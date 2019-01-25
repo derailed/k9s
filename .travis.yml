@@ -1,0 +1,21 @@
+language: go
+go_import_path: github.com/k8sland/k9s
+go:
+  - 1.11.2
+  # - master
+
+os:
+  - linux
+  - osx
+
+dist: trusty
+sudo: false
+
+install: true
+
+env:
+  - GO111MODULE=on
+
+script:
+  - go build
+  - go test ./...

@@ -1,0 +1,56 @@
+project_name: k9s
+before:
+  hooks:
+    # you may remove this if you don't use vgo
+    - go mod download
+    # you may remove this if you don't need go generate
+    - go generate ./...
+
+release:
+  prerelease: true
+
+builds:
+- env:
+  - CGO_ENABLED=0
+  goos:
+  - linux
+  - darwin
+  - windows
+  goarch:
+  - 386
+  - amd64
+  ldflags:
+  - -s -w -X github.com/k8sland/k9s/cmd.version={{.Version}} -X github.com/k8sland/k9s/cmd.commit={{.Commit}} -X github.com/k8sland/k9s/cmd.date={{.Date}}
+
+archive:
+  replacements:
+    darwin:  Darwin
+    linux:   Linux
+    windows: Windows
+    386:     i386
+    amd64:   x86_64
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+    - '^docs:'
+    - '^test:'
+
+# Homebrew
+brew:
+  name: k9s
+  github:
+    owner: k8sland
+    name: k9s-homebrew-tap
+  commit_author:
+    name: k8sland
+    email: fernand@k8sland.io
+  folder: Formula
+  homepage: https://k9ss.io
+  description: A CLI to interact with your Kubernetes clusters
+  test: |
+    system "k9s version"

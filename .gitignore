@@ -1,0 +1,10 @@
+.vscode
+k9s.log
+.envrc
+cov.out
+execs
+k9s
+samples
+dist
+notes
+styles

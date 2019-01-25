@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   id="svg8"
+   version="1.1"
+   viewBox="0 0 210 297"
+   height="297mm"
+   width="210mm">
+  <defs
+     id="defs2">
+    <linearGradient
+       id="linearGradient2680">
+      <stop
+         id="stop2676"
+         offset="0"
+         style="stop-color:#ababab;stop-opacity:1;" />
+      <stop
+         id="stop2678"
+         offset="1"
+         style="stop-color:#ababab;stop-opacity:0;" />
+    </linearGradient>
+    <marker
+       style="overflow:visible"
+       id="Arrow1Lstart"
+       refX="0.0"
+       refY="0.0"
+       orient="auto">
+      <path
+         transform="scale(0.8) translate(12.5,0)"
+         style="fill-rule:evenodd;stroke:#000000;stroke-width:1.0pt"
+         d="M 0.0,0.0 L 5.0,-5.0 L -12.5,0.0 L 5.0,5.0 L 0.0,0.0 z "
+         id="path848" />
+    </marker>
+    <radialGradient
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1,0,0,0.28804762,0,94.764912)"
+       r="19.622099"
+       fy="133.10568"
+       fx="111.58373"
+       cy="133.10568"
+       cx="111.58373"
+       id="radialGradient2684"
+       xlink:href="#linearGradient2680" />
+  </defs>
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     id="layer1">
+    <rect
+       y="99.44445"
+       x="31.750006"
+       height="86.430557"
+       width="129.64584"
+       id="rect1130"
+       style="opacity:1;fill:#5d6c53;fill-opacity:1;stroke:#244f24;stroke-width:10;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+    <text
+       transform="scale(0.99941234,1.000588)"
+       id="text1128"
+       y="160.47581"
+       x="44.689861"
+       style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:46.0962944px;line-height:1.25;font-family:'Glass TTY VT220';-inkscape-font-specification:'Glass TTY VT220, Medium';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;letter-spacing:0px;word-spacing:0px;writing-mode:lr-tb;text-anchor:start;fill:#5ef86d;fill-opacity:1;stroke:#59ff32;stroke-width:0.80994618;stroke-opacity:0.94520545;"
+       xml:space="preserve"><tspan
+         style="font-style:normal;font-variant:normal;font-weight:500;font-stretch:normal;font-size:46.0962944px;font-family:'Glass TTY VT220';-inkscape-font-specification:'Glass TTY VT220, Medium';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-feature-settings:normal;text-align:start;writing-mode:lr-tb;text-anchor:start;fill:#5ef86d;fill-opacity:1;stroke:#59ff32;stroke-width:0.80994618;stroke-opacity:0.94520545;"
+         y="160.47581"
+         x="44.689861"
+         id="tspan1126">tcell</tspan></text>
+    <flowRoot
+       style="fill:black;fill-opacity:1;stroke:none;font-family:sans-serif;font-style:normal;font-weight:normal;font-size:40px;line-height:1.25;letter-spacing:0px;word-spacing:0px"
+       id="flowRoot1132"
+       xml:space="preserve"><flowRegion
+         id="flowRegion1134"><rect
+           y="432.51968"
+           x="290"
+           height="160"
+           width="330"
+           id="rect1136" /></flowRegion><flowPara
+         id="flowPara1138"></flowPara></flowRoot>  </g>
+</svg>
