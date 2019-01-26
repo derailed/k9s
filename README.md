@@ -1,6 +1,6 @@
 <img src="assets/logo_w.png">
 
-# K9s - Kubernetes Screens
+# K8scmd - Kubernetes graphical CLI
 
 A Kubernetes CLI written in GO and curses to interact with your clusters. The initial
 aim of this project is to make it simpler to navigate and diagnose a cluster.
@@ -18,11 +18,11 @@ aim of this project is to make it simpler to navigate and diagnose a cluster.
 ---
 ## Description
 
-K9s is a CLI for Kubernetes. It provides a bit more information about your cluster
+K8scmd is a CLI for Kubernetes. It provides a bit more information about your cluster
 than *kubectl* while allowing to perform primordial Kubernetes commands with
 ease.
 
-At the time of this writing, K9s only supports a subset of all available Kubernetes
+At the time of this writing, K8scmd only supports a subset of all available Kubernetes
 resources. More will be added soon (please PR us to add your favorite resource!)
 
 <br/>
@@ -48,10 +48,10 @@ brew install k9s
 ---
 ## Features
 
-> Note: K9s does not have an idiot light. Please be sure to hit the correct command
+> Note: K8scmd does not have an idiot light. Please be sure to hit the correct command
 > sequences to avoid pilot errors. `Are you sure?` not in effect here...
 
-+ K9s uses 2 or 3 letters alias to navigate to a K8s resource
++ K8scmd uses 2 or 3 letters alias to navigate to a K8s resource
 + At any time you can use `?<Enter>` to look up the various commands
 + Use `alias<Enter>` to activate a resource under that alias
 + Use `Esc` to erase previous keystrokes.
@@ -64,7 +64,7 @@ brew install k9s
 ---
 ## Video Demo
 
-+ [K9s Demo](https://youtu.be/k7zseUhaXeU)
++ [K8scmd Demo](https://youtu.be/k7zseUhaXeU)
 
 
 <br/>
@@ -85,7 +85,7 @@ brew install k9s
 ---
 ## Known Issues...
 
-This initial drop is brittle. K9s will most likely blow up if...
+This initial drop is brittle. K8scmd will most likely blow up if...
 
 + Your kube-config file does not live under $HOME/.kube or you use multiple configs
 + You don't have enough RBAC fu to manage your cluster
@@ -109,7 +109,7 @@ dig this effort, please let us know that too!
 ---
 ## ATTA Girls/Boys!
 
-K9s sits on top of two very cool GO projects that provides the much needed terminal
+K8scmd sits on top of two very cool GO projects that provides the much needed terminal
 support. So big thanks and shootout to the good folks at tcell+tview for
 making K9s a reality!!
 
@@ -122,9 +122,9 @@ making K9s a reality!!
 ---
 ## Contact Information
 
-+ **Email**:   fernand@k8sland.io
++ **Email**:   fernand@imhotep.io
 + **Twitter**: [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
-+ **Github**:  [K9s](https://github.com/k8sland/k9s)
++ **Github**:  [K9scmd](https://github.com/derailed/k8scmd)
 <br/>
 
 ---
