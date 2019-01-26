@@ -23,13 +23,15 @@ func newPodView(t string, app *appView, list resource.List, c colorerFn) resourc
 	v.AddPage("logs", logs, true, false)
 
 	picker := newSelectList()
-	picker.SetSelectedFunc(func(i int, t, d string, r rune) {
-		log.Println("Selected", i, t, d, r)
-		v.sshInto(v.selectedItem, t)
-	})
-	picker.setActions(keyActions{
-		tcell.KeyCtrlB: {description: "Back", action: v.back},
-	})
+	{
+		picker.SetSelectedFunc(func(i int, t, d string, r rune) {
+			log.Println("Selected", i, t, d, r)
+			v.sshInto(v.selectedItem, t)
+		})
+		picker.setActions(keyActions{
+			tcell.KeyCtrlB: {description: "Back", action: v.back},
+		})
+	}
 
 	v.AddPage("choose", picker, true, false)
 	v.switchPage("po")

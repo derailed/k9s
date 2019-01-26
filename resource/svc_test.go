@@ -44,7 +44,8 @@ func TestSvcFields(t *testing.T) {
 				"ClusterIP",
 				"1.1.1.1",
 				"2.2.2.2",
-				"http:90➔ 0/TCP",
+				"fred=blee",
+				"http:90->0/TCP",
 			},
 		},
 	}
@@ -88,7 +89,7 @@ func TestSVCListData(t *testing.T) {
 	assert.Equal(t, "blee", l.GetNamespace())
 	assert.False(t, l.HasXRay())
 	row := td.Rows["blee/fred"]
-	assert.Equal(t, 6, len(row.Deltas))
+	assert.Equal(t, 7, len(row.Deltas))
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}
@@ -143,6 +144,7 @@ func svcHeader() resource.Row {
 		"TYPE",
 		"CLUSTER-IP",
 		"EXTERNAL-IP",
+		"SELECTOR",
 		"PORT(S)",
 		"AGE",
 	}
