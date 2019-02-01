@@ -1,29 +1,21 @@
-<img src="assets/logo_w.png">
+<img src="assets/k9s.png">
 
-# K8scmd - Kubernetes graphical CLI
+# K9s - A command line application to manage your kubernetes clusters.
 
-A Kubernetes CLI written in GO and curses to interact with your clusters. The initial
-aim of this project is to make it simpler to navigate and diagnose a cluster.
+A CLI written in GO and curses to interact with your Kubernetes clusters.
+The aim of this project is to make it easier to navigate, observe and manage
+your clusters.
 
-<br/>
-
----
-
-[![Go Report Card](https://goreportcard.com/badge/github.com/k8sland/k9s)](https://goreportcard.com/report/github.com/k8sland/k9s)
-[![Build Status](https://travis-ci.org/k8sland/k9s.svg?branch=master)](https://travis-ci.org/k8sland/k9s)
-
+K9s is a CLI for Kubernetes. It provides a bit more information about your cluster
+than *kubectl* while allowing to perform primordial Kubernetes commands with ease.
 
 <br/>
 
 ---
-## Description
 
-K8scmd is a CLI for Kubernetes. It provides a bit more information about your cluster
-than *kubectl* while allowing to perform primordial Kubernetes commands with
-ease.
+[![Go Report Card](https://goreportcard.com/badge/github.com/derailed/k9s)](https://goreportcard.com/report/github.com/derailed/k9s)
+[![Build Status](https://travis-ci.org/derailed/k9s.svg?branch=master)](https://travis-ci.org/derailed/k9s)
 
-At the time of this writing, K8scmd only supports a subset of all available Kubernetes
-resources. More will be added soon (please PR us to add your favorite resource!)
 
 <br/>
 
@@ -33,13 +25,13 @@ resources. More will be added soon (please PR us to add your favorite resource!)
 ### Homebrew (OSX)
 
 ```shell
-brew tap k8sland/k9s https://github.com/k8sland/k9s-homebrew-tap.git
+brew tap derailed/k9s https://github.com/derailed/k9s-homebrew-tap.git
 brew install k9s
 ```
 
 ### Binary Releases
 
-- [Releases](https://github.com/k8sland/k9s/releases)
+- [Releases](https://github.com/derailed/k9s/releases)
 
 
 
@@ -48,10 +40,10 @@ brew install k9s
 ---
 ## Features
 
-> Note: K8scmd does not have an idiot light. Please be sure to hit the correct command
+> Note: k9s does not have an idiot light. Please be sure to hit the correct command
 > sequences to avoid pilot errors. `Are you sure?` not in effect here...
 
-+ K8scmd uses 2 or 3 letters alias to navigate to a K8s resource
++ k9s uses 2 or 3 letters alias to navigate most Kubernetes resources
 + At any time you can use `?<Enter>` to look up the various commands
 + Use `alias<Enter>` to activate a resource under that alias
 + Use `Esc` to erase previous keystrokes.
@@ -64,7 +56,7 @@ brew install k9s
 ---
 ## Video Demo
 
-+ [K8scmd Demo](https://youtu.be/k7zseUhaXeU)
++ [k9s Demo](https://youtu.be/k7zseUhaXeU)
 
 
 <br/>
@@ -85,15 +77,11 @@ brew install k9s
 ---
 ## Known Issues...
 
-This initial drop is brittle. K8scmd will most likely blow up if...
+This initial drop is brittle. k9s will most likely blow up if...
 
 + Your kube-config file does not live under $HOME/.kube or you use multiple configs
 + You don't have enough RBAC fu to manage your cluster
 + Your cluster does not run a metrics-server
-+ You have more than 9 namespaces
-+ Most likely will bork on older Kubernetes revs. Guessing > 1.9+ is Ok??
-+ Not sure at this time about the ill effects for large clusters??
-+ Many others for sure...
 
 <br/>
 
@@ -109,9 +97,9 @@ dig this effort, please let us know that too!
 ---
 ## ATTA Girls/Boys!
 
-K8scmd sits on top of two very cool GO projects that provides the much needed terminal
+k9s sits on top of two very cool GO projects that provides the much needed terminal
 support. So big thanks and shootout to the good folks at tcell+tview for
-making K9s a reality!!
+making k9s a reality!!
 
 + [tcell](https://github.com/gdamore/tcell)
 + [tview](https://github.com/rivo/tview)
@@ -124,7 +112,7 @@ making K9s a reality!!
 
 + **Email**:   fernand@imhotep.io
 + **Twitter**: [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
-+ **Github**:  [K9scmd](https://github.com/derailed/k8scmd)
++ **Github**:  [k9s](https://github.com/derailed/k9s)
 <br/>
 
 ---
