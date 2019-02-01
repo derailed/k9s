@@ -1,13 +1,12 @@
 <img src="assets/k9s.png">
 
-# K9s - A command line application to manage your kubernetes clusters.
+# K9s - CLI to manage your Kubernetes clusters.
 
-A CLI written in GO and curses to interact with your Kubernetes clusters.
-The aim of this project is to make it easier to navigate, observe and manage
-your clusters.
-
-K9s is a CLI for Kubernetes. It provides a bit more information about your cluster
-than *kubectl* while allowing to perform primordial Kubernetes commands with ease.
+K9s is written in GO and provides a graphical terminal UI to interact with your
+Kubernetes clusters. The aim of this project is to make it easier to navigate,
+observe and manage your clusters. The CLI continually watches Kubernetes
+resources for changes and offers subsequent commands to interact with the
+observed resource.
 
 <br/>
 
