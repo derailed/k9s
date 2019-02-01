@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/gdamore/tcell"
-	"github.com/k8sland/k9s/resource"
+	"github.com/derailed/k9s/resource"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/watch"
 )
@@ -221,7 +221,7 @@ func TestCtxColorer(t *testing.T) {
 	}
 }
 
-func TestPoColorer(t *testing.T) {
+func TestPodColorer(t *testing.T) {
 	var (
 		nsRow                = resource.Row{"blee", "fred", "1/1", "Running"}
 		toastNS              = resource.Row{"blee", "fred", "1/1", "Boom"}

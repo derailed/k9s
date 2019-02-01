@@ -20,7 +20,7 @@ builds:
   - 386
   - amd64
   ldflags:
-  - -s -w -X github.com/k8sland/k9s/cmd.version={{.Version}} -X github.com/k8sland/k9s/cmd.commit={{.Commit}} -X github.com/k8sland/k9s/cmd.date={{.Date}}
+  - -s -w -X github.com/derailed/k9s/cmd.version={{.Version}} -X github.com/derailed/k9s/cmd.commit={{.Commit}} -X github.com/derailed/k9s/cmd.date={{.Date}}
 
 archive:
   replacements:
@@ -44,13 +44,13 @@ changelog:
 brew:
   name: k9s
   github:
-    owner: k8sland
+    owner: derailed
     name: k9s-homebrew-tap
   commit_author:
-    name: k8sland
-    email: fernand@k8sland.io
+    name: derailed
+    email: fernand@imhotep.io
   folder: Formula
-  homepage: https://k9ss.io
-  description: A CLI to interact with your Kubernetes clusters
+  homepage: https://k9s.io
+  description: A graphical terminal CLI to interact with your Kubernetes clusters!
   test: |
     system "k9s version"

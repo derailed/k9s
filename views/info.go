@@ -1,8 +1,8 @@
 package views
 
 import (
+	"github.com/derailed/k9s/resource"
 	"github.com/gdamore/tcell"
-	"github.com/k8sland/k9s/resource"
 	"github.com/k8sland/tview"
 	log "github.com/sirupsen/logrus"
 )
@@ -20,10 +20,10 @@ func newInfoView(app *appView) *infoView {
 func (v *infoView) init() {
 	var row int
 	cluster := resource.NewCluster()
-	rev := cluster.Version()
 	v.SetCell(row, 0, v.sectionCell("Cluster"))
 	v.SetCell(row, 1, v.infoCell(cluster.Name()))
 	row++
+	rev := cluster.Version()
 	v.SetCell(row, 0, v.sectionCell("K8s Version"))
 	v.SetCell(row, 1, v.infoCell(rev))
 	row++

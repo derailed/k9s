@@ -19,7 +19,6 @@ const (
 type (
 	focusHandler func(tview.Primitive)
 
-	// Igniter represents a component that must be initialized.
 	igniter interface {
 		tview.Primitive
 		init(ctx context.Context, ns string)
@@ -51,18 +50,21 @@ type (
 
 // NewApp returns a K9s app instance.
 func NewApp(v string, rate int, ns string) *appView {
-	app := appView{
-		Application: tview.NewApplication(),
-		pages:       tview.NewPages(),
-		version:     v,
-		menuView:    newMenuView(),
-		content:     tview.NewPages(),
-		refreshRate: rate,
-		defaultNS:   ns,
+	var app appView
+	{
+		app = appView{
+			Application: tview.NewApplication(),
+			pages:       tview.NewPages(),
+			version:     v,
+			menuView:    newMenuView(),
+			content:     tview.NewPages(),
+			refreshRate: rate,
+			defaultNS:   ns,
+		}
+		app.command = newCommand(&app)
+		app.focusChanged = app.changedFocus
+		app.SetInputCapture(app.keyboard)
 	}
-	app.command = newCommand(&app)
-	app.focusChanged = app.changedFocus
-	app.SetInputCapture(app.keyboard)
 	return &app
 }
 
@@ -72,20 +74,24 @@ func (a *appView) Init() {
 
 	a.flashView = newFlashView(a.Application, "Initializing...")
 
-	header := tview.NewFlex().SetDirection(tview.FlexColumn)
-	header.AddItem(logoView(), 30, 1, false)
-	header.AddItem(a.menuView, 0, 1, false)
-	header.AddItem(a.infoView, 25, 1, false)
+	header := tview.NewFlex()
+	{
+		header.SetDirection(tview.FlexColumn)
+		header.AddItem(a.infoView, 25, 1, false)
+		header.AddItem(a.menuView, 0, 1, false)
+		header.AddItem(logoView(), 25, 1, false)
+	}
 
 	main := tview.NewFlex()
-	main.SetDirection(tview.FlexRow)
-	main.AddItem(header, 6, 1, false)
-	main.AddItem(a.content, 0, 10, true)
-	main.AddItem(a.flashView, 1, 1, false)
+	{
+		main.SetDirection(tview.FlexRow)
+		main.AddItem(header, 6, 1, false)
+		main.AddItem(a.content, 0, 10, true)
+		main.AddItem(a.flashView, 1, 1, false)
+	}
 
 	a.pages.AddPage("main", main, true, false)
 	a.pages.AddPage("splash", NewSplash(a.version), true, true)
-
 	a.SetRoot(a.pages, true)
 }
 
@@ -143,9 +149,11 @@ func (a *appView) inject(p igniter) {
 	a.content.RemovePage("main")
 	a.content.AddPage("main", p, true, true)
 
-	ctx, cancel := context.WithCancel(context.TODO())
-	a.cancel = cancel
-	p.init(ctx, a.defaultNS)
+	{
+		var ctx context.Context
+		ctx, a.cancel = context.WithCancel(context.TODO())
+		p.init(ctx, a.defaultNS)
+	}
 
 	go func() {
 		<-time.After(100 * time.Millisecond)
@@ -162,31 +170,30 @@ func (a *appView) refresh() {
 	a.infoView.refresh()
 }
 
-// Quit the application.
 func (a *appView) quit(*tcell.EventKey) {
 	a.Stop()
 	os.Exit(0)
 }
 
-// Flash a user message.
 func (a *appView) flash(level flashLevel, m ...string) {
 	a.flashView.setMessage(level, m...)
 }
 
-// SetHints for menu bar.
 func (a *appView) setHints(h hints) {
 	a.menuView.setMenu(h)
 }
 
 func logoView() tview.Primitive {
 	v := tview.NewTextView()
-	v.SetWordWrap(false)
-	v.SetWrap(false)
-	v.SetDynamicColors(true)
-	for i, s := range logo {
-		fmt.Fprintf(v, "[orange::b]%s", s)
-		if i+1 < len(logo) {
-			fmt.Fprintf(v, "\n")
+	{
+		v.SetWordWrap(false)
+		v.SetWrap(false)
+		v.SetDynamicColors(true)
+		for i, s := range logoSmall {
+			fmt.Fprintf(v, "[orange::b]%s", s)
+			if i+1 < len(logoSmall) {
+				fmt.Fprintf(v, "\n")
+			}
 		}
 	}
 	return v

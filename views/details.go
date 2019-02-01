@@ -7,7 +7,7 @@ import (
 	"github.com/k8sland/tview"
 )
 
-const detailFmt = " [orange::b]%s [aqua::-]YAML "
+const detailFmt = " [aqua::-]%s [fuchsia::b]YAML "
 
 // detailsView display yaml output
 type detailsView struct {

@@ -13,13 +13,23 @@ const (
 	product = "Kubernetes CLI Island Style!"
 )
 
-var logo = []string{
+var logoSmall = []string{
+
 	` __     ______         `,
 	`|  | __/  __  \  ______`,
 	`|  |/ />      < /  ___/`,
 	`|    </   --   \\___ \ `,
 	`|__|_ \______  /____  >`,
 	`     \/      \/     \/ `,
+}
+
+var logo = []string{
+	` ____  __. ______        _________              .___`,
+	`|    |/ _|/  __  \  _____\_   ___ \  _____    __| _/`,
+	`|      <  >      < /  ___/    \  \/ /     \  / __ | `,
+	`|    |  \/   --   \\___ \\     \___|  Y Y  \/ /_/ | `,
+	`|____|__ \______  /____  >\______  /__|_|  /\____ | `,
+	`        \/      \/     \/        \/      \/      \/ `,
 }
 
 var co = []string{
@@ -40,39 +50,31 @@ type Splash struct {
 func NewSplash(rev string) *Splash {
 	v := Splash{tview.NewFlex()}
 
-	t1 := tview.NewTextView()
-	t1.SetDynamicColors(true)
-	t1.SetBackgroundColor(tcell.ColorDefault)
-	t1.SetTextAlign(tview.AlignCenter)
-	v.layoutLogo(t1)
+	logo := tview.NewTextView()
+	{
+		logo.SetDynamicColors(true)
+		logo.SetBackgroundColor(tcell.ColorDefault)
+		logo.SetTextAlign(tview.AlignCenter)
+	}
+	v.layoutLogo(logo)
 
-	t2 := tview.NewTextView()
-	t2.SetDynamicColors(true)
-	t2.SetBackgroundColor(tcell.ColorDefault)
-	t2.SetTextAlign(tview.AlignCenter)
-	v.layoutCo(t2)
-
-	t3 := tview.NewTextView()
-	t3.SetDynamicColors(true)
-	t3.SetBackgroundColor(tcell.ColorDefault)
-	t3.SetTextAlign(tview.AlignCenter)
-	v.layoutRev(t3, rev)
+	vers := tview.NewTextView()
+	{
+		vers.SetDynamicColors(true)
+		vers.SetBackgroundColor(tcell.ColorDefault)
+		vers.SetTextAlign(tview.AlignCenter)
+	}
+	v.layoutRev(vers, rev)
 
 	v.SetDirection(tview.FlexRow)
-	v.AddItem(t2, 0, 2, false)
-	v.AddItem(t1, 0, 4, false)
-	v.AddItem(t3, 2, 1, false)
+	v.AddItem(logo, 10, 1, false)
+	v.AddItem(vers, 1, 1, false)
 	return &v
 }
 
 func (v *Splash) layoutLogo(t *tview.TextView) {
 	logo := strings.Join(logo, "\n[orange::b]")
 	fmt.Fprintf(t, "%s[orange::b]%s\n", strings.Repeat("\n", 2), logo)
-}
-
-func (v *Splash) layoutCo(t *tview.TextView) {
-	cos := strings.Join(co, "\n[yellowgreen::b]")
-	fmt.Fprintf(t, "[yellowgreen::b]%s\n", cos)
 }
 
 func (v *Splash) layoutRev(t *tview.TextView, rev string) {

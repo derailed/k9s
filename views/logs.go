@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/derailed/k9s/resource"
 	"github.com/gdamore/tcell"
-	"github.com/k8sland/k9s/resource"
 	"github.com/k8sland/tview"
 	log "github.com/sirupsen/logrus"
 )
@@ -21,9 +21,11 @@ type logsView struct {
 }
 
 func newLogsView(pv *podView) *logsView {
-	v := logsView{Pages: tview.NewPages(), pv: pv, containers: []string{}}
-	v.SetInputCapture(v.keyboard)
-
+	var v logsView
+	{
+		v = logsView{Pages: tview.NewPages(), pv: pv, containers: []string{}}
+		v.SetInputCapture(v.keyboard)
+	}
 	return &v
 }
 

@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/derailed/k9s/resource"
 	"github.com/gdamore/tcell"
-	"github.com/k8sland/k9s/resource"
 	"github.com/k8sland/tview"
 )
 
@@ -92,7 +92,6 @@ type (
 		description string
 		action      keyboardHandler
 	}
-
 	keyActions map[tcell.Key]keyAction
 
 	menuView struct {
@@ -112,7 +111,6 @@ func newMenuView() *menuView {
 
 func (v *menuView) setMenu(hh hints) {
 	v.Clear()
-
 	v.SetRows(1, 1, 1, 1)
 	v.SetColumns(colLen, colLen)
 	isNS := true

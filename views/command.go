@@ -3,7 +3,7 @@ package views
 import (
 	"fmt"
 
-	"github.com/k8sland/k9s/resource"
+	"github.com/derailed/k9s/resource"
 )
 
 type command struct {

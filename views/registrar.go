@@ -1,9 +1,9 @@
 package views
 
 import (
+	"github.com/derailed/k9s/resource"
+	"github.com/derailed/k9s/resource/k8s"
 	"github.com/gdamore/tcell"
-	"github.com/k8sland/k9s/resource"
-	"github.com/k8sland/k9s/resource/k8s"
 )
 
 type (
@@ -21,13 +21,13 @@ type (
 )
 
 var cmdMap = map[string]resCmd{
-	// "cm": resCmd{
-	// 	title:     "Config Maps",
-	// 	api:       "core",
-	// 	viewFn:    newResourceView,
-	// 	listFn:    resource.NewConfigMapList,
-	// 	colorerFn: defaultColorer,
-	// },
+	"cm": resCmd{
+		title:     "Config Maps",
+		api:       "core",
+		viewFn:    newResourceView,
+		listFn:    resource.NewConfigMapList,
+		colorerFn: defaultColorer,
+	},
 	"cr": resCmd{
 		title:     "Cluster Roles",
 		api:       "rbac.authorization.k8s.io",
@@ -189,17 +189,17 @@ var cmdMap = map[string]resCmd{
 		listFn:    resource.NewStatefulSetList,
 		colorerFn: stsColorer,
 	},
-	// "svc": resCmd{
-	// 	title:     "Services",
-	// 	api:       "core",
-	// 	viewFn:    newResourceView,
-	// 	listFn:    resource.NewServiceList,
-	// 	colorerFn: defaultColorer,
-	// },
+	"svc": resCmd{
+		title:     "Services",
+		api:       "core",
+		viewFn:    newResourceView,
+		listFn:    resource.NewServiceList,
+		colorerFn: defaultColorer,
+	},
 }
 
 func helpCmds() map[string]resCmd {
-	cmds := map[string]resCmd{}
+	cmds := make(map[string]resCmd, len(cmdMap))
 	for k, v := range cmdMap {
 		cmds[k] = v
 	}
@@ -242,23 +242,23 @@ func getCRDS() map[string]k8s.ApiGroup {
 		}
 	}
 
-	m["cm"] = k8s.ApiGroup{
-		Version:  "v1",
-		Group:    "",
-		Kind:     "ConfigMap",
-		Singular: "configmap",
-		Plural:   "configmaps",
-		Aliases:  []string{"cm"},
-	}
+	// m["cm"] = k8s.ApiGroup{
+	// 	Version:  "v1",
+	// 	Group:    "core",
+	// 	Kind:     "ConfigMap",
+	// 	Singular: "configmap",
+	// 	Plural:   "configmaps",
+	// 	Aliases:  []string{"cm"},
+	// }
 
-	m["svc"] = k8s.ApiGroup{
-		Version:  "v1",
-		Group:    "",
-		Kind:     "Service",
-		Singular: "service",
-		Plural:   "services",
-		Aliases:  []string{"svc"},
-	}
+	// m["svc"] = k8s.ApiGroup{
+	// 	Version:  "v1",
+	// 	Group:    "core",
+	// 	Kind:     "Service",
+	// 	Singular: "service",
+	// 	Plural:   "services",
+	// 	Aliases:  []string{"svc"},
+	// }
 
 	return m
 }

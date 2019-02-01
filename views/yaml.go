@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/derailed/k9s/resource"
 	"github.com/gdamore/tcell"
-	"github.com/k8sland/k9s/resource"
 	"github.com/k8sland/tview"
 )
 

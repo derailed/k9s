@@ -1,7 +1,7 @@
 package resource
 
 import (
-	"github.com/k8sland/k9s/resource/k8s"
+	"github.com/derailed/k9s/resource/k8s"
 	"k8s.io/api/core/v1"
 )
 

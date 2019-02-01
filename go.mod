@@ -1,11 +1,14 @@
-module github.com/k8sland/k9s
+module github.com/derailed/k9s
 
 // replace github.com/k8sland/tview => /Users/fernand/k8sland/src/github.com/k8sland/tview
 
 require (
 	cloud.google.com/go v0.34.0 // indirect
+	github.com/emicklei/go-restful v2.8.1+incompatible // indirect
+	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
 	github.com/gdamore/tcell v1.1.0
 	github.com/ghodss/yaml v1.0.0 // indirect
+	github.com/go-openapi/spec v0.18.0 // indirect
 	github.com/gogo/protobuf v1.1.1 // indirect
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b // indirect
 	github.com/google/btree v0.0.0-20180813153112-4030bb1f1f0c // indirect
@@ -23,6 +26,7 @@ require (
 	github.com/onsi/gomega v1.4.3 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/petergtz/pegomock v0.0.0-20181206220228-b113d17a7e81
+	github.com/pkg/errors v0.8.1 // indirect
 	github.com/sirupsen/logrus v1.2.0
 	github.com/smartystreets/assertions v0.0.0-20180927180507-b2de0cb4f26d // indirect
 	github.com/smartystreets/goconvey v0.0.0-20181108003508-044398e4856c // indirect
@@ -43,6 +47,9 @@ require (
 	k8s.io/apiextensions-apiserver v0.0.0-20181206111255-bb0a52a3f19d // indirect
 	k8s.io/apimachinery v0.0.0-20181108045954-261df694e725
 	k8s.io/client-go v9.0.0+incompatible
+	k8s.io/kube-openapi v0.0.0-20190131215449-d8b685cd2daa // indirect
 	k8s.io/kubernetes v1.13.0
 	k8s.io/metrics v0.0.0-20181121073115-d8618695b08f
+	sigs.k8s.io/kind v0.0.0-20190131032353-9307ec01e70f // indirect
+	sigs.k8s.io/kustomize v1.0.11 // indirect
 )

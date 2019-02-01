@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"sort"
 
-	"github.com/k8sland/k9s/resource/k8s"
+	"github.com/derailed/k9s/resource/k8s"
 	"k8s.io/apimachinery/pkg/watch"
 )
 
@@ -154,6 +154,9 @@ func (l *list) GetNamespace() string {
 // SetNamespace updates the namespace on the list. Default ns is "" for all
 // namespaces.
 func (l *list) SetNamespace(n string) {
+	if l.namespace == n {
+		return
+	}
 	l.cache = RowEvents{}
 	if l.Access(NamespaceAccess) {
 		l.namespace = n

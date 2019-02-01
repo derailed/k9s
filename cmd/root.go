@@ -5,35 +5,31 @@ import (
 
 	"github.com/gdamore/tcell"
 
-	"github.com/k8sland/k9s/views"
+	"github.com/derailed/k9s/views"
 	"github.com/k8sland/tview"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"k8s.io/client-go/kubernetes"
 )
 
-const (
-	defaultRefreshRate = 5 // secs
-)
+const defaultRefreshRate = 5 // secs
 
 var (
 	version     = "dev"
 	commit      = "dev"
 	date        = "n/a"
-	srv         kubernetes.Interface
 	refreshRate int
 	namespace   string
 
 	rootCmd = &cobra.Command{
 		Use:   "k9s",
-		Short: "K9s a Kubernetes cluster management CLI",
-		Long:  `K9s is a Kubernetes CLI to view and manage your Kubernetes clusters.`,
+		Short: "A graphical CLI for your Kubernetes cluster management.",
+		Long:  `k9s is a Kubernetes CLI to view and manage your Kubernetes clusters.`,
 		Run:   run,
 	}
 	versionCmd = &cobra.Command{
 		Use:   "version",
-		Short: "Print K9s version",
-		Long:  "Prints K9s version",
+		Short: "Print k9s version",
+		Long:  "Prints k9s version",
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Printf("Version:%s GitCommit:%s On %s\n", version, commit, date)
 		},
@@ -56,7 +52,6 @@ func init() {
 		"",
 		"Uses a given namespace versus all-namespaces",
 	)
-
 }
 
 // Execute root command
@@ -70,9 +65,6 @@ func run(cmd *cobra.Command, args []string) {
 	initStyles()
 	initKeys()
 
-	if refreshRate < 0 {
-		refreshRate = defaultRefreshRate
-	}
 	app := views.NewApp(version, refreshRate, namespace)
 	app.Init()
 	app.Run()

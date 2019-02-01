@@ -3,7 +3,7 @@ package views
 import (
 	"testing"
 
-	"github.com/k8sland/k9s/resource"
+	"github.com/derailed/k9s/resource"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,6 +16,7 @@ func TestDeltas(t *testing.T) {
 		{"1", "2", plus("2")},
 		{"2", "1", minus("1")},
 		{"10Gi", "20Gi", plus("20Gi")},
+		{"15%(-)", "15%", "15%"},
 		{resource.MissingValue, "fred", delta("fred")},
 		{resource.NAValue, "fred", delta("fred")},
 	}

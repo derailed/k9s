@@ -7,7 +7,7 @@ import (
 	"path"
 	"strings"
 
-	"github.com/k8sland/k9s/resource/k8s"
+	"github.com/derailed/k9s/resource/k8s"
 	log "github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v2"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"

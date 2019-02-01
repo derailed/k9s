@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/derailed/k9s/resource"
+	"github.com/derailed/k9s/resource/k8s"
 	"github.com/gdamore/tcell"
-	"github.com/k8sland/k9s/resource"
-	"github.com/k8sland/k9s/resource/k8s"
 	"github.com/k8sland/tview"
 	log "github.com/sirupsen/logrus"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 const noSelection = ""
@@ -200,8 +200,9 @@ func (v *resourceView) switchNamespace(evt *tcell.EventKey) {
 		v.refresh()
 	}
 	v.resume()
-	v.selectedItem = noSelection
+	v.selectItem(0, 0)
 	v.getTV().resetTitle()
+	v.getTV().Select(0, 0)
 	v.app.resetCmd()
 }
 
@@ -223,6 +224,7 @@ func (v *resourceView) refresh() {
 	if _, ok := v.CurrentPage().Item.(*tableView); !ok {
 		return
 	}
+
 	v.list.SetNamespace(v.selectedNS)
 	if err := v.list.Reconcile(); err != nil {
 		v.app.flash(flashErr, err.Error())

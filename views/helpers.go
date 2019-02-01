@@ -25,6 +25,9 @@ func deltas(c, n string) string {
 	}
 
 	if isAlpha(c) {
+		if strings.Contains(c, "(") {
+			return n
+		}
 		switch strings.Compare(c, n) {
 		case -1:
 			return plus(n)

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/k8sland/k9s/resource/k8s"
+	"github.com/derailed/k9s/resource/k8s"
 	log "github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v2"
 	"k8s.io/api/core/v1"

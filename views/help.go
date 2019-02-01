@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/derailed/k9s/resource"
 	"github.com/gdamore/tcell"
-	"github.com/k8sland/k9s/resource"
 	"github.com/k8sland/tview"
 )
 
@@ -32,14 +32,17 @@ func (v *helpView) init(context.Context, string) {
 		tcell.KeyCtrlB: keyAction{description: "Help Back", action: v.back},
 	}
 
-	t := tview.NewTable()
-	t.SetBorder(true)
-	t.SetTitle(" [::b]Commands Help ")
-	t.SetTitleColor(tcell.ColorAqua)
-	t.SetBorderColor(tcell.ColorDodgerBlue)
-	t.SetSelectable(true, false)
-	t.SetSelectedStyle(tcell.ColorWhite, tcell.ColorFuchsia, tcell.AttrNone)
-	t.SetInputCapture(v.keyboard)
+	var t *tview.Table
+	{
+		t = tview.NewTable()
+		t.SetBorder(true)
+		t.SetTitle(" [::b]Commands Help ")
+		t.SetTitleColor(tcell.ColorAqua)
+		t.SetBorderColor(tcell.ColorDodgerBlue)
+		t.SetSelectable(true, false)
+		t.SetSelectedStyle(tcell.ColorWhite, tcell.ColorFuchsia, tcell.AttrNone)
+		t.SetInputCapture(v.keyboard)
+	}
 
 	var row int
 	for c, h := range []string{"ALIAS", "RESOURCE", "APIGROUP"} {
@@ -50,7 +53,6 @@ func (v *helpView) init(context.Context, string) {
 	row++
 
 	cmds := helpCmds()
-
 	kk := make([]string, 0, len(cmds))
 	for k := range cmds {
 		kk = append(kk, k)
@@ -98,7 +100,6 @@ func (v *helpView) back(evt *tcell.EventKey) {
 	v.app.inject(v.current)
 }
 
-// Hints fetch menu hints
 func (v *helpView) hints() hints {
 	return v.keys.toHints()
 }

@@ -15,6 +15,11 @@ const (
 	flashErr
 	flashFatal
 	flashDelay = 5
+
+	emoDoh   = "😗"
+	emoRed   = "😡"
+	emoDead  = "💀"
+	emoHappy = "😎"
 )
 
 type (
@@ -29,10 +34,13 @@ type (
 )
 
 func newFlashView(app *tview.Application, m string) *flashView {
-	f := flashView{app: app, TextView: tview.NewTextView()}
-	f.SetTextColor(tcell.ColorAqua)
-	f.SetTextAlign(tview.AlignLeft)
-	f.SetBorderPadding(0, 0, 1, 1)
+	var f flashView
+	{
+		f = flashView{app: app, TextView: tview.NewTextView()}
+		f.SetTextColor(tcell.ColorAqua)
+		f.SetTextAlign(tview.AlignLeft)
+		f.SetBorderPadding(0, 0, 1, 1)
+	}
 	return &f
 }
 
@@ -40,34 +48,37 @@ func (f *flashView) setMessage(level flashLevel, msg ...string) {
 	if f.cancel != nil {
 		f.cancel()
 	}
-	ctx, cancel := context.WithTimeout(context.TODO(), flashDelay*time.Second)
-	f.cancel = cancel
-	go func(ctx context.Context) {
-		m := strings.Join(msg, " ")
-		f.SetTextColor(flashColor(level))
-		f.SetText(flashEmoji(level) + "  " + m)
-		f.app.Draw()
-		for {
-			select {
-			case <-ctx.Done():
-				f.Clear()
-				f.app.Draw()
-				return
+
+	var ctx context.Context
+	{
+		ctx, f.cancel = context.WithTimeout(context.TODO(), flashDelay*time.Second)
+		go func(ctx context.Context) {
+			m := strings.Join(msg, " ")
+			f.SetTextColor(flashColor(level))
+			f.SetText(flashEmoji(level) + "  " + m)
+			f.app.Draw()
+			for {
+				select {
+				case <-ctx.Done():
+					f.Clear()
+					f.app.Draw()
+					return
+				}
 			}
-		}
-	}(ctx)
+		}(ctx)
+	}
 }
 
 func flashEmoji(l flashLevel) string {
 	switch l {
 	case flashWarn:
-		return "😗"
+		return emoDoh
 	case flashErr:
-		return "😡"
+		return emoRed
 	case flashFatal:
-		return "💀"
+		return emoDead
 	default:
-		return "😎"
+		return emoHappy
 	}
 }
 

@@ -4,7 +4,7 @@ import (
 	"os"
 	"path"
 
-	"github.com/k8sland/k9s/cmd"
+	"github.com/derailed/k9s/cmd"
 	log "github.com/sirupsen/logrus"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 )

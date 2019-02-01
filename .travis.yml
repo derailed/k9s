@@ -1,5 +1,5 @@
 language: go
-go_import_path: github.com/k8sland/k9s
+go_import_path: github.com/derailed/k9s
 go:
   - 1.11.2
   # - master

@@ -3,7 +3,7 @@ package resource
 import (
 	"strings"
 
-	"github.com/k8sland/k9s/resource/k8s"
+	"github.com/derailed/k9s/resource/k8s"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 	"k8s.io/api/rbac/v1"

@@ -2,16 +2,15 @@ package views
 
 import (
 	"fmt"
-	"strings"
 
+	"github.com/derailed/k9s/resource"
 	"github.com/gdamore/tcell"
-	"github.com/k8sland/k9s/resource"
 	"github.com/k8sland/tview"
 )
 
 const (
 	titleFmt   = " [aqua::b]%s[aqua::-]([fuchsia::b]%d[aqua::-]) "
-	nsTitleFmt = " [aqua::-]<[fuchsia::b]%s[aqua::-]>" + titleFmt
+	nsTitleFmt = " [aqua::b]%s([fuchsia::b]%s[aqua::-])[aqua::-][[aqua::b]%d[aqua::-]][aqua::-] "
 )
 
 type (
@@ -98,7 +97,7 @@ func (v *tableView) resetTitle() {
 		if v.currentNS == resource.AllNamespaces {
 			ns = "all"
 		}
-		v.SetTitle(fmt.Sprintf(nsTitleFmt, strings.Title(ns), v.baseTitle, v.GetRowCount()-1))
+		v.SetTitle(fmt.Sprintf(nsTitleFmt, v.baseTitle, ns, v.GetRowCount()-1))
 	}
 }
 
@@ -110,12 +109,13 @@ func (v *tableView) update(data resource.TableData) {
 	var row int
 	for col, h := range data.Header {
 		c := tview.NewTableCell(h)
-		if len(h) == 0 {
-			c.SetExpansion(1)
-		} else {
+		{
 			c.SetExpansion(3)
+			if len(h) == 0 {
+				c.SetExpansion(1)
+			}
+			c.SetTextColor(tcell.ColorWhite)
 		}
-		c.SetTextColor(tcell.ColorWhite)
 		v.SetCell(row, col, c)
 	}
 	row++
@@ -132,12 +132,13 @@ func (v *tableView) update(data resource.TableData) {
 		}
 		for col, f := range data.Rows[k].Fields {
 			c := tview.NewTableCell(deltas(data.Rows[k].Deltas[col], f))
-			if len(data.Header[col]) == 0 {
-				c.SetExpansion(1)
-			} else {
+			{
 				c.SetExpansion(3)
+				if len(data.Header[col]) == 0 {
+					c.SetExpansion(1)
+				}
+				c.SetTextColor(fgColor)
 			}
-			c.SetTextColor(fgColor)
 			v.SetCell(row, col, c)
 		}
 		row++

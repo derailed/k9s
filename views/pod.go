@@ -1,8 +1,8 @@
 package views
 
 import (
+	"github.com/derailed/k9s/resource"
 	"github.com/gdamore/tcell"
-	"github.com/k8sland/k9s/resource"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -15,12 +15,13 @@ func newPodView(t string, app *appView, list resource.List, c colorerFn) resourc
 	v.extraActionsFn = v.extraActions
 
 	logs := newLogsView(&v)
-	logs.setActions(keyActions{
-		tcell.KeyCtrlB: {description: "Back", action: v.stopLogs},
-		tcell.KeyCtrlK: {description: "Clear", action: v.clearLogs},
-	})
-
-	v.AddPage("logs", logs, true, false)
+	{
+		logs.setActions(keyActions{
+			tcell.KeyCtrlB: {description: "Back", action: v.stopLogs},
+			tcell.KeyCtrlK: {description: "Clear", action: v.clearLogs},
+		})
+		v.AddPage("logs", logs, true, false)
+	}
 
 	picker := newSelectList()
 	{
@@ -31,11 +32,10 @@ func newPodView(t string, app *appView, list resource.List, c colorerFn) resourc
 		picker.setActions(keyActions{
 			tcell.KeyCtrlB: {description: "Back", action: v.back},
 		})
+		v.AddPage("choose", picker, true, false)
 	}
 
-	v.AddPage("choose", picker, true, false)
 	v.switchPage("po")
-
 	return &v
 }
 
