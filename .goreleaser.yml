@@ -50,7 +50,7 @@ brew:
     name: derailed
     email: fernand@imhotep.io
   folder: Formula
-  homepage: https://k9s.io
-  description: A graphical terminal CLI to interact with your Kubernetes clusters!
+  homepage: https://k9ss.io
+  description: Kubernetes CLI To Manage Your Clusters In Style!
   test: |
     system "k9s version"
