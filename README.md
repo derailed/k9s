@@ -23,8 +23,7 @@ for changes and offers subsequent commands to interact with observed resources.
 ### Homebrew (OSX)
 
 ```shell
-brew tap derailed/k9s https://github.com/derailed/k9s-homebrew-tap.git
-brew install k9s
+brew tap derailed/k9s && brew install k9s
 ```
 
 ### Binary Releases
@@ -59,11 +58,11 @@ brew install k9s
 
 ### Pod View
 
-<img src="assets/screen_1.png">
+<img src="assets/screen_3.png">
 
 ### Log View
 
-<img src="assets/screen_2.png">
+<img src="assets/screen_4.png">
 
 <br/>
 
