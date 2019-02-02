@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 func TestToIPs(t *testing.T) {
@@ -33,11 +33,11 @@ func TestToPorts(t *testing.T) {
 	}{
 		{[]v1.ServicePort{
 			v1.ServicePort{Name: "http", Port: 80, NodePort: 90, Protocol: "TCP"}},
-			"http:80->90/TCP",
+			"http:80►90",
 		},
 		{[]v1.ServicePort{
 			v1.ServicePort{Port: 80, NodePort: 30080, Protocol: "UDP"}},
-			"80->30080/UDP",
+			"80►30080╱UDP",
 		},
 	}
 	for _, u := range uu {

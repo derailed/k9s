@@ -7,7 +7,7 @@ import (
 	"github.com/derailed/k9s/resource/k8s"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -44,8 +44,7 @@ func TestSvcFields(t *testing.T) {
 				"ClusterIP",
 				"1.1.1.1",
 				"2.2.2.2",
-				"fred=blee",
-				"http:90->0/TCP",
+				"http:90►0",
 			},
 		},
 	}
@@ -89,7 +88,7 @@ func TestSVCListData(t *testing.T) {
 	assert.Equal(t, "blee", l.GetNamespace())
 	assert.False(t, l.HasXRay())
 	row := td.Rows["blee/fred"]
-	assert.Equal(t, 7, len(row.Deltas))
+	assert.Equal(t, 6, len(row.Deltas))
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}
@@ -144,7 +143,6 @@ func svcHeader() resource.Row {
 		"TYPE",
 		"CLUSTER-IP",
 		"EXTERNAL-IP",
-		"SELECTOR",
 		"PORT(S)",
 		"AGE",
 	}
