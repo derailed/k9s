@@ -79,13 +79,13 @@ func (a *appView) Init() {
 		header.SetDirection(tview.FlexColumn)
 		header.AddItem(a.infoView, 25, 1, false)
 		header.AddItem(a.menuView, 0, 1, false)
-		header.AddItem(logoView(), 25, 1, false)
+		header.AddItem(logoView(), 26, 1, false)
 	}
 
 	main := tview.NewFlex()
 	{
 		main.SetDirection(tview.FlexRow)
-		main.AddItem(header, 6, 1, false)
+		main.AddItem(header, 7, 1, false)
 		main.AddItem(a.content, 0, 10, true)
 		main.AddItem(a.flashView, 1, 1, false)
 	}

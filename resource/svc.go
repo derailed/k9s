@@ -8,7 +8,7 @@ import (
 	"github.com/derailed/k9s/resource/k8s"
 	log "github.com/sirupsen/logrus"
 	yaml "gopkg.in/yaml.v2"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // Service tracks a kubernetes resource.
@@ -89,7 +89,6 @@ func (*Service) Header(ns string) Row {
 		"TYPE",
 		"CLUSTER-IP",
 		"EXTERNAL-IP",
-		"SELECTOR",
 		"PORT(S)",
 		"AGE",
 	)
@@ -109,7 +108,6 @@ func (r *Service) Fields(ns string) Row {
 		string(i.Spec.Type),
 		i.Spec.ClusterIP,
 		r.toIPs(i.Spec.Type, i.Spec.ExternalIPs),
-		mapToStr(i.Spec.Selector),
 		r.toPorts(i.Spec.Ports),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
@@ -140,11 +138,11 @@ func (*Service) toPorts(pp []v1.ServicePort) string {
 			ports[i] = p.Name + ":"
 		}
 		ports[i] += strconv.Itoa(int(p.Port)) +
-			"->" +
-			strconv.Itoa(int(p.NodePort)) +
-			"/" +
-			string(p.Protocol)
-
+			"►" +
+			strconv.Itoa(int(p.NodePort))
+		if p.Protocol != "TCP" {
+			ports[i] += "╱" + string(p.Protocol)
+		}
 	}
-	return strings.Join(ports, ",")
+	return strings.Join(ports, " ")
 }

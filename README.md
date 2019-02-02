@@ -1,12 +1,12 @@
 <img src="assets/k9s.png">
 
-# K9s - CLI to manage your Kubernetes clusters.
+# K9s - Kubernetes CLI To Manage Your Clusters In Style!
 
-K9s is written in GO and provides a graphical terminal UI to interact with your
-Kubernetes clusters. The aim of this project is to make it easier to navigate,
-observe and manage your clusters. The CLI continually watches Kubernetes
-resources for changes and offers subsequent commands to interact with the
-observed resource.
+K9s provides a curses based terminal UI to interact with your Kubernetes clusters.
+The aim of this project is to make it easier to navigate, observe and manage
+your applications. This command line app continually watches Kubernetes
+for changes and offers subsequent commands to interact with observed resources.
+
 
 <br/>
 
@@ -33,27 +33,22 @@ brew install k9s
 - [Releases](https://github.com/derailed/k9s/releases)
 
 
-
 <br/>
 
 ---
-## Features
+## Commands
 
-> Note: k9s does not have an idiot light. Please be sure to hit the correct command
-> sequences to avoid pilot errors. `Are you sure?` not in effect here...
-
-+ k9s uses 2 or 3 letters alias to navigate most Kubernetes resources
++ K9s uses 2 or 3 letters alias to navigate most K8s resource
 + At any time you can use `?<Enter>` to look up the various commands
 + Use `alias<Enter>` to activate a resource under that alias
-+ Use `Esc` to erase previous keystrokes.
-+ Use `Q` or `Ctrl-C` to Quit.
 + `Ctrl` sequences are used to view, edit, delete, ssh ...
-+ Use `ctx<Enter>` to see and switch between your clusters
++ Use `ctx<Enter>` to switch between clusters
++ Use `Q` or `Ctrl-C` to Quit.
 
 <br/>
 
 ---
-## Video Demo
+## Demo Video
 
 + [k9s Demo](https://youtu.be/k7zseUhaXeU)
 
