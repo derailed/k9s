@@ -104,7 +104,7 @@ making k9s a reality!!
 
 + **Email**:   fernand@imhotep.io
 + **Twitter**: [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
-+ **Github**:  [k9s](https://github.com/derailed/k9s)
++ **Github**:  [derailed](https://github.com/derailed)
 <br/>
 
 ---
