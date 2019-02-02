@@ -123,7 +123,7 @@ func k8sSVC() *v1.Service {
 			ExternalIPs: []string{"2.2.2.2"},
 			Selector:    map[string]string{"fred": "blee"},
 			Ports: []v1.ServicePort{
-				v1.ServicePort{
+				{
 					Name:     "http",
 					Port:     90,
 					Protocol: "TCP",

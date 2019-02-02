@@ -21,175 +21,175 @@ type (
 )
 
 var cmdMap = map[string]resCmd{
-	"cm": resCmd{
+	"cm": {
 		title:     "Config Maps",
 		api:       "core",
 		viewFn:    newResourceView,
 		listFn:    resource.NewConfigMapList,
 		colorerFn: defaultColorer,
 	},
-	"cr": resCmd{
+	"cr": {
 		title:     "Cluster Roles",
 		api:       "rbac.authorization.k8s.io",
 		viewFn:    newResourceView,
 		listFn:    resource.NewClusterRoleList,
 		colorerFn: defaultColorer,
 	},
-	"crb": resCmd{
+	"crb": {
 		title:     "Cluster Role Bindings",
 		api:       "rbac.authorization.k8s.io",
 		viewFn:    newResourceView,
 		listFn:    resource.NewClusterRoleBindingList,
 		colorerFn: defaultColorer,
 	},
-	"crd": resCmd{
+	"crd": {
 		title:     "Custom Resource Definitions",
 		api:       "apiextensions.k8s.io",
 		viewFn:    newResourceView,
 		listFn:    resource.NewCRDList,
 		colorerFn: defaultColorer,
 	},
-	"cjo": resCmd{
+	"cjo": {
 		title:     "CronJobs",
 		api:       "batch",
 		viewFn:    newResourceView,
 		listFn:    resource.NewCronJobList,
 		colorerFn: defaultColorer,
 	},
-	"ctx": resCmd{
+	"ctx": {
 		title:     "Contexts",
 		api:       "core",
 		viewFn:    newContextView,
 		listFn:    resource.NewContextList,
 		colorerFn: ctxColorer,
 	},
-	"ds": resCmd{
+	"ds": {
 		title:     "DaemonSets",
 		api:       "core",
 		viewFn:    newResourceView,
 		listFn:    resource.NewDaemonSetList,
 		colorerFn: dpColorer,
 	},
-	"dp": resCmd{
+	"dp": {
 		title:     "Deployments",
 		api:       "apps",
 		viewFn:    newResourceView,
 		listFn:    resource.NewDeploymentList,
 		colorerFn: dpColorer,
 	},
-	"ep": resCmd{
+	"ep": {
 		title:     "EndPoints",
 		api:       "core",
 		viewFn:    newResourceView,
 		listFn:    resource.NewEndpointsList,
 		colorerFn: defaultColorer,
 	},
-	"ev": resCmd{
+	"ev": {
 		title:     "Events",
 		api:       "core",
 		viewFn:    newResourceView,
 		listFn:    resource.NewEventList,
 		colorerFn: evColorer,
 	},
-	"hpa": resCmd{
+	"hpa": {
 		title:     "Horizontal Pod Autoscalers",
 		api:       "autoscaling",
 		viewFn:    newResourceView,
 		listFn:    resource.NewHPAList,
 		colorerFn: defaultColorer,
 	},
-	"ing": resCmd{
+	"ing": {
 		title:     "Ingress",
 		api:       "extensions",
 		viewFn:    newResourceView,
 		listFn:    resource.NewIngressList,
 		colorerFn: defaultColorer,
 	},
-	"jo": resCmd{
+	"jo": {
 		title:     "Jobs",
 		api:       "batch",
 		viewFn:    newResourceView,
 		listFn:    resource.NewJobList,
 		colorerFn: defaultColorer,
 	},
-	"no": resCmd{
+	"no": {
 		title:     "Nodes",
 		api:       "core",
 		viewFn:    newResourceView,
 		listFn:    resource.NewNodeList,
 		colorerFn: nsColorer,
 	},
-	"ns": resCmd{
+	"ns": {
 		title:     "Namespaces",
 		api:       "core",
 		viewFn:    newResourceView,
 		listFn:    resource.NewNamespaceList,
 		colorerFn: nsColorer,
 	},
-	"po": resCmd{
+	"po": {
 		title:     "Pods",
 		api:       "core",
 		viewFn:    newPodView,
 		listFn:    resource.NewPodList,
 		colorerFn: podColorer,
 	},
-	"pv": resCmd{
+	"pv": {
 		title:     "Persistent Volumes",
 		api:       "core",
 		viewFn:    newResourceView,
 		listFn:    resource.NewPVList,
 		colorerFn: pvColorer,
 	},
-	"pvc": resCmd{
+	"pvc": {
 		title:     "Persistent Volume Claims",
 		api:       "core",
 		viewFn:    newResourceView,
 		listFn:    resource.NewPVCList,
 		colorerFn: pvcColorer,
 	},
-	"rb": resCmd{
+	"rb": {
 		title:     "Role Bindings",
 		api:       "rbac.authorization.k8s.io",
 		viewFn:    newResourceView,
 		listFn:    resource.NewRoleBindingList,
 		colorerFn: defaultColorer,
 	},
-	"ro": resCmd{
+	"ro": {
 		title:     "Roles",
 		api:       "rbac.authorization.k8s.io",
 		viewFn:    newResourceView,
 		listFn:    resource.NewRoleList,
 		colorerFn: defaultColorer,
 	},
-	"rs": resCmd{
+	"rs": {
 		title:     "Replica Sets",
 		api:       "apps",
 		viewFn:    newResourceView,
 		listFn:    resource.NewReplicaSetList,
 		colorerFn: rsColorer,
 	},
-	"sa": resCmd{
+	"sa": {
 		title:     "Service Accounts",
 		api:       "core",
 		viewFn:    newResourceView,
 		listFn:    resource.NewServiceAccountList,
 		colorerFn: defaultColorer,
 	},
-	"sec": resCmd{
+	"sec": {
 		title:     "Secrets",
 		api:       "core",
 		viewFn:    newResourceView,
 		listFn:    resource.NewSecretList,
 		colorerFn: defaultColorer,
 	},
-	"sts": resCmd{
+	"sts": {
 		title:     "StatefulSets",
 		api:       "apps",
 		viewFn:    newResourceView,
 		listFn:    resource.NewStatefulSetList,
 		colorerFn: stsColorer,
 	},
-	"svc": resCmd{
+	"svc": {
 		title:     "Services",
 		api:       "core",
 		viewFn:    newResourceView,

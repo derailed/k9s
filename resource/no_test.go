@@ -33,7 +33,7 @@ func TestNodeMarshal(t *testing.T) {
 
 	mx := NewMockMetricsIfc()
 	m.When(mx.PerNodeMetrics([]v1.Node{*k8sNode()})).
-		ThenReturn(map[string]k8s.Metric{"fred": k8s.Metric{}}, nil)
+		ThenReturn(map[string]k8s.Metric{"fred": {}}, nil)
 	ca := NewMockCaller()
 	m.When(ca.Get("blee", "fred")).ThenReturn(k8sNode(), nil)
 
@@ -49,7 +49,7 @@ func TestNodeListData(t *testing.T) {
 
 	mx := NewMockMetricsIfc()
 	m.When(mx.PerNodeMetrics([]v1.Node{*k8sNode()})).
-		ThenReturn(map[string]k8s.Metric{"fred": k8s.Metric{}}, nil)
+		ThenReturn(map[string]k8s.Metric{"fred": {}}, nil)
 	ca := NewMockCaller()
 	m.When(ca.List("")).ThenReturn(k8s.Collection{*k8sNode()}, nil)
 
@@ -78,7 +78,7 @@ func TestNodeListDescribe(t *testing.T) {
 
 	mx := NewMockMetricsIfc()
 	m.When(mx.PerNodeMetrics([]v1.Node{*k8sNode()})).
-		ThenReturn(map[string]k8s.Metric{"fred": k8s.Metric{}}, nil)
+		ThenReturn(map[string]k8s.Metric{"fred": {}}, nil)
 	ca := NewMockCaller()
 	m.When(ca.Get("blee", "fred")).ThenReturn(k8sNode(), nil)
 	l := resource.NewNodeListWithArgs("blee", resource.NewNodeWithArgs(ca, mx))

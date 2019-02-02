@@ -1,8 +1,8 @@
 package views
 
 import (
-	"github.com/gdamore/tcell"
 	"github.com/derailed/k9s/resource"
+	"github.com/gdamore/tcell"
 )
 
 type contextView struct {

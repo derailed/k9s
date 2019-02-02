@@ -36,7 +36,7 @@ func TestPodMarshal(t *testing.T) {
 	setup(t)
 
 	mx := NewMockMetricsIfc()
-	m.When(mx.PodMetrics()).ThenReturn(map[string]k8s.Metric{"fred": k8s.Metric{}}, nil)
+	m.When(mx.PodMetrics()).ThenReturn(map[string]k8s.Metric{"fred": {}}, nil)
 	ca := NewMockCaller()
 	m.When(ca.Get("blee", "fred")).ThenReturn(k8sPod(), nil)
 
@@ -51,7 +51,7 @@ func TestPodListData(t *testing.T) {
 	setup(t)
 
 	mx := NewMockMetricsIfc()
-	m.When(mx.PodMetrics()).ThenReturn(map[string]k8s.Metric{"fred": k8s.Metric{}}, nil)
+	m.When(mx.PodMetrics()).ThenReturn(map[string]k8s.Metric{"fred": {}}, nil)
 	ca := NewMockCaller()
 	m.When(ca.List("")).ThenReturn(k8s.Collection{*k8sPod()}, nil)
 
@@ -79,7 +79,7 @@ func TestPodListDescribe(t *testing.T) {
 	setup(t)
 
 	mx := NewMockMetricsIfc()
-	m.When(mx.PodMetrics()).ThenReturn(map[string]k8s.Metric{"fred": k8s.Metric{}}, nil)
+	m.When(mx.PodMetrics()).ThenReturn(map[string]k8s.Metric{"fred": {}}, nil)
 	ca := NewMockCaller()
 	m.When(ca.Get("blee", "fred")).ThenReturn(k8sPod(), nil)
 	l := resource.NewPodListWithArgs("blee", resource.NewPodWithArgs(ca, mx))

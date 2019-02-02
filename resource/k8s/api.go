@@ -30,6 +30,7 @@ func init() {
 }
 
 type (
+	// ApiGroup represents a K8s resource descriptor.
 	ApiGroup struct {
 		Resource             string
 		Group, Kind, Version string

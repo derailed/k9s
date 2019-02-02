@@ -3,8 +3,8 @@ package views
 import (
 	"context"
 
-	"github.com/gdamore/tcell"
 	"github.com/derailed/k9s/resource"
+	"github.com/gdamore/tcell"
 	"github.com/k8sland/tview"
 )
 

@@ -13,7 +13,7 @@ for changes and offers subsequent commands to interact with observed resources.
 ---
 
 [![Go Report Card](https://goreportcard.com/badge/github.com/derailed/k9s)](https://goreportcard.com/report/github.com/derailed/k9s)
-[![Build Status](https://travis-ci.org/derailed/k9s.svg?branch=master)](https://travis-ci.org/derailed/k9s)
+[![Build Status](https://travis-ci.com/derailed/k9s.svg?branch=master)](https://travis-ci.com/derailed/k9s)
 
 
 <br/>

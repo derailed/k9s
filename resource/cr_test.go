@@ -106,7 +106,7 @@ func k8sCR() *rbacv1.ClusterRole {
 			CreationTimestamp: metav1.Time{testTime()},
 		},
 		Rules: []rbacv1.PolicyRule{
-			rbacv1.PolicyRule{
+			{
 				Verbs:         []string{"get", "list"},
 				APIGroups:     []string{""},
 				ResourceNames: []string{"pod"},

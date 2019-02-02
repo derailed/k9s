@@ -32,11 +32,11 @@ func TestToPorts(t *testing.T) {
 		e  string
 	}{
 		{[]v1.ServicePort{
-			v1.ServicePort{Name: "http", Port: 80, NodePort: 90, Protocol: "TCP"}},
+			{Name: "http", Port: 80, NodePort: 90, Protocol: "TCP"}},
 			"http:80►90",
 		},
 		{[]v1.ServicePort{
-			v1.ServicePort{Port: 80, NodePort: 30080, Protocol: "UDP"}},
+			{Port: 80, NodePort: 30080, Protocol: "UDP"}},
 			"80►30080╱UDP",
 		},
 	}
@@ -48,9 +48,9 @@ func TestToPorts(t *testing.T) {
 func BenchmarkToPorts(b *testing.B) {
 	var s Service
 	sp := []v1.ServicePort{
-		v1.ServicePort{Name: "http", Port: 80, NodePort: 90, Protocol: "TCP"},
-		v1.ServicePort{Port: 80, NodePort: 90, Protocol: "TCP"},
-		v1.ServicePort{Name: "http", Port: 80, NodePort: 90, Protocol: "TCP"},
+		{Name: "http", Port: 80, NodePort: 90, Protocol: "TCP"},
+		{Port: 80, NodePort: 90, Protocol: "TCP"},
+		{Name: "http", Port: 80, NodePort: 90, Protocol: "TCP"},
 	}
 	b.ResetTimer()
 	b.ReportAllocs()
