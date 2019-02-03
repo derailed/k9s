@@ -26,6 +26,13 @@ for changes and offers subsequent commands to interact with observed resources.
 brew tap derailed/k9s && brew install k9s
 ```
 
+### Archlinux (AUR)
+K9s is available in the Arch User Repository under the name [k9s-bin](https://aur.archlinux.org/packages/k9s-bin/), you can install it with your favourite AUR helper like so:
+
+```shell
+yay -S k9s-bin
+```
+
 ### Binary Releases
 
 - [Releases](https://github.com/derailed/k9s/releases)
