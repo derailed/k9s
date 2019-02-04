@@ -127,7 +127,7 @@ func (*Job) toDuration(status v1.JobStatus) string {
 	switch {
 	case status.StartTime == nil:
 	case status.CompletionTime == nil:
-		return duration.HumanDuration(time.Now().Sub(status.StartTime.Time))
+		return duration.HumanDuration(time.Since(status.StartTime.Time))
 	}
 	return duration.HumanDuration(status.CompletionTime.Sub(status.StartTime.Time))
 }
