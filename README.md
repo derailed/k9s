@@ -37,8 +37,8 @@ brew tap derailed/k9s && brew install k9s
 ## Commands
 
 + K9s uses 2 or 3 letters alias to navigate most K8s resource
-+ At any time you can use `?<Enter>` to look up the various commands
-+ Use `alias<Enter>` to activate a resource under that alias
++ At any time you can use `:?<Enter>` to look up the various commands
++ Use `:alias<Enter>` to activate a resource under that alias
 + `Ctrl` sequences are used to view, edit, delete, ssh ...
 + Use `ctx<Enter>` to switch between clusters
 + Use `Q` or `Ctrl-C` to Quit.

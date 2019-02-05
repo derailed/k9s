@@ -45,6 +45,7 @@ type (
 		focusChanged focusHandler
 		cancel       context.CancelFunc
 		cmdBuff      []rune
+		isCmd        bool
 	}
 )
 
@@ -129,13 +130,18 @@ func (a *appView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyTab:
 		a.nextFocus()
 	case tcell.KeyRune:
-		a.cmdBuff = append([]rune(a.cmdBuff), evt.Rune())
+		if evt.Rune() == ':' {
+			a.isCmd = true
+		} else if a.isCmd {
+			a.cmdBuff = append([]rune(a.cmdBuff), evt.Rune())
+		}
 	}
 	return evt
 }
 
 func (a *appView) resetCmd() {
 	a.cmdBuff = []rune{}
+	a.isCmd = false
 }
 
 func (a *appView) showPage(p string) {
