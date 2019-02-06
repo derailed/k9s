@@ -8,7 +8,6 @@ import (
 	"github.com/derailed/k9s/resource"
 	"github.com/gdamore/tcell"
 	"github.com/k8sland/tview"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
