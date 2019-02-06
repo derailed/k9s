@@ -17,7 +17,7 @@ type (
 	}
 
 	// Pod represents a Kubernetes resource.
-	 Pod struct{}
+	Pod struct{}
 )
 
 // NewPod returns a new Pod.

@@ -13,7 +13,7 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-const defaultTimeout = 1*time.Second
+const defaultTimeout = 1 * time.Second
 
 type (
 	// Container represents a resource that encompass multiple containers.
