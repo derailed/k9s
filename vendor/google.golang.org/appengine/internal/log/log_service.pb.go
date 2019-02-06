@@ -415,7 +415,7 @@ func (m *RequestLog) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_RequestLog proto.InternalMessageInfo
 
-const Default_RequestLog_ModuleId string = "default"
+const Default_RequestLog_ModuleId string = (resource.DefaultNamespace)
 const Default_RequestLog_ReplicaIndex int32 = -1
 const Default_RequestLog_Finished bool = true
 
@@ -717,7 +717,7 @@ func (m *LogModuleVersion) XXX_DiscardUnknown() {
 
 var xxx_messageInfo_LogModuleVersion proto.InternalMessageInfo
 
-const Default_LogModuleVersion_ModuleId string = "default"
+const Default_LogModuleVersion_ModuleId string = (resource.DefaultNamespace)
 
 func (m *LogModuleVersion) GetModuleId() string {
 	if m != nil && m.ModuleId != nil {

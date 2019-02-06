@@ -168,8 +168,12 @@ func nsColorer(ns string, r *resource.RowEvent) tcell.Color {
 
 	switch strings.TrimSpace(r.Fields[1]) {
 	case "Inactive", "Terminating":
-		return errColor
-	default:
-		return stdColor
+		c = errColor
 	}
+
+	if strings.Contains(strings.TrimSpace(r.Fields[0]), "*") {
+		c = highlightColor
+	}
+
+	return c
 }

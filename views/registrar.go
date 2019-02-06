@@ -122,7 +122,7 @@ var cmdMap = map[string]resCmd{
 	"ns": {
 		title:     "Namespaces",
 		api:       "core",
-		viewFn:    newResourceView,
+		viewFn:    newNamespaceView,
 		listFn:    resource.NewNamespaceList,
 		colorerFn: nsColorer,
 	},
@@ -241,24 +241,5 @@ func getCRDS() map[string]k8s.ApiGroup {
 			m[s] = grp
 		}
 	}
-
-	// m["cm"] = k8s.ApiGroup{
-	// 	Version:  "v1",
-	// 	Group:    "core",
-	// 	Kind:     "ConfigMap",
-	// 	Singular: "configmap",
-	// 	Plural:   "configmaps",
-	// 	Aliases:  []string{"cm"},
-	// }
-
-	// m["svc"] = k8s.ApiGroup{
-	// 	Version:  "v1",
-	// 	Group:    "core",
-	// 	Kind:     "Service",
-	// 	Singular: "service",
-	// 	Plural:   "services",
-	// 	Aliases:  []string{"svc"},
-	// }
-
 	return m
 }

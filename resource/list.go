@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/derailed/k9s/resource/k8s"
+	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/watch"
 )
 
@@ -62,6 +63,8 @@ type (
 	List interface {
 		Data() TableData
 		Resource() Resource
+		Namespaced() bool
+		AllNamespaces() bool
 		GetNamespace() string
 		SetNamespace(string)
 		Reconcile() error
@@ -143,6 +146,16 @@ func (l *list) Access(f int) bool {
 	return l.verbs&f == f
 }
 
+// Namespaced checks if k8s resource is namespaced.
+func (l *list) Namespaced() bool {
+	return l.namespace != NotNamespaced
+}
+
+// AllNamespaces checks if this resource spans all namespaces.
+func (l *list) AllNamespaces() bool {
+	return l.namespace == AllNamespaces
+}
+
 // GetNamespace associated with the resource.
 func (l *list) GetNamespace() string {
 	if !l.Access(NamespaceAccess) {
@@ -154,12 +167,18 @@ func (l *list) GetNamespace() string {
 // SetNamespace updates the namespace on the list. Default ns is "" for all
 // namespaces.
 func (l *list) SetNamespace(n string) {
+	if n == AllNamespace {
+		n = AllNamespaces
+	}
 	if l.namespace == n {
 		return
 	}
 	l.cache = RowEvents{}
 	if l.Access(NamespaceAccess) {
 		l.namespace = n
+		if n == AllNamespace {
+			l.namespace = AllNamespaces
+		}
 	}
 }
 
@@ -199,6 +218,7 @@ func (l *list) Reconcile() error {
 		err   error
 	)
 
+	log.Debugf("Fetching list for resource `%s` in ns `%s`", l.name, l.namespace)
 	if items, err = l.api.List(l.namespace); err != nil {
 		return err
 	}
@@ -218,7 +238,7 @@ func (l *list) Reconcile() error {
 		dd := make(Row, len(ff))
 		kk = append(kk, i.Name())
 		if evt, ok := l.cache[i.Name()]; ok {
-			f1, f2 := evt.Fields[:len(evt.Fields)-2], ff[:len(ff)-2]
+			f1, f2 := evt.Fields[:len(evt.Fields)-1], ff[:len(ff)-1]
 			a = Unchanged
 			if !reflect.DeepEqual(f1, f2) {
 				for i, f := range f1 {

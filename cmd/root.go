@@ -2,42 +2,67 @@ package cmd
 
 import (
 	"fmt"
-
-	"github.com/gdamore/tcell"
+	"strings"
 
 	"github.com/derailed/k9s/views"
+	"github.com/gdamore/tcell"
 	"github.com/k8sland/tview"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-const defaultRefreshRate = 5 // secs
+const (
+	defaultRefreshRate = 2 // secs
+	defaultLogLevel    = "info"
+	defaultNamespace   = ""
+)
 
 var (
 	version     = "dev"
 	commit      = "dev"
 	date        = "n/a"
 	refreshRate int
+	logLevel    string
 	namespace   string
+	kubeconfig  string
 
 	rootCmd = &cobra.Command{
 		Use:   "k9s",
 		Short: "A graphical CLI for your Kubernetes cluster management.",
-		Long:  `k9s is a Kubernetes CLI to view and manage your Kubernetes clusters.`,
+		Long:  `K9s is a Kubernetes CLI to view and manage your Kubernetes clusters.`,
 		Run:   run,
 	}
 	versionCmd = &cobra.Command{
 		Use:   "version",
-		Short: "Print k9s version",
-		Long:  "Prints k9s version",
+		Short: "Print k9s version info",
+		Long:  "Prints k9s version info",
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Printf("Version:%s GitCommit:%s On %s\n", version, commit, date)
+		},
+	}
+	infoCmd = &cobra.Command{
+		Use:   "info",
+		Short: "Print k9s configuration information",
+		Long:  "Print k9s configuration information",
+		Run: func(cmd *cobra.Command, args []string) {
+			const (
+				cyan    = "\033[1;36m%s\033[0m"
+				green   = "\033[1;32m%s\033[0m"
+				magenta = "\033[1;35m%s\033[0m"
+			)
+			fmt.Printf(cyan+"\n", strings.Repeat("-", 80))
+			fmt.Printf(green+"\n", "🐶 K9s Information")
+			fmt.Printf(magenta, fmt.Sprintf("%-10s", "LogFile:"))
+			fmt.Printf("%s\n", views.K9sLogs)
+			fmt.Printf(magenta, fmt.Sprintf("%-10s", "Config:"))
+			fmt.Printf("%s\n", views.K9sConfig)
+			fmt.Printf(cyan+"\n", strings.Repeat("-", 80))
 		},
 	}
 )
 
 func init() {
-	rootCmd.AddCommand(versionCmd)
+	rootCmd.AddCommand(versionCmd, infoCmd)
 
 	rootCmd.Flags().IntVarP(
 		&refreshRate,
@@ -49,8 +74,15 @@ func init() {
 	rootCmd.Flags().StringVarP(
 		&namespace,
 		"namespace", "n",
-		"",
+		defaultNamespace,
 		"Uses a given namespace versus all-namespaces",
+	)
+
+	rootCmd.Flags().StringVarP(
+		&logLevel,
+		"logLevel", "l",
+		defaultLogLevel,
+		"Specify a log level (info, warn, debug, error, fatal, panic, trace)",
 	)
 }
 
@@ -62,12 +94,21 @@ func Execute() {
 }
 
 func run(cmd *cobra.Command, args []string) {
+	level, err := log.ParseLevel(logLevel)
+	if err != nil {
+		level = log.DebugLevel
+	}
+	log.SetLevel(level)
+	log.SetFormatter(&log.TextFormatter{FullTimestamp: true, ForceColors: true})
+
 	initStyles()
 	initKeys()
 
 	app := views.NewApp(version, refreshRate, namespace)
-	app.Init()
-	app.Run()
+	{
+		app.Init()
+		app.Run()
+	}
 }
 
 func initKeys() {

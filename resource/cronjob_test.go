@@ -24,7 +24,7 @@ func TestCronJobListAccess(t *testing.T) {
 }
 
 func TestCronJobHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "SCHEDULE", "SUSPEND", "ACTIVE", "LAST_SCHEDULE", "AGE"}, newCronJob().Header("default"))
+	assert.Equal(t, resource.Row{"NAME", "SCHEDULE", "SUSPEND", "ACTIVE", "LAST_SCHEDULE", "AGE"}, newCronJob().Header(resource.DefaultNamespace))
 }
 
 func TestCronJobFields(t *testing.T) {

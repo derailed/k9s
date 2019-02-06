@@ -64,7 +64,7 @@ func (r *Resource) Delete(ns, n string) error {
 func (r *Resource) getClient() *rest.RESTClient {
 	gv := schema.GroupVersion{Group: r.group, Version: r.version}
 	codecs, _ := r.codecs()
-	crConfig := *conn.configOrDie()
+	crConfig := *conn.restConfigOrDie()
 	crConfig.GroupVersion = &gv
 	crConfig.APIPath = "/apis"
 	if len(r.group) == 0 {

@@ -13,7 +13,7 @@ import (
 	"k8s.io/api/core/v1"
 )
 
-const defaultTimeout = 3
+const defaultTimeout = 1*time.Second
 
 type (
 	// Container represents a resource that encompass multiple containers.
@@ -23,7 +23,7 @@ type (
 
 	// Tailable represents a resource with tailable logs.
 	Tailable interface {
-		Logs(c chan<- string, ns, na, co string) (context.CancelFunc, error)
+		Logs(c chan<- string, ns, na, co string, lines int64) (context.CancelFunc, error)
 	}
 
 	// TailableResource is a resource that have tailable logs.
@@ -125,15 +125,15 @@ func (r *Pod) Containers(path string) ([]string, error) {
 }
 
 // Logs tails a given container logs
-func (r *Pod) Logs(c chan<- string, ns, n, co string) (context.CancelFunc, error) {
-	req := r.caller.(k8s.PodRes).Logs(ns, n, co)
+func (r *Pod) Logs(c chan<- string, ns, n, co string, lines int64) (context.CancelFunc, error) {
+	req := r.caller.(k8s.PodRes).Logs(ns, n, co, lines)
 	ctx, cancel := context.WithCancel(context.TODO())
 	req.Context(ctx)
 
 	blocked := true
 	go func() {
 		select {
-		case <-time.After(1 * time.Second):
+		case <-time.After(defaultTimeout):
 			if blocked {
 				close(c)
 				cancel()

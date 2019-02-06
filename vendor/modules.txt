@@ -2,7 +2,7 @@
 cloud.google.com/go/compute/metadata
 # github.com/davecgh/go-spew v1.1.1
 github.com/davecgh/go-spew/spew
-# github.com/gdamore/encoding v0.0.0-20151215212835-b23993cbb635
+# github.com/gdamore/encoding v1.0.0
 github.com/gdamore/encoding
 # github.com/gdamore/tcell v1.1.0
 github.com/gdamore/tcell
@@ -43,7 +43,7 @@ github.com/k8sland/tview
 github.com/konsorten/go-windows-terminal-sequences
 # github.com/lucasb-eyer/go-colorful v0.0.0-20181028223441-12d3b2882a08
 github.com/lucasb-eyer/go-colorful
-# github.com/mattn/go-runewidth v0.0.3
+# github.com/mattn/go-runewidth v0.0.4
 github.com/mattn/go-runewidth
 # github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd
 github.com/modern-go/concurrent

@@ -18,8 +18,8 @@ import (
 	"sync"
 	"unicode/utf8"
 
-	"golang.org/x/text/transform"
 	"golang.org/x/text/encoding"
+	"golang.org/x/text/transform"
 )
 
 const (
@@ -135,8 +135,12 @@ func (c *Charmap) NewDecoder() *encoding.Decoder {
 // 8-bit character set.  Unknown mappings are mapped to 0x1A.
 func (c *Charmap) NewEncoder() *encoding.Encoder {
 	c.Init()
-	return &encoding.Encoder{Transformer:
-	    &cmapEncoder{bytes: c.bytes, replace: c.ReplacementChar}}
+	return &encoding.Encoder{
+		Transformer: &cmapEncoder{
+			bytes:   c.bytes,
+			replace: c.ReplacementChar,
+		},
+	}
 }
 
 func (d *cmapDecoder) Transform(dst, src []byte, atEOF bool) (int, int, error) {

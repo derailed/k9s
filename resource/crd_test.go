@@ -23,7 +23,7 @@ func TestCRDListAccess(t *testing.T) {
 }
 
 func TestCRDHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "AGE"}, newCRD().Header("default"))
+	assert.Equal(t, resource.Row{"NAME", "AGE"}, newCRD().Header(resource.DefaultNamespace))
 }
 
 func TestCRDHeaderAllNS(t *testing.T) {

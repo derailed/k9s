@@ -25,7 +25,7 @@ import (
 
 const (
 	// NamespaceDefault means the object is in the default namespace which is applied when not specified by clients
-	NamespaceDefault string = "default"
+	NamespaceDefault string = (resource.DefaultNamespace)
 	// NamespaceAll is the default argument to specify on a context when you want to list or filter resources across all namespaces
 	NamespaceAll string = ""
 	// NamespaceNodeLease is the namespace where we place node lease objects (used for node heartbeats)
@@ -1417,7 +1417,7 @@ type StorageOSVolumeSource struct {
 	// namespace is specified then the Pod's namespace will be used.  This allows the
 	// Kubernetes name scoping to be mirrored within StorageOS for tighter integration.
 	// Set VolumeName to any name to override the default behaviour.
-	// Set to "default" if you are not using namespaces within StorageOS.
+	// Set to (resource.DefaultNamespace) if you are not using namespaces within StorageOS.
 	// Namespaces that do not pre-exist within StorageOS will be created.
 	// +optional
 	VolumeNamespace string `json:"volumeNamespace,omitempty" protobuf:"bytes,2,opt,name=volumeNamespace"`
@@ -1445,7 +1445,7 @@ type StorageOSPersistentVolumeSource struct {
 	// namespace is specified then the Pod's namespace will be used.  This allows the
 	// Kubernetes name scoping to be mirrored within StorageOS for tighter integration.
 	// Set VolumeName to any name to override the default behaviour.
-	// Set to "default" if you are not using namespaces within StorageOS.
+	// Set to (resource.DefaultNamespace) if you are not using namespaces within StorageOS.
 	// Namespaces that do not pre-exist within StorageOS will be created.
 	// +optional
 	VolumeNamespace string `json:"volumeNamespace,omitempty" protobuf:"bytes,2,opt,name=volumeNamespace"`

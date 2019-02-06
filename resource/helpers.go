@@ -15,7 +15,11 @@ import (
 )
 
 const (
-	// AllNamespaces indicator to retrieve K8s resource for all namespaces
+	// DefaultNamespace indicator to fetch default namespace.
+	DefaultNamespace = "default"
+	// AllNamespace namespace name to span all namespaces.
+	AllNamespace = "all"
+	// AllNamespaces indicator to retrieve K8s resource for all namespaces.
 	AllNamespaces = ""
 	// NotNamespaced indicator for non namespaced resource.
 	NotNamespaced = "-"

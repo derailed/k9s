@@ -24,7 +24,7 @@ func TestEventListAccess(t *testing.T) {
 }
 
 func TestEventHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"", "NAME", "REASON", "SOURCE", "COUNT", "MESSAGE", "AGE"}, newEvent().Header("default"))
+	assert.Equal(t, resource.Row{"", "NAME", "REASON", "SOURCE", "COUNT", "MESSAGE", "AGE"}, newEvent().Header(resource.DefaultNamespace))
 }
 
 func TestEventFields(t *testing.T) {

@@ -12,7 +12,7 @@ import (
 )
 
 func TestCRBHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "AGE"}, newCRB().Header("default"))
+	assert.Equal(t, resource.Row{"NAME", "AGE"}, newCRB().Header(resource.DefaultNamespace))
 }
 
 func TestCRBHeaderAllNS(t *testing.T) {

@@ -15,9 +15,8 @@ type logView struct {
 }
 
 func newLogView(title string, pv *podView) *logView {
-	var v logView
+	v := logView{TextView: tview.NewTextView()}
 	{
-		v = logView{TextView: tview.NewTextView()}
 		v.SetScrollable(true)
 		v.SetDynamicColors(true)
 		v.SetBorder(true)
@@ -29,4 +28,9 @@ func newLogView(title string, pv *podView) *logView {
 		})
 	}
 	return &v
+}
+
+func (l *logView) log(lines fmt.Stringer) {
+	l.Clear()
+	fmt.Fprintln(l, lines.String())
 }

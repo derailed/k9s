@@ -24,7 +24,7 @@ func TestEndpointsListAccess(t *testing.T) {
 }
 
 func TestEndpointsHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "ENDPOINTS", "AGE"}, newEndpoints().Header("default"))
+	assert.Equal(t, resource.Row{"NAME", "ENDPOINTS", "AGE"}, newEndpoints().Header(resource.DefaultNamespace))
 }
 
 func TestEndpointsFields(t *testing.T) {

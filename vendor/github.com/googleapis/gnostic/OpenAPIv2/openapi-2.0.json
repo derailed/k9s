@@ -296,7 +296,7 @@
         },
         "deprecated": {
           "type": "boolean",
-          "default": false
+          (resource.DefaultNamespace): false
         },
         "security": {
           "$ref": "#/definitions/security"
@@ -439,7 +439,7 @@
         "collectionFormat": {
           "$ref": "#/definitions/collectionFormat"
         },
-        "default": {
+        (resource.DefaultNamespace): {
           "$ref": "#/definitions/default"
         },
         "maximum": {
@@ -524,7 +524,7 @@
         "required": {
           "type": "boolean",
           "description": "Determines whether or not this parameter is required or optional.",
-          "default": false
+          (resource.DefaultNamespace): false
         },
         "schema": {
           "$ref": "#/definitions/schema"
@@ -543,7 +543,7 @@
         "required": {
           "type": "boolean",
           "description": "Determines whether or not this parameter is required or optional.",
-          "default": false
+          (resource.DefaultNamespace): false
         },
         "in": {
           "type": "string",
@@ -579,7 +579,7 @@
         "collectionFormat": {
           "$ref": "#/definitions/collectionFormat"
         },
-        "default": {
+        (resource.DefaultNamespace): {
           "$ref": "#/definitions/default"
         },
         "maximum": {
@@ -631,7 +631,7 @@
         "required": {
           "type": "boolean",
           "description": "Determines whether or not this parameter is required or optional.",
-          "default": false
+          (resource.DefaultNamespace): false
         },
         "in": {
           "type": "string",
@@ -650,7 +650,7 @@
         },
         "allowEmptyValue": {
           "type": "boolean",
-          "default": false,
+          (resource.DefaultNamespace): false,
           "description": "allows sending a parameter by name only or with an empty value."
         },
         "type": {
@@ -672,7 +672,7 @@
         "collectionFormat": {
           "$ref": "#/definitions/collectionFormatWithMulti"
         },
-        "default": {
+        (resource.DefaultNamespace): {
           "$ref": "#/definitions/default"
         },
         "maximum": {
@@ -724,7 +724,7 @@
         "required": {
           "type": "boolean",
           "description": "Determines whether or not this parameter is required or optional.",
-          "default": false
+          (resource.DefaultNamespace): false
         },
         "in": {
           "type": "string",
@@ -743,7 +743,7 @@
         },
         "allowEmptyValue": {
           "type": "boolean",
-          "default": false,
+          (resource.DefaultNamespace): false,
           "description": "allows sending a parameter by name only or with an empty value."
         },
         "type": {
@@ -766,7 +766,7 @@
         "collectionFormat": {
           "$ref": "#/definitions/collectionFormatWithMulti"
         },
-        "default": {
+        (resource.DefaultNamespace): {
           "$ref": "#/definitions/default"
         },
         "maximum": {
@@ -859,7 +859,7 @@
         "collectionFormat": {
           "$ref": "#/definitions/collectionFormat"
         },
-        "default": {
+        (resource.DefaultNamespace): {
           "$ref": "#/definitions/default"
         },
         "maximum": {
@@ -953,7 +953,7 @@
         "description": {
           "$ref": "http://json-schema.org/draft-04/schema#/properties/description"
         },
-        "default": {
+        (resource.DefaultNamespace): {
           "$ref": "http://json-schema.org/draft-04/schema#/properties/default"
         },
         "multipleOf": {
@@ -1010,7 +1010,7 @@
               "type": "boolean"
             }
           ],
-          "default": {}
+          (resource.DefaultNamespace): {}
         },
         "type": {
           "$ref": "http://json-schema.org/draft-04/schema#/properties/type"
@@ -1028,7 +1028,7 @@
               }
             }
           ],
-          "default": {}
+          (resource.DefaultNamespace): {}
         },
         "allOf": {
           "type": "array",
@@ -1042,14 +1042,14 @@
           "additionalProperties": {
             "$ref": "#/definitions/schema"
           },
-          "default": {}
+          (resource.DefaultNamespace): {}
         },
         "discriminator": {
           "type": "string"
         },
         "readOnly": {
           "type": "boolean",
-          "default": false
+          (resource.DefaultNamespace): false
         },
         "xml": {
           "$ref": "#/definitions/xml"
@@ -1082,7 +1082,7 @@
         "description": {
           "$ref": "http://json-schema.org/draft-04/schema#/properties/description"
         },
-        "default": {
+        (resource.DefaultNamespace): {
           "$ref": "http://json-schema.org/draft-04/schema#/properties/default"
         },
         "required": {
@@ -1096,7 +1096,7 @@
         },
         "readOnly": {
           "type": "boolean",
-          "default": false
+          (resource.DefaultNamespace): false
         },
         "externalDocs": {
           "$ref": "#/definitions/externalDocs"
@@ -1128,7 +1128,7 @@
         "collectionFormat": {
           "$ref": "#/definitions/collectionFormat"
         },
-        "default": {
+        (resource.DefaultNamespace): {
           "$ref": "#/definitions/default"
         },
         "maximum": {
@@ -1206,11 +1206,11 @@
         },
         "attribute": {
           "type": "boolean",
-          "default": false
+          (resource.DefaultNamespace): false
         },
         "wrapped": {
           "type": "boolean",
-          "default": false
+          (resource.DefaultNamespace): false
         }
       },
       "patternProperties": {
@@ -1533,7 +1533,7 @@
         "tsv",
         "pipes"
       ],
-      "default": "csv"
+      (resource.DefaultNamespace): "csv"
     },
     "collectionFormatWithMulti": {
       "type": "string",
@@ -1544,7 +1544,7 @@
         "pipes",
         "multi"
       ],
-      "default": "csv"
+      (resource.DefaultNamespace): "csv"
     },
     "title": {
       "$ref": "http://json-schema.org/draft-04/schema#/properties/title"
@@ -1552,7 +1552,7 @@
     "description": {
       "$ref": "http://json-schema.org/draft-04/schema#/properties/description"
     },
-    "default": {
+    (resource.DefaultNamespace): {
       "$ref": "http://json-schema.org/draft-04/schema#/properties/default"
     },
     "multipleOf": {

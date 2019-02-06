@@ -24,7 +24,7 @@ func TestDeploymentListAccess(t *testing.T) {
 }
 
 func TestDeploymentHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "DESIRED", "CURRENT", "UP-TO-DATE", "AVAILABLE", "AGE"}, newDeployment().Header("default"))
+	assert.Equal(t, resource.Row{"NAME", "DESIRED", "CURRENT", "UP-TO-DATE", "AVAILABLE", "AGE"}, newDeployment().Header(resource.DefaultNamespace))
 }
 
 func TestDeploymentFields(t *testing.T) {
