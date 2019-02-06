@@ -35,7 +35,7 @@ func (v *helpView) init(context.Context, string) {
 	t := tview.NewTable()
 	{
 		t.SetBorder(true)
-		t.SetTitle(" [::b]Commands Help ")
+		t.SetTitle(" [::b]Commands Aliases ")
 		t.SetTitleColor(tcell.ColorAqua)
 		t.SetBorderColor(tcell.ColorDodgerBlue)
 		t.SetSelectable(true, false)

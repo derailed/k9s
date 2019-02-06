@@ -18,6 +18,7 @@ const (
 	defaultRefreshRate   = 2
 	defaultLogBufferSize = 200
 	defaultView          = "po"
+	maxFavorites         = 10
 )
 
 var (
@@ -29,8 +30,6 @@ var (
 	// K9sLogs represents K9s log.
 	K9sLogs = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-%s.log", mustK9sUser()))
 )
-
-const maxFavorites = 5
 
 type (
 	namespace struct {
@@ -152,26 +151,6 @@ func (c *config) rmFavNS(ns string) {
 	c.K9s.Namespace.Favorites = fv
 }
 
-func defaultK9sConfig() *config {
-	return &config{
-		K9s: k9s{
-			RefreshRate:   5,
-			LogBufferSize: 200,
-			View: view{
-				Active: "po",
-			},
-			Namespace: namespace{
-				Active: resource.DefaultNamespace,
-				Favorites: []string{
-					resource.AllNamespace,
-					resource.DefaultNamespace,
-					"kube-system",
-				},
-			},
-		},
-	}
-}
-
 func inList(ll []string, n string) bool {
 	for _, l := range ll {
 		if l == n {
@@ -228,5 +207,28 @@ func ensurePath(path string, mod os.FileMode) {
 			log.Errorf("Unable to create K9s home config dir: %v", err)
 			panic(err)
 		}
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Seed...
+
+func defaultK9sConfig() *config {
+	return &config{
+		K9s: k9s{
+			RefreshRate:   5,
+			LogBufferSize: 200,
+			View: view{
+				Active: "po",
+			},
+			Namespace: namespace{
+				Active: resource.DefaultNamespace,
+				Favorites: []string{
+					resource.AllNamespace,
+					resource.DefaultNamespace,
+					"kube-system",
+				},
+			},
+		},
 	}
 }

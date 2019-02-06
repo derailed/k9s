@@ -104,9 +104,9 @@ func run(cmd *cobra.Command, args []string) {
 	initStyles()
 	initKeys()
 
-	app := views.NewApp(version, refreshRate, namespace)
+	app := views.NewApp()
 	{
-		app.Init()
+		app.Init(version, refreshRate, namespace)
 		app.Run()
 	}
 }

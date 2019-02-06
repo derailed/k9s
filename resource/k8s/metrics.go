@@ -5,7 +5,6 @@ import (
 	"math"
 	"path"
 
-	log "github.com/sirupsen/logrus"
 	"k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -94,7 +93,6 @@ func (m *MetricsServer) PodMetrics() (map[string]Metric, error) {
 
 // PerNodeMetrics retrieves all nodes metrics
 func (m *MetricsServer) PerNodeMetrics(nn []v1.Node) (map[string]Metric, error) {
-	log.Println("Getting per node metrics...")
 	mx := map[string]Metric{}
 
 	mm, err := m.getNodeMetrics()

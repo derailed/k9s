@@ -38,8 +38,8 @@ func TestConfigAddActive(t *testing.T) {
 		{"all", []string{"all", "default", "kube-system"}},
 		{"ns1", []string{"ns1", "all", "default", "kube-system"}},
 		{"ns2", []string{"ns2", "ns1", "all", "default", "kube-system"}},
-		{"ns3", []string{"ns3", "ns2", "ns1", "all", "default"}},
-		{"ns4", []string{"ns4", "ns3", "ns2", "ns1", "all"}},
+		{"ns3", []string{"ns3", "ns2", "ns1", "all", "default", "kube-system"}},
+		{"ns4", []string{"ns4", "ns3", "ns2", "ns1", "all", "default", "kube-system"}},
 	}
 
 	for _, u := range uu {

@@ -20,26 +20,28 @@ for changes and offers subsequent commands to interact with observed resources.
 ---
 ## Installation
 
-### Homebrew (OSX)
+1. Homebrew (OSX)
 
 ```shell
 brew tap derailed/k9s && brew install k9s
 ```
 
-### Binary Releases
+1. Binary Releases
 
 - [Releases](https://github.com/derailed/k9s/releases)
-
 
 <br/>
 
 ---
 ## Command Line
 
-To show all available options from the cli use:
-
 ```shell
+# List all available CLI options
 k9s -h
+# To get info about K9s runtime (logs, configs, etc..)
+k9s config
+# To run K9s in a given namespace
+k9s -n mybitchns
 ```
 
 <br/>
@@ -55,8 +57,9 @@ k9s -h
 
 * For clusters with many namespaces you can either edit ~/.k9s/config.yml or
   go to the namespace(ns) view to switch your default namespace to your namespace
-  of choice using *Ctrl-S*witch. K9s will keep your top 5 favorite namespaces.
-  Namespaces will get evicted based on your namespace switching frequency.
+  of choice using *Ctrl-S*witch. K9s keeps your top 10 favorite namespaces.
+  Namespaces will get evicted from the top 10 list, based on your namespace
+  switching frequency.
 
 
     ```yaml
@@ -65,7 +68,7 @@ k9s -h
       logBufferSize: 200 # Size of the logs buffer. Try to keep a sensible default!
       namespace:
         active: myCoolNS # Current active namespace name
-        favorites:       # List of your 5 most frequently used namespaces
+        favorites:       # List of your 10 most frequently used namespaces
         - myCoolNS1
         - myCoolNS2
         - all
@@ -84,14 +87,39 @@ k9s -h
 <br/>
 
 ---
-## Commands
+## Usage
 
-+ K9s uses 2 or 3 letters alias to navigate most K8s resource
-+ At any time you can use `?` to look up the various commands
-+ Use `alias<Enter>` to activate a resource under that alias
-+ `Ctrl` sequences are used to view, edit, delete, ssh ...
-+ Use `ctx<Enter>` to switch between clusters
-+ Use `Q` or `Ctrl-C` to Quit.
+K9s uses 2 or 3 letters alias to navigate most K8s resource.
+
+| Command            | Result                                             | Example              |
+| ------------------ | -------------------------------------------------- | -------------------- |
+| `>`alias`<ENTER>`  | List a Kubernetes resource in the active namespace | `>po<ENTER>`         |
+| Ctrl-A             | Show all command aliases                           |                      |
+| `/`filter`ENTER`>  | Filter out a resource view given a filter          | `/bumblebeetuna`     |
+| `<Esc>`            | Bails out of command mode                          |                      |
+| `Ctrl-Key`         | Key mapping to view, edit, see logs, etc...        | `Ctrl-L` (view logs) |
+| `>`ctx`<ENTER>`    | To view and switch to another Kubernetes cluster   |                      |
+| `Ctrl-q`, `Ctrl-c` | To bail out of K9s                                 |                      |
+
+
+<br/>
+
+---
+## Building From Source
+
+K9s was built using go 1.11. In order to build K9 from source:
+
++ Clone the repo
++ Add the following command in your go.mod file
+  ```text
+  replace (
+    github.com/derailed/k9s => MY_K9S_CLONED_REPO
+  )
+  ```
++ Build and run the executable
+  ```shell
+  go run main.go
+  ```
 
 <br/>
 
@@ -119,9 +147,9 @@ k9s -h
 ---
 ## Known Issues...
 
-This initial drop is brittle. k9s will most likely blow up if...
+This initial drop is brittle. K9s will most likely blow up if...
 
-+ Your kube-config file does not live under $HOME/.kube or you use multiple configs
++ K9s does not support multiple cluster config specified via KUBECONFIG env var
 + You don't have enough RBAC fu to manage your cluster
 + Your cluster does not run a metrics-server
 
@@ -139,8 +167,9 @@ dig this effort, please let us know that too!
 ---
 ## ATTA Girls/Boys!
 
-k9s sits on top of on a lot of opensource projects. So *big thanks* to all the
-contributors that made this project a reality!
+K9s sits on top of many of opensource projects and libraries. Our *sincere*
+appreciations to all the OSS contributors that work nights and weekends
+to make this project a reality!
 
 
 <br/>

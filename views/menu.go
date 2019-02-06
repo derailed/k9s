@@ -19,6 +19,123 @@ const (
 	colLen       = 20
 )
 
+type (
+	keyboardHandler func(*tcell.EventKey)
+
+	hint struct {
+		mnemonic, display string
+	}
+	hints []hint
+
+	hinter interface {
+		hints() hints
+	}
+
+	keyAction struct {
+		description string
+		action      keyboardHandler
+	}
+	keyActions map[tcell.Key]keyAction
+
+	menuView struct {
+		*tview.Table
+	}
+)
+
+func (h hints) Len() int {
+	return len(h)
+}
+func (h hints) Swap(i, j int) {
+	h[i], h[j] = h[j], h[i]
+}
+func (h hints) Less(i, j int) bool {
+	n, err1 := strconv.Atoi(h[i].mnemonic)
+	m, err2 := strconv.Atoi(h[j].mnemonic)
+
+	if err1 == nil && err2 == nil {
+		return n < m
+	}
+
+	d := strings.Compare(h[i].mnemonic, h[j].mnemonic)
+	return d < 0
+}
+
+func newKeyHandler(d string, a keyboardHandler) keyAction {
+	return keyAction{description: d, action: a}
+}
+
+func newMenuView() *menuView {
+	v := menuView{tview.NewTable()}
+	return &v
+}
+
+func (v *menuView) setMenu(hh hints) {
+	v.Clear()
+	sort.Sort(hh)
+
+	var row, col int
+	firstNS, firstCmd := true, true
+	for _, h := range hh {
+		if len(h.mnemonic) == 1 && firstNS {
+			row = 0
+			col = 2
+			firstNS = false
+		}
+
+		if len(h.mnemonic) > 1 && firstCmd {
+			row = 0
+			col++
+			firstCmd = false
+		}
+		c := tview.NewTableCell(v.item(h))
+		v.SetCell(row, col, c)
+		row++
+		if row > maxRows {
+			col++
+			row = 0
+		}
+	}
+}
+
+func (v *menuView) item(h hint) string {
+	i, err := strconv.Atoi(h.mnemonic)
+	if err == nil {
+		return fmt.Sprintf(menuIndexFmt, i, resource.Truncate(h.display, 14))
+	}
+
+	var s string
+	// if strings.ToLower(h.display)[0] == h.mnemonic[0] {
+	// 	s = fmt.Sprintf(menuFmt, strings.ToUpper(h.mnemonic), h.display[1:])
+	// } else {
+	s = fmt.Sprintf(menuSepFmt, strings.ToUpper(h.mnemonic), h.display)
+	// }
+	return s
+}
+
+func (a keyActions) toHints() hints {
+	kk := make([]int, 0, len(a))
+	for k := range a {
+		kk = append(kk, int(k))
+	}
+	// sort.Ints(kk)
+
+	hh := make(hints, 0, len(a))
+	for _, k := range kk {
+		if name, ok := tcell.KeyNames[tcell.Key(k)]; ok {
+			if name == "Backspace2" {
+				name = "delete"
+			}
+			hh = append(hh, hint{
+				mnemonic: name,
+				display:  a[tcell.Key(k)].description})
+		}
+	}
+	return hh
+}
+
+// -----------------------------------------------------------------------------
+// Key mapping Constants
+
 // Defines numeric keys for container actions
 const (
 	Key0 int32 = iota + 48
@@ -74,91 +191,4 @@ var numKeys = map[int]int32{
 	7: Key7,
 	8: Key8,
 	9: Key9,
-}
-
-type (
-	keyboardHandler func(*tcell.EventKey)
-
-	hint struct {
-		mnemonic, display string
-	}
-	hints []hint
-
-	hinter interface {
-		hints() hints
-	}
-
-	keyAction struct {
-		description string
-		action      keyboardHandler
-	}
-	keyActions map[tcell.Key]keyAction
-
-	menuView struct {
-		*tview.Grid
-	}
-)
-
-func newKeyHandler(d string, a keyboardHandler) keyAction {
-	return keyAction{description: d, action: a}
-}
-
-func newMenuView() *menuView {
-	v := menuView{tview.NewGrid()}
-	v.SetGap(0, 1)
-	return &v
-}
-
-func (v *menuView) setMenu(hh hints) {
-	v.Clear()
-	v.SetRows(1, 1, 1, 1)
-	v.SetColumns(colLen, colLen)
-	isNS := true
-	var row, col int
-	for _, h := range hh {
-		// Reset cols for namespace menus...
-		if len(h.mnemonic) == 1 && isNS {
-			col++
-			row = 0
-			isNS = false
-		}
-		v.AddItem(v.item(h), row, col, 1, 1, 1, 1, false)
-		row++
-		if row > maxRows {
-			col++
-			row = 0
-		}
-	}
-}
-
-func (v *menuView) item(h hint) tview.Primitive {
-	c := tview.NewTextView()
-	c.SetDynamicColors(true)
-	var s string
-	if i, err := strconv.Atoi(h.mnemonic); err != nil {
-		if strings.ToLower(h.display)[0] == h.mnemonic[0] {
-			s = fmt.Sprintf(menuFmt, strings.ToUpper(h.mnemonic), h.display[1:])
-		} else {
-			s = fmt.Sprintf(menuSepFmt, strings.ToUpper(h.mnemonic), h.display)
-		}
-	} else {
-		s = fmt.Sprintf(menuIndexFmt, i, resource.Truncate(h.display, 14))
-	}
-	c.SetText(s)
-	return c
-}
-
-func (a keyActions) toHints() hints {
-	kk := make([]int, 0, len(a))
-	for k := range a {
-		kk = append(kk, int(k))
-	}
-	sort.Ints(kk)
-	hh := make(hints, 0, len(a))
-	for _, k := range kk {
-		hh = append(hh, hint{
-			mnemonic: tcell.KeyNames[tcell.Key(k)],
-			display:  a[tcell.Key(k)].description})
-	}
-	return hh
 }

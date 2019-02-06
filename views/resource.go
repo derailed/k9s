@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/derailed/k9s/resource"
@@ -16,10 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const (
-	noSelection   = ""
-	maxNamespaces = 5
-)
+const noSelection = ""
 
 type (
 	details interface {
@@ -38,7 +36,7 @@ type (
 		selectedItem   string
 		namespaces     map[int]string
 		selectedNS     string
-		suspendUpdate  bool
+		update         sync.Mutex
 		list           resource.List
 		extraActionsFn func(keyActions)
 		decorateDataFn func(resource.TableData) resource.TableData
@@ -54,10 +52,12 @@ func newResourceView(title string, app *appView, list resource.List, c colorerFn
 		Pages:      tview.NewPages(),
 	}
 
-	table := newTableView(v.title, list.SortFn())
-	table.SetColorer(c)
-	table.SetSelectionChangedFunc(v.selChanged)
-	v.AddPage(v.list.GetName(), table, true, true)
+	tv := newTableView(app, v.title, list.SortFn())
+	{
+		tv.SetColorer(c)
+		tv.table.SetSelectionChangedFunc(v.selChanged)
+	}
+	v.AddPage(v.list.GetName(), tv, true, true)
 
 	var xray details
 	if list.HasXRay() {
@@ -95,15 +95,13 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 				log.Debugf("%s watcher canceled!", v.title)
 				return
 			case <-time.After(time.Duration(initTick) * time.Second):
-				if !v.isSuspended() {
-					v.refresh()
-				}
+				v.refresh()
 				initTick = float64(k9sCfg.K9s.RefreshRate)
 			}
 		}
 	}(ctx)
 	v.refreshActions()
-	v.CurrentPage().Item.(*tableView).Select(0, 0)
+	v.CurrentPage().Item.(*tableView).table.Select(0, 0)
 }
 
 func (v *resourceView) selChanged(r, c int) {
@@ -196,7 +194,7 @@ func (v *resourceView) switchNamespace(evt *tcell.EventKey) {
 }
 
 func (v *resourceView) doSwitchNamespace(ns string) {
-	v.suspend()
+	v.update.Lock()
 	{
 		if ns == noSelection {
 			ns = resource.AllNamespace
@@ -204,50 +202,43 @@ func (v *resourceView) doSwitchNamespace(ns string) {
 		v.selectedNS = ns
 		v.app.flash(flashInfo, fmt.Sprintf("Viewing `%s namespace...", ns))
 		v.list.SetNamespace(v.selectedNS)
-		v.refresh()
 	}
-	v.resume()
+	v.update.Unlock()
+	v.refresh()
 	v.selectItem(0, 0)
 	v.getTV().resetTitle()
-	v.getTV().Select(0, 0)
-	v.app.resetCmd()
+	v.getTV().table.Select(0, 0)
+	v.app.cmdBuff.reset()
 	k9sCfg.K9s.Namespace.Active = v.selectedNS
 	k9sCfg.validateAndSave()
 }
 
 // Utils...
 
-func (v *resourceView) suspend() {
-	v.suspendUpdate = true
-}
-
-func (v *resourceView) resume() {
-	v.suspendUpdate = false
-}
-
-func (v *resourceView) isSuspended() bool {
-	return v.suspendUpdate
-}
-
 func (v *resourceView) refresh() {
 	if _, ok := v.CurrentPage().Item.(*tableView); !ok {
 		return
 	}
-	if v.list.Namespaced() {
-		v.list.SetNamespace(v.selectedNS)
-	}
-	if err := v.list.Reconcile(); err != nil {
-		v.app.flash(flashErr, err.Error())
-	}
 
-	v.refreshActions()
-	data := v.list.Data()
-	if v.decorateDataFn != nil {
-		data = v.decorateDataFn(data)
+	v.update.Lock()
+	{
+		if v.list.Namespaced() {
+			v.list.SetNamespace(v.selectedNS)
+		}
+		if err := v.list.Reconcile(); err != nil {
+			v.app.flash(flashErr, err.Error())
+		}
+		data := v.list.Data()
+		if v.decorateDataFn != nil {
+			data = v.decorateDataFn(data)
+		}
+		v.getTV().update(data)
+
+		v.refreshActions()
+		v.app.infoView.refresh()
+		v.app.Draw()
 	}
-	v.getTV().update(data)
-	v.app.infoView.refresh()
-	v.app.Draw()
+	v.update.Unlock()
 }
 
 func (v *resourceView) getTV() *tableView {
@@ -267,22 +258,22 @@ func (v *resourceView) selectItem(r, c int) {
 	t := v.getTV()
 	switch v.list.GetNamespace() {
 	case resource.NotNamespaced:
-		v.selectedItem = strings.TrimSpace(t.GetCell(r, 0).Text)
+		v.selectedItem = strings.TrimSpace(t.table.GetCell(r, 0).Text)
 	case resource.AllNamespaces:
 		v.selectedItem = path.Join(
-			strings.TrimSpace(t.GetCell(r, 0).Text),
-			strings.TrimSpace(t.GetCell(r, 1).Text),
+			strings.TrimSpace(t.table.GetCell(r, 0).Text),
+			strings.TrimSpace(t.table.GetCell(r, 1).Text),
 		)
 	default:
 		v.selectedItem = path.Join(
 			v.selectedNS,
-			strings.TrimSpace(t.GetCell(r, 0).Text),
+			strings.TrimSpace(t.table.GetCell(r, 0).Text),
 		)
 	}
 }
 
 func (v *resourceView) switchPage(p string) {
-	v.suspend()
+	v.update.Lock()
 	{
 		v.SwitchToPage(p)
 		h := v.GetPrimitive(p).(hinter)
@@ -290,7 +281,7 @@ func (v *resourceView) switchPage(p string) {
 		v.app.setHints(h.hints())
 		v.app.SetFocus(v.CurrentPage().Item)
 	}
-	v.resume()
+	v.update.Unlock()
 }
 
 func (v *resourceView) rowSelected() bool {
@@ -314,15 +305,21 @@ func (v *resourceView) refreshActions() {
 		return
 	}
 
-	if v.list.Namespaced() && !v.list.AllNamespaces() && !inNSList(nn, v.list.GetNamespace()) {
-		v.list.SetNamespace(resource.DefaultNamespace)
+	if v.list.Namespaced() && !v.list.AllNamespaces() {
+		if !inNSList(nn, v.list.GetNamespace()) {
+			v.list.SetNamespace(resource.DefaultNamespace)
+		}
 	}
 
 	aa := keyActions{}
 	if v.list.Access(resource.NamespaceAccess) {
-		v.namespaces = make(map[int]string, maxNamespaces)
+		v.namespaces = make(map[int]string, maxFavorites)
 		var i int
 		for _, n := range k9sCfg.K9s.Namespace.Favorites {
+			if i > maxFavorites {
+				break
+			}
+
 			if n == resource.AllNamespace {
 				aa[tcell.Key(numKeys[i])] = newKeyHandler(resource.AllNamespace, v.switchNamespace)
 				v.namespaces[i] = resource.AllNamespaces
@@ -338,17 +335,15 @@ func (v *resourceView) refreshActions() {
 				k9sCfg.rmFavNS(n)
 				k9sCfg.validateAndSave()
 			}
-			if i > maxNamespaces {
-				break
-			}
 		}
 	}
 
 	if v.list.Access(resource.EditAccess) {
 		aa[tcell.KeyCtrlE] = newKeyHandler("Edit", v.edit)
 	}
+
 	if v.list.Access(resource.DeleteAccess) {
-		aa[tcell.KeyCtrlD] = newKeyHandler("Delete", v.delete)
+		aa[tcell.KeyBackspace2] = newKeyHandler("Delete", v.delete)
 	}
 	if v.list.Access(resource.ViewAccess) {
 		aa[tcell.KeyCtrlV] = newKeyHandler("View", v.view)
@@ -357,13 +352,14 @@ func (v *resourceView) refreshActions() {
 		aa[tcell.KeyCtrlX] = newKeyHandler("Describe", v.describe)
 	}
 
+	aa[tcell.KeyCtrlQ] = newKeyHandler("Quit", v.app.quit)
+	aa[tcell.KeyCtrlA] = newKeyHandler("Aliases", v.app.help)
+
 	if v.extraActionsFn != nil {
 		v.extraActionsFn(aa)
 	}
 
 	t := v.getTV()
-	{
-		t.setActions(aa)
-		v.app.setHints(t.hints())
-	}
+	t.setActions(aa)
+	v.app.setHints(t.hints())
 }

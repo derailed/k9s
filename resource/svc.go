@@ -11,6 +11,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+const lbIPWidth = 16
+
 // Service tracks a kubernetes resource.
 type Service struct {
 	*Base
@@ -107,7 +109,7 @@ func (r *Service) Fields(ns string) Row {
 		i.ObjectMeta.Name,
 		string(i.Spec.Type),
 		i.Spec.ClusterIP,
-		r.toIPs(i.Spec.Type, i.Spec.ExternalIPs),
+		r.toIPs(i.Spec.Type, getSvcExtIPS(i)),
 		r.toPorts(i.Spec.Ports),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
@@ -119,6 +121,44 @@ func (r *Service) ExtFields() Properties {
 }
 
 // Helpers...
+
+func getSvcExtIPS(svc *v1.Service) []string {
+	results := []string{}
+
+	switch svc.Spec.Type {
+	case v1.ServiceTypeClusterIP:
+		fallthrough
+	case v1.ServiceTypeNodePort:
+		return svc.Spec.ExternalIPs
+	case v1.ServiceTypeLoadBalancer:
+		lbIps := lbIngressIP(svc.Status.LoadBalancer)
+		if len(svc.Spec.ExternalIPs) > 0 {
+			if len(lbIps) > 0 {
+				results = append(results, lbIps)
+			}
+			return append(results, svc.Spec.ExternalIPs...)
+		}
+		if len(lbIps) > 0 {
+			results = append(results, lbIps)
+		}
+	case v1.ServiceTypeExternalName:
+		results = append(results, svc.Spec.ExternalName)
+	}
+	return results
+}
+
+func lbIngressIP(s v1.LoadBalancerStatus) string {
+	ingress := s.Ingress
+	result := []string{}
+	for i := range ingress {
+		if len(ingress[i].IP) > 0 {
+			result = append(result, ingress[i].IP)
+		} else if len(ingress[i].Hostname) > 0 {
+			result = append(result, ingress[i].Hostname)
+		}
+	}
+	return strings.Join(result, ",")
+}
 
 func (*Service) toIPs(svcType v1.ServiceType, ips []string) string {
 	if len(ips) == 0 {

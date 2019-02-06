@@ -72,7 +72,7 @@ func (v *logsView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	if _, ok := numKeys[i]; ok {
 		v.load(i - 1)
-		v.pv.app.resetCmd()
+		v.pv.app.cmdBuff.reset()
 		return nil
 	}
 	return evt

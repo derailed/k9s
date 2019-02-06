@@ -1,6 +1,8 @@
 package views
 
 import (
+	"strings"
+
 	"github.com/derailed/k9s/resource"
 	"github.com/gdamore/tcell"
 )
@@ -22,15 +24,24 @@ func (v *contextView) useContext(*tcell.EventKey) {
 	if !v.rowSelected() {
 		return
 	}
-	err := v.list.Resource().(*resource.Context).Switch(v.selectedItem)
+
+	ctx := v.selectedItem
+	if strings.HasSuffix(ctx, "*") {
+		ctx = strings.TrimRight(ctx, "*")
+	}
+	if strings.HasSuffix(ctx, "(𝜟)") {
+		ctx = strings.TrimRight(ctx, "(𝜟)")
+	}
+
+	err := v.list.Resource().(*resource.Context).Switch(ctx)
 	if err != nil {
 		v.app.flash(flashWarn, err.Error())
 		return
 	}
-	v.app.flash(flashInfo, "Switching context to ", v.selectedItem)
+	v.app.flash(flashInfo, "Switching context to ", ctx)
 	v.refresh()
-	table := v.GetPrimitive("ctx").(*tableView)
-	table.Select(0, 0)
+	tv := v.GetPrimitive("ctx").(*tableView)
+	tv.table.Select(0, 0)
 }
 
 func (v *contextView) extraActions(aa keyActions) {

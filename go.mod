@@ -1,9 +1,10 @@
 module github.com/derailed/k9s
 
-// replace github.com/k8sland/tview => /Users/fernand/go_wk/k8sland/src/github.com/k8sland/tview
+replace github.com/k8sland/tview => /Users/fernand/go_wk/k8sland/src/github.com/k8sland/tview
 
 require (
 	cloud.google.com/go v0.34.0 // indirect
+	github.com/gdamore/encoding v1.0.0 // indirect
 	github.com/gdamore/tcell v1.1.0
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/gogo/protobuf v1.1.1 // indirect
