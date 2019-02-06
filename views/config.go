@@ -45,7 +45,7 @@ type (
 	k9s struct {
 		RefreshRate   int       `yaml:"refreshRate"`
 		LogBufferSize int       `yaml:"logBufferSize"`
-		Namespace     namespace `yaml:"namespace`
+		Namespace     namespace `yaml:"namespace"`
 		View          view      `yaml:"view"`
 	}
 
