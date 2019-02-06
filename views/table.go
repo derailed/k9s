@@ -72,9 +72,11 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 	switch evt.Key() {
 	case tcell.KeyEnter:
-		v.filtered = true
-		v.filter()
-		v.searchMode = false
+		if len(v.cmdBuffer) > 0 {
+			v.filtered = true
+			v.filter()
+			v.searchMode = false
+		}
 		evt = nil
 	case tcell.KeyEsc:
 		v.filtered, v.searchMode = false, false
