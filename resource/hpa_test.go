@@ -24,7 +24,7 @@ func TestHPAListAccess(t *testing.T) {
 }
 
 func TestHPAHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "REFERENCE", "TARGETS", "MINPODS", "MAXPODS", "REPLICAS", "AGE"}, newHPA().Header("default"))
+	assert.Equal(t, resource.Row{"NAME", "REFERENCE", "TARGETS", "MINPODS", "MAXPODS", "REPLICAS", "AGE"}, newHPA().Header(resource.DefaultNamespace))
 }
 
 func TestHPAFields(t *testing.T) {

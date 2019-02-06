@@ -120,7 +120,7 @@ type ObjectMeta struct {
 	GenerateName string `json:"generateName,omitempty" protobuf:"bytes,2,opt,name=generateName"`
 
 	// Namespace defines the space within each name must be unique. An empty namespace is
-	// equivalent to the "default" namespace, but "default" is the canonical representation.
+	// equivalent to the (resource.DefaultNamespace) namespace, but (resource.DefaultNamespace) is the canonical representation.
 	// Not all objects are required to be scoped to a namespace - the value of this field for
 	// those objects will be empty.
 	//
@@ -274,7 +274,7 @@ type Initializer struct {
 
 const (
 	// NamespaceDefault means the object is in the default namespace which is applied when not specified by clients
-	NamespaceDefault string = "default"
+	NamespaceDefault string = (resource.DefaultNamespace)
 	// NamespaceAll is the default argument to specify on a context when you want to list or filter resources across all namespaces
 	NamespaceAll string = ""
 	// NamespaceNone is the argument for a context when there is no namespace.

@@ -144,7 +144,7 @@ func (config *DeferredLoadingClientConfig) Namespace() (string, bool, error) {
 
 	if len(ns) > 0 {
 		// if we got a non-default namespace from the kubeconfig, use it
-		if ns != "default" {
+		if ns != (resource.DefaultNamespace) {
 			return ns, false, nil
 		}
 

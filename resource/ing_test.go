@@ -24,7 +24,7 @@ func TestIngressListAccess(t *testing.T) {
 }
 
 func TestIngressHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "HOSTS", "ADDRESS", "PORT", "AGE"}, newIngress().Header("default"))
+	assert.Equal(t, resource.Row{"NAME", "HOSTS", "ADDRESS", "PORT", "AGE"}, newIngress().Header(resource.DefaultNamespace))
 }
 
 func TestIngressFields(t *testing.T) {

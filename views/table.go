@@ -2,10 +2,13 @@ package views
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/derailed/k9s/resource"
 	"github.com/gdamore/tcell"
 	"github.com/k8sland/tview"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -16,13 +19,16 @@ const (
 type (
 	tableView struct {
 		*tview.Table
-		baseTitle string
-		currentNS string
-		actions   keyActions
-		colorer   colorerFn
-		cmdBuff   string
-		sortFn    resource.SortFn
-		parent    *resourceView
+		baseTitle  string
+		currentNS  string
+		actions    keyActions
+		colorer    colorerFn
+		sortFn     resource.SortFn
+		parent     *resourceView
+		cmdBuffer  []rune
+		data       resource.TableData
+		searchMode bool
+		filtered   bool
 	}
 )
 
@@ -44,23 +50,60 @@ func (v *tableView) setDeleted() {
 	for x := 0; x < cols; x++ {
 		v.GetCell(r, x).SetAttributes(tcell.AttrDim)
 	}
-	v.Select(0, 0)
 }
 
 func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
+	key := evt.Key()
 	if evt.Key() == tcell.KeyRune {
-		if a, ok := v.actions[tcell.Key(evt.Rune())]; ok {
-			a.action(evt)
-			evt = nil
+		if evt.Rune() == '/' {
+			v.searchMode = true
+			v.cmdBuffer = []rune{}
+		} else {
+			if v.searchMode {
+				v.cmdBuffer = append([]rune(v.cmdBuffer), evt.Rune())
+			}
 		}
-		return evt
+		key = tcell.Key(evt.Rune())
 	}
 
-	if a, ok := v.actions[evt.Key()]; ok {
+	if a, ok := v.actions[key]; ok {
 		a.action(evt)
+		return nil
+	}
+
+	switch evt.Key() {
+	case tcell.KeyEnter:
+		v.filtered = true
+		v.filter()
+		v.searchMode = false
+		evt = nil
+	case tcell.KeyEsc:
+		v.filtered, v.searchMode = false, false
+		v.cmdBuffer = []rune{}
 		evt = nil
 	}
 	return evt
+}
+
+func (v *tableView) filter() {
+	v.filterData(string(v.cmdBuffer))
+}
+
+func (v *tableView) filterData(filter string) {
+	filtered := resource.TableData{
+		Header:    v.data.Header,
+		Rows:      resource.RowEvents{},
+		Namespace: v.data.Namespace,
+	}
+
+	rx := regexp.MustCompile(filter)
+	for k, row := range v.data.Rows {
+		f := strings.Join(row.Fields, " ")
+		if rx.MatchString(f) {
+			filtered.Rows[k] = row
+		}
+	}
+	v.doUpdate(filtered)
 }
 
 // SetColorer sets up table row color management.
@@ -89,20 +132,36 @@ func (v *tableView) hints() hints {
 }
 
 func (v *tableView) resetTitle() {
+	var title string
+
 	switch v.currentNS {
 	case resource.NotNamespaced:
-		v.SetTitle(fmt.Sprintf(titleFmt, v.baseTitle, v.GetRowCount()-1))
+		title = fmt.Sprintf(titleFmt, v.baseTitle, v.GetRowCount()-1)
 	default:
 		ns := v.currentNS
 		if v.currentNS == resource.AllNamespaces {
-			ns = "all"
+			ns = resource.AllNamespace
 		}
-		v.SetTitle(fmt.Sprintf(nsTitleFmt, v.baseTitle, ns, v.GetRowCount()-1))
+		title = fmt.Sprintf(nsTitleFmt, v.baseTitle, ns, v.GetRowCount()-1)
 	}
+
+	if v.filtered {
+		title += fmt.Sprintf("<[green::b]/%s[aqua::]> ", string(v.cmdBuffer))
+	}
+	v.SetTitle(title)
 }
 
 // Update table content
 func (v *tableView) update(data resource.TableData) {
+	v.data = data
+	if v.filtered {
+		v.filter()
+	} else {
+		v.doUpdate(data)
+	}
+}
+
+func (v *tableView) doUpdate(data resource.TableData) {
 	v.Clear()
 	v.currentNS = data.Namespace
 

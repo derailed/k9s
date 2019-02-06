@@ -14,7 +14,7 @@ import (
 func TestCMHeader(t *testing.T) {
 	assert.Equal(t,
 		resource.Row{"NAME", "DATA", "AGE"},
-		newConfigMap().Header("default"),
+		newConfigMap().Header(resource.DefaultNamespace),
 	)
 }
 

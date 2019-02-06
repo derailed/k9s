@@ -6,17 +6,19 @@ import (
 	restclient "k8s.io/client-go/rest"
 )
 
-const defaultTailLines = 10
+const defaultKillGrace int64 = 5
 
-// PodRes represents a K8s pod resource.
-type PodRes interface {
-	Res
-	Containers(ns, n string) ([]string, error)
-	Logs(ns, n, co string) *restclient.Request
-}
+type (
+	// PodRes represents a K8s pod resource.
+	PodRes interface {
+		Res
+		Containers(ns, n string) ([]string, error)
+		Logs(ns, n, co string, lines int64) *restclient.Request
+	}
 
-// Pod represents a Kubernetes service
-type Pod struct{}
+	// Pod represents a Kubernetes resource.
+	 Pod struct{}
+)
 
 // NewPod returns a new Pod.
 func NewPod() Res {
@@ -48,7 +50,10 @@ func (*Pod) List(ns string) (Collection, error) {
 
 // Delete a service
 func (*Pod) Delete(ns, n string) error {
-	opts := metav1.DeleteOptions{}
+	var grace = defaultKillGrace
+	opts := metav1.DeleteOptions{
+		GracePeriodSeconds: &grace,
+	}
 	return conn.dialOrDie().CoreV1().Pods(ns).Delete(n, &opts)
 }
 
@@ -68,12 +73,11 @@ func (*Pod) Containers(ns, n string) ([]string, error) {
 }
 
 // Logs fetch container logs for a given pod and container.
-func (*Pod) Logs(ns, n, co string) *restclient.Request {
-	tl := int64(defaultTailLines)
+func (*Pod) Logs(ns, n, co string, lines int64) *restclient.Request {
 	opts := &v1.PodLogOptions{
 		Container: co,
 		Follow:    true,
-		TailLines: &tl,
+		TailLines: &lines,
 	}
 	return conn.dialOrDie().CoreV1().Pods(ns).GetLogs(n, opts)
 }

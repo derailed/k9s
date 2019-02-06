@@ -27,7 +27,7 @@ func TestCRListAccess(t *testing.T) {
 }
 
 func TestCRHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "AGE"}, newClusterRole().Header("default"))
+	assert.Equal(t, resource.Row{"NAME", "AGE"}, newClusterRole().Header(resource.DefaultNamespace))
 }
 
 func TestCRHeaderAllNS(t *testing.T) {

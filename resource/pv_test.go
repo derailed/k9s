@@ -24,7 +24,7 @@ func TestPVListAccess(t *testing.T) {
 }
 
 func TestPVHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "CAPACITY", "ACCESS MODES", "RECLAIM POLICY", "STATUS", "CLAIM", "STORAGECLASS", "REASON", "AGE"}, newPV().Header("default"))
+	assert.Equal(t, resource.Row{"NAME", "CAPACITY", "ACCESS MODES", "RECLAIM POLICY", "STATUS", "CLAIM", "STORAGECLASS", "REASON", "AGE"}, newPV().Header(resource.DefaultNamespace))
 }
 
 func TestPVFields(t *testing.T) {

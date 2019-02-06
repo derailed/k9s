@@ -333,7 +333,7 @@ func (config *DirectClientConfig) Namespace() (string, bool, error) {
 	}
 
 	if len(configContext.Namespace) == 0 {
-		return "default", false, nil
+		return (resource.DefaultNamespace), false, nil
 	}
 
 	return configContext.Namespace, false, nil
@@ -523,7 +523,7 @@ func (config *inClusterClientConfig) Namespace() (string, bool, error) {
 		}
 	}
 
-	return "default", false, nil
+	return (resource.DefaultNamespace), false, nil
 }
 
 func (config *inClusterClientConfig) ConfigAccess() ConfigAccess {

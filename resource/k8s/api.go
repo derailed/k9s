@@ -49,8 +49,8 @@ type (
 	}
 
 	connection interface {
-		configOrDie() *restclient.Config
-		dialConfigOrDie() *clientcmdapi.Config
+		restConfigOrDie() *restclient.Config
+		apiConfigOrDie() *clientcmdapi.Config
 		dialOrDie() kubernetes.Interface
 		dynDialOrDie() dynamic.Interface
 		nsDialOrDie() dynamic.NamespaceableResourceInterface
@@ -85,14 +85,6 @@ func (a *apiServer) hasMetricsServer() bool {
 	return a.useMetricServer
 }
 
-func (a *apiServer) dialConfigOrDie() *clientcmdapi.Config {
-	c, err := clientcmd.NewDefaultPathOptions().GetStartingConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-	return c
-}
-
 // DialOrDie returns a handle to api server or die.
 func (a *apiServer) dialOrDie() kubernetes.Interface {
 	a.checkCurrentConfig()
@@ -101,8 +93,8 @@ func (a *apiServer) dialOrDie() kubernetes.Interface {
 	}
 
 	var err error
-	if a.client, err = kubernetes.NewForConfig(a.configOrDie()); err != nil {
-		log.Fatal(err)
+	if a.client, err = kubernetes.NewForConfig(a.restConfigOrDie()); err != nil {
+		panic(err)
 	}
 
 	return a.client
@@ -118,7 +110,7 @@ func (a *apiServer) csDialOrDie() *clientset.Clientset {
 	// cfg := clientcmd.NewNonInteractiveClientConfig(config, contextName, overrides, configAccess)
 	var err error
 	if a.csClient, err = clientset.NewForConfig(cfg); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	return a.csClient
@@ -132,8 +124,8 @@ func (a *apiServer) dynDialOrDie() dynamic.Interface {
 	}
 
 	var err error
-	if a.dClient, err = dynamic.NewForConfig(a.configOrDie()); err != nil {
-		log.Fatal(err)
+	if a.dClient, err = dynamic.NewForConfig(a.restConfigOrDie()); err != nil {
+		panic(err)
 	}
 
 	return a.dClient
@@ -189,11 +181,30 @@ func (a *apiServer) mxsDial() (*versioned.Clientset, error) {
 	return a.mxsClient, err
 }
 
-func (*apiServer) configOrDie() *restclient.Config {
+// ConfigOrDie check kubernetes cluster config.
+// Dies if no config is found or incorrect.
+func ConfigOrDie() {
+	var srv *apiServer
+	cfg := srv.apiConfigOrDie()
+	if clientcmdapi.IsConfigEmpty(cfg) {
+		panic("K8s config file load failed. Please check your .kube/config or $KUBECONFIG env")
+	}
+}
+
+func (*apiServer) apiConfigOrDie() *clientcmdapi.Config {
+	paths := clientcmd.NewDefaultPathOptions()
+	c, err := paths.GetStartingConfig()
+	if err != nil {
+		panic(err)
+	}
+	return c
+}
+
+func (*apiServer) restConfigOrDie() *restclient.Config {
 	opts := clientcmd.NewDefaultPathOptions()
 	cfg, err := clientcmd.BuildConfigFromFlags("", opts.GetDefaultFilename())
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	return cfg
 }

@@ -25,7 +25,7 @@ func TestPVCListAccess(t *testing.T) {
 }
 
 func TestPVCHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "STATUS", "VOLUME", "CAPACITY", "ACCESS MODES", "STORAGECLASS", "AGE"}, newPVC().Header("default"))
+	assert.Equal(t, resource.Row{"NAME", "STATUS", "VOLUME", "CAPACITY", "ACCESS MODES", "STORAGECLASS", "AGE"}, newPVC().Header(resource.DefaultNamespace))
 }
 
 func TestPVCFields(t *testing.T) {

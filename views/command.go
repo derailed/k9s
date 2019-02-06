@@ -16,7 +16,7 @@ func newCommand(app *appView) *command {
 
 // DefaultCmd reset default command ie show pods.
 func (c *command) defaultCmd() {
-	c.run("po")
+	c.run(k9sCfg.K9s.View.Active)
 }
 
 // Helpers...
@@ -27,15 +27,14 @@ func (c *command) run(cmd string) {
 	switch cmd {
 	case "q":
 		c.app.quit(nil)
-	case "h", "help", "?":
-		v = newHelpView(c.app)
-		c.app.flash(flashInfo, "Viewing Help...")
 	default:
 		if res, ok := cmdMap[cmd]; ok {
 			v = res.viewFn(res.title, c.app, res.listFn(defaultNS), res.colorerFn)
 			c.app.flash(flashInfo, "Viewing all "+res.title+"...")
 		} else {
-			if res, ok := getCRDS()[cmd]; ok {
+			if res, ok := getCRDS()[cmd]; !ok {
+				c.app.flash(flashWarn, fmt.Sprintf("Huh? `%s` command not found", cmd))
+			} else {
 				n := res.Plural
 				if len(n) == 0 {
 					n = res.Singular
@@ -46,13 +45,13 @@ func (c *command) run(cmd string) {
 					resource.NewCustomList("", res.Group, res.Version, n),
 					defaultColorer,
 				)
-			} else {
-				c.app.flash(flashWarn, fmt.Sprintf("Huh? `%s` command not found", cmd))
 			}
 		}
 	}
 
 	if v != nil {
+		k9sCfg.K9s.View.Active = cmd
+		k9sCfg.validateAndSave()
 		c.app.inject(v)
 	}
 	return

@@ -24,7 +24,7 @@ func TestJobListAccess(t *testing.T) {
 }
 
 func TestJobHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "COMPLETIONS", "DURATION", "AGE"}, newJob().Header("default"))
+	assert.Equal(t, resource.Row{"NAME", "COMPLETIONS", "DURATION", "AGE"}, newJob().Header(resource.DefaultNamespace))
 }
 
 func TestJobFields(t *testing.T) {

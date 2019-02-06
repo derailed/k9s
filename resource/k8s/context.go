@@ -34,12 +34,12 @@ func NewContext() Res {
 
 // Get a Context.
 func (*Context) Get(_, n string) (interface{}, error) {
-	return &NamedContext{Name: n, Context: conn.dialConfigOrDie().Contexts[n]}, nil
+	return &NamedContext{Name: n, Context: conn.apiConfigOrDie().Contexts[n]}, nil
 }
 
 // List all Contexts in a given namespace
 func (*Context) List(string) (Collection, error) {
-	conn := conn.dialConfigOrDie()
+	conn := conn.apiConfigOrDie()
 
 	cc := make([]interface{}, 0, len(conn.Contexts))
 	for k, v := range conn.Contexts {
@@ -50,7 +50,7 @@ func (*Context) List(string) (Collection, error) {
 
 // Delete a Context
 func (*Context) Delete(_, n string) error {
-	conn := conn.dialConfigOrDie()
+	conn := conn.apiConfigOrDie()
 
 	if conn.CurrentContext == n {
 		return fmt.Errorf("trying to delete your current context %s", n)
@@ -64,7 +64,7 @@ func (*Context) Delete(_, n string) error {
 
 // Switch cluster Context.
 func (*Context) Switch(n string) error {
-	conn := conn.dialConfigOrDie()
+	conn := conn.apiConfigOrDie()
 
 	conn.CurrentContext = n
 	acc := clientcmd.NewDefaultPathOptions()

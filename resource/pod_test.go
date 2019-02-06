@@ -24,7 +24,7 @@ func TestPodListAccess(t *testing.T) {
 }
 
 func TestPodHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "READY", "STATUS", "RESTARTS", "CPU", "MEM", "IP", "NODE", "QOS", "AGE"}, newPod().Header("default"))
+	assert.Equal(t, resource.Row{"NAME", "READY", "STATUS", "RESTARTS", "CPU", "MEM", "IP", "NODE", "QOS", "AGE"}, newPod().Header(resource.DefaultNamespace))
 }
 
 func TestPodFields(t *testing.T) {

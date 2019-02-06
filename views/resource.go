@@ -14,10 +14,12 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/k8sland/tview"
 	log "github.com/sirupsen/logrus"
-	v1 "k8s.io/api/core/v1"
 )
 
-const noSelection = ""
+const (
+	noSelection   = ""
+	maxNamespaces = 5
+)
 
 type (
 	details interface {
@@ -39,6 +41,7 @@ type (
 		suspendUpdate  bool
 		list           resource.List
 		extraActionsFn func(keyActions)
+		decorateDataFn func(resource.TableData) resource.TableData
 	}
 )
 
@@ -63,12 +66,12 @@ func newResourceView(title string, app *appView, list resource.List, c colorerFn
 		xray = newYamlView(app)
 	}
 	xray.setActions(keyActions{
-		tcell.KeyCtrlB: {description: "Back", action: v.back},
+		tcell.KeyEscape: {description: "Back", action: v.back},
 	})
 
 	details := newDetailsView()
 	details.setActions(keyActions{
-		tcell.KeyCtrlB: {description: "Back", action: v.back},
+		tcell.KeyEscape: {description: "Back", action: v.back},
 	})
 
 	v.AddPage("details", details, true, false)
@@ -89,13 +92,13 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Printf("%s watcher canceled!", v.title)
+				log.Debugf("%s watcher canceled!", v.title)
 				return
 			case <-time.After(time.Duration(initTick) * time.Second):
 				if !v.isSuspended() {
 					v.refresh()
 				}
-				initTick = float64(v.app.refreshRate)
+				initTick = float64(k9sCfg.K9s.RefreshRate)
 			}
 		}
 	}(ctx)
@@ -187,14 +190,18 @@ func (v *resourceView) edit(*tcell.EventKey) {
 }
 
 func (v *resourceView) switchNamespace(evt *tcell.EventKey) {
+	i, _ := strconv.Atoi(string(evt.Rune()))
+	ns := v.namespaces[i]
+	v.doSwitchNamespace(ns)
+}
+
+func (v *resourceView) doSwitchNamespace(ns string) {
 	v.suspend()
 	{
-		i, _ := strconv.Atoi(string(evt.Rune()))
-		ns := v.namespaces[i]
-		v.selectedNS = ns
 		if ns == noSelection {
-			ns = "all"
+			ns = resource.AllNamespace
 		}
+		v.selectedNS = ns
 		v.app.flash(flashInfo, fmt.Sprintf("Viewing `%s namespace...", ns))
 		v.list.SetNamespace(v.selectedNS)
 		v.refresh()
@@ -204,6 +211,8 @@ func (v *resourceView) switchNamespace(evt *tcell.EventKey) {
 	v.getTV().resetTitle()
 	v.getTV().Select(0, 0)
 	v.app.resetCmd()
+	k9sCfg.K9s.Namespace.Active = v.selectedNS
+	k9sCfg.validateAndSave()
 }
 
 // Utils...
@@ -224,13 +233,19 @@ func (v *resourceView) refresh() {
 	if _, ok := v.CurrentPage().Item.(*tableView); !ok {
 		return
 	}
-
-	v.list.SetNamespace(v.selectedNS)
+	if v.list.Namespaced() {
+		v.list.SetNamespace(v.selectedNS)
+	}
 	if err := v.list.Reconcile(); err != nil {
 		v.app.flash(flashErr, err.Error())
 	}
+
 	v.refreshActions()
-	v.getTV().update(v.list.Data())
+	data := v.list.Data()
+	if v.decorateDataFn != nil {
+		data = v.decorateDataFn(data)
+	}
+	v.getTV().update(data)
 	v.app.infoView.refresh()
 	v.app.Draw()
 }
@@ -299,19 +314,33 @@ func (v *resourceView) refreshActions() {
 		return
 	}
 
+	if v.list.Namespaced() && !v.list.AllNamespaces() && !inNSList(nn, v.list.GetNamespace()) {
+		v.list.SetNamespace(resource.DefaultNamespace)
+	}
+
 	aa := keyActions{}
 	if v.list.Access(resource.NamespaceAccess) {
-		v.namespaces = make(map[int]string, len(nn))
+		v.namespaces = make(map[int]string, maxNamespaces)
 		var i int
-		aa[tcell.Key(numKeys[i])] = newKeyHandler("all", v.switchNamespace)
-		v.namespaces[i] = resource.AllNamespaces
-		i++
+		for _, n := range k9sCfg.K9s.Namespace.Favorites {
+			if n == resource.AllNamespace {
+				aa[tcell.Key(numKeys[i])] = newKeyHandler(resource.AllNamespace, v.switchNamespace)
+				v.namespaces[i] = resource.AllNamespaces
+				i++
+				continue
+			}
 
-		for _, n := range nn {
-			nsp := n.(v1.Namespace)
-			v.namespaces[i] = nsp.Name
-			aa[tcell.Key(numKeys[i])] = newKeyHandler(nsp.Name, v.switchNamespace)
-			i++
+			if inNSList(nn, n) {
+				aa[tcell.Key(numKeys[i])] = newKeyHandler(n, v.switchNamespace)
+				v.namespaces[i] = n
+				i++
+			} else {
+				k9sCfg.rmFavNS(n)
+				k9sCfg.validateAndSave()
+			}
+			if i > maxNamespaces {
+				break
+			}
 		}
 	}
 
@@ -333,6 +362,8 @@ func (v *resourceView) refreshActions() {
 	}
 
 	t := v.getTV()
-	t.setActions(aa)
-	v.app.setHints(t.hints())
+	{
+		t.setActions(aa)
+		v.app.setHints(t.hints())
+	}
 }

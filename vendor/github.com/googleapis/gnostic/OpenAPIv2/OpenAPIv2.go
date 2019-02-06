@@ -869,7 +869,7 @@ func NewFileSchema(in interface{}, context *compiler.Context) (*FileSchema, erro
 			message := fmt.Sprintf("is missing required %s: %+v", compiler.PluralProperties(len(missingKeys)), strings.Join(missingKeys, ", "))
 			errors = append(errors, compiler.NewError(context, message))
 		}
-		allowedKeys := []string{"default", "description", "example", "externalDocs", "format", "readOnly", "required", "title", "type"}
+		allowedKeys := []string{(resource.DefaultNamespace), "description", "example", "externalDocs", "format", "readOnly", "required", "title", "type"}
 		allowedPatterns := []*regexp.Regexp{pattern0}
 		invalidKeys := compiler.InvalidKeysInMap(m, allowedKeys, allowedPatterns)
 		if len(invalidKeys) > 0 {
@@ -904,10 +904,10 @@ func NewFileSchema(in interface{}, context *compiler.Context) (*FileSchema, erro
 			}
 		}
 		// Any default = 4;
-		v4 := compiler.MapValueForKey(m, "default")
+		v4 := compiler.MapValueForKey(m, (resource.DefaultNamespace))
 		if v4 != nil {
 			var err error
-			x.Default, err = NewAny(v4, compiler.NewContext("default", context))
+			x.Default, err = NewAny(v4, compiler.NewContext((resource.DefaultNamespace), context))
 			if err != nil {
 				errors = append(errors, err)
 			}
@@ -1009,7 +1009,7 @@ func NewFormDataParameterSubSchema(in interface{}, context *compiler.Context) (*
 		message := fmt.Sprintf("has unexpected value: %+v (%T)", in, in)
 		errors = append(errors, compiler.NewError(context, message))
 	} else {
-		allowedKeys := []string{"allowEmptyValue", "collectionFormat", "default", "description", "enum", "exclusiveMaximum", "exclusiveMinimum", "format", "in", "items", "maxItems", "maxLength", "maximum", "minItems", "minLength", "minimum", "multipleOf", "name", "pattern", "required", "type", "uniqueItems"}
+		allowedKeys := []string{"allowEmptyValue", "collectionFormat", (resource.DefaultNamespace), "description", "enum", "exclusiveMaximum", "exclusiveMinimum", "format", "in", "items", "maxItems", "maxLength", "maximum", "minItems", "minLength", "minimum", "multipleOf", "name", "pattern", "required", "type", "uniqueItems"}
 		allowedPatterns := []*regexp.Regexp{pattern0}
 		invalidKeys := compiler.InvalidKeysInMap(m, allowedKeys, allowedPatterns)
 		if len(invalidKeys) > 0 {
@@ -1116,10 +1116,10 @@ func NewFormDataParameterSubSchema(in interface{}, context *compiler.Context) (*
 			}
 		}
 		// Any default = 10;
-		v10 := compiler.MapValueForKey(m, "default")
+		v10 := compiler.MapValueForKey(m, (resource.DefaultNamespace))
 		if v10 != nil {
 			var err error
-			x.Default, err = NewAny(v10, compiler.NewContext("default", context))
+			x.Default, err = NewAny(v10, compiler.NewContext((resource.DefaultNamespace), context))
 			if err != nil {
 				errors = append(errors, err)
 			}
@@ -1339,7 +1339,7 @@ func NewHeader(in interface{}, context *compiler.Context) (*Header, error) {
 			message := fmt.Sprintf("is missing required %s: %+v", compiler.PluralProperties(len(missingKeys)), strings.Join(missingKeys, ", "))
 			errors = append(errors, compiler.NewError(context, message))
 		}
-		allowedKeys := []string{"collectionFormat", "default", "description", "enum", "exclusiveMaximum", "exclusiveMinimum", "format", "items", "maxItems", "maxLength", "maximum", "minItems", "minLength", "minimum", "multipleOf", "pattern", "type", "uniqueItems"}
+		allowedKeys := []string{"collectionFormat", (resource.DefaultNamespace), "description", "enum", "exclusiveMaximum", "exclusiveMinimum", "format", "items", "maxItems", "maxLength", "maximum", "minItems", "minLength", "minimum", "multipleOf", "pattern", "type", "uniqueItems"}
 		allowedPatterns := []*regexp.Regexp{pattern0}
 		invalidKeys := compiler.InvalidKeysInMap(m, allowedKeys, allowedPatterns)
 		if len(invalidKeys) > 0 {
@@ -1395,10 +1395,10 @@ func NewHeader(in interface{}, context *compiler.Context) (*Header, error) {
 			}
 		}
 		// Any default = 5;
-		v5 := compiler.MapValueForKey(m, "default")
+		v5 := compiler.MapValueForKey(m, (resource.DefaultNamespace))
 		if v5 != nil {
 			var err error
-			x.Default, err = NewAny(v5, compiler.NewContext("default", context))
+			x.Default, err = NewAny(v5, compiler.NewContext((resource.DefaultNamespace), context))
 			if err != nil {
 				errors = append(errors, err)
 			}
@@ -1621,7 +1621,7 @@ func NewHeaderParameterSubSchema(in interface{}, context *compiler.Context) (*He
 		message := fmt.Sprintf("has unexpected value: %+v (%T)", in, in)
 		errors = append(errors, compiler.NewError(context, message))
 	} else {
-		allowedKeys := []string{"collectionFormat", "default", "description", "enum", "exclusiveMaximum", "exclusiveMinimum", "format", "in", "items", "maxItems", "maxLength", "maximum", "minItems", "minLength", "minimum", "multipleOf", "name", "pattern", "required", "type", "uniqueItems"}
+		allowedKeys := []string{"collectionFormat", (resource.DefaultNamespace), "description", "enum", "exclusiveMaximum", "exclusiveMinimum", "format", "in", "items", "maxItems", "maxLength", "maximum", "minItems", "minLength", "minimum", "multipleOf", "name", "pattern", "required", "type", "uniqueItems"}
 		allowedPatterns := []*regexp.Regexp{pattern0}
 		invalidKeys := compiler.InvalidKeysInMap(m, allowedKeys, allowedPatterns)
 		if len(invalidKeys) > 0 {
@@ -1719,10 +1719,10 @@ func NewHeaderParameterSubSchema(in interface{}, context *compiler.Context) (*He
 			}
 		}
 		// Any default = 9;
-		v9 := compiler.MapValueForKey(m, "default")
+		v9 := compiler.MapValueForKey(m, (resource.DefaultNamespace))
 		if v9 != nil {
 			var err error
-			x.Default, err = NewAny(v9, compiler.NewContext("default", context))
+			x.Default, err = NewAny(v9, compiler.NewContext((resource.DefaultNamespace), context))
 			if err != nil {
 				errors = append(errors, err)
 			}
@@ -3602,7 +3602,7 @@ func NewPathParameterSubSchema(in interface{}, context *compiler.Context) (*Path
 			message := fmt.Sprintf("is missing required %s: %+v", compiler.PluralProperties(len(missingKeys)), strings.Join(missingKeys, ", "))
 			errors = append(errors, compiler.NewError(context, message))
 		}
-		allowedKeys := []string{"collectionFormat", "default", "description", "enum", "exclusiveMaximum", "exclusiveMinimum", "format", "in", "items", "maxItems", "maxLength", "maximum", "minItems", "minLength", "minimum", "multipleOf", "name", "pattern", "required", "type", "uniqueItems"}
+		allowedKeys := []string{"collectionFormat", (resource.DefaultNamespace), "description", "enum", "exclusiveMaximum", "exclusiveMinimum", "format", "in", "items", "maxItems", "maxLength", "maximum", "minItems", "minLength", "minimum", "multipleOf", "name", "pattern", "required", "type", "uniqueItems"}
 		allowedPatterns := []*regexp.Regexp{pattern0}
 		invalidKeys := compiler.InvalidKeysInMap(m, allowedKeys, allowedPatterns)
 		if len(invalidKeys) > 0 {
@@ -3700,10 +3700,10 @@ func NewPathParameterSubSchema(in interface{}, context *compiler.Context) (*Path
 			}
 		}
 		// Any default = 9;
-		v9 := compiler.MapValueForKey(m, "default")
+		v9 := compiler.MapValueForKey(m, (resource.DefaultNamespace))
 		if v9 != nil {
 			var err error
-			x.Default, err = NewAny(v9, compiler.NewContext("default", context))
+			x.Default, err = NewAny(v9, compiler.NewContext((resource.DefaultNamespace), context))
 			if err != nil {
 				errors = append(errors, err)
 			}
@@ -3987,7 +3987,7 @@ func NewPrimitivesItems(in interface{}, context *compiler.Context) (*PrimitivesI
 		message := fmt.Sprintf("has unexpected value: %+v (%T)", in, in)
 		errors = append(errors, compiler.NewError(context, message))
 	} else {
-		allowedKeys := []string{"collectionFormat", "default", "enum", "exclusiveMaximum", "exclusiveMinimum", "format", "items", "maxItems", "maxLength", "maximum", "minItems", "minLength", "minimum", "multipleOf", "pattern", "type", "uniqueItems"}
+		allowedKeys := []string{"collectionFormat", (resource.DefaultNamespace), "enum", "exclusiveMaximum", "exclusiveMinimum", "format", "items", "maxItems", "maxLength", "maximum", "minItems", "minLength", "minimum", "multipleOf", "pattern", "type", "uniqueItems"}
 		allowedPatterns := []*regexp.Regexp{pattern0}
 		invalidKeys := compiler.InvalidKeysInMap(m, allowedKeys, allowedPatterns)
 		if len(invalidKeys) > 0 {
@@ -4043,10 +4043,10 @@ func NewPrimitivesItems(in interface{}, context *compiler.Context) (*PrimitivesI
 			}
 		}
 		// Any default = 5;
-		v5 := compiler.MapValueForKey(m, "default")
+		v5 := compiler.MapValueForKey(m, (resource.DefaultNamespace))
 		if v5 != nil {
 			var err error
-			x.Default, err = NewAny(v5, compiler.NewContext("default", context))
+			x.Default, err = NewAny(v5, compiler.NewContext((resource.DefaultNamespace), context))
 			if err != nil {
 				errors = append(errors, err)
 			}
@@ -4290,7 +4290,7 @@ func NewQueryParameterSubSchema(in interface{}, context *compiler.Context) (*Que
 		message := fmt.Sprintf("has unexpected value: %+v (%T)", in, in)
 		errors = append(errors, compiler.NewError(context, message))
 	} else {
-		allowedKeys := []string{"allowEmptyValue", "collectionFormat", "default", "description", "enum", "exclusiveMaximum", "exclusiveMinimum", "format", "in", "items", "maxItems", "maxLength", "maximum", "minItems", "minLength", "minimum", "multipleOf", "name", "pattern", "required", "type", "uniqueItems"}
+		allowedKeys := []string{"allowEmptyValue", "collectionFormat", (resource.DefaultNamespace), "description", "enum", "exclusiveMaximum", "exclusiveMinimum", "format", "in", "items", "maxItems", "maxLength", "maximum", "minItems", "minLength", "minimum", "multipleOf", "name", "pattern", "required", "type", "uniqueItems"}
 		allowedPatterns := []*regexp.Regexp{pattern0}
 		invalidKeys := compiler.InvalidKeysInMap(m, allowedKeys, allowedPatterns)
 		if len(invalidKeys) > 0 {
@@ -4397,10 +4397,10 @@ func NewQueryParameterSubSchema(in interface{}, context *compiler.Context) (*Que
 			}
 		}
 		// Any default = 10;
-		v10 := compiler.MapValueForKey(m, "default")
+		v10 := compiler.MapValueForKey(m, (resource.DefaultNamespace))
 		if v10 != nil {
 			var err error
-			x.Default, err = NewAny(v10, compiler.NewContext("default", context))
+			x.Default, err = NewAny(v10, compiler.NewContext((resource.DefaultNamespace), context))
 			if err != nil {
 				errors = append(errors, err)
 			}
@@ -4847,7 +4847,7 @@ func NewSchema(in interface{}, context *compiler.Context) (*Schema, error) {
 		message := fmt.Sprintf("has unexpected value: %+v (%T)", in, in)
 		errors = append(errors, compiler.NewError(context, message))
 	} else {
-		allowedKeys := []string{"$ref", "additionalProperties", "allOf", "default", "description", "discriminator", "enum", "example", "exclusiveMaximum", "exclusiveMinimum", "externalDocs", "format", "items", "maxItems", "maxLength", "maxProperties", "maximum", "minItems", "minLength", "minProperties", "minimum", "multipleOf", "pattern", "properties", "readOnly", "required", "title", "type", "uniqueItems", "xml"}
+		allowedKeys := []string{"$ref", "additionalProperties", "allOf", (resource.DefaultNamespace), "description", "discriminator", "enum", "example", "exclusiveMaximum", "exclusiveMinimum", "externalDocs", "format", "items", "maxItems", "maxLength", "maxProperties", "maximum", "minItems", "minLength", "minProperties", "minimum", "multipleOf", "pattern", "properties", "readOnly", "required", "title", "type", "uniqueItems", "xml"}
 		allowedPatterns := []*regexp.Regexp{pattern0}
 		invalidKeys := compiler.InvalidKeysInMap(m, allowedKeys, allowedPatterns)
 		if len(invalidKeys) > 0 {
@@ -4891,10 +4891,10 @@ func NewSchema(in interface{}, context *compiler.Context) (*Schema, error) {
 			}
 		}
 		// Any default = 5;
-		v5 := compiler.MapValueForKey(m, "default")
+		v5 := compiler.MapValueForKey(m, (resource.DefaultNamespace))
 		if v5 != nil {
 			var err error
-			x.Default, err = NewAny(v5, compiler.NewContext("default", context))
+			x.Default, err = NewAny(v5, compiler.NewContext((resource.DefaultNamespace), context))
 			if err != nil {
 				errors = append(errors, err)
 			}
@@ -7334,7 +7334,7 @@ func (m *FileSchema) ToRawInfo() interface{} {
 		info = append(info, yaml.MapItem{Key: "description", Value: m.Description})
 	}
 	if m.Default != nil {
-		info = append(info, yaml.MapItem{Key: "default", Value: m.Default.ToRawInfo()})
+		info = append(info, yaml.MapItem{Key: (resource.DefaultNamespace), Value: m.Default.ToRawInfo()})
 	}
 	// &{Name:default Type:Any StringEnumValues:[] MapType: Repeated:false Pattern: Implicit:false Description:}
 	if len(m.Required) != 0 {
@@ -7395,7 +7395,7 @@ func (m *FormDataParameterSubSchema) ToRawInfo() interface{} {
 		info = append(info, yaml.MapItem{Key: "collectionFormat", Value: m.CollectionFormat})
 	}
 	if m.Default != nil {
-		info = append(info, yaml.MapItem{Key: "default", Value: m.Default.ToRawInfo()})
+		info = append(info, yaml.MapItem{Key: (resource.DefaultNamespace), Value: m.Default.ToRawInfo()})
 	}
 	// &{Name:default Type:Any StringEnumValues:[] MapType: Repeated:false Pattern: Implicit:false Description:}
 	if m.Maximum != 0.0 {
@@ -7465,7 +7465,7 @@ func (m *Header) ToRawInfo() interface{} {
 		info = append(info, yaml.MapItem{Key: "collectionFormat", Value: m.CollectionFormat})
 	}
 	if m.Default != nil {
-		info = append(info, yaml.MapItem{Key: "default", Value: m.Default.ToRawInfo()})
+		info = append(info, yaml.MapItem{Key: (resource.DefaultNamespace), Value: m.Default.ToRawInfo()})
 	}
 	// &{Name:default Type:Any StringEnumValues:[] MapType: Repeated:false Pattern: Implicit:false Description:}
 	if m.Maximum != 0.0 {
@@ -7550,7 +7550,7 @@ func (m *HeaderParameterSubSchema) ToRawInfo() interface{} {
 		info = append(info, yaml.MapItem{Key: "collectionFormat", Value: m.CollectionFormat})
 	}
 	if m.Default != nil {
-		info = append(info, yaml.MapItem{Key: "default", Value: m.Default.ToRawInfo()})
+		info = append(info, yaml.MapItem{Key: (resource.DefaultNamespace), Value: m.Default.ToRawInfo()})
 	}
 	// &{Name:default Type:Any StringEnumValues:[] MapType: Repeated:false Pattern: Implicit:false Description:}
 	if m.Maximum != 0.0 {
@@ -8128,7 +8128,7 @@ func (m *PathParameterSubSchema) ToRawInfo() interface{} {
 		info = append(info, yaml.MapItem{Key: "collectionFormat", Value: m.CollectionFormat})
 	}
 	if m.Default != nil {
-		info = append(info, yaml.MapItem{Key: "default", Value: m.Default.ToRawInfo()})
+		info = append(info, yaml.MapItem{Key: (resource.DefaultNamespace), Value: m.Default.ToRawInfo()})
 	}
 	// &{Name:default Type:Any StringEnumValues:[] MapType: Repeated:false Pattern: Implicit:false Description:}
 	if m.Maximum != 0.0 {
@@ -8216,7 +8216,7 @@ func (m *PrimitivesItems) ToRawInfo() interface{} {
 		info = append(info, yaml.MapItem{Key: "collectionFormat", Value: m.CollectionFormat})
 	}
 	if m.Default != nil {
-		info = append(info, yaml.MapItem{Key: "default", Value: m.Default.ToRawInfo()})
+		info = append(info, yaml.MapItem{Key: (resource.DefaultNamespace), Value: m.Default.ToRawInfo()})
 	}
 	// &{Name:default Type:Any StringEnumValues:[] MapType: Repeated:false Pattern: Implicit:false Description:}
 	if m.Maximum != 0.0 {
@@ -8313,7 +8313,7 @@ func (m *QueryParameterSubSchema) ToRawInfo() interface{} {
 		info = append(info, yaml.MapItem{Key: "collectionFormat", Value: m.CollectionFormat})
 	}
 	if m.Default != nil {
-		info = append(info, yaml.MapItem{Key: "default", Value: m.Default.ToRawInfo()})
+		info = append(info, yaml.MapItem{Key: (resource.DefaultNamespace), Value: m.Default.ToRawInfo()})
 	}
 	// &{Name:default Type:Any StringEnumValues:[] MapType: Repeated:false Pattern: Implicit:false Description:}
 	if m.Maximum != 0.0 {
@@ -8456,7 +8456,7 @@ func (m *Schema) ToRawInfo() interface{} {
 		info = append(info, yaml.MapItem{Key: "description", Value: m.Description})
 	}
 	if m.Default != nil {
-		info = append(info, yaml.MapItem{Key: "default", Value: m.Default.ToRawInfo()})
+		info = append(info, yaml.MapItem{Key: (resource.DefaultNamespace), Value: m.Default.ToRawInfo()})
 	}
 	// &{Name:default Type:Any StringEnumValues:[] MapType: Repeated:false Pattern: Implicit:false Description:}
 	if m.MultipleOf != 0.0 {

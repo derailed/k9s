@@ -24,7 +24,7 @@ func TestDSListAccess(t *testing.T) {
 }
 
 func TestDSHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "DESIRED", "CURRENT", "READY", "UP-TO-DATE", "AVAILABLE", "NODE_SELECTOR", "AGE"}, newDS().Header("default"))
+	assert.Equal(t, resource.Row{"NAME", "DESIRED", "CURRENT", "READY", "UP-TO-DATE", "AVAILABLE", "NODE_SELECTOR", "AGE"}, newDS().Header(resource.DefaultNamespace))
 }
 
 func TestDSFields(t *testing.T) {

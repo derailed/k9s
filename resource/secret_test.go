@@ -14,7 +14,7 @@ import (
 func TestSecretHeader(t *testing.T) {
 	assert.Equal(t,
 		resource.Row{"NAME", "TYPE", "DATA", "AGE"},
-		newSecret().Header("default"),
+		newSecret().Header(resource.DefaultNamespace),
 	)
 }
 

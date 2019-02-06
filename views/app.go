@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/derailed/k9s/resource/k8s"
 	"github.com/gdamore/tcell"
 	"github.com/k8sland/tview"
 	log "github.com/sirupsen/logrus"
@@ -31,9 +32,9 @@ type (
 	appView struct {
 		*tview.Application
 
-		refreshRate  int
 		version      string
-		defaultNS    string
+		refreshRate  int
+		namespace    string
 		pages        *tview.Pages
 		content      *tview.Pages
 		flashView    *flashView
@@ -56,10 +57,10 @@ func NewApp(v string, rate int, ns string) *appView {
 			Application: tview.NewApplication(),
 			pages:       tview.NewPages(),
 			version:     v,
+			refreshRate: rate,
+			namespace:   ns,
 			menuView:    newMenuView(),
 			content:     tview.NewPages(),
-			refreshRate: rate,
-			defaultNS:   ns,
 		}
 		app.command = newCommand(&app)
 		app.focusChanged = app.changedFocus
@@ -69,6 +70,11 @@ func NewApp(v string, rate int, ns string) *appView {
 }
 
 func (a *appView) Init() {
+	log.Info("🐶 K9s starting up...")
+	mustK8s()
+
+	initConfig(a.refreshRate, a.namespace)
+
 	a.infoView = newInfoView(a)
 	a.infoView.init()
 
@@ -87,12 +93,30 @@ func (a *appView) Init() {
 		main.SetDirection(tview.FlexRow)
 		main.AddItem(header, 7, 1, false)
 		main.AddItem(a.content, 0, 10, true)
-		main.AddItem(a.flashView, 1, 1, false)
+		main.AddItem(a.flashView, 2, 1, false)
 	}
 
 	a.pages.AddPage("main", main, true, false)
 	a.pages.AddPage("splash", NewSplash(a.version), true, true)
 	a.SetRoot(a.pages, true)
+}
+
+func initConfig(rate int, ns string) {
+	k9sCfg.load(K9sConfig)
+	k9sCfg.K9s.RefreshRate = rate
+	if len(ns) != 0 {
+		k9sCfg.K9s.Namespace.Active = ns
+	}
+	k9sCfg.validate()
+	k9sCfg.save(K9sConfig)
+}
+
+func mustK8s() {
+	k8s.ConfigOrDie()
+	if _, err := k8s.NewNamespace().List(defaultNS); err != nil {
+		panic(err)
+	}
+	log.Info("Kubernetes connectivity ✅")
 }
 
 // Run starts the application loop
@@ -105,7 +129,7 @@ func (a *appView) Run() {
 
 	a.command.defaultCmd()
 	if err := a.Application.Run(); err != nil {
-		log.Panic(err)
+		panic(err)
 	}
 }
 
@@ -114,6 +138,9 @@ func (a *appView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	case 'q':
 		a.quit(evt)
 		return nil
+	case '?':
+		a.helpCmd()
+		return evt
 	}
 
 	switch evt.Key() {
@@ -134,6 +161,11 @@ func (a *appView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
+func (a *appView) helpCmd() {
+	log.Info("Got help")
+	a.inject(newHelpView(a))
+}
+
 func (a *appView) resetCmd() {
 	a.cmdBuff = []rune{}
 }
@@ -149,10 +181,10 @@ func (a *appView) inject(p igniter) {
 	a.content.RemovePage("main")
 	a.content.AddPage("main", p, true, true)
 
+	var ctx context.Context
 	{
-		var ctx context.Context
 		ctx, a.cancel = context.WithCancel(context.TODO())
-		p.init(ctx, a.defaultNS)
+		p.init(ctx, k9sCfg.K9s.Namespace.Active)
 	}
 
 	go func() {

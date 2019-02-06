@@ -34,6 +34,26 @@ brew tap derailed/k9s && brew install k9s
 <br/>
 
 ---
+## Command Line Options
+
+* --namespace(-n) change the default namespace
+* --refresh(-r) changes the default(2sec) refresh
+
+<br/>
+
+---
+## PreFlight
+
+* K9s uses 256 colors terminal mode. On OSX make sure TERM is set accordingly.
+
+    ```shell
+    export TERM=xterm-256color
+    ```
+
+---
+<br/>
+
+---
 ## Commands
 
 + K9s uses 2 or 3 letters alias to navigate most K8s resource

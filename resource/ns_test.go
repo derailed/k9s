@@ -24,7 +24,7 @@ func TestNamespaceListAccess(t *testing.T) {
 }
 
 func TestNamespaceHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "STATUS", "AGE"}, newNamespace().Header("default"))
+	assert.Equal(t, resource.Row{"NAME", "STATUS", "AGE"}, newNamespace().Header(resource.DefaultNamespace))
 }
 
 func TestNamespaceFields(t *testing.T) {

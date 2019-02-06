@@ -14,23 +14,15 @@ func newPodView(t string, app *appView, list resource.List, c colorerFn) resourc
 	v := podView{newResourceView(t, app, list, c).(*resourceView)}
 	v.extraActionsFn = v.extraActions
 
-	logs := newLogsView(&v)
-	{
-		logs.setActions(keyActions{
-			tcell.KeyCtrlB: {description: "Back", action: v.stopLogs},
-			tcell.KeyCtrlK: {description: "Clear", action: v.clearLogs},
-		})
-		v.AddPage("logs", logs, true, false)
-	}
+	v.AddPage("logs", newLogsView(&v), true, false)
 
 	picker := newSelectList()
 	{
 		picker.SetSelectedFunc(func(i int, t, d string, r rune) {
-			log.Println("Selected", i, t, d, r)
 			v.sshInto(v.selectedItem, t)
 		})
 		picker.setActions(keyActions{
-			tcell.KeyCtrlB: {description: "Back", action: v.back},
+			tcell.KeyEscape: {description: "Back", action: v.back},
 		})
 		v.AddPage("choose", picker, true, false)
 	}
@@ -40,10 +32,6 @@ func newPodView(t string, app *appView, list resource.List, c colorerFn) resourc
 }
 
 // Handlers...
-
-func (v *podView) back(*tcell.EventKey) {
-	v.switchPage(v.list.GetName())
-}
 
 func (v *podView) logs(*tcell.EventKey) {
 	if !v.rowSelected() {
@@ -65,7 +53,7 @@ func (v *podView) logs(*tcell.EventKey) {
 	l.init()
 }
 
-func (v *podView) ssh(*tcell.EventKey) {
+func (v *podView) shell(*tcell.EventKey) {
 	if !v.rowSelected() {
 		return
 	}
@@ -92,7 +80,7 @@ func (v *podView) showPicker(cc []string) {
 }
 
 func (v *podView) sshInto(path, co string) {
-	v.app.flash(flashInfo, "SSH into pod", path)
+	v.app.flash(flashInfo, "Shell into pod", path)
 	ns, po := namespaced(path)
 	if len(co) == 0 {
 		run(v.app, "exec", "-it", "-n", ns, po, "--", "sh")
@@ -101,19 +89,9 @@ func (v *podView) sshInto(path, co string) {
 	}
 }
 
-func (v *podView) clearLogs(*tcell.EventKey) {
-	v.app.flash(flashInfo, "Clearing logs...")
-	v.GetPrimitive("logs").(*logsView).clearLogs()
-}
-
-func (v *podView) stopLogs(*tcell.EventKey) {
-	v.GetPrimitive("logs").(*logsView).stop()
-	v.switchPage(v.list.GetName())
-}
-
 func (v *podView) extraActions(aa keyActions) {
 	aa[tcell.KeyCtrlL] = newKeyHandler("Logs", v.logs)
-	aa[tcell.KeyCtrlS] = newKeyHandler("SSH", v.ssh)
+	aa[tcell.KeyCtrlS] = newKeyHandler("Shell", v.shell)
 }
 
 func fetchContainers(l resource.List, po string) ([]string, error) {

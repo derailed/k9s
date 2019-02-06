@@ -149,7 +149,7 @@ func (f *credentialsFile) tokenSource(ctx context.Context, scopes []string) (oau
 // ComputeTokenSource returns a token source that fetches access tokens
 // from Google Compute Engine (GCE)'s metadata server. It's only valid to use
 // this token source if your program is running on a GCE instance.
-// If no account is specified, "default" is used.
+// If no account is specified, (resource.DefaultNamespace) is used.
 // Further information about retrieving access tokens from the GCE metadata
 // server can be found at https://cloud.google.com/compute/docs/authentication.
 func ComputeTokenSource(account string) oauth2.TokenSource {
@@ -166,7 +166,7 @@ func (cs computeSource) Token() (*oauth2.Token, error) {
 	}
 	acct := cs.account
 	if acct == "" {
-		acct = "default"
+		acct = (resource.DefaultNamespace)
 	}
 	tokenJSON, err := metadata.Get("instance/service-accounts/" + acct + "/token")
 	if err != nil {
