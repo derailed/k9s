@@ -86,7 +86,6 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 	if a, ok := v.actions[key]; ok {
 		a.action(evt)
-		return evt
 	}
 
 	switch evt.Key() {
