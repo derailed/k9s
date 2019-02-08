@@ -52,7 +52,7 @@ var cmdMap = map[string]resCmd{
 	"cjo": {
 		title:     "CronJobs",
 		api:       "batch",
-		viewFn:    newResourceView,
+		viewFn:    newCronjobView,
 		listFn:    resource.NewCronJobList,
 		colorerFn: defaultColorer,
 	},

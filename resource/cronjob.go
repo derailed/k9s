@@ -5,15 +5,21 @@ import (
 
 	"github.com/derailed/k9s/resource/k8s"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 )
 
 // CronJob tracks a kubernetes resource.
-type CronJob struct {
-	*Base
-	instance *batchv1beta1.CronJob
-}
+type (
+	TriggerableCronjob interface {
+		Trigger(path string) error
+	}
+
+	CronJob struct {
+		*Base
+		instance *batchv1beta1.CronJob
+	}
+)
 
 // NewCronJobList returns a new resource list.
 func NewCronJobList(ns string) List {
@@ -106,6 +112,11 @@ func (r *CronJob) Fields(ns string) Row {
 		lastScheduled,
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
+}
+
+func (r *CronJob) Trigger(path string) error {
+	ns, n := namespaced(path)
+	return r.caller.(k8s.TriggerableCronjob).Trigger(ns, n)
 }
 
 // ExtFields returns extended fields in relation to headers.
