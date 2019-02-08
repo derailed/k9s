@@ -13,6 +13,7 @@
 package unix
 
 import (
+	"runtime"
 	"syscall"
 	"unsafe"
 )
@@ -187,6 +188,13 @@ func IoctlGetWinsize(fd int, req uint) (*Winsize, error) {
 func IoctlGetTermios(fd int, req uint) (*Termios, error) {
 	var value Termios
 	err := ioctl(fd, req, uintptr(unsafe.Pointer(&value)))
+	return &value, err
+}
+
+func IoctlGetPtmget(fd int, req uint) (*Ptmget, error) {
+	var value Ptmget
+	err := ioctl(fd, req, uintptr(unsafe.Pointer(&value)))
+	runtime.KeepAlive(value)
 	return &value, err
 }
 

@@ -5,6 +5,7 @@ import (
 
 	"github.com/gdamore/tcell"
 	"github.com/k8sland/tview"
+	log "github.com/sirupsen/logrus"
 )
 
 const defaultPrompt = "%c> %s"
@@ -12,8 +13,9 @@ const defaultPrompt = "%c> %s"
 type cmdView struct {
 	*tview.TextView
 
-	icon rune
-	text string
+	activated bool
+	icon      rune
+	text      string
 }
 
 func newCmdView(ic rune) *cmdView {
@@ -26,6 +28,10 @@ func newCmdView(ic rune) *cmdView {
 		v.SetTextColor(tcell.ColorAqua)
 	}
 	return &v
+}
+
+func (v *cmdView) inCmdMode() bool {
+	return v.activated
 }
 
 func (v *cmdView) activate() {
@@ -54,9 +60,12 @@ func (v *cmdView) changed(s string) {
 }
 
 func (v *cmdView) active(f bool) {
+	v.activated = f
 	if f {
+		log.Debug("CmdView was activated...")
 		v.activate()
-		return
+	} else {
+		log.Debug("CmdView was deactivated!")
+	  v.Clear()
 	}
-	v.Clear()
 }

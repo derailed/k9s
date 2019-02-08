@@ -4,17 +4,21 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/config"
+	"github.com/derailed/k9s/resource/k8s"
 	"github.com/derailed/k9s/views"
 	"github.com/gdamore/tcell"
 	"github.com/k8sland/tview"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
+
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
 const (
 	defaultRefreshRate = 2 // secs
 	defaultLogLevel    = "info"
-	defaultNamespace   = ""
 )
 
 var (
@@ -23,8 +27,8 @@ var (
 	date        = "n/a"
 	refreshRate int
 	logLevel    string
-	namespace   string
 	kubeconfig  string
+	k8sFlags    *genericclioptions.ConfigFlags
 
 	rootCmd = &cobra.Command{
 		Use:   "k9s",
@@ -34,16 +38,16 @@ var (
 	}
 	versionCmd = &cobra.Command{
 		Use:   "version",
-		Short: "Print k9s version info",
-		Long:  "Prints k9s version info",
+		Short: "Print version info",
+		Long:  "Prints version info",
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Printf("Version:%s GitCommit:%s On %s\n", version, commit, date)
 		},
 	}
 	infoCmd = &cobra.Command{
 		Use:   "info",
-		Short: "Print k9s configuration information",
-		Long:  "Print k9s configuration information",
+		Short: "Print configuration information",
+		Long:  "Print configuration information",
 		Run: func(cmd *cobra.Command, args []string) {
 			const (
 				cyan    = "\033[1;36m%s\033[0m"
@@ -53,9 +57,9 @@ var (
 			fmt.Printf(cyan+"\n", strings.Repeat("-", 80))
 			fmt.Printf(green+"\n", "🐶 K9s Information")
 			fmt.Printf(magenta, fmt.Sprintf("%-10s", "LogFile:"))
-			fmt.Printf("%s\n", views.K9sLogs)
+			fmt.Printf("%s\n", config.K9sLogs)
 			fmt.Printf(magenta, fmt.Sprintf("%-10s", "Config:"))
-			fmt.Printf("%s\n", views.K9sConfig)
+			fmt.Printf("%s\n", config.K9sConfigFile)
 			fmt.Printf(cyan+"\n", strings.Repeat("-", 80))
 		},
 	}
@@ -72,18 +76,18 @@ func init() {
 	)
 
 	rootCmd.Flags().StringVarP(
-		&namespace,
-		"namespace", "n",
-		defaultNamespace,
-		"Uses a given namespace versus all-namespaces",
-	)
-
-	rootCmd.Flags().StringVarP(
 		&logLevel,
 		"logLevel", "l",
 		defaultLogLevel,
 		"Specify a log level (info, warn, debug, error, fatal, panic, trace)",
 	)
+
+	k8sFlags = genericclioptions.NewConfigFlags(false)
+	k8sFlags.AddFlags(rootCmd.PersistentFlags())
+}
+
+func initK8s() {
+	k8s.InitConnection(k8sFlags)
 }
 
 // Execute root command
@@ -101,12 +105,13 @@ func run(cmd *cobra.Command, args []string) {
 	log.SetLevel(level)
 	log.SetFormatter(&log.TextFormatter{FullTimestamp: true, ForceColors: true})
 
+	initK8s()
 	initStyles()
 	initKeys()
 
 	app := views.NewApp()
 	{
-		app.Init(version, refreshRate, namespace)
+		app.Init(version, refreshRate, k8sFlags)
 		app.Run()
 	}
 }
@@ -147,6 +152,7 @@ func initKeys() {
 	tcell.KeyNames[tcell.Key(views.KeyX)] = "x"
 	tcell.KeyNames[tcell.Key(views.KeyY)] = "y"
 	tcell.KeyNames[tcell.Key(views.KeyZ)] = "z"
+	tcell.KeyNames[tcell.Key(views.KeyHelp)] = "?"
 }
 
 func initStyles() {

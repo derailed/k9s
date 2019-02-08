@@ -6,7 +6,6 @@ import (
 	"github.com/derailed/k9s/resource"
 	"github.com/derailed/k9s/resource/k8s"
 	m "github.com/petergtz/pegomock"
-	pegomock "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
@@ -120,7 +119,7 @@ func TestCTXListData(t *testing.T) {
 	for i := 0; i < 2; i++ {
 		assert.Nil(t, l.Reconcile())
 	}
-	ca.VerifyWasCalled(pegomock.Times(2)).List(resource.NotNamespaced)
+	ca.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
 
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))

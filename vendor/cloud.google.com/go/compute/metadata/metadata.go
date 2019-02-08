@@ -446,11 +446,11 @@ func (c *Client) ProjectAttributeValue(attr string) (string, error) {
 }
 
 // Scopes returns the service account scopes for the given account.
-// The account may be empty or the string (resource.DefaultNamespace) to use the instance's
+// The account may be empty or the string "default" to use the instance's
 // main account.
 func (c *Client) Scopes(serviceAccount string) ([]string, error) {
 	if serviceAccount == "" {
-		serviceAccount = (resource.DefaultNamespace)
+		serviceAccount = "default"
 	}
 	return c.lines("instance/service-accounts/" + serviceAccount + "/scopes")
 }

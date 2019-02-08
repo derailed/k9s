@@ -14,7 +14,7 @@ import (
 const (
 	menuFmt      = " [dodgerblue::b]%s[white::d]%s "
 	menuSepFmt   = " [dodgerblue::b]<%s> [white::d]%s "
-	menuIndexFmt = " [dodgerblue::b]<%d> [white::d]%s "
+	menuIndexFmt = " [fuchsia::b]<%d> [white::d]%s "
 	maxRows      = 5
 	colLen       = 20
 )
@@ -76,15 +76,16 @@ func (v *menuView) setMenu(hh hints) {
 	var row, col int
 	firstNS, firstCmd := true, true
 	for _, h := range hh {
-		if len(h.mnemonic) == 1 && firstNS {
+		_, err := strconv.Atoi(h.mnemonic)
+		if err == nil && firstNS {
 			row = 0
 			col = 2
 			firstNS = false
 		}
 
-		if len(h.mnemonic) > 1 && firstCmd {
+		if err != nil && firstCmd {
 			row = 0
-			col++
+			col = 0
 			firstCmd = false
 		}
 		c := tview.NewTableCell(v.item(h))
@@ -104,11 +105,11 @@ func (v *menuView) item(h hint) string {
 	}
 
 	var s string
-	// if strings.ToLower(h.display)[0] == h.mnemonic[0] {
-	// 	s = fmt.Sprintf(menuFmt, strings.ToUpper(h.mnemonic), h.display[1:])
-	// } else {
-	s = fmt.Sprintf(menuSepFmt, strings.ToUpper(h.mnemonic), h.display)
-	// }
+	if len(h.mnemonic) == 1 {
+		s = fmt.Sprintf(menuSepFmt, strings.ToLower(h.mnemonic), h.display)
+	} else {
+	  s = fmt.Sprintf(menuSepFmt, strings.ToUpper(h.mnemonic), h.display)
+	}
 	return s
 }
 
@@ -117,14 +118,11 @@ func (a keyActions) toHints() hints {
 	for k := range a {
 		kk = append(kk, int(k))
 	}
-	// sort.Ints(kk)
+	sort.Ints(kk)
 
 	hh := make(hints, 0, len(a))
 	for _, k := range kk {
 		if name, ok := tcell.KeyNames[tcell.Key(k)]; ok {
-			if name == "Backspace2" {
-				name = "delete"
-			}
 			hh = append(hh, hint{
 				mnemonic: name,
 				display:  a[tcell.Key(k)].description})
@@ -152,7 +150,7 @@ const (
 
 // Defines char keystrokes
 const (
-	KeyA int32 = iota + 97
+	KeyA tcell.Key = iota + 97
 	KeyB
 	KeyC
 	KeyD
@@ -178,6 +176,7 @@ const (
 	KeyX
 	KeyY
 	KeyZ
+	KeyHelp = 63
 )
 
 var numKeys = map[int]int32{

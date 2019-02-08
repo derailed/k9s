@@ -1,16 +1,15 @@
 package k8s
 
 import (
-	"io/ioutil"
-
-	log "github.com/sirupsen/logrus"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	restclient "k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	clientcmd "k8s.io/client-go/tools/clientcmd"
 	"k8s.io/kubernetes/pkg/kubectl/metricsutil"
 	"k8s.io/kubernetes/staging/src/k8s.io/apiextensions-apiserver/pkg/client/clientset/clientset"
 	metricsapi "k8s.io/metrics/pkg/apis/metrics"
@@ -21,13 +20,9 @@ import (
 const NA = "n/a"
 
 var (
-	conn                        connection
-	supportedMetricsAPIVersions = []string{"v1beta1"}
+	conn                        connection = &apiServer{}
+	supportedMetricsAPIVersions            = []string{"v1beta1"}
 )
-
-func init() {
-	conn = &apiServer{}
-}
 
 type (
 	// ApiGroup represents a K8s resource descriptor.
@@ -41,48 +36,82 @@ type (
 	// Collection of empty interfaces.
 	Collection []interface{}
 
-	// Res K8s api server calls
+	// Res K8s api server calls.
 	Res interface {
 		Get(ns string, name string) (interface{}, error)
 		List(ns string) (Collection, error)
 		Delete(ns string, name string) error
 	}
 
+	// Connection represents a k8s api server connection.
 	connection interface {
+		configAccess() clientcmd.ConfigAccess
 		restConfigOrDie() *restclient.Config
-		apiConfigOrDie() *clientcmdapi.Config
+		apiConfigOrDie() clientcmdapi.Config
 		dialOrDie() kubernetes.Interface
 		dynDialOrDie() dynamic.Interface
 		nsDialOrDie() dynamic.NamespaceableResourceInterface
 		mxsDial() (*versioned.Clientset, error)
 		heapsterDial() (*metricsutil.HeapsterMetricsClient, error)
 		getClusterName() string
-		setClusterName(n string)
 		hasMetricsServer() bool
 	}
 
 	apiServer struct {
+		flags           *genericclioptions.ConfigFlags
 		client          kubernetes.Interface
 		dClient         dynamic.Interface
 		csClient        *clientset.Clientset
 		nsClient        dynamic.NamespaceableResourceInterface
 		heapsterClient  *metricsutil.HeapsterMetricsClient
 		mxsClient       *versioned.Clientset
-		cluster         string
+		clusterName     string
 		useMetricServer bool
 	}
 )
 
-func (a *apiServer) getClusterName() string {
-	return a.cluster
+// InitConnection initialize connection from command line args.
+func InitConnection(flags *genericclioptions.ConfigFlags) {
+	conn = &apiServer{flags: flags}
 }
 
-func (a *apiServer) setClusterName(n string) {
-	a.cluster = n
+func (a *apiServer) getClusterName() string {
+	a.checkCurrentConfig()
+	return a.clusterName
 }
 
 func (a *apiServer) hasMetricsServer() bool {
 	return a.useMetricServer
+}
+
+// ActiveClusterOrDie Fetch the current cluster based on current context.
+func ActiveClusterOrDie() string {
+	cfg := conn.apiConfigOrDie()
+	return cfg.Contexts[cfg.CurrentContext].Cluster
+}
+
+// AllClustersOrDie fetch all available clusters from config.
+func AllClustersOrDie() []string {
+	cfg := conn.apiConfigOrDie()
+
+	cc := make([]string, 0, len(cfg.Clusters))
+	for k := range cfg.Clusters {
+		cc = append(cc, k)
+	}
+	return cc
+}
+
+// AllNamespacesOrDie fetch all available namespaces on current cluster.
+func AllNamespacesOrDie() []string {
+	nn, err := NewNamespace().List("")
+	if err != nil {
+		panic(err)
+	}
+	ss := make([]string, len(nn))
+	for i, n := range nn {
+		ss[i] = n.(v1.Namespace).Name
+	}
+	return ss
 }
 
 // DialOrDie returns a handle to api server or die.
@@ -167,42 +196,34 @@ func (a *apiServer) mxsDial() (*versioned.Clientset, error) {
 		return a.mxsClient, nil
 	}
 
-	opts := clientcmd.NewDefaultPathOptions()
-	dat, err := ioutil.ReadFile(opts.GetDefaultFilename())
-	if err != nil {
-		return nil, err
-	}
-	rc, err := clientcmd.RESTConfigFromKubeConfig(dat)
-	if err != nil {
-		return nil, err
-	}
-
-	a.mxsClient, err = versioned.NewForConfig(rc)
+	var err error
+	a.mxsClient, err = versioned.NewForConfig(a.restConfigOrDie())
 	return a.mxsClient, err
 }
 
 // ConfigOrDie check kubernetes cluster config.
 // Dies if no config is found or incorrect.
 func ConfigOrDie() {
-	var srv *apiServer
-	cfg := srv.apiConfigOrDie()
-	if clientcmdapi.IsConfigEmpty(cfg) {
+	cfg := conn.apiConfigOrDie()
+	if clientcmdapi.IsConfigEmpty(&cfg) {
 		panic("K8s config file load failed. Please check your .kube/config or $KUBECONFIG env")
 	}
 }
 
-func (*apiServer) apiConfigOrDie() *clientcmdapi.Config {
-	paths := clientcmd.NewDefaultPathOptions()
-	c, err := paths.GetStartingConfig()
+func (a *apiServer) configAccess() clientcmd.ConfigAccess {
+	return a.flags.ToRawKubeConfigLoader().ConfigAccess()
+}
+
+func (a *apiServer) apiConfigOrDie() clientcmdapi.Config {
+	c, err := a.flags.ToRawKubeConfigLoader().RawConfig()
 	if err != nil {
 		panic(err)
 	}
 	return c
 }
 
-func (*apiServer) restConfigOrDie() *restclient.Config {
-	opts := clientcmd.NewDefaultPathOptions()
-	cfg, err := clientcmd.BuildConfigFromFlags("", opts.GetDefaultFilename())
+func (a *apiServer) restConfigOrDie() *restclient.Config {
+	cfg, err := a.flags.ToRESTConfig()
 	if err != nil {
 		panic(err)
 	}
@@ -210,20 +231,18 @@ func (*apiServer) restConfigOrDie() *restclient.Config {
 }
 
 func (a *apiServer) checkCurrentConfig() {
-	cfg, err := clientcmd.NewDefaultPathOptions().GetStartingConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
+	cfg := a.apiConfigOrDie()
+	currentCluster := cfg.Contexts[cfg.CurrentContext].Cluster
 
-	if len(a.getClusterName()) == 0 {
-		a.setClusterName(cfg.CurrentContext)
+	if len(a.clusterName) == 0 {
+		a.clusterName = currentCluster
 		a.useMetricServer = a.supportsMxServer()
 		return
 	}
 
-	if a.getClusterName() != cfg.CurrentContext {
+	if a.clusterName != currentCluster {
 		a.reset()
-		a.setClusterName(cfg.CurrentContext)
+		a.clusterName = currentCluster
 		a.useMetricServer = a.supportsMxServer()
 	}
 }
@@ -231,7 +250,7 @@ func (a *apiServer) checkCurrentConfig() {
 func (a *apiServer) reset() {
 	a.client, a.dClient, a.nsClient = nil, nil, nil
 	a.heapsterClient, a.mxsClient = nil, nil
-	a.setClusterName("")
+	a.clusterName = ""
 }
 
 func (a *apiServer) supportsMxServer() bool {

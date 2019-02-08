@@ -3,7 +3,9 @@ package views
 import (
 	"fmt"
 
+	"github.com/derailed/k9s/config"
 	"github.com/derailed/k9s/resource"
+	"github.com/derailed/k9s/resource/k8s"
 )
 
 type command struct {
@@ -16,7 +18,7 @@ func newCommand(app *appView) *command {
 
 // DefaultCmd reset default command ie show pods.
 func (c *command) defaultCmd() {
-	c.run(k9sCfg.K9s.View.Active)
+	c.run(config.Root.ActiveView())
 }
 
 // Helpers...
@@ -24,12 +26,19 @@ func (c *command) defaultCmd() {
 // Exec the command by showing associated display.
 func (c *command) run(cmd string) {
 	var v igniter
-	if res, ok := cmdMap[cmd]; ok {
-		v = res.viewFn(res.title, c.app, res.listFn(defaultNS), res.colorerFn)
-		c.app.flash(flashInfo, "Viewing all "+res.title+"...")
-		c.exec(cmd, v)
-		return
+	switch cmd {
+	case "q", "quit":
+		c.app.quit(nil)
+	case "?", "help", "alias":
+		c.app.help(nil)
+	default:
+		if res, ok := cmdMap[cmd]; ok {
+			v = res.viewFn(res.title, c.app, res.listFn(resource.DefaultNamespace), res.colorerFn)
+			c.app.flash(flashInfo, "Viewing all "+res.title+"...")
+			c.exec(cmd, v)
+			return
 	}
+}
 
 	res, ok := getCRDS()[cmd]
 	if !ok {
@@ -52,8 +61,8 @@ func (c *command) run(cmd string) {
 
 func (c *command) exec(cmd string, v igniter) {
 	if v != nil {
-		k9sCfg.K9s.View.Active = cmd
-		k9sCfg.validateAndSave()
+		config.Root.SetActiveView(cmd)
+		config.Root.Save(k8s.ClusterInfo{})
 		c.app.inject(v)
 	}
 }

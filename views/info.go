@@ -19,10 +19,16 @@ func newInfoView(app *appView) *infoView {
 
 func (v *infoView) init() {
 	var row int
+
 	cluster := resource.NewCluster()
 	v.SetCell(row, 0, v.sectionCell("Cluster"))
 	v.SetCell(row, 1, v.infoCell(cluster.Name()))
 	row++
+
+	v.SetCell(row, 0, v.sectionCell("K9s Version"))
+	v.SetCell(row, 1, v.infoCell(v.app.version))
+	row++
+
 	rev := cluster.Version()
 	v.SetCell(row, 0, v.sectionCell("K8s Version"))
 	v.SetCell(row, 1, v.infoCell(rev))
@@ -37,7 +43,7 @@ func (v *infoView) init() {
 
 func (*infoView) sectionCell(t string) *tview.TableCell {
 	c := tview.NewTableCell(t + ":")
-	c.SetAlign(tview.AlignRight)
+	c.SetAlign(tview.AlignLeft)
 	return c
 }
 
@@ -53,7 +59,7 @@ func (v *infoView) refresh() {
 
 	cluster := resource.NewCluster()
 	v.GetCell(row, 1).SetText(cluster.Name())
-	row++
+	row+=2
 	rev := cluster.Version()
 	v.GetCell(row, 1).SetText(rev)
 	row++

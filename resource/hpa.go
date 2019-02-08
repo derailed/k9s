@@ -106,10 +106,15 @@ func (r *HPA) Fields(ns string) Row {
 		target = strconv.Itoa(int(*i.Status.CurrentCPUUtilizationPercentage))
 	}
 
+	var current int32
+	if i.Spec.TargetCPUUtilizationPercentage != nil {
+		current = *i.Spec.TargetCPUUtilizationPercentage
+	}
+
 	return append(ff,
 		i.ObjectMeta.Name,
 		i.Spec.ScaleTargetRef.Name,
-		fmt.Sprintf("%s٪/%d٪", target, *i.Spec.TargetCPUUtilizationPercentage),
+		fmt.Sprintf("%s٪/%d٪", target, current),
 		strconv.Itoa(int(*i.Spec.MinReplicas)),
 		strconv.Itoa(int(i.Spec.MaxReplicas)),
 		strconv.Itoa(int(i.Status.CurrentReplicas)),

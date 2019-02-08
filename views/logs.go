@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/derailed/k9s/config"
 	"github.com/derailed/k9s/resource"
 	"github.com/gdamore/tcell"
 	"github.com/k8sland/tview"
@@ -29,7 +30,7 @@ type logsView struct {
 }
 
 func newLogsView(pv *podView) *logsView {
-	maxBuff := k9sCfg.K9s.LogBufferSize
+	maxBuff := config.Root.K9s.LogBufferSize
 	v := logsView{
 		Pages:      tview.NewPages(),
 		pv:         pv,
@@ -38,11 +39,11 @@ func newLogsView(pv *podView) *logsView {
 	}
 	v.setActions(keyActions{
 		tcell.KeyEscape: {description: "Back", action: v.back},
-		tcell.KeyCtrlK:  {description: "Clear", action: v.clearLogs},
-		tcell.KeyCtrlU:  {description: "Top", action: v.top},
-		tcell.KeyCtrlD:  {description: "Bottom", action: v.bottom},
-		tcell.KeyCtrlF:  {description: "Page Up", action: v.pageUp},
-		tcell.KeyCtrlB:  {description: "Page Down", action: v.pageDown},
+		KeyC:            {description: "Clear", action: v.clearLogs},
+		KeyU:            {description: "Top", action: v.top},
+		KeyD:            {description: "Bottom", action: v.bottom},
+		KeyF:            {description: "Page Up", action: v.pageUp},
+		KeyB:            {description: "Page Down", action: v.pageDown},
 	})
 	v.SetInputCapture(v.keyboard)
 
@@ -65,15 +66,17 @@ func (v *logsView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	i, err := strconv.Atoi(string(evt.Rune()))
-	if err != nil {
-		log.Error("Boom!", err)
-		return evt
+	if m, ok := v.actions[tcell.Key(evt.Rune())]; ok {
+		if m.action != nil {
+			m.action(evt)
+			return nil
+		}
 	}
-	if _, ok := numKeys[i]; ok {
-		v.load(i - 1)
-		v.pv.app.cmdBuff.reset()
-		return nil
+
+	if i, err := strconv.Atoi(string(evt.Rune())); err == nil {
+		if _, ok := numKeys[i]; ok {
+			v.load(i - 1)
+		}
 	}
 	return evt
 }
@@ -174,7 +177,7 @@ func (v *logsView) doLoad(path, co string) error {
 	if !ok {
 		return fmt.Errorf("Resource %T is not tailable", v.pv.list.Resource)
 	}
-	maxBuff := k9sCfg.K9s.LogBufferSize
+	maxBuff := config.Root.K9s.LogBufferSize
 	cancelFn, err := res.Logs(c, ns, po, co, int64(maxBuff))
 	if err != nil {
 		cancelFn()

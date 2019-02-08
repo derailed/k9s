@@ -1,5 +1,9 @@
 package views
 
+import(
+	log "github.com/sirupsen/logrus"
+)
+
 const maxBuff = 10
 
 type buffWatcher interface {
@@ -23,10 +27,12 @@ func newCmdBuff(key rune) *cmdBuff {
 }
 
 func (c *cmdBuff) isActive() bool {
+	log.Debugf("Cmd buff `%s Active:%t", string(c.hotKey), c.active)
 	return c.active
 }
 
 func (c *cmdBuff) setActive(b bool) {
+	log.Debugf("Cmd buff `%s SetActive:%t", string(c.hotKey), b)
 	c.active = b
 	c.fireActive(c.active)
 }
@@ -55,10 +61,9 @@ func (c *cmdBuff) clear() {
 }
 
 func (c *cmdBuff) reset() {
-	c.active = false
 	c.clear()
 	c.fireChanged()
-	c.fireActive(c.active)
+	c.setActive(false)
 }
 
 func (c *cmdBuff) empty() bool {

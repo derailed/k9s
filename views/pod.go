@@ -90,8 +90,8 @@ func (v *podView) sshInto(path, co string) {
 }
 
 func (v *podView) extraActions(aa keyActions) {
-	aa[tcell.KeyCtrlL] = newKeyHandler("Logs", v.logs)
-	aa[tcell.KeyCtrlS] = newKeyHandler("Shell", v.shell)
+	aa[KeyL] = newKeyHandler("Logs", v.logs)
+	aa[KeyS] = newKeyHandler("Shell", v.shell)
 }
 
 func fetchContainers(l resource.List, po string) ([]string, error) {

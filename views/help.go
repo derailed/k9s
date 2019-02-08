@@ -14,6 +14,7 @@ type helpView struct {
 	*tview.Pages
 
 	app     *appView
+	title   string
 	current igniter
 	keys    keyActions
 }
@@ -21,6 +22,7 @@ type helpView struct {
 func newHelpView(app *appView) *helpView {
 	return &helpView{
 		app:     app,
+		title:   "Help",
 		current: app.content.GetPrimitive("main").(igniter),
 		Pages:   tview.NewPages(),
 	}
@@ -79,6 +81,10 @@ func (v *helpView) init(context.Context, string) {
 	v.app.SetFocus(v.CurrentPage().Item)
 }
 
+func (v *helpView) getTitle() string {
+	return v.title
+}
+
 func (v *helpView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	switch evt.Key() {
 	case tcell.KeyEscape:
@@ -86,9 +92,9 @@ func (v *helpView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	case tcell.KeyEnter:
 		t := v.GetPrimitive("main").(*tview.Table)
-		r, c := t.GetSelection()
+		r, _ := t.GetSelection()
 		if r > 0 {
-			v.app.command.run(strings.TrimSpace(t.GetCell(r, c).Text))
+			v.app.command.run(strings.TrimSpace(t.GetCell(r, 0).Text))
 			return nil
 		}
 	}

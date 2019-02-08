@@ -10,6 +10,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/derailed/k9s/config"
 	"github.com/derailed/k9s/resource"
 	"github.com/derailed/k9s/resource/k8s"
 	"github.com/gdamore/tcell"
@@ -96,12 +97,16 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 				return
 			case <-time.After(time.Duration(initTick) * time.Second):
 				v.refresh()
-				initTick = float64(k9sCfg.K9s.RefreshRate)
+				initTick = float64(config.Root.K9s.RefreshRate)
 			}
 		}
 	}(ctx)
 	v.refreshActions()
 	v.CurrentPage().Item.(*tableView).table.Select(0, 0)
+}
+
+func (v *resourceView) getTitle() string {
+	return v.title
 }
 
 func (v *resourceView) selChanged(r, c int) {
@@ -209,8 +214,8 @@ func (v *resourceView) doSwitchNamespace(ns string) {
 	v.getTV().resetTitle()
 	v.getTV().table.Select(0, 0)
 	v.app.cmdBuff.reset()
-	k9sCfg.K9s.Namespace.Active = v.selectedNS
-	k9sCfg.validateAndSave()
+	config.Root.SetActiveNamespace(v.selectedNS)
+	config.Root.Save(k8s.ClusterInfo{})
 }
 
 // Utils...
@@ -299,61 +304,42 @@ func (v *resourceView) refreshActions() {
 		return
 	}
 
-	nn, err := k8s.NewNamespace().List(defaultNS)
+	nn, err := k8s.NewNamespace().List(resource.AllNamespaces)
 	if err != nil {
 		v.app.flash(flashErr, "Unable to retrieve namespaces", err.Error())
 		return
 	}
 
 	if v.list.Namespaced() && !v.list.AllNamespaces() {
-		if !inNSList(nn, v.list.GetNamespace()) {
+		if !config.InNSList(nn, v.list.GetNamespace()) {
 			v.list.SetNamespace(resource.DefaultNamespace)
 		}
 	}
 
 	aa := keyActions{}
 	if v.list.Access(resource.NamespaceAccess) {
-		v.namespaces = make(map[int]string, maxFavorites)
-		var i int
-		for _, n := range k9sCfg.K9s.Namespace.Favorites {
-			if i > maxFavorites {
-				break
-			}
-
-			if n == resource.AllNamespace {
-				aa[tcell.Key(numKeys[i])] = newKeyHandler(resource.AllNamespace, v.switchNamespace)
-				v.namespaces[i] = resource.AllNamespaces
-				i++
-				continue
-			}
-
-			if inNSList(nn, n) {
-				aa[tcell.Key(numKeys[i])] = newKeyHandler(n, v.switchNamespace)
-				v.namespaces[i] = n
-				i++
-			} else {
-				k9sCfg.rmFavNS(n)
-				k9sCfg.validateAndSave()
-			}
+		v.namespaces = make(map[int]string, config.MaxFavoritesNS)
+		for i, n := range config.Root.FavNamespaces() {
+			aa[tcell.Key(numKeys[i])] = newKeyHandler(n, v.switchNamespace)
+			v.namespaces[i] = n
 		}
 	}
 
 	if v.list.Access(resource.EditAccess) {
-		aa[tcell.KeyCtrlE] = newKeyHandler("Edit", v.edit)
+		aa[KeyE] = newKeyHandler("Edit", v.edit)
 	}
 
 	if v.list.Access(resource.DeleteAccess) {
-		aa[tcell.KeyBackspace2] = newKeyHandler("Delete", v.delete)
+		aa[tcell.KeyCtrlD] = newKeyHandler("Delete", v.delete)
 	}
 	if v.list.Access(resource.ViewAccess) {
-		aa[tcell.KeyCtrlV] = newKeyHandler("View", v.view)
+		aa[KeyV] = newKeyHandler("View", v.view)
 	}
 	if v.list.Access(resource.DescribeAccess) {
 		aa[tcell.KeyCtrlX] = newKeyHandler("Describe", v.describe)
 	}
 
-	aa[tcell.KeyCtrlQ] = newKeyHandler("Quit", v.app.quit)
-	aa[tcell.KeyCtrlA] = newKeyHandler("Aliases", v.app.help)
+	aa[KeyHelp] = newKeyHandler("Help", v.app.noop)
 
 	if v.extraActionsFn != nil {
 		v.extraActionsFn(aa)

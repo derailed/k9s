@@ -34,15 +34,17 @@ func NewContext() Res {
 
 // Get a Context.
 func (*Context) Get(_, n string) (interface{}, error) {
-	return &NamedContext{Name: n, Context: conn.apiConfigOrDie().Contexts[n]}, nil
+	return &NamedContext{
+		Name: n,
+		Context: conn.apiConfigOrDie().Contexts[n],
+	}, nil
 }
 
 // List all Contexts in a given namespace
 func (*Context) List(string) (Collection, error) {
-	conn := conn.apiConfigOrDie()
-
-	cc := make([]interface{}, 0, len(conn.Contexts))
-	for k, v := range conn.Contexts {
+	con := conn.apiConfigOrDie()
+	cc := make([]interface{}, 0, len(con.Contexts))
+	for k, v := range con.Contexts {
 		cc = append(cc, &NamedContext{k, v})
 	}
 	return cc, nil
@@ -50,23 +52,18 @@ func (*Context) List(string) (Collection, error) {
 
 // Delete a Context
 func (*Context) Delete(_, n string) error {
-	conn := conn.apiConfigOrDie()
-
-	if conn.CurrentContext == n {
+	con := conn.apiConfigOrDie()
+	if con.CurrentContext == n {
 		return fmt.Errorf("trying to delete your current context %s", n)
 	}
 
-	acc := clientcmd.NewDefaultPathOptions()
-
-	delete(conn.Contexts, n)
-	return clientcmd.ModifyConfig(acc, *conn, true)
+	delete(con.Contexts, n)
+	return clientcmd.ModifyConfig(conn.configAccess(), con, true)
 }
 
 // Switch cluster Context.
 func (*Context) Switch(n string) error {
-	conn := conn.apiConfigOrDie()
-
-	conn.CurrentContext = n
-	acc := clientcmd.NewDefaultPathOptions()
-	return clientcmd.ModifyConfig(acc, *conn, true)
+	con := conn.apiConfigOrDie()
+	con.CurrentContext = n
+	return clientcmd.ModifyConfig(conn.configAccess(), con, true)
 }

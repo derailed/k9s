@@ -9,6 +9,7 @@ import (
 	"github.com/derailed/k9s/resource"
 	"github.com/gdamore/tcell"
 	"github.com/k8sland/tview"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -73,10 +74,11 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		if v.cmdBuff.isActive() {
 			v.cmdBuff.add(evt.Rune())
 		}
-
 		switch evt.Rune() {
 		case v.cmdBuff.hotKey:
-			if !v.cmdBuff.isActive() {
+			if !v.app.cmdView.inCmdMode() {
+				v.app.flash(flashInfo,"Entering filtering mode...")
+				log.Info("K9s entering filtering mode...")
 				v.cmdBuff.setActive(true)
 			}
 			return evt
@@ -85,7 +87,9 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if a, ok := v.actions[key]; ok {
-		a.action(evt)
+		if ! v.app.cmdView.inCmdMode() {
+			a.action(evt)
+		}
 	}
 
 	switch evt.Key() {
@@ -119,6 +123,7 @@ func (v *tableView) filterData(filter fmt.Stringer) {
 	rx, err := regexp.Compile(filter.String())
 	if err != nil {
 		v.app.flash(flashErr, "Invalid search expression")
+		v.cmdBuff.clear()
 		return
 	}
 	for k, row := range v.data.Rows {

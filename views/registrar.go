@@ -154,6 +154,13 @@ var cmdMap = map[string]resCmd{
 		listFn:    resource.NewRoleBindingList,
 		colorerFn: defaultColorer,
 	},
+	"rc": {
+		title:     "ReplicationController",
+		api:       "v1",
+		viewFn:    newResourceView,
+		listFn:    resource.NewReplicationControllerList,
+		colorerFn: rsColorer,
+	},
 	"ro": {
 		title:     "Roles",
 		api:       "rbac.authorization.k8s.io",

@@ -42,7 +42,7 @@ message LogLine {
 
 message RequestLog {
   required string app_id = 1;
-  optional string module_id = 37 [default=(resource.DefaultNamespace)];
+  optional string module_id = 37 [default="default"];
   required string version_id = 2;
   required bytes request_id = 3;
   optional LogOffset offset = 35;
@@ -88,7 +88,7 @@ message RequestLog {
 }
 
 message LogModuleVersion {
-  optional string module_id = 1 [default=(resource.DefaultNamespace)];
+  optional string module_id = 1 [default="default"];
   optional string version_id = 2;
 }
 

@@ -34,7 +34,7 @@ This basic example creates a box titled "Hello, World!" and displays it in your 
 package main
 
 import (
-	"github.com/rivo/tview"
+	"github.com/k8sland/tview"
 )
 
 func main() {

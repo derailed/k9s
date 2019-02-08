@@ -8,7 +8,6 @@ package unix
 
 import (
 	"bytes"
-	"runtime"
 	"sort"
 	"sync"
 	"syscall"
@@ -19,13 +18,6 @@ var (
 	Stdin  = 0
 	Stdout = 1
 	Stderr = 2
-)
-
-const (
-	darwin64Bit    = runtime.GOOS == "darwin" && SizeofPtr == 8
-	dragonfly64Bit = runtime.GOOS == "dragonfly" && SizeofPtr == 8
-	netbsd32Bit    = runtime.GOOS == "netbsd" && SizeofPtr == 4
-	solaris64Bit   = runtime.GOOS == "solaris" && SizeofPtr == 8
 )
 
 // Do the interface allocations only once for common

@@ -4,6 +4,8 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/resource"
+	"github.com/derailed/k9s/resource/k8s"
+	"github.com/derailed/k9s/config"
 	"github.com/gdamore/tcell"
 )
 
@@ -25,7 +27,7 @@ func (v *contextView) useContext(*tcell.EventKey) {
 		return
 	}
 
-	ctx := v.selectedItem
+	ctx := strings.TrimSpace(v.selectedItem)
 	if strings.HasSuffix(ctx, "*") {
 		ctx = strings.TrimRight(ctx, "*")
 	}
@@ -38,12 +40,16 @@ func (v *contextView) useContext(*tcell.EventKey) {
 		v.app.flash(flashWarn, err.Error())
 		return
 	}
-	v.app.flash(flashInfo, "Switching context to ", ctx)
+
+	config.Root.SetActiveCluster(ctx)
+	config.Root.Save(k8s.ClusterInfo{})
+
+	v.app.flash(flashInfo, "Switching context to", ctx)
 	v.refresh()
 	tv := v.GetPrimitive("ctx").(*tableView)
 	tv.table.Select(0, 0)
 }
 
 func (v *contextView) extraActions(aa keyActions) {
-	aa[tcell.KeyCtrlS] = keyAction{description: "Switch", action: v.useContext}
+	aa[KeyU] = keyAction{description: "Use", action: v.useContext}
 }

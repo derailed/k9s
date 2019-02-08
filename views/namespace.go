@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/config"
 	"github.com/derailed/k9s/resource"
+	"github.com/derailed/k9s/resource/k8s"
 	"github.com/gdamore/tcell"
 )
 
@@ -41,14 +43,13 @@ func (v *namespaceView) useNamespace(*tcell.EventKey) {
 	}
 	v.refresh()
 
-	k9sCfg.K9s.Namespace.Active = ns
-	k9sCfg.addFavNS(v.selectedItem)
-	k9sCfg.validateAndSave()
+	config.Root.SetActiveNamespace(ns)
+	config.Root.Save(k8s.ClusterInfo{})
 	v.app.flash(flashInfo, fmt.Sprintf("Setting namespace `%s as your default namespace", ns))
 }
 
 func (v *namespaceView) extraActions(aa keyActions) {
-	aa[tcell.KeyCtrlS] = keyAction{description: "Switch", action: v.useNamespace}
+	aa[KeyU] = keyAction{description: "Use", action: v.useNamespace}
 }
 
 func (v *namespaceView) decorate(data resource.TableData) resource.TableData {
@@ -61,12 +62,12 @@ func (v *namespaceView) decorate(data resource.TableData) resource.TableData {
 	}
 
 	for k, v := range data.Rows {
-		if inList(k9sCfg.K9s.Namespace.Favorites, k) {
+		if config.InList(config.Root.FavNamespaces(), k) {
 			v.Fields[0] += "+"
 			v.Action = resource.Unchanged
 		}
 
-		if k9sCfg.K9s.Namespace.Active == k {
+		if config.Root.ActiveNamespace() == k {
 			v.Fields[0] += "(*)"
 			v.Action = resource.Unchanged
 		}
