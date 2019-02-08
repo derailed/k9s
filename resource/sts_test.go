@@ -144,6 +144,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 spec:
   replicas: 0
   selector: null
@@ -165,6 +166,7 @@ spec:
       initializers: null
       finalizers: []
       clustername: ""
+      managedfields: []
     spec:
       volumes: []
       initcontainers: []

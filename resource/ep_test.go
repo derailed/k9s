@@ -131,6 +131,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 subsets:
 - addresses:
   - ip: 1.1.1.1

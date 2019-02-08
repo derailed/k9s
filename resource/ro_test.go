@@ -100,6 +100,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 rules: []
 `
 }

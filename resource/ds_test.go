@@ -132,6 +132,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 spec:
   selector:
     matchlabels:
@@ -155,6 +156,7 @@ spec:
       initializers: null
       finalizers: []
       clustername: ""
+      managedfields: []
     spec:
       volumes: []
       initcontainers: []

@@ -18,6 +18,7 @@ func TestCMHeader(t *testing.T) {
 	)
 }
 
+
 func TestCMHeaderAllNS(t *testing.T) {
 	assert.Equal(t,
 		resource.Row{"NAMESPACE", "NAME", "DATA", "AGE"},
@@ -203,6 +204,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 data:
   blee: blee
   duh: duh

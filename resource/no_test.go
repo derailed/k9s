@@ -131,6 +131,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 spec:
   podcidr: ""
   providerid: ""

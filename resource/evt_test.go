@@ -124,6 +124,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 involvedobject:
   kind: ""
   namespace: ""

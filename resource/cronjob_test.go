@@ -129,6 +129,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 spec:
   schedule: '*/1 * * * *'
   startingdeadlineseconds: null
@@ -152,6 +153,7 @@ spec:
       initializers: null
       finalizers: []
       clustername: ""
+      managedfields: []
     spec:
       parallelism: null
       completions: null
@@ -177,6 +179,7 @@ spec:
           initializers: null
           finalizers: []
           clustername: ""
+          managedfields: []
         spec:
           volumes: []
           initcontainers: []

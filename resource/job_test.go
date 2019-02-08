@@ -130,6 +130,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 spec:
   parallelism: 0
   completions: 0
@@ -155,6 +156,7 @@ spec:
       initializers: null
       finalizers: []
       clustername: ""
+      managedfields: []
     spec:
       volumes: []
       initcontainers: []

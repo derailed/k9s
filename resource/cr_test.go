@@ -148,6 +148,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 rules:
 - verbs:
   - get

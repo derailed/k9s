@@ -108,6 +108,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 spec:
   replicas: 1
   minreadyseconds: 0
@@ -130,6 +131,7 @@ spec:
       initializers: null
       finalizers: []
       clustername: ""
+      managedfields: []
     spec:
       volumes: []
       initcontainers: []

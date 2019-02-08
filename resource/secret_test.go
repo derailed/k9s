@@ -210,6 +210,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 data:
   blee:
   - 98

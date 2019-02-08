@@ -17,6 +17,7 @@ func TestNSValidate(t *testing.T) {
 	m.When(ciMock.AllNamespacesOrDie()).ThenReturn([]string{"ns1", "ns2", "default"})
 
 	ns.Validate(ciMock)
+	ciMock.VerifyWasCalledOnce()
 	assert.Equal(t, "default", ns.Active)
 	assert.Equal(t, []string{"all", "default"}, ns.Favorites)
 }

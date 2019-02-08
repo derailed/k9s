@@ -122,6 +122,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 spec:
   capacity: {}
   persistentvolumesource:

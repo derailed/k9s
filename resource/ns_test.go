@@ -121,6 +121,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 spec:
   finalizers: []
 status:

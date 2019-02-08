@@ -126,6 +126,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 spec:
   backend: null
   tls: []

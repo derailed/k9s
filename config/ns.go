@@ -8,8 +8,6 @@ import (
 // MaxFavoritesNS number # favorite namespaces to keep in the configuration.
 const MaxFavoritesNS = 10
 
-var defaultNamespaces = []string{"all", "default", "kube-system"}
-
 // Namespace tracks active and favorites namespaces.
 type Namespace struct {
 	Active    string   `yaml:"active"`
@@ -20,7 +18,7 @@ type Namespace struct {
 func NewNamespace() *Namespace {
 	return &Namespace{
 		Active:    resource.DefaultNamespace,
-		Favorites: defaultNamespaces,
+		Favorites: []string{"all", "default", "kube-system"},
 	}
 }
 

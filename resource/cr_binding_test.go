@@ -104,6 +104,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 subjects:
 - kind: test
   apigroup: ""

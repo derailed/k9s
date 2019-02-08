@@ -135,6 +135,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 spec:
   scaletargetref:
     kind: fred

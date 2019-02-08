@@ -130,6 +130,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 spec:
   accessmodes: []
   selector: null

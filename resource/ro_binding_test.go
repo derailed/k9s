@@ -111,6 +111,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 subjects:
 - kind: User
   apigroup: ""

@@ -171,6 +171,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 spec:
   volumes:
   - name: fred

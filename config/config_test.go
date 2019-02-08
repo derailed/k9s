@@ -17,6 +17,7 @@ func TestConfigValidate(t *testing.T) {
 	assert.Nil(t, config.Load("test_assets/k9s.yml"))
 
 	ciMock := NewMockClusterInfo()
+	m.When(ciMock.AllNamespacesOrDie()).ThenReturn([]string{"ns1", "ns2", "default"})
 	m.When(ciMock.AllClustersOrDie()).ThenReturn([]string{"c1", "c2"})
 
 	config.Root.Validate(ciMock)

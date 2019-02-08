@@ -139,6 +139,7 @@ objectmeta:
   initializers: null
   finalizers: []
   clustername: ""
+  managedfields: []
 secrets:
 - kind: ""
   namespace: ""
