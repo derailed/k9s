@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"path"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -343,7 +344,12 @@ func (v *resourceView) refreshActions() {
 	}
 
 	if v.list.Access(resource.DeleteAccess) {
-		aa[tcell.KeyBackspace2] = newKeyHandler("Delete", v.delete)
+		kd := tcell.KeyDelete
+		if runtime.GOOS == "darwin" {
+			kd = tcell.KeyBackspace2
+		}
+
+		aa[kd] = newKeyHandler("Delete", v.delete)
 	}
 	if v.list.Access(resource.ViewAccess) {
 		aa[tcell.KeyCtrlV] = newKeyHandler("View", v.view)
