@@ -343,7 +343,7 @@ func (v *resourceView) refreshActions() {
 	}
 
 	if v.list.Access(resource.DeleteAccess) {
-		aa[tcell.KeyBackspace2] = newKeyHandler("Delete", v.delete)
+		aa[tcell.KeyCtrlD] = newKeyHandler("Delete", v.delete)
 	}
 	if v.list.Access(resource.ViewAccess) {
 		aa[tcell.KeyCtrlV] = newKeyHandler("View", v.view)
