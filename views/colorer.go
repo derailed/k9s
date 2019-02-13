@@ -29,12 +29,19 @@ func defaultColorer(ns string, r *resource.RowEvent) tcell.Color {
 }
 
 func podColorer(ns string, r *resource.RowEvent) tcell.Color {
+
 	c := defaultColorer(ns, r)
 
 	statusCol := 3
 	if len(ns) != 0 {
 		statusCol = 2
 	}
+
+	// When new pod gets added, show it in different color until the status changed.
+	if r.Action == watch.Added || strings.TrimSpace(r.Fields[statusCol]) == "ContainerCreating" {
+		return addColor
+	}
+
 	switch strings.TrimSpace(r.Fields[statusCol]) {
 	case "Running", "Initialized", "Completed", "Terminating":
 	default:
