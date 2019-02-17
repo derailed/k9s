@@ -39,7 +39,7 @@ brew tap derailed/k9s && brew install k9s
 # List all available CLI options
 k9s -h
 # To get info about K9s runtime (logs, configs, etc..)
-k9s config
+k9s info
 # To run K9s in a given namespace
 k9s -n mybitchns
 ```
