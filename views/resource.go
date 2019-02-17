@@ -102,7 +102,9 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 		}
 	}(ctx)
 	v.refreshActions()
-	v.CurrentPage().Item.(*tableView).table.Select(0, 0)
+	if tv, ok := v.CurrentPage().Item.(*tableView); ok {
+		tv.table.Select(0, 0)
+	}
 }
 
 func (v *resourceView) getTitle() string {
@@ -247,7 +249,10 @@ func (v *resourceView) refresh() {
 }
 
 func (v *resourceView) getTV() *tableView {
-	return v.GetPrimitive(v.list.GetName()).(*tableView)
+	if tv, ok := v.GetPrimitive(v.list.GetName()).(*tableView); ok {
+		return tv
+	}
+	return nil
 }
 
 func (v *resourceView) getSelectedItem() string {
