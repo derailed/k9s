@@ -45,8 +45,9 @@ func (v *contextView) useContext(*tcell.EventKey) {
 
 	v.app.flash(flashInfo, "Switching context to", ctx)
 	v.refresh()
-	tv := v.GetPrimitive("ctx").(*tableView)
-	tv.table.Select(0, 0)
+	if tv, ok := v.GetPrimitive("ctx").(*tableView); ok {
+		tv.table.Select(0, 0)
+	}
 }
 
 func (v *contextView) extraActions(aa keyActions) {

@@ -102,7 +102,9 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 		}
 	}(ctx)
 	v.refreshActions()
-	v.CurrentPage().Item.(*tableView).table.Select(0, 0)
+	if tv, ok := v.CurrentPage().Item.(*tableView); ok {
+		tv.table.Select(0, 0)
+	}
 }
 
 func (v *resourceView) getTitle() string {

@@ -30,6 +30,11 @@ brew tap derailed/k9s && brew install k9s
 
 - [Releases](https://github.com/derailed/k9s/releases)
 
+1. Running from source
+
+- You will need to use go 1.11+
+- GO111MODULE=on
+
 <br/>
 
 ---
@@ -39,7 +44,7 @@ brew tap derailed/k9s && brew install k9s
 # List all available CLI options
 k9s -h
 # To get info about K9s runtime (logs, configs, etc..)
-k9s config
+k9s info
 # To run K9s in a given namespace
 k9s -n mybitchns
 ```
