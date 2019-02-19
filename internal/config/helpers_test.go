@@ -59,7 +59,7 @@ func TestHelperInNSList(t *testing.T) {
 func TestEnsurePathNone(t *testing.T) {
 	var mod os.FileMode = 0744
 	dir := filepath.Join("/tmp", "fred")
-	assert.Nil(t, os.Remove(dir))
+	os.Remove(dir)
 
 	path := filepath.Join(dir, "duh.yml")
 	config.EnsurePath(path, mod)
@@ -72,7 +72,7 @@ func TestEnsurePathNone(t *testing.T) {
 func TestEnsurePathNoOpt(t *testing.T) {
 	var mod os.FileMode = 0744
 	dir := filepath.Join("/tmp", "blee")
-	assert.Nil(t, os.Remove(dir))
+	os.Remove(dir)
 	assert.Nil(t, os.Mkdir(dir, mod))
 
 	path := filepath.Join(dir, "duh.yml")
