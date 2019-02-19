@@ -129,10 +129,11 @@ func initK8sFlags() {
 		"Bearer token for authentication to the API server",
 	)
 
-	rootCmd.Flags().StringVar(
+	rootCmd.Flags().StringVarP(
 		k8sFlags.Namespace,
 		"namespace",
 		"n",
+		"",
 		"If present, the namespace scope for this CLI request",
 	)
 }

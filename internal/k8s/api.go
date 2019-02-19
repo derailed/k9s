@@ -74,27 +74,8 @@ func (a *apiServer) hasMetricsServer() bool {
 	return a.useMetricServer
 }
 
-// ActiveClusterOrDie Fetch the current cluster based on current context.
-func ActiveClusterOrDie() string {
-	cl, err := conn.config.CurrentClusterName()
-	if err != nil {
-		panic(err)
-	}
-	return cl
-}
-
-// AllClusterNamesOrDie fetch all available clusters from config.
-func AllClusterNamesOrDie() []string {
-	if cc, err := conn.config.ClusterNames(); err != nil {
-		panic(err)
-	} else {
-		return cc
-	}
-}
-
 // DialOrDie returns a handle to api server or die.
 func (a *apiServer) dialOrDie() kubernetes.Interface {
-	a.checkCurrentConfig()
 	if a.client != nil {
 		return a.client
 	}
@@ -108,7 +89,6 @@ func (a *apiServer) dialOrDie() kubernetes.Interface {
 
 // DynDial returns a handle to the api server.
 func (a *apiServer) dynDialOrDie() dynamic.Interface {
-	a.checkCurrentConfig()
 	if a.dClient != nil {
 		return a.dClient
 	}
@@ -122,7 +102,6 @@ func (a *apiServer) dynDialOrDie() dynamic.Interface {
 }
 
 func (a *apiServer) nsDialOrDie() dynamic.NamespaceableResourceInterface {
-	a.checkCurrentConfig()
 	if a.nsClient != nil {
 		return a.nsClient
 	}
@@ -136,7 +115,6 @@ func (a *apiServer) nsDialOrDie() dynamic.NamespaceableResourceInterface {
 }
 
 func (a *apiServer) heapsterDial() (*metricsutil.HeapsterMetricsClient, error) {
-	a.checkCurrentConfig()
 	if a.heapsterClient != nil {
 		return a.heapsterClient, nil
 	}
@@ -152,7 +130,6 @@ func (a *apiServer) heapsterDial() (*metricsutil.HeapsterMetricsClient, error) {
 }
 
 func (a *apiServer) mxsDial() (*versioned.Clientset, error) {
-	a.checkCurrentConfig()
 	if a.mxsClient != nil {
 		return a.mxsClient, nil
 	}
@@ -160,14 +137,6 @@ func (a *apiServer) mxsDial() (*versioned.Clientset, error) {
 	var err error
 	a.mxsClient, err = versioned.NewForConfig(a.restConfigOrDie())
 	return a.mxsClient, err
-}
-
-func (a *apiServer) configAccess() clientcmd.ConfigAccess {
-	cfg, err := a.config.ConfigAccess()
-	if err != nil {
-		panic(err)
-	}
-	return cfg
 }
 
 func (a *apiServer) restConfigOrDie() *restclient.Config {
@@ -191,20 +160,6 @@ func (a *apiServer) switchContextOrDie(ctx string) {
 		}
 		a.useMetricServer = a.supportsMxServer()
 	}
-}
-
-func (a *apiServer) checkCurrentConfig() {
-	// currentCluster, err := a.config.CurrentCluster()
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// if a.clusterName != currentCluster {
-	// 	a.reset()
-	// 	a.clusterName = currentCluster
-	// 	a.useMetricServer = a.supportsMxServer()
-	// 	return
-	// }
 }
 
 func (a *apiServer) reset() {

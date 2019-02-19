@@ -23,7 +23,7 @@ func NewContextList(ns string) List {
 
 // NewContextListWithArgs returns a new resource list.
 func NewContextListWithArgs(ns string, res Resource) List {
-	return newList(NotNamespaced, "ctx", res, SwitchAccess|DeleteAccess)
+	return newList(NotNamespaced, "ctx", res, SwitchAccess)
 }
 
 // NewContext instantiates a new Context.
