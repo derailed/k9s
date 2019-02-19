@@ -102,7 +102,7 @@ func SetTestEnv() func() {
 		{"GAE_LONG_APP_ID", "my-app-id"},
 		{"GAE_MINOR_VERSION", "067924799508853122"},
 		{"GAE_MODULE_INSTANCE", "0"},
-		{"GAE_MODULE_NAME", (resource.DefaultNamespace)},
+		{"GAE_MODULE_NAME", "default"},
 		{"GAE_MODULE_VERSION", "20150612t184001"},
 	}
 

@@ -20,7 +20,7 @@ builds:
   - 386
   - amd64
   ldflags:
-  - -s -w -X github.com/derailed/k9s/cmd.version={{.Version}} -X github.com/derailed/k9s/cmd.commit={{.Commit}} -X github.com/derailed/k9s/cmd.date={{.Date}}
+  - -s -w -X github.com/derailed/k9s/internal/cmd.version={{.Version}} -X github.com/derailed/k9s/internal/cmd.commit={{.Commit}} -X github.com/derailed/k9s/internal/cmd.date={{.Date}}
 
 archive:
   replacements:

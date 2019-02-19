@@ -30,6 +30,11 @@ brew tap derailed/k9s && brew install k9s
 
 - [Releases](https://github.com/derailed/k9s/releases)
 
+1. Running from source
+
+- You will need to use go 1.11+
+- GO111MODULE=on
+
 <br/>
 
 ---
@@ -39,7 +44,7 @@ brew tap derailed/k9s && brew install k9s
 # List all available CLI options
 k9s -h
 # To get info about K9s runtime (logs, configs, etc..)
-k9s config
+k9s info
 # To run K9s in a given namespace
 k9s -n mybitchns
 ```
@@ -91,15 +96,15 @@ k9s -n mybitchns
 
 K9s uses 2 or 3 letters alias to navigate most K8s resource.
 
-| Command            | Result                                             | Example              |
-| ------------------ | -------------------------------------------------- | -------------------- |
-| `>`alias`<ENTER>`  | List a Kubernetes resource in the active namespace | `>po<ENTER>`         |
-| Ctrl-A             | Show all command aliases                           |                      |
-| `/`filter`ENTER`>  | Filter out a resource view given a filter          | `/bumblebeetuna`     |
-| `<Esc>`            | Bails out of command mode                          |                      |
-| `Ctrl-Key`         | Key mapping to view, edit, see logs, etc...        | `Ctrl-L` (view logs) |
-| `>`ctx`<ENTER>`    | To view and switch to another Kubernetes cluster   |                      |
-| `Ctrl-q`, `Ctrl-c` | To bail out of K9s                                 |                      |
+| Command           | Result                                             | Example          |
+|-------------------|----------------------------------------------------|------------------|
+| `:`alias`<ENTER>` | List a Kubernetes resource in the active namespace | `:po<ENTER>`     |
+| '?'               | Show all command aliases                           |                  |
+| `/`filter`ENTER`> | Filter out a resource view given a filter          | `/bumblebeetuna` |
+| `<Esc>`           | Bails out of command mode                          |                  |
+| `v`, `e`, `l`,... | Key mapping to view, edit, see logs, etc...        | `l` (view logs)  |
+| `:`ctx`<ENTER>`   | To view and switch to another Kubernetes cluster   |                  |
+| `q`, `Ctrl-c`     | To bail out of K9s                                 |                  |
 
 
 <br/>

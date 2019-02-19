@@ -976,12 +976,9 @@ func (t *TextView) InputHandler() func(event *tcell.EventKey, setFocus func(p Pr
 		case tcell.KeyRune:
 			switch event.Rune() {
 			case 'g': // Home.
-				t.trackEnd = false
-				t.lineOffset = 0
-				t.columnOffset = 0
+				t.ScrollToBeginning()
 			case 'G': // End.
-				t.trackEnd = true
-				t.columnOffset = 0
+				t.ScrollToEnd()
 			case 'j': // Down.
 				t.lineOffset++
 			case 'k': // Up.
@@ -993,12 +990,9 @@ func (t *TextView) InputHandler() func(event *tcell.EventKey, setFocus func(p Pr
 				t.columnOffset++
 			}
 		case tcell.KeyHome:
-			t.trackEnd = false
-			t.lineOffset = 0
-			t.columnOffset = 0
+			t.ScrollToBeginning()
 		case tcell.KeyEnd:
-			t.trackEnd = true
-			t.columnOffset = 0
+			t.ScrollToEnd()
 		case tcell.KeyUp:
 			t.trackEnd = false
 			t.lineOffset--
@@ -1009,10 +1003,20 @@ func (t *TextView) InputHandler() func(event *tcell.EventKey, setFocus func(p Pr
 		case tcell.KeyRight:
 			t.columnOffset++
 		case tcell.KeyPgDn, tcell.KeyCtrlF:
-			t.lineOffset += t.pageSize
+			t.PageDown()
 		case tcell.KeyPgUp, tcell.KeyCtrlB:
-			t.trackEnd = false
-			t.lineOffset -= t.pageSize
+			t.PageUp()
 		}
 	})
+}
+
+// PageUp move up a full page.
+func (t *TextView) PageUp() {
+	t.trackEnd = false
+	t.lineOffset -= t.pageSize
+}
+
+// PageDown move down a full page.
+func (t *TextView) PageDown() {
+	t.lineOffset += t.pageSize
 }
