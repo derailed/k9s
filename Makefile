@@ -8,8 +8,8 @@ cover:     ## Run test coverage suite
 	@go test ./... --coverprofile=cov.out
 	@go tool cover --html=cov.out
 
-osx:       ## Builds OSX CLI
-	@env GOOS=darwin GOARCH=amd64 go build \
+build:       ## Builds the CLI
+	@go build \
 	-ldflags "-w -X ${PACKAGE}/cmd.Version=${VERSION}" \
 	-a -tags netgo -o execs/${NAME} *.go
 
