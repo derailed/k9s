@@ -116,7 +116,13 @@ func (r *CronJob) Fields(ns string) Row {
 
 func (r *CronJob) Trigger(path string) error {
 	ns, n := namespaced(path)
-	return r.caller.(k8s.TriggerableCronjob).Trigger(ns, n)
+	i, err := r.caller.Get(ns, n)
+	if err != nil {
+		return err
+	}
+
+	cj := i.(*batchv1beta1.CronJob)
+	return k8s.CreateJobFromCronJob(ns, cj)
 }
 
 // ExtFields returns extended fields in relation to headers.
