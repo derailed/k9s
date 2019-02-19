@@ -5,6 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
+	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/watch"
 )
 
@@ -15,6 +16,7 @@ const (
 	stdColor       = tcell.ColorWhite
 	highlightColor = tcell.ColorAqua
 	killColor      = tcell.ColorMediumPurple
+	completedColor = tcell.ColorDodgerBlue
 )
 
 func defaultColorer(ns string, r *resource.RowEvent) tcell.Color {
@@ -35,8 +37,15 @@ func podColorer(ns string, r *resource.RowEvent) tcell.Color {
 	if len(ns) != 0 {
 		statusCol = 2
 	}
+	log.Debug("Status", strings.TrimSpace(r.Fields[statusCol]))
 	switch strings.TrimSpace(r.Fields[statusCol]) {
-	case "Running", "Initialized", "Completed", "Terminating":
+	case "ContainerCreating":
+		return addColor
+	case "Terminating", "Initialized":
+		return highlightColor
+	case "Completed":
+		return completedColor
+	case "Running":
 	default:
 		c = errColor
 	}
