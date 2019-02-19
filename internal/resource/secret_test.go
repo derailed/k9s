@@ -3,11 +3,11 @@ package resource_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -190,38 +190,15 @@ func k8sSecret() *v1.Secret {
 }
 
 func secretYaml() string {
-	return `typemeta:
-  kind: Secret
-  apiversion: v1
-objectmeta:
-  name: fred
-  generatename: ""
-  namespace: blee
-  selflink: ""
-  uid: ""
-  resourceversion: ""
-  generation: 0
-  creationtimestamp: "2018-12-14T10:36:43.326972-07:00"
-  deletiontimestamp: null
-  deletiongraceperiodseconds: null
-  labels: {}
-  annotations: {}
-  ownerreferences: []
-  initializers: null
-  finalizers: []
-  clustername: ""
-  managedfields: []
+	return `apiVersion: v1
 data:
-  blee:
-  - 98
-  - 108
-  - 101
-  - 101
-  duh:
-  - 100
-  - 117
-  - 104
-stringdata: {}
+  blee: YmxlZQ==
+  duh: ZHVo
+kind: Secret
+metadata:
+  creationTimestamp: "2018-12-14T17:36:43Z"
+  name: fred
+  namespace: blee
 type: Opaque
 `
 }

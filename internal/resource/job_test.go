@@ -3,11 +3,11 @@ package resource_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/batch/v1"
+	v1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -110,91 +110,22 @@ func newJob() resource.Columnar {
 }
 
 func jobYaml() string {
-	return `typemeta:
-  kind: Job
-  apiversion: extensions/v1beta1
-objectmeta:
+	return `apiVersion: extensions/v1beta1
+kind: Job
+metadata:
+  creationTimestamp: "2018-12-14T17:36:43Z"
   name: fred
-  generatename: ""
   namespace: blee
-  selflink: ""
-  uid: ""
-  resourceversion: ""
-  generation: 0
-  creationtimestamp: "2018-12-14T10:36:43.326972-07:00"
-  deletiontimestamp: null
-  deletiongraceperiodseconds: null
-  labels: {}
-  annotations: {}
-  ownerreferences: []
-  initializers: null
-  finalizers: []
-  clustername: ""
-  managedfields: []
 spec:
-  parallelism: 0
   completions: 0
-  activedeadlineseconds: null
-  backofflimit: null
-  selector: null
-  manualselector: null
+  parallelism: 0
   template:
-    objectmeta:
-      name: ""
-      generatename: ""
-      namespace: ""
-      selflink: ""
-      uid: ""
-      resourceversion: ""
-      generation: 0
-      creationtimestamp: "0001-01-01T00:00:00Z"
-      deletiontimestamp: null
-      deletiongraceperiodseconds: null
-      labels: {}
-      annotations: {}
-      ownerreferences: []
-      initializers: null
-      finalizers: []
-      clustername: ""
-      managedfields: []
+    metadata:
+      creationTimestamp: null
     spec:
-      volumes: []
-      initcontainers: []
-      containers: []
-      restartpolicy: ""
-      terminationgraceperiodseconds: null
-      activedeadlineseconds: null
-      dnspolicy: ""
-      nodeselector: {}
-      serviceaccountname: ""
-      deprecatedserviceaccount: ""
-      automountserviceaccounttoken: null
-      nodename: ""
-      hostnetwork: false
-      hostpid: false
-      hostipc: false
-      shareprocessnamespace: null
-      securitycontext: null
-      imagepullsecrets: []
-      hostname: ""
-      subdomain: ""
-      affinity: null
-      schedulername: ""
-      tolerations: []
-      hostaliases: []
-      priorityclassname: ""
-      priority: null
-      dnsconfig: null
-      readinessgates: []
-      runtimeclassname: null
-      enableservicelinks: null
-  ttlsecondsafterfinished: null
+      containers: null
 status:
-  conditions: []
-  starttime: "2018-12-14T10:36:43.326972-07:00"
-  completiontime: "2018-12-14T10:36:43.326972-07:00"
-  active: 0
-  succeeded: 0
-  failed: 0
+  completionTime: "2018-12-14T17:36:43Z"
+  startTime: "2018-12-14T17:36:43Z"
 `
 }

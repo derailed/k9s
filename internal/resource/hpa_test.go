@@ -3,11 +3,11 @@ package resource_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/autoscaling/v1"
+	v1 "k8s.io/api/autoscaling/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -115,40 +115,22 @@ func newHPA() resource.Columnar {
 }
 
 func hpaYaml() string {
-	return `typemeta:
-  kind: HPA
-  apiversion: autoscaling/v1
-objectmeta:
+	return `apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  creationTimestamp: "2018-12-14T17:36:43Z"
   name: fred
-  generatename: ""
   namespace: blee
-  selflink: ""
-  uid: ""
-  resourceversion: ""
-  generation: 0
-  creationtimestamp: "2018-12-14T10:36:43.326972-07:00"
-  deletiontimestamp: null
-  deletiongraceperiodseconds: null
-  labels: {}
-  annotations: {}
-  ownerreferences: []
-  initializers: null
-  finalizers: []
-  clustername: ""
-  managedfields: []
 spec:
-  scaletargetref:
+  maxReplicas: 1
+  minReplicas: 1
+  scaleTargetRef:
     kind: fred
     name: blee
-    apiversion: ""
-  minreplicas: 1
-  maxreplicas: 1
-  targetcpuutilizationpercentage: 1
+  targetCPUUtilizationPercentage: 1
 status:
-  observedgeneration: null
-  lastscaletime: null
-  currentreplicas: 1
-  desiredreplicas: 0
-  currentcpuutilizationpercentage: 1
+  currentCPUUtilizationPercentage: 1
+  currentReplicas: 1
+  desiredReplicas: 0
 `
 }

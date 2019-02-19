@@ -3,8 +3,8 @@ package resource_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/client-go/tools/clientcmd/api"
@@ -16,14 +16,6 @@ func TestCTXHeader(t *testing.T) {
 		newContext().Header(""),
 	)
 }
-
-// BOZO!! Need Mocks!
-// func TestCTXFieldsAllNS(t *testing.T) {
-// 	r := newContext().Fields(resource.AllNamespaces)
-// 	assert.Equal(t, "test", r[0])
-// 	assert.Equal(t, "blee", r[1])
-// 	assert.Equal(t, "secret", r[2])
-// }
 
 func TestCTXSwitch(t *testing.T) {
 	setup(t)
@@ -108,31 +100,6 @@ func TestCTXListDescribe(t *testing.T) {
 	assert.Equal(t, 0, len(props))
 	ca.VerifyWasCalledOnce().Get("blee", "fred")
 }
-
-// BOZO!! Need mocks
-// func TestCTXListData(t *testing.T) {
-// 	setup(t)
-
-// 	ca := NewMockSwitchableRes()
-// 	m.When(ca.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sNamedCTX()}, nil)
-
-// 	l := resource.NewContextListWithArgs("blee", resource.NewContextWithArgs(ca))
-// 	// Make sure we can get deltas!
-// 	for i := 0; i < 2; i++ {
-// 		assert.Nil(t, l.Reconcile())
-// 	}
-// 	ca.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
-
-// 	td := l.Data()
-// 	assert.Equal(t, 1, len(td.Rows))
-// 	assert.False(t, l.HasXRay())
-// 	row := td.Rows["test"]
-// 	assert.Equal(t, 4, len(row.Deltas))
-// 	for _, d := range row.Deltas {
-// 		assert.Equal(t, "", d)
-// 	}
-// 	assert.Equal(t, resource.Row{"test", "blee", "secret", ""}, row.Fields)
-// }
 
 // Helpers...
 

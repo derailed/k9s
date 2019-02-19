@@ -3,8 +3,8 @@ package resource_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -149,53 +149,25 @@ func svcHeader() resource.Row {
 }
 
 func svcYaml() string {
-	return `typemeta:
-  kind: Service
-  apiversion: v1
-objectmeta:
+	return `apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: "2018-12-14T17:36:43Z"
   name: fred
-  generatename: ""
   namespace: blee
-  selflink: ""
-  uid: ""
-  resourceversion: ""
-  generation: 0
-  creationtimestamp: "2018-12-14T10:36:43.326972-07:00"
-  deletiontimestamp: null
-  deletiongraceperiodseconds: null
-  labels: {}
-  annotations: {}
-  ownerreferences: []
-  initializers: null
-  finalizers: []
-  clustername: ""
-  managedfields: []
 spec:
+  clusterIP: 1.1.1.1
+  externalIPs:
+  - 2.2.2.2
   ports:
   - name: http
-    protocol: TCP
     port: 90
-    targetport:
-      type: 0
-      intval: 0
-      strval: ""
-    nodeport: 0
+    protocol: TCP
+    targetPort: 0
   selector:
     fred: blee
-  clusterip: 1.1.1.1
   type: ClusterIP
-  externalips:
-  - 2.2.2.2
-  sessionaffinity: ""
-  loadbalancerip: ""
-  loadbalancersourceranges: []
-  externalname: ""
-  externaltrafficpolicy: ""
-  healthchecknodeport: 0
-  publishnotreadyaddresses: false
-  sessionaffinityconfig: null
 status:
-  loadbalancer:
-    ingress: []
+  loadBalancer: {}
 `
 }

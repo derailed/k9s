@@ -3,11 +3,11 @@ package resource_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -104,49 +104,21 @@ func newEvent() resource.Columnar {
 }
 
 func evYaml() string {
-	return `typemeta:
-  kind: Event
-  apiversion: v1
-objectmeta:
-  name: fred
-  generatename: ""
-  namespace: blee
-  selflink: ""
-  uid: ""
-  resourceversion: ""
-  generation: 0
-  creationtimestamp: "2018-12-14T10:36:43.326972-07:00"
-  deletiontimestamp: null
-  deletiongraceperiodseconds: null
-  labels: {}
-  annotations: {}
-  ownerreferences: []
-  initializers: null
-  finalizers: []
-  clustername: ""
-  managedfields: []
-involvedobject:
-  kind: ""
-  namespace: ""
-  name: ""
-  uid: ""
-  apiversion: ""
-  resourceversion: ""
-  fieldpath: ""
-reason: blah
-message: blee
-source:
-  component: ""
-  host: ""
-firsttimestamp: "0001-01-01T00:00:00Z"
-lasttimestamp: "0001-01-01T00:00:00Z"
+	return `apiVersion: v1
 count: 1
-type: ""
-eventtime: "0001-01-01T00:00:00Z"
-series: null
-action: ""
-related: null
-reportingcontroller: ""
-reportinginstance: ""
+eventTime: null
+firstTimestamp: null
+involvedObject: {}
+kind: Event
+lastTimestamp: null
+message: blee
+metadata:
+  creationTimestamp: "2018-12-14T17:36:43Z"
+  name: fred
+  namespace: blee
+reason: blah
+reportingComponent: ""
+reportingInstance: ""
+source: {}
 `
 }

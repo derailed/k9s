@@ -3,11 +3,11 @@ package resource_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	resv1 "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -110,43 +110,18 @@ func newPVC() resource.Columnar {
 }
 
 func pvcYaml() string {
-	return `typemeta:
-  kind: PersistentVolumeClaim
-  apiversion: v1
-objectmeta:
+	return `apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  creationTimestamp: "2018-12-14T17:36:43Z"
   name: fred
-  generatename: ""
   namespace: blee
-  selflink: ""
-  uid: ""
-  resourceversion: ""
-  generation: 0
-  creationtimestamp: "2018-12-14T10:36:43.326972-07:00"
-  deletiontimestamp: null
-  deletiongraceperiodseconds: null
-  labels: {}
-  annotations: {}
-  ownerreferences: []
-  initializers: null
-  finalizers: []
-  clustername: ""
-  managedfields: []
 spec:
-  accessmodes: []
-  selector: null
+  dataSource: null
   resources:
-    limits: {}
     requests:
-      storage:
-        format: ""
-  volumename: duh
-  storageclassname: null
-  volumemode: null
-  datasource: null
-status:
-  phase: ""
-  accessmodes: []
-  capacity: {}
-  conditions: []
+      storage: "0"
+  volumeName: duh
+status: {}
 `
 }

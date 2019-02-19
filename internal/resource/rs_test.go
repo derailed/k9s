@@ -3,11 +3,11 @@ package resource_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/apps/v1"
+	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -88,87 +88,22 @@ func newReplicaSet() resource.Columnar {
 }
 
 func rsYaml() string {
-	return `typemeta:
-  kind: ReplicaSet
-  apiversion: extensions/v1beta
-objectmeta:
+	return `apiVersion: extensions/v1beta
+kind: ReplicaSet
+metadata:
+  creationTimestamp: "2018-12-14T17:36:43Z"
   name: fred
-  generatename: ""
   namespace: blee
-  selflink: ""
-  uid: ""
-  resourceversion: ""
-  generation: 0
-  creationtimestamp: "2018-12-14T10:36:43.326972-07:00"
-  deletiontimestamp: null
-  deletiongraceperiodseconds: null
-  labels: {}
-  annotations: {}
-  ownerreferences: []
-  initializers: null
-  finalizers: []
-  clustername: ""
-  managedfields: []
 spec:
   replicas: 1
-  minreadyseconds: 0
   selector: null
   template:
-    objectmeta:
-      name: ""
-      generatename: ""
-      namespace: ""
-      selflink: ""
-      uid: ""
-      resourceversion: ""
-      generation: 0
-      creationtimestamp: "0001-01-01T00:00:00Z"
-      deletiontimestamp: null
-      deletiongraceperiodseconds: null
-      labels: {}
-      annotations: {}
-      ownerreferences: []
-      initializers: null
-      finalizers: []
-      clustername: ""
-      managedfields: []
+    metadata:
+      creationTimestamp: null
     spec:
-      volumes: []
-      initcontainers: []
-      containers: []
-      restartpolicy: ""
-      terminationgraceperiodseconds: null
-      activedeadlineseconds: null
-      dnspolicy: ""
-      nodeselector: {}
-      serviceaccountname: ""
-      deprecatedserviceaccount: ""
-      automountserviceaccounttoken: null
-      nodename: ""
-      hostnetwork: false
-      hostpid: false
-      hostipc: false
-      shareprocessnamespace: null
-      securitycontext: null
-      imagepullsecrets: []
-      hostname: ""
-      subdomain: ""
-      affinity: null
-      schedulername: ""
-      tolerations: []
-      hostaliases: []
-      priorityclassname: ""
-      priority: null
-      dnsconfig: null
-      readinessgates: []
-      runtimeclassname: null
-      enableservicelinks: null
+      containers: null
 status:
+  readyReplicas: 1
   replicas: 1
-  fullylabeledreplicas: 0
-  readyreplicas: 1
-  availablereplicas: 0
-  observedgeneration: 0
-  conditions: []
 `
 }

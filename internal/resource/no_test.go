@@ -3,11 +3,11 @@ package resource_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -111,59 +111,29 @@ func newNode() resource.Columnar {
 }
 
 func noYaml() string {
-	return `typemeta:
-  kind: Node
-  apiversion: v1
-objectmeta:
+	return `apiVersion: v1
+kind: Node
+metadata:
+  creationTimestamp: "2018-12-14T17:36:43Z"
   name: fred
-  generatename: ""
-  namespace: ""
-  selflink: ""
-  uid: ""
-  resourceversion: ""
-  generation: 0
-  creationtimestamp: "2018-12-14T10:36:43.326972-07:00"
-  deletiontimestamp: null
-  deletiongraceperiodseconds: null
-  labels: {}
-  annotations: {}
-  ownerreferences: []
-  initializers: null
-  finalizers: []
-  clustername: ""
-  managedfields: []
-spec:
-  podcidr: ""
-  providerid: ""
-  unschedulable: false
-  taints: []
-  configsource: null
-  donotuse_externalid: ""
+spec: {}
 status:
-  capacity: {}
-  allocatable: {}
-  phase: ""
-  conditions: []
   addresses:
-  - type: ""
-    address: 1.1.1.1
-  daemonendpoints:
-    kubeletendpoint:
-      port: 0
-  nodeinfo:
-    machineid: ""
-    systemuuid: ""
-    bootid: ""
-    kernelversion: ""
-    osimage: ""
-    containerruntimeversion: ""
-    kubeletversion: ""
-    kubeproxyversion: ""
-    operatingsystem: ""
+  - address: 1.1.1.1
+    type: ""
+  daemonEndpoints:
+    kubeletEndpoint:
+      Port: 0
+  nodeInfo:
     architecture: ""
-  images: []
-  volumesinuse: []
-  volumesattached: []
-  config: null
+    bootID: ""
+    containerRuntimeVersion: ""
+    kernelVersion: ""
+    kubeProxyVersion: ""
+    kubeletVersion: ""
+    machineID: ""
+    operatingSystem: ""
+    osImage: ""
+    systemUUID: ""
 `
 }

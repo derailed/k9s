@@ -3,11 +3,11 @@ package resource_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -150,150 +150,43 @@ func newPod() resource.Columnar {
 }
 
 func poYaml() string {
-	return `typemeta:
-  kind: Pod
-  apiversion: v1
-objectmeta:
-  name: fred
-  generatename: ""
-  namespace: blee
-  selflink: ""
-  uid: ""
-  resourceversion: ""
-  generation: 0
-  creationtimestamp: "2018-12-14T10:36:43.326972-07:00"
-  deletiontimestamp: null
-  deletiongraceperiodseconds: null
+	return `apiVersion: v1
+kind: Pod
+metadata:
+  creationTimestamp: "2018-12-14T17:36:43Z"
   labels:
     blee: duh
-  annotations: {}
-  ownerreferences: []
-  initializers: null
-  finalizers: []
-  clustername: ""
-  managedfields: []
+  name: fred
+  namespace: blee
 spec:
-  volumes:
-  - name: fred
-    volumesource:
-      hostpath:
-        path: /blee
-        type: Directory
-      emptydir: null
-      gcepersistentdisk: null
-      awselasticblockstore: null
-      gitrepo: null
-      secret: null
-      nfs: null
-      iscsi: null
-      glusterfs: null
-      persistentvolumeclaim: null
-      rbd: null
-      flexvolume: null
-      cinder: null
-      cephfs: null
-      flocker: null
-      downwardapi: null
-      fc: null
-      azurefile: null
-      configmap: null
-      vspherevolume: null
-      quobyte: null
-      azuredisk: null
-      photonpersistentdisk: null
-      projected: null
-      portworxvolume: null
-      scaleio: null
-      storageos: null
-  initcontainers: []
   containers:
-  - name: fred
-    image: blee
-    command: []
-    args: []
-    workingdir: ""
-    ports: []
-    envfrom: []
-    env:
+  - env:
     - name: fred
       value: "1"
-      valuefrom:
-        fieldref: null
-        resourcefieldref: null
-        configmapkeyref:
-          localobjectreference:
-            name: ""
+      valueFrom:
+        configMapKeyRef:
           key: blee
-          optional: null
-        secretkeyref: null
-    resources:
-      limits: {}
-      requests: {}
-    volumemounts: []
-    volumedevices: []
-    livenessprobe: null
-    readinessprobe: null
-    lifecycle: null
-    terminationmessagepath: ""
-    terminationmessagepolicy: ""
-    imagepullpolicy: ""
-    securitycontext: null
-    stdin: false
-    stdinonce: false
-    tty: false
-  restartpolicy: ""
-  terminationgraceperiodseconds: null
-  activedeadlineseconds: null
-  dnspolicy: ""
-  nodeselector: {}
-  serviceaccountname: ""
-  deprecatedserviceaccount: ""
-  automountserviceaccounttoken: null
-  nodename: ""
-  hostnetwork: false
-  hostpid: false
-  hostipc: false
-  shareprocessnamespace: null
-  securitycontext: null
-  imagepullsecrets: []
-  hostname: ""
-  subdomain: ""
-  affinity: null
-  schedulername: ""
-  tolerations: []
-  hostaliases: []
-  priorityclassname: bozo
+    image: blee
+    name: fred
+    resources: {}
   priority: 1
-  dnsconfig: null
-  readinessgates: []
-  runtimeclassname: null
-  enableservicelinks: null
+  priorityClassName: bozo
+  volumes:
+  - hostPath:
+      path: /blee
+      type: Directory
+    name: fred
 status:
-  phase: Running
-  conditions: []
-  message: ""
-  reason: ""
-  nominatednodename: ""
-  hostip: ""
-  podip: ""
-  starttime: null
-  initcontainerstatuses: []
-  containerstatuses:
-  - name: fred
-    state:
-      waiting: null
-      running:
-        startedat: "0001-01-01T00:00:00Z"
-      terminated: null
-    lastterminationstate:
-      waiting: null
-      running: null
-      terminated: null
+  containerStatuses:
+  - image: ""
+    imageID: ""
+    lastState: {}
+    name: fred
     ready: false
-    restartcount: 0
-    image: ""
-    imageid: ""
-    containerid: ""
-  qosclass: ""
+    restartCount: 0
+    state:
+      running:
+        startedAt: null
+  phase: Running
 `
 }

@@ -3,8 +3,8 @@ package resource_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
@@ -109,113 +109,25 @@ func newCronJob() resource.Columnar {
 }
 
 func cronjobYaml() string {
-	return `typemeta:
-  kind: CronJob
-  apiversion: extensions/batchv1beta1
-objectmeta:
+	return `apiVersion: extensions/batchv1beta1
+kind: CronJob
+metadata:
+  creationTimestamp: "2018-12-14T17:36:43Z"
   name: fred
-  generatename: ""
   namespace: blee
-  selflink: ""
-  uid: ""
-  resourceversion: ""
-  generation: 0
-  creationtimestamp: "2018-12-14T10:36:43.326972-07:00"
-  deletiontimestamp: null
-  deletiongraceperiodseconds: null
-  labels: {}
-  annotations: {}
-  ownerreferences: []
-  initializers: null
-  finalizers: []
-  clustername: ""
-  managedfields: []
 spec:
-  schedule: '*/1 * * * *'
-  startingdeadlineseconds: null
-  concurrencypolicy: ""
-  suspend: false
-  jobtemplate:
-    objectmeta:
-      name: ""
-      generatename: ""
-      namespace: ""
-      selflink: ""
-      uid: ""
-      resourceversion: ""
-      generation: 0
-      creationtimestamp: "0001-01-01T00:00:00Z"
-      deletiontimestamp: null
-      deletiongraceperiodseconds: null
-      labels: {}
-      annotations: {}
-      ownerreferences: []
-      initializers: null
-      finalizers: []
-      clustername: ""
-      managedfields: []
+  jobTemplate:
+    metadata:
+      creationTimestamp: null
     spec:
-      parallelism: null
-      completions: null
-      activedeadlineseconds: null
-      backofflimit: null
-      selector: null
-      manualselector: null
       template:
-        objectmeta:
-          name: ""
-          generatename: ""
-          namespace: ""
-          selflink: ""
-          uid: ""
-          resourceversion: ""
-          generation: 0
-          creationtimestamp: "0001-01-01T00:00:00Z"
-          deletiontimestamp: null
-          deletiongraceperiodseconds: null
-          labels: {}
-          annotations: {}
-          ownerreferences: []
-          initializers: null
-          finalizers: []
-          clustername: ""
-          managedfields: []
+        metadata:
+          creationTimestamp: null
         spec:
-          volumes: []
-          initcontainers: []
-          containers: []
-          restartpolicy: ""
-          terminationgraceperiodseconds: null
-          activedeadlineseconds: null
-          dnspolicy: ""
-          nodeselector: {}
-          serviceaccountname: ""
-          deprecatedserviceaccount: ""
-          automountserviceaccounttoken: null
-          nodename: ""
-          hostnetwork: false
-          hostpid: false
-          hostipc: false
-          shareprocessnamespace: null
-          securitycontext: null
-          imagepullsecrets: []
-          hostname: ""
-          subdomain: ""
-          affinity: null
-          schedulername: ""
-          tolerations: []
-          hostaliases: []
-          priorityclassname: ""
-          priority: null
-          dnsconfig: null
-          readinessgates: []
-          runtimeclassname: null
-          enableservicelinks: null
-      ttlsecondsafterfinished: null
-  successfuljobshistorylimit: null
-  failedjobshistorylimit: null
+          containers: null
+  schedule: '*/1 * * * *'
+  suspend: false
 status:
-  active: []
-  lastscheduletime: "2018-12-14T10:36:43.326972-07:00"
+  lastScheduleTime: "2018-12-14T17:36:43Z"
 `
 }

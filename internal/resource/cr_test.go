@@ -128,37 +128,19 @@ func testTime() time.Time {
 }
 
 func crYaml() string {
-	return `typemeta:
-  kind: ClusterRole
-  apiversion: rbac.authorization.k8s.io/v1
-objectmeta:
+	return `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: "2018-12-14T17:36:43Z"
   name: fred
-  generatename: ""
   namespace: blee
-  selflink: ""
-  uid: ""
-  resourceversion: ""
-  generation: 0
-  creationtimestamp: "2018-12-14T10:36:43.326972-07:00"
-  deletiontimestamp: null
-  deletiongraceperiodseconds: null
-  labels: {}
-  annotations: {}
-  ownerreferences: []
-  initializers: null
-  finalizers: []
-  clustername: ""
-  managedfields: []
 rules:
-- verbs:
+- apiGroups:
+  - ""
+  resourceNames:
+  - pod
+  verbs:
   - get
   - list
-  apigroups:
-  - ""
-  resources: []
-  resourcenames:
-  - pod
-  nonresourceurls: []
-aggregationrule: null
 `
 }

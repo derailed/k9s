@@ -3,8 +3,8 @@ package resource_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -84,35 +84,19 @@ func newCRB() resource.Columnar {
 }
 
 func crbYaml() string {
-	return `typemeta:
-  kind: ClusterRoleBinding
-  apiversion: rbac.authorization.k8s.io/v1
-objectmeta:
-  name: fred
-  generatename: ""
-  namespace: blee
-  selflink: ""
-  uid: ""
-  resourceversion: ""
-  generation: 0
-  creationtimestamp: "2018-12-14T10:36:43.326972-07:00"
-  deletiontimestamp: null
-  deletiongraceperiodseconds: null
-  labels: {}
-  annotations: {}
-  ownerreferences: []
-  initializers: null
-  finalizers: []
-  clustername: ""
-  managedfields: []
-subjects:
-- kind: test
-  apigroup: ""
+	return `apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  creationTimestamp: "2018-12-14T17:36:43Z"
   name: fred
   namespace: blee
-roleref:
-  apigroup: ""
+roleRef:
+  apiGroup: ""
   kind: ""
   name: ""
+subjects:
+- kind: test
+  name: fred
+  namespace: blee
 `
 }

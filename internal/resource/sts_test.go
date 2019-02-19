@@ -3,11 +3,11 @@ package resource_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/apps/v1"
+	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -124,96 +124,24 @@ func stsHeader() resource.Row {
 }
 
 func stsYaml() string {
-	return `typemeta:
-  kind: StatefulSet
-  apiversion: v1
-objectmeta:
+	return `apiVersion: v1
+kind: StatefulSet
+metadata:
+  creationTimestamp: "2018-12-14T17:36:43Z"
   name: fred
-  generatename: ""
   namespace: blee
-  selflink: ""
-  uid: ""
-  resourceversion: ""
-  generation: 0
-  creationtimestamp: "2018-12-14T10:36:43.326972-07:00"
-  deletiontimestamp: null
-  deletiongraceperiodseconds: null
-  labels: {}
-  annotations: {}
-  ownerreferences: []
-  initializers: null
-  finalizers: []
-  clustername: ""
-  managedfields: []
 spec:
   replicas: 0
   selector: null
+  serviceName: ""
   template:
-    objectmeta:
-      name: ""
-      generatename: ""
-      namespace: ""
-      selflink: ""
-      uid: ""
-      resourceversion: ""
-      generation: 0
-      creationtimestamp: "0001-01-01T00:00:00Z"
-      deletiontimestamp: null
-      deletiongraceperiodseconds: null
-      labels: {}
-      annotations: {}
-      ownerreferences: []
-      initializers: null
-      finalizers: []
-      clustername: ""
-      managedfields: []
+    metadata:
+      creationTimestamp: null
     spec:
-      volumes: []
-      initcontainers: []
-      containers: []
-      restartpolicy: ""
-      terminationgraceperiodseconds: null
-      activedeadlineseconds: null
-      dnspolicy: ""
-      nodeselector: {}
-      serviceaccountname: ""
-      deprecatedserviceaccount: ""
-      automountserviceaccounttoken: null
-      nodename: ""
-      hostnetwork: false
-      hostpid: false
-      hostipc: false
-      shareprocessnamespace: null
-      securitycontext: null
-      imagepullsecrets: []
-      hostname: ""
-      subdomain: ""
-      affinity: null
-      schedulername: ""
-      tolerations: []
-      hostaliases: []
-      priorityclassname: ""
-      priority: null
-      dnsconfig: null
-      readinessgates: []
-      runtimeclassname: null
-      enableservicelinks: null
-  volumeclaimtemplates: []
-  servicename: ""
-  podmanagementpolicy: ""
-  updatestrategy:
-    type: ""
-    rollingupdate: null
-  revisionhistorylimit: null
+      containers: null
+  updateStrategy: {}
 status:
-  observedgeneration: 0
+  readyReplicas: 1
   replicas: 0
-  readyreplicas: 1
-  currentreplicas: 0
-  updatedreplicas: 0
-  currentrevision: ""
-  updaterevision: ""
-  collisioncount: null
-  conditions: []
 `
 }

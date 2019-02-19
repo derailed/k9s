@@ -3,11 +3,11 @@ package resource_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -102,62 +102,13 @@ func newPV() resource.Columnar {
 }
 
 func pvYaml() string {
-	return `typemeta:
-  kind: PV
-  apiversion: v1
-objectmeta:
+	return `apiVersion: v1
+kind: PeristentVolume
+metadata:
+  creationTimestamp: "2018-12-14T17:36:43Z"
   name: fred
-  generatename: ""
   namespace: blee
-  selflink: ""
-  uid: ""
-  resourceversion: ""
-  generation: 0
-  creationtimestamp: "2018-12-14T10:36:43.326972-07:00"
-  deletiontimestamp: null
-  deletiongraceperiodseconds: null
-  labels: {}
-  annotations: {}
-  ownerreferences: []
-  initializers: null
-  finalizers: []
-  clustername: ""
-  managedfields: []
-spec:
-  capacity: {}
-  persistentvolumesource:
-    gcepersistentdisk: null
-    awselasticblockstore: null
-    hostpath: null
-    glusterfs: null
-    nfs: null
-    rbd: null
-    iscsi: null
-    cinder: null
-    cephfs: null
-    fc: null
-    flocker: null
-    flexvolume: null
-    azurefile: null
-    vspherevolume: null
-    quobyte: null
-    azuredisk: null
-    photonpersistentdisk: null
-    portworxvolume: null
-    scaleio: null
-    local: null
-    storageos: null
-    csi: null
-  accessmodes: []
-  claimref: null
-  persistentvolumereclaimpolicy: ""
-  storageclassname: ""
-  mountoptions: []
-  volumemode: null
-  nodeaffinity: null
-status:
-  phase: ""
-  message: ""
-  reason: ""
+spec: {}
+status: {}
 `
 }

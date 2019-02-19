@@ -3,8 +3,8 @@ package resource_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
@@ -112,98 +112,27 @@ func newDS() resource.Columnar {
 }
 
 func dsYaml() string {
-	return `typemeta:
-  kind: DaemonSet
-  apiversion: extensions/v1beta1
-objectmeta:
+	return `apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  creationTimestamp: "2018-12-14T17:36:43Z"
   name: fred
-  generatename: ""
   namespace: blee
-  selflink: ""
-  uid: ""
-  resourceversion: ""
-  generation: 0
-  creationtimestamp: "2018-12-14T10:36:43.326972-07:00"
-  deletiontimestamp: null
-  deletiongraceperiodseconds: null
-  labels: {}
-  annotations: {}
-  ownerreferences: []
-  initializers: null
-  finalizers: []
-  clustername: ""
-  managedfields: []
 spec:
   selector:
-    matchlabels:
+    matchLabels:
       fred: blee
-    matchexpressions: []
   template:
-    objectmeta:
-      name: ""
-      generatename: ""
-      namespace: ""
-      selflink: ""
-      uid: ""
-      resourceversion: ""
-      generation: 0
-      creationtimestamp: "0001-01-01T00:00:00Z"
-      deletiontimestamp: null
-      deletiongraceperiodseconds: null
-      labels: {}
-      annotations: {}
-      ownerreferences: []
-      initializers: null
-      finalizers: []
-      clustername: ""
-      managedfields: []
+    metadata:
+      creationTimestamp: null
     spec:
-      volumes: []
-      initcontainers: []
-      containers: []
-      restartpolicy: ""
-      terminationgraceperiodseconds: null
-      activedeadlineseconds: null
-      dnspolicy: ""
-      nodeselector: {}
-      serviceaccountname: ""
-      deprecatedserviceaccount: ""
-      automountserviceaccounttoken: null
-      nodename: ""
-      hostnetwork: false
-      hostpid: false
-      hostipc: false
-      shareprocessnamespace: null
-      securitycontext: null
-      imagepullsecrets: []
-      hostname: ""
-      subdomain: ""
-      affinity: null
-      schedulername: ""
-      tolerations: []
-      hostaliases: []
-      priorityclassname: ""
-      priority: null
-      dnsconfig: null
-      readinessgates: []
-      runtimeclassname: null
-      enableservicelinks: null
-  updatestrategy:
-    type: ""
-    rollingupdate: null
-  minreadyseconds: 0
-  templategeneration: 0
-  revisionhistorylimit: null
+      containers: null
+  updateStrategy: {}
 status:
-  currentnumberscheduled: 1
-  numbermisscheduled: 0
-  desirednumberscheduled: 1
-  numberready: 1
-  observedgeneration: 0
-  updatednumberscheduled: 0
-  numberavailable: 1
-  numberunavailable: 0
-  collisioncount: null
-  conditions: []
+  currentNumberScheduled: 1
+  desiredNumberScheduled: 1
+  numberAvailable: 1
+  numberMisscheduled: 0
+  numberReady: 1
 `
 }

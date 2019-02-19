@@ -3,11 +3,11 @@ package resource_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -17,7 +17,6 @@ func TestCMHeader(t *testing.T) {
 		newConfigMap().Header(resource.DefaultNamespace),
 	)
 }
-
 
 func TestCMHeaderAllNS(t *testing.T) {
 	assert.Equal(t,
@@ -184,30 +183,14 @@ func k8sCM() *v1.ConfigMap {
 }
 
 func cmYaml() string {
-	return `typemeta:
-  kind: ConfigMap
-  apiversion: v1
-objectmeta:
-  name: fred
-  generatename: ""
-  namespace: blee
-  selflink: ""
-  uid: ""
-  resourceversion: ""
-  generation: 0
-  creationtimestamp: "2018-12-14T10:36:43.326972-07:00"
-  deletiontimestamp: null
-  deletiongraceperiodseconds: null
-  labels: {}
-  annotations: {}
-  ownerreferences: []
-  initializers: null
-  finalizers: []
-  clustername: ""
-  managedfields: []
+	return `apiVersion: v1
 data:
   blee: blee
   duh: duh
-binarydata: {}
+kind: ConfigMap
+metadata:
+  creationTimestamp: "2018-12-14T17:36:43Z"
+  name: fred
+  namespace: blee
 `
 }

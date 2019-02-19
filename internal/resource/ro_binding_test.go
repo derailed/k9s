@@ -3,11 +3,11 @@ package resource_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/api/rbac/v1"
+	v1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -91,35 +91,19 @@ func newRB() resource.Columnar {
 }
 
 func rbYaml() string {
-	return `typemeta:
-  kind: RoleBinding
-  apiversion: rbac.authorization.k8s.io/v1
-objectmeta:
-  name: fred
-  generatename: ""
-  namespace: blee
-  selflink: ""
-  uid: ""
-  resourceversion: ""
-  generation: 0
-  creationtimestamp: "2018-12-14T10:36:43.326972-07:00"
-  deletiontimestamp: null
-  deletiongraceperiodseconds: null
-  labels: {}
-  annotations: {}
-  ownerreferences: []
-  initializers: null
-  finalizers: []
-  clustername: ""
-  managedfields: []
-subjects:
-- kind: User
-  apigroup: ""
+	return `apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  creationTimestamp: "2018-12-14T17:36:43Z"
   name: fred
   namespace: blee
-roleref:
-  apigroup: ""
+roleRef:
+  apiGroup: ""
   kind: User
   name: duh
+subjects:
+- kind: User
+  name: fred
+  namespace: blee
 `
 }

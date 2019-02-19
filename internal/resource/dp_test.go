@@ -3,8 +3,8 @@ package resource_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	appsv1 "k8s.io/api/apps/v1"
@@ -105,95 +105,21 @@ func newDeployment() resource.Columnar {
 }
 
 func dpYaml() string {
-	return `typemeta:
-  kind: Deployment
-  apiversion: apps/v1
-objectmeta:
+	return `apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2018-12-14T17:36:43Z"
   name: fred
-  generatename: ""
   namespace: blee
-  selflink: ""
-  uid: ""
-  resourceversion: ""
-  generation: 0
-  creationtimestamp: "2018-12-14T10:36:43.326972-07:00"
-  deletiontimestamp: null
-  deletiongraceperiodseconds: null
-  labels: {}
-  annotations: {}
-  ownerreferences: []
-  initializers: null
-  finalizers: []
-  clustername: ""
-  managedfields: []
 spec:
   replicas: 1
   selector: null
+  strategy: {}
   template:
-    objectmeta:
-      name: ""
-      generatename: ""
-      namespace: ""
-      selflink: ""
-      uid: ""
-      resourceversion: ""
-      generation: 0
-      creationtimestamp: "0001-01-01T00:00:00Z"
-      deletiontimestamp: null
-      deletiongraceperiodseconds: null
-      labels: {}
-      annotations: {}
-      ownerreferences: []
-      initializers: null
-      finalizers: []
-      clustername: ""
-      managedfields: []
+    metadata:
+      creationTimestamp: null
     spec:
-      volumes: []
-      initcontainers: []
-      containers: []
-      restartpolicy: ""
-      terminationgraceperiodseconds: null
-      activedeadlineseconds: null
-      dnspolicy: ""
-      nodeselector: {}
-      serviceaccountname: ""
-      deprecatedserviceaccount: ""
-      automountserviceaccounttoken: null
-      nodename: ""
-      hostnetwork: false
-      hostpid: false
-      hostipc: false
-      shareprocessnamespace: null
-      securitycontext: null
-      imagepullsecrets: []
-      hostname: ""
-      subdomain: ""
-      affinity: null
-      schedulername: ""
-      tolerations: []
-      hostaliases: []
-      priorityclassname: ""
-      priority: null
-      dnsconfig: null
-      readinessgates: []
-      runtimeclassname: null
-      enableservicelinks: null
-  strategy:
-    type: ""
-    rollingupdate: null
-  minreadyseconds: 0
-  revisionhistorylimit: null
-  paused: false
-  progressdeadlineseconds: null
-status:
-  observedgeneration: 0
-  replicas: 0
-  updatedreplicas: 0
-  readyreplicas: 0
-  availablereplicas: 0
-  unavailablereplicas: 0
-  conditions: []
-  collisioncount: null
+      containers: null
+status: {}
 `
 }
