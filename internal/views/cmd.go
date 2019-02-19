@@ -66,6 +66,6 @@ func (v *cmdView) active(f bool) {
 		v.activate()
 	} else {
 		log.Debug("CmdView was deactivated!")
-	  v.Clear()
+		v.Clear()
 	}
 }

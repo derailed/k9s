@@ -77,7 +77,7 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		switch evt.Rune() {
 		case v.cmdBuff.hotKey:
 			if !v.app.cmdView.inCmdMode() {
-				v.app.flash(flashInfo,"Entering filtering mode...")
+				v.app.flash(flashInfo, "Entering filtering mode...")
 				log.Info("K9s entering filtering mode...")
 				v.cmdBuff.setActive(true)
 			}
@@ -87,7 +87,7 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if a, ok := v.actions[key]; ok {
-		if ! v.app.cmdView.inCmdMode() {
+		if !v.app.cmdView.inCmdMode() {
 			a.action(evt)
 		}
 	}

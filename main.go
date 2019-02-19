@@ -6,6 +6,7 @@ import (
 	"github.com/derailed/k9s/internal/cmd"
 	"github.com/derailed/k9s/internal/config"
 	log "github.com/sirupsen/logrus"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
 func init() {

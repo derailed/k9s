@@ -1,6 +1,6 @@
 package views
 
-import(
+import (
 	log "github.com/sirupsen/logrus"
 )
 
