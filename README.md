@@ -30,6 +30,11 @@ brew tap derailed/k9s && brew install k9s
 
 - [Releases](https://github.com/derailed/k9s/releases)
 
+1. Running from source
+
+- You will need to use go 1.11+
+- GO111MODULE=on
+
 <br/>
 
 ---
