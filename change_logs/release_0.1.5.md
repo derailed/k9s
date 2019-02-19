@@ -27,4 +27,4 @@ Thank you so much for your support!!
 ---
 ## Resolved Bugs
 
--
+- Fixed release version not showing up on execs
