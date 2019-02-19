@@ -2,7 +2,7 @@ package views
 
 import (
 	"fmt"
-	"github.com/derailed/k9s/resource"
+	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
 )
 
