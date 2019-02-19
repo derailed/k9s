@@ -5,7 +5,6 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -68,11 +67,7 @@ func (r *CRD) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	raw, err := yaml.Marshal(i)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	return r.marshalObject(i.(*unstructured.Unstructured))
 }
 
 // Header return the resource header.

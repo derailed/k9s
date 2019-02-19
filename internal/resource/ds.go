@@ -5,7 +5,6 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
 )
 
@@ -65,14 +64,10 @@ func (r *DaemonSet) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	dp := i.(*extv1beta1.DaemonSet)
-	dp.TypeMeta.APIVersion = "extensions/v1beta1"
-	dp.TypeMeta.Kind = "DaemonSet"
-	raw, err := yaml.Marshal(i)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	ds := i.(*extv1beta1.DaemonSet)
+	ds.TypeMeta.APIVersion = "extensions/v1beta1"
+	ds.TypeMeta.Kind = "DaemonSet"
+	return r.marshalObject(ds)
 }
 
 // Header return resource header.

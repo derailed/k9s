@@ -7,8 +7,7 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 const (
@@ -105,11 +104,7 @@ func (r *Node) Marshal(path string) (string, error) {
 	no := i.(*v1.Node)
 	no.TypeMeta.APIVersion = "v1"
 	no.TypeMeta.Kind = "Node"
-	raw, err := yaml.Marshal(no)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	return r.marshalObject(no)
 }
 
 // Header returns resource header.

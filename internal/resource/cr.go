@@ -3,9 +3,7 @@ package resource
 import (
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	"k8s.io/api/rbac/v1"
-
-	"gopkg.in/yaml.v2"
+	v1 "k8s.io/api/rbac/v1"
 )
 
 // ClusterRole tracks a kubernetes resource.
@@ -67,11 +65,7 @@ func (r *ClusterRole) Marshal(path string) (string, error) {
 	cr := i.(*v1.ClusterRole)
 	cr.TypeMeta.APIVersion = "rbac.authorization.k8s.io/v1"
 	cr.TypeMeta.Kind = "ClusterRole"
-	raw, err := yaml.Marshal(i)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	return r.marshalObject(cr)
 }
 
 // Header return resource header.

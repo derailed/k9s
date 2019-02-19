@@ -6,8 +6,7 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
-	"k8s.io/api/batch/v1"
+	v1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
@@ -67,14 +66,10 @@ func (r *Job) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	dp := i.(*v1.Job)
-	dp.TypeMeta.APIVersion = "extensions/v1beta1"
-	dp.TypeMeta.Kind = "Job"
-	raw, err := yaml.Marshal(i)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	jo := i.(*v1.Job)
+	jo.TypeMeta.APIVersion = "extensions/v1beta1"
+	jo.TypeMeta.Kind = "Job"
+	return r.marshalObject(jo)
 }
 
 // Header return resource header.

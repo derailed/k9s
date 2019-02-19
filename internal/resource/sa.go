@@ -5,8 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // ServiceAccount represents a Kubernetes resource.
@@ -68,11 +67,7 @@ func (r *ServiceAccount) Marshal(path string) (string, error) {
 	sa := i.(*v1.ServiceAccount)
 	sa.TypeMeta.APIVersion = "v1"
 	sa.TypeMeta.Kind = "ServiceAccount"
-	raw, err := yaml.Marshal(i)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	return r.marshalObject(sa)
 }
 
 // Header return resource header.

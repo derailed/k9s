@@ -5,8 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
-	"k8s.io/api/apps/v1"
+	v1 "k8s.io/api/apps/v1"
 )
 
 // StatefulSet tracks a kubernetes resource.
@@ -68,11 +67,7 @@ func (r *StatefulSet) Marshal(path string) (string, error) {
 	sts := i.(*v1.StatefulSet)
 	sts.TypeMeta.APIVersion = "v1"
 	sts.TypeMeta.Kind = "StatefulSet"
-	raw, err := yaml.Marshal(i)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	return r.marshalObject(sts)
 }
 
 // Header return resource header.

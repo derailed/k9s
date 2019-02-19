@@ -5,8 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // ReplicationController tracks a kubernetes resource.
@@ -65,14 +64,10 @@ func (r *ReplicationController) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	rs := i.(*v1.ReplicationController)
-	rs.TypeMeta.APIVersion = "v1"
-	rs.TypeMeta.Kind = "ReplicationController"
-	raw, err := yaml.Marshal(rs)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	rc := i.(*v1.ReplicationController)
+	rc.TypeMeta.APIVersion = "v1"
+	rc.TypeMeta.Kind = "ReplicationController"
+	return r.marshalObject(rc)
 }
 
 // Header return resource header.

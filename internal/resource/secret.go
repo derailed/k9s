@@ -5,8 +5,7 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
-	yaml "gopkg.in/yaml.v2"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // Secret tracks a kubernetes resource.
@@ -65,14 +64,10 @@ func (r *Secret) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	cm := i.(*v1.Secret)
-	cm.TypeMeta.APIVersion = "v1"
-	cm.TypeMeta.Kind = "Secret"
-	raw, err := yaml.Marshal(i)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	sec := i.(*v1.Secret)
+	sec.TypeMeta.APIVersion = "v1"
+	sec.TypeMeta.Kind = "Secret"
+	return r.marshalObject(sec)
 }
 
 // Header return resource header.

@@ -1,10 +1,14 @@
 package resource
 
 import (
+	"bytes"
 	"path"
 
 	"github.com/derailed/k9s/internal/k8s"
+	log "github.com/sirupsen/logrus"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/cli-runtime/pkg/genericclioptions/printers"
 )
 
 type (
@@ -70,4 +74,17 @@ func (b *Base) Delete(path string) error {
 
 func (*Base) namespacedName(m metav1.ObjectMeta) string {
 	return path.Join(m.Namespace, m.Name)
+}
+
+func (*Base) marshalObject(o runtime.Object) (string, error) {
+	var (
+		buff bytes.Buffer
+		p    printers.YAMLPrinter
+	)
+	err := p.PrintObj(o, &buff)
+	if err != nil {
+		log.Errorf("Marshal Error %v", err)
+		return "", err
+	}
+	return buff.String(), nil
 }

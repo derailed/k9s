@@ -5,8 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 )
 
@@ -69,11 +68,7 @@ func (r *Ingress) Marshal(path string) (string, error) {
 	ing := i.(*v1beta1.Ingress)
 	ing.TypeMeta.APIVersion = "extensions/v1beta1"
 	ing.TypeMeta.Kind = "Ingress"
-	raw, err := yaml.Marshal(i)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	return r.marshalObject(ing)
 }
 
 // Header return resource header.

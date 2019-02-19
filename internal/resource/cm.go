@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
-	yaml "gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -68,11 +67,7 @@ func (r *ConfigMap) Marshal(path string) (string, error) {
 	cm := i.(*v1.ConfigMap)
 	cm.TypeMeta.APIVersion = "v1"
 	cm.TypeMeta.Kind = "ConfigMap"
-	raw, err := yaml.Marshal(i)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	return r.marshalObject(cm)
 }
 
 // Header return resource header.

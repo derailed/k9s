@@ -5,8 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
-	"k8s.io/api/rbac/v1"
+	v1 "k8s.io/api/rbac/v1"
 )
 
 // Role tracks a kubernetes resource.
@@ -70,11 +69,7 @@ func (r *Role) Marshal(path string) (string, error) {
 	role := i.(*v1.Role)
 	role.TypeMeta.APIVersion = "rbac.authorization.k8s.io/v1"
 	role.TypeMeta.Kind = "Role"
-	raw, err := yaml.Marshal(role)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	return r.marshalObject(role)
 }
 
 // Header return resource header.

@@ -3,8 +3,7 @@ package resource
 import (
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // Namespace tracks a kubernetes resource.
@@ -67,11 +66,7 @@ func (r *Namespace) Marshal(path string) (string, error) {
 	nss := i.(*v1.Namespace)
 	nss.TypeMeta.APIVersion = "v1"
 	nss.TypeMeta.Kind = "Namespace"
-	raw, err := yaml.Marshal(nss)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	return r.marshalObject(nss)
 }
 
 // Header returns resource header.

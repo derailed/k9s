@@ -6,8 +6,7 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // PV tracks a kubernetes resource.
@@ -68,12 +67,8 @@ func (r *PV) Marshal(path string) (string, error) {
 
 	pv := i.(*v1.PersistentVolume)
 	pv.TypeMeta.APIVersion = "v1"
-	pv.TypeMeta.Kind = "PV"
-	raw, err := yaml.Marshal(pv)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	pv.TypeMeta.Kind = "PeristentVolume"
+	return r.marshalObject(pv)
 }
 
 // Header return resource header.

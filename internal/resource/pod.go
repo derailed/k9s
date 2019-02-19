@@ -9,8 +9,7 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 const defaultTimeout = 1 * time.Second
@@ -111,11 +110,7 @@ func (r *Pod) Marshal(path string) (string, error) {
 	po := i.(*v1.Pod)
 	po.TypeMeta.APIVersion = "v1"
 	po.TypeMeta.Kind = "Pod"
-	raw, err := yaml.Marshal(po)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	return r.marshalObject(po)
 }
 
 // Containers lists out all the docker contrainers name contained in a pod.

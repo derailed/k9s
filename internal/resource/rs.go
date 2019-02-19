@@ -5,8 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
-	"k8s.io/api/apps/v1"
+	v1 "k8s.io/api/apps/v1"
 )
 
 // ReplicaSet tracks a kubernetes resource.
@@ -68,11 +67,7 @@ func (r *ReplicaSet) Marshal(path string) (string, error) {
 	rs := i.(*v1.ReplicaSet)
 	rs.TypeMeta.APIVersion = "extensions/v1beta"
 	rs.TypeMeta.Kind = "ReplicaSet"
-	raw, err := yaml.Marshal(rs)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	return r.marshalObject(rs)
 }
 
 // Header return resource header.

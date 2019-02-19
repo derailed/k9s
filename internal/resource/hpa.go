@@ -6,8 +6,7 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
-	"k8s.io/api/autoscaling/v1"
+	v1 "k8s.io/api/autoscaling/v1"
 )
 
 // HPA tracks a kubernetes resource.
@@ -68,12 +67,8 @@ func (r *HPA) Marshal(path string) (string, error) {
 
 	hpa := i.(*v1.HorizontalPodAutoscaler)
 	hpa.TypeMeta.APIVersion = "autoscaling/v1"
-	hpa.TypeMeta.Kind = "HPA"
-	raw, err := yaml.Marshal(i)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	hpa.TypeMeta.Kind = "HorizontalPodAutoscaler"
+	return r.marshalObject(hpa)
 }
 
 // Header return resource header.

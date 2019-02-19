@@ -5,8 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
-	"k8s.io/api/apps/v1"
+	v1 "k8s.io/api/apps/v1"
 )
 
 // Deployment tracks a kubernetes resource.
@@ -68,11 +67,7 @@ func (r *Deployment) Marshal(path string) (string, error) {
 	dp := i.(*v1.Deployment)
 	dp.TypeMeta.APIVersion = "apps/v1"
 	dp.TypeMeta.Kind = "Deployment"
-	raw, err := yaml.Marshal(i)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	return r.marshalObject(dp)
 }
 
 // Header return resource header.

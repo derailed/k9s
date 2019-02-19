@@ -7,7 +7,6 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -73,11 +72,7 @@ func (r *Service) Marshal(path string) (string, error) {
 	svc := i.(*v1.Service)
 	svc.TypeMeta.APIVersion = "v1"
 	svc.TypeMeta.Kind = "Service"
-	raw, err := yaml.Marshal(svc)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	return r.marshalObject(svc)
 }
 
 // Header returns resource header.

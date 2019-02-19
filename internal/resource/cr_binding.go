@@ -3,8 +3,7 @@ package resource
 import (
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
-	"k8s.io/api/rbac/v1"
+	v1 "k8s.io/api/rbac/v1"
 )
 
 // ClusterRoleBinding tracks a kubernetes resource.
@@ -66,11 +65,7 @@ func (r *ClusterRoleBinding) Marshal(path string) (string, error) {
 	crb := i.(*v1.ClusterRoleBinding)
 	crb.TypeMeta.APIVersion = "rbac.authorization.k8s.io/v1"
 	crb.TypeMeta.Kind = "ClusterRoleBinding"
-	raw, err := yaml.Marshal(crb)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	return r.marshalObject(crb)
 }
 
 // Header return resource header.

@@ -3,8 +3,7 @@ package resource
 import (
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 // PVC tracks a kubernetes resource.
@@ -66,11 +65,7 @@ func (r *PVC) Marshal(path string) (string, error) {
 	pvc := i.(*v1.PersistentVolumeClaim)
 	pvc.TypeMeta.APIVersion = "v1"
 	pvc.TypeMeta.Kind = "PersistentVolumeClaim"
-	raw, err := yaml.Marshal(pvc)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	return r.marshalObject(pvc)
 }
 
 // Header return resource header.

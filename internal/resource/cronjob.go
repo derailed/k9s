@@ -5,7 +5,6 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	log "github.com/sirupsen/logrus"
-	yaml "gopkg.in/yaml.v2"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 )
 
@@ -65,14 +64,10 @@ func (r *CronJob) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	dp := i.(*batchv1beta1.CronJob)
-	dp.TypeMeta.APIVersion = "extensions/batchv1beta1"
-	dp.TypeMeta.Kind = "CronJob"
-	raw, err := yaml.Marshal(i)
-	if err != nil {
-		return "", err
-	}
-	return string(raw), nil
+	cj := i.(*batchv1beta1.CronJob)
+	cj.TypeMeta.APIVersion = "extensions/batchv1beta1"
+	cj.TypeMeta.Kind = "CronJob"
+	return r.marshalObject(cj)
 }
 
 // Header return resource header.
