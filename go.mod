@@ -40,7 +40,6 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.2.2
 	k8s.io/api v0.0.0-20190202010724-74b699b93c15
-	k8s.io/apiextensions-apiserver v0.0.0-20190205053453-ba46448aaa9f // indirect
 	k8s.io/apimachinery v0.0.0-20190207091153-095b9d203467
 	k8s.io/cli-runtime v0.0.0-20190207094101-a32b78e5dd0a
 	k8s.io/client-go v10.0.0+incompatible
