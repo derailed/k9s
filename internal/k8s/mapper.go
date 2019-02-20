@@ -28,128 +28,128 @@ func (*RestMapper) Name() meta.RESTScopeName {
 }
 
 var resMap = map[string]*meta.RESTMapping{
-	"ConfigMaps": &meta.RESTMapping{
+	"ConfigMaps": {
 		Resource:         schema.GroupVersionResource{Group: "", Version: "v1", Resource: "configmap"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "", Version: "v1", Kind: "ConfigMap"},
 		Scope:            RestMapping,
 	},
-	"Pods": &meta.RESTMapping{
+	"Pods": {
 		Resource:         schema.GroupVersionResource{Group: "", Version: "v1", Resource: "pod"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Pod"},
 		Scope:            RestMapping,
 	},
-	"Services": &meta.RESTMapping{
+	"Services": {
 		Resource:         schema.GroupVersionResource{Group: "", Version: "v1", Resource: "service"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Service"},
 		Scope:            RestMapping,
 	},
-	"EndPoints": &meta.RESTMapping{
+	"EndPoints": {
 		Resource:         schema.GroupVersionResource{Group: "", Version: "v1", Resource: "endpoints"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Endpoints"},
 		Scope:            RestMapping,
 	},
-	"Namespaces": &meta.RESTMapping{
+	"Namespaces": {
 		Resource:         schema.GroupVersionResource{Group: "", Version: "v1", Resource: "namespace"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Namespace"},
 		Scope:            RestMapping,
 	},
-	"Nodes": &meta.RESTMapping{
+	"Nodes": {
 		Resource:         schema.GroupVersionResource{Group: "", Version: "v1", Resource: "node"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Node"},
 		Scope:            RestMapping,
 	},
-	"PersistentVolumes": &meta.RESTMapping{
+	"PersistentVolumes": {
 		Resource:         schema.GroupVersionResource{Group: "", Version: "v1", Resource: "persistentvolume"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "", Version: "v1", Kind: "PersistentVolume"},
 		Scope:            RestMapping,
 	},
-	"PersistentVolumeClaims": &meta.RESTMapping{
+	"PersistentVolumeClaims": {
 		Resource:         schema.GroupVersionResource{Group: "", Version: "v1", Resource: "persistentvolumeclaim"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "", Version: "v1", Kind: "PersistentVolumeClaim"},
 		Scope:            RestMapping,
 	},
-	"ReplicationControllers": &meta.RESTMapping{
+	"ReplicationControllers": {
 		Resource:         schema.GroupVersionResource{Group: "", Version: "v1", Resource: "replicationcontroller"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "", Version: "v1", Kind: "ReplicationController"},
 		Scope:            RestMapping,
 	},
-	"Secrets": &meta.RESTMapping{
+	"Secrets": {
 		Resource:         schema.GroupVersionResource{Group: "", Version: "v1", Resource: "secret"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Secret"},
 		Scope:            RestMapping,
 	},
-	"ServiceAccounts": &meta.RESTMapping{
+	"ServiceAccounts": {
 		Resource:         schema.GroupVersionResource{Group: "", Version: "v1", Resource: "serviceaccount"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "", Version: "v1", Kind: "ServiceAccount"},
 		Scope:            RestMapping,
 	},
 
-	"Deployments": &meta.RESTMapping{
+	"Deployments": {
 		Resource:         schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployment"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "Deployment"},
 		Scope:            RestMapping,
 	},
-	"ReplicaSets": &meta.RESTMapping{
+	"ReplicaSets": {
 		Resource:         schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "replicaset"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "ReplicaSet"},
 		Scope:            RestMapping,
 	},
-	"StatefulSets": &meta.RESTMapping{
+	"StatefulSets": {
 		Resource:         schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "statefulsets"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "apps", Version: "v1", Kind: "StatefulSet"},
 		Scope:            RestMapping,
 	},
 
-	"HorizontalPodAutoscalers": &meta.RESTMapping{
+	"HorizontalPodAutoscalers": {
 		Resource:         schema.GroupVersionResource{Group: "autoscaling", Version: "v1", Resource: "horizontalpodautoscaler"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "autoscaling", Version: "v1", Kind: "HorizontalPodAutoscaler"},
 		Scope:            RestMapping,
 	},
 
-	"Jobs": &meta.RESTMapping{
+	"Jobs": {
 		Resource:         schema.GroupVersionResource{Group: "batch", Version: "v1", Resource: "job"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "batch", Version: "v1", Kind: "Job"},
 		Scope:            RestMapping,
 	},
-	"CronJobs": &meta.RESTMapping{
+	"CronJobs": {
 		Resource:         schema.GroupVersionResource{Group: "batch", Version: "v1", Resource: "cronjob"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "batch", Version: "v1", Kind: "CronJob"},
 		Scope:            RestMapping,
 	},
 
-	"DaemonSets": &meta.RESTMapping{
+	"DaemonSets": {
 		Resource:         schema.GroupVersionResource{Group: "extensions", Version: "v1beta1", Resource: "daemonset"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "extensions", Version: "v1beta1", Kind: "DaemonSet"},
 		Scope:            RestMapping,
 	},
-	"Ingress": &meta.RESTMapping{
+	"Ingress": {
 		Resource:         schema.GroupVersionResource{Group: "extensions", Version: "v1beta1", Resource: "ingress"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "extensions", Version: "v1beta1", Kind: "Ingress"},
 		Scope:            RestMapping,
 	},
 
-	"ClusterRoles": &meta.RESTMapping{
+	"ClusterRoles": {
 		Resource:         schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterrole"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "ClusterRole"},
 		Scope:            RestMapping,
 	},
-	"ClusterRoleBindings": &meta.RESTMapping{
+	"ClusterRoleBindings": {
 		Resource:         schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "clusterrolebinding"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "ClusterRoleBinding"},
 		Scope:            RestMapping,
 	},
-	"Roles": &meta.RESTMapping{
+	"Roles": {
 		Resource:         schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "role"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "Role"},
 		Scope:            RestMapping,
 	},
-	"RoleBindings": &meta.RESTMapping{
+	"RoleBindings": {
 		Resource:         schema.GroupVersionResource{Group: "rbac.authorization.k8s.io", Version: "v1", Resource: "rolebinding"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "rbac.authorization.k8s.io", Version: "v1", Kind: "RoleBinding"},
 		Scope:            RestMapping,
 	},
 
-	"CustomResourceDefinitions": &meta.RESTMapping{
+	"CustomResourceDefinitions": {
 		Resource:         schema.GroupVersionResource{Group: "apiextensions.k8s.io", Version: "v1beta1", Resource: "customresourcedefinitions"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "apiextensions.k8s.io", Version: "v1beta1", Kind: "CustomResourceDefinition"},
 		Scope:            RestMapping,
