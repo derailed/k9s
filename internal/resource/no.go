@@ -81,12 +81,14 @@ func (r *Node) List(ns string) (Columnars, error) {
 	cc := make(Columnars, 0, len(nn))
 	mx, err := r.metricSvc.PerNodeMetrics(nn)
 	if err != nil {
-		return cc, err
+		log.Warnf("No metrics: %#v", err)
 	}
 
 	for i := 0; i < len(nn); i++ {
 		n := r.NewInstance(&nn[i]).(*Node)
-		n.metrics = mx[nn[i].Name]
+		if err == nil {
+			n.metrics = mx[nn[i].Name]
+		}
 		cc = append(cc, n)
 	}
 	return cc, nil

@@ -121,15 +121,6 @@ func (r *Pod) Containers(path string) ([]string, error) {
 
 // Logs tails a given container logs
 func (r *Pod) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (context.CancelFunc, error) {
-	// var ctn v1.Container
-	// for _, c := range r.instance.Spec.Containers {
-	// 	if c.Name == co {
-	// 		ctn = c
-	// 	}
-	// }
-
-	// if ctn.Status.ContainerStatus
-
 	req := r.caller.(k8s.Loggable).Logs(ns, n, co, lines, prev)
 	ctx, cancel := context.WithCancel(context.TODO())
 	req.Context(ctx)
@@ -181,7 +172,9 @@ func (r *Pod) List(ns string) (Columnars, error) {
 	cc := make(Columnars, 0, len(ii))
 	for i := 0; i < len(ii); i++ {
 		po := r.NewInstance(&ii[i]).(MxColumnar)
-		po.SetMetrics(metrics[po.Name()])
+		if err == nil {
+			po.SetMetrics(metrics[po.Name()])
+		}
 		cc = append(cc, po)
 	}
 	return cc, nil

@@ -128,6 +128,7 @@ func TestConfigSaveFile(t *testing.T) {
 	ksMock := NewMockKubeSettings()
 	m.When(ksMock.CurrentContextName()).ThenReturn("minikube", nil)
 	m.When(ksMock.CurrentClusterName()).ThenReturn("minikube", nil)
+	m.When(ksMock.CurrentNamespaceName()).ThenReturn("default", nil)
 	m.When(ksMock.ClusterNames()).ThenReturn([]string{"minikube", "fred", "blee"}, nil)
 
 	cfg := config.NewConfig(ksMock)
@@ -150,6 +151,7 @@ func TestConfigReset(t *testing.T) {
 	ksMock := NewMockKubeSettings()
 	m.When(ksMock.CurrentContextName()).ThenReturn("blee", nil)
 	m.When(ksMock.CurrentClusterName()).ThenReturn("blee", nil)
+	m.When(ksMock.CurrentNamespaceName()).ThenReturn("default", nil)
 	m.When(ksMock.ClusterNames()).ThenReturn([]string{"blee"}, nil)
 
 	cfg := config.NewConfig(ksMock)

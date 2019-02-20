@@ -75,7 +75,9 @@ func TestConfigCurrentNamespace(t *testing.T) {
 
 	for _, u := range uu {
 		cfg := k8s.NewConfig(u.flags)
-		assert.Equal(t, u.namespace, cfg.CurrentNamespaceName())
+		ns, err := cfg.CurrentNamespaceName()
+		assert.Nil(t, err)
+		assert.Equal(t, u.namespace, ns)
 	}
 }
 
