@@ -145,22 +145,49 @@ func (v *resourceView) delete(*tcell.EventKey) {
 	v.selectedItem = noSelection
 }
 
-func (v *resourceView) describe(*tcell.EventKey) {
-	details := v.GetPrimitive("xray").(details)
-	details.clear()
+// func (v *resourceView) xRay(*tcell.EventKey) {
+// 	details := v.GetPrimitive("xray").(details)
+// 	details.clear()
 
+// 	if !v.rowSelected() {
+// 		return
+// 	}
+
+// 	props, err := v.list.Describe(v.selectedItem)
+// 	if err != nil {
+// 		v.app.flash(flashErr, "Unable to get xray fields", err.Error())
+// 		return
+// 	}
+// 	details.update(props)
+// 	details.setTitle(fmt.Sprintf(" %s ", v.selectedItem))
+// 	v.switchPage("xray")
+// }
+
+func (v *resourceView) describe(*tcell.EventKey) {
 	if !v.rowSelected() {
 		return
 	}
 
-	props, err := v.list.Describe(v.selectedItem)
+	selected := v.selectedItem
+	selected = strings.Replace(selected, "+", "", -1)
+	selected = strings.Replace(selected, "(*)", "", -1)
+
+	raw, err := v.list.Resource().Describe(v.title, selected)
 	if err != nil {
-		v.app.flash(flashErr, "Unable to get xray fields", err.Error())
+		v.app.flash(flashErr, "Unable to describe this resource", err.Error())
+		log.Error(err)
 		return
 	}
-	details.update(props)
-	details.setTitle(fmt.Sprintf(" %s ", v.selectedItem))
-	v.switchPage("xray")
+
+	var re = regexp.MustCompile(`(?m:(^(.+)$))`)
+	str := re.ReplaceAllString(string(raw), `[aqua]$1`)
+
+	details := v.GetPrimitive("details").(*detailsView)
+	details.ScrollToBeginning()
+	details.setCategory("DESC")
+	details.SetText(str)
+	details.setTitle(selected)
+	v.switchPage("details")
 }
 
 func (v *resourceView) view(*tcell.EventKey) {
@@ -175,10 +202,12 @@ func (v *resourceView) view(*tcell.EventKey) {
 		return
 	}
 
-	var re = regexp.MustCompile(`([\w|\.|"|\-|\/|\@]+):(.*)`)
+	var re = regexp.MustCompile(`(?m:([\w|\.|"|\-|\/|\@]+):(.*)$)`)
 	str := re.ReplaceAllString(string(raw), `[aqua]$1: [white]$2`)
 
 	details := v.GetPrimitive("details").(*detailsView)
+	details.ScrollToBeginning()
+	details.setCategory("YAML")
 	details.SetText(str)
 	details.setTitle(v.selectedItem)
 	v.switchPage("details")
@@ -341,7 +370,7 @@ func (v *resourceView) refreshActions() {
 		aa[KeyV] = newKeyHandler("View", v.view)
 	}
 	if v.list.Access(resource.DescribeAccess) {
-		aa[tcell.KeyCtrlX] = newKeyHandler("Describe", v.describe)
+		aa[KeyD] = newKeyHandler("Describe", v.describe)
 	}
 
 	aa[KeyHelp] = newKeyHandler("Help", v.app.noop)

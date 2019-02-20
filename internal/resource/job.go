@@ -1,6 +1,8 @@
 package resource
 
 import (
+	"bufio"
+	"context"
 	"fmt"
 	"time"
 
@@ -23,7 +25,7 @@ func NewJobList(ns string) List {
 
 // NewJobListWithArgs returns a new resource list.
 func NewJobListWithArgs(ns string, res Resource) List {
-	return newList(ns, "job", res, AllVerbsAccess)
+	return newList(ns, "job", res, AllVerbsAccess|DescribeAccess)
 }
 
 // NewJob instantiates a new Job.
@@ -70,6 +72,49 @@ func (r *Job) Marshal(path string) (string, error) {
 	jo.TypeMeta.APIVersion = "extensions/v1beta1"
 	jo.TypeMeta.Kind = "Job"
 	return r.marshalObject(jo)
+}
+
+func (r *Job) Containers(path string) ([]string, error) {
+	ns, n := namespaced(path)
+	return r.caller.(k8s.Loggable).Containers(ns, n)
+}
+
+func (r *Job) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (context.CancelFunc, error) {
+	req := r.caller.(k8s.Loggable).Logs(ns, n, co, lines, prev)
+	ctx, cancel := context.WithCancel(context.TODO())
+	req.Context(ctx)
+
+	blocked := true
+	go func() {
+		select {
+		case <-time.After(defaultTimeout):
+			if blocked {
+				close(c)
+				cancel()
+			}
+		}
+	}()
+
+	// This call will block if nothing is in the stream!!
+	stream, err := req.Stream()
+	blocked = false
+	if err != nil {
+		return cancel, fmt.Errorf("Log tail request failed for job `%s/%s:%s", ns, n, co)
+	}
+
+	go func() {
+		defer func() {
+			stream.Close()
+			cancel()
+			close(c)
+		}()
+
+		scanner := bufio.NewScanner(stream)
+		for scanner.Scan() {
+			c <- scanner.Text()
+		}
+	}()
+	return cancel, nil
 }
 
 // Header return resource header.

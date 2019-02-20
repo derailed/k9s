@@ -21,7 +21,7 @@ func NewReplicationControllerList(ns string) List {
 
 // NewReplicationControllerListWithArgs returns a new resource list.
 func NewReplicationControllerListWithArgs(ns string, res Resource) List {
-	return newList(ns, "rc", res, AllVerbsAccess)
+	return newList(ns, "rc", res, AllVerbsAccess|DescribeAccess)
 }
 
 // NewReplicationController instantiates a new Endpoint.

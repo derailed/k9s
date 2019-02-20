@@ -102,6 +102,7 @@ type (
 		Get(path string) (Columnar, error)
 		List(ns string) (Columnars, error)
 		Delete(path string) error
+		Describe(kind, pa string) (string, error)
 		Marshal(pa string) (string, error)
 		Header(ns string) Row
 	}

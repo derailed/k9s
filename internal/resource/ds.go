@@ -21,7 +21,7 @@ func NewDaemonSetList(ns string) List {
 
 // NewDaemonSetListWithArgs returns a new resource list.
 func NewDaemonSetListWithArgs(ns string, res Resource) List {
-	return newList(ns, "ds", res, AllVerbsAccess)
+	return newList(ns, "ds", res, AllVerbsAccess|DescribeAccess)
 }
 
 // NewDaemonSet instantiates a new DaemonSet.

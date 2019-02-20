@@ -22,7 +22,7 @@ func NewHPAList(ns string) List {
 
 // NewHPAListWithArgs returns a new resource list.
 func NewHPAListWithArgs(ns string, res Resource) List {
-	return newList(ns, "hpa", res, AllVerbsAccess)
+	return newList(ns, "hpa", res, AllVerbsAccess|DescribeAccess)
 }
 
 // NewHPA instantiates a new Endpoint.

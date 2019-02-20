@@ -90,7 +90,6 @@ func (c *Config) ActiveView() string {
 
 // SetActiveView set the currently cluster active view
 func (c *Config) SetActiveView(view string) {
-	c.Dump("ActiveView")
 	c.K9s.ActiveCluster().View.Active = view
 }
 

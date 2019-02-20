@@ -21,7 +21,7 @@ func NewServiceAccountList(ns string) List {
 
 // NewServiceAccountListWithArgs returns a new resource list.
 func NewServiceAccountListWithArgs(ns string, res Resource) List {
-	return newList(NotNamespaced, "sa", res, CRUDAccess)
+	return newList(ns, "sa", res, AllVerbsAccess|DescribeAccess)
 }
 
 // NewServiceAccount instantiates a new Endpoint.

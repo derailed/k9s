@@ -21,7 +21,7 @@ func NewConfigMapList(ns string) List {
 
 // NewConfigMapListWithArgs returns a new resource list.
 func NewConfigMapListWithArgs(ns string, res Resource) List {
-	return newList(ns, "cm", res, AllVerbsAccess)
+	return newList(ns, "cm", res, AllVerbsAccess|DescribeAccess)
 }
 
 // NewConfigMap instantiates a new ConfigMap.

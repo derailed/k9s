@@ -22,7 +22,7 @@ func NewPVList(ns string) List {
 
 // NewPVListWithArgs returns a new resource list.
 func NewPVListWithArgs(ns string, res Resource) List {
-	return newList(NotNamespaced, "pv", res, CRUDAccess)
+	return newList(NotNamespaced, "pv", res, CRUDAccess|DescribeAccess)
 }
 
 // NewPV instantiates a new Endpoint.

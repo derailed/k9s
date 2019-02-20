@@ -5,7 +5,6 @@ import (
 
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
-	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/watch"
 )
 
@@ -22,7 +21,7 @@ const (
 func defaultColorer(ns string, r *resource.RowEvent) tcell.Color {
 	c := stdColor
 	switch r.Action {
-	case watch.Added:
+	case watch.Added, resource.New:
 		c = addColor
 	case watch.Modified:
 		c = modColor
@@ -37,7 +36,6 @@ func podColorer(ns string, r *resource.RowEvent) tcell.Color {
 	if len(ns) != 0 {
 		statusCol = 2
 	}
-	log.Debug("Status", strings.TrimSpace(r.Fields[statusCol]))
 	switch strings.TrimSpace(r.Fields[statusCol]) {
 	case "ContainerCreating":
 		return addColor

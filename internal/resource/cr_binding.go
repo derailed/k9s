@@ -19,7 +19,7 @@ func NewClusterRoleBindingList(ns string) List {
 
 // NewClusterRoleBindingListWithArgs returns a new resource list.
 func NewClusterRoleBindingListWithArgs(ns string, res Resource) List {
-	return newList(NotNamespaced, "ctx", res, SwitchAccess|ViewAccess|DeleteAccess)
+	return newList(NotNamespaced, "ctx", res, SwitchAccess|ViewAccess|DeleteAccess|DescribeAccess)
 }
 
 // NewClusterRoleBinding instantiates a new ClusterRoleBinding.

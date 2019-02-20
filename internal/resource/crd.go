@@ -23,7 +23,7 @@ func NewCRDList(ns string) List {
 
 // NewCRDListWithArgs returns a new resource list.
 func NewCRDListWithArgs(ns string, res Resource) List {
-	return newList(NotNamespaced, "crd", res, CRUDAccess)
+	return newList(NotNamespaced, "crd", res, CRUDAccess|DescribeAccess)
 }
 
 // NewCRD instantiates a new CRD.

@@ -12,6 +12,9 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
+// KubeConfig represents kubeconfig settings.
+var KubeConfig *Config
+
 // Config tracks a kubernetes configuration.
 type Config struct {
 	flags          *genericclioptions.ConfigFlags
@@ -23,7 +26,13 @@ type Config struct {
 
 // NewConfig returns a new k8s config or an error if the flags are invalid.
 func NewConfig(f *genericclioptions.ConfigFlags) *Config {
-	return &Config{flags: f}
+	KubeConfig = &Config{flags: f}
+	return KubeConfig
+}
+
+// Flags returns configuration flags.
+func (c *Config) Flags() *genericclioptions.ConfigFlags {
+	return c.flags
 }
 
 // SwitchContext changes the kubeconfig context to a new cluster.

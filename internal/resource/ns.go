@@ -19,7 +19,7 @@ func NewNamespaceList(ns string) List {
 
 // NewNamespaceListWithArgs returns a new resource list.
 func NewNamespaceListWithArgs(ns string, res Resource) List {
-	return newList(NotNamespaced, "ns", res, CRUDAccess)
+	return newList(NotNamespaced, "ns", res, CRUDAccess|DescribeAccess)
 }
 
 // NewNamespace instantiates a new Endpoint.

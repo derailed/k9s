@@ -25,7 +25,7 @@ func NewServiceList(ns string) List {
 
 // NewServiceListWithArgs returns a new resource list.
 func NewServiceListWithArgs(ns string, res Resource) List {
-	return newList(ns, "svc", res, AllVerbsAccess)
+	return newList(ns, "svc", res, AllVerbsAccess|DescribeAccess)
 }
 
 // NewService instantiates a new Endpoint.

@@ -22,7 +22,7 @@ func NewIngressList(ns string) List {
 
 // NewIngressListWithArgs returns a new resource list.
 func NewIngressListWithArgs(ns string, res Resource) List {
-	return newList(ns, "ing", res, AllVerbsAccess)
+	return newList(ns, "ing", res, AllVerbsAccess|DescribeAccess)
 }
 
 // NewIngress instantiates a new Endpoint.

@@ -21,7 +21,7 @@ func NewSecretList(ns string) List {
 
 // NewSecretListWithArgs returns a new resource list.
 func NewSecretListWithArgs(ns string, res Resource) List {
-	return newList(ns, "secret", res, AllVerbsAccess)
+	return newList(ns, "secret", res, AllVerbsAccess|DescribeAccess)
 }
 
 // NewSecret instantiates a new Secret.

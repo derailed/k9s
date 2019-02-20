@@ -21,7 +21,7 @@ func NewDeploymentList(ns string) List {
 
 // NewDeploymentListWithArgs returns a new resource list.
 func NewDeploymentListWithArgs(ns string, res Resource) List {
-	return newList(ns, "deploy", res, AllVerbsAccess)
+	return newList(ns, "deploy", res, AllVerbsAccess|DescribeAccess)
 }
 
 // NewDeployment instantiates a new Deployment.

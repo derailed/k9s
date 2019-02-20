@@ -7,13 +7,14 @@ import (
 	"github.com/k8sland/tview"
 )
 
-const detailFmt = " [aqua::-]%s [fuchsia::b]YAML "
+const detailFmt = " [aqua::-]%s [fuchsia::b]%s "
 
 // detailsView display yaml output
 type detailsView struct {
 	*tview.TextView
 
-	actions keyActions
+	actions  keyActions
+	category string
 }
 
 func newDetailsView() *detailsView {
@@ -23,6 +24,10 @@ func newDetailsView() *detailsView {
 	v.SetTitleColor(tcell.ColorAqua)
 	v.SetInputCapture(v.keyboard)
 	return &v
+}
+
+func (v *detailsView) setCategory(n string) {
+	v.category = n
 }
 
 func (v *detailsView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
@@ -54,5 +59,5 @@ func (v *detailsView) hints() hints {
 }
 
 func (v *detailsView) setTitle(t string) {
-	v.SetTitle(fmt.Sprintf(detailFmt, t))
+	v.SetTitle(fmt.Sprintf(detailFmt, t, v.category))
 }

@@ -19,7 +19,7 @@ func NewClusterRoleList(ns string) List {
 
 // NewClusterRoleListWithArgs returns a new resource list.
 func NewClusterRoleListWithArgs(ns string, res Resource) List {
-	return newList(NotNamespaced, "clusterrole", res, CRUDAccess)
+	return newList(NotNamespaced, "clusterrole", res, CRUDAccess|DescribeAccess)
 }
 
 // NewClusterRole instantiates a new ClusterRole.

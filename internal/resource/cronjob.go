@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -8,11 +9,23 @@ import (
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 )
 
-// CronJob tracks a kubernetes resource.
-type CronJob struct {
-	*Base
-	instance *batchv1beta1.CronJob
-}
+type (
+	// CronJob tracks a kubernetes resource.
+	CronJob struct {
+		*Base
+		instance *batchv1beta1.CronJob
+	}
+
+	// Runner can run jobs.
+	Runner interface {
+		Run(path string) error
+	}
+
+	// Runnable can run jobs.
+	Runnable interface {
+		Run(ns, n string) error
+	}
+)
 
 // NewCronJobList returns a new resource list.
 func NewCronJobList(ns string) List {
@@ -21,7 +34,7 @@ func NewCronJobList(ns string) List {
 
 // NewCronJobListWithArgs returns a new resource list.
 func NewCronJobListWithArgs(ns string, res Resource) List {
-	return newList(ns, "job", res, AllVerbsAccess)
+	return newList(ns, "cronjob", res, AllVerbsAccess|DescribeAccess)
 }
 
 // NewCronJob instantiates a new CronJob.
@@ -70,6 +83,15 @@ func (r *CronJob) Marshal(path string) (string, error) {
 	return r.marshalObject(cj)
 }
 
+// Run a given cronjob.
+func (r *CronJob) Run(pa string) error {
+	ns, n := namespaced(pa)
+	if c, ok := r.caller.(Runnable); ok {
+		return c.Run(ns, n)
+	}
+	return fmt.Errorf("unable to run cronjob %s", pa)
+}
+
 // Header return resource header.
 func (*CronJob) Header(ns string) Row {
 	hh := Row{}
@@ -107,5 +129,3 @@ func (r *CronJob) Fields(ns string) Row {
 func (*CronJob) ExtFields() Properties {
 	return Properties{}
 }
-
-// Helpers...

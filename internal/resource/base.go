@@ -9,6 +9,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/genericclioptions/printers"
+	"k8s.io/kubernetes/pkg/kubectl/describe"
+	versioned "k8s.io/kubernetes/pkg/kubectl/describe/versioned"
 )
 
 type (
@@ -64,6 +66,24 @@ func (b *Base) List(ns string) (Columnars, error) {
 		cc = append(cc, b.creator.NewInstance(ii[i]))
 	}
 	return cc, nil
+}
+
+// Describe a given resource.
+func (b *Base) Describe(kind, pa string) (string, error) {
+
+	ns, n := namespaced(pa)
+	mapping, err := k8s.RestMapping.Find(kind)
+	if err != nil {
+		return "", err
+	}
+	d, err := versioned.Describer(k8s.KubeConfig.Flags(), mapping)
+	if err != nil {
+		return "", err
+	}
+	opts := describe.DescriberSettings{
+		ShowEvents: true,
+	}
+	return d.Describe(ns, n, opts)
 }
 
 // Delete a resource by name.

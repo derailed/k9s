@@ -19,7 +19,7 @@ func NewPVCList(ns string) List {
 
 // NewPVCListWithArgs returns a new resource list.
 func NewPVCListWithArgs(ns string, res Resource) List {
-	return newList(ns, "pvc", res, AllVerbsAccess)
+	return newList(ns, "pvc", res, AllVerbsAccess|DescribeAccess)
 }
 
 // NewPVC instantiates a new Endpoint.

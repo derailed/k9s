@@ -10,6 +10,13 @@ type podView struct {
 	*resourceView
 }
 
+type loggable interface {
+	appView() *appView
+	getSelection() string
+	getList() resource.List
+	switchPage(n string)
+}
+
 func newPodView(t string, app *appView, list resource.List, c colorerFn) resourceViewer {
 	v := podView{newResourceView(t, app, list, c).(*resourceView)}
 	v.extraActionsFn = v.extraActions
@@ -29,6 +36,18 @@ func newPodView(t string, app *appView, list resource.List, c colorerFn) resourc
 
 	v.switchPage("po")
 	return &v
+}
+
+// Protocol...
+
+func (v *podView) appView() *appView {
+	return v.app
+}
+func (v *podView) getList() resource.List {
+	return v.list
+}
+func (v *podView) getSelection() string {
+	return v.selectedItem
 }
 
 // Handlers...

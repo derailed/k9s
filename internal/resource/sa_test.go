@@ -16,7 +16,7 @@ func TestSaListAccess(t *testing.T) {
 	l := resource.NewServiceAccountList(resource.AllNamespaces)
 	l.SetNamespace(ns)
 
-	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
+	assert.Equal(t, ns, l.GetNamespace())
 	assert.Equal(t, "sa", l.GetName())
 	for _, a := range []int{resource.GetAccess, resource.ListAccess, resource.DeleteAccess, resource.ViewAccess, resource.EditAccess} {
 		assert.True(t, l.Access(a))

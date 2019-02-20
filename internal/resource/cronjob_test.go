@@ -17,7 +17,7 @@ func TestCronJobListAccess(t *testing.T) {
 	l.SetNamespace(ns)
 
 	assert.Equal(t, "blee", l.GetNamespace())
-	assert.Equal(t, "job", l.GetName())
+	assert.Equal(t, "cronjob", l.GetName())
 	for _, a := range []int{resource.GetAccess, resource.ListAccess, resource.DeleteAccess, resource.ViewAccess, resource.EditAccess} {
 		assert.True(t, l.Access(a))
 	}

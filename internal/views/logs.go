@@ -22,18 +22,18 @@ const (
 type logsView struct {
 	*tview.Pages
 
-	pv         *podView
+	parent     loggable
 	containers []string
 	actions    keyActions
 	cancelFunc context.CancelFunc
 	buffer     *logBuffer
 }
 
-func newLogsView(pv *podView) *logsView {
+func newLogsView(parent loggable) *logsView {
 	maxBuff := config.Root.K9s.LogBufferSize
 	v := logsView{
 		Pages:      tview.NewPages(),
-		pv:         pv,
+		parent:     parent,
 		containers: []string{},
 		buffer:     newLogBuffer(int(maxBuff), true),
 	}
@@ -42,8 +42,8 @@ func newLogsView(pv *podView) *logsView {
 		KeyC:            {description: "Clear", action: v.clearLogs},
 		KeyU:            {description: "Top", action: v.top},
 		KeyD:            {description: "Bottom", action: v.bottom},
-		KeyF:            {description: "Page Up", action: v.pageUp},
-		KeyB:            {description: "Page Down", action: v.pageDown},
+		KeyF:            {description: "PageUp", action: v.pageUp},
+		KeyB:            {description: "PageDown", action: v.pageDown},
 	})
 	v.SetInputCapture(v.keyboard)
 
@@ -98,7 +98,7 @@ func (v *logsView) hints() hints {
 
 func (v *logsView) addContainer(n string) {
 	v.containers = append(v.containers, n)
-	l := newLogView(n, v.pv)
+	l := newLogView(n, v.parent)
 	l.SetInputCapture(v.keyboard)
 	v.AddPage(n, l, true, false)
 }
@@ -121,14 +121,14 @@ func (v *logsView) load(i int) {
 	}
 	v.SwitchToPage(v.containers[i])
 	v.buffer.clear()
-	if err := v.doLoad(v.pv.selectedItem, v.containers[i]); err != nil {
-		v.pv.app.flash(flashErr, err.Error())
+	if err := v.doLoad(v.parent.getSelection(), v.containers[i]); err != nil {
+		v.parent.appView().flash(flashErr, err.Error())
 		v.buffer.add("😂 Doh! No logs are available at this time. Check again later on...")
 		l := v.CurrentPage().Item.(*logView)
 		l.log(v.buffer)
 		return
 	}
-	v.pv.app.SetFocus(v)
+	v.parent.appView().SetFocus(v)
 }
 
 func (v *logsView) killLogIfAny() {
@@ -149,6 +149,11 @@ func (v *logsView) doLoad(path, co string) error {
 			select {
 			case line, ok := <-c:
 				if !ok {
+					if v.buffer.length() > 0 {
+						v.buffer.add("--- No more logs ---")
+						l.log(v.buffer)
+						l.ScrollToEnd()
+					}
 					return
 				}
 				v.buffer.add(line)
@@ -173,12 +178,12 @@ func (v *logsView) doLoad(path, co string) error {
 	}()
 
 	ns, po := namespaced(path)
-	res, ok := v.pv.list.Resource().(resource.Tailable)
+	res, ok := v.parent.getList().Resource().(resource.Tailable)
 	if !ok {
-		return fmt.Errorf("Resource %T is not tailable", v.pv.list.Resource)
+		return fmt.Errorf("Resource %T is not tailable", v.parent.getList().Resource)
 	}
 	maxBuff := config.Root.K9s.LogBufferSize
-	cancelFn, err := res.Logs(c, ns, po, co, int64(maxBuff))
+	cancelFn, err := res.Logs(c, ns, po, co, int64(maxBuff), false)
 	if err != nil {
 		cancelFn()
 		return err
@@ -193,40 +198,40 @@ func (v *logsView) doLoad(path, co string) error {
 
 func (v *logsView) back(*tcell.EventKey) {
 	v.stop()
-	v.pv.switchPage(v.pv.list.GetName())
+	v.parent.switchPage(v.parent.getList().GetName())
 }
 
 func (v *logsView) top(*tcell.EventKey) {
 	if p := v.CurrentPage(); p != nil {
-		v.pv.app.flash(flashInfo, "Top logs...")
+		v.parent.appView().flash(flashInfo, "Top logs...")
 		p.Item.(*logView).ScrollToBeginning()
 	}
 }
 
 func (v *logsView) bottom(*tcell.EventKey) {
 	if p := v.CurrentPage(); p != nil {
-		v.pv.app.flash(flashInfo, "Bottom logs...")
+		v.parent.appView().flash(flashInfo, "Bottom logs...")
 		p.Item.(*logView).ScrollToEnd()
 	}
 }
 
 func (v *logsView) pageUp(*tcell.EventKey) {
 	if p := v.CurrentPage(); p != nil {
-		v.pv.app.flash(flashInfo, "Page Up logs...")
+		v.parent.appView().flash(flashInfo, "Page Up logs...")
 		p.Item.(*logView).PageUp()
 	}
 }
 
 func (v *logsView) pageDown(*tcell.EventKey) {
 	if p := v.CurrentPage(); p != nil {
-		v.pv.app.flash(flashInfo, "Page Down logs...")
+		v.parent.appView().flash(flashInfo, "Page Down logs...")
 		p.Item.(*logView).PageDown()
 	}
 }
 
 func (v *logsView) clearLogs(*tcell.EventKey) {
 	if p := v.CurrentPage(); p != nil {
-		v.pv.app.flash(flashInfo, "Clearing logs...")
+		v.parent.appView().flash(flashInfo, "Clearing logs...")
 		v.buffer.clear()
 		p.Item.(*logView).Clear()
 	}

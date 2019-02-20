@@ -22,7 +22,7 @@ type (
 
 	// Tailable represents a resource with tailable logs.
 	Tailable interface {
-		Logs(c chan<- string, ns, na, co string, lines int64) (context.CancelFunc, error)
+		Logs(c chan<- string, ns, na, co string, lines int64, prev bool) (context.CancelFunc, error)
 	}
 
 	// TailableResource is a resource that have tailable logs.
@@ -47,7 +47,7 @@ func NewPodList(ns string) List {
 
 // NewPodListWithArgs returns a new resource list.
 func NewPodListWithArgs(ns string, res Resource) List {
-	l := newList(ns, "po", res, AllVerbsAccess)
+	l := newList(ns, "po", res, AllVerbsAccess|DescribeAccess)
 	l.xray = true
 	return l
 }
@@ -116,12 +116,21 @@ func (r *Pod) Marshal(path string) (string, error) {
 // Containers lists out all the docker contrainers name contained in a pod.
 func (r *Pod) Containers(path string) ([]string, error) {
 	ns, po := namespaced(path)
-	return r.caller.(k8s.PodRes).Containers(ns, po)
+	return r.caller.(k8s.Loggable).Containers(ns, po)
 }
 
 // Logs tails a given container logs
-func (r *Pod) Logs(c chan<- string, ns, n, co string, lines int64) (context.CancelFunc, error) {
-	req := r.caller.(k8s.PodRes).Logs(ns, n, co, lines)
+func (r *Pod) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (context.CancelFunc, error) {
+	// var ctn v1.Container
+	// for _, c := range r.instance.Spec.Containers {
+	// 	if c.Name == co {
+	// 		ctn = c
+	// 	}
+	// }
+
+	// if ctn.Status.ContainerStatus
+
+	req := r.caller.(k8s.Loggable).Logs(ns, n, co, lines, prev)
 	ctx, cancel := context.WithCancel(context.TODO())
 	req.Context(ctx)
 

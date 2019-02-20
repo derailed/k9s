@@ -12,10 +12,9 @@ import (
 )
 
 const (
-	menuFmt      = " [dodgerblue::b]%s[white::d]%s "
-	menuSepFmt   = " [dodgerblue::b]<%s> [white::d]%s "
+	menuSepFmt   = " [dodgerblue::b]%-8s [white::d]%s "
 	menuIndexFmt = " [fuchsia::b]<%d> [white::d]%s "
-	maxRows      = 5
+	maxRows      = 6
 	colLen       = 20
 )
 
@@ -98,19 +97,17 @@ func (v *menuView) setMenu(hh hints) {
 	}
 }
 
+func (*menuView) toMnemonic(s string) string {
+	return "<" + strings.ToLower(s) + ">"
+}
+
 func (v *menuView) item(h hint) string {
 	i, err := strconv.Atoi(h.mnemonic)
 	if err == nil {
 		return fmt.Sprintf(menuIndexFmt, i, resource.Truncate(h.display, 14))
 	}
 
-	var s string
-	if len(h.mnemonic) == 1 {
-		s = fmt.Sprintf(menuSepFmt, strings.ToLower(h.mnemonic), h.display)
-	} else {
-		s = fmt.Sprintf(menuSepFmt, strings.ToUpper(h.mnemonic), h.display)
-	}
-	return s
+	return fmt.Sprintf(menuSepFmt, v.toMnemonic(h.mnemonic), h.display)
 }
 
 func (a keyActions) toHints() hints {

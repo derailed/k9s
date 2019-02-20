@@ -21,7 +21,7 @@ func NewRoleBindingList(ns string) List {
 
 // NewRoleBindingListWithArgs returns a new resource list.
 func NewRoleBindingListWithArgs(ns string, res Resource) List {
-	return newList(ns, "rolebinding", res, AllVerbsAccess)
+	return newList(ns, "rolebinding", res, AllVerbsAccess|DescribeAccess)
 }
 
 // NewRoleBinding instantiates a new Endpoint.

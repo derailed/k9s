@@ -21,7 +21,7 @@ func NewStatefulSetList(ns string) List {
 
 // NewStatefulSetListWithArgs returns a new resource list.
 func NewStatefulSetListWithArgs(ns string, res Resource) List {
-	return newList(ns, "sts", res, AllVerbsAccess)
+	return newList(ns, "sts", res, AllVerbsAccess|DescribeAccess)
 }
 
 // NewStatefulSet instantiates a new Endpoint.

@@ -12,6 +12,7 @@ require (
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
 	github.com/exponent-io/jsonpath v0.0.0-20151013193312-d6023ce2651d // indirect
+	github.com/fatih/camelcase v1.0.0 // indirect
 	github.com/gdamore/tcell v1.1.0
 	github.com/go-openapi/spec v0.18.0 // indirect
 	github.com/gogo/protobuf v1.1.1 // indirect

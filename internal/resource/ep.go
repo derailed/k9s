@@ -23,7 +23,7 @@ func NewEndpointsList(ns string) List {
 
 // NewEndpointsListWithArgs returns a new resource list.
 func NewEndpointsListWithArgs(ns string, res Resource) List {
-	return newList(ns, "ep", res, AllVerbsAccess)
+	return newList(ns, "ep", res, AllVerbsAccess|DescribeAccess)
 }
 
 // NewEndpoints instantiates a new Endpoint.

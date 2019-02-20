@@ -21,7 +21,7 @@ func NewReplicaSetList(ns string) List {
 
 // NewReplicaSetListWithArgs returns a new resource list.
 func NewReplicaSetListWithArgs(ns string, res Resource) List {
-	return newList(ns, "rs", res, AllVerbsAccess)
+	return newList(ns, "rs", res, AllVerbsAccess|DescribeAccess)
 }
 
 // NewReplicaSet instantiates a new Endpoint.

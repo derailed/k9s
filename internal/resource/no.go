@@ -30,7 +30,7 @@ func NewNodeList(ns string) List {
 
 // NewNodeListWithArgs returns a new resource list.
 func NewNodeListWithArgs(ns string, res Resource) List {
-	return newList(NotNamespaced, "no", res, ViewAccess)
+	return newList(NotNamespaced, "no", res, ViewAccess|DescribeAccess)
 }
 
 // NewNode instantiates a new Endpoint.
