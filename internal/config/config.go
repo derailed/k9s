@@ -29,6 +29,7 @@ var (
 type KubeSettings interface {
 	CurrentContextName() (string, error)
 	CurrentClusterName() (string, error)
+	CurrentNamespaceName() (string, error)
 	ClusterNames() ([]string, error)
 	NamespaceNames() ([]string, error)
 }

@@ -45,7 +45,6 @@ func init() {
 		defaultRefreshRate,
 		"Specifies the default refresh rate as an integer (sec)",
 	)
-
 	rootCmd.Flags().StringVarP(
 		&logLevel,
 		"logLevel", "l",
@@ -54,87 +53,6 @@ func init() {
 	)
 
 	initK8sFlags()
-}
-
-func initK8sFlags() {
-	k8sFlags = genericclioptions.NewConfigFlags(false)
-	rootCmd.Flags().StringVar(
-		k8sFlags.KubeConfig,
-		"kubeconfig",
-		"",
-		"Path to the kubeconfig file to use for CLI requests",
-	)
-
-	rootCmd.Flags().StringVar(
-		k8sFlags.Timeout,
-		"request-timeout",
-		"",
-		"The length of time to wait before giving up on a single server request",
-	)
-
-	rootCmd.Flags().StringVar(
-		k8sFlags.Context,
-		"context",
-		"",
-		"The name of the kuconfig context to use",
-	)
-
-	rootCmd.Flags().StringVar(
-		k8sFlags.ClusterName,
-		"cluster",
-		"",
-		"The name of the kubeconfig cluster to use",
-	)
-
-	rootCmd.Flags().StringVar(
-		k8sFlags.AuthInfoName,
-		"user",
-		"",
-		"The name of the kubeconfig user to use",
-	)
-
-	rootCmd.Flags().BoolVar(
-		k8sFlags.Insecure,
-		"insecure-skip-tls-verify",
-		false,
-		"If true, the server's caCertFile will not be checked for validity",
-	)
-
-	rootCmd.Flags().StringVar(
-		k8sFlags.CAFile,
-		"certificate-authority",
-		"",
-		"Path to a cert file for the certificate authority",
-	)
-
-	rootCmd.Flags().StringVar(
-		k8sFlags.KeyFile,
-		"client-key",
-		"",
-		"Path to a client key file for TLS",
-	)
-
-	rootCmd.Flags().StringVar(
-		k8sFlags.CertFile,
-		"client-certificate",
-		"",
-		"Path to a client certificate file for TLS",
-	)
-
-	rootCmd.Flags().StringVar(
-		k8sFlags.BearerToken,
-		"token",
-		"",
-		"Bearer token for authentication to the API server",
-	)
-
-	rootCmd.Flags().StringVarP(
-		k8sFlags.Namespace,
-		"namespace",
-		"n",
-		"",
-		"If present, the namespace scope for this CLI request",
-	)
 }
 
 func initK9s() {
@@ -162,16 +80,28 @@ func initK9sConfig() {
 	if err != nil {
 		panic("Invalid configuration. Unable to connect to api")
 	}
-	ctx := cfg.CurrentContext
-	if isSet(k8sFlags.Context) {
-		ctx = *k8sFlags.Context
-	}
-	config.Root.K9s.CurrentContext = ctx
 
+	ctx := cfg.CurrentContext
+	switch{
+	case isSet(k8sFlags.Context):
+		ctx = *k8sFlags.Context
+		config.Root.K9s.CurrentContext = ctx
+	case isSet(&config.Root.K9s.CurrentContext):
+		k8sFlags.Context = &config.Root.K9s.CurrentContext
+	default:
+		config.Root.K9s.CurrentContext = ctx
+		if isSet(&cfg.Contexts[ctx].Namespace) {
+			config.Root.SetActiveNamespace(cfg.Contexts[ctx].Namespace)
+		}
+	}
 	log.Debugf("Active Context `%v`", ctx)
 
 	if isSet(k8sFlags.Namespace) {
 		config.Root.SetActiveNamespace(*k8sFlags.Namespace)
+	}
+
+	if isSet(k8sFlags.ClusterName) {
+		config.Root.K9s.CurrentCluster = *k8sFlags.ClusterName
 	}
 
 	if c, ok := cfg.Contexts[ctx]; ok {
@@ -255,4 +185,85 @@ func initStyles() {
 	tview.Styles.ContrastBackgroundColor = tcell.ColorBlack
 	tview.Styles.FocusColor = tcell.ColorLightSkyBlue
 	tview.Styles.BorderColor = tcell.ColorDodgerBlue
+}
+
+func initK8sFlags() {
+	k8sFlags = genericclioptions.NewConfigFlags(false)
+	rootCmd.Flags().StringVar(
+		k8sFlags.KubeConfig,
+		"kubeconfig",
+		"",
+		"Path to the kubeconfig file to use for CLI requests",
+	)
+
+	rootCmd.Flags().StringVar(
+		k8sFlags.Timeout,
+		"request-timeout",
+		"",
+		"The length of time to wait before giving up on a single server request",
+	)
+
+	rootCmd.Flags().StringVar(
+		k8sFlags.Context,
+		"context",
+		"",
+		"The name of the kuconfig context to use",
+	)
+
+	rootCmd.Flags().StringVar(
+		k8sFlags.ClusterName,
+		"cluster",
+		"",
+		"The name of the kubeconfig cluster to use",
+	)
+
+	rootCmd.Flags().StringVar(
+		k8sFlags.AuthInfoName,
+		"user",
+		"",
+		"The name of the kubeconfig user to use",
+	)
+
+	rootCmd.Flags().BoolVar(
+		k8sFlags.Insecure,
+		"insecure-skip-tls-verify",
+		false,
+		"If true, the server's caCertFile will not be checked for validity",
+	)
+
+	rootCmd.Flags().StringVar(
+		k8sFlags.CAFile,
+		"certificate-authority",
+		"",
+		"Path to a cert file for the certificate authority",
+	)
+
+	rootCmd.Flags().StringVar(
+		k8sFlags.KeyFile,
+		"client-key",
+		"",
+		"Path to a client key file for TLS",
+	)
+
+	rootCmd.Flags().StringVar(
+		k8sFlags.CertFile,
+		"client-certificate",
+		"",
+		"Path to a client certificate file for TLS",
+	)
+
+	rootCmd.Flags().StringVar(
+		k8sFlags.BearerToken,
+		"token",
+		"",
+		"Bearer token for authentication to the API server",
+	)
+
+	rootCmd.Flags().StringVarP(
+		k8sFlags.Namespace,
+		"namespace",
+		"n",
+		"",
+		"If present, the namespace scope for this CLI request",
+	)
 }

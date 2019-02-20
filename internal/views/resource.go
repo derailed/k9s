@@ -145,24 +145,6 @@ func (v *resourceView) delete(*tcell.EventKey) {
 	v.selectedItem = noSelection
 }
 
-// func (v *resourceView) xRay(*tcell.EventKey) {
-// 	details := v.GetPrimitive("xray").(details)
-// 	details.clear()
-
-// 	if !v.rowSelected() {
-// 		return
-// 	}
-
-// 	props, err := v.list.Describe(v.selectedItem)
-// 	if err != nil {
-// 		v.app.flash(flashErr, "Unable to get xray fields", err.Error())
-// 		return
-// 	}
-// 	details.update(props)
-// 	details.setTitle(fmt.Sprintf(" %s ", v.selectedItem))
-// 	v.switchPage("xray")
-// }
-
 func (v *resourceView) describe(*tcell.EventKey) {
 	if !v.rowSelected() {
 		return
@@ -284,10 +266,6 @@ func (v *resourceView) getTV() *tableView {
 	return nil
 }
 
-func (v *resourceView) getSelectedItem() string {
-	return v.selectedItem
-}
-
 func (v *resourceView) selectItem(r, c int) {
 	if r == 0 {
 		v.selectedItem = noSelection
@@ -324,7 +302,7 @@ func (v *resourceView) switchPage(p string) {
 }
 
 func (v *resourceView) rowSelected() bool {
-	item := v.getSelectedItem()
+	item := v.selectedItem
 	return item != noSelection
 }
 

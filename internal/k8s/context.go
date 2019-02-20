@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/client-go/tools/clientcmd"
 )
 
 // ContextRes represents a kubernetes clusters configurations.
@@ -73,4 +74,15 @@ func (*Context) Delete(_, n string) error {
 func (*Context) Switch(n string) error {
 	conn.switchContextOrDie(n)
 	return nil
+}
+
+// KubeUpdate modifies kubeconfig default context.
+func (c *Context) KubeUpdate(n string) error {
+	c.Switch(n)
+	acc := clientcmd.NewDefaultPathOptions()
+	config, err := conn.config.RawConfig()
+	if err != nil {
+		return err
+	}
+	return clientcmd.ModifyConfig(acc, config, true)
 }
