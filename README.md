@@ -129,15 +129,12 @@ K9s uses aliases to navigate most K8s resources.
 ## Screenshots
 
 1. Pods
-
   <img src="assets/screen_po.png">
 
 1. Logs
-
   <img src="assets/screen_logs.png">
 
 1. Deployments
-
   <img src="assets/screen_dp.png">
 
 
