@@ -76,7 +76,7 @@ func initK8sFlags() {
 		k8sFlags.Context,
 		"context",
 		"",
-		"The name of the kuconfig context to use",
+		"The name of the kubeconfig context to use",
 	)
 
 	rootCmd.Flags().StringVar(
