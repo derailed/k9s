@@ -18,7 +18,7 @@ for changes and offers subsequent commands to interact with observed resources.
 
 K9s is available on Linux, OSX and Windows platforms.
 
-* Binaries for Linux, Windows and Mac are available as tar balls in the [release](https://github.com/derailed/k9s/releases) page.
+* Binaries for Linux, Windows and Mac are available as tarballs in the [release](https://github.com/derailed/k9s/releases) page.
 
 * For OSX using Homebrew
 
