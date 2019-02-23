@@ -3,8 +3,8 @@ package k8s
 import (
 	"fmt"
 
-	"k8s.io/client-go/tools/clientcmd/api"
 	"k8s.io/client-go/tools/clientcmd"
+	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 // ContextRes represents a kubernetes clusters configurations.

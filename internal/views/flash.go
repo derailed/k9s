@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gdamore/tcell"
 	"github.com/derailed/tview"
+	"github.com/gdamore/tcell"
 )
 
 const (

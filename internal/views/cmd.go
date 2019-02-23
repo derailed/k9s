@@ -3,8 +3,8 @@ package views
 import (
 	"fmt"
 
-	"github.com/gdamore/tcell"
 	"github.com/derailed/tview"
+	"github.com/gdamore/tcell"
 	log "github.com/sirupsen/logrus"
 )
 
