@@ -74,11 +74,13 @@ func (r *Job) Marshal(path string) (string, error) {
 	return r.marshalObject(jo)
 }
 
-func (r *Job) Containers(path string) ([]string, error) {
+// Containers fetch all the containers on this job, may include init containers.
+func (r *Job) Containers(path string, includeInit bool) ([]string, error) {
 	ns, n := namespaced(path)
-	return r.caller.(k8s.Loggable).Containers(ns, n)
+	return r.caller.(k8s.Loggable).Containers(ns, n, includeInit)
 }
 
+// Logs retrieves logs for a given container.
 func (r *Job) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (context.CancelFunc, error) {
 	req := r.caller.(k8s.Loggable).Logs(ns, n, co, lines, prev)
 	ctx, cancel := context.WithCancel(context.TODO())

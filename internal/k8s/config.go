@@ -12,6 +12,8 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
+const defaultNamespace = "default"
+
 // KubeConfig represents kubeconfig settings.
 var KubeConfig *Config
 
@@ -186,11 +188,27 @@ func (c *Config) CurrentUserName() (string, error) {
 }
 
 // CurrentNamespaceName retrieves the active namespace.
-func (c *Config) CurrentNamespaceName() string {
+func (c *Config) CurrentNamespaceName() (string, error) {
 	if isSet(c.flags.Namespace) {
-		return *c.flags.Namespace
+		return *c.flags.Namespace, nil
 	}
-	return "default"
+
+	cfg, err := c.RawConfig()
+	if err != nil {
+		return "", err
+	}
+
+	ctx, err := c.CurrentContextName()
+	if err != nil {
+		return "", err
+	}
+
+	if ctx, ok := cfg.Contexts[ctx]; ok {
+		if isSet(&ctx.Namespace) {
+			return ctx.Namespace, nil
+		}
+	}
+	return "", nil
 }
 
 // NamespaceNames fetch all available namespaces on current cluster.

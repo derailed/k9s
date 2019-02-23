@@ -3,8 +3,8 @@ package views
 import (
 	"strconv"
 
+	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"github.com/k8sland/tview"
 )
 
 type selectList struct {
@@ -15,15 +15,17 @@ type selectList struct {
 
 func newSelectList() *selectList {
 	v := selectList{List: tview.NewList()}
-	v.SetBorder(true)
-	v.SetTitle(" Please select a Container ")
-	v.SetInputCapture(func(evt *tcell.EventKey) *tcell.EventKey {
-		if a, ok := v.actions[evt.Key()]; ok {
-			a.action(evt)
-			evt = nil
-		}
-		return evt
-	})
+	{
+		v.SetBorder(true)
+		v.SetTitle(" [aqua::b]Container Selector ")
+		v.SetInputCapture(func(evt *tcell.EventKey) *tcell.EventKey {
+			if a, ok := v.actions[evt.Key()]; ok {
+				a.action(evt)
+				evt = nil
+			}
+			return evt
+		})
+	}
 	return &v
 }
 

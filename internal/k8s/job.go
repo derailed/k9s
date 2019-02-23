@@ -48,13 +48,13 @@ func (*Job) Delete(ns, n string) error {
 }
 
 // Containers returns all container names on pod
-func (j *Job) Containers(ns, n string) ([]string, error) {
+func (j *Job) Containers(ns, n string, includeInit bool) ([]string, error) {
 	pod, err := j.assocPod(ns, n)
 	if err != nil {
 		return nil, err
 	}
 	log.Debug("Containers found assoc pod", pod)
-	return NewPod().(Loggable).Containers(ns, pod)
+	return NewPod().(Loggable).Containers(ns, pod, includeInit)
 }
 
 // Logs fetch container logs for a given pod and container.

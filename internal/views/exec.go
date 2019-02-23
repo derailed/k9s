@@ -7,12 +7,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func run(app *appView, args ...string) {
-	app.Suspend(func() {
+func run(app *appView, args ...string) bool {
+	return app.Suspend(func() {
 		if err := execute(args...); err != nil {
 			log.Error("Command failed:", err, args)
 			app.flash(flashErr, "Doh! command failed", err.Error())
 		}
+		log.Debug("Command Done Running..")
 	})
 }
 

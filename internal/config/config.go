@@ -29,6 +29,7 @@ var (
 type KubeSettings interface {
 	CurrentContextName() (string, error)
 	CurrentClusterName() (string, error)
+	CurrentNamespaceName() (string, error)
 	ClusterNames() ([]string, error)
 	NamespaceNames() ([]string, error)
 }
@@ -77,6 +78,8 @@ func (c *Config) FavNamespaces() []string {
 func (c *Config) SetActiveNamespace(ns string) {
 	if c.K9s.ActiveCluster() != nil {
 		c.K9s.ActiveCluster().Namespace.SetActive(ns)
+	} else {
+		log.Debug("Doh! no active cluster. unable to set active namespace")
 	}
 }
 

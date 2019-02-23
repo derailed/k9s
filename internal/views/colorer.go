@@ -29,6 +29,10 @@ func defaultColorer(ns string, r *resource.RowEvent) tcell.Color {
 	return c
 }
 
+func aliasColorer(string, *resource.RowEvent) tcell.Color {
+	return tcell.ColorFuchsia
+}
+
 func podColorer(ns string, r *resource.RowEvent) tcell.Color {
 	c := defaultColorer(ns, r)
 
@@ -37,7 +41,7 @@ func podColorer(ns string, r *resource.RowEvent) tcell.Color {
 		statusCol = 2
 	}
 	switch strings.TrimSpace(r.Fields[statusCol]) {
-	case "ContainerCreating":
+	case "ContainerCreating", "PodInitializing":
 		return addColor
 	case "Terminating", "Initialized":
 		return highlightColor

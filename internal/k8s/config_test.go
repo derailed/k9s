@@ -69,13 +69,15 @@ func TestConfigCurrentNamespace(t *testing.T) {
 		flags     *genericclioptions.ConfigFlags
 		namespace string
 	}{
-		{&genericclioptions.ConfigFlags{KubeConfig: &kubeConfig}, "default"},
+		{&genericclioptions.ConfigFlags{KubeConfig: &kubeConfig}, ""},
 		{&genericclioptions.ConfigFlags{KubeConfig: &kubeConfig, Namespace: &name}, "blee"},
 	}
 
 	for _, u := range uu {
 		cfg := k8s.NewConfig(u.flags)
-		assert.Equal(t, u.namespace, cfg.CurrentNamespaceName())
+		ns, err := cfg.CurrentNamespaceName()
+		assert.Nil(t, err)
+		assert.Equal(t, u.namespace, ns)
 	}
 }
 

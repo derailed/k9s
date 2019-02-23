@@ -21,9 +21,9 @@ func newContextView(t string, app *appView, list resource.List, c colorerFn) res
 	return &v
 }
 
-func (v *contextView) useContext(*tcell.EventKey) {
+func (v *contextView) useContext(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
-		return
+		return evt
 	}
 
 	ctx := strings.TrimSpace(v.selectedItem)
@@ -37,7 +37,7 @@ func (v *contextView) useContext(*tcell.EventKey) {
 	err := v.list.Resource().(*resource.Context).Switch(ctx)
 	if err != nil {
 		v.app.flash(flashWarn, err.Error())
-		return
+		return evt
 	}
 
 	config.Root.Reset()
@@ -46,10 +46,11 @@ func (v *contextView) useContext(*tcell.EventKey) {
 	v.app.flash(flashInfo, "Switching context to", ctx)
 	v.refresh()
 	if tv, ok := v.GetPrimitive("ctx").(*tableView); ok {
-		tv.table.Select(0, 0)
+		tv.Select(0, 0)
 	}
+	return nil
 }
 
 func (v *contextView) extraActions(aa keyActions) {
-	aa[KeyU] = keyAction{description: "Use", action: v.useContext}
+	aa[KeyU] = newKeyAction("Use", v.useContext)
 }
