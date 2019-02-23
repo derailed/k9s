@@ -131,6 +131,7 @@ func (a *appView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	if key == tcell.KeyRune {
 		if a.cmdBuff.isActive() {
 			a.cmdBuff.add(evt.Rune())
+			return nil
 		}
 		key = tcell.Key(evt.Rune())
 	}
