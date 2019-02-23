@@ -69,7 +69,7 @@ func TestConfigCurrentNamespace(t *testing.T) {
 		flags     *genericclioptions.ConfigFlags
 		namespace string
 	}{
-		{&genericclioptions.ConfigFlags{KubeConfig: &kubeConfig}, "default"},
+		{&genericclioptions.ConfigFlags{KubeConfig: &kubeConfig}, ""},
 		{&genericclioptions.ConfigFlags{KubeConfig: &kubeConfig, Namespace: &name}, "blee"},
 	}
 
