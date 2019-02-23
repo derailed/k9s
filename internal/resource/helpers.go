@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/k8sland/tview"
+	"github.com/derailed/tview"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 	"k8s.io/apimachinery/pkg/watch"

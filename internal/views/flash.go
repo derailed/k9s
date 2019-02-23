@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell"
-	"github.com/k8sland/tview"
+	"github.com/derailed/tview"
 )
 
 const (

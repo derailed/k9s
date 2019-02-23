@@ -12,7 +12,9 @@ type jobView struct {
 
 func newJobView(t string, app *appView, list resource.List, c colorerFn) resourceViewer {
 	v := jobView{newResourceView(t, app, list, c).(*resourceView)}
-	v.extraActionsFn = v.extraActions
+	{
+		v.extraActionsFn = v.extraActions
+	}
 	v.AddPage("logs", newLogsView(&v), true, false)
 	v.switchPage("job")
 	return &v
@@ -23,23 +25,31 @@ func newJobView(t string, app *appView, list resource.List, c colorerFn) resourc
 func (v *jobView) appView() *appView {
 	return v.app
 }
+
+func (v *jobView) backFn() actionHandler {
+	return v.backCmd
+}
+
 func (v *jobView) getList() resource.List {
 	return v.list
 }
+
 func (v *jobView) getSelection() string {
 	return v.selectedItem
 }
 
 // Handlers...
 
-func (v *jobView) logs(*tcell.EventKey) {
+func (v *jobView) logs(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
-		return
+		return evt
 	}
 
-	cc, err := fetchContainers(v.list, v.selectedItem)
+	cc, err := fetchContainers(v.list, v.selectedItem, true)
 	if err != nil {
+		v.app.flash(flashErr, err.Error())
 		log.Error(err)
+		return evt
 	}
 
 	l := v.GetPrimitive("logs").(*logsView)
@@ -50,8 +60,9 @@ func (v *jobView) logs(*tcell.EventKey) {
 
 	v.switchPage("logs")
 	l.init()
+	return nil
 }
 
 func (v *jobView) extraActions(aa keyActions) {
-	aa[KeyL] = newKeyHandler("Logs", v.logs)
+	aa[KeyL] = newKeyAction("Logs", v.logs)
 }

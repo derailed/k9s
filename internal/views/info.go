@@ -3,7 +3,7 @@ package views
 import (
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
-	"github.com/k8sland/tview"
+	"github.com/derailed/tview"
 	log "github.com/sirupsen/logrus"
 )
 

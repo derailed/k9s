@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	"github.com/derailed/k9s/internal/k8s"
-	log "github.com/sirupsen/logrus"
 	"k8s.io/apimachinery/pkg/watch"
 )
 
@@ -219,7 +218,6 @@ func (l *list) Reconcile() error {
 		err   error
 	)
 
-	log.Debugf("Fetching list for resource `%s` in ns `%s`", l.name, l.namespace)
 	if items, err = l.api.List(l.namespace); err != nil {
 		return err
 	}

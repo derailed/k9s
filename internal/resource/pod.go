@@ -17,7 +17,7 @@ const defaultTimeout = 1 * time.Second
 type (
 	// Container represents a resource that encompass multiple containers.
 	Container interface {
-		Containers(path string) ([]string, error)
+		Containers(path string, includeInit bool) ([]string, error)
 	}
 
 	// Tailable represents a resource with tailable logs.
@@ -114,9 +114,9 @@ func (r *Pod) Marshal(path string) (string, error) {
 }
 
 // Containers lists out all the docker contrainers name contained in a pod.
-func (r *Pod) Containers(path string) ([]string, error) {
+func (r *Pod) Containers(path string, includeInit bool) ([]string, error) {
 	ns, po := namespaced(path)
-	return r.caller.(k8s.Loggable).Containers(ns, po)
+	return r.caller.(k8s.Loggable).Containers(ns, po, includeInit)
 }
 
 // Logs tails a given container logs

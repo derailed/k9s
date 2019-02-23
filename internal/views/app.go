@@ -3,12 +3,11 @@ package views
 import (
 	"context"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"github.com/k8sland/tview"
 	log "github.com/sirupsen/logrus"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
@@ -22,6 +21,10 @@ type (
 		tview.Primitive
 		getTitle() string
 		init(ctx context.Context, ns string)
+	}
+
+	keyHandler interface {
+		keyboard(evt *tcell.EventKey) *tcell.EventKey
 	}
 
 	resourceViewer interface {
@@ -44,35 +47,47 @@ type (
 		cancel       context.CancelFunc
 		cmdBuff      *cmdBuff
 		cmdView      *cmdView
+		actions      keyActions
 	}
 )
 
+func init() {
+	initKeys()
+	initStyles()
+}
+
 // NewApp returns a K9s app instance.
 func NewApp() *appView {
-	var app appView
+	v := appView{Application: tview.NewApplication()}
 	{
-		app = appView{
-			Application: tview.NewApplication(),
-			pages:       tview.NewPages(),
-			menuView:    newMenuView(),
-			content:     tview.NewPages(),
-			cmdBuff:     newCmdBuff(':'),
-			cmdView:     newCmdView('🐶'),
-		}
-		app.command = newCommand(&app)
-		app.focusChanged = app.changedFocus
-		app.SetInputCapture(app.keyboard)
+		v.pages = tview.NewPages()
+		v.actions = make(keyActions)
+		v.menuView = newMenuView()
+		v.content = tview.NewPages()
+		v.cmdBuff = newCmdBuff(':')
+		v.cmdView = newCmdView('🐶')
+		v.command = newCommand(&v)
+		v.flashView = newFlashView(v.Application, "Initializing...")
+		v.infoView = newInfoView(&v)
+		v.focusChanged = v.changedFocus
+		v.SetInputCapture(v.keyboard)
 	}
-	return &app
+
+	v.actions[KeyColon] = newKeyAction("Cmd", v.activateCmd)
+	v.actions[tcell.KeyCtrlR] = newKeyAction("Redraw", v.redrawCmd)
+	v.actions[KeyQ] = newKeyAction("Quit", v.quitCmd)
+	v.actions[KeyHelp] = newKeyAction("Help", v.helpCmd)
+	v.actions[tcell.KeyEscape] = newKeyAction("Exit Cmd", v.deactivateCmd)
+	v.actions[tcell.KeyEnter] = newKeyAction("Goto", v.gotoCmd)
+	v.actions[tcell.KeyBackspace2] = newKeyAction("Goto", v.eraseCmd)
+	v.actions[tcell.KeyTab] = newKeyAction("Focus", v.focusCmd)
+
+	return &v
 }
 
 func (a *appView) Init(v string, rate int, flags *genericclioptions.ConfigFlags) {
 	a.version = v
-	a.infoView = newInfoView(a)
 	a.infoView.init()
-
-	a.flashView = newFlashView(a.Application, "Initializing...")
-
 	a.cmdBuff.addListener(a.cmdView)
 
 	header := tview.NewFlex()
@@ -114,49 +129,79 @@ func (a *appView) Run() {
 func (a *appView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	key := evt.Key()
 	if key == tcell.KeyRune {
-		switch evt.Rune() {
-		case 'q':
-			if !a.cmdMode() {
-				a.quit(evt)
-			}
-		case '?':
-			if !a.cmdView.inCmdMode() {
-				a.help(evt)
-				return evt
-			}
-		case a.cmdBuff.hotKey:
-			a.flash(flashInfo, "Entering command mode...")
-			log.Debug("K9s entering command mode...")
-			a.cmdBuff.setActive(true)
-			a.cmdBuff.clear()
-			return evt
-		}
-
 		if a.cmdBuff.isActive() {
 			a.cmdBuff.add(evt.Rune())
 		}
-		return evt
+		key = tcell.Key(evt.Rune())
 	}
-
-	switch evt.Key() {
-	case tcell.KeyCtrlR:
-		log.Debug("Refreshing screen...")
-		a.Draw()
-	case tcell.KeyEsc:
-		a.cmdBuff.reset()
-	case tcell.KeyEnter:
-		if a.cmdBuff.isActive() && !a.cmdBuff.empty() {
-			a.command.run(a.cmdBuff.String())
-		}
-		a.cmdBuff.setActive(false)
-	case tcell.KeyBackspace2:
-		if a.cmdBuff.isActive() {
-			a.cmdBuff.del()
-		}
-	case tcell.KeyTab:
-		a.nextFocus()
+	if a, ok := a.actions[key]; ok {
+		log.Debug(">> AppView handled key: ", tcell.KeyNames[key])
+		return a.action(evt)
 	}
 	return evt
+}
+
+func (a *appView) redrawCmd(evt *tcell.EventKey) *tcell.EventKey {
+	a.Draw()
+	return evt
+}
+
+func (a *appView) focusCmd(evt *tcell.EventKey) *tcell.EventKey {
+	a.nextFocus()
+	return evt
+}
+
+func (a *appView) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.cmdBuff.isActive() {
+		a.cmdBuff.del()
+		return nil
+	}
+	return evt
+}
+
+func (a *appView) deactivateCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.cmdBuff.isActive() {
+		a.cmdBuff.reset()
+	}
+	return evt
+}
+
+func (a *appView) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.cmdBuff.isActive() && !a.cmdBuff.empty() {
+		a.command.run(a.cmdBuff.String())
+		a.cmdBuff.reset()
+		return nil
+	}
+	a.cmdBuff.setActive(false)
+	return evt
+}
+
+func (a *appView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
+	a.flash(flashInfo, "Entering command mode...")
+	log.Debug("Entering app command mode...")
+	a.cmdBuff.setActive(true)
+	a.cmdBuff.clear()
+	return nil
+}
+
+func (a *appView) quitCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.cmdMode() {
+		return evt
+	}
+	a.Stop()
+	return nil
+}
+
+func (a *appView) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.cmdView.inCmdMode() {
+		return evt
+	}
+	a.inject(newAliasView(a))
+	return nil
+}
+
+func (a *appView) noopCmd(*tcell.EventKey) *tcell.EventKey {
+	return nil
 }
 
 func (a *appView) showPage(p string) {
@@ -193,18 +238,6 @@ func (a *appView) cmdMode() bool {
 
 func (a *appView) refresh() {
 	a.infoView.refresh()
-}
-
-func (a *appView) help(*tcell.EventKey) {
-	a.inject(newHelpView(a))
-}
-
-func (a *appView) noop(*tcell.EventKey) {
-}
-
-func (a *appView) quit(*tcell.EventKey) {
-	a.Stop()
-	os.Exit(0)
 }
 
 func (a *appView) flash(level flashLevel, m ...string) {
@@ -259,4 +292,11 @@ func (a *appView) nextFocus() {
 		}
 	}
 	return
+}
+
+func initStyles() {
+	tview.Styles.PrimitiveBackgroundColor = tcell.ColorBlack
+	tview.Styles.ContrastBackgroundColor = tcell.ColorBlack
+	tview.Styles.FocusColor = tcell.ColorLightSkyBlue
+	tview.Styles.BorderColor = tcell.ColorDodgerBlue
 }

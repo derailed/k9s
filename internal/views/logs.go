@@ -8,8 +8,8 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"github.com/k8sland/tview"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -42,8 +42,8 @@ func newLogsView(parent loggable) *logsView {
 		KeyC:            {description: "Clear", action: v.clearLogs},
 		KeyU:            {description: "Top", action: v.top},
 		KeyD:            {description: "Bottom", action: v.bottom},
-		KeyF:            {description: "PageUp", action: v.pageUp},
-		KeyB:            {description: "PageDown", action: v.pageDown},
+		KeyF:            {description: "Up", action: v.pageUp},
+		KeyB:            {description: "Down", action: v.pageDown},
 	})
 	v.SetInputCapture(v.keyboard)
 
@@ -57,26 +57,26 @@ func (v *logsView) init() {
 }
 
 func (v *logsView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	if m, ok := v.actions[evt.Key()]; ok {
-		m.action(evt)
-		return nil
-	}
-
-	if evt.Key() != tcell.KeyRune {
-		return evt
-	}
-
-	if m, ok := v.actions[tcell.Key(evt.Rune())]; ok {
-		if m.action != nil {
-			m.action(evt)
+	if kv, ok := v.CurrentPage().Item.(keyHandler); ok {
+		if kv.keyboard(evt) == nil {
 			return nil
 		}
 	}
 
-	if i, err := strconv.Atoi(string(evt.Rune())); err == nil {
-		if _, ok := numKeys[i]; ok {
-			v.load(i - 1)
+	key := evt.Key()
+	if key == tcell.KeyRune {
+		if i, err := strconv.Atoi(string(evt.Rune())); err == nil {
+			if _, ok := numKeys[i]; ok {
+				v.load(i - 1)
+				return nil
+			}
 		}
+		key = tcell.Key(evt.Rune())
+	}
+
+	if m, ok := v.actions[key]; ok {
+		log.Debug(">> LogsView handled ", tcell.KeyNames[key])
+		return m.action(evt)
 	}
 	return evt
 }
@@ -90,7 +90,7 @@ func (v *logsView) setActions(aa keyActions) {
 func (v *logsView) hints() hints {
 	if len(v.containers) > 1 {
 		for i, c := range v.containers {
-			v.actions[tcell.Key(numKeys[i+1])] = keyAction{description: c}
+			v.actions[tcell.Key(numKeys[i+1])] = newKeyAction(c, nil)
 		}
 	}
 	return v.actions.toHints()
@@ -99,7 +99,9 @@ func (v *logsView) hints() hints {
 func (v *logsView) addContainer(n string) {
 	v.containers = append(v.containers, n)
 	l := newLogView(n, v.parent)
-	l.SetInputCapture(v.keyboard)
+	{
+		l.SetInputCapture(v.keyboard)
+	}
 	v.AddPage(n, l, true, false)
 }
 
@@ -145,6 +147,7 @@ func (v *logsView) doLoad(path, co string) error {
 	c := make(chan string)
 	go func() {
 		l, count, first := v.CurrentPage().Item.(*logView), 0, true
+		l.setTitle(path + ":" + co)
 		for {
 			select {
 			case line, ok := <-c:
@@ -189,50 +192,55 @@ func (v *logsView) doLoad(path, co string) error {
 		return err
 	}
 	v.cancelFunc = cancelFn
-
 	return nil
 }
 
 // ----------------------------------------------------------------------------
 // Actions...
 
-func (v *logsView) back(*tcell.EventKey) {
+func (v *logsView) back(evt *tcell.EventKey) *tcell.EventKey {
 	v.stop()
 	v.parent.switchPage(v.parent.getList().GetName())
+	return nil
 }
 
-func (v *logsView) top(*tcell.EventKey) {
+func (v *logsView) top(evt *tcell.EventKey) *tcell.EventKey {
 	if p := v.CurrentPage(); p != nil {
 		v.parent.appView().flash(flashInfo, "Top logs...")
 		p.Item.(*logView).ScrollToBeginning()
 	}
+	return nil
 }
 
-func (v *logsView) bottom(*tcell.EventKey) {
+func (v *logsView) bottom(*tcell.EventKey) *tcell.EventKey {
 	if p := v.CurrentPage(); p != nil {
 		v.parent.appView().flash(flashInfo, "Bottom logs...")
 		p.Item.(*logView).ScrollToEnd()
 	}
+	return nil
 }
 
-func (v *logsView) pageUp(*tcell.EventKey) {
+func (v *logsView) pageUp(*tcell.EventKey) *tcell.EventKey {
 	if p := v.CurrentPage(); p != nil {
 		v.parent.appView().flash(flashInfo, "Page Up logs...")
 		p.Item.(*logView).PageUp()
 	}
+	return nil
 }
 
-func (v *logsView) pageDown(*tcell.EventKey) {
+func (v *logsView) pageDown(*tcell.EventKey) *tcell.EventKey {
 	if p := v.CurrentPage(); p != nil {
 		v.parent.appView().flash(flashInfo, "Page Down logs...")
 		p.Item.(*logView).PageDown()
 	}
+	return nil
 }
 
-func (v *logsView) clearLogs(*tcell.EventKey) {
+func (v *logsView) clearLogs(*tcell.EventKey) *tcell.EventKey {
 	if p := v.CurrentPage(); p != nil {
 		v.parent.appView().flash(flashInfo, "Clearing logs...")
 		v.buffer.clear()
 		p.Item.(*logView).Clear()
 	}
+	return nil
 }

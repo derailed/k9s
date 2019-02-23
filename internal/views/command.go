@@ -27,9 +27,11 @@ func (c *command) run(cmd string) {
 	var v igniter
 	switch cmd {
 	case "q", "quit":
-		c.app.quit(nil)
+		c.app.Stop()
+		return
 	case "?", "help", "alias":
-		c.app.help(nil)
+		c.app.inject(newAliasView(c.app))
+		return
 	default:
 		if res, ok := cmdMap[cmd]; ok {
 			v = res.viewFn(res.title, c.app, res.listFn(resource.DefaultNamespace), res.colorerFn)

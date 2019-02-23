@@ -12,6 +12,7 @@ type podView struct {
 
 type loggable interface {
 	appView() *appView
+	backFn() actionHandler
 	getSelection() string
 	getList() resource.List
 	switchPage(n string)
@@ -19,7 +20,9 @@ type loggable interface {
 
 func newPodView(t string, app *appView, list resource.List, c colorerFn) resourceViewer {
 	v := podView{newResourceView(t, app, list, c).(*resourceView)}
-	v.extraActionsFn = v.extraActions
+	{
+		v.extraActionsFn = v.extraActions
+	}
 
 	v.AddPage("logs", newLogsView(&v), true, false)
 
@@ -29,7 +32,7 @@ func newPodView(t string, app *appView, list resource.List, c colorerFn) resourc
 			v.sshInto(v.selectedItem, t)
 		})
 		picker.setActions(keyActions{
-			tcell.KeyEscape: {description: "Back", action: v.back},
+			tcell.KeyEscape: {description: "Back", action: v.backCmd},
 		})
 		v.AddPage("choose", picker, true, false)
 	}
@@ -40,56 +43,60 @@ func newPodView(t string, app *appView, list resource.List, c colorerFn) resourc
 
 // Protocol...
 
+func (v *podView) backFn() actionHandler {
+	return v.backCmd
+}
+
 func (v *podView) appView() *appView {
 	return v.app
 }
+
 func (v *podView) getList() resource.List {
 	return v.list
 }
+
 func (v *podView) getSelection() string {
 	return v.selectedItem
 }
 
 // Handlers...
 
-func (v *podView) logs(*tcell.EventKey) {
+func (v *podView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
-		return
+		return evt
 	}
-
-	cc, err := fetchContainers(v.list, v.selectedItem)
+	cc, err := fetchContainers(v.list, v.selectedItem, true)
 	if err != nil {
+		v.app.flash(flashErr, err.Error())
 		log.Error(err)
+		return evt
 	}
-
 	l := v.GetPrimitive("logs").(*logsView)
 	l.deleteAllPages()
 	for _, c := range cc {
 		l.addContainer(c)
 	}
-
 	v.switchPage("logs")
 	l.init()
+	return nil
 }
 
-func (v *podView) shell(*tcell.EventKey) {
+func (v *podView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
-		return
+		return evt
 	}
-
-	cc, err := fetchContainers(v.list, v.selectedItem)
+	cc, err := fetchContainers(v.list, v.selectedItem, false)
 	if err != nil {
+		v.app.flash(flashErr, err.Error())
 		log.Error("Error fetching containers", err)
-		return
+		return evt
 	}
-
 	if len(cc) == 1 {
 		v.sshInto(v.selectedItem, "")
-		return
+		return nil
 	}
-
 	v.showPicker(cc)
-	return
+	return nil
 }
 
 func (v *podView) showPicker(cc []string) {
@@ -109,13 +116,13 @@ func (v *podView) sshInto(path, co string) {
 }
 
 func (v *podView) extraActions(aa keyActions) {
-	aa[KeyL] = newKeyHandler("Logs", v.logs)
-	aa[KeyS] = newKeyHandler("Shell", v.shell)
+	aa[KeyL] = newKeyAction("Logs", v.logsCmd)
+	aa[KeyS] = newKeyAction("Shell", v.shellCmd)
 }
 
-func fetchContainers(l resource.List, po string) ([]string, error) {
+func fetchContainers(l resource.List, po string, includeInit bool) ([]string, error) {
 	if len(po) == 0 {
 		return []string{}, nil
 	}
-	return l.Resource().(resource.Container).Containers(po)
+	return l.Resource().(resource.Container).Containers(po, includeInit)
 }

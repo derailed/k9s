@@ -20,17 +20,19 @@ func newCronJobView(t string, app *appView, list resource.List, c colorerFn) res
 	return &v
 }
 
-func (v *cronJobView) trigger(*tcell.EventKey) {
+func (v *cronJobView) trigger(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
-		return
+		return evt
 	}
 
 	v.app.flash(flashInfo, fmt.Sprintf("Triggering %s %s", v.list.GetName(), v.selectedItem))
 	if err := v.list.Resource().(resource.Runner).Run(v.selectedItem); err != nil {
 		v.app.flash(flashErr, "Boom!", err.Error())
+		return evt
 	}
+	return nil
 }
 
 func (v *cronJobView) extraActions(aa keyActions) {
-	aa[tcell.KeyCtrlT] = keyAction{description: "Trigger", action: v.trigger}
+	aa[tcell.KeyCtrlT] = newKeyAction("Trigger", v.trigger)
 }

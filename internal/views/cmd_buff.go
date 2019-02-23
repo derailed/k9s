@@ -49,6 +49,10 @@ func (c *cmdBuff) del() {
 	c.fireChanged()
 }
 
+func (c *cmdBuff) wipe() {
+	c.buff = make([]rune, 0, maxBuff)
+}
+
 func (c *cmdBuff) clear() {
 	c.buff = make([]rune, 0, maxBuff)
 	c.fireChanged()

@@ -203,12 +203,12 @@ func (c *Config) CurrentNamespaceName() (string, error) {
 		return "", err
 	}
 
-  if ctx, ok := cfg.Contexts[ctx]; ok {
+	if ctx, ok := cfg.Contexts[ctx]; ok {
 		if isSet(&ctx.Namespace) {
 			return ctx.Namespace, nil
 		}
 	}
-	return defaultNamespace, nil
+	return "", nil
 }
 
 // NamespaceNames fetch all available namespaces on current cluster.

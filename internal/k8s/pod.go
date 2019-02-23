@@ -12,7 +12,7 @@ type (
 	// Loggable represents a K8s resource that has containers and can be logged.
 	Loggable interface {
 		Res
-		Containers(ns, n string) ([]string, error)
+		Containers(ns, n string, includeInit bool) ([]string, error)
 		Logs(ns, n, co string, lines int64, previous bool) *restclient.Request
 	}
 
@@ -58,7 +58,7 @@ func (*Pod) Delete(ns, n string) error {
 }
 
 // Containers returns all container names on pod
-func (*Pod) Containers(ns, n string) ([]string, error) {
+func (*Pod) Containers(ns, n string, includeInit bool) ([]string, error) {
 	opts := metav1.GetOptions{}
 	cc := []string{}
 	po, err := conn.dialOrDie().CoreV1().Pods(ns).Get(n, opts)
@@ -66,6 +66,11 @@ func (*Pod) Containers(ns, n string) ([]string, error) {
 		return cc, err
 	}
 
+	if includeInit {
+		for _, c := range po.Spec.InitContainers {
+			cc = append(cc, c.Name)
+		}
+	}
 	for _, c := range po.Spec.Containers {
 		cc = append(cc, c.Name)
 	}

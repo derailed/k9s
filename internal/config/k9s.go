@@ -81,7 +81,7 @@ func (k *K9s) Validate(ks KubeSettings) {
 		k.Clusters[k.CurrentCluster] = NewCluster()
 	}
 
-	if ns, err := ks.CurrentNamespaceName(); err == nil {
+	if ns, err := ks.CurrentNamespaceName(); err == nil && len(ns) != 0 {
 		k.Clusters[k.CurrentCluster].Namespace.Active = ns
 	}
 }
