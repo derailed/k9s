@@ -31,6 +31,7 @@ type (
 		sortFn    resource.SortFn
 		data      resource.TableData
 		cmdBuff   *cmdBuff
+		tableMX   sync.Mutex
 	}
 )
 
@@ -123,9 +124,13 @@ func (v *tableView) SetColorer(f colorerFn) {
 
 // SetActions sets up keyboard action listener.
 func (v *tableView) setActions(aa keyActions) {
-	for k, a := range aa {
-		v.actions[k] = a
+	v.tableMX.Lock()
+	{
+		for k, a := range aa {
+			v.actions[k] = a
+		}
 	}
+	v.tableMX.Unlock()
 }
 
 // Hints options

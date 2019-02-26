@@ -173,6 +173,20 @@ func initK8sFlags() {
 		"The name of the kubeconfig user to use",
 	)
 
+	rootCmd.Flags().StringVar(
+		k8sFlags.Impersonate,
+		"as",
+		"",
+		"Username to impersonate for the operation",
+	)
+
+	rootCmd.Flags().StringArrayVar(
+		k8sFlags.ImpersonateGroup,
+		"as-group",
+		[]string{},
+		"Group to impersonate for the operation",
+	)
+
 	rootCmd.Flags().BoolVar(
 		k8sFlags.Insecure,
 		"insecure-skip-tls-verify",

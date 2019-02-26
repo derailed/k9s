@@ -168,6 +168,9 @@ func (c *Config) ClusterNames() ([]string, error) {
 
 // CurrentUserName retrieves the active user name.
 func (c *Config) CurrentUserName() (string, error) {
+	if isSet(c.flags.Impersonate) {
+		return *c.flags.Impersonate, nil
+	}
 	if isSet(c.flags.AuthInfoName) {
 		return *c.flags.AuthInfoName, nil
 	}
