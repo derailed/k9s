@@ -3,6 +3,7 @@ package views
 import (
 	"context"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/derailed/k9s/internal/resource"
@@ -16,7 +17,6 @@ const (
 
 type aliasView struct {
 	*tableView
-
 	current igniter
 }
 
@@ -26,10 +26,16 @@ func newAliasView(app *appView) *aliasView {
 		v.SetSelectedStyle(tcell.ColorWhite, tcell.ColorFuchsia, tcell.AttrNone)
 		v.colorerFn = aliasColorer
 		v.current = app.content.GetPrimitive("main").(igniter)
+		v.sortFn = v.sorterFn
 	}
 	v.actions[tcell.KeyEnter] = newKeyAction("Search", v.aliasCmd)
+	v.actions[tcell.KeyEscape] = newKeyAction("Reset", v.resetCmd)
 	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd)
 	return &v
+}
+
+func (v *aliasView) sorterFn(ss []string) {
+	sort.Strings(ss)
 }
 
 // Init the view.
@@ -41,6 +47,15 @@ func (v *aliasView) init(context.Context, string) {
 
 func (v *aliasView) getTitle() string {
 	return aliasTitle
+}
+
+func (v *aliasView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !v.cmdBuff.empty() {
+		v.cmdBuff.reset()
+		v.refresh()
+		return nil
+	}
+	return v.backCmd(evt)
 }
 
 func (v *aliasView) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
