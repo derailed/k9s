@@ -186,7 +186,6 @@ func (v *resourceView) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
 		return evt
 	}
-	v.app.flash(flashInfo, fmt.Sprintf("Editing %s %s", v.title, v.selectedItem))
 	ns, s := namespaced(v.selectedItem)
 	run(v.app, "edit", v.list.GetName(), "-n", ns, s)
 	return evt
