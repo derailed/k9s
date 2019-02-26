@@ -106,7 +106,6 @@ func (v *podView) showPicker(cc []string) {
 }
 
 func (v *podView) sshInto(path, co string) {
-	// v.app.flash(flashInfo, "Shell into pod", path)
 	ns, po := namespaced(path)
 	if len(co) == 0 {
 		run(v.app, "exec", "-it", "-n", ns, po, "--", "sh")
