@@ -102,12 +102,15 @@ func (c *Config) Load(path string) error {
 	if err != nil {
 		return err
 	}
+	c.K9s = NewK9s()
 
 	var cfg Config
 	if err := yaml.Unmarshal(f, &cfg); err != nil {
 		return err
 	}
-	c.K9s = cfg.K9s
+	if cfg.K9s != nil {
+		c.K9s = cfg.K9s
+	}
 	return nil
 }
 

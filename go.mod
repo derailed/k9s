@@ -1,7 +1,5 @@
 module github.com/derailed/k9s
 
-// replace github.com/derailed/tview => /Users/fernand/go_wk/derailed/src/github.com/derailed/tview
-
 require (
 	contrib.go.opencensus.io/exporter/ocagent v0.4.3 // indirect
 	github.com/Azure/go-autorest v11.4.0+incompatible // indirect
