@@ -211,19 +211,18 @@ func (c *Config) CurrentNamespaceName() (string, error) {
 			return ctx.Namespace, nil
 		}
 	}
-	return "", nil
+	return "", fmt.Errorf("No active namespace specified")
 }
 
 // NamespaceNames fetch all available namespaces on current cluster.
 func (c *Config) NamespaceNames() ([]string, error) {
-	var nn []string
 	ll, err := NewNamespace().List("")
 	if err != nil {
-		return nn, err
+		return []string{}, err
 	}
-	nn = make([]string, len(nn))
-	for i, n := range ll {
-		nn[i] = n.(v1.Namespace).Name
+	nn := make([]string, 0, len(ll))
+	for _, n := range ll {
+		nn = append(nn, n.(v1.Namespace).Name)
 	}
 	return nn, nil
 }

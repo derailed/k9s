@@ -39,10 +39,12 @@ func (v *namespaceView) useNamespace(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	ns := v.getSelectedItem()
-	config.Root.SetActiveNamespace(ns)
+	if err := config.Root.SetActiveNamespace(ns); err != nil {
+		v.app.flash(flashErr, err.Error())
+	} else {
+		v.app.flash(flashInfo, fmt.Sprintf("Namespace %s is now active!", ns))
+	}
 	config.Root.Save()
-	v.refresh()
-	v.app.flash(flashInfo, fmt.Sprintf("Setting namespace `%s as your default namespace", ns))
 	return nil
 }
 

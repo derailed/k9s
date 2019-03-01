@@ -187,7 +187,7 @@ func (v *resourceView) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	ns, s := namespaced(v.selectedItem)
-	run(v.app, "edit", v.list.GetName(), "-n", ns, s)
+	runK(v.app, "edit", v.list.GetName(), "-n", ns, s)
 	return evt
 }
 

@@ -2,6 +2,7 @@ package k8s_test
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -68,15 +69,17 @@ func TestConfigCurrentNamespace(t *testing.T) {
 	uu := []struct {
 		flags     *genericclioptions.ConfigFlags
 		namespace string
+		err       error
 	}{
-		{&genericclioptions.ConfigFlags{KubeConfig: &kubeConfig}, ""},
-		{&genericclioptions.ConfigFlags{KubeConfig: &kubeConfig, Namespace: &name}, "blee"},
+		{&genericclioptions.ConfigFlags{KubeConfig: &kubeConfig}, "", fmt.Errorf("No active namespace specified")},
+		{&genericclioptions.ConfigFlags{KubeConfig: &kubeConfig, Namespace: &name}, "blee", nil},
 	}
 
 	for _, u := range uu {
 		cfg := k8s.NewConfig(u.flags)
 		ns, err := cfg.CurrentNamespaceName()
-		assert.Nil(t, err)
+		fmt.Println("CRap", ns, err)
+		assert.Equal(t, u.err, err)
 		assert.Equal(t, u.namespace, ns)
 	}
 }

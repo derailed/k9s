@@ -75,12 +75,13 @@ func (c *Config) FavNamespaces() []string {
 }
 
 // SetActiveNamespace set the active namespace in the current cluster.
-func (c *Config) SetActiveNamespace(ns string) {
+func (c *Config) SetActiveNamespace(ns string) error {
+	log.Debugf("Setting active namespace `%s", ns)
 	if c.K9s.ActiveCluster() != nil {
-		c.K9s.ActiveCluster().Namespace.SetActive(ns)
-	} else {
-		log.Debug("Doh! no active cluster. unable to set active namespace")
+		return c.K9s.ActiveCluster().Namespace.SetActive(ns, c.settings)
 	}
+	log.Error("Doh! no active cluster. unable to set active namespace")
+	return fmt.Errorf("no active cluster. unable to set active namespace")
 }
 
 // ActiveView returns the active view in the current cluster.

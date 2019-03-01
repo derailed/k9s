@@ -130,6 +130,7 @@ func TestConfigSaveFile(t *testing.T) {
 	m.When(ksMock.CurrentClusterName()).ThenReturn("minikube", nil)
 	m.When(ksMock.CurrentNamespaceName()).ThenReturn("default", nil)
 	m.When(ksMock.ClusterNames()).ThenReturn([]string{"minikube", "fred", "blee"}, nil)
+	m.When(ksMock.NamespaceNames()).ThenReturn([]string{"default"}, nil)
 
 	cfg := config.NewConfig(ksMock)
 	cfg.Load("test_assets/k9s.yml")
@@ -153,6 +154,7 @@ func TestConfigReset(t *testing.T) {
 	m.When(ksMock.CurrentClusterName()).ThenReturn("blee", nil)
 	m.When(ksMock.CurrentNamespaceName()).ThenReturn("default", nil)
 	m.When(ksMock.ClusterNames()).ThenReturn([]string{"blee"}, nil)
+	m.When(ksMock.NamespaceNames()).ThenReturn([]string{"default"}, nil)
 
 	cfg := config.NewConfig(ksMock)
 	cfg.Load("test_assets/k9s.yml")

@@ -52,6 +52,7 @@ func TestNSValidateNoNS(t *testing.T) {
 }
 
 func TestNSSetActive(t *testing.T) {
+	allNS := []string{"ns4", "ns3", "ns2", "ns1", "all", "default"}
 	uu := []struct {
 		ns  string
 		fav []string
@@ -60,30 +61,30 @@ func TestNSSetActive(t *testing.T) {
 		{"ns1", []string{"ns1", "all", "default"}},
 		{"ns2", []string{"ns2", "ns1", "all", "default"}},
 		{"ns3", []string{"ns3", "ns2", "ns1", "all", "default"}},
-		{"ns4", []string{"ns4", "ns3", "ns2", "ns1", "all", "default"}},
+		{"ns4", allNS},
 	}
+
+	ksMock := NewMockKubeSettings()
+	m.When(ksMock.NamespaceNames()).ThenReturn(allNS, nil)
 
 	ns := config.NewNamespace()
 	for _, u := range uu {
-		ns.SetActive(u.ns)
+		err := ns.SetActive(u.ns, ksMock)
+		assert.Nil(t, err)
 		assert.Equal(t, u.ns, ns.Active)
 		assert.Equal(t, u.fav, ns.Favorites)
 	}
 }
 
-func TestNSRmFavNS(t *testing.T) {
-	ns := config.NewNamespace()
-	uu := []struct {
-		ns  string
-		fav []string
-	}{
-		{"all", []string{"default", "kube-system"}},
-		{"kube-system", []string{"default"}},
-		{"blee", []string{"default"}},
-	}
+func TestNSValidateRmFavs(t *testing.T) {
+	allNS := []string{"default", "kube-system"}
 
-	for _, u := range uu {
-		ns.SetActive(u.ns)
-		assert.Equal(t, u.ns, ns.Active)
-	}
+	ksMock := NewMockKubeSettings()
+	m.When(ksMock.NamespaceNames()).ThenReturn(allNS, nil)
+
+	ns := config.NewNamespace()
+	ns.Favorites = []string{"default", "fred", "blee"}
+
+	ns.Validate(ksMock)
+	assert.Equal(t, []string{"default"}, ns.Favorites)
 }

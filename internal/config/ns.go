@@ -27,6 +27,7 @@ func NewNamespace() *Namespace {
 
 // Validate a namespace is setup correctly
 func (n *Namespace) Validate(ks KubeSettings) {
+	log.Debug("Validating favorites...", n.Active)
 	nn, err := ks.NamespaceNames()
 	if err != nil {
 		return
@@ -46,9 +47,11 @@ func (n *Namespace) Validate(ks KubeSettings) {
 }
 
 // SetActive set the active namespace.
-func (n *Namespace) SetActive(ns string) {
+func (n *Namespace) SetActive(ns string, ks KubeSettings) error {
+	log.Debug("Setting active ns ", ns)
 	n.Active = ns
 	n.addFavNS(ns)
+	return nil
 }
 
 func (n *Namespace) isAllNamespace() bool {

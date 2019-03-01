@@ -105,6 +105,9 @@ func initK9sConfig() {
 
 	if c, ok := cfg.Contexts[ctx]; ok {
 		config.Root.K9s.CurrentCluster = c.Cluster
+		if len(c.Namespace) != 0 {
+			config.Root.SetActiveNamespace(c.Namespace)
+		}
 	} else {
 		panic(fmt.Sprintf("The specified context `%s does not exists in kubeconfig", cfg.CurrentContext))
 	}
@@ -134,6 +137,8 @@ func run(cmd *cobra.Command, args []string) {
 	{
 		app.Init(version, refreshRate, k8sFlags)
 		defer func() {
+			// Clear screen
+			print("\033[H\033[2J")
 			if err := recover(); err != nil {
 				app.Stop()
 				fmt.Println(err)
