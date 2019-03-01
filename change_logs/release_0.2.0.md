@@ -19,7 +19,7 @@ Thank you so much for your support!!
   There was some issues with the previous implementation with missing info and panics.
   NOTE! User must type Ctrl-C to exit the logs and navigate back to K9s
 + Reordered containers to show spec.containers first vs spec.initcontainers.
-+ [Feature #29]((https://github.com/derailed/k9s/issues/29))
++ [Feature #29](https://github.com/derailed/k9s/issues/29)
   Side effect of #97 Log coloring if present, will now show in the terminal.
 
 ---
