@@ -44,7 +44,7 @@ func TestLogBufferCleanse(t *testing.T) {
 func TestLogBufferDecorate(t *testing.T) {
 	l := "hello k9s"
 	var b *logBuffer
-	assert.Equal(t, "["+newLogColor+"::]"+l+"[::]", b.decorateLine(l))
+	assert.Equal(t, l, b.decorateLine(l))
 }
 
 func TestLogBufferTrimLine(t *testing.T) {

@@ -13,8 +13,6 @@ github.com/census-instrumentation/opencensus-proto v0.1.0-0.20181214143942-ba49f
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/derailed/tview v0.1.1 h1:s9rGoufUkZYsIFCfV3M23yHxTKa7Rt6n+QFaOgnirpk=
-github.com/derailed/tview v0.1.1/go.mod h1:WRYVfgb2PBMLZ/muaSpOc/4H4fYsOPnHOaGnBoJ+hGE=
 github.com/derailed/tview v0.1.2 h1:T/XDdjvWrSdhi68bKE0O87O7oHD/JxmfU4IQ13y4fmc=
 github.com/derailed/tview v0.1.2/go.mod h1:WRYVfgb2PBMLZ/muaSpOc/4H4fYsOPnHOaGnBoJ+hGE=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
