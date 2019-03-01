@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"runtime/debug"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
@@ -126,14 +127,22 @@ func run(cmd *cobra.Command, args []string) {
 		level = log.DebugLevel
 	}
 	log.SetLevel(level)
-	log.SetFormatter(&log.TextFormatter{FullTimestamp: true, ForceColors: true})
 
 	initK9s()
+
 	app := views.NewApp()
 	{
 		app.Init(version, refreshRate, k8sFlags)
+		defer func() {
+			if err := recover(); err != nil {
+				app.Stop()
+				fmt.Println(err)
+				debug.PrintStack()
+			}
+		}()
 		app.Run()
 	}
+
 }
 
 func initK8sFlags() {

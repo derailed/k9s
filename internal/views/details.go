@@ -77,7 +77,6 @@ func (v *detailsView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		log.Debug(">> DetailsView handled ", tcell.KeyNames[key])
 		return a.action(evt)
 	}
-	log.Debug("Doh! DetailsView got no registered action for key ", tcell.KeyNames[key])
 	return evt
 }
 

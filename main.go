@@ -15,6 +15,7 @@ func init() {
 	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
 	if file, err := os.OpenFile(config.K9sLogs, mod, config.DefaultFileMod); err == nil {
 		log.SetOutput(file)
+		log.SetFormatter(&log.TextFormatter{FullTimestamp: true, ForceColors: true})
 	} else {
 		panic(err)
 	}

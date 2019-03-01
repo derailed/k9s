@@ -214,18 +214,13 @@ func (a *appView) inject(p igniter) {
 		a.cancel()
 	}
 	a.content.RemovePage("main")
-	a.content.AddPage("main", p, true, true)
 
 	var ctx context.Context
 	{
 		ctx, a.cancel = context.WithCancel(context.TODO())
 		p.init(ctx, config.Root.ActiveNamespace())
 	}
-
-	go func() {
-		<-time.After(100 * time.Millisecond)
-		a.Draw()
-	}()
+	a.content.AddPage("main", p, true, true)
 
 	a.focusGroup = append([]tview.Primitive{}, p)
 	a.focusCurrent = 0

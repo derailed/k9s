@@ -18,10 +18,9 @@ func newInfoView(app *appView) *infoView {
 }
 
 func (v *infoView) init() {
-	var row int
-
 	cluster := resource.NewCluster()
 
+	var row int
 	v.SetCell(row, 0, v.sectionCell("Context"))
 	v.SetCell(row, 1, v.infoCell(cluster.ContextName()))
 	row++

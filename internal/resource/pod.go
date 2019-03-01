@@ -12,7 +12,10 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-const defaultTimeout = 1 * time.Second
+const (
+	defaultTimeout = 1 * time.Second
+	podNameSize    = 42
+)
 
 type (
 	// Container represents a resource that encompass multiple containers.
@@ -211,7 +214,7 @@ func (r *Pod) Fields(ns string) Row {
 
 	cr, _, rc, cc := r.statuses()
 	return append(ff,
-		i.ObjectMeta.Name,
+		Pad(i.ObjectMeta.Name, podNameSize),
 		strconv.Itoa(cr)+"/"+strconv.Itoa(len(cc)),
 		r.phase(i.Status),
 		strconv.Itoa(rc),

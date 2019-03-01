@@ -68,8 +68,13 @@ func (*Custom) NewInstance(i interface{}) Columnar {
 		log.Error(err)
 	}
 	meta := obj["metadata"].(map[string]interface{})
-	cr.path = path.Join(meta["namespace"].(string), meta["name"].(string))
-	cr.group, cr.version, cr.name = obj["kind"].(string), obj["apiVersion"].(string), meta["name"].(string)
+	ns := ""
+	if n, ok := meta["namespace"]; ok {
+		ns = n.(string)
+	}
+	name := meta["name"].(string)
+	cr.path = path.Join(ns, name)
+	cr.group, cr.version, cr.name = obj["kind"].(string), obj["apiVersion"].(string), name
 	return cr
 }
 

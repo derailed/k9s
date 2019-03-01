@@ -16,6 +16,8 @@ func newLogView(title string, parent loggable) *logView {
 	{
 		v.SetBorderPadding(0, 0, 1, 1)
 		v.setCategory("Logs")
+		v.SetDynamicColors(false)
+		v.SetWrap(true)
 		v.setTitle(parent.getSelection())
 	}
 	return &v

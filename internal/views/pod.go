@@ -28,15 +28,11 @@ func newPodView(t string, app *appView, list resource.List, c colorerFn) resourc
 
 	picker := newSelectList()
 	{
-		picker.SetSelectedFunc(func(i int, t, d string, r rune) {
-			v.sshInto(v.selectedItem, t)
-		})
 		picker.setActions(keyActions{
 			tcell.KeyEscape: {description: "Back", action: v.backCmd},
 		})
 		v.AddPage("choose", picker, true, false)
 	}
-
 	v.switchPage("po")
 	return &v
 }
@@ -81,6 +77,29 @@ func (v *podView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+// func (v *podView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
+// 	if !v.rowSelected() {
+// 		return evt
+// 	}
+// 	cc, err := fetchContainers(v.list, v.selectedItem, true)
+// 	if err != nil {
+// 		v.app.flash(flashErr, err.Error())
+// 		log.Error("Error fetching containers", err)
+// 		return evt
+// 	}
+// 	if len(cc) == 1 {
+// 		v.showLogs(v.selectedItem, "")
+// 	} else {
+// 		p := v.GetPrimitive("choose").(*selectList)
+// 		p.populate(cc)
+// 		p.SetSelectedFunc(func(i int, t, d string, r rune) {
+// 			v.showLogs(v.selectedItem, t)
+// 		})
+// 		v.switchPage("choose")
+// 	}
+// 	return evt
+// }
+
 func (v *podView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
 		return evt
@@ -92,11 +111,17 @@ func (v *podView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	if len(cc) == 1 {
-		v.sshInto(v.selectedItem, "")
-		return nil
+		v.shellIn(v.selectedItem, "")
+	} else {
+		// v.showPicker(cc)
+		p := v.GetPrimitive("choose").(*selectList)
+		p.populate(cc)
+		p.SetSelectedFunc(func(i int, t, d string, r rune) {
+			v.shellIn(v.selectedItem, t)
+		})
+		v.switchPage("choose")
 	}
-	v.showPicker(cc)
-	return nil
+	return evt
 }
 
 func (v *podView) showPicker(cc []string) {
@@ -105,13 +130,25 @@ func (v *podView) showPicker(cc []string) {
 	v.switchPage("choose")
 }
 
-func (v *podView) sshInto(path, co string) {
+func (v *podView) shellIn(path, co string) {
 	ns, po := namespaced(path)
-	if len(co) == 0 {
-		run(v.app, "exec", "-it", "-n", ns, po, "--", "sh")
-	} else {
-		run(v.app, "exec", "-it", "-n", ns, po, "-c", co, "--", "sh")
+	args := []string{"exec", "-it", "-n", ns, po}
+	if len(co) != 0 {
+		args = append(args, "-c", co)
 	}
+	args = append(args, "--", "sh")
+	log.Debug("Shell args", args)
+	run(v.app, args...)
+}
+
+func (v *podView) showLogs(path, co string) {
+	ns, po := namespaced(path)
+	args := []string{"logs", "-f", "-n", ns, po}
+	if len(co) != 0 {
+		args = append(args, "-c", co)
+	}
+	log.Debug("Logs Args", args)
+	run(v.app, args...)
 }
 
 func (v *podView) extraActions(aa keyActions) {
