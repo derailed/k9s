@@ -13,7 +13,7 @@ func run(app *appView, args ...string) bool {
 			log.Error("Command failed:", err, args)
 			app.flash(flashErr, "Doh! command failed", err.Error())
 		}
-		log.Debug("Command exec sucessfully!")
+		log.Debug("Command exec successfully!")
 	})
 }
 
