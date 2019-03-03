@@ -40,8 +40,8 @@ func newLogsView(parent loggable) *logsView {
 	v.setActions(keyActions{
 		tcell.KeyEscape: {description: "Back", action: v.back},
 		KeyC:            {description: "Clear", action: v.clearLogs},
-		KeyU:            {description: "Top", action: v.top},
-		KeyD:            {description: "Bottom", action: v.bottom},
+		KeyG:            {description: "Top", action: v.top},
+		KeyShiftG:       {description: "Bottom", action: v.bottom},
 		KeyF:            {description: "Up", action: v.pageUp},
 		KeyB:            {description: "Down", action: v.pageDown},
 	})
@@ -206,7 +206,7 @@ func (v *logsView) back(evt *tcell.EventKey) *tcell.EventKey {
 
 func (v *logsView) top(evt *tcell.EventKey) *tcell.EventKey {
 	if p := v.CurrentPage(); p != nil {
-		v.parent.appView().flash(flashInfo, "Top logs...")
+		v.parent.appView().flash(flashInfo, "Top of logs...")
 		p.Item.(*logView).ScrollToBeginning()
 	}
 	return nil
@@ -214,7 +214,7 @@ func (v *logsView) top(evt *tcell.EventKey) *tcell.EventKey {
 
 func (v *logsView) bottom(*tcell.EventKey) *tcell.EventKey {
 	if p := v.CurrentPage(); p != nil {
-		v.parent.appView().flash(flashInfo, "Bottom logs...")
+		v.parent.appView().flash(flashInfo, "Bottom of logs...")
 		p.Item.(*logView).ScrollToEnd()
 	}
 	return nil
@@ -222,7 +222,6 @@ func (v *logsView) bottom(*tcell.EventKey) *tcell.EventKey {
 
 func (v *logsView) pageUp(*tcell.EventKey) *tcell.EventKey {
 	if p := v.CurrentPage(); p != nil {
-		v.parent.appView().flash(flashInfo, "Page Up logs...")
 		p.Item.(*logView).PageUp()
 	}
 	return nil
@@ -230,7 +229,6 @@ func (v *logsView) pageUp(*tcell.EventKey) *tcell.EventKey {
 
 func (v *logsView) pageDown(*tcell.EventKey) *tcell.EventKey {
 	if p := v.CurrentPage(); p != nil {
-		v.parent.appView().flash(flashInfo, "Page Down logs...")
 		p.Item.(*logView).PageDown()
 	}
 	return nil

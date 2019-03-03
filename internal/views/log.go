@@ -2,8 +2,6 @@ package views
 
 import (
 	"fmt"
-
-	log "github.com/sirupsen/logrus"
 )
 
 type logView struct {
@@ -11,7 +9,6 @@ type logView struct {
 }
 
 func newLogView(title string, parent loggable) *logView {
-	log.Debug("LogsView init...")
 	v := logView{detailsView: newDetailsView(parent.appView(), parent.backFn())}
 	{
 		v.SetBorderPadding(0, 0, 1, 1)

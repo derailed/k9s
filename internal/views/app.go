@@ -205,6 +205,10 @@ func (a *appView) noopCmd(*tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+func (a *appView) puntCmd(evt *tcell.EventKey) *tcell.EventKey {
+	return evt
+}
+
 func (a *appView) showPage(p string) {
 	a.pages.SwitchToPage(p)
 }

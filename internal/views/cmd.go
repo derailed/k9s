@@ -66,7 +66,6 @@ func (v *cmdView) active(f bool) {
 		v.SetBackgroundColor(tcell.ColorDodgerBlue)
 		v.activate()
 	} else {
-		log.Debug("CmdView was deactivated!")
 		v.SetBackgroundColor(tcell.ColorDefault)
 		v.Clear()
 	}

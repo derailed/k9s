@@ -3,7 +3,7 @@ module github.com/derailed/k9s
 require (
 	contrib.go.opencensus.io/exporter/ocagent v0.4.3 // indirect
 	github.com/Azure/go-autorest v11.4.0+incompatible // indirect
-	github.com/derailed/tview v0.1.2
+	github.com/derailed/tview v0.1.3
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect

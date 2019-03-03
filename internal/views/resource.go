@@ -94,6 +94,7 @@ func (v *resourceView) getTitle() string {
 
 func (v *resourceView) selChanged(r, c int) {
 	v.selectItem(r, c)
+	v.getTV().cmdBuff.setActive(false)
 }
 
 func (v *resourceView) colorFn(f colorerFn) {
@@ -289,8 +290,7 @@ func (v *resourceView) switchPage(p string) {
 }
 
 func (v *resourceView) rowSelected() bool {
-	item := v.selectedItem
-	return item != noSelection
+	return v.selectedItem != noSelection
 }
 
 func namespaced(n string) (string, string) {

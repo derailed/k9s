@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -18,6 +20,7 @@ const (
 type aliasView struct {
 	*tableView
 	current igniter
+	cancel  context.CancelFunc
 }
 
 func newAliasView(app *appView) *aliasView {
@@ -27,10 +30,26 @@ func newAliasView(app *appView) *aliasView {
 		v.colorerFn = aliasColorer
 		v.current = app.content.GetPrimitive("main").(igniter)
 		v.sortFn = v.sorterFn
+		v.currentNS = ""
 	}
-	v.actions[tcell.KeyEnter] = newKeyAction("Search", v.aliasCmd)
+	v.actions[tcell.KeyEnter] = newKeyAction("Search", v.gotoCmd)
 	v.actions[tcell.KeyEscape] = newKeyAction("Reset", v.resetCmd)
 	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd)
+
+	ctx, cancel := context.WithCancel(context.TODO())
+	v.cancel = cancel
+	go func(ctx context.Context) {
+		for {
+			select {
+			case <-ctx.Done():
+				log.Debug("Alias GR bailing out!")
+				return
+			case <-time.After(1 * time.Second):
+				v.update(v.hydrate())
+				v.app.Draw()
+			}
+		}
+	}(ctx)
 	return &v
 }
 
@@ -52,21 +71,32 @@ func (v *aliasView) getTitle() string {
 func (v *aliasView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.cmdBuff.empty() {
 		v.cmdBuff.reset()
-		v.refresh()
 		return nil
 	}
 	return v.backCmd(evt)
 }
 
-func (v *aliasView) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (v *aliasView) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
+	r, _ := v.GetSelection()
+	if r != 0 {
+		return v.runCmd(evt)
+	}
+
 	if v.cmdBuff.isActive() {
 		return v.filterCmd(evt)
 	}
-	return v.runCmd(evt)
+	return evt
 }
 
 func (v *aliasView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	v.app.inject(v.current)
+	if v.cancel != nil {
+		v.cancel()
+	}
+	if v.cmdBuff.isActive() {
+		v.cmdBuff.reset()
+	} else {
+		v.app.inject(v.current)
+	}
 	return nil
 }
 

@@ -137,8 +137,7 @@ func run(cmd *cobra.Command, args []string) {
 	{
 		app.Init(version, refreshRate, k8sFlags)
 		defer func() {
-			// Clear screen
-			print("\033[H\033[2J")
+			clearScreen()
 			if err := recover(); err != nil {
 				app.Stop()
 				fmt.Println(err)
@@ -147,7 +146,10 @@ func run(cmd *cobra.Command, args []string) {
 		}()
 		app.Run()
 	}
+}
 
+func clearScreen() {
+	fmt.Print("\033[H\033[2J")
 }
 
 func initK8sFlags() {

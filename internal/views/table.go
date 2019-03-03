@@ -57,8 +57,17 @@ func newTableView(app *appView, title string, sortFn resource.SortFn) *tableView
 	v.actions[tcell.KeyEnter] = newKeyAction("Search", v.filterCmd)
 	v.actions[tcell.KeyEscape] = newKeyAction("Reset", v.resetCmd)
 	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd)
+	v.actions[KeyG] = newKeyAction("Top", app.puntCmd)
+	v.actions[KeyShiftG] = newKeyAction("Bottom", app.puntCmd)
+	v.actions[KeyB] = newKeyAction("Down", v.pageDownCmd)
+	v.actions[KeyF] = newKeyAction("Up", v.pageUpCmd)
 
 	return &v
+}
+
+func (v *tableView) clearSelection() {
+	v.Select(0, 0)
+	v.ScrollToBeginning()
 }
 
 func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
@@ -66,6 +75,8 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	if key == tcell.KeyRune {
 		if v.cmdBuff.isActive() {
 			v.cmdBuff.add(evt.Rune())
+			v.clearSelection()
+			v.doUpdate(v.filtered())
 			return nil
 		}
 		key = tcell.Key(evt.Rune())
@@ -76,6 +87,16 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		return a.action(evt)
 	}
 	return evt
+}
+
+func (v *tableView) pageUpCmd(evt *tcell.EventKey) *tcell.EventKey {
+	v.PageUp()
+	return nil
+}
+
+func (v *tableView) pageDownCmd(evt *tcell.EventKey) *tcell.EventKey {
+	v.PageDown()
+	return nil
 }
 
 func (v *tableView) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -92,6 +113,7 @@ func (v *tableView) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *tableView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
+	v.app.flash(flashInfo, "Filtering off...")
 	v.cmdBuff.reset()
 	v.refresh()
 	return nil
@@ -102,7 +124,7 @@ func (v *tableView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	v.app.flash(flashInfo, "Entering filtering mode...")
+	v.app.flash(flashInfo, "Filtering...")
 	log.Info("Entering filtering mode...")
 	v.cmdBuff.reset()
 	v.cmdBuff.setActive(true)
@@ -150,7 +172,7 @@ func (v *tableView) update(data resource.TableData) {
 	v.refreshMX.Lock()
 	{
 		v.data = data
-		if !v.cmdBuff.isActive() && !v.cmdBuff.empty() {
+		if !v.cmdBuff.empty() {
 			v.doUpdate(v.filtered())
 		} else {
 			v.doUpdate(data)
