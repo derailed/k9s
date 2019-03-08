@@ -15,14 +15,14 @@ func NewHPA() Res {
 // Get a service.
 func (*HPA) Get(ns, n string) (interface{}, error) {
 	opts := metav1.GetOptions{}
-	return conn.dialOrDie().Autoscaling().HorizontalPodAutoscalers(ns).Get(n, opts)
+	return conn.dialOrDie().AutoscalingV2beta2().HorizontalPodAutoscalers(ns).Get(n, opts)
 }
 
 // List all services in a given namespace
 func (*HPA) List(ns string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
-	rr, err := conn.dialOrDie().Autoscaling().HorizontalPodAutoscalers(ns).List(opts)
+	rr, err := conn.dialOrDie().AutoscalingV2beta2().HorizontalPodAutoscalers(ns).List(opts)
 	if err != nil {
 		return Collection{}, err
 	}
