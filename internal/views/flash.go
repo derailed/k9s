@@ -14,7 +14,7 @@ const (
 	flashWarn
 	flashErr
 	flashFatal
-	flashDelay = 3
+	flashDelay = 2
 
 	emoDoh   = "😗"
 	emoRed   = "😡"

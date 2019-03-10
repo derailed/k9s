@@ -119,7 +119,7 @@ func (v *resourceView) hints() hints {
 // Actions...
 
 func (v *resourceView) refreshCmd(*tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msg("Refreshing resource...")
+	v.app.flash(flashInfo, "Refreshing...")
 	v.refresh()
 	return nil
 }
