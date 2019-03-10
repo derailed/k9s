@@ -4,7 +4,7 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/apps/v1"
 )
 
@@ -50,7 +50,7 @@ func (*StatefulSet) NewInstance(i interface{}) Columnar {
 		ii := i.(v1.StatefulSet)
 		cm.instance = &ii
 	default:
-		log.Fatalf("Unknown %#v", i)
+		log.Fatal().Msgf("Unknown %#v", i)
 	}
 	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
 	return cm

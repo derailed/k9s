@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	restclient "k8s.io/client-go/rest"
@@ -53,7 +53,7 @@ func (j *Job) Containers(ns, n string, includeInit bool) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Debug("Containers found assoc pod", pod)
+	log.Debug().Msgf("Containers found assoc pod %v", pod)
 	return NewPod().(Loggable).Containers(ns, pod, includeInit)
 }
 
@@ -63,7 +63,6 @@ func (j *Job) Logs(ns, n, co string, lines int64, prev bool) *restclient.Request
 	if err != nil {
 		return nil
 	}
-	log.Println("Logs found assoc pod", pod)
 	return NewPod().(Loggable).Logs(ns, pod, co, lines, prev)
 }
 

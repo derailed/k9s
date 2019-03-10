@@ -6,7 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/derailed/k9s/internal/k8s"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -60,7 +60,7 @@ func (*Node) NewInstance(i interface{}) Columnar {
 		ii := i.(v1.Node)
 		cm.instance = &ii
 	default:
-		log.Fatalf("Unknown %#v", i)
+		log.Fatal().Msgf("Unknown %#v", i)
 	}
 	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
 	return cm
@@ -81,7 +81,7 @@ func (r *Node) List(ns string) (Columnars, error) {
 	cc := make(Columnars, 0, len(nn))
 	mx, err := r.metricSvc.PerNodeMetrics(nn)
 	if err != nil {
-		log.Warnf("No metrics: %#v", err)
+		log.Warn().Msgf("No metrics: %#v", err)
 	}
 
 	for i := 0; i < len(nn); i++ {
@@ -99,7 +99,7 @@ func (r *Node) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
 	i, err := r.caller.Get(ns, n)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err)
 		return "", err
 	}
 

@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -52,7 +52,7 @@ func (*Endpoints) NewInstance(i interface{}) Columnar {
 		ii := i.(v1.Endpoints)
 		cm.instance = &ii
 	default:
-		log.Fatalf("Unknown %#v", i)
+		log.Fatal().Msgf("Unknown %#v", i)
 	}
 	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
 	return cm

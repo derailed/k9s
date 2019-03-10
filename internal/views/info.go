@@ -4,7 +4,7 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 type infoView struct {
@@ -77,7 +77,7 @@ func (v *infoView) refresh() {
 
 	mx, err := cluster.Metrics()
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err)
 		return
 	}
 	c := v.GetCell(row, 1)

@@ -2,7 +2,7 @@ package resource
 
 import (
 	"github.com/derailed/k9s/internal/k8s"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -48,7 +48,7 @@ func (*Namespace) NewInstance(i interface{}) Columnar {
 		ii := i.(v1.Namespace)
 		cm.instance = &ii
 	default:
-		log.Fatalf("Unknown %#v", i)
+		log.Fatal().Msgf("Unknown %#v", i)
 	}
 	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
 	return cm
@@ -59,7 +59,7 @@ func (r *Namespace) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
 	i, err := r.caller.Get(ns, n)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err)
 		return "", err
 	}
 

@@ -8,7 +8,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
@@ -136,7 +136,7 @@ func (a *appView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		key = tcell.Key(evt.Rune())
 	}
 	if a, ok := a.actions[key]; ok {
-		log.Debug(">> AppView handled key: ", tcell.KeyNames[key])
+		log.Debug().Msgf(">> AppView handled key: %s", tcell.KeyNames[key])
 		return a.action(evt)
 	}
 	return evt
@@ -178,8 +178,11 @@ func (a *appView) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *appView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.cmdView.inCmdMode() {
+		return evt
+	}
 	a.flash(flashInfo, "Entering command mode...")
-	log.Debug("Entering app command mode...")
+	log.Debug().Msg("Entering app command mode...")
 	a.cmdBuff.setActive(true)
 	a.cmdBuff.clear()
 	return nil

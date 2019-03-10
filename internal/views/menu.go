@@ -10,7 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -143,7 +143,7 @@ func (a keyActions) toHints() hints {
 				mnemonic: name,
 				display:  a[tcell.Key(k)].description})
 		} else {
-			log.Errorf("Unable to local KeyName for %#v", k)
+			log.Error().Msgf("Unable to local KeyName for %#v", k)
 		}
 	}
 	return hh

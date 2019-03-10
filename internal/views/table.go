@@ -9,7 +9,7 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -83,7 +83,7 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if a, ok := v.actions[key]; ok {
-		log.Debug(">> TableView handled ", tcell.KeyNames[key])
+		log.Debug().Msgf(">> TableView handled %s", tcell.KeyNames[key])
 		return a.action(evt)
 	}
 	return evt
@@ -125,7 +125,7 @@ func (v *tableView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	v.app.flash(flashInfo, "Filtering...")
-	log.Info("Entering filtering mode...")
+	log.Info().Msg("Entering filtering mode...")
 	v.cmdBuff.reset()
 	v.cmdBuff.setActive(true)
 	return nil

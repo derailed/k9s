@@ -6,8 +6,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
-	log "github.com/sirupsen/logrus"
-	v1 "k8s.io/api/autoscaling/v1"
+	"github.com/rs/zerolog/log"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 )
 
@@ -53,7 +52,7 @@ func (*HPA) NewInstance(i interface{}) Columnar {
 		ii := i.(autoscalingv2beta2.HorizontalPodAutoscaler)
 		cm.instance = &ii
 	default:
-		log.Fatalf("Unknown %#v", i)
+		log.Fatal().Msgf("Unknown %#v", i)
 	}
 	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
 	return cm
@@ -67,8 +66,8 @@ func (r *HPA) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	hpa := i.(*v1.HorizontalPodAutoscaler)
-	hpa.TypeMeta.APIVersion = "autoscaling/v1"
+	hpa := i.(*autoscalingv2beta2.HorizontalPodAutoscaler)
+	hpa.TypeMeta.APIVersion = "autoscaling/v2beta2"
 	hpa.TypeMeta.Kind = "HorizontalPodAutoscaler"
 	return r.marshalObject(hpa)
 }

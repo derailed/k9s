@@ -5,9 +5,12 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
+	res "k8s.io/apimachinery/pkg/api/resource"
+
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/autoscaling/v1"
+	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -86,26 +89,46 @@ func TestHPAListDescribe(t *testing.T) {
 
 // Helpers...
 
-func k8sHPA() *v1.HorizontalPodAutoscaler {
+func k8sHPA() *autoscalingv2beta2.HorizontalPodAutoscaler {
 	var i int32 = 1
-	return &v1.HorizontalPodAutoscaler{
+	return &autoscalingv2beta2.HorizontalPodAutoscaler{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:         "blee",
 			Name:              "fred",
 			CreationTimestamp: metav1.Time{Time: testTime()},
 		},
-		Spec: v1.HorizontalPodAutoscalerSpec{
-			ScaleTargetRef: v1.CrossVersionObjectReference{
+		Spec: autoscalingv2beta2.HorizontalPodAutoscalerSpec{
+			ScaleTargetRef: autoscalingv2beta2.CrossVersionObjectReference{
 				Kind: "fred",
 				Name: "blee",
 			},
-			MinReplicas:                    &i,
-			MaxReplicas:                    1,
-			TargetCPUUtilizationPercentage: &i,
+			MinReplicas: &i,
+			MaxReplicas: 1,
+			Metrics: []autoscalingv2beta2.MetricSpec{
+				{
+					Type: autoscalingv2beta2.ResourceMetricSourceType,
+					Resource: &autoscalingv2beta2.ResourceMetricSource{
+						Name: v1.ResourceCPU,
+						Target: autoscalingv2beta2.MetricTarget{
+							Type: autoscalingv2beta2.UtilizationMetricType,
+						},
+					},
+				},
+			},
 		},
-		Status: v1.HorizontalPodAutoscalerStatus{
-			CurrentReplicas:                 1,
-			CurrentCPUUtilizationPercentage: &i,
+		Status: autoscalingv2beta2.HorizontalPodAutoscalerStatus{
+			CurrentReplicas: 1,
+			CurrentMetrics: []autoscalingv2beta2.MetricStatus{
+				{
+					Type: autoscalingv2beta2.ResourceMetricSourceType,
+					Resource: &autoscalingv2beta2.ResourceMetricStatus{
+						Name: v1.ResourceCPU,
+						Current: autoscalingv2beta2.MetricValueStatus{
+							Value: &res.Quantity{},
+						},
+					},
+				},
+			},
 		},
 	}
 }
@@ -115,7 +138,7 @@ func newHPA() resource.Columnar {
 }
 
 func hpaYaml() string {
-	return `apiVersion: autoscaling/v1
+	return `apiVersion: autoscaling/v2beta2
 kind: HorizontalPodAutoscaler
 metadata:
   creationTimestamp: "2018-12-14T17:36:43Z"
@@ -123,13 +146,24 @@ metadata:
   namespace: blee
 spec:
   maxReplicas: 1
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        type: Utilization
+    type: Resource
   minReplicas: 1
   scaleTargetRef:
     kind: fred
     name: blee
-  targetCPUUtilizationPercentage: 1
 status:
-  currentCPUUtilizationPercentage: 1
+  conditions: null
+  currentMetrics:
+  - resource:
+      current:
+        value: "0"
+      name: cpu
+    type: Resource
   currentReplicas: 1
   desiredReplicas: 0
 `

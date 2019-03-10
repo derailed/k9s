@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	restclient "k8s.io/client-go/rest"
@@ -239,7 +239,7 @@ func (c *Config) ConfigAccess() (clientcmd.ConfigAccess, error) {
 // RawConfig fetch the current kubeconfig with no overrides.
 func (c *Config) RawConfig() (clientcmdapi.Config, error) {
 	if c.rawConfig != nil && c.rawConfig.CurrentContext != c.currentContext {
-		log.Debugf("Context swith detected...")
+		log.Debug().Msg("Context swith detected...")
 		c.currentContext = c.rawConfig.CurrentContext
 		c.reset()
 	}
@@ -248,7 +248,7 @@ func (c *Config) RawConfig() (clientcmdapi.Config, error) {
 		if err := c.configFromFlags(); err != nil {
 			return clientcmdapi.Config{}, err
 		}
-		log.Debugf("Reloading RawConfig...")
+		log.Debug().Msg("Reloading RawConfig...")
 		cfg, err := c.clientConfig.RawConfig()
 		if err != nil {
 			return cfg, err
@@ -269,7 +269,7 @@ func (c *Config) RESTConfig() (*restclient.Config, error) {
 		if err != nil {
 			return c.restConfig, err
 		}
-		log.Debugf("Connecting to API Server %s", c.restConfig.Host)
+		log.Debug().Msgf("Connecting to API Server %s", c.restConfig.Host)
 	}
 	return c.restConfig, nil
 }

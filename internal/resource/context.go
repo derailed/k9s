@@ -2,7 +2,7 @@ package resource
 
 import (
 	"github.com/derailed/k9s/internal/k8s"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 // SwitchableRes represents a resource that can be switched.
@@ -52,7 +52,7 @@ func (r *Context) NewInstance(i interface{}) Columnar {
 		ii := i.(k8s.NamedContext)
 		c.instance = &ii
 	default:
-		log.Fatalf("unknown context type %#v", i)
+		log.Fatal().Msgf("unknown context type %#v", i)
 	}
 	c.path = c.instance.Name
 	return c

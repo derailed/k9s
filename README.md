@@ -141,10 +141,11 @@ K9s uses aliases to navigate most K8s resources.
 
 ## Known Issues
 
-This initial drop is brittle. K9s will most likely blow up if...
+This initial drop is brittle. K9s will most likely blow up...
 
+1. You're running older versions of Kubernetes. K9s works best Kubernetes 1.10+
 1. You don't have enough RBAC fu to manage your cluster
-2. Your cluster does not run a metric server.
+1. Your cluster does not run a metric server.
 
 ---
 

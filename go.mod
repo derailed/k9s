@@ -23,7 +23,8 @@ require (
 	github.com/onsi/gomega v1.4.3 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/petergtz/pegomock v0.0.0-20181206220228-b113d17a7e81
-	github.com/sirupsen/logrus v1.3.0
+	github.com/rs/zerolog v1.12.0
+	github.com/sirupsen/logrus v1.3.0 // indirect
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/stretchr/testify v1.2.2

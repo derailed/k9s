@@ -8,8 +8,13 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	m "github.com/petergtz/pegomock"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+}
 
 func TestConfigValidate(t *testing.T) {
 	setup(t)

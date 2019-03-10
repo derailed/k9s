@@ -6,9 +6,14 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
+
+func init() {
+	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+}
 
 func TestConfigCurrentContext(t *testing.T) {
 	name, kubeConfig := "blee", "./assets/config"
@@ -78,7 +83,6 @@ func TestConfigCurrentNamespace(t *testing.T) {
 	for _, u := range uu {
 		cfg := k8s.NewConfig(u.flags)
 		ns, err := cfg.CurrentNamespaceName()
-		fmt.Println("CRap", ns, err)
 		assert.Equal(t, u.err, err)
 		assert.Equal(t, u.namespace, ns)
 	}

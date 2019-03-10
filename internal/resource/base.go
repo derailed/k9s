@@ -5,7 +5,7 @@ import (
 	"path"
 
 	"github.com/derailed/k9s/internal/k8s"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/genericclioptions/printers"
@@ -103,7 +103,7 @@ func (*Base) marshalObject(o runtime.Object) (string, error) {
 	)
 	err := p.PrintObj(o, &buff)
 	if err != nil {
-		log.Errorf("Marshal Error %v", err)
+		log.Error().Msgf("Marshal Error %v", err)
 		return "", err
 	}
 	return buff.String(), nil

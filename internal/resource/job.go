@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/k8s"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 )
@@ -54,7 +54,7 @@ func (*Job) NewInstance(i interface{}) Columnar {
 		ii := i.(v1.Job)
 		job.instance = &ii
 	default:
-		log.Fatalf("Unknown %#v", i)
+		log.Fatal().Msgf("Unknown %#v", i)
 	}
 	job.path = job.namespacedName(job.instance.ObjectMeta)
 	return job

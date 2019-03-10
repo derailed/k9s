@@ -3,7 +3,7 @@ package views
 import (
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 type jobView struct {
@@ -48,7 +48,7 @@ func (v *jobView) logs(evt *tcell.EventKey) *tcell.EventKey {
 	cc, err := fetchContainers(v.list, v.selectedItem, true)
 	if err != nil {
 		v.app.flash(flashErr, err.Error())
-		log.Error(err)
+		log.Error().Err(err)
 		return evt
 	}
 

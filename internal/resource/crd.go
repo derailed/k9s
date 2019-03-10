@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/k8s"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	yaml "gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -52,7 +52,7 @@ func (r *CRD) NewInstance(i interface{}) Columnar {
 		ii := i.(unstructured.Unstructured)
 		c.instance = &ii
 	default:
-		log.Fatalf("unknown context type %#v", i)
+		log.Fatal().Msgf("unknown context type %#v", i)
 	}
 	meta := c.instance.Object["metadata"].(map[string]interface{})
 	c.path = meta["name"].(string)
@@ -90,7 +90,7 @@ func (r *CRD) Fields(ns string) Row {
 	meta := i.Object["metadata"].(map[string]interface{})
 	t, err := time.Parse(time.RFC3339, meta["creationTimestamp"].(string))
 	if err != nil {
-		log.Error("Fields timestamp", err)
+		log.Error().Msgf("Fields timestamp %v", err)
 	}
 	return append(ff, meta["name"].(string), toAge(metav1.Time{t}))
 }

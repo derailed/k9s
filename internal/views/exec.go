@@ -10,13 +10,13 @@ import (
 	"strings"
 	"syscall"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 func runK(app *appView, args ...string) bool {
 	bin, err := exec.LookPath("kubectl")
 	if err != nil {
-		log.Error("Unable to find kubeclt command in path")
+		log.Error().Msgf("Unable to find kubeclt command in path %v", err)
 		return false
 	}
 
@@ -31,7 +31,7 @@ func runK(app *appView, args ...string) bool {
 			}
 		}
 		if err := execute(bin, args...); err != nil {
-			log.Errorf("Command exited: %T %v %v", err, err, args)
+			log.Error().Msgf("Command exited: %T %v %v", err, err, args)
 			app.flash(flashErr, "Command exited:", err.Error())
 		}
 	})
@@ -40,7 +40,7 @@ func runK(app *appView, args ...string) bool {
 func run1(app *appView, bin string, args ...string) bool {
 	return app.Suspend(func() {
 		if err := execute(bin, args...); err != nil {
-			log.Errorf("Command exited: %T %v %v", err, err, args)
+			log.Error().Msgf("Command exited: %T %v %v", err, err, args)
 			app.flash(flashErr, "Command exited: ", err.Error())
 		}
 	})
@@ -48,7 +48,7 @@ func run1(app *appView, bin string, args ...string) bool {
 
 func execute(bin string, args ...string) error {
 	clearScreen()
-	log.Debugf("Running command > %s %s", bin, strings.Join(args, " "))
+	log.Debug().Msgf("Running command > %s %s", bin, strings.Join(args, " "))
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -56,14 +56,14 @@ func execute(bin string, args ...string) error {
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-sigChan
-		log.Debug("Command canceled with signal!")
+		log.Debug().Msg("Command canceled with signal!")
 		cancel()
 	}()
 
 	cmd := exec.Command(bin, args...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	err := cmd.Run()
-	log.Debug("Command return status ", err)
+	log.Debug().Msgf("Command return status %v", err)
 	select {
 	case <-ctx.Done():
 		return errors.New("canceled by operator")

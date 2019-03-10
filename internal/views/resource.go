@@ -14,7 +14,7 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 const noSelection = ""
@@ -74,7 +74,7 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Debugf("%s watcher canceled!", v.title)
+				log.Debug().Msgf("%s watcher canceled!", v.title)
 				return
 			case <-time.After(time.Duration(initTick) * time.Second):
 				v.refresh()
@@ -118,6 +118,12 @@ func (v *resourceView) hints() hints {
 // ----------------------------------------------------------------------------
 // Actions...
 
+func (v *resourceView) refreshCmd(*tcell.EventKey) *tcell.EventKey {
+	log.Debug().Msg("Refreshing resource...")
+	v.refresh()
+	return nil
+}
+
 func (v *resourceView) backCmd(*tcell.EventKey) *tcell.EventKey {
 	v.switchPage(v.list.GetName())
 	return nil
@@ -145,7 +151,7 @@ func (v *resourceView) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	raw, err := v.list.Resource().Describe(v.title, sel)
 	if err != nil {
 		v.app.flash(flashErr, "Unable to describeCmd this resource", err.Error())
-		log.Error(err)
+		log.Error().Err(err)
 		return evt
 	}
 	details := v.GetPrimitive("details").(*detailsView)
@@ -168,7 +174,7 @@ func (v *resourceView) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	raw, err := v.list.Resource().Marshal(sel)
 	if err != nil {
 		v.app.flash(flashErr, "Unable to marshal resource", err.Error())
-		log.Error(err)
+		log.Error().Err(err)
 		return evt
 	}
 	details := v.GetPrimitive("details").(*detailsView)
@@ -323,6 +329,8 @@ func (v *resourceView) refreshActions() {
 			v.namespaces[i] = n
 		}
 	}
+
+	aa[tcell.KeyCtrlR] = newKeyAction("Refresh", v.refreshCmd)
 
 	if v.list.Access(resource.EditAccess) {
 		aa[KeyE] = newKeyAction("Edit", v.editCmd)

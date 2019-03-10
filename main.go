@@ -5,7 +5,8 @@ import (
 
 	"github.com/derailed/k9s/internal/cmd"
 	"github.com/derailed/k9s/internal/config"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
@@ -14,8 +15,7 @@ func init() {
 
 	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
 	if file, err := os.OpenFile(config.K9sLogs, mod, config.DefaultFileMod); err == nil {
-		log.SetOutput(file)
-		log.SetFormatter(&log.TextFormatter{FullTimestamp: true, ForceColors: true})
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: file})
 	} else {
 		panic(err)
 	}

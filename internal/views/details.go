@@ -8,7 +8,7 @@ import (
 
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 const detailsTitleFmt = " [aqua::b]%s([fuchsia::b]%s[aqua::-])[aqua::-] "
@@ -25,6 +25,11 @@ type detailsView struct {
 	backFn        actionHandler
 	numSelections int
 }
+
+var (
+	regionRX = regexp.MustCompile(`\["([a-zA-Z0-9_,;: \-\.]*)"\]`)
+	escapeRX = regexp.MustCompile(`\[([a-zA-Z0-9_,;: \-\."#]+)\[(\[*)\]`)
+)
 
 func newDetailsView(app *appView, backFn actionHandler) *detailsView {
 	v := detailsView{TextView: tview.NewTextView(), app: app, actions: make(keyActions)}
@@ -74,7 +79,7 @@ func (v *detailsView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if a, ok := v.actions[key]; ok {
-		log.Debug(">> DetailsView handled ", tcell.KeyNames[key])
+		log.Debug().Msgf(">> DetailsView handled %s", tcell.KeyNames[key])
 		return a.action(evt)
 	}
 	return evt
@@ -128,8 +133,9 @@ func (v *detailsView) searchCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (v *detailsView) search(evt *tcell.EventKey) {
 	v.numSelections = 0
 	v.Highlight()
-	log.Debug("Searching...", v.cmdBuff, v.numSelections)
-	v.SetText(v.decorateLines(v.GetText(true), v.cmdBuff.String()))
+	log.Debug().Msgf("Searching... %s - %d", v.cmdBuff, v.numSelections)
+	v.Highlight("")
+	v.SetText(v.decorateLines(v.GetText(false), v.cmdBuff.String()))
 
 	if v.cmdBuff.empty() {
 		v.app.flash(flashWarn, "Clearing out search query...")
@@ -203,9 +209,13 @@ func (v *detailsView) decorateLines(buff, q string) string {
 	rx := regexp.MustCompile(`(?i)` + q)
 	lines := strings.Split(buff, "\n")
 	for i, l := range lines {
+		l = regionRX.ReplaceAllString(l, "")
+		l = escapeRX.ReplaceAllString(l, "")
 		if m := rx.FindString(l); len(m) > 0 {
 			lines[i] = rx.ReplaceAllString(l, fmt.Sprintf(`["%d"]%s[""]`, v.numSelections, m))
 			v.numSelections++
+		} else {
+			lines[i] = l
 		}
 	}
 	return strings.Join(lines, "\n")

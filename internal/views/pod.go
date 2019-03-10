@@ -5,7 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 type podView struct {
@@ -60,14 +60,13 @@ func (v *podView) getSelection() string {
 // Handlers...
 
 func (v *podView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	log.Println("Selected", v.rowSelected())
 	if !v.rowSelected() {
 		return evt
 	}
 	cc, err := fetchContainers(v.list, v.selectedItem, true)
 	if err != nil {
 		v.app.flash(flashErr, err.Error())
-		log.Error(err)
+		log.Error().Err(err)
 		return evt
 	}
 	l := v.GetPrimitive("logs").(*logsView)
@@ -117,7 +116,7 @@ func (v *podView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	cc, err := fetchContainers(v.list, v.selectedItem, false)
 	if err != nil {
 		v.app.flash(flashErr, err.Error())
-		log.Error("Error fetching containers", err)
+		log.Error().Msgf("Error fetching containers %v", err)
 		return evt
 	}
 	if len(cc) == 1 {
@@ -146,7 +145,7 @@ func (v *podView) shellIn(path, co string) {
 		args = append(args, "-c", co)
 	}
 	args = append(args, "--", "sh")
-	log.Debug("Shell args", args)
+	log.Debug().Msgf("Shell args %v", args)
 	runK(v.app, args...)
 }
 

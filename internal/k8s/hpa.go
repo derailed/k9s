@@ -38,5 +38,5 @@ func (*HPA) List(ns string) (Collection, error) {
 // Delete a service
 func (*HPA) Delete(ns, n string) error {
 	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().Autoscaling().HorizontalPodAutoscalers(ns).Delete(n, &opts)
+	return conn.dialOrDie().AutoscalingV2beta2().HorizontalPodAutoscalers(ns).Delete(n, &opts)
 }

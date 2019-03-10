@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/k8s"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -86,7 +86,7 @@ func (r *Pod) NewInstance(i interface{}) Columnar {
 		po := ptr.(v1.Pod)
 		pod.instance = &po
 	default:
-		log.Fatalf("Unknown %#v", i)
+		log.Fatal().Msgf("Unknown %#v", i)
 	}
 	pod.path = r.namespacedName(pod.instance.ObjectMeta)
 	return pod
@@ -169,7 +169,7 @@ func (r *Pod) List(ns string) (Columnars, error) {
 
 	metrics, err := r.metricSvc.PodMetrics()
 	if err != nil {
-		log.Warn(err)
+		log.Error().Err(err)
 	}
 
 	cc := make(Columnars, 0, len(ii))
@@ -221,7 +221,7 @@ func (r *Pod) Fields(ns string) Row {
 		r.metrics.CPU,
 		r.metrics.Mem,
 		i.Status.PodIP,
-		i.Status.HostIP,
+		i.Spec.NodeName,
 		string(i.Status.QOSClass),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
@@ -230,15 +230,6 @@ func (r *Pod) Fields(ns string) Row {
 // ExtFields returns extra info about the resource.
 func (r *Pod) ExtFields() Properties {
 	i := r.instance
-
-	// po := k8s.Pod{}
-	// e, err := po.Events(i.Namespace, i.Name)
-	// if err != nil {
-	// 	log.Error("Boom!", err)
-	// }
-	// if len(e.Items) > 0 {
-	// 	log.Println("Events", ee.Items)
-	// }
 
 	return Properties{
 		"Priority":        strconv.Itoa(int(*i.Spec.Priority)),
@@ -249,21 +240,8 @@ func (r *Pod) ExtFields() Properties {
 		"Init Containers": r.toContainers(i.Spec.InitContainers),
 		"Node Selectors":  mapToStr(i.Spec.NodeSelector),
 		"Volumes":         r.toVolumes(i.Spec.Volumes),
-		// "Events":          r.toEvents(e),
 	}
 }
-
-// func (r *Pod) toEvents(e *v1.EventList) []string {
-// 	ss := make([]string, 0, len(e.Items)+1)
-// 	for _, h := range([]string{"Type", "Reason", "From", "Message", "Age"}) {
-// 		ss[0] = fmt.Printf("%10s %10s %20s %30s", )
-// 	}
-// 	for i, e := range e.Items {
-// 		ss[i] = e.
-
-// 	}
-// 	return ss
-// }
 
 func (r *Pod) toVolumes(vv []v1.Volume) map[string]interface{} {
 	m := make(map[string]interface{}, len(vv))

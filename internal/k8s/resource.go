@@ -3,7 +3,7 @@ package k8s
 import (
 	"fmt"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -73,7 +73,7 @@ func (r *Resource) getClient() *rest.RESTClient {
 	crConfig.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: codecs}
 	crRestClient, err := rest.RESTClientFor(&crConfig)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal().Err(err)
 	}
 	return crRestClient
 }

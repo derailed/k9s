@@ -4,7 +4,7 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
 )
 
@@ -50,7 +50,7 @@ func (*DaemonSet) NewInstance(i interface{}) Columnar {
 		ii := i.(extv1beta1.DaemonSet)
 		cm.instance = &ii
 	default:
-		log.Fatalf("Unknown %#v", i)
+		log.Fatal().Msgf("Unknown %#v", i)
 	}
 	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
 	return cm

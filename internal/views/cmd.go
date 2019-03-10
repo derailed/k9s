@@ -5,7 +5,7 @@ import (
 
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 const defaultPrompt = "%c> %s"
@@ -62,7 +62,7 @@ func (v *cmdView) changed(s string) {
 func (v *cmdView) active(f bool) {
 	v.activated = f
 	if f {
-		log.Debug("CmdView was activated...")
+		log.Debug().Msg("CmdView was activated...")
 		v.SetBackgroundColor(tcell.ColorDodgerBlue)
 		v.activate()
 	} else {

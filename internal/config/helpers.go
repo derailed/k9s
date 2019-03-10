@@ -5,7 +5,7 @@ import (
 	"os/user"
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -56,7 +56,7 @@ func EnsurePath(path string, mod os.FileMode) {
 	dir := filepath.Dir(path)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err = os.Mkdir(dir, mod); err != nil {
-			log.Errorf("Unable to create K9s home config dir: %v", err)
+			log.Error().Msgf("Unable to create K9s home config dir: %v", err)
 			panic(err)
 		}
 	}

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	yaml "gopkg.in/yaml.v2"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 )
@@ -60,12 +60,12 @@ func (*Custom) NewInstance(i interface{}) Columnar {
 		t := i.(metav1beta1.TableRow)
 		cr.instance = &t
 	default:
-		log.Fatalf("Unknown %#v", i)
+		log.Fatal().Msgf("Unknown %#v", i)
 	}
 	var obj map[string]interface{}
 	err := json.Unmarshal(cr.instance.Object.Raw, &obj)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err)
 	}
 	meta := obj["metadata"].(map[string]interface{})
 	ns := ""
@@ -137,7 +137,7 @@ func (r *Custom) Fields(ns string) Row {
 	var obj map[string]interface{}
 	err := json.Unmarshal(r.instance.Object.Raw, &obj)
 	if err != nil {
-		log.Error(err)
+		log.Error().Err(err)
 		return Row{}
 	}
 

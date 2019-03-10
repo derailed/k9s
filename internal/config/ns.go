@@ -1,7 +1,7 @@
 package config
 
 import (
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -27,20 +27,20 @@ func NewNamespace() *Namespace {
 
 // Validate a namespace is setup correctly
 func (n *Namespace) Validate(ks KubeSettings) {
-	log.Debug("Validating favorites...", n.Active)
+	log.Debug().Msgf("Validating favorites... %s", n.Active)
 	nn, err := ks.NamespaceNames()
 	if err != nil {
 		return
 	}
 
 	if !n.isAllNamespace() && !InList(nn, n.Active) {
-		log.Debugf("[Config] Validation error active namespace resetting to `default")
+		log.Debug().Msg("[Config] Validation error active namespace resetting to `default")
 		n.Active = defaultNS
 	}
 
 	for _, ns := range n.Favorites {
 		if ns != allNS && !InList(nn, ns) {
-			log.Debugf("[Config] Invalid favorite found '%s' - %t", ns, n.isAllNamespace())
+			log.Debug().Msgf("[Config] Invalid favorite found '%s' - %t", ns, n.isAllNamespace())
 			n.rmFavNS(ns)
 		}
 	}
@@ -48,7 +48,7 @@ func (n *Namespace) Validate(ks KubeSettings) {
 
 // SetActive set the active namespace.
 func (n *Namespace) SetActive(ns string, ks KubeSettings) error {
-	log.Debug("Setting active ns ", ns)
+	log.Debug().Msgf("Setting active ns %s", ns)
 	n.Active = ns
 	n.addFavNS(ns)
 	return nil

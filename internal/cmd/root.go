@@ -7,7 +7,8 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/views"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
@@ -55,7 +56,7 @@ func init() {
 }
 
 func initK9s() {
-	log.Info("🐶 K9s starting up...")
+	log.Info().Msg("🐶 K9s starting up...")
 
 	// Load K9s config file...
 	cfg := k8s.NewConfig(k8sFlags)
@@ -64,14 +65,14 @@ func initK9s() {
 
 	// Init K8s connection...
 	k8s.InitConnectionOrDie(cfg)
-	log.Info("✅ Kubernetes connectivity")
+	log.Info().Msg("✅ Kubernetes connectivity")
 
 	config.Root.Save()
 }
 
 func initK9sConfig() {
 	if err := config.Root.Load(config.K9sConfigFile); err != nil {
-		log.Warnf("Unable to locate K9s config. Generating new configuration...")
+		log.Warn().Msg("Unable to locate K9s config. Generating new configuration...")
 	}
 	config.Root.K9s.RefreshRate = refreshRate
 
@@ -93,7 +94,7 @@ func initK9sConfig() {
 			config.Root.SetActiveNamespace(cfg.Contexts[ctx].Namespace)
 		}
 	}
-	log.Debugf("Active Context `%v`", ctx)
+	log.Debug().Msgf("Active Context `%v`", ctx)
 
 	if isSet(k8sFlags.Namespace) {
 		config.Root.SetActiveNamespace(*k8sFlags.Namespace)
@@ -120,16 +121,27 @@ func isSet(s *string) bool {
 // Execute root command
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		log.Panic(err)
+		log.Panic().Err(err)
+	}
+}
+
+func parseLevel(level string) zerolog.Level {
+	switch level {
+	case "debug":
+		return zerolog.DebugLevel
+	case "warn":
+		return zerolog.WarnLevel
+	case "error":
+		return zerolog.ErrorLevel
+	case "fatal":
+		return zerolog.FatalLevel
+	default:
+		return zerolog.InfoLevel
 	}
 }
 
 func run(cmd *cobra.Command, args []string) {
-	level, err := log.ParseLevel(logLevel)
-	if err != nil {
-		level = log.DebugLevel
-	}
-	log.SetLevel(level)
+	zerolog.SetGlobalLevel(parseLevel(logLevel))
 
 	initK9s()
 
@@ -140,7 +152,7 @@ func run(cmd *cobra.Command, args []string) {
 			clearScreen()
 			if err := recover(); err != nil {
 				app.Stop()
-				fmt.Println(err)
+				log.Error().Msgf("Boom! %#v", err)
 				debug.PrintStack()
 			}
 		}()

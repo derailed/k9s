@@ -9,7 +9,7 @@ import (
 
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -42,7 +42,7 @@ func newAliasView(app *appView) *aliasView {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Debug("Alias GR bailing out!")
+				log.Debug().Msg("Alias GR bailing out!")
 				return
 			case <-time.After(1 * time.Second):
 				v.update(v.hydrate())

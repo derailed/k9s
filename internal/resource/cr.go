@@ -2,7 +2,7 @@ package resource
 
 import (
 	"github.com/derailed/k9s/internal/k8s"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/rbac/v1"
 )
 
@@ -48,7 +48,7 @@ func (r *ClusterRole) NewInstance(i interface{}) Columnar {
 		ii := i.(v1.ClusterRole)
 		c.instance = &ii
 	default:
-		log.Fatalf("unknown context type %#v", i)
+		log.Fatal().Msgf("unknown context type %#v", i)
 	}
 	c.path = c.instance.Name
 	return c

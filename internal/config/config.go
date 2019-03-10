@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/derailed/k9s/internal/resource"
-	log "github.com/sirupsen/logrus"
+	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 )
 
@@ -76,11 +76,11 @@ func (c *Config) FavNamespaces() []string {
 
 // SetActiveNamespace set the active namespace in the current cluster.
 func (c *Config) SetActiveNamespace(ns string) error {
-	log.Debugf("Setting active namespace `%s", ns)
+	log.Debug().Msgf("Setting active namespace `%s", ns)
 	if c.K9s.ActiveCluster() != nil {
 		return c.K9s.ActiveCluster().Namespace.SetActive(ns, c.settings)
 	}
-	log.Error("Doh! no active cluster. unable to set active namespace")
+	log.Error().Msg("Doh! no active cluster. unable to set active namespace")
 	return fmt.Errorf("no active cluster. unable to set active namespace")
 }
 
@@ -117,7 +117,7 @@ func (c *Config) Load(path string) error {
 
 // Save configuration to disk.
 func (c *Config) Save() error {
-	log.Debugf("[Config] Saving configuration...")
+	log.Debug().Msg("[Config] Saving configuration...")
 	c.Validate()
 	return c.SaveFile(K9sConfigFile)
 }
@@ -127,7 +127,7 @@ func (c *Config) SaveFile(path string) error {
 	EnsurePath(path, DefaultDirMod)
 	cfg, err := yaml.Marshal(c)
 	if err != nil {
-		log.Errorf("[Config] Unable to save K9s config file: %v", err)
+		log.Error().Msgf("[Config] Unable to save K9s config file: %v", err)
 		return err
 	}
 	return ioutil.WriteFile(path, cfg, 0644)
@@ -140,9 +140,9 @@ func (c *Config) Validate() {
 
 // Dump debug...
 func (c *Config) Dump(msg string) {
-	log.Debug(msg)
-	log.Debugf("Current Context: %s\n", c.K9s.CurrentCluster)
+	log.Debug().Msg(msg)
+	log.Debug().Msgf("Current Context: %s\n", c.K9s.CurrentCluster)
 	for k, cl := range c.K9s.Clusters {
-		log.Debugf("K9s cluster: %s -- %s\n", k, cl.Namespace)
+		log.Debug().Msgf("K9s cluster: %s -- %s\n", k, cl.Namespace)
 	}
 }
