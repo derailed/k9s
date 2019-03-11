@@ -193,8 +193,14 @@ func (v *resourceView) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
 		return evt
 	}
-	ns, s := namespaced(v.selectedItem)
-	runK(v.app, "edit", v.list.GetName(), "-n", ns, s)
+	ns, po := namespaced(v.selectedItem)
+	args := make([]string, 0, 10)
+	args = append(args, "edit")
+	args = append(args, v.list.GetName())
+	args = append(args, "-n", ns)
+	args = append(args, "--context", config.Root.K9s.CurrentContext)
+	args = append(args, po)
+	runK(v.app, args...)
 	return evt
 }
 

@@ -3,6 +3,7 @@ package views
 import (
 	"fmt"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -140,7 +141,11 @@ func (v *podView) showPicker(cc []string) {
 
 func (v *podView) shellIn(path, co string) {
 	ns, po := namespaced(path)
-	args := []string{"exec", "-it", "-n", ns, po}
+	args := make([]string, 0, 12)
+	args = append(args, "exec", "-it")
+	args = append(args, "--context", config.Root.K9s.CurrentContext)
+	args = append(args, "-n", ns)
+	args = append(args, po)
 	if len(co) != 0 {
 		args = append(args, "-c", co)
 	}
@@ -153,13 +158,16 @@ func (v *podView) showLogs(path, co string, previous bool) {
 	ns, po := namespaced(path)
 	args := make([]string, 0, 10)
 	args = append(args, "logs", "-f")
+	args = append(args, "-n", ns)
+	args = append(args, "--context", config.Root.K9s.CurrentContext)
 	if len(co) != 0 {
 		args = append(args, "-c", co)
 		v.app.flash(flashInfo, fmt.Sprintf("Viewing logs from container %s on pod %s", co, po))
 	} else {
 		v.app.flash(flashInfo, fmt.Sprintf("Viewing logs from pod %s", po))
 	}
-	runK(v.app, append(args, "-n", ns, po)...)
+	args = append(args, po)
+	runK(v.app, args...)
 }
 
 func (v *podView) extraActions(aa keyActions) {

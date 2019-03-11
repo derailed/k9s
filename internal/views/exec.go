@@ -37,15 +37,6 @@ func runK(app *appView, args ...string) bool {
 	})
 }
 
-func run1(app *appView, bin string, args ...string) bool {
-	return app.Suspend(func() {
-		if err := execute(bin, args...); err != nil {
-			log.Error().Msgf("Command exited: %T %v %v", err, err, args)
-			app.flash(flashErr, "Command exited: ", err.Error())
-		}
-	})
-}
-
 func execute(bin string, args ...string) error {
 	clearScreen()
 	log.Debug().Msgf("Running command > %s %s", bin, strings.Join(args, " "))
