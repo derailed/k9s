@@ -80,36 +80,6 @@ func (v *podView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-// func (v *podView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
-// 	if !v.rowSelected() {
-// 		return evt
-// 	}
-
-// 	previous := false
-// 	if evt.Rune() == 'p' {
-// 		log.Debug("Previous logs detected")
-// 		previous = true
-// 	}
-
-// 	cc, err := fetchContainers(v.list, v.selectedItem, true)
-// 	if err != nil {
-// 		v.app.flash(flashErr, err.Error())
-// 		log.Error("Error fetching containers", err)
-// 		return evt
-// 	}
-// 	if len(cc) == 1 {
-// 		v.showLogs(v.selectedItem, "", previous)
-// 	} else {
-// 		p := v.GetPrimitive("choose").(*selectList)
-// 		p.populate(cc)
-// 		p.SetSelectedFunc(func(i int, t, d string, r rune) {
-// 			v.showLogs(v.selectedItem, t, previous)
-// 		})
-// 		v.switchPage("choose")
-// 	}
-// 	return evt
-// }
-
 func (v *podView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
 		return evt

@@ -34,6 +34,7 @@ type (
 		app            *appView
 		title          string
 		selectedItem   string
+		selectedRow    int
 		namespaces     map[int]string
 		selectedNS     string
 		update         sync.Mutex
@@ -62,6 +63,12 @@ func newResourceView(title string, app *appView, list resource.List, c colorerFn
 
 	details := newDetailsView(app, v.backCmd)
 	v.AddPage("details", details, true, false)
+
+	confirm := tview.NewModal().
+		AddButtons([]string{"OK", "Cancel"}).
+		SetTextColor(tcell.ColorFuchsia)
+	v.AddPage("confirm", confirm, false, false)
+
 	return &v
 }
 
@@ -93,6 +100,7 @@ func (v *resourceView) getTitle() string {
 }
 
 func (v *resourceView) selChanged(r, c int) {
+	v.selectedRow = r
 	v.selectItem(r, c)
 	v.getTV().cmdBuff.setActive(false)
 }
@@ -133,13 +141,24 @@ func (v *resourceView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
 		return evt
 	}
-	v.getTV().setDeleted()
+
 	sel := v.getSelectedItem()
-	v.app.flash(flashInfo, fmt.Sprintf("Deleting %s %s", v.list.GetName(), sel))
-	if err := v.list.Resource().Delete(sel); err != nil {
-		v.app.flash(flashErr, "Boom!", err.Error())
-	}
-	v.selectedItem = noSelection
+	confirm := v.GetPrimitive("confirm").(*tview.Modal)
+	confirm.SetText(fmt.Sprintf("Delete %s %s?", v.list.GetName(), sel))
+	confirm.SetDoneFunc(func(_ int, button string) {
+		if button == "OK" {
+			v.getTV().setDeleted()
+			v.app.flash(flashInfo, fmt.Sprintf("Deleting %s %s", v.list.GetName(), sel))
+			if err := v.list.Resource().Delete(sel); err != nil {
+				v.app.flash(flashErr, "Boom!", err.Error())
+			} else {
+				v.refresh()
+			}
+		}
+		v.switchPage(v.list.GetName())
+	})
+	v.SwitchToPage("confirm")
+
 	return nil
 }
 
@@ -251,7 +270,7 @@ func (v *resourceView) refresh() {
 			data = v.decorateDataFn(data)
 		}
 		v.getTV().update(data)
-
+		v.selectItem(v.selectedRow, 0)
 		v.refreshActions()
 		v.app.infoView.refresh()
 		v.app.Draw()
@@ -267,12 +286,12 @@ func (v *resourceView) getTV() *tableView {
 }
 
 func (v *resourceView) selectItem(r, c int) {
-	if r == 0 {
+	t := v.getTV()
+	if r == 0 || t.GetCell(r, 0) == nil {
 		v.selectedItem = noSelection
 		return
 	}
 
-	t := v.getTV()
 	switch v.list.GetNamespace() {
 	case resource.NotNamespaced:
 		v.selectedItem = strings.TrimSpace(t.GetCell(r, 0).Text)
