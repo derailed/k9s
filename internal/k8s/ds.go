@@ -12,13 +12,13 @@ func NewDaemonSet() Res {
 	return &DaemonSet{}
 }
 
-// Get a service.
+// Get a DaemonSet.
 func (*DaemonSet) Get(ns, n string) (interface{}, error) {
 	opts := metav1.GetOptions{}
 	return conn.dialOrDie().ExtensionsV1beta1().DaemonSets(ns).Get(n, opts)
 }
 
-// List all DaemonSets in a given namespace
+// List all DaemonSets in a given namespace.
 func (*DaemonSet) List(ns string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -35,7 +35,7 @@ func (*DaemonSet) List(ns string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a DaemonSet
+// Delete a DaemonSet.
 func (*DaemonSet) Delete(ns, n string) error {
 	opts := metav1.DeleteOptions{}
 	return conn.dialOrDie().ExtensionsV1beta1().DaemonSets(ns).Delete(n, &opts)

@@ -12,7 +12,7 @@ func NewStatefulSet() Res {
 	return &StatefulSet{}
 }
 
-// Get a StatefulSet
+// Get a StatefulSet.
 func (*StatefulSet) Get(ns, n string) (interface{}, error) {
 	opts := metav1.GetOptions{}
 	o, err := conn.dialOrDie().AppsV1().StatefulSets(ns).Get(n, opts)
@@ -22,7 +22,7 @@ func (*StatefulSet) Get(ns, n string) (interface{}, error) {
 	return o, nil
 }
 
-// List all StatefulSets in a given namespace
+// List all StatefulSets in a given namespace.
 func (*StatefulSet) List(ns string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -38,7 +38,7 @@ func (*StatefulSet) List(ns string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a StatefulSet
+// Delete a StatefulSet.
 func (*StatefulSet) Delete(ns, n string) error {
 	opts := metav1.DeleteOptions{}
 	return conn.dialOrDie().AppsV1().StatefulSets(ns).Delete(n, &opts)

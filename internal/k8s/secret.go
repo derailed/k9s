@@ -4,7 +4,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Secret represents a Kubernetes Secret
+// Secret represents a Kubernetes Secret.
 type Secret struct{}
 
 // NewSecret returns a new Secret.
@@ -18,7 +18,7 @@ func (c *Secret) Get(ns, n string) (interface{}, error) {
 	return conn.dialOrDie().CoreV1().Secrets(ns).Get(n, opts)
 }
 
-// List all Secrets in a given namespace
+// List all Secrets in a given namespace.
 func (c *Secret) List(ns string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -35,7 +35,7 @@ func (c *Secret) List(ns string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a Secret
+// Delete a Secret.
 func (c *Secret) Delete(ns, n string) error {
 	opts := metav1.DeleteOptions{}
 	return conn.dialOrDie().CoreV1().Secrets(ns).Delete(n, &opts)

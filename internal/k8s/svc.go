@@ -4,7 +4,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Service represents a Kubernetes Service
+// Service represents a Kubernetes Service.
 type Service struct{}
 
 // NewService returns a new Service.
@@ -18,7 +18,7 @@ func (*Service) Get(ns, n string) (interface{}, error) {
 	return conn.dialOrDie().CoreV1().Services(ns).Get(n, opts)
 }
 
-// List all Services in a given namespace
+// List all Services in a given namespace.
 func (*Service) List(ns string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -35,7 +35,7 @@ func (*Service) List(ns string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a Service
+// Delete a Service.
 func (*Service) Delete(ns, n string) error {
 	opts := metav1.DeleteOptions{}
 	return conn.dialOrDie().CoreV1().Services(ns).Delete(n, &opts)

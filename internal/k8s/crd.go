@@ -18,7 +18,7 @@ func (*CRD) Get(_, n string) (interface{}, error) {
 	return conn.nsDialOrDie().Get(n, opts)
 }
 
-// List all CRDs in a given namespace
+// List all CRDs in a given namespace.
 func (*CRD) List(string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -35,7 +35,7 @@ func (*CRD) List(string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a CRD
+// Delete a CRD.
 func (*CRD) Delete(_, n string) error {
 	opts := metav1.DeleteOptions{}
 	return conn.nsDialOrDie().Delete(n, &opts)

@@ -25,13 +25,13 @@ func NewPod() Res {
 	return &Pod{}
 }
 
-// Get a service.
+// Get a pod.
 func (*Pod) Get(ns, n string) (interface{}, error) {
 	opts := metav1.GetOptions{}
 	return conn.dialOrDie().CoreV1().Pods(ns).Get(n, opts)
 }
 
-// List all services in a given namespace
+// List all pods in a given namespace.
 func (*Pod) List(ns string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -48,7 +48,7 @@ func (*Pod) List(ns string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a service
+// Delete a pod.
 func (*Pod) Delete(ns, n string) error {
 	var grace = defaultKillGrace
 	opts := metav1.DeleteOptions{

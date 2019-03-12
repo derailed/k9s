@@ -4,7 +4,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Ingress represents a Kubernetes Ingress
+// Ingress represents a Kubernetes Ingress.
 type Ingress struct{}
 
 // NewIngress returns a new Ingress.
@@ -12,13 +12,13 @@ func NewIngress() Res {
 	return &Ingress{}
 }
 
-// Get a service.
+// Get a Ingress.
 func (*Ingress) Get(ns, n string) (interface{}, error) {
 	opts := metav1.GetOptions{}
 	return conn.dialOrDie().ExtensionsV1beta1().Ingresses(ns).Get(n, opts)
 }
 
-// List all Ingresss in a given namespace
+// List all Ingresss in a given namespace.
 func (*Ingress) List(ns string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -35,7 +35,7 @@ func (*Ingress) List(ns string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a Ingress
+// Delete a Ingress.
 func (*Ingress) Delete(ns, n string) error {
 	opts := metav1.DeleteOptions{}
 	return conn.dialOrDie().ExtensionsV1beta1().Ingresses(ns).Delete(n, &opts)

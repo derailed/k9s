@@ -4,7 +4,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ReplicaSet represents a Kubernetes service
+// ReplicaSet represents a Kubernetes ReplicaSet.
 type ReplicaSet struct{}
 
 // NewReplicaSet returns a new ReplicaSet.
@@ -12,13 +12,13 @@ func NewReplicaSet() Res {
 	return &ReplicaSet{}
 }
 
-// Get a service.
+// Get a ReplicaSet.
 func (*ReplicaSet) Get(ns, n string) (interface{}, error) {
 	opts := metav1.GetOptions{}
 	return conn.dialOrDie().Apps().ReplicaSets(ns).Get(n, opts)
 }
 
-// List all services in a given namespace
+// List all ReplicaSets in a given namespace.
 func (*ReplicaSet) List(ns string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -35,7 +35,7 @@ func (*ReplicaSet) List(ns string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a service
+// Delete a ReplicaSet.
 func (*ReplicaSet) Delete(ns, n string) error {
 	opts := metav1.DeleteOptions{}
 	return conn.dialOrDie().Apps().ReplicaSets(ns).Delete(n, &opts)

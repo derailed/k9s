@@ -4,7 +4,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// ReplicationController represents a Kubernetes service
+// ReplicationController represents a Kubernetes service.
 type ReplicationController struct{}
 
 // NewReplicationController returns a new ReplicationController.
@@ -12,13 +12,13 @@ func NewReplicationController() Res {
 	return &ReplicationController{}
 }
 
-// Get a service.
+// Get a RC.
 func (*ReplicationController) Get(ns, n string) (interface{}, error) {
 	opts := metav1.GetOptions{}
 	return conn.dialOrDie().Core().ReplicationControllers(ns).Get(n, opts)
 }
 
-// List all services in a given namespace
+// List all RCs in a given namespace.
 func (*ReplicationController) List(ns string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -35,7 +35,7 @@ func (*ReplicationController) List(ns string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a service
+// Delete a RC.
 func (*ReplicationController) Delete(ns, n string) error {
 	opts := metav1.DeleteOptions{}
 	return conn.dialOrDie().Core().ReplicationControllers(ns).Delete(n, &opts)

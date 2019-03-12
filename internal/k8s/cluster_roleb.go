@@ -18,7 +18,7 @@ func (*ClusterRoleBinding) Get(_, n string) (interface{}, error) {
 	return conn.dialOrDie().RbacV1().ClusterRoleBindings().Get(n, opts)
 }
 
-// List all ClusterRoleBindings in a given namespace
+// List all ClusterRoleBindings on a cluster.
 func (*ClusterRoleBinding) List(_ string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -35,7 +35,7 @@ func (*ClusterRoleBinding) List(_ string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a ClusterRoleBinding
+// Delete a ClusterRoleBinding.
 func (*ClusterRoleBinding) Delete(_, n string) error {
 	opts := metav1.DeleteOptions{}
 	return conn.dialOrDie().RbacV1().ClusterRoleBindings().Delete(n, &opts)

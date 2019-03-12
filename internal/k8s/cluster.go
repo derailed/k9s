@@ -1,9 +1,9 @@
 package k8s
 
-// Cluster manages a Kubernetes ClusterRole.
+// Cluster represents a Kubernetes cluster.
 type Cluster struct{}
 
-// NewCluster instantiates a new ClusterRole.
+// NewCluster instantiates a new cluster.
 func NewCluster() *Cluster {
 	return &Cluster{}
 }

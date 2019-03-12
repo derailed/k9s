@@ -4,7 +4,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Endpoints represents a Kubernetes Endpoints
+// Endpoints represents a Kubernetes Endpoints.
 type Endpoints struct{}
 
 // NewEndpoints returns a new Endpoints.
@@ -12,13 +12,13 @@ func NewEndpoints() Res {
 	return &Endpoints{}
 }
 
-// Get a service.
+// Get a Endpoint.
 func (*Endpoints) Get(ns, n string) (interface{}, error) {
 	opts := metav1.GetOptions{}
 	return conn.dialOrDie().CoreV1().Endpoints(ns).Get(n, opts)
 }
 
-// List all Endpointss in a given namespace
+// List all Endpoints in a given namespace.
 func (*Endpoints) List(ns string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -35,7 +35,7 @@ func (*Endpoints) List(ns string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a Endpoints
+// Delete a Endpoint.
 func (*Endpoints) Delete(ns, n string) error {
 	opts := metav1.DeleteOptions{}
 	return conn.dialOrDie().CoreV1().Endpoints(ns).Delete(n, &opts)

@@ -9,7 +9,7 @@ import (
 
 const maxJobNameSize = 42
 
-// CronJob represents a Kubernetes CronJob
+// CronJob represents a Kubernetes CronJob.
 type CronJob struct{}
 
 // NewCronJob returns a new CronJob.
@@ -23,7 +23,7 @@ func (c *CronJob) Get(ns, n string) (interface{}, error) {
 	return conn.dialOrDie().BatchV1beta1().CronJobs(ns).Get(n, opts)
 }
 
-// List all CronJobs in a given namespace
+// List all CronJobs in a given namespace.
 func (c *CronJob) List(ns string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -40,7 +40,7 @@ func (c *CronJob) List(ns string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a CronJob
+// Delete a CronJob.
 func (c *CronJob) Delete(ns, n string) error {
 	opts := metav1.DeleteOptions{}
 	return conn.dialOrDie().BatchV1beta1().CronJobs(ns).Delete(n, &opts)

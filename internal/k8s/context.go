@@ -7,7 +7,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
-// ContextRes represents a kubernetes clusters configurations.
+// ContextRes represents a Kubernetes clusters configurations.
 type ContextRes interface {
 	Res
 	Switch(n string) error
@@ -45,7 +45,7 @@ func (*Context) Get(_, n string) (interface{}, error) {
 	return &NamedContext{Name: n, Context: ctx}, nil
 }
 
-// List all Contexts in a given namespace
+// List all Contexts on the current cluster.
 func (*Context) List(string) (Collection, error) {
 	ctxs, err := conn.config.Contexts()
 	if err != nil {
@@ -58,7 +58,7 @@ func (*Context) List(string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a Context
+// Delete a Context.
 func (*Context) Delete(_, n string) error {
 	ctx, err := conn.config.CurrentContextName()
 	if err != nil {
@@ -70,7 +70,7 @@ func (*Context) Delete(_, n string) error {
 	return conn.config.DelContext(n)
 }
 
-// Switch cluster Context.
+// Switch to another context.
 func (*Context) Switch(n string) error {
 	conn.switchContextOrDie(n)
 	return nil

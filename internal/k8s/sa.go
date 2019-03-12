@@ -12,7 +12,7 @@ func NewServiceAccount() Res {
 	return &ServiceAccount{}
 }
 
-// Get a ServiceAccount
+// Get a ServiceAccount.
 func (*ServiceAccount) Get(ns, n string) (interface{}, error) {
 	opts := metav1.GetOptions{}
 	o, err := conn.dialOrDie().CoreV1().ServiceAccounts(ns).Get(n, opts)
@@ -22,7 +22,7 @@ func (*ServiceAccount) Get(ns, n string) (interface{}, error) {
 	return o, nil
 }
 
-// List all ServiceAccounts in a given namespace
+// List all ServiceAccounts in a given namespace.
 func (*ServiceAccount) List(ns string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -39,7 +39,7 @@ func (*ServiceAccount) List(ns string) (Collection, error) {
 
 }
 
-// Delete a ServiceAccount
+// Delete a ServiceAccount.
 func (*ServiceAccount) Delete(ns, n string) error {
 	opts := metav1.DeleteOptions{}
 	return conn.dialOrDie().CoreV1().ServiceAccounts(ns).Delete(n, &opts)

@@ -12,13 +12,13 @@ func NewHPA() Res {
 	return &HPA{}
 }
 
-// Get a service.
+// Get a HPA.
 func (*HPA) Get(ns, n string) (interface{}, error) {
 	opts := metav1.GetOptions{}
 	return conn.dialOrDie().AutoscalingV2beta2().HorizontalPodAutoscalers(ns).Get(n, opts)
 }
 
-// List all services in a given namespace
+// List all HPAs in a given namespace.
 func (*HPA) List(ns string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -35,7 +35,7 @@ func (*HPA) List(ns string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a service
+// Delete a HPA.
 func (*HPA) Delete(ns, n string) error {
 	opts := metav1.DeleteOptions{}
 	return conn.dialOrDie().AutoscalingV2beta2().HorizontalPodAutoscalers(ns).Delete(n, &opts)

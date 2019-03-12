@@ -5,7 +5,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Role represents a Kubernetes service
+// Role represents a Kubernetes Role.
 type Role struct{}
 
 // NewRole returns a new Role.
@@ -13,13 +13,13 @@ func NewRole() Res {
 	return &Role{}
 }
 
-// Get a service.
+// Get a Role.
 func (*Role) Get(ns, n string) (interface{}, error) {
 	opts := metav1.GetOptions{}
 	return conn.dialOrDie().RbacV1().Roles(ns).Get(n, opts)
 }
 
-// List all services in a given namespace
+// List all Roles in a given namespace.
 func (*Role) List(ns string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -36,7 +36,7 @@ func (*Role) List(ns string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a service
+// Delete a Role.
 func (*Role) Delete(ns, n string) error {
 	opts := metav1.DeleteOptions{}
 	return conn.dialOrDie().RbacV1().Roles(ns).Delete(n, &opts)

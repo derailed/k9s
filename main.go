@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/derailed/k9s/internal/cmd"
+	"github.com/derailed/k9s/cmd"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"

@@ -43,7 +43,7 @@ func (r *Resource) Get(ns, n string) (interface{}, error) {
 	return r.base().Namespace(ns).Get(n, opts)
 }
 
-// List all Resources in a given namespace
+// List all Resources in a given namespace.
 func (r *Resource) List(ns string) (Collection, error) {
 	obj, err := r.listAll(ns, r.name)
 	if err != nil {
@@ -53,7 +53,7 @@ func (r *Resource) List(ns string) (Collection, error) {
 	return Collection{obj.(*metav1beta1.Table)}, nil
 }
 
-// Delete a Resource
+// Delete a Resource.
 func (r *Resource) Delete(ns, n string) error {
 	opts := metav1.DeleteOptions{}
 	return r.base().Namespace(ns).Delete(n, &opts)

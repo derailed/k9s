@@ -18,7 +18,7 @@ func (c *ConfigMap) Get(ns, n string) (interface{}, error) {
 	return conn.dialOrDie().CoreV1().ConfigMaps(ns).Get(n, opts)
 }
 
-// List all ConfigMaps in a given namespace
+// List all ConfigMaps in a given namespace.
 func (c *ConfigMap) List(ns string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -35,7 +35,7 @@ func (c *ConfigMap) List(ns string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a ConfigMap
+// Delete a ConfigMap.
 func (c *ConfigMap) Delete(ns, n string) error {
 	opts := metav1.DeleteOptions{}
 	return conn.dialOrDie().CoreV1().ConfigMaps(ns).Delete(n, &opts)

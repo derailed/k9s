@@ -10,7 +10,7 @@ import (
 	restclient "k8s.io/client-go/rest"
 )
 
-// Job represents a Kubernetes Job
+// Job represents a Kubernetes Job.
 type Job struct{}
 
 // NewJob returns a new Job.
@@ -24,7 +24,7 @@ func (*Job) Get(ns, n string) (interface{}, error) {
 	return conn.dialOrDie().BatchV1().Jobs(ns).Get(n, opts)
 }
 
-// List all Jobs in a given namespace
+// List all Jobs in a given namespace.
 func (*Job) List(ns string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -41,13 +41,13 @@ func (*Job) List(ns string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a Job
+// Delete a Job.
 func (*Job) Delete(ns, n string) error {
 	opts := metav1.DeleteOptions{}
 	return conn.dialOrDie().BatchV1().Jobs(ns).Delete(n, &opts)
 }
 
-// Containers returns all container names on pod
+// Containers returns all container names on job.
 func (j *Job) Containers(ns, n string, includeInit bool) ([]string, error) {
 	pod, err := j.assocPod(ns, n)
 	if err != nil {
@@ -57,7 +57,7 @@ func (j *Job) Containers(ns, n string, includeInit bool) ([]string, error) {
 	return NewPod().(Loggable).Containers(ns, pod, includeInit)
 }
 
-// Logs fetch container logs for a given pod and container.
+// Logs fetch container logs for a given job and container.
 func (j *Job) Logs(ns, n, co string, lines int64, prev bool) *restclient.Request {
 	pod, err := j.assocPod(ns, n)
 	if err != nil {

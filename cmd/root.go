@@ -32,9 +32,8 @@ var (
 		Long:  `K9s is a CLI to view and manage your Kubernetes clusters.`,
 		Run:   run,
 	}
+	_ config.KubeSettings = &k8s.Config{}
 )
-
-var _ config.KubeSettings = &k8s.Config{}
 
 func init() {
 	rootCmd.AddCommand(versionCmd(), infoCmd())

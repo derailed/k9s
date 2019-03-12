@@ -12,13 +12,13 @@ func NewClusterRole() Res {
 	return &ClusterRole{}
 }
 
-// Get a service.
+// Get a cluster role.
 func (*ClusterRole) Get(_, n string) (interface{}, error) {
 	opts := metav1.GetOptions{}
 	return conn.dialOrDie().RbacV1().ClusterRoles().Get(n, opts)
 }
 
-// List all ClusterRoles in a given namespace
+// List all ClusterRoles on a cluster.
 func (*ClusterRole) List(_ string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -35,7 +35,7 @@ func (*ClusterRole) List(_ string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a ClusterRole
+// Delete a ClusterRole.
 func (*ClusterRole) Delete(_, n string) error {
 	opts := metav1.DeleteOptions{}
 	return conn.dialOrDie().RbacV1().ClusterRoles().Delete(n, &opts)

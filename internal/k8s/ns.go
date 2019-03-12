@@ -4,7 +4,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// Namespace represents a Kubernetes service
+// Namespace represents a Kubernetes namespace.
 type Namespace struct{}
 
 // NewNamespace returns a new Namespace.
@@ -12,13 +12,13 @@ func NewNamespace() Res {
 	return &Namespace{}
 }
 
-// Get a service.
+// Get a namespace.
 func (*Namespace) Get(_, n string) (interface{}, error) {
 	opts := metav1.GetOptions{}
 	return conn.dialOrDie().CoreV1().Namespaces().Get(n, opts)
 }
 
-// List all services in a given namespace
+// List all namespaces on the cluster.
 func (*Namespace) List(_ string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -35,7 +35,7 @@ func (*Namespace) List(_ string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a service
+// Delete a namespace.
 func (*Namespace) Delete(_, n string) error {
 	opts := metav1.DeleteOptions{}
 	return conn.dialOrDie().CoreV1().Namespaces().Delete(n, &opts)
