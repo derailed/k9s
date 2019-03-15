@@ -79,7 +79,7 @@ func (r *Context) Fields(ns string) Row {
 	i := r.instance
 
 	name := i.Name
-	if i.MustCurrentClusterName() == name {
+	if i.MustCurrentContextName() == name {
 		name += "*"
 	}
 

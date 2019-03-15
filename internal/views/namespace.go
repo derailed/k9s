@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
 )
@@ -31,21 +32,34 @@ func newNamespaceView(t string, app *appView, list resource.List, c colorerFn) r
 }
 
 func (v *namespaceView) extraActions(aa keyActions) {
-	aa[KeyU] = newKeyAction("Use", v.useNamespace)
+	aa[tcell.KeyEnter] = newKeyAction("Switch", v.switchNsCmd, true)
+	aa[KeyU] = newKeyAction("Use", v.useNsCmd, true)
 }
 
-func (v *namespaceView) useNamespace(evt *tcell.EventKey) *tcell.EventKey {
+func (v *namespaceView) switchNsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
 		return evt
 	}
-	ns := v.getSelectedItem()
-	if err := config.Root.SetActiveNamespace(ns); err != nil {
+	v.useNamespace(v.getSelectedItem())
+	v.app.gotoResource("po", true)
+	return nil
+}
+
+func (v *namespaceView) useNsCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !v.rowSelected() {
+		return evt
+	}
+	v.useNamespace(v.getSelectedItem())
+	return nil
+}
+
+func (v *namespaceView) useNamespace(name string) {
+	if err := config.Root.SetActiveNamespace(name); err != nil {
 		v.app.flash(flashErr, err.Error())
 	} else {
-		v.app.flash(flashInfo, fmt.Sprintf("Namespace %s is now active!", ns))
+		v.app.flash(flashInfo, fmt.Sprintf("Namespace %s is now active!", name))
 	}
 	config.Root.Save()
-	return nil
 }
 
 func (v *namespaceView) getSelectedItem() string {
@@ -58,10 +72,12 @@ func (*namespaceView) cleanser(s string) string {
 
 func (v *namespaceView) decorate(data resource.TableData) resource.TableData {
 	if _, ok := data.Rows[resource.AllNamespaces]; !ok {
-		data.Rows[resource.AllNamespace] = &resource.RowEvent{
-			Action: resource.Unchanged,
-			Fields: resource.Row{resource.AllNamespace, "Active", "0"},
-			Deltas: resource.Row{"", "", ""},
+		if k8s.CanIAccess("", "list", "namespaces", "namespace.v1") {
+			data.Rows[resource.AllNamespace] = &resource.RowEvent{
+				Action: resource.Unchanged,
+				Fields: resource.Row{resource.AllNamespace, "Active", "0"},
+				Deltas: resource.Row{"", "", ""},
+			}
 		}
 	}
 	for k, v := range data.Rows {

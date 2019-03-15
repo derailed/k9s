@@ -17,7 +17,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const noSelection = ""
+const (
+	refreshDelay = 0.1
+	noSelection  = ""
+)
 
 type (
 	details interface {
@@ -77,7 +80,7 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 	v.selectedItem, v.selectedNS = noSelection, ns
 
 	go func(ctx context.Context) {
-		initTick := 0.1
+		initTick := refreshDelay
 		for {
 			select {
 			case <-ctx.Done():
@@ -169,8 +172,8 @@ func (v *resourceView) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	sel := v.getSelectedItem()
 	raw, err := v.list.Resource().Describe(v.title, sel)
 	if err != nil {
-		v.app.flash(flashErr, "Unable to describeCmd this resource", err.Error())
-		log.Error().Err(err)
+		v.app.flash(flashErr, err.Error())
+		log.Warn().Msg(err.Error())
 		return evt
 	}
 	details := v.GetPrimitive("details").(*detailsView)
@@ -250,8 +253,6 @@ func (v *resourceView) doSwitchNamespace(ns string) {
 	config.Root.Save()
 }
 
-// Utils...
-
 func (v *resourceView) refresh() {
 	if _, ok := v.CurrentPage().Item.(*tableView); !ok {
 		return
@@ -263,6 +264,7 @@ func (v *resourceView) refresh() {
 			v.list.SetNamespace(v.selectedNS)
 		}
 		if err := v.list.Reconcile(); err != nil {
+			log.Warn().Msgf("%s", err)
 			v.app.flash(flashErr, err.Error())
 		}
 		data := v.list.Data()
@@ -272,7 +274,7 @@ func (v *resourceView) refresh() {
 		v.getTV().update(data)
 		v.selectItem(v.selectedRow, 0)
 		v.refreshActions()
-		v.app.infoView.refresh()
+		v.app.clusterInfoView.refresh()
 		v.app.Draw()
 	}
 	v.update.Unlock()
@@ -334,49 +336,51 @@ func (v *resourceView) refreshActions() {
 		return
 	}
 
-	nn, err := k8s.NewNamespace().List(resource.AllNamespaces)
-	if err != nil {
-		v.app.flash(flashErr, "Unable to retrieve namespaces", err.Error())
-		return
-	}
-
-	if v.list.Namespaced() && !v.list.AllNamespaces() {
-		if !config.InNSList(nn, v.list.GetNamespace()) {
-			v.list.SetNamespace(resource.DefaultNamespace)
-		}
-	}
-
+	var nn []interface{}
 	aa := make(keyActions)
-	if v.list.Access(resource.NamespaceAccess) {
-		v.namespaces = make(map[int]string, config.MaxFavoritesNS)
-		for i, n := range config.Root.FavNamespaces() {
-			aa[tcell.Key(numKeys[i])] = newKeyAction(n, v.switchNamespaceCmd)
-			v.namespaces[i] = n
+	if k8s.CanIAccess("", "list", "namespaces", "namespace.v1") {
+		var err error
+		nn, err = k8s.NewNamespace().List(resource.AllNamespaces)
+		if err != nil {
+			log.Warn().Msgf("%s", err)
+			v.app.flash(flashErr, err.Error())
+		}
+
+		if v.list.Namespaced() && !v.list.AllNamespaces() {
+			if !config.InNSList(nn, v.list.GetNamespace()) {
+				v.list.SetNamespace(resource.DefaultNamespace)
+			}
+		}
+
+		if v.list.Access(resource.NamespaceAccess) {
+			v.namespaces = make(map[int]string, config.MaxFavoritesNS)
+			for i, n := range config.Root.FavNamespaces() {
+				aa[tcell.Key(numKeys[i])] = newKeyAction(n, v.switchNamespaceCmd, true)
+				v.namespaces[i] = n
+			}
 		}
 	}
 
-	aa[tcell.KeyCtrlR] = newKeyAction("Refresh", v.refreshCmd)
+	aa[tcell.KeyCtrlR] = newKeyAction("Refresh", v.refreshCmd, false)
+	aa[KeyHelp] = newKeyAction("Help", v.app.noopCmd, false)
+	aa[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
 
 	if v.list.Access(resource.EditAccess) {
-		aa[KeyE] = newKeyAction("Edit", v.editCmd)
+		aa[KeyE] = newKeyAction("Edit", v.editCmd, true)
 	}
-
 	if v.list.Access(resource.DeleteAccess) {
-		aa[tcell.KeyCtrlD] = newKeyAction("Delete", v.deleteCmd)
+		aa[tcell.KeyCtrlD] = newKeyAction("Delete", v.deleteCmd, true)
 	}
 	if v.list.Access(resource.ViewAccess) {
-		aa[KeyV] = newKeyAction("View", v.viewCmd)
+		aa[KeyV] = newKeyAction("View", v.viewCmd, true)
 	}
 	if v.list.Access(resource.DescribeAccess) {
-		aa[KeyD] = newKeyAction("Describe", v.describeCmd)
+		aa[KeyD] = newKeyAction("Describe", v.describeCmd, true)
 	}
-
-	aa[KeyHelp] = newKeyAction("Help", v.app.noopCmd)
 
 	if v.extraActionsFn != nil {
 		v.extraActionsFn(aa)
 	}
-
 	t := v.getTV()
 	t.setActions(aa)
 	v.app.setHints(t.hints())

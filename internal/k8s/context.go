@@ -19,9 +19,9 @@ type NamedContext struct {
 	Context *api.Context
 }
 
-// MustCurrentClusterName return the active cluster name.
-func (c *NamedContext) MustCurrentClusterName() string {
-	cl, err := conn.config.CurrentClusterName()
+// MustCurrentContextName return the active context name.
+func (c *NamedContext) MustCurrentContextName() string {
+	cl, err := conn.config.CurrentContextName()
 	if err != nil {
 		panic(err)
 	}

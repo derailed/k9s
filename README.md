@@ -80,10 +80,17 @@ k9s --context coolCtx
 
   ```yaml
   k9s:
+    # Indicates api-server poll intervals.
     refreshRate: 2
+    # Indicates log view maximum buffer size. Default 1k lines.
     logBufferSize: 200
+    # Indicates how many lines of logs to retrieve from the api-server. Default 200 lines.
+    logRequestSize: 200
+    # Indicates the current kube context. Defaults to current context
     currentContext: minikube
+    # Indicates the current kube cluster. Defaults to current context cluster
     currentCluster: minikube
+    # Persists per cluster preferences for favorite namespaces and view.
     clusters:
       bitchn:
         namespace:
@@ -143,9 +150,100 @@ K9s uses aliases to navigate most K8s resources.
 
 This initial drop is brittle. K9s will most likely blow up...
 
-1. You're running older versions of Kubernetes. K9s works best Kubernetes 1.10+
-1. You don't have enough RBAC fu to manage your cluster
+1. You're running older versions of Kubernetes. K9s works best Kubernetes 1.10+.
+1. You don't have enough RBAC fu to manage your cluster (see RBAC section below).
 1. Your cluster does not run a metric server.
+
+---
+
+## K9s RBAC FU
+
+On RBAC enabled clusters, you would need to give your users/groups capabilities so that they can use K9s to explore Kubernetes cluster.
+K9s needs minimaly read privileges at both the cluster and namespace level to display resources and metrics.
+
+These rules below are just suggestions. You will need to customize them based on your environment policies. If you need to edit/delete resources extra Fu will be necessary.
+
+> NOTE! Cluster/Namespace access may change in the future as K9s evolves.
+
+> NOTE! We expect K9s to keep running even in atrophied clusters/namespaces. Please file issues if this is not the case!
+
+### Cluster RBAC scope
+
+```yaml
+---
+# K9s Reader ClusterRole
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: k9s
+rules:
+  # Grants RO access to cluster resources node and namespace
+  - apiGroups: [""]
+    resources: ["nodes", "namespaces"]
+    verbs: ["get", "list"]
+  # Grants RO access to RBAC resources
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles", "roles", "clusterrolebindings", "rolebindings"]
+    verbs: ["get", "list"]
+  # Grants RO access to CRD resources
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list"]
+  # Grants RO access to netric server
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["nodes", "pods"]
+    verbs: ["list"]
+
+---
+# Sample K9s user ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: k9s
+subjects:
+  - kind: User
+    name: fernand
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: ClusterRole
+  name: k9s
+  apiGroup: rbac.authorization.k8s.io
+```
+
+### Namespace RBAC scope
+
+If your users are constrained to certain namespaces, K9s will need to following role to enable read access to namespaced resources.
+
+```yaml
+---
+# K9s Reader Role (default namespace)
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: k9s
+  namespace: default
+rules:
+  # Grants RO access to most namespaced resources
+  - apiGroups: ["", "apps", "autoscaling", "batch", "extensions"]
+    resources: ["*"]
+    verbs: ["get", "list"]
+
+---
+# Sample K9s user RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: k9s
+  namespace: default
+subjects:
+  - kind: User
+    name: fernand
+    apiGroup: rbac.authorization.k8s.io
+roleRef:
+  kind: Role
+  name: k9s
+  apiGroup: rbac.authorization.k8s.io
+```
 
 ---
 
@@ -169,7 +267,7 @@ to make this project a reality!
 ## Contact Info
 
 1. **Email**:   fernand@imhotep.io
-1. **Twitter**: [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
+2. **Twitter**: [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
 
 
 ---

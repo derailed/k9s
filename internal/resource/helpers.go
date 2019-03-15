@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/derailed/tview"
+	runewidth "github.com/mattn/go-runewidth"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 	"k8s.io/apimachinery/pkg/watch"
@@ -82,12 +83,8 @@ func Pad(s string, l int) string {
 }
 
 // Truncate a string to the given l and suffix ellipsis if needed.
-func Truncate(s string, l int) string {
-	if len(s) > l {
-		fmat := "%." + strconv.Itoa(l) + "s%s"
-		return fmt.Sprintf(fmat, s, string(tview.SemigraphicsHorizontalEllipsis))
-	}
-	return s
+func Truncate(str string, width int) string {
+	return runewidth.Truncate(str, width, string(tview.SemigraphicsHorizontalEllipsis))
 }
 
 func mapToStr(m map[string]string) (s string) {

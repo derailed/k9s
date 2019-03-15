@@ -19,6 +19,7 @@ const (
 
 type aliasView struct {
 	*tableView
+
 	current igniter
 	cancel  context.CancelFunc
 }
@@ -32,9 +33,9 @@ func newAliasView(app *appView) *aliasView {
 		v.sortFn = v.sorterFn
 		v.currentNS = ""
 	}
-	v.actions[tcell.KeyEnter] = newKeyAction("Search", v.gotoCmd)
-	v.actions[tcell.KeyEscape] = newKeyAction("Reset", v.resetCmd)
-	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd)
+	v.actions[tcell.KeyEnter] = newKeyAction("Goto", v.gotoCmd, true)
+	v.actions[tcell.KeyEscape] = newKeyAction("Reset", v.resetCmd, false)
+	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd, false)
 
 	ctx, cancel := context.WithCancel(context.TODO())
 	v.cancel = cancel
@@ -50,6 +51,7 @@ func newAliasView(app *appView) *aliasView {
 			}
 		}
 	}(ctx)
+
 	return &v
 }
 
@@ -73,6 +75,7 @@ func (v *aliasView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.cmdBuff.reset()
 		return nil
 	}
+
 	return v.backCmd(evt)
 }
 
@@ -85,6 +88,7 @@ func (v *aliasView) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.cmdBuff.isActive() {
 		return v.filterCmd(evt)
 	}
+
 	return evt
 }
 
@@ -92,19 +96,22 @@ func (v *aliasView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.cancel != nil {
 		v.cancel()
 	}
+
 	if v.cmdBuff.isActive() {
 		v.cmdBuff.reset()
 	} else {
 		v.app.inject(v.current)
 	}
+
 	return nil
 }
 
 func (v *aliasView) runCmd(evt *tcell.EventKey) *tcell.EventKey {
 	r, _ := v.GetSelection()
 	if r > 0 {
-		v.app.command.run(strings.TrimSpace(v.GetCell(r, 0).Text))
+		v.app.gotoResource(strings.TrimSpace(v.GetCell(r, 0).Text), true)
 	}
+
 	return nil
 }
 
@@ -133,6 +140,7 @@ func (v *aliasView) hydrate() resource.TableData {
 			Deltas: fields,
 		}
 	}
+
 	return data
 }
 

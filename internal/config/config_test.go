@@ -141,6 +141,7 @@ func TestConfigSaveFile(t *testing.T) {
 	cfg.Load("test_assets/k9s.yml")
 	cfg.K9s.RefreshRate = 100
 	cfg.K9s.LogBufferSize = 500
+	cfg.K9s.LogRequestSize = 100
 	cfg.K9s.CurrentContext = "blee"
 	cfg.K9s.CurrentCluster = "blee"
 	cfg.Validate()
@@ -190,6 +191,7 @@ func setup(t *testing.T) {
 var expectedConfig = `k9s:
   refreshRate: 100
   logBufferSize: 500
+  logRequestSize: 100
   currentContext: blee
   currentCluster: blee
   clusters:
@@ -227,6 +229,7 @@ var expectedConfig = `k9s:
 var resetConfig = `k9s:
   refreshRate: 2
   logBufferSize: 200
+  logRequestSize: 200
   currentContext: blee
   currentCluster: blee
   clusters:

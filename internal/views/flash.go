@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 )
@@ -34,12 +35,12 @@ type (
 )
 
 func newFlashView(app *tview.Application, m string) *flashView {
-	var f flashView
+	f := flashView{app: app, TextView: tview.NewTextView()}
 	{
-		f = flashView{app: app, TextView: tview.NewTextView()}
 		f.SetTextColor(tcell.ColorAqua)
 		f.SetTextAlign(tview.AlignLeft)
 		f.SetBorderPadding(0, 0, 1, 1)
+		f.SetText(m)
 	}
 	return &f
 }
@@ -48,14 +49,17 @@ func (f *flashView) setMessage(level flashLevel, msg ...string) {
 	if f.cancel != nil {
 		f.cancel()
 	}
-
 	var ctx context.Context
 	{
 		ctx, f.cancel = context.WithTimeout(context.TODO(), flashDelay*time.Second)
 		go func(ctx context.Context) {
+			_, _, width, _ := f.GetRect()
+			if width <= 15 {
+				width = 100
+			}
 			m := strings.Join(msg, " ")
 			f.SetTextColor(flashColor(level))
-			f.SetText(flashEmoji(level) + "  " + m)
+			f.SetText(resource.Truncate(flashEmoji(level)+" "+m, width-3))
 			f.app.Draw()
 			for {
 				select {

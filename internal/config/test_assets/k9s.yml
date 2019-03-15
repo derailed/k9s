@@ -1,6 +1,7 @@
 k9s:
   refreshRate: 2
   logBufferSize: 200
+  logRequestSize: 200
   currentContext: minikube
   currentCluster: minikube
   clusters:
@@ -8,21 +9,21 @@ k9s:
       namespace:
         active: kube-system
         favorites:
-        - default
-        - kube-public
-        - istio-system
-        - all
-        - kube-system
+          - default
+          - kube-public
+          - istio-system
+          - all
+          - kube-system
       view:
         active: ctx
     fred:
       namespace:
         active: default
         favorites:
-        - default
-        - kube-public
-        - istio-system
-        - all
-        - kube-system
+          - default
+          - kube-public
+          - istio-system
+          - all
+          - kube-system
       view:
         active: po

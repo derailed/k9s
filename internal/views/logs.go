@@ -35,12 +35,12 @@ func newLogsView(parent loggable) *logsView {
 		containers: []string{},
 	}
 	v.setActions(keyActions{
-		tcell.KeyEscape: {description: "Back", action: v.back},
-		KeyC:            {description: "Clear", action: v.clearLogs},
-		KeyG:            {description: "Top", action: v.top},
-		KeyShiftG:       {description: "Bottom", action: v.bottom},
-		KeyF:            {description: "Up", action: v.pageUp},
-		KeyB:            {description: "Down", action: v.pageDown},
+		tcell.KeyEscape: {description: "Back", action: v.back, visible: true},
+		KeyC:            {description: "Clear", action: v.clearLogs, visible: true},
+		KeyG:            {description: "Top", action: v.top, visible: false},
+		KeyShiftG:       {description: "Bottom", action: v.bottom, visible: false},
+		KeyF:            {description: "Up", action: v.pageUp, visible: false},
+		KeyB:            {description: "Down", action: v.pageDown, visible: false},
 	})
 	v.SetInputCapture(v.keyboard)
 
@@ -91,7 +91,7 @@ func (v *logsView) setActions(aa keyActions) {
 func (v *logsView) hints() hints {
 	if len(v.containers) > 1 {
 		for i, c := range v.containers {
-			v.actions[tcell.Key(numKeys[i+1])] = newKeyAction(c, nil)
+			v.actions[tcell.Key(numKeys[i+1])] = newKeyAction(c, nil, true)
 		}
 	}
 	return v.actions.toHints()
@@ -163,7 +163,7 @@ func (v *logsView) doLoad(path, co string) error {
 	if !ok {
 		return fmt.Errorf("Resource %T is not tailable", v.parent.getList().Resource)
 	}
-	maxBuff := int64(config.Root.K9s.LogBufferSize)
+	maxBuff := int64(config.Root.K9s.LogRequestSize)
 	cancelFn, err := res.Logs(c, ns, po, co, maxBuff, false)
 	if err != nil {
 		cancelFn()
@@ -200,14 +200,18 @@ func (v *logsView) bottom(*tcell.EventKey) *tcell.EventKey {
 
 func (v *logsView) pageUp(*tcell.EventKey) *tcell.EventKey {
 	if p := v.CurrentPage(); p != nil {
-		p.Item.(*logView).PageUp()
+		if p.Item.(*logView).PageUp() {
+			v.parent.appView().flash(flashInfo, "Reached Top ...")
+		}
 	}
 	return nil
 }
 
 func (v *logsView) pageDown(*tcell.EventKey) *tcell.EventKey {
 	if p := v.CurrentPage(); p != nil {
-		p.Item.(*logView).PageDown()
+		if p.Item.(*logView).PageDown() {
+			v.parent.appView().flash(flashInfo, "Reached Bottom ...")
+		}
 	}
 	return nil
 }

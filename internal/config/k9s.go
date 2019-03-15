@@ -1,14 +1,16 @@
 package config
 
 const (
-	defaultRefreshRate   = 2
-	defaultLogBufferSize = 200
+	defaultRefreshRate    = 2
+	defaultLogRequestSize = 200
+	defaultLogBufferSize  = 1000
 )
 
 // K9s tracks K9s configuration options.
 type K9s struct {
 	RefreshRate    int                 `yaml:"refreshRate"`
 	LogBufferSize  int                 `yaml:"logBufferSize"`
+	LogRequestSize int                 `yaml:"logRequestSize"`
 	CurrentContext string              `yaml:"currentContext"`
 	CurrentCluster string              `yaml:"currentCluster"`
 	Clusters       map[string]*Cluster `yaml:"clusters,omitempty"`
@@ -18,10 +20,11 @@ type K9s struct {
 // NewK9s create a new K9s configuration.
 func NewK9s() *K9s {
 	return &K9s{
-		RefreshRate:   defaultRefreshRate,
-		LogBufferSize: defaultLogBufferSize,
-		Clusters:      map[string]*Cluster{},
-		Aliases:       map[string]string{},
+		RefreshRate:    defaultRefreshRate,
+		LogBufferSize:  defaultLogBufferSize,
+		LogRequestSize: defaultLogRequestSize,
+		Clusters:       map[string]*Cluster{},
+		Aliases:        map[string]string{},
 	}
 }
 
@@ -49,6 +52,10 @@ func (k *K9s) Validate(ks KubeSettings) {
 
 	if k.LogBufferSize <= 0 {
 		k.LogBufferSize = defaultLogBufferSize
+	}
+
+	if k.LogRequestSize <= 0 {
+		k.LogRequestSize = defaultLogRequestSize
 	}
 
 	if k.Clusters == nil {

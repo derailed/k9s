@@ -32,13 +32,13 @@ var logo = []string{
 }
 
 // Splash screen definition
-type Splash struct {
+type splashView struct {
 	*tview.Flex
 }
 
 // NewSplash instantiates a new splash screen with product and company info.
-func NewSplash(rev string) *Splash {
-	v := Splash{tview.NewFlex()}
+func newSplash(rev string) *splashView {
+	v := splashView{tview.NewFlex()}
 
 	logo := tview.NewTextView()
 	{
@@ -62,11 +62,11 @@ func NewSplash(rev string) *Splash {
 	return &v
 }
 
-func (v *Splash) layoutLogo(t *tview.TextView) {
+func (v *splashView) layoutLogo(t *tview.TextView) {
 	logo := strings.Join(logo, "\n[orange::b]")
 	fmt.Fprintf(t, "%s[orange::b]%s\n", strings.Repeat("\n", 2), logo)
 }
 
-func (v *Splash) layoutRev(t *tview.TextView, rev string) {
+func (v *splashView) layoutRev(t *tview.TextView, rev string) {
 	fmt.Fprintf(t, "[white::b]Revision [red::b]%s", rev)
 }

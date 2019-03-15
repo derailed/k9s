@@ -141,8 +141,8 @@ func (v *podView) showLogs(path, co string, previous bool) {
 }
 
 func (v *podView) extraActions(aa keyActions) {
-	aa[KeyL] = newKeyAction("Logs", v.logsCmd)
-	aa[KeyS] = newKeyAction("Shell", v.shellCmd)
+	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
+	aa[KeyS] = newKeyAction("Shell", v.shellCmd, true)
 }
 
 func fetchContainers(l resource.List, po string, includeInit bool) ([]string, error) {

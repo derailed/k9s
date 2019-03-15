@@ -82,8 +82,8 @@ func TestTruncate(t *testing.T) {
 		l int
 		e string
 	}{
-		{"fred", 2, "fr…"},
-		{"fred", 1, "f…"},
+		{"fred", 3, "fr…"},
+		{"fred", 2, "f…"},
 		{"fred", 10, "fred"},
 	}
 

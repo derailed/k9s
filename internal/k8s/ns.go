@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -12,13 +13,14 @@ func NewNamespace() Res {
 	return &Namespace{}
 }
 
-// Get a namespace.
+// Get a active namespace.
 func (*Namespace) Get(_, n string) (interface{}, error) {
 	opts := metav1.GetOptions{}
+
 	return conn.dialOrDie().CoreV1().Namespaces().Get(n, opts)
 }
 
-// List all namespaces on the cluster.
+// List all active namespaces on the cluster.
 func (*Namespace) List(_ string) (Collection, error) {
 	opts := metav1.ListOptions{}
 
@@ -29,7 +31,9 @@ func (*Namespace) List(_ string) (Collection, error) {
 
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
-		cc[i] = r
+		if r.Status.Phase == v1.NamespaceActive {
+			cc[i] = r
+		}
 	}
 
 	return cc, nil
@@ -38,5 +42,6 @@ func (*Namespace) List(_ string) (Collection, error) {
 // Delete a namespace.
 func (*Namespace) Delete(_, n string) error {
 	opts := metav1.DeleteOptions{}
+
 	return conn.dialOrDie().CoreV1().Namespaces().Delete(n, &opts)
 }

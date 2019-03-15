@@ -64,5 +64,5 @@ func (v *jobView) logs(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *jobView) extraActions(aa keyActions) {
-	aa[KeyL] = newKeyAction("Logs", v.logs)
+	aa[KeyL] = newKeyAction("Logs", v.logs, true)
 }

@@ -1,5 +1,7 @@
 package k8s
 
+import "github.com/rs/zerolog/log"
+
 // Cluster represents a Kubernetes cluster.
 type Cluster struct{}
 
@@ -12,6 +14,7 @@ func NewCluster() *Cluster {
 func (c *Cluster) Version() (string, error) {
 	rev, err := conn.dialOrDie().Discovery().ServerVersion()
 	if err != nil {
+		log.Warn().Msgf("%s", err)
 		return "", err
 	}
 	return rev.GitVersion, nil
@@ -21,6 +24,7 @@ func (c *Cluster) Version() (string, error) {
 func (c *Cluster) ContextName() string {
 	ctx, err := conn.config.CurrentContextName()
 	if err != nil {
+		log.Warn().Msgf("%s", err)
 		return "N/A"
 	}
 	return ctx
@@ -30,6 +34,7 @@ func (c *Cluster) ContextName() string {
 func (c *Cluster) ClusterName() string {
 	ctx, err := conn.config.CurrentClusterName()
 	if err != nil {
+		log.Warn().Msgf("%s", err)
 		return "N/A"
 	}
 	return ctx
@@ -39,6 +44,7 @@ func (c *Cluster) ClusterName() string {
 func (c *Cluster) UserName() string {
 	usr, err := conn.config.CurrentUserName()
 	if err != nil {
+		log.Warn().Msgf("%s", err)
 		return "N/A"
 	}
 	return usr

@@ -53,14 +53,14 @@ func newTableView(app *appView, title string, sortFn resource.SortFn) *tableView
 		v.SetInputCapture(v.keyboard)
 	}
 
-	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd)
-	v.actions[tcell.KeyEnter] = newKeyAction("Search", v.filterCmd)
-	v.actions[tcell.KeyEscape] = newKeyAction("Reset", v.resetCmd)
-	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd)
-	v.actions[KeyG] = newKeyAction("Top", app.puntCmd)
-	v.actions[KeyShiftG] = newKeyAction("Bottom", app.puntCmd)
-	v.actions[KeyB] = newKeyAction("Down", v.pageDownCmd)
-	v.actions[KeyF] = newKeyAction("Up", v.pageUpCmd)
+	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd, false)
+	v.actions[tcell.KeyEnter] = newKeyAction("Search", v.filterCmd, false)
+	v.actions[tcell.KeyEscape] = newKeyAction("Reset Filter", v.resetCmd, false)
+	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd, false)
+	v.actions[KeyG] = newKeyAction("Top", app.puntCmd, false)
+	v.actions[KeyShiftG] = newKeyAction("Bottom", app.puntCmd, false)
+	v.actions[KeyB] = newKeyAction("Down", v.pageDownCmd, false)
+	v.actions[KeyF] = newKeyAction("Up", v.pageUpCmd, false)
 
 	return &v
 }
@@ -77,6 +77,7 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 			v.cmdBuff.add(evt.Rune())
 			v.clearSelection()
 			v.doUpdate(v.filtered())
+			v.setSelection()
 			return nil
 		}
 		key = tcell.Key(evt.Rune())
@@ -87,6 +88,12 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		return a.action(evt)
 	}
 	return evt
+}
+
+func (v *tableView) setSelection() {
+	if v.GetRowCount() > 0 {
+		v.Select(1, 0)
+	}
 }
 
 func (v *tableView) pageUpCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -113,7 +120,9 @@ func (v *tableView) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *tableView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
-	v.app.flash(flashInfo, "Filtering off...")
+	if !v.cmdBuff.empty() {
+		v.app.flash(flashInfo, "Clearing filter...")
+	}
 	v.cmdBuff.reset()
 	v.refresh()
 	return nil

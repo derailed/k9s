@@ -34,5 +34,5 @@ func (v *cronJobView) trigger(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *cronJobView) extraActions(aa keyActions) {
-	aa[tcell.KeyCtrlT] = newKeyAction("Trigger", v.trigger)
+	aa[tcell.KeyCtrlT] = newKeyAction("Trigger", v.trigger, true)
 }

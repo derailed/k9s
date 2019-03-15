@@ -6,6 +6,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/printer"
 	"github.com/derailed/k9s/internal/views"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -14,22 +15,23 @@ import (
 )
 
 const (
+	appName            = "k9s"
 	defaultRefreshRate = 2 // secs
 	defaultLogLevel    = "info"
+	shortAppDesc       = "A graphical CLI for your Kubernetes cluster management."
+	longAppDesc        = "K9s is a CLI to view and manage your Kubernetes clusters."
 )
 
 var (
-	version     = "dev"
-	commit      = "dev"
-	date        = "n/a"
-	refreshRate int
-	logLevel    string
-	k8sFlags    *genericclioptions.ConfigFlags
+	version, commit, date = "dev", "dev", "n/a"
+	refreshRate           int
+	logLevel              string
+	k8sFlags              *genericclioptions.ConfigFlags
 
 	rootCmd = &cobra.Command{
-		Use:   "k9s",
-		Short: "A graphical CLI for your Kubernetes cluster management.",
-		Long:  `K9s is a CLI to view and manage your Kubernetes clusters.`,
+		Use:   appName,
+		Short: shortAppDesc,
+		Long:  longAppDesc,
 		Run:   run,
 	}
 	_ config.KubeSettings = &k8s.Config{}
@@ -37,63 +39,77 @@ var (
 
 func init() {
 	rootCmd.AddCommand(versionCmd(), infoCmd())
-
-	rootCmd.Flags().IntVarP(
-		&refreshRate,
-		"refresh", "r",
-		defaultRefreshRate,
-		"Specifies the default refresh rate as an integer (sec)",
-	)
-	rootCmd.Flags().StringVarP(
-		&logLevel,
-		"logLevel", "l",
-		defaultLogLevel,
-		"Specify a log level (info, warn, debug, error, fatal, panic, trace)",
-	)
-
+	initK9sFlags()
 	initK8sFlags()
 }
 
-func initK9s() {
+// Execute root command
+func Execute() {
+	if err := rootCmd.Execute(); err != nil {
+		log.Panic().Err(err)
+	}
+}
+
+func run(cmd *cobra.Command, args []string) {
+	defer func() {
+		clearScreen()
+		if err := recover(); err != nil {
+			log.Error().Msgf("%v", err)
+			log.Error().Msg(string(debug.Stack()))
+			fmt.Printf(printer.Colorize("Boom!! ", printer.ColorRed))
+			fmt.Println(printer.Colorize(fmt.Sprintf("%v.", err), printer.ColorDarkGray))
+			// debug.PrintStack()
+		}
+	}()
+
+	zerolog.SetGlobalLevel(parseLevel(logLevel))
+	loadConfiguration()
+	app := views.NewApp()
+	{
+		defer app.Stop()
+		app.Init(version, refreshRate, k8sFlags)
+		app.Run()
+	}
+}
+
+func loadConfiguration() {
 	log.Info().Msg("🐶 K9s starting up...")
 
 	// Load K9s config file...
 	cfg := k8s.NewConfig(k8sFlags)
 	config.Root = config.NewConfig(cfg)
-	initK9sConfig()
-
-	// Init K8s connection...
-	k8s.InitConnectionOrDie(cfg)
-	log.Info().Msg("✅ Kubernetes connectivity")
-
-	config.Root.Save()
-}
-
-func initK9sConfig() {
 	if err := config.Root.Load(config.K9sConfigFile); err != nil {
 		log.Warn().Msg("Unable to locate K9s config. Generating new configuration...")
 	}
 	config.Root.K9s.RefreshRate = refreshRate
+	mergeConfigs()
+	// Init K8s connection...
+	k8s.InitConnectionOrDie(cfg)
+	log.Info().Msg("✅ Kubernetes connectivity")
+	config.Root.Save()
+}
 
+func mergeConfigs() {
 	cfg, err := k8sFlags.ToRawKubeConfigLoader().RawConfig()
 	if err != nil {
 		panic("Invalid configuration. Unable to connect to api")
 	}
 
-	ctx := cfg.CurrentContext
-	switch {
-	case isSet(k8sFlags.Context):
-		ctx = *k8sFlags.Context
-		config.Root.K9s.CurrentContext = ctx
-	case isSet(&config.Root.K9s.CurrentContext):
-		k8sFlags.Context = &config.Root.K9s.CurrentContext
-	default:
-		config.Root.K9s.CurrentContext = ctx
-		if isSet(&cfg.Contexts[ctx].Namespace) {
-			config.Root.SetActiveNamespace(cfg.Contexts[ctx].Namespace)
-		}
+	if isSet(k8sFlags.Context) {
+		config.Root.K9s.CurrentContext = *k8sFlags.Context
+	} else {
+		config.Root.K9s.CurrentContext = cfg.CurrentContext
 	}
-	log.Debug().Msgf("Active Context `%v`", ctx)
+	log.Debug().Msgf("Active Context `%v`", config.Root.K9s.CurrentContext)
+
+	if c, ok := cfg.Contexts[config.Root.K9s.CurrentContext]; ok {
+		config.Root.K9s.CurrentCluster = c.Cluster
+		if len(c.Namespace) != 0 {
+			config.Root.SetActiveNamespace(c.Namespace)
+		}
+	} else {
+		log.Panic().Msg(fmt.Sprintf("The specified context `%s does not exists in kubeconfig", config.Root.K9s.CurrentContext))
+	}
 
 	if isSet(k8sFlags.Namespace) {
 		config.Root.SetActiveNamespace(*k8sFlags.Namespace)
@@ -101,26 +117,6 @@ func initK9sConfig() {
 
 	if isSet(k8sFlags.ClusterName) {
 		config.Root.K9s.CurrentCluster = *k8sFlags.ClusterName
-	}
-
-	if c, ok := cfg.Contexts[ctx]; ok {
-		config.Root.K9s.CurrentCluster = c.Cluster
-		if len(c.Namespace) != 0 {
-			config.Root.SetActiveNamespace(c.Namespace)
-		}
-	} else {
-		panic(fmt.Sprintf("The specified context `%s does not exists in kubeconfig", cfg.CurrentContext))
-	}
-}
-
-func isSet(s *string) bool {
-	return s != nil && len(*s) > 0
-}
-
-// Execute root command
-func Execute() {
-	if err := rootCmd.Execute(); err != nil {
-		log.Panic().Err(err)
 	}
 }
 
@@ -139,28 +135,19 @@ func parseLevel(level string) zerolog.Level {
 	}
 }
 
-func run(cmd *cobra.Command, args []string) {
-	zerolog.SetGlobalLevel(parseLevel(logLevel))
-
-	initK9s()
-
-	app := views.NewApp()
-	{
-		app.Init(version, refreshRate, k8sFlags)
-		defer func() {
-			clearScreen()
-			if err := recover(); err != nil {
-				app.Stop()
-				log.Error().Msgf("Boom! %#v", err)
-				debug.PrintStack()
-			}
-		}()
-		app.Run()
-	}
-}
-
-func clearScreen() {
-	fmt.Print("\033[H\033[2J")
+func initK9sFlags() {
+	rootCmd.Flags().IntVarP(
+		&refreshRate,
+		"refresh", "r",
+		defaultRefreshRate,
+		"Specifies the default refresh rate as an integer (sec)",
+	)
+	rootCmd.Flags().StringVarP(
+		&logLevel,
+		"logLevel", "l",
+		defaultLogLevel,
+		"Specify a log level (info, warn, debug, error, fatal, panic, trace)",
+	)
 }
 
 func initK8sFlags() {
@@ -256,4 +243,15 @@ func initK8sFlags() {
 		"",
 		"If present, the namespace scope for this CLI request",
 	)
+}
+
+// ----------------------------------------------------------------------------
+// Helpers...
+
+func clearScreen() {
+	fmt.Print("\033[H\033[2J")
+}
+
+func isSet(s *string) bool {
+	return s != nil && len(*s) > 0
 }

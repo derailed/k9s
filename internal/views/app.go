@@ -34,20 +34,21 @@ type (
 	appView struct {
 		*tview.Application
 
-		version      string
-		pages        *tview.Pages
-		content      *tview.Pages
-		flashView    *flashView
-		menuView     *menuView
-		infoView     *infoView
-		command      *command
-		focusGroup   []tview.Primitive
-		focusCurrent int
-		focusChanged focusHandler
-		cancel       context.CancelFunc
-		cmdBuff      *cmdBuff
-		cmdView      *cmdView
-		actions      keyActions
+		version         string
+		pages           *tview.Pages
+		content         *tview.Pages
+		flashView       *flashView
+		crumbsView      *crumbsView
+		menuView        *menuView
+		clusterInfoView *clusterInfoView
+		command         *command
+		focusGroup      []tview.Primitive
+		focusCurrent    int
+		focusChanged    focusHandler
+		cancel          context.CancelFunc
+		cmdBuff         *cmdBuff
+		cmdView         *cmdView
+		actions         keyActions
 	}
 )
 
@@ -68,32 +69,35 @@ func NewApp() *appView {
 		v.cmdView = newCmdView('🐶')
 		v.command = newCommand(&v)
 		v.flashView = newFlashView(v.Application, "Initializing...")
-		v.infoView = newInfoView(&v)
+		v.crumbsView = newCrumbsView(v.Application)
+		v.clusterInfoView = newInfoView(&v)
 		v.focusChanged = v.changedFocus
 		v.SetInputCapture(v.keyboard)
 	}
 
-	v.actions[KeyColon] = newKeyAction("Cmd", v.activateCmd)
-	v.actions[tcell.KeyCtrlR] = newKeyAction("Redraw", v.redrawCmd)
-	v.actions[KeyQ] = newKeyAction("Quit", v.quitCmd)
-	v.actions[KeyHelp] = newKeyAction("Help", v.helpCmd)
-	v.actions[tcell.KeyEscape] = newKeyAction("Exit Cmd", v.deactivateCmd)
-	v.actions[tcell.KeyEnter] = newKeyAction("Goto", v.gotoCmd)
-	v.actions[tcell.KeyBackspace2] = newKeyAction("Goto", v.eraseCmd)
-	v.actions[tcell.KeyTab] = newKeyAction("Focus", v.focusCmd)
+	v.actions[KeyColon] = newKeyAction("Cmd", v.activateCmd, false)
+	v.actions[tcell.KeyCtrlR] = newKeyAction("Redraw", v.redrawCmd, false)
+	v.actions[KeyQ] = newKeyAction("Quit", v.quitCmd, false)
+	v.actions[KeyHelp] = newKeyAction("Help", v.helpCmd, false)
+	v.actions[KeyA] = newKeyAction("Aliases", v.aliasCmd, true)
+	v.actions[tcell.KeyEscape] = newKeyAction("Exit Cmd", v.deactivateCmd, false)
+	v.actions[tcell.KeyEnter] = newKeyAction("Goto", v.gotoCmd, false)
+	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd, false)
+	v.actions[tcell.KeyBackspace] = newKeyAction("Erase", v.eraseCmd, false)
+	v.actions[tcell.KeyTab] = newKeyAction("Focus", v.focusCmd, false)
 
 	return &v
 }
 
 func (a *appView) Init(v string, rate int, flags *genericclioptions.ConfigFlags) {
 	a.version = v
-	a.infoView.init()
+	a.clusterInfoView.init()
 	a.cmdBuff.addListener(a.cmdView)
 
 	header := tview.NewFlex()
 	{
 		header.SetDirection(tview.FlexColumn)
-		header.AddItem(a.infoView, 55, 1, false)
+		header.AddItem(a.clusterInfoView, 55, 1, false)
 		header.AddItem(a.menuView, 0, 1, false)
 		header.AddItem(logoView(), 26, 1, false)
 	}
@@ -104,11 +108,12 @@ func (a *appView) Init(v string, rate int, flags *genericclioptions.ConfigFlags)
 		main.AddItem(header, 7, 1, false)
 		main.AddItem(a.cmdView, 1, 1, false)
 		main.AddItem(a.content, 0, 10, true)
-		main.AddItem(a.flashView, 2, 1, false)
+		main.AddItem(a.crumbsView, 2, 1, false)
+		main.AddItem(a.flashView, 1, 1, false)
 	}
 
 	a.pages.AddPage("main", main, true, false)
-	a.pages.AddPage("splash", NewSplash(a.version), true, true)
+	a.pages.AddPage("splash", newSplash(a.version), true, true)
 	a.SetRoot(a.pages, true)
 }
 
@@ -167,9 +172,18 @@ func (a *appView) deactivateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
+func (a *appView) prevCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if top, ok := a.command.previousCmd(); ok {
+		log.Debug().Msgf("Previous command %s", top)
+		a.gotoResource(top, false)
+		return nil
+	}
+	return evt
+}
+
 func (a *appView) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.cmdBuff.isActive() && !a.cmdBuff.empty() {
-		a.command.run(a.cmdBuff.String())
+		a.gotoResource(a.cmdBuff.String(), true)
 		a.cmdBuff.reset()
 		return nil
 	}
@@ -200,6 +214,14 @@ func (a *appView) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.cmdView.inCmdMode() {
 		return evt
 	}
+	a.inject(newHelpView(a))
+	return nil
+}
+
+func (a *appView) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.cmdView.inCmdMode() {
+		return evt
+	}
 	a.inject(newAliasView(a))
 	return nil
 }
@@ -210,6 +232,14 @@ func (a *appView) noopCmd(*tcell.EventKey) *tcell.EventKey {
 
 func (a *appView) puntCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
+}
+
+func (a *appView) gotoResource(res string, record bool) bool {
+	valid := a.command.run(res)
+	if valid && record {
+		a.command.pushCmd(res)
+	}
+	return valid
 }
 
 func (a *appView) showPage(p string) {
@@ -240,7 +270,7 @@ func (a *appView) cmdMode() bool {
 }
 
 func (a *appView) refresh() {
-	a.infoView.refresh()
+	a.clusterInfoView.refresh()
 }
 
 func (a *appView) flash(level flashLevel, m ...string) {
@@ -248,7 +278,7 @@ func (a *appView) flash(level flashLevel, m ...string) {
 }
 
 func (a *appView) setHints(h hints) {
-	a.menuView.setMenu(h)
+	a.menuView.populateMenu(h)
 }
 
 func logoView() tview.Primitive {

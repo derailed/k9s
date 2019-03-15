@@ -14,17 +14,16 @@ import (
 )
 
 const (
-	menuSepFmt   = " [dodgerblue::b]%-9s [white::d]%s "
+	menuSepFmt   = " [dodgerblue::b]%-%ds [white::d]%s "
 	menuIndexFmt = " [fuchsia::b]<%d> [white::d]%s "
-	maxRows      = 6
-	colLen       = 20
+	maxRows      = 7
 )
 
 var menuRX = regexp.MustCompile(`\d`)
 
 type (
 	hint struct {
-		mnemonic, display string
+		mnemonic, description string
 	}
 	hints []hint
 
@@ -53,7 +52,7 @@ func (h hints) Less(i, j int) bool {
 	if err1 != nil && err2 == nil {
 		return false
 	}
-	return strings.Compare(h[i].mnemonic, h[j].mnemonic) < 0
+	return strings.Compare(h[i].description, h[j].description) < 0
 }
 
 // -----------------------------------------------------------------------------
@@ -63,12 +62,13 @@ type (
 	keyAction struct {
 		description string
 		action      actionHandler
+		visible     bool
 	}
 	keyActions map[tcell.Key]keyAction
 )
 
-func newKeyAction(d string, a actionHandler) keyAction {
-	return keyAction{description: d, action: a}
+func newKeyAction(d string, a actionHandler, display bool) keyAction {
+	return keyAction{description: d, action: a, visible: display}
 }
 
 func newMenuView() *menuView {
@@ -76,77 +76,105 @@ func newMenuView() *menuView {
 	return &v
 }
 
-// -----------------------------------------------------------------------------
-type menuView struct {
-	*tview.Table
-}
-
-func (v *menuView) setMenu(hh hints) {
-	v.Clear()
-	sort.Sort(hh)
-
-	var row, col int
-	firstNS, firstCmd := true, true
-	for _, h := range hh {
-		isDigit := menuRX.MatchString(h.mnemonic)
-		if isDigit && firstNS {
-			row, col, firstNS = 0, 2, false
-		}
-		if !isDigit && firstCmd {
-			row, col, firstCmd = 0, 0, false
-		}
-		c := tview.NewTableCell(v.item(h))
-		v.SetCell(row, col, c)
-		row++
-		if row > maxRows {
-			col++
-			row = 0
-		}
-	}
-}
-
-func (*menuView) toMnemonic(s string) string {
-	return "<" + strings.ToLower(s) + ">"
-}
-
-func (v *menuView) item(h hint) string {
-	i, err := strconv.Atoi(h.mnemonic)
-	if err == nil {
-		return fmt.Sprintf(menuIndexFmt, i, resource.Truncate(h.display, 14))
-	}
-	return fmt.Sprintf(menuSepFmt, v.toMnemonic(h.mnemonic), h.display)
-}
-
-func (a keyActions) skipKey(k tcell.Key) bool {
-	switch k {
-	case tcell.KeyBackspace2:
-		fallthrough
-	case tcell.KeyEnter:
-		return true
-	}
-	return false
-}
-
 func (a keyActions) toHints() hints {
 	kk := make([]int, 0, len(a))
-	for k := range a {
-		if !a.skipKey(k) {
+	for k, v := range a {
+		if v.visible {
 			kk = append(kk, int(k))
 		}
 	}
 	sort.Ints(kk)
 
-	hh := make(hints, 0, len(a))
+	hh := make(hints, 0, len(kk))
 	for _, k := range kk {
 		if name, ok := tcell.KeyNames[tcell.Key(k)]; ok {
 			hh = append(hh, hint{
-				mnemonic: name,
-				display:  a[tcell.Key(k)].description})
+				mnemonic:    name,
+				description: a[tcell.Key(k)].description})
 		} else {
 			log.Error().Msgf("Unable to local KeyName for %#v", k)
 		}
 	}
 	return hh
+}
+
+// -----------------------------------------------------------------------------
+type menuView struct {
+	*tview.Table
+}
+
+func (v *menuView) populateMenu(hh hints) {
+	v.Clear()
+	sort.Sort(hh)
+
+	t := v.buildMenuTable(hh)
+	for row := 0; row < len(t); row++ {
+		for col := 0; col < len(t[row]); col++ {
+			if len(t[row][col]) == 0 {
+				continue
+			}
+			c := tview.NewTableCell(t[row][col])
+			v.SetCell(row, col, c)
+		}
+	}
+}
+
+func (v *menuView) buildMenuTable(hh hints) [][]string {
+	table := make([][]hint, maxRows+1)
+
+	colCount := (len(hh) / maxRows) + 1
+	for row := 0; row < maxRows; row++ {
+		table[row] = make([]hint, colCount)
+	}
+
+	var row, col int
+	firstNS, firstCmd := true, true
+	maxKeys := make([]int, colCount)
+	for _, h := range hh {
+		isDigit := menuRX.MatchString(h.mnemonic)
+		if isDigit && firstNS {
+			row, col, firstNS = 0, col+1, false
+		}
+		if !isDigit && firstCmd {
+			row, col, firstCmd = 0, 0, false
+		}
+		if maxKeys[col] < len(h.mnemonic) {
+			maxKeys[col] = len(h.mnemonic)
+		}
+		table[row][col] = h
+		row++
+		if row >= maxRows {
+			col++
+			row = 0
+		}
+	}
+
+	strTable := make([][]string, maxRows+1)
+	for r := 0; r < len(table); r++ {
+		strTable[r] = make([]string, len(table[r]))
+	}
+	for row := range strTable {
+		for col := range strTable[row] {
+			strTable[row][col] = v.formatMenu(table[row][col], maxKeys[col])
+		}
+	}
+	return strTable
+}
+
+func (*menuView) toMnemonic(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+	return "<" + strings.ToLower(s) + ">"
+}
+
+func (v *menuView) formatMenu(h hint, size int) string {
+	i, err := strconv.Atoi(h.mnemonic)
+	if err == nil {
+		return fmt.Sprintf(menuIndexFmt, i, resource.Truncate(h.description, 14))
+	}
+	menuFmt := " [dodgerblue::b]%-" + strconv.Itoa(size+2) + "s [white::d]%s "
+	return fmt.Sprintf(menuFmt, v.toMnemonic(h.mnemonic), h.description)
 }
 
 // -----------------------------------------------------------------------------

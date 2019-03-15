@@ -8,43 +8,56 @@ import (
 )
 
 type command struct {
-	app *appView
+	app     *appView
+	history *cmdStack
 }
 
 func newCommand(app *appView) *command {
-	return &command{app: app}
+	return &command{app: app, history: newCmdStack()}
+}
+
+func (c *command) pushCmd(cmd string) {
+	c.history.push(cmd)
+	c.app.crumbsView.update(c.history.stack)
+}
+
+func (c *command) previousCmd() (string, bool) {
+	c.history.pop()
+	c.app.crumbsView.update(c.history.stack)
+	return c.history.top()
 }
 
 // DefaultCmd reset default command ie show pods.
 func (c *command) defaultCmd() {
+	c.pushCmd(config.Root.ActiveView())
 	c.run(config.Root.ActiveView())
 }
 
 // Helpers...
 
 // Exec the command by showing associated display.
-func (c *command) run(cmd string) {
+func (c *command) run(cmd string) bool {
 	var v igniter
 	switch cmd {
 	case "q", "quit":
 		c.app.Stop()
-		return
+		return true
 	case "?", "help", "alias":
 		c.app.inject(newAliasView(c.app))
-		return
+		return true
 	default:
-		if res, ok := cmdMap[cmd]; ok {
+		if res, ok := resourceViews()[cmd]; ok {
 			v = res.viewFn(res.title, c.app, res.listFn(resource.DefaultNamespace), res.colorerFn)
-			c.app.flash(flashInfo, "Viewing all "+res.title+"...")
+			c.app.flash(flashInfo, fmt.Sprintf("Viewing %s in namespace %s...", res.title, config.Root.ActiveNamespace()))
 			c.exec(cmd, v)
-			return
+			return true
 		}
 	}
 
-	res, ok := getCRDS()[cmd]
+	res, ok := allCRDs()[cmd]
 	if !ok {
 		c.app.flash(flashWarn, fmt.Sprintf("Huh? `%s` command not found", cmd))
-		return
+		return false
 	}
 
 	n := res.Plural
@@ -58,6 +71,7 @@ func (c *command) run(cmd string) {
 		defaultColorer,
 	)
 	c.exec(cmd, v)
+	return true
 }
 
 func (c *command) exec(cmd string, v igniter) {

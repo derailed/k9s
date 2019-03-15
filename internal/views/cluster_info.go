@@ -7,17 +7,17 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type infoView struct {
+type clusterInfoView struct {
 	*tview.Table
 
 	app *appView
 }
 
-func newInfoView(app *appView) *infoView {
-	return &infoView{app: app, Table: tview.NewTable()}
+func newInfoView(app *appView) *clusterInfoView {
+	return &clusterInfoView{app: app, Table: tview.NewTable()}
 }
 
-func (v *infoView) init() {
+func (v *clusterInfoView) init() {
 	cluster := resource.NewCluster()
 
 	var row int
@@ -49,20 +49,22 @@ func (v *infoView) init() {
 	v.refresh()
 }
 
-func (*infoView) sectionCell(t string) *tview.TableCell {
+func (*clusterInfoView) sectionCell(t string) *tview.TableCell {
 	c := tview.NewTableCell(t + ":")
 	c.SetAlign(tview.AlignLeft)
+
 	return c
 }
 
-func (*infoView) infoCell(t string) *tview.TableCell {
+func (*clusterInfoView) infoCell(t string) *tview.TableCell {
 	c := tview.NewTableCell(t)
 	c.SetExpansion(2)
 	c.SetTextColor(tcell.ColorOrange)
+
 	return c
 }
 
-func (v *infoView) refresh() {
+func (v *clusterInfoView) refresh() {
 	var row int
 
 	cluster := resource.NewCluster()
@@ -77,7 +79,7 @@ func (v *infoView) refresh() {
 
 	mx, err := cluster.Metrics()
 	if err != nil {
-		log.Error().Err(err)
+		log.Warn().Msgf("%s", err)
 		return
 	}
 	c := v.GetCell(row, 1)

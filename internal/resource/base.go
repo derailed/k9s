@@ -70,12 +70,13 @@ func (b *Base) List(ns string) (Columnars, error) {
 
 // Describe a given resource.
 func (b *Base) Describe(kind, pa string) (string, error) {
-
 	ns, n := namespaced(pa)
-	mapping, err := k8s.RestMapping.Find(kind)
+
+	mapping, err := k8s.RestMapping.Find1(kind)
 	if err != nil {
 		return "", err
 	}
+
 	d, err := versioned.Describer(k8s.KubeConfig.Flags(), mapping)
 	if err != nil {
 		return "", err
