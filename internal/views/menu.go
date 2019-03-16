@@ -92,7 +92,7 @@ func (a keyActions) toHints() hints {
 				mnemonic:    name,
 				description: a[tcell.Key(k)].description})
 		} else {
-			log.Error().Msgf("Unable to local KeyName for %#v", k)
+			log.Error().Msgf("Unable to locate KeyName for %#v", k)
 		}
 	}
 	return hh
@@ -124,12 +124,12 @@ func (v *menuView) buildMenuTable(hh hints) [][]string {
 
 	colCount := (len(hh) / maxRows) + 1
 	for row := 0; row < maxRows; row++ {
-		table[row] = make([]hint, colCount)
+		table[row] = make([]hint, colCount+1)
 	}
 
 	var row, col int
 	firstNS, firstCmd := true, true
-	maxKeys := make([]int, colCount)
+	maxKeys := make([]int, colCount+1)
 	for _, h := range hh {
 		isDigit := menuRX.MatchString(h.mnemonic)
 		if isDigit && firstNS {

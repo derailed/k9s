@@ -76,7 +76,6 @@ func (c *Config) FavNamespaces() []string {
 
 // SetActiveNamespace set the active namespace in the current cluster.
 func (c *Config) SetActiveNamespace(ns string) error {
-	log.Debug().Msgf("Setting active namespace `%s", ns)
 	if c.K9s.ActiveCluster() != nil {
 		return c.K9s.ActiveCluster().Namespace.SetActive(ns, c.settings)
 	}

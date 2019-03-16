@@ -144,12 +144,12 @@ func (v *logsView) doLoad(path, co string) error {
 	c := make(chan string)
 	go func() {
 		l := v.CurrentPage().Item.(*logView)
+		l.Clear()
 		l.setTitle(path + ":" + co)
 		for {
 			select {
 			case line, ok := <-c:
 				if !ok {
-					l.logLine("--- No more logs ---")
 					l.ScrollToEnd()
 					return
 				}

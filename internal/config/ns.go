@@ -27,7 +27,6 @@ func NewNamespace() *Namespace {
 
 // Validate a namespace is setup correctly
 func (n *Namespace) Validate(ks KubeSettings) {
-	log.Debug().Msgf("Validating favorites... %s", n.Active)
 	nn, err := ks.NamespaceNames()
 	if err != nil {
 		return

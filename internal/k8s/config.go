@@ -238,22 +238,25 @@ func (c *Config) ConfigAccess() (clientcmd.ConfigAccess, error) {
 
 // RawConfig fetch the current kubeconfig with no overrides.
 func (c *Config) RawConfig() (clientcmdapi.Config, error) {
-	if c.rawConfig != nil && c.rawConfig.CurrentContext != c.currentContext {
-		log.Debug().Msg("Context swith detected...")
-		c.currentContext = c.rawConfig.CurrentContext
-		c.reset()
+	if c.rawConfig != nil {
+		if c.rawConfig.CurrentContext != c.currentContext {
+			log.Debug().Msgf("Context switch detected... %s vs %s", c.rawConfig.CurrentContext, c.currentContext)
+			c.currentContext = c.rawConfig.CurrentContext
+			c.reset()
+		}
 	}
 
 	if c.rawConfig == nil {
 		if err := c.configFromFlags(); err != nil {
 			return clientcmdapi.Config{}, err
 		}
-		log.Debug().Msg("Reloading RawConfig...")
+		log.Debug().Msg("Loading RawConfig...")
 		cfg, err := c.clientConfig.RawConfig()
 		if err != nil {
 			return cfg, err
 		}
 		c.rawConfig = &cfg
+		c.currentContext = cfg.CurrentContext
 	}
 	return *c.rawConfig, nil
 }
@@ -279,6 +282,7 @@ func (c *Config) RESTConfig() (*restclient.Config, error) {
 
 func (c *Config) configFromFlags() error {
 	if c.clientConfig == nil {
+		log.Debug().Msg("Loading raw config from flags...")
 		c.clientConfig = c.flags.ToRawKubeConfigLoader()
 	}
 	return nil
