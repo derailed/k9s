@@ -14,10 +14,10 @@ Thank you so much for your support!!
 
 ## Change Logs
 
-+ Added an actual help view to show available key bindings. Use `<?>` to access it.
-+ Changed alias view to now be accessible via key `<a>`
++ Added a help view to show available key bindings. Use `<?>` to access it.
++ Alias view is now accessible via key `<a>`
 + Pressing `<enter>` while on the namespace/context views will navigate directly to the pods view.
-+ Added resource view breadcrumbs to easily navigate back in history. Use key `<p>` to navigate back.
++ Added resource view breadcrumbs to easily navigate in history. Use key `<p>` to navigate back.
 + Added configuration `logBufferSize` to limit the size of the log view while viewing chatty or big logs.
 
 ---
