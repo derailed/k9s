@@ -72,7 +72,7 @@ func (b *Base) List(ns string) (Columnars, error) {
 func (b *Base) Describe(kind, pa string) (string, error) {
 	ns, n := namespaced(pa)
 
-	mapping, err := k8s.RestMapping.Find1(kind)
+	mapping, err := k8s.RestMapping.Find(kind)
 	if err != nil {
 		return "", err
 	}

@@ -22,13 +22,14 @@ var RestMapping = &RestMapper{}
 type RestMapper struct{}
 
 // Find a mapping given a resource name.
-func (*RestMapper) Find1(res string) (*meta.RESTMapping, error) {
+func (*RestMapper) Find(res string) (*meta.RESTMapping, error) {
 	if m, ok := resMap[res]; ok {
 		return m, nil
 	}
 	return nil, fmt.Errorf("no mapping for resource %s", res)
 }
 
+// ToRESTMapper map resources to kind, and map kind and version to interfaces for manipulating K8s objects.
 func (*RestMapper) ToRESTMapper() (meta.RESTMapper, error) {
 	rc := conn.restConfigOrDie()
 
