@@ -27,6 +27,7 @@ func newNamespaceView(t string, app *appView, list resource.List, c colorerFn) r
 	v.extraActionsFn = v.extraActions
 	v.selectedFn = v.getSelectedItem
 	v.decorateDataFn = v.decorate
+	v.getTV().cleanseFn = v.cleanser
 	v.switchPage("ns")
 	return &v
 }

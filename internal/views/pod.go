@@ -143,6 +143,23 @@ func (v *podView) showLogs(path, co string, previous bool) {
 func (v *podView) extraActions(aa keyActions) {
 	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
 	aa[KeyS] = newKeyAction("Shell", v.shellCmd, true)
+	aa[KeyShiftR] = newKeyAction("Sort Ready", v.sortColCmd(1, false), true)
+	aa[KeyShiftS] = newKeyAction("Sort Status", v.sortColCmd(2, true), true)
+	aa[KeyShiftT] = newKeyAction("Sort Restart", v.sortColCmd(3, false), true)
+	aa[KeyShiftC] = newKeyAction("Sort CPU", v.sortColCmd(4, false), true)
+	aa[KeyShiftM] = newKeyAction("Sort MEM", v.sortColCmd(5, false), true)
+	aa[KeyShiftO] = newKeyAction("Sort Node", v.sortColCmd(7, true), true)
+	aa[KeyShiftQ] = newKeyAction("Sort QOS", v.sortColCmd(8, true), true)
+}
+
+func (v *podView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
+	return func(evt *tcell.EventKey) *tcell.EventKey {
+		t := v.getTV()
+		t.sortCol.index, t.sortCol.asc = t.nameColIndex()+col, asc
+		t.refresh()
+
+		return nil
+	}
 }
 
 func fetchContainers(l resource.List, po string, includeInit bool) ([]string, error) {

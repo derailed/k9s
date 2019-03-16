@@ -1,7 +1,6 @@
 package k8s
 
 import (
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -31,9 +30,7 @@ func (*Namespace) List(_ string) (Collection, error) {
 
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
-		if r.Status.Phase == v1.NamespaceActive {
-			cc[i] = r
-		}
+		cc[i] = r
 	}
 
 	return cc, nil

@@ -30,7 +30,9 @@ func InList(ll []string, n string) bool {
 func InNSList(nn []interface{}, ns string) bool {
 	ss := make([]string, len(nn))
 	for i, n := range nn {
-		ss[i] = n.(v1.Namespace).Name
+		if nsp, ok := n.(v1.Namespace); ok {
+			ss[i] = nsp.Name
+		}
 	}
 	return InList(ss, ns)
 }

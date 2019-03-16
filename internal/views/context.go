@@ -16,6 +16,7 @@ func newContextView(t string, app *appView, list resource.List, c colorerFn) res
 	v := contextView{newResourceView(t, app, list, c).(*resourceView)}
 	{
 		v.extraActionsFn = v.extraActions
+		v.getTV().cleanseFn = v.cleanser
 		v.switchPage("ctx")
 	}
 	return &v
@@ -39,15 +40,19 @@ func (v *contextView) useCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *contextView) useContext(name string) error {
-	ctx := strings.TrimSpace(name)
-	if strings.HasSuffix(ctx, "*") {
-		ctx = strings.TrimRight(ctx, "*")
+func (*contextView) cleanser(s string) string {
+	name := strings.TrimSpace(s)
+	if strings.HasSuffix(name, "*") {
+		name = strings.TrimRight(name, "*")
 	}
-	if strings.HasSuffix(ctx, "(𝜟)") {
-		ctx = strings.TrimRight(ctx, "(𝜟)")
+	if strings.HasSuffix(name, "(𝜟)") {
+		name = strings.TrimRight(name, "(𝜟)")
 	}
+	return name
+}
 
+func (v *contextView) useContext(name string) error {
+	ctx := v.cleanser(name)
 	if err := v.list.Resource().(*resource.Context).Switch(ctx); err != nil {
 		return err
 	}
@@ -59,5 +64,6 @@ func (v *contextView) useContext(name string) error {
 	if tv, ok := v.GetPrimitive("ctx").(*tableView); ok {
 		tv.Select(0, 0)
 	}
+
 	return nil
 }

@@ -88,8 +88,7 @@ func (v *helpView) init(_ context.Context, _ string) {
 		{"k", "Up"},
 		{"j", "Down"},
 	}
-	fmt.Fprintln(v)
-	fmt.Fprintf(v, "🖲 [aqua::b]%s\n", "View Navigation")
+	fmt.Fprintf(v, "\n🤖 [aqua::b]%s\n", "View Navigation")
 	for _, h := range navigation {
 		fmt.Fprintf(v, "[pink::b]%9s [gray::]%s\n", h.key, h.description)
 	}
@@ -98,8 +97,7 @@ func (v *helpView) init(_ context.Context, _ string) {
 		{"?", "Help"},
 		{"a", "Aliases view"},
 	}
-	fmt.Fprintln(v)
-	fmt.Fprintf(v, "️️⁉️ [aqua::b]%s\n", "Help")
+	fmt.Fprintf(v, "️️\n😱 [aqua::b]%s\n", "Help")
 	for _, h := range views {
 		fmt.Fprintf(v, "[pink::b]%9s [gray::]%s\n", h.key, h.description)
 	}

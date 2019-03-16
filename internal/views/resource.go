@@ -57,7 +57,7 @@ func newResourceView(title string, app *appView, list resource.List, c colorerFn
 		Pages:      tview.NewPages(),
 	}
 
-	tv := newTableView(app, v.title, list.SortFn())
+	tv := newTableView(app, v.title)
 	{
 		tv.SetColorer(c)
 		tv.SetSelectionChangedFunc(v.selChanged)

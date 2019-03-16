@@ -2,7 +2,6 @@ package resource
 
 import (
 	"reflect"
-	"sort"
 
 	"github.com/derailed/k9s/internal/k8s"
 	"k8s.io/apimachinery/pkg/watch"
@@ -34,9 +33,6 @@ const (
 )
 
 type (
-	// SortFn provides for sorting items in  list.
-	SortFn func([]string)
-
 	// RowEvent represents a call for action after a resource reconciliation.
 	// Tracks whether a resource got added, deleted or updated.
 	RowEvent struct {
@@ -71,7 +67,6 @@ type (
 		GetName() string
 		Access(flag int) bool
 		HasXRay() bool
-		SortFn() SortFn
 	}
 
 	// Columnar tracks resources that can be diplayed in a tabular fashion.
@@ -84,6 +79,9 @@ type (
 
 	// Row represents a collection of string fields.
 	Row []string
+
+	// Rows represents a collection of rows.
+	Rows []Row
 
 	// Columnars a collection of columnars.
 	Columnars []Columnar
@@ -112,7 +110,6 @@ type (
 		xray            bool
 		api             Resource
 		cache           RowEvents
-		sortFn          func([]string)
 	}
 )
 
@@ -128,13 +125,6 @@ func newList(ns, name string, api Resource, v int) *list {
 		api:       api,
 		cache:     RowEvents{},
 	}
-}
-
-func (l *list) SortFn() SortFn {
-	if l.sortFn == nil {
-		return sort.Strings
-	}
-	return l.sortFn
 }
 
 func (l *list) HasXRay() bool {

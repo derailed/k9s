@@ -222,7 +222,9 @@ func (c *Config) NamespaceNames() ([]string, error) {
 	}
 	nn := make([]string, 0, len(ll))
 	for _, n := range ll {
-		nn = append(nn, n.(v1.Namespace).Name)
+		if ns, ok := n.(v1.Namespace); ok {
+			nn = append(nn, ns.Name)
+		}
 	}
 	return nn, nil
 }

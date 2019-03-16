@@ -90,16 +90,6 @@ func TestSecretMarshal(t *testing.T) {
 	assert.Equal(t, secretYaml(), ma)
 }
 
-func TestSecretListSort(t *testing.T) {
-	setup(t)
-
-	ca := NewMockCaller()
-	l := resource.NewSecretListWithArgs("blee", resource.NewSecretWithArgs(ca))
-	kk := []string{"c", "b", "a"}
-	l.SortFn()(kk)
-	assert.Equal(t, []string{"a", "b", "c"}, kk)
-}
-
 func TestSecretListHasName(t *testing.T) {
 	setup(t)
 

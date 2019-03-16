@@ -33,12 +33,12 @@ func (v *clusterInfoView) init() {
 	v.SetCell(row, 1, v.infoCell(cluster.UserName()))
 	row++
 
-	v.SetCell(row, 0, v.sectionCell("K9s Version"))
+	v.SetCell(row, 0, v.sectionCell("K9s Rev"))
 	v.SetCell(row, 1, v.infoCell(v.app.version))
 	row++
 
 	rev := cluster.Version()
-	v.SetCell(row, 0, v.sectionCell("K8s Version"))
+	v.SetCell(row, 0, v.sectionCell("K8s Rev"))
 	v.SetCell(row, 1, v.infoCell(rev))
 	row++
 

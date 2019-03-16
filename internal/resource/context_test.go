@@ -52,16 +52,6 @@ func TestCTXDelete(t *testing.T) {
 	ca.VerifyWasCalledOnce().Delete("", "fred")
 }
 
-func TestCTXListSort(t *testing.T) {
-	setup(t)
-
-	ca := NewMockSwitchableRes()
-	l := resource.NewContextListWithArgs("blee", resource.NewContextWithArgs(ca))
-	kk := []string{"c", "b", "a"}
-	l.SortFn()(kk)
-	assert.Equal(t, []string{"a", "b", "c"}, kk)
-}
-
 func TestCTXListHasName(t *testing.T) {
 	setup(t)
 

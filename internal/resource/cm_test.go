@@ -89,16 +89,6 @@ func TestCMMarshal(t *testing.T) {
 	assert.Equal(t, cmYaml(), ma)
 }
 
-func TestCMListSort(t *testing.T) {
-	setup(t)
-
-	ca := NewMockCaller()
-	l := resource.NewConfigMapListWithArgs("blee", resource.NewConfigMapWithArgs(ca))
-	kk := []string{"c", "b", "a"}
-	l.SortFn()(kk)
-	assert.Equal(t, []string{"a", "b", "c"}, kk)
-}
-
 func TestCMListHasName(t *testing.T) {
 	setup(t)
 

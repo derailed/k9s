@@ -128,15 +128,15 @@ func (v *menuView) buildMenuTable(hh hints) [][]string {
 	}
 
 	var row, col int
-	firstNS, firstCmd := true, true
+	firstCmd := true
 	maxKeys := make([]int, colCount+1)
 	for _, h := range hh {
 		isDigit := menuRX.MatchString(h.mnemonic)
-		if isDigit && firstNS {
-			row, col, firstNS = 0, col+1, false
-		}
+		// if isDigit && firstNS {
+		// 	row, col, firstNS = 0, 2, false
+		// }
 		if !isDigit && firstCmd {
-			row, col, firstCmd = 0, 0, false
+			row, col, firstCmd = 0, col+1, false
 		}
 		if maxKeys[col] < len(h.mnemonic) {
 			maxKeys[col] = len(h.mnemonic)
@@ -158,6 +158,7 @@ func (v *menuView) buildMenuTable(hh hints) [][]string {
 			strTable[row][col] = v.formatMenu(table[row][col], maxKeys[col])
 		}
 	}
+
 	return strTable
 }
 
@@ -165,6 +166,7 @@ func (*menuView) toMnemonic(s string) string {
 	if len(s) == 0 {
 		return s
 	}
+
 	return "<" + strings.ToLower(s) + ">"
 }
 
@@ -173,6 +175,7 @@ func (v *menuView) formatMenu(h hint, size int) string {
 	if err == nil {
 		return fmt.Sprintf(menuIndexFmt, i, resource.Truncate(h.description, 14))
 	}
+
 	menuFmt := " [dodgerblue::b]%-" + strconv.Itoa(size+2) + "s [white::d]%s "
 	return fmt.Sprintf(menuFmt, v.toMnemonic(h.mnemonic), h.description)
 }

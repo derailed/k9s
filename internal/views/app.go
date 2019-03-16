@@ -97,7 +97,7 @@ func (a *appView) Init(v string, rate int, flags *genericclioptions.ConfigFlags)
 	header := tview.NewFlex()
 	{
 		header.SetDirection(tview.FlexColumn)
-		header.AddItem(a.clusterInfoView, 55, 1, false)
+		header.AddItem(a.clusterInfoView, 35, 1, false)
 		header.AddItem(a.menuView, 0, 1, false)
 		header.AddItem(logoView(), 26, 1, false)
 	}

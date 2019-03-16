@@ -3,6 +3,7 @@ package views
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 	"sync"
 
@@ -19,6 +20,15 @@ const (
 )
 
 type (
+	sortFn    func(rows resource.Rows, sortCol sortColumn)
+	cleanseFn func(string) string
+
+	sortColumn struct {
+		index    int
+		colCount int
+		asc      bool
+	}
+
 	tableView struct {
 		*tview.Table
 
@@ -28,18 +38,20 @@ type (
 		refreshMX sync.Mutex
 		actions   keyActions
 		colorerFn colorerFn
-		sortFn    resource.SortFn
+		sortFn    sortFn
+		cleanseFn cleanseFn
 		data      resource.TableData
 		cmdBuff   *cmdBuff
+		sortBuff  *cmdBuff
 		tableMX   sync.Mutex
+		sortCol   sortColumn
 	}
 )
 
-func newTableView(app *appView, title string, sortFn resource.SortFn) *tableView {
-	v := tableView{app: app, Table: tview.NewTable()}
+func newTableView(app *appView, title string) *tableView {
+	v := tableView{app: app, Table: tview.NewTable(), sortCol: sortColumn{0, 0, true}}
 	{
 		v.baseTitle = title
-		v.sortFn = sortFn
 		v.actions = make(keyActions)
 		v.SetBorder(true)
 		v.SetBorderColor(tcell.ColorDodgerBlue)
@@ -53,9 +65,14 @@ func newTableView(app *appView, title string, sortFn resource.SortFn) *tableView
 		v.SetInputCapture(v.keyboard)
 	}
 
-	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd, false)
-	v.actions[tcell.KeyEnter] = newKeyAction("Search", v.filterCmd, false)
-	v.actions[tcell.KeyEscape] = newKeyAction("Reset Filter", v.resetCmd, false)
+	v.actions[KeyShiftI] = newKeyAction("Invert", v.sortInvertCmd, true)
+	v.actions[KeyShiftN] = newKeyAction("Sort Name", v.sortColCmd(0), true)
+	v.actions[KeyShiftA] = newKeyAction("Sort Age", v.sortColCmd(-1), true)
+
+	v.actions[KeySlash] = newKeyAction("Filter Mode", v.activateCmd, false)
+	v.actions[tcell.KeyEscape] = newKeyAction("Filter Reset", v.resetCmd, false)
+	v.actions[tcell.KeyEnter] = newKeyAction("Filter", v.filterCmd, false)
+
 	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[KeyG] = newKeyAction("Top", app.puntCmd, false)
 	v.actions[KeyShiftG] = newKeyAction("Bottom", app.puntCmd, false)
@@ -128,13 +145,45 @@ func (v *tableView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+func (v *tableView) nameColIndex() int {
+	col := 0
+	if v.currentNS == resource.AllNamespaces {
+		col++
+	}
+	return col
+}
+
+func (v *tableView) sortColCmd(col int) func(evt *tcell.EventKey) *tcell.EventKey {
+	return func(evt *tcell.EventKey) *tcell.EventKey {
+		if col == -1 {
+			v.sortCol.index, v.sortCol.asc = v.GetColumnCount()-1, true
+		} else {
+			v.sortCol.index, v.sortCol.asc = v.nameColIndex()+col, true
+		}
+
+		v.refresh()
+		return nil
+	}
+}
+
+func (v *tableView) sortNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
+	v.sortCol.index, v.sortCol.asc = 0, true
+	v.refresh()
+	return nil
+}
+
+func (v *tableView) sortInvertCmd(evt *tcell.EventKey) *tcell.EventKey {
+	v.sortCol.asc = !v.sortCol.asc
+	v.refresh()
+	return nil
+}
+
 func (v *tableView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.app.cmdView.inCmdMode() {
 		return evt
 	}
 
 	v.app.flash(flashInfo, "Filtering...")
-	log.Info().Msg("Entering filtering mode...")
 	v.cmdBuff.reset()
 	v.cmdBuff.setActive(true)
 	return nil
@@ -217,49 +266,151 @@ func (v *tableView) filtered() resource.TableData {
 	return filtered
 }
 
+func (v *tableView) displayCol(index int, name string) string {
+	if v.sortCol.index != index {
+		return name
+	}
+
+	order := "↓"
+	if v.sortCol.asc {
+		order = "↑"
+	}
+	return fmt.Sprintf("%s[green::]%s[::]", name, order)
+}
+
 func (v *tableView) doUpdate(data resource.TableData) {
-	v.Clear()
 	v.currentNS = data.Namespace
+	if v.currentNS == resource.AllNamespaces {
+		v.actions[KeyShiftG] = newKeyAction("Sort Namespace", v.sortNamespaceCmd, true)
+	} else {
+		delete(v.actions, KeyShiftS)
+	}
+	v.Clear()
+
+	// Going from namespace to non namespace or vice-versa?
+	switch {
+	case v.sortCol.colCount == 0:
+	case len(data.Header) > v.sortCol.colCount:
+		v.sortCol.index++
+	case len(data.Header) < v.sortCol.colCount:
+		v.sortCol.index--
+	}
+	v.sortCol.colCount = len(data.Header)
+	if v.sortCol.index < 0 {
+		v.sortCol.index = 0
+	}
 
 	var row int
 	for col, h := range data.Header {
-		c := tview.NewTableCell(h)
-		{
-			c.SetExpansion(3)
-			if len(h) == 0 {
-				c.SetExpansion(1)
-			}
-			c.SetTextColor(tcell.ColorWhite)
-		}
-		v.SetCell(row, col, c)
+		v.addHeaderCell(col, h)
 	}
 	row++
 
-	keys := make([]string, 0, len(data.Rows))
-	for k := range data.Rows {
-		keys = append(keys, k)
-	}
-	if v.sortFn != nil {
-		v.sortFn(keys)
-	}
+	keys := v.sortRows(data)
+	groupKeys := map[string][]string{}
 	for _, k := range keys {
-		fgColor := tcell.ColorGray
-		if v.colorerFn != nil {
-			fgColor = v.colorerFn(data.Namespace, data.Rows[k])
+		grp := data.Rows[k].Fields[v.sortCol.index]
+		if s, ok := groupKeys[grp]; ok {
+			s = append(s, k)
+			groupKeys[grp] = s
+		} else {
+			groupKeys[grp] = []string{k}
 		}
-		for col, f := range data.Rows[k].Fields {
-			c := tview.NewTableCell(deltas(data.Rows[k].Deltas[col], f))
-			{
-				c.SetExpansion(3)
-				if len(data.Header[col]) == 0 {
-					c.SetExpansion(1)
-				}
-				c.SetTextColor(fgColor)
-			}
-			v.SetCell(row, col, c)
-		}
-		row++
 	}
+
+	// Performs secondary to sort by name for each groups.
+	gKeys := make([]string, len(keys))
+	for k, v := range groupKeys {
+		sort.Strings(v)
+		gKeys = append(gKeys, k)
+	}
+	rs := groupSorter{gKeys, v.sortCol.asc}
+	sort.Sort(rs)
+
+	for _, gk := range gKeys {
+		for _, k := range groupKeys[gk] {
+			fgColor := tcell.ColorGray
+			if v.colorerFn != nil {
+				fgColor = v.colorerFn(data.Namespace, data.Rows[k])
+			}
+			for col, field := range data.Rows[k].Fields {
+				v.addBodyCell(row, col, field, data.Rows[k].Deltas[col], fgColor)
+			}
+			row++
+		}
+	}
+}
+
+func (v *tableView) addHeaderCell(col int, name string) {
+	c := tview.NewTableCell(v.displayCol(col, name))
+	{
+		c.SetExpansion(3)
+		if len(name) == 0 {
+			c.SetExpansion(1)
+		}
+		c.SetTextColor(tcell.ColorAntiqueWhite)
+	}
+	v.SetCell(0, col, c)
+}
+
+func (v *tableView) addBodyCell(row, col int, field, delta string, color tcell.Color) {
+	c := tview.NewTableCell(deltas(delta, field))
+	{
+		c.SetExpansion(3)
+		if len(v.GetCell(0, col).Text) == 0 {
+			c.SetExpansion(1)
+		}
+		c.SetTextColor(color)
+	}
+	v.SetCell(row, col, c)
+}
+
+func (v *tableView) defaultSort(rows resource.Rows) {
+	t := rowSorter{rows: rows, index: v.sortCol.index, asc: v.sortCol.asc}
+	sort.Sort(t)
+}
+
+func (v *tableView) sortRows(data resource.TableData) []string {
+	rows := make(resource.Rows, 0, len(data.Rows))
+	for _, r := range data.Rows {
+		rows = append(rows, r.Fields)
+	}
+
+	if v.sortFn != nil {
+		v.sortFn(rows, v.sortCol)
+	} else {
+		v.defaultSort(rows)
+	}
+
+	keys := make([]string, len(rows))
+	for i, r := range rows {
+		col, prefix := 0, v.currentNS
+		switch v.currentNS {
+		case resource.AllNamespaces:
+			col, prefix = 1, r[0]
+		case resource.NotNamespaced:
+			prefix = ""
+		}
+
+		key := r[col]
+		if v.cleanseFn != nil {
+			key = v.cleanseFn(key)
+		} else {
+			key = v.defaultColCleanse(key)
+		}
+
+		if len(prefix) == 0 {
+			keys[i] = key
+		} else {
+			keys[i] = prefix + "/" + key
+		}
+	}
+
+	return keys
+}
+
+func (*tableView) defaultColCleanse(s string) string {
+	return strings.TrimSpace(s)
 }
 
 func (v *tableView) resetTitle() {

@@ -3,7 +3,6 @@ package views
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strings"
 	"time"
 
@@ -25,17 +24,18 @@ type aliasView struct {
 }
 
 func newAliasView(app *appView) *aliasView {
-	v := aliasView{tableView: newTableView(app, aliasTitle, nil)}
+	v := aliasView{tableView: newTableView(app, aliasTitle)}
 	{
 		v.SetSelectedStyle(tcell.ColorWhite, tcell.ColorFuchsia, tcell.AttrNone)
 		v.colorerFn = aliasColorer
 		v.current = app.content.GetPrimitive("main").(igniter)
-		v.sortFn = v.sorterFn
 		v.currentNS = ""
 	}
 	v.actions[tcell.KeyEnter] = newKeyAction("Goto", v.gotoCmd, true)
 	v.actions[tcell.KeyEscape] = newKeyAction("Reset", v.resetCmd, false)
 	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd, false)
+	v.actions[KeyShiftR] = newKeyAction("Sort Resources", v.sortResourceCmd, true)
+	v.actions[KeyShiftG] = newKeyAction("Sort Groups", v.sortGroupCmd, true)
 
 	ctx, cancel := context.WithCancel(context.TODO())
 	v.cancel = cancel
@@ -55,10 +55,6 @@ func newAliasView(app *appView) *aliasView {
 	return &v
 }
 
-func (v *aliasView) sorterFn(ss []string) {
-	sort.Strings(ss)
-}
-
 // Init the view.
 func (v *aliasView) init(context.Context, string) {
 	v.update(v.hydrate())
@@ -68,6 +64,18 @@ func (v *aliasView) init(context.Context, string) {
 
 func (v *aliasView) getTitle() string {
 	return aliasTitle
+}
+
+func (v *aliasView) sortResourceCmd(evt *tcell.EventKey) *tcell.EventKey {
+	v.sortCol.index, v.sortCol.asc = 1, true
+	v.refresh()
+	return nil
+}
+
+func (v *aliasView) sortGroupCmd(evt *tcell.EventKey) *tcell.EventKey {
+	v.sortCol.index, v.sortCol.asc = 2, true
+	v.refresh()
+	return nil
 }
 
 func (v *aliasView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -123,9 +131,9 @@ func (v *aliasView) hydrate() resource.TableData {
 	cmds := helpCmds()
 
 	data := resource.TableData{
-		Header:    resource.Row{"ALIAS", "RESOURCE", "APIGROUP"},
+		Header:    resource.Row{"NAME", "RESOURCE", "APIGROUP"},
 		Rows:      make(resource.RowEvents, len(cmds)),
-		Namespace: "",
+		Namespace: resource.NotNamespaced,
 	}
 
 	for k := range cmds {
