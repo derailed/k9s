@@ -55,7 +55,7 @@ k9s -h
 # To get info about K9s runtime (logs, configs, etc..)
 k9s info
 # To run K9s in a given namespace
-k9s -n mybitchns
+k9s -n mycoolns
 # Start K9s in an existing KubeConfig context
 k9s --context coolCtx
 ```
@@ -92,7 +92,7 @@ k9s --context coolCtx
     currentCluster: minikube
     # Persists per cluster preferences for favorite namespaces and view.
     clusters:
-      bitchn:
+      cooln:
         namespace:
           active: coolio
           favorites:
