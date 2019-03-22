@@ -24,12 +24,12 @@ func TestEventListAccess(t *testing.T) {
 }
 
 func TestEventHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"", "NAME", "REASON", "SOURCE", "COUNT", "MESSAGE", "AGE"}, newEvent().Header(resource.DefaultNamespace))
+	assert.Equal(t, resource.Row{"NAME", "REASON", "SOURCE", "COUNT", "MESSAGE", "AGE"}, newEvent().Header(resource.DefaultNamespace))
 }
 
 func TestEventFields(t *testing.T) {
 	r := newEvent().Fields("blee")
-	assert.Equal(t, resource.Row{"😮", "fred", "blah", "", "1"}, r[:5])
+	assert.Equal(t, resource.Row{"fred", "blah", "", "1"}, r[:4])
 }
 
 func TestEventMarshal(t *testing.T) {
@@ -64,11 +64,11 @@ func TestEventListData(t *testing.T) {
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
 	assert.False(t, l.HasXRay())
 	row := td.Rows["blee/fred"]
-	assert.Equal(t, 7, len(row.Deltas))
+	assert.Equal(t, 6, len(row.Deltas))
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}
-	assert.Equal(t, resource.Row{"😮"}, row.Fields[:1])
+	assert.Equal(t, resource.Row{"fred"}, row.Fields[:1])
 }
 
 func TestEventListDescribe(t *testing.T) {

@@ -74,6 +74,8 @@ func newTableView(app *appView, title string) *tableView {
 	v.actions[tcell.KeyEnter] = newKeyAction("Filter", v.filterCmd, false)
 
 	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd, false)
+	v.actions[tcell.KeyBackspace] = newKeyAction("Erase", v.eraseCmd, false)
+	v.actions[tcell.KeyDelete] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[KeyG] = newKeyAction("Top", app.puntCmd, false)
 	v.actions[KeyShiftG] = newKeyAction("Bottom", app.puntCmd, false)
 	v.actions[KeyB] = newKeyAction("Down", v.pageDownCmd, false)

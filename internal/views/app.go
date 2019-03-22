@@ -84,6 +84,7 @@ func NewApp() *appView {
 	v.actions[tcell.KeyEnter] = newKeyAction("Goto", v.gotoCmd, false)
 	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[tcell.KeyBackspace] = newKeyAction("Erase", v.eraseCmd, false)
+	v.actions[tcell.KeyDelete] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[tcell.KeyTab] = newKeyAction("Focus", v.focusCmd, false)
 
 	return &v

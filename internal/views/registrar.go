@@ -176,6 +176,13 @@ func resourceViews() map[string]resCmd {
 			listFn:    resource.NewNamespaceList,
 			colorerFn: nsColorer,
 		},
+		"pdb": {
+			title:     "PodDiscruptionBudgets",
+			api:       "v1.beta1",
+			viewFn:    newResourceView,
+			listFn:    resource.NewPDBList,
+			colorerFn: pdbColorer,
+		},
 		"po": {
 			title:     "Pods",
 			api:       "",

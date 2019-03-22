@@ -142,7 +142,8 @@ func (r *Pod) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (c
 	stream, err := req.Stream()
 	blocked = false
 	if err != nil {
-		return cancel, fmt.Errorf("Log tail request failed for pod `%s/%s:%s", ns, n, co)
+		log.Error().Msgf("Tail logs failed `%s/%s:%s -- %v", ns, n, co, err)
+		return cancel, fmt.Errorf("%v", err)
 	}
 
 	go func() {

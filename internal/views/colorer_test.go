@@ -160,6 +160,35 @@ func TestDpColorer(t *testing.T) {
 	}
 }
 
+func TestPdbColorer(t *testing.T) {
+	var (
+		ns       = resource.Row{"blee", "fred", "1", "1", "1", "1", "1"}
+		nonNS    = ns[1:]
+		bustNS   = resource.Row{"blee", "fred", "1", "1", "1", "1", "2"}
+		bustNoNS = bustNS[1:]
+	)
+
+	uu := colorerUCs{
+		// Add AllNS
+		{"", &resource.RowEvent{Action: watch.Added, Fields: ns}, addColor},
+		// Add NS
+		{"blee", &resource.RowEvent{Action: watch.Added, Fields: nonNS}, addColor},
+		// Mod AllNS
+		{"", &resource.RowEvent{Action: watch.Modified, Fields: ns}, modColor},
+		// Mod NS
+		{"blee", &resource.RowEvent{Action: watch.Modified, Fields: nonNS}, modColor},
+		// Unchanged cool
+		{"", &resource.RowEvent{Action: resource.Unchanged, Fields: ns}, stdColor},
+		// Bust AllNS
+		{"", &resource.RowEvent{Action: resource.Unchanged, Fields: bustNS}, errColor},
+		// Bust NS
+		{"blee", &resource.RowEvent{Action: resource.Unchanged, Fields: bustNoNS}, errColor},
+	}
+	for _, u := range uu {
+		assert.Equal(t, u.e, pdbColorer(u.ns, u.r))
+	}
+}
+
 func TestPVColorer(t *testing.T) {
 	var (
 		pv     = resource.Row{"blee", "1G", "RO", "Duh", "Bound"}

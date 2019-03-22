@@ -106,6 +106,22 @@ func pvcColorer(ns string, r *resource.RowEvent) tcell.Color {
 	return c
 }
 
+func pdbColorer(ns string, r *resource.RowEvent) tcell.Color {
+	c := defaultColorer(ns, r)
+	if r.Action == watch.Added || r.Action == watch.Modified {
+		return c
+	}
+
+	markCol := 5
+	if ns != resource.AllNamespaces {
+		markCol = 4
+	}
+	if strings.TrimSpace(r.Fields[markCol]) != strings.TrimSpace(r.Fields[markCol+1]) {
+		return errColor
+	}
+	return stdColor
+}
+
 func dpColorer(ns string, r *resource.RowEvent) tcell.Color {
 	c := defaultColorer(ns, r)
 	if r.Action == watch.Added || r.Action == watch.Modified {

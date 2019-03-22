@@ -88,26 +88,26 @@ func (r *Event) Delete(path string) error {
 
 // Header return resource header.
 func (*Event) Header(ns string) Row {
-	ff := Row{""}
+	var ff Row
 	if ns == AllNamespaces {
 		ff = append(ff, "NAMESPACE")
 	}
 	return append(ff, "NAME", "REASON", "SOURCE", "COUNT", "MESSAGE", "AGE")
 }
 
+var rx = regexp.MustCompile(`(.+)\.(.+)`)
+
 // Fields returns display fields.
 func (r *Event) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
 	i := r.instance
 
-	ff = append(ff, r.toEmoji(i.Type, i.Reason))
 	if ns == AllNamespaces {
 		ff = append(ff, i.Namespace)
 	}
-	rx := regexp.MustCompile(`(.+)\.(.+)`)
+
 	return append(ff,
-		// i.Name,
-		rx.ReplaceAllString(i.Name, `$1`),
+		i.Name,
 		i.Reason,
 		i.Source.Component,
 		strconv.Itoa(int(i.Count)),

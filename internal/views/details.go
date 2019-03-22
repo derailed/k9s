@@ -57,6 +57,7 @@ func newDetailsView(app *appView, backFn actionHandler) *detailsView {
 	// v.actions[tcell.KeyEnter] = newKeyAction("Search", v.searchCmd)
 	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[tcell.KeyBackspace] = newKeyAction("Erase", v.eraseCmd, false)
+	v.actions[tcell.KeyDelete] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[tcell.KeyEscape] = newKeyAction("Back", v.backCmd, true)
 	v.actions[tcell.KeyTab] = newKeyAction("Next Match", v.nextCmd, false)
 	v.actions[tcell.KeyBacktab] = newKeyAction("Previous Match", v.prevCmd, false)
