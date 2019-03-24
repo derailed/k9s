@@ -5,28 +5,26 @@ import (
 )
 
 // DaemonSet represents a Kubernetes DaemonSet
-type DaemonSet struct{}
+type DaemonSet struct {
+	Connection
+}
 
 // NewDaemonSet returns a new DaemonSet.
-func NewDaemonSet() Res {
-	return &DaemonSet{}
+func NewDaemonSet(c Connection) Cruder {
+	return &DaemonSet{c}
 }
 
 // Get a DaemonSet.
-func (*DaemonSet) Get(ns, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().ExtensionsV1beta1().DaemonSets(ns).Get(n, opts)
+func (d *DaemonSet) Get(ns, n string) (interface{}, error) {
+	return d.DialOrDie().ExtensionsV1beta1().DaemonSets(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all DaemonSets in a given namespace.
-func (*DaemonSet) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().ExtensionsV1beta1().DaemonSets(ns).List(opts)
+func (d *DaemonSet) List(ns string) (Collection, error) {
+	rr, err := d.DialOrDie().ExtensionsV1beta1().DaemonSets(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -36,7 +34,6 @@ func (*DaemonSet) List(ns string) (Collection, error) {
 }
 
 // Delete a DaemonSet.
-func (*DaemonSet) Delete(ns, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().ExtensionsV1beta1().DaemonSets(ns).Delete(n, &opts)
+func (d *DaemonSet) Delete(ns, n string) error {
+	return d.DialOrDie().ExtensionsV1beta1().DaemonSets(ns).Delete(n, nil)
 }

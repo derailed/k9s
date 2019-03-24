@@ -14,9 +14,6 @@ import (
 
 const defaultNamespace = "default"
 
-// KubeConfig represents kubeconfig settings.
-var KubeConfig *Config
-
 // Config tracks a kubernetes configuration.
 type Config struct {
 	flags          *genericclioptions.ConfigFlags
@@ -28,8 +25,7 @@ type Config struct {
 
 // NewConfig returns a new k8s config or an error if the flags are invalid.
 func NewConfig(f *genericclioptions.ConfigFlags) *Config {
-	KubeConfig = &Config{flags: f}
-	return KubeConfig
+	return &Config{flags: f}
 }
 
 // Flags returns configuration flags.
@@ -60,6 +56,7 @@ func (c *Config) CurrentContextName() (string, error) {
 	if isSet(c.flags.Context) {
 		return *c.flags.Context, nil
 	}
+
 	cfg, err := c.RawConfig()
 	if err != nil {
 		return "", err
@@ -82,11 +79,11 @@ func (c *Config) GetContext(n string) (*clientcmdapi.Context, error) {
 
 // Contexts fetch all available contexts.
 func (c *Config) Contexts() (map[string]*clientcmdapi.Context, error) {
-	var cc map[string]*clientcmdapi.Context
 	cfg, err := c.RawConfig()
 	if err != nil {
-		return cc, err
+		return nil, err
 	}
+
 	return cfg.Contexts, nil
 }
 
@@ -97,18 +94,18 @@ func (c *Config) DelContext(n string) error {
 		return err
 	}
 	delete(cfg.Contexts, n)
+
 	return clientcmd.ModifyConfig(c.clientConfig.ConfigAccess(), cfg, true)
 }
 
 // ContextNames fetch all available contexts.
 func (c *Config) ContextNames() ([]string, error) {
-	var cc []string
 	cfg, err := c.RawConfig()
 	if err != nil {
-		return cc, err
+		return nil, err
 	}
 
-	cc = make([]string, 0, len(cfg.Contexts))
+	cc := make([]string, 0, len(cfg.Contexts))
 	for n := range cfg.Contexts {
 		cc = append(cc, n)
 	}
@@ -121,6 +118,7 @@ func (c *Config) ClusterNameFromContext(ctx string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	if ctx, ok := cfg.Contexts[ctx]; ok {
 		return ctx.Cluster, nil
 	}
@@ -137,32 +135,31 @@ func (c *Config) CurrentClusterName() (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	current := cfg.CurrentContext
 	if isSet(c.flags.Context) {
 		current = *c.flags.Context
 	}
+
 	if ctx, ok := cfg.Contexts[current]; ok {
 		return ctx.Cluster, nil
 	}
+
 	return "", errors.New("unable to locate current cluster")
 }
 
 // ClusterNames fetch all kubeconfig defined clusters.
 func (c *Config) ClusterNames() ([]string, error) {
-	var cc []string
-	if err := c.configFromFlags(); err != nil {
-		return cc, err
-	}
-
 	cfg, err := c.RawConfig()
 	if err != nil {
-		return cc, err
+		return nil, err
 	}
 
-	cc = make([]string, 0, len(cfg.Clusters))
+	cc := make([]string, 0, len(cfg.Clusters))
 	for name := range cfg.Clusters {
 		cc = append(cc, name)
 	}
+
 	return cc, nil
 }
 
@@ -171,6 +168,7 @@ func (c *Config) CurrentUserName() (string, error) {
 	if isSet(c.flags.Impersonate) {
 		return *c.flags.Impersonate, nil
 	}
+
 	if isSet(c.flags.AuthInfoName) {
 		return *c.flags.AuthInfoName, nil
 	}
@@ -187,6 +185,7 @@ func (c *Config) CurrentUserName() (string, error) {
 	if ctx, ok := cfg.Contexts[current]; ok {
 		return ctx.AuthInfo, nil
 	}
+
 	return "", errors.New("unable to locate current cluster")
 }
 
@@ -211,48 +210,39 @@ func (c *Config) CurrentNamespaceName() (string, error) {
 			return ctx.Namespace, nil
 		}
 	}
+
 	return "", fmt.Errorf("No active namespace specified")
 }
 
 // NamespaceNames fetch all available namespaces on current cluster.
-func (c *Config) NamespaceNames() ([]string, error) {
-	ll, err := NewNamespace().List("")
-	if err != nil {
-		return []string{}, err
+func (c *Config) NamespaceNames(nns []v1.Namespace) []string {
+	nn := make([]string, 0, len(nns))
+	for _, ns := range nns {
+		nn = append(nn, ns.Name)
 	}
-	nn := make([]string, 0, len(ll))
-	for _, n := range ll {
-		if ns, ok := n.(v1.Namespace); ok {
-			nn = append(nn, ns.Name)
-		}
-	}
-	return nn, nil
+
+	return nn
 }
 
 // ConfigAccess return the current kubeconfig api server access configuration.
 func (c *Config) ConfigAccess() (clientcmd.ConfigAccess, error) {
-	var acc clientcmd.ConfigAccess
-	if err := c.configFromFlags(); err != nil {
-		return acc, err
-	}
+	c.ensureConfig()
 	return c.clientConfig.ConfigAccess(), nil
 }
 
 // RawConfig fetch the current kubeconfig with no overrides.
 func (c *Config) RawConfig() (clientcmdapi.Config, error) {
 	if c.rawConfig != nil {
-		if c.rawConfig.CurrentContext != c.currentContext {
-			log.Debug().Msgf("Context switch detected... %s vs %s", c.rawConfig.CurrentContext, c.currentContext)
-			c.currentContext = c.rawConfig.CurrentContext
-			c.reset()
+		if c.rawConfig.CurrentContext == c.currentContext {
+			return *c.rawConfig, nil
 		}
+		log.Debug().Msgf("Context switch detected... %s vs %s", c.rawConfig.CurrentContext, c.currentContext)
+		c.currentContext = c.rawConfig.CurrentContext
+		c.reset()
 	}
 
 	if c.rawConfig == nil {
-		if err := c.configFromFlags(); err != nil {
-			return clientcmdapi.Config{}, err
-		}
-		log.Debug().Msg("Loading RawConfig...")
+		c.ensureConfig()
 		cfg, err := c.clientConfig.RawConfig()
 		if err != nil {
 			return cfg, err
@@ -260,35 +250,37 @@ func (c *Config) RawConfig() (clientcmdapi.Config, error) {
 		c.rawConfig = &cfg
 		c.currentContext = cfg.CurrentContext
 	}
+
 	return *c.rawConfig, nil
 }
 
 // RESTConfig fetch the current REST api service connection.
 func (c *Config) RESTConfig() (*restclient.Config, error) {
-	var err error
-	if c.restConfig == nil {
-		if err = c.configFromFlags(); err != nil {
-			return nil, err
-		}
-		c.restConfig, err = c.flags.ToRESTConfig()
-		if err != nil {
-			return c.restConfig, err
-		}
-		log.Debug().Msgf("Connecting to API Server %s", c.restConfig.Host)
+	if c.restConfig != nil {
+		return c.restConfig, nil
 	}
+
+	var err error
+	if c.restConfig, err = c.flags.ToRESTConfig(); err != nil {
+		return nil, err
+	}
+	log.Debug().Msgf("Connecting to API Server %s", c.restConfig.Host)
+
 	return c.restConfig, nil
+}
+
+func (c *Config) ensureConfig() {
+	if c.clientConfig != nil {
+		return
+	}
+
+	log.Debug().Msg("Loading raw config from flags...")
+	c.clientConfig = c.flags.ToRawKubeConfigLoader()
+	return
 }
 
 // ----------------------------------------------------------------------------
 // Helpers...
-
-func (c *Config) configFromFlags() error {
-	if c.clientConfig == nil {
-		log.Debug().Msg("Loading raw config from flags...")
-		c.clientConfig = c.flags.ToRawKubeConfigLoader()
-	}
-	return nil
-}
 
 func isSet(s *string) bool {
 	return s != nil && len(*s) != 0

@@ -5,28 +5,26 @@ import (
 )
 
 // Deployment represents a Kubernetes Deployment.
-type Deployment struct{}
+type Deployment struct {
+	Connection
+}
 
 // NewDeployment returns a new Deployment.
-func NewDeployment() Res {
-	return &Deployment{}
+func NewDeployment(c Connection) Cruder {
+	return &Deployment{c}
 }
 
 // Get a deployment.
-func (*Deployment) Get(ns, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().Apps().Deployments(ns).Get(n, opts)
+func (d *Deployment) Get(ns, n string) (interface{}, error) {
+	return d.DialOrDie().Apps().Deployments(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all Deployments in a given namespace.
-func (*Deployment) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().Apps().Deployments(ns).List(opts)
+func (d *Deployment) List(ns string) (Collection, error) {
+	rr, err := d.DialOrDie().Apps().Deployments(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -36,7 +34,6 @@ func (*Deployment) List(ns string) (Collection, error) {
 }
 
 // Delete a Deployment.
-func (*Deployment) Delete(ns, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().Apps().Deployments(ns).Delete(n, &opts)
+func (d *Deployment) Delete(ns, n string) error {
+	return d.DialOrDie().Apps().Deployments(ns).Delete(n, nil)
 }

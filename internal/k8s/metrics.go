@@ -1,218 +1,145 @@
 package k8s
 
 import (
-	"fmt"
-	"math"
-	"path"
-
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	metricsapi "k8s.io/metrics/pkg/apis/metrics"
-	metricsV1beta1api "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 type (
 	// MetricsServer serves cluster metrics for nodes and pods.
-	MetricsServer struct{}
-
-	// Metric tracks resource metrics.
-	Metric struct {
-		CPU      string
-		Mem      string
-		AvailCPU string
-		AvailMem string
+	MetricsServer struct {
+		Connection
 	}
+
+	// NodeMetrics describes raw node metrics.
+	NodeMetrics struct {
+		CurrentCPU int64
+		CurrentMEM float64
+		AvailCPU   int64
+		AvailMEM   float64
+		TotalCPU   int64
+		TotalMEM   float64
+	}
+
+	// PodMetrics represent an aggregation of all pod containers metrics.
+	PodMetrics struct {
+		CurrentCPU int64
+		CurrentMEM float64
+	}
+
+	// ClusterMetrics summarizes total node metrics as percentages.
+	ClusterMetrics struct {
+		PercCPU float64
+		PercMEM float64
+	}
+
+	// NodesMetrics tracks usage metrics per nodes.
+	NodesMetrics map[string]NodeMetrics
+
+	// PodsMetrics tracks usage metrics per pods.
+	PodsMetrics map[string]PodMetrics
 )
 
 // NewMetricsServer return a metric server instance.
-func NewMetricsServer() *MetricsServer {
-	return &MetricsServer{}
+func NewMetricsServer(c Connection) *MetricsServer {
+	return &MetricsServer{c}
 }
 
-// NodeMetrics retrieves all nodes metrics
-func (m *MetricsServer) NodeMetrics() (Metric, error) {
-	var mx Metric
-
-	opts := metav1.ListOptions{}
-	nn, err := conn.dialOrDie().CoreV1().Nodes().List(opts)
-	if err != nil {
-		log.Warn().Msgf("%s", err)
-		return mx, err
-	}
-
-	nods := make([]string, len(nn.Items))
-	var maxCPU, maxMem float64
-	for i, n := range nn.Items {
-		nods[i] = n.Name
-		c := n.Status.Allocatable["cpu"]
-		maxCPU += float64(c.MilliValue())
-		m := n.Status.Allocatable["memory"]
-		maxMem += float64(m.Value() / (1024 * 1024))
-	}
-
-	mm, err := m.getNodeMetrics()
-	if err != nil {
-		log.Warn().Msgf("%s", err)
-		return mx, err
-	}
-
-	var cpu, mem float64
-	for _, n := range nods {
-		for _, m := range mm.Items {
-			if m.Name == n {
-				cpu += float64(m.Usage.Cpu().MilliValue())
-				mem += float64(m.Usage.Memory().Value() / (1024 * 1024))
-			}
-		}
-	}
-	mx = Metric{
-		CPU: fmt.Sprintf("%0.f%%", math.Round((cpu/maxCPU)*100)),
-		Mem: fmt.Sprintf("%0.f%%", math.Round((mem/maxMem)*100)),
-	}
-
-	return mx, nil
-}
-
-// PodMetrics retrieves all pods metrics
-func (m *MetricsServer) PodMetrics() (map[string]Metric, error) {
-	mx := map[string]Metric{}
-
-	mm, err := m.getPodMetrics()
-	if err != nil {
-		log.Warn().Msgf("%s", err)
-		return mx, err
-	}
-
-	for _, m := range mm.Items {
-		var cpu, mem int64
-		for _, c := range m.Containers {
-			cpu += c.Usage.Cpu().MilliValue()
-			mem += c.Usage.Memory().Value() / (1024 * 1024)
-		}
-		pa := path.Join(m.Namespace, m.Name)
-		mx[pa] = Metric{CPU: fmt.Sprintf("%dm", cpu), Mem: fmt.Sprintf("%dMi", mem)}
-	}
-
-	return mx, nil
-}
-
-// PerNodeMetrics retrieves all nodes metrics
-func (m *MetricsServer) PerNodeMetrics(nn []v1.Node) (map[string]Metric, error) {
-	mx := map[string]Metric{}
-
-	mm, err := m.getNodeMetrics()
-	if err != nil {
-		log.Warn().Msgf("%s", err)
-		return mx, err
-	}
-
-	for _, n := range nn {
-		acpu := n.Status.Allocatable["cpu"]
-		amem := n.Status.Allocatable["memory"]
-		var cpu, mem int64
-		for _, m := range mm.Items {
-			if m.Name == n.Name {
-				cpu += m.Usage.Cpu().MilliValue()
-				mem += m.Usage.Memory().Value() / (1024 * 1024)
-			}
-		}
-		mx[n.Name] = Metric{
-			CPU:      fmt.Sprintf("%dm", cpu),
-			Mem:      fmt.Sprintf("%dMi", mem),
-			AvailCPU: fmt.Sprintf("%dm", acpu.MilliValue()),
-			AvailMem: fmt.Sprintf("%dMi", amem.Value()/(1024*1024)),
+// NodesMetrics retrieves metrics for a given set of nodes.
+func (m *MetricsServer) NodesMetrics(nodes []v1.Node, metrics []mv1beta1.NodeMetrics, mmx NodesMetrics) {
+	for _, n := range nodes {
+		mmx[n.Name] = NodeMetrics{
+			AvailCPU: n.Status.Allocatable.Cpu().MilliValue(),
+			AvailMEM: asMi(n.Status.Allocatable.Memory().Value()),
+			TotalCPU: n.Status.Capacity.Cpu().MilliValue(),
+			TotalMEM: asMi(n.Status.Capacity.Memory().Value()),
 		}
 	}
 
-	return mx, nil
+	for _, c := range metrics {
+		if mx, ok := mmx[c.Name]; ok {
+			mx.CurrentCPU = c.Usage.Cpu().MilliValue()
+			mx.CurrentMEM = asMi(c.Usage.Memory().Value())
+			mmx[c.Name] = mx
+		}
+	}
 }
 
-func (m *MetricsServer) getPodMetrics() (*metricsapi.PodMetricsList, error) {
-	if conn.hasMetricsServer() {
-		return m.podMetricsViaService()
+// ClusterLoad retrieves all cluster nodes metrics.
+func (m *MetricsServer) ClusterLoad(nodes []v1.Node, metrics []mv1beta1.NodeMetrics) ClusterMetrics {
+	nodeMetrics := make(NodesMetrics, len(nodes))
+
+	for _, n := range nodes {
+		nodeMetrics[n.Name] = NodeMetrics{
+			AvailCPU: n.Status.Allocatable.Cpu().MilliValue(),
+			AvailMEM: asMi(n.Status.Allocatable.Memory().Value()),
+			TotalCPU: n.Status.Capacity.Cpu().MilliValue(),
+			TotalMEM: asMi(n.Status.Capacity.Memory().Value()),
+		}
 	}
 
-	var mx *metricsapi.PodMetricsList
-	conn, err := conn.heapsterDial()
-	if err != nil {
-		log.Warn().Msgf("%s", err)
-		return mx, err
+	for _, mx := range metrics {
+		if m, ok := nodeMetrics[mx.Name]; ok {
+			m.CurrentCPU = mx.Usage.Cpu().MilliValue()
+			m.CurrentMEM = asMi(mx.Usage.Memory().Value())
+			nodeMetrics[mx.Name] = m
+		}
 	}
 
-	return conn.GetPodMetrics("", "", true, labels.Everything())
+	var cpu, tcpu, mem, tmem float64
+	for _, mx := range nodeMetrics {
+		cpu += float64(mx.CurrentCPU)
+		tcpu += float64(mx.TotalCPU)
+		mem += mx.CurrentMEM
+		tmem += mx.TotalMEM
+	}
+
+	return ClusterMetrics{PercCPU: toPerc(cpu, tcpu), PercMEM: toPerc(mem, tmem)}
 }
 
-func (m *MetricsServer) getNodeMetrics() (*metricsapi.NodeMetricsList, error) {
-	if conn.hasMetricsServer() {
-		return m.nodeMetricsViaService()
-	}
+// // HasMetrics check if cluster has a metrics server.
+// func (m *MetricsServer) HasMetrics() bool {
+// 	return m.HasMetrics()
+// }
 
-	var mx *metricsapi.NodeMetricsList
-	conn, err := conn.heapsterDial()
+// FetchNodesMetrics return all metrics for pods in a given namespace.
+func (m *MetricsServer) FetchNodesMetrics() ([]mv1beta1.NodeMetrics, error) {
+	client, err := m.MXDial()
 	if err != nil {
-		log.Warn().Msgf("%s", err)
-		return mx, err
-	}
-
-	return conn.GetNodeMetrics("", labels.Everything().String())
-}
-
-func (*MetricsServer) nodeMetricsViaService() (*metricsapi.NodeMetricsList, error) {
-	var mx *metricsapi.NodeMetricsList
-
-	clt, err := conn.mxsDial()
-	if err != nil {
-		log.Warn().Msgf("%s", err)
-		return mx, err
-	}
-
-	selector := labels.Everything()
-	var versionedMetrics *metricsV1beta1api.NodeMetricsList
-	mc := clt.Metrics()
-	nm := mc.NodeMetricses()
-	versionedMetrics, err = nm.List(metav1.ListOptions{LabelSelector: selector.String()})
-	if err != nil {
-		log.Warn().Msgf("%s", err)
 		return nil, err
 	}
 
-	metrics := &metricsapi.NodeMetricsList{}
-	err = metricsV1beta1api.Convert_v1beta1_NodeMetricsList_To_metrics_NodeMetricsList(versionedMetrics, metrics, nil)
+	list, err := client.Metrics().NodeMetricses().List(metav1.ListOptions{})
 	if err != nil {
-		log.Warn().Msgf("%s", err)
 		return nil, err
 	}
-
-	return metrics, nil
+	return list.Items, nil
 }
 
-func (*MetricsServer) podMetricsViaService() (*metricsapi.PodMetricsList, error) {
-	var mx *metricsapi.PodMetricsList
-
-	clt, err := conn.mxsDial()
+// FetchPodsMetrics return all metrics for pods in a given namespace.
+func (m *MetricsServer) FetchPodsMetrics(ns string) ([]mv1beta1.PodMetrics, error) {
+	client, err := m.MXDial()
 	if err != nil {
-		log.Warn().Msgf("%s", err)
-		return mx, err
-	}
-
-	selector := labels.Everything()
-	var versionedMetrics *metricsV1beta1api.PodMetricsList
-	mc := clt.Metrics()
-	nm := mc.PodMetricses("")
-	versionedMetrics, err = nm.List(metav1.ListOptions{LabelSelector: selector.String()})
-	if err != nil {
-		log.Warn().Msgf("%s", err)
 		return nil, err
 	}
 
-	metrics := &metricsapi.PodMetricsList{}
-	err = metricsV1beta1api.Convert_v1beta1_PodMetricsList_To_metrics_PodMetricsList(versionedMetrics, metrics, nil)
+	list, err := client.Metrics().PodMetricses(ns).List(metav1.ListOptions{})
 	if err != nil {
-		log.Warn().Msgf("%s", err)
 		return nil, err
 	}
+	return list.Items, nil
+}
 
-	return metrics, nil
+// PodsMetrics retrieves metrics for all pods in a given namespace.
+func (m *MetricsServer) PodsMetrics(pods []mv1beta1.PodMetrics, mmx PodsMetrics) {
+	// Compute all pod's containers metrics.
+	for _, p := range pods {
+		var mx PodMetrics
+		for _, c := range p.Containers {
+			mx.CurrentCPU += c.Usage.Cpu().MilliValue()
+			mx.CurrentMEM += asMi(c.Usage.Memory().Value())
+		}
+		mmx[p.Namespace+"/"+p.Name] = mx
+	}
 }

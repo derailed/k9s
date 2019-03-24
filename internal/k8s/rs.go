@@ -5,28 +5,26 @@ import (
 )
 
 // ReplicaSet represents a Kubernetes ReplicaSet.
-type ReplicaSet struct{}
+type ReplicaSet struct {
+	Connection
+}
 
 // NewReplicaSet returns a new ReplicaSet.
-func NewReplicaSet() Res {
-	return &ReplicaSet{}
+func NewReplicaSet(c Connection) Cruder {
+	return &ReplicaSet{c}
 }
 
 // Get a ReplicaSet.
-func (*ReplicaSet) Get(ns, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().Apps().ReplicaSets(ns).Get(n, opts)
+func (r *ReplicaSet) Get(ns, n string) (interface{}, error) {
+	return r.DialOrDie().Apps().ReplicaSets(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all ReplicaSets in a given namespace.
-func (*ReplicaSet) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().Apps().ReplicaSets(ns).List(opts)
+func (r *ReplicaSet) List(ns string) (Collection, error) {
+	rr, err := r.DialOrDie().Apps().ReplicaSets(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -36,7 +34,6 @@ func (*ReplicaSet) List(ns string) (Collection, error) {
 }
 
 // Delete a ReplicaSet.
-func (*ReplicaSet) Delete(ns, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().Apps().ReplicaSets(ns).Delete(n, &opts)
+func (r *ReplicaSet) Delete(ns, n string) error {
+	return r.DialOrDie().Apps().ReplicaSets(ns).Delete(n, nil)
 }

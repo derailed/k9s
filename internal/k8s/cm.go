@@ -5,28 +5,26 @@ import (
 )
 
 // ConfigMap represents a Kubernetes ConfigMap
-type ConfigMap struct{}
+type ConfigMap struct {
+	Connection
+}
 
 // NewConfigMap returns a new ConfigMap.
-func NewConfigMap() Res {
-	return &ConfigMap{}
+func NewConfigMap(c Connection) Cruder {
+	return &ConfigMap{c}
 }
 
 // Get a ConfigMap.
 func (c *ConfigMap) Get(ns, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().CoreV1().ConfigMaps(ns).Get(n, opts)
+	return c.DialOrDie().CoreV1().ConfigMaps(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all ConfigMaps in a given namespace.
 func (c *ConfigMap) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().CoreV1().ConfigMaps(ns).List(opts)
+	rr, err := c.DialOrDie().CoreV1().ConfigMaps(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -37,6 +35,5 @@ func (c *ConfigMap) List(ns string) (Collection, error) {
 
 // Delete a ConfigMap.
 func (c *ConfigMap) Delete(ns, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().CoreV1().ConfigMaps(ns).Delete(n, &opts)
+	return c.DialOrDie().CoreV1().ConfigMaps(ns).Delete(n, nil)
 }

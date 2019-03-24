@@ -5,28 +5,26 @@ import (
 )
 
 // PodDisruptionBudget represents a PodDisruptionBudget Kubernetes resource.
-type PodDisruptionBudget struct{}
+type PodDisruptionBudget struct {
+	Connection
+}
 
 // NewPodDisruptionBudget returns a new PodDisruptionBudget.
-func NewPodDisruptionBudget() Res {
-	return &PodDisruptionBudget{}
+func NewPodDisruptionBudget(c Connection) Cruder {
+	return &PodDisruptionBudget{c}
 }
 
 // Get a pdb.
-func (*PodDisruptionBudget) Get(ns, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().PolicyV1beta1().PodDisruptionBudgets(ns).Get(n, opts)
+func (p *PodDisruptionBudget) Get(ns, n string) (interface{}, error) {
+	return p.DialOrDie().PolicyV1beta1().PodDisruptionBudgets(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all pdbs in a given namespace.
-func (*PodDisruptionBudget) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().PolicyV1beta1().PodDisruptionBudgets(ns).List(opts)
+func (p *PodDisruptionBudget) List(ns string) (Collection, error) {
+	rr, err := p.DialOrDie().PolicyV1beta1().PodDisruptionBudgets(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -36,7 +34,6 @@ func (*PodDisruptionBudget) List(ns string) (Collection, error) {
 }
 
 // Delete a pdb.
-func (*PodDisruptionBudget) Delete(ns, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().PolicyV1beta1().PodDisruptionBudgets(ns).Delete(n, &opts)
+func (p *PodDisruptionBudget) Delete(ns, n string) error {
+	return p.DialOrDie().PolicyV1beta1().PodDisruptionBudgets(ns).Delete(n, nil)
 }

@@ -5,41 +5,35 @@ import (
 )
 
 // StatefulSet manages a Kubernetes StatefulSet.
-type StatefulSet struct{}
+type StatefulSet struct {
+	Connection
+}
 
 // NewStatefulSet instantiates a new StatefulSet.
-func NewStatefulSet() Res {
-	return &StatefulSet{}
+func NewStatefulSet(c Connection) Cruder {
+	return &StatefulSet{c}
 }
 
 // Get a StatefulSet.
-func (*StatefulSet) Get(ns, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	o, err := conn.dialOrDie().AppsV1().StatefulSets(ns).Get(n, opts)
-	if err != nil {
-		return o, err
-	}
-	return o, nil
+func (s *StatefulSet) Get(ns, n string) (interface{}, error) {
+	return s.DialOrDie().AppsV1().StatefulSets(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all StatefulSets in a given namespace.
-func (*StatefulSet) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().AppsV1().StatefulSets(ns).List(opts)
+func (s *StatefulSet) List(ns string) (Collection, error) {
+	rr, err := s.DialOrDie().AppsV1().StatefulSets(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
 	}
+
 	return cc, nil
 }
 
 // Delete a StatefulSet.
-func (*StatefulSet) Delete(ns, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().AppsV1().StatefulSets(ns).Delete(n, &opts)
+func (s *StatefulSet) Delete(ns, n string) error {
+	return s.DialOrDie().AppsV1().StatefulSets(ns).Delete(n, nil)
 }

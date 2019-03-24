@@ -5,32 +5,26 @@ import (
 )
 
 // ServiceAccount manages a Kubernetes ServiceAccount.
-type ServiceAccount struct{}
+type ServiceAccount struct {
+	Connection
+}
 
 // NewServiceAccount instantiates a new ServiceAccount.
-func NewServiceAccount() Res {
-	return &ServiceAccount{}
+func NewServiceAccount(c Connection) Cruder {
+	return &ServiceAccount{c}
 }
 
 // Get a ServiceAccount.
-func (*ServiceAccount) Get(ns, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	o, err := conn.dialOrDie().CoreV1().ServiceAccounts(ns).Get(n, opts)
-	if err != nil {
-		return o, err
-	}
-	return o, nil
+func (s *ServiceAccount) Get(ns, n string) (interface{}, error) {
+	return s.DialOrDie().CoreV1().ServiceAccounts(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all ServiceAccounts in a given namespace.
-func (*ServiceAccount) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().CoreV1().ServiceAccounts(ns).List(opts)
+func (s *ServiceAccount) List(ns string) (Collection, error) {
+	rr, err := s.DialOrDie().CoreV1().ServiceAccounts(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -40,7 +34,6 @@ func (*ServiceAccount) List(ns string) (Collection, error) {
 }
 
 // Delete a ServiceAccount.
-func (*ServiceAccount) Delete(ns, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().CoreV1().ServiceAccounts(ns).Delete(n, &opts)
+func (s *ServiceAccount) Delete(ns, n string) error {
+	return s.DialOrDie().CoreV1().ServiceAccounts(ns).Delete(n, nil)
 }

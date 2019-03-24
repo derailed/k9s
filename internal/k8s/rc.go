@@ -5,28 +5,26 @@ import (
 )
 
 // ReplicationController represents a Kubernetes service.
-type ReplicationController struct{}
+type ReplicationController struct {
+	Connection
+}
 
 // NewReplicationController returns a new ReplicationController.
-func NewReplicationController() Res {
-	return &ReplicationController{}
+func NewReplicationController(c Connection) Cruder {
+	return &ReplicationController{c}
 }
 
 // Get a RC.
-func (*ReplicationController) Get(ns, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().Core().ReplicationControllers(ns).Get(n, opts)
+func (r *ReplicationController) Get(ns, n string) (interface{}, error) {
+	return r.DialOrDie().Core().ReplicationControllers(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all RCs in a given namespace.
-func (*ReplicationController) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().Core().ReplicationControllers(ns).List(opts)
+func (r *ReplicationController) List(ns string) (Collection, error) {
+	rr, err := r.DialOrDie().Core().ReplicationControllers(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -36,7 +34,6 @@ func (*ReplicationController) List(ns string) (Collection, error) {
 }
 
 // Delete a RC.
-func (*ReplicationController) Delete(ns, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().Core().ReplicationControllers(ns).Delete(n, &opts)
+func (r *ReplicationController) Delete(ns, n string) error {
+	return r.DialOrDie().Core().ReplicationControllers(ns).Delete(n, nil)
 }

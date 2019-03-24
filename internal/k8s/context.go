@@ -9,7 +9,7 @@ import (
 
 // ContextRes represents a Kubernetes clusters configurations.
 type ContextRes interface {
-	Res
+	Cruder
 	Switch(n string) error
 }
 
@@ -17,11 +17,17 @@ type ContextRes interface {
 type NamedContext struct {
 	Name    string
 	Context *api.Context
+	config  *Config
+}
+
+// NewNamedContext returns a new named context.
+func NewNamedContext(c *Config, n string, ctx *api.Context) *NamedContext {
+	return &NamedContext{Name: n, Context: ctx, config: c}
 }
 
 // MustCurrentContextName return the active context name.
 func (c *NamedContext) MustCurrentContextName() string {
-	cl, err := conn.config.CurrentContextName()
+	cl, err := c.config.CurrentContextName()
 	if err != nil {
 		panic(err)
 	}
@@ -29,16 +35,18 @@ func (c *NamedContext) MustCurrentContextName() string {
 }
 
 // Context represents a Kubernetes Context.
-type Context struct{}
+type Context struct {
+	Connection
+}
 
 // NewContext returns a new Context.
-func NewContext() Res {
-	return &Context{}
+func NewContext(c Connection) Cruder {
+	return &Context{c}
 }
 
 // Get a Context.
-func (*Context) Get(_, n string) (interface{}, error) {
-	ctx, err := conn.config.GetContext(n)
+func (c *Context) Get(_, n string) (interface{}, error) {
+	ctx, err := c.Config().GetContext(n)
 	if err != nil {
 		return nil, err
 	}
@@ -46,43 +54,45 @@ func (*Context) Get(_, n string) (interface{}, error) {
 }
 
 // List all Contexts on the current cluster.
-func (*Context) List(string) (Collection, error) {
-	ctxs, err := conn.config.Contexts()
+func (c *Context) List(string) (Collection, error) {
+	ctxs, err := c.Config().Contexts()
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
 	cc := make([]interface{}, 0, len(ctxs))
 	for k, v := range ctxs {
-		cc = append(cc, &NamedContext{k, v})
+		cc = append(cc, NewNamedContext(c.Config(), k, v))
 	}
+
 	return cc, nil
 }
 
 // Delete a Context.
-func (*Context) Delete(_, n string) error {
-	ctx, err := conn.config.CurrentContextName()
+func (c *Context) Delete(_, n string) error {
+	ctx, err := c.Config().CurrentContextName()
 	if err != nil {
 		return err
 	}
 	if ctx == n {
 		return fmt.Errorf("trying to delete your current context %s", n)
 	}
-	return conn.config.DelContext(n)
+	return c.Config().DelContext(n)
 }
 
 // Switch to another context.
-func (*Context) Switch(n string) error {
-	conn.switchContextOrDie(n)
+func (c *Context) Switch(ctx string) error {
+	c.SwitchContextOrDie(ctx)
 	return nil
 }
 
 // KubeUpdate modifies kubeconfig default context.
 func (c *Context) KubeUpdate(n string) error {
-	c.Switch(n)
-	acc := clientcmd.NewDefaultPathOptions()
-	config, err := conn.config.RawConfig()
+	config, err := c.Config().RawConfig()
 	if err != nil {
 		return err
 	}
-	return clientcmd.ModifyConfig(acc, config, true)
+	c.Switch(n)
+	return clientcmd.ModifyConfig(
+		clientcmd.NewDefaultPathOptions(), config, true,
+	)
 }

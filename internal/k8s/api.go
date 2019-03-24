@@ -1,13 +1,12 @@
 package k8s
 
 import (
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
-	clientcmd "k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
-	"k8s.io/kubernetes/pkg/kubectl/metricsutil"
 	metricsapi "k8s.io/metrics/pkg/apis/metrics"
 	versioned "k8s.io/metrics/pkg/client/clientset/versioned"
 )
@@ -15,10 +14,7 @@ import (
 // NA Not available
 const NA = "n/a"
 
-var (
-	conn                        = &apiServer{}
-	supportedMetricsAPIVersions = []string{"v1beta1"}
-)
+var supportedMetricsAPIVersions = []string{"v1beta1"}
 
 type (
 	// APIGroup represents a K8s resource descriptor.
@@ -32,81 +28,125 @@ type (
 	// Collection of empty interfaces.
 	Collection []interface{}
 
-	// Res K8s api server calls.
-	Res interface {
+	// Cruder represent a crudable Kubernetes resource.
+	Cruder interface {
 		Get(ns string, name string) (interface{}, error)
 		List(ns string) (Collection, error)
 		Delete(ns string, name string) error
 	}
 
-	// Connection represents a k8s api server connection.
-	connection interface {
-		configAccess() clientcmd.ConfigAccess
-		restConfigOrDie() *restclient.Config
-		apiConfigOrDie() clientcmdapi.Config
-		dialOrDie() kubernetes.Interface
-		dynDialOrDie() dynamic.Interface
-		nsDialOrDie() dynamic.NamespaceableResourceInterface
-		mxsDial() (*versioned.Clientset, error)
-		heapsterDial() (*metricsutil.HeapsterMetricsClient, error)
-		hasMetricsServer() bool
+	// Connection represents a Kubenetes apiserver connection.
+	Connection interface {
+		Config() *Config
+		DialOrDie() kubernetes.Interface
+		SwitchContextOrDie(ctx string)
+		NSDialOrDie() dynamic.NamespaceableResourceInterface
+		RestConfigOrDie() *restclient.Config
+		MXDial() (*versioned.Clientset, error)
+		DynDialOrDie() dynamic.Interface
+		HasMetrics() bool
+		IsNamespaced(n string) bool
+		SupportsResource(group string) bool
 	}
 
-	apiServer struct {
+	// APIClient represents a Kubernetes api client.
+	APIClient struct {
 		config          *Config
 		client          kubernetes.Interface
 		dClient         dynamic.Interface
 		nsClient        dynamic.NamespaceableResourceInterface
-		heapsterClient  *metricsutil.HeapsterMetricsClient
 		mxsClient       *versioned.Clientset
 		useMetricServer bool
+		log             zerolog.Logger
 	}
 )
 
 // InitConnectionOrDie initialize connection from command line args.
 // Checks for connectivity with the api server.
-func InitConnectionOrDie(config *Config) {
-	conn = &apiServer{config: config}
+func InitConnectionOrDie(config *Config, logger zerolog.Logger) *APIClient {
+	conn := APIClient{config: config, log: logger}
 	conn.useMetricServer = conn.supportsMxServer()
+
+	return &conn
 }
 
-func (a *apiServer) hasMetricsServer() bool {
+// IsNamespaced check on server if given resource is namespaced
+func (a *APIClient) IsNamespaced(res string) bool {
+	list, _ := a.DialOrDie().Discovery().ServerPreferredResources()
+	for _, l := range list {
+		log.Debug().Msgf("GV %s", l.GroupVersion)
+		for _, r := range l.APIResources {
+			if r.Name == res {
+				return r.Namespaced
+			}
+		}
+	}
+	return false
+}
+
+// SupportsResource checks for resource supported version against the server.
+func (a *APIClient) SupportsResource(group string) bool {
+	list, _ := a.DialOrDie().Discovery().ServerPreferredResources()
+	for _, l := range list {
+		if l.GroupVersion == group {
+			return true
+		}
+	}
+	return false
+}
+
+// Config return a kubernetes configuration.
+func (a *APIClient) Config() *Config {
+	return a.config
+}
+
+// HasMetrics returns true if the cluster supports metrics.
+func (a *APIClient) HasMetrics() bool {
 	return a.useMetricServer
 }
 
 // DialOrDie returns a handle to api server or die.
-func (a *apiServer) dialOrDie() kubernetes.Interface {
+func (a *APIClient) DialOrDie() kubernetes.Interface {
 	if a.client != nil {
 		return a.client
 	}
 
 	var err error
-	if a.client, err = kubernetes.NewForConfig(a.restConfigOrDie()); err != nil {
-		panic(err)
+	if a.client, err = kubernetes.NewForConfig(a.RestConfigOrDie()); err != nil {
+		a.log.Panic().Err(err)
 	}
 	return a.client
 }
 
-// DynDial returns a handle to the api server.
-func (a *apiServer) dynDialOrDie() dynamic.Interface {
+// RestConfigOrDie returns a rest api client.
+func (a *APIClient) RestConfigOrDie() *restclient.Config {
+	cfg, err := a.config.RESTConfig()
+	if err != nil {
+		a.log.Panic().Err(err)
+	}
+	return cfg
+}
+
+// DynDialOrDie returns a handle to a dynamic interface.
+func (a *APIClient) DynDialOrDie() dynamic.Interface {
 	if a.dClient != nil {
 		return a.dClient
 	}
 
 	var err error
-	if a.dClient, err = dynamic.NewForConfig(a.restConfigOrDie()); err != nil {
-		panic(err)
+	if a.dClient, err = dynamic.NewForConfig(a.RestConfigOrDie()); err != nil {
+		a.log.Panic().Err(err)
 	}
-
 	return a.dClient
 }
 
-func (a *apiServer) nsDialOrDie() dynamic.NamespaceableResourceInterface {
+// NSDialOrDie returns a handle to a namespaced resource.
+func (a *APIClient) NSDialOrDie() dynamic.NamespaceableResourceInterface {
 	if a.nsClient != nil {
 		return a.nsClient
 	}
 
-	a.nsClient = a.dynDialOrDie().Resource(schema.GroupVersionResource{
+	a.nsClient = a.DynDialOrDie().Resource(schema.GroupVersionResource{
 		Group:    "apiextensions.k8s.io",
 		Version:  "v1beta1",
 		Resource: "customresourcedefinitions",
@@ -114,40 +154,21 @@ func (a *apiServer) nsDialOrDie() dynamic.NamespaceableResourceInterface {
 	return a.nsClient
 }
 
-func (a *apiServer) heapsterDial() (*metricsutil.HeapsterMetricsClient, error) {
-	if a.heapsterClient != nil {
-		return a.heapsterClient, nil
-	}
-
-	a.heapsterClient = metricsutil.NewHeapsterMetricsClient(
-		a.dialOrDie().CoreV1(),
-		metricsutil.DefaultHeapsterNamespace,
-		metricsutil.DefaultHeapsterScheme,
-		metricsutil.DefaultHeapsterService,
-		metricsutil.DefaultHeapsterPort,
-	)
-	return a.heapsterClient, nil
-}
-
-func (a *apiServer) mxsDial() (*versioned.Clientset, error) {
+// MXDial returns a handle to the metrics server.
+func (a *APIClient) MXDial() (*versioned.Clientset, error) {
 	if a.mxsClient != nil {
 		return a.mxsClient, nil
 	}
 
 	var err error
-	a.mxsClient, err = versioned.NewForConfig(a.restConfigOrDie())
+	if a.mxsClient, err = versioned.NewForConfig(a.RestConfigOrDie()); err != nil {
+		a.log.Debug().Err(err)
+	}
 	return a.mxsClient, err
 }
 
-func (a *apiServer) restConfigOrDie() *restclient.Config {
-	cfg, err := a.config.RESTConfig()
-	if err != nil {
-		panic(err)
-	}
-	return cfg
-}
-
-func (a *apiServer) switchContextOrDie(ctx string) {
+// SwitchContextOrDie handles kubeconfig context switches.
+func (a *APIClient) SwitchContextOrDie(ctx string) {
 	currentCtx, err := a.config.CurrentContextName()
 	if err != nil {
 		panic(err)
@@ -162,13 +183,12 @@ func (a *apiServer) switchContextOrDie(ctx string) {
 	}
 }
 
-func (a *apiServer) reset() {
-	a.client, a.dClient, a.nsClient = nil, nil, nil
-	a.heapsterClient, a.mxsClient = nil, nil
+func (a *APIClient) reset() {
+	a.client, a.dClient, a.nsClient, a.mxsClient = nil, nil, nil, nil
 }
 
-func (a *apiServer) supportsMxServer() bool {
-	apiGroups, err := a.dialOrDie().Discovery().ServerGroups()
+func (a *APIClient) supportsMxServer() bool {
+	apiGroups, err := a.DialOrDie().Discovery().ServerGroups()
 	if err != nil {
 		return false
 	}
@@ -177,6 +197,7 @@ func (a *apiServer) supportsMxServer() bool {
 		if discoveredAPIGroup.Name != metricsapi.GroupName {
 			continue
 		}
+
 		for _, version := range discoveredAPIGroup.Versions {
 			for _, supportedVersion := range supportedMetricsAPIVersions {
 				if version.Version == supportedVersion {
@@ -185,5 +206,6 @@ func (a *apiServer) supportsMxServer() bool {
 			}
 		}
 	}
+
 	return false
 }

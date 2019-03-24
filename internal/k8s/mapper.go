@@ -14,12 +14,17 @@ import (
 	"k8s.io/client-go/restmapper"
 )
 
-// RestMapping holds k8s resource mapping
-// BOZO!! Has to be a better way...
-var RestMapping = &RestMapper{}
+var (
+	// RestMapping holds k8s resource mapping
+	// BOZO!! Has to be a better way...
+	RestMapping = &RestMapper{}
+	toFileName  = regexp.MustCompile(`[^(\w/\.)]`)
+)
 
 // RestMapper map resource to REST mapping ie kind, group, version.
-type RestMapper struct{}
+type RestMapper struct {
+	Connection
+}
 
 // Find a mapping given a resource name.
 func (*RestMapper) Find(res string) (*meta.RESTMapping, error) {
@@ -30,8 +35,8 @@ func (*RestMapper) Find(res string) (*meta.RESTMapping, error) {
 }
 
 // ToRESTMapper map resources to kind, and map kind and version to interfaces for manipulating K8s objects.
-func (*RestMapper) ToRESTMapper() (meta.RESTMapper, error) {
-	rc := conn.restConfigOrDie()
+func (r *RestMapper) ToRESTMapper() (meta.RESTMapper, error) {
+	rc := r.RestConfigOrDie()
 
 	httpCacheDir := filepath.Join(mustHomeDir(), ".kube", "http-cache")
 	discCacheDir := filepath.Join(mustHomeDir(), ".kube", "cache", "discovery", toHostDir(rc.Host))
@@ -45,11 +50,8 @@ func (*RestMapper) ToRESTMapper() (meta.RESTMapper, error) {
 	return expander, nil
 }
 
-var toFileName = regexp.MustCompile(`[^(\w/\.)]`)
-
 func toHostDir(host string) string {
 	h := strings.Replace(strings.Replace(host, "https://", "", 1), "http://", "", 1)
-	// now do a simple collapse of non-AZ09 characters.  Collisions are possible but unlikely.  Even if we do collide the problem is short lived
 	return toFileName.ReplaceAllString(h, "_")
 }
 

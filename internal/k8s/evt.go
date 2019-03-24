@@ -5,28 +5,26 @@ import (
 )
 
 // Event represents a Kubernetes Event.
-type Event struct{}
+type Event struct {
+	Connection
+}
 
 // NewEvent returns a new Event.
-func NewEvent() Res {
-	return &Event{}
+func NewEvent(c Connection) Cruder {
+	return &Event{c}
 }
 
 // Get a Event.
-func (*Event) Get(ns, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().CoreV1().Events(ns).Get(n, opts)
+func (e *Event) Get(ns, n string) (interface{}, error) {
+	return e.DialOrDie().CoreV1().Events(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all Events in a given namespace.
-func (*Event) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().CoreV1().Events(ns).List(opts)
+func (e *Event) List(ns string) (Collection, error) {
+	rr, err := e.DialOrDie().CoreV1().Events(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -36,7 +34,6 @@ func (*Event) List(ns string) (Collection, error) {
 }
 
 // Delete an Event.
-func (*Event) Delete(ns, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().CoreV1().Events(ns).Delete(n, &opts)
+func (e *Event) Delete(ns, n string) error {
+	return e.DialOrDie().CoreV1().Events(ns).Delete(n, nil)
 }

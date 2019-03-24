@@ -5,28 +5,26 @@ import (
 )
 
 // ClusterRoleBinding represents a Kubernetes ClusterRoleBinding
-type ClusterRoleBinding struct{}
+type ClusterRoleBinding struct {
+	Connection
+}
 
 // NewClusterRoleBinding returns a new ClusterRoleBinding.
-func NewClusterRoleBinding() Res {
-	return &ClusterRoleBinding{}
+func NewClusterRoleBinding(c Connection) Cruder {
+	return &ClusterRoleBinding{c}
 }
 
 // Get a service.
-func (*ClusterRoleBinding) Get(_, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().RbacV1().ClusterRoleBindings().Get(n, opts)
+func (c *ClusterRoleBinding) Get(_, n string) (interface{}, error) {
+	return c.DialOrDie().RbacV1().ClusterRoleBindings().Get(n, metav1.GetOptions{})
 }
 
 // List all ClusterRoleBindings on a cluster.
-func (*ClusterRoleBinding) List(_ string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().RbacV1().ClusterRoleBindings().List(opts)
+func (c *ClusterRoleBinding) List(_ string) (Collection, error) {
+	rr, err := c.DialOrDie().RbacV1().ClusterRoleBindings().List(metav1.ListOptions{})
 	if err != nil {
 		return Collection{}, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -36,7 +34,6 @@ func (*ClusterRoleBinding) List(_ string) (Collection, error) {
 }
 
 // Delete a ClusterRoleBinding.
-func (*ClusterRoleBinding) Delete(_, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().RbacV1().ClusterRoleBindings().Delete(n, &opts)
+func (c *ClusterRoleBinding) Delete(_, n string) error {
+	return c.DialOrDie().RbacV1().ClusterRoleBindings().Delete(n, nil)
 }

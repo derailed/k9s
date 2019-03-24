@@ -5,38 +5,37 @@ import (
 )
 
 // HPA represents am HorizontalPodAutoscaler.
-type HPA struct{}
+type HPA struct {
+	Connection
+}
 
 // NewHPA returns a new HPA.
-func NewHPA() Res {
-	return &HPA{}
+func NewHPA(c Connection) Cruder {
+	return &HPA{c}
 }
 
 // Get a HPA.
-func (*HPA) Get(ns, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().AutoscalingV2beta2().HorizontalPodAutoscalers(ns).Get(n, opts)
+func (h *HPA) Get(ns, n string) (interface{}, error) {
+	return h.DialOrDie().AutoscalingV2beta2().HorizontalPodAutoscalers(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all HPAs in a given namespace.
-func (*HPA) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().AutoscalingV2beta2().HorizontalPodAutoscalers(ns).List(opts)
+func (h *HPA) List(ns string) (Collection, error) {
+	rr, err := h.DialOrDie().AutoscalingV2beta2().HorizontalPodAutoscalers(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
 	}
-
 	return cc, nil
 }
 
 // Delete a HPA.
-func (*HPA) Delete(ns, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().AutoscalingV2beta2().HorizontalPodAutoscalers(ns).Delete(n, &opts)
+func (h *HPA) Delete(ns, n string) error {
+	if h.SupportsResource("autoscaling/v2beta1") {
+		return h.DialOrDie().AutoscalingV2beta1().HorizontalPodAutoscalers(ns).Delete(n, nil)
+	}
+	return h.DialOrDie().AutoscalingV2beta2().HorizontalPodAutoscalers(ns).Delete(n, nil)
 }

@@ -5,28 +5,26 @@ import (
 )
 
 // CRD represents a Kubernetes CRD
-type CRD struct{}
+type CRD struct {
+	Connection
+}
 
 // NewCRD returns a new CRD.
-func NewCRD() Res {
-	return &CRD{}
+func NewCRD(c Connection) Cruder {
+	return &CRD{c}
 }
 
 // Get a CRD.
-func (*CRD) Get(_, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.nsDialOrDie().Get(n, opts)
+func (c *CRD) Get(_, n string) (interface{}, error) {
+	return c.NSDialOrDie().Get(n, metav1.GetOptions{})
 }
 
 // List all CRDs in a given namespace.
-func (*CRD) List(string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.nsDialOrDie().List(opts)
+func (c *CRD) List(string) (Collection, error) {
+	rr, err := c.NSDialOrDie().List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -36,7 +34,6 @@ func (*CRD) List(string) (Collection, error) {
 }
 
 // Delete a CRD.
-func (*CRD) Delete(_, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.nsDialOrDie().Delete(n, &opts)
+func (c *CRD) Delete(_, n string) error {
+	return c.NSDialOrDie().Delete(n, nil)
 }

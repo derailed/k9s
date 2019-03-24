@@ -10,28 +10,26 @@ import (
 const maxJobNameSize = 42
 
 // CronJob represents a Kubernetes CronJob.
-type CronJob struct{}
+type CronJob struct {
+	Connection
+}
 
 // NewCronJob returns a new CronJob.
-func NewCronJob() Res {
-	return &CronJob{}
+func NewCronJob(c Connection) Cruder {
+	return &CronJob{c}
 }
 
 // Get a CronJob.
 func (c *CronJob) Get(ns, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().BatchV1beta1().CronJobs(ns).Get(n, opts)
+	return c.DialOrDie().BatchV1beta1().CronJobs(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all CronJobs in a given namespace.
 func (c *CronJob) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().BatchV1beta1().CronJobs(ns).List(opts)
+	rr, err := c.DialOrDie().BatchV1beta1().CronJobs(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -42,22 +40,20 @@ func (c *CronJob) List(ns string) (Collection, error) {
 
 // Delete a CronJob.
 func (c *CronJob) Delete(ns, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().BatchV1beta1().CronJobs(ns).Delete(n, &opts)
+	return c.DialOrDie().BatchV1beta1().CronJobs(ns).Delete(n, nil)
 }
 
 // Run the job associated with this cronjob.
 func (c *CronJob) Run(ns, n string) error {
-	i, err := c.Get(ns, n)
+	cj, err := c.Get(ns, n)
 	if err != nil {
 		return err
 	}
-
-	cronJob := i.(*batchv1beta1.CronJob)
+	cronJob := cj.(*batchv1beta1.CronJob)
 
 	var jobName = cronJob.Name
 	if len(cronJob.Name) >= maxJobNameSize {
-		jobName = cronJob.Name[0:41]
+		jobName = cronJob.Name[0:maxJobNameSize]
 	}
 
 	job := &batchv1.Job{
@@ -68,6 +64,7 @@ func (c *CronJob) Run(ns, n string) error {
 		},
 		Spec: cronJob.Spec.JobTemplate.Spec,
 	}
-	_, err = conn.dialOrDie().BatchV1().Jobs(ns).Create(job)
+
+	_, err = c.DialOrDie().BatchV1().Jobs(ns).Create(job)
 	return err
 }

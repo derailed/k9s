@@ -5,26 +5,25 @@ import (
 )
 
 // PV represents a Kubernetes PersistentVolume.
-type PV struct{}
+type PV struct {
+	Connection
+}
 
 // NewPV returns a new PV.
-func NewPV() Res {
-	return &PV{}
+func NewPV(c Connection) Cruder {
+	return &PV{c}
 }
 
 // Get a PV.
-func (*PV) Get(_, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().CoreV1().PersistentVolumes().Get(n, opts)
+func (p *PV) Get(_, n string) (interface{}, error) {
+	return p.DialOrDie().CoreV1().PersistentVolumes().Get(n, metav1.GetOptions{})
 }
 
 // List all PVs in a given namespace.
-func (*PV) List(_ string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().CoreV1().PersistentVolumes().List(opts)
+func (p *PV) List(_ string) (Collection, error) {
+	rr, err := p.DialOrDie().CoreV1().PersistentVolumes().List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
 
 	cc := make(Collection, len(rr.Items))
@@ -36,7 +35,6 @@ func (*PV) List(_ string) (Collection, error) {
 }
 
 // Delete a PV.
-func (*PV) Delete(_, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().CoreV1().PersistentVolumes().Delete(n, &opts)
+func (p *PV) Delete(_, n string) error {
+	return p.DialOrDie().CoreV1().PersistentVolumes().Delete(n, nil)
 }

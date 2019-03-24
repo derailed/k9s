@@ -5,28 +5,26 @@ import (
 )
 
 // ClusterRole represents a Kubernetes ClusterRole
-type ClusterRole struct{}
+type ClusterRole struct {
+	Connection
+}
 
 // NewClusterRole returns a new ClusterRole.
-func NewClusterRole() Res {
-	return &ClusterRole{}
+func NewClusterRole(c Connection) Cruder {
+	return &ClusterRole{c}
 }
 
 // Get a cluster role.
-func (*ClusterRole) Get(_, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().RbacV1().ClusterRoles().Get(n, opts)
+func (c *ClusterRole) Get(_, n string) (interface{}, error) {
+	return c.DialOrDie().RbacV1().ClusterRoles().Get(n, metav1.GetOptions{})
 }
 
 // List all ClusterRoles on a cluster.
-func (*ClusterRole) List(_ string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().RbacV1().ClusterRoles().List(opts)
+func (c *ClusterRole) List(_ string) (Collection, error) {
+	rr, err := c.DialOrDie().RbacV1().ClusterRoles().List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -36,7 +34,6 @@ func (*ClusterRole) List(_ string) (Collection, error) {
 }
 
 // Delete a ClusterRole.
-func (*ClusterRole) Delete(_, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().RbacV1().ClusterRoles().Delete(n, &opts)
+func (c *ClusterRole) Delete(_, n string) error {
+	return c.DialOrDie().RbacV1().ClusterRoles().Delete(n, nil)
 }

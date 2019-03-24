@@ -5,28 +5,26 @@ import (
 )
 
 // PVC represents a Kubernetes service.
-type PVC struct{}
+type PVC struct {
+	Connection
+}
 
 // NewPVC returns a new PVC.
-func NewPVC() Res {
-	return &PVC{}
+func NewPVC(c Connection) Cruder {
+	return &PVC{c}
 }
 
 // Get a PVC.
-func (*PVC) Get(ns, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().CoreV1().PersistentVolumeClaims(ns).Get(n, opts)
+func (p *PVC) Get(ns, n string) (interface{}, error) {
+	return p.DialOrDie().CoreV1().PersistentVolumeClaims(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all PVCs in a given namespace.
-func (*PVC) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().CoreV1().PersistentVolumeClaims(ns).List(opts)
+func (p *PVC) List(ns string) (Collection, error) {
+	rr, err := p.DialOrDie().CoreV1().PersistentVolumeClaims(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -36,7 +34,6 @@ func (*PVC) List(ns string) (Collection, error) {
 }
 
 // Delete a PVC.
-func (*PVC) Delete(ns, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().CoreV1().PersistentVolumeClaims(ns).Delete(n, &opts)
+func (p *PVC) Delete(ns, n string) error {
+	return p.DialOrDie().CoreV1().PersistentVolumeClaims(ns).Delete(n, nil)
 }

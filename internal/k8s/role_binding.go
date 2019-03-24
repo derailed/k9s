@@ -3,28 +3,26 @@ package k8s
 import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 // RoleBinding represents a Kubernetes RoleBinding.
-type RoleBinding struct{}
+type RoleBinding struct {
+	Connection
+}
 
 // NewRoleBinding returns a new RoleBinding.
-func NewRoleBinding() Res {
-	return &RoleBinding{}
+func NewRoleBinding(c Connection) Cruder {
+	return &RoleBinding{c}
 }
 
 // Get a RoleBinding.
-func (*RoleBinding) Get(ns, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().RbacV1().RoleBindings(ns).Get(n, opts)
+func (r *RoleBinding) Get(ns, n string) (interface{}, error) {
+	return r.DialOrDie().RbacV1().RoleBindings(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all RoleBindings in a given namespace.
-func (*RoleBinding) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().RbacV1().RoleBindings(ns).List(opts)
+func (r *RoleBinding) List(ns string) (Collection, error) {
+	rr, err := r.DialOrDie().RbacV1().RoleBindings(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -34,7 +32,6 @@ func (*RoleBinding) List(ns string) (Collection, error) {
 }
 
 // Delete a RoleBinding.
-func (*RoleBinding) Delete(ns, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().RbacV1().RoleBindings(ns).Delete(n, &opts)
+func (r *RoleBinding) Delete(ns, n string) error {
+	return r.DialOrDie().RbacV1().RoleBindings(ns).Delete(n, nil)
 }

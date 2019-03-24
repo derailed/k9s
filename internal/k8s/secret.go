@@ -5,28 +5,26 @@ import (
 )
 
 // Secret represents a Kubernetes Secret.
-type Secret struct{}
+type Secret struct {
+	Connection
+}
 
 // NewSecret returns a new Secret.
-func NewSecret() Res {
-	return &Secret{}
+func NewSecret(c Connection) Cruder {
+	return &Secret{c}
 }
 
 // Get a Secret.
-func (c *Secret) Get(ns, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().CoreV1().Secrets(ns).Get(n, opts)
+func (s *Secret) Get(ns, n string) (interface{}, error) {
+	return s.DialOrDie().CoreV1().Secrets(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all Secrets in a given namespace.
-func (c *Secret) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().CoreV1().Secrets(ns).List(opts)
+func (s *Secret) List(ns string) (Collection, error) {
+	rr, err := s.DialOrDie().CoreV1().Secrets(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -36,7 +34,6 @@ func (c *Secret) List(ns string) (Collection, error) {
 }
 
 // Delete a Secret.
-func (c *Secret) Delete(ns, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().CoreV1().Secrets(ns).Delete(n, &opts)
+func (s *Secret) Delete(ns, n string) error {
+	return s.DialOrDie().CoreV1().Secrets(ns).Delete(n, nil)
 }

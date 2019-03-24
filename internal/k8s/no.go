@@ -5,28 +5,26 @@ import (
 )
 
 // Node represents a Kubernetes node.
-type Node struct{}
+type Node struct {
+	Connection
+}
 
 // NewNode returns a new Node.
-func NewNode() Res {
-	return &Node{}
+func NewNode(c Connection) Cruder {
+	return &Node{c}
 }
 
 // Get a node.
-func (*Node) Get(_, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().CoreV1().Nodes().Get(n, opts)
+func (n *Node) Get(_, name string) (interface{}, error) {
+	return n.DialOrDie().CoreV1().Nodes().Get(name, metav1.GetOptions{})
 }
 
 // List all nodes on the cluster.
-func (*Node) List(_ string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().CoreV1().Nodes().List(opts)
+func (n *Node) List(_ string) (Collection, error) {
+	rr, err := n.DialOrDie().CoreV1().Nodes().List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -36,7 +34,6 @@ func (*Node) List(_ string) (Collection, error) {
 }
 
 // Delete a node.
-func (*Node) Delete(_, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().CoreV1().Nodes().Delete(n, &opts)
+func (n *Node) Delete(_, name string) error {
+	return n.DialOrDie().CoreV1().Nodes().Delete(name, nil)
 }

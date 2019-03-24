@@ -5,29 +5,26 @@ import (
 )
 
 // Namespace represents a Kubernetes namespace.
-type Namespace struct{}
+type Namespace struct {
+	Connection
+}
 
 // NewNamespace returns a new Namespace.
-func NewNamespace() Res {
-	return &Namespace{}
+func NewNamespace(c Connection) Cruder {
+	return &Namespace{c}
 }
 
 // Get a active namespace.
-func (*Namespace) Get(_, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-
-	return conn.dialOrDie().CoreV1().Namespaces().Get(n, opts)
+func (n *Namespace) Get(_, name string) (interface{}, error) {
+	return n.DialOrDie().CoreV1().Namespaces().Get(name, metav1.GetOptions{})
 }
 
 // List all active namespaces on the cluster.
-func (*Namespace) List(_ string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().CoreV1().Namespaces().List(opts)
+func (n *Namespace) List(_ string) (Collection, error) {
+	rr, err := n.DialOrDie().CoreV1().Namespaces().List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -37,8 +34,6 @@ func (*Namespace) List(_ string) (Collection, error) {
 }
 
 // Delete a namespace.
-func (*Namespace) Delete(_, n string) error {
-	opts := metav1.DeleteOptions{}
-
-	return conn.dialOrDie().CoreV1().Namespaces().Delete(n, &opts)
+func (n *Namespace) Delete(_, name string) error {
+	return n.DialOrDie().CoreV1().Namespaces().Delete(name, nil)
 }

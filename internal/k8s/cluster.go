@@ -1,20 +1,26 @@
 package k8s
 
-import "github.com/rs/zerolog/log"
+import (
+	"github.com/rs/zerolog"
+)
 
 // Cluster represents a Kubernetes cluster.
-type Cluster struct{}
+type Cluster struct {
+	Connection
+
+	logger *zerolog.Logger
+}
 
 // NewCluster instantiates a new cluster.
-func NewCluster() *Cluster {
-	return &Cluster{}
+func NewCluster(c Connection, l *zerolog.Logger) *Cluster {
+	return &Cluster{c, l}
 }
 
 // Version returns the current cluster git version.
 func (c *Cluster) Version() (string, error) {
-	rev, err := conn.dialOrDie().Discovery().ServerVersion()
+	rev, err := c.DialOrDie().Discovery().ServerVersion()
 	if err != nil {
-		log.Warn().Msgf("%s", err)
+		c.logger.Warn().Msgf("%s", err)
 		return "", err
 	}
 	return rev.GitVersion, nil
@@ -22,9 +28,9 @@ func (c *Cluster) Version() (string, error) {
 
 // ContextName returns the currently active context.
 func (c *Cluster) ContextName() string {
-	ctx, err := conn.config.CurrentContextName()
+	ctx, err := c.Config().CurrentContextName()
 	if err != nil {
-		log.Warn().Msgf("%s", err)
+		c.logger.Warn().Msgf("%s", err)
 		return "N/A"
 	}
 	return ctx
@@ -32,9 +38,9 @@ func (c *Cluster) ContextName() string {
 
 // ClusterName return the currently active cluster name.
 func (c *Cluster) ClusterName() string {
-	ctx, err := conn.config.CurrentClusterName()
+	ctx, err := c.Config().CurrentClusterName()
 	if err != nil {
-		log.Warn().Msgf("%s", err)
+		c.logger.Warn().Msgf("%s", err)
 		return "N/A"
 	}
 	return ctx
@@ -42,9 +48,9 @@ func (c *Cluster) ClusterName() string {
 
 // UserName returns the currently active user.
 func (c *Cluster) UserName() string {
-	usr, err := conn.config.CurrentUserName()
+	usr, err := c.Config().CurrentUserName()
 	if err != nil {
-		log.Warn().Msgf("%s", err)
+		c.logger.Warn().Msgf("%s", err)
 		return "N/A"
 	}
 	return usr

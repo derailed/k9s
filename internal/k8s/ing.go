@@ -5,28 +5,26 @@ import (
 )
 
 // Ingress represents a Kubernetes Ingress.
-type Ingress struct{}
+type Ingress struct {
+	Connection
+}
 
 // NewIngress returns a new Ingress.
-func NewIngress() Res {
-	return &Ingress{}
+func NewIngress(c Connection) Cruder {
+	return &Ingress{c}
 }
 
 // Get a Ingress.
-func (*Ingress) Get(ns, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().ExtensionsV1beta1().Ingresses(ns).Get(n, opts)
+func (i *Ingress) Get(ns, n string) (interface{}, error) {
+	return i.DialOrDie().ExtensionsV1beta1().Ingresses(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all Ingresss in a given namespace.
-func (*Ingress) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().ExtensionsV1beta1().Ingresses(ns).List(opts)
+func (i *Ingress) List(ns string) (Collection, error) {
+	rr, err := i.DialOrDie().ExtensionsV1beta1().Ingresses(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -36,7 +34,6 @@ func (*Ingress) List(ns string) (Collection, error) {
 }
 
 // Delete a Ingress.
-func (*Ingress) Delete(ns, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().ExtensionsV1beta1().Ingresses(ns).Delete(n, &opts)
+func (i *Ingress) Delete(ns, n string) error {
+	return i.DialOrDie().ExtensionsV1beta1().Ingresses(ns).Delete(n, nil)
 }

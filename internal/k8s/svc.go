@@ -5,28 +5,26 @@ import (
 )
 
 // Service represents a Kubernetes Service.
-type Service struct{}
+type Service struct {
+	Connection
+}
 
 // NewService returns a new Service.
-func NewService() Res {
-	return &Service{}
+func NewService(c Connection) Cruder {
+	return &Service{c}
 }
 
 // Get a service.
-func (*Service) Get(ns, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().CoreV1().Services(ns).Get(n, opts)
+func (s *Service) Get(ns, n string) (interface{}, error) {
+	return s.DialOrDie().CoreV1().Services(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all Services in a given namespace.
-func (*Service) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().CoreV1().Services(ns).List(opts)
+func (s *Service) List(ns string) (Collection, error) {
+	rr, err := s.DialOrDie().CoreV1().Services(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -36,7 +34,6 @@ func (*Service) List(ns string) (Collection, error) {
 }
 
 // Delete a Service.
-func (*Service) Delete(ns, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().CoreV1().Services(ns).Delete(n, &opts)
+func (s *Service) Delete(ns, n string) error {
+	return s.DialOrDie().CoreV1().Services(ns).Delete(n, nil)
 }

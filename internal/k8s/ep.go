@@ -5,28 +5,26 @@ import (
 )
 
 // Endpoints represents a Kubernetes Endpoints.
-type Endpoints struct{}
+type Endpoints struct {
+	Connection
+}
 
 // NewEndpoints returns a new Endpoints.
-func NewEndpoints() Res {
-	return &Endpoints{}
+func NewEndpoints(c Connection) Cruder {
+	return &Endpoints{c}
 }
 
 // Get a Endpoint.
-func (*Endpoints) Get(ns, n string) (interface{}, error) {
-	opts := metav1.GetOptions{}
-	return conn.dialOrDie().CoreV1().Endpoints(ns).Get(n, opts)
+func (e *Endpoints) Get(ns, n string) (interface{}, error) {
+	return e.DialOrDie().CoreV1().Endpoints(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all Endpoints in a given namespace.
-func (*Endpoints) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{}
-
-	rr, err := conn.dialOrDie().CoreV1().Endpoints(ns).List(opts)
+func (e *Endpoints) List(ns string) (Collection, error) {
+	rr, err := e.DialOrDie().CoreV1().Endpoints(ns).List(metav1.ListOptions{})
 	if err != nil {
-		return Collection{}, err
+		return nil, err
 	}
-
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
@@ -36,7 +34,6 @@ func (*Endpoints) List(ns string) (Collection, error) {
 }
 
 // Delete a Endpoint.
-func (*Endpoints) Delete(ns, n string) error {
-	opts := metav1.DeleteOptions{}
-	return conn.dialOrDie().CoreV1().Endpoints(ns).Delete(n, &opts)
+func (e *Endpoints) Delete(ns, n string) error {
+	return e.DialOrDie().CoreV1().Endpoints(ns).Delete(n, nil)
 }
