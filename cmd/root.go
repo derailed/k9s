@@ -58,13 +58,12 @@ func run(cmd *cobra.Command, args []string) {
 			log.Error().Msg(string(debug.Stack()))
 			fmt.Printf(printer.Colorize("Boom!! ", printer.ColorRed))
 			fmt.Println(printer.Colorize(fmt.Sprintf("%v.", err), printer.ColorDarkGray))
-			// debug.PrintStack()
 		}
 	}()
 
 	zerolog.SetGlobalLevel(parseLevel(logLevel))
-	loadConfiguration()
-	app := views.NewApp()
+	cfg := loadConfiguration()
+	app := views.NewApp(cfg)
 	{
 		defer app.Stop()
 		app.Init(version, refreshRate, k8sFlags)
@@ -72,52 +71,22 @@ func run(cmd *cobra.Command, args []string) {
 	}
 }
 
-func loadConfiguration() {
+func loadConfiguration() *config.Config {
 	log.Info().Msg("🐶 K9s starting up...")
 
 	// Load K9s config file...
-	cfg := k8s.NewConfig(k8sFlags)
-	config.Root = config.NewConfig(cfg)
-	if err := config.Root.Load(config.K9sConfigFile); err != nil {
+	k8sCfg := k8s.NewConfig(k8sFlags)
+	k9sCfg := config.NewConfig(k8sCfg)
+	if err := k9sCfg.Load(config.K9sConfigFile); err != nil {
 		log.Warn().Msg("Unable to locate K9s config. Generating new configuration...")
 	}
-	config.Root.K9s.RefreshRate = refreshRate
-	mergeConfigs()
-	// Init K8s connection...
-	k8s.InitConnectionOrDie(cfg)
+	k9sCfg.K9s.RefreshRate = refreshRate
+	k9sCfg.Refine(k8sFlags)
+	k9sCfg.SetConnection(k8s.InitConnectionOrDie(k8sCfg, log.Logger))
 	log.Info().Msg("✅ Kubernetes connectivity")
-	config.Root.Save()
-}
+	k9sCfg.Save()
 
-func mergeConfigs() {
-	cfg, err := k8sFlags.ToRawKubeConfigLoader().RawConfig()
-	if err != nil {
-		panic("Invalid configuration. Unable to connect to api")
-	}
-
-	if isSet(k8sFlags.Context) {
-		config.Root.K9s.CurrentContext = *k8sFlags.Context
-	} else {
-		config.Root.K9s.CurrentContext = cfg.CurrentContext
-	}
-	log.Debug().Msgf("Active Context `%v`", config.Root.K9s.CurrentContext)
-
-	if c, ok := cfg.Contexts[config.Root.K9s.CurrentContext]; ok {
-		config.Root.K9s.CurrentCluster = c.Cluster
-		if len(c.Namespace) != 0 {
-			config.Root.SetActiveNamespace(c.Namespace)
-		}
-	} else {
-		log.Panic().Msg(fmt.Sprintf("The specified context `%s does not exists in kubeconfig", config.Root.K9s.CurrentContext))
-	}
-
-	if isSet(k8sFlags.Namespace) {
-		config.Root.SetActiveNamespace(*k8sFlags.Namespace)
-	}
-
-	if isSet(k8sFlags.ClusterName) {
-		config.Root.K9s.CurrentCluster = *k8sFlags.ClusterName
-	}
+	return k9sCfg
 }
 
 func parseLevel(level string) zerolog.Level {
@@ -250,8 +219,4 @@ func initK8sFlags() {
 
 func clearScreen() {
 	fmt.Print("\033[H\033[2J")
-}
-
-func isSet(s *string) bool {
-	return s != nil && len(*s) > 0
 }

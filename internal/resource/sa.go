@@ -15,51 +15,43 @@ type ServiceAccount struct {
 }
 
 // NewServiceAccountList returns a new resource list.
-func NewServiceAccountList(ns string) List {
-	return NewServiceAccountListWithArgs(ns, NewServiceAccount())
+func NewServiceAccountList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"sa",
+		NewServiceAccount(c),
+		AllVerbsAccess|DescribeAccess,
+	)
 }
 
-// NewServiceAccountListWithArgs returns a new resource list.
-func NewServiceAccountListWithArgs(ns string, res Resource) List {
-	return newList(ns, "sa", res, AllVerbsAccess|DescribeAccess)
+// NewServiceAccount instantiates a new ServiceAccount.
+func NewServiceAccount(c k8s.Connection) *ServiceAccount {
+	s := &ServiceAccount{&Base{connection: c, resource: k8s.NewServiceAccount(c)}, nil}
+	s.Factory = s
+
+	return s
 }
 
-// NewServiceAccount instantiates a new Endpoint.
-func NewServiceAccount() *ServiceAccount {
-	return NewServiceAccountWithArgs(k8s.NewServiceAccount())
-}
-
-// NewServiceAccountWithArgs instantiates a new Endpoint.
-func NewServiceAccountWithArgs(r k8s.Res) *ServiceAccount {
-	ep := &ServiceAccount{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	ep.creator = ep
-	return ep
-}
-
-// NewInstance builds a new Endpoint instance from a k8s resource.
-func (*ServiceAccount) NewInstance(i interface{}) Columnar {
-	cm := NewServiceAccount()
-	switch i.(type) {
+// New builds a new ServiceAccount instance from a k8s resource.
+func (r *ServiceAccount) New(i interface{}) Columnar {
+	c := NewServiceAccount(r.connection)
+	switch instance := i.(type) {
 	case *v1.ServiceAccount:
-		cm.instance = i.(*v1.ServiceAccount)
+		c.instance = instance
 	case v1.ServiceAccount:
-		ii := i.(v1.ServiceAccount)
-		cm.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown ServiceAccount type %#v", i)
 	}
-	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
-	return cm
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal resource to yaml.
 func (r *ServiceAccount) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -67,6 +59,7 @@ func (r *ServiceAccount) Marshal(path string) (string, error) {
 	sa := i.(*v1.ServiceAccount)
 	sa.TypeMeta.APIVersion = "v1"
 	sa.TypeMeta.Kind = "ServiceAccount"
+
 	return r.marshalObject(sa)
 }
 
@@ -76,6 +69,7 @@ func (*ServiceAccount) Header(ns string) Row {
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
+
 	return append(hh, "NAME", "SECRET", "AGE")
 }
 
@@ -92,9 +86,4 @@ func (r *ServiceAccount) Fields(ns string) Row {
 		strconv.Itoa(len(i.Secrets)),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
-}
-
-// ExtFields returns extended fields in relation to headers.
-func (*ServiceAccount) ExtFields() Properties {
-	return Properties{}
 }

@@ -13,51 +13,43 @@ type PVC struct {
 }
 
 // NewPVCList returns a new resource list.
-func NewPVCList(ns string) List {
-	return NewPVCListWithArgs(ns, NewPVC())
+func NewPVCList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"pvc",
+		NewPVC(c),
+		AllVerbsAccess|DescribeAccess,
+	)
 }
 
-// NewPVCListWithArgs returns a new resource list.
-func NewPVCListWithArgs(ns string, res Resource) List {
-	return newList(ns, "pvc", res, AllVerbsAccess|DescribeAccess)
+// NewPVC instantiates a new PVC.
+func NewPVC(c k8s.Connection) *PVC {
+	p := &PVC{&Base{connection: c, resource: k8s.NewPVC(c)}, nil}
+	p.Factory = p
+
+	return p
 }
 
-// NewPVC instantiates a new Endpoint.
-func NewPVC() *PVC {
-	return NewPVCWithArgs(k8s.NewPVC())
-}
-
-// NewPVCWithArgs instantiates a new Endpoint.
-func NewPVCWithArgs(r k8s.Res) *PVC {
-	ep := &PVC{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	ep.creator = ep
-	return ep
-}
-
-// NewInstance builds a new Endpoint instance from a k8s resource.
-func (*PVC) NewInstance(i interface{}) Columnar {
-	cm := NewPVC()
-	switch i.(type) {
+// New builds a new PVC instance from a k8s resource.
+func (r *PVC) New(i interface{}) Columnar {
+	c := NewPVC(r.connection)
+	switch instance := i.(type) {
 	case *v1.PersistentVolumeClaim:
-		cm.instance = i.(*v1.PersistentVolumeClaim)
+		c.instance = instance
 	case v1.PersistentVolumeClaim:
-		ii := i.(v1.PersistentVolumeClaim)
-		cm.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown PVC type %#v", i)
 	}
-	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
-	return cm
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal resource to yaml.
 func (r *PVC) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -65,6 +57,7 @@ func (r *PVC) Marshal(path string) (string, error) {
 	pvc := i.(*v1.PersistentVolumeClaim)
 	pvc.TypeMeta.APIVersion = "v1"
 	pvc.TypeMeta.Kind = "PersistentVolumeClaim"
+
 	return r.marshalObject(pvc)
 }
 
@@ -74,6 +67,7 @@ func (*PVC) Header(ns string) Row {
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
+
 	return append(hh, "NAME", "STATUS", "VOLUME", "CAPACITY", "ACCESS MODES", "STORAGECLASS", "AGE")
 }
 
@@ -115,9 +109,4 @@ func (r *PVC) Fields(ns string) Row {
 		class,
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
-}
-
-// ExtFields returns extended fields in relation to headers.
-func (*PVC) ExtFields() Properties {
-	return Properties{}
 }

@@ -15,51 +15,43 @@ type ReplicaSet struct {
 }
 
 // NewReplicaSetList returns a new resource list.
-func NewReplicaSetList(ns string) List {
-	return NewReplicaSetListWithArgs(ns, NewReplicaSet())
+func NewReplicaSetList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"rs",
+		NewReplicaSet(c),
+		AllVerbsAccess|DescribeAccess,
+	)
 }
 
-// NewReplicaSetListWithArgs returns a new resource list.
-func NewReplicaSetListWithArgs(ns string, res Resource) List {
-	return newList(ns, "rs", res, AllVerbsAccess|DescribeAccess)
+// NewReplicaSet instantiates a new ReplicaSet.
+func NewReplicaSet(c k8s.Connection) *ReplicaSet {
+	r := &ReplicaSet{&Base{connection: c, resource: k8s.NewReplicaSet(c)}, nil}
+	r.Factory = r
+
+	return r
 }
 
-// NewReplicaSet instantiates a new Endpoint.
-func NewReplicaSet() *ReplicaSet {
-	return NewReplicaSetWithArgs(k8s.NewReplicaSet())
-}
-
-// NewReplicaSetWithArgs instantiates a new Endpoint.
-func NewReplicaSetWithArgs(r k8s.Res) *ReplicaSet {
-	ep := &ReplicaSet{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	ep.creator = ep
-	return ep
-}
-
-// NewInstance builds a new Endpoint instance from a k8s resource.
-func (*ReplicaSet) NewInstance(i interface{}) Columnar {
-	cm := NewReplicaSet()
-	switch i.(type) {
+// New builds a new ReplicaSet instance from a k8s resource.
+func (r *ReplicaSet) New(i interface{}) Columnar {
+	c := NewReplicaSet(r.connection)
+	switch instance := i.(type) {
 	case *v1.ReplicaSet:
-		cm.instance = i.(*v1.ReplicaSet)
+		c.instance = instance
 	case v1.ReplicaSet:
-		ii := i.(v1.ReplicaSet)
-		cm.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown ReplicaSet type %#v", i)
 	}
-	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
-	return cm
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal a deployment given a namespaced name.
 func (r *ReplicaSet) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -67,6 +59,7 @@ func (r *ReplicaSet) Marshal(path string) (string, error) {
 	rs := i.(*v1.ReplicaSet)
 	rs.TypeMeta.APIVersion = "extensions/v1beta"
 	rs.TypeMeta.Kind = "ReplicaSet"
+
 	return r.marshalObject(rs)
 }
 
@@ -76,6 +69,7 @@ func (*ReplicaSet) Header(ns string) Row {
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
+
 	return append(hh, "NAME", "DESIRED", "CURRENT", "READY", "AGE")
 }
 
@@ -87,6 +81,7 @@ func (r *ReplicaSet) Fields(ns string) Row {
 	}
 
 	i := r.instance
+
 	return append(ff,
 		i.Name,
 		strconv.Itoa(int(*i.Spec.Replicas)),
@@ -94,9 +89,4 @@ func (r *ReplicaSet) Fields(ns string) Row {
 		strconv.Itoa(int(i.Status.ReadyReplicas)),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
-}
-
-// ExtFields returns extended fields in relation to headers.
-func (*ReplicaSet) ExtFields() Properties {
-	return Properties{}
 }

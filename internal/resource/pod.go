@@ -37,75 +37,64 @@ type (
 	// Pod that can be displayed in a table and interacted with.
 	Pod struct {
 		*Base
-		instance  *v1.Pod
-		metricSvc MetricsIfc
-		metrics   k8s.Metric
+		instance     *v1.Pod
+		metricServer MetricsServer
+		metrics      k8s.PodMetrics
 	}
 )
 
 // NewPodList returns a new resource list.
-func NewPodList(ns string) List {
-	return NewPodListWithArgs(ns, NewPod())
+func NewPodList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"po",
+		NewPod(c),
+		AllVerbsAccess|DescribeAccess,
+	)
 }
 
-// NewPodListWithArgs returns a new resource list.
-func NewPodListWithArgs(ns string, res Resource) List {
-	l := newList(ns, "po", res, AllVerbsAccess|DescribeAccess)
-	l.xray = true
-	return l
-}
+// NewPod instantiates a new Pod.
+func NewPod(c k8s.Connection) *Pod {
+	p := &Pod{&Base{connection: c, resource: k8s.NewPod(c)}, nil, k8s.NewMetricsServer(c), k8s.PodMetrics{}}
+	p.Factory = p
 
-// NewPod returns a new Pod instance.
-func NewPod() *Pod {
-	return NewPodWithArgs(k8s.NewPod(), k8s.NewMetricsServer())
-}
-
-// NewPodWithArgs returns a new Pod instance.
-func NewPodWithArgs(r k8s.Res, mx MetricsIfc) *Pod {
-	p := &Pod{
-		metricSvc: mx,
-		Base: &Base{
-			caller: r,
-		},
-	}
-	p.creator = p
 	return p
 }
 
-// NewInstance builds a new Pod instance from a k8s resource.
-func (r *Pod) NewInstance(i interface{}) Columnar {
-	pod := NewPod()
-	switch i.(type) {
+// New builds a new Pod instance from a k8s resource.
+func (r *Pod) New(i interface{}) Columnar {
+	c := NewPod(r.connection)
+	switch instance := i.(type) {
 	case *v1.Pod:
-		pod.instance = i.(*v1.Pod)
+		c.instance = instance
 	case v1.Pod:
-		ii := i.(v1.Pod)
-		pod.instance = &ii
+		c.instance = &instance
 	case *interface{}:
-		ptr := *i.(*interface{})
+		ptr := *instance
 		po := ptr.(v1.Pod)
-		pod.instance = &po
+		c.instance = &po
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown Pod type %#v", i)
 	}
-	pod.path = r.namespacedName(pod.instance.ObjectMeta)
-	return pod
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Metrics retrieves cpu/mem resource consumption on a pod.
-func (r *Pod) Metrics() k8s.Metric {
+func (r *Pod) Metrics() k8s.PodMetrics {
 	return r.metrics
 }
 
 // SetMetrics set the current k8s resource metrics on a given pod.
-func (r *Pod) SetMetrics(m k8s.Metric) {
+func (r *Pod) SetMetrics(m k8s.PodMetrics) {
 	r.metrics = m
 }
 
 // Marshal resource to yaml.
 func (r *Pod) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -113,18 +102,20 @@ func (r *Pod) Marshal(path string) (string, error) {
 	po := i.(*v1.Pod)
 	po.TypeMeta.APIVersion = "v1"
 	po.TypeMeta.Kind = "Pod"
+
 	return r.marshalObject(po)
 }
 
 // Containers lists out all the docker contrainers name contained in a pod.
 func (r *Pod) Containers(path string, includeInit bool) ([]string, error) {
 	ns, po := namespaced(path)
-	return r.caller.(k8s.Loggable).Containers(ns, po, includeInit)
+
+	return r.resource.(k8s.Loggable).Containers(ns, po, includeInit)
 }
 
 // Logs tails a given container logs
 func (r *Pod) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (context.CancelFunc, error) {
-	req := r.caller.(k8s.Loggable).Logs(ns, n, co, lines, prev)
+	req := r.resource.(k8s.Loggable).Logs(ns, n, co, lines, prev)
 	ctx, cancel := context.WithCancel(context.TODO())
 	req.Context(ctx)
 
@@ -158,29 +149,32 @@ func (r *Pod) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (c
 			c <- scanner.Text()
 		}
 	}()
+
 	return cancel, nil
 }
 
 // List resources for a given namespace.
 func (r *Pod) List(ns string) (Columnars, error) {
-	ii, err := r.caller.List(ns)
+	pods, err := r.resource.List(ns)
 	if err != nil {
 		return nil, err
 	}
 
-	metrics, err := r.metricSvc.PodMetrics()
-	if err != nil {
-		log.Error().Err(err)
+	mx := make(k8s.PodsMetrics, len(pods))
+	if r.metricServer.HasMetrics() {
+		pmx, _ := r.metricServer.FetchPodsMetrics(ns)
+		r.metricServer.PodsMetrics(pmx, mx)
 	}
 
-	cc := make(Columnars, 0, len(ii))
-	for i := 0; i < len(ii); i++ {
-		po := r.NewInstance(&ii[i]).(MxColumnar)
+	cc := make(Columnars, 0, len(pods))
+	for i := range pods {
+		po := r.New(&pods[i]).(*Pod)
 		if err == nil {
-			po.SetMetrics(metrics[po.Name()])
+			po.metrics = mx[po.Name()]
 		}
 		cc = append(cc, po)
 	}
+
 	return cc, nil
 }
 
@@ -214,13 +208,14 @@ func (r *Pod) Fields(ns string) Row {
 	}
 
 	cr, _, rc, cc := r.statuses()
+
 	return append(ff,
 		Pad(i.ObjectMeta.Name, podNameSize),
 		strconv.Itoa(cr)+"/"+strconv.Itoa(len(cc)),
 		r.phase(i.Status),
 		strconv.Itoa(rc),
-		r.metrics.CPU,
-		r.metrics.Mem,
+		ToMillicore(r.metrics.CurrentCPU),
+		ToMi(r.metrics.CurrentMEM),
 		i.Status.PodIP,
 		i.Spec.NodeName,
 		string(i.Status.QOSClass),
@@ -228,27 +223,15 @@ func (r *Pod) Fields(ns string) Row {
 	)
 }
 
-// ExtFields returns extra info about the resource.
-func (r *Pod) ExtFields() Properties {
-	i := r.instance
-
-	return Properties{
-		"Priority":        strconv.Itoa(int(*i.Spec.Priority)),
-		"Priority Class":  missing(i.Spec.PriorityClassName),
-		"Labels":          mapToStr(i.Labels),
-		"Annotations":     mapToStr(i.ObjectMeta.Annotations),
-		"Containers":      r.toContainers(i.Spec.Containers),
-		"Init Containers": r.toContainers(i.Spec.InitContainers),
-		"Node Selectors":  mapToStr(i.Spec.NodeSelector),
-		"Volumes":         r.toVolumes(i.Spec.Volumes),
-	}
-}
+// ----------------------------------------------------------------------------
+// Helpers...
 
 func (r *Pod) toVolumes(vv []v1.Volume) map[string]interface{} {
 	m := make(map[string]interface{}, len(vv))
 	for _, v := range vv {
 		m[v.Name] = r.toVolume(v)
 	}
+
 	return m
 }
 
@@ -280,6 +263,7 @@ func (r *Pod) toContainers(cc []v1.Container) map[string]interface{} {
 			"Environment": r.toEnv(c.Env),
 		}
 	}
+
 	return m
 }
 
@@ -297,6 +281,7 @@ func (r *Pod) toEnv(ee []v1.EnvVar) []string {
 			ss[i] = e.Name + "=" + e.Value + "(" + s + ")"
 		}
 	}
+
 	return ss
 }
 
@@ -317,6 +302,7 @@ func (r *Pod) toEnvFrom(e *v1.EnvVarSource) string {
 		f := e.SecretKeyRef
 		s += f.Name + ":" + f.Key + "(" + r.boolPtrToStr(f.Optional) + ")"
 	}
+
 	return s
 }
 
@@ -339,6 +325,7 @@ func (r *Pod) statuses() (cr, ct, rc int, cc []v1.ContainerStatus) {
 		}
 		rc += int(c.RestartCount)
 	}
+
 	return
 }
 
@@ -357,5 +344,6 @@ func (*Pod) phase(s v1.PodStatus) string {
 			}
 		}
 	}
+
 	return status
 }

@@ -10,34 +10,37 @@ import (
 type clusterInfoView struct {
 	*tview.Table
 
-	app *appView
+	app     *appView
+	cluster *resource.Cluster
 }
 
 func newInfoView(app *appView) *clusterInfoView {
-	return &clusterInfoView{app: app, Table: tview.NewTable()}
+	return &clusterInfoView{
+		app:     app,
+		Table:   tview.NewTable(),
+		cluster: resource.NewCluster(app.conn(), &log.Logger),
+	}
 }
 
 func (v *clusterInfoView) init() {
-	cluster := resource.NewCluster()
-
 	var row int
 	v.SetCell(row, 0, v.sectionCell("Context"))
-	v.SetCell(row, 1, v.infoCell(cluster.ContextName()))
+	v.SetCell(row, 1, v.infoCell(v.cluster.ContextName()))
 	row++
 
 	v.SetCell(row, 0, v.sectionCell("Cluster"))
-	v.SetCell(row, 1, v.infoCell(cluster.ClusterName()))
+	v.SetCell(row, 1, v.infoCell(v.cluster.ClusterName()))
 	row++
 
 	v.SetCell(row, 0, v.sectionCell("User"))
-	v.SetCell(row, 1, v.infoCell(cluster.UserName()))
+	v.SetCell(row, 1, v.infoCell(v.cluster.UserName()))
 	row++
 
 	v.SetCell(row, 0, v.sectionCell("K9s Rev"))
 	v.SetCell(row, 1, v.infoCell(v.app.version))
 	row++
 
-	rev := cluster.Version()
+	rev := v.cluster.Version()
 	v.SetCell(row, 0, v.sectionCell("K8s Rev"))
 	v.SetCell(row, 1, v.infoCell(rev))
 	row++
@@ -67,24 +70,30 @@ func (*clusterInfoView) infoCell(t string) *tview.TableCell {
 func (v *clusterInfoView) refresh() {
 	var row int
 
-	cluster := resource.NewCluster()
-	v.GetCell(row, 1).SetText(cluster.ContextName())
+	v.GetCell(row, 1).SetText(v.cluster.ContextName())
 	row++
-	v.GetCell(row, 1).SetText(cluster.ClusterName())
+	v.GetCell(row, 1).SetText(v.cluster.ClusterName())
 	row++
-	v.GetCell(row, 1).SetText(cluster.UserName())
+	v.GetCell(row, 1).SetText(v.cluster.UserName())
 	row += 2
-	v.GetCell(row, 1).SetText(cluster.Version())
+	v.GetCell(row, 1).SetText(v.cluster.Version())
 	row++
 
-	mx, err := cluster.Metrics()
+	nodes, err := v.cluster.GetNodes()
 	if err != nil {
-		log.Warn().Msgf("%s", err)
+		log.Warn().Msgf("ClusterInfo %s", err)
 		return
 	}
+	mxNodes, err := v.cluster.GetNodesMetrics()
+	if err != nil {
+		log.Warn().Msgf("ClusterInfo %s", err)
+		return
+	}
+
+	mx := v.cluster.Metrics(nodes, mxNodes)
 	c := v.GetCell(row, 1)
-	c.SetText(deltas(c.Text, mx.CPU))
+	c.SetText(deltas(c.Text, toPerc(mx.PercCPU)))
 	row++
 	c = v.GetCell(row, 1)
-	c.SetText(deltas(c.Text, mx.Mem))
+	c.SetText(deltas(c.Text, toPerc(mx.PercMEM)))
 }

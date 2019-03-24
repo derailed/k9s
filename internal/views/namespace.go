@@ -8,6 +8,7 @@ import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -55,12 +56,12 @@ func (v *namespaceView) useNsCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *namespaceView) useNamespace(name string) {
-	if err := config.Root.SetActiveNamespace(name); err != nil {
+	if err := v.app.config.SetActiveNamespace(name); err != nil {
 		v.app.flash(flashErr, err.Error())
 	} else {
 		v.app.flash(flashInfo, fmt.Sprintf("Namespace %s is now active!", name))
 	}
-	config.Root.Save()
+	v.app.config.Save()
 }
 
 func (v *namespaceView) getSelectedItem() string {
@@ -73,7 +74,7 @@ func (*namespaceView) cleanser(s string) string {
 
 func (v *namespaceView) decorate(data resource.TableData) resource.TableData {
 	if _, ok := data.Rows[resource.AllNamespaces]; !ok {
-		if k8s.CanIAccess("", "list", "namespaces", "namespace.v1") {
+		if k8s.CanIAccess(v.app.conn().Config(), log.Logger, "", "list", "namespaces", "namespace.v1") {
 			data.Rows[resource.AllNamespace] = &resource.RowEvent{
 				Action: resource.Unchanged,
 				Fields: resource.Row{resource.AllNamespace, "Active", "0"},
@@ -81,14 +82,14 @@ func (v *namespaceView) decorate(data resource.TableData) resource.TableData {
 			}
 		}
 	}
-	for k, v := range data.Rows {
-		if config.InList(config.Root.FavNamespaces(), k) {
-			v.Fields[0] += "+"
-			v.Action = resource.Unchanged
+	for k, r := range data.Rows {
+		if config.InList(v.app.config.FavNamespaces(), k) {
+			r.Fields[0] += "+"
+			r.Action = resource.Unchanged
 		}
-		if config.Root.ActiveNamespace() == k {
-			v.Fields[0] += "(*)"
-			v.Action = resource.Unchanged
+		if v.app.config.ActiveNamespace() == k {
+			r.Fields[0] += "(*)"
+			r.Action = resource.Unchanged
 		}
 	}
 	return data

@@ -117,3 +117,33 @@ func BenchmarkMapToStr(b *testing.B) {
 		mapToStr(ll)
 	}
 }
+
+func TestToMillicore(t *testing.T) {
+	uu := []struct {
+		v int64
+		e string
+	}{
+		{0, "0m"},
+		{2, "2m"},
+		{1000, "1000m"},
+	}
+
+	for _, u := range uu {
+		assert.Equal(t, u.e, ToMillicore(u.v))
+	}
+}
+
+func TestToMi(t *testing.T) {
+	uu := []struct {
+		v float64
+		e string
+	}{
+		{0, "0Mi"},
+		{2, "2Mi"},
+		{1000, "1000Mi"},
+	}
+
+	for _, u := range uu {
+		assert.Equal(t, u.e, ToMi(u.v))
+	}
+}

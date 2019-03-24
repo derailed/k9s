@@ -1,10 +1,10 @@
 package resource
 
 import (
-	"log"
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -15,51 +15,43 @@ type Secret struct {
 }
 
 // NewSecretList returns a new resource list.
-func NewSecretList(ns string) List {
-	return NewSecretListWithArgs(ns, NewSecret())
-}
-
-// NewSecretListWithArgs returns a new resource list.
-func NewSecretListWithArgs(ns string, res Resource) List {
-	return newList(ns, "secret", res, AllVerbsAccess|DescribeAccess)
+func NewSecretList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"secret",
+		NewSecret(c),
+		AllVerbsAccess|DescribeAccess,
+	)
 }
 
 // NewSecret instantiates a new Secret.
-func NewSecret() *Secret {
-	return NewSecretWithArgs(k8s.NewSecret())
+func NewSecret(c k8s.Connection) *Secret {
+	s := &Secret{&Base{connection: c, resource: k8s.NewSecret(c)}, nil}
+	s.Factory = s
+
+	return s
 }
 
-// NewSecretWithArgs instantiates a new Secret.
-func NewSecretWithArgs(r k8s.Res) *Secret {
-	cm := &Secret{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	cm.creator = cm
-	return cm
-}
-
-// NewInstance builds a new Secret instance from a k8s resource.
-func (*Secret) NewInstance(i interface{}) Columnar {
-	cm := NewSecret()
-	switch i.(type) {
+// New builds a new Secret instance from a k8s resource.
+func (r *Secret) New(i interface{}) Columnar {
+	c := NewSecret(r.connection)
+	switch instance := i.(type) {
 	case *v1.Secret:
-		cm.instance = i.(*v1.Secret)
+		c.instance = instance
 	case v1.Secret:
-		ii := i.(v1.Secret)
-		cm.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatalf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown Secret type %#v", i)
 	}
-	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
-	return cm
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal resource to yaml.
 func (r *Secret) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -67,6 +59,7 @@ func (r *Secret) Marshal(path string) (string, error) {
 	sec := i.(*v1.Secret)
 	sec.TypeMeta.APIVersion = "v1"
 	sec.TypeMeta.Kind = "Secret"
+
 	return r.marshalObject(sec)
 }
 
@@ -76,6 +69,7 @@ func (*Secret) Header(ns string) Row {
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
+
 	return append(hh, "NAME", "TYPE", "DATA", "AGE")
 }
 
@@ -93,9 +87,4 @@ func (r *Secret) Fields(ns string) Row {
 		strconv.Itoa(len(i.Data)),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
-}
-
-// ExtFields returns extended fields in relation to headers.
-func (*Secret) ExtFields() Properties {
-	return Properties{}
 }

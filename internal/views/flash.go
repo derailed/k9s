@@ -40,7 +40,7 @@ func newFlashView(app *tview.Application, m string) *flashView {
 		f.SetTextColor(tcell.ColorAqua)
 		f.SetTextAlign(tview.AlignLeft)
 		f.SetBorderPadding(0, 0, 1, 1)
-		f.SetText(m)
+		f.SetText("")
 	}
 	return &f
 }

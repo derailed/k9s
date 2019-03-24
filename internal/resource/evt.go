@@ -16,51 +16,43 @@ type Event struct {
 }
 
 // NewEventList returns a new resource list.
-func NewEventList(ns string) List {
-	return NewEventListWithArgs(ns, NewEvent())
+func NewEventList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"ev",
+		NewEvent(c),
+		ListAccess+NamespaceAccess,
+	)
 }
 
-// NewEventListWithArgs returns a new resource list.
-func NewEventListWithArgs(ns string, res Resource) List {
-	return newList(ns, "event", res, ListAccess+NamespaceAccess)
+// NewEvent instantiates a new Event.
+func NewEvent(c k8s.Connection) *Event {
+	ev := &Event{&Base{connection: c, resource: k8s.NewEvent(c)}, nil}
+	ev.Factory = ev
+
+	return ev
 }
 
-// NewEvent instantiates a new Endpoint.
-func NewEvent() *Event {
-	return NewEventWithArgs(k8s.NewEvent())
-}
-
-// NewEventWithArgs instantiates a new Endpoint.
-func NewEventWithArgs(r k8s.Res) *Event {
-	ep := &Event{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	ep.creator = ep
-	return ep
-}
-
-// NewInstance builds a new Endpoint instance from a k8s resource.
-func (*Event) NewInstance(i interface{}) Columnar {
-	cm := NewEvent()
-	switch i.(type) {
+// New builds a new Event instance from a k8s resource.
+func (r *Event) New(i interface{}) Columnar {
+	c := NewEvent(r.connection)
+	switch instance := i.(type) {
 	case *v1.Event:
-		cm.instance = i.(*v1.Event)
+		c.instance = instance
 	case v1.Event:
-		ii := i.(v1.Event)
-		cm.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown Event type %#v", i)
 	}
-	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
-	return cm
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal resource to yaml.
 func (r *Event) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -68,18 +60,9 @@ func (r *Event) Marshal(path string) (string, error) {
 	ev := i.(*v1.Event)
 	ev.TypeMeta.APIVersion = "v1"
 	ev.TypeMeta.Kind = "Event"
+
 	return r.marshalObject(ev)
 }
-
-// // Get resource given a namespaced name.
-// func (r *Event) Get(path string) (Columnar, error) {
-// 	ns, n := namespaced(path)
-// 	i, err := r.caller.Get(ns, n)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	return r.NewInstance(i), nil
-// }
 
 // Delete a resource by name.
 func (r *Event) Delete(path string) error {
@@ -92,6 +75,7 @@ func (*Event) Header(ns string) Row {
 	if ns == AllNamespaces {
 		ff = append(ff, "NAMESPACE")
 	}
+
 	return append(ff, "NAME", "REASON", "SOURCE", "COUNT", "MESSAGE", "AGE")
 }
 
@@ -116,11 +100,7 @@ func (r *Event) Fields(ns string) Row {
 	)
 }
 
-// ExtFields returns extended fields in relation to headers.
-func (*Event) ExtFields() Properties {
-	return Properties{}
-}
-
+// ----------------------------------------------------------------------------
 // Helpers...
 
 func (*Event) toEmoji(t, r string) string {

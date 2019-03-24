@@ -15,51 +15,43 @@ type RoleBinding struct {
 }
 
 // NewRoleBindingList returns a new resource list.
-func NewRoleBindingList(ns string) List {
-	return NewRoleBindingListWithArgs(ns, NewRoleBinding())
+func NewRoleBindingList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"rolebinding",
+		NewRoleBinding(c),
+		AllVerbsAccess|DescribeAccess,
+	)
 }
 
-// NewRoleBindingListWithArgs returns a new resource list.
-func NewRoleBindingListWithArgs(ns string, res Resource) List {
-	return newList(ns, "rolebinding", res, AllVerbsAccess|DescribeAccess)
+// NewRoleBinding instantiates a new RoleBinding.
+func NewRoleBinding(c k8s.Connection) *RoleBinding {
+	r := &RoleBinding{&Base{connection: c, resource: k8s.NewRoleBinding(c)}, nil}
+	r.Factory = r
+
+	return r
 }
 
-// NewRoleBinding instantiates a new Endpoint.
-func NewRoleBinding() *RoleBinding {
-	return NewRoleBindingWithArgs(k8s.NewRoleBinding())
-}
-
-// NewRoleBindingWithArgs instantiates a new Endpoint.
-func NewRoleBindingWithArgs(r k8s.Res) *RoleBinding {
-	ep := &RoleBinding{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	ep.creator = ep
-	return ep
-}
-
-// NewInstance builds a new Endpoint instance from a k8s resource.
-func (*RoleBinding) NewInstance(i interface{}) Columnar {
-	cm := NewRoleBinding()
-	switch i.(type) {
+// New builds a new RoleBinding instance from a k8s resource.
+func (r *RoleBinding) New(i interface{}) Columnar {
+	c := NewRoleBinding(r.connection)
+	switch instance := i.(type) {
 	case *v1.RoleBinding:
-		cm.instance = i.(*v1.RoleBinding)
+		c.instance = instance
 	case v1.RoleBinding:
-		ii := i.(v1.RoleBinding)
-		cm.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown RoleBinding type %#v", i)
 	}
-	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
-	return cm
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal resource to yaml.
 func (r *RoleBinding) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -67,6 +59,7 @@ func (r *RoleBinding) Marshal(path string) (string, error) {
 	rb := i.(*v1.RoleBinding)
 	rb.TypeMeta.APIVersion = "rbac.authorization.k8s.io/v1"
 	rb.TypeMeta.Kind = "RoleBinding"
+
 	return r.marshalObject(rb)
 }
 
@@ -76,6 +69,7 @@ func (*RoleBinding) Header(ns string) Row {
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
+
 	return append(hh, "NAME", "ROLE", "SUBJECTS", "AGE")
 }
 
@@ -95,11 +89,7 @@ func (r *RoleBinding) Fields(ns string) Row {
 	)
 }
 
-// ExtFields returns extended fields in relation to headers.
-func (*RoleBinding) ExtFields() Properties {
-	return Properties{}
-}
-
+// ----------------------------------------------------------------------------
 // Helpers...
 
 func (r *RoleBinding) toSubjects(ss []v1.Subject) string {
@@ -110,6 +100,7 @@ func (r *RoleBinding) toSubjects(ss []v1.Subject) string {
 			acc += ","
 		}
 	}
+
 	return acc
 }
 

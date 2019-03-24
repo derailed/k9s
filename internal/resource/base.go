@@ -8,34 +8,50 @@ import (
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/cli-runtime/pkg/genericclioptions/printers"
+	"k8s.io/client-go/dynamic"
+	"k8s.io/client-go/kubernetes"
+	restclient "k8s.io/client-go/rest"
 	"k8s.io/kubernetes/pkg/kubectl/describe"
 	versioned "k8s.io/kubernetes/pkg/kubectl/describe/versioned"
+	v "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
 type (
-	// Creator can create a new resources.
-	Creator interface {
-		NewInstance(interface{}) Columnar
+	// Cruder represent a crudable Kubernetes resource.
+	Cruder interface {
+		Get(ns string, name string) (interface{}, error)
+		List(ns string) (k8s.Collection, error)
+		Delete(ns string, name string) error
 	}
 
-	// Caller can call Kubernetes verbs on a resource.
-	Caller interface {
-		k8s.Res
+	// Connection represents a Kubenetes apiserver connection.
+	Connection interface {
+		Config() *k8s.Config
+		DialOrDie() kubernetes.Interface
+		SwitchContextOrDie(ctx string)
+		NSDialOrDie() dynamic.NamespaceableResourceInterface
+		RestConfigOrDie() *restclient.Config
+		MXDial() (*v.Clientset, error)
+		DynDialOrDie() dynamic.Interface
+		HasMetrics() bool
+		IsNamespaced(n string) bool
+		SupportsResource(group string) bool
 	}
 
-	// APIFn knows how to call K8s api server.
-	APIFn func() k8s.Res
-
-	// InstanceFn instantiates a concrete resource.
-	InstanceFn func(interface{}) Columnar
+	// Factory creates new tabular resources.
+	Factory interface {
+		New(interface{}) Columnar
+	}
 
 	// Base resource.
 	Base struct {
-		path string
+		Factory
 
-		caller  Caller
-		creator Creator
+		connection Connection
+		path       string
+		resource   Cruder
 	}
 )
 
@@ -44,32 +60,39 @@ func (b *Base) Name() string {
 	return b.path
 }
 
+// ExtFields returns extended fields in relation to headers.
+func (*Base) ExtFields() Properties {
+	return Properties{}
+}
+
 // Get a resource by name
 func (b *Base) Get(path string) (Columnar, error) {
 	ns, n := namespaced(path)
-	i, err := b.caller.Get(ns, n)
+	i, err := b.resource.Get(ns, n)
 	if err != nil {
 		return nil, err
 	}
-	return b.creator.NewInstance(i), nil
+
+	return b.New(i), nil
 }
 
 // List all resources
 func (b *Base) List(ns string) (Columnars, error) {
-	ii, err := b.caller.List(ns)
+	ii, err := b.resource.List(ns)
 	if err != nil {
 		return nil, err
 	}
 
 	cc := make(Columnars, 0, len(ii))
 	for i := 0; i < len(ii); i++ {
-		cc = append(cc, b.creator.NewInstance(ii[i]))
+		cc = append(cc, b.New(ii[i]))
 	}
+
 	return cc, nil
 }
 
 // Describe a given resource.
-func (b *Base) Describe(kind, pa string) (string, error) {
+func (b *Base) Describe(kind, pa string, flags *genericclioptions.ConfigFlags) (string, error) {
 	ns, n := namespaced(pa)
 
 	mapping, err := k8s.RestMapping.Find(kind)
@@ -77,20 +100,22 @@ func (b *Base) Describe(kind, pa string) (string, error) {
 		return "", err
 	}
 
-	d, err := versioned.Describer(k8s.KubeConfig.Flags(), mapping)
+	d, err := versioned.Describer(flags, mapping)
 	if err != nil {
 		return "", err
 	}
 	opts := describe.DescriberSettings{
 		ShowEvents: true,
 	}
+
 	return d.Describe(ns, n, opts)
 }
 
 // Delete a resource by name.
 func (b *Base) Delete(path string) error {
 	ns, n := namespaced(path)
-	return b.caller.Delete(ns, n)
+
+	return b.resource.Delete(ns, n)
 }
 
 func (*Base) namespacedName(m metav1.ObjectMeta) string {
@@ -107,5 +132,6 @@ func (*Base) marshalObject(o runtime.Object) (string, error) {
 		log.Error().Msgf("Marshal Error %v", err)
 		return "", err
 	}
+
 	return buff.String(), nil
 }

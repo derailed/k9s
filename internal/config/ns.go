@@ -1,7 +1,9 @@
 package config
 
 import (
+	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -26,12 +28,13 @@ func NewNamespace() *Namespace {
 }
 
 // Validate a namespace is setup correctly
-func (n *Namespace) Validate(ks KubeSettings) {
-	nn, err := ks.NamespaceNames()
+func (n *Namespace) Validate(c k8s.Connection, ks KubeSettings) {
+	nns, err := c.DialOrDie().CoreV1().Namespaces().List(metav1.ListOptions{})
 	if err != nil {
 		return
 	}
 
+	nn := ks.NamespaceNames(nns.Items)
 	if !n.isAllNamespace() && !InList(nn, n.Active) {
 		log.Debug().Msg("[Config] Validation error active namespace resetting to `default")
 		n.Active = defaultNS

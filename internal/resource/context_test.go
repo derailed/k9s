@@ -78,19 +78,6 @@ func TestCTXListHasResource(t *testing.T) {
 	assert.NotNil(t, l.Resource())
 }
 
-func TestCTXListDescribe(t *testing.T) {
-	setup(t)
-
-	ca := NewMockSwitchableRes()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sNamedCTX(), nil)
-
-	l := resource.NewContextListWithArgs("blee", resource.NewContextWithArgs(ca))
-	props, err := l.Describe("blee/fred")
-	assert.Nil(t, err)
-	assert.Equal(t, 0, len(props))
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
-}
-
 // Helpers...
 
 func newContext() resource.Columnar {

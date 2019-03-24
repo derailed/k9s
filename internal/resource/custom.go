@@ -16,49 +16,41 @@ import (
 // Custom tracks a kubernetes resource.
 type Custom struct {
 	*Base
-	// instance             *unstructured.Unstructured
+
 	instance             *metav1beta1.TableRow
 	group, version, name string
 	headers              Row
 }
 
 // NewCustomList returns a new resource list.
-func NewCustomList(ns, g, v, n string) List {
-	return NewCustomListWithArgs(ns, n, NewCustom(g, v, n))
-}
-
-// NewCustomListWithArgs returns a new resource list.
-func NewCustomListWithArgs(ns, n string, res Resource) List {
-	return newList(ns, n, res, AllVerbsAccess)
+func NewCustomList(c k8s.Connection, ns, group, version, name string) List {
+	if !c.IsNamespaced(name) {
+		ns = NotNamespaced
+	}
+	return newList(
+		ns,
+		name,
+		NewCustom(c, group, version, name), AllVerbsAccess,
+	)
 }
 
 // NewCustom instantiates a new Kubernetes Resource.
-func NewCustom(g, v, n string) *Custom {
-	return NewCustomWithArgs(k8s.NewResource(g, v, n))
-}
+func NewCustom(c k8s.Connection, group, version, name string) *Custom {
+	cr := &Custom{Base: &Base{connection: c, resource: k8s.NewResource(c, group, version, name)}}
+	cr.Factory = cr
+	cr.group, cr.version, cr.name = cr.resource.(*k8s.Resource).GetInfo()
 
-// NewCustomWithArgs instantiates a new Custom.
-func NewCustomWithArgs(r k8s.Res) *Custom {
-	cr := &Custom{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	cr.creator = cr
-
-	cr.group, cr.version, cr.name = r.(*k8s.Resource).GetInfo()
 	return cr
 }
 
-// NewInstance builds a new Custom instance from a k8s resource.
-func (*Custom) NewInstance(i interface{}) Columnar {
-	cr := NewCustom("", "", "")
-	switch i.(type) {
+// New builds a new Custom instance from a k8s resource.
+func (r *Custom) New(i interface{}) Columnar {
+	cr := NewCustom(r.connection, "", "", "")
+	switch instance := i.(type) {
 	case *metav1beta1.TableRow:
-		cr.instance = i.(*metav1beta1.TableRow)
+		cr.instance = instance
 	case metav1beta1.TableRow:
-		t := i.(metav1beta1.TableRow)
-		cr.instance = &t
+		cr.instance = &instance
 	default:
 		log.Fatal().Msgf("Unknown %#v", i)
 	}
@@ -75,13 +67,14 @@ func (*Custom) NewInstance(i interface{}) Columnar {
 	name := meta["name"].(string)
 	cr.path = path.Join(ns, name)
 	cr.group, cr.version, cr.name = obj["kind"].(string), obj["apiVersion"].(string), name
+
 	return cr
 }
 
 // Marshal resource to yaml.
 func (r *Custom) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -90,12 +83,13 @@ func (r *Custom) Marshal(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
 	return string(raw), nil
 }
 
 // List all resources
 func (r *Custom) List(ns string) (Columnars, error) {
-	ii, err := r.caller.List(ns)
+	ii, err := r.resource.List(ns)
 	if err != nil {
 		return nil, err
 	}
@@ -112,21 +106,23 @@ func (r *Custom) List(ns string) (Columnars, error) {
 	rows := table.Rows
 	cc := make(Columnars, 0, len(rows))
 	for i := 0; i < len(rows); i++ {
-		cc = append(cc, r.creator.NewInstance(rows[i]))
+		cc = append(cc, r.New(rows[i]))
 	}
+
 	return cc, nil
 }
 
 // Header return resource header.
 func (r *Custom) Header(ns string) Row {
 	hh := make(Row, 0, len(r.headers)+1)
+
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
-
 	for _, h := range r.headers {
 		hh = append(hh, strings.ToUpper(h))
 	}
+
 	return hh
 }
 
@@ -142,55 +138,17 @@ func (r *Custom) Fields(ns string) Row {
 	}
 
 	meta := obj["metadata"].(map[string]interface{})
+	rns, ok := meta["namespace"].(string)
 
 	if ns == AllNamespaces {
-		ff = append(ff, meta["namespace"].(string))
+		if ok {
+			ff = append(ff, rns)
+		}
 	}
+
 	for _, c := range r.instance.Cells {
 		ff = append(ff, fmt.Sprintf("%v", c))
 	}
 
 	return ff
-}
-
-// ExtFields returns extended fields in relation to headers.
-func (*Custom) ExtFields() Properties {
-	return Properties{}
-}
-
-func getCRDS() map[string]k8s.APIGroup {
-	m := map[string]k8s.APIGroup{}
-	list := NewCRDList("")
-	ll, _ := list.Resource().List("")
-	for _, l := range ll {
-		ff := l.ExtFields()
-		grp := k8s.APIGroup{
-			Resource: ff["name"].(string),
-			Version:  ff["version"].(string),
-			Group:    ff["group"].(string),
-			Kind:     ff["kind"].(string),
-		}
-		if aa, ok := ff["aliases"].([]interface{}); ok {
-			if n, ok := ff["plural"].(string); ok {
-				grp.Plural = n
-			}
-			if n, ok := ff["singular"].(string); ok {
-				grp.Singular = n
-			}
-			aliases := make([]string, len(aa))
-			for i, a := range aa {
-				aliases[i] = a.(string)
-			}
-			grp.Aliases = aliases
-		} else if s, ok := ff["singular"].(string); ok {
-			grp.Singular = s
-			if p, ok := ff["plural"].(string); ok {
-				grp.Plural = p
-			}
-		} else if s, ok := ff["plural"].(string); ok {
-			grp.Plural = s
-		}
-		m[grp.Kind] = grp
-	}
-	return m
 }

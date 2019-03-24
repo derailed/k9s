@@ -7,9 +7,9 @@ import (
 )
 
 type (
-	viewFn    func(string, *appView, resource.List, colorerFn) resourceViewer
-	listFn    func(string) resource.List
-	colorerFn func(string, *resource.RowEvent) tcell.Color
+	viewFn    func(ns string, app *appView, list resource.List, colorer colorerFn) resourceViewer
+	listFn    func(c k8s.Connection, ns string) resource.List
+	colorerFn func(ns string, evt *resource.RowEvent) tcell.Color
 
 	resCmd struct {
 		title     string
@@ -20,49 +20,50 @@ type (
 	}
 )
 
-func helpCmds() map[string]resCmd {
+func helpCmds(c k8s.Connection) map[string]resCmd {
 	cmdMap := resourceViews()
 	cmds := make(map[string]resCmd, len(cmdMap))
 	for k, v := range cmdMap {
 		cmds[k] = v
 	}
-	for k, v := range allCRDs() {
+	for k, v := range allCRDs(c) {
 		cmds[k] = resCmd{title: v.Kind, api: v.Group}
 	}
 
 	return cmds
 }
 
-func allCRDs() map[string]k8s.APIGroup {
+func allCRDs(c k8s.Connection) map[string]k8s.APIGroup {
 	m := map[string]k8s.APIGroup{}
-	list := resource.NewCRDList(resource.AllNamespaces)
-	ll, _ := list.Resource().List(resource.AllNamespaces)
-	for _, l := range ll {
-		ff := l.ExtFields()
+
+	crds, _ := resource.
+		NewCRDList(c, resource.AllNamespaces).
+		Resource().
+		List(resource.AllNamespaces)
+
+	for _, crd := range crds {
+		ff := crd.ExtFields()
+
 		grp := k8s.APIGroup{
-			Version: ff["version"].(string),
 			Group:   ff["group"].(string),
 			Kind:    ff["kind"].(string),
+			Version: ff["version"].(string),
 		}
+
+		if p, ok := ff["plural"].(string); ok {
+			grp.Plural = p
+			m[p] = grp
+		}
+
+		if s, ok := ff["singular"].(string); ok {
+			grp.Singular = s
+			m[s] = grp
+		}
+
 		if aa, ok := ff["aliases"].([]interface{}); ok {
-			if n, ok := ff["plural"].(string); ok {
-				grp.Plural = n
-			}
-			if n, ok := ff["singular"].(string); ok {
-				grp.Singular = n
-			}
 			for _, a := range aa {
 				m[a.(string)] = grp
 			}
-		} else if s, ok := ff["singular"].(string); ok {
-			grp.Singular = s
-			if p, ok := ff["plural"].(string); ok {
-				grp.Plural = p
-			}
-			m[s] = grp
-		} else if s, ok := ff["plural"].(string); ok {
-			grp.Plural = s
-			m[s] = grp
 		}
 	}
 
@@ -165,7 +166,7 @@ func resourceViews() map[string]resCmd {
 		"no": {
 			title:     "Nodes",
 			api:       "",
-			viewFn:    newResourceView,
+			viewFn:    newNodeView,
 			listFn:    resource.NewNodeList,
 			colorerFn: nsColorer,
 		},
@@ -177,7 +178,7 @@ func resourceViews() map[string]resCmd {
 			colorerFn: nsColorer,
 		},
 		"pdb": {
-			title:     "PodDiscruptionBudgets",
+			title:     "PodDisruptionBudgets",
 			api:       "v1.beta1",
 			viewFn:    newResourceView,
 			listFn:    resource.NewPDBList,

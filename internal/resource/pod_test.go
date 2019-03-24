@@ -35,8 +35,9 @@ func TestPodFields(t *testing.T) {
 func TestPodMarshal(t *testing.T) {
 	setup(t)
 
-	mx := NewMockMetricsIfc()
-	m.When(mx.PodMetrics()).ThenReturn(map[string]k8s.Metric{"fred": {}}, nil)
+	mx := NewMockMetricsServer()
+	// metrics := make(k8s.PodsMetrics, 1)
+	// m.When(mx.PodsMetrics([]mv1beta1.PodMetrics{}, metrics)).thenReturn()
 	ca := NewMockCaller()
 	m.When(ca.Get("blee", "fred")).ThenReturn(k8sPod(), nil)
 
@@ -50,8 +51,8 @@ func TestPodMarshal(t *testing.T) {
 func TestPodListData(t *testing.T) {
 	setup(t)
 
-	mx := NewMockMetricsIfc()
-	m.When(mx.PodMetrics()).ThenReturn(map[string]k8s.Metric{"fred": {}}, nil)
+	mx := NewMockMetricsServer()
+	// m.When(mx.PodsMetrics("")).ThenReturn(map[string]k8s.Metric{"fred": {}}, nil)
 	ca := NewMockCaller()
 	m.When(ca.List("")).ThenReturn(k8s.Collection{*k8sPod()}, nil)
 
@@ -66,28 +67,12 @@ func TestPodListData(t *testing.T) {
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.AllNamespaces, l.GetNamespace())
-	assert.True(t, l.HasXRay())
 	row := td.Rows["blee/fred"]
 	assert.Equal(t, 11, len(row.Deltas))
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}
 	assert.Equal(t, resource.Row{"blee"}, row.Fields[:1])
-}
-
-func TestPodListDescribe(t *testing.T) {
-	setup(t)
-
-	mx := NewMockMetricsIfc()
-	m.When(mx.PodMetrics()).ThenReturn(map[string]k8s.Metric{"fred": {}}, nil)
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sPod(), nil)
-	l := resource.NewPodListWithArgs("blee", resource.NewPodWithArgs(ca, mx))
-	props, err := l.Describe("blee/fred")
-
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
-	assert.Nil(t, err)
-	assert.Equal(t, 8, len(props))
 }
 
 // Helpers...

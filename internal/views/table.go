@@ -283,7 +283,7 @@ func (v *tableView) displayCol(index int, name string) string {
 func (v *tableView) doUpdate(data resource.TableData) {
 	v.currentNS = data.Namespace
 	if v.currentNS == resource.AllNamespaces {
-		v.actions[KeyShiftG] = newKeyAction("Sort Namespace", v.sortNamespaceCmd, true)
+		v.actions[KeyShiftS] = newKeyAction("Sort Namespace", v.sortNamespaceCmd, true)
 	} else {
 		delete(v.actions, KeyShiftS)
 	}
@@ -308,9 +308,14 @@ func (v *tableView) doUpdate(data resource.TableData) {
 	}
 	row++
 
+	// for k := range data.Rows {
+	// 	log.Debug().Msgf("Keys: %s", k)
+	// }
+
 	keys := v.sortRows(data)
 	groupKeys := map[string][]string{}
 	for _, k := range keys {
+		// log.Debug().Msgf("RKEY: %s", k)
 		grp := data.Rows[k].Fields[v.sortCol.index]
 		if s, ok := groupKeys[grp]; ok {
 			s = append(s, k)

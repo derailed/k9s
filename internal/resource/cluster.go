@@ -2,39 +2,52 @@ package resource
 
 import (
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/rs/zerolog"
 	v1 "k8s.io/api/core/v1"
+	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 type (
-	// ClusterIfc represents a cluster.
-	ClusterIfc interface {
+	// ClusterMeta represents metadata about a Kubernetes cluster.
+	ClusterMeta interface {
+		Connection
+
 		Version() (string, error)
 		ContextName() string
 		ClusterName() string
 		UserName() string
 	}
 
-	// MetricsIfc represents a metrics server.
-	MetricsIfc interface {
-		NodeMetrics() (k8s.Metric, error)
-		PerNodeMetrics([]v1.Node) (map[string]k8s.Metric, error)
-		PodMetrics() (map[string]k8s.Metric, error)
+	// MetricsServer gather metrics information from pods and nodes.
+	MetricsServer interface {
+		MetricsService
+
+		ClusterLoad([]v1.Node, []mv1beta1.NodeMetrics) k8s.ClusterMetrics
+		NodesMetrics([]v1.Node, []mv1beta1.NodeMetrics, k8s.NodesMetrics)
+		PodsMetrics([]mv1beta1.PodMetrics, k8s.PodsMetrics)
+	}
+
+	// MetricsService calls the metrics server for metrics info.
+	MetricsService interface {
+		HasMetrics() bool
+		FetchNodesMetrics() ([]mv1beta1.NodeMetrics, error)
+		FetchPodsMetrics(ns string) ([]mv1beta1.PodMetrics, error)
 	}
 
 	// Cluster represents a kubernetes resource.
 	Cluster struct {
-		api ClusterIfc
-		mx  MetricsIfc
+		api ClusterMeta
+		mx  MetricsServer
 	}
 )
 
 // NewCluster returns a new cluster info resource.
-func NewCluster() *Cluster {
-	return NewClusterWithArgs(k8s.NewCluster(), k8s.NewMetricsServer())
+func NewCluster(c Connection, log *zerolog.Logger) *Cluster {
+	return NewClusterWithArgs(k8s.NewCluster(c, log), k8s.NewMetricsServer(c))
 }
 
 // NewClusterWithArgs for tests only!
-func NewClusterWithArgs(ci ClusterIfc, mx MetricsIfc) *Cluster {
+func NewClusterWithArgs(ci ClusterMeta, mx MetricsServer) *Cluster {
 	return &Cluster{api: ci, mx: mx}
 }
 
@@ -44,6 +57,7 @@ func (c *Cluster) Version() string {
 	if err != nil {
 		return "n/a"
 	}
+
 	return info
 }
 
@@ -63,6 +77,25 @@ func (c *Cluster) UserName() string {
 }
 
 // Metrics gathers node level metrics and compute utilization percentages.
-func (c *Cluster) Metrics() (k8s.Metric, error) {
-	return c.mx.NodeMetrics()
+func (c *Cluster) Metrics(nodes []v1.Node, nmx []mv1beta1.NodeMetrics) k8s.ClusterMetrics {
+	return c.mx.ClusterLoad(nodes, nmx)
+}
+
+// GetNodesMetrics fetch all nodes metrics.
+func (c *Cluster) GetNodesMetrics() ([]mv1beta1.NodeMetrics, error) {
+	return c.mx.FetchNodesMetrics()
+}
+
+// GetNodes fetch all available nodes.
+func (c *Cluster) GetNodes() ([]v1.Node, error) {
+	nn, err := k8s.NewNode(c.api).List("")
+	if err != nil {
+		return nil, err
+	}
+	nodes := make([]v1.Node, 0, len(nn))
+	for _, n := range nn {
+		nodes = append(nodes, n.(v1.Node))
+	}
+
+	return nodes, nil
 }

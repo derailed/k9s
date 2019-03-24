@@ -17,51 +17,43 @@ type Endpoints struct {
 }
 
 // NewEndpointsList returns a new resource list.
-func NewEndpointsList(ns string) List {
-	return NewEndpointsListWithArgs(ns, NewEndpoints())
+func NewEndpointsList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"ep",
+		NewEndpoints(c),
+		AllVerbsAccess|DescribeAccess,
+	)
 }
 
-// NewEndpointsListWithArgs returns a new resource list.
-func NewEndpointsListWithArgs(ns string, res Resource) List {
-	return newList(ns, "ep", res, AllVerbsAccess|DescribeAccess)
-}
+// NewEndpoints instantiates a new Endpoints.
+func NewEndpoints(c k8s.Connection) *Endpoints {
+	ep := &Endpoints{&Base{connection: c, resource: k8s.NewEndpoints(c)}, nil}
+	ep.Factory = ep
 
-// NewEndpoints instantiates a new Endpoint.
-func NewEndpoints() *Endpoints {
-	return NewEndpointsWithArgs(k8s.NewEndpoints())
-}
-
-// NewEndpointsWithArgs instantiates a new Endpoint.
-func NewEndpointsWithArgs(r k8s.Res) *Endpoints {
-	ep := &Endpoints{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	ep.creator = ep
 	return ep
 }
 
-// NewInstance builds a new Endpoint instance from a k8s resource.
-func (*Endpoints) NewInstance(i interface{}) Columnar {
-	cm := NewEndpoints()
-	switch i.(type) {
+// New builds a new Endpoints instance from a k8s resource.
+func (r *Endpoints) New(i interface{}) Columnar {
+	c := NewEndpoints(r.connection)
+	switch instance := i.(type) {
 	case *v1.Endpoints:
-		cm.instance = i.(*v1.Endpoints)
+		c.instance = instance
 	case v1.Endpoints:
-		ii := i.(v1.Endpoints)
-		cm.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown Endpoints type %#v", i)
 	}
-	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
-	return cm
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal resource to yaml.
 func (r *Endpoints) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -69,6 +61,7 @@ func (r *Endpoints) Marshal(path string) (string, error) {
 	ep := i.(*v1.Endpoints)
 	ep.TypeMeta.APIVersion = "v1"
 	ep.TypeMeta.Kind = "Endpoint"
+
 	return r.marshalObject(ep)
 }
 
@@ -78,6 +71,7 @@ func (*Endpoints) Header(ns string) Row {
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
+
 	return append(hh, "NAME", "ENDPOINTS", "AGE")
 }
 
@@ -96,10 +90,8 @@ func (r *Endpoints) Fields(ns string) Row {
 	)
 }
 
-// ExtFields returns extended fields in relation to headers.
-func (*Endpoints) ExtFields() Properties {
-	return Properties{}
-}
+// ----------------------------------------------------------------------------
+// Helpers...
 
 func (r *Endpoints) toEPs(ss []v1.EndpointSubset) string {
 	aa := make([]string, 0, len(ss))
@@ -124,5 +116,6 @@ func (r *Endpoints) toEPs(ss []v1.EndpointSubset) string {
 			}
 		}
 	}
+
 	return strings.Join(aa, ",")
 }

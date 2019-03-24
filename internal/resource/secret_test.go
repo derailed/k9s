@@ -114,20 +114,6 @@ func TestSecretListHasResource(t *testing.T) {
 	assert.NotNil(t, l.Resource())
 }
 
-func TestSecretListDescribe(t *testing.T) {
-	setup(t)
-
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sSecret(), nil)
-
-	l := resource.NewSecretListWithArgs("blee", resource.NewSecretWithArgs(ca))
-	props, err := l.Describe("blee/fred")
-
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
-	assert.Nil(t, err)
-	assert.Equal(t, 0, len(props))
-}
-
 func TestSecretListData(t *testing.T) {
 	setup(t)
 
@@ -147,7 +133,6 @@ func TestSecretListData(t *testing.T) {
 	assert.Equal(t, 1, len(td.Rows))
 
 	assert.Equal(t, "blee", l.GetNamespace())
-	assert.False(t, l.HasXRay())
 	row := td.Rows["blee/fred"]
 	assert.Equal(t, 4, len(row.Deltas))
 	for _, d := range row.Deltas {

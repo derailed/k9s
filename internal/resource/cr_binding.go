@@ -13,51 +13,43 @@ type ClusterRoleBinding struct {
 }
 
 // NewClusterRoleBindingList returns a new resource list.
-func NewClusterRoleBindingList(ns string) List {
-	return NewClusterRoleBindingListWithArgs(ns, NewClusterRoleBinding())
-}
-
-// NewClusterRoleBindingListWithArgs returns a new resource list.
-func NewClusterRoleBindingListWithArgs(ns string, res Resource) List {
-	return newList(NotNamespaced, "ctx", res, SwitchAccess|ViewAccess|DeleteAccess|DescribeAccess)
+func NewClusterRoleBindingList(c k8s.Connection, _ string) List {
+	return newList(
+		NotNamespaced,
+		"ctx",
+		NewClusterRoleBinding(c),
+		SwitchAccess|ViewAccess|DeleteAccess|DescribeAccess,
+	)
 }
 
 // NewClusterRoleBinding instantiates a new ClusterRoleBinding.
-func NewClusterRoleBinding() *ClusterRoleBinding {
-	return NewClusterRoleBindingWithArgs(k8s.NewClusterRoleBinding())
+func NewClusterRoleBinding(c k8s.Connection) *ClusterRoleBinding {
+	crb := &ClusterRoleBinding{&Base{connection: c, resource: k8s.NewClusterRoleBinding(c)}, nil}
+	crb.Factory = crb
+
+	return crb
 }
 
-// NewClusterRoleBindingWithArgs instantiates a new Context.
-func NewClusterRoleBindingWithArgs(r k8s.Res) *ClusterRoleBinding {
-	ctx := &ClusterRoleBinding{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	ctx.creator = ctx
-	return ctx
-}
-
-// NewInstance builds a new Context instance from a k8s resource.
-func (r *ClusterRoleBinding) NewInstance(i interface{}) Columnar {
-	c := NewClusterRoleBinding()
-	switch i.(type) {
+// New builds a new tabular instance from a k8s resource.
+func (r *ClusterRoleBinding) New(i interface{}) Columnar {
+	crb := NewClusterRoleBinding(r.connection)
+	switch instance := i.(type) {
 	case *v1.ClusterRoleBinding:
-		c.instance = i.(*v1.ClusterRoleBinding)
+		crb.instance = instance
 	case v1.ClusterRoleBinding:
-		ii := i.(v1.ClusterRoleBinding)
-		c.instance = &ii
+		crb.instance = &instance
 	default:
 		log.Fatal().Msgf("unknown context type %#v", i)
 	}
-	c.path = c.instance.Name
-	return c
+	crb.path = crb.instance.Name
+
+	return crb
 }
 
 // Marshal resource to yaml.
 func (r *ClusterRoleBinding) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -65,6 +57,7 @@ func (r *ClusterRoleBinding) Marshal(path string) (string, error) {
 	crb := i.(*v1.ClusterRoleBinding)
 	crb.TypeMeta.APIVersion = "rbac.authorization.k8s.io/v1"
 	crb.TypeMeta.Kind = "ClusterRoleBinding"
+
 	return r.marshalObject(crb)
 }
 
@@ -76,15 +69,9 @@ func (*ClusterRoleBinding) Header(_ string) Row {
 // Fields retrieves displayable fields.
 func (r *ClusterRoleBinding) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
-	i := r.instance
 
 	return append(ff,
-		i.Name,
-		toAge(i.ObjectMeta.CreationTimestamp),
+		r.instance.Name,
+		toAge(r.instance.ObjectMeta.CreationTimestamp),
 	)
-}
-
-// ExtFields returns extended fields in relation to headers.
-func (*ClusterRoleBinding) ExtFields() Properties {
-	return Properties{}
 }

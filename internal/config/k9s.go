@@ -1,5 +1,7 @@
 package config
 
+import "github.com/derailed/k9s/internal/k8s"
+
 const (
 	defaultRefreshRate    = 2
 	defaultLogRequestSize = 200
@@ -45,7 +47,7 @@ func (k *K9s) ActiveCluster() *Cluster {
 }
 
 // Validate the current configuration.
-func (k *K9s) Validate(ks KubeSettings) {
+func (k *K9s) Validate(c k8s.Connection, ks KubeSettings) {
 	if k.RefreshRate <= 0 {
 		k.RefreshRate = defaultRefreshRate
 	}
@@ -87,5 +89,5 @@ func (k *K9s) Validate(ks KubeSettings) {
 	if _, ok := k.Clusters[k.CurrentCluster]; !ok {
 		k.Clusters[k.CurrentCluster] = NewCluster()
 	}
-	k.Clusters[k.CurrentCluster].Validate(ks)
+	k.Clusters[k.CurrentCluster].Validate(c, ks)
 }

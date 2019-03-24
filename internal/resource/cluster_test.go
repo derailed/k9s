@@ -8,12 +8,14 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
+	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 func TestClusterVersion(t *testing.T) {
 	setup(t)
 
-	cIfc, mxIfc := NewMockClusterIfc(), NewMockMetricsIfc()
+	cIfc, mxIfc := NewMockClusterMeta(), NewMockMetricsServer()
 	m.When(cIfc.Version()).ThenReturn("1.2.3", nil)
 
 	ci := resource.NewClusterWithArgs(cIfc, mxIfc)
@@ -23,7 +25,7 @@ func TestClusterVersion(t *testing.T) {
 func TestClusterNoVersion(t *testing.T) {
 	setup(t)
 
-	cIfc, mxIfc := NewMockClusterIfc(), NewMockMetricsIfc()
+	cIfc, mxIfc := NewMockClusterMeta(), NewMockMetricsServer()
 	m.When(cIfc.Version()).ThenReturn("bad", fmt.Errorf("No data"))
 
 	ci := resource.NewClusterWithArgs(cIfc, mxIfc)
@@ -33,7 +35,7 @@ func TestClusterNoVersion(t *testing.T) {
 func TestClusterName(t *testing.T) {
 	setup(t)
 
-	cIfc, mxIfc := NewMockClusterIfc(), NewMockMetricsIfc()
+	cIfc, mxIfc := NewMockClusterMeta(), NewMockMetricsServer()
 	m.When(cIfc.ClusterName()).ThenReturn("fred")
 
 	ci := resource.NewClusterWithArgs(cIfc, mxIfc)
@@ -43,13 +45,11 @@ func TestClusterName(t *testing.T) {
 func TestClusterMetrics(t *testing.T) {
 	setup(t)
 
-	cIfc, mxIfc := NewMockClusterIfc(), NewMockMetricsIfc()
-	m.When(mxIfc.NodeMetrics()).ThenReturn(testMetric(), nil)
+	cIfc, mxIfc := NewMockClusterMeta(), NewMockMetricsServer()
+	m.When(mxIfc.ClusterLoad([]v1.Node{}, []mv1beta1.NodeMetrics{})).ThenReturn(clusterMetric())
 
 	c := resource.NewClusterWithArgs(cIfc, mxIfc)
-	m, err := c.Metrics()
-	assert.Nil(t, err)
-	assert.Equal(t, testMetric(), m)
+	assert.Equal(t, clusterMetric(), c.Metrics([]v1.Node{}, []mv1beta1.NodeMetrics{}))
 }
 
 // Helpers...
@@ -61,11 +61,9 @@ func setup(t *testing.T) {
 	})
 }
 
-func testMetric() k8s.Metric {
-	return k8s.Metric{
-		CPU:      "100m",
-		AvailCPU: "1000m",
-		Mem:      "256Gi",
-		AvailMem: "512Gi",
+func clusterMetric() k8s.ClusterMetrics {
+	return k8s.ClusterMetrics{
+		PercCPU: 100,
+		PercMEM: 1000,
 	}
 }

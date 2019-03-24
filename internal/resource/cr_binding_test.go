@@ -55,7 +55,6 @@ func TestCRBListData(t *testing.T) {
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
-	assert.False(t, l.HasXRay())
 	row := td.Rows["fred"]
 	assert.Equal(t, 2, len(row.Deltas))
 	for _, d := range row.Deltas {

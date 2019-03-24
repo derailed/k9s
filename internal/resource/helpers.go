@@ -38,6 +38,7 @@ const (
 
 func namespaced(n string) (string, string) {
 	ns, po := path.Split(n)
+
 	return strings.Trim(ns, "/"), po
 }
 
@@ -53,6 +54,7 @@ func check(s, sub string) string {
 	if len(s) == 0 {
 		return sub
 	}
+
 	return s
 }
 
@@ -73,12 +75,14 @@ func toAge(timestamp metav1.Time) string {
 	if timestamp.IsZero() {
 		return "<unknown>"
 	}
+
 	return duration.HumanDuration(time.Since(timestamp.Time))
 }
 
 // Pad a string up to the given length.
 func Pad(s string, l int) string {
 	fmat := "%-" + strconv.Itoa(l) + "s"
+
 	return fmt.Sprintf(fmat, s)
 }
 
@@ -104,5 +108,16 @@ func mapToStr(m map[string]string) (s string) {
 			s += ","
 		}
 	}
+
 	return
+}
+
+// ToMillicore shows cpu reading for human.
+func ToMillicore(v int64) string {
+	return strconv.Itoa(int(v)) + "m"
+}
+
+// ToMi shows mem reading for human.
+func ToMi(v float64) string {
+	return strconv.Itoa(int(v)) + "Mi"
 }

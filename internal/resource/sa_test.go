@@ -75,26 +75,12 @@ func TestSAListData(t *testing.T) {
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
-	assert.False(t, l.HasXRay())
 	row := td.Rows["blee/fred"]
 	assert.Equal(t, 3, len(row.Deltas))
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}
 	assert.Equal(t, resource.Row{"fred"}, row.Fields[:1])
-}
-
-func TestSAListDescribe(t *testing.T) {
-	setup(t)
-
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sSA(), nil)
-	l := resource.NewServiceAccountListWithArgs("blee", resource.NewServiceAccountWithArgs(ca))
-	props, err := l.Describe("blee/fred")
-
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
-	assert.Nil(t, err)
-	assert.Equal(t, 0, len(props))
 }
 
 // Helpers...

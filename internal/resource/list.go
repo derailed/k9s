@@ -3,8 +3,8 @@ package resource
 import (
 	"reflect"
 
-	"github.com/derailed/k9s/internal/k8s"
 	"k8s.io/apimachinery/pkg/watch"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 const (
@@ -63,10 +63,8 @@ type (
 		GetNamespace() string
 		SetNamespace(string)
 		Reconcile() error
-		Describe(pa string) (Properties, error)
 		GetName() string
 		Access(flag int) bool
-		HasXRay() bool
 	}
 
 	// Columnar tracks resources that can be diplayed in a tabular fashion.
@@ -86,20 +84,13 @@ type (
 	// Columnars a collection of columnars.
 	Columnars []Columnar
 
-	// MxColumnar tracks resource metrics.
-	MxColumnar interface {
-		Columnar
-		Metrics() k8s.Metric
-		SetMetrics(k8s.Metric)
-	}
-
 	// Resource tracks generic Kubernetes resources.
 	Resource interface {
-		NewInstance(interface{}) Columnar
+		New(interface{}) Columnar
 		Get(path string) (Columnar, error)
 		List(ns string) (Columnars, error)
 		Delete(path string) error
-		Describe(kind, pa string) (string, error)
+		Describe(kind, pa string, flags *genericclioptions.ConfigFlags) (string, error)
 		Marshal(pa string) (string, error)
 		Header(ns string) Row
 	}
@@ -107,8 +98,7 @@ type (
 	list struct {
 		namespace, name string
 		verbs           int
-		xray            bool
-		api             Resource
+		resource        Resource
 		cache           RowEvents
 	}
 )
@@ -117,18 +107,14 @@ func newRowEvent(a watch.EventType, f, d Row) *RowEvent {
 	return &RowEvent{Action: a, Fields: f, Deltas: d}
 }
 
-func newList(ns, name string, api Resource, v int) *list {
+func newList(ns, name string, res Resource, verbs int) *list {
 	return &list{
 		namespace: ns,
 		name:      name,
-		verbs:     v,
-		api:       api,
+		verbs:     verbs,
+		resource:  res,
 		cache:     RowEvents{},
 	}
-}
-
-func (l *list) HasXRay() bool {
-	return l.xray
 }
 
 // Access check access control on a given resource.
@@ -151,6 +137,7 @@ func (l *list) GetNamespace() string {
 	if !l.Access(NamespaceAccess) {
 		l.namespace = NotNamespaced
 	}
+
 	return l.namespace
 }
 
@@ -179,26 +166,16 @@ func (l *list) GetName() string {
 
 // Resource returns a resource api connection.
 func (l *list) Resource() Resource {
-	return l.api
+	return l.resource
 }
 
 // Cache tracks previous resource state.
 func (l *list) Data() TableData {
 	return TableData{
-		Header:    l.api.Header(l.namespace),
+		Header:    l.resource.Header(l.namespace),
 		Rows:      l.cache,
 		Namespace: l.namespace,
 	}
-}
-
-func (l *list) Describe(pa string) (Properties, error) {
-	var p Properties
-	i, err := l.api.Get(pa)
-	if err != nil {
-		return p, err
-	}
-
-	return i.ExtFields(), nil
 }
 
 // Reconcile previous vs current state and emits delta events.
@@ -208,7 +185,7 @@ func (l *list) Reconcile() error {
 		err   error
 	)
 
-	if items, err = l.api.List(l.namespace); err != nil {
+	if items, err = l.resource.List(l.namespace); err != nil {
 		return err
 	}
 
@@ -254,5 +231,6 @@ func (l *list) Reconcile() error {
 			delete(l.cache, k)
 		}
 	}
+
 	return nil
 }

@@ -9,14 +9,15 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 var (
-	// Root K9s configuration.
-	Root *Config
 	// K9sHome represent K9s home directory.
 	K9sHome = filepath.Join(mustK9sHome(), ".k9s")
 	// K9sConfigFile represents K9s config file location.
@@ -31,18 +32,55 @@ type KubeSettings interface {
 	CurrentClusterName() (string, error)
 	CurrentNamespaceName() (string, error)
 	ClusterNames() ([]string, error)
-	NamespaceNames() ([]string, error)
+	NamespaceNames(nn []v1.Namespace) []string
 }
 
 // Config tracks K9s configuration options.
 type Config struct {
 	K9s      *K9s `yaml:"k9s"`
+	client   k8s.Connection
 	settings KubeSettings
 }
 
 // NewConfig creates a new default config.
 func NewConfig(ks KubeSettings) *Config {
 	return &Config{K9s: NewK9s(), settings: ks}
+}
+
+func isSet(s *string) bool {
+	return s != nil && len(*s) > 0
+}
+
+// Refine the configuration based on cli args.
+func (c *Config) Refine(flags *genericclioptions.ConfigFlags) {
+	cfg, err := flags.ToRawKubeConfigLoader().RawConfig()
+	if err != nil {
+		panic("Invalid configuration. Unable to connect to api")
+	}
+
+	if isSet(flags.Context) {
+		c.K9s.CurrentContext = *flags.Context
+	} else {
+		c.K9s.CurrentContext = cfg.CurrentContext
+	}
+	log.Debug().Msgf("Active Context `%v`", c.K9s.CurrentContext)
+
+	if ctx, ok := cfg.Contexts[c.K9s.CurrentContext]; ok {
+		c.K9s.CurrentCluster = ctx.Cluster
+		if len(ctx.Namespace) != 0 {
+			c.SetActiveNamespace(ctx.Namespace)
+		}
+	} else {
+		log.Panic().Msg(fmt.Sprintf("The specified context `%s does not exists in kubeconfig", c.K9s.CurrentContext))
+	}
+
+	if isSet(flags.Namespace) {
+		c.SetActiveNamespace(*flags.Namespace)
+	}
+
+	if isSet(flags.ClusterName) {
+		c.K9s.CurrentCluster = *flags.ClusterName
+	}
 }
 
 // Reset the context to the new current context/cluster.
@@ -96,6 +134,16 @@ func (c *Config) SetActiveView(view string) {
 	c.K9s.ActiveCluster().View.Active = view
 }
 
+// GetConnection return an api server connection.
+func (c *Config) GetConnection() k8s.Connection {
+	return c.client
+}
+
+// SetConnection set an api server connection.
+func (c *Config) SetConnection(conn k8s.Connection) {
+	c.client = conn
+}
+
 // Load K9s configuration from file
 func (c *Config) Load(path string) error {
 	f, err := ioutil.ReadFile(path)
@@ -134,7 +182,7 @@ func (c *Config) SaveFile(path string) error {
 
 // Validate the configuration.
 func (c *Config) Validate() {
-	c.K9s.Validate(c.settings)
+	c.K9s.Validate(c.client, c.settings)
 }
 
 // Dump debug...

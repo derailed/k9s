@@ -15,51 +15,43 @@ type DaemonSet struct {
 }
 
 // NewDaemonSetList returns a new resource list.
-func NewDaemonSetList(ns string) List {
-	return NewDaemonSetListWithArgs(ns, NewDaemonSet())
-}
-
-// NewDaemonSetListWithArgs returns a new resource list.
-func NewDaemonSetListWithArgs(ns string, res Resource) List {
-	return newList(ns, "ds", res, AllVerbsAccess|DescribeAccess)
+func NewDaemonSetList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"ds",
+		NewDaemonSet(c),
+		AllVerbsAccess|DescribeAccess,
+	)
 }
 
 // NewDaemonSet instantiates a new DaemonSet.
-func NewDaemonSet() *DaemonSet {
-	return NewDaemonSetWithArgs(k8s.NewDaemonSet())
+func NewDaemonSet(c k8s.Connection) *DaemonSet {
+	ds := &DaemonSet{&Base{connection: c, resource: k8s.NewDaemonSet(c)}, nil}
+	ds.Factory = ds
+
+	return ds
 }
 
-// NewDaemonSetWithArgs instantiates a new DaemonSet.
-func NewDaemonSetWithArgs(r k8s.Res) *DaemonSet {
-	cm := &DaemonSet{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	cm.creator = cm
-	return cm
-}
-
-// NewInstance builds a new DaemonSet instance from a k8s resource.
-func (*DaemonSet) NewInstance(i interface{}) Columnar {
-	cm := NewDaemonSet()
-	switch i.(type) {
+// New builds a new DaemonSet instance from a k8s resource.
+func (r *DaemonSet) New(i interface{}) Columnar {
+	c := NewDaemonSet(r.connection)
+	switch instance := i.(type) {
 	case *extv1beta1.DaemonSet:
-		cm.instance = i.(*extv1beta1.DaemonSet)
+		c.instance = instance
 	case extv1beta1.DaemonSet:
-		ii := i.(extv1beta1.DaemonSet)
-		cm.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown DaemonSet type %#v", i)
 	}
-	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
-	return cm
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal resource to yaml.
 func (r *DaemonSet) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -67,6 +59,7 @@ func (r *DaemonSet) Marshal(path string) (string, error) {
 	ds := i.(*extv1beta1.DaemonSet)
 	ds.TypeMeta.APIVersion = "extensions/v1beta1"
 	ds.TypeMeta.Kind = "DaemonSet"
+
 	return r.marshalObject(ds)
 }
 
@@ -78,6 +71,7 @@ func (*DaemonSet) Header(ns string) Row {
 	}
 	hh = append(hh, "NAME", "DESIRED", "CURRENT", "READY", "UP-TO-DATE")
 	hh = append(hh, "AVAILABLE", "NODE_SELECTOR", "AGE")
+
 	return hh
 }
 
@@ -89,6 +83,7 @@ func (r *DaemonSet) Fields(ns string) Row {
 	if ns == AllNamespaces {
 		ff = append(ff, i.Namespace)
 	}
+
 	return append(ff,
 		i.Name,
 		strconv.Itoa(int(i.Status.DesiredNumberScheduled)),
@@ -99,9 +94,4 @@ func (r *DaemonSet) Fields(ns string) Row {
 		mapToStr(i.Spec.Template.Spec.NodeSelector),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
-}
-
-// ExtFields returns extended fields in relation to headers.
-func (*DaemonSet) ExtFields() Properties {
-	return Properties{}
 }

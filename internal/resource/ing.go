@@ -16,51 +16,43 @@ type Ingress struct {
 }
 
 // NewIngressList returns a new resource list.
-func NewIngressList(ns string) List {
-	return NewIngressListWithArgs(ns, NewIngress())
+func NewIngressList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"ing",
+		NewIngress(c),
+		AllVerbsAccess|DescribeAccess,
+	)
 }
 
-// NewIngressListWithArgs returns a new resource list.
-func NewIngressListWithArgs(ns string, res Resource) List {
-	return newList(ns, "ing", res, AllVerbsAccess|DescribeAccess)
+// NewIngress instantiates a new Ingress.
+func NewIngress(c k8s.Connection) *Ingress {
+	ing := &Ingress{&Base{connection: c, resource: k8s.NewIngress(c)}, nil}
+	ing.Factory = ing
+
+	return ing
 }
 
-// NewIngress instantiates a new Endpoint.
-func NewIngress() *Ingress {
-	return NewIngressWithArgs(k8s.NewIngress())
-}
-
-// NewIngressWithArgs instantiates a new Endpoint.
-func NewIngressWithArgs(r k8s.Res) *Ingress {
-	ep := &Ingress{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	ep.creator = ep
-	return ep
-}
-
-// NewInstance builds a new Endpoint instance from a k8s resource.
-func (*Ingress) NewInstance(i interface{}) Columnar {
-	cm := NewIngress()
-	switch i.(type) {
+// New builds a new Ingress instance from a k8s resource.
+func (r *Ingress) New(i interface{}) Columnar {
+	c := NewIngress(r.connection)
+	switch instance := i.(type) {
 	case *v1beta1.Ingress:
-		cm.instance = i.(*v1beta1.Ingress)
+		c.instance = instance
 	case v1beta1.Ingress:
-		ii := i.(v1beta1.Ingress)
-		cm.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown Ingress type %#v", i)
 	}
-	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
-	return cm
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal resource to yaml.
 func (r *Ingress) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -68,6 +60,7 @@ func (r *Ingress) Marshal(path string) (string, error) {
 	ing := i.(*v1beta1.Ingress)
 	ing.TypeMeta.APIVersion = "extensions/v1beta1"
 	ing.TypeMeta.Kind = "Ingress"
+
 	return r.marshalObject(ing)
 }
 
@@ -77,6 +70,7 @@ func (*Ingress) Header(ns string) Row {
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
+
 	return append(hh, "NAME", "HOSTS", "ADDRESS", "PORT", "AGE")
 }
 
@@ -98,11 +92,7 @@ func (r *Ingress) Fields(ns string) Row {
 	)
 }
 
-// ExtFields returns extended fields in relation to headers.
-func (*Ingress) ExtFields() Properties {
-	return Properties{}
-}
-
+// ----------------------------------------------------------------------------
 // Helpers...
 
 func (*Ingress) toAddress(lbs v1.LoadBalancerStatus) string {
@@ -115,6 +105,7 @@ func (*Ingress) toAddress(lbs v1.LoadBalancerStatus) string {
 			res = append(res, lb.Hostname)
 		}
 	}
+
 	return strings.Join(res, ",")
 }
 
@@ -122,6 +113,7 @@ func (*Ingress) toPorts(tls []v1beta1.IngressTLS) string {
 	if len(tls) != 0 {
 		return "80, 443"
 	}
+
 	return "80"
 }
 
@@ -135,5 +127,6 @@ func (*Ingress) toHosts(rr []v1beta1.IngressRule) string {
 		}
 		i++
 	}
+
 	return s
 }

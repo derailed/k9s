@@ -3,7 +3,6 @@ package views
 import (
 	"fmt"
 
-	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -113,7 +112,7 @@ func (v *podView) shellIn(path, co string) {
 	ns, po := namespaced(path)
 	args := make([]string, 0, 12)
 	args = append(args, "exec", "-it")
-	args = append(args, "--context", config.Root.K9s.CurrentContext)
+	args = append(args, "--context", v.app.config.K9s.CurrentContext)
 	args = append(args, "-n", ns)
 	args = append(args, po)
 	if len(co) != 0 {
@@ -129,7 +128,7 @@ func (v *podView) showLogs(path, co string, previous bool) {
 	args := make([]string, 0, 10)
 	args = append(args, "logs", "-f")
 	args = append(args, "-n", ns)
-	args = append(args, "--context", config.Root.K9s.CurrentContext)
+	args = append(args, "--context", v.app.config.K9s.CurrentContext)
 	if len(co) != 0 {
 		args = append(args, "-c", co)
 		v.app.flash(flashInfo, fmt.Sprintf("Viewing logs from container %s on pod %s", co, po))

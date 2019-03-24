@@ -28,51 +28,43 @@ type (
 )
 
 // NewCronJobList returns a new resource list.
-func NewCronJobList(ns string) List {
-	return NewCronJobListWithArgs(ns, NewCronJob())
-}
-
-// NewCronJobListWithArgs returns a new resource list.
-func NewCronJobListWithArgs(ns string, res Resource) List {
-	return newList(ns, "cronjob", res, AllVerbsAccess|DescribeAccess)
+func NewCronJobList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"cronjob",
+		NewCronJob(c),
+		AllVerbsAccess|DescribeAccess,
+	)
 }
 
 // NewCronJob instantiates a new CronJob.
-func NewCronJob() *CronJob {
-	return NewCronJobWithArgs(k8s.NewCronJob())
+func NewCronJob(c k8s.Connection) *CronJob {
+	cj := &CronJob{&Base{connection: c, resource: k8s.NewCronJob(c)}, nil}
+	cj.Factory = cj
+
+	return cj
 }
 
-// NewCronJobWithArgs instantiates a new CronJob.
-func NewCronJobWithArgs(r k8s.Res) *CronJob {
-	cm := &CronJob{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	cm.creator = cm
-	return cm
-}
-
-// NewInstance builds a new CronJob instance from a k8s resource.
-func (*CronJob) NewInstance(i interface{}) Columnar {
-	job := NewCronJob()
-	switch i.(type) {
+// New builds a new CronJob instance from a k8s resource.
+func (r *CronJob) New(i interface{}) Columnar {
+	c := NewCronJob(r.connection)
+	switch instance := i.(type) {
 	case *batchv1beta1.CronJob:
-		job.instance = i.(*batchv1beta1.CronJob)
+		c.instance = instance
 	case batchv1beta1.CronJob:
-		ii := i.(batchv1beta1.CronJob)
-		job.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown CronJob type %#v", i)
 	}
-	job.path = job.namespacedName(job.instance.ObjectMeta)
-	return job
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal resource to yaml.
 func (r *CronJob) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -80,15 +72,17 @@ func (r *CronJob) Marshal(path string) (string, error) {
 	cj := i.(*batchv1beta1.CronJob)
 	cj.TypeMeta.APIVersion = "extensions/batchv1beta1"
 	cj.TypeMeta.Kind = "CronJob"
+
 	return r.marshalObject(cj)
 }
 
 // Run a given cronjob.
 func (r *CronJob) Run(pa string) error {
 	ns, n := namespaced(pa)
-	if c, ok := r.caller.(Runnable); ok {
+	if c, ok := r.resource.(Runnable); ok {
 		return c.Run(ns, n)
 	}
+
 	return fmt.Errorf("unable to run cronjob %s", pa)
 }
 
@@ -98,6 +92,7 @@ func (*CronJob) Header(ns string) Row {
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
+
 	return append(hh, "NAME", "SCHEDULE", "SUSPEND", "ACTIVE", "LAST_SCHEDULE", "AGE")
 }
 
@@ -123,9 +118,4 @@ func (r *CronJob) Fields(ns string) Row {
 		lastScheduled,
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
-}
-
-// ExtFields returns extended fields in relation to headers.
-func (*CronJob) ExtFields() Properties {
-	return Properties{}
 }

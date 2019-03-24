@@ -7,6 +7,7 @@ import (
 
 // SwitchableRes represents a resource that can be switched.
 type SwitchableRes interface {
+	k8s.Connection
 	k8s.ContextRes
 }
 
@@ -17,50 +18,37 @@ type Context struct {
 }
 
 // NewContextList returns a new resource list.
-func NewContextList(ns string) List {
-	return NewContextListWithArgs(ns, NewContext())
-}
-
-// NewContextListWithArgs returns a new resource list.
-func NewContextListWithArgs(ns string, res Resource) List {
-	return newList(NotNamespaced, "ctx", res, SwitchAccess)
+func NewContextList(c k8s.Connection, ns string) List {
+	return newList(NotNamespaced, "ctx", NewContext(c), SwitchAccess)
 }
 
 // NewContext instantiates a new Context.
-func NewContext() *Context {
-	return NewContextWithArgs(k8s.NewContext().(SwitchableRes))
-}
+func NewContext(c k8s.Connection) *Context {
+	ctx := &Context{&Base{connection: c, resource: k8s.NewContext(c)}, nil}
+	ctx.Factory = ctx
 
-// NewContextWithArgs instantiates a new Context.
-func NewContextWithArgs(r SwitchableRes) *Context {
-	ctx := &Context{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	ctx.creator = ctx
 	return ctx
 }
 
-// NewInstance builds a new Context instance from a k8s resource.
-func (r *Context) NewInstance(i interface{}) Columnar {
-	c := NewContext()
-	switch i.(type) {
+// New builds a new Context instance from a k8s resource.
+func (r *Context) New(i interface{}) Columnar {
+	c := NewContext(r.connection)
+	switch instance := i.(type) {
 	case *k8s.NamedContext:
-		c.instance = i.(*k8s.NamedContext)
+		c.instance = instance
 	case k8s.NamedContext:
-		ii := i.(k8s.NamedContext)
-		c.instance = &ii
+		c.instance = &instance
 	default:
 		log.Fatal().Msgf("unknown context type %#v", i)
 	}
 	c.path = c.instance.Name
+
 	return c
 }
 
 // Switch out current context.
 func (r *Context) Switch(c string) error {
-	return r.caller.(k8s.ContextRes).Switch(c)
+	return r.resource.(k8s.ContextRes).Switch(c)
 }
 
 // Marshal the resource to yaml.
@@ -89,9 +77,4 @@ func (r *Context) Fields(ns string) Row {
 		i.Context.AuthInfo,
 		i.Context.Namespace,
 	)
-}
-
-// ExtFields returns extended fields in relation to headers.
-func (*Context) ExtFields() Properties {
-	return Properties{}
 }

@@ -35,7 +35,7 @@ func newAliasView(app *appView) *aliasView {
 	v.actions[tcell.KeyEscape] = newKeyAction("Reset", v.resetCmd, false)
 	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd, false)
 	v.actions[KeyShiftR] = newKeyAction("Sort Resources", v.sortResourceCmd, true)
-	v.actions[KeyShiftG] = newKeyAction("Sort Groups", v.sortGroupCmd, true)
+	v.actions[KeyShiftO] = newKeyAction("Sort Groups", v.sortGroupCmd, true)
 
 	ctx, cancel := context.WithCancel(context.TODO())
 	v.cancel = cancel
@@ -128,7 +128,7 @@ func (v *aliasView) hints() hints {
 }
 
 func (v *aliasView) hydrate() resource.TableData {
-	cmds := helpCmds()
+	cmds := helpCmds(v.app.conn())
 
 	data := resource.TableData{
 		Header:    resource.Row{"NAME", "RESOURCE", "APIGROUP"},

@@ -15,53 +15,43 @@ type Role struct {
 }
 
 // NewRoleList returns a new resource list.
-func NewRoleList(ns string) List {
-	return NewRoleListWithArgs(ns, NewRole())
+func NewRoleList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"role",
+		NewRole(c),
+		AllVerbsAccess|DescribeAccess,
+	)
 }
 
-// NewRoleListWithArgs returns a new resource list.
-func NewRoleListWithArgs(ns string, res Resource) List {
-	l := newList(ns, "role", res, AllVerbsAccess|DescribeAccess)
-	l.xray = true
-	return l
+// NewRole instantiates a new Role.
+func NewRole(c k8s.Connection) *Role {
+	r := &Role{&Base{connection: c, resource: k8s.NewRole(c)}, nil}
+	r.Factory = r
+
+	return r
 }
 
-// NewRole instantiates a new Endpoint.
-func NewRole() *Role {
-	return NewRoleWithArgs(k8s.NewRole())
-}
-
-// NewRoleWithArgs instantiates a new Endpoint.
-func NewRoleWithArgs(r k8s.Res) *Role {
-	ep := &Role{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	ep.creator = ep
-	return ep
-}
-
-// NewInstance builds a new Endpoint instance from a k8s resource.
-func (*Role) NewInstance(i interface{}) Columnar {
-	cm := NewRole()
-	switch i.(type) {
+// New builds a new Role instance from a k8s resource.
+func (r *Role) New(i interface{}) Columnar {
+	c := NewRole(r.connection)
+	switch instance := i.(type) {
 	case *v1.Role:
-		cm.instance = i.(*v1.Role)
+		c.instance = instance
 	case v1.Role:
-		ii := i.(v1.Role)
-		cm.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown Role type %#v", i)
 	}
-	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
-	return cm
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal resource to yaml.
 func (r *Role) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -69,6 +59,7 @@ func (r *Role) Marshal(path string) (string, error) {
 	role := i.(*v1.Role)
 	role.TypeMeta.APIVersion = "rbac.authorization.k8s.io/v1"
 	role.TypeMeta.Kind = "Role"
+
 	return r.marshalObject(role)
 }
 
@@ -78,6 +69,7 @@ func (*Role) Header(ns string) Row {
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
+
 	return append(hh, "NAME", "AGE")
 }
 
@@ -95,16 +87,7 @@ func (r *Role) Fields(ns string) Row {
 	)
 }
 
-// ExtFields returns extended fields in relation to headers.
-func (r *Role) ExtFields() Properties {
-	i := r.instance
-
-	return Properties{
-		"Headers": Row{"RESOURCES", "NON-RESOURCE URLS", "RESOURCE NAMES", "VERBS"},
-		"Rows":    r.parseRules(i.Rules),
-	}
-}
-
+// ----------------------------------------------------------------------------
 // Helpers...
 
 func (r *Role) parseRules(pp []v1.PolicyRule) []Row {
@@ -116,5 +99,6 @@ func (r *Role) parseRules(pp []v1.PolicyRule) []Row {
 		acc[i][2] = strings.Join(p.ResourceNames, ", ")
 		acc[i][3] = strings.Join(p.Verbs, ", ")
 	}
+
 	return acc
 }

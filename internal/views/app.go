@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -34,7 +35,9 @@ type (
 	appView struct {
 		*tview.Application
 
+		config          *config.Config
 		version         string
+		flags           *genericclioptions.ConfigFlags
 		pages           *tview.Pages
 		content         *tview.Pages
 		flashView       *flashView
@@ -58,8 +61,8 @@ func init() {
 }
 
 // NewApp returns a K9s app instance.
-func NewApp() *appView {
-	v := appView{Application: tview.NewApplication()}
+func NewApp(cfg *config.Config) *appView {
+	v := appView{Application: tview.NewApplication(), config: cfg}
 	{
 		v.pages = tview.NewPages()
 		v.actions = make(keyActions)
@@ -92,6 +95,7 @@ func NewApp() *appView {
 
 func (a *appView) Init(v string, rate int, flags *genericclioptions.ConfigFlags) {
 	a.version = v
+	a.flags = flags
 	a.clusterInfoView.init()
 	a.cmdBuff.addListener(a.cmdView)
 
@@ -118,8 +122,18 @@ func (a *appView) Init(v string, rate int, flags *genericclioptions.ConfigFlags)
 	a.SetRoot(a.pages, true)
 }
 
+func (a *appView) conn() k8s.Connection {
+	return a.config.GetConnection()
+}
+
 // Run starts the application loop
 func (a *appView) Run() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Error().Msgf("%#v", err)
+		}
+	}()
+
 	go func() {
 		<-time.After(splashTime * time.Second)
 		a.showPage("main")
@@ -256,7 +270,7 @@ func (a *appView) inject(p igniter) {
 	var ctx context.Context
 	{
 		ctx, a.cancel = context.WithCancel(context.TODO())
-		p.init(ctx, config.Root.ActiveNamespace())
+		p.init(ctx, a.config.ActiveNamespace())
 	}
 	a.content.AddPage("main", p, true, true)
 

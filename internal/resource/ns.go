@@ -13,51 +13,43 @@ type Namespace struct {
 }
 
 // NewNamespaceList returns a new resource list.
-func NewNamespaceList(ns string) List {
-	return NewNamespaceListWithArgs(ns, NewNamespace())
+func NewNamespaceList(c k8s.Connection, ns string) List {
+	return newList(
+		NotNamespaced,
+		"ns",
+		NewNamespace(c),
+		CRUDAccess|DescribeAccess,
+	)
 }
 
-// NewNamespaceListWithArgs returns a new resource list.
-func NewNamespaceListWithArgs(ns string, res Resource) List {
-	return newList(NotNamespaced, "ns", res, CRUDAccess|DescribeAccess)
+// NewNamespace instantiates a new Namespace.
+func NewNamespace(c k8s.Connection) *Namespace {
+	n := &Namespace{&Base{connection: c, resource: k8s.NewNamespace(c)}, nil}
+	n.Factory = n
+
+	return n
 }
 
-// NewNamespace instantiates a new Endpoint.
-func NewNamespace() *Namespace {
-	return NewNamespaceWithArgs(k8s.NewNamespace())
-}
-
-// NewNamespaceWithArgs instantiates a new Endpoint.
-func NewNamespaceWithArgs(r k8s.Res) *Namespace {
-	ep := &Namespace{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	ep.creator = ep
-	return ep
-}
-
-// NewInstance builds a new Endpoint instance from a k8s resource.
-func (*Namespace) NewInstance(i interface{}) Columnar {
-	cm := NewNamespace()
-	switch i.(type) {
+// New builds a new Namespace instance from a k8s resource.
+func (r *Namespace) New(i interface{}) Columnar {
+	c := NewNamespace(r.connection)
+	switch instance := i.(type) {
 	case *v1.Namespace:
-		cm.instance = i.(*v1.Namespace)
+		c.instance = instance
 	case v1.Namespace:
-		ii := i.(v1.Namespace)
-		cm.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown Namespace type %#v", i)
 	}
-	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
-	return cm
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal a resource to yaml.
 func (r *Namespace) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		log.Error().Err(err)
 		return "", err
@@ -66,6 +58,7 @@ func (r *Namespace) Marshal(path string) (string, error) {
 	nss := i.(*v1.Namespace)
 	nss.TypeMeta.APIVersion = "v1"
 	nss.TypeMeta.Kind = "Namespace"
+
 	return r.marshalObject(nss)
 }
 
@@ -78,14 +71,10 @@ func (*Namespace) Header(ns string) Row {
 func (r *Namespace) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
 	i := r.instance
+
 	return append(ff,
 		i.Name,
 		string(i.Status.Phase),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
-}
-
-// ExtFields returns extended fields in relation to headers.
-func (*Namespace) ExtFields() Properties {
-	return Properties{}
 }

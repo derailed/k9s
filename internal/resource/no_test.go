@@ -8,7 +8,10 @@ import (
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
+	res "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 func TestNodeListAccess(t *testing.T) {
@@ -31,9 +34,9 @@ func TestNodeFields(t *testing.T) {
 func TestNodeMarshal(t *testing.T) {
 	setup(t)
 
-	mx := NewMockMetricsIfc()
-	m.When(mx.PerNodeMetrics([]v1.Node{*k8sNode()})).
-		ThenReturn(map[string]k8s.Metric{"fred": {}}, nil)
+	mx := NewMockMetricsServer()
+	// m.When(mx.NodesMetrics([]v1.Node{*k8sNode()})).
+	// 	ThenReturn(map[string]k8s.RawMetric{"fred": {}}, nil)
 	ca := NewMockCaller()
 	m.When(ca.Get("blee", "fred")).ThenReturn(k8sNode(), nil)
 
@@ -47,46 +50,32 @@ func TestNodeMarshal(t *testing.T) {
 func TestNodeListData(t *testing.T) {
 	setup(t)
 
-	mx := NewMockMetricsIfc()
-	m.When(mx.PerNodeMetrics([]v1.Node{*k8sNode()})).
-		ThenReturn(map[string]k8s.Metric{"fred": {}}, nil)
-	ca := NewMockCaller()
-	m.When(ca.List("")).ThenReturn(k8s.Collection{*k8sNode()}, nil)
+	mockServer := NewMockMetricsServer()
+	m.When(mockServer.HasMetrics()).ThenReturn(true)
+	m.When(mockServer.FetchNodesMetrics()).
+		ThenReturn([]mv1beta1.NodeMetrics{makeMxNode("fred", "100m", "100Mi")}, nil)
 
-	l := resource.NewNodeListWithArgs("", resource.NewNodeWithArgs(ca, mx))
+	ca := NewMockCaller()
+	m.When(ca.List("-")).ThenReturn(k8s.Collection{*k8sNode()}, nil)
+
+	l := resource.NewNodeListWithArgs("", resource.NewNodeWithArgs(ca, mockServer))
 	// Make sure we can get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List("")
+	ca.VerifyWasCalled(m.Times(2)).List("-")
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
-	assert.False(t, l.HasXRay())
-	row := td.Rows["fred"]
-	assert.Equal(t, 11, len(row.Deltas))
+	row, ok := td.Rows["fred"]
+	assert.True(t, ok)
+	assert.Equal(t, 12, len(row.Deltas))
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}
 	assert.Equal(t, resource.Row{"fred"}, row.Fields[:1])
-}
-
-func TestNodeListDescribe(t *testing.T) {
-	setup(t)
-
-	mx := NewMockMetricsIfc()
-	m.When(mx.PerNodeMetrics([]v1.Node{*k8sNode()})).
-		ThenReturn(map[string]k8s.Metric{"fred": {}}, nil)
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sNode(), nil)
-	l := resource.NewNodeListWithArgs("blee", resource.NewNodeWithArgs(ca, mx))
-	props, err := l.Describe("blee/fred")
-
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
-	assert.Nil(t, err)
-	assert.Equal(t, 0, len(props))
 }
 
 // Helpers...
@@ -103,6 +92,25 @@ func k8sNode() *v1.Node {
 				{Address: "1.1.1.1"},
 			},
 		},
+	}
+}
+
+func makeMxNode(name, cpu, mem string) mv1beta1.NodeMetrics {
+	return v1beta1.NodeMetrics{
+		ObjectMeta: metav1.ObjectMeta{
+			Name: name,
+		},
+		Usage: makeRes(cpu, mem),
+	}
+}
+
+func makeRes(c, m string) v1.ResourceList {
+	cpu, _ := res.ParseQuantity(c)
+	mem, _ := res.ParseQuantity(m)
+
+	return v1.ResourceList{
+		v1.ResourceCPU:    cpu,
+		v1.ResourceMemory: mem,
 	}
 }
 

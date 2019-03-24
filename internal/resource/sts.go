@@ -15,51 +15,43 @@ type StatefulSet struct {
 }
 
 // NewStatefulSetList returns a new resource list.
-func NewStatefulSetList(ns string) List {
-	return NewStatefulSetListWithArgs(ns, NewStatefulSet())
+func NewStatefulSetList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"sts",
+		NewStatefulSet(c),
+		AllVerbsAccess|DescribeAccess,
+	)
 }
 
-// NewStatefulSetListWithArgs returns a new resource list.
-func NewStatefulSetListWithArgs(ns string, res Resource) List {
-	return newList(ns, "sts", res, AllVerbsAccess|DescribeAccess)
+// NewStatefulSet instantiates a new StatefulSet.
+func NewStatefulSet(c k8s.Connection) *StatefulSet {
+	s := &StatefulSet{&Base{connection: c, resource: k8s.NewStatefulSet(c)}, nil}
+	s.Factory = s
+
+	return s
 }
 
-// NewStatefulSet instantiates a new Endpoint.
-func NewStatefulSet() *StatefulSet {
-	return NewStatefulSetWithArgs(k8s.NewStatefulSet())
-}
-
-// NewStatefulSetWithArgs instantiates a new Endpoint.
-func NewStatefulSetWithArgs(r k8s.Res) *StatefulSet {
-	ep := &StatefulSet{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	ep.creator = ep
-	return ep
-}
-
-// NewInstance builds a new Endpoint instance from a k8s resource.
-func (*StatefulSet) NewInstance(i interface{}) Columnar {
-	cm := NewStatefulSet()
-	switch i.(type) {
+// New builds a new StatefulSet instance from a k8s resource.
+func (r *StatefulSet) New(i interface{}) Columnar {
+	c := NewStatefulSet(r.connection)
+	switch instance := i.(type) {
 	case *v1.StatefulSet:
-		cm.instance = i.(*v1.StatefulSet)
+		c.instance = instance
 	case v1.StatefulSet:
-		ii := i.(v1.StatefulSet)
-		cm.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown StatefulSet type %#v", i)
 	}
-	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
-	return cm
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal resource to yaml.
 func (r *StatefulSet) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -67,6 +59,7 @@ func (r *StatefulSet) Marshal(path string) (string, error) {
 	sts := i.(*v1.StatefulSet)
 	sts.TypeMeta.APIVersion = "v1"
 	sts.TypeMeta.Kind = "StatefulSet"
+
 	return r.marshalObject(sts)
 }
 
@@ -76,6 +69,7 @@ func (*StatefulSet) Header(ns string) Row {
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
+
 	return append(hh, "NAME", "DESIRED", "CURRENT", "AGE")
 }
 
@@ -93,9 +87,4 @@ func (r *StatefulSet) Fields(ns string) Row {
 		strconv.Itoa(int(i.Status.ReadyReplicas)),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
-}
-
-// ExtFields returns extended fields in relation to headers.
-func (*StatefulSet) ExtFields() Properties {
-	return Properties{}
 }

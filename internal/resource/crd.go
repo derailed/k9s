@@ -17,42 +17,33 @@ type CRD struct {
 }
 
 // NewCRDList returns a new resource list.
-func NewCRDList(ns string) List {
-	return NewCRDListWithArgs(ns, NewCRD())
-}
-
-// NewCRDListWithArgs returns a new resource list.
-func NewCRDListWithArgs(ns string, res Resource) List {
-	return newList(NotNamespaced, "crd", res, CRUDAccess|DescribeAccess)
+func NewCRDList(c k8s.Connection, ns string) List {
+	return newList(
+		NotNamespaced,
+		"crd",
+		NewCRD(c),
+		CRUDAccess|DescribeAccess,
+	)
 }
 
 // NewCRD instantiates a new CRD.
-func NewCRD() *CRD {
-	return NewCRDWithArgs(k8s.NewCRD())
+func NewCRD(c k8s.Connection) *CRD {
+	crd := &CRD{&Base{connection: c, resource: k8s.NewCRD(c)}, nil}
+	crd.Factory = crd
+
+	return crd
 }
 
-// NewCRDWithArgs instantiates a new Context.
-func NewCRDWithArgs(r k8s.Res) *CRD {
-	ctx := &CRD{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	ctx.creator = ctx
-	return ctx
-}
-
-// NewInstance builds a new Context instance from a k8s resource.
-func (r *CRD) NewInstance(i interface{}) Columnar {
-	c := NewCRD()
-	switch i.(type) {
+// New builds a new CRD instance from a k8s resource.
+func (r *CRD) New(i interface{}) Columnar {
+	c := NewCRD(r.connection)
+	switch instance := i.(type) {
 	case *unstructured.Unstructured:
-		c.instance = i.(*unstructured.Unstructured)
+		c.instance = instance
 	case unstructured.Unstructured:
-		ii := i.(unstructured.Unstructured)
-		c.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown context type %#v", i)
+		log.Fatal().Msgf("unknown CRD type %#v", i)
 	}
 	meta := c.instance.Object["metadata"].(map[string]interface{})
 	c.path = meta["name"].(string)
@@ -63,7 +54,7 @@ func (r *CRD) NewInstance(i interface{}) Columnar {
 // Marshal a resource.
 func (r *CRD) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -72,9 +63,10 @@ func (r *CRD) Marshal(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return string(raw), nil
+
 	// BOZO!! Need to figure out apiGroup+Version
 	// return r.marshalObject(i.(*unstructured.Unstructured))
+	return string(raw), nil
 }
 
 // Header return the resource header.
@@ -92,6 +84,7 @@ func (r *CRD) Fields(ns string) Row {
 	if err != nil {
 		log.Error().Msgf("Fields timestamp %v", err)
 	}
+
 	return append(ff, meta["name"].(string), toAge(metav1.Time{t}))
 }
 
@@ -112,5 +105,6 @@ func (r *CRD) ExtFields() Properties {
 		pp["singular"], pp["plural"] = names["singular"], names["plural"]
 		pp["aliases"] = names["shortNames"]
 	}
+
 	return pp
 }

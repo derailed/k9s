@@ -11,59 +11,52 @@ import (
 // PodDisruptionBudget that can be displayed in a table and interacted with.
 type PodDisruptionBudget struct {
 	*Base
+
 	instance *v1beta1.PodDisruptionBudget
 }
 
 // NewPDBList returns a new resource list.
-func NewPDBList(ns string) List {
-	return NewPDBListWithArgs(ns, NewPDB())
+func NewPDBList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"pdb",
+		NewPDB(c),
+		AllVerbsAccess|DescribeAccess,
+	)
 }
 
-// NewPDBListWithArgs returns a new resource list.
-func NewPDBListWithArgs(ns string, res Resource) List {
-	return newList(ns, "pdb", res, AllVerbsAccess|DescribeAccess)
-}
+// NewPDB instantiates a new PDB.
+func NewPDB(c k8s.Connection) *PodDisruptionBudget {
+	p := &PodDisruptionBudget{&Base{connection: c, resource: k8s.NewPodDisruptionBudget(c)}, nil}
+	p.Factory = p
 
-// NewPDB returns a new PodDisruptionBudget instance.
-func NewPDB() *PodDisruptionBudget {
-	return NewPDBWithArgs(k8s.NewPodDisruptionBudget())
-}
-
-// NewPDBWithArgs returns a new Pod instance.
-func NewPDBWithArgs(r k8s.Res) *PodDisruptionBudget {
-	p := &PodDisruptionBudget{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	p.creator = p
 	return p
 }
 
-// NewInstance builds a new PodDisruptionBudget instance from a k8s resource.
-func (r *PodDisruptionBudget) NewInstance(i interface{}) Columnar {
-	pdb := NewPDB()
-	switch i.(type) {
+// New builds a new PDB instance from a k8s resource.
+func (r *PodDisruptionBudget) New(i interface{}) Columnar {
+	c := NewPDB(r.connection)
+	switch instance := i.(type) {
 	case *v1beta1.PodDisruptionBudget:
-		pdb.instance = i.(*v1beta1.PodDisruptionBudget)
+		c.instance = instance
 	case v1beta1.PodDisruptionBudget:
-		ii := i.(v1beta1.PodDisruptionBudget)
-		pdb.instance = &ii
+		c.instance = &instance
 	case *interface{}:
 		ptr := *i.(*interface{})
 		pdbi := ptr.(v1beta1.PodDisruptionBudget)
-		pdb.instance = &pdbi
+		c.instance = &pdbi
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown PDB type %#v", i)
 	}
-	pdb.path = r.namespacedName(pdb.instance.ObjectMeta)
-	return pdb
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal resource to yaml.
 func (r *PodDisruptionBudget) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -71,6 +64,7 @@ func (r *PodDisruptionBudget) Marshal(path string) (string, error) {
 	pdb := i.(*v1beta1.PodDisruptionBudget)
 	pdb.TypeMeta.APIVersion = "v1beta1"
 	pdb.TypeMeta.Kind = "PodDisruptionBudget"
+
 	return r.marshalObject(pdb)
 }
 
@@ -80,6 +74,7 @@ func (*PodDisruptionBudget) Header(ns string) Row {
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
+
 	return append(hh,
 		"NAME",
 		"MIN AVAILABLE",
@@ -121,9 +116,4 @@ func (r *PodDisruptionBudget) Fields(ns string) Row {
 		strconv.Itoa(int(i.Status.ExpectedPods)),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
-}
-
-// ExtFields returns extra info about the resource.
-func (r *PodDisruptionBudget) ExtFields() Properties {
-	return nil
 }

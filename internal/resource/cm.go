@@ -15,51 +15,43 @@ type ConfigMap struct {
 }
 
 // NewConfigMapList returns a new resource list.
-func NewConfigMapList(ns string) List {
-	return NewConfigMapListWithArgs(ns, NewConfigMap())
-}
-
-// NewConfigMapListWithArgs returns a new resource list.
-func NewConfigMapListWithArgs(ns string, res Resource) List {
-	return newList(ns, "cm", res, AllVerbsAccess|DescribeAccess)
+func NewConfigMapList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"cm",
+		NewConfigMap(c),
+		AllVerbsAccess|DescribeAccess,
+	)
 }
 
 // NewConfigMap instantiates a new ConfigMap.
-func NewConfigMap() *ConfigMap {
-	return NewConfigMapWithArgs(k8s.NewConfigMap())
+func NewConfigMap(c k8s.Connection) *ConfigMap {
+	m := &ConfigMap{&Base{connection: c, resource: k8s.NewConfigMap(c)}, nil}
+	m.Factory = m
+
+	return m
 }
 
-// NewConfigMapWithArgs instantiates a new ConfigMap.
-func NewConfigMapWithArgs(r k8s.Res) *ConfigMap {
-	cm := &ConfigMap{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	cm.creator = cm
-	return cm
-}
-
-// NewInstance builds a new ConfigMap instance from a k8s resource.
-func (*ConfigMap) NewInstance(i interface{}) Columnar {
-	cm := NewConfigMap()
-	switch i.(type) {
+// New builds a new ConfigMap instance from a k8s resource.
+func (r *ConfigMap) New(i interface{}) Columnar {
+	cm := NewConfigMap(r.connection)
+	switch instance := i.(type) {
 	case *v1.ConfigMap:
-		cm.instance = i.(*v1.ConfigMap)
+		cm.instance = instance
 	case v1.ConfigMap:
-		ii := i.(v1.ConfigMap)
-		cm.instance = &ii
+		cm.instance = &instance
 	default:
 		log.Fatalf("Unknown %#v", i)
 	}
 	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
+
 	return cm
 }
 
 // Marshal resource to yaml.
 func (r *ConfigMap) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -67,6 +59,7 @@ func (r *ConfigMap) Marshal(path string) (string, error) {
 	cm := i.(*v1.ConfigMap)
 	cm.TypeMeta.APIVersion = "v1"
 	cm.TypeMeta.Kind = "ConfigMap"
+
 	return r.marshalObject(cm)
 }
 
@@ -76,6 +69,7 @@ func (*ConfigMap) Header(ns string) Row {
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
+
 	return append(hh, "NAME", "DATA", "AGE")
 }
 
@@ -92,9 +86,4 @@ func (r *ConfigMap) Fields(ns string) Row {
 		strconv.Itoa(len(i.Data)),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
-}
-
-// ExtFields returns extended fields in relation to headers.
-func (*ConfigMap) ExtFields() Properties {
-	return Properties{}
 }

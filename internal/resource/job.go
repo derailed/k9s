@@ -19,51 +19,43 @@ type Job struct {
 }
 
 // NewJobList returns a new resource list.
-func NewJobList(ns string) List {
-	return NewJobListWithArgs(ns, NewJob())
-}
-
-// NewJobListWithArgs returns a new resource list.
-func NewJobListWithArgs(ns string, res Resource) List {
-	return newList(ns, "job", res, AllVerbsAccess|DescribeAccess)
+func NewJobList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"job",
+		NewJob(c),
+		AllVerbsAccess|DescribeAccess,
+	)
 }
 
 // NewJob instantiates a new Job.
-func NewJob() *Job {
-	return NewJobWithArgs(k8s.NewJob())
+func NewJob(c k8s.Connection) *Job {
+	j := &Job{&Base{connection: c, resource: k8s.NewJob(c)}, nil}
+	j.Factory = j
+
+	return j
 }
 
-// NewJobWithArgs instantiates a new Job.
-func NewJobWithArgs(r k8s.Res) *Job {
-	cm := &Job{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	cm.creator = cm
-	return cm
-}
-
-// NewInstance builds a new Job instance from a k8s resource.
-func (*Job) NewInstance(i interface{}) Columnar {
-	job := NewJob()
-	switch i.(type) {
+// New builds a new Job instance from a k8s resource.
+func (r *Job) New(i interface{}) Columnar {
+	c := NewJob(r.connection)
+	switch instance := i.(type) {
 	case *v1.Job:
-		job.instance = i.(*v1.Job)
+		c.instance = instance
 	case v1.Job:
-		ii := i.(v1.Job)
-		job.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown Job type %#v", i)
 	}
-	job.path = job.namespacedName(job.instance.ObjectMeta)
-	return job
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal resource to yaml.
 func (r *Job) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -71,18 +63,20 @@ func (r *Job) Marshal(path string) (string, error) {
 	jo := i.(*v1.Job)
 	jo.TypeMeta.APIVersion = "extensions/v1beta1"
 	jo.TypeMeta.Kind = "Job"
+
 	return r.marshalObject(jo)
 }
 
 // Containers fetch all the containers on this job, may include init containers.
 func (r *Job) Containers(path string, includeInit bool) ([]string, error) {
 	ns, n := namespaced(path)
-	return r.caller.(k8s.Loggable).Containers(ns, n, includeInit)
+
+	return r.resource.(k8s.Loggable).Containers(ns, n, includeInit)
 }
 
 // Logs retrieves logs for a given container.
 func (r *Job) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (context.CancelFunc, error) {
-	req := r.caller.(k8s.Loggable).Logs(ns, n, co, lines, prev)
+	req := r.resource.(k8s.Loggable).Logs(ns, n, co, lines, prev)
 	ctx, cancel := context.WithCancel(context.TODO())
 	req.Context(ctx)
 
@@ -116,6 +110,7 @@ func (r *Job) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (c
 			c <- scanner.Text()
 		}
 	}()
+
 	return cancel, nil
 }
 
@@ -125,6 +120,7 @@ func (*Job) Header(ns string) Row {
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
+
 	return append(hh, "NAME", "COMPLETIONS", "DURATION", "AGE")
 }
 
@@ -136,6 +132,7 @@ func (r *Job) Fields(ns string) Row {
 	if ns == AllNamespaces {
 		ff = append(ff, i.Namespace)
 	}
+
 	return append(ff,
 		i.Name,
 		r.toCompletion(i.Spec, i.Status),
@@ -144,11 +141,7 @@ func (r *Job) Fields(ns string) Row {
 	)
 }
 
-// ExtFields returns extended fields in relation to headers.
-func (*Job) ExtFields() Properties {
-	return Properties{}
-}
-
+// ----------------------------------------------------------------------------
 // Helpers...
 
 func (*Job) toCompletion(spec v1.JobSpec, status v1.JobStatus) (s string) {
@@ -162,6 +155,7 @@ func (*Job) toCompletion(spec v1.JobSpec, status v1.JobStatus) (s string) {
 	if parallelism > 1 {
 		return fmt.Sprintf("%d/1 of %d", status.Succeeded, parallelism)
 	}
+
 	return fmt.Sprintf("%d/1", status.Succeeded)
 }
 
@@ -171,5 +165,6 @@ func (*Job) toDuration(status v1.JobStatus) string {
 	case status.CompletionTime == nil:
 		return duration.HumanDuration(time.Since(status.StartTime.Time))
 	}
+
 	return duration.HumanDuration(status.CompletionTime.Sub(status.StartTime.Time))
 }

@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
@@ -163,7 +162,7 @@ func (v *logsView) doLoad(path, co string) error {
 	if !ok {
 		return fmt.Errorf("Resource %T is not tailable", v.parent.getList().Resource)
 	}
-	maxBuff := int64(config.Root.K9s.LogRequestSize)
+	maxBuff := int64(v.parent.appView().config.K9s.LogRequestSize)
 	cancelFn, err := res.Logs(c, ns, po, co, maxBuff, false)
 	if err != nil {
 		cancelFn()

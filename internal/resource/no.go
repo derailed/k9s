@@ -18,86 +18,77 @@ const (
 // Node tracks a kubernetes resource.
 type Node struct {
 	*Base
-	instance  *v1.Node
-	metricSvc MetricsIfc
-	metrics   k8s.Metric
+	instance      *v1.Node
+	metricsServer MetricsServer
+	metrics       k8s.NodeMetrics
 }
 
 // NewNodeList returns a new resource list.
-func NewNodeList(ns string) List {
-	return NewNodeListWithArgs(ns, NewNode())
+func NewNodeList(c k8s.Connection, ns string) List {
+	return newList(
+		NotNamespaced,
+		"no",
+		NewNode(c),
+		ViewAccess|DescribeAccess,
+	)
 }
 
-// NewNodeListWithArgs returns a new resource list.
-func NewNodeListWithArgs(ns string, res Resource) List {
-	return newList(NotNamespaced, "no", res, ViewAccess|DescribeAccess)
+// NewNode instantiates a new Node.
+func NewNode(c k8s.Connection) *Node {
+	n := &Node{&Base{connection: c, resource: k8s.NewNode(c)}, nil, k8s.NewMetricsServer(c), k8s.NodeMetrics{}}
+	n.Factory = n
+
+	return n
 }
 
-// NewNode instantiates a new Endpoint.
-func NewNode() *Node {
-	return NewNodeWithArgs(k8s.NewNode(), k8s.NewMetricsServer())
-}
-
-// NewNodeWithArgs instantiates a new Endpoint.
-func NewNodeWithArgs(r k8s.Res, mx MetricsIfc) *Node {
-	ep := &Node{
-		metricSvc: mx,
-		Base: &Base{
-			caller: r,
-		},
-	}
-	ep.creator = ep
-	return ep
-}
-
-// NewInstance builds a new Endpoint instance from a k8s resource.
-func (*Node) NewInstance(i interface{}) Columnar {
-	cm := NewNode()
-	switch i.(type) {
+// New builds a new Node instance from a k8s resource.
+func (r *Node) New(i interface{}) Columnar {
+	c := NewNode(r.connection)
+	switch instance := i.(type) {
 	case *v1.Node:
-		cm.instance = i.(*v1.Node)
+		c.instance = instance
 	case v1.Node:
-		ii := i.(v1.Node)
-		cm.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown Node type %#v", i)
 	}
-	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
-	return cm
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // List all resources for a given namespace.
 func (r *Node) List(ns string) (Columnars, error) {
-	ii, err := r.caller.List(AllNamespaces)
+	nn, err := r.resource.List(ns)
 	if err != nil {
 		return nil, err
 	}
 
-	nn := make([]v1.Node, len(ii))
-	for k, i := range ii {
-		nn[k] = i.(v1.Node)
+	nodes := make([]v1.Node, 0, len(nn))
+	for _, n := range nn {
+		nodes = append(nodes, n.(v1.Node))
 	}
 
-	cc := make(Columnars, 0, len(nn))
-	mx, err := r.metricSvc.PerNodeMetrics(nn)
-	if err != nil {
-		log.Warn().Msgf("No metrics: %#v", err)
+	mx := make(k8s.NodesMetrics, len(nodes))
+	if r.metricsServer.HasMetrics() {
+		nmx, _ := r.metricsServer.FetchNodesMetrics()
+		r.metricsServer.NodesMetrics(nodes, nmx, mx)
 	}
 
-	for i := 0; i < len(nn); i++ {
-		n := r.NewInstance(&nn[i]).(*Node)
-		if err == nil {
-			n.metrics = mx[nn[i].Name]
-		}
-		cc = append(cc, n)
+	cc := make(Columnars, 0, len(nodes))
+	for i := range nodes {
+		no := r.New(&nodes[i]).(*Node)
+		no.metrics = mx[nodes[i].Name]
+		cc = append(cc, no)
 	}
+
 	return cc, nil
 }
 
 // Marshal a resource to yaml.
 func (r *Node) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		log.Error().Err(err)
 		return "", err
@@ -106,6 +97,7 @@ func (r *Node) Marshal(path string) (string, error) {
 	no := i.(*v1.Node)
 	no.TypeMeta.APIVersion = "v1"
 	no.TypeMeta.Kind = "Node"
+
 	return r.marshalObject(no)
 }
 
@@ -116,12 +108,15 @@ func (*Node) Header(ns string) Row {
 		"STATUS",
 		"ROLES",
 		"VERSION",
+		"KERNEL",
 		"INTERNAL-IP",
 		"EXTERNAL-IP",
 		"CPU",
 		"MEM",
-		"AVAILABLE_CPU",
-		"AVAILABLE_MEM",
+		"AVA CPU",
+		"AVA MEM",
+		"CAP CPU",
+		"CAP MEM",
 		"AGE",
 	}
 }
@@ -131,33 +126,28 @@ func (r *Node) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
 	i := r.instance
 
-	status := r.status(i)
 	iIP, eIP := r.getIPs(i.Status.Addresses)
 	iIP, eIP = missing(iIP), missing(eIP)
 
-	roles := missing(strings.Join(findNodeRoles(i), ","))
-	cpu, mem, acpu, amem := na(r.metrics.CPU), na(r.metrics.Mem), na(r.metrics.AvailCPU), na(r.metrics.AvailMem)
-
 	return append(ff,
 		i.Name,
-		status,
-		roles,
+		r.status(i),
+		missing(strings.Join(findNodeRoles(i), ",")),
+		i.Status.NodeInfo.KubeletVersion,
 		i.Status.NodeInfo.KernelVersion,
 		iIP,
 		eIP,
-		cpu,
-		mem,
-		acpu,
-		amem,
+		ToMillicore(r.metrics.CurrentCPU),
+		ToMi(r.metrics.CurrentMEM),
+		ToMillicore(r.metrics.AvailCPU),
+		ToMi(r.metrics.AvailMEM),
+		ToMillicore(r.metrics.TotalCPU),
+		ToMi(r.metrics.TotalMEM),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
 }
 
-// ExtFields returns extended fields in relation to headers.
-func (*Node) ExtFields() Properties {
-	return Properties{}
-}
-
+// ----------------------------------------------------------------------------
 // Helpers...
 
 func (*Node) getIPs(addrs []v1.NodeAddress) (iIP, eIP string) {
@@ -169,6 +159,7 @@ func (*Node) getIPs(addrs []v1.NodeAddress) (iIP, eIP string) {
 			iIP = a.Address
 		}
 	}
+
 	return
 }
 
@@ -195,6 +186,7 @@ func (r *Node) status(i *v1.Node) string {
 	if i.Spec.Unschedulable {
 		status = append(status, "SchedulingDisabled")
 	}
+
 	return strings.Join(status, ",")
 }
 
@@ -210,5 +202,6 @@ func findNodeRoles(i *v1.Node) []string {
 			roles.Insert(v)
 		}
 	}
+
 	return roles.List()
 }

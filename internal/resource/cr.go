@@ -13,51 +13,43 @@ type ClusterRole struct {
 }
 
 // NewClusterRoleList returns a new resource list.
-func NewClusterRoleList(ns string) List {
-	return NewClusterRoleListWithArgs(ns, NewClusterRole())
-}
-
-// NewClusterRoleListWithArgs returns a new resource list.
-func NewClusterRoleListWithArgs(ns string, res Resource) List {
-	return newList(NotNamespaced, "clusterrole", res, CRUDAccess|DescribeAccess)
+func NewClusterRoleList(c k8s.Connection, ns string) List {
+	return newList(
+		NotNamespaced,
+		"clusterrole",
+		NewClusterRole(c),
+		CRUDAccess|DescribeAccess,
+	)
 }
 
 // NewClusterRole instantiates a new ClusterRole.
-func NewClusterRole() *ClusterRole {
-	return NewClusterRoleWithArgs(k8s.NewClusterRole())
+func NewClusterRole(c k8s.Connection) *ClusterRole {
+	cr := &ClusterRole{&Base{connection: c, resource: k8s.NewClusterRole(c)}, nil}
+	cr.Factory = cr
+
+	return cr
 }
 
-// NewClusterRoleWithArgs instantiates a new Context.
-func NewClusterRoleWithArgs(r k8s.Res) *ClusterRole {
-	ctx := &ClusterRole{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	ctx.creator = ctx
-	return ctx
-}
-
-// NewInstance builds a new Context instance from a k8s resource.
-func (r *ClusterRole) NewInstance(i interface{}) Columnar {
-	c := NewClusterRole()
-	switch i.(type) {
+// New builds a new ClusterRole instance from a k8s resource.
+func (r *ClusterRole) New(i interface{}) Columnar {
+	c := NewClusterRole(r.connection)
+	switch instance := i.(type) {
 	case *v1.ClusterRole:
-		c.instance = i.(*v1.ClusterRole)
+		c.instance = instance
 	case v1.ClusterRole:
-		ii := i.(v1.ClusterRole)
-		c.instance = &ii
+		c.instance = &instance
 	default:
 		log.Fatal().Msgf("unknown context type %#v", i)
 	}
 	c.path = c.instance.Name
+
 	return c
 }
 
 // Marshal resource to yaml.
 func (r *ClusterRole) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -65,6 +57,7 @@ func (r *ClusterRole) Marshal(path string) (string, error) {
 	cr := i.(*v1.ClusterRole)
 	cr.TypeMeta.APIVersion = "rbac.authorization.k8s.io/v1"
 	cr.TypeMeta.Kind = "ClusterRole"
+
 	return r.marshalObject(cr)
 }
 
@@ -82,9 +75,4 @@ func (r *ClusterRole) Fields(ns string) Row {
 		Pad(i.Name, 70),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
-}
-
-// ExtFields returns extended fields in relation to headers.
-func (*ClusterRole) ExtFields() Properties {
-	return Properties{}
 }

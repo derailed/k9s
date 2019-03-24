@@ -19,52 +19,44 @@ type Service struct {
 }
 
 // NewServiceList returns a new resource list.
-func NewServiceList(ns string) List {
-	return NewServiceListWithArgs(ns, NewService())
+func NewServiceList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"svc",
+		NewService(c),
+		AllVerbsAccess|DescribeAccess,
+	)
 }
 
-// NewServiceListWithArgs returns a new resource list.
-func NewServiceListWithArgs(ns string, res Resource) List {
-	return newList(ns, "svc", res, AllVerbsAccess|DescribeAccess)
+// NewService instantiates a new Service.
+func NewService(c k8s.Connection) *Service {
+	s := &Service{&Base{connection: c, resource: k8s.NewService(c)}, nil}
+	s.Factory = s
+
+	return s
 }
 
-// NewService instantiates a new Endpoint.
-func NewService() *Service {
-	return NewServiceWithArgs(k8s.NewService())
-}
-
-// NewServiceWithArgs instantiates a new Endpoint.
-func NewServiceWithArgs(r k8s.Res) *Service {
-	ep := &Service{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	ep.creator = ep
-	return ep
-}
-
-// NewInstance builds a new Endpoint instance from a k8s resource.
-func (*Service) NewInstance(i interface{}) Columnar {
-	cm := NewService()
-	switch i.(type) {
+// New builds a new Service instance from a k8s resource.
+func (r *Service) New(i interface{}) Columnar {
+	c := NewService(r.connection)
+	switch instance := i.(type) {
 	case *v1.Service:
-		cm.instance = i.(*v1.Service)
+		c.instance = instance
 	case v1.Service:
-		ii := i.(v1.Service)
-		cm.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown Service type %#v", i)
 	}
-	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
-	return cm
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal resource to yaml.
 // BOZO!! Why you need to fill type info??
 func (r *Service) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -72,6 +64,7 @@ func (r *Service) Marshal(path string) (string, error) {
 	svc := i.(*v1.Service)
 	svc.TypeMeta.APIVersion = "v1"
 	svc.TypeMeta.Kind = "Service"
+
 	return r.marshalObject(svc)
 }
 
@@ -81,6 +74,7 @@ func (*Service) Header(ns string) Row {
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
+
 	return append(hh,
 		"NAME",
 		"TYPE",
@@ -110,11 +104,7 @@ func (r *Service) Fields(ns string) Row {
 	)
 }
 
-// ExtFields returns extended fields in relation to headers.
-func (r *Service) ExtFields() Properties {
-	return Properties{}
-}
-
+// ----------------------------------------------------------------------------
 // Helpers...
 
 func getSvcExtIPS(svc *v1.Service) []string {
@@ -139,6 +129,7 @@ func getSvcExtIPS(svc *v1.Service) []string {
 	case v1.ServiceTypeExternalName:
 		results = append(results, svc.Spec.ExternalName)
 	}
+
 	return results
 }
 
@@ -152,6 +143,7 @@ func lbIngressIP(s v1.LoadBalancerStatus) string {
 			result = append(result, ingress[i].Hostname)
 		}
 	}
+
 	return strings.Join(result, ",")
 }
 
@@ -163,6 +155,7 @@ func (*Service) toIPs(svcType v1.ServiceType, ips []string) string {
 		return MissingValue
 	}
 	sort.Strings(ips)
+
 	return strings.Join(ips, ",")
 }
 
@@ -179,5 +172,6 @@ func (*Service) toPorts(pp []v1.ServicePort) string {
 			ports[i] += "╱" + string(p.Protocol)
 		}
 	}
+
 	return strings.Join(ports, " ")
 }

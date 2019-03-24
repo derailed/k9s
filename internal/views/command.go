@@ -3,8 +3,8 @@ package views
 import (
 	"fmt"
 
-	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/rs/zerolog/log"
 )
 
 type command struct {
@@ -29,14 +29,20 @@ func (c *command) previousCmd() (string, bool) {
 
 // DefaultCmd reset default command ie show pods.
 func (c *command) defaultCmd() {
-	c.pushCmd(config.Root.ActiveView())
-	c.run(config.Root.ActiveView())
+	c.pushCmd(c.app.config.ActiveView())
+	c.run(c.app.config.ActiveView())
 }
 
 // Helpers...
 
 // Exec the command by showing associated display.
 func (c *command) run(cmd string) bool {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Debug().Msgf("Command failed %v", err)
+		}
+	}()
+
 	var v igniter
 	switch cmd {
 	case "q", "quit":
@@ -47,14 +53,14 @@ func (c *command) run(cmd string) bool {
 		return true
 	default:
 		if res, ok := resourceViews()[cmd]; ok {
-			v = res.viewFn(res.title, c.app, res.listFn(resource.DefaultNamespace), res.colorerFn)
-			c.app.flash(flashInfo, fmt.Sprintf("Viewing %s in namespace %s...", res.title, config.Root.ActiveNamespace()))
+			v = res.viewFn(res.title, c.app, res.listFn(c.app.conn(), resource.DefaultNamespace), res.colorerFn)
+			c.app.flash(flashInfo, fmt.Sprintf("Viewing %s in namespace %s...", res.title, c.app.config.ActiveNamespace()))
 			c.exec(cmd, v)
 			return true
 		}
 	}
 
-	res, ok := allCRDs()[cmd]
+	res, ok := allCRDs(c.app.conn())[cmd]
 	if !ok {
 		c.app.flash(flashWarn, fmt.Sprintf("Huh? `%s` command not found", cmd))
 		return false
@@ -67,7 +73,7 @@ func (c *command) run(cmd string) bool {
 	v = newResourceView(
 		res.Kind,
 		c.app,
-		resource.NewCustomList("", res.Group, res.Version, n),
+		resource.NewCustomList(c.app.conn(), "", res.Group, res.Version, n),
 		defaultColorer,
 	)
 	c.exec(cmd, v)
@@ -76,8 +82,8 @@ func (c *command) run(cmd string) bool {
 
 func (c *command) exec(cmd string, v igniter) {
 	if v != nil {
-		config.Root.SetActiveView(cmd)
-		config.Root.Save()
+		c.app.config.SetActiveView(cmd)
+		c.app.config.Save()
 		c.app.inject(v)
 	}
 }

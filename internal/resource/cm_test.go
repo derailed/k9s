@@ -41,36 +41,39 @@ func TestCMFields(t *testing.T) {
 func TestCMGet(t *testing.T) {
 	setup(t)
 
-	ca := NewMockCaller()
+	conn := NewMockConnection()
+	ca := NewMockCruder()
 	m.When(ca.Get("blee", "fred")).ThenReturn(k8sCM(), nil)
 
-	cm := resource.NewConfigMapWithArgs(ca)
+	cm := resource.NewConfigMap(conn)
 	ma, err := cm.Get("blee/fred")
 	assert.Nil(t, err)
 	ca.VerifyWasCalledOnce().Get("blee", "fred")
-	assert.Equal(t, cm.NewInstance(k8sCM()), ma)
+	assert.Equal(t, cm.New(k8sCM()), ma)
 }
 
 func TestCMList(t *testing.T) {
 	setup(t)
 
-	ca := NewMockCaller()
+	conn := NewMockConnection()
+	ca := NewMockCruder()
 	m.When(ca.List("blee")).ThenReturn(k8s.Collection{*k8sCM()}, nil)
 
-	cm := resource.NewConfigMapWithArgs(ca)
+	cm := resource.NewConfigMap(conn)
 	ma, err := cm.List("blee")
 	assert.Nil(t, err)
 	ca.VerifyWasCalledOnce().List("blee")
-	assert.Equal(t, resource.Columnars{cm.NewInstance(k8sCM())}, ma)
+	assert.Equal(t, resource.Columnars{cm.New(k8sCM())}, ma)
 }
 
 func TestCMDelete(t *testing.T) {
 	setup(t)
 
-	ca := NewMockCaller()
+	conn := NewMockConnection()
+	ca := NewMockCruder()
 	m.When(ca.Delete("blee", "fred")).ThenReturn(nil)
 
-	cm := resource.NewConfigMapWithArgs(ca)
+	cm := resource.NewConfigMap(conn)
 	assert.Nil(t, cm.Delete("blee/fred"))
 	ca.VerifyWasCalledOnce().Delete("blee", "fred")
 }
@@ -78,10 +81,11 @@ func TestCMDelete(t *testing.T) {
 func TestCMMarshal(t *testing.T) {
 	setup(t)
 
-	ca := NewMockCaller()
+	conn := NewMockConnection()
+	ca := NewMockCruder()
 	m.When(ca.Get("blee", "fred")).ThenReturn(k8sCM(), nil)
 
-	cm := resource.NewConfigMapWithArgs(ca)
+	cm := resource.NewConfigMap(conn)
 	ma, err := cm.Marshal("blee/fred")
 
 	ca.VerifyWasCalledOnce().Get("blee", "fred")
@@ -92,48 +96,38 @@ func TestCMMarshal(t *testing.T) {
 func TestCMListHasName(t *testing.T) {
 	setup(t)
 
-	ca := NewMockCaller()
-	l := resource.NewConfigMapListWithArgs("blee", resource.NewConfigMapWithArgs(ca))
+	conn := NewMockConnection()
+	ca := NewMockCruder()
+	l := resource.NewConfigMapList(conn, "blee")
 	assert.Equal(t, "cm", l.GetName())
 }
 
 func TestCMListHasNamespace(t *testing.T) {
 	setup(t)
 
-	ca := NewMockCaller()
-	l := resource.NewConfigMapListWithArgs("blee", resource.NewConfigMapWithArgs(ca))
+	conn := NewMockConnection()
+	ca := NewMockCruder()
+	l := resource.NewConfigMapList(conn, "blee")
 	assert.Equal(t, "blee", l.GetNamespace())
 }
 
 func TestCMListHasResource(t *testing.T) {
 	setup(t)
 
-	ca := NewMockCaller()
-	l := resource.NewConfigMapListWithArgs("blee", resource.NewConfigMapWithArgs(ca))
+	conn := NewMockConnection()
+	ca := NewMockCruder()
+	l := resource.NewConfigMapList(conn, "blee")
 	assert.NotNil(t, l.Resource())
-}
-
-func TestCMListDescribe(t *testing.T) {
-	setup(t)
-
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sCM(), nil)
-
-	l := resource.NewConfigMapListWithArgs("blee", resource.NewConfigMapWithArgs(ca))
-	props, err := l.Describe("blee/fred")
-
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
-	assert.Nil(t, err)
-	assert.Equal(t, 0, len(props))
 }
 
 func TestCMListData(t *testing.T) {
 	setup(t)
 
-	ca := NewMockCaller()
+	conn := NewMockConnection()
+	ca := NewMockCruder()
 	m.When(ca.List("blee")).ThenReturn(k8s.Collection{*k8sCM()}, nil)
 
-	l := resource.NewConfigMapListWithArgs("blee", resource.NewConfigMapWithArgs(ca))
+	l := resource.NewConfigMapList(conn, "blee")
 	// Make sure we can get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
@@ -146,7 +140,6 @@ func TestCMListData(t *testing.T) {
 	assert.Equal(t, 1, len(td.Rows))
 
 	assert.Equal(t, "blee", l.GetNamespace())
-	assert.False(t, l.HasXRay())
 	row := td.Rows["blee/fred"]
 	assert.Equal(t, 3, len(row.Deltas))
 	for _, d := range row.Deltas {
@@ -158,7 +151,8 @@ func TestCMListData(t *testing.T) {
 // Helpers...
 
 func newConfigMap() resource.Columnar {
-	return resource.NewConfigMap().NewInstance(k8sCM())
+	conn := NewMockConnection()
+	return resource.NewConfigMap(conn).New(k8sCM())
 }
 
 func k8sCM() *v1.ConfigMap {

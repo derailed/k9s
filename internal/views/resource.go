@@ -88,7 +88,7 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 				return
 			case <-time.After(time.Duration(initTick) * time.Second):
 				v.refresh()
-				initTick = float64(config.Root.K9s.RefreshRate)
+				initTick = float64(v.app.config.K9s.RefreshRate)
 			}
 		}
 	}(ctx)
@@ -170,10 +170,10 @@ func (v *resourceView) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	sel := v.getSelectedItem()
-	raw, err := v.list.Resource().Describe(v.title, sel)
+	raw, err := v.list.Resource().Describe(v.title, sel, v.app.flags)
 	if err != nil {
 		v.app.flash(flashErr, err.Error())
-		log.Warn().Msg(err.Error())
+		log.Warn().Msgf("Describe %v", err.Error())
 		return evt
 	}
 	details := v.GetPrimitive("details").(*detailsView)
@@ -220,7 +220,7 @@ func (v *resourceView) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	args = append(args, "edit")
 	args = append(args, v.list.GetName())
 	args = append(args, "-n", ns)
-	args = append(args, "--context", config.Root.K9s.CurrentContext)
+	args = append(args, "--context", v.app.config.K9s.CurrentContext)
 	args = append(args, po)
 	runK(v.app, args...)
 	return evt
@@ -249,8 +249,8 @@ func (v *resourceView) doSwitchNamespace(ns string) {
 	v.getTV().resetTitle()
 	v.getTV().Select(0, 0)
 	v.app.cmdBuff.reset()
-	config.Root.SetActiveNamespace(v.selectedNS)
-	config.Root.Save()
+	v.app.config.SetActiveNamespace(v.selectedNS)
+	v.app.config.Save()
 }
 
 func (v *resourceView) refresh() {
@@ -264,7 +264,7 @@ func (v *resourceView) refresh() {
 			v.list.SetNamespace(v.selectedNS)
 		}
 		if err := v.list.Reconcile(); err != nil {
-			log.Warn().Msgf("%s", err)
+			log.Warn().Msgf("Reconcile %v", err)
 			v.app.flash(flashErr, err.Error())
 		}
 		data := v.list.Data()
@@ -338,11 +338,11 @@ func (v *resourceView) refreshActions() {
 
 	var nn []interface{}
 	aa := make(keyActions)
-	if k8s.CanIAccess("", "list", "namespaces", "namespace.v1") {
+	if k8s.CanIAccess(v.app.conn().Config(), log.Logger, "", "list", "namespaces", "namespace.v1") {
 		var err error
-		nn, err = k8s.NewNamespace().List(resource.AllNamespaces)
+		nn, err = k8s.NewNamespace(v.app.conn()).List(resource.AllNamespaces)
 		if err != nil {
-			log.Warn().Msgf("%s", err)
+			log.Warn().Msgf("Access %v", err)
 			v.app.flash(flashErr, err.Error())
 		}
 
@@ -354,7 +354,7 @@ func (v *resourceView) refreshActions() {
 
 		if v.list.Access(resource.NamespaceAccess) {
 			v.namespaces = make(map[int]string, config.MaxFavoritesNS)
-			for i, n := range config.Root.FavNamespaces() {
+			for i, n := range v.app.config.FavNamespaces() {
 				aa[tcell.Key(numKeys[i])] = newKeyAction(n, v.switchNamespaceCmd, true)
 				v.namespaces[i] = n
 			}

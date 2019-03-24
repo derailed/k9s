@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
 )
 
@@ -21,7 +20,7 @@ func newLogView(title string, parent loggable) *logView {
 		v.SetDynamicColors(true)
 		v.SetWrap(true)
 		v.setTitle(parent.getSelection())
-		v.SetMaxBuffer(config.Root.K9s.LogBufferSize)
+		v.SetMaxBuffer(parent.appView().config.K9s.LogBufferSize)
 	}
 	v.ansiWriter = tview.ANSIWriter(v)
 	return &v

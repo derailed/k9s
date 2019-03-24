@@ -3,7 +3,6 @@ package views
 import (
 	"strings"
 
-	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
 )
@@ -57,8 +56,8 @@ func (v *contextView) useContext(name string) error {
 		return err
 	}
 
-	config.Root.Reset()
-	config.Root.Save()
+	v.app.config.Reset()
+	v.app.config.Save()
 	v.app.flash(flashInfo, "Switching context to", ctx)
 	v.refresh()
 	if tv, ok := v.GetPrimitive("ctx").(*tableView); ok {

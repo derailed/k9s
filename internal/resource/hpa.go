@@ -17,51 +17,43 @@ type HPA struct {
 }
 
 // NewHPAList returns a new resource list.
-func NewHPAList(ns string) List {
-	return NewHPAListWithArgs(ns, NewHPA())
+func NewHPAList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"hpa",
+		NewHPA(c),
+		AllVerbsAccess|DescribeAccess,
+	)
 }
 
-// NewHPAListWithArgs returns a new resource list.
-func NewHPAListWithArgs(ns string, res Resource) List {
-	return newList(ns, "hpa", res, AllVerbsAccess|DescribeAccess)
+// NewHPA instantiates a new HPA.
+func NewHPA(c k8s.Connection) *HPA {
+	hpa := &HPA{&Base{connection: c, resource: k8s.NewHPA(c)}, nil}
+	hpa.Factory = hpa
+
+	return hpa
 }
 
-// NewHPA instantiates a new Endpoint.
-func NewHPA() *HPA {
-	return NewHPAWithArgs(k8s.NewHPA())
-}
-
-// NewHPAWithArgs instantiates a new Endpoint.
-func NewHPAWithArgs(r k8s.Res) *HPA {
-	ep := &HPA{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	ep.creator = ep
-	return ep
-}
-
-// NewInstance builds a new Endpoint instance from a k8s resource.
-func (*HPA) NewInstance(i interface{}) Columnar {
-	cm := NewHPA()
-	switch i.(type) {
+// New builds a new HPA instance from a k8s resource.
+func (r *HPA) New(i interface{}) Columnar {
+	c := NewHPA(r.connection)
+	switch instance := i.(type) {
 	case *autoscalingv2beta2.HorizontalPodAutoscaler:
-		cm.instance = i.(*autoscalingv2beta2.HorizontalPodAutoscaler)
+		c.instance = instance
 	case autoscalingv2beta2.HorizontalPodAutoscaler:
-		ii := i.(autoscalingv2beta2.HorizontalPodAutoscaler)
-		cm.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown HPA type %#v", i)
 	}
-	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
-	return cm
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal resource to yaml.
 func (r *HPA) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -69,6 +61,7 @@ func (r *HPA) Marshal(path string) (string, error) {
 	hpa := i.(*autoscalingv2beta2.HorizontalPodAutoscaler)
 	hpa.TypeMeta.APIVersion = "autoscaling/v2beta2"
 	hpa.TypeMeta.Kind = "HorizontalPodAutoscaler"
+
 	return r.marshalObject(hpa)
 }
 
@@ -78,6 +71,7 @@ func (*HPA) Header(ns string) Row {
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
+
 	return append(hh,
 		"NAME",
 		"REFERENCE",
@@ -108,60 +102,33 @@ func (r *HPA) Fields(ns string) Row {
 	)
 }
 
-// ExtFields returns extended fields in relation to headers.
-func (*HPA) ExtFields() Properties {
-	return Properties{}
-}
+// ----------------------------------------------------------------------------
+// Helpers...
 
 func toMetrics(specs []autoscalingv2beta2.MetricSpec, statuses []autoscalingv2beta2.MetricStatus) string {
 	if len(specs) == 0 {
 		return "<none>"
 	}
+
 	list, max, more, count := []string{}, 2, false, 0
 	for i, spec := range specs {
+		current := "<unknown>"
+
 		switch spec.Type {
 		case autoscalingv2beta2.ExternalMetricSourceType:
-			current := "<unknown>"
-			if spec.External.Target.AverageValue != nil {
-				if len(statuses) > i && statuses[i].External != nil && &statuses[i].External.Current.AverageValue != nil {
-					current = statuses[i].External.Current.AverageValue.String()
-				}
-				list = append(list, fmt.Sprintf("%s/%s (avg)", current, spec.External.Target.AverageValue.String()))
-			} else {
-				if len(statuses) > i && statuses[i].External != nil {
-					current = statuses[i].External.Current.Value.String()
-				}
-				list = append(list, fmt.Sprintf("%s/%s", current, spec.External.Target.Value.String()))
-			}
+			list = append(list, externalMetrics(i, spec, statuses))
 		case autoscalingv2beta2.PodsMetricSourceType:
-			current := "<unknown>"
 			if len(statuses) > i && statuses[i].Pods != nil {
 				current = statuses[i].Pods.Current.AverageValue.String()
 			}
 			list = append(list, fmt.Sprintf("%s/%s", current, spec.Pods.Target.AverageValue.String()))
 		case autoscalingv2beta2.ObjectMetricSourceType:
-			current := "<unknown>"
 			if len(statuses) > i && statuses[i].Object != nil {
 				current = statuses[i].Object.Current.Value.String()
 			}
 			list = append(list, fmt.Sprintf("%s/%s", current, spec.Object.Target.Value.String()))
 		case autoscalingv2beta2.ResourceMetricSourceType:
-			current := "<unknown>"
-			if spec.Resource.Target.AverageValue != nil {
-				if len(statuses) > i && statuses[i].Resource != nil {
-					current = statuses[i].Resource.Current.AverageValue.String()
-				}
-				list = append(list, fmt.Sprintf("%s/%s", current, spec.Resource.Target.AverageValue.String()))
-			} else {
-				if len(statuses) > i && statuses[i].Resource != nil && statuses[i].Resource.Current.AverageUtilization != nil {
-					current = fmt.Sprintf("%d%%", *statuses[i].Resource.Current.AverageUtilization)
-				}
-				target := "<auto>"
-				if spec.Resource.Target.AverageUtilization != nil {
-					target = fmt.Sprintf("%d%%", *spec.Resource.Target.AverageUtilization)
-				}
-				list = append(list, fmt.Sprintf("%s/%s", current, target))
-			}
+			list = append(list, resourceMetrics(i, spec, statuses))
 		default:
 			list = append(list, "<unknown type>")
 		}
@@ -169,13 +136,50 @@ func toMetrics(specs []autoscalingv2beta2.MetricSpec, statuses []autoscalingv2be
 	}
 
 	if count > max {
-		list = list[:max]
-		more = true
+		list, more = list[:max], true
 	}
 
 	ret := strings.Join(list, ", ")
 	if more {
 		return fmt.Sprintf("%s + %d more...", ret, count-max)
 	}
+
 	return ret
+}
+
+func externalMetrics(i int, spec autoscalingv2beta2.MetricSpec, statuses []autoscalingv2beta2.MetricStatus) string {
+	current := "<unknown>"
+
+	if spec.External.Target.AverageValue != nil {
+		if len(statuses) > i && statuses[i].External != nil && &statuses[i].External.Current.AverageValue != nil {
+			current = statuses[i].External.Current.AverageValue.String()
+		}
+		return fmt.Sprintf("%s/%s (avg)", current, spec.External.Target.AverageValue.String())
+	}
+	if len(statuses) > i && statuses[i].External != nil {
+		current = statuses[i].External.Current.Value.String()
+	}
+
+	return fmt.Sprintf("%s/%s", current, spec.External.Target.Value.String())
+}
+
+func resourceMetrics(i int, spec autoscalingv2beta2.MetricSpec, statuses []autoscalingv2beta2.MetricStatus) string {
+	current := "<unknown>"
+
+	if spec.Resource.Target.AverageValue != nil {
+		if len(statuses) > i && statuses[i].Resource != nil {
+			current = statuses[i].Resource.Current.AverageValue.String()
+		}
+		return fmt.Sprintf("%s/%s", current, spec.Resource.Target.AverageValue.String())
+	}
+
+	if len(statuses) > i && statuses[i].Resource != nil && statuses[i].Resource.Current.AverageUtilization != nil {
+		current = fmt.Sprintf("%d%%", *statuses[i].Resource.Current.AverageUtilization)
+	}
+
+	target := "<auto>"
+	if spec.Resource.Target.AverageUtilization != nil {
+		target = fmt.Sprintf("%d%%", *spec.Resource.Target.AverageUtilization)
+	}
+	return fmt.Sprintf("%s/%s", current, target)
 }

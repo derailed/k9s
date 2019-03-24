@@ -15,51 +15,43 @@ type Deployment struct {
 }
 
 // NewDeploymentList returns a new resource list.
-func NewDeploymentList(ns string) List {
-	return NewDeploymentListWithArgs(ns, NewDeployment())
-}
-
-// NewDeploymentListWithArgs returns a new resource list.
-func NewDeploymentListWithArgs(ns string, res Resource) List {
-	return newList(ns, "deploy", res, AllVerbsAccess|DescribeAccess)
+func NewDeploymentList(c k8s.Connection, ns string) List {
+	return newList(
+		ns,
+		"deploy",
+		NewDeployment(c),
+		AllVerbsAccess|DescribeAccess,
+	)
 }
 
 // NewDeployment instantiates a new Deployment.
-func NewDeployment() *Deployment {
-	return NewDeploymentWithArgs(k8s.NewDeployment())
+func NewDeployment(c k8s.Connection) *Deployment {
+	d := &Deployment{&Base{connection: c, resource: k8s.NewDeployment(c)}, nil}
+	d.Factory = d
+
+	return d
 }
 
-// NewDeploymentWithArgs instantiates a new Deployment.
-func NewDeploymentWithArgs(r k8s.Res) *Deployment {
-	cm := &Deployment{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	cm.creator = cm
-	return cm
-}
-
-// NewInstance builds a new Deployment instance from a k8s resource.
-func (*Deployment) NewInstance(i interface{}) Columnar {
-	cm := NewDeployment()
-	switch i.(type) {
+// New builds a new Deployment instance from a k8s resource.
+func (r *Deployment) New(i interface{}) Columnar {
+	c := NewDeployment(r.connection)
+	switch instance := i.(type) {
 	case *v1.Deployment:
-		cm.instance = i.(*v1.Deployment)
+		c.instance = instance
 	case v1.Deployment:
-		ii := i.(v1.Deployment)
-		cm.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown Deployment type %#v", i)
 	}
-	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
-	return cm
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal resource to yaml.
 func (r *Deployment) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -67,6 +59,7 @@ func (r *Deployment) Marshal(path string) (string, error) {
 	dp := i.(*v1.Deployment)
 	dp.TypeMeta.APIVersion = "apps/v1"
 	dp.TypeMeta.Kind = "Deployment"
+
 	return r.marshalObject(dp)
 }
 
@@ -76,6 +69,7 @@ func (*Deployment) Header(ns string) Row {
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
+
 	return append(hh, "NAME", "DESIRED", "CURRENT", "UP-TO-DATE", "AVAILABLE", "AGE")
 }
 
@@ -87,6 +81,7 @@ func (r *Deployment) Fields(ns string) Row {
 	if ns == AllNamespaces {
 		ff = append(ff, i.Namespace)
 	}
+
 	return append(ff,
 		i.Name,
 		strconv.Itoa(int(*i.Spec.Replicas)),
@@ -95,9 +90,4 @@ func (r *Deployment) Fields(ns string) Row {
 		strconv.Itoa(int(i.Status.AvailableReplicas)),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
-}
-
-// ExtFields returns extended fields in relation to headers.
-func (*Deployment) ExtFields() Properties {
-	return Properties{}
 }

@@ -16,51 +16,43 @@ type PV struct {
 }
 
 // NewPVList returns a new resource list.
-func NewPVList(ns string) List {
-	return NewPVListWithArgs(ns, NewPV())
+func NewPVList(c k8s.Connection, ns string) List {
+	return newList(
+		NotNamespaced,
+		"pv",
+		NewPV(c),
+		CRUDAccess|DescribeAccess,
+	)
 }
 
-// NewPVListWithArgs returns a new resource list.
-func NewPVListWithArgs(ns string, res Resource) List {
-	return newList(NotNamespaced, "pv", res, CRUDAccess|DescribeAccess)
+// NewPV instantiates a new PV.
+func NewPV(c k8s.Connection) *PV {
+	p := &PV{&Base{connection: c, resource: k8s.NewPV(c)}, nil}
+	p.Factory = p
+
+	return p
 }
 
-// NewPV instantiates a new Endpoint.
-func NewPV() *PV {
-	return NewPVWithArgs(k8s.NewPV())
-}
-
-// NewPVWithArgs instantiates a new Endpoint.
-func NewPVWithArgs(r k8s.Res) *PV {
-	ep := &PV{
-		Base: &Base{
-			caller: r,
-		},
-	}
-	ep.creator = ep
-	return ep
-}
-
-// NewInstance builds a new Endpoint instance from a k8s resource.
-func (*PV) NewInstance(i interface{}) Columnar {
-	cm := NewPV()
-	switch i.(type) {
+// New builds a new PV instance from a k8s resource.
+func (r *PV) New(i interface{}) Columnar {
+	c := NewPV(r.connection)
+	switch instance := i.(type) {
 	case *v1.PersistentVolume:
-		cm.instance = i.(*v1.PersistentVolume)
+		c.instance = instance
 	case v1.PersistentVolume:
-		ii := i.(v1.PersistentVolume)
-		cm.instance = &ii
+		c.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		log.Fatal().Msgf("unknown PV type %#v", i)
 	}
-	cm.path = cm.namespacedName(cm.instance.ObjectMeta)
-	return cm
+	c.path = c.namespacedName(c.instance.ObjectMeta)
+
+	return c
 }
 
 // Marshal resource to yaml.
 func (r *PV) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.caller.Get(ns, n)
+	i, err := r.resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -68,6 +60,7 @@ func (r *PV) Marshal(path string) (string, error) {
 	pv := i.(*v1.PersistentVolume)
 	pv.TypeMeta.APIVersion = "v1"
 	pv.TypeMeta.Kind = "PeristentVolume"
+
 	return r.marshalObject(pv)
 }
 
@@ -77,6 +70,7 @@ func (*PV) Header(ns string) Row {
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
+
 	return append(hh, "NAME", "CAPACITY", "ACCESS MODES", "RECLAIM POLICY", "STATUS", "CLAIM", "STORAGECLASS", "REASON", "AGE")
 }
 
@@ -118,11 +112,7 @@ func (r *PV) Fields(ns string) Row {
 	)
 }
 
-// ExtFields returns extended fields in relation to headers.
-func (*PV) ExtFields() Properties {
-	return Properties{}
-}
-
+// ----------------------------------------------------------------------------
 // Helpers...
 
 func (r *PV) accessMode(aa []v1.PersistentVolumeAccessMode) string {
@@ -138,6 +128,7 @@ func (r *PV) accessMode(aa []v1.PersistentVolumeAccessMode) string {
 			s = append(s, "RWX")
 		}
 	}
+
 	return strings.Join(s, ",")
 }
 
@@ -147,6 +138,7 @@ func (r *PV) accessContains(cc []v1.PersistentVolumeAccessMode, a v1.PersistentV
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -157,5 +149,6 @@ func (r *PV) accessDedup(cc []v1.PersistentVolumeAccessMode) []v1.PersistentVolu
 			set = append(set, c)
 		}
 	}
+
 	return set
 }

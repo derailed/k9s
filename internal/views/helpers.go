@@ -1,9 +1,14 @@
 package views
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
+
+func toPerc(f float64) string {
+	return fmt.Sprintf("%.0f%%", f)
+}
 
 func deltas(c, n string) string {
 	if c == "n/a" {
