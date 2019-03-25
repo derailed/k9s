@@ -6,10 +6,16 @@ import (
 )
 
 type (
-	// SwitchableResource represents a resource that can be switched.
-	SwitchableResource interface {
+	// Switchable represents a switchable resource.
+	Switchable interface {
+		Switch(ctx string) error
+		MustCurrentContextName() string
+	}
+
+	// SwitchableCruder represents a resource that can be switched.
+	SwitchableCruder interface {
 		Cruder
-		k8s.Switchable
+		Switchable
 	}
 
 	// Context tracks a kubernetes resource.
@@ -50,7 +56,7 @@ func (r *Context) New(i interface{}) Columnar {
 
 // Switch out current context.
 func (r *Context) Switch(c string) error {
-	return r.Resource.(SwitchableResource).Switch(c)
+	return r.Resource.(Switchable).Switch(c)
 }
 
 // Marshal the resource to yaml.

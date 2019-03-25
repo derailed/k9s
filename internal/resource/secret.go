@@ -15,7 +15,7 @@ type Secret struct {
 }
 
 // NewSecretList returns a new resource list.
-func NewSecretList(c k8s.Connection, ns string) List {
+func NewSecretList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"secret",
@@ -25,7 +25,7 @@ func NewSecretList(c k8s.Connection, ns string) List {
 }
 
 // NewSecret instantiates a new Secret.
-func NewSecret(c k8s.Connection) *Secret {
+func NewSecret(c Connection) *Secret {
 	s := &Secret{&Base{Connection: c, Resource: k8s.NewSecret(c)}, nil}
 	s.Factory = s
 

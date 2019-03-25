@@ -15,7 +15,7 @@ type ServiceAccount struct {
 }
 
 // NewServiceAccountList returns a new resource list.
-func NewServiceAccountList(c k8s.Connection, ns string) List {
+func NewServiceAccountList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"sa",
@@ -25,7 +25,7 @@ func NewServiceAccountList(c k8s.Connection, ns string) List {
 }
 
 // NewServiceAccount instantiates a new ServiceAccount.
-func NewServiceAccount(c k8s.Connection) *ServiceAccount {
+func NewServiceAccount(c Connection) *ServiceAccount {
 	s := &ServiceAccount{&Base{Connection: c, Resource: k8s.NewServiceAccount(c)}, nil}
 	s.Factory = s
 

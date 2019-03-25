@@ -10,12 +10,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/cli-runtime/pkg/genericclioptions/printers"
-	"k8s.io/client-go/dynamic"
-	"k8s.io/client-go/kubernetes"
-	restclient "k8s.io/client-go/rest"
 	"k8s.io/kubernetes/pkg/kubectl/describe"
 	versioned "k8s.io/kubernetes/pkg/kubectl/describe/versioned"
-	v "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
 type (
@@ -27,18 +23,7 @@ type (
 	}
 
 	// Connection represents a Kubenetes apiserver connection.
-	Connection interface {
-		Config() *k8s.Config
-		DialOrDie() kubernetes.Interface
-		SwitchContextOrDie(ctx string)
-		NSDialOrDie() dynamic.NamespaceableResourceInterface
-		RestConfigOrDie() *restclient.Config
-		MXDial() (*v.Clientset, error)
-		DynDialOrDie() dynamic.Interface
-		HasMetrics() bool
-		IsNamespaced(n string) bool
-		SupportsResource(group string) bool
-	}
+	Connection k8s.Connection
 
 	// Factory creates new tabular resources.
 	Factory interface {

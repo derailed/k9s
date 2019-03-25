@@ -6,6 +6,9 @@ DATE    := $(shell date +%FT%T%Z)
 
 default: help
 
+test:      ## Run all tests
+	@go test ./...
+
 cover:     ## Run test coverage suite
 	@go test ./... --coverprofile=cov.out
 	@go tool cover --html=cov.out

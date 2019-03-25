@@ -13,7 +13,7 @@ type Namespace struct {
 }
 
 // NewNamespaceList returns a new resource list.
-func NewNamespaceList(c k8s.Connection, ns string) List {
+func NewNamespaceList(c Connection, ns string) List {
 	return NewList(
 		NotNamespaced,
 		"ns",
@@ -23,7 +23,7 @@ func NewNamespaceList(c k8s.Connection, ns string) List {
 }
 
 // NewNamespace instantiates a new Namespace.
-func NewNamespace(c k8s.Connection) *Namespace {
+func NewNamespace(c Connection) *Namespace {
 	n := &Namespace{&Base{Connection: c, Resource: k8s.NewNamespace(c)}, nil}
 	n.Factory = n
 

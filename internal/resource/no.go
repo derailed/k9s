@@ -24,7 +24,7 @@ type Node struct {
 }
 
 // NewNodeList returns a new resource list.
-func NewNodeList(c k8s.Connection, mx MetricsServer, ns string) List {
+func NewNodeList(c Connection, mx MetricsServer, ns string) List {
 	return NewList(
 		NotNamespaced,
 		"no",
@@ -34,7 +34,7 @@ func NewNodeList(c k8s.Connection, mx MetricsServer, ns string) List {
 }
 
 // NewNode instantiates a new Node.
-func NewNode(c k8s.Connection, mx MetricsServer) *Node {
+func NewNode(c Connection, mx MetricsServer) *Node {
 	n := &Node{&Base{Connection: c, Resource: k8s.NewNode(c)}, nil, mx, k8s.NodeMetrics{}}
 	n.Factory = n
 

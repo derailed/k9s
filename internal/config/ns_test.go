@@ -1,7 +1,7 @@
 package config_test
 
 import (
-	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
@@ -10,43 +10,43 @@ import (
 )
 
 func TestNSValidate(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
+	mk := NewMockKubeSettings()
+	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"ns1", "ns2", "default"})
 
 	ns := config.NewNamespace()
+	ns.Validate(mc, mk)
 
-	ksMock := NewMockKubeSettings()
-	m.When(ksMock.NamespaceNames()).ThenReturn([]string{"ns1", "ns2", "default"}, nil)
-
-	ns.Validate(ksMock)
-	ksMock.VerifyWasCalledOnce()
+	mk.VerifyWasCalledOnce()
 	assert.Equal(t, "default", ns.Active)
 	assert.Equal(t, []string{"default"}, ns.Favorites)
 }
 
 func TestNSValidateMissing(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
+	mk := NewMockKubeSettings()
+	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"ns1", "ns2"})
 
 	ns := config.NewNamespace()
+	ns.Validate(mc, mk)
 
-	ksMock := NewMockKubeSettings()
-	m.When(ksMock.NamespaceNames()).ThenReturn([]string{"ns1", "ns2"}, nil)
-	ns.Validate(ksMock)
-
-	ksMock.VerifyWasCalledOnce()
+	mk.VerifyWasCalledOnce()
 	assert.Equal(t, "default", ns.Active)
 	assert.Equal(t, []string{}, ns.Favorites)
 }
 
 func TestNSValidateNoNS(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), fmt.Errorf("Crap!"))
+	mk := NewMockKubeSettings()
+	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"ns1", "ns2"})
 
 	ns := config.NewNamespace()
+	ns.Validate(mc, mk)
 
-	ksMock := NewMockKubeSettings()
-	m.When(ksMock.NamespaceNames()).ThenReturn([]string{"ns1", "ns2"}, errors.New("boom"))
-	ns.Validate(ksMock)
-
-	ksMock.VerifyWasCalledOnce()
+	mk.VerifyWasCalledOnce()
 	assert.Equal(t, "default", ns.Active)
 	assert.Equal(t, []string{"default"}, ns.Favorites)
 }
@@ -64,12 +64,13 @@ func TestNSSetActive(t *testing.T) {
 		{"ns4", allNS},
 	}
 
-	ksMock := NewMockKubeSettings()
-	m.When(ksMock.NamespaceNames()).ThenReturn(allNS, nil)
+	mk := NewMockKubeSettings()
+	m.When(mk.NamespaceNames(namespaces())).ThenReturn(allNS)
 
 	ns := config.NewNamespace()
 	for _, u := range uu {
-		err := ns.SetActive(u.ns, ksMock)
+		err := ns.SetActive(u.ns, mk)
+
 		assert.Nil(t, err)
 		assert.Equal(t, u.ns, ns.Active)
 		assert.Equal(t, u.fav, ns.Favorites)
@@ -79,12 +80,13 @@ func TestNSSetActive(t *testing.T) {
 func TestNSValidateRmFavs(t *testing.T) {
 	allNS := []string{"default", "kube-system"}
 
-	ksMock := NewMockKubeSettings()
-	m.When(ksMock.NamespaceNames()).ThenReturn(allNS, nil)
+	mc := NewMockConnection()
+	mk := NewMockKubeSettings()
+	m.When(mk.NamespaceNames(namespaces())).ThenReturn(allNS)
 
 	ns := config.NewNamespace()
 	ns.Favorites = []string{"default", "fred", "blee"}
+	ns.Validate(mc, mk)
 
-	ns.Validate(ksMock)
-	assert.Equal(t, []string{"default"}, ns.Favorites)
+	assert.Equal(t, []string{"fred"}, ns.Favorites)
 }

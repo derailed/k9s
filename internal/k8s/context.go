@@ -7,17 +7,6 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
-// Switchable represents a switchable resource.
-type Switchable interface {
-	Switch(ctx string) error
-}
-
-// SwitchableResource represents a Kubernetes clusters configurations.
-type SwitchableResource interface {
-	Cruder
-	Switchable
-}
-
 // NamedContext represents a named cluster context.
 type NamedContext struct {
 	Name    string
@@ -38,6 +27,8 @@ func (c *NamedContext) MustCurrentContextName() string {
 	}
 	return cl
 }
+
+// ----------------------------------------------------------------------------
 
 // Context represents a Kubernetes Context.
 type Context struct {
@@ -82,6 +73,15 @@ func (c *Context) Delete(_, n string) error {
 		return fmt.Errorf("trying to delete your current context %s", n)
 	}
 	return c.Config().DelContext(n)
+}
+
+// MustCurrentContextName return the active context name.
+func (c *Context) MustCurrentContextName() string {
+	cl, err := c.Config().CurrentContextName()
+	if err != nil {
+		panic(err)
+	}
+	return cl
 }
 
 // Switch to another context.

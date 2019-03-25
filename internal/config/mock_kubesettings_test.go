@@ -5,6 +5,7 @@ package config_test
 
 import (
 	pegomock "github.com/petergtz/pegomock"
+	v1 "k8s.io/api/core/v1"
 	"reflect"
 	"time"
 )
@@ -93,23 +94,19 @@ func (mock *MockKubeSettings) CurrentNamespaceName() (string, error) {
 	return ret0, ret1
 }
 
-func (mock *MockKubeSettings) NamespaceNames() ([]string, error) {
+func (mock *MockKubeSettings) NamespaceNames(_param0 []v1.Namespace) []string {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockKubeSettings().")
 	}
-	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("NamespaceNames", params, []reflect.Type{reflect.TypeOf((*[]string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	params := []pegomock.Param{_param0}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("NamespaceNames", params, []reflect.Type{reflect.TypeOf((*[]string)(nil)).Elem()})
 	var ret0 []string
-	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
 			ret0 = result[0].([]string)
 		}
-		if result[1] != nil {
-			ret1 = result[1].(error)
-		}
 	}
-	return ret0, ret1
+	return ret0
 }
 
 func (mock *MockKubeSettings) VerifyWasCalledOnce() *VerifierKubeSettings {
@@ -217,8 +214,8 @@ func (c *KubeSettings_CurrentNamespaceName_OngoingVerification) GetCapturedArgum
 func (c *KubeSettings_CurrentNamespaceName_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierKubeSettings) NamespaceNames() *KubeSettings_NamespaceNames_OngoingVerification {
-	params := []pegomock.Param{}
+func (verifier *VerifierKubeSettings) NamespaceNames(_param0 []v1.Namespace) *KubeSettings_NamespaceNames_OngoingVerification {
+	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "NamespaceNames", params, verifier.timeout)
 	return &KubeSettings_NamespaceNames_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -228,8 +225,18 @@ type KubeSettings_NamespaceNames_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *KubeSettings_NamespaceNames_OngoingVerification) GetCapturedArguments() {
+func (c *KubeSettings_NamespaceNames_OngoingVerification) GetCapturedArguments() []v1.Namespace {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
 }
 
-func (c *KubeSettings_NamespaceNames_OngoingVerification) GetAllCapturedArguments() {
+func (c *KubeSettings_NamespaceNames_OngoingVerification) GetAllCapturedArguments() (_param0 [][]v1.Namespace) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([][]v1.Namespace, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.([]v1.Namespace)
+		}
+	}
+	return
 }

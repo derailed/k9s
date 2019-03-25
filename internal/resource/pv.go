@@ -16,7 +16,7 @@ type PV struct {
 }
 
 // NewPVList returns a new resource list.
-func NewPVList(c k8s.Connection, ns string) List {
+func NewPVList(c Connection, ns string) List {
 	return NewList(
 		NotNamespaced,
 		"pv",
@@ -26,7 +26,7 @@ func NewPVList(c k8s.Connection, ns string) List {
 }
 
 // NewPV instantiates a new PV.
-func NewPV(c k8s.Connection) *PV {
+func NewPV(c Connection) *PV {
 	p := &PV{&Base{Connection: c, Resource: k8s.NewPV(c)}, nil}
 	p.Factory = p
 

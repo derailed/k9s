@@ -13,7 +13,7 @@ type PVC struct {
 }
 
 // NewPVCList returns a new resource list.
-func NewPVCList(c k8s.Connection, ns string) List {
+func NewPVCList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"pvc",
@@ -23,7 +23,7 @@ func NewPVCList(c k8s.Connection, ns string) List {
 }
 
 // NewPVC instantiates a new PVC.
-func NewPVC(c k8s.Connection) *PVC {
+func NewPVC(c Connection) *PVC {
 	p := &PVC{&Base{Connection: c, Resource: k8s.NewPVC(c)}, nil}
 	p.Factory = p
 

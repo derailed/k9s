@@ -44,7 +44,7 @@ type (
 )
 
 // NewPodList returns a new resource list.
-func NewPodList(c k8s.Connection, mx MetricsServer, ns string) List {
+func NewPodList(c Connection, mx MetricsServer, ns string) List {
 	return NewList(
 		ns,
 		"po",
@@ -54,7 +54,7 @@ func NewPodList(c k8s.Connection, mx MetricsServer, ns string) List {
 }
 
 // NewPod instantiates a new Pod.
-func NewPod(c k8s.Connection, mx MetricsServer) *Pod {
+func NewPod(c Connection, mx MetricsServer) *Pod {
 	p := &Pod{&Base{Connection: c, Resource: k8s.NewPod(c)}, nil, mx, k8s.PodMetrics{}}
 	p.Factory = p
 

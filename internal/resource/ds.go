@@ -15,7 +15,7 @@ type DaemonSet struct {
 }
 
 // NewDaemonSetList returns a new resource list.
-func NewDaemonSetList(c k8s.Connection, ns string) List {
+func NewDaemonSetList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"ds",
@@ -25,7 +25,7 @@ func NewDaemonSetList(c k8s.Connection, ns string) List {
 }
 
 // NewDaemonSet instantiates a new DaemonSet.
-func NewDaemonSet(c k8s.Connection) *DaemonSet {
+func NewDaemonSet(c Connection) *DaemonSet {
 	ds := &DaemonSet{&Base{Connection: c, Resource: k8s.NewDaemonSet(c)}, nil}
 	ds.Factory = ds
 

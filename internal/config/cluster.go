@@ -1,7 +1,5 @@
 package config
 
-import "github.com/derailed/k9s/internal/k8s"
-
 // Cluster tracks K9s cluster configuration.
 type Cluster struct {
 	Namespace *Namespace `yaml:"namespace"`
@@ -14,7 +12,7 @@ func NewCluster() *Cluster {
 }
 
 // Validate a cluster config.
-func (c *Cluster) Validate(conn k8s.Connection, ks KubeSettings) {
+func (c *Cluster) Validate(conn Connection, ks KubeSettings) {
 	if c.Namespace == nil {
 		c.Namespace = NewNamespace()
 	}

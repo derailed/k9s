@@ -13,7 +13,7 @@ const (
 	product = "Kubernetes CLI Island Style!"
 )
 
-var logoSmall = []string{
+var LogoSmall = []string{
 	` ____  __.________       `,
 	`|    |/ _/   __   \______`,
 	`|      < \____    /  ___/`,
@@ -22,7 +22,7 @@ var logoSmall = []string{
 	`        \/            \/ `,
 }
 
-var logo = []string{
+var Logo = []string{
 	` ____  __.________      _________ .____    .___ `,
 	`|    |/ _/   __   \_____\_   ___ \|    |   |   |`,
 	`|      < \____    /  ___/    \  \/|    |   |   |`,
@@ -63,7 +63,7 @@ func newSplash(rev string) *splashView {
 }
 
 func (v *splashView) layoutLogo(t *tview.TextView) {
-	logo := strings.Join(logo, "\n[orange::b]")
+	logo := strings.Join(Logo, "\n[orange::b]")
 	fmt.Fprintf(t, "%s[orange::b]%s\n", strings.Repeat("\n", 2), logo)
 }
 

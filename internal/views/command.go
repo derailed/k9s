@@ -3,6 +3,7 @@ package views
 import (
 	"fmt"
 
+	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/rs/zerolog/log"
 )
@@ -53,8 +54,15 @@ func (c *command) run(cmd string) bool {
 		return true
 	default:
 		if res, ok := resourceViews()[cmd]; ok {
-			v = res.viewFn(res.title, c.app, res.listFn(c.app.conn(), resource.DefaultNamespace), res.colorerFn)
+			var r resource.List
+			if res.listMxFn != nil {
+				r = res.listMxFn(c.app.conn(), k8s.NewMetricsServer(c.app.conn()), resource.DefaultNamespace)
+			} else {
+				r = res.listFn(c.app.conn(), resource.DefaultNamespace)
+			}
+			v = res.viewFn(res.title, c.app, r, res.colorerFn)
 			c.app.flash(flashInfo, fmt.Sprintf("Viewing %s in namespace %s...", res.title, c.app.config.ActiveNamespace()))
+			log.Debug().Msgf("Running command %s", cmd)
 			c.exec(cmd, v)
 			return true
 		}

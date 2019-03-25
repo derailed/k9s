@@ -15,7 +15,7 @@ type StatefulSet struct {
 }
 
 // NewStatefulSetList returns a new resource list.
-func NewStatefulSetList(c k8s.Connection, ns string) List {
+func NewStatefulSetList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"sts",
@@ -25,7 +25,7 @@ func NewStatefulSetList(c k8s.Connection, ns string) List {
 }
 
 // NewStatefulSet instantiates a new StatefulSet.
-func NewStatefulSet(c k8s.Connection) *StatefulSet {
+func NewStatefulSet(c Connection) *StatefulSet {
 	s := &StatefulSet{&Base{Connection: c, Resource: k8s.NewStatefulSet(c)}, nil}
 	s.Factory = s
 

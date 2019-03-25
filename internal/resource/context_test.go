@@ -15,7 +15,7 @@ func NewContextListWithArgs(ns string, ctx *resource.Context) resource.List {
 	return resource.NewList(resource.NotNamespaced, "ctx", ctx, resource.SwitchAccess)
 }
 
-func NewContextWithArgs(c k8s.Connection, s resource.SwitchableResource) *resource.Context {
+func NewContextWithArgs(c k8s.Connection, s resource.SwitchableCruder) *resource.Context {
 	ctx := &resource.Context{Base: resource.NewBase(c, s)}
 	ctx.Factory = ctx
 	return ctx

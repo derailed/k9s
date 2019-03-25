@@ -9,15 +9,14 @@ import (
 )
 
 func TestK9sValidate(t *testing.T) {
-	setup(t)
-
-	ksMock := NewMockKubeSettings()
-	m.When(ksMock.CurrentContextName()).ThenReturn("ctx1", nil)
-	m.When(ksMock.CurrentClusterName()).ThenReturn("c1", nil)
-	m.When(ksMock.ClusterNames()).ThenReturn([]string{"c1", "c2"}, nil)
+	mc := NewMockConnection()
+	mk := NewMockKubeSettings()
+	m.When(mk.CurrentContextName()).ThenReturn("ctx1", nil)
+	m.When(mk.CurrentClusterName()).ThenReturn("c1", nil)
+	m.When(mk.ClusterNames()).ThenReturn([]string{"c1", "c2"}, nil)
 
 	c := config.NewK9s()
-	c.Validate(ksMock)
+	c.Validate(mc, mk)
 
 	assert.Equal(t, 2, c.RefreshRate)
 	assert.Equal(t, 1000, c.LogBufferSize)
@@ -30,15 +29,14 @@ func TestK9sValidate(t *testing.T) {
 }
 
 func TestK9sValidateBlank(t *testing.T) {
-	setup(t)
-
-	ksMock := NewMockKubeSettings()
-	m.When(ksMock.CurrentContextName()).ThenReturn("ctx1", nil)
-	m.When(ksMock.CurrentClusterName()).ThenReturn("c1", nil)
-	m.When(ksMock.ClusterNames()).ThenReturn([]string{"c1", "c2"}, nil)
+	mc := NewMockConnection()
+	mk := NewMockKubeSettings()
+	m.When(mk.CurrentContextName()).ThenReturn("ctx1", nil)
+	m.When(mk.CurrentClusterName()).ThenReturn("c1", nil)
+	m.When(mk.ClusterNames()).ThenReturn([]string{"c1", "c2"}, nil)
 
 	var c config.K9s
-	c.Validate(ksMock)
+	c.Validate(mc, mk)
 
 	assert.Equal(t, 2, c.RefreshRate)
 	assert.Equal(t, 1000, c.LogBufferSize)
@@ -51,8 +49,6 @@ func TestK9sValidateBlank(t *testing.T) {
 }
 
 func TestK9sActiveClusterZero(t *testing.T) {
-	setup(t)
-
 	c := config.NewK9s()
 	c.CurrentCluster = "fred"
 	cl := c.ActiveCluster()
@@ -62,18 +58,14 @@ func TestK9sActiveClusterZero(t *testing.T) {
 }
 
 func TestK9sActiveClusterBlank(t *testing.T) {
-	setup(t)
-
 	var c config.K9s
 	cl := c.ActiveCluster()
 	assert.Nil(t, cl)
 }
 
 func TestK9sActiveCluster(t *testing.T) {
-	setup(t)
-
-	ksMock := NewMockKubeSettings()
-	cfg := config.NewConfig(ksMock)
+	mk := NewMockKubeSettings()
+	cfg := config.NewConfig(mk)
 	assert.Nil(t, cfg.Load("test_assets/k9s.yml"))
 
 	cl := cfg.K9s.ActiveCluster()

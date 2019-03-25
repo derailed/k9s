@@ -16,7 +16,7 @@ type Ingress struct {
 }
 
 // NewIngressList returns a new resource list.
-func NewIngressList(c k8s.Connection, ns string) List {
+func NewIngressList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"ing",
@@ -26,7 +26,7 @@ func NewIngressList(c k8s.Connection, ns string) List {
 }
 
 // NewIngress instantiates a new Ingress.
-func NewIngress(c k8s.Connection) *Ingress {
+func NewIngress(c Connection) *Ingress {
 	ing := &Ingress{&Base{Connection: c, Resource: k8s.NewIngress(c)}, nil}
 	ing.Factory = ing
 

@@ -16,7 +16,7 @@ type PodDisruptionBudget struct {
 }
 
 // NewPDBList returns a new resource list.
-func NewPDBList(c k8s.Connection, ns string) List {
+func NewPDBList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"pdb",
@@ -26,7 +26,7 @@ func NewPDBList(c k8s.Connection, ns string) List {
 }
 
 // NewPDB instantiates a new PDB.
-func NewPDB(c k8s.Connection) *PodDisruptionBudget {
+func NewPDB(c Connection) *PodDisruptionBudget {
 	p := &PodDisruptionBudget{&Base{Connection: c, Resource: k8s.NewPodDisruptionBudget(c)}, nil}
 	p.Factory = p
 

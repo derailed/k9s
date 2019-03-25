@@ -70,7 +70,7 @@ func TestJobListData(t *testing.T) {
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, "blee", l.GetNamespace())
 	row := td.Rows["blee/fred"]
-	assert.Equal(t, 4, len(row.Deltas))
+	assert.Equal(t, 6, len(row.Deltas))
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}

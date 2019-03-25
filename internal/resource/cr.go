@@ -13,7 +13,7 @@ type ClusterRole struct {
 }
 
 // NewClusterRoleList returns a new resource list.
-func NewClusterRoleList(c k8s.Connection, ns string) List {
+func NewClusterRoleList(c Connection, ns string) List {
 	return NewList(
 		NotNamespaced,
 		"clusterrole",
@@ -23,7 +23,7 @@ func NewClusterRoleList(c k8s.Connection, ns string) List {
 }
 
 // NewClusterRole instantiates a new ClusterRole.
-func NewClusterRole(c k8s.Connection) *ClusterRole {
+func NewClusterRole(c Connection) *ClusterRole {
 	cr := &ClusterRole{&Base{Connection: c, Resource: k8s.NewClusterRole(c)}, nil}
 	cr.Factory = cr
 

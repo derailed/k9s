@@ -15,7 +15,7 @@ type ReplicationController struct {
 }
 
 // NewReplicationControllerList returns a new resource list.
-func NewReplicationControllerList(c k8s.Connection, ns string) List {
+func NewReplicationControllerList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"rc",
@@ -25,7 +25,7 @@ func NewReplicationControllerList(c k8s.Connection, ns string) List {
 }
 
 // NewReplicationController instantiates a new ReplicationController.
-func NewReplicationController(c k8s.Connection) *ReplicationController {
+func NewReplicationController(c Connection) *ReplicationController {
 	r := &ReplicationController{&Base{Connection: c, Resource: k8s.NewReplicationController(c)}, nil}
 	r.Factory = r
 

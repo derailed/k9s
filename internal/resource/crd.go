@@ -17,7 +17,7 @@ type CRD struct {
 }
 
 // NewCRDList returns a new resource list.
-func NewCRDList(c k8s.Connection, ns string) List {
+func NewCRDList(c Connection, ns string) List {
 	return NewList(
 		NotNamespaced,
 		"crd",
@@ -27,7 +27,7 @@ func NewCRDList(c k8s.Connection, ns string) List {
 }
 
 // NewCRD instantiates a new CRD.
-func NewCRD(c k8s.Connection) *CRD {
+func NewCRD(c Connection) *CRD {
 	crd := &CRD{&Base{Connection: c, Resource: k8s.NewCRD(c)}, nil}
 	crd.Factory = crd
 

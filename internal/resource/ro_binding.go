@@ -15,7 +15,7 @@ type RoleBinding struct {
 }
 
 // NewRoleBindingList returns a new resource list.
-func NewRoleBindingList(c k8s.Connection, ns string) List {
+func NewRoleBindingList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"rolebinding",
@@ -25,7 +25,7 @@ func NewRoleBindingList(c k8s.Connection, ns string) List {
 }
 
 // NewRoleBinding instantiates a new RoleBinding.
-func NewRoleBinding(c k8s.Connection) *RoleBinding {
+func NewRoleBinding(c Connection) *RoleBinding {
 	r := &RoleBinding{&Base{Connection: c, Resource: k8s.NewRoleBinding(c)}, nil}
 	r.Factory = r
 

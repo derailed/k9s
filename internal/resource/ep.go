@@ -17,7 +17,7 @@ type Endpoints struct {
 }
 
 // NewEndpointsList returns a new resource list.
-func NewEndpointsList(c k8s.Connection, ns string) List {
+func NewEndpointsList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"ep",
@@ -27,7 +27,7 @@ func NewEndpointsList(c k8s.Connection, ns string) List {
 }
 
 // NewEndpoints instantiates a new Endpoints.
-func NewEndpoints(c k8s.Connection) *Endpoints {
+func NewEndpoints(c Connection) *Endpoints {
 	ep := &Endpoints{&Base{Connection: c, Resource: k8s.NewEndpoints(c)}, nil}
 	ep.Factory = ep
 

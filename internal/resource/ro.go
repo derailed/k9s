@@ -15,7 +15,7 @@ type Role struct {
 }
 
 // NewRoleList returns a new resource list.
-func NewRoleList(c k8s.Connection, ns string) List {
+func NewRoleList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"role",
@@ -25,7 +25,7 @@ func NewRoleList(c k8s.Connection, ns string) List {
 }
 
 // NewRole instantiates a new Role.
-func NewRole(c k8s.Connection) *Role {
+func NewRole(c Connection) *Role {
 	r := &Role{&Base{Connection: c, Resource: k8s.NewRole(c)}, nil}
 	r.Factory = r
 

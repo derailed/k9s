@@ -3,6 +3,8 @@ package k8s
 import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -47,6 +49,7 @@ type (
 		HasMetrics() bool
 		IsNamespaced(n string) bool
 		SupportsResource(group string) bool
+		ValidNamespaces() ([]v1.Namespace, error)
 	}
 
 	// APIClient represents a Kubernetes api client.
@@ -68,6 +71,16 @@ func InitConnectionOrDie(config *Config, logger zerolog.Logger) *APIClient {
 	conn.useMetricServer = conn.supportsMxServer()
 
 	return &conn
+}
+
+// ValidNamespaces returns a collection of valid namespaces.
+// Bozo!! filter active?
+func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
+	nn, err := a.DialOrDie().CoreV1().Namespaces().List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+	return nn.Items, nil
 }
 
 // IsNamespaced check on server if given resource is namespaced

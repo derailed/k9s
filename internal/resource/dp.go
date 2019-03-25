@@ -15,7 +15,7 @@ type Deployment struct {
 }
 
 // NewDeploymentList returns a new resource list.
-func NewDeploymentList(c k8s.Connection, ns string) List {
+func NewDeploymentList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"deploy",
@@ -25,7 +25,7 @@ func NewDeploymentList(c k8s.Connection, ns string) List {
 }
 
 // NewDeployment instantiates a new Deployment.
-func NewDeployment(c k8s.Connection) *Deployment {
+func NewDeployment(c Connection) *Deployment {
 	d := &Deployment{&Base{Connection: c, Resource: k8s.NewDeployment(c)}, nil}
 	d.Factory = d
 

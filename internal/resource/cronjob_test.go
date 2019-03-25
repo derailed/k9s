@@ -12,7 +12,7 @@ import (
 )
 
 func NewCronJobListWithArgs(ns string, r *resource.CronJob) resource.List {
-	return resource.NewList(ns, "cronjob", r, resource.AllVerbsAccess|resource.DescribeAccess)
+	return resource.NewList(ns, "cj", r, resource.AllVerbsAccess|resource.DescribeAccess)
 }
 
 func NewCronJobWithArgs(conn k8s.Connection, res resource.Cruder) *resource.CronJob {
@@ -31,7 +31,7 @@ func TestCronJobListAccess(t *testing.T) {
 	l.SetNamespace(ns)
 
 	assert.Equal(t, ns, l.GetNamespace())
-	assert.Equal(t, "cronjob", l.GetName())
+	assert.Equal(t, "cj", l.GetName())
 	for _, a := range []int{resource.GetAccess, resource.ListAccess, resource.DeleteAccess, resource.ViewAccess, resource.EditAccess} {
 		assert.True(t, l.Access(a))
 	}

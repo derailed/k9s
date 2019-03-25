@@ -26,21 +26,26 @@ var (
 	K9sLogs = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-%s.log", mustK9sUser()))
 )
 
-// KubeSettings exposes kubeconfig context informations.
-type KubeSettings interface {
-	CurrentContextName() (string, error)
-	CurrentClusterName() (string, error)
-	CurrentNamespaceName() (string, error)
-	ClusterNames() ([]string, error)
-	NamespaceNames(nn []v1.Namespace) []string
-}
+type (
+	// Connection present a kubernetes api server connection.
+	Connection k8s.Connection
 
-// Config tracks K9s configuration options.
-type Config struct {
-	K9s      *K9s `yaml:"k9s"`
-	client   k8s.Connection
-	settings KubeSettings
-}
+	// KubeSettings exposes kubeconfig context informations.
+	KubeSettings interface {
+		CurrentContextName() (string, error)
+		CurrentClusterName() (string, error)
+		CurrentNamespaceName() (string, error)
+		ClusterNames() ([]string, error)
+		NamespaceNames(nn []v1.Namespace) []string
+	}
+
+	// Config tracks K9s configuration options.
+	Config struct {
+		K9s      *K9s `yaml:"k9s"`
+		client   Connection
+		settings KubeSettings
+	}
+)
 
 // NewConfig creates a new default config.
 func NewConfig(ks KubeSettings) *Config {
@@ -135,12 +140,12 @@ func (c *Config) SetActiveView(view string) {
 }
 
 // GetConnection return an api server connection.
-func (c *Config) GetConnection() k8s.Connection {
+func (c *Config) GetConnection() Connection {
 	return c.client
 }
 
 // SetConnection set an api server connection.
-func (c *Config) SetConnection(conn k8s.Connection) {
+func (c *Config) SetConnection(conn Connection) {
 	c.client = conn
 }
 

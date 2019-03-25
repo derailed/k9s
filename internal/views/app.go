@@ -128,12 +128,6 @@ func (a *appView) conn() k8s.Connection {
 
 // Run starts the application loop
 func (a *appView) Run() {
-	defer func() {
-		if err := recover(); err != nil {
-			log.Error().Msgf("%#v", err)
-		}
-	}()
-
 	go func() {
 		<-time.After(splashTime * time.Second)
 		a.showPage("main")
@@ -302,9 +296,9 @@ func logoView() tview.Primitive {
 		v.SetWordWrap(false)
 		v.SetWrap(false)
 		v.SetDynamicColors(true)
-		for i, s := range logoSmall {
+		for i, s := range LogoSmall {
 			fmt.Fprintf(v, "[orange::b]%s", s)
-			if i+1 < len(logoSmall) {
+			if i+1 < len(LogoSmall) {
 				fmt.Fprintf(v, "\n")
 			}
 		}

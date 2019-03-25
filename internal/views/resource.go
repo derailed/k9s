@@ -80,19 +80,17 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 	v.selectedItem, v.selectedNS = noSelection, ns
 
 	go func(ctx context.Context) {
-		initTick := refreshDelay
 		for {
 			select {
 			case <-ctx.Done():
 				log.Debug().Msgf("%s watcher canceled!", v.title)
 				return
-			case <-time.After(time.Duration(initTick) * time.Second):
+			case <-time.After(time.Duration(v.app.config.K9s.RefreshRate) * time.Second):
 				v.refresh()
-				initTick = float64(v.app.config.K9s.RefreshRate)
 			}
 		}
 	}(ctx)
-	v.refreshActions()
+	v.refresh()
 	if tv, ok := v.CurrentPage().Item.(*tableView); ok {
 		tv.Select(0, 0)
 	}

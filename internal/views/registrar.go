@@ -8,7 +8,8 @@ import (
 
 type (
 	viewFn    func(ns string, app *appView, list resource.List, colorer colorerFn) resourceViewer
-	listFn    func(c k8s.Connection, ns string) resource.List
+	listFn    func(c resource.Connection, ns string) resource.List
+	listMxFn  func(c resource.Connection, mx resource.MetricsServer, ns string) resource.List
 	colorerFn func(ns string, evt *resource.RowEvent) tcell.Color
 
 	resCmd struct {
@@ -16,6 +17,7 @@ type (
 		api       string
 		viewFn    viewFn
 		listFn    listFn
+		listMxFn  listMxFn
 		colorerFn colorerFn
 	}
 )
@@ -100,7 +102,7 @@ func resourceViews() map[string]resCmd {
 			listFn:    resource.NewCRDList,
 			colorerFn: defaultColorer,
 		},
-		"cron": {
+		"cj": {
 			title:     "CronJobs",
 			api:       "batch",
 			viewFn:    newCronJobView,
@@ -156,7 +158,7 @@ func resourceViews() map[string]resCmd {
 			listFn:    resource.NewIngressList,
 			colorerFn: defaultColorer,
 		},
-		"job": {
+		"jo": {
 			title:     "Jobs",
 			api:       "batch",
 			viewFn:    newJobView,
@@ -167,7 +169,7 @@ func resourceViews() map[string]resCmd {
 			title:     "Nodes",
 			api:       "",
 			viewFn:    newNodeView,
-			listFn:    resource.NewNodeList,
+			listMxFn:  resource.NewNodeList,
 			colorerFn: nsColorer,
 		},
 		"ns": {
@@ -188,7 +190,7 @@ func resourceViews() map[string]resCmd {
 			title:     "Pods",
 			api:       "",
 			viewFn:    newPodView,
-			listFn:    resource.NewPodList,
+			listMxFn:  resource.NewPodList,
 			colorerFn: podColorer,
 		},
 		"pv": {

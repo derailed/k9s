@@ -17,20 +17,20 @@ func init() {
 }
 
 func TestConfigValidate(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
+	mk := NewMockKubeSettings()
+	m.When(mk.ClusterNames()).ThenReturn([]string{"c1", "c2"}, nil)
 
-	ksMock := NewMockKubeSettings()
-	m.When(ksMock.NamespaceNames()).ThenReturn([]string{"ns1", "ns2", "default"}, nil)
-	m.When(ksMock.ClusterNames()).ThenReturn([]string{"c1", "c2"}, nil)
-
-	cfg := config.NewConfig(ksMock)
+	cfg := config.NewConfig(mk)
+	cfg.SetConnection(mc)
 	assert.Nil(t, cfg.Load("test_assets/k9s.yml"))
 	cfg.Validate()
 }
 
 func TestConfigLoad(t *testing.T) {
-	ksMock := NewMockKubeSettings()
-	cfg := config.NewConfig(ksMock)
+	mk := NewMockKubeSettings()
+	cfg := config.NewConfig(mk)
 	assert.Nil(t, cfg.Load("test_assets/k9s.yml"))
 
 	assert.Equal(t, 2, cfg.K9s.RefreshRate)
@@ -55,8 +55,8 @@ func TestConfigLoad(t *testing.T) {
 }
 
 func TestConfigCurrentCluster(t *testing.T) {
-	ksMock := NewMockKubeSettings()
-	cfg := config.NewConfig(ksMock)
+	mk := NewMockKubeSettings()
+	cfg := config.NewConfig(mk)
 
 	assert.Nil(t, cfg.Load("test_assets/k9s.yml"))
 	assert.NotNil(t, cfg.CurrentCluster())
@@ -65,8 +65,8 @@ func TestConfigCurrentCluster(t *testing.T) {
 }
 
 func TestConfigActiveNamespace(t *testing.T) {
-	ksMock := NewMockKubeSettings()
-	cfg := config.NewConfig(ksMock)
+	mk := NewMockKubeSettings()
+	cfg := config.NewConfig(mk)
 
 	assert.Nil(t, cfg.Load("test_assets/k9s.yml"))
 	assert.Equal(t, "kube-system", cfg.ActiveNamespace())
@@ -78,8 +78,8 @@ func TestConfigActiveNamespaceBlank(t *testing.T) {
 }
 
 func TestConfigSetActiveNamespace(t *testing.T) {
-	ksMock := NewMockKubeSettings()
-	cfg := config.NewConfig(ksMock)
+	mk := NewMockKubeSettings()
+	cfg := config.NewConfig(mk)
 
 	assert.Nil(t, cfg.Load("test_assets/k9s.yml"))
 	cfg.SetActiveNamespace("default")
@@ -87,8 +87,8 @@ func TestConfigSetActiveNamespace(t *testing.T) {
 }
 
 func TestConfigActiveView(t *testing.T) {
-	ksMock := NewMockKubeSettings()
-	cfg := config.NewConfig(ksMock)
+	mk := NewMockKubeSettings()
+	cfg := config.NewConfig(mk)
 
 	assert.Nil(t, cfg.Load("test_assets/k9s.yml"))
 	assert.Equal(t, "ctx", cfg.ActiveView())
@@ -100,8 +100,8 @@ func TestConfigActiveViewBlank(t *testing.T) {
 }
 
 func TestConfigSetActiveView(t *testing.T) {
-	ksMock := NewMockKubeSettings()
-	cfg := config.NewConfig(ksMock)
+	mk := NewMockKubeSettings()
+	cfg := config.NewConfig(mk)
 
 	assert.Nil(t, cfg.Load("test_assets/k9s.yml"))
 	cfg.SetActiveView("po")
@@ -109,8 +109,8 @@ func TestConfigSetActiveView(t *testing.T) {
 }
 
 func TestConfigFavNamespaces(t *testing.T) {
-	ksMock := NewMockKubeSettings()
-	cfg := config.NewConfig(ksMock)
+	mk := NewMockKubeSettings()
+	cfg := config.NewConfig(mk)
 
 	assert.Nil(t, cfg.Load("test_assets/k9s.yml"))
 	expectedNS := []string{"default", "kube-public", "istio-system", "all", "kube-system"}
@@ -118,26 +118,30 @@ func TestConfigFavNamespaces(t *testing.T) {
 }
 
 func TestConfigLoadOldCfg(t *testing.T) {
-	ksMock := NewMockKubeSettings()
-	cfg := config.NewConfig(ksMock)
+	mk := NewMockKubeSettings()
+	cfg := config.NewConfig(mk)
 	assert.Nil(t, cfg.Load("test_assets/k9s_old.yml"))
 }
 
 func TestConfigLoadCrap(t *testing.T) {
-	ksMock := NewMockKubeSettings()
-	cfg := config.NewConfig(ksMock)
+	mk := NewMockKubeSettings()
+	cfg := config.NewConfig(mk)
 	assert.NotNil(t, cfg.Load("test_assets/k9s_not_there.yml"))
 }
 
 func TestConfigSaveFile(t *testing.T) {
-	ksMock := NewMockKubeSettings()
-	m.When(ksMock.CurrentContextName()).ThenReturn("minikube", nil)
-	m.When(ksMock.CurrentClusterName()).ThenReturn("minikube", nil)
-	m.When(ksMock.CurrentNamespaceName()).ThenReturn("default", nil)
-	m.When(ksMock.ClusterNames()).ThenReturn([]string{"minikube", "fred", "blee"}, nil)
-	m.When(ksMock.NamespaceNames()).ThenReturn([]string{"default"}, nil)
+	mc := NewMockConnection()
+	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
 
-	cfg := config.NewConfig(ksMock)
+	mk := NewMockKubeSettings()
+	m.When(mk.CurrentContextName()).ThenReturn("minikube", nil)
+	m.When(mk.CurrentClusterName()).ThenReturn("minikube", nil)
+	m.When(mk.CurrentNamespaceName()).ThenReturn("default", nil)
+	m.When(mk.ClusterNames()).ThenReturn([]string{"minikube", "fred", "blee"}, nil)
+	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"default"})
+
+	cfg := config.NewConfig(mk)
+	cfg.SetConnection(mc)
 	cfg.Load("test_assets/k9s.yml")
 	cfg.K9s.RefreshRate = 100
 	cfg.K9s.LogBufferSize = 500
@@ -155,14 +159,18 @@ func TestConfigSaveFile(t *testing.T) {
 }
 
 func TestConfigReset(t *testing.T) {
-	ksMock := NewMockKubeSettings()
-	m.When(ksMock.CurrentContextName()).ThenReturn("blee", nil)
-	m.When(ksMock.CurrentClusterName()).ThenReturn("blee", nil)
-	m.When(ksMock.CurrentNamespaceName()).ThenReturn("default", nil)
-	m.When(ksMock.ClusterNames()).ThenReturn([]string{"blee"}, nil)
-	m.When(ksMock.NamespaceNames()).ThenReturn([]string{"default"}, nil)
+	mc := NewMockConnection()
+	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
 
-	cfg := config.NewConfig(ksMock)
+	mk := NewMockKubeSettings()
+	m.When(mk.CurrentContextName()).ThenReturn("blee", nil)
+	m.When(mk.CurrentClusterName()).ThenReturn("blee", nil)
+	m.When(mk.CurrentNamespaceName()).ThenReturn("default", nil)
+	m.When(mk.ClusterNames()).ThenReturn([]string{"blee"}, nil)
+	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"default"})
+
+	cfg := config.NewConfig(mk)
+	cfg.SetConnection(mc)
 	cfg.Load("test_assets/k9s.yml")
 	cfg.Reset()
 	cfg.Validate()
@@ -178,7 +186,7 @@ func TestConfigReset(t *testing.T) {
 
 // Helpers...
 
-func setup(t *testing.T) {
+func TestSetup(t *testing.T) {
 	m.RegisterMockTestingT(t)
 	m.RegisterMockFailHandler(func(m string, i ...int) {
 		fmt.Println("Boom!", m, i)

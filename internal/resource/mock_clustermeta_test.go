@@ -234,6 +234,25 @@ func (mock *MockClusterMeta) UserName() string {
 	return ret0
 }
 
+func (mock *MockClusterMeta) ValidNamespaces() ([]v1.Namespace, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockClusterMeta().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("ValidNamespaces", params, []reflect.Type{reflect.TypeOf((*[]v1.Namespace)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 []v1.Namespace
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].([]v1.Namespace)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
 func (mock *MockClusterMeta) Version() (string, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockClusterMeta().")
@@ -556,6 +575,23 @@ func (c *ClusterMeta_UserName_OngoingVerification) GetCapturedArguments() {
 }
 
 func (c *ClusterMeta_UserName_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierClusterMeta) ValidNamespaces() *ClusterMeta_ValidNamespaces_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ValidNamespaces", params, verifier.timeout)
+	return &ClusterMeta_ValidNamespaces_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type ClusterMeta_ValidNamespaces_OngoingVerification struct {
+	mock              *MockClusterMeta
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *ClusterMeta_ValidNamespaces_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *ClusterMeta_ValidNamespaces_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierClusterMeta) Version() *ClusterMeta_Version_OngoingVerification {

@@ -4,22 +4,24 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
-	v1 "k8s.io/api/batch/v1"
+	batchv1 "k8s.io/api/batch/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 // Job tracks a kubernetes resource.
 type Job struct {
 	*Base
-	instance *v1.Job
+	instance *batchv1.Job
 }
 
 // NewJobList returns a new resource list.
-func NewJobList(c k8s.Connection, ns string) List {
+func NewJobList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"job",
@@ -29,7 +31,7 @@ func NewJobList(c k8s.Connection, ns string) List {
 }
 
 // NewJob instantiates a new Job.
-func NewJob(c k8s.Connection) *Job {
+func NewJob(c Connection) *Job {
 	j := &Job{&Base{Connection: c, Resource: k8s.NewJob(c)}, nil}
 	j.Factory = j
 
@@ -40,9 +42,9 @@ func NewJob(c k8s.Connection) *Job {
 func (r *Job) New(i interface{}) Columnar {
 	c := NewJob(r.Connection)
 	switch instance := i.(type) {
-	case *v1.Job:
+	case *batchv1.Job:
 		c.instance = instance
-	case v1.Job:
+	case batchv1.Job:
 		c.instance = &instance
 	default:
 		log.Fatal().Msgf("unknown Job type %#v", i)
@@ -60,7 +62,7 @@ func (r *Job) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	jo := i.(*v1.Job)
+	jo := i.(*batchv1.Job)
 	jo.TypeMeta.APIVersion = "extensions/v1beta1"
 	jo.TypeMeta.Kind = "Job"
 
@@ -121,7 +123,7 @@ func (*Job) Header(ns string) Row {
 		hh = append(hh, "NAMESPACE")
 	}
 
-	return append(hh, "NAME", "COMPLETIONS", "DURATION", "AGE")
+	return append(hh, "NAME", "COMPLETIONS", "DURATION", "CONTAINERS", "IMAGES", "AGE")
 }
 
 // Fields retrieves displayable fields.
@@ -133,10 +135,14 @@ func (r *Job) Fields(ns string) Row {
 		ff = append(ff, i.Namespace)
 	}
 
+	cc, ii := r.toContainers(i.Spec.Template.Spec)
+
 	return append(ff,
 		i.Name,
 		r.toCompletion(i.Spec, i.Status),
 		r.toDuration(i.Status),
+		cc,
+		ii,
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
 }
@@ -144,7 +150,30 @@ func (r *Job) Fields(ns string) Row {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func (*Job) toCompletion(spec v1.JobSpec, status v1.JobStatus) (s string) {
+func (*Job) toContainers(p v1.PodSpec) (string, string) {
+	cc := make([]string, 0, len(p.InitContainers)+len(p.Containers))
+	ii := make([]string, 0, len(cc))
+	for _, c := range p.InitContainers {
+		cc = append(cc, c.Name)
+		ii = append(ii, c.Image)
+	}
+	for _, c := range p.Containers {
+		cc = append(cc, c.Name)
+		ii = append(ii, c.Image)
+	}
+
+	// Limit to 2 of each...
+	if len(cc) > 2 {
+		cc = append(cc[:2], "...")
+	}
+	if len(ii) > 2 {
+		ii = append(ii[:2], "...")
+	}
+
+	return strings.Join(cc, ","), strings.Join(ii, ",")
+}
+
+func (*Job) toCompletion(spec batchv1.JobSpec, status batchv1.JobStatus) (s string) {
 	if spec.Completions != nil {
 		return fmt.Sprintf("%d/%d", status.Succeeded, *spec.Completions)
 	}
@@ -159,7 +188,7 @@ func (*Job) toCompletion(spec v1.JobSpec, status v1.JobStatus) (s string) {
 	return fmt.Sprintf("%d/1", status.Succeeded)
 }
 
-func (*Job) toDuration(status v1.JobStatus) string {
+func (*Job) toDuration(status batchv1.JobStatus) string {
 	switch {
 	case status.StartTime == nil:
 	case status.CompletionTime == nil:

@@ -16,7 +16,7 @@ type Event struct {
 }
 
 // NewEventList returns a new resource list.
-func NewEventList(c k8s.Connection, ns string) List {
+func NewEventList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"ev",
@@ -26,7 +26,7 @@ func NewEventList(c k8s.Connection, ns string) List {
 }
 
 // NewEvent instantiates a new Event.
-func NewEvent(c k8s.Connection) *Event {
+func NewEvent(c Connection) *Event {
 	ev := &Event{&Base{Connection: c, Resource: k8s.NewEvent(c)}, nil}
 	ev.Factory = ev
 

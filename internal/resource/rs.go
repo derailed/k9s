@@ -15,7 +15,7 @@ type ReplicaSet struct {
 }
 
 // NewReplicaSetList returns a new resource list.
-func NewReplicaSetList(c k8s.Connection, ns string) List {
+func NewReplicaSetList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"rs",
@@ -25,7 +25,7 @@ func NewReplicaSetList(c k8s.Connection, ns string) List {
 }
 
 // NewReplicaSet instantiates a new ReplicaSet.
-func NewReplicaSet(c k8s.Connection) *ReplicaSet {
+func NewReplicaSet(c Connection) *ReplicaSet {
 	r := &ReplicaSet{&Base{Connection: c, Resource: k8s.NewReplicaSet(c)}, nil}
 	r.Factory = r
 

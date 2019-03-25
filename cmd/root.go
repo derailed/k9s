@@ -54,7 +54,7 @@ func run(cmd *cobra.Command, args []string) {
 	defer func() {
 		clearScreen()
 		if err := recover(); err != nil {
-			log.Error().Msgf("%v", err)
+			log.Error().Msgf("Boom! %v", err)
 			log.Error().Msg(string(debug.Stack()))
 			fmt.Printf(printer.Colorize("Boom!! ", printer.ColorRed))
 			fmt.Println(printer.Colorize(fmt.Sprintf("%v.", err), printer.ColorDarkGray))

@@ -28,7 +28,7 @@ type (
 )
 
 // NewCronJobList returns a new resource list.
-func NewCronJobList(c k8s.Connection, ns string) List {
+func NewCronJobList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"cronjob",
@@ -38,7 +38,7 @@ func NewCronJobList(c k8s.Connection, ns string) List {
 }
 
 // NewCronJob instantiates a new CronJob.
-func NewCronJob(c k8s.Connection) *CronJob {
+func NewCronJob(c Connection) *CronJob {
 	cj := &CronJob{&Base{Connection: c, Resource: k8s.NewCronJob(c)}, nil}
 	cj.Factory = cj
 

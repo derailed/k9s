@@ -6,16 +6,19 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestClusterValidate(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
 
-	ksMock := NewMockKubeSettings()
-	m.When(ksMock.NamespaceNames()).ThenReturn([]string{"ns1", "ns2", "default"}, nil)
+	mk := NewMockKubeSettings()
+	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"ns1", "ns2", "default"})
 
 	c := config.NewCluster()
-	c.Validate(ksMock)
+	c.Validate(mc, mk)
 
 	assert.Equal(t, "po", c.View.Active)
 	assert.Equal(t, "default", c.Namespace.Active)
@@ -24,16 +27,32 @@ func TestClusterValidate(t *testing.T) {
 }
 
 func TestClusterValidateEmpty(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
 
-	ksMock := NewMockKubeSettings()
-	m.When(ksMock.NamespaceNames()).ThenReturn([]string{"ns1", "ns2", "default"}, nil)
+	mk := NewMockKubeSettings()
+	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"ns1", "ns2", "default"})
 
 	var c config.Cluster
-	c.Validate(ksMock)
+	c.Validate(mc, mk)
 
 	assert.Equal(t, "po", c.View.Active)
 	assert.Equal(t, "default", c.Namespace.Active)
 	assert.Equal(t, 1, len(c.Namespace.Favorites))
 	assert.Equal(t, []string{"default"}, c.Namespace.Favorites)
+}
+
+func namespaces() []v1.Namespace {
+	return []v1.Namespace{
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "default",
+			},
+		},
+		{
+			ObjectMeta: metav1.ObjectMeta{
+				Name: "fred",
+			},
+		},
+	}
 }

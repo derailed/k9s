@@ -5,6 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/printer"
+	"github.com/derailed/k9s/internal/views"
 	"github.com/spf13/cobra"
 )
 
@@ -14,11 +15,19 @@ func infoCmd() *cobra.Command {
 		Short: "Print configuration information",
 		Long:  "Print configuration information",
 		Run: func(cmd *cobra.Command, args []string) {
-			fmt.Printf(printer.Colorize(fmt.Sprintf("%-15s", "Configuration:"), printer.ColorMagenta))
-			fmt.Println(printer.Colorize(config.K9sConfigFile, printer.ColorDarkGray))
-
-			fmt.Printf(printer.Colorize(fmt.Sprintf("%-15s", "Logs:"), printer.ColorMagenta))
-			fmt.Println(printer.Colorize(config.K9sLogs, printer.ColorDarkGray))
+			printInfo()
 		},
 	}
+}
+
+func printInfo() {
+	for _, l := range views.LogoSmall {
+		fmt.Println(printer.Colorize(l, printer.ColorCyan))
+	}
+	fmt.Println()
+	fmt.Printf(printer.Colorize(fmt.Sprintf("%-15s", "Configuration:"), printer.ColorCyan))
+	fmt.Println(printer.Colorize(config.K9sConfigFile, printer.ColorWhite))
+
+	fmt.Printf(printer.Colorize(fmt.Sprintf("%-15s", "Logs:"), printer.ColorCyan))
+	fmt.Println(printer.Colorize(config.K9sLogs, printer.ColorWhite))
 }

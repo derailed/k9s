@@ -13,7 +13,7 @@ type ClusterRoleBinding struct {
 }
 
 // NewClusterRoleBindingList returns a new resource list.
-func NewClusterRoleBindingList(c k8s.Connection, _ string) List {
+func NewClusterRoleBindingList(c Connection, _ string) List {
 	return NewList(
 		NotNamespaced,
 		"clusterrolebinding",
@@ -23,7 +23,7 @@ func NewClusterRoleBindingList(c k8s.Connection, _ string) List {
 }
 
 // NewClusterRoleBinding instantiates a new ClusterRoleBinding.
-func NewClusterRoleBinding(c k8s.Connection) *ClusterRoleBinding {
+func NewClusterRoleBinding(c Connection) *ClusterRoleBinding {
 	crb := &ClusterRoleBinding{&Base{Connection: c, Resource: k8s.NewClusterRoleBinding(c)}, nil}
 	crb.Factory = crb
 

@@ -2,6 +2,8 @@ package k8s
 
 import (
 	"github.com/rs/zerolog"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Cluster represents a Kubernetes cluster.
@@ -54,4 +56,14 @@ func (c *Cluster) UserName() string {
 		return "N/A"
 	}
 	return usr
+}
+
+// FetchNodes get all available nodes in the cluster.
+func (c *Cluster) FetchNodes() ([]v1.Node, error) {
+	list, err := c.DialOrDie().CoreV1().Nodes().List(metav1.ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return list.Items, nil
 }

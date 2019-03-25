@@ -17,7 +17,7 @@ type HPA struct {
 }
 
 // NewHPAList returns a new resource list.
-func NewHPAList(c k8s.Connection, ns string) List {
+func NewHPAList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"hpa",
@@ -27,7 +27,7 @@ func NewHPAList(c k8s.Connection, ns string) List {
 }
 
 // NewHPA instantiates a new HPA.
-func NewHPA(c k8s.Connection) *HPA {
+func NewHPA(c Connection) *HPA {
 	hpa := &HPA{&Base{Connection: c, Resource: k8s.NewHPA(c)}, nil}
 	hpa.Factory = hpa
 

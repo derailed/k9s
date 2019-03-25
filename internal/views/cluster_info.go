@@ -1,6 +1,7 @@
 package views
 
 import (
+	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
@@ -18,7 +19,7 @@ func newInfoView(app *appView) *clusterInfoView {
 	return &clusterInfoView{
 		app:     app,
 		Table:   tview.NewTable(),
-		cluster: resource.NewCluster(app.conn(), &log.Logger),
+		cluster: resource.NewCluster(app.conn(), &log.Logger, k8s.NewMetricsServer(app.conn())),
 	}
 }
 
@@ -79,12 +80,12 @@ func (v *clusterInfoView) refresh() {
 	v.GetCell(row, 1).SetText(v.cluster.Version())
 	row++
 
-	nodes, err := v.cluster.GetNodes()
+	nodes, err := v.cluster.FetchNodes()
 	if err != nil {
 		log.Warn().Msgf("ClusterInfo %s", err)
 		return
 	}
-	mxNodes, err := v.cluster.GetNodesMetrics()
+	mxNodes, err := v.cluster.FetchNodesMetrics()
 	if err != nil {
 		log.Warn().Msgf("ClusterInfo %s", err)
 		return

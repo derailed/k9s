@@ -19,7 +19,7 @@ type Service struct {
 }
 
 // NewServiceList returns a new resource list.
-func NewServiceList(c k8s.Connection, ns string) List {
+func NewServiceList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"svc",
@@ -29,7 +29,7 @@ func NewServiceList(c k8s.Connection, ns string) List {
 }
 
 // NewService instantiates a new Service.
-func NewService(c k8s.Connection) *Service {
+func NewService(c Connection) *Service {
 	s := &Service{&Base{Connection: c, Resource: k8s.NewService(c)}, nil}
 	s.Factory = s
 
