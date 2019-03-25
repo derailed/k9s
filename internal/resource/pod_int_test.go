@@ -18,14 +18,14 @@ func TestPodStatuses(t *testing.T) {
 	}{
 		{
 			[]v1.ContainerStatus{
-				v1.ContainerStatus{
+				{
 					Name:  "c1",
 					Ready: true,
 					State: v1.ContainerState{
 						Running: &v1.ContainerStateRunning{},
 					},
 				},
-				v1.ContainerStatus{
+				{
 					Name:         "c2",
 					Ready:        false,
 					RestartCount: 10,
