@@ -153,6 +153,7 @@ func (r *Job) Fields(ns string) Row {
 func (*Job) toContainers(p v1.PodSpec) (string, string) {
 	cc := make([]string, 0, len(p.InitContainers)+len(p.Containers))
 	ii := make([]string, 0, len(cc))
+
 	for _, c := range p.InitContainers {
 		cc = append(cc, c.Name)
 		ii = append(ii, c.Image)
@@ -162,12 +163,13 @@ func (*Job) toContainers(p v1.PodSpec) (string, string) {
 		ii = append(ii, c.Image)
 	}
 
+	const maxShow = 2
 	// Limit to 2 of each...
-	if len(cc) > 2 {
-		cc = append(cc[:2], "...")
+	if len(cc) > maxShow {
+		cc = append(cc[:2], fmt.Sprintf("(+%d)...", len(cc)-maxShow))
 	}
-	if len(ii) > 2 {
-		ii = append(ii[:2], "...")
+	if len(ii) > maxShow {
+		ii = append(ii[:2], fmt.Sprintf("(+%d)...", len(ii)-maxShow))
 	}
 
 	return strings.Join(cc, ","), strings.Join(ii, ",")
@@ -177,23 +179,31 @@ func (*Job) toCompletion(spec batchv1.JobSpec, status batchv1.JobStatus) (s stri
 	if spec.Completions != nil {
 		return fmt.Sprintf("%d/%d", status.Succeeded, *spec.Completions)
 	}
-	var parallelism int32
-	if spec.Parallelism != nil {
-		parallelism = *spec.Parallelism
+
+	if spec.Parallelism == nil {
+		return fmt.Sprintf("%d/1", status.Succeeded)
 	}
-	if parallelism > 1 {
-		return fmt.Sprintf("%d/1 of %d", status.Succeeded, parallelism)
+
+	p := *spec.Parallelism
+	if p > 1 {
+		return fmt.Sprintf("%d/1 of %d", status.Succeeded, p)
 	}
 
 	return fmt.Sprintf("%d/1", status.Succeeded)
 }
 
 func (*Job) toDuration(status batchv1.JobStatus) string {
-	switch {
-	case status.StartTime == nil:
-	case status.CompletionTime == nil:
-		return duration.HumanDuration(time.Since(status.StartTime.Time))
+	if status.StartTime == nil {
+		return MissingValue
 	}
 
-	return duration.HumanDuration(status.CompletionTime.Sub(status.StartTime.Time))
+	var d time.Duration
+	switch {
+	case status.CompletionTime == nil:
+		d = time.Since(status.StartTime.Time)
+	default:
+		d = status.CompletionTime.Sub(status.StartTime.Time)
+	}
+
+	return duration.HumanDuration(d)
 }
