@@ -5,18 +5,30 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
-	res "k8s.io/apimachinery/pkg/api/resource"
-
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 	v1 "k8s.io/api/core/v1"
+	res "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewHPAListWithArgs(ns string, r *resource.HPA) resource.List {
+	return resource.NewList(ns, "hpa", r, resource.AllVerbsAccess|resource.DescribeAccess)
+}
+
+func NewHPAWithArgs(conn k8s.Connection, res resource.Cruder) *resource.HPA {
+	r := &resource.HPA{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestHPAListAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+
 	ns := "blee"
-	l := resource.NewHPAList(resource.AllNamespaces)
+	l := NewHPAListWithArgs(resource.AllNamespaces, NewHPAWithArgs(mc, mr))
 	l.SetNamespace(ns)
 
 	assert.Equal(t, "blee", l.GetNamespace())
@@ -26,45 +38,39 @@ func TestHPAListAccess(t *testing.T) {
 	}
 }
 
-func TestHPAHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "REFERENCE", "TARGETS", "MINPODS", "MAXPODS", "REPLICAS", "AGE"}, newHPA().Header(resource.DefaultNamespace))
-}
-
 func TestHPAFields(t *testing.T) {
 	r := newHPA().Fields("blee")
 	assert.Equal(t, "fred", r[0])
 }
 
 func TestHPAMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sHPA(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sHPA(), nil)
-
-	cm := resource.NewHPAWithArgs(ca)
+	cm := NewHPAWithArgs(mc, mr)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, hpaYaml(), ma)
 }
 
 func TestHPAListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sHPA()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sHPA()}, nil)
-
-	l := resource.NewHPAListWithArgs("-", resource.NewHPAWithArgs(ca))
-	// Make sure we can get deltas!
+	l := NewHPAListWithArgs("blee", NewHPAWithArgs(mc, mr))
+	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	mr.VerifyWasCalled(m.Times(2)).List("blee")
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
-	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
+	assert.Equal(t, "blee", l.GetNamespace())
 	row := td.Rows["blee/fred"]
 	assert.Equal(t, 7, len(row.Deltas))
 	for _, d := range row.Deltas {
@@ -120,7 +126,8 @@ func k8sHPA() *autoscalingv2beta2.HorizontalPodAutoscaler {
 }
 
 func newHPA() resource.Columnar {
-	return resource.NewHPA().NewInstance(k8sHPA())
+	mc := NewMockConnection()
+	return resource.NewHPA(mc).New(k8sHPA())
 }
 
 func hpaYaml() string {

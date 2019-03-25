@@ -29,7 +29,7 @@ type (
 
 // NewCronJobList returns a new resource list.
 func NewCronJobList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		ns,
 		"cronjob",
 		NewCronJob(c),
@@ -39,7 +39,7 @@ func NewCronJobList(c k8s.Connection, ns string) List {
 
 // NewCronJob instantiates a new CronJob.
 func NewCronJob(c k8s.Connection) *CronJob {
-	cj := &CronJob{&Base{connection: c, resource: k8s.NewCronJob(c)}, nil}
+	cj := &CronJob{&Base{Connection: c, Resource: k8s.NewCronJob(c)}, nil}
 	cj.Factory = cj
 
 	return cj
@@ -47,7 +47,7 @@ func NewCronJob(c k8s.Connection) *CronJob {
 
 // New builds a new CronJob instance from a k8s resource.
 func (r *CronJob) New(i interface{}) Columnar {
-	c := NewCronJob(r.connection)
+	c := NewCronJob(r.Connection)
 	switch instance := i.(type) {
 	case *batchv1beta1.CronJob:
 		c.instance = instance
@@ -64,7 +64,7 @@ func (r *CronJob) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *CronJob) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -79,7 +79,7 @@ func (r *CronJob) Marshal(path string) (string, error) {
 // Run a given cronjob.
 func (r *CronJob) Run(pa string) error {
 	ns, n := namespaced(pa)
-	if c, ok := r.resource.(Runnable); ok {
+	if c, ok := r.Resource.(Runnable); ok {
 		return c.Run(ns, n)
 	}
 

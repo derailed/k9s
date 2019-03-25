@@ -11,33 +11,41 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewRoleListWithArgs(ns string, r *resource.Role) resource.List {
+	return resource.NewList(ns, "ro", r, resource.AllVerbsAccess|resource.DescribeAccess)
+}
+
+func NewRoleWithArgs(conn k8s.Connection, res resource.Cruder) *resource.Role {
+	r := &resource.Role{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestRoleMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sRole(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sRole(), nil)
-
-	cm := resource.NewRoleWithArgs(ca)
+	cm := NewRoleWithArgs(mc, mr)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, roleYaml(), ma)
 }
 
 func TestRoleListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sRole()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List("blee")).ThenReturn(k8s.Collection{*k8sRole()}, nil)
-
-	l := resource.NewRoleListWithArgs("blee", resource.NewRoleWithArgs(ca))
-	// Make sure we can get deltas!
+	l := NewRoleListWithArgs("blee", NewRoleWithArgs(mc, mr))
+	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List("blee")
+	mr.VerifyWasCalled(m.Times(2)).List("blee")
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, "blee", l.GetNamespace())
@@ -62,7 +70,8 @@ func k8sRole() *v1.Role {
 }
 
 func newRole() resource.Columnar {
-	return resource.NewRole().NewInstance(k8sRole())
+	mc := NewMockConnection()
+	return resource.NewRole(mc).New(k8sRole())
 }
 
 func roleYaml() string {

@@ -16,7 +16,7 @@ type DaemonSet struct {
 
 // NewDaemonSetList returns a new resource list.
 func NewDaemonSetList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		ns,
 		"ds",
 		NewDaemonSet(c),
@@ -26,7 +26,7 @@ func NewDaemonSetList(c k8s.Connection, ns string) List {
 
 // NewDaemonSet instantiates a new DaemonSet.
 func NewDaemonSet(c k8s.Connection) *DaemonSet {
-	ds := &DaemonSet{&Base{connection: c, resource: k8s.NewDaemonSet(c)}, nil}
+	ds := &DaemonSet{&Base{Connection: c, Resource: k8s.NewDaemonSet(c)}, nil}
 	ds.Factory = ds
 
 	return ds
@@ -34,7 +34,7 @@ func NewDaemonSet(c k8s.Connection) *DaemonSet {
 
 // New builds a new DaemonSet instance from a k8s resource.
 func (r *DaemonSet) New(i interface{}) Columnar {
-	c := NewDaemonSet(r.connection)
+	c := NewDaemonSet(r.Connection)
 	switch instance := i.(type) {
 	case *extv1beta1.DaemonSet:
 		c.instance = instance
@@ -51,7 +51,7 @@ func (r *DaemonSet) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *DaemonSet) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

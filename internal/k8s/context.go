@@ -7,10 +7,15 @@ import (
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
-// ContextRes represents a Kubernetes clusters configurations.
-type ContextRes interface {
+// Switchable represents a switchable resource.
+type Switchable interface {
+	Switch(ctx string) error
+}
+
+// SwitchableResource represents a Kubernetes clusters configurations.
+type SwitchableResource interface {
 	Cruder
-	Switch(n string) error
+	Switchable
 }
 
 // NamedContext represents a named cluster context.

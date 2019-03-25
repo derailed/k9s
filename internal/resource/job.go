@@ -20,7 +20,7 @@ type Job struct {
 
 // NewJobList returns a new resource list.
 func NewJobList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		ns,
 		"job",
 		NewJob(c),
@@ -30,7 +30,7 @@ func NewJobList(c k8s.Connection, ns string) List {
 
 // NewJob instantiates a new Job.
 func NewJob(c k8s.Connection) *Job {
-	j := &Job{&Base{connection: c, resource: k8s.NewJob(c)}, nil}
+	j := &Job{&Base{Connection: c, Resource: k8s.NewJob(c)}, nil}
 	j.Factory = j
 
 	return j
@@ -38,7 +38,7 @@ func NewJob(c k8s.Connection) *Job {
 
 // New builds a new Job instance from a k8s resource.
 func (r *Job) New(i interface{}) Columnar {
-	c := NewJob(r.connection)
+	c := NewJob(r.Connection)
 	switch instance := i.(type) {
 	case *v1.Job:
 		c.instance = instance
@@ -55,7 +55,7 @@ func (r *Job) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *Job) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -71,12 +71,12 @@ func (r *Job) Marshal(path string) (string, error) {
 func (r *Job) Containers(path string, includeInit bool) ([]string, error) {
 	ns, n := namespaced(path)
 
-	return r.resource.(k8s.Loggable).Containers(ns, n, includeInit)
+	return r.Resource.(k8s.Loggable).Containers(ns, n, includeInit)
 }
 
 // Logs retrieves logs for a given container.
 func (r *Job) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (context.CancelFunc, error) {
-	req := r.resource.(k8s.Loggable).Logs(ns, n, co, lines, prev)
+	req := r.Resource.(k8s.Loggable).Logs(ns, n, co, lines, prev)
 	ctx, cancel := context.WithCancel(context.TODO())
 	req.Context(ctx)
 

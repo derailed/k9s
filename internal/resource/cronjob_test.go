@@ -11,20 +11,30 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewCronJobListWithArgs(ns string, r *resource.CronJob) resource.List {
+	return resource.NewList(ns, "cronjob", r, resource.AllVerbsAccess|resource.DescribeAccess)
+}
+
+func NewCronJobWithArgs(conn k8s.Connection, res resource.Cruder) *resource.CronJob {
+	r := &resource.CronJob{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestCronJobListAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+
 	ns := "blee"
-	l := resource.NewCronJobList(resource.AllNamespaces)
+	r := NewCronJobWithArgs(mc, mr)
+	l := NewCronJobListWithArgs(resource.AllNamespaces, r)
 	l.SetNamespace(ns)
 
-	assert.Equal(t, "blee", l.GetNamespace())
+	assert.Equal(t, ns, l.GetNamespace())
 	assert.Equal(t, "cronjob", l.GetName())
 	for _, a := range []int{resource.GetAccess, resource.ListAccess, resource.DeleteAccess, resource.ViewAccess, resource.EditAccess} {
 		assert.True(t, l.Access(a))
 	}
-}
-
-func TestCronJobHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "SCHEDULE", "SUSPEND", "ACTIVE", "LAST_SCHEDULE", "AGE"}, newCronJob().Header(resource.DefaultNamespace))
 }
 
 func TestCronJobFields(t *testing.T) {
@@ -33,32 +43,30 @@ func TestCronJobFields(t *testing.T) {
 }
 
 func TestCronJobMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sCronJob(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sCronJob(), nil)
-
-	cm := resource.NewCronJobWithArgs(ca)
+	cm := NewCronJobWithArgs(mc, mr)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, cronjobYaml(), ma)
 }
 
 func TestCronJobListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sCronJob()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sCronJob()}, nil)
-
-	l := resource.NewCronJobListWithArgs("-", resource.NewCronJobWithArgs(ca))
+	l := NewCronJobListWithArgs("-", NewCronJobWithArgs(mc, mr))
 	// Make sure we can get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	mr.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
@@ -91,7 +99,8 @@ func k8sCronJob() *batchv1beta1.CronJob {
 }
 
 func newCronJob() resource.Columnar {
-	return resource.NewCronJob().NewInstance(k8sCronJob())
+	mc := NewMockConnection()
+	return resource.NewCronJob(mc).New(k8sCronJob())
 }
 
 func cronjobYaml() string {

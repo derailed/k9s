@@ -19,23 +19,23 @@ const (
 type Node struct {
 	*Base
 	instance      *v1.Node
-	metricsServer MetricsServer
+	MetricsServer MetricsServer
 	metrics       k8s.NodeMetrics
 }
 
 // NewNodeList returns a new resource list.
-func NewNodeList(c k8s.Connection, ns string) List {
-	return newList(
+func NewNodeList(c k8s.Connection, mx MetricsServer, ns string) List {
+	return NewList(
 		NotNamespaced,
 		"no",
-		NewNode(c),
+		NewNode(c, mx),
 		ViewAccess|DescribeAccess,
 	)
 }
 
 // NewNode instantiates a new Node.
-func NewNode(c k8s.Connection) *Node {
-	n := &Node{&Base{connection: c, resource: k8s.NewNode(c)}, nil, k8s.NewMetricsServer(c), k8s.NodeMetrics{}}
+func NewNode(c k8s.Connection, mx MetricsServer) *Node {
+	n := &Node{&Base{Connection: c, Resource: k8s.NewNode(c)}, nil, mx, k8s.NodeMetrics{}}
 	n.Factory = n
 
 	return n
@@ -43,7 +43,7 @@ func NewNode(c k8s.Connection) *Node {
 
 // New builds a new Node instance from a k8s resource.
 func (r *Node) New(i interface{}) Columnar {
-	c := NewNode(r.connection)
+	c := NewNode(r.Connection, r.MetricsServer)
 	switch instance := i.(type) {
 	case *v1.Node:
 		c.instance = instance
@@ -59,7 +59,7 @@ func (r *Node) New(i interface{}) Columnar {
 
 // List all resources for a given namespace.
 func (r *Node) List(ns string) (Columnars, error) {
-	nn, err := r.resource.List(ns)
+	nn, err := r.Resource.List(ns)
 	if err != nil {
 		return nil, err
 	}
@@ -70,9 +70,9 @@ func (r *Node) List(ns string) (Columnars, error) {
 	}
 
 	mx := make(k8s.NodesMetrics, len(nodes))
-	if r.metricsServer.HasMetrics() {
-		nmx, _ := r.metricsServer.FetchNodesMetrics()
-		r.metricsServer.NodesMetrics(nodes, nmx, mx)
+	if r.MetricsServer.HasMetrics() {
+		nmx, _ := r.MetricsServer.FetchNodesMetrics()
+		r.MetricsServer.NodesMetrics(nodes, nmx, mx)
 	}
 
 	cc := make(Columnars, 0, len(nodes))
@@ -88,7 +88,7 @@ func (r *Node) List(ns string) (Columnars, error) {
 // Marshal a resource to yaml.
 func (r *Node) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		log.Error().Err(err)
 		return "", err

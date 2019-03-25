@@ -11,26 +11,30 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestCRBHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "AGE"}, newCRB().Header(resource.DefaultNamespace))
+func NewClusterRoleBindingListWithArgs(ns string, r *resource.ClusterRoleBinding) resource.List {
+	return resource.NewList(resource.NotNamespaced, "clusterrolebinding", r, resource.ViewAccess|resource.DeleteAccess|resource.DescribeAccess)
 }
 
-func TestCRBHeaderAllNS(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "AGE"}, newCRB().Header(resource.AllNamespaces))
+func NewClusterRoleBindingWithArgs(conn k8s.Connection, res resource.Cruder) *resource.ClusterRoleBinding {
+	r := &resource.ClusterRoleBinding{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
 }
 
 func TestCRBFields(t *testing.T) {
-	r := newCRB().Fields(resource.AllNamespaces)
+	conn := NewMockConnection()
+
+	r := newCRB(conn).Fields(resource.AllNamespaces)
+
 	assert.Equal(t, "fred", r[0])
 }
 
 func TestCRBMarshal(t *testing.T) {
-	setup(t)
-
-	ca := NewMockCaller()
+	conn := NewMockConnection()
+	ca := NewMockCruder()
 	m.When(ca.Get("blee", "fred")).ThenReturn(k8sCRB(), nil)
 
-	cm := resource.NewClusterRoleBindingWithArgs(ca)
+	cm := NewClusterRoleBindingWithArgs(conn, ca)
 	ma, err := cm.Marshal("blee/fred")
 
 	ca.VerifyWasCalledOnce().Get("blee", "fred")
@@ -39,12 +43,11 @@ func TestCRBMarshal(t *testing.T) {
 }
 
 func TestCRBListData(t *testing.T) {
-	setup(t)
-
-	ca := NewMockCaller()
+	conn := NewMockConnection()
+	ca := NewMockCruder()
 	m.When(ca.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sCRB()}, nil)
 
-	l := resource.NewClusterRoleBindingListWithArgs("-", resource.NewClusterRoleBindingWithArgs(ca))
+	l := NewClusterRoleBindingListWithArgs("-", NewClusterRoleBindingWithArgs(conn, ca))
 	// Make sure we can get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
@@ -78,8 +81,8 @@ func k8sCRB() *rbacv1.ClusterRoleBinding {
 	}
 }
 
-func newCRB() resource.Columnar {
-	return resource.NewClusterRoleBinding().NewInstance(k8sCRB())
+func newCRB(c resource.Connection) resource.Columnar {
+	return resource.NewClusterRoleBinding(c).New(k8sCRB())
 }
 
 func crbYaml() string {

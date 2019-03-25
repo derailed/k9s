@@ -17,7 +17,7 @@ type PodDisruptionBudget struct {
 
 // NewPDBList returns a new resource list.
 func NewPDBList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		ns,
 		"pdb",
 		NewPDB(c),
@@ -27,7 +27,7 @@ func NewPDBList(c k8s.Connection, ns string) List {
 
 // NewPDB instantiates a new PDB.
 func NewPDB(c k8s.Connection) *PodDisruptionBudget {
-	p := &PodDisruptionBudget{&Base{connection: c, resource: k8s.NewPodDisruptionBudget(c)}, nil}
+	p := &PodDisruptionBudget{&Base{Connection: c, Resource: k8s.NewPodDisruptionBudget(c)}, nil}
 	p.Factory = p
 
 	return p
@@ -35,7 +35,7 @@ func NewPDB(c k8s.Connection) *PodDisruptionBudget {
 
 // New builds a new PDB instance from a k8s resource.
 func (r *PodDisruptionBudget) New(i interface{}) Columnar {
-	c := NewPDB(r.connection)
+	c := NewPDB(r.Connection)
 	switch instance := i.(type) {
 	case *v1beta1.PodDisruptionBudget:
 		c.instance = instance
@@ -56,7 +56,7 @@ func (r *PodDisruptionBudget) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *PodDisruptionBudget) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

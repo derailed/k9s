@@ -18,7 +18,7 @@ type Endpoints struct {
 
 // NewEndpointsList returns a new resource list.
 func NewEndpointsList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		ns,
 		"ep",
 		NewEndpoints(c),
@@ -28,7 +28,7 @@ func NewEndpointsList(c k8s.Connection, ns string) List {
 
 // NewEndpoints instantiates a new Endpoints.
 func NewEndpoints(c k8s.Connection) *Endpoints {
-	ep := &Endpoints{&Base{connection: c, resource: k8s.NewEndpoints(c)}, nil}
+	ep := &Endpoints{&Base{Connection: c, Resource: k8s.NewEndpoints(c)}, nil}
 	ep.Factory = ep
 
 	return ep
@@ -36,7 +36,7 @@ func NewEndpoints(c k8s.Connection) *Endpoints {
 
 // New builds a new Endpoints instance from a k8s resource.
 func (r *Endpoints) New(i interface{}) Columnar {
-	c := NewEndpoints(r.connection)
+	c := NewEndpoints(r.Connection)
 	switch instance := i.(type) {
 	case *v1.Endpoints:
 		c.instance = instance
@@ -53,7 +53,7 @@ func (r *Endpoints) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *Endpoints) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

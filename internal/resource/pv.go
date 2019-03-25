@@ -17,7 +17,7 @@ type PV struct {
 
 // NewPVList returns a new resource list.
 func NewPVList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		NotNamespaced,
 		"pv",
 		NewPV(c),
@@ -27,7 +27,7 @@ func NewPVList(c k8s.Connection, ns string) List {
 
 // NewPV instantiates a new PV.
 func NewPV(c k8s.Connection) *PV {
-	p := &PV{&Base{connection: c, resource: k8s.NewPV(c)}, nil}
+	p := &PV{&Base{Connection: c, Resource: k8s.NewPV(c)}, nil}
 	p.Factory = p
 
 	return p
@@ -35,7 +35,7 @@ func NewPV(c k8s.Connection) *PV {
 
 // New builds a new PV instance from a k8s resource.
 func (r *PV) New(i interface{}) Columnar {
-	c := NewPV(r.connection)
+	c := NewPV(r.Connection)
 	switch instance := i.(type) {
 	case *v1.PersistentVolume:
 		c.instance = instance
@@ -52,7 +52,7 @@ func (r *PV) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *PV) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

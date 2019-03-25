@@ -11,33 +11,42 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewRBListWithArgs(ns string, r *resource.RoleBinding) resource.List {
+	return resource.NewList(ns, "rb", r, resource.AllVerbsAccess|resource.DescribeAccess)
+}
+
+func NewRBWithArgs(conn k8s.Connection, res resource.Cruder) *resource.RoleBinding {
+	r := &resource.RoleBinding{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestRBMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sRB(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sRB(), nil)
-
-	cm := resource.NewRoleBindingWithArgs(ca)
+	cm := NewRBWithArgs(mc, mr)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, rbYaml(), ma)
 }
 
 func TestRBListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sRB()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List("blee")).ThenReturn(k8s.Collection{*k8sRB()}, nil)
-
-	l := resource.NewRoleBindingListWithArgs("blee", resource.NewRoleBindingWithArgs(ca))
-	// Make sure we can get deltas!
+	l := NewRBListWithArgs("blee", NewRBWithArgs(mc, mr))
+	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List("blee")
+	mr.VerifyWasCalled(m.Times(2)).List("blee")
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, "blee", l.GetNamespace())
@@ -73,7 +82,8 @@ func k8sRB() *v1.RoleBinding {
 }
 
 func newRB() resource.Columnar {
-	return resource.NewRoleBinding().NewInstance(k8sRB())
+	mc := NewMockConnection()
+	return resource.NewRoleBinding(mc).New(k8sRB())
 }
 
 func rbYaml() string {

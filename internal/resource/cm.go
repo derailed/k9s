@@ -15,8 +15,8 @@ type ConfigMap struct {
 }
 
 // NewConfigMapList returns a new resource list.
-func NewConfigMapList(c k8s.Connection, ns string) List {
-	return newList(
+func NewConfigMapList(c Connection, ns string) List {
+	return NewList(
 		ns,
 		"cm",
 		NewConfigMap(c),
@@ -25,8 +25,8 @@ func NewConfigMapList(c k8s.Connection, ns string) List {
 }
 
 // NewConfigMap instantiates a new ConfigMap.
-func NewConfigMap(c k8s.Connection) *ConfigMap {
-	m := &ConfigMap{&Base{connection: c, resource: k8s.NewConfigMap(c)}, nil}
+func NewConfigMap(c Connection) *ConfigMap {
+	m := &ConfigMap{&Base{Connection: c, Resource: k8s.NewConfigMap(c)}, nil}
 	m.Factory = m
 
 	return m
@@ -34,7 +34,7 @@ func NewConfigMap(c k8s.Connection) *ConfigMap {
 
 // New builds a new ConfigMap instance from a k8s resource.
 func (r *ConfigMap) New(i interface{}) Columnar {
-	cm := NewConfigMap(r.connection)
+	cm := NewConfigMap(r.Connection)
 	switch instance := i.(type) {
 	case *v1.ConfigMap:
 		cm.instance = instance
@@ -51,7 +51,7 @@ func (r *ConfigMap) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *ConfigMap) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

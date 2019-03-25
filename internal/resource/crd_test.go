@@ -10,9 +10,23 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
+func NewCRDListWithArgs(ns string, r *resource.CRD) resource.List {
+	return resource.NewList("-", "crd", r, resource.CRUDAccess|resource.DescribeAccess)
+}
+
+func NewCRDWithArgs(conn k8s.Connection, res resource.Cruder) *resource.CRD {
+	r := &resource.CRD{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestCRDListAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+
 	ns := "blee"
-	l := resource.NewCRDList(resource.AllNamespaces)
+	r := NewCRDWithArgs(mc, mr)
+	l := NewCRDListWithArgs(resource.AllNamespaces, r)
 	l.SetNamespace(ns)
 
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
@@ -20,14 +34,6 @@ func TestCRDListAccess(t *testing.T) {
 	for _, a := range []int{resource.GetAccess, resource.ListAccess, resource.DeleteAccess, resource.ViewAccess, resource.EditAccess} {
 		assert.True(t, l.Access(a))
 	}
-}
-
-func TestCRDHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "AGE"}, newCRD().Header(resource.DefaultNamespace))
-}
-
-func TestCRDHeaderAllNS(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "AGE"}, newCRD().Header(resource.AllNamespaces))
 }
 
 func TestCRDFields(t *testing.T) {
@@ -41,32 +47,31 @@ func TestCRDFieldsAllNS(t *testing.T) {
 }
 
 func TestCRDMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	cr := NewMockCruder()
+	m.When(cr.Get("blee", "fred")).ThenReturn(k8sCRD(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sCRD(), nil)
+	r := NewCRDWithArgs(mc, cr)
+	ma, err := r.Marshal("blee/fred")
 
-	cm := resource.NewCRDWithArgs(ca)
-	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+	cr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, crdYaml(), ma)
 }
 
 func TestCRDListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	cr := NewMockCruder()
+	m.When(cr.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sCRD()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sCRD()}, nil)
-
-	l := resource.NewCRDListWithArgs("-", resource.NewCRDWithArgs(ca))
+	l := NewCRDListWithArgs("-", NewCRDWithArgs(mc, cr))
 	// Make sure we can get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	cr.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
@@ -93,7 +98,8 @@ func k8sCRD() *unstructured.Unstructured {
 }
 
 func newCRD() resource.Columnar {
-	return resource.NewCRD().NewInstance(k8sCRD())
+	mc := NewMockConnection()
+	return resource.NewCRD(mc).New(k8sCRD())
 }
 
 func crdYaml() string {

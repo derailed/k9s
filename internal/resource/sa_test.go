@@ -11,9 +11,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewServiceAccountListWithArgs(ns string, r *resource.ServiceAccount) resource.List {
+	return resource.NewList(ns, "sa", r, resource.AllVerbsAccess|resource.DescribeAccess)
+}
+
+func NewServiceAccountWithArgs(conn k8s.Connection, res resource.Cruder) *resource.ServiceAccount {
+	r := &resource.ServiceAccount{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestSaListAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+
 	ns := "blee"
-	l := resource.NewServiceAccountList(resource.AllNamespaces)
+	l := NewServiceAccountListWithArgs(resource.AllNamespaces, NewServiceAccountWithArgs(mc, mr))
 	l.SetNamespace(ns)
 
 	assert.Equal(t, ns, l.GetNamespace())
@@ -46,35 +59,33 @@ func TestSaFields(t *testing.T) {
 }
 
 func TestSAMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sSA(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sSA(), nil)
-
-	cm := resource.NewServiceAccountWithArgs(ca)
+	cm := NewServiceAccountWithArgs(mc, mr)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, saYaml(), ma)
 }
 
 func TestSAListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sSA()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List("-")).ThenReturn(k8s.Collection{*k8sSA()}, nil)
-
-	l := resource.NewServiceAccountListWithArgs("-", resource.NewServiceAccountWithArgs(ca))
-	// Make sure we can get deltas!
+	l := NewServiceAccountListWithArgs("blee", NewServiceAccountWithArgs(mc, mr))
+	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List("-")
+	mr.VerifyWasCalled(m.Times(2)).List("blee")
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
-	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
+	assert.Equal(t, "blee", l.GetNamespace())
 	row := td.Rows["blee/fred"]
 	assert.Equal(t, 3, len(row.Deltas))
 	for _, d := range row.Deltas {
@@ -97,7 +108,8 @@ func k8sSA() *v1.ServiceAccount {
 }
 
 func newSa() resource.Columnar {
-	return resource.NewServiceAccount().NewInstance(k8sSA())
+	mc := NewMockConnection()
+	return resource.NewServiceAccount(mc).New(k8sSA())
 }
 
 func saHeader() resource.Row {

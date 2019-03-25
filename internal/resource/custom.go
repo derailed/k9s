@@ -27,7 +27,7 @@ func NewCustomList(c k8s.Connection, ns, group, version, name string) List {
 	if !c.IsNamespaced(name) {
 		ns = NotNamespaced
 	}
-	return newList(
+	return NewList(
 		ns,
 		name,
 		NewCustom(c, group, version, name), AllVerbsAccess,
@@ -36,16 +36,16 @@ func NewCustomList(c k8s.Connection, ns, group, version, name string) List {
 
 // NewCustom instantiates a new Kubernetes Resource.
 func NewCustom(c k8s.Connection, group, version, name string) *Custom {
-	cr := &Custom{Base: &Base{connection: c, resource: k8s.NewResource(c, group, version, name)}}
+	cr := &Custom{Base: &Base{Connection: c, Resource: k8s.NewResource(c, group, version, name)}}
 	cr.Factory = cr
-	cr.group, cr.version, cr.name = cr.resource.(*k8s.Resource).GetInfo()
+	cr.group, cr.version, cr.name = cr.Resource.(*k8s.Resource).GetInfo()
 
 	return cr
 }
 
 // New builds a new Custom instance from a k8s resource.
 func (r *Custom) New(i interface{}) Columnar {
-	cr := NewCustom(r.connection, "", "", "")
+	cr := NewCustom(r.Connection, "", "", "")
 	switch instance := i.(type) {
 	case *metav1beta1.TableRow:
 		cr.instance = instance
@@ -74,7 +74,7 @@ func (r *Custom) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *Custom) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -89,7 +89,7 @@ func (r *Custom) Marshal(path string) (string, error) {
 
 // List all resources
 func (r *Custom) List(ns string) (Columnars, error) {
-	ii, err := r.resource.List(ns)
+	ii, err := r.Resource.List(ns)
 	if err != nil {
 		return nil, err
 	}

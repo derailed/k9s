@@ -20,7 +20,7 @@ type Service struct {
 
 // NewServiceList returns a new resource list.
 func NewServiceList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		ns,
 		"svc",
 		NewService(c),
@@ -30,7 +30,7 @@ func NewServiceList(c k8s.Connection, ns string) List {
 
 // NewService instantiates a new Service.
 func NewService(c k8s.Connection) *Service {
-	s := &Service{&Base{connection: c, resource: k8s.NewService(c)}, nil}
+	s := &Service{&Base{Connection: c, Resource: k8s.NewService(c)}, nil}
 	s.Factory = s
 
 	return s
@@ -38,7 +38,7 @@ func NewService(c k8s.Connection) *Service {
 
 // New builds a new Service instance from a k8s resource.
 func (r *Service) New(i interface{}) Columnar {
-	c := NewService(r.connection)
+	c := NewService(r.Connection)
 	switch instance := i.(type) {
 	case *v1.Service:
 		c.instance = instance
@@ -56,7 +56,7 @@ func (r *Service) New(i interface{}) Columnar {
 // BOZO!! Why you need to fill type info??
 func (r *Service) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

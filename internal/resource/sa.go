@@ -16,7 +16,7 @@ type ServiceAccount struct {
 
 // NewServiceAccountList returns a new resource list.
 func NewServiceAccountList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		ns,
 		"sa",
 		NewServiceAccount(c),
@@ -26,7 +26,7 @@ func NewServiceAccountList(c k8s.Connection, ns string) List {
 
 // NewServiceAccount instantiates a new ServiceAccount.
 func NewServiceAccount(c k8s.Connection) *ServiceAccount {
-	s := &ServiceAccount{&Base{connection: c, resource: k8s.NewServiceAccount(c)}, nil}
+	s := &ServiceAccount{&Base{Connection: c, Resource: k8s.NewServiceAccount(c)}, nil}
 	s.Factory = s
 
 	return s
@@ -34,7 +34,7 @@ func NewServiceAccount(c k8s.Connection) *ServiceAccount {
 
 // New builds a new ServiceAccount instance from a k8s resource.
 func (r *ServiceAccount) New(i interface{}) Columnar {
-	c := NewServiceAccount(r.connection)
+	c := NewServiceAccount(r.Connection)
 	switch instance := i.(type) {
 	case *v1.ServiceAccount:
 		c.instance = instance
@@ -51,7 +51,7 @@ func (r *ServiceAccount) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *ServiceAccount) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

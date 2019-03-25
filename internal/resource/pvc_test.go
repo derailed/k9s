@@ -12,9 +12,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewPVCListWithArgs(ns string, r *resource.PVC) resource.List {
+	return resource.NewList(ns, "pvc", r, resource.AllVerbsAccess|resource.DescribeAccess)
+}
+
+func NewPVCWithArgs(conn k8s.Connection, res resource.Cruder) *resource.PVC {
+	r := &resource.PVC{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestPVCListAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+
 	ns := "blee"
-	l := resource.NewPVCList(resource.AllNamespaces)
+	l := NewPVCListWithArgs(resource.AllNamespaces, NewPVCWithArgs(mc, mr))
 	l.SetNamespace(ns)
 
 	assert.Equal(t, "blee", l.GetNamespace())
@@ -24,45 +37,39 @@ func TestPVCListAccess(t *testing.T) {
 	}
 }
 
-func TestPVCHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "STATUS", "VOLUME", "CAPACITY", "ACCESS MODES", "STORAGECLASS", "AGE"}, newPVC().Header(resource.DefaultNamespace))
-}
-
 func TestPVCFields(t *testing.T) {
 	r := newPVC().Fields("blee")
 	assert.Equal(t, "fred", r[0])
 }
 
 func TestPVCMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sPVC(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sPVC(), nil)
-
-	cm := resource.NewPVCWithArgs(ca)
+	cm := NewPVCWithArgs(mc, mr)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, pvcYaml(), ma)
 }
 
 func TestPVCListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sPVC()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sPVC()}, nil)
-
-	l := resource.NewPVCListWithArgs("-", resource.NewPVCWithArgs(ca))
-	// Make sure we can get deltas!
+	l := NewPVCListWithArgs("blee", NewPVCWithArgs(mc, mr))
+	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	mr.VerifyWasCalled(m.Times(2)).List("blee")
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
-	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
+	assert.Equal(t, "blee", l.GetNamespace())
 	row := td.Rows["blee/fred"]
 	assert.Equal(t, 7, len(row.Deltas))
 	for _, d := range row.Deltas {
@@ -92,7 +99,8 @@ func k8sPVC() *v1.PersistentVolumeClaim {
 }
 
 func newPVC() resource.Columnar {
-	return resource.NewPVC().NewInstance(k8sPVC())
+	mc := NewMockConnection()
+	return resource.NewPVC(mc).New(k8sPVC())
 }
 
 func pvcYaml() string {

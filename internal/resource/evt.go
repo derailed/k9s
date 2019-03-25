@@ -17,7 +17,7 @@ type Event struct {
 
 // NewEventList returns a new resource list.
 func NewEventList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		ns,
 		"ev",
 		NewEvent(c),
@@ -27,7 +27,7 @@ func NewEventList(c k8s.Connection, ns string) List {
 
 // NewEvent instantiates a new Event.
 func NewEvent(c k8s.Connection) *Event {
-	ev := &Event{&Base{connection: c, resource: k8s.NewEvent(c)}, nil}
+	ev := &Event{&Base{Connection: c, Resource: k8s.NewEvent(c)}, nil}
 	ev.Factory = ev
 
 	return ev
@@ -35,7 +35,7 @@ func NewEvent(c k8s.Connection) *Event {
 
 // New builds a new Event instance from a k8s resource.
 func (r *Event) New(i interface{}) Columnar {
-	c := NewEvent(r.connection)
+	c := NewEvent(r.Connection)
 	switch instance := i.(type) {
 	case *v1.Event:
 		c.instance = instance
@@ -52,7 +52,7 @@ func (r *Event) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *Event) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

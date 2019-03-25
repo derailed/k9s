@@ -18,7 +18,7 @@ type HPA struct {
 
 // NewHPAList returns a new resource list.
 func NewHPAList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		ns,
 		"hpa",
 		NewHPA(c),
@@ -28,7 +28,7 @@ func NewHPAList(c k8s.Connection, ns string) List {
 
 // NewHPA instantiates a new HPA.
 func NewHPA(c k8s.Connection) *HPA {
-	hpa := &HPA{&Base{connection: c, resource: k8s.NewHPA(c)}, nil}
+	hpa := &HPA{&Base{Connection: c, Resource: k8s.NewHPA(c)}, nil}
 	hpa.Factory = hpa
 
 	return hpa
@@ -36,7 +36,7 @@ func NewHPA(c k8s.Connection) *HPA {
 
 // New builds a new HPA instance from a k8s resource.
 func (r *HPA) New(i interface{}) Columnar {
-	c := NewHPA(r.connection)
+	c := NewHPA(r.Connection)
 	switch instance := i.(type) {
 	case *autoscalingv2beta2.HorizontalPodAutoscaler:
 		c.instance = instance
@@ -53,7 +53,7 @@ func (r *HPA) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *HPA) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

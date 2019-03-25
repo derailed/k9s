@@ -16,7 +16,7 @@ type Secret struct {
 
 // NewSecretList returns a new resource list.
 func NewSecretList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		ns,
 		"secret",
 		NewSecret(c),
@@ -26,7 +26,7 @@ func NewSecretList(c k8s.Connection, ns string) List {
 
 // NewSecret instantiates a new Secret.
 func NewSecret(c k8s.Connection) *Secret {
-	s := &Secret{&Base{connection: c, resource: k8s.NewSecret(c)}, nil}
+	s := &Secret{&Base{Connection: c, Resource: k8s.NewSecret(c)}, nil}
 	s.Factory = s
 
 	return s
@@ -34,7 +34,7 @@ func NewSecret(c k8s.Connection) *Secret {
 
 // New builds a new Secret instance from a k8s resource.
 func (r *Secret) New(i interface{}) Columnar {
-	c := NewSecret(r.connection)
+	c := NewSecret(r.Connection)
 	switch instance := i.(type) {
 	case *v1.Secret:
 		c.instance = instance
@@ -51,7 +51,7 @@ func (r *Secret) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *Secret) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

@@ -14,17 +14,17 @@ type ClusterRoleBinding struct {
 
 // NewClusterRoleBindingList returns a new resource list.
 func NewClusterRoleBindingList(c k8s.Connection, _ string) List {
-	return newList(
+	return NewList(
 		NotNamespaced,
-		"ctx",
+		"clusterrolebinding",
 		NewClusterRoleBinding(c),
-		SwitchAccess|ViewAccess|DeleteAccess|DescribeAccess,
+		ViewAccess|DeleteAccess|DescribeAccess,
 	)
 }
 
 // NewClusterRoleBinding instantiates a new ClusterRoleBinding.
 func NewClusterRoleBinding(c k8s.Connection) *ClusterRoleBinding {
-	crb := &ClusterRoleBinding{&Base{connection: c, resource: k8s.NewClusterRoleBinding(c)}, nil}
+	crb := &ClusterRoleBinding{&Base{Connection: c, Resource: k8s.NewClusterRoleBinding(c)}, nil}
 	crb.Factory = crb
 
 	return crb
@@ -32,7 +32,7 @@ func NewClusterRoleBinding(c k8s.Connection) *ClusterRoleBinding {
 
 // New builds a new tabular instance from a k8s resource.
 func (r *ClusterRoleBinding) New(i interface{}) Columnar {
-	crb := NewClusterRoleBinding(r.connection)
+	crb := NewClusterRoleBinding(r.Connection)
 	switch instance := i.(type) {
 	case *v1.ClusterRoleBinding:
 		crb.instance = instance
@@ -49,7 +49,7 @@ func (r *ClusterRoleBinding) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *ClusterRoleBinding) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

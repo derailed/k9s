@@ -16,7 +16,7 @@ type StatefulSet struct {
 
 // NewStatefulSetList returns a new resource list.
 func NewStatefulSetList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		ns,
 		"sts",
 		NewStatefulSet(c),
@@ -26,7 +26,7 @@ func NewStatefulSetList(c k8s.Connection, ns string) List {
 
 // NewStatefulSet instantiates a new StatefulSet.
 func NewStatefulSet(c k8s.Connection) *StatefulSet {
-	s := &StatefulSet{&Base{connection: c, resource: k8s.NewStatefulSet(c)}, nil}
+	s := &StatefulSet{&Base{Connection: c, Resource: k8s.NewStatefulSet(c)}, nil}
 	s.Factory = s
 
 	return s
@@ -34,7 +34,7 @@ func NewStatefulSet(c k8s.Connection) *StatefulSet {
 
 // New builds a new StatefulSet instance from a k8s resource.
 func (r *StatefulSet) New(i interface{}) Columnar {
-	c := NewStatefulSet(r.connection)
+	c := NewStatefulSet(r.Connection)
 	switch instance := i.(type) {
 	case *v1.StatefulSet:
 		c.instance = instance
@@ -51,7 +51,7 @@ func (r *StatefulSet) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *StatefulSet) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

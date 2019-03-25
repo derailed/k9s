@@ -11,33 +11,41 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewReplicaSetListWithArgs(ns string, r *resource.ReplicaSet) resource.List {
+	return resource.NewList(ns, "rs", r, resource.AllVerbsAccess|resource.DescribeAccess)
+}
+
+func NewReplicaSetWithArgs(conn k8s.Connection, res resource.Cruder) *resource.ReplicaSet {
+	r := &resource.ReplicaSet{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestReplicaSetMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sReplicaSet(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sReplicaSet(), nil)
-
-	cm := resource.NewReplicaSetWithArgs(ca)
+	cm := NewReplicaSetWithArgs(mc, mr)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, rsYaml(), ma)
 }
 
 func TestReplicaSetListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sReplicaSet()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List("blee")).ThenReturn(k8s.Collection{*k8sReplicaSet()}, nil)
-
-	l := resource.NewReplicaSetListWithArgs("blee", resource.NewReplicaSetWithArgs(ca))
+	l := NewReplicaSetListWithArgs("blee", NewReplicaSetWithArgs(mc, mr))
 	// Make sure we can get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List("blee")
+	mr.VerifyWasCalled(m.Times(2)).List("blee")
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, "blee", l.GetNamespace())
@@ -70,7 +78,8 @@ func k8sReplicaSet() *v1.ReplicaSet {
 }
 
 func newReplicaSet() resource.Columnar {
-	return resource.NewReplicaSet().NewInstance(k8sReplicaSet())
+	mc := NewMockConnection()
+	return resource.NewReplicaSet(mc).New(k8sReplicaSet())
 }
 
 func rsYaml() string {

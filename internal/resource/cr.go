@@ -14,7 +14,7 @@ type ClusterRole struct {
 
 // NewClusterRoleList returns a new resource list.
 func NewClusterRoleList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		NotNamespaced,
 		"clusterrole",
 		NewClusterRole(c),
@@ -24,7 +24,7 @@ func NewClusterRoleList(c k8s.Connection, ns string) List {
 
 // NewClusterRole instantiates a new ClusterRole.
 func NewClusterRole(c k8s.Connection) *ClusterRole {
-	cr := &ClusterRole{&Base{connection: c, resource: k8s.NewClusterRole(c)}, nil}
+	cr := &ClusterRole{&Base{Connection: c, Resource: k8s.NewClusterRole(c)}, nil}
 	cr.Factory = cr
 
 	return cr
@@ -32,7 +32,7 @@ func NewClusterRole(c k8s.Connection) *ClusterRole {
 
 // New builds a new ClusterRole instance from a k8s resource.
 func (r *ClusterRole) New(i interface{}) Columnar {
-	c := NewClusterRole(r.connection)
+	c := NewClusterRole(r.Connection)
 	switch instance := i.(type) {
 	case *v1.ClusterRole:
 		c.instance = instance
@@ -49,7 +49,7 @@ func (r *ClusterRole) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *ClusterRole) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

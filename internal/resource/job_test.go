@@ -11,9 +11,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewJobListWithArgs(ns string, r *resource.Job) resource.List {
+	return resource.NewList(ns, "job", r, resource.AllVerbsAccess|resource.DescribeAccess)
+}
+
+func NewJobWithArgs(conn k8s.Connection, res resource.Cruder) *resource.Job {
+	r := &resource.Job{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestJobListAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+
 	ns := "blee"
-	l := resource.NewJobList(resource.AllNamespaces)
+	l := NewJobListWithArgs(resource.AllNamespaces, NewJobWithArgs(mc, mr))
 	l.SetNamespace(ns)
 
 	assert.Equal(t, "blee", l.GetNamespace())
@@ -23,45 +36,39 @@ func TestJobListAccess(t *testing.T) {
 	}
 }
 
-func TestJobHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "COMPLETIONS", "DURATION", "AGE"}, newJob().Header(resource.DefaultNamespace))
-}
-
 func TestJobFields(t *testing.T) {
 	r := newJob().Fields("blee")
 	assert.Equal(t, "fred", r[0])
 }
 
 func TestJobMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sJob(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sJob(), nil)
-
-	cm := resource.NewJobWithArgs(ca)
+	cm := NewJobWithArgs(mc, mr)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, jobYaml(), ma)
 }
 
 func TestJobListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sJob()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sJob()}, nil)
-
-	l := resource.NewJobListWithArgs("-", resource.NewJobWithArgs(ca))
-	// Make sure we can get deltas!
+	l := NewJobListWithArgs("blee", NewJobWithArgs(mc, mr))
+	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	mr.VerifyWasCalled(m.Times(2)).List("blee")
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
-	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
+	assert.Equal(t, "blee", l.GetNamespace())
 	row := td.Rows["blee/fred"]
 	assert.Equal(t, 4, len(row.Deltas))
 	for _, d := range row.Deltas {
@@ -92,7 +99,8 @@ func k8sJob() *v1.Job {
 }
 
 func newJob() resource.Columnar {
-	return resource.NewJob().NewInstance(k8sJob())
+	mc := NewMockConnection()
+	return resource.NewJob(mc).New(k8sJob())
 }
 
 func jobYaml() string {

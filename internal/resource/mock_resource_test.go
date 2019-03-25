@@ -6,6 +6,7 @@ package resource_test
 import (
 	resource "github.com/derailed/k9s/internal/resource"
 	pegomock "github.com/petergtz/pegomock"
+	genericclioptions "k8s.io/cli-runtime/pkg/genericclioptions"
 	"reflect"
 	"time"
 )
@@ -31,6 +32,25 @@ func (mock *MockResource) Delete(_param0 string) error {
 		}
 	}
 	return ret0
+}
+
+func (mock *MockResource) Describe(_param0 string, _param1 string, _param2 *genericclioptions.ConfigFlags) (string, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockResource().")
+	}
+	params := []pegomock.Param{_param0, _param1, _param2}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("Describe", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 string
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(string)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
 }
 
 func (mock *MockResource) Get(_param0 string) (resource.Columnar, error) {
@@ -105,6 +125,21 @@ func (mock *MockResource) Marshal(_param0 string) (string, error) {
 	return ret0, ret1
 }
 
+func (mock *MockResource) New(_param0 interface{}) resource.Columnar {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockResource().")
+	}
+	params := []pegomock.Param{_param0}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("New", params, []reflect.Type{reflect.TypeOf((*resource.Columnar)(nil)).Elem()})
+	var ret0 resource.Columnar
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(resource.Columnar)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockResource) VerifyWasCalledOnce() *VerifierResource {
 	return &VerifierResource{
 		mock:                   mock,
@@ -164,6 +199,41 @@ func (c *Resource_Delete_OngoingVerification) GetAllCapturedArguments() (_param0
 		_param0 = make([]string, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierResource) Describe(_param0 string, _param1 string, _param2 *genericclioptions.ConfigFlags) *Resource_Describe_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Describe", params, verifier.timeout)
+	return &Resource_Describe_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Resource_Describe_OngoingVerification struct {
+	mock              *MockResource
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Resource_Describe_OngoingVerification) GetCapturedArguments() (string, string, *genericclioptions.ConfigFlags) {
+	_param0, _param1, _param2 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
+}
+
+func (c *Resource_Describe_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []*genericclioptions.ConfigFlags) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.(string)
+		}
+		_param2 = make([]*genericclioptions.ConfigFlags, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(*genericclioptions.ConfigFlags)
 		}
 	}
 	return
@@ -272,6 +342,33 @@ func (c *Resource_Marshal_OngoingVerification) GetAllCapturedArguments() (_param
 		_param0 = make([]string, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierResource) New(_param0 interface{}) *Resource_New_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "New", params, verifier.timeout)
+	return &Resource_New_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Resource_New_OngoingVerification struct {
+	mock              *MockResource
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Resource_New_OngoingVerification) GetCapturedArguments() interface{} {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *Resource_New_OngoingVerification) GetAllCapturedArguments() (_param0 []interface{}) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]interface{}, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(interface{})
 		}
 	}
 	return

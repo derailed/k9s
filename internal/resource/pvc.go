@@ -14,7 +14,7 @@ type PVC struct {
 
 // NewPVCList returns a new resource list.
 func NewPVCList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		ns,
 		"pvc",
 		NewPVC(c),
@@ -24,7 +24,7 @@ func NewPVCList(c k8s.Connection, ns string) List {
 
 // NewPVC instantiates a new PVC.
 func NewPVC(c k8s.Connection) *PVC {
-	p := &PVC{&Base{connection: c, resource: k8s.NewPVC(c)}, nil}
+	p := &PVC{&Base{Connection: c, Resource: k8s.NewPVC(c)}, nil}
 	p.Factory = p
 
 	return p
@@ -32,7 +32,7 @@ func NewPVC(c k8s.Connection) *PVC {
 
 // New builds a new PVC instance from a k8s resource.
 func (r *PVC) New(i interface{}) Columnar {
-	c := NewPVC(r.connection)
+	c := NewPVC(r.Connection)
 	switch instance := i.(type) {
 	case *v1.PersistentVolumeClaim:
 		c.instance = instance
@@ -49,7 +49,7 @@ func (r *PVC) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *PVC) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

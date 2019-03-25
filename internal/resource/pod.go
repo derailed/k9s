@@ -37,25 +37,25 @@ type (
 	// Pod that can be displayed in a table and interacted with.
 	Pod struct {
 		*Base
-		instance     *v1.Pod
-		metricServer MetricsServer
-		metrics      k8s.PodMetrics
+		instance      *v1.Pod
+		MetricsServer MetricsServer
+		metrics       k8s.PodMetrics
 	}
 )
 
 // NewPodList returns a new resource list.
-func NewPodList(c k8s.Connection, ns string) List {
-	return newList(
+func NewPodList(c k8s.Connection, mx MetricsServer, ns string) List {
+	return NewList(
 		ns,
 		"po",
-		NewPod(c),
+		NewPod(c, mx),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewPod instantiates a new Pod.
-func NewPod(c k8s.Connection) *Pod {
-	p := &Pod{&Base{connection: c, resource: k8s.NewPod(c)}, nil, k8s.NewMetricsServer(c), k8s.PodMetrics{}}
+func NewPod(c k8s.Connection, mx MetricsServer) *Pod {
+	p := &Pod{&Base{Connection: c, Resource: k8s.NewPod(c)}, nil, mx, k8s.PodMetrics{}}
 	p.Factory = p
 
 	return p
@@ -63,7 +63,7 @@ func NewPod(c k8s.Connection) *Pod {
 
 // New builds a new Pod instance from a k8s resource.
 func (r *Pod) New(i interface{}) Columnar {
-	c := NewPod(r.connection)
+	c := NewPod(r.Connection, r.MetricsServer)
 	switch instance := i.(type) {
 	case *v1.Pod:
 		c.instance = instance
@@ -94,7 +94,7 @@ func (r *Pod) SetMetrics(m k8s.PodMetrics) {
 // Marshal resource to yaml.
 func (r *Pod) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -110,12 +110,12 @@ func (r *Pod) Marshal(path string) (string, error) {
 func (r *Pod) Containers(path string, includeInit bool) ([]string, error) {
 	ns, po := namespaced(path)
 
-	return r.resource.(k8s.Loggable).Containers(ns, po, includeInit)
+	return r.Resource.(k8s.Loggable).Containers(ns, po, includeInit)
 }
 
 // Logs tails a given container logs
 func (r *Pod) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (context.CancelFunc, error) {
-	req := r.resource.(k8s.Loggable).Logs(ns, n, co, lines, prev)
+	req := r.Resource.(k8s.Loggable).Logs(ns, n, co, lines, prev)
 	ctx, cancel := context.WithCancel(context.TODO())
 	req.Context(ctx)
 
@@ -155,15 +155,15 @@ func (r *Pod) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (c
 
 // List resources for a given namespace.
 func (r *Pod) List(ns string) (Columnars, error) {
-	pods, err := r.resource.List(ns)
+	pods, err := r.Resource.List(ns)
 	if err != nil {
 		return nil, err
 	}
 
 	mx := make(k8s.PodsMetrics, len(pods))
-	if r.metricServer.HasMetrics() {
-		pmx, _ := r.metricServer.FetchPodsMetrics(ns)
-		r.metricServer.PodsMetrics(pmx, mx)
+	if r.MetricsServer.HasMetrics() {
+		pmx, _ := r.MetricsServer.FetchPodsMetrics(ns)
+		r.MetricsServer.PodsMetrics(pmx, mx)
 	}
 
 	cc := make(Columnars, 0, len(pods))

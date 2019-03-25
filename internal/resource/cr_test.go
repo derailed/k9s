@@ -14,9 +14,23 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewClusterRoleListWithArgs(ns string, r *resource.ClusterRole) resource.List {
+	return resource.NewList(resource.NotNamespaced, "clusterrole", r, resource.CRUDAccess|resource.DescribeAccess)
+}
+
+func NewClusterRoleWithArgs(mc resource.Connection, res resource.Cruder) *resource.ClusterRole {
+	r := &resource.ClusterRole{Base: resource.NewBase(mc, res)}
+	r.Factory = r
+	return r
+}
+
 func TestCRListAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+
 	ns := "blee"
-	l := resource.NewClusterRoleList(resource.AllNamespaces)
+	r := NewClusterRoleWithArgs(mc, mr)
+	l := NewClusterRoleListWithArgs(resource.AllNamespaces, r)
 	l.SetNamespace(ns)
 
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
@@ -24,14 +38,6 @@ func TestCRListAccess(t *testing.T) {
 	for _, a := range []int{resource.GetAccess, resource.ListAccess, resource.DeleteAccess, resource.ViewAccess, resource.EditAccess} {
 		assert.True(t, l.Access(a))
 	}
-}
-
-func TestCRHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "AGE"}, newClusterRole().Header(resource.DefaultNamespace))
-}
-
-func TestCRHeaderAllNS(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "AGE"}, newClusterRole().Header(resource.AllNamespaces))
 }
 
 func TestCRFields(t *testing.T) {
@@ -45,32 +51,32 @@ func TestCRFieldsAllNS(t *testing.T) {
 }
 
 func TestCRMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sCR(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sCR(), nil)
+	cr := NewClusterRoleWithArgs(mc, mr)
+	ma, err := cr.Marshal("blee/fred")
 
-	cm := resource.NewClusterRoleWithArgs(ca)
-	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
-	assert.Equal(t, crYaml(), ma)
+	assert.Equal(t, mrYaml(), ma)
 }
 
 func TestCRListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sCR()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sCR()}, nil)
-
-	l := resource.NewClusterRoleListWithArgs("-", resource.NewClusterRoleWithArgs(ca))
-	// Make sure we can get deltas!
+	l := NewClusterRoleListWithArgs("-", NewClusterRoleWithArgs(mc, mr))
+	// Make sure we mcn get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	mr.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
@@ -102,7 +108,8 @@ func k8sCR() *rbacv1.ClusterRole {
 }
 
 func newClusterRole() resource.Columnar {
-	return resource.NewClusterRole().NewInstance(k8sCR())
+	conn := NewMockConnection()
+	return resource.NewClusterRole(conn).New(k8sCR())
 }
 
 func testTime() time.Time {
@@ -113,7 +120,7 @@ func testTime() time.Time {
 	return t
 }
 
-func crYaml() string {
+func mrYaml() string {
 	return `apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:

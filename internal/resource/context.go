@@ -5,10 +5,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// SwitchableRes represents a resource that can be switched.
-type SwitchableRes interface {
-	k8s.Connection
-	k8s.ContextRes
+// SwitchableResource represents a resource that can be switched.
+type SwitchableResource interface {
+	k8s.Cruder
+	k8s.Switchable
 }
 
 // Context tracks a kubernetes resource.
@@ -19,12 +19,12 @@ type Context struct {
 
 // NewContextList returns a new resource list.
 func NewContextList(c k8s.Connection, ns string) List {
-	return newList(NotNamespaced, "ctx", NewContext(c), SwitchAccess)
+	return NewList(NotNamespaced, "ctx", NewContext(c), SwitchAccess)
 }
 
 // NewContext instantiates a new Context.
 func NewContext(c k8s.Connection) *Context {
-	ctx := &Context{&Base{connection: c, resource: k8s.NewContext(c)}, nil}
+	ctx := &Context{Base: NewBase(c, k8s.NewContext(c))}
 	ctx.Factory = ctx
 
 	return ctx
@@ -32,7 +32,7 @@ func NewContext(c k8s.Connection) *Context {
 
 // New builds a new Context instance from a k8s resource.
 func (r *Context) New(i interface{}) Columnar {
-	c := NewContext(r.connection)
+	c := NewContext(r.Connection)
 	switch instance := i.(type) {
 	case *k8s.NamedContext:
 		c.instance = instance
@@ -48,7 +48,7 @@ func (r *Context) New(i interface{}) Columnar {
 
 // Switch out current context.
 func (r *Context) Switch(c string) error {
-	return r.resource.(k8s.ContextRes).Switch(c)
+	return r.Resource.(SwitchableResource).Switch(c)
 }
 
 // Marshal the resource to yaml.

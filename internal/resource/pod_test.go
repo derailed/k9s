@@ -1,6 +1,7 @@
 package resource_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -9,11 +10,26 @@ import (
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
+func NewPodListWithArgs(ns string, r *resource.Pod) resource.List {
+	return resource.NewList(ns, "po", r, resource.AllVerbsAccess|resource.DescribeAccess)
+}
+
+func NewPodWithArgs(conn k8s.Connection, res resource.Cruder, mx resource.MetricsServer) *resource.Pod {
+	r := &resource.Pod{Base: resource.NewBase(conn, res), MetricsServer: mx}
+	r.Factory = r
+	return r
+}
+
 func TestPodListAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	mx := NewMockMetricsServer()
+
 	ns := "blee"
-	l := resource.NewPodList(resource.AllNamespaces)
+	l := NewPodListWithArgs(resource.AllNamespaces, NewPodWithArgs(mc, mr, mx))
 	l.SetNamespace(ns)
 
 	assert.Equal(t, "blee", l.GetNamespace())
@@ -23,56 +39,51 @@ func TestPodListAccess(t *testing.T) {
 	}
 }
 
-func TestPodHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "READY", "STATUS", "RESTARTS", "CPU", "MEM", "IP", "NODE", "QOS", "AGE"}, newPod().Header(resource.DefaultNamespace))
-}
-
 func TestPodFields(t *testing.T) {
 	r := newPod().Fields("blee")
 	assert.Equal(t, resource.Pad("fred", 42), r[0])
 }
 
 func TestPodMarshal(t *testing.T) {
-	setup(t)
-
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sPod(), nil)
 	mx := NewMockMetricsServer()
-	// metrics := make(k8s.PodsMetrics, 1)
-	// m.When(mx.PodsMetrics([]mv1beta1.PodMetrics{}, metrics)).thenReturn()
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sPod(), nil)
 
-	cm := resource.NewPodWithArgs(ca, mx)
+	cm := NewPodWithArgs(mc, mr, mx)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, poYaml(), ma)
 }
 
 func TestPodListData(t *testing.T) {
-	setup(t)
-
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sPod()}, nil)
 	mx := NewMockMetricsServer()
-	// m.When(mx.PodsMetrics("")).ThenReturn(map[string]k8s.Metric{"fred": {}}, nil)
-	ca := NewMockCaller()
-	m.When(ca.List("")).ThenReturn(k8s.Collection{*k8sPod()}, nil)
+	m.When(mx.HasMetrics()).ThenReturn(true)
+	m.When(mx.FetchPodsMetrics("blee")).
+		ThenReturn([]mv1beta1.PodMetrics{makeMxPod("fred", "100m", "20Mi")}, nil)
 
-	l := resource.NewPodListWithArgs("", resource.NewPodWithArgs(ca, mx))
-	// Make sure we can get deltas!
+	l := NewPodListWithArgs("blee", NewPodWithArgs(mc, mr, mx))
+	// Make sure we mcn get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List(resource.AllNamespaces)
+	mr.VerifyWasCalled(m.Times(2)).List("blee")
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
-	assert.Equal(t, resource.AllNamespaces, l.GetNamespace())
+	assert.Equal(t, "blee", l.GetNamespace())
 	row := td.Rows["blee/fred"]
-	assert.Equal(t, 11, len(row.Deltas))
+	assert.Equal(t, 10, len(row.Deltas))
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}
-	assert.Equal(t, resource.Row{"blee"}, row.Fields[:1])
+	assert.Equal(t, "fred", strings.TrimSpace(row.Fields[:1][0]))
 }
 
 // Helpers...
@@ -131,7 +142,9 @@ func k8sPod() *v1.Pod {
 }
 
 func newPod() resource.Columnar {
-	return resource.NewPod().NewInstance(k8sPod())
+	mc := NewMockConnection()
+	mx := NewMockMetricsServer()
+	return resource.NewPod(mc, mx).New(k8sPod())
 }
 
 func poYaml() string {
@@ -174,4 +187,18 @@ status:
         startedAt: null
   phase: Running
 `
+}
+
+func makeMxPod(name, cpu, mem string) mv1beta1.PodMetrics {
+	return mv1beta1.PodMetrics{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: "default",
+		},
+		Containers: []mv1beta1.ContainerMetrics{
+			{Usage: makeRes(cpu, mem)},
+			{Usage: makeRes(cpu, mem)},
+			{Usage: makeRes(cpu, mem)},
+		},
+	}
 }

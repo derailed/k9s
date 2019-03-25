@@ -16,7 +16,7 @@ type RoleBinding struct {
 
 // NewRoleBindingList returns a new resource list.
 func NewRoleBindingList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		ns,
 		"rolebinding",
 		NewRoleBinding(c),
@@ -26,7 +26,7 @@ func NewRoleBindingList(c k8s.Connection, ns string) List {
 
 // NewRoleBinding instantiates a new RoleBinding.
 func NewRoleBinding(c k8s.Connection) *RoleBinding {
-	r := &RoleBinding{&Base{connection: c, resource: k8s.NewRoleBinding(c)}, nil}
+	r := &RoleBinding{&Base{Connection: c, Resource: k8s.NewRoleBinding(c)}, nil}
 	r.Factory = r
 
 	return r
@@ -34,7 +34,7 @@ func NewRoleBinding(c k8s.Connection) *RoleBinding {
 
 // New builds a new RoleBinding instance from a k8s resource.
 func (r *RoleBinding) New(i interface{}) Columnar {
-	c := NewRoleBinding(r.connection)
+	c := NewRoleBinding(r.Connection)
 	switch instance := i.(type) {
 	case *v1.RoleBinding:
 		c.instance = instance
@@ -51,7 +51,7 @@ func (r *RoleBinding) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *RoleBinding) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

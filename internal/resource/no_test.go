@@ -14,9 +14,23 @@ import (
 	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
+func NewNodeListWithArgs(ns string, r *resource.Node) resource.List {
+	return resource.NewList(resource.NotNamespaced, "no", r, resource.ViewAccess|resource.DescribeAccess)
+}
+
+func NewNodeWithArgs(conn k8s.Connection, res resource.Cruder, mx resource.MetricsServer) *resource.Node {
+	r := &resource.Node{Base: resource.NewBase(conn, res), MetricsServer: mx}
+	r.Factory = r
+	return r
+}
+
 func TestNodeListAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	mx := NewMockMetricsServer()
+
 	ns := "blee"
-	l := resource.NewNodeList(resource.AllNamespaces)
+	l := NewNodeListWithArgs(resource.AllNamespaces, NewNodeWithArgs(mc, mr, mx))
 	l.SetNamespace(ns)
 
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
@@ -32,46 +46,42 @@ func TestNodeFields(t *testing.T) {
 }
 
 func TestNodeMarshal(t *testing.T) {
-	setup(t)
-
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sNode(), nil)
 	mx := NewMockMetricsServer()
-	// m.When(mx.NodesMetrics([]v1.Node{*k8sNode()})).
-	// 	ThenReturn(map[string]k8s.RawMetric{"fred": {}}, nil)
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sNode(), nil)
 
-	cm := resource.NewNodeWithArgs(ca, mx)
+	cm := NewNodeWithArgs(mc, mr, mx)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, noYaml(), ma)
 }
 
 func TestNodeListData(t *testing.T) {
-	setup(t)
-
-	mockServer := NewMockMetricsServer()
-	m.When(mockServer.HasMetrics()).ThenReturn(true)
-	m.When(mockServer.FetchNodesMetrics()).
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List("-")).ThenReturn(k8s.Collection{*k8sNode()}, nil)
+	mx := NewMockMetricsServer()
+	m.When(mx.HasMetrics()).ThenReturn(true)
+	m.When(mx.FetchNodesMetrics()).
 		ThenReturn([]mv1beta1.NodeMetrics{makeMxNode("fred", "100m", "100Mi")}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List("-")).ThenReturn(k8s.Collection{*k8sNode()}, nil)
-
-	l := resource.NewNodeListWithArgs("", resource.NewNodeWithArgs(ca, mockServer))
-	// Make sure we can get deltas!
+	l := NewNodeListWithArgs("-", NewNodeWithArgs(mc, mr, mx))
+	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List("-")
+	mr.VerifyWasCalled(m.Times(2)).List("-")
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
 	row, ok := td.Rows["fred"]
 	assert.True(t, ok)
-	assert.Equal(t, 12, len(row.Deltas))
+	assert.Equal(t, 14, len(row.Deltas))
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}
@@ -115,7 +125,9 @@ func makeRes(c, m string) v1.ResourceList {
 }
 
 func newNode() resource.Columnar {
-	return resource.NewNode().NewInstance(k8sNode())
+	mc := NewMockConnection()
+	mx := NewMockMetricsServer()
+	return resource.NewNode(mc, mx).New(k8sNode())
 }
 
 func noYaml() string {

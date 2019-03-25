@@ -11,9 +11,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewServiceListWithArgs(ns string, r *resource.Service) resource.List {
+	return resource.NewList(ns, "svc", r, resource.AllVerbsAccess|resource.DescribeAccess)
+}
+
+func NewServiceWithArgs(conn k8s.Connection, res resource.Cruder) *resource.Service {
+	r := &resource.Service{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestSvcListAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+
 	ns := "blee"
-	l := resource.NewServiceList(resource.AllNamespaces)
+	l := NewServiceListWithArgs(resource.AllNamespaces, NewServiceWithArgs(mc, mr))
 	l.SetNamespace(ns)
 
 	assert.Equal(t, l.GetNamespace(), ns)
@@ -57,32 +70,30 @@ func TestSvcFields(t *testing.T) {
 }
 
 func TestSVCMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sSVC(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sSVC(), nil)
-
-	cm := resource.NewServiceWithArgs(ca)
+	cm := NewServiceWithArgs(mc, mr)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, svcYaml(), ma)
 }
 
 func TestSVCListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sSVC()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List("blee")).ThenReturn(k8s.Collection{*k8sSVC()}, nil)
-
-	l := resource.NewServiceListWithArgs("blee", resource.NewServiceWithArgs(ca))
-	// Make sure we can get deltas!
+	l := NewServiceListWithArgs("blee", NewServiceWithArgs(mc, mr))
+	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List("blee")
+	mr.VerifyWasCalled(m.Times(2)).List("blee")
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, "blee", l.GetNamespace())
@@ -120,7 +131,8 @@ func k8sSVC() *v1.Service {
 }
 
 func newSvc() resource.Columnar {
-	return resource.NewService().NewInstance(k8sSVC())
+	mc := NewMockConnection()
+	return resource.NewService(mc).New(k8sSVC())
 }
 
 func svcHeader() resource.Row {

@@ -16,7 +16,7 @@ type ReplicationController struct {
 
 // NewReplicationControllerList returns a new resource list.
 func NewReplicationControllerList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		ns,
 		"rc",
 		NewReplicationController(c),
@@ -26,7 +26,7 @@ func NewReplicationControllerList(c k8s.Connection, ns string) List {
 
 // NewReplicationController instantiates a new ReplicationController.
 func NewReplicationController(c k8s.Connection) *ReplicationController {
-	r := &ReplicationController{&Base{connection: c, resource: k8s.NewReplicationController(c)}, nil}
+	r := &ReplicationController{&Base{Connection: c, Resource: k8s.NewReplicationController(c)}, nil}
 	r.Factory = r
 
 	return r
@@ -34,7 +34,7 @@ func NewReplicationController(c k8s.Connection) *ReplicationController {
 
 // New builds a new ReplicationController instance from a k8s resource.
 func (r *ReplicationController) New(i interface{}) Columnar {
-	c := NewReplicationController(r.connection)
+	c := NewReplicationController(r.Connection)
 	switch instance := i.(type) {
 	case *v1.ReplicationController:
 		c.instance = instance
@@ -51,7 +51,7 @@ func (r *ReplicationController) New(i interface{}) Columnar {
 // Marshal a deployment given a namespaced name.
 func (r *ReplicationController) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

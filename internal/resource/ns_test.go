@@ -11,9 +11,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewNamespaceListWithArgs(ns string, r *resource.Namespace) resource.List {
+	return resource.NewList(resource.NotNamespaced, "ns", r, resource.CRUDAccess|resource.DescribeAccess)
+}
+
+func NewNamespaceWithArgs(conn k8s.Connection, res resource.Cruder) *resource.Namespace {
+	r := &resource.Namespace{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestNamespaceListAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+
 	ns := "blee"
-	l := resource.NewNamespaceList(resource.AllNamespaces)
+	l := NewNamespaceListWithArgs(resource.AllNamespaces, NewNamespaceWithArgs(mc, mr))
 	l.SetNamespace(ns)
 
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
@@ -23,42 +36,37 @@ func TestNamespaceListAccess(t *testing.T) {
 	}
 }
 
-func TestNamespaceHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "STATUS", "AGE"}, newNamespace().Header(resource.DefaultNamespace))
-}
-
 func TestNamespaceFields(t *testing.T) {
 	r := newNamespace().Fields("blee")
 	assert.Equal(t, "fred", r[0])
 }
 
 func TestNamespaceMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("", "fred")).ThenReturn(k8sNamespace(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("", "fred")).ThenReturn(k8sNamespace(), nil)
-
-	cm := resource.NewNamespaceWithArgs(ca)
+	cm := NewNamespaceWithArgs(mc, mr)
 	ma, err := cm.Marshal("fred")
-	ca.VerifyWasCalledOnce().Get("", "fred")
+
+	mr.VerifyWasCalledOnce().Get("", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, nsYaml(), ma)
 }
 
 func TestNamespaceListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sNamespace()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sNamespace()}, nil)
-
-	l := resource.NewNamespaceListWithArgs("-", resource.NewNamespaceWithArgs(ca))
-	// Make sure we can get deltas!
+	l := NewNamespaceListWithArgs("-", NewNamespaceWithArgs(mc, mr))
+	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	mr.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
@@ -83,7 +91,8 @@ func k8sNamespace() *v1.Namespace {
 }
 
 func newNamespace() resource.Columnar {
-	return resource.NewNamespace().NewInstance(k8sNamespace())
+	mc := NewMockConnection()
+	return resource.NewNamespace(mc).New(k8sNamespace())
 }
 
 func nsYaml() string {

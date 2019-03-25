@@ -3,17 +3,33 @@ package resource_test
 import (
 	"testing"
 
+	// 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
+
+	// 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewEndpointsListWithArgs(ns string, r *resource.Endpoints) resource.List {
+	return resource.NewList(ns, "ep", r, resource.AllVerbsAccess|resource.DescribeAccess)
+}
+
+func NewEndpointsWithArgs(conn k8s.Connection, res resource.Cruder) *resource.Endpoints {
+	r := &resource.Endpoints{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestEndpointsListAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+
 	ns := "blee"
-	l := resource.NewEndpointsList(resource.AllNamespaces)
+	l := NewEndpointsListWithArgs(resource.AllNamespaces, NewEndpointsWithArgs(mc, mr))
 	l.SetNamespace(ns)
 
 	assert.Equal(t, "blee", l.GetNamespace())
@@ -23,42 +39,31 @@ func TestEndpointsListAccess(t *testing.T) {
 	}
 }
 
-func TestEndpointsHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "ENDPOINTS", "AGE"}, newEndpoints().Header(resource.DefaultNamespace))
-}
-
-func TestEndpointsFields(t *testing.T) {
-	r := newEndpoints().Fields("blee")
-	assert.Equal(t, "fred", r[0])
-}
-
 func TestEndpointsMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sEndpoints(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sEndpoints(), nil)
-
-	cm := resource.NewEndpointsWithArgs(ca)
+	cm := NewEndpointsWithArgs(mc, mr)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, epYaml(), ma)
 }
 
 func TestEndpointsListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sEndpoints()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sEndpoints()}, nil)
-
-	l := resource.NewEndpointsListWithArgs("-", resource.NewEndpointsWithArgs(ca))
-	// Make sure we can get deltas!
+	l := NewEndpointsListWithArgs("-", NewEndpointsWithArgs(mc, mr))
+	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	mr.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
@@ -93,7 +98,8 @@ func k8sEndpoints() *v1.Endpoints {
 }
 
 func newEndpoints() resource.Columnar {
-	return resource.NewEndpoints().NewInstance(k8sEndpoints())
+	mc := NewMockConnection()
+	return resource.NewEndpoints(mc).New(k8sEndpoints())
 }
 
 func epYaml() string {

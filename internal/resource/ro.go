@@ -16,7 +16,7 @@ type Role struct {
 
 // NewRoleList returns a new resource list.
 func NewRoleList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		ns,
 		"role",
 		NewRole(c),
@@ -26,7 +26,7 @@ func NewRoleList(c k8s.Connection, ns string) List {
 
 // NewRole instantiates a new Role.
 func NewRole(c k8s.Connection) *Role {
-	r := &Role{&Base{connection: c, resource: k8s.NewRole(c)}, nil}
+	r := &Role{&Base{Connection: c, Resource: k8s.NewRole(c)}, nil}
 	r.Factory = r
 
 	return r
@@ -34,7 +34,7 @@ func NewRole(c k8s.Connection) *Role {
 
 // New builds a new Role instance from a k8s resource.
 func (r *Role) New(i interface{}) Columnar {
-	c := NewRole(r.connection)
+	c := NewRole(r.Connection)
 	switch instance := i.(type) {
 	case *v1.Role:
 		c.instance = instance
@@ -51,7 +51,7 @@ func (r *Role) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *Role) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

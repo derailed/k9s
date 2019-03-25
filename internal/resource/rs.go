@@ -16,7 +16,7 @@ type ReplicaSet struct {
 
 // NewReplicaSetList returns a new resource list.
 func NewReplicaSetList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		ns,
 		"rs",
 		NewReplicaSet(c),
@@ -26,7 +26,7 @@ func NewReplicaSetList(c k8s.Connection, ns string) List {
 
 // NewReplicaSet instantiates a new ReplicaSet.
 func NewReplicaSet(c k8s.Connection) *ReplicaSet {
-	r := &ReplicaSet{&Base{connection: c, resource: k8s.NewReplicaSet(c)}, nil}
+	r := &ReplicaSet{&Base{Connection: c, Resource: k8s.NewReplicaSet(c)}, nil}
 	r.Factory = r
 
 	return r
@@ -34,7 +34,7 @@ func NewReplicaSet(c k8s.Connection) *ReplicaSet {
 
 // New builds a new ReplicaSet instance from a k8s resource.
 func (r *ReplicaSet) New(i interface{}) Columnar {
-	c := NewReplicaSet(r.connection)
+	c := NewReplicaSet(r.Connection)
 	switch instance := i.(type) {
 	case *v1.ReplicaSet:
 		c.instance = instance
@@ -51,7 +51,7 @@ func (r *ReplicaSet) New(i interface{}) Columnar {
 // Marshal a deployment given a namespaced name.
 func (r *ReplicaSet) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

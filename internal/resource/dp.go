@@ -16,7 +16,7 @@ type Deployment struct {
 
 // NewDeploymentList returns a new resource list.
 func NewDeploymentList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		ns,
 		"deploy",
 		NewDeployment(c),
@@ -26,7 +26,7 @@ func NewDeploymentList(c k8s.Connection, ns string) List {
 
 // NewDeployment instantiates a new Deployment.
 func NewDeployment(c k8s.Connection) *Deployment {
-	d := &Deployment{&Base{connection: c, resource: k8s.NewDeployment(c)}, nil}
+	d := &Deployment{&Base{Connection: c, Resource: k8s.NewDeployment(c)}, nil}
 	d.Factory = d
 
 	return d
@@ -34,7 +34,7 @@ func NewDeployment(c k8s.Connection) *Deployment {
 
 // New builds a new Deployment instance from a k8s resource.
 func (r *Deployment) New(i interface{}) Columnar {
-	c := NewDeployment(r.connection)
+	c := NewDeployment(r.Connection)
 	switch instance := i.(type) {
 	case *v1.Deployment:
 		c.instance = instance
@@ -51,7 +51,7 @@ func (r *Deployment) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *Deployment) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

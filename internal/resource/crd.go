@@ -18,7 +18,7 @@ type CRD struct {
 
 // NewCRDList returns a new resource list.
 func NewCRDList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		NotNamespaced,
 		"crd",
 		NewCRD(c),
@@ -28,7 +28,7 @@ func NewCRDList(c k8s.Connection, ns string) List {
 
 // NewCRD instantiates a new CRD.
 func NewCRD(c k8s.Connection) *CRD {
-	crd := &CRD{&Base{connection: c, resource: k8s.NewCRD(c)}, nil}
+	crd := &CRD{&Base{Connection: c, Resource: k8s.NewCRD(c)}, nil}
 	crd.Factory = crd
 
 	return crd
@@ -36,7 +36,7 @@ func NewCRD(c k8s.Connection) *CRD {
 
 // New builds a new CRD instance from a k8s resource.
 func (r *CRD) New(i interface{}) Columnar {
-	c := NewCRD(r.connection)
+	c := NewCRD(r.Connection)
 	switch instance := i.(type) {
 	case *unstructured.Unstructured:
 		c.instance = instance
@@ -54,7 +54,7 @@ func (r *CRD) New(i interface{}) Columnar {
 // Marshal a resource.
 func (r *CRD) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

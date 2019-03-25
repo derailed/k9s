@@ -107,7 +107,8 @@ func newRowEvent(a watch.EventType, f, d Row) *RowEvent {
 	return &RowEvent{Action: a, Fields: f, Deltas: d}
 }
 
-func newList(ns, name string, res Resource, verbs int) *list {
+// NewList returns a new resource list.
+func NewList(ns, name string, res Resource, verbs int) *list {
 	return &list{
 		namespace: ns,
 		name:      name,

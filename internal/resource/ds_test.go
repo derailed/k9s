@@ -11,9 +11,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewDaemonSetListWithArgs(ns string, r *resource.DaemonSet) resource.List {
+	return resource.NewList(ns, "ds", r, resource.AllVerbsAccess|resource.DescribeAccess)
+}
+
+func NewDaemonSetWithArgs(conn k8s.Connection, res resource.Cruder) *resource.DaemonSet {
+	r := &resource.DaemonSet{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestDSListAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+
 	ns := "blee"
-	l := resource.NewDaemonSetList(resource.AllNamespaces)
+	l := NewDaemonSetListWithArgs(resource.AllNamespaces, NewDaemonSetWithArgs(mc, mr))
 	l.SetNamespace(ns)
 
 	assert.Equal(t, "blee", l.GetNamespace())
@@ -23,45 +36,39 @@ func TestDSListAccess(t *testing.T) {
 	}
 }
 
-func TestDSHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "DESIRED", "CURRENT", "READY", "UP-TO-DATE", "AVAILABLE", "NODE_SELECTOR", "AGE"}, newDS().Header(resource.DefaultNamespace))
-}
-
 func TestDSFields(t *testing.T) {
 	r := newDS().Fields("blee")
 	assert.Equal(t, "fred", r[0])
 }
 
 func TestDSMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sDS(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sDS(), nil)
-
-	cm := resource.NewDaemonSetWithArgs(ca)
+	cm := NewDaemonSetWithArgs(mc, mr)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, dsYaml(), ma)
 }
 
 func TestDSListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sDS()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sDS()}, nil)
-
-	l := resource.NewDaemonSetListWithArgs("-", resource.NewDaemonSetWithArgs(ca))
+	l := NewDaemonSetListWithArgs("blee", NewDaemonSetWithArgs(mc, mr))
 	// Make sure we can get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	mr.VerifyWasCalled(m.Times(2)).List("blee")
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
-	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
+	assert.Equal(t, "blee", l.GetNamespace())
 	row := td.Rows["blee/fred"]
 	assert.Equal(t, 8, len(row.Deltas))
 	for _, d := range row.Deltas {
@@ -94,7 +101,8 @@ func k8sDS() *extv1beta1.DaemonSet {
 }
 
 func newDS() resource.Columnar {
-	return resource.NewDaemonSet().NewInstance(k8sDS())
+	mc := NewMockConnection()
+	return resource.NewDaemonSet(mc).New(k8sDS())
 }
 
 func dsYaml() string {

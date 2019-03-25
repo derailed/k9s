@@ -112,6 +112,21 @@ func (mock *MockClusterMeta) HasMetrics() bool {
 	return ret0
 }
 
+func (mock *MockClusterMeta) IsNamespaced(_param0 string) bool {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockClusterMeta().")
+	}
+	params := []pegomock.Param{_param0}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("IsNamespaced", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
+	var ret0 bool
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(bool)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockClusterMeta) MXDial() (*versioned.Clientset, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockClusterMeta().")
@@ -156,6 +171,21 @@ func (mock *MockClusterMeta) RestConfigOrDie() *rest.Config {
 	if len(result) != 0 {
 		if result[0] != nil {
 			ret0 = result[0].(*rest.Config)
+		}
+	}
+	return ret0
+}
+
+func (mock *MockClusterMeta) SupportsResource(_param0 string) bool {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockClusterMeta().")
+	}
+	params := []pegomock.Param{_param0}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("SupportsResource", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
+	var ret0 bool
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(bool)
 		}
 	}
 	return ret0
@@ -342,6 +372,33 @@ func (c *ClusterMeta_HasMetrics_OngoingVerification) GetCapturedArguments() {
 func (c *ClusterMeta_HasMetrics_OngoingVerification) GetAllCapturedArguments() {
 }
 
+func (verifier *VerifierClusterMeta) IsNamespaced(_param0 string) *ClusterMeta_IsNamespaced_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IsNamespaced", params, verifier.timeout)
+	return &ClusterMeta_IsNamespaced_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type ClusterMeta_IsNamespaced_OngoingVerification struct {
+	mock              *MockClusterMeta
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *ClusterMeta_IsNamespaced_OngoingVerification) GetCapturedArguments() string {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *ClusterMeta_IsNamespaced_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+	}
+	return
+}
+
 func (verifier *VerifierClusterMeta) MXDial() *ClusterMeta_MXDial_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "MXDial", params, verifier.timeout)
@@ -391,6 +448,33 @@ func (c *ClusterMeta_RestConfigOrDie_OngoingVerification) GetCapturedArguments()
 }
 
 func (c *ClusterMeta_RestConfigOrDie_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierClusterMeta) SupportsResource(_param0 string) *ClusterMeta_SupportsResource_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SupportsResource", params, verifier.timeout)
+	return &ClusterMeta_SupportsResource_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type ClusterMeta_SupportsResource_OngoingVerification struct {
+	mock              *MockClusterMeta
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *ClusterMeta_SupportsResource_OngoingVerification) GetCapturedArguments() string {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *ClusterMeta_SupportsResource_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+	}
+	return
 }
 
 func (verifier *VerifierClusterMeta) SwitchContextOrDie(_param0 string) *ClusterMeta_SwitchContextOrDie_OngoingVerification {

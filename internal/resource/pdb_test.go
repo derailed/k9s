@@ -11,9 +11,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewPDBListWithArgs(ns string, r *resource.PodDisruptionBudget) resource.List {
+	return resource.NewList(ns, "pdb", r, resource.AllVerbsAccess|resource.DescribeAccess)
+}
+
+func NewPDBWithArgs(conn k8s.Connection, res resource.Cruder) *resource.PodDisruptionBudget {
+	r := &resource.PodDisruptionBudget{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestPDBListAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+
 	ns := "blee"
-	l := resource.NewPDBList(resource.AllNamespaces)
+	l := NewPDBListWithArgs(resource.AllNamespaces, NewPDBWithArgs(mc, mr))
 	l.SetNamespace(ns)
 
 	assert.Equal(t, ns, l.GetNamespace())
@@ -23,55 +36,39 @@ func TestPDBListAccess(t *testing.T) {
 	}
 }
 
-func TestPDBHeader(t *testing.T) {
-	row := resource.Row{
-		"NAME",
-		"MIN AVAILABLE",
-		"MAX_ UNAVAILABLE",
-		"ALLOWED DISRUPTIONS",
-		"CURRENT",
-		"DESIRED",
-		"EXPECTED",
-		"AGE",
-	}
-	assert.Equal(t, row, newPDB().Header(resource.DefaultNamespace))
-}
-
 func TestPDBFields(t *testing.T) {
 	r := newPDB().Fields("blee")
 	assert.Equal(t, "fred", r[0])
 }
 
 func TestPDBMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sPDB(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sPDB(), nil)
-
-	cm := resource.NewPDBWithArgs(ca)
+	cm := NewPDBWithArgs(mc, mr)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, pdbYaml(), ma)
 }
 
 func TestPDBListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sPDB()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sPDB()}, nil)
-
-	l := resource.NewPDBListWithArgs("-", resource.NewPDBWithArgs(ca))
-	// Make sure we can get deltas!
+	l := NewPDBListWithArgs("blee", NewPDBWithArgs(mc, mr))
+	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	mr.VerifyWasCalled(m.Times(2)).List("blee")
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
-	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
+	assert.Equal(t, "blee", l.GetNamespace())
 	row := td.Rows["blee/fred"]
 	assert.Equal(t, 8, len(row.Deltas))
 	for _, d := range row.Deltas {
@@ -94,7 +91,8 @@ func k8sPDB() *v1beta1.PodDisruptionBudget {
 }
 
 func newPDB() resource.Columnar {
-	return resource.NewPDB().NewInstance(k8sPDB())
+	mc := NewMockConnection()
+	return resource.NewPDB(mc).New(k8sPDB())
 }
 
 func pdbYaml() string {

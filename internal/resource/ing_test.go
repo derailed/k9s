@@ -11,9 +11,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewIngressListWithArgs(ns string, r *resource.Ingress) resource.List {
+	return resource.NewList(ns, "ing", r, resource.AllVerbsAccess|resource.DescribeAccess)
+}
+
+func NewIngressWithArgs(conn k8s.Connection, res resource.Cruder) *resource.Ingress {
+	r := &resource.Ingress{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestIngressListAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+
 	ns := "blee"
-	l := resource.NewIngressList(resource.AllNamespaces)
+	l := NewIngressListWithArgs(resource.AllNamespaces, NewIngressWithArgs(mc, mr))
 	l.SetNamespace(ns)
 
 	assert.Equal(t, "blee", l.GetNamespace())
@@ -23,45 +36,39 @@ func TestIngressListAccess(t *testing.T) {
 	}
 }
 
-func TestIngressHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "HOSTS", "ADDRESS", "PORT", "AGE"}, newIngress().Header(resource.DefaultNamespace))
-}
-
 func TestIngressFields(t *testing.T) {
 	r := newIngress().Fields("blee")
 	assert.Equal(t, "fred", r[0])
 }
 
 func TestIngressMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sIngress(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sIngress(), nil)
-
-	cm := resource.NewIngressWithArgs(ca)
+	cm := NewIngressWithArgs(mc, mr)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, ingYaml(), ma)
 }
 
 func TestIngressListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sIngress()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sIngress()}, nil)
-
-	l := resource.NewIngressListWithArgs("-", resource.NewIngressWithArgs(ca))
-	// Make sure we can get deltas!
+	l := NewIngressListWithArgs("blee", NewIngressWithArgs(mc, mr))
+	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	mr.VerifyWasCalled(m.Times(2)).List("blee")
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
-	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
+	assert.Equal(t, "blee", l.GetNamespace())
 	row := td.Rows["blee/fred"]
 	assert.Equal(t, 5, len(row.Deltas))
 	for _, d := range row.Deltas {
@@ -88,7 +95,8 @@ func k8sIngress() *v1beta1.Ingress {
 }
 
 func newIngress() resource.Columnar {
-	return resource.NewIngress().NewInstance(k8sIngress())
+	mc := NewMockConnection()
+	return resource.NewIngress(mc).New(k8sIngress())
 }
 
 func ingYaml() string {

@@ -14,7 +14,7 @@ type Namespace struct {
 
 // NewNamespaceList returns a new resource list.
 func NewNamespaceList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		NotNamespaced,
 		"ns",
 		NewNamespace(c),
@@ -24,7 +24,7 @@ func NewNamespaceList(c k8s.Connection, ns string) List {
 
 // NewNamespace instantiates a new Namespace.
 func NewNamespace(c k8s.Connection) *Namespace {
-	n := &Namespace{&Base{connection: c, resource: k8s.NewNamespace(c)}, nil}
+	n := &Namespace{&Base{Connection: c, Resource: k8s.NewNamespace(c)}, nil}
 	n.Factory = n
 
 	return n
@@ -32,7 +32,7 @@ func NewNamespace(c k8s.Connection) *Namespace {
 
 // New builds a new Namespace instance from a k8s resource.
 func (r *Namespace) New(i interface{}) Columnar {
-	c := NewNamespace(r.connection)
+	c := NewNamespace(r.Connection)
 	switch instance := i.(type) {
 	case *v1.Namespace:
 		c.instance = instance
@@ -49,7 +49,7 @@ func (r *Namespace) New(i interface{}) Columnar {
 // Marshal a resource to yaml.
 func (r *Namespace) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		log.Error().Err(err)
 		return "", err

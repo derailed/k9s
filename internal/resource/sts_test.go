@@ -11,9 +11,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewStatefulSetListWithArgs(ns string, r *resource.StatefulSet) resource.List {
+	return resource.NewList(ns, "sts", r, resource.AllVerbsAccess|resource.DescribeAccess)
+}
+
+func NewStatefulSetWithArgs(conn k8s.Connection, res resource.Cruder) *resource.StatefulSet {
+	r := &resource.StatefulSet{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestStsListAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+
 	ns := "blee"
-	l := resource.NewStatefulSetList(resource.AllNamespaces)
+	l := NewStatefulSetListWithArgs(resource.AllNamespaces, NewStatefulSetWithArgs(mc, mr))
 	l.SetNamespace(ns)
 
 	assert.Equal(t, l.GetNamespace(), ns)
@@ -46,32 +59,31 @@ func TestStsFields(t *testing.T) {
 }
 
 func TestSTSMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sSTS(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sSTS(), nil)
-
-	cm := resource.NewStatefulSetWithArgs(ca)
+	cm := NewStatefulSetWithArgs(mc, mr)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, stsYaml(), ma)
 }
 
 func TestSTSListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sSTS()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List("blee")).ThenReturn(k8s.Collection{*k8sSTS()}, nil)
-
-	l := resource.NewStatefulSetListWithArgs("blee", resource.NewStatefulSetWithArgs(ca))
-	// Make sure we can get deltas!
+	l := NewStatefulSetListWithArgs("blee", NewStatefulSetWithArgs(mc, mr))
+	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List("blee")
+	mr.VerifyWasCalled(m.Times(2)).List("blee")
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, "blee", l.GetNamespace())
@@ -102,7 +114,8 @@ func k8sSTS() *v1.StatefulSet {
 }
 
 func newSts() resource.Columnar {
-	return resource.NewStatefulSet().NewInstance(k8sSTS())
+	mc := NewMockConnection()
+	return resource.NewStatefulSet(mc).New(k8sSTS())
 }
 
 func stsHeader() resource.Row {

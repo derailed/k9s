@@ -11,9 +11,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewPVListWithArgs(ns string, r *resource.PV) resource.List {
+	return resource.NewList(resource.NotNamespaced, "pv", r, resource.CRUDAccess|resource.DescribeAccess)
+}
+
+func NewPVWithArgs(conn k8s.Connection, res resource.Cruder) *resource.PV {
+	r := &resource.PV{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestPVListAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+
 	ns := "blee"
-	l := resource.NewPVList(resource.AllNamespaces)
+	l := NewPVListWithArgs(resource.AllNamespaces, NewPVWithArgs(mc, mr))
 	l.SetNamespace(ns)
 
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
@@ -23,42 +36,36 @@ func TestPVListAccess(t *testing.T) {
 	}
 }
 
-func TestPVHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "CAPACITY", "ACCESS MODES", "RECLAIM POLICY", "STATUS", "CLAIM", "STORAGECLASS", "REASON", "AGE"}, newPV().Header(resource.DefaultNamespace))
-}
-
 func TestPVFields(t *testing.T) {
 	r := newPV().Fields("blee")
 	assert.Equal(t, "fred", r[0])
 }
 
 func TestPVMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sPV(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sPV(), nil)
-
-	cm := resource.NewPVWithArgs(ca)
+	cm := NewPVWithArgs(mc, mr)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, pvYaml(), ma)
 }
 
 func TestPVListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sPV()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sPV()}, nil)
-
-	l := resource.NewPVListWithArgs("-", resource.NewPVWithArgs(ca))
-	// Make sure we can get deltas!
+	l := NewPVListWithArgs("-", NewPVWithArgs(mc, mr))
+	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	mr.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
@@ -84,7 +91,8 @@ func k8sPV() *v1.PersistentVolume {
 }
 
 func newPV() resource.Columnar {
-	return resource.NewPV().NewInstance(k8sPV())
+	mc := NewMockConnection()
+	return resource.NewPV(mc).New(k8sPV())
 }
 
 func pvYaml() string {

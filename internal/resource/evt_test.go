@@ -11,20 +11,29 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestEventListAccess(t *testing.T) {
+func NewEventListWithArgs(ns string, r *resource.Event) resource.List {
+	return resource.NewList(ns, "ev", r, resource.AllVerbsAccess|resource.DescribeAccess)
+}
+
+func NewEventWithArgs(conn k8s.Connection, res resource.Cruder) *resource.Event {
+	r := &resource.Event{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
+func TestEventAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+
 	ns := "blee"
-	l := resource.NewEventList(resource.AllNamespaces)
+	l := NewEventListWithArgs(resource.AllNamespaces, NewEventWithArgs(mc, mr))
 	l.SetNamespace(ns)
 
 	assert.Equal(t, "blee", l.GetNamespace())
-	assert.Equal(t, "event", l.GetName())
+	assert.Equal(t, "ev", l.GetName())
 	for _, a := range []int{resource.ListAccess, resource.NamespaceAccess} {
 		assert.True(t, l.Access(a))
 	}
-}
-
-func TestEventHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "REASON", "SOURCE", "COUNT", "MESSAGE", "AGE"}, newEvent().Header(resource.DefaultNamespace))
 }
 
 func TestEventFields(t *testing.T) {
@@ -33,35 +42,33 @@ func TestEventFields(t *testing.T) {
 }
 
 func TestEventMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sEvent(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sEvent(), nil)
-
-	cm := resource.NewEventWithArgs(ca)
+	cm := NewEventWithArgs(mc, mr)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, evYaml(), ma)
 }
 
-func TestEventListData(t *testing.T) {
-	setup(t)
+func TestEventData(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sEvent()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sEvent()}, nil)
-
-	l := resource.NewEventListWithArgs("-", resource.NewEventWithArgs(ca))
-	// Make sure we can get deltas!
+	l := NewEventListWithArgs("blee", NewEventWithArgs(mc, mr))
+	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	mr.VerifyWasCalled(m.Times(2)).List("blee")
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
-	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
+	assert.Equal(t, "blee", l.GetNamespace())
 	row := td.Rows["blee/fred"]
 	assert.Equal(t, 6, len(row.Deltas))
 	for _, d := range row.Deltas {
@@ -86,7 +93,8 @@ func k8sEvent() *v1.Event {
 }
 
 func newEvent() resource.Columnar {
-	return resource.NewEvent().NewInstance(k8sEvent())
+	mc := NewMockConnection()
+	return resource.NewEvent(mc).New(k8sEvent())
 }
 
 func evYaml() string {

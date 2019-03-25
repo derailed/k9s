@@ -13,8 +13,6 @@ import (
 )
 
 func TestClusterVersion(t *testing.T) {
-	setup(t)
-
 	cIfc, mxIfc := NewMockClusterMeta(), NewMockMetricsServer()
 	m.When(cIfc.Version()).ThenReturn("1.2.3", nil)
 
@@ -23,8 +21,6 @@ func TestClusterVersion(t *testing.T) {
 }
 
 func TestClusterNoVersion(t *testing.T) {
-	setup(t)
-
 	cIfc, mxIfc := NewMockClusterMeta(), NewMockMetricsServer()
 	m.When(cIfc.Version()).ThenReturn("bad", fmt.Errorf("No data"))
 
@@ -33,8 +29,6 @@ func TestClusterNoVersion(t *testing.T) {
 }
 
 func TestClusterName(t *testing.T) {
-	setup(t)
-
 	cIfc, mxIfc := NewMockClusterMeta(), NewMockMetricsServer()
 	m.When(cIfc.ClusterName()).ThenReturn("fred")
 
@@ -43,8 +37,6 @@ func TestClusterName(t *testing.T) {
 }
 
 func TestClusterMetrics(t *testing.T) {
-	setup(t)
-
 	cIfc, mxIfc := NewMockClusterMeta(), NewMockMetricsServer()
 	m.When(mxIfc.ClusterLoad([]v1.Node{}, []mv1beta1.NodeMetrics{})).ThenReturn(clusterMetric())
 
@@ -54,7 +46,7 @@ func TestClusterMetrics(t *testing.T) {
 
 // Helpers...
 
-func setup(t *testing.T) {
+func TestUsingMocks(t *testing.T) {
 	m.RegisterMockTestingT(t)
 	m.RegisterMockFailHandler(func(m string, i ...int) {
 		fmt.Println("Boom!", m, i)

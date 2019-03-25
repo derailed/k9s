@@ -49,11 +49,16 @@ type (
 	Base struct {
 		Factory
 
-		connection Connection
+		Connection Connection
 		path       string
-		resource   Cruder
+		Resource   Cruder
 	}
 )
+
+// NewBase returns a new base
+func NewBase(c Connection, r Cruder) *Base {
+	return &Base{Connection: c, Resource: r}
+}
 
 // Name returns the resource namespaced name.
 func (b *Base) Name() string {
@@ -68,7 +73,7 @@ func (*Base) ExtFields() Properties {
 // Get a resource by name
 func (b *Base) Get(path string) (Columnar, error) {
 	ns, n := namespaced(path)
-	i, err := b.resource.Get(ns, n)
+	i, err := b.Resource.Get(ns, n)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +83,7 @@ func (b *Base) Get(path string) (Columnar, error) {
 
 // List all resources
 func (b *Base) List(ns string) (Columnars, error) {
-	ii, err := b.resource.List(ns)
+	ii, err := b.Resource.List(ns)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +120,7 @@ func (b *Base) Describe(kind, pa string, flags *genericclioptions.ConfigFlags) (
 func (b *Base) Delete(path string) error {
 	ns, n := namespaced(path)
 
-	return b.resource.Delete(ns, n)
+	return b.Resource.Delete(ns, n)
 }
 
 func (*Base) namespacedName(m metav1.ObjectMeta) string {

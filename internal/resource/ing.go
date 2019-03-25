@@ -17,7 +17,7 @@ type Ingress struct {
 
 // NewIngressList returns a new resource list.
 func NewIngressList(c k8s.Connection, ns string) List {
-	return newList(
+	return NewList(
 		ns,
 		"ing",
 		NewIngress(c),
@@ -27,7 +27,7 @@ func NewIngressList(c k8s.Connection, ns string) List {
 
 // NewIngress instantiates a new Ingress.
 func NewIngress(c k8s.Connection) *Ingress {
-	ing := &Ingress{&Base{connection: c, resource: k8s.NewIngress(c)}, nil}
+	ing := &Ingress{&Base{Connection: c, Resource: k8s.NewIngress(c)}, nil}
 	ing.Factory = ing
 
 	return ing
@@ -35,7 +35,7 @@ func NewIngress(c k8s.Connection) *Ingress {
 
 // New builds a new Ingress instance from a k8s resource.
 func (r *Ingress) New(i interface{}) Columnar {
-	c := NewIngress(r.connection)
+	c := NewIngress(r.Connection)
 	switch instance := i.(type) {
 	case *v1beta1.Ingress:
 		c.instance = instance
@@ -52,7 +52,7 @@ func (r *Ingress) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 func (r *Ingress) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
-	i, err := r.resource.Get(ns, n)
+	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
 	}

@@ -11,9 +11,22 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewDeploymentListWithArgs(ns string, r *resource.Deployment) resource.List {
+	return resource.NewList(ns, "deploy", r, resource.AllVerbsAccess|resource.DescribeAccess)
+}
+
+func NewDeploymentWithArgs(conn k8s.Connection, res resource.Cruder) *resource.Deployment {
+	r := &resource.Deployment{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestDeploymentListAccess(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+
 	ns := "blee"
-	l := resource.NewDeploymentList(resource.AllNamespaces)
+	l := NewDeploymentListWithArgs(resource.AllNamespaces, NewDeploymentWithArgs(mc, mr))
 	l.SetNamespace(ns)
 
 	assert.Equal(t, "blee", l.GetNamespace())
@@ -23,42 +36,37 @@ func TestDeploymentListAccess(t *testing.T) {
 	}
 }
 
-func TestDeploymentHeader(t *testing.T) {
-	assert.Equal(t, resource.Row{"NAME", "DESIRED", "CURRENT", "UP-TO-DATE", "AVAILABLE", "AGE"}, newDeployment().Header(resource.DefaultNamespace))
-}
-
 func TestDeploymentFields(t *testing.T) {
 	r := newDeployment().Fields("blee")
 	assert.Equal(t, "fred", r[0])
 }
 
 func TestDeploymentMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sDeployment(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sDeployment(), nil)
-
-	cm := resource.NewDeploymentWithArgs(ca)
+	cm := NewDeploymentWithArgs(mc, mr)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, dpYaml(), ma)
 }
 
 func TestDeploymentListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sDeployment()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sDeployment()}, nil)
-
-	l := resource.NewDeploymentListWithArgs("-", resource.NewDeploymentWithArgs(ca))
+	l := NewDeploymentListWithArgs("-", NewDeploymentWithArgs(mc, mr))
 	// Make sure we can get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	mr.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
@@ -87,7 +95,8 @@ func k8sDeployment() *appsv1.Deployment {
 }
 
 func newDeployment() resource.Columnar {
-	return resource.NewDeployment().NewInstance(k8sDeployment())
+	mc := NewMockConnection()
+	return resource.NewDeployment(mc).New(k8sDeployment())
 }
 
 func dpYaml() string {

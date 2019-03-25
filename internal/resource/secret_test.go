@@ -11,6 +11,16 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func NewSecretListWithArgs(ns string, r *resource.Secret) resource.List {
+	return resource.NewList(ns, "secret", r, resource.AllVerbsAccess|resource.DescribeAccess)
+}
+
+func NewSecretWithArgs(conn k8s.Connection, res resource.Cruder) *resource.Secret {
+	r := &resource.Secret{Base: resource.NewBase(conn, res)}
+	r.Factory = r
+	return r
+}
+
 func TestSecretHeader(t *testing.T) {
 	assert.Equal(t,
 		resource.Row{"NAME", "TYPE", "DATA", "AGE"},
@@ -41,93 +51,90 @@ func TestSecretFields(t *testing.T) {
 }
 
 func TestSecretGet(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sSecret(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sSecret(), nil)
-
-	cm := resource.NewSecretWithArgs(ca)
+	cm := NewSecretWithArgs(mc, mr)
 	ma, err := cm.Get("blee/fred")
+
 	assert.Nil(t, err)
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
-	assert.Equal(t, cm.NewInstance(k8sSecret()), ma)
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
+	assert.Equal(t, cm.New(k8sSecret()), ma)
 }
 
 func TestSecretList(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sSecret()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List("blee")).ThenReturn(k8s.Collection{*k8sSecret()}, nil)
-
-	cm := resource.NewSecretWithArgs(ca)
+	cm := NewSecretWithArgs(mc, mr)
 	ma, err := cm.List("blee")
+
 	assert.Nil(t, err)
-	ca.VerifyWasCalledOnce().List("blee")
-	assert.Equal(t, resource.Columnars{cm.NewInstance(k8sSecret())}, ma)
+	mr.VerifyWasCalledOnce().List("blee")
+	assert.Equal(t, resource.Columnars{cm.New(k8sSecret())}, ma)
 }
 
 func TestSecretDelete(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Delete("blee", "fred")).ThenReturn(nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Delete("blee", "fred")).ThenReturn(nil)
+	cm := NewSecretWithArgs(mc, mr)
 
-	cm := resource.NewSecretWithArgs(ca)
 	assert.Nil(t, cm.Delete("blee/fred"))
-	ca.VerifyWasCalledOnce().Delete("blee", "fred")
+	mr.VerifyWasCalledOnce().Delete("blee", "fred")
 }
 
 func TestSecretMarshal(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sSecret(), nil)
 
-	ca := NewMockCaller()
-	m.When(ca.Get("blee", "fred")).ThenReturn(k8sSecret(), nil)
-
-	cm := resource.NewSecretWithArgs(ca)
+	cm := NewSecretWithArgs(mc, mr)
 	ma, err := cm.Marshal("blee/fred")
-	ca.VerifyWasCalledOnce().Get("blee", "fred")
+
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
 	assert.Nil(t, err)
 	assert.Equal(t, secretYaml(), ma)
 }
 
 func TestSecretListHasName(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
 
-	ca := NewMockCaller()
-	l := resource.NewSecretListWithArgs("blee", resource.NewSecretWithArgs(ca))
+	l := NewSecretListWithArgs("blee", NewSecretWithArgs(mc, mr))
 	assert.Equal(t, "secret", l.GetName())
 }
 
 func TestSecretListHasNamespace(t *testing.T) {
-	setup(t)
-
-	ca := NewMockCaller()
-	l := resource.NewSecretListWithArgs("blee", resource.NewSecretWithArgs(ca))
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	l := NewSecretListWithArgs("blee", NewSecretWithArgs(mc, mr))
 	assert.Equal(t, "blee", l.GetNamespace())
 }
 
 func TestSecretListHasResource(t *testing.T) {
-	setup(t)
-
-	ca := NewMockCaller()
-	l := resource.NewSecretListWithArgs("blee", resource.NewSecretWithArgs(ca))
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	l := NewSecretListWithArgs("blee", NewSecretWithArgs(mc, mr))
 	assert.NotNil(t, l.Resource())
 }
 
 func TestSecretListData(t *testing.T) {
-	setup(t)
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sSecret()}, nil)
 
-	ca := NewMockCaller()
-	m.When(ca.List("blee")).ThenReturn(k8s.Collection{*k8sSecret()}, nil)
-
-	l := resource.NewSecretListWithArgs("blee", resource.NewSecretWithArgs(ca))
-	// Make sure we can get deltas!
+	l := NewSecretListWithArgs("blee", NewSecretWithArgs(mc, mr))
+	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
 		err := l.Reconcile()
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List("blee")
+	mr.VerifyWasCalled(m.Times(2)).List("blee")
 
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
@@ -144,7 +151,8 @@ func TestSecretListData(t *testing.T) {
 // Helpers...
 
 func newSecret() resource.Columnar {
-	return resource.NewSecret().NewInstance(k8sSecret())
+	mc := NewMockConnection()
+	return resource.NewSecret(mc).New(k8sSecret())
 }
 
 func k8sSecret() *v1.Secret {

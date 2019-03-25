@@ -82,6 +82,21 @@ func (mock *MockConnection) HasMetrics() bool {
 	return ret0
 }
 
+func (mock *MockConnection) IsNamespaced(_param0 string) bool {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockConnection().")
+	}
+	params := []pegomock.Param{_param0}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("IsNamespaced", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
+	var ret0 bool
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(bool)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockConnection) MXDial() (*versioned.Clientset, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")
@@ -126,6 +141,21 @@ func (mock *MockConnection) RestConfigOrDie() *rest.Config {
 	if len(result) != 0 {
 		if result[0] != nil {
 			ret0 = result[0].(*rest.Config)
+		}
+	}
+	return ret0
+}
+
+func (mock *MockConnection) SupportsResource(_param0 string) bool {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockConnection().")
+	}
+	params := []pegomock.Param{_param0}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("SupportsResource", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
+	var ret0 bool
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(bool)
 		}
 	}
 	return ret0
@@ -244,6 +274,33 @@ func (c *Connection_HasMetrics_OngoingVerification) GetCapturedArguments() {
 func (c *Connection_HasMetrics_OngoingVerification) GetAllCapturedArguments() {
 }
 
+func (verifier *VerifierConnection) IsNamespaced(_param0 string) *Connection_IsNamespaced_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IsNamespaced", params, verifier.timeout)
+	return &Connection_IsNamespaced_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Connection_IsNamespaced_OngoingVerification struct {
+	mock              *MockConnection
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Connection_IsNamespaced_OngoingVerification) GetCapturedArguments() string {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *Connection_IsNamespaced_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+	}
+	return
+}
+
 func (verifier *VerifierConnection) MXDial() *Connection_MXDial_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "MXDial", params, verifier.timeout)
@@ -293,6 +350,33 @@ func (c *Connection_RestConfigOrDie_OngoingVerification) GetCapturedArguments() 
 }
 
 func (c *Connection_RestConfigOrDie_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierConnection) SupportsResource(_param0 string) *Connection_SupportsResource_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SupportsResource", params, verifier.timeout)
+	return &Connection_SupportsResource_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Connection_SupportsResource_OngoingVerification struct {
+	mock              *MockConnection
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Connection_SupportsResource_OngoingVerification) GetCapturedArguments() string {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *Connection_SupportsResource_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+	}
+	return
 }
 
 func (verifier *VerifierConnection) SwitchContextOrDie(_param0 string) *Connection_SwitchContextOrDie_OngoingVerification {
