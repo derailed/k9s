@@ -16,6 +16,7 @@ type (
 		ContextName() string
 		ClusterName() string
 		UserName() string
+		FetchNodes() ([]v1.Node, error)
 	}
 
 	// MetricsServer gather metrics information from pods and nodes.
@@ -42,8 +43,8 @@ type (
 )
 
 // NewCluster returns a new cluster info resource.
-func NewCluster(c Connection, log *zerolog.Logger) *Cluster {
-	return NewClusterWithArgs(k8s.NewCluster(c, log), k8s.NewMetricsServer(c))
+func NewCluster(c Connection, log *zerolog.Logger, mx MetricsServer) *Cluster {
+	return NewClusterWithArgs(k8s.NewCluster(c, log), mx)
 }
 
 // NewClusterWithArgs for tests only!
@@ -81,21 +82,12 @@ func (c *Cluster) Metrics(nodes []v1.Node, nmx []mv1beta1.NodeMetrics) k8s.Clust
 	return c.mx.ClusterLoad(nodes, nmx)
 }
 
-// GetNodesMetrics fetch all nodes metrics.
-func (c *Cluster) GetNodesMetrics() ([]mv1beta1.NodeMetrics, error) {
+// FetchNodesMetrics fetch all nodes metrics.
+func (c *Cluster) FetchNodesMetrics() ([]mv1beta1.NodeMetrics, error) {
 	return c.mx.FetchNodesMetrics()
 }
 
-// GetNodes fetch all available nodes.
-func (c *Cluster) GetNodes() ([]v1.Node, error) {
-	nn, err := k8s.NewNode(c.api).List("")
-	if err != nil {
-		return nil, err
-	}
-	nodes := make([]v1.Node, 0, len(nn))
-	for _, n := range nn {
-		nodes = append(nodes, n.(v1.Node))
-	}
-
-	return nodes, nil
+// FetchNodes fetch all available nodes.
+func (c *Cluster) FetchNodes() ([]v1.Node, error) {
+	return c.api.FetchNodes()
 }

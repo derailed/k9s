@@ -7,6 +7,7 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 	api "k8s.io/client-go/tools/clientcmd/api"
 )
 
@@ -21,72 +22,102 @@ func NewContextWithArgs(c k8s.Connection, s resource.SwitchableResource) *resour
 }
 
 func TestCTXSwitch(t *testing.T) {
-	conn := NewMockConnection()
-	ca := NewMockSwitchableResource()
-	m.When(ca.Switch("fred")).ThenReturn(nil)
+	mc := NewMockConnection()
+	mr := NewMockSwitchableResource()
+	m.When(mr.Switch("fred")).ThenReturn(nil)
 
-	ctx := NewContextWithArgs(conn, ca)
+	ctx := NewContextWithArgs(mc, mr)
 	err := ctx.Switch("fred")
 
 	assert.Nil(t, err)
-	ca.VerifyWasCalledOnce().Switch("fred")
+	mr.VerifyWasCalledOnce().Switch("fred")
 }
 
 func TestCTXList(t *testing.T) {
-	conn := NewMockConnection()
-	ca := NewMockSwitchableResource()
-	m.When(ca.List("blee")).ThenReturn(k8s.Collection{*k8sNamedCTX()}, nil)
+	mc := NewMockConnection()
+	mr := NewMockSwitchableResource()
+	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sNamedCTX()}, nil)
 
-	ctx := NewContextWithArgs(conn, ca)
+	ctx := NewContextWithArgs(mc, mr)
 	cc, err := ctx.List("blee")
 
 	assert.Nil(t, err)
 	assert.Equal(t, resource.Columnars{ctx.New(k8sNamedCTX())}, cc)
-	ca.VerifyWasCalledOnce().List("blee")
+	mr.VerifyWasCalledOnce().List("blee")
 }
 
 func TestCTXDelete(t *testing.T) {
-	conn := NewMockConnection()
-	ca := NewMockSwitchableResource()
-	m.When(ca.Delete("", "fred")).ThenReturn(nil)
+	mc := NewMockConnection()
+	mr := NewMockSwitchableResource()
+	m.When(mr.Delete("", "fred")).ThenReturn(nil)
 
-	ctx := NewContextWithArgs(conn, ca)
+	ctx := NewContextWithArgs(mc, mr)
 
 	assert.Nil(t, ctx.Delete("fred"))
-	ca.VerifyWasCalledOnce().Delete("", "fred")
+	mr.VerifyWasCalledOnce().Delete("", "fred")
 }
 
 func TestCTXListHasName(t *testing.T) {
-	conn := NewMockConnection()
-	ca := NewMockSwitchableResource()
+	mc := NewMockConnection()
+	mr := NewMockSwitchableResource()
 
-	ctx := NewContextWithArgs(conn, ca)
+	ctx := NewContextWithArgs(mc, mr)
 	l := NewContextListWithArgs("blee", ctx)
 
 	assert.Equal(t, "ctx", l.GetName())
 }
 
 func TestCTXListHasNamespace(t *testing.T) {
-	conn := NewMockConnection()
-	ca := NewMockSwitchableResource()
+	mc := NewMockConnection()
+	mr := NewMockSwitchableResource()
 
-	ctx := NewContextWithArgs(conn, ca)
+	ctx := NewContextWithArgs(mc, mr)
 	l := NewContextListWithArgs("blee", ctx)
 
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
 }
 
 func TestCTXListHasResource(t *testing.T) {
-	conn := NewMockConnection()
-	ca := NewMockSwitchableResource()
+	mc := NewMockConnection()
+	mr := NewMockSwitchableResource()
 
-	ctx := NewContextWithArgs(conn, ca)
+	ctx := NewContextWithArgs(mc, mr)
 	l := NewContextListWithArgs("blee", ctx)
 
 	assert.NotNil(t, l.Resource())
 }
 
+func TestCTXHeader(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockSwitchableResource()
+
+	ctx := NewContextWithArgs(mc, mr)
+
+	assert.Equal(t, 4, len(ctx.Header("")))
+}
+
+func TestCTXFields(t *testing.T) {
+	mc := NewMockConnection()
+	m.When(mc.Config()).ThenReturn(k8sConfig())
+	mr := NewMockSwitchableResource()
+	m.When(mr.MustCurrentContextName()).ThenReturn("test")
+
+	ctx := NewContextWithArgs(mc, mr)
+	c := ctx.New(k8sNamedCTX())
+
+	assert.Equal(t, 4, len(c.Fields("")))
+	assert.Equal(t, "test*", c.Fields("")[0])
+}
+
 // Helpers...
+
+func k8sConfig() *k8s.Config {
+	ctx := "test"
+	f := genericclioptions.ConfigFlags{
+		Context: &ctx,
+	}
+	return k8s.NewConfig(&f)
+}
 
 func k8sCTX() *api.Context {
 	return &api.Context{
@@ -97,13 +128,13 @@ func k8sCTX() *api.Context {
 }
 
 func k8sNamedCTX() *k8s.NamedContext {
-	ctx := k8s.NamedContext{
-		Name: "test",
-		Context: &api.Context{
+	return k8s.NewNamedContext(
+		k8sConfig(),
+		"test",
+		&api.Context{
 			LocationOfOrigin: "fred",
 			Cluster:          "blee",
 			AuthInfo:         "secret",
 		},
-	}
-	return &ctx
+	)
 }

@@ -17,6 +17,7 @@ func NewCRDListWithArgs(ns string, r *resource.CRD) resource.List {
 func NewCRDWithArgs(conn k8s.Connection, res resource.Cruder) *resource.CRD {
 	r := &resource.CRD{Base: resource.NewBase(conn, res)}
 	r.Factory = r
+
 	return r
 }
 
@@ -38,11 +39,19 @@ func TestCRDListAccess(t *testing.T) {
 
 func TestCRDFields(t *testing.T) {
 	r := newCRD().Fields("blee")
+
 	assert.Equal(t, "fred", r[0])
+}
+
+func TestCRDExtFields(t *testing.T) {
+	p := newCRDFull().ExtFields()
+
+	assert.Equal(t, 7, len(p))
 }
 
 func TestCRDFieldsAllNS(t *testing.T) {
 	r := newCRD().Fields(resource.AllNamespaces)
+
 	assert.Equal(t, "fred", r[0])
 }
 
@@ -95,6 +104,33 @@ func k8sCRD() *unstructured.Unstructured {
 			},
 		},
 	}
+}
+
+func k8sCRDFull() *unstructured.Unstructured {
+	return &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"metadata": map[string]interface{}{
+				"namespace":         "blee",
+				"name":              "fred",
+				"creationTimestamp": "2018-12-14T10:36:43.326972Z",
+			},
+			"spec": map[string]interface{}{
+				"group":   "apps",
+				"version": "v1",
+				"names": map[string]interface{}{
+					"kind":       "cool",
+					"singular":   "cool",
+					"plural":     "cools",
+					"shortNamed": []string{"co", "cos"},
+				},
+			},
+		},
+	}
+}
+
+func newCRDFull() resource.Columnar {
+	mc := NewMockConnection()
+	return resource.NewCRD(mc).New(k8sCRDFull())
 }
 
 func newCRD() resource.Columnar {

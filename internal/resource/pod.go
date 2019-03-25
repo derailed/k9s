@@ -207,11 +207,12 @@ func (r *Pod) Fields(ns string) Row {
 		ff = append(ff, i.Namespace)
 	}
 
-	cr, _, rc, cc := r.statuses()
+	ss := i.Status.ContainerStatuses
+	cr, _, rc := r.statuses(ss)
 
 	return append(ff,
 		Pad(i.ObjectMeta.Name, podNameSize),
-		strconv.Itoa(cr)+"/"+strconv.Itoa(len(cc)),
+		strconv.Itoa(cr)+"/"+strconv.Itoa(len(ss)),
 		r.phase(i.Status),
 		strconv.Itoa(rc),
 		ToMillicore(r.metrics.CurrentCPU),
@@ -226,97 +227,8 @@ func (r *Pod) Fields(ns string) Row {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func (r *Pod) toVolumes(vv []v1.Volume) map[string]interface{} {
-	m := make(map[string]interface{}, len(vv))
-	for _, v := range vv {
-		m[v.Name] = r.toVolume(v)
-	}
-
-	return m
-}
-
-func (r *Pod) toVolume(v v1.Volume) map[string]interface{} {
-	switch {
-	case v.Secret != nil:
-		return map[string]interface{}{
-			"Type":     "Secret",
-			"Name":     v.Secret.SecretName,
-			"Optional": r.boolPtrToStr(v.Secret.Optional),
-		}
-	case v.AWSElasticBlockStore != nil:
-		return map[string]interface{}{
-			"Type":      v.AWSElasticBlockStore.FSType,
-			"VolumeID":  v.AWSElasticBlockStore.VolumeID,
-			"Partition": strconv.Itoa(int(v.AWSElasticBlockStore.Partition)),
-			"ReadOnly":  boolToStr(v.AWSElasticBlockStore.ReadOnly),
-		}
-	default:
-		return map[string]interface{}{}
-	}
-}
-
-func (r *Pod) toContainers(cc []v1.Container) map[string]interface{} {
-	m := make(map[string]interface{}, len(cc))
-	for _, c := range cc {
-		m[c.Name] = map[string]interface{}{
-			"Image":       c.Image,
-			"Environment": r.toEnv(c.Env),
-		}
-	}
-
-	return m
-}
-
-func (r *Pod) toEnv(ee []v1.EnvVar) []string {
-	if len(ee) == 0 {
-		return []string{MissingValue}
-	}
-
-	ss := make([]string, len(ee))
-	for i, e := range ee {
-		s := r.toEnvFrom(e.ValueFrom)
-		if len(s) == 0 {
-			ss[i] = e.Name + "=" + e.Value
-		} else {
-			ss[i] = e.Name + "=" + e.Value + "(" + s + ")"
-		}
-	}
-
-	return ss
-}
-
-func (r *Pod) toEnvFrom(e *v1.EnvVarSource) string {
-	if e == nil {
-		return MissingValue
-	}
-
-	var s string
-	switch {
-	case e.ConfigMapKeyRef != nil:
-		f := e.ConfigMapKeyRef
-		s += f.Name + ":" + f.Key + "(" + r.boolPtrToStr(f.Optional) + ")"
-	case e.FieldRef != nil:
-		f := e.FieldRef
-		s += f.FieldPath + ":" + f.APIVersion
-	case e.SecretKeyRef != nil:
-		f := e.SecretKeyRef
-		s += f.Name + ":" + f.Key + "(" + r.boolPtrToStr(f.Optional) + ")"
-	}
-
-	return s
-}
-
-func (r *Pod) boolPtrToStr(b *bool) string {
-	if b == nil {
-		return "false"
-	}
-
-	return boolToStr(*b)
-}
-
-func (r *Pod) statuses() (cr, ct, rc int, cc []v1.ContainerStatus) {
-	cc = r.instance.Status.ContainerStatuses
-	for _, c := range cc {
+func (r *Pod) statuses(ss []v1.ContainerStatus) (cr, ct, rc int) {
+	for _, c := range ss {
 		if c.State.Terminated != nil {
 			ct++
 		}

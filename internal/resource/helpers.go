@@ -121,3 +121,11 @@ func ToMillicore(v int64) string {
 func ToMi(v float64) string {
 	return strconv.Itoa(int(v)) + "Mi"
 }
+
+func boolPtrToStr(b *bool) string {
+	if b == nil {
+		return "false"
+	}
+
+	return boolToStr(*b)
+}

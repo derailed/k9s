@@ -113,7 +113,7 @@ func (r *CronJob) Fields(ns string) Row {
 	return append(ff,
 		i.Name,
 		i.Spec.Schedule,
-		boolToStr(*i.Spec.Suspend),
+		boolPtrToStr(i.Spec.Suspend),
 		strconv.Itoa(len(i.Status.Active)),
 		lastScheduled,
 		toAge(i.ObjectMeta.CreationTimestamp),

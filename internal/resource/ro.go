@@ -76,6 +76,7 @@ func (*Role) Header(ns string) Row {
 // Fields retrieves displayable fields.
 func (r *Role) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
+
 	i := r.instance
 	if ns == AllNamespaces {
 		ff = append(ff, i.Namespace)
@@ -92,12 +93,13 @@ func (r *Role) Fields(ns string) Row {
 
 func (r *Role) parseRules(pp []v1.PolicyRule) []Row {
 	acc := make([]Row, len(pp))
+
 	for i, p := range pp {
-		acc[i] = make(Row, 4)
-		acc[i][0] = strings.Join(p.Resources, ", ")
-		acc[i][1] = strings.Join(p.NonResourceURLs, ", ")
-		acc[i][2] = strings.Join(p.ResourceNames, ", ")
-		acc[i][3] = strings.Join(p.Verbs, ", ")
+		acc[i] = make(Row, 0, 4)
+		acc[i] = append(acc[i], strings.Join(p.Resources, ", "))
+		acc[i] = append(acc[i], strings.Join(p.NonResourceURLs, ", "))
+		acc[i] = append(acc[i], strings.Join(p.ResourceNames, ", "))
+		acc[i] = append(acc[i], strings.Join(p.Verbs, ", "))
 	}
 
 	return acc

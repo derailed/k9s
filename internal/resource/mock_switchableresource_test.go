@@ -71,6 +71,21 @@ func (mock *MockSwitchableResource) List(_param0 string) (k8s.Collection, error)
 	return ret0, ret1
 }
 
+func (mock *MockSwitchableResource) MustCurrentContextName() string {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockSwitchableResource().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("MustCurrentContextName", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem()})
+	var ret0 string
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(string)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockSwitchableResource) Switch(_param0 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockSwitchableResource().")
@@ -210,6 +225,23 @@ func (c *SwitchableResource_List_OngoingVerification) GetAllCapturedArguments() 
 		}
 	}
 	return
+}
+
+func (verifier *VerifierSwitchableResource) MustCurrentContextName() *SwitchableResource_MustCurrentContextName_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "MustCurrentContextName", params, verifier.timeout)
+	return &SwitchableResource_MustCurrentContextName_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type SwitchableResource_MustCurrentContextName_OngoingVerification struct {
+	mock              *MockSwitchableResource
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *SwitchableResource_MustCurrentContextName_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *SwitchableResource_MustCurrentContextName_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierSwitchableResource) Switch(_param0 string) *SwitchableResource_Switch_OngoingVerification {

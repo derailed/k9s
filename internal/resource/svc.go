@@ -98,7 +98,7 @@ func (r *Service) Fields(ns string) Row {
 		i.ObjectMeta.Name,
 		string(i.Spec.Type),
 		i.Spec.ClusterIP,
-		r.toIPs(i.Spec.Type, getSvcExtIPS(i)),
+		r.toIPs(i.Spec.Type, r.getSvcExtIPS(i)),
 		r.toPorts(i.Spec.Ports),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
@@ -107,7 +107,7 @@ func (r *Service) Fields(ns string) Row {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func getSvcExtIPS(svc *v1.Service) []string {
+func (r *Service) getSvcExtIPS(svc *v1.Service) []string {
 	results := []string{}
 
 	switch svc.Spec.Type {
@@ -116,7 +116,7 @@ func getSvcExtIPS(svc *v1.Service) []string {
 	case v1.ServiceTypeNodePort:
 		return svc.Spec.ExternalIPs
 	case v1.ServiceTypeLoadBalancer:
-		lbIps := lbIngressIP(svc.Status.LoadBalancer)
+		lbIps := r.lbIngressIP(svc.Status.LoadBalancer)
 		if len(svc.Spec.ExternalIPs) > 0 {
 			if len(lbIps) > 0 {
 				results = append(results, lbIps)
@@ -133,7 +133,7 @@ func getSvcExtIPS(svc *v1.Service) []string {
 	return results
 }
 
-func lbIngressIP(s v1.LoadBalancerStatus) string {
+func (*Service) lbIngressIP(s v1.LoadBalancerStatus) string {
 	ingress := s.Ingress
 	result := []string{}
 	for i := range ingress {

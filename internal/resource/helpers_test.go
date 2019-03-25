@@ -6,6 +6,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestBoolPtrToStr(t *testing.T) {
+	tv, fv := true, false
+
+	uu := []struct {
+		p *bool
+		e string
+	}{
+		{nil, "false"},
+		{&tv, "true"},
+		{&fv, "false"},
+	}
+
+	for _, u := range uu {
+		assert.Equal(t, u.e, boolPtrToStr(u.p))
+	}
+}
+
 func TestNamespaced(t *testing.T) {
 	uu := []struct {
 		p, ns, n string

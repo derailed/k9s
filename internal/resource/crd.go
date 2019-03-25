@@ -95,15 +95,17 @@ func (r *CRD) ExtFields() Properties {
 		i  = r.instance
 	)
 
-	meta := i.Object["metadata"].(map[string]interface{})
-
 	if spec, ok := i.Object["spec"].(map[string]interface{}); ok {
-		pp["name"] = meta["name"]
+		if meta, ok := i.Object["metadata"].(map[string]interface{}); ok {
+			pp["name"] = meta["name"]
+		}
 		pp["group"], pp["version"] = spec["group"], spec["version"]
-		names := spec["names"].(map[string]interface{})
-		pp["kind"] = names["kind"]
-		pp["singular"], pp["plural"] = names["singular"], names["plural"]
-		pp["aliases"] = names["shortNames"]
+
+		if names, ok := spec["names"].(map[string]interface{}); ok {
+			pp["kind"] = names["kind"]
+			pp["singular"], pp["plural"] = names["singular"], names["plural"]
+			pp["aliases"] = names["shortNames"]
+		}
 	}
 
 	return pp

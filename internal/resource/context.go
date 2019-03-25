@@ -5,25 +5,27 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// SwitchableResource represents a resource that can be switched.
-type SwitchableResource interface {
-	k8s.Cruder
-	k8s.Switchable
-}
+type (
+	// SwitchableResource represents a resource that can be switched.
+	SwitchableResource interface {
+		Cruder
+		k8s.Switchable
+	}
 
-// Context tracks a kubernetes resource.
-type Context struct {
-	*Base
-	instance *k8s.NamedContext
-}
+	// Context tracks a kubernetes resource.
+	Context struct {
+		*Base
+		instance *k8s.NamedContext
+	}
+)
 
 // NewContextList returns a new resource list.
-func NewContextList(c k8s.Connection, ns string) List {
+func NewContextList(c Connection, ns string) List {
 	return NewList(NotNamespaced, "ctx", NewContext(c), SwitchAccess)
 }
 
 // NewContext instantiates a new Context.
-func NewContext(c k8s.Connection) *Context {
+func NewContext(c Connection) *Context {
 	ctx := &Context{Base: NewBase(c, k8s.NewContext(c))}
 	ctx.Factory = ctx
 
@@ -64,15 +66,14 @@ func (*Context) Header(string) Row {
 // Fields retrieves displayable fields.
 func (r *Context) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
-	i := r.instance
 
-	name := i.Name
-	if i.MustCurrentContextName() == name {
-		name += "*"
+	i := r.instance
+	if i.MustCurrentContextName() == i.Name {
+		i.Name += "*"
 	}
 
 	return append(ff,
-		name,
+		i.Name,
 		i.Context.Cluster,
 		i.Context.AuthInfo,
 		i.Context.Namespace,
