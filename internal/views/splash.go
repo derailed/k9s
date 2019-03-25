@@ -13,6 +13,7 @@ const (
 	product = "Kubernetes CLI Island Style!"
 )
 
+// LogoSmall K9s small log.
 var LogoSmall = []string{
 	` ____  __.________       `,
 	`|    |/ _/   __   \______`,
@@ -22,6 +23,7 @@ var LogoSmall = []string{
 	`        \/            \/ `,
 }
 
+// Logo K9s big logo for splash page.
 var Logo = []string{
 	` ____  __.________      _________ .____    .___ `,
 	`|    |/ _/   __   \_____\_   ___ \|    |   |   |`,
