@@ -30,8 +30,8 @@ archive:
     darwin: Darwin
     linux: Linux
     windows: Windows
-    arm: 32-bit
-    arm64: 64-bit
+    arm: arm32
+    arm64: arm64
     386: i386
     amd64: x86_64
 checksum:

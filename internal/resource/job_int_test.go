@@ -80,7 +80,7 @@ func TestJobToCompletion(t *testing.T) {
 }
 
 func TestJobToDuration(t *testing.T) {
-	t0 := testTime()
+	t0 := testTime().UTC()
 	t1, t2 := metav1.Time{t0}, metav1.Time{t0.Add(10 * time.Second)}
 
 	uu := []struct {
@@ -98,7 +98,7 @@ func TestJobToDuration(t *testing.T) {
 			batchv1.JobStatus{
 				StartTime: &t1,
 			},
-			"101d",
+			"102d",
 		},
 		{
 			batchv1.JobStatus{
