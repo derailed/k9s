@@ -60,7 +60,7 @@ brew:
   test: |
     system "k9s version"
 
-# Snap
+# Snapcraft
 snapcraft:
   name: k9s
   name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
@@ -71,7 +71,7 @@ snapcraft:
     darwin: macOS
     linux: Tux
 
-  publish: false
+  publish: true
 
   summary: K9s is a CLI to view and manage your Kubernetes clusters.
   description: |
