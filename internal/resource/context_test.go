@@ -23,7 +23,7 @@ func NewContextWithArgs(c k8s.Connection, s resource.SwitchableCruder) *resource
 
 func TestCTXSwitch(t *testing.T) {
 	mc := NewMockConnection()
-	mr := NewMockSwitchableResource()
+	mr := NewMockSwitchableCruder()
 	m.When(mr.Switch("fred")).ThenReturn(nil)
 
 	ctx := NewContextWithArgs(mc, mr)
@@ -35,7 +35,7 @@ func TestCTXSwitch(t *testing.T) {
 
 func TestCTXList(t *testing.T) {
 	mc := NewMockConnection()
-	mr := NewMockSwitchableResource()
+	mr := NewMockSwitchableCruder()
 	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sNamedCTX()}, nil)
 
 	ctx := NewContextWithArgs(mc, mr)
@@ -48,7 +48,7 @@ func TestCTXList(t *testing.T) {
 
 func TestCTXDelete(t *testing.T) {
 	mc := NewMockConnection()
-	mr := NewMockSwitchableResource()
+	mr := NewMockSwitchableCruder()
 	m.When(mr.Delete("", "fred")).ThenReturn(nil)
 
 	ctx := NewContextWithArgs(mc, mr)
@@ -59,7 +59,7 @@ func TestCTXDelete(t *testing.T) {
 
 func TestCTXListHasName(t *testing.T) {
 	mc := NewMockConnection()
-	mr := NewMockSwitchableResource()
+	mr := NewMockSwitchableCruder()
 
 	ctx := NewContextWithArgs(mc, mr)
 	l := NewContextListWithArgs("blee", ctx)
@@ -69,7 +69,7 @@ func TestCTXListHasName(t *testing.T) {
 
 func TestCTXListHasNamespace(t *testing.T) {
 	mc := NewMockConnection()
-	mr := NewMockSwitchableResource()
+	mr := NewMockSwitchableCruder()
 
 	ctx := NewContextWithArgs(mc, mr)
 	l := NewContextListWithArgs("blee", ctx)
@@ -79,7 +79,7 @@ func TestCTXListHasNamespace(t *testing.T) {
 
 func TestCTXListHasResource(t *testing.T) {
 	mc := NewMockConnection()
-	mr := NewMockSwitchableResource()
+	mr := NewMockSwitchableCruder()
 
 	ctx := NewContextWithArgs(mc, mr)
 	l := NewContextListWithArgs("blee", ctx)
@@ -89,7 +89,7 @@ func TestCTXListHasResource(t *testing.T) {
 
 func TestCTXHeader(t *testing.T) {
 	mc := NewMockConnection()
-	mr := NewMockSwitchableResource()
+	mr := NewMockSwitchableCruder()
 
 	ctx := NewContextWithArgs(mc, mr)
 
@@ -99,7 +99,7 @@ func TestCTXHeader(t *testing.T) {
 func TestCTXFields(t *testing.T) {
 	mc := NewMockConnection()
 	m.When(mc.Config()).ThenReturn(k8sConfig())
-	mr := NewMockSwitchableResource()
+	mr := NewMockSwitchableCruder()
 	m.When(mr.MustCurrentContextName()).ThenReturn("test")
 
 	ctx := NewContextWithArgs(mc, mr)

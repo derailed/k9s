@@ -36,6 +36,17 @@ const (
 	NAValue = "<n/a>"
 )
 
+func asPerc(f float64) string {
+	return fmt.Sprintf("%d%%", int(f))
+}
+
+func toPerc(v1, v2 float64) float64 {
+	if v2 == 0 {
+		return 0
+	}
+	return (v1 / v2) * 100
+}
+
 func namespaced(n string) (string, string) {
 	ns, po := path.Split(n)
 

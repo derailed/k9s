@@ -83,8 +83,12 @@ func loadConfiguration() *config.Config {
 	k9sCfg.K9s.RefreshRate = refreshRate
 	k9sCfg.Refine(k8sFlags)
 	k9sCfg.SetConnection(k8s.InitConnectionOrDie(k8sCfg, log.Logger))
+
 	log.Info().Msg("✅ Kubernetes connectivity")
 	k9sCfg.Save()
+
+	// k8s.NewNode(k9sCfg.GetConnection()).FetchReqLimit("minikube")
+	// os.Exit(0)
 
 	return k9sCfg
 }

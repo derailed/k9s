@@ -3,11 +3,12 @@ package resource
 import (
 	"strings"
 
-	"k8s.io/apimachinery/pkg/util/sets"
-
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 const (
@@ -106,17 +107,20 @@ func (*Node) Header(ns string) Row {
 	return Row{
 		"NAME",
 		"STATUS",
-		"ROLES",
 		"VERSION",
 		"KERNEL",
 		"INTERNAL-IP",
 		"EXTERNAL-IP",
+		"CPU%",
+		"MEM%",
+		"RCPU%",
+		"RMEM%",
 		"CPU",
 		"MEM",
-		"AVA CPU",
-		"AVA MEM",
-		"CAP CPU",
-		"CAP MEM",
+		"RMEM",
+		"RCPU",
+		"ACPU",
+		"AMEM",
 		"AGE",
 	}
 }
@@ -124,25 +128,48 @@ func (*Node) Header(ns string) Row {
 // Fields returns displayable fields.
 func (r *Node) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
-	i := r.instance
 
+	i := r.instance
 	iIP, eIP := r.getIPs(i.Status.Addresses)
 	iIP, eIP = missing(iIP), missing(eIP)
+
+	reqs, _, err := r.fetchReqLimit(i.Name)
+	if err != nil {
+		if !errors.IsForbidden(err) {
+			log.Warn().Msgf("User is not authorized to list pods on nodes: %v", err)
+		}
+		log.Error().Msgf("%#v", err)
+	}
+
+	rcpu, rmem := reqs["cpu"], reqs["memory"]
+
+	var pcpur float64
+	if r.metrics.AvailCPU > 0 {
+		pcpur = toPerc(float64(rcpu.MilliValue()), float64(r.metrics.AvailCPU))
+	}
+
+	var pmemr float64
+	if r.metrics.AvailMEM > 0 {
+		pmemr = toPerc(float64(rmem.Value()/(1024*1024)), float64(r.metrics.AvailMEM))
+	}
 
 	return append(ff,
 		i.Name,
 		r.status(i),
-		missing(strings.Join(findNodeRoles(i), ",")),
 		i.Status.NodeInfo.KubeletVersion,
 		i.Status.NodeInfo.KernelVersion,
 		iIP,
 		eIP,
+		asPerc(toPerc(float64(r.metrics.CurrentCPU), float64(r.metrics.AvailCPU))),
+		asPerc(toPerc(r.metrics.CurrentMEM, r.metrics.AvailMEM)),
+		asPerc(pcpur),
+		asPerc(pmemr),
 		ToMillicore(r.metrics.CurrentCPU),
 		ToMi(r.metrics.CurrentMEM),
 		ToMillicore(r.metrics.AvailCPU),
 		ToMi(r.metrics.AvailMEM),
-		ToMillicore(r.metrics.TotalCPU),
-		ToMi(r.metrics.TotalMEM),
+		rcpu.String(),
+		rmem.String(),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
 }
@@ -204,4 +231,73 @@ func findNodeRoles(i *v1.Node) []string {
 	}
 
 	return roles.List()
+}
+
+func (r *Node) fetchReqLimit(name string) (req, lim v1.ResourceList, err error) {
+	reqs, limits := map[v1.ResourceName]resource.Quantity{}, map[v1.ResourceName]resource.Quantity{}
+
+	pods, err := r.Connection.ValidPods(name)
+	for _, p := range pods {
+		preq, plim := podRequestsAndLimits(&p)
+		for k, v := range preq {
+			if value, ok := reqs[k]; !ok {
+				reqs[k] = *v.Copy()
+			} else {
+				value.Add(v)
+				reqs[k] = value
+			}
+		}
+		for k, v := range plim {
+			if value, ok := limits[k]; !ok {
+				limits[k] = *v.Copy()
+			} else {
+				value.Add(v)
+				limits[k] = value
+			}
+		}
+	}
+
+	return reqs, limits, nil
+}
+
+func podRequestsAndLimits(pod *v1.Pod) (reqs, limits v1.ResourceList) {
+	reqs, limits = map[v1.ResourceName]resource.Quantity{}, map[v1.ResourceName]resource.Quantity{}
+
+	for _, container := range pod.Spec.Containers {
+		addResourceList(reqs, container.Resources.Requests)
+		addResourceList(limits, container.Resources.Limits)
+	}
+	// init containers define the minimum of any resource
+	for _, container := range pod.Spec.InitContainers {
+		maxResourceList(reqs, container.Resources.Requests)
+		maxResourceList(limits, container.Resources.Limits)
+	}
+	return
+}
+
+// addResourceList adds the resources in newList to list
+func addResourceList(list, new v1.ResourceList) {
+	for name, quantity := range new {
+		if value, ok := list[name]; !ok {
+			list[name] = *quantity.Copy()
+		} else {
+			value.Add(quantity)
+			list[name] = value
+		}
+	}
+}
+
+// maxResourceList sets list to the greater of list/newList for every resource
+// either list
+func maxResourceList(list, new v1.ResourceList) {
+	for name, quantity := range new {
+		if value, ok := list[name]; !ok {
+			list[name] = *quantity.Copy()
+			continue
+		} else {
+			if quantity.Cmp(value) > 0 {
+				list[name] = *quantity.Copy()
+			}
+		}
+	}
 }

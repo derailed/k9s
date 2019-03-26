@@ -1,10 +1,13 @@
 package k8s
 
 import (
+	"fmt"
+
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
@@ -50,6 +53,7 @@ type (
 		IsNamespaced(n string) bool
 		SupportsResource(group string) bool
 		ValidNamespaces() ([]v1.Namespace, error)
+		ValidPods(node string) ([]v1.Pod, error)
 	}
 
 	// APIClient represents a Kubernetes api client.
@@ -81,6 +85,23 @@ func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
 		return nil, err
 	}
 	return nn.Items, nil
+}
+
+// ValidPods returns a collection of all availble pods on a given node.
+func (a *APIClient) ValidPods(node string) ([]v1.Pod, error) {
+	const selFmt = "spec.nodeName=%s,status.phase!=%s,status.phase!=%s"
+	fieldSelector, err := fields.ParseSelector(fmt.Sprintf(selFmt, node, v1.PodSucceeded, v1.PodFailed))
+	if err != nil {
+		return nil, err
+	}
+
+	pods, err := a.DialOrDie().Core().Pods("").List(metav1.ListOptions{
+		FieldSelector: fieldSelector.String(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return pods.Items, nil
 }
 
 // IsNamespaced check on server if given resource is namespaced
@@ -126,7 +147,7 @@ func (a *APIClient) DialOrDie() kubernetes.Interface {
 
 	var err error
 	if a.client, err = kubernetes.NewForConfig(a.RestConfigOrDie()); err != nil {
-		a.log.Panic().Err(err)
+		a.log.Fatal().Msgf("Unable to connect to api server %v", err)
 	}
 	return a.client
 }
@@ -135,7 +156,7 @@ func (a *APIClient) DialOrDie() kubernetes.Interface {
 func (a *APIClient) RestConfigOrDie() *restclient.Config {
 	cfg, err := a.config.RESTConfig()
 	if err != nil {
-		a.log.Panic().Err(err)
+		a.log.Panic().Msgf("Unable to connect to api server %v", err)
 	}
 	return cfg
 }

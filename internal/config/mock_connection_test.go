@@ -189,6 +189,25 @@ func (mock *MockConnection) ValidNamespaces() ([]v1.Namespace, error) {
 	return ret0, ret1
 }
 
+func (mock *MockConnection) ValidPods(_param0 string) ([]v1.Pod, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockConnection().")
+	}
+	params := []pegomock.Param{_param0}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("ValidPods", params, []reflect.Type{reflect.TypeOf((*[]v1.Pod)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 []v1.Pod
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].([]v1.Pod)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
 func (mock *MockConnection) VerifyWasCalledOnce() *VerifierConnection {
 	return &VerifierConnection{
 		mock:                   mock,
@@ -441,4 +460,31 @@ func (c *Connection_ValidNamespaces_OngoingVerification) GetCapturedArguments() 
 }
 
 func (c *Connection_ValidNamespaces_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierConnection) ValidPods(_param0 string) *Connection_ValidPods_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ValidPods", params, verifier.timeout)
+	return &Connection_ValidPods_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Connection_ValidPods_OngoingVerification struct {
+	mock              *MockConnection
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Connection_ValidPods_OngoingVerification) GetCapturedArguments() string {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *Connection_ValidPods_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+	}
+	return
 }
