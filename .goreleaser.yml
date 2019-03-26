@@ -17,6 +17,11 @@ builds:
     goarch:
       - 386
       - amd64
+      - arm
+      - arm64
+    goarm:
+      - 6
+      - 7
     ldflags:
       - -s -w -X github.com/derailed/k9s/cmd.version={{.Version}} -X github.com/derailed/k9s/cmd.commit={{.Commit}} -X github.com/derailed/k9s/cmd.date={{.Date}}
 
@@ -25,6 +30,8 @@ archive:
     darwin: Darwin
     linux: Linux
     windows: Windows
+    arm: 32-bit
+    arm64: 64-bit
     386: i386
     amd64: x86_64
 checksum:
@@ -52,3 +59,36 @@ brew:
   description: Kubernetes CLI To Manage Your Clusters In Style!
   test: |
     system "k9s version"
+
+# Snap
+snapcraft:
+  name: k9s
+  name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+  replacements:
+    amd64: 64-bit
+    386: 32-bit
+    darwin: macOS
+    linux: Tux
+
+  publish: false
+
+  summary: K9s is a CLI to view and manage your Kubernetes clusters.
+  description: |
+    K9s is a CLI to view and manage your Kubernetes clusters.
+    By leveraging a terminal UI, you can easily traverse Kubernetes resources
+    and view the state of you clusters in a single powerful session.
+
+  grade: devel
+  confinement: devmode
+
+  apps:
+    k9s:
+      plugs: ["home", "network", "home-dir"]
+
+  plugs:
+    home-dir:
+      read:
+        - $HOME/.k9s
+      write:
+        - $HOME/.k9s

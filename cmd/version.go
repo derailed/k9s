@@ -13,13 +13,21 @@ func versionCmd() *cobra.Command {
 		Short: "Print version info",
 		Long:  "Prints version info",
 		Run: func(cmd *cobra.Command, args []string) {
-			const secFmt = "%-10s"
-			fmt.Printf(printer.Colorize(fmt.Sprintf(secFmt, "Version:"), printer.ColorMagenta))
-			fmt.Println(printer.Colorize(version, printer.ColorDarkGray))
-			fmt.Printf(printer.Colorize(fmt.Sprintf(secFmt, "Commit:"), printer.ColorMagenta))
-			fmt.Println(printer.Colorize(commit, printer.ColorDarkGray))
-			fmt.Printf(printer.Colorize(fmt.Sprintf(secFmt, "Date:"), printer.ColorMagenta))
-			fmt.Println(printer.Colorize(date, printer.ColorDarkGray))
+			printVersion()
 		},
 	}
+}
+
+func printVersion() {
+	const secFmt = "%-10s "
+
+	printLogo()
+	printTuple(secFmt, "Version", version)
+	printTuple(secFmt, "Commit", commit)
+	printTuple(secFmt, "Date", date)
+}
+
+func printTuple(format, section, value string) {
+	fmt.Printf(printer.Colorize(fmt.Sprintf(format, section+":"), printer.ColorCyan))
+	fmt.Println(printer.Colorize(value, printer.ColorWhite))
 }

@@ -21,13 +21,16 @@ func infoCmd() *cobra.Command {
 }
 
 func printInfo() {
+	const secFmt = "%-15s "
+
+	printLogo()
+	printTuple(secFmt, "Configuration", config.K9sConfigFile)
+	printTuple(secFmt, "Logs", config.K9sLogs)
+}
+
+func printLogo() {
 	for _, l := range views.LogoSmall {
 		fmt.Println(printer.Colorize(l, printer.ColorCyan))
 	}
 	fmt.Println()
-	fmt.Printf(printer.Colorize(fmt.Sprintf("%-15s", "Configuration:"), printer.ColorCyan))
-	fmt.Println(printer.Colorize(config.K9sConfigFile, printer.ColorWhite))
-
-	fmt.Printf(printer.Colorize(fmt.Sprintf("%-15s", "Logs:"), printer.ColorCyan))
-	fmt.Println(printer.Colorize(config.K9sLogs, printer.ColorWhite))
 }
