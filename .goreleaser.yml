@@ -76,7 +76,7 @@ snapcraft:
     By leveraging a terminal UI, you can easily traverse Kubernetes resources
     and view the state of you clusters in a single powerful session.
   grade: devel
-  confinement: devel
+  confinement: devmode
   apps:
     k9s:
       plugs: ["home", "network"]
