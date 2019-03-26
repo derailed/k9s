@@ -87,7 +87,7 @@ func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
 	return nn.Items, nil
 }
 
-// ValidPods returns a collection of all availble pods on a given node.
+// ValidPods returns a collection of all available pods on a given node.
 func (a *APIClient) ValidPods(node string) ([]v1.Pod, error) {
 	const selFmt = "spec.nodeName=%s,status.phase!=%s,status.phase!=%s"
 	fieldSelector, err := fields.ParseSelector(fmt.Sprintf(selFmt, node, v1.PodSucceeded, v1.PodFailed))
