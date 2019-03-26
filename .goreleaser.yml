@@ -75,7 +75,7 @@ snapcraft:
     K9s is a CLI to view and manage your Kubernetes clusters.
     By leveraging a terminal UI, you can easily traverse Kubernetes resources
     and view the state of you clusters in a single powerful session.
-  grade: edge
+  grade: devel
   confinement: devmode
   apps:
     k9s:
