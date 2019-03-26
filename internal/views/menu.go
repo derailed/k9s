@@ -92,7 +92,7 @@ func (a keyActions) toHints() hints {
 				mnemonic:    name,
 				description: a[tcell.Key(k)].description})
 		} else {
-			log.Error().Msgf("Unable to locate KeyName for %#v", k)
+			log.Error().Msgf("Unable to locate KeyName for %#v", string(k))
 		}
 	}
 	return hh
@@ -307,6 +307,7 @@ func initKeys() {
 	tcell.KeyNames[tcell.Key(KeyT)] = "t"
 	tcell.KeyNames[tcell.Key(KeyU)] = "u"
 	tcell.KeyNames[tcell.Key(KeyV)] = "v"
+	tcell.KeyNames[tcell.Key(KeyW)] = "w"
 	tcell.KeyNames[tcell.Key(KeyX)] = "x"
 	tcell.KeyNames[tcell.Key(KeyY)] = "y"
 	tcell.KeyNames[tcell.Key(KeyZ)] = "z"
@@ -333,6 +334,7 @@ func initKeys() {
 	tcell.KeyNames[tcell.Key(KeyShiftT)] = "SHIFT-T"
 	tcell.KeyNames[tcell.Key(KeyShiftU)] = "SHIFT-U"
 	tcell.KeyNames[tcell.Key(KeyShiftV)] = "SHIFT-V"
+	tcell.KeyNames[tcell.Key(KeyShiftW)] = "SHIFT-W"
 	tcell.KeyNames[tcell.Key(KeyShiftX)] = "SHIFT-X"
 	tcell.KeyNames[tcell.Key(KeyShiftY)] = "SHIFT-Y"
 	tcell.KeyNames[tcell.Key(KeyShiftZ)] = "SHIFT-Z"
