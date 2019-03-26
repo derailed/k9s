@@ -6,13 +6,19 @@ DATE    := $(shell date +%FT%T%Z)
 
 default: help
 
+test: export GO111MODULE=on
+test: export GOPROXY=https://gocenter.io
 test:      ## Run all tests
 	@go test ./...
 
+cover: export GO111MODULE=on
+cover: export GOPROXY=https://gocenter.io
 cover:     ## Run test coverage suite
 	@go test ./... --coverprofile=cov.out
 	@go tool cover --html=cov.out
 
+build: export GO111MODULE=on
+build: export GOPROXY=https://gocenter.io
 build:     ## Builds the CLI
 	@go build \
 	-ldflags "-w -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \

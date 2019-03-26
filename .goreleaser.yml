@@ -1,4 +1,7 @@
 project_name: k9s
+env:
+  - GO111MODULE=on
+  - GOPROXY=https://gocenter.io
 before:
   hooks:
     - go mod download
@@ -17,7 +20,7 @@ builds:
     goarch:
       - 386
       - amd64
-      - arm
+       - arm
       - arm64
     goarm:
       - 6
@@ -80,3 +83,4 @@ snapcraft:
   apps:
     k9s:
       plugs: ["home", "network"]
+
