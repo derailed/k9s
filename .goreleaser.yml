@@ -79,10 +79,4 @@ snapcraft:
   confinement: devmode
   apps:
     k9s:
-      plugs: ["home", "network", "home-dir"]
-  plugs:
-    home-dir:
-      read:
-        - $HOME/.k9s
-      write:
-        - $HOME/.k9s
+      plugs: ["home", "network"]
