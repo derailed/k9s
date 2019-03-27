@@ -44,7 +44,7 @@ func (c *command) run(cmd string) bool {
 		}
 	}()
 
-	var v igniter
+	var v resourceViewer
 	switch cmd {
 	case "q", "quit":
 		c.app.Stop()
@@ -56,12 +56,19 @@ func (c *command) run(cmd string) bool {
 		if res, ok := resourceViews()[cmd]; ok {
 			var r resource.List
 			if res.listMxFn != nil {
-				r = res.listMxFn(c.app.conn(), k8s.NewMetricsServer(c.app.conn()), resource.DefaultNamespace)
+				r = res.listMxFn(c.app.conn(),
+					k8s.NewMetricsServer(c.app.conn()),
+					resource.DefaultNamespace,
+				)
 			} else {
 				r = res.listFn(c.app.conn(), resource.DefaultNamespace)
 			}
 			v = res.viewFn(res.title, c.app, r, res.colorerFn)
-			c.app.flash(flashInfo, fmt.Sprintf("Viewing %s in namespace %s...", res.title, c.app.config.ActiveNamespace()))
+			if res.enterFn != nil {
+				v.setEnterFn(res.enterFn)
+			}
+			const fmat = "Viewing %s in namespace %s..."
+			c.app.flash(flashInfo, fmt.Sprintf(fmat, res.title, c.app.config.ActiveNamespace()))
 			log.Debug().Msgf("Running command %s", cmd)
 			c.exec(cmd, v)
 			return true

@@ -4,6 +4,7 @@ import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 )
 
 type (
@@ -11,6 +12,7 @@ type (
 	listFn    func(c resource.Connection, ns string) resource.List
 	listMxFn  func(c resource.Connection, mx resource.MetricsServer, ns string) resource.List
 	colorerFn func(ns string, evt *resource.RowEvent) tcell.Color
+	enterFn   func(app *appView, ns, resource, selection string)
 
 	resCmd struct {
 		title     string
@@ -18,6 +20,7 @@ type (
 		viewFn    viewFn
 		listFn    listFn
 		listMxFn  listMxFn
+		enterFn   enterFn
 		colorerFn colorerFn
 	}
 )
@@ -72,6 +75,16 @@ func allCRDs(c k8s.Connection) map[string]k8s.APIGroup {
 	return m
 }
 
+func showRBAC(app *appView, ns, resource, selection string) {
+	log.Debug().Msgf("Entered FN on `%s`--%s:%s", ns, resource, selection)
+	kind := clusterRole
+	if resource == "role" {
+		kind = role
+	}
+	app.command.pushCmd("policies")
+	app.inject(newRBACView(app, ns, selection, kind))
+}
+
 func resourceViews() map[string]resCmd {
 	return map[string]resCmd{
 		"cm": {
@@ -86,6 +99,7 @@ func resourceViews() map[string]resCmd {
 			api:       "rbac.authorization.k8s.io",
 			viewFn:    newResourceView,
 			listFn:    resource.NewClusterRoleList,
+			enterFn:   showRBAC,
 			colorerFn: defaultColorer,
 		},
 		"crb": {
@@ -226,6 +240,7 @@ func resourceViews() map[string]resCmd {
 			api:       "rbac.authorization.k8s.io",
 			viewFn:    newResourceView,
 			listFn:    resource.NewRoleList,
+			enterFn:   showRBAC,
 			colorerFn: defaultColorer,
 		},
 		"rs": {

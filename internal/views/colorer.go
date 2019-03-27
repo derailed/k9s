@@ -33,6 +33,13 @@ func aliasColorer(string, *resource.RowEvent) tcell.Color {
 	return tcell.ColorFuchsia
 }
 
+func rbacColorer(ns string, r *resource.RowEvent) tcell.Color {
+	c := defaultColorer(ns, r)
+
+	// return tcell.ColorDarkOliveGreen
+	return c
+}
+
 func podColorer(ns string, r *resource.RowEvent) tcell.Color {
 	c := defaultColorer(ns, r)
 
@@ -62,6 +69,7 @@ func podColorer(ns string, r *resource.RowEvent) tcell.Color {
 			c = errColor
 		}
 	}
+
 	return c
 }
 
@@ -74,6 +82,7 @@ func ctxColorer(ns string, r *resource.RowEvent) tcell.Color {
 	if strings.Contains(strings.TrimSpace(r.Fields[0]), "*") {
 		c = highlightColor
 	}
+
 	return c
 }
 
@@ -86,6 +95,7 @@ func pvColorer(ns string, r *resource.RowEvent) tcell.Color {
 	if strings.TrimSpace(r.Fields[4]) != "Bound" {
 		return errColor
 	}
+
 	return stdColor
 }
 
@@ -103,6 +113,7 @@ func pvcColorer(ns string, r *resource.RowEvent) tcell.Color {
 	if strings.TrimSpace(r.Fields[markCol]) != "Bound" {
 		c = errColor
 	}
+
 	return c
 }
 
@@ -119,6 +130,7 @@ func pdbColorer(ns string, r *resource.RowEvent) tcell.Color {
 	if strings.TrimSpace(r.Fields[markCol]) != strings.TrimSpace(r.Fields[markCol+1]) {
 		return errColor
 	}
+
 	return stdColor
 }
 
@@ -135,6 +147,7 @@ func dpColorer(ns string, r *resource.RowEvent) tcell.Color {
 	if strings.TrimSpace(r.Fields[markCol]) != strings.TrimSpace(r.Fields[markCol+1]) {
 		return errColor
 	}
+
 	return stdColor
 }
 
@@ -151,6 +164,7 @@ func stsColorer(ns string, r *resource.RowEvent) tcell.Color {
 	if strings.TrimSpace(r.Fields[markCol]) != strings.TrimSpace(r.Fields[markCol+1]) {
 		return errColor
 	}
+
 	return stdColor
 }
 
@@ -167,6 +181,7 @@ func rsColorer(ns string, r *resource.RowEvent) tcell.Color {
 	if strings.TrimSpace(r.Fields[markCol]) != strings.TrimSpace(r.Fields[markCol+1]) {
 		return errColor
 	}
+
 	return stdColor
 }
 
@@ -184,6 +199,7 @@ func evColorer(ns string, r *resource.RowEvent) tcell.Color {
 	case "Killing":
 		c = killColor
 	}
+
 	return c
 }
 

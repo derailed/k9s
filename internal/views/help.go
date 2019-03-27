@@ -75,7 +75,7 @@ func (v *helpView) init(_ context.Context, _ string) {
 	}
 	fmt.Fprintf(v, "🏠 [aqua::b]%s\n", "General")
 	for _, h := range general {
-		fmt.Fprintf(v, "[pink::b]%9s [gray::]%s\n", h.key, h.description)
+		v.printHelp(h.key, h.description)
 	}
 
 	navigation := []helpItem{
@@ -90,7 +90,7 @@ func (v *helpView) init(_ context.Context, _ string) {
 	}
 	fmt.Fprintf(v, "\n🤖 [aqua::b]%s\n", "View Navigation")
 	for _, h := range navigation {
-		fmt.Fprintf(v, "[pink::b]%9s [gray::]%s\n", h.key, h.description)
+		v.printHelp(h.key, h.description)
 	}
 
 	views := []helpItem{
@@ -99,10 +99,13 @@ func (v *helpView) init(_ context.Context, _ string) {
 	}
 	fmt.Fprintf(v, "️️\n😱 [aqua::b]%s\n", "Help")
 	for _, h := range views {
-		fmt.Fprintf(v, "[pink::b]%9s [gray::]%s\n", h.key, h.description)
+		v.printHelp(h.key, h.description)
 	}
-
 	v.app.setHints(v.hints())
+}
+
+func (v *helpView) printHelp(key, desc string) {
+	fmt.Fprintf(v, "[pink::b]%9s [white::]%s\n", key, desc)
 }
 
 func (v *helpView) hints() hints {

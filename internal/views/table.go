@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	titleFmt   = " [aqua::b]%s[aqua::-]([fuchsia::b]%d[aqua::-]) "
+	titleFmt   = " [aqua::b]%s[aqua::-][[fuchsia::b]%d[aqua::-]] "
 	searchFmt  = "<[green::b]/%s[aqua::]> "
 	nsTitleFmt = " [aqua::b]%s([fuchsia::b]%s[aqua::-])[aqua::-][[aqua::b]%d[aqua::-]][aqua::-] "
 )
@@ -63,24 +63,8 @@ func newTableView(app *appView, title string) *tableView {
 		v.SetSelectable(true, false)
 		v.SetSelectedStyle(tcell.ColorBlack, tcell.ColorAqua, tcell.AttrBold)
 		v.SetInputCapture(v.keyboard)
+		v.registerHandlers()
 	}
-
-	v.actions[KeyShiftI] = newKeyAction("Invert", v.sortInvertCmd, true)
-	v.actions[KeyShiftN] = newKeyAction("Sort Name", v.sortColCmd(0), true)
-	v.actions[KeyShiftA] = newKeyAction("Sort Age", v.sortColCmd(-1), true)
-
-	v.actions[KeySlash] = newKeyAction("Filter Mode", v.activateCmd, false)
-	v.actions[tcell.KeyEscape] = newKeyAction("Filter Reset", v.resetCmd, false)
-	v.actions[tcell.KeyEnter] = newKeyAction("Filter", v.filterCmd, false)
-
-	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd, false)
-	v.actions[tcell.KeyBackspace] = newKeyAction("Erase", v.eraseCmd, false)
-	v.actions[tcell.KeyDelete] = newKeyAction("Erase", v.eraseCmd, false)
-	v.actions[KeyG] = newKeyAction("Top", app.puntCmd, false)
-	v.actions[KeyShiftG] = newKeyAction("Bottom", app.puntCmd, false)
-	v.actions[KeyB] = newKeyAction("Down", v.pageDownCmd, false)
-	v.actions[KeyF] = newKeyAction("Up", v.pageUpCmd, false)
-
 	return &v
 }
 
@@ -128,6 +112,7 @@ func (v *tableView) pageDownCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (v *tableView) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.cmdBuff.setActive(false)
 	v.refresh()
+
 	return nil
 }
 
@@ -309,10 +294,11 @@ func (v *tableView) doUpdate(data resource.TableData) {
 	row++
 
 	// for k := range data.Rows {
-	// 	log.Debug().Msgf("Keys: %s", k)
+	// 	log.Debug().Msgf("Keys: `%s`", k)
 	// }
 
 	keys := v.sortRows(data)
+	// log.Debug().Msgf("KEYS %#v", keys)
 	groupKeys := map[string][]string{}
 	for _, k := range keys {
 		// log.Debug().Msgf("RKEY: %s", k)
@@ -446,6 +432,24 @@ func (v *tableView) resetTitle() {
 
 // ----------------------------------------------------------------------------
 // Event listeners...
+
+func (v *tableView) registerHandlers() {
+	v.actions[KeyShiftI] = newKeyAction("Invert", v.sortInvertCmd, true)
+	v.actions[KeyShiftN] = newKeyAction("Sort Name", v.sortColCmd(0), true)
+	v.actions[KeyShiftA] = newKeyAction("Sort Age", v.sortColCmd(-1), true)
+
+	v.actions[KeySlash] = newKeyAction("Filter Mode", v.activateCmd, false)
+	v.actions[tcell.KeyEscape] = newKeyAction("Filter Reset", v.resetCmd, false)
+	v.actions[tcell.KeyEnter] = newKeyAction("Filter", v.filterCmd, false)
+
+	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd, false)
+	v.actions[tcell.KeyBackspace] = newKeyAction("Erase", v.eraseCmd, false)
+	v.actions[tcell.KeyDelete] = newKeyAction("Erase", v.eraseCmd, false)
+	v.actions[KeyG] = newKeyAction("Top", v.app.puntCmd, false)
+	v.actions[KeyShiftG] = newKeyAction("Bottom", v.app.puntCmd, false)
+	v.actions[KeyB] = newKeyAction("Down", v.pageDownCmd, false)
+	v.actions[KeyF] = newKeyAction("Up", v.pageUpCmd, false)
+}
 
 func (v *tableView) changed(s string) {
 }

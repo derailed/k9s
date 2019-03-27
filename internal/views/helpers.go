@@ -46,6 +46,7 @@ func deltas(c, n string) string {
 	if len(c) == 0 {
 		return n
 	}
+
 	switch strings.Compare(c, n) {
 	case 1, -1:
 		return delta(n)
@@ -76,6 +77,7 @@ func numerical(s string) (int, bool) {
 func delta(s string) string {
 	return suffix(s, "𝜟")
 }
+
 func plus(s string) string {
 	return suffix(s, "+")
 }

@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -30,28 +28,8 @@ func newAliasView(app *appView) *aliasView {
 		v.colorerFn = aliasColorer
 		v.current = app.content.GetPrimitive("main").(igniter)
 		v.currentNS = ""
+		v.registerActions()
 	}
-	v.actions[tcell.KeyEnter] = newKeyAction("Goto", v.gotoCmd, true)
-	v.actions[tcell.KeyEscape] = newKeyAction("Reset", v.resetCmd, false)
-	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd, false)
-	v.actions[KeyShiftR] = newKeyAction("Sort Resources", v.sortResourceCmd, true)
-	v.actions[KeyShiftO] = newKeyAction("Sort Groups", v.sortGroupCmd, true)
-
-	ctx, cancel := context.WithCancel(context.TODO())
-	v.cancel = cancel
-	go func(ctx context.Context) {
-		for {
-			select {
-			case <-ctx.Done():
-				log.Debug().Msg("Alias GR bailing out!")
-				return
-			case <-time.After(1 * time.Second):
-				v.update(v.hydrate())
-				v.app.Draw()
-			}
-		}
-	}(ctx)
-
 	return &v
 }
 
@@ -60,6 +38,14 @@ func (v *aliasView) init(context.Context, string) {
 	v.update(v.hydrate())
 	v.app.SetFocus(v)
 	v.resetTitle()
+}
+
+func (v *aliasView) registerActions() {
+	v.actions[tcell.KeyEnter] = newKeyAction("Goto", v.gotoCmd, true)
+	v.actions[tcell.KeyEscape] = newKeyAction("Reset", v.resetCmd, false)
+	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd, false)
+	v.actions[KeyShiftR] = newKeyAction("Sort Resources", v.sortResourceCmd, true)
+	v.actions[KeyShiftO] = newKeyAction("Sort Groups", v.sortGroupCmd, true)
 }
 
 func (v *aliasView) getTitle() string {

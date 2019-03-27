@@ -42,6 +42,7 @@ type (
 		selectedNS     string
 		update         sync.Mutex
 		list           resource.List
+		enterFn        enterFn
 		extraActionsFn func(keyActions)
 		selectedFn     func() string
 		decorateDataFn func(resource.TableData) resource.TableData
@@ -124,8 +125,20 @@ func (v *resourceView) hints() hints {
 	return v.CurrentPage().Item.(hinter).hints()
 }
 
+func (v *resourceView) setEnterFn(f enterFn) {
+	v.enterFn = f
+}
+
 // ----------------------------------------------------------------------------
 // Actions...
+
+func (v *resourceView) enterCmd(*tcell.EventKey) *tcell.EventKey {
+	v.app.flash(flashInfo, "Enter pressed...")
+	if v.enterFn != nil {
+		v.enterFn(v.app, v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
+	}
+	return nil
+}
 
 func (v *resourceView) refreshCmd(*tcell.EventKey) *tcell.EventKey {
 	v.app.flash(flashInfo, "Refreshing...")
@@ -359,6 +372,8 @@ func (v *resourceView) refreshActions() {
 		}
 	}
 
+	aa[tcell.KeyEnter] = newKeyAction("Enter", v.enterCmd, true)
+
 	aa[tcell.KeyCtrlR] = newKeyAction("Refresh", v.refreshCmd, false)
 	aa[KeyHelp] = newKeyAction("Help", v.app.noopCmd, false)
 	aa[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
@@ -370,7 +385,7 @@ func (v *resourceView) refreshActions() {
 		aa[tcell.KeyCtrlD] = newKeyAction("Delete", v.deleteCmd, true)
 	}
 	if v.list.Access(resource.ViewAccess) {
-		aa[KeyV] = newKeyAction("View", v.viewCmd, true)
+		aa[KeyY] = newKeyAction("YAML", v.viewCmd, true)
 	}
 	if v.list.Access(resource.DescribeAccess) {
 		aa[KeyD] = newKeyAction("Describe", v.describeCmd, true)
