@@ -96,9 +96,9 @@ func TestJobToDuration(t *testing.T) {
 		},
 		{
 			batchv1.JobStatus{
-				StartTime: &t1,
+				StartTime: &metav1.Time{time.Now().Add(-10 * time.Second)},
 			},
-			"102d",
+			"10s",
 		},
 		{
 			batchv1.JobStatus{
