@@ -90,13 +90,6 @@ func toAge(timestamp metav1.Time) string {
 	return duration.HumanDuration(time.Since(timestamp.Time))
 }
 
-// Pad a string up to the given length.
-func Pad(s string, l int) string {
-	fmat := "%-" + strconv.Itoa(l) + "s"
-
-	return fmt.Sprintf(fmat, s)
-}
-
 // Truncate a string to the given l and suffix ellipsis if needed.
 func Truncate(str string, width int) string {
 	return runewidth.Truncate(str, width, string(tview.SemigraphicsHorizontalEllipsis))

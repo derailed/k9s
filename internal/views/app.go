@@ -20,6 +20,7 @@ type (
 
 	igniter interface {
 		tview.Primitive
+
 		getTitle() string
 		init(ctx context.Context, ns string)
 	}
@@ -30,6 +31,10 @@ type (
 
 	resourceViewer interface {
 		igniter
+
+		setEnterFn(enterFn)
+		setColorerFn(colorerFn)
+		setDecorateFn(decorateFn)
 	}
 
 	appView struct {
@@ -89,6 +94,8 @@ func NewApp(cfg *config.Config) *appView {
 	v.actions[tcell.KeyBackspace] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[tcell.KeyDelete] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[tcell.KeyTab] = newKeyAction("Focus", v.focusCmd, false)
+
+	// v.actions[KeyO] = newKeyAction("RBAC", v.rbacCmd, false)
 
 	return &v
 }
@@ -153,6 +160,11 @@ func (a *appView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		log.Debug().Msgf(">> AppView handled key: %s", tcell.KeyNames[key])
 		return a.action(evt)
 	}
+	return evt
+}
+
+func (a *appView) rbacCmd(evt *tcell.EventKey) *tcell.EventKey {
+	a.inject(newRBACView(a, "", "aa_k9s", clusterRole))
 	return evt
 }
 
@@ -263,7 +275,7 @@ func (a *appView) inject(p igniter) {
 
 	var ctx context.Context
 	{
-		ctx, a.cancel = context.WithCancel(context.TODO())
+		ctx, a.cancel = context.WithCancel(context.Background())
 		p.init(ctx, a.config.ActiveNamespace())
 	}
 	a.content.AddPage("main", p, true, true)

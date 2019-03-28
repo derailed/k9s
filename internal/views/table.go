@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	titleFmt   = " [aqua::b]%s[aqua::-]([fuchsia::b]%d[aqua::-]) "
+	titleFmt   = " [aqua::b]%s[aqua::-][[fuchsia::b]%d[aqua::-]] "
 	searchFmt  = "<[green::b]/%s[aqua::]> "
 	nsTitleFmt = " [aqua::b]%s([fuchsia::b]%s[aqua::-])[aqua::-][[aqua::b]%d[aqua::-]][aqua::-] "
 )
@@ -55,6 +55,7 @@ func newTableView(app *appView, title string) *tableView {
 		v.actions = make(keyActions)
 		v.SetFixed(1, 0)
 		v.SetBorder(true)
+		v.SetFixed(1, 0)
 		v.SetBorderColor(tcell.ColorDodgerBlue)
 		v.SetBorderAttributes(tcell.AttrBold)
 		v.SetBorderPadding(0, 0, 1, 1)
@@ -64,8 +65,13 @@ func newTableView(app *appView, title string) *tableView {
 		v.SetSelectable(true, false)
 		v.SetSelectedStyle(tcell.ColorBlack, tcell.ColorAqua, tcell.AttrBold)
 		v.SetInputCapture(v.keyboard)
+		v.bindKeys()
 	}
 
+	return &v
+}
+
+func (v *tableView) bindKeys() {
 	v.actions[KeyShiftI] = newKeyAction("Invert", v.sortInvertCmd, true)
 	v.actions[KeyShiftN] = newKeyAction("Sort Name", v.sortColCmd(0), true)
 	v.actions[KeyShiftA] = newKeyAction("Sort Age", v.sortColCmd(-1), true)
@@ -77,12 +83,10 @@ func newTableView(app *appView, title string) *tableView {
 	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[tcell.KeyBackspace] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[tcell.KeyDelete] = newKeyAction("Erase", v.eraseCmd, false)
-	v.actions[KeyG] = newKeyAction("Top", app.puntCmd, false)
-	v.actions[KeyShiftG] = newKeyAction("Bottom", app.puntCmd, false)
+	v.actions[KeyG] = newKeyAction("Top", v.app.puntCmd, false)
+	v.actions[KeyShiftG] = newKeyAction("Bottom", v.app.puntCmd, false)
 	v.actions[KeyB] = newKeyAction("Down", v.pageDownCmd, false)
 	v.actions[KeyF] = newKeyAction("Up", v.pageUpCmd, false)
-
-	return &v
 }
 
 func (v *tableView) clearSelection() {
@@ -107,6 +111,7 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		log.Debug().Msgf(">> TableView handled %s", tcell.KeyNames[key])
 		return a.action(evt)
 	}
+
 	return evt
 }
 
@@ -118,17 +123,20 @@ func (v *tableView) setSelection() {
 
 func (v *tableView) pageUpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.PageUp()
+
 	return nil
 }
 
 func (v *tableView) pageDownCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.PageDown()
+
 	return nil
 }
 
 func (v *tableView) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.cmdBuff.setActive(false)
 	v.refresh()
+
 	return nil
 }
 
@@ -136,6 +144,7 @@ func (v *tableView) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.cmdBuff.isActive() {
 		v.cmdBuff.del()
 	}
+
 	return nil
 }
 
@@ -145,6 +154,7 @@ func (v *tableView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	v.cmdBuff.reset()
 	v.refresh()
+
 	return nil
 }
 
@@ -172,12 +182,14 @@ func (v *tableView) sortColCmd(col int) func(evt *tcell.EventKey) *tcell.EventKe
 func (v *tableView) sortNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.sortCol.index, v.sortCol.asc = 0, true
 	v.refresh()
+
 	return nil
 }
 
 func (v *tableView) sortInvertCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.sortCol.asc = !v.sortCol.asc
 	v.refresh()
+
 	return nil
 }
 
@@ -189,6 +201,7 @@ func (v *tableView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.app.flash(flashInfo, "Filtering...")
 	v.cmdBuff.reset()
 	v.cmdBuff.setActive(true)
+
 	return nil
 }
 
@@ -201,7 +214,7 @@ func (v *tableView) setDeleted() {
 }
 
 // SetColorer sets up table row color management.
-func (v *tableView) SetColorer(f colorerFn) {
+func (v *tableView) setColorer(f colorerFn) {
 	v.colorerFn = f
 }
 
@@ -221,6 +234,7 @@ func (v *tableView) hints() hints {
 	if v.actions != nil {
 		return v.actions.toHints()
 	}
+
 	return nil
 }
 
@@ -266,10 +280,11 @@ func (v *tableView) filtered() resource.TableData {
 			filtered.Rows[k] = row
 		}
 	}
+
 	return filtered
 }
 
-func (v *tableView) displayCol(index int, name string) string {
+func (v *tableView) sortIndicator(index int, name string) string {
 	if v.sortCol.index != index {
 		return name
 	}
@@ -278,13 +293,13 @@ func (v *tableView) displayCol(index int, name string) string {
 	if v.sortCol.asc {
 		order = "↑"
 	}
-	return fmt.Sprintf("%s[green::]%s[::]", name, order)
+	return fmt.Sprintf("%s [green::]%s[::]", name, order)
 }
 
 func (v *tableView) doUpdate(data resource.TableData) {
 	v.currentNS = data.Namespace
-	if v.currentNS == resource.AllNamespaces {
-		v.actions[KeyShiftS] = newKeyAction("Sort Namespace", v.sortNamespaceCmd, true)
+	if v.currentNS == resource.AllNamespaces || v.currentNS == "*" {
+		v.actions[KeyShiftP] = newKeyAction("Sort Namespace", v.sortNamespaceCmd, true)
 	} else {
 		delete(v.actions, KeyShiftS)
 	}
@@ -303,118 +318,94 @@ func (v *tableView) doUpdate(data resource.TableData) {
 		v.sortCol.index = 0
 	}
 
+	pads := make(maxyPad, len(data.Header))
+	computeMaxColumns(pads, v.sortCol.index, data)
 	var row int
 	for col, h := range data.Header {
-		v.addHeaderCell(col, h)
+		v.addHeaderCell(col, h, pads)
 	}
 	row++
 
-	// for k := range data.Rows {
-	// 	log.Debug().Msgf("Keys: %s", k)
-	// }
-
-	keys := v.sortRows(data)
-	groupKeys := map[string][]string{}
-	for _, k := range keys {
-		// log.Debug().Msgf("RKEY: %s", k)
-		grp := data.Rows[k].Fields[v.sortCol.index]
-		if s, ok := groupKeys[grp]; ok {
-			s = append(s, k)
-			groupKeys[grp] = s
-		} else {
-			groupKeys[grp] = []string{k}
-		}
+	sortFn := v.defaultSort
+	if v.sortFn != nil {
+		sortFn = v.sortFn
 	}
-
-	// Performs secondary to sort by name for each groups.
-	gKeys := make([]string, len(keys))
-	for k, v := range groupKeys {
-		sort.Strings(v)
-		gKeys = append(gKeys, k)
-	}
-	rs := groupSorter{gKeys, v.sortCol.asc}
-	sort.Sort(rs)
-
-	for _, gk := range gKeys {
-		for _, k := range groupKeys[gk] {
+	prim, sec := v.sortAllRows(data.Rows, sortFn)
+	for _, pk := range prim {
+		for _, sk := range sec[pk] {
 			fgColor := tcell.ColorGray
 			if v.colorerFn != nil {
-				fgColor = v.colorerFn(data.Namespace, data.Rows[k])
+				fgColor = v.colorerFn(data.Namespace, data.Rows[sk])
 			}
-			for col, field := range data.Rows[k].Fields {
-				v.addBodyCell(row, col, field, data.Rows[k].Deltas[col], fgColor)
+			for col, field := range data.Rows[sk].Fields {
+				v.addBodyCell(row, col, field, data.Rows[sk].Deltas[col], fgColor, pads)
 			}
 			row++
 		}
 	}
 }
 
-func (v *tableView) addHeaderCell(col int, name string) {
-	c := tview.NewTableCell(v.displayCol(col, name))
+func (v *tableView) sortAllRows(rows resource.RowEvents, sortFn sortFn) (resource.Row, map[string]resource.Row) {
+	keys := make([]string, len(rows))
+	v.sortRows(rows, sortFn, v.sortCol, keys)
+
+	sec := make(map[string]resource.Row, len(rows))
+	for _, k := range keys {
+		grp := rows[k].Fields[v.sortCol.index]
+		sec[grp] = append(sec[grp], k)
+	}
+
+	// Performs secondary to sort by name for each groups.
+	prim := make(resource.Row, 0, len(sec))
+	for k, v := range sec {
+		sort.Strings(v)
+		prim = append(prim, k)
+	}
+	sort.Sort(groupSorter{prim, v.sortCol.asc})
+
+	return prim, sec
+}
+
+func (v *tableView) addHeaderCell(col int, name string, pads maxyPad) {
+	c := tview.NewTableCell(v.sortIndicator(col, name))
 	{
-		c.SetExpansion(3)
-		if len(name) == 0 {
-			c.SetExpansion(1)
-		}
+		c.SetExpansion(1)
 		c.SetTextColor(tcell.ColorAntiqueWhite)
 	}
 	v.SetCell(0, col, c)
 }
 
-func (v *tableView) addBodyCell(row, col int, field, delta string, color tcell.Color) {
-	c := tview.NewTableCell(deltas(delta, field))
+func (v *tableView) addBodyCell(row, col int, field, delta string, color tcell.Color, pads maxyPad) {
+	var pField string
+	if isASCII(field) {
+		pField = pad(deltas(delta, field), pads[col])
+	} else {
+		pField = deltas(delta, field)
+	}
+
+	c := tview.NewTableCell(pField)
 	{
-		c.SetExpansion(3)
-		if len(v.GetCell(0, col).Text) == 0 {
-			c.SetExpansion(1)
-		}
+		c.SetExpansion(1)
 		c.SetTextColor(color)
 	}
 	v.SetCell(row, col, c)
 }
 
-func (v *tableView) defaultSort(rows resource.Rows) {
-	t := rowSorter{rows: rows, index: v.sortCol.index, asc: v.sortCol.asc}
+func (v *tableView) defaultSort(rows resource.Rows, sortCol sortColumn) {
+	t := rowSorter{rows: rows, index: sortCol.index, asc: sortCol.asc}
 	sort.Sort(t)
 }
 
-func (v *tableView) sortRows(data resource.TableData) []string {
-	rows := make(resource.Rows, 0, len(data.Rows))
-	for _, r := range data.Rows {
-		rows = append(rows, r.Fields)
+func (*tableView) sortRows(evts resource.RowEvents, sortFn sortFn, sortCol sortColumn, keys []string) {
+	rows := make(resource.Rows, 0, len(evts))
+	for k, r := range evts {
+		rows = append(rows, append(r.Fields, k))
 	}
+	sortFn(rows, sortCol)
 
-	if v.sortFn != nil {
-		v.sortFn(rows, v.sortCol)
-	} else {
-		v.defaultSort(rows)
-	}
-
-	keys := make([]string, len(rows))
 	for i, r := range rows {
-		col, prefix := 0, v.currentNS
-		switch v.currentNS {
-		case resource.AllNamespaces:
-			col, prefix = 1, r[0]
-		case resource.NotNamespaced:
-			prefix = ""
-		}
-
-		key := r[col]
-		if v.cleanseFn != nil {
-			key = v.cleanseFn(key)
-		} else {
-			key = v.defaultColCleanse(key)
-		}
-
-		if len(prefix) == 0 {
-			keys[i] = key
-		} else {
-			keys[i] = prefix + "/" + key
-		}
+		keys[i] = r[len(r)-1]
 	}
-
-	return keys
 }
 
 func (*tableView) defaultColCleanse(s string) string {
@@ -448,8 +439,7 @@ func (v *tableView) resetTitle() {
 // ----------------------------------------------------------------------------
 // Event listeners...
 
-func (v *tableView) changed(s string) {
-}
+func (v *tableView) changed(s string) {}
 
 func (v *tableView) active(b bool) {
 	if b {

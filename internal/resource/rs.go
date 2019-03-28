@@ -75,12 +75,12 @@ func (*ReplicaSet) Header(ns string) Row {
 
 // Fields retrieves displayable fields.
 func (r *ReplicaSet) Fields(ns string) Row {
+	i := r.instance
+
 	ff := make(Row, 0, len(r.Header(ns)))
 	if ns == AllNamespaces {
-		ff = append(ff, r.instance.Namespace)
+		ff = append(ff, i.Namespace)
 	}
-
-	i := r.instance
 
 	return append(ff,
 		i.Name,

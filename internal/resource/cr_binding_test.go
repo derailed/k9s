@@ -59,7 +59,7 @@ func TestCRBListData(t *testing.T) {
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
 	row := td.Rows["fred"]
-	assert.Equal(t, 2, len(row.Deltas))
+	assert.Equal(t, 5, len(row.Deltas))
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}

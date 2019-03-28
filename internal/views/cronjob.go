@@ -11,12 +11,13 @@ type cronJobView struct {
 	*resourceView
 }
 
-func newCronJobView(t string, app *appView, list resource.List, c colorerFn) resourceViewer {
+func newCronJobView(t string, app *appView, list resource.List) resourceViewer {
 	v := cronJobView{
-		resourceView: newResourceView(t, app, list, c).(*resourceView),
+		resourceView: newResourceView(t, app, list).(*resourceView),
 	}
 	v.extraActionsFn = v.extraActions
 	v.switchPage("cronjob")
+
 	return &v
 }
 
@@ -30,6 +31,7 @@ func (v *cronJobView) trigger(evt *tcell.EventKey) *tcell.EventKey {
 		v.app.flash(flashErr, "Boom!", err.Error())
 		return evt
 	}
+
 	return nil
 }
 

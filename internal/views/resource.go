@@ -42,13 +42,15 @@ type (
 		selectedNS     string
 		update         sync.Mutex
 		list           resource.List
+		enterFn        enterFn
 		extraActionsFn func(keyActions)
 		selectedFn     func() string
-		decorateDataFn func(resource.TableData) resource.TableData
+		decorateFn     decorateFn
+		colorerFn      colorerFn
 	}
 )
 
-func newResourceView(title string, app *appView, list resource.List, c colorerFn) resourceViewer {
+func newResourceView(title string, app *appView, list resource.List) resourceViewer {
 	v := resourceView{
 		app:        app,
 		title:      title,
@@ -59,7 +61,6 @@ func newResourceView(title string, app *appView, list resource.List, c colorerFn
 
 	tv := newTableView(app, v.title)
 	{
-		tv.SetColorer(c)
 		tv.SetSelectionChangedFunc(v.selChanged)
 	}
 	v.AddPage(v.list.GetName(), tv, true, true)
@@ -78,6 +79,12 @@ func newResourceView(title string, app *appView, list resource.List, c colorerFn
 // Init watches all running pods in given namespace
 func (v *resourceView) init(ctx context.Context, ns string) {
 	v.selectedItem, v.selectedNS = noSelection, ns
+
+	colorer := defaultColorer
+	if v.colorerFn != nil {
+		colorer = v.colorerFn
+	}
+	v.getTV().setColorer(colorer)
 
 	go func(ctx context.Context) {
 		for {
@@ -106,10 +113,6 @@ func (v *resourceView) selChanged(r, c int) {
 	v.getTV().cmdBuff.setActive(false)
 }
 
-func (v *resourceView) colorFn(f colorerFn) {
-	v.getTV().SetColorer(f)
-}
-
 func (v *resourceView) getSelectedItem() string {
 	if v.selectedFn != nil {
 		return v.selectedFn()
@@ -124,8 +127,29 @@ func (v *resourceView) hints() hints {
 	return v.CurrentPage().Item.(hinter).hints()
 }
 
+func (v *resourceView) setColorerFn(f colorerFn) {
+	v.colorerFn = f
+	v.getTV().setColorer(f)
+}
+
+func (v *resourceView) setEnterFn(f enterFn) {
+	v.enterFn = f
+}
+
+func (v *resourceView) setDecorateFn(f decorateFn) {
+	v.decorateFn = f
+}
+
 // ----------------------------------------------------------------------------
 // Actions...
+
+func (v *resourceView) enterCmd(*tcell.EventKey) *tcell.EventKey {
+	v.app.flash(flashInfo, "Enter pressed...")
+	if v.enterFn != nil {
+		v.enterFn(v.app, v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
+	}
+	return nil
+}
 
 func (v *resourceView) refreshCmd(*tcell.EventKey) *tcell.EventKey {
 	v.app.flash(flashInfo, "Refreshing...")
@@ -262,12 +286,12 @@ func (v *resourceView) refresh() {
 			v.list.SetNamespace(v.selectedNS)
 		}
 		if err := v.list.Reconcile(); err != nil {
-			log.Warn().Msgf("Reconcile %v", err)
+			log.Error().Err(err).Msg("Reconciliation failed")
 			v.app.flash(flashErr, err.Error())
 		}
 		data := v.list.Data()
-		if v.decorateDataFn != nil {
-			data = v.decorateDataFn(data)
+		if v.decorateFn != nil {
+			data = v.decorateFn(data)
 		}
 		v.getTV().update(data)
 		v.selectItem(v.selectedRow, 0)
@@ -359,6 +383,8 @@ func (v *resourceView) refreshActions() {
 		}
 	}
 
+	aa[tcell.KeyEnter] = newKeyAction("Enter", v.enterCmd, true)
+
 	aa[tcell.KeyCtrlR] = newKeyAction("Refresh", v.refreshCmd, false)
 	aa[KeyHelp] = newKeyAction("Help", v.app.noopCmd, false)
 	aa[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
@@ -370,7 +396,7 @@ func (v *resourceView) refreshActions() {
 		aa[tcell.KeyCtrlD] = newKeyAction("Delete", v.deleteCmd, true)
 	}
 	if v.list.Access(resource.ViewAccess) {
-		aa[KeyV] = newKeyAction("View", v.viewCmd, true)
+		aa[KeyY] = newKeyAction("YAML", v.viewCmd, true)
 	}
 	if v.list.Access(resource.DescribeAccess) {
 		aa[KeyD] = newKeyAction("Describe", v.describeCmd, true)

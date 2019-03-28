@@ -8,8 +8,6 @@ import (
 )
 
 func TestToSubjectAlias(t *testing.T) {
-	r := RoleBinding{}
-
 	uu := []struct {
 		i string
 		e string
@@ -20,38 +18,44 @@ func TestToSubjectAlias(t *testing.T) {
 		{"fred", "FRED"},
 	}
 	for _, u := range uu {
-		assert.Equal(t, u.e, r.toSubjectAlias(u.i))
+		assert.Equal(t, u.e, toSubjectAlias(u.i))
 	}
 }
 
-func TestToSubjects(t *testing.T) {
-	r := RoleBinding{}
-
+func TestRenderSubjects(t *testing.T) {
 	uu := []struct {
-		i []rbacv1.Subject
-		e string
+		ss []rbacv1.Subject
+		ek string
+		e  string
 	}{
 		{
 			[]rbacv1.Subject{
 				{Name: "blee", Kind: rbacv1.UserKind},
 			},
-			"blee/USR",
+			"USR",
+			"blee",
+		},
+		{
+			[]rbacv1.Subject{},
+			"<n/a>",
+			"",
 		},
 	}
 	for _, u := range uu {
-		assert.Equal(t, u.e, r.toSubjects(u.i))
+		kind, ss := renderSubjects(u.ss)
+		assert.Equal(t, u.e, ss)
+		assert.Equal(t, u.ek, kind)
 	}
 }
 
 func BenchmarkToSubjects(b *testing.B) {
-	var r RoleBinding
 	ss := []rbacv1.Subject{
 		{Name: "blee", Kind: rbacv1.UserKind},
 	}
+
 	b.ResetTimer()
 	b.ReportAllocs()
-
 	for i := 0; i < b.N; i++ {
-		r.toSubjects(ss)
+		renderSubjects(ss)
 	}
 }

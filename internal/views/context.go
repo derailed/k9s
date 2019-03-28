@@ -11,8 +11,8 @@ type contextView struct {
 	*resourceView
 }
 
-func newContextView(t string, app *appView, list resource.List, c colorerFn) resourceViewer {
-	v := contextView{newResourceView(t, app, list, c).(*resourceView)}
+func newContextView(t string, app *appView, list resource.List) resourceViewer {
+	v := contextView{newResourceView(t, app, list).(*resourceView)}
 	{
 		v.extraActionsFn = v.extraActions
 		v.getTV().cleanseFn = v.cleanser

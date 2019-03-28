@@ -20,8 +20,8 @@ type loggable interface {
 	switchPage(n string)
 }
 
-func newPodView(t string, app *appView, list resource.List, c colorerFn) resourceViewer {
-	v := podView{newResourceView(t, app, list, c).(*resourceView)}
+func newPodView(t string, app *appView, list resource.List) resourceViewer {
+	v := podView{newResourceView(t, app, list).(*resourceView)}
 	{
 		v.extraActionsFn = v.extraActions
 	}

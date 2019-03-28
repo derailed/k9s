@@ -14,7 +14,6 @@ import (
 
 const (
 	defaultTimeout = 1 * time.Second
-	podNameSize    = 42
 )
 
 type (
@@ -188,7 +187,7 @@ func (*Pod) Header(ns string) Row {
 		"NAME",
 		"READY",
 		"STATUS",
-		"RESTARTS",
+		"RS",
 		"CPU",
 		"MEM",
 		"IP",
@@ -211,7 +210,7 @@ func (r *Pod) Fields(ns string) Row {
 	cr, _, rc := r.statuses(ss)
 
 	return append(ff,
-		Pad(i.ObjectMeta.Name, podNameSize),
+		i.ObjectMeta.Name,
 		strconv.Itoa(cr)+"/"+strconv.Itoa(len(ss)),
 		r.phase(i.Status),
 		strconv.Itoa(rc),
@@ -219,13 +218,24 @@ func (r *Pod) Fields(ns string) Row {
 		ToMi(r.metrics.CurrentMEM),
 		i.Status.PodIP,
 		i.Spec.NodeName,
-		string(i.Status.QOSClass),
+		r.mapQOS(i.Status.QOSClass),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
 }
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func (*Pod) mapQOS(class v1.PodQOSClass) string {
+	switch class {
+	case v1.PodQOSGuaranteed:
+		return "GA"
+	case v1.PodQOSBurstable:
+		return "BU"
+	default:
+		return "BE"
+	}
+}
 
 func (r *Pod) statuses(ss []v1.ContainerStatus) (cr, ct, rc int) {
 	for _, c := range ss {

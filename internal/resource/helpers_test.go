@@ -77,22 +77,6 @@ func TestNa(t *testing.T) {
 	}
 }
 
-func TestPad(t *testing.T) {
-	uu := []struct {
-		s string
-		l int
-		e string
-	}{
-		{"fred", 10, "fred      "},
-		{"fred", 6, "fred  "},
-		{"fred", 4, "fred"},
-	}
-
-	for _, u := range uu {
-		assert.Equal(t, u.e, Pad(u.s, u.l))
-	}
-}
-
 func TestTruncate(t *testing.T) {
 	uu := []struct {
 		s string

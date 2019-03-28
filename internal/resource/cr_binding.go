@@ -1,6 +1,8 @@
 package resource
 
 import (
+	"strings"
+
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/rbac/v1"
@@ -63,15 +65,54 @@ func (r *ClusterRoleBinding) Marshal(path string) (string, error) {
 
 // Header return resource header.
 func (*ClusterRoleBinding) Header(_ string) Row {
-	return append(Row{}, "NAME", "AGE")
+	return append(Row{}, "NAME", "ROLE", "KIND", "SUBJECTS", "AGE")
 }
 
 // Fields retrieves displayable fields.
 func (r *ClusterRoleBinding) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
 
+	i := r.instance
+	kind, ss := renderSubjects(i.Subjects)
+
 	return append(ff,
-		r.instance.Name,
-		toAge(r.instance.ObjectMeta.CreationTimestamp),
+		i.Name,
+		i.RoleRef.Name,
+		kind,
+		ss,
+		toAge(i.ObjectMeta.CreationTimestamp),
 	)
+}
+
+// ----------------------------------------------------------------------------
+// Helpers...
+
+func renderSubjects(ss []v1.Subject) (kind string, subjects string) {
+	if len(ss) == 0 {
+		return NAValue, ""
+	}
+
+	var tt []string
+	for _, s := range ss {
+		kind = toSubjectAlias(s.Kind)
+		tt = append(tt, s.Name)
+	}
+	return kind, strings.Join(tt, ",")
+}
+
+func toSubjectAlias(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+
+	switch s {
+	case v1.UserKind:
+		return "USR"
+	case v1.GroupKind:
+		return "GRP"
+	case v1.ServiceAccountKind:
+		return "SA"
+	default:
+		return strings.ToUpper(s)
+	}
 }

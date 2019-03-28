@@ -145,6 +145,10 @@ func (l *list) GetNamespace() string {
 // SetNamespace updates the namespace on the list. Default ns is "" for all
 // namespaces.
 func (l *list) SetNamespace(n string) {
+	if l.namespace == NotNamespaced {
+		return
+	}
+
 	if n == AllNamespace {
 		n = AllNamespaces
 	}
