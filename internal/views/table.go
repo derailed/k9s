@@ -351,7 +351,6 @@ func (v *tableView) sortAllRows(rows resource.RowEvents, sortFn sortFn) (resourc
 	sec := make(map[string]resource.Row, len(rows))
 	for _, k := range keys {
 		grp := rows[k].Fields[v.sortCol.index]
-		log.Debug().Msg("append")
 		sec[grp] = append(sec[grp], k)
 	}
 
@@ -361,8 +360,7 @@ func (v *tableView) sortAllRows(rows resource.RowEvents, sortFn sortFn) (resourc
 		sort.Strings(v)
 		prim = append(prim, k)
 	}
-	rs := groupSorter{prim, v.sortCol.asc}
-	sort.Sort(rs)
+	sort.Sort(groupSorter{prim, v.sortCol.asc})
 
 	return prim, sec
 }
