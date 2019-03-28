@@ -115,7 +115,6 @@ func (v *fuView) hints() hints {
 }
 
 func (v *fuView) reconcile() (resource.TableData, error) {
-	log.Debug().Msg("ClusterRoles...")
 	evts, errs := v.clusterPolicies()
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -124,7 +123,6 @@ func (v *fuView) reconcile() (resource.TableData, error) {
 		return resource.TableData{}, errs[0]
 	}
 
-	log.Debug().Msg("Roles...")
 	nevts, errs := v.namespacePolicies()
 	if len(errs) > 0 {
 		for _, err := range errs {

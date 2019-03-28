@@ -36,6 +36,14 @@ const (
 	NAValue = "<n/a>"
 )
 
+// Columns Padding...
+const (
+	NSPad   = 13
+	NamePad = 50
+	AgePad  = 5
+	RBACPad = 80
+)
+
 func asPerc(f float64) string {
 	return fmt.Sprintf("%d%%", int(f))
 }

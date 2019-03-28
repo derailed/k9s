@@ -132,18 +132,18 @@ func (r *Job) Fields(ns string) Row {
 
 	i := r.instance
 	if ns == AllNamespaces {
-		ff = append(ff, i.Namespace)
+		ff = append(ff, Pad(i.Namespace, NSPad))
 	}
 
 	cc, ii := r.toContainers(i.Spec.Template.Spec)
 
 	return append(ff,
-		i.Name,
+		Pad(i.Name, NamePad),
 		r.toCompletion(i.Spec, i.Status),
 		r.toDuration(i.Status),
 		cc,
 		ii,
-		toAge(i.ObjectMeta.CreationTimestamp),
+		Pad(toAge(i.ObjectMeta.CreationTimestamp), AgePad),
 	)
 }
 

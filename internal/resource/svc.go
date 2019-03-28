@@ -91,16 +91,16 @@ func (r *Service) Fields(ns string) Row {
 	i := r.instance
 
 	if ns == AllNamespaces {
-		ff = append(ff, i.Namespace)
+		ff = append(ff, Pad(i.Namespace, NSPad))
 	}
 
 	return append(ff,
-		i.ObjectMeta.Name,
+		Pad(i.ObjectMeta.Name, NamePad),
 		string(i.Spec.Type),
 		i.Spec.ClusterIP,
 		r.toIPs(i.Spec.Type, r.getSvcExtIPS(i)),
 		r.toPorts(i.Spec.Ports),
-		toAge(i.ObjectMeta.CreationTimestamp),
+		Pad(toAge(i.ObjectMeta.CreationTimestamp), AgePad),
 	)
 }
 

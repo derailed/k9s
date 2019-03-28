@@ -2,7 +2,6 @@ package resource_test
 
 import (
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -42,12 +41,12 @@ func TestCRListAccess(t *testing.T) {
 
 func TestCRFields(t *testing.T) {
 	r := newClusterRole().Fields("blee")
-	assert.Equal(t, "fred"+strings.Repeat(" ", 66), r[0])
+	assert.Equal(t, resource.Pad("fred", resource.RBACPad), r[0])
 }
 
 func TestCRFieldsAllNS(t *testing.T) {
 	r := newClusterRole().Fields(resource.AllNamespaces)
-	assert.Equal(t, "fred"+strings.Repeat(" ", 66), r[0])
+	assert.Equal(t, resource.Pad("fred", resource.RBACPad), r[0])
 }
 
 func TestCRMarshal(t *testing.T) {
@@ -85,7 +84,7 @@ func TestCRListData(t *testing.T) {
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}
-	assert.Equal(t, resource.Row{"fred" + strings.Repeat(" ", 66)}, row.Fields[:1])
+	assert.Equal(t, resource.Row{resource.Pad("fred", resource.RBACPad)}, row.Fields[:1])
 }
 
 // Helpers...

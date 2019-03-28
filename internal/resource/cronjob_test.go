@@ -39,7 +39,7 @@ func TestCronJobListAccess(t *testing.T) {
 
 func TestCronJobFields(t *testing.T) {
 	r := newCronJob().Fields("blee")
-	assert.Equal(t, "fred", r[0])
+	assert.Equal(t, resource.Pad("fred", resource.NamePad), r[0])
 }
 
 func TestCronJobMarshal(t *testing.T) {
@@ -75,7 +75,7 @@ func TestCronJobListData(t *testing.T) {
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}
-	assert.Equal(t, resource.Row{"fred"}, row.Fields[:1])
+	assert.Equal(t, resource.Row{resource.Pad("fred", resource.NamePad)}, row.Fields[:1])
 }
 
 // Helpers...

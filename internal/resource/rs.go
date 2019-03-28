@@ -77,16 +77,16 @@ func (*ReplicaSet) Header(ns string) Row {
 func (r *ReplicaSet) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
 	if ns == AllNamespaces {
-		ff = append(ff, r.instance.Namespace)
+		ff = append(ff, Pad(r.instance.Namespace, NSPad))
 	}
 
 	i := r.instance
 
 	return append(ff,
-		i.Name,
+		Pad(i.Name, NamePad),
 		strconv.Itoa(int(*i.Spec.Replicas)),
 		strconv.Itoa(int(i.Status.Replicas)),
 		strconv.Itoa(int(i.Status.ReadyReplicas)),
-		toAge(i.ObjectMeta.CreationTimestamp),
+		Pad(toAge(i.ObjectMeta.CreationTimestamp), AgePad),
 	)
 }

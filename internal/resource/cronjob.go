@@ -102,7 +102,7 @@ func (r *CronJob) Fields(ns string) Row {
 
 	i := r.instance
 	if ns == AllNamespaces {
-		ff = append(ff, i.Namespace)
+		ff = append(ff, Pad(i.Namespace, NSPad))
 	}
 
 	lastScheduled := "<none>"
@@ -111,11 +111,11 @@ func (r *CronJob) Fields(ns string) Row {
 	}
 
 	return append(ff,
-		i.Name,
+		Pad(i.Name, NamePad),
 		i.Spec.Schedule,
 		boolPtrToStr(i.Spec.Suspend),
 		strconv.Itoa(len(i.Status.Active)),
 		lastScheduled,
-		toAge(i.ObjectMeta.CreationTimestamp),
+		Pad(toAge(i.ObjectMeta.CreationTimestamp), AgePad),
 	)
 }
