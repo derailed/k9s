@@ -53,6 +53,7 @@ func newTableView(app *appView, title string) *tableView {
 	{
 		v.baseTitle = title
 		v.actions = make(keyActions)
+		v.SetFixed(1, 0)
 		v.SetBorder(true)
 		v.SetBorderColor(tcell.ColorDodgerBlue)
 		v.SetBorderAttributes(tcell.AttrBold)
