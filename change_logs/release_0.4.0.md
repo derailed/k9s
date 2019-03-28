@@ -15,8 +15,6 @@ Thank you so much for your support and awesome suggestions to make K9s better!!
 ## Change Logs
 
 > NOTE! Lots of changes here, please report any disturbances in the force. Thank you!
-> NOTE!: This feature is very much an alpha feature right now.
-> I find it really powerful and useful, hopefully I am not the only to be hunanimous on that??
 
 1. [Feature #82](https://github.com/derailed/k9s/issues/82)
    1. Added ability to view RBAC policies while in clusterrole or role view.
