@@ -272,7 +272,7 @@ func (a *appView) inject(p igniter) {
 
 	var ctx context.Context
 	{
-		ctx, a.cancel = context.WithCancel(context.TODO())
+		ctx, a.cancel = context.WithCancel(context.Background())
 		p.init(ctx, a.config.ActiveNamespace())
 	}
 	a.content.AddPage("main", p, true, true)

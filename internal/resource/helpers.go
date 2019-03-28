@@ -90,6 +90,14 @@ func toAge(timestamp metav1.Time) string {
 	return duration.HumanDuration(time.Since(timestamp.Time))
 }
 
+// FixCol set column width to specified size by either truncating or padding.
+func FixCol(s string, size int) string {
+	if len(s) > size {
+		return Truncate(s, size)
+	}
+	return s + strings.Repeat(" ", size-len(s))
+}
+
 // Pad a string up to the given length.
 func Pad(s string, l int) string {
 	fmat := "%-" + strconv.Itoa(l) + "s"

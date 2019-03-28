@@ -109,6 +109,22 @@ func TestTruncate(t *testing.T) {
 	}
 }
 
+func TestSizeCol(t *testing.T) {
+	uu := []struct {
+		s string
+		l int
+		e string
+	}{
+		{"fred", 3, "fr…"},
+		{"01234567890", 10, "012345678…"},
+		{"fred", 10, "fred      "},
+	}
+
+	for _, u := range uu {
+		assert.Equal(t, u.e, FixCol(u.s, u.l))
+	}
+}
+
 func TestMapToStr(t *testing.T) {
 	uu := []struct {
 		i map[string]string

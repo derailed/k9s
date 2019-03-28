@@ -2,6 +2,7 @@ package views
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
@@ -36,22 +37,27 @@ func (c *command) defaultCmd() {
 
 // Helpers...
 
+var fuMatcher = regexp.MustCompile(`\Afu\s([u|g|s]):([\w-:]+)\b`)
+
 // Exec the command by showing associated display.
 func (c *command) run(cmd string) bool {
-	defer func() {
-		if err := recover(); err != nil {
-			log.Debug().Msgf("Command failed %v", err)
-		}
-	}()
-
 	var v resourceViewer
-	switch cmd {
-	case "q", "quit":
+	switch {
+	case cmd == "q", cmd == "quit":
 		c.app.Stop()
 		return true
-	case "?", "help", "alias":
+	case cmd == "?", cmd == "help":
+		c.app.inject(newHelpView(c.app))
+		return true
+	case cmd == "alias":
 		c.app.inject(newAliasView(c.app))
 		return true
+	case fuMatcher.MatchString(cmd):
+		tokens := fuMatcher.FindAllStringSubmatch(cmd, -1)
+		if len(tokens) == 1 && len(tokens[0]) == 3 {
+			c.app.inject(newFuView(c.app, tokens[0][1], tokens[0][2]))
+			return true
+		}
 	default:
 		if res, ok := resourceViews()[cmd]; ok {
 			var r resource.List

@@ -54,6 +54,7 @@ func newTableView(app *appView, title string) *tableView {
 		v.baseTitle = title
 		v.actions = make(keyActions)
 		v.SetBorder(true)
+		v.SetFixed(1, 0)
 		v.SetBorderColor(tcell.ColorDodgerBlue)
 		v.SetBorderAttributes(tcell.AttrBold)
 		v.SetBorderPadding(0, 0, 1, 1)
@@ -63,9 +64,28 @@ func newTableView(app *appView, title string) *tableView {
 		v.SetSelectable(true, false)
 		v.SetSelectedStyle(tcell.ColorBlack, tcell.ColorAqua, tcell.AttrBold)
 		v.SetInputCapture(v.keyboard)
-		v.registerHandlers()
+		v.bindKeys()
 	}
+
 	return &v
+}
+
+func (v *tableView) bindKeys() {
+	v.actions[KeyShiftI] = newKeyAction("Invert", v.sortInvertCmd, true)
+	v.actions[KeyShiftN] = newKeyAction("Sort Name", v.sortColCmd(0), true)
+	v.actions[KeyShiftA] = newKeyAction("Sort Age", v.sortColCmd(-1), true)
+
+	v.actions[KeySlash] = newKeyAction("Filter Mode", v.activateCmd, false)
+	v.actions[tcell.KeyEscape] = newKeyAction("Filter Reset", v.resetCmd, false)
+	v.actions[tcell.KeyEnter] = newKeyAction("Filter", v.filterCmd, false)
+
+	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd, false)
+	v.actions[tcell.KeyBackspace] = newKeyAction("Erase", v.eraseCmd, false)
+	v.actions[tcell.KeyDelete] = newKeyAction("Erase", v.eraseCmd, false)
+	v.actions[KeyG] = newKeyAction("Top", v.app.puntCmd, false)
+	v.actions[KeyShiftG] = newKeyAction("Bottom", v.app.puntCmd, false)
+	v.actions[KeyB] = newKeyAction("Down", v.pageDownCmd, false)
+	v.actions[KeyF] = newKeyAction("Up", v.pageUpCmd, false)
 }
 
 func (v *tableView) clearSelection() {
@@ -90,6 +110,7 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		log.Debug().Msgf(">> TableView handled %s", tcell.KeyNames[key])
 		return a.action(evt)
 	}
+
 	return evt
 }
 
@@ -101,11 +122,13 @@ func (v *tableView) setSelection() {
 
 func (v *tableView) pageUpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.PageUp()
+
 	return nil
 }
 
 func (v *tableView) pageDownCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.PageDown()
+
 	return nil
 }
 
@@ -120,6 +143,7 @@ func (v *tableView) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.cmdBuff.isActive() {
 		v.cmdBuff.del()
 	}
+
 	return nil
 }
 
@@ -129,6 +153,7 @@ func (v *tableView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	v.cmdBuff.reset()
 	v.refresh()
+
 	return nil
 }
 
@@ -156,12 +181,14 @@ func (v *tableView) sortColCmd(col int) func(evt *tcell.EventKey) *tcell.EventKe
 func (v *tableView) sortNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.sortCol.index, v.sortCol.asc = 0, true
 	v.refresh()
+
 	return nil
 }
 
 func (v *tableView) sortInvertCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.sortCol.asc = !v.sortCol.asc
 	v.refresh()
+
 	return nil
 }
 
@@ -173,6 +200,7 @@ func (v *tableView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.app.flash(flashInfo, "Filtering...")
 	v.cmdBuff.reset()
 	v.cmdBuff.setActive(true)
+
 	return nil
 }
 
@@ -205,6 +233,7 @@ func (v *tableView) hints() hints {
 	if v.actions != nil {
 		return v.actions.toHints()
 	}
+
 	return nil
 }
 
@@ -250,6 +279,7 @@ func (v *tableView) filtered() resource.TableData {
 			filtered.Rows[k] = row
 		}
 	}
+
 	return filtered
 }
 
@@ -267,7 +297,7 @@ func (v *tableView) displayCol(index int, name string) string {
 
 func (v *tableView) doUpdate(data resource.TableData) {
 	v.currentNS = data.Namespace
-	if v.currentNS == resource.AllNamespaces {
+	if v.currentNS == resource.AllNamespaces || v.currentNS == "*" {
 		v.actions[KeyShiftS] = newKeyAction("Sort Namespace", v.sortNamespaceCmd, true)
 	} else {
 		delete(v.actions, KeyShiftS)
@@ -293,15 +323,15 @@ func (v *tableView) doUpdate(data resource.TableData) {
 	}
 	row++
 
-	// for k := range data.Rows {
-	// 	log.Debug().Msgf("Keys: `%s`", k)
-	// }
+	sortFn := v.defaultSort
+	if v.sortFn != nil {
+		sortFn = v.sortFn
+	}
 
-	keys := v.sortRows(data)
-	// log.Debug().Msgf("KEYS %#v", keys)
+	keys := make([]string, len(data.Rows))
+	v.sortRows(data.Rows, sortFn, v.sortCol, keys)
 	groupKeys := map[string][]string{}
 	for _, k := range keys {
-		// log.Debug().Msgf("RKEY: %s", k)
 		grp := data.Rows[k].Fields[v.sortCol.index]
 		if s, ok := groupKeys[grp]; ok {
 			s = append(s, k)
@@ -358,48 +388,21 @@ func (v *tableView) addBodyCell(row, col int, field, delta string, color tcell.C
 	v.SetCell(row, col, c)
 }
 
-func (v *tableView) defaultSort(rows resource.Rows) {
-	t := rowSorter{rows: rows, index: v.sortCol.index, asc: v.sortCol.asc}
+func (v *tableView) defaultSort(rows resource.Rows, sortCol sortColumn) {
+	t := rowSorter{rows: rows, index: sortCol.index, asc: sortCol.asc}
 	sort.Sort(t)
 }
 
-func (v *tableView) sortRows(data resource.TableData) []string {
-	rows := make(resource.Rows, 0, len(data.Rows))
-	for _, r := range data.Rows {
-		rows = append(rows, r.Fields)
+func (*tableView) sortRows(evts resource.RowEvents, sortFn sortFn, sortCol sortColumn, keys []string) {
+	rows := make(resource.Rows, 0, len(evts))
+	for k, r := range evts {
+		rows = append(rows, append(r.Fields, k))
 	}
+	sortFn(rows, sortCol)
 
-	if v.sortFn != nil {
-		v.sortFn(rows, v.sortCol)
-	} else {
-		v.defaultSort(rows)
-	}
-
-	keys := make([]string, len(rows))
 	for i, r := range rows {
-		col, prefix := 0, v.currentNS
-		switch v.currentNS {
-		case resource.AllNamespaces:
-			col, prefix = 1, r[0]
-		case resource.NotNamespaced:
-			prefix = ""
-		}
-
-		key := r[col]
-		if v.cleanseFn != nil {
-			key = v.cleanseFn(key)
-		} else {
-			key = v.defaultColCleanse(key)
-		}
-
-		if len(prefix) == 0 {
-			keys[i] = key
-		} else {
-			keys[i] = prefix + "/" + key
-		}
+		keys[i] = r[len(r)-1]
 	}
-
-	return keys
 }
 
 func (*tableView) defaultColCleanse(s string) string {
@@ -433,26 +436,7 @@ func (v *tableView) resetTitle() {
 // ----------------------------------------------------------------------------
 // Event listeners...
 
-func (v *tableView) registerHandlers() {
-	v.actions[KeyShiftI] = newKeyAction("Invert", v.sortInvertCmd, true)
-	v.actions[KeyShiftN] = newKeyAction("Sort Name", v.sortColCmd(0), true)
-	v.actions[KeyShiftA] = newKeyAction("Sort Age", v.sortColCmd(-1), true)
-
-	v.actions[KeySlash] = newKeyAction("Filter Mode", v.activateCmd, false)
-	v.actions[tcell.KeyEscape] = newKeyAction("Filter Reset", v.resetCmd, false)
-	v.actions[tcell.KeyEnter] = newKeyAction("Filter", v.filterCmd, false)
-
-	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd, false)
-	v.actions[tcell.KeyBackspace] = newKeyAction("Erase", v.eraseCmd, false)
-	v.actions[tcell.KeyDelete] = newKeyAction("Erase", v.eraseCmd, false)
-	v.actions[KeyG] = newKeyAction("Top", v.app.puntCmd, false)
-	v.actions[KeyShiftG] = newKeyAction("Bottom", v.app.puntCmd, false)
-	v.actions[KeyB] = newKeyAction("Down", v.pageDownCmd, false)
-	v.actions[KeyF] = newKeyAction("Up", v.pageUpCmd, false)
-}
-
-func (v *tableView) changed(s string) {
-}
+func (v *tableView) changed(s string) {}
 
 func (v *tableView) active(b bool) {
 	if b {

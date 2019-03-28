@@ -4,7 +4,6 @@ import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 type (
@@ -76,7 +75,6 @@ func allCRDs(c k8s.Connection) map[string]k8s.APIGroup {
 }
 
 func showRBAC(app *appView, ns, resource, selection string) {
-	log.Debug().Msgf("Entered FN on `%s`--%s:%s", ns, resource, selection)
 	kind := clusterRole
 	if resource == "role" {
 		kind = role

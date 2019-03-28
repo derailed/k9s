@@ -84,13 +84,17 @@ func newRBACView(app *appView, ns, name string, kind roleKind) *rbacView {
 		v.roleName, v.roleType = name, kind
 		v.tableView = newTableView(app, v.getTitle())
 		v.currentNS = ns
-		// v.SetSelectedStyle(tcell.ColorWhite, tcell.ColorDarkSeaGreen, tcell.AttrNone)
 		v.colorerFn = rbacColorer
 		v.current = app.content.GetPrimitive("main").(igniter)
+		v.bindKeys()
 	}
-	v.actions[tcell.KeyEscape] = newKeyAction("Reset", v.resetCmd, false)
-	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd, false)
-	v.actions[KeyShiftO] = newKeyAction("Sort Groups", v.sortColCmd(1), true)
+
+	return &v
+}
+
+// Init the view.
+func (v *rbacView) init(_ context.Context, ns string) {
+	v.sortCol = sortColumn{1, len(rbacHeader), true}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	v.cancel = cancel
@@ -100,22 +104,25 @@ func newRBACView(app *appView, ns, name string, kind roleKind) *rbacView {
 			case <-ctx.Done():
 				log.Debug().Msg("RBAC Watch bailing out!")
 				return
-			case <-time.After(time.Duration(app.config.K9s.RefreshRate) * time.Second):
+			case <-time.After(time.Duration(v.app.config.K9s.RefreshRate) * time.Second):
 				v.refresh()
 				v.app.Draw()
 			}
 		}
 	}(ctx)
 
-	return &v
-}
-
-// Init the view.
-func (v *rbacView) init(_ context.Context, ns string) {
-	// v.baseTitle = v.getTitle()
-	v.sortCol = sortColumn{1, len(rbacHeader), true}
 	v.refresh()
 	v.app.SetFocus(v)
+}
+
+func (v *rbacView) bindKeys() {
+	delete(v.actions, KeyShiftA)
+
+	v.actions[tcell.KeyEscape] = newKeyAction("Reset", v.resetCmd, false)
+	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd, false)
+	v.actions[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
+
+	v.actions[KeyShiftO] = newKeyAction("Sort Groups", v.sortColCmd(1), true)
 }
 
 func (v *rbacView) getTitle() string {
@@ -125,6 +132,10 @@ func (v *rbacView) getTitle() string {
 	}
 
 	return fmt.Sprintf(rbacTitleFmt, title, v.roleName)
+}
+
+func (v *rbacView) hints() hints {
+	return v.actions.toHints()
 }
 
 func (v *rbacView) refresh() {
@@ -152,14 +163,10 @@ func (v *rbacView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.cmdBuff.isActive() {
 		v.cmdBuff.reset()
 	} else {
-		v.app.inject(v.current)
+		v.app.prevCmd(evt)
 	}
 
 	return nil
-}
-
-func (v *rbacView) hints() hints {
-	return v.actions.toHints()
 }
 
 func (v *rbacView) reconcile(ns, name string, kind roleKind) (resource.TableData, error) {
@@ -216,6 +223,7 @@ func (v *rbacView) reconcile(ns, name string, kind roleKind) (resource.TableData
 			delete(v.cache, k)
 		}
 	}
+
 	return data, nil
 }
 
@@ -241,13 +249,6 @@ func (v *rbacView) rowEvents(ns, name string, kind roleKind) (resource.RowEvents
 	return evts, nil
 }
 
-func toGroup(g string) string {
-	if g == "" {
-		return "v1"
-	}
-	return g
-}
-
 func (v *rbacView) clusterPolicies(name string) (resource.RowEvents, error) {
 	cr, err := v.app.conn().DialOrDie().Rbac().ClusterRoles().Get(name, metav1.GetOptions{})
 	if err != nil {
@@ -267,12 +268,7 @@ func (v *rbacView) namespacedPolicies(path string) (resource.RowEvents, error) {
 	return v.parseRules(cr.Rules), nil
 }
 
-func (*rbacView) parseRules(rules []rbacv1.PolicyRule) resource.RowEvents {
-	const (
-		nameLen  = 60
-		groupLen = 30
-	)
-
+func (v *rbacView) parseRules(rules []rbacv1.PolicyRule) resource.RowEvents {
 	m := make(resource.RowEvents, len(rules))
 	for _, r := range rules {
 		for _, grp := range r.APIGroups {
@@ -284,11 +280,11 @@ func (*rbacView) parseRules(rules []rbacv1.PolicyRule) resource.RowEvents {
 				for _, na := range r.ResourceNames {
 					n := k + "/" + na
 					m[n] = &resource.RowEvent{
-						Fields: makeRow(resource.Pad(n, nameLen), resource.Pad(toGroup(grp), groupLen), asVerbs(r.Verbs...)),
+						Fields: prepRow(n, grp, r.Verbs),
 					}
 				}
 				m[k] = &resource.RowEvent{
-					Fields: makeRow(resource.Pad(k, nameLen), resource.Pad(toGroup(grp), groupLen), asVerbs(r.Verbs...)),
+					Fields: prepRow(k, grp, r.Verbs),
 				}
 			}
 		}
@@ -297,7 +293,7 @@ func (*rbacView) parseRules(rules []rbacv1.PolicyRule) resource.RowEvents {
 				nres = "/" + nres
 			}
 			m[nres] = &resource.RowEvent{
-				Fields: makeRow(resource.Pad(nres, nameLen), resource.Pad(resource.NAValue, groupLen), asVerbs(r.Verbs...)),
+				Fields: prepRow(nres, resource.NAValue, r.Verbs),
 			}
 		}
 	}
@@ -305,8 +301,21 @@ func (*rbacView) parseRules(rules []rbacv1.PolicyRule) resource.RowEvents {
 	return m
 }
 
+func prepRow(res, grp string, verbs []string) resource.Row {
+	const (
+		nameLen  = 60
+		groupLen = 30
+	)
+
+	if grp != resource.NAValue {
+		grp = toGroup(grp)
+	}
+
+	return makeRow(resource.Pad(res, nameLen), resource.Pad(grp, groupLen), asVerbs(verbs...))
+}
+
 func makeRow(res, group string, verbs []string) resource.Row {
-	r := make(resource.Row, 0, 12)
+	r := make(resource.Row, 0, len(rbacHeader))
 	r = append(r, res, group)
 
 	return append(r, verbs...)
@@ -360,4 +369,11 @@ func hasVerb(verbs []string, verb string) bool {
 	}
 
 	return false
+}
+
+func toGroup(g string) string {
+	if g == "" {
+		return "v1"
+	}
+	return g
 }
