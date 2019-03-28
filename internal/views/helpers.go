@@ -11,6 +11,10 @@ func toPerc(f float64) string {
 }
 
 func deltas(c, n string) string {
+	c, n = strings.TrimSpace(c), strings.TrimSpace(n)
+
+	// log.Debug().Msgf("`%s` vs `%s`", c, n)
+
 	if c == "n/a" {
 		return n
 	}

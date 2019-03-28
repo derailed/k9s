@@ -203,14 +203,14 @@ func (r *Pod) Fields(ns string) Row {
 	i := r.instance
 
 	if ns == AllNamespaces {
-		ff = append(ff, FixCol(i.Namespace, NSPad))
+		ff = append(ff, i.Namespace)
 	}
 
 	ss := i.Status.ContainerStatuses
 	cr, _, rc := r.statuses(ss)
 
 	return append(ff,
-		FixCol(i.ObjectMeta.Name, NamePad),
+		i.ObjectMeta.Name,
 		strconv.Itoa(cr)+"/"+strconv.Itoa(len(ss)),
 		r.phase(i.Status),
 		strconv.Itoa(rc),
@@ -219,7 +219,7 @@ func (r *Pod) Fields(ns string) Row {
 		i.Status.PodIP,
 		i.Spec.NodeName,
 		r.mapQOS(i.Status.QOSClass),
-		Pad(toAge(i.ObjectMeta.CreationTimestamp), AgePad),
+		toAge(i.ObjectMeta.CreationTimestamp),
 	)
 }
 
@@ -229,13 +229,14 @@ func (r *Pod) Fields(ns string) Row {
 func (*Pod) mapQOS(class v1.PodQOSClass) string {
 	switch class {
 	case v1.PodQOSGuaranteed:
-		return "Ga"
+		return "GA"
 	case v1.PodQOSBurstable:
-		return "Bu"
+		return "BU"
 	default:
 		return "BE"
 	}
 }
+
 func (r *Pod) statuses(ss []v1.ContainerStatus) (cr, ct, rc int) {
 	for _, c := range ss {
 		if c.State.Terminated != nil {

@@ -31,7 +31,10 @@ type (
 
 	resourceViewer interface {
 		igniter
+
 		setEnterFn(enterFn)
+		setColorerFn(colorerFn)
+		setDecorateFn(decorateFn)
 	}
 
 	appView struct {

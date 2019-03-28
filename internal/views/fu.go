@@ -302,7 +302,7 @@ func (v *fuView) prepRow(ns, res, grp, binding string, verbs []string) resource.
 		grp = toGroup(grp)
 	}
 
-	return v.makeRow(resource.Pad(ns, nsLen), resource.Pad(res, nameLen), resource.Pad(grp, groupLen), binding, asVerbs(verbs...))
+	return v.makeRow(ns, res, grp, binding, asVerbs(verbs...))
 }
 
 func (*fuView) makeRow(ns, res, group, binding string, verbs []string) resource.Row {

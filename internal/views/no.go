@@ -9,8 +9,8 @@ type nodeView struct {
 	*resourceView
 }
 
-func newNodeView(t string, app *appView, list resource.List, c colorerFn) resourceViewer {
-	v := nodeView{newResourceView(t, app, list, c).(*resourceView)}
+func newNodeView(t string, app *appView, list resource.List) resourceViewer {
+	v := nodeView{newResourceView(t, app, list).(*resourceView)}
 	{
 		v.extraActionsFn = v.extraActions
 		v.switchPage("no")

@@ -1,8 +1,6 @@
 package resource
 
 import (
-	"strings"
-
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/rbac/v1"
@@ -70,49 +68,25 @@ func (*RoleBinding) Header(ns string) Row {
 		hh = append(hh, "NAMESPACE")
 	}
 
-	return append(hh, "NAME", "ROLE", "SUBJECTS", "AGE")
+	return append(hh, "NAME", "ROLE", "KIND", "SUBJECTS", "AGE")
 }
 
 // Fields retrieves displayable fields.
 func (r *RoleBinding) Fields(ns string) Row {
-	ff := make(Row, 0, len(r.Header(ns)))
 	i := r.instance
+
+	ff := make(Row, 0, len(r.Header(ns)))
 	if ns == AllNamespaces {
 		ff = append(ff, i.Namespace)
 	}
 
+	kind, ss := renderSubjects(i.Subjects)
+
 	return append(ff,
 		i.Name,
 		i.RoleRef.Name,
-		r.toSubjects(i.Subjects),
+		kind,
+		ss,
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
-}
-
-// ----------------------------------------------------------------------------
-// Helpers...
-
-func (r *RoleBinding) toSubjects(ss []v1.Subject) string {
-	var acc string
-	for i, s := range ss {
-		acc += s.Name + "/" + r.toSubjectAlias(s.Kind)
-		if i < len(ss)-1 {
-			acc += ","
-		}
-	}
-
-	return acc
-}
-
-func (r *RoleBinding) toSubjectAlias(s string) string {
-	switch s {
-	case v1.UserKind:
-		return "USR"
-	case v1.GroupKind:
-		return "GRP"
-	case v1.ServiceAccountKind:
-		return "SA"
-	default:
-		return strings.ToUpper(s)
-	}
 }

@@ -10,13 +10,14 @@ type jobView struct {
 	*resourceView
 }
 
-func newJobView(t string, app *appView, list resource.List, c colorerFn) resourceViewer {
-	v := jobView{newResourceView(t, app, list, c).(*resourceView)}
+func newJobView(t string, app *appView, list resource.List) resourceViewer {
+	v := jobView{newResourceView(t, app, list).(*resourceView)}
 	{
 		v.extraActionsFn = v.extraActions
+		v.AddPage("logs", newLogsView(&v), true, false)
+		v.switchPage("job")
 	}
-	v.AddPage("logs", newLogsView(&v), true, false)
-	v.switchPage("job")
+
 	return &v
 }
 
@@ -60,6 +61,7 @@ func (v *jobView) logs(evt *tcell.EventKey) *tcell.EventKey {
 
 	v.switchPage("logs")
 	l.init()
+
 	return nil
 }
 

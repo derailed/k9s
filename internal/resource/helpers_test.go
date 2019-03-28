@@ -77,22 +77,6 @@ func TestNa(t *testing.T) {
 	}
 }
 
-func TestPad(t *testing.T) {
-	uu := []struct {
-		s string
-		l int
-		e string
-	}{
-		{"fred", 10, "fred      "},
-		{"fred", 6, "fred  "},
-		{"fred", 4, "fred"},
-	}
-
-	for _, u := range uu {
-		assert.Equal(t, u.e, Pad(u.s, u.l))
-	}
-}
-
 func TestTruncate(t *testing.T) {
 	uu := []struct {
 		s string
@@ -106,22 +90,6 @@ func TestTruncate(t *testing.T) {
 
 	for _, u := range uu {
 		assert.Equal(t, u.e, Truncate(u.s, u.l))
-	}
-}
-
-func TestSizeCol(t *testing.T) {
-	uu := []struct {
-		s string
-		l int
-		e string
-	}{
-		{"fred", 3, "fr…"},
-		{"01234567890", 10, "012345678…"},
-		{"fred", 10, "fred      "},
-	}
-
-	for _, u := range uu {
-		assert.Equal(t, u.e, FixCol(u.s, u.l))
 	}
 }
 

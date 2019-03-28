@@ -7,20 +7,22 @@ import (
 )
 
 type (
-	viewFn    func(ns string, app *appView, list resource.List, colorer colorerFn) resourceViewer
-	listFn    func(c resource.Connection, ns string) resource.List
-	listMxFn  func(c resource.Connection, mx resource.MetricsServer, ns string) resource.List
-	colorerFn func(ns string, evt *resource.RowEvent) tcell.Color
-	enterFn   func(app *appView, ns, resource, selection string)
+	viewFn     func(ns string, app *appView, list resource.List) resourceViewer
+	listFn     func(c resource.Connection, ns string) resource.List
+	listMxFn   func(c resource.Connection, mx resource.MetricsServer, ns string) resource.List
+	colorerFn  func(ns string, evt *resource.RowEvent) tcell.Color
+	enterFn    func(app *appView, ns, resource, selection string)
+	decorateFn func(resource.TableData) resource.TableData
 
 	resCmd struct {
-		title     string
-		api       string
-		viewFn    viewFn
-		listFn    listFn
-		listMxFn  listMxFn
-		enterFn   enterFn
-		colorerFn colorerFn
+		title      string
+		api        string
+		viewFn     viewFn
+		listFn     listFn
+		listMxFn   listMxFn
+		enterFn    enterFn
+		colorerFn  colorerFn
+		decorateFn decorateFn
 	}
 )
 
@@ -86,40 +88,36 @@ func showRBAC(app *appView, ns, resource, selection string) {
 func resourceViews() map[string]resCmd {
 	return map[string]resCmd{
 		"cm": {
-			title:     "ConfigMaps",
-			api:       "",
-			viewFn:    newResourceView,
-			listFn:    resource.NewConfigMapList,
-			colorerFn: defaultColorer,
+			title:  "ConfigMaps",
+			api:    "",
+			viewFn: newResourceView,
+			listFn: resource.NewConfigMapList,
 		},
 		"cr": {
-			title:     "ClusterRoles",
-			api:       "rbac.authorization.k8s.io",
-			viewFn:    newResourceView,
-			listFn:    resource.NewClusterRoleList,
-			enterFn:   showRBAC,
-			colorerFn: defaultColorer,
+			title:   "ClusterRoles",
+			api:     "rbac.authorization.k8s.io",
+			viewFn:  newResourceView,
+			listFn:  resource.NewClusterRoleList,
+			enterFn: showRBAC,
 		},
 		"crb": {
-			title:     "ClusterRoleBindings",
-			api:       "rbac.authorization.k8s.io",
-			viewFn:    newResourceView,
-			listFn:    resource.NewClusterRoleBindingList,
-			colorerFn: defaultColorer,
+			title:  "ClusterRoleBindings",
+			api:    "rbac.authorization.k8s.io",
+			viewFn: newResourceView,
+			listFn: resource.NewClusterRoleBindingList,
+			// decorateFn: crbDecorator,
 		},
 		"crd": {
-			title:     "CustomResourceDefinitions",
-			api:       "apiextensions.k8s.io",
-			viewFn:    newResourceView,
-			listFn:    resource.NewCRDList,
-			colorerFn: defaultColorer,
+			title:  "CustomResourceDefinitions",
+			api:    "apiextensions.k8s.io",
+			viewFn: newResourceView,
+			listFn: resource.NewCRDList,
 		},
 		"cj": {
-			title:     "CronJobs",
-			api:       "batch",
-			viewFn:    newCronJobView,
-			listFn:    resource.NewCronJobList,
-			colorerFn: defaultColorer,
+			title:  "CronJobs",
+			api:    "batch",
+			viewFn: newCronJobView,
+			listFn: resource.NewCronJobList,
 		},
 		"ctx": {
 			title:     "Contexts",
@@ -143,11 +141,10 @@ func resourceViews() map[string]resCmd {
 			colorerFn: dpColorer,
 		},
 		"ep": {
-			title:     "EndPoints",
-			api:       "",
-			viewFn:    newResourceView,
-			listFn:    resource.NewEndpointsList,
-			colorerFn: defaultColorer,
+			title:  "EndPoints",
+			api:    "",
+			viewFn: newResourceView,
+			listFn: resource.NewEndpointsList,
 		},
 		"ev": {
 			title:     "Events",
@@ -157,25 +154,22 @@ func resourceViews() map[string]resCmd {
 			colorerFn: evColorer,
 		},
 		"hpa": {
-			title:     "HorizontalPodAutoscalers",
-			api:       "autoscaling",
-			viewFn:    newResourceView,
-			listFn:    resource.NewHPAList,
-			colorerFn: defaultColorer,
+			title:  "HorizontalPodAutoscalers",
+			api:    "autoscaling",
+			viewFn: newResourceView,
+			listFn: resource.NewHPAList,
 		},
 		"ing": {
-			title:     "Ingress",
-			api:       "extensions",
-			viewFn:    newResourceView,
-			listFn:    resource.NewIngressList,
-			colorerFn: defaultColorer,
+			title:  "Ingress",
+			api:    "extensions",
+			viewFn: newResourceView,
+			listFn: resource.NewIngressList,
 		},
 		"jo": {
-			title:     "Jobs",
-			api:       "batch",
-			viewFn:    newJobView,
-			listFn:    resource.NewJobList,
-			colorerFn: defaultColorer,
+			title:  "Jobs",
+			api:    "batch",
+			viewFn: newJobView,
+			listFn: resource.NewJobList,
 		},
 		"no": {
 			title:     "Nodes",
@@ -220,11 +214,10 @@ func resourceViews() map[string]resCmd {
 			colorerFn: pvcColorer,
 		},
 		"rb": {
-			title:     "RoleBindings",
-			api:       "rbac.authorization.k8s.io",
-			viewFn:    newResourceView,
-			listFn:    resource.NewRoleBindingList,
-			colorerFn: defaultColorer,
+			title:  "RoleBindings",
+			api:    "rbac.authorization.k8s.io",
+			viewFn: newResourceView,
+			listFn: resource.NewRoleBindingList,
 		},
 		"rc": {
 			title:     "ReplicationControllers",
@@ -234,12 +227,11 @@ func resourceViews() map[string]resCmd {
 			colorerFn: rsColorer,
 		},
 		"ro": {
-			title:     "Roles",
-			api:       "rbac.authorization.k8s.io",
-			viewFn:    newResourceView,
-			listFn:    resource.NewRoleList,
-			enterFn:   showRBAC,
-			colorerFn: defaultColorer,
+			title:   "Roles",
+			api:     "rbac.authorization.k8s.io",
+			viewFn:  newResourceView,
+			listFn:  resource.NewRoleList,
+			enterFn: showRBAC,
 		},
 		"rs": {
 			title:     "ReplicaSets",
@@ -249,18 +241,16 @@ func resourceViews() map[string]resCmd {
 			colorerFn: rsColorer,
 		},
 		"sa": {
-			title:     "ServiceAccounts",
-			api:       "",
-			viewFn:    newResourceView,
-			listFn:    resource.NewServiceAccountList,
-			colorerFn: defaultColorer,
+			title:  "ServiceAccounts",
+			api:    "",
+			viewFn: newResourceView,
+			listFn: resource.NewServiceAccountList,
 		},
 		"sec": {
-			title:     "Secrets",
-			api:       "",
-			viewFn:    newResourceView,
-			listFn:    resource.NewSecretList,
-			colorerFn: defaultColorer,
+			title:  "Secrets",
+			api:    "",
+			viewFn: newResourceView,
+			listFn: resource.NewSecretList,
 		},
 		"sts": {
 			title:     "StatefulSets",
@@ -270,11 +260,11 @@ func resourceViews() map[string]resCmd {
 			colorerFn: stsColorer,
 		},
 		"svc": {
-			title:     "Services",
-			api:       "",
-			viewFn:    newResourceView,
-			listFn:    resource.NewServiceList,
-			colorerFn: defaultColorer,
+			title:  "Services",
+			api:    "",
+			viewFn: newResourceView,
+			listFn: resource.NewServiceList,
+			// decorateFn: svcDecorator,
 		},
 	}
 }

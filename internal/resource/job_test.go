@@ -38,7 +38,7 @@ func TestJobListAccess(t *testing.T) {
 
 func TestJobFields(t *testing.T) {
 	r := newJob().Fields("blee")
-	assert.Equal(t, resource.Pad("fred", resource.NamePad), r[0])
+	assert.Equal(t, "fred", r[0])
 }
 
 func TestJobMarshal(t *testing.T) {
@@ -74,7 +74,7 @@ func TestJobListData(t *testing.T) {
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}
-	assert.Equal(t, resource.Row{resource.Pad("fred", resource.NamePad)}, row.Fields[:1])
+	assert.Equal(t, resource.Row{"fred"}, row.Fields[:1])
 }
 
 // Helpers...

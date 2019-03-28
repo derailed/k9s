@@ -41,7 +41,7 @@ func TestPodListAccess(t *testing.T) {
 
 func TestPodFields(t *testing.T) {
 	r := newPod().Fields("blee")
-	assert.Equal(t, resource.FixCol("fred", 50), r[0])
+	assert.Equal(t, "fred", r[0])
 }
 
 func TestPodMarshal(t *testing.T) {

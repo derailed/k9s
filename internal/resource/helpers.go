@@ -36,14 +36,6 @@ const (
 	NAValue = "<n/a>"
 )
 
-// Columns Padding...
-const (
-	NSPad   = 13
-	NamePad = 50
-	AgePad  = 5
-	RBACPad = 80
-)
-
 func asPerc(f float64) string {
 	return fmt.Sprintf("%d%%", int(f))
 }
@@ -96,21 +88,6 @@ func toAge(timestamp metav1.Time) string {
 	}
 
 	return duration.HumanDuration(time.Since(timestamp.Time))
-}
-
-// FixCol set column width to specified size by either truncating or padding.
-func FixCol(s string, size int) string {
-	if len(s) > size {
-		return Truncate(s, size)
-	}
-	return s + strings.Repeat(" ", size-len(s))
-}
-
-// Pad a string up to the given length.
-func Pad(s string, l int) string {
-	fmat := "%-" + strconv.Itoa(l) + "s"
-
-	return fmt.Sprintf(fmat, s)
 }
 
 // Truncate a string to the given l and suffix ellipsis if needed.

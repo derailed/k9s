@@ -54,7 +54,7 @@ func TestRoleListData(t *testing.T) {
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}
-	assert.Equal(t, resource.Row{resource.Pad("fred", resource.RBACPad)}, row.Fields[:1])
+	assert.Equal(t, resource.Row{"fred"}, row.Fields[:1])
 }
 
 // Helpers...

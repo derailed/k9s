@@ -23,13 +23,16 @@ type namespaceView struct {
 	*resourceView
 }
 
-func newNamespaceView(t string, app *appView, list resource.List, c colorerFn) resourceViewer {
-	v := namespaceView{newResourceView(t, app, list, c).(*resourceView)}
-	v.extraActionsFn = v.extraActions
-	v.selectedFn = v.getSelectedItem
-	v.decorateDataFn = v.decorate
-	v.getTV().cleanseFn = v.cleanser
-	v.switchPage("ns")
+func newNamespaceView(t string, app *appView, list resource.List) resourceViewer {
+	v := namespaceView{newResourceView(t, app, list).(*resourceView)}
+	{
+		v.extraActionsFn = v.extraActions
+		v.selectedFn = v.getSelectedItem
+		v.decorateFn = v.decorate
+		v.getTV().cleanseFn = v.cleanser
+		v.switchPage("ns")
+	}
+
 	return &v
 }
 
@@ -44,6 +47,7 @@ func (v *namespaceView) switchNsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	v.useNamespace(v.getSelectedItem())
 	v.app.gotoResource("po", true)
+
 	return nil
 }
 
@@ -52,6 +56,7 @@ func (v *namespaceView) useNsCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	v.useNamespace(v.getSelectedItem())
+
 	return nil
 }
 
@@ -92,5 +97,6 @@ func (v *namespaceView) decorate(data resource.TableData) resource.TableData {
 			r.Action = resource.Unchanged
 		}
 	}
+
 	return data
 }

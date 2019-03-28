@@ -213,7 +213,7 @@ func (v *tableView) setDeleted() {
 }
 
 // SetColorer sets up table row color management.
-func (v *tableView) SetColorer(f colorerFn) {
+func (v *tableView) setColorer(f colorerFn) {
 	v.colorerFn = f
 }
 
@@ -283,7 +283,7 @@ func (v *tableView) filtered() resource.TableData {
 	return filtered
 }
 
-func (v *tableView) displayCol(index int, name string) string {
+func (v *tableView) sortIndicator(index int, name string) string {
 	if v.sortCol.index != index {
 		return name
 	}
@@ -292,13 +292,13 @@ func (v *tableView) displayCol(index int, name string) string {
 	if v.sortCol.asc {
 		order = "↑"
 	}
-	return fmt.Sprintf("%s[green::]%s[::]", name, order)
+	return fmt.Sprintf("%s [green::]%s[::]", name, order)
 }
 
 func (v *tableView) doUpdate(data resource.TableData) {
 	v.currentNS = data.Namespace
 	if v.currentNS == resource.AllNamespaces || v.currentNS == "*" {
-		v.actions[KeyShiftS] = newKeyAction("Sort Namespace", v.sortNamespaceCmd, true)
+		v.actions[KeyShiftP] = newKeyAction("Sort Namespace", v.sortNamespaceCmd, true)
 	} else {
 		delete(v.actions, KeyShiftS)
 	}
@@ -317,9 +317,11 @@ func (v *tableView) doUpdate(data resource.TableData) {
 		v.sortCol.index = 0
 	}
 
+	pads := make(maxyPad, len(data.Header))
+	computeMaxColumns(pads, v.sortCol.index, data)
 	var row int
 	for col, h := range data.Header {
-		v.addHeaderCell(col, h)
+		v.addHeaderCell(col, h, pads)
 	}
 	row++
 
@@ -327,62 +329,64 @@ func (v *tableView) doUpdate(data resource.TableData) {
 	if v.sortFn != nil {
 		sortFn = v.sortFn
 	}
-
-	keys := make([]string, len(data.Rows))
-	v.sortRows(data.Rows, sortFn, v.sortCol, keys)
-	groupKeys := map[string][]string{}
-	for _, k := range keys {
-		grp := data.Rows[k].Fields[v.sortCol.index]
-		if s, ok := groupKeys[grp]; ok {
-			s = append(s, k)
-			groupKeys[grp] = s
-		} else {
-			groupKeys[grp] = []string{k}
-		}
-	}
-
-	// Performs secondary to sort by name for each groups.
-	gKeys := make([]string, len(keys))
-	for k, v := range groupKeys {
-		sort.Strings(v)
-		gKeys = append(gKeys, k)
-	}
-	rs := groupSorter{gKeys, v.sortCol.asc}
-	sort.Sort(rs)
-
-	for _, gk := range gKeys {
-		for _, k := range groupKeys[gk] {
+	prim, sec := v.sortAllRows(data.Rows, sortFn)
+	for _, pk := range prim {
+		for _, sk := range sec[pk] {
 			fgColor := tcell.ColorGray
 			if v.colorerFn != nil {
-				fgColor = v.colorerFn(data.Namespace, data.Rows[k])
+				fgColor = v.colorerFn(data.Namespace, data.Rows[sk])
 			}
-			for col, field := range data.Rows[k].Fields {
-				v.addBodyCell(row, col, field, data.Rows[k].Deltas[col], fgColor)
+			for col, field := range data.Rows[sk].Fields {
+				v.addBodyCell(row, col, field, data.Rows[sk].Deltas[col], fgColor, pads)
 			}
 			row++
 		}
 	}
 }
 
-func (v *tableView) addHeaderCell(col int, name string) {
-	c := tview.NewTableCell(v.displayCol(col, name))
+func (v *tableView) sortAllRows(rows resource.RowEvents, sortFn sortFn) (resource.Row, map[string]resource.Row) {
+	keys := make([]string, len(rows))
+	v.sortRows(rows, sortFn, v.sortCol, keys)
+
+	sec := make(map[string]resource.Row, len(rows))
+	for _, k := range keys {
+		grp := rows[k].Fields[v.sortCol.index]
+		log.Debug().Msg("append")
+		sec[grp] = append(sec[grp], k)
+	}
+
+	// Performs secondary to sort by name for each groups.
+	prim := make(resource.Row, 0, len(sec))
+	for k, v := range sec {
+		sort.Strings(v)
+		prim = append(prim, k)
+	}
+	rs := groupSorter{prim, v.sortCol.asc}
+	sort.Sort(rs)
+
+	return prim, sec
+}
+
+func (v *tableView) addHeaderCell(col int, name string, pads maxyPad) {
+	c := tview.NewTableCell(v.sortIndicator(col, name))
 	{
-		c.SetExpansion(3)
-		if len(name) == 0 {
-			c.SetExpansion(1)
-		}
+		c.SetExpansion(1)
 		c.SetTextColor(tcell.ColorAntiqueWhite)
 	}
 	v.SetCell(0, col, c)
 }
 
-func (v *tableView) addBodyCell(row, col int, field, delta string, color tcell.Color) {
-	c := tview.NewTableCell(deltas(delta, field))
+func (v *tableView) addBodyCell(row, col int, field, delta string, color tcell.Color, pads maxyPad) {
+	var pField string
+	if isASCII(field) {
+		pField = pad(deltas(delta, field), pads[col])
+	} else {
+		pField = deltas(delta, field)
+	}
+
+	c := tview.NewTableCell(pField)
 	{
-		c.SetExpansion(3)
-		if len(v.GetCell(0, col).Text) == 0 {
-			c.SetExpansion(1)
-		}
+		c.SetExpansion(1)
 		c.SetTextColor(color)
 	}
 	v.SetCell(row, col, c)

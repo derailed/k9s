@@ -124,9 +124,9 @@ func (v *aliasView) hydrate() resource.TableData {
 
 	for k := range cmds {
 		fields := resource.Row{
-			resource.Pad(k, 30),
-			resource.Pad(cmds[k].title, 30),
-			resource.Pad(cmds[k].api, 30),
+			pad(k, 30),
+			pad(cmds[k].title, 30),
+			pad(cmds[k].api, 30),
 		}
 		data.Rows[k] = &resource.RowEvent{
 			Action: resource.New,

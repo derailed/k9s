@@ -69,9 +69,15 @@ func (c *command) run(cmd string) bool {
 			} else {
 				r = res.listFn(c.app.conn(), resource.DefaultNamespace)
 			}
-			v = res.viewFn(res.title, c.app, r, res.colorerFn)
+			v = res.viewFn(res.title, c.app, r)
+			if res.colorerFn != nil {
+				v.setColorerFn(res.colorerFn)
+			}
 			if res.enterFn != nil {
 				v.setEnterFn(res.enterFn)
+			}
+			if res.decorateFn != nil {
+				v.setDecorateFn(res.decorateFn)
 			}
 			const fmat = "Viewing %s in namespace %s..."
 			c.app.flash(flashInfo, fmt.Sprintf(fmat, res.title, c.app.config.ActiveNamespace()))
@@ -87,16 +93,16 @@ func (c *command) run(cmd string) bool {
 		return false
 	}
 
-	n := res.Plural
-	if len(n) == 0 {
-		n = res.Singular
+	name := res.Plural
+	if len(name) == 0 {
+		name = res.Singular
 	}
 	v = newResourceView(
 		res.Kind,
 		c.app,
-		resource.NewCustomList(c.app.conn(), "", res.Group, res.Version, n),
-		defaultColorer,
+		resource.NewCustomList(c.app.conn(), "", res.Group, res.Version, name),
 	)
+	v.setColorerFn(defaultColorer)
 	c.exec(cmd, v)
 	return true
 }

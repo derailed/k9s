@@ -72,7 +72,7 @@ func (r *ClusterRole) Fields(ns string) Row {
 	i := r.instance
 
 	return append(ff,
-		Pad(i.Name, RBACPad),
-		Pad(toAge(i.ObjectMeta.CreationTimestamp), AgePad),
+		i.Name,
+		toAge(i.ObjectMeta.CreationTimestamp),
 	)
 }

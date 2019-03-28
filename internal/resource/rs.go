@@ -75,18 +75,18 @@ func (*ReplicaSet) Header(ns string) Row {
 
 // Fields retrieves displayable fields.
 func (r *ReplicaSet) Fields(ns string) Row {
-	ff := make(Row, 0, len(r.Header(ns)))
-	if ns == AllNamespaces {
-		ff = append(ff, Pad(r.instance.Namespace, NSPad))
-	}
-
 	i := r.instance
 
+	ff := make(Row, 0, len(r.Header(ns)))
+	if ns == AllNamespaces {
+		ff = append(ff, i.Namespace)
+	}
+
 	return append(ff,
-		Pad(i.Name, NamePad),
+		i.Name,
 		strconv.Itoa(int(*i.Spec.Replicas)),
 		strconv.Itoa(int(i.Status.Replicas)),
 		strconv.Itoa(int(i.Status.ReadyReplicas)),
-		Pad(toAge(i.ObjectMeta.CreationTimestamp), AgePad),
+		toAge(i.ObjectMeta.CreationTimestamp),
 	)
 }

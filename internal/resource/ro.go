@@ -79,12 +79,12 @@ func (r *Role) Fields(ns string) Row {
 
 	i := r.instance
 	if ns == AllNamespaces {
-		ff = append(ff, Pad(i.Namespace, NSPad))
+		ff = append(ff, i.Namespace)
 	}
 
 	return append(ff,
-		Pad(i.Name, RBACPad),
-		Pad(toAge(i.ObjectMeta.CreationTimestamp), AgePad),
+		i.Name,
+		toAge(i.ObjectMeta.CreationTimestamp),
 	)
 }
 

@@ -41,12 +41,12 @@ func TestCRListAccess(t *testing.T) {
 
 func TestCRFields(t *testing.T) {
 	r := newClusterRole().Fields("blee")
-	assert.Equal(t, resource.Pad("fred", resource.RBACPad), r[0])
+	assert.Equal(t, "fred", r[0])
 }
 
 func TestCRFieldsAllNS(t *testing.T) {
 	r := newClusterRole().Fields(resource.AllNamespaces)
-	assert.Equal(t, resource.Pad("fred", resource.RBACPad), r[0])
+	assert.Equal(t, "fred", r[0])
 }
 
 func TestCRMarshal(t *testing.T) {
@@ -84,7 +84,7 @@ func TestCRListData(t *testing.T) {
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}
-	assert.Equal(t, resource.Row{resource.Pad("fred", resource.RBACPad)}, row.Fields[:1])
+	assert.Equal(t, resource.Row{"fred"}, row.Fields[:1])
 }
 
 // Helpers...

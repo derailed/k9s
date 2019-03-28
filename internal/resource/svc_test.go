@@ -52,8 +52,8 @@ func TestSvcFields(t *testing.T) {
 		{
 			i: newSvc(),
 			e: resource.Row{
-				resource.Pad("blee", resource.NSPad),
-				resource.Pad("fred", resource.NamePad),
+				"blee",
+				"fred",
 				"ClusterIP",
 				"1.1.1.1",
 				"2.2.2.2",
@@ -102,7 +102,7 @@ func TestSVCListData(t *testing.T) {
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}
-	assert.Equal(t, resource.Row{resource.Pad("fred", 50)}, row.Fields[:1])
+	assert.Equal(t, resource.Row{"fred"}, row.Fields[:1])
 }
 
 // Helpers...

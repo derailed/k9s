@@ -311,7 +311,7 @@ func prepRow(res, grp string, verbs []string) resource.Row {
 		grp = toGroup(grp)
 	}
 
-	return makeRow(resource.Pad(res, nameLen), resource.Pad(grp, groupLen), asVerbs(verbs...))
+	return makeRow(res, grp, asVerbs(verbs...))
 }
 
 func makeRow(res, group string, verbs []string) resource.Row {
@@ -329,7 +329,7 @@ func asVerbs(verbs ...string) resource.Row {
 
 	r := make(resource.Row, 0, len(k8sVerbs)+1)
 	for _, v := range k8sVerbs {
-		r = append(r, resource.Pad(toVerbIcon(hasVerb(verbs, v)), 4))
+		r = append(r, toVerbIcon(hasVerb(verbs, v)))
 	}
 
 	var unknowns []string
