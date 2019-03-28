@@ -59,7 +59,7 @@ func TestParseRules(t *testing.T) {
 				{APIGroups: []string{"*"}, Resources: []string{"*"}, Verbs: []string{"*"}},
 			},
 			map[string]resource.Row{
-				"*.*": resource.Row{"*.*", "*", ok, ok, ok, ok, ok, ok, ok, ok, ""},
+				"*.*": {"*.*", "*", ok, ok, ok, ok, ok, ok, ok, ok, ""},
 			},
 		},
 		{
@@ -67,7 +67,7 @@ func TestParseRules(t *testing.T) {
 				{APIGroups: []string{"*"}, Resources: []string{"*"}, Verbs: []string{"get"}},
 			},
 			map[string]resource.Row{
-				"*.*": resource.Row{"*.*", "*", ok, nok, nok, nok, nok, nok, nok, nok, ""},
+				"*.*": {"*.*", "*", ok, nok, nok, nok, nok, nok, nok, nok, ""},
 			},
 		},
 		{
@@ -75,7 +75,7 @@ func TestParseRules(t *testing.T) {
 				{APIGroups: []string{""}, Resources: []string{"*"}, Verbs: []string{"list"}},
 			},
 			map[string]resource.Row{
-				"*": resource.Row{"*", "v1", nok, ok, nok, nok, nok, nok, nok, nok, ""},
+				"*": {"*", "v1", nok, ok, nok, nok, nok, nok, nok, nok, ""},
 			},
 		},
 		{
@@ -83,8 +83,8 @@ func TestParseRules(t *testing.T) {
 				{APIGroups: []string{""}, Resources: []string{"pods"}, Verbs: []string{"list"}, ResourceNames: []string{"fred"}},
 			},
 			map[string]resource.Row{
-				"pods":      resource.Row{"pods", "v1", nok, ok, nok, nok, nok, nok, nok, nok, ""},
-				"pods/fred": resource.Row{"pods/fred", "v1", nok, ok, nok, nok, nok, nok, nok, nok, ""},
+				"pods":      {"pods", "v1", nok, ok, nok, nok, nok, nok, nok, nok, ""},
+				"pods/fred": {"pods/fred", "v1", nok, ok, nok, nok, nok, nok, nok, nok, ""},
 			},
 		},
 		{
@@ -92,7 +92,7 @@ func TestParseRules(t *testing.T) {
 				{APIGroups: []string{}, Resources: []string{}, Verbs: []string{"get"}, NonResourceURLs: []string{"/fred"}},
 			},
 			map[string]resource.Row{
-				"/fred": resource.Row{"/fred", "<n/a>", ok, nok, nok, nok, nok, nok, nok, nok, ""},
+				"/fred": {"/fred", "<n/a>", ok, nok, nok, nok, nok, nok, nok, nok, ""},
 			},
 		},
 		{
@@ -100,7 +100,7 @@ func TestParseRules(t *testing.T) {
 				{APIGroups: []string{}, Resources: []string{}, Verbs: []string{"get"}, NonResourceURLs: []string{"fred"}},
 			},
 			map[string]resource.Row{
-				"/fred": resource.Row{"/fred", "<n/a>", ok, nok, nok, nok, nok, nok, nok, nok, ""},
+				"/fred": {"/fred", "<n/a>", ok, nok, nok, nok, nok, nok, nok, nok, ""},
 			},
 		},
 	}
