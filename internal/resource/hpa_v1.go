@@ -16,7 +16,6 @@ type HPAV1 struct {
 
 // NewHPAV1List returns a new resource list.
 func NewHPAV1List(c Connection, ns string) List {
-	log.Debug().Msg(">>> YO!!!")
 	return NewList(
 		ns,
 		"hpa",

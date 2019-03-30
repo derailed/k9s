@@ -221,7 +221,6 @@ func (v *rbacView) clusterPolicies(name string) (resource.RowEvents, error) {
 
 func (v *rbacView) namespacedPolicies(path string) (resource.RowEvents, error) {
 	ns, na := namespaced(path)
-	log.Debug().Msgf("!!!! YO %s %s", ns, na)
 	cr, err := v.app.conn().DialOrDie().Rbac().Roles(ns).Get(na, metav1.GetOptions{})
 	if err != nil {
 		return nil, err

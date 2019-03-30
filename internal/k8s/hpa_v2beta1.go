@@ -1,7 +1,6 @@
 package k8s
 
 import (
-	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -22,8 +21,6 @@ func (h *HPAV2Beta1) Get(ns, n string) (interface{}, error) {
 
 // List all HPAs in a given namespace.
 func (h *HPAV2Beta1) List(ns string) (Collection, error) {
-	log.Debug().Msg("!!!! YO V2B1")
-
 	rr, err := h.DialOrDie().AutoscalingV2beta2().HorizontalPodAutoscalers(ns).List(metav1.ListOptions{})
 	if err != nil {
 		return nil, err
