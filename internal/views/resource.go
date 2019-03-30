@@ -144,9 +144,10 @@ func (v *resourceView) setDecorateFn(f decorateFn) {
 // Actions...
 
 func (v *resourceView) enterCmd(*tcell.EventKey) *tcell.EventKey {
-	v.app.flash(flashInfo, "Enter pressed...")
 	if v.enterFn != nil {
 		v.enterFn(v.app, v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
+	} else {
+		v.defaultEnter(v.app, v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
 	}
 	return nil
 }
@@ -187,17 +188,15 @@ func (v *resourceView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *resourceView) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
-		return evt
-	}
+func (v *resourceView) defaultEnter(app *appView, ns, resource, selection string) {
 	sel := v.getSelectedItem()
 	raw, err := v.list.Resource().Describe(v.title, sel, v.app.flags)
 	if err != nil {
 		v.app.flash(flashErr, err.Error())
 		log.Warn().Msgf("Describe %v", err.Error())
-		return evt
+		return
 	}
+
 	details := v.GetPrimitive("details").(*detailsView)
 	{
 		details.setCategory("Describe")
@@ -207,6 +206,15 @@ func (v *resourceView) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 		details.ScrollToBeginning()
 	}
 	v.switchPage("details")
+}
+
+func (v *resourceView) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !v.rowSelected() {
+		return evt
+	}
+
+	v.defaultEnter(v.app, v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
+
 	return nil
 }
 
@@ -383,7 +391,7 @@ func (v *resourceView) refreshActions() {
 		}
 	}
 
-	aa[tcell.KeyEnter] = newKeyAction("Enter", v.enterCmd, true)
+	aa[tcell.KeyEnter] = newKeyAction("Enter", v.enterCmd, false)
 
 	aa[tcell.KeyCtrlR] = newKeyAction("Refresh", v.refreshCmd, false)
 	aa[KeyHelp] = newKeyAction("Help", v.app.noopCmd, false)

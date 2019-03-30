@@ -28,7 +28,7 @@ func NewHPAList(c Connection, ns string) List {
 
 // NewHPA instantiates a new HPA.
 func NewHPA(c Connection) *HPA {
-	hpa := &HPA{&Base{Connection: c, Resource: k8s.NewHPA(c)}, nil}
+	hpa := &HPA{&Base{Connection: c, Resource: k8s.NewHPAV2Beta2(c)}, nil}
 	hpa.Factory = hpa
 
 	return hpa

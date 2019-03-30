@@ -44,7 +44,7 @@ func TestMaxColumn(t *testing.T) {
 				},
 			},
 			0,
-			maxyPad{3, 5},
+			maxyPad{28, 5},
 		},
 	}
 

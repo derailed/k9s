@@ -29,7 +29,7 @@ K9s is available on Linux, OSX and Windows platforms.
    ```
 
 * Building from source
-   K9s was built using go 1.11 or above. In order to build K9 from source you must:
+   K9s was built using go 1.12 or above. In order to build K9 from source you must:
    1. Clone the repo
    2. Set env var *GO111MODULE=on*
    3. Add the following command in your go.mod file
@@ -151,7 +151,7 @@ K9s uses aliases to navigate most K8s resources.
 
 This initial drop is brittle. K9s will most likely blow up...
 
-1. You're running older versions of Kubernetes. K9s works best Kubernetes 1.10+.
+1. You're running older versions of Kubernetes. K9s works best Kubernetes 1.12+.
 1. You don't have enough RBAC fu to manage your cluster (see RBAC section below).
 1. Your cluster does not run a metric server.
 

@@ -4,6 +4,8 @@ import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type (
@@ -27,7 +29,7 @@ type (
 )
 
 func helpCmds(c k8s.Connection) map[string]resCmd {
-	cmdMap := resourceViews()
+	cmdMap := resourceViews(c)
 	cmds := make(map[string]resCmd, len(cmdMap))
 	for k, v := range cmdMap {
 		cmds[k] = v
@@ -81,12 +83,35 @@ func showRBAC(app *appView, ns, resource, selection string) {
 	if resource == "role" {
 		kind = role
 	}
-	app.command.pushCmd("policies")
 	app.inject(newRBACView(app, ns, selection, kind))
 }
 
-func resourceViews() map[string]resCmd {
-	return map[string]resCmd{
+func showClusterRole(app *appView, ns, resource, selection string) {
+	crb, err := app.conn().DialOrDie().Rbac().ClusterRoleBindings().Get(selection, metav1.GetOptions{})
+	if err != nil {
+		app.flash(flashErr, "Unable to retrieve crb", selection)
+		return
+	}
+	app.inject(newRBACView(app, ns, crb.RoleRef.Name, clusterRole))
+}
+
+func showRole(app *appView, _, resource, selection string) {
+	ns, n := namespaced(selection)
+	rb, err := app.conn().DialOrDie().Rbac().RoleBindings(ns).Get(n, metav1.GetOptions{})
+	if err != nil {
+		app.flash(flashErr, "Unable to retrieve rb", selection)
+		return
+	}
+	app.inject(newRBACView(app, ns, namespacedName(ns, rb.RoleRef.Name), role))
+}
+
+func showSAPolicy(app *appView, _, _, selection string) {
+	_, n := namespaced(selection)
+	app.inject(newPolicyView(app, mapFuSubject("ServiceAccount"), n))
+}
+
+func resourceViews(c k8s.Connection) map[string]resCmd {
+	cmds := map[string]resCmd{
 		"cm": {
 			title:  "ConfigMaps",
 			api:    "",
@@ -101,11 +126,11 @@ func resourceViews() map[string]resCmd {
 			enterFn: showRBAC,
 		},
 		"crb": {
-			title:  "ClusterRoleBindings",
-			api:    "rbac.authorization.k8s.io",
-			viewFn: newResourceView,
-			listFn: resource.NewClusterRoleBindingList,
-			// decorateFn: crbDecorator,
+			title:   "ClusterRoleBindings",
+			api:     "rbac.authorization.k8s.io",
+			viewFn:  newResourceView,
+			listFn:  resource.NewClusterRoleBindingList,
+			enterFn: showClusterRole,
 		},
 		"crd": {
 			title:  "CustomResourceDefinitions",
@@ -152,12 +177,6 @@ func resourceViews() map[string]resCmd {
 			viewFn:    newResourceView,
 			listFn:    resource.NewEventList,
 			colorerFn: evColorer,
-		},
-		"hpa": {
-			title:  "HorizontalPodAutoscalers",
-			api:    "autoscaling",
-			viewFn: newResourceView,
-			listFn: resource.NewHPAList,
 		},
 		"ing": {
 			title:  "Ingress",
@@ -214,10 +233,11 @@ func resourceViews() map[string]resCmd {
 			colorerFn: pvcColorer,
 		},
 		"rb": {
-			title:  "RoleBindings",
-			api:    "rbac.authorization.k8s.io",
-			viewFn: newResourceView,
-			listFn: resource.NewRoleBindingList,
+			title:   "RoleBindings",
+			api:     "rbac.authorization.k8s.io",
+			viewFn:  newResourceView,
+			listFn:  resource.NewRoleBindingList,
+			enterFn: showRole,
 		},
 		"rc": {
 			title:     "ReplicationControllers",
@@ -241,10 +261,11 @@ func resourceViews() map[string]resCmd {
 			colorerFn: rsColorer,
 		},
 		"sa": {
-			title:  "ServiceAccounts",
-			api:    "",
-			viewFn: newResourceView,
-			listFn: resource.NewServiceAccountList,
+			title:   "ServiceAccounts",
+			api:     "",
+			viewFn:  newResourceView,
+			listFn:  resource.NewServiceAccountList,
+			enterFn: showSAPolicy,
 		},
 		"sec": {
 			title:  "Secrets",
@@ -264,7 +285,52 @@ func resourceViews() map[string]resCmd {
 			api:    "",
 			viewFn: newResourceView,
 			listFn: resource.NewServiceList,
-			// decorateFn: svcDecorator,
+		},
+		"usr": {
+			title:  "Users",
+			api:    "",
+			viewFn: newSubjectView,
+		},
+		"grp": {
+			title:  "Groups",
+			api:    "",
+			viewFn: newSubjectView,
 		},
 	}
+
+	rev, ok := c.SupportsRes("autoscaling", []string{"v1", "v2beta1", "v2beta2"})
+	if !ok {
+		log.Warn().Msg("HPA are not supported on this cluster")
+	}
+
+	switch rev {
+	case "v1":
+		log.Debug().Msg("Using HPA V1!")
+		cmds["hpa"] = resCmd{
+			title:  "HorizontalPodAutoscalers",
+			api:    "autoscaling",
+			viewFn: newResourceView,
+			listFn: resource.NewHPAV1List,
+		}
+	case "v2beta1":
+		log.Debug().Msg("Using HPA V2Beta1!")
+		cmds["hpa"] = resCmd{
+			title:  "HorizontalPodAutoscalers",
+			api:    "autoscaling",
+			viewFn: newResourceView,
+			listFn: resource.NewHPAV2Beta1List,
+		}
+	case "v2beta2":
+		log.Debug().Msg("Using HPA V2Beta2!")
+		cmds["hpa"] = resCmd{
+			title:  "HorizontalPodAutoscalers",
+			api:    "autoscaling",
+			viewFn: newResourceView,
+			listFn: resource.NewHPAList,
+		}
+	default:
+		log.Panic().Msgf("K9s does not currently support HPA version %s", rev)
+	}
+
+	return cmds
 }

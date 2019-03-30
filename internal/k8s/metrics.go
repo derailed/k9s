@@ -98,11 +98,6 @@ func (m *MetricsServer) ClusterLoad(nodes []v1.Node, metrics []mv1beta1.NodeMetr
 	return ClusterMetrics{PercCPU: toPerc(cpu, tcpu), PercMEM: toPerc(mem, tmem)}
 }
 
-// // HasMetrics check if cluster has a metrics server.
-// func (m *MetricsServer) HasMetrics() bool {
-// 	return m.HasMetrics()
-// }
-
 // FetchNodesMetrics return all metrics for pods in a given namespace.
 func (m *MetricsServer) FetchNodesMetrics() ([]mv1beta1.NodeMetrics, error) {
 	client, err := m.MXDial()

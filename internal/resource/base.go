@@ -92,13 +92,13 @@ func (b *Base) Describe(kind, pa string, flags *genericclioptions.ConfigFlags) (
 
 	d, err := versioned.Describer(flags, mapping)
 	if err != nil {
+		log.Error().Err(err).Msgf("Unable to find describer for %#v", mapping)
 		return "", err
 	}
-	opts := describe.DescriberSettings{
-		ShowEvents: true,
-	}
 
-	return d.Describe(ns, n, opts)
+	log.Debug().Msgf("Describer %#v", d)
+
+	return d.Describe(ns, n, describe.DescriberSettings{ShowEvents: true})
 }
 
 // Delete a resource by name.

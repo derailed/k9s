@@ -87,9 +87,6 @@ func loadConfiguration() *config.Config {
 	log.Info().Msg("✅ Kubernetes connectivity")
 	k9sCfg.Save()
 
-	// k8s.NewNode(k9sCfg.GetConnection()).FetchReqLimit("minikube")
-	// os.Exit(0)
-
 	return k9sCfg
 }
 

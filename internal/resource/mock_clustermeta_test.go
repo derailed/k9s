@@ -196,6 +196,25 @@ func (mock *MockClusterMeta) RestConfigOrDie() *rest.Config {
 	return ret0
 }
 
+func (mock *MockClusterMeta) SupportsRes(_param0 string, _param1 []string) (string, bool) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockClusterMeta().")
+	}
+	params := []pegomock.Param{_param0, _param1}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("SupportsRes", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*bool)(nil)).Elem()})
+	var ret0 string
+	var ret1 bool
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(string)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(bool)
+		}
+	}
+	return ret0, ret1
+}
+
 func (mock *MockClusterMeta) SupportsResource(_param0 string) bool {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockClusterMeta().")
@@ -523,6 +542,37 @@ func (c *ClusterMeta_RestConfigOrDie_OngoingVerification) GetCapturedArguments()
 }
 
 func (c *ClusterMeta_RestConfigOrDie_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierClusterMeta) SupportsRes(_param0 string, _param1 []string) *ClusterMeta_SupportsRes_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SupportsRes", params, verifier.timeout)
+	return &ClusterMeta_SupportsRes_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type ClusterMeta_SupportsRes_OngoingVerification struct {
+	mock              *MockClusterMeta
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *ClusterMeta_SupportsRes_OngoingVerification) GetCapturedArguments() (string, []string) {
+	_param0, _param1 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1]
+}
+
+func (c *ClusterMeta_SupportsRes_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 [][]string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([][]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.([]string)
+		}
+	}
+	return
 }
 
 func (verifier *VerifierClusterMeta) SupportsResource(_param0 string) *ClusterMeta_SupportsResource_OngoingVerification {

@@ -21,8 +21,8 @@ type cmdView struct {
 func newCmdView(ic rune) *cmdView {
 	v := cmdView{icon: ic, TextView: tview.NewTextView()}
 	{
-		v.SetWordWrap(false)
-		v.SetWrap(false)
+		v.SetWordWrap(true)
+		v.SetWrap(true)
 		v.SetDynamicColors(true)
 		v.SetBorderPadding(0, 0, 1, 1)
 		v.SetTextColor(tcell.ColorAqua)

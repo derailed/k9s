@@ -12,9 +12,6 @@ func toPerc(f float64) string {
 
 func deltas(c, n string) string {
 	c, n = strings.TrimSpace(c), strings.TrimSpace(n)
-
-	// log.Debug().Msgf("`%s` vs `%s`", c, n)
-
 	if c == "n/a" {
 		return n
 	}
@@ -83,13 +80,13 @@ func delta(s string) string {
 }
 
 func plus(s string) string {
-	return suffix(s, "+")
+	return suffix(s, "⬆")
 }
 
 func minus(s string) string {
-	return suffix(s, "-")
+	return suffix(s, "⬇︎")
 }
 
 func suffix(s, su string) string {
-	return s + "(" + su + ")"
+	return s + su
 }

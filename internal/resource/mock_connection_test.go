@@ -147,6 +147,25 @@ func (mock *MockConnection) RestConfigOrDie() *rest.Config {
 	return ret0
 }
 
+func (mock *MockConnection) SupportsRes(_param0 string, _param1 []string) (string, bool) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockConnection().")
+	}
+	params := []pegomock.Param{_param0, _param1}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("SupportsRes", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*bool)(nil)).Elem()})
+	var ret0 string
+	var ret1 bool
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(string)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(bool)
+		}
+	}
+	return ret0, ret1
+}
+
 func (mock *MockConnection) SupportsResource(_param0 string) bool {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")
@@ -389,6 +408,37 @@ func (c *Connection_RestConfigOrDie_OngoingVerification) GetCapturedArguments() 
 }
 
 func (c *Connection_RestConfigOrDie_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierConnection) SupportsRes(_param0 string, _param1 []string) *Connection_SupportsRes_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SupportsRes", params, verifier.timeout)
+	return &Connection_SupportsRes_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Connection_SupportsRes_OngoingVerification struct {
+	mock              *MockConnection
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Connection_SupportsRes_OngoingVerification) GetCapturedArguments() (string, []string) {
+	_param0, _param1 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1]
+}
+
+func (c *Connection_SupportsRes_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 [][]string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+		_param1 = make([][]string, len(params[1]))
+		for u, param := range params[1] {
+			_param1[u] = param.([]string)
+		}
+	}
+	return
 }
 
 func (verifier *VerifierConnection) SupportsResource(_param0 string) *Connection_SupportsResource_OngoingVerification {

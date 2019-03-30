@@ -298,10 +298,10 @@ func (v *tableView) sortIndicator(index int, name string) string {
 
 func (v *tableView) doUpdate(data resource.TableData) {
 	v.currentNS = data.Namespace
-	if v.currentNS == resource.AllNamespaces || v.currentNS == "*" {
+	if v.currentNS == resource.AllNamespaces && v.currentNS != "*" {
 		v.actions[KeyShiftP] = newKeyAction("Sort Namespace", v.sortNamespaceCmd, true)
 	} else {
-		delete(v.actions, KeyShiftS)
+		delete(v.actions, KeyShiftP)
 	}
 	v.Clear()
 
@@ -378,7 +378,7 @@ func (v *tableView) addHeaderCell(col int, name string, pads maxyPad) {
 func (v *tableView) addBodyCell(row, col int, field, delta string, color tcell.Color, pads maxyPad) {
 	var pField string
 	if isASCII(field) {
-		pField = pad(deltas(delta, field), pads[col])
+		pField = pad(deltas(delta, field), pads[col]+5)
 	} else {
 		pField = deltas(delta, field)
 	}
@@ -420,7 +420,7 @@ func (v *tableView) resetTitle() {
 		rc--
 	}
 	switch v.currentNS {
-	case resource.NotNamespaced:
+	case resource.NotNamespaced, "*":
 		title = fmt.Sprintf(titleFmt, v.baseTitle, rc)
 	default:
 		ns := v.currentNS

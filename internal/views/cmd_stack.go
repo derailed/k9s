@@ -44,3 +44,7 @@ func (s *cmdStack) top() (string, bool) {
 func (s *cmdStack) empty() bool {
 	return len(s.stack) == 0
 }
+
+func (s *cmdStack) last() bool {
+	return len(s.stack) == 1
+}

@@ -3,7 +3,6 @@ package views
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"strings"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/rs/zerolog/log"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/watch"
 )
 
 const (
@@ -50,7 +48,8 @@ var (
 		"DELETE",
 		"EXTRAS",
 	}
-	rbacHeader = append(resource.Row{"NAME", "GROUP"}, rbacHeaderVerbs...)
+
+	rbacHeader = append(resource.Row{"NAME", "API GROUP"}, rbacHeaderVerbs...)
 
 	k8sVerbs = []string{
 		"get",
@@ -93,10 +92,10 @@ func newRBACView(app *appView, ns, name string, kind roleKind) *rbacView {
 }
 
 // Init the view.
-func (v *rbacView) init(_ context.Context, ns string) {
+func (v *rbacView) init(c context.Context, ns string) {
 	v.sortCol = sortColumn{1, len(rbacHeader), true}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(c)
 	v.cancel = cancel
 	go func(ctx context.Context) {
 		for {
@@ -122,16 +121,11 @@ func (v *rbacView) bindKeys() {
 	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd, false)
 	v.actions[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
 
-	v.actions[KeyShiftO] = newKeyAction("Sort Groups", v.sortColCmd(1), true)
+	v.actions[KeyShiftO] = newKeyAction("Sort APIGroup", v.sortColCmd(1), true)
 }
 
 func (v *rbacView) getTitle() string {
-	title := "ClusterRole"
-	if v.roleType == role {
-		title = "Role"
-	}
-
-	return fmt.Sprintf(rbacTitleFmt, title, v.roleName)
+	return fmt.Sprintf(rbacTitleFmt, rbacTitle, v.roleName)
 }
 
 func (v *rbacView) hints() hints {
@@ -139,6 +133,7 @@ func (v *rbacView) hints() hints {
 }
 
 func (v *rbacView) refresh() {
+	log.Debug().Msg("RBAC Watching...")
 	data, err := v.reconcile(v.currentNS, v.roleName, v.roleType)
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to reconcile for %s:%d", v.roleName, v.roleType)
@@ -162,69 +157,35 @@ func (v *rbacView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	if v.cmdBuff.isActive() {
 		v.cmdBuff.reset()
-	} else {
-		v.app.prevCmd(evt)
+		return nil
 	}
+
+	v.app.inject(v.current)
 
 	return nil
 }
 
 func (v *rbacView) reconcile(ns, name string, kind roleKind) (resource.TableData, error) {
+	var table resource.TableData
+
 	evts, err := v.rowEvents(ns, name, kind)
 	if err != nil {
-		return resource.TableData{}, err
+		return table, err
 	}
 
-	data := resource.TableData{
-		Header:    rbacHeader,
-		Rows:      make(resource.RowEvents, len(evts)),
-		Namespace: resource.NotNamespaced,
-	}
+	return buildTable(v, evts), nil
+}
 
-	noDeltas := make(resource.Row, len(rbacHeader))
-	if len(v.cache) == 0 {
-		for k, ev := range evts {
-			ev.Action = resource.New
-			ev.Deltas = noDeltas
-			data.Rows[k] = ev
-		}
-		v.cache = evts
+func (v *rbacView) header() resource.Row {
+	return rbacHeader
+}
 
-		return data, nil
-	}
+func (v *rbacView) getCache() resource.RowEvents {
+	return v.cache
+}
 
-	for k, ev := range evts {
-		data.Rows[k] = ev
-
-		newr := ev.Fields
-		if _, ok := v.cache[k]; !ok {
-			ev.Action, ev.Deltas = watch.Added, noDeltas
-			continue
-		}
-		oldr := v.cache[k].Fields
-		deltas := make(resource.Row, len(newr))
-		if !reflect.DeepEqual(oldr, newr) {
-			ev.Action = watch.Modified
-			for i, field := range oldr {
-				if field != newr[i] {
-					deltas[i] = field
-				}
-			}
-			ev.Deltas = deltas
-		} else {
-			ev.Action = resource.Unchanged
-			ev.Deltas = noDeltas
-		}
-	}
+func (v *rbacView) setCache(evts resource.RowEvents) {
 	v.cache = evts
-
-	for k := range v.cache {
-		if _, ok := data.Rows[k]; !ok {
-			delete(v.cache, k)
-		}
-	}
-
-	return data, nil
 }
 
 func (v *rbacView) rowEvents(ns, name string, kind roleKind) (resource.RowEvents, error) {
@@ -260,6 +221,7 @@ func (v *rbacView) clusterPolicies(name string) (resource.RowEvents, error) {
 
 func (v *rbacView) namespacedPolicies(path string) (resource.RowEvents, error) {
 	ns, na := namespaced(path)
+	log.Debug().Msgf("!!!! YO %s %s", ns, na)
 	cr, err := v.app.conn().DialOrDie().Rbac().Roles(ns).Get(na, metav1.GetOptions{})
 	if err != nil {
 		return nil, err

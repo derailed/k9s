@@ -54,6 +54,7 @@ type (
 		SupportsResource(group string) bool
 		ValidNamespaces() ([]v1.Namespace, error)
 		ValidPods(node string) ([]v1.Pod, error)
+		SupportsRes(grp string, versions []string) (string, bool)
 	}
 
 	// APIClient represents a Kubernetes api client.
@@ -122,6 +123,7 @@ func (a *APIClient) IsNamespaced(res string) bool {
 func (a *APIClient) SupportsResource(group string) bool {
 	list, _ := a.DialOrDie().Discovery().ServerPreferredResources()
 	for _, l := range list {
+		log.Debug().Msgf(">>> Group %s", l.GroupVersion)
 		if l.GroupVersion == group {
 			return true
 		}
@@ -242,4 +244,29 @@ func (a *APIClient) supportsMxServer() bool {
 	}
 
 	return false
+}
+
+// SupportsRes checks latest supported version.
+func (a *APIClient) SupportsRes(group string, versions []string) (string, bool) {
+	apiGroups, err := a.DialOrDie().Discovery().ServerGroups()
+	if err != nil {
+		return "", false
+	}
+
+	for _, grp := range apiGroups.Groups {
+		if grp.Name != group {
+			continue
+		}
+		return grp.PreferredVersion.Version, true
+
+		// for _, version := range grp.Versions {
+		// 	for _, supportedVersion := range versions {
+		// 		if version.Version == supportedVersion {
+		// 			return supportedVersion, true
+		// 		}
+		// 	}
+		// }
+	}
+
+	return "", false
 }

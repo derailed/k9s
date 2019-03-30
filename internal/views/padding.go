@@ -20,7 +20,7 @@ func computeMaxColumns(pads maxyPad, sortCol int, table resource.TableData) {
 	var row int
 	for _, rev := range table.Rows {
 		for index, field := range rev.Fields {
-			if len(field) > pads[index] && isASCII(field) {
+			if len(field) > pads[index] {
 				pads[index] = len([]rune(field))
 			}
 		}

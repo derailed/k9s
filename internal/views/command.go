@@ -9,6 +9,12 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+type subjectViewer interface {
+	resourceViewer
+
+	setSubject(s string)
+}
+
 type command struct {
 	app     *appView
 	history *cmdStack
@@ -16,6 +22,10 @@ type command struct {
 
 func newCommand(app *appView) *command {
 	return &command{app: app, history: newCmdStack()}
+}
+
+func (c *command) lastCmd() bool {
+	return c.history.last()
 }
 
 func (c *command) pushCmd(cmd string) {
@@ -37,7 +47,7 @@ func (c *command) defaultCmd() {
 
 // Helpers...
 
-var fuMatcher = regexp.MustCompile(`\Afu\s([u|g|s]):([\w-:]+)\b`)
+var policyMatcher = regexp.MustCompile(`\Apol\s([u|g|s]):([\w-:]+)\b`)
 
 // Exec the command by showing associated display.
 func (c *command) run(cmd string) bool {
@@ -52,21 +62,21 @@ func (c *command) run(cmd string) bool {
 	case cmd == "alias":
 		c.app.inject(newAliasView(c.app))
 		return true
-	case fuMatcher.MatchString(cmd):
-		tokens := fuMatcher.FindAllStringSubmatch(cmd, -1)
+	case policyMatcher.MatchString(cmd):
+		tokens := policyMatcher.FindAllStringSubmatch(cmd, -1)
 		if len(tokens) == 1 && len(tokens[0]) == 3 {
-			c.app.inject(newFuView(c.app, tokens[0][1], tokens[0][2]))
+			c.app.inject(newPolicyView(c.app, tokens[0][1], tokens[0][2]))
 			return true
 		}
 	default:
-		if res, ok := resourceViews()[cmd]; ok {
+		if res, ok := resourceViews(c.app.conn())[cmd]; ok {
 			var r resource.List
 			if res.listMxFn != nil {
 				r = res.listMxFn(c.app.conn(),
 					k8s.NewMetricsServer(c.app.conn()),
 					resource.DefaultNamespace,
 				)
-			} else {
+			} else if res.listFn != nil {
 				r = res.listFn(c.app.conn(), resource.DefaultNamespace)
 			}
 			v = res.viewFn(res.title, c.app, r)
@@ -79,8 +89,8 @@ func (c *command) run(cmd string) bool {
 			if res.decorateFn != nil {
 				v.setDecorateFn(res.decorateFn)
 			}
-			const fmat = "Viewing %s in namespace %s..."
-			c.app.flash(flashInfo, fmt.Sprintf(fmat, res.title, c.app.config.ActiveNamespace()))
+			const fmat = "Viewing resource %s..."
+			c.app.flash(flashInfo, fmt.Sprintf(fmat, res.title))
 			log.Debug().Msgf("Running command %s", cmd)
 			c.exec(cmd, v)
 			return true
@@ -108,9 +118,11 @@ func (c *command) run(cmd string) bool {
 }
 
 func (c *command) exec(cmd string, v igniter) {
-	if v != nil {
-		c.app.config.SetActiveView(cmd)
-		c.app.config.Save()
-		c.app.inject(v)
+	if v == nil {
+		return
 	}
+
+	c.app.config.SetActiveView(cmd)
+	c.app.config.Save()
+	c.app.inject(v)
 }
