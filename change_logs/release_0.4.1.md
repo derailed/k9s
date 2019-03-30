@@ -1,3 +1,5 @@
+<img src="../assets/k9s_small.png" align="right" width="200" height="auto"/>
+
 # Release v0.4.1
 
 ## Notes
@@ -14,33 +16,35 @@ Thank you so much for your support and awesome suggestions to make K9s better!!
 
 ## Change Logs
 
-### Subject View
+### o Subject View
 
    You can now view users/groups that are bound by RBAC rules without having to type to full subject name.
    To activate use the following command mode
 
    ```text
-   # for users
+   # For users
    :usr
-   # for groups
+   # For groups
    :grp
    ```
 
-   These commands will pull all the available cluster and role binding associated with these subject types.
-   You can then select and `<enter>` to see the associated policies.
-   You can also filter/sort like in any other K9s views with the added bonus of auto updates when new
-   users/groups binding come into your clusters.
+   These commands will pull all the available cluster and role bindings associated with these subject types.
+   Use select + `<enter>` to see the associated RBACK policy rules.
+   You can also filter/sort, like in any other K9s views with the added bonus of auto updates when new user/group bindings come into your clusters.
 
-   To see ServiceAccount RBAC policies, you can now navigate to the serviceaccount view aka `:sa` and press `<enter>`
-   to view the associated policy rules.
+   To see ServiceAccount RBAC policies, you can navigate to the serviceaccount view aka `:sa` and select + `<enter>` to view the associated policy rules.
 
-### Fu View
+### o ~~FuView~~ is now PolicyView
 
-  Has been renamed policy view to see all RBAC policies available on a subject.
-  You can now use `pol` (instead of `fu`) to list out RBAC policies associated with a
+  The Fu command has been depracated for pol(icy) command to see all RBAC policies available on a subject. You can use `pol` (instead of `fu`) to list out RBAC policies associated with a
   user/group or serviceaccount.
 
-### Enter now has a meaning!
+  ```text
+  # To list out all the RBAC policies associated with user `fernand`
+  :pol u:fernand
+  ```
+
+### Enter. Yes Please!
 
   Pressing `<enter>` on most resource views will now describe the resource by default.
 
@@ -48,7 +52,11 @@ Thank you so much for your support and awesome suggestions to make K9s better!!
 
 ## Resolved Bugs
 
-+ [Issue #143](https://github.com/derailed/k9s/issues/143)
-+ [Issue #140](https://github.com/derailed/k9s/issues/140)
-  NOTE! Describe on v1 HPA is busted just like it is when running v 1.13 of
-  kubectl against a v1.12 cluster.
++ RBAC long subject names [Issue #143](https://github.com/derailed/k9s/issues/143)
++ Support HPA v1 [Issue #140](https://github.com/derailed/k9s/issues/140)
+  > NOTE: Describe on v1 HPA is busted just like it is when running kubectl v1.13
+  > against an older cluster.
+
+---
+
+<img src="../assets/imhotep_logo.png" width="32" height="auto"/> © 2019 Imhotep Software LLC. All materials licensed under [Apache v2.0](http://www.apache.org/licenses/LICENSE-2.0)
