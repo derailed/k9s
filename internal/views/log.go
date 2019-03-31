@@ -27,7 +27,7 @@ func newLogView(title string, parent loggable) *logView {
 }
 
 func (l *logView) logLine(line string) {
-	fmt.Fprintln(l.ansiWriter, line)
+	fmt.Fprintln(l.ansiWriter, tview.Escape(line))
 }
 
 func (l *logView) log(lines fmt.Stringer) {

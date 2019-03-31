@@ -270,7 +270,7 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 		"sec": {
 			title:  "Secrets",
 			api:    "",
-			viewFn: newResourceView,
+			viewFn: newSecretView,
 			listFn: resource.NewSecretList,
 		},
 		"sts": {

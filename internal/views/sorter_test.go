@@ -22,6 +22,8 @@ func TestGroupSort(t *testing.T) {
 		{false, []string{"100Mi", "10Mi"}, []string{"100Mi", "10Mi"}},
 		{true, []string{"xyz", "abc"}, []string{"abc", "xyz"}},
 		{false, []string{"xyz", "abc"}, []string{"xyz", "abc"}},
+		{true, []string{"2m30s", "1m10s"}, []string{"1m10s", "2m30s"}},
+		{true, []string{"3d", "1d"}, []string{"1d", "3d"}},
 	}
 
 	for _, u := range uu {
@@ -33,9 +35,8 @@ func TestGroupSort(t *testing.T) {
 
 func TestRowSort(t *testing.T) {
 	uu := []struct {
-		order  bool
-		rows   resource.Rows
-		expect resource.Rows
+		order        bool
+		rows, expect resource.Rows
 	}{
 		{
 			true,

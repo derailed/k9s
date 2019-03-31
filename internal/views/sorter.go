@@ -4,8 +4,10 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal/resource"
+	res "k8s.io/apimachinery/pkg/api/resource"
 )
 
 type rowSorter struct {
@@ -53,6 +55,10 @@ func less(asc bool, c1, c2 string) bool {
 		return o
 	}
 
+	if o, ok := isDurationSort(asc, c1, c2); ok {
+		return o
+	}
+
 	if o, ok := isIntegerSort(asc, c1, c2); ok {
 		return o
 	}
@@ -64,18 +70,30 @@ func less(asc bool, c1, c2 string) bool {
 	return c > 0
 }
 
-func isMetricSort(asc bool, c1, c2 string) (bool, bool) {
-	m1, ok := isMetric(c1)
-	if !ok {
+func isDurationSort(asc bool, c1, c2 string) (bool, bool) {
+	d1, ok1 := isDuration(c1)
+	d2, ok2 := isDuration(c2)
+	if !ok1 || !ok2 {
 		return false, false
 	}
-	m2, _ := isMetric(c2)
-	i1, _ := strconv.Atoi(m1)
-	i2, _ := strconv.Atoi(m2)
+
 	if asc {
-		return i1 < i2, true
+		return d1 < d2, true
 	}
-	return i1 > i2, true
+	return d1 > d2, true
+}
+
+func isMetricSort(asc bool, c1, c2 string) (bool, bool) {
+	q1, err1 := res.ParseQuantity(c1)
+	q2, err2 := res.ParseQuantity(c2)
+	if err1 != nil || err2 != nil {
+		return false, false
+	}
+
+	if asc {
+		return q1.Cmp(q2) <= 0, true
+	}
+	return q1.Cmp(q2) > 0, true
 }
 
 func isIntegerSort(asc bool, c1, c2 string) (bool, bool) {
@@ -97,4 +115,12 @@ func isMetric(s string) (string, bool) {
 		return m[1], true
 	}
 	return s, false
+}
+
+func isDuration(s string) (time.Duration, bool) {
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		return d, false
+	}
+	return d, true
 }

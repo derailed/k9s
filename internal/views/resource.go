@@ -190,7 +190,7 @@ func (v *resourceView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (v *resourceView) defaultEnter(app *appView, ns, resource, selection string) {
 	sel := v.getSelectedItem()
-	raw, err := v.list.Resource().Describe(v.title, sel, v.app.flags)
+	yaml, err := v.list.Resource().Describe(v.title, sel, v.app.flags)
 	if err != nil {
 		v.app.flash(flashErr, err.Error())
 		log.Warn().Msgf("Describe %v", err.Error())
@@ -202,7 +202,7 @@ func (v *resourceView) defaultEnter(app *appView, ns, resource, selection string
 		details.setCategory("Describe")
 		details.setTitle(sel)
 		details.SetTextColor(tcell.ColorAqua)
-		details.SetText(string(raw))
+		details.SetText(colorizeYAML(yaml))
 		details.ScrollToBeginning()
 	}
 	v.switchPage("details")
@@ -212,7 +212,6 @@ func (v *resourceView) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
 		return evt
 	}
-
 	v.defaultEnter(v.app, v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
 
 	return nil
@@ -234,7 +233,7 @@ func (v *resourceView) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		details.setCategory("View")
 		details.setTitle(sel)
 		details.SetTextColor(tcell.ColorMediumAquamarine)
-		details.SetText(string(raw))
+		details.SetText(colorizeYAML(raw))
 		details.ScrollToBeginning()
 	}
 	v.switchPage("details")
@@ -345,9 +344,12 @@ func (v *resourceView) switchPage(p string) {
 	{
 		v.SwitchToPage(p)
 		v.selectedNS = v.list.GetNamespace()
-		h := v.GetPrimitive(p).(hinter)
-		v.app.setHints(h.hints())
-		v.app.SetFocus(v.CurrentPage().Item)
+		if h, ok := v.GetPrimitive(p).(hinter); ok {
+			v.app.setHints(h.hints())
+			v.app.SetFocus(v.CurrentPage().Item)
+		} else {
+			log.Error().Msgf("Hinter not implemented on %s", p)
+		}
 	}
 	v.update.Unlock()
 }

@@ -26,11 +26,6 @@ type detailsView struct {
 	numSelections int
 }
 
-var (
-	regionRX = regexp.MustCompile(`\["([a-zA-Z0-9_,;: \-\.]*)"\]`)
-	escapeRX = regexp.MustCompile(`\[([a-zA-Z0-9_,;: \-\."#]+)\[(\[*)\]`)
-)
-
 func newDetailsView(app *appView, backFn actionHandler) *detailsView {
 	v := detailsView{TextView: tview.NewTextView(), app: app, actions: make(keyActions)}
 	{
@@ -53,8 +48,6 @@ func newDetailsView(app *appView, backFn actionHandler) *detailsView {
 		})
 	}
 
-	// v.actions[KeySlash] = newKeyAction("Search", v.activateCmd)
-	// v.actions[tcell.KeyEnter] = newKeyAction("Search", v.searchCmd)
 	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[tcell.KeyBackspace] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[tcell.KeyDelete] = newKeyAction("Erase", v.eraseCmd, false)
@@ -206,6 +199,11 @@ func (v *detailsView) setTitle(t string) {
 	}
 	v.SetTitle(title)
 }
+
+var (
+	regionRX = regexp.MustCompile(`\["([a-zA-Z0-9_,;: \-\.]*)"\]`)
+	escapeRX = regexp.MustCompile(`\[([a-zA-Z0-9_,;: \-\."#]+)\[(\[*)\]`)
+)
 
 func (v *detailsView) decorateLines(buff, q string) string {
 	rx := regexp.MustCompile(`(?i)` + q)
