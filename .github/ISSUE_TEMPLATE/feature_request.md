@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-<img src="https://github.com/derailed/k9s/blob/master/assets/k9s_small.png" align="right" width="100" height="auto"/>
+<img src="https://github.com/derailed/k9s/master/assets/k9s_small.png" align="right" width="100" height="auto"/>
 
 <br/>
 <br/>
