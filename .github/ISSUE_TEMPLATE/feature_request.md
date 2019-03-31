@@ -1,9 +1,3 @@
-<img src="../../assets/k9s_small.png" align="right" width="100" height="auto"/>
-
-<br/>
-<br/>
-<br/>
-
 ---
 name: Feature request
 about: Suggest an idea for this project
@@ -12,6 +6,13 @@ labels: ''
 assignees: ''
 
 ---
+
+<img src="../../assets/k9s_small.png" align="right" width="100" height="auto"/>
+
+<br/>
+<br/>
+<br/>
+
 
 **Is your feature request related to a problem? Please describe.**
 A clear and concise description of what the problem is. Ex. I'm always frustrated when [...]
