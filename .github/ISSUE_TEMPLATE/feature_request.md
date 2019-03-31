@@ -1,3 +1,9 @@
+<img src="../../assets/k9s_small.png" align="right" width="100" height="auto"/>
+
+<br/>
+<br/>
+<br/>
+
 ---
 name: Feature request
 about: Suggest an idea for this project

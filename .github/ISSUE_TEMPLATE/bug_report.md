@@ -1,3 +1,9 @@
+<img src="../../assets/k9s_err.png" align="right" width="100" height="auto"/>
+
+<br/>
+<br/>
+<br/>
+
 ---
 name: Bug report
 about: Create a report to help us improve
