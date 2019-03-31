@@ -7,7 +7,7 @@ assignees: ''
 
 ---
 
-<img src="../assets/k9s_err.png" align="right" width="100" height="auto"/>
+<img src="./assets/k9s_err.png" align="right" width="100" height="auto"/>
 
 <br/>
 <br/>
