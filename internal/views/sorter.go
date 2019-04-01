@@ -118,6 +118,18 @@ func isMetric(s string) (string, bool) {
 }
 
 func isDuration(s string) (time.Duration, bool) {
+	// rx := regexp.MustCompile(`(\d+)([h|d])`)
+	// mm := rx.FindStringSubmatch(s)
+	// if len(mm) == 3 {
+	// 	n, _ := strconv.Atoi(mm[1])
+	// 	switch mm[2] {
+	// 	case "d":
+	// 		s = fmt.Sprintf("%dh", n*24)
+	// 	case "y":
+	// 		s = fmt.Sprintf("%dh", n*365*24)
+	// 	}
+	// }
+
 	d, err := time.ParseDuration(s)
 	if err != nil {
 		return d, false

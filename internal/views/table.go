@@ -6,11 +6,13 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
+	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 const (
@@ -338,7 +340,11 @@ func (v *tableView) doUpdate(data resource.TableData) {
 				fgColor = v.colorerFn(data.Namespace, data.Rows[sk])
 			}
 			for col, field := range data.Rows[sk].Fields {
-				v.addBodyCell(row, col, field, data.Rows[sk].Deltas[col], fgColor, pads)
+				var age bool
+				if data.Header[col] == "AGE" {
+					age = true
+				}
+				v.addBodyCell(age, row, col, field, data.Rows[sk].Deltas[col], fgColor, pads)
 			}
 			row++
 		}
@@ -375,15 +381,22 @@ func (v *tableView) addHeaderCell(col int, name string, pads maxyPad) {
 	v.SetCell(0, col, c)
 }
 
-func (v *tableView) addBodyCell(row, col int, field, delta string, color tcell.Color, pads maxyPad) {
-	var pField string
-	if isASCII(field) {
-		pField = pad(deltas(delta, field), pads[col]+5)
-	} else {
-		pField = deltas(delta, field)
+func (v *tableView) addBodyCell(age bool, row, col int, field, delta string, color tcell.Color, pads maxyPad) {
+	dField := field
+	if age {
+		dur, err := time.ParseDuration(field)
+		if err == nil {
+			log.Debug().Msg("YO!")
+			dField = duration.HumanDuration(dur)
+		}
 	}
 
-	c := tview.NewTableCell(pField)
+	dField += deltas(delta, field)
+	if isASCII(field) {
+		dField = pad(dField, pads[col]+5)
+	}
+
+	c := tview.NewTableCell(dField)
 	{
 		c.SetExpansion(1)
 		c.SetTextColor(color)

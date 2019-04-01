@@ -107,7 +107,7 @@ func (r *CronJob) Fields(ns string) Row {
 
 	lastScheduled := "<none>"
 	if i.Status.LastScheduleTime != nil {
-		lastScheduled = toAge(*i.Status.LastScheduleTime)
+		lastScheduled = toAgeHuman(toAge(*i.Status.LastScheduleTime))
 	}
 
 	return append(ff,

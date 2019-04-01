@@ -11,14 +11,14 @@ func TestDeltas(t *testing.T) {
 	uu := []struct {
 		s1, s2, e string
 	}{
-		{"fred", "fred", "fred"},
-		{"fred", "blee", delta("blee")},
-		{"1", "2", plus("2")},
-		{"2", "1", minus("1")},
-		{"10Gi", "20Gi", plus("20Gi")},
-		{"15%(-)", "15%", "15%"},
-		{resource.MissingValue, "fred", delta("fred")},
-		{resource.NAValue, "fred", delta("fred")},
+		{"fred", "fred", ""},
+		{"fred", "blee", delta()},
+		{"1", "2", plus()},
+		{"2", "1", minus()},
+		{"10Gi", "20Gi", plus()},
+		{"15%(-)", "15%", ""},
+		{resource.MissingValue, "", delta()},
+		{resource.NAValue, "", delta()},
 	}
 
 	for _, u := range uu {

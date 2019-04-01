@@ -83,11 +83,16 @@ func boolToStr(b bool) string {
 }
 
 func toAge(timestamp metav1.Time) string {
-	if timestamp.IsZero() {
+	return time.Since(timestamp.Time).String()
+}
+
+func toAgeHuman(s string) string {
+	d, err := time.ParseDuration(s)
+	if err != nil {
 		return "<unknown>"
 	}
 
-	return duration.HumanDuration(time.Since(timestamp.Time))
+	return duration.HumanDuration(d)
 }
 
 // Truncate a string to the given l and suffix ellipsis if needed.

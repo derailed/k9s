@@ -13,46 +13,46 @@ func toPerc(f float64) string {
 func deltas(c, n string) string {
 	c, n = strings.TrimSpace(c), strings.TrimSpace(n)
 	if c == "n/a" {
-		return n
+		return ""
 	}
 
 	if i, ok := numerical(c); ok {
 		if j, ok := numerical(n); ok {
 			switch {
 			case i < j:
-				return plus(n)
+				return plus()
 			case i > j:
-				return minus(n)
+				return minus()
 			default:
-				return n
+				return ""
 			}
 		}
-		return n
+		return ""
 	}
 
 	if isAlpha(c) {
 		if strings.Contains(c, "(") {
-			return n
+			return ""
 		}
 		switch strings.Compare(c, n) {
 		case -1:
-			return plus(n)
+			return plus()
 		case 1:
-			return minus(n)
+			return minus()
 		default:
-			return n
+			return ""
 		}
 	}
 
 	if len(c) == 0 {
-		return n
+		return ""
 	}
 
 	switch strings.Compare(c, n) {
 	case 1, -1:
-		return delta(n)
+		return delta()
 	default:
-		return n
+		return ""
 	}
 }
 
@@ -75,18 +75,14 @@ func numerical(s string) (int, bool) {
 	return n, true
 }
 
-func delta(s string) string {
-	return suffix(s, "𝜟")
+func delta() string {
+	return "𝜟"
 }
 
-func plus(s string) string {
-	return suffix(s, "⬆")
+func plus() string {
+	return "⬆"
 }
 
-func minus(s string) string {
-	return suffix(s, "⬇︎")
-}
-
-func suffix(s, su string) string {
-	return s + su
+func minus() string {
+	return "⬇︎"
 }

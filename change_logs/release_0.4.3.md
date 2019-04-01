@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s_small.png" align="right" width="200" height="auto"/>
 
-# Release v0.4.2
+# Release v0.4.3
 
 ## Notes
 
@@ -18,23 +18,11 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ## Change Logs
 
-### o Decode Secrets On Demand
-
-  Secrets can now be base64 decoded to view their actual content.
-
-  In the secret view you can use `ctrl-x` to decode a selected secret. [Feature #123](https://github.com/derailed/k9s/issues/123)
-
-### o YAML Highlighter
-
-  Describe and YAML commands will now yield syntax highlighted views.
-  [Feature #142](https://github.com/derailed/k9s/issues/142)
-
 ---
 
 ## Resolved Bugs
 
-+ Sort by age busted [Issue #145](https://github.com/derailed/k9s/issues/145)
-+ Logs not escaped correctly [Issue #137](https://github.com/derailed/k9s/issues/137)
++ Sort by age busted (with feeling edition!) [Issue #145](https://github.com/derailed/k9s/issues/145)
 
 ---
 
