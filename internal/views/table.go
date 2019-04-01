@@ -386,7 +386,6 @@ func (v *tableView) addBodyCell(age bool, row, col int, field, delta string, col
 	if age {
 		dur, err := time.ParseDuration(field)
 		if err == nil {
-			log.Debug().Msg("YO!")
 			dField = duration.HumanDuration(dur)
 		}
 	}
