@@ -96,11 +96,16 @@ func (v *clusterInfoView) refresh() {
 	mx := v.cluster.Metrics(nodes, mxNodes)
 	c := v.GetCell(row, 1)
 	cpu := toPerc(mx.PercCPU)
-	stripTxt := strings.Replace(c.Text, plus(), "", 1)
-	stripTxt = strings.Replace(stripTxt, minus(), "", 1)
-	c.SetText(cpu + deltas(stripTxt, cpu))
+	c.SetText(cpu + deltas(strip(c.Text), cpu))
 	row++
+
 	c = v.GetCell(row, 1)
 	mem := toPerc(mx.PercMEM)
-	c.SetText(mem + deltas(c.Text, mem))
+	c.SetText(mem + deltas(strip(c.Text), mem))
+}
+
+func strip(s string) string {
+	t := strings.Replace(s, plus(), "", 1)
+	t = strings.Replace(t, minus(), "", 1)
+	return t
 }
