@@ -122,8 +122,8 @@ func TestClusterLoad(t *testing.T) {
 	}
 
 	mx := m.ClusterLoad(nodes.Items, metrics.Items)
-	assert.Equal(t, 50.0, mx.PercCPU)
-	assert.Equal(t, 25.0, mx.PercMEM)
+	assert.Equal(t, 100.0, mx.PercCPU)
+	assert.Equal(t, 50.0, mx.PercMEM)
 }
 
 func BenchmarkClusterLoad(b *testing.B) {

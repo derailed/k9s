@@ -54,13 +54,14 @@ func (p *Pod) Containers(ns, n string, includeInit bool) ([]string, error) {
 	}
 
 	cc := []string{}
+	for _, c := range po.Spec.Containers {
+		cc = append(cc, c.Name)
+	}
+
 	if includeInit {
 		for _, c := range po.Spec.InitContainers {
 			cc = append(cc, c.Name)
 		}
-	}
-	for _, c := range po.Spec.Containers {
-		cc = append(cc, c.Name)
 	}
 
 	return cc, nil

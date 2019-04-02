@@ -90,9 +90,9 @@ func (m *MetricsServer) ClusterLoad(nodes []v1.Node, metrics []mv1beta1.NodeMetr
 	var cpu, tcpu, mem, tmem float64
 	for _, mx := range nodeMetrics {
 		cpu += float64(mx.CurrentCPU)
-		tcpu += float64(mx.TotalCPU)
+		tcpu += float64(mx.AvailCPU)
 		mem += mx.CurrentMEM
-		tmem += mx.TotalMEM
+		tmem += mx.AvailMEM
 	}
 
 	return ClusterMetrics{PercCPU: toPerc(cpu, tcpu), PercMEM: toPerc(mem, tmem)}

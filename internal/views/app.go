@@ -85,7 +85,7 @@ func NewApp(cfg *config.Config) *appView {
 
 	v.actions[KeyColon] = newKeyAction("Cmd", v.activateCmd, false)
 	v.actions[tcell.KeyCtrlR] = newKeyAction("Redraw", v.redrawCmd, false)
-	v.actions[KeyQ] = newKeyAction("Quit", v.quitCmd, false)
+	v.actions[tcell.KeyCtrlC] = newKeyAction("Quit", v.quitCmd, false)
 	v.actions[KeyHelp] = newKeyAction("Help", v.helpCmd, false)
 	v.actions[KeyA] = newKeyAction("Aliases", v.aliasCmd, true)
 	v.actions[tcell.KeyEscape] = newKeyAction("Exit Cmd", v.deactivateCmd, false)
@@ -93,9 +93,6 @@ func NewApp(cfg *config.Config) *appView {
 	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[tcell.KeyBackspace] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[tcell.KeyDelete] = newKeyAction("Erase", v.eraseCmd, false)
-	v.actions[tcell.KeyTab] = newKeyAction("Focus", v.focusCmd, false)
-
-	// v.actions[KeyO] = newKeyAction("RBAC", v.rbacCmd, false)
 
 	return &v
 }

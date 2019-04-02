@@ -4,7 +4,7 @@ k9s.log
 cov.out
 execs
 k9s
-samples
+/k8s
 dist
 notes
 styles

@@ -95,7 +95,7 @@ func (r *Event) Fields(ns string) Row {
 		i.Reason,
 		i.Source.Component,
 		strconv.Itoa(int(i.Count)),
-		Truncate(i.Message, 50),
+		Truncate(i.Message, 80),
 		toAge(i.LastTimestamp),
 	)
 }
