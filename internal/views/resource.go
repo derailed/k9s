@@ -69,7 +69,7 @@ func newResourceView(title string, app *appView, list resource.List) resourceVie
 	v.AddPage("details", details, true, false)
 
 	confirm := tview.NewModal().
-		AddButtons([]string{"OK", "Cancel"}).
+		AddButtons([]string{"Cancel", "OK"}).
 		SetTextColor(tcell.ColorFuchsia)
 	v.AddPage("confirm", confirm, false, false)
 
