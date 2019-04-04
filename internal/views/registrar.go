@@ -329,7 +329,7 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 			listFn: resource.NewHPAList,
 		}
 	default:
-		log.Panic().Msgf("K9s does not currently support HPA version %s", rev)
+		log.Panic().Msgf("K9s does not currently support HPA version `%s`", rev)
 	}
 
 	return cmds

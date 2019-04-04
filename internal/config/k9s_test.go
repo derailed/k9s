@@ -60,7 +60,7 @@ func TestK9sActiveClusterZero(t *testing.T) {
 func TestK9sActiveClusterBlank(t *testing.T) {
 	var c config.K9s
 	cl := c.ActiveCluster()
-	assert.Nil(t, cl)
+	assert.Equal(t, config.NewCluster(), cl)
 }
 
 func TestK9sActiveCluster(t *testing.T) {

@@ -1,8 +1,6 @@
 package views
 
 import (
-	"fmt"
-
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -26,16 +24,17 @@ func newPodView(t string, app *appView, list resource.List) resourceViewer {
 		v.extraActionsFn = v.extraActions
 	}
 
-	v.AddPage("logs", newLogsView(&v), true, false)
-
-	picker := newSelectList()
+	picker := newSelectList(&v)
 	{
 		picker.setActions(keyActions{
-			tcell.KeyEscape: {description: "Back", action: v.backCmd},
+			tcell.KeyEscape: {description: "Back", action: v.backCmd, visible: true},
 		})
-		v.AddPage("choose", picker, true, false)
 	}
+	v.AddPage("picker", picker, true, false)
+
+	v.AddPage("logs", newLogsView(list.GetName(), &v), true, false)
 	v.switchPage("po")
+
 	return &v
 }
 
@@ -63,49 +62,64 @@ func (v *podView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
 		return evt
 	}
+
 	cc, err := fetchContainers(v.list, v.selectedItem, true)
 	if err != nil {
 		v.app.flash(flashErr, err.Error())
 		log.Error().Err(err)
 		return evt
 	}
-	l := v.GetPrimitive("logs").(*logsView)
-	l.deleteAllPages()
-	for _, c := range cc {
-		l.addContainer(c)
+
+	if len(cc) == 1 {
+		v.showLogs(v.selectedItem, cc[0], v.list.GetName(), v)
+		return nil
 	}
+
+	picker := v.GetPrimitive("picker").(*selectList)
+	picker.populate(cc)
+	picker.SetSelectedFunc(func(i int, t, d string, r rune) {
+		v.showLogs(v.selectedItem, t, "picker", picker)
+	})
+	v.switchPage("picker")
+
+	return nil
+}
+
+func (v *podView) showLogs(path, co, view string, parent loggable) {
+	l := v.GetPrimitive("logs").(*logsView)
+	l.parent = parent
+	l.parentView = view
+	l.deleteAllPages()
+	l.addContainer(co)
 	v.switchPage("logs")
 	l.init()
-	return nil
 }
 
 func (v *podView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
 		return evt
 	}
+
 	cc, err := fetchContainers(v.list, v.selectedItem, false)
 	if err != nil {
 		v.app.flash(flashErr, err.Error())
 		log.Error().Msgf("Error fetching containers %v", err)
 		return evt
 	}
+
 	if len(cc) == 1 {
 		v.shellIn(v.selectedItem, "")
-	} else {
-		p := v.GetPrimitive("choose").(*selectList)
-		p.populate(cc)
-		p.SetSelectedFunc(func(i int, t, d string, r rune) {
-			v.shellIn(v.selectedItem, t)
-		})
-		v.switchPage("choose")
+		return nil
 	}
-	return evt
-}
 
-func (v *podView) showPicker(cc []string) {
-	l := v.GetPrimitive("choose").(*selectList)
-	l.populate(cc)
-	v.switchPage("choose")
+	p := v.GetPrimitive("picker").(*selectList)
+	p.populate(cc)
+	p.SetSelectedFunc(func(i int, t, d string, r rune) {
+		v.shellIn(v.selectedItem, t)
+	})
+	v.switchPage("picker")
+
+	return evt
 }
 
 func (v *podView) shellIn(path, co string) {
@@ -120,22 +134,6 @@ func (v *podView) shellIn(path, co string) {
 	}
 	args = append(args, "--", "sh")
 	log.Debug().Msgf("Shell args %v", args)
-	runK(v.app, args...)
-}
-
-func (v *podView) showLogs(path, co string, previous bool) {
-	ns, po := namespaced(path)
-	args := make([]string, 0, 10)
-	args = append(args, "logs", "-f")
-	args = append(args, "-n", ns)
-	args = append(args, "--context", v.app.config.K9s.CurrentContext)
-	if len(co) != 0 {
-		args = append(args, "-c", co)
-		v.app.flash(flashInfo, fmt.Sprintf("Viewing logs from container %s on pod %s", co, po))
-	} else {
-		v.app.flash(flashInfo, fmt.Sprintf("Viewing logs from pod %s", po))
-	}
-	args = append(args, po)
 	runK(v.app, args...)
 }
 

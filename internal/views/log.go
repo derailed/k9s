@@ -9,6 +9,7 @@ import (
 
 type logView struct {
 	*detailsView
+
 	ansiWriter io.Writer
 }
 
@@ -21,13 +22,15 @@ func newLogView(title string, parent loggable) *logView {
 		v.SetWrap(true)
 		v.setTitle(parent.getSelection())
 		v.SetMaxBuffer(parent.appView().config.K9s.LogBufferSize)
+		v.ansiWriter = tview.ANSIWriter(v)
 	}
-	v.ansiWriter = tview.ANSIWriter(v)
+
 	return &v
 }
 
 func (l *logView) logLine(line string) {
 	fmt.Fprintln(l.ansiWriter, tview.Escape(line))
+	l.ScrollToEnd()
 }
 
 func (l *logView) log(lines fmt.Stringer) {

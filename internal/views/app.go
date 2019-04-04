@@ -87,7 +87,7 @@ func NewApp(cfg *config.Config) *appView {
 	v.actions[tcell.KeyCtrlR] = newKeyAction("Redraw", v.redrawCmd, false)
 	v.actions[tcell.KeyCtrlC] = newKeyAction("Quit", v.quitCmd, false)
 	v.actions[KeyHelp] = newKeyAction("Help", v.helpCmd, false)
-	v.actions[KeyA] = newKeyAction("Aliases", v.aliasCmd, true)
+	v.actions[KeyShiftA] = newKeyAction("Aliases", v.aliasCmd, true)
 	v.actions[tcell.KeyEscape] = newKeyAction("Exit Cmd", v.deactivateCmd, false)
 	v.actions[tcell.KeyEnter] = newKeyAction("Goto", v.gotoCmd, false)
 	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd, false)

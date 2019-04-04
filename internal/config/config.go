@@ -114,7 +114,11 @@ func (c *Config) ActiveNamespace() string {
 
 // FavNamespaces returns fav namespaces in the current cluster.
 func (c *Config) FavNamespaces() []string {
-	return c.K9s.ActiveCluster().Namespace.Favorites
+	cl := c.K9s.ActiveCluster()
+	if cl != nil {
+		return c.K9s.ActiveCluster().Namespace.Favorites
+	}
+	return []string{}
 }
 
 // SetActiveNamespace set the active namespace in the current cluster.
@@ -136,7 +140,10 @@ func (c *Config) ActiveView() string {
 
 // SetActiveView set the currently cluster active view
 func (c *Config) SetActiveView(view string) {
-	c.K9s.ActiveCluster().View.Active = view
+	cl := c.K9s.ActiveCluster()
+	if cl != nil {
+		cl.View.Active = view
+	}
 }
 
 // GetConnection return an api server connection.

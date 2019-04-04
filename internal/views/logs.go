@@ -21,16 +21,18 @@ const (
 type logsView struct {
 	*tview.Pages
 
+	parentView string
 	parent     loggable
 	containers []string
 	actions    keyActions
 	cancelFunc context.CancelFunc
 }
 
-func newLogsView(parent loggable) *logsView {
+func newLogsView(pview string, parent loggable) *logsView {
 	v := logsView{
 		Pages:      tview.NewPages(),
 		parent:     parent,
+		parentView: pview,
 		containers: []string{},
 	}
 	v.setActions(keyActions{
@@ -93,6 +95,7 @@ func (v *logsView) hints() hints {
 			v.actions[tcell.Key(numKeys[i+1])] = newKeyAction(c, nil, true)
 		}
 	}
+
 	return v.actions.toHints()
 }
 
@@ -169,6 +172,7 @@ func (v *logsView) doLoad(path, co string) error {
 		return err
 	}
 	v.cancelFunc = cancelFn
+
 	return nil
 }
 
@@ -177,7 +181,8 @@ func (v *logsView) doLoad(path, co string) error {
 
 func (v *logsView) back(evt *tcell.EventKey) *tcell.EventKey {
 	v.stop()
-	v.parent.switchPage(v.parent.getList().GetName())
+	v.parent.switchPage(v.parentView)
+
 	return nil
 }
 
@@ -186,6 +191,7 @@ func (v *logsView) top(evt *tcell.EventKey) *tcell.EventKey {
 		v.parent.appView().flash(flashInfo, "Top of logs...")
 		p.Item.(*logView).ScrollToBeginning()
 	}
+
 	return nil
 }
 
@@ -194,6 +200,7 @@ func (v *logsView) bottom(*tcell.EventKey) *tcell.EventKey {
 		v.parent.appView().flash(flashInfo, "Bottom of logs...")
 		p.Item.(*logView).ScrollToEnd()
 	}
+
 	return nil
 }
 
@@ -203,6 +210,7 @@ func (v *logsView) pageUp(*tcell.EventKey) *tcell.EventKey {
 			v.parent.appView().flash(flashInfo, "Reached Top ...")
 		}
 	}
+
 	return nil
 }
 
@@ -212,6 +220,7 @@ func (v *logsView) pageDown(*tcell.EventKey) *tcell.EventKey {
 			v.parent.appView().flash(flashInfo, "Reached Bottom ...")
 		}
 	}
+
 	return nil
 }
 
@@ -220,5 +229,6 @@ func (v *logsView) clearLogs(*tcell.EventKey) *tcell.EventKey {
 		v.parent.appView().flash(flashInfo, "Clearing logs...")
 		p.Item.(*logView).Clear()
 	}
+
 	return nil
 }

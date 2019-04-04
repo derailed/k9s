@@ -35,14 +35,13 @@ func (k *K9s) ActiveCluster() *Cluster {
 	if k.Clusters == nil {
 		k.Clusters = map[string]*Cluster{}
 	}
-	if len(k.CurrentCluster) == 0 {
-		return nil
-	}
 
 	if c, ok := k.Clusters[k.CurrentCluster]; ok {
 		return c
 	}
+
 	k.Clusters[k.CurrentCluster] = NewCluster()
+
 	return k.Clusters[k.CurrentCluster]
 }
 

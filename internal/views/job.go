@@ -14,9 +14,17 @@ func newJobView(t string, app *appView, list resource.List) resourceViewer {
 	v := jobView{newResourceView(t, app, list).(*resourceView)}
 	{
 		v.extraActionsFn = v.extraActions
-		v.AddPage("logs", newLogsView(&v), true, false)
+		v.AddPage("logs", newLogsView(list.GetName(), &v), true, false)
 		v.switchPage("job")
 	}
+
+	picker := newSelectList(&v)
+	{
+		picker.setActions(keyActions{
+			tcell.KeyEscape: {description: "Back", action: v.backCmd, visible: true},
+		})
+	}
+	v.AddPage("picker", picker, true, false)
 
 	return &v
 }
@@ -41,7 +49,7 @@ func (v *jobView) getSelection() string {
 
 // Handlers...
 
-func (v *jobView) logs(evt *tcell.EventKey) *tcell.EventKey {
+func (v *jobView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
 		return evt
 	}
@@ -49,22 +57,35 @@ func (v *jobView) logs(evt *tcell.EventKey) *tcell.EventKey {
 	cc, err := fetchContainers(v.list, v.selectedItem, true)
 	if err != nil {
 		v.app.flash(flashErr, err.Error())
-		log.Error().Err(err)
+		log.Error().Err(err).Msgf("Unable to fetch containers for %s", v.selectedItem)
 		return evt
 	}
 
-	l := v.GetPrimitive("logs").(*logsView)
-	l.deleteAllPages()
-	for _, c := range cc {
-		l.addContainer(c)
+	if len(cc) == 1 {
+		v.showLogs(v.selectedItem, cc[0], v.list.GetName(), v)
+		return nil
 	}
 
-	v.switchPage("logs")
-	l.init()
+	picker := v.GetPrimitive("picker").(*selectList)
+	picker.populate(cc)
+	picker.SetSelectedFunc(func(i int, t, d string, r rune) {
+		v.showLogs(v.selectedItem, t, "picker", picker)
+	})
+	v.switchPage("picker")
 
 	return nil
 }
 
+func (v *jobView) showLogs(path, co, view string, parent loggable) {
+	l := v.GetPrimitive("logs").(*logsView)
+	l.parent = parent
+	l.parentView = view
+	l.deleteAllPages()
+	l.addContainer(co)
+	v.switchPage("logs")
+	l.init()
+}
+
 func (v *jobView) extraActions(aa keyActions) {
-	aa[KeyL] = newKeyAction("Logs", v.logs, true)
+	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
 }

@@ -250,6 +250,7 @@ func (a *APIClient) supportsMxServer() bool {
 func (a *APIClient) SupportsRes(group string, versions []string) (string, bool) {
 	apiGroups, err := a.DialOrDie().Discovery().ServerGroups()
 	if err != nil {
+		log.Error().Err(err).Msg("Unable to dial api groups")
 		return "", false
 	}
 
