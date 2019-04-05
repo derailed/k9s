@@ -4,37 +4,36 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
+
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func toPerc(f float64) string {
 	return fmt.Sprintf("%.0f%%", f)
 }
 
-func deltas(c, n string) string {
-	c, n = strings.TrimSpace(c), strings.TrimSpace(n)
-	if c == "n/a" {
+func deltas(o, n string) string {
+	o, n = strings.TrimSpace(o), strings.TrimSpace(n)
+	if o == "" || o == "n/a" {
 		return ""
 	}
 
-	if i, ok := numerical(c); ok {
-		if j, ok := numerical(n); ok {
-			switch {
-			case i < j:
-				return plus()
-			case i > j:
-				return minus()
-			default:
-				return ""
-			}
-		}
-		return ""
-	}
-
-	if isAlpha(c) {
-		if strings.Contains(c, "(") {
+	if i, ok := numerical(o); ok {
+		j, _ := numerical(n)
+		switch {
+		case i < j:
+			return plus()
+		case i > j:
+			return minus()
+		default:
 			return ""
 		}
-		switch strings.Compare(c, n) {
+	}
+
+	if q1, err := resource.ParseQuantity(o); err == nil {
+		q2, _ := resource.ParseQuantity(n)
+		switch q1.Cmp(q2) {
 		case -1:
 			return plus()
 		case 1:
@@ -44,11 +43,19 @@ func deltas(c, n string) string {
 		}
 	}
 
-	if len(c) == 0 {
-		return ""
+	if d1, err := time.ParseDuration(o); err == nil {
+		d2, _ := time.ParseDuration(n)
+		switch {
+		case d2-d1 > 0:
+			return plus()
+		case d2-d1 < 0:
+			return minus()
+		default:
+			return ""
+		}
 	}
 
-	switch strings.Compare(c, n) {
+	switch strings.Compare(o, n) {
 	case 1, -1:
 		return delta()
 	default:
@@ -56,22 +63,12 @@ func deltas(c, n string) string {
 	}
 }
 
-func isAlpha(s string) bool {
-	if len(s) == 0 {
-		return false
-	}
-
-	if _, err := strconv.Atoi(string(s[0])); err != nil {
-		return false
-	}
-	return true
-}
-
 func numerical(s string) (int, bool) {
 	n, err := strconv.Atoi(s)
 	if err != nil {
 		return 0, false
 	}
+
 	return n, true
 }
 
