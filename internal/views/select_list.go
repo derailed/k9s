@@ -18,7 +18,7 @@ func newSelectList(parent loggable) *selectList {
 	{
 		v.parent = parent
 		v.SetBorder(true)
-		v.SetMainTextColor(tcell.ColorGray)
+		v.SetMainTextColor(tcell.ColorWhite)
 		v.ShowSecondaryText(false)
 		v.SetShortcutColor(tcell.ColorAqua)
 		v.SetSelectedBackgroundColor(tcell.ColorAqua)
