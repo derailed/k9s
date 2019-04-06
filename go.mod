@@ -1,7 +1,5 @@
 module github.com/derailed/k9s
 
-replace github.com/derailed/popeye => /Users/fernand/go_wk/derailed/src/github.com/derailed/popeye
-
 require (
 	contrib.go.opencensus.io/exporter/ocagent v0.4.11 // indirect
 	github.com/derailed/popeye v0.1.2
