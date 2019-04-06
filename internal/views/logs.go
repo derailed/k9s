@@ -26,6 +26,7 @@ type logsView struct {
 	containers []string
 	actions    keyActions
 	cancelFunc context.CancelFunc
+	autoScroll bool
 }
 
 func newLogsView(pview string, parent loggable) *logsView {
@@ -33,15 +34,17 @@ func newLogsView(pview string, parent loggable) *logsView {
 		Pages:      tview.NewPages(),
 		parent:     parent,
 		parentView: pview,
+		autoScroll: true,
 		containers: []string{},
 	}
 	v.setActions(keyActions{
-		tcell.KeyEscape: {description: "Back", action: v.back, visible: true},
-		KeyC:            {description: "Clear", action: v.clearLogs, visible: true},
-		KeyG:            {description: "Top", action: v.top, visible: false},
-		KeyShiftG:       {description: "Bottom", action: v.bottom, visible: false},
-		KeyF:            {description: "Up", action: v.pageUp, visible: false},
-		KeyB:            {description: "Down", action: v.pageDown, visible: false},
+		tcell.KeyEscape: {description: "Back", action: v.backCmd, visible: true},
+		KeyC:            {description: "Clear", action: v.clearCmd, visible: true},
+		KeyS:            {description: "Toggle AutoScroll", action: v.toggleScrollCmd, visible: true},
+		KeyG:            {description: "Top", action: v.topCmd, visible: false},
+		KeyShiftG:       {description: "Bottom", action: v.bottomCmd, visible: false},
+		KeyF:            {description: "Up", action: v.pageUpCmd, visible: false},
+		KeyB:            {description: "Down", action: v.pageDownCmd, visible: false},
 	})
 	v.SetInputCapture(v.keyboard)
 
@@ -104,7 +107,7 @@ func (v *logsView) addContainer(n string) {
 	l := newLogView(n, v.parent)
 	{
 		l.SetInputCapture(v.keyboard)
-		l.backFn = v.back
+		l.backFn = v.backCmd
 	}
 	v.AddPage(n, l, true, false)
 }
@@ -134,7 +137,7 @@ func (v *logsView) load(i int) {
 	if err := v.doLoad(v.parent.getSelection(), v.containers[i]); err != nil {
 		v.parent.appView().flash(flashErr, err.Error())
 		l := v.CurrentPage().Item.(*logView)
-		l.logLine("😂 Doh! No logs are available at this time. Check again later on...")
+		l.logLine("😂 Doh! No logs are available at this time. Check again later on...", false)
 		return
 	}
 	v.parent.appView().SetFocus(v)
@@ -152,10 +155,12 @@ func (v *logsView) doLoad(path, co string) error {
 			select {
 			case line, ok := <-c:
 				if !ok {
-					l.ScrollToEnd()
+					if v.autoScroll {
+						l.ScrollToEnd()
+					}
 					return
 				}
-				l.logLine(line)
+				l.logLine(line, v.autoScroll)
 			}
 		}
 	}()
@@ -179,14 +184,25 @@ func (v *logsView) doLoad(path, co string) error {
 // ----------------------------------------------------------------------------
 // Actions...
 
-func (v *logsView) back(evt *tcell.EventKey) *tcell.EventKey {
+func (v *logsView) toggleScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
+	v.autoScroll = !v.autoScroll
+	if v.autoScroll {
+		v.parent.appView().flash(flashInfo, "Autoscroll is on")
+	} else {
+		v.parent.appView().flash(flashInfo, "Autoscroll is off")
+	}
+
+	return nil
+}
+
+func (v *logsView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.stop()
 	v.parent.switchPage(v.parentView)
 
 	return nil
 }
 
-func (v *logsView) top(evt *tcell.EventKey) *tcell.EventKey {
+func (v *logsView) topCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if p := v.CurrentPage(); p != nil {
 		v.parent.appView().flash(flashInfo, "Top of logs...")
 		p.Item.(*logView).ScrollToBeginning()
@@ -195,7 +211,7 @@ func (v *logsView) top(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *logsView) bottom(*tcell.EventKey) *tcell.EventKey {
+func (v *logsView) bottomCmd(*tcell.EventKey) *tcell.EventKey {
 	if p := v.CurrentPage(); p != nil {
 		v.parent.appView().flash(flashInfo, "Bottom of logs...")
 		p.Item.(*logView).ScrollToEnd()
@@ -204,7 +220,7 @@ func (v *logsView) bottom(*tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *logsView) pageUp(*tcell.EventKey) *tcell.EventKey {
+func (v *logsView) pageUpCmd(*tcell.EventKey) *tcell.EventKey {
 	if p := v.CurrentPage(); p != nil {
 		if p.Item.(*logView).PageUp() {
 			v.parent.appView().flash(flashInfo, "Reached Top ...")
@@ -214,7 +230,7 @@ func (v *logsView) pageUp(*tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *logsView) pageDown(*tcell.EventKey) *tcell.EventKey {
+func (v *logsView) pageDownCmd(*tcell.EventKey) *tcell.EventKey {
 	if p := v.CurrentPage(); p != nil {
 		if p.Item.(*logView).PageDown() {
 			v.parent.appView().flash(flashInfo, "Reached Bottom ...")
@@ -224,7 +240,7 @@ func (v *logsView) pageDown(*tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *logsView) clearLogs(*tcell.EventKey) *tcell.EventKey {
+func (v *logsView) clearCmd(*tcell.EventKey) *tcell.EventKey {
 	if p := v.CurrentPage(); p != nil {
 		v.parent.appView().flash(flashInfo, "Clearing logs...")
 		p.Item.(*logView).Clear()

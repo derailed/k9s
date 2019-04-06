@@ -122,7 +122,7 @@ K9s uses aliases to navigate most K8s resources.
 |-----------------------|----------------------------------------------------|----------------------------|
 | `:`alias`<ENTER>`     | View a Kubernetes resource                         | `:po<ENTER>`               |
 | `?`                   | Show keyboard shortcuts and help                   |                            |
-| `A`                   | Show all available resource alias                  | select+`<ENTER>` to view   |
+| `Ctrl-a`              | Show all available resource alias                  | select+`<ENTER>` to view   |
 | `/`filter`ENTER`>     | Filter out a resource view given a filter          | `/bumblebeetuna`           |
 | `<Esc>`               | Bails out of command mode                          |                            |
 | `d`,`v`, `e`, `l`,... | Key mapping to describe, view, edit, view logs,... | `d` (describes a resource) |

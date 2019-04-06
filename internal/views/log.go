@@ -28,9 +28,11 @@ func newLogView(title string, parent loggable) *logView {
 	return &v
 }
 
-func (l *logView) logLine(line string) {
+func (l *logView) logLine(line string, scroll bool) {
 	fmt.Fprintln(l.ansiWriter, tview.Escape(line))
-	l.ScrollToEnd()
+	if scroll {
+		l.ScrollToEnd()
+	}
 }
 
 func (l *logView) log(lines fmt.Stringer) {

@@ -62,6 +62,9 @@ func (c *command) run(cmd string) bool {
 	case cmd == "alias":
 		c.app.inject(newAliasView(c.app))
 		return true
+	case cmd == "popeye":
+		c.app.inject(newPopeyeView(c.app))
+		return true
 	case policyMatcher.MatchString(cmd):
 		tokens := policyMatcher.FindAllStringSubmatch(cmd, -1)
 		if len(tokens) == 1 && len(tokens[0]) == 3 {
