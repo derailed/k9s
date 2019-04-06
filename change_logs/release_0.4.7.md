@@ -5,8 +5,7 @@
 ## Notes
 
 Thank you to all that contributed with flushing out issues with K9s! I'll try
-to mark some of these issues as fixed. But if you don't mind grab the latest
-rev and see if we're happier with some of the fixes!
+to mark some of these issues as fixed. But if you don't mind grab the latest rev and see if we're happier with some of the fixes!
 
 If you've filed an issue please help me verify and close.
 
@@ -21,11 +20,7 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 ### Popeye Support
 
 Managing and operating a cluster is the wild is hard and getting harder.
-I've created [Popeye](https://github.com/derailed/popeye) to help with
-cluster sanitation and best practices. Since K9s folks are so
-awesome, you're getting a sneak peek! I figured why not integrate it with K9s?
-No need to install yet another CLI right? Provided I did not mess this up too much,
-you should now be able to use command mod `:popeye` to access Popeye sanitizer reports within
+I've created [Popeye](https://github.com/derailed/popeye) to help with cluster sanitation and best practices. Since K9s folks are so awesome, you're getting a sneak peek! I figured why not integrate it with K9s? No need to install yet another CLI right? Provided I did not mess this up too much, you should now be able to use command mod `:popeye` to access Popeye sanitizer reports within
 K9s and scan your clusters. You can read more about it [here](https://medium.com/@fernand.galiana/k8s-clusters-oh-biff-em-popeye-637e9312963)
 and if you like so give it a clap or two ;)
 
