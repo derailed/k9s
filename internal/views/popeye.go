@@ -2,6 +2,7 @@ package views
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
@@ -38,9 +39,16 @@ func newPopeyeView(app *appView) *popeyeView {
 }
 
 func (v *popeyeView) init(ctx context.Context, ns string) {
+	defer func() {
+		if err := recover(); err != nil {
+			v.app.flash(flashErr, fmt.Sprintf("%v", err))
+		}
+	}()
+
 	c := cfg.New()
 
 	spinach := filepath.Join(config.K9sHome, "spinach.yml")
+
 	if _, err := os.Stat(spinach); err == nil {
 		c.Spinach = spinach
 	}
@@ -53,8 +61,8 @@ func (v *popeyeView) init(ctx context.Context, ns string) {
 		log.Error().Err(err).Msg("Unable to load spinach config")
 	}
 
-	p := pkg.NewPopeye(c, v.ansiWriter)
-	p.Sanitize()
+	p := pkg.NewPopeye(c, &log.Logger, v.ansiWriter)
+	p.Sanitize(false)
 }
 
 func (v *popeyeView) getTitle() string {

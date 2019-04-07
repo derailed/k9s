@@ -2,7 +2,7 @@ module github.com/derailed/k9s
 
 require (
 	contrib.go.opencensus.io/exporter/ocagent v0.4.11 // indirect
-	github.com/derailed/popeye v0.1.2
+	github.com/derailed/popeye v0.1.5
 	github.com/derailed/tview v0.1.4
 	github.com/fatih/camelcase v1.0.0 // indirect
 	github.com/gdamore/tcell v1.1.1
