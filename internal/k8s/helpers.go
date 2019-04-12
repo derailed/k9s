@@ -6,7 +6,8 @@ import (
 
 const megaByte = 1024 * 1024
 
-func asMi(v int64) float64 {
+// ToMB converts bytes to megabytes.
+func ToMB(v int64) float64 {
 	return float64(v) / megaByte
 }
 

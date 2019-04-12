@@ -4,24 +4,29 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// CRD represents a Kubernetes CRD
-type CRD struct {
+// CustomResourceDefinition represents a Kubernetes CustomResourceDefinition
+type CustomResourceDefinition struct {
+	*base
 	Connection
 }
 
-// NewCRD returns a new CRD.
-func NewCRD(c Connection) Cruder {
-	return &CRD{c}
+// NewCustomResourceDefinition returns a new CustomResourceDefinition.
+func NewCustomResourceDefinition(c Connection) *CustomResourceDefinition {
+	return &CustomResourceDefinition{&base{}, c}
 }
 
-// Get a CRD.
-func (c *CRD) Get(_, n string) (interface{}, error) {
+// Get a CustomResourceDefinition.
+func (c *CustomResourceDefinition) Get(_, n string) (interface{}, error) {
 	return c.NSDialOrDie().Get(n, metav1.GetOptions{})
 }
 
-// List all CRDs in a given namespace.
-func (c *CRD) List(string) (Collection, error) {
-	rr, err := c.NSDialOrDie().List(metav1.ListOptions{})
+// List all CustomResourceDefinitions in a given namespace.
+func (c *CustomResourceDefinition) List(string) (Collection, error) {
+	opts := metav1.ListOptions{
+		LabelSelector: c.labelSelector,
+		FieldSelector: c.fieldSelector,
+	}
+	rr, err := c.NSDialOrDie().List(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +38,7 @@ func (c *CRD) List(string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a CRD.
-func (c *CRD) Delete(_, n string) error {
+// Delete a CustomResourceDefinition.
+func (c *CustomResourceDefinition) Delete(_, n string) error {
 	return c.NSDialOrDie().Delete(n, nil)
 }

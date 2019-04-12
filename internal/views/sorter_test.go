@@ -29,6 +29,8 @@ func TestGroupSort(t *testing.T) {
 		{true, []string{"95d", "93d"}, []string{"93d", "95d"}},
 		{true, []string{"1h10m", "59m"}, []string{"59m", "1h10m"}},
 		{true, []string{"95m", "1h30m"}, []string{"1h30m", "95m"}},
+		{true, []string{"b-21", "b-2"}, []string{"b-2", "b-21"}},
+		{false, []string{"b-21", "b-2"}, []string{"b-21", "b-2"}},
 	}
 
 	for _, u := range uu {

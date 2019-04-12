@@ -44,8 +44,7 @@ func helpCmds(c k8s.Connection) map[string]resCmd {
 func allCRDs(c k8s.Connection) map[string]k8s.APIGroup {
 	m := map[string]k8s.APIGroup{}
 
-	crds, _ := resource.
-		NewCRDList(c, resource.AllNamespaces).
+	crds, _ := resource.NewCustomResourceDefinitionList(c, resource.AllNamespaces).
 		Resource().
 		List(resource.AllNamespaces)
 
@@ -136,7 +135,7 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 			title:  "CustomResourceDefinitions",
 			api:    "apiextensions.k8s.io",
 			viewFn: newResourceView,
-			listFn: resource.NewCRDList,
+			listFn: resource.NewCustomResourceDefinitionList,
 		},
 		"cj": {
 			title:  "CronJobs",
@@ -222,14 +221,14 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 			title:     "PersistentVolumes",
 			api:       "",
 			viewFn:    newResourceView,
-			listFn:    resource.NewPVList,
+			listFn:    resource.NewPersistentVolumeList,
 			colorerFn: pvColorer,
 		},
 		"pvc": {
 			title:     "PersistentVolumeClaims",
 			api:       "",
 			viewFn:    newResourceView,
-			listFn:    resource.NewPVCList,
+			listFn:    resource.NewPersistentVolumeClaimList,
 			colorerFn: pvcColorer,
 		},
 		"rb": {
@@ -310,7 +309,7 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 			title:  "HorizontalPodAutoscalers",
 			api:    "autoscaling",
 			viewFn: newResourceView,
-			listFn: resource.NewHPAV1List,
+			listFn: resource.NewHorizontalPodAutoscalerV1List,
 		}
 	case "v2beta1":
 		log.Debug().Msg("Using HPA V2Beta1!")
@@ -318,7 +317,7 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 			title:  "HorizontalPodAutoscalers",
 			api:    "autoscaling",
 			viewFn: newResourceView,
-			listFn: resource.NewHPAV2Beta1List,
+			listFn: resource.NewHorizontalPodAutoscalerV2Beta1List,
 		}
 	case "v2beta2":
 		log.Debug().Msg("Using HPA V2Beta2!")
@@ -326,7 +325,7 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 			title:  "HorizontalPodAutoscalers",
 			api:    "autoscaling",
 			viewFn: newResourceView,
-			listFn: resource.NewHPAList,
+			listFn: resource.NewHorizontalPodAutoscalerList,
 		}
 	default:
 		log.Panic().Msgf("K9s does not currently support HPA version `%s`", rev)

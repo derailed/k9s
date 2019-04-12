@@ -6,12 +6,13 @@ import (
 
 // Ingress represents a Kubernetes Ingress.
 type Ingress struct {
+	*base
 	Connection
 }
 
 // NewIngress returns a new Ingress.
-func NewIngress(c Connection) Cruder {
-	return &Ingress{c}
+func NewIngress(c Connection) *Ingress {
+	return &Ingress{&base{}, c}
 }
 
 // Get a Ingress.
@@ -21,7 +22,11 @@ func (i *Ingress) Get(ns, n string) (interface{}, error) {
 
 // List all Ingresss in a given namespace.
 func (i *Ingress) List(ns string) (Collection, error) {
-	rr, err := i.DialOrDie().ExtensionsV1beta1().Ingresses(ns).List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: i.labelSelector,
+		FieldSelector: i.fieldSelector,
+	}
+	rr, err := i.DialOrDie().ExtensionsV1beta1().Ingresses(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}

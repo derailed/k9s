@@ -6,12 +6,13 @@ import (
 
 // ServiceAccount manages a Kubernetes ServiceAccount.
 type ServiceAccount struct {
+	*base
 	Connection
 }
 
 // NewServiceAccount instantiates a new ServiceAccount.
-func NewServiceAccount(c Connection) Cruder {
-	return &ServiceAccount{c}
+func NewServiceAccount(c Connection) *ServiceAccount {
+	return &ServiceAccount{&base{}, c}
 }
 
 // Get a ServiceAccount.
@@ -21,7 +22,11 @@ func (s *ServiceAccount) Get(ns, n string) (interface{}, error) {
 
 // List all ServiceAccounts in a given namespace.
 func (s *ServiceAccount) List(ns string) (Collection, error) {
-	rr, err := s.DialOrDie().CoreV1().ServiceAccounts(ns).List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: s.labelSelector,
+		FieldSelector: s.fieldSelector,
+	}
+	rr, err := s.DialOrDie().CoreV1().ServiceAccounts(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}

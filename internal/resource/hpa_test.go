@@ -13,12 +13,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewHPAListWithArgs(ns string, r *resource.HPA) resource.List {
+func NewHPAListWithArgs(ns string, r *resource.HorizontalPodAutoscaler) resource.List {
 	return resource.NewList(ns, "hpa", r, resource.AllVerbsAccess|resource.DescribeAccess)
 }
 
-func NewHPAWithArgs(conn k8s.Connection, res resource.Cruder) *resource.HPA {
-	r := &resource.HPA{Base: resource.NewBase(conn, res)}
+func NewHPAWithArgs(conn k8s.Connection, res resource.Cruder) *resource.HorizontalPodAutoscaler {
+	r := &resource.HorizontalPodAutoscaler{Base: resource.NewBase(conn, res)}
 	r.Factory = r
 	return r
 }
@@ -127,7 +127,7 @@ func k8sHPA() *autoscalingv2beta2.HorizontalPodAutoscaler {
 
 func newHPA() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewHPA(mc).New(k8sHPA())
+	return resource.NewHorizontalPodAutoscaler(mc).New(k8sHPA())
 }
 
 func hpaYaml() string {

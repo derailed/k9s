@@ -7,12 +7,13 @@ import (
 
 // Role represents a Kubernetes Role.
 type Role struct {
+	*base
 	Connection
 }
 
 // NewRole returns a new Role.
-func NewRole(c Connection) Cruder {
-	return &Role{c}
+func NewRole(c Connection) *Role {
+	return &Role{&base{}, c}
 }
 
 // Get a Role.
@@ -22,7 +23,11 @@ func (r *Role) Get(ns, n string) (interface{}, error) {
 
 // List all Roles in a given namespace.
 func (r *Role) List(ns string) (Collection, error) {
-	rr, err := r.DialOrDie().RbacV1().Roles(ns).List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: r.labelSelector,
+		FieldSelector: r.fieldSelector,
+	}
+	rr, err := r.DialOrDie().RbacV1().Roles(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}

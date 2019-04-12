@@ -264,7 +264,7 @@ func (a *appView) showPage(p string) {
 	a.pages.SwitchToPage(p)
 }
 
-func (a *appView) inject(p igniter) {
+func (a *appView) inject(i igniter) {
 	if a.cancel != nil {
 		a.cancel()
 	}
@@ -273,14 +273,14 @@ func (a *appView) inject(p igniter) {
 	var ctx context.Context
 	{
 		ctx, a.cancel = context.WithCancel(context.Background())
-		p.init(ctx, a.config.ActiveNamespace())
+		i.init(ctx, a.config.ActiveNamespace())
 	}
-	a.content.AddPage("main", p, true, true)
+	a.content.AddPage("main", i, true, true)
 
-	a.focusGroup = append([]tview.Primitive{}, p)
+	a.focusGroup = append([]tview.Primitive{}, i)
 	a.focusCurrent = 0
-	a.fireFocusChanged(p)
-	a.SetFocus(p)
+	a.fireFocusChanged(i)
+	a.SetFocus(i)
 }
 
 func (a *appView) cmdMode() bool {

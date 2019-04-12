@@ -70,6 +70,7 @@ func (v *helpView) init(_ context.Context, _ string) {
 		{"tab", "Next term match"},
 		{"backtab", "Previous term match"},
 		{"Ctrl-r", "Refresh"},
+		{"Shift-i", "Invert Sort"},
 		{"p", "Previous resource view"},
 		{"q", "Quit"},
 	}

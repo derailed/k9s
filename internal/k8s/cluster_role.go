@@ -6,12 +6,13 @@ import (
 
 // ClusterRole represents a Kubernetes ClusterRole
 type ClusterRole struct {
+	*base
 	Connection
 }
 
 // NewClusterRole returns a new ClusterRole.
-func NewClusterRole(c Connection) Cruder {
-	return &ClusterRole{c}
+func NewClusterRole(c Connection) *ClusterRole {
+	return &ClusterRole{&base{}, c}
 }
 
 // Get a cluster role.
@@ -21,7 +22,11 @@ func (c *ClusterRole) Get(_, n string) (interface{}, error) {
 
 // List all ClusterRoles on a cluster.
 func (c *ClusterRole) List(_ string) (Collection, error) {
-	rr, err := c.DialOrDie().RbacV1().ClusterRoles().List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: c.labelSelector,
+		FieldSelector: c.fieldSelector,
+	}
+	rr, err := c.DialOrDie().RbacV1().ClusterRoles().List(opts)
 	if err != nil {
 		return nil, err
 	}

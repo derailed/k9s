@@ -4,12 +4,13 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 // RoleBinding represents a Kubernetes RoleBinding.
 type RoleBinding struct {
+	*base
 	Connection
 }
 
 // NewRoleBinding returns a new RoleBinding.
-func NewRoleBinding(c Connection) Cruder {
-	return &RoleBinding{c}
+func NewRoleBinding(c Connection) *RoleBinding {
+	return &RoleBinding{&base{}, c}
 }
 
 // Get a RoleBinding.
@@ -19,7 +20,11 @@ func (r *RoleBinding) Get(ns, n string) (interface{}, error) {
 
 // List all RoleBindings in a given namespace.
 func (r *RoleBinding) List(ns string) (Collection, error) {
-	rr, err := r.DialOrDie().RbacV1().RoleBindings(ns).List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: r.labelSelector,
+		FieldSelector: r.fieldSelector,
+	}
+	rr, err := r.DialOrDie().RbacV1().RoleBindings(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}

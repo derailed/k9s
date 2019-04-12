@@ -17,8 +17,8 @@ const (
 )
 
 type (
-	// Container represents a resource that encompass multiple containers.
-	Container interface {
+	// Containers represents a resource that supports containers.
+	Containers interface {
 		Containers(path string, includeInit bool) ([]string, error)
 	}
 

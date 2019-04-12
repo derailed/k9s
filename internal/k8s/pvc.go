@@ -4,24 +4,29 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// PVC represents a Kubernetes service.
-type PVC struct {
+// PersistentVolumeClaim represents a Kubernetes PersistentVolumeClaim.
+type PersistentVolumeClaim struct {
+	*base
 	Connection
 }
 
-// NewPVC returns a new PVC.
-func NewPVC(c Connection) Cruder {
-	return &PVC{c}
+// NewPersistentVolumeClaim returns a new PersistentVolumeClaim.
+func NewPersistentVolumeClaim(c Connection) *PersistentVolumeClaim {
+	return &PersistentVolumeClaim{&base{}, c}
 }
 
-// Get a PVC.
-func (p *PVC) Get(ns, n string) (interface{}, error) {
+// Get a PersistentVolumeClaim.
+func (p *PersistentVolumeClaim) Get(ns, n string) (interface{}, error) {
 	return p.DialOrDie().CoreV1().PersistentVolumeClaims(ns).Get(n, metav1.GetOptions{})
 }
 
-// List all PVCs in a given namespace.
-func (p *PVC) List(ns string) (Collection, error) {
-	rr, err := p.DialOrDie().CoreV1().PersistentVolumeClaims(ns).List(metav1.ListOptions{})
+// List all PersistentVolumeClaims in a given namespace.
+func (p *PersistentVolumeClaim) List(ns string) (Collection, error) {
+	opts := metav1.ListOptions{
+		LabelSelector: p.labelSelector,
+		FieldSelector: p.fieldSelector,
+	}
+	rr, err := p.DialOrDie().CoreV1().PersistentVolumeClaims(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +38,7 @@ func (p *PVC) List(ns string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a PVC.
-func (p *PVC) Delete(ns, n string) error {
+// Delete a PersistentVolumeClaim.
+func (p *PersistentVolumeClaim) Delete(ns, n string) error {
 	return p.DialOrDie().CoreV1().PersistentVolumeClaims(ns).Delete(n, nil)
 }

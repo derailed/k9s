@@ -6,12 +6,13 @@ import (
 
 // Deployment represents a Kubernetes Deployment.
 type Deployment struct {
+	*base
 	Connection
 }
 
 // NewDeployment returns a new Deployment.
-func NewDeployment(c Connection) Cruder {
-	return &Deployment{c}
+func NewDeployment(c Connection) *Deployment {
+	return &Deployment{&base{}, c}
 }
 
 // Get a deployment.
@@ -21,7 +22,11 @@ func (d *Deployment) Get(ns, n string) (interface{}, error) {
 
 // List all Deployments in a given namespace.
 func (d *Deployment) List(ns string) (Collection, error) {
-	rr, err := d.DialOrDie().Apps().Deployments(ns).List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: d.labelSelector,
+		FieldSelector: d.fieldSelector,
+	}
+	rr, err := d.DialOrDie().Apps().Deployments(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}

@@ -6,40 +6,40 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// PVC tracks a kubernetes resource.
-type PVC struct {
+// PersistentVolumeClaim tracks a kubernetes resource.
+type PersistentVolumeClaim struct {
 	*Base
 	instance *v1.PersistentVolumeClaim
 }
 
-// NewPVCList returns a new resource list.
-func NewPVCList(c Connection, ns string) List {
+// NewPersistentVolumeClaimList returns a new resource list.
+func NewPersistentVolumeClaimList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"pvc",
-		NewPVC(c),
+		NewPersistentVolumeClaim(c),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
-// NewPVC instantiates a new PVC.
-func NewPVC(c Connection) *PVC {
-	p := &PVC{&Base{Connection: c, Resource: k8s.NewPVC(c)}, nil}
+// NewPersistentVolumeClaim instantiates a new PersistentVolumeClaim.
+func NewPersistentVolumeClaim(c Connection) *PersistentVolumeClaim {
+	p := &PersistentVolumeClaim{&Base{Connection: c, Resource: k8s.NewPersistentVolumeClaim(c)}, nil}
 	p.Factory = p
 
 	return p
 }
 
-// New builds a new PVC instance from a k8s resource.
-func (r *PVC) New(i interface{}) Columnar {
-	c := NewPVC(r.Connection)
+// New builds a new PersistentVolumeClaim instance from a k8s resource.
+func (r *PersistentVolumeClaim) New(i interface{}) Columnar {
+	c := NewPersistentVolumeClaim(r.Connection)
 	switch instance := i.(type) {
 	case *v1.PersistentVolumeClaim:
 		c.instance = instance
 	case v1.PersistentVolumeClaim:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown PVC type %#v", i)
+		log.Fatal().Msgf("unknown PersistentVolumeClaim type %#v", i)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
@@ -47,7 +47,7 @@ func (r *PVC) New(i interface{}) Columnar {
 }
 
 // Marshal resource to yaml.
-func (r *PVC) Marshal(path string) (string, error) {
+func (r *PersistentVolumeClaim) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
 	i, err := r.Resource.Get(ns, n)
 	if err != nil {
@@ -62,7 +62,7 @@ func (r *PVC) Marshal(path string) (string, error) {
 }
 
 // Header return resource header.
-func (*PVC) Header(ns string) Row {
+func (*PersistentVolumeClaim) Header(ns string) Row {
 	hh := Row{}
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
@@ -72,7 +72,7 @@ func (*PVC) Header(ns string) Row {
 }
 
 // Fields retrieves displayable fields.
-func (r *PVC) Fields(ns string) Row {
+func (r *PersistentVolumeClaim) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
 	i := r.instance
 	if ns == AllNamespaces {
@@ -84,7 +84,7 @@ func (r *PVC) Fields(ns string) Row {
 		phase = "Terminating"
 	}
 
-	pv := PV{}
+	var pv PersistentVolume
 	storage := i.Spec.Resources.Requests[v1.ResourceStorage]
 	var capacity, accessModes string
 	if i.Spec.VolumeName != "" {

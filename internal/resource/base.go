@@ -20,6 +20,8 @@ type (
 		Get(ns string, name string) (interface{}, error)
 		List(ns string) (k8s.Collection, error)
 		Delete(ns string, name string) error
+		SetLabelSelector(string)
+		SetFieldSelector(string)
 	}
 
 	// Connection represents a Kubenetes apiserver connection.
@@ -43,6 +45,16 @@ type (
 // NewBase returns a new base
 func NewBase(c Connection, r Cruder) *Base {
 	return &Base{Connection: c, Resource: r}
+}
+
+// SetFieldSelector refines query results via selector.
+func (b *Base) SetFieldSelector(s string) {
+	b.Resource.SetFieldSelector(s)
+}
+
+// SetLabelSelector refines query results via labels.
+func (b *Base) SetLabelSelector(s string) {
+	b.Resource.SetLabelSelector(s)
 }
 
 // Name returns the resource namespaced name.

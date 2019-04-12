@@ -71,6 +71,22 @@ func (mock *MockCruder) List(_param0 string) (k8s.Collection, error) {
 	return ret0, ret1
 }
 
+func (mock *MockCruder) SetFieldSelector(_param0 string) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockCruder().")
+	}
+	params := []pegomock.Param{_param0}
+	pegomock.GetGenericMockFrom(mock).Invoke("SetFieldSelector", params, []reflect.Type{})
+}
+
+func (mock *MockCruder) SetLabelSelector(_param0 string) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockCruder().")
+	}
+	params := []pegomock.Param{_param0}
+	pegomock.GetGenericMockFrom(mock).Invoke("SetLabelSelector", params, []reflect.Type{})
+}
+
 func (mock *MockCruder) VerifyWasCalledOnce() *VerifierCruder {
 	return &VerifierCruder{
 		mock:                   mock,
@@ -187,6 +203,60 @@ func (c *Cruder_List_OngoingVerification) GetCapturedArguments() string {
 }
 
 func (c *Cruder_List_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierCruder) SetFieldSelector(_param0 string) *Cruder_SetFieldSelector_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetFieldSelector", params, verifier.timeout)
+	return &Cruder_SetFieldSelector_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Cruder_SetFieldSelector_OngoingVerification struct {
+	mock              *MockCruder
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Cruder_SetFieldSelector_OngoingVerification) GetCapturedArguments() string {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *Cruder_SetFieldSelector_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+	}
+	return
+}
+
+func (verifier *VerifierCruder) SetLabelSelector(_param0 string) *Cruder_SetLabelSelector_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetLabelSelector", params, verifier.timeout)
+	return &Cruder_SetLabelSelector_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Cruder_SetLabelSelector_OngoingVerification struct {
+	mock              *MockCruder
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Cruder_SetLabelSelector_OngoingVerification) GetCapturedArguments() string {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *Cruder_SetLabelSelector_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))

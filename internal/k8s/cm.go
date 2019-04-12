@@ -6,12 +6,13 @@ import (
 
 // ConfigMap represents a Kubernetes ConfigMap
 type ConfigMap struct {
+	*base
 	Connection
 }
 
 // NewConfigMap returns a new ConfigMap.
-func NewConfigMap(c Connection) Cruder {
-	return &ConfigMap{c}
+func NewConfigMap(c Connection) *ConfigMap {
+	return &ConfigMap{&base{}, c}
 }
 
 // Get a ConfigMap.
@@ -21,7 +22,11 @@ func (c *ConfigMap) Get(ns, n string) (interface{}, error) {
 
 // List all ConfigMaps in a given namespace.
 func (c *ConfigMap) List(ns string) (Collection, error) {
-	rr, err := c.DialOrDie().CoreV1().ConfigMaps(ns).List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: c.labelSelector,
+		FieldSelector: c.fieldSelector,
+	}
+	rr, err := c.DialOrDie().CoreV1().ConfigMaps(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}

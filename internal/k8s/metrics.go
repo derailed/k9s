@@ -9,6 +9,7 @@ import (
 type (
 	// MetricsServer serves cluster metrics for nodes and pods.
 	MetricsServer struct {
+		*base
 		Connection
 	}
 
@@ -43,7 +44,7 @@ type (
 
 // NewMetricsServer return a metric server instance.
 func NewMetricsServer(c Connection) *MetricsServer {
-	return &MetricsServer{c}
+	return &MetricsServer{&base{}, c}
 }
 
 // NodesMetrics retrieves metrics for a given set of nodes.
@@ -51,16 +52,16 @@ func (m *MetricsServer) NodesMetrics(nodes []v1.Node, metrics []mv1beta1.NodeMet
 	for _, n := range nodes {
 		mmx[n.Name] = NodeMetrics{
 			AvailCPU: n.Status.Allocatable.Cpu().MilliValue(),
-			AvailMEM: asMi(n.Status.Allocatable.Memory().Value()),
+			AvailMEM: ToMB(n.Status.Allocatable.Memory().Value()),
 			TotalCPU: n.Status.Capacity.Cpu().MilliValue(),
-			TotalMEM: asMi(n.Status.Capacity.Memory().Value()),
+			TotalMEM: ToMB(n.Status.Capacity.Memory().Value()),
 		}
 	}
 
 	for _, c := range metrics {
 		if mx, ok := mmx[c.Name]; ok {
 			mx.CurrentCPU = c.Usage.Cpu().MilliValue()
-			mx.CurrentMEM = asMi(c.Usage.Memory().Value())
+			mx.CurrentMEM = ToMB(c.Usage.Memory().Value())
 			mmx[c.Name] = mx
 		}
 	}
@@ -73,16 +74,16 @@ func (m *MetricsServer) ClusterLoad(nodes []v1.Node, metrics []mv1beta1.NodeMetr
 	for _, n := range nodes {
 		nodeMetrics[n.Name] = NodeMetrics{
 			AvailCPU: n.Status.Allocatable.Cpu().MilliValue(),
-			AvailMEM: asMi(n.Status.Allocatable.Memory().Value()),
+			AvailMEM: ToMB(n.Status.Allocatable.Memory().Value()),
 			TotalCPU: n.Status.Capacity.Cpu().MilliValue(),
-			TotalMEM: asMi(n.Status.Capacity.Memory().Value()),
+			TotalMEM: ToMB(n.Status.Capacity.Memory().Value()),
 		}
 	}
 
 	for _, mx := range metrics {
 		if m, ok := nodeMetrics[mx.Name]; ok {
 			m.CurrentCPU = mx.Usage.Cpu().MilliValue()
-			m.CurrentMEM = asMi(mx.Usage.Memory().Value())
+			m.CurrentMEM = ToMB(mx.Usage.Memory().Value())
 			nodeMetrics[mx.Name] = m
 		}
 	}
@@ -133,7 +134,7 @@ func (m *MetricsServer) PodsMetrics(pods []mv1beta1.PodMetrics, mmx PodsMetrics)
 		var mx PodMetrics
 		for _, c := range p.Containers {
 			mx.CurrentCPU += c.Usage.Cpu().MilliValue()
-			mx.CurrentMEM += asMi(c.Usage.Memory().Value())
+			mx.CurrentMEM += ToMB(c.Usage.Memory().Value())
 		}
 		mmx[p.Namespace+"/"+p.Name] = mx
 	}

@@ -6,12 +6,13 @@ import (
 
 // ReplicaSet represents a Kubernetes ReplicaSet.
 type ReplicaSet struct {
+	*base
 	Connection
 }
 
 // NewReplicaSet returns a new ReplicaSet.
-func NewReplicaSet(c Connection) Cruder {
-	return &ReplicaSet{c}
+func NewReplicaSet(c Connection) *ReplicaSet {
+	return &ReplicaSet{&base{}, c}
 }
 
 // Get a ReplicaSet.
@@ -21,7 +22,11 @@ func (r *ReplicaSet) Get(ns, n string) (interface{}, error) {
 
 // List all ReplicaSets in a given namespace.
 func (r *ReplicaSet) List(ns string) (Collection, error) {
-	rr, err := r.DialOrDie().Apps().ReplicaSets(ns).List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: r.labelSelector,
+		FieldSelector: r.fieldSelector,
+	}
+	rr, err := r.DialOrDie().Apps().ReplicaSets(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}

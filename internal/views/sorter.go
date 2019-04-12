@@ -3,11 +3,11 @@ package views
 import (
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/resource"
 	res "k8s.io/apimachinery/pkg/api/resource"
+	"vbom.ml/util/sortorder"
 )
 
 type rowSorter struct {
@@ -63,11 +63,11 @@ func less(asc bool, c1, c2 string) bool {
 		return o
 	}
 
-	c := strings.Compare(c1, c2)
+	b := sortorder.NaturalLess(c1, c2)
 	if asc {
-		return c < 0
+		return b
 	}
-	return c > 0
+	return !b
 }
 
 func isDurationSort(asc bool, c1, c2 string) (bool, bool) {
@@ -118,18 +118,6 @@ func isMetric(s string) (string, bool) {
 }
 
 func isDuration(s string) (time.Duration, bool) {
-	// rx := regexp.MustCompile(`(\d+)([h|d])`)
-	// mm := rx.FindStringSubmatch(s)
-	// if len(mm) == 3 {
-	// 	n, _ := strconv.Atoi(mm[1])
-	// 	switch mm[2] {
-	// 	case "d":
-	// 		s = fmt.Sprintf("%dh", n*24)
-	// 	case "y":
-	// 		s = fmt.Sprintf("%dh", n*365*24)
-	// 	}
-	// }
-
 	d, err := time.ParseDuration(s)
 	if err != nil {
 		return d, false

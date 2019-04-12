@@ -65,6 +65,8 @@ type (
 		Reconcile() error
 		GetName() string
 		Access(flag int) bool
+		SetFieldSelector(string)
+		SetLabelSelector(string)
 	}
 
 	// Columnar tracks resources that can be diplayed in a tabular fashion.
@@ -84,7 +86,7 @@ type (
 	// Columnars a collection of columnars.
 	Columnars []Columnar
 
-	// Resource tracks generic Kubernetes resources.
+	// Resource represents a tabular Kubernetes resource.
 	Resource interface {
 		New(interface{}) Columnar
 		Get(path string) (Columnar, error)
@@ -93,6 +95,8 @@ type (
 		Describe(kind, pa string, flags *genericclioptions.ConfigFlags) (string, error)
 		Marshal(pa string) (string, error)
 		Header(ns string) Row
+		SetFieldSelector(string)
+		SetLabelSelector(string)
 	}
 
 	list struct {
@@ -116,6 +120,16 @@ func NewList(ns, name string, res Resource, verbs int) *list {
 		resource:  res,
 		cache:     RowEvents{},
 	}
+}
+
+// SetFieldSelector narrows down resource query given fields selection.
+func (l *list) SetFieldSelector(s string) {
+	l.resource.SetFieldSelector(s)
+}
+
+// SetLabelSelector narrows down resource query via labels selections.
+func (l *list) SetLabelSelector(s string) {
+	l.resource.SetLabelSelector(s)
 }
 
 // Access check access control on a given resource.
