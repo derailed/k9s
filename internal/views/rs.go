@@ -90,11 +90,8 @@ func (v *replicaSetView) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {
 	confirm.SetDoneFunc(func(_ int, button string) {
 		if button == "OK" {
 			v.app.flash(flashInfo, fmt.Sprintf("Rolling back %s %s", v.list.GetName(), v.selectedItem))
-			if !rollback(v.app, v.selectedItem) {
-				v.app.flash(flashErr, "Rollback failed!")
-			} else {
-				v.refresh()
-			}
+			rollback(v.app, v.selectedItem)
+			v.refresh()
 		}
 		v.switchPage(v.list.GetName())
 	})
