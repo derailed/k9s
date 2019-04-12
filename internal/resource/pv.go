@@ -9,40 +9,40 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// PV tracks a kubernetes resource.
-type PV struct {
+// PersistentVolume tracks a kubernetes resource.
+type PersistentVolume struct {
 	*Base
 	instance *v1.PersistentVolume
 }
 
-// NewPVList returns a new resource list.
-func NewPVList(c Connection, ns string) List {
+// NewPersistentVolumeList returns a new resource list.
+func NewPersistentVolumeList(c Connection, ns string) List {
 	return NewList(
 		NotNamespaced,
 		"pv",
-		NewPV(c),
+		NewPersistentVolume(c),
 		CRUDAccess|DescribeAccess,
 	)
 }
 
-// NewPV instantiates a new PV.
-func NewPV(c Connection) *PV {
-	p := &PV{&Base{Connection: c, Resource: k8s.NewPV(c)}, nil}
+// NewPersistentVolume instantiates a new PersistentVolume.
+func NewPersistentVolume(c Connection) *PersistentVolume {
+	p := &PersistentVolume{&Base{Connection: c, Resource: k8s.NewPersistentVolume(c)}, nil}
 	p.Factory = p
 
 	return p
 }
 
-// New builds a new PV instance from a k8s resource.
-func (r *PV) New(i interface{}) Columnar {
-	c := NewPV(r.Connection)
+// New builds a new PersistentVolume instance from a k8s resource.
+func (r *PersistentVolume) New(i interface{}) Columnar {
+	c := NewPersistentVolume(r.Connection)
 	switch instance := i.(type) {
 	case *v1.PersistentVolume:
 		c.instance = instance
 	case v1.PersistentVolume:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown PV type %#v", i)
+		log.Fatal().Msgf("unknown PersistentVolume type %#v", i)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
@@ -50,7 +50,7 @@ func (r *PV) New(i interface{}) Columnar {
 }
 
 // Marshal resource to yaml.
-func (r *PV) Marshal(path string) (string, error) {
+func (r *PersistentVolume) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
 	i, err := r.Resource.Get(ns, n)
 	if err != nil {
@@ -65,7 +65,7 @@ func (r *PV) Marshal(path string) (string, error) {
 }
 
 // Header return resource header.
-func (*PV) Header(ns string) Row {
+func (*PersistentVolume) Header(ns string) Row {
 	hh := Row{}
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
@@ -75,7 +75,7 @@ func (*PV) Header(ns string) Row {
 }
 
 // Fields retrieves displayable fields.
-func (r *PV) Fields(ns string) Row {
+func (r *PersistentVolume) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
 	i := r.instance
 	if ns == AllNamespaces {
@@ -115,7 +115,7 @@ func (r *PV) Fields(ns string) Row {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func (r *PV) accessMode(aa []v1.PersistentVolumeAccessMode) string {
+func (r *PersistentVolume) accessMode(aa []v1.PersistentVolumeAccessMode) string {
 	dd := r.accessDedup(aa)
 	s := make([]string, 0, len(dd))
 	for i := 0; i < len(aa); i++ {
@@ -132,7 +132,7 @@ func (r *PV) accessMode(aa []v1.PersistentVolumeAccessMode) string {
 	return strings.Join(s, ",")
 }
 
-func (r *PV) accessContains(cc []v1.PersistentVolumeAccessMode, a v1.PersistentVolumeAccessMode) bool {
+func (r *PersistentVolume) accessContains(cc []v1.PersistentVolumeAccessMode, a v1.PersistentVolumeAccessMode) bool {
 	for _, c := range cc {
 		if c == a {
 			return true
@@ -142,7 +142,7 @@ func (r *PV) accessContains(cc []v1.PersistentVolumeAccessMode, a v1.PersistentV
 	return false
 }
 
-func (r *PV) accessDedup(cc []v1.PersistentVolumeAccessMode) []v1.PersistentVolumeAccessMode {
+func (r *PersistentVolume) accessDedup(cc []v1.PersistentVolumeAccessMode) []v1.PersistentVolumeAccessMode {
 	set := []v1.PersistentVolumeAccessMode{}
 	for _, c := range cc {
 		if !r.accessContains(set, c) {

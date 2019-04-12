@@ -10,40 +10,40 @@ import (
 	autoscalingv2beta1 "k8s.io/api/autoscaling/v2beta1"
 )
 
-// HPAV2Beta1 tracks a kubernetes resource.
-type HPAV2Beta1 struct {
+// HorizontalPodAutoscalerV2Beta1 tracks a kubernetes resource.
+type HorizontalPodAutoscalerV2Beta1 struct {
 	*Base
 	instance *autoscalingv2beta1.HorizontalPodAutoscaler
 }
 
-// NewHPAV2Beta1List returns a new resource list.
-func NewHPAV2Beta1List(c Connection, ns string) List {
+// NewHorizontalPodAutoscalerV2Beta1List returns a new resource list.
+func NewHorizontalPodAutoscalerV2Beta1List(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"hpa",
-		NewHPAV2Beta1(c),
+		NewHorizontalPodAutoscalerV2Beta1(c),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
-// NewHPAV2Beta1 instantiates a new HPAV2Beta1.
-func NewHPAV2Beta1(c Connection) *HPAV2Beta1 {
-	hpa := &HPAV2Beta1{&Base{Connection: c, Resource: k8s.NewHPAV2Beta1(c)}, nil}
+// NewHorizontalPodAutoscalerV2Beta1 instantiates a new HorizontalPodAutoscalerV2Beta1.
+func NewHorizontalPodAutoscalerV2Beta1(c Connection) *HorizontalPodAutoscalerV2Beta1 {
+	hpa := &HorizontalPodAutoscalerV2Beta1{&Base{Connection: c, Resource: k8s.NewHorizontalPodAutoscalerV2Beta1(c)}, nil}
 	hpa.Factory = hpa
 
 	return hpa
 }
 
-// New builds a new HPAV2Beta1 instance from a k8s resource.
-func (r *HPAV2Beta1) New(i interface{}) Columnar {
-	c := NewHPAV2Beta1(r.Connection)
+// New builds a new HorizontalPodAutoscalerV2Beta1 instance from a k8s resource.
+func (r *HorizontalPodAutoscalerV2Beta1) New(i interface{}) Columnar {
+	c := NewHorizontalPodAutoscalerV2Beta1(r.Connection)
 	switch instance := i.(type) {
 	case *autoscalingv2beta1.HorizontalPodAutoscaler:
 		c.instance = instance
 	case autoscalingv2beta1.HorizontalPodAutoscaler:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown HPAV2Beta1 type %#v", i)
+		log.Fatal().Msgf("unknown HorizontalPodAutoscalerV2Beta1 type %#v", i)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
@@ -51,7 +51,7 @@ func (r *HPAV2Beta1) New(i interface{}) Columnar {
 }
 
 // Marshal resource to yaml.
-func (r *HPAV2Beta1) Marshal(path string) (string, error) {
+func (r *HorizontalPodAutoscalerV2Beta1) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
 	i, err := r.Resource.Get(ns, n)
 	if err != nil {
@@ -66,7 +66,7 @@ func (r *HPAV2Beta1) Marshal(path string) (string, error) {
 }
 
 // Header return resource header.
-func (*HPAV2Beta1) Header(ns string) Row {
+func (*HorizontalPodAutoscalerV2Beta1) Header(ns string) Row {
 	hh := Row{}
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
@@ -83,7 +83,7 @@ func (*HPAV2Beta1) Header(ns string) Row {
 }
 
 // Fields retrieves displayable fields.
-func (r *HPAV2Beta1) Fields(ns string) Row {
+func (r *HorizontalPodAutoscalerV2Beta1) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
 
 	i := r.instance
@@ -105,7 +105,7 @@ func (r *HPAV2Beta1) Fields(ns string) Row {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func (r *HPAV2Beta1) toMetrics(specs []autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {
+func (r *HorizontalPodAutoscalerV2Beta1) toMetrics(specs []autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {
 	if len(specs) == 0 {
 		return "<none>"
 	}
@@ -147,7 +147,7 @@ func (r *HPAV2Beta1) toMetrics(specs []autoscalingv2beta1.MetricSpec, statuses [
 	return ret
 }
 
-func (*HPAV2Beta1) externalMetrics(i int, spec autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {
+func (*HorizontalPodAutoscalerV2Beta1) externalMetrics(i int, spec autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {
 	current := "<unknown>"
 
 	if spec.External.TargetAverageValue != nil {
@@ -163,7 +163,7 @@ func (*HPAV2Beta1) externalMetrics(i int, spec autoscalingv2beta1.MetricSpec, st
 	return fmt.Sprintf("%s/%s", current, spec.External.TargetValue.String())
 }
 
-func (*HPAV2Beta1) resourceMetrics(i int, spec autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {
+func (*HorizontalPodAutoscalerV2Beta1) resourceMetrics(i int, spec autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {
 	current := "<unknown>"
 
 	if spec.Resource.TargetAverageValue != nil {

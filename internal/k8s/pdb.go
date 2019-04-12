@@ -4,14 +4,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// PodDisruptionBudget represents a PodDisruptionBudget Kubernetes resource.
+// PodDisruptionBudget represents a Kubernetes PodDisruptionBudget.
 type PodDisruptionBudget struct {
+	*base
 	Connection
 }
 
 // NewPodDisruptionBudget returns a new PodDisruptionBudget.
-func NewPodDisruptionBudget(c Connection) Cruder {
-	return &PodDisruptionBudget{c}
+func NewPodDisruptionBudget(c Connection) *PodDisruptionBudget {
+	return &PodDisruptionBudget{&base{}, c}
 }
 
 // Get a pdb.
@@ -21,7 +22,11 @@ func (p *PodDisruptionBudget) Get(ns, n string) (interface{}, error) {
 
 // List all pdbs in a given namespace.
 func (p *PodDisruptionBudget) List(ns string) (Collection, error) {
-	rr, err := p.DialOrDie().PolicyV1beta1().PodDisruptionBudgets(ns).List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: p.labelSelector,
+		FieldSelector: p.fieldSelector,
+	}
+	rr, err := p.DialOrDie().PolicyV1beta1().PodDisruptionBudgets(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}

@@ -6,12 +6,13 @@ import (
 
 // Secret represents a Kubernetes Secret.
 type Secret struct {
+	*base
 	Connection
 }
 
 // NewSecret returns a new Secret.
-func NewSecret(c Connection) Cruder {
-	return &Secret{c}
+func NewSecret(c Connection) *Secret {
+	return &Secret{&base{}, c}
 }
 
 // Get a Secret.
@@ -21,7 +22,11 @@ func (s *Secret) Get(ns, n string) (interface{}, error) {
 
 // List all Secrets in a given namespace.
 func (s *Secret) List(ns string) (Collection, error) {
-	rr, err := s.DialOrDie().CoreV1().Secrets(ns).List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: s.labelSelector,
+		FieldSelector: s.fieldSelector,
+	}
+	rr, err := s.DialOrDie().CoreV1().Secrets(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}

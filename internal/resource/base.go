@@ -20,6 +20,9 @@ type (
 		Get(ns string, name string) (interface{}, error)
 		List(ns string) (k8s.Collection, error)
 		Delete(ns string, name string) error
+		SetLabelSelector(string)
+		SetFieldSelector(string)
+		HasSelectors() bool
 	}
 
 	// Connection represents a Kubenetes apiserver connection.
@@ -43,6 +46,21 @@ type (
 // NewBase returns a new base
 func NewBase(c Connection, r Cruder) *Base {
 	return &Base{Connection: c, Resource: r}
+}
+
+// HasSelectors returns true if field or label selectors are set.
+func (b *Base) HasSelectors() bool {
+	return b.Resource.HasSelectors()
+}
+
+// SetFieldSelector refines query results via selector.
+func (b *Base) SetFieldSelector(s string) {
+	b.Resource.SetFieldSelector(s)
+}
+
+// SetLabelSelector refines query results via labels.
+func (b *Base) SetLabelSelector(s string) {
+	b.Resource.SetLabelSelector(s)
 }
 
 // Name returns the resource namespaced name.
@@ -87,6 +105,7 @@ func (b *Base) Describe(kind, pa string, flags *genericclioptions.ConfigFlags) (
 
 	mapping, err := k8s.RestMapping.Find(kind)
 	if err != nil {
+		log.Debug().Msgf("Unable to find mapper for %s %s", kind, pa)
 		return "", err
 	}
 

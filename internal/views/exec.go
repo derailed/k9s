@@ -13,7 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func runK(app *appView, args ...string) bool {
+func runK(clear bool, app *appView, args ...string) bool {
 	bin, err := exec.LookPath("kubectl")
 	if err != nil {
 		log.Error().Msgf("Unable to find kubeclt command in path %v", err)
@@ -24,21 +24,23 @@ func runK(app *appView, args ...string) bool {
 		last := len(args) - 1
 		if args[last] == "sh" {
 			args[last] = "bash"
-			if err := execute(bin, args...); err != nil {
+			if err := execute(clear, bin, args...); err != nil {
 				args[last] = "sh"
 			} else {
 				return
 			}
 		}
-		if err := execute(bin, args...); err != nil {
+		if err := execute(clear, bin, args...); err != nil {
 			log.Error().Msgf("Command exited: %T %v %v", err, err, args)
 			app.flash(flashErr, "Command exited:", err.Error())
 		}
 	})
 }
 
-func execute(bin string, args ...string) error {
-	clearScreen()
+func execute(clear bool, bin string, args ...string) error {
+	if clear {
+		clearScreen()
+	}
 	log.Debug().Msgf("Running command > %s %s", bin, strings.Join(args, " "))
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -64,5 +66,6 @@ func execute(bin string, args ...string) error {
 }
 
 func clearScreen() {
+	log.Debug().Msg("Clearing screen...")
 	fmt.Print("\033[H\033[2J")
 }

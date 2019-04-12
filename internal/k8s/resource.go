@@ -14,14 +14,15 @@ import (
 
 // Resource represents a Kubernetes Resource
 type Resource struct {
+	*base
 	Connection
 
 	group, version, name string
 }
 
 // NewResource returns a new Resource.
-func NewResource(c Connection, group, version, name string) Cruder {
-	return &Resource{Connection: c, group: group, version: version, name: name}
+func NewResource(c Connection, group, version, name string) *Resource {
+	return &Resource{base: &base{}, Connection: c, group: group, version: version, name: name}
 }
 
 // GetInfo returns info about apigroup.
@@ -29,7 +30,7 @@ func (r *Resource) GetInfo() (string, string, string) {
 	return r.group, r.version, r.name
 }
 
-func (r *Resource) base() dynamic.NamespaceableResourceInterface {
+func (r *Resource) nsRes() dynamic.NamespaceableResourceInterface {
 	g := schema.GroupVersionResource{
 		Group:    r.group,
 		Version:  r.version,
@@ -40,7 +41,7 @@ func (r *Resource) base() dynamic.NamespaceableResourceInterface {
 
 // Get a Resource.
 func (r *Resource) Get(ns, n string) (interface{}, error) {
-	return r.base().Namespace(ns).Get(n, metav1.GetOptions{})
+	return r.nsRes().Namespace(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all Resources in a given namespace.
@@ -54,7 +55,7 @@ func (r *Resource) List(ns string) (Collection, error) {
 
 // Delete a Resource.
 func (r *Resource) Delete(ns, n string) error {
-	return r.base().Namespace(ns).Delete(n, nil)
+	return r.nsRes().Namespace(ns).Delete(n, nil)
 }
 
 // ----------------------------------------------------------------------------

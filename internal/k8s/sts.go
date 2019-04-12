@@ -6,12 +6,13 @@ import (
 
 // StatefulSet manages a Kubernetes StatefulSet.
 type StatefulSet struct {
+	*base
 	Connection
 }
 
 // NewStatefulSet instantiates a new StatefulSet.
-func NewStatefulSet(c Connection) Cruder {
-	return &StatefulSet{c}
+func NewStatefulSet(c Connection) *StatefulSet {
+	return &StatefulSet{&base{}, c}
 }
 
 // Get a StatefulSet.
@@ -21,7 +22,11 @@ func (s *StatefulSet) Get(ns, n string) (interface{}, error) {
 
 // List all StatefulSets in a given namespace.
 func (s *StatefulSet) List(ns string) (Collection, error) {
-	rr, err := s.DialOrDie().AppsV1().StatefulSets(ns).List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: s.labelSelector,
+		FieldSelector: s.fieldSelector,
+	}
+	rr, err := s.DialOrDie().AppsV1().StatefulSets(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}

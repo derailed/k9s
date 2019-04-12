@@ -6,12 +6,13 @@ import (
 
 // Node represents a Kubernetes node.
 type Node struct {
+	*base
 	Connection
 }
 
 // NewNode returns a new Node.
-func NewNode(c Connection) Cruder {
-	return &Node{c}
+func NewNode(c Connection) *Node {
+	return &Node{&base{}, c}
 }
 
 // Get a node.
@@ -21,7 +22,11 @@ func (n *Node) Get(_, name string) (interface{}, error) {
 
 // List all nodes on the cluster.
 func (n *Node) List(_ string) (Collection, error) {
-	rr, err := n.DialOrDie().CoreV1().Nodes().List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: n.labelSelector,
+		FieldSelector: n.fieldSelector,
+	}
+	rr, err := n.DialOrDie().CoreV1().Nodes().List(opts)
 	if err != nil {
 		return nil, err
 	}

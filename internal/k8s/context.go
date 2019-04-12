@@ -32,12 +32,13 @@ func (c *NamedContext) MustCurrentContextName() string {
 
 // Context represents a Kubernetes Context.
 type Context struct {
+	*base
 	Connection
 }
 
 // NewContext returns a new Context.
-func NewContext(c Connection) Cruder {
-	return &Context{c}
+func NewContext(c Connection) *Context {
+	return &Context{&base{}, c}
 }
 
 // Get a Context.

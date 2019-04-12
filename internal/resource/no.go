@@ -107,14 +107,11 @@ func (*Node) Header(ns string) Row {
 	return Row{
 		"NAME",
 		"STATUS",
+		"ROLE",
 		"VERSION",
 		"KERNEL",
 		"INTERNAL-IP",
 		"EXTERNAL-IP",
-		"CPU%",
-		"MEM%",
-		"RCPU%",
-		"RMEM%",
 		"CPU",
 		"MEM",
 		"RCPU",
@@ -143,39 +140,58 @@ func (r *Node) Fields(ns string) Row {
 
 	rcpu, rmem := reqs["cpu"], reqs["memory"]
 
-	var pcpur float64
-	if r.metrics.AvailCPU > 0 {
-		pcpur = toPerc(float64(rcpu.MilliValue()), float64(r.metrics.AvailCPU))
-	}
-
-	var pmemr float64
-	if r.metrics.AvailMEM > 0 {
-		pmemr = toPerc(float64(rmem.Value()/(1024*1024)), float64(r.metrics.AvailMEM))
-	}
+	pcpur := toPerc(float64(rcpu.MilliValue()), float64(r.metrics.AvailCPU))
+	pmemr := toPerc(k8s.ToMB(rmem.Value()), float64(r.metrics.AvailMEM))
 
 	return append(ff,
 		i.Name,
 		r.status(i),
+		r.nodeRoles(i),
 		i.Status.NodeInfo.KubeletVersion,
 		i.Status.NodeInfo.KernelVersion,
 		iIP,
 		eIP,
-		asPerc(toPerc(float64(r.metrics.CurrentCPU), float64(r.metrics.AvailCPU))),
-		asPerc(toPerc(r.metrics.CurrentMEM, r.metrics.AvailMEM)),
-		asPerc(pcpur),
-		asPerc(pmemr),
-		ToMillicore(r.metrics.CurrentCPU),
-		ToMi(r.metrics.CurrentMEM),
+		withPerc(ToMillicore(r.metrics.CurrentCPU), asPerc(toPerc(float64(r.metrics.CurrentCPU), float64(r.metrics.AvailCPU)))),
+		withPerc(ToMi(r.metrics.CurrentMEM), asPerc(toPerc(r.metrics.CurrentMEM, r.metrics.AvailMEM))),
+		withPerc(rcpu.String(), asPerc(pcpur)),
+		withPerc(rmem.String(), asPerc(pmemr)),
 		ToMillicore(r.metrics.AvailCPU),
 		ToMi(r.metrics.AvailMEM),
-		rcpu.String(),
-		rmem.String(),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
 }
 
+func withPerc(v, p string) string {
+	return v + " (" + p + ")"
+}
+
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func (*Node) nodeRoles(node *v1.Node) string {
+	const (
+		labelNodeRolePrefix = "node-role.kubernetes.io/"
+		nodeLabelRole       = "kubernetes.io/role"
+	)
+
+	roles := sets.NewString()
+	for k, v := range node.Labels {
+		switch {
+		case strings.HasPrefix(k, labelNodeRolePrefix):
+			if role := strings.TrimPrefix(k, labelNodeRolePrefix); len(role) > 0 {
+				roles.Insert(role)
+			}
+
+		case k == nodeLabelRole && v != "":
+			roles.Insert(v)
+		}
+	}
+
+	if len(roles) == 0 {
+		return MissingValue
+	}
+	return strings.Join(roles.List(), ",")
+}
 
 func (*Node) getIPs(addrs []v1.NodeAddress) (iIP, eIP string) {
 	for _, a := range addrs {

@@ -74,7 +74,7 @@ func newTableView(app *appView, title string) *tableView {
 }
 
 func (v *tableView) bindKeys() {
-	v.actions[KeyShiftI] = newKeyAction("Invert", v.sortInvertCmd, true)
+	v.actions[KeyShiftI] = newKeyAction("Invert", v.sortInvertCmd, false)
 	v.actions[KeyShiftN] = newKeyAction("Sort Name", v.sortColCmd(0), true)
 	v.actions[KeyShiftA] = newKeyAction("Sort Age", v.sortColCmd(-1), true)
 

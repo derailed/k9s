@@ -6,12 +6,13 @@ import (
 
 // Service represents a Kubernetes Service.
 type Service struct {
+	*base
 	Connection
 }
 
 // NewService returns a new Service.
-func NewService(c Connection) Cruder {
-	return &Service{c}
+func NewService(c Connection) *Service {
+	return &Service{&base{}, c}
 }
 
 // Get a service.
@@ -21,7 +22,11 @@ func (s *Service) Get(ns, n string) (interface{}, error) {
 
 // List all Services in a given namespace.
 func (s *Service) List(ns string) (Collection, error) {
-	rr, err := s.DialOrDie().CoreV1().Services(ns).List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: s.labelSelector,
+		FieldSelector: s.fieldSelector,
+	}
+	rr, err := s.DialOrDie().CoreV1().Services(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}

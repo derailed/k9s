@@ -20,7 +20,7 @@ func TestToPerc(t *testing.T) {
 	}
 }
 
-func TestAsMi(t *testing.T) {
+func TestToMB(t *testing.T) {
 	uu := []struct {
 		v int64
 		e float64
@@ -31,6 +31,6 @@ func TestAsMi(t *testing.T) {
 	}
 
 	for _, u := range uu {
-		assert.Equal(t, u.e, asMi(u.v))
+		assert.Equal(t, u.e, ToMB(u.v))
 	}
 }

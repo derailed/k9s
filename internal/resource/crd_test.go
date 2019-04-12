@@ -10,12 +10,12 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-func NewCRDListWithArgs(ns string, r *resource.CRD) resource.List {
+func NewCRDListWithArgs(ns string, r *resource.CustomResourceDefinition) resource.List {
 	return resource.NewList("-", "crd", r, resource.CRUDAccess|resource.DescribeAccess)
 }
 
-func NewCRDWithArgs(conn k8s.Connection, res resource.Cruder) *resource.CRD {
-	r := &resource.CRD{Base: resource.NewBase(conn, res)}
+func NewCRDWithArgs(conn k8s.Connection, res resource.Cruder) *resource.CustomResourceDefinition {
+	r := &resource.CustomResourceDefinition{Base: resource.NewBase(conn, res)}
 	r.Factory = r
 
 	return r
@@ -130,12 +130,12 @@ func k8sCRDFull() *unstructured.Unstructured {
 
 func newCRDFull() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewCRD(mc).New(k8sCRDFull())
+	return resource.NewCustomResourceDefinition(mc).New(k8sCRDFull())
 }
 
 func newCRD() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewCRD(mc).New(k8sCRD())
+	return resource.NewCustomResourceDefinition(mc).New(k8sCRD())
 }
 
 func crdYaml() string {

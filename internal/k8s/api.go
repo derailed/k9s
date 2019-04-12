@@ -38,6 +38,8 @@ type (
 		Get(ns string, name string) (interface{}, error)
 		List(ns string) (Collection, error)
 		Delete(ns string, name string) error
+		SetFieldSelector(string)
+		SetLabelSelector(string)
 	}
 
 	// Connection represents a Kubenetes apiserver connection.
@@ -78,8 +80,7 @@ func InitConnectionOrDie(config *Config, logger zerolog.Logger) *APIClient {
 	return &conn
 }
 
-// ValidNamespaces returns a collection of valid namespaces.
-// Bozo!! filter active?
+// ValidNamespaces returns all available namespaces.
 func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
 	nn, err := a.DialOrDie().CoreV1().Namespaces().List(metav1.ListOptions{})
 	if err != nil {

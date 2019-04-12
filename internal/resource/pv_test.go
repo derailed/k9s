@@ -11,12 +11,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func NewPVListWithArgs(ns string, r *resource.PV) resource.List {
+func NewPVListWithArgs(ns string, r *resource.PersistentVolume) resource.List {
 	return resource.NewList(resource.NotNamespaced, "pv", r, resource.CRUDAccess|resource.DescribeAccess)
 }
 
-func NewPVWithArgs(conn k8s.Connection, res resource.Cruder) *resource.PV {
-	r := &resource.PV{Base: resource.NewBase(conn, res)}
+func NewPVWithArgs(conn k8s.Connection, res resource.Cruder) *resource.PersistentVolume {
+	r := &resource.PersistentVolume{Base: resource.NewBase(conn, res)}
 	r.Factory = r
 	return r
 }
@@ -92,7 +92,7 @@ func k8sPV() *v1.PersistentVolume {
 
 func newPV() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewPV(mc).New(k8sPV())
+	return resource.NewPersistentVolume(mc).New(k8sPV())
 }
 
 func pvYaml() string {

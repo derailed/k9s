@@ -6,12 +6,13 @@ import (
 
 // Event represents a Kubernetes Event.
 type Event struct {
+	*base
 	Connection
 }
 
 // NewEvent returns a new Event.
-func NewEvent(c Connection) Cruder {
-	return &Event{c}
+func NewEvent(c Connection) *Event {
+	return &Event{&base{}, c}
 }
 
 // Get a Event.
@@ -21,7 +22,11 @@ func (e *Event) Get(ns, n string) (interface{}, error) {
 
 // List all Events in a given namespace.
 func (e *Event) List(ns string) (Collection, error) {
-	rr, err := e.DialOrDie().CoreV1().Events(ns).List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: e.labelSelector,
+		FieldSelector: e.fieldSelector,
+	}
+	rr, err := e.DialOrDie().CoreV1().Events(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}

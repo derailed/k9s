@@ -6,12 +6,13 @@ import (
 
 // ClusterRoleBinding represents a Kubernetes ClusterRoleBinding
 type ClusterRoleBinding struct {
+	*base
 	Connection
 }
 
 // NewClusterRoleBinding returns a new ClusterRoleBinding.
-func NewClusterRoleBinding(c Connection) Cruder {
-	return &ClusterRoleBinding{c}
+func NewClusterRoleBinding(c Connection) *ClusterRoleBinding {
+	return &ClusterRoleBinding{&base{}, c}
 }
 
 // Get a service.
@@ -21,7 +22,11 @@ func (c *ClusterRoleBinding) Get(_, n string) (interface{}, error) {
 
 // List all ClusterRoleBindings on a cluster.
 func (c *ClusterRoleBinding) List(_ string) (Collection, error) {
-	rr, err := c.DialOrDie().RbacV1().ClusterRoleBindings().List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: c.labelSelector,
+		FieldSelector: c.fieldSelector,
+	}
+	rr, err := c.DialOrDie().RbacV1().ClusterRoleBindings().List(opts)
 	if err != nil {
 		return Collection{}, err
 	}

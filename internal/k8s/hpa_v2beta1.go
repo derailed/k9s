@@ -4,24 +4,29 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// HPAV2Beta1 represents am HorizontalPodAutoscaler.
-type HPAV2Beta1 struct {
+// HorizontalPodAutoscalerV2Beta1 represents am HorizontalPodAutoscaler.
+type HorizontalPodAutoscalerV2Beta1 struct {
+	*base
 	Connection
 }
 
-// NewHPAV2Beta1 returns a new HPA.
-func NewHPAV2Beta1(c Connection) Cruder {
-	return &HPAV2Beta1{c}
+// NewHorizontalPodAutoscalerV2Beta1 returns a new HorizontalPodAutoscaler.
+func NewHorizontalPodAutoscalerV2Beta1(c Connection) *HorizontalPodAutoscalerV2Beta1 {
+	return &HorizontalPodAutoscalerV2Beta1{&base{}, c}
 }
 
-// Get a HPA.
-func (h *HPAV2Beta1) Get(ns, n string) (interface{}, error) {
+// Get a HorizontalPodAutoscaler.
+func (h *HorizontalPodAutoscalerV2Beta1) Get(ns, n string) (interface{}, error) {
 	return h.DialOrDie().AutoscalingV2beta2().HorizontalPodAutoscalers(ns).Get(n, metav1.GetOptions{})
 }
 
-// List all HPAs in a given namespace.
-func (h *HPAV2Beta1) List(ns string) (Collection, error) {
-	rr, err := h.DialOrDie().AutoscalingV2beta2().HorizontalPodAutoscalers(ns).List(metav1.ListOptions{})
+// List all HorizontalPodAutoscalers in a given namespace.
+func (h *HorizontalPodAutoscalerV2Beta1) List(ns string) (Collection, error) {
+	opts := metav1.ListOptions{
+		LabelSelector: h.labelSelector,
+		FieldSelector: h.fieldSelector,
+	}
+	rr, err := h.DialOrDie().AutoscalingV2beta2().HorizontalPodAutoscalers(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +37,7 @@ func (h *HPAV2Beta1) List(ns string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a HPA.
-func (h *HPAV2Beta1) Delete(ns, n string) error {
+// Delete a HorizontalPodAutoscaler.
+func (h *HorizontalPodAutoscalerV2Beta1) Delete(ns, n string) error {
 	return h.DialOrDie().AutoscalingV2beta1().HorizontalPodAutoscalers(ns).Delete(n, nil)
 }

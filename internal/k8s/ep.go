@@ -6,12 +6,13 @@ import (
 
 // Endpoints represents a Kubernetes Endpoints.
 type Endpoints struct {
+	*base
 	Connection
 }
 
 // NewEndpoints returns a new Endpoints.
-func NewEndpoints(c Connection) Cruder {
-	return &Endpoints{c}
+func NewEndpoints(c Connection) *Endpoints {
+	return &Endpoints{&base{}, c}
 }
 
 // Get a Endpoint.
@@ -21,7 +22,11 @@ func (e *Endpoints) Get(ns, n string) (interface{}, error) {
 
 // List all Endpoints in a given namespace.
 func (e *Endpoints) List(ns string) (Collection, error) {
-	rr, err := e.DialOrDie().CoreV1().Endpoints(ns).List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: e.labelSelector,
+		FieldSelector: e.fieldSelector,
+	}
+	rr, err := e.DialOrDie().CoreV1().Endpoints(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}

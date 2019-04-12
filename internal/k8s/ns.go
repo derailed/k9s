@@ -6,12 +6,13 @@ import (
 
 // Namespace represents a Kubernetes namespace.
 type Namespace struct {
+	*base
 	Connection
 }
 
 // NewNamespace returns a new Namespace.
-func NewNamespace(c Connection) Cruder {
-	return &Namespace{c}
+func NewNamespace(c Connection) *Namespace {
+	return &Namespace{&base{}, c}
 }
 
 // Get a active namespace.
@@ -21,7 +22,11 @@ func (n *Namespace) Get(_, name string) (interface{}, error) {
 
 // List all active namespaces on the cluster.
 func (n *Namespace) List(_ string) (Collection, error) {
-	rr, err := n.DialOrDie().CoreV1().Namespaces().List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: n.labelSelector,
+		FieldSelector: n.fieldSelector,
+	}
+	rr, err := n.DialOrDie().CoreV1().Namespaces().List(opts)
 	if err != nil {
 		return nil, err
 	}

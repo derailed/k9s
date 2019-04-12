@@ -10,40 +10,40 @@ import (
 	autoscalingv2beta2 "k8s.io/api/autoscaling/v2beta2"
 )
 
-// HPA tracks a kubernetes resource.
-type HPA struct {
+// HorizontalPodAutoscaler tracks a kubernetes resource.
+type HorizontalPodAutoscaler struct {
 	*Base
 	instance *autoscalingv2beta2.HorizontalPodAutoscaler
 }
 
-// NewHPAList returns a new resource list.
-func NewHPAList(c Connection, ns string) List {
+// NewHorizontalPodAutoscalerList returns a new resource list.
+func NewHorizontalPodAutoscalerList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"hpa",
-		NewHPA(c),
+		NewHorizontalPodAutoscaler(c),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
-// NewHPA instantiates a new HPA.
-func NewHPA(c Connection) *HPA {
-	hpa := &HPA{&Base{Connection: c, Resource: k8s.NewHPAV2Beta2(c)}, nil}
+// NewHorizontalPodAutoscaler instantiates a new HorizontalPodAutoscaler.
+func NewHorizontalPodAutoscaler(c Connection) *HorizontalPodAutoscaler {
+	hpa := &HorizontalPodAutoscaler{&Base{Connection: c, Resource: k8s.NewHorizontalPodAutoscalerV2Beta2(c)}, nil}
 	hpa.Factory = hpa
 
 	return hpa
 }
 
-// New builds a new HPA instance from a k8s resource.
-func (r *HPA) New(i interface{}) Columnar {
-	c := NewHPA(r.Connection)
+// New builds a new HorizontalPodAutoscaler instance from a k8s resource.
+func (r *HorizontalPodAutoscaler) New(i interface{}) Columnar {
+	c := NewHorizontalPodAutoscaler(r.Connection)
 	switch instance := i.(type) {
 	case *autoscalingv2beta2.HorizontalPodAutoscaler:
 		c.instance = instance
 	case autoscalingv2beta2.HorizontalPodAutoscaler:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown HPA type %#v", i)
+		log.Fatal().Msgf("unknown HorizontalPodAutoscaler type %#v", i)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
@@ -51,7 +51,7 @@ func (r *HPA) New(i interface{}) Columnar {
 }
 
 // Marshal resource to yaml.
-func (r *HPA) Marshal(path string) (string, error) {
+func (r *HorizontalPodAutoscaler) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
 	i, err := r.Resource.Get(ns, n)
 	if err != nil {
@@ -66,7 +66,7 @@ func (r *HPA) Marshal(path string) (string, error) {
 }
 
 // Header return resource header.
-func (*HPA) Header(ns string) Row {
+func (*HorizontalPodAutoscaler) Header(ns string) Row {
 	hh := Row{}
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
@@ -83,7 +83,7 @@ func (*HPA) Header(ns string) Row {
 }
 
 // Fields retrieves displayable fields.
-func (r *HPA) Fields(ns string) Row {
+func (r *HorizontalPodAutoscaler) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
 
 	i := r.instance

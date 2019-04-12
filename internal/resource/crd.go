@@ -10,40 +10,40 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
-// CRD tracks a kubernetes resource.
-type CRD struct {
+// CustomResourceDefinition tracks a kubernetes resource.
+type CustomResourceDefinition struct {
 	*Base
 	instance *unstructured.Unstructured
 }
 
-// NewCRDList returns a new resource list.
-func NewCRDList(c Connection, ns string) List {
+// NewCustomResourceDefinitionList returns a new resource list.
+func NewCustomResourceDefinitionList(c Connection, ns string) List {
 	return NewList(
 		NotNamespaced,
 		"crd",
-		NewCRD(c),
+		NewCustomResourceDefinition(c),
 		CRUDAccess|DescribeAccess,
 	)
 }
 
-// NewCRD instantiates a new CRD.
-func NewCRD(c Connection) *CRD {
-	crd := &CRD{&Base{Connection: c, Resource: k8s.NewCRD(c)}, nil}
+// NewCustomResourceDefinition instantiates a new CustomResourceDefinition.
+func NewCustomResourceDefinition(c Connection) *CustomResourceDefinition {
+	crd := &CustomResourceDefinition{&Base{Connection: c, Resource: k8s.NewCustomResourceDefinition(c)}, nil}
 	crd.Factory = crd
 
 	return crd
 }
 
-// New builds a new CRD instance from a k8s resource.
-func (r *CRD) New(i interface{}) Columnar {
-	c := NewCRD(r.Connection)
+// New builds a new CustomResourceDefinition instance from a k8s resource.
+func (r *CustomResourceDefinition) New(i interface{}) Columnar {
+	c := NewCustomResourceDefinition(r.Connection)
 	switch instance := i.(type) {
 	case *unstructured.Unstructured:
 		c.instance = instance
 	case unstructured.Unstructured:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown CRD type %#v", i)
+		log.Fatal().Msgf("unknown CustomResourceDefinition type %#v", i)
 	}
 	meta := c.instance.Object["metadata"].(map[string]interface{})
 	c.path = meta["name"].(string)
@@ -52,7 +52,7 @@ func (r *CRD) New(i interface{}) Columnar {
 }
 
 // Marshal a resource.
-func (r *CRD) Marshal(path string) (string, error) {
+func (r *CustomResourceDefinition) Marshal(path string) (string, error) {
 	ns, n := namespaced(path)
 	i, err := r.Resource.Get(ns, n)
 	if err != nil {
@@ -70,12 +70,12 @@ func (r *CRD) Marshal(path string) (string, error) {
 }
 
 // Header return the resource header.
-func (*CRD) Header(ns string) Row {
+func (*CustomResourceDefinition) Header(ns string) Row {
 	return Row{"NAME", "AGE"}
 }
 
 // Fields retrieves displayable fields.
-func (r *CRD) Fields(ns string) Row {
+func (r *CustomResourceDefinition) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
 
 	i := r.instance
@@ -89,7 +89,7 @@ func (r *CRD) Fields(ns string) Row {
 }
 
 // ExtFields returns extended fields.
-func (r *CRD) ExtFields() Properties {
+func (r *CustomResourceDefinition) ExtFields() Properties {
 	var (
 		pp = Properties{}
 		i  = r.instance

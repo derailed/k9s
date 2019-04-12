@@ -12,6 +12,7 @@ import (
 type (
 	// Job represents a Kubernetes Job.
 	Job struct {
+		*base
 		Connection
 	}
 
@@ -23,8 +24,8 @@ type (
 )
 
 // NewJob returns a new Job.
-func NewJob(c Connection) Cruder {
-	return &Job{c}
+func NewJob(c Connection) *Job {
+	return &Job{&base{}, c}
 }
 
 // Get a Job.
@@ -34,7 +35,11 @@ func (j *Job) Get(ns, n string) (interface{}, error) {
 
 // List all Jobs in a given namespace.
 func (j *Job) List(ns string) (Collection, error) {
-	rr, err := j.DialOrDie().BatchV1().Jobs(ns).List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: j.labelSelector,
+		FieldSelector: j.fieldSelector,
+	}
+	rr, err := j.DialOrDie().BatchV1().Jobs(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +62,7 @@ func (j *Job) Containers(ns, n string, includeInit bool) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewPod(j).(Loggable).Containers(ns, pod, includeInit)
+	return NewPod(j).Containers(ns, pod, includeInit)
 }
 
 // Logs fetch container logs for a given job and container.
@@ -66,7 +71,7 @@ func (j *Job) Logs(ns, n, co string, lines int64, prev bool) *restclient.Request
 	if err != nil {
 		return nil
 	}
-	return NewPod(j).(Loggable).Logs(ns, pod, co, lines, prev)
+	return NewPod(j).Logs(ns, pod, co, lines, prev)
 }
 
 // Events retrieved jobs events.

@@ -8,14 +8,15 @@ import (
 
 const defaultKillGrace int64 = 5
 
-// Pod represents a Kubernetes resource.
+// Pod represents a Kubernetes Pod.
 type Pod struct {
+	*base
 	Connection
 }
 
 // NewPod returns a new Pod.
-func NewPod(c Connection) Cruder {
-	return &Pod{c}
+func NewPod(c Connection) *Pod {
+	return &Pod{base: &base{}, Connection: c}
 }
 
 // Get a pod.
@@ -25,7 +26,12 @@ func (p *Pod) Get(ns, name string) (interface{}, error) {
 
 // List all pods in a given namespace.
 func (p *Pod) List(ns string) (Collection, error) {
-	rr, err := p.DialOrDie().CoreV1().Pods(ns).List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: p.labelSelector,
+		FieldSelector: p.fieldSelector,
+	}
+
+	rr, err := p.DialOrDie().CoreV1().Pods(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}

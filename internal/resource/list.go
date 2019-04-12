@@ -65,6 +65,11 @@ type (
 		Reconcile() error
 		GetName() string
 		Access(flag int) bool
+		GetAccess() int
+		SetAccess(int)
+		SetFieldSelector(string)
+		SetLabelSelector(string)
+		HasSelectors() bool
 	}
 
 	// Columnar tracks resources that can be diplayed in a tabular fashion.
@@ -84,7 +89,7 @@ type (
 	// Columnars a collection of columnars.
 	Columnars []Columnar
 
-	// Resource tracks generic Kubernetes resources.
+	// Resource represents a tabular Kubernetes resource.
 	Resource interface {
 		New(interface{}) Columnar
 		Get(path string) (Columnar, error)
@@ -93,6 +98,9 @@ type (
 		Describe(kind, pa string, flags *genericclioptions.ConfigFlags) (string, error)
 		Marshal(pa string) (string, error)
 		Header(ns string) Row
+		SetFieldSelector(string)
+		SetLabelSelector(string)
+		HasSelectors() bool
 	}
 
 	list struct {
@@ -118,9 +126,33 @@ func NewList(ns, name string, res Resource, verbs int) *list {
 	}
 }
 
+func (l *list) HasSelectors() bool {
+	return l.resource.HasSelectors()
+}
+
+// SetFieldSelector narrows down resource query given fields selection.
+func (l *list) SetFieldSelector(s string) {
+	l.resource.SetFieldSelector(s)
+}
+
+// SetLabelSelector narrows down resource query via labels selections.
+func (l *list) SetLabelSelector(s string) {
+	l.resource.SetLabelSelector(s)
+}
+
 // Access check access control on a given resource.
 func (l *list) Access(f int) bool {
 	return l.verbs&f == f
+}
+
+// Access check access control on a given resource.
+func (l *list) GetAccess() int {
+	return l.verbs
+}
+
+// Access check access control on a given resource.
+func (l *list) SetAccess(f int) {
+	l.verbs = f
 }
 
 // Namespaced checks if k8s resource is namespaced.

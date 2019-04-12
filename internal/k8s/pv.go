@@ -4,24 +4,29 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// PV represents a Kubernetes PersistentVolume.
-type PV struct {
+// PeristentVolume represents a Kubernetes PersistentVolume.
+type PeristentVolume struct {
+	*base
 	Connection
 }
 
-// NewPV returns a new PV.
-func NewPV(c Connection) Cruder {
-	return &PV{c}
+// NewPersistentVolume returns a new PeristentVolume.
+func NewPersistentVolume(c Connection) *PeristentVolume {
+	return &PeristentVolume{&base{}, c}
 }
 
-// Get a PV.
-func (p *PV) Get(_, n string) (interface{}, error) {
+// Get a PeristentVolume.
+func (p *PeristentVolume) Get(_, n string) (interface{}, error) {
 	return p.DialOrDie().CoreV1().PersistentVolumes().Get(n, metav1.GetOptions{})
 }
 
-// List all PVs in a given namespace.
-func (p *PV) List(_ string) (Collection, error) {
-	rr, err := p.DialOrDie().CoreV1().PersistentVolumes().List(metav1.ListOptions{})
+// List all PeristentVolumes in a given namespace.
+func (p *PeristentVolume) List(_ string) (Collection, error) {
+	opts := metav1.ListOptions{
+		LabelSelector: p.labelSelector,
+		FieldSelector: p.fieldSelector,
+	}
+	rr, err := p.DialOrDie().CoreV1().PersistentVolumes().List(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -34,7 +39,7 @@ func (p *PV) List(_ string) (Collection, error) {
 	return cc, nil
 }
 
-// Delete a PV.
-func (p *PV) Delete(_, n string) error {
+// Delete a PeristentVolume.
+func (p *PeristentVolume) Delete(_, n string) error {
 	return p.DialOrDie().CoreV1().PersistentVolumes().Delete(n, nil)
 }

@@ -11,12 +11,13 @@ const maxJobNameSize = 42
 
 // CronJob represents a Kubernetes CronJob.
 type CronJob struct {
+	*base
 	Connection
 }
 
 // NewCronJob returns a new CronJob.
-func NewCronJob(c Connection) Cruder {
-	return &CronJob{c}
+func NewCronJob(c Connection) *CronJob {
+	return &CronJob{&base{}, c}
 }
 
 // Get a CronJob.
@@ -26,7 +27,11 @@ func (c *CronJob) Get(ns, n string) (interface{}, error) {
 
 // List all CronJobs in a given namespace.
 func (c *CronJob) List(ns string) (Collection, error) {
-	rr, err := c.DialOrDie().BatchV1beta1().CronJobs(ns).List(metav1.ListOptions{})
+	opts := metav1.ListOptions{
+		LabelSelector: c.labelSelector,
+		FieldSelector: c.fieldSelector,
+	}
+	rr, err := c.DialOrDie().BatchV1beta1().CronJobs(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}

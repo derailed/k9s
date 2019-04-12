@@ -1,10 +1,16 @@
 package views
 
 import (
+	"fmt"
+
+	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+const fmat = "[aqua::b]%s([fuchsia::b]%s[aqua::-])"
 
 type podView struct {
 	*resourceView
@@ -22,6 +28,7 @@ func newPodView(t string, app *appView, list resource.List) resourceViewer {
 	v := podView{newResourceView(t, app, list).(*resourceView)}
 	{
 		v.extraActionsFn = v.extraActions
+		v.enterFn = v.listContainers
 	}
 
 	picker := newSelectList(&v)
@@ -36,6 +43,20 @@ func newPodView(t string, app *appView, list resource.List) resourceViewer {
 	v.switchPage("po")
 
 	return &v
+}
+
+func (v *podView) listContainers(app *appView, _, res, sel string) {
+	ns, n := namespaced(sel)
+	po, err := app.conn().DialOrDie().CoreV1().Pods(ns).Get(n, metav1.GetOptions{})
+	if err != nil {
+		log.Error().Err(err).Msgf("Unable to retrieve pod %s", sel)
+		app.flash(flashErr, err.Error())
+		return
+	}
+
+	mx := k8s.NewMetricsServer(app.conn())
+	list := resource.NewContainerList(app.conn(), mx, po)
+	app.inject(newContainerView(fmt.Sprintf(fmat, "Containers", sel), app, list, namespacedName(po.Namespace, po.Name)))
 }
 
 // Protocol...
@@ -59,40 +80,51 @@ func (v *podView) getSelection() string {
 // Handlers...
 
 func (v *podView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if v.viewLogs(false) {
+		return nil
+	}
+	return evt
+}
+
+func (v *podView) prevLogsCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if v.viewLogs(true) {
+		return nil
+	}
+	return evt
+}
+
+func (v *podView) viewLogs(prev bool) bool {
 	if !v.rowSelected() {
-		return evt
+		return false
 	}
 
 	cc, err := fetchContainers(v.list, v.selectedItem, true)
 	if err != nil {
 		v.app.flash(flashErr, err.Error())
 		log.Error().Err(err)
-		return evt
+		return false
 	}
 
 	if len(cc) == 1 {
-		v.showLogs(v.selectedItem, cc[0], v.list.GetName(), v)
-		return nil
+		v.showLogs(v.selectedItem, cc[0], v.list.GetName(), v, prev)
+		return true
 	}
 
 	picker := v.GetPrimitive("picker").(*selectList)
 	picker.populate(cc)
 	picker.SetSelectedFunc(func(i int, t, d string, r rune) {
-		v.showLogs(v.selectedItem, t, "picker", picker)
+		v.showLogs(v.selectedItem, t, "picker", picker, prev)
 	})
 	v.switchPage("picker")
 
-	return nil
+	return true
 }
 
-func (v *podView) showLogs(path, co, view string, parent loggable) {
+func (v *podView) showLogs(path, co, view string, parent loggable, prev bool) {
 	l := v.GetPrimitive("logs").(*logsView)
-	l.parent = parent
-	l.parentView = view
-	l.deleteAllPages()
-	l.addContainer(co)
+	l.reload(co, parent, view, prev)
+
 	v.switchPage("logs")
-	l.init()
 }
 
 func (v *podView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -134,11 +166,12 @@ func (v *podView) shellIn(path, co string) {
 	}
 	args = append(args, "--", "sh")
 	log.Debug().Msgf("Shell args %v", args)
-	runK(v.app, args...)
+	runK(true, v.app, args...)
 }
 
 func (v *podView) extraActions(aa keyActions) {
 	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
+	aa[KeyShiftL] = newKeyAction("Logs", v.prevLogsCmd, true)
 	aa[KeyS] = newKeyAction("Shell", v.shellCmd, true)
 	aa[KeyShiftR] = newKeyAction("Sort Ready", v.sortColCmd(1, false), true)
 	aa[KeyShiftS] = newKeyAction("Sort Status", v.sortColCmd(2, true), true)
@@ -146,7 +179,6 @@ func (v *podView) extraActions(aa keyActions) {
 	aa[KeyShiftC] = newKeyAction("Sort CPU", v.sortColCmd(4, false), true)
 	aa[KeyShiftM] = newKeyAction("Sort MEM", v.sortColCmd(5, false), true)
 	aa[KeyShiftO] = newKeyAction("Sort Node", v.sortColCmd(7, true), true)
-	aa[KeyShiftQ] = newKeyAction("Sort QOS", v.sortColCmd(8, true), true)
 }
 
 func (v *podView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
@@ -163,5 +195,5 @@ func fetchContainers(l resource.List, po string, includeInit bool) ([]string, er
 	if len(po) == 0 {
 		return []string{}, nil
 	}
-	return l.Resource().(resource.Container).Containers(po, includeInit)
+	return l.Resource().(resource.Containers).Containers(po, includeInit)
 }

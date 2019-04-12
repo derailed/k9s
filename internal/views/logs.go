@@ -21,12 +21,13 @@ const (
 type logsView struct {
 	*tview.Pages
 
-	parentView string
-	parent     loggable
-	containers []string
-	actions    keyActions
-	cancelFunc context.CancelFunc
-	autoScroll bool
+	parentView   string
+	parent       loggable
+	containers   []string
+	actions      keyActions
+	cancelFunc   context.CancelFunc
+	autoScroll   bool
+	showPrevious bool
 }
 
 func newLogsView(pview string, parent loggable) *logsView {
@@ -53,7 +54,10 @@ func newLogsView(pview string, parent loggable) *logsView {
 
 // Protocol...
 
-func (v *logsView) init() {
+func (v *logsView) reload(co string, parent loggable, view string, prevLogs bool) {
+	v.parent, v.parentView, v.showPrevious = parent, view, prevLogs
+	v.deleteAllPages()
+	v.addContainer(co)
 	v.load(0)
 }
 
@@ -171,7 +175,7 @@ func (v *logsView) doLoad(path, co string) error {
 		return fmt.Errorf("Resource %T is not tailable", v.parent.getList().Resource)
 	}
 	maxBuff := int64(v.parent.appView().config.K9s.LogRequestSize)
-	cancelFn, err := res.Logs(c, ns, po, co, maxBuff, false)
+	cancelFn, err := res.Logs(c, ns, po, co, maxBuff, v.showPrevious)
 	if err != nil {
 		cancelFn()
 		return err
