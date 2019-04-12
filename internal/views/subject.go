@@ -83,6 +83,9 @@ func (v *subjectView) init(c context.Context, _ string) {
 	v.app.SetFocus(v)
 }
 
+func (v *subjectView) setExtraActionsFn(f actionsFn) {
+}
+
 func (v *subjectView) setColorerFn(f colorerFn)   {}
 func (v *subjectView) setEnterFn(f enterFn)       {}
 func (v *subjectView) setDecorateFn(f decorateFn) {}

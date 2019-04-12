@@ -29,12 +29,15 @@ type (
 		keyboard(evt *tcell.EventKey) *tcell.EventKey
 	}
 
+	actionsFn func(keyActions)
+
 	resourceViewer interface {
 		igniter
 
 		setEnterFn(enterFn)
 		setColorerFn(colorerFn)
 		setDecorateFn(decorateFn)
+		setExtraActionsFn(actionsFn)
 	}
 
 	appView struct {

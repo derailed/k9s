@@ -52,6 +52,21 @@ func (mock *MockCruder) Get(_param0 string, _param1 string) (interface{}, error)
 	return ret0, ret1
 }
 
+func (mock *MockCruder) HasSelectors() bool {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockCruder().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("HasSelectors", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
+	var ret0 bool
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(bool)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockCruder) List(_param0 string) (k8s.Collection, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockCruder().")
@@ -184,6 +199,23 @@ func (c *Cruder_Get_OngoingVerification) GetAllCapturedArguments() (_param0 []st
 		}
 	}
 	return
+}
+
+func (verifier *VerifierCruder) HasSelectors() *Cruder_HasSelectors_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "HasSelectors", params, verifier.timeout)
+	return &Cruder_HasSelectors_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Cruder_HasSelectors_OngoingVerification struct {
+	mock              *MockCruder
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Cruder_HasSelectors_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *Cruder_HasSelectors_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierCruder) List(_param0 string) *Cruder_List_OngoingVerification {

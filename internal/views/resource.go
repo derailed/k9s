@@ -47,6 +47,7 @@ type (
 		selectedFn     func() string
 		decorateFn     decorateFn
 		colorerFn      colorerFn
+		actions        keyActions
 	}
 )
 
@@ -54,6 +55,7 @@ func newResourceView(title string, app *appView, list resource.List) resourceVie
 	v := resourceView{
 		app:        app,
 		title:      title,
+		actions:    make(keyActions),
 		list:       list,
 		selectedNS: list.GetNamespace(),
 		Pages:      tview.NewPages(),
@@ -101,6 +103,10 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 	if tv, ok := v.CurrentPage().Item.(*tableView); ok {
 		tv.Select(0, 0)
 	}
+}
+
+func (v *resourceView) setExtraActionsFn(f actionsFn) {
+	f(v.actions)
 }
 
 func (v *resourceView) getTitle() string {
@@ -251,7 +257,7 @@ func (v *resourceView) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	args = append(args, "-n", ns)
 	args = append(args, "--context", v.app.config.K9s.CurrentContext)
 	args = append(args, po)
-	runK(v.app, args...)
+	runK(true, v.app, args...)
 	return evt
 }
 
@@ -369,8 +375,7 @@ func (v *resourceView) refreshActions() {
 	}
 
 	var nn []interface{}
-	aa := make(keyActions)
-	if k8s.CanIAccess(v.app.conn().Config(), log.Logger, "", "list", "namespaces", "namespace.v1") {
+	if !v.list.HasSelectors() && k8s.CanIAccess(v.app.conn().Config(), log.Logger, "", "list", "namespaces", "namespace.v1") {
 		var err error
 		nn, err = k8s.NewNamespace(v.app.conn()).List(resource.AllNamespaces)
 		if err != nil {
@@ -387,35 +392,35 @@ func (v *resourceView) refreshActions() {
 		if v.list.Access(resource.NamespaceAccess) {
 			v.namespaces = make(map[int]string, config.MaxFavoritesNS)
 			for i, n := range v.app.config.FavNamespaces() {
-				aa[tcell.Key(numKeys[i])] = newKeyAction(n, v.switchNamespaceCmd, true)
+				v.actions[tcell.Key(numKeys[i])] = newKeyAction(n, v.switchNamespaceCmd, true)
 				v.namespaces[i] = n
 			}
 		}
 	}
 
-	aa[tcell.KeyEnter] = newKeyAction("Enter", v.enterCmd, false)
+	v.actions[tcell.KeyEnter] = newKeyAction("Enter", v.enterCmd, false)
 
-	aa[tcell.KeyCtrlR] = newKeyAction("Refresh", v.refreshCmd, false)
-	aa[KeyHelp] = newKeyAction("Help", v.app.noopCmd, false)
-	aa[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
+	v.actions[tcell.KeyCtrlR] = newKeyAction("Refresh", v.refreshCmd, false)
+	v.actions[KeyHelp] = newKeyAction("Help", v.app.noopCmd, false)
+	v.actions[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
 
 	if v.list.Access(resource.EditAccess) {
-		aa[KeyE] = newKeyAction("Edit", v.editCmd, true)
+		v.actions[KeyE] = newKeyAction("Edit", v.editCmd, true)
 	}
 	if v.list.Access(resource.DeleteAccess) {
-		aa[tcell.KeyCtrlD] = newKeyAction("Delete", v.deleteCmd, true)
+		v.actions[tcell.KeyCtrlD] = newKeyAction("Delete", v.deleteCmd, true)
 	}
 	if v.list.Access(resource.ViewAccess) {
-		aa[KeyY] = newKeyAction("YAML", v.viewCmd, true)
+		v.actions[KeyY] = newKeyAction("YAML", v.viewCmd, true)
 	}
 	if v.list.Access(resource.DescribeAccess) {
-		aa[KeyD] = newKeyAction("Describe", v.describeCmd, true)
+		v.actions[KeyD] = newKeyAction("Describe", v.describeCmd, true)
 	}
 
 	if v.extraActionsFn != nil {
-		v.extraActionsFn(aa)
+		v.extraActionsFn(v.actions)
 	}
 	t := v.getTV()
-	t.setActions(aa)
+	t.setActions(v.actions)
 	v.app.setHints(t.hints())
 }

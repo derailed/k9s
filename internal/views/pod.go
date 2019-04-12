@@ -166,7 +166,7 @@ func (v *podView) shellIn(path, co string) {
 	}
 	args = append(args, "--", "sh")
 	log.Debug().Msgf("Shell args %v", args)
-	runK(v.app, args...)
+	runK(true, v.app, args...)
 }
 
 func (v *podView) extraActions(aa keyActions) {

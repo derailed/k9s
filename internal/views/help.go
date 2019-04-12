@@ -96,7 +96,7 @@ func (v *helpView) init(_ context.Context, _ string) {
 
 	views := []helpItem{
 		{"?", "Help"},
-		{"a", "Aliases view"},
+		{"Ctrl-a", "Aliases view"},
 	}
 	fmt.Fprintf(v, "️️\n😱 [aqua::b]%s\n", "Help")
 	for _, h := range views {
@@ -106,7 +106,7 @@ func (v *helpView) init(_ context.Context, _ string) {
 }
 
 func (v *helpView) printHelp(key, desc string) {
-	fmt.Fprintf(v, "[pink::b]%9s [white::]%s\n", key, desc)
+	fmt.Fprintf(v, "[dodgerblue::b]%9s [white::]%s\n", key, desc)
 }
 
 func (v *helpView) hints() hints {

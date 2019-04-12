@@ -30,7 +30,6 @@ func (p *Pod) List(ns string) (Collection, error) {
 		LabelSelector: p.labelSelector,
 		FieldSelector: p.fieldSelector,
 	}
-	// FieldSelector: "spec.nodeName=gke-k9s-default-pool-0fa2fb89-lbtf",
 
 	rr, err := p.DialOrDie().CoreV1().Pods(ns).List(opts)
 	if err != nil {

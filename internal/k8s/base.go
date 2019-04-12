@@ -14,3 +14,7 @@ func (b *base) SetFieldSelector(s string) {
 func (b *base) SetLabelSelector(s string) {
 	b.labelSelector = s
 }
+
+func (b *base) HasSelectors() bool {
+	return b.labelSelector != "" || b.fieldSelector != ""
+}

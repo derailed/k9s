@@ -94,7 +94,7 @@ func (v *containerView) shellIn(path, co string) {
 	}
 	args = append(args, "--", "sh")
 	log.Debug().Msgf("Shell args %v", args)
-	runK(v.app, args...)
+	runK(true, v.app, args...)
 }
 
 func (v *containerView) extraActions(aa keyActions) {
@@ -103,7 +103,9 @@ func (v *containerView) extraActions(aa keyActions) {
 	aa[KeyS] = newKeyAction("Shell", v.shellCmd, true)
 	aa[tcell.KeyEscape] = newKeyAction("Back", v.backCmd, false)
 	aa[KeyP] = newKeyAction("Previous", v.backCmd, false)
-	aa[tcell.KeyEnter] = newKeyAction("Enter", v.logsCmd, false)
+	aa[tcell.KeyEnter] = newKeyAction("View Logs", v.logsCmd, false)
+	aa[KeyShiftC] = newKeyAction("Sort CPU", v.sortColCmd(7, false), true)
+	aa[KeyShiftM] = newKeyAction("Sort MEM", v.sortColCmd(8, false), true)
 }
 
 func (v *containerView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {

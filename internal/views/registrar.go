@@ -153,14 +153,14 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 		"ds": {
 			title:     "DaemonSets",
 			api:       "",
-			viewFn:    newResourceView,
+			viewFn:    newDaemonSetView,
 			listFn:    resource.NewDaemonSetList,
 			colorerFn: dpColorer,
 		},
 		"dp": {
 			title:     "Deployments",
 			api:       "apps",
-			viewFn:    newResourceView,
+			viewFn:    newDeployView,
 			listFn:    resource.NewDeploymentList,
 			colorerFn: dpColorer,
 		},
@@ -255,7 +255,7 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 		"rs": {
 			title:     "ReplicaSets",
 			api:       "apps",
-			viewFn:    newResourceView,
+			viewFn:    newReplicaSetView,
 			listFn:    resource.NewReplicaSetList,
 			colorerFn: rsColorer,
 		},
@@ -275,7 +275,7 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 		"sts": {
 			title:     "StatefulSets",
 			api:       "apps",
-			viewFn:    newResourceView,
+			viewFn:    newStatefulSetView,
 			listFn:    resource.NewStatefulSetList,
 			colorerFn: stsColorer,
 		},

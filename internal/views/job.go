@@ -1,9 +1,12 @@
 package views
 
 import (
+	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
+	batchv1 "k8s.io/api/batch/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type jobView struct {
@@ -30,6 +33,9 @@ func newJobView(t string, app *appView, list resource.List) resourceViewer {
 }
 
 // Protocol...
+
+func (v *jobView) setExtraActionsFn(f actionsFn) {
+}
 
 func (v *jobView) appView() *appView {
 	return v.app
@@ -99,4 +105,37 @@ func (v *jobView) showLogs(path, co, view string, parent loggable, prev bool) {
 func (v *jobView) extraActions(aa keyActions) {
 	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
 	aa[KeyShiftL] = newKeyAction("Previous Logs", v.prevLogsCmd, true)
+	aa[tcell.KeyEnter] = newKeyAction("View Pods", v.showPodsCmd, true)
+}
+
+func (v *jobView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !v.rowSelected() {
+		return evt
+	}
+
+	ns, n := namespaced(v.selectedItem)
+	j := k8s.NewJob(v.app.conn())
+	job, err := j.Get(ns, n)
+	if err != nil {
+		log.Error().Err(err).Msgf("Fetching Job %s", v.selectedItem)
+		v.app.flash(flashErr, err.Error())
+		return evt
+	}
+	jo := job.(*batchv1.Job)
+
+	sel, err := metav1.LabelSelectorAsSelector(jo.Spec.Selector)
+	if err != nil {
+		log.Error().Err(err).Msgf("Converting selector for Job %s", v.selectedItem)
+		v.app.flash(flashErr, err.Error())
+		return evt
+	}
+	showPods(v.app, "", "Job", v.selectedItem, sel.String(), "", v.backCmd)
+
+	return nil
+}
+
+func (v *jobView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
+	v.app.inject(v)
+
+	return nil
 }
