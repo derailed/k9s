@@ -75,11 +75,9 @@ func (v *containerView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	log.Debug().Msgf("Selected %s", v.selectedItem)
-
 	v.shellIn(v.path, v.selectedItem)
-	return nil
 
-	return evt
+	return nil
 }
 
 func (v *containerView) shellIn(path, co string) {
