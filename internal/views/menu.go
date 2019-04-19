@@ -13,6 +13,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+func init() {
+	initKeys()
+	initStyles()
+}
+
 const (
 	menuSepFmt   = " [dodgerblue::b]%-%ds [white::d]%s "
 	menuIndexFmt = " [fuchsia::b]<%d> [white::d]%s "

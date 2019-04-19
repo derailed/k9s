@@ -16,7 +16,7 @@ type (
 		ContextName() string
 		ClusterName() string
 		UserName() string
-		FetchNodes() ([]v1.Node, error)
+		GetNodes() ([]v1.Node, error)
 	}
 
 	// MetricsServer gather metrics information from pods and nodes.
@@ -87,7 +87,7 @@ func (c *Cluster) FetchNodesMetrics() ([]mv1beta1.NodeMetrics, error) {
 	return c.mx.FetchNodesMetrics()
 }
 
-// FetchNodes fetch all available nodes.
-func (c *Cluster) FetchNodes() ([]v1.Node, error) {
-	return c.api.FetchNodes()
+// GetNodes fetch all available nodes.
+func (c *Cluster) GetNodes() ([]v1.Node, error) {
+	return c.api.GetNodes()
 }

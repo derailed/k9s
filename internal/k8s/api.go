@@ -9,6 +9,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
@@ -57,6 +58,8 @@ type (
 		ValidNamespaces() ([]v1.Namespace, error)
 		ValidPods(node string) ([]v1.Pod, error)
 		SupportsRes(grp string, versions []string) (string, bool)
+		ServerVersion() (*version.Info, error)
+		FetchNodes() (*v1.NodeList, error)
 	}
 
 	// APIClient represents a Kubernetes api client.
@@ -78,6 +81,16 @@ func InitConnectionOrDie(config *Config, logger zerolog.Logger) *APIClient {
 	conn.useMetricServer = conn.supportsMxServer()
 
 	return &conn
+}
+
+// ServerVersion returns the current server version info.
+func (a *APIClient) ServerVersion() (*version.Info, error) {
+	return a.DialOrDie().Discovery().ServerVersion()
+}
+
+// FetchNodes returns all available nodes.
+func (a *APIClient) FetchNodes() (*v1.NodeList, error) {
+	return a.DialOrDie().CoreV1().Nodes().List(metav1.ListOptions{})
 }
 
 // ValidNamespaces returns all available namespaces.

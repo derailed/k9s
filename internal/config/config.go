@@ -52,10 +52,6 @@ func NewConfig(ks KubeSettings) *Config {
 	return &Config{K9s: NewK9s(), settings: ks}
 }
 
-func isSet(s *string) bool {
-	return s != nil && len(*s) > 0
-}
-
 // Refine the configuration based on cli args.
 func (c *Config) Refine(flags *genericclioptions.ConfigFlags) {
 	cfg, err := flags.ToRawKubeConfigLoader().RawConfig()
@@ -204,4 +200,11 @@ func (c *Config) Dump(msg string) {
 	for k, cl := range c.K9s.Clusters {
 		log.Debug().Msgf("K9s cluster: %s -- %s\n", k, cl.Namespace)
 	}
+}
+
+// ----------------------------------------------------------------------------
+// Helpers...
+
+func isSet(s *string) bool {
+	return s != nil && len(*s) > 0
 }

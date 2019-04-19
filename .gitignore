@@ -10,3 +10,7 @@ notes
 styles
 vendor
 go.mod1
+popeye1.go
+gen.sh
+cluster_info_test.go
+*.test

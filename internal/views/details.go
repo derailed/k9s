@@ -31,7 +31,7 @@ func newDetailsView(app *appView, backFn actionHandler) *detailsView {
 	{
 		v.backFn = backFn
 		v.SetScrollable(true)
-		v.SetWrap(false)
+		v.SetWrap(true)
 		v.SetDynamicColors(true)
 		v.SetRegions(true)
 		v.SetBorder(true)

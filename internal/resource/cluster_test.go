@@ -62,11 +62,11 @@ func TestClusterMetrics(t *testing.T) {
 
 func TestClusterGetNodes(t *testing.T) {
 	mm, mx := NewMockClusterMeta(), NewMockMetricsServer()
-	m.When(mm.FetchNodes()).ThenReturn([]v1.Node{*k8sNode()}, nil)
+	m.When(mm.GetNodes()).ThenReturn([]v1.Node{*k8sNode()}, nil)
 	m.When(mx.ClusterLoad([]v1.Node{}, []mv1beta1.NodeMetrics{})).ThenReturn(clusterMetric())
 
 	c := resource.NewClusterWithArgs(mm, mx)
-	nodes, err := c.FetchNodes()
+	nodes, err := c.GetNodes()
 
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(nodes))
@@ -74,7 +74,7 @@ func TestClusterGetNodes(t *testing.T) {
 
 func TestClusterFetchNodesMetrics(t *testing.T) {
 	mm, mx := NewMockClusterMeta(), NewMockMetricsServer()
-	m.When(mm.FetchNodes()).ThenReturn([]v1.Node{*k8sNode()}, nil)
+	m.When(mm.GetNodes()).ThenReturn([]v1.Node{*k8sNode()}, nil)
 	m.When(mx.FetchNodesMetrics()).ThenReturn([]mv1beta1.NodeMetrics{makeMxNode("fred", "100m", "10Mi")}, nil)
 
 	c := resource.NewClusterWithArgs(mm, mx)

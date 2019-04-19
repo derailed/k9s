@@ -92,11 +92,17 @@ func pvColorer(ns string, r *resource.RowEvent) tcell.Color {
 		return c
 	}
 
-	if strings.TrimSpace(r.Fields[4]) != "Bound" {
-		return errColor
+	status := strings.TrimSpace(r.Fields[4])
+	switch status {
+	case "Bound":
+		c = stdColor
+	case "Available":
+		c = tcell.ColorYellow
+	default:
+		c = errColor
 	}
 
-	return stdColor
+	return c
 }
 
 func pvcColorer(ns string, r *resource.RowEvent) tcell.Color {

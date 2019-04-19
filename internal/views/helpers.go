@@ -2,6 +2,7 @@ package views
 
 import (
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -21,6 +22,18 @@ func deltas(o, n string) string {
 
 	if i, ok := numerical(o); ok {
 		j, _ := numerical(n)
+		switch {
+		case i < j:
+			return plus()
+		case i > j:
+			return minus()
+		default:
+			return ""
+		}
+	}
+
+	if i, ok := percentage(o); ok {
+		j, _ := percentage(n)
 		switch {
 		case i < j:
 			return plus()
@@ -61,6 +74,17 @@ func deltas(o, n string) string {
 	default:
 		return ""
 	}
+}
+
+var percent = regexp.MustCompile(`\A(\d+)\%\z`)
+
+func percentage(s string) (int, bool) {
+	if res := percent.FindStringSubmatch(s); len(res) == 2 {
+		n, _ := strconv.Atoi(res[1])
+		return n, true
+	}
+
+	return 0, false
 }
 
 func numerical(s string) (int, bool) {

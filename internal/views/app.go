@@ -63,11 +63,6 @@ type (
 	}
 )
 
-func init() {
-	initKeys()
-	initStyles()
-}
-
 // NewApp returns a K9s app instance.
 func NewApp(cfg *config.Config) *appView {
 	v := appView{Application: tview.NewApplication(), config: cfg}
@@ -81,7 +76,7 @@ func NewApp(cfg *config.Config) *appView {
 		v.command = newCommand(&v)
 		v.flashView = newFlashView(v.Application, "Initializing...")
 		v.crumbsView = newCrumbsView(v.Application)
-		v.clusterInfoView = newInfoView(&v)
+		v.clusterInfoView = newClusterInfoView(&v, k8s.NewMetricsServer(cfg.GetConnection()))
 		v.focusChanged = v.changedFocus
 		v.SetInputCapture(v.keyboard)
 	}

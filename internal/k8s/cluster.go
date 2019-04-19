@@ -3,7 +3,6 @@ package k8s
 import (
 	"github.com/rs/zerolog"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Cluster represents a Kubernetes cluster.
@@ -20,7 +19,7 @@ func NewCluster(c Connection, l *zerolog.Logger) *Cluster {
 
 // Version returns the current cluster git version.
 func (c *Cluster) Version() (string, error) {
-	rev, err := c.DialOrDie().Discovery().ServerVersion()
+	rev, err := c.ServerVersion()
 	if err != nil {
 		c.logger.Warn().Msgf("%s", err)
 		return "", err
@@ -58,9 +57,9 @@ func (c *Cluster) UserName() string {
 	return usr
 }
 
-// FetchNodes get all available nodes in the cluster.
-func (c *Cluster) FetchNodes() ([]v1.Node, error) {
-	list, err := c.DialOrDie().CoreV1().Nodes().List(metav1.ListOptions{})
+// GetNodes get all available nodes in the cluster.
+func (c *Cluster) GetNodes() ([]v1.Node, error) {
+	list, err := c.FetchNodes()
 	if err != nil {
 		return nil, err
 	}
