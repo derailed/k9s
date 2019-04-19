@@ -149,7 +149,12 @@ func (v *resourceView) setDecorateFn(f decorateFn) {
 // ----------------------------------------------------------------------------
 // Actions...
 
-func (v *resourceView) enterCmd(*tcell.EventKey) *tcell.EventKey {
+func (v *resourceView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
+	// If in command mode run filter otherwise enter function.
+	if v.getTV().filterCmd(evt) == nil {
+		return nil
+	}
+
 	if v.enterFn != nil {
 		v.enterFn(v.app, v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
 	} else {

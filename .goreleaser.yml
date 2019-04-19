@@ -80,4 +80,11 @@ snapcraft:
   confinement: strict
   apps:
     k9s:
-      plugs: ["home", "network"]
+      plugs: ["home", "network", "personal-files"]
+  plugs:
+    personal-files:
+      read:
+      - $HOME/.k9s
+      - $HOME/.kube
+      write:
+      - $HOME/.k9s

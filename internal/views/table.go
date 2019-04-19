@@ -136,10 +136,13 @@ func (v *tableView) pageDownCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *tableView) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
-	v.cmdBuff.setActive(false)
-	v.refresh()
+	if v.cmdBuff.isActive() {
+		v.cmdBuff.setActive(false)
+		v.refresh()
+		return nil
+	}
 
-	return nil
+	return evt
 }
 
 func (v *tableView) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {

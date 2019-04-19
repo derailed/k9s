@@ -46,6 +46,11 @@ func newPodView(t string, app *appView, list resource.List) resourceViewer {
 }
 
 func (v *podView) listContainers(app *appView, _, res, sel string) {
+	if !v.rowSelected() {
+		return
+	}
+
+	log.Debug().Msgf("Selected %s", sel)
 	ns, n := namespaced(sel)
 	po, err := app.conn().DialOrDie().CoreV1().Pods(ns).Get(n, metav1.GetOptions{})
 	if err != nil {
