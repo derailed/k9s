@@ -76,15 +76,16 @@ snapcraft:
     bit: Arm
     bitv6: Arm6
     bitv7: Arm7
-  grade: stable
-  confinement: strict
+  grade: devel
+  confinement: devmode
   apps:
     k9s:
-      plugs: ["home", "network", "personal-files"]
-  plugs:
-    personal-files:
-      read:
-      - $HOME/.k9s
-      - $HOME/.kube
-      write:
-      - $HOME/.k9s
+      plugs: ["home", "network"]
+      # plugs: ["home", "network", "personal-files"]
+  # plugs:
+  #   personal-files:
+  #     read:
+  #     - $HOME/.k9s
+  #     - $HOME/.kube
+  #     write:
+  #     - $HOME/.k9s
