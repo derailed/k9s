@@ -266,14 +266,28 @@ func (r *Pod) phase(po *v1.Pod) string {
 	}
 
 	var init bool
-	init, status = r.initPhase(po, status)
+	init, status = r.initContainerPhase(po.Status, len(po.Spec.InitContainers), status)
 	if init {
 		return status
 	}
 
 	var running bool
-	for i := len(po.Status.ContainerStatuses) - 1; i >= 0; i-- {
-		cs := po.Status.ContainerStatuses[i]
+	running, status = r.containerPhase(po.Status, status)
+	if status == "Completed" && running {
+		status = "Running"
+	}
+
+	if po.DeletionTimestamp == nil {
+		return status
+	}
+
+	return "Terminated"
+}
+
+func (*Pod) containerPhase(st v1.PodStatus, status string) (bool, string) {
+	var running bool
+	for i := len(st.ContainerStatuses) - 1; i >= 0; i-- {
+		cs := st.ContainerStatuses[i]
 		switch {
 		case cs.State.Waiting != nil && cs.State.Waiting.Reason != "":
 			status = cs.State.Waiting.Reason
@@ -290,20 +304,12 @@ func (r *Pod) phase(po *v1.Pod) string {
 		}
 	}
 
-	if status == "Completed" && running {
-		status = "Running"
-	}
-
-	if po.DeletionTimestamp == nil {
-		return status
-	}
-
-	return "Terminated"
+	return running, status
 }
 
-func (*Pod) initPhase(po *v1.Pod, status string) (bool, string) {
+func (*Pod) initContainerPhase(st v1.PodStatus, initCount int, status string) (bool, string) {
 	var init bool
-	for i, cs := range po.Status.InitContainerStatuses {
+	for i, cs := range st.InitContainerStatuses {
 		switch {
 		case cs.State.Terminated != nil:
 			if cs.State.Terminated.ExitCode == 0 {
@@ -321,7 +327,7 @@ func (*Pod) initPhase(po *v1.Pod, status string) (bool, string) {
 		case cs.State.Waiting != nil && cs.State.Waiting.Reason != "" && cs.State.Waiting.Reason != "PodInitializing":
 			status = "Init:" + cs.State.Waiting.Reason
 		default:
-			status = fmt.Sprintf("Init:%d/%d", i, len(po.Spec.InitContainers))
+			status = fmt.Sprintf("Init:%d/%d", i, initCount)
 		}
 		init = true
 		break
