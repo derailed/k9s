@@ -5,6 +5,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
@@ -24,6 +25,7 @@ type detailsView struct {
 	cmdBuff       *cmdBuff
 	backFn        actionHandler
 	numSelections int
+	mx            sync.Mutex
 }
 
 func newDetailsView(app *appView, backFn actionHandler) *detailsView {
@@ -63,6 +65,9 @@ func (v *detailsView) setCategory(n string) {
 }
 
 func (v *detailsView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
+	v.mx.Lock()
+	defer v.mx.Unlock()
+
 	key := evt.Key()
 	if key == tcell.KeyRune {
 		if v.cmdBuff.isActive() {

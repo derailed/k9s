@@ -7,7 +7,6 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
-	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
@@ -85,17 +84,14 @@ func (v *replicaSetView) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	confirm := v.GetPrimitive("confirm").(*tview.Modal)
-	confirm.SetText(fmt.Sprintf("Rollback %s %s?", v.list.GetName(), v.selectedItem))
-	confirm.SetDoneFunc(func(_ int, button string) {
+	v.showModal(fmt.Sprintf("Rollback %s %s?", v.list.GetName(), v.selectedItem), func(_ int, button string) {
 		if button == "OK" {
 			v.app.flash(flashInfo, fmt.Sprintf("Rolling back %s %s", v.list.GetName(), v.selectedItem))
 			rollback(v.app, v.selectedItem)
 			v.refresh()
 		}
-		v.switchPage(v.list.GetName())
+		v.dismissModal()
 	})
-	v.SwitchToPage("confirm")
 
 	return nil
 }

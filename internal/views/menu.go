@@ -6,6 +6,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
@@ -77,7 +78,7 @@ func newKeyAction(d string, a actionHandler, display bool) keyAction {
 }
 
 func newMenuView() *menuView {
-	v := menuView{tview.NewTable()}
+	v := menuView{Table: tview.NewTable()}
 	return &v
 }
 
@@ -106,9 +107,14 @@ func (a keyActions) toHints() hints {
 // -----------------------------------------------------------------------------
 type menuView struct {
 	*tview.Table
+
+	mx sync.Mutex
 }
 
 func (v *menuView) populateMenu(hh hints) {
+	v.mx.Lock()
+	defer v.mx.Unlock()
+
 	v.Clear()
 	sort.Sort(hh)
 

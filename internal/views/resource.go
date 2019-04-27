@@ -70,11 +70,6 @@ func newResourceView(title string, app *appView, list resource.List) resourceVie
 	details := newDetailsView(app, v.backCmd)
 	v.AddPage("details", details, true, false)
 
-	confirm := tview.NewModal().
-		AddButtons([]string{"Cancel", "OK"}).
-		SetTextColor(tcell.ColorFuchsia)
-	v.AddPage("confirm", confirm, false, false)
-
 	return &v
 }
 
@@ -180,9 +175,7 @@ func (v *resourceView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	sel := v.getSelectedItem()
-	confirm := v.GetPrimitive("confirm").(*tview.Modal)
-	confirm.SetText(fmt.Sprintf("Delete %s %s?", v.list.GetName(), sel))
-	confirm.SetDoneFunc(func(_ int, button string) {
+	v.showModal(fmt.Sprintf("Delete %s %s?", v.list.GetName(), sel), func(_ int, button string) {
 		if button == "OK" {
 			v.getTV().setDeleted()
 			v.app.flash(flashInfo, fmt.Sprintf("Deleting %s %s", v.list.GetName(), sel))
@@ -192,11 +185,25 @@ func (v *resourceView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 				v.refresh()
 			}
 		}
-		v.switchPage(v.list.GetName())
+		v.dismissModal()
 	})
-	v.SwitchToPage("confirm")
 
 	return nil
+}
+
+func (v *resourceView) showModal(msg string, done func(int, string)) {
+	confirm := tview.NewModal().
+		AddButtons([]string{"Cancel", "OK"}).
+		SetTextColor(tcell.ColorFuchsia).
+		SetText(msg).
+		SetDoneFunc(done)
+	v.AddPage("confirm", confirm, false, false)
+	v.ShowPage("confirm")
+}
+
+func (v *resourceView) dismissModal() {
+	v.RemovePage("confirm")
+	v.switchPage(v.list.GetName())
 }
 
 func (v *resourceView) defaultEnter(app *appView, ns, resource, selection string) {
@@ -270,6 +277,7 @@ func (v *resourceView) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	i, _ := strconv.Atoi(string(evt.Rune()))
 	ns := v.namespaces[i]
 	v.doSwitchNamespace(ns)
+
 	return nil
 }
 
@@ -284,6 +292,7 @@ func (v *resourceView) doSwitchNamespace(ns string) {
 		v.list.SetNamespace(v.selectedNS)
 	}
 	v.update.Unlock()
+
 	v.refresh()
 	v.selectItem(0, 0)
 	v.getTV().resetTitle()

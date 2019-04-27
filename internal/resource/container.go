@@ -179,6 +179,7 @@ func (r *Container) Fields(ns string) Row {
 		}
 		cs = &c
 	}
+
 	if cs == nil {
 		for _, c := range r.pod.Status.InitContainerStatuses {
 			if c.Name != i.Name {
@@ -188,12 +189,17 @@ func (r *Container) Fields(ns string) Row {
 		}
 	}
 
+	ready, state, restarts := "false", MissingValue, "0"
+	if cs != nil {
+		ready, state, restarts = boolToStr(cs.Ready), toState(cs.State), strconv.Itoa(int(cs.RestartCount))
+	}
+
 	return append(ff,
 		i.Name,
 		i.Image,
-		boolToStr(cs.Ready),
-		toState(cs.State),
-		strconv.Itoa(int(cs.RestartCount)),
+		ready,
+		state,
+		restarts,
 		probe(i.LivenessProbe),
 		probe(i.ReadinessProbe),
 		cpu,

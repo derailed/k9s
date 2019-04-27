@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/kubernetes/pkg/util/node"
 )
 
 const (
@@ -212,7 +213,7 @@ func (r *Pod) Fields(ns string) Row {
 	return append(ff,
 		i.ObjectMeta.Name,
 		strconv.Itoa(cr)+"/"+strconv.Itoa(len(ss)),
-		r.phase(i.Status),
+		r.phase(i),
 		strconv.Itoa(rc),
 		ToMillicore(r.metrics.CurrentCPU),
 		ToMi(r.metrics.CurrentMEM),
@@ -251,21 +252,76 @@ func (r *Pod) statuses(ss []v1.ContainerStatus) (cr, ct, rc int) {
 	return
 }
 
-func (*Pod) phase(s v1.PodStatus) string {
-	status := "Pending"
-	for _, cs := range s.ContainerStatuses {
+func isSet(s *string) bool {
+	return s != nil && *s != ""
+}
+
+func (*Pod) phase(po *v1.Pod) string {
+	status := string(po.Status.Phase)
+	if po.Status.Reason != "" {
+		if po.DeletionTimestamp != nil && po.Status.Reason == node.NodeUnreachablePodReason {
+			return "Unknown"
+		}
+		status = po.Status.Reason
+	}
+
+	var init bool
+	for i, cs := range po.Status.InitContainerStatuses {
 		switch {
-		case cs.State.Running != nil:
-			status = "Running"
-		case cs.State.Waiting != nil:
-			status = cs.State.Waiting.Reason
 		case cs.State.Terminated != nil:
-			status = "Terminating"
-			if len(cs.State.Terminated.Reason) != 0 {
-				status = cs.State.Terminated.Reason
+			if cs.State.Terminated.ExitCode == 0 {
+				continue
 			}
+			if cs.State.Terminated.Reason != "" {
+				status = "Init:" + cs.State.Terminated.Reason
+				init = true
+				break
+			}
+
+			if cs.State.Terminated.Signal != 0 {
+				status = fmt.Sprintf("Init:Signal:%d", cs.State.Terminated.Signal)
+			} else {
+				status = fmt.Sprintf("Init:ExitCode:%d", cs.State.Terminated.ExitCode)
+			}
+		case cs.State.Waiting != nil && cs.State.Waiting.Reason != "" && cs.State.Waiting.Reason != "PodInitializing":
+			status = "Init:" + cs.State.Waiting.Reason
+		default:
+			status = fmt.Sprintf("Init:%d/%d", i, len(po.Spec.InitContainers))
+		}
+		init = true
+		break
+	}
+
+	if init {
+		return status
+	}
+
+	var running bool
+	for i := len(po.Status.ContainerStatuses) - 1; i >= 0; i-- {
+		cs := po.Status.ContainerStatuses[i]
+		switch {
+		case cs.State.Waiting != nil && cs.State.Waiting.Reason != "":
+			status = cs.State.Waiting.Reason
+		case cs.State.Terminated != nil && cs.State.Terminated.Reason != "":
+			status = cs.State.Terminated.Reason
+		case cs.State.Terminated != nil:
+			if cs.State.Terminated.Signal != 0 {
+				status = fmt.Sprintf("Signal:%d", cs.State.Terminated.Signal)
+			} else {
+				status = fmt.Sprintf("ExitCode:%d", cs.State.Terminated.ExitCode)
+			}
+		case cs.Ready && cs.State.Running != nil:
+			running = true
 		}
 	}
 
-	return status
+	if status == "Completed" && running {
+		status = "Running"
+	}
+
+	if po.DeletionTimestamp == nil {
+		return status
+	}
+
+	return "Terminated"
 }

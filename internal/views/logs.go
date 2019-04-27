@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/derailed/k9s/internal/resource"
@@ -28,6 +29,7 @@ type logsView struct {
 	cancelFunc   context.CancelFunc
 	autoScroll   bool
 	showPrevious bool
+	mx           sync.Mutex
 }
 
 func newLogsView(pview string, parent loggable) *logsView {
@@ -148,6 +150,9 @@ func (v *logsView) load(i int) {
 }
 
 func (v *logsView) doLoad(path, co string) error {
+	v.mx.Lock()
+	defer v.mx.Unlock()
+
 	v.stop()
 
 	c := make(chan string)

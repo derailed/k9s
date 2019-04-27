@@ -3,6 +3,7 @@ package views
 import (
 	"fmt"
 	"regexp"
+	"runtime"
 	"sort"
 	"strings"
 	"sync"
@@ -111,6 +112,7 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 	if a, ok := v.actions[key]; ok {
 		log.Debug().Msgf(">> TableView handled %s", tcell.KeyNames[key])
+		log.Debug().Msgf("Go Routine %d", runtime.NumGoroutine())
 		return a.action(evt)
 	}
 

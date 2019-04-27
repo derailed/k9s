@@ -135,7 +135,11 @@ func (a *APIClient) IsNamespaced(res string) bool {
 
 // SupportsResource checks for resource supported version against the server.
 func (a *APIClient) SupportsResource(group string) bool {
-	list, _ := a.DialOrDie().Discovery().ServerPreferredResources()
+	list, err := a.DialOrDie().Discovery().ServerPreferredResources()
+	if err != nil {
+		log.Debug().Err(err).Msg("Unable to dial api server")
+		return false
+	}
 	for _, l := range list {
 		log.Debug().Msgf(">>> Group %s", l.GroupVersion)
 		if l.GroupVersion == group {

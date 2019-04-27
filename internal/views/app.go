@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"time"
+	"sync"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
@@ -60,6 +61,7 @@ type (
 		cmdBuff         *cmdBuff
 		cmdView         *cmdView
 		actions         keyActions
+		mx sync.Mutex
 	}
 )
 
@@ -143,6 +145,9 @@ func (a *appView) Run() {
 }
 
 func (a *appView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
 	key := evt.Key()
 	if key == tcell.KeyRune {
 		if a.cmdBuff.isActive() {

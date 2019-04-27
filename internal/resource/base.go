@@ -115,8 +115,6 @@ func (b *Base) Describe(kind, pa string, flags *genericclioptions.ConfigFlags) (
 		return "", err
 	}
 
-	log.Debug().Msgf("Describer %#v", d)
-
 	return d.Describe(ns, n, describe.DescriberSettings{ShowEvents: true})
 }
 

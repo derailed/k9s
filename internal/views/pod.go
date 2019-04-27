@@ -25,7 +25,7 @@ type loggable interface {
 }
 
 func newPodView(t string, app *appView, list resource.List) resourceViewer {
-	v := podView{newResourceView(t, app, list).(*resourceView)}
+	v := podView{resourceView: newResourceView(t, app, list).(*resourceView)}
 	{
 		v.extraActionsFn = v.extraActions
 		v.enterFn = v.listContainers
