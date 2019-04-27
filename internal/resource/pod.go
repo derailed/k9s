@@ -256,7 +256,7 @@ func isSet(s *string) bool {
 	return s != nil && *s != ""
 }
 
-func (*Pod) phase(po *v1.Pod) string {
+func (p *Pod) phase(po *v1.Pod) string {
 	status := string(po.Status.Phase)
 	if po.Status.Reason != "" {
 		if po.DeletionTimestamp != nil && po.Status.Reason == node.NodeUnreachablePodReason {
@@ -266,32 +266,7 @@ func (*Pod) phase(po *v1.Pod) string {
 	}
 
 	var init bool
-	for i, cs := range po.Status.InitContainerStatuses {
-		switch {
-		case cs.State.Terminated != nil:
-			if cs.State.Terminated.ExitCode == 0 {
-				continue
-			}
-			if cs.State.Terminated.Reason != "" {
-				status = "Init:" + cs.State.Terminated.Reason
-				init = true
-				break
-			}
-
-			if cs.State.Terminated.Signal != 0 {
-				status = fmt.Sprintf("Init:Signal:%d", cs.State.Terminated.Signal)
-			} else {
-				status = fmt.Sprintf("Init:ExitCode:%d", cs.State.Terminated.ExitCode)
-			}
-		case cs.State.Waiting != nil && cs.State.Waiting.Reason != "" && cs.State.Waiting.Reason != "PodInitializing":
-			status = "Init:" + cs.State.Waiting.Reason
-		default:
-			status = fmt.Sprintf("Init:%d/%d", i, len(po.Spec.InitContainers))
-		}
-		init = true
-		break
-	}
-
+	init, status = p.initPhase(po, status)
 	if init {
 		return status
 	}
@@ -324,4 +299,33 @@ func (*Pod) phase(po *v1.Pod) string {
 	}
 
 	return "Terminated"
+}
+
+func (*Pod) initPhase(po *v1.Pod, status string) (bool, string) {
+	var init bool
+	for i, cs := range po.Status.InitContainerStatuses {
+		switch {
+		case cs.State.Terminated != nil:
+			if cs.State.Terminated.ExitCode == 0 {
+				continue
+			}
+			if cs.State.Terminated.Reason != "" {
+				status = "Init:" + cs.State.Terminated.Reason
+				break
+			}
+			if cs.State.Terminated.Signal != 0 {
+				status = fmt.Sprintf("Init:Signal:%d", cs.State.Terminated.Signal)
+			} else {
+				status = fmt.Sprintf("Init:ExitCode:%d", cs.State.Terminated.ExitCode)
+			}
+		case cs.State.Waiting != nil && cs.State.Waiting.Reason != "" && cs.State.Waiting.Reason != "PodInitializing":
+			status = "Init:" + cs.State.Waiting.Reason
+		default:
+			status = fmt.Sprintf("Init:%d/%d", i, len(po.Spec.InitContainers))
+		}
+		init = true
+		break
+	}
+
+	return init, status
 }

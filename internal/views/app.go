@@ -3,8 +3,8 @@ package views
 import (
 	"context"
 	"fmt"
-	"time"
 	"sync"
+	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
@@ -61,7 +61,7 @@ type (
 		cmdBuff         *cmdBuff
 		cmdView         *cmdView
 		actions         keyActions
-		mx sync.Mutex
+		mx              sync.Mutex
 	}
 )
 

@@ -16,6 +16,7 @@ type clusterInfoView struct {
 	cluster *resource.Cluster
 }
 
+// ClusterInfo tracks Kubernetes cluster and K9s information.
 type ClusterInfo interface {
 	ContextName() string
 	ClusterName() string
