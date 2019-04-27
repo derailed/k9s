@@ -256,7 +256,7 @@ func isSet(s *string) bool {
 	return s != nil && *s != ""
 }
 
-func (p *Pod) phase(po *v1.Pod) string {
+func (r *Pod) phase(po *v1.Pod) string {
 	status := string(po.Status.Phase)
 	if po.Status.Reason != "" {
 		if po.DeletionTimestamp != nil && po.Status.Reason == node.NodeUnreachablePodReason {
@@ -266,7 +266,7 @@ func (p *Pod) phase(po *v1.Pod) string {
 	}
 
 	var init bool
-	init, status = p.initPhase(po, status)
+	init, status = r.initPhase(po, status)
 	if init {
 		return status
 	}
