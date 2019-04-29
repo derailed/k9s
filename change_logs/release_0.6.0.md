@@ -22,7 +22,7 @@ You can now skin K9s based on your own sense of style. Skinning, is currently li
 
 ### Possible instability
 
-Just spent my birthday weekend tracking down a weird synchronization issue ;(. I might have introduced some instability in the process. So please thread lightly and
+Just spent my birthday weekend tracking down a weird synchronization issue ;( I might have introduced some instability in the process. So please thread lightly and
 please report any weirdness. Thank you!!
 
 ---
