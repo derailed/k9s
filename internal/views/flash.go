@@ -30,42 +30,44 @@ type (
 		*tview.TextView
 
 		cancel context.CancelFunc
-		app    *tview.Application
+		app    *appView
 	}
 )
 
-func newFlashView(app *tview.Application, m string) *flashView {
+func newFlashView(app *appView, m string) *flashView {
 	f := flashView{app: app, TextView: tview.NewTextView()}
-	{
-		f.SetTextColor(tcell.ColorAqua)
-		f.SetTextAlign(tview.AlignLeft)
-		f.SetBorderPadding(0, 0, 1, 1)
-		f.SetText("")
-	}
+	f.SetTextColor(tcell.ColorAqua)
+	f.SetTextAlign(tview.AlignLeft)
+	f.SetBorderPadding(0, 0, 1, 1)
+	f.SetText("")
+
 	return &f
 }
 
-func (f *flashView) setMessage(level flashLevel, msg ...string) {
-	if f.cancel != nil {
-		f.cancel()
+func (v *flashView) setMessage(level flashLevel, msg ...string) {
+	if v.cancel != nil {
+		v.cancel()
 	}
+
+	_, _, width, _ := v.GetRect()
+	if width <= 15 {
+		width = 100
+	}
+	m := strings.Join(msg, " ")
+	v.SetTextColor(flashColor(level))
+	v.SetText(resource.Truncate(flashEmoji(level)+" "+m, width-3))
+
 	var ctx context.Context
 	{
-		ctx, f.cancel = context.WithTimeout(context.TODO(), flashDelay*time.Second)
+		ctx, v.cancel = context.WithTimeout(context.TODO(), flashDelay*time.Second)
 		go func(ctx context.Context) {
-			_, _, width, _ := f.GetRect()
-			if width <= 15 {
-				width = 100
-			}
-			m := strings.Join(msg, " ")
-			f.SetTextColor(flashColor(level))
-			f.SetText(resource.Truncate(flashEmoji(level)+" "+m, width-3))
-			f.app.Draw()
 			for {
 				select {
 				case <-ctx.Done():
-					f.Clear()
-					f.app.Draw()
+					v.app.QueueUpdateDraw(func() {
+						v.Clear()
+						// v.app.Draw()
+					})
 					return
 				}
 			}

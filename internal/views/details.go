@@ -5,14 +5,14 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"sync"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 )
 
-const detailsTitleFmt = " [aqua::b]%s([fuchsia::b]%s[aqua::-])[aqua::-] "
+const detailsTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
 
 // detailsView displays text output.
 type detailsView struct {
@@ -25,7 +25,6 @@ type detailsView struct {
 	cmdBuff       *cmdBuff
 	backFn        actionHandler
 	numSelections int
-	mx            sync.Mutex
 }
 
 func newDetailsView(app *appView, backFn actionHandler) *detailsView {
@@ -37,6 +36,7 @@ func newDetailsView(app *appView, backFn actionHandler) *detailsView {
 		v.SetDynamicColors(true)
 		v.SetRegions(true)
 		v.SetBorder(true)
+		v.SetBorderFocusColor(config.AsColor(v.app.styles.Style.Border.FocusColor))
 		v.SetHighlightColor(tcell.ColorOrange)
 		v.SetTitleColor(tcell.ColorAqua)
 		v.SetInputCapture(v.keyboard)
@@ -65,9 +65,6 @@ func (v *detailsView) setCategory(n string) {
 }
 
 func (v *detailsView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	v.mx.Lock()
-	defer v.mx.Unlock()
-
 	key := evt.Key()
 	if key == tcell.KeyRune {
 		if v.cmdBuff.isActive() {
@@ -198,9 +195,16 @@ func (v *detailsView) refreshTitle() {
 
 func (v *detailsView) setTitle(t string) {
 	v.title = t
-	title := fmt.Sprintf(detailsTitleFmt, v.category, t)
+
+	fmat := strings.Replace(detailsTitleFmt, "[fg", "["+v.app.styles.Style.Title.FgColor, -1)
+	fmat = strings.Replace(fmat, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
+	fmat = strings.Replace(fmat, "[hilite", "["+v.app.styles.Style.Title.CounterColor, 1)
+	title := fmt.Sprintf(fmat, v.category, t)
 	if !v.cmdBuff.empty() {
-		title += fmt.Sprintf(searchFmt, v.cmdBuff.String())
+		fmat := strings.Replace(searchFmt, "[fg", "["+v.app.styles.Style.Title.FgColor, -1)
+		fmat = strings.Replace(fmat, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
+		fmat = strings.Replace(fmat, "[filter", "["+v.app.styles.Style.Title.FilterColor, 1)
+		title += fmt.Sprintf(fmat, v.cmdBuff.String())
 	}
 	v.SetTitle(title)
 }

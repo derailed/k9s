@@ -8,14 +8,14 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-const (
-	modColor       = tcell.ColorGreenYellow
-	addColor       = tcell.ColorLightSkyBlue
-	errColor       = tcell.ColorOrangeRed
-	stdColor       = tcell.ColorWhite
-	highlightColor = tcell.ColorAqua
-	killColor      = tcell.ColorMediumPurple
-	completedColor = tcell.ColorDodgerBlue
+var (
+	modColor       tcell.Color
+	addColor       tcell.Color
+	errColor       tcell.Color
+	stdColor       tcell.Color
+	highlightColor tcell.Color
+	killColor      tcell.Color
+	completedColor tcell.Color
 )
 
 func defaultColorer(ns string, r *resource.RowEvent) tcell.Color {

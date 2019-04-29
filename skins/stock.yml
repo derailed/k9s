@@ -1,0 +1,30 @@
+k9s:
+  fgColor: dodgerblue
+  bgColor: black
+  logoColor: orange
+  info:
+    fgColor: white
+    sectionColor: dodgerblue
+  border:
+    fgColor: dodgerblue
+    focusColor: aqua
+  menu:
+    fgColor: white
+    keyColor: dodgerblue
+    numKeyColor: fuchsia
+  crumb:
+    fgColor: black
+    bgColor: steelblue
+    activeColor: orange
+  table:
+    fgColor: blue
+    bgColor: black
+    cursorColor: aqua
+    header:
+      fgColor: aqua
+      bgColor: black
+      sorterColor: orange
+  yaml:
+    keyColor: steelblue
+    colonColor: white
+    valueColor: papayawhip

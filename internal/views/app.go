@@ -3,18 +3,22 @@ package views
 import (
 	"context"
 	"fmt"
-	"sync"
+	"runtime"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/tview"
+	"github.com/fsnotify/fsnotify"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-const splashTime = 1
+const (
+	splashTime = 1
+	devMode    = "dev"
+)
 
 type (
 	focusHandler func(tview.Primitive)
@@ -45,6 +49,7 @@ type (
 		*tview.Application
 
 		config          *config.Config
+		styles          *config.Styles
 		version         string
 		flags           *genericclioptions.ConfigFlags
 		pages           *tview.Pages
@@ -61,7 +66,6 @@ type (
 		cmdBuff         *cmdBuff
 		cmdView         *cmdView
 		actions         keyActions
-		mx              sync.Mutex
 	}
 )
 
@@ -69,15 +73,16 @@ type (
 func NewApp(cfg *config.Config) *appView {
 	v := appView{Application: tview.NewApplication(), config: cfg}
 	{
+		v.refreshStyles()
 		v.pages = tview.NewPages()
 		v.actions = make(keyActions)
-		v.menuView = newMenuView()
+		v.menuView = newMenuView(&v)
 		v.content = tview.NewPages()
 		v.cmdBuff = newCmdBuff(':')
-		v.cmdView = newCmdView('🐶')
+		v.cmdView = newCmdView(&v, '🐶')
 		v.command = newCommand(&v)
-		v.flashView = newFlashView(v.Application, "Initializing...")
-		v.crumbsView = newCrumbsView(v.Application)
+		v.flashView = newFlashView(&v, "Initializing...")
+		v.crumbsView = newCrumbsView(&v)
 		v.clusterInfoView = newClusterInfoView(&v, k8s.NewMetricsServer(cfg.GetConnection()))
 		v.focusChanged = v.changedFocus
 		v.SetInputCapture(v.keyboard)
@@ -108,21 +113,21 @@ func (a *appView) Init(v string, rate int, flags *genericclioptions.ConfigFlags)
 		header.SetDirection(tview.FlexColumn)
 		header.AddItem(a.clusterInfoView, 35, 1, false)
 		header.AddItem(a.menuView, 0, 1, false)
-		header.AddItem(logoView(), 26, 1, false)
+		header.AddItem(a.logoView(), 26, 1, false)
 	}
 
 	main := tview.NewFlex()
 	{
 		main.SetDirection(tview.FlexRow)
 		main.AddItem(header, 7, 1, false)
-		main.AddItem(a.cmdView, 1, 1, false)
+		main.AddItem(a.cmdView, 3, 1, false)
 		main.AddItem(a.content, 0, 10, true)
 		main.AddItem(a.crumbsView, 2, 1, false)
 		main.AddItem(a.flashView, 1, 1, false)
 	}
 
 	a.pages.AddPage("main", main, true, false)
-	a.pages.AddPage("splash", newSplash(a.version), true, true)
+	a.pages.AddPage("splash", newSplash(a), true, true)
 	a.SetRoot(a.pages, true)
 }
 
@@ -130,12 +135,52 @@ func (a *appView) conn() k8s.Connection {
 	return a.config.GetConnection()
 }
 
+func (a *appView) stylesUpdater() (*fsnotify.Watcher, error) {
+	w, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Error().Err(err).Msg("File notifier failed")
+		return w, err
+	}
+
+	go func() {
+		for {
+			select {
+			case evt := <-w.Events:
+				log.Debug().Msgf("Evt %#v", evt)
+				a.QueueUpdateDraw(func() {
+					a.refreshStyles()
+				})
+			case err := <-w.Errors:
+				log.Error().Err(err).Msg("Watcher failed")
+			}
+		}
+	}()
+
+	if err := w.Add(config.K9sStylesFile); err != nil {
+		log.Error().Err(err).Msg("Styles file watch failed")
+		return w, err
+	}
+
+	return w, nil
+}
+
 // Run starts the application loop
 func (a *appView) Run() {
+	// Only enable updater while in dev mode.
+	if a.version == devMode {
+		w, err := a.stylesUpdater()
+		defer func() {
+			if err != nil {
+				w.Close()
+			}
+		}()
+	}
+
 	go func() {
 		<-time.After(splashTime * time.Second)
-		a.showPage("main")
-		a.Draw()
+		a.QueueUpdateDraw(func() {
+			a.showPage("main")
+		})
 	}()
 
 	a.command.defaultCmd()
@@ -145,9 +190,6 @@ func (a *appView) Run() {
 }
 
 func (a *appView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	a.mx.Lock()
-	defer a.mx.Unlock()
-
 	key := evt.Key()
 	if key == tcell.KeyRune {
 		if a.cmdBuff.isActive() {
@@ -156,10 +198,12 @@ func (a *appView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		}
 		key = tcell.Key(evt.Rune())
 	}
+
 	if a, ok := a.actions[key]; ok {
-		log.Debug().Msgf(">> AppView handled key: %s", tcell.KeyNames[key])
+		log.Debug().Msgf(">> AppView handled key: %s -- %d", tcell.KeyNames[key], runtime.NumGoroutine())
 		return a.action(evt)
 	}
+
 	return evt
 }
 
@@ -216,8 +260,8 @@ func (a *appView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.cmdView.inCmdMode() {
 		return evt
 	}
-	a.flash(flashInfo, "Entering command mode...")
-	log.Debug().Msg("Entering app command mode...")
+	a.flash(flashInfo, "Command mode activated.")
+	log.Debug().Msg("Entering command mode...")
 	a.cmdBuff.setActive(true)
 	a.cmdBuff.clear()
 	return nil
@@ -290,10 +334,6 @@ func (a *appView) cmdMode() bool {
 	return a.cmdView.inCmdMode()
 }
 
-func (a *appView) refresh() {
-	a.clusterInfoView.refresh()
-}
-
 func (a *appView) flash(level flashLevel, m ...string) {
 	a.flashView.setMessage(level, m...)
 }
@@ -302,14 +342,14 @@ func (a *appView) setHints(h hints) {
 	a.menuView.populateMenu(h)
 }
 
-func logoView() tview.Primitive {
+func (a *appView) logoView() tview.Primitive {
 	v := tview.NewTextView()
 	{
 		v.SetWordWrap(false)
 		v.SetWrap(false)
 		v.SetDynamicColors(true)
 		for i, s := range LogoSmall {
-			fmt.Fprintf(v, "[orange::b]%s", s)
+			fmt.Fprintf(v, "[%s::b]%s", a.styles.Style.LogoColor, s)
 			if i+1 < len(LogoSmall) {
 				fmt.Fprintf(v, "\n")
 			}
@@ -348,9 +388,17 @@ func (a *appView) nextFocus() {
 	return
 }
 
-func initStyles() {
-	tview.Styles.PrimitiveBackgroundColor = tcell.ColorBlack
-	tview.Styles.ContrastBackgroundColor = tcell.ColorBlack
-	tview.Styles.FocusColor = tcell.ColorLightSkyBlue
-	tview.Styles.BorderColor = tcell.ColorDodgerBlue
+func (a *appView) refreshStyles() {
+	var err error
+	if a.styles, err = config.NewStyles(); err != nil {
+		log.Error().Err(err).Msg("No skin file found. Loading defaults.")
+	}
+	a.styles.Update()
+
+	stdColor = config.AsColor(a.styles.Style.Status.NewColor)
+	addColor = config.AsColor(a.styles.Style.Status.AddColor)
+	modColor = config.AsColor(a.styles.Style.Status.ModifyColor)
+	errColor = config.AsColor(a.styles.Style.Status.ErrorColor)
+	highlightColor = config.AsColor(a.styles.Style.Status.HighlightColor)
+	completedColor = config.AsColor(a.styles.Style.Status.CompletedColor)
 }

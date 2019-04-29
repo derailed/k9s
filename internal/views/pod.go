@@ -2,6 +2,7 @@ package views
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
@@ -10,7 +11,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const fmat = "[aqua::b]%s([fuchsia::b]%s[aqua::-])"
+const containerFmt = "[fg:bg:b]%s([hilite:bg:b]%s[fg:bg:-])"
 
 type podView struct {
 	*resourceView
@@ -61,7 +62,17 @@ func (v *podView) listContainers(app *appView, _, res, sel string) {
 
 	mx := k8s.NewMetricsServer(app.conn())
 	list := resource.NewContainerList(app.conn(), mx, po)
-	app.inject(newContainerView(fmt.Sprintf(fmat, "Containers", sel), app, list, namespacedName(po.Namespace, po.Name)))
+
+	fmat := strings.Replace(containerFmt, "[fg", "["+v.app.styles.Style.Title.FgColor, -1)
+	fmat = strings.Replace(containerFmt, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
+	fmat = strings.Replace(fmat, "[hilite", "["+v.app.styles.Style.Title.CounterColor, 1)
+
+	app.inject(newContainerView(
+		fmt.Sprintf(fmat, "Containers", sel),
+		app,
+		list,
+		namespacedName(po.Namespace, po.Name),
+	))
 }
 
 // Protocol...
@@ -88,6 +99,7 @@ func (v *podView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.viewLogs(false) {
 		return nil
 	}
+
 	return evt
 }
 
@@ -95,6 +107,7 @@ func (v *podView) prevLogsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.viewLogs(true) {
 		return nil
 	}
+
 	return evt
 }
 

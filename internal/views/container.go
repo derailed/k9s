@@ -22,6 +22,7 @@ func newContainerView(t string, app *appView, list resource.List, path string) r
 	}
 	v.AddPage("logs", newLogsView(list.GetName(), &v), true, false)
 	v.switchPage("co")
+	v.selChanged(1, 0)
 
 	return &v
 }

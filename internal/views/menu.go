@@ -6,7 +6,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
@@ -16,12 +15,10 @@ import (
 
 func init() {
 	initKeys()
-	initStyles()
 }
 
 const (
-	menuSepFmt   = " [dodgerblue::b]%-%ds [white::d]%s "
-	menuIndexFmt = " [fuchsia::b]<%d> [white::d]%s "
+	menuIndexFmt = " [key:bg:b]<%d> [fg:bg:d]%s "
 	maxRows      = 7
 )
 
@@ -77,11 +74,6 @@ func newKeyAction(d string, a actionHandler, display bool) keyAction {
 	return keyAction{description: d, action: a, visible: display}
 }
 
-func newMenuView() *menuView {
-	v := menuView{Table: tview.NewTable()}
-	return &v
-}
-
 func (a keyActions) toHints() hints {
 	kk := make([]int, 0, len(a))
 	for k, v := range a {
@@ -108,16 +100,19 @@ func (a keyActions) toHints() hints {
 type menuView struct {
 	*tview.Table
 
-	mx sync.Mutex
+	app *appView
+}
+
+func newMenuView(app *appView) *menuView {
+	v := menuView{Table: tview.NewTable(), app: app}
+	v.SetBackgroundColor(app.styles.BgColor())
+
+	return &v
 }
 
 func (v *menuView) populateMenu(hh hints) {
-	v.mx.Lock()
-	defer v.mx.Unlock()
-
 	v.Clear()
 	sort.Sort(hh)
-
 	t := v.buildMenuTable(hh)
 	for row := 0; row < len(t); row++ {
 		for col := 0; col < len(t[row]); col++ {
@@ -125,6 +120,7 @@ func (v *menuView) populateMenu(hh hints) {
 				continue
 			}
 			c := tview.NewTableCell(t[row][col])
+			c.SetBackgroundColor(v.app.styles.BgColor())
 			v.SetCell(row, col, c)
 		}
 	}
@@ -143,9 +139,6 @@ func (v *menuView) buildMenuTable(hh hints) [][]string {
 	maxKeys := make([]int, colCount+1)
 	for _, h := range hh {
 		isDigit := menuRX.MatchString(h.mnemonic)
-		// if isDigit && firstNS {
-		// 	row, col, firstNS = 0, 2, false
-		// }
 		if !isDigit && firstCmd {
 			row, col, firstCmd = 0, col+1, false
 		}
@@ -184,11 +177,17 @@ func (*menuView) toMnemonic(s string) string {
 func (v *menuView) formatMenu(h hint, size int) string {
 	i, err := strconv.Atoi(h.mnemonic)
 	if err == nil {
-		return fmt.Sprintf(menuIndexFmt, i, resource.Truncate(h.description, 14))
+		fmat := strings.Replace(menuIndexFmt, "[key", "["+v.app.styles.Style.Menu.NumKeyColor, 1)
+		fmat = strings.Replace(fmat, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
+		fmat = strings.Replace(fmat, "[fg", "["+v.app.styles.Style.Menu.FgColor, 1)
+		return fmt.Sprintf(fmat, i, resource.Truncate(h.description, 14))
 	}
 
-	menuFmt := " [dodgerblue::b]%-" + strconv.Itoa(size+2) + "s [white::d]%s "
-	return fmt.Sprintf(menuFmt, v.toMnemonic(h.mnemonic), h.description)
+	menuFmt := " [key:bg:b]%-" + strconv.Itoa(size+2) + "s [fg:bg:d]%s "
+	fmat := strings.Replace(menuFmt, "[key", "["+v.app.styles.Style.Menu.KeyColor, 1)
+	fmat = strings.Replace(fmat, "[fg", "["+v.app.styles.Style.Menu.FgColor, 1)
+	fmat = strings.Replace(fmat, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
+	return fmt.Sprintf(fmat, v.toMnemonic(h.mnemonic), h.description)
 }
 
 // -----------------------------------------------------------------------------

@@ -1,0 +1,44 @@
+k9s:
+  fgColor: dodgerblue
+  bgColor: white
+  logoColor: blue
+  info:
+    fgColor: lightskyblue
+    sectionColor: steelblue
+  border:
+    fgColor: dodgerblue
+    focusColor: aliceblue
+  menu:
+    fgColor: darkblue
+    keyColor: cornflowerblue
+    numKeyColor: cadetblue
+  crumb:
+    fgColor: white
+    bgColor: steelblue
+    activeColor: skyblue
+  table:
+    fgColor: blue
+    bgColor: darkblue
+    cursorColor: aqua
+    header:
+      fgColor: white
+      bgColor: darkblue
+      sorterColor: orange
+  status:
+    newColor: blue
+    modifyColor: powderblue
+    addColor: lightskyblue
+    errorColor: indianred
+    highlightcolor: royalblue
+    killColor: slategray
+    completedColor: gray
+  title:
+    fgColor: aqua
+    bgColor: white
+    highlightColor: skyblue
+    counterColor: slateblue
+    filterColor: slategray
+  yaml:
+    keyColor: steelblue
+    colorColor: blue
+    valueColor: royalblue

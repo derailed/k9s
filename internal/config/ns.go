@@ -50,7 +50,9 @@ func (n *Namespace) Validate(c Connection, ks KubeSettings) {
 func (n *Namespace) SetActive(ns string, ks KubeSettings) error {
 	log.Debug().Msgf("Setting active ns %s", ns)
 	n.Active = ns
-	n.addFavNS(ns)
+	if ns != "" {
+		n.addFavNS(ns)
+	}
 	return nil
 }
 

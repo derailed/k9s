@@ -36,11 +36,13 @@ var Logo = []string{
 // Splash screen definition
 type splashView struct {
 	*tview.Flex
+
+	app *appView
 }
 
 // NewSplash instantiates a new splash screen with product and company info.
-func newSplash(rev string) *splashView {
-	v := splashView{tview.NewFlex()}
+func newSplash(app *appView) *splashView {
+	v := splashView{Flex: tview.NewFlex(), app: app}
 
 	logo := tview.NewTextView()
 	{
@@ -56,7 +58,7 @@ func newSplash(rev string) *splashView {
 		vers.SetBackgroundColor(tcell.ColorDefault)
 		vers.SetTextAlign(tview.AlignCenter)
 	}
-	v.layoutRev(vers, rev)
+	v.layoutRev(vers, app.version)
 
 	v.SetDirection(tview.FlexRow)
 	v.AddItem(logo, 10, 1, false)
@@ -65,10 +67,13 @@ func newSplash(rev string) *splashView {
 }
 
 func (v *splashView) layoutLogo(t *tview.TextView) {
-	logo := strings.Join(Logo, "\n[orange::b]")
-	fmt.Fprintf(t, "%s[orange::b]%s\n", strings.Repeat("\n", 2), logo)
+	logo := strings.Join(Logo, fmt.Sprintf("\n[%s::b]", v.app.styles.Style.LogoColor))
+	fmt.Fprintf(t, "%s[%s::b]%s\n",
+		strings.Repeat("\n", 2),
+		v.app.styles.Style.LogoColor,
+		logo)
 }
 
 func (v *splashView) layoutRev(t *tview.TextView, rev string) {
-	fmt.Fprintf(t, "[white::b]Revision [red::b]%s", rev)
+	fmt.Fprintf(t, "[%s::b]Revision [red::b]%s", v.app.styles.Style.FgColor, rev)
 }

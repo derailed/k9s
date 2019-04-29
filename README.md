@@ -249,6 +249,227 @@ roleRef:
 
 ---
 
+## Skins
+
+You can style K9s based on your own sense of style and look. This is very much an experimental feature at this time, more will be added/modified if this feature has legs so thread accordingly!
+
+Skins are YAML files, that enable a user to change K9s presentation layer. K9s skins are loaded from `$HOME/.k9s/skin.yml`. If a skin file is detected then the skin would be loaded if not the current stock skin remains in effect.
+
+Below is a sample skin file, more skins would be available in the skins directory, just simply copy any of these in your user's home dir as `skin.yml`.
+
+```yaml
+# InTheNavy Skin...
+k9s:
+  # General K9s styles
+  fgColor: dodgerblue
+  bgColor: white
+  logoColor: blue
+  # ClusterInfoView styles.
+  info:
+    fgColor: lightskyblue
+    sectionColor: steelblue
+  # Borders styles.
+  border:
+    fgColor: dodgerblue
+    focusColor: aliceblue
+  # MenuView attributes and styles.
+  menu:
+    fgColor: darkblue
+    keyColor: cornflowerblue
+    # Used for favorite namespaces
+    numKeyColor: cadetblue
+  # CrumbView attributes for history navigation.
+  crumb:
+    fgColor: white
+    bgColor: steelblue
+    # Active view settings
+    activeColor: skyblue
+  # TableView attributes.
+  table:
+    fgColor: blue
+    bgColor: darkblue
+    cursorColor: aqua
+    # Header row styles.
+    header:
+      fgColor: white
+      bgColor: darkblue
+      sorterColor: orange
+  # Resource status and update styles
+  status:
+    newColor: blue
+    modifyColor: powderblue
+    addColor: lightskyblue
+    errorColor: indianred
+    highlightcolor: royalblue
+    killColor: slategray
+    completedColor: gray
+  # Border title styles.
+  title:
+    fgColor: aqua
+    bgColor: white
+    highlightColor: skyblue
+    counterColor: slateblue
+    filterColor: slategray
+  # YAML info styles.
+  yaml:
+    keyColor: steelblue
+    colonColor: blue
+    valueColor: royalblue
+```
+
+Available color names are defined below:
+
+| Color Names          |
+|----------------------|
+| black                |
+| maroon               |
+| green                |
+| olive                |
+| navy                 |
+| purple               |
+| teal                 |
+| silver               |
+| gray                 |
+| red                  |
+| lime                 |
+| yellow               |
+| blue                 |
+| fuchsia              |
+| aqua                 |
+| white                |
+| aliceblue            |
+| antiquewhite         |
+| aquamarine           |
+| azure                |
+| beige                |
+| bisque               |
+| blanchedalmond       |
+| blueviolet           |
+| brown                |
+| burlywood            |
+| cadetblue            |
+| chartreuse           |
+| chocolate            |
+| coral                |
+| cornflowerblue       |
+| cornsilk             |
+| crimson              |
+| darkblue             |
+| darkcyan             |
+| darkgoldenrod        |
+| darkgray             |
+| darkgreen            |
+| darkkhaki            |
+| darkmagenta          |
+| darkolivegreen       |
+| darkorange           |
+| darkorchid           |
+| darkred              |
+| darksalmon           |
+| darkseagreen         |
+| darkslateblue        |
+| darkslategray        |
+| darkturquoise        |
+| darkviolet           |
+| deeppink             |
+| deepskyblue          |
+| dimgray              |
+| dodgerblue           |
+| firebrick            |
+| floralwhite          |
+| forestgreen          |
+| gainsboro            |
+| ghostwhite           |
+| gold                 |
+| goldenrod            |
+| greenyellow          |
+| honeydew             |
+| hotpink              |
+| indianred            |
+| indigo               |
+| ivory                |
+| khaki                |
+| lavender             |
+| lavenderblush        |
+| lawngreen            |
+| lemonchiffon         |
+| lightblue            |
+| lightcoral           |
+| lightcyan            |
+| lightgoldenrodyellow |
+| lightgray            |
+| lightgreen           |
+| lightpink            |
+| lightsalmon          |
+| lightseagreen        |
+| lightskyblue         |
+| lightslategray       |
+| lightsteelblue       |
+| lightyellow          |
+| limegreen            |
+| linen                |
+| mediumaquamarine     |
+| mediumblue           |
+| mediumorchid         |
+| mediumpurple         |
+| mediumseagreen       |
+| mediumslateblue      |
+| mediumspringgreen    |
+| mediumturquoise      |
+| mediumvioletred      |
+| midnightblue         |
+| mintcream            |
+| mistyrose            |
+| moccasin             |
+| navajowhite          |
+| oldlace              |
+| olivedrab            |
+| orange               |
+| orangered            |
+| orchid               |
+| palegoldenrod        |
+| palegreen            |
+| paleturquoise        |
+| palevioletred        |
+| papayawhip           |
+| peachpuff            |
+| peru                 |
+| pink                 |
+| plum                 |
+| powderblue           |
+| rebeccapurple        |
+| rosybrown            |
+| royalblue            |
+| saddlebrown          |
+| salmon               |
+| sandybrown           |
+| seagreen             |
+| seashell             |
+| sienna               |
+| skyblue              |
+| slateblue            |
+| slategray            |
+| snow                 |
+| springgreen          |
+| steelblue            |
+| tan                  |
+| thistle              |
+| tomato               |
+| turquoise            |
+| violet               |
+| wheat                |
+| whitesmoke           |
+| yellowgreen          |
+| grey                 |
+| dimgrey              |
+| darkgrey             |
+| darkslategrey        |
+| lightgrey            |
+| lightslategrey       |
+| slategrey            |
+
+---
+
 ## Disclaimer
 
 This is still work in progress! If there is enough interest in the Kubernetes

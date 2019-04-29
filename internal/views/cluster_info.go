@@ -3,6 +3,7 @@ package views
 import (
 	"strings"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
@@ -62,20 +63,25 @@ func (v *clusterInfoView) init() {
 	v.SetCell(row, 1, v.infoCell("n/a"))
 	v.SetCell(row+1, 0, v.sectionCell("MEM"))
 	v.SetCell(row+1, 1, v.infoCell("n/a"))
+
 	v.refresh()
 }
 
-func (*clusterInfoView) sectionCell(t string) *tview.TableCell {
+func (v *clusterInfoView) sectionCell(t string) *tview.TableCell {
 	c := tview.NewTableCell(t + ":")
 	c.SetAlign(tview.AlignLeft)
+	var s tcell.Style
+	c.SetStyle(s.Bold(true).Foreground(config.AsColor(v.app.styles.Style.Info.SectionColor)))
+	c.SetBackgroundColor(v.app.styles.BgColor())
 
 	return c
 }
 
-func (*clusterInfoView) infoCell(t string) *tview.TableCell {
+func (v *clusterInfoView) infoCell(t string) *tview.TableCell {
 	c := tview.NewTableCell(t)
 	c.SetExpansion(2)
-	c.SetTextColor(tcell.ColorOrange)
+	c.SetTextColor(config.AsColor(v.app.styles.Style.Info.FgColor))
+	c.SetBackgroundColor(v.app.styles.BgColor())
 
 	return c
 }

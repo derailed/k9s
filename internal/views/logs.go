@@ -3,8 +3,8 @@ package views
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/derailed/k9s/internal/resource"
@@ -17,6 +17,7 @@ const (
 	maxBuff1    int64 = 200
 	refreshRate       = 200 * time.Millisecond
 	maxCleanse        = 100
+	logBuffSize       = 100
 )
 
 type logsView struct {
@@ -29,7 +30,6 @@ type logsView struct {
 	cancelFunc   context.CancelFunc
 	autoScroll   bool
 	showPrevious bool
-	mx           sync.Mutex
 }
 
 func newLogsView(pview string, parent loggable) *logsView {
@@ -130,8 +130,9 @@ func (v *logsView) stop() {
 	if v.cancelFunc == nil {
 		return
 	}
-	log.Debug().Msg("Canceling logs...")
+
 	v.cancelFunc()
+	log.Debug().Msgf("Canceling logs... %d", runtime.NumGoroutine())
 	v.cancelFunc = nil
 }
 
@@ -139,47 +140,57 @@ func (v *logsView) load(i int) {
 	if i < 0 || i > len(v.containers)-1 {
 		return
 	}
+
 	v.SwitchToPage(v.containers[i])
 	if err := v.doLoad(v.parent.getSelection(), v.containers[i]); err != nil {
 		v.parent.appView().flash(flashErr, err.Error())
 		l := v.CurrentPage().Item.(*logView)
-		l.logLine("😂 Doh! No logs are available at this time. Check again later on...", false)
+		l.logLine("😂 Doh! No logs are available at this time. Check again later on...")
 		return
 	}
 	v.parent.appView().SetFocus(v)
 }
 
 func (v *logsView) doLoad(path, co string) error {
-	v.mx.Lock()
-	defer v.mx.Unlock()
-
 	v.stop()
 
-	c := make(chan string)
-	go func() {
-		l := v.CurrentPage().Item.(*logView)
-		l.Clear()
-		l.setTitle(path + ":" + co)
+	maxBuff := int64(v.parent.appView().config.K9s.LogRequestSize)
+	l := v.CurrentPage().Item.(*logView)
+	l.Clear()
+	l.setTitle(path + ":" + co)
+
+	c := make(chan string, 10)
+	go func(l *logView) {
+		buff, index := make([]string, logBuffSize), 0
 		for {
 			select {
 			case line, ok := <-c:
 				if !ok {
-					if v.autoScroll {
-						l.ScrollToEnd()
-					}
+					l.flush(index, buff, v.autoScroll)
+					index = 0
 					return
 				}
-				l.logLine(line, v.autoScroll)
+				if index < logBuffSize {
+					buff[index] = line
+					index++
+					continue
+				}
+				l.flush(index, buff, v.autoScroll)
+				index = 0
+				buff[index] = line
+			case <-time.After(1 * time.Second):
+				l.flush(index, buff, v.autoScroll)
+				index = 0
 			}
 		}
-	}()
+	}(l)
 
 	ns, po := namespaced(path)
 	res, ok := v.parent.getList().Resource().(resource.Tailable)
 	if !ok {
 		return fmt.Errorf("Resource %T is not tailable", v.parent.getList().Resource)
 	}
-	maxBuff := int64(v.parent.appView().config.K9s.LogRequestSize)
+
 	cancelFn, err := res.Logs(c, ns, po, co, maxBuff, v.showPrevious)
 	if err != nil {
 		cancelFn()
@@ -196,9 +207,9 @@ func (v *logsView) doLoad(path, co string) error {
 func (v *logsView) toggleScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.autoScroll = !v.autoScroll
 	if v.autoScroll {
-		v.parent.appView().flash(flashInfo, "Autoscroll is on")
+		v.parent.appView().flash(flashInfo, "Autoscroll is on.")
 	} else {
-		v.parent.appView().flash(flashInfo, "Autoscroll is off")
+		v.parent.appView().flash(flashInfo, "Autoscroll is off.")
 	}
 
 	return nil
@@ -208,7 +219,7 @@ func (v *logsView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.stop()
 	v.parent.switchPage(v.parentView)
 
-	return nil
+	return evt
 }
 
 func (v *logsView) topCmd(evt *tcell.EventKey) *tcell.EventKey {

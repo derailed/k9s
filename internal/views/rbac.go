@@ -19,7 +19,7 @@ const (
 
 	all          = "*"
 	rbacTitle    = "RBAC"
-	rbacTitleFmt = " [aqua::b]%s([fuchsia::b]%s[aqua::-])"
+	rbacTitleFmt = " [fg:bg:b]%s([hilite:bg:b]%s[fg:bg:-])"
 )
 
 type (
@@ -28,6 +28,7 @@ type (
 	rbacView struct {
 		*tableView
 
+		app      *appView
 		current  igniter
 		cancel   context.CancelFunc
 		roleType roleKind
@@ -78,7 +79,7 @@ var (
 )
 
 func newRBACView(app *appView, ns, name string, kind roleKind) *rbacView {
-	v := rbacView{}
+	v := rbacView{app: app}
 	{
 		v.roleName, v.roleType = name, kind
 		v.tableView = newTableView(app, v.getTitle())
@@ -125,7 +126,11 @@ func (v *rbacView) bindKeys() {
 }
 
 func (v *rbacView) getTitle() string {
-	return fmt.Sprintf(rbacTitleFmt, rbacTitle, v.roleName)
+	fmat := strings.Replace(rbacTitleFmt, "[fg", "["+v.app.styles.Style.Title.FgColor, -1)
+	fmat = strings.Replace(fmat, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
+	fmat = strings.Replace(fmat, "[hilite", "["+v.app.styles.Style.Title.HighlightColor, 1)
+
+	return fmt.Sprintf(fmat, rbacTitle, v.roleName)
 }
 
 func (v *rbacView) hints() hints {

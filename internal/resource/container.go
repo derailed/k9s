@@ -3,8 +3,8 @@ package resource
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -22,6 +22,7 @@ type (
 		instance      v1.Container
 		MetricsServer MetricsServer
 		metrics       k8s.PodMetrics
+		mx            sync.RWMutex
 	}
 )
 
@@ -82,30 +83,49 @@ func (r *Container) Logs(c chan<- string, ns, n, co string, lines int64, prev bo
 	go func() {
 		select {
 		case <-time.After(defaultTimeout):
-			if blocked {
+			var closes bool
+			r.mx.RLock()
+			{
+				closes = blocked
+			}
+			r.mx.RUnlock()
+			if closes {
+				log.Debug().Msg(">>Closing Channel<<")
 				close(c)
 				cancel()
 			}
 		}
 	}()
+
 	// This call will block if nothing is in the stream!!
 	stream, err := req.Stream()
-	blocked = false
 	if err != nil {
 		log.Error().Msgf("Tail logs failed `%s/%s:%s -- %v", ns, n, co, err)
-		return cancel, fmt.Errorf("%v", err)
+		return cancel, err
 	}
+
+	r.mx.Lock()
+	{
+		blocked = false
+	}
+	r.mx.Unlock()
 
 	go func() {
 		defer func() {
+			log.Debug().Msg("!!!Closing Stream!!!")
+			close(c)
 			stream.Close()
 			cancel()
-			close(c)
 		}()
 
 		scanner := bufio.NewScanner(stream)
 		for scanner.Scan() {
 			c <- scanner.Text()
+			select {
+			case <-ctx.Done():
+				return
+			default:
+			}
 		}
 	}()
 

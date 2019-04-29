@@ -12,10 +12,12 @@ replace (
 
 require (
 	github.com/Azure/go-autorest/autorest v0.1.0 // indirect
-	github.com/derailed/tview v0.1.4
+	github.com/derailed/tview v0.1.6
 	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
+	github.com/fsnotify/fsnotify v1.4.7
 	github.com/gdamore/tcell v1.1.1
+	github.com/go-fsnotify/fsnotify v0.0.0-20180321022601-755488143dae // indirect
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/google/btree v1.0.0 // indirect
 	github.com/google/gofuzz v1.0.0 // indirect
@@ -30,6 +32,7 @@ require (
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/petergtz/pegomock v0.0.0-20181206220228-b113d17a7e81
+	github.com/pkg/profile v1.3.0
 	github.com/rs/zerolog v1.14.3
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect

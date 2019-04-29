@@ -3,9 +3,8 @@ package views
 import (
 	"fmt"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 const defaultPrompt = "%c> %s"
@@ -16,16 +15,20 @@ type cmdView struct {
 	activated bool
 	icon      rune
 	text      string
+	app       *appView
 }
 
-func newCmdView(ic rune) *cmdView {
-	v := cmdView{icon: ic, TextView: tview.NewTextView()}
+func newCmdView(app *appView, ic rune) *cmdView {
+	v := cmdView{app: app, icon: ic, TextView: tview.NewTextView()}
 	{
 		v.SetWordWrap(true)
 		v.SetWrap(true)
 		v.SetDynamicColors(true)
+		v.SetBorder(true)
 		v.SetBorderPadding(0, 0, 1, 1)
-		v.SetTextColor(tcell.ColorAqua)
+		v.SetBackgroundColor(app.styles.BgColor())
+		v.SetBorderColor(config.AsColor(app.styles.Style.Border.FocusColor))
+		v.SetTextColor(app.styles.FgColor())
 	}
 	return &v
 }
@@ -62,11 +65,12 @@ func (v *cmdView) changed(s string) {
 func (v *cmdView) active(f bool) {
 	v.activated = f
 	if f {
-		log.Debug().Msg("CmdView was activated...")
-		v.SetBackgroundColor(tcell.ColorDodgerBlue)
+		v.SetBorder(true)
+		v.SetTextColor(v.app.styles.FgColor())
 		v.activate()
 	} else {
-		v.SetBackgroundColor(tcell.ColorDefault)
+		v.SetBorder(false)
+		v.SetBackgroundColor(v.app.styles.BgColor())
 		v.Clear()
 	}
 }

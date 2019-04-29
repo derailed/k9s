@@ -6,9 +6,9 @@ import (
 	"runtime"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
@@ -17,9 +17,9 @@ import (
 )
 
 const (
-	titleFmt   = " [aqua::b]%s[aqua::-][[fuchsia::b]%d[aqua::-]] "
-	searchFmt  = "<[green::b]/%s[aqua::]> "
-	nsTitleFmt = " [aqua::b]%s([fuchsia::b]%s[aqua::-])[aqua::-][[aqua::b]%d[aqua::-]][aqua::-] "
+	titleFmt   = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]] "
+	searchFmt  = "<[filter:bg:b]/%s[fg:bg:]> "
+	nsTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
 )
 
 type (
@@ -38,7 +38,6 @@ type (
 		app       *appView
 		baseTitle string
 		currentNS string
-		refreshMX sync.Mutex
 		actions   keyActions
 		colorerFn colorerFn
 		sortFn    sortFn
@@ -46,7 +45,6 @@ type (
 		data      resource.TableData
 		cmdBuff   *cmdBuff
 		sortBuff  *cmdBuff
-		tableMX   sync.Mutex
 		sortCol   sortColumn
 	}
 )
@@ -58,15 +56,20 @@ func newTableView(app *appView, title string) *tableView {
 		v.actions = make(keyActions)
 		v.SetFixed(1, 0)
 		v.SetBorder(true)
-		v.SetFixed(1, 0)
-		v.SetBorderColor(tcell.ColorDodgerBlue)
+		v.SetBackgroundColor(config.AsColor(app.styles.Style.Table.BgColor))
+		v.SetBorderColor(config.AsColor(app.styles.Style.Table.FgColor))
+		v.SetBorderFocusColor(config.AsColor(app.styles.Style.Border.FocusColor))
 		v.SetBorderAttributes(tcell.AttrBold)
 		v.SetBorderPadding(0, 0, 1, 1)
 		v.cmdBuff = newCmdBuff('/')
 		v.cmdBuff.addListener(app.cmdView)
 		v.cmdBuff.reset()
 		v.SetSelectable(true, false)
-		v.SetSelectedStyle(tcell.ColorBlack, tcell.ColorAqua, tcell.AttrBold)
+		v.SetSelectedStyle(
+			tcell.ColorBlack,
+			config.AsColor(app.styles.Style.Table.CursorColor),
+			tcell.AttrBold,
+		)
 		v.SetInputCapture(v.keyboard)
 		v.bindKeys()
 	}
@@ -205,7 +208,7 @@ func (v *tableView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	v.app.flash(flashInfo, "Filtering...")
+	v.app.flash(flashInfo, "Filter mode activated.")
 	v.cmdBuff.reset()
 	v.cmdBuff.setActive(true)
 
@@ -227,13 +230,13 @@ func (v *tableView) setColorer(f colorerFn) {
 
 // SetActions sets up keyboard action listener.
 func (v *tableView) setActions(aa keyActions) {
-	v.tableMX.Lock()
-	{
-		for k, a := range aa {
-			v.actions[k] = a
-		}
+	// v.mx.Lock()
+	// {
+	for k, a := range aa {
+		v.actions[k] = a
 	}
-	v.tableMX.Unlock()
+	// }
+	// v.mx.Unlock()
 }
 
 // Hints options
@@ -251,16 +254,12 @@ func (v *tableView) refresh() {
 
 // Update table content
 func (v *tableView) update(data resource.TableData) {
-	v.refreshMX.Lock()
-	{
-		v.data = data
-		if !v.cmdBuff.empty() {
-			v.doUpdate(v.filtered())
-		} else {
-			v.doUpdate(data)
-		}
+	v.data = data
+	if !v.cmdBuff.empty() {
+		v.doUpdate(v.filtered())
+	} else {
+		v.doUpdate(v.data)
 	}
-	v.refreshMX.Unlock()
 	v.resetTitle()
 }
 
@@ -300,7 +299,7 @@ func (v *tableView) sortIndicator(index int, name string) string {
 	if v.sortCol.asc {
 		order = "↑"
 	}
-	return fmt.Sprintf("%s [green::]%s[::]", name, order)
+	return fmt.Sprintf("%s [%s::]%s[::]", name, v.app.styles.Style.Table.Header.SorterColor, order)
 }
 
 func (v *tableView) doUpdate(data resource.TableData) {
@@ -326,7 +325,11 @@ func (v *tableView) doUpdate(data resource.TableData) {
 	}
 
 	pads := make(maxyPad, len(data.Header))
+	// v.mx.Lock()
+	// {
 	computeMaxColumns(pads, v.sortCol.index, data)
+	// }
+	// v.mx.Unlock()
 	var row int
 	for col, h := range data.Header {
 		v.addHeaderCell(col, h, pads)
@@ -340,7 +343,7 @@ func (v *tableView) doUpdate(data resource.TableData) {
 	prim, sec := v.sortAllRows(data.Rows, sortFn)
 	for _, pk := range prim {
 		for _, sk := range sec[pk] {
-			fgColor := tcell.ColorGray
+			fgColor := config.AsColor(v.app.styles.Style.Table.FgColor)
 			if v.colorerFn != nil {
 				fgColor = v.colorerFn(data.Namespace, data.Rows[sk])
 			}
@@ -381,7 +384,8 @@ func (v *tableView) addHeaderCell(col int, name string, pads maxyPad) {
 	c := tview.NewTableCell(v.sortIndicator(col, name))
 	{
 		c.SetExpansion(1)
-		c.SetTextColor(tcell.ColorAntiqueWhite)
+		c.SetTextColor(config.AsColor(v.app.styles.Style.Table.Header.FgColor))
+		c.SetBackgroundColor(config.AsColor(v.app.styles.Style.Table.Header.BgColor))
 	}
 	v.SetCell(0, col, c)
 }
@@ -438,17 +442,28 @@ func (v *tableView) resetTitle() {
 	}
 	switch v.currentNS {
 	case resource.NotNamespaced, "*":
-		title = fmt.Sprintf(titleFmt, v.baseTitle, rc)
+		fmat := strings.Replace(titleFmt, "[fg", "["+v.app.styles.Style.Title.FgColor, -1)
+		fmat = strings.Replace(fmat, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
+		fmat = strings.Replace(fmat, "[count", "["+v.app.styles.Style.Title.CounterColor, 1)
+		title = fmt.Sprintf(fmat, v.baseTitle, rc)
 	default:
 		ns := v.currentNS
 		if v.currentNS == resource.AllNamespaces {
 			ns = resource.AllNamespace
 		}
-		title = fmt.Sprintf(nsTitleFmt, v.baseTitle, ns, rc)
+		fmat := strings.Replace(nsTitleFmt, "[fg", "["+v.app.styles.Style.Title.FgColor, -1)
+		fmat = strings.Replace(fmat, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
+		fmat = strings.Replace(fmat, "[hilite", "["+v.app.styles.Style.Title.HighlightColor, 1)
+		fmat = strings.Replace(fmat, "[count", "["+v.app.styles.Style.Title.CounterColor, 1)
+		title = fmt.Sprintf(fmat, v.baseTitle, ns, rc)
 	}
 
 	if !v.cmdBuff.isActive() && !v.cmdBuff.empty() {
-		title += fmt.Sprintf(searchFmt, v.cmdBuff)
+		fmat := strings.Replace(searchFmt, "[fg", "["+v.app.styles.Style.Title.FgColor, 1)
+		fmat = strings.Replace(fmat, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
+		fmat = strings.Replace(fmat, "[filter", "["+v.app.styles.Style.Title.FilterColor, 1)
+
+		title += fmt.Sprintf(fmat, v.cmdBuff)
 	}
 	v.SetTitle(title)
 }

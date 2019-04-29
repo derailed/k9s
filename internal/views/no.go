@@ -63,8 +63,11 @@ func showPods(app *appView, ns, res, selected, labelSel, fieldSel string, b acti
 
 	title := fmt.Sprintf("%s:%s Pods", res, selected)
 	pv := newPodView(title, app, list)
+	pv.setColorerFn(podColorer)
 	pv.setExtraActionsFn(func(aa keyActions) {
 		aa[tcell.KeyEsc] = newKeyAction("Back", b, true)
 	})
+	// Reset active namespace to all.
+	app.config.SetActiveNamespace("")
 	app.inject(pv)
 }

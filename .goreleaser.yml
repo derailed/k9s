@@ -67,7 +67,8 @@ snapcraft:
     By leveraging a terminal UI, you can easily traverse Kubernetes resources
     and view the state of you clusters in a single powerful session.
   name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-  publish: false
+  # publish: false
+  publish: true
   replacements:
     amd64: 64-bit
     386: 32-bit
@@ -76,16 +77,15 @@ snapcraft:
     bit: Arm
     bitv6: Arm6
     bitv7: Arm7
-  grade: devel
-  confinement: devmode
+  # grade: devel
+  # confinement: devmode
+  grade: stable
+  confinement: strict
   apps:
     k9s:
-      plugs: ["home", "network"]
-      # plugs: ["home", "network", "personal-files"]
-  # plugs:
-  #   personal-files:
-  #     read:
-  #     - $HOME/.k9s
-  #     - $HOME/.kube
-  #     write:
-  #     - $HOME/.k9s
+      # plugs: ["home", "network"]
+      plugs: ["home", "network", "personal-files"]
+  plugs:
+    personal-files:
+      read:
+      - $HOME/.kube

@@ -14,8 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-const subjectTitleFmt = " [aqua::b]%s([fuchsia::b]%s[aqua::-])"
-
 var subjectHeader = resource.Row{"NAME", "KIND", "FIRST LOCATION"}
 
 type (
@@ -177,13 +175,11 @@ func (v *subjectView) reconcile() (resource.TableData, error) {
 	if err != nil {
 		return table, err
 	}
-	log.Debug().Msgf("Cluster evts %d", len(evts))
 
 	nevts, err := v.namespacedSubjects()
 	if err != nil {
 		return table, err
 	}
-	log.Debug().Msgf("NS evts %d", len(nevts))
 	for k, v := range nevts {
 		evts[k] = v
 	}

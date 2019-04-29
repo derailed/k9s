@@ -3,6 +3,7 @@ package views
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -40,7 +41,8 @@ func TestYaml(t *testing.T) {
 		},
 	}
 
+	s, _ := config.NewStyles()
 	for _, u := range uu {
-		assert.Equal(t, u.e, colorizeYAML(u.s))
+		assert.Equal(t, u.e, colorizeYAML(s.Style, u.s))
 	}
 }

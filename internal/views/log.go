@@ -3,6 +3,7 @@ package views
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/derailed/tview"
 )
@@ -28,14 +29,23 @@ func newLogView(title string, parent loggable) *logView {
 	return &v
 }
 
-func (l *logView) logLine(line string, scroll bool) {
+func (l *logView) logLine(line string) {
 	fmt.Fprintln(l.ansiWriter, tview.Escape(line))
-	if scroll {
-		l.ScrollToEnd()
-	}
 }
 
 func (l *logView) log(lines fmt.Stringer) {
 	l.Clear()
 	fmt.Fprintln(l.ansiWriter, lines.String())
+}
+
+func (l *logView) flush(index int, buff []string, scroll bool) {
+	if index > 0 {
+		l.logLine(strings.Join(buff[:index], "\n"))
+		if scroll {
+			l.app.QueueUpdate(func() {
+				l.ScrollToEnd()
+			})
+		}
+		index = 0
+	}
 }
