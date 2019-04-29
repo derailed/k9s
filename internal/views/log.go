@@ -46,6 +46,5 @@ func (l *logView) flush(index int, buff []string, scroll bool) {
 				l.ScrollToEnd()
 			})
 		}
-		index = 0
 	}
 }
