@@ -6,6 +6,7 @@ import (
 	"path"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
@@ -43,6 +44,8 @@ type (
 		decorateFn     decorateFn
 		colorerFn      colorerFn
 		actions        keyActions
+		mx             sync.Mutex
+		suspended      bool
 	}
 )
 
@@ -78,6 +81,15 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 	}
 	v.getTV().setColorer(colorer)
 
+	go v.updater(ctx)
+	v.refresh()
+	if tv, ok := v.CurrentPage().Item.(*tableView); ok {
+		tv.Select(1, 0)
+		v.selChanged(1, 0)
+	}
+}
+
+func (v *resourceView) updater(ctx context.Context) {
 	go func(ctx context.Context) {
 		for {
 			select {
@@ -85,17 +97,37 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 				log.Debug().Msgf("%s watcher canceled!", v.title)
 				return
 			case <-time.After(time.Duration(v.app.config.K9s.RefreshRate) * time.Second):
+				var suspended bool
+				v.mx.Lock()
+				{
+					suspended = v.suspended
+				}
+				v.mx.Unlock()
+				if suspended == true {
+					continue
+				}
 				v.app.QueueUpdate(func() {
 					v.refresh()
 				})
 			}
 		}
 	}(ctx)
-	v.refresh()
-	if tv, ok := v.CurrentPage().Item.(*tableView); ok {
-		tv.Select(1, 0)
-		v.selChanged(1, 0)
+}
+
+func (v *resourceView) suspend() {
+	v.mx.Lock()
+	{
+		v.suspended = true
 	}
+	v.mx.Unlock()
+}
+
+func (v *resourceView) resume() {
+	v.mx.Lock()
+	{
+		v.suspended = false
+	}
+	v.mx.Unlock()
 }
 
 func (v *resourceView) setExtraActionsFn(f actionsFn) {

@@ -173,18 +173,22 @@ func (v *podView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *podView) shellIn(path, co string) {
-	ns, po := namespaced(path)
-	args := make([]string, 0, 12)
-	args = append(args, "exec", "-it")
-	args = append(args, "--context", v.app.config.K9s.CurrentContext)
-	args = append(args, "-n", ns)
-	args = append(args, po)
-	if len(co) != 0 {
-		args = append(args, "-c", co)
+	v.suspend()
+	{
+		ns, po := namespaced(path)
+		args := make([]string, 0, 12)
+		args = append(args, "exec", "-it")
+		args = append(args, "--context", v.app.config.K9s.CurrentContext)
+		args = append(args, "-n", ns)
+		args = append(args, po)
+		if len(co) != 0 {
+			args = append(args, "-c", co)
+		}
+		args = append(args, "--", "sh")
+		log.Debug().Msgf("Shell args %v", args)
+		runK(true, v.app, args...)
 	}
-	args = append(args, "--", "sh")
-	log.Debug().Msgf("Shell args %v", args)
-	runK(true, v.app, args...)
+	v.resume()
 }
 
 func (v *podView) extraActions(aa keyActions) {
