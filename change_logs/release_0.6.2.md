@@ -18,14 +18,13 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ### Performance
 
-In our attempt to remediate screens lock outs, it looks like K9s performance on certain clusters took a turn for the worst. In this drop we've taken
-a peek at improving some perfs tho much more in investigating remains. Big ATTA Boys! in effect to both @eldada and @despairblue for helping me track down some of these issues. We're not done by any strectch but hopefully this drop will be a bit of an improvement in the 0.6.x lineage. Thank you all for your patience and support!!
+In our attempt to remediate screens lock outs, it looks like K9s performance on certain clusters took a major dive. In this drop we've taken a peek at improving some of the perf issues tho much more investigating does remain. Big ATTA Boys! in effect this week to @eldada and @despairblue for kind support in helping me track down some of these issues. We're not done yet but hopefully this drop will be a bit of an improvement in the 0.6.x lineage. Thank you all for your patience and support!!
 
 ---
 
 ## Resolved Bugs
 
-+ [Issue #171](https://github.com/derailed/k9s/issues/171) With feelings...
++ [Issue #176](https://github.com/derailed/k9s/issues/171) Fingers crossed it's a better drop 🙏🐭?
 
 ---
 
