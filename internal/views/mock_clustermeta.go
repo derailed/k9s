@@ -118,17 +118,17 @@ func (mock *MockClusterMeta) FetchNodes() (*v1.NodeList, error) {
 	return ret0, ret1
 }
 
-func (mock *MockClusterMeta) GetNodes() ([]v1.Node, error) {
+func (mock *MockClusterMeta) GetNodes() (*v1.NodeList, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockClusterMeta().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("GetNodes", params, []reflect.Type{reflect.TypeOf((*[]v1.Node)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 []v1.Node
+	result := pegomock.GetGenericMockFrom(mock).Invoke("GetNodes", params, []reflect.Type{reflect.TypeOf((**v1.NodeList)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 *v1.NodeList
 	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].([]v1.Node)
+			ret0 = result[0].(*v1.NodeList)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(error)
@@ -199,6 +199,25 @@ func (mock *MockClusterMeta) NSDialOrDie() dynamic.NamespaceableResourceInterfac
 		}
 	}
 	return ret0
+}
+
+func (mock *MockClusterMeta) NodePods(_param0 string) (*v1.PodList, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockClusterMeta().")
+	}
+	params := []pegomock.Param{_param0}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("NodePods", params, []reflect.Type{reflect.TypeOf((**v1.PodList)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 *v1.PodList
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(*v1.PodList)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
 }
 
 func (mock *MockClusterMeta) RestConfigOrDie() *rest.Config {
@@ -303,25 +322,6 @@ func (mock *MockClusterMeta) ValidNamespaces() ([]v1.Namespace, error) {
 	if len(result) != 0 {
 		if result[0] != nil {
 			ret0 = result[0].([]v1.Namespace)
-		}
-		if result[1] != nil {
-			ret1 = result[1].(error)
-		}
-	}
-	return ret0, ret1
-}
-
-func (mock *MockClusterMeta) ValidPods(_param0 string) ([]v1.Pod, error) {
-	if mock == nil {
-		panic("mock must not be nil. Use myMock := NewMockClusterMeta().")
-	}
-	params := []pegomock.Param{_param0}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("ValidPods", params, []reflect.Type{reflect.TypeOf((*[]v1.Pod)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 []v1.Pod
-	var ret1 error
-	if len(result) != 0 {
-		if result[0] != nil {
-			ret0 = result[0].([]v1.Pod)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(error)
@@ -583,6 +583,33 @@ func (c *ClusterMeta_NSDialOrDie_OngoingVerification) GetCapturedArguments() {
 func (c *ClusterMeta_NSDialOrDie_OngoingVerification) GetAllCapturedArguments() {
 }
 
+func (verifier *VerifierClusterMeta) NodePods(_param0 string) *ClusterMeta_NodePods_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "NodePods", params, verifier.timeout)
+	return &ClusterMeta_NodePods_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type ClusterMeta_NodePods_OngoingVerification struct {
+	mock              *MockClusterMeta
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *ClusterMeta_NodePods_OngoingVerification) GetCapturedArguments() string {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *ClusterMeta_NodePods_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
+	if len(params) > 0 {
+		_param0 = make([]string, len(params[0]))
+		for u, param := range params[0] {
+			_param0[u] = param.(string)
+		}
+	}
+	return
+}
+
 func (verifier *VerifierClusterMeta) RestConfigOrDie() *ClusterMeta_RestConfigOrDie_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "RestConfigOrDie", params, verifier.timeout)
@@ -734,33 +761,6 @@ func (c *ClusterMeta_ValidNamespaces_OngoingVerification) GetCapturedArguments()
 }
 
 func (c *ClusterMeta_ValidNamespaces_OngoingVerification) GetAllCapturedArguments() {
-}
-
-func (verifier *VerifierClusterMeta) ValidPods(_param0 string) *ClusterMeta_ValidPods_OngoingVerification {
-	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ValidPods", params, verifier.timeout)
-	return &ClusterMeta_ValidPods_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
-}
-
-type ClusterMeta_ValidPods_OngoingVerification struct {
-	mock              *MockClusterMeta
-	methodInvocations []pegomock.MethodInvocation
-}
-
-func (c *ClusterMeta_ValidPods_OngoingVerification) GetCapturedArguments() string {
-	_param0 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1]
-}
-
-func (c *ClusterMeta_ValidPods_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
-	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
-	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
-		for u, param := range params[0] {
-			_param0[u] = param.(string)
-		}
-	}
-	return
 }
 
 func (verifier *VerifierClusterMeta) Version() *ClusterMeta_Version_OngoingVerification {

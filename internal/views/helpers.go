@@ -1,7 +1,6 @@
 package views
 
 import (
-	"fmt"
 	"regexp"
 	"strconv"
 	"strings"
@@ -9,10 +8,6 @@ import (
 
 	"k8s.io/apimachinery/pkg/api/resource"
 )
-
-func toPerc(f float64) string {
-	return fmt.Sprintf("%.0f%%", f)
-}
 
 func deltas(o, n string) string {
 	o, n = strings.TrimSpace(o), strings.TrimSpace(n)

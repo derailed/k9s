@@ -1,7 +1,6 @@
 package resource
 
 import (
-	"fmt"
 	"path"
 	"sort"
 	"strconv"
@@ -36,10 +35,12 @@ const (
 	NAValue = "<n/a>"
 )
 
-func asPerc(f float64) string {
-	return fmt.Sprintf("%d%%", int(f))
+// AsPerc prints a number as a percentage.
+func AsPerc(f float64) string {
+	return strconv.Itoa(int(f)) + "%"
 }
 
+// ToPerc computes the ratio of two numbers as a percentage.
 func toPerc(v1, v2 float64) float64 {
 	if v2 == 0 {
 		return 0

@@ -1,6 +1,8 @@
 package views
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/derailed/k9s/internal/resource"
@@ -68,5 +70,28 @@ func BenchmarkTVSortRows(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		v.sortRows(evts, v.defaultSort, sc, keys)
+	}
+}
+
+func BenchmarkTitleReplace(b *testing.B) {
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		fmat := strings.Replace(nsTitleFmt, "[fg", "["+"red", -1)
+		fmat = strings.Replace(fmat, ":bg:", ":"+"blue"+":", -1)
+		fmat = strings.Replace(fmat, "[hilite", "["+"green", 1)
+		fmat = strings.Replace(fmat, "[count", "["+"yellow", 1)
+		_ = fmt.Sprintf(fmat, "Pods", "default", 10)
+	}
+}
+
+func BenchmarkTitleReplace1(b *testing.B) {
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		fmat := strings.Replace(nsTitleFmt, "fg:bg", "red"+":"+"blue", -1)
+		fmat = strings.Replace(fmat, "[hilite", "["+"green", 1)
+		fmat = strings.Replace(fmat, "[count", "["+"yellow", 1)
+		_ = fmt.Sprintf(fmat, "Pods", "default", 10)
 	}
 }

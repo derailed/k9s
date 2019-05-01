@@ -63,8 +63,7 @@ func (v *podView) listContainers(app *appView, _, res, sel string) {
 	mx := k8s.NewMetricsServer(app.conn())
 	list := resource.NewContainerList(app.conn(), mx, po)
 
-	fmat := strings.Replace(containerFmt, "[fg", "["+v.app.styles.Style.Title.FgColor, -1)
-	fmat = strings.Replace(fmat, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
+	fmat := strings.Replace(containerFmt, "[fg:bg", "["+v.app.styles.Style.Title.FgColor+":"+v.app.styles.Style.Title.BgColor, -1)
 	fmat = strings.Replace(fmat, "[hilite", "["+v.app.styles.Style.Title.CounterColor, 1)
 
 	app.inject(newContainerView(

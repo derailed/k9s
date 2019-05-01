@@ -1,9 +1,5 @@
 package views
 
-import (
-	"github.com/rs/zerolog/log"
-)
-
 const maxBuff = 10
 
 type buffWatcher interface {
@@ -41,7 +37,6 @@ func (c *cmdBuff) String() string {
 }
 
 func (c *cmdBuff) add(r rune) {
-	log.Debug().Msgf("Add %s", string(r))
 	c.buff = append(c.buff, r)
 	c.fireChanged()
 }

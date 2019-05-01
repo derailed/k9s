@@ -13,3 +13,4 @@ popeye1.go
 gen.sh
 cluster_info_test.go
 *.test
+*.log

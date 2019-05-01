@@ -58,11 +58,6 @@ func (c *Cluster) UserName() string {
 }
 
 // GetNodes get all available nodes in the cluster.
-func (c *Cluster) GetNodes() ([]v1.Node, error) {
-	list, err := c.FetchNodes()
-	if err != nil {
-		return nil, err
-	}
-
-	return list.Items, nil
+func (c *Cluster) GetNodes() (*v1.NodeList, error) {
+	return c.FetchNodes()
 }

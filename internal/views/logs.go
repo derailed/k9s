@@ -3,7 +3,6 @@ package views
 import (
 	"context"
 	"fmt"
-	"runtime"
 	"strconv"
 	"time"
 
@@ -14,10 +13,11 @@ import (
 )
 
 const (
-	maxBuff1    int64 = 200
-	refreshRate       = 200 * time.Millisecond
-	maxCleanse        = 100
-	logBuffSize       = 100
+	maxBuff1     int64 = 200
+	refreshRate        = 200 * time.Millisecond
+	maxCleanse         = 100
+	logBuffSize        = 100
+	flushTimeout       = 500 * time.Millisecond
 )
 
 type logsView struct {
@@ -132,7 +132,7 @@ func (v *logsView) stop() {
 	}
 
 	v.cancelFunc()
-	log.Debug().Msgf("Canceling logs... %d", runtime.NumGoroutine())
+	log.Debug().Msgf("Canceling logs...")
 	v.cancelFunc = nil
 }
 
@@ -178,7 +178,7 @@ func (v *logsView) doLoad(path, co string) error {
 				l.flush(index, buff, v.autoScroll)
 				index = 0
 				buff[index] = line
-			case <-time.After(1 * time.Second):
+			case <-time.After(flushTimeout):
 				l.flush(index, buff, v.autoScroll)
 				index = 0
 			}

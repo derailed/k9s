@@ -3,7 +3,6 @@ package views
 import (
 	"fmt"
 	"regexp"
-	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -115,7 +114,6 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 	if a, ok := v.actions[key]; ok {
 		log.Debug().Msgf(">> TableView handled %s", tcell.KeyNames[key])
-		log.Debug().Msgf("Go Routine %d", runtime.NumGoroutine())
 		return a.action(evt)
 	}
 
@@ -230,13 +228,9 @@ func (v *tableView) setColorer(f colorerFn) {
 
 // SetActions sets up keyboard action listener.
 func (v *tableView) setActions(aa keyActions) {
-	// v.mx.Lock()
-	// {
 	for k, a := range aa {
 		v.actions[k] = a
 	}
-	// }
-	// v.mx.Unlock()
 }
 
 // Hints options
@@ -325,14 +319,12 @@ func (v *tableView) doUpdate(data resource.TableData) {
 	}
 
 	pads := make(maxyPad, len(data.Header))
-	// v.mx.Lock()
-	// {
 	computeMaxColumns(pads, v.sortCol.index, data)
-	// }
-	// v.mx.Unlock()
 	var row int
+	fg := config.AsColor(v.app.styles.Style.Table.Header.FgColor)
+	bg := config.AsColor(v.app.styles.Style.Table.Header.BgColor)
 	for col, h := range data.Header {
-		v.addHeaderCell(col, h, pads)
+		v.addHeaderCell(col, h, pads, fg, bg)
 	}
 	row++
 
@@ -341,9 +333,9 @@ func (v *tableView) doUpdate(data resource.TableData) {
 		sortFn = v.sortFn
 	}
 	prim, sec := v.sortAllRows(data.Rows, sortFn)
+	fgColor := config.AsColor(v.app.styles.Style.Table.FgColor)
 	for _, pk := range prim {
 		for _, sk := range sec[pk] {
-			fgColor := config.AsColor(v.app.styles.Style.Table.FgColor)
 			if v.colorerFn != nil {
 				fgColor = v.colorerFn(data.Namespace, data.Rows[sk])
 			}
@@ -380,12 +372,12 @@ func (v *tableView) sortAllRows(rows resource.RowEvents, sortFn sortFn) (resourc
 	return prim, sec
 }
 
-func (v *tableView) addHeaderCell(col int, name string, pads maxyPad) {
+func (v *tableView) addHeaderCell(col int, name string, pads maxyPad, fg, bg tcell.Color) {
 	c := tview.NewTableCell(v.sortIndicator(col, name))
 	{
 		c.SetExpansion(1)
-		c.SetTextColor(config.AsColor(v.app.styles.Style.Table.Header.FgColor))
-		c.SetBackgroundColor(config.AsColor(v.app.styles.Style.Table.Header.BgColor))
+		c.SetTextColor(fg)
+		c.SetBackgroundColor(bg)
 	}
 	v.SetCell(0, col, c)
 }
@@ -442,27 +434,24 @@ func (v *tableView) resetTitle() {
 	}
 	switch v.currentNS {
 	case resource.NotNamespaced, "*":
-		fmat := strings.Replace(titleFmt, "[fg", "["+v.app.styles.Style.Title.FgColor, -1)
-		fmat = strings.Replace(fmat, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
+		fmat := strings.Replace(titleFmt, "[fg:bg", "["+v.app.styles.Style.Title.FgColor+":"+v.app.styles.Style.Title.BgColor, -1)
 		fmat = strings.Replace(fmat, "[count", "["+v.app.styles.Style.Title.CounterColor, 1)
 		title = fmt.Sprintf(fmat, v.baseTitle, rc)
 	default:
 		ns := v.currentNS
-		if v.currentNS == resource.AllNamespaces {
+		if ns == resource.AllNamespaces {
 			ns = resource.AllNamespace
 		}
-		fmat := strings.Replace(nsTitleFmt, "[fg", "["+v.app.styles.Style.Title.FgColor, -1)
-		fmat = strings.Replace(fmat, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
+		fmat := strings.Replace(nsTitleFmt, "[fg:bg", "["+v.app.styles.Style.Title.FgColor+":"+v.app.styles.Style.Title.BgColor, -1)
 		fmat = strings.Replace(fmat, "[hilite", "["+v.app.styles.Style.Title.HighlightColor, 1)
 		fmat = strings.Replace(fmat, "[count", "["+v.app.styles.Style.Title.CounterColor, 1)
 		title = fmt.Sprintf(fmat, v.baseTitle, ns, rc)
 	}
 
 	if !v.cmdBuff.isActive() && !v.cmdBuff.empty() {
-		fmat := strings.Replace(searchFmt, "[fg", "["+v.app.styles.Style.Title.FgColor, 1)
+		fmat := strings.Replace(searchFmt, "[fg:bg", "["+v.app.styles.Style.Title.FgColor+":"+v.app.styles.Style.Title.BgColor, -1)
 		fmat = strings.Replace(fmat, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
 		fmat = strings.Replace(fmat, "[filter", "["+v.app.styles.Style.Title.FilterColor, 1)
-
 		title += fmt.Sprintf(fmat, v.cmdBuff)
 	}
 	v.SetTitle(title)

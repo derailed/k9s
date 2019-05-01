@@ -100,7 +100,7 @@ func (r *Container) Logs(c chan<- string, ns, n, co string, lines int64, prev bo
 	// This call will block if nothing is in the stream!!
 	stream, err := req.Stream()
 	if err != nil {
-		log.Error().Msgf("Tail logs failed `%s/%s:%s -- %v", ns, n, co, err)
+		log.Warn().Err(err).Msgf("Stream canceled `%s/%s:%s", ns, n, co)
 		return cancel, err
 	}
 
@@ -178,7 +178,7 @@ func (r *Container) Fields(ns string) Row {
 	mxs, _ := r.MetricsServer.FetchPodsMetrics(r.pod.Namespace)
 
 	var cpu, mem string
-	for _, mx := range mxs {
+	for _, mx := range mxs.Items {
 		if mx.Name != r.pod.Name {
 			continue
 		}

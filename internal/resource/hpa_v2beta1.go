@@ -1,7 +1,6 @@
 package resource
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -121,12 +120,12 @@ func (r *HorizontalPodAutoscalerV2Beta1) toMetrics(specs []autoscalingv2beta1.Me
 			if len(statuses) > i && statuses[i].Pods != nil {
 				current = statuses[i].Pods.CurrentAverageValue.String()
 			}
-			list = append(list, fmt.Sprintf("%s/%s", current, spec.Pods.TargetAverageValue.String()))
+			list = append(list, current+"/"+spec.Pods.TargetAverageValue.String())
 		case autoscalingv2beta1.ObjectMetricSourceType:
 			if len(statuses) > i && statuses[i].Object != nil {
 				current = statuses[i].Object.CurrentValue.String()
 			}
-			list = append(list, fmt.Sprintf("%s/%s", current, spec.Object.TargetValue.String()))
+			list = append(list, current+"/"+spec.Object.TargetValue.String())
 		case autoscalingv2beta1.ResourceMetricSourceType:
 			list = append(list, r.resourceMetrics(i, spec, statuses))
 		default:
@@ -141,7 +140,7 @@ func (r *HorizontalPodAutoscalerV2Beta1) toMetrics(specs []autoscalingv2beta1.Me
 
 	ret := strings.Join(list, ", ")
 	if more {
-		return fmt.Sprintf("%s + %d more...", ret, count-max)
+		return ret + " + " + strconv.Itoa(count-max) + "more..."
 	}
 
 	return ret
@@ -154,13 +153,13 @@ func (*HorizontalPodAutoscalerV2Beta1) externalMetrics(i int, spec autoscalingv2
 		if len(statuses) > i && statuses[i].External != nil && &statuses[i].External.CurrentAverageValue != nil {
 			current = statuses[i].External.CurrentAverageValue.String()
 		}
-		return fmt.Sprintf("%s/%s (avg)", current, spec.External.TargetAverageValue.String())
+		return current + "/" + spec.External.TargetAverageValue.String() + " (avg)"
 	}
 	if len(statuses) > i && statuses[i].External != nil {
 		current = statuses[i].External.CurrentValue.String()
 	}
 
-	return fmt.Sprintf("%s/%s", current, spec.External.TargetValue.String())
+	return current + "/" + spec.External.TargetValue.String()
 }
 
 func (*HorizontalPodAutoscalerV2Beta1) resourceMetrics(i int, spec autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {
@@ -170,16 +169,17 @@ func (*HorizontalPodAutoscalerV2Beta1) resourceMetrics(i int, spec autoscalingv2
 		if len(statuses) > i && statuses[i].Resource != nil {
 			current = statuses[i].Resource.CurrentAverageValue.String()
 		}
-		return fmt.Sprintf("%s/%s", current, spec.Resource.TargetAverageValue.String())
+		return current + "/" + spec.Resource.TargetAverageValue.String()
 	}
 
 	if len(statuses) > i && statuses[i].Resource != nil && statuses[i].Resource.CurrentAverageUtilization != nil {
-		current = fmt.Sprintf("%d%%", *statuses[i].Resource.CurrentAverageUtilization)
+		current = AsPerc(float64(*statuses[i].Resource.CurrentAverageUtilization))
 	}
 
 	target := "<auto>"
 	if spec.Resource.TargetAverageUtilization != nil {
-		target = fmt.Sprintf("%d%%", *spec.Resource.TargetAverageUtilization)
+		target = AsPerc(float64(*spec.Resource.TargetAverageUtilization))
 	}
-	return fmt.Sprintf("%s/%s", current, target)
+
+	return current + "/" + target
 }

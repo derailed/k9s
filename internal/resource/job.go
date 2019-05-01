@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -166,10 +167,10 @@ func (*Job) toContainers(p v1.PodSpec) (string, string) {
 	const maxShow = 2
 	// Limit to 2 of each...
 	if len(cc) > maxShow {
-		cc = append(cc[:2], fmt.Sprintf("(+%d)...", len(cc)-maxShow))
+		cc = append(cc[:2], "(+"+strconv.Itoa(len(cc)-maxShow)+")...")
 	}
 	if len(ii) > maxShow {
-		ii = append(ii[:2], fmt.Sprintf("(+%d)...", len(ii)-maxShow))
+		ii = append(ii[:2], "(+"+strconv.Itoa(len(ii)-maxShow)+")...")
 	}
 
 	return strings.Join(cc, ","), strings.Join(ii, ",")
@@ -177,19 +178,19 @@ func (*Job) toContainers(p v1.PodSpec) (string, string) {
 
 func (*Job) toCompletion(spec batchv1.JobSpec, status batchv1.JobStatus) (s string) {
 	if spec.Completions != nil {
-		return fmt.Sprintf("%d/%d", status.Succeeded, *spec.Completions)
+		return strconv.Itoa(int(status.Succeeded)) + "/" + strconv.Itoa(int(*spec.Completions))
 	}
 
 	if spec.Parallelism == nil {
-		return fmt.Sprintf("%d/1", status.Succeeded)
+		return strconv.Itoa(int(status.Succeeded)) + "/1"
 	}
 
 	p := *spec.Parallelism
 	if p > 1 {
-		return fmt.Sprintf("%d/1 of %d", status.Succeeded, p)
+		return strconv.Itoa(int(status.Succeeded)) + "/1 of " + strconv.Itoa(int(p))
 	}
 
-	return fmt.Sprintf("%d/1", status.Succeeded)
+	return strconv.Itoa(int(status.Succeeded)) + "/1"
 }
 
 func (*Job) toDuration(status batchv1.JobStatus) string {

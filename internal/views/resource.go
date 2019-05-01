@@ -46,6 +46,7 @@ type (
 		actions        keyActions
 		mx             sync.Mutex
 		suspended      bool
+		nsListAccess   bool
 	}
 )
 
@@ -81,6 +82,21 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 	}
 	v.getTV().setColorer(colorer)
 
+	v.nsListAccess = k8s.CanIAccess(v.app.conn().Config(), log.Logger, "", "list", "namespaces", "namespace.v1")
+	if v.nsListAccess {
+		nn, err := k8s.NewNamespace(v.app.conn()).List(resource.AllNamespaces)
+		if err != nil {
+			log.Warn().Err(err).Msg("List namespaces")
+			v.app.flash(flashErr, err.Error())
+		}
+
+		if v.list.Namespaced() && !v.list.AllNamespaces() {
+			if !config.InNSList(nn, v.list.GetNamespace()) {
+				v.list.SetNamespace(resource.DefaultNamespace)
+			}
+		}
+	}
+
 	go v.updater(ctx)
 	v.refresh()
 	if tv, ok := v.CurrentPage().Item.(*tableView); ok {
@@ -94,16 +110,27 @@ func (v *resourceView) updater(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Debug().Msgf("%s watcher canceled!", v.title)
+				log.Debug().Msgf("%s cluster updater canceled!", v.list.GetName())
+				return
+			case <-time.After(time.Duration(15 * time.Second)):
+				if v.isSuspended() {
+					continue
+				}
+				v.app.QueueUpdate(func() {
+					v.app.clusterInfoView.refresh()
+				})
+			}
+		}
+	}(ctx)
+
+	go func(ctx context.Context) {
+		for {
+			select {
+			case <-ctx.Done():
+				log.Debug().Msgf("%s updater canceled!", v.list.GetName())
 				return
 			case <-time.After(time.Duration(v.app.config.K9s.RefreshRate) * time.Second):
-				var suspended bool
-				v.mx.Lock()
-				{
-					suspended = v.suspended
-				}
-				v.mx.Unlock()
-				if suspended == true {
+				if v.isSuspended() {
 					continue
 				}
 				v.app.QueueUpdate(func() {
@@ -112,6 +139,17 @@ func (v *resourceView) updater(ctx context.Context) {
 			}
 		}
 	}(ctx)
+}
+
+func (v *resourceView) isSuspended() bool {
+	var suspended bool
+	v.mx.Lock()
+	{
+		suspended = v.suspended
+	}
+	v.mx.Unlock()
+
+	return suspended
 }
 
 func (v *resourceView) suspend() {
@@ -184,7 +222,7 @@ func (v *resourceView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.enterFn != nil {
 		v.enterFn(v.app, v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
 	} else {
-		v.defaultEnter(v.app, v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
+		v.defaultEnter(v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
 	}
 	return nil
 }
@@ -237,9 +275,9 @@ func (v *resourceView) dismissModal() {
 	v.switchPage(v.list.GetName())
 }
 
-func (v *resourceView) defaultEnter(app *appView, ns, resource, selection string) {
-	sel := v.getSelectedItem()
-	yaml, err := v.list.Resource().Describe(v.title, sel, v.app.flags)
+func (v *resourceView) defaultEnter(ns, resource, selection string) {
+	log.Debug().Msgf("Title %s", v.title)
+	yaml, err := v.list.Resource().Describe(v.title, selection, v.app.flags)
 	if err != nil {
 		v.app.flash(flashErr, err.Error())
 		log.Warn().Msgf("Describe %v", err.Error())
@@ -249,7 +287,7 @@ func (v *resourceView) defaultEnter(app *appView, ns, resource, selection string
 	details := v.GetPrimitive("details").(*detailsView)
 	{
 		details.setCategory("Describe")
-		details.setTitle(sel)
+		details.setTitle(selection)
 		details.SetTextColor(tcell.ColorAqua)
 		details.SetText(colorizeYAML(v.app.styles.Style, yaml))
 		details.ScrollToBeginning()
@@ -261,7 +299,10 @@ func (v *resourceView) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
 		return evt
 	}
-	v.defaultEnter(v.app, v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
+
+	log.Debug().Msgf("Selected Item %v-%v-%v", v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
+
+	v.defaultEnter(v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
 
 	return nil
 }
@@ -343,7 +384,6 @@ func (v *resourceView) refresh() {
 	}
 
 	v.refreshActions()
-	v.app.clusterInfoView.refresh()
 
 	if err := v.list.Reconcile(); err != nil {
 		log.Error().Err(err).Msg("Reconciliation failed")
@@ -353,10 +393,8 @@ func (v *resourceView) refresh() {
 	if v.decorateFn != nil {
 		data = v.decorateFn(data)
 	}
-
 	v.getTV().update(data)
 	v.selectItem(v.selectedRow, 0)
-	v.app.Draw()
 }
 
 func (v *resourceView) getTV() *tableView {
@@ -391,10 +429,18 @@ func (v *resourceView) selectItem(r, c int) {
 }
 
 func (v *resourceView) switchPage(p string) {
+	if _, ok := v.CurrentPage().Item.(*tableView); ok {
+		v.suspend()
+	}
+
 	v.SwitchToPage(p)
 	v.selectedNS = v.list.GetNamespace()
 	if h, ok := v.GetPrimitive(p).(hinter); ok {
 		v.app.setHints(h.hints())
+	}
+
+	if _, ok := v.CurrentPage().Item.(*tableView); ok {
+		v.resume()
 	}
 }
 
@@ -408,31 +454,11 @@ func namespaced(n string) (string, string) {
 }
 
 func (v *resourceView) refreshActions() {
-	if _, ok := v.CurrentPage().Item.(*tableView); !ok {
-		return
-	}
-
-	var nn []interface{}
-	if k8s.CanIAccess(v.app.conn().Config(), log.Logger, "", "list", "namespaces", "namespace.v1") {
-		var err error
-		nn, err = k8s.NewNamespace(v.app.conn()).List(resource.AllNamespaces)
-		if err != nil {
-			log.Warn().Msgf("Access %v", err)
-			v.app.flash(flashErr, err.Error())
-		}
-
-		if v.list.Namespaced() && !v.list.AllNamespaces() {
-			if !config.InNSList(nn, v.list.GetNamespace()) {
-				v.list.SetNamespace(resource.DefaultNamespace)
-			}
-		}
-
-		if v.list.Access(resource.NamespaceAccess) {
-			v.namespaces = make(map[int]string, config.MaxFavoritesNS)
-			for i, n := range v.app.config.FavNamespaces() {
-				v.actions[tcell.Key(numKeys[i])] = newKeyAction(n, v.switchNamespaceCmd, true)
-				v.namespaces[i] = n
-			}
+	if v.list.Access(resource.NamespaceAccess) {
+		v.namespaces = make(map[int]string, config.MaxFavoritesNS)
+		for i, n := range v.app.config.FavNamespaces() {
+			v.actions[tcell.Key(numKeys[i])] = newKeyAction(n, v.switchNamespaceCmd, true)
+			v.namespaces[i] = n
 		}
 	}
 

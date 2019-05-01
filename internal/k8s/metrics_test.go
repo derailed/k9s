@@ -21,7 +21,7 @@ func TestPodsMetrics(t *testing.T) {
 	}
 
 	mmx := make(PodsMetrics)
-	m.PodsMetrics(metrics.Items, mmx)
+	m.PodsMetrics(&metrics, mmx)
 	assert.Equal(t, 2, len(mmx))
 
 	mx, ok := mmx["default/p1"]
@@ -45,18 +45,16 @@ func BenchmarkPodsMetrics(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
-		m.PodsMetrics(metrics.Items, mmx)
+		m.PodsMetrics(&metrics, mmx)
 	}
 }
 
 func TestNodesMetrics(t *testing.T) {
 	m := NewMetricsServer(nil)
 
-	nodes := v1.NodeList{
-		Items: []v1.Node{
-			makeNode("n1", "32", "128Gi", "50m", "2Mi"),
-			makeNode("n2", "8", "4Gi", "50m", "2Mi"),
-		},
+	nodes := Collection{
+		makeNode("n1", "32", "128Gi", "50m", "2Mi"),
+		makeNode("n2", "8", "4Gi", "50m", "2Mi"),
 	}
 
 	metrics := v1beta1.NodeMetricsList{
@@ -67,7 +65,7 @@ func TestNodesMetrics(t *testing.T) {
 	}
 
 	mmx := make(NodesMetrics)
-	m.NodesMetrics(nodes.Items, metrics.Items, mmx)
+	m.NodesMetrics(nodes, &metrics, mmx)
 	assert.Equal(t, 2, len(mmx))
 	mx, ok := mmx["n1"]
 	assert.True(t, ok)
@@ -80,11 +78,9 @@ func TestNodesMetrics(t *testing.T) {
 }
 
 func BenchmarkNodesMetrics(b *testing.B) {
-	nodes := v1.NodeList{
-		Items: []v1.Node{
-			makeNode("n1", "100m", "4Mi", "50m", "2Mi"),
-			makeNode("n2", "100m", "4Mi", "50m", "2Mi"),
-		},
+	nodes := Collection{
+		makeNode("n1", "100m", "4Mi", "50m", "2Mi"),
+		makeNode("n2", "100m", "4Mi", "50m", "2Mi"),
 	}
 
 	metrics := v1beta1.NodeMetricsList{
@@ -100,7 +96,7 @@ func BenchmarkNodesMetrics(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
-		m.NodesMetrics(nodes.Items, metrics.Items, mmx)
+		m.NodesMetrics(nodes, &metrics, mmx)
 	}
 }
 
@@ -121,7 +117,8 @@ func TestClusterLoad(t *testing.T) {
 		},
 	}
 
-	mx := m.ClusterLoad(nodes.Items, metrics.Items)
+	var mx ClusterMetrics
+	m.ClusterLoad(&nodes, &metrics, &mx)
 	assert.Equal(t, 100.0, mx.PercCPU)
 	assert.Equal(t, 50.0, mx.PercMEM)
 }
@@ -142,11 +139,11 @@ func BenchmarkClusterLoad(b *testing.B) {
 	}
 
 	m := NewMetricsServer(nil)
-
+	var mx ClusterMetrics
 	b.ResetTimer()
 	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
-		m.ClusterLoad(nodes.Items, metrics.Items)
+		m.ClusterLoad(&nodes, &metrics, &mx)
 	}
 }
 

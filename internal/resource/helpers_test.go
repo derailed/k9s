@@ -148,3 +148,28 @@ func TestToMi(t *testing.T) {
 		assert.Equal(t, u.e, ToMi(u.v))
 	}
 }
+
+func TestAsPerc(t *testing.T) {
+	uu := []struct {
+		v float64
+		e string
+	}{
+		{0, "0%"},
+		{10.5, "10%"},
+		{10, "10%"},
+		{0.05, "0%"},
+	}
+
+	for _, u := range uu {
+		assert.Equal(t, u.e, AsPerc(u.v))
+	}
+}
+
+func BenchmarkAsPerc(b *testing.B) {
+	v := 10.5
+	b.ResetTimer()
+	b.ReportAllocs()
+	for n := 0; n < b.N; n++ {
+		AsPerc(v)
+	}
+}

@@ -16,23 +16,23 @@ type (
 		ContextName() string
 		ClusterName() string
 		UserName() string
-		GetNodes() ([]v1.Node, error)
+		GetNodes() (*v1.NodeList, error)
 	}
 
 	// MetricsServer gather metrics information from pods and nodes.
 	MetricsServer interface {
 		MetricsService
 
-		ClusterLoad([]v1.Node, []mv1beta1.NodeMetrics) k8s.ClusterMetrics
-		NodesMetrics([]v1.Node, []mv1beta1.NodeMetrics, k8s.NodesMetrics)
-		PodsMetrics([]mv1beta1.PodMetrics, k8s.PodsMetrics)
+		ClusterLoad(*v1.NodeList, *mv1beta1.NodeMetricsList, *k8s.ClusterMetrics)
+		NodesMetrics(k8s.Collection, *mv1beta1.NodeMetricsList, k8s.NodesMetrics)
+		PodsMetrics(*mv1beta1.PodMetricsList, k8s.PodsMetrics)
 	}
 
 	// MetricsService calls the metrics server for metrics info.
 	MetricsService interface {
 		HasMetrics() bool
-		FetchNodesMetrics() ([]mv1beta1.NodeMetrics, error)
-		FetchPodsMetrics(ns string) ([]mv1beta1.PodMetrics, error)
+		FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error)
+		FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, error)
 	}
 
 	// Cluster represents a kubernetes resource.
@@ -78,16 +78,16 @@ func (c *Cluster) UserName() string {
 }
 
 // Metrics gathers node level metrics and compute utilization percentages.
-func (c *Cluster) Metrics(nodes []v1.Node, nmx []mv1beta1.NodeMetrics) k8s.ClusterMetrics {
-	return c.mx.ClusterLoad(nodes, nmx)
+func (c *Cluster) Metrics(nodes *v1.NodeList, nmx *mv1beta1.NodeMetricsList, mx *k8s.ClusterMetrics) {
+	c.mx.ClusterLoad(nodes, nmx, mx)
 }
 
 // FetchNodesMetrics fetch all nodes metrics.
-func (c *Cluster) FetchNodesMetrics() ([]mv1beta1.NodeMetrics, error) {
+func (c *Cluster) FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error) {
 	return c.mx.FetchNodesMetrics()
 }
 
 // GetNodes fetch all available nodes.
-func (c *Cluster) GetNodes() ([]v1.Node, error) {
+func (c *Cluster) GetNodes() (*v1.NodeList, error) {
 	return c.api.GetNodes()
 }

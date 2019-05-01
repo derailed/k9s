@@ -56,7 +56,7 @@ type (
 		IsNamespaced(n string) bool
 		SupportsResource(group string) bool
 		ValidNamespaces() ([]v1.Namespace, error)
-		ValidPods(node string) ([]v1.Pod, error)
+		NodePods(node string) (*v1.PodList, error)
 		SupportsRes(grp string, versions []string) (string, bool)
 		ServerVersion() (*version.Info, error)
 		FetchNodes() (*v1.NodeList, error)
@@ -102,21 +102,17 @@ func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
 	return nn.Items, nil
 }
 
-// ValidPods returns a collection of all available pods on a given node.
-func (a *APIClient) ValidPods(node string) ([]v1.Pod, error) {
+// NodePods returns a collection of all available pods on a given node.
+func (a *APIClient) NodePods(node string) (*v1.PodList, error) {
 	const selFmt = "spec.nodeName=%s,status.phase!=%s,status.phase!=%s"
 	fieldSelector, err := fields.ParseSelector(fmt.Sprintf(selFmt, node, v1.PodSucceeded, v1.PodFailed))
 	if err != nil {
 		return nil, err
 	}
 
-	pods, err := a.DialOrDie().Core().Pods("").List(metav1.ListOptions{
+	return a.DialOrDie().Core().Pods("").List(metav1.ListOptions{
 		FieldSelector: fieldSelector.String(),
 	})
-	if err != nil {
-		return nil, err
-	}
-	return pods.Items, nil
 }
 
 // IsNamespaced check on server if given resource is namespaced

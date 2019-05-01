@@ -1,8 +1,6 @@
 package views
 
 import (
-	"fmt"
-
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
@@ -61,8 +59,7 @@ func showPods(app *appView, ns, res, selected, labelSel, fieldSel string, b acti
 	list.SetLabelSelector(labelSel)
 	list.SetFieldSelector(fieldSel)
 
-	title := fmt.Sprintf("%s:%s Pods", res, selected)
-	pv := newPodView(title, app, list)
+	pv := newPodView("Pods", app, list)
 	pv.setColorerFn(podColorer)
 	pv.setExtraActionsFn(func(aa keyActions) {
 		aa[tcell.KeyEsc] = newKeyAction("Back", b, true)

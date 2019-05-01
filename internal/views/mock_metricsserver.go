@@ -20,32 +20,25 @@ func NewMockMetricsServer() *MockMetricsServer {
 	return &MockMetricsServer{fail: pegomock.GlobalFailHandler}
 }
 
-func (mock *MockMetricsServer) ClusterLoad(_param0 []v1.Node, _param1 []v1beta1.NodeMetrics) k8s.ClusterMetrics {
+func (mock *MockMetricsServer) ClusterLoad(_param0 *v1.NodeList, _param1 *v1beta1.NodeMetricsList, _param2 *k8s.ClusterMetrics) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockMetricsServer().")
 	}
-	params := []pegomock.Param{_param0, _param1}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("ClusterLoad", params, []reflect.Type{reflect.TypeOf((*k8s.ClusterMetrics)(nil)).Elem()})
-	var ret0 k8s.ClusterMetrics
-	if len(result) != 0 {
-		if result[0] != nil {
-			ret0 = result[0].(k8s.ClusterMetrics)
-		}
-	}
-	return ret0
+	params := []pegomock.Param{_param0, _param1, _param2}
+	pegomock.GetGenericMockFrom(mock).Invoke("ClusterLoad", params, []reflect.Type{})
 }
 
-func (mock *MockMetricsServer) FetchNodesMetrics() ([]v1beta1.NodeMetrics, error) {
+func (mock *MockMetricsServer) FetchNodesMetrics() (*v1beta1.NodeMetricsList, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockMetricsServer().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("FetchNodesMetrics", params, []reflect.Type{reflect.TypeOf((*[]v1beta1.NodeMetrics)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 []v1beta1.NodeMetrics
+	result := pegomock.GetGenericMockFrom(mock).Invoke("FetchNodesMetrics", params, []reflect.Type{reflect.TypeOf((**v1beta1.NodeMetricsList)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 *v1beta1.NodeMetricsList
 	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].([]v1beta1.NodeMetrics)
+			ret0 = result[0].(*v1beta1.NodeMetricsList)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(error)
@@ -54,17 +47,17 @@ func (mock *MockMetricsServer) FetchNodesMetrics() ([]v1beta1.NodeMetrics, error
 	return ret0, ret1
 }
 
-func (mock *MockMetricsServer) FetchPodsMetrics(_param0 string) ([]v1beta1.PodMetrics, error) {
+func (mock *MockMetricsServer) FetchPodsMetrics(_param0 string) (*v1beta1.PodMetricsList, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockMetricsServer().")
 	}
 	params := []pegomock.Param{_param0}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("FetchPodsMetrics", params, []reflect.Type{reflect.TypeOf((*[]v1beta1.PodMetrics)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 []v1beta1.PodMetrics
+	result := pegomock.GetGenericMockFrom(mock).Invoke("FetchPodsMetrics", params, []reflect.Type{reflect.TypeOf((**v1beta1.PodMetricsList)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 *v1beta1.PodMetricsList
 	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].([]v1beta1.PodMetrics)
+			ret0 = result[0].(*v1beta1.PodMetricsList)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(error)
@@ -88,7 +81,7 @@ func (mock *MockMetricsServer) HasMetrics() bool {
 	return ret0
 }
 
-func (mock *MockMetricsServer) NodesMetrics(_param0 []v1.Node, _param1 []v1beta1.NodeMetrics, _param2 k8s.NodesMetrics) {
+func (mock *MockMetricsServer) NodesMetrics(_param0 k8s.Collection, _param1 *v1beta1.NodeMetricsList, _param2 k8s.NodesMetrics) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockMetricsServer().")
 	}
@@ -96,7 +89,7 @@ func (mock *MockMetricsServer) NodesMetrics(_param0 []v1.Node, _param1 []v1beta1
 	pegomock.GetGenericMockFrom(mock).Invoke("NodesMetrics", params, []reflect.Type{})
 }
 
-func (mock *MockMetricsServer) PodsMetrics(_param0 []v1beta1.PodMetrics, _param1 k8s.PodsMetrics) {
+func (mock *MockMetricsServer) PodsMetrics(_param0 *v1beta1.PodMetricsList, _param1 k8s.PodsMetrics) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockMetricsServer().")
 	}
@@ -141,8 +134,8 @@ type VerifierMetricsServer struct {
 	timeout                time.Duration
 }
 
-func (verifier *VerifierMetricsServer) ClusterLoad(_param0 []v1.Node, _param1 []v1beta1.NodeMetrics) *MetricsServer_ClusterLoad_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1}
+func (verifier *VerifierMetricsServer) ClusterLoad(_param0 *v1.NodeList, _param1 *v1beta1.NodeMetricsList, _param2 *k8s.ClusterMetrics) *MetricsServer_ClusterLoad_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ClusterLoad", params, verifier.timeout)
 	return &MetricsServer_ClusterLoad_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -152,21 +145,25 @@ type MetricsServer_ClusterLoad_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MetricsServer_ClusterLoad_OngoingVerification) GetCapturedArguments() ([]v1.Node, []v1beta1.NodeMetrics) {
-	_param0, _param1 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1]
+func (c *MetricsServer_ClusterLoad_OngoingVerification) GetCapturedArguments() (*v1.NodeList, *v1beta1.NodeMetricsList, *k8s.ClusterMetrics) {
+	_param0, _param1, _param2 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *MetricsServer_ClusterLoad_OngoingVerification) GetAllCapturedArguments() (_param0 [][]v1.Node, _param1 [][]v1beta1.NodeMetrics) {
+func (c *MetricsServer_ClusterLoad_OngoingVerification) GetAllCapturedArguments() (_param0 []*v1.NodeList, _param1 []*v1beta1.NodeMetricsList, _param2 []*k8s.ClusterMetrics) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([][]v1.Node, len(params[0]))
+		_param0 = make([]*v1.NodeList, len(params[0]))
 		for u, param := range params[0] {
-			_param0[u] = param.([]v1.Node)
+			_param0[u] = param.(*v1.NodeList)
 		}
-		_param1 = make([][]v1beta1.NodeMetrics, len(params[1]))
+		_param1 = make([]*v1beta1.NodeMetricsList, len(params[1]))
 		for u, param := range params[1] {
-			_param1[u] = param.([]v1beta1.NodeMetrics)
+			_param1[u] = param.(*v1beta1.NodeMetricsList)
+		}
+		_param2 = make([]*k8s.ClusterMetrics, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(*k8s.ClusterMetrics)
 		}
 	}
 	return
@@ -233,7 +230,7 @@ func (c *MetricsServer_HasMetrics_OngoingVerification) GetCapturedArguments() {
 func (c *MetricsServer_HasMetrics_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierMetricsServer) NodesMetrics(_param0 []v1.Node, _param1 []v1beta1.NodeMetrics, _param2 k8s.NodesMetrics) *MetricsServer_NodesMetrics_OngoingVerification {
+func (verifier *VerifierMetricsServer) NodesMetrics(_param0 k8s.Collection, _param1 *v1beta1.NodeMetricsList, _param2 k8s.NodesMetrics) *MetricsServer_NodesMetrics_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "NodesMetrics", params, verifier.timeout)
 	return &MetricsServer_NodesMetrics_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
@@ -244,21 +241,21 @@ type MetricsServer_NodesMetrics_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MetricsServer_NodesMetrics_OngoingVerification) GetCapturedArguments() ([]v1.Node, []v1beta1.NodeMetrics, k8s.NodesMetrics) {
+func (c *MetricsServer_NodesMetrics_OngoingVerification) GetCapturedArguments() (k8s.Collection, *v1beta1.NodeMetricsList, k8s.NodesMetrics) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *MetricsServer_NodesMetrics_OngoingVerification) GetAllCapturedArguments() (_param0 [][]v1.Node, _param1 [][]v1beta1.NodeMetrics, _param2 []k8s.NodesMetrics) {
+func (c *MetricsServer_NodesMetrics_OngoingVerification) GetAllCapturedArguments() (_param0 []k8s.Collection, _param1 []*v1beta1.NodeMetricsList, _param2 []k8s.NodesMetrics) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([][]v1.Node, len(params[0]))
+		_param0 = make([]k8s.Collection, len(params[0]))
 		for u, param := range params[0] {
-			_param0[u] = param.([]v1.Node)
+			_param0[u] = param.(k8s.Collection)
 		}
-		_param1 = make([][]v1beta1.NodeMetrics, len(params[1]))
+		_param1 = make([]*v1beta1.NodeMetricsList, len(params[1]))
 		for u, param := range params[1] {
-			_param1[u] = param.([]v1beta1.NodeMetrics)
+			_param1[u] = param.(*v1beta1.NodeMetricsList)
 		}
 		_param2 = make([]k8s.NodesMetrics, len(params[2]))
 		for u, param := range params[2] {
@@ -268,7 +265,7 @@ func (c *MetricsServer_NodesMetrics_OngoingVerification) GetAllCapturedArguments
 	return
 }
 
-func (verifier *VerifierMetricsServer) PodsMetrics(_param0 []v1beta1.PodMetrics, _param1 k8s.PodsMetrics) *MetricsServer_PodsMetrics_OngoingVerification {
+func (verifier *VerifierMetricsServer) PodsMetrics(_param0 *v1beta1.PodMetricsList, _param1 k8s.PodsMetrics) *MetricsServer_PodsMetrics_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "PodsMetrics", params, verifier.timeout)
 	return &MetricsServer_PodsMetrics_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
@@ -279,17 +276,17 @@ type MetricsServer_PodsMetrics_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MetricsServer_PodsMetrics_OngoingVerification) GetCapturedArguments() ([]v1beta1.PodMetrics, k8s.PodsMetrics) {
+func (c *MetricsServer_PodsMetrics_OngoingVerification) GetCapturedArguments() (*v1beta1.PodMetricsList, k8s.PodsMetrics) {
 	_param0, _param1 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *MetricsServer_PodsMetrics_OngoingVerification) GetAllCapturedArguments() (_param0 [][]v1beta1.PodMetrics, _param1 []k8s.PodsMetrics) {
+func (c *MetricsServer_PodsMetrics_OngoingVerification) GetAllCapturedArguments() (_param0 []*v1beta1.PodMetricsList, _param1 []k8s.PodsMetrics) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([][]v1beta1.PodMetrics, len(params[0]))
+		_param0 = make([]*v1beta1.PodMetricsList, len(params[0]))
 		for u, param := range params[0] {
-			_param0[u] = param.([]v1beta1.PodMetrics)
+			_param0[u] = param.(*v1beta1.PodMetricsList)
 		}
 		_param1 = make([]k8s.PodsMetrics, len(params[1]))
 		for u, param := range params[1] {

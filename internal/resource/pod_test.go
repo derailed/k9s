@@ -65,7 +65,7 @@ func TestPodListData(t *testing.T) {
 	mx := NewMockMetricsServer()
 	m.When(mx.HasMetrics()).ThenReturn(true)
 	m.When(mx.FetchPodsMetrics("blee")).
-		ThenReturn([]mv1beta1.PodMetrics{makeMxPod("fred", "100m", "20Mi")}, nil)
+		ThenReturn(&mv1beta1.PodMetricsList{Items: []mv1beta1.PodMetrics{makeMxPod("fred", "100m", "20Mi")}}, nil)
 
 	l := NewPodListWithArgs("blee", NewPodWithArgs(mc, mr, mx))
 	// Make sure we mcn get deltas!

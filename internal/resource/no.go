@@ -6,8 +6,6 @@ import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
 
@@ -65,21 +63,17 @@ func (r *Node) List(ns string) (Columnars, error) {
 		return nil, err
 	}
 
-	nodes := make([]v1.Node, 0, len(nn))
-	for _, n := range nn {
-		nodes = append(nodes, n.(v1.Node))
-	}
-
-	mx := make(k8s.NodesMetrics, len(nodes))
+	mx := make(k8s.NodesMetrics, len(nn))
 	if r.MetricsServer.HasMetrics() {
 		nmx, _ := r.MetricsServer.FetchNodesMetrics()
-		r.MetricsServer.NodesMetrics(nodes, nmx, mx)
+		r.MetricsServer.NodesMetrics(nn, nmx, mx)
 	}
 
-	cc := make(Columnars, 0, len(nodes))
-	for i := range nodes {
-		no := r.New(&nodes[i]).(*Node)
-		no.metrics = mx[nodes[i].Name]
+	cc := make(Columnars, 0, len(nn))
+	for i := range nn {
+		node := nn[i].(v1.Node)
+		no := r.New(&node).(*Node)
+		no.metrics = mx[node.Name]
 		cc = append(cc, no)
 	}
 
@@ -114,8 +108,8 @@ func (*Node) Header(ns string) Row {
 		"EXTERNAL-IP",
 		"CPU",
 		"MEM",
-		"RCPU",
-		"RMEM",
+		// "RCPU",
+		// "RMEM",
 		"ACPU",
 		"AMEM",
 		"AGE",
@@ -130,31 +124,36 @@ func (r *Node) Fields(ns string) Row {
 	iIP, eIP := r.getIPs(i.Status.Addresses)
 	iIP, eIP = missing(iIP), missing(eIP)
 
-	reqs, _, err := r.fetchReqLimit(i.Name)
-	if err != nil {
-		if !errors.IsForbidden(err) {
-			log.Warn().Msgf("User is not authorized to list pods on nodes: %v", err)
-		}
-		log.Error().Msgf("%#v", err)
-	}
+	// reqs, _, err := r.podsResources(i.Name)
+	// if err != nil {
+	// 	if !errors.IsForbidden(err) {
+	// 		log.Warn().Msgf("User is not authorized to list pods on nodes: %v", err)
+	// 	}
+	// 	log.Error().Msgf("%#v", err)
+	// }
 
-	rcpu, rmem := reqs["cpu"], reqs["memory"]
-
-	pcpur := toPerc(float64(rcpu.MilliValue()), float64(r.metrics.AvailCPU))
-	pmemr := toPerc(k8s.ToMB(rmem.Value()), float64(r.metrics.AvailMEM))
+	// rcpu, rmem := reqs["cpu"], reqs["memory"]
+	// pcpur := toPerc(float64(rcpu.MilliValue()), float64(r.metrics.AvailCPU))
+	// pmemr := toPerc(k8s.ToMB(rmem.Value()), float64(r.metrics.AvailMEM))
 
 	return append(ff,
 		i.Name,
-		r.status(i),
+		r.status(i.Status, i.Spec.Unschedulable),
 		r.nodeRoles(i),
 		i.Status.NodeInfo.KubeletVersion,
 		i.Status.NodeInfo.KernelVersion,
 		iIP,
 		eIP,
-		withPerc(ToMillicore(r.metrics.CurrentCPU), asPerc(toPerc(float64(r.metrics.CurrentCPU), float64(r.metrics.AvailCPU)))),
-		withPerc(ToMi(r.metrics.CurrentMEM), asPerc(toPerc(r.metrics.CurrentMEM, r.metrics.AvailMEM))),
-		withPerc(rcpu.String(), asPerc(pcpur)),
-		withPerc(rmem.String(), asPerc(pmemr)),
+		withPerc(
+			ToMillicore(r.metrics.CurrentCPU),
+			AsPerc(toPerc(float64(r.metrics.CurrentCPU), float64(r.metrics.AvailCPU))),
+		),
+		withPerc(
+			ToMi(r.metrics.CurrentMEM),
+			AsPerc(toPerc(r.metrics.CurrentMEM, r.metrics.AvailMEM)),
+		),
+		// withPerc(rcpu.String(), AsPerc(pcpur)),
+		// withPerc(rmem.String(), AsPerc(pmemr)),
 		ToMillicore(r.metrics.AvailCPU),
 		ToMi(r.metrics.AvailMEM),
 		toAge(i.ObjectMeta.CreationTimestamp),
@@ -190,6 +189,7 @@ func (*Node) nodeRoles(node *v1.Node) string {
 	if len(roles) == 0 {
 		return MissingValue
 	}
+
 	return strings.Join(roles.List(), ",")
 }
 
@@ -206,31 +206,35 @@ func (*Node) getIPs(addrs []v1.NodeAddress) (iIP, eIP string) {
 	return
 }
 
-func (r *Node) status(i *v1.Node) string {
-	conditionMap := make(map[v1.NodeConditionType]*v1.NodeCondition)
-	NodeAllConditions := []v1.NodeConditionType{v1.NodeReady}
-	for n := range i.Status.Conditions {
-		cond := i.Status.Conditions[n]
-		conditionMap[cond.Type] = &cond
-	}
-	var status []string
-	for _, validCondition := range NodeAllConditions {
-		if condition, ok := conditionMap[validCondition]; ok {
-			if condition.Status == v1.ConditionTrue {
-				status = append(status, string(condition.Type))
-			} else {
-				status = append(status, "Not"+string(condition.Type))
-			}
-		}
-	}
-	if len(status) == 0 {
-		status = append(status, "Unknown")
-	}
-	if i.Spec.Unschedulable {
-		status = append(status, "SchedulingDisabled")
+func (*Node) status(status v1.NodeStatus, exempt bool) string {
+	conditions := make(map[v1.NodeConditionType]*v1.NodeCondition)
+	for n := range status.Conditions {
+		cond := status.Conditions[n]
+		conditions[cond.Type] = &cond
 	}
 
-	return strings.Join(status, ",")
+	var conds []string
+	validConditions := []v1.NodeConditionType{v1.NodeReady}
+	for _, validCondition := range validConditions {
+		condition, ok := conditions[validCondition]
+		if !ok {
+			continue
+		}
+		neg := ""
+		if condition.Status != v1.ConditionTrue {
+			neg = "Not"
+		}
+		conds = append(conds, neg+string(condition.Type))
+
+	}
+	if len(conds) == 0 {
+		conds = append(conds, "Unknown")
+	}
+	if exempt {
+		conds = append(conds, "SchedulingDisabled")
+	}
+
+	return strings.Join(conds, ",")
 }
 
 func findNodeRoles(i *v1.Node) []string {
@@ -249,12 +253,14 @@ func findNodeRoles(i *v1.Node) []string {
 	return roles.List()
 }
 
-func (r *Node) fetchReqLimit(name string) (req, lim v1.ResourceList, err error) {
-	reqs, limits := map[v1.ResourceName]resource.Quantity{}, map[v1.ResourceName]resource.Quantity{}
-
-	pods, err := r.Connection.ValidPods(name)
-	for _, p := range pods {
-		preq, plim := podRequestsAndLimits(&p)
+func (r *Node) podsResources(name string) (v1.ResourceList, v1.ResourceList, error) {
+	reqs, limits := v1.ResourceList{}, v1.ResourceList{}
+	pods, err := r.Connection.NodePods(name)
+	if err != nil {
+		return reqs, limits, err
+	}
+	for _, p := range pods.Items {
+		preq, plim := podResources(&p)
 		for k, v := range preq {
 			if value, ok := reqs[k]; !ok {
 				reqs[k] = *v.Copy()
@@ -276,44 +282,42 @@ func (r *Node) fetchReqLimit(name string) (req, lim v1.ResourceList, err error) 
 	return reqs, limits, nil
 }
 
-func podRequestsAndLimits(pod *v1.Pod) (reqs, limits v1.ResourceList) {
-	reqs, limits = map[v1.ResourceName]resource.Quantity{}, map[v1.ResourceName]resource.Quantity{}
-
+func podResources(pod *v1.Pod) (v1.ResourceList, v1.ResourceList) {
+	reqs, limits := v1.ResourceList{}, v1.ResourceList{}
 	for _, container := range pod.Spec.Containers {
-		addResourceList(reqs, container.Resources.Requests)
-		addResourceList(limits, container.Resources.Limits)
+		addResources(reqs, container.Resources.Requests)
+		addResources(limits, container.Resources.Limits)
 	}
 	// init containers define the minimum of any resource
 	for _, container := range pod.Spec.InitContainers {
-		maxResourceList(reqs, container.Resources.Requests)
-		maxResourceList(limits, container.Resources.Limits)
+		maxResources(reqs, container.Resources.Requests)
+		maxResources(limits, container.Resources.Limits)
 	}
-	return
+
+	return reqs, limits
 }
 
-// addResourceList adds the resources in newList to list
-func addResourceList(list, new v1.ResourceList) {
-	for name, quantity := range new {
-		if value, ok := list[name]; !ok {
-			list[name] = *quantity.Copy()
-		} else {
+// AddResources adds the resources from l2 to l1.
+func addResources(l1, l2 v1.ResourceList) {
+	for name, quantity := range l2 {
+		if value, ok := l1[name]; ok {
 			value.Add(quantity)
-			list[name] = value
+			l1[name] = value
+		} else {
+			l1[name] = *quantity.Copy()
 		}
 	}
 }
 
-// maxResourceList sets list to the greater of list/newList for every resource
-// either list
-func maxResourceList(list, new v1.ResourceList) {
-	for name, quantity := range new {
-		if value, ok := list[name]; !ok {
-			list[name] = *quantity.Copy()
-			continue
-		} else {
+// MaxResourceList sets list to the greater of l1/l2 for every resource.
+func maxResources(l1, l2 v1.ResourceList) {
+	for name, quantity := range l2 {
+		if value, ok := l1[name]; ok {
 			if quantity.Cmp(value) > 0 {
-				list[name] = *quantity.Copy()
+				l1[name] = *quantity.Copy()
 			}
+		} else {
+			l1[name] = *quantity.Copy()
 		}
 	}
 }

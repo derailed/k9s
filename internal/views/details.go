@@ -196,13 +196,11 @@ func (v *detailsView) refreshTitle() {
 func (v *detailsView) setTitle(t string) {
 	v.title = t
 
-	fmat := strings.Replace(detailsTitleFmt, "[fg", "["+v.app.styles.Style.Title.FgColor, -1)
-	fmat = strings.Replace(fmat, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
+	fmat := strings.Replace(detailsTitleFmt, "[fg:bg", "["+v.app.styles.Style.Title.FgColor+":"+v.app.styles.Style.Title.BgColor, -1)
 	fmat = strings.Replace(fmat, "[hilite", "["+v.app.styles.Style.Title.CounterColor, 1)
 	title := fmt.Sprintf(fmat, v.category, t)
 	if !v.cmdBuff.empty() {
-		fmat := strings.Replace(searchFmt, "[fg", "["+v.app.styles.Style.Title.FgColor, -1)
-		fmat = strings.Replace(fmat, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
+		fmat := strings.Replace(searchFmt, "[fg:bg", "["+v.app.styles.Style.Title.FgColor+":"+v.app.styles.Style.Title.BgColor, -1)
 		fmat = strings.Replace(fmat, "[filter", "["+v.app.styles.Style.Title.FilterColor, 1)
 		title += fmt.Sprintf(fmat, v.cmdBuff.String())
 	}

@@ -1,7 +1,6 @@
 package resource
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -105,11 +104,11 @@ func (r *Endpoints) toEPs(ss []v1.EndpointSubset) string {
 		for _, a := range s.Addresses {
 			if len(a.IP) != 0 {
 				if len(pp) == 0 {
-					aa = append(aa, fmt.Sprintf("%s", a.IP))
+					aa = append(aa, a.IP)
 				} else {
-					add := fmt.Sprintf("%s:%s", a.IP, strings.Join(pp, ","))
+					add := a.IP + ":" + strings.Join(pp, ",")
 					if len(pp) > max {
-						add = fmt.Sprintf("%s:%s...", a.IP, strings.Join(pp[:max], ","))
+						add = a.IP + ":" + strings.Join(pp[:max], ",") + "..."
 					}
 					aa = append(aa, add)
 				}

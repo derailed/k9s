@@ -217,12 +217,8 @@ func (l *list) Data() TableData {
 
 // Reconcile previous vs current state and emits delta events.
 func (l *list) Reconcile() error {
-	var (
-		items Columnars
-		err   error
-	)
-
-	if items, err = l.resource.List(l.namespace); err != nil {
+	items, err := l.resource.List(l.namespace)
+	if err != nil {
 		return err
 	}
 

@@ -3,7 +3,6 @@ package resource
 import (
 	"bufio"
 	"context"
-	"fmt"
 	"strconv"
 	"sync"
 	"time"
@@ -146,7 +145,7 @@ func (r *Pod) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (c
 	// This call will block if nothing is in the stream!!
 	stream, err := req.Stream()
 	if err != nil {
-		log.Error().Msgf("Tail logs failed `%s/%s:%s -- %v", ns, n, co, err)
+		log.Warn().Err(err).Msgf("Stream canceled `%s/%s:%s", ns, n, co)
 		return cancel, err
 	}
 
@@ -194,9 +193,7 @@ func (r *Pod) List(ns string) (Columnars, error) {
 	cc := make(Columnars, 0, len(pods))
 	for i := range pods {
 		po := r.New(&pods[i]).(*Pod)
-		if err == nil {
-			po.metrics = mx[po.Name()]
-		}
+		po.metrics = mx[po.Name()]
 		cc = append(cc, po)
 	}
 
@@ -320,9 +317,9 @@ func (*Pod) containerPhase(st v1.PodStatus, status string) (bool, string) {
 			status = cs.State.Terminated.Reason
 		case cs.State.Terminated != nil:
 			if cs.State.Terminated.Signal != 0 {
-				status = fmt.Sprintf("Signal:%d", cs.State.Terminated.Signal)
+				status = "Signal:" + strconv.Itoa(int(cs.State.Terminated.Signal))
 			} else {
-				status = fmt.Sprintf("ExitCode:%d", cs.State.Terminated.ExitCode)
+				status = "ExitCode:" + strconv.Itoa(int(cs.State.Terminated.ExitCode))
 			}
 		case cs.Ready && cs.State.Running != nil:
 			running = true
@@ -345,14 +342,14 @@ func (*Pod) initContainerPhase(st v1.PodStatus, initCount int, status string) (b
 				break
 			}
 			if cs.State.Terminated.Signal != 0 {
-				status = fmt.Sprintf("Init:Signal:%d", cs.State.Terminated.Signal)
+				status = "Init:Signal:" + strconv.Itoa(int(cs.State.Terminated.Signal))
 			} else {
-				status = fmt.Sprintf("Init:ExitCode:%d", cs.State.Terminated.ExitCode)
+				status = "Init:ExitCode:" + strconv.Itoa(int(cs.State.Terminated.ExitCode))
 			}
 		case cs.State.Waiting != nil && cs.State.Waiting.Reason != "" && cs.State.Waiting.Reason != "PodInitializing":
 			status = "Init:" + cs.State.Waiting.Reason
 		default:
-			status = fmt.Sprintf("Init:%d/%d", i, initCount)
+			status = "Init:" + strconv.Itoa(i) + "/" + strconv.Itoa(initCount)
 		}
 		init = true
 		break

@@ -34,7 +34,3 @@ func TestDeltas(t *testing.T) {
 		assert.Equal(t, u.e, deltas(u.s1, u.s2))
 	}
 }
-
-func TestToPerc(t *testing.T) {
-	assert.Equal(t, "50%", toPerc(50))
-}

@@ -48,17 +48,18 @@ func NewMetricsServer(c Connection) *MetricsServer {
 }
 
 // NodesMetrics retrieves metrics for a given set of nodes.
-func (m *MetricsServer) NodesMetrics(nodes []v1.Node, metrics []mv1beta1.NodeMetrics, mmx NodesMetrics) {
+func (m *MetricsServer) NodesMetrics(nodes Collection, metrics *mv1beta1.NodeMetricsList, mmx NodesMetrics) {
 	for _, n := range nodes {
-		mmx[n.Name] = NodeMetrics{
-			AvailCPU: n.Status.Allocatable.Cpu().MilliValue(),
-			AvailMEM: ToMB(n.Status.Allocatable.Memory().Value()),
-			TotalCPU: n.Status.Capacity.Cpu().MilliValue(),
-			TotalMEM: ToMB(n.Status.Capacity.Memory().Value()),
+		no := n.(v1.Node)
+		mmx[no.Name] = NodeMetrics{
+			AvailCPU: no.Status.Allocatable.Cpu().MilliValue(),
+			AvailMEM: ToMB(no.Status.Allocatable.Memory().Value()),
+			TotalCPU: no.Status.Capacity.Cpu().MilliValue(),
+			TotalMEM: ToMB(no.Status.Capacity.Memory().Value()),
 		}
 	}
 
-	for _, c := range metrics {
+	for _, c := range metrics.Items {
 		if mx, ok := mmx[c.Name]; ok {
 			mx.CurrentCPU = c.Usage.Cpu().MilliValue()
 			mx.CurrentMEM = ToMB(c.Usage.Memory().Value())
@@ -68,19 +69,17 @@ func (m *MetricsServer) NodesMetrics(nodes []v1.Node, metrics []mv1beta1.NodeMet
 }
 
 // ClusterLoad retrieves all cluster nodes metrics.
-func (m *MetricsServer) ClusterLoad(nodes []v1.Node, metrics []mv1beta1.NodeMetrics) ClusterMetrics {
-	nodeMetrics := make(NodesMetrics, len(nodes))
+func (m *MetricsServer) ClusterLoad(nodes *v1.NodeList, metrics *mv1beta1.NodeMetricsList, mx *ClusterMetrics) {
+	nodeMetrics := make(NodesMetrics, len(nodes.Items))
 
-	for _, n := range nodes {
+	for _, n := range nodes.Items {
 		nodeMetrics[n.Name] = NodeMetrics{
 			AvailCPU: n.Status.Allocatable.Cpu().MilliValue(),
 			AvailMEM: ToMB(n.Status.Allocatable.Memory().Value()),
-			TotalCPU: n.Status.Capacity.Cpu().MilliValue(),
-			TotalMEM: ToMB(n.Status.Capacity.Memory().Value()),
 		}
 	}
 
-	for _, mx := range metrics {
+	for _, mx := range metrics.Items {
 		if m, ok := nodeMetrics[mx.Name]; ok {
 			m.CurrentCPU = mx.Usage.Cpu().MilliValue()
 			m.CurrentMEM = ToMB(mx.Usage.Memory().Value())
@@ -96,41 +95,33 @@ func (m *MetricsServer) ClusterLoad(nodes []v1.Node, metrics []mv1beta1.NodeMetr
 		tmem += mx.AvailMEM
 	}
 
-	return ClusterMetrics{PercCPU: toPerc(cpu, tcpu), PercMEM: toPerc(mem, tmem)}
+	mx.PercCPU, mx.PercMEM = toPerc(cpu, tcpu), toPerc(mem, tmem)
 }
 
 // FetchNodesMetrics return all metrics for pods in a given namespace.
-func (m *MetricsServer) FetchNodesMetrics() ([]mv1beta1.NodeMetrics, error) {
+func (m *MetricsServer) FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error) {
 	client, err := m.MXDial()
 	if err != nil {
 		return nil, err
 	}
 
-	list, err := client.Metrics().NodeMetricses().List(metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return list.Items, nil
+	return client.Metrics().NodeMetricses().List(metav1.ListOptions{})
 }
 
 // FetchPodsMetrics return all metrics for pods in a given namespace.
-func (m *MetricsServer) FetchPodsMetrics(ns string) ([]mv1beta1.PodMetrics, error) {
+func (m *MetricsServer) FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, error) {
 	client, err := m.MXDial()
 	if err != nil {
 		return nil, err
 	}
 
-	list, err := client.Metrics().PodMetricses(ns).List(metav1.ListOptions{})
-	if err != nil {
-		return nil, err
-	}
-	return list.Items, nil
+	return client.Metrics().PodMetricses(ns).List(metav1.ListOptions{})
 }
 
 // PodsMetrics retrieves metrics for all pods in a given namespace.
-func (m *MetricsServer) PodsMetrics(pods []mv1beta1.PodMetrics, mmx PodsMetrics) {
+func (m *MetricsServer) PodsMetrics(pods *mv1beta1.PodMetricsList, mmx PodsMetrics) {
 	// Compute all pod's containers metrics.
-	for _, p := range pods {
+	for _, p := range pods.Items {
 		var mx PodMetrics
 		for _, c := range p.Containers {
 			mx.CurrentCPU += c.Usage.Cpu().MilliValue()

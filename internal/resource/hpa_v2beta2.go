@@ -1,7 +1,6 @@
 package resource
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -121,12 +120,12 @@ func toMetrics(specs []autoscalingv2beta2.MetricSpec, statuses []autoscalingv2be
 			if len(statuses) > i && statuses[i].Pods != nil {
 				current = statuses[i].Pods.Current.AverageValue.String()
 			}
-			list = append(list, fmt.Sprintf("%s/%s", current, spec.Pods.Target.AverageValue.String()))
+			list = append(list, current+"/"+spec.Pods.Target.AverageValue.String())
 		case autoscalingv2beta2.ObjectMetricSourceType:
 			if len(statuses) > i && statuses[i].Object != nil {
 				current = statuses[i].Object.Current.Value.String()
 			}
-			list = append(list, fmt.Sprintf("%s/%s", current, spec.Object.Target.Value.String()))
+			list = append(list, current+"/"+spec.Object.Target.Value.String())
 		case autoscalingv2beta2.ResourceMetricSourceType:
 			list = append(list, resourceMetrics(i, spec, statuses))
 		default:
@@ -141,7 +140,7 @@ func toMetrics(specs []autoscalingv2beta2.MetricSpec, statuses []autoscalingv2be
 
 	ret := strings.Join(list, ", ")
 	if more {
-		return fmt.Sprintf("%s + %d more...", ret, count-max)
+		return ret + " + " + strconv.Itoa(count-max) + "more..."
 	}
 
 	return ret
@@ -154,13 +153,13 @@ func externalMetrics(i int, spec autoscalingv2beta2.MetricSpec, statuses []autos
 		if len(statuses) > i && statuses[i].External != nil && &statuses[i].External.Current.AverageValue != nil {
 			current = statuses[i].External.Current.AverageValue.String()
 		}
-		return fmt.Sprintf("%s/%s (avg)", current, spec.External.Target.AverageValue.String())
+		return current + "/" + spec.External.Target.AverageValue.String() + " (avg)"
 	}
 	if len(statuses) > i && statuses[i].External != nil {
 		current = statuses[i].External.Current.Value.String()
 	}
 
-	return fmt.Sprintf("%s/%s", current, spec.External.Target.Value.String())
+	return current + "/" + spec.External.Target.Value.String()
 }
 
 func resourceMetrics(i int, spec autoscalingv2beta2.MetricSpec, statuses []autoscalingv2beta2.MetricStatus) string {
@@ -170,16 +169,17 @@ func resourceMetrics(i int, spec autoscalingv2beta2.MetricSpec, statuses []autos
 		if len(statuses) > i && statuses[i].Resource != nil {
 			current = statuses[i].Resource.Current.AverageValue.String()
 		}
-		return fmt.Sprintf("%s/%s", current, spec.Resource.Target.AverageValue.String())
+		return current + "/" + spec.Resource.Target.AverageValue.String()
 	}
 
 	if len(statuses) > i && statuses[i].Resource != nil && statuses[i].Resource.Current.AverageUtilization != nil {
-		current = fmt.Sprintf("%d%%", *statuses[i].Resource.Current.AverageUtilization)
+		current = AsPerc(float64(*statuses[i].Resource.Current.AverageUtilization))
 	}
 
 	target := "<auto>"
 	if spec.Resource.Target.AverageUtilization != nil {
-		target = fmt.Sprintf("%d%%", *spec.Resource.Target.AverageUtilization)
+		target = AsPerc(float64(*spec.Resource.Target.AverageUtilization))
 	}
-	return fmt.Sprintf("%s/%s", current, target)
+
+	return current + "/" + target
 }

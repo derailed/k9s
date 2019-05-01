@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
@@ -88,7 +89,6 @@ func (v *clusterInfoView) infoCell(t string) *tview.TableCell {
 
 func (v *clusterInfoView) refresh() {
 	var row int
-
 	v.GetCell(row, 1).SetText(v.cluster.ContextName())
 	row++
 	v.GetCell(row, 1).SetText(v.cluster.ClusterName())
@@ -100,23 +100,24 @@ func (v *clusterInfoView) refresh() {
 
 	nodes, err := v.cluster.GetNodes()
 	if err != nil {
-		log.Warn().Msgf("ClusterInfo %s", err)
+		log.Warn().Err(err).Msg("List nodes")
 		return
 	}
 	mxNodes, err := v.cluster.FetchNodesMetrics()
 	if err != nil {
-		log.Warn().Msgf("ClusterInfo %s", err)
+		log.Warn().Err(err).Msg("List node metrics")
 		return
 	}
 
-	mx := v.cluster.Metrics(nodes, mxNodes)
+	var mx k8s.ClusterMetrics
+	v.cluster.Metrics(nodes, mxNodes, &mx)
 	c := v.GetCell(row, 1)
-	cpu := toPerc(mx.PercCPU)
+	cpu := resource.AsPerc(mx.PercCPU)
 	c.SetText(cpu + deltas(strip(c.Text), cpu))
 	row++
 
 	c = v.GetCell(row, 1)
-	mem := toPerc(mx.PercMEM)
+	mem := resource.AsPerc(mx.PercMEM)
 	c.SetText(mem + deltas(strip(c.Text), mem))
 }
 

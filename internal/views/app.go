@@ -3,7 +3,6 @@ package views
 import (
 	"context"
 	"fmt"
-	"runtime"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
@@ -138,7 +137,6 @@ func (a *appView) conn() k8s.Connection {
 func (a *appView) stylesUpdater() (*fsnotify.Watcher, error) {
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Error().Err(err).Msg("File notifier failed")
 		return w, err
 	}
 
@@ -146,18 +144,17 @@ func (a *appView) stylesUpdater() (*fsnotify.Watcher, error) {
 		for {
 			select {
 			case evt := <-w.Events:
-				log.Debug().Msgf("Evt %#v", evt)
+				_ = evt
 				a.QueueUpdateDraw(func() {
 					a.refreshStyles()
 				})
-			case err := <-w.Errors:
-				log.Error().Err(err).Msg("Watcher failed")
+				// case err := <-w.Errors:
+				// 	log.Info().Err(err).Msg("Skin watcher failed")
 			}
 		}
 	}()
 
 	if err := w.Add(config.K9sStylesFile); err != nil {
-		log.Error().Err(err).Msg("Styles file watch failed")
 		return w, err
 	}
 
@@ -200,7 +197,7 @@ func (a *appView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if a, ok := a.actions[key]; ok {
-		log.Debug().Msgf(">> AppView handled key: %s -- %d", tcell.KeyNames[key], runtime.NumGoroutine())
+		log.Debug().Msgf(">> AppView handled key: %s", tcell.KeyNames[key])
 		return a.action(evt)
 	}
 
@@ -391,7 +388,7 @@ func (a *appView) nextFocus() {
 func (a *appView) refreshStyles() {
 	var err error
 	if a.styles, err = config.NewStyles(); err != nil {
-		log.Error().Err(err).Msg("No skin file found. Loading defaults.")
+		log.Warn().Err(err).Msg("No skin file found. Loading defaults.")
 	}
 	a.styles.Update()
 

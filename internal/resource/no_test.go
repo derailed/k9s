@@ -66,7 +66,7 @@ func TestNodeListData(t *testing.T) {
 	mx := NewMockMetricsServer()
 	m.When(mx.HasMetrics()).ThenReturn(true)
 	m.When(mx.FetchNodesMetrics()).
-		ThenReturn([]mv1beta1.NodeMetrics{makeMxNode("fred", "100m", "100Mi")}, nil)
+		ThenReturn(&mv1beta1.NodeMetricsList{Items: []mv1beta1.NodeMetrics{makeMxNode("fred", "100m", "100Mi")}}, nil)
 
 	l := NewNodeListWithArgs("-", NewNodeWithArgs(mc, mr, mx))
 	// Make sure we mrn get deltas!
@@ -81,13 +81,14 @@ func TestNodeListData(t *testing.T) {
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
 	row, ok := td.Rows["fred"]
 	assert.True(t, ok)
-	assert.Equal(t, 14, len(row.Deltas))
+	assert.Equal(t, 12, len(row.Deltas))
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}
 	assert.Equal(t, resource.Row{"fred"}, row.Fields[:1])
 }
 
+// ----------------------------------------------------------------------------
 // Helpers...
 
 func k8sNode() *v1.Node {
