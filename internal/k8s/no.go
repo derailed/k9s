@@ -1,6 +1,9 @@
 package k8s
 
 import (
+	"time"
+
+	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -22,6 +25,10 @@ func (n *Node) Get(_, name string) (interface{}, error) {
 
 // List all nodes on the cluster.
 func (n *Node) List(_ string) (Collection, error) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("List Node %v", time.Since(t))
+	}(time.Now())
+
 	opts := metav1.ListOptions{
 		LabelSelector: n.labelSelector,
 		FieldSelector: n.fieldSelector,

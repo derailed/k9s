@@ -1,6 +1,9 @@
 package k8s
 
 import (
+	"time"
+
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
@@ -49,6 +52,10 @@ func NewMetricsServer(c Connection) *MetricsServer {
 
 // NodesMetrics retrieves metrics for a given set of nodes.
 func (m *MetricsServer) NodesMetrics(nodes Collection, metrics *mv1beta1.NodeMetricsList, mmx NodesMetrics) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("Node MX %v", time.Since(t))
+	}(time.Now())
+
 	for _, n := range nodes {
 		no := n.(v1.Node)
 		mmx[no.Name] = NodeMetrics{
@@ -70,6 +77,10 @@ func (m *MetricsServer) NodesMetrics(nodes Collection, metrics *mv1beta1.NodeMet
 
 // ClusterLoad retrieves all cluster nodes metrics.
 func (m *MetricsServer) ClusterLoad(nodes *v1.NodeList, metrics *mv1beta1.NodeMetricsList, mx *ClusterMetrics) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("Cluster Load %v", time.Since(t))
+	}(time.Now())
+
 	nodeMetrics := make(NodesMetrics, len(nodes.Items))
 
 	for _, n := range nodes.Items {
@@ -100,6 +111,10 @@ func (m *MetricsServer) ClusterLoad(nodes *v1.NodeList, metrics *mv1beta1.NodeMe
 
 // FetchNodesMetrics return all metrics for pods in a given namespace.
 func (m *MetricsServer) FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("Node metrics %v", time.Since(t))
+	}(time.Now())
+
 	client, err := m.MXDial()
 	if err != nil {
 		return nil, err
@@ -110,6 +125,10 @@ func (m *MetricsServer) FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error) {
 
 // FetchPodsMetrics return all metrics for pods in a given namespace.
 func (m *MetricsServer) FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, error) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("Pod Metrics %v", time.Since(t))
+	}(time.Now())
+
 	client, err := m.MXDial()
 	if err != nil {
 		return nil, err
@@ -120,6 +139,10 @@ func (m *MetricsServer) FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, e
 
 // PodsMetrics retrieves metrics for all pods in a given namespace.
 func (m *MetricsServer) PodsMetrics(pods *mv1beta1.PodMetricsList, mmx PodsMetrics) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("Pod MX %v", time.Since(t))
+	}(time.Now())
+
 	// Compute all pod's containers metrics.
 	for _, p := range pods.Items {
 		var mx PodMetrics

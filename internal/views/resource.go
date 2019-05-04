@@ -116,7 +116,7 @@ func (v *resourceView) updater(ctx context.Context) {
 				if v.isSuspended() {
 					continue
 				}
-				v.app.QueueUpdate(func() {
+				v.app.QueueUpdateDraw(func() {
 					v.app.clusterInfoView.refresh()
 				})
 			}
@@ -375,6 +375,11 @@ func (v *resourceView) doSwitchNamespace(ns string) {
 }
 
 func (v *resourceView) refresh() {
+	log.Debug().Msgf("%s", strings.Repeat("-", 80))
+	defer func(t time.Time) {
+		log.Debug().Msgf("Refresh %v", time.Since(t))
+	}(time.Now())
+
 	if _, ok := v.CurrentPage().Item.(*tableView); !ok {
 		return
 	}

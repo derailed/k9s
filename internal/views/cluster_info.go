@@ -14,8 +14,8 @@ import (
 type clusterInfoView struct {
 	*tview.Table
 
-	app     *appView
-	cluster *resource.Cluster
+	app *appView
+	mxs resource.MetricsServer
 }
 
 // ClusterInfo tracks Kubernetes cluster and K9s information.
@@ -31,31 +31,33 @@ type ClusterInfo interface {
 
 func newClusterInfoView(app *appView, mx resource.MetricsServer) *clusterInfoView {
 	return &clusterInfoView{
-		app:     app,
-		Table:   tview.NewTable(),
-		cluster: resource.NewCluster(app.conn(), &log.Logger, mx),
+		app:   app,
+		Table: tview.NewTable(),
+		mxs:   mx,
 	}
 }
 
 func (v *clusterInfoView) init() {
+	cluster := resource.NewCluster(v.app.conn(), &log.Logger, v.mxs)
+
 	var row int
 	v.SetCell(row, 0, v.sectionCell("Context"))
-	v.SetCell(row, 1, v.infoCell(v.cluster.ContextName()))
+	v.SetCell(row, 1, v.infoCell(cluster.ContextName()))
 	row++
 
 	v.SetCell(row, 0, v.sectionCell("Cluster"))
-	v.SetCell(row, 1, v.infoCell(v.cluster.ClusterName()))
+	v.SetCell(row, 1, v.infoCell(cluster.ClusterName()))
 	row++
 
 	v.SetCell(row, 0, v.sectionCell("User"))
-	v.SetCell(row, 1, v.infoCell(v.cluster.UserName()))
+	v.SetCell(row, 1, v.infoCell(cluster.UserName()))
 	row++
 
 	v.SetCell(row, 0, v.sectionCell("K9s Rev"))
 	v.SetCell(row, 1, v.infoCell(v.app.version))
 	row++
 
-	rev := v.cluster.Version()
+	rev := cluster.Version()
 	v.SetCell(row, 0, v.sectionCell("K8s Rev"))
 	v.SetCell(row, 1, v.infoCell(rev))
 	row++
@@ -88,29 +90,31 @@ func (v *clusterInfoView) infoCell(t string) *tview.TableCell {
 }
 
 func (v *clusterInfoView) refresh() {
+	cluster := resource.NewCluster(v.app.conn(), &log.Logger, v.mxs)
+
 	var row int
-	v.GetCell(row, 1).SetText(v.cluster.ContextName())
+	v.GetCell(row, 1).SetText(cluster.ContextName())
 	row++
-	v.GetCell(row, 1).SetText(v.cluster.ClusterName())
+	v.GetCell(row, 1).SetText(cluster.ClusterName())
 	row++
-	v.GetCell(row, 1).SetText(v.cluster.UserName())
+	v.GetCell(row, 1).SetText(cluster.UserName())
 	row += 2
-	v.GetCell(row, 1).SetText(v.cluster.Version())
+	v.GetCell(row, 1).SetText(cluster.Version())
 	row++
 
-	nodes, err := v.cluster.GetNodes()
+	nodes, err := cluster.GetNodes()
 	if err != nil {
 		log.Warn().Err(err).Msg("List nodes")
 		return
 	}
-	mxNodes, err := v.cluster.FetchNodesMetrics()
+	mxNodes, err := cluster.FetchNodesMetrics()
 	if err != nil {
 		log.Warn().Err(err).Msg("List node metrics")
 		return
 	}
 
 	var mx k8s.ClusterMetrics
-	v.cluster.Metrics(nodes, mxNodes, &mx)
+	cluster.Metrics(nodes, mxNodes, &mx)
 	c := v.GetCell(row, 1)
 	cpu := resource.AsPerc(mx.PercCPU)
 	c.SetText(cpu + deltas(strip(c.Text), cpu))

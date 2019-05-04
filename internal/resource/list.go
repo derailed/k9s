@@ -2,7 +2,9 @@ package resource
 
 import (
 	"reflect"
+	"time"
 
+	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
@@ -217,6 +219,10 @@ func (l *list) Data() TableData {
 
 // Reconcile previous vs current state and emits delta events.
 func (l *list) Reconcile() error {
+	defer func(t time.Time) {
+		log.Debug().Msgf("Reconcile %v", time.Since(t))
+	}(time.Now())
+
 	items, err := l.resource.List(l.namespace)
 	if err != nil {
 		return err

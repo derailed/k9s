@@ -148,8 +148,8 @@ func (a *appView) stylesUpdater() (*fsnotify.Watcher, error) {
 				a.QueueUpdateDraw(func() {
 					a.refreshStyles()
 				})
-				// case err := <-w.Errors:
-				// 	log.Info().Err(err).Msg("Skin watcher failed")
+			case err := <-w.Errors:
+				log.Info().Err(err).Msg("Skin watcher failed")
 			}
 		}
 	}()

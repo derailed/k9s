@@ -34,6 +34,11 @@ func (v *contextView) useCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
+	// Update cluster info on context switch.
+	v.app.QueueUpdateDraw(func() {
+		v.app.clusterInfoView.refresh()
+	})
+
 	v.app.gotoResource("po", true)
 
 	return nil
