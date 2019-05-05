@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type clusterInfoView struct {
@@ -103,12 +104,12 @@ func (v *clusterInfoView) refresh() {
 	v.GetCell(row, 1).SetText(cluster.Version())
 	row++
 
-	nos, err := v.app.informer.List(watch.NodeIndex, "")
+	nos, err := v.app.informer.List(watch.NodeIndex, "", metav1.ListOptions{})
 	if err != nil {
 		log.Warn().Err(err).Msg("List nodes")
 		return
 	}
-	nmx, err := v.app.informer.List(watch.NodeMXIndex, "")
+	nmx, err := v.app.informer.List(watch.NodeMXIndex, "", metav1.ListOptions{})
 	if err != nil {
 		log.Warn().Err(err).Msg("List node metrics")
 		return

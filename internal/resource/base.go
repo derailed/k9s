@@ -23,6 +23,8 @@ type (
 		Delete(ns string, name string) error
 		SetLabelSelector(string)
 		SetFieldSelector(string)
+		GetLabelSelector() string
+		GetFieldSelector() string
 		HasSelectors() bool
 	}
 
@@ -68,6 +70,16 @@ func (b *Base) SetFieldSelector(s string) {
 // SetLabelSelector refines query results via labels.
 func (b *Base) SetLabelSelector(s string) {
 	b.Resource.SetLabelSelector(s)
+}
+
+// GetFieldSelector returns field selector.
+func (b *Base) GetFieldSelector() string {
+	return b.Resource.GetFieldSelector()
+}
+
+// GetLabelSelector returns label selector.
+func (b *Base) GetLabelSelector() string {
+	return b.Resource.GetLabelSelector()
 }
 
 // Name returns the resource namespaced name.

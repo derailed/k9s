@@ -39,7 +39,7 @@ func NewPodMetrics(c k8s.Connection, ns string) *PodMetrics {
 }
 
 // List pod metrics from store.
-func (p *PodMetrics) List(ns string) k8s.Collection {
+func (p *PodMetrics) List(ns string, opts metav1.ListOptions) k8s.Collection {
 	var res k8s.Collection
 	for _, o := range p.GetStore().List() {
 		mx := o.(*mv1beta1.PodMetrics)
@@ -52,7 +52,7 @@ func (p *PodMetrics) List(ns string) k8s.Collection {
 }
 
 // Get pod metrics from store.
-func (p *PodMetrics) Get(fqn string) (interface{}, error) {
+func (p *PodMetrics) Get(fqn string, opts metav1.GetOptions) (interface{}, error) {
 	o, ok, err := p.GetStore().GetByKey(fqn)
 	if err != nil {
 		return nil, err

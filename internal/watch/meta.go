@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/k8s"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/tools/cache"
 )
@@ -37,8 +38,8 @@ type TableListenerFn func(TableData)
 // StoreInformer an informer that allows listeners registration.
 type StoreInformer interface {
 	cache.SharedIndexInformer
-	Get(fqn string) (interface{}, error)
-	List(ns string) k8s.Collection
+	Get(fqn string, opts metav1.GetOptions) (interface{}, error)
+	List(ns string, opts metav1.ListOptions) k8s.Collection
 }
 
 // Meta represents a collection of cluster wide watchers.
@@ -72,21 +73,21 @@ func (m *Meta) init(ns string) {
 }
 
 // List items from store.
-func (m *Meta) List(res, ns string) (k8s.Collection, error) {
+func (m *Meta) List(res, ns string, opts metav1.ListOptions) (k8s.Collection, error) {
 	if m == nil {
 		return nil, fmt.Errorf("No meta exists")
 	}
 	if i, ok := m.informers[res]; ok {
-		return i.List(ns), nil
+		return i.List(ns, opts), nil
 	}
 
 	return nil, fmt.Errorf("No informer found for resource %s", res)
 }
 
 // Get a resource by name.
-func (m Meta) Get(res, fqn string) (interface{}, error) {
+func (m Meta) Get(res, fqn string, opts metav1.GetOptions) (interface{}, error) {
 	if informer, ok := m.informers[res]; ok {
-		return informer.Get(fqn)
+		return informer.Get(fqn, opts)
 	}
 
 	return nil, fmt.Errorf("No informer found for resource %s", res)

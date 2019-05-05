@@ -5,6 +5,7 @@ import (
 
 	"github.com/rs/zerolog"
 	"gotest.tools/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -16,7 +17,7 @@ func TestPodMXList(t *testing.T) {
 	cmo := NewMockConnection()
 	no := NewPodMetrics(cmo, "")
 
-	o := no.List("")
+	o := no.List("", metav1.ListOptions{})
 	assert.Assert(t, len(o) == 0)
 }
 
@@ -24,7 +25,7 @@ func TestPodMXGet(t *testing.T) {
 	cmo := NewMockConnection()
 	no := NewPodMetrics(cmo, "")
 
-	o, err := no.Get("")
+	o, err := no.Get("", metav1.GetOptions{})
 	assert.ErrorContains(t, err, "No pod metrics")
 	assert.Assert(t, o == nil)
 }

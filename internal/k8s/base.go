@@ -15,6 +15,16 @@ func (b *base) SetLabelSelector(s string) {
 	b.labelSelector = s
 }
 
+// GetFieldSelector returns field selector.
+func (b *base) GetFieldSelector() string {
+	return b.fieldSelector
+}
+
+// GetLabelSelector returns label selector.
+func (b *base) GetLabelSelector() string {
+	return b.labelSelector
+}
+
 func (b *base) HasSelectors() bool {
 	return b.labelSelector != "" || b.fieldSelector != ""
 }

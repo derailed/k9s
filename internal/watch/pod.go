@@ -2,9 +2,12 @@ package watch
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	wv1 "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
@@ -30,20 +33,48 @@ func NewPod(c Connection, ns string) *Pod {
 	}
 }
 
+func toSelector(s string) map[string]string {
+	var m map[string]string
+	ls, err := metav1.ParseToLabelSelector(s)
+	if err != nil {
+		log.Error().Err(err).Msg("StringToSel")
+		return m
+	}
+	mSel, err := metav1.LabelSelectorAsMap(ls)
+	if err != nil {
+		log.Error().Err(err).Msg("SelToMap")
+		return m
+	}
+
+	return mSel
+}
+
 // List all pods from store in the given namespace.
-func (p *Pod) List(ns string) k8s.Collection {
+func (p *Pod) List(ns string, opts metav1.ListOptions) k8s.Collection {
 	var res k8s.Collection
+	var nodeSelector bool
+	if strings.Contains(opts.FieldSelector, "spec.nodeName") {
+		nodeSelector = true
+	}
 	for _, o := range p.GetStore().List() {
 		pod := o.(*v1.Pod)
-		if ns == "" || pod.Namespace == ns {
-			res = append(res, pod)
+		if ns != "" && pod.Namespace != ns {
+			continue
 		}
+		if nodeSelector {
+			if !matchesNode(pod.Spec.NodeName, toSelector(opts.FieldSelector)) {
+				continue
+			}
+		} else if !matchesLabels(pod.ObjectMeta.Labels, toSelector(opts.LabelSelector)) {
+			continue
+		}
+		res = append(res, pod)
 	}
 	return res
 }
 
 // Get retrieves a given pod from store.
-func (p *Pod) Get(fqn string) (interface{}, error) {
+func (p *Pod) Get(fqn string, opts metav1.GetOptions) (interface{}, error) {
 	o, ok, err := p.GetStore().GetByKey(fqn)
 	if err != nil {
 		return nil, err
@@ -53,4 +84,25 @@ func (p *Pod) Get(fqn string) (interface{}, error) {
 	}
 
 	return o, nil
+}
+
+func matchesLabels(labels, selector map[string]string) bool {
+	if len(selector) == 0 {
+		return true
+	}
+	for k, v := range selector {
+		la, ok := labels[k]
+		if !ok || la != v {
+			return false
+		}
+	}
+
+	return true
+}
+
+func matchesNode(name string, selector map[string]string) bool {
+	if len(selector) == 0 {
+		return true
+	}
+	return selector["spec.nodeName"] == name
 }

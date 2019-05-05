@@ -62,6 +62,6 @@ func showPods(app *appView, ns, res, selected, labelSel, fieldSel string, b acti
 		aa[tcell.KeyEsc] = newKeyAction("Back", b, true)
 	})
 	// Reset active namespace to all.
-	app.config.SetActiveNamespace("")
+	app.config.SetActiveNamespace(ns)
 	app.inject(pv)
 }

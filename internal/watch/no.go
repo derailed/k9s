@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/k8s"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	wv1 "k8s.io/client-go/informers/core/v1"
 	"k8s.io/client-go/tools/cache"
 )
@@ -27,7 +28,7 @@ func NewNode(c k8s.Connection) *Node {
 }
 
 // List all nodes.
-func (n *Node) List(_ string) k8s.Collection {
+func (n *Node) List(_ string, opts metav1.ListOptions) k8s.Collection {
 	var res k8s.Collection
 	for _, o := range n.GetStore().List() {
 		res = append(res, o)
@@ -37,7 +38,7 @@ func (n *Node) List(_ string) k8s.Collection {
 }
 
 // Get retrieves a given node from store.
-func (n *Node) Get(fqn string) (interface{}, error) {
+func (n *Node) Get(fqn string, opts metav1.GetOptions) (interface{}, error) {
 	o, ok, err := n.GetStore().GetByKey(fqn)
 	if err != nil {
 		return nil, err

@@ -10,6 +10,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const containerFmt = "[fg:bg:b]%s([hilite:bg:b]%s[fg:bg:-])"
@@ -52,10 +53,7 @@ func (v *podView) listContainers(app *appView, _, res, sel string) {
 		return
 	}
 
-	log.Debug().Msgf("Selected %s", sel)
-	// ns, n := namespaced(sel)
-	po, err := v.app.informer.Get(watch.PodIndex, sel)
-	// po, err := app.conn().DialOrDie().CoreV1().Pods(ns).Get(n, metav1.GetOptions{})
+	po, err := v.app.informer.Get(watch.PodIndex, sel, metav1.GetOptions{})
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to retrieve pod %s", sel)
 		app.flash(flashErr, err.Error())

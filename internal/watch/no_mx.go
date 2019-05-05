@@ -36,12 +36,12 @@ func NewNodeMetrics(c k8s.Connection) *NodeMetrics {
 }
 
 // List node metrics from store.
-func (p *NodeMetrics) List(string) k8s.Collection {
+func (p *NodeMetrics) List(_ string, opts metav1.ListOptions) k8s.Collection {
 	return p.GetStore().List()
 }
 
 // Get node metrics from store.
-func (p *NodeMetrics) Get(MetaFQN string) (interface{}, error) {
+func (p *NodeMetrics) Get(MetaFQN string, opts metav1.GetOptions) (interface{}, error) {
 	o, ok, err := p.GetStore().GetByKey(MetaFQN)
 	if err != nil {
 		return nil, err

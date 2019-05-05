@@ -60,7 +60,7 @@ func (v *deployView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.app.flash(flashErr, err.Error())
 		return evt
 	}
-	showPods(v.app, "", "Deployment", v.selectedItem, sel.String(), "", v.backCmd)
+	showPods(v.app, ns, "Deployment", v.selectedItem, sel.String(), "", v.backCmd)
 
 	return nil
 }

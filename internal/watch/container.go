@@ -6,6 +6,7 @@ import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const (
@@ -31,7 +32,7 @@ func (c *Container) StartWatching(stopCh <-chan struct{}) {}
 func (c *Container) Run(closeCh <-chan struct{}) {}
 
 // Get retrieves a given container from store.
-func (c *Container) Get(fqn string) (interface{}, error) {
+func (c *Container) Get(fqn string, opts metav1.GetOptions) (interface{}, error) {
 	o, ok, err := c.GetStore().GetByKey(fqn)
 	if err != nil {
 		return nil, err
@@ -47,7 +48,7 @@ func (c *Container) Get(fqn string) (interface{}, error) {
 }
 
 // List retrieves a given containers from store.
-func (c *Container) List(fqn string) k8s.Collection {
+func (c *Container) List(fqn string, opts metav1.ListOptions) k8s.Collection {
 	o, ok, err := c.GetStore().GetByKey(fqn)
 	if err != nil {
 		log.Error().Err(err).Msg("Pod<container>")

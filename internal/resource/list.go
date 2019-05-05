@@ -108,6 +108,8 @@ type (
 		Header(ns string) Row
 		SetFieldSelector(string)
 		SetLabelSelector(string)
+		GetFieldSelector() string
+		GetLabelSelector() string
 		HasSelectors() bool
 	}
 
@@ -232,12 +234,16 @@ func metaFQN(m metav1.ObjectMeta) string {
 }
 
 func (l *list) fetchFromStore(m *wa.Meta, ns string) (Columnars, error) {
-	rr, err := m.List(l.name, ns)
+	rr, err := m.List(l.name, ns, metav1.ListOptions{
+		FieldSelector: l.resource.GetFieldSelector(),
+		LabelSelector: l.resource.GetLabelSelector(),
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	items := make(Columnars, 0, len(rr))
+	opts := metav1.GetOptions{}
 	for _, r := range rr {
 		var (
 			fqn string
@@ -247,7 +253,7 @@ func (l *list) fetchFromStore(m *wa.Meta, ns string) (Columnars, error) {
 		case *v1.Node:
 			fqn = metaFQN(o.ObjectMeta)
 			res = l.resource.New(r)
-			nmx, err := m.Get(wa.NodeMXIndex, fqn)
+			nmx, err := m.Get(wa.NodeMXIndex, fqn, opts)
 			if err != nil {
 				log.Warn().Err(err).Msg("NodeMetrics")
 			}
@@ -257,7 +263,7 @@ func (l *list) fetchFromStore(m *wa.Meta, ns string) (Columnars, error) {
 		case *v1.Pod:
 			fqn = metaFQN(o.ObjectMeta)
 			res = l.resource.New(r)
-			pmx, err := m.Get(wa.PodMXIndex, fqn)
+			pmx, err := m.Get(wa.PodMXIndex, fqn, opts)
 			if err != nil {
 				log.Warn().Err(err).Msg("PodMetrics")
 			}
@@ -267,7 +273,7 @@ func (l *list) fetchFromStore(m *wa.Meta, ns string) (Columnars, error) {
 		case v1.Container:
 			fqn = ns
 			res = l.resource.New(r)
-			pmx, err := m.Get(wa.PodMXIndex, fqn)
+			pmx, err := m.Get(wa.PodMXIndex, fqn, opts)
 			if err != nil {
 				log.Warn().Err(err).Msg("PodMetrics")
 			}
@@ -294,7 +300,6 @@ func (l *list) Reconcile(m *wa.Meta, path *string) error {
 	if rr, err := l.fetchFromStore(m, ns); err == nil {
 		items = rr
 	} else {
-		log.Debug().Msg("Standard load")
 		items, err = l.resource.List(l.namespace)
 		if err != nil {
 			return err
