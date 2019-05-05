@@ -20,7 +20,7 @@ type (
 
 		pod           *v1.Pod
 		isInit        bool
-		instance      *v1.Container
+		instance      v1.Container
 		MetricsServer MetricsServer
 		metrics       *mv1beta1.PodMetrics
 		mx            sync.RWMutex
@@ -43,7 +43,6 @@ func NewContainer(c Connection, mx MetricsServer, pod *v1.Pod) *Container {
 		Base:          &Base{Connection: c, Resource: k8s.NewPod(c)},
 		pod:           pod,
 		MetricsServer: mx,
-		metrics:       &mv1beta1.PodMetrics{},
 	}
 	co.Factory = &co
 
@@ -53,7 +52,7 @@ func NewContainer(c Connection, mx MetricsServer, pod *v1.Pod) *Container {
 // New builds a new Container instance from a k8s resource.
 func (r *Container) New(i interface{}) Columnar {
 	co := NewContainer(r.Connection, r.MetricsServer, r.pod)
-	co.instance = i.(*v1.Container)
+	co.instance = i.(v1.Container)
 	co.path = r.namespacedName(r.pod.ObjectMeta) + ":" + co.instance.Name
 
 	return co
@@ -108,7 +107,7 @@ func (r *Container) Logs(c chan<- string, ns, n, co string, lines int64, prev bo
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("!!!Closing Stream!!!")
+			log.Debug().Msgf("Closing stream %s:%s", n, co)
 			close(c)
 			stream.Close()
 			cancel()
@@ -171,9 +170,12 @@ func (r *Container) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
 	i := r.instance
 
-	var cpu int64
-	var mem float64
+	scpu, smem := NAValue, NAValue
 	if r.metrics != nil {
+		var (
+			cpu int64
+			mem float64
+		)
 		for _, co := range r.metrics.Containers {
 			if co.Name == i.Name {
 				cpu = co.Usage.Cpu().MilliValue()
@@ -181,6 +183,7 @@ func (r *Container) Fields(ns string) Row {
 				break
 			}
 		}
+		scpu, smem = ToMillicore(cpu), ToMi(mem)
 	}
 	rcpu, rmem := resources(i)
 
@@ -214,8 +217,8 @@ func (r *Container) Fields(ns string) Row {
 		restarts,
 		probe(i.LivenessProbe),
 		probe(i.ReadinessProbe),
-		ToMillicore(cpu),
-		ToMi(mem),
+		scpu,
+		smem,
 		rcpu,
 		rmem,
 		toAge(r.pod.CreationTimestamp),
@@ -251,30 +254,25 @@ func toRes(r v1.ResourceList) (string, string) {
 	return ToMillicore(cpu.MilliValue()), ToMi(k8s.ToMB(mem.Value()))
 }
 
-func resources(c *v1.Container) (cpu, mem string) {
+func resources(c v1.Container) (cpu, mem string) {
 	req, lim := c.Resources.Requests, c.Resources.Limits
-
-	if len(req) == 0 {
-		if len(lim) != 0 {
-			return toRes(lim)
-		}
-	} else {
+	if len(req) != 0 {
 		return toRes(req)
 	}
+	if len(lim) != 0 {
+		return toRes(lim)
+	}
 
-	return "0", "0"
+	return NAValue, NAValue
 }
 
 func probe(p *v1.Probe) string {
 	if p == nil {
-		return "no"
+		return "on"
 	}
-
-	return "yes"
+	return "off"
 }
 
 func asMi(v int64) float64 {
-	const megaByte = 1024 * 1024
-
-	return float64(v) / megaByte
+	return float64(v) / 1024 * 1024
 }

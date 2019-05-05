@@ -92,7 +92,7 @@ func TestParseRules(t *testing.T) {
 				{APIGroups: []string{}, Resources: []string{}, Verbs: []string{"get"}, NonResourceURLs: []string{"/fred"}},
 			},
 			map[string]resource.Row{
-				"/fred": {"/fred", "<n/a>", ok, nok, nok, nok, nok, nok, nok, nok, ""},
+				"/fred": {"/fred", resource.NAValue, ok, nok, nok, nok, nok, nok, nok, nok, ""},
 			},
 		},
 		{
@@ -100,7 +100,7 @@ func TestParseRules(t *testing.T) {
 				{APIGroups: []string{}, Resources: []string{}, Verbs: []string{"get"}, NonResourceURLs: []string{"fred"}},
 			},
 			map[string]resource.Row{
-				"/fred": {"/fred", "<n/a>", ok, nok, nok, nok, nok, nok, nok, nok, ""},
+				"/fred": {"/fred", resource.NAValue, ok, nok, nok, nok, nok, nok, nok, nok, ""},
 			},
 		},
 	}

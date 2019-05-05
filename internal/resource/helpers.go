@@ -32,8 +32,52 @@ const (
 	// MissingValue indicates an unset value.
 	MissingValue = "<none>"
 	// NAValue indicates a value that does not pertain.
-	NAValue = "<n/a>"
+	NAValue = "n/a"
 )
+
+func empty(s []string) bool {
+	for _, v := range s {
+		if len(v) != 0 {
+			return false
+		}
+	}
+	return true
+}
+
+// Join a slice of strings, skipping blanks.
+func join(a []string, sep string) string {
+	switch len(a) {
+	case 0:
+		return ""
+	case 1:
+		return a[0]
+	}
+
+	var b []string
+	for _, s := range a {
+		if s != "" {
+			b = append(b, s)
+		}
+	}
+	if len(b) == 0 {
+		return ""
+	}
+
+	n := len(sep) * (len(b) - 1)
+	for i := 0; i < len(b); i++ {
+		n += len(a[i])
+	}
+
+	var buff strings.Builder
+	buff.Grow(n)
+	buff.WriteString(a[0])
+	for _, s := range b[1:] {
+		buff.WriteString(sep)
+		buff.WriteString(s)
+	}
+
+	return buff.String()
+}
 
 // AsPerc prints a number as a percentage.
 func AsPerc(f float64) string {

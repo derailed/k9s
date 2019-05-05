@@ -37,7 +37,7 @@ func TestRenderSubjects(t *testing.T) {
 		},
 		{
 			[]rbacv1.Subject{},
-			"<n/a>",
+			NAValue,
 			"",
 		},
 	}

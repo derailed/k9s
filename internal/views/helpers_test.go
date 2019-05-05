@@ -4,8 +4,13 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	zerolog.SetGlobalLevel(zerolog.Disabled)
+}
 
 func TestDeltas(t *testing.T) {
 	uu := []struct {
@@ -13,7 +18,7 @@ func TestDeltas(t *testing.T) {
 	}{
 		{"", "", ""},
 		{resource.MissingValue, "", delta()},
-		{resource.NAValue, "", delta()},
+		{resource.NAValue, "", ""},
 		{"fred", "fred", ""},
 		{"fred", "blee", delta()},
 		{"1", "1", ""},

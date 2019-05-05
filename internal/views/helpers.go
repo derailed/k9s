@@ -6,12 +6,13 @@ import (
 	"strings"
 	"time"
 
+	res "github.com/derailed/k9s/internal/resource"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 func deltas(o, n string) string {
 	o, n = strings.TrimSpace(o), strings.TrimSpace(n)
-	if o == "" || o == "n/a" {
+	if o == "" || o == res.NAValue {
 		return ""
 	}
 

@@ -57,10 +57,10 @@ func (v *contextView) useContext(name string) error {
 	}
 
 	v.app.startInformer()
-	// Update cluster info on context switch.
-	v.app.QueueUpdateDraw(func() {
-		v.app.clusterInfoView.refresh()
-	})
+	// // Update cluster info on context switch.
+	// v.app.QueueUpdateDraw(func() {
+	// 	v.app.clusterInfoView.refresh()
+	// })
 
 	v.app.config.Reset()
 	v.app.config.Save()

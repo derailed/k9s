@@ -47,7 +47,7 @@ func TestPodFields(t *testing.T) {
 func TestPodMarshal(t *testing.T) {
 	mc := NewMockConnection()
 	mr := NewMockCruder()
-	m.When(mr.Get("blee", "fred")).ThenReturn(k8sPod(), nil)
+	m.When(mr.Get("blee", "fred")).ThenReturn(makePod(), nil)
 	mx := NewMockMetricsServer()
 
 	cm := NewPodWithArgs(mc, mr, mx)
@@ -61,7 +61,7 @@ func TestPodMarshal(t *testing.T) {
 func TestPodListData(t *testing.T) {
 	mc := NewMockConnection()
 	mr := NewMockCruder()
-	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sPod()}, nil)
+	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*makePod()}, nil)
 	mx := NewMockMetricsServer()
 	m.When(mx.HasMetrics()).ThenReturn(true)
 	m.When(mx.FetchPodsMetrics("blee")).
@@ -86,9 +86,22 @@ func TestPodListData(t *testing.T) {
 	assert.Equal(t, "fred", strings.TrimSpace(row.Fields[:1][0]))
 }
 
+func BenchmarkPodFields(b *testing.B) {
+	p := resource.NewPod(nil)
+	po := makePod()
+
+	b.ResetTimer()
+	b.ReportAllocs()
+
+	for n := 0; n < b.N; n++ {
+		_ = p.New(po).Fields("")
+	}
+}
+
+// ----------------------------------------------------------------------------
 // Helpers...
 
-func k8sPod() *v1.Pod {
+func makePod() *v1.Pod {
 	var i int32 = 1
 	var t = v1.HostPathDirectory
 	return &v1.Pod{
@@ -143,7 +156,7 @@ func k8sPod() *v1.Pod {
 
 func newPod() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewPod(mc).New(k8sPod())
+	return resource.NewPod(mc).New(makePod())
 }
 
 func poYaml() string {

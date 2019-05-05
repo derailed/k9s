@@ -17,7 +17,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const noSelection = ""
+const (
+	noSelection    = ""
+	clusterRefresh = time.Duration(15 * time.Second)
+)
 
 type (
 	details interface {
@@ -99,6 +102,7 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 	}
 
 	go v.updater(ctx)
+	v.app.clusterInfoView.refresh()
 	v.refresh()
 	if tv, ok := v.CurrentPage().Item.(*tableView); ok {
 		tv.Select(1, 0)
@@ -113,7 +117,7 @@ func (v *resourceView) updater(ctx context.Context) {
 			case <-ctx.Done():
 				log.Debug().Msgf("%s cluster updater canceled!", v.list.GetName())
 				return
-			case <-time.After(time.Duration(15 * time.Second)):
+			case <-time.After(clusterRefresh):
 				if v.isSuspended() {
 					continue
 				}

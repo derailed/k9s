@@ -257,7 +257,7 @@ func (l *list) Reconcile(m *wa.Meta, path *string) error {
 				res = l.resource.New(r)
 				nmx, err := m.Get(wa.NodeMXIndex, fqn)
 				if err != nil {
-					log.Warn().Err(err).Msg("No node metrics")
+					log.Warn().Err(err).Msg("NodeMetrics")
 				}
 				if mx, ok := nmx.(*mv1beta1.NodeMetrics); ok {
 					res.SetNodeMetrics(mx)
@@ -267,18 +267,17 @@ func (l *list) Reconcile(m *wa.Meta, path *string) error {
 				res = l.resource.New(r)
 				pmx, err := m.Get(wa.PodMXIndex, fqn)
 				if err != nil {
-					log.Warn().Err(err).Msg("No pod metrics")
+					log.Warn().Err(err).Msg("PodMetrics")
 				}
 				if mx, ok := pmx.(*mv1beta1.PodMetrics); ok {
 					res.SetPodMetrics(mx)
 				}
-			case *v1.Container:
-				log.Debug().Msgf("Got container %s", ns)
+			case v1.Container:
 				fqn = ns
 				res = l.resource.New(r)
 				pmx, err := m.Get(wa.PodMXIndex, fqn)
 				if err != nil {
-					log.Warn().Err(err).Msg("No pod metrics")
+					log.Warn().Err(err).Msg("PodMetrics")
 				}
 				if mx, ok := pmx.(*mv1beta1.PodMetrics); ok {
 					res.SetPodMetrics(mx)

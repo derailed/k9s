@@ -65,9 +65,9 @@ func (v *clusterInfoView) init() {
 	row++
 
 	v.SetCell(row, 0, v.sectionCell("CPU"))
-	v.SetCell(row, 1, v.infoCell("n/a"))
+	v.SetCell(row, 1, v.infoCell(resource.NAValue))
 	v.SetCell(row+1, 0, v.sectionCell("MEM"))
-	v.SetCell(row+1, 1, v.infoCell("n/a"))
+	v.SetCell(row+1, 1, v.infoCell(resource.NAValue))
 
 	v.refresh()
 }

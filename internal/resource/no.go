@@ -111,8 +111,6 @@ func (*Node) Header(ns string) Row {
 		"EXTERNAL-IP",
 		"CPU",
 		"MEM",
-		// "RCPU",
-		// "RMEM",
 		"ACPU",
 		"AMEM",
 		"AGE",
@@ -123,83 +121,75 @@ func (*Node) Header(ns string) Row {
 func (r *Node) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
 
-	i := r.instance
-	iIP, eIP := r.getIPs(i.Status.Addresses)
+	no := r.instance
+	iIP, eIP := r.getIPs(no.Status.Addresses)
 	iIP, eIP = missing(iIP), missing(eIP)
 
-	var (
-		cpu int64
-		mem float64
-	)
+	ccpu, cmem, scpu, smem := NAValue, NAValue, NAValue, NAValue
 	if r.metrics != nil {
+		var (
+			cpu int64
+			mem float64
+		)
+
 		cpu = r.metrics.Usage.Cpu().MilliValue()
 		mem = k8s.ToMB(r.metrics.Usage.Memory().Value())
+
+		acpu := no.Status.Allocatable.Cpu().MilliValue()
+		amem := k8s.ToMB(no.Status.Allocatable.Memory().Value())
+		ccpu = withPerc(ToMillicore(cpu), AsPerc(toPerc(float64(cpu), float64(acpu))))
+		cmem = withPerc(ToMi(mem), AsPerc(toPerc(mem, amem)))
+		scpu = ToMillicore(cpu)
+		smem = ToMi(mem)
 	}
 
-	acpu := i.Status.Allocatable.Cpu().MilliValue()
-	amem := k8s.ToMB(i.Status.Allocatable.Memory().Value())
-
-	// reqs, _, err := r.podsResources(i.Name)
-	// if err != nil {
-	// 	if !errors.IsForbidden(err) {
-	// 		log.Warn().Msgf("User is not authorized to list pods on nodes: %v", err)
-	// 	}
-	// 	log.Error().Msgf("%#v", err)
-	// }
-
-	// rcpu, rmem := reqs["cpu"], reqs["memory"]
-	// pcpur := toPerc(float64(rcpu.MilliValue()), float64(r.metrics.AvailCPU))
-	// pmemr := toPerc(k8s.ToMB(rmem.Value()), float64(r.metrics.AvailMEM))
+	sta := make([]string, 10)
+	r.status(no.Status, no.Spec.Unschedulable, sta)
+	ro := make([]string, 10)
+	r.nodeRoles(no, ro)
 
 	return append(ff,
-		i.Name,
-		r.status(i.Status, i.Spec.Unschedulable),
-		r.nodeRoles(i),
-		i.Status.NodeInfo.KubeletVersion,
-		i.Status.NodeInfo.KernelVersion,
+		no.Name,
+		join(sta, ","),
+		join(ro, ","),
+		no.Status.NodeInfo.KubeletVersion,
+		no.Status.NodeInfo.KernelVersion,
 		iIP,
 		eIP,
-		withPerc(ToMillicore(cpu), AsPerc(toPerc(float64(cpu), float64(acpu)))),
-		withPerc(ToMi(mem), AsPerc(toPerc(mem, amem))),
-		// withPerc(rcpu.String(), AsPerc(pcpur)),
-		// withPerc(rmem.String(), AsPerc(pmemr)),
-		ToMillicore(cpu),
-		ToMi(mem),
-		toAge(i.ObjectMeta.CreationTimestamp),
+		ccpu,
+		cmem,
+		scpu,
+		smem,
+		toAge(no.ObjectMeta.CreationTimestamp),
 	)
-}
-
-func withPerc(v, p string) string {
-	return v + " (" + p + ")"
 }
 
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func (*Node) nodeRoles(node *v1.Node) string {
-	const (
-		labelNodeRolePrefix = "node-role.kubernetes.io/"
-		nodeLabelRole       = "kubernetes.io/role"
-	)
+func withPerc(v, p string) string {
+	return v + " (" + p + ")"
+}
 
-	roles := sets.NewString()
+func (*Node) nodeRoles(node *v1.Node, res []string) {
+	index := 0
 	for k, v := range node.Labels {
 		switch {
 		case strings.HasPrefix(k, labelNodeRolePrefix):
 			if role := strings.TrimPrefix(k, labelNodeRolePrefix); len(role) > 0 {
-				roles.Insert(role)
+				res[index] = role
+				index++
 			}
-
 		case k == nodeLabelRole && v != "":
-			roles.Insert(v)
+			res[index] = v
+			index++
 		}
 	}
 
-	if len(roles) == 0 {
-		return MissingValue
+	if empty(res) {
+		res[index] = MissingValue
+		index++
 	}
-
-	return strings.Join(roles.List(), ",")
 }
 
 func (*Node) getIPs(addrs []v1.NodeAddress) (iIP, eIP string) {
@@ -215,14 +205,14 @@ func (*Node) getIPs(addrs []v1.NodeAddress) (iIP, eIP string) {
 	return
 }
 
-func (*Node) status(status v1.NodeStatus, exempt bool) string {
+func (*Node) status(status v1.NodeStatus, exempt bool, res []string) {
+	var index int
 	conditions := make(map[v1.NodeConditionType]*v1.NodeCondition)
 	for n := range status.Conditions {
 		cond := status.Conditions[n]
 		conditions[cond.Type] = &cond
 	}
 
-	var conds []string
 	validConditions := []v1.NodeConditionType{v1.NodeReady}
 	for _, validCondition := range validConditions {
 		condition, ok := conditions[validCondition]
@@ -233,22 +223,23 @@ func (*Node) status(status v1.NodeStatus, exempt bool) string {
 		if condition.Status != v1.ConditionTrue {
 			neg = "Not"
 		}
-		conds = append(conds, neg+string(condition.Type))
+		res[index] = neg + string(condition.Type)
+		index++
 
 	}
-	if len(conds) == 0 {
-		conds = append(conds, "Unknown")
+	if len(res) == 0 {
+		res[index] = "Unknown"
+		index++
 	}
 	if exempt {
-		conds = append(conds, "SchedulingDisabled")
+		res[index] = "SchedulingDisabled"
+		index++
 	}
-
-	return strings.Join(conds, ",")
 }
 
-func findNodeRoles(i *v1.Node) []string {
+func findNodeRoles(no *v1.Node) []string {
 	roles := sets.NewString()
-	for k, v := range i.Labels {
+	for k, v := range no.Labels {
 		switch {
 		case strings.HasPrefix(k, labelNodeRolePrefix):
 			if role := strings.TrimPrefix(k, labelNodeRolePrefix); len(role) > 0 {

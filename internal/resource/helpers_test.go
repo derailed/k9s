@@ -6,6 +6,24 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestJoin(t *testing.T) {
+	uu := map[string]struct {
+		i []string
+		e string
+	}{
+		"zero":   {[]string{}, ""},
+		"std":    {[]string{"a", "b", "c"}, "a,b,c"},
+		"blank":  {[]string{"", "", ""}, ""},
+		"sparse": {[]string{"a", "", "c"}, "a,c"},
+	}
+
+	for k, v := range uu {
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, v.e, join(v.i, ","))
+		})
+	}
+}
+
 func TestBoolPtrToStr(t *testing.T) {
 	tv, fv := true, false
 

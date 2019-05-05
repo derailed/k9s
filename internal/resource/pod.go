@@ -127,7 +127,7 @@ func (r *Pod) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (c
 			}
 			r.mx.RUnlock()
 			if closes {
-				log.Debug().Msg(">>Closing Channel<<")
+				log.Debug().Msgf("Closing channel %s:%s", n, co)
 				close(c)
 				cancel()
 			}
@@ -149,7 +149,7 @@ func (r *Pod) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (c
 
 	go func() {
 		defer func() {
-			log.Debug().Msg("!!!Closing Stream!!!")
+			log.Debug().Msgf("Closing stream %s:%s", n, co)
 			close(c)
 			stream.Close()
 			cancel()
@@ -221,13 +221,17 @@ func (r *Pod) Fields(ns string) Row {
 	ss := i.Status.ContainerStatuses
 	cr, _, rc := r.statuses(ss)
 
-	var cpu int64
-	var mem float64
+	scpu, smem := NAValue, NAValue
 	if r.metrics != nil {
+		var cpu int64
+		var mem float64
+
 		for _, c := range r.metrics.Containers {
 			cpu += c.Usage.Cpu().MilliValue()
 			mem += k8s.ToMB(c.Usage.Memory().Value())
 		}
+		scpu = ToMillicore(cpu)
+		smem = ToMi(mem)
 	}
 
 	return append(ff,
@@ -235,8 +239,8 @@ func (r *Pod) Fields(ns string) Row {
 		strconv.Itoa(cr)+"/"+strconv.Itoa(len(ss)),
 		r.phase(i),
 		strconv.Itoa(rc),
-		ToMillicore(cpu),
-		ToMi(mem),
+		scpu,
+		smem,
 		i.Status.PodIP,
 		i.Spec.NodeName,
 		r.mapQOS(i.Status.QOSClass),

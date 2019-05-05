@@ -66,7 +66,6 @@ func (b *logBuffer) length() int {
 
 func (*logBuffer) decorateLine(l string) string {
 	return l
-	// return "[" + newLogColor + "::]" + l + "[::]"
 }
 
 func (b *logBuffer) trimLine(l string) string {

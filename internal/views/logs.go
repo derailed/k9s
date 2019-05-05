@@ -17,7 +17,7 @@ const (
 	refreshRate        = 200 * time.Millisecond
 	maxCleanse         = 100
 	logBuffSize        = 100
-	flushTimeout       = 500 * time.Millisecond
+	flushTimeout       = 200 * time.Millisecond
 )
 
 type logsView struct {
