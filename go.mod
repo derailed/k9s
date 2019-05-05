@@ -18,6 +18,7 @@ require (
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/gdamore/tcell v1.1.1
 	github.com/gogo/protobuf v1.2.1 // indirect
+	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
 	github.com/google/btree v1.0.0 // indirect
 	github.com/google/gofuzz v1.0.0 // indirect
 	github.com/googleapis/gnostic v0.2.0 // indirect
@@ -31,7 +32,6 @@ require (
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/petergtz/pegomock v0.0.0-20181206220228-b113d17a7e81
-	github.com/pkg/profile v1.3.0
 	github.com/rs/zerolog v1.14.3
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
