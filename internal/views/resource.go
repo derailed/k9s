@@ -379,11 +379,6 @@ func (v *resourceView) doSwitchNamespace(ns string) {
 }
 
 func (v *resourceView) refresh() {
-	log.Debug().Msgf("%s", strings.Repeat("-", 80))
-	defer func(t time.Time) {
-		log.Debug().Msgf("Refresh %s %v", v.list.GetName(), time.Since(t))
-	}(time.Now())
-
 	if _, ok := v.CurrentPage().Item.(*tableView); !ok {
 		return
 	}

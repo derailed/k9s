@@ -2,7 +2,6 @@ package views
 
 import (
 	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
@@ -92,10 +91,6 @@ func (v *clusterInfoView) infoCell(t string) *tview.TableCell {
 }
 
 func (v *clusterInfoView) refresh() {
-	defer func(t time.Time) {
-		log.Debug().Msgf("Cluster Refresh %v", time.Since(t))
-	}(time.Now())
-
 	cluster := resource.NewCluster(v.app.conn(), &log.Logger, v.mxs)
 
 	var row int

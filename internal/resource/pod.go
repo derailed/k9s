@@ -171,10 +171,6 @@ func (r *Pod) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (c
 
 // List resources for a given namespace.
 func (r *Pod) List(ns string) (Columnars, error) {
-	defer func(t time.Time) {
-		log.Debug().Msgf("List Pod %v", time.Since(t))
-	}(time.Now())
-
 	pods, err := r.Resource.List(ns)
 	if err != nil {
 		return nil, err

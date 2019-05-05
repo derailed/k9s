@@ -1,8 +1,8 @@
 package resource
 
 import (
+	"fmt"
 	"reflect"
-	"time"
 
 	wa "github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
@@ -231,60 +231,68 @@ func metaFQN(m metav1.ObjectMeta) string {
 	return m.Namespace + "/" + m.Name
 }
 
+func (l *list) fetchFromStore(m *wa.Meta, ns string) (Columnars, error) {
+	rr, err := m.List(l.name, ns)
+	if err != nil {
+		return nil, err
+	}
+
+	items := make(Columnars, 0, len(rr))
+	for _, r := range rr {
+		var (
+			fqn string
+			res Columnar
+		)
+		switch o := r.(type) {
+		case *v1.Node:
+			fqn = metaFQN(o.ObjectMeta)
+			res = l.resource.New(r)
+			nmx, err := m.Get(wa.NodeMXIndex, fqn)
+			if err != nil {
+				log.Warn().Err(err).Msg("NodeMetrics")
+			}
+			if mx, ok := nmx.(*mv1beta1.NodeMetrics); ok {
+				res.SetNodeMetrics(mx)
+			}
+		case *v1.Pod:
+			fqn = metaFQN(o.ObjectMeta)
+			res = l.resource.New(r)
+			pmx, err := m.Get(wa.PodMXIndex, fqn)
+			if err != nil {
+				log.Warn().Err(err).Msg("PodMetrics")
+			}
+			if mx, ok := pmx.(*mv1beta1.PodMetrics); ok {
+				res.SetPodMetrics(mx)
+			}
+		case v1.Container:
+			fqn = ns
+			res = l.resource.New(r)
+			pmx, err := m.Get(wa.PodMXIndex, fqn)
+			if err != nil {
+				log.Warn().Err(err).Msg("PodMetrics")
+			}
+			if mx, ok := pmx.(*mv1beta1.PodMetrics); ok {
+				res.SetPodMetrics(mx)
+			}
+		default:
+			return items, fmt.Errorf("No informer matched %s:%s", l.name, ns)
+		}
+		items = append(items, res)
+	}
+
+	return items, nil
+}
+
 // Reconcile previous vs current state and emits delta events.
 func (l *list) Reconcile(m *wa.Meta, path *string) error {
-	defer func(t time.Time) {
-		log.Debug().Msgf("Reconcile %v", time.Since(t))
-	}(time.Now())
-
 	ns := l.namespace
 	if path != nil {
 		ns = *path
 	}
 
-	var (
-		items Columnars
-		err   error
-	)
-	rr, err := m.List(l.name, ns)
-	if err == nil {
-		for _, r := range rr {
-			var fqn string
-			var res Columnar
-			switch o := r.(type) {
-			case *v1.Node:
-				fqn = metaFQN(o.ObjectMeta)
-				res = l.resource.New(r)
-				nmx, err := m.Get(wa.NodeMXIndex, fqn)
-				if err != nil {
-					log.Warn().Err(err).Msg("NodeMetrics")
-				}
-				if mx, ok := nmx.(*mv1beta1.NodeMetrics); ok {
-					res.SetNodeMetrics(mx)
-				}
-			case *v1.Pod:
-				fqn = metaFQN(o.ObjectMeta)
-				res = l.resource.New(r)
-				pmx, err := m.Get(wa.PodMXIndex, fqn)
-				if err != nil {
-					log.Warn().Err(err).Msg("PodMetrics")
-				}
-				if mx, ok := pmx.(*mv1beta1.PodMetrics); ok {
-					res.SetPodMetrics(mx)
-				}
-			case v1.Container:
-				fqn = ns
-				res = l.resource.New(r)
-				pmx, err := m.Get(wa.PodMXIndex, fqn)
-				if err != nil {
-					log.Warn().Err(err).Msg("PodMetrics")
-				}
-				if mx, ok := pmx.(*mv1beta1.PodMetrics); ok {
-					res.SetPodMetrics(mx)
-				}
-			}
-			items = append(items, res)
-		}
+	var items Columnars
+	if rr, err := l.fetchFromStore(m, ns); err == nil {
+		items = rr
 	} else {
 		log.Debug().Msg("Standard load")
 		items, err = l.resource.List(l.namespace)
