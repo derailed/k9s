@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
+	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 type (
@@ -19,9 +20,9 @@ type (
 
 		pod           *v1.Pod
 		isInit        bool
-		instance      v1.Container
+		instance      *v1.Container
 		MetricsServer MetricsServer
-		metrics       k8s.PodMetrics
+		metrics       *mv1beta1.PodMetrics
 		mx            sync.RWMutex
 	}
 )
@@ -42,7 +43,7 @@ func NewContainer(c Connection, mx MetricsServer, pod *v1.Pod) *Container {
 		Base:          &Base{Connection: c, Resource: k8s.NewPod(c)},
 		pod:           pod,
 		MetricsServer: mx,
-		metrics:       k8s.PodMetrics{},
+		metrics:       &mv1beta1.PodMetrics{},
 	}
 	co.Factory = &co
 
@@ -52,19 +53,14 @@ func NewContainer(c Connection, mx MetricsServer, pod *v1.Pod) *Container {
 // New builds a new Container instance from a k8s resource.
 func (r *Container) New(i interface{}) Columnar {
 	co := NewContainer(r.Connection, r.MetricsServer, r.pod)
-	co.instance = i.(v1.Container)
+	co.instance = i.(*v1.Container)
 	co.path = r.namespacedName(r.pod.ObjectMeta) + ":" + co.instance.Name
 
 	return co
 }
 
-// Metrics retrieves cpu/mem resource consumption on associated pod.
-func (r *Container) Metrics() k8s.PodMetrics {
-	return r.metrics
-}
-
-// SetMetrics set the current k8s resource metrics on associated pod.
-func (r *Container) SetMetrics(m k8s.PodMetrics) {
+// SetPodMetrics set the current k8s resource metrics on associated pod.
+func (r *Container) SetPodMetrics(m *mv1beta1.PodMetrics) {
 	r.metrics = m
 }
 
@@ -175,21 +171,17 @@ func (r *Container) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
 	i := r.instance
 
-	mxs, _ := r.MetricsServer.FetchPodsMetrics(r.pod.Namespace)
-
-	var cpu, mem string
-	for _, mx := range mxs.Items {
-		if mx.Name != r.pod.Name {
-			continue
-		}
-		for _, co := range mx.Containers {
-			if co.Name != i.Name {
-				continue
+	var cpu int64
+	var mem float64
+	if r.metrics != nil {
+		for _, co := range r.metrics.Containers {
+			if co.Name == i.Name {
+				cpu = co.Usage.Cpu().MilliValue()
+				mem = k8s.ToMB(co.Usage.Memory().Value())
+				break
 			}
-			cpu, mem = toRes(co.Usage)
 		}
 	}
-
 	rcpu, rmem := resources(i)
 
 	var cs *v1.ContainerStatus
@@ -222,8 +214,8 @@ func (r *Container) Fields(ns string) Row {
 		restarts,
 		probe(i.LivenessProbe),
 		probe(i.ReadinessProbe),
-		cpu,
-		mem,
+		ToMillicore(cpu),
+		ToMi(mem),
 		rcpu,
 		rmem,
 		toAge(r.pod.CreationTimestamp),
@@ -259,7 +251,7 @@ func toRes(r v1.ResourceList) (string, string) {
 	return ToMillicore(cpu.MilliValue()), ToMi(k8s.ToMB(mem.Value()))
 }
 
-func resources(c v1.Container) (cpu, mem string) {
+func resources(c *v1.Container) (cpu, mem string) {
 	req, lim := c.Resources.Requests, c.Resources.Limits
 
 	if len(req) == 0 {

@@ -46,6 +46,7 @@ require (
 	google.golang.org/appengine v1.5.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.2.2
+	gotest.tools v2.2.0+incompatible
 	k8s.io/api v0.0.0-20190425012535-181e1f9c52c1
 	k8s.io/apiextensions-apiserver v0.0.0-20190426053235-842c4571cde0 // indirect
 	k8s.io/apimachinery v0.0.0-20190425132440-17f84483f500

@@ -42,7 +42,7 @@ func TestRBListData(t *testing.T) {
 	l := NewRBListWithArgs("blee", NewRBWithArgs(mc, mr))
 	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
-		err := l.Reconcile()
+		err := l.Reconcile(nil, nil)
 		assert.Nil(t, err)
 	}
 

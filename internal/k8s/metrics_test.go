@@ -10,13 +10,14 @@ import (
 	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
+
 func TestPodsMetrics(t *testing.T) {
 	m := NewMetricsServer(nil)
 
 	metrics := v1beta1.PodMetricsList{
 		Items: []v1beta1.PodMetrics{
-			makeMxPod("p1", "1", "4Gi"),
-			makeMxPod("p2", "50m", "1Mi"),
+			*makeMxPod("p1", "1", "4Gi"),
+			*makeMxPod("p2", "50m", "1Mi"),
 		},
 	}
 
@@ -35,9 +36,9 @@ func BenchmarkPodsMetrics(b *testing.B) {
 
 	metrics := v1beta1.PodMetricsList{
 		Items: []v1beta1.PodMetrics{
-			makeMxPod("p1", "1", "4Gi"),
-			makeMxPod("p2", "50m", "1Mi"),
-			makeMxPod("p3", "50m", "1Mi"),
+			*makeMxPod("p1", "1", "4Gi"),
+			*makeMxPod("p2", "50m", "1Mi"),
+			*makeMxPod("p3", "50m", "1Mi"),
 		},
 	}
 	mmx := make(PodsMetrics, 3)
@@ -59,8 +60,8 @@ func TestNodesMetrics(t *testing.T) {
 
 	metrics := v1beta1.NodeMetricsList{
 		Items: []v1beta1.NodeMetrics{
-			makeMxNode("n1", "10", "8Gi"),
-			makeMxNode("n2", "50m", "1Mi"),
+			*makeMxNode("n1", "10", "8Gi"),
+			*makeMxNode("n2", "50m", "1Mi"),
 		},
 	}
 
@@ -85,8 +86,8 @@ func BenchmarkNodesMetrics(b *testing.B) {
 
 	metrics := v1beta1.NodeMetricsList{
 		Items: []v1beta1.NodeMetrics{
-			makeMxNode("n1", "50m", "1Mi"),
-			makeMxNode("n2", "50m", "1Mi"),
+			*makeMxNode("n1", "50m", "1Mi"),
+			*makeMxNode("n2", "50m", "1Mi"),
 		},
 	}
 
@@ -103,39 +104,31 @@ func BenchmarkNodesMetrics(b *testing.B) {
 func TestClusterLoad(t *testing.T) {
 	m := NewMetricsServer(nil)
 
-	nodes := v1.NodeList{
-		Items: []v1.Node{
+	nodes := Collection{
 			makeNode("n1", "100m", "4Mi", "50m", "2Mi"),
 			makeNode("n2", "100m", "4Mi", "50m", "2Mi"),
-		},
 	}
 
-	metrics := v1beta1.NodeMetricsList{
-		Items: []v1beta1.NodeMetrics{
+	metrics := Collection{
 			makeMxNode("n1", "50m", "1Mi"),
 			makeMxNode("n2", "50m", "1Mi"),
-		},
 	}
 
 	var mx ClusterMetrics
-	m.ClusterLoad(&nodes, &metrics, &mx)
+	m.ClusterLoad(nodes, metrics, &mx)
 	assert.Equal(t, 100.0, mx.PercCPU)
 	assert.Equal(t, 50.0, mx.PercMEM)
 }
 
 func BenchmarkClusterLoad(b *testing.B) {
-	nodes := v1.NodeList{
-		Items: []v1.Node{
-			makeNode("n1", "100m", "4Mi", "50m", "2Mi"),
-			makeNode("n2", "100m", "4Mi", "50m", "2Mi"),
-		},
+	nodes := Collection{
+		makeNode("n1", "100m", "4Mi", "50m", "2Mi"),
+		makeNode("n2", "100m", "4Mi", "50m", "2Mi"),
 	}
 
-	metrics := v1beta1.NodeMetricsList{
-		Items: []v1beta1.NodeMetrics{
-			makeMxNode("n1", "50m", "1Mi"),
-			makeMxNode("n2", "50m", "1Mi"),
-		},
+	metrics := Collection{
+		makeMxNode("n1", "50m", "1Mi"),
+		makeMxNode("n2", "50m", "1Mi"),
 	}
 
 	m := NewMetricsServer(nil)
@@ -143,12 +136,15 @@ func BenchmarkClusterLoad(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
-		m.ClusterLoad(&nodes, &metrics, &mx)
+		m.ClusterLoad(nodes, metrics, &mx)
 	}
 }
 
-func makeMxPod(name, cpu, mem string) v1beta1.PodMetrics {
-	return v1beta1.PodMetrics{
+// ----------------------------------------------------------------------------
+// Helpers...
+
+func makeMxPod(name, cpu, mem string) *v1beta1.PodMetrics {
+	return &v1beta1.PodMetrics{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
 			Namespace: "default",
@@ -161,8 +157,8 @@ func makeMxPod(name, cpu, mem string) v1beta1.PodMetrics {
 	}
 }
 
-func makeNode(name, tcpu, tmem, acpu, amem string) v1.Node {
-	return v1.Node{
+func makeNode(name, tcpu, tmem, acpu, amem string) *v1.Node {
+	return &v1.Node{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},
@@ -173,8 +169,8 @@ func makeNode(name, tcpu, tmem, acpu, amem string) v1.Node {
 	}
 }
 
-func makeMxNode(name, cpu, mem string) v1beta1.NodeMetrics {
-	return v1beta1.NodeMetrics{
+func makeMxNode(name, cpu, mem string) *v1beta1.NodeMetrics {
+	return &v1beta1.NodeMetrics{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},

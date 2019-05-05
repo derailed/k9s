@@ -6,9 +6,10 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/watch"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 const containerFmt = "[fg:bg:b]%s([hilite:bg:b]%s[fg:bg:-])"
@@ -52,25 +53,28 @@ func (v *podView) listContainers(app *appView, _, res, sel string) {
 	}
 
 	log.Debug().Msgf("Selected %s", sel)
-	ns, n := namespaced(sel)
-	po, err := app.conn().DialOrDie().CoreV1().Pods(ns).Get(n, metav1.GetOptions{})
+	// ns, n := namespaced(sel)
+	po, err := v.app.informer.Get(watch.PodIndex, sel)
+	// po, err := app.conn().DialOrDie().CoreV1().Pods(ns).Get(n, metav1.GetOptions{})
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to retrieve pod %s", sel)
 		app.flash(flashErr, err.Error())
 		return
 	}
 
+	pod := po.(*v1.Pod)
 	mx := k8s.NewMetricsServer(app.conn())
-	list := resource.NewContainerList(app.conn(), mx, po)
+	list := resource.NewContainerList(app.conn(), mx, pod)
+	log.Debug().Msgf(">>>> Got pod %s", pod.Name)
 
 	fmat := strings.Replace(containerFmt, "[fg:bg", "["+v.app.styles.Style.Title.FgColor+":"+v.app.styles.Style.Title.BgColor, -1)
 	fmat = strings.Replace(fmat, "[hilite", "["+v.app.styles.Style.Title.CounterColor, 1)
-
+	title := fmt.Sprintf(fmat, "Containers", sel)
 	app.inject(newContainerView(
-		fmt.Sprintf(fmat, "Containers", sel),
+		title,
 		app,
 		list,
-		namespacedName(po.Namespace, po.Name),
+		namespacedName(pod.Namespace, pod.Name),
 	))
 }
 

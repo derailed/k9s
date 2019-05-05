@@ -50,7 +50,7 @@ func TestCRBListData(t *testing.T) {
 	l := NewClusterRoleBindingListWithArgs("-", NewClusterRoleBindingWithArgs(conn, ca))
 	// Make sure we can get deltas!
 	for i := 0; i < 2; i++ {
-		err := l.Reconcile()
+		err := l.Reconcile(nil, nil)
 		assert.Nil(t, err)
 	}
 

@@ -25,7 +25,7 @@ func TestNodeStatus(t *testing.T) {
 		},
 	}
 
-	no := NewNode(nil, nil)
+	no := NewNode(nil)
 	for _, u := range uu {
 		cond := no.status(u.s, false)
 		assert.Equal(t, "Ready", cond)

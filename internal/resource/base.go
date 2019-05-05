@@ -12,6 +12,7 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions/printers"
 	"k8s.io/kubernetes/pkg/kubectl/describe"
 	versioned "k8s.io/kubernetes/pkg/kubectl/describe/versioned"
+	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 type (
@@ -52,6 +53,12 @@ func NewBase(c Connection, r Cruder) *Base {
 func (b *Base) HasSelectors() bool {
 	return b.Resource.HasSelectors()
 }
+
+// SetPodMetrics attach pod metrics to resource.
+func (b *Base) SetPodMetrics(*mv1beta1.PodMetrics) {}
+
+// SetNodeMetrics attach node metrics to resource.
+func (b *Base) SetNodeMetrics(*mv1beta1.NodeMetrics) {}
 
 // SetFieldSelector refines query results via selector.
 func (b *Base) SetFieldSelector(s string) {

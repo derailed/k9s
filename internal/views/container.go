@@ -10,13 +10,12 @@ type containerView struct {
 	*resourceView
 
 	current igniter
-	path    string
 }
 
 func newContainerView(t string, app *appView, list resource.List, path string) resourceViewer {
 	v := containerView{resourceView: newResourceView(t, app, list).(*resourceView)}
 	{
-		v.path = path
+		v.path = &path
 		v.extraActionsFn = v.extraActions
 		v.current = app.content.GetPrimitive("main").(igniter)
 	}
@@ -42,7 +41,7 @@ func (v *containerView) getList() resource.List {
 }
 
 func (v *containerView) getSelection() string {
-	return v.path
+	return *v.path
 }
 
 // Handlers...
@@ -76,7 +75,7 @@ func (v *containerView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	log.Debug().Msgf("Selected %s", v.selectedItem)
-	v.shellIn(v.path, v.selectedItem)
+	v.shellIn(*v.path, v.selectedItem)
 
 	return nil
 }

@@ -61,7 +61,7 @@ func TestDSListData(t *testing.T) {
 	l := NewDaemonSetListWithArgs("blee", NewDaemonSetWithArgs(mc, mr))
 	// Make sure we can get deltas!
 	for i := 0; i < 2; i++ {
-		err := l.Reconcile()
+		err := l.Reconcile(nil, nil)
 		assert.Nil(t, err)
 	}
 

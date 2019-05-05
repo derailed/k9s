@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/kubernetes/pkg/util/node"
+	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 const (
@@ -37,29 +38,26 @@ type (
 	// Pod that can be displayed in a table and interacted with.
 	Pod struct {
 		*Base
-		instance      *v1.Pod
-		MetricsServer MetricsServer
-		metrics       k8s.PodMetrics
-		mx            sync.RWMutex
+		instance *v1.Pod
+		metrics  *mv1beta1.PodMetrics
+		mx       sync.RWMutex
 	}
 )
 
 // NewPodList returns a new resource list.
-func NewPodList(c Connection, mx MetricsServer, ns string) List {
+func NewPodList(c Connection, ns string) List {
 	return NewList(
 		ns,
 		"po",
-		NewPod(c, mx),
+		NewPod(c),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewPod instantiates a new Pod.
-func NewPod(c Connection, mx MetricsServer) *Pod {
+func NewPod(c Connection) *Pod {
 	p := &Pod{
-		Base:          &Base{Connection: c, Resource: k8s.NewPod(c)},
-		MetricsServer: mx,
-		metrics:       k8s.PodMetrics{},
+		Base: &Base{Connection: c, Resource: k8s.NewPod(c)},
 	}
 	p.Factory = p
 
@@ -68,7 +66,7 @@ func NewPod(c Connection, mx MetricsServer) *Pod {
 
 // New builds a new Pod instance from a k8s resource.
 func (r *Pod) New(i interface{}) Columnar {
-	c := NewPod(r.Connection, r.MetricsServer)
+	c := NewPod(r.Connection)
 	switch instance := i.(type) {
 	case *v1.Pod:
 		c.instance = instance
@@ -86,13 +84,8 @@ func (r *Pod) New(i interface{}) Columnar {
 	return c
 }
 
-// Metrics retrieves cpu/mem resource consumption on a pod.
-func (r *Pod) Metrics() k8s.PodMetrics {
-	return r.metrics
-}
-
-// SetMetrics set the current k8s resource metrics on a given pod.
-func (r *Pod) SetMetrics(m k8s.PodMetrics) {
+// SetPodMetrics set the current k8s resource metrics on a given pod.
+func (r *Pod) SetPodMetrics(m *mv1beta1.PodMetrics) {
 	r.metrics = m
 }
 
@@ -103,7 +96,6 @@ func (r *Pod) Marshal(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	po := i.(*v1.Pod)
 	po.TypeMeta.APIVersion = "v1"
 	po.TypeMeta.Kind = "Pod"
@@ -188,16 +180,9 @@ func (r *Pod) List(ns string) (Columnars, error) {
 		return nil, err
 	}
 
-	mx := make(k8s.PodsMetrics, len(pods))
-	if r.MetricsServer.HasMetrics() {
-		pmx, _ := r.MetricsServer.FetchPodsMetrics(ns)
-		r.MetricsServer.PodsMetrics(pmx, mx)
-	}
-
 	cc := make(Columnars, 0, len(pods))
 	for i := range pods {
 		po := r.New(&pods[i]).(*Pod)
-		po.metrics = mx[po.Name()]
 		cc = append(cc, po)
 	}
 
@@ -236,13 +221,22 @@ func (r *Pod) Fields(ns string) Row {
 	ss := i.Status.ContainerStatuses
 	cr, _, rc := r.statuses(ss)
 
+	var cpu int64
+	var mem float64
+	if r.metrics != nil {
+		for _, c := range r.metrics.Containers {
+			cpu += c.Usage.Cpu().MilliValue()
+			mem += k8s.ToMB(c.Usage.Memory().Value())
+		}
+	}
+
 	return append(ff,
 		i.ObjectMeta.Name,
 		strconv.Itoa(cr)+"/"+strconv.Itoa(len(ss)),
 		r.phase(i),
 		strconv.Itoa(rc),
-		ToMillicore(r.metrics.CurrentCPU),
-		ToMi(r.metrics.CurrentMEM),
+		ToMillicore(cpu),
+		ToMi(mem),
 		i.Status.PodIP,
 		i.Spec.NodeName,
 		r.mapQOS(i.Status.QOSClass),

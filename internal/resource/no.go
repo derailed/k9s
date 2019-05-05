@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
+	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 const (
@@ -17,24 +18,28 @@ const (
 // Node tracks a kubernetes resource.
 type Node struct {
 	*Base
-	instance      *v1.Node
-	MetricsServer MetricsServer
-	metrics       k8s.NodeMetrics
+	instance *v1.Node
+	metrics  *mv1beta1.NodeMetrics
 }
 
 // NewNodeList returns a new resource list.
-func NewNodeList(c Connection, mx MetricsServer, ns string) List {
+func NewNodeList(c Connection, _ string) List {
 	return NewList(
 		NotNamespaced,
 		"no",
-		NewNode(c, mx),
+		NewNode(c),
 		ViewAccess|DescribeAccess,
 	)
 }
 
 // NewNode instantiates a new Node.
-func NewNode(c Connection, mx MetricsServer) *Node {
-	n := &Node{&Base{Connection: c, Resource: k8s.NewNode(c)}, nil, mx, k8s.NodeMetrics{}}
+func NewNode(c Connection) *Node {
+	n := &Node{
+		Base: &Base{
+			Connection: c,
+			Resource:   k8s.NewNode(c),
+		},
+	}
 	n.Factory = n
 
 	return n
@@ -42,7 +47,7 @@ func NewNode(c Connection, mx MetricsServer) *Node {
 
 // New builds a new Node instance from a k8s resource.
 func (r *Node) New(i interface{}) Columnar {
-	c := NewNode(r.Connection, r.MetricsServer)
+	c := NewNode(r.Connection)
 	switch instance := i.(type) {
 	case *v1.Node:
 		c.instance = instance
@@ -56,6 +61,11 @@ func (r *Node) New(i interface{}) Columnar {
 	return c
 }
 
+// SetNodeMetrics set the current k8s resource metrics on a given node.
+func (r *Node) SetNodeMetrics(m *mv1beta1.NodeMetrics) {
+	r.metrics = m
+}
+
 // List all resources for a given namespace.
 func (r *Node) List(ns string) (Columnars, error) {
 	nn, err := r.Resource.List(ns)
@@ -63,17 +73,10 @@ func (r *Node) List(ns string) (Columnars, error) {
 		return nil, err
 	}
 
-	mx := make(k8s.NodesMetrics, len(nn))
-	if r.MetricsServer.HasMetrics() {
-		nmx, _ := r.MetricsServer.FetchNodesMetrics()
-		r.MetricsServer.NodesMetrics(nn, nmx, mx)
-	}
-
 	cc := make(Columnars, 0, len(nn))
 	for i := range nn {
 		node := nn[i].(v1.Node)
 		no := r.New(&node).(*Node)
-		no.metrics = mx[node.Name]
 		cc = append(cc, no)
 	}
 
@@ -124,6 +127,18 @@ func (r *Node) Fields(ns string) Row {
 	iIP, eIP := r.getIPs(i.Status.Addresses)
 	iIP, eIP = missing(iIP), missing(eIP)
 
+	var (
+		cpu int64
+		mem float64
+	)
+	if r.metrics != nil {
+		cpu = r.metrics.Usage.Cpu().MilliValue()
+		mem = k8s.ToMB(r.metrics.Usage.Memory().Value())
+	}
+
+	acpu := i.Status.Allocatable.Cpu().MilliValue()
+	amem := k8s.ToMB(i.Status.Allocatable.Memory().Value())
+
 	// reqs, _, err := r.podsResources(i.Name)
 	// if err != nil {
 	// 	if !errors.IsForbidden(err) {
@@ -144,18 +159,12 @@ func (r *Node) Fields(ns string) Row {
 		i.Status.NodeInfo.KernelVersion,
 		iIP,
 		eIP,
-		withPerc(
-			ToMillicore(r.metrics.CurrentCPU),
-			AsPerc(toPerc(float64(r.metrics.CurrentCPU), float64(r.metrics.AvailCPU))),
-		),
-		withPerc(
-			ToMi(r.metrics.CurrentMEM),
-			AsPerc(toPerc(r.metrics.CurrentMEM, r.metrics.AvailMEM)),
-		),
+		withPerc(ToMillicore(cpu), AsPerc(toPerc(float64(cpu), float64(acpu)))),
+		withPerc(ToMi(mem), AsPerc(toPerc(mem, amem))),
 		// withPerc(rcpu.String(), AsPerc(pcpur)),
 		// withPerc(rmem.String(), AsPerc(pmemr)),
-		ToMillicore(r.metrics.AvailCPU),
-		ToMi(r.metrics.AvailMEM),
+		ToMillicore(cpu),
+		ToMi(mem),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
 }

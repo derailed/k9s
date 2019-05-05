@@ -61,7 +61,7 @@ func TestPDBListData(t *testing.T) {
 	l := NewPDBListWithArgs("blee", NewPDBWithArgs(mc, mr))
 	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
-		err := l.Reconcile()
+		err := l.Reconcile(nil, nil)
 		assert.Nil(t, err)
 	}
 

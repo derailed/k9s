@@ -9,19 +9,19 @@ import (
 )
 
 type (
-	viewFn     func(ns string, app *appView, list resource.List) resourceViewer
-	listFn     func(c resource.Connection, ns string) resource.List
-	listMxFn   func(c resource.Connection, mx resource.MetricsServer, ns string) resource.List
+	viewFn func(ns string, app *appView, list resource.List) resourceViewer
+	listFn func(c resource.Connection, ns string) resource.List
+	// listMxFn   func(c resource.Connection, mx resource.MetricsServer, ns string) resource.List
 	colorerFn  func(ns string, evt *resource.RowEvent) tcell.Color
 	enterFn    func(app *appView, ns, resource, selection string)
 	decorateFn func(resource.TableData) resource.TableData
 
 	resCmd struct {
-		title      string
-		api        string
-		viewFn     viewFn
-		listFn     listFn
-		listMxFn   listMxFn
+		title  string
+		api    string
+		viewFn viewFn
+		listFn listFn
+		// listMxFn   listMxFn
 		enterFn    enterFn
 		colorerFn  colorerFn
 		decorateFn decorateFn
@@ -193,7 +193,7 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 			title:     "Nodes",
 			api:       "",
 			viewFn:    newNodeView,
-			listMxFn:  resource.NewNodeList,
+			listFn:    resource.NewNodeList,
 			colorerFn: nsColorer,
 		},
 		"ns": {
@@ -214,7 +214,7 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 			title:     "Pods",
 			api:       "",
 			viewFn:    newPodView,
-			listMxFn:  resource.NewPodList,
+			listFn:    resource.NewPodList,
 			colorerFn: podColorer,
 		},
 		"pv": {

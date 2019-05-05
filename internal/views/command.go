@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 
-	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/rs/zerolog/log"
 )
@@ -54,7 +53,7 @@ func (c *command) run(cmd string) bool {
 	var v resourceViewer
 	switch {
 	case cmd == "q", cmd == "quit":
-		c.app.Stop()
+		c.app.bailOut()
 		return true
 	case cmd == "?", cmd == "help":
 		c.app.inject(newHelpView(c.app))
@@ -71,12 +70,7 @@ func (c *command) run(cmd string) bool {
 	default:
 		if res, ok := resourceViews(c.app.conn())[cmd]; ok {
 			var r resource.List
-			if res.listMxFn != nil {
-				r = res.listMxFn(c.app.conn(),
-					k8s.NewMetricsServer(c.app.conn()),
-					resource.DefaultNamespace,
-				)
-			} else if res.listFn != nil {
+			if res.listFn != nil {
 				r = res.listFn(c.app.conn(), resource.DefaultNamespace)
 			}
 			v = res.viewFn(res.title, c.app, r)

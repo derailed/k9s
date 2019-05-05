@@ -4,9 +4,13 @@ import (
 	"reflect"
 	"time"
 
+	wa "github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 const (
@@ -64,7 +68,7 @@ type (
 		AllNamespaces() bool
 		GetNamespace() string
 		SetNamespace(string)
-		Reconcile() error
+		Reconcile(informer *wa.Meta, path *string) error
 		GetName() string
 		Access(flag int) bool
 		GetAccess() int
@@ -80,16 +84,18 @@ type (
 		Fields(ns string) Row
 		ExtFields() Properties
 		Name() string
+		SetPodMetrics(*mv1beta1.PodMetrics)
+		SetNodeMetrics(*mv1beta1.NodeMetrics)
 	}
+
+	// Columnars a collection of columnars.
+	Columnars []Columnar
 
 	// Row represents a collection of string fields.
 	Row []string
 
 	// Rows represents a collection of rows.
 	Rows []Row
-
-	// Columnars a collection of columnars.
-	Columnars []Columnar
 
 	// Resource represents a tabular Kubernetes resource.
 	Resource interface {
@@ -217,15 +223,75 @@ func (l *list) Data() TableData {
 	}
 }
 
+func metaFQN(m metav1.ObjectMeta) string {
+	if m.Namespace == "" {
+		return m.Name
+	}
+
+	return m.Namespace + "/" + m.Name
+}
+
 // Reconcile previous vs current state and emits delta events.
-func (l *list) Reconcile() error {
+func (l *list) Reconcile(m *wa.Meta, path *string) error {
 	defer func(t time.Time) {
 		log.Debug().Msgf("Reconcile %v", time.Since(t))
 	}(time.Now())
 
-	items, err := l.resource.List(l.namespace)
-	if err != nil {
-		return err
+	ns := l.namespace
+	if path != nil {
+		ns = *path
+	}
+
+	var (
+		items Columnars
+		err   error
+	)
+	rr, err := m.List(l.name, ns)
+	if err == nil {
+		for _, r := range rr {
+			var fqn string
+			var res Columnar
+			switch o := r.(type) {
+			case *v1.Node:
+				fqn = metaFQN(o.ObjectMeta)
+				res = l.resource.New(r)
+				nmx, err := m.Get(wa.NodeMXIndex, fqn)
+				if err != nil {
+					log.Warn().Err(err).Msg("No node metrics")
+				}
+				if mx, ok := nmx.(*mv1beta1.NodeMetrics); ok {
+					res.SetNodeMetrics(mx)
+				}
+			case *v1.Pod:
+				fqn = metaFQN(o.ObjectMeta)
+				res = l.resource.New(r)
+				pmx, err := m.Get(wa.PodMXIndex, fqn)
+				if err != nil {
+					log.Warn().Err(err).Msg("No pod metrics")
+				}
+				if mx, ok := pmx.(*mv1beta1.PodMetrics); ok {
+					res.SetPodMetrics(mx)
+				}
+			case *v1.Container:
+				log.Debug().Msgf("Got container %s", ns)
+				fqn = ns
+				res = l.resource.New(r)
+				pmx, err := m.Get(wa.PodMXIndex, fqn)
+				if err != nil {
+					log.Warn().Err(err).Msg("No pod metrics")
+				}
+				if mx, ok := pmx.(*mv1beta1.PodMetrics); ok {
+					res.SetPodMetrics(mx)
+				}
+			}
+			items = append(items, res)
+		}
+	} else {
+		log.Debug().Msg("Standard load")
+		items, err = l.resource.List(l.namespace)
+		if err != nil {
+			return err
+		}
 	}
 
 	if len(l.cache) == 0 {

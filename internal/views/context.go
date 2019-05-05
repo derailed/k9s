@@ -34,11 +34,6 @@ func (v *contextView) useCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	// Update cluster info on context switch.
-	v.app.QueueUpdateDraw(func() {
-		v.app.clusterInfoView.refresh()
-	})
-
 	v.app.gotoResource("po", true)
 
 	return nil
@@ -60,6 +55,12 @@ func (v *contextView) useContext(name string) error {
 	if err := v.list.Resource().(*resource.Context).Switch(ctx); err != nil {
 		return err
 	}
+
+	v.app.startInformer()
+	// Update cluster info on context switch.
+	v.app.QueueUpdateDraw(func() {
+		v.app.clusterInfoView.refresh()
+	})
 
 	v.app.config.Reset()
 	v.app.config.Save()

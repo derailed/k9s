@@ -70,7 +70,7 @@ func TestCRListData(t *testing.T) {
 	l := NewClusterRoleListWithArgs("-", NewClusterRoleWithArgs(mc, mr))
 	// Make sure we mcn get deltas!
 	for i := 0; i < 2; i++ {
-		err := l.Reconcile()
+		err := l.Reconcile(nil, nil)
 		assert.Nil(t, err)
 	}
 

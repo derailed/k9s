@@ -7,6 +7,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tview"
 	"github.com/fsnotify/fsnotify"
 	"github.com/gdamore/tcell"
@@ -65,6 +66,8 @@ type (
 		cmdBuff         *cmdBuff
 		cmdView         *cmdView
 		actions         keyActions
+		stopCh          chan struct{}
+		informer        *watch.Meta
 	}
 )
 
@@ -104,6 +107,7 @@ func NewApp(cfg *config.Config) *appView {
 func (a *appView) Init(v string, rate int, flags *genericclioptions.ConfigFlags) {
 	a.version = v
 	a.flags = flags
+	a.startInformer()
 	a.clusterInfoView.init()
 	a.cmdBuff.addListener(a.cmdView)
 
@@ -128,6 +132,29 @@ func (a *appView) Init(v string, rate int, flags *genericclioptions.ConfigFlags)
 	a.pages.AddPage("main", main, true, false)
 	a.pages.AddPage("splash", newSplash(a), true, true)
 	a.SetRoot(a.pages, true)
+}
+
+func (a *appView) startInformer() {
+	if a.stopCh != nil {
+		close(a.stopCh)
+	}
+
+	a.stopCh = make(chan struct{})
+	ns := ""
+	if a.flags.Namespace != nil {
+		ns = *a.flags.Namespace
+	}
+	a.informer = watch.NewMeta(a.conn(), ns)
+	log.Debug().Msgf(">> Starting Watcher")
+	a.informer.Run(a.stopCh)
+}
+
+func (a *appView) bailOut() {
+	if a.stopCh != nil {
+		log.Debug().Msg("<<<< Stopping Watcher")
+		close(a.stopCh)
+	}
+	a.Stop()
 }
 
 func (a *appView) conn() k8s.Connection {

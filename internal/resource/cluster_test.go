@@ -8,8 +8,6 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
-	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 func TestClusterVersion(t *testing.T) {
@@ -58,31 +56,8 @@ func TestClusterMetrics(t *testing.T) {
 	mxx := clusterMetric()
 
 	c := resource.NewClusterWithArgs(mm, mx)
-	c.Metrics(&v1.NodeList{}, &mv1beta1.NodeMetricsList{}, &mxx)
+	c.Metrics(k8s.Collection{}, k8s.Collection{}, &mxx)
 	assert.Equal(t, clusterMetric(), mxx)
-}
-
-func TestClusterGetNodes(t *testing.T) {
-	mm, mx := NewMockClusterMeta(), NewMockMetricsServer()
-	m.When(mm.GetNodes()).ThenReturn(&v1.NodeList{Items: []v1.Node{*k8sNode()}}, nil)
-
-	c := resource.NewClusterWithArgs(mm, mx)
-	nodes, err := c.GetNodes()
-
-	assert.Nil(t, err)
-	assert.Equal(t, 1, len(nodes.Items))
-}
-
-func TestClusterFetchNodesMetrics(t *testing.T) {
-	mm, mx := NewMockClusterMeta(), NewMockMetricsServer()
-	m.When(mm.GetNodes()).ThenReturn(&v1.NodeList{Items: []v1.Node{*k8sNode()}}, nil)
-	m.When(mx.FetchNodesMetrics()).ThenReturn(&mv1beta1.NodeMetricsList{Items: []mv1beta1.NodeMetrics{makeMxNode("fred", "100m", "10Mi")}}, nil)
-
-	c := resource.NewClusterWithArgs(mm, mx)
-	metrics, err := c.FetchNodesMetrics()
-
-	assert.Nil(t, err)
-	assert.Equal(t, 1, len(metrics.Items))
 }
 
 // Helpers...

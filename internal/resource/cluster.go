@@ -23,7 +23,7 @@ type (
 	MetricsServer interface {
 		MetricsService
 
-		ClusterLoad(*v1.NodeList, *mv1beta1.NodeMetricsList, *k8s.ClusterMetrics)
+		ClusterLoad(nodes k8s.Collection, metrics k8s.Collection, cmx *k8s.ClusterMetrics)
 		NodesMetrics(k8s.Collection, *mv1beta1.NodeMetricsList, k8s.NodesMetrics)
 		PodsMetrics(*mv1beta1.PodMetricsList, k8s.PodsMetrics)
 	}
@@ -78,16 +78,6 @@ func (c *Cluster) UserName() string {
 }
 
 // Metrics gathers node level metrics and compute utilization percentages.
-func (c *Cluster) Metrics(nodes *v1.NodeList, nmx *mv1beta1.NodeMetricsList, mx *k8s.ClusterMetrics) {
-	c.mx.ClusterLoad(nodes, nmx, mx)
-}
-
-// FetchNodesMetrics fetch all nodes metrics.
-func (c *Cluster) FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error) {
-	return c.mx.FetchNodesMetrics()
-}
-
-// GetNodes fetch all available nodes.
-func (c *Cluster) GetNodes() (*v1.NodeList, error) {
-	return c.api.GetNodes()
+func (c *Cluster) Metrics(nos k8s.Collection, nmx k8s.Collection, mx *k8s.ClusterMetrics) {
+	c.mx.ClusterLoad(nos, nmx, mx)
 }

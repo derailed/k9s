@@ -6,7 +6,6 @@ package resource_test
 import (
 	k8s "github.com/derailed/k9s/internal/k8s"
 	pegomock "github.com/petergtz/pegomock"
-	v1 "k8s.io/api/core/v1"
 	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	"reflect"
 	"time"
@@ -20,7 +19,7 @@ func NewMockMetricsServer() *MockMetricsServer {
 	return &MockMetricsServer{fail: pegomock.GlobalFailHandler}
 }
 
-func (mock *MockMetricsServer) ClusterLoad(_param0 *v1.NodeList, _param1 *v1beta1.NodeMetricsList, _param2 *k8s.ClusterMetrics) {
+func (mock *MockMetricsServer) ClusterLoad(_param0 k8s.Collection, _param1 k8s.Collection, _param2 *k8s.ClusterMetrics) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockMetricsServer().")
 	}
@@ -134,7 +133,7 @@ type VerifierMetricsServer struct {
 	timeout                time.Duration
 }
 
-func (verifier *VerifierMetricsServer) ClusterLoad(_param0 *v1.NodeList, _param1 *v1beta1.NodeMetricsList, _param2 *k8s.ClusterMetrics) *MetricsServer_ClusterLoad_OngoingVerification {
+func (verifier *VerifierMetricsServer) ClusterLoad(_param0 k8s.Collection, _param1 k8s.Collection, _param2 *k8s.ClusterMetrics) *MetricsServer_ClusterLoad_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ClusterLoad", params, verifier.timeout)
 	return &MetricsServer_ClusterLoad_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
@@ -145,21 +144,21 @@ type MetricsServer_ClusterLoad_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MetricsServer_ClusterLoad_OngoingVerification) GetCapturedArguments() (*v1.NodeList, *v1beta1.NodeMetricsList, *k8s.ClusterMetrics) {
+func (c *MetricsServer_ClusterLoad_OngoingVerification) GetCapturedArguments() (k8s.Collection, k8s.Collection, *k8s.ClusterMetrics) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *MetricsServer_ClusterLoad_OngoingVerification) GetAllCapturedArguments() (_param0 []*v1.NodeList, _param1 []*v1beta1.NodeMetricsList, _param2 []*k8s.ClusterMetrics) {
+func (c *MetricsServer_ClusterLoad_OngoingVerification) GetAllCapturedArguments() (_param0 []k8s.Collection, _param1 []k8s.Collection, _param2 []*k8s.ClusterMetrics) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]*v1.NodeList, len(params[0]))
+		_param0 = make([]k8s.Collection, len(params[0]))
 		for u, param := range params[0] {
-			_param0[u] = param.(*v1.NodeList)
+			_param0[u] = param.(k8s.Collection)
 		}
-		_param1 = make([]*v1beta1.NodeMetricsList, len(params[1]))
+		_param1 = make([]k8s.Collection, len(params[1]))
 		for u, param := range params[1] {
-			_param1[u] = param.(*v1beta1.NodeMetricsList)
+			_param1[u] = param.(k8s.Collection)
 		}
 		_param2 = make([]*k8s.ClusterMetrics, len(params[2]))
 		for u, param := range params[2] {

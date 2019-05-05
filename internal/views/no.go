@@ -1,7 +1,6 @@
 package views
 
 import (
-	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
 )
@@ -53,9 +52,7 @@ func (v *nodeView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func showPods(app *appView, ns, res, selected, labelSel, fieldSel string, b actionHandler) {
-	mx := k8s.NewMetricsServer(app.conn())
-	list := resource.NewPodList(app.conn(), mx, ns)
-
+	list := resource.NewPodList(app.conn(), ns)
 	list.SetLabelSelector(labelSel)
 	list.SetFieldSelector(fieldSel)
 

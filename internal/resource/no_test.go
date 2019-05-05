@@ -19,7 +19,7 @@ func NewNodeListWithArgs(ns string, r *resource.Node) resource.List {
 }
 
 func NewNodeWithArgs(conn k8s.Connection, res resource.Cruder, mx resource.MetricsServer) *resource.Node {
-	r := &resource.Node{Base: resource.NewBase(conn, res), MetricsServer: mx}
+	r := &resource.Node{Base: resource.NewBase(conn, res)}
 	r.Factory = r
 	return r
 }
@@ -71,7 +71,7 @@ func TestNodeListData(t *testing.T) {
 	l := NewNodeListWithArgs("-", NewNodeWithArgs(mc, mr, mx))
 	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
-		err := l.Reconcile()
+		err := l.Reconcile(nil, nil)
 		assert.Nil(t, err)
 	}
 
@@ -127,8 +127,7 @@ func makeRes(c, m string) v1.ResourceList {
 
 func newNode() resource.Columnar {
 	mc := NewMockConnection()
-	mx := NewMockMetricsServer()
-	return resource.NewNode(mc, mx).New(k8sNode())
+	return resource.NewNode(mc).New(k8sNode())
 }
 
 func noYaml() string {

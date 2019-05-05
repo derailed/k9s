@@ -47,6 +47,7 @@ type (
 		mx             sync.Mutex
 		suspended      bool
 		nsListAccess   bool
+		path           *string
 	}
 )
 
@@ -133,7 +134,7 @@ func (v *resourceView) updater(ctx context.Context) {
 				if v.isSuspended() {
 					continue
 				}
-				v.app.QueueUpdate(func() {
+				v.app.QueueUpdateDraw(func() {
 					v.refresh()
 				})
 			}
@@ -301,7 +302,6 @@ func (v *resourceView) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	log.Debug().Msgf("Selected Item %v-%v-%v", v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
-
 	v.defaultEnter(v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
 
 	return nil
@@ -377,7 +377,7 @@ func (v *resourceView) doSwitchNamespace(ns string) {
 func (v *resourceView) refresh() {
 	log.Debug().Msgf("%s", strings.Repeat("-", 80))
 	defer func(t time.Time) {
-		log.Debug().Msgf("Refresh %v", time.Since(t))
+		log.Debug().Msgf("Refresh %s %v", v.list.GetName(), time.Since(t))
 	}(time.Now())
 
 	if _, ok := v.CurrentPage().Item.(*tableView); !ok {
@@ -390,7 +390,7 @@ func (v *resourceView) refresh() {
 
 	v.refreshActions()
 
-	if err := v.list.Reconcile(); err != nil {
+	if err := v.list.Reconcile(v.app.informer, v.path); err != nil {
 		log.Error().Err(err).Msg("Reconciliation failed")
 		v.app.flash(flashErr, err.Error())
 	}
@@ -461,9 +461,16 @@ func namespaced(n string) (string, string) {
 func (v *resourceView) refreshActions() {
 	if v.list.Access(resource.NamespaceAccess) {
 		v.namespaces = make(map[int]string, config.MaxFavoritesNS)
-		for i, n := range v.app.config.FavNamespaces() {
-			v.actions[tcell.Key(numKeys[i])] = newKeyAction(n, v.switchNamespaceCmd, true)
-			v.namespaces[i] = n
+		v.actions[tcell.Key(numKeys[0])] = newKeyAction(resource.AllNamespace, v.switchNamespaceCmd, true)
+		v.namespaces[0] = resource.AllNamespace
+		index := 1
+		for _, n := range v.app.config.FavNamespaces() {
+			if n == resource.AllNamespace {
+				continue
+			}
+			v.actions[tcell.Key(numKeys[index])] = newKeyAction(n, v.switchNamespaceCmd, true)
+			v.namespaces[index] = n
+			index++
 		}
 	}
 

@@ -18,7 +18,7 @@ func NewPodListWithArgs(ns string, r *resource.Pod) resource.List {
 }
 
 func NewPodWithArgs(conn k8s.Connection, res resource.Cruder, mx resource.MetricsServer) *resource.Pod {
-	r := &resource.Pod{Base: resource.NewBase(conn, res), MetricsServer: mx}
+	r := &resource.Pod{Base: resource.NewBase(conn, res)}
 	r.Factory = r
 	return r
 }
@@ -70,7 +70,7 @@ func TestPodListData(t *testing.T) {
 	l := NewPodListWithArgs("blee", NewPodWithArgs(mc, mr, mx))
 	// Make sure we mcn get deltas!
 	for i := 0; i < 2; i++ {
-		err := l.Reconcile()
+		err := l.Reconcile(nil, nil)
 		assert.Nil(t, err)
 	}
 
@@ -143,8 +143,7 @@ func k8sPod() *v1.Pod {
 
 func newPod() resource.Columnar {
 	mc := NewMockConnection()
-	mx := NewMockMetricsServer()
-	return resource.NewPod(mc, mx).New(k8sPod())
+	return resource.NewPod(mc).New(k8sPod())
 }
 
 func poYaml() string {

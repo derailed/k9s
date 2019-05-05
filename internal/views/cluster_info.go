@@ -2,10 +2,12 @@ package views
 
 import (
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -90,6 +92,10 @@ func (v *clusterInfoView) infoCell(t string) *tview.TableCell {
 }
 
 func (v *clusterInfoView) refresh() {
+	defer func(t time.Time) {
+		log.Debug().Msgf("Cluster Refresh %v", time.Since(t))
+	}(time.Now())
+
 	cluster := resource.NewCluster(v.app.conn(), &log.Logger, v.mxs)
 
 	var row int
@@ -102,26 +108,25 @@ func (v *clusterInfoView) refresh() {
 	v.GetCell(row, 1).SetText(cluster.Version())
 	row++
 
-	nodes, err := cluster.GetNodes()
+	nos, err := v.app.informer.List(watch.NodeIndex, "")
 	if err != nil {
 		log.Warn().Err(err).Msg("List nodes")
 		return
 	}
-	mxNodes, err := cluster.FetchNodesMetrics()
+	nmx, err := v.app.informer.List(watch.NodeMXIndex, "")
 	if err != nil {
 		log.Warn().Err(err).Msg("List node metrics")
 		return
 	}
-
-	var mx k8s.ClusterMetrics
-	cluster.Metrics(nodes, mxNodes, &mx)
+	var cmx k8s.ClusterMetrics
+	cluster.Metrics(nos, nmx, &cmx)
 	c := v.GetCell(row, 1)
-	cpu := resource.AsPerc(mx.PercCPU)
+	cpu := resource.AsPerc(cmx.PercCPU)
 	c.SetText(cpu + deltas(strip(c.Text), cpu))
 	row++
 
 	c = v.GetCell(row, 1)
-	mem := resource.AsPerc(mx.PercMEM)
+	mem := resource.AsPerc(cmx.PercMEM)
 	c.SetText(mem + deltas(strip(c.Text), mem))
 }
 
