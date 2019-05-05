@@ -232,7 +232,6 @@ func (*Node) status(status v1.NodeStatus, exempt bool, res []string) {
 	}
 	if exempt {
 		res[index] = "SchedulingDisabled"
-		index++
 	}
 }
 
