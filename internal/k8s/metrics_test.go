@@ -10,7 +10,6 @@ import (
 	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
-
 func TestPodsMetrics(t *testing.T) {
 	m := NewMetricsServer(nil)
 
@@ -105,13 +104,13 @@ func TestClusterLoad(t *testing.T) {
 	m := NewMetricsServer(nil)
 
 	nodes := Collection{
-			makeNode("n1", "100m", "4Mi", "50m", "2Mi"),
-			makeNode("n2", "100m", "4Mi", "50m", "2Mi"),
+		makeNode("n1", "100m", "4Mi", "50m", "2Mi"),
+		makeNode("n2", "100m", "4Mi", "50m", "2Mi"),
 	}
 
 	metrics := Collection{
-			makeMxNode("n1", "50m", "1Mi"),
-			makeMxNode("n2", "50m", "1Mi"),
+		makeMxNode("n1", "50m", "1Mi"),
+		makeMxNode("n2", "50m", "1Mi"),
 	}
 
 	var mx ClusterMetrics
