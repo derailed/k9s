@@ -188,7 +188,6 @@ func (*Node) nodeRoles(node *v1.Node, res []string) {
 
 	if empty(res) {
 		res[index] = MissingValue
-		index++
 	}
 }
 
