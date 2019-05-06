@@ -60,6 +60,7 @@ type (
 		SupportsRes(grp string, versions []string) (string, bool)
 		ServerVersion() (*version.Info, error)
 		FetchNodes() (*v1.NodeList, error)
+		CurrentNamespaceName() (string, error)
 	}
 
 	// APIClient represents a Kubernetes api client.
@@ -81,6 +82,11 @@ func InitConnectionOrDie(config *Config, logger zerolog.Logger) *APIClient {
 	conn.useMetricServer = conn.supportsMxServer()
 
 	return &conn
+}
+
+// CurrentNamespaceName return namespace name set via either cli arg or cluster config.
+func (a *APIClient) CurrentNamespaceName() (string, error) {
+	return a.config.CurrentNamespaceName()
 }
 
 // ServerVersion returns the current server version info.

@@ -265,7 +265,7 @@ func (l *list) fetchFromStore(m *wa.Meta, ns string) (Columnars, error) {
 			res = l.resource.New(r)
 			pmx, err := m.Get(wa.PodMXIndex, fqn, opts)
 			if err != nil {
-				log.Warn().Err(err).Msg("PodMetrics")
+				log.Warn().Err(err).Msgf("PodMetrics %s", fqn)
 			}
 			if mx, ok := pmx.(*mv1beta1.PodMetrics); ok {
 				res.SetPodMetrics(mx)
@@ -275,7 +275,7 @@ func (l *list) fetchFromStore(m *wa.Meta, ns string) (Columnars, error) {
 			res = l.resource.New(r)
 			pmx, err := m.Get(wa.PodMXIndex, fqn, opts)
 			if err != nil {
-				log.Warn().Err(err).Msg("PodMetrics")
+				log.Warn().Err(err).Msgf("PodMetrics<container> %s", fqn)
 			}
 			if mx, ok := pmx.(*mv1beta1.PodMetrics); ok {
 				res.SetPodMetrics(mx)

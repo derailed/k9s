@@ -104,19 +104,25 @@ func (v *clusterInfoView) refresh() {
 	v.GetCell(row, 1).SetText(cluster.Version())
 	row++
 
+	c := v.GetCell(row, 1)
+	c.SetText(resource.NAValue)
+	c = v.GetCell(row+1, 1)
+	c.SetText(resource.NAValue)
+
 	nos, err := v.app.informer.List(watch.NodeIndex, "", metav1.ListOptions{})
 	if err != nil {
-		log.Warn().Err(err).Msg("List nodes")
+		log.Warn().Err(err).Msg("ListNodes")
 		return
 	}
 	nmx, err := v.app.informer.List(watch.NodeMXIndex, "", metav1.ListOptions{})
 	if err != nil {
-		log.Warn().Err(err).Msg("List node metrics")
+		log.Warn().Err(err).Msg("ListNodeMetrics")
 		return
 	}
+
 	var cmx k8s.ClusterMetrics
 	cluster.Metrics(nos, nmx, &cmx)
-	c := v.GetCell(row, 1)
+	c = v.GetCell(row, 1)
 	cpu := resource.AsPerc(cmx.PercCPU)
 	c.SetText(cpu + deltas(strip(c.Text), cpu))
 	row++

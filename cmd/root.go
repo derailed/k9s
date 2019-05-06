@@ -56,6 +56,7 @@ func run(cmd *cobra.Command, args []string) {
 		if err := recover(); err != nil {
 			log.Error().Msgf("Boom! %v", err)
 			log.Error().Msg(string(debug.Stack()))
+			printLogo(printer.ColorRed)
 			fmt.Printf(printer.Colorize("Boom!! ", printer.ColorRed))
 			fmt.Println(printer.Colorize(fmt.Sprintf("%v.", err), printer.ColorDarkGray))
 		}

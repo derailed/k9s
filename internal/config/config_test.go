@@ -19,13 +19,15 @@ func init() {
 func TestConfigValidate(t *testing.T) {
 	mc := NewMockConnection()
 	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
+
 	mk := NewMockKubeSettings()
-	m.When(mk.ClusterNames()).ThenReturn([]string{"c1", "c2"}, nil)
+	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"default"})
 
 	cfg := config.NewConfig(mk)
 	cfg.SetConnection(mc)
 	assert.Nil(t, cfg.Load("test_assets/k9s.yml"))
 	cfg.Validate()
+	// mc.VerifyWasCalledOnce().ValidNamespaces()
 }
 
 func TestConfigLoad(t *testing.T) {

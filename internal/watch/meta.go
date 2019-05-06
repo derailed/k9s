@@ -81,7 +81,7 @@ func (m *Meta) List(res, ns string, opts metav1.ListOptions) (k8s.Collection, er
 		return i.List(ns, opts), nil
 	}
 
-	return nil, fmt.Errorf("No informer found for resource %s", res)
+	return nil, fmt.Errorf("No informer found for resource %s:%q", res, ns)
 }
 
 // Get a resource by name.
@@ -90,7 +90,7 @@ func (m Meta) Get(res, fqn string, opts metav1.GetOptions) (interface{}, error) 
 		return informer.Get(fqn, opts)
 	}
 
-	return nil, fmt.Errorf("No informer found for resource %s", res)
+	return nil, fmt.Errorf("No informer found for resource %s:%q", res, fqn)
 }
 
 // Run starts watching cluster resources.

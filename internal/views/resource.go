@@ -459,17 +459,19 @@ func namespaced(n string) (string, string) {
 
 func (v *resourceView) refreshActions() {
 	if v.list.Access(resource.NamespaceAccess) {
-		v.namespaces = make(map[int]string, config.MaxFavoritesNS)
-		v.actions[tcell.Key(numKeys[0])] = newKeyAction(resource.AllNamespace, v.switchNamespaceCmd, true)
-		v.namespaces[0] = resource.AllNamespace
-		index := 1
-		for _, n := range v.app.config.FavNamespaces() {
-			if n == resource.AllNamespace {
-				continue
+		if ns, err := v.app.conn().CurrentNamespaceName(); err != nil || ns == "" {
+			v.namespaces = make(map[int]string, config.MaxFavoritesNS)
+			v.actions[tcell.Key(numKeys[0])] = newKeyAction(resource.AllNamespace, v.switchNamespaceCmd, true)
+			v.namespaces[0] = resource.AllNamespace
+			index := 1
+			for _, n := range v.app.config.FavNamespaces() {
+				if n == resource.AllNamespace {
+					continue
+				}
+				v.actions[tcell.Key(numKeys[index])] = newKeyAction(n, v.switchNamespaceCmd, true)
+				v.namespaces[index] = n
+				index++
 			}
-			v.actions[tcell.Key(numKeys[index])] = newKeyAction(n, v.switchNamespaceCmd, true)
-			v.namespaces[index] = n
-			index++
 		}
 	}
 

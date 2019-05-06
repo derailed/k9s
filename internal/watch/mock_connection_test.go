@@ -39,6 +39,25 @@ func (mock *MockConnection) Config() *k8s.Config {
 	return ret0
 }
 
+func (mock *MockConnection) CurrentNamespaceName() (string, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockConnection().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CurrentNamespaceName", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 string
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(string)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
 func (mock *MockConnection) DialOrDie() kubernetes.Interface {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")
@@ -318,6 +337,23 @@ func (c *Connection_Config_OngoingVerification) GetCapturedArguments() {
 }
 
 func (c *Connection_Config_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierConnection) CurrentNamespaceName() *Connection_CurrentNamespaceName_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CurrentNamespaceName", params, verifier.timeout)
+	return &Connection_CurrentNamespaceName_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Connection_CurrentNamespaceName_OngoingVerification struct {
+	mock              *MockConnection
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Connection_CurrentNamespaceName_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *Connection_CurrentNamespaceName_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierConnection) DialOrDie() *Connection_DialOrDie_OngoingVerification {

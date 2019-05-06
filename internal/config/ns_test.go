@@ -24,6 +24,12 @@ func TestNSValidate(t *testing.T) {
 }
 
 func TestNSValidateMissing(t *testing.T) {
+	defer func() {
+		if err := recover(); err == nil {
+			t.Fatalf("Expected panic on non existing namespace")
+		}
+	}()
+
 	mc := NewMockConnection()
 	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
 	mk := NewMockKubeSettings()
@@ -81,6 +87,8 @@ func TestNSValidateRmFavs(t *testing.T) {
 	allNS := []string{"default", "kube-system"}
 
 	mc := NewMockConnection()
+	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
+
 	mk := NewMockKubeSettings()
 	m.When(mk.NamespaceNames(namespaces())).ThenReturn(allNS)
 
@@ -88,5 +96,5 @@ func TestNSValidateRmFavs(t *testing.T) {
 	ns.Favorites = []string{"default", "fred", "blee"}
 	ns.Validate(mc, mk)
 
-	assert.Equal(t, []string{"fred"}, ns.Favorites)
+	assert.Equal(t, []string{"default"}, ns.Favorites)
 }

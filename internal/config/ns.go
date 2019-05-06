@@ -1,6 +1,8 @@
 package config
 
 import (
+	"fmt"
+
 	"github.com/rs/zerolog/log"
 )
 
@@ -31,11 +33,10 @@ func (n *Namespace) Validate(c Connection, ks KubeSettings) {
 	if err != nil {
 		return
 	}
-
 	nn := ks.NamespaceNames(nns)
 	if !n.isAllNamespace() && !InList(nn, n.Active) {
-		log.Debug().Msg("[Config] Validation error active namespace resetting to `default")
-		n.Active = defaultNS
+		log.Error().Msgf("[Config] Validation error active namespace `%s does not exists", n.Active)
+		panic(fmt.Errorf("Invalid namespace. The provided namespace `%s does not exists", n.Active))
 	}
 
 	for _, ns := range n.Favorites {

@@ -53,6 +53,7 @@ require (
 	k8s.io/apiserver v0.0.0-20190426133039-accf7b6d6716 // indirect
 	k8s.io/cli-runtime v0.0.0-20190325194458-f2b4781c3ae1
 	k8s.io/client-go v10.0.0+incompatible
+	k8s.io/klog v0.3.0
 	k8s.io/kube-openapi v0.0.0-20190426233423-c5d3b0f4bee0 // indirect
 	k8s.io/kubernetes v1.13.5
 	k8s.io/metrics v0.0.0-20190325194013-29123f6a4aa6

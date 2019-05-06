@@ -69,6 +69,25 @@ func (mock *MockClusterMeta) ContextName() string {
 	return ret0
 }
 
+func (mock *MockClusterMeta) CurrentNamespaceName() (string, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockClusterMeta().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CurrentNamespaceName", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 string
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(string)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
 func (mock *MockClusterMeta) DialOrDie() kubernetes.Interface {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockClusterMeta().")
@@ -435,6 +454,23 @@ func (c *ClusterMeta_ContextName_OngoingVerification) GetCapturedArguments() {
 }
 
 func (c *ClusterMeta_ContextName_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierClusterMeta) CurrentNamespaceName() *ClusterMeta_CurrentNamespaceName_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CurrentNamespaceName", params, verifier.timeout)
+	return &ClusterMeta_CurrentNamespaceName_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type ClusterMeta_CurrentNamespaceName_OngoingVerification struct {
+	mock              *MockClusterMeta
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *ClusterMeta_CurrentNamespaceName_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *ClusterMeta_CurrentNamespaceName_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierClusterMeta) DialOrDie() *ClusterMeta_DialOrDie_OngoingVerification {

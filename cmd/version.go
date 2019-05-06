@@ -21,7 +21,7 @@ func versionCmd() *cobra.Command {
 func printVersion() {
 	const secFmt = "%-10s "
 
-	printLogo()
+	printLogo(printer.ColorCyan)
 	printTuple(secFmt, "Version", version)
 	printTuple(secFmt, "Commit", commit)
 	printTuple(secFmt, "Date", date)

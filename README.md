@@ -154,7 +154,6 @@ This initial drop is brittle. K9s will most likely blow up...
 
 1. You're running older versions of Kubernetes. K9s works best Kubernetes 1.12+.
 1. You don't have enough RBAC fu to manage your cluster (see RBAC section below).
-1. Your cluster does not run a metric server.
 
 ---
 
@@ -182,15 +181,15 @@ rules:
   # Grants RO access to cluster resources node and namespace
   - apiGroups: [""]
     resources: ["nodes", "namespaces"]
-    verbs: ["get", "list"]
+    verbs: ["get", "list", "watch"]
   # Grants RO access to RBAC resources
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["clusterroles", "roles", "clusterrolebindings", "rolebindings"]
-    verbs: ["get", "list"]
+    verbs: ["get", "list", "watch"]
   # Grants RO access to CRD resources
   - apiGroups: ["apiextensions.k8s.io"]
     resources: ["customresourcedefinitions"]
-    verbs: ["get", "list"]
+    verbs: ["get", "list", "watch"]
   # Grants RO access to netric server
   - apiGroups: ["metrics.k8s.io"]
     resources: ["nodes", "pods"]
@@ -228,7 +227,7 @@ rules:
   # Grants RO access to most namespaced resources
   - apiGroups: ["", "apps", "autoscaling", "batch", "extensions"]
     resources: ["*"]
-    verbs: ["get", "list"]
+    verbs: ["get", "list", "watch"]
 
 ---
 # Sample K9s user RoleBinding

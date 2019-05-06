@@ -10,10 +10,13 @@ import (
 
 func TestK9sValidate(t *testing.T) {
 	mc := NewMockConnection()
+	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
+
 	mk := NewMockKubeSettings()
 	m.When(mk.CurrentContextName()).ThenReturn("ctx1", nil)
 	m.When(mk.CurrentClusterName()).ThenReturn("c1", nil)
 	m.When(mk.ClusterNames()).ThenReturn([]string{"c1", "c2"}, nil)
+	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"default"})
 
 	c := config.NewK9s()
 	c.Validate(mc, mk)
@@ -30,10 +33,13 @@ func TestK9sValidate(t *testing.T) {
 
 func TestK9sValidateBlank(t *testing.T) {
 	mc := NewMockConnection()
+	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
+
 	mk := NewMockKubeSettings()
 	m.When(mk.CurrentContextName()).ThenReturn("ctx1", nil)
 	m.When(mk.CurrentClusterName()).ThenReturn("c1", nil)
 	m.When(mk.ClusterNames()).ThenReturn([]string{"c1", "c2"}, nil)
+	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"default"})
 
 	var c config.K9s
 	c.Validate(mc, mk)
