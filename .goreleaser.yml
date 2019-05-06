@@ -15,11 +15,11 @@ builds:
     goarch:
       - 386
       - amd64
-      - arm
-      - arm64
-    goarm:
-      - 6
-      - 7
+      # - arm
+      # - arm64
+    # goarm:
+    #   - 6
+    #   - 7
     ldflags:
       - -s -w -X github.com/derailed/k9s/cmd.version={{.Version}} -X github.com/derailed/k9s/cmd.commit={{.Commit}} -X github.com/derailed/k9s/cmd.date={{.Date}}
 archive:
