@@ -349,7 +349,7 @@ Available color names are defined below:
 | steelblue            | tan                  | thistle              | tomato               | turquoise            |
 | violet               | wheat                | whitesmoke           | yellowgreen          | grey                 |
 | dimgrey              | darkgrey             | darkslategrey        | lightgrey            | lightslategrey       |
-| slategrey            | | | | |
+| slategrey            |                      |                      |                      |                      |
 
 ---
 
