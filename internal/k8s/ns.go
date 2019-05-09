@@ -34,7 +34,6 @@ func (n *Namespace) List(_ string) (Collection, error) {
 	for i, r := range rr.Items {
 		cc[i] = r
 	}
-
 	return cc, nil
 }
 

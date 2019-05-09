@@ -24,12 +24,6 @@ func TestNSValidate(t *testing.T) {
 }
 
 func TestNSValidateMissing(t *testing.T) {
-	defer func() {
-		if err := recover(); err == nil {
-			t.Fatalf("Expected panic on non existing namespace")
-		}
-	}()
-
 	mc := NewMockConnection()
 	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
 	mk := NewMockKubeSettings()

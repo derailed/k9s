@@ -5,10 +5,8 @@ import (
 	"regexp"
 
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -79,7 +77,7 @@ func (*namespaceView) cleanser(s string) string {
 
 func (v *namespaceView) decorate(data resource.TableData) resource.TableData {
 	if _, ok := data.Rows[resource.AllNamespaces]; !ok {
-		if k8s.CanIAccess(v.app.conn().Config(), log.Logger, "", "list", "namespaces", "namespace.v1") {
+		if v.app.conn().CanIAccess("", "namespaces", "namespace.v1", []string{"list"}) {
 			data.Rows[resource.AllNamespace] = &resource.RowEvent{
 				Action: resource.Unchanged,
 				Fields: resource.Row{resource.AllNamespace, "Active", "0"},

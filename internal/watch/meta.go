@@ -53,7 +53,7 @@ type Meta struct {
 // NewMeta creates a new cluster resource informer
 func NewMeta(client k8s.Connection, ns string) *Meta {
 	m := Meta{client: client, informers: map[string]StoreInformer{}}
-	m.init(ns)
+	m.init("")
 
 	return &m
 }
@@ -70,6 +70,18 @@ func (m *Meta) init(ns string) {
 		m.informers[NodeMXIndex] = NewNodeMetrics(m.client)
 		m.informers[PodMXIndex] = NewPodMetrics(m.client, ns)
 	}
+}
+
+// CheckAccess checks if current user as enought RBAC fu to access watched resources.
+func (m *Meta) checkAccess(ns string) error {
+	if !m.client.CanIAccess(ns, "nodes", "node.v1", []string{"list", "watch"}) {
+		return fmt.Errorf("Not authorized to list/watch nodes")
+	}
+	if !m.client.CanIAccess(ns, "pods", "pod.v1", []string{"list", "watch"}) {
+		return fmt.Errorf("Not authorized to list/watch pods in namespace %s", ns)
+	}
+
+	return nil
 }
 
 // List items from store.

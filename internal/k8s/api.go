@@ -2,9 +2,11 @@ package k8s
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	authorizationv1 "k8s.io/api/authorization/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/fields"
@@ -61,6 +63,7 @@ type (
 		ServerVersion() (*version.Info, error)
 		FetchNodes() (*v1.NodeList, error)
 		CurrentNamespaceName() (string, error)
+		CanIAccess(ns, name, resURL string, verbs []string) bool
 	}
 
 	// APIClient represents a Kubernetes api client.
@@ -82,6 +85,35 @@ func InitConnectionOrDie(config *Config, logger zerolog.Logger) *APIClient {
 	conn.useMetricServer = conn.supportsMxServer()
 
 	return &conn
+}
+
+// CanIAccess checks if user has access to a certain resource.
+func (a *APIClient) CanIAccess(ns, name, resURL string, verbs []string) bool {
+	_, gr := schema.ParseResourceArg(strings.ToLower(resURL))
+	sar := &authorizationv1.SelfSubjectAccessReview{
+		Spec: authorizationv1.SelfSubjectAccessReviewSpec{
+			ResourceAttributes: &authorizationv1.ResourceAttributes{
+				Namespace:   ns,
+				Group:       gr.Group,
+				Resource:    gr.Resource,
+				Subresource: "",
+				Name:        name,
+			},
+		},
+	}
+
+	var resp *authorizationv1.SelfSubjectAccessReview
+	var err error
+	for _, v := range verbs {
+		sar.Spec.ResourceAttributes.Verb = v
+		resp, err = a.DialOrDie().AuthorizationV1().SelfSubjectAccessReviews().Create(sar)
+		if err != nil {
+			log.Warn().Err(err).Msgf("CanIAccess")
+			return false
+		}
+	}
+
+	return resp.Status.Allowed
 }
 
 // CurrentNamespaceName return namespace name set via either cli arg or cluster config.

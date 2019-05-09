@@ -62,6 +62,21 @@ func (r *Namespace) Marshal(path string) (string, error) {
 	return r.marshalObject(nss)
 }
 
+// // List resources for a given namespace.
+// func (r *Namespace) List(ns string) (Columnars, error) {
+// 	r.Resource.
+// 	nss, err := r.Resource.List(ns)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	cc := make(Columnars, 0, len(nss))
+// 	for i := range nss {
+// 		cc = append(cc, r.New(&nss[i]).(*Namespace))
+// 	}
+
+// 	return cc, nil
+// }
+
 // Header returns resource header.
 func (*Namespace) Header(ns string) Row {
 	return Row{"NAME", "STATUS", "AGE"}
