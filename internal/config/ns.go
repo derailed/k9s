@@ -33,12 +33,7 @@ func (n *Namespace) Validate(c Connection, ks KubeSettings) {
 	}
 	nn := ks.NamespaceNames(nns)
 	if !n.isAllNamespace() && !InList(nn, n.Active) {
-<<<<<<< HEAD
 		log.Error().Msgf("[Config] Validation error active namespace `%s does not exists", n.Active)
-=======
-		log.Error().Msgf("[Config] Validation error active namespace `%s` does not exist", n.Active)
-		panic(fmt.Errorf("Invalid namespace. The provided namespace `%s` does not exist", n.Active))
->>>>>>> 6be8a58784ba218b22c236be8e5d95d14ac72c03
 	}
 
 	for _, ns := range n.Favorites {
