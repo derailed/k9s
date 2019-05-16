@@ -9,11 +9,11 @@ builds:
   - env:
       - CGO_ENABLED=0
     goos:
-      - linux
-      - darwin
-      # - windows
+      # - linux
+      # - darwin
+      - windows
     goarch:
-      - 386
+      # - 386
       - amd64
       # - arm
       # - arm64
