@@ -142,9 +142,9 @@ func TestToMillicore(t *testing.T) {
 		v int64
 		e string
 	}{
-		{0, "0m"},
-		{2, "2m"},
-		{1000, "1000m"},
+		{0, "0"},
+		{2, "2"},
+		{1000, "1000"},
 	}
 
 	for _, u := range uu {
@@ -157,9 +157,9 @@ func TestToMi(t *testing.T) {
 		v float64
 		e string
 	}{
-		{0, "0Mi"},
-		{2, "2Mi"},
-		{1000, "1000Mi"},
+		{0, "0"},
+		{2, "2"},
+		{1000, "1000"},
 	}
 
 	for _, u := range uu {
@@ -172,10 +172,10 @@ func TestAsPerc(t *testing.T) {
 		v float64
 		e string
 	}{
-		{0, "0%"},
-		{10.5, "10%"},
-		{10, "10%"},
-		{0.05, "0%"},
+		{0, "0"},
+		{10.5, "10"},
+		{10, "10"},
+		{0.05, "0"},
 	}
 
 	for _, u := range uu {

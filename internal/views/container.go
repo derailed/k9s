@@ -10,14 +10,16 @@ type containerView struct {
 	*resourceView
 
 	current igniter
+	exitFn  func()
 }
 
-func newContainerView(t string, app *appView, list resource.List, path string) resourceViewer {
+func newContainerView(t string, app *appView, list resource.List, path string, exitFn func()) resourceViewer {
 	v := containerView{resourceView: newResourceView(t, app, list).(*resourceView)}
 	{
 		v.path = &path
 		v.extraActionsFn = v.extraActions
 		v.current = app.content.GetPrimitive("main").(igniter)
+		v.exitFn = exitFn
 	}
 	v.AddPage("logs", newLogsView(list.GetName(), &v), true, false)
 	v.switchPage("co")
@@ -97,13 +99,15 @@ func (v *containerView) shellIn(path, co string) {
 
 func (v *containerView) extraActions(aa keyActions) {
 	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
-	aa[KeyShiftL] = newKeyAction("Previous Logs", v.prevLogsCmd, true)
+	aa[KeyShiftL] = newKeyAction("Prev Logs", v.prevLogsCmd, true)
 	aa[KeyS] = newKeyAction("Shell", v.shellCmd, true)
 	aa[tcell.KeyEscape] = newKeyAction("Back", v.backCmd, false)
 	aa[KeyP] = newKeyAction("Previous", v.backCmd, false)
 	aa[tcell.KeyEnter] = newKeyAction("View Logs", v.logsCmd, false)
-	aa[KeyShiftC] = newKeyAction("Sort CPU", v.sortColCmd(7, false), true)
-	aa[KeyShiftM] = newKeyAction("Sort MEM", v.sortColCmd(8, false), true)
+	aa[KeyShiftC] = newKeyAction("Sort CPU", v.sortColCmd(6, false), true)
+	aa[KeyShiftM] = newKeyAction("Sort MEM", v.sortColCmd(7, false), true)
+	aa[KeyAltC] = newKeyAction("Sort %CPU", v.sortColCmd(8, false), true)
+	aa[KeyAltM] = newKeyAction("Sort %MEM", v.sortColCmd(9, false), true)
 }
 
 func (v *containerView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
@@ -117,7 +121,8 @@ func (v *containerView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) 
 }
 
 func (v *containerView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	v.app.inject(v.current)
+	// v.app.inject(v.current)
+	v.exitFn()
 
 	return nil
 }

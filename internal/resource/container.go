@@ -147,20 +147,17 @@ func (r *Container) List(ns string) (Columnars, error) {
 
 // Header return resource header.
 func (*Container) Header(ns string) Row {
-	hh := Row{}
-
-	return append(hh,
+	return append(Row{},
 		"NAME",
 		"IMAGE",
 		"READY",
 		"STATE",
 		"RS",
-		"LPROB",
-		"RPROB",
+		"PROBES(L:R)",
 		"CPU",
 		"MEM",
-		"RCPU",
-		"RMEM",
+		"%CPU",
+		"%MEM",
 		"AGE",
 	)
 }
@@ -170,7 +167,7 @@ func (r *Container) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
 	i := r.instance
 
-	scpu, smem := NAValue, NAValue
+	scpu, smem, pcpu, pmem := NAValue, NAValue, NAValue, NAValue
 	if r.metrics != nil {
 		var (
 			cpu int64
@@ -184,8 +181,14 @@ func (r *Container) Fields(ns string) Row {
 			}
 		}
 		scpu, smem = ToMillicore(cpu), ToMi(mem)
+		rcpu, rmem := containerResources(i)
+		if rcpu != nil {
+			pcpu = AsPerc(toPerc(float64(cpu), float64(rcpu.MilliValue())))
+		}
+		if rmem != nil {
+			pmem = AsPerc(toPerc(mem, k8s.ToMB(rmem.Value())))
+		}
 	}
-	rcpu, rmem := resources(i)
 
 	var cs *v1.ContainerStatus
 	for _, c := range r.pod.Status.ContainerStatuses {
@@ -215,12 +218,11 @@ func (r *Container) Fields(ns string) Row {
 		ready,
 		state,
 		restarts,
-		probe(i.LivenessProbe),
-		probe(i.ReadinessProbe),
+		probe(i.LivenessProbe)+":"+probe(i.ReadinessProbe),
 		scpu,
 		smem,
-		rcpu,
-		rmem,
+		pcpu,
+		pmem,
 		toAge(r.pod.CreationTimestamp),
 	)
 }
@@ -252,18 +254,6 @@ func toRes(r v1.ResourceList) (string, string) {
 	cpu, mem := r[v1.ResourceCPU], r[v1.ResourceMemory]
 
 	return ToMillicore(cpu.MilliValue()), ToMi(k8s.ToMB(mem.Value()))
-}
-
-func resources(c v1.Container) (cpu, mem string) {
-	req, lim := c.Resources.Requests, c.Resources.Limits
-	if len(req) != 0 {
-		return toRes(req)
-	}
-	if len(lim) != 0 {
-		return toRes(lim)
-	}
-
-	return NAValue, NAValue
 }
 
 func probe(p *v1.Probe) string {

@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/kubernetes/pkg/util/node"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
@@ -198,6 +199,8 @@ func (*Pod) Header(ns string) Row {
 		"RS",
 		"CPU",
 		"MEM",
+		"%CPU",
+		"%MEM",
 		"IP",
 		"NODE",
 		"QOS",
@@ -217,17 +220,13 @@ func (r *Pod) Fields(ns string) Row {
 	ss := i.Status.ContainerStatuses
 	cr, _, rc := r.statuses(ss)
 
-	scpu, smem := NAValue, NAValue
+	ccpu, cmem, pcpu, pmem := NAValue, NAValue, NAValue, NAValue
 	if r.metrics != nil {
-		var cpu int64
-		var mem float64
-
-		for _, c := range r.metrics.Containers {
-			cpu += c.Usage.Cpu().MilliValue()
-			mem += k8s.ToMB(c.Usage.Memory().Value())
-		}
-		scpu = ToMillicore(cpu)
-		smem = ToMi(mem)
+		c, m := r.currentRes(r.metrics)
+		ccpu, cmem = ToMillicore(c.MilliValue()), ToMi(k8s.ToMB(m.Value()))
+		rc, rm := r.requestedRes(i)
+		pcpu = AsPerc(toPerc(float64(c.MilliValue()), float64(rc.MilliValue())))
+		pmem = AsPerc(toPerc(k8s.ToMB(m.Value()), k8s.ToMB(rm.Value())))
 	}
 
 	return append(ff,
@@ -235,8 +234,10 @@ func (r *Pod) Fields(ns string) Row {
 		strconv.Itoa(cr)+"/"+strconv.Itoa(len(ss)),
 		r.phase(i),
 		strconv.Itoa(rc),
-		scpu,
-		smem,
+		ccpu,
+		cmem,
+		pcpu,
+		pmem,
 		i.Status.PodIP,
 		i.Spec.NodeName,
 		r.mapQOS(i.Status.QOSClass),
@@ -246,6 +247,41 @@ func (r *Pod) Fields(ns string) Row {
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func containerResources(co v1.Container) (cpu, mem *resource.Quantity) {
+	req, limit := co.Resources.Requests, co.Resources.Limits
+	switch {
+	case len(req) != 0 && len(limit) != 0:
+		cpu, mem = limit.Cpu(), limit.Memory()
+	case len(req) != 0:
+		cpu, mem = req.Cpu(), req.Memory()
+	case len(limit) != 0:
+		cpu, mem = limit.Cpu(), limit.Memory()
+	}
+	return
+}
+
+func (r *Pod) requestedRes(po *v1.Pod) (cpu, mem resource.Quantity) {
+	for _, co := range po.Spec.Containers {
+		c, m := containerResources(co)
+		if c != nil {
+			cpu.Add(*c)
+		}
+		if m != nil {
+			mem.Add(*m)
+		}
+	}
+	return
+}
+
+func (*Pod) currentRes(mx *mv1beta1.PodMetrics) (cpu, mem resource.Quantity) {
+	for _, co := range mx.Containers {
+		c, m := co.Usage.Cpu(), co.Usage.Memory()
+		cpu.Add(*c)
+		mem.Add(*m)
+	}
+	return
+}
 
 func (*Pod) mapQOS(class v1.PodQOSClass) string {
 	switch class {

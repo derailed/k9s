@@ -81,7 +81,7 @@ func join(a []string, sep string) string {
 
 // AsPerc prints a number as a percentage.
 func AsPerc(f float64) string {
-	return strconv.Itoa(int(f)) + "%"
+	return strconv.Itoa(int(f))
 }
 
 // ToPerc computes the ratio of two numbers as a percentage.
@@ -168,12 +168,12 @@ func mapToStr(m map[string]string) (s string) {
 
 // ToMillicore shows cpu reading for human.
 func ToMillicore(v int64) string {
-	return strconv.Itoa(int(v)) + "m"
+	return strconv.Itoa(int(v))
 }
 
 // ToMi shows mem reading for human.
 func ToMi(v float64) string {
-	return strconv.Itoa(int(v)) + "Mi"
+	return strconv.Itoa(int(v))
 }
 
 func boolPtrToStr(b *bool) string {

@@ -111,6 +111,8 @@ func (*Node) Header(ns string) Row {
 		"EXTERNAL-IP",
 		"CPU",
 		"MEM",
+		"%CPU",
+		"%MEM",
 		"ACPU",
 		"AMEM",
 		"AGE",
@@ -125,7 +127,7 @@ func (r *Node) Fields(ns string) Row {
 	iIP, eIP := r.getIPs(no.Status.Addresses)
 	iIP, eIP = missing(iIP), missing(eIP)
 
-	ccpu, cmem, scpu, smem := NAValue, NAValue, NAValue, NAValue
+	ccpu, cmem, scpu, smem, pcpu, pmem := NAValue, NAValue, NAValue, NAValue, NAValue, NAValue
 	if r.metrics != nil {
 		var (
 			cpu int64
@@ -137,8 +139,10 @@ func (r *Node) Fields(ns string) Row {
 
 		acpu := no.Status.Allocatable.Cpu().MilliValue()
 		amem := k8s.ToMB(no.Status.Allocatable.Memory().Value())
-		ccpu = withPerc(ToMillicore(cpu), AsPerc(toPerc(float64(cpu), float64(acpu))))
-		cmem = withPerc(ToMi(mem), AsPerc(toPerc(mem, amem)))
+		ccpu = ToMillicore(cpu)
+		pcpu = AsPerc(toPerc(float64(cpu), float64(acpu)))
+		cmem = ToMi(mem)
+		pmem = AsPerc(toPerc(mem, amem))
 		scpu = ToMillicore(cpu)
 		smem = ToMi(mem)
 	}
@@ -158,6 +162,8 @@ func (r *Node) Fields(ns string) Row {
 		eIP,
 		ccpu,
 		cmem,
+		pcpu,
+		pmem,
 		scpu,
 		smem,
 		toAge(no.ObjectMeta.CreationTimestamp),

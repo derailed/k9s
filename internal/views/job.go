@@ -104,7 +104,7 @@ func (v *jobView) showLogs(path, co, view string, parent loggable, prev bool) {
 
 func (v *jobView) extraActions(aa keyActions) {
 	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
-	aa[KeyShiftL] = newKeyAction("Previous Logs", v.prevLogsCmd, true)
+	aa[KeyShiftL] = newKeyAction("Prev Logs", v.prevLogsCmd, true)
 	aa[tcell.KeyEnter] = newKeyAction("View Pods", v.showPodsCmd, true)
 }
 

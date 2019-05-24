@@ -216,11 +216,14 @@ func (a *appView) Run() {
 func (a *appView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	key := evt.Key()
 	if key == tcell.KeyRune {
-		if a.cmdBuff.isActive() {
+		if a.cmdBuff.isActive() && evt.Modifiers() == tcell.ModNone {
 			a.cmdBuff.add(evt.Rune())
 			return nil
 		}
 		key = tcell.Key(evt.Rune())
+		if evt.Modifiers() == tcell.ModAlt {
+			key = tcell.Key(int16(evt.Rune()) * int16(evt.Modifiers()))
+		}
 	}
 
 	if a, ok := a.actions[key]; ok {
@@ -340,7 +343,6 @@ func (a *appView) inject(i igniter) {
 		a.cancel()
 	}
 	a.content.RemovePage("main")
-
 	var ctx context.Context
 	{
 		ctx, a.cancel = context.WithCancel(context.Background())

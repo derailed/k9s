@@ -110,6 +110,15 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 	}
 }
 
+func (v *resourceView) reloadList(list resource.List, ns string) {
+	v.suspend()
+	{
+		v.list = list
+		v.list.SetNamespace(ns)
+	}
+	v.resume()
+}
+
 func (v *resourceView) updater(ctx context.Context) {
 	go func(ctx context.Context) {
 		for {
@@ -388,7 +397,6 @@ func (v *resourceView) refresh() {
 	}
 
 	v.refreshActions()
-
 	if err := v.list.Reconcile(v.app.informer, v.path); err != nil {
 		log.Error().Err(err).Msg("Reconciliation failed")
 		v.app.flash(flashErr, err.Error())
@@ -443,6 +451,7 @@ func (v *resourceView) switchPage(p string) {
 		v.app.setHints(h.hints())
 	}
 
+	log.Info().Msgf("Current page %#v", v.CurrentPage())
 	if _, ok := v.CurrentPage().Item.(*tableView); ok {
 		v.resume()
 	}

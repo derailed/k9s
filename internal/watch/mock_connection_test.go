@@ -239,14 +239,15 @@ func (mock *MockConnection) ServerVersion() (*version.Info, error) {
 	return ret0, ret1
 }
 
-func (mock *MockConnection) SupportsRes(_param0 string, _param1 []string) (string, bool) {
+func (mock *MockConnection) SupportsRes(_param0 string, _param1 []string) (string, bool, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")
 	}
 	params := []pegomock.Param{_param0, _param1}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("SupportsRes", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*bool)(nil)).Elem()})
+	result := pegomock.GetGenericMockFrom(mock).Invoke("SupportsRes", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*bool)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 string
 	var ret1 bool
+	var ret2 error
 	if len(result) != 0 {
 		if result[0] != nil {
 			ret0 = result[0].(string)
@@ -254,8 +255,11 @@ func (mock *MockConnection) SupportsRes(_param0 string, _param1 []string) (strin
 		if result[1] != nil {
 			ret1 = result[1].(bool)
 		}
+		if result[2] != nil {
+			ret2 = result[2].(error)
+		}
 	}
-	return ret0, ret1
+	return ret0, ret1, ret2
 }
 
 func (mock *MockConnection) SupportsResource(_param0 string) bool {

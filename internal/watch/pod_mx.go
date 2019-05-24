@@ -1,7 +1,6 @@
 package watch
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -75,11 +74,6 @@ func newPodMetricsInformer(client k8s.Connection, ns string, sync time.Duration,
 				if err != nil {
 					return nil, err
 				}
-
-				if !client.HasMetrics() {
-					return nil, errors.New("metrics-server not supported")
-				}
-
 				l, err := c.MetricsV1beta1().PodMetricses(ns).List(opts)
 				if err == nil {
 					pw.update(l, false)

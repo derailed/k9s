@@ -176,7 +176,7 @@ func newTableHeader() *TableHeader {
 	return &TableHeader{
 		FgColor:     "white",
 		BgColor:     "black",
-		SorterColor: "orange",
+		SorterColor: "aqua",
 	}
 }
 

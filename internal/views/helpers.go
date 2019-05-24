@@ -10,6 +10,15 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+const (
+	// deltaSign = "𝜟"
+	// plusSign  = "⬆"
+	// minusSign = "⬇︎"
+	deltaSign = "Δ"
+	plusSign  = "↑"
+	minusSign = "↓"
+)
+
 func deltas(o, n string) string {
 	o, n = strings.TrimSpace(o), strings.TrimSpace(n)
 	if o == "" || o == res.NAValue {
@@ -20,9 +29,9 @@ func deltas(o, n string) string {
 		j, _ := numerical(n)
 		switch {
 		case i < j:
-			return plus()
+			return plusSign
 		case i > j:
-			return minus()
+			return minusSign
 		default:
 			return ""
 		}
@@ -32,9 +41,9 @@ func deltas(o, n string) string {
 		j, _ := percentage(n)
 		switch {
 		case i < j:
-			return plus()
+			return plusSign
 		case i > j:
-			return minus()
+			return minusSign
 		default:
 			return ""
 		}
@@ -44,9 +53,9 @@ func deltas(o, n string) string {
 		q2, _ := resource.ParseQuantity(n)
 		switch q1.Cmp(q2) {
 		case -1:
-			return plus()
+			return plusSign
 		case 1:
-			return minus()
+			return minusSign
 		default:
 			return ""
 		}
@@ -56,9 +65,9 @@ func deltas(o, n string) string {
 		d2, _ := time.ParseDuration(n)
 		switch {
 		case d2-d1 > 0:
-			return plus()
+			return plusSign
 		case d2-d1 < 0:
-			return minus()
+			return minusSign
 		default:
 			return ""
 		}
@@ -66,7 +75,7 @@ func deltas(o, n string) string {
 
 	switch strings.Compare(o, n) {
 	case 1, -1:
-		return delta()
+		return deltaSign
 	default:
 		return ""
 	}
@@ -90,16 +99,4 @@ func numerical(s string) (int, bool) {
 	}
 
 	return n, true
-}
-
-func delta() string {
-	return "𝜟"
-}
-
-func plus() string {
-	return "⬆"
-}
-
-func minus() string {
-	return "⬇︎"
 }

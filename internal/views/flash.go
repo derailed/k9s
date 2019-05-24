@@ -48,7 +48,27 @@ func (v *flashView) setMessage(level flashLevel, msg ...string) {
 	if v.cancel != nil {
 		v.cancel()
 	}
-
+	var ctx1, ctx2 context.Context
+	{
+		ctx1, v.cancel = context.WithCancel(context.TODO())
+		ctx2, _ = context.WithTimeout(context.TODO(), flashDelay*time.Second)
+		go func(ctx1, ctx2 context.Context) {
+			for {
+				select {
+				// Timer canceled bail now
+				case <-ctx1.Done():
+					return
+				// Timed out clear and bail
+				case <-ctx2.Done():
+					v.app.QueueUpdateDraw(func() {
+						v.Clear()
+						v.app.Draw()
+					})
+					return
+				}
+			}
+		}(ctx1, ctx2)
+	}
 	_, _, width, _ := v.GetRect()
 	if width <= 15 {
 		width = 100
@@ -56,23 +76,6 @@ func (v *flashView) setMessage(level flashLevel, msg ...string) {
 	m := strings.Join(msg, " ")
 	v.SetTextColor(flashColor(level))
 	v.SetText(resource.Truncate(flashEmoji(level)+" "+m, width-3))
-
-	var ctx context.Context
-	{
-		ctx, v.cancel = context.WithTimeout(context.TODO(), flashDelay*time.Second)
-		go func(ctx context.Context) {
-			for {
-				select {
-				case <-ctx.Done():
-					v.app.QueueUpdateDraw(func() {
-						v.Clear()
-						// v.app.Draw()
-					})
-					return
-				}
-			}
-		}(ctx)
-	}
 }
 
 func flashEmoji(l flashLevel) string {

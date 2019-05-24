@@ -124,16 +124,22 @@ func (v *clusterInfoView) refresh() {
 	cluster.Metrics(nos, nmx, &cmx)
 	c = v.GetCell(row, 1)
 	cpu := resource.AsPerc(cmx.PercCPU)
+	if cpu == "0" {
+		cpu = resource.NAValue
+	}
 	c.SetText(cpu + deltas(strip(c.Text), cpu))
 	row++
 
 	c = v.GetCell(row, 1)
 	mem := resource.AsPerc(cmx.PercMEM)
+	if mem == "0" {
+		mem = resource.NAValue
+	}
 	c.SetText(mem + deltas(strip(c.Text), mem))
 }
 
 func strip(s string) string {
-	t := strings.Replace(s, plus(), "", 1)
-	t = strings.Replace(t, minus(), "", 1)
+	t := strings.Replace(s, plusSign, "", 1)
+	t = strings.Replace(t, minusSign, "", 1)
 	return t
 }

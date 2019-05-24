@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"flag"
 	"fmt"
 	"runtime/debug"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/klog"
 )
 
 const (
@@ -41,6 +43,13 @@ func init() {
 	rootCmd.AddCommand(versionCmd(), infoCmd())
 	initK9sFlags()
 	initK8sFlags()
+
+	// Klogs (of course) want to print stuff to the screen ;(
+	klog.InitFlags(nil)
+	flag.Set("log_file", config.K9sLogs)
+	flag.Set("stderrthreshold", "fatal")
+	flag.Set("alsologtostderr", "false")
+	flag.Set("logtostderr", "false")
 }
 
 // Execute root command

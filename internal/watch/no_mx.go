@@ -64,7 +64,6 @@ func newNodeMetricsInformer(client k8s.Connection, sync time.Duration, idxs cach
 				if err != nil {
 					return nil, err
 				}
-
 				l, err := c.MetricsV1beta1().NodeMetricses().List(opts)
 				if err == nil {
 					pw.update(l, false)
@@ -113,7 +112,6 @@ func (n *nodeMxWatcher) Run() {
 				if err != nil {
 					return
 				}
-
 				list, err := c.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{})
 				if err != nil {
 					log.Error().Err(err).Msg("Fetch node metrics")
@@ -142,7 +140,6 @@ func (n *nodeMxWatcher) update(list *mv1beta1.NodeMetricsList, notify bool) {
 		fqn := MetaFQN(list.Items[i].ObjectMeta)
 		fqns[fqn] = &list.Items[i]
 	}
-
 	for k, v := range n.cache {
 		if _, ok := fqns[k]; !ok {
 			if notify {
@@ -154,7 +151,6 @@ func (n *nodeMxWatcher) update(list *mv1beta1.NodeMetricsList, notify bool) {
 			delete(n.cache, k)
 		}
 	}
-
 	for k, v := range fqns {
 		kind := watch.Added
 		if v1, ok := n.cache[k]; ok {
@@ -163,7 +159,6 @@ func (n *nodeMxWatcher) update(list *mv1beta1.NodeMetricsList, notify bool) {
 			}
 			kind = watch.Modified
 		}
-
 		if notify {
 			n.eventChan <- watch.Event{
 				Type:   kind,

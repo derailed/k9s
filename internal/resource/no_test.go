@@ -81,7 +81,7 @@ func TestNodeListData(t *testing.T) {
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())
 	row, ok := td.Rows["fred"]
 	assert.True(t, ok)
-	assert.Equal(t, 12, len(row.Deltas))
+	assert.Equal(t, 14, len(row.Deltas))
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}

@@ -3,6 +3,7 @@ package k8s
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -59,7 +60,7 @@ type (
 		SupportsResource(group string) bool
 		ValidNamespaces() ([]v1.Namespace, error)
 		NodePods(node string) (*v1.PodList, error)
-		SupportsRes(grp string, versions []string) (string, bool)
+		SupportsRes(grp string, versions []string) (string, bool, error)
 		ServerVersion() (*version.Info, error)
 		FetchNodes() (*v1.NodeList, error)
 		CurrentNamespaceName() (string, error)
@@ -75,6 +76,7 @@ type (
 		mxsClient       *versioned.Clientset
 		useMetricServer bool
 		log             zerolog.Logger
+		mx              sync.Mutex
 	}
 )
 
@@ -104,6 +106,7 @@ func (a *APIClient) CanIAccess(ns, name, resURL string, verbs []string) bool {
 
 	var resp *authorizationv1.SelfSubjectAccessReview
 	var err error
+	var allow bool
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
 		resp, err = a.DialOrDie().AuthorizationV1().SelfSubjectAccessReviews().Create(sar)
@@ -111,9 +114,14 @@ func (a *APIClient) CanIAccess(ns, name, resURL string, verbs []string) bool {
 			log.Warn().Err(err).Msgf("CanIAccess")
 			return false
 		}
+		log.Debug().Msgf("CHECKING ACCESS for %s/%s/ in NS %q verb: %s -> %t, %s", resURL, name, ns, v, resp.Status.Allowed, resp.Status.Reason)
+		if !resp.Status.Allowed {
+			return false
+		}
+		allow = true
 	}
-
-	return resp.Status.Allowed
+	log.Debug().Msgf("GRANT ACCESS:%t", allow)
+	return allow
 }
 
 // CurrentNamespaceName return namespace name set via either cli arg or cluster config.
@@ -230,28 +238,34 @@ func (a *APIClient) DynDialOrDie() dynamic.Interface {
 
 // NSDialOrDie returns a handle to a namespaced resource.
 func (a *APIClient) NSDialOrDie() dynamic.NamespaceableResourceInterface {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
 	if a.nsClient != nil {
 		return a.nsClient
 	}
-
 	a.nsClient = a.DynDialOrDie().Resource(schema.GroupVersionResource{
 		Group:    "apiextensions.k8s.io",
 		Version:  "v1beta1",
 		Resource: "customresourcedefinitions",
 	})
+
 	return a.nsClient
 }
 
 // MXDial returns a handle to the metrics server.
 func (a *APIClient) MXDial() (*versioned.Clientset, error) {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
 	if a.mxsClient != nil {
 		return a.mxsClient, nil
 	}
-
 	var err error
 	if a.mxsClient, err = versioned.NewForConfig(a.RestConfigOrDie()); err != nil {
 		a.log.Debug().Err(err)
 	}
+
 	return a.mxsClient, err
 }
 
@@ -299,27 +313,18 @@ func (a *APIClient) supportsMxServer() bool {
 }
 
 // SupportsRes checks latest supported version.
-func (a *APIClient) SupportsRes(group string, versions []string) (string, bool) {
+func (a *APIClient) SupportsRes(group string, versions []string) (string, bool, error) {
 	apiGroups, err := a.DialOrDie().Discovery().ServerGroups()
 	if err != nil {
-		log.Error().Err(err).Msg("Unable to dial api groups")
-		return "", false
+		return "", false, err
 	}
 
 	for _, grp := range apiGroups.Groups {
 		if grp.Name != group {
 			continue
 		}
-		return grp.PreferredVersion.Version, true
-
-		// for _, version := range grp.Versions {
-		// 	for _, supportedVersion := range versions {
-		// 		if version.Version == supportedVersion {
-		// 			return supportedVersion, true
-		// 		}
-		// 	}
-		// }
+		return grp.PreferredVersion.Version, true, nil
 	}
 
-	return "", false
+	return "", false, nil
 }

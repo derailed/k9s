@@ -4,7 +4,9 @@ go 1.12
 
 replace (
 	k8s.io/api => k8s.io/api v0.0.0-20190222213804-5cb15d344471
+	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190325193600-475668423e9f
 	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190221213512-86fb29eff628
+	k8s.io/apiserver => k8s.io/apiserver v0.0.0-20190319190228-a4358799e4fe
 	k8s.io/cli-runtime => k8s.io/cli-runtime v0.0.0-20190325194458-f2b4781c3ae1
 	k8s.io/client-go => k8s.io/client-go v10.0.0+incompatible
 	k8s.io/metrics => k8s.io/metrics v0.0.0-20190325194013-29123f6a4aa6
@@ -26,6 +28,7 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc // indirect
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
+	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.6 // indirect
 	github.com/mattn/go-runewidth v0.0.4
 	github.com/onsi/ginkgo v1.8.0 // indirect

@@ -17,22 +17,22 @@ func TestDeltas(t *testing.T) {
 		s1, s2, e string
 	}{
 		{"", "", ""},
-		{resource.MissingValue, "", delta()},
+		{resource.MissingValue, "", deltaSign},
 		{resource.NAValue, "", ""},
 		{"fred", "fred", ""},
-		{"fred", "blee", delta()},
+		{"fred", "blee", deltaSign},
 		{"1", "1", ""},
-		{"1", "2", plus()},
-		{"2", "1", minus()},
+		{"1", "2", plusSign},
+		{"2", "1", minusSign},
 		{"2m33s", "2m33s", ""},
-		{"2m33s", "1m", minus()},
-		{"33s", "1m", plus()},
+		{"2m33s", "1m", minusSign},
+		{"33s", "1m", plusSign},
 		{"10Gi", "10Gi", ""},
-		{"10Gi", "20Gi", plus()},
-		{"30Gi", "20Gi", minus()},
+		{"10Gi", "20Gi", plusSign},
+		{"30Gi", "20Gi", minusSign},
 		{"15%", "15%", ""},
-		{"20%", "40%", plus()},
-		{"5%", "2%", minus()},
+		{"20%", "40%", plusSign},
+		{"5%", "2%", minusSign},
 	}
 
 	for _, u := range uu {

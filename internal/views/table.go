@@ -16,9 +16,16 @@ import (
 )
 
 const (
-	titleFmt   = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]] "
-	searchFmt  = "<[filter:bg:b]/%s[fg:bg:]> "
-	nsTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
+	titleFmt      = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]] "
+	searchFmt     = "<[filter:bg:b]/%s[fg:bg:]> "
+	nsTitleFmt    = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
+	descIndicator = "↓"
+	ascIndicator  = "↑"
+)
+
+var (
+	crx = regexp.MustCompile(`\A.{0,1}CPU`)
+	mrx = regexp.MustCompile(`\A.{0,1}MEM`)
 )
 
 type (
@@ -110,6 +117,9 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 			return nil
 		}
 		key = tcell.Key(evt.Rune())
+		if evt.Modifiers() == tcell.ModAlt {
+			key = tcell.Key(int16(evt.Rune()) * int16(evt.Modifiers()))
+		}
 	}
 
 	if a, ok := v.actions[key]; ok {
@@ -181,8 +191,8 @@ func (v *tableView) sortColCmd(col int) func(evt *tcell.EventKey) *tcell.EventKe
 		} else {
 			v.sortCol.index, v.sortCol.asc = v.nameColIndex()+col, true
 		}
-
 		v.refresh()
+
 		return nil
 	}
 }
@@ -289,11 +299,11 @@ func (v *tableView) sortIndicator(index int, name string) string {
 		return name
 	}
 
-	order := "↓"
+	order := descIndicator
 	if v.sortCol.asc {
-		order = "↑"
+		order = ascIndicator
 	}
-	return fmt.Sprintf("%s [%s::]%s[::]", name, v.app.styles.Style.Table.Header.SorterColor, order)
+	return fmt.Sprintf("%s[%s::]%s[::]", name, v.app.styles.Style.Table.Header.SorterColor, order)
 }
 
 func (v *tableView) doUpdate(data resource.TableData) {
@@ -324,7 +334,7 @@ func (v *tableView) doUpdate(data resource.TableData) {
 	fg := config.AsColor(v.app.styles.Style.Table.Header.FgColor)
 	bg := config.AsColor(v.app.styles.Style.Table.Header.BgColor)
 	for col, h := range data.Header {
-		v.addHeaderCell(col, h, pads, fg, bg)
+		v.addHeaderCell(col, h, fg, bg)
 	}
 	row++
 
@@ -340,11 +350,7 @@ func (v *tableView) doUpdate(data resource.TableData) {
 				fgColor = v.colorerFn(data.Namespace, data.Rows[sk])
 			}
 			for col, field := range data.Rows[sk].Fields {
-				var age bool
-				if data.Header[col] == "AGE" {
-					age = true
-				}
-				v.addBodyCell(age, row, col, field, data.Rows[sk].Deltas[col], fgColor, pads)
+				v.addBodyCell(data.Header[col], row, col, field, data.Rows[sk].Deltas[col], fgColor, pads)
 			}
 			row++
 		}
@@ -372,34 +378,43 @@ func (v *tableView) sortAllRows(rows resource.RowEvents, sortFn sortFn) (resourc
 	return prim, sec
 }
 
-func (v *tableView) addHeaderCell(col int, name string, pads maxyPad, fg, bg tcell.Color) {
+func (v *tableView) addHeaderCell(col int, name string, fg, bg tcell.Color) {
 	c := tview.NewTableCell(v.sortIndicator(col, name))
 	{
 		c.SetExpansion(1)
 		c.SetTextColor(fg)
+		if crx.MatchString(name) || mrx.MatchString(name) {
+			c.SetAlign(tview.AlignRight)
+		}
 		c.SetBackgroundColor(bg)
 	}
 	v.SetCell(0, col, c)
 }
 
-func (v *tableView) addBodyCell(age bool, row, col int, field, delta string, color tcell.Color, pads maxyPad) {
-	dField := field
-	if age {
+func (v *tableView) addBodyCell(header string, row, col int, field, delta string, color tcell.Color, pads maxyPad) {
+	const colPadding = 3
+
+	if header == "AGE" {
 		dur, err := time.ParseDuration(field)
 		if err == nil {
-			dField = duration.HumanDuration(dur)
+			field = duration.HumanDuration(dur)
 		}
 	}
 
-	dField += deltas(delta, field)
-	if isASCII(field) {
-		dField = pad(dField, pads[col]+5)
+	field += deltas(delta, field)
+	align := tview.AlignLeft
+	if crx.MatchString(header) || mrx.MatchString(header) {
+		align = tview.AlignRight
+	} else if isASCII(field) {
+		field = pad(field, pads[col]+colPadding)
 	}
 
-	c := tview.NewTableCell(dField)
+	c := tview.NewTableCell(field)
 	{
 		c.SetExpansion(1)
+		c.SetAlign(align)
 		c.SetTextColor(color)
+		c.SetMaxWidth(pads[col] + colPadding)
 	}
 	v.SetCell(row, col, c)
 }

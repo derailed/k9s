@@ -9,19 +9,17 @@ import (
 )
 
 type (
-	viewFn func(ns string, app *appView, list resource.List) resourceViewer
-	listFn func(c resource.Connection, ns string) resource.List
-	// listMxFn   func(c resource.Connection, mx resource.MetricsServer, ns string) resource.List
+	viewFn     func(ns string, app *appView, list resource.List) resourceViewer
+	listFn     func(c resource.Connection, ns string) resource.List
 	colorerFn  func(ns string, evt *resource.RowEvent) tcell.Color
 	enterFn    func(app *appView, ns, resource, selection string)
 	decorateFn func(resource.TableData) resource.TableData
 
 	resCmd struct {
-		title  string
-		api    string
-		viewFn viewFn
-		listFn listFn
-		// listMxFn   listMxFn
+		title      string
+		api        string
+		viewFn     viewFn
+		listFn     listFn
 		enterFn    enterFn
 		colorerFn  colorerFn
 		decorateFn decorateFn
@@ -297,9 +295,14 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 		},
 	}
 
-	rev, ok := c.SupportsRes("autoscaling", []string{"v1", "v2beta1", "v2beta2"})
+	rev, ok, err := c.SupportsRes("autoscaling", []string{"v1", "v2beta1", "v2beta2"})
+	if err != nil {
+		log.Error().Err(err).Msg("Checking HPA")
+		return cmds
+	}
 	if !ok {
-		log.Warn().Msg("HPA are not supported on this cluster")
+		log.Error().Msg("HPA are not supported on this cluster")
+		return cmds
 	}
 
 	switch rev {
@@ -328,7 +331,7 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 			listFn: resource.NewHorizontalPodAutoscalerList,
 		}
 	default:
-		log.Panic().Msgf("K9s does not currently support HPA version `%s`", rev)
+		log.Panic().Msgf("K9s unsupported HPA version. Exiting!")
 	}
 
 	return cmds

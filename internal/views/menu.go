@@ -207,6 +207,36 @@ const (
 	Key9
 )
 
+// Defines AltKeys
+const (
+	KeyAltA tcell.Key = 4 * (iota + 97)
+	KeyAltB
+	KeyAltC
+	KeyAltD
+	KeyAltE
+	KeyAltF
+	KeyAltG
+	KeyAltH
+	KeyAltI
+	KeyAltJ
+	KeyAltK
+	KeyAltL
+	KeyAltM
+	KeyAltN
+	KeyAltO
+	KeyAltP
+	KeyAltQ
+	KeyAltR
+	KeyAltS
+	KeyAltT
+	KeyAltU
+	KeyAltV
+	KeyAltW
+	KeyAltX
+	KeyAltY
+	KeyAltZ
+)
+
 // Defines char keystrokes
 const (
 	KeyA tcell.Key = iota + 97
@@ -351,4 +381,32 @@ func initKeys() {
 
 	tcell.KeyNames[tcell.Key(KeyHelp)] = "?"
 	tcell.KeyNames[tcell.Key(KeySlash)] = "/"
+
+	tcell.KeyNames[tcell.Key(KeyAltA)] = "ALT-A"
+	tcell.KeyNames[tcell.Key(KeyAltB)] = "ALT-B"
+	tcell.KeyNames[tcell.Key(KeyAltC)] = "ALT-C"
+	tcell.KeyNames[tcell.Key(KeyAltD)] = "ALT-D"
+	tcell.KeyNames[tcell.Key(KeyAltE)] = "ALT-E"
+	tcell.KeyNames[tcell.Key(KeyAltF)] = "ALT-F"
+	tcell.KeyNames[tcell.Key(KeyAltG)] = "ALT-G"
+	tcell.KeyNames[tcell.Key(KeyAltH)] = "ALT-H"
+	tcell.KeyNames[tcell.Key(KeyAltI)] = "ALT-I"
+	tcell.KeyNames[tcell.Key(KeyAltJ)] = "ALT-J"
+	tcell.KeyNames[tcell.Key(KeyAltK)] = "ALT-K"
+	tcell.KeyNames[tcell.Key(KeyAltL)] = "ALT-L"
+	tcell.KeyNames[tcell.Key(KeyAltM)] = "ALT-M"
+	tcell.KeyNames[tcell.Key(KeyAltN)] = "ALT-N"
+	tcell.KeyNames[tcell.Key(KeyAltO)] = "ALT-O"
+	tcell.KeyNames[tcell.Key(KeyAltP)] = "ALT-P"
+	tcell.KeyNames[tcell.Key(KeyAltQ)] = "ALT-Q"
+	tcell.KeyNames[tcell.Key(KeyAltR)] = "ALT-R"
+	tcell.KeyNames[tcell.Key(KeyAltS)] = "ALT-S"
+	tcell.KeyNames[tcell.Key(KeyAltT)] = "ALT-T"
+	tcell.KeyNames[tcell.Key(KeyAltU)] = "ALT-U"
+	tcell.KeyNames[tcell.Key(KeyAltV)] = "ALT-V"
+	tcell.KeyNames[tcell.Key(KeyAltW)] = "ALT-W"
+	tcell.KeyNames[tcell.Key(KeyAltX)] = "ALT-X"
+	tcell.KeyNames[tcell.Key(KeyAltY)] = "ALT-Y"
+	tcell.KeyNames[tcell.Key(KeyAltZ)] = "ALT-Z"
+
 }
