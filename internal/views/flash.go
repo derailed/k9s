@@ -50,9 +50,11 @@ func (v *flashView) setMessage(level flashLevel, msg ...string) {
 	}
 	var ctx1, ctx2 context.Context
 	{
+		var timerCancel context.CancelFunc
 		ctx1, v.cancel = context.WithCancel(context.TODO())
-		ctx2, _ = context.WithTimeout(context.TODO(), flashDelay*time.Second)
-		go func(ctx1, ctx2 context.Context) {
+		ctx2, timerCancel = context.WithTimeout(context.TODO(), flashDelay*time.Second)
+		go func(ctx1, ctx2 context.Context, timerCancel context.CancelFunc) {
+			defer timerCancel()
 			for {
 				select {
 				// Timer canceled bail now
@@ -67,7 +69,7 @@ func (v *flashView) setMessage(level flashLevel, msg ...string) {
 					return
 				}
 			}
-		}(ctx1, ctx2)
+		}(ctx1, ctx2, timerCancel)
 	}
 	_, _, width, _ := v.GetRect()
 	if width <= 15 {
