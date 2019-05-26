@@ -181,6 +181,7 @@ func (v *podView) shellIn(path, co string) {
 		args = append(args, "exec", "-it")
 		args = append(args, "--context", v.app.config.K9s.CurrentContext)
 		args = append(args, "-n", ns)
+		args = append(args, "--kubeconfig", *v.app.config.GetConnection().Config().Flags().KubeConfig)
 		args = append(args, po)
 		if len(co) != 0 {
 			args = append(args, "-c", co)
