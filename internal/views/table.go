@@ -1,18 +1,17 @@
 package views
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
-	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 const (
@@ -56,29 +55,31 @@ type (
 )
 
 func newTableView(app *appView, title string) *tableView {
-	v := tableView{app: app, Table: tview.NewTable(), sortCol: sortColumn{0, 0, true}}
-	{
-		v.baseTitle = title
-		v.actions = make(keyActions)
-		v.SetFixed(1, 0)
-		v.SetBorder(true)
-		v.SetBackgroundColor(config.AsColor(app.styles.Style.Table.BgColor))
-		v.SetBorderColor(config.AsColor(app.styles.Style.Table.FgColor))
-		v.SetBorderFocusColor(config.AsColor(app.styles.Style.Border.FocusColor))
-		v.SetBorderAttributes(tcell.AttrBold)
-		v.SetBorderPadding(0, 0, 1, 1)
-		v.cmdBuff = newCmdBuff('/')
-		v.cmdBuff.addListener(app.cmdView)
-		v.cmdBuff.reset()
-		v.SetSelectable(true, false)
-		v.SetSelectedStyle(
-			tcell.ColorBlack,
-			config.AsColor(app.styles.Style.Table.CursorColor),
-			tcell.AttrBold,
-		)
-		v.SetInputCapture(v.keyboard)
-		v.bindKeys()
+	v := tableView{
+		app:       app,
+		Table:     tview.NewTable(),
+		sortCol:   sortColumn{0, 0, true},
+		actions:   make(keyActions),
+		baseTitle: title,
+		cmdBuff:   newCmdBuff('/'),
 	}
+	v.SetFixed(1, 0)
+	v.SetBorder(true)
+	v.SetBackgroundColor(config.AsColor(app.styles.Style.Table.BgColor))
+	v.SetBorderColor(config.AsColor(app.styles.Style.Table.FgColor))
+	v.SetBorderFocusColor(config.AsColor(app.styles.Style.Border.FocusColor))
+	v.SetBorderAttributes(tcell.AttrBold)
+	v.SetBorderPadding(0, 0, 1, 1)
+	v.cmdBuff.addListener(app.cmdView)
+	v.cmdBuff.reset()
+	v.SetSelectable(true, false)
+	v.SetSelectedStyle(
+		tcell.ColorBlack,
+		config.AsColor(app.styles.Style.Table.CursorColor),
+		tcell.AttrBold,
+	)
+	v.SetInputCapture(v.keyboard)
+	v.bindKeys()
 
 	return &v
 }
@@ -95,10 +96,6 @@ func (v *tableView) bindKeys() {
 	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[tcell.KeyBackspace] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[tcell.KeyDelete] = newKeyAction("Erase", v.eraseCmd, false)
-	v.actions[KeyG] = newKeyAction("Top", v.app.puntCmd, false)
-	v.actions[KeyShiftG] = newKeyAction("Bottom", v.app.puntCmd, false)
-	v.actions[KeyB] = newKeyAction("Down", v.pageDownCmd, false)
-	v.actions[KeyF] = newKeyAction("Up", v.pageUpCmd, false)
 }
 
 func (v *tableView) clearSelection() {
@@ -136,18 +133,6 @@ func (v *tableView) setSelection() {
 	}
 }
 
-func (v *tableView) pageUpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	v.PageUp()
-
-	return nil
-}
-
-func (v *tableView) pageDownCmd(evt *tcell.EventKey) *tcell.EventKey {
-	v.PageDown()
-
-	return nil
-}
-
 func (v *tableView) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.cmdBuff.isActive() {
 		v.cmdBuff.setActive(false)
@@ -168,7 +153,7 @@ func (v *tableView) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (v *tableView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.cmdBuff.empty() {
-		v.app.flash(flashInfo, "Clearing filter...")
+		v.app.flash().info("Clearing filter...")
 	}
 	v.cmdBuff.reset()
 	v.refresh()
@@ -216,7 +201,7 @@ func (v *tableView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	v.app.flash(flashInfo, "Filter mode activated.")
+	v.app.flash().info("Filter mode activated.")
 	v.cmdBuff.reset()
 	v.cmdBuff.setActive(true)
 
@@ -274,7 +259,7 @@ func (v *tableView) filtered() resource.TableData {
 
 	rx, err := regexp.Compile(`(?i)` + v.cmdBuff.String())
 	if err != nil {
-		v.app.flash(flashErr, "Invalid filter expression")
+		v.app.flash().err(errors.New("Invalid filter expression"))
 		v.cmdBuff.clear()
 		return v.data
 	}
@@ -392,21 +377,12 @@ func (v *tableView) addHeaderCell(col int, name string, fg, bg tcell.Color) {
 }
 
 func (v *tableView) addBodyCell(header string, row, col int, field, delta string, color tcell.Color, pads maxyPad) {
-	const colPadding = 3
-
-	if header == "AGE" {
-		dur, err := time.ParseDuration(field)
-		if err == nil {
-			field = duration.HumanDuration(dur)
-		}
-	}
-
 	field += deltas(delta, field)
 	align := tview.AlignLeft
 	if crx.MatchString(header) || mrx.MatchString(header) {
 		align = tview.AlignRight
 	} else if isASCII(field) {
-		field = pad(field, pads[col]+colPadding)
+		field = pad(field, pads[col])
 	}
 
 	c := tview.NewTableCell(field)
@@ -414,7 +390,6 @@ func (v *tableView) addBodyCell(header string, row, col int, field, delta string
 		c.SetExpansion(1)
 		c.SetAlign(align)
 		c.SetTextColor(color)
-		c.SetMaxWidth(pads[col] + colPadding)
 	}
 	v.SetCell(row, col, c)
 }
@@ -449,31 +424,33 @@ func (v *tableView) resetTitle() {
 	}
 	switch v.currentNS {
 	case resource.NotNamespaced, "*":
-		fmat := strings.Replace(titleFmt, "[fg:bg", "["+v.app.styles.Style.Title.FgColor+":"+v.app.styles.Style.Title.BgColor, -1)
-		fmat = strings.Replace(fmat, "[count", "["+v.app.styles.Style.Title.CounterColor, 1)
-		title = fmt.Sprintf(fmat, v.baseTitle, rc)
+		title = skinTitle(fmt.Sprintf(titleFmt, v.baseTitle, rc), v.app.styles.Style)
 	default:
 		ns := v.currentNS
 		if ns == resource.AllNamespaces {
 			ns = resource.AllNamespace
 		}
-		fmat := strings.Replace(nsTitleFmt, "[fg:bg", "["+v.app.styles.Style.Title.FgColor+":"+v.app.styles.Style.Title.BgColor, -1)
-		fmat = strings.Replace(fmat, "[hilite", "["+v.app.styles.Style.Title.HighlightColor, 1)
-		fmat = strings.Replace(fmat, "[count", "["+v.app.styles.Style.Title.CounterColor, 1)
-		title = fmt.Sprintf(fmat, v.baseTitle, ns, rc)
+		title = skinTitle(fmt.Sprintf(nsTitleFmt, v.baseTitle, ns, rc), v.app.styles.Style)
 	}
 
 	if !v.cmdBuff.isActive() && !v.cmdBuff.empty() {
-		fmat := strings.Replace(searchFmt, "[fg:bg", "["+v.app.styles.Style.Title.FgColor+":"+v.app.styles.Style.Title.BgColor, -1)
-		fmat = strings.Replace(fmat, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
-		fmat = strings.Replace(fmat, "[filter", "["+v.app.styles.Style.Title.FilterColor, 1)
-		title += fmt.Sprintf(fmat, v.cmdBuff)
+		title += skinTitle(fmt.Sprintf(searchFmt, v.cmdBuff), v.app.styles.Style)
 	}
 	v.SetTitle(title)
 }
 
 // ----------------------------------------------------------------------------
 // Event listeners...
+
+func skinTitle(fmat string, style *config.Style) string {
+	fmat = strings.Replace(fmat, "[fg:bg", "["+style.Title.FgColor+":"+style.Title.BgColor, -1)
+	fmat = strings.Replace(fmat, "[hilite", "["+style.Title.HighlightColor, 1)
+	fmat = strings.Replace(fmat, "[key", "["+style.Menu.NumKeyColor, 1)
+	fmat = strings.Replace(fmat, "[filter", "["+style.Title.FilterColor, 1)
+	fmat = strings.Replace(fmat, "[count", "["+style.Title.CounterColor, 1)
+	fmat = strings.Replace(fmat, ":bg:", ":"+style.Title.BgColor+":", -1)
+	return fmat
+}
 
 func (v *tableView) changed(s string) {}
 

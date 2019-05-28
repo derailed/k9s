@@ -223,10 +223,6 @@ func (v *policyView) namespacePolicies() (resource.RowEvents, []error) {
 	return evts, errs
 }
 
-func namespacedName(ns, n string) string {
-	return ns + "/" + n
-}
-
 func (v *policyView) parseRules(ns, binding string, rules []rbacv1.PolicyRule) resource.RowEvents {
 	m := make(resource.RowEvents, len(rules))
 	for _, r := range rules {
@@ -237,12 +233,12 @@ func (v *policyView) parseRules(ns, binding string, rules []rbacv1.PolicyRule) r
 					k = res + "." + grp
 				}
 				for _, na := range r.ResourceNames {
-					n := k + "/" + na
-					m[namespacedName(ns, n)] = &resource.RowEvent{
+					n := fqn(k, na)
+					m[fqn(ns, n)] = &resource.RowEvent{
 						Fields: v.prepRow(ns, n, grp, binding, r.Verbs),
 					}
 				}
-				m[namespacedName(ns, k)] = &resource.RowEvent{
+				m[fqn(ns, k)] = &resource.RowEvent{
 					Fields: v.prepRow(ns, k, grp, binding, r.Verbs),
 				}
 			}
@@ -251,7 +247,7 @@ func (v *policyView) parseRules(ns, binding string, rules []rbacv1.PolicyRule) r
 			if nres[0] != '/' {
 				nres = "/" + nres
 			}
-			m[namespacedName(ns, nres)] = &resource.RowEvent{
+			m[fqn(ns, nres)] = &resource.RowEvent{
 				Fields: v.prepRow(ns, nres, resource.NAValue, binding, r.Verbs),
 			}
 		}

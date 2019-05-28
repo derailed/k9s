@@ -23,7 +23,7 @@ var (
 	// K9sConfigFile represents K9s config file location.
 	K9sConfigFile = filepath.Join(K9sHome, "config.yml")
 	// K9sLogs represents K9s log.
-	K9sLogs = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-%s.log", mustK9sUser()))
+	K9sLogs = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-%s.log", MustK9sUser()))
 )
 
 type (

@@ -160,10 +160,7 @@ func (n *nodeMxWatcher) update(list *mv1beta1.NodeMetricsList, notify bool) {
 			kind = watch.Modified
 		}
 		if notify {
-			n.eventChan <- watch.Event{
-				Type:   kind,
-				Object: v,
-			}
+			n.eventChan <- watch.Event{Type: kind, Object: v}
 		}
 		n.cache[k] = v
 	}

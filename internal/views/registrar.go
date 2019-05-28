@@ -86,7 +86,7 @@ func showRBAC(app *appView, ns, resource, selection string) {
 func showClusterRole(app *appView, ns, resource, selection string) {
 	crb, err := app.conn().DialOrDie().Rbac().ClusterRoleBindings().Get(selection, metav1.GetOptions{})
 	if err != nil {
-		app.flash(flashErr, "Unable to retrieve crb", selection)
+		app.flash().errf("Unable to retrieve clusterrolebindings for %s", selection)
 		return
 	}
 	app.inject(newRBACView(app, ns, crb.RoleRef.Name, clusterRole))
@@ -96,10 +96,10 @@ func showRole(app *appView, _, resource, selection string) {
 	ns, n := namespaced(selection)
 	rb, err := app.conn().DialOrDie().Rbac().RoleBindings(ns).Get(n, metav1.GetOptions{})
 	if err != nil {
-		app.flash(flashErr, "Unable to retrieve rb", selection)
+		app.flash().errf("Unable to retrieve rolebindings for %s", selection)
 		return
 	}
-	app.inject(newRBACView(app, ns, namespacedName(ns, rb.RoleRef.Name), role))
+	app.inject(newRBACView(app, ns, fqn(ns, rb.RoleRef.Name), role))
 }
 
 func showSAPolicy(app *appView, _, _, selection string) {
@@ -280,7 +280,7 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 		"svc": {
 			title:  "Services",
 			api:    "",
-			viewFn: newResourceView,
+			viewFn: newSvcView,
 			listFn: resource.NewServiceList,
 		},
 		"usr": {
@@ -307,7 +307,6 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 
 	switch rev {
 	case "v1":
-		log.Debug().Msg("Using HPA V1!")
 		cmds["hpa"] = resCmd{
 			title:  "HorizontalPodAutoscalers",
 			api:    "autoscaling",
@@ -315,7 +314,6 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 			listFn: resource.NewHorizontalPodAutoscalerV1List,
 		}
 	case "v2beta1":
-		log.Debug().Msg("Using HPA V2Beta1!")
 		cmds["hpa"] = resCmd{
 			title:  "HorizontalPodAutoscalers",
 			api:    "autoscaling",
@@ -323,7 +321,6 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 			listFn: resource.NewHorizontalPodAutoscalerV2Beta1List,
 		}
 	case "v2beta2":
-		log.Debug().Msg("Using HPA V2Beta2!")
 		cmds["hpa"] = resCmd{
 			title:  "HorizontalPodAutoscalers",
 			api:    "autoscaling",

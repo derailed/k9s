@@ -22,7 +22,7 @@ func TestMaxColumn(t *testing.T) {
 				},
 			},
 			0,
-			maxyPad{5, 5},
+			maxyPad{6, 6},
 		},
 		{
 			resource.TableData{
@@ -33,7 +33,7 @@ func TestMaxColumn(t *testing.T) {
 				},
 			},
 			1,
-			maxyPad{5, 5},
+			maxyPad{6, 6},
 		},
 		{
 			resource.TableData{
@@ -44,7 +44,7 @@ func TestMaxColumn(t *testing.T) {
 				},
 			},
 			0,
-			maxyPad{28, 5},
+			maxyPad{32, 6},
 		},
 	}
 

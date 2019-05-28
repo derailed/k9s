@@ -315,6 +315,10 @@ k9s:
     keyColor: steelblue
     colonColor: blue
     valueColor: royalblue
+  # Logs styles.
+  yaml:
+    fgColor: white
+    bgColor: black
 ```
 
 Available color names are defined below:

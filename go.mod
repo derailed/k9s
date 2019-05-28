@@ -3,6 +3,7 @@ module github.com/derailed/k9s
 go 1.12
 
 replace (
+	github.com/derailed/tview => /Users/fernand/go_wk/derailed/src/github.com/derailed/tview
 	k8s.io/api => k8s.io/api v0.0.0-20190222213804-5cb15d344471
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190325193600-475668423e9f
 	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190221213512-86fb29eff628
@@ -15,6 +16,7 @@ replace (
 require (
 	github.com/Azure/go-autorest/autorest v0.1.0 // indirect
 	github.com/derailed/tview v0.1.6
+	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.7
@@ -35,6 +37,7 @@ require (
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/petergtz/pegomock v0.0.0-20181206220228-b113d17a7e81
+	github.com/rakyll/hey v0.1.2
 	github.com/rs/zerolog v1.14.3
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect

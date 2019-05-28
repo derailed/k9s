@@ -11,7 +11,7 @@ import (
 
 const (
 	aliasTitle    = "Aliases"
-	aliasTitleFmt = " [aqua::b]%s[[aqua::b]%d[aqua::-]][aqua::-] "
+	aliasTitleFmt = " [aqua::b]%s([fuchsia::b]%d[fuchsia::-])[aqua::-] "
 )
 
 type aliasView struct {
@@ -24,6 +24,7 @@ type aliasView struct {
 func newAliasView(app *appView) *aliasView {
 	v := aliasView{tableView: newTableView(app, aliasTitle)}
 	{
+		v.SetBorderFocusColor(tcell.ColorFuchsia)
 		v.SetSelectedStyle(tcell.ColorWhite, tcell.ColorFuchsia, tcell.AttrNone)
 		v.colorerFn = aliasColorer
 		v.current = app.content.GetPrimitive("main").(igniter)

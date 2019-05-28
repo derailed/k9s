@@ -35,6 +35,13 @@ const (
 	NAValue = "n/a"
 )
 
+func fqn(ns, n string) string {
+	if ns == "" {
+		return n
+	}
+	return ns + "/" + n
+}
+
 func empty(s []string) bool {
 	for _, v := range s {
 		if len(v) != 0 {

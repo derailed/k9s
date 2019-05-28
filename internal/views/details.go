@@ -114,7 +114,7 @@ func (v *detailsView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (v *detailsView) searchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.cmdBuff.isActive() && !v.cmdBuff.empty() {
-		v.app.flash(flashInfo, fmt.Sprintf("Searching for %s...", v.cmdBuff))
+		v.app.flash().infof("Searching for %s...", v.cmdBuff)
 		v.search(evt)
 		highlights := v.GetHighlights()
 		if len(highlights) > 0 {
@@ -135,15 +135,15 @@ func (v *detailsView) search(evt *tcell.EventKey) {
 	v.SetText(v.decorateLines(v.GetText(false), v.cmdBuff.String()))
 
 	if v.cmdBuff.empty() {
-		v.app.flash(flashWarn, "Clearing out search query...")
+		v.app.flash().info("Clearing out search query...")
 		v.refreshTitle()
 		return
 	}
 	if v.numSelections == 0 {
-		v.app.flash(flashWarn, "No matches found!")
+		v.app.flash().warn("No matches found!")
 		return
 	}
-	v.app.flash(flashWarn, fmt.Sprintf("Found <%d> matches! <tab>/<TAB> for next/previous", v.numSelections))
+	v.app.flash().infof("Found <%d> matches! <tab>/<TAB> for next/previous", v.numSelections)
 }
 
 func (v *detailsView) nextCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -154,7 +154,7 @@ func (v *detailsView) nextCmd(evt *tcell.EventKey) *tcell.EventKey {
 	index, _ := strconv.Atoi(highlights[0])
 	index = (index + 1) % v.numSelections
 	if index+1 == v.numSelections {
-		v.app.flash(flashInfo, "Search hit BOTTOM, continuing at TOP")
+		v.app.flash().info("Search hit BOTTOM, continuing at TOP")
 	}
 	v.Highlight(strconv.Itoa(index)).ScrollToHighlight()
 	return nil
@@ -168,7 +168,7 @@ func (v *detailsView) prevCmd(evt *tcell.EventKey) *tcell.EventKey {
 	index, _ := strconv.Atoi(highlights[0])
 	index = (index - 1 + v.numSelections) % v.numSelections
 	if index == 0 {
-		v.app.flash(flashInfo, "Search hit TOP, continuing at BOTTOM")
+		v.app.flash().info("Search hit TOP, continuing at BOTTOM")
 	}
 	v.Highlight(strconv.Itoa(index)).ScrollToHighlight()
 	return nil
@@ -196,13 +196,9 @@ func (v *detailsView) refreshTitle() {
 func (v *detailsView) setTitle(t string) {
 	v.title = t
 
-	fmat := strings.Replace(detailsTitleFmt, "[fg:bg", "["+v.app.styles.Style.Title.FgColor+":"+v.app.styles.Style.Title.BgColor, -1)
-	fmat = strings.Replace(fmat, "[hilite", "["+v.app.styles.Style.Title.CounterColor, 1)
-	title := fmt.Sprintf(fmat, v.category, t)
+	title := skinTitle(fmt.Sprintf(detailsTitleFmt, v.category, t), v.app.styles.Style)
 	if !v.cmdBuff.empty() {
-		fmat := strings.Replace(searchFmt, "[fg:bg", "["+v.app.styles.Style.Title.FgColor+":"+v.app.styles.Style.Title.BgColor, -1)
-		fmat = strings.Replace(fmat, "[filter", "["+v.app.styles.Style.Title.FilterColor, 1)
-		title += fmt.Sprintf(fmat, v.cmdBuff.String())
+		title += skinTitle(fmt.Sprintf(searchFmt, v.cmdBuff.String()), v.app.styles.Style)
 	}
 	v.SetTitle(title)
 }

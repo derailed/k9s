@@ -1,8 +1,6 @@
 package views
 
 import (
-	"fmt"
-
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
 )
@@ -26,11 +24,11 @@ func (v *cronJobView) trigger(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	v.app.flash(flashInfo, fmt.Sprintf("Triggering %s %s", v.list.GetName(), v.selectedItem))
 	if err := v.list.Resource().(resource.Runner).Run(v.selectedItem); err != nil {
-		v.app.flash(flashErr, "Boom!", err.Error())
+		v.app.flash().errf("Cronjob trigger failed %v", err)
 		return evt
 	}
+	v.app.flash().infof("Triggering %s %s", v.list.GetName(), v.selectedItem)
 
 	return nil
 }

@@ -22,37 +22,28 @@ const (
 	clusterRefresh = time.Duration(15 * time.Second)
 )
 
-type (
-	details interface {
-		tview.Primitive
-		setTitle(string)
-		clear()
-		setActions(keyActions)
-		update(resource.Properties)
-	}
+type resourceView struct {
+	*tview.Pages
 
-	resourceView struct {
-		*tview.Pages
-
-		app            *appView
-		title          string
-		selectedItem   string
-		selectedRow    int
-		namespaces     map[int]string
-		selectedNS     string
-		list           resource.List
-		enterFn        enterFn
-		extraActionsFn func(keyActions)
-		selectedFn     func() string
-		decorateFn     decorateFn
-		colorerFn      colorerFn
-		actions        keyActions
-		mx             sync.Mutex
-		suspended      bool
-		nsListAccess   bool
-		path           *string
-	}
-)
+	app            *appView
+	title          string
+	selectedItem   string
+	selectedRow    int
+	namespaces     map[int]string
+	selectedNS     string
+	list           resource.List
+	enterFn        enterFn
+	extraActionsFn func(keyActions)
+	selectedFn     func() string
+	decorateFn     decorateFn
+	colorerFn      colorerFn
+	actions        keyActions
+	mx             sync.Mutex
+	suspended      bool
+	nsListAccess   bool
+	path           *string
+	context        context.Context
+}
 
 func newResourceView(title string, app *appView, list resource.List) resourceViewer {
 	v := resourceView{
@@ -78,7 +69,7 @@ func newResourceView(title string, app *appView, list resource.List) resourceVie
 
 // Init watches all running pods in given namespace
 func (v *resourceView) init(ctx context.Context, ns string) {
-	v.selectedItem, v.selectedNS = noSelection, ns
+	v.context, v.selectedItem, v.selectedNS = ctx, noSelection, ns
 
 	colorer := defaultColorer
 	if v.colorerFn != nil {
@@ -91,7 +82,7 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 		nn, err := k8s.NewNamespace(v.app.conn()).List(resource.AllNamespaces)
 		if err != nil {
 			log.Warn().Err(err).Msg("List namespaces")
-			v.app.flash(flashErr, err.Error())
+			v.app.flash().errf("Unable to list namespaces %s", err)
 		}
 
 		if v.list.Namespaced() && !v.list.AllNamespaces() {
@@ -232,17 +223,17 @@ func (v *resourceView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.getTV().filterCmd(evt) == nil {
 		return nil
 	}
-
 	if v.enterFn != nil {
 		v.enterFn(v.app, v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
 	} else {
 		v.defaultEnter(v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
 	}
+
 	return nil
 }
 
 func (v *resourceView) refreshCmd(*tcell.EventKey) *tcell.EventKey {
-	v.app.flash(flashInfo, "Refreshing...")
+	v.app.flash().info("Refreshing...")
 	v.refresh()
 	return nil
 }
@@ -261,9 +252,9 @@ func (v *resourceView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.showModal(fmt.Sprintf("Delete %s %s?", v.list.GetName(), sel), func(_ int, button string) {
 		if button == "OK" {
 			v.getTV().setDeleted()
-			v.app.flash(flashInfo, fmt.Sprintf("Deleting %s %s", v.list.GetName(), sel))
+			v.app.flash().infof("Deleting %s %s", v.list.GetName(), sel)
 			if err := v.list.Resource().Delete(sel); err != nil {
-				v.app.flash(flashErr, "Boom!", err.Error())
+				v.app.flash().errf("Delete failed with %s", err)
 			} else {
 				v.refresh()
 			}
@@ -290,10 +281,9 @@ func (v *resourceView) dismissModal() {
 }
 
 func (v *resourceView) defaultEnter(ns, resource, selection string) {
-	log.Debug().Msgf("Title %s", v.title)
 	yaml, err := v.list.Resource().Describe(v.title, selection, v.app.flags)
 	if err != nil {
-		v.app.flash(flashErr, err.Error())
+		v.app.flash().errf("Describe command failed %s", err)
 		log.Warn().Msgf("Describe %v", err.Error())
 		return
 	}
@@ -328,7 +318,7 @@ func (v *resourceView) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	sel := v.getSelectedItem()
 	raw, err := v.list.Resource().Marshal(sel)
 	if err != nil {
-		v.app.flash(flashErr, "Unable to marshal resource", err.Error())
+		v.app.flash().errf("Unable to marshal resource %s", err)
 		log.Error().Err(err)
 		return evt
 	}
@@ -375,7 +365,7 @@ func (v *resourceView) doSwitchNamespace(ns string) {
 		ns = resource.AllNamespace
 	}
 	v.selectedNS = ns
-	v.app.flash(flashInfo, fmt.Sprintf("Viewing `%s namespace...", ns))
+	v.app.flash().infof("Viewing `%s namespace...", ns)
 	v.list.SetNamespace(v.selectedNS)
 
 	v.refresh()
@@ -392,14 +382,14 @@ func (v *resourceView) refresh() {
 		return
 	}
 
+	v.refreshActions()
+
 	if v.list.Namespaced() {
 		v.list.SetNamespace(v.selectedNS)
 	}
-
-	v.refreshActions()
 	if err := v.list.Reconcile(v.app.informer, v.path); err != nil {
 		log.Error().Err(err).Msg("Reconciliation failed")
-		v.app.flash(flashErr, err.Error())
+		v.app.flash().errf("Reconciliation failed %s", err)
 	}
 	data := v.list.Data()
 	if v.decorateFn != nil {
@@ -413,7 +403,6 @@ func (v *resourceView) getTV() *tableView {
 	if tv, ok := v.GetPrimitive(v.list.GetName()).(*tableView); ok {
 		return tv
 	}
-
 	return nil
 }
 
@@ -424,19 +413,14 @@ func (v *resourceView) selectItem(r, c int) {
 		return
 	}
 
+	col0 := strings.TrimSpace(t.GetCell(r, 0).Text)
 	switch v.list.GetNamespace() {
 	case resource.NotNamespaced:
-		v.selectedItem = strings.TrimSpace(t.GetCell(r, 0).Text)
+		v.selectedItem = col0
 	case resource.AllNamespaces:
-		v.selectedItem = path.Join(
-			strings.TrimSpace(t.GetCell(r, 0).Text),
-			strings.TrimSpace(t.GetCell(r, 1).Text),
-		)
+		v.selectedItem = path.Join(col0, strings.TrimSpace(t.GetCell(r, 1).Text))
 	default:
-		v.selectedItem = path.Join(
-			v.selectedNS,
-			strings.TrimSpace(t.GetCell(r, 0).Text),
-		)
+		v.selectedItem = path.Join(v.selectedNS, col0)
 	}
 }
 

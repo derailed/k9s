@@ -80,7 +80,8 @@ func (*Service) Header(ns string) Row {
 		"TYPE",
 		"CLUSTER-IP",
 		"EXTERNAL-IP",
-		"PORT(S)",
+		"SELECTOR",
+		"PORTS",
 		"AGE",
 	)
 }
@@ -99,6 +100,7 @@ func (r *Service) Fields(ns string) Row {
 		string(i.Spec.Type),
 		i.Spec.ClusterIP,
 		r.toIPs(i.Spec.Type, r.getSvcExtIPS(i)),
+		mapToStr(i.Spec.Selector),
 		r.toPorts(i.Spec.Ports),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)

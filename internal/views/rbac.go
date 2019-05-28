@@ -126,11 +126,7 @@ func (v *rbacView) bindKeys() {
 }
 
 func (v *rbacView) getTitle() string {
-	fmat := strings.Replace(rbacTitleFmt, "[fg", "["+v.app.styles.Style.Title.FgColor, -1)
-	fmat = strings.Replace(fmat, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
-	fmat = strings.Replace(fmat, "[hilite", "["+v.app.styles.Style.Title.HighlightColor, 1)
-
-	return fmt.Sprintf(fmat, rbacTitle, v.roleName)
+	return skinTitle(fmt.Sprintf(rbacTitleFmt, rbacTitle, v.roleName), v.app.styles.Style)
 }
 
 func (v *rbacView) hints() hints {
@@ -244,7 +240,7 @@ func (v *rbacView) parseRules(rules []rbacv1.PolicyRule) resource.RowEvents {
 					k = res + "." + grp
 				}
 				for _, na := range r.ResourceNames {
-					n := k + "/" + na
+					n := fqn(k, na)
 					m[n] = &resource.RowEvent{
 						Fields: prepRow(n, grp, r.Verbs),
 					}

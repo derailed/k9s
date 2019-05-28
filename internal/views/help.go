@@ -82,10 +82,10 @@ func (v *helpView) init(_ context.Context, _ string) {
 	navigation := []helpItem{
 		{"g", "Goto Top"},
 		{"G", "Goto Bottom"},
-		{"b", "Page Down"},
-		{"f", "Page Up"},
-		{"l", "Left"},
-		{"h", "Right"},
+		{"Ctrl-b", "Page Down"},
+		{"Ctrl-f", "Page Up"},
+		{"h", "Left"},
+		{"l", "Right"},
 		{"k", "Up"},
 		{"j", "Down"},
 	}

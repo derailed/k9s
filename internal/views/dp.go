@@ -49,7 +49,7 @@ func (v *deployView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	dep, err := d.Get(ns, n)
 	if err != nil {
 		log.Error().Err(err).Msgf("Fetching Deployment %s", v.selectedItem)
-		v.app.flash(flashErr, err.Error())
+		v.app.flash().err(err)
 		return evt
 	}
 	dp := dep.(*v1.Deployment)
@@ -57,7 +57,7 @@ func (v *deployView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	sel, err := metav1.LabelSelectorAsSelector(dp.Spec.Selector)
 	if err != nil {
 		log.Error().Err(err).Msgf("Converting selector for Deployment %s", v.selectedItem)
-		v.app.flash(flashErr, err.Error())
+		v.app.flash().err(err)
 		return evt
 	}
 	showPods(v.app, ns, "Deployment", v.selectedItem, sel.String(), "", v.backCmd)

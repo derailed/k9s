@@ -5,6 +5,7 @@ import (
 	"io"
 	"strings"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -27,12 +28,15 @@ func newLogView(title string, parent masterView) *logView {
 	v.autoScroll = true
 	v.parent = parent
 	v.SetBorder(true)
+	v.SetBackgroundColor(config.AsColor(parent.appView().styles.Style.Log.BgColor))
 	v.SetBorderPadding(0, 0, 1, 1)
 	v.logs = newDetailsView(parent.appView(), parent.backFn())
 	{
 		v.logs.SetBorder(false)
 		v.logs.setCategory("Logs")
 		v.logs.SetDynamicColors(true)
+		v.logs.SetTextColor(config.AsColor(parent.appView().styles.Style.Log.FgColor))
+		v.logs.SetBackgroundColor(config.AsColor(parent.appView().styles.Style.Log.BgColor))
 		v.logs.SetWrap(true)
 		v.logs.SetMaxBuffer(parent.appView().config.K9s.LogBufferSize)
 	}
@@ -110,11 +114,11 @@ func (v *logView) update() {
 func (v *logView) toggleScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.autoScroll = !v.autoScroll
 	if v.autoScroll {
-		v.app.flash(flashInfo, "Autoscroll is on.")
+		v.app.flash().info("Autoscroll is on.")
 		v.logs.ScrollToEnd()
 	} else {
 		v.logs.PageUp()
-		v.app.flash(flashInfo, "Autoscroll is off.")
+		v.app.flash().info("Autoscroll is off.")
 	}
 	v.update()
 
@@ -126,33 +130,33 @@ func (v *logView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *logView) topCmd(evt *tcell.EventKey) *tcell.EventKey {
-	v.app.flash(flashInfo, "Top of logs...")
+	v.app.flash().info("Top of logs...")
 	v.logs.ScrollToBeginning()
 	return nil
 }
 
 func (v *logView) bottomCmd(*tcell.EventKey) *tcell.EventKey {
-	v.app.flash(flashInfo, "Bottom of logs...")
+	v.app.flash().info("Bottom of logs...")
 	v.logs.ScrollToEnd()
 	return nil
 }
 
 func (v *logView) pageUpCmd(*tcell.EventKey) *tcell.EventKey {
 	if v.logs.PageUp() {
-		v.app.flash(flashInfo, "Reached Top ...")
+		v.app.flash().info("Reached Top ...")
 	}
 	return nil
 }
 
 func (v *logView) pageDownCmd(*tcell.EventKey) *tcell.EventKey {
 	if v.logs.PageDown() {
-		v.app.flash(flashInfo, "Reached Bottom ...")
+		v.app.flash().info("Reached Bottom ...")
 	}
 	return nil
 }
 
 func (v *logView) clearCmd(*tcell.EventKey) *tcell.EventKey {
-	v.app.flash(flashInfo, "Clearing logs...")
+	v.app.flash().info("Clearing logs...")
 	v.logs.Clear()
 	v.logs.ScrollTo(0, 0)
 	return nil

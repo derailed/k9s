@@ -49,7 +49,7 @@ func (v *daemonSetView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	dset, err := d.Get(ns, n)
 	if err != nil {
 		log.Error().Err(err).Msgf("Fetching DeaemonSet %s", v.selectedItem)
-		v.app.flash(flashErr, err.Error())
+		v.app.flash().err(err)
 		return evt
 	}
 	ds := dset.(*extv1beta1.DaemonSet)
@@ -57,7 +57,7 @@ func (v *daemonSetView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	sel, err := metav1.LabelSelectorAsSelector(ds.Spec.Selector)
 	if err != nil {
 		log.Error().Err(err).Msgf("Converting selector for DaemonSet %s", v.selectedItem)
-		v.app.flash(flashErr, err.Error())
+		v.app.flash().err(err)
 		return evt
 	}
 	showPods(v.app, "", "DaemonSet", v.selectedItem, sel.String(), "", v.backCmd)

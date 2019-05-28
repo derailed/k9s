@@ -2,6 +2,7 @@ package views
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -42,6 +43,30 @@ func newFlashView(app *appView, m string) *flashView {
 	f.SetText("")
 
 	return &f
+}
+
+func (v *flashView) info(msg string) {
+	v.setMessage(flashInfo, msg)
+}
+
+func (v *flashView) infof(fmat string, args ...interface{}) {
+	v.info(fmt.Sprintf(fmat, args...))
+}
+
+func (v *flashView) warn(msg string) {
+	v.setMessage(flashWarn, msg)
+}
+
+func (v *flashView) warnf(fmat string, args ...interface{}) {
+	v.warn(fmt.Sprintf(fmat, args...))
+}
+
+func (v *flashView) err(err error) {
+	v.setMessage(flashErr, err.Error())
+}
+
+func (v *flashView) errf(fmat string, args ...interface{}) {
+	v.setMessage(flashErr, fmt.Sprintf(fmat, args...))
 }
 
 func (v *flashView) setMessage(level flashLevel, msg ...string) {

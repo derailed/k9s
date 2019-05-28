@@ -3,6 +3,7 @@ package views
 import (
 	"fmt"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
 )
 
@@ -15,9 +16,8 @@ type statusView struct {
 func newStatusView(app *appView) *statusView {
 	v := statusView{app: app, TextView: tview.NewTextView()}
 	{
-		v.SetBackgroundColor(app.styles.BgColor())
+		v.SetBackgroundColor(config.AsColor(app.styles.Style.Log.BgColor))
 		v.SetTextAlign(tview.AlignRight)
-		// v.SetBorderPadding(0, 0, 1, 1)
 		v.SetDynamicColors(true)
 	}
 	return &v

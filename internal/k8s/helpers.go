@@ -2,6 +2,8 @@ package k8s
 
 import (
 	"math"
+	"path"
+	"strings"
 )
 
 const megaByte = 1024 * 1024
@@ -16,4 +18,10 @@ func toPerc(v1, v2 float64) float64 {
 		return 0
 	}
 	return math.Round((v1 / v2) * 100)
+}
+
+func namespaced(n string) (string, string) {
+	ns, po := path.Split(n)
+
+	return strings.Trim(ns, "/"), po
 }

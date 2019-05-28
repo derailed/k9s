@@ -2,7 +2,6 @@ package views
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
@@ -13,6 +12,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/tools/portforward"
 )
 
 const (
@@ -22,6 +22,15 @@ const (
 
 type (
 	focusHandler func(tview.Primitive)
+
+	forwarder interface {
+		Start(path string, ports []string) (*portforward.PortForwarder, error)
+		Stop()
+		Path() string
+		Ports() []string
+		Active() bool
+		Age() string
+	}
 
 	igniter interface {
 		tview.Primitive
@@ -56,31 +65,38 @@ type (
 		content         *tview.Pages
 		flashView       *flashView
 		crumbsView      *crumbsView
+		logoView        *logoView
 		menuView        *menuView
 		clusterInfoView *clusterInfoView
+		cmdView         *cmdView
 		command         *command
 		focusGroup      []tview.Primitive
 		focusCurrent    int
 		focusChanged    focusHandler
 		cancel          context.CancelFunc
+		cancelSkin      context.CancelFunc
 		cmdBuff         *cmdBuff
-		cmdView         *cmdView
 		actions         keyActions
 		stopCh          chan struct{}
 		informer        *watch.Meta
+		forwarders      []forwarder
 	}
 )
 
 // NewApp returns a K9s app instance.
 func NewApp(cfg *config.Config) *appView {
-	v := appView{Application: tview.NewApplication(), config: cfg}
+	v := appView{
+		Application: tview.NewApplication(),
+		config:      cfg,
+		pages:       tview.NewPages(),
+		actions:     make(keyActions),
+		content:     tview.NewPages(),
+		cmdBuff:     newCmdBuff(':'),
+	}
 	{
 		v.refreshStyles()
-		v.pages = tview.NewPages()
-		v.actions = make(keyActions)
 		v.menuView = newMenuView(&v)
-		v.content = tview.NewPages()
-		v.cmdBuff = newCmdBuff(':')
+		v.logoView = newLogoView(&v)
 		v.cmdView = newCmdView(&v, '🐶')
 		v.command = newCommand(&v)
 		v.flashView = newFlashView(&v, "Initializing...")
@@ -116,7 +132,7 @@ func (a *appView) Init(v string, rate int, flags *genericclioptions.ConfigFlags)
 		header.SetDirection(tview.FlexColumn)
 		header.AddItem(a.clusterInfoView, 35, 1, false)
 		header.AddItem(a.menuView, 0, 1, false)
-		header.AddItem(a.logoView(), 26, 1, false)
+		header.AddItem(a.logoView, 26, 1, false)
 	}
 
 	main := tview.NewFlex()
@@ -154,6 +170,18 @@ func (a *appView) bailOut() {
 		log.Debug().Msg("<<<< Stopping Watcher")
 		close(a.stopCh)
 	}
+
+	if a.cancel != nil {
+		a.cancel()
+	}
+	if a.cancelSkin != nil {
+		a.cancelSkin()
+	}
+
+	for _, f := range a.forwarders {
+		f.Stop()
+	}
+
 	a.Stop()
 }
 
@@ -161,10 +189,10 @@ func (a *appView) conn() k8s.Connection {
 	return a.config.GetConnection()
 }
 
-func (a *appView) stylesUpdater() (*fsnotify.Watcher, error) {
+func (a *appView) stylesUpdater(ctx context.Context) error {
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
-		return w, err
+		return err
 	}
 
 	go func() {
@@ -177,27 +205,26 @@ func (a *appView) stylesUpdater() (*fsnotify.Watcher, error) {
 				})
 			case err := <-w.Errors:
 				log.Info().Err(err).Msg("Skin watcher failed")
+				return
+			case <-ctx.Done():
+				w.Close()
+				return
 			}
 		}
 	}()
 
-	if err := w.Add(config.K9sStylesFile); err != nil {
-		return w, err
-	}
-
-	return w, nil
+	return w.Add(config.K9sStylesFile)
 }
 
 // Run starts the application loop
 func (a *appView) Run() {
-	// Only enable updater while in dev mode.
+	// Only enable skin updater while in dev mode.
 	if a.version == devMode {
-		w, err := a.stylesUpdater()
-		defer func() {
-			if err != nil {
-				w.Close()
-			}
-		}()
+		var ctx context.Context
+		ctx, a.cancelSkin = context.WithCancel(context.Background())
+		if err := a.stylesUpdater(ctx); err != nil {
+			log.Error().Err(err).Msg("Unable to track skin changes")
+		}
 	}
 
 	go func() {
@@ -211,6 +238,23 @@ func (a *appView) Run() {
 	if err := a.Application.Run(); err != nil {
 		panic(err)
 	}
+}
+
+func (a *appView) statusReset() {
+	a.logoView.reset()
+	a.Draw()
+}
+
+func (a *appView) status(l flashLevel, msg string) {
+	switch l {
+	case flashWarn:
+		a.logoView.warn(msg)
+	case flashInfo:
+		a.logoView.info(msg)
+	default:
+		a.logoView.reset()
+	}
+	a.Draw()
 }
 
 func (a *appView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
@@ -287,7 +331,7 @@ func (a *appView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.cmdView.inCmdMode() {
 		return evt
 	}
-	a.flash(flashInfo, "Command mode activated.")
+	a.flashView.info("Command mode activated.")
 	log.Debug().Msg("Entering command mode...")
 	a.cmdBuff.setActive(true)
 	a.cmdBuff.clear()
@@ -298,7 +342,8 @@ func (a *appView) quitCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.cmdMode() {
 		return evt
 	}
-	a.Stop()
+	a.bailOut()
+
 	return nil
 }
 
@@ -314,7 +359,17 @@ func (a *appView) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.cmdView.inCmdMode() {
 		return evt
 	}
+
 	a.inject(newAliasView(a))
+	return nil
+}
+
+func (a *appView) fwdCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.cmdView.inCmdMode() {
+		return evt
+	}
+
+	a.inject(newForwardView(a))
 	return nil
 }
 
@@ -327,10 +382,14 @@ func (a *appView) puntCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *appView) gotoResource(res string, record bool) bool {
+	if a.cancel != nil {
+		a.cancel()
+	}
 	valid := a.command.run(res)
 	if valid && record {
 		a.command.pushCmd(res)
 	}
+
 	return valid
 }
 
@@ -360,28 +419,12 @@ func (a *appView) cmdMode() bool {
 	return a.cmdView.inCmdMode()
 }
 
-func (a *appView) flash(level flashLevel, m ...string) {
-	a.flashView.setMessage(level, m...)
+func (a *appView) flash() *flashView {
+	return a.flashView
 }
 
 func (a *appView) setHints(h hints) {
 	a.menuView.populateMenu(h)
-}
-
-func (a *appView) logoView() tview.Primitive {
-	v := tview.NewTextView()
-	{
-		v.SetWordWrap(false)
-		v.SetWrap(false)
-		v.SetDynamicColors(true)
-		for i, s := range LogoSmall {
-			fmt.Fprintf(v, "[%s::b]%s", a.styles.Style.LogoColor, s)
-			if i+1 < len(LogoSmall) {
-				fmt.Fprintf(v, "\n")
-			}
-		}
-	}
-	return v
 }
 
 func (a *appView) fireFocusChanged(p tview.Primitive) {

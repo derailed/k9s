@@ -230,7 +230,7 @@ func metaFQN(m metav1.ObjectMeta) string {
 		return m.Name
 	}
 
-	return m.Namespace + "/" + m.Name
+	return fqn(m.Namespace, m.Name)
 }
 
 func (l *list) fetchFromStore(m *wa.Meta, ns string) (Columnars, error) {
@@ -239,7 +239,6 @@ func (l *list) fetchFromStore(m *wa.Meta, ns string) (Columnars, error) {
 		LabelSelector: l.resource.GetLabelSelector(),
 	})
 	if err != nil {
-		log.Debug().Msgf(">>>>>> DOH! %#v", err)
 		return nil, err
 	}
 

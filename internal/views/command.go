@@ -1,7 +1,6 @@
 package views
 
 import (
-	"fmt"
 	"regexp"
 
 	"github.com/derailed/k9s/internal/resource"
@@ -58,6 +57,12 @@ func (c *command) run(cmd string) bool {
 	case cmd == "?", cmd == "help":
 		c.app.inject(newHelpView(c.app))
 		return true
+	case cmd == "pf":
+		c.app.inject(newForwardView(c.app))
+		return true
+	case cmd == "be":
+		c.app.inject(newBenchView(c.app))
+		return true
 	case cmd == "alias":
 		c.app.inject(newAliasView(c.app))
 		return true
@@ -84,7 +89,7 @@ func (c *command) run(cmd string) bool {
 				v.setDecorateFn(res.decorateFn)
 			}
 			const fmat = "Viewing resource %s..."
-			c.app.flash(flashInfo, fmt.Sprintf(fmat, res.title))
+			c.app.flash().infof(fmat, res.title)
 			log.Debug().Msgf("Running command %s", cmd)
 			c.exec(cmd, v)
 			return true
@@ -93,7 +98,7 @@ func (c *command) run(cmd string) bool {
 
 	res, ok := allCRDs(c.app.conn())[cmd]
 	if !ok {
-		c.app.flash(flashWarn, fmt.Sprintf("Huh? `%s` command not found", cmd))
+		c.app.flash().warnf("Huh? `%s` command not found", cmd)
 		return false
 	}
 
@@ -108,6 +113,7 @@ func (c *command) run(cmd string) bool {
 	)
 	v.setColorerFn(defaultColorer)
 	c.exec(cmd, v)
+
 	return true
 }
 

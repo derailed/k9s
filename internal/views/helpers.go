@@ -19,6 +19,13 @@ const (
 	minusSign = "↓"
 )
 
+func fqn(ns, n string) string {
+	if ns == "" {
+		return n
+	}
+	return ns + "/" + n
+}
+
 func deltas(o, n string) string {
 	o, n = strings.TrimSpace(o), strings.TrimSpace(n)
 	if o == "" || o == res.NAValue {

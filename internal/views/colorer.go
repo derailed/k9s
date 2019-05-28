@@ -29,24 +29,45 @@ func defaultColorer(ns string, r *resource.RowEvent) tcell.Color {
 	return c
 }
 
+func forwardColorer(string, *resource.RowEvent) tcell.Color {
+	return tcell.ColorSkyblue
+}
+
+func benchColorer(ns string, r *resource.RowEvent) tcell.Color {
+	c := tcell.ColorPaleGreen
+
+	statusCol := 2
+	if strings.TrimSpace(r.Fields[statusCol]) != "pass" {
+		c = errColor
+	}
+
+	return c
+}
+
 func aliasColorer(string, *resource.RowEvent) tcell.Color {
 	return tcell.ColorFuchsia
 }
 
 func rbacColorer(ns string, r *resource.RowEvent) tcell.Color {
-	c := defaultColorer(ns, r)
-
-	// return tcell.ColorDarkOliveGreen
-	return c
+	return defaultColorer(ns, r)
 }
 
 func podColorer(ns string, r *resource.RowEvent) tcell.Color {
 	c := defaultColorer(ns, r)
 
-	statusCol := 3
+	readyCol := 2
 	if len(ns) != 0 {
-		statusCol = 2
+		readyCol = 1
 	}
+	statusCol := readyCol + 1
+
+	tokens := strings.Split(strings.TrimSpace(r.Fields[readyCol]), "/")
+	if len(tokens) == 2 && (tokens[0] == "0" || tokens[0] != tokens[1]) {
+		if strings.TrimSpace(r.Fields[statusCol]) != "Completed" {
+			c = errColor
+		}
+	}
+
 	switch strings.TrimSpace(r.Fields[statusCol]) {
 	case "ContainerCreating", "PodInitializing":
 		return addColor
@@ -59,15 +80,28 @@ func podColorer(ns string, r *resource.RowEvent) tcell.Color {
 		c = errColor
 	}
 
+	return c
+}
+
+func containerColorer(ns string, r *resource.RowEvent) tcell.Color {
+	c := defaultColorer(ns, r)
+
 	readyCol := 2
-	if len(ns) != 0 {
-		readyCol = 1
+	if strings.TrimSpace(r.Fields[readyCol]) == "false" {
+		c = errColor
 	}
-	tokens := strings.Split(strings.TrimSpace(r.Fields[readyCol]), "/")
-	if len(tokens) == 2 && (tokens[0] == "0" || tokens[0] != tokens[1]) {
-		if strings.TrimSpace(r.Fields[statusCol]) != "Completed" {
-			c = errColor
-		}
+
+	stateCol := readyCol + 1
+	switch strings.TrimSpace(r.Fields[stateCol]) {
+	case "ContainerCreating", "PodInitializing":
+		return addColor
+	case "Terminating", "Initialized":
+		return highlightColor
+	case "Completed":
+		return completedColor
+	case "Running":
+	default:
+		c = errColor
 	}
 
 	return c

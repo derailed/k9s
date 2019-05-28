@@ -30,7 +30,7 @@ func (v *contextView) useCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	if err := v.useContext(v.selectedItem); err != nil {
-		v.app.flash(flashWarn, err.Error())
+		v.app.flash().err(err)
 		return evt
 	}
 
@@ -57,14 +57,9 @@ func (v *contextView) useContext(name string) error {
 	}
 
 	v.app.startInformer()
-	// // Update cluster info on context switch.
-	// v.app.QueueUpdateDraw(func() {
-	// 	v.app.clusterInfoView.refresh()
-	// })
-
 	v.app.config.Reset()
 	v.app.config.Save()
-	v.app.flash(flashInfo, "Switching context to", ctx)
+	v.app.flash().infof("Switching context to %s", ctx)
 	v.refresh()
 	if tv, ok := v.GetPrimitive("ctx").(*tableView); ok {
 		tv.Select(0, 0)

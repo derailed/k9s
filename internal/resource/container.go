@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -158,6 +159,7 @@ func (*Container) Header(ns string) Row {
 		"MEM",
 		"%CPU",
 		"%MEM",
+		"PORTS",
 		"AGE",
 	)
 }
@@ -223,12 +225,28 @@ func (r *Container) Fields(ns string) Row {
 		smem,
 		pcpu,
 		pmem,
+		toStrPorts(i.Ports),
 		toAge(r.pod.CreationTimestamp),
 	)
 }
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func toStrPorts(pp []v1.ContainerPort) string {
+	ports := make([]string, len(pp))
+	for i, p := range pp {
+		if len(p.Name) > 0 {
+			ports[i] = p.Name + ":"
+		}
+		ports[i] += strconv.Itoa(int(p.ContainerPort))
+		if p.Protocol != "TCP" {
+			ports[i] += "╱" + string(p.Protocol)
+		}
+	}
+
+	return strings.Join(ports, ",")
+}
 
 func toState(s v1.ContainerState) string {
 	switch {

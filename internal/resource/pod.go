@@ -238,8 +238,8 @@ func (r *Pod) Fields(ns string) Row {
 		cmem,
 		pcpu,
 		pmem,
-		i.Status.PodIP,
-		i.Spec.NodeName,
+		na(i.Status.PodIP),
+		na(i.Spec.NodeName),
 		r.mapQOS(i.Status.QOSClass),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)

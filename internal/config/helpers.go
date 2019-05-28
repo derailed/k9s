@@ -45,7 +45,8 @@ func mustK9sHome() string {
 	return usr.HomeDir
 }
 
-func mustK9sUser() string {
+// MustK9sUser establishes current user identity or fail.
+func MustK9sUser() string {
 	usr, err := user.Current()
 	if err != nil {
 		panic(err)
@@ -57,7 +58,7 @@ func mustK9sUser() string {
 func EnsurePath(path string, mod os.FileMode) {
 	dir := filepath.Dir(path)
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if err = os.Mkdir(dir, mod); err != nil {
+		if err = os.MkdirAll(dir, mod); err != nil {
 			log.Error().Msgf("Unable to create K9s home config dir: %v", err)
 			panic(err)
 		}

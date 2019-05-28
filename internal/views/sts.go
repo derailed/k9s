@@ -49,7 +49,7 @@ func (v *statefulSetView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	s, err := d.Get(ns, n)
 	if err != nil {
 		log.Error().Err(err).Msgf("Fetching StatefulSet %s", v.selectedItem)
-		v.app.flash(flashErr, err.Error())
+		v.app.flash().errf("Unable to fetch statefulset %s", err)
 		return evt
 	}
 	sts := s.(*v1.StatefulSet)
@@ -57,7 +57,7 @@ func (v *statefulSetView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	sel, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
 	if err != nil {
 		log.Error().Err(err).Msgf("Converting selector for StatefulSet %s", v.selectedItem)
-		v.app.flash(flashErr, err.Error())
+		v.app.flash().errf("Selector failed %s", err)
 		return evt
 	}
 	showPods(v.app, "", "StatefulSet", v.selectedItem, sel.String(), "", v.backCmd)

@@ -32,7 +32,7 @@ func runK(clear bool, app *appView, args ...string) bool {
 		}
 		if err := execute(clear, bin, args...); err != nil {
 			log.Error().Msgf("Command exited: %T %v %v", err, err, args)
-			app.flash(flashErr, "Command exited:", err.Error())
+			app.flash().errf("Command exited: %v", err)
 		}
 	})
 }

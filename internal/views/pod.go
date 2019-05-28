@@ -3,7 +3,6 @@ package views
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
@@ -56,22 +55,18 @@ func (v *podView) listContainers(app *appView, _, res, sel string) {
 	po, err := v.app.informer.Get(watch.PodIndex, sel, metav1.GetOptions{})
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to retrieve pod %s", sel)
-		app.flash(flashErr, err.Error())
+		app.flash().errf("Unable to retrieve pods %s", err)
 		return
 	}
 	pod := po.(*v1.Pod)
 	mx := k8s.NewMetricsServer(app.conn())
 	list := resource.NewContainerList(app.conn(), mx, pod)
-	log.Debug().Msgf(">>>> Got pod %s", pod.Name)
-
-	fmat := strings.Replace(containerFmt, "[fg:bg", "["+v.app.styles.Style.Title.FgColor+":"+v.app.styles.Style.Title.BgColor, -1)
-	fmat = strings.Replace(fmat, "[hilite", "["+v.app.styles.Style.Title.CounterColor, 1)
-	title := fmt.Sprintf(fmat, "Containers", sel)
+	title := skinTitle(fmt.Sprintf(containerFmt, "Containers", sel), v.app.styles.Style)
 
 	v.suspend()
-	cv := newContainerView(title, app, list, namespacedName(pod.Namespace, pod.Name), v.exitFn)
+	cv := newContainerView(title, app, list, fqn(pod.Namespace, pod.Name), v.exitFn)
 	v.AddPage("containers", cv, true, true)
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(v.context)
 	v.cancel = cancel
 	cv.init(ctx, pod.Namespace)
 }
@@ -125,7 +120,7 @@ func (v *podView) viewLogs(prev bool) bool {
 	}
 	cc, err := fetchContainers(v.list, v.selectedItem, true)
 	if err != nil {
-		v.app.flash(flashErr, err.Error())
+		v.app.flash().errf("Unable to retrieve containers %s", err)
 		log.Error().Err(err)
 		return false
 	}
@@ -155,7 +150,7 @@ func (v *podView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	cc, err := fetchContainers(v.list, v.selectedItem, false)
 	if err != nil {
-		v.app.flash(flashErr, err.Error())
+		v.app.flash().errf("Unable to retrieve containers %s", err)
 		log.Error().Msgf("Error fetching containers %v", err)
 		return evt
 	}
@@ -176,33 +171,46 @@ func (v *podView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (v *podView) shellIn(path, co string) {
 	v.suspend()
 	{
-		ns, po := namespaced(path)
-		args := make([]string, 0, 12)
-		args = append(args, "exec", "-it")
-		args = append(args, "--context", v.app.config.K9s.CurrentContext)
-		args = append(args, "-n", ns)
-		args = append(args, po)
-		if len(co) != 0 {
-			args = append(args, "-c", co)
-		}
-		args = append(args, "--", "sh")
-		log.Debug().Msgf("Shell args %v", args)
-		runK(true, v.app, args...)
+		shellIn(v.app, path, co)
 	}
 	v.resume()
 }
 
+func shellIn(a *appView, path, co string) {
+	args := computeShellArgs(path, co, a.config.K9s.CurrentContext, a.conn().Config().Flags().KubeConfig)
+	log.Debug().Msgf("Shell args %v", args)
+	runK(true, a, args...)
+}
+
+func computeShellArgs(path, co, context string, cfg *string) []string {
+	a := make([]string, 0, 15)
+	a = append(a, "exec", "-it")
+	a = append(a, "--context", context)
+	ns, po := namespaced(path)
+	a = append(a, "-n", ns)
+	a = append(a, po)
+	if cfg != nil && *cfg != "" {
+		a = append(a, "--kubeconfig", *cfg)
+	}
+	if co != "" {
+		a = append(a, "-c", co)
+	}
+	a = append(a, "--", "sh")
+
+	return a
+}
+
 func (v *podView) extraActions(aa keyActions) {
 	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
-	aa[KeyShiftL] = newKeyAction("Prev Logs", v.prevLogsCmd, true)
+	aa[KeyShiftL] = newKeyAction("Logs Previous", v.prevLogsCmd, true)
 	aa[KeyS] = newKeyAction("Shell", v.shellCmd, true)
 	aa[KeyShiftR] = newKeyAction("Sort Ready", v.sortColCmd(1, false), true)
 	aa[KeyShiftS] = newKeyAction("Sort Status", v.sortColCmd(2, true), true)
 	aa[KeyShiftT] = newKeyAction("Sort Restart", v.sortColCmd(3, false), true)
 	aa[KeyShiftC] = newKeyAction("Sort CPU", v.sortColCmd(4, false), true)
 	aa[KeyShiftM] = newKeyAction("Sort MEM", v.sortColCmd(5, false), true)
-	aa[KeyAltC] = newKeyAction("Sort %CPU", v.sortColCmd(6, false), true)
-	aa[KeyAltM] = newKeyAction("Sort %MEM", v.sortColCmd(7, false), true)
+	aa[KeyAltC] = newKeyAction("Sort CPU%", v.sortColCmd(6, false), true)
+	aa[KeyAltM] = newKeyAction("Sort MEM%", v.sortColCmd(7, false), true)
 	aa[KeyShiftO] = newKeyAction("Sort Node", v.sortColCmd(8, true), true)
 }
 

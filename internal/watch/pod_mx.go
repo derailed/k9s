@@ -164,10 +164,7 @@ func (p *podMxWatcher) update(list *mv1beta1.PodMetricsList, notify bool) {
 		}
 
 		if notify {
-			p.eventChan <- watch.Event{
-				Type:   kind,
-				Object: v,
-			}
+			p.eventChan <- watch.Event{Type: kind, Object: v}
 		}
 		p.cache[k] = v
 	}

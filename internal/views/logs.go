@@ -3,7 +3,6 @@ package views
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/resource"
@@ -18,6 +17,8 @@ const (
 	maxCleanse         = 100
 	logBuffSize        = 100
 	flushTimeout       = 200 * time.Millisecond
+
+	logFmt = " Logs([fg:bg:]%s:[hilite:bg:b]%s[-:bg:-]) "
 )
 
 type masterView interface {
@@ -104,7 +105,7 @@ func (v *logsView) load(i int) {
 	}
 	v.SwitchToPage(v.containers[i])
 	if err := v.doLoad(v.parent.getSelection(), v.containers[i]); err != nil {
-		v.parent.appView().flash(flashErr, err.Error())
+		v.parent.appView().flash().err(err)
 		l := v.CurrentPage().Item.(*logView)
 		l.logLine("😂 Doh! No logs are available at this time. Check again later on...")
 		return
@@ -118,10 +119,7 @@ func (v *logsView) doLoad(path, co string) error {
 	maxBuff := int64(v.parent.appView().config.K9s.LogRequestSize)
 	l := v.CurrentPage().Item.(*logView)
 	l.logs.Clear()
-	const logFmt = " Logs([fg:bg:]%s:[hilite:bg:b]%s[-:-:-]) "
-	fmat := fmt.Sprintf(logFmt, path, co)
-	fmat = strings.Replace(fmat, "[fg:bg", "["+v.parent.appView().styles.Style.Title.FgColor+":"+v.parent.appView().styles.Style.Title.BgColor, -1)
-	fmat = strings.Replace(fmat, "[hilite", "["+v.parent.appView().styles.Style.Title.HighlightColor, 1)
+	fmat := skinTitle(fmt.Sprintf(logFmt, path, co), v.parent.appView().styles.Style)
 	l.SetTitle(fmat)
 
 	c := make(chan string, 10)

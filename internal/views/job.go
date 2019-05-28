@@ -76,7 +76,7 @@ func (v *jobView) viewLogs(previous bool) bool {
 
 	cc, err := fetchContainers(v.list, v.selectedItem, true)
 	if err != nil {
-		v.app.flash(flashErr, err.Error())
+		v.app.flash().err(err)
 		log.Error().Err(err).Msgf("Unable to fetch containers for %s", v.selectedItem)
 		return false
 	}
@@ -104,7 +104,7 @@ func (v *jobView) showLogs(path, co, view string, parent loggable, prev bool) {
 
 func (v *jobView) extraActions(aa keyActions) {
 	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
-	aa[KeyShiftL] = newKeyAction("Prev Logs", v.prevLogsCmd, true)
+	aa[KeyShiftL] = newKeyAction("Logs Previous", v.prevLogsCmd, true)
 	aa[tcell.KeyEnter] = newKeyAction("View Pods", v.showPodsCmd, true)
 }
 
@@ -118,7 +118,7 @@ func (v *jobView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	job, err := j.Get(ns, n)
 	if err != nil {
 		log.Error().Err(err).Msgf("Fetching Job %s", v.selectedItem)
-		v.app.flash(flashErr, err.Error())
+		v.app.flash().err(err)
 		return evt
 	}
 	jo := job.(*batchv1.Job)
@@ -126,7 +126,7 @@ func (v *jobView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	sel, err := metav1.LabelSelectorAsSelector(jo.Spec.Selector)
 	if err != nil {
 		log.Error().Err(err).Msgf("Converting selector for Job %s", v.selectedItem)
-		v.app.flash(flashErr, err.Error())
+		v.app.flash().err(err)
 		return evt
 	}
 	showPods(v.app, "", "Job", v.selectedItem, sel.String(), "", v.backCmd)

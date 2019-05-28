@@ -57,7 +57,7 @@ func (v *replicaSetView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	r, err := rset.Get(ns, n)
 	if err != nil {
 		log.Error().Err(err).Msgf("Fetching ReplicaSet %s", v.selectedItem)
-		v.app.flash(flashErr, err.Error())
+		v.app.flash().errf("Replicaset failed %s", err)
 		return evt
 	}
 	rs := r.(*v1.ReplicaSet)
@@ -65,7 +65,7 @@ func (v *replicaSetView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	sel, err := metav1.LabelSelectorAsSelector(rs.Spec.Selector)
 	if err != nil {
 		log.Error().Err(err).Msgf("Converting selector for ReplicaSet %s", v.selectedItem)
-		v.app.flash(flashErr, err.Error())
+		v.app.flash().errf("Selector failed %s", err)
 		return evt
 	}
 	showPods(v.app, "", "ReplicaSet", v.selectedItem, sel.String(), "", v.backCmd)
@@ -86,7 +86,7 @@ func (v *replicaSetView) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	v.showModal(fmt.Sprintf("Rollback %s %s?", v.list.GetName(), v.selectedItem), func(_ int, button string) {
 		if button == "OK" {
-			v.app.flash(flashInfo, fmt.Sprintf("Rolling back %s %s", v.list.GetName(), v.selectedItem))
+			v.app.flash().infof("Rolling back %s %s", v.list.GetName(), v.selectedItem)
 			rollback(v.app, v.selectedItem)
 			v.refresh()
 		}
@@ -102,7 +102,7 @@ func rollback(app *appView, selectedItem string) bool {
 	r, err := rset.Get(ns, n)
 	if err != nil {
 		log.Error().Err(err).Msgf("Fetching ReplicaSet %s", selectedItem)
-		app.flash(flashErr, err.Error())
+		app.flash().errf("Failed retrieving replicaset %s", err)
 		return false
 	}
 	rs := r.(*v1.ReplicaSet)
@@ -115,13 +115,13 @@ func rollback(app *appView, selectedItem string) bool {
 		}
 	}
 	if ctrlName == "" || ctrlKind == "" || ctrlAPI == "" {
-		app.flash(flashErr, "Unable to find controller for ReplicaSet %s", selectedItem)
+		app.flash().errf("Unable to find controller for ReplicaSet %s", selectedItem)
 		return false
 	}
 
 	revision := rs.ObjectMeta.Annotations["deployment.kubernetes.io/revision"]
 	if rs.Status.Replicas != 0 {
-		app.flash(flashWarn, "Can not rollback the current replica!")
+		app.flash().warn("Can not rollback the current replica!")
 		return false
 	}
 
@@ -129,7 +129,7 @@ func rollback(app *appView, selectedItem string) bool {
 	dep, err := dpr.Get(ns, ctrlName)
 	if err != nil {
 		log.Error().Err(err).Msgf("Fetching Deployment %s", selectedItem)
-		app.flash(flashErr, err.Error())
+		app.flash().errf("Unable to retrieve deployments %s", err)
 		return false
 	}
 	dp := dep.(*appsv1.Deployment)
@@ -157,7 +157,7 @@ func rollback(app *appView, selectedItem string) bool {
 		return false
 	}
 	log.Debug().Msgf("Version %s %s", revision, res)
-	app.flash(flashInfo, fmt.Sprintf("Version %s %s", revision, res))
+	app.flash().infof("Version %s %s", revision, res)
 
 	return true
 }

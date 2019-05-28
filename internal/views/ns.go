@@ -1,7 +1,6 @@
 package views
 
 import (
-	"fmt"
 	"regexp"
 
 	"github.com/derailed/k9s/internal/config"
@@ -60,9 +59,9 @@ func (v *namespaceView) useNsCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (v *namespaceView) useNamespace(name string) {
 	if err := v.app.config.SetActiveNamespace(name); err != nil {
-		v.app.flash(flashErr, err.Error())
+		v.app.flash().err(err)
 	} else {
-		v.app.flash(flashInfo, fmt.Sprintf("Namespace %s is now active!", name))
+		v.app.flash().infof("Namespace %s is now active!", name)
 	}
 	v.app.config.Save()
 }

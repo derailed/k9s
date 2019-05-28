@@ -36,7 +36,7 @@ func (v *secretView) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	ns, n := namespaced(sel)
 	sec, err := v.app.conn().DialOrDie().CoreV1().Secrets(ns).Get(n, metav1.GetOptions{})
 	if err != nil {
-		v.app.flash(flashErr, "Unable to retrieve secret", sel)
+		v.app.flash().errf("Unable to retrieve secret %s", err)
 		return evt
 	}
 
@@ -46,7 +46,7 @@ func (v *secretView) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	raw, err := yaml.Marshal(d)
 	if err != nil {
-		v.app.flash(flashErr, "Error decoding secret for `", sel)
+		v.app.flash().errf("Error decoding secret %s", err)
 		log.Error().Err(err).Msgf("Marshal error getting secret %s", sel)
 		return nil
 	}

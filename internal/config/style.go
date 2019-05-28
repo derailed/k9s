@@ -34,6 +34,7 @@ type (
 		Status *Status `yaml:"status"`
 		Title  *Title  `yaml:"title"`
 		Yaml   *Yaml   `yaml:"yaml"`
+		Log    *Log    `yaml:"logs"`
 	}
 
 	// Status tracks resource status styles.
@@ -45,6 +46,12 @@ type (
 		HighlightColor string `yaml:"highlightColor"`
 		KillColor      string `yaml:"killColor"`
 		CompletedColor string `yaml:"completedColor"`
+	}
+
+	// Log tracks Log styles.
+	Log struct {
+		FgColor string `yaml:"fgColor"`
+		BgColor string `yaml:"bgColor"`
 	}
 
 	// Yaml tracks yaml styles.
@@ -118,6 +125,7 @@ func newStyle() *Style {
 		Status:    newStatus(),
 		Title:     newTitle(),
 		Yaml:      newYaml(),
+		Log:       newLog(),
 	}
 }
 
@@ -130,6 +138,14 @@ func newStatus() *Status {
 		HighlightColor: "aqua",
 		KillColor:      "mediumpurple",
 		CompletedColor: "gray",
+	}
+}
+
+// NewLog returns a new log style.
+func newLog() *Log {
+	return &Log{
+		FgColor: "lightskyblue",
+		BgColor: "black",
 	}
 }
 
@@ -250,6 +266,10 @@ func (s *Styles) ensure() {
 
 	if s.Style.Yaml == nil {
 		s.Style.Yaml = newYaml()
+	}
+
+	if s.Style.Log == nil {
+		s.Style.Log = newLog()
 	}
 }
 
