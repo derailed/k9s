@@ -67,7 +67,7 @@ func run(cmd *cobra.Command, args []string) {
 			log.Error().Msg(string(debug.Stack()))
 			printLogo(printer.ColorRed)
 			fmt.Printf(printer.Colorize("Boom!! ", printer.ColorRed))
-			fmt.Println(printer.Colorize(fmt.Sprintf("%v.", err), printer.ColorDarkGray))
+			fmt.Println(printer.Colorize(fmt.Sprintf("%v.", err), printer.ColorWhite))
 		}
 	}()
 
@@ -94,6 +94,10 @@ func loadConfiguration() *config.Config {
 	k9sCfg.Refine(k8sFlags)
 	k9sCfg.SetConnection(k8s.InitConnectionOrDie(k8sCfg, log.Logger))
 
+	// Try to access server version if that fail. Connectivity issue?
+	if _, err := k9sCfg.GetConnection().ServerVersion(); err != nil {
+		log.Panic().Err(err).Msg("K9s can't connect to cluster")
+	}
 	log.Info().Msg("✅ Kubernetes connectivity")
 	k9sCfg.Save()
 

@@ -66,13 +66,13 @@ func NewInformer(client k8s.Connection, ns string) *Informer {
 	ns, err := client.Config().CurrentNamespaceName()
 	// User did not lock NS. Check all ns access if not bail
 	if err != nil && !nsAccess {
-		log.Panic().Msg("Unauthorized access to list namespaces. Please specify a namespace")
+		log.Panic().Msg("Unauthorized: Unable to list ALL namespaces. Missing verbs ['list', 'watch']. Please specify a namespace or correct RBAC")
 	}
 
 	// Namespace is locked in. check if user has auth for this ns access.
 	if ns != AllNamespaces && !nsAccess {
 		if !i.client.CanIAccess("", ns, "namespaces", []string{"get", "watch"}) {
-			log.Panic().Msgf("Unauthorized access to namespace %q", ns)
+			log.Panic().Msgf("Unauthorized: Access to namespace %q is missing verbs ['get', 'watch']", ns)
 		}
 		i.init(ns)
 	} else {
