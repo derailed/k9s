@@ -34,8 +34,12 @@ func (v *logoView) reset() {
 	v.refreshLogo(v.app.styles.Style.LogoColor)
 }
 
-func (v *logoView) warn(msg string) {
+func (v *logoView) err(msg string) {
 	v.update(msg, "red")
+}
+
+func (v *logoView) warn(msg string) {
+	v.update(msg, "mediumvioletred")
 }
 
 func (v *logoView) info(msg string) {

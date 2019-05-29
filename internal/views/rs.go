@@ -22,10 +22,7 @@ type replicaSetView struct {
 
 func newReplicaSetView(t string, app *appView, list resource.List) resourceViewer {
 	v := replicaSetView{newResourceView(t, app, list).(*resourceView)}
-	{
-		v.extraActionsFn = v.extraActions
-		v.switchPage("rs")
-	}
+	v.extraActionsFn = v.extraActions
 
 	return &v
 }

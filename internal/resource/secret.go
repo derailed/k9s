@@ -73,6 +73,13 @@ func (*Secret) Header(ns string) Row {
 	return append(hh, "NAME", "TYPE", "DATA", "AGE")
 }
 
+// NumCols designates if column is numerical.
+func (*Secret) NumCols(n string) map[string]bool {
+	return map[string]bool{
+		"DATA": true,
+	}
+}
+
 // Fields retrieves displayable fields.
 func (r *Secret) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))

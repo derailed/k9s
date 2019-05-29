@@ -15,10 +15,7 @@ type deployView struct {
 
 func newDeployView(t string, app *appView, list resource.List) resourceViewer {
 	v := deployView{newResourceView(t, app, list).(*resourceView)}
-	{
-		v.extraActionsFn = v.extraActions
-		v.switchPage("deploy")
-	}
+	v.extraActionsFn = v.extraActions
 
 	return &v
 }
@@ -66,6 +63,8 @@ func (v *deployView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *deployView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
+	// Reset namespace to what it was
+	v.app.config.SetActiveNamespace(v.list.GetNamespace())
 	v.app.inject(v)
 
 	return nil

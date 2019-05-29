@@ -78,7 +78,7 @@ func isDurationSort(asc bool, c1, c2 string) (bool, bool) {
 	}
 
 	if asc {
-		return d1 < d2, true
+		return d1 <= d2, true
 	}
 	return d1 > d2, true
 }
@@ -103,7 +103,7 @@ func isIntegerSort(asc bool, c1, c2 string) (bool, bool) {
 	}
 	n2, _ := strconv.Atoi(c2)
 	if asc {
-		return n1 < n2, true
+		return n1 <= n2, true
 	}
 	return n1 > n2, true
 }

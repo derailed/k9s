@@ -75,7 +75,7 @@ func run(cmd *cobra.Command, args []string) {
 	cfg := loadConfiguration()
 	app := views.NewApp(cfg)
 	{
-		defer app.Stop()
+		defer app.BailOut()
 		app.Init(version, refreshRate, k8sFlags)
 		app.Run()
 	}

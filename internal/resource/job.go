@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -18,7 +19,9 @@ import (
 // Job tracks a kubernetes resource.
 type Job struct {
 	*Base
+
 	instance *batchv1.Job
+	mx       sync.RWMutex
 }
 
 // NewJobList returns a new resource list.
@@ -33,7 +36,9 @@ func NewJobList(c Connection, ns string) List {
 
 // NewJob instantiates a new Job.
 func NewJob(c Connection) *Job {
-	j := &Job{&Base{Connection: c, Resource: k8s.NewJob(c)}, nil}
+	j := &Job{
+		Base: &Base{Connection: c, Resource: k8s.NewJob(c)},
+	}
 	j.Factory = j
 
 	return j
@@ -87,7 +92,13 @@ func (r *Job) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (c
 	go func() {
 		select {
 		case <-time.After(defaultTimeout):
-			if blocked {
+			var closes bool
+			r.mx.RLock()
+			{
+				closes = blocked
+			}
+			r.mx.RUnlock()
+			if closes {
 				close(c)
 				cancel()
 			}
@@ -96,10 +107,15 @@ func (r *Job) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (c
 
 	// This call will block if nothing is in the stream!!
 	stream, err := req.Stream()
-	blocked = false
 	if err != nil {
 		return cancel, fmt.Errorf("Log tail request failed for job `%s/%s:%s", ns, n, co)
 	}
+
+	r.mx.Lock()
+	{
+		blocked = false
+	}
+	r.mx.Unlock()
 
 	go func() {
 		defer func() {

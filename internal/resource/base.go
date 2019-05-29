@@ -87,6 +87,11 @@ func (b *Base) Name() string {
 	return b.path
 }
 
+// NumCols designates if column is numerical.
+func (*Base) NumCols(n string) map[string]bool {
+	return map[string]bool{}
+}
+
 // ExtFields returns extended fields in relation to headers.
 func (*Base) ExtFields() Properties {
 	return Properties{}

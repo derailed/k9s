@@ -15,10 +15,7 @@ type statefulSetView struct {
 
 func newStatefulSetView(t string, app *appView, list resource.List) resourceViewer {
 	v := statefulSetView{newResourceView(t, app, list).(*resourceView)}
-	{
-		v.extraActionsFn = v.extraActions
-		v.switchPage("sts")
-	}
+	v.extraActionsFn = v.extraActions
 
 	return &v
 }

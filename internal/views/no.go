@@ -11,10 +11,7 @@ type nodeView struct {
 
 func newNodeView(t string, app *appView, list resource.List) resourceViewer {
 	v := nodeView{newResourceView(t, app, list).(*resourceView)}
-	{
-		v.extraActionsFn = v.extraActions
-		v.switchPage("no")
-	}
+	v.extraActionsFn = v.extraActions
 
 	return &v
 }

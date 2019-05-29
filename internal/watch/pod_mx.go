@@ -66,14 +66,15 @@ func (p *PodMetrics) Get(fqn string, opts metav1.GetOptions) (interface{}, error
 // NewPodMetricsInformer return an informer to return pod metrix.
 func newPodMetricsInformer(client k8s.Connection, ns string, sync time.Duration, idxs cache.Indexers) cache.SharedIndexInformer {
 	pw := newPodMxWatcher(client, ns)
+	c, err := client.MXDial()
+	if err != nil {
+		log.Error().Err(err).Msg("PodMetrix dial")
+		return nil
+	}
 
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-				c, err := client.MXDial()
-				if err != nil {
-					return nil, err
-				}
 				l, err := c.MetricsV1beta1().PodMetricses(ns).List(opts)
 				if err == nil {
 					pw.update(l, false)
@@ -81,7 +82,7 @@ func newPodMetricsInformer(client k8s.Connection, ns string, sync time.Duration,
 				return l, err
 			},
 			WatchFunc: func(opts metav1.ListOptions) (watch.Interface, error) {
-				pw.Run()
+				go pw.Run()
 				return pw, nil
 			},
 		},
@@ -113,26 +114,25 @@ func newPodMxWatcher(c k8s.Connection, ns string) *podMxWatcher {
 
 // Run watcher to monitor pod metrics.
 func (p *podMxWatcher) Run() {
-	go func() {
-		defer log.Debug().Msg("Podmetrics watcher canceled!")
-		for {
-			select {
-			case <-p.doneChan:
-				return
-			case <-time.After(podMXRefresh):
-				c, err := p.client.MXDial()
-				if err != nil || !p.client.HasMetrics() {
-					return
-				}
+	defer log.Debug().Msg("PodMetrics informer stopped!")
+	c, err := p.client.MXDial()
+	if err != nil {
+		log.Error().Err(err).Msg("PodMetrix Dial Failed!")
+		return
+	}
 
-				list, err := c.MetricsV1beta1().PodMetricses(p.ns).List(metav1.ListOptions{})
-				if err != nil {
-					log.Error().Err(err).Msg("Fetch pod metrics")
-				}
-				p.update(list, true)
+	for {
+		select {
+		case <-p.doneChan:
+			return
+		case <-time.After(podMXRefresh):
+			list, err := c.MetricsV1beta1().PodMetricses(p.ns).List(metav1.ListOptions{})
+			if err != nil {
+				log.Error().Err(err).Msg("PodMetrics List Failed!")
 			}
+			p.update(list, true)
 		}
-	}()
+	}
 }
 
 func (p *podMxWatcher) update(list *mv1beta1.PodMetricsList, notify bool) {
@@ -162,7 +162,6 @@ func (p *podMxWatcher) update(list *mv1beta1.PodMetricsList, notify bool) {
 			}
 			kind = watch.Modified
 		}
-
 		if notify {
 			p.eventChan <- watch.Event{Type: kind, Object: v}
 		}
@@ -172,7 +171,7 @@ func (p *podMxWatcher) update(list *mv1beta1.PodMetricsList, notify bool) {
 
 // Stop the metrics informer.
 func (p *podMxWatcher) Stop() {
-	log.Debug().Msg("Stopping pod watcher!")
+	log.Debug().Msg("Stopping PodMetrix informer!!")
 	close(p.doneChan)
 	close(p.eventChan)
 }

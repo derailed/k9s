@@ -14,19 +14,19 @@ func TestAugmentRow(t *testing.T) {
 		e    resource.Row
 	}{
 		"cool": {
-			"assets/b1.txt",
+			"test_assets/b1.txt",
 			resource.Row{"pass", "3.3544", "29.8116", "100", "0"},
 		},
 		"2XX": {
-			"assets/b4.txt",
+			"test_assets/b4.txt",
 			resource.Row{"pass", "3.3544", "29.8116", "160", "0"},
 		},
 		"4XX/5XX": {
-			"assets/b2.txt",
+			"test_assets/b2.txt",
 			resource.Row{"pass", "3.3544", "29.8116", "100", "12"},
 		},
 		"toast": {
-			"assets/b3.txt",
+			"test_assets/b3.txt",
 			resource.Row{"fail", "2.3688", "35.4606", "0", "0"},
 		},
 	}

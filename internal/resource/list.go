@@ -57,6 +57,7 @@ type (
 	TableData struct {
 		Header    Row
 		Rows      RowEvents
+		NumCols   map[string]bool
 		Namespace string
 	}
 
@@ -68,7 +69,7 @@ type (
 		AllNamespaces() bool
 		GetNamespace() string
 		SetNamespace(string)
-		Reconcile(informer *wa.Meta, path *string) error
+		Reconcile(informer *wa.Informer, path *string) error
 		GetName() string
 		Access(flag int) bool
 		GetAccess() int
@@ -106,6 +107,7 @@ type (
 		Describe(kind, pa string, flags *genericclioptions.ConfigFlags) (string, error)
 		Marshal(pa string) (string, error)
 		Header(ns string) Row
+		NumCols(ns string) map[string]bool
 		SetFieldSelector(string)
 		SetLabelSelector(string)
 		GetFieldSelector() string
@@ -221,6 +223,7 @@ func (l *list) Data() TableData {
 	return TableData{
 		Header:    l.resource.Header(l.namespace),
 		Rows:      l.cache,
+		NumCols:   l.resource.NumCols(l.namespace),
 		Namespace: l.namespace,
 	}
 }
@@ -233,8 +236,8 @@ func metaFQN(m metav1.ObjectMeta) string {
 	return fqn(m.Namespace, m.Name)
 }
 
-func (l *list) fetchFromStore(m *wa.Meta, ns string) (Columnars, error) {
-	rr, err := m.List(l.name, ns, metav1.ListOptions{
+func (l *list) fetchFromStore(informer *wa.Informer, ns string) (Columnars, error) {
+	rr, err := informer.List(l.name, ns, metav1.ListOptions{
 		FieldSelector: l.resource.GetFieldSelector(),
 		LabelSelector: l.resource.GetLabelSelector(),
 	})
@@ -253,7 +256,7 @@ func (l *list) fetchFromStore(m *wa.Meta, ns string) (Columnars, error) {
 		case *v1.Node:
 			fqn = metaFQN(o.ObjectMeta)
 			res = l.resource.New(r)
-			nmx, err := m.Get(wa.NodeMXIndex, fqn, opts)
+			nmx, err := informer.Get(wa.NodeMXIndex, fqn, opts)
 			if err != nil {
 				log.Warn().Err(err).Msg("NodeMetrics")
 			}
@@ -263,7 +266,7 @@ func (l *list) fetchFromStore(m *wa.Meta, ns string) (Columnars, error) {
 		case *v1.Pod:
 			fqn = metaFQN(o.ObjectMeta)
 			res = l.resource.New(r)
-			pmx, err := m.Get(wa.PodMXIndex, fqn, opts)
+			pmx, err := informer.Get(wa.PodMXIndex, fqn, opts)
 			if err != nil {
 				log.Warn().Err(err).Msgf("PodMetrics %s", fqn)
 			}
@@ -273,7 +276,7 @@ func (l *list) fetchFromStore(m *wa.Meta, ns string) (Columnars, error) {
 		case v1.Container:
 			fqn = ns
 			res = l.resource.New(r)
-			pmx, err := m.Get(wa.PodMXIndex, fqn, opts)
+			pmx, err := informer.Get(wa.PodMXIndex, fqn, opts)
 			if err != nil {
 				log.Warn().Err(err).Msgf("PodMetrics<container> %s", fqn)
 			}
@@ -290,14 +293,14 @@ func (l *list) fetchFromStore(m *wa.Meta, ns string) (Columnars, error) {
 }
 
 // Reconcile previous vs current state and emits delta events.
-func (l *list) Reconcile(m *wa.Meta, path *string) error {
+func (l *list) Reconcile(informer *wa.Informer, path *string) error {
 	ns := l.namespace
 	if path != nil {
 		ns = *path
 	}
 
 	var items Columnars
-	if rr, err := l.fetchFromStore(m, ns); err == nil {
+	if rr, err := l.fetchFromStore(informer, ns); err == nil {
 		items = rr
 	} else {
 		items, err = l.resource.List(l.namespace)

@@ -119,6 +119,18 @@ func (*Node) Header(ns string) Row {
 	}
 }
 
+// NumCols designates if column is numerical.
+func (*Node) NumCols(n string) map[string]bool {
+	return map[string]bool{
+		"CPU":  true,
+		"MEM":  true,
+		"%CPU": true,
+		"%MEM": true,
+		"ACPU": true,
+		"AMEM": true,
+	}
+}
+
 // Fields returns displayable fields.
 func (r *Node) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))

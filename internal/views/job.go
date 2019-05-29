@@ -15,18 +15,13 @@ type jobView struct {
 
 func newJobView(t string, app *appView, list resource.List) resourceViewer {
 	v := jobView{resourceView: newResourceView(t, app, list).(*resourceView)}
-	{
-		v.extraActionsFn = v.extraActions
-		v.AddPage("logs", newLogsView(list.GetName(), &v), true, false)
-		v.switchPage("job")
-	}
+	v.extraActionsFn = v.extraActions
+	v.AddPage("logs", newLogsView(list.GetName(), &v), true, false)
 
 	picker := newSelectList(&v)
-	{
-		picker.setActions(keyActions{
-			tcell.KeyEscape: {description: "Back", action: v.backCmd, visible: true},
-		})
-	}
+	picker.setActions(keyActions{
+		tcell.KeyEscape: {description: "Back", action: v.backCmd, visible: true},
+	})
 	v.AddPage("picker", picker, true, false)
 
 	return &v
@@ -34,8 +29,7 @@ func newJobView(t string, app *appView, list resource.List) resourceViewer {
 
 // Protocol...
 
-func (v *jobView) setExtraActionsFn(f actionsFn) {
-}
+func (v *jobView) setExtraActionsFn(f actionsFn) {}
 
 func (v *jobView) appView() *appView {
 	return v.app

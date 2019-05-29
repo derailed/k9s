@@ -65,12 +65,29 @@ func (r *Deployment) Marshal(path string) (string, error) {
 
 // Header return resource header.
 func (*Deployment) Header(ns string) Row {
-	hh := Row{}
+	var hh Row
 	if ns == AllNamespaces {
 		hh = append(hh, "NAMESPACE")
 	}
 
-	return append(hh, "NAME", "DESIRED", "CURRENT", "UP-TO-DATE", "AVAILABLE", "AGE")
+	return append(hh,
+		"NAME",
+		"DESIRED",
+		"CURRENT",
+		"UP-TO-DATE",
+		"AVAILABLE",
+		"AGE",
+	)
+}
+
+// NumCols designates if column is numerical.
+func (*Deployment) NumCols(n string) map[string]bool {
+	return map[string]bool{
+		"DESIRED":    true,
+		"CURRENT":    true,
+		"UP-TO-DATE": true,
+		"AVAILABLE":  true,
+	}
 }
 
 // Fields retrieves displayable fields.

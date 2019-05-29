@@ -1,7 +1,9 @@
 package watch
 
 import (
+	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
@@ -46,73 +48,67 @@ type StoreInformer interface {
 	List(ns string, opts metav1.ListOptions) k8s.Collection
 }
 
-// Meta represents a collection of cluster wide watchers.
-type Meta struct {
+// Informer represents a collection of cluster wide watchers.
+type Informer struct {
 	informers   map[string]StoreInformer
 	client      k8s.Connection
 	podInformer *Pod
 	listenerFn  TableListenerFn
+	initOnce    sync.Once
 }
 
-// NewMeta creates a new cluster resource informer
-func NewMeta(client k8s.Connection, ns string) *Meta {
-	m := Meta{client: client, informers: map[string]StoreInformer{}}
+// NewInformer creates a new cluster resource informer
+func NewInformer(client k8s.Connection, ns string) *Informer {
+	log.Debug().Msgf(">> Starting Informer")
+	i := Informer{client: client, informers: map[string]StoreInformer{}}
 
-	nsAccess := m.client.CanIAccess("", "", "namespaces", []string{"list", "watch"})
+	nsAccess := i.client.CanIAccess("", "", "namespaces", []string{"list", "watch"})
 	ns, err := client.Config().CurrentNamespaceName()
 	// User did not lock NS. Check all ns access if not bail
 	if err != nil && !nsAccess {
 		log.Panic().Msg("Unauthorized access to list namespaces. Please specify a namespace")
 	}
 
-	// Namespace is locks in check if user has auth for this  ns access.
+	// Namespace is locked in. check if user has auth for this ns access.
 	if ns != AllNamespaces && !nsAccess {
-		if !m.client.CanIAccess("", ns, "namespaces", []string{"get", "watch"}) {
+		if !i.client.CanIAccess("", ns, "namespaces", []string{"get", "watch"}) {
 			log.Panic().Msgf("Unauthorized access to namespace %q", ns)
 		}
-		m.init(ns)
+		i.init(ns)
 	} else {
-		m.init(AllNamespaces)
+		i.init(AllNamespaces)
 	}
 
-	return &m
+	return &i
 }
 
-func (m *Meta) init(ns string) {
-	po := NewPod(m.client, ns)
-
-	m.informers = map[string]StoreInformer{
-		NodeIndex:      NewNode(m.client),
-		PodIndex:       po,
-		ContainerIndex: NewContainer(po),
-	}
-
-	if m.client.HasMetrics() {
-		if m.client.CanIAccess("", ns, "metrics.k8s.io", []string{"list", "watch"}) {
-			m.informers[NodeMXIndex] = NewNodeMetrics(m.client)
-			m.informers[PodMXIndex] = NewPodMetrics(m.client, ns)
+func (i *Informer) init(ns string) {
+	i.initOnce.Do(func() {
+		po := NewPod(i.client, ns)
+		i.informers = map[string]StoreInformer{
+			NodeIndex:      NewNode(i.client),
+			PodIndex:       po,
+			ContainerIndex: NewContainer(po),
 		}
-	}
-}
 
-// CheckAccess checks if current user as enought RBAC fu to access watched resources.
-func (m *Meta) checkAccess(ns string) error {
-	if !m.client.CanIAccess(ns, "nodes", "nodes", []string{"list", "watch"}) {
-		return fmt.Errorf("Not authorized to list/watch nodes")
-	}
-	if !m.client.CanIAccess(ns, "pods", "pods", []string{"list", "watch"}) {
-		return fmt.Errorf("Not authorized to list/watch pods in namespace %s", ns)
-	}
+		if !i.client.HasMetrics() {
+			return
+		}
 
-	return nil
+		if i.client.CanIAccess("", ns, "metrics.k8s.io", []string{"list", "watch"}) {
+			i.informers[NodeMXIndex] = NewNodeMetrics(i.client)
+			i.informers[PodMXIndex] = NewPodMetrics(i.client, ns)
+		}
+	})
 }
 
 // List items from store.
-func (m *Meta) List(res, ns string, opts metav1.ListOptions) (k8s.Collection, error) {
-	if m == nil {
-		return nil, fmt.Errorf("No meta exists")
+func (i *Informer) List(res, ns string, opts metav1.ListOptions) (k8s.Collection, error) {
+	if i == nil {
+		return nil, errors.New("Invalid informer")
 	}
-	if i, ok := m.informers[res]; ok {
+
+	if i, ok := i.informers[res]; ok {
 		return i.List(ns, opts), nil
 	}
 
@@ -120,8 +116,8 @@ func (m *Meta) List(res, ns string, opts metav1.ListOptions) (k8s.Collection, er
 }
 
 // Get a resource by name.
-func (m Meta) Get(res, fqn string, opts metav1.GetOptions) (interface{}, error) {
-	if informer, ok := m.informers[res]; ok {
+func (i Informer) Get(res, fqn string, opts metav1.GetOptions) (interface{}, error) {
+	if informer, ok := i.informers[res]; ok {
 		return informer.Get(fqn, opts)
 	}
 
@@ -129,10 +125,10 @@ func (m Meta) Get(res, fqn string, opts metav1.GetOptions) (interface{}, error) 
 }
 
 // Run starts watching cluster resources.
-func (m *Meta) Run(closeCh <-chan struct{}) {
-	for i := range m.informers {
-		go func(informer StoreInformer, c <-chan struct{}) {
-			informer.Run(c)
-		}(m.informers[i], closeCh)
+func (i *Informer) Run(closeCh <-chan struct{}) {
+	for name := range i.informers {
+		go func(si StoreInformer, c <-chan struct{}) {
+			si.Run(c)
+		}(i.informers[name], closeCh)
 	}
 }

@@ -15,10 +15,7 @@ type secretView struct {
 
 func newSecretView(t string, app *appView, list resource.List) resourceViewer {
 	v := secretView{newResourceView(t, app, list).(*resourceView)}
-	{
-		v.extraActionsFn = v.extraActions
-		v.switchPage("secret")
-	}
+	v.extraActionsFn = v.extraActions
 
 	return &v
 }

@@ -105,8 +105,9 @@ func (v *rbacView) init(c context.Context, ns string) {
 				log.Debug().Msg("RBAC Watch bailing out!")
 				return
 			case <-time.After(time.Duration(v.app.config.K9s.RefreshRate) * time.Second):
-				v.refresh()
-				v.app.Draw()
+				v.app.QueueUpdateDraw(func() {
+					v.refresh()
+				})
 			}
 		}
 	}(ctx)

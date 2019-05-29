@@ -32,8 +32,13 @@ func (c *command) pushCmd(cmd string) {
 }
 
 func (c *command) previousCmd() (string, bool) {
+	if c.lastCmd() {
+		return c.history.top()
+	}
+
 	c.history.pop()
 	c.app.crumbsView.update(c.history.stack)
+
 	return c.history.top()
 }
 
@@ -52,7 +57,7 @@ func (c *command) run(cmd string) bool {
 	var v resourceViewer
 	switch {
 	case cmd == "q", cmd == "quit":
-		c.app.bailOut()
+		c.app.BailOut()
 		return true
 	case cmd == "?", cmd == "help":
 		c.app.inject(newHelpView(c.app))

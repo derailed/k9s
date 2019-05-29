@@ -18,8 +18,8 @@ func TestPodList(t *testing.T) {
 func TestPodGet(t *testing.T) {
 	cmo := NewMockConnection()
 	no := NewPod(cmo, "")
-
 	o, err := no.Get("", metav1.GetOptions{})
+
 	assert.ErrorContains(t, err, "not found")
 	assert.Assert(t, o == nil)
 }

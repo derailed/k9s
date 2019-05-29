@@ -17,10 +17,7 @@ type svcView struct {
 
 func newSvcView(t string, app *appView, list resource.List) resourceViewer {
 	v := svcView{newResourceView(t, app, list).(*resourceView)}
-	{
-		v.extraActionsFn = v.extraActions
-		v.switchPage("svc")
-	}
+	v.extraActionsFn = v.extraActions
 
 	return &v
 }
@@ -52,14 +49,16 @@ func (v *svcView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
 		log.Error().Err(err).Msgf("Fetch service %s", v.selectedItem)
 		return nil
 	}
-	svc := res.(*v1.Service)
-
-	v.showSvcPods(ns, svc.Spec.Selector, v.backCmd)
+	if svc, ok := res.(*v1.Service); ok {
+		v.showSvcPods(ns, svc.Spec.Selector, v.backCmd)
+	}
 
 	return nil
 }
 
 func (v *svcView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
+	// Reset namespace to what it was
+	v.app.config.SetActiveNamespace(v.list.GetNamespace())
 	v.app.inject(v)
 
 	return nil
@@ -78,7 +77,7 @@ func (v *svcView) showSvcPods(ns string, sel map[string]string, b actionHandler)
 	pv.setExtraActionsFn(func(aa keyActions) {
 		aa[tcell.KeyEsc] = newKeyAction("Back", b, true)
 	})
-	// Reset active namespace to all.
+	// set active namespace to service ns.
 	v.app.config.SetActiveNamespace(ns)
 	v.app.inject(pv)
 }

@@ -1,12 +1,15 @@
 package watch
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/rs/zerolog"
 	"gotest.tools/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 func init() {
@@ -15,17 +18,17 @@ func init() {
 
 func TestPodMXList(t *testing.T) {
 	cmo := NewMockConnection()
-	no := NewPodMetrics(cmo, "")
+	po := NewPodMetrics(cmo, "")
 
-	o := no.List("", metav1.ListOptions{})
+	o := po.List("", metav1.ListOptions{})
 	assert.Assert(t, len(o) == 0)
 }
 
 func TestPodMXGet(t *testing.T) {
 	cmo := NewMockConnection()
-	no := NewPodMetrics(cmo, "")
+	po := NewPodMetrics(cmo, "")
 
-	o, err := no.Get("", metav1.GetOptions{})
+	o, err := po.Get("", metav1.GetOptions{})
 	assert.ErrorContains(t, err, "No pod metrics")
 	assert.Assert(t, o == nil)
 }
@@ -53,6 +56,80 @@ func TestPodMXRun(t *testing.T) {
 	cmo := NewMockConnection()
 	w := newPodMxWatcher(cmo, "")
 
-	w.Run()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		w.Run()
+	}()
+
 	w.Stop()
+	wg.Wait()
+}
+
+func TestPodMXUpdate(t *testing.T) {
+	cmo := NewMockConnection()
+	po := newPodMxWatcher(cmo, "default")
+	po.cache = map[string]runtime.Object{
+		"default/p1": makePodMX("p1", "11m", "11Mi"),
+	}
+
+	mxx := &mv1beta1.PodMetricsList{
+		Items: []mv1beta1.PodMetrics{
+			*makePodMX("p1", "10m", "10Mi"),
+		},
+	}
+	po.update(mxx, false)
+
+	pmx := po.cache["default/p1"].(*mv1beta1.PodMetrics)
+	assert.Equal(t, toQty("10m"), *pmx.Containers[0].Usage.Cpu())
+	assert.Equal(t, toQty("10Mi"), *pmx.Containers[0].Usage.Memory())
+}
+
+func TestPodMXUpdateNoChange(t *testing.T) {
+	cmo := NewMockConnection()
+	po := newPodMxWatcher(cmo, "default")
+	po.cache = map[string]runtime.Object{
+		"default/p1": makePodMX("p1", "10m", "10Mi"),
+	}
+
+	mxx := &mv1beta1.PodMetricsList{
+		Items: []mv1beta1.PodMetrics{
+			*makePodMX("p1", "10m", "10Mi"),
+		},
+	}
+	po.update(mxx, false)
+
+	pmx := po.cache["default/p1"].(*mv1beta1.PodMetrics)
+	assert.Equal(t, toQty("10m"), *pmx.Containers[0].Usage.Cpu())
+	assert.Equal(t, toQty("10Mi"), *pmx.Containers[0].Usage.Memory())
+}
+
+func TestPodMXDelete(t *testing.T) {
+	cmo := NewMockConnection()
+	po := newPodMxWatcher(cmo, "default")
+	po.cache = map[string]runtime.Object{
+		"default/p1": makePodMX("p1", "11m", "11Mi"),
+	}
+
+	mxx := &mv1beta1.PodMetricsList{}
+	po.update(mxx, false)
+
+	assert.Equal(t, 0, len(po.cache))
+}
+
+// ----------------------------------------------------------------------------
+// Helpers...
+
+func makePodMX(name, cpu, mem string) *v1beta1.PodMetrics {
+	return &v1beta1.PodMetrics{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      name,
+			Namespace: "default",
+		},
+		Containers: []v1beta1.ContainerMetrics{
+			{Name: "i1", Usage: makeRes(cpu, mem)},
+			{Name: "c1", Usage: makeRes(cpu, mem)},
+		},
+	}
 }

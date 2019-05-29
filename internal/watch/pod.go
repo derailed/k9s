@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	wv1 "k8s.io/client-go/informers/core/v1"
@@ -31,22 +30,6 @@ func NewPod(c Connection, ns string) *Pod {
 	return &Pod{
 		SharedIndexInformer: wv1.NewPodInformer(c.DialOrDie(), ns, 0, cache.Indexers{}),
 	}
-}
-
-func toSelector(s string) map[string]string {
-	var m map[string]string
-	ls, err := metav1.ParseToLabelSelector(s)
-	if err != nil {
-		log.Error().Err(err).Msg("StringToSel")
-		return m
-	}
-	mSel, err := metav1.LabelSelectorAsMap(ls)
-	if err != nil {
-		log.Error().Err(err).Msg("SelToMap")
-		return m
-	}
-
-	return mSel
 }
 
 // List all pods from store in the given namespace.
@@ -84,25 +67,4 @@ func (p *Pod) Get(fqn string, opts metav1.GetOptions) (interface{}, error) {
 	}
 
 	return o, nil
-}
-
-func matchesLabels(labels, selector map[string]string) bool {
-	if len(selector) == 0 {
-		return true
-	}
-	for k, v := range selector {
-		la, ok := labels[k]
-		if !ok || la != v {
-			return false
-		}
-	}
-
-	return true
-}
-
-func matchesNode(name string, selector map[string]string) bool {
-	if len(selector) == 0 {
-		return true
-	}
-	return selector["spec.nodeName"] == name
 }

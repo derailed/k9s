@@ -7,6 +7,8 @@ import (
 	"time"
 
 	res "github.com/derailed/k9s/internal/resource"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
@@ -106,4 +108,10 @@ func numerical(s string) (int, bool) {
 	}
 
 	return n, true
+}
+
+// AsNumb prints a number with thousand separator.
+func asNum(n int) string {
+	p := message.NewPrinter(language.English)
+	return p.Sprintf("%d", n)
 }

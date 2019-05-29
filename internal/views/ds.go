@@ -15,10 +15,7 @@ type daemonSetView struct {
 
 func newDaemonSetView(t string, app *appView, list resource.List) resourceViewer {
 	v := daemonSetView{newResourceView(t, app, list).(*resourceView)}
-	{
-		v.extraActionsFn = v.extraActions
-		v.switchPage("ds")
-	}
+	v.extraActionsFn = v.extraActions
 
 	return &v
 }
@@ -60,12 +57,14 @@ func (v *daemonSetView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.app.flash().err(err)
 		return evt
 	}
-	showPods(v.app, "", "DaemonSet", v.selectedItem, sel.String(), "", v.backCmd)
+	showPods(v.app, ns, "DaemonSet", v.selectedItem, sel.String(), "", v.backCmd)
 
 	return nil
 }
 
 func (v *daemonSetView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
+	// Reset namespace to what it was
+	v.app.config.SetActiveNamespace(v.list.GetNamespace())
 	v.app.inject(v)
 
 	return nil

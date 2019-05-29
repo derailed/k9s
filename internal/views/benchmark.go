@@ -59,29 +59,33 @@ func (b *benchmark) annuled() bool {
 }
 
 func (b *benchmark) cancel() {
+	if b == nil {
+		return
+	}
 	b.canceled = true
 	b.worker.Stop()
 }
 
-func (b *benchmark) run(done func()) {
+func (b *benchmark) run(cluster string, done func()) {
 	buff := new(bytes.Buffer)
 	b.worker.Writer = buff
 	b.worker.Run()
 	if !b.canceled {
-		if err := b.save(buff); err != nil {
+		if err := b.save(cluster, buff); err != nil {
 			log.Error().Err(err).Msg("Saving benchmark")
 		}
 	}
 	done()
 }
 
-func (b *benchmark) save(r io.Reader) error {
-	if err := os.MkdirAll(K9sBenchDir, 0777); err != nil {
+func (b *benchmark) save(cluster string, r io.Reader) error {
+	dir := filepath.Join(K9sBenchDir, cluster)
+	if err := os.MkdirAll(dir, 0744); err != nil {
 		return err
 	}
 
 	ns, n := namespaced(b.config.Path)
-	file := filepath.Join(K9sBenchDir, fmt.Sprintf(benchFmat, ns, n, time.Now().UnixNano()))
+	file := filepath.Join(dir, fmt.Sprintf(benchFmat, ns, n, time.Now().UnixNano()))
 	f, err := os.Create(file)
 	if err != nil {
 		return err

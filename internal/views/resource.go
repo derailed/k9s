@@ -22,6 +22,12 @@ const (
 	clusterRefresh = time.Duration(15 * time.Second)
 )
 
+type updatable interface {
+	restartUpdates()
+	stopUpdates()
+	update(context.Context)
+}
+
 type resourceView struct {
 	*tview.Pages
 
@@ -39,10 +45,11 @@ type resourceView struct {
 	colorerFn      colorerFn
 	actions        keyActions
 	mx             sync.Mutex
-	suspended      bool
-	nsListAccess   bool
-	path           *string
-	context        context.Context
+	// suspended      bool
+	nsListAccess bool
+	path         *string
+	cancelFn     context.CancelFunc
+	parentCtx    context.Context
 }
 
 func newResourceView(title string, app *appView, list resource.List) resourceViewer {
@@ -56,9 +63,7 @@ func newResourceView(title string, app *appView, list resource.List) resourceVie
 	}
 
 	tv := newTableView(app, v.title)
-	{
-		tv.SetSelectionChangedFunc(v.selChanged)
-	}
+	tv.SetSelectionChangedFunc(v.selChanged)
 	v.AddPage(v.list.GetName(), tv, true, true)
 
 	details := newDetailsView(app, v.backCmd)
@@ -67,9 +72,30 @@ func newResourceView(title string, app *appView, list resource.List) resourceVie
 	return &v
 }
 
+func (v *resourceView) stopUpdates() {
+	if v.cancelFn != nil {
+		log.Debug().Msgf(">>> STOP updates %s", v.list.GetName())
+		v.cancelFn()
+	}
+}
+
+func (v *resourceView) restartUpdates() {
+	log.Debug().Msgf(">>> RESTART updates %s", v.list.GetName())
+	if v.cancelFn != nil {
+		v.cancelFn()
+	}
+
+	var vctx context.Context
+	vctx, v.cancelFn = context.WithCancel(v.parentCtx)
+	v.update(vctx)
+}
+
 // Init watches all running pods in given namespace
 func (v *resourceView) init(ctx context.Context, ns string) {
-	v.context, v.selectedItem, v.selectedNS = ctx, noSelection, ns
+	v.parentCtx = ctx
+	var vctx context.Context
+	vctx, v.cancelFn = context.WithCancel(ctx)
+	v.selectedItem, v.selectedNS = noSelection, ns
 
 	colorer := defaultColorer
 	if v.colorerFn != nil {
@@ -92,25 +118,15 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 		}
 	}
 
-	go v.updater(ctx)
+	v.update(vctx)
 	v.app.clusterInfoView.refresh()
 	v.refresh()
 	if tv, ok := v.CurrentPage().Item.(*tableView); ok {
 		tv.Select(1, 0)
-		v.selChanged(1, 0)
 	}
 }
 
-func (v *resourceView) reloadList(list resource.List, ns string) {
-	v.suspend()
-	{
-		v.list = list
-		v.list.SetNamespace(ns)
-	}
-	v.resume()
-}
-
-func (v *resourceView) updater(ctx context.Context) {
+func (v *resourceView) update(ctx context.Context) {
 	go func(ctx context.Context) {
 		for {
 			select {
@@ -118,9 +134,6 @@ func (v *resourceView) updater(ctx context.Context) {
 				log.Debug().Msgf("%s cluster updater canceled!", v.list.GetName())
 				return
 			case <-time.After(clusterRefresh):
-				if v.isSuspended() {
-					continue
-				}
 				v.app.QueueUpdateDraw(func() {
 					v.app.clusterInfoView.refresh()
 				})
@@ -135,42 +148,13 @@ func (v *resourceView) updater(ctx context.Context) {
 				log.Debug().Msgf("%s updater canceled!", v.list.GetName())
 				return
 			case <-time.After(time.Duration(v.app.config.K9s.RefreshRate) * time.Second):
-				if v.isSuspended() {
-					continue
-				}
 				v.app.QueueUpdateDraw(func() {
+					log.Debug().Msgf(">>> Refreshing %s", v.list.GetName())
 					v.refresh()
 				})
 			}
 		}
 	}(ctx)
-}
-
-func (v *resourceView) isSuspended() bool {
-	var suspended bool
-	v.mx.Lock()
-	{
-		suspended = v.suspended
-	}
-	v.mx.Unlock()
-
-	return suspended
-}
-
-func (v *resourceView) suspend() {
-	v.mx.Lock()
-	{
-		v.suspended = true
-	}
-	v.mx.Unlock()
-}
-
-func (v *resourceView) resume() {
-	v.mx.Lock()
-	{
-		v.suspended = false
-	}
-	v.mx.Unlock()
 }
 
 func (v *resourceView) setExtraActionsFn(f actionsFn) {
@@ -324,7 +308,7 @@ func (v *resourceView) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	details := v.GetPrimitive("details").(*detailsView)
 	{
-		details.setCategory("View")
+		details.setCategory("YAML")
 		details.setTitle(sel)
 		details.SetTextColor(tcell.ColorMediumAquamarine)
 		details.SetText(colorizeYAML(v.app.styles.Style, raw))
@@ -340,14 +324,18 @@ func (v *resourceView) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	ns, po := namespaced(v.selectedItem)
-	args := make([]string, 0, 10)
-	args = append(args, "edit")
-	args = append(args, v.list.GetName())
-	args = append(args, "-n", ns)
-	args = append(args, "--context", v.app.config.K9s.CurrentContext)
-	args = append(args, po)
-	runK(true, v.app, args...)
+	v.stopUpdates()
+	{
+		ns, po := namespaced(v.selectedItem)
+		args := make([]string, 0, 10)
+		args = append(args, "edit")
+		args = append(args, v.list.GetName())
+		args = append(args, "-n", ns)
+		args = append(args, "--context", v.app.config.K9s.CurrentContext)
+		args = append(args, po)
+		runK(true, v.app, args...)
+	}
+	v.restartUpdates()
 
 	return evt
 }
@@ -388,8 +376,8 @@ func (v *resourceView) refresh() {
 		v.list.SetNamespace(v.selectedNS)
 	}
 	if err := v.list.Reconcile(v.app.informer, v.path); err != nil {
-		log.Error().Err(err).Msg("Reconciliation failed")
-		v.app.flash().errf("Reconciliation failed %s", err)
+		log.Error().Err(err).Msgf("Reconciliation for %s failed", v.title)
+		v.app.flash().errf("Reconciliation for %s failed - %s", v.title, err)
 	}
 	data := v.list.Data()
 	if v.decorateFn != nil {
@@ -425,19 +413,21 @@ func (v *resourceView) selectItem(r, c int) {
 }
 
 func (v *resourceView) switchPage(p string) {
+	log.Debug().Msgf("Switching page to %s", p)
 	if _, ok := v.CurrentPage().Item.(*tableView); ok {
-		v.suspend()
+		v.stopUpdates()
+	} else {
+		log.Debug().Msgf("Not a table %T", v.CurrentPage().Item)
 	}
 
 	v.SwitchToPage(p)
 	v.selectedNS = v.list.GetNamespace()
-	if h, ok := v.GetPrimitive(p).(hinter); ok {
-		v.app.setHints(h.hints())
+	if vu, ok := v.GetPrimitive(p).(hinter); ok {
+		v.app.setHints(vu.hints())
 	}
 
-	log.Info().Msgf("Current page %#v", v.CurrentPage())
 	if _, ok := v.CurrentPage().Item.(*tableView); ok {
-		v.resume()
+		v.restartUpdates()
 	}
 }
 

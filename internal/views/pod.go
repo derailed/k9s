@@ -18,8 +18,10 @@ const containerFmt = "[fg:bg:b]%s([hilite:bg:b]%s[fg:bg:-])"
 type podView struct {
 	*resourceView
 
-	cancel context.CancelFunc
+	childCancelFn context.CancelFunc
 }
+
+var _ updatable = &podView{}
 
 type loggable interface {
 	appView() *appView
@@ -43,15 +45,29 @@ func newPodView(t string, app *appView, list resource.List) resourceViewer {
 	}
 	v.AddPage("picker", picker, true, false)
 	v.AddPage("logs", newLogsView(list.GetName(), &v), true, false)
-	v.switchPage("po")
 
 	return &v
+}
+
+func (v *podView) extraActions(aa keyActions) {
+	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
+	aa[KeyShiftL] = newKeyAction("Logs Previous", v.prevLogsCmd, true)
+	aa[KeyS] = newKeyAction("Shell", v.shellCmd, true)
+	aa[KeyShiftR] = newKeyAction("Sort Ready", v.sortColCmd(1, false), true)
+	aa[KeyShiftS] = newKeyAction("Sort Status", v.sortColCmd(2, true), true)
+	aa[KeyShiftT] = newKeyAction("Sort Restart", v.sortColCmd(3, false), true)
+	aa[KeyShiftC] = newKeyAction("Sort CPU", v.sortColCmd(4, false), true)
+	aa[KeyShiftM] = newKeyAction("Sort MEM", v.sortColCmd(5, false), true)
+	aa[KeyAltC] = newKeyAction("Sort CPU%", v.sortColCmd(6, false), true)
+	aa[KeyAltM] = newKeyAction("Sort MEM%", v.sortColCmd(7, false), true)
+	aa[KeyShiftO] = newKeyAction("Sort Node", v.sortColCmd(8, true), true)
 }
 
 func (v *podView) listContainers(app *appView, _, res, sel string) {
 	if !v.rowSelected() {
 		return
 	}
+
 	po, err := v.app.informer.Get(watch.PodIndex, sel, metav1.GetOptions{})
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to retrieve pod %s", sel)
@@ -63,19 +79,26 @@ func (v *podView) listContainers(app *appView, _, res, sel string) {
 	list := resource.NewContainerList(app.conn(), mx, pod)
 	title := skinTitle(fmt.Sprintf(containerFmt, "Containers", sel), v.app.styles.Style)
 
-	v.suspend()
+	// Stop my updater
+	if v.cancelFn != nil {
+		v.cancelFn()
+	}
+
+	// Span child view
 	cv := newContainerView(title, app, list, fqn(pod.Namespace, pod.Name), v.exitFn)
 	v.AddPage("containers", cv, true, true)
-	ctx, cancel := context.WithCancel(v.context)
-	v.cancel = cancel
+	var ctx context.Context
+	ctx, v.childCancelFn = context.WithCancel(v.parentCtx)
 	cv.init(ctx, pod.Namespace)
 }
 
 func (v *podView) exitFn() {
-	v.cancel()
-	v.switchPage("po")
+	if v.childCancelFn != nil {
+		v.childCancelFn()
+	}
 	v.RemovePage("containers")
-	v.resume()
+	v.switchPage("po")
+	v.restartUpdates()
 }
 
 // Protocol...
@@ -102,7 +125,6 @@ func (v *podView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.viewLogs(false) {
 		return nil
 	}
-
 	return evt
 }
 
@@ -110,7 +132,6 @@ func (v *podView) prevLogsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.viewLogs(true) {
 		return nil
 	}
-
 	return evt
 }
 
@@ -118,12 +139,14 @@ func (v *podView) viewLogs(prev bool) bool {
 	if !v.rowSelected() {
 		return false
 	}
+
 	cc, err := fetchContainers(v.list, v.selectedItem, true)
 	if err != nil {
 		v.app.flash().errf("Unable to retrieve containers %s", err)
 		log.Error().Err(err)
 		return false
 	}
+
 	if len(cc) == 1 {
 		v.showLogs(v.selectedItem, cc[0], v.list.GetName(), v, prev)
 		return true
@@ -148,6 +171,7 @@ func (v *podView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
 		return evt
 	}
+
 	cc, err := fetchContainers(v.list, v.selectedItem, false)
 	if err != nil {
 		v.app.flash().errf("Unable to retrieve containers %s", err)
@@ -169,11 +193,29 @@ func (v *podView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *podView) shellIn(path, co string) {
-	v.suspend()
-	{
-		shellIn(v.app, path, co)
+	v.stopUpdates()
+	shellIn(v.app, path, co)
+	v.restartUpdates()
+}
+
+func (v *podView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
+	return func(evt *tcell.EventKey) *tcell.EventKey {
+		t := v.getTV()
+		t.sortCol.index, t.sortCol.asc = t.nameColIndex()+col, asc
+		t.refresh()
+
+		return nil
 	}
-	v.resume()
+}
+
+// ----------------------------------------------------------------------------
+// Helpers...
+
+func fetchContainers(l resource.List, po string, includeInit bool) ([]string, error) {
+	if len(po) == 0 {
+		return []string{}, nil
+	}
+	return l.Resource().(resource.Containers).Containers(po, includeInit)
 }
 
 func shellIn(a *appView, path, co string) {
@@ -198,35 +240,4 @@ func computeShellArgs(path, co, context string, cfg *string) []string {
 	a = append(a, "--", "sh")
 
 	return a
-}
-
-func (v *podView) extraActions(aa keyActions) {
-	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
-	aa[KeyShiftL] = newKeyAction("Logs Previous", v.prevLogsCmd, true)
-	aa[KeyS] = newKeyAction("Shell", v.shellCmd, true)
-	aa[KeyShiftR] = newKeyAction("Sort Ready", v.sortColCmd(1, false), true)
-	aa[KeyShiftS] = newKeyAction("Sort Status", v.sortColCmd(2, true), true)
-	aa[KeyShiftT] = newKeyAction("Sort Restart", v.sortColCmd(3, false), true)
-	aa[KeyShiftC] = newKeyAction("Sort CPU", v.sortColCmd(4, false), true)
-	aa[KeyShiftM] = newKeyAction("Sort MEM", v.sortColCmd(5, false), true)
-	aa[KeyAltC] = newKeyAction("Sort CPU%", v.sortColCmd(6, false), true)
-	aa[KeyAltM] = newKeyAction("Sort MEM%", v.sortColCmd(7, false), true)
-	aa[KeyShiftO] = newKeyAction("Sort Node", v.sortColCmd(8, true), true)
-}
-
-func (v *podView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		t := v.getTV()
-		t.sortCol.index, t.sortCol.asc = t.nameColIndex()+col, asc
-		t.refresh()
-
-		return nil
-	}
-}
-
-func fetchContainers(l resource.List, po string, includeInit bool) ([]string, error) {
-	if len(po) == 0 {
-		return []string{}, nil
-	}
-	return l.Resource().(resource.Containers).Containers(po, includeInit)
 }

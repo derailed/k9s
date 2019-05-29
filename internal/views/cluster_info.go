@@ -1,6 +1,8 @@
 package views
 
 import (
+	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal/config"
@@ -95,7 +97,7 @@ func (v *clusterInfoView) refresh() {
 	cluster := resource.NewCluster(v.app.conn(), &log.Logger, v.mxs)
 
 	var row int
-	v.GetCell(row, 1).SetText(cluster.ContextName())
+	v.GetCell(row, 1).SetText(cluster.ContextName() + ":" + strconv.Itoa(runtime.NumGoroutine()))
 	row++
 	v.GetCell(row, 1).SetText(cluster.ClusterName())
 	row++
@@ -127,7 +129,7 @@ func (v *clusterInfoView) refresh() {
 	if cpu == "0" {
 		cpu = resource.NAValue
 	}
-	c.SetText(cpu + deltas(strip(c.Text), cpu))
+	c.SetText(cpu + "%" + deltas(strip(c.Text), cpu))
 	row++
 
 	c = v.GetCell(row, 1)
@@ -135,7 +137,7 @@ func (v *clusterInfoView) refresh() {
 	if mem == "0" {
 		mem = resource.NAValue
 	}
-	c.SetText(mem + deltas(strip(c.Text), mem))
+	c.SetText(mem + "%" + deltas(strip(c.Text), mem))
 }
 
 func strip(s string) string {

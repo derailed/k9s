@@ -286,6 +286,9 @@ func (a *APIClient) SwitchContextOrDie(ctx string) {
 }
 
 func (a *APIClient) reset() {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
 	a.client, a.dClient, a.nsClient, a.mxsClient = nil, nil, nil, nil
 }
 

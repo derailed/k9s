@@ -23,8 +23,8 @@ const (
 )
 
 var (
-	crx = regexp.MustCompile(`\A.{0,1}CPU`)
-	mrx = regexp.MustCompile(`\A.{0,1}MEM`)
+	cpuRX = regexp.MustCompile(`\A.{0,1}CPU`)
+	memRX = regexp.MustCompile(`\A.{0,1}MEM`)
 )
 
 type (
@@ -319,7 +319,7 @@ func (v *tableView) doUpdate(data resource.TableData) {
 	fg := config.AsColor(v.app.styles.Style.Table.Header.FgColor)
 	bg := config.AsColor(v.app.styles.Style.Table.Header.BgColor)
 	for col, h := range data.Header {
-		v.addHeaderCell(col, h, fg, bg)
+		v.addHeaderCell(data.NumCols, col, h, fg, bg)
 	}
 	row++
 
@@ -335,7 +335,7 @@ func (v *tableView) doUpdate(data resource.TableData) {
 				fgColor = v.colorerFn(data.Namespace, data.Rows[sk])
 			}
 			for col, field := range data.Rows[sk].Fields {
-				v.addBodyCell(data.Header[col], row, col, field, data.Rows[sk].Deltas[col], fgColor, pads)
+				v.addBodyCell(data.NumCols, data.Header[col], row, col, field, data.Rows[sk].Deltas[col], fgColor, pads)
 			}
 			row++
 		}
@@ -363,12 +363,12 @@ func (v *tableView) sortAllRows(rows resource.RowEvents, sortFn sortFn) (resourc
 	return prim, sec
 }
 
-func (v *tableView) addHeaderCell(col int, name string, fg, bg tcell.Color) {
+func (v *tableView) addHeaderCell(numCols map[string]bool, col int, name string, fg, bg tcell.Color) {
 	c := tview.NewTableCell(v.sortIndicator(col, name))
 	{
 		c.SetExpansion(1)
 		c.SetTextColor(fg)
-		if crx.MatchString(name) || mrx.MatchString(name) {
+		if numCols[name] || cpuRX.MatchString(name) || memRX.MatchString(name) {
 			c.SetAlign(tview.AlignRight)
 		}
 		c.SetBackgroundColor(bg)
@@ -376,10 +376,10 @@ func (v *tableView) addHeaderCell(col int, name string, fg, bg tcell.Color) {
 	v.SetCell(0, col, c)
 }
 
-func (v *tableView) addBodyCell(header string, row, col int, field, delta string, color tcell.Color, pads maxyPad) {
+func (v *tableView) addBodyCell(numCols map[string]bool, header string, row, col int, field, delta string, color tcell.Color, pads maxyPad) {
 	field += deltas(delta, field)
 	align := tview.AlignLeft
-	if crx.MatchString(header) || mrx.MatchString(header) {
+	if numCols[header] || cpuRX.MatchString(header) || memRX.MatchString(header) {
 		align = tview.AlignRight
 	} else if isASCII(field) {
 		field = pad(field, pads[col])

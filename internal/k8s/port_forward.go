@@ -33,6 +33,7 @@ type PortForward struct {
 	logger              *zerolog.Logger
 	active              bool
 	path                string
+	container           string
 	ports               []string
 	age                 time.Time
 }
@@ -57,6 +58,7 @@ func (p *PortForward) Active() bool {
 	return p.active
 }
 
+// SetActive mark a portforward as active.
 func (p *PortForward) SetActive(b bool) {
 	p.active = b
 }
@@ -71,6 +73,11 @@ func (p *PortForward) Path() string {
 	return p.path
 }
 
+// Container returns the targetes container.
+func (p *PortForward) Container() string {
+	return p.container
+}
+
 // Stop terminates a port forard
 func (p *PortForward) Stop() {
 	p.logger.Debug().Msgf("<<< Stopping port forward %q %v", p.path, p.ports)
@@ -79,15 +86,14 @@ func (p *PortForward) Stop() {
 }
 
 // Start initiates a port foward session for a given pod and ports.
-func (p *PortForward) Start(path string, ports []string) (*portforward.PortForwarder, error) {
-	p.path, p.ports, p.age = path, ports, time.Now()
+func (p *PortForward) Start(path, co string, ports []string) (*portforward.PortForwarder, error) {
+	p.path, p.container, p.ports, p.age = path, co, ports, time.Now()
 
 	ns, n := namespaced(path)
 	pod, err := p.DialOrDie().CoreV1().Pods(ns).Get(n, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
-
 	if pod.Status.Phase != v1.PodRunning {
 		return nil, fmt.Errorf("unable to forward port because pod is not running. Current status=%v", pod.Status.Phase)
 	}

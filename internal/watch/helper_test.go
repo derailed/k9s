@@ -17,6 +17,7 @@ func TestMetaFQN(t *testing.T) {
 		e string
 	}{
 		"full": {metav1.ObjectMeta{Namespace: "fred", Name: "blee"}, "fred/blee"},
+		"nons": {metav1.ObjectMeta{Name: "blee"}, "blee"},
 	}
 
 	for k, v := range uu {
@@ -41,6 +42,98 @@ func TestMxResourceDiff(t *testing.T) {
 	for k, v := range uu {
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, v.e, resourceDiff(v.r1, v.r2))
+		})
+	}
+}
+
+func TestToSelector(t *testing.T) {
+	uu := map[string]struct {
+		s string
+		e map[string]string
+	}{
+		"cool": {
+			"app=fred,env=test",
+			map[string]string{"app": "fred", "env": "test"},
+		},
+		"empty": {
+			"",
+			map[string]string{},
+		},
+		"hosed": {
+			"app|blee",
+			map[string]string{},
+		},
+		"toast": {
+			"app,blee",
+			map[string]string{},
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			m := toSelector(u.s)
+			for k, v := range m {
+				assert.Equal(t, u.e[k], v)
+			}
+		})
+	}
+}
+
+func TestMatchesNode(t *testing.T) {
+	uu := map[string]struct {
+		n string
+		s map[string]string
+		e bool
+	}{
+		"cool": {
+			"n1",
+			map[string]string{"spec.nodeName": "n1"},
+			true,
+		},
+		"nomatch": {
+			"n2",
+			map[string]string{"spec.nodeName": "n1"},
+			false,
+		},
+		"matchAll": {
+			"n2",
+			map[string]string{},
+			true,
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, matchesNode(u.n, u.s))
+		})
+	}
+}
+
+func TestMatchesLabels(t *testing.T) {
+	uu := map[string]struct {
+		l, s map[string]string
+		e    bool
+	}{
+		"cool": {
+			map[string]string{"spec.nodeName": "n1"},
+			map[string]string{"spec.nodeName": "n1"},
+			true,
+		},
+		"nomatch": {
+			map[string]string{"spec.nodeName": "n2"},
+			map[string]string{"spec.nodeName": "n1"},
+			false,
+		},
+		"matchAll": {
+			map[string]string{"spec.nodeName": "n2"},
+			map[string]string{},
+			true,
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, matchesLabels(u.l, u.s))
 		})
 	}
 }

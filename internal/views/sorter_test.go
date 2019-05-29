@@ -10,10 +10,11 @@ import (
 
 func TestGroupSort(t *testing.T) {
 	uu := []struct {
-		order  bool
+		asc    bool
 		rows   []string
 		expect []string
 	}{
+		{true, []string{"200m", "100m"}, []string{"100m", "200m"}},
 		{true, []string{"200m", "100m"}, []string{"100m", "200m"}},
 		{false, []string{"200m", "100m"}, []string{"200m", "100m"}},
 		{true, []string{"10", "1"}, []string{"1", "10"}},
@@ -31,10 +32,11 @@ func TestGroupSort(t *testing.T) {
 		{true, []string{"95m", "1h30m"}, []string{"1h30m", "95m"}},
 		{true, []string{"b-21", "b-2"}, []string{"b-2", "b-21"}},
 		{false, []string{"b-21", "b-2"}, []string{"b-21", "b-2"}},
+		{true, []string{"4m", "3m2s"}, []string{"3m2s", "4m"}},
 	}
 
 	for _, u := range uu {
-		g := groupSorter{rows: u.rows, asc: u.order}
+		g := groupSorter{rows: u.rows, asc: u.asc}
 		sort.Sort(g)
 		assert.Equal(t, u.expect, g.rows)
 	}
@@ -42,7 +44,7 @@ func TestGroupSort(t *testing.T) {
 
 func TestRowSort(t *testing.T) {
 	uu := []struct {
-		order        bool
+		asc          bool
 		rows, expect resource.Rows
 	}{
 		{
@@ -65,10 +67,15 @@ func TestRowSort(t *testing.T) {
 			resource.Rows{resource.Row{"200Mi"}, resource.Row{"100Mi"}},
 			resource.Rows{resource.Row{"200Mi"}, resource.Row{"100Mi"}},
 		},
+		{
+			true,
+			resource.Rows{resource.Row{"8m4s"}, resource.Row{"31m"}},
+			resource.Rows{resource.Row{"8m4s"}, resource.Row{"31m"}},
+		},
 	}
 
 	for _, u := range uu {
-		r := rowSorter{index: 0, rows: u.rows, asc: u.order}
+		r := rowSorter{index: 0, rows: u.rows, asc: u.asc}
 		sort.Sort(r)
 		assert.Equal(t, u.expect, r.rows)
 	}

@@ -18,7 +18,6 @@ func (s *cmdStack) push(cmd string) {
 		s.stack = s.stack[1 : len(s.stack)-1]
 	}
 	s.stack = append(s.stack, cmd)
-	log.Info().Msgf("Pushed %s %v", cmd, s.stack)
 }
 
 func (s *cmdStack) pop() (string, bool) {

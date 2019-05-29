@@ -56,14 +56,15 @@ func (p *NodeMetrics) Get(MetaFQN string, opts metav1.GetOptions) (interface{}, 
 // NewNodeMetricsInformer return an informer to return node metrix.
 func newNodeMetricsInformer(client k8s.Connection, sync time.Duration, idxs cache.Indexers) cache.SharedIndexInformer {
 	pw := newNodeMxWatcher(client)
+	c, err := client.MXDial()
+	if err != nil {
+		log.Error().Err(err).Msg("NodeMetrix dial")
+		return nil
+	}
 
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(opts metav1.ListOptions) (runtime.Object, error) {
-				c, err := client.MXDial()
-				if err != nil {
-					return nil, err
-				}
 				l, err := c.MetricsV1beta1().NodeMetricses().List(opts)
 				if err == nil {
 					pw.update(l, false)
@@ -71,7 +72,7 @@ func newNodeMetricsInformer(client k8s.Connection, sync time.Duration, idxs cach
 				return l, err
 			},
 			WatchFunc: func(opts metav1.ListOptions) (watch.Interface, error) {
-				pw.Run()
+				go pw.Run()
 				return pw, nil
 			},
 		},
@@ -101,30 +102,30 @@ func newNodeMxWatcher(c k8s.Connection) *nodeMxWatcher {
 
 // Run watcher to monitor node metrics.
 func (n *nodeMxWatcher) Run() {
-	go func() {
-		defer log.Debug().Msg("Node metrics watcher canceled!")
-		for {
-			select {
-			case <-n.doneChan:
-				return
-			case <-time.After(nodeMXRefresh):
-				c, err := n.client.MXDial()
-				if err != nil {
-					return
-				}
-				list, err := c.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{})
-				if err != nil {
-					log.Error().Err(err).Msg("Fetch node metrics")
-				}
-				n.update(list, true)
+	defer log.Debug().Msg("NodeMetrics informer canceled!")
+	c, err := n.client.MXDial()
+	if err != nil {
+		log.Error().Err(err).Msg("NodeMetrix Dial Failed!")
+		return
+	}
+
+	for {
+		select {
+		case <-n.doneChan:
+			return
+		case <-time.After(nodeMXRefresh):
+			list, err := c.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{})
+			if err != nil {
+				log.Error().Err(err).Msg("NodeMetrics List Failed!")
 			}
+			n.update(list, true)
 		}
-	}()
+	}
 }
 
 // Stop the metrics informer.
 func (n *nodeMxWatcher) Stop() {
-	log.Debug().Msg("Stopping node watcher!")
+	log.Debug().Msg("Stopping NodeMetrix informer!")
 	close(n.doneChan)
 	close(n.eventChan)
 }

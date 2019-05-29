@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	// K9sStylesFile represents K9s config file location.
+	// K9sStylesFile represents K9s skins file location.
 	K9sStylesFile = filepath.Join(K9sHome, "skin.yml")
 )
 
@@ -133,7 +133,7 @@ func newStatus() *Status {
 	return &Status{
 		NewColor:       "lightskyblue",
 		ModifyColor:    "greenyellow",
-		AddColor:       "white",
+		AddColor:       "dodgerblue",
 		ErrorColor:     "orangered",
 		HighlightColor: "aqua",
 		KillColor:      "mediumpurple",

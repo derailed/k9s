@@ -24,9 +24,10 @@ type (
 	focusHandler func(tview.Primitive)
 
 	forwarder interface {
-		Start(path string, ports []string) (*portforward.PortForwarder, error)
+		Start(path, co string, ports []string) (*portforward.PortForwarder, error)
 		Stop()
 		Path() string
+		Container() string
 		Ports() []string
 		Active() bool
 		Age() string
@@ -59,6 +60,7 @@ type (
 
 		config          *config.Config
 		styles          *config.Styles
+		bench           *config.Bench
 		version         string
 		flags           *genericclioptions.ConfigFlags
 		pages           *tview.Pages
@@ -78,8 +80,9 @@ type (
 		cmdBuff         *cmdBuff
 		actions         keyActions
 		stopCh          chan struct{}
-		informer        *watch.Meta
+		informer        *watch.Informer
 		forwarders      []forwarder
+		hasSkins        bool
 	}
 )
 
@@ -94,6 +97,7 @@ func NewApp(cfg *config.Config) *appView {
 		cmdBuff:     newCmdBuff(':'),
 	}
 	{
+		v.initBench()
 		v.refreshStyles()
 		v.menuView = newMenuView(&v)
 		v.logoView = newLogoView(&v)
@@ -160,29 +164,36 @@ func (a *appView) startInformer() {
 	if a.flags.Namespace != nil {
 		ns = *a.flags.Namespace
 	}
-	a.informer = watch.NewMeta(a.conn(), ns)
-	log.Debug().Msgf(">> Starting Watcher")
+	a.informer = watch.NewInformer(a.conn(), ns)
 	a.informer.Run(a.stopCh)
 }
 
-func (a *appView) bailOut() {
+// BailOut exists the application.
+func (a *appView) BailOut() {
 	if a.stopCh != nil {
 		log.Debug().Msg("<<<< Stopping Watcher")
 		close(a.stopCh)
+		a.stopCh = nil
 	}
 
 	if a.cancel != nil {
 		a.cancel()
+		a.cancel = nil
 	}
 	if a.cancelSkin != nil {
 		a.cancelSkin()
+		a.cancelSkin = nil
 	}
+	a.stopForwarders()
+	a.Stop()
+}
 
+func (a *appView) stopForwarders() {
 	for _, f := range a.forwarders {
+		log.Debug().Msgf("Deleting forwarder %s", f.Path())
 		f.Stop()
 	}
-
-	a.Stop()
+	a.forwarders = []forwarder{}
 }
 
 func (a *appView) conn() k8s.Connection {
@@ -219,7 +230,7 @@ func (a *appView) stylesUpdater(ctx context.Context) error {
 // Run starts the application loop
 func (a *appView) Run() {
 	// Only enable skin updater while in dev mode.
-	if a.version == devMode {
+	if a.version == devMode && a.hasSkins {
 		var ctx context.Context
 		ctx, a.cancelSkin = context.WithCancel(context.Background())
 		if err := a.stylesUpdater(ctx); err != nil {
@@ -230,7 +241,7 @@ func (a *appView) Run() {
 	go func() {
 		<-time.After(splashTime * time.Second)
 		a.QueueUpdateDraw(func() {
-			a.showPage("main")
+			a.pages.SwitchToPage("main")
 		})
 	}()
 
@@ -247,6 +258,8 @@ func (a *appView) statusReset() {
 
 func (a *appView) status(l flashLevel, msg string) {
 	switch l {
+	case flashErr:
+		a.logoView.err(msg)
 	case flashWarn:
 		a.logoView.warn(msg)
 	case flashInfo:
@@ -342,7 +355,7 @@ func (a *appView) quitCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.cmdMode() {
 		return evt
 	}
-	a.bailOut()
+	a.BailOut()
 
 	return nil
 }
@@ -391,10 +404,6 @@ func (a *appView) gotoResource(res string, record bool) bool {
 	}
 
 	return valid
-}
-
-func (a *appView) showPage(p string) {
-	a.pages.SwitchToPage(p)
 }
 
 func (a *appView) inject(i igniter) {
@@ -457,10 +466,20 @@ func (a *appView) nextFocus() {
 	return
 }
 
+func (a *appView) initBench() {
+	var err error
+	if a.bench, err = config.NewBench(config.K9sBenchmarkFile); err != nil {
+		log.Warn().Err(err).Msg("No benchmark config file found, using defaults.")
+	}
+}
+
 func (a *appView) refreshStyles() {
 	var err error
 	if a.styles, err = config.NewStyles(); err != nil {
 		log.Warn().Err(err).Msg("No skin file found. Loading defaults.")
+	}
+	if err == nil {
+		a.hasSkins = true
 	}
 	a.styles.Update()
 

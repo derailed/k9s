@@ -196,7 +196,7 @@ func (c *Config) Validate() {
 // Dump debug...
 func (c *Config) Dump(msg string) {
 	log.Debug().Msg(msg)
-	log.Debug().Msgf("Current Context: %s\n", c.K9s.CurrentCluster)
+	log.Debug().Msgf("Current Cluster: %s\n", c.K9s.CurrentCluster)
 	for k, cl := range c.K9s.Clusters {
 		log.Debug().Msgf("K9s cluster: %s -- %s\n", k, cl.Namespace)
 	}

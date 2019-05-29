@@ -80,6 +80,7 @@ func (v *benchView) init(ctx context.Context, _ string) {
 	v.refresh()
 	tv.sortCol.index, tv.sortCol.asc = tv.nameColIndex()+7, true
 	tv.refresh()
+	tv.Select(1, 0)
 	v.app.SetFocus(tv)
 }
 
@@ -88,20 +89,6 @@ func (v *benchView) refresh() {
 	tv.update(v.hydrate())
 	tv.resetTitle()
 	v.selChanged(v.selectedRow, 0)
-}
-
-func (v *benchView) getTV() *tableView {
-	if vu, ok := v.GetPrimitive("table").(*tableView); ok {
-		return vu
-	}
-	return nil
-}
-
-func (v *benchView) getDetails() *detailsView {
-	if vu, ok := v.GetPrimitive("details").(*detailsView); ok {
-		return vu
-	}
-	return nil
 }
 
 func (v *benchView) registerActions() {
@@ -119,6 +106,7 @@ func (v *benchView) getTitle() string {
 }
 
 func (v *benchView) selChanged(r, c int) {
+	log.Info().Msgf("Bench sel changed %d:%d", r, c)
 	tv := v.getTV()
 	if r == 0 || tv.GetCell(r, 0) == nil {
 		v.selectedItem = ""
@@ -148,14 +136,13 @@ func (v *benchView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if sel == "" {
 		return nil
 	}
-
-	data, err := ioutil.ReadFile(filepath.Join(K9sBenchDir, sel))
+	dir := filepath.Join(K9sBenchDir, v.app.config.K9s.CurrentCluster)
+	data, err := ioutil.ReadFile(filepath.Join(dir, sel))
 	if err != nil {
 		log.Error().Err(err).Msg("Read failed")
 		v.app.flash().errf("Unable to load bench file %s", err)
 		return nil
 	}
-	log.Debug().Msgf("Bench %v", string(data))
 	vu := v.getDetails()
 	vu.Clear()
 	fmt.Fprintln(vu, string(data))
@@ -176,8 +163,9 @@ func (v *benchView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
+	dir := filepath.Join(K9sBenchDir, v.app.config.K9s.CurrentCluster)
 	showModal(v.Pages, fmt.Sprintf("Deleting `%s are you sure?", sel), "table", func() {
-		if err := os.Remove(filepath.Join(K9sBenchDir, sel)); err != nil {
+		if err := os.Remove(filepath.Join(dir, sel)); err != nil {
 			v.app.flash().errf("Unable to delete file %s", err)
 			log.Error().Err(err).Msg("Delete failed")
 			return
@@ -203,22 +191,28 @@ func (v *benchView) hints() hints {
 }
 
 func (v *benchView) hydrate() resource.TableData {
-	cmds := helpCmds(v.app.conn())
-
 	data := resource.TableData{
-		Header:    benchHeader,
-		Rows:      make(resource.RowEvents, len(cmds)),
+		Header: benchHeader,
+		Rows:   make(resource.RowEvents, 10),
+		NumCols: map[string]bool{
+			benchHeader[3]: true,
+			benchHeader[4]: true,
+			benchHeader[5]: true,
+			benchHeader[6]: true,
+		},
 		Namespace: resource.AllNamespaces,
 	}
 
-	ff, err := ioutil.ReadDir(K9sBenchDir)
+	dir := filepath.Join(K9sBenchDir, v.app.config.K9s.CurrentCluster)
+	log.Debug().Msgf("----> DIR %s", dir)
+	ff, err := ioutil.ReadDir(dir)
 	if err != nil {
 		log.Error().Err(err).Msg("Reading bench dir")
 		v.app.flash().errf("Unable to read bench directory %s", err)
 	}
 
 	for _, f := range ff {
-		bench, err := ioutil.ReadFile(filepath.Join(K9sBenchDir, f.Name()))
+		bench, err := ioutil.ReadFile(filepath.Join(dir, f.Name()))
 		if err != nil {
 			continue
 		}
@@ -269,7 +263,7 @@ func augmentRow(fields resource.Row, data string) {
 				sum += m
 			}
 		}
-		fields[col] = strconv.Itoa(sum)
+		fields[col] = asNum(sum)
 	}
 	col++
 
@@ -282,7 +276,7 @@ func augmentRow(fields resource.Row, data string) {
 				sum += m
 			}
 		}
-		fields[col] = strconv.Itoa(sum)
+		fields[col] = asNum(sum)
 	}
 }
 
@@ -305,14 +299,29 @@ func (v *benchView) watchBenchDir(ctx context.Context) error {
 					v.refresh()
 				})
 			case err := <-w.Errors:
-				log.Info().Err(err).Msg("Skin watcher failed")
+				log.Info().Err(err).Msg("Dir Watcher failed")
 				return
 			case <-ctx.Done():
+				log.Debug().Msg("!!!! FS WATCHER DONE!!")
 				w.Close()
 				return
 			}
 		}
 	}()
 
-	return w.Add(K9sBenchDir)
+	return w.Add(filepath.Join(K9sBenchDir, v.app.config.K9s.CurrentCluster))
+}
+
+func (v *benchView) getTV() *tableView {
+	if vu, ok := v.GetPrimitive("table").(*tableView); ok {
+		return vu
+	}
+	return nil
+}
+
+func (v *benchView) getDetails() *detailsView {
+	if vu, ok := v.GetPrimitive("details").(*detailsView); ok {
+		return vu
+	}
+	return nil
 }

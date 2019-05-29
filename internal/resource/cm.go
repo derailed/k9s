@@ -73,6 +73,13 @@ func (*ConfigMap) Header(ns string) Row {
 	return append(hh, "NAME", "DATA", "AGE")
 }
 
+// NumCols designates if column is numerical.
+func (*ConfigMap) NumCols(n string) map[string]bool {
+	return map[string]bool{
+		"DATA": true,
+	}
+}
+
 // Fields retrieves displayable fields.
 func (r *ConfigMap) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))

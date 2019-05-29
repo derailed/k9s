@@ -10,11 +10,8 @@ type cronJobView struct {
 }
 
 func newCronJobView(t string, app *appView, list resource.List) resourceViewer {
-	v := cronJobView{
-		resourceView: newResourceView(t, app, list).(*resourceView),
-	}
+	v := cronJobView{resourceView: newResourceView(t, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
-	v.switchPage("cronjob")
 
 	return &v
 }

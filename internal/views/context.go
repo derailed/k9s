@@ -13,15 +13,14 @@ type contextView struct {
 
 func newContextView(t string, app *appView, list resource.List) resourceViewer {
 	v := contextView{newResourceView(t, app, list).(*resourceView)}
-	{
-		v.extraActionsFn = v.extraActions
-		v.getTV().cleanseFn = v.cleanser
-		v.switchPage("ctx")
-	}
+	v.extraActionsFn = v.extraActions
+	v.getTV().cleanseFn = v.cleanser
+
 	return &v
 }
 
 func (v *contextView) extraActions(aa keyActions) {
+	delete(v.getTV().actions, KeyShiftA)
 	aa[tcell.KeyEnter] = newKeyAction("Switch", v.useCmd, true)
 }
 
@@ -59,6 +58,7 @@ func (v *contextView) useContext(name string) error {
 	v.app.startInformer()
 	v.app.config.Reset()
 	v.app.config.Save()
+	v.app.stopForwarders()
 	v.app.flash().infof("Switching context to %s", ctx)
 	v.refresh()
 	if tv, ok := v.GetPrimitive("ctx").(*tableView); ok {

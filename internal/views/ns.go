@@ -22,13 +22,10 @@ type namespaceView struct {
 
 func newNamespaceView(t string, app *appView, list resource.List) resourceViewer {
 	v := namespaceView{newResourceView(t, app, list).(*resourceView)}
-	{
-		v.extraActionsFn = v.extraActions
-		v.selectedFn = v.getSelectedItem
-		v.decorateFn = v.decorate
-		v.getTV().cleanseFn = v.cleanser
-		v.switchPage("ns")
-	}
+	v.extraActionsFn = v.extraActions
+	v.selectedFn = v.getSelectedItem
+	v.decorateFn = v.decorate
+	v.getTV().cleanseFn = v.cleanser
 
 	return &v
 }

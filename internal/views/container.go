@@ -1,6 +1,7 @@
 package views
 
 import (
+	"context"
 	"errors"
 	"strings"
 
@@ -29,10 +30,27 @@ func newContainerView(t string, app *appView, list resource.List, path string, e
 		v.exitFn = exitFn
 	}
 	v.AddPage("logs", newLogsView(list.GetName(), &v), true, false)
-	v.switchPage("co")
-	v.selChanged(1, 0)
 
 	return &v
+}
+
+func (v *containerView) init(ctx context.Context, ns string) {
+	v.resourceView.init(ctx, ns)
+	// v.selChanged(1, 0)
+}
+
+func (v *containerView) extraActions(aa keyActions) {
+	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
+	aa[KeyShiftF] = newKeyAction("PortForward", v.portFwdCmd, true)
+	aa[KeyShiftL] = newKeyAction("Logs Previous", v.prevLogsCmd, true)
+	aa[KeyS] = newKeyAction("Shell", v.shellCmd, true)
+	aa[tcell.KeyEscape] = newKeyAction("Back", v.backCmd, false)
+	aa[KeyP] = newKeyAction("Previous", v.backCmd, false)
+	aa[tcell.KeyEnter] = newKeyAction("View Logs", v.logsCmd, false)
+	aa[KeyShiftC] = newKeyAction("Sort CPU", v.sortColCmd(6, false), true)
+	aa[KeyShiftM] = newKeyAction("Sort MEM", v.sortColCmd(7, false), true)
+	aa[KeyAltC] = newKeyAction("Sort CPU%", v.sortColCmd(8, false), true)
+	aa[KeyAltM] = newKeyAction("Sort MEM%", v.sortColCmd(9, false), true)
 }
 
 // Protocol...
@@ -90,27 +108,14 @@ func (v *containerView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	v.suspend()
-	{
-		shellIn(v.app, *v.path, v.selectedItem)
-	}
-	v.resume()
-
+	v.stopUpdates()
+	// v.suspend()
+	// {
+	shellIn(v.app, *v.path, v.selectedItem)
+	// }
+	// v.resume()
+	v.restartUpdates()
 	return nil
-}
-
-func (v *containerView) extraActions(aa keyActions) {
-	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
-	aa[KeyShiftF] = newKeyAction("PortFwd", v.portFwdCmd, true)
-	aa[KeyShiftL] = newKeyAction("Logs Previous", v.prevLogsCmd, true)
-	aa[KeyS] = newKeyAction("Shell", v.shellCmd, true)
-	aa[tcell.KeyEscape] = newKeyAction("Back", v.backCmd, false)
-	aa[KeyP] = newKeyAction("Previous", v.backCmd, false)
-	aa[tcell.KeyEnter] = newKeyAction("View Logs", v.logsCmd, false)
-	aa[KeyShiftC] = newKeyAction("Sort CPU", v.sortColCmd(6, false), true)
-	aa[KeyShiftM] = newKeyAction("Sort MEM", v.sortColCmd(7, false), true)
-	aa[KeyAltC] = newKeyAction("Sort CPU%", v.sortColCmd(8, false), true)
-	aa[KeyAltM] = newKeyAction("Sort MEM%", v.sortColCmd(9, false), true)
 }
 
 func (v *containerView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
@@ -128,15 +133,15 @@ func (v *containerView) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	cell := v.getTV().GetCell(v.selectedRow, 10)
-	ports := strings.Split(cell.Text, ",")
+	portC := v.getTV().GetCell(v.selectedRow, 10)
+	ports := strings.Split(portC.Text, ",")
 	if len(ports) == 0 {
-		v.app.flash().err(errors.New("No ports to foward to"))
+		v.app.flash().err(errors.New("Container exposes no ports"))
 		return nil
 	}
 	port := strings.TrimSpace(ports[0])
 	if port == "" {
-		v.app.flash().err(errors.New("No ports to foward to"))
+		v.app.flash().err(errors.New("Container exposed no ports"))
 		return nil
 	}
 	f := tview.NewForm()
@@ -158,7 +163,8 @@ func (v *containerView) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 	f.AddButton("OK", func() {
 		pf := k8s.NewPortForward(v.app.conn(), &log.Logger)
 		ports := []string{f2 + ":" + f1}
-		fw, err := pf.Start(*v.path, ports)
+		co := strings.TrimSpace(v.getTV().GetCell(v.selectedRow, 0).Text)
+		fw, err := pf.Start(*v.path, co, ports)
 		if err != nil {
 			log.Error().Err(err).Msg("Fort Forward")
 			v.app.flash().errf("PortForward failed! %v", err)
@@ -174,8 +180,10 @@ func (v *containerView) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 			})
 			pf.SetActive(true)
 			if err := f.ForwardPorts(); err != nil {
-				v.app.forwarders = v.app.forwarders[:len(v.app.forwarders)-1]
 				v.app.QueueUpdate(func() {
+					if len(v.app.forwarders) > 0 {
+						v.app.forwarders = v.app.forwarders[:len(v.app.forwarders)-1]
+					}
 					pf.SetActive(false)
 					log.Error().Err(err).Msg("Port forward failed")
 					v.app.flash().errf("PortForward failed %s", err)

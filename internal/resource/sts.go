@@ -73,6 +73,14 @@ func (*StatefulSet) Header(ns string) Row {
 	return append(hh, "NAME", "DESIRED", "CURRENT", "AGE")
 }
 
+// NumCols designates if column is numerical.
+func (*StatefulSet) NumCols(n string) map[string]bool {
+	return map[string]bool{
+		"DESIRED": true,
+		"CURRENT": true,
+	}
+}
+
 // Fields retrieves displayable fields.
 func (r *StatefulSet) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))

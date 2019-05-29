@@ -208,6 +208,17 @@ func (*Pod) Header(ns string) Row {
 	)
 }
 
+// NumCols designates if column is numerical.
+func (*Pod) NumCols(n string) map[string]bool {
+	return map[string]bool{
+		"CPU":  true,
+		"MEM":  true,
+		"%CPU": true,
+		"%MEM": true,
+		"RS":   true,
+	}
+}
+
 // Fields retrieves displayable fields.
 func (r *Pod) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
