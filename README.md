@@ -182,7 +182,7 @@ benchmarks:
 K9s uses aliases to navigate most K8s resources.
 
 | Command               | Result                                             | Example                    |
-|-----------------------|----------------------------------------------------|----------------------------|
+| --------------------- | -------------------------------------------------- | -------------------------- |
 | `:`alias`<ENTER>`     | View a Kubernetes resource aliases                 | `:po<ENTER>`               |
 | `?`                   | Show keyboard shortcuts and help                   |                            |
 | `Ctrl-a`              | Show all available resource alias                  | select+`<ENTER>` to view   |
@@ -196,7 +196,8 @@ K9s uses aliases to navigate most K8s resources.
 
 ## Demo Video
 
-1. [K9s Demo](https://youtu.be/k7zseUhaXeU)
+1. [K9s v0 Demo](https://youtu.be/k7zseUhaXeU)
+2. [K9s v0.7.0 Features](https://youtu.be/83jYehwlql8)
 
 
 ## Screenshots
@@ -377,7 +378,7 @@ k9s:
 Available color names are defined below:
 
 | Color Names          |                |                  |                   |                 |
-|----------------------|----------------|------------------|-------------------|-----------------|
+| -------------------- | -------------- | ---------------- | ----------------- | --------------- |
 | black                | maroon         | green            | olive             | navy            |
 | purple               | teal           | silver           | gray              | red             |
 | lime                 | yellow         | blue             | fuchsia           | aqua            |

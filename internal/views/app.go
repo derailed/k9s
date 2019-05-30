@@ -384,7 +384,7 @@ func (a *appView) fwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	a.inject(newForwardView(a))
+	a.inject(newForwardView("", a, nil))
 	return nil
 }
 

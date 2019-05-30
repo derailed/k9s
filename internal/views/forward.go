@@ -31,7 +31,9 @@ type forwardView struct {
 	bench   *benchmark
 }
 
-func newForwardView(app *appView) *forwardView {
+var _ resourceViewer = &forwardView{}
+
+func newForwardView(ns string, app *appView, list resource.List) resourceViewer {
 	v := forwardView{
 		Pages: tview.NewPages(),
 		app:   app,
@@ -49,6 +51,11 @@ func newForwardView(app *appView) *forwardView {
 
 	return &v
 }
+
+func (v *forwardView) setEnterFn(enterFn)          {}
+func (v *forwardView) setColorerFn(colorerFn)      {}
+func (v *forwardView) setDecorateFn(decorateFn)    {}
+func (v *forwardView) setExtraActionsFn(actionsFn) {}
 
 // Init the view.
 func (v *forwardView) init(ctx context.Context, _ string) {

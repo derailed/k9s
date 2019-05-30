@@ -63,10 +63,10 @@ func (c *command) run(cmd string) bool {
 		c.app.inject(newHelpView(c.app))
 		return true
 	case cmd == "pf":
-		c.app.inject(newForwardView(c.app))
+		c.app.inject(newForwardView("", c.app, nil))
 		return true
 	case cmd == "be":
-		c.app.inject(newBenchView(c.app))
+		c.app.inject(newBenchView("", c.app, nil))
 		return true
 	case cmd == "alias":
 		c.app.inject(newAliasView(c.app))

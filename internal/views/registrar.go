@@ -293,6 +293,16 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 			api:    "",
 			viewFn: newSubjectView,
 		},
+		"pf": {
+			title:  "PortForward",
+			api:    "",
+			viewFn: newForwardView,
+		},
+		"be": {
+			title:  "Benchmark",
+			api:    "",
+			viewFn: newBenchView,
+		},
 	}
 
 	rev, ok, err := c.SupportsRes("autoscaling", []string{"v1", "v2beta1", "v2beta2"})

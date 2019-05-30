@@ -43,7 +43,7 @@ type benchView struct {
 	actions      keyActions
 }
 
-func newBenchView(app *appView) *benchView {
+func newBenchView(_ string, app *appView, _ resource.List) resourceViewer {
 	v := benchView{
 		Pages:   tview.NewPages(),
 		actions: make(keyActions),
@@ -68,6 +68,11 @@ func newBenchView(app *appView) *benchView {
 
 	return &v
 }
+
+func (v *benchView) setEnterFn(enterFn)          {}
+func (v *benchView) setColorerFn(colorerFn)      {}
+func (v *benchView) setDecorateFn(decorateFn)    {}
+func (v *benchView) setExtraActionsFn(actionsFn) {}
 
 // Init the view.
 func (v *benchView) init(ctx context.Context, _ string) {
