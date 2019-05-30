@@ -36,7 +36,6 @@ func newContainerView(t string, app *appView, list resource.List, path string, e
 
 func (v *containerView) init(ctx context.Context, ns string) {
 	v.resourceView.init(ctx, ns)
-	// v.selChanged(1, 0)
 }
 
 func (v *containerView) extraActions(aa keyActions) {
