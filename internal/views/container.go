@@ -109,11 +109,7 @@ func (v *containerView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	v.stopUpdates()
-	// v.suspend()
-	// {
 	shellIn(v.app, *v.path, v.selectedItem)
-	// }
-	// v.resume()
 	v.restartUpdates()
 	return nil
 }

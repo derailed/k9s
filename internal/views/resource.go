@@ -45,11 +45,10 @@ type resourceView struct {
 	colorerFn      colorerFn
 	actions        keyActions
 	mx             sync.Mutex
-	// suspended      bool
-	nsListAccess bool
-	path         *string
-	cancelFn     context.CancelFunc
-	parentCtx    context.Context
+	nsListAccess   bool
+	path           *string
+	cancelFn       context.CancelFunc
+	parentCtx      context.Context
 }
 
 func newResourceView(title string, app *appView, list resource.List) resourceViewer {
