@@ -116,7 +116,7 @@ func (i *Informer) List(res, ns string, opts metav1.ListOptions) (k8s.Collection
 }
 
 // Get a resource by name.
-func (i Informer) Get(res, fqn string, opts metav1.GetOptions) (interface{}, error) {
+func (i *Informer) Get(res, fqn string, opts metav1.GetOptions) (interface{}, error) {
 	if informer, ok := i.informers[res]; ok {
 		return informer.Get(fqn, opts)
 	}
