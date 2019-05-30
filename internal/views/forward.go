@@ -75,6 +75,7 @@ func (v *forwardView) getTV() *tableView {
 
 func (v *forwardView) reload() {
 	path := benchConfig(v.app.config.K9s.CurrentCluster)
+	log.Debug().Msgf("Reloading config %s", path)
 	if err := v.app.bench.Reload(path); err != nil {
 		log.Error().Err(err).Msg("Bench config reload")
 		v.app.flash().err(err)
@@ -328,17 +329,13 @@ func watchFS(ctx context.Context, app *appView, dir, file string, cb func()) err
 		return err
 	}
 
-	path := filepath.Join(dir, file)
-	if file == "" {
-		path = ""
-	}
 	go func() {
 		for {
 			select {
 			case evt := <-w.Events:
-				log.Debug().Msgf("Event %#v", evt)
-				if file == "" || evt.Name == path {
-					log.Debug().Msgf("FS %s event %v", dir, evt)
+				log.Debug().Msgf("FS %s event %v", file, evt.Name)
+				if file == "" || evt.Name == file {
+					log.Debug().Msgf("Capuring Event %#v", evt)
 					app.QueueUpdateDraw(func() {
 						cb()
 					})
