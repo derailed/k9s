@@ -12,12 +12,25 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ## Change Logs
 
+### AfterMath
+
+Looks like I've broken some stuff in the excitement of 0.7.0! As I ran thru the video this am, I noticed the last minute screen dumps might not be a viable feature. As [Norbert](https://github.com/ncsibra) correctly points out, in issue #187 (Thanks Norbert!!), retrieving screen dumps was a pain. So I've put together a quick ScreenDump view alias `sd` to view the screen snapshots and allows to pop your editor of choice upon selection to view the screen dump file content.
+
+NOTE: You will need to use an EDITOR env var to tell K9s which editor you want to use.
+
+```shell
+# For example...
+export EDITOR=vim
+```
+
+This is a quick turn around, hopefully I did not hose anything else in the process ;(
 
 ---
 
 ## Resolved Bugs/Features
 
 + [Issue #200](https://github.com/derailed/k9s/issues/200)
++ [Issue #187](https://github.com/derailed/k9s/issues/187)
 
 ---
 
