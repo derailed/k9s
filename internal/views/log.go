@@ -3,7 +3,10 @@ package views
 import (
 	"fmt"
 	"io"
+	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
@@ -21,6 +24,7 @@ type logView struct {
 	ansiWriter io.Writer
 	autoScroll bool
 	actions    keyActions
+	path       string
 }
 
 func newLogView(title string, parent masterView) *logView {
@@ -47,13 +51,14 @@ func newLogView(title string, parent masterView) *logView {
 	v.AddItem(v.logs, 0, 1, true)
 
 	v.actions = keyActions{
-		tcell.KeyEscape: {description: "Back", action: v.backCmd, visible: true},
-		KeyC:            {description: "Clear", action: v.clearCmd, visible: true},
-		KeyS:            {description: "Toggle AutoScroll", action: v.toggleScrollCmd, visible: true},
-		KeyG:            {description: "Top", action: v.topCmd, visible: false},
-		KeyShiftG:       {description: "Bottom", action: v.bottomCmd, visible: false},
-		KeyF:            {description: "Up", action: v.pageUpCmd, visible: false},
-		KeyB:            {description: "Down", action: v.pageDownCmd, visible: false},
+		tcell.KeyEscape: newKeyAction("Back", v.backCmd, true),
+		KeyC:            newKeyAction("Clear", v.clearCmd, true),
+		KeyS:            newKeyAction("Toggle AutoScroll", v.toggleScrollCmd, true),
+		KeyG:            newKeyAction("Top", v.topCmd, false),
+		KeyShiftG:       newKeyAction("Bottom", v.bottomCmd, false),
+		KeyF:            newKeyAction("Up", v.pageUpCmd, false),
+		KeyB:            newKeyAction("Down", v.pageDownCmd, false),
+		tcell.KeyCtrlS:  newKeyAction("Save", v.saveCmd, true),
 	}
 	v.logs.SetInputCapture(v.keyboard)
 
@@ -110,6 +115,37 @@ func (v *logView) update() {
 
 // ----------------------------------------------------------------------------
 // Actions...
+
+func (v *logView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if err := os.MkdirAll(K9sDump, 0744); err != nil {
+		log.Error().Err(err).Msgf("Mkdir K9s dump")
+		return nil
+	}
+
+	now := time.Now().UnixNano()
+	fName := fmt.Sprintf("%s-%d.log", strings.Replace(v.path, "/", "-", -1), now)
+
+	path := filepath.Join(K9sDump, fName)
+	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
+	file, err := os.OpenFile(path, mod, 0644)
+	defer func() {
+		if file != nil {
+			file.Close()
+		}
+	}()
+	if err != nil {
+		log.Error().Err(err).Msgf("LogFile create %s", path)
+		return nil
+	}
+
+	if _, err := fmt.Fprintf(file, v.logs.GetText(true)); err != nil {
+		log.Error().Err(err).Msgf("Log dump %s", v.path)
+	}
+	v.app.flash().infof("Log %s saved successfully!", path)
+	log.Debug().Msgf("Log %s saved successfully!", path)
+
+	return nil
+}
 
 func (v *logView) toggleScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.autoScroll = !v.autoScroll

@@ -12,15 +12,21 @@ import (
 
 func init() {
 	config.EnsurePath(config.K9sLogs, config.DefaultDirMod)
-
-	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
-	if file, err := os.OpenFile(config.K9sLogs, mod, config.DefaultFileMod); err == nil {
-		log.Logger = log.Output(zerolog.ConsoleWriter{Out: file})
-	} else {
-		panic(err)
-	}
 }
 
 func main() {
+	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
+	file, err := os.OpenFile(config.K9sLogs, mod, config.DefaultFileMod)
+	defer func() {
+		if file != nil {
+			file.Close()
+		}
+	}()
+	if err != nil {
+		panic(err)
+	}
+
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: file})
+
 	cmd.Execute()
 }

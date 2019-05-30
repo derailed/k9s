@@ -121,6 +121,7 @@ func (v *logsView) doLoad(path, co string) error {
 	l.logs.Clear()
 	fmat := skinTitle(fmt.Sprintf(logFmt, path, co), v.parent.appView().styles.Style)
 	l.SetTitle(fmat)
+	l.path = path
 
 	c := make(chan string, 10)
 	go func(l *logView) {

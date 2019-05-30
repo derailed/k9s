@@ -1,11 +1,15 @@
 package views
 
 import (
+	"encoding/csv"
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
@@ -86,8 +90,7 @@ func newTableView(app *appView, title string) *tableView {
 
 func (v *tableView) bindKeys() {
 	v.actions[KeyShiftI] = newKeyAction("Invert", v.sortInvertCmd, false)
-	v.actions[KeyShiftN] = newKeyAction("Sort Name", v.sortColCmd(0), true)
-	v.actions[KeyShiftA] = newKeyAction("Sort Age", v.sortColCmd(-1), true)
+	v.actions[tcell.KeyCtrlS] = newKeyAction("Save", v.saveCmd, true)
 
 	v.actions[KeySlash] = newKeyAction("Filter Mode", v.activateCmd, false)
 	v.actions[tcell.KeyEscape] = newKeyAction("Filter Reset", v.resetCmd, false)
@@ -96,6 +99,9 @@ func (v *tableView) bindKeys() {
 	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[tcell.KeyBackspace] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[tcell.KeyDelete] = newKeyAction("Erase", v.eraseCmd, false)
+
+	v.actions[KeyShiftN] = newKeyAction("Sort Name", v.sortColCmd(0), true)
+	v.actions[KeyShiftA] = newKeyAction("Sort Age", v.sortColCmd(-1), true)
 }
 
 func (v *tableView) clearSelection() {
@@ -131,6 +137,57 @@ func (v *tableView) setSelection() {
 	if v.GetRowCount() > 0 {
 		v.Select(1, 0)
 	}
+}
+
+// K9sDump represents a directory where K9s artifacts will be persisted.
+var K9sDump = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-screens-%s", config.MustK9sUser()))
+
+const (
+	fullFmat = "%s-%s-%d.csv"
+	noNSFmat = "%s-%d.csv"
+)
+
+func (v *tableView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if err := os.MkdirAll(K9sDump, 0744); err != nil {
+		log.Error().Err(err).Msgf("Mkdir K9s dump")
+		return nil
+	}
+
+	ns, now := v.data.Namespace, time.Now().UnixNano()
+	if ns == resource.AllNamespaces {
+		ns = resource.AllNamespace
+	}
+	fName := fmt.Sprintf(fullFmat, v.baseTitle, ns, now)
+	if ns == resource.NotNamespaced {
+		fName = fmt.Sprintf(noNSFmat, v.baseTitle, now)
+	}
+
+	path := filepath.Join(K9sDump, fName)
+	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
+	file, err := os.OpenFile(path, mod, 0644)
+	defer func() {
+		if file != nil {
+			file.Close()
+		}
+	}()
+	if err != nil {
+		log.Error().Err(err).Msgf("CSV create %s", path)
+		return nil
+	}
+
+	w := csv.NewWriter(file)
+	w.Write(v.data.Header)
+	for _, r := range v.data.Rows {
+		w.Write(r.Fields)
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		log.Error().Err(err).Msgf("Screen dump %s", v.baseTitle)
+	}
+	v.app.flash().infof("File %s saved successfully!", path)
+	log.Debug().Msgf("File %s saved successfully!", path)
+
+	return nil
 }
 
 func (v *tableView) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
