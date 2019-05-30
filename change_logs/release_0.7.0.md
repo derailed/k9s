@@ -4,11 +4,7 @@
 
 ## Notes
 
-Thank you to all that contributed with flushing out issues with K9s! I'll try to mark some of these issues as fixed. But if you don't mind grab the latest rev and see if we're happier with some of the fixes!
-
-If you've filed an issue please help me verify and close.
-
-Thank you so much for your support and awesome suggestions to make K9s better!!
+Thank you to all that contributed with flushing out issues with K9s! I'll try to mark some of these issues as fixed. But if you don't mind grab the latest rev and see if we're happier with some of the fixes! If you've filed an issue please help me verify and close. Your support, kindness and awesome suggestions to make K9s better is as always very much appreciated!
 
 Also if you dig this tool, please make some noise on social! [@kitesurfer](https://twitter.com/kitesurfer)
 
@@ -18,32 +14,33 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ### Labor Day Weekend?
 
-I've always seem to get this wrong! Does Labor Day weekend mean you get to work on your OSS projects all weekend?
-I am very excited about this drop and hopefully won't be hunamimous on that 🐭??
+I always seem to get this wrong... Does Labor Day weekend mean you get to work on your OSS projects all weekend?
+
+I am very excited about this drop and hopefully won't be hunamimous on this? 🐭
 
 ### Service Traversals
 
-Provided your K8s service is head(Full), you can now navigate to the pods that match the service selector. So you will be able to traverse Pods/Containers directly from a service just like other resources like deployment, cron, sts...
+Provided your K8s services are head(Full), you can now navigate to the pods that match the service selector. So you will be able to traverse Pods/Containers directly from a service just like other resources like deployment, cron, sts...
 
 ### Moving Forward!
 
-K9s now supports port-forwarding! Provided a pod's container exposes a port, you can navigate to the container view, select a container with an exposed port and activate a port-forward directly from K9s without needing to shell out. I think that's very handy. This was indeed a long time coming... Big Thanks and ATTABOY! in full effect this week to [Brent](https://github.com/brentco) for filling the initial issue.
+In this drop, we've added support for port-forwarding that allows you to exercise your container from your local machine. To setup a port-forward, from the Pod view drill down to a selected Pod's containers, select the container that exposes the port of interest and hit `Ctrl-F`. A dialog will popup allowing you to configure a localhost port to forward to. Once set up, K9s will take you to you to the new PortForward view aka `pf`. Pending your terminal feature and container setup, you should be able to pop the forwarded URL directly into your browse. On iTerm2 me think `command+click` does the trick?
 
-That said, these babies are a bit expensive to run, so make sure you choose wisely and delete any superflous port-forwards!! To access the port-forward view directly use `:pf<enter>`.
-BONUS: Pending your terminal of choice, you might even be able to pop the forwarded URL directly into your browse. On iTerm me thinkw `command+click` does the trick?
+Big thanks and ATTABOY! in full effect all week to [Brent](https://github.com/brentco) for filing this initial issue. Please keep in mind, these port-forward babies are a bit expensive to run, so make sure you choose wisely and delete any superflous PFs!!
 
-This feature is very much still work in progress, thinks like basic auth, http verbs, headers, etc... are coming next, so please thread lightly and checkout the README under the Benchmarking section. Your feedback as always, is welcome and encouraged!
+This feature is still work in progress. It does require a new config file to help assist with URL configurations. As it stands, your PortForwards are in effect for the current K9s session and will be terminated on exit. Please thread lightly and checkout the README under the Benchmarking section. Your feedback on this as always, is welcome and encouraged!
 
 ### Hey now!
 
-This is one feature that I think is, pardon my french, `Bitch'n`. K9s now encompassed [Hey](https://github.com/rakyll/hey) from the totaly brilliant and kind Jaana Dogan of Google fame.
-So along with the port-forward feature, you can now benchmark your containers and gather some interesting metrics that may help you configure resources, auto scalers, compare Canary builds, etc... You should also bench your services providing they export ports via NodePort or LoadBalancer, tho very lightly tested as this was a lot of code to punch thru.
+This is one feature that I think is, pardon my french.., totally `Bitch'n`! K9s now bundles [Hey](https://github.com/rakyll/hey) CLI tool from the extremely talented Jaana Dogan of Google fame. Hey allows you to benchmark HTTP service endpoints similar to apache bench.
 
-Useless to say, this feature is still a moving target, as much code still needs to be tuned to make it totally killer. Please checkout the README on how to configure this feature. There are many more improvements that need to happen notably bench'ing service, ingress, etc and will come in subsequent K9s drops...
+Benchmarking is enabled via keyboard shortcuts `Ctrl-B` and `Alt-B` to activate/cancel a benchmark while in PortForward and Service views. Benchmarking a service assumes the HTTP service is exposed either as NodePort or LoadBalancer. To view your benchmarks, navigate to the new Benchmark view aka `:be<ENTER>` to list your benchmarks and runs statistics.
 
-We think this port-forward/bench combo is totally cool and hope you'll dig these new features? Hopefully you'll agree... With the understanding the full-monty is coming soon, please help us `bench and solidify these features as they are the base ingredients to more features along these lines...
+So you now have the ability to stretch out your cluster legs by benchmarking your pods and services and gather all kind of interesting statistics directly in K9s. Generating load on your resources will help you tune your cluster resources, exercise your auto scalers, compare Canary builds perf, etc...
 
-> NOTE! Has with anything in life `Aim small, Miss small!`. You could totally hose K9s with over zealous benchmarks and forwards, so start small say C:1 N:100, measure and go from there.
+Please keep in mind, this is very much a moving target at this point and will change. Ingress support will come next once we solidy the existing feature. Also checkout the README for additional configuration for this feature. With the understanding the Full Monty is coming, please help us solidify these features as these are the base ingredients to even cooler things coming down the line...
+
+> NOTE! As with anything in life `Aim small, Miss small!`. You could totally overwhelm K9s with over-zealous benchmarks and port-forwards, so please start small say C:1 N:1000, measure and go from there.
 
 ---
 
@@ -51,7 +48,7 @@ We think this port-forward/bench combo is totally cool and hope you'll dig these
 
 + [Issue #198](https://github.com/derailed/k9s/issues/198)
 + [Issue #197](https://github.com/derailed/k9s/issues/197)
-+ [Issue #195](https://github.com/derailed/k9s/issues/195) Thanks [Sebastiaan](https://github.com/tammert). You Rock!!
++ [Issue #195](https://github.com/derailed/k9s/issues/195) Thanks to the awesome [Sebastiaan](https://github.com/tammert). You Rock Sir!!
 + [Issue #194](https://github.com/derailed/k9s/issues/194)
 + [Issue #69](https://github.com/derailed/k9s/issues/69)
 
