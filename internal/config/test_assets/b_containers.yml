@@ -8,7 +8,7 @@ benchmarks:
       requests: 1000
       method: GET
       http2: true
-      address: 10.10.10.10
+      host: 10.10.10.10
       path: /duh
       body: |-
         {"fred": "blee"}
@@ -16,14 +16,16 @@ benchmarks:
         user: "fred"
         password: "blee"
       headers:
-       - "Accept: text/html"
-       - "Content-Type: application/json"
+        Accept:
+          - text/html
+        Content-Type:
+          - application/json
     c2:
       concurrency: 10
       requests: 1500
       method: POST
       http2: false
-      address: 20.20.20.20
+      host: 20.20.20.20
       path: /fred
       body: |-
         {"fred": "blee"}
@@ -31,15 +33,17 @@ benchmarks:
         user: "fred"
         password: "blee"
       headers:
-       - "Accept: text/html"
-       - "Content-Type: application/json"
+        Accept:
+          - text/html
+        Content-Type:
+          - application/json
   services:
     default/nginx:
       concurrency: 2
       requests: 1000
       method: GET
       http2: true
-      address: 10.10.10.10
+      host: 10.10.10.10
       path: /
       body: |-
         {"fred": "blee"}
@@ -47,14 +51,16 @@ benchmarks:
         user: "fred"
         password: "blee"
       headers:
-       - "Accept: text/html"
-       - "Content-Type: application/json"
+        Accept:
+          - text/html
+        Content-Type:
+          - application/json
     blee/fred:
       concurrency: 10
       requests: 1500
       method: POST
       http2: false
-      address: 20.20.20.20
+      host: 20.20.20.20
       path: /blee
       body: |-
         {"fred": "blee"}
@@ -62,5 +68,7 @@ benchmarks:
         user: "fred"
         password: "blee"
       headers:
-       - "Accept: text/html"
-       - "Content-Type: application/json"
+        Accept:
+          - text/html
+        Content-Type:
+          - application/json

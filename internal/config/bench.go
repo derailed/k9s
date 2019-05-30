@@ -2,16 +2,14 @@ package config
 
 import (
 	"io/ioutil"
-	"path/filepath"
+	"net/http"
 
 	"gopkg.in/yaml.v2"
 )
 
 var (
-	// K9sBenchmarks the name of the benchmarks config file.
-	K9sBenchmarks = "benchmarks.yml"
-	// K9sBenchmarkFile represents K9s config file location.
-	K9sBenchmarkFile = filepath.Join(K9sHome, K9sBenchmarks)
+	// K9sBench the name of the benchmarks config file.
+	K9sBench = "bench"
 )
 
 type (
@@ -41,16 +39,16 @@ type (
 
 	// BenchConfig represents a service benchmark.
 	BenchConfig struct {
-		C       int      `yaml:"concurrency"`
-		N       int      `yaml:"requests"`
-		Method  string   `yaml:"method"`
-		Name    string   `yaml:"name"`
-		Address string   `yaml:"address"`
-		Path    string   `yaml:"path"`
-		HTTP2   bool     `yaml:"http2"`
-		Body    string   `yaml:"body"`
-		Auth    Auth     `yaml:"auth"`
-		Headers []string `yaml:"headers"`
+		C       int         `yaml:"concurrency"`
+		N       int         `yaml:"requests"`
+		Method  string      `yaml:"method"`
+		Host    string      `yaml:"host"`
+		Path    string      `yaml:"path"`
+		HTTP2   bool        `yaml:"http2"`
+		Body    string      `yaml:"body"`
+		Auth    Auth        `yaml:"auth"`
+		Headers http.Header `yaml:"headers"`
+		Name    string
 	}
 )
 
@@ -87,15 +85,15 @@ func newBench() *Bench {
 }
 
 // NewBench creates a new default config.
-func NewBench(file string) (*Bench, error) {
+func NewBench(path string) (*Bench, error) {
 	s := &Bench{Benchmarks: newBenchmarks()}
-	err := s.load(file)
+	err := s.load(path)
 	return s, err
 }
 
 // Reload update the configuration from disk.
-func (s *Bench) Reload() error {
-	return s.load(K9sBenchmarkFile)
+func (s *Bench) Reload(path string) error {
+	return s.load(path)
 }
 
 // Load K9s benchmark configs from file
@@ -108,16 +106,6 @@ func (s *Bench) load(path string) error {
 	if err := yaml.Unmarshal(f, &s); err != nil {
 		return err
 	}
-	// s.fill()
 
 	return nil
 }
-
-// func (s *Bench) fill() {
-// 	for k, svc := range s.Benchmarks.Services {
-// 		if svc.Benchmark.empty() {
-// 			svc.Benchmark =
-// 			s.Benchmarks.Services[k] = svc
-// 		}
-// 	}
-// }

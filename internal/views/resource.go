@@ -74,13 +74,11 @@ func newResourceView(title string, app *appView, list resource.List) resourceVie
 
 func (v *resourceView) stopUpdates() {
 	if v.cancelFn != nil {
-		log.Debug().Msgf(">>> STOP updates %s", v.list.GetName())
 		v.cancelFn()
 	}
 }
 
 func (v *resourceView) restartUpdates() {
-	log.Debug().Msgf(">>> RESTART updates %s", v.list.GetName())
 	if v.cancelFn != nil {
 		v.cancelFn()
 	}
@@ -149,7 +147,6 @@ func (v *resourceView) update(ctx context.Context) {
 				return
 			case <-time.After(time.Duration(v.app.config.K9s.RefreshRate) * time.Second):
 				v.app.QueueUpdateDraw(func() {
-					log.Debug().Msgf(">>> Refreshing %s", v.list.GetName())
 					v.refresh()
 				})
 			}

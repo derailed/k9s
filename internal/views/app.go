@@ -97,7 +97,7 @@ func NewApp(cfg *config.Config) *appView {
 		cmdBuff:     newCmdBuff(':'),
 	}
 	{
-		v.initBench()
+		v.initBench(cfg.K9s.CurrentCluster)
 		v.refreshStyles()
 		v.menuView = newMenuView(&v)
 		v.logoView = newLogoView(&v)
@@ -466,9 +466,9 @@ func (a *appView) nextFocus() {
 	return
 }
 
-func (a *appView) initBench() {
+func (a *appView) initBench(cluster string) {
 	var err error
-	if a.bench, err = config.NewBench(config.K9sBenchmarkFile); err != nil {
+	if a.bench, err = config.NewBench(benchConfig(cluster)); err != nil {
 		log.Warn().Err(err).Msg("No benchmark config file found, using defaults.")
 	}
 }

@@ -1,6 +1,7 @@
 package config
 
 import (
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -44,13 +45,13 @@ func TestBenchLoad(t *testing.T) {
 
 func TestBenchServiceLoad(t *testing.T) {
 	uu := map[string]struct {
-		key                   string
-		c, n                  int
-		method, address, path string
-		http2                 bool
-		body                  string
-		auth                  Auth
-		headers               []string
+		key                string
+		c, n               int
+		method, host, path string
+		http2              bool
+		body               string
+		auth               Auth
+		headers            http.Header
 	}{
 		"s1": {
 			"default/nginx",
@@ -62,7 +63,7 @@ func TestBenchServiceLoad(t *testing.T) {
 			true,
 			`{"fred": "blee"}`,
 			Auth{"fred", "blee"},
-			[]string{"Accept: text/html", "Content-Type: application/json"},
+			http.Header{"Accept": []string{"text/html"}, "Content-Type": []string{"application/json"}},
 		},
 		"s2": {
 			"blee/fred",
@@ -74,7 +75,7 @@ func TestBenchServiceLoad(t *testing.T) {
 			false,
 			`{"fred": "blee"}`,
 			Auth{"fred", "blee"},
-			[]string{"Accept: text/html", "Content-Type: application/json"},
+			http.Header{"Accept": []string{"text/html"}, "Content-Type": []string{"application/json"}},
 		},
 	}
 
@@ -88,7 +89,7 @@ func TestBenchServiceLoad(t *testing.T) {
 			assert.Equal(t, u.c, svc.C)
 			assert.Equal(t, u.n, svc.N)
 			assert.Equal(t, u.method, svc.Method)
-			assert.Equal(t, u.address, svc.Address)
+			assert.Equal(t, u.host, svc.Host)
 			assert.Equal(t, u.path, svc.Path)
 			assert.Equal(t, u.http2, svc.HTTP2)
 			assert.Equal(t, u.body, svc.Body)
@@ -100,13 +101,13 @@ func TestBenchServiceLoad(t *testing.T) {
 
 func TestBenchContainerLoad(t *testing.T) {
 	uu := map[string]struct {
-		key                   string
-		c, n                  int
-		method, address, path string
-		http2                 bool
-		body                  string
-		auth                  Auth
-		headers               []string
+		key                string
+		c, n               int
+		method, host, path string
+		http2              bool
+		body               string
+		auth               Auth
+		headers            http.Header
 	}{
 		"c1": {
 			"c1",
@@ -118,7 +119,7 @@ func TestBenchContainerLoad(t *testing.T) {
 			true,
 			`{"fred": "blee"}`,
 			Auth{"fred", "blee"},
-			[]string{"Accept: text/html", "Content-Type: application/json"},
+			http.Header{"Accept": []string{"text/html"}, "Content-Type": []string{"application/json"}},
 		},
 		"c2": {
 			"c2",
@@ -130,7 +131,7 @@ func TestBenchContainerLoad(t *testing.T) {
 			false,
 			`{"fred": "blee"}`,
 			Auth{"fred", "blee"},
-			[]string{"Accept: text/html", "Content-Type: application/json"},
+			http.Header{"Accept": []string{"text/html"}, "Content-Type": []string{"application/json"}},
 		},
 	}
 
@@ -144,7 +145,7 @@ func TestBenchContainerLoad(t *testing.T) {
 			assert.Equal(t, u.c, co.C)
 			assert.Equal(t, u.n, co.N)
 			assert.Equal(t, u.method, co.Method)
-			assert.Equal(t, u.address, co.Address)
+			assert.Equal(t, u.host, co.Host)
 			assert.Equal(t, u.path, co.Path)
 			assert.Equal(t, u.http2, co.HTTP2)
 			assert.Equal(t, u.body, co.Body)

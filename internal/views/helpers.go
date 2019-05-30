@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/derailed/k9s/internal/config"
 	res "github.com/derailed/k9s/internal/resource"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -13,13 +14,33 @@ import (
 )
 
 const (
-	// deltaSign = "𝜟"
-	// plusSign  = "⬆"
-	// minusSign = "⬇︎"
 	deltaSign = "Δ"
 	plusSign  = "↑"
 	minusSign = "↓"
 )
+
+// ContainerID computes container ID based on ns/po/co.
+func containerID(path, co string) string {
+	ns, n := namespaced(path)
+	po := strings.Split(n, "-")[0]
+
+	return ns + "/" + po + ":" + co
+}
+
+// UrlFor computes fq url for a given benchmark configuration.
+func urlFor(cfg config.BenchConfig, co, port string) string {
+	host := "localhost"
+	if cfg.Host != "" {
+		host = cfg.Host
+	}
+
+	path := "/"
+	if cfg.Path != "" {
+		path = cfg.Path
+	}
+
+	return "http://" + host + ":" + port + path
+}
 
 func fqn(ns, n string) string {
 	if ns == "" {

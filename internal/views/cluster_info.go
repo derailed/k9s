@@ -1,8 +1,6 @@
 package views
 
 import (
-	"runtime"
-	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal/config"
@@ -97,7 +95,7 @@ func (v *clusterInfoView) refresh() {
 	cluster := resource.NewCluster(v.app.conn(), &log.Logger, v.mxs)
 
 	var row int
-	v.GetCell(row, 1).SetText(cluster.ContextName() + ":" + strconv.Itoa(runtime.NumGoroutine()))
+	v.GetCell(row, 1).SetText(cluster.ContextName())
 	row++
 	v.GetCell(row, 1).SetText(cluster.ClusterName())
 	row++

@@ -15,7 +15,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const benchFmat = "%s_%s_%d.txt"
+const (
+	benchFmat = "%s_%s_%d.txt"
+	k9sUA     = "k9s/0.0.7"
+)
 
 // K9sBenchDir directory to store K9s benchmark files.
 var K9sBenchDir = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-bench-%s", config.MustK9sUser()))
@@ -23,32 +26,43 @@ var K9sBenchDir = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-bench-%s", config
 type (
 	benchmark struct {
 		canceled bool
-		config   benchConfig
+		config   config.BenchConfig
 		worker   *requester.Work
-	}
-
-	benchConfig struct {
-		Method, Path, URL string
-		C, N              int
 	}
 )
 
-func newBenchmark(cfg benchConfig) (*benchmark, error) {
+func newBenchmark(base string, cfg config.BenchConfig) (*benchmark, error) {
 	b := benchmark{config: cfg}
-	return &b, b.init()
+
+	return &b, b.init(base)
 }
 
-func (b *benchmark) init() error {
-	req, err := http.NewRequest(b.config.Method, b.config.URL, nil)
+func (b *benchmark) init(base string) error {
+	req, err := http.NewRequest(b.config.Method, base, nil)
 	if err != nil {
 		return err
 	}
 
+	if b.config.Auth.User != "" || b.config.Auth.Password != "" {
+		req.SetBasicAuth(b.config.Auth.User, b.config.Auth.Password)
+	}
+
+	req.Header = b.config.Headers
+	ua := req.UserAgent()
+	if ua == "" {
+		ua = k9sUA
+	} else {
+		ua += " " + k9sUA
+	}
+	req.Header.Set("User-Agent", ua)
+
 	b.worker = &requester.Work{
-		Request: req,
-		N:       b.config.N,
-		C:       b.config.C,
-		Output:  "",
+		Request:     req,
+		RequestBody: []byte(b.config.Body),
+		N:           b.config.N,
+		C:           b.config.C,
+		H2:          b.config.HTTP2,
+		Output:      "",
 	}
 
 	return nil
@@ -84,7 +98,7 @@ func (b *benchmark) save(cluster string, r io.Reader) error {
 		return err
 	}
 
-	ns, n := namespaced(b.config.Path)
+	ns, n := namespaced(b.config.Name)
 	file := filepath.Join(dir, fmt.Sprintf(benchFmat, ns, n, time.Now().UnixNano()))
 	f, err := os.Create(file)
 	if err != nil {

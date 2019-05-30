@@ -115,6 +115,68 @@ k9s --context coolCtx
 
 ---
 
+## Benchmarking (Way early Pupp!)
+
+K9s integrates [Hey](https://github.com/rakyll/hey) from the brilliant Jaana Dogan of Google fame. This is a preliminary feature and is only supported for port-forwards at this time.
+
+The Hey tool is currently being used to benchmark port-forwards. Services and ingresses will be enabled next. To setup a port-forward, you will need to navigate to the pod view, select a pod and then select a container that exposes a port. Using `SHIFT-F` a dialog will come up to allow you to pick a local port to forward to. Once successfull, K9s will take you the port-forward view (alias `pf`) listing out you currently active port-forwards. Selecting a port-forward and using `CTRL-B` will run a benchmark on that container. To view the results of your benchmarking runs go to the  benchmark view (alias `be`). You should now be able to select a benchmark and view the run stats details by pressing `<ENTER>`.
+
+By default, the benchmark will be run with the following assumptions:
+
+* Concurrency Level: 1
+* Number of Requests: 200
+* HTTP Verb: GET
+* Path: /
+
+NOTE: Granted, benchmarking a single container might not be all that useful, compared to benchmarking a service/ingress, etc... It does however given you some insights by putting a container under load to help with resources/auto-scaling settings or a quick first glance at comparing Canary's implementation. At this time, we're trying to steel-thread thru the basic mechanics and then escalate to wider use cases once the essentials are in place.
+
+The port forward view is backed by a new K9s config file namely: `$HOME/.k9s/benchmarks.yml`. Changes to this file should update the port-forward view to indicate how you want to run your benchmarks.
+
+Here is a sample benchmarks.yml configuration. Please keep in mind this file will change!
+Provision for specifying auth, headers, payload, etc... will be coming soon...
+
+```yaml
+# This file resides in $HOME/.k9s/benchmarks.yml
+benchmarks:
+  # Indicates the default setting if a container or service rule does not match.
+  defaults:
+    # One concurrent connection
+    concurrency: 1
+    # 500 requests will be sent to an endpoint
+    requests: 500
+  containers:
+    # Containers will need to match a container name whose port has been forwarded.
+    # NOTE: the container ID syntax uses namespace/pod_name:container_name
+    default/nginx:nginx:
+      # Benchmark the container named nginx using GET HTTP verb using http://localhost:someport/
+      concurrency: 1
+      requests: 10000
+      path: /
+      method: POST
+      body:
+        {"fred":"blee"}
+      http2: true
+      header:
+        Accept: text/html
+        Content-Type: application/json
+  services:
+    # NOTE Does nothing yet! ie NYI
+    # Benchmark a service exposed either via nodeport, loadbalancer or ingress.
+    default/nginx:
+      concurrency: 1
+      requests: 500
+      method: GET
+      # This setting will depend on whether service is nodeport or loadbalancer.
+      # Set this to a node if nodeport or LB if applicable. IP or dns name.
+      address: jeanbaptistemmanuel.zorg
+      path: /bumblebeetuna
+      auth:
+        user: zorg
+        password: MultiPass
+```
+
+---
+
 ## Key Bindings
 
 K9s uses aliases to navigate most K8s resources.
@@ -146,15 +208,6 @@ K9s uses aliases to navigate most K8s resources.
 1. Deployments
       <img src="assets/screen_dp.png"/>
 
-
----
-
-## Known Issues
-
-This initial drop is brittle. K9s will most likely blow up...
-
-1. You're running older versions of Kubernetes. K9s works best Kubernetes 1.12+.
-1. You don't have enough RBAC fu to manage your cluster (see RBAC section below).
 
 ---
 
@@ -355,6 +408,15 @@ Available color names are defined below:
 | violet               | wheat          | whitesmoke       | yellowgreen       | grey            |
 | dimgrey              | darkgrey       | darkslategrey    | lightgrey         | lightslategrey  |
 | slategrey            |                |                  |                   |                 |
+
+---
+
+## Known Issues
+
+This initial drop is brittle. K9s will most likely blow up...
+
+1. You're running older versions of Kubernetes. K9s works best Kubernetes 1.12+.
+1. You don't have enough RBAC fu to manage your cluster (see RBAC section below).
 
 ---
 

@@ -52,9 +52,10 @@ func newForwardView(app *appView) *forwardView {
 
 // Init the view.
 func (v *forwardView) init(ctx context.Context, _ string) {
-	if err := watchFS(ctx, v.app, config.K9sHome, config.K9sBenchmarks, v.reload); err != nil {
+	path := benchConfig(v.app.config.K9s.CurrentCluster)
+	if err := watchFS(ctx, v.app, config.K9sHome, path, v.reload); err != nil {
 		log.Error().Err(err).Msg("Benchdir watch failed!")
-		v.app.flash().errf("Unable to watch benchmarks directory %s", err)
+		v.app.flash().errf("RuRoh! Unable to watch benchmarks directory %s : %s", config.K9sHome, err)
 	}
 
 	tv := v.getTV()
@@ -73,7 +74,8 @@ func (v *forwardView) getTV() *tableView {
 }
 
 func (v *forwardView) reload() {
-	if err := v.app.bench.Reload(); err != nil {
+	path := benchConfig(v.app.config.K9s.CurrentCluster)
+	if err := v.app.bench.Reload(path); err != nil {
 		log.Error().Err(err).Msg("Bench config reload")
 		v.app.flash().err(err)
 	}
@@ -129,6 +131,7 @@ func (v *forwardView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if sel == "" {
 		return nil
 	}
+
 	if v.bench != nil {
 		v.app.flash().err(errors.New("Only one benchmark allowed at a time"))
 		return nil
@@ -136,23 +139,23 @@ func (v *forwardView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	tv := v.getTV()
 	r, _ := tv.GetSelection()
-	c, n := v.app.bench.Benchmarks.Defaults.C, v.app.bench.Benchmarks.Defaults.N
-	m, url := config.DefaultMethod, strings.TrimSpace(tv.GetCell(r, 4).Text)
-	container := strings.TrimSpace(tv.GetCell(r, 2).Text)
-	if b, ok := v.app.bench.Benchmarks.Containers[container]; ok {
-		c, n = b.C, b.N
-	}
 
-	cfg := benchConfig{
-		Path:   sel,
-		Method: m,
-		URL:    url,
-		C:      c,
-		N:      n,
+	cfg := config.BenchConfig{
+		C:      config.DefaultC,
+		N:      config.DefaultN,
+		Method: config.DefaultMethod,
+		Path:   "/",
 	}
+	co := strings.TrimSpace(tv.GetCell(r, 2).Text)
+	if b, ok := v.app.bench.Benchmarks.Containers[containerID(sel, co)]; ok {
+		cfg = b
+	}
+	cfg.Name = sel
 	log.Debug().Msgf(">>>>> BENCHCONFIG %#v", cfg)
+
+	base := strings.TrimSpace(tv.GetCell(r, 4).Text)
 	var err error
-	if v.bench, err = newBenchmark(cfg); err != nil {
+	if v.bench, err = newBenchmark(base, cfg); err != nil {
 		log.Error().Err(err).Msg("Bench failed!")
 		v.app.flash().errf("Bench failed %v", err)
 		v.app.statusReset()
@@ -260,8 +263,15 @@ func (v *forwardView) hydrate() resource.TableData {
 	dc, dn := v.app.bench.Benchmarks.Defaults.C, v.app.bench.Benchmarks.Defaults.N
 	for _, f := range v.app.forwarders {
 		c, n := dc, dn
-		if b, ok := v.app.bench.Benchmarks.Containers[f.Container()]; ok {
-			c, n = b.C, b.N
+		cfg, ok := v.app.bench.Benchmarks.Containers[containerID(f.Path(), f.Container())]
+		log.Debug().Msgf("Located %s CFG? %t %v", containerID(f.Path(), f.Container()), ok, cfg)
+		if ok {
+			if cfg.C != 0 {
+				c = cfg.C
+			}
+			if cfg.N != 0 {
+				n = cfg.N
+			}
 		}
 
 		ports := strings.Split(f.Ports()[0], ":")
@@ -271,7 +281,7 @@ func (v *forwardView) hydrate() resource.TableData {
 			na,
 			f.Container(),
 			strings.Join(f.Ports(), ","),
-			urlFor(v.app.bench.Benchmarks, f.Container(), ports[0]),
+			urlFor(cfg, f.Container(), ports[0]),
 			asNum(c),
 			asNum(n),
 			f.Age(),
@@ -292,17 +302,6 @@ func (v *forwardView) resetTitle() {
 
 // ----------------------------------------------------------------------------
 // Helpers...
-
-func urlFor(cfg *config.Benchmarks, co, port string) string {
-	path := "/"
-	if b, ok := cfg.Containers[co]; ok {
-		if b.Path != "" {
-			path = b.Path
-		}
-	}
-
-	return "http://localhost" + ":" + port + path
-}
 
 func showModal(pv *tview.Pages, msg, back string, ok func()) {
 	m := tview.NewModal().
@@ -358,4 +357,10 @@ func watchFS(ctx context.Context, app *appView, dir, file string, cb func()) err
 	}()
 
 	return w.Add(dir)
+}
+
+func benchConfig(cluster string) string {
+	path := filepath.Join(config.K9sHome, config.K9sBench+"-"+cluster+".yml")
+	log.Debug().Msgf("!!!!!!!!!!!!!! Loading bench config from: %s", path)
+	return path
 }
