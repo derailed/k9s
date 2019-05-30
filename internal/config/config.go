@@ -24,6 +24,8 @@ var (
 	K9sConfigFile = filepath.Join(K9sHome, "config.yml")
 	// K9sLogs represents K9s log.
 	K9sLogs = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-%s.log", MustK9sUser()))
+	// K9sDumpDir represents a directory where K9s screen dumps will be persisted.
+	K9sDumpDir = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-screens-%s", MustK9sUser()))
 )
 
 type (

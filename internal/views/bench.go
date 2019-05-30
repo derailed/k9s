@@ -36,7 +36,6 @@ type benchView struct {
 	*tview.Pages
 
 	app          *appView
-	current      igniter
 	cancel       context.CancelFunc
 	selectedItem string
 	selectedRow  int
@@ -48,7 +47,6 @@ func newBenchView(_ string, app *appView, _ resource.List) resourceViewer {
 		Pages:   tview.NewPages(),
 		actions: make(keyActions),
 		app:     app,
-		current: app.content.GetPrimitive("main").(igniter),
 	}
 
 	tv := newTableView(app, benchTitle)
@@ -119,7 +117,6 @@ func (v *benchView) selChanged(r, c int) {
 	}
 	v.selectedRow = r
 	v.selectedItem = strings.TrimSpace(tv.GetCell(r, 7).Text)
-	v.getTV().cmdBuff.setActive(false)
 }
 
 func (v *benchView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
@@ -209,7 +206,6 @@ func (v *benchView) hydrate() resource.TableData {
 	}
 
 	dir := filepath.Join(K9sBenchDir, v.app.config.K9s.CurrentCluster)
-	log.Debug().Msgf("----> DIR %s", dir)
 	ff, err := ioutil.ReadDir(dir)
 	if err != nil {
 		log.Error().Err(err).Msg("Reading bench dir")

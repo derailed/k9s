@@ -25,10 +25,9 @@ const (
 type forwardView struct {
 	*tview.Pages
 
-	app     *appView
-	current igniter
-	cancel  context.CancelFunc
-	bench   *benchmark
+	app    *appView
+	cancel context.CancelFunc
+	bench  *benchmark
 }
 
 var _ resourceViewer = &forwardView{}
@@ -45,8 +44,6 @@ func newForwardView(ns string, app *appView, list resource.List) resourceViewer 
 	tv.colorerFn = forwardColorer
 	tv.currentNS = ""
 	v.AddPage("table", tv, true, true)
-
-	v.current = app.content.GetPrimitive("main").(igniter)
 	v.registerActions()
 
 	return &v
@@ -248,7 +245,7 @@ func (v *forwardView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if tv.cmdBuff.isActive() {
 		tv.cmdBuff.reset()
 	} else {
-		v.app.inject(v.current)
+		v.app.inject(v.app.content.GetPrimitive("main").(igniter))
 	}
 
 	return nil
@@ -362,7 +359,5 @@ func watchFS(ctx context.Context, app *appView, dir, file string, cb func()) err
 }
 
 func benchConfig(cluster string) string {
-	path := filepath.Join(config.K9sHome, config.K9sBench+"-"+cluster+".yml")
-	log.Debug().Msgf("!!!!!!!!!!!!!! Loading bench config from: %s", path)
-	return path
+	return filepath.Join(config.K9sHome, config.K9sBench+"-"+cluster+".yml")
 }

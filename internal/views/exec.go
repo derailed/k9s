@@ -37,6 +37,21 @@ func runK(clear bool, app *appView, args ...string) bool {
 	})
 }
 
+func run(clear bool, app *appView, args ...string) bool {
+	bin, err := exec.LookPath(os.Getenv("EDITOR"))
+	if err != nil {
+		log.Error().Msgf("Unable to find editor command in path %v", err)
+		return false
+	}
+
+	return app.Suspend(func() {
+		if err := execute(clear, bin, args...); err != nil {
+			log.Error().Msgf("Command exited: %T %v %v", err, err, args)
+			app.flash().errf("Command exited: %v", err)
+		}
+	})
+}
+
 func execute(clear bool, bin string, args ...string) error {
 	if clear {
 		clearScreen()

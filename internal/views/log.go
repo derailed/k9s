@@ -117,7 +117,8 @@ func (v *logView) update() {
 // Actions...
 
 func (v *logView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if err := os.MkdirAll(K9sDump, 0744); err != nil {
+	dir := filepath.Join(config.K9sDumpDir, v.app.config.K9s.CurrentCluster)
+	if err := os.MkdirAll(dir, 0744); err != nil {
 		log.Error().Err(err).Msgf("Mkdir K9s dump")
 		return nil
 	}
@@ -125,7 +126,7 @@ func (v *logView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	now := time.Now().UnixNano()
 	fName := fmt.Sprintf("%s-%d.log", strings.Replace(v.path, "/", "-", -1), now)
 
-	path := filepath.Join(K9sDump, fName)
+	path := filepath.Join(dir, fName)
 	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
 	file, err := os.OpenFile(path, mod, 0644)
 	defer func() {

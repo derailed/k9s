@@ -16,8 +16,9 @@ import (
 )
 
 const (
-	splashTime = 1
-	devMode    = "dev"
+	splashTime     = 1
+	devMode        = "dev"
+	clusterRefresh = time.Duration(15 * time.Second)
 )
 
 type (
@@ -154,6 +155,20 @@ func (a *appView) Init(v string, rate int, flags *genericclioptions.ConfigFlags)
 	a.SetRoot(a.pages, true)
 }
 
+func (a *appView) clusterUpdater(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			log.Debug().Msg("Cluster updater canceled!")
+			return
+		case <-time.After(clusterRefresh):
+			a.QueueUpdateDraw(func() {
+				a.clusterInfoView.refresh()
+			})
+		}
+	}
+}
+
 func (a *appView) startInformer() {
 	if a.stopCh != nil {
 		close(a.stopCh)
@@ -229,6 +244,10 @@ func (a *appView) stylesUpdater(ctx context.Context) error {
 
 // Run starts the application loop
 func (a *appView) Run() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go a.clusterUpdater(ctx)
+
 	// Only enable skin updater while in dev mode.
 	if a.version == devMode && a.hasSkins {
 		var ctx context.Context

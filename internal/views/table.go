@@ -89,9 +89,7 @@ func newTableView(app *appView, title string) *tableView {
 }
 
 func (v *tableView) bindKeys() {
-	v.actions[KeyShiftI] = newKeyAction("Invert", v.sortInvertCmd, false)
 	v.actions[tcell.KeyCtrlS] = newKeyAction("Save", v.saveCmd, true)
-
 	v.actions[KeySlash] = newKeyAction("Filter Mode", v.activateCmd, false)
 	v.actions[tcell.KeyEscape] = newKeyAction("Filter Reset", v.resetCmd, false)
 	v.actions[tcell.KeyEnter] = newKeyAction("Filter", v.filterCmd, false)
@@ -100,6 +98,7 @@ func (v *tableView) bindKeys() {
 	v.actions[tcell.KeyBackspace] = newKeyAction("Erase", v.eraseCmd, false)
 	v.actions[tcell.KeyDelete] = newKeyAction("Erase", v.eraseCmd, false)
 
+	v.actions[KeyShiftI] = newKeyAction("Invert", v.sortInvertCmd, false)
 	v.actions[KeyShiftN] = newKeyAction("Sort Name", v.sortColCmd(0), true)
 	v.actions[KeyShiftA] = newKeyAction("Sort Age", v.sortColCmd(-1), true)
 }
@@ -139,16 +138,14 @@ func (v *tableView) setSelection() {
 	}
 }
 
-// K9sDump represents a directory where K9s artifacts will be persisted.
-var K9sDump = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-screens-%s", config.MustK9sUser()))
-
 const (
 	fullFmat = "%s-%s-%d.csv"
 	noNSFmat = "%s-%d.csv"
 )
 
 func (v *tableView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if err := os.MkdirAll(K9sDump, 0744); err != nil {
+	dir := filepath.Join(config.K9sDumpDir, v.app.config.K9s.CurrentCluster)
+	if err := os.MkdirAll(dir, 0744); err != nil {
 		log.Error().Err(err).Msgf("Mkdir K9s dump")
 		return nil
 	}
@@ -162,7 +159,7 @@ func (v *tableView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 		fName = fmt.Sprintf(noNSFmat, v.baseTitle, now)
 	}
 
-	path := filepath.Join(K9sDump, fName)
+	path := filepath.Join(dir, fName)
 	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
 	file, err := os.OpenFile(path, mod, 0644)
 	defer func() {

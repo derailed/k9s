@@ -17,10 +17,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const (
-	noSelection    = ""
-	clusterRefresh = time.Duration(15 * time.Second)
-)
+const noSelection = ""
 
 type updatable interface {
 	restartUpdates()
@@ -128,20 +125,6 @@ func (v *resourceView) update(ctx context.Context) {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Debug().Msgf("%s cluster updater canceled!", v.list.GetName())
-				return
-			case <-time.After(clusterRefresh):
-				v.app.QueueUpdateDraw(func() {
-					v.app.clusterInfoView.refresh()
-				})
-			}
-		}
-	}(ctx)
-
-	go func(ctx context.Context) {
-		for {
-			select {
-			case <-ctx.Done():
 				log.Debug().Msgf("%s updater canceled!", v.list.GetName())
 				return
 			case <-time.After(time.Duration(v.app.config.K9s.RefreshRate) * time.Second):
@@ -164,7 +147,6 @@ func (v *resourceView) getTitle() string {
 func (v *resourceView) selChanged(r, c int) {
 	v.selectedRow = r
 	v.selectItem(r, c)
-	v.getTV().cmdBuff.setActive(false)
 }
 
 func (v *resourceView) getSelectedItem() string {

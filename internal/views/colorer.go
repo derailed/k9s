@@ -33,6 +33,10 @@ func forwardColorer(string, *resource.RowEvent) tcell.Color {
 	return tcell.ColorSkyblue
 }
 
+func dumpColorer(ns string, r *resource.RowEvent) tcell.Color {
+	return tcell.ColorNavajoWhite
+}
+
 func benchColorer(ns string, r *resource.RowEvent) tcell.Color {
 	c := tcell.ColorPaleGreen
 

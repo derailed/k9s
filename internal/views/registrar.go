@@ -303,6 +303,11 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 			api:    "",
 			viewFn: newBenchView,
 		},
+		"sd": {
+			title:  "ScreenDumps",
+			api:    "",
+			viewFn: newDumpView,
+		},
 	}
 
 	rev, ok, err := c.SupportsRes("autoscaling", []string{"v1", "v2beta1", "v2beta2"})
