@@ -71,7 +71,7 @@ func (b *benchmark) init(base string) error {
 	return nil
 }
 
-func (b *benchmark) annuled() bool {
+func (b *benchmark) annulled() bool {
 	return b.canceled
 }
 

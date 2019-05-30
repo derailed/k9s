@@ -103,9 +103,5 @@ func (s *Bench) load(path string) error {
 		return err
 	}
 
-	if err := yaml.Unmarshal(f, &s); err != nil {
-		return err
-	}
-
-	return nil
+	return yaml.Unmarshal(f, &s)
 }

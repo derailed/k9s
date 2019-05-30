@@ -85,7 +85,7 @@ func (p *PortForward) Stop() {
 	close(p.stopChan)
 }
 
-// Start initiates a port foward session for a given pod and ports.
+// Start initiates a port forward session for a given pod and ports.
 func (p *PortForward) Start(path, co string, ports []string) (*portforward.PortForwarder, error) {
 	p.path, p.container, p.ports, p.age = path, co, ports, time.Now()
 
