@@ -257,6 +257,8 @@ func (a *appView) statusReset() {
 }
 
 func (a *appView) status(l flashLevel, msg string) {
+	a.flash().info(msg)
+
 	switch l {
 	case flashErr:
 		a.logoView.err(msg)

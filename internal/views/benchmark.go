@@ -54,6 +54,9 @@ func (b *benchmark) init(base string) error {
 	} else {
 		ua += " " + k9sUA
 	}
+	if req.Header == nil {
+		req.Header = make(http.Header)
+	}
 	req.Header.Set("User-Agent", ua)
 
 	b.worker = &requester.Work{

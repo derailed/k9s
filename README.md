@@ -117,20 +117,20 @@ k9s --context coolCtx
 
 ## Benchmarking (Way early Pupp!)
 
-K9s integrates [Hey](https://github.com/rakyll/hey) from the brilliant Jaana Dogan of Google fame. This is a preliminary feature and is only supported for port-forwards at this time.
+K9s integrates [Hey](https://github.com/rakyll/hey) from the brilliant and super talented [Jaana Dogan](https://github.com/rakyll) of Google fame. This is a preliminary feature and is only supports for port-forwards and very limited NodePort/LoadBalancer services at this time (Read the paint is way fresh!).
 
-The Hey tool is currently being used to benchmark port-forwards. Services and ingresses will be enabled next. To setup a port-forward, you will need to navigate to the pod view, select a pod and then select a container that exposes a port. Using `SHIFT-F` a dialog will come up to allow you to pick a local port to forward to. Once successfull, K9s will take you the port-forward view (alias `pf`) listing out you currently active port-forwards. Selecting a port-forward and using `CTRL-B` will run a benchmark on that container. To view the results of your benchmarking runs go to the  benchmark view (alias `be`). You should now be able to select a benchmark and view the run stats details by pressing `<ENTER>`.
+The `Hey` tool is currently being used to benchmark port-forwards. Services and ingresses will be fully enabled next. To setup a port-forward, you will need to navigate to the pod view, select a pod and a container that exposes a port. Using `SHIFT-F` a dialog will come up to allow you to pick a local port to forward to. Once successfull, K9s will take you the port-forward view (alias `pf`) listing out you currently active port-forwards. Selecting a port-forward and using `CTRL-B` will run a benchmark on that container. To view the results of your benchmark runs, go to the benchmark view (alias `be`). You should now be able to select a benchmark and view the run stats details by pressing `<ENTER>`.
 
-By default, the benchmark will be run with the following assumptions:
+Initially, the benchmark will(may?) run with the following defaults:
 
 * Concurrency Level: 1
 * Number of Requests: 200
 * HTTP Verb: GET
 * Path: /
 
-NOTE: Granted, benchmarking a single container might not be all that useful, compared to benchmarking a service/ingress, etc... It does however given you some insights by putting a container under load to help with resources/auto-scaling settings or a quick first glance at comparing Canary's implementation. At this time, we're trying to steel-thread thru the basic mechanics and then escalate to wider use cases once the essentials are in place.
+NOTE: In case it wasn't abundantly obvious this a super early release. It does however given you some insights by putting a container under load to help with resources/auto-scaling settings or a quick first glance at comparing Canary's implementation. At this time, we're trying to steel-thread thru the basic mechanics and then escalate to wider use cases once the essentials are in place. So please thread lightly and aim small as port-forwards and heavy benchmarking will most likely cause K9s to kick over.
 
-The port forward view is backed by a new K9s config file namely: `$HOME/.k9s/benchmarks.yml`. Changes to this file should update the port-forward view to indicate how you want to run your benchmarks.
+The port forward view is backed by a new K9s config file namely: `$HOME/.k9s/bench-mycluster.yml`. Each cluster you will connect to will have its own bench config file. Changes to this file should update the port-forward view to indicate how you want to run your benchmarks.
 
 Here is a sample benchmarks.yml configuration. Please keep in mind this file will change!
 Provision for specifying auth, headers, payload, etc... will be coming soon...
@@ -151,28 +151,28 @@ benchmarks:
       # Benchmark the container named nginx using GET HTTP verb using http://localhost:someport/
       concurrency: 1
       requests: 10000
-      path: /
+      path: /bozo
       method: POST
       body:
         {"fred":"blee"}
-      http2: true
       header:
-        Accept: text/html
-        Content-Type: application/json
+        Accept:
+          - text/html
+        Content-Type:
+          - application/json
   services:
-    # NOTE Does nothing yet! ie NYI
-    # Benchmark a service exposed either via nodeport, loadbalancer or ingress.
+    # Benchmark a service exposed either via nodeport, loadbalancer.
     default/nginx:
       concurrency: 1
       requests: 500
       method: GET
       # This setting will depend on whether service is nodeport or loadbalancer.
       # Set this to a node if nodeport or LB if applicable. IP or dns name.
-      address: jeanbaptistemmanuel.zorg
+      address: super.dev
       path: /bumblebeetuna
       auth:
-        user: zorg
-        password: MultiPass
+        user: jeanbaptiste
+        password: Zorg!
 ```
 
 ---
@@ -183,7 +183,7 @@ K9s uses aliases to navigate most K8s resources.
 
 | Command               | Result                                             | Example                    |
 |-----------------------|----------------------------------------------------|----------------------------|
-| `:`alias`<ENTER>`     | View a Kubernetes resource                         | `:po<ENTER>`               |
+| `:`alias`<ENTER>`     | View a Kubernetes resource aliases                 | `:po<ENTER>`               |
 | `?`                   | Show keyboard shortcuts and help                   |                            |
 | `Ctrl-a`              | Show all available resource alias                  | select+`<ENTER>` to view   |
 | `/`filter`ENTER`>     | Filter out a resource view given a filter          | `/bumblebeetuna`           |

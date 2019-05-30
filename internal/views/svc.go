@@ -1,8 +1,10 @@
 package views
 
 import (
+	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
@@ -13,18 +15,23 @@ import (
 
 type svcView struct {
 	*resourceView
+
+	bench *benchmark
 }
 
 func newSvcView(t string, app *appView, list resource.List) resourceViewer {
-	v := svcView{newResourceView(t, app, list).(*resourceView)}
+	v := svcView{resourceView: newResourceView(t, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
 
 	return &v
 }
 
 func (v *svcView) extraActions(aa keyActions) {
-	aa[KeyShiftT] = newKeyAction("Sort Type", v.sortColCmd(1, false), true)
+	aa[tcell.KeyCtrlB] = newKeyAction("Bench", v.benchCmd, true)
+	aa[KeyAltB] = newKeyAction("Bench Stop", v.benchStopCmd, true)
 	aa[tcell.KeyEnter] = newKeyAction("View Pods", v.showPodsCmd, true)
+
+	aa[KeyShiftT] = newKeyAction("Sort Type", v.sortColCmd(1, false), true)
 }
 
 func (v *svcView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
@@ -62,6 +69,106 @@ func (v *svcView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.app.inject(v)
 
 	return nil
+}
+
+func (v *svcView) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if v.bench != nil {
+		log.Debug().Msg(">>> Benchmark canceled!!")
+		v.app.status(flashErr, "Benchmark Camceled!")
+		v.bench.cancel()
+	}
+	v.app.statusReset()
+
+	return nil
+}
+
+func (v *svcView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !v.rowSelected() {
+		return evt
+	}
+
+	if v.bench != nil {
+		v.app.flash().err(errors.New("Only one benchmark allowed at a time"))
+		return nil
+	}
+
+	sel := v.getSelectedItem()
+	tv := v.getTV()
+	r, _ := tv.GetSelection()
+
+	// BOZO!! Poorman Reload bench to make sure we pick up updates if any.
+	path := benchConfig(v.app.config.K9s.CurrentCluster)
+	if err := v.app.bench.Reload(path); err != nil {
+		log.Error().Err(err).Msg("Bench config reload")
+		v.app.flash().err(err)
+		return nil
+	}
+
+	cfg, ok := v.app.bench.Benchmarks.Services[sel]
+	if !ok {
+		v.app.flash().errf("No bench config found for service %s", sel)
+		return nil
+	}
+
+	svcType := strings.TrimSpace(tv.GetCell(r, tv.nameColIndex()+1).Text)
+	log.Debug().Msgf("Service Type %q", svcType)
+	if svcType != "NodePort" && svcType != "LoadBalancer" {
+		v.app.flash().err(errors.New("You must select a reachable service"))
+		return nil
+	}
+
+	ports := strings.TrimSpace(tv.GetCell(r, tv.nameColIndex()+5).Text)
+	// BOZO!! You Brute!!
+	// BOZO!! Will new much improv ie pop dialog and select port if multiport.
+	pp := strings.Split(ports, " ")
+	if len(pp) == 0 {
+		v.app.flash().err(errors.New("No ports found"))
+		return nil
+	}
+	// Grap the first port pair for now...
+	tokens := strings.Split(pp[0], "►")
+	if len(tokens) < 2 {
+		v.app.flash().err(errors.New("No ports pair found"))
+		return nil
+	}
+	// Found external nodeport
+	port := tokens[1]
+	cfg.Name = sel
+	log.Debug().Msgf(">>>>> BENCHCONFIG %#v", cfg)
+
+	base := "http://" + cfg.Host + ":" + port + cfg.Path
+	var err error
+	if v.bench, err = newBenchmark(base, cfg); err != nil {
+		log.Error().Err(err).Msg("Bench failed!")
+		v.app.flash().errf("Bench failed %v", err)
+		v.app.statusReset()
+		v.bench = nil
+		return nil
+	}
+
+	v.app.status(flashWarn, "Benchmark in progress...")
+	log.Debug().Msg("Bench starting...")
+	go v.bench.run(v.app.config.K9s.CurrentCluster, func() {
+		log.Debug().Msg("Bench Completed!")
+		v.app.QueueUpdate(func() {
+			if v.bench.canceled {
+				v.app.status(flashInfo, "Benchmark canceled")
+			} else {
+				v.app.status(flashInfo, "Benchmark Completed!")
+				v.bench.cancel()
+			}
+			v.bench = nil
+			go func() {
+				<-time.After(2 * time.Second)
+				v.app.QueueUpdate(func() {
+					v.app.statusReset()
+				})
+			}()
+		})
+	})
+
+	return nil
+
 }
 
 func (v *svcView) showSvcPods(ns string, sel map[string]string, b actionHandler) {

@@ -117,7 +117,6 @@ func (v *forwardView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *t
 func (v *forwardView) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.bench != nil {
 		log.Debug().Msg(">>> Benchmark canceled!!")
-		v.app.flash().info("Benchmark canceled!")
 		v.app.status(flashErr, "Benchmark Camceled!")
 		v.bench.cancel()
 	}
@@ -171,7 +170,6 @@ func (v *forwardView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 			if v.bench.canceled {
 				v.app.status(flashInfo, "Benchmark canceled")
 			} else {
-				v.app.flash().infof("Benchmark for %s is done!", sel)
 				v.app.status(flashInfo, "Benchmark Completed!")
 				v.bench.cancel()
 			}

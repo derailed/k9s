@@ -18,7 +18,8 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ### Labor Day Weekend?
 
-I've always seem to get this wrong. Does Labor Day weekend mean you get to work on you OSS projects all weekend? I am very excited about this drop and hopefully won't be hunamimous on that??
+I've always seem to get this wrong! Does Labor Day weekend mean you get to work on your OSS projects all weekend?
+I am very excited about this drop and hopefully won't be hunamimous on that 🐭??
 
 ### Service Traversals
 
@@ -26,30 +27,31 @@ Provided your K8s service is head(Full), you can now navigate to the pods that m
 
 ### Moving Forward!
 
-K9s supports port-forwarding. Provided a pod's container exposes a port, you can navigate to the container view, select a container with an exposed port and activate a port-forward directly from K9s without needing to shell out. I think that's very handy. This was indeed a long time coming... Big Thank You and ATTABoy!! to [Brent](https://github.com/brentco) for this great issue.
+K9s now supports port-forwarding! Provided a pod's container exposes a port, you can navigate to the container view, select a container with an exposed port and activate a port-forward directly from K9s without needing to shell out. I think that's very handy. This was indeed a long time coming... Big Thanks and ATTABOY! in full effect this week to [Brent](https://github.com/brentco) for filling the initial issue.
 
-That said, these babies are a bit expensive to run, so make sure you choose wisely and delete any superflous forwards! To access the port-forward view directly use `:pf<enter>`.
-BONUS: Pending your terminal of choice, you might even be able to pop the forwarded URL directly into your browse. On iTerm I think `command+click` does the trick.
+That said, these babies are a bit expensive to run, so make sure you choose wisely and delete any superflous port-forwards!! To access the port-forward view directly use `:pf<enter>`.
+BONUS: Pending your terminal of choice, you might even be able to pop the forwarded URL directly into your browse. On iTerm me thinkw `command+click` does the trick?
 
-This feature is very much still work in progress, thinks like basic auth, http verbs, headers, etc... are coming next, so please thread lightly and checkout the README under the Benchmarking section.
+This feature is very much still work in progress, thinks like basic auth, http verbs, headers, etc... are coming next, so please thread lightly and checkout the README under the Benchmarking section. Your feedback as always, is welcome and encouraged!
 
 ### Hey now!
 
-This is one feature that I think, pardon my french `Bitch'n`. K9s now encompassed [Hey](https://github.com/rakyll/hey) from the totaly brilliant and kind Jaana Dogan of Google fame.
-So along with the port-forward feature, you can now benchmark your containers and gather some interesting metrics that may help you configure resources, auto scalers, compare Canary builds, etc...
+This is one feature that I think is, pardon my french, `Bitch'n`. K9s now encompassed [Hey](https://github.com/rakyll/hey) from the totaly brilliant and kind Jaana Dogan of Google fame.
+So along with the port-forward feature, you can now benchmark your containers and gather some interesting metrics that may help you configure resources, auto scalers, compare Canary builds, etc... You should also bench your services providing they export ports via NodePort or LoadBalancer, tho very lightly tested as this was a lot of code to punch thru.
 
-That said, this feature is still a moving target, as much configuration still needs to be tuned to make it totally killer. Please checkout the README on how to configure this feature. There are many more improvements that need to happen notably bench'ing service, ingress, etc and will come in subsequent K9s drops...
+Useless to say, this feature is still a moving target, as much code still needs to be tuned to make it totally killer. Please checkout the README on how to configure this feature. There are many more improvements that need to happen notably bench'ing service, ingress, etc and will come in subsequent K9s drops...
 
-We think this port-forward/bench combo is a killer feature! Hopefully you'll agree. With the understanding the full-monty is coming soon, please help us mold and solidify these features as they are the base ingredients to setup for benchmarking services and ingresses...
+We think this port-forward/bench combo is totally cool and hope you'll dig these new features? Hopefully you'll agree... With the understanding the full-monty is coming soon, please help us `bench and solidify these features as they are the base ingredients to more features along these lines...
 
-> NOTE! Has with anything in life `Aim small, Miss small!`. You could totally hose K9s with over ambitious benchmarks, so start small say C:1 N:100, measure and go from there.
+> NOTE! Has with anything in life `Aim small, Miss small!`. You could totally hose K9s with over zealous benchmarks and forwards, so start small say C:1 N:100, measure and go from there.
+
 ---
 
 ## Resolved Bugs
 
 + [Issue #198](https://github.com/derailed/k9s/issues/198)
 + [Issue #197](https://github.com/derailed/k9s/issues/197)
-+ [Issue #195](https://github.com/derailed/k9s/issues/195) Thanks [Sebastiaan](https://github.com/tammert)!!
++ [Issue #195](https://github.com/derailed/k9s/issues/195) Thanks [Sebastiaan](https://github.com/tammert). You Rock!!
 + [Issue #194](https://github.com/derailed/k9s/issues/194)
 + [Issue #69](https://github.com/derailed/k9s/issues/69)
 
