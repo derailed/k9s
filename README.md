@@ -13,7 +13,7 @@ for changes and offers subsequent commands to interact with observed resources.
 [![Build Status](https://travis-ci.com/derailed/k9s.svg?branch=master)](https://travis-ci.com/derailed/k9s)
 [![release](https://img.shields.io/github/release-pre/derailed/k9s.svg)](https://github.com/derailed/k9s/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/mum4k/termdash/blob/master/LICENSE)
-<!-- [![k9s](https://snapcraft.io/k9s/badge.svg)](https://snapcraft.io/k9s) -->
+[![k9s](https://snapcraft.io/k9s/badge.svg)](https://snapcraft.io/k9s)
 
 ---
 

@@ -83,7 +83,6 @@ snapcraft:
   # confinement: strict
   apps:
     k9s:
-      # plugs: ["home", "network"]
       plugs: ["home", "network", "kube-config"]
   plugs:
     kube-config:

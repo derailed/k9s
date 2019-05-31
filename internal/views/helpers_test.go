@@ -1,6 +1,7 @@
 package views
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
@@ -84,6 +85,29 @@ func TestContainerID(t *testing.T) {
 	for k, u := range uu {
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, containerID(u.path, u.co))
+		})
+	}
+}
+
+func TestStripPort(t *testing.T) {
+	uu := map[string]struct {
+		port, e string
+	}{
+		"full": {
+			"fred:8000", "8000",
+		},
+		"port": {
+			"8000", "8000",
+		},
+		"protocol": {
+			"dns:53╱UDP", "53",
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			fmt.Println("TCP?", u.port, isTCPPort(u.port))
+			assert.Equal(t, u.e, stripPort(u.port))
 		})
 	}
 }

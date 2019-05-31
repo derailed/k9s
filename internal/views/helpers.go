@@ -19,6 +19,20 @@ const (
 	minusSign = "↓"
 )
 
+func isTCPPort(p string) bool {
+	return !strings.Contains(p, "UDP")
+}
+
+// StripPort removes the named port id if present.
+func stripPort(p string) string {
+	tokens := strings.Split(p, ":")
+	if len(tokens) == 2 {
+		return strings.Replace(tokens[1], "╱UDP", "", 1)
+	}
+
+	return p
+}
+
 // ContainerID computes container ID based on ns/po/co.
 func containerID(path, co string) string {
 	ns, n := namespaced(path)

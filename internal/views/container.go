@@ -134,9 +134,18 @@ func (v *containerView) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.app.flash().err(errors.New("Container exposes no ports"))
 		return nil
 	}
-	port := strings.TrimSpace(ports[0])
+
+	var port string
+	for _, p := range ports {
+		log.Debug().Msgf("Checking port %q", p)
+		if !isTCPPort(p) {
+			continue
+		}
+		port = strings.TrimSpace(p)
+		break
+	}
 	if port == "" {
-		v.app.flash().err(errors.New("Container exposed no ports"))
+		v.app.flash().err(errors.New("No valid TCP port found on this container"))
 		return nil
 	}
 	f := tview.NewForm()
@@ -148,16 +157,16 @@ func (v *containerView) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		SetFieldTextColor(tcell.ColorOrange)
 
 	f1, f2 := port, port
-	f.AddInputField("Pod Port:", f1, 10, nil, func(changed string) {
+	f.AddInputField("Pod Port:", f1, 20, nil, func(changed string) {
 		f1 = changed
 	})
-	f.AddInputField("Local Port:", f2, 10, nil, func(changed string) {
+	f.AddInputField("Local Port:", f2, 20, nil, func(changed string) {
 		f2 = changed
 	})
 
 	f.AddButton("OK", func() {
 		pf := k8s.NewPortForward(v.app.conn(), &log.Logger)
-		ports := []string{f2 + ":" + f1}
+		ports := []string{stripPort(f2) + ":" + stripPort(f1)}
 		co := strings.TrimSpace(v.getTV().GetCell(v.selectedRow, 0).Text)
 		fw, err := pf.Start(*v.path, co, ports)
 		if err != nil {

@@ -86,9 +86,12 @@ func (i *Informer) init(ns string) {
 	i.initOnce.Do(func() {
 		po := NewPod(i.client, ns)
 		i.informers = map[string]StoreInformer{
-			NodeIndex:      NewNode(i.client),
 			PodIndex:       po,
 			ContainerIndex: NewContainer(po),
+		}
+
+		if i.client.CanIAccess("", "", "nodes", []string{"list", "watch"}) {
+			i.informers[NodeIndex] = NewNode(i.client)
 		}
 
 		if !i.client.HasMetrics() {
