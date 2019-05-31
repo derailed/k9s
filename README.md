@@ -182,7 +182,7 @@ benchmarks:
 K9s uses aliases to navigate most K8s resources.
 
 | Command               | Result                                             | Example                    |
-| --------------------- | -------------------------------------------------- | -------------------------- |
+|-----------------------|----------------------------------------------------|----------------------------|
 | `:`alias`<ENTER>`     | View a Kubernetes resource aliases                 | `:po<ENTER>`               |
 | `?`                   | Show keyboard shortcuts and help                   |                            |
 | `Ctrl-a`              | Show all available resource alias                  | select+`<ENTER>` to view   |
@@ -370,7 +370,7 @@ k9s:
     colonColor: blue
     valueColor: royalblue
   # Logs styles.
-  yaml:
+  logs:
     fgColor: white
     bgColor: black
 ```
@@ -378,7 +378,7 @@ k9s:
 Available color names are defined below:
 
 | Color Names          |                |                  |                   |                 |
-| -------------------- | -------------- | ---------------- | ----------------- | --------------- |
+|----------------------|----------------|------------------|-------------------|-----------------|
 | black                | maroon         | green            | olive             | navy            |
 | purple               | teal           | silver           | gray              | red             |
 | lime                 | yellow         | blue             | fuchsia           | aqua            |
