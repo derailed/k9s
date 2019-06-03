@@ -287,9 +287,9 @@ func toRes(r v1.ResourceList) (string, string) {
 
 func probe(p *v1.Probe) string {
 	if p == nil {
-		return "on"
+		return "off"
 	}
-	return "off"
+	return "on"
 }
 
 func asMi(v int64) float64 {
