@@ -6,6 +6,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -36,7 +37,7 @@ func (v *namespaceView) extraActions(aa keyActions) {
 }
 
 func (v *namespaceView) switchNs(app *appView, _, res, sel string) {
-	v.useNamespace(sel)
+	v.useNamespace(v.cleanser(sel))
 	app.gotoResource("po", true)
 }
 
@@ -63,12 +64,13 @@ func (v *namespaceView) getSelectedItem() string {
 }
 
 func (*namespaceView) cleanser(s string) string {
+	log.Debug().Msgf("SWITCHING: %s-%s", s, nsCleanser.ReplaceAllString(s, `$1`))
 	return nsCleanser.ReplaceAllString(s, `$1`)
 }
 
 func (v *namespaceView) decorate(data resource.TableData) resource.TableData {
 	if _, ok := data.Rows[resource.AllNamespaces]; !ok {
-		if v.app.conn().CanIAccess("", "namespaces", "namespace.v1", []string{"list"}) {
+		if acc, err := v.app.conn().CanIAccess("", "namespaces", "namespace.v1", []string{"list"}); acc && err != nil {
 			data.Rows[resource.AllNamespace] = &resource.RowEvent{
 				Action: resource.Unchanged,
 				Fields: resource.Row{resource.AllNamespace, "Active", "0"},

@@ -19,9 +19,9 @@ func TestInformerInitWithNS(t *testing.T) {
 	cmo := NewMockConnection()
 	m.When(cmo.Config()).ThenReturn(k8s.NewConfig(f))
 	m.When(cmo.HasMetrics()).ThenReturn(true)
-	m.When(cmo.CanIAccess("", "", "namespaces", []string{"list", "watch"})).ThenReturn(false)
-	m.When(cmo.CanIAccess("", ns, "namespaces", []string{"get", "watch"})).ThenReturn(true)
-	m.When(cmo.CanIAccess("", ns, "metrics.k8s.io", []string{"list", "watch"})).ThenReturn(true)
+	m.When(cmo.CanIAccess("", "", "namespaces", []string{"list", "watch"})).ThenReturn(false, nil)
+	m.When(cmo.CanIAccess("", ns, "namespaces", []string{"get", "watch"})).ThenReturn(true, nil)
+	m.When(cmo.CanIAccess("", ns, "metrics.k8s.io", []string{"list", "watch"})).ThenReturn(true, nil)
 	i := NewInformer(cmo, ns)
 
 	o, err := i.List(PodIndex, "fred", metav1.ListOptions{})

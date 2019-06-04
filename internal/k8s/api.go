@@ -64,7 +64,7 @@ type (
 		ServerVersion() (*version.Info, error)
 		FetchNodes() (*v1.NodeList, error)
 		CurrentNamespaceName() (string, error)
-		CanIAccess(ns, name, resURL string, verbs []string) bool
+		CanIAccess(ns, name, resURL string, verbs []string) (bool, error)
 	}
 
 	// APIClient represents a Kubernetes api client.
@@ -90,7 +90,7 @@ func InitConnectionOrDie(config *Config, logger zerolog.Logger) *APIClient {
 }
 
 // CanIAccess checks if user has access to a certain resource.
-func (a *APIClient) CanIAccess(ns, name, resURL string, verbs []string) bool {
+func (a *APIClient) CanIAccess(ns, name, resURL string, verbs []string) (bool, error) {
 	_, gr := schema.ParseResourceArg(strings.ToLower(resURL))
 	sar := &authorizationv1.SelfSubjectAccessReview{
 		Spec: authorizationv1.SelfSubjectAccessReviewSpec{
@@ -104,24 +104,31 @@ func (a *APIClient) CanIAccess(ns, name, resURL string, verbs []string) bool {
 		},
 	}
 
-	var resp *authorizationv1.SelfSubjectAccessReview
-	var err error
-	var allow bool
+	user, _ := a.Config().CurrentUserName()
+	groups, _ := a.Config().CurrentGroupNames()
+	log.Debug().Msgf("AuthInfo user/groups: %s:%v", user, groups)
+
+	var (
+		resp  *authorizationv1.SelfSubjectAccessReview
+		err   error
+		allow bool
+	)
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
 		resp, err = a.DialOrDie().AuthorizationV1().SelfSubjectAccessReviews().Create(sar)
 		if err != nil {
 			log.Warn().Err(err).Msgf("CanIAccess")
-			return false
+			return false, err
 		}
-		log.Debug().Msgf("CHECKING ACCESS for %s/%s/ in NS %q verb: %s -> %t, %s", resURL, name, ns, v, resp.Status.Allowed, resp.Status.Reason)
+		log.Debug().Msgf("CHECKING ACCESS res:%s-%q for NS: %q Verb: %s -> %t, %s", resURL, name, ns, v, resp.Status.Allowed, resp.Status.Reason)
 		if !resp.Status.Allowed {
-			return false
+			return false, err
 		}
 		allow = true
 	}
-	log.Debug().Msgf("GRANT ACCESS:%t", allow)
-	return allow
+	log.Debug().Msgf("GRANT ACCESS? >>> %t", allow)
+
+	return allow, nil
 }
 
 // CurrentNamespaceName return namespace name set via either cli arg or cluster config.

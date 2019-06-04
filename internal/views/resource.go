@@ -97,7 +97,7 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 	}
 	v.getTV().setColorer(colorer)
 
-	v.nsListAccess = v.app.conn().CanIAccess("", "namespaces", "namespace.v1", []string{"list"})
+	v.nsListAccess, _ = v.app.conn().CanIAccess("", "namespaces", "namespace.v1", []string{"list"})
 	if v.nsListAccess {
 		nn, err := k8s.NewNamespace(v.app.conn()).List(resource.AllNamespaces)
 		if err != nil {

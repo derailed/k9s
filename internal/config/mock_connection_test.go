@@ -24,19 +24,23 @@ func NewMockConnection() *MockConnection {
 	return &MockConnection{fail: pegomock.GlobalFailHandler}
 }
 
-func (mock *MockConnection) CanIAccess(_param0 string, _param1 string, _param2 string, _param3 []string) bool {
+func (mock *MockConnection) CanIAccess(_param0 string, _param1 string, _param2 string, _param3 []string) (bool, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")
 	}
 	params := []pegomock.Param{_param0, _param1, _param2, _param3}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CanIAccess", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CanIAccess", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 bool
+	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
 			ret0 = result[0].(bool)
 		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
 	}
-	return ret0
+	return ret0, ret1
 }
 
 func (mock *MockConnection) Config() *k8s.Config {

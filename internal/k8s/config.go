@@ -163,6 +163,15 @@ func (c *Config) ClusterNames() ([]string, error) {
 	return cc, nil
 }
 
+// CurrentGroupNames retrieves the active group names.
+func (c *Config) CurrentGroupNames() ([]string, error) {
+	if c.flags.ImpersonateGroup != nil && len(*c.flags.ImpersonateGroup) != 0 {
+		return *c.flags.ImpersonateGroup, nil
+	}
+
+	return []string{}, errors.New("unable to locate current group")
+}
+
 // CurrentUserName retrieves the active user name.
 func (c *Config) CurrentUserName() (string, error) {
 	if isSet(c.flags.Impersonate) {
@@ -186,7 +195,7 @@ func (c *Config) CurrentUserName() (string, error) {
 		return ctx.AuthInfo, nil
 	}
 
-	return "", errors.New("unable to locate current cluster")
+	return "", errors.New("unable to locate current user")
 }
 
 // CurrentNamespaceName retrieves the active namespace.
@@ -199,12 +208,10 @@ func (c *Config) CurrentNamespaceName() (string, error) {
 	if err != nil {
 		return "", err
 	}
-
 	ctx, err := c.CurrentContextName()
 	if err != nil {
 		return "", err
 	}
-
 	if ctx, ok := cfg.Contexts[ctx]; ok {
 		if isSet(&ctx.Namespace) {
 			return ctx.Namespace, nil

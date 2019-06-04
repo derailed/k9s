@@ -62,17 +62,20 @@ func NewInformer(client k8s.Connection, ns string) *Informer {
 	log.Debug().Msgf(">> Starting Informer")
 	i := Informer{client: client, informers: map[string]StoreInformer{}}
 
-	nsAccess := i.client.CanIAccess("", "", "namespaces", []string{"list", "watch"})
-	ns, err := client.Config().CurrentNamespaceName()
-	// User did not lock NS. Check all ns access if not bail
-	if err != nil && !nsAccess {
-		log.Panic().Msg("Unauthorized: Unable to list ALL namespaces. Missing verbs ['list', 'watch']. Please specify a namespace or correct RBAC")
+	_, err := client.CanIAccess("", "", "namespaces", []string{"list", "watch"})
+	if err != nil && ns == AllNamespaces {
+		log.Panic().Msg("Unauthorized: All namespaces. Missing verbs ['list', 'watch']. Please specify a namespace or correct RBAC")
 	}
 
 	// Namespace is locked in. check if user has auth for this ns access.
-	if ns != AllNamespaces && !nsAccess {
-		if !i.client.CanIAccess("", ns, "namespaces", []string{"get", "watch"}) {
-			log.Panic().Msgf("Unauthorized: Access to namespace %q is missing verbs ['get', 'watch']", ns)
+	if ns != AllNamespaces {
+		acc, err := client.CanIAccess("", ns, "namespaces", []string{"get", "watch"})
+		if err != nil {
+			log.Panic().Err(err).Msgf("Failed access %s", ns)
+		}
+		if !acc {
+			user, _ := client.Config().CurrentUserName()
+			log.Panic().Msgf("Unauthorized: %s access to namespace %q is missing verbs ['get', 'watch']", user, ns)
 		}
 		i.init(ns)
 	} else {
@@ -90,7 +93,7 @@ func (i *Informer) init(ns string) {
 			ContainerIndex: NewContainer(po),
 		}
 
-		if i.client.CanIAccess("", "", "nodes", []string{"list", "watch"}) {
+		if acc, err := i.client.CanIAccess("", "", "nodes", []string{"list", "watch"}); acc && err != nil {
 			i.informers[NodeIndex] = NewNode(i.client)
 		}
 
@@ -98,7 +101,7 @@ func (i *Informer) init(ns string) {
 			return
 		}
 
-		if i.client.CanIAccess("", ns, "metrics.k8s.io", []string{"list", "watch"}) {
+		if acc, err := i.client.CanIAccess("", ns, "metrics.k8s.io", []string{"list", "watch"}); acc && err != nil {
 			i.informers[NodeMXIndex] = NewNodeMetrics(i.client)
 			i.informers[PodMXIndex] = NewPodMetrics(i.client, ns)
 		}
