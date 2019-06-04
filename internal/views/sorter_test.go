@@ -33,6 +33,7 @@ func TestGroupSort(t *testing.T) {
 		{true, []string{"b-21", "b-2"}, []string{"b-2", "b-21"}},
 		{false, []string{"b-21", "b-2"}, []string{"b-21", "b-2"}},
 		{true, []string{"4m", "3m2s"}, []string{"3m2s", "4m"}},
+		{true, []string{"3y37d", "2y4d"}, []string{"2y4d", "3y37d"}},
 	}
 
 	for _, u := range uu {
@@ -78,5 +79,26 @@ func TestRowSort(t *testing.T) {
 		r := rowSorter{index: 0, rows: u.rows, asc: u.asc}
 		sort.Sort(r)
 		assert.Equal(t, u.expect, r.rows)
+	}
+}
+
+func TestIsDurationSort(t *testing.T) {
+	uu := map[string]struct {
+		s1, s2 string
+		asc, e bool
+	}{
+		"ascLess":     {"10h5m", "2h10m", true, false},
+		"descGreater": {"10h5m", "2h10m", false, true},
+		"ascEqual":    {"2h10m", "2h10m", true, true},
+		"descEqual":   {"2h10m", "2h10m", false, true},
+		"ascGreater":  {"10h10m", "2h5m", true, false},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			less, ok := isDurationSort(u.asc, u.s1, u.s2)
+			assert.True(t, ok)
+			assert.Equal(t, u.e, less)
+		})
 	}
 }

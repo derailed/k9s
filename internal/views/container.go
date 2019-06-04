@@ -25,6 +25,7 @@ func newContainerView(t string, app *appView, list resource.List, path string, e
 	{
 		v.path = &path
 		v.extraActionsFn = v.extraActions
+		v.enterFn = v.viewLogs
 		v.colorerFn = containerColorer
 		v.current = app.content.GetPrimitive("main").(igniter)
 		v.exitFn = exitFn
@@ -45,7 +46,6 @@ func (v *containerView) extraActions(aa keyActions) {
 	aa[KeyS] = newKeyAction("Shell", v.shellCmd, true)
 	aa[tcell.KeyEscape] = newKeyAction("Back", v.backCmd, false)
 	aa[KeyP] = newKeyAction("Previous", v.backCmd, false)
-	aa[tcell.KeyEnter] = newKeyAction("View Logs", v.logsCmd, false)
 	aa[KeyShiftC] = newKeyAction("Sort CPU", v.sortColCmd(6, false), true)
 	aa[KeyShiftM] = newKeyAction("Sort MEM", v.sortColCmd(7, false), true)
 	aa[KeyAltC] = newKeyAction("Sort CPU%", v.sortColCmd(8, false), true)
@@ -72,18 +72,22 @@ func (v *containerView) getSelection() string {
 
 // Handlers...
 
+func (v *containerView) viewLogs(app *appView, _, res, sel string) {
+	cell := v.getTV().GetCell(v.selectedRow, 3)
+	if cell != nil && strings.TrimSpace(cell.Text) != "Running" {
+		v.app.flash().err(errors.New("No logs for a non running container"))
+		return
+	}
+
+	v.showLogs(sel, v.list.GetName(), v, false)
+}
+
 func (v *containerView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
 		return evt
 	}
 
-	cell := v.getTV().GetCell(v.selectedRow, 3)
-	if cell != nil && strings.TrimSpace(cell.Text) != "Running" {
-		v.app.flash().err(errors.New("No logs for a non running container"))
-		return evt
-	}
-	v.showLogs(v.selectedItem, v.list.GetName(), v, false)
-
+	v.viewLogs(v.app, v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
 	return nil
 }
 

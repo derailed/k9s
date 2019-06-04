@@ -16,6 +16,7 @@ type statefulSetView struct {
 func newStatefulSetView(t string, app *appView, list resource.List) resourceViewer {
 	v := statefulSetView{newResourceView(t, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
+	v.enterFn = v.showPods
 
 	return &v
 }
@@ -23,7 +24,6 @@ func newStatefulSetView(t string, app *appView, list resource.List) resourceView
 func (v *statefulSetView) extraActions(aa keyActions) {
 	aa[KeyShiftD] = newKeyAction("Sort Desired", v.sortColCmd(1, false), true)
 	aa[KeyShiftC] = newKeyAction("Sort Current", v.sortColCmd(2, false), true)
-	aa[tcell.KeyEnter] = newKeyAction("View Pods", v.showPodsCmd, true)
 }
 
 func (v *statefulSetView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
@@ -36,30 +36,25 @@ func (v *statefulSetView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey
 	}
 }
 
-func (v *statefulSetView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
-		return evt
-	}
-
-	ns, n := namespaced(v.selectedItem)
-	d := k8s.NewStatefulSet(v.app.conn())
-	s, err := d.Get(ns, n)
+func (v *statefulSetView) showPods(app *appView, ns, res, sel string) {
+	ns, n := namespaced(sel)
+	s := k8s.NewStatefulSet(app.conn())
+	st, err := s.Get(ns, n)
 	if err != nil {
-		log.Error().Err(err).Msgf("Fetching StatefulSet %s", v.selectedItem)
-		v.app.flash().errf("Unable to fetch statefulset %s", err)
-		return evt
+		log.Error().Err(err).Msgf("Fetching StatefulSet %s", sel)
+		app.flash().errf("Unable to fetch statefulset %s", err)
+		return
 	}
-	sts := s.(*v1.StatefulSet)
 
-	sel, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
+	sts := st.(*v1.StatefulSet)
+	l, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
 	if err != nil {
-		log.Error().Err(err).Msgf("Converting selector for StatefulSet %s", v.selectedItem)
-		v.app.flash().errf("Selector failed %s", err)
-		return evt
+		log.Error().Err(err).Msgf("Converting selector for StatefulSet %s", sel)
+		app.flash().errf("Selector failed %s", err)
+		return
 	}
-	showPods(v.app, "", "StatefulSet", v.selectedItem, sel.String(), "", v.backCmd)
 
-	return nil
+	showPods(app, "", "StatefulSet", sel, l.String(), "", v.backCmd)
 }
 
 func (v *statefulSetView) backCmd(evt *tcell.EventKey) *tcell.EventKey {

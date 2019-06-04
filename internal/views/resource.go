@@ -185,6 +185,11 @@ func (v *resourceView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.getTV().filterCmd(evt) == nil {
 		return nil
 	}
+
+	if v.selectedItem == "" {
+		return nil
+	}
+
 	if v.enterFn != nil {
 		v.enterFn(v.app, v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
 	} else {

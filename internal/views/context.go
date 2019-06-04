@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/resource"
-	"github.com/gdamore/tcell"
 )
 
 type contextView struct {
@@ -14,6 +13,7 @@ type contextView struct {
 func newContextView(t string, app *appView, list resource.List) resourceViewer {
 	v := contextView{newResourceView(t, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
+	v.enterFn = v.useCtx
 	v.getTV().cleanseFn = v.cleanser
 
 	return &v
@@ -21,21 +21,14 @@ func newContextView(t string, app *appView, list resource.List) resourceViewer {
 
 func (v *contextView) extraActions(aa keyActions) {
 	delete(v.getTV().actions, KeyShiftA)
-	aa[tcell.KeyEnter] = newKeyAction("Switch", v.useCmd, true)
 }
 
-func (v *contextView) useCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
-		return evt
+func (v *contextView) useCtx(app *appView, _, res, sel string) {
+	if err := v.useContext(sel); err != nil {
+		app.flash().err(err)
+		return
 	}
-	if err := v.useContext(v.selectedItem); err != nil {
-		v.app.flash().err(err)
-		return evt
-	}
-
-	v.app.gotoResource("po", true)
-
-	return nil
+	app.gotoResource("po", true)
 }
 
 func (*contextView) cleanser(s string) string {

@@ -70,9 +70,9 @@ func less(asc bool, c1, c2 string) bool {
 	return !b
 }
 
-func isDurationSort(asc bool, c1, c2 string) (bool, bool) {
-	d1, ok1 := isDuration(c1)
-	d2, ok2 := isDuration(c2)
+func isDurationSort(asc bool, s1, s2 string) (bool, bool) {
+	d1, ok1 := isDuration(s1)
+	d2, ok2 := isDuration(s2)
 	if !ok1 || !ok2 {
 		return false, false
 	}
@@ -80,7 +80,7 @@ func isDurationSort(asc bool, c1, c2 string) (bool, bool) {
 	if asc {
 		return d1 <= d2, true
 	}
-	return d1 > d2, true
+	return d1 >= d2, true
 }
 
 func isMetricSort(asc bool, c1, c2 string) (bool, bool) {

@@ -16,6 +16,7 @@ import (
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
+	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 const (
@@ -421,16 +422,23 @@ func (v *tableView) addHeaderCell(numCols map[string]bool, col int, name string,
 	c := tview.NewTableCell(v.sortIndicator(col, name))
 	{
 		c.SetExpansion(1)
-		c.SetTextColor(fg)
 		if numCols[name] || cpuRX.MatchString(name) || memRX.MatchString(name) {
 			c.SetAlign(tview.AlignRight)
 		}
+		c.SetTextColor(fg)
 		c.SetBackgroundColor(bg)
 	}
 	v.SetCell(0, col, c)
 }
 
 func (v *tableView) addBodyCell(numCols map[string]bool, header string, row, col int, field, delta string, color tcell.Color, pads maxyPad) {
+	if header == "AGE" {
+		dur, err := time.ParseDuration(field)
+		if err == nil {
+			field = duration.HumanDuration(dur)
+		}
+	}
+
 	field += deltas(delta, field)
 	align := tview.AlignLeft
 	if numCols[header] || cpuRX.MatchString(header) || memRX.MatchString(header) {

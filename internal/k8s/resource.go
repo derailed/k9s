@@ -80,23 +80,6 @@ func (r *Resource) listAll(ns, n string) (runtime.Object, error) {
 		Do().Get()
 }
 
-func (r *Resource) getOne(ns, n string) (runtime.Object, error) {
-	a := fmt.Sprintf(gvFmt, metav1beta1.SchemeGroupVersion.Version, metav1beta1.GroupName)
-	_, codec := r.codecs()
-
-	c, err := r.getClient()
-	if err != nil {
-		return nil, err
-	}
-
-	return c.Get().
-		SetHeader("Accept", a).
-		Namespace(ns).
-		Resource(n).
-		VersionedParams(&metav1beta1.TableOptions{}, codec).
-		Do().Get()
-}
-
 func (r *Resource) getClient() (*rest.RESTClient, error) {
 	crConfig := r.RestConfigOrDie()
 	crConfig.GroupVersion = &schema.GroupVersion{Group: r.group, Version: r.version}

@@ -64,20 +64,17 @@ func (v *podView) extraActions(aa keyActions) {
 }
 
 func (v *podView) listContainers(app *appView, _, res, sel string) {
-	if !v.rowSelected() {
-		return
-	}
-
 	po, err := v.app.informer.Get(watch.PodIndex, sel, metav1.GetOptions{})
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to retrieve pod %s", sel)
 		app.flash().errf("Unable to retrieve pods %s", err)
 		return
 	}
+
 	pod := po.(*v1.Pod)
 	mx := k8s.NewMetricsServer(app.conn())
 	list := resource.NewContainerList(app.conn(), mx, pod)
-	title := skinTitle(fmt.Sprintf(containerFmt, "Containers", sel), v.app.styles.Style)
+	title := skinTitle(fmt.Sprintf(containerFmt, "Containers", sel), app.styles.Style)
 
 	// Stop my updater
 	if v.cancelFn != nil {

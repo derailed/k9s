@@ -16,6 +16,7 @@ type daemonSetView struct {
 func newDaemonSetView(t string, app *appView, list resource.List) resourceViewer {
 	v := daemonSetView{newResourceView(t, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
+	v.enterFn = v.showPods
 
 	return &v
 }
@@ -23,7 +24,6 @@ func newDaemonSetView(t string, app *appView, list resource.List) resourceViewer
 func (v *daemonSetView) extraActions(aa keyActions) {
 	aa[KeyShiftD] = newKeyAction("Sort Desired", v.sortColCmd(2, false), true)
 	aa[KeyShiftC] = newKeyAction("Sort Current", v.sortColCmd(3, false), true)
-	aa[tcell.KeyEnter] = newKeyAction("View Pods", v.showPodsCmd, true)
 }
 
 func (v *daemonSetView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
@@ -36,30 +36,25 @@ func (v *daemonSetView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) 
 	}
 }
 
-func (v *daemonSetView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
-		return evt
-	}
-
-	ns, n := namespaced(v.selectedItem)
-	d := k8s.NewDaemonSet(v.app.conn())
+func (v *daemonSetView) showPods(app *appView, _, res, sel string) {
+	ns, n := namespaced(sel)
+	d := k8s.NewDaemonSet(app.conn())
 	dset, err := d.Get(ns, n)
 	if err != nil {
-		log.Error().Err(err).Msgf("Fetching DeaemonSet %s", v.selectedItem)
+		log.Error().Err(err).Msgf("Fetching DeaemonSet %s", sel)
 		v.app.flash().err(err)
-		return evt
+		return
 	}
+
 	ds := dset.(*extv1beta1.DaemonSet)
-
-	sel, err := metav1.LabelSelectorAsSelector(ds.Spec.Selector)
+	l, err := metav1.LabelSelectorAsSelector(ds.Spec.Selector)
 	if err != nil {
-		log.Error().Err(err).Msgf("Converting selector for DaemonSet %s", v.selectedItem)
-		v.app.flash().err(err)
-		return evt
+		log.Error().Err(err).Msgf("Converting selector for DaemonSet %s", sel)
+		app.flash().err(err)
+		return
 	}
-	showPods(v.app, ns, "DaemonSet", v.selectedItem, sel.String(), "", v.backCmd)
 
-	return nil
+	showPods(app, ns, "DaemonSet", sel, l.String(), "", v.backCmd)
 }
 
 func (v *daemonSetView) backCmd(evt *tcell.EventKey) *tcell.EventKey {

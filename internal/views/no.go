@@ -12,6 +12,7 @@ type nodeView struct {
 func newNodeView(t string, app *appView, list resource.List) resourceViewer {
 	v := nodeView{newResourceView(t, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
+	v.enterFn = v.showPods
 
 	return &v
 }
@@ -19,7 +20,6 @@ func newNodeView(t string, app *appView, list resource.List) resourceViewer {
 func (v *nodeView) extraActions(aa keyActions) {
 	aa[KeyShiftC] = newKeyAction("Sort CPU", v.sortColCmd(7, false), true)
 	aa[KeyShiftM] = newKeyAction("Sort MEM", v.sortColCmd(8, false), true)
-	aa[tcell.KeyEnter] = newKeyAction("View Pods", v.showPodsCmd, true)
 }
 
 func (v *nodeView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
@@ -32,14 +32,8 @@ func (v *nodeView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcel
 	}
 }
 
-func (v *nodeView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
-		return evt
-	}
-
-	showPods(v.app, "", "Node", v.selectedItem, "", "spec.nodeName="+v.selectedItem, v.backCmd)
-
-	return nil
+func (v *nodeView) showPods(app *appView, _, res, sel string) {
+	showPods(app, "", "Node", sel, "", "spec.nodeName="+sel, v.backCmd)
 }
 
 func (v *nodeView) backCmd(evt *tcell.EventKey) *tcell.EventKey {

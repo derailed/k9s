@@ -94,7 +94,7 @@ func (r *Custom) List(ns string) (Columnars, error) {
 		return nil, err
 	}
 
-	if len(ii) != 1 {
+	if len(ii) == 0 {
 		return Columnars{}, errors.New("no resources found")
 	}
 

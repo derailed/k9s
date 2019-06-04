@@ -22,7 +22,7 @@ func computeMaxColumns(pads maxyPad, sortCol int, table resource.TableData) {
 	}
 
 	var row int
-	for k, rev := range table.Rows {
+	for _, rev := range table.Rows {
 		ageIndex := len(rev.Fields) - 1
 		for index, field := range rev.Fields {
 			// Date field comes out as timestamp.
@@ -31,7 +31,6 @@ func computeMaxColumns(pads maxyPad, sortCol int, table resource.TableData) {
 				if err == nil {
 					field = duration.HumanDuration(dur)
 				}
-				table.Rows[k].Fields[index] = field
 			}
 			width := len(field) + colPadding
 			if width > pads[index] {

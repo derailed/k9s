@@ -47,6 +47,16 @@ func TestTVSortRows(t *testing.T) {
 			resource.Row{"x", "y"},
 			[]string{"row1", "row2"},
 		},
+		{
+			resource.RowEvents{
+				"row1": {Fields: resource.Row{"2175h48m0.06015s", "y"}},
+				"row2": {Fields: resource.Row{"403h42m34.060166s", "b"}},
+			},
+			0,
+			true,
+			resource.Row{"403h42m34.060166s", "b"},
+			[]string{"row2", "row1"},
+		},
 	}
 
 	var v *tableView

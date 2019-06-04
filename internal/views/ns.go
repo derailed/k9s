@@ -25,24 +25,19 @@ func newNamespaceView(t string, app *appView, list resource.List) resourceViewer
 	v.extraActionsFn = v.extraActions
 	v.selectedFn = v.getSelectedItem
 	v.decorateFn = v.decorate
+	v.enterFn = v.switchNs
 	v.getTV().cleanseFn = v.cleanser
 
 	return &v
 }
 
 func (v *namespaceView) extraActions(aa keyActions) {
-	aa[tcell.KeyEnter] = newKeyAction("Switch", v.switchNsCmd, true)
 	aa[KeyU] = newKeyAction("Use", v.useNsCmd, true)
 }
 
-func (v *namespaceView) switchNsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
-		return evt
-	}
-	v.useNamespace(v.getSelectedItem())
-	v.app.gotoResource("po", true)
-
-	return nil
+func (v *namespaceView) switchNs(app *appView, _, res, sel string) {
+	v.useNamespace(sel)
+	app.gotoResource("po", true)
 }
 
 func (v *namespaceView) useNsCmd(evt *tcell.EventKey) *tcell.EventKey {

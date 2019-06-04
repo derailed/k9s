@@ -16,6 +16,7 @@ type jobView struct {
 func newJobView(t string, app *appView, list resource.List) resourceViewer {
 	v := jobView{resourceView: newResourceView(t, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
+	v.enterFn = v.showPods
 	v.AddPage("logs", newLogsView(list.GetName(), &v), true, false)
 
 	picker := newSelectList(&v)
@@ -99,33 +100,27 @@ func (v *jobView) showLogs(path, co, view string, parent loggable, prev bool) {
 func (v *jobView) extraActions(aa keyActions) {
 	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
 	aa[KeyShiftL] = newKeyAction("Logs Previous", v.prevLogsCmd, true)
-	aa[tcell.KeyEnter] = newKeyAction("View Pods", v.showPodsCmd, true)
 }
 
-func (v *jobView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
-		return evt
-	}
-
-	ns, n := namespaced(v.selectedItem)
-	j := k8s.NewJob(v.app.conn())
+func (v *jobView) showPods(app *appView, _, res, sel string) {
+	ns, n := namespaced(sel)
+	j := k8s.NewJob(app.conn())
 	job, err := j.Get(ns, n)
 	if err != nil {
-		log.Error().Err(err).Msgf("Fetching Job %s", v.selectedItem)
-		v.app.flash().err(err)
-		return evt
+		log.Error().Err(err).Msgf("Fetching Job %s", sel)
+		app.flash().err(err)
+		return
 	}
+
 	jo := job.(*batchv1.Job)
-
-	sel, err := metav1.LabelSelectorAsSelector(jo.Spec.Selector)
+	l, err := metav1.LabelSelectorAsSelector(jo.Spec.Selector)
 	if err != nil {
-		log.Error().Err(err).Msgf("Converting selector for Job %s", v.selectedItem)
-		v.app.flash().err(err)
-		return evt
+		log.Error().Err(err).Msgf("Converting selector for Job %s", sel)
+		app.flash().err(err)
+		return
 	}
-	showPods(v.app, "", "Job", v.selectedItem, sel.String(), "", v.backCmd)
 
-	return nil
+	showPods(app, "", "Job", sel, l.String(), "", v.backCmd)
 }
 
 func (v *jobView) backCmd(evt *tcell.EventKey) *tcell.EventKey {

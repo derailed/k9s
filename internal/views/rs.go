@@ -23,6 +23,7 @@ type replicaSetView struct {
 func newReplicaSetView(t string, app *appView, list resource.List) resourceViewer {
 	v := replicaSetView{newResourceView(t, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
+	v.enterFn = v.showPods
 
 	return &v
 }
@@ -31,7 +32,6 @@ func (v *replicaSetView) extraActions(aa keyActions) {
 	aa[KeyShiftD] = newKeyAction("Sort Desired", v.sortColCmd(2, false), true)
 	aa[KeyShiftC] = newKeyAction("Sort Current", v.sortColCmd(3, false), true)
 	aa[tcell.KeyCtrlB] = newKeyAction("Rollback", v.rollbackCmd, true)
-	aa[tcell.KeyEnter] = newKeyAction("View Pods", v.showPodsCmd, true)
 }
 
 func (v *replicaSetView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
@@ -44,30 +44,24 @@ func (v *replicaSetView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey)
 	}
 }
 
-func (v *replicaSetView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
-		return evt
-	}
-
-	ns, n := namespaced(v.selectedItem)
-	rset := k8s.NewReplicaSet(v.app.conn())
+func (v *replicaSetView) showPods(app *appView, ns, res, sel string) {
+	ns, n := namespaced(sel)
+	rset := k8s.NewReplicaSet(app.conn())
 	r, err := rset.Get(ns, n)
 	if err != nil {
-		log.Error().Err(err).Msgf("Fetching ReplicaSet %s", v.selectedItem)
-		v.app.flash().errf("Replicaset failed %s", err)
-		return evt
+		log.Error().Err(err).Msgf("Fetching ReplicaSet %s", sel)
+		app.flash().errf("Replicaset failed %s", err)
 	}
+
 	rs := r.(*v1.ReplicaSet)
-
-	sel, err := metav1.LabelSelectorAsSelector(rs.Spec.Selector)
+	l, err := metav1.LabelSelectorAsSelector(rs.Spec.Selector)
 	if err != nil {
-		log.Error().Err(err).Msgf("Converting selector for ReplicaSet %s", v.selectedItem)
-		v.app.flash().errf("Selector failed %s", err)
-		return evt
+		log.Error().Err(err).Msgf("Converting selector for ReplicaSet %s", sel)
+		app.flash().errf("Selector failed %s", err)
+		return
 	}
-	showPods(v.app, "", "ReplicaSet", v.selectedItem, sel.String(), "", v.backCmd)
 
-	return nil
+	showPods(app, "", "ReplicaSet", sel, l.String(), "", v.backCmd)
 }
 
 func (v *replicaSetView) backCmd(evt *tcell.EventKey) *tcell.EventKey {

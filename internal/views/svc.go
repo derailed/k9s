@@ -22,6 +22,7 @@ type svcView struct {
 func newSvcView(t string, app *appView, list resource.List) resourceViewer {
 	v := svcView{resourceView: newResourceView(t, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
+	v.enterFn = v.showPods
 
 	return &v
 }
@@ -29,7 +30,6 @@ func newSvcView(t string, app *appView, list resource.List) resourceViewer {
 func (v *svcView) extraActions(aa keyActions) {
 	aa[tcell.KeyCtrlB] = newKeyAction("Bench", v.benchCmd, true)
 	aa[KeyAltB] = newKeyAction("Bench Stop", v.benchStopCmd, true)
-	aa[tcell.KeyEnter] = newKeyAction("View Pods", v.showPodsCmd, true)
 
 	aa[KeyShiftT] = newKeyAction("Sort Type", v.sortColCmd(1, false), true)
 }
@@ -44,23 +44,19 @@ func (v *svcView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell
 	}
 }
 
-func (v *svcView) showPodsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
-		return evt
-	}
-
-	s := k8s.NewService(v.app.conn())
-	ns, n := namespaced(v.selectedItem)
-	res, err := s.Get(ns, n)
+func (v *svcView) showPods(app *appView, ns, res, sel string) {
+	s := k8s.NewService(app.conn())
+	ns, n := namespaced(sel)
+	svc, err := s.Get(ns, n)
 	if err != nil {
-		log.Error().Err(err).Msgf("Fetch service %s", v.selectedItem)
-		return nil
-	}
-	if svc, ok := res.(*v1.Service); ok {
-		v.showSvcPods(ns, svc.Spec.Selector, v.backCmd)
+		log.Error().Err(err).Msgf("Fetch service %s", sel)
+		app.flash().err(err)
+		return
 	}
 
-	return nil
+	if s, ok := svc.(*v1.Service); ok {
+		v.showSvcPods(ns, s.Spec.Selector, v.backCmd)
+	}
 }
 
 func (v *svcView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -111,15 +107,12 @@ func (v *svcView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	svcType := strings.TrimSpace(tv.GetCell(r, tv.nameColIndex()+1).Text)
-	log.Debug().Msgf("Service Type %q", svcType)
 	if svcType != "NodePort" && svcType != "LoadBalancer" {
 		v.app.flash().err(errors.New("You must select a reachable service"))
 		return nil
 	}
 
 	ports := strings.TrimSpace(tv.GetCell(r, tv.nameColIndex()+5).Text)
-	// BOZO!! You Brute!!
-	// BOZO!! Will new much improv ie pop dialog and select port if multiport.
 	pp := strings.Split(ports, " ")
 	if len(pp) == 0 {
 		v.app.flash().err(errors.New("No ports found"))
