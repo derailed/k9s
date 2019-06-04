@@ -60,7 +60,8 @@ func (v *podView) extraActions(aa keyActions) {
 	aa[KeyShiftM] = newKeyAction("Sort MEM", v.sortColCmd(5, false), true)
 	aa[KeyAltC] = newKeyAction("Sort CPU%", v.sortColCmd(6, false), true)
 	aa[KeyAltM] = newKeyAction("Sort MEM%", v.sortColCmd(7, false), true)
-	aa[KeyShiftO] = newKeyAction("Sort Node", v.sortColCmd(8, true), true)
+	aa[KeyShiftD] = newKeyAction("Sort IP", v.sortColCmd(8, true), true)
+	aa[KeyShiftO] = newKeyAction("Sort Node", v.sortColCmd(9, true), true)
 }
 
 func (v *podView) listContainers(app *appView, _, res, sel string) {
