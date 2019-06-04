@@ -62,9 +62,13 @@ func NewInformer(client k8s.Connection, ns string) *Informer {
 	log.Debug().Msgf(">> Starting Informer")
 	i := Informer{client: client, informers: map[string]StoreInformer{}}
 
-	_, err := client.CanIAccess("", "", "namespaces", []string{"list", "watch"})
-	if err != nil && ns == AllNamespaces {
-		log.Panic().Msg("Unauthorized: All namespaces. Missing verbs ['list', 'watch']. Please specify a namespace or correct RBAC")
+	nsAccess, err := client.CanIAccess("", "", "namespaces", []string{"list", "watch"})
+	if ns == AllNamespaces && (err != nil || !nsAccess) {
+		user, _ := client.Config().CurrentUserName()
+		if err != nil {
+			log.Panic().Err(err).Msgf("Unauthorized: All namespaces. No access for user `%s", user)
+		}
+		log.Panic().Msgf("Unauthorized: All namespaces for user `%s. Missing verbs ['list', 'watch']. Please specify a namespace or correct RBAC", user)
 	}
 
 	// Namespace is locked in. check if user has auth for this ns access.
@@ -93,7 +97,7 @@ func (i *Informer) init(ns string) {
 			ContainerIndex: NewContainer(po),
 		}
 
-		if acc, err := i.client.CanIAccess("", "", "nodes", []string{"list", "watch"}); acc && err != nil {
+		if acc, err := i.client.CanIAccess("", "", "nodes", []string{"list", "watch"}); acc && err == nil {
 			i.informers[NodeIndex] = NewNode(i.client)
 		}
 
@@ -101,8 +105,10 @@ func (i *Informer) init(ns string) {
 			return
 		}
 
-		if acc, err := i.client.CanIAccess("", ns, "metrics.k8s.io", []string{"list", "watch"}); acc && err != nil {
+		if acc, err := i.client.CanIAccess(ns, "", "nodes.metrics.k8s.io", []string{"list", "watch"}); acc && err == nil {
 			i.informers[NodeMXIndex] = NewNodeMetrics(i.client)
+		}
+		if acc, err := i.client.CanIAccess(ns, "", "pods.metrics.k8s.io", []string{"list", "watch"}); acc && err == nil {
 			i.informers[PodMXIndex] = NewPodMetrics(i.client, ns)
 		}
 	})

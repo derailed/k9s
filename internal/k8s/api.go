@@ -120,7 +120,7 @@ func (a *APIClient) CanIAccess(ns, name, resURL string, verbs []string) (bool, e
 			log.Warn().Err(err).Msgf("CanIAccess")
 			return false, err
 		}
-		log.Debug().Msgf("CHECKING ACCESS res:%s-%q for NS: %q Verb: %s -> %t, %s", resURL, name, ns, v, resp.Status.Allowed, resp.Status.Reason)
+		log.Debug().Msgf("CHECKING ACCESS group:%q|resource:%q|namespace:%q|name:%q, verb:%s access:%t -- %s", gr.Group, gr.Resource, ns, name, v, resp.Status.Allowed, resp.Status.Reason)
 		if !resp.Status.Allowed {
 			return false, err
 		}
