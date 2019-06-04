@@ -70,7 +70,7 @@ func (*namespaceView) cleanser(s string) string {
 
 func (v *namespaceView) decorate(data resource.TableData) resource.TableData {
 	if _, ok := data.Rows[resource.AllNamespaces]; !ok {
-		if acc, err := v.app.conn().CanIAccess("", "namespaces", "namespace.v1", []string{"list"}); acc && err != nil {
+		if acc, err := v.app.conn().CanIAccess("", "namespaces", "namespace.v1", []string{"list"}); acc && err == nil {
 			data.Rows[resource.AllNamespace] = &resource.RowEvent{
 				Action: resource.Unchanged,
 				Fields: resource.Row{resource.AllNamespace, "Active", "0"},
