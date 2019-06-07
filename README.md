@@ -26,7 +26,7 @@ K9s is available on Linux, OSX and Windows platforms.
 * For OSX using Homebrew
 
    ```shell
-   brew tap derailed/k9s && brew install k9s
+   brew install derailed/k9s/k9s
    ```
 
 * Building from source

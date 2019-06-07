@@ -20,6 +20,8 @@ func newNodeView(t string, app *appView, list resource.List) resourceViewer {
 func (v *nodeView) extraActions(aa keyActions) {
 	aa[KeyShiftC] = newKeyAction("Sort CPU", v.sortColCmd(7, false), true)
 	aa[KeyShiftM] = newKeyAction("Sort MEM", v.sortColCmd(8, false), true)
+	aa[KeyAltC] = newKeyAction("Sort CPU%", v.sortColCmd(9, false), true)
+	aa[KeyAltM] = newKeyAction("Sort MEM%", v.sortColCmd(10, false), true)
 }
 
 func (v *nodeView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
