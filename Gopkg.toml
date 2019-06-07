@@ -1,0 +1,110 @@
+# Gopkg.toml example
+#
+# Refer to https://golang.github.io/dep/docs/Gopkg.toml.html
+# for detailed Gopkg.toml documentation.
+#
+# required = ["github.com/user/thing/cmd/thing"]
+# ignored = ["github.com/user/project/pkgX", "bitbucket.org/user/project/pkgA/pkgY"]
+#
+# [[constraint]]
+#   name = "github.com/user/project"
+#   version = "1.0.0"
+#
+# [[constraint]]
+#   name = "github.com/user/project2"
+#   branch = "dev"
+#   source = "github.com/myfork/project2"
+#
+# [[override]]
+#   name = "github.com/x/y"
+#   version = "2.4.0"
+#
+# [prune]
+#   non-go = false
+#   go-tests = true
+#   unused-packages = true
+
+
+[[constraint]]
+  name = "github.com/derailed/tview"
+  version = "0.1.7"
+
+[[constraint]]
+  name = "github.com/fsnotify/fsnotify"
+  version = "1.4.7"
+
+[[constraint]]
+  name = "github.com/gdamore/tcell"
+  version = "1.1.2"
+
+[[constraint]]
+  name = "github.com/mattn/go-runewidth"
+  version = "0.0.4"
+
+[[constraint]]
+  name = "github.com/petergtz/pegomock"
+  version = "2.5.0"
+
+[[constraint]]
+  name = "github.com/rakyll/hey"
+  version = "0.1.2"
+
+[[constraint]]
+  name = "github.com/rs/zerolog"
+  version = "1.14.3"
+
+[[constraint]]
+  name = "github.com/spf13/cobra"
+  version = "0.0.4"
+
+[[constraint]]
+  name = "github.com/stretchr/testify"
+  version = "1.3.0"
+
+[[constraint]]
+  name = "golang.org/x/text"
+  version = "0.3.2"
+
+[[constraint]]
+  name = "gopkg.in/yaml.v2"
+  version = "2.2.2"
+
+[[constraint]]
+  name = "gotest.tools"
+  version = "2.3.0"
+
+[[constraint]]
+  branch = "master"
+  name = "k8s.io/api"
+
+[[constraint]]
+  name = "k8s.io/cli-runtime"
+  version = "kubernetes-1.12.0-beta.1"
+
+[[constraint]]
+  branch = "master"
+  name = "k8s.io/client-go"
+
+[[constraint]]
+  name = "k8s.io/klog"
+  version = "0.3.2"
+
+[[constraint]]
+  name = "k8s.io/kubernetes"
+  version = "1.14.2"
+
+[[constraint]]
+  branch = "master"
+  name = "k8s.io/metrics"
+
+[[constraint]]
+  name = "sigs.k8s.io/yaml"
+  version = "1.1.0"
+
+[[constraint]]
+  branch = "master"
+  name = "vbom.ml/util"
+
+[prune]
+  go-tests = true
+  unused-packages = true
