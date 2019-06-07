@@ -35,6 +35,15 @@ const (
 	NAValue = "n/a"
 )
 
+func toSelector(m map[string]string) string {
+	s := make([]string, 0, len(m))
+	for k, v := range m {
+		s = append(s, k+"="+v)
+	}
+
+	return strings.Join(s, ",")
+}
+
 func fqn(ns, n string) string {
 	if ns == "" {
 		return n
@@ -189,4 +198,14 @@ func boolPtrToStr(b *bool) string {
 	}
 
 	return boolToStr(*b)
+}
+
+// Check if string is in a string list.
+func in(ll []string, s string) bool {
+	for _, l := range ll {
+		if l == s {
+			return true
+		}
+	}
+	return false
 }

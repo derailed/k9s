@@ -39,6 +39,6 @@ func (s *StatefulSet) List(ns string) (Collection, error) {
 }
 
 // Delete a StatefulSet.
-func (s *StatefulSet) Delete(ns, n string) error {
+func (s *StatefulSet) Delete(ns, n string, cascade, force bool) error {
 	return s.DialOrDie().AppsV1().StatefulSets(ns).Delete(n, nil)
 }

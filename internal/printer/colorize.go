@@ -4,22 +4,28 @@ import (
 	"fmt"
 )
 
+// Color describes a terminal color.
+type Color int
+
 // Defines basic ANSI colors.
 const (
-	ColorBlack = iota + 30
-	ColorRed
-	ColorGreen
-	ColorYellow
-	ColorBlue
-	ColorMagenta
-	ColorCyan
-	ColorWhite
+	Black Color = iota + 30
+	Red
+	Green
+	Yellow
+	Blue
+	Magenta
+	Cyan
+	White
+	DarkGray = 90
 
-	ColorBold     = 1
-	ColorDarkGray = 90
+	Bold = 1
 )
 
 // Colorize a string based on given color.
-func Colorize(s string, c int) string {
+func Colorize(s string, c Color) string {
+	if c == 0 {
+		c = White
+	}
 	return fmt.Sprintf("\x1b[%dm%s\x1b[0m", c, s)
 }

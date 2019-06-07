@@ -14,23 +14,21 @@ import (
 )
 
 type containerView struct {
-	*resourceView
+	*logResourceView
 
 	current igniter
 	exitFn  func()
 }
 
-func newContainerView(t string, app *appView, list resource.List, path string, exitFn func()) resourceViewer {
-	v := containerView{resourceView: newResourceView(t, app, list).(*resourceView)}
-	{
-		v.path = &path
-		v.extraActionsFn = v.extraActions
-		v.enterFn = v.viewLogs
-		v.colorerFn = containerColorer
-		v.current = app.content.GetPrimitive("main").(igniter)
-		v.exitFn = exitFn
-	}
-	v.AddPage("logs", newLogsView(list.GetName(), &v), true, false)
+func newContainerView(ns string, app *appView, list resource.List, path string, exitFn func()) resourceViewer {
+	v := containerView{logResourceView: newLogResourceView(ns, app, list)}
+	v.path = &path
+	v.containerFn = v.selectedContainer
+	v.extraActionsFn = v.extraActions
+	v.enterFn = v.viewLogs
+	v.colorerFn = containerColorer
+	v.current = app.content.GetPrimitive("main").(igniter)
+	v.exitFn = exitFn
 
 	return &v
 }
@@ -40,7 +38,7 @@ func (v *containerView) init(ctx context.Context, ns string) {
 }
 
 func (v *containerView) extraActions(aa keyActions) {
-	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
+	v.logResourceView.extraActions(aa)
 	aa[KeyShiftF] = newKeyAction("PortForward", v.portFwdCmd, true)
 	aa[KeyShiftL] = newKeyAction("Logs Previous", v.prevLogsCmd, true)
 	aa[KeyS] = newKeyAction("Shell", v.shellCmd, true)
@@ -52,59 +50,20 @@ func (v *containerView) extraActions(aa keyActions) {
 	aa[KeyAltM] = newKeyAction("Sort MEM%", v.sortColCmd(9, false), true)
 }
 
-// Protocol...
-
-func (v *containerView) backFn() actionHandler {
-	return v.backCmd
+func (v *containerView) selectedContainer() string {
+	return v.selectedItem
 }
 
-func (v *containerView) appView() *appView {
-	return v.app
-}
-
-func (v *containerView) getList() resource.List {
-	return v.list
-}
-
-func (v *containerView) getSelection() string {
-	return *v.path
+func (v *containerView) viewLogs(app *appView, _, res, sel string) {
+	status := strings.TrimSpace(v.getTV().GetCell(v.selectedRow, 3).Text)
+	if status == "Running" || status == "Completed" {
+		v.showLogs(false)
+		return
+	}
+	v.app.flash().err(errors.New("No logs available"))
 }
 
 // Handlers...
-
-func (v *containerView) viewLogs(app *appView, _, res, sel string) {
-	cell := v.getTV().GetCell(v.selectedRow, 3)
-	if cell != nil && strings.TrimSpace(cell.Text) != "Running" {
-		v.app.flash().err(errors.New("No logs for a non running container"))
-		return
-	}
-
-	v.showLogs(sel, v.list.GetName(), v, false)
-}
-
-func (v *containerView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
-		return evt
-	}
-
-	v.viewLogs(v.app, v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
-	return nil
-}
-
-func (v *containerView) prevLogsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
-		return evt
-	}
-	v.showLogs(v.selectedItem, v.list.GetName(), v, true)
-
-	return nil
-}
-
-func (v *containerView) showLogs(co, view string, parent loggable, prev bool) {
-	l := v.GetPrimitive("logs").(*logsView)
-	l.reload(co, parent, view, prev)
-	v.switchPage("logs")
-}
 
 func (v *containerView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
@@ -115,16 +74,6 @@ func (v *containerView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	shellIn(v.app, *v.path, v.selectedItem)
 	v.restartUpdates()
 	return nil
-}
-
-func (v *containerView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		t := v.getTV()
-		t.sortCol.index, t.sortCol.asc = t.nameColIndex()+col, asc
-		t.refresh()
-
-		return nil
-	}
 }
 
 func (v *containerView) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -149,33 +98,18 @@ func (v *containerView) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		break
 	}
 	if port == "" {
-		v.app.flash().err(errors.New("No valid TCP port found on this container"))
-		return nil
+		v.app.flash().warn("No valid TCP port found on this container. User will specify...")
+		port = "MY_TCP_PORT!"
 	}
-	f := tview.NewForm()
-	f.SetItemPadding(0)
-	f.SetButtonsAlign(tview.AlignCenter).
-		SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
-		SetButtonTextColor(tview.Styles.PrimaryTextColor).
-		SetLabelColor(tcell.ColorAqua).
-		SetFieldTextColor(tcell.ColorOrange)
 
-	f1, f2 := port, port
-	f.AddInputField("Pod Port:", f1, 20, nil, func(changed string) {
-		f1 = changed
-	})
-	f.AddInputField("Local Port:", f2, 20, nil, func(changed string) {
-		f2 = changed
-	})
+	co := strings.TrimSpace(v.getTV().GetCell(v.selectedRow, 0).Text)
 
-	f.AddButton("OK", func() {
+	v.showPortFwdDialog(port, func(lport, cport string) {
 		pf := k8s.NewPortForward(v.app.conn(), &log.Logger)
-		ports := []string{stripPort(f2) + ":" + stripPort(f1)}
-		co := strings.TrimSpace(v.getTV().GetCell(v.selectedRow, 0).Text)
+		ports := []string{lport + ":" + cport}
 		fw, err := pf.Start(*v.path, co, ports)
 		if err != nil {
-			log.Error().Err(err).Msg("Fort Forward")
-			v.app.flash().errf("PortForward failed! %v", err)
+			v.app.flash().err(err)
 			return
 		}
 
@@ -188,7 +122,6 @@ func (v *containerView) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 			})
 			pf.SetActive(true)
 			if err := f.ForwardPorts(); err != nil {
-				log.Error().Err(err).Msg("Port forward failed")
 				v.app.QueueUpdateDraw(func() {
 					if len(v.app.forwarders) > 0 {
 						v.app.forwarders = v.app.forwarders[:len(v.app.forwarders)-1]
@@ -198,6 +131,40 @@ func (v *containerView) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 				})
 			}
 		}(fw)
+	})
+
+	return nil
+}
+
+func (v *containerView) dismissModal() {
+	v.RemovePage("dialog")
+	v.switchPage(v.list.GetName())
+}
+
+func (v *containerView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
+	v.exitFn()
+	return nil
+}
+
+func (v *containerView) showPortFwdDialog(port string, okFn func(lport, cport string)) {
+	f := tview.NewForm()
+	f.SetItemPadding(0)
+	f.SetButtonsAlign(tview.AlignCenter).
+		SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
+		SetButtonTextColor(tview.Styles.PrimaryTextColor).
+		SetLabelColor(tcell.ColorAqua).
+		SetFieldTextColor(tcell.ColorOrange)
+
+	p1, p2 := port, port
+	f.AddInputField("Pod Port:", p1, 20, nil, func(port string) {
+		p1 = port
+	})
+	f.AddInputField("Local Port:", p2, 20, nil, func(port string) {
+		p2 = port
+	})
+
+	f.AddButton("OK", func() {
+		okFn(stripPort(p2), stripPort(p1))
 	})
 	f.AddButton("Cancel", func() {
 		v.app.flash().info("Canceled!!")
@@ -210,17 +177,4 @@ func (v *containerView) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 	})
 	v.AddPage("dialog", modal, false, false)
 	v.ShowPage("dialog")
-
-	return nil
-}
-
-func (v *containerView) dismissModal() {
-	v.RemovePage("dialog")
-	v.switchPage(v.list.GetName())
-}
-
-func (v *containerView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	v.exitFn()
-
-	return nil
 }

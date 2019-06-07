@@ -103,7 +103,7 @@ type (
 		New(interface{}) Columnar
 		Get(path string) (Columnar, error)
 		List(ns string) (Columnars, error)
-		Delete(path string) error
+		Delete(path string, cascade, force bool) error
 		Describe(kind, pa string, flags *genericclioptions.ConfigFlags) (string, error)
 		Marshal(pa string) (string, error)
 		Header(ns string) Row

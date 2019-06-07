@@ -216,15 +216,13 @@ func (v *resourceView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	sel := v.getSelectedItem()
-	v.showModal(fmt.Sprintf("Delete %s %s?", v.list.GetName(), sel), func(_ int, button string) {
-		if button == "OK" {
-			v.getTV().setDeleted()
-			v.app.flash().infof("Deleting %s %s", v.list.GetName(), sel)
-			if err := v.list.Resource().Delete(sel); err != nil {
-				v.app.flash().errf("Delete failed with %s", err)
-			} else {
-				v.refresh()
-			}
+	v.showDelete(fmt.Sprintf("Delete %s %s?", v.list.GetName(), sel), func(cascade, force bool) {
+		v.getTV().setDeleted()
+		v.app.flash().infof("Deleting %s %s", v.list.GetName(), sel)
+		if err := v.list.Resource().Delete(sel, cascade, force); err != nil {
+			v.app.flash().errf("Delete failed with %s", err)
+		} else {
+			v.refresh()
 		}
 		v.dismissModal()
 	})
@@ -232,12 +230,37 @@ func (v *resourceView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *resourceView) showModal(msg string, done func(int, string)) {
-	confirm := tview.NewModal().
-		AddButtons([]string{"Cancel", "OK"}).
-		SetTextColor(tcell.ColorFuchsia).
-		SetText(msg).
-		SetDoneFunc(done)
+func (v *resourceView) showDelete(msg string, done func(bool, bool)) {
+	cascade, force := true, false
+	f := tview.NewForm()
+	f.SetItemPadding(0)
+	f.SetButtonsAlign(tview.AlignCenter).
+		SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
+		SetButtonTextColor(tview.Styles.PrimaryTextColor).
+		SetLabelColor(tcell.ColorAqua).
+		SetFieldTextColor(tcell.ColorOrange)
+	f.AddCheckbox("Cascade:", cascade, func(checked bool) {
+		log.Debug().Msgf("Cascade changed: %t", checked)
+		cascade = checked
+	})
+	f.AddCheckbox("Force:", force, func(checked bool) {
+		log.Debug().Msgf("Force changed: %t", checked)
+		force = checked
+	})
+	f.AddButton("Cancel", func() {
+		v.app.flash().info("Canceled!!")
+		v.dismissModal()
+	})
+	f.AddButton("OK", func() {
+		done(cascade, force)
+		v.dismissModal()
+	})
+
+	confirm := tview.NewModalForm("<Delete>", f)
+	confirm.SetText(msg)
+	confirm.SetDoneFunc(func(int, string) {
+		v.dismissModal()
+	})
 	v.AddPage("confirm", confirm, false, false)
 	v.ShowPage("confirm")
 }
@@ -307,6 +330,7 @@ func (v *resourceView) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
+	kcfg := v.app.conn().Config().Flags().KubeConfig
 	v.stopUpdates()
 	{
 		ns, po := namespaced(v.selectedItem)
@@ -315,8 +339,10 @@ func (v *resourceView) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		args = append(args, v.list.GetName())
 		args = append(args, "-n", ns)
 		args = append(args, "--context", v.app.config.K9s.CurrentContext)
-		args = append(args, po)
-		runK(true, v.app, args...)
+		if kcfg != nil && *kcfg != "" {
+			args = append(args, "--kubeconfig", *kcfg)
+		}
+		runK(true, v.app, append(args, po)...)
 	}
 	v.restartUpdates()
 

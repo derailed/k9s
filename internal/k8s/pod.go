@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	restclient "k8s.io/client-go/rest"
@@ -44,9 +45,12 @@ func (p *Pod) List(ns string) (Collection, error) {
 }
 
 // Delete a pod.
-func (p *Pod) Delete(ns, n string) error {
-	// Make pods die faster?
+func (p *Pod) Delete(ns, n string, cascade, force bool) error {
+	log.Debug().Msgf("Killing Pod %s %t:%t", n, cascade, force)
 	grace := defaultKillGrace
+	if force {
+		grace = 0
+	}
 	return p.DialOrDie().CoreV1().Pods(ns).Delete(n, &metav1.DeleteOptions{
 		GracePeriodSeconds: &grace,
 	})
@@ -76,9 +80,10 @@ func (p *Pod) Containers(ns, n string, includeInit bool) ([]string, error) {
 // Logs fetch container logs for a given pod and container.
 func (p *Pod) Logs(ns, n, co string, lines int64, prev bool) *restclient.Request {
 	return p.DialOrDie().CoreV1().Pods(ns).GetLogs(n, &v1.PodLogOptions{
-		Container: co,
-		Follow:    true,
-		TailLines: &lines,
-		Previous:  prev,
+		Container:  co,
+		Follow:     true,
+		TailLines:  &lines,
+		Timestamps: false,
+		Previous:   prev,
 	})
 }

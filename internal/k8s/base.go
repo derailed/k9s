@@ -28,3 +28,7 @@ func (b *base) GetLabelSelector() string {
 func (b *base) HasSelectors() bool {
 	return b.labelSelector != "" || b.fieldSelector != ""
 }
+
+func (b *base) Kill(ns, n string) error {
+	return nil
+}

@@ -39,6 +39,6 @@ func (s *Secret) List(ns string) (Collection, error) {
 }
 
 // Delete a Secret.
-func (s *Secret) Delete(ns, n string) error {
+func (s *Secret) Delete(ns, n string, cascade, force bool) error {
 	return s.DialOrDie().CoreV1().Secrets(ns).Delete(n, nil)
 }

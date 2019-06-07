@@ -40,6 +40,6 @@ func (p *PeristentVolume) List(_ string) (Collection, error) {
 }
 
 // Delete a PeristentVolume.
-func (p *PeristentVolume) Delete(_, n string) error {
+func (p *PeristentVolume) Delete(_, n string, cascade, force bool) error {
 	return p.DialOrDie().CoreV1().PersistentVolumes().Delete(n, nil)
 }

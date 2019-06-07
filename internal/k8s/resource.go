@@ -54,7 +54,7 @@ func (r *Resource) List(ns string) (Collection, error) {
 }
 
 // Delete a Resource.
-func (r *Resource) Delete(ns, n string) error {
+func (r *Resource) Delete(ns, n string, cascade, force bool) error {
 	return r.nsRes().Namespace(ns).Delete(n, nil)
 }
 

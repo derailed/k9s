@@ -39,6 +39,6 @@ func (e *Event) List(ns string) (Collection, error) {
 }
 
 // Delete an Event.
-func (e *Event) Delete(ns, n string) error {
+func (e *Event) Delete(ns, n string, cascade, force bool) error {
 	return e.DialOrDie().CoreV1().Events(ns).Delete(n, nil)
 }

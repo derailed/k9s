@@ -1,12 +1,11 @@
 package resource
 
 import (
-	"bufio"
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
@@ -69,63 +68,19 @@ func (r *Container) Marshal(path string) (string, error) {
 	return "", nil
 }
 
+// // PodLogs tail logs for all containers in a running Pod.
+// func (r *Container) PodLogs(ctx context.Context, c chan<- string, ns, n string, lines int64, prev bool) error {
+// 	return nil
+// }
+
 // Logs tails a given container logs
-func (r *Container) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (context.CancelFunc, error) {
-	req := r.Resource.(k8s.Loggable).Logs(ns, n, co, lines, prev)
-	ctx, cancel := context.WithCancel(context.TODO())
-	req.Context(ctx)
-
-	blocked := true
-	go func() {
-		select {
-		case <-time.After(defaultTimeout):
-			var closes bool
-			r.mx.RLock()
-			{
-				closes = blocked
-			}
-			r.mx.RUnlock()
-			if closes {
-				log.Debug().Msg(">>Closing Channel<<")
-				close(c)
-				cancel()
-			}
-		}
-	}()
-
-	// This call will block if nothing is in the stream!!
-	stream, err := req.Stream()
-	if err != nil {
-		log.Warn().Err(err).Msgf("Stream canceled `%s/%s:%s", ns, n, co)
-		return cancel, err
+func (r *Container) Logs(ctx context.Context, c chan<- string, opts LogOptions) error {
+	res, ok := r.Resource.(k8s.Loggable)
+	if !ok {
+		return fmt.Errorf("Resource %T is not Loggable", r.Resource)
 	}
 
-	r.mx.Lock()
-	{
-		blocked = false
-	}
-	r.mx.Unlock()
-
-	go func() {
-		defer func() {
-			log.Debug().Msgf("Closing stream %s:%s", n, co)
-			close(c)
-			stream.Close()
-			cancel()
-		}()
-
-		scanner := bufio.NewScanner(stream)
-		for scanner.Scan() {
-			c <- scanner.Text()
-			select {
-			case <-ctx.Done():
-				return
-			default:
-			}
-		}
-	}()
-
-	return cancel, nil
+	return tailLogs(ctx, res, c, opts)
 }
 
 // List resources for a given namespace.
@@ -205,20 +160,22 @@ func (r *Container) Fields(ns string) Row {
 
 	var cs *v1.ContainerStatus
 	for _, c := range r.pod.Status.ContainerStatuses {
-		if c.Name != i.Name {
-			continue
+		if c.Name == i.Name {
+			cs = &c
+			break
 		}
-		cs = &c
 	}
 
 	if cs == nil {
 		for _, c := range r.pod.Status.InitContainerStatuses {
-			if c.Name != i.Name {
-				continue
+			if c.Name == i.Name {
+				cs = &c
+				break
 			}
-			cs = &c
 		}
 	}
+
+	log.Debug().Msgf("Container %s %v", i.Name, cs.Name)
 
 	ready, state, restarts := "false", MissingValue, "0"
 	if cs != nil {

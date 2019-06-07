@@ -37,6 +37,6 @@ func (r *RoleBinding) List(ns string) (Collection, error) {
 }
 
 // Delete a RoleBinding.
-func (r *RoleBinding) Delete(ns, n string) error {
+func (r *RoleBinding) Delete(ns, n string, cascade, force bool) error {
 	return r.DialOrDie().RbacV1().RoleBindings(ns).Delete(n, nil)
 }

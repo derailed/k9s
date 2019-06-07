@@ -63,12 +63,12 @@ func TestCMList(t *testing.T) {
 func TestCMDelete(t *testing.T) {
 	rc := NewMockConnection()
 	cr := NewMockCruder()
-	m.When(cr.Delete("blee", "fred")).ThenReturn(nil)
+	m.When(cr.Delete("blee", "fred", true, true)).ThenReturn(nil)
 
 	cm := NewConfigMapWithArgs(rc, cr)
 
-	assert.Nil(t, cm.Delete("blee/fred"))
-	cr.VerifyWasCalledOnce().Delete("blee", "fred")
+	assert.Nil(t, cm.Delete("blee/fred", true, true))
+	cr.VerifyWasCalledOnce().Delete("blee", "fred", true, true)
 }
 
 func TestCMMarshal(t *testing.T) {

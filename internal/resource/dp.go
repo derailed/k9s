@@ -1,17 +1,19 @@
 package resource
 
 import (
+	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 )
 
 // Deployment tracks a kubernetes resource.
 type Deployment struct {
 	*Base
-	instance *v1.Deployment
+	instance *appsv1.Deployment
 }
 
 // NewDeploymentList returns a new resource list.
@@ -36,9 +38,9 @@ func NewDeployment(c Connection) *Deployment {
 func (r *Deployment) New(i interface{}) Columnar {
 	c := NewDeployment(r.Connection)
 	switch instance := i.(type) {
-	case *v1.Deployment:
+	case *appsv1.Deployment:
 		c.instance = instance
-	case v1.Deployment:
+	case appsv1.Deployment:
 		c.instance = &instance
 	default:
 		log.Fatal().Msgf("unknown Deployment type %#v", i)
@@ -56,11 +58,25 @@ func (r *Deployment) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	dp := i.(*v1.Deployment)
+	dp := i.(*appsv1.Deployment)
 	dp.TypeMeta.APIVersion = "apps/v1"
 	dp.TypeMeta.Kind = "Deployment"
 
 	return r.marshalObject(dp)
+}
+
+// Logs tail logs for all pods represented by this deployment.
+func (r *Deployment) Logs(ctx context.Context, c chan<- string, opts LogOptions) error {
+	instance, err := r.Resource.Get(opts.Namespace, opts.Name)
+	if err != nil {
+		return err
+	}
+	dp := instance.(*appsv1.Deployment)
+	if dp.Spec.Selector == nil || len(dp.Spec.Selector.MatchLabels) == 0 {
+		return fmt.Errorf("No valid selector found on deployment %s", opts.Name)
+	}
+
+	return r.podLogs(ctx, c, dp.Spec.Selector.MatchLabels, opts)
 }
 
 // Header return resource header.

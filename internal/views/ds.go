@@ -3,18 +3,17 @@ package views
 import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
-	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	extv1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type daemonSetView struct {
-	*resourceView
+	*logResourceView
 }
 
 func newDaemonSetView(t string, app *appView, list resource.List) resourceViewer {
-	v := daemonSetView{newResourceView(t, app, list).(*resourceView)}
+	v := daemonSetView{newLogResourceView(t, app, list)}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.showPods
 
@@ -22,18 +21,9 @@ func newDaemonSetView(t string, app *appView, list resource.List) resourceViewer
 }
 
 func (v *daemonSetView) extraActions(aa keyActions) {
+	v.logResourceView.extraActions(aa)
 	aa[KeyShiftD] = newKeyAction("Sort Desired", v.sortColCmd(2, false), true)
 	aa[KeyShiftC] = newKeyAction("Sort Current", v.sortColCmd(3, false), true)
-}
-
-func (v *daemonSetView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		t := v.getTV()
-		t.sortCol.index, t.sortCol.asc = t.nameColIndex()+col, asc
-		t.refresh()
-
-		return nil
-	}
 }
 
 func (v *daemonSetView) showPods(app *appView, _, res, sel string) {
@@ -55,12 +45,4 @@ func (v *daemonSetView) showPods(app *appView, _, res, sel string) {
 	}
 
 	showPods(app, ns, "DaemonSet", sel, l.String(), "", v.backCmd)
-}
-
-func (v *daemonSetView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	// Reset namespace to what it was
-	v.app.config.SetActiveNamespace(v.list.GetNamespace())
-	v.app.inject(v)
-
-	return nil
 }

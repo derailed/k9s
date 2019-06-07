@@ -32,10 +32,6 @@ func (c *command) pushCmd(cmd string) {
 }
 
 func (c *command) previousCmd() (string, bool) {
-	if c.lastCmd() {
-		return c.history.top()
-	}
-
 	c.history.pop()
 	c.app.crumbsView.update(c.history.stack)
 

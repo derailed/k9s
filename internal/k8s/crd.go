@@ -39,6 +39,6 @@ func (c *CustomResourceDefinition) List(string) (Collection, error) {
 }
 
 // Delete a CustomResourceDefinition.
-func (c *CustomResourceDefinition) Delete(_, n string) error {
+func (c *CustomResourceDefinition) Delete(_, n string, cascade, force bool) error {
 	return c.NSDialOrDie().Delete(n, nil)
 }

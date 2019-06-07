@@ -18,11 +18,11 @@ func NewMockSwitchableCruder() *MockSwitchableCruder {
 	return &MockSwitchableCruder{fail: pegomock.GlobalFailHandler}
 }
 
-func (mock *MockSwitchableCruder) Delete(_param0 string, _param1 string) error {
+func (mock *MockSwitchableCruder) Delete(_param0 string, _param1 string, _param2 bool, _param3 bool) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockSwitchableCruder().")
 	}
-	params := []pegomock.Param{_param0, _param1}
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	result := pegomock.GetGenericMockFrom(mock).Invoke("Delete", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 error
 	if len(result) != 0 {
@@ -199,8 +199,8 @@ type VerifierSwitchableCruder struct {
 	timeout                time.Duration
 }
 
-func (verifier *VerifierSwitchableCruder) Delete(_param0 string, _param1 string) *SwitchableCruder_Delete_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1}
+func (verifier *VerifierSwitchableCruder) Delete(_param0 string, _param1 string, _param2 bool, _param3 bool) *SwitchableCruder_Delete_OngoingVerification {
+	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Delete", params, verifier.timeout)
 	return &SwitchableCruder_Delete_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
@@ -210,12 +210,12 @@ type SwitchableCruder_Delete_OngoingVerification struct {
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *SwitchableCruder_Delete_OngoingVerification) GetCapturedArguments() (string, string) {
-	_param0, _param1 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1]
+func (c *SwitchableCruder_Delete_OngoingVerification) GetCapturedArguments() (string, string, bool, bool) {
+	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
 }
 
-func (c *SwitchableCruder_Delete_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
+func (c *SwitchableCruder_Delete_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []bool, _param3 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -225,6 +225,14 @@ func (c *SwitchableCruder_Delete_OngoingVerification) GetAllCapturedArguments() 
 		_param1 = make([]string, len(params[1]))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
+		}
+		_param2 = make([]bool, len(params[2]))
+		for u, param := range params[2] {
+			_param2[u] = param.(bool)
+		}
+		_param3 = make([]bool, len(params[3]))
+		for u, param := range params[3] {
+			_param3[u] = param.(bool)
 		}
 	}
 	return

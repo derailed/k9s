@@ -39,6 +39,6 @@ func (e *Endpoints) List(ns string) (Collection, error) {
 }
 
 // Delete a Endpoint.
-func (e *Endpoints) Delete(ns, n string) error {
+func (e *Endpoints) Delete(ns, n string, cascade, force bool) error {
 	return e.DialOrDie().CoreV1().Endpoints(ns).Delete(n, nil)
 }

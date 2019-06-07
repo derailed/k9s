@@ -1,0 +1,74 @@
+benchmarks:
+  defaults:
+    concurrency: 20
+    requests: 100
+  containers:
+    c1:
+      concurrency: 2
+      requests: 1000
+      method: GET
+      http2: true
+      host: 10.10.10.10
+      path: /duh
+      body: |-
+        {"fred": "blee"}
+      auth:
+        user: "fred"
+        password: "blee"
+      headers:
+        Accept:
+          - text/html
+        Content-Type:
+          - application/json
+    c2:
+      concurrency: 10
+      requests: 1500
+      method: POST
+      http2: false
+      host: 20.20.20.20
+      path: /fred
+      body: |-
+        {"fred": "blee"}
+      auth:
+        user: "fred"
+        password: "blee"
+      headers:
+        Accept:
+          - text/html
+        Content-Type:
+          - application/json
+  services:
+    default/nginx:
+      concurrency: 2
+      requests: 1000
+      method: GET
+      http2: true
+      host: 10.10.10.10
+      path: /
+      body: |-
+        {"fred": "blee"}
+      auth:
+        user: "fred"
+        password: "blee"
+      headers:
+        Accept:
+          - text/html
+        Content-Type:
+          - application/json
+    blee/fred:
+      concurrency: 10
+      requests: 1500
+      method: POST
+      http2: false
+      host: 20.20.20.20
+      path: /blee
+      body: |-
+        {"fred": "blee"}
+      auth:
+        user: "fred"
+        password: "blee"
+      headers:
+        Accept:
+          - text/html
+        Content-Type:
+          - application/json

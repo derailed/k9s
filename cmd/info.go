@@ -23,13 +23,13 @@ func infoCmd() *cobra.Command {
 func printInfo() {
 	const sectionFmt = "%-15s "
 
-	printLogo(printer.ColorCyan)
+	printLogo(printer.Cyan)
 	printTuple(sectionFmt, "Configuration", config.K9sConfigFile)
 	printTuple(sectionFmt, "Logs", config.K9sLogs)
 	printTuple(sectionFmt, "Screen Dumps", config.K9sDumpDir)
 }
 
-func printLogo(color int) {
+func printLogo(color printer.Color) {
 	for _, l := range views.LogoSmall {
 		fmt.Println(printer.Colorize(l, color))
 	}

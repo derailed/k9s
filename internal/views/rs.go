@@ -7,6 +7,7 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
@@ -86,6 +87,19 @@ func (v *replicaSetView) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	return nil
 }
+
+func (v *replicaSetView) showModal(msg string, done func(int, string)) {
+	confirm := tview.NewModal().
+		AddButtons([]string{"Cancel", "OK"}).
+		SetTextColor(tcell.ColorFuchsia).
+		SetText(msg).
+		SetDoneFunc(done)
+	v.AddPage("confirm", confirm, false, false)
+	v.ShowPage("confirm")
+}
+
+// ----------------------------------------------------------------------------
+// Helpers...
 
 func rollback(app *appView, selectedItem string) bool {
 	ns, n := namespaced(selectedItem)

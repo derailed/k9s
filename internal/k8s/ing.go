@@ -39,6 +39,6 @@ func (i *Ingress) List(ns string) (Collection, error) {
 }
 
 // Delete a Ingress.
-func (i *Ingress) Delete(ns, n string) error {
+func (i *Ingress) Delete(ns, n string, cascade, force bool) error {
 	return i.DialOrDie().ExtensionsV1beta1().Ingresses(ns).Delete(n, nil)
 }

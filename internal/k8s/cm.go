@@ -39,6 +39,6 @@ func (c *ConfigMap) List(ns string) (Collection, error) {
 }
 
 // Delete a ConfigMap.
-func (c *ConfigMap) Delete(ns, n string) error {
+func (c *ConfigMap) Delete(ns, n string, cascade, force bool) error {
 	return c.DialOrDie().CoreV1().ConfigMaps(ns).Delete(n, nil)
 }

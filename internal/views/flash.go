@@ -9,6 +9,7 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -62,10 +63,12 @@ func (v *flashView) warnf(fmat string, args ...interface{}) {
 }
 
 func (v *flashView) err(err error) {
+	log.Error().Err(err)
 	v.setMessage(flashErr, err.Error())
 }
 
 func (v *flashView) errf(fmat string, args ...interface{}) {
+	log.Error().Msgf(fmat, args...)
 	v.setMessage(flashErr, fmt.Sprintf(fmat, args...))
 }
 

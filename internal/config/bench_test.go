@@ -7,6 +7,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestBenchEmpty(t *testing.T) {
+	uu := map[string]struct {
+		b Benchmark
+		e bool
+	}{
+		"empty":    {Benchmark{}, true},
+		"notEmpty": {newBenchmark(), false},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, u.b.empty())
+		})
+	}
+}
+
 func TestBenchLoad(t *testing.T) {
 	uu := map[string]struct {
 		file     string
@@ -97,6 +113,20 @@ func TestBenchServiceLoad(t *testing.T) {
 			assert.Equal(t, u.headers, svc.Headers)
 		})
 	}
+}
+
+func TestBenchReLoad(t *testing.T) {
+	b, err := NewBench("test_assets/b_containers.yml")
+	assert.Nil(t, err)
+
+	assert.Equal(t, 2, b.Benchmarks.Defaults.C)
+	assert.Nil(t, b.Reload("test_assets/b_containers_1.yml"))
+	assert.Equal(t, 20, b.Benchmarks.Defaults.C)
+}
+
+func TestBenchLoadToast(t *testing.T) {
+	_, err := NewBench("test_assets/toast.yml")
+	assert.NotNil(t, err)
 }
 
 func TestBenchContainerLoad(t *testing.T) {

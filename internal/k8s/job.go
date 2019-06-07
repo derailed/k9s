@@ -52,7 +52,7 @@ func (j *Job) List(ns string) (Collection, error) {
 }
 
 // Delete a Job.
-func (j *Job) Delete(ns, n string) error {
+func (j *Job) Delete(ns, n string, cascade, force bool) error {
 	return j.DialOrDie().BatchV1().Jobs(ns).Delete(n, nil)
 }
 

@@ -23,11 +23,23 @@ func newSvcView(t string, app *appView, list resource.List) resourceViewer {
 	v := svcView{resourceView: newResourceView(t, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.showPods
+	v.AddPage("logs", newLogsView(list.GetName(), app, &v), true, false)
 
 	return &v
 }
 
+// Protocol...
+
+func (v *svcView) getList() resource.List {
+	return v.list
+}
+
+func (v *svcView) getSelection() string {
+	return v.selectedItem
+}
+
 func (v *svcView) extraActions(aa keyActions) {
+	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
 	aa[tcell.KeyCtrlB] = newKeyAction("Bench", v.benchCmd, true)
 	aa[KeyAltB] = newKeyAction("Bench Stop", v.benchStopCmd, true)
 
@@ -57,6 +69,18 @@ func (v *svcView) showPods(app *appView, ns, res, sel string) {
 	if s, ok := svc.(*v1.Service); ok {
 		v.showSvcPods(ns, s.Spec.Selector, v.backCmd)
 	}
+}
+
+func (v *svcView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !v.rowSelected() {
+		return evt
+	}
+
+	l := v.GetPrimitive("logs").(*logsView)
+	l.reload("", v, v.list.GetName(), false)
+	v.switchPage("logs")
+
+	return nil
 }
 
 func (v *svcView) backCmd(evt *tcell.EventKey) *tcell.EventKey {

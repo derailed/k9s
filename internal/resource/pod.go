@@ -3,14 +3,19 @@ package resource
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"strconv"
-	"sync"
+	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/printer"
+	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/kubernetes/pkg/util/node"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
@@ -20,6 +25,9 @@ const (
 )
 
 type (
+	// IKey informer context key.
+	IKey string
+
 	// Containers represents a resource that supports containers.
 	Containers interface {
 		Containers(path string, includeInit bool) ([]string, error)
@@ -27,7 +35,7 @@ type (
 
 	// Tailable represents a resource with tailable logs.
 	Tailable interface {
-		Logs(c chan<- string, ns, na, co string, lines int64, prev bool) (context.CancelFunc, error)
+		Logs(ctx context.Context, c chan<- string, opts LogOptions) error
 	}
 
 	// TailableResource is a resource that have tailable logs.
@@ -41,7 +49,6 @@ type (
 		*Base
 		instance *v1.Pod
 		metrics  *mv1beta1.PodMetrics
-		mx       sync.RWMutex
 	}
 )
 
@@ -104,70 +111,104 @@ func (r *Pod) Marshal(path string) (string, error) {
 	return r.marshalObject(po)
 }
 
-// Containers lists out all the docker contrainers name contained in a pod.
+// Containers lists out all the docker containers name contained in a pod.
 func (r *Pod) Containers(path string, includeInit bool) ([]string, error) {
 	ns, po := namespaced(path)
 
 	return r.Resource.(k8s.Loggable).Containers(ns, po, includeInit)
 }
 
-// Logs tails a given container logs
-func (r *Pod) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (context.CancelFunc, error) {
-	req := r.Resource.(k8s.Loggable).Logs(ns, n, co, lines, prev)
-	ctx, cancel := context.WithCancel(context.TODO())
-	req.Context(ctx)
+func asColor(n string) printer.Color {
+	var sum int
+	for _, r := range n {
+		sum += int(r)
+	}
+	return printer.Color(30 + 1 + sum%6)
+}
 
-	blocked := true
-	go func() {
-		select {
-		case <-time.After(defaultTimeout):
-			var closes bool
-			r.mx.RLock()
-			{
-				closes = blocked
-			}
-			r.mx.RUnlock()
-			if closes {
-				log.Debug().Msgf("Closing channel %s:%s", n, co)
-				close(c)
-				cancel()
+// PodLogs tail logs for all containers in a running Pod.
+func (r *Pod) PodLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
+	i := ctx.Value(IKey("informer")).(*watch.Informer)
+	p, err := i.Get(watch.PodIndex, opts.FQN(), metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	po := p.(*v1.Pod)
+	opts.Color = asColor(po.Name)
+	for _, co := range po.Spec.InitContainers {
+		opts.Container = co.Name
+		if err := r.Logs(ctx, c, opts); err != nil {
+			return err
+		}
+	}
+	rcos := r.loggableContainers(po.Status)
+	for _, co := range po.Spec.Containers {
+		if in(rcos, co.Name) {
+			opts.Container = co.Name
+			if err := r.Logs(ctx, c, opts); err != nil {
+				return err
 			}
 		}
-	}()
+	}
+
+	return nil
+}
+
+// Logs tails a given container logs
+func (r *Pod) Logs(ctx context.Context, c chan<- string, opts LogOptions) error {
+	if !opts.HasContainer() {
+		return r.PodLogs(ctx, c, opts)
+	}
+	res, ok := r.Resource.(k8s.Loggable)
+	if !ok {
+		return fmt.Errorf("Resource %T is not Loggable", r.Resource)
+	}
+	return tailLogs(ctx, res, c, opts)
+}
+
+func tailLogs(ctx context.Context, res k8s.Loggable, c chan<- string, opts LogOptions) error {
+	log.Debug().Msgf("Tailing logs for %q/%q:%q", opts.Namespace, opts.Name, opts.Container)
+	req := res.Logs(opts.Namespace, opts.Name, opts.Container, opts.Lines, opts.Previous)
+	req.Context(ctx)
+
+	var blocked int32 = 1
+	go func(c chan<- string) {
+		select {
+		case <-time.After(defaultTimeout):
+			if atomic.LoadInt32(&blocked) == 1 {
+				log.Debug().Msgf("Closing channel %s:%s", opts.Name, opts.Container)
+			}
+		}
+	}(c)
 
 	// This call will block if nothing is in the stream!!
 	stream, err := req.Stream()
 	if err != nil {
-		log.Warn().Err(err).Msgf("Stream canceled `%s/%s:%s", ns, n, co)
-		return cancel, err
+		log.Error().Err(err).Msgf("Stream canceled `%s", opts.Path())
+		return err
 	}
 
-	r.mx.Lock()
-	{
-		blocked = false
-	}
-	r.mx.Unlock()
-
-	go func() {
+	atomic.StoreInt32(&blocked, 0)
+	go func(c chan<- string) {
 		defer func() {
-			log.Debug().Msgf("Closing stream %s:%s", n, co)
-			close(c)
+			log.Debug().Msgf("Closing stream `%s", opts.Path())
 			stream.Close()
-			cancel()
 		}()
 
+		head := opts.NormalizeName()
 		scanner := bufio.NewScanner(stream)
 		for scanner.Scan() {
-			c <- scanner.Text()
 			select {
 			case <-ctx.Done():
 				return
+			case c <- head + strings.TrimSpace(scanner.Text()):
 			default:
 			}
 		}
-	}()
+	}(c)
 
-	return cancel, nil
+	return nil
 }
 
 // List resources for a given namespace.
@@ -401,4 +442,14 @@ func (*Pod) initContainerPhase(st v1.PodStatus, initCount int, status string) (b
 	}
 
 	return init, status
+}
+
+func (r *Pod) loggableContainers(s v1.PodStatus) []string {
+	var rcos []string
+	for _, c := range s.ContainerStatuses {
+		if c.State.Running != nil || c.State.Terminated != nil {
+			rcos = append(rcos, c.Name)
+		}
+	}
+	return rcos
 }

@@ -4,6 +4,7 @@ package config
 // go get gopkg.in/validator.v2
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -55,10 +56,10 @@ func NewConfig(ks KubeSettings) *Config {
 }
 
 // Refine the configuration based on cli args.
-func (c *Config) Refine(flags *genericclioptions.ConfigFlags) {
+func (c *Config) Refine(flags *genericclioptions.ConfigFlags) error {
 	cfg, err := flags.ToRawKubeConfigLoader().RawConfig()
 	if err != nil {
-		panic("Invalid configuration. Unable to connect to api")
+		return err
 	}
 
 	if isSet(flags.Context) {
@@ -68,22 +69,24 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags) {
 	}
 	log.Debug().Msgf("Active Context `%v`", c.K9s.CurrentContext)
 
-	if ctx, ok := cfg.Contexts[c.K9s.CurrentContext]; ok {
-		c.K9s.CurrentCluster = ctx.Cluster
-		if len(ctx.Namespace) != 0 {
-			c.SetActiveNamespace(ctx.Namespace)
-		}
-	} else {
-		log.Panic().Msg(fmt.Sprintf("The specified context `%s does not exists in kubeconfig", c.K9s.CurrentContext))
+	ctx, ok := cfg.Contexts[c.K9s.CurrentContext]
+	if !ok {
+		return fmt.Errorf("The specified context `%s does not exists in kubeconfig", c.K9s.CurrentContext)
+	}
+	c.K9s.CurrentCluster = ctx.Cluster
+	if len(ctx.Namespace) != 0 {
+		c.SetActiveNamespace(ctx.Namespace)
+	}
+
+	if isSet(flags.ClusterName) {
+		c.K9s.CurrentCluster = *flags.ClusterName
 	}
 
 	if isSet(flags.Namespace) {
 		c.SetActiveNamespace(*flags.Namespace)
 	}
 
-	if isSet(flags.ClusterName) {
-		c.K9s.CurrentCluster = *flags.ClusterName
-	}
+	return nil
 }
 
 // Reset the context to the new current context/cluster.
@@ -124,8 +127,10 @@ func (c *Config) SetActiveNamespace(ns string) error {
 	if c.K9s.ActiveCluster() != nil {
 		return c.K9s.ActiveCluster().Namespace.SetActive(ns, c.settings)
 	}
-	log.Error().Msg("Doh! no active cluster. unable to set active namespace")
-	return fmt.Errorf("no active cluster. unable to set active namespace")
+
+	err := errors.New("no active cluster. unable to set active namespace")
+	log.Error().Err(err).Msg("SetActiveNamespace")
+	return err
 }
 
 // ActiveView returns the active view in the current cluster.

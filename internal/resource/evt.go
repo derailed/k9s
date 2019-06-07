@@ -65,7 +65,7 @@ func (r *Event) Marshal(path string) (string, error) {
 }
 
 // Delete a resource by name.
-func (r *Event) Delete(path string) error {
+func (r *Event) Delete(path string, cascade, force bool) error {
 	return nil
 }
 

@@ -65,7 +65,7 @@ func (c *Context) List(string) (Collection, error) {
 }
 
 // Delete a Context.
-func (c *Context) Delete(_, n string) error {
+func (c *Context) Delete(_, n string, cascade, force bool) error {
 	ctx, err := c.Config().CurrentContextName()
 	if err != nil {
 		return err

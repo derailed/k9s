@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
@@ -19,33 +20,33 @@ type logView struct {
 
 	app        *appView
 	logs       *detailsView
+	backFn     actionHandler
 	status     *statusView
-	parent     masterView
 	ansiWriter io.Writer
-	autoScroll bool
+	autoScroll int32
 	actions    keyActions
 	path       string
 }
 
-func newLogView(title string, parent masterView) *logView {
-	v := logView{Flex: tview.NewFlex(), app: parent.appView()}
-	v.autoScroll = true
-	v.parent = parent
+func newLogView(title string, app *appView, backFn actionHandler) *logView {
+	v := logView{Flex: tview.NewFlex(), app: app}
+	v.autoScroll = 1
+	v.backFn = backFn
 	v.SetBorder(true)
-	v.SetBackgroundColor(config.AsColor(parent.appView().styles.Style.Log.BgColor))
+	v.SetBackgroundColor(config.AsColor(app.styles.Style.Log.BgColor))
 	v.SetBorderPadding(0, 0, 1, 1)
-	v.logs = newDetailsView(parent.appView(), parent.backFn())
+	v.logs = newDetailsView(app, backFn)
 	{
 		v.logs.SetBorder(false)
 		v.logs.setCategory("Logs")
 		v.logs.SetDynamicColors(true)
-		v.logs.SetTextColor(config.AsColor(parent.appView().styles.Style.Log.FgColor))
-		v.logs.SetBackgroundColor(config.AsColor(parent.appView().styles.Style.Log.BgColor))
+		v.logs.SetTextColor(config.AsColor(app.styles.Style.Log.FgColor))
+		v.logs.SetBackgroundColor(config.AsColor(app.styles.Style.Log.BgColor))
 		v.logs.SetWrap(true)
-		v.logs.SetMaxBuffer(parent.appView().config.K9s.LogBufferSize)
+		v.logs.SetMaxBuffer(app.config.K9s.LogBufferSize)
 	}
 	v.ansiWriter = tview.ANSIWriter(v.logs)
-	v.status = newStatusView(parent.appView())
+	v.status = newStatusView(app)
 	v.SetDirection(tview.FlexRow)
 	v.AddItem(v.status, 1, 1, false)
 	v.AddItem(v.logs, 0, 1, true)
@@ -97,7 +98,7 @@ func (v *logView) flush(index int, buff []string) {
 		return
 	}
 	v.logLine(strings.Join(buff[:index], "\n"))
-	if v.autoScroll {
+	if atomic.LoadInt32(&v.autoScroll) == 1 {
 		v.app.QueueUpdateDraw(func() {
 			v.update()
 			v.logs.ScrollToEnd()
@@ -107,7 +108,7 @@ func (v *logView) flush(index int, buff []string) {
 
 func (v *logView) update() {
 	status := "Off"
-	if v.autoScroll {
+	if v.autoScroll == 1 {
 		status = "On"
 	}
 	v.status.update([]string{fmt.Sprintf("Autoscroll: %s", status)})
@@ -149,12 +150,17 @@ func (v *logView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *logView) toggleScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
-	v.autoScroll = !v.autoScroll
-	if v.autoScroll {
+	if atomic.LoadInt32(&v.autoScroll) == 0 {
+		atomic.StoreInt32(&v.autoScroll, 1)
+	} else {
+		atomic.StoreInt32(&v.autoScroll, 0)
+	}
+
+	if atomic.LoadInt32(&v.autoScroll) == 1 {
 		v.app.flash().info("Autoscroll is on.")
 		v.logs.ScrollToEnd()
 	} else {
-		v.logs.PageUp()
+		v.logs.LineUp()
 		v.app.flash().info("Autoscroll is off.")
 	}
 	v.update()
@@ -163,7 +169,7 @@ func (v *logView) toggleScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *logView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return v.parent.backFn()(evt)
+	return v.backFn(evt)
 }
 
 func (v *logView) topCmd(evt *tcell.EventKey) *tcell.EventKey {

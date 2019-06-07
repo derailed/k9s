@@ -1,7 +1,6 @@
 package resource
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"strconv"
@@ -83,54 +82,17 @@ func (r *Job) Containers(path string, includeInit bool) ([]string, error) {
 }
 
 // Logs retrieves logs for a given container.
-func (r *Job) Logs(c chan<- string, ns, n, co string, lines int64, prev bool) (context.CancelFunc, error) {
-	req := r.Resource.(k8s.Loggable).Logs(ns, n, co, lines, prev)
-	ctx, cancel := context.WithCancel(context.TODO())
-	req.Context(ctx)
-
-	blocked := true
-	go func() {
-		select {
-		case <-time.After(defaultTimeout):
-			var closes bool
-			r.mx.RLock()
-			{
-				closes = blocked
-			}
-			r.mx.RUnlock()
-			if closes {
-				close(c)
-				cancel()
-			}
-		}
-	}()
-
-	// This call will block if nothing is in the stream!!
-	stream, err := req.Stream()
+func (r *Job) Logs(ctx context.Context, c chan<- string, opts LogOptions) error {
+	instance, err := r.Resource.Get(opts.Namespace, opts.Name)
 	if err != nil {
-		return cancel, fmt.Errorf("Log tail request failed for job `%s/%s:%s", ns, n, co)
+		return err
+	}
+	jo := instance.(*batchv1.Job)
+	if jo.Spec.Selector == nil || len(jo.Spec.Selector.MatchLabels) == 0 {
+		return fmt.Errorf("No valid selector found on job %s", opts.FQN())
 	}
 
-	r.mx.Lock()
-	{
-		blocked = false
-	}
-	r.mx.Unlock()
-
-	go func() {
-		defer func() {
-			stream.Close()
-			cancel()
-			close(c)
-		}()
-
-		scanner := bufio.NewScanner(stream)
-		for scanner.Scan() {
-			c <- scanner.Text()
-		}
-	}()
-
-	return cancel, nil
+	return r.podLogs(ctx, c, jo.Spec.Selector.MatchLabels, opts)
 }
 
 // Header return resource header.

@@ -3,18 +3,17 @@ package views
 import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
-	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type statefulSetView struct {
-	*resourceView
+	*logResourceView
 }
 
 func newStatefulSetView(t string, app *appView, list resource.List) resourceViewer {
-	v := statefulSetView{newResourceView(t, app, list).(*resourceView)}
+	v := statefulSetView{newLogResourceView(t, app, list)}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.showPods
 
@@ -22,18 +21,9 @@ func newStatefulSetView(t string, app *appView, list resource.List) resourceView
 }
 
 func (v *statefulSetView) extraActions(aa keyActions) {
+	v.logResourceView.extraActions(aa)
 	aa[KeyShiftD] = newKeyAction("Sort Desired", v.sortColCmd(1, false), true)
 	aa[KeyShiftC] = newKeyAction("Sort Current", v.sortColCmd(2, false), true)
-}
-
-func (v *statefulSetView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		t := v.getTV()
-		t.sortCol.index, t.sortCol.asc = t.nameColIndex()+col, asc
-		t.refresh()
-
-		return nil
-	}
 }
 
 func (v *statefulSetView) showPods(app *appView, ns, res, sel string) {
@@ -55,10 +45,4 @@ func (v *statefulSetView) showPods(app *appView, ns, res, sel string) {
 	}
 
 	showPods(app, "", "StatefulSet", sel, l.String(), "", v.backCmd)
-}
-
-func (v *statefulSetView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	v.app.inject(v)
-
-	return nil
 }

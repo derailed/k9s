@@ -1,17 +1,19 @@
 package resource
 
 import (
+	"context"
+	"fmt"
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 )
 
 // StatefulSet tracks a kubernetes resource.
 type StatefulSet struct {
 	*Base
-	instance *v1.StatefulSet
+	instance *appsv1.StatefulSet
 }
 
 // NewStatefulSetList returns a new resource list.
@@ -36,9 +38,9 @@ func NewStatefulSet(c Connection) *StatefulSet {
 func (r *StatefulSet) New(i interface{}) Columnar {
 	c := NewStatefulSet(r.Connection)
 	switch instance := i.(type) {
-	case *v1.StatefulSet:
+	case *appsv1.StatefulSet:
 		c.instance = instance
-	case v1.StatefulSet:
+	case appsv1.StatefulSet:
 		c.instance = &instance
 	default:
 		log.Fatal().Msgf("unknown StatefulSet type %#v", i)
@@ -56,11 +58,26 @@ func (r *StatefulSet) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	sts := i.(*v1.StatefulSet)
+	sts := i.(*appsv1.StatefulSet)
 	sts.TypeMeta.APIVersion = "v1"
 	sts.TypeMeta.Kind = "StatefulSet"
 
 	return r.marshalObject(sts)
+}
+
+// Logs tail logs for all pods represented by this statefulset.
+func (r *StatefulSet) Logs(ctx context.Context, c chan<- string, opts LogOptions) error {
+	instance, err := r.Resource.Get(opts.Namespace, opts.Name)
+	if err != nil {
+		return err
+	}
+
+	sts := instance.(*appsv1.StatefulSet)
+	if sts.Spec.Selector == nil || len(sts.Spec.Selector.MatchLabels) == 0 {
+		return fmt.Errorf("No valid selector found on statefulset %s", opts.FQN())
+	}
+
+	return r.podLogs(ctx, c, sts.Spec.Selector.MatchLabels, opts)
 }
 
 // Header return resource header.

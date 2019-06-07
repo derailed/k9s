@@ -10,10 +10,69 @@ import (
 	m "github.com/petergtz/pegomock"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 func init() {
 	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+}
+
+func TestConfigRefine(t *testing.T) {
+	cfgFile, ctx, cluster, ns := "test_assets/kubeconfig-test.yml", "test", "c1", "ns1"
+	uu := map[string]struct {
+		flags                       *genericclioptions.ConfigFlags
+		issue                       bool
+		context, cluster, namespace string
+	}{
+		"kubeconfig": {
+			flags:     &genericclioptions.ConfigFlags{KubeConfig: &cfgFile},
+			issue:     false,
+			context:   "test",
+			cluster:   "testCluster",
+			namespace: "testNS",
+		},
+		"override": {
+			flags: &genericclioptions.ConfigFlags{
+				KubeConfig:  &cfgFile,
+				Context:     &ctx,
+				ClusterName: &cluster,
+				Namespace:   &ns,
+			},
+			issue:     false,
+			context:   ctx,
+			cluster:   cluster,
+			namespace: ns,
+		},
+		"badContext": {
+			flags: &genericclioptions.ConfigFlags{
+				KubeConfig:  &cfgFile,
+				Context:     &ns,
+				ClusterName: &cluster,
+				Namespace:   &ns,
+			},
+			issue: true,
+		},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			mc := NewMockConnection()
+			m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
+			mk := NewMockKubeSettings()
+			m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"default"})
+			cfg := config.NewConfig(mk)
+			err := cfg.Refine(u.flags)
+
+			if u.issue {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+				assert.Equal(t, u.context, cfg.K9s.CurrentContext)
+				assert.Equal(t, u.cluster, cfg.K9s.CurrentCluster)
+				assert.Equal(t, u.namespace, cfg.ActiveNamespace())
+			}
+		})
+	}
 }
 
 func TestConfigValidate(t *testing.T) {
@@ -234,6 +293,14 @@ var expectedConfig = `k9s:
         - kube-system
       view:
         active: ctx
+  plugins:
+    sniff:
+      shortCut: ShiftS
+      scopes:
+      - po
+      - dp
+      args:
+        "n": $NAMESPACE
 `
 
 var resetConfig = `k9s:
@@ -250,4 +317,12 @@ var resetConfig = `k9s:
         - default
       view:
         active: po
+  plugins:
+    sniff:
+      shortCut: ShiftS
+      scopes:
+      - po
+      - dp
+      args:
+        "n": $NAMESPACE
 `

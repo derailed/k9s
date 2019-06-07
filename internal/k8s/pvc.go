@@ -39,6 +39,6 @@ func (p *PersistentVolumeClaim) List(ns string) (Collection, error) {
 }
 
 // Delete a PersistentVolumeClaim.
-func (p *PersistentVolumeClaim) Delete(ns, n string) error {
+func (p *PersistentVolumeClaim) Delete(ns, n string, cascade, force bool) error {
 	return p.DialOrDie().CoreV1().PersistentVolumeClaims(ns).Delete(n, nil)
 }

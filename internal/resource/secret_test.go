@@ -79,12 +79,12 @@ func TestSecretList(t *testing.T) {
 func TestSecretDelete(t *testing.T) {
 	mc := NewMockConnection()
 	mr := NewMockCruder()
-	m.When(mr.Delete("blee", "fred")).ThenReturn(nil)
+	m.When(mr.Delete("blee", "fred", true, true)).ThenReturn(nil)
 
 	cm := NewSecretWithArgs(mc, mr)
 
-	assert.Nil(t, cm.Delete("blee/fred"))
-	mr.VerifyWasCalledOnce().Delete("blee", "fred")
+	assert.Nil(t, cm.Delete("blee/fred", true, true))
+	mr.VerifyWasCalledOnce().Delete("blee", "fred", true, true)
 }
 
 func TestSecretMarshal(t *testing.T) {

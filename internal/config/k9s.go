@@ -17,6 +17,7 @@ type K9s struct {
 	CurrentCluster string              `yaml:"currentCluster"`
 	Clusters       map[string]*Cluster `yaml:"clusters,omitempty"`
 	Aliases        map[string]string   `yaml:"aliases,omitempty"`
+	Plugins        map[string]Plugin   `yaml:"plugins"`
 }
 
 // NewK9s create a new K9s configuration.

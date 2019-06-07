@@ -38,6 +38,6 @@ func (h *HorizontalPodAutoscalerV2Beta1) List(ns string) (Collection, error) {
 }
 
 // Delete a HorizontalPodAutoscaler.
-func (h *HorizontalPodAutoscalerV2Beta1) Delete(ns, n string) error {
+func (h *HorizontalPodAutoscalerV2Beta1) Delete(ns, n string, cascade, force bool) error {
 	return h.DialOrDie().AutoscalingV2beta1().HorizontalPodAutoscalers(ns).Delete(n, nil)
 }

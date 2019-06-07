@@ -44,7 +44,7 @@ func (c *CronJob) List(ns string) (Collection, error) {
 }
 
 // Delete a CronJob.
-func (c *CronJob) Delete(ns, n string) error {
+func (c *CronJob) Delete(ns, n string, cascade, force bool) error {
 	return c.DialOrDie().BatchV1beta1().CronJobs(ns).Delete(n, nil)
 }
 

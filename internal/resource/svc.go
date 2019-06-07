@@ -1,6 +1,8 @@
 package resource
 
 import (
+	"context"
+	"errors"
 	"sort"
 	"strconv"
 	"strings"
@@ -66,6 +68,22 @@ func (r *Service) Marshal(path string) (string, error) {
 	svc.TypeMeta.Kind = "Service"
 
 	return r.marshalObject(svc)
+}
+
+// Logs tail logs for all pods represented by this service.
+func (r *Service) Logs(ctx context.Context, c chan<- string, opts LogOptions) error {
+	instance, err := r.Resource.Get(opts.Namespace, opts.Name)
+	if err != nil {
+		return err
+	}
+
+	svc := instance.(*v1.Service)
+	log.Debug().Msgf("Service %s--%s", svc.Name, svc.Spec.Selector)
+	if len(svc.Spec.Selector) == 0 {
+		return errors.New("No logs for headless service")
+	}
+
+	return r.podLogs(ctx, c, svc.Spec.Selector, opts)
 }
 
 // Header returns resource header.

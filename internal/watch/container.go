@@ -47,7 +47,7 @@ func (c *Container) Get(fqn string, opts metav1.GetOptions) (interface{}, error)
 	return cc, nil
 }
 
-// List retrieves a given containers from store.
+// List retrieves alist of containers for a given po from store.
 func (c *Container) List(fqn string, opts metav1.ListOptions) k8s.Collection {
 	o, ok, err := c.GetStore().GetByKey(fqn)
 	if err != nil {

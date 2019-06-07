@@ -39,6 +39,6 @@ func (p *PodDisruptionBudget) List(ns string) (Collection, error) {
 }
 
 // Delete a pdb.
-func (p *PodDisruptionBudget) Delete(ns, n string) error {
+func (p *PodDisruptionBudget) Delete(ns, n string, cascade, force bool) error {
 	return p.DialOrDie().PolicyV1beta1().PodDisruptionBudgets(ns).Delete(n, nil)
 }

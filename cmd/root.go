@@ -65,9 +65,9 @@ func run(cmd *cobra.Command, args []string) {
 		if err := recover(); err != nil {
 			log.Error().Msgf("Boom! %v", err)
 			log.Error().Msg(string(debug.Stack()))
-			printLogo(printer.ColorRed)
-			fmt.Printf(printer.Colorize("Boom!! ", printer.ColorRed))
-			fmt.Println(printer.Colorize(fmt.Sprintf("%v.", err), printer.ColorWhite))
+			printLogo(printer.Red)
+			fmt.Printf(printer.Colorize("Boom!! ", printer.Red))
+			fmt.Println(printer.Colorize(fmt.Sprintf("%v.", err), printer.White))
 		}
 	}()
 
@@ -91,7 +91,9 @@ func loadConfiguration() *config.Config {
 		log.Warn().Msg("Unable to locate K9s config. Generating new configuration...")
 	}
 	k9sCfg.K9s.RefreshRate = refreshRate
-	k9sCfg.Refine(k8sFlags)
+	if err := k9sCfg.Refine(k8sFlags); err != nil {
+		log.Panic().Err(err).Msg("Refine Config")
+	}
 	k9sCfg.SetConnection(k8s.InitConnectionOrDie(k8sCfg, log.Logger))
 
 	// Try to access server version if that fail. Connectivity issue?

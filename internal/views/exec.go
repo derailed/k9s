@@ -20,16 +20,21 @@ func runK(clear bool, app *appView, args ...string) bool {
 		return false
 	}
 
-	return app.Suspend(func() {
-		last := len(args) - 1
-		if args[last] == "sh" {
-			args[last] = "bash"
-			if err := execute(clear, bin, args...); err != nil {
-				args[last] = "sh"
-			} else {
-				return
-			}
+	last := len(args) - 1
+	if args[last] == "sh" {
+		args[last] = "bash"
+		if !run(clear, app, bin, args...) {
+			args[last] = "sh"
+		} else {
+			return true
 		}
+	}
+
+	return run(clear, app, bin, args...)
+}
+
+func run(clear bool, app *appView, bin string, args ...string) bool {
+	return app.Suspend(func() {
 		if err := execute(clear, bin, args...); err != nil {
 			log.Error().Msgf("Command exited: %T %v %v", err, err, args)
 			app.flash().errf("Command exited: %v", err)
@@ -37,19 +42,14 @@ func runK(clear bool, app *appView, args ...string) bool {
 	})
 }
 
-func run(clear bool, app *appView, args ...string) bool {
+func edit(clear bool, app *appView, args ...string) bool {
 	bin, err := exec.LookPath(os.Getenv("EDITOR"))
 	if err != nil {
 		log.Error().Msgf("Unable to find editor command in path %v", err)
 		return false
 	}
 
-	return app.Suspend(func() {
-		if err := execute(clear, bin, args...); err != nil {
-			log.Error().Msgf("Command exited: %T %v %v", err, err, args)
-			app.flash().errf("Command exited: %v", err)
-		}
-	})
+	return run(clear, app, bin, args...)
 }
 
 func execute(clear bool, bin string, args ...string) error {

@@ -39,6 +39,6 @@ func (c *ClusterRoleBinding) List(_ string) (Collection, error) {
 }
 
 // Delete a ClusterRoleBinding.
-func (c *ClusterRoleBinding) Delete(_, n string) error {
+func (c *ClusterRoleBinding) Delete(_, n string, cascade, force bool) error {
 	return c.DialOrDie().RbacV1().ClusterRoleBindings().Delete(n, nil)
 }

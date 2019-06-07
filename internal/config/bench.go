@@ -78,12 +78,6 @@ func newBenchmarks() *Benchmarks {
 	}
 }
 
-func newBench() *Bench {
-	return &Bench{
-		Benchmarks: newBenchmarks(),
-	}
-}
-
 // NewBench creates a new default config.
 func NewBench(path string) (*Bench, error) {
 	s := &Bench{Benchmarks: newBenchmarks()}

@@ -2,10 +2,13 @@ package resource
 
 import (
 	"bytes"
+	"context"
 	"path"
 
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -20,7 +23,7 @@ type (
 	Cruder interface {
 		Get(ns string, name string) (interface{}, error)
 		List(ns string) (k8s.Collection, error)
-		Delete(ns string, name string) error
+		Delete(ns string, name string, cascade, force bool) error
 		SetLabelSelector(string)
 		SetFieldSelector(string)
 		GetLabelSelector() string
@@ -143,10 +146,10 @@ func (b *Base) Describe(kind, pa string, flags *genericclioptions.ConfigFlags) (
 }
 
 // Delete a resource by name.
-func (b *Base) Delete(path string) error {
+func (b *Base) Delete(path string, cascade, force bool) error {
 	ns, n := namespaced(path)
 
-	return b.Resource.Delete(ns, n)
+	return b.Resource.Delete(ns, n, cascade, force)
 }
 
 func (*Base) namespacedName(m metav1.ObjectMeta) string {
@@ -165,4 +168,26 @@ func (*Base) marshalObject(o runtime.Object) (string, error) {
 	}
 
 	return buff.String(), nil
+}
+
+func (b *Base) podLogs(ctx context.Context, c chan<- string, sel map[string]string, opts LogOptions) error {
+	i := ctx.Value(IKey("informer")).(*watch.Informer)
+	pods, err := i.List(watch.PodIndex, opts.Namespace, metav1.ListOptions{
+		LabelSelector: toSelector(sel),
+	})
+	if err != nil {
+		return err
+	}
+
+	pr := NewPod(b.Connection)
+	for _, p := range pods {
+		po := p.(*v1.Pod)
+		if po.Status.Phase == v1.PodRunning {
+			opts.Namespace, opts.Name = po.Namespace, po.Name
+			if err := pr.PodLogs(ctx, c, opts); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }

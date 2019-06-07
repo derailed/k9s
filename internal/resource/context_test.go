@@ -49,12 +49,12 @@ func TestCTXList(t *testing.T) {
 func TestCTXDelete(t *testing.T) {
 	mc := NewMockConnection()
 	mr := NewMockSwitchableCruder()
-	m.When(mr.Delete("", "fred")).ThenReturn(nil)
+	m.When(mr.Delete("", "fred", true, true)).ThenReturn(nil)
 
 	ctx := NewContextWithArgs(mc, mr)
 
-	assert.Nil(t, ctx.Delete("fred"))
-	mr.VerifyWasCalledOnce().Delete("", "fred")
+	assert.Nil(t, ctx.Delete("fred", true, true))
+	mr.VerifyWasCalledOnce().Delete("", "fred", true, true)
 }
 
 func TestCTXListHasName(t *testing.T) {

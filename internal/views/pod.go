@@ -2,7 +2,9 @@ package views
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
@@ -24,8 +26,6 @@ type podView struct {
 var _ updatable = &podView{}
 
 type loggable interface {
-	appView() *appView
-	backFn() actionHandler
 	getSelection() string
 	getList() resource.List
 	switchPage(n string)
@@ -44,12 +44,14 @@ func newPodView(t string, app *appView, list resource.List) resourceViewer {
 		})
 	}
 	v.AddPage("picker", picker, true, false)
-	v.AddPage("logs", newLogsView(list.GetName(), &v), true, false)
+	v.AddPage("logs", newLogsView(list.GetName(), app, &v), true, false)
 
 	return &v
 }
 
 func (v *podView) extraActions(aa keyActions) {
+	// aa[KeyAltS] = newKeyAction("Sniff", v.sniffCmd, true)
+
 	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
 	aa[KeyShiftL] = newKeyAction("Logs Previous", v.prevLogsCmd, true)
 	aa[KeyS] = newKeyAction("Shell", v.shellCmd, true)
@@ -101,14 +103,6 @@ func (v *podView) exitFn() {
 
 // Protocol...
 
-func (v *podView) backFn() actionHandler {
-	return v.backCmd
-}
-
-func (v *podView) appView() *appView {
-	return v.app
-}
-
 func (v *podView) getList() resource.List {
 	return v.list
 }
@@ -117,12 +111,28 @@ func (v *podView) getSelection() string {
 	return v.selectedItem
 }
 
-// Handlers...
+func (v *podView) sniffCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !v.rowSelected() {
+		return evt
+	}
+
+	ns, n := namespaced(v.selectedItem)
+	var args []string
+	args = append(args, "sniff", n, "-n", ns)
+
+	if runK(true, v.app, args...) {
+		v.app.flash().info("Sniff launched!")
+	} else {
+		v.app.flash().info("Sniff failed!")
+	}
+	return nil
+}
 
 func (v *podView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.viewLogs(false) {
 		return nil
 	}
+
 	return evt
 }
 
@@ -130,6 +140,7 @@ func (v *podView) prevLogsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.viewLogs(true) {
 		return nil
 	}
+
 	return evt
 }
 
@@ -138,25 +149,19 @@ func (v *podView) viewLogs(prev bool) bool {
 		return false
 	}
 
-	cc, err := fetchContainers(v.list, v.selectedItem, true)
-	if err != nil {
-		v.app.flash().errf("Unable to retrieve containers %s", err)
-		log.Error().Err(err)
-		return false
+	r := v.selectedRow
+	col := 2
+	if v.list.AllNamespaces() {
+		col = 3
 	}
-
-	if len(cc) == 1 {
-		v.showLogs(v.selectedItem, cc[0], v.list.GetName(), v, prev)
+	status := strings.TrimSpace(v.getTV().GetCell(r, col).Text)
+	if status == "Running" || status == "Completed" {
+		v.showLogs(v.selectedItem, "", v.list.GetName(), v, prev)
 		return true
 	}
-	picker := v.GetPrimitive("picker").(*selectList)
-	picker.populate(cc)
-	picker.SetSelectedFunc(func(i int, t, d string, r rune) {
-		v.showLogs(v.selectedItem, t, "picker", picker, prev)
-	})
-	v.switchPage("picker")
 
-	return true
+	v.app.flash().err(errors.New("Selected pod is not running"))
+	return false
 }
 
 func (v *podView) showLogs(path, co, view string, parent loggable, prev bool) {
@@ -222,20 +227,19 @@ func shellIn(a *appView, path, co string) {
 	runK(true, a, args...)
 }
 
-func computeShellArgs(path, co, context string, cfg *string) []string {
-	a := make([]string, 0, 15)
-	a = append(a, "exec", "-it")
-	a = append(a, "--context", context)
+func computeShellArgs(path, co, context string, kcfg *string) []string {
+	args := make([]string, 0, 15)
+	args = append(args, "exec", "-it")
+	args = append(args, "--context", context)
 	ns, po := namespaced(path)
-	a = append(a, "-n", ns)
-	a = append(a, po)
-	if cfg != nil && *cfg != "" {
-		a = append(a, "--kubeconfig", *cfg)
+	args = append(args, "-n", ns)
+	args = append(args, po)
+	if kcfg != nil && *kcfg != "" {
+		args = append(args, "--kubeconfig", *kcfg)
 	}
 	if co != "" {
-		a = append(a, "-c", co)
+		args = append(args, "-c", co)
 	}
-	a = append(a, "--", "sh")
 
-	return a
+	return append(args, "--", "sh")
 }

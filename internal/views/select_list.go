@@ -47,14 +47,6 @@ func (v *selectList) switchPage(p string) {
 	v.parent.switchPage(p)
 }
 
-func (v *selectList) backFn() actionHandler {
-	return v.parent.backFn()
-}
-
-func (v *selectList) appView() *appView {
-	return v.parent.appView()
-}
-
 func (v *selectList) getList() resource.List {
 	return v.parent.getList()
 }

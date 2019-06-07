@@ -39,6 +39,12 @@ func (d *DaemonSet) List(ns string) (Collection, error) {
 }
 
 // Delete a DaemonSet.
-func (d *DaemonSet) Delete(ns, n string) error {
-	return d.DialOrDie().ExtensionsV1beta1().DaemonSets(ns).Delete(n, nil)
+func (d *DaemonSet) Delete(ns, n string, cascade, force bool) error {
+	p := metav1.DeletePropagationOrphan
+	if cascade {
+		p = metav1.DeletePropagationBackground
+	}
+	return d.DialOrDie().ExtensionsV1beta1().DaemonSets(ns).Delete(n, &metav1.DeleteOptions{
+		PropagationPolicy: &p,
+	})
 }
