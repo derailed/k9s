@@ -3,7 +3,7 @@ package resource
 import (
 	"strings"
 
-	"github.com/derailed/k9s/internal/printer"
+	"github.com/derailed/k9s/internal/color"
 )
 
 // LogOptions represent logger options.
@@ -11,7 +11,7 @@ type LogOptions struct {
 	Namespace, Name, Container string
 	Lines                      int64
 	Previous                   bool
-	Color                      printer.Color
+	Color                      color.Paint
 }
 
 // HasContainer checks if a container is present.
@@ -47,5 +47,5 @@ func (o LogOptions) NormalizeName() string {
 	if o.Color == 0 {
 		return ""
 	}
-	return printer.Colorize(o.Name+":"+o.Container+" ", o.Color)
+	return color.Colorize(o.Name+":"+o.Container+" ", o.Color)
 }

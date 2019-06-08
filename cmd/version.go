@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/derailed/k9s/internal/printer"
+	"github.com/derailed/k9s/internal/color"
 	"github.com/spf13/cobra"
 )
 
@@ -21,13 +21,13 @@ func versionCmd() *cobra.Command {
 func printVersion() {
 	const secFmt = "%-10s "
 
-	printLogo(printer.Cyan)
+	printLogo(color.Cyan)
 	printTuple(secFmt, "Version", version)
 	printTuple(secFmt, "Commit", commit)
 	printTuple(secFmt, "Date", date)
 }
 
 func printTuple(format, section, value string) {
-	fmt.Printf(printer.Colorize(fmt.Sprintf(format, section+":"), printer.Cyan))
-	fmt.Println(printer.Colorize(value, printer.White))
+	fmt.Printf(color.Colorize(fmt.Sprintf(format, section+":"), color.Cyan))
+	fmt.Println(color.Colorize(value, color.White))
 }

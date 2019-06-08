@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"runtime/debug"
 
+	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/derailed/k9s/internal/printer"
 	"github.com/derailed/k9s/internal/views"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -65,9 +65,9 @@ func run(cmd *cobra.Command, args []string) {
 		if err := recover(); err != nil {
 			log.Error().Msgf("Boom! %v", err)
 			log.Error().Msg(string(debug.Stack()))
-			printLogo(printer.Red)
-			fmt.Printf(printer.Colorize("Boom!! ", printer.Red))
-			fmt.Println(printer.Colorize(fmt.Sprintf("%v.", err), printer.White))
+			printLogo(color.Red)
+			fmt.Printf(color.Colorize("Boom!! ", color.Red))
+			fmt.Println(color.Colorize(fmt.Sprintf("%v.", err), color.White))
 		}
 	}()
 

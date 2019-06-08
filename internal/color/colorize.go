@@ -1,15 +1,15 @@
-package printer
+package color
 
 import (
 	"fmt"
 )
 
-// Color describes a terminal color.
-type Color int
+// Paint describes a terminal color.
+type Paint int
 
 // Defines basic ANSI colors.
 const (
-	Black Color = iota + 30
+	Black Paint = iota + 30
 	Red
 	Green
 	Yellow
@@ -22,8 +22,8 @@ const (
 	Bold = 1
 )
 
-// Colorize a string based on given color.
-func Colorize(s string, c Color) string {
+// Colorize returns an ASCII colored string based on given color.
+func Colorize(s string, c Paint) string {
 	if c == 0 {
 		c = White
 	}

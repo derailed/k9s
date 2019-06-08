@@ -9,8 +9,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/derailed/k9s/internal/printer"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -118,12 +118,12 @@ func (r *Pod) Containers(path string, includeInit bool) ([]string, error) {
 	return r.Resource.(k8s.Loggable).Containers(ns, po, includeInit)
 }
 
-func asColor(n string) printer.Color {
+func asColor(n string) color.Paint {
 	var sum int
 	for _, r := range n {
 		sum += int(r)
 	}
-	return printer.Color(30 + 1 + sum%6)
+	return color.Paint(30 + 1 + sum%6)
 }
 
 // PodLogs tail logs for all containers in a running Pod.
