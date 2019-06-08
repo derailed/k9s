@@ -6,7 +6,6 @@ import (
 	"path"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
@@ -41,7 +40,6 @@ type resourceView struct {
 	decorateFn     decorateFn
 	colorerFn      colorerFn
 	actions        keyActions
-	mx             sync.Mutex
 	nsListAccess   bool
 	path           *string
 	cancelFn       context.CancelFunc
