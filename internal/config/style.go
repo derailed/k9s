@@ -223,54 +223,9 @@ func newMenu() *Menu {
 }
 
 // NewStyles creates a new default config.
-func NewStyles() (*Styles, error) {
+func NewStyles(p string) (*Styles, error) {
 	s := &Styles{Style: newStyle()}
-	err := s.load(K9sStylesFile)
-
-	return s, err
-}
-
-// Ensure default styles are applied in not in stylesheet.
-func (s *Styles) ensure() {
-	if s.Style == nil {
-		s.Style = newStyle()
-	}
-
-	if s.Style.Info == nil {
-		s.Style.Info = newInfo()
-	}
-
-	if s.Style.Border == nil {
-		s.Style.Border = newBorder()
-	}
-
-	if s.Style.Table == nil {
-		s.Style.Table = newTable()
-	}
-
-	if s.Style.Menu == nil {
-		s.Style.Menu = newMenu()
-	}
-
-	if s.Style.Crumb == nil {
-		s.Style.Crumb = newCrumb()
-	}
-
-	if s.Style.Status == nil {
-		s.Style.Status = newStatus()
-	}
-
-	if s.Style.Title == nil {
-		s.Style.Title = newTitle()
-	}
-
-	if s.Style.Yaml == nil {
-		s.Style.Yaml = newYaml()
-	}
-
-	if s.Style.Log == nil {
-		s.Style.Log = newLog()
-	}
+	return s, s.load(p)
 }
 
 // FgColor returns the foreground color.
@@ -298,7 +253,6 @@ func (s *Styles) load(path string) error {
 	if cfg.Style != nil {
 		s.Style = cfg.Style
 	}
-	s.ensure()
 
 	return nil
 }
