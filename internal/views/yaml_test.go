@@ -41,7 +41,7 @@ func TestYaml(t *testing.T) {
 		},
 	}
 
-	s, _ := config.NewStyles()
+	s, _ := config.NewStyles(config.K9sStylesFile)
 	for _, u := range uu {
 		assert.Equal(t, u.e, colorizeYAML(s.Style, u.s))
 	}

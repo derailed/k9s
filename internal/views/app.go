@@ -496,7 +496,7 @@ func (a *appView) initBench(cluster string) {
 
 func (a *appView) refreshStyles() {
 	var err error
-	if a.styles, err = config.NewStyles(); err != nil {
+	if a.styles, err = config.NewStyles(config.K9sStylesFile); err != nil {
 		log.Warn().Err(err).Msg("No skin file found. Loading defaults.")
 	}
 	if err == nil {
