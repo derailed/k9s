@@ -20,16 +20,6 @@ func runK(clear bool, app *appView, args ...string) bool {
 		return false
 	}
 
-	last := len(args) - 1
-	if args[last] == "sh" {
-		args[last] = "bash"
-		if !run(clear, app, bin, args...) {
-			args[last] = "sh"
-		} else {
-			return true
-		}
-	}
-
 	return run(clear, app, bin, args...)
 }
 

@@ -241,5 +241,5 @@ func computeShellArgs(path, co, context string, kcfg *string) []string {
 		args = append(args, "-c", co)
 	}
 
-	return append(args, "--", "sh")
+	return append(args, "--", "sh", "-c", "command -v bash >/dev/null && exec bash || exec sh")
 }
