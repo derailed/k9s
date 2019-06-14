@@ -76,10 +76,10 @@ snapcraft:
     bit: Arm
     bitv6: Arm6
     bitv7: Arm7
-  grade: devel
-  confinement: devmode
-  # grade: stable
-  # confinement: strict
+  # grade: devel
+  # confinement: devmode
+  grade: stable
+  confinement: strict
   apps:
     k9s:
       plugs: ["home", "network", "kube-config"]

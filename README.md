@@ -181,16 +181,17 @@ benchmarks:
 
 K9s uses aliases to navigate most K8s resources.
 
-| Command               | Result                                             | Example                    |
-|-----------------------|----------------------------------------------------|----------------------------|
-| `:`alias`<ENTER>`     | View a Kubernetes resource aliases                 | `:po<ENTER>`               |
-| `?`                   | Show keyboard shortcuts and help                   |                            |
-| `Ctrl-a`              | Show all available resource alias                  | select+`<ENTER>` to view   |
-| `/`filter`ENTER`>     | Filter out a resource view given a filter          | `/bumblebeetuna`           |
-| `<Esc>`               | Bails out of command mode                          |                            |
-| `d`,`v`, `e`, `l`,... | Key mapping to describe, view, edit, view logs,... | `d` (describes a resource) |
-| `:`ctx`<ENTER>`       | To view and switch to another Kubernetes context   | `:`+`ctx`+`<ENTER>`        |
-| `:q`, `Ctrl-c`        | To bail out of K9s                                 |                            |
+| Command                     | Result                                             | Example                    |
+|-----------------------------|----------------------------------------------------|----------------------------|
+| `:`alias`<ENTER>`           | View a Kubernetes resource aliases                 | `:po<ENTER>`               |
+| `?`                         | Show keyboard shortcuts and help                   |                            |
+| `Ctrl-a`                    | Show all available resource alias                  | select+`<ENTER>` to view   |
+| `/`filter`ENTER`            | Filter out a resource view given a filter          | `/bumblebeetuna`           |
+| `/`-l label-selector`ENTER` | Filter resource view by labels                     | `/-l app=fred`             |
+| `<Esc>`                     | Bails out of command mode                          |                            |
+| `d`,`v`, `e`, `l`,...       | Key mapping to describe, view, edit, view logs,... | `d` (describes a resource) |
+| `:`ctx`<ENTER>`             | To view and switch to another Kubernetes context   | `:`+`ctx`+`<ENTER>`        |
+| `:q`, `Ctrl-c`              | To bail out of K9s                                 |                            |
 
 ---
 
