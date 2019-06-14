@@ -15,7 +15,10 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const containerFmt = "[fg:bg:b]%s([hilite:bg:b]%s[fg:bg:-])"
+const (
+	containerFmt = "[fg:bg:b]%s([hilite:bg:b]%s[fg:bg:-])"
+	shellCheck   = "command -v bash >/dev/null && exec bash || exec sh"
+)
 
 type podView struct {
 	*resourceView
@@ -241,5 +244,5 @@ func computeShellArgs(path, co, context string, kcfg *string) []string {
 		args = append(args, "-c", co)
 	}
 
-	return append(args, "--", "sh", "-c", "command -v bash >/dev/null && exec bash || exec sh")
+	return append(args, "--", "sh", "-c", shellCheck)
 }

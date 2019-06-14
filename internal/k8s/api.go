@@ -117,7 +117,7 @@ func (a *APIClient) CanIAccess(ns, name, resURL string, verbs []string) (bool, e
 		sar.Spec.ResourceAttributes.Verb = v
 		resp, err = a.DialOrDie().AuthorizationV1().SelfSubjectAccessReviews().Create(sar)
 		if err != nil {
-			log.Warn().Err(err).Msgf("CanIAccess")
+			log.Error().Err(err).Msgf("CanIAccess")
 			return false, err
 		}
 		log.Debug().Msgf("CHECKING ACCESS group:%q|resource:%q|namespace:%q|name:%q, verb:%s access:%t -- %s", gr.Group, gr.Resource, ns, name, v, resp.Status.Allowed, resp.Status.Reason)

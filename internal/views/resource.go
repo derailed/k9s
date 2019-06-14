@@ -46,6 +46,11 @@ type resourceView struct {
 	parentCtx      context.Context
 }
 
+func (v *resourceView) filterResource(sel string) {
+	v.list.SetLabelSelector(sel)
+	v.refresh()
+}
+
 func newResourceView(title string, app *appView, list resource.List) resourceViewer {
 	v := resourceView{
 		app:        app,
@@ -58,6 +63,8 @@ func newResourceView(title string, app *appView, list resource.List) resourceVie
 
 	tv := newTableView(app, v.title)
 	tv.SetSelectionChangedFunc(v.selChanged)
+	tv.filterChanged(v.filterResource)
+
 	v.AddPage(v.list.GetName(), tv, true, true)
 
 	details := newDetailsView(app, v.backCmd)
@@ -114,7 +121,10 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 	v.app.clusterInfoView.refresh()
 	v.refresh()
 	if tv, ok := v.CurrentPage().Item.(*tableView); ok {
-		tv.Select(1, 0)
+		r, _ := tv.GetSelection()
+		if r == 0 && tv.GetRowCount() > 0 {
+			tv.Select(1, 0)
+		}
 	}
 }
 
@@ -151,7 +161,6 @@ func (v *resourceView) getSelectedItem() string {
 	if v.selectedFn != nil {
 		return v.selectedFn()
 	}
-
 	return v.selectedItem
 }
 
@@ -238,15 +247,12 @@ func (v *resourceView) showDelete(msg string, done func(bool, bool)) {
 		SetLabelColor(tcell.ColorAqua).
 		SetFieldTextColor(tcell.ColorOrange)
 	f.AddCheckbox("Cascade:", cascade, func(checked bool) {
-		log.Debug().Msgf("Cascade changed: %t", checked)
 		cascade = checked
 	})
 	f.AddCheckbox("Force:", force, func(checked bool) {
-		log.Debug().Msgf("Force changed: %t", checked)
 		force = checked
 	})
 	f.AddButton("Cancel", func() {
-		v.app.flash().info("Canceled!!")
 		v.dismissModal()
 	})
 	f.AddButton("OK", func() {
@@ -292,9 +298,7 @@ func (v *resourceView) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	log.Debug().Msgf("Selected Item %v-%v-%v", v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
 	v.defaultEnter(v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
-
 	return nil
 }
 

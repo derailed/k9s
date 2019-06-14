@@ -54,13 +54,11 @@ func (v *logResourceView) getSelection() string {
 
 func (v *logResourceView) prevLogsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.showLogs(true)
-
 	return nil
 }
 
 func (v *logResourceView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.showLogs(false)
-
 	return nil
 }
 

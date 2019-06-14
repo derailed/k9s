@@ -19,28 +19,28 @@ func TestComputeShellArgs(t *testing.T) {
 			"c1",
 			"ctx1",
 			&config,
-			"exec -it --context ctx1 -n fred blee --kubeconfig coolConfig -c c1 -- sh -c command -v bash >/dev/null && exec bash || exec sh",
+			"exec -it --context ctx1 -n fred blee --kubeconfig coolConfig -c c1 -- sh -c " + shellCheck,
 		},
 		"noconfig": {
 			"fred/blee",
 			"c1",
 			"ctx1",
 			nil,
-			"exec -it --context ctx1 -n fred blee -c c1 -- sh -c command -v bash >/dev/null && exec bash || exec sh",
+			"exec -it --context ctx1 -n fred blee -c c1 -- sh -c " + shellCheck,
 		},
 		"emptyConfig": {
 			"fred/blee",
 			"c1",
 			"ctx1",
 			&empty,
-			"exec -it --context ctx1 -n fred blee -c c1 -- sh -c command -v bash >/dev/null && exec bash || exec sh",
+			"exec -it --context ctx1 -n fred blee -c c1 -- sh -c " + shellCheck,
 		},
 		"singleContainer": {
 			"fred/blee",
 			"",
 			"ctx1",
 			&empty,
-			"exec -it --context ctx1 -n fred blee -- sh -c command -v bash >/dev/null && exec bash || exec sh",
+			"exec -it --context ctx1 -n fred blee -- sh -c " + shellCheck,
 		},
 	}
 

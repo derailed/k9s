@@ -73,6 +73,26 @@ func TestRowSort(t *testing.T) {
 			resource.Rows{resource.Row{"8m4s"}, resource.Row{"31m"}},
 			resource.Rows{resource.Row{"8m4s"}, resource.Row{"31m"}},
 		},
+		{
+			true,
+			resource.Rows{resource.Row{"n/a"}, resource.Row{"31m"}},
+			resource.Rows{resource.Row{"31m"}, resource.Row{"n/a"}},
+		},
+		{
+			true,
+			resource.Rows{resource.Row{"31m"}, resource.Row{"n/a"}},
+			resource.Rows{resource.Row{"31m"}, resource.Row{"n/a"}},
+		},
+		{
+			false,
+			resource.Rows{resource.Row{"n/a"}, resource.Row{"31m"}},
+			resource.Rows{resource.Row{"31m"}, resource.Row{"n/a"}},
+		},
+		{
+			false,
+			resource.Rows{resource.Row{"31m"}, resource.Row{"n/a"}},
+			resource.Rows{resource.Row{"31m"}, resource.Row{"n/a"}},
+		},
 	}
 
 	for _, u := range uu {

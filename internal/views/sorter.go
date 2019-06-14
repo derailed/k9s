@@ -51,6 +51,13 @@ func (s groupSorter) Less(i, j int) bool {
 // Helpers...
 
 func less(asc bool, c1, c2 string) bool {
+	if c1 == resource.NAValue && c2 != resource.NAValue {
+		return false
+	}
+	if c1 != resource.NAValue && c2 == resource.NAValue {
+		return true
+	}
+
 	if o, ok := isMetricSort(asc, c1, c2); ok {
 		return o
 	}

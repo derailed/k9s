@@ -8,7 +8,6 @@ import (
 	"sync"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
@@ -174,8 +173,6 @@ func (r *Container) Fields(ns string) Row {
 			}
 		}
 	}
-
-	log.Debug().Msgf("Container %s %v", i.Name, cs.Name)
 
 	ready, state, restarts := "false", MissingValue, "0"
 	if cs != nil {

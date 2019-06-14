@@ -20,11 +20,12 @@ import (
 )
 
 const (
-	titleFmt      = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]] "
-	searchFmt     = "<[filter:bg:b]/%s[fg:bg:]> "
-	nsTitleFmt    = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
-	descIndicator = "↓"
-	ascIndicator  = "↑"
+	titleFmt          = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]] "
+	searchFmt         = "<[filter:bg:b]/%s[fg:bg:]> "
+	nsTitleFmt        = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
+	descIndicator     = "↓"
+	ascIndicator      = "↑"
+	labelSelIndicator = "-l"
 )
 
 var (
@@ -54,8 +55,8 @@ type (
 		cleanseFn cleanseFn
 		data      resource.TableData
 		cmdBuff   *cmdBuff
-		sortBuff  *cmdBuff
 		sortCol   sortColumn
+		filterFn  func(string)
 	}
 )
 
@@ -87,6 +88,10 @@ func newTableView(app *appView, title string) *tableView {
 	v.bindKeys()
 
 	return &v
+}
+
+func (v *tableView) filterChanged(fn func(string)) {
+	v.filterFn = fn
 }
 
 func (v *tableView) bindKeys() {
@@ -191,6 +196,11 @@ func (v *tableView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (v *tableView) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.cmdBuff.isActive() {
 		v.cmdBuff.setActive(false)
+		cmd := v.cmdBuff.String()
+		if isLabelSelector(cmd) && v.filterFn != nil {
+			v.filterFn(trimLabelSelector(cmd))
+			return nil
+		}
 		v.refresh()
 		return nil
 	}
@@ -209,6 +219,9 @@ func (v *tableView) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (v *tableView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.cmdBuff.empty() {
 		v.app.flash().info("Clearing filter...")
+	}
+	if isLabelSelector(v.cmdBuff.String()) {
+		v.filterFn("")
 	}
 	v.cmdBuff.reset()
 	v.refresh()
@@ -257,6 +270,9 @@ func (v *tableView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	v.app.flash().info("Filter mode activated.")
+	if isLabelSelector(v.cmdBuff.String()) {
+		return nil
+	}
 	v.cmdBuff.reset()
 	v.cmdBuff.setActive(true)
 
@@ -308,7 +324,7 @@ func (v *tableView) update(data resource.TableData) {
 }
 
 func (v *tableView) filtered() resource.TableData {
-	if v.cmdBuff.empty() {
+	if v.cmdBuff.empty() || isLabelSelector(v.cmdBuff.String()) {
 		return v.data
 	}
 
@@ -496,7 +512,11 @@ func (v *tableView) resetTitle() {
 	}
 
 	if !v.cmdBuff.isActive() && !v.cmdBuff.empty() {
-		title += skinTitle(fmt.Sprintf(searchFmt, v.cmdBuff), v.app.styles.Style)
+		cmd := v.cmdBuff.String()
+		if isLabelSelector(cmd) {
+			cmd = trimLabelSelector(cmd)
+		}
+		title += skinTitle(fmt.Sprintf(searchFmt, cmd), v.app.styles.Style)
 	}
 	v.SetTitle(title)
 }
@@ -522,4 +542,17 @@ func (v *tableView) active(b bool) {
 		return
 	}
 	v.SetBorderColor(tcell.ColorDodgerBlue)
+}
+
+var labelCmd = regexp.MustCompile(`\A\-l`)
+
+func isLabelSelector(s string) bool {
+	if s == "" {
+		return false
+	}
+	return labelCmd.MatchString(s)
+}
+
+func trimLabelSelector(s string) string {
+	return strings.TrimSpace(s[2:])
 }
