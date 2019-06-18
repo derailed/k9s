@@ -191,7 +191,7 @@ func newTable() *Table {
 func newTableHeader() *TableHeader {
 	return &TableHeader{
 		FgColor:     "white",
-		BgColor:     "red",
+		BgColor:     "black",
 		SorterColor: "aqua",
 	}
 }
@@ -223,9 +223,9 @@ func newMenu() *Menu {
 }
 
 // NewStyles creates a new default config.
-func NewStyles(p string) (*Styles, error) {
+func NewStyles(path string) (*Styles, error) {
 	s := &Styles{Style: newStyle()}
-	return s, s.load(p)
+	return s, s.load(path)
 }
 
 // FgColor returns the foreground color.

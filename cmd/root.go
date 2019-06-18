@@ -76,7 +76,7 @@ func run(cmd *cobra.Command, args []string) {
 	app := views.NewApp(cfg)
 	{
 		defer app.BailOut()
-		app.Init(version, refreshRate, k8sFlags)
+		app.Init(version, refreshRate)
 		app.Run()
 	}
 }
@@ -138,6 +138,7 @@ func initK9sFlags() {
 
 func initK8sFlags() {
 	k8sFlags = genericclioptions.NewConfigFlags()
+
 	rootCmd.Flags().StringVar(
 		k8sFlags.KubeConfig,
 		"kubeconfig",
@@ -173,6 +174,19 @@ func initK8sFlags() {
 		"The name of the kubeconfig user to use",
 	)
 
+	rootCmd.Flags().StringVarP(
+		k8sFlags.Namespace,
+		"namespace",
+		"n",
+		"",
+		"If present, the namespace scope for this CLI request",
+	)
+
+	initAsFlags()
+	initCertFlags()
+}
+
+func initAsFlags() {
 	rootCmd.Flags().StringVar(
 		k8sFlags.Impersonate,
 		"as",
@@ -186,7 +200,9 @@ func initK8sFlags() {
 		[]string{},
 		"Group to impersonate for the operation",
 	)
+}
 
+func initCertFlags() {
 	rootCmd.Flags().BoolVar(
 		k8sFlags.Insecure,
 		"insecure-skip-tls-verify",
@@ -220,14 +236,6 @@ func initK8sFlags() {
 		"token",
 		"",
 		"Bearer token for authentication to the API server",
-	)
-
-	rootCmd.Flags().StringVarP(
-		k8sFlags.Namespace,
-		"namespace",
-		"n",
-		"",
-		"If present, the namespace scope for this CLI request",
 	)
 }
 

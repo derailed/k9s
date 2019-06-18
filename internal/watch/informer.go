@@ -12,8 +12,12 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-// AllNamespaces designates all namespaces.
-const AllNamespaces = ""
+const (
+	// AllNamespaces designates all namespaces.
+	allNamespaces = ""
+	// AllNamespaces designate the special `all` namespace.
+	allNamespace = "all"
+)
 
 type (
 	// Row represents a collection of string fields.
@@ -59,11 +63,14 @@ type Informer struct {
 
 // NewInformer creates a new cluster resource informer
 func NewInformer(client k8s.Connection, ns string) *Informer {
-	log.Debug().Msgf(">> Starting Informer")
+	if ns == allNamespace {
+		ns = allNamespaces
+	}
+	log.Debug().Msgf(">> Starting Informer in namespace %q", ns)
 	i := Informer{client: client, informers: map[string]StoreInformer{}}
 
 	nsAccess, err := client.CanIAccess("", "", "namespaces", []string{"list", "watch"})
-	if ns == AllNamespaces && (err != nil || !nsAccess) {
+	if ns == allNamespaces && (err != nil || !nsAccess) {
 		user, _ := client.Config().CurrentUserName()
 		if err != nil {
 			log.Panic().Err(err).Msgf("Unauthorized: All namespaces. No access for user `%s", user)
@@ -72,7 +79,7 @@ func NewInformer(client k8s.Connection, ns string) *Informer {
 	}
 
 	// Namespace is locked in. check if user has auth for this ns access.
-	if ns != AllNamespaces {
+	if ns != allNamespaces {
 		acc, err := client.CanIAccess("", ns, "namespaces", []string{"get", "watch"})
 		if err != nil {
 			log.Panic().Err(err).Msgf("Failed access %s", ns)
@@ -83,7 +90,7 @@ func NewInformer(client k8s.Connection, ns string) *Informer {
 		}
 		i.init(ns)
 	} else {
-		i.init(AllNamespaces)
+		i.init(allNamespaces)
 	}
 
 	return &i

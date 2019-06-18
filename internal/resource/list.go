@@ -9,7 +9,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -104,7 +103,7 @@ type (
 		Get(path string) (Columnar, error)
 		List(ns string) (Columnars, error)
 		Delete(path string, cascade, force bool) error
-		Describe(kind, pa string, flags *genericclioptions.ConfigFlags) (string, error)
+		Describe(kind, pa string) (string, error)
 		Marshal(pa string) (string, error)
 		Header(ns string) Row
 		NumCols(ns string) map[string]bool
@@ -189,7 +188,7 @@ func (l *list) GetNamespace() string {
 // SetNamespace updates the namespace on the list. Default ns is "" for all
 // namespaces.
 func (l *list) SetNamespace(n string) {
-	if l.namespace == NotNamespaced {
+	if !l.Namespaced() {
 		return
 	}
 

@@ -5,7 +5,7 @@
 K9s provides a curses based terminal UI to interact with your Kubernetes clusters.
 The aim of this project is to make it easier to navigate, observe and manage
 your applications in the wild. K9s continually watches Kubernetes
-for changes and offers subsequent commands to interact with observed resources.
+for changes and offers subsequent commands to interact with observed Kubernetes resources.
 
 ---
 
@@ -14,6 +14,7 @@ for changes and offers subsequent commands to interact with observed resources.
 [![release](https://img.shields.io/github/release-pre/derailed/k9s.svg)](https://github.com/derailed/k9s/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/mum4k/termdash/blob/master/LICENSE)
 [![k9s](https://snapcraft.io/k9s/badge.svg)](https://snapcraft.io/k9s)
+[![Releases](https://img.shields.io/github/downloads/derailed/k9s/total.svg)]()
 
 ---
 
@@ -418,7 +419,7 @@ Available color names are defined below:
 This initial drop is brittle. K9s will most likely blow up...
 
 1. You're running older versions of Kubernetes. K9s works best Kubernetes 1.12+.
-1. You don't have enough RBAC fu to manage your cluster (see RBAC section below).
+2. You don't have enough RBAC fu to manage your cluster.
 
 ---
 

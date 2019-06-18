@@ -11,7 +11,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/cli-runtime/pkg/genericclioptions/printers"
 	"k8s.io/kubernetes/pkg/kubectl/describe"
 	versioned "k8s.io/kubernetes/pkg/kubectl/describe/versioned"
@@ -127,7 +126,7 @@ func (b *Base) List(ns string) (Columnars, error) {
 }
 
 // Describe a given resource.
-func (b *Base) Describe(kind, pa string, flags *genericclioptions.ConfigFlags) (string, error) {
+func (b *Base) Describe(kind, pa string) (string, error) {
 	ns, n := namespaced(pa)
 
 	mapping, err := k8s.RestMapping.Find(kind)
@@ -136,7 +135,7 @@ func (b *Base) Describe(kind, pa string, flags *genericclioptions.ConfigFlags) (
 		return "", err
 	}
 
-	d, err := versioned.Describer(flags, mapping)
+	d, err := versioned.Describer(b.Connection.Config().Flags(), mapping)
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to find describer for %#v", mapping)
 		return "", err
