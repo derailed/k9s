@@ -21,13 +21,13 @@ type aliasView struct {
 	cancel  context.CancelFunc
 }
 
-func newAliasView(app *appView) *aliasView {
+func newAliasView(app *appView, current igniter) *aliasView {
 	v := aliasView{tableView: newTableView(app, aliasTitle)}
 	{
 		v.SetBorderFocusColor(tcell.ColorFuchsia)
 		v.SetSelectedStyle(tcell.ColorWhite, tcell.ColorFuchsia, tcell.AttrNone)
 		v.colorerFn = aliasColorer
-		v.current = app.content.GetPrimitive("main").(igniter)
+		v.current = current
 		v.currentNS = ""
 		v.registerActions()
 	}

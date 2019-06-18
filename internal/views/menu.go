@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
@@ -100,12 +101,12 @@ func (a keyActions) toHints() hints {
 type menuView struct {
 	*tview.Table
 
-	app *appView
+	styles *config.Styles
 }
 
-func newMenuView(app *appView) *menuView {
-	v := menuView{Table: tview.NewTable(), app: app}
-	v.SetBackgroundColor(app.styles.BgColor())
+func newMenuView(styles *config.Styles) *menuView {
+	v := menuView{Table: tview.NewTable(), styles: styles}
+	v.SetBackgroundColor(styles.BgColor())
 
 	return &v
 }
@@ -120,7 +121,7 @@ func (v *menuView) populateMenu(hh hints) {
 				continue
 			}
 			c := tview.NewTableCell(t[row][col])
-			c.SetBackgroundColor(v.app.styles.BgColor())
+			c.SetBackgroundColor(v.styles.BgColor())
 			v.SetCell(row, col, c)
 		}
 	}
@@ -177,16 +178,16 @@ func (*menuView) toMnemonic(s string) string {
 func (v *menuView) formatMenu(h hint, size int) string {
 	i, err := strconv.Atoi(h.mnemonic)
 	if err == nil {
-		fmat := strings.Replace(menuIndexFmt, "[key", "["+v.app.styles.Style.Menu.NumKeyColor, 1)
-		fmat = strings.Replace(fmat, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
-		fmat = strings.Replace(fmat, "[fg", "["+v.app.styles.Style.Menu.FgColor, 1)
+		fmat := strings.Replace(menuIndexFmt, "[key", "["+v.styles.Style.Menu.NumKeyColor, 1)
+		fmat = strings.Replace(fmat, ":bg:", ":"+v.styles.Style.Title.BgColor+":", -1)
+		fmat = strings.Replace(fmat, "[fg", "["+v.styles.Style.Menu.FgColor, 1)
 		return fmt.Sprintf(fmat, i, resource.Truncate(h.description, 14))
 	}
 
 	menuFmt := " [key:bg:b]%-" + strconv.Itoa(size+2) + "s [fg:bg:d]%s "
-	fmat := strings.Replace(menuFmt, "[key", "["+v.app.styles.Style.Menu.KeyColor, 1)
-	fmat = strings.Replace(fmat, "[fg", "["+v.app.styles.Style.Menu.FgColor, 1)
-	fmat = strings.Replace(fmat, ":bg:", ":"+v.app.styles.Style.Title.BgColor+":", -1)
+	fmat := strings.Replace(menuFmt, "[key", "["+v.styles.Style.Menu.KeyColor, 1)
+	fmat = strings.Replace(fmat, "[fg", "["+v.styles.Style.Menu.FgColor, 1)
+	fmat = strings.Replace(fmat, ":bg:", ":"+v.styles.Style.Title.BgColor+":", -1)
 	return fmt.Sprintf(fmat, v.toMnemonic(h.mnemonic), h.description)
 }
 

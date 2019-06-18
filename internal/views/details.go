@@ -42,7 +42,7 @@ func newDetailsView(app *appView, backFn actionHandler) *detailsView {
 		v.SetInputCapture(v.keyboard)
 		v.cmdBuff = newCmdBuff('/')
 		{
-			v.cmdBuff.addListener(app.cmdView)
+			v.cmdBuff.addListener(app.cmd())
 			v.cmdBuff.reset()
 		}
 		v.SetChangedFunc(func() {
@@ -104,7 +104,7 @@ func (v *detailsView) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *detailsView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.app.cmdView.inCmdMode() {
+	if !v.app.inCmdMode() {
 		v.cmdBuff.setActive(true)
 		v.cmdBuff.clear()
 		return nil

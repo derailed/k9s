@@ -39,7 +39,7 @@ func newClusterInfoView(app *appView, mx resource.MetricsServer) *clusterInfoVie
 	}
 }
 
-func (v *clusterInfoView) init() {
+func (v *clusterInfoView) init(version string) {
 	cluster := resource.NewCluster(v.app.conn(), &log.Logger, v.mxs)
 
 	var row int
@@ -56,7 +56,7 @@ func (v *clusterInfoView) init() {
 	row++
 
 	v.SetCell(row, 0, v.sectionCell("K9s Rev"))
-	v.SetCell(row, 1, v.infoCell(v.app.version))
+	v.SetCell(row, 1, v.infoCell(version))
 	row++
 
 	rev := cluster.Version()

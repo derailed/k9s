@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 )
@@ -36,44 +37,39 @@ var Logo = []string{
 // Splash screen definition
 type splashView struct {
 	*tview.Flex
-
-	app *appView
 }
 
 // NewSplash instantiates a new splash screen with product and company info.
-func newSplash(app *appView) *splashView {
-	v := splashView{Flex: tview.NewFlex(), app: app}
+func newSplash(styles *config.Styles, version string) *splashView {
+	v := splashView{Flex: tview.NewFlex()}
 
 	logo := tview.NewTextView()
-	{
-		logo.SetDynamicColors(true)
-		logo.SetBackgroundColor(tcell.ColorDefault)
-		logo.SetTextAlign(tview.AlignCenter)
-	}
-	v.layoutLogo(logo)
+	logo.SetDynamicColors(true)
+	logo.SetBackgroundColor(tcell.ColorDefault)
+	logo.SetTextAlign(tview.AlignCenter)
+	v.layoutLogo(logo, styles)
 
 	vers := tview.NewTextView()
-	{
-		vers.SetDynamicColors(true)
-		vers.SetBackgroundColor(tcell.ColorDefault)
-		vers.SetTextAlign(tview.AlignCenter)
-	}
-	v.layoutRev(vers, app.version)
+	vers.SetDynamicColors(true)
+	vers.SetBackgroundColor(tcell.ColorDefault)
+	vers.SetTextAlign(tview.AlignCenter)
+	v.layoutRev(vers, version, styles)
 
 	v.SetDirection(tview.FlexRow)
 	v.AddItem(logo, 10, 1, false)
 	v.AddItem(vers, 1, 1, false)
+
 	return &v
 }
 
-func (v *splashView) layoutLogo(t *tview.TextView) {
-	logo := strings.Join(Logo, fmt.Sprintf("\n[%s::b]", v.app.styles.Style.LogoColor))
+func (v *splashView) layoutLogo(t *tview.TextView, styles *config.Styles) {
+	logo := strings.Join(Logo, fmt.Sprintf("\n[%s::b]", styles.Style.LogoColor))
 	fmt.Fprintf(t, "%s[%s::b]%s\n",
 		strings.Repeat("\n", 2),
-		v.app.styles.Style.LogoColor,
+		styles.Style.LogoColor,
 		logo)
 }
 
-func (v *splashView) layoutRev(t *tview.TextView, rev string) {
-	fmt.Fprintf(t, "[%s::b]Revision [red::b]%s", v.app.styles.Style.FgColor, rev)
+func (v *splashView) layoutRev(t *tview.TextView, rev string, styles *config.Styles) {
+	fmt.Fprintf(t, "[%s::b]Revision [red::b]%s", styles.Style.FgColor, rev)
 }

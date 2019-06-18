@@ -118,7 +118,7 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 	}
 
 	v.update(vctx)
-	v.app.clusterInfoView.refresh()
+	v.app.clusterInfoRefresh()
 	v.refresh()
 	if tv, ok := v.CurrentPage().Item.(*tableView); ok {
 		r, _ := tv.GetSelection()
@@ -275,7 +275,7 @@ func (v *resourceView) dismissModal() {
 }
 
 func (v *resourceView) defaultEnter(ns, resource, selection string) {
-	yaml, err := v.list.Resource().Describe(v.title, selection, v.app.flags)
+	yaml, err := v.list.Resource().Describe(v.title, selection)
 	if err != nil {
 		v.app.flash().errf("Describe command failed %s", err)
 		log.Warn().Msgf("Describe %v", err.Error())
@@ -444,11 +444,6 @@ func (v *resourceView) switchPage(p string) {
 
 func (v *resourceView) rowSelected() bool {
 	return v.selectedItem != noSelection
-}
-
-func namespaced(n string) (string, string) {
-	ns, po := path.Split(n)
-	return strings.Trim(ns, "/"), po
 }
 
 func (v *resourceView) refreshActions() {

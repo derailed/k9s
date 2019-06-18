@@ -76,7 +76,7 @@ func newTableView(app *appView, title string) *tableView {
 	v.SetBorderFocusColor(config.AsColor(app.styles.Style.Border.FocusColor))
 	v.SetBorderAttributes(tcell.AttrBold)
 	v.SetBorderPadding(0, 0, 1, 1)
-	v.cmdBuff.addListener(app.cmdView)
+	v.cmdBuff.addListener(app.cmd())
 	v.cmdBuff.reset()
 	v.SetSelectable(true, false)
 	v.SetSelectedStyle(
@@ -265,7 +265,7 @@ func (v *tableView) sortInvertCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *tableView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if v.app.cmdView.inCmdMode() {
+	if v.app.inCmdMode() {
 		return evt
 	}
 

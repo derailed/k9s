@@ -28,12 +28,12 @@ func (c *command) lastCmd() bool {
 
 func (c *command) pushCmd(cmd string) {
 	c.history.push(cmd)
-	c.app.crumbsView.update(c.history.stack)
+	c.app.crumbs().update(c.history.stack)
 }
 
 func (c *command) previousCmd() (string, bool) {
 	c.history.pop()
-	c.app.crumbsView.update(c.history.stack)
+	c.app.crumbs().update(c.history.stack)
 
 	return c.history.top()
 }
@@ -56,10 +56,10 @@ func (c *command) run(cmd string) bool {
 		c.app.BailOut()
 		return true
 	case cmd == "?", cmd == "help":
-		c.app.inject(newHelpView(c.app))
+		c.app.inject(newHelpView(c.app, c.app.currentView()))
 		return true
 	case cmd == "alias":
-		c.app.inject(newAliasView(c.app))
+		c.app.inject(newAliasView(c.app, c.app.currentView()))
 		return true
 	case policyMatcher.MatchString(cmd):
 		tokens := policyMatcher.FindAllStringSubmatch(cmd, -1)

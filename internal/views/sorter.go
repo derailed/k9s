@@ -1,7 +1,6 @@
 package views
 
 import (
-	"regexp"
 	"strconv"
 	"time"
 
@@ -58,15 +57,15 @@ func less(asc bool, c1, c2 string) bool {
 		return true
 	}
 
+	if o, ok := isIntegerSort(asc, c1, c2); ok {
+		return o
+	}
+
 	if o, ok := isMetricSort(asc, c1, c2); ok {
 		return o
 	}
 
 	if o, ok := isDurationSort(asc, c1, c2); ok {
-		return o
-	}
-
-	if o, ok := isIntegerSort(asc, c1, c2); ok {
 		return o
 	}
 
@@ -104,24 +103,16 @@ func isMetricSort(asc bool, c1, c2 string) (bool, bool) {
 }
 
 func isIntegerSort(asc bool, c1, c2 string) (bool, bool) {
-	n1, err := strconv.Atoi(c1)
-	if err != nil {
+	n1, err1 := strconv.Atoi(c1)
+	n2, err2 := strconv.Atoi(c2)
+	if err1 != nil || err2 != nil {
 		return false, false
 	}
-	n2, _ := strconv.Atoi(c2)
+
 	if asc {
 		return n1 <= n2, true
 	}
 	return n1 > n2, true
-}
-
-var metricRX = regexp.MustCompile(`\A(\d+)(m|Mi)\z`)
-
-func isMetric(s string) (string, bool) {
-	if m := metricRX.FindStringSubmatch(s); len(m) == 3 {
-		return m[1], true
-	}
-	return s, false
 }
 
 func isDuration(s string) (time.Duration, bool) {

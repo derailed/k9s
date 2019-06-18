@@ -22,16 +22,15 @@ type helpView struct {
 	actions keyActions
 }
 
-func newHelpView(app *appView) *helpView {
+func newHelpView(app *appView, current igniter) *helpView {
 	v := helpView{TextView: tview.NewTextView(), app: app, actions: make(keyActions)}
-	{
-		v.SetTextColor(tcell.ColorAqua)
-		v.SetBorder(true)
-		v.SetBorderPadding(0, 0, 1, 1)
-		v.SetDynamicColors(true)
-		v.SetInputCapture(v.keyboard)
-		v.current = app.content.GetPrimitive("main").(igniter)
-	}
+	v.SetTextColor(tcell.ColorAqua)
+	v.SetBorder(true)
+	v.SetBorderPadding(0, 0, 1, 1)
+	v.SetDynamicColors(true)
+	v.SetInputCapture(v.keyboard)
+	v.current = current
+
 	v.actions[tcell.KeyEsc] = newKeyAction("Back", v.backCmd, true)
 	v.actions[tcell.KeyEnter] = newKeyAction("Back", v.backCmd, false)
 

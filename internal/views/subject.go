@@ -81,12 +81,10 @@ func (v *subjectView) init(c context.Context, _ string) {
 	v.app.SetFocus(v)
 }
 
-func (v *subjectView) setExtraActionsFn(f actionsFn) {
-}
-
-func (v *subjectView) setColorerFn(f colorerFn)   {}
-func (v *subjectView) setEnterFn(f enterFn)       {}
-func (v *subjectView) setDecorateFn(f decorateFn) {}
+func (v *subjectView) setExtraActionsFn(f actionsFn) {}
+func (v *subjectView) setColorerFn(f colorerFn)      {}
+func (v *subjectView) setEnterFn(f enterFn)          {}
+func (v *subjectView) setDecorateFn(f decorateFn)    {}
 
 func (v *subjectView) bindKeys() {
 	// No time data or ns
@@ -97,7 +95,6 @@ func (v *subjectView) bindKeys() {
 	v.actions[tcell.KeyEscape] = newKeyAction("Reset", v.resetCmd, false)
 	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd, false)
 	v.actions[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
-
 	v.actions[KeyShiftK] = newKeyAction("Sort Kind", v.sortColCmd(1), true)
 }
 

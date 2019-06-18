@@ -10,28 +10,28 @@ import (
 type logoView struct {
 	*tview.Flex
 	logo, status *tview.TextView
-	app          *appView
+	styles       *config.Styles
 }
 
-func newLogoView(app *appView) *logoView {
+func newLogoView(styles *config.Styles) *logoView {
 	v := logoView{
 		Flex:   tview.NewFlex(),
 		logo:   logo(),
 		status: status(),
-		app:    app,
+		styles: styles,
 	}
 	v.SetDirection(tview.FlexRow)
 	v.AddItem(v.logo, 0, 6, false)
 	v.AddItem(v.status, 0, 1, false)
-	v.refreshLogo(app.styles.Style.LogoColor)
+	v.refreshLogo(styles.Style.LogoColor)
 
 	return &v
 }
 
 func (v *logoView) reset() {
 	v.status.Clear()
-	v.status.SetBackgroundColor(v.app.styles.BgColor())
-	v.refreshLogo(v.app.styles.Style.LogoColor)
+	v.status.SetBackgroundColor(v.styles.BgColor())
+	v.refreshLogo(v.styles.Style.LogoColor)
 }
 
 func (v *logoView) err(msg string) {

@@ -13,6 +13,37 @@ func init() {
 	zerolog.SetGlobalLevel(zerolog.Disabled)
 }
 
+func TestIsTCPPort(t *testing.T) {
+	uu := map[string]struct {
+		p string
+		e bool
+	}{
+		"tcp": {"80╱TCP", true},
+		"udp": {"80╱UDP", false},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, isTCPPort(u.p))
+		})
+	}
+}
+
+func TestFQN(t *testing.T) {
+	uu := map[string]struct {
+		ns, n, e string
+	}{
+		"fullFQN": {"blee", "fred", "blee/fred"},
+		"allNS":   {"", "fred", "fred"},
+	}
+
+	for k, u := range uu {
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, fqn(u.ns, u.n))
+		})
+	}
+}
+
 func TestDeltas(t *testing.T) {
 	uu := []struct {
 		s1, s2, e string

@@ -10,13 +10,13 @@ import (
 type statusView struct {
 	*tview.TextView
 
-	app *appView
+	styles *config.Styles
 }
 
-func newStatusView(app *appView) *statusView {
-	v := statusView{app: app, TextView: tview.NewTextView()}
+func newStatusView(styles *config.Styles) *statusView {
+	v := statusView{styles: styles, TextView: tview.NewTextView()}
 	{
-		v.SetBackgroundColor(config.AsColor(app.styles.Style.Log.BgColor))
+		v.SetBackgroundColor(config.AsColor(styles.Style.Log.BgColor))
 		v.SetTextAlign(tview.AlignRight)
 		v.SetDynamicColors(true)
 	}
@@ -25,14 +25,14 @@ func newStatusView(app *appView) *statusView {
 
 func (v *statusView) update(status []string) {
 	v.Clear()
-	last, bgColor := len(status)-1, v.app.styles.Style.Crumb.BgColor
+	last, bgColor := len(status)-1, v.styles.Style.Crumb.BgColor
 	for i, c := range status {
 		if i == last {
-			bgColor = v.app.styles.Style.Crumb.ActiveColor
+			bgColor = v.styles.Style.Crumb.ActiveColor
 		}
 		fmt.Fprintf(v, "[%s:%s:b] %s [-:%s:-] ",
-			v.app.styles.Style.Crumb.FgColor,
+			v.styles.Style.Crumb.FgColor,
 			bgColor, c,
-			v.app.styles.Style.BgColor)
+			v.styles.Style.BgColor)
 	}
 }

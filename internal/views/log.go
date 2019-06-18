@@ -19,8 +19,8 @@ type logView struct {
 	*tview.Flex
 
 	app        *appView
-	logs       *detailsView
 	backFn     actionHandler
+	logs       *detailsView
 	status     *statusView
 	ansiWriter io.Writer
 	autoScroll int32
@@ -46,7 +46,7 @@ func newLogView(title string, app *appView, backFn actionHandler) *logView {
 		v.logs.SetMaxBuffer(app.config.K9s.LogBufferSize)
 	}
 	v.ansiWriter = tview.ANSIWriter(v.logs)
-	v.status = newStatusView(app)
+	v.status = newStatusView(app.styles)
 	v.SetDirection(tview.FlexRow)
 	v.AddItem(v.status, 1, 1, false)
 	v.AddItem(v.logs, 0, 1, true)
@@ -86,11 +86,6 @@ func (v *logView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 func (v *logView) logLine(line string) {
 	fmt.Fprintln(v.ansiWriter, tview.Escape(line))
-}
-
-func (v *logView) log(lines fmt.Stringer) {
-	v.logs.Clear()
-	fmt.Fprintln(v.ansiWriter, lines.String())
 }
 
 func (v *logView) flush(index int, buff []string) {

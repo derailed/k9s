@@ -1,6 +1,7 @@
 package views
 
 import (
+	"path"
 	"regexp"
 	"strconv"
 	"strings"
@@ -31,6 +32,12 @@ func stripPort(p string) string {
 	}
 
 	return p
+}
+
+// Namespaced converts an fqn resource name to ns and name.
+func namespaced(n string) (string, string) {
+	ns, po := path.Split(n)
+	return strings.Trim(ns, "/"), po
 }
 
 // ContainerID computes container ID based on ns/po/co.

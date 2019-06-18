@@ -15,20 +15,20 @@ type cmdView struct {
 	activated bool
 	icon      rune
 	text      string
-	app       *appView
+	styles    *config.Styles
 }
 
-func newCmdView(app *appView, ic rune) *cmdView {
-	v := cmdView{app: app, icon: ic, TextView: tview.NewTextView()}
+func newCmdView(styles *config.Styles, ic rune) *cmdView {
+	v := cmdView{styles: styles, icon: ic, TextView: tview.NewTextView()}
 	{
 		v.SetWordWrap(true)
 		v.SetWrap(true)
 		v.SetDynamicColors(true)
 		v.SetBorder(true)
 		v.SetBorderPadding(0, 0, 1, 1)
-		v.SetBackgroundColor(app.styles.BgColor())
-		v.SetBorderColor(config.AsColor(app.styles.Style.Border.FocusColor))
-		v.SetTextColor(app.styles.FgColor())
+		v.SetBackgroundColor(styles.BgColor())
+		v.SetBorderColor(config.AsColor(styles.Style.Border.FocusColor))
+		v.SetTextColor(styles.FgColor())
 	}
 	return &v
 }
@@ -66,11 +66,11 @@ func (v *cmdView) active(f bool) {
 	v.activated = f
 	if f {
 		v.SetBorder(true)
-		v.SetTextColor(v.app.styles.FgColor())
+		v.SetTextColor(v.styles.FgColor())
 		v.activate()
 	} else {
 		v.SetBorder(false)
-		v.SetBackgroundColor(v.app.styles.BgColor())
+		v.SetBackgroundColor(v.styles.BgColor())
 		v.Clear()
 	}
 }

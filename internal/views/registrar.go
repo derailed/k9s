@@ -41,6 +41,9 @@ func helpCmds(c k8s.Connection) map[string]resCmd {
 
 func allCRDs(c k8s.Connection) map[string]k8s.APIGroup {
 	m := map[string]k8s.APIGroup{}
+	if c == nil {
+		return m
+	}
 
 	crds, _ := resource.NewCustomResourceDefinitionList(c, resource.AllNamespaces).
 		Resource().
@@ -310,6 +313,9 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 		},
 	}
 
+	if c == nil {
+		return cmds
+	}
 	rev, ok, err := c.SupportsRes("autoscaling", []string{"v1", "v2beta1", "v2beta2"})
 	if err != nil {
 		log.Error().Err(err).Msg("Checking HPA")
