@@ -68,7 +68,9 @@ func (c *command) run(cmd string) bool {
 			return true
 		}
 	default:
-		if res, ok := resourceViews(c.app.conn())[cmd]; ok {
+		cmds := make(map[string]resCmd, 30)
+		resourceViews(c.app.conn(), cmds)
+		if res, ok := cmds[cmd]; ok {
 			var r resource.List
 			if res.listFn != nil {
 				r = res.listFn(c.app.conn(), resource.DefaultNamespace)
@@ -91,20 +93,22 @@ func (c *command) run(cmd string) bool {
 		}
 	}
 
-	res, ok := allCRDs(c.app.conn())[cmd]
+	cmds := make(map[string]resCmd, 30)
+	allCRDs(c.app.conn(), cmds)
+	res, ok := cmds[cmd]
 	if !ok {
 		c.app.flash().warnf("Huh? `%s` command not found", cmd)
 		return false
 	}
 
-	name := res.Plural
-	if len(name) == 0 {
-		name = res.Singular
+	name := res.plural
+	if name == "" {
+		name = res.singular
 	}
 	v = newResourceView(
-		res.Kind,
+		res.title,
 		c.app,
-		resource.NewCustomList(c.app.conn(), "", res.Group, res.Version, name),
+		resource.NewCustomList(c.app.conn(), "", res.api, res.version, name),
 	)
 	v.setColorerFn(defaultColorer)
 	c.exec(cmd, v)

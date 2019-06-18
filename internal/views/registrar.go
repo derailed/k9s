@@ -18,6 +18,9 @@ type (
 	resCmd struct {
 		title      string
 		api        string
+		version    string
+		plural     string
+		singular   string
 		viewFn     viewFn
 		listFn     listFn
 		enterFn    enterFn
@@ -26,25 +29,14 @@ type (
 	}
 )
 
-func helpCmds(c k8s.Connection) map[string]resCmd {
-	cmdMap := resourceViews(c)
-	cmds := make(map[string]resCmd, len(cmdMap))
-	for k, v := range cmdMap {
-		cmds[k] = v
+func aliasCmds(c k8s.Connection, m map[string]resCmd) {
+	resourceViews(c, m)
+	if c != nil {
+		allCRDs(c, m)
 	}
-	for k, v := range allCRDs(c) {
-		cmds[k] = resCmd{title: v.Kind, api: v.Group}
-	}
-
-	return cmds
 }
 
-func allCRDs(c k8s.Connection) map[string]k8s.APIGroup {
-	m := map[string]k8s.APIGroup{}
-	if c == nil {
-		return m
-	}
-
+func allCRDs(c k8s.Connection, m map[string]resCmd) {
 	crds, _ := resource.NewCustomResourceDefinitionList(c, resource.AllNamespaces).
 		Resource().
 		List(resource.AllNamespaces)
@@ -58,24 +50,23 @@ func allCRDs(c k8s.Connection) map[string]k8s.APIGroup {
 			Version: ff["version"].(string),
 		}
 
+		res := resCmd{title: grp.Kind, api: grp.Group, version: grp.Version}
 		if p, ok := ff["plural"].(string); ok {
-			grp.Plural = p
-			m[p] = grp
+			res.plural = p
+			m[p] = res
 		}
 
 		if s, ok := ff["singular"].(string); ok {
-			grp.Singular = s
-			m[s] = grp
+			res.singular = s
+			m[s] = res
 		}
 
 		if aa, ok := ff["aliases"].([]interface{}); ok {
 			for _, a := range aa {
-				m[a.(string)] = grp
+				m[a.(string)] = res
 			}
 		}
 	}
-
-	return m
 }
 
 func showRBAC(app *appView, ns, resource, selection string) {
@@ -110,220 +101,254 @@ func showSAPolicy(app *appView, _, _, selection string) {
 	app.inject(newPolicyView(app, mapFuSubject("ServiceAccount"), n))
 }
 
-func resourceViews(c k8s.Connection) map[string]resCmd {
-	cmds := map[string]resCmd{
-		"cm": {
-			title:  "ConfigMaps",
-			api:    "",
-			viewFn: newResourceView,
-			listFn: resource.NewConfigMapList,
-		},
-		"cr": {
-			title:   "ClusterRoles",
-			api:     "rbac.authorization.k8s.io",
-			viewFn:  newResourceView,
-			listFn:  resource.NewClusterRoleList,
-			enterFn: showRBAC,
-		},
-		"crb": {
-			title:   "ClusterRoleBindings",
-			api:     "rbac.authorization.k8s.io",
-			viewFn:  newResourceView,
-			listFn:  resource.NewClusterRoleBindingList,
-			enterFn: showClusterRole,
-		},
-		"crd": {
-			title:  "CustomResourceDefinitions",
-			api:    "apiextensions.k8s.io",
-			viewFn: newResourceView,
-			listFn: resource.NewCustomResourceDefinitionList,
-		},
-		"cj": {
-			title:  "CronJobs",
-			api:    "batch",
-			viewFn: newCronJobView,
-			listFn: resource.NewCronJobList,
-		},
-		"ctx": {
-			title:     "Contexts",
-			api:       "",
-			viewFn:    newContextView,
-			listFn:    resource.NewContextList,
-			colorerFn: ctxColorer,
-		},
-		"ds": {
-			title:     "DaemonSets",
-			api:       "",
-			viewFn:    newDaemonSetView,
-			listFn:    resource.NewDaemonSetList,
-			colorerFn: dpColorer,
-		},
-		"dp": {
-			title:     "Deployments",
-			api:       "apps",
-			viewFn:    newDeployView,
-			listFn:    resource.NewDeploymentList,
-			colorerFn: dpColorer,
-		},
-		"ep": {
-			title:  "EndPoints",
-			api:    "",
-			viewFn: newResourceView,
-			listFn: resource.NewEndpointsList,
-		},
-		"ev": {
-			title:     "Events",
-			api:       "",
-			viewFn:    newResourceView,
-			listFn:    resource.NewEventList,
-			colorerFn: evColorer,
-		},
-		"ing": {
-			title:  "Ingress",
-			api:    "extensions",
-			viewFn: newResourceView,
-			listFn: resource.NewIngressList,
-		},
-		"jo": {
-			title:  "Jobs",
-			api:    "batch",
-			viewFn: newJobView,
-			listFn: resource.NewJobList,
-		},
-		"no": {
-			title:     "Nodes",
-			api:       "",
-			viewFn:    newNodeView,
-			listFn:    resource.NewNodeList,
-			colorerFn: nsColorer,
-		},
-		"ns": {
-			title:     "Namespaces",
-			api:       "",
-			viewFn:    newNamespaceView,
-			listFn:    resource.NewNamespaceList,
-			colorerFn: nsColorer,
-		},
-		"pdb": {
-			title:     "PodDisruptionBudgets",
-			api:       "v1.beta1",
-			viewFn:    newResourceView,
-			listFn:    resource.NewPDBList,
-			colorerFn: pdbColorer,
-		},
-		"po": {
-			title:     "Pods",
-			api:       "",
-			viewFn:    newPodView,
-			listFn:    resource.NewPodList,
-			colorerFn: podColorer,
-		},
-		"pv": {
-			title:     "PersistentVolumes",
-			api:       "",
-			viewFn:    newResourceView,
-			listFn:    resource.NewPersistentVolumeList,
-			colorerFn: pvColorer,
-		},
-		"pvc": {
-			title:     "PersistentVolumeClaims",
-			api:       "",
-			viewFn:    newResourceView,
-			listFn:    resource.NewPersistentVolumeClaimList,
-			colorerFn: pvcColorer,
-		},
-		"rb": {
-			title:   "RoleBindings",
-			api:     "rbac.authorization.k8s.io",
-			viewFn:  newResourceView,
-			listFn:  resource.NewRoleBindingList,
-			enterFn: showRole,
-		},
-		"rc": {
-			title:     "ReplicationControllers",
-			api:       "",
-			viewFn:    newResourceView,
-			listFn:    resource.NewReplicationControllerList,
-			colorerFn: rsColorer,
-		},
-		"ro": {
-			title:   "Roles",
-			api:     "rbac.authorization.k8s.io",
-			viewFn:  newResourceView,
-			listFn:  resource.NewRoleList,
-			enterFn: showRBAC,
-		},
-		"rs": {
-			title:     "ReplicaSets",
-			api:       "apps",
-			viewFn:    newReplicaSetView,
-			listFn:    resource.NewReplicaSetList,
-			colorerFn: rsColorer,
-		},
-		"sa": {
-			title:   "ServiceAccounts",
-			api:     "",
-			viewFn:  newResourceView,
-			listFn:  resource.NewServiceAccountList,
-			enterFn: showSAPolicy,
-		},
-		"sec": {
-			title:  "Secrets",
-			api:    "",
-			viewFn: newSecretView,
-			listFn: resource.NewSecretList,
-		},
-		"sts": {
-			title:     "StatefulSets",
-			api:       "apps",
-			viewFn:    newStatefulSetView,
-			listFn:    resource.NewStatefulSetList,
-			colorerFn: stsColorer,
-		},
-		"svc": {
-			title:  "Services",
-			api:    "",
-			viewFn: newSvcView,
-			listFn: resource.NewServiceList,
-		},
-		"usr": {
-			title:  "Users",
-			api:    "",
-			viewFn: newSubjectView,
-		},
-		"grp": {
-			title:  "Groups",
-			api:    "",
-			viewFn: newSubjectView,
-		},
-		"pf": {
-			title:  "PortForward",
-			api:    "",
-			viewFn: newForwardView,
-		},
-		"be": {
-			title:  "Benchmark",
-			api:    "",
-			viewFn: newBenchView,
-		},
-		"sd": {
-			title:  "ScreenDumps",
-			api:    "",
-			viewFn: newDumpView,
-		},
+func resourceViews(c k8s.Connection, m map[string]resCmd) {
+	coreRes(m)
+	rbacRes(m)
+	apiExtRes(m)
+	batchRes(m)
+	appsRes(m)
+	extRes(m)
+	v1beta1Res(m)
+	custRes(m)
+
+	if c != nil {
+		hpaRes(c, m)
+	}
+}
+
+func coreRes(m map[string]resCmd) {
+	m["cm"] = resCmd{
+		title:  "ConfigMaps",
+		api:    "",
+		viewFn: newResourceView,
+		listFn: resource.NewConfigMapList,
+	}
+	m["ctx"] = resCmd{
+		title:     "Contexts",
+		api:       "",
+		viewFn:    newContextView,
+		listFn:    resource.NewContextList,
+		colorerFn: ctxColorer,
+	}
+	m["ds"] = resCmd{
+		title:     "DaemonSets",
+		api:       "",
+		viewFn:    newDaemonSetView,
+		listFn:    resource.NewDaemonSetList,
+		colorerFn: dpColorer,
+	}
+	m["ep"] = resCmd{
+		title:  "EndPoints",
+		api:    "",
+		viewFn: newResourceView,
+		listFn: resource.NewEndpointsList,
+	}
+	m["ev"] = resCmd{
+		title:     "Events",
+		api:       "",
+		viewFn:    newResourceView,
+		listFn:    resource.NewEventList,
+		colorerFn: evColorer,
+	}
+	m["no"] = resCmd{
+		title:     "Nodes",
+		api:       "",
+		viewFn:    newNodeView,
+		listFn:    resource.NewNodeList,
+		colorerFn: nsColorer,
+	}
+	m["ns"] = resCmd{
+		title:     "Namespaces",
+		api:       "",
+		viewFn:    newNamespaceView,
+		listFn:    resource.NewNamespaceList,
+		colorerFn: nsColorer,
+	}
+	m["po"] = resCmd{
+		title:     "Pods",
+		api:       "",
+		viewFn:    newPodView,
+		listFn:    resource.NewPodList,
+		colorerFn: podColorer,
+	}
+	m["pv"] = resCmd{
+		title:     "PersistentVolumes",
+		api:       "",
+		viewFn:    newResourceView,
+		listFn:    resource.NewPersistentVolumeList,
+		colorerFn: pvColorer,
+	}
+	m["pvc"] = resCmd{
+		title:     "PersistentVolumeClaims",
+		api:       "",
+		viewFn:    newResourceView,
+		listFn:    resource.NewPersistentVolumeClaimList,
+		colorerFn: pvcColorer,
+	}
+	m["rc"] = resCmd{
+		title:     "ReplicationControllers",
+		api:       "",
+		viewFn:    newResourceView,
+		listFn:    resource.NewReplicationControllerList,
+		colorerFn: rsColorer,
+	}
+	m["sa"] = resCmd{
+		title:   "ServiceAccounts",
+		api:     "",
+		viewFn:  newResourceView,
+		listFn:  resource.NewServiceAccountList,
+		enterFn: showSAPolicy,
+	}
+	m["sec"] = resCmd{
+		title:  "Secrets",
+		api:    "",
+		viewFn: newSecretView,
+		listFn: resource.NewSecretList,
+	}
+	m["svc"] = resCmd{
+		title:  "Services",
+		api:    "",
+		viewFn: newSvcView,
+		listFn: resource.NewServiceList,
+	}
+}
+
+func custRes(m map[string]resCmd) {
+	m["usr"] = resCmd{
+		title:  "Users",
+		api:    "",
+		viewFn: newSubjectView,
+	}
+	m["grp"] = resCmd{
+		title:  "Groups",
+		api:    "",
+		viewFn: newSubjectView,
+	}
+	m["pf"] = resCmd{
+		title:  "PortForward",
+		api:    "",
+		viewFn: newForwardView,
+	}
+	m["be"] = resCmd{
+		title:  "Benchmark",
+		api:    "",
+		viewFn: newBenchView,
+	}
+	m["sd"] = resCmd{
+		title:  "ScreenDumps",
+		api:    "",
+		viewFn: newDumpView,
+	}
+}
+
+func rbacRes(m map[string]resCmd) {
+	m["cr"] = resCmd{
+		title:   "ClusterRoles",
+		api:     "rbac.authorization.k8s.io",
+		viewFn:  newResourceView,
+		listFn:  resource.NewClusterRoleList,
+		enterFn: showRBAC,
+	}
+	m["crb"] = resCmd{
+		title:   "ClusterRoleBindings",
+		api:     "rbac.authorization.k8s.io",
+		viewFn:  newResourceView,
+		listFn:  resource.NewClusterRoleBindingList,
+		enterFn: showClusterRole,
 	}
 
-	if c == nil {
-		return cmds
+	m["rb"] = resCmd{
+		title:   "RoleBindings",
+		api:     "rbac.authorization.k8s.io",
+		viewFn:  newResourceView,
+		listFn:  resource.NewRoleBindingList,
+		enterFn: showRole,
 	}
+	m["ro"] = resCmd{
+		title:   "Roles",
+		api:     "rbac.authorization.k8s.io",
+		viewFn:  newResourceView,
+		listFn:  resource.NewRoleList,
+		enterFn: showRBAC,
+	}
+}
+
+func apiExtRes(m map[string]resCmd) {
+	m["crd"] = resCmd{
+		title:  "CustomResourceDefinitions",
+		api:    "apiextensions.k8s.io",
+		viewFn: newResourceView,
+		listFn: resource.NewCustomResourceDefinitionList,
+	}
+}
+
+func batchRes(m map[string]resCmd) {
+	m["cj"] = resCmd{
+		title:  "CronJobs",
+		api:    "batch",
+		viewFn: newCronJobView,
+		listFn: resource.NewCronJobList,
+	}
+	m["jo"] = resCmd{
+		title:  "Jobs",
+		api:    "batch",
+		viewFn: newJobView,
+		listFn: resource.NewJobList,
+	}
+}
+
+func appsRes(m map[string]resCmd) {
+	m["dp"] = resCmd{
+		title:     "Deployments",
+		api:       "apps",
+		viewFn:    newDeployView,
+		listFn:    resource.NewDeploymentList,
+		colorerFn: dpColorer,
+	}
+	m["rs"] = resCmd{
+		title:     "ReplicaSets",
+		api:       "apps",
+		viewFn:    newReplicaSetView,
+		listFn:    resource.NewReplicaSetList,
+		colorerFn: rsColorer,
+	}
+	m["sts"] = resCmd{
+		title:     "StatefulSets",
+		api:       "apps",
+		viewFn:    newStatefulSetView,
+		listFn:    resource.NewStatefulSetList,
+		colorerFn: stsColorer,
+	}
+}
+
+func extRes(m map[string]resCmd) {
+	m["ing"] = resCmd{
+		title:  "Ingress",
+		api:    "extensions",
+		viewFn: newResourceView,
+		listFn: resource.NewIngressList,
+	}
+}
+
+func v1beta1Res(m map[string]resCmd) {
+	m["pdb"] = resCmd{
+		title:     "PodDisruptionBudgets",
+		api:       "v1.beta1",
+		viewFn:    newResourceView,
+		listFn:    resource.NewPDBList,
+		colorerFn: pdbColorer,
+	}
+}
+
+func hpaRes(c k8s.Connection, cmds map[string]resCmd) {
 	rev, ok, err := c.SupportsRes("autoscaling", []string{"v1", "v2beta1", "v2beta2"})
 	if err != nil {
 		log.Error().Err(err).Msg("Checking HPA")
-		return cmds
+		return
 	}
 	if !ok {
 		log.Error().Msg("HPA are not supported on this cluster")
-		return cmds
+		return
 	}
 
 	switch rev {
@@ -351,6 +376,4 @@ func resourceViews(c k8s.Connection) map[string]resCmd {
 	default:
 		log.Panic().Msgf("K9s unsupported HPA version. Exiting!")
 	}
-
-	return cmds
 }

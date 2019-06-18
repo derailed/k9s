@@ -22,19 +22,18 @@ type (
 
 	// Style tracks K9s styles.
 	Style struct {
-		FgColor   string `yaml:"fgColor"`
-		BgColor   string `yaml:"bgColor"`
-		LogoColor string `yaml:"logoColor"`
-
-		Info   *Info   `yaml:"info"`
-		Border *Border `yaml:"border"`
-		Menu   *Menu   `yaml:"menu"`
-		Crumb  *Crumb  `yaml:"crumb"`
-		Table  *Table  `yaml:"table"`
-		Status *Status `yaml:"status"`
-		Title  *Title  `yaml:"title"`
-		Yaml   *Yaml   `yaml:"yaml"`
-		Log    *Log    `yaml:"logs"`
+		FgColor   string  `yaml:"fgColor"`
+		BgColor   string  `yaml:"bgColor"`
+		LogoColor string  `yaml:"logoColor"`
+		Title     *Title  `yaml:"title"`
+		Border    *Border `yaml:"border"`
+		Info      *Info   `yaml:"info"`
+		Menu      *Menu   `yaml:"menu"`
+		Crumb     *Crumb  `yaml:"crumb"`
+		Table     *Table  `yaml:"table"`
+		Status    *Status `yaml:"status"`
+		Yaml      *Yaml   `yaml:"yaml"`
+		Log       *Log    `yaml:"logs"`
 	}
 
 	// Status tracks resource status styles.
@@ -117,13 +116,13 @@ func newStyle() *Style {
 		FgColor:   "cadetblue",
 		BgColor:   "black",
 		LogoColor: "orange",
-		Info:      newInfo(),
 		Border:    newBorder(),
+		Title:     newTitle(),
+		Info:      newInfo(),
 		Menu:      newMenu(),
 		Crumb:     newCrumb(),
 		Table:     newTable(),
 		Status:    newStatus(),
-		Title:     newTitle(),
 		Yaml:      newYaml(),
 		Log:       newLog(),
 	}

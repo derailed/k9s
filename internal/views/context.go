@@ -10,8 +10,8 @@ type contextView struct {
 	*resourceView
 }
 
-func newContextView(t string, app *appView, list resource.List) resourceViewer {
-	v := contextView{newResourceView(t, app, list).(*resourceView)}
+func newContextView(title string, app *appView, list resource.List) resourceViewer {
+	v := contextView{newResourceView(title, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.useCtx
 	v.getTV().cleanseFn = v.cleanser

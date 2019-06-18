@@ -49,14 +49,14 @@ type (
 		app       *appView
 		baseTitle string
 		currentNS string
+		data      resource.TableData
 		actions   keyActions
+		cmdBuff   *cmdBuff
 		colorerFn colorerFn
 		sortFn    sortFn
 		cleanseFn cleanseFn
-		data      resource.TableData
-		cmdBuff   *cmdBuff
-		sortCol   sortColumn
 		filterFn  func(string)
+		sortCol   sortColumn
 	}
 )
 
@@ -406,7 +406,15 @@ func (v *tableView) doUpdate(data resource.TableData) {
 				fgColor = v.colorerFn(data.Namespace, data.Rows[sk])
 			}
 			for col, field := range data.Rows[sk].Fields {
-				v.addBodyCell(data.NumCols, data.Header[col], row, col, field, data.Rows[sk].Deltas[col], fgColor, pads)
+				header := data.Header[col]
+				field, align := v.formatCell(data.NumCols[header], header, field, pads[col])
+				c := tview.NewTableCell(field + deltas(data.Rows[sk].Deltas[col], field))
+				{
+					c.SetExpansion(1)
+					c.SetAlign(align)
+					c.SetTextColor(fgColor)
+				}
+				v.SetCell(row, col, c)
 			}
 			row++
 		}
@@ -447,7 +455,7 @@ func (v *tableView) addHeaderCell(numCols map[string]bool, col int, name string,
 	v.SetCell(0, col, c)
 }
 
-func (v *tableView) addBodyCell(numCols map[string]bool, header string, row, col int, field, delta string, color tcell.Color, pads maxyPad) {
+func (v *tableView) formatCell(numerical bool, header, field string, padding int) (string, int) {
 	if header == "AGE" {
 		dur, err := time.ParseDuration(field)
 		if err == nil {
@@ -455,21 +463,16 @@ func (v *tableView) addBodyCell(numCols map[string]bool, header string, row, col
 		}
 	}
 
-	field += deltas(delta, field)
-	align := tview.AlignLeft
-	if numCols[header] || cpuRX.MatchString(header) || memRX.MatchString(header) {
-		align = tview.AlignRight
-	} else if isASCII(field) {
-		field = pad(field, pads[col])
+	if numerical || cpuRX.MatchString(header) || memRX.MatchString(header) {
+		return field, tview.AlignRight
 	}
 
-	c := tview.NewTableCell(field)
-	{
-		c.SetExpansion(1)
-		c.SetAlign(align)
-		c.SetTextColor(color)
+	align := tview.AlignLeft
+	if isASCII(field) {
+		return pad(field, padding), align
 	}
-	v.SetCell(row, col, c)
+
+	return field, align
 }
 
 func (v *tableView) defaultSort(rows resource.Rows, sortCol sortColumn) {

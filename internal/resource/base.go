@@ -3,12 +3,14 @@ package resource
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"path"
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/genericclioptions/printers"
@@ -127,14 +129,23 @@ func (b *Base) List(ns string) (Columnars, error) {
 
 // Describe a given resource.
 func (b *Base) Describe(kind, pa string) (string, error) {
-	ns, n := namespaced(pa)
-
 	mapping, err := k8s.RestMapping.Find(kind)
 	if err != nil {
-		log.Debug().Msgf("Unable to find mapper for %s %s", kind, pa)
-		return "", err
+		g, v, n := b.Resource.(*k8s.Resource).GetInfo()
+		mapper := k8s.RestMapper{b.Connection}
+		var e error
+		mapping, e = mapper.ResourceFor(fmt.Sprintf("%s.%s.%s", n, v, g))
+		if e != nil {
+			log.Debug().Err(err).Msgf("Unable to find mapper for %s %s", kind, pa)
+			return "", err
+		}
 	}
 
+	return b.doDescribe(pa, mapping)
+}
+
+func (b *Base) doDescribe(pa string, mapping *meta.RESTMapping) (string, error) {
+	ns, n := namespaced(pa)
 	d, err := versioned.Describer(b.Connection.Config().Flags(), mapping)
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to find describer for %#v", mapping)

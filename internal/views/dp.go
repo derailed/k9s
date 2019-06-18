@@ -12,8 +12,8 @@ type deployView struct {
 	*logResourceView
 }
 
-func newDeployView(ns string, app *appView, list resource.List) resourceViewer {
-	v := deployView{newLogResourceView(ns, app, list)}
+func newDeployView(title string, app *appView, list resource.List) resourceViewer {
+	v := deployView{newLogResourceView(title, app, list)}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.showPods
 

@@ -99,8 +99,10 @@ func (a *appView) registerActions() {
 }
 
 func (a *appView) Init(version string, rate int) {
-	a.startInformer()
-	a.clusterInfo().init(version)
+	if a.conn() != nil {
+		a.startInformer()
+		a.clusterInfo().init(version)
+	}
 	a.cmdBuff.addListener(a.cmd())
 
 	header := tview.NewFlex()
@@ -333,6 +335,7 @@ func (a *appView) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (a *appView) currentView() igniter {
 	return a.content.GetPrimitive("main").(igniter)
 }
+
 func (a *appView) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.inCmdMode() {
 		return evt

@@ -23,13 +23,11 @@ const (
 // K9sBenchDir directory to store K9s benchmark files.
 var K9sBenchDir = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-bench-%s", config.MustK9sUser()))
 
-type (
-	benchmark struct {
-		canceled bool
-		config   config.BenchConfig
-		worker   *requester.Work
-	}
-)
+type benchmark struct {
+	canceled bool
+	config   config.BenchConfig
+	worker   *requester.Work
+}
 
 func newBenchmark(base string, cfg config.BenchConfig) (*benchmark, error) {
 	b := benchmark{config: cfg}
