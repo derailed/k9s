@@ -21,10 +21,26 @@ k9s:
     bgColor: black
     cursorColor: aqua
     header:
-      fgColor: aqua
+      fgColor: white
       bgColor: black
       sorterColor: orange
+  status:
+    newColor: lightskyblue
+    modifyColor: greenyellow
+    addColor: white
+    errorColor: orangered
+    highlightcolor: aqua
+    killColor: mediumpurple
+    completedColor: gray
+  title:
+    fgColor: aqua
+    highlightColor: fuchsia
+    counterColor: papayawhip
+    filterColor: steelblue
   yaml:
     keyColor: steelblue
     colonColor: white
     valueColor: papayawhip
+  logs:
+    fgColor: white
+    bgColor: black

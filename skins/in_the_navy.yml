@@ -7,6 +7,7 @@ k9s:
     sectionColor: steelblue
   border:
     fgColor: dodgerblue
+    bgColor: darkblue
     focusColor: aliceblue
   menu:
     fgColor: darkblue
@@ -34,7 +35,7 @@ k9s:
     completedColor: gray
   title:
     fgColor: aqua
-    bgColor: white
+    bgColor: darkblue
     highlightColor: skyblue
     counterColor: slateblue
     filterColor: slategray
@@ -42,3 +43,6 @@ k9s:
     keyColor: steelblue
     colorColor: blue
     valueColor: royalblue
+  logs:
+    fgColor: white
+    bgColor: darkblue

@@ -41,3 +41,6 @@ k9s:
     keyColor: ghostwhite
     colorColor: slategray
     valueColor: navajowhite
+  logs:
+    fgColor: ghostwhite
+    bgColor: black
