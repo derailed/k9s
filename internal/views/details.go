@@ -217,9 +217,9 @@ func (v *detailsView) decorateLines(buff, q string) string {
 		if m := rx.FindString(l); len(m) > 0 {
 			lines[i] = rx.ReplaceAllString(l, fmt.Sprintf(`["%d"]%s[""]`, v.numSelections, m))
 			v.numSelections++
-		} else {
-			lines[i] = l
+			continue
 		}
+		lines[i] = l
 	}
 	return strings.Join(lines, "\n")
 }

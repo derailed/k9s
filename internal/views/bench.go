@@ -60,6 +60,8 @@ func newBenchView(_ string, app *appView, _ resource.List) resourceViewer {
 	v.AddPage("table", tv, true, true)
 
 	details := newDetailsView(app, v.backCmd)
+	details.setCategory("Bench")
+	details.SetTextColor(app.styles.FgColor())
 	v.AddPage("details", details, true, false)
 
 	v.registerActions()
@@ -133,27 +135,19 @@ func (v *benchView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.getTV().cmdBuff.isActive() {
 		return v.getTV().filterCmd(evt)
 	}
-
-	sel := v.selectedItem
-	if sel == "" {
+	if v.selectedItem == "" {
 		return nil
 	}
-	dir := filepath.Join(K9sBenchDir, v.app.config.K9s.CurrentCluster)
-	data, err := ioutil.ReadFile(filepath.Join(dir, sel))
+
+	data, err := v.loadBenchFile(v.selectedItem)
 	if err != nil {
 		log.Error().Err(err).Msg("Read failed")
 		v.app.flash().errf("Unable to load bench file %s", err)
 		return nil
 	}
 	vu := v.getDetails()
-	vu.Clear()
-	fmt.Fprintln(vu, string(data))
-	{
-		vu.setCategory("Bench")
-		vu.setTitle(sel)
-		vu.SetTextColor(tcell.ColorAqua)
-		vu.ScrollToBeginning()
-	}
+	vu.SetText(data)
+	vu.setTitle(v.selectedItem)
 	v.SwitchToPage("details")
 
 	return nil
@@ -192,8 +186,60 @@ func (v *benchView) hints() hints {
 	return v.CurrentPage().Item.(hinter).hints()
 }
 
+func (v *benchView) benchDir() string {
+	return filepath.Join(K9sBenchDir, v.app.config.K9s.CurrentCluster)
+}
+
+func (v *benchView) loadBenchDir() ([]os.FileInfo, error) {
+	return ioutil.ReadDir(v.benchDir())
+}
+
+func (v *benchView) loadBenchFile(n string) (string, error) {
+	data, err := ioutil.ReadFile(filepath.Join(v.benchDir(), n))
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
 func (v *benchView) hydrate() resource.TableData {
-	data := resource.TableData{
+	ff, err := v.loadBenchDir()
+	if err != nil {
+		log.Error().Err(err).Msg("Reading bench dir")
+		v.app.flash().errf("Unable to read bench directory %s", err)
+	}
+
+	data := initTable()
+	blank := make(resource.Row, len(benchHeader))
+	for _, f := range ff {
+		bench, err := v.loadBenchFile(f.Name())
+		if err != nil {
+			log.Error().Err(err).Msgf("Unable to load bench file %s", f.Name())
+			continue
+		}
+		tokens := strings.Split(f.Name(), "_")
+		fields := resource.Row{
+			0: tokens[0],
+			1: tokens[1],
+			7: f.Name(),
+			8: time.Since(f.ModTime()).String(),
+		}
+		augmentRow(fields, bench)
+		data.Rows[f.Name()] = &resource.RowEvent{
+			Action: resource.New,
+			Fields: fields,
+			Deltas: blank,
+		}
+	}
+
+	return data
+}
+
+// ----------------------------------------------------------------------------
+// Helpers...
+
+func initTable() resource.TableData {
+	return resource.TableData{
 		Header: benchHeader,
 		Rows:   make(resource.RowEvents, 10),
 		NumCols: map[string]bool{
@@ -204,30 +250,6 @@ func (v *benchView) hydrate() resource.TableData {
 		},
 		Namespace: resource.AllNamespaces,
 	}
-
-	dir := filepath.Join(K9sBenchDir, v.app.config.K9s.CurrentCluster)
-	ff, err := ioutil.ReadDir(dir)
-	if err != nil {
-		log.Error().Err(err).Msg("Reading bench dir")
-		v.app.flash().errf("Unable to read bench directory %s", err)
-	}
-
-	for _, f := range ff {
-		bench, err := ioutil.ReadFile(filepath.Join(dir, f.Name()))
-		if err != nil {
-			continue
-		}
-		tokens := strings.Split(f.Name(), "_")
-		fields := resource.Row{0: tokens[0], 1: tokens[1], 7: f.Name(), 8: time.Since(f.ModTime()).String()}
-		augmentRow(fields, string(bench))
-		data.Rows[f.Name()] = &resource.RowEvent{
-			Action: resource.New,
-			Fields: fields,
-			Deltas: fields,
-		}
-	}
-
-	return data
 }
 
 func augmentRow(fields resource.Row, data string) {
