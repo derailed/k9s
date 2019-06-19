@@ -4,6 +4,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/rs/zerolog/log"
 )
 
 type contextView struct {
@@ -14,13 +15,13 @@ func newContextView(title string, app *appView, list resource.List) resourceView
 	v := contextView{newResourceView(title, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.useCtx
-	v.getTV().cleanseFn = v.cleanser
+	v.masterPage().cleanseFn = v.cleanser
 
 	return &v
 }
 
 func (v *contextView) extraActions(aa keyActions) {
-	delete(v.getTV().actions, KeyShiftA)
+	delete(v.masterPage().actions, KeyShiftA)
 }
 
 func (v *contextView) useCtx(app *appView, _, res, sel string) {
@@ -48,10 +49,14 @@ func (v *contextView) useContext(name string) error {
 		return err
 	}
 
-	v.app.startInformer()
+	v.app.stopForwarders()
+	ns, err := v.app.conn().Config().CurrentNamespaceName()
+	if err != nil {
+		log.Info().Err(err).Msg("No namespace specified using all namespaces")
+	}
+	v.app.startInformer(ns)
 	v.app.config.Reset()
 	v.app.config.Save()
-	v.app.stopForwarders()
 	v.app.flash().infof("Switching context to %s", ctx)
 	v.refresh()
 	if tv, ok := v.GetPrimitive("ctx").(*tableView); ok {

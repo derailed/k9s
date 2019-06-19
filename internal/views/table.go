@@ -22,8 +22,6 @@ const (
 	titleFmt          = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]] "
 	searchFmt         = "<[filter:bg:b]/%s[fg:bg:]> "
 	nsTitleFmt        = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
-	descIndicator     = "↓"
-	ascIndicator      = "↑"
 	labelSelIndicator = "-l"
 )
 

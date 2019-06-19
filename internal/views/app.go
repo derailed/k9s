@@ -35,7 +35,6 @@ type (
 	igniter interface {
 		tview.Primitive
 
-		getTitle() string
 		init(ctx context.Context, ns string)
 	}
 
@@ -100,7 +99,11 @@ func (a *appView) registerActions() {
 
 func (a *appView) Init(version string, rate int) {
 	if a.conn() != nil {
-		a.startInformer()
+		ns, err := a.conn().Config().CurrentNamespaceName()
+		if err != nil {
+			log.Info().Err(err).Msg("No namespace specified using all namespaces")
+		}
+		a.startInformer(ns)
 		a.clusterInfo().init(version)
 	}
 	a.cmdBuff.addListener(a.cmd())
@@ -142,17 +145,17 @@ func (a *appView) clusterUpdater(ctx context.Context) {
 	}
 }
 
-func (a *appView) startInformer() {
+func (a *appView) startInformer(ns string) {
 	if a.stopCh != nil {
 		close(a.stopCh)
 	}
 
+	var err error
 	a.stopCh = make(chan struct{})
-	ns, err := a.conn().Config().CurrentNamespaceName()
+	a.informer, err = watch.NewInformer(a.conn(), ns)
 	if err != nil {
-		log.Warn().Err(err).Msg("No namespace specified using all namespaces")
+		log.Panic().Err(err).Msgf("%v", err)
 	}
-	a.informer = watch.NewInformer(a.conn(), ns)
 	a.informer.Run(a.stopCh)
 }
 

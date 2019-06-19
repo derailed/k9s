@@ -49,7 +49,7 @@ func (v *svcView) extraActions(aa keyActions) {
 
 func (v *svcView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		t := v.getTV()
+		t := v.masterPage()
 		t.sortCol.index, t.sortCol.asc = t.nameColIndex()+col, asc
 		t.refresh()
 
@@ -62,7 +62,6 @@ func (v *svcView) showPods(app *appView, ns, res, sel string) {
 	ns, n := namespaced(sel)
 	svc, err := s.Get(ns, n)
 	if err != nil {
-		log.Error().Err(err).Msgf("Fetch service %s", sel)
 		app.flash().err(err)
 		return
 	}
@@ -112,7 +111,7 @@ func trimCell(tv *tableView, row, col int) (string, error) {
 }
 
 func (v *svcView) checkSvc(row int) error {
-	svcType, err := trimCell(v.getTV(), row, 1)
+	svcType, err := trimCell(v.masterPage(), row, 1)
 	if err != nil {
 		return err
 	}
@@ -123,7 +122,7 @@ func (v *svcView) checkSvc(row int) error {
 }
 
 func (v *svcView) getExternalPort(row int) (string, error) {
-	ports, err := trimCell(v.getTV(), row, 5)
+	ports, err := trimCell(v.masterPage(), row, 5)
 	if err != nil {
 		return "", err
 	}
@@ -158,7 +157,6 @@ func (v *svcView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 	if err := v.reloadBenchCfg(); err != nil {
-		log.Error().Err(err).Msg("Bench config reload")
 		v.app.flash().err(err)
 		return nil
 	}
@@ -171,7 +169,7 @@ func (v *svcView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	cfg.Name = sel
 
-	row, _ := v.getTV().GetSelection()
+	row, _ := v.masterPage().GetSelection()
 	if err := v.checkSvc(row); err != nil {
 		v.app.flash().err(err)
 		return nil
@@ -182,7 +180,6 @@ func (v *svcView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 	if err := v.runBenchmark(port, cfg); err != nil {
-		log.Error().Err(err).Msg("Benchmark failed!")
 		v.app.flash().errf("Benchmark failed %v", err)
 		v.app.statusReset()
 		v.bench = nil

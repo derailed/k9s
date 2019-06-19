@@ -55,7 +55,7 @@ func (v *containerView) selectedContainer() string {
 }
 
 func (v *containerView) viewLogs(app *appView, _, res, sel string) {
-	status := strings.TrimSpace(v.getTV().GetCell(v.selectedRow, 3).Text)
+	status := strings.TrimSpace(v.masterPage().GetCell(v.selectedRow, 3).Text)
 	if status == "Running" || status == "Completed" {
 		v.showLogs(false)
 		return
@@ -81,7 +81,7 @@ func (v *containerView) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	portC := v.getTV().GetCell(v.selectedRow, 10)
+	portC := v.masterPage().GetCell(v.selectedRow, 10)
 	ports := strings.Split(portC.Text, ",")
 	if len(ports) == 0 {
 		v.app.flash().err(errors.New("Container exposes no ports"))
@@ -102,7 +102,7 @@ func (v *containerView) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		port = "MY_TCP_PORT!"
 	}
 
-	co := strings.TrimSpace(v.getTV().GetCell(v.selectedRow, 0).Text)
+	co := strings.TrimSpace(v.masterPage().GetCell(v.selectedRow, 0).Text)
 
 	v.showPortFwdDialog(port, func(lport, cport string) {
 		pf := k8s.NewPortForward(v.app.conn(), &log.Logger)
@@ -137,8 +137,8 @@ func (v *containerView) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *containerView) dismissModal() {
-	v.RemovePage("dialog")
-	v.switchPage(v.list.GetName())
+	v.RemovePage("forward")
+	v.switchPage("master")
 }
 
 func (v *containerView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -175,6 +175,6 @@ func (v *containerView) showPortFwdDialog(port string, okFn func(lport, cport st
 	modal.SetDoneFunc(func(_ int, b string) {
 		v.dismissModal()
 	})
-	v.AddPage("dialog", modal, false, false)
-	v.ShowPage("dialog")
+	v.AddPage("forward", modal, false, false)
+	v.ShowPage("forward")
 }

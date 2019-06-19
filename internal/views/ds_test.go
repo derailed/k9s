@@ -10,7 +10,7 @@ import (
 
 func TestDaemonSetView(t *testing.T) {
 	l := resource.NewDaemonSetList(nil, "fred")
-	v := newDaemonSetView("blee", NewApp(config.NewConfig(ks{})), l)
+	v := newDaemonSetView("blee", NewApp(config.NewConfig(ks{})), l).(*daemonSetView)
 
-	assert.Equal(t, "blee", v.getTitle())
+	assert.Equal(t, 3, len(v.hints()))
 }

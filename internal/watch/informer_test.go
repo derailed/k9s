@@ -1,6 +1,7 @@
 package watch
 
 import (
+	"errors"
 	"sync"
 	"testing"
 
@@ -11,18 +12,44 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-func TestInformerInitWithNS(t *testing.T) {
-	ns := "ns1"
-
+func TestInformerAllNSNoAccess(t *testing.T) {
+	ns := ""
 	f := new(genericclioptions.ConfigFlags)
 	f.Namespace = &ns
 	cmo := NewMockConnection()
 	m.When(cmo.Config()).ThenReturn(k8s.NewConfig(f))
 	m.When(cmo.HasMetrics()).ThenReturn(true)
-	m.When(cmo.CanIAccess("", "", "namespaces", []string{"list", "watch"})).ThenReturn(false, nil)
-	m.When(cmo.CanIAccess("", ns, "namespaces", []string{"get", "watch"})).ThenReturn(true, nil)
-	m.When(cmo.CanIAccess("", ns, "metrics.k8s.io", []string{"list", "watch"})).ThenReturn(true, nil)
-	i := NewInformer(cmo, ns)
+	m.When(cmo.CheckListNSAccess()).ThenReturn(errors.New("denied"))
+	m.When(cmo.CheckNSAccess(ns)).ThenReturn(errors.New("denied"))
+
+	_, err := NewInformer(cmo, ns)
+	assert.Error(t, err, "denied")
+}
+
+func TestInformerNSNoAccess(t *testing.T) {
+	ns := "ns1"
+	f := new(genericclioptions.ConfigFlags)
+	f.Namespace = &ns
+	cmo := NewMockConnection()
+	m.When(cmo.Config()).ThenReturn(k8s.NewConfig(f))
+	m.When(cmo.HasMetrics()).ThenReturn(true)
+	m.When(cmo.CheckNSAccess(ns)).ThenReturn(errors.New("denied"))
+	m.When(cmo.CheckListNSAccess()).ThenReturn(errors.New("denied"))
+
+	_, err := NewInformer(cmo, ns)
+	assert.Error(t, err, "denied")
+}
+
+func TestInformerInitWithNS(t *testing.T) {
+	ns := "ns1"
+	f := new(genericclioptions.ConfigFlags)
+	f.Namespace = &ns
+	cmo := NewMockConnection()
+	m.When(cmo.Config()).ThenReturn(k8s.NewConfig(f))
+	m.When(cmo.HasMetrics()).ThenReturn(true)
+	m.When(cmo.CheckNSAccess(ns)).ThenReturn(nil)
+	i, err := NewInformer(cmo, ns)
+	assert.NilError(t, err)
 
 	o, err := i.List(PodIndex, "fred", metav1.ListOptions{})
 	assert.NilError(t, err)
@@ -33,7 +60,8 @@ func TestInformerList(t *testing.T) {
 	f := new(genericclioptions.ConfigFlags)
 	cmo := NewMockConnection()
 	m.When(cmo.Config()).ThenReturn(k8s.NewConfig(f))
-	i := NewInformer(cmo, "")
+	i, err := NewInformer(cmo, "")
+	assert.NilError(t, err)
 
 	o, err := i.List(PodIndex, "fred", metav1.ListOptions{})
 	assert.NilError(t, err)
@@ -44,7 +72,8 @@ func TestInformerListNoRes(t *testing.T) {
 	f := new(genericclioptions.ConfigFlags)
 	cmo := NewMockConnection()
 	m.When(cmo.Config()).ThenReturn(k8s.NewConfig(f))
-	i := NewInformer(cmo, "")
+	i, err := NewInformer(cmo, "")
+	assert.NilError(t, err)
 
 	o, err := i.List("dp", "fred", metav1.ListOptions{})
 	assert.ErrorContains(t, err, "No informer found")
@@ -55,7 +84,8 @@ func TestInformerGet(t *testing.T) {
 	f := new(genericclioptions.ConfigFlags)
 	cmo := NewMockConnection()
 	m.When(cmo.Config()).ThenReturn(k8s.NewConfig(f))
-	i := NewInformer(cmo, "")
+	i, err := NewInformer(cmo, "")
+	assert.NilError(t, err)
 
 	o, err := i.Get(PodIndex, "fred", metav1.GetOptions{})
 	assert.ErrorContains(t, err, "Pod fred not found")
@@ -66,7 +96,8 @@ func TestInformerGetNoRes(t *testing.T) {
 	f := new(genericclioptions.ConfigFlags)
 	cmo := NewMockConnection()
 	m.When(cmo.Config()).ThenReturn(k8s.NewConfig(f))
-	i := NewInformer(cmo, "")
+	i, err := NewInformer(cmo, "")
+	assert.NilError(t, err)
 
 	o, err := i.Get("rs", "fred", metav1.GetOptions{})
 	assert.ErrorContains(t, err, "No informer found")
@@ -77,7 +108,8 @@ func TestInformerRun(t *testing.T) {
 	f := new(genericclioptions.ConfigFlags)
 	cmo := NewMockConnection()
 	m.When(cmo.Config()).ThenReturn(k8s.NewConfig(f))
-	i := NewInformer(cmo, "")
+	i, err := NewInformer(cmo, "")
+	assert.NilError(t, err)
 
 	var wg sync.WaitGroup
 	wg.Add(1)

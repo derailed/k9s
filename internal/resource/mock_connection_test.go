@@ -24,23 +24,34 @@ func NewMockConnection() *MockConnection {
 	return &MockConnection{fail: pegomock.GlobalFailHandler}
 }
 
-func (mock *MockConnection) CanIAccess(_param0 string, _param1 string, _param2 string, _param3 []string) (bool, error) {
+func (mock *MockConnection) CheckListNSAccess() error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")
 	}
-	params := []pegomock.Param{_param0, _param1, _param2, _param3}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CanIAccess", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 bool
-	var ret1 error
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CheckListNSAccess", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].(bool)
-		}
-		if result[1] != nil {
-			ret1 = result[1].(error)
+			ret0 = result[0].(error)
 		}
 	}
-	return ret0, ret1
+	return ret0
+}
+
+func (mock *MockConnection) CheckNSAccess(_param0 string) error {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockConnection().")
+	}
+	params := []pegomock.Param{_param0}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CheckNSAccess", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(error)
+		}
+	}
+	return ret0
 }
 
 func (mock *MockConnection) Config() *k8s.Config {
@@ -345,40 +356,45 @@ type VerifierConnection struct {
 	timeout                time.Duration
 }
 
-func (verifier *VerifierConnection) CanIAccess(_param0 string, _param1 string, _param2 string, _param3 []string) *Connection_CanIAccess_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1, _param2, _param3}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CanIAccess", params, verifier.timeout)
-	return &Connection_CanIAccess_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+func (verifier *VerifierConnection) CheckListNSAccess() *Connection_CheckListNSAccess_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CheckListNSAccess", params, verifier.timeout)
+	return &Connection_CheckListNSAccess_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Connection_CanIAccess_OngoingVerification struct {
+type Connection_CheckListNSAccess_OngoingVerification struct {
 	mock              *MockConnection
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Connection_CanIAccess_OngoingVerification) GetCapturedArguments() (string, string, string, []string) {
-	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
+func (c *Connection_CheckListNSAccess_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *Connection_CanIAccess_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []string, _param3 [][]string) {
+func (c *Connection_CheckListNSAccess_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierConnection) CheckNSAccess(_param0 string) *Connection_CheckNSAccess_OngoingVerification {
+	params := []pegomock.Param{_param0}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CheckNSAccess", params, verifier.timeout)
+	return &Connection_CheckNSAccess_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type Connection_CheckNSAccess_OngoingVerification struct {
+	mock              *MockConnection
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *Connection_CheckNSAccess_OngoingVerification) GetCapturedArguments() string {
+	_param0 := c.GetAllCapturedArguments()
+	return _param0[len(_param0)-1]
+}
+
+func (c *Connection_CheckNSAccess_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
-		}
-		_param1 = make([]string, len(params[1]))
-		for u, param := range params[1] {
-			_param1[u] = param.(string)
-		}
-		_param2 = make([]string, len(params[2]))
-		for u, param := range params[2] {
-			_param2[u] = param.(string)
-		}
-		_param3 = make([][]string, len(params[3]))
-		for u, param := range params[3] {
-			_param3[u] = param.([]string)
 		}
 	}
 	return

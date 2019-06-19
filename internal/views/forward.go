@@ -58,7 +58,6 @@ func (v *forwardView) setExtraActionsFn(actionsFn) {}
 func (v *forwardView) init(ctx context.Context, _ string) {
 	path := benchConfig(v.app.config.K9s.CurrentCluster)
 	if err := watchFS(ctx, v.app, config.K9sHome, path, v.reload); err != nil {
-		log.Error().Err(err).Msg("Benchdir watch failed!")
 		v.app.flash().errf("RuRoh! Unable to watch benchmarks directory %s : %s", config.K9sHome, err)
 	}
 
@@ -81,7 +80,6 @@ func (v *forwardView) reload() {
 	path := benchConfig(v.app.config.K9s.CurrentCluster)
 	log.Debug().Msgf("Reloading config %s", path)
 	if err := v.app.bench.Reload(path); err != nil {
-		log.Error().Err(err).Msg("Bench config reload")
 		v.app.flash().err(err)
 	}
 	v.refresh()
@@ -155,12 +153,10 @@ func (v *forwardView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 		cfg = b
 	}
 	cfg.Name = sel
-	log.Debug().Msgf(">>>>> BENCHCONFIG %#v", cfg)
 
 	base := strings.TrimSpace(tv.GetCell(r, 4).Text)
 	var err error
 	if v.bench, err = newBenchmark(base, cfg); err != nil {
-		log.Error().Err(err).Msg("Bench failed!")
 		v.app.flash().errf("Bench failed %v", err)
 		v.app.statusReset()
 		v.bench = nil

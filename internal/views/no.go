@@ -26,7 +26,7 @@ func (v *nodeView) extraActions(aa keyActions) {
 
 func (v *nodeView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		t := v.getTV()
+		t := v.masterPage()
 		t.sortCol.index, t.sortCol.asc = t.nameColIndex()+col, asc
 		t.refresh()
 

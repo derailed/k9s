@@ -50,13 +50,11 @@ func newBenchView(_ string, app *appView, _ resource.List) resourceViewer {
 	}
 
 	tv := newTableView(app, benchTitle)
-	{
-		tv.SetSelectionChangedFunc(v.selChanged)
-		tv.SetBorderFocusColor(tcell.ColorSeaGreen)
-		tv.SetSelectedStyle(tcell.ColorWhite, tcell.ColorSeaGreen, tcell.AttrNone)
-		tv.colorerFn = benchColorer
-		tv.currentNS = ""
-	}
+	tv.SetSelectionChangedFunc(v.selChanged)
+	tv.SetBorderFocusColor(tcell.ColorSeaGreen)
+	tv.SetSelectedStyle(tcell.ColorWhite, tcell.ColorSeaGreen, tcell.AttrNone)
+	tv.colorerFn = benchColorer
+	tv.currentNS = ""
 	v.AddPage("table", tv, true, true)
 
 	details := newDetailsView(app, v.backCmd)
@@ -77,7 +75,6 @@ func (v *benchView) setExtraActionsFn(actionsFn) {}
 // Init the view.
 func (v *benchView) init(ctx context.Context, _ string) {
 	if err := v.watchBenchDir(ctx); err != nil {
-		log.Error().Err(err).Msg("Benchdir watch failed!")
 		v.app.flash().errf("Unable to watch benchmarks directory %s", err)
 	}
 
@@ -141,7 +138,6 @@ func (v *benchView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	data, err := v.loadBenchFile(v.selectedItem)
 	if err != nil {
-		log.Error().Err(err).Msg("Read failed")
 		v.app.flash().errf("Unable to load bench file %s", err)
 		return nil
 	}
@@ -163,7 +159,6 @@ func (v *benchView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	showModal(v.Pages, fmt.Sprintf("Deleting `%s are you sure?", sel), "table", func() {
 		if err := os.Remove(filepath.Join(dir, sel)); err != nil {
 			v.app.flash().errf("Unable to delete file %s", err)
-			log.Error().Err(err).Msg("Delete failed")
 			return
 		}
 		v.refresh()
@@ -205,7 +200,6 @@ func (v *benchView) loadBenchFile(n string) (string, error) {
 func (v *benchView) hydrate() resource.TableData {
 	ff, err := v.loadBenchDir()
 	if err != nil {
-		log.Error().Err(err).Msg("Reading bench dir")
 		v.app.flash().errf("Unable to read bench directory %s", err)
 	}
 

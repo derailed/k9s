@@ -3,7 +3,6 @@ package views
 import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -31,7 +30,6 @@ func (v *deployView) showPods(app *appView, _, res, sel string) {
 	d := k8s.NewDeployment(app.conn())
 	dep, err := d.Get(ns, n)
 	if err != nil {
-		log.Error().Err(err).Msgf("Fetching Deployment %s", sel)
 		app.flash().err(err)
 		return
 	}
@@ -39,7 +37,6 @@ func (v *deployView) showPods(app *appView, _, res, sel string) {
 	dp := dep.(*v1.Deployment)
 	l, err := metav1.LabelSelectorAsSelector(dp.Spec.Selector)
 	if err != nil {
-		log.Error().Err(err).Msgf("Converting selector for Deployment %s", sel)
 		app.flash().err(err)
 		return
 	}

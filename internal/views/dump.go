@@ -69,7 +69,6 @@ func (v *dumpView) setExtraActionsFn(actionsFn) {}
 // Init the view.
 func (v *dumpView) init(ctx context.Context, _ string) {
 	if err := v.watchDumpDir(ctx); err != nil {
-		log.Error().Err(err).Msg("Dumpdir watch failed!")
 		v.app.flash().errf("Unable to watch dumpmarks directory %s", err)
 	}
 
@@ -134,8 +133,7 @@ func (v *dumpView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	dir := filepath.Join(config.K9sDumpDir, v.app.config.K9s.CurrentCluster)
-	if !run(true, v.app, filepath.Join(dir, sel)) {
-		log.Error().Msg("Failed to launch editor")
+	if !edit(true, v.app, filepath.Join(dir, sel)) {
 		v.app.flash().err(errors.New("Failed to launch editor"))
 	}
 
@@ -152,7 +150,6 @@ func (v *dumpView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	showModal(v.Pages, fmt.Sprintf("Deleting `%s are you sure?", sel), "table", func() {
 		if err := os.Remove(filepath.Join(dir, sel)); err != nil {
 			v.app.flash().errf("Unable to delete file %s", err)
-			log.Error().Err(err).Msg("Delete failed")
 			return
 		}
 		v.refresh()
@@ -184,7 +181,6 @@ func (v *dumpView) hydrate() resource.TableData {
 	dir := filepath.Join(config.K9sDumpDir, v.app.config.K9s.CurrentCluster)
 	ff, err := ioutil.ReadDir(dir)
 	if err != nil {
-		log.Error().Err(err).Msg("Reading dump dir")
 		v.app.flash().errf("Unable to read dump directory %s", err)
 	}
 

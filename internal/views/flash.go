@@ -63,12 +63,19 @@ func (v *flashView) warnf(fmat string, args ...interface{}) {
 }
 
 func (v *flashView) err(err error) {
-	log.Error().Err(err)
+	log.Error().Err(err).Msgf("%v", err)
 	v.setMessage(flashErr, err.Error())
 }
 
 func (v *flashView) errf(fmat string, args ...interface{}) {
-	log.Error().Msgf(fmat, args...)
+	var err error
+	for _, a := range args {
+		switch e := a.(type) {
+		case error:
+			err = e
+		}
+	}
+	log.Error().Err(err).Msgf(fmat, args...)
 	v.setMessage(flashErr, fmt.Sprintf(fmat, args...))
 }
 

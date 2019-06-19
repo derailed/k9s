@@ -217,8 +217,7 @@ K9s uses aliases to navigate most K8s resources.
 
 ## K9s RBAC FU
 
-On RBAC enabled clusters, you would need to give your users/groups capabilities so that they can use K9s to explore Kubernetes cluster.
-K9s needs minimaly read privileges at both the cluster and namespace level to display resources and metrics.
+On RBAC enabled clusters, you would need to give your users/groups capabilities so that they can use K9s to explore their Kubernetes cluster. K9s needs minimaly read privileges at both the cluster and namespace level to display resources and metrics.
 
 These rules below are just suggestions. You will need to customize them based on your environment policies. If you need to edit/delete resources extra Fu will be necessary.
 
@@ -248,10 +247,10 @@ rules:
   - apiGroups: ["apiextensions.k8s.io"]
     resources: ["customresourcedefinitions"]
     verbs: ["get", "list", "watch"]
-  # Grants RO access to netric server
+  # Grants RO access to metric server
   - apiGroups: ["metrics.k8s.io"]
     resources: ["nodes", "pods"]
-    verbs: ["list"]
+    verbs: ["get", "list", "watch"]
 
 ---
 # Sample K9s user ClusterRoleBinding
@@ -286,6 +285,13 @@ rules:
   - apiGroups: ["", "apps", "autoscaling", "batch", "extensions"]
     resources: ["*"]
     verbs: ["get", "list", "watch"]
+  # Grants RO access to metric server
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods"]
+    verbs:
+      - get
+      - list
+      - watch
 
 ---
 # Sample K9s user RoleBinding

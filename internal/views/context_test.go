@@ -10,9 +10,9 @@ import (
 
 func TestContextView(t *testing.T) {
 	l := resource.NewContextList(nil, "fred")
-	v := newContextView("blee", NewApp(config.NewConfig(ks{})), l)
+	v := newContextView("blee", NewApp(config.NewConfig(ks{})), l).(*contextView)
 
-	assert.Equal(t, "blee", v.getTitle())
+	assert.Equal(t, 3, len(v.hints()))
 }
 
 func TestCleaner(t *testing.T) {

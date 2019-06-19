@@ -22,21 +22,6 @@ const (
 	rbacTitleFmt = " [fg:bg:b]%s([hilite:bg:b]%s[fg:bg:-])"
 )
 
-type (
-	roleKind = int8
-
-	rbacView struct {
-		*tableView
-
-		app      *appView
-		current  igniter
-		cancel   context.CancelFunc
-		roleType roleKind
-		roleName string
-		cache    resource.RowEvents
-	}
-)
-
 var (
 	rbacHeaderVerbs = resource.Row{
 		"GET   ",
@@ -78,16 +63,29 @@ var (
 	}
 )
 
+type (
+	roleKind = int8
+
+	rbacView struct {
+		*tableView
+
+		app      *appView
+		current  igniter
+		cancel   context.CancelFunc
+		roleType roleKind
+		roleName string
+		cache    resource.RowEvents
+	}
+)
+
 func newRBACView(app *appView, ns, name string, kind roleKind) *rbacView {
 	v := rbacView{app: app}
-	{
-		v.roleName, v.roleType = name, kind
-		v.tableView = newTableView(app, v.getTitle())
-		v.currentNS = ns
-		v.colorerFn = rbacColorer
-		v.current = app.content.GetPrimitive("main").(igniter)
-		v.bindKeys()
-	}
+	v.roleName, v.roleType = name, kind
+	v.tableView = newTableView(app, v.getTitle())
+	v.currentNS = ns
+	v.colorerFn = rbacColorer
+	v.current = app.content.GetPrimitive("main").(igniter)
+	v.bindKeys()
 
 	return &v
 }
@@ -102,7 +100,6 @@ func (v *rbacView) init(c context.Context, ns string) {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Debug().Msg("RBAC Watch bailing out!")
 				return
 			case <-time.After(time.Duration(v.app.config.K9s.RefreshRate) * time.Second):
 				v.app.QueueUpdateDraw(func() {
@@ -113,6 +110,7 @@ func (v *rbacView) init(c context.Context, ns string) {
 	}(ctx)
 
 	v.refresh()
+	v.app.setHints(v.hints())
 	v.app.SetFocus(v)
 }
 
@@ -122,7 +120,6 @@ func (v *rbacView) bindKeys() {
 	v.actions[tcell.KeyEscape] = newKeyAction("Reset", v.resetCmd, false)
 	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd, false)
 	v.actions[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
-
 	v.actions[KeyShiftO] = newKeyAction("Sort APIGroup", v.sortColCmd(1), true)
 }
 
@@ -135,7 +132,6 @@ func (v *rbacView) hints() hints {
 }
 
 func (v *rbacView) refresh() {
-	log.Debug().Msg("RBAC Watching...")
 	data, err := v.reconcile(v.currentNS, v.roleName, v.roleType)
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to reconcile for %s:%d", v.roleName, v.roleType)

@@ -27,7 +27,7 @@ func newNamespaceView(t string, app *appView, list resource.List) resourceViewer
 	v.selectedFn = v.getSelectedItem
 	v.decorateFn = v.decorate
 	v.enterFn = v.switchNs
-	v.getTV().cleanseFn = v.cleanser
+	v.masterPage().cleanseFn = v.cleanser
 
 	return &v
 }
@@ -50,11 +50,11 @@ func (v *namespaceView) useNsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *namespaceView) useNamespace(name string) {
-	if err := v.app.config.SetActiveNamespace(name); err != nil {
+func (v *namespaceView) useNamespace(ns string) {
+	if err := v.app.config.SetActiveNamespace(ns); err != nil {
 		v.app.flash().err(err)
 	} else {
-		v.app.flash().infof("Namespace %s is now active!", name)
+		v.app.flash().infof("Namespace %s is now active!", ns)
 	}
 	v.app.config.Save()
 }
@@ -70,7 +70,7 @@ func (*namespaceView) cleanser(s string) string {
 
 func (v *namespaceView) decorate(data resource.TableData) resource.TableData {
 	if _, ok := data.Rows[resource.AllNamespaces]; !ok {
-		if acc, err := v.app.conn().CanIAccess("", "namespaces", "namespace.v1", []string{"list"}); acc && err == nil {
+		if err := v.app.conn().CheckNSAccess(""); err == nil {
 			data.Rows[resource.AllNamespace] = &resource.RowEvent{
 				Action: resource.Unchanged,
 				Fields: resource.Row{resource.AllNamespace, "Active", "0"},

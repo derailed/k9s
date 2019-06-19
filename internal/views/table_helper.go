@@ -12,6 +12,11 @@ import (
 
 var labelCmd = regexp.MustCompile(`\A\-l`)
 
+const (
+	descIndicator = "↓"
+	ascIndicator  = "↑"
+)
+
 func isLabelSelector(s string) bool {
 	if s == "" {
 		return false

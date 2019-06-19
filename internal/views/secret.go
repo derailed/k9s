@@ -5,7 +5,6 @@ import (
 
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -44,18 +43,15 @@ func (v *secretView) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	raw, err := yaml.Marshal(d)
 	if err != nil {
 		v.app.flash().errf("Error decoding secret %s", err)
-		log.Error().Err(err).Msgf("Marshal error getting secret %s", sel)
 		return nil
 	}
 
-	details := v.GetPrimitive("details").(*detailsView)
-	{
-		details.setCategory("Decoder")
-		details.setTitle(sel)
-		details.SetTextColor(tcell.ColorMediumAquamarine)
-		details.SetText(colorizeYAML(v.app.styles.Style, string(raw)))
-		details.ScrollToBeginning()
-	}
+	details := v.detailsPage()
+	details.setCategory("Decoder")
+	details.setTitle(sel)
+	details.SetTextColor(v.app.styles.FgColor())
+	details.SetText(colorizeYAML(v.app.styles.Style, string(raw)))
+	details.ScrollToBeginning()
 	v.switchPage("details")
 
 	return nil

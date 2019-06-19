@@ -3,7 +3,6 @@ package views
 import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
-	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -29,7 +28,6 @@ func (v *jobView) showPods(app *appView, ns, res, sel string) {
 	j := k8s.NewJob(app.conn())
 	job, err := j.Get(ns, n)
 	if err != nil {
-		log.Error().Err(err).Msgf("Fetching Job %s", sel)
 		app.flash().err(err)
 		return
 	}
@@ -37,7 +35,6 @@ func (v *jobView) showPods(app *appView, ns, res, sel string) {
 	jo := job.(*batchv1.Job)
 	l, err := metav1.LabelSelectorAsSelector(jo.Spec.Selector)
 	if err != nil {
-		log.Error().Err(err).Msgf("Converting selector for Job %s", sel)
 		app.flash().err(err)
 		return
 	}

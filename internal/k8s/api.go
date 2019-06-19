@@ -64,7 +64,8 @@ type (
 		ServerVersion() (*version.Info, error)
 		FetchNodes() (*v1.NodeList, error)
 		CurrentNamespaceName() (string, error)
-		CanIAccess(ns, name, resURL string, verbs []string) (bool, error)
+		CheckNSAccess(ns string) error
+		CheckListNSAccess() error
 	}
 
 	// APIClient represents a Kubernetes api client.
@@ -89,8 +90,27 @@ func InitConnectionOrDie(config *Config, logger zerolog.Logger) *APIClient {
 	return &conn
 }
 
+// CheckListNSAccess check if current user can list namespaces.
+func (a *APIClient) CheckListNSAccess() error {
+	ns := NewNamespace(a)
+	_, err := ns.List("")
+	return err
+}
+
+// CheckNSAccess asserts if user can access a namespace.
+func (a *APIClient) CheckNSAccess(n string) error {
+	ns := NewNamespace(a)
+	if n == "" {
+		_, err := ns.List(n)
+		return err
+	}
+
+	_, err := ns.Get("", n)
+	return err
+}
+
 // CanIAccess checks if user has access to a certain resource.
-func (a *APIClient) CanIAccess(ns, name, resURL string, verbs []string) (bool, error) {
+func (a *APIClient) canIAccess(ns, name, resURL string, verbs []string) (bool, error) {
 	_, gr := schema.ParseResourceArg(strings.ToLower(resURL))
 	sar := &authorizationv1.SelfSubjectAccessReview{
 		Spec: authorizationv1.SelfSubjectAccessReviewSpec{

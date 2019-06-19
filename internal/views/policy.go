@@ -49,7 +49,6 @@ func (v *policyView) init(c context.Context, ns string) {
 		for {
 			select {
 			case <-ctx.Done():
-				log.Debug().Msgf("Policy %s:%s Watch bailing out!", v.subjectKind, v.subjectName)
 				return
 			case <-time.After(time.Duration(v.app.config.K9s.RefreshRate) * time.Second):
 				v.refresh()
@@ -118,8 +117,6 @@ func (v *policyView) hints() hints {
 func (v *policyView) reconcile() (resource.TableData, error) {
 	var table resource.TableData
 
-	log.Debug().Msgf(">>> Policy %s-%s", v.subjectKind, v.subjectName)
-
 	evts, errs := v.clusterPolicies()
 	if len(errs) > 0 {
 		for _, err := range errs {
@@ -172,7 +169,6 @@ func (v *policyView) clusterPolicies() (resource.RowEvents, []error) {
 			}
 		}
 	}
-	log.Debug().Msgf("Matching clusterroles: %#v", rr)
 
 	for _, r := range rr {
 		role, err := v.app.conn().DialOrDie().Rbac().ClusterRoles().Get(r, metav1.GetOptions{})
@@ -208,7 +204,6 @@ func (v *policyView) namespacePolicies() (resource.RowEvents, []error) {
 			}
 		}
 	}
-	log.Debug().Msgf("Matching roles: %#v", rr)
 
 	for _, r := range rr {
 		cr, err := v.app.conn().DialOrDie().Rbac().Roles(r.ns).Get(r.role, metav1.GetOptions{})

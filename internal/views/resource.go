@@ -3,20 +3,14 @@ package views
 import (
 	"context"
 	"fmt"
-	"path"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
-	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 )
-
-const noSelection = ""
 
 type (
 	updatable interface {
@@ -25,93 +19,43 @@ type (
 		update(context.Context)
 	}
 
-	masterDetail struct {
-		*tview.Pages
-
-		app          *appView
-		actions      keyActions
-		title        string
-		selectedItem string
-		selectedRow  int
-		selectedNS   string
-		path         *string
-	}
-
 	resourceView struct {
 		*masterDetail
 
-		namespaces     map[int]string
-		list           resource.List
-		enterFn        enterFn
-		extraActionsFn func(keyActions)
-		selectedFn     func() string
-		decorateFn     decorateFn
-		colorerFn      colorerFn
-		nsListAccess   bool
-		cancelFn       context.CancelFunc
-		parentCtx      context.Context
+		namespaces map[int]string
+		list       resource.List
+		cancelFn   context.CancelFunc
+		parentCtx  context.Context
+		path       *string
 	}
 )
 
 func newResourceView(title string, app *appView, list resource.List) resourceViewer {
 	v := resourceView{
-		masterDetail: &masterDetail{
-			Pages:      tview.NewPages(),
-			app:        app,
-			title:      title,
-			actions:    make(keyActions),
-			selectedNS: list.GetNamespace(),
-		},
-		list: list,
+		masterDetail: newMasterDetail(title, app, list.GetNamespace()),
+		list:         list,
 	}
-
-	tv := newTableView(app, v.title)
-	tv.SetSelectionChangedFunc(v.selChanged)
-	tv.filterChanged(v.filterResource)
-	v.AddPage(v.list.GetName(), tv, true, true)
-
-	details := newDetailsView(app, v.backCmd)
-	v.AddPage("details", details, true, false)
+	v.masterPage().filterChanged(v.filterResource)
 
 	return &v
 }
 
 // Init watches all running pods in given namespace
 func (v *resourceView) init(ctx context.Context, ns string) {
+	v.masterDetail.init(ns, v.backCmd)
+
 	v.parentCtx = ctx
 	var vctx context.Context
 	vctx, v.cancelFn = context.WithCancel(ctx)
-	v.selectedItem, v.selectedNS = noSelection, ns
-
-	colorer := defaultColorer
-	if v.colorerFn != nil {
-		colorer = v.colorerFn
-	}
-	v.getTV().setColorer(colorer)
-
-	v.nsListAccess, _ = v.app.conn().CanIAccess("", "namespaces", "namespace.v1", []string{"list"})
-	if v.nsListAccess {
-		nn, err := k8s.NewNamespace(v.app.conn()).List(resource.AllNamespaces)
-		if err != nil {
-			log.Warn().Err(err).Msg("List namespaces")
-			v.app.flash().errf("Unable to list namespaces %s", err)
-		}
-
-		if v.list.Namespaced() && !v.list.AllNamespaces() {
-			if !config.InNSList(nn, v.list.GetNamespace()) {
-				v.list.SetNamespace(resource.DefaultNamespace)
-			}
-		}
-	}
 
 	v.update(vctx)
 	v.app.clusterInfoRefresh()
 	v.refresh()
-	if tv, ok := v.CurrentPage().Item.(*tableView); ok {
-		r, _ := tv.GetSelection()
-		if r == 0 && tv.GetRowCount() > 0 {
-			tv.Select(1, 0)
-		}
+
+	tv := v.masterPage()
+	r, _ := tv.GetSelection()
+	if r == 0 && tv.GetRowCount() > 0 {
+		tv.Select(1, 0)
 	}
 }
 
@@ -152,56 +96,17 @@ func (v *resourceView) update(ctx context.Context) {
 	}(ctx)
 }
 
-func (v *resourceView) setExtraActionsFn(f actionsFn) {
-	f(v.actions)
-}
-
-func (v *resourceView) getTitle() string {
-	return v.title
-}
-
-func (v *resourceView) selChanged(r, c int) {
-	v.selectedRow = r
-	v.selectItem(r, c)
-}
-
-func (v *resourceView) getSelectedItem() string {
-	if v.selectedFn != nil {
-		return v.selectedFn()
-	}
-	return v.selectedItem
-}
-
-// Protocol...
-
-// Hints fetch menu hints
-func (v *resourceView) hints() hints {
-	return v.CurrentPage().Item.(hinter).hints()
-}
-
-func (v *resourceView) setColorerFn(f colorerFn) {
-	v.colorerFn = f
-	v.getTV().setColorer(f)
-}
-
-func (v *resourceView) setEnterFn(f enterFn) {
-	v.enterFn = f
-}
-
-func (v *resourceView) setDecorateFn(f decorateFn) {
-	v.decorateFn = f
-}
-
 // ----------------------------------------------------------------------------
 // Actions...
 
+func (v *resourceView) backCmd(*tcell.EventKey) *tcell.EventKey {
+	v.switchPage("master")
+	return nil
+}
+
 func (v *resourceView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	// If in command mode run filter otherwise enter function.
-	if v.getTV().filterCmd(evt) == nil {
-		return nil
-	}
-
-	if v.selectedItem == "" {
+	if v.masterPage().filterCmd(evt) == nil || !v.rowSelected() {
 		return nil
 	}
 
@@ -220,84 +125,41 @@ func (v *resourceView) refreshCmd(*tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *resourceView) backCmd(*tcell.EventKey) *tcell.EventKey {
-	v.switchPage(v.list.GetName())
-	return nil
-}
-
 func (v *resourceView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
 		return evt
 	}
 
 	sel := v.getSelectedItem()
-	v.showDelete(fmt.Sprintf("Delete %s %s?", v.list.GetName(), sel), func(cascade, force bool) {
-		v.getTV().setDeleted()
+	msg := fmt.Sprintf("Delete %s %s?", v.list.GetName(), sel)
+	showDeleteDialog(v.Pages, msg, func(cascade, force bool) {
+		v.masterPage().setDeleted()
 		v.app.flash().infof("Deleting %s %s", v.list.GetName(), sel)
 		if err := v.list.Resource().Delete(sel, cascade, force); err != nil {
 			v.app.flash().errf("Delete failed with %s", err)
 		} else {
 			v.refresh()
 		}
-		v.dismissModal()
+	}, func() {
+		v.switchPage("master")
 	})
-
 	return nil
 }
 
-func (v *resourceView) showDelete(msg string, done func(bool, bool)) {
-	cascade, force := true, false
-	f := tview.NewForm()
-	f.SetItemPadding(0)
-	f.SetButtonsAlign(tview.AlignCenter).
-		SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
-		SetButtonTextColor(tview.Styles.PrimaryTextColor).
-		SetLabelColor(tcell.ColorAqua).
-		SetFieldTextColor(tcell.ColorOrange)
-	f.AddCheckbox("Cascade:", cascade, func(checked bool) {
-		cascade = checked
-	})
-	f.AddCheckbox("Force:", force, func(checked bool) {
-		force = checked
-	})
-	f.AddButton("Cancel", func() {
-		v.dismissModal()
-	})
-	f.AddButton("OK", func() {
-		done(cascade, force)
-		v.dismissModal()
-	})
-
-	confirm := tview.NewModalForm("<Delete>", f)
-	confirm.SetText(msg)
-	confirm.SetDoneFunc(func(int, string) {
-		v.dismissModal()
-	})
-	v.AddPage("confirm", confirm, false, false)
-	v.ShowPage("confirm")
-}
-
-func (v *resourceView) dismissModal() {
-	v.RemovePage("confirm")
-	v.switchPage(v.list.GetName())
-}
-
 func (v *resourceView) defaultEnter(ns, resource, selection string) {
-	yaml, err := v.list.Resource().Describe(v.title, selection)
+	yaml, err := v.list.Resource().Describe(v.masterPage().baseTitle, selection)
 	if err != nil {
 		v.app.flash().errf("Describe command failed %s", err)
-		log.Warn().Msgf("Describe %v", err.Error())
 		return
 	}
 
-	details := v.GetPrimitive("details").(*detailsView)
-	{
-		details.setCategory("Describe")
-		details.setTitle(selection)
-		details.SetTextColor(tcell.ColorAqua)
-		details.SetText(colorizeYAML(v.app.styles.Style, yaml))
-		details.ScrollToBeginning()
-	}
+	details := v.detailsPage()
+	details.setCategory("Describe")
+	details.setTitle(selection)
+	details.SetTextColor(v.app.styles.FgColor())
+	details.SetText(colorizeYAML(v.app.styles.Style, yaml))
+	details.ScrollToBeginning()
+
 	v.switchPage("details")
 }
 
@@ -319,17 +181,14 @@ func (v *resourceView) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	raw, err := v.list.Resource().Marshal(sel)
 	if err != nil {
 		v.app.flash().errf("Unable to marshal resource %s", err)
-		log.Error().Err(err)
 		return evt
 	}
-	details := v.GetPrimitive("details").(*detailsView)
-	{
-		details.setCategory("YAML")
-		details.setTitle(sel)
-		details.SetTextColor(tcell.ColorMediumAquamarine)
-		details.SetText(colorizeYAML(v.app.styles.Style, raw))
-		details.ScrollToBeginning()
-	}
+	details := v.detailsPage()
+	details.setCategory("YAML")
+	details.setTitle(sel)
+	details.SetTextColor(v.app.styles.FgColor())
+	details.SetText(colorizeYAML(v.app.styles.Style, raw))
+	details.ScrollToBeginning()
 	v.switchPage("details")
 
 	return nil
@@ -359,29 +218,34 @@ func (v *resourceView) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
+func (v *resourceView) setNamespace(ns string) {
+	if v.list.Namespaced() {
+		v.currentNS = ns
+		v.list.SetNamespace(ns)
+	}
+}
+
 func (v *resourceView) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	i, _ := strconv.Atoi(string(evt.Rune()))
 	ns := v.namespaces[i]
-	v.doSwitchNamespace(ns)
-
-	return nil
-}
-
-func (v *resourceView) doSwitchNamespace(ns string) {
 	if ns == "" {
 		ns = resource.AllNamespace
 	}
-	v.selectedNS = ns
-	v.app.flash().infof("Viewing `%s namespace...", ns)
-	v.list.SetNamespace(v.selectedNS)
+	if v.currentNS == ns {
+		return nil
+	}
 
+	v.setNamespace(ns)
+	v.app.flash().infof("Viewing `%s namespace...", ns)
 	v.refresh()
-	v.getTV().resetTitle()
-	v.getTV().Select(1, 0)
+	v.masterPage().resetTitle()
+	v.masterPage().Select(1, 0)
 	v.selectItem(1, 0)
 	v.app.cmdBuff.reset()
-	v.app.config.SetActiveNamespace(v.selectedNS)
+	v.app.config.SetActiveNamespace(v.currentNS)
 	v.app.config.Save()
+
+	return nil
 }
 
 func (v *resourceView) refresh() {
@@ -390,57 +254,28 @@ func (v *resourceView) refresh() {
 	}
 
 	v.refreshActions()
-
 	if v.list.Namespaced() {
-		v.list.SetNamespace(v.selectedNS)
+		v.list.SetNamespace(v.currentNS)
 	}
 	if err := v.list.Reconcile(v.app.informer, v.path); err != nil {
-		log.Error().Err(err).Msgf("Reconciliation for %s failed", v.title)
-		v.app.flash().errf("Reconciliation for %s failed - %s", v.title, err)
+		v.app.flash().errf("Reconciliation for %s failed - %s", v.list.GetName(), err)
 	}
 	data := v.list.Data()
 	if v.decorateFn != nil {
 		data = v.decorateFn(data)
 	}
-	v.getTV().update(data)
+	v.masterPage().update(data)
 	v.selectItem(v.selectedRow, 0)
-}
-
-func (v *resourceView) getTV() *tableView {
-	if tv, ok := v.GetPrimitive(v.list.GetName()).(*tableView); ok {
-		return tv
-	}
-	return nil
-}
-
-func (v *resourceView) selectItem(r, c int) {
-	t := v.getTV()
-	if r == 0 || t.GetCell(r, 0) == nil {
-		v.selectedItem = noSelection
-		return
-	}
-
-	col0 := strings.TrimSpace(t.GetCell(r, 0).Text)
-	switch v.list.GetNamespace() {
-	case resource.NotNamespaced:
-		v.selectedItem = col0
-	case resource.AllNamespaces:
-		v.selectedItem = path.Join(col0, strings.TrimSpace(t.GetCell(r, 1).Text))
-	default:
-		v.selectedItem = path.Join(v.selectedNS, col0)
-	}
 }
 
 func (v *resourceView) switchPage(p string) {
 	log.Debug().Msgf("Switching page to %s", p)
 	if _, ok := v.CurrentPage().Item.(*tableView); ok {
 		v.stopUpdates()
-	} else {
-		log.Debug().Msgf("Not a table %T", v.CurrentPage().Item)
 	}
 
 	v.SwitchToPage(p)
-	v.selectedNS = v.list.GetNamespace()
+	v.currentNS = v.list.GetNamespace()
 	if vu, ok := v.GetPrimitive(p).(hinter); ok {
 		v.app.setHints(vu.hints())
 	}
@@ -450,30 +285,33 @@ func (v *resourceView) switchPage(p string) {
 	}
 }
 
-func (v *resourceView) rowSelected() bool {
-	return v.selectedItem != noSelection
+func (v *resourceView) namespaceActions() {
+	if !v.list.Access(resource.NamespaceAccess) {
+		return
+	}
+	v.namespaces = make(map[int]string, config.MaxFavoritesNS)
+	// User can't list namespace. Don't offer a choice.
+	if v.app.conn().CheckListNSAccess() != nil {
+		return
+	}
+	v.actions[tcell.Key(numKeys[0])] = newKeyAction(resource.AllNamespace, v.switchNamespaceCmd, true)
+	v.namespaces[0] = resource.AllNamespace
+	index := 1
+	for _, n := range v.app.config.FavNamespaces() {
+		if n == resource.AllNamespace {
+			continue
+		}
+		v.actions[tcell.Key(numKeys[index])] = newKeyAction(n, v.switchNamespaceCmd, true)
+		v.namespaces[index] = n
+		index++
+	}
 }
 
 func (v *resourceView) refreshActions() {
-	if v.list.Access(resource.NamespaceAccess) {
-		v.namespaces = make(map[int]string, config.MaxFavoritesNS)
-		v.actions[tcell.Key(numKeys[0])] = newKeyAction(resource.AllNamespace, v.switchNamespaceCmd, true)
-		v.namespaces[0] = resource.AllNamespace
-		index := 1
-		for _, n := range v.app.config.FavNamespaces() {
-			if n == resource.AllNamespace {
-				continue
-			}
-			v.actions[tcell.Key(numKeys[index])] = newKeyAction(n, v.switchNamespaceCmd, true)
-			v.namespaces[index] = n
-			index++
-		}
-	}
-
+	v.namespaceActions()
+	v.defaultActions()
 	v.actions[tcell.KeyEnter] = newKeyAction("Enter", v.enterCmd, false)
 	v.actions[tcell.KeyCtrlR] = newKeyAction("Refresh", v.refreshCmd, false)
-	v.actions[KeyHelp] = newKeyAction("Help", v.app.noopCmd, false)
-	v.actions[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
 
 	if v.list.Access(resource.EditAccess) {
 		v.actions[KeyE] = newKeyAction("Edit", v.editCmd, true)
@@ -488,10 +326,7 @@ func (v *resourceView) refreshActions() {
 		v.actions[KeyD] = newKeyAction("Describe", v.describeCmd, true)
 	}
 
-	if v.extraActionsFn != nil {
-		v.extraActionsFn(v.actions)
-	}
-	t := v.getTV()
+	t := v.masterPage()
 	t.setActions(v.actions)
 	v.app.setHints(t.hints())
 }

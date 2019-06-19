@@ -36,7 +36,7 @@ func newSelectList(parent loggable) *selectList {
 }
 
 func (v *selectList) back(evt *tcell.EventKey) *tcell.EventKey {
-	v.parent.switchPage(v.parent.getList().GetName())
+	v.parent.switchPage("master")
 
 	return nil
 }

@@ -72,7 +72,6 @@ func (v *podView) extraActions(aa keyActions) {
 func (v *podView) listContainers(app *appView, _, res, sel string) {
 	po, err := v.app.informer.Get(watch.PodIndex, sel, metav1.GetOptions{})
 	if err != nil {
-		log.Error().Err(err).Msgf("Unable to retrieve pod %s", sel)
 		app.flash().errf("Unable to retrieve pods %s", err)
 		return
 	}
@@ -100,7 +99,7 @@ func (v *podView) exitFn() {
 		v.childCancelFn()
 	}
 	v.RemovePage("containers")
-	v.switchPage("po")
+	v.switchPage("master")
 	v.restartUpdates()
 }
 
@@ -157,7 +156,7 @@ func (v *podView) viewLogs(prev bool) bool {
 	if v.list.AllNamespaces() {
 		col = 3
 	}
-	status := strings.TrimSpace(v.getTV().GetCell(r, col).Text)
+	status := strings.TrimSpace(v.masterPage().GetCell(r, col).Text)
 	if status == "Running" || status == "Completed" {
 		v.showLogs(v.selectedItem, "", v.list.GetName(), v, prev)
 		return true
@@ -181,7 +180,6 @@ func (v *podView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	cc, err := fetchContainers(v.list, v.selectedItem, false)
 	if err != nil {
 		v.app.flash().errf("Unable to retrieve containers %s", err)
-		log.Error().Msgf("Error fetching containers %v", err)
 		return evt
 	}
 	if len(cc) == 1 {
@@ -206,7 +204,7 @@ func (v *podView) shellIn(path, co string) {
 
 func (v *podView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		t := v.getTV()
+		t := v.masterPage()
 		t.sortCol.index, t.sortCol.asc = t.nameColIndex()+col, asc
 		t.refresh()
 

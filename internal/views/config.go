@@ -51,14 +51,14 @@ func (c *configurator) stylesUpdater(ctx context.Context, s synchronizer) error 
 func (c *configurator) initBench(cluster string) {
 	var err error
 	if c.bench, err = config.NewBench(benchConfig(cluster)); err != nil {
-		log.Warn().Err(err).Msg("No benchmark config file found, using defaults.")
+		log.Info().Err(err).Msg("No benchmark config file found, using defaults.")
 	}
 }
 
 func (c *configurator) refreshStyles() {
 	var err error
 	if c.styles, err = config.NewStyles(config.K9sStylesFile); err != nil {
-		log.Warn().Err(err).Msg("No skin file found. Loading defaults.")
+		log.Info().Msg("No skin file found. Loading stock skins.")
 	}
 	if err == nil {
 		c.hasSkins = true

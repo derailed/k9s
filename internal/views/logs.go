@@ -171,7 +171,7 @@ func (v *logsView) doLoad(path, co string) error {
 
 func (v *logsView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.stop()
-	v.parent.switchPage(v.title)
+	v.parent.switchPage("master")
 
 	return evt
 }

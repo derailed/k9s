@@ -37,7 +37,7 @@ func (v *replicaSetView) extraActions(aa keyActions) {
 
 func (v *replicaSetView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		t := v.getTV()
+		t := v.masterPage()
 		t.sortCol.index, t.sortCol.asc = t.nameColIndex()+col, asc
 		t.refresh()
 
@@ -50,14 +50,12 @@ func (v *replicaSetView) showPods(app *appView, ns, res, sel string) {
 	rset := k8s.NewReplicaSet(app.conn())
 	r, err := rset.Get(ns, n)
 	if err != nil {
-		log.Error().Err(err).Msgf("Fetching ReplicaSet %s", sel)
 		app.flash().errf("Replicaset failed %s", err)
 	}
 
 	rs := r.(*v1.ReplicaSet)
 	l, err := metav1.LabelSelectorAsSelector(rs.Spec.Selector)
 	if err != nil {
-		log.Error().Err(err).Msgf("Converting selector for ReplicaSet %s", sel)
 		app.flash().errf("Selector failed %s", err)
 		return
 	}
@@ -88,6 +86,11 @@ func (v *replicaSetView) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+func (v *replicaSetView) dismissModal() {
+	v.RemovePage("confirm")
+	v.switchPage("master")
+}
+
 func (v *replicaSetView) showModal(msg string, done func(int, string)) {
 	confirm := tview.NewModal().
 		AddButtons([]string{"Cancel", "OK"}).
@@ -106,7 +109,6 @@ func rollback(app *appView, selectedItem string) bool {
 	rset := k8s.NewReplicaSet(app.conn())
 	r, err := rset.Get(ns, n)
 	if err != nil {
-		log.Error().Err(err).Msgf("Fetching ReplicaSet %s", selectedItem)
 		app.flash().errf("Failed retrieving replicaset %s", err)
 		return false
 	}
@@ -133,7 +135,6 @@ func rollback(app *appView, selectedItem string) bool {
 	dpr := k8s.NewDeployment(app.conn())
 	dep, err := dpr.Get(ns, ctrlName)
 	if err != nil {
-		log.Error().Err(err).Msgf("Fetching Deployment %s", selectedItem)
 		app.flash().errf("Unable to retrieve deployments %s", err)
 		return false
 	}

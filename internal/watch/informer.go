@@ -62,62 +62,37 @@ type Informer struct {
 }
 
 // NewInformer creates a new cluster resource informer
-func NewInformer(client k8s.Connection, ns string) *Informer {
-	if ns == allNamespace {
-		ns = allNamespaces
-	}
-	log.Debug().Msgf(">> Starting Informer in namespace %q", ns)
+func NewInformer(client k8s.Connection, ns string) (*Informer, error) {
 	i := Informer{client: client, informers: map[string]StoreInformer{}}
-
-	nsAccess, err := client.CanIAccess("", "", "namespaces", []string{"list", "watch"})
-	if ns == allNamespaces && (err != nil || !nsAccess) {
-		user, _ := client.Config().CurrentUserName()
-		if err != nil {
-			log.Panic().Err(err).Msgf("Unauthorized: All namespaces. No access for user `%s", user)
-		}
-		log.Panic().Msgf("Unauthorized: All namespaces for user `%s. Missing verbs ['list', 'watch']. Please specify a namespace or correct RBAC", user)
-	}
-
-	// Namespace is locked in. check if user has auth for this ns access.
-	if ns != allNamespaces {
-		acc, err := client.CanIAccess("", ns, "namespaces", []string{"get", "watch"})
-		if err != nil {
-			log.Panic().Err(err).Msgf("Failed access %s", ns)
-		}
-		if !acc {
-			user, _ := client.Config().CurrentUserName()
-			log.Panic().Msgf("Unauthorized: %s access to namespace %q is missing verbs ['get', 'watch']", user, ns)
-		}
-		i.init(ns)
-	} else {
+	if client.CheckListNSAccess() == nil {
 		i.init(allNamespaces)
+		return &i, nil
 	}
 
-	return &i
+	if err := client.CheckNSAccess(ns); err != nil {
+		return nil, err
+	}
+
+	i.init(ns)
+	return &i, nil
 }
 
 func (i *Informer) init(ns string) {
+	log.Debug().Msgf(">>>>> Starting Informer in namespace %q", ns)
+
 	i.initOnce.Do(func() {
 		po := NewPod(i.client, ns)
 		i.informers = map[string]StoreInformer{
 			PodIndex:       po,
 			ContainerIndex: NewContainer(po),
 		}
-
-		if acc, err := i.client.CanIAccess("", "", "nodes", []string{"list", "watch"}); acc && err == nil {
-			i.informers[NodeIndex] = NewNode(i.client)
-		}
+		i.informers[NodeIndex] = NewNode(i.client)
 
 		if !i.client.HasMetrics() {
 			return
 		}
-
-		if acc, err := i.client.CanIAccess(ns, "", "nodes.metrics.k8s.io", []string{"list", "watch"}); acc && err == nil {
-			i.informers[NodeMXIndex] = NewNodeMetrics(i.client)
-		}
-		if acc, err := i.client.CanIAccess(ns, "", "pods.metrics.k8s.io", []string{"list", "watch"}); acc && err == nil {
-			i.informers[PodMXIndex] = NewPodMetrics(i.client, ns)
-		}
+		i.informers[NodeMXIndex] = NewNodeMetrics(i.client)
+		i.informers[PodMXIndex] = NewPodMetrics(i.client, ns)
 	})
 }
 
@@ -131,7 +106,7 @@ func (i *Informer) List(res, ns string, opts metav1.ListOptions) (k8s.Collection
 		return i.List(ns, opts), nil
 	}
 
-	return nil, fmt.Errorf("No informer found for resource %s:%q", res, ns)
+	return nil, fmt.Errorf("No informer found for resource %s in namespace %q", res, ns)
 }
 
 // Get a resource by name.
@@ -140,7 +115,7 @@ func (i *Informer) Get(res, fqn string, opts metav1.GetOptions) (interface{}, er
 		return informer.Get(fqn, opts)
 	}
 
-	return nil, fmt.Errorf("No informer found for resource %s:%q", res, fqn)
+	return nil, fmt.Errorf("No informer found for resource %s in namespace %q", res, fqn)
 }
 
 // Run starts watching cluster resources.
