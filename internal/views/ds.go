@@ -44,5 +44,5 @@ func (v *daemonSetView) showPods(app *appView, _, res, sel string) {
 		return
 	}
 
-	showPods(app, ns, "DaemonSet", sel, l.String(), "", v.backCmd)
+	showPods(app, ns, l.String(), "", v.backCmd)
 }

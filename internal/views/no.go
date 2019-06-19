@@ -35,7 +35,7 @@ func (v *nodeView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcel
 }
 
 func (v *nodeView) showPods(app *appView, _, res, sel string) {
-	showPods(app, "", "Node", sel, "", "spec.nodeName="+sel, v.backCmd)
+	showPods(app, "", "", "spec.nodeName="+sel, v.backCmd)
 }
 
 func (v *nodeView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -44,7 +44,7 @@ func (v *nodeView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func showPods(app *appView, ns, res, selected, labelSel, fieldSel string, b actionHandler) {
+func showPods(app *appView, ns, labelSel, fieldSel string, a actionHandler) {
 	list := resource.NewPodList(app.conn(), ns)
 	list.SetLabelSelector(labelSel)
 	list.SetFieldSelector(fieldSel)
@@ -52,7 +52,7 @@ func showPods(app *appView, ns, res, selected, labelSel, fieldSel string, b acti
 	pv := newPodView("Pods", app, list)
 	pv.setColorerFn(podColorer)
 	pv.setExtraActionsFn(func(aa keyActions) {
-		aa[tcell.KeyEsc] = newKeyAction("Back", b, true)
+		aa[tcell.KeyEsc] = newKeyAction("Back", a, true)
 	})
 	// Reset active namespace to all.
 	app.config.SetActiveNamespace(ns)

@@ -44,5 +44,5 @@ func (v *statefulSetView) showPods(app *appView, ns, res, sel string) {
 		return
 	}
 
-	showPods(app, "", "StatefulSet", sel, l.String(), "", v.backCmd)
+	showPods(app, ns, l.String(), "", v.backCmd)
 }

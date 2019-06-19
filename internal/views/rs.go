@@ -62,7 +62,7 @@ func (v *replicaSetView) showPods(app *appView, ns, res, sel string) {
 		return
 	}
 
-	showPods(app, "", "ReplicaSet", sel, l.String(), "", v.backCmd)
+	showPods(app, ns, l.String(), "", v.backCmd)
 }
 
 func (v *replicaSetView) backCmd(evt *tcell.EventKey) *tcell.EventKey {

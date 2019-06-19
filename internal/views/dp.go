@@ -44,5 +44,5 @@ func (v *deployView) showPods(app *appView, _, res, sel string) {
 		return
 	}
 
-	showPods(app, ns, "Deployment", sel, l.String(), "", v.backCmd)
+	showPods(app, ns, l.String(), "", v.backCmd)
 }
