@@ -402,8 +402,8 @@ func (v *tableView) doUpdate(data resource.TableData) {
 			}
 			for col, field := range data.Rows[sk].Fields {
 				header := data.Header[col]
-				field, align := v.formatCell(data.NumCols[header], header, field, pads[col])
-				c := tview.NewTableCell(field + deltas(data.Rows[sk].Deltas[col], field))
+				field, align := v.formatCell(data.NumCols[header], header, field+deltas(data.Rows[sk].Deltas[col], field), pads[col])
+				c := tview.NewTableCell(field)
 				{
 					c.SetExpansion(1)
 					c.SetAlign(align)

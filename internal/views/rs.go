@@ -1,6 +1,7 @@
 package views
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -77,7 +78,11 @@ func (v *replicaSetView) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.showModal(fmt.Sprintf("Rollback %s %s?", v.list.GetName(), v.selectedItem), func(_ int, button string) {
 		if button == "OK" {
 			v.app.flash().infof("Rolling back %s %s", v.list.GetName(), v.selectedItem)
-			rollback(v.app, v.selectedItem)
+			if res, err := rollback(v.app.conn(), v.selectedItem); err != nil {
+				v.app.flash().err(err)
+			} else {
+				v.app.flash().info(res)
+			}
 			v.refresh()
 		}
 		v.dismissModal()
@@ -104,66 +109,79 @@ func (v *replicaSetView) showModal(msg string, done func(int, string)) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func rollback(app *appView, selectedItem string) bool {
-	ns, n := namespaced(selectedItem)
-	rset := k8s.NewReplicaSet(app.conn())
+func findRS(conn k8s.Connection, ns, n string) (*v1.ReplicaSet, error) {
+	rset := k8s.NewReplicaSet(conn)
 	r, err := rset.Get(ns, n)
 	if err != nil {
-		app.flash().errf("Failed retrieving replicaset %s", err)
-		return false
+		return nil, err
 	}
-	rs := r.(*v1.ReplicaSet)
+	return r.(*v1.ReplicaSet), nil
+}
 
-	var ctrlName, ctrlKind, ctrlAPI string
+func findDP(conn k8s.Connection, ns, n string) (*appsv1.Deployment, error) {
+	dp, err := k8s.NewDeployment(conn).Get(ns, n)
+	if err != nil {
+		return nil, err
+	}
+	return dp.(*appsv1.Deployment), nil
+}
+
+func controllerInfo(rs *v1.ReplicaSet) (string, string, string, error) {
 	for _, ref := range rs.ObjectMeta.OwnerReferences {
-		if ref.Controller != nil && *ref.Controller {
-			ctrlAPI, ctrlKind, ctrlName = ref.APIVersion, ref.Kind, ref.Name
-			break
+		if ref.Controller == nil {
+			continue
 		}
+		log.Debug().Msgf("Controller name %s", ref.Name)
+		tokens := strings.Split(ref.APIVersion, "/")
+		apiGroup := ref.APIVersion
+		if len(tokens) == 2 {
+			apiGroup = tokens[0]
+		}
+		return ref.Name, ref.Kind, apiGroup, nil
 	}
-	if ctrlName == "" || ctrlKind == "" || ctrlAPI == "" {
-		app.flash().errf("Unable to find controller for ReplicaSet %s", selectedItem)
-		return false
-	}
+	return "", "", "", fmt.Errorf("Unable to find controller for ReplicaSet %s", rs.ObjectMeta.Name)
+}
 
+func getRevision(rs *v1.ReplicaSet) (int64, error) {
 	revision := rs.ObjectMeta.Annotations["deployment.kubernetes.io/revision"]
 	if rs.Status.Replicas != 0 {
-		app.flash().warn("Can not rollback the current replica!")
-		return false
+		return 0, errors.New("Can not rollback current replica")
 	}
-
-	dpr := k8s.NewDeployment(app.conn())
-	dep, err := dpr.Get(ns, ctrlName)
-	if err != nil {
-		app.flash().errf("Unable to retrieve deployments %s", err)
-		return false
-	}
-	dp := dep.(*appsv1.Deployment)
-
 	vers, err := strconv.Atoi(revision)
 	if err != nil {
-		log.Error().Err(err).Msg("Revision conversion failed")
-		return false
+		return 0, errors.New("Revision conversion failed")
 	}
+	return int64(vers), nil
+}
 
-	tokens := strings.Split(ctrlAPI, "/")
-	group := ctrlAPI
-	if len(tokens) == 2 {
-		group = tokens[0]
-	}
-	rb, err := kubectl.RollbackerFor(schema.GroupKind{group, ctrlKind}, app.conn().DialOrDie())
+func rollback(conn k8s.Connection, selectedItem string) (string, error) {
+	ns, n := namespaced(selectedItem)
+
+	rs, err := findRS(conn, ns, n)
 	if err != nil {
-		log.Error().Err(err).Msg("No rollbacker")
-		return false
+		return "", err
 	}
-
-	res, err := rb.Rollback(dp, map[string]string{}, int64(vers), false)
+	version, err := getRevision(rs)
 	if err != nil {
-		log.Error().Err(err).Msg("Rollback failed")
-		return false
+		return "", err
 	}
-	log.Debug().Msgf("Version %s %s", revision, res)
-	app.flash().infof("Version %s %s", revision, res)
 
-	return true
+	name, kind, apiGroup, err := controllerInfo(rs)
+	if err != nil {
+		return "", err
+	}
+	rb, err := kubectl.RollbackerFor(schema.GroupKind{apiGroup, kind}, conn.DialOrDie())
+	if err != nil {
+		return "", err
+	}
+	dp, err := findDP(conn, ns, name)
+	if err != nil {
+		return "", err
+	}
+	res, err := rb.Rollback(dp, map[string]string{}, version, false)
+	if err != nil {
+		return "", err
+	}
+
+	return res, nil
 }
