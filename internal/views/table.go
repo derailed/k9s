@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
@@ -43,7 +42,7 @@ type (
 		asc      bool
 	}
 
-	tableView struct {
+	resTable struct {
 		*tview.Table
 
 		app       *appView
@@ -51,6 +50,11 @@ type (
 		currentNS string
 		data      resource.TableData
 		actions   keyActions
+	}
+
+	tableView struct {
+		*resTable
+
 		cmdBuff   *cmdBuff
 		colorerFn colorerFn
 		sortFn    sortFn
@@ -62,12 +66,14 @@ type (
 
 func newTableView(app *appView, title string) *tableView {
 	v := tableView{
-		app:       app,
-		Table:     tview.NewTable(),
-		sortCol:   sortColumn{0, 0, true},
-		actions:   make(keyActions),
-		baseTitle: title,
-		cmdBuff:   newCmdBuff('/'),
+		resTable: &resTable{
+			Table:     tview.NewTable(),
+			app:       app,
+			actions:   make(keyActions),
+			baseTitle: title,
+		},
+		sortCol: sortColumn{0, 0, true},
+		cmdBuff: newCmdBuff('/'),
 	}
 	v.SetFixed(1, 0)
 	v.SetBorder(true)
@@ -121,7 +127,7 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 			v.cmdBuff.add(evt.Rune())
 			v.clearSelection()
 			v.doUpdate(v.filtered())
-			v.setSelection()
+			v.selectFirstRow()
 			return nil
 		}
 		key = tcell.Key(evt.Rune())
@@ -138,7 +144,7 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
-func (v *tableView) setSelection() {
+func (v *tableView) selectFirstRow() {
 	if v.GetRowCount() > 0 {
 		v.Select(1, 0)
 	}
@@ -350,18 +356,6 @@ func (v *tableView) filtered() resource.TableData {
 	return filtered
 }
 
-func (v *tableView) sortIndicator(index int, name string) string {
-	if v.sortCol.index != index {
-		return name
-	}
-
-	order := descIndicator
-	if v.sortCol.asc {
-		order = ascIndicator
-	}
-	return fmt.Sprintf("%s[%s::]%s[::]", name, v.app.styles.Style.Table.Header.SorterColor, order)
-}
-
 func (v *tableView) doUpdate(data resource.TableData) {
 	v.currentNS = data.Namespace
 	if v.currentNS == resource.AllNamespaces && v.currentNS != "*" {
@@ -390,15 +384,18 @@ func (v *tableView) doUpdate(data resource.TableData) {
 	fg := config.AsColor(v.app.styles.Style.Table.Header.FgColor)
 	bg := config.AsColor(v.app.styles.Style.Table.Header.BgColor)
 	for col, h := range data.Header {
-		v.addHeaderCell(data.NumCols, col, h, fg, bg)
+		v.addHeaderCell(data.NumCols[h], col, h)
+		c := v.GetCell(0, col)
+		c.SetBackgroundColor(bg)
+		c.SetTextColor(fg)
 	}
 	row++
 
-	sortFn := v.defaultSort
+	sortFn := defaultSort
 	if v.sortFn != nil {
 		sortFn = v.sortFn
 	}
-	prim, sec := v.sortAllRows(data.Rows, sortFn)
+	prim, sec := sortAllRows(v.sortCol, data.Rows, sortFn)
 	fgColor := config.AsColor(v.app.styles.Style.Table.FgColor)
 	for _, pk := range prim {
 		for _, sk := range sec[pk] {
@@ -421,36 +418,11 @@ func (v *tableView) doUpdate(data resource.TableData) {
 	}
 }
 
-func (v *tableView) sortAllRows(rows resource.RowEvents, sortFn sortFn) (resource.Row, map[string]resource.Row) {
-	keys := make([]string, len(rows))
-	v.sortRows(rows, sortFn, v.sortCol, keys)
-
-	sec := make(map[string]resource.Row, len(rows))
-	for _, k := range keys {
-		grp := rows[k].Fields[v.sortCol.index]
-		sec[grp] = append(sec[grp], k)
-	}
-
-	// Performs secondary to sort by name for each groups.
-	prim := make(resource.Row, 0, len(sec))
-	for k, v := range sec {
-		sort.Strings(v)
-		prim = append(prim, k)
-	}
-	sort.Sort(groupSorter{prim, v.sortCol.asc})
-
-	return prim, sec
-}
-
-func (v *tableView) addHeaderCell(numCols map[string]bool, col int, name string, fg, bg tcell.Color) {
-	c := tview.NewTableCell(v.sortIndicator(col, name))
-	{
-		c.SetExpansion(1)
-		if numCols[name] || cpuRX.MatchString(name) || memRX.MatchString(name) {
-			c.SetAlign(tview.AlignRight)
-		}
-		c.SetTextColor(fg)
-		c.SetBackgroundColor(bg)
+func (v *tableView) addHeaderCell(numerical bool, col int, name string) {
+	c := tview.NewTableCell(sortIndicator(v.sortCol, v.app.styles.Style, col, name))
+	c.SetExpansion(1)
+	if numerical || cpuRX.MatchString(name) || memRX.MatchString(name) {
+		c.SetAlign(tview.AlignRight)
 	}
 	v.SetCell(0, col, c)
 }
@@ -473,27 +445,6 @@ func (v *tableView) formatCell(numerical bool, header, field string, padding int
 	}
 
 	return field, align
-}
-
-func (v *tableView) defaultSort(rows resource.Rows, sortCol sortColumn) {
-	t := rowSorter{rows: rows, index: sortCol.index, asc: sortCol.asc}
-	sort.Sort(t)
-}
-
-func (*tableView) sortRows(evts resource.RowEvents, sortFn sortFn, sortCol sortColumn, keys []string) {
-	rows := make(resource.Rows, 0, len(evts))
-	for k, r := range evts {
-		rows = append(rows, append(r.Fields, k))
-	}
-	sortFn(rows, sortCol)
-
-	for i, r := range rows {
-		keys[i] = r[len(r)-1]
-	}
-}
-
-func (*tableView) defaultColCleanse(s string) string {
-	return strings.TrimSpace(s)
 }
 
 func (v *tableView) resetTitle() {
@@ -522,40 +473,4 @@ func (v *tableView) resetTitle() {
 		title += skinTitle(fmt.Sprintf(searchFmt, cmd), v.app.styles.Style)
 	}
 	v.SetTitle(title)
-}
-
-// ----------------------------------------------------------------------------
-// Event listeners...
-
-func skinTitle(fmat string, style *config.Style) string {
-	fmat = strings.Replace(fmat, "[fg:bg", "["+style.Title.FgColor+":"+style.Title.BgColor, -1)
-	fmat = strings.Replace(fmat, "[hilite", "["+style.Title.HighlightColor, 1)
-	fmat = strings.Replace(fmat, "[key", "["+style.Menu.NumKeyColor, 1)
-	fmat = strings.Replace(fmat, "[filter", "["+style.Title.FilterColor, 1)
-	fmat = strings.Replace(fmat, "[count", "["+style.Title.CounterColor, 1)
-	fmat = strings.Replace(fmat, ":bg:", ":"+style.Title.BgColor+":", -1)
-	return fmat
-}
-
-func (v *tableView) changed(s string) {}
-
-func (v *tableView) active(b bool) {
-	if b {
-		v.SetBorderColor(tcell.ColorRed)
-		return
-	}
-	v.SetBorderColor(tcell.ColorDodgerBlue)
-}
-
-var labelCmd = regexp.MustCompile(`\A\-l`)
-
-func isLabelSelector(s string) bool {
-	if s == "" {
-		return false
-	}
-	return labelCmd.MatchString(s)
-}
-
-func trimLabelSelector(s string) string {
-	return strings.TrimSpace(s[2:])
 }

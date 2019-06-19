@@ -235,6 +235,52 @@ func (v *benchView) hydrate() resource.TableData {
 	return data
 }
 
+func (v *benchView) getTV() *tableView {
+	if vu, ok := v.GetPrimitive("table").(*tableView); ok {
+		return vu
+	}
+	return nil
+}
+
+func (v *benchView) getDetails() *detailsView {
+	if vu, ok := v.GetPrimitive("details").(*detailsView); ok {
+		return vu
+	}
+	return nil
+}
+
+func (v *benchView) resetTitle() {
+	v.SetTitle(fmt.Sprintf(benchTitleFmt, benchTitle, v.getTV().GetRowCount()-1))
+}
+
+func (v *benchView) watchBenchDir(ctx context.Context) error {
+	w, err := fsnotify.NewWatcher()
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		for {
+			select {
+			case evt := <-w.Events:
+				log.Debug().Msgf("Bench event %#v", evt)
+				v.app.QueueUpdateDraw(func() {
+					v.refresh()
+				})
+			case err := <-w.Errors:
+				log.Info().Err(err).Msg("Dir Watcher failed")
+				return
+			case <-ctx.Done():
+				log.Debug().Msg("!!!! FS WATCHER DONE!!")
+				w.Close()
+				return
+			}
+		}
+	}()
+
+	return w.Add(v.benchDir())
+}
+
 // ----------------------------------------------------------------------------
 // Helpers...
 
@@ -301,50 +347,4 @@ func augmentRow(fields resource.Row, data string) {
 		}
 		fields[col] = asNum(sum)
 	}
-}
-
-func (v *benchView) resetTitle() {
-	v.SetTitle(fmt.Sprintf(benchTitleFmt, benchTitle, v.getTV().GetRowCount()-1))
-}
-
-func (v *benchView) watchBenchDir(ctx context.Context) error {
-	w, err := fsnotify.NewWatcher()
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		for {
-			select {
-			case evt := <-w.Events:
-				log.Debug().Msgf("Bench event %#v", evt)
-				v.app.QueueUpdateDraw(func() {
-					v.refresh()
-				})
-			case err := <-w.Errors:
-				log.Info().Err(err).Msg("Dir Watcher failed")
-				return
-			case <-ctx.Done():
-				log.Debug().Msg("!!!! FS WATCHER DONE!!")
-				w.Close()
-				return
-			}
-		}
-	}()
-
-	return w.Add(filepath.Join(K9sBenchDir, v.app.config.K9s.CurrentCluster))
-}
-
-func (v *benchView) getTV() *tableView {
-	if vu, ok := v.GetPrimitive("table").(*tableView); ok {
-		return vu
-	}
-	return nil
-}
-
-func (v *benchView) getDetails() *detailsView {
-	if vu, ok := v.GetPrimitive("details").(*detailsView); ok {
-		return vu
-	}
-	return nil
 }

@@ -195,10 +195,9 @@ func TestTVSortRows(t *testing.T) {
 		},
 	}
 
-	var v *tableView
 	for _, u := range uu {
 		keys := make([]string, len(u.rows))
-		v.sortRows(u.rows, v.defaultSort, sortColumn{u.col, len(u.rows), u.asc}, keys)
+		sortRows(u.rows, defaultSort, sortColumn{u.col, len(u.rows), u.asc}, keys)
 		assert.Equal(t, u.e, keys)
 		assert.Equal(t, u.first, u.rows[u.e[0]].Fields)
 	}
@@ -210,12 +209,11 @@ func BenchmarkTVSortRows(b *testing.B) {
 		"row2": {Fields: resource.Row{"a", "b"}},
 	}
 	sc := sortColumn{0, 2, true}
-	var v *tableView
 	keys := make([]string, len(evts))
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		v.sortRows(evts, v.defaultSort, sc, keys)
+		sortRows(evts, defaultSort, sc, keys)
 	}
 }
 

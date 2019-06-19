@@ -18,75 +18,62 @@ import (
 
 const noSelection = ""
 
-type updatable interface {
-	restartUpdates()
-	stopUpdates()
-	update(context.Context)
-}
+type (
+	updatable interface {
+		restartUpdates()
+		stopUpdates()
+		update(context.Context)
+	}
 
-type resourceView struct {
-	*tview.Pages
+	masterDetail struct {
+		*tview.Pages
 
-	app            *appView
-	title          string
-	selectedItem   string
-	selectedRow    int
-	namespaces     map[int]string
-	selectedNS     string
-	list           resource.List
-	enterFn        enterFn
-	extraActionsFn func(keyActions)
-	selectedFn     func() string
-	decorateFn     decorateFn
-	colorerFn      colorerFn
-	actions        keyActions
-	nsListAccess   bool
-	path           *string
-	cancelFn       context.CancelFunc
-	parentCtx      context.Context
-}
+		app          *appView
+		actions      keyActions
+		title        string
+		selectedItem string
+		selectedRow  int
+		selectedNS   string
+		path         *string
+	}
 
-func (v *resourceView) filterResource(sel string) {
-	v.list.SetLabelSelector(sel)
-	v.refresh()
-}
+	resourceView struct {
+		*masterDetail
+
+		namespaces     map[int]string
+		list           resource.List
+		enterFn        enterFn
+		extraActionsFn func(keyActions)
+		selectedFn     func() string
+		decorateFn     decorateFn
+		colorerFn      colorerFn
+		nsListAccess   bool
+		cancelFn       context.CancelFunc
+		parentCtx      context.Context
+	}
+)
 
 func newResourceView(title string, app *appView, list resource.List) resourceViewer {
 	v := resourceView{
-		app:        app,
-		title:      title,
-		actions:    make(keyActions),
-		list:       list,
-		selectedNS: list.GetNamespace(),
-		Pages:      tview.NewPages(),
+		masterDetail: &masterDetail{
+			Pages:      tview.NewPages(),
+			app:        app,
+			title:      title,
+			actions:    make(keyActions),
+			selectedNS: list.GetNamespace(),
+		},
+		list: list,
 	}
 
 	tv := newTableView(app, v.title)
 	tv.SetSelectionChangedFunc(v.selChanged)
 	tv.filterChanged(v.filterResource)
-
 	v.AddPage(v.list.GetName(), tv, true, true)
 
 	details := newDetailsView(app, v.backCmd)
 	v.AddPage("details", details, true, false)
 
 	return &v
-}
-
-func (v *resourceView) stopUpdates() {
-	if v.cancelFn != nil {
-		v.cancelFn()
-	}
-}
-
-func (v *resourceView) restartUpdates() {
-	if v.cancelFn != nil {
-		v.cancelFn()
-	}
-
-	var vctx context.Context
-	vctx, v.cancelFn = context.WithCancel(v.parentCtx)
-	v.update(vctx)
 }
 
 // Init watches all running pods in given namespace
@@ -126,6 +113,27 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 			tv.Select(1, 0)
 		}
 	}
+}
+
+func (v *resourceView) filterResource(sel string) {
+	v.list.SetLabelSelector(sel)
+	v.refresh()
+}
+
+func (v *resourceView) stopUpdates() {
+	if v.cancelFn != nil {
+		v.cancelFn()
+	}
+}
+
+func (v *resourceView) restartUpdates() {
+	if v.cancelFn != nil {
+		v.cancelFn()
+	}
+
+	var vctx context.Context
+	vctx, v.cancelFn = context.WithCancel(v.parentCtx)
+	v.update(vctx)
 }
 
 func (v *resourceView) update(ctx context.Context) {

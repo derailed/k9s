@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
@@ -102,6 +103,51 @@ func (v *svcView) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+func trimCell(tv *tableView, row, col int) (string, error) {
+	c := tv.GetCell(row, tv.nameColIndex()+col)
+	if c == nil {
+		return "", fmt.Errorf("No cell at location [%d:%d]", row, col)
+	}
+	return strings.TrimSpace(c.Text), nil
+}
+
+func (v *svcView) checkSvc(row int) error {
+	svcType, err := trimCell(v.getTV(), row, 1)
+	if err != nil {
+		return err
+	}
+	if svcType != "NodePort" && svcType != "LoadBalancer" {
+		return errors.New("You must select a reachable service")
+	}
+	return nil
+}
+
+func (v *svcView) getExternalPort(row int) (string, error) {
+	ports, err := trimCell(v.getTV(), row, 5)
+	if err != nil {
+		return "", err
+	}
+
+	pp := strings.Split(ports, " ")
+	if len(pp) == 0 {
+		return "", errors.New("No ports found")
+	}
+
+	// Grap the first port pair for now...
+	tokens := strings.Split(pp[0], "►")
+	if len(tokens) < 2 {
+		return "", errors.New("No ports pair found")
+	}
+
+	return tokens[1], nil
+}
+
+func (v *svcView) reloadBenchCfg() error {
+	// BOZO!! Poorman Reload bench to make sure we pick up updates if any.
+	path := benchConfig(v.app.config.K9s.CurrentCluster)
+	return v.app.bench.Reload(path)
+}
+
 func (v *svcView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.rowSelected() {
 		return evt
@@ -111,56 +157,45 @@ func (v *svcView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.app.flash().err(errors.New("Only one benchmark allowed at a time"))
 		return nil
 	}
-
-	sel := v.getSelectedItem()
-	tv := v.getTV()
-	r, _ := tv.GetSelection()
-
-	// BOZO!! Poorman Reload bench to make sure we pick up updates if any.
-	path := benchConfig(v.app.config.K9s.CurrentCluster)
-	if err := v.app.bench.Reload(path); err != nil {
+	if err := v.reloadBenchCfg(); err != nil {
 		log.Error().Err(err).Msg("Bench config reload")
 		v.app.flash().err(err)
 		return nil
 	}
 
+	sel := v.getSelectedItem()
 	cfg, ok := v.app.bench.Benchmarks.Services[sel]
 	if !ok {
 		v.app.flash().errf("No bench config found for service %s", sel)
 		return nil
 	}
-
-	svcType := strings.TrimSpace(tv.GetCell(r, tv.nameColIndex()+1).Text)
-	if svcType != "NodePort" && svcType != "LoadBalancer" {
-		v.app.flash().err(errors.New("You must select a reachable service"))
-		return nil
-	}
-
-	ports := strings.TrimSpace(tv.GetCell(r, tv.nameColIndex()+5).Text)
-	pp := strings.Split(ports, " ")
-	if len(pp) == 0 {
-		v.app.flash().err(errors.New("No ports found"))
-		return nil
-	}
-	// Grap the first port pair for now...
-	tokens := strings.Split(pp[0], "►")
-	if len(tokens) < 2 {
-		v.app.flash().err(errors.New("No ports pair found"))
-		return nil
-	}
-	// Found external nodeport
-	port := tokens[1]
 	cfg.Name = sel
-	log.Debug().Msgf(">>>>> BENCHCONFIG %#v", cfg)
 
-	base := "http://" + cfg.Host + ":" + port + cfg.Path
-	var err error
-	if v.bench, err = newBenchmark(base, cfg); err != nil {
-		log.Error().Err(err).Msg("Bench failed!")
-		v.app.flash().errf("Bench failed %v", err)
+	row, _ := v.getTV().GetSelection()
+	if err := v.checkSvc(row); err != nil {
+		v.app.flash().err(err)
+		return nil
+	}
+	port, err := v.getExternalPort(row)
+	if err != nil {
+		v.app.flash().err(err)
+		return nil
+	}
+	if err := v.runBenchmark(port, cfg); err != nil {
+		log.Error().Err(err).Msg("Benchmark failed!")
+		v.app.flash().errf("Benchmark failed %v", err)
 		v.app.statusReset()
 		v.bench = nil
-		return nil
+	}
+
+	return nil
+}
+
+func (v *svcView) runBenchmark(port string, cfg config.BenchConfig) error {
+	var err error
+	base := "http://" + cfg.Host + ":" + port + cfg.Path
+	if v.bench, err = newBenchmark(base, cfg); err != nil {
+		return err
 	}
 
 	v.app.status(flashWarn, "Benchmark in progress...")
@@ -185,7 +220,6 @@ func (v *svcView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	})
 
 	return nil
-
 }
 
 func (v *svcView) showSvcPods(ns string, sel map[string]string, b actionHandler) {
