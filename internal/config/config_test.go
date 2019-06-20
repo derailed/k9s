@@ -293,14 +293,6 @@ var expectedConfig = `k9s:
         - kube-system
       view:
         active: ctx
-  plugins:
-    sniff:
-      shortCut: ShiftS
-      scopes:
-      - po
-      - dp
-      args:
-        "n": $NAMESPACE
 `
 
 var resetConfig = `k9s:
@@ -317,12 +309,4 @@ var resetConfig = `k9s:
         - default
       view:
         active: po
-  plugins:
-    sniff:
-      shortCut: ShiftS
-      scopes:
-      - po
-      - dp
-      args:
-        "n": $NAMESPACE
 `

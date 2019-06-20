@@ -230,11 +230,11 @@ func (v *policyView) parseRules(ns, binding string, rules []rbacv1.PolicyRule) r
 				for _, na := range r.ResourceNames {
 					n := fqn(k, na)
 					m[fqn(ns, n)] = &resource.RowEvent{
-						Fields: v.prepRow(ns, n, grp, binding, r.Verbs),
+						Fields: append(v.prepRow(ns, n, grp, binding), r.Verbs...),
 					}
 				}
 				m[fqn(ns, k)] = &resource.RowEvent{
-					Fields: v.prepRow(ns, k, grp, binding, r.Verbs),
+					Fields: append(v.prepRow(ns, k, grp, binding), r.Verbs...),
 				}
 			}
 		}
@@ -243,7 +243,7 @@ func (v *policyView) parseRules(ns, binding string, rules []rbacv1.PolicyRule) r
 				nres = "/" + nres
 			}
 			m[fqn(ns, nres)] = &resource.RowEvent{
-				Fields: v.prepRow(ns, nres, resource.NAValue, binding, r.Verbs),
+				Fields: append(v.prepRow(ns, nres, resource.NAValue, binding), r.Verbs...),
 			}
 		}
 	}
@@ -251,19 +251,13 @@ func (v *policyView) parseRules(ns, binding string, rules []rbacv1.PolicyRule) r
 	return m
 }
 
-func (v *policyView) prepRow(ns, res, grp, binding string, verbs []string) resource.Row {
+func (v *policyView) prepRow(ns, res, grp, binding string) resource.Row {
 	if grp != resource.NAValue {
 		grp = toGroup(grp)
 	}
 
-	return v.makeRow(ns, res, grp, binding, asVerbs(verbs...))
-}
-
-func (*policyView) makeRow(ns, res, group, binding string, verbs []string) resource.Row {
 	r := make(resource.Row, 0, len(policyHeader))
-	r = append(r, ns, res, group, binding)
-
-	return append(r, verbs...)
+	return append(r, ns, res, grp, binding)
 }
 
 func mapSubject(subject string) string {
