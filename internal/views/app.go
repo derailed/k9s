@@ -78,25 +78,21 @@ func NewApp(cfg *config.Config) *appView {
 	v.views["crumbs"] = newCrumbsView(v.styles)
 	v.views["clusterInfo"] = newClusterInfoView(&v, k8s.NewMetricsServer(cfg.GetConnection()))
 
+	v.actions = keyActions{
+		KeyColon:            newKeyAction("Cmd", v.activateCmd, false),
+		tcell.KeyCtrlR:      newKeyAction("Redraw", v.redrawCmd, false),
+		tcell.KeyCtrlC:      newKeyAction("Quit", v.quitCmd, false),
+		KeyHelp:             newKeyAction("Help", v.helpCmd, false),
+		tcell.KeyCtrlA:      newKeyAction("Aliases", v.aliasCmd, true),
+		tcell.KeyEscape:     newKeyAction("Escape", v.escapeCmd, false),
+		tcell.KeyEnter:      newKeyAction("Goto", v.gotoCmd, false),
+		tcell.KeyBackspace2: newKeyAction("Erase", v.eraseCmd, false),
+		tcell.KeyBackspace:  newKeyAction("Erase", v.eraseCmd, false),
+		tcell.KeyDelete:     newKeyAction("Erase", v.eraseCmd, false),
+	}
 	v.SetInputCapture(v.keyboard)
-	v.bindKeys()
 
 	return &v
-}
-
-func (a *appView) bindKeys() {
-	a.actions = keyActions{
-		KeyColon:            newKeyAction("Cmd", a.activateCmd, false),
-		tcell.KeyCtrlR:      newKeyAction("Redraw", a.redrawCmd, false),
-		tcell.KeyCtrlC:      newKeyAction("Quit", a.quitCmd, false),
-		KeyHelp:             newKeyAction("Help", a.helpCmd, false),
-		tcell.KeyCtrlA:      newKeyAction("Aliases", a.aliasCmd, true),
-		tcell.KeyEscape:     newKeyAction("Escape", a.escapeCmd, false),
-		tcell.KeyEnter:      newKeyAction("Goto", a.gotoCmd, false),
-		tcell.KeyBackspace2: newKeyAction("Erase", a.eraseCmd, false),
-		tcell.KeyBackspace:  newKeyAction("Erase", a.eraseCmd, false),
-		tcell.KeyDelete:     newKeyAction("Erase", a.eraseCmd, false),
-	}
 }
 
 func (a *appView) Init(version string, rate int) {
