@@ -68,13 +68,18 @@ type (
 		CheckListNSAccess() error
 	}
 
+	k8sClient struct {
+		client    kubernetes.Interface
+		dClient   dynamic.Interface
+		nsClient  dynamic.NamespaceableResourceInterface
+		mxsClient *versioned.Clientset
+	}
+
 	// APIClient represents a Kubernetes api client.
 	APIClient struct {
+		k8sClient
+
 		config          *Config
-		client          kubernetes.Interface
-		dClient         dynamic.Interface
-		nsClient        dynamic.NamespaceableResourceInterface
-		mxsClient       *versioned.Clientset
 		useMetricServer bool
 		log             zerolog.Logger
 		mx              sync.Mutex

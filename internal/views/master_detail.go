@@ -8,24 +8,37 @@ import (
 	"github.com/derailed/tview"
 )
 
-type masterDetail struct {
-	*tview.Pages
+type (
+	pageView struct {
+		*tview.Pages
 
-	app            *appView
-	actions        keyActions
-	currentNS      string
-	selectedItem   string
-	selectedRow    int
-	selectedFn     func() string
-	enterFn        enterFn
-	extraActionsFn func(keyActions)
+		app     *appView
+		actions keyActions
+	}
+
+	masterDetail struct {
+		*pageView
+
+		currentNS      string
+		selectedItem   string
+		selectedRow    int
+		selectedFn     func() string
+		enterFn        enterFn
+		extraActionsFn func(keyActions)
+	}
+)
+
+func newPageView(app *appView) *pageView {
+	return &pageView{
+		Pages:   tview.NewPages(),
+		app:     app,
+		actions: make(keyActions),
+	}
 }
 
 func newMasterDetail(title string, app *appView, ns string) *masterDetail {
 	v := masterDetail{
-		Pages:     tview.NewPages(),
-		app:       app,
-		actions:   make(keyActions),
+		pageView:  newPageView(app),
 		currentNS: ns,
 	}
 

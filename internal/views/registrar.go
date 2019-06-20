@@ -15,12 +15,17 @@ type (
 	enterFn    func(app *appView, ns, resource, selection string)
 	decorateFn func(resource.TableData) resource.TableData
 
+	crdCmd struct {
+		version  string
+		plural   string
+		singular string
+	}
+
 	resCmd struct {
-		title      string
+		crdCmd
+
 		api        string
-		version    string
-		plural     string
-		singular   string
+		title      string
 		viewFn     viewFn
 		listFn     listFn
 		enterFn    enterFn
@@ -50,7 +55,13 @@ func allCRDs(c k8s.Connection, m map[string]resCmd) {
 			Version: ff["version"].(string),
 		}
 
-		res := resCmd{title: grp.Kind, api: grp.Group, version: grp.Version}
+		res := resCmd{
+			title: grp.Kind,
+			api:   grp.Group,
+			crdCmd: crdCmd{
+				version: grp.Version,
+			},
+		}
 		if p, ok := ff["plural"].(string); ok {
 			res.plural = p
 			m[p] = res
