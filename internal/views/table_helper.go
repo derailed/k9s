@@ -1,21 +1,77 @@
 package views
 
 import (
+	"encoding/csv"
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 )
 
-var labelCmd = regexp.MustCompile(`\A\-l`)
-
 const (
-	descIndicator = "↓"
-	ascIndicator  = "↑"
+	titleFmt          = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]] "
+	searchFmt         = "<[filter:bg:b]/%s[fg:bg:]> "
+	nsTitleFmt        = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
+	labelSelIndicator = "-l"
+	descIndicator     = "↓"
+	ascIndicator      = "↑"
+	fullFmat          = "%s-%s-%d.csv"
+	noNSFmat          = "%s-%d.csv"
 )
+
+var (
+	cpuRX    = regexp.MustCompile(`\A.{0,1}CPU`)
+	memRX    = regexp.MustCompile(`\A.{0,1}MEM`)
+	labelCmd = regexp.MustCompile(`\A\-l`)
+)
+
+type cleanseFn func(string) string
+
+func saveTable(cluster, name string, data resource.TableData) (string, error) {
+	dir := filepath.Join(config.K9sDumpDir, cluster)
+	if err := ensureDir(dir); err != nil {
+		return "", err
+	}
+
+	ns, now := data.Namespace, time.Now().UnixNano()
+	if ns == resource.AllNamespaces {
+		ns = resource.AllNamespace
+	}
+	fName := fmt.Sprintf(fullFmat, name, ns, now)
+	if ns == resource.NotNamespaced {
+		fName = fmt.Sprintf(noNSFmat, name, now)
+	}
+
+	path := filepath.Join(dir, fName)
+	mod := os.O_CREATE | os.O_WRONLY
+	file, err := os.OpenFile(path, mod, 0644)
+	defer func() {
+		if file != nil {
+			file.Close()
+		}
+	}()
+	if err != nil {
+		return "", err
+	}
+
+	w := csv.NewWriter(file)
+	w.Write(data.Header)
+	for _, r := range data.Rows {
+		w.Write(r.Fields)
+	}
+	w.Flush()
+	if err := w.Error(); err != nil {
+		return "", err
+	}
+
+	return path, nil
+}
 
 func isLabelSelector(s string) bool {
 	if s == "" {

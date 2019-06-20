@@ -1,11 +1,8 @@
 package views
 
 import (
-	"encoding/csv"
 	"errors"
 	"fmt"
-	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -18,21 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
-const (
-	titleFmt          = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]] "
-	searchFmt         = "<[filter:bg:b]/%s[fg:bg:]> "
-	nsTitleFmt        = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
-	labelSelIndicator = "-l"
-)
-
-var (
-	cpuRX = regexp.MustCompile(`\A.{0,1}CPU`)
-	memRX = regexp.MustCompile(`\A.{0,1}MEM`)
-)
-
 type (
-	cleanseFn func(string) string
-
 	resTable struct {
 		*tview.Table
 
@@ -73,14 +56,15 @@ func newTableView(app *appView, title string) *tableView {
 	v.SetBorderFocusColor(config.AsColor(app.styles.Frame().Border.FocusColor))
 	v.SetBorderAttributes(tcell.AttrBold)
 	v.SetBorderPadding(0, 0, 1, 1)
-	v.cmdBuff.addListener(app.cmd())
-	v.cmdBuff.reset()
 	v.SetSelectable(true, false)
 	v.SetSelectedStyle(
 		tcell.ColorBlack,
 		config.AsColor(app.styles.Table().CursorColor),
 		tcell.AttrBold,
 	)
+	v.cmdBuff.addListener(app.cmd())
+	v.cmdBuff.reset()
+
 	v.SetInputCapture(v.keyboard)
 	v.bindKeys()
 
@@ -102,7 +86,7 @@ func (v *tableView) bindKeys() {
 	}
 }
 
-func (v *tableView) filterChanged(fn func(string)) {
+func (v *tableView) setFilterFn(fn func(string)) {
 	v.filterFn = fn
 }
 
@@ -141,51 +125,13 @@ func (v *tableView) selectFirstRow() {
 	}
 }
 
-const (
-	fullFmat = "%s-%s-%d.csv"
-	noNSFmat = "%s-%d.csv"
-)
-
 func (v *tableView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	dir := filepath.Join(config.K9sDumpDir, v.app.config.K9s.CurrentCluster)
-	if err := ensureDir(dir); err != nil {
-		log.Error().Err(err).Msgf("Mkdir K9s dump")
-		return nil
+	if path, err := saveTable(v.app.config.K9s.CurrentCluster, v.baseTitle, v.data); err != nil {
+		v.app.flash().err(err)
+	} else {
+		v.app.flash().infof("File %s saved successfully!", path)
 	}
 
-	ns, now := v.data.Namespace, time.Now().UnixNano()
-	if ns == resource.AllNamespaces {
-		ns = resource.AllNamespace
-	}
-	fName := fmt.Sprintf(fullFmat, v.baseTitle, ns, now)
-	if ns == resource.NotNamespaced {
-		fName = fmt.Sprintf(noNSFmat, v.baseTitle, now)
-	}
-
-	path := filepath.Join(dir, fName)
-	mod := os.O_CREATE | os.O_WRONLY
-	file, err := os.OpenFile(path, mod, 0644)
-	defer func() {
-		if file != nil {
-			file.Close()
-		}
-	}()
-	if err != nil {
-		log.Error().Err(err).Msgf("CSV create %s", path)
-		return nil
-	}
-
-	w := csv.NewWriter(file)
-	w.Write(v.data.Header)
-	for _, r := range v.data.Rows {
-		w.Write(r.Fields)
-	}
-	w.Flush()
-	if err := w.Error(); err != nil {
-		log.Error().Err(err).Msgf("Screen dump %s", v.baseTitle)
-	}
-
-	v.app.flash().infof("File %s saved successfully!", path)
 	return nil
 }
 

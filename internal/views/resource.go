@@ -37,7 +37,7 @@ func newResourceView(title string, app *appView, list resource.List) resourceVie
 		masterDetail: newMasterDetail(title, app, list.GetNamespace()),
 		list:         list,
 	}
-	v.masterPage().filterChanged(v.filterResource)
+	v.masterPage().setFilterFn(v.filterResource)
 
 	return &v
 }
