@@ -241,3 +241,7 @@ func (v *dumpView) getDetails() *detailsView {
 	}
 	return nil
 }
+
+func noopCmd(*tcell.EventKey) *tcell.EventKey {
+	return nil
+}

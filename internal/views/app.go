@@ -300,7 +300,6 @@ func (a *appView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	a.flash().info("Command mode activated.")
-	log.Debug().Msg("Entering command mode...")
 	a.cmdBuff.setActive(true)
 	a.cmdBuff.clear()
 	return nil
@@ -331,12 +330,8 @@ func (a *appView) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.inCmdMode() {
 		return evt
 	}
-
 	a.inject(newAliasView(a, a.currentView()))
-	return nil
-}
 
-func noopCmd(*tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
