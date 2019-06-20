@@ -92,9 +92,10 @@ func (v *clusterInfoView) infoCell(t string) *tview.TableCell {
 }
 
 func (v *clusterInfoView) refresh() {
-	cluster := resource.NewCluster(v.app.conn(), &log.Logger, v.mxs)
-
-	var row int
+	var (
+		cluster = resource.NewCluster(v.app.conn(), &log.Logger, v.mxs)
+		row     int
+	)
 	v.GetCell(row, 1).SetText(cluster.ContextName())
 	row++
 	v.GetCell(row, 1).SetText(cluster.ClusterName())
@@ -109,6 +110,10 @@ func (v *clusterInfoView) refresh() {
 	c = v.GetCell(row+1, 1)
 	c.SetText(resource.NAValue)
 
+	v.refreshMetrics(cluster, row)
+}
+
+func (v *clusterInfoView) refreshMetrics(cluster *resource.Cluster, row int) {
 	nos, err := v.app.informer.List(watch.NodeIndex, "", metav1.ListOptions{})
 	if err != nil {
 		log.Warn().Err(err).Msg("ListNodes")
@@ -122,7 +127,7 @@ func (v *clusterInfoView) refresh() {
 
 	var cmx k8s.ClusterMetrics
 	cluster.Metrics(nos, nmx, &cmx)
-	c = v.GetCell(row, 1)
+	c := v.GetCell(row, 1)
 	cpu := resource.AsPerc(cmx.PercCPU)
 	if cpu == "0" {
 		cpu = resource.NAValue

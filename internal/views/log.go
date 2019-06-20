@@ -15,26 +15,45 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type logView struct {
-	*tview.Flex
+type (
+	logFrame struct {
+		*tview.Flex
+		app     *appView
+		actions keyActions
+		backFn  actionHandler
+	}
 
-	app        *appView
-	backFn     actionHandler
-	logs       *detailsView
-	status     *statusView
-	ansiWriter io.Writer
-	autoScroll int32
-	actions    keyActions
-	path       string
+	logView struct {
+		*logFrame
+		logs       *detailsView
+		status     *statusView
+		ansiWriter io.Writer
+		autoScroll int32
+		path       string
+	}
+)
+
+func newLogFrame(app *appView, backFn actionHandler) *logFrame {
+	f := logFrame{
+		Flex:    tview.NewFlex(),
+		app:     app,
+		backFn:  backFn,
+		actions: make(keyActions),
+	}
+	f.SetBorder(true)
+	f.SetBackgroundColor(config.AsColor(app.styles.Views().Log.BgColor))
+	f.SetBorderPadding(0, 0, 1, 1)
+	f.SetDirection(tview.FlexRow)
+
+	return &f
 }
 
-func newLogView(title string, app *appView, backFn actionHandler) *logView {
-	v := logView{Flex: tview.NewFlex(), app: app}
-	v.autoScroll = 1
-	v.backFn = backFn
-	v.SetBorder(true)
-	v.SetBackgroundColor(config.AsColor(app.styles.Views().Log.BgColor))
-	v.SetBorderPadding(0, 0, 1, 1)
+func newLogView(_ string, app *appView, backFn actionHandler) *logView {
+	v := logView{
+		logFrame:   newLogFrame(app, backFn),
+		autoScroll: 1,
+	}
+
 	v.logs = newDetailsView(app, backFn)
 	{
 		v.logs.SetBorder(false)
@@ -47,10 +66,16 @@ func newLogView(title string, app *appView, backFn actionHandler) *logView {
 	}
 	v.ansiWriter = tview.ANSIWriter(v.logs)
 	v.status = newStatusView(app.styles)
-	v.SetDirection(tview.FlexRow)
 	v.AddItem(v.status, 1, 1, false)
 	v.AddItem(v.logs, 0, 1, true)
 
+	v.bindKeys()
+	v.logs.SetInputCapture(v.keyboard)
+
+	return &v
+}
+
+func (v *logView) bindKeys() {
 	v.actions = keyActions{
 		tcell.KeyEscape: newKeyAction("Back", v.backCmd, true),
 		KeyC:            newKeyAction("Clear", v.clearCmd, true),
@@ -61,9 +86,6 @@ func newLogView(title string, app *appView, backFn actionHandler) *logView {
 		KeyB:            newKeyAction("Down", v.pageDownCmd, false),
 		tcell.KeyCtrlS:  newKeyAction("Save", v.saveCmd, true),
 	}
-	v.logs.SetInputCapture(v.keyboard)
-
-	return &v
 }
 
 // Hints show action hints
