@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"strconv"
 	"strings"
 	"sync/atomic"
@@ -173,14 +174,7 @@ func tailLogs(ctx context.Context, res k8s.Loggable, c chan<- string, opts LogOp
 	req.Context(ctx)
 
 	var blocked int32 = 1
-	go func(c chan<- string) {
-		select {
-		case <-time.After(defaultTimeout):
-			if atomic.LoadInt32(&blocked) == 1 {
-				log.Debug().Msgf("Closing channel %s:%s", opts.Name, opts.Container)
-			}
-		}
-	}(c)
+	go logsTimeout(blocked, c, opts)
 
 	// This call will block if nothing is in the stream!!
 	stream, err := req.Stream()
@@ -190,25 +184,36 @@ func tailLogs(ctx context.Context, res k8s.Loggable, c chan<- string, opts LogOp
 	}
 
 	atomic.StoreInt32(&blocked, 0)
-	go func(c chan<- string) {
-		defer func() {
-			log.Debug().Msgf("Closing stream `%s", opts.Path())
-			stream.Close()
-		}()
-
-		head := opts.NormalizeName()
-		scanner := bufio.NewScanner(stream)
-		for scanner.Scan() {
-			select {
-			case <-ctx.Done():
-				return
-			case c <- head + strings.TrimSpace(scanner.Text()):
-			default:
-			}
-		}
-	}(c)
+	go readLogs(ctx, stream, c, opts)
 
 	return nil
+}
+
+func logsTimeout(blocked int32, c chan<- string, opts LogOptions) {
+	select {
+	case <-time.After(defaultTimeout):
+		if atomic.LoadInt32(&blocked) == 1 {
+			log.Debug().Msgf("Closing channel %s:%s", opts.Name, opts.Container)
+		}
+	}
+}
+
+func readLogs(ctx context.Context, stream io.ReadCloser, c chan<- string, opts LogOptions) {
+	defer func() {
+		log.Debug().Msgf("Closing stream `%s", opts.Path())
+		stream.Close()
+	}()
+
+	head := opts.NormalizeName()
+	scanner := bufio.NewScanner(stream)
+	for scanner.Scan() {
+		select {
+		case <-ctx.Done():
+			return
+		case c <- head + strings.TrimSpace(scanner.Text()):
+		default:
+		}
+	}
 }
 
 // List resources for a given namespace.

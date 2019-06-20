@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/fsnotify/fsnotify"
@@ -136,7 +137,7 @@ func (v *benchView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	data, err := v.loadBenchFile(v.selectedItem)
+	data, err := readBenchFile(v.app.config, v.selectedItem)
 	if err != nil {
 		v.app.flash().errf("Unable to load bench file %s", err)
 		return nil
@@ -181,24 +182,8 @@ func (v *benchView) hints() hints {
 	return v.CurrentPage().Item.(hinter).hints()
 }
 
-func (v *benchView) benchDir() string {
-	return filepath.Join(K9sBenchDir, v.app.config.K9s.CurrentCluster)
-}
-
-func (v *benchView) loadBenchDir() ([]os.FileInfo, error) {
-	return ioutil.ReadDir(v.benchDir())
-}
-
-func (v *benchView) loadBenchFile(n string) (string, error) {
-	data, err := ioutil.ReadFile(filepath.Join(v.benchDir(), n))
-	if err != nil {
-		return "", err
-	}
-	return string(data), nil
-}
-
 func (v *benchView) hydrate() resource.TableData {
-	ff, err := v.loadBenchDir()
+	ff, err := loadBenchDir(v.app.config)
 	if err != nil {
 		v.app.flash().errf("Unable to read bench directory %s", err)
 	}
@@ -206,7 +191,7 @@ func (v *benchView) hydrate() resource.TableData {
 	data := initTable()
 	blank := make(resource.Row, len(benchHeader))
 	for _, f := range ff {
-		bench, err := v.loadBenchFile(f.Name())
+		bench, err := readBenchFile(v.app.config, f.Name())
 		if err != nil {
 			log.Error().Err(err).Msgf("Unable to load bench file %s", f.Name())
 			continue
@@ -246,7 +231,7 @@ func (v *benchView) getDetails() *detailsView {
 	return nil
 }
 
-func (v *benchView) resetTitle() {
+func (v *benchView) resetTitle1() {
 	v.SetTitle(fmt.Sprintf(benchTitleFmt, benchTitle, v.getTV().GetRowCount()-1))
 }
 
@@ -275,7 +260,7 @@ func (v *benchView) watchBenchDir(ctx context.Context) error {
 		}
 	}()
 
-	return w.Add(v.benchDir())
+	return w.Add(benchDir(v.app.config))
 }
 
 // ----------------------------------------------------------------------------
@@ -344,4 +329,20 @@ func augmentRow(fields resource.Row, data string) {
 		}
 		fields[col] = asNum(sum)
 	}
+}
+
+func benchDir(cfg *config.Config) string {
+	return filepath.Join(K9sBenchDir, cfg.K9s.CurrentCluster)
+}
+
+func loadBenchDir(cfg *config.Config) ([]os.FileInfo, error) {
+	return ioutil.ReadDir(benchDir(cfg))
+}
+
+func readBenchFile(cfg *config.Config, n string) (string, error) {
+	data, err := ioutil.ReadFile(filepath.Join(benchDir(cfg), n))
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }
