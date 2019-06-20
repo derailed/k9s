@@ -150,15 +150,16 @@ benchmarks:
       # Benchmark a container named nginx using POST HTTP verb using http://localhost:port/bozo URL and headers.
       concurrency: 1
       requests: 10000
-      path: /bozo
-      method: POST
-      body:
-        {"fred":"blee"}
-      header:
-        Accept:
-          - text/html
-        Content-Type:
-          - application/json
+      http:
+        path: /bozo
+        method: POST
+        body:
+          {"fred":"blee"}
+        header:
+          Accept:
+            - text/html
+          Content-Type:
+            - application/json
   services:
     # Similary you can Benchmark an HTTP service exposed either via nodeport, loadbalancer types.
     # Service ID is ns/svc-name
@@ -167,11 +168,12 @@ benchmarks:
       concurrency: 5
       # Issues a total of 500 requests
       requests: 500
-      method: GET
-      # This setting will depend on whether service is nodeport or loadbalancer. Nodeport may require vendor port tuneling setting.
-      # Set this to a node if nodeport or LB if applicable. IP or dns name.
-      host: 10.11.13.14
-      path: /bumblebeetuna
+      http:
+        method: GET
+        # This setting will depend on whether service is nodeport or loadbalancer. Nodeport may require vendor port tuneling setting.
+        # Set this to a node if nodeport or LB if applicable. IP or dns name.
+        host: 10.11.13.14
+        path: /bumblebeetuna
       auth:
         user: jean-baptiste-emmanuel
         password: Zorg!

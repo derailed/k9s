@@ -104,13 +104,13 @@ func TestBenchServiceLoad(t *testing.T) {
 			svc := b.Benchmarks.Services[u.key]
 			assert.Equal(t, u.c, svc.C)
 			assert.Equal(t, u.n, svc.N)
-			assert.Equal(t, u.method, svc.Method)
-			assert.Equal(t, u.host, svc.Host)
-			assert.Equal(t, u.path, svc.Path)
-			assert.Equal(t, u.http2, svc.HTTP2)
-			assert.Equal(t, u.body, svc.Body)
+			assert.Equal(t, u.method, svc.HTTP.Method)
+			assert.Equal(t, u.host, svc.HTTP.Host)
+			assert.Equal(t, u.path, svc.HTTP.Path)
+			assert.Equal(t, u.http2, svc.HTTP.HTTP2)
+			assert.Equal(t, u.body, svc.HTTP.Body)
 			assert.Equal(t, u.auth, svc.Auth)
-			assert.Equal(t, u.headers, svc.Headers)
+			assert.Equal(t, u.headers, svc.HTTP.Headers)
 		})
 	}
 }
@@ -174,13 +174,13 @@ func TestBenchContainerLoad(t *testing.T) {
 			co := b.Benchmarks.Containers[u.key]
 			assert.Equal(t, u.c, co.C)
 			assert.Equal(t, u.n, co.N)
-			assert.Equal(t, u.method, co.Method)
-			assert.Equal(t, u.host, co.Host)
-			assert.Equal(t, u.path, co.Path)
-			assert.Equal(t, u.http2, co.HTTP2)
-			assert.Equal(t, u.body, co.Body)
+			assert.Equal(t, u.method, co.HTTP.Method)
+			assert.Equal(t, u.host, co.HTTP.Host)
+			assert.Equal(t, u.path, co.HTTP.Path)
+			assert.Equal(t, u.http2, co.HTTP.HTTP2)
+			assert.Equal(t, u.body, co.HTTP.Body)
 			assert.Equal(t, u.auth, co.Auth)
-			assert.Equal(t, u.headers, co.Headers)
+			assert.Equal(t, u.headers, co.HTTP.Headers)
 		})
 	}
 }

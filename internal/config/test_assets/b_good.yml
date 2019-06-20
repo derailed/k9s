@@ -6,34 +6,36 @@ benchmarks:
     default/nginx:
       concurrency: 2
       requests: 1000
-      method: GET
-      http2: true
-      host: 10.10.10.10
-      path: /
-      body: |-
-        {"fred": "blee"}
+      http:
+        method: GET
+        http2: true
+        host: 10.10.10.10
+        path: /
+        body: |-
+          {"fred": "blee"}
+        headers:
+          Accept:
+            - text/html
+          Content-Type:
+            - application/json
       auth:
         user: "fred"
         password: "blee"
-      headers:
-        Accept:
-          - text/html
-        Content-Type:
-          - application/json
     blee/fred:
       concurrency: 10
       requests: 1500
-      method: POST
-      http2: false
-      host: 20.20.20.20
-      path: /zorg
-      body: |-
-        {"fred": "blee"}
+      http:
+        method: POST
+        http2: false
+        host: 20.20.20.20
+        path: /zorg
+        body: |-
+          {"fred": "blee"}
+        headers:
+          Accept:
+            - text/html
+          Content-Type:
+            - application/json
       auth:
         user: "fred"
         password: "blee"
-      headers:
-        Accept:
-          - text/html
-        Content-Type:
-          - application/json

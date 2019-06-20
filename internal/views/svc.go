@@ -190,7 +190,7 @@ func (v *svcView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (v *svcView) runBenchmark(port string, cfg config.BenchConfig) error {
 	var err error
-	base := "http://" + cfg.Host + ":" + port + cfg.Path
+	base := "http://" + cfg.HTTP.Host + ":" + port + cfg.HTTP.Path
 	if v.bench, err = newBenchmark(base, cfg); err != nil {
 		return err
 	}

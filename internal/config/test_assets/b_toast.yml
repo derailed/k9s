@@ -2,15 +2,16 @@ benchmarks:
   service:
     - default/nginx:
       concurrency: 1
-      requests: 100
-      http2: true
-      method: GET
-      url: http://35.224.16.201/
-      body: |-
-        {"fred": "blee"}
+      http:
+        requests: 100
+        http2: true
+        method: GET
+        url: http://35.224.16.201/
+        body: |-
+          {"fred": "blee"}
+        headers:
+        - "Accept: text/html"
+        - "Content-Type: application/json"
       auth:
         user: "fred"
         password: "blee"
-      headers:
-       - "Accept: text/html"
-       - "Content-Type: application/json"

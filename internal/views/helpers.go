@@ -51,13 +51,13 @@ func containerID(path, co string) string {
 // UrlFor computes fq url for a given benchmark configuration.
 func urlFor(cfg config.BenchConfig, co, port string) string {
 	host := "localhost"
-	if cfg.Host != "" {
-		host = cfg.Host
+	if cfg.HTTP.Host != "" {
+		host = cfg.HTTP.Host
 	}
 
 	path := "/"
-	if cfg.Path != "" {
-		path = cfg.Path
+	if cfg.HTTP.Path != "" {
+		path = cfg.HTTP.Path
 	}
 
 	return "http://" + host + ":" + port + path

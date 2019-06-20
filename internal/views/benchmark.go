@@ -36,7 +36,7 @@ func newBenchmark(base string, cfg config.BenchConfig) (*benchmark, error) {
 }
 
 func (b *benchmark) init(base string) error {
-	req, err := http.NewRequest(b.config.Method, base, nil)
+	req, err := http.NewRequest(b.config.HTTP.Method, base, nil)
 	if err != nil {
 		return err
 	}
@@ -45,7 +45,7 @@ func (b *benchmark) init(base string) error {
 		req.SetBasicAuth(b.config.Auth.User, b.config.Auth.Password)
 	}
 
-	req.Header = b.config.Headers
+	req.Header = b.config.HTTP.Headers
 	ua := req.UserAgent()
 	if ua == "" {
 		ua = k9sUA
@@ -59,10 +59,10 @@ func (b *benchmark) init(base string) error {
 
 	b.worker = &requester.Work{
 		Request:     req,
-		RequestBody: []byte(b.config.Body),
+		RequestBody: []byte(b.config.HTTP.Body),
 		N:           b.config.N,
 		C:           b.config.C,
-		H2:          b.config.HTTP2,
+		H2:          b.config.HTTP.HTTP2,
 		Output:      "",
 	}
 

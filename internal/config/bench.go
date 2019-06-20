@@ -37,18 +37,23 @@ type (
 		N int `yaml:"requests"`
 	}
 
-	// BenchConfig represents a service benchmark.
-	BenchConfig struct {
-		C       int         `yaml:"concurrency"`
-		N       int         `yaml:"requests"`
+	// HTTP represents an http request.
+	HTTP struct {
 		Method  string      `yaml:"method"`
 		Host    string      `yaml:"host"`
 		Path    string      `yaml:"path"`
 		HTTP2   bool        `yaml:"http2"`
 		Body    string      `yaml:"body"`
-		Auth    Auth        `yaml:"auth"`
 		Headers http.Header `yaml:"headers"`
-		Name    string
+	}
+
+	// BenchConfig represents a service benchmark.
+	BenchConfig struct {
+		C    int  `yaml:"concurrency"`
+		N    int  `yaml:"requests"`
+		Auth Auth `yaml:"auth"`
+		HTTP HTTP `yaml:"http"`
+		Name string
 	}
 )
 

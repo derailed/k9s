@@ -82,10 +82,25 @@ func TestUrlFor(t *testing.T) {
 			config.BenchConfig{}, "c1", "9000", "http://localhost:9000/",
 		},
 		"path": {
-			config.BenchConfig{Path: "/fred/blee"}, "c1", "9000", "http://localhost:9000/fred/blee",
+			config.BenchConfig{
+				HTTP: config.HTTP{
+					Path: "/fred/blee",
+				},
+			},
+			"c1",
+			"9000",
+			"http://localhost:9000/fred/blee",
 		},
 		"host/path": {
-			config.BenchConfig{Host: "zorg", Path: "/fred/blee"}, "c1", "9000", "http://zorg:9000/fred/blee",
+			config.BenchConfig{
+				HTTP: config.HTTP{
+					Host: "zorg",
+					Path: "/fred/blee",
+				},
+			},
+			"c1",
+			"9000",
+			"http://zorg:9000/fred/blee",
 		},
 	}
 

@@ -144,10 +144,12 @@ func (v *forwardView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	r, _ := tv.GetSelection()
 
 	cfg := config.BenchConfig{
-		C:      config.DefaultC,
-		N:      config.DefaultN,
-		Method: config.DefaultMethod,
-		Path:   "/",
+		C: config.DefaultC,
+		N: config.DefaultN,
+		HTTP: config.HTTP{
+			Method: config.DefaultMethod,
+			Path:   "/",
+		},
 	}
 	co := strings.TrimSpace(tv.GetCell(r, 2).Text)
 	if b, ok := v.app.bench.Benchmarks.Containers[containerID(sel, co)]; ok {

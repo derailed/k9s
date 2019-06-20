@@ -48,9 +48,7 @@ func (c *command) defaultCmd() {
 
 var policyMatcher = regexp.MustCompile(`\Apol\s([u|g|s]):([\w-:]+)\b`)
 
-// Exec the command by showing associated display.
-func (c *command) run(cmd string) bool {
-	var v resourceViewer
+func (c *command) isStdCmd(cmd string) bool {
 	switch {
 	case cmd == "q", cmd == "quit":
 		c.app.BailOut()
@@ -67,37 +65,48 @@ func (c *command) run(cmd string) bool {
 			c.app.inject(newPolicyView(c.app, tokens[0][1], tokens[0][2]))
 			return true
 		}
-	default:
-		cmds := make(map[string]resCmd, 30)
-		resourceViews(c.app.conn(), cmds)
-		if res, ok := cmds[cmd]; ok {
-			var r resource.List
-			if res.listFn != nil {
-				r = res.listFn(c.app.conn(), resource.DefaultNamespace)
-			}
-			v = res.viewFn(res.title, c.app, r)
-			if res.colorerFn != nil {
-				v.setColorerFn(res.colorerFn)
-			}
-			if res.enterFn != nil {
-				v.setEnterFn(res.enterFn)
-			}
-			if res.decorateFn != nil {
-				v.setDecorateFn(res.decorateFn)
-			}
-			const fmat = "Viewing resource %s..."
-			c.app.flash().infof(fmat, res.title)
-			log.Debug().Msgf("Running command %s", cmd)
-			c.exec(cmd, v)
-			return true
-		}
 	}
+	return false
+}
+
+func (c *command) isAliasCmd(cmd string) bool {
 
 	cmds := make(map[string]resCmd, 30)
-	allCRDs(c.app.conn(), cmds)
+	resourceViews(c.app.conn(), cmds)
 	res, ok := cmds[cmd]
 	if !ok {
-		c.app.flash().warnf("Huh? `%s` command not found", cmd)
+		return false
+	}
+
+	var r resource.List
+	if res.listFn != nil {
+		r = res.listFn(c.app.conn(), resource.DefaultNamespace)
+	}
+
+	v := res.viewFn(res.title, c.app, r)
+	if res.colorerFn != nil {
+		v.setColorerFn(res.colorerFn)
+	}
+	if res.enterFn != nil {
+		v.setEnterFn(res.enterFn)
+	}
+	if res.decorateFn != nil {
+		v.setDecorateFn(res.decorateFn)
+	}
+
+	const fmat = "Viewing resource %s..."
+	c.app.flash().infof(fmat, res.title)
+	log.Debug().Msgf("Running command %s", cmd)
+	c.exec(cmd, v)
+
+	return true
+}
+
+func (c *command) isCRDCmd(cmd string) bool {
+	crds := map[string]resCmd{}
+	allCRDs(c.app.conn(), crds)
+	res, ok := crds[cmd]
+	if !ok {
 		return false
 	}
 
@@ -105,7 +114,7 @@ func (c *command) run(cmd string) bool {
 	if name == "" {
 		name = res.singular
 	}
-	v = newResourceView(
+	v := newResourceView(
 		res.title,
 		c.app,
 		resource.NewCustomList(c.app.conn(), "", res.api, res.version, name),
@@ -114,6 +123,24 @@ func (c *command) run(cmd string) bool {
 	c.exec(cmd, v)
 
 	return true
+}
+
+// Exec the command by showing associated display.
+func (c *command) run(cmd string) bool {
+	if c.isStdCmd(cmd) {
+		return true
+	}
+
+	if c.isAliasCmd(cmd) {
+		return true
+	}
+
+	if c.isCRDCmd(cmd) {
+		return true
+	}
+
+	c.app.flash().warnf("Huh? `%s` command not found", cmd)
+	return false
 }
 
 func (c *command) exec(cmd string, v igniter) {
