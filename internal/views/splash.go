@@ -63,13 +63,13 @@ func newSplash(styles *config.Styles, version string) *splashView {
 }
 
 func (v *splashView) layoutLogo(t *tview.TextView, styles *config.Styles) {
-	logo := strings.Join(Logo, fmt.Sprintf("\n[%s::b]", styles.Style.LogoColor))
+	logo := strings.Join(Logo, fmt.Sprintf("\n[%s::b]", styles.Body().LogoColor))
 	fmt.Fprintf(t, "%s[%s::b]%s\n",
 		strings.Repeat("\n", 2),
-		styles.Style.LogoColor,
+		styles.Body().LogoColor,
 		logo)
 }
 
 func (v *splashView) layoutRev(t *tview.TextView, rev string, styles *config.Styles) {
-	fmt.Fprintf(t, "[%s::b]Revision [red::b]%s", styles.Style.FgColor, rev)
+	fmt.Fprintf(t, "[%s::b]Revision [red::b]%s", styles.Body().FgColor, rev)
 }

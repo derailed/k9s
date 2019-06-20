@@ -1,21 +1,36 @@
 k9s:
-  fgColor: white
-  bgColor: black
-  logoColor: white
+  body:
+    fgColor: white
+    bgColor: black
+    logoColor: white
   info:
     fgColor: navajowhite
     sectionColor: white
-  border:
-    fgColor: white
-    focusColor: white
-  menu:
-    fgColor: white
-    keyColor: white
-    numKeyColor: navajowhite
-  crumb:
-    fgColor: black
-    bgColor: navajowhite
-    activeColor: whitesmoke
+  frame:
+    border:
+      fgColor: white
+      focusColor: white
+    menu:
+      fgColor: white
+      keyColor: white
+      numKeyColor: navajowhite
+    crumbs:
+      fgColor: black
+      bgColor: navajowhite
+      activeColor: whitesmoke
+    status:
+      newColor: ghostwhite
+      modifyColor: navajowhite
+      addColor: darkslategray
+      errorColor: whitesmoke
+      highlightcolor: dimgray
+      killColor: slategray
+      completedColor: gray
+    title:
+      fgColor: ghostwhite
+      highlightColor: navajowhite
+      counterColor: navajowhite
+      filterColor: slategray
   table:
     fgColor: white
     bgColor: black
@@ -24,23 +39,11 @@ k9s:
       fgColor: darkgray
       bgColor: black
       sorterColor: white
-  status:
-    newColor: ghostwhite
-    modifyColor: navajowhite
-    addColor: darkslategray
-    errorColor: whitesmoke
-    highlightcolor: dimgray
-    killColor: slategray
-    completedColor: gray
-  title:
-    fgColor: ghostwhite
-    highlightColor: navajowhite
-    counterColor: navajowhite
-    filterColor: slategray
-  yaml:
-    keyColor: ghostwhite
-    colorColor: slategray
-    valueColor: navajowhite
-  logs:
-    fgColor: ghostwhite
-    bgColor: black
+  views:
+    yaml:
+      keyColor: ghostwhite
+      colorColor: slategray
+      valueColor: navajowhite
+    logs:
+      fgColor: ghostwhite
+      bgColor: black

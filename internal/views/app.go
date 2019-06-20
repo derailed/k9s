@@ -194,7 +194,6 @@ func (a *appView) Run() {
 
 	// Only enable skin updater while in dev mode.
 	if a.hasSkins {
-		var ctx context.Context
 		if err := a.stylesUpdater(ctx, a); err != nil {
 			log.Error().Err(err).Msg("Unable to track skin changes")
 		}

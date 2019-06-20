@@ -1,21 +1,36 @@
 k9s:
-  fgColor: dodgerblue
-  bgColor: black
-  logoColor: orange
+  body:
+    fgColor: dodgerblue
+    bgColor: black
+    logoColor: orange
   info:
     fgColor: white
     sectionColor: dodgerblue
-  border:
-    fgColor: dodgerblue
-    focusColor: aqua
-  menu:
-    fgColor: white
-    keyColor: dodgerblue
-    numKeyColor: fuchsia
-  crumb:
-    fgColor: black
-    bgColor: steelblue
-    activeColor: orange
+  frame:
+    border:
+      fgColor: dodgerblue
+      focusColor: aqua
+    menu:
+      fgColor: white
+      keyColor: dodgerblue
+      numKeyColor: fuchsia
+    crumbs:
+      fgColor: black
+      bgColor: steelblue
+      activeColor: orange
+    status:
+      newColor: lightskyblue
+      modifyColor: greenyellow
+      addColor: white
+      errorColor: orangered
+      highlightcolor: aqua
+      killColor: mediumpurple
+      completedColor: gray
+    title:
+      fgColor: aqua
+      highlightColor: fuchsia
+      counterColor: papayawhip
+      filterColor: steelblue
   table:
     fgColor: blue
     bgColor: black
@@ -24,23 +39,11 @@ k9s:
       fgColor: white
       bgColor: black
       sorterColor: orange
-  status:
-    newColor: lightskyblue
-    modifyColor: greenyellow
-    addColor: white
-    errorColor: orangered
-    highlightcolor: aqua
-    killColor: mediumpurple
-    completedColor: gray
-  title:
-    fgColor: aqua
-    highlightColor: fuchsia
-    counterColor: papayawhip
-    filterColor: steelblue
-  yaml:
-    keyColor: steelblue
-    colonColor: white
-    valueColor: papayawhip
-  logs:
-    fgColor: white
-    bgColor: black
+  views:
+    yaml:
+      keyColor: steelblue
+      colonColor: white
+      valueColor: papayawhip
+    logs:
+      fgColor: white
+      bgColor: black

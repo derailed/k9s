@@ -79,7 +79,7 @@ func (v *podView) listContainers(app *appView, _, res, sel string) {
 	pod := po.(*v1.Pod)
 	mx := k8s.NewMetricsServer(app.conn())
 	list := resource.NewContainerList(app.conn(), mx, pod)
-	title := skinTitle(fmt.Sprintf(containerFmt, "Containers", sel), app.styles.Style)
+	title := skinTitle(fmt.Sprintf(containerFmt, "Containers", sel), app.styles.Frame())
 
 	// Stop my updater
 	if v.cancelFn != nil {

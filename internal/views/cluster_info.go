@@ -76,7 +76,7 @@ func (v *clusterInfoView) sectionCell(t string) *tview.TableCell {
 	c := tview.NewTableCell(t + ":")
 	c.SetAlign(tview.AlignLeft)
 	var s tcell.Style
-	c.SetStyle(s.Bold(true).Foreground(config.AsColor(v.app.styles.Style.Info.SectionColor)))
+	c.SetStyle(s.Bold(true).Foreground(config.AsColor(v.app.styles.K9s.Info.SectionColor)))
 	c.SetBackgroundColor(v.app.styles.BgColor())
 
 	return c
@@ -85,7 +85,7 @@ func (v *clusterInfoView) sectionCell(t string) *tview.TableCell {
 func (v *clusterInfoView) infoCell(t string) *tview.TableCell {
 	c := tview.NewTableCell(t)
 	c.SetExpansion(2)
-	c.SetTextColor(config.AsColor(v.app.styles.Style.Info.FgColor))
+	c.SetTextColor(config.AsColor(v.app.styles.K9s.Info.FgColor))
 	c.SetBackgroundColor(v.app.styles.BgColor())
 
 	return c

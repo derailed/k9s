@@ -75,9 +75,9 @@ func newTableView(app *appView, title string) *tableView {
 	}
 	v.SetFixed(1, 0)
 	v.SetBorder(true)
-	v.SetBackgroundColor(config.AsColor(app.styles.Style.Table.BgColor))
-	v.SetBorderColor(config.AsColor(app.styles.Style.Table.FgColor))
-	v.SetBorderFocusColor(config.AsColor(app.styles.Style.Border.FocusColor))
+	v.SetBackgroundColor(config.AsColor(app.styles.Table().BgColor))
+	v.SetBorderColor(config.AsColor(app.styles.Table().FgColor))
+	v.SetBorderFocusColor(config.AsColor(app.styles.Frame().Border.FocusColor))
 	v.SetBorderAttributes(tcell.AttrBold)
 	v.SetBorderPadding(0, 0, 1, 1)
 	v.cmdBuff.addListener(app.cmd())
@@ -85,7 +85,7 @@ func newTableView(app *appView, title string) *tableView {
 	v.SetSelectable(true, false)
 	v.SetSelectedStyle(
 		tcell.ColorBlack,
-		config.AsColor(app.styles.Style.Table.CursorColor),
+		config.AsColor(app.styles.Table().CursorColor),
 		tcell.AttrBold,
 	)
 	v.SetInputCapture(v.keyboard)
@@ -379,8 +379,8 @@ func (v *tableView) doUpdate(data resource.TableData) {
 	pads := make(maxyPad, len(data.Header))
 	computeMaxColumns(pads, v.sortCol.index, data)
 	var row int
-	fg := config.AsColor(v.app.styles.Style.Table.Header.FgColor)
-	bg := config.AsColor(v.app.styles.Style.Table.Header.BgColor)
+	fg := config.AsColor(v.app.styles.Table().Header.FgColor)
+	bg := config.AsColor(v.app.styles.Table().Header.BgColor)
 	for col, h := range data.Header {
 		v.addHeaderCell(data.NumCols[h], col, h)
 		c := v.GetCell(0, col)
@@ -394,7 +394,7 @@ func (v *tableView) doUpdate(data resource.TableData) {
 		sortFn = v.sortFn
 	}
 	prim, sec := sortAllRows(v.sortCol, data.Rows, sortFn)
-	fgColor := config.AsColor(v.app.styles.Style.Table.FgColor)
+	fgColor := config.AsColor(v.app.styles.Table().FgColor)
 	for _, pk := range prim {
 		for _, sk := range sec[pk] {
 			if v.colorerFn != nil {
@@ -417,7 +417,7 @@ func (v *tableView) doUpdate(data resource.TableData) {
 }
 
 func (v *tableView) addHeaderCell(numerical bool, col int, name string) {
-	c := tview.NewTableCell(sortIndicator(v.sortCol, v.app.styles.Style, col, name))
+	c := tview.NewTableCell(sortIndicator(v.sortCol, v.app.styles.Table(), col, name))
 	c.SetExpansion(1)
 	if numerical || cpuRX.MatchString(name) || memRX.MatchString(name) {
 		c.SetAlign(tview.AlignRight)
@@ -454,13 +454,13 @@ func (v *tableView) resetTitle() {
 	}
 	switch v.currentNS {
 	case resource.NotNamespaced, "*":
-		title = skinTitle(fmt.Sprintf(titleFmt, v.baseTitle, rc), v.app.styles.Style)
+		title = skinTitle(fmt.Sprintf(titleFmt, v.baseTitle, rc), v.app.styles.Frame())
 	default:
 		ns := v.currentNS
 		if ns == resource.AllNamespaces {
 			ns = resource.AllNamespace
 		}
-		title = skinTitle(fmt.Sprintf(nsTitleFmt, v.baseTitle, ns, rc), v.app.styles.Style)
+		title = skinTitle(fmt.Sprintf(nsTitleFmt, v.baseTitle, ns, rc), v.app.styles.Frame())
 	}
 
 	if !v.cmdBuff.isActive() && !v.cmdBuff.empty() {
@@ -468,7 +468,7 @@ func (v *tableView) resetTitle() {
 		if isLabelSelector(cmd) {
 			cmd = trimLabelSelector(cmd)
 		}
-		title += skinTitle(fmt.Sprintf(searchFmt, cmd), v.app.styles.Style)
+		title += skinTitle(fmt.Sprintf(searchFmt, cmd), v.app.styles.Frame())
 	}
 	v.SetTitle(title)
 }

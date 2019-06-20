@@ -27,6 +27,8 @@ type (
 		cancelFn   context.CancelFunc
 		parentCtx  context.Context
 		path       *string
+		colorerFn  colorerFn
+		decorateFn decorateFn
 	}
 )
 
@@ -48,6 +50,12 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 	var vctx context.Context
 	vctx, v.cancelFn = context.WithCancel(ctx)
 
+	colorer := defaultColorer
+	if v.colorerFn != nil {
+		colorer = v.colorerFn
+	}
+	v.masterPage().setColorer(colorer)
+
 	v.update(vctx)
 	v.app.clusterInfoRefresh()
 	v.refresh()
@@ -57,6 +65,15 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 	if r == 0 && tv.GetRowCount() > 0 {
 		tv.Select(1, 0)
 	}
+}
+
+func (v *resourceView) setColorerFn(f colorerFn) {
+	v.colorerFn = f
+	v.masterPage().setColorer(f)
+}
+
+func (v *resourceView) setDecorateFn(f decorateFn) {
+	v.decorateFn = f
 }
 
 func (v *resourceView) filterResource(sel string) {
@@ -157,7 +174,7 @@ func (v *resourceView) defaultEnter(ns, resource, selection string) {
 	details.setCategory("Describe")
 	details.setTitle(selection)
 	details.SetTextColor(v.app.styles.FgColor())
-	details.SetText(colorizeYAML(v.app.styles.Style, yaml))
+	details.SetText(colorizeYAML(v.app.styles.Views().Yaml, yaml))
 	details.ScrollToBeginning()
 
 	v.switchPage("details")
@@ -187,7 +204,7 @@ func (v *resourceView) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	details.setCategory("YAML")
 	details.setTitle(sel)
 	details.SetTextColor(v.app.styles.FgColor())
-	details.SetText(colorizeYAML(v.app.styles.Style, raw))
+	details.SetText(colorizeYAML(v.app.styles.Views().Yaml, raw))
 	details.ScrollToBeginning()
 	v.switchPage("details")
 

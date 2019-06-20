@@ -14,9 +14,9 @@ func TestSkinNone(t *testing.T) {
 
 	s.Update()
 
-	assert.Equal(t, "cadetblue", s.Style.FgColor)
-	assert.Equal(t, "black", s.Style.BgColor)
-	assert.Equal(t, "black", s.Style.Table.BgColor)
+	assert.Equal(t, "cadetblue", s.Body().FgColor)
+	assert.Equal(t, "black", s.Body().BgColor)
+	assert.Equal(t, "black", s.Table().BgColor)
 	assert.Equal(t, tcell.ColorCadetBlue, s.FgColor())
 	assert.Equal(t, tcell.ColorBlack, s.BgColor())
 	assert.Equal(t, tcell.ColorBlack, tview.Styles.PrimitiveBackgroundColor)
@@ -30,9 +30,9 @@ func TestSkin(t *testing.T) {
 
 	s.Update()
 
-	assert.Equal(t, "white", s.Style.FgColor)
-	assert.Equal(t, "black", s.Style.BgColor)
-	assert.Equal(t, "black", s.Style.Table.BgColor)
+	assert.Equal(t, "white", s.Body().FgColor)
+	assert.Equal(t, "black", s.Body().BgColor)
+	assert.Equal(t, "black", s.Table().BgColor)
 	assert.Equal(t, tcell.ColorWhite, s.FgColor())
 	assert.Equal(t, tcell.ColorBlack, s.BgColor())
 	assert.Equal(t, tcell.ColorBlack, tview.Styles.PrimitiveBackgroundColor)

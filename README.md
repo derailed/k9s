@@ -324,29 +324,46 @@ Below is a sample skin file, more skins would be available in the skins director
 # InTheNavy Skin...
 k9s:
   # General K9s styles
-  fgColor: dodgerblue
-  bgColor: white
-  logoColor: blue
+  body:
+    fgColor: dodgerblue
+    bgColor: white
+    logoColor: blue
   # ClusterInfoView styles.
   info:
     fgColor: lightskyblue
     sectionColor: steelblue
-  # Borders styles.
-  border:
-    fgColor: dodgerblue
-    focusColor: aliceblue
-  # MenuView attributes and styles.
-  menu:
-    fgColor: darkblue
-    keyColor: cornflowerblue
-    # Used for favorite namespaces
-    numKeyColor: cadetblue
-  # CrumbView attributes for history navigation.
-  crumb:
-    fgColor: white
-    bgColor: steelblue
-    # Active view settings
-    activeColor: skyblue
+  frame:
+    # Borders styles.
+    border:
+      fgColor: dodgerblue
+      focusColor: aliceblue
+    # MenuView attributes and styles.
+    menu:
+      fgColor: darkblue
+      keyColor: cornflowerblue
+      # Used for favorite namespaces
+      numKeyColor: cadetblue
+    # CrumbView attributes for history navigation.
+    crumbs:
+      fgColor: white
+      bgColor: steelblue
+      activeColor: skyblue
+    # Resource status and update styles
+    status:
+      newColor: blue
+      modifyColor: powderblue
+      addColor: lightskyblue
+      errorColor: indianred
+      highlightcolor: royalblue
+      killColor: slategray
+      completedColor: gray
+    # Border title styles.
+    title:
+      fgColor: aqua
+      bgColor: white
+      highlightColor: skyblue
+      counterColor: slateblue
+      filterColor: slategray
   # TableView attributes.
   table:
     fgColor: blue
@@ -357,31 +374,16 @@ k9s:
       fgColor: white
       bgColor: darkblue
       sorterColor: orange
-  # Resource status and update styles
-  status:
-    newColor: blue
-    modifyColor: powderblue
-    addColor: lightskyblue
-    errorColor: indianred
-    highlightcolor: royalblue
-    killColor: slategray
-    completedColor: gray
-  # Border title styles.
-  title:
-    fgColor: aqua
-    bgColor: white
-    highlightColor: skyblue
-    counterColor: slateblue
-    filterColor: slategray
-  # YAML info styles.
-  yaml:
-    keyColor: steelblue
-    colonColor: blue
-    valueColor: royalblue
-  # Logs styles.
-  logs:
-    fgColor: white
-    bgColor: black
+  views:
+    # YAML info styles.
+    yaml:
+      keyColor: steelblue
+      colonColor: blue
+      valueColor: royalblue
+    # Logs styles.
+    logs:
+      fgColor: white
+      bgColor: black
 ```
 
 Available color names are defined below:

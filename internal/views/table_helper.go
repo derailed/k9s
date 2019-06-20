@@ -8,6 +8,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/rs/zerolog/log"
 )
 
 var labelCmd = regexp.MustCompile(`\A\-l`)
@@ -28,7 +29,8 @@ func trimLabelSelector(s string) string {
 	return strings.TrimSpace(s[2:])
 }
 
-func skinTitle(fmat string, style *config.Style) string {
+func skinTitle(fmat string, style config.Frame) string {
+	log.Debug().Msgf("BG color %#v", style.Title.BgColor)
 	fmat = strings.Replace(fmat, "[fg:bg", "["+style.Title.FgColor+":"+style.Title.BgColor, -1)
 	fmat = strings.Replace(fmat, "[hilite", "["+style.Title.HighlightColor, 1)
 	fmat = strings.Replace(fmat, "[key", "["+style.Menu.NumKeyColor, 1)
@@ -76,7 +78,7 @@ func sortAllRows(col sortColumn, rows resource.RowEvents, sortFn sortFn) (resour
 	return prim, sec
 }
 
-func sortIndicator(col sortColumn, style *config.Style, index int, name string) string {
+func sortIndicator(col sortColumn, style config.Table, index int, name string) string {
 	if col.index != index {
 		return name
 	}
@@ -85,5 +87,5 @@ func sortIndicator(col sortColumn, style *config.Style, index int, name string) 
 	if col.asc {
 		order = ascIndicator
 	}
-	return fmt.Sprintf("%s[%s::]%s[::]", name, style.Table.Header.SorterColor, order)
+	return fmt.Sprintf("%s[%s::]%s[::]", name, style.Header.SorterColor, order)
 }

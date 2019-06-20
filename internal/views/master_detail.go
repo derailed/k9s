@@ -18,8 +18,6 @@ type masterDetail struct {
 	selectedRow    int
 	selectedFn     func() string
 	enterFn        enterFn
-	colorerFn      colorerFn
-	decorateFn     decorateFn
 	extraActionsFn func(keyActions)
 }
 
@@ -45,11 +43,6 @@ func (v *masterDetail) init(ns string, backCmd actionHandler) {
 	if v.currentNS != resource.NotNamespaced {
 		v.currentNS = ns
 	}
-	colorer := defaultColorer
-	if v.colorerFn != nil {
-		colorer = v.colorerFn
-	}
-	v.masterPage().setColorer(colorer)
 }
 
 func (v *masterDetail) setExtraActionsFn(f actionsFn) {
@@ -79,17 +72,8 @@ func (v *masterDetail) hints() hints {
 	return v.CurrentPage().Item.(hinter).hints()
 }
 
-func (v *masterDetail) setColorerFn(f colorerFn) {
-	v.colorerFn = f
-	v.masterPage().setColorer(f)
-}
-
 func (v *masterDetail) setEnterFn(f enterFn) {
 	v.enterFn = f
-}
-
-func (v *masterDetail) setDecorateFn(f decorateFn) {
-	v.decorateFn = f
 }
 
 func (v *masterDetail) masterPage() *tableView {

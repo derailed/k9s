@@ -124,7 +124,7 @@ func (v *rbacView) bindKeys() {
 }
 
 func (v *rbacView) getTitle() string {
-	return skinTitle(fmt.Sprintf(rbacTitleFmt, rbacTitle, v.roleName), v.app.styles.Style)
+	return skinTitle(fmt.Sprintf(rbacTitleFmt, rbacTitle, v.roleName), v.app.styles.Frame())
 }
 
 func (v *rbacView) hints() hints {

@@ -27,7 +27,7 @@ func newCmdView(styles *config.Styles, ic rune) *cmdView {
 		v.SetBorder(true)
 		v.SetBorderPadding(0, 0, 1, 1)
 		v.SetBackgroundColor(styles.BgColor())
-		v.SetBorderColor(config.AsColor(styles.Style.Border.FocusColor))
+		v.SetBorderColor(config.AsColor(styles.Frame().Border.FocusColor))
 		v.SetTextColor(styles.FgColor())
 	}
 	return &v

@@ -178,16 +178,16 @@ func (*menuView) toMnemonic(s string) string {
 func (v *menuView) formatMenu(h hint, size int) string {
 	i, err := strconv.Atoi(h.mnemonic)
 	if err == nil {
-		fmat := strings.Replace(menuIndexFmt, "[key", "["+v.styles.Style.Menu.NumKeyColor, 1)
-		fmat = strings.Replace(fmat, ":bg:", ":"+v.styles.Style.Title.BgColor+":", -1)
-		fmat = strings.Replace(fmat, "[fg", "["+v.styles.Style.Menu.FgColor, 1)
+		fmat := strings.Replace(menuIndexFmt, "[key", "["+v.styles.Frame().Menu.NumKeyColor, 1)
+		fmat = strings.Replace(fmat, ":bg:", ":"+v.styles.Frame().Title.BgColor+":", -1)
+		fmat = strings.Replace(fmat, "[fg", "["+v.styles.Frame().Menu.FgColor, 1)
 		return fmt.Sprintf(fmat, i, resource.Truncate(h.description, 14))
 	}
 
 	menuFmt := " [key:bg:b]%-" + strconv.Itoa(size+2) + "s [fg:bg:d]%s "
-	fmat := strings.Replace(menuFmt, "[key", "["+v.styles.Style.Menu.KeyColor, 1)
-	fmat = strings.Replace(fmat, "[fg", "["+v.styles.Style.Menu.FgColor, 1)
-	fmat = strings.Replace(fmat, ":bg:", ":"+v.styles.Style.Title.BgColor+":", -1)
+	fmat := strings.Replace(menuFmt, "[key", "["+v.styles.Frame().Menu.KeyColor, 1)
+	fmat = strings.Replace(fmat, "[fg", "["+v.styles.Frame().Menu.FgColor, 1)
+	fmat = strings.Replace(fmat, ":bg:", ":"+v.styles.Frame().Title.BgColor+":", -1)
 	return fmt.Sprintf(fmat, v.toMnemonic(h.mnemonic), h.description)
 }
 

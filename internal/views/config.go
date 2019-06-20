@@ -65,10 +65,10 @@ func (c *configurator) refreshStyles() {
 	}
 	c.styles.Update()
 
-	stdColor = config.AsColor(c.styles.Style.Status.NewColor)
-	addColor = config.AsColor(c.styles.Style.Status.AddColor)
-	modColor = config.AsColor(c.styles.Style.Status.ModifyColor)
-	errColor = config.AsColor(c.styles.Style.Status.ErrorColor)
-	highlightColor = config.AsColor(c.styles.Style.Status.HighlightColor)
-	completedColor = config.AsColor(c.styles.Style.Status.CompletedColor)
+	stdColor = config.AsColor(c.styles.Frame().Status.NewColor)
+	addColor = config.AsColor(c.styles.Frame().Status.AddColor)
+	modColor = config.AsColor(c.styles.Frame().Status.ModifyColor)
+	errColor = config.AsColor(c.styles.Frame().Status.ErrorColor)
+	highlightColor = config.AsColor(c.styles.Frame().Status.HighlightColor)
+	completedColor = config.AsColor(c.styles.Frame().Status.CompletedColor)
 }

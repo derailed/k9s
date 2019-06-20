@@ -33,15 +33,15 @@ func newLogView(title string, app *appView, backFn actionHandler) *logView {
 	v.autoScroll = 1
 	v.backFn = backFn
 	v.SetBorder(true)
-	v.SetBackgroundColor(config.AsColor(app.styles.Style.Log.BgColor))
+	v.SetBackgroundColor(config.AsColor(app.styles.Views().Log.BgColor))
 	v.SetBorderPadding(0, 0, 1, 1)
 	v.logs = newDetailsView(app, backFn)
 	{
 		v.logs.SetBorder(false)
 		v.logs.setCategory("Logs")
 		v.logs.SetDynamicColors(true)
-		v.logs.SetTextColor(config.AsColor(app.styles.Style.Log.FgColor))
-		v.logs.SetBackgroundColor(config.AsColor(app.styles.Style.Log.BgColor))
+		v.logs.SetTextColor(config.AsColor(app.styles.Views().Log.FgColor))
+		v.logs.SetBackgroundColor(config.AsColor(app.styles.Views().Log.BgColor))
 		v.logs.SetWrap(true)
 		v.logs.SetMaxBuffer(app.config.K9s.LogBufferSize)
 	}

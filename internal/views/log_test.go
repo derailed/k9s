@@ -32,7 +32,7 @@ func TestLogViewFlush(t *testing.T) {
 
 	v.toggleScrollCmd(nil)
 	assert.Equal(t, "blee\nbozo\n", v.logs.GetText(true))
-	assert.Equal(t, " Autoscroll: Off  ", v.status.GetText(true))
+	assert.Equal(t, " Autoscroll: Off ", v.status.GetText(true))
 	v.toggleScrollCmd(nil)
 	assert.Equal(t, " Autoscroll: On  ", v.status.GetText(true))
 }

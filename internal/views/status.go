@@ -16,7 +16,7 @@ type statusView struct {
 func newStatusView(styles *config.Styles) *statusView {
 	v := statusView{styles: styles, TextView: tview.NewTextView()}
 	{
-		v.SetBackgroundColor(config.AsColor(styles.Style.Log.BgColor))
+		v.SetBackgroundColor(config.AsColor(styles.Views().Log.BgColor))
 		v.SetTextAlign(tview.AlignRight)
 		v.SetDynamicColors(true)
 	}
@@ -25,14 +25,11 @@ func newStatusView(styles *config.Styles) *statusView {
 
 func (v *statusView) update(status []string) {
 	v.Clear()
-	last, bgColor := len(status)-1, v.styles.Style.Crumb.BgColor
+	last, bgColor := len(status)-1, v.styles.Frame().Crumb.BgColor
 	for i, c := range status {
 		if i == last {
-			bgColor = v.styles.Style.Crumb.ActiveColor
+			bgColor = v.styles.Frame().Crumb.ActiveColor
 		}
-		fmt.Fprintf(v, "[%s:%s:b] %s [-:%s:-] ",
-			v.styles.Style.Crumb.FgColor,
-			bgColor, c,
-			v.styles.Style.BgColor)
+		fmt.Fprintf(v, "[%s:%s:b] %-15s ", v.styles.Frame().Crumb.FgColor, bgColor, c)
 	}
 }

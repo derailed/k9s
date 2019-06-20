@@ -17,23 +17,29 @@ var (
 type (
 	// Styles tracks K9s styling options.
 	Styles struct {
-		Style *Style `yaml:"k9s"`
+		K9s Style `yaml:"k9s"`
 	}
 
-	// Style tracks K9s styles.
-	Style struct {
-		FgColor   string  `yaml:"fgColor"`
-		BgColor   string  `yaml:"bgColor"`
-		LogoColor string  `yaml:"logoColor"`
-		Title     *Title  `yaml:"title"`
-		Border    *Border `yaml:"border"`
-		Info      *Info   `yaml:"info"`
-		Menu      *Menu   `yaml:"menu"`
-		Crumb     *Crumb  `yaml:"crumb"`
-		Table     *Table  `yaml:"table"`
-		Status    *Status `yaml:"status"`
-		Yaml      *Yaml   `yaml:"yaml"`
-		Log       *Log    `yaml:"logs"`
+	// Body tracks body styles.
+	Body struct {
+		FgColor   string `yaml:"fgColor"`
+		BgColor   string `yaml:"bgColor"`
+		LogoColor string `yaml:"logoColor"`
+	}
+
+	// Frame tracks frame styles.
+	Frame struct {
+		Title  Title  `yaml:"title"`
+		Border Border `yaml:"border"`
+		Menu   Menu   `yaml:"menu"`
+		Crumb  Crumb  `yaml:"crumbs"`
+		Status Status `yaml:"status"`
+	}
+
+	// Views tracks individual view styles.
+	Views struct {
+		Yaml Yaml `yaml:"yaml"`
+		Log  Log  `yaml:"logs"`
 	}
 
 	// Status tracks resource status styles.
@@ -90,10 +96,10 @@ type (
 
 	// Table tracks table styles.
 	Table struct {
-		FgColor     string       `yaml:"fgColor"`
-		BgColor     string       `yaml:"bgColor"`
-		CursorColor string       `yaml:"cursorColor"`
-		Header      *TableHeader `yaml:"header"`
+		FgColor     string      `yaml:"fgColor"`
+		BgColor     string      `yaml:"bgColor"`
+		CursorColor string      `yaml:"cursorColor"`
+		Header      TableHeader `yaml:"header"`
 	}
 
 	// TableHeader tracks table header styles.
@@ -109,27 +115,54 @@ type (
 		KeyColor    string `yaml:"keyColor"`
 		NumKeyColor string `yaml:"numKeyColor"`
 	}
+
+	// Style tracks K9s styles.
+	Style struct {
+		Body  Body  `yaml:"body"`
+		Frame Frame `yaml:"frame"`
+		Info  Info  `yaml:"info"`
+		Table Table `yaml:"table"`
+		Views Views `yaml:"views"`
+	}
 )
 
-func newStyle() *Style {
-	return &Style{
-		FgColor:   "cadetblue",
-		BgColor:   "black",
-		LogoColor: "orange",
-		Border:    newBorder(),
-		Title:     newTitle(),
-		Info:      newInfo(),
-		Menu:      newMenu(),
-		Crumb:     newCrumb(),
-		Table:     newTable(),
-		Status:    newStatus(),
-		Yaml:      newYaml(),
-		Log:       newLog(),
+func newStyle() Style {
+	return Style{
+		Body:  newBody(),
+		Frame: newFrame(),
+		Info:  newInfo(),
+		Table: newTable(),
+		Views: newViews(),
 	}
 }
 
-func newStatus() *Status {
-	return &Status{
+func newViews() Views {
+	return Views{
+		Yaml: newYaml(),
+		Log:  newLog(),
+	}
+}
+
+func newFrame() Frame {
+	return Frame{
+		Title:  newTitle(),
+		Border: newBorder(),
+		Menu:   newMenu(),
+		Crumb:  newCrumb(),
+		Status: newStatus(),
+	}
+}
+
+func newBody() Body {
+	return Body{
+		FgColor:   "cadetblue",
+		BgColor:   "black",
+		LogoColor: "orange",
+	}
+}
+
+func newStatus() Status {
+	return Status{
 		NewColor:       "lightskyblue",
 		ModifyColor:    "greenyellow",
 		AddColor:       "dodgerblue",
@@ -141,16 +174,16 @@ func newStatus() *Status {
 }
 
 // NewLog returns a new log style.
-func newLog() *Log {
-	return &Log{
+func newLog() Log {
+	return Log{
 		FgColor: "lightskyblue",
 		BgColor: "black",
 	}
 }
 
 // NewYaml returns a new yaml style.
-func newYaml() *Yaml {
-	return &Yaml{
+func newYaml() Yaml {
+	return Yaml{
 		KeyColor:   "steelblue",
 		ColonColor: "white",
 		ValueColor: "papayawhip",
@@ -158,8 +191,8 @@ func newYaml() *Yaml {
 }
 
 // NewTitle returns a new title style.
-func newTitle() *Title {
-	return &Title{
+func newTitle() Title {
+	return Title{
 		FgColor:        "aqua",
 		BgColor:        "black",
 		HighlightColor: "fuchsia",
@@ -169,16 +202,16 @@ func newTitle() *Title {
 }
 
 // NewInfo returns a new info style.
-func newInfo() *Info {
-	return &Info{
+func newInfo() Info {
+	return Info{
 		SectionColor: "white",
 		FgColor:      "orange",
 	}
 }
 
 // NewTable returns a new table style.
-func newTable() *Table {
-	return &Table{
+func newTable() Table {
+	return Table{
 		FgColor:     "aqua",
 		BgColor:     "black",
 		CursorColor: "aqua",
@@ -187,8 +220,8 @@ func newTable() *Table {
 }
 
 // NewTableHeader returns a new table header style.
-func newTableHeader() *TableHeader {
-	return &TableHeader{
+func newTableHeader() TableHeader {
+	return TableHeader{
 		FgColor:     "white",
 		BgColor:     "black",
 		SorterColor: "aqua",
@@ -196,8 +229,8 @@ func newTableHeader() *TableHeader {
 }
 
 // NewCrumb returns a new crumbs style.
-func newCrumb() *Crumb {
-	return &Crumb{
+func newCrumb() Crumb {
+	return Crumb{
 		FgColor:     "black",
 		BgColor:     "aqua",
 		ActiveColor: "orange",
@@ -205,16 +238,16 @@ func newCrumb() *Crumb {
 }
 
 // NewBorder returns a new border style.
-func newBorder() *Border {
-	return &Border{
+func newBorder() Border {
+	return Border{
 		FgColor:    "dodgerblue",
 		FocusColor: "lightskyblue",
 	}
 }
 
 // NewMenu returns a new menu style.
-func newMenu() *Menu {
-	return &Menu{
+func newMenu() Menu {
+	return Menu{
 		FgColor:     "white",
 		KeyColor:    "dodgerblue",
 		NumKeyColor: "fuchsia",
@@ -223,18 +256,48 @@ func newMenu() *Menu {
 
 // NewStyles creates a new default config.
 func NewStyles(path string) (*Styles, error) {
-	s := &Styles{Style: newStyle()}
+	s := &Styles{K9s: newStyle()}
 	return s, s.load(path)
 }
 
 // FgColor returns the foreground color.
 func (s *Styles) FgColor() tcell.Color {
-	return AsColor(s.Style.FgColor)
+	return AsColor(s.Body().FgColor)
 }
 
 // BgColor returns the background color.
 func (s *Styles) BgColor() tcell.Color {
-	return AsColor(s.Style.BgColor)
+	return AsColor(s.Body().BgColor)
+}
+
+// Body returns body styles.
+func (s *Styles) Body() Body {
+	return s.K9s.Body
+}
+
+// Frame returns frame styles.
+func (s *Styles) Frame() Frame {
+	return s.K9s.Frame
+}
+
+// Crumb returns crumb styles.
+func (s *Styles) Crumb() Crumb {
+	return s.Frame().Crumb
+}
+
+// Title returns title styles.
+func (s *Styles) Title() Title {
+	return s.Frame().Title
+}
+
+// Table returns table styles.
+func (s *Styles) Table() Table {
+	return s.K9s.Table
+}
+
+// Views returns views styles.
+func (s *Styles) Views() Views {
+	return s.K9s.Views
 }
 
 // Load K9s configuration from file
@@ -244,13 +307,8 @@ func (s *Styles) load(path string) error {
 		return err
 	}
 
-	var cfg Styles
-	if err := yaml.Unmarshal(f, &cfg); err != nil {
+	if err := yaml.Unmarshal(f, s); err != nil {
 		return err
-	}
-
-	if cfg.Style != nil {
-		s.Style = cfg.Style
 	}
 
 	return nil
@@ -258,11 +316,11 @@ func (s *Styles) load(path string) error {
 
 // Update apply terminal colors based on styles.
 func (s *Styles) Update() {
-	tview.Styles.PrimitiveBackgroundColor = AsColor(s.Style.BgColor)
-	tview.Styles.ContrastBackgroundColor = AsColor(s.Style.BgColor)
-	tview.Styles.PrimaryTextColor = AsColor(s.Style.FgColor)
-	tview.Styles.BorderColor = AsColor(s.Style.Border.FgColor)
-	tview.Styles.FocusColor = AsColor(s.Style.Border.FocusColor)
+	tview.Styles.PrimitiveBackgroundColor = s.BgColor()
+	tview.Styles.ContrastBackgroundColor = s.BgColor()
+	tview.Styles.PrimaryTextColor = s.FgColor()
+	tview.Styles.BorderColor = AsColor(s.K9s.Frame.Border.FgColor)
+	tview.Styles.FocusColor = AsColor(s.K9s.Frame.Border.FocusColor)
 }
 
 // AsColor checks color index, if match return color otherwise pink it is.

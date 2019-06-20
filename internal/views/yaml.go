@@ -19,17 +19,17 @@ const (
 	yamlValueFmt = "[val::]%s"
 )
 
-func colorizeYAML(style *config.Style, raw string) string {
+func colorizeYAML(style config.Yaml, raw string) string {
 	lines := strings.Split(raw, "\n")
 
-	fullFmt := strings.Replace(yamlFullFmt, "[key", "["+style.Yaml.KeyColor, 1)
-	fullFmt = strings.Replace(fullFmt, "[colon", "["+style.Yaml.ColonColor, 1)
-	fullFmt = strings.Replace(fullFmt, "[val", "["+style.Yaml.ValueColor, 1)
+	fullFmt := strings.Replace(yamlFullFmt, "[key", "["+style.KeyColor, 1)
+	fullFmt = strings.Replace(fullFmt, "[colon", "["+style.ColonColor, 1)
+	fullFmt = strings.Replace(fullFmt, "[val", "["+style.ValueColor, 1)
 
-	keyFmt := strings.Replace(yamlKeyFmt, "[key", "["+style.Yaml.KeyColor, 1)
-	keyFmt = strings.Replace(keyFmt, "[colon", "["+style.Yaml.ColonColor, 1)
+	keyFmt := strings.Replace(yamlKeyFmt, "[key", "["+style.KeyColor, 1)
+	keyFmt = strings.Replace(keyFmt, "[colon", "["+style.ColonColor, 1)
 
-	valFmt := strings.Replace(yamlValueFmt, "[val", "["+style.Yaml.ValueColor, 1)
+	valFmt := strings.Replace(yamlValueFmt, "[val", "["+style.ValueColor, 1)
 
 	buff := make([]string, 0, len(lines))
 	for _, l := range lines {

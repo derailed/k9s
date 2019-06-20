@@ -50,7 +50,7 @@ func (v *secretView) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	details.setCategory("Decoder")
 	details.setTitle(sel)
 	details.SetTextColor(v.app.styles.FgColor())
-	details.SetText(colorizeYAML(v.app.styles.Style, string(raw)))
+	details.SetText(colorizeYAML(v.app.styles.Views().Yaml, string(raw)))
 	details.ScrollToBeginning()
 	v.switchPage("details")
 

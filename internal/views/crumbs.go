@@ -27,14 +27,14 @@ func newCrumbsView(styles *config.Styles) *crumbsView {
 
 func (v *crumbsView) update(crumbs []string) {
 	v.Clear()
-	last, bgColor := len(crumbs)-1, v.styles.Style.Crumb.BgColor
+	last, bgColor := len(crumbs)-1, v.styles.Frame().Crumb.BgColor
 	for i, c := range crumbs {
 		if i == last {
-			bgColor = v.styles.Style.Crumb.ActiveColor
+			bgColor = v.styles.Frame().Crumb.ActiveColor
 		}
 		fmt.Fprintf(v, "[%s:%s:b] <%s> [-:%s:-] ",
-			v.styles.Style.Crumb.FgColor,
+			v.styles.Frame().Crumb.FgColor,
 			bgColor, c,
-			v.styles.Style.BgColor)
+			v.styles.Body().BgColor)
 	}
 }

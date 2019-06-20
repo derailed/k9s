@@ -23,7 +23,7 @@ func newLogoView(styles *config.Styles) *logoView {
 	v.SetDirection(tview.FlexRow)
 	v.AddItem(v.logo, 0, 6, false)
 	v.AddItem(v.status, 0, 1, false)
-	v.refreshLogo(styles.Style.LogoColor)
+	v.refreshLogo(styles.Body().LogoColor)
 
 	return &v
 }
@@ -31,7 +31,7 @@ func newLogoView(styles *config.Styles) *logoView {
 func (v *logoView) reset() {
 	v.status.Clear()
 	v.status.SetBackgroundColor(v.styles.BgColor())
-	v.refreshLogo(v.styles.Style.LogoColor)
+	v.refreshLogo(v.styles.Body().LogoColor)
 }
 
 func (v *logoView) err(msg string) {

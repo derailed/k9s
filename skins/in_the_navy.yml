@@ -1,22 +1,38 @@
 k9s:
-  fgColor: dodgerblue
-  bgColor: white
-  logoColor: blue
+  body:
+    fgColor: dodgerblue
+    bgColor: white
+    logoColor: blue
   info:
     fgColor: lightskyblue
     sectionColor: steelblue
-  border:
-    fgColor: dodgerblue
-    bgColor: darkblue
-    focusColor: aliceblue
-  menu:
-    fgColor: darkblue
-    keyColor: cornflowerblue
-    numKeyColor: cadetblue
-  crumb:
-    fgColor: white
-    bgColor: steelblue
-    activeColor: skyblue
+  frame:
+    border:
+      fgColor: dodgerblue
+      bgColor: darkblue
+      focusColor: aliceblue
+    menu:
+      fgColor: darkblue
+      keyColor: cornflowerblue
+      numKeyColor: cadetblue
+    crumbs:
+      fgColor: white
+      bgColor: steelblue
+      activeColor: skyblue
+    status:
+      newColor: blue
+      modifyColor: powderblue
+      addColor: lightskyblue
+      errorColor: indianred
+      highlightcolor: royalblue
+      killColor: slategray
+      completedColor: gray
+    title:
+      fgColor: aqua
+      bgColor: darkblue
+      highlightColor: skyblue
+      counterColor: slateblue
+      filterColor: slategray
   table:
     fgColor: blue
     bgColor: darkblue
@@ -25,24 +41,11 @@ k9s:
       fgColor: white
       bgColor: darkblue
       sorterColor: orange
-  status:
-    newColor: blue
-    modifyColor: powderblue
-    addColor: lightskyblue
-    errorColor: indianred
-    highlightcolor: royalblue
-    killColor: slategray
-    completedColor: gray
-  title:
-    fgColor: aqua
-    bgColor: darkblue
-    highlightColor: skyblue
-    counterColor: slateblue
-    filterColor: slategray
-  yaml:
-    keyColor: steelblue
-    colorColor: blue
-    valueColor: royalblue
-  logs:
-    fgColor: white
-    bgColor: darkblue
+  views:
+    yaml:
+      keyColor: steelblue
+      colorColor: blue
+      valueColor: royalblue
+    logs:
+      fgColor: white
+      bgColor: darkblue

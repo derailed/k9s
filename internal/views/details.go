@@ -36,7 +36,7 @@ func newDetailsView(app *appView, backFn actionHandler) *detailsView {
 		v.SetDynamicColors(true)
 		v.SetRegions(true)
 		v.SetBorder(true)
-		v.SetBorderFocusColor(config.AsColor(v.app.styles.Style.Border.FocusColor))
+		v.SetBorderFocusColor(config.AsColor(v.app.styles.Frame().Border.FocusColor))
 		v.SetHighlightColor(tcell.ColorOrange)
 		v.SetTitleColor(tcell.ColorAqua)
 		v.SetInputCapture(v.keyboard)
@@ -196,9 +196,9 @@ func (v *detailsView) refreshTitle() {
 func (v *detailsView) setTitle(t string) {
 	v.title = t
 
-	title := skinTitle(fmt.Sprintf(detailsTitleFmt, v.category, t), v.app.styles.Style)
+	title := skinTitle(fmt.Sprintf(detailsTitleFmt, v.category, t), v.app.styles.Frame())
 	if !v.cmdBuff.empty() {
-		title += skinTitle(fmt.Sprintf(searchFmt, v.cmdBuff.String()), v.app.styles.Style)
+		title += skinTitle(fmt.Sprintf(searchFmt, v.cmdBuff.String()), v.app.styles.Frame())
 	}
 	v.SetTitle(title)
 }

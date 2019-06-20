@@ -111,9 +111,9 @@ func (v *logsView) doLoad(path, co string) error {
 
 	var fmat string
 	if co == "" {
-		fmat = skinTitle(fmt.Sprintf(logFmt, path), v.app.styles.Style)
+		fmat = skinTitle(fmt.Sprintf(logFmt, path), v.app.styles.Frame())
 	} else {
-		fmat = skinTitle(fmt.Sprintf(logCoFmt, path, co), v.app.styles.Style)
+		fmat = skinTitle(fmt.Sprintf(logCoFmt, path, co), v.app.styles.Frame())
 	}
 	l.SetTitle(fmat)
 
