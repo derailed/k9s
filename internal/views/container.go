@@ -101,39 +101,41 @@ func (v *containerView) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.app.flash().warn("No valid TCP port found on this container. User will specify...")
 		port = "MY_TCP_PORT!"
 	}
-
-	co := strings.TrimSpace(v.masterPage().GetCell(v.selectedRow, 0).Text)
-
-	v.showPortFwdDialog(port, func(lport, cport string) {
-		pf := k8s.NewPortForward(v.app.conn(), &log.Logger)
-		ports := []string{lport + ":" + cport}
-		fw, err := pf.Start(*v.path, co, ports)
-		if err != nil {
-			v.app.flash().err(err)
-			return
-		}
-
-		log.Debug().Msgf(">>> Starting port forward %q %v", *v.path, ports)
-		go func(f *portforward.PortForwarder) {
-			v.app.QueueUpdateDraw(func() {
-				v.app.forwarders = append(v.app.forwarders, pf)
-				v.app.flash().infof("PortForward activated %s:%s", pf.Path(), pf.Ports()[0])
-				v.dismissModal()
-			})
-			pf.SetActive(true)
-			if err := f.ForwardPorts(); err != nil {
-				v.app.QueueUpdateDraw(func() {
-					if len(v.app.forwarders) > 0 {
-						v.app.forwarders = v.app.forwarders[:len(v.app.forwarders)-1]
-					}
-					pf.SetActive(false)
-					v.app.flash().errf("PortForward failed %s", err)
-				})
-			}
-		}(fw)
-	})
+	v.showPortFwdDialog(port, v.portForward)
 
 	return nil
+}
+
+func (v *containerView) portForward(lport, cport string) {
+	co := strings.TrimSpace(v.masterPage().GetCell(v.selectedRow, 0).Text)
+
+	pf := k8s.NewPortForward(v.app.conn(), &log.Logger)
+	ports := []string{lport + ":" + cport}
+	fw, err := pf.Start(*v.path, co, ports)
+	if err != nil {
+		v.app.flash().err(err)
+		return
+	}
+
+	log.Debug().Msgf(">>> Starting port forward %q %v", *v.path, ports)
+	go func(f *portforward.PortForwarder) {
+		v.app.QueueUpdateDraw(func() {
+			v.app.forwarders = append(v.app.forwarders, pf)
+			v.app.flash().infof("PortForward activated %s:%s", pf.Path(), pf.Ports()[0])
+			v.dismissModal()
+		})
+		pf.SetActive(true)
+		if err := f.ForwardPorts(); err == nil {
+			return
+		}
+		v.app.QueueUpdateDraw(func() {
+			if len(v.app.forwarders) > 0 {
+				v.app.forwarders = v.app.forwarders[:len(v.app.forwarders)-1]
+			}
+			pf.SetActive(false)
+			v.app.flash().errf("PortForward failed %s", err)
+		})
+	}(fw)
 }
 
 func (v *containerView) dismissModal() {

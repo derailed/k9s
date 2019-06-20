@@ -67,6 +67,7 @@ func (v *forwardView) init(ctx context.Context, _ string) {
 	tv.refresh()
 	tv.Select(1, 0)
 	v.app.SetFocus(tv)
+	v.app.setHints(v.hints())
 }
 
 func (v *forwardView) getTV() *tableView {
