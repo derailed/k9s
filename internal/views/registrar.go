@@ -16,6 +16,7 @@ type (
 	decorateFn func(resource.TableData) resource.TableData
 
 	crdCmd struct {
+		api      string
 		version  string
 		plural   string
 		singular string
@@ -24,7 +25,6 @@ type (
 	resCmd struct {
 		crdCmd
 
-		api        string
 		title      string
 		viewFn     viewFn
 		listFn     listFn
@@ -57,8 +57,8 @@ func allCRDs(c k8s.Connection, m map[string]resCmd) {
 
 		res := resCmd{
 			title: grp.Kind,
-			api:   grp.Group,
 			crdCmd: crdCmd{
+				api:     grp.Group,
 				version: grp.Version,
 			},
 		}
@@ -129,96 +129,124 @@ func resourceViews(c k8s.Connection, m map[string]resCmd) {
 
 func coreRes(m map[string]resCmd) {
 	m["cm"] = resCmd{
-		title:  "ConfigMaps",
-		api:    "",
+		title: "ConfigMaps",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn: newResourceView,
 		listFn: resource.NewConfigMapList,
 	}
 	m["ctx"] = resCmd{
-		title:     "Contexts",
-		api:       "",
+		title: "Contexts",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn:    newContextView,
 		listFn:    resource.NewContextList,
 		colorerFn: ctxColorer,
 	}
 	m["ds"] = resCmd{
-		title:     "DaemonSets",
-		api:       "",
+		title: "DaemonSets",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn:    newDaemonSetView,
 		listFn:    resource.NewDaemonSetList,
 		colorerFn: dpColorer,
 	}
 	m["ep"] = resCmd{
-		title:  "EndPoints",
-		api:    "",
+		title: "EndPoints",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn: newResourceView,
 		listFn: resource.NewEndpointsList,
 	}
 	m["ev"] = resCmd{
-		title:     "Events",
-		api:       "",
+		title: "Events",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn:    newResourceView,
 		listFn:    resource.NewEventList,
 		colorerFn: evColorer,
 	}
 	m["no"] = resCmd{
-		title:     "Nodes",
-		api:       "",
+		title: "Nodes",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn:    newNodeView,
 		listFn:    resource.NewNodeList,
 		colorerFn: nsColorer,
 	}
 	m["ns"] = resCmd{
-		title:     "Namespaces",
-		api:       "",
+		title: "Namespaces",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn:    newNamespaceView,
 		listFn:    resource.NewNamespaceList,
 		colorerFn: nsColorer,
 	}
 	m["po"] = resCmd{
-		title:     "Pods",
-		api:       "",
+		title: "Pods",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn:    newPodView,
 		listFn:    resource.NewPodList,
 		colorerFn: podColorer,
 	}
 	m["pv"] = resCmd{
-		title:     "PersistentVolumes",
-		api:       "",
+		title: "PersistentVolumes",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn:    newResourceView,
 		listFn:    resource.NewPersistentVolumeList,
 		colorerFn: pvColorer,
 	}
 	m["pvc"] = resCmd{
-		title:     "PersistentVolumeClaims",
-		api:       "",
+		title: "PersistentVolumeClaims",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn:    newResourceView,
 		listFn:    resource.NewPersistentVolumeClaimList,
 		colorerFn: pvcColorer,
 	}
 	m["rc"] = resCmd{
-		title:     "ReplicationControllers",
-		api:       "",
+		title: "ReplicationControllers",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn:    newResourceView,
 		listFn:    resource.NewReplicationControllerList,
 		colorerFn: rsColorer,
 	}
 	m["sa"] = resCmd{
-		title:   "ServiceAccounts",
-		api:     "",
+		title: "ServiceAccounts",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn:  newResourceView,
 		listFn:  resource.NewServiceAccountList,
 		enterFn: showSAPolicy,
 	}
 	m["sec"] = resCmd{
-		title:  "Secrets",
-		api:    "",
+		title: "Secrets",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn: newSecretView,
 		listFn: resource.NewSecretList,
 	}
 	m["svc"] = resCmd{
-		title:  "Services",
-		api:    "",
+		title: "Services",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn: newSvcView,
 		listFn: resource.NewServiceList,
 	}
@@ -226,58 +254,76 @@ func coreRes(m map[string]resCmd) {
 
 func custRes(m map[string]resCmd) {
 	m["usr"] = resCmd{
-		title:  "Users",
-		api:    "",
+		title: "Users",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn: newSubjectView,
 	}
 	m["grp"] = resCmd{
-		title:  "Groups",
-		api:    "",
+		title: "Groups",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn: newSubjectView,
 	}
 	m["pf"] = resCmd{
-		title:  "PortForward",
-		api:    "",
+		title: "PortForward",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn: newForwardView,
 	}
 	m["be"] = resCmd{
-		title:  "Benchmark",
-		api:    "",
+		title: "Benchmark",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn: newBenchView,
 	}
 	m["sd"] = resCmd{
-		title:  "ScreenDumps",
-		api:    "",
+		title: "ScreenDumps",
+		crdCmd: crdCmd{
+			api: "",
+		},
 		viewFn: newDumpView,
 	}
 }
 
 func rbacRes(m map[string]resCmd) {
 	m["cr"] = resCmd{
-		title:   "ClusterRoles",
-		api:     "rbac.authorization.k8s.io",
+		title: "ClusterRoles",
+		crdCmd: crdCmd{
+			api: "rbac.authorization.k8s.io",
+		},
 		viewFn:  newResourceView,
 		listFn:  resource.NewClusterRoleList,
 		enterFn: showRBAC,
 	}
 	m["crb"] = resCmd{
-		title:   "ClusterRoleBindings",
-		api:     "rbac.authorization.k8s.io",
+		title: "ClusterRoleBindings",
+		crdCmd: crdCmd{
+			api: "rbac.authorization.k8s.io",
+		},
 		viewFn:  newResourceView,
 		listFn:  resource.NewClusterRoleBindingList,
 		enterFn: showClusterRole,
 	}
 
 	m["rb"] = resCmd{
-		title:   "RoleBindings",
-		api:     "rbac.authorization.k8s.io",
+		title: "RoleBindings",
+		crdCmd: crdCmd{
+			api: "rbac.authorization.k8s.io",
+		},
 		viewFn:  newResourceView,
 		listFn:  resource.NewRoleBindingList,
 		enterFn: showRole,
 	}
 	m["ro"] = resCmd{
-		title:   "Roles",
-		api:     "rbac.authorization.k8s.io",
+		title: "Roles",
+		crdCmd: crdCmd{
+			api: "rbac.authorization.k8s.io",
+		},
 		viewFn:  newResourceView,
 		listFn:  resource.NewRoleList,
 		enterFn: showRBAC,
@@ -286,8 +332,10 @@ func rbacRes(m map[string]resCmd) {
 
 func apiExtRes(m map[string]resCmd) {
 	m["crd"] = resCmd{
-		title:  "CustomResourceDefinitions",
-		api:    "apiextensions.k8s.io",
+		title: "CustomResourceDefinitions",
+		crdCmd: crdCmd{
+			api: "apiextensions.k8s.io",
+		},
 		viewFn: newResourceView,
 		listFn: resource.NewCustomResourceDefinitionList,
 	}
@@ -295,14 +343,18 @@ func apiExtRes(m map[string]resCmd) {
 
 func batchRes(m map[string]resCmd) {
 	m["cj"] = resCmd{
-		title:  "CronJobs",
-		api:    "batch",
+		title: "CronJobs",
+		crdCmd: crdCmd{
+			api: "batch",
+		},
 		viewFn: newCronJobView,
 		listFn: resource.NewCronJobList,
 	}
 	m["jo"] = resCmd{
-		title:  "Jobs",
-		api:    "batch",
+		title: "Jobs",
+		crdCmd: crdCmd{
+			api: "batch",
+		},
 		viewFn: newJobView,
 		listFn: resource.NewJobList,
 	}
@@ -310,22 +362,28 @@ func batchRes(m map[string]resCmd) {
 
 func appsRes(m map[string]resCmd) {
 	m["dp"] = resCmd{
-		title:     "Deployments",
-		api:       "apps",
+		title: "Deployments",
+		crdCmd: crdCmd{
+			api: "apps",
+		},
 		viewFn:    newDeployView,
 		listFn:    resource.NewDeploymentList,
 		colorerFn: dpColorer,
 	}
 	m["rs"] = resCmd{
-		title:     "ReplicaSets",
-		api:       "apps",
+		title: "ReplicaSets",
+		crdCmd: crdCmd{
+			api: "apps",
+		},
 		viewFn:    newReplicaSetView,
 		listFn:    resource.NewReplicaSetList,
 		colorerFn: rsColorer,
 	}
 	m["sts"] = resCmd{
-		title:     "StatefulSets",
-		api:       "apps",
+		title: "StatefulSets",
+		crdCmd: crdCmd{
+			api: "apps",
+		},
 		viewFn:    newStatefulSetView,
 		listFn:    resource.NewStatefulSetList,
 		colorerFn: stsColorer,
@@ -334,8 +392,10 @@ func appsRes(m map[string]resCmd) {
 
 func extRes(m map[string]resCmd) {
 	m["ing"] = resCmd{
-		title:  "Ingress",
-		api:    "extensions",
+		title: "Ingress",
+		crdCmd: crdCmd{
+			api: "extensions",
+		},
 		viewFn: newResourceView,
 		listFn: resource.NewIngressList,
 	}
@@ -343,8 +403,10 @@ func extRes(m map[string]resCmd) {
 
 func v1beta1Res(m map[string]resCmd) {
 	m["pdb"] = resCmd{
-		title:     "PodDisruptionBudgets",
-		api:       "v1.beta1",
+		title: "PodDisruptionBudgets",
+		crdCmd: crdCmd{
+			api: "v1.beta1",
+		},
 		viewFn:    newResourceView,
 		listFn:    resource.NewPDBList,
 		colorerFn: pdbColorer,
@@ -365,22 +427,28 @@ func hpaRes(c k8s.Connection, cmds map[string]resCmd) {
 	switch rev {
 	case "v1":
 		cmds["hpa"] = resCmd{
-			title:  "HorizontalPodAutoscalers",
-			api:    "autoscaling",
+			title: "HorizontalPodAutoscalers",
+			crdCmd: crdCmd{
+				api: "autoscaling",
+			},
 			viewFn: newResourceView,
 			listFn: resource.NewHorizontalPodAutoscalerV1List,
 		}
 	case "v2beta1":
 		cmds["hpa"] = resCmd{
-			title:  "HorizontalPodAutoscalers",
-			api:    "autoscaling",
+			title: "HorizontalPodAutoscalers",
+			crdCmd: crdCmd{
+				api: "autoscaling",
+			},
 			viewFn: newResourceView,
 			listFn: resource.NewHorizontalPodAutoscalerV2Beta1List,
 		}
 	case "v2beta2":
 		cmds["hpa"] = resCmd{
-			title:  "HorizontalPodAutoscalers",
-			api:    "autoscaling",
+			title: "HorizontalPodAutoscalers",
+			crdCmd: crdCmd{
+				api: "autoscaling",
+			},
 			viewFn: newResourceView,
 			listFn: resource.NewHorizontalPodAutoscalerList,
 		}

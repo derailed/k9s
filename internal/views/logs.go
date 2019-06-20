@@ -85,8 +85,8 @@ func (v *logsView) stop() {
 	v.cancelFunc = nil
 }
 
-func (v *logsView) load(container string, showPrevious bool) {
-	if err := v.doLoad(v.parent.getSelection(), container, showPrevious); err != nil {
+func (v *logsView) load(container string, prevLogs bool) {
+	if err := v.doLoad(v.parent.getSelection(), container, prevLogs); err != nil {
 		v.app.flash().err(err)
 		l := v.CurrentPage().Item.(*logView)
 		l.logLine("😂 Doh! No logs are available at this time. Check again later on...")
@@ -95,41 +95,26 @@ func (v *logsView) load(container string, showPrevious bool) {
 	v.app.SetFocus(v)
 }
 
-func (v *logsView) doLoad(path, co string, showPrevious bool) error {
+func (v *logsView) doLoad(path, co string, prevLogs bool) error {
 	v.stop()
 
-	maxBuff := int64(v.app.config.K9s.LogRequestSize)
 	l := v.CurrentPage().Item.(*logView)
 	l.logs.Clear()
 	l.path = path
-
-	var fmat string
-	if co == "" {
-		fmat = skinTitle(fmt.Sprintf(logFmt, path), v.app.styles.Frame())
-	} else {
-		fmat = skinTitle(fmt.Sprintf(logCoFmt, path, co), v.app.styles.Frame())
-	}
-	l.SetTitle(fmat)
+	l.setTitle(path, co)
 
 	c := make(chan string, 10)
 	go updateLogs(c, l)
 
-	ns, po := namespaced(path)
 	res, ok := v.parent.getList().Resource().(resource.Tailable)
 	if !ok {
 		return fmt.Errorf("Resource %T is not tailable", v.parent.getList().Resource())
 	}
+
 	var ctx context.Context
 	ctx = context.WithValue(context.Background(), resource.IKey("informer"), v.app.informer)
 	ctx, v.cancelFunc = context.WithCancel(ctx)
-	opts := resource.LogOptions{
-		Namespace: ns,
-		Name:      po,
-		Container: co,
-		Lines:     maxBuff,
-		Previous:  showPrevious,
-	}
-	if err := res.Logs(ctx, c, opts); err != nil {
+	if err := res.Logs(ctx, c, v.logOpts(path, co, prevLogs)); err != nil {
 		v.cancelFunc()
 		return err
 	}
@@ -137,6 +122,17 @@ func (v *logsView) doLoad(path, co string, showPrevious bool) error {
 	return nil
 }
 
+func (v *logsView) logOpts(path, co string, prevLogs bool) resource.LogOptions {
+	ns, po := namespaced(path)
+	return resource.LogOptions{
+		Namespace: ns,
+		Name:      po,
+		Container: co,
+		Lines:     int64(v.app.config.K9s.LogRequestSize),
+		Previous:  prevLogs,
+	}
+
+}
 func updateLogs(c <-chan string, l *logView) {
 	buff, index := make([]string, logBuffSize), 0
 	for {

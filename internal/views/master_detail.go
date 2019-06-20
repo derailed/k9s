@@ -12,17 +12,17 @@ type (
 	pageView struct {
 		*tview.Pages
 
-		app     *appView
-		actions keyActions
+		app          *appView
+		actions      keyActions
+		selectedItem string
+		selectedRow  int
+		selectedFn   func() string
 	}
 
 	masterDetail struct {
 		*pageView
 
 		currentNS      string
-		selectedItem   string
-		selectedRow    int
-		selectedFn     func() string
 		enterFn        enterFn
 		extraActionsFn func(keyActions)
 	}

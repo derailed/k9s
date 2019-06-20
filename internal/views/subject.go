@@ -196,22 +196,22 @@ func (v *subjectView) setCache(evts resource.RowEvents) {
 	v.cache = evts
 }
 
-func buildTable(v cachedEventer, evts resource.RowEvents) resource.TableData {
+func buildTable(c cachedEventer, evts resource.RowEvents) resource.TableData {
 	table := resource.TableData{
-		Header:    v.header(),
+		Header:    c.header(),
 		Rows:      make(resource.RowEvents, len(evts)),
 		Namespace: "*",
 	}
 
-	noDeltas := make(resource.Row, len(v.header()))
-	cache := v.getCache()
+	noDeltas := make(resource.Row, len(c.header()))
+	cache := c.getCache()
 	if len(cache) == 0 {
 		for k, ev := range evts {
 			ev.Action = resource.New
 			ev.Deltas = noDeltas
 			table.Rows[k] = ev
 		}
-		v.setCache(evts)
+		c.setCache(evts)
 		return table
 	}
 
@@ -244,7 +244,7 @@ func buildTable(v cachedEventer, evts resource.RowEvents) resource.TableData {
 			delete(evts, k)
 		}
 	}
-	v.setCache(evts)
+	c.setCache(evts)
 
 	return table
 }
@@ -258,19 +258,16 @@ func (v *subjectView) clusterSubjects() (resource.RowEvents, error) {
 	evts := make(resource.RowEvents, len(crbs.Items))
 	for _, crb := range crbs.Items {
 		for _, s := range crb.Subjects {
-			if s.Kind == v.subjectKind {
-				evts[s.Name] = &resource.RowEvent{
-					Fields: v.makeRow("*", s.Name, "ClusterRoleBinding", crb.Name),
-				}
+			if s.Kind != v.subjectKind {
+				continue
+			}
+			evts[s.Name] = &resource.RowEvent{
+				Fields: resource.Row{s.Name, "ClusterRoleBinding", crb.Name},
 			}
 		}
 	}
 
 	return evts, nil
-}
-
-func (v *subjectView) makeRow(_, subject, kind, loc string) resource.Row {
-	return resource.Row{subject, kind, loc}
 }
 
 func (v *subjectView) namespacedSubjects() (resource.RowEvents, error) {
@@ -284,7 +281,7 @@ func (v *subjectView) namespacedSubjects() (resource.RowEvents, error) {
 		for _, s := range rb.Subjects {
 			if s.Kind == v.subjectKind {
 				evts[s.Name] = &resource.RowEvent{
-					Fields: v.makeRow(rb.Namespace, s.Name, "RoleBinding", rb.Name),
+					Fields: resource.Row{s.Name, "RoleBinding", rb.Name},
 				}
 			}
 		}

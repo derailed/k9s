@@ -373,18 +373,15 @@ func (r *Pod) phase(po *v1.Pod) string {
 		status = po.Status.Reason
 	}
 
-	var init bool
-	init, status = r.initContainerPhase(po.Status, len(po.Spec.InitContainers), status)
+	init, status := r.initContainerPhase(po.Status, len(po.Spec.InitContainers), status)
 	if init {
 		return status
 	}
 
-	var running bool
-	running, status = r.containerPhase(po.Status, status)
-	if status == "Completed" && running {
+	running, status := r.containerPhase(po.Status, status)
+	if running && status == "Completed" {
 		status = "Running"
 	}
-
 	if po.DeletionTimestamp == nil {
 		return status
 	}
@@ -416,32 +413,35 @@ func (*Pod) containerPhase(st v1.PodStatus, status string) (bool, string) {
 }
 
 func (*Pod) initContainerPhase(st v1.PodStatus, initCount int, status string) (bool, string) {
-	var init bool
 	for i, cs := range st.InitContainerStatuses {
-		switch {
-		case cs.State.Terminated != nil:
-			if cs.State.Terminated.ExitCode == 0 {
-				continue
-			}
-			if cs.State.Terminated.Reason != "" {
-				status = "Init:" + cs.State.Terminated.Reason
-				break
-			}
-			if cs.State.Terminated.Signal != 0 {
-				status = "Init:Signal:" + strconv.Itoa(int(cs.State.Terminated.Signal))
-			} else {
-				status = "Init:ExitCode:" + strconv.Itoa(int(cs.State.Terminated.ExitCode))
-			}
-		case cs.State.Waiting != nil && cs.State.Waiting.Reason != "" && cs.State.Waiting.Reason != "PodInitializing":
-			status = "Init:" + cs.State.Waiting.Reason
-		default:
-			status = "Init:" + strconv.Itoa(i) + "/" + strconv.Itoa(initCount)
+		status := checkContainerStatus(cs, i, initCount)
+		if status == "" {
+			continue
 		}
-		init = true
-		break
+		return true, status
 	}
 
-	return init, status
+	return false, status
+}
+
+func checkContainerStatus(cs v1.ContainerStatus, i, initCount int) string {
+	switch {
+	case cs.State.Terminated != nil:
+		if cs.State.Terminated.ExitCode == 0 {
+			return ""
+		}
+		if cs.State.Terminated.Reason != "" {
+			return "Init:" + cs.State.Terminated.Reason
+		}
+		if cs.State.Terminated.Signal != 0 {
+			return "Init:Signal:" + strconv.Itoa(int(cs.State.Terminated.Signal))
+		}
+		return "Init:ExitCode:" + strconv.Itoa(int(cs.State.Terminated.ExitCode))
+	case cs.State.Waiting != nil && cs.State.Waiting.Reason != "" && cs.State.Waiting.Reason != "PodInitializing":
+		return "Init:" + cs.State.Waiting.Reason
+	default:
+		return "Init:" + strconv.Itoa(i) + "/" + strconv.Itoa(initCount)
+	}
 }
 
 func (r *Pod) loggableContainers(s v1.PodStatus) []string {

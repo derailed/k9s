@@ -88,6 +88,17 @@ func (v *logView) bindKeys() {
 	}
 }
 
+func (v *logView) setTitle(path, co string) {
+	var fmat string
+	if co == "" {
+		fmat = skinTitle(fmt.Sprintf(logFmt, path), v.app.styles.Frame())
+	} else {
+		fmat = skinTitle(fmt.Sprintf(logCoFmt, path, co), v.app.styles.Frame())
+	}
+	v.path = path
+	v.SetTitle(fmat)
+}
+
 // Hints show action hints
 func (v *logView) hints() hints {
 	return v.actions.toHints()

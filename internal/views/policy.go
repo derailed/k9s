@@ -16,15 +16,21 @@ const policyTitle = "Policy"
 
 var policyHeader = append(resource.Row{"NAMESPACE", "NAME", "API GROUP", "BINDING"}, rbacHeaderVerbs...)
 
-type policyView struct {
-	*tableView
+type (
+	namespacedRole struct {
+		ns, role string
+	}
 
-	current     igniter
-	cancel      context.CancelFunc
-	subjectKind string
-	subjectName string
-	cache       resource.RowEvents
-}
+	policyView struct {
+		*tableView
+
+		current     igniter
+		cancel      context.CancelFunc
+		subjectKind string
+		subjectName string
+		cache       resource.RowEvents
+	}
+)
 
 func newPolicyView(app *appView, subject, name string) *policyView {
 	v := policyView{}
@@ -140,6 +146,8 @@ func (v *policyView) reconcile() (resource.TableData, error) {
 	return buildTable(v, evts), nil
 }
 
+// Protocol...
+
 func (v *policyView) header() resource.Row {
 	return policyHeader
 }
@@ -181,10 +189,6 @@ func (v *policyView) clusterPolicies() (resource.RowEvents, []error) {
 	}
 
 	return evts, errs
-}
-
-type namespacedRole struct {
-	ns, role string
 }
 
 func (v *policyView) namespacePolicies() (resource.RowEvents, []error) {
@@ -230,11 +234,11 @@ func (v *policyView) parseRules(ns, binding string, rules []rbacv1.PolicyRule) r
 				for _, na := range r.ResourceNames {
 					n := fqn(k, na)
 					m[fqn(ns, n)] = &resource.RowEvent{
-						Fields: append(v.prepRow(ns, n, grp, binding), r.Verbs...),
+						Fields: append(policyRow(ns, n, grp, binding), r.Verbs...),
 					}
 				}
 				m[fqn(ns, k)] = &resource.RowEvent{
-					Fields: append(v.prepRow(ns, k, grp, binding), r.Verbs...),
+					Fields: append(policyRow(ns, k, grp, binding), r.Verbs...),
 				}
 			}
 		}
@@ -243,7 +247,7 @@ func (v *policyView) parseRules(ns, binding string, rules []rbacv1.PolicyRule) r
 				nres = "/" + nres
 			}
 			m[fqn(ns, nres)] = &resource.RowEvent{
-				Fields: append(v.prepRow(ns, nres, resource.NAValue, binding), r.Verbs...),
+				Fields: append(policyRow(ns, nres, resource.NAValue, binding), r.Verbs...),
 			}
 		}
 	}
@@ -251,7 +255,7 @@ func (v *policyView) parseRules(ns, binding string, rules []rbacv1.PolicyRule) r
 	return m
 }
 
-func (v *policyView) prepRow(ns, res, grp, binding string) resource.Row {
+func policyRow(ns, res, grp, binding string) resource.Row {
 	if grp != resource.NAValue {
 		grp = toGroup(grp)
 	}
