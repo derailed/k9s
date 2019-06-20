@@ -42,6 +42,18 @@ func newClusterInfoView(app *appView, mx resource.MetricsServer) *clusterInfoVie
 func (v *clusterInfoView) init(version string) {
 	cluster := resource.NewCluster(v.app.conn(), &log.Logger, v.mxs)
 
+	row := v.initInfo(version, cluster)
+
+	v.SetCell(row, 0, v.sectionCell("CPU"))
+	v.SetCell(row, 1, v.infoCell(resource.NAValue))
+	row++
+	v.SetCell(row, 0, v.sectionCell("MEM"))
+	v.SetCell(row, 1, v.infoCell(resource.NAValue))
+
+	v.refresh()
+}
+
+func (v *clusterInfoView) initInfo(version string, cluster *resource.Cluster) int {
 	var row int
 	v.SetCell(row, 0, v.sectionCell("Context"))
 	v.SetCell(row, 1, v.infoCell(cluster.ContextName()))
@@ -59,17 +71,11 @@ func (v *clusterInfoView) init(version string) {
 	v.SetCell(row, 1, v.infoCell(version))
 	row++
 
-	rev := cluster.Version()
 	v.SetCell(row, 0, v.sectionCell("K8s Rev"))
-	v.SetCell(row, 1, v.infoCell(rev))
+	v.SetCell(row, 1, v.infoCell(cluster.Version()))
 	row++
 
-	v.SetCell(row, 0, v.sectionCell("CPU"))
-	v.SetCell(row, 1, v.infoCell(resource.NAValue))
-	v.SetCell(row+1, 0, v.sectionCell("MEM"))
-	v.SetCell(row+1, 1, v.infoCell(resource.NAValue))
-
-	v.refresh()
+	return row
 }
 
 func (v *clusterInfoView) sectionCell(t string) *tview.TableCell {
