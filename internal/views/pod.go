@@ -52,20 +52,23 @@ func newPodView(t string, app *appView, list resource.List) resourceViewer {
 }
 
 func (v *podView) extraActions(aa keyActions) {
-	// aa[KeyAltS] = newKeyAction("Sniff", v.sniffCmd, true)
-
-	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
-	aa[KeyShiftL] = newKeyAction("Logs Previous", v.prevLogsCmd, true)
-	aa[KeyS] = newKeyAction("Shell", v.shellCmd, true)
-	aa[KeyShiftR] = newKeyAction("Sort Ready", v.sortColCmd(1, false), true)
-	aa[KeyShiftS] = newKeyAction("Sort Status", v.sortColCmd(2, true), true)
-	aa[KeyShiftT] = newKeyAction("Sort Restart", v.sortColCmd(3, false), true)
-	aa[KeyShiftC] = newKeyAction("Sort CPU", v.sortColCmd(4, false), true)
-	aa[KeyShiftM] = newKeyAction("Sort MEM", v.sortColCmd(5, false), true)
-	aa[KeyAltC] = newKeyAction("Sort CPU%", v.sortColCmd(6, false), true)
-	aa[KeyAltM] = newKeyAction("Sort MEM%", v.sortColCmd(7, false), true)
-	aa[KeyShiftD] = newKeyAction("Sort IP", v.sortColCmd(8, true), true)
-	aa[KeyShiftO] = newKeyAction("Sort Node", v.sortColCmd(9, true), true)
+	actions := keyActions{
+		KeyL:      newKeyAction("Logs", v.logsCmd, true),
+		KeyShiftL: newKeyAction("Logs Previous", v.prevLogsCmd, true),
+		KeyS:      newKeyAction("Shell", v.shellCmd, true),
+		KeyShiftR: newKeyAction("Sort Ready", v.sortColCmd(1, false), true),
+		KeyShiftS: newKeyAction("Sort Status", v.sortColCmd(2, true), true),
+		KeyShiftT: newKeyAction("Sort Restart", v.sortColCmd(3, false), true),
+		KeyShiftC: newKeyAction("Sort CPU", v.sortColCmd(4, false), true),
+		KeyShiftM: newKeyAction("Sort MEM", v.sortColCmd(5, false), true),
+		KeyAltC:   newKeyAction("Sort CPU%", v.sortColCmd(6, false), true),
+		KeyAltM:   newKeyAction("Sort MEM%", v.sortColCmd(7, false), true),
+		KeyShiftD: newKeyAction("Sort IP", v.sortColCmd(8, true), true),
+		KeyShiftO: newKeyAction("Sort Node", v.sortColCmd(9, true), true),
+	}
+	for k, v := range actions {
+		aa[k] = v
+	}
 }
 
 func (v *podView) listContainers(app *appView, _, res, sel string) {

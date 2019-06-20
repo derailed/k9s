@@ -13,20 +13,21 @@ type (
 		Connection
 	}
 
-	// NodeMetrics describes raw node metrics.
-	NodeMetrics struct {
+	currentMetrics struct {
 		CurrentCPU int64
 		CurrentMEM float64
-		AvailCPU   int64
-		AvailMEM   float64
-		TotalCPU   int64
-		TotalMEM   float64
 	}
 
 	// PodMetrics represent an aggregation of all pod containers metrics.
-	PodMetrics struct {
-		CurrentCPU int64
-		CurrentMEM float64
+	PodMetrics currentMetrics
+
+	// NodeMetrics describes raw node metrics.
+	NodeMetrics struct {
+		currentMetrics
+		AvailCPU int64
+		AvailMEM float64
+		TotalCPU int64
+		TotalMEM float64
 	}
 
 	// ClusterMetrics summarizes total node metrics as percentages.

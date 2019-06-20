@@ -14,48 +14,62 @@ import (
 
 const detailsTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
 
-// detailsView displays text output.
-type detailsView struct {
-	*tview.TextView
+type (
+	textView struct {
+		*tview.TextView
 
-	app           *appView
-	actions       keyActions
-	title         string
-	category      string
-	cmdBuff       *cmdBuff
-	backFn        actionHandler
-	numSelections int
+		app     *appView
+		actions keyActions
+		cmdBuff *cmdBuff
+		title   string
+	}
+
+	detailsView struct {
+		*textView
+
+		category      string
+		backFn        actionHandler
+		numSelections int
+	}
+)
+
+func newTextView(app *appView) *textView {
+	return &textView{
+		TextView: tview.NewTextView(),
+		app:      app,
+		actions:  make(keyActions),
+	}
 }
 
 func newDetailsView(app *appView, backFn actionHandler) *detailsView {
-	v := detailsView{TextView: tview.NewTextView(), app: app, actions: make(keyActions)}
-	{
-		v.backFn = backFn
-		v.SetScrollable(true)
-		v.SetWrap(true)
-		v.SetDynamicColors(true)
-		v.SetRegions(true)
-		v.SetBorder(true)
-		v.SetBorderFocusColor(config.AsColor(v.app.styles.Frame().Border.FocusColor))
-		v.SetHighlightColor(tcell.ColorOrange)
-		v.SetTitleColor(tcell.ColorAqua)
-		v.SetInputCapture(v.keyboard)
-		v.cmdBuff = newCmdBuff('/')
-		{
-			v.cmdBuff.addListener(app.cmd())
-			v.cmdBuff.reset()
-		}
-		v.SetChangedFunc(func() {
-			app.Draw()
-		})
-	}
+	v := detailsView{textView: newTextView(app)}
+	v.backFn = backFn
+	v.SetScrollable(true)
+	v.SetWrap(true)
+	v.SetDynamicColors(true)
+	v.SetRegions(true)
+	v.SetBorder(true)
+	v.SetBorderFocusColor(config.AsColor(v.app.styles.Frame().Border.FocusColor))
+	v.SetHighlightColor(tcell.ColorOrange)
+	v.SetTitleColor(tcell.ColorAqua)
+	v.SetInputCapture(v.keyboard)
 
-	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd, false)
-	v.actions[tcell.KeyBackspace] = newKeyAction("Erase", v.eraseCmd, false)
-	v.actions[tcell.KeyDelete] = newKeyAction("Erase", v.eraseCmd, false)
-	v.actions[tcell.KeyEscape] = newKeyAction("Back", v.backCmd, true)
-	v.actions[tcell.KeyTab] = newKeyAction("Next Match", v.nextCmd, false)
-	v.actions[tcell.KeyBacktab] = newKeyAction("Previous Match", v.prevCmd, false)
+	v.cmdBuff = newCmdBuff('/')
+	v.cmdBuff.addListener(app.cmd())
+	v.cmdBuff.reset()
+
+	v.SetChangedFunc(func() {
+		app.Draw()
+	})
+
+	v.actions = keyActions{
+		tcell.KeyBackspace2: newKeyAction("Erase", v.eraseCmd, false),
+		tcell.KeyBackspace:  newKeyAction("Erase", v.eraseCmd, false),
+		tcell.KeyDelete:     newKeyAction("Erase", v.eraseCmd, false),
+		tcell.KeyEscape:     newKeyAction("Back", v.backCmd, true),
+		tcell.KeyTab:        newKeyAction("Next Match", v.nextCmd, false),
+		tcell.KeyBacktab:    newKeyAction("Previous Match", v.prevCmd, false),
+	}
 
 	return &v
 }
@@ -129,7 +143,6 @@ func (v *detailsView) searchCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (v *detailsView) search(evt *tcell.EventKey) {
 	v.numSelections = 0
-	v.Highlight()
 	log.Debug().Msgf("Searching... %s - %d", v.cmdBuff, v.numSelections)
 	v.Highlight("")
 	v.SetText(v.decorateLines(v.GetText(false), v.cmdBuff.String()))

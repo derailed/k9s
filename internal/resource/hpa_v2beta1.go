@@ -170,11 +170,8 @@ func (*HorizontalPodAutoscalerV2Beta1) externalMetrics(i int, spec autoscalingv2
 func (*HorizontalPodAutoscalerV2Beta1) resourceMetrics(i int, spec autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {
 	current := "<unknown>"
 
-	if spec.Resource.TargetAverageValue != nil {
-		if len(statuses) > i && statuses[i].Resource != nil {
-			current = statuses[i].Resource.CurrentAverageValue.String()
-		}
-		return current + "/" + spec.Resource.TargetAverageValue.String()
+	if status := checkTargetMetrics(i, spec, statuses); status != "" {
+		return status
 	}
 
 	if len(statuses) > i && statuses[i].Resource != nil && statuses[i].Resource.CurrentAverageUtilization != nil {
@@ -187,4 +184,16 @@ func (*HorizontalPodAutoscalerV2Beta1) resourceMetrics(i int, spec autoscalingv2
 	}
 
 	return current + "/" + target
+}
+
+func checkTargetMetrics(i int, spec autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {
+	if spec.Resource.TargetAverageValue == nil {
+		return ""
+	}
+
+	var current string
+	if len(statuses) > i && statuses[i].Resource != nil {
+		current = statuses[i].Resource.CurrentAverageValue.String()
+	}
+	return current + "/" + spec.Resource.TargetAverageValue.String()
 }

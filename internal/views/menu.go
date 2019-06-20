@@ -167,7 +167,10 @@ func (v *menuView) buildMenuTable(hh hints) [][]string {
 	return strTable
 }
 
-func (*menuView) toMnemonic(s string) string {
+// ----------------------------------------------------------------------------
+// Helpers...
+
+func toMnemonic(s string) string {
 	if len(s) == 0 {
 		return s
 	}
@@ -178,17 +181,25 @@ func (*menuView) toMnemonic(s string) string {
 func (v *menuView) formatMenu(h hint, size int) string {
 	i, err := strconv.Atoi(h.mnemonic)
 	if err == nil {
-		fmat := strings.Replace(menuIndexFmt, "[key", "["+v.styles.Frame().Menu.NumKeyColor, 1)
-		fmat = strings.Replace(fmat, ":bg:", ":"+v.styles.Frame().Title.BgColor+":", -1)
-		fmat = strings.Replace(fmat, "[fg", "["+v.styles.Frame().Menu.FgColor, 1)
-		return fmt.Sprintf(fmat, i, resource.Truncate(h.description, 14))
+		return formatNSMenu(i, h.description, v.styles.Frame())
 	}
 
+	return formatPlainMenu(h, size, v.styles.Frame())
+}
+
+func formatNSMenu(i int, name string, styles config.Frame) string {
+	fmat := strings.Replace(menuIndexFmt, "[key", "["+styles.Menu.NumKeyColor, 1)
+	fmat = strings.Replace(fmat, ":bg:", ":"+styles.Title.BgColor+":", -1)
+	fmat = strings.Replace(fmat, "[fg", "["+styles.Menu.FgColor, 1)
+	return fmt.Sprintf(fmat, i, resource.Truncate(name, 14))
+}
+
+func formatPlainMenu(h hint, size int, styles config.Frame) string {
 	menuFmt := " [key:bg:b]%-" + strconv.Itoa(size+2) + "s [fg:bg:d]%s "
-	fmat := strings.Replace(menuFmt, "[key", "["+v.styles.Frame().Menu.KeyColor, 1)
-	fmat = strings.Replace(fmat, "[fg", "["+v.styles.Frame().Menu.FgColor, 1)
-	fmat = strings.Replace(fmat, ":bg:", ":"+v.styles.Frame().Title.BgColor+":", -1)
-	return fmt.Sprintf(fmat, v.toMnemonic(h.mnemonic), h.description)
+	fmat := strings.Replace(menuFmt, "[key", "["+styles.Menu.KeyColor, 1)
+	fmat = strings.Replace(fmat, "[fg", "["+styles.Menu.FgColor, 1)
+	fmat = strings.Replace(fmat, ":bg:", ":"+styles.Title.BgColor+":", -1)
+	return fmt.Sprintf(fmat, toMnemonic(h.mnemonic), h.description)
 }
 
 // -----------------------------------------------------------------------------
