@@ -155,7 +155,7 @@ const (
 
 func (v *tableView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	dir := filepath.Join(config.K9sDumpDir, v.app.config.K9s.CurrentCluster)
-	if err := os.MkdirAll(dir, 0744); err != nil {
+	if err := ensureDir(dir); err != nil {
 		log.Error().Err(err).Msgf("Mkdir K9s dump")
 		return nil
 	}
@@ -170,7 +170,7 @@ func (v *tableView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	path := filepath.Join(dir, fName)
-	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
+	mod := os.O_CREATE | os.O_WRONLY
 	file, err := os.OpenFile(path, mod, 0644)
 	defer func() {
 		if file != nil {
@@ -191,9 +191,8 @@ func (v *tableView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if err := w.Error(); err != nil {
 		log.Error().Err(err).Msgf("Screen dump %s", v.baseTitle)
 	}
-	v.app.flash().infof("File %s saved successfully!", path)
-	log.Debug().Msgf("File %s saved successfully!", path)
 
+	v.app.flash().infof("File %s saved successfully!", path)
 	return nil
 }
 

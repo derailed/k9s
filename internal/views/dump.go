@@ -91,7 +91,7 @@ func (v *dumpView) registerActions() {
 	v.actions[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
 	v.actions[tcell.KeyEnter] = newKeyAction("Enter", v.enterCmd, true)
 	v.actions[tcell.KeyCtrlD] = newKeyAction("Delete", v.deleteCmd, true)
-	v.actions[tcell.KeyCtrlS] = newKeyAction("Save", v.app.noopCmd, false)
+	v.actions[tcell.KeyCtrlS] = newKeyAction("Save", noopCmd, false)
 
 	vu := v.getTV()
 	vu.setActions(v.actions)

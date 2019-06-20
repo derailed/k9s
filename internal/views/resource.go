@@ -57,7 +57,7 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 	v.masterPage().setColorer(colorer)
 
 	v.update(vctx)
-	v.app.clusterInfoRefresh()
+	v.app.clusterInfo().refresh()
 	v.refresh()
 
 	tv := v.masterPage()

@@ -135,17 +135,29 @@ func (v *logView) update() {
 // Actions...
 
 func (v *logView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	dir := filepath.Join(config.K9sDumpDir, v.app.config.K9s.CurrentCluster)
-	if err := os.MkdirAll(dir, 0744); err != nil {
-		log.Error().Err(err).Msgf("Mkdir K9s dump")
-		return nil
+	if path, err := saveData(v.app.config.K9s.CurrentCluster, v.path, v.logs.GetText(true)); err != nil {
+		v.app.flash().err(err)
+	} else {
+		v.app.flash().infof("Log %s saved successfully!", path)
+	}
+	return nil
+}
+
+func ensureDir(dir string) error {
+	return os.MkdirAll(dir, 0744)
+}
+
+func saveData(cluster, name, data string) (string, error) {
+	dir := filepath.Join(config.K9sDumpDir, cluster)
+	if err := ensureDir(dir); err != nil {
+		return "", err
 	}
 
 	now := time.Now().UnixNano()
-	fName := fmt.Sprintf("%s-%d.log", strings.Replace(v.path, "/", "-", -1), now)
+	fName := fmt.Sprintf("%s-%d.log", strings.Replace(name, "/", "-", -1), now)
 
 	path := filepath.Join(dir, fName)
-	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
+	mod := os.O_CREATE | os.O_WRONLY
 	file, err := os.OpenFile(path, mod, 0644)
 	defer func() {
 		if file != nil {
@@ -154,16 +166,13 @@ func (v *logView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}()
 	if err != nil {
 		log.Error().Err(err).Msgf("LogFile create %s", path)
-		return nil
+		return "", nil
+	}
+	if _, err := fmt.Fprintf(file, data); err != nil {
+		return "", err
 	}
 
-	if _, err := fmt.Fprintf(file, v.logs.GetText(true)); err != nil {
-		log.Error().Err(err).Msgf("Log dump %s", v.path)
-	}
-	v.app.flash().infof("Log %s saved successfully!", path)
-	log.Debug().Msgf("Log %s saved successfully!", path)
-
-	return nil
+	return path, nil
 }
 
 func (v *logView) toggleScrollCmd(evt *tcell.EventKey) *tcell.EventKey {

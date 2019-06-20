@@ -109,31 +109,13 @@ func (r *HorizontalPodAutoscalerV2Beta1) toMetrics(specs []autoscalingv2beta1.Me
 		return "<none>"
 	}
 
-	list, max, more, count := []string{}, 2, false, 0
+	list, count := []string{}, 0
 	for i, spec := range specs {
-		current := "<unknown>"
-
-		switch spec.Type {
-		case autoscalingv2beta1.ExternalMetricSourceType:
-			list = append(list, r.externalMetrics(i, spec, statuses))
-		case autoscalingv2beta1.PodsMetricSourceType:
-			if len(statuses) > i && statuses[i].Pods != nil {
-				current = statuses[i].Pods.CurrentAverageValue.String()
-			}
-			list = append(list, current+"/"+spec.Pods.TargetAverageValue.String())
-		case autoscalingv2beta1.ObjectMetricSourceType:
-			if len(statuses) > i && statuses[i].Object != nil {
-				current = statuses[i].Object.CurrentValue.String()
-			}
-			list = append(list, current+"/"+spec.Object.TargetValue.String())
-		case autoscalingv2beta1.ResourceMetricSourceType:
-			list = append(list, r.resourceMetrics(i, spec, statuses))
-		default:
-			list = append(list, "<unknown type>")
-		}
+		list = append(list, r.checkHPAType(i, spec, statuses))
 		count++
 	}
 
+	max, more := 2, false
 	if count > max {
 		list, more = list[:max], true
 	}
@@ -144,6 +126,29 @@ func (r *HorizontalPodAutoscalerV2Beta1) toMetrics(specs []autoscalingv2beta1.Me
 	}
 
 	return ret
+}
+
+func (r *HorizontalPodAutoscalerV2Beta1) checkHPAType(i int, spec autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {
+	current := "<unknown>"
+
+	switch spec.Type {
+	case autoscalingv2beta1.ExternalMetricSourceType:
+		return r.externalMetrics(i, spec, statuses)
+	case autoscalingv2beta1.PodsMetricSourceType:
+		if len(statuses) > i && statuses[i].Pods != nil {
+			current = statuses[i].Pods.CurrentAverageValue.String()
+		}
+		return current + "/" + spec.Pods.TargetAverageValue.String()
+	case autoscalingv2beta1.ObjectMetricSourceType:
+		if len(statuses) > i && statuses[i].Object != nil {
+			current = statuses[i].Object.CurrentValue.String()
+		}
+		return current + "/" + spec.Object.TargetValue.String()
+	case autoscalingv2beta1.ResourceMetricSourceType:
+		return r.resourceMetrics(i, spec, statuses)
+	}
+
+	return "<unknown type>"
 }
 
 func (*HorizontalPodAutoscalerV2Beta1) externalMetrics(i int, spec autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {

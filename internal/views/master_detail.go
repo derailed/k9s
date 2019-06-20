@@ -119,7 +119,7 @@ func (v *masterDetail) selectItem(r, c int) {
 }
 
 func (v *masterDetail) defaultActions() {
-	v.actions[KeyHelp] = newKeyAction("Help", v.app.noopCmd, false)
+	v.actions[KeyHelp] = newKeyAction("Help", noopCmd, false)
 	v.actions[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
 
 	if v.extraActionsFn != nil {

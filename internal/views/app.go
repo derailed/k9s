@@ -79,22 +79,24 @@ func NewApp(cfg *config.Config) *appView {
 	v.views["clusterInfo"] = newClusterInfoView(&v, k8s.NewMetricsServer(cfg.GetConnection()))
 
 	v.SetInputCapture(v.keyboard)
-	v.registerActions()
+	v.bindKeys()
 
 	return &v
 }
 
-func (a *appView) registerActions() {
-	a.actions[KeyColon] = newKeyAction("Cmd", a.activateCmd, false)
-	a.actions[tcell.KeyCtrlR] = newKeyAction("Redraw", a.redrawCmd, false)
-	a.actions[tcell.KeyCtrlC] = newKeyAction("Quit", a.quitCmd, false)
-	a.actions[KeyHelp] = newKeyAction("Help", a.helpCmd, false)
-	a.actions[tcell.KeyCtrlA] = newKeyAction("Aliases", a.aliasCmd, true)
-	a.actions[tcell.KeyEscape] = newKeyAction("Escape", a.escapeCmd, false)
-	a.actions[tcell.KeyEnter] = newKeyAction("Goto", a.gotoCmd, false)
-	a.actions[tcell.KeyBackspace2] = newKeyAction("Erase", a.eraseCmd, false)
-	a.actions[tcell.KeyBackspace] = newKeyAction("Erase", a.eraseCmd, false)
-	a.actions[tcell.KeyDelete] = newKeyAction("Erase", a.eraseCmd, false)
+func (a *appView) bindKeys() {
+	a.actions = keyActions{
+		KeyColon:            newKeyAction("Cmd", a.activateCmd, false),
+		tcell.KeyCtrlR:      newKeyAction("Redraw", a.redrawCmd, false),
+		tcell.KeyCtrlC:      newKeyAction("Quit", a.quitCmd, false),
+		KeyHelp:             newKeyAction("Help", a.helpCmd, false),
+		tcell.KeyCtrlA:      newKeyAction("Aliases", a.aliasCmd, true),
+		tcell.KeyEscape:     newKeyAction("Escape", a.escapeCmd, false),
+		tcell.KeyEnter:      newKeyAction("Goto", a.gotoCmd, false),
+		tcell.KeyBackspace2: newKeyAction("Erase", a.eraseCmd, false),
+		tcell.KeyBackspace:  newKeyAction("Erase", a.eraseCmd, false),
+		tcell.KeyDelete:     newKeyAction("Erase", a.eraseCmd, false),
+	}
 }
 
 func (a *appView) Init(version string, rate int) {
@@ -212,14 +214,6 @@ func (a *appView) Run() {
 	}
 }
 
-func (a *appView) crumbs() *crumbsView {
-	return a.views["crumbs"].(*crumbsView)
-}
-
-func (a *appView) logo() *logoView {
-	return a.views["logo"].(*logoView)
-}
-
 func (a *appView) statusReset() {
 	a.logo().reset()
 	a.Draw()
@@ -259,11 +253,6 @@ func (a *appView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		return a.action(evt)
 	}
 
-	return evt
-}
-
-func (a *appView) rbacCmd(evt *tcell.EventKey) *tcell.EventKey {
-	a.inject(newRBACView(a, "", "aa_k9s", clusterRole))
 	return evt
 }
 
@@ -347,21 +336,8 @@ func (a *appView) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (a *appView) fwdCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.inCmdMode() {
-		return evt
-	}
-
-	a.inject(newForwardView("", a, nil))
+func noopCmd(*tcell.EventKey) *tcell.EventKey {
 	return nil
-}
-
-func (a *appView) noopCmd(*tcell.EventKey) *tcell.EventKey {
-	return nil
-}
-
-func (a *appView) puntCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return evt
 }
 
 func (a *appView) gotoResource(res string, record bool) bool {
@@ -390,26 +366,32 @@ func (a *appView) inject(i igniter) {
 	a.SetFocus(i)
 }
 
-func (a *appView) flash() *flashView {
-	return a.views["flash"].(*flashView)
+func (a *appView) inCmdMode() bool {
+	return a.cmd().inCmdMode()
 }
 
 func (a *appView) setHints(h hints) {
 	a.views["menu"].(*menuView).populateMenu(h)
 }
 
+// View Accessors...
+
+func (a *appView) crumbs() *crumbsView {
+	return a.views["crumbs"].(*crumbsView)
+}
+
+func (a *appView) logo() *logoView {
+	return a.views["logo"].(*logoView)
+}
+
 func (a *appView) clusterInfo() *clusterInfoView {
 	return a.views["clusterInfo"].(*clusterInfoView)
 }
 
-func (a *appView) clusterInfoRefresh() {
-	a.clusterInfo().refresh()
+func (a *appView) flash() *flashView {
+	return a.views["flash"].(*flashView)
 }
 
 func (a *appView) cmd() *cmdView {
 	return a.views["cmd"].(*cmdView)
-}
-
-func (a *appView) inCmdMode() bool {
-	return a.cmd().inCmdMode()
 }
