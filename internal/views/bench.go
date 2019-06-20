@@ -211,13 +211,8 @@ func (v *benchView) hydrate() resource.TableData {
 			log.Error().Err(err).Msgf("Unable to load bench file %s", f.Name())
 			continue
 		}
-		tokens := strings.Split(f.Name(), "_")
-		fields := resource.Row{
-			0: tokens[0],
-			1: tokens[1],
-			7: f.Name(),
-			8: time.Since(f.ModTime()).String(),
-		}
+		fields := make(resource.Row, len(benchHeader))
+		initRow(fields, f)
 		augmentRow(fields, bench)
 		data.Rows[f.Name()] = &resource.RowEvent{
 			Action: resource.New,
@@ -227,6 +222,14 @@ func (v *benchView) hydrate() resource.TableData {
 	}
 
 	return data
+}
+
+func initRow(row resource.Row, f os.FileInfo) {
+	tokens := strings.Split(f.Name(), "_")
+	row[0] = tokens[0]
+	row[1] = tokens[1]
+	row[7] = f.Name()
+	row[8] = time.Since(f.ModTime()).String()
 }
 
 func (v *benchView) getTV() *tableView {

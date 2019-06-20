@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/gdamore/tcell"
@@ -77,8 +76,7 @@ func (v *podView) listContainers(app *appView, _, res, sel string) {
 	}
 
 	pod := po.(*v1.Pod)
-	mx := k8s.NewMetricsServer(app.conn())
-	list := resource.NewContainerList(app.conn(), mx, pod)
+	list := resource.NewContainerList(app.conn(), pod)
 	title := skinTitle(fmt.Sprintf(containerFmt, "Containers", sel), app.styles.Frame())
 
 	// Stop my updater

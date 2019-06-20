@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/derailed/k9s/internal/k8s"
 	v1 "k8s.io/api/core/v1"
@@ -17,31 +16,27 @@ type (
 	Container struct {
 		*Base
 
-		pod           *v1.Pod
-		isInit        bool
-		instance      v1.Container
-		MetricsServer MetricsServer
-		metrics       *mv1beta1.PodMetrics
-		mx            sync.RWMutex
+		pod      *v1.Pod
+		instance v1.Container
+		metrics  *mv1beta1.PodMetrics
 	}
 )
 
 // NewContainerList returns a collection of container.
-func NewContainerList(c Connection, mx MetricsServer, pod *v1.Pod) List {
+func NewContainerList(c Connection, pod *v1.Pod) List {
 	return NewList(
 		"",
 		"co",
-		NewContainer(c, mx, pod),
+		NewContainer(c, pod),
 		0,
 	)
 }
 
 // NewContainer returns a new set of containers.
-func NewContainer(c Connection, mx MetricsServer, pod *v1.Pod) *Container {
+func NewContainer(c Connection, pod *v1.Pod) *Container {
 	co := Container{
-		Base:          &Base{Connection: c, Resource: k8s.NewPod(c)},
-		pod:           pod,
-		MetricsServer: mx,
+		Base: &Base{Connection: c, Resource: k8s.NewPod(c)},
+		pod:  pod,
 	}
 	co.Factory = &co
 
@@ -50,7 +45,7 @@ func NewContainer(c Connection, mx MetricsServer, pod *v1.Pod) *Container {
 
 // New builds a new Container instance from a k8s resource.
 func (r *Container) New(i interface{}) Columnar {
-	co := NewContainer(r.Connection, r.MetricsServer, r.pod)
+	co := NewContainer(r.Connection, r.pod)
 	co.instance = i.(v1.Container)
 	co.path = r.namespacedName(r.pod.ObjectMeta) + ":" + co.instance.Name
 
@@ -90,7 +85,6 @@ func (r *Container) List(ns string) (Columnars, error) {
 	cc := make(Columnars, 0, len(icos)+len(cos))
 	for _, co := range icos {
 		ci := r.New(co)
-		ci.(*Container).isInit = true
 		cc = append(cc, ci)
 	}
 	for _, co := range cos {
@@ -134,47 +128,10 @@ func (r *Container) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
 	i := r.instance
 
-	scpu, smem, pcpu, pmem := NAValue, NAValue, NAValue, NAValue
-	if r.metrics != nil {
-		var (
-			cpu int64
-			mem float64
-		)
-		for _, co := range r.metrics.Containers {
-			if co.Name == i.Name {
-				cpu = co.Usage.Cpu().MilliValue()
-				mem = k8s.ToMB(co.Usage.Memory().Value())
-				break
-			}
-		}
-		scpu, smem = ToMillicore(cpu), ToMi(mem)
-		rcpu, rmem := containerResources(i)
-		if rcpu != nil {
-			pcpu = AsPerc(toPerc(float64(cpu), float64(rcpu.MilliValue())))
-		}
-		if rmem != nil {
-			pmem = AsPerc(toPerc(mem, k8s.ToMB(rmem.Value())))
-		}
-	}
-
-	var cs *v1.ContainerStatus
-	for _, c := range r.pod.Status.ContainerStatuses {
-		if c.Name == i.Name {
-			cs = &c
-			break
-		}
-	}
-
-	if cs == nil {
-		for _, c := range r.pod.Status.InitContainerStatuses {
-			if c.Name == i.Name {
-				cs = &c
-				break
-			}
-		}
-	}
+	scpu, smem, pcpu, pmem := gatherMetrics(i, r.metrics)
 
 	ready, state, restarts := "false", MissingValue, "0"
+	cs := getContainerStatus(i.Name, r.pod.Status)
 	if cs != nil {
 		ready, state, restarts = boolToStr(cs.Ready), toState(cs.State), strconv.Itoa(int(cs.RestartCount))
 	}
@@ -197,6 +154,53 @@ func (r *Container) Fields(ns string) Row {
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func gatherMetrics(co v1.Container, mx *mv1beta1.PodMetrics) (scpu string, smem string, pcpu string, pmem string) {
+	scpu, smem, pcpu, pmem = NAValue, NAValue, NAValue, NAValue
+	if mx == nil {
+		return
+	}
+
+	var (
+		cpu int64
+		mem float64
+	)
+	for _, c := range mx.Containers {
+		if c.Name != co.Name {
+			continue
+		}
+		cpu = c.Usage.Cpu().MilliValue()
+		mem = k8s.ToMB(c.Usage.Memory().Value())
+		break
+	}
+
+	scpu, smem = ToMillicore(cpu), ToMi(mem)
+	rcpu, rmem := containerResources(co)
+	if rcpu != nil {
+		pcpu = AsPerc(toPerc(float64(cpu), float64(rcpu.MilliValue())))
+	}
+	if rmem != nil {
+		pmem = AsPerc(toPerc(mem, k8s.ToMB(rmem.Value())))
+	}
+
+	return
+}
+
+func getContainerStatus(co string, status v1.PodStatus) *v1.ContainerStatus {
+	for _, c := range status.ContainerStatuses {
+		if c.Name == co {
+			return &c
+		}
+	}
+
+	for _, c := range status.InitContainerStatuses {
+		if c.Name == co {
+			return &c
+		}
+	}
+
+	return nil
+}
 
 func toStrPorts(pp []v1.ContainerPort) string {
 	ports := make([]string, len(pp))
