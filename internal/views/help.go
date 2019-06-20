@@ -14,13 +14,19 @@ const (
 	helpTitleFmt = " [aqua::b]%s "
 )
 
-type helpView struct {
-	*tview.TextView
+type (
+	helpItem struct {
+		key, description string
+	}
 
-	app     *appView
-	current igniter
-	actions keyActions
-}
+	helpView struct {
+		*tview.TextView
+
+		app     *appView
+		current igniter
+		actions keyActions
+	}
+)
 
 func newHelpView(app *appView, current igniter) *helpView {
 	v := helpView{TextView: tview.NewTextView(), app: app, actions: make(keyActions)}
@@ -58,10 +64,41 @@ func (v *helpView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (v *helpView) init(_ context.Context, _ string) {
 	v.resetTitle()
 
-	type helpItem struct {
-		key, description string
-	}
+	v.showGeneral()
+	v.showNav()
+	v.showHelp()
+	v.app.setHints(v.hints())
+}
 
+func (v *helpView) showHelp() {
+	views := []helpItem{
+		{"?", "Help"},
+		{"Ctrl-a", "Aliases view"},
+	}
+	fmt.Fprintf(v, "️️\n😱 [aqua::b]%s\n", "Help")
+	for _, h := range views {
+		v.printHelp(h.key, h.description)
+	}
+}
+
+func (v *helpView) showNav() {
+	navigation := []helpItem{
+		{"g", "Goto Top"},
+		{"G", "Goto Bottom"},
+		{"Ctrl-b", "Page Down"},
+		{"Ctrl-f", "Page Up"},
+		{"h", "Left"},
+		{"l", "Right"},
+		{"k", "Up"},
+		{"j", "Down"},
+	}
+	fmt.Fprintf(v, "\n🤖 [aqua::b]%s\n", "View Navigation")
+	for _, h := range navigation {
+		v.printHelp(h.key, h.description)
+	}
+}
+
+func (v *helpView) showGeneral() {
 	general := []helpItem{
 		{":<cmd>", "Command mode"},
 		{"/<term>", "Filter mode"},
@@ -77,31 +114,6 @@ func (v *helpView) init(_ context.Context, _ string) {
 	for _, h := range general {
 		v.printHelp(h.key, h.description)
 	}
-
-	navigation := []helpItem{
-		{"g", "Goto Top"},
-		{"G", "Goto Bottom"},
-		{"Ctrl-b", "Page Down"},
-		{"Ctrl-f", "Page Up"},
-		{"h", "Left"},
-		{"l", "Right"},
-		{"k", "Up"},
-		{"j", "Down"},
-	}
-	fmt.Fprintf(v, "\n🤖 [aqua::b]%s\n", "View Navigation")
-	for _, h := range navigation {
-		v.printHelp(h.key, h.description)
-	}
-
-	views := []helpItem{
-		{"?", "Help"},
-		{"Ctrl-a", "Aliases view"},
-	}
-	fmt.Fprintf(v, "️️\n😱 [aqua::b]%s\n", "Help")
-	for _, h := range views {
-		v.printHelp(h.key, h.description)
-	}
-	v.app.setHints(v.hints())
 }
 
 func (v *helpView) printHelp(key, desc string) {

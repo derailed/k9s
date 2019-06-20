@@ -26,12 +26,18 @@ const NA = "n/a"
 var supportedMetricsAPIVersions = []string{"v1beta1"}
 
 type (
+	// GKV tracks api resource version info.
+	GKV struct {
+		Group, Kind, Version string
+	}
+
 	// APIGroup represents a K8s resource descriptor.
 	APIGroup struct {
-		Resource             string
-		Group, Kind, Version string
-		Plural, Singular     string
-		Aliases              []string
+		GKV
+
+		Resource         string
+		Plural, Singular string
+		Aliases          []string
 	}
 
 	// Collection of empty interfaces.
@@ -114,10 +120,9 @@ func (a *APIClient) CheckNSAccess(n string) error {
 	return err
 }
 
-// CanIAccess checks if user has access to a certain resource.
-func (a *APIClient) canIAccess(ns, name, resURL string, verbs []string) (bool, error) {
+func makeSAR(ns, name, resURL string) *authorizationv1.SelfSubjectAccessReview {
 	_, gr := schema.ParseResourceArg(strings.ToLower(resURL))
-	sar := &authorizationv1.SelfSubjectAccessReview{
+	return &authorizationv1.SelfSubjectAccessReview{
 		Spec: authorizationv1.SelfSubjectAccessReviewSpec{
 			ResourceAttributes: &authorizationv1.ResourceAttributes{
 				Namespace:   ns,
@@ -128,32 +133,24 @@ func (a *APIClient) canIAccess(ns, name, resURL string, verbs []string) (bool, e
 			},
 		},
 	}
+}
 
-	user, _ := a.Config().CurrentUserName()
-	groups, _ := a.Config().CurrentGroupNames()
-	log.Debug().Msgf("AuthInfo user/groups: %s:%v", user, groups)
-
-	var (
-		resp  *authorizationv1.SelfSubjectAccessReview
-		err   error
-		allow bool
-	)
+// CanIAccess checks if user has access to a certain resource.
+func (a *APIClient) canIAccess(ns, name, resURL string, verbs []string) (bool, error) {
+	sar := makeSAR(ns, name, resURL)
+	dial := a.DialOrDie().AuthorizationV1().SelfSubjectAccessReviews()
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
-		resp, err = a.DialOrDie().AuthorizationV1().SelfSubjectAccessReviews().Create(sar)
+		resp, err := dial.Create(sar)
 		if err != nil {
 			log.Error().Err(err).Msgf("CanIAccess")
 			return false, err
 		}
-		log.Debug().Msgf("CHECKING ACCESS group:%q|resource:%q|namespace:%q|name:%q, verb:%s access:%t -- %s", gr.Group, gr.Resource, ns, name, v, resp.Status.Allowed, resp.Status.Reason)
 		if !resp.Status.Allowed {
 			return false, err
 		}
-		allow = true
 	}
-	log.Debug().Msgf("GRANT ACCESS? >>> %t", allow)
-
-	return allow, nil
+	return true, nil
 }
 
 // CurrentNamespaceName return namespace name set via either cli arg or cluster config.
@@ -330,16 +327,23 @@ func (a *APIClient) supportsMxServer() bool {
 		return false
 	}
 
-	for _, discoveredAPIGroup := range apiGroups.Groups {
-		if discoveredAPIGroup.Name != metricsapi.GroupName {
+	for _, grp := range apiGroups.Groups {
+		if grp.Name != metricsapi.GroupName {
 			continue
 		}
+		if checkMetricsVersion(grp) {
+			return true
+		}
+	}
 
-		for _, version := range discoveredAPIGroup.Versions {
-			for _, supportedVersion := range supportedMetricsAPIVersions {
-				if version.Version == supportedVersion {
-					return true
-				}
+	return false
+}
+
+func checkMetricsVersion(grp metav1.APIGroup) bool {
+	for _, version := range grp.Versions {
+		for _, supportedVersion := range supportedMetricsAPIVersions {
+			if version.Version == supportedVersion {
+				return true
 			}
 		}
 	}

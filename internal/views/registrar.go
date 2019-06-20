@@ -50,9 +50,11 @@ func allCRDs(c k8s.Connection, m map[string]resCmd) {
 		ff := crd.ExtFields()
 
 		grp := k8s.APIGroup{
-			Group:   ff["group"].(string),
-			Kind:    ff["kind"].(string),
-			Version: ff["version"].(string),
+			GKV: k8s.GKV{
+				Group:   ff["group"].(string),
+				Kind:    ff["kind"].(string),
+				Version: ff["version"].(string),
+			},
 		}
 
 		res := resCmd{

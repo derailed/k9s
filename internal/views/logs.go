@@ -100,7 +100,6 @@ func (v *logsView) doLoad(path, co string, prevLogs bool) error {
 
 	l := v.CurrentPage().Item.(*logView)
 	l.logs.Clear()
-	l.path = path
 	l.setTitle(path, co)
 
 	c := make(chan string, 10)
