@@ -9,11 +9,21 @@ import (
 	"vbom.ml/util/sortorder"
 )
 
-type rowSorter struct {
-	rows  resource.Rows
-	index int
-	asc   bool
-}
+type (
+	sortFn func(rows resource.Rows, sortCol sortColumn)
+
+	sortColumn struct {
+		index    int
+		colCount int
+		asc      bool
+	}
+
+	rowSorter struct {
+		rows  resource.Rows
+		index int
+		asc   bool
+	}
+)
 
 func (s rowSorter) Len() int {
 	return len(s.rows)

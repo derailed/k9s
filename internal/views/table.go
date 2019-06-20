@@ -31,14 +31,7 @@ var (
 )
 
 type (
-	sortFn    func(rows resource.Rows, sortCol sortColumn)
 	cleanseFn func(string) string
-
-	sortColumn struct {
-		index    int
-		colCount int
-		asc      bool
-	}
 
 	resTable struct {
 		*tview.Table
@@ -94,23 +87,23 @@ func newTableView(app *appView, title string) *tableView {
 	return &v
 }
 
-func (v *tableView) filterChanged(fn func(string)) {
-	v.filterFn = fn
+func (v *tableView) bindKeys() {
+	v.actions = keyActions{
+		tcell.KeyCtrlS:      newKeyAction("Save", v.saveCmd, true),
+		KeySlash:            newKeyAction("Filter Mode", v.activateCmd, false),
+		tcell.KeyEscape:     newKeyAction("Filter Reset", v.resetCmd, false),
+		tcell.KeyEnter:      newKeyAction("Filter", v.filterCmd, false),
+		tcell.KeyBackspace2: newKeyAction("Erase", v.eraseCmd, false),
+		tcell.KeyBackspace:  newKeyAction("Erase", v.eraseCmd, false),
+		tcell.KeyDelete:     newKeyAction("Erase", v.eraseCmd, false),
+		KeyShiftI:           newKeyAction("Invert", v.sortInvertCmd, false),
+		KeyShiftN:           newKeyAction("Sort Name", v.sortColCmd(0), true),
+		KeyShiftA:           newKeyAction("Sort Age", v.sortColCmd(-1), true),
+	}
 }
 
-func (v *tableView) bindKeys() {
-	v.actions[tcell.KeyCtrlS] = newKeyAction("Save", v.saveCmd, true)
-	v.actions[KeySlash] = newKeyAction("Filter Mode", v.activateCmd, false)
-	v.actions[tcell.KeyEscape] = newKeyAction("Filter Reset", v.resetCmd, false)
-	v.actions[tcell.KeyEnter] = newKeyAction("Filter", v.filterCmd, false)
-
-	v.actions[tcell.KeyBackspace2] = newKeyAction("Erase", v.eraseCmd, false)
-	v.actions[tcell.KeyBackspace] = newKeyAction("Erase", v.eraseCmd, false)
-	v.actions[tcell.KeyDelete] = newKeyAction("Erase", v.eraseCmd, false)
-
-	v.actions[KeyShiftI] = newKeyAction("Invert", v.sortInvertCmd, false)
-	v.actions[KeyShiftN] = newKeyAction("Sort Name", v.sortColCmd(0), true)
-	v.actions[KeyShiftA] = newKeyAction("Sort Age", v.sortColCmd(-1), true)
+func (v *tableView) filterChanged(fn func(string)) {
+	v.filterFn = fn
 }
 
 func (v *tableView) clearSelection() {
@@ -253,13 +246,6 @@ func (v *tableView) sortColCmd(col int) func(evt *tcell.EventKey) *tcell.EventKe
 	}
 }
 
-func (v *tableView) sortNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
-	v.sortCol.index, v.sortCol.asc = 0, true
-	v.refresh()
-
-	return nil
-}
-
 func (v *tableView) sortInvertCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.sortCol.asc = !v.sortCol.asc
 	v.refresh()
@@ -356,7 +342,7 @@ func (v *tableView) filtered() resource.TableData {
 func (v *tableView) doUpdate(data resource.TableData) {
 	v.currentNS = data.Namespace
 	if v.currentNS == resource.AllNamespaces && v.currentNS != "*" {
-		v.actions[KeyShiftP] = newKeyAction("Sort Namespace", v.sortNamespaceCmd, true)
+		v.actions[KeyShiftP] = newKeyAction("Sort Namespace", v.sortColCmd(0), true)
 	} else {
 		delete(v.actions, KeyShiftP)
 	}
