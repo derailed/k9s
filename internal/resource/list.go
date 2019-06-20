@@ -298,12 +298,13 @@ func (l *list) Reconcile(informer *wa.Informer, path *string) error {
 		ns = *path
 	}
 
-	var items Columnars
-	if rr, err := l.fetchFromStore(informer, ns); err == nil {
-		items = rr
-	} else {
-		items, err = l.resource.List(l.namespace)
-		if err != nil {
+	var (
+		items Columnars
+		err   error
+	)
+	items, err = l.fetchFromStore(informer, ns)
+	if err != nil {
+		if items, err = l.resource.List(l.namespace); err != nil {
 			return err
 		}
 	}
@@ -323,20 +324,30 @@ func (l *list) Reconcile(informer *wa.Informer, path *string) error {
 		dd := make(Row, len(ff))
 		kk = append(kk, i.Name())
 		if evt, ok := l.cache[i.Name()]; ok {
-			f1, f2 := evt.Fields[:len(evt.Fields)-1], ff[:len(ff)-1]
-			a = Unchanged
-			if !reflect.DeepEqual(f1, f2) {
-				for i, f := range f1 {
-					if f != f2[i] {
-						dd[i] = f
-					}
-				}
-				a = watch.Modified
-			}
+			a = computeDeltas(evt, ff[:len(ff)-1], dd)
 		}
 		l.cache[i.Name()] = newRowEvent(a, ff, dd)
 	}
+	l.ensureDeletes(kk)
 
+	return nil
+}
+
+func computeDeltas(evt *RowEvent, newRow, deltas Row) watch.EventType {
+	oldRow := evt.Fields[:len(evt.Fields)-1]
+	a := Unchanged
+	if !reflect.DeepEqual(oldRow, newRow) {
+		for i, field := range oldRow {
+			if field != newRow[i] {
+				deltas[i] = field
+			}
+		}
+		a = watch.Modified
+	}
+	return a
+}
+
+func (l *list) ensureDeletes(kk []string) {
 	// Check for deletions!
 	for k := range l.cache {
 		var found bool
@@ -350,6 +361,4 @@ func (l *list) Reconcile(informer *wa.Informer, path *string) error {
 			delete(l.cache, k)
 		}
 	}
-
-	return nil
 }
