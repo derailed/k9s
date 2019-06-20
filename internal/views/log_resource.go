@@ -72,7 +72,7 @@ func (v *logResourceView) showLogs(prev bool) {
 	if v.containerFn != nil {
 		co = v.containerFn()
 	}
-	l.reload(co, v, v.list.GetName(), prev)
+	l.reload(co, v, prev)
 	v.switchPage("logs")
 }
 

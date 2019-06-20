@@ -158,7 +158,7 @@ func (v *podView) viewLogs(prev bool) bool {
 	}
 	status := strings.TrimSpace(v.masterPage().GetCell(r, col).Text)
 	if status == "Running" || status == "Completed" {
-		v.showLogs(v.selectedItem, "", v.list.GetName(), v, prev)
+		v.showLogs(v.selectedItem, "", v, prev)
 		return true
 	}
 
@@ -166,9 +166,9 @@ func (v *podView) viewLogs(prev bool) bool {
 	return false
 }
 
-func (v *podView) showLogs(path, co, view string, parent loggable, prev bool) {
+func (v *podView) showLogs(path, co string, parent loggable, prev bool) {
 	l := v.GetPrimitive("logs").(*logsView)
-	l.reload(co, parent, view, prev)
+	l.reload(co, parent, prev)
 	v.switchPage("logs")
 }
 

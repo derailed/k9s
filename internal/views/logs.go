@@ -31,13 +31,10 @@ type (
 	logsView struct {
 		*tview.Pages
 
-		app          *appView
-		title        string
-		parent       loggable
-		container    string
-		actions      keyActions
-		cancelFunc   context.CancelFunc
-		showPrevious bool
+		app        *appView
+		parent     loggable
+		actions    keyActions
+		cancelFunc context.CancelFunc
 	}
 )
 
@@ -46,7 +43,6 @@ func newLogsView(title string, app *appView, parent loggable) *logsView {
 		app:    app,
 		Pages:  tview.NewPages(),
 		parent: parent,
-		title:  title,
 	}
 
 	return &v
@@ -54,12 +50,11 @@ func newLogsView(title string, app *appView, parent loggable) *logsView {
 
 // Protocol...
 
-func (v *logsView) reload(co string, parent loggable, title string, prevLogs bool) {
-	v.parent, v.title, v.showPrevious = parent, title, prevLogs
+func (v *logsView) reload(co string, parent loggable, prevLogs bool) {
+	v.parent = parent
 	v.deletePage()
-	v.AddPage(co, newLogView(co, v.app, v.backCmd), true, true)
-	v.container = co
-	v.load()
+	v.AddPage("logs", newLogView(co, v.app, v.backCmd), true, true)
+	v.load(co, prevLogs)
 }
 
 // SetActions to handle keyboard events.
@@ -78,8 +73,7 @@ func (v *logsView) backFn() actionHandler {
 }
 
 func (v *logsView) deletePage() {
-	v.RemovePage(v.container)
-	v.container = ""
+	v.RemovePage("logs")
 }
 
 func (v *logsView) stop() {
@@ -91,8 +85,8 @@ func (v *logsView) stop() {
 	v.cancelFunc = nil
 }
 
-func (v *logsView) load() {
-	if err := v.doLoad(v.parent.getSelection(), v.container); err != nil {
+func (v *logsView) load(container string, showPrevious bool) {
+	if err := v.doLoad(v.parent.getSelection(), container, showPrevious); err != nil {
 		v.app.flash().err(err)
 		l := v.CurrentPage().Item.(*logView)
 		l.logLine("😂 Doh! No logs are available at this time. Check again later on...")
@@ -101,7 +95,7 @@ func (v *logsView) load() {
 	v.app.SetFocus(v)
 }
 
-func (v *logsView) doLoad(path, co string) error {
+func (v *logsView) doLoad(path, co string, showPrevious bool) error {
 	v.stop()
 
 	maxBuff := int64(v.app.config.K9s.LogRequestSize)
@@ -118,30 +112,7 @@ func (v *logsView) doLoad(path, co string) error {
 	l.SetTitle(fmat)
 
 	c := make(chan string, 10)
-	go func(l *logView) {
-		buff, index := make([]string, logBuffSize), 0
-		for {
-			select {
-			case line, ok := <-c:
-				if !ok {
-					l.flush(index, buff)
-					index = 0
-					return
-				}
-				if index < logBuffSize {
-					buff[index] = line
-					index++
-					continue
-				}
-				l.flush(index, buff)
-				index = 0
-				buff[index] = line
-			case <-time.After(flushTimeout):
-				l.flush(index, buff)
-				index = 0
-			}
-		}
-	}(l)
+	go updateLogs(c, l)
 
 	ns, po := namespaced(path)
 	res, ok := v.parent.getList().Resource().(resource.Tailable)
@@ -156,7 +127,7 @@ func (v *logsView) doLoad(path, co string) error {
 		Name:      po,
 		Container: co,
 		Lines:     maxBuff,
-		Previous:  v.showPrevious,
+		Previous:  showPrevious,
 	}
 	if err := res.Logs(ctx, c, opts); err != nil {
 		v.cancelFunc()
@@ -164,6 +135,31 @@ func (v *logsView) doLoad(path, co string) error {
 	}
 
 	return nil
+}
+
+func updateLogs(c <-chan string, l *logView) {
+	buff, index := make([]string, logBuffSize), 0
+	for {
+		select {
+		case line, ok := <-c:
+			if !ok {
+				l.flush(index, buff)
+				index = 0
+				return
+			}
+			if index < logBuffSize {
+				buff[index] = line
+				index++
+				continue
+			}
+			l.flush(index, buff)
+			index = 0
+			buff[index] = line
+		case <-time.After(flushTimeout):
+			l.flush(index, buff)
+			index = 0
+		}
+	}
 }
 
 // ----------------------------------------------------------------------------

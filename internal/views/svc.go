@@ -77,7 +77,7 @@ func (v *svcView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	l := v.GetPrimitive("logs").(*logsView)
-	l.reload("", v, v.list.GetName(), false)
+	l.reload("", v, false)
 	v.switchPage("logs")
 
 	return nil
