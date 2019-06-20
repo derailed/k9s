@@ -131,7 +131,7 @@ func (v *policyView) reconcile() (resource.TableData, error) {
 		return table, errs[0]
 	}
 
-	nevts, errs := v.namespacePolicies()
+	nevts, errs := v.namespacedPolicies()
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Debug().Err(err).Msg("Unable to find cluster policies")
@@ -191,16 +191,15 @@ func (v *policyView) clusterPolicies() (resource.RowEvents, []error) {
 	return evts, errs
 }
 
-func (v *policyView) namespacePolicies() (resource.RowEvents, []error) {
-	var errs []error
-	evts := make(resource.RowEvents)
+func (v policyView) loadRoleBindings() ([]namespacedRole, error) {
+	var rr []namespacedRole
 
-	rbs, err := v.app.conn().DialOrDie().Rbac().RoleBindings("").List(metav1.ListOptions{})
+	dial := v.app.conn().DialOrDie().Rbac()
+	rbs, err := dial.RoleBindings("").List(metav1.ListOptions{})
 	if err != nil {
-		return evts, errs
+		return rr, err
 	}
 
-	var rr []namespacedRole
 	for _, rb := range rbs.Items {
 		for _, s := range rb.Subjects {
 			if s.Kind == v.subjectKind && s.Name == v.subjectName {
@@ -209,16 +208,35 @@ func (v *policyView) namespacePolicies() (resource.RowEvents, []error) {
 		}
 	}
 
+	return rr, nil
+}
+
+func (v *policyView) loadRoles(errs []error, rr []namespacedRole) (resource.RowEvents, []error) {
+	var (
+		dial = v.app.conn().DialOrDie().Rbac()
+		evts = make(resource.RowEvents)
+	)
 	for _, r := range rr {
-		cr, err := v.app.conn().DialOrDie().Rbac().Roles(r.ns).Get(r.role, metav1.GetOptions{})
-		if err != nil {
+		if cr, err := dial.Roles(r.ns).Get(r.role, metav1.GetOptions{}); err != nil {
 			errs = append(errs, err)
-		}
-		for k, v := range v.parseRules(r.ns, "RO:"+r.role, cr.Rules) {
-			evts[k] = v
+		} else {
+			for k, v := range v.parseRules(r.ns, "RO:"+r.role, cr.Rules) {
+				evts[k] = v
+			}
 		}
 	}
 
+	return evts, errs
+}
+
+func (v *policyView) namespacedPolicies() (resource.RowEvents, []error) {
+	var errs []error
+	rr, err := v.loadRoleBindings()
+	if err != nil {
+		errs = append(errs, err)
+	}
+
+	evts, errs := v.loadRoles(errs, rr)
 	return evts, errs
 }
 
