@@ -6,6 +6,7 @@ import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
 	v1beta1 "k8s.io/api/policy/v1beta1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // PodDisruptionBudget that can be displayed in a table and interacted with.
@@ -96,24 +97,23 @@ func (r *PodDisruptionBudget) Fields(ns string) Row {
 		ff = append(ff, i.Namespace)
 	}
 
-	min := NAValue
-	if i.Spec.MinAvailable != nil {
-		min = strconv.Itoa(int(i.Spec.MinAvailable.IntVal))
-	}
-
-	max := NAValue
-	if i.Spec.MaxUnavailable != nil {
-		max = strconv.Itoa(int(i.Spec.MaxUnavailable.IntVal))
-	}
-
 	return append(ff,
 		i.Name,
-		min,
-		max,
+		numbToStr(i.Spec.MinAvailable),
+		numbToStr(i.Spec.MaxUnavailable),
 		strconv.Itoa(int(i.Status.PodDisruptionsAllowed)),
 		strconv.Itoa(int(i.Status.CurrentHealthy)),
 		strconv.Itoa(int(i.Status.DesiredHealthy)),
 		strconv.Itoa(int(i.Status.ExpectedPods)),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
+}
+
+// Helpers...
+
+func numbToStr(n *intstr.IntOrString) string {
+	if n == nil {
+		return NAValue
+	}
+	return strconv.Itoa(int(n.IntVal))
 }

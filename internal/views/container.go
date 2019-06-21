@@ -118,24 +118,27 @@ func (v *containerView) portForward(lport, cport string) {
 	}
 
 	log.Debug().Msgf(">>> Starting port forward %q %v", *v.path, ports)
-	go func(f *portforward.PortForwarder) {
-		v.app.QueueUpdateDraw(func() {
-			v.app.forwarders = append(v.app.forwarders, pf)
-			v.app.flash().infof("PortForward activated %s:%s", pf.Path(), pf.Ports()[0])
-			v.dismissModal()
-		})
-		pf.SetActive(true)
-		if err := f.ForwardPorts(); err == nil {
-			return
+	go v.runForward(pf, fw)
+}
+
+func (v *containerView) runForward(pf *k8s.PortForward, f *portforward.PortForwarder) {
+	v.app.QueueUpdateDraw(func() {
+		v.app.forwarders = append(v.app.forwarders, pf)
+		v.app.flash().infof("PortForward activated %s:%s", pf.Path(), pf.Ports()[0])
+		v.dismissModal()
+	})
+
+	pf.SetActive(true)
+	if err := f.ForwardPorts(); err == nil {
+		v.app.flash().err(err)
+		return
+	}
+	v.app.QueueUpdateDraw(func() {
+		if len(v.app.forwarders) > 0 {
+			v.app.forwarders = v.app.forwarders[:len(v.app.forwarders)-1]
 		}
-		v.app.QueueUpdateDraw(func() {
-			if len(v.app.forwarders) > 0 {
-				v.app.forwarders = v.app.forwarders[:len(v.app.forwarders)-1]
-			}
-			pf.SetActive(false)
-			v.app.flash().errf("PortForward failed %s", err)
-		})
-	}(fw)
+		pf.SetActive(false)
+	})
 }
 
 func (v *containerView) dismissModal() {
