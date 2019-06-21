@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/resource"
@@ -107,7 +106,7 @@ func (v *subjectView) selChanged(r, _ int) {
 		v.selectedItem = ""
 		return
 	}
-	v.selectedItem = strings.TrimSpace(v.GetCell(r, 0).Text)
+	v.selectedItem = trimCell(v.tableView, r, 0)
 }
 
 func (v *subjectView) SetSubject(s string) {

@@ -18,6 +18,7 @@ import (
 type (
 	logFrame struct {
 		*tview.Flex
+
 		app     *appView
 		actions keyActions
 		backFn  actionHandler
@@ -25,6 +26,7 @@ type (
 
 	logView struct {
 		*logFrame
+
 		logs       *detailsView
 		status     *statusView
 		ansiWriter io.Writer
@@ -119,12 +121,14 @@ func (v *logView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 func (v *logView) logLine(line string) {
 	fmt.Fprintln(v.ansiWriter, tview.Escape(line))
+	log.Debug().Msgf("LOG LINES %d", v.logs.GetLineCount())
 }
 
 func (v *logView) flush(index int, buff []string) {
 	if index == 0 {
 		return
 	}
+
 	v.logLine(strings.Join(buff[:index], "\n"))
 	if atomic.LoadInt32(&v.autoScroll) == 1 {
 		v.app.QueueUpdateDraw(func() {

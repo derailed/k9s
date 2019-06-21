@@ -109,14 +109,13 @@ func (v *benchView) getTitle() string {
 }
 
 func (v *benchView) selChanged(r, c int) {
-	log.Info().Msgf("Bench sel changed %d:%d", r, c)
 	tv := v.getTV()
 	if r == 0 || tv.GetCell(r, 0) == nil {
 		v.selectedItem = ""
 		return
 	}
 	v.selectedRow = r
-	v.selectedItem = strings.TrimSpace(tv.GetCell(r, 7).Text)
+	v.selectedItem = trimCell(tv, r, 7)
 }
 
 func (v *benchView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
@@ -157,7 +156,7 @@ func (v *benchView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	dir := filepath.Join(K9sBenchDir, v.app.config.K9s.CurrentCluster)
-	showModal(v.Pages, fmt.Sprintf("Deleting `%s are you sure?", sel), "table", func() {
+	showModal(v.Pages, fmt.Sprintf("Delete benchmark `%s?", sel), "table", func() {
 		if err := os.Remove(filepath.Join(dir, sel)); err != nil {
 			v.app.flash().errf("Unable to delete file %s", err)
 			return

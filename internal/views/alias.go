@@ -3,7 +3,6 @@ package views
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/gdamore/tcell"
@@ -95,7 +94,7 @@ func (v *aliasView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (v *aliasView) runCmd(evt *tcell.EventKey) *tcell.EventKey {
 	r, _ := v.GetSelection()
 	if r > 0 {
-		v.app.gotoResource(strings.TrimSpace(v.GetCell(r, 0).Text), true)
+		v.app.gotoResource(trimCell(v.tableView, r, 0), true)
 	}
 
 	return nil

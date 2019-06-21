@@ -102,19 +102,8 @@ func (v *svcView) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func trimCell(tv *tableView, row, col int) (string, error) {
-	c := tv.GetCell(row, tv.nameColIndex()+col)
-	if c == nil {
-		return "", fmt.Errorf("No cell at location [%d:%d]", row, col)
-	}
-	return strings.TrimSpace(c.Text), nil
-}
-
 func (v *svcView) checkSvc(row int) error {
-	svcType, err := trimCell(v.masterPage(), row, 1)
-	if err != nil {
-		return err
-	}
+	svcType := trimCellRelative(v.masterPage(), row, 1)
 	if svcType != "NodePort" && svcType != "LoadBalancer" {
 		return errors.New("You must select a reachable service")
 	}
@@ -122,10 +111,7 @@ func (v *svcView) checkSvc(row int) error {
 }
 
 func (v *svcView) getExternalPort(row int) (string, error) {
-	ports, err := trimCell(v.masterPage(), row, 5)
-	if err != nil {
-		return "", err
-	}
+	ports := trimCellRelative(v.masterPage(), row, 5)
 
 	pp := strings.Split(ports, " ")
 	if len(pp) == 0 {

@@ -2,7 +2,6 @@ package views
 
 import (
 	"path"
-	"strings"
 
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
@@ -107,12 +106,12 @@ func (v *masterDetail) selectItem(r, c int) {
 		return
 	}
 
-	col0 := cleanCell(t, r, 0)
+	col0 := trimCell(t, r, 0)
 	switch v.currentNS {
 	case resource.NotNamespaced:
 		v.selectedItem = col0
 	case resource.AllNamespace, resource.AllNamespaces:
-		v.selectedItem = path.Join(col0, cleanCell(t, r, 1))
+		v.selectedItem = path.Join(col0, trimCell(t, r, 1))
 	default:
 		v.selectedItem = path.Join(v.currentNS, col0)
 	}
@@ -125,8 +124,4 @@ func (v *masterDetail) defaultActions() {
 	if v.extraActionsFn != nil {
 		v.extraActionsFn(v.actions)
 	}
-}
-
-func cleanCell(v *tableView, r, c int) string {
-	return strings.TrimSpace(v.GetCell(r, c).Text)
 }

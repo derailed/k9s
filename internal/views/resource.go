@@ -151,7 +151,7 @@ func (v *resourceView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	msg := fmt.Sprintf("Delete %s %s?", v.list.GetName(), sel)
 	showDeleteDialog(v.Pages, msg, func(cascade, force bool) {
 		v.masterPage().setDeleted()
-		v.app.flash().infof("Deleting %s %s", v.list.GetName(), sel)
+		v.app.flash().infof("Delete resource %s %s", v.list.GetName(), sel)
 		if err := v.list.Resource().Delete(sel, cascade, force); err != nil {
 			v.app.flash().errf("Delete failed with %s", err)
 		} else {

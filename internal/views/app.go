@@ -55,25 +55,25 @@ type (
 		cancel     context.CancelFunc
 		informer   *watch.Informer
 		stopCh     chan struct{}
-		forwarders []forwarder
+		forwarders map[string]forwarder
 	}
 )
 
 // NewApp returns a K9s app instance.
 func NewApp(cfg *config.Config) *appView {
 	v := appView{
-		shellView: newShellView(),
-		cmdBuff:   newCmdBuff(':'),
+		shellView:  newShellView(),
+		cmdBuff:    newCmdBuff(':'),
+		forwarders: make(map[string]forwarder),
 	}
-
 	v.config = cfg
 	v.initBench(cfg.K9s.CurrentCluster)
 	v.refreshStyles()
+	v.command = newCommand(&v)
 
 	v.views["menu"] = newMenuView(v.styles)
 	v.views["logo"] = newLogoView(v.styles)
 	v.views["cmd"] = newCmdView(v.styles, '🐶')
-	v.command = newCommand(&v)
 	v.views["flash"] = newFlashView(&v, "Initializing...")
 	v.views["crumbs"] = newCrumbsView(v.styles)
 	v.views["clusterInfo"] = newClusterInfoView(&v, k8s.NewMetricsServer(cfg.GetConnection()))
@@ -173,11 +173,11 @@ func (a *appView) BailOut() {
 }
 
 func (a *appView) stopForwarders() {
-	for _, f := range a.forwarders {
+	for k, f := range a.forwarders {
 		log.Debug().Msgf("Deleting forwarder %s", f.Path())
 		f.Stop()
+		delete(a.forwarders, k)
 	}
-	a.forwarders = []forwarder{}
 }
 
 func (a *appView) conn() k8s.Connection {

@@ -79,5 +79,6 @@ func (p *Pod) Containers(ns, n string, includeInit bool) ([]string, error) {
 
 // Logs fetch container logs for a given pod and container.
 func (p *Pod) Logs(ns, n string, opts *v1.PodLogOptions) *restclient.Request {
+	log.Debug().Msgf("Log Options %#v", *opts.TailLines)
 	return p.DialOrDie().CoreV1().Pods(ns).GetLogs(n, opts)
 }

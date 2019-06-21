@@ -151,13 +151,13 @@ func (v *forwardView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 			Path:   "/",
 		},
 	}
-	co := strings.TrimSpace(tv.GetCell(r, 2).Text)
+	co := trimCell(tv, r, 2)
 	if b, ok := v.app.bench.Benchmarks.Containers[containerID(sel, co)]; ok {
 		cfg = b
 	}
 	cfg.Name = sel
 
-	base := strings.TrimSpace(tv.GetCell(r, 4).Text)
+	base := trimCell(tv, r, 4)
 	var err error
 	if v.bench, err = newBenchmark(base, cfg); err != nil {
 		v.app.flash().errf("Bench failed %v", err)
@@ -196,8 +196,7 @@ func (v *forwardView) getSelectedItem() string {
 	if r == 0 {
 		return ""
 	}
-
-	return fqn(strings.TrimSpace(tv.GetCell(r, 0).Text), strings.TrimSpace(tv.GetCell(r, 1).Text))
+	return fwFQN(fqn(trimCell(tv, r, 0), trimCell(tv, r, 1)), trimCell(tv, r, 2))
 }
 
 func (v *forwardView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -206,27 +205,21 @@ func (v *forwardView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		tv.cmdBuff.reset()
 		return nil
 	}
+
 	sel := v.getSelectedItem()
 	if sel == "" {
 		return nil
 	}
 
-	showModal(v.Pages, fmt.Sprintf("Deleting `%s are you sure?", sel), "table", func() {
-		index := -1
-		for i, f := range v.app.forwarders {
-			if sel == f.Path() {
-				index = i
-			}
-		}
-		if index == -1 {
+	showModal(v.Pages, fmt.Sprintf("Delete PortForward `%s?", sel), "table", func() {
+		fw, ok := v.app.forwarders[sel]
+		if !ok {
+			log.Debug().Msgf("Unable to find forwarder %s", sel)
 			return
 		}
-		v.app.forwarders[index].Stop()
-		if index == 0 && len(v.app.forwarders) == 1 {
-			v.app.forwarders = []forwarder{}
-		} else {
-			v.app.forwarders = append(v.app.forwarders[:index], v.app.forwarders[index+1:]...)
-		}
+		fw.Stop()
+		delete(v.app.forwarders, sel)
+
 		log.Debug().Msgf("PortForwards after delete: %#v", v.app.forwarders)
 		v.getTV().update(v.hydrate())
 		v.app.flash().infof("PortForward %s deleted!", sel)

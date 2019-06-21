@@ -7,7 +7,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
@@ -110,7 +109,7 @@ func (v *dumpView) selChanged(r, c int) {
 		return
 	}
 	v.selectedRow = r
-	v.selectedItem = strings.TrimSpace(tv.GetCell(r, 0).Text)
+	v.selectedItem = trimCell(tv, r, 0)
 }
 
 func (v *dumpView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
@@ -118,7 +117,6 @@ func (v *dumpView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcel
 		tv := v.getTV()
 		tv.sortCol.index, tv.sortCol.asc = tv.nameColIndex()+col, asc
 		tv.refresh()
-
 		return nil
 	}
 }
@@ -147,7 +145,7 @@ func (v *dumpView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	dir := filepath.Join(config.K9sDumpDir, v.app.config.K9s.CurrentCluster)
-	showModal(v.Pages, fmt.Sprintf("Deleting `%s are you sure?", sel), "table", func() {
+	showModal(v.Pages, fmt.Sprintf("Delete screen dump `%s?", sel), "table", func() {
 		if err := os.Remove(filepath.Join(dir, sel)); err != nil {
 			v.app.flash().errf("Unable to delete file %s", err)
 			return

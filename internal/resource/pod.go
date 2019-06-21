@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"strconv"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -211,12 +210,17 @@ func readLogs(ctx context.Context, stream io.ReadCloser, c chan<- string, opts L
 
 	head := opts.NormalizeName()
 	scanner := bufio.NewScanner(stream)
+	// count := 0
 	for scanner.Scan() {
+		txt := scanner.Text()
+		// log.Debug().Msgf("Pushing %d: %s", count, txt)
+		// count++
 		select {
 		case <-ctx.Done():
 			return
-		case c <- head + strings.TrimSpace(scanner.Text()):
+		case c <- head + txt:
 		default:
+			// Ensures we get back to scanning
 		}
 	}
 }

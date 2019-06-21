@@ -85,6 +85,11 @@ func (p *PortForward) Stop() {
 	close(p.stopChan)
 }
 
+// FQN returns the portforward unique id.
+func (p *PortForward) FQN() string {
+	return p.path + ":" + p.container
+}
+
 // Start initiates a port forward session for a given pod and ports.
 func (p *PortForward) Start(path, co string, ports []string) (*portforward.PortForwarder, error) {
 	p.path, p.container, p.ports, p.age = path, co, ports, time.Now()

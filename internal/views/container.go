@@ -3,6 +3,7 @@ package views
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -55,7 +56,7 @@ func (v *containerView) selectedContainer() string {
 }
 
 func (v *containerView) viewLogs(app *appView, _, res, sel string) {
-	status := strings.TrimSpace(v.masterPage().GetCell(v.selectedRow, 3).Text)
+	status := trimCell(v.masterPage(), v.selectedRow, 3)
 	if status == "Running" || status == "Completed" {
 		v.showLogs(false)
 		return
@@ -81,8 +82,19 @@ func (v *containerView) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	portC := v.masterPage().GetCell(v.selectedRow, 10)
-	ports := strings.Split(portC.Text, ",")
+	if _, ok := v.app.forwarders[fwFQN(*v.path, v.selectedItem)]; ok {
+		v.app.flash().err(fmt.Errorf("A PortForward already exist on container %s", *v.path))
+		return nil
+	}
+
+	state := trimCell(v.masterPage(), v.selectedRow, 3)
+	if state != "Running" {
+		v.app.flash().err(fmt.Errorf("Container %s is not running?", v.selectedItem))
+		return nil
+	}
+
+	portC := trimCell(v.masterPage(), v.selectedRow, 10)
+	ports := strings.Split(portC, ",")
 	if len(ports) == 0 {
 		v.app.flash().err(errors.New("Container exposes no ports"))
 		return nil
@@ -123,20 +135,18 @@ func (v *containerView) portForward(lport, cport string) {
 
 func (v *containerView) runForward(pf *k8s.PortForward, f *portforward.PortForwarder) {
 	v.app.QueueUpdateDraw(func() {
-		v.app.forwarders = append(v.app.forwarders, pf)
+		v.app.forwarders[pf.FQN()] = pf
 		v.app.flash().infof("PortForward activated %s:%s", pf.Path(), pf.Ports()[0])
 		v.dismissModal()
 	})
 
 	pf.SetActive(true)
-	if err := f.ForwardPorts(); err == nil {
+	if err := f.ForwardPorts(); err != nil {
 		v.app.flash().err(err)
 		return
 	}
 	v.app.QueueUpdateDraw(func() {
-		if len(v.app.forwarders) > 0 {
-			v.app.forwarders = v.app.forwarders[:len(v.app.forwarders)-1]
-		}
+		delete(v.app.forwarders, pf.FQN())
 		pf.SetActive(false)
 	})
 }

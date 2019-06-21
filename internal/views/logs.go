@@ -12,11 +12,8 @@ import (
 )
 
 const (
-	maxBuff1     int64 = 200
-	refreshRate        = 200 * time.Millisecond
-	maxCleanse         = 100
-	logBuffSize        = 100
-	flushTimeout       = 200 * time.Millisecond
+	logBuffSize  = 100
+	flushTimeout = 200 * time.Millisecond
 
 	logCoFmt = " Logs([fg:bg:]%s:[hilite:bg:b]%s[-:bg:-]) "
 	logFmt   = " Logs([fg:bg:]%s) "
@@ -103,10 +100,11 @@ func (v *logsView) doLoad(path, co string, prevLogs bool) error {
 	l.setTitle(path, co)
 
 	c := make(chan string, 10)
-	go updateLogs(c, l)
+	go updateLogs(c, l, logBuffSize)
 
 	res, ok := v.parent.getList().Resource().(resource.Tailable)
 	if !ok {
+		close(c)
 		return fmt.Errorf("Resource %T is not tailable", v.parent.getList().Resource())
 	}
 
@@ -132,19 +130,18 @@ func (v *logsView) logOpts(path, co string, prevLogs bool) resource.LogOptions {
 		Lines:    int64(v.app.config.K9s.LogRequestSize),
 		Previous: prevLogs,
 	}
-
 }
-func updateLogs(c <-chan string, l *logView) {
-	buff, index := make([]string, logBuffSize), 0
+
+func updateLogs(c <-chan string, l *logView, buffSize int) {
+	buff, index := make([]string, buffSize), 0
 	for {
 		select {
 		case line, ok := <-c:
 			if !ok {
 				l.flush(index, buff)
-				index = 0
 				return
 			}
-			if index < logBuffSize {
+			if index < buffSize {
 				buff[index] = line
 				index++
 				continue
@@ -152,6 +149,7 @@ func updateLogs(c <-chan string, l *logView) {
 			l.flush(index, buff)
 			index = 0
 			buff[index] = line
+			index++
 		case <-time.After(flushTimeout):
 			l.flush(index, buff)
 			index = 0

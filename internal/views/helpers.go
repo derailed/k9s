@@ -20,6 +20,11 @@ const (
 	minusSign = "↓"
 )
 
+// FwFQN returns a fully qualified ns/name:container id.
+func fwFQN(po, co string) string {
+	return po + ":" + co
+}
+
 func isTCPPort(p string) bool {
 	return !strings.Contains(p, "UDP")
 }

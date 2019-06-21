@@ -12,6 +12,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -32,6 +33,19 @@ var (
 )
 
 type cleanseFn func(string) string
+
+func trimCellRelative(tv *tableView, row, col int) string {
+	return trimCell(tv, row, tv.nameColIndex()+col)
+}
+
+func trimCell(tv *tableView, row, col int) string {
+	c := tv.GetCell(row, col)
+	if c == nil {
+		log.Error().Err(fmt.Errorf("No cell at location [%d:%d]", row, col)).Msg("Trim cell failed!")
+		return ""
+	}
+	return strings.TrimSpace(c.Text)
+}
 
 func saveTable(cluster, name string, data resource.TableData) (string, error) {
 	dir := filepath.Join(config.K9sDumpDir, cluster)

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/watch"
@@ -152,12 +151,7 @@ func (v *podView) viewLogs(prev bool) bool {
 		return false
 	}
 
-	r := v.selectedRow
-	col := 2
-	if v.list.AllNamespaces() {
-		col = 3
-	}
-	status := strings.TrimSpace(v.masterPage().GetCell(r, col).Text)
+	status := trimCellRelative(v.masterPage(), v.selectedRow, 2)
 	if status == "Running" || status == "Completed" {
 		v.showLogs(v.selectedItem, "", v, prev)
 		return true
