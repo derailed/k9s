@@ -155,7 +155,7 @@ func (r *Container) Fields(ns string) Row {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func gatherMetrics(co v1.Container, mx *mv1beta1.PodMetrics) (scpu string, smem string, pcpu string, pmem string) {
+func gatherMetrics(co v1.Container, mx *mv1beta1.PodMetrics) (scpu, smem, pcpu, pmem string) {
 	scpu, smem, pcpu, pmem = NAValue, NAValue, NAValue, NAValue
 	if mx == nil {
 		return

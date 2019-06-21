@@ -276,15 +276,7 @@ func (r *Pod) Fields(ns string) Row {
 
 	ss := i.Status.ContainerStatuses
 	cr, _, rc := r.statuses(ss)
-
-	ccpu, cmem, pcpu, pmem := NAValue, NAValue, NAValue, NAValue
-	if r.metrics != nil {
-		c, m := r.currentRes(r.metrics)
-		ccpu, cmem = ToMillicore(c.MilliValue()), ToMi(k8s.ToMB(m.Value()))
-		rc, rm := r.requestedRes(i)
-		pcpu = AsPerc(toPerc(float64(c.MilliValue()), float64(rc.MilliValue())))
-		pmem = AsPerc(toPerc(k8s.ToMB(m.Value()), k8s.ToMB(rm.Value())))
-	}
+	ccpu, cmem, pcpu, pmem := r.gatherPodMetrics(i)
 
 	return append(ff,
 		i.ObjectMeta.Name,
@@ -304,6 +296,21 @@ func (r *Pod) Fields(ns string) Row {
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func (r *Pod) gatherPodMetrics(po *v1.Pod) (ccpu, cmem, pcpu, pmem string) {
+	ccpu, cmem, pcpu, pmem = NAValue, NAValue, NAValue, NAValue
+	if r.metrics == nil {
+		return
+	}
+
+	c, m := r.currentRes(r.metrics)
+	ccpu, cmem = ToMillicore(c.MilliValue()), ToMi(k8s.ToMB(m.Value()))
+	rc, rm := r.requestedRes(po)
+	pcpu = AsPerc(toPerc(float64(c.MilliValue()), float64(rc.MilliValue())))
+	pmem = AsPerc(toPerc(k8s.ToMB(m.Value()), k8s.ToMB(rm.Value())))
+
+	return
+}
 
 func containerResources(co v1.Container) (cpu, mem *resource.Quantity) {
 	req, limit := co.Resources.Requests, co.Resources.Limits

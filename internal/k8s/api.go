@@ -136,9 +136,9 @@ func makeSAR(ns, name, resURL string) *authorizationv1.SelfSubjectAccessReview {
 }
 
 // CanIAccess checks if user has access to a certain resource.
-func (a *APIClient) canIAccess(ns, name, resURL string, verbs []string) (bool, error) {
+func canIAccess(conn Connection, ns, name, resURL string, verbs []string) (bool, error) {
 	sar := makeSAR(ns, name, resURL)
-	dial := a.DialOrDie().AuthorizationV1().SelfSubjectAccessReviews()
+	dial := conn.DialOrDie().AuthorizationV1().SelfSubjectAccessReviews()
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
 		resp, err := dial.Create(sar)
@@ -194,7 +194,6 @@ func (a *APIClient) NodePods(node string) (*v1.PodList, error) {
 func (a *APIClient) IsNamespaced(res string) bool {
 	list, _ := a.DialOrDie().Discovery().ServerPreferredResources()
 	for _, l := range list {
-		log.Debug().Msgf("GV %s", l.GroupVersion)
 		for _, r := range l.APIResources {
 			if r.Name == res {
 				return r.Namespaced

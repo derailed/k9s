@@ -129,20 +129,14 @@ func (r *Job) Fields(ns string) Row {
 // ----------------------------------------------------------------------------
 // Helpers...
 
+const maxShow = 2
+
 func (*Job) toContainers(p v1.PodSpec) (string, string) {
-	cc := make([]string, 0, len(p.InitContainers)+len(p.Containers))
-	ii := make([]string, 0, len(cc))
+	cc, ii := parseContainers(p.InitContainers)
+	cn, ci := parseContainers(p.Containers)
 
-	for _, c := range p.InitContainers {
-		cc = append(cc, c.Name)
-		ii = append(ii, c.Image)
-	}
-	for _, c := range p.Containers {
-		cc = append(cc, c.Name)
-		ii = append(ii, c.Image)
-	}
+	cc, ii = append(cc, cn...), append(ii, ci...)
 
-	const maxShow = 2
 	// Limit to 2 of each...
 	if len(cc) > maxShow {
 		cc = append(cc[:2], "(+"+strconv.Itoa(len(cc)-maxShow)+")...")
@@ -152,6 +146,15 @@ func (*Job) toContainers(p v1.PodSpec) (string, string) {
 	}
 
 	return strings.Join(cc, ","), strings.Join(ii, ",")
+}
+
+func parseContainers(cos []v1.Container) (nn, ii []string) {
+	for _, co := range cos {
+		nn = append(nn, co.Name)
+		ii = append(ii, co.Image)
+	}
+
+	return nn, ii
 }
 
 func (*Job) toCompletion(spec batchv1.JobSpec, status batchv1.JobStatus) (s string) {

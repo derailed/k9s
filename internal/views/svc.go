@@ -148,14 +148,10 @@ func (v *svcView) reloadBenchCfg() error {
 }
 
 func (v *svcView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
+	if !v.rowSelected() || v.bench != nil {
 		return evt
 	}
 
-	if v.bench != nil {
-		v.app.flash().err(errors.New("Only one benchmark allowed at a time"))
-		return nil
-	}
 	if err := v.reloadBenchCfg(); err != nil {
 		v.app.flash().err(err)
 		return nil
@@ -197,26 +193,30 @@ func (v *svcView) runBenchmark(port string, cfg config.BenchConfig) error {
 
 	v.app.status(flashWarn, "Benchmark in progress...")
 	log.Debug().Msg("Bench starting...")
-	go v.bench.run(v.app.config.K9s.CurrentCluster, func() {
-		log.Debug().Msg("Bench Completed!")
-		v.app.QueueUpdate(func() {
-			if v.bench.canceled {
-				v.app.status(flashInfo, "Benchmark canceled")
-			} else {
-				v.app.status(flashInfo, "Benchmark Completed!")
-				v.bench.cancel()
-			}
-			v.bench = nil
-			go func() {
-				<-time.After(2 * time.Second)
-				v.app.QueueUpdate(func() {
-					v.app.statusReset()
-				})
-			}()
-		})
-	})
+	go v.bench.run(v.app.config.K9s.CurrentCluster, v.benchDone)
 
 	return nil
+}
+
+func (v *svcView) benchDone() {
+	log.Debug().Msg("Bench Completed!")
+	v.app.QueueUpdate(func() {
+		if v.bench.canceled {
+			v.app.status(flashInfo, "Benchmark canceled")
+		} else {
+			v.app.status(flashInfo, "Benchmark Completed!")
+			v.bench.cancel()
+		}
+		v.bench = nil
+		go benchTimedOut(v.app)
+	})
+}
+
+func benchTimedOut(app *appView) {
+	<-time.After(2 * time.Second)
+	app.QueueUpdate(func() {
+		app.statusReset()
+	})
 }
 
 func (v *svcView) showSvcPods(ns string, sel map[string]string, b actionHandler) {
