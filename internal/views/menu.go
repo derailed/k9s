@@ -326,6 +326,16 @@ var numKeys = map[int]int32{
 }
 
 func initKeys() {
+	tcell.KeyNames[tcell.Key(KeyHelp)] = "?"
+	tcell.KeyNames[tcell.Key(KeySlash)] = "/"
+
+	initNumbKeys()
+	initStdKeys()
+	initShiftKeys()
+	initAltKeys()
+}
+
+func initNumbKeys() {
 	tcell.KeyNames[tcell.Key(Key0)] = "0"
 	tcell.KeyNames[tcell.Key(Key1)] = "1"
 	tcell.KeyNames[tcell.Key(Key2)] = "2"
@@ -336,7 +346,9 @@ func initKeys() {
 	tcell.KeyNames[tcell.Key(Key7)] = "7"
 	tcell.KeyNames[tcell.Key(Key8)] = "8"
 	tcell.KeyNames[tcell.Key(Key9)] = "9"
+}
 
+func initStdKeys() {
 	tcell.KeyNames[tcell.Key(KeyA)] = "a"
 	tcell.KeyNames[tcell.Key(KeyB)] = "b"
 	tcell.KeyNames[tcell.Key(KeyC)] = "c"
@@ -363,7 +375,9 @@ func initKeys() {
 	tcell.KeyNames[tcell.Key(KeyX)] = "x"
 	tcell.KeyNames[tcell.Key(KeyY)] = "y"
 	tcell.KeyNames[tcell.Key(KeyZ)] = "z"
+}
 
+func initShiftKeys() {
 	tcell.KeyNames[tcell.Key(KeyShiftA)] = "SHIFT-A"
 	tcell.KeyNames[tcell.Key(KeyShiftB)] = "SHIFT-B"
 	tcell.KeyNames[tcell.Key(KeyShiftC)] = "SHIFT-C"
@@ -390,10 +404,9 @@ func initKeys() {
 	tcell.KeyNames[tcell.Key(KeyShiftX)] = "SHIFT-X"
 	tcell.KeyNames[tcell.Key(KeyShiftY)] = "SHIFT-Y"
 	tcell.KeyNames[tcell.Key(KeyShiftZ)] = "SHIFT-Z"
+}
 
-	tcell.KeyNames[tcell.Key(KeyHelp)] = "?"
-	tcell.KeyNames[tcell.Key(KeySlash)] = "/"
-
+func initAltKeys() {
 	tcell.KeyNames[tcell.Key(KeyAltA)] = "ALT-A"
 	tcell.KeyNames[tcell.Key(KeyAltB)] = "ALT-B"
 	tcell.KeyNames[tcell.Key(KeyAltC)] = "ALT-C"
@@ -420,5 +433,4 @@ func initKeys() {
 	tcell.KeyNames[tcell.Key(KeyAltX)] = "ALT-X"
 	tcell.KeyNames[tcell.Key(KeyAltY)] = "ALT-Y"
 	tcell.KeyNames[tcell.Key(KeyAltZ)] = "ALT-Z"
-
 }
