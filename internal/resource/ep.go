@@ -94,28 +94,35 @@ func (r *Endpoints) Fields(ns string) Row {
 
 func (r *Endpoints) toEPs(ss []v1.EndpointSubset) string {
 	aa := make([]string, 0, len(ss))
-	max := 3
 	for _, s := range ss {
-		pp := make([]string, 0, len(s.Ports))
-		for _, p := range s.Ports {
-			pp = append(pp, strconv.Itoa(int(p.Port)))
-		}
-
-		for _, a := range s.Addresses {
-			if len(a.IP) == 0 {
-				continue
-			}
-			if len(pp) == 0 {
-				aa = append(aa, a.IP)
-				continue
-			}
-			add := a.IP + ":" + strings.Join(pp, ",")
-			if len(pp) > max {
-				add = a.IP + ":" + strings.Join(pp[:max], ",") + "..."
-			}
-			aa = append(aa, add)
-		}
+		pp := make([]string, len(s.Ports))
+		portsToStrs(s.Ports, pp)
+		proccessIPs(aa, pp, s.Addresses)
 	}
 
 	return strings.Join(aa, ",")
+}
+
+func portsToStrs(pp []v1.EndpointPort, ss []string) {
+	for i := 0; i < len(pp); i++ {
+		ss[i] = strconv.Itoa(int(pp[i].Port))
+	}
+}
+
+func proccessIPs(aa []string, pp []string, addrs []v1.EndpointAddress) {
+	const maxIPs = 3
+	for _, a := range addrs {
+		if len(a.IP) == 0 {
+			continue
+		}
+		if len(pp) == 0 {
+			aa = append(aa, a.IP)
+			continue
+		}
+		if len(pp) > maxIPs {
+			aa = append(aa, a.IP+":"+strings.Join(pp[:maxIPs], ",")+"...")
+		} else {
+			aa = append(aa, a.IP+":"+strings.Join(pp, ","))
+		}
+	}
 }

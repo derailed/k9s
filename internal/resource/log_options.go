@@ -6,13 +6,21 @@ import (
 	"github.com/derailed/k9s/internal/color"
 )
 
-// LogOptions represent logger options.
-type LogOptions struct {
-	Namespace, Name, Container string
-	Lines                      int64
-	Previous                   bool
-	Color                      color.Paint
-}
+type (
+	// Fqn uniquely describes a container
+	Fqn struct {
+		Namespace, Name, Container string
+	}
+
+	// LogOptions represent logger options.
+	LogOptions struct {
+		Fqn
+
+		Lines    int64
+		Previous bool
+		Color    color.Paint
+	}
+)
 
 // HasContainer checks if a container is present.
 func (o LogOptions) HasContainer() bool {

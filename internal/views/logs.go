@@ -124,11 +124,13 @@ func (v *logsView) doLoad(path, co string, prevLogs bool) error {
 func (v *logsView) logOpts(path, co string, prevLogs bool) resource.LogOptions {
 	ns, po := namespaced(path)
 	return resource.LogOptions{
-		Namespace: ns,
-		Name:      po,
-		Container: co,
-		Lines:     int64(v.app.config.K9s.LogRequestSize),
-		Previous:  prevLogs,
+		Fqn: resource.Fqn{
+			Namespace: ns,
+			Name:      po,
+			Container: co,
+		},
+		Lines:    int64(v.app.config.K9s.LogRequestSize),
+		Previous: prevLogs,
 	}
 
 }
