@@ -138,9 +138,11 @@ func updateLogs(c <-chan string, l *logView, buffSize int) {
 		select {
 		case line, ok := <-c:
 			if !ok {
+				log.Debug().Msgf("Closed channel detected. Bailing out...")
 				l.flush(index, buff)
 				return
 			}
+			log.Debug().Msgf("Got line %s", line)
 			if index < buffSize {
 				buff[index] = line
 				index++

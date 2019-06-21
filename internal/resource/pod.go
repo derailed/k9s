@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"strconv"
-	"sync/atomic"
 	"time"
 
 	"github.com/derailed/k9s/internal/color"
@@ -171,14 +170,12 @@ func tailLogs(ctx context.Context, res k8s.Loggable, c chan<- string, opts LogOp
 	log.Debug().Msgf("Tailing logs for %q/%q:%q", opts.Namespace, opts.Name, opts.Container)
 	o := v1.PodLogOptions{
 		Container: opts.Container,
+		Follow:    true,
 		TailLines: &opts.Lines,
 		Previous:  opts.Previous,
 	}
 	req := res.Logs(opts.Namespace, opts.Name, &o)
 	req.Context(ctx)
-
-	var blocked int32 = 1
-	go logsTimeout(blocked, c, opts)
 
 	// This call will block if nothing is in the stream!!
 	stream, err := req.Stream()
@@ -187,7 +184,7 @@ func tailLogs(ctx context.Context, res k8s.Loggable, c chan<- string, opts LogOp
 		return err
 	}
 
-	atomic.StoreInt32(&blocked, 0)
+	// atomic.StoreInt32(&blocked, 0)
 	go readLogs(ctx, stream, c, opts)
 
 	return nil
@@ -195,28 +192,18 @@ func tailLogs(ctx context.Context, res k8s.Loggable, c chan<- string, opts LogOp
 
 func readLogs(ctx context.Context, stream io.ReadCloser, c chan<- string, opts LogOptions) {
 	defer func() {
-		log.Debug().Msgf("Closing stream `%s", opts.Path())
+		log.Debug().Msgf(">>> Closing stream `%s", opts.Path())
 		stream.Close()
 	}()
 
 	scanner, head := bufio.NewScanner(stream), opts.NormalizeName()
 	for scanner.Scan() {
-		txt := scanner.Text()
 		select {
 		case <-ctx.Done():
 			return
-		case c <- head + txt:
+		case c <- head + scanner.Text():
 		default:
 			// Ensures we get back to scanning
-		}
-	}
-}
-
-func logsTimeout(blocked int32, c chan<- string, opts LogOptions) {
-	select {
-	case <-time.After(defaultTimeout):
-		if atomic.LoadInt32(&blocked) == 1 {
-			log.Debug().Msgf("Closing channel %s:%s", opts.Name, opts.Container)
 		}
 	}
 }
