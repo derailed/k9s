@@ -12,7 +12,7 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ## Change Logs
 
-This is mainly a maintenance release a few bugs were fixed but mainly code was refactored.
+This is mainly a maintenance release a few bugs were fixed.
 
 ### Breaking Change!
 
