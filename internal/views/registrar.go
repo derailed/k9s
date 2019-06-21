@@ -115,6 +115,7 @@ func showSAPolicy(app *appView, _, _, selection string) {
 }
 
 func resourceViews(c k8s.Connection, m map[string]resCmd) {
+	primRes(m)
 	coreRes(m)
 	rbacRes(m)
 	apiExtRes(m)
