@@ -78,12 +78,6 @@ func (p *Pod) Containers(ns, n string, includeInit bool) ([]string, error) {
 }
 
 // Logs fetch container logs for a given pod and container.
-func (p *Pod) Logs(ns, n, co string, lines int64, prev bool) *restclient.Request {
-	return p.DialOrDie().CoreV1().Pods(ns).GetLogs(n, &v1.PodLogOptions{
-		Container:  co,
-		Follow:     true,
-		TailLines:  &lines,
-		Timestamps: false,
-		Previous:   prev,
-	})
+func (p *Pod) Logs(ns, n string, opts *v1.PodLogOptions) *restclient.Request {
+	return p.DialOrDie().CoreV1().Pods(ns).GetLogs(n, opts)
 }

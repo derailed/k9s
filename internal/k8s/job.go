@@ -19,7 +19,7 @@ type (
 	// Loggable represents a K8s resource that has containers and can be logged.
 	Loggable interface {
 		Containers(ns, n string, includeInit bool) ([]string, error)
-		Logs(ns, n, co string, lines int64, previous bool) *restclient.Request
+		Logs(ns, n string, opts *v1.PodLogOptions) *restclient.Request
 	}
 )
 
@@ -66,12 +66,13 @@ func (j *Job) Containers(ns, n string, includeInit bool) ([]string, error) {
 }
 
 // Logs fetch container logs for a given job and container.
-func (j *Job) Logs(ns, n, co string, lines int64, prev bool) *restclient.Request {
+func (j *Job) Logs(ns, n string, opts *v1.PodLogOptions) *restclient.Request {
 	pod, err := j.assocPod(ns, n)
 	if err != nil {
 		return nil
 	}
-	return NewPod(j).Logs(ns, pod, co, lines, prev)
+
+	return NewPod(j).Logs(ns, pod, opts)
 }
 
 // Events retrieved jobs events.

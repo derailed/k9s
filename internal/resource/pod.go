@@ -170,7 +170,12 @@ func (r *Pod) Logs(ctx context.Context, c chan<- string, opts LogOptions) error 
 
 func tailLogs(ctx context.Context, res k8s.Loggable, c chan<- string, opts LogOptions) error {
 	log.Debug().Msgf("Tailing logs for %q/%q:%q", opts.Namespace, opts.Name, opts.Container)
-	req := res.Logs(opts.Namespace, opts.Name, opts.Container, opts.Lines, opts.Previous)
+	o := v1.PodLogOptions{
+		Container: opts.Container,
+		TailLines: &opts.Lines,
+		Previous:  opts.Previous,
+	}
+	req := res.Logs(opts.Namespace, opts.Name, &o)
 	req.Context(ctx)
 
 	var blocked int32 = 1
