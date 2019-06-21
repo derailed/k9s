@@ -193,23 +193,13 @@ func tailLogs(ctx context.Context, res k8s.Loggable, c chan<- string, opts LogOp
 	return nil
 }
 
-func logsTimeout(blocked int32, c chan<- string, opts LogOptions) {
-	select {
-	case <-time.After(defaultTimeout):
-		if atomic.LoadInt32(&blocked) == 1 {
-			log.Debug().Msgf("Closing channel %s:%s", opts.Name, opts.Container)
-		}
-	}
-}
-
 func readLogs(ctx context.Context, stream io.ReadCloser, c chan<- string, opts LogOptions) {
 	defer func() {
 		log.Debug().Msgf("Closing stream `%s", opts.Path())
 		stream.Close()
 	}()
 
-	head := opts.NormalizeName()
-	scanner := bufio.NewScanner(stream)
+	scanner, head := bufio.NewScanner(stream), opts.NormalizeName()
 	for scanner.Scan() {
 		txt := scanner.Text()
 		select {
@@ -218,6 +208,15 @@ func readLogs(ctx context.Context, stream io.ReadCloser, c chan<- string, opts L
 		case c <- head + txt:
 		default:
 			// Ensures we get back to scanning
+		}
+	}
+}
+
+func logsTimeout(blocked int32, c chan<- string, opts LogOptions) {
+	select {
+	case <-time.After(defaultTimeout):
+		if atomic.LoadInt32(&blocked) == 1 {
+			log.Debug().Msgf("Closing channel %s:%s", opts.Name, opts.Container)
 		}
 	}
 }

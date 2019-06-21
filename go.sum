@@ -37,6 +37,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/derailed/tview v0.1.10 h1:QWjK82ccTl3C7Tfyfmv765eRqEt/T3aXp40464cfnlw=
 github.com/derailed/tview v0.1.10/go.mod h1:g+ZyIsV5osK+lQ6LajiGQeLW10BQLJ6aMvy8Ldt2oa0=
+github.com/derailed/tview v0.1.11 h1:aHe5bNiKC27qRLjjyu54Xoq6bRdtW3S0//r34rHzUbU=
+github.com/derailed/tview v0.1.11/go.mod h1:g+ZyIsV5osK+lQ6LajiGQeLW10BQLJ6aMvy8Ldt2oa0=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c h1:ZfSZ3P3BedhKGUhzj7BQlPSU4OvT6tfOKe3DVHzOA7s=
