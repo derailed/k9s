@@ -129,7 +129,7 @@ func resourceViews(c k8s.Connection, m map[string]resCmd) {
 	}
 }
 
-func coreRes(m map[string]resCmd) {
+func primRes(m map[string]resCmd) {
 	m["cm"] = resCmd{
 		title: "ConfigMaps",
 		crdCmd: crdCmd{
@@ -138,6 +138,61 @@ func coreRes(m map[string]resCmd) {
 		viewFn: newResourceView,
 		listFn: resource.NewConfigMapList,
 	}
+	m["no"] = resCmd{
+		title: "Nodes",
+		crdCmd: crdCmd{
+			api: "",
+		},
+		viewFn:    newNodeView,
+		listFn:    resource.NewNodeList,
+		colorerFn: nsColorer,
+	}
+	m["ns"] = resCmd{
+		title: "Namespaces",
+		crdCmd: crdCmd{
+			api: "",
+		},
+		viewFn:    newNamespaceView,
+		listFn:    resource.NewNamespaceList,
+		colorerFn: nsColorer,
+	}
+	m["po"] = resCmd{
+		title: "Pods",
+		crdCmd: crdCmd{
+			api: "",
+		},
+		viewFn:    newPodView,
+		listFn:    resource.NewPodList,
+		colorerFn: podColorer,
+	}
+	m["sa"] = resCmd{
+		title: "ServiceAccounts",
+		crdCmd: crdCmd{
+			api: "",
+		},
+		viewFn:  newResourceView,
+		listFn:  resource.NewServiceAccountList,
+		enterFn: showSAPolicy,
+	}
+	m["sec"] = resCmd{
+		title: "Secrets",
+		crdCmd: crdCmd{
+			api: "",
+		},
+		viewFn: newSecretView,
+		listFn: resource.NewSecretList,
+	}
+	m["svc"] = resCmd{
+		title: "Services",
+		crdCmd: crdCmd{
+			api: "",
+		},
+		viewFn: newSvcView,
+		listFn: resource.NewServiceList,
+	}
+}
+
+func coreRes(m map[string]resCmd) {
 	m["ctx"] = resCmd{
 		title: "Contexts",
 		crdCmd: crdCmd{
@@ -173,33 +228,6 @@ func coreRes(m map[string]resCmd) {
 		listFn:    resource.NewEventList,
 		colorerFn: evColorer,
 	}
-	m["no"] = resCmd{
-		title: "Nodes",
-		crdCmd: crdCmd{
-			api: "",
-		},
-		viewFn:    newNodeView,
-		listFn:    resource.NewNodeList,
-		colorerFn: nsColorer,
-	}
-	m["ns"] = resCmd{
-		title: "Namespaces",
-		crdCmd: crdCmd{
-			api: "",
-		},
-		viewFn:    newNamespaceView,
-		listFn:    resource.NewNamespaceList,
-		colorerFn: nsColorer,
-	}
-	m["po"] = resCmd{
-		title: "Pods",
-		crdCmd: crdCmd{
-			api: "",
-		},
-		viewFn:    newPodView,
-		listFn:    resource.NewPodList,
-		colorerFn: podColorer,
-	}
 	m["pv"] = resCmd{
 		title: "PersistentVolumes",
 		crdCmd: crdCmd{
@@ -226,31 +254,6 @@ func coreRes(m map[string]resCmd) {
 		viewFn:    newResourceView,
 		listFn:    resource.NewReplicationControllerList,
 		colorerFn: rsColorer,
-	}
-	m["sa"] = resCmd{
-		title: "ServiceAccounts",
-		crdCmd: crdCmd{
-			api: "",
-		},
-		viewFn:  newResourceView,
-		listFn:  resource.NewServiceAccountList,
-		enterFn: showSAPolicy,
-	}
-	m["sec"] = resCmd{
-		title: "Secrets",
-		crdCmd: crdCmd{
-			api: "",
-		},
-		viewFn: newSecretView,
-		listFn: resource.NewSecretList,
-	}
-	m["svc"] = resCmd{
-		title: "Services",
-		crdCmd: crdCmd{
-			api: "",
-		},
-		viewFn: newSvcView,
-		listFn: resource.NewServiceList,
 	}
 }
 

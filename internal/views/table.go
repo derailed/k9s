@@ -285,15 +285,7 @@ func (v *tableView) filtered() resource.TableData {
 	return filtered
 }
 
-func (v *tableView) doUpdate(data resource.TableData) {
-	v.currentNS = data.Namespace
-	if v.currentNS == resource.AllNamespaces && v.currentNS != "*" {
-		v.actions[KeyShiftP] = newKeyAction("Sort Namespace", v.sortColCmd(0), true)
-	} else {
-		delete(v.actions, KeyShiftP)
-	}
-	v.Clear()
-
+func (v *tableView) adjustSorter(data resource.TableData) {
 	// Going from namespace to non namespace or vice-versa?
 	switch {
 	case v.sortCol.colCount == 0:
@@ -306,9 +298,19 @@ func (v *tableView) doUpdate(data resource.TableData) {
 	if v.sortCol.index < 0 {
 		v.sortCol.index = 0
 	}
+}
 
-	pads := make(maxyPad, len(data.Header))
-	computeMaxColumns(pads, v.sortCol.index, data)
+func (v *tableView) doUpdate(data resource.TableData) {
+	v.currentNS = data.Namespace
+	if v.currentNS == resource.AllNamespaces && v.currentNS != "*" {
+		v.actions[KeyShiftP] = newKeyAction("Sort Namespace", v.sortColCmd(0), true)
+	} else {
+		delete(v.actions, KeyShiftP)
+	}
+	v.Clear()
+
+	v.adjustSorter(data)
+
 	var row int
 	fg := config.AsColor(v.app.styles.Table().Header.FgColor)
 	bg := config.AsColor(v.app.styles.Table().Header.BgColor)
@@ -319,6 +321,13 @@ func (v *tableView) doUpdate(data resource.TableData) {
 		c.SetTextColor(fg)
 	}
 	row++
+
+	v.sort(data, row)
+}
+
+func (v *tableView) sort(data resource.TableData, row int) {
+	pads := make(maxyPad, len(data.Header))
+	computeMaxColumns(pads, v.sortCol.index, data)
 
 	sortFn := defaultSort
 	if v.sortFn != nil {
