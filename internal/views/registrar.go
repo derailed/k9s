@@ -130,7 +130,7 @@ func resourceViews(c k8s.Connection, m map[string]resCmd) {
 	}
 }
 
-func primRes(m map[string]resCmd) {
+func stateRes(m map[string]resCmd) {
 	m["cm"] = resCmd{
 		title: "ConfigMaps",
 		crdCmd: crdCmd{
@@ -139,6 +139,35 @@ func primRes(m map[string]resCmd) {
 		viewFn: newResourceView,
 		listFn: resource.NewConfigMapList,
 	}
+	m["pv"] = resCmd{
+		title: "PersistentVolumes",
+		crdCmd: crdCmd{
+			api: "",
+		},
+		viewFn:    newResourceView,
+		listFn:    resource.NewPersistentVolumeList,
+		colorerFn: pvColorer,
+	}
+	m["pvc"] = resCmd{
+		title: "PersistentVolumeClaims",
+		crdCmd: crdCmd{
+			api: "",
+		},
+		viewFn:    newResourceView,
+		listFn:    resource.NewPersistentVolumeClaimList,
+		colorerFn: pvcColorer,
+	}
+	m["sec"] = resCmd{
+		title: "Secrets",
+		crdCmd: crdCmd{
+			api: "",
+		},
+		viewFn: newSecretView,
+		listFn: resource.NewSecretList,
+	}
+}
+
+func primRes(m map[string]resCmd) {
 	m["no"] = resCmd{
 		title: "Nodes",
 		crdCmd: crdCmd{
@@ -174,14 +203,6 @@ func primRes(m map[string]resCmd) {
 		viewFn:  newResourceView,
 		listFn:  resource.NewServiceAccountList,
 		enterFn: showSAPolicy,
-	}
-	m["sec"] = resCmd{
-		title: "Secrets",
-		crdCmd: crdCmd{
-			api: "",
-		},
-		viewFn: newSecretView,
-		listFn: resource.NewSecretList,
 	}
 	m["svc"] = resCmd{
 		title: "Services",
@@ -228,24 +249,6 @@ func coreRes(m map[string]resCmd) {
 		viewFn:    newResourceView,
 		listFn:    resource.NewEventList,
 		colorerFn: evColorer,
-	}
-	m["pv"] = resCmd{
-		title: "PersistentVolumes",
-		crdCmd: crdCmd{
-			api: "",
-		},
-		viewFn:    newResourceView,
-		listFn:    resource.NewPersistentVolumeList,
-		colorerFn: pvColorer,
-	}
-	m["pvc"] = resCmd{
-		title: "PersistentVolumeClaims",
-		crdCmd: crdCmd{
-			api: "",
-		},
-		viewFn:    newResourceView,
-		listFn:    resource.NewPersistentVolumeClaimList,
-		colorerFn: pvcColorer,
 	}
 	m["rc"] = resCmd{
 		title: "ReplicationControllers",
