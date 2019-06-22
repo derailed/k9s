@@ -53,10 +53,7 @@ func (s *shellView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 			s.cmdBuff.add(evt.Rune())
 			return nil
 		}
-		key = tcell.Key(evt.Rune())
-		if evt.Modifiers() == tcell.ModAlt {
-			key = tcell.Key(int16(evt.Rune()) * int16(evt.Modifiers()))
-		}
+		key = asKey(evt)
 	}
 
 	if a, ok := s.actions[key]; ok {

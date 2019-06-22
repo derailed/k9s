@@ -9,6 +9,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	res "github.com/derailed/k9s/internal/resource"
+	"github.com/gdamore/tcell"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -19,6 +20,15 @@ const (
 	plusSign  = "↑"
 	minusSign = "↓"
 )
+
+// AsKey converts rune to keyboard key.,
+func asKey(evt *tcell.EventKey) tcell.Key {
+	key := tcell.Key(evt.Rune())
+	if evt.Modifiers() == tcell.ModAlt {
+		key = tcell.Key(int16(evt.Rune()) * int16(evt.Modifiers()))
+	}
+	return key
+}
 
 // FwFQN returns a fully qualified ns/name:container id.
 func fwFQN(po, co string) string {

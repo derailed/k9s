@@ -67,10 +67,7 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 			v.selectFirstRow()
 			return nil
 		}
-		key = tcell.Key(evt.Rune())
-		if evt.Modifiers() == tcell.ModAlt {
-			key = tcell.Key(int16(evt.Rune()) * int16(evt.Modifiers()))
-		}
+		key = asKey(evt)
 	}
 
 	if a, ok := v.actions[key]; ok {
