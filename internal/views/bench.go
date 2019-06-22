@@ -188,7 +188,6 @@ func (v *benchView) hydrate() resource.TableData {
 	}
 
 	data := initTable()
-	blank := make(resource.Row, len(benchHeader))
 	for _, f := range ff {
 		bench, err := readBenchFile(v.app.config, f.Name())
 		if err != nil {
@@ -201,7 +200,7 @@ func (v *benchView) hydrate() resource.TableData {
 		data.Rows[f.Name()] = &resource.RowEvent{
 			Action: resource.New,
 			Fields: fields,
-			Deltas: blank,
+			Deltas: fields,
 		}
 	}
 

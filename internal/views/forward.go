@@ -95,6 +95,7 @@ func (v *forwardView) refresh() {
 
 func (v *forwardView) registerActions() {
 	tv := v.getTV()
+	tv.actions[tcell.KeyEnter] = newKeyAction("Goto", v.gotoBenchCmd, true)
 	tv.actions[tcell.KeyCtrlB] = newKeyAction("Bench", v.benchCmd, true)
 	tv.actions[KeyAltB] = newKeyAction("Bench Stop", v.benchStopCmd, true)
 	tv.actions[tcell.KeyCtrlD] = newKeyAction("Delete", v.deleteCmd, true)
@@ -116,6 +117,12 @@ func (v *forwardView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *t
 
 		return nil
 	}
+}
+
+func (v *forwardView) gotoBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
+	v.app.gotoResource("be", true)
+
+	return nil
 }
 
 func (v *forwardView) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -142,16 +149,7 @@ func (v *forwardView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	tv := v.getTV()
 	r, _ := tv.GetSelection()
-
-	cfg := config.BenchConfig{
-		C: config.DefaultC,
-		N: config.DefaultN,
-		HTTP: config.HTTP{
-			Method: config.DefaultMethod,
-			Path:   "/",
-		},
-	}
-	co := trimCell(tv, r, 2)
+	cfg, co := defaultConfig(), trimCell(tv, r, 2)
 	if b, ok := v.app.bench.Benchmarks.Containers[containerID(sel, co)]; ok {
 		cfg = b
 	}
@@ -162,13 +160,18 @@ func (v *forwardView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.bench, err = newBenchmark(base, cfg); err != nil {
 		v.app.flash().errf("Bench failed %v", err)
 		v.app.statusReset()
-		v.bench = nil
 		return nil
 	}
 
 	v.app.status(flashWarn, "Benchmark in progress...")
 	log.Debug().Msg("Bench starting...")
-	go v.bench.run(v.app.config.K9s.CurrentCluster, func() {
+	go v.runBenchmark()
+
+	return nil
+}
+
+func (v *forwardView) runBenchmark() {
+	v.bench.run(v.app.config.K9s.CurrentCluster, func() {
 		log.Debug().Msg("Bench Completed!")
 		v.app.QueueUpdate(func() {
 			if v.bench.canceled {
@@ -180,14 +183,10 @@ func (v *forwardView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 			v.bench = nil
 			go func() {
 				<-time.After(2 * time.Second)
-				v.app.QueueUpdate(func() {
-					v.app.statusReset()
-				})
+				v.app.QueueUpdate(func() { v.app.statusReset() })
 			}()
 		})
 	})
-
-	return nil
 }
 
 func (v *forwardView) getSelectedItem() string {
@@ -248,26 +247,10 @@ func (v *forwardView) hints() hints {
 }
 
 func (v *forwardView) hydrate() resource.TableData {
-	data := resource.TableData{
-		Header:    resource.Row{"NAMESPACE", "NAME", "CONTAINER", "PORTS", "URL", "C", "N", "AGE"},
-		NumCols:   map[string]bool{"C": true, "N": true},
-		Rows:      make(resource.RowEvents, len(v.app.forwarders)),
-		Namespace: resource.AllNamespaces,
-	}
-
+	data := initHeader(len(v.app.forwarders))
 	dc, dn := v.app.bench.Benchmarks.Defaults.C, v.app.bench.Benchmarks.Defaults.N
 	for _, f := range v.app.forwarders {
-		c, n := dc, dn
-		cfg, ok := v.app.bench.Benchmarks.Containers[containerID(f.Path(), f.Container())]
-		log.Debug().Msgf("Located %s CFG? %t %v", containerID(f.Path(), f.Container()), ok, cfg)
-		if ok {
-			if cfg.C != 0 {
-				c = cfg.C
-			}
-			if cfg.N != 0 {
-				n = cfg.N
-			}
-		}
+		c, n, cfg := loadConfig(dc, dn, containerID(f.Path(), f.Container()), v.app.bench.Benchmarks.Containers)
 
 		ports := strings.Split(f.Ports()[0], ":")
 		ns, na := namespaced(f.Path())
@@ -297,6 +280,43 @@ func (v *forwardView) resetTitle() {
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func defaultConfig() config.BenchConfig {
+	return config.BenchConfig{
+		C: config.DefaultC,
+		N: config.DefaultN,
+		HTTP: config.HTTP{
+			Method: config.DefaultMethod,
+			Path:   "/",
+		},
+	}
+}
+
+func initHeader(rows int) resource.TableData {
+	return resource.TableData{
+		Header:    resource.Row{"NAMESPACE", "NAME", "CONTAINER", "PORTS", "URL", "C", "N", "AGE"},
+		NumCols:   map[string]bool{"C": true, "N": true},
+		Rows:      make(resource.RowEvents, rows),
+		Namespace: resource.AllNamespaces,
+	}
+}
+
+func loadConfig(dc, dn int, id string, cc map[string]config.BenchConfig) (int, int, config.BenchConfig) {
+	c, n := dc, dn
+	cfg, ok := cc[id]
+	if !ok {
+		return c, n, cfg
+	}
+
+	if cfg.C != 0 {
+		c = cfg.C
+	}
+	if cfg.N != 0 {
+		n = cfg.N
+	}
+
+	return c, n, cfg
+}
 
 func showModal(pv *tview.Pages, msg, back string, ok func()) {
 	m := tview.NewModal().

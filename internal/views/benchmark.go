@@ -31,8 +31,10 @@ type benchmark struct {
 
 func newBenchmark(base string, cfg config.BenchConfig) (*benchmark, error) {
 	b := benchmark{config: cfg}
-
-	return &b, b.init(base)
+	if err := b.init(base); err != nil {
+		return nil, err
+	}
+	return &b, nil
 }
 
 func (b *benchmark) init(base string) error {
