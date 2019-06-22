@@ -139,25 +139,7 @@ func (r *Node) Fields(ns string) Row {
 	iIP, eIP := r.getIPs(no.Status.Addresses)
 	iIP, eIP = missing(iIP), missing(eIP)
 
-	ccpu, cmem, scpu, smem, pcpu, pmem := NAValue, NAValue, NAValue, NAValue, NAValue, NAValue
-	if r.metrics != nil {
-		var (
-			cpu int64
-			mem float64
-		)
-
-		cpu = r.metrics.Usage.Cpu().MilliValue()
-		mem = k8s.ToMB(r.metrics.Usage.Memory().Value())
-
-		acpu := no.Status.Allocatable.Cpu().MilliValue()
-		amem := k8s.ToMB(no.Status.Allocatable.Memory().Value())
-		ccpu = ToMillicore(cpu)
-		pcpu = AsPerc(toPerc(float64(cpu), float64(acpu)))
-		cmem = ToMi(mem)
-		pmem = AsPerc(toPerc(mem, amem))
-		scpu = ToMillicore(cpu)
-		smem = ToMi(mem)
-	}
+	c, a, p := gatherNodeMX(no, r.metrics)
 
 	sta := make([]string, 10)
 	r.status(no.Status, no.Spec.Unschedulable, sta)
@@ -172,18 +154,54 @@ func (r *Node) Fields(ns string) Row {
 		no.Status.NodeInfo.KernelVersion,
 		iIP,
 		eIP,
-		ccpu,
-		cmem,
-		pcpu,
-		pmem,
-		scpu,
-		smem,
+		c.cpu,
+		c.mem,
+		p.cpu,
+		p.mem,
+		a.cpu,
+		a.mem,
 		toAge(no.ObjectMeta.CreationTimestamp),
 	)
 }
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+type metric struct {
+	cpu, mem string
+}
+
+func noMetric() metric {
+	return metric{cpu: NAValue, mem: NAValue}
+}
+
+func gatherNodeMX(no *v1.Node, mx *mv1beta1.NodeMetrics) (c metric, a metric, p metric) {
+	c, a, p = noMetric(), noMetric(), noMetric()
+	if mx == nil {
+		return
+	}
+
+	cpu := mx.Usage.Cpu().MilliValue()
+	mem := k8s.ToMB(mx.Usage.Memory().Value())
+	c = metric{
+		cpu: ToMillicore(cpu),
+		mem: ToMi(mem),
+	}
+
+	acpu := no.Status.Allocatable.Cpu().MilliValue()
+	amem := k8s.ToMB(no.Status.Allocatable.Memory().Value())
+	a = metric{
+		cpu: ToMillicore(acpu),
+		mem: ToMi(amem),
+	}
+
+	p = metric{
+		cpu: AsPerc(toPerc(float64(cpu), float64(acpu))),
+		mem: AsPerc(toPerc(mem, amem)),
+	}
+
+	return
+}
 
 func withPerc(v, p string) string {
 	return v + " (" + p + ")"

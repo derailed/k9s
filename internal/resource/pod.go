@@ -268,17 +268,18 @@ func (r *Pod) Fields(ns string) Row {
 
 	ss := i.Status.ContainerStatuses
 	cr, _, rc := r.statuses(ss)
-	ccpu, cmem, pcpu, pmem := r.gatherPodMetrics(i)
+
+	c, p := r.gatherPodMX(i)
 
 	return append(ff,
 		i.ObjectMeta.Name,
 		strconv.Itoa(cr)+"/"+strconv.Itoa(len(ss)),
 		r.phase(i),
 		strconv.Itoa(rc),
-		ccpu,
-		cmem,
-		pcpu,
-		pmem,
+		c.cpu,
+		c.mem,
+		p.cpu,
+		p.mem,
 		na(i.Status.PodIP),
 		na(i.Spec.NodeName),
 		r.mapQOS(i.Status.QOSClass),
@@ -289,17 +290,23 @@ func (r *Pod) Fields(ns string) Row {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func (r *Pod) gatherPodMetrics(po *v1.Pod) (ccpu, cmem, pcpu, pmem string) {
-	ccpu, cmem, pcpu, pmem = NAValue, NAValue, NAValue, NAValue
+func (r *Pod) gatherPodMX(po *v1.Pod) (c, p metric) {
+	c, p = noMetric(), noMetric()
 	if r.metrics == nil {
 		return
 	}
 
-	c, m := r.currentRes(r.metrics)
-	ccpu, cmem = ToMillicore(c.MilliValue()), ToMi(k8s.ToMB(m.Value()))
+	cpu, mem := r.currentRes(r.metrics)
+	c = metric{
+		cpu: ToMillicore(cpu.MilliValue()),
+		mem: ToMi(k8s.ToMB(mem.Value())),
+	}
+
 	rc, rm := r.requestedRes(po)
-	pcpu = AsPerc(toPerc(float64(c.MilliValue()), float64(rc.MilliValue())))
-	pmem = AsPerc(toPerc(k8s.ToMB(m.Value()), k8s.ToMB(rm.Value())))
+	p = metric{
+		cpu: AsPerc(toPerc(float64(cpu.MilliValue()), float64(rc.MilliValue()))),
+		mem: AsPerc(toPerc(k8s.ToMB(mem.Value()), k8s.ToMB(rm.Value()))),
+	}
 
 	return
 }

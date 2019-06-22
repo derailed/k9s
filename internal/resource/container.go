@@ -128,7 +128,7 @@ func (r *Container) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
 	i := r.instance
 
-	scpu, smem, pcpu, pmem := gatherMetrics(i, r.metrics)
+	c, p := gatherMetrics(i, r.metrics)
 
 	ready, state, restarts := "false", MissingValue, "0"
 	cs := getContainerStatus(i.Name, r.pod.Status)
@@ -143,10 +143,10 @@ func (r *Container) Fields(ns string) Row {
 		state,
 		restarts,
 		probe(i.LivenessProbe)+":"+probe(i.ReadinessProbe),
-		scpu,
-		smem,
-		pcpu,
-		pmem,
+		c.cpu,
+		c.mem,
+		p.cpu,
+		p.mem,
 		toStrPorts(i.Ports),
 		toAge(r.pod.CreationTimestamp),
 	)
@@ -155,8 +155,8 @@ func (r *Container) Fields(ns string) Row {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func gatherMetrics(co v1.Container, mx *mv1beta1.PodMetrics) (scpu, smem, pcpu, pmem string) {
-	scpu, smem, pcpu, pmem = NAValue, NAValue, NAValue, NAValue
+func gatherMetrics(co v1.Container, mx *mv1beta1.PodMetrics) (c, p metric) {
+	c, p = noMetric(), noMetric()
 	if mx == nil {
 		return
 	}
@@ -166,21 +166,23 @@ func gatherMetrics(co v1.Container, mx *mv1beta1.PodMetrics) (scpu, smem, pcpu, 
 		mem float64
 	)
 	for _, c := range mx.Containers {
-		if c.Name != co.Name {
-			continue
+		if c.Name == co.Name {
+			cpu = c.Usage.Cpu().MilliValue()
+			mem = k8s.ToMB(c.Usage.Memory().Value())
+			break
 		}
-		cpu = c.Usage.Cpu().MilliValue()
-		mem = k8s.ToMB(c.Usage.Memory().Value())
-		break
+	}
+	c = metric{
+		cpu: ToMillicore(cpu),
+		mem: ToMi(mem),
 	}
 
-	scpu, smem = ToMillicore(cpu), ToMi(mem)
 	rcpu, rmem := containerResources(co)
 	if rcpu != nil {
-		pcpu = AsPerc(toPerc(float64(cpu), float64(rcpu.MilliValue())))
+		p.cpu = AsPerc(toPerc(float64(cpu), float64(rcpu.MilliValue())))
 	}
 	if rmem != nil {
-		pmem = AsPerc(toPerc(mem, k8s.ToMB(rmem.Value())))
+		p.mem = AsPerc(toPerc(mem, k8s.ToMB(rmem.Value())))
 	}
 
 	return
