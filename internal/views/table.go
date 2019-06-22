@@ -5,63 +5,31 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
-	"k8s.io/apimachinery/pkg/util/duration"
 )
 
-type (
-	resTable struct {
-		*tview.Table
+type tableView struct {
+	*resTable
 
-		app       *appView
-		baseTitle string
-		currentNS string
-		data      resource.TableData
-		actions   keyActions
-	}
-
-	tableView struct {
-		*resTable
-
-		cmdBuff   *cmdBuff
-		colorerFn colorerFn
-		sortFn    sortFn
-		cleanseFn cleanseFn
-		filterFn  func(string)
-		sortCol   sortColumn
-	}
-)
+	cmdBuff   *cmdBuff
+	colorerFn colorerFn
+	sortFn    sortFn
+	cleanseFn cleanseFn
+	filterFn  func(string)
+	sortCol   sortColumn
+}
 
 func newTableView(app *appView, title string) *tableView {
 	v := tableView{
-		resTable: &resTable{
-			Table:     tview.NewTable(),
-			app:       app,
-			actions:   make(keyActions),
-			baseTitle: title,
-		},
-		sortCol: sortColumn{0, 0, true},
-		cmdBuff: newCmdBuff('/'),
+		resTable: newResTable(app, title),
+		cmdBuff:  newCmdBuff('/'),
+		sortCol:  sortColumn{0, 0, true},
 	}
-	v.SetFixed(1, 0)
-	v.SetBorder(true)
-	v.SetBackgroundColor(config.AsColor(app.styles.Table().BgColor))
-	v.SetBorderColor(config.AsColor(app.styles.Table().FgColor))
-	v.SetBorderFocusColor(config.AsColor(app.styles.Frame().Border.FocusColor))
-	v.SetBorderAttributes(tcell.AttrBold)
-	v.SetBorderPadding(0, 0, 1, 1)
-	v.SetSelectable(true, false)
-	v.SetSelectedStyle(
-		tcell.ColorBlack,
-		config.AsColor(app.styles.Table().CursorColor),
-		tcell.AttrBold,
-	)
 	v.cmdBuff.addListener(app.cmd())
 	v.cmdBuff.reset()
 
@@ -69,6 +37,10 @@ func newTableView(app *appView, title string) *tableView {
 	v.bindKeys()
 
 	return &v
+}
+
+func (v *tableView) setFilterFn(fn func(string)) {
+	v.filterFn = fn
 }
 
 func (v *tableView) bindKeys() {
@@ -84,15 +56,6 @@ func (v *tableView) bindKeys() {
 		KeyShiftN:           newKeyAction("Sort Name", v.sortColCmd(0), true),
 		KeyShiftA:           newKeyAction("Sort Age", v.sortColCmd(-1), true),
 	}
-}
-
-func (v *tableView) setFilterFn(fn func(string)) {
-	v.filterFn = fn
-}
-
-func (v *tableView) clearSelection() {
-	v.Select(0, 0)
-	v.ScrollToBeginning()
 }
 
 func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
@@ -117,22 +80,6 @@ func (v *tableView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return evt
-}
-
-func (v *tableView) selectFirstRow() {
-	if v.GetRowCount() > 0 {
-		v.Select(1, 0)
-	}
-}
-
-func (v *tableView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveTable(v.app.config.K9s.CurrentCluster, v.baseTitle, v.data); err != nil {
-		v.app.flash().err(err)
-	} else {
-		v.app.flash().infof("File %s saved successfully!", path)
-	}
-
-	return nil
 }
 
 func (v *tableView) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -171,14 +118,6 @@ func (v *tableView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *tableView) nameColIndex() int {
-	col := 0
-	if v.currentNS == resource.AllNamespaces {
-		col++
-	}
-	return col
-}
-
 func (v *tableView) sortColCmd(col int) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		if col == -1 {
@@ -214,33 +153,9 @@ func (v *tableView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *tableView) setDeleted() {
-	r, _ := v.GetSelection()
-	cols := v.GetColumnCount()
-	for x := 0; x < cols; x++ {
-		v.GetCell(r, x).SetAttributes(tcell.AttrDim)
-	}
-}
-
 // SetColorer sets up table row color management.
 func (v *tableView) setColorer(f colorerFn) {
 	v.colorerFn = f
-}
-
-// SetActions sets up keyboard action listener.
-func (v *tableView) setActions(aa keyActions) {
-	for k, a := range aa {
-		v.actions[k] = a
-	}
-}
-
-// Hints options
-func (v *tableView) hints() hints {
-	if v.actions != nil {
-		return v.actions.toHints()
-	}
-
-	return nil
 }
 
 func (v *tableView) refresh() {
@@ -363,26 +278,6 @@ func (v *tableView) addHeaderCell(numerical bool, col int, name string) {
 		c.SetAlign(tview.AlignRight)
 	}
 	v.SetCell(0, col, c)
-}
-
-func (v *tableView) formatCell(numerical bool, header, field string, padding int) (string, int) {
-	if header == "AGE" {
-		dur, err := time.ParseDuration(field)
-		if err == nil {
-			field = duration.HumanDuration(dur)
-		}
-	}
-
-	if numerical || cpuRX.MatchString(header) || memRX.MatchString(header) {
-		return field, tview.AlignRight
-	}
-
-	align := tview.AlignLeft
-	if isASCII(field) {
-		return pad(field, padding), align
-	}
-
-	return field, align
 }
 
 func (v *tableView) resetTitle() {
