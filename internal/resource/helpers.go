@@ -35,13 +35,12 @@ const (
 	NAValue = "n/a"
 )
 
-func toSelector(m map[string]string) string {
-	s := make([]string, 0, len(m))
-	for k, v := range m {
-		s = append(s, k+"="+v)
+func metaFQN(m metav1.ObjectMeta) string {
+	if m.Namespace == "" {
+		return m.Name
 	}
 
-	return strings.Join(s, ",")
+	return fqn(m.Namespace, m.Name)
 }
 
 func fqn(ns, n string) string {
@@ -49,6 +48,15 @@ func fqn(ns, n string) string {
 		return n
 	}
 	return ns + "/" + n
+}
+
+func toSelector(m map[string]string) string {
+	s := make([]string, 0, len(m))
+	for k, v := range m {
+		s = append(s, k+"="+v)
+	}
+
+	return strings.Join(s, ",")
 }
 
 func empty(s []string) bool {

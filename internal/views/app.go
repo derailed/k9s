@@ -99,7 +99,7 @@ func (a *appView) Init(version string, rate int) {
 	if a.conn() != nil {
 		ns, err := a.conn().Config().CurrentNamespaceName()
 		if err != nil {
-			log.Info().Err(err).Msg("No namespace specified using all namespaces")
+			log.Info().Msg("No namespace specified using all namespaces")
 		}
 		a.startInformer(ns)
 		a.clusterInfo().init(version)
