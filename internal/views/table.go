@@ -17,11 +17,10 @@ type tableView struct {
 	*resTable
 
 	cmdBuff   *cmdBuff
-	colorerFn colorerFn
+	sortCol   sortColumn
 	sortFn    sortFn
 	cleanseFn cleanseFn
 	filterFn  func(string)
-	sortCol   sortColumn
 }
 
 func newTableView(app *appView, title string) *tableView {
@@ -249,23 +248,9 @@ func (v *tableView) sort(data resource.TableData, row int) {
 		sortFn = v.sortFn
 	}
 	prim, sec := sortAllRows(v.sortCol, data.Rows, sortFn)
-	fgColor := config.AsColor(v.app.styles.Table().FgColor)
 	for _, pk := range prim {
 		for _, sk := range sec[pk] {
-			if v.colorerFn != nil {
-				fgColor = v.colorerFn(data.Namespace, data.Rows[sk])
-			}
-			for col, field := range data.Rows[sk].Fields {
-				header := data.Header[col]
-				field, align := v.formatCell(data.NumCols[header], header, field+deltas(data.Rows[sk].Deltas[col], field), pads[col])
-				c := tview.NewTableCell(field)
-				{
-					c.SetExpansion(1)
-					c.SetAlign(align)
-					c.SetTextColor(fgColor)
-				}
-				v.SetCell(row, col, c)
-			}
+			v.buildRow(row, data, sk, pads)
 			row++
 		}
 	}

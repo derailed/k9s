@@ -18,6 +18,7 @@ type resTable struct {
 	currentNS string
 	data      resource.TableData
 	actions   keyActions
+	colorerFn colorerFn
 }
 
 func newResTable(app *appView, title string) *resTable {
@@ -43,6 +44,24 @@ func newResTable(app *appView, title string) *resTable {
 	)
 
 	return &v
+}
+
+func (v *resTable) buildRow(row int, data resource.TableData, sk string, pads maxyPad) {
+	f := v.colorerFn
+	if f == nil {
+		f = defaultColorer
+	}
+	for col, field := range data.Rows[sk].Fields {
+		header := data.Header[col]
+		field, align := v.formatCell(data.NumCols[header], header, field+deltas(data.Rows[sk].Deltas[col], field), pads[col])
+		c := tview.NewTableCell(field)
+		{
+			c.SetExpansion(1)
+			c.SetAlign(align)
+			c.SetTextColor(f(data.Namespace, data.Rows[sk]))
+		}
+		v.SetCell(row, col, c)
+	}
 }
 
 func (v *resTable) formatCell(numerical bool, header, field string, padding int) (string, int) {

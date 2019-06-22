@@ -50,7 +50,6 @@ type (
 	appView struct {
 		*shellView
 
-		cmdBuff    *cmdBuff
 		command    *command
 		cancel     context.CancelFunc
 		informer   *watch.Informer
@@ -63,19 +62,13 @@ type (
 func NewApp(cfg *config.Config) *appView {
 	v := appView{
 		shellView:  newShellView(),
-		cmdBuff:    newCmdBuff(':'),
 		forwarders: make(map[string]forwarder),
 	}
 	v.config = cfg
 	v.initBench(cfg.K9s.CurrentCluster)
-	v.refreshStyles()
 	v.command = newCommand(&v)
 
-	v.views["menu"] = newMenuView(v.styles)
-	v.views["logo"] = newLogoView(v.styles)
-	v.views["cmd"] = newCmdView(v.styles, '🐶')
 	v.views["flash"] = newFlashView(&v, "Initializing...")
-	v.views["crumbs"] = newCrumbsView(v.styles)
 	v.views["clusterInfo"] = newClusterInfoView(&v, k8s.NewMetricsServer(cfg.GetConnection()))
 
 	v.actions = keyActions{
@@ -180,10 +173,6 @@ func (a *appView) stopForwarders() {
 	}
 }
 
-func (a *appView) conn() k8s.Connection {
-	return a.config.GetConnection()
-}
-
 // Run starts the application loop
 func (a *appView) Run() {
 	ctx, cancel := context.WithCancel(context.Background())
@@ -210,14 +199,8 @@ func (a *appView) Run() {
 	}
 }
 
-func (a *appView) statusReset() {
-	a.logo().reset()
-	a.Draw()
-}
-
 func (a *appView) status(l flashLevel, msg string) {
 	a.flash().info(msg)
-
 	switch l {
 	case flashErr:
 		a.logo().err(msg)
@@ -229,47 +212,6 @@ func (a *appView) status(l flashLevel, msg string) {
 		a.logo().reset()
 	}
 	a.Draw()
-}
-
-func (a *appView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	key := evt.Key()
-	if key == tcell.KeyRune {
-		if a.cmdBuff.isActive() && evt.Modifiers() == tcell.ModNone {
-			a.cmdBuff.add(evt.Rune())
-			return nil
-		}
-		key = tcell.Key(evt.Rune())
-		if evt.Modifiers() == tcell.ModAlt {
-			key = tcell.Key(int16(evt.Rune()) * int16(evt.Modifiers()))
-		}
-	}
-
-	if a, ok := a.actions[key]; ok {
-		log.Debug().Msgf(">> AppView handled key: %s", tcell.KeyNames[key])
-		return a.action(evt)
-	}
-
-	return evt
-}
-
-func (a *appView) redrawCmd(evt *tcell.EventKey) *tcell.EventKey {
-	a.Draw()
-	return evt
-}
-
-func (a *appView) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.cmdBuff.isActive() {
-		a.cmdBuff.del()
-		return nil
-	}
-	return evt
-}
-
-func (a *appView) escapeCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.cmdBuff.isActive() {
-		a.cmdBuff.reset()
-	}
-	return evt
 }
 
 func (a *appView) prevCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -298,6 +240,7 @@ func (a *appView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	a.flash().info("Command mode activated.")
 	a.cmdBuff.setActive(true)
 	a.cmdBuff.clear()
+
 	return nil
 }
 
@@ -316,10 +259,6 @@ func (a *appView) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	a.inject(newHelpView(a, a.currentView()))
 	return nil
-}
-
-func (a *appView) currentView() igniter {
-	return a.content.GetPrimitive("main").(igniter)
 }
 
 func (a *appView) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -359,30 +298,4 @@ func (a *appView) inject(i igniter) {
 
 func (a *appView) inCmdMode() bool {
 	return a.cmd().inCmdMode()
-}
-
-func (a *appView) setHints(h hints) {
-	a.views["menu"].(*menuView).populateMenu(h)
-}
-
-// View Accessors...
-
-func (a *appView) crumbs() *crumbsView {
-	return a.views["crumbs"].(*crumbsView)
-}
-
-func (a *appView) logo() *logoView {
-	return a.views["logo"].(*logoView)
-}
-
-func (a *appView) clusterInfo() *clusterInfoView {
-	return a.views["clusterInfo"].(*clusterInfoView)
-}
-
-func (a *appView) flash() *flashView {
-	return a.views["flash"].(*flashView)
-}
-
-func (a *appView) cmd() *cmdView {
-	return a.views["cmd"].(*cmdView)
 }
