@@ -43,6 +43,7 @@ func (v *clusterInfoView) init(version string) {
 	cluster := resource.NewCluster(v.app.conn(), &log.Logger, v.mxs)
 
 	row := v.initInfo(version, cluster)
+	row = v.initVersion(row, version, cluster)
 
 	v.SetCell(row, 0, v.sectionCell("CPU"))
 	v.SetCell(row, 1, v.infoCell(resource.NAValue))
@@ -67,6 +68,10 @@ func (v *clusterInfoView) initInfo(version string, cluster *resource.Cluster) in
 	v.SetCell(row, 1, v.infoCell(cluster.UserName()))
 	row++
 
+	return row
+}
+
+func (v *clusterInfoView) initVersion(row int, version string, cluster *resource.Cluster) int {
 	v.SetCell(row, 0, v.sectionCell("K9s Rev"))
 	v.SetCell(row, 1, v.infoCell(version))
 	row++
@@ -119,15 +124,24 @@ func (v *clusterInfoView) refresh() {
 	v.refreshMetrics(cluster, row)
 }
 
-func (v *clusterInfoView) refreshMetrics(cluster *resource.Cluster, row int) {
+func (v *clusterInfoView) fetchResources() (k8s.Collection, k8s.Collection, error) {
 	nos, err := v.app.informer.List(watch.NodeIndex, "", metav1.ListOptions{})
 	if err != nil {
-		log.Warn().Err(err).Msg("ListNodes")
-		return
+		return nil, nil, err
 	}
+
 	nmx, err := v.app.informer.List(watch.NodeMXIndex, "", metav1.ListOptions{})
 	if err != nil {
-		log.Warn().Err(err).Msg("ListNodeMetrics")
+		return nil, nil, err
+	}
+
+	return nos, nmx, nil
+}
+
+func (v *clusterInfoView) refreshMetrics(cluster *resource.Cluster, row int) {
+	nos, nmx, err := v.fetchResources()
+	if err != nil {
+		log.Warn().Err(err).Msg("NodeMetrics")
 		return
 	}
 
