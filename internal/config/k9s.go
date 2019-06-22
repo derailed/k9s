@@ -45,8 +45,7 @@ func (k *K9s) ActiveCluster() *Cluster {
 	return k.Clusters[k.CurrentCluster]
 }
 
-// Validate the current configuration.
-func (k *K9s) Validate(c k8s.Connection, ks KubeSettings) {
+func (k *K9s) validateDefaults() {
 	if k.RefreshRate <= 0 {
 		k.RefreshRate = defaultRefreshRate
 	}
@@ -58,23 +57,32 @@ func (k *K9s) Validate(c k8s.Connection, ks KubeSettings) {
 	if k.LogRequestSize <= 0 {
 		k.LogRequestSize = defaultLogRequestSize
 	}
+}
 
-	if k.Clusters == nil {
-		k.Clusters = map[string]*Cluster{}
-	}
-
+func (k *K9s) checkClusters(ks KubeSettings) {
 	cc, err := ks.ClusterNames()
 	if err != nil {
 		return
 	}
 	for key := range k.Clusters {
-		if !InList(cc, key) {
-			if k.CurrentCluster == key {
-				k.CurrentCluster = ""
-			}
-			delete(k.Clusters, key)
+		if InList(cc, key) {
+			continue
 		}
+		if k.CurrentCluster == key {
+			k.CurrentCluster = ""
+		}
+		delete(k.Clusters, key)
 	}
+}
+
+// Validate the current configuration.
+func (k *K9s) Validate(c k8s.Connection, ks KubeSettings) {
+	k.validateDefaults()
+
+	if k.Clusters == nil {
+		k.Clusters = map[string]*Cluster{}
+	}
+	k.checkClusters(ks)
 
 	if ctx, err := ks.CurrentContextName(); err == nil && len(k.CurrentContext) == 0 {
 		k.CurrentContext = ctx
