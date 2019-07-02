@@ -16,7 +16,7 @@ import (
 func runK(clear bool, app *appView, args ...string) bool {
 	bin, err := exec.LookPath("kubectl")
 	if err != nil {
-		log.Error().Msgf("Unable to find kubeclt command in path %v", err)
+		log.Error().Msgf("Unable to find kubectl command in path %v", err)
 		return false
 	}
 
