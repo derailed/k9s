@@ -4,7 +4,7 @@ ADD ./ /k9s
 WORKDIR /k9s
 RUN apk add make git gcc libc-dev curl
 RUN curl -o aws-iam-authenticator https://amazon-eks.s3-us-west-2.amazonaws.com/1.13.7/2019-06-11/bin/linux/amd64/aws-iam-authenticator
-RUN make build && go clean
+RUN make build
 
 FROM alpine:latest
 
