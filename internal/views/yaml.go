@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	keyValRX = regexp.MustCompile(`\A(\s*)([\w|\-|\.|\s]+):\s(.+)\z`)
-	keyRX    = regexp.MustCompile(`\A(\s*)([\w|\-|\.|\s]+):\s*\z`)
+	keyValRX = regexp.MustCompile(`\A(\s*)([\w|\-|\.|\/|\s]+):\s(.+)\z`)
+	keyRX    = regexp.MustCompile(`\A(\s*)([\w|\-|\.|\/|\s]+):\s*\z`)
 )
 
 const (
