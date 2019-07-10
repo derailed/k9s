@@ -39,6 +39,10 @@ func TestYaml(t *testing.T) {
 			"fred.blee:  <none>",
 			"[steelblue::b]fred.blee[white::-]: [papayawhip::] <none>",
 		},
+		{
+			"certmanager.k8s.io/cluster-issuer: nameOfClusterIssuer",
+			"[steelblue::b]certmanager.k8s.io/cluster-issuer[white::-]: [papayawhip::]nameOfClusterIssuer",
+		},
 	}
 
 	s, _ := config.NewStyles("skins/stock.yml")
