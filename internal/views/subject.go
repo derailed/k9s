@@ -69,7 +69,7 @@ func (v *subjectView) init(c context.Context, _ string) {
 			case <-ctx.Done():
 				log.Debug().Msgf("Subject:%s Watch bailing out!", v.subjectKind)
 				return
-			case <-time.After(time.Duration(v.app.config.K9s.RefreshRate) * time.Second):
+			case <-time.After(time.Duration(v.app.config.K9s.GetRefreshRate()) * time.Second):
 				v.refresh()
 				v.app.Draw()
 			}

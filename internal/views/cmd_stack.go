@@ -1,7 +1,5 @@
 package views
 
-import "github.com/rs/zerolog/log"
-
 const maxStackSize = 10
 
 type cmdStack struct {
@@ -24,10 +22,10 @@ func (s *cmdStack) pop() (string, bool) {
 	if s.empty() {
 		return "", false
 	}
-	log.Info().Msgf("Before Pop %v", s.stack)
+
 	top := s.stack[len(s.stack)-1]
 	s.stack = s.stack[:len(s.stack)-1]
-	log.Info().Msgf("After Pop %v", s.stack)
+
 	return top, true
 }
 
@@ -35,7 +33,6 @@ func (s *cmdStack) top() (string, bool) {
 	if s.empty() {
 		return "", false
 	}
-	log.Info().Msgf("Top %v -- %s", s.stack, s.stack[len(s.stack)-1])
 
 	return s.stack[len(s.stack)-1], true
 }

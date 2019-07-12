@@ -56,7 +56,7 @@ func (v *policyView) init(c context.Context, ns string) {
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(time.Duration(v.app.config.K9s.RefreshRate) * time.Second):
+			case <-time.After(time.Duration(v.app.config.K9s.GetRefreshRate()) * time.Second):
 				v.refresh()
 				v.app.Draw()
 			}

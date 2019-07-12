@@ -2,7 +2,6 @@ package views
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/derailed/k9s/internal/resource"
@@ -150,15 +149,9 @@ func (v *podView) viewLogs(prev bool) bool {
 	if !v.rowSelected() {
 		return false
 	}
+	v.showLogs(v.selectedItem, "", v, prev)
 
-	status := trimCellRelative(v.masterPage(), v.selectedRow, 2)
-	if status == "Running" || status == "Completed" {
-		v.showLogs(v.selectedItem, "", v, prev)
-		return true
-	}
-
-	v.app.flash().err(errors.New("Selected pod is not running"))
-	return false
+	return true
 }
 
 func (v *podView) showLogs(path, co string, parent loggable, prev bool) {

@@ -86,13 +86,14 @@ func (v *logsView) load(container string, prevLogs bool) {
 	if err := v.doLoad(v.parent.getSelection(), container, prevLogs); err != nil {
 		v.app.flash().err(err)
 		l := v.CurrentPage().Item.(*logView)
-		l.logLine("😂 Doh! No logs are available at this time. Check again later on...")
+		l.log("😂 Doh! No logs are available at this time. Check again later on...")
 		return
 	}
 	v.app.SetFocus(v)
 }
 
 func (v *logsView) doLoad(path, co string, prevLogs bool) error {
+	log.Debug().Msgf("----Container %q", co)
 	v.stop()
 
 	l := v.CurrentPage().Item.(*logView)
@@ -142,7 +143,6 @@ func updateLogs(c <-chan string, l *logView, buffSize int) {
 				l.flush(index, buff)
 				return
 			}
-			log.Debug().Msgf("Got line %s", line)
 			if index < buffSize {
 				buff[index] = line
 				index++

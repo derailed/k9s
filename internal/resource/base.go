@@ -189,6 +189,9 @@ func (b *Base) podLogs(ctx context.Context, c chan<- string, sel map[string]stri
 		return err
 	}
 
+	if len(pods) > 1 {
+		opts.MultiPods = true
+	}
 	pr := NewPod(b.Connection)
 	for _, p := range pods {
 		po := p.(*v1.Pod)

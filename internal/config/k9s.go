@@ -1,6 +1,8 @@
 package config
 
-import "github.com/derailed/k9s/internal/k8s"
+import (
+	"github.com/derailed/k9s/internal/k8s"
+)
 
 const (
 	defaultRefreshRate    = 2
@@ -10,13 +12,14 @@ const (
 
 // K9s tracks K9s configuration options.
 type K9s struct {
-	RefreshRate    int                 `yaml:"refreshRate"`
-	LogBufferSize  int                 `yaml:"logBufferSize"`
-	LogRequestSize int                 `yaml:"logRequestSize"`
-	CurrentContext string              `yaml:"currentContext"`
-	CurrentCluster string              `yaml:"currentCluster"`
-	Clusters       map[string]*Cluster `yaml:"clusters,omitempty"`
-	Aliases        map[string]string   `yaml:"aliases,omitempty"`
+	RefreshRate       int `yaml:"refreshRate"`
+	manualRefreshRate int
+	LogBufferSize     int                 `yaml:"logBufferSize"`
+	LogRequestSize    int                 `yaml:"logRequestSize"`
+	CurrentContext    string              `yaml:"currentContext"`
+	CurrentCluster    string              `yaml:"currentCluster"`
+	Clusters          map[string]*Cluster `yaml:"clusters,omitempty"`
+	Aliases           map[string]string   `yaml:"aliases,omitempty"`
 }
 
 // NewK9s create a new K9s configuration.
@@ -28,6 +31,21 @@ func NewK9s() *K9s {
 		Clusters:       map[string]*Cluster{},
 		Aliases:        map[string]string{},
 	}
+}
+
+// OverrideRefreshRate set the refresh rate manually.
+func (k *K9s) OverrideRefreshRate(r int) {
+	k.manualRefreshRate = r
+}
+
+// GetRefreshRate returns the current refresh rate.
+func (k *K9s) GetRefreshRate() int {
+	rate := k.RefreshRate
+	if k.manualRefreshRate != 0 {
+		rate = k.manualRefreshRate
+	}
+
+	return rate
 }
 
 // ActiveCluster returns the currently active cluster.

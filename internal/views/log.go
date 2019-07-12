@@ -66,7 +66,7 @@ func newLogView(_ string, app *appView, backFn actionHandler) *logView {
 		v.logs.SetWrap(true)
 		v.logs.SetMaxBuffer(app.config.K9s.LogBufferSize)
 	}
-	v.ansiWriter = tview.ANSIWriter(v.logs)
+	v.ansiWriter = tview.ANSIWriter(v.logs, app.styles.Views().Log.FgColor, app.styles.Views().Log.BgColor)
 	v.status = newStatusView(app.styles)
 	v.AddItem(v.status, 1, 1, false)
 	v.AddItem(v.logs, 0, 1, true)
@@ -119,8 +119,8 @@ func (v *logView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
-func (v *logView) logLine(line string) {
-	fmt.Fprintln(v.ansiWriter, tview.Escape(line))
+func (v *logView) log(lines string) {
+	fmt.Fprintln(v.ansiWriter, tview.Escape(lines))
 	log.Debug().Msgf("LOG LINES %d", v.logs.GetLineCount())
 }
 
@@ -129,7 +129,7 @@ func (v *logView) flush(index int, buff []string) {
 		return
 	}
 
-	v.logLine(strings.Join(buff[:index], "\n"))
+	v.log(strings.Join(buff[:index], "\n"))
 	if atomic.LoadInt32(&v.autoScroll) == 1 {
 		v.app.QueueUpdateDraw(func() {
 			v.update()

@@ -16,9 +16,11 @@ type (
 	LogOptions struct {
 		Fqn
 
-		Lines    int64
-		Previous bool
-		Color    color.Paint
+		Lines           int64
+		Previous        bool
+		Color           color.Paint
+		SingleContainer bool
+		MultiPods       bool
 	}
 )
 
@@ -50,10 +52,37 @@ func (o LogOptions) FixedSizeName() string {
 	return Truncate(strings.Join(s, "-"), 15) + "-" + tokens[len(tokens)-1]
 }
 
-// NormalizeName colorizes a pod name.
-func (o LogOptions) NormalizeName() string {
-	if o.Color == 0 {
+// // NormalizeName colorizes a pod name.
+// func (o LogOptions) NormalizeName() string {
+// 	if o.Color == 0 {
+// 		return ""
+// 	}
+
+// 	return color.Colorize(o.Name+":"+o.Container+" ", o.Color)
+// 	// return o.Name + ":" + o.Container + " "
+// }
+
+func colorize(c color.Paint, txt string) string {
+	if c == 0 {
 		return ""
 	}
-	return color.Colorize(o.Name+":"+o.Container+" ", o.Color)
+
+	return color.Colorize(txt, c)
+}
+
+// DecorateLog add a log header to display po/co information along with the log message.
+func (o LogOptions) DecorateLog(msg string) string {
+	if msg == "" {
+		return msg
+	}
+
+	if o.MultiPods {
+		return colorize(o.Color, o.Name+":"+o.Container+" ") + msg
+	}
+
+	if !o.SingleContainer {
+		return colorize(o.Color, o.Container+" ") + msg
+	}
+
+	return msg
 }

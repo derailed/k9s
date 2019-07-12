@@ -14,7 +14,7 @@ replace (
 
 require (
 	github.com/Azure/go-autorest/autorest v0.1.0 // indirect
-	github.com/derailed/tview v0.1.11
+	github.com/derailed/tview v0.1.12
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/elazarl/goproxy v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect

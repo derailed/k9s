@@ -34,17 +34,20 @@ type (
 
 func newResourceView(title string, app *appView, list resource.List) resourceViewer {
 	v := resourceView{
-		masterDetail: newMasterDetail(title, app, list.GetNamespace()),
-		list:         list,
+		list: list,
 	}
-	v.masterPage().setFilterFn(v.filterResource)
+	v.masterDetail = newMasterDetail(title, list.GetNamespace(), app, v.backCmd)
 
 	return &v
 }
 
 // Init watches all running pods in given namespace
 func (v *resourceView) init(ctx context.Context, ns string) {
-	v.masterDetail.init(ns, v.backCmd)
+	v.masterDetail.init(ctx, ns)
+	v.masterPage().setFilterFn(v.filterResource)
+	if v.colorerFn != nil {
+		v.masterPage().setColorer(v.colorerFn)
+	}
 
 	v.parentCtx = ctx
 	var vctx context.Context
@@ -69,7 +72,6 @@ func (v *resourceView) init(ctx context.Context, ns string) {
 
 func (v *resourceView) setColorerFn(f colorerFn) {
 	v.colorerFn = f
-	v.masterPage().setColorer(f)
 }
 
 func (v *resourceView) setDecorateFn(f decorateFn) {
@@ -104,7 +106,7 @@ func (v *resourceView) update(ctx context.Context) {
 			case <-ctx.Done():
 				log.Debug().Msgf("%s updater canceled!", v.list.GetName())
 				return
-			case <-time.After(time.Duration(v.app.config.K9s.RefreshRate) * time.Second):
+			case <-time.After(time.Duration(v.app.config.K9s.GetRefreshRate()) * time.Second):
 				v.app.QueueUpdateDraw(func() {
 					v.refresh()
 				})
@@ -113,13 +115,30 @@ func (v *resourceView) update(ctx context.Context) {
 	}(ctx)
 }
 
-// ----------------------------------------------------------------------------
-// Actions...
-
 func (v *resourceView) backCmd(*tcell.EventKey) *tcell.EventKey {
 	v.switchPage("master")
 	return nil
 }
+
+func (v *resourceView) switchPage(p string) {
+	log.Debug().Msgf("Switching page to %s", p)
+	if _, ok := v.CurrentPage().Item.(*tableView); ok {
+		v.stopUpdates()
+	}
+
+	v.SwitchToPage(p)
+	v.currentNS = v.list.GetNamespace()
+	if vu, ok := v.GetPrimitive(p).(hinter); ok {
+		v.app.setHints(vu.hints())
+	}
+
+	if _, ok := v.CurrentPage().Item.(*tableView); ok {
+		v.restartUpdates()
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Actions...
 
 func (v *resourceView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	// If in command mode run filter otherwise enter function.
@@ -163,7 +182,11 @@ func (v *resourceView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *resourceView) defaultEnter(ns, resource, selection string) {
+func (v *resourceView) defaultEnter(ns, _, selection string) {
+	if !v.list.Access(resource.DescribeAccess) {
+		return
+	}
+
 	yaml, err := v.list.Resource().Describe(v.masterPage().baseTitle, selection)
 	if err != nil {
 		v.app.flash().errf("Describe command failed %s", err)
@@ -283,23 +306,6 @@ func (v *resourceView) refresh() {
 	}
 	v.masterPage().update(data)
 	v.selectItem(v.selectedRow, 0)
-}
-
-func (v *resourceView) switchPage(p string) {
-	log.Debug().Msgf("Switching page to %s", p)
-	if _, ok := v.CurrentPage().Item.(*tableView); ok {
-		v.stopUpdates()
-	}
-
-	v.SwitchToPage(p)
-	v.currentNS = v.list.GetNamespace()
-	if vu, ok := v.GetPrimitive(p).(hinter); ok {
-		v.app.setHints(vu.hints())
-	}
-
-	if _, ok := v.CurrentPage().Item.(*tableView); ok {
-		v.restartUpdates()
-	}
 }
 
 func (v *resourceView) namespaceActions() {

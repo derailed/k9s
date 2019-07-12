@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"sync/atomic"
 	"time"
 
 	"github.com/derailed/k9s/internal/color"
@@ -117,14 +118,6 @@ func (r *Pod) Containers(path string, includeInit bool) ([]string, error) {
 	return r.Resource.(k8s.Loggable).Containers(ns, po, includeInit)
 }
 
-func asColor(n string) color.Paint {
-	var sum int
-	for _, r := range n {
-		sum += int(r)
-	}
-	return color.Paint(30 + 1 + sum%6)
-}
-
 // PodLogs tail logs for all containers in a running Pod.
 func (r *Pod) PodLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
 	i := ctx.Value(IKey("informer")).(*watch.Informer)
@@ -135,6 +128,10 @@ func (r *Pod) PodLogs(ctx context.Context, c chan<- string, opts LogOptions) err
 
 	po := p.(*v1.Pod)
 	opts.Color = asColor(po.Name)
+	if len(po.Spec.InitContainers)+len(po.Spec.Containers) == 1 {
+		opts.SingleContainer = true
+	}
+
 	for _, co := range po.Spec.InitContainers {
 		opts.Container = co.Name
 		if err := r.Logs(ctx, c, opts); err != nil {
@@ -175,19 +172,32 @@ func tailLogs(ctx context.Context, res k8s.Loggable, c chan<- string, opts LogOp
 		Previous:  opts.Previous,
 	}
 	req := res.Logs(opts.Namespace, opts.Name, &o)
-	req.Context(ctx)
+	ctxt, cancelFunc := context.WithCancel(ctx)
+	req.Context(ctxt)
+
+	var blocked int32 = 1
+	go logsTimeout(cancelFunc, &blocked)
 
 	// This call will block if nothing is in the stream!!
 	stream, err := req.Stream()
+	atomic.StoreInt32(&blocked, 0)
 	if err != nil {
-		log.Error().Err(err).Msgf("Stream canceled `%s", opts.Path())
-		return err
+		log.Error().Err(err).Msgf("Log stream failed for `%s", opts.Path())
+		return fmt.Errorf("Unable to obtain log stream for %s", opts.Path())
 	}
-
-	// atomic.StoreInt32(&blocked, 0)
 	go readLogs(ctx, stream, c, opts)
 
 	return nil
+}
+
+func logsTimeout(cancel context.CancelFunc, blocked *int32) {
+	select {
+	case <-time.After(defaultTimeout):
+		if atomic.LoadInt32(blocked) == 1 {
+			log.Debug().Msg("Timed out reading the log stream")
+			cancel()
+		}
+	}
 }
 
 func readLogs(ctx context.Context, stream io.ReadCloser, c chan<- string, opts LogOptions) {
@@ -196,14 +206,13 @@ func readLogs(ctx context.Context, stream io.ReadCloser, c chan<- string, opts L
 		stream.Close()
 	}()
 
-	scanner, head := bufio.NewScanner(stream), opts.NormalizeName()
+	scanner := bufio.NewScanner(stream)
 	for scanner.Scan() {
 		select {
 		case <-ctx.Done():
 			return
-		case c <- head + scanner.Text():
 		default:
-			// Ensures we get back to scanning
+			c <- opts.DecorateLog(scanner.Text())
 		}
 	}
 }
@@ -463,4 +472,14 @@ func (r *Pod) loggableContainers(s v1.PodStatus) []string {
 		}
 	}
 	return rcos
+}
+
+// Helpers..
+
+func asColor(n string) color.Paint {
+	var sum int
+	for _, r := range n {
+		sum += int(r)
+	}
+	return color.Paint(30 + 2 + sum%6)
 }

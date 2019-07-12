@@ -90,9 +90,13 @@ func loadConfiguration() *config.Config {
 	if err := k9sCfg.Load(config.K9sConfigFile); err != nil {
 		log.Warn().Msg("Unable to locate K9s config. Generating new configuration...")
 	}
-	k9sCfg.K9s.RefreshRate = refreshRate
+
+	if refreshRate != defaultRefreshRate {
+		k9sCfg.K9s.OverrideRefreshRate(refreshRate)
+	}
+
 	if err := k9sCfg.Refine(k8sFlags); err != nil {
-		log.Panic().Err(err).Msg("Refine Config")
+		log.Panic().Err(err).Msg("Unable to locate K8s cluster configuration")
 	}
 	k9sCfg.SetConnection(k8s.InitConnectionOrDie(k8sCfg, log.Logger))
 

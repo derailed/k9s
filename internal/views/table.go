@@ -116,10 +116,15 @@ func (v *tableView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (v *tableView) sortColCmd(col int) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		if col == -1 {
-			v.sortCol.index, v.sortCol.asc = v.GetColumnCount()-1, true
-		} else {
-			v.sortCol.index, v.sortCol.asc = v.nameColIndex()+col, true
+		v.sortCol.asc = true
+		switch col {
+		case -2:
+			v.sortCol.index = 0
+		case -1:
+			v.sortCol.index = v.GetColumnCount() - 1
+		default:
+			v.sortCol.index = v.nameColIndex() + col
+
 		}
 		v.refresh()
 
@@ -214,7 +219,7 @@ func (v *tableView) adjustSorter(data resource.TableData) {
 func (v *tableView) doUpdate(data resource.TableData) {
 	v.currentNS = data.Namespace
 	if v.currentNS == resource.AllNamespaces && v.currentNS != "*" {
-		v.actions[KeyShiftP] = newKeyAction("Sort Namespace", v.sortColCmd(0), true)
+		v.actions[KeyShiftP] = newKeyAction("Sort Namespace", v.sortColCmd(-2), true)
 	} else {
 		delete(v.actions, KeyShiftP)
 	}

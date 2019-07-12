@@ -62,6 +62,12 @@ func newDetailsView(app *appView, backFn actionHandler) *detailsView {
 		app.Draw()
 	})
 
+	v.bindKeys()
+
+	return &v
+}
+
+func (v *detailsView) bindKeys() {
 	v.actions = keyActions{
 		tcell.KeyBackspace2: newKeyAction("Erase", v.eraseCmd, false),
 		tcell.KeyBackspace:  newKeyAction("Erase", v.eraseCmd, false),
@@ -70,8 +76,6 @@ func newDetailsView(app *appView, backFn actionHandler) *detailsView {
 		tcell.KeyTab:        newKeyAction("Next Match", v.nextCmd, false),
 		tcell.KeyBacktab:    newKeyAction("Previous Match", v.prevCmd, false),
 	}
-
-	return &v
 }
 
 func (v *detailsView) setCategory(n string) {

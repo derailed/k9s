@@ -70,7 +70,6 @@ func (c *command) isStdCmd(cmd string) bool {
 }
 
 func (c *command) isAliasCmd(cmd string) bool {
-
 	cmds := make(map[string]resCmd, 30)
 	resourceViews(c.app.conn(), cmds)
 	res, ok := cmds[cmd]

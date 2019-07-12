@@ -1,6 +1,7 @@
 package views
 
 import (
+	"context"
 	"path"
 
 	"github.com/derailed/k9s/internal/resource"
@@ -22,6 +23,7 @@ type (
 		*pageView
 
 		currentNS      string
+		title          string
 		enterFn        enterFn
 		extraActionsFn func(keyActions)
 	}
@@ -35,23 +37,23 @@ func newPageView(app *appView) *pageView {
 	}
 }
 
-func newMasterDetail(title string, app *appView, ns string) *masterDetail {
+func newMasterDetail(title, ns string, app *appView, backCmd actionHandler) *masterDetail {
 	v := masterDetail{
 		pageView:  newPageView(app),
 		currentNS: ns,
+		title:     title,
 	}
-
-	tv := newTableView(app, title)
+	tv := newTableView(v.app, v.title)
 	tv.SetSelectionChangedFunc(v.selChanged)
 	v.AddPage("master", tv, true, true)
+
+	details := newDetailsView(v.app, backCmd)
+	v.AddPage("details", details, true, false)
 
 	return &v
 }
 
-func (v *masterDetail) init(ns string, backCmd actionHandler) {
-	details := newDetailsView(v.app, backCmd)
-	v.AddPage("details", details, true, false)
-
+func (v *masterDetail) init(ctx context.Context, ns string) {
 	if v.currentNS != resource.NotNamespaced {
 		v.currentNS = ns
 	}
