@@ -38,7 +38,7 @@ func NewCustomList(c k8s.Connection, ns, group, version, name string) List {
 func NewCustom(c k8s.Connection, group, version, name string) *Custom {
 	cr := &Custom{Base: &Base{Connection: c, Resource: k8s.NewResource(c, group, version, name)}}
 	cr.Factory = cr
-	cr.group, cr.version, cr.name = cr.Resource.(*k8s.Resource).GetInfo()
+	cr.group, cr.version, cr.name = group, version, name
 
 	return cr
 }
