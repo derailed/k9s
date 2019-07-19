@@ -189,7 +189,7 @@ func (v *resourceView) defaultEnter(ns, _, selection string) {
 
 	yaml, err := v.list.Resource().Describe(v.masterPage().baseTitle, selection)
 	if err != nil {
-		v.app.flash().errf("Describe command failed %s", err)
+		v.app.flash().errf("Describe command failed: %s", err)
 		return
 	}
 
