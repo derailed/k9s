@@ -40,5 +40,11 @@ func (s *StatefulSet) List(ns string) (Collection, error) {
 
 // Delete a StatefulSet.
 func (s *StatefulSet) Delete(ns, n string, cascade, force bool) error {
-	return s.DialOrDie().AppsV1().StatefulSets(ns).Delete(n, nil)
+	p := metav1.DeletePropagationOrphan
+	if cascade {
+		p = metav1.DeletePropagationBackground
+	}
+	return s.DialOrDie().AppsV1().StatefulSets(ns).Delete(n, &metav1.DeleteOptions{
+		PropagationPolicy: &p,
+	})
 }

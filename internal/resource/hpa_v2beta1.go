@@ -58,7 +58,7 @@ func (r *HorizontalPodAutoscalerV2Beta1) Marshal(path string) (string, error) {
 	}
 
 	hpa := i.(*autoscalingv2beta1.HorizontalPodAutoscaler)
-	hpa.TypeMeta.APIVersion = "autoscaling/v2beta1"
+	hpa.TypeMeta.APIVersion = extractVersion(hpa.Annotations)
 	hpa.TypeMeta.Kind = "HorizontalPodAutoscaler"
 
 	return r.marshalObject(hpa)
@@ -153,7 +153,7 @@ func (r *HorizontalPodAutoscalerV2Beta1) checkHPAType(i int, spec autoscalingv2b
 
 func (*HorizontalPodAutoscalerV2Beta1) externalMetrics(i int, spec autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {
 	current := "<unknown>"
-
+	log.Debug().Msg("YO!")
 	if spec.External.TargetAverageValue != nil {
 		if len(statuses) > i && statuses[i].External != nil && &statuses[i].External.CurrentAverageValue != nil {
 			current = statuses[i].External.CurrentAverageValue.String()

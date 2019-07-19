@@ -361,7 +361,7 @@ func (a *APIClient) SupportsRes(group string, versions []string) (string, bool, 
 		if grp.Name != group {
 			continue
 		}
-		return grp.PreferredVersion.Version, true, nil
+		return grp.Versions[len(grp.Versions)-1].Version, true, nil
 	}
 
 	return "", false, nil
