@@ -130,20 +130,22 @@ func (b *Base) List(ns string) (Columnars, error) {
 // Describe a given resource.
 func (b *Base) Describe(kind, pa string) (string, error) {
 	mapping, err := k8s.RestMapping.Find(kind)
-	if err != nil {
-		resource, ok := b.Resource.(*k8s.Resource)
-		if !ok {
-			log.Debug().Msgf("resource not a (*k8s.Resource) and %s", err)
-			return "", fmt.Errorf("resource not a (*k8s.Resource) and %s", err)
-		}
-		g, v, n := resource.GetInfo()
-		mapper := k8s.RestMapper{Connection: b.Connection}
-		var e error
-		mapping, e = mapper.ResourceFor(fmt.Sprintf("%s.%s.%s", n, v, g))
-		if e != nil {
-			log.Debug().Err(e).Msgf("Unable to find mapper for %s %s", kind, pa)
-			return "", e
-		}
+	if err == nil {
+		return b.doDescribe(pa, mapping)
+	}
+
+	resource, ok := b.Resource.(*k8s.Resource)
+	if !ok {
+		log.Debug().Msgf("resource not a (*k8s.Resource) and %s", err)
+		return "", fmt.Errorf("resource not a (*k8s.Resource) and %s", err)
+	}
+	g, v, n := resource.GetInfo()
+	mapper := k8s.RestMapper{Connection: b.Connection}
+	var e error
+	mapping, e = mapper.ResourceFor(fmt.Sprintf("%s.%s.%s", n, v, g))
+	if e != nil {
+		log.Debug().Err(e).Msgf("Unable to find mapper for %s %s", kind, pa)
+		return "", e
 	}
 
 	return b.doDescribe(pa, mapping)
