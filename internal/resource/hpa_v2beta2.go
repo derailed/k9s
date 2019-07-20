@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -58,10 +59,21 @@ func (r *HorizontalPodAutoscaler) Marshal(path string) (string, error) {
 	}
 
 	hpa := i.(*autoscalingv2beta2.HorizontalPodAutoscaler)
-	hpa.TypeMeta.APIVersion = "autoscaling/v2beta2"
+	hpa.TypeMeta.APIVersion = extractVersion(hpa.Annotations)
 	hpa.TypeMeta.Kind = "HorizontalPodAutoscaler"
 
 	return r.marshalObject(hpa)
+}
+
+func extractVersion(a map[string]string) string {
+	ann := a["kubectl.kubernetes.io/last-applied-configuration"]
+	rx := regexp.MustCompile(`\A{"apiVersion":"([\w|/]+)",`)
+	found := rx.FindAllStringSubmatch(ann, 1)
+	if len(found) == 0 || len(found[0]) < 1 {
+		return "autoscaling/v2beta2"
+	}
+
+	return found[0][1]
 }
 
 // Header return resource header.

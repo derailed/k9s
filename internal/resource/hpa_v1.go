@@ -57,7 +57,7 @@ func (r *HorizontalPodAutoscalerV1) Marshal(path string) (string, error) {
 	}
 
 	hpa := i.(*autoscalingv1.HorizontalPodAutoscaler)
-	hpa.TypeMeta.APIVersion = "autoscaling/v1"
+	hpa.TypeMeta.APIVersion = extractVersion(hpa.Annotations)
 	hpa.TypeMeta.Kind = "HorizontalPodAutoscaler"
 
 	return r.marshalObject(hpa)

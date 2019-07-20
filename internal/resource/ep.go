@@ -97,9 +97,12 @@ func (r *Endpoints) toEPs(ss []v1.EndpointSubset) string {
 	for _, s := range ss {
 		pp := make([]string, len(s.Ports))
 		portsToStrs(s.Ports, pp)
-		proccessIPs(aa, pp, s.Addresses)
+		log.Debug().Msgf("Ports %#v", pp)
+		a := make([]string, len(s.Addresses))
+		proccessIPs(a, pp, s.Addresses)
+		aa = append(aa, strings.Join(a, ","))
 	}
-
+	log.Debug().Msgf("AA %#v", aa)
 	return strings.Join(aa, ",")
 }
 
@@ -111,18 +114,19 @@ func portsToStrs(pp []v1.EndpointPort, ss []string) {
 
 func proccessIPs(aa []string, pp []string, addrs []v1.EndpointAddress) {
 	const maxIPs = 3
+	var i int
 	for _, a := range addrs {
 		if len(a.IP) == 0 {
 			continue
 		}
 		if len(pp) == 0 {
-			aa = append(aa, a.IP)
+			aa[i], i = a.IP, i+1
 			continue
 		}
 		if len(pp) > maxIPs {
-			aa = append(aa, a.IP+":"+strings.Join(pp[:maxIPs], ",")+"...")
+			aa[i], i = a.IP+":"+strings.Join(pp[:maxIPs], ",")+"...", i+1
 		} else {
-			aa = append(aa, a.IP+":"+strings.Join(pp, ","))
+			aa[i], i = a.IP+":"+strings.Join(pp, ","), i+1
 		}
 	}
 }

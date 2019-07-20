@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -17,7 +18,7 @@ func NewHorizontalPodAutoscalerV2Beta1(c Connection) *HorizontalPodAutoscalerV2B
 
 // Get a HorizontalPodAutoscaler.
 func (h *HorizontalPodAutoscalerV2Beta1) Get(ns, n string) (interface{}, error) {
-	return h.DialOrDie().AutoscalingV2beta2().HorizontalPodAutoscalers(ns).Get(n, metav1.GetOptions{})
+	return h.DialOrDie().AutoscalingV2beta1().HorizontalPodAutoscalers(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all HorizontalPodAutoscalers in a given namespace.
@@ -26,8 +27,9 @@ func (h *HorizontalPodAutoscalerV2Beta1) List(ns string) (Collection, error) {
 		LabelSelector: h.labelSelector,
 		FieldSelector: h.fieldSelector,
 	}
-	rr, err := h.DialOrDie().AutoscalingV2beta2().HorizontalPodAutoscalers(ns).List(opts)
+	rr, err := h.DialOrDie().AutoscalingV2beta1().HorizontalPodAutoscalers(ns).List(opts)
 	if err != nil {
+		log.Error().Err(err).Msg("Beta1 Failed!")
 		return nil, err
 	}
 	cc := make(Collection, len(rr.Items))
