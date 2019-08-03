@@ -256,7 +256,7 @@ func coreRes(m map[string]resCmd) {
 		crdCmd: crdCmd{
 			api: "",
 		},
-		viewFn:    newResourceView,
+		viewFn:    newScalableResourceView,
 		listFn:    resource.NewReplicationControllerList,
 		colorerFn: rsColorer,
 	}

@@ -20,7 +20,7 @@ import (
 )
 
 type (
-	// Cruder represent a crudable Kubernetes resource.
+	// Cruder represents a crudable Kubernetes resource.
 	Cruder interface {
 		Get(ns string, name string) (interface{}, error)
 		List(ns string) (k8s.Collection, error)
@@ -30,6 +30,11 @@ type (
 		GetLabelSelector() string
 		GetFieldSelector() string
 		HasSelectors() bool
+	}
+
+	// Scalable represents a scalable Kubernetes resource.
+	Scalable interface {
+		Scale(ns string, name string, replicas int32) error
 	}
 
 	// Connection represents a Kubenetes apiserver connection.

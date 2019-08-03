@@ -48,3 +48,15 @@ func (s *StatefulSet) Delete(ns, n string, cascade, force bool) error {
 		PropagationPolicy: &p,
 	})
 }
+
+// Scale a StatefulSet.
+func (s *StatefulSet) Scale(ns, n string, replicas int32) error {
+	scale, err := s.DialOrDie().Apps().StatefulSets(ns).GetScale(n, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	scale.Spec.Replicas = replicas
+	_, err = s.DialOrDie().Apps().StatefulSets(ns).UpdateScale(n, scale)
+	return err
+}

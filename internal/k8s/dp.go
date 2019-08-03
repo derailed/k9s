@@ -26,6 +26,7 @@ func (d *Deployment) List(ns string) (Collection, error) {
 		LabelSelector: d.labelSelector,
 		FieldSelector: d.fieldSelector,
 	}
+
 	rr, err := d.DialOrDie().Apps().Deployments(ns).List(opts)
 	if err != nil {
 		return nil, err
@@ -41,4 +42,16 @@ func (d *Deployment) List(ns string) (Collection, error) {
 // Delete a Deployment.
 func (d *Deployment) Delete(ns, n string, cascade, force bool) error {
 	return d.DialOrDie().Apps().Deployments(ns).Delete(n, nil)
+}
+
+// Scale a Deployment.
+func (d *Deployment) Scale(ns, n string, replicas int32) error {
+	scale, err := d.DialOrDie().Apps().Deployments(ns).GetScale(n, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	scale.Spec.Replicas = replicas
+	_, err = d.DialOrDie().Apps().Deployments(ns).UpdateScale(n, scale)
+	return err
 }
