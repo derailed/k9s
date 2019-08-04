@@ -52,13 +52,19 @@ func (v *scalableResourceView) scale(selection string, replicas int) {
 }
 
 func (v *scalableResourceView) showScaleDialog(resourceType string, resourceName string) {
-	f := tview.NewForm()
-	f.SetItemPadding(0)
-	f.SetButtonsAlign(tview.AlignCenter).
-		SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
-		SetButtonTextColor(tview.Styles.PrimaryTextColor).
-		SetLabelColor(tcell.ColorAqua).
-		SetFieldTextColor(tcell.ColorOrange)
+	f := v.createScaleForm()
+
+	confirm := tview.NewModalForm("<Scale>", f)
+	confirm.SetText(fmt.Sprintf("Scale %s %s", resourceType, resourceName))
+	confirm.SetDoneFunc(func(int, string) {
+		v.dismissScaleDialog()
+	})
+	v.AddPage(scaleDialogKey, confirm, false, false)
+	v.ShowPage(scaleDialogKey)
+}
+
+func (v *scalableResourceView) createScaleForm() *tview.Form {
+	f := v.createStyledForm()
 
 	replicas := "1"
 	f.AddInputField("Replicas:", replicas, 4, func(textToCheck string, lastChar rune) bool {
@@ -68,29 +74,38 @@ func (v *scalableResourceView) showScaleDialog(resourceType string, resourceName
 		replicas = changed
 	})
 
-	dismiss := func() {
-		v.Pages.RemovePage(scaleDialogKey)
-	}
-
 	f.AddButton("OK", func() {
-		if val, err := strconv.Atoi(replicas); err == nil {
-			v.scale(v.selectedItem, val)
-		} else {
-			v.app.flash().err(err)
-		}
-
-		dismiss()
+		v.okSelected(replicas)
 	})
 
 	f.AddButton("Cancel", func() {
-		dismiss()
+		v.dismissScaleDialog()
 	})
 
-	confirm := tview.NewModalForm("<Scale>", f)
-	confirm.SetText(fmt.Sprintf("Scale %s %s", resourceType, resourceName))
-	confirm.SetDoneFunc(func(int, string) {
-		dismiss()
-	})
-	v.AddPage(scaleDialogKey, confirm, false, false)
-	v.ShowPage(scaleDialogKey)
+	return f
+}
+
+func (v *scalableResourceView) createStyledForm() *tview.Form {
+	f := tview.NewForm()
+	f.SetItemPadding(0)
+	f.SetButtonsAlign(tview.AlignCenter).
+		SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
+		SetButtonTextColor(tview.Styles.PrimaryTextColor).
+		SetLabelColor(tcell.ColorAqua).
+		SetFieldTextColor(tcell.ColorOrange)
+	return f
+}
+
+func (v *scalableResourceView) okSelected(replicas string) {
+	if val, err := strconv.Atoi(replicas); err == nil {
+		v.scale(v.selectedItem, val)
+	} else {
+		v.app.flash().err(err)
+	}
+
+	v.dismissScaleDialog()
+}
+
+func (v *scalableResourceView) dismissScaleDialog() {
+	v.Pages.RemovePage(scaleDialogKey)
 }
