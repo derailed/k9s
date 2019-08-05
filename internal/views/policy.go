@@ -164,7 +164,7 @@ func (v *policyView) clusterPolicies() (resource.RowEvents, []error) {
 	var errs []error
 	evts := make(resource.RowEvents)
 
-	crbs, err := v.app.conn().DialOrDie().Rbac().ClusterRoleBindings().List(metav1.ListOptions{})
+	crbs, err := v.app.conn().DialOrDie().RbacV1().ClusterRoleBindings().List(metav1.ListOptions{})
 	if err != nil {
 		return evts, errs
 	}
@@ -179,7 +179,7 @@ func (v *policyView) clusterPolicies() (resource.RowEvents, []error) {
 	}
 
 	for _, r := range rr {
-		role, err := v.app.conn().DialOrDie().Rbac().ClusterRoles().Get(r, metav1.GetOptions{})
+		role, err := v.app.conn().DialOrDie().RbacV1().ClusterRoles().Get(r, metav1.GetOptions{})
 		if err != nil {
 			errs = append(errs, err)
 		}
@@ -194,7 +194,7 @@ func (v *policyView) clusterPolicies() (resource.RowEvents, []error) {
 func (v policyView) loadRoleBindings() ([]namespacedRole, error) {
 	var rr []namespacedRole
 
-	dial := v.app.conn().DialOrDie().Rbac()
+	dial := v.app.conn().DialOrDie().RbacV1()
 	rbs, err := dial.RoleBindings("").List(metav1.ListOptions{})
 	if err != nil {
 		return rr, err
@@ -213,7 +213,7 @@ func (v policyView) loadRoleBindings() ([]namespacedRole, error) {
 
 func (v *policyView) loadRoles(errs []error, rr []namespacedRole) (resource.RowEvents, []error) {
 	var (
-		dial = v.app.conn().DialOrDie().Rbac()
+		dial = v.app.conn().DialOrDie().RbacV1()
 		evts = make(resource.RowEvents)
 	)
 	for _, r := range rr {

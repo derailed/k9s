@@ -17,7 +17,7 @@ func NewReplicaSet(c Connection) *ReplicaSet {
 
 // Get a ReplicaSet.
 func (r *ReplicaSet) Get(ns, n string) (interface{}, error) {
-	return r.DialOrDie().Apps().ReplicaSets(ns).Get(n, metav1.GetOptions{})
+	return r.DialOrDie().AppsV1().ReplicaSets(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all ReplicaSets in a given namespace.
@@ -26,7 +26,7 @@ func (r *ReplicaSet) List(ns string) (Collection, error) {
 		LabelSelector: r.labelSelector,
 		FieldSelector: r.fieldSelector,
 	}
-	rr, err := r.DialOrDie().Apps().ReplicaSets(ns).List(opts)
+	rr, err := r.DialOrDie().AppsV1().ReplicaSets(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -40,5 +40,5 @@ func (r *ReplicaSet) List(ns string) (Collection, error) {
 
 // Delete a ReplicaSet.
 func (r *ReplicaSet) Delete(ns, n string, cascade, force bool) error {
-	return r.DialOrDie().Apps().ReplicaSets(ns).Delete(n, nil)
+	return r.DialOrDie().AppsV1().ReplicaSets(ns).Delete(n, nil)
 }

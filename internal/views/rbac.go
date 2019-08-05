@@ -209,7 +209,7 @@ func (v *rbacView) rowEvents(ns, name string, kind roleKind) (resource.RowEvents
 }
 
 func (v *rbacView) clusterPolicies(name string) (resource.RowEvents, error) {
-	cr, err := v.app.conn().DialOrDie().Rbac().ClusterRoles().Get(name, metav1.GetOptions{})
+	cr, err := v.app.conn().DialOrDie().RbacV1().ClusterRoles().Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +219,7 @@ func (v *rbacView) clusterPolicies(name string) (resource.RowEvents, error) {
 
 func (v *rbacView) namespacedPolicies(path string) (resource.RowEvents, error) {
 	ns, na := namespaced(path)
-	cr, err := v.app.conn().DialOrDie().Rbac().Roles(ns).Get(na, metav1.GetOptions{})
+	cr, err := v.app.conn().DialOrDie().RbacV1().Roles(ns).Get(na, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

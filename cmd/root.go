@@ -141,7 +141,7 @@ func initK9sFlags() {
 }
 
 func initK8sFlags() {
-	k8sFlags = genericclioptions.NewConfigFlags()
+	k8sFlags = genericclioptions.NewConfigFlags(false)
 
 	rootCmd.Flags().StringVar(
 		k8sFlags.KubeConfig,

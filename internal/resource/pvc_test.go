@@ -111,7 +111,6 @@ metadata:
   name: fred
   namespace: blee
 spec:
-  dataSource: null
   resources:
     requests:
       storage: "0"

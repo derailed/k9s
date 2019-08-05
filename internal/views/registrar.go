@@ -91,7 +91,7 @@ func showRBAC(app *appView, ns, resource, selection string) {
 }
 
 func showClusterRole(app *appView, ns, resource, selection string) {
-	crb, err := app.conn().DialOrDie().Rbac().ClusterRoleBindings().Get(selection, metav1.GetOptions{})
+	crb, err := app.conn().DialOrDie().RbacV1().ClusterRoleBindings().Get(selection, metav1.GetOptions{})
 	if err != nil {
 		app.flash().errf("Unable to retrieve clusterrolebindings for %s", selection)
 		return
@@ -101,7 +101,7 @@ func showClusterRole(app *appView, ns, resource, selection string) {
 
 func showRole(app *appView, _, resource, selection string) {
 	ns, n := namespaced(selection)
-	rb, err := app.conn().DialOrDie().Rbac().RoleBindings(ns).Get(n, metav1.GetOptions{})
+	rb, err := app.conn().DialOrDie().RbacV1().RoleBindings(ns).Get(n, metav1.GetOptions{})
 	if err != nil {
 		app.flash().errf("Unable to retrieve rolebindings for %s", selection)
 		return

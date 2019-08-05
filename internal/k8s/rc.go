@@ -17,7 +17,7 @@ func NewReplicationController(c Connection) *ReplicationController {
 
 // Get a RC.
 func (r *ReplicationController) Get(ns, n string) (interface{}, error) {
-	return r.DialOrDie().Core().ReplicationControllers(ns).Get(n, metav1.GetOptions{})
+	return r.DialOrDie().CoreV1().ReplicationControllers(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all RCs in a given namespace.
@@ -26,7 +26,7 @@ func (r *ReplicationController) List(ns string) (Collection, error) {
 		LabelSelector: r.labelSelector,
 		FieldSelector: r.fieldSelector,
 	}
-	rr, err := r.DialOrDie().Core().ReplicationControllers(ns).List(opts)
+	rr, err := r.DialOrDie().CoreV1().ReplicationControllers(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (r *ReplicationController) Delete(ns, n string, cascade, force bool) error 
 	if cascade {
 		p = metav1.DeletePropagationBackground
 	}
-	return r.DialOrDie().Core().ReplicationControllers(ns).Delete(n, &metav1.DeleteOptions{
+	return r.DialOrDie().CoreV1().ReplicationControllers(ns).Delete(n, &metav1.DeleteOptions{
 		PropagationPolicy: &p,
 	})
 }

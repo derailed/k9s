@@ -185,7 +185,7 @@ func (a *APIClient) NodePods(node string) (*v1.PodList, error) {
 		return nil, err
 	}
 
-	return a.DialOrDie().Core().Pods("").List(metav1.ListOptions{
+	return a.DialOrDie().CoreV1().Pods("").List(metav1.ListOptions{
 		FieldSelector: fieldSelector.String(),
 	})
 }

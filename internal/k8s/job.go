@@ -77,7 +77,7 @@ func (j *Job) Logs(ns, n string, opts *v1.PodLogOptions) *restclient.Request {
 
 // Events retrieved jobs events.
 func (j *Job) Events(ns, n string) (*v1.EventList, error) {
-	e := j.DialOrDie().Core().Events(ns)
+	e := j.DialOrDie().CoreV1().Events(ns)
 	return e.List(metav1.ListOptions{
 		FieldSelector: e.GetFieldSelector(&n, &ns, nil, nil).String(),
 	})

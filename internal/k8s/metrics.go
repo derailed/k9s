@@ -107,7 +107,7 @@ func (m *MetricsServer) FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error) {
 		return nil, err
 	}
 
-	return client.Metrics().NodeMetricses().List(metav1.ListOptions{})
+	return client.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{})
 }
 
 // FetchPodsMetrics return all metrics for pods in a given namespace.
@@ -117,7 +117,7 @@ func (m *MetricsServer) FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, e
 		return nil, err
 	}
 
-	return client.Metrics().PodMetricses(ns).List(metav1.ListOptions{})
+	return client.MetricsV1beta1().PodMetricses(ns).List(metav1.ListOptions{})
 }
 
 // PodsMetrics retrieves metrics for all pods in a given namespace.

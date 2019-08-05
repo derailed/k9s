@@ -13,7 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/cli-runtime/pkg/genericclioptions/printers"
+	genericprinters "k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/kubernetes/pkg/kubectl/describe"
 	versioned "k8s.io/kubernetes/pkg/kubectl/describe/versioned"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
@@ -181,7 +181,7 @@ func (*Base) namespacedName(m metav1.ObjectMeta) string {
 func (*Base) marshalObject(o runtime.Object) (string, error) {
 	var (
 		buff bytes.Buffer
-		p    printers.YAMLPrinter
+		p    genericprinters.YAMLPrinter
 	)
 	err := p.PrintObj(o, &buff)
 	if err != nil {

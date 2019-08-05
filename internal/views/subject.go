@@ -249,7 +249,7 @@ func buildTable(c cachedEventer, evts resource.RowEvents) resource.TableData {
 }
 
 func (v *subjectView) clusterSubjects() (resource.RowEvents, error) {
-	crbs, err := v.app.conn().DialOrDie().Rbac().ClusterRoleBindings().List(metav1.ListOptions{})
+	crbs, err := v.app.conn().DialOrDie().RbacV1().ClusterRoleBindings().List(metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +270,7 @@ func (v *subjectView) clusterSubjects() (resource.RowEvents, error) {
 }
 
 func (v *subjectView) namespacedSubjects() (resource.RowEvents, error) {
-	rbs, err := v.app.conn().DialOrDie().Rbac().RoleBindings("").List(metav1.ListOptions{})
+	rbs, err := v.app.conn().DialOrDie().RbacV1().RoleBindings("").List(metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}

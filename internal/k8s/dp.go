@@ -17,7 +17,7 @@ func NewDeployment(c Connection) *Deployment {
 
 // Get a deployment.
 func (d *Deployment) Get(ns, n string) (interface{}, error) {
-	return d.DialOrDie().Apps().Deployments(ns).Get(n, metav1.GetOptions{})
+	return d.DialOrDie().AppsV1().Deployments(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all Deployments in a given namespace.
@@ -26,8 +26,7 @@ func (d *Deployment) List(ns string) (Collection, error) {
 		LabelSelector: d.labelSelector,
 		FieldSelector: d.fieldSelector,
 	}
-
-	rr, err := d.DialOrDie().Apps().Deployments(ns).List(opts)
+	rr, err := d.DialOrDie().AppsV1().Deployments(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -41,17 +40,17 @@ func (d *Deployment) List(ns string) (Collection, error) {
 
 // Delete a Deployment.
 func (d *Deployment) Delete(ns, n string, cascade, force bool) error {
-	return d.DialOrDie().Apps().Deployments(ns).Delete(n, nil)
+	return d.DialOrDie().AppsV1().Deployments(ns).Delete(n, nil)
 }
 
 // Scale a Deployment.
 func (d *Deployment) Scale(ns, n string, replicas int32) error {
-	scale, err := d.DialOrDie().Apps().Deployments(ns).GetScale(n, metav1.GetOptions{})
+	scale, err := d.DialOrDie().AppsV1().Deployments(ns).GetScale(n, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
 	scale.Spec.Replicas = replicas
-	_, err = d.DialOrDie().Apps().Deployments(ns).UpdateScale(n, scale)
+	_, err = d.DialOrDie().AppsV1().Deployments(ns).UpdateScale(n, scale)
 	return err
 }

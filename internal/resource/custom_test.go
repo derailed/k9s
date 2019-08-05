@@ -141,6 +141,7 @@ listmeta:
   selflink: ""
   resourceversion: ""
   continue: ""
+  remainingitemcount: null
 columndefinitions:
 - name: A
   type: ""
