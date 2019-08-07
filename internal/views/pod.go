@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -33,14 +34,13 @@ type loggable interface {
 
 func newPodView(t string, app *appView, list resource.List) resourceViewer {
 	v := podView{resourceView: newResourceView(t, app, list).(*resourceView)}
-	{
-		v.extraActionsFn = v.extraActions
-		v.enterFn = v.listContainers
-	}
+	v.extraActionsFn = v.extraActions
+	v.enterFn = v.listContainers
+
 	picker := newSelectList(&v)
 	{
-		picker.setActions(keyActions{
-			tcell.KeyEscape: {description: "Back", action: v.backCmd, visible: true},
+		picker.setActions(ui.KeyActions{
+			tcell.KeyEscape: {Description: "Back", Action: v.backCmd, Visible: true},
 		})
 	}
 	v.AddPage("picker", picker, true, false)
@@ -49,20 +49,20 @@ func newPodView(t string, app *appView, list resource.List) resourceViewer {
 	return &v
 }
 
-func (v *podView) extraActions(aa keyActions) {
-	actions := keyActions{
-		KeyL:      newKeyAction("Logs", v.logsCmd, true),
-		KeyShiftL: newKeyAction("Logs Previous", v.prevLogsCmd, true),
-		KeyS:      newKeyAction("Shell", v.shellCmd, true),
-		KeyShiftR: newKeyAction("Sort Ready", v.sortColCmd(1, false), true),
-		KeyShiftS: newKeyAction("Sort Status", v.sortColCmd(2, true), true),
-		KeyShiftT: newKeyAction("Sort Restart", v.sortColCmd(3, false), true),
-		KeyShiftC: newKeyAction("Sort CPU", v.sortColCmd(4, false), true),
-		KeyShiftM: newKeyAction("Sort MEM", v.sortColCmd(5, false), true),
-		KeyAltC:   newKeyAction("Sort CPU%", v.sortColCmd(6, false), true),
-		KeyAltM:   newKeyAction("Sort MEM%", v.sortColCmd(7, false), true),
-		KeyShiftD: newKeyAction("Sort IP", v.sortColCmd(8, true), true),
-		KeyShiftO: newKeyAction("Sort Node", v.sortColCmd(9, true), true),
+func (v *podView) extraActions(aa ui.KeyActions) {
+	actions := ui.KeyActions{
+		ui.KeyL:      ui.NewKeyAction("Logs", v.logsCmd, true),
+		ui.KeyShiftL: ui.NewKeyAction("Logs Previous", v.prevLogsCmd, true),
+		ui.KeyS:      ui.NewKeyAction("Shell", v.shellCmd, true),
+		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", v.sortColCmd(1, false), true),
+		ui.KeyShiftS: ui.NewKeyAction("Sort Status", v.sortColCmd(2, true), true),
+		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", v.sortColCmd(3, false), true),
+		ui.KeyShiftC: ui.NewKeyAction("Sort CPU", v.sortColCmd(4, false), true),
+		ui.KeyShiftM: ui.NewKeyAction("Sort MEM", v.sortColCmd(5, false), true),
+		ui.KeyAltC:   ui.NewKeyAction("Sort CPU%", v.sortColCmd(6, false), true),
+		ui.KeyAltM:   ui.NewKeyAction("Sort MEM%", v.sortColCmd(7, false), true),
+		ui.KeyShiftD: ui.NewKeyAction("Sort IP", v.sortColCmd(8, true), true),
+		ui.KeyShiftO: ui.NewKeyAction("Sort Node", v.sortColCmd(9, true), true),
 	}
 	for k, v := range actions {
 		aa[k] = v
@@ -72,13 +72,13 @@ func (v *podView) extraActions(aa keyActions) {
 func (v *podView) listContainers(app *appView, _, res, sel string) {
 	po, err := v.app.informer.Get(watch.PodIndex, sel, metav1.GetOptions{})
 	if err != nil {
-		app.flash().errf("Unable to retrieve pods %s", err)
+		app.Flash().Errf("Unable to retrieve pods %s", err)
 		return
 	}
 
 	pod := po.(*v1.Pod)
-	list := resource.NewContainerList(app.conn(), pod)
-	title := skinTitle(fmt.Sprintf(containerFmt, "Containers", sel), app.styles.Frame())
+	list := resource.NewContainerList(app.Conn(), pod)
+	title := skinTitle(fmt.Sprintf(containerFmt, "Containers", sel), app.Styles.Frame())
 
 	// Stop my updater
 	if v.cancelFn != nil {
@@ -90,7 +90,7 @@ func (v *podView) listContainers(app *appView, _, res, sel string) {
 	v.AddPage("containers", cv, true, true)
 	var ctx context.Context
 	ctx, v.childCancelFn = context.WithCancel(v.parentCtx)
-	cv.init(ctx, pod.Namespace)
+	cv.Init(ctx, pod.Namespace)
 }
 
 func (v *podView) exitFn() {
@@ -122,9 +122,9 @@ func (v *podView) sniffCmd(evt *tcell.EventKey) *tcell.EventKey {
 	args = append(args, "sniff", n, "-n", ns)
 
 	if runK(true, v.app, args...) {
-		v.app.flash().info("Sniff launched!")
+		v.app.Flash().Info("Sniff launched!")
 	} else {
-		v.app.flash().info("Sniff failed!")
+		v.app.Flash().Info("Sniff failed!")
 	}
 	return nil
 }
@@ -167,7 +167,7 @@ func (v *podView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	cc, err := fetchContainers(v.list, v.selectedItem, false)
 	if err != nil {
-		v.app.flash().errf("Unable to retrieve containers %s", err)
+		v.app.Flash().Errf("Unable to retrieve containers %s", err)
 		return evt
 	}
 	if len(cc) == 1 {
@@ -193,8 +193,8 @@ func (v *podView) shellIn(path, co string) {
 func (v *podView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		t := v.masterPage()
-		t.sortCol.index, t.sortCol.asc = t.nameColIndex()+col, asc
-		t.refresh()
+		t.SetSortCol(t.NameColIndex()+col, asc)
+		t.Refresh()
 
 		return nil
 	}
@@ -211,7 +211,7 @@ func fetchContainers(l resource.List, po string, includeInit bool) ([]string, er
 }
 
 func shellIn(a *appView, path, co string) {
-	args := computeShellArgs(path, co, a.config.K9s.CurrentContext, a.conn().Config().Flags().KubeConfig)
+	args := computeShellArgs(path, co, a.Config.K9s.CurrentContext, a.Conn().Config().Flags().KubeConfig)
 	log.Debug().Msgf("Shell args %v", args)
 	runK(true, a, args...)
 }

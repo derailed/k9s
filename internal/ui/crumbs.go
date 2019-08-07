@@ -1,4 +1,4 @@
-package views
+package ui
 
 import (
 	"fmt"
@@ -7,14 +7,16 @@ import (
 	"github.com/derailed/tview"
 )
 
-type crumbsView struct {
+// CrumbsView represents user breadcrumbs.
+type CrumbsView struct {
 	*tview.TextView
 
 	styles *config.Styles
 }
 
-func newCrumbsView(styles *config.Styles) *crumbsView {
-	v := crumbsView{styles: styles, TextView: tview.NewTextView()}
+// NewCrumbsView returns a new breadcrumb view.
+func NewCrumbsView(styles *config.Styles) *CrumbsView {
+	v := CrumbsView{styles: styles, TextView: tview.NewTextView()}
 	{
 		v.SetBackgroundColor(styles.BgColor())
 		v.SetTextAlign(tview.AlignLeft)
@@ -25,7 +27,8 @@ func newCrumbsView(styles *config.Styles) *crumbsView {
 	return &v
 }
 
-func (v *crumbsView) update(crumbs []string) {
+// Refresh updates view with new crumbs.
+func (v *CrumbsView) Refresh(crumbs []string) {
 	v.Clear()
 	last, bgColor := len(crumbs)-1, v.styles.Frame().Crumb.BgColor
 	for i, c := range crumbs {

@@ -4,6 +4,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -19,8 +20,8 @@ func newSecretView(t string, app *appView, list resource.List) resourceViewer {
 	return &v
 }
 
-func (v *secretView) extraActions(aa keyActions) {
-	aa[tcell.KeyCtrlX] = newKeyAction("Decode", v.decodeCmd, true)
+func (v *secretView) extraActions(aa ui.KeyActions) {
+	aa[tcell.KeyCtrlX] = ui.NewKeyAction("Decode", v.decodeCmd, true)
 }
 
 func (v *secretView) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -30,9 +31,9 @@ func (v *secretView) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	sel := v.getSelectedItem()
 	ns, n := namespaced(sel)
-	sec, err := v.app.conn().DialOrDie().CoreV1().Secrets(ns).Get(n, metav1.GetOptions{})
+	sec, err := v.app.Conn().DialOrDie().CoreV1().Secrets(ns).Get(n, metav1.GetOptions{})
 	if err != nil {
-		v.app.flash().errf("Unable to retrieve secret %s", err)
+		v.app.Flash().Errf("Unable to retrieve secret %s", err)
 		return evt
 	}
 
@@ -42,15 +43,15 @@ func (v *secretView) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	raw, err := yaml.Marshal(d)
 	if err != nil {
-		v.app.flash().errf("Error decoding secret %s", err)
+		v.app.Flash().Errf("Error decoding secret %s", err)
 		return nil
 	}
 
 	details := v.detailsPage()
 	details.setCategory("Decoder")
 	details.setTitle(sel)
-	details.SetTextColor(v.app.styles.FgColor())
-	details.SetText(colorizeYAML(v.app.styles.Views().Yaml, string(raw)))
+	details.SetTextColor(v.app.Styles.FgColor())
+	details.SetText(colorizeYAML(v.app.Styles.Views().Yaml, string(raw)))
 	details.ScrollToBeginning()
 	v.switchPage("details")
 

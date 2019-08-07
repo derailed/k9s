@@ -2,6 +2,7 @@ package views
 
 import (
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 )
 
@@ -22,14 +23,14 @@ func (v *cronJobView) trigger(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if err := v.list.Resource().(resource.Runner).Run(v.selectedItem); err != nil {
-		v.app.flash().errf("Cronjob trigger failed %v", err)
+		v.app.Flash().Errf("Cronjob trigger failed %v", err)
 		return evt
 	}
-	v.app.flash().infof("Triggering %s %s", v.list.GetName(), v.selectedItem)
+	v.app.Flash().Infof("Triggering %s %s", v.list.GetName(), v.selectedItem)
 
 	return nil
 }
 
-func (v *cronJobView) extraActions(aa keyActions) {
-	aa[tcell.KeyCtrlT] = newKeyAction("Trigger", v.trigger, true)
+func (v *cronJobView) extraActions(aa ui.KeyActions) {
+	aa[tcell.KeyCtrlT] = ui.NewKeyAction("Trigger", v.trigger, true)
 }

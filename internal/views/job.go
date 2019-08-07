@@ -3,6 +3,7 @@ package views
 import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -19,23 +20,23 @@ func newJobView(t string, app *appView, list resource.List) resourceViewer {
 	return &v
 }
 
-func (v *jobView) extraActions(aa keyActions) {
+func (v *jobView) extraActions(aa ui.KeyActions) {
 	v.logResourceView.extraActions(aa)
 }
 
 func (v *jobView) showPods(app *appView, ns, res, sel string) {
 	ns, n := namespaced(sel)
-	j := k8s.NewJob(app.conn())
+	j := k8s.NewJob(app.Conn())
 	job, err := j.Get(ns, n)
 	if err != nil {
-		app.flash().err(err)
+		app.Flash().Err(err)
 		return
 	}
 
 	jo := job.(*batchv1.Job)
 	l, err := metav1.LabelSelectorAsSelector(jo.Spec.Selector)
 	if err != nil {
-		app.flash().err(err)
+		app.Flash().Err(err)
 		return
 	}
 

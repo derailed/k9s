@@ -1,4 +1,4 @@
-package views
+package ui
 
 import (
 	"testing"
@@ -10,8 +10,8 @@ import (
 
 func TestNewMenuView(t *testing.T) {
 	defaults, _ := config.NewStyles("")
-	v := newMenuView(defaults)
-	v.populateMenu(hints{
+	v := NewMenuView(defaults)
+	v.HydrateMenu(Hints{
 		{"a", "bleeA"},
 		{"b", "bleeB"},
 		{"0", "zero"},
@@ -24,17 +24,17 @@ func TestNewMenuView(t *testing.T) {
 
 func TestKeyActions(t *testing.T) {
 	uu := map[string]struct {
-		aa keyActions
-		e  hints
+		aa KeyActions
+		e  Hints
 	}{
 		"a": {
-			aa: keyActions{
-				KeyB:            newKeyAction("bleeB", nil, true),
-				KeyA:            newKeyAction("bleeA", nil, true),
-				tcell.Key(Key0): newKeyAction("zero", nil, true),
-				tcell.Key(Key1): newKeyAction("one", nil, false),
+			aa: KeyActions{
+				KeyB:            NewKeyAction("bleeB", nil, true),
+				KeyA:            NewKeyAction("bleeA", nil, true),
+				tcell.Key(Key0): NewKeyAction("zero", nil, true),
+				tcell.Key(Key1): NewKeyAction("one", nil, false),
 			},
-			e: hints{
+			e: Hints{
 				{"0", "zero"},
 				{"a", "bleeA"},
 				{"b", "bleeB"},
@@ -44,7 +44,7 @@ func TestKeyActions(t *testing.T) {
 
 	for k, u := range uu {
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, u.aa.toHints())
+			assert.Equal(t, u.e, u.aa.Hints())
 		})
 	}
 }

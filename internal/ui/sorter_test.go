@@ -1,4 +1,4 @@
-package views
+package ui
 
 import (
 	"sort"
@@ -37,7 +37,7 @@ func TestGroupSort(t *testing.T) {
 	}
 
 	for _, u := range uu {
-		g := groupSorter{rows: u.rows, asc: u.asc}
+		g := GroupSorter{rows: u.rows, asc: u.asc}
 		sort.Sort(g)
 		assert.Equal(t, u.expect, g.rows)
 	}
@@ -96,7 +96,7 @@ func TestRowSort(t *testing.T) {
 	}
 
 	for _, u := range uu {
-		r := rowSorter{index: 0, rows: u.rows, asc: u.asc}
+		r := RowSorter{index: 0, rows: u.rows, asc: u.asc}
 		sort.Sort(r)
 		assert.Equal(t, u.expect, r.rows)
 	}

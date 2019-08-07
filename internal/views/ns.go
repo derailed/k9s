@@ -5,6 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 )
@@ -32,8 +33,8 @@ func newNamespaceView(t string, app *appView, list resource.List) resourceViewer
 	return &v
 }
 
-func (v *namespaceView) extraActions(aa keyActions) {
-	aa[KeyU] = newKeyAction("Use", v.useNsCmd, true)
+func (v *namespaceView) extraActions(aa ui.KeyActions) {
+	aa[ui.KeyU] = ui.NewKeyAction("Use", v.useNsCmd, true)
 }
 
 func (v *namespaceView) switchNs(app *appView, _, res, sel string) {
@@ -51,12 +52,12 @@ func (v *namespaceView) useNsCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *namespaceView) useNamespace(ns string) {
-	if err := v.app.config.SetActiveNamespace(ns); err != nil {
-		v.app.flash().err(err)
+	if err := v.app.Config.SetActiveNamespace(ns); err != nil {
+		v.app.Flash().Err(err)
 	} else {
-		v.app.flash().infof("Namespace %s is now active!", ns)
+		v.app.Flash().Infof("Namespace %s is now active!", ns)
 	}
-	v.app.config.Save()
+	v.app.Config.Save()
 }
 
 func (v *namespaceView) getSelectedItem() string {
@@ -70,7 +71,7 @@ func (*namespaceView) cleanser(s string) string {
 
 func (v *namespaceView) decorate(data resource.TableData) resource.TableData {
 	if _, ok := data.Rows[resource.AllNamespaces]; !ok {
-		if err := v.app.conn().CheckNSAccess(""); err == nil {
+		if err := v.app.Conn().CheckNSAccess(""); err == nil {
 			data.Rows[resource.AllNamespace] = &resource.RowEvent{
 				Action: resource.Unchanged,
 				Fields: resource.Row{resource.AllNamespace, "Active", "0"},
@@ -79,11 +80,11 @@ func (v *namespaceView) decorate(data resource.TableData) resource.TableData {
 		}
 	}
 	for k, r := range data.Rows {
-		if config.InList(v.app.config.FavNamespaces(), k) {
+		if config.InList(v.app.Config.FavNamespaces(), k) {
 			r.Fields[0] += "+"
 			r.Action = resource.Unchanged
 		}
-		if v.app.config.ActiveNamespace() == k {
+		if v.app.Config.ActiveNamespace() == k {
 			r.Fields[0] += "(*)"
 			r.Action = resource.Unchanged
 		}

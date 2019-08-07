@@ -3,6 +3,7 @@ package views
 import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,20 +23,25 @@ func newStatefulSetView(t string, app *appView, list resource.List) resourceView
 	return &v
 }
 
-func (v *statefulSetView) extraActions(aa keyActions) {
+func (v *statefulSetView) extraActions(aa ui.KeyActions) {
 	v.logResourceView.extraActions(aa)
+<<<<<<< HEAD
 	v.scalableResourceView.extraActions(aa)
 	aa[KeyShiftD] = newKeyAction("Sort Desired", v.sortColCmd(1, false), true)
 	aa[KeyShiftC] = newKeyAction("Sort Current", v.sortColCmd(2, false), true)
+=======
+	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", v.sortColCmd(1, false), true)
+	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", v.sortColCmd(2, false), true)
+>>>>>>> checkpoint
 }
 
 func (v *statefulSetView) showPods(app *appView, ns, res, sel string) {
 	ns, n := namespaced(sel)
-	s := k8s.NewStatefulSet(app.conn())
+	s := k8s.NewStatefulSet(app.Conn())
 	st, err := s.Get(ns, n)
 	if err != nil {
 		log.Error().Err(err).Msgf("Fetching StatefulSet %s", sel)
-		app.flash().errf("Unable to fetch statefulset %s", err)
+		app.Flash().Errf("Unable to fetch statefulset %s", err)
 		return
 	}
 
@@ -43,7 +49,7 @@ func (v *statefulSetView) showPods(app *appView, ns, res, sel string) {
 	l, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
 	if err != nil {
 		log.Error().Err(err).Msgf("Converting selector for StatefulSet %s", sel)
-		app.flash().errf("Selector failed %s", err)
+		app.Flash().Errf("Selector failed %s", err)
 		return
 	}
 

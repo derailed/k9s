@@ -13,6 +13,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/fsnotify/fsnotify"
 	"github.com/gdamore/tcell"
@@ -40,13 +41,13 @@ type benchView struct {
 	cancel       context.CancelFunc
 	selectedItem string
 	selectedRow  int
-	actions      keyActions
+	actions      ui.KeyActions
 }
 
 func newBenchView(_ string, app *appView, _ resource.List) resourceViewer {
 	v := benchView{
 		Pages:   tview.NewPages(),
-		actions: make(keyActions),
+		actions: make(ui.KeyActions),
 		app:     app,
 	}
 
@@ -54,13 +55,13 @@ func newBenchView(_ string, app *appView, _ resource.List) resourceViewer {
 	tv.SetSelectionChangedFunc(v.selChanged)
 	tv.SetBorderFocusColor(tcell.ColorSeaGreen)
 	tv.SetSelectedStyle(tcell.ColorWhite, tcell.ColorSeaGreen, tcell.AttrNone)
-	tv.colorerFn = benchColorer
-	tv.currentNS = ""
+	tv.SetColorerFn(benchColorer)
+	tv.SetActiveNS("")
 	v.AddPage("table", tv, true, true)
 
 	details := newDetailsView(app, v.backCmd)
 	details.setCategory("Bench")
-	details.SetTextColor(app.styles.FgColor())
+	details.SetTextColor(app.Styles.FgColor())
 	v.AddPage("details", details, true, false)
 
 	v.registerActions()
@@ -68,40 +69,40 @@ func newBenchView(_ string, app *appView, _ resource.List) resourceViewer {
 	return &v
 }
 
-func (v *benchView) setEnterFn(enterFn)          {}
-func (v *benchView) setColorerFn(colorerFn)      {}
-func (v *benchView) setDecorateFn(decorateFn)    {}
-func (v *benchView) setExtraActionsFn(actionsFn) {}
+func (v *benchView) setEnterFn(enterFn)               {}
+func (v *benchView) setColorerFn(ui.ColorerFunc)      {}
+func (v *benchView) setDecorateFn(decorateFn)         {}
+func (v *benchView) setExtraActionsFn(ui.ActionsFunc) {}
 
 // Init the view.
-func (v *benchView) init(ctx context.Context, _ string) {
+func (v *benchView) Init(ctx context.Context, _ string) {
 	if err := v.watchBenchDir(ctx); err != nil {
-		v.app.flash().errf("Unable to watch benchmarks directory %s", err)
+		v.app.Flash().Errf("Unable to watch benchmarks directory %s", err)
 	}
 
-	tv := v.getTV()
 	v.refresh()
-	tv.sortCol.index, tv.sortCol.asc = tv.nameColIndex()+7, true
-	tv.refresh()
+	tv := v.getTV()
+	tv.SetSortCol(tv.NameColIndex()+7, true)
+	tv.Refresh()
 	tv.Select(1, 0)
 	v.app.SetFocus(tv)
 }
 
 func (v *benchView) refresh() {
 	tv := v.getTV()
-	tv.update(v.hydrate())
-	tv.resetTitle()
+	tv.Update(v.hydrate())
+	tv.UpdateTitle()
 	v.selChanged(v.selectedRow, 0)
 }
 
 func (v *benchView) registerActions() {
-	v.actions[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
-	v.actions[tcell.KeyEnter] = newKeyAction("Enter", v.enterCmd, false)
-	v.actions[tcell.KeyCtrlD] = newKeyAction("Delete", v.deleteCmd, false)
+	v.actions[ui.KeyP] = ui.NewKeyAction("Previous", v.app.prevCmd, false)
+	v.actions[tcell.KeyEnter] = ui.NewKeyAction("Enter", v.enterCmd, false)
+	v.actions[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", v.deleteCmd, false)
 
 	vu := v.getTV()
-	vu.setActions(v.actions)
-	v.app.setHints(vu.hints())
+	vu.SetActions(v.actions)
+	v.app.SetHints(vu.Hints())
 }
 
 func (v *benchView) getTitle() string {
@@ -115,30 +116,30 @@ func (v *benchView) selChanged(r, c int) {
 		return
 	}
 	v.selectedRow = r
-	v.selectedItem = trimCell(tv, r, 7)
+	v.selectedItem = ui.TrimCell(tv.Table, r, 7)
 }
 
 func (v *benchView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		tv := v.getTV()
-		tv.sortCol.index, tv.sortCol.asc = tv.nameColIndex()+col, asc
-		tv.refresh()
+		tv.SetSortCol(tv.NameColIndex()+col, asc)
+		tv.Refresh()
 
 		return nil
 	}
 }
 
 func (v *benchView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if v.getTV().cmdBuff.isActive() {
+	if v.getTV().Cmd().IsActive() {
 		return v.getTV().filterCmd(evt)
 	}
 	if v.selectedItem == "" {
 		return nil
 	}
 
-	data, err := readBenchFile(v.app.config, v.selectedItem)
+	data, err := readBenchFile(v.app.Config, v.selectedItem)
 	if err != nil {
-		v.app.flash().errf("Unable to load bench file %s", err)
+		v.app.Flash().Errf("Unable to load bench file %s", err)
 		return nil
 	}
 	vu := v.getDetails()
@@ -155,14 +156,14 @@ func (v *benchView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	dir := filepath.Join(K9sBenchDir, v.app.config.K9s.CurrentCluster)
+	dir := filepath.Join(K9sBenchDir, v.app.Config.K9s.CurrentCluster)
 	showModal(v.Pages, fmt.Sprintf("Delete benchmark `%s?", sel), "table", func() {
 		if err := os.Remove(filepath.Join(dir, sel)); err != nil {
-			v.app.flash().errf("Unable to delete file %s", err)
+			v.app.Flash().Errf("Unable to delete file %s", err)
 			return
 		}
 		v.refresh()
-		v.app.flash().infof("Benchmark %s deleted!", sel)
+		v.app.Flash().Infof("Benchmark %s deleted!", sel)
 	})
 
 	return nil
@@ -177,19 +178,19 @@ func (v *benchView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *benchView) hints() hints {
-	return v.CurrentPage().Item.(hinter).hints()
+func (v *benchView) hints() ui.Hints {
+	return v.CurrentPage().Item.(ui.Hinter).Hints()
 }
 
 func (v *benchView) hydrate() resource.TableData {
-	ff, err := loadBenchDir(v.app.config)
+	ff, err := loadBenchDir(v.app.Config)
 	if err != nil {
-		v.app.flash().errf("Unable to read bench directory %s", err)
+		v.app.Flash().Errf("Unable to read bench directory %s", err)
 	}
 
 	data := initTable()
 	for _, f := range ff {
-		bench, err := readBenchFile(v.app.config, f.Name())
+		bench, err := readBenchFile(v.app.Config, f.Name())
 		if err != nil {
 			log.Error().Err(err).Msgf("Unable to load bench file %s", f.Name())
 			continue
@@ -258,7 +259,7 @@ func (v *benchView) watchBenchDir(ctx context.Context) error {
 		}
 	}()
 
-	return w.Add(benchDir(v.app.config))
+	return w.Add(benchDir(v.app.Config))
 }
 
 // ----------------------------------------------------------------------------

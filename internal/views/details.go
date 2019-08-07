@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -19,8 +20,8 @@ type (
 		*tview.TextView
 
 		app     *appView
-		actions keyActions
-		cmdBuff *cmdBuff
+		actions ui.KeyActions
+		cmdBuff *ui.CmdBuff
 		title   string
 	}
 
@@ -28,7 +29,7 @@ type (
 		*textView
 
 		category      string
-		backFn        actionHandler
+		backFn        ui.ActionHandler
 		numSelections int
 	}
 )
@@ -37,11 +38,11 @@ func newTextView(app *appView) *textView {
 	return &textView{
 		TextView: tview.NewTextView(),
 		app:      app,
-		actions:  make(keyActions),
+		actions:  make(ui.KeyActions),
 	}
 }
 
-func newDetailsView(app *appView, backFn actionHandler) *detailsView {
+func newDetailsView(app *appView, backFn ui.ActionHandler) *detailsView {
 	v := detailsView{textView: newTextView(app)}
 	v.backFn = backFn
 	v.SetScrollable(true)
@@ -49,14 +50,14 @@ func newDetailsView(app *appView, backFn actionHandler) *detailsView {
 	v.SetDynamicColors(true)
 	v.SetRegions(true)
 	v.SetBorder(true)
-	v.SetBorderFocusColor(config.AsColor(v.app.styles.Frame().Border.FocusColor))
+	v.SetBorderFocusColor(config.AsColor(v.app.Styles.Frame().Border.FocusColor))
 	v.SetHighlightColor(tcell.ColorOrange)
 	v.SetTitleColor(tcell.ColorAqua)
 	v.SetInputCapture(v.keyboard)
 
-	v.cmdBuff = newCmdBuff('/')
-	v.cmdBuff.addListener(app.cmd())
-	v.cmdBuff.reset()
+	v.cmdBuff = ui.NewCmdBuff('/')
+	v.cmdBuff.AddListener(app.Cmd())
+	v.cmdBuff.Reset()
 
 	v.SetChangedFunc(func() {
 		app.Draw()
@@ -68,13 +69,13 @@ func newDetailsView(app *appView, backFn actionHandler) *detailsView {
 }
 
 func (v *detailsView) bindKeys() {
-	v.actions = keyActions{
-		tcell.KeyBackspace2: newKeyAction("Erase", v.eraseCmd, false),
-		tcell.KeyBackspace:  newKeyAction("Erase", v.eraseCmd, false),
-		tcell.KeyDelete:     newKeyAction("Erase", v.eraseCmd, false),
-		tcell.KeyEscape:     newKeyAction("Back", v.backCmd, true),
-		tcell.KeyTab:        newKeyAction("Next Match", v.nextCmd, false),
-		tcell.KeyBacktab:    newKeyAction("Previous Match", v.prevCmd, false),
+	v.actions = ui.KeyActions{
+		tcell.KeyBackspace2: ui.NewKeyAction("Erase", v.eraseCmd, false),
+		tcell.KeyBackspace:  ui.NewKeyAction("Erase", v.eraseCmd, false),
+		tcell.KeyDelete:     ui.NewKeyAction("Erase", v.eraseCmd, false),
+		tcell.KeyEscape:     ui.NewKeyAction("Back", v.backCmd, true),
+		tcell.KeyTab:        ui.NewKeyAction("Next Match", v.nextCmd, false),
+		tcell.KeyBacktab:    ui.NewKeyAction("Previous Match", v.prevCmd, false),
 	}
 }
 
@@ -85,8 +86,8 @@ func (v *detailsView) setCategory(n string) {
 func (v *detailsView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	key := evt.Key()
 	if key == tcell.KeyRune {
-		if v.cmdBuff.isActive() {
-			v.cmdBuff.add(evt.Rune())
+		if v.cmdBuff.IsActive() {
+			v.cmdBuff.Add(evt.Rune())
 			v.refreshTitle()
 			return nil
 		}
@@ -95,18 +96,18 @@ func (v *detailsView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 	if a, ok := v.actions[key]; ok {
 		log.Debug().Msgf(">> DetailsView handled %s", tcell.KeyNames[key])
-		return a.action(evt)
+		return a.Action(evt)
 	}
 	return evt
 }
 
 func (v *detailsView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.cmdBuff.empty() {
-		v.cmdBuff.reset()
+	if !v.cmdBuff.Empty() {
+		v.cmdBuff.Reset()
 		v.search(evt)
 		return nil
 	}
-	v.cmdBuff.reset()
+	v.cmdBuff.Reset()
 	if v.backFn != nil {
 		return v.backFn(evt)
 	}
@@ -114,25 +115,25 @@ func (v *detailsView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *detailsView) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.cmdBuff.isActive() {
+	if !v.cmdBuff.IsActive() {
 		return evt
 	}
-	v.cmdBuff.del()
+	v.cmdBuff.Delete()
 	return nil
 }
 
 func (v *detailsView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.app.inCmdMode() {
-		v.cmdBuff.setActive(true)
-		v.cmdBuff.clear()
+	if !v.app.InCmdMode() {
+		v.cmdBuff.SetActive(true)
+		v.cmdBuff.Clear()
 		return nil
 	}
 	return evt
 }
 
 func (v *detailsView) searchCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if v.cmdBuff.isActive() && !v.cmdBuff.empty() {
-		v.app.flash().infof("Searching for %s...", v.cmdBuff)
+	if v.cmdBuff.IsActive() && !v.cmdBuff.Empty() {
+		v.app.Flash().Infof("Searching for %s...", v.cmdBuff)
 		v.search(evt)
 		highlights := v.GetHighlights()
 		if len(highlights) > 0 {
@@ -141,7 +142,7 @@ func (v *detailsView) searchCmd(evt *tcell.EventKey) *tcell.EventKey {
 			v.Highlight("0").ScrollToHighlight()
 		}
 	}
-	v.cmdBuff.setActive(false)
+	v.cmdBuff.SetActive(false)
 	return evt
 }
 
@@ -151,16 +152,16 @@ func (v *detailsView) search(evt *tcell.EventKey) {
 	v.Highlight("")
 	v.SetText(v.decorateLines(v.GetText(false), v.cmdBuff.String()))
 
-	if v.cmdBuff.empty() {
-		v.app.flash().info("Clearing out search query...")
+	if v.cmdBuff.Empty() {
+		v.app.Flash().Info("Clearing out search query...")
 		v.refreshTitle()
 		return
 	}
 	if v.numSelections == 0 {
-		v.app.flash().warn("No matches found!")
+		v.app.Flash().Warn("No matches found!")
 		return
 	}
-	v.app.flash().infof("Found <%d> matches! <tab>/<TAB> for next/previous", v.numSelections)
+	v.app.Flash().Infof("Found <%d> matches! <tab>/<TAB> for next/previous", v.numSelections)
 }
 
 func (v *detailsView) nextCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -171,7 +172,7 @@ func (v *detailsView) nextCmd(evt *tcell.EventKey) *tcell.EventKey {
 	index, _ := strconv.Atoi(highlights[0])
 	index = (index + 1) % v.numSelections
 	if index+1 == v.numSelections {
-		v.app.flash().info("Search hit BOTTOM, continuing at TOP")
+		v.app.Flash().Info("Search hit BOTTOM, continuing at TOP")
 	}
 	v.Highlight(strconv.Itoa(index)).ScrollToHighlight()
 	return nil
@@ -185,23 +186,23 @@ func (v *detailsView) prevCmd(evt *tcell.EventKey) *tcell.EventKey {
 	index, _ := strconv.Atoi(highlights[0])
 	index = (index - 1 + v.numSelections) % v.numSelections
 	if index == 0 {
-		v.app.flash().info("Search hit TOP, continuing at BOTTOM")
+		v.app.Flash().Info("Search hit TOP, continuing at BOTTOM")
 	}
 	v.Highlight(strconv.Itoa(index)).ScrollToHighlight()
 	return nil
 }
 
 // SetActions to handle keyboard inputs
-func (v *detailsView) setActions(aa keyActions) {
+func (v *detailsView) setActions(aa ui.KeyActions) {
 	for k, a := range aa {
 		v.actions[k] = a
 	}
 }
 
 // Hints fetch mmemonic and hints
-func (v *detailsView) hints() hints {
+func (v *detailsView) hints() ui.Hints {
 	if v.actions != nil {
-		return v.actions.toHints()
+		return v.actions.Hints()
 	}
 	return nil
 }
@@ -213,9 +214,9 @@ func (v *detailsView) refreshTitle() {
 func (v *detailsView) setTitle(t string) {
 	v.title = t
 
-	title := skinTitle(fmt.Sprintf(detailsTitleFmt, v.category, t), v.app.styles.Frame())
-	if !v.cmdBuff.empty() {
-		title += skinTitle(fmt.Sprintf(searchFmt, v.cmdBuff.String()), v.app.styles.Frame())
+	title := skinTitle(fmt.Sprintf(detailsTitleFmt, v.category, t), v.app.Styles.Frame())
+	if !v.cmdBuff.Empty() {
+		title += skinTitle(fmt.Sprintf(searchFmt, v.cmdBuff.String()), v.app.Styles.Frame())
 	}
 	v.SetTitle(title)
 }

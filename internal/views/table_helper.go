@@ -6,18 +6,17 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/ui"
 )
 
 const (
 	titleFmt          = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]] "
-	searchFmt         = "<[filter:bg:b]/%s[fg:bg:]> "
+	searchFmt         = "<[filter:bg:r]/%s[fg:bg:-]> "
 	nsTitleFmt        = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
 	labelSelIndicator = "-l"
 	descIndicator     = "↓"
@@ -35,17 +34,17 @@ var (
 type cleanseFn func(string) string
 
 func trimCellRelative(tv *tableView, row, col int) string {
-	return trimCell(tv, row, tv.nameColIndex()+col)
+	return ui.TrimCell(tv.Table, row, tv.NameColIndex()+col)
 }
 
-func trimCell(tv *tableView, row, col int) string {
-	c := tv.GetCell(row, col)
-	if c == nil {
-		log.Error().Err(fmt.Errorf("No cell at location [%d:%d]", row, col)).Msg("Trim cell failed!")
-		return ""
-	}
-	return strings.TrimSpace(c.Text)
-}
+// func trimCell(tv *ui.Table, row, col int) string {
+// 	c := tv.GetCell(row, col)
+// 	if c == nil {
+// 		log.Error().Err(fmt.Errorf("No cell at location [%d:%d]", row, col)).Msg("Trim cell failed!")
+// 		return ""
+// 	}
+// 	return strings.TrimSpace(c.Text)
+// }
 
 func saveTable(cluster, name string, data resource.TableData) (string, error) {
 	dir := filepath.Join(config.K9sDumpDir, cluster)
@@ -109,7 +108,7 @@ func skinTitle(fmat string, style config.Frame) string {
 	return fmat
 }
 
-func sortRows(evts resource.RowEvents, sortFn sortFn, sortCol sortColumn, keys []string) {
+func sortRows(evts resource.RowEvents, sortFn ui.SortFn, sortCol ui.SortColumn, keys []string) {
 	rows := make(resource.Rows, 0, len(evts))
 	for k, r := range evts {
 		rows = append(rows, append(r.Fields, k))
@@ -121,40 +120,40 @@ func sortRows(evts resource.RowEvents, sortFn sortFn, sortCol sortColumn, keys [
 	}
 }
 
-func defaultSort(rows resource.Rows, sortCol sortColumn) {
-	t := rowSorter{rows: rows, index: sortCol.index, asc: sortCol.asc}
-	sort.Sort(t)
-}
+// func defaultSort(rows resource.Rows, sortCol ui.SortColumn) {
+// 	t := rowSorter{rows: rows, index: sortCol.index, asc: sortCol.asc}
+// 	sort.Sort(t)
+// }
 
-func sortAllRows(col sortColumn, rows resource.RowEvents, sortFn sortFn) (resource.Row, map[string]resource.Row) {
-	keys := make([]string, len(rows))
-	sortRows(rows, sortFn, col, keys)
+// func sortAllRows(col ui.SortColumn, rows resource.RowEvents, sortFn ui.SortFn) (resource.Row, map[string]resource.Row) {
+// 	keys := make([]string, len(rows))
+// 	sortRows(rows, sortFn, col, keys)
 
-	sec := make(map[string]resource.Row, len(rows))
-	for _, k := range keys {
-		grp := rows[k].Fields[col.index]
-		sec[grp] = append(sec[grp], k)
-	}
+// 	sec := make(map[string]resource.Row, len(rows))
+// 	for _, k := range keys {
+// 		grp := rows[k].Fields[col.index]
+// 		sec[grp] = append(sec[grp], k)
+// 	}
 
-	// Performs secondary to sort by name for each groups.
-	prim := make(resource.Row, 0, len(sec))
-	for k, v := range sec {
-		sort.Strings(v)
-		prim = append(prim, k)
-	}
-	sort.Sort(groupSorter{prim, col.asc})
+// 	// Performs secondary to sort by name for each groups.
+// 	prim := make(resource.Row, 0, len(sec))
+// 	for k, v := range sec {
+// 		sort.Strings(v)
+// 		prim = append(prim, k)
+// 	}
+// 	sort.Sort(groupSorter{prim, col.asc})
 
-	return prim, sec
-}
+// 	return prim, sec
+// }
 
-func sortIndicator(col sortColumn, style config.Table, index int, name string) string {
-	if col.index != index {
-		return name
-	}
+// func sortIndicator(col ui.SortColumn, style config.Table, index int, name string) string {
+// 	if col.index != index {
+// 		return name
+// 	}
 
-	order := descIndicator
-	if col.asc {
-		order = ascIndicator
-	}
-	return fmt.Sprintf("%s[%s::]%s[::]", name, style.Header.SorterColor, order)
-}
+// 	order := descIndicator
+// 	if col.asc {
+// 		order = ascIndicator
+// 	}
+// 	return fmt.Sprintf("%s[%s::]%s[::]", name, style.Header.SorterColor, order)
+// }

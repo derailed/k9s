@@ -1,4 +1,4 @@
-package views
+package ui
 
 import (
 	"fmt"
@@ -9,7 +9,8 @@ import (
 
 const defaultPrompt = "%c> %s"
 
-type cmdView struct {
+// CmdView captures users free from command input.
+type CmdView struct {
 	*tview.TextView
 
 	activated bool
@@ -18,8 +19,9 @@ type cmdView struct {
 	styles    *config.Styles
 }
 
-func newCmdView(styles *config.Styles, ic rune) *cmdView {
-	v := cmdView{styles: styles, icon: ic, TextView: tview.NewTextView()}
+// NewCmdView returns a new command view.
+func NewCmdView(styles *config.Styles, ic rune) *CmdView {
+	v := CmdView{styles: styles, icon: ic, TextView: tview.NewTextView()}
 	{
 		v.SetWordWrap(true)
 		v.SetWrap(true)
@@ -33,36 +35,37 @@ func newCmdView(styles *config.Styles, ic rune) *cmdView {
 	return &v
 }
 
-func (v *cmdView) inCmdMode() bool {
+// InCmdMode returns true if command is active, false otherwise.
+func (v *CmdView) InCmdMode() bool {
 	return v.activated
 }
 
-func (v *cmdView) activate() {
+func (v *CmdView) activate() {
 	v.write(v.text)
 }
 
-func (v *cmdView) update(s string) {
+func (v *CmdView) update(s string) {
 	v.text = s
 	v.Clear()
 	v.write(s)
 }
 
-func (v *cmdView) append(r rune) {
+func (v *CmdView) append(r rune) {
 	fmt.Fprintf(v, string(r))
 }
 
-func (v *cmdView) write(s string) {
+func (v *CmdView) write(s string) {
 	fmt.Fprintf(v, defaultPrompt, v.icon, s)
 }
 
 // ----------------------------------------------------------------------------
 // Event Listener protocol...
 
-func (v *cmdView) changed(s string) {
+func (v *CmdView) changed(s string) {
 	v.update(s)
 }
 
-func (v *cmdView) active(f bool) {
+func (v *CmdView) active(f bool) {
 	v.activated = f
 	if f {
 		v.SetBorder(true)

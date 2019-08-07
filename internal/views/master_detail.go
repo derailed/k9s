@@ -5,7 +5,9 @@ import (
 	"path"
 
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
+	"github.com/gdamore/tcell"
 )
 
 type (
@@ -13,7 +15,7 @@ type (
 		*tview.Pages
 
 		app          *appView
-		actions      keyActions
+		actions      ui.KeyActions
 		selectedItem string
 		selectedRow  int
 		selectedFn   func() string
@@ -25,7 +27,7 @@ type (
 		currentNS      string
 		title          string
 		enterFn        enterFn
-		extraActionsFn func(keyActions)
+		extraActionsFn func(ui.KeyActions)
 	}
 )
 
@@ -33,11 +35,11 @@ func newPageView(app *appView) *pageView {
 	return &pageView{
 		Pages:   tview.NewPages(),
 		app:     app,
-		actions: make(keyActions),
+		actions: make(ui.KeyActions),
 	}
 }
 
-func newMasterDetail(title, ns string, app *appView, backCmd actionHandler) *masterDetail {
+func newMasterDetail(title, ns string, app *appView, backCmd ui.ActionHandler) *masterDetail {
 	v := masterDetail{
 		pageView:  newPageView(app),
 		currentNS: ns,
@@ -59,7 +61,7 @@ func (v *masterDetail) init(ctx context.Context, ns string) {
 	}
 }
 
-func (v *masterDetail) setExtraActionsFn(f actionsFn) {
+func (v *masterDetail) setExtraActionsFn(f ui.ActionsFunc) {
 	f(v.actions)
 }
 
@@ -70,6 +72,16 @@ func (v *masterDetail) rowSelected() bool {
 func (v *masterDetail) selChanged(r, c int) {
 	v.selectedRow = r
 	v.selectItem(r, c)
+	if r == 0 {
+		return
+	}
+	tv := v.masterPage()
+	cell := tv.GetCell(r, c)
+	tv.SetSelectedStyle(
+		cell.BackgroundColor,
+		cell.Color,
+		tcell.AttrBold,
+	)
 }
 
 func (v *masterDetail) getSelectedItem() string {
@@ -82,8 +94,8 @@ func (v *masterDetail) getSelectedItem() string {
 // Protocol...
 
 // Hints fetch menu hints
-func (v *masterDetail) hints() hints {
-	return v.CurrentPage().Item.(hinter).hints()
+func (v *masterDetail) hints() ui.Hints {
+	return v.CurrentPage().Item.(ui.Hinter).Hints()
 }
 
 func (v *masterDetail) setEnterFn(f enterFn) {
@@ -108,20 +120,20 @@ func (v *masterDetail) selectItem(r, c int) {
 		return
 	}
 
-	col0 := trimCell(t, r, 0)
+	col0 := ui.TrimCell(t.Table, r, 0)
 	switch v.currentNS {
 	case resource.NotNamespaced:
 		v.selectedItem = col0
 	case resource.AllNamespace, resource.AllNamespaces:
-		v.selectedItem = path.Join(col0, trimCell(t, r, 1))
+		v.selectedItem = path.Join(col0, ui.TrimCell(t.Table, r, 1))
 	default:
 		v.selectedItem = path.Join(v.currentNS, col0)
 	}
 }
 
 func (v *masterDetail) defaultActions() {
-	v.actions[KeyHelp] = newKeyAction("Help", noopCmd, false)
-	v.actions[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
+	v.actions[ui.KeyHelp] = ui.NewKeyAction("Help", noopCmd, false)
+	v.actions[ui.KeyP] = ui.NewKeyAction("Previous", v.app.prevCmd, false)
 
 	if v.extraActionsFn != nil {
 		v.extraActionsFn(v.actions)

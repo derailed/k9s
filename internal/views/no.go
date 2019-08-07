@@ -2,6 +2,7 @@ package views
 
 import (
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 )
 
@@ -17,18 +18,18 @@ func newNodeView(t string, app *appView, list resource.List) resourceViewer {
 	return &v
 }
 
-func (v *nodeView) extraActions(aa keyActions) {
-	aa[KeyShiftC] = newKeyAction("Sort CPU", v.sortColCmd(7, false), true)
-	aa[KeyShiftM] = newKeyAction("Sort MEM", v.sortColCmd(8, false), true)
-	aa[KeyAltC] = newKeyAction("Sort CPU%", v.sortColCmd(9, false), true)
-	aa[KeyAltM] = newKeyAction("Sort MEM%", v.sortColCmd(10, false), true)
+func (v *nodeView) extraActions(aa ui.KeyActions) {
+	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", v.sortColCmd(7, false), true)
+	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", v.sortColCmd(8, false), true)
+	aa[ui.KeyAltC] = ui.NewKeyAction("Sort CPU%", v.sortColCmd(9, false), true)
+	aa[ui.KeyAltM] = ui.NewKeyAction("Sort MEM%", v.sortColCmd(10, false), true)
 }
 
 func (v *nodeView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		t := v.masterPage()
-		t.sortCol.index, t.sortCol.asc = t.nameColIndex()+col, asc
-		t.refresh()
+		t.SetSortCol(t.NameColIndex()+col, asc)
+		t.Refresh()
 
 		return nil
 	}
@@ -44,17 +45,17 @@ func (v *nodeView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func showPods(app *appView, ns, labelSel, fieldSel string, a actionHandler) {
-	list := resource.NewPodList(app.conn(), ns)
+func showPods(app *appView, ns, labelSel, fieldSel string, a ui.ActionHandler) {
+	list := resource.NewPodList(app.Conn(), ns)
 	list.SetLabelSelector(labelSel)
 	list.SetFieldSelector(fieldSel)
 
 	pv := newPodView("Pods", app, list)
 	pv.setColorerFn(podColorer)
-	pv.setExtraActionsFn(func(aa keyActions) {
-		aa[tcell.KeyEsc] = newKeyAction("Back", a, true)
+	pv.setExtraActionsFn(func(aa ui.KeyActions) {
+		aa[tcell.KeyEsc] = ui.NewKeyAction("Back", a, true)
 	})
 	// Reset active namespace to all.
-	app.config.SetActiveNamespace(ns)
+	app.Config.SetActiveNamespace(ns)
 	app.inject(pv)
 }

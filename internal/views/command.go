@@ -4,6 +4,7 @@ import (
 	"regexp"
 
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/rs/zerolog/log"
 )
 
@@ -15,33 +16,33 @@ type subjectViewer interface {
 
 type command struct {
 	app     *appView
-	history *cmdStack
+	history *ui.CmdStack
 }
 
 func newCommand(app *appView) *command {
-	return &command{app: app, history: newCmdStack()}
+	return &command{app: app, history: ui.NewCmdStack()}
 }
 
 func (c *command) lastCmd() bool {
-	return c.history.last()
+	return c.history.Last()
 }
 
 func (c *command) pushCmd(cmd string) {
-	c.history.push(cmd)
-	c.app.crumbs().update(c.history.stack)
+	c.history.Push(cmd)
+	c.app.Crumbs().Refresh(c.history.Items())
 }
 
 func (c *command) previousCmd() (string, bool) {
-	c.history.pop()
-	c.app.crumbs().update(c.history.stack)
+	c.history.Pop()
+	c.app.Crumbs().Refresh(c.history.Items())
 
-	return c.history.top()
+	return c.history.Top()
 }
 
 // DefaultCmd reset default command ie show pods.
 func (c *command) defaultCmd() {
-	c.pushCmd(c.app.config.ActiveView())
-	c.run(c.app.config.ActiveView())
+	c.pushCmd(c.app.Config.ActiveView())
+	c.run(c.app.Config.ActiveView())
 }
 
 // Helpers...
@@ -54,10 +55,10 @@ func (c *command) isStdCmd(cmd string) bool {
 		c.app.BailOut()
 		return true
 	case cmd == "?", cmd == "help":
-		c.app.inject(newHelpView(c.app, c.app.currentView()))
+		c.app.inject(newHelpView(c.app, c.app.ActiveView()))
 		return true
 	case cmd == "alias":
-		c.app.inject(newAliasView(c.app, c.app.currentView()))
+		c.app.inject(newAliasView(c.app, c.app.ActiveView()))
 		return true
 	case policyMatcher.MatchString(cmd):
 		tokens := policyMatcher.FindAllStringSubmatch(cmd, -1)
@@ -71,7 +72,7 @@ func (c *command) isStdCmd(cmd string) bool {
 
 func (c *command) isAliasCmd(cmd string) bool {
 	cmds := make(map[string]resCmd, 30)
-	resourceViews(c.app.conn(), cmds)
+	resourceViews(c.app.Conn(), cmds)
 	res, ok := cmds[cmd]
 	if !ok {
 		return false
@@ -79,7 +80,7 @@ func (c *command) isAliasCmd(cmd string) bool {
 
 	var r resource.List
 	if res.listFn != nil {
-		r = res.listFn(c.app.conn(), resource.DefaultNamespace)
+		r = res.listFn(c.app.Conn(), resource.DefaultNamespace)
 	}
 
 	v := res.viewFn(res.title, c.app, r)
@@ -94,7 +95,7 @@ func (c *command) isAliasCmd(cmd string) bool {
 	}
 
 	const fmat = "Viewing resource %s..."
-	c.app.flash().infof(fmat, res.title)
+	c.app.Flash().Infof(fmat, res.title)
 	log.Debug().Msgf("Running command %s", cmd)
 	c.exec(cmd, v)
 
@@ -103,7 +104,7 @@ func (c *command) isAliasCmd(cmd string) bool {
 
 func (c *command) isCRDCmd(cmd string) bool {
 	crds := map[string]resCmd{}
-	allCRDs(c.app.conn(), crds)
+	allCRDs(c.app.Conn(), crds)
 	res, ok := crds[cmd]
 	if !ok {
 		return false
@@ -116,9 +117,9 @@ func (c *command) isCRDCmd(cmd string) bool {
 	v := newResourceView(
 		res.title,
 		c.app,
-		resource.NewCustomList(c.app.conn(), "", res.api, res.version, name),
+		resource.NewCustomList(c.app.Conn(), "", res.api, res.version, name),
 	)
-	v.setColorerFn(defaultColorer)
+	v.setColorerFn(ui.DefaultColorer)
 	c.exec(cmd, v)
 
 	return true
@@ -138,16 +139,16 @@ func (c *command) run(cmd string) bool {
 		return true
 	}
 
-	c.app.flash().warnf("Huh? `%s` command not found", cmd)
+	c.app.Flash().Warnf("Huh? `%s` command not found", cmd)
 	return false
 }
 
-func (c *command) exec(cmd string, v igniter) {
+func (c *command) exec(cmd string, v ui.Igniter) {
 	if v == nil {
 		return
 	}
 
-	c.app.config.SetActiveView(cmd)
-	c.app.config.Save()
+	c.app.Config.SetActiveView(cmd)
+	c.app.Config.Save()
 	c.app.inject(v)
 }

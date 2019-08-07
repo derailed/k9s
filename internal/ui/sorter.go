@@ -1,4 +1,4 @@
-package views
+package ui
 
 import (
 	"strconv"
@@ -10,49 +10,53 @@ import (
 )
 
 type (
-	sortFn func(rows resource.Rows, sortCol sortColumn)
+	// SortFn represent a function that can sort columnar data.
+	SortFn func(rows resource.Rows, sortCol SortColumn)
 
-	sortColumn struct {
+	// SortColumn represents a sortable column.
+	SortColumn struct {
 		index    int
 		colCount int
 		asc      bool
 	}
 
-	rowSorter struct {
+	// RowSorter sorts rows.
+	RowSorter struct {
 		rows  resource.Rows
 		index int
 		asc   bool
 	}
 )
 
-func (s rowSorter) Len() int {
+func (s RowSorter) Len() int {
 	return len(s.rows)
 }
 
-func (s rowSorter) Swap(i, j int) {
+func (s RowSorter) Swap(i, j int) {
 	s.rows[i], s.rows[j] = s.rows[j], s.rows[i]
 }
 
-func (s rowSorter) Less(i, j int) bool {
+func (s RowSorter) Less(i, j int) bool {
 	return less(s.asc, s.rows[i][s.index], s.rows[j][s.index])
 }
 
 // ----------------------------------------------------------------------------
 
-type groupSorter struct {
+// GroupSorter sorts a collection of rows.
+type GroupSorter struct {
 	rows []string
 	asc  bool
 }
 
-func (s groupSorter) Len() int {
+func (s GroupSorter) Len() int {
 	return len(s.rows)
 }
 
-func (s groupSorter) Swap(i, j int) {
+func (s GroupSorter) Swap(i, j int) {
 	s.rows[i], s.rows[j] = s.rows[j], s.rows[i]
 }
 
-func (s groupSorter) Less(i, j int) bool {
+func (s GroupSorter) Less(i, j int) bool {
 	return less(s.asc, s.rows[i], s.rows[j])
 }
 

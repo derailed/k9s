@@ -1,4 +1,4 @@
-package views
+package ui
 
 import (
 	"testing"
@@ -9,13 +9,13 @@ import (
 
 func TestFlashEmoji(t *testing.T) {
 	uu := []struct {
-		level flashLevel
+		level FlashLevel
 		emoji string
 	}{
-		{flashWarn, emoDoh},
-		{flashErr, emoRed},
-		{flashFatal, emoDead},
-		{flashInfo, emoHappy},
+		{FlashWarn, emoDoh},
+		{FlashErr, emoRed},
+		{FlashFatal, emoDead},
+		{FlashInfo, emoHappy},
 	}
 
 	for _, u := range uu {
@@ -25,13 +25,13 @@ func TestFlashEmoji(t *testing.T) {
 
 func TestFlashColor(t *testing.T) {
 	uu := []struct {
-		level flashLevel
+		level FlashLevel
 		color tcell.Color
 	}{
-		{flashWarn, tcell.ColorOrange},
-		{flashErr, tcell.ColorOrangeRed},
-		{flashFatal, tcell.ColorFuchsia},
-		{flashInfo, tcell.ColorNavajoWhite},
+		{FlashWarn, tcell.ColorOrange},
+		{FlashErr, tcell.ColorOrangeRed},
+		{FlashFatal, tcell.ColorFuchsia},
+		{FlashInfo, tcell.ColorNavajoWhite},
 	}
 
 	for _, u := range uu {

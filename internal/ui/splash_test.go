@@ -1,4 +1,4 @@
-package views
+package ui
 
 import (
 	"testing"
@@ -9,7 +9,7 @@ import (
 
 func TestNewSplash(t *testing.T) {
 	defaults, _ := config.NewStyles("")
-	s := newSplash(defaults, "bozo")
+	s := NewSplash(defaults, "bozo")
 
 	x, y, w, h := s.GetRect()
 	assert.Equal(t, 0, x)

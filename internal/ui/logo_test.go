@@ -1,4 +1,4 @@
-package views
+package ui
 
 import (
 	"testing"
@@ -9,8 +9,8 @@ import (
 
 func TestNewLogoView(t *testing.T) {
 	defaults, _ := config.NewStyles("")
-	v := newLogoView(defaults)
-	v.reset()
+	v := NewLogoView(defaults)
+	v.Reset()
 
 	const elogo = "[orange::b] ____  __.________       \n[orange::b]|    |/ _/   __   \\______\n[orange::b]|      < \\____    /  ___/\n[orange::b]|    |  \\   /    /\\___ \\ \n[orange::b]|____|__ \\ /____//____  >\n[orange::b]        \\/            \\/ \n"
 	assert.Equal(t, elogo, v.logo.GetText(false))
@@ -39,16 +39,16 @@ func TestLogoStatus(t *testing.T) {
 	}
 
 	defaults, _ := config.NewStyles("")
-	v := newLogoView(defaults)
+	v := NewLogoView(defaults)
 	for k, u := range uu {
 		t.Run(k, func(t *testing.T) {
 			switch k {
 			case "info":
-				v.info(u.msg)
+				v.Info(u.msg)
 			case "warn":
-				v.warn(u.msg)
+				v.Warn(u.msg)
 			case "err":
-				v.err(u.msg)
+				v.Err(u.msg)
 			}
 			assert.Equal(t, u.logo, v.logo.GetText(false))
 			assert.Equal(t, u.e, v.status.GetText(false))

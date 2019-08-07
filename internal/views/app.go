@@ -6,6 +6,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
@@ -32,23 +33,17 @@ type (
 		Age() string
 	}
 
-	igniter interface {
-		tview.Primitive
-
-		init(ctx context.Context, ns string)
-	}
-
 	resourceViewer interface {
-		igniter
+		ui.Igniter
 
 		setEnterFn(enterFn)
-		setColorerFn(colorerFn)
+		setColorerFn(ui.ColorerFunc)
 		setDecorateFn(decorateFn)
-		setExtraActionsFn(actionsFn)
+		setExtraActionsFn(ui.ActionsFunc)
 	}
 
 	appView struct {
-		*shellView
+		*ui.App
 
 		command    *command
 		cancel     context.CancelFunc
@@ -61,65 +56,57 @@ type (
 // NewApp returns a K9s app instance.
 func NewApp(cfg *config.Config) *appView {
 	v := appView{
-		shellView:  newShellView(),
+		App:        ui.NewApp(),
 		forwarders: make(map[string]forwarder),
 	}
-	v.config = cfg
-	v.initBench(cfg.K9s.CurrentCluster)
+	v.Config = cfg
+	v.InitBench(cfg.K9s.CurrentCluster)
 	v.command = newCommand(&v)
 
-	v.views["flash"] = newFlashView(&v, "Initializing...")
-	v.views["clusterInfo"] = newClusterInfoView(&v, k8s.NewMetricsServer(cfg.GetConnection()))
-
-	v.actions = keyActions{
-		KeyColon:            newKeyAction("Cmd", v.activateCmd, false),
-		tcell.KeyCtrlR:      newKeyAction("Redraw", v.redrawCmd, false),
-		tcell.KeyCtrlC:      newKeyAction("Quit", v.quitCmd, false),
-		KeyHelp:             newKeyAction("Help", v.helpCmd, false),
-		tcell.KeyCtrlA:      newKeyAction("Aliases", v.aliasCmd, true),
-		tcell.KeyEscape:     newKeyAction("Escape", v.escapeCmd, false),
-		tcell.KeyEnter:      newKeyAction("Goto", v.gotoCmd, false),
-		tcell.KeyBackspace2: newKeyAction("Erase", v.eraseCmd, false),
-		tcell.KeyBackspace:  newKeyAction("Erase", v.eraseCmd, false),
-		tcell.KeyDelete:     newKeyAction("Erase", v.eraseCmd, false),
-	}
-	v.SetInputCapture(v.keyboard)
+	v.Views()["flash"] = ui.NewFlashView(v.Application, "Initializing...")
+	v.Views()["clusterInfo"] = newClusterInfoView(&v, k8s.NewMetricsServer(cfg.GetConnection()))
 
 	return &v
 }
 
 func (a *appView) Init(version string, rate int) {
-	if a.conn() != nil {
-		ns, err := a.conn().Config().CurrentNamespaceName()
+	a.App.Init()
+
+	a.AddActions(ui.KeyActions{
+		ui.KeyHelp:     ui.NewKeyAction("Help", a.helpCmd, false),
+		tcell.KeyCtrlA: ui.NewKeyAction("Aliases", a.aliasCmd, true),
+		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
+	})
+
+	if a.Conn() != nil {
+		ns, err := a.Conn().Config().CurrentNamespaceName()
 		if err != nil {
 			log.Info().Msg("No namespace specified using all namespaces")
 		}
 		a.startInformer(ns)
 		a.clusterInfo().init(version)
 	}
-	a.cmdBuff.addListener(a.cmd())
 
 	header := tview.NewFlex()
 	{
 		header.SetDirection(tview.FlexColumn)
 		header.AddItem(a.clusterInfo(), 35, 1, false)
-		header.AddItem(a.views["menu"], 0, 1, false)
-		header.AddItem(a.logo(), 26, 1, false)
+		header.AddItem(a.Menu(), 0, 1, false)
+		header.AddItem(a.Logo(), 26, 1, false)
 	}
 
 	main := tview.NewFlex()
 	{
 		main.SetDirection(tview.FlexRow)
 		main.AddItem(header, 7, 1, false)
-		main.AddItem(a.cmd(), 3, 1, false)
-		main.AddItem(a.content, 0, 10, true)
-		main.AddItem(a.crumbs(), 2, 1, false)
-		main.AddItem(a.flash(), 1, 1, false)
+		main.AddItem(a.Cmd(), 3, 1, false)
+		main.AddItem(a.Frame(), 0, 10, true)
+		main.AddItem(a.Crumbs(), 2, 1, false)
+		main.AddItem(a.Flash(), 1, 1, false)
 	}
 
-	a.pages.AddPage("main", main, true, false)
-	a.pages.AddPage("splash", newSplash(a.styles, version), true, true)
-	a.SetRoot(a.pages, true)
+	a.Main().AddPage("main", main, true, false)
+	a.Main().AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
 }
 
 func (a *appView) clusterUpdater(ctx context.Context) {
@@ -143,7 +130,7 @@ func (a *appView) startInformer(ns string) {
 
 	var err error
 	a.stopCh = make(chan struct{})
-	a.informer, err = watch.NewInformer(a.conn(), ns)
+	a.informer, err = watch.NewInformer(a.Conn(), ns)
 	if err != nil {
 		log.Panic().Err(err).Msgf("%v", err)
 	}
@@ -162,7 +149,7 @@ func (a *appView) BailOut() {
 		a.cancel()
 	}
 	a.stopForwarders()
-	a.Stop()
+	a.App.BailOut()
 }
 
 func (a *appView) stopForwarders() {
@@ -180,8 +167,8 @@ func (a *appView) Run() {
 	go a.clusterUpdater(ctx)
 
 	// Only enable skin updater while in dev mode.
-	if a.hasSkins {
-		if err := a.stylesUpdater(ctx, a); err != nil {
+	if a.HasSkins {
+		if err := a.StylesUpdater(ctx, a); err != nil {
 			log.Error().Err(err).Msg("Unable to track skin changes")
 		}
 	}
@@ -189,7 +176,7 @@ func (a *appView) Run() {
 	go func() {
 		<-time.After(splashTime * time.Second)
 		a.QueueUpdateDraw(func() {
-			a.pages.SwitchToPage("main")
+			a.Main().SwitchToPage("main")
 		})
 	}()
 
@@ -199,17 +186,17 @@ func (a *appView) Run() {
 	}
 }
 
-func (a *appView) status(l flashLevel, msg string) {
-	a.flash().info(msg)
+func (a *appView) status(l ui.FlashLevel, msg string) {
+	a.Flash().Info(msg)
 	switch l {
-	case flashErr:
-		a.logo().err(msg)
-	case flashWarn:
-		a.logo().warn(msg)
-	case flashInfo:
-		a.logo().info(msg)
+	case ui.FlashErr:
+		a.Logo().Err(msg)
+	case ui.FlashWarn:
+		a.Logo().Warn(msg)
+	case ui.FlashInfo:
+		a.Logo().Info(msg)
 	default:
-		a.logo().reset()
+		a.Logo().Reset()
 	}
 	a.Draw()
 }
@@ -224,48 +211,29 @@ func (a *appView) prevCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *appView) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.cmdBuff.isActive() && !a.cmdBuff.empty() {
-		a.gotoResource(a.cmdBuff.String(), true)
-		a.cmdBuff.reset()
+	if a.GetCmdBuff().IsActive() && !a.GetCmdBuff().Empty() {
+		a.gotoResource(a.GetCmd(), true)
+		a.ResetCmd()
 		return nil
 	}
-	a.cmdBuff.setActive(false)
+	a.ActivateCmd(false)
+
 	return evt
 }
 
-func (a *appView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.inCmdMode() {
-		return evt
-	}
-	a.flash().info("Command mode activated.")
-	a.cmdBuff.setActive(true)
-	a.cmdBuff.clear()
-
-	return nil
-}
-
-func (a *appView) quitCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.inCmdMode() {
-		return evt
-	}
-	a.BailOut()
-
-	return nil
-}
-
 func (a *appView) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.inCmdMode() {
+	if a.InCmdMode() {
 		return evt
 	}
-	a.inject(newHelpView(a, a.currentView()))
+	a.inject(newHelpView(a, a.ActiveView()))
 	return nil
 }
 
 func (a *appView) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.inCmdMode() {
+	if a.InCmdMode() {
 		return evt
 	}
-	a.inject(newAliasView(a, a.currentView()))
+	a.inject(newAliasView(a, a.ActiveView()))
 
 	return nil
 }
@@ -282,20 +250,20 @@ func (a *appView) gotoResource(res string, record bool) bool {
 	return valid
 }
 
-func (a *appView) inject(i igniter) {
+func (a *appView) inject(i ui.Igniter) {
 	if a.cancel != nil {
 		a.cancel()
 	}
-	a.content.RemovePage("main")
+	a.Frame().RemovePage("main")
 	var ctx context.Context
 	{
 		ctx, a.cancel = context.WithCancel(context.Background())
-		i.init(ctx, a.config.ActiveNamespace())
+		i.Init(ctx, a.Config.ActiveNamespace())
 	}
-	a.content.AddPage("main", i, true, true)
+	a.Frame().AddPage("main", i, true, true)
 	a.SetFocus(i)
 }
 
-func (a *appView) inCmdMode() bool {
-	return a.cmd().inCmdMode()
+func (a *appView) clusterInfo() *clusterInfoView {
+	return a.Views()["clusterInfo"].(*clusterInfoView)
 }

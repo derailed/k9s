@@ -4,12 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/fsnotify/fsnotify"
 	"github.com/gdamore/tcell"
@@ -41,33 +41,33 @@ func newForwardView(ns string, app *appView, list resource.List) resourceViewer 
 	tv := newTableView(app, forwardTitle)
 	tv.SetBorderFocusColor(tcell.ColorDodgerBlue)
 	tv.SetSelectedStyle(tcell.ColorWhite, tcell.ColorDodgerBlue, tcell.AttrNone)
-	tv.colorerFn = forwardColorer
-	tv.currentNS = ""
+	tv.SetColorerFn(forwardColorer)
+	tv.SetActiveNS("")
 	v.AddPage("table", tv, true, true)
 	v.registerActions()
 
 	return &v
 }
 
-func (v *forwardView) setEnterFn(enterFn)          {}
-func (v *forwardView) setColorerFn(colorerFn)      {}
-func (v *forwardView) setDecorateFn(decorateFn)    {}
-func (v *forwardView) setExtraActionsFn(actionsFn) {}
+func (v *forwardView) setEnterFn(enterFn)               {}
+func (v *forwardView) setColorerFn(ui.ColorerFunc)      {}
+func (v *forwardView) setDecorateFn(decorateFn)         {}
+func (v *forwardView) setExtraActionsFn(ui.ActionsFunc) {}
 
 // Init the view.
-func (v *forwardView) init(ctx context.Context, _ string) {
-	path := benchConfig(v.app.config.K9s.CurrentCluster)
+func (v *forwardView) Init(ctx context.Context, _ string) {
+	path := ui.BenchConfig(v.app.Config.K9s.CurrentCluster)
 	if err := watchFS(ctx, v.app, config.K9sHome, path, v.reload); err != nil {
-		v.app.flash().errf("RuRoh! Unable to watch benchmarks directory %s : %s", config.K9sHome, err)
+		v.app.Flash().Errf("RuRoh! Unable to watch benchmarks directory %s : %s", config.K9sHome, err)
 	}
 
 	tv := v.getTV()
 	v.refresh()
-	tv.sortCol.index, tv.sortCol.asc = tv.nameColIndex()+6, true
-	tv.refresh()
+	tv.SetSortCol(tv.NameColIndex()+6, true)
+	tv.Refresh()
 	tv.Select(1, 0)
 	v.app.SetFocus(tv)
-	v.app.setHints(v.hints())
+	v.app.SetHints(v.hints())
 }
 
 func (v *forwardView) getTV() *tableView {
@@ -78,31 +78,33 @@ func (v *forwardView) getTV() *tableView {
 }
 
 func (v *forwardView) reload() {
-	path := benchConfig(v.app.config.K9s.CurrentCluster)
-	log.Debug().Msgf("Reloading config %s", path)
-	if err := v.app.bench.Reload(path); err != nil {
-		v.app.flash().err(err)
+	path := ui.BenchConfig(v.app.Config.K9s.CurrentCluster)
+	log.Debug().Msgf("Reloading Config %s", path)
+	if err := v.app.Bench.Reload(path); err != nil {
+		v.app.Flash().Err(err)
 	}
 	v.refresh()
 }
 
 func (v *forwardView) refresh() {
 	tv := v.getTV()
-	tv.update(v.hydrate())
+	tv.Update(v.hydrate())
 	v.app.SetFocus(tv)
-	tv.resetTitle()
+	tv.UpdateTitle()
 }
 
 func (v *forwardView) registerActions() {
 	tv := v.getTV()
-	tv.actions[tcell.KeyEnter] = newKeyAction("Goto", v.gotoBenchCmd, true)
-	tv.actions[tcell.KeyCtrlB] = newKeyAction("Bench", v.benchCmd, true)
-	tv.actions[KeyAltB] = newKeyAction("Bench Stop", v.benchStopCmd, true)
-	tv.actions[tcell.KeyCtrlD] = newKeyAction("Delete", v.deleteCmd, true)
-	tv.actions[KeySlash] = newKeyAction("Filter", tv.activateCmd, false)
-	tv.actions[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
-	tv.actions[KeyShiftP] = newKeyAction("Sort Ports", v.sortColCmd(2, true), true)
-	tv.actions[KeyShiftU] = newKeyAction("Sort URL", v.sortColCmd(4, true), true)
+	tv.SetActions(ui.KeyActions{
+		tcell.KeyEnter: ui.NewKeyAction("Goto", v.gotoBenchCmd, true),
+		tcell.KeyCtrlB: ui.NewKeyAction("Bench", v.benchCmd, true),
+		ui.KeyAltB:     ui.NewKeyAction("Bench Stop", v.benchStopCmd, true),
+		tcell.KeyCtrlD: ui.NewKeyAction("Delete", v.deleteCmd, true),
+		ui.KeySlash:    ui.NewKeyAction("Filter", tv.ActivateCmd, false),
+		ui.KeyP:        ui.NewKeyAction("Previous", v.app.prevCmd, false),
+		ui.KeyShiftP:   ui.NewKeyAction("Sort Ports", v.sortColCmd(2, true), true),
+		ui.KeyShiftU:   ui.NewKeyAction("Sort URL", v.sortColCmd(4, true), true),
+	})
 }
 
 func (v *forwardView) getTitle() string {
@@ -112,7 +114,7 @@ func (v *forwardView) getTitle() string {
 func (v *forwardView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		tv := v.getTV()
-		tv.sortCol.index, tv.sortCol.asc = tv.nameColIndex()+col, asc
+		tv.SetSortCol(tv.NameColIndex()+col, asc)
 		v.refresh()
 
 		return nil
@@ -128,10 +130,10 @@ func (v *forwardView) gotoBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (v *forwardView) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.bench != nil {
 		log.Debug().Msg(">>> Benchmark canceled!!")
-		v.app.status(flashErr, "Benchmark Camceled!")
+		v.app.status(ui.FlashErr, "Benchmark Camceled!")
 		v.bench.cancel()
 	}
-	v.app.statusReset()
+	v.app.StatusReset()
 
 	return nil
 }
@@ -143,27 +145,27 @@ func (v *forwardView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if v.bench != nil {
-		v.app.flash().err(errors.New("Only one benchmark allowed at a time"))
+		v.app.Flash().Err(errors.New("Only one benchmark allowed at a time"))
 		return nil
 	}
 
 	tv := v.getTV()
 	r, _ := tv.GetSelection()
-	cfg, co := defaultConfig(), trimCell(tv, r, 2)
-	if b, ok := v.app.bench.Benchmarks.Containers[containerID(sel, co)]; ok {
+	cfg, co := defaultConfig(), ui.TrimCell(tv.Table, r, 2)
+	if b, ok := v.app.Bench.Benchmarks.Containers[containerID(sel, co)]; ok {
 		cfg = b
 	}
 	cfg.Name = sel
 
-	base := trimCell(tv, r, 4)
+	base := ui.TrimCell(tv.Table, r, 4)
 	var err error
 	if v.bench, err = newBenchmark(base, cfg); err != nil {
-		v.app.flash().errf("Bench failed %v", err)
-		v.app.statusReset()
+		v.app.Flash().Errf("Bench failed %v", err)
+		v.app.StatusReset()
 		return nil
 	}
 
-	v.app.status(flashWarn, "Benchmark in progress...")
+	v.app.status(ui.FlashWarn, "Benchmark in progress...")
 	log.Debug().Msg("Bench starting...")
 	go v.runBenchmark()
 
@@ -171,19 +173,19 @@ func (v *forwardView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *forwardView) runBenchmark() {
-	v.bench.run(v.app.config.K9s.CurrentCluster, func() {
+	v.bench.run(v.app.Config.K9s.CurrentCluster, func() {
 		log.Debug().Msg("Bench Completed!")
 		v.app.QueueUpdate(func() {
 			if v.bench.canceled {
-				v.app.status(flashInfo, "Benchmark canceled")
+				v.app.status(ui.FlashInfo, "Benchmark canceled")
 			} else {
-				v.app.status(flashInfo, "Benchmark Completed!")
+				v.app.status(ui.FlashInfo, "Benchmark Completed!")
 				v.bench.cancel()
 			}
 			v.bench = nil
 			go func() {
 				<-time.After(2 * time.Second)
-				v.app.QueueUpdate(func() { v.app.statusReset() })
+				v.app.QueueUpdate(func() { v.app.StatusReset() })
 			}()
 		})
 	})
@@ -195,13 +197,16 @@ func (v *forwardView) getSelectedItem() string {
 	if r == 0 {
 		return ""
 	}
-	return fwFQN(fqn(trimCell(tv, r, 0), trimCell(tv, r, 1)), trimCell(tv, r, 2))
+	return fwFQN(
+		fqn(ui.TrimCell(tv.Table, r, 0), ui.TrimCell(tv.Table, r, 1)),
+		ui.TrimCell(tv.Table, r, 2),
+	)
 }
 
 func (v *forwardView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	tv := v.getTV()
-	if !tv.cmdBuff.empty() {
-		tv.cmdBuff.reset()
+	if !tv.Cmd().Empty() {
+		tv.Cmd().Reset()
 		return nil
 	}
 
@@ -220,8 +225,8 @@ func (v *forwardView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		delete(v.app.forwarders, sel)
 
 		log.Debug().Msgf("PortForwards after delete: %#v", v.app.forwarders)
-		v.getTV().update(v.hydrate())
-		v.app.flash().infof("PortForward %s deleted!", sel)
+		v.getTV().Update(v.hydrate())
+		v.app.Flash().Infof("PortForward %s deleted!", sel)
 	})
 
 	return nil
@@ -233,24 +238,24 @@ func (v *forwardView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	tv := v.getTV()
-	if tv.cmdBuff.isActive() {
-		tv.cmdBuff.reset()
+	if tv.Cmd().IsActive() {
+		tv.Cmd().Reset()
 	} else {
-		v.app.inject(v.app.content.GetPrimitive("main").(igniter))
+		v.app.inject(v.app.Frame().GetPrimitive("main").(ui.Igniter))
 	}
 
 	return nil
 }
 
-func (v *forwardView) hints() hints {
-	return v.getTV().actions.toHints()
+func (v *forwardView) hints() ui.Hints {
+	return v.getTV().Hints()
 }
 
 func (v *forwardView) hydrate() resource.TableData {
 	data := initHeader(len(v.app.forwarders))
-	dc, dn := v.app.bench.Benchmarks.Defaults.C, v.app.bench.Benchmarks.Defaults.N
+	dc, dn := v.app.Bench.Benchmarks.Defaults.C, v.app.Bench.Benchmarks.Defaults.N
 	for _, f := range v.app.forwarders {
-		c, n, cfg := loadConfig(dc, dn, containerID(f.Path(), f.Container()), v.app.bench.Benchmarks.Containers)
+		c, n, cfg := loadConfig(dc, dn, containerID(f.Path(), f.Container()), v.app.Bench.Benchmarks.Containers)
 
 		ports := strings.Split(f.Ports()[0], ":")
 		ns, na := namespaced(f.Path())
@@ -368,8 +373,4 @@ func watchFS(ctx context.Context, app *appView, dir, file string, cb func()) err
 	}()
 
 	return w.Add(dir)
-}
-
-func benchConfig(cluster string) string {
-	return filepath.Join(config.K9sHome, config.K9sBench+"-"+cluster+".yml")
 }

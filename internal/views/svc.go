@@ -9,6 +9,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -39,30 +40,29 @@ func (v *svcView) getSelection() string {
 	return v.selectedItem
 }
 
-func (v *svcView) extraActions(aa keyActions) {
-	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
-	aa[tcell.KeyCtrlB] = newKeyAction("Bench", v.benchCmd, true)
-	aa[KeyAltB] = newKeyAction("Bench Stop", v.benchStopCmd, true)
-
-	aa[KeyShiftT] = newKeyAction("Sort Type", v.sortColCmd(1, false), true)
+func (v *svcView) extraActions(aa ui.KeyActions) {
+	aa[ui.KeyL] = ui.NewKeyAction("Logs", v.logsCmd, true)
+	aa[tcell.KeyCtrlB] = ui.NewKeyAction("Bench", v.benchCmd, true)
+	aa[ui.KeyAltB] = ui.NewKeyAction("Bench Stop", v.benchStopCmd, true)
+	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Type", v.sortColCmd(1, false), true)
 }
 
 func (v *svcView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		t := v.masterPage()
-		t.sortCol.index, t.sortCol.asc = t.nameColIndex()+col, asc
-		t.refresh()
+		t.SetSortCol(t.NameColIndex()+col, asc)
+		t.Refresh()
 
 		return nil
 	}
 }
 
 func (v *svcView) showPods(app *appView, ns, res, sel string) {
-	s := k8s.NewService(app.conn())
+	s := k8s.NewService(app.Conn())
 	ns, n := namespaced(sel)
 	svc, err := s.Get(ns, n)
 	if err != nil {
-		app.flash().err(err)
+		app.Flash().Err(err)
 		return
 	}
 
@@ -85,7 +85,7 @@ func (v *svcView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (v *svcView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	// Reset namespace to what it was
-	v.app.config.SetActiveNamespace(v.list.GetNamespace())
+	v.app.Config.SetActiveNamespace(v.list.GetNamespace())
 	v.app.inject(v)
 
 	return nil
@@ -94,10 +94,10 @@ func (v *svcView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (v *svcView) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.bench != nil {
 		log.Debug().Msg(">>> Benchmark canceled!!")
-		v.app.status(flashErr, "Benchmark Camceled!")
+		v.app.status(ui.FlashErr, "Benchmark Camceled!")
 		v.bench.cancel()
 	}
-	v.app.statusReset()
+	v.app.StatusReset()
 
 	return nil
 }
@@ -129,8 +129,8 @@ func (v *svcView) getExternalPort(row int) (string, error) {
 
 func (v *svcView) reloadBenchCfg() error {
 	// BOZO!! Poorman Reload bench to make sure we pick up updates if any.
-	path := benchConfig(v.app.config.K9s.CurrentCluster)
-	return v.app.bench.Reload(path)
+	path := ui.BenchConfig(v.app.Config.K9s.CurrentCluster)
+	return v.app.Bench.Reload(path)
 }
 
 func (v *svcView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -139,31 +139,31 @@ func (v *svcView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if err := v.reloadBenchCfg(); err != nil {
-		v.app.flash().err(err)
+		v.app.Flash().Err(err)
 		return nil
 	}
 
 	sel := v.getSelectedItem()
-	cfg, ok := v.app.bench.Benchmarks.Services[sel]
+	cfg, ok := v.app.Bench.Benchmarks.Services[sel]
 	if !ok {
-		v.app.flash().errf("No bench config found for service %s", sel)
+		v.app.Flash().Errf("No bench config found for service %s", sel)
 		return nil
 	}
 	cfg.Name = sel
 
 	row, _ := v.masterPage().GetSelection()
 	if err := v.checkSvc(row); err != nil {
-		v.app.flash().err(err)
+		v.app.Flash().Err(err)
 		return nil
 	}
 	port, err := v.getExternalPort(row)
 	if err != nil {
-		v.app.flash().err(err)
+		v.app.Flash().Err(err)
 		return nil
 	}
 	if err := v.runBenchmark(port, cfg); err != nil {
-		v.app.flash().errf("Benchmark failed %v", err)
-		v.app.statusReset()
+		v.app.Flash().Errf("Benchmark failed %v", err)
+		v.app.StatusReset()
 		v.bench = nil
 	}
 
@@ -177,9 +177,9 @@ func (v *svcView) runBenchmark(port string, cfg config.BenchConfig) error {
 		return err
 	}
 
-	v.app.status(flashWarn, "Benchmark in progress...")
+	v.app.status(ui.FlashWarn, "Benchmark in progress...")
 	log.Debug().Msg("Bench starting...")
-	go v.bench.run(v.app.config.K9s.CurrentCluster, v.benchDone)
+	go v.bench.run(v.app.Config.K9s.CurrentCluster, v.benchDone)
 
 	return nil
 }
@@ -188,9 +188,9 @@ func (v *svcView) benchDone() {
 	log.Debug().Msg("Bench Completed!")
 	v.app.QueueUpdate(func() {
 		if v.bench.canceled {
-			v.app.status(flashInfo, "Benchmark canceled")
+			v.app.status(ui.FlashInfo, "Benchmark canceled")
 		} else {
-			v.app.status(flashInfo, "Benchmark Completed!")
+			v.app.status(ui.FlashInfo, "Benchmark Completed!")
 			v.bench.cancel()
 		}
 		v.bench = nil
@@ -201,24 +201,24 @@ func (v *svcView) benchDone() {
 func benchTimedOut(app *appView) {
 	<-time.After(2 * time.Second)
 	app.QueueUpdate(func() {
-		app.statusReset()
+		app.StatusReset()
 	})
 }
 
-func (v *svcView) showSvcPods(ns string, sel map[string]string, b actionHandler) {
+func (v *svcView) showSvcPods(ns string, sel map[string]string, b ui.ActionHandler) {
 	var s []string
 	for k, v := range sel {
 		s = append(s, fmt.Sprintf("%s=%s", k, v))
 	}
-	list := resource.NewPodList(v.app.conn(), ns)
+	list := resource.NewPodList(v.app.Conn(), ns)
 	list.SetLabelSelector(strings.Join(s, ","))
 
 	pv := newPodView("Pods", v.app, list)
 	pv.setColorerFn(podColorer)
-	pv.setExtraActionsFn(func(aa keyActions) {
-		aa[tcell.KeyEsc] = newKeyAction("Back", b, true)
+	pv.setExtraActionsFn(func(aa ui.KeyActions) {
+		aa[tcell.KeyEsc] = ui.NewKeyAction("Back", b, true)
 	})
 	// set active namespace to service ns.
-	v.app.config.SetActiveNamespace(ns)
+	v.app.Config.SetActiveNamespace(ns)
 	v.app.inject(pv)
 }

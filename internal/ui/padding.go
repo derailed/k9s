@@ -1,4 +1,4 @@
-package views
+package ui
 
 import (
 	"strings"
@@ -9,9 +9,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
-type maxyPad []int
+// MaxyPad tracks uniform column padding.
+type MaxyPad []int
 
-func computeMaxColumns(pads maxyPad, sortCol int, table resource.TableData) {
+// ComputeMaxColumns figures out column max size and necessary padding.
+func ComputeMaxColumns(pads MaxyPad, sortCol int, table resource.TableData) {
 	const colPadding = 1
 
 	for index, h := range table.Header {
@@ -41,7 +43,8 @@ func computeMaxColumns(pads maxyPad, sortCol int, table resource.TableData) {
 	}
 }
 
-func isASCII(s string) bool {
+// IsASCII checks if table cell has all ascii characters.
+func IsASCII(s string) bool {
 	for i := 0; i < len(s); i++ {
 		if s[i] > unicode.MaxASCII {
 			return false
@@ -51,7 +54,7 @@ func isASCII(s string) bool {
 }
 
 // Pad a string up to the given length or truncates if greater than length.
-func pad(s string, width int) string {
+func Pad(s string, width int) string {
 	if len(s) == width {
 		return s
 	}

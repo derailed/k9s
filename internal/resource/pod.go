@@ -143,6 +143,7 @@ func (r *Pod) PodLogs(ctx context.Context, c chan<- string, opts LogOptions) err
 		if in(rcos, co.Name) {
 			opts.Container = co.Name
 			if err := r.Logs(ctx, c, opts); err != nil {
+				log.Error().Err(err).Msgf("Getting logs for %s failed", co.Name)
 				return err
 			}
 		}
@@ -160,6 +161,7 @@ func (r *Pod) Logs(ctx context.Context, c chan<- string, opts LogOptions) error 
 	if !ok {
 		return fmt.Errorf("Resource %T is not Loggable", r.Resource)
 	}
+
 	return tailLogs(ctx, res, c, opts)
 }
 
@@ -467,9 +469,7 @@ func checkContainerStatus(cs v1.ContainerStatus, i, initCount int) string {
 func (r *Pod) loggableContainers(s v1.PodStatus) []string {
 	var rcos []string
 	for _, c := range s.ContainerStatuses {
-		if c.State.Running != nil || c.State.Terminated != nil {
-			rcos = append(rcos, c.Name)
-		}
+		rcos = append(rcos, c.Name)
 	}
 	return rcos
 }

@@ -3,7 +3,7 @@ package views
 import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
-	"github.com/gdamore/tcell"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -11,7 +11,6 @@ import (
 type (
 	viewFn     func(ns string, app *appView, list resource.List) resourceViewer
 	listFn     func(c resource.Connection, ns string) resource.List
-	colorerFn  func(ns string, evt *resource.RowEvent) tcell.Color
 	enterFn    func(app *appView, ns, resource, selection string)
 	decorateFn func(resource.TableData) resource.TableData
 
@@ -29,7 +28,7 @@ type (
 		viewFn     viewFn
 		listFn     listFn
 		enterFn    enterFn
-		colorerFn  colorerFn
+		colorerFn  ui.ColorerFunc
 		decorateFn decorateFn
 	}
 )
@@ -91,9 +90,9 @@ func showRBAC(app *appView, ns, resource, selection string) {
 }
 
 func showClusterRole(app *appView, ns, resource, selection string) {
-	crb, err := app.conn().DialOrDie().RbacV1().ClusterRoleBindings().Get(selection, metav1.GetOptions{})
+	crb, err := app.Conn().DialOrDie().RbacV1().ClusterRoleBindings().Get(selection, metav1.GetOptions{})
 	if err != nil {
-		app.flash().errf("Unable to retrieve clusterrolebindings for %s", selection)
+		app.Flash().Errf("Unable to retrieve clusterrolebindings for %s", selection)
 		return
 	}
 	app.inject(newRBACView(app, ns, crb.RoleRef.Name, clusterRole))
@@ -101,9 +100,9 @@ func showClusterRole(app *appView, ns, resource, selection string) {
 
 func showRole(app *appView, _, resource, selection string) {
 	ns, n := namespaced(selection)
-	rb, err := app.conn().DialOrDie().RbacV1().RoleBindings(ns).Get(n, metav1.GetOptions{})
+	rb, err := app.Conn().DialOrDie().RbacV1().RoleBindings(ns).Get(n, metav1.GetOptions{})
 	if err != nil {
-		app.flash().errf("Unable to retrieve rolebindings for %s", selection)
+		app.Flash().Errf("Unable to retrieve rolebindings for %s", selection)
 		return
 	}
 	app.inject(newRBACView(app, ns, fqn(ns, rb.RoleRef.Name), role))

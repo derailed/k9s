@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -21,7 +22,7 @@ const (
 
 type (
 	masterView interface {
-		backFn() actionHandler
+		backFn() ui.ActionHandler
 		appView() *appView
 	}
 
@@ -30,7 +31,7 @@ type (
 
 		app        *appView
 		parent     loggable
-		actions    keyActions
+		actions    ui.KeyActions
 		cancelFunc context.CancelFunc
 	}
 )
@@ -55,17 +56,17 @@ func (v *logsView) reload(co string, parent loggable, prevLogs bool) {
 }
 
 // SetActions to handle keyboard events.
-func (v *logsView) setActions(aa keyActions) {
+func (v *logsView) setActions(aa ui.KeyActions) {
 	v.actions = aa
 }
 
 // Hints show action hints
-func (v *logsView) hints() hints {
+func (v *logsView) Hints() ui.Hints {
 	l := v.CurrentPage().Item.(*logView)
-	return l.actions.toHints()
+	return l.actions.Hints()
 }
 
-func (v *logsView) backFn() actionHandler {
+func (v *logsView) backFn() ui.ActionHandler {
 	return v.backCmd
 }
 
@@ -84,7 +85,7 @@ func (v *logsView) stop() {
 
 func (v *logsView) load(container string, prevLogs bool) {
 	if err := v.doLoad(v.parent.getSelection(), container, prevLogs); err != nil {
-		v.app.flash().err(err)
+		v.app.Flash().Err(err)
 		l := v.CurrentPage().Item.(*logView)
 		l.log("😂 Doh! No logs are available at this time. Check again later on...")
 		return
@@ -93,15 +94,18 @@ func (v *logsView) load(container string, prevLogs bool) {
 }
 
 func (v *logsView) doLoad(path, co string, prevLogs bool) error {
-	log.Debug().Msgf("----Container %q", co)
 	v.stop()
 
 	l := v.CurrentPage().Item.(*logView)
 	l.logs.Clear()
 	l.setTitle(path, co)
 
+	var ctx context.Context
+	ctx = context.WithValue(context.Background(), resource.IKey("informer"), v.app.informer)
+	ctx, v.cancelFunc = context.WithCancel(ctx)
+
 	c := make(chan string, 10)
-	go updateLogs(c, l, logBuffSize)
+	go updateLogs(ctx, c, l, logBuffSize)
 
 	res, ok := v.parent.getList().Resource().(resource.Tailable)
 	if !ok {
@@ -109,11 +113,9 @@ func (v *logsView) doLoad(path, co string, prevLogs bool) error {
 		return fmt.Errorf("Resource %T is not tailable", v.parent.getList().Resource())
 	}
 
-	var ctx context.Context
-	ctx = context.WithValue(context.Background(), resource.IKey("informer"), v.app.informer)
-	ctx, v.cancelFunc = context.WithCancel(ctx)
 	if err := res.Logs(ctx, c, v.logOpts(path, co, prevLogs)); err != nil {
 		v.cancelFunc()
+		close(c)
 		return err
 	}
 
@@ -128,12 +130,15 @@ func (v *logsView) logOpts(path, co string, prevLogs bool) resource.LogOptions {
 			Name:      po,
 			Container: co,
 		},
-		Lines:    int64(v.app.config.K9s.LogRequestSize),
+		Lines:    int64(v.app.Config.K9s.LogRequestSize),
 		Previous: prevLogs,
 	}
 }
 
-func updateLogs(c <-chan string, l *logView, buffSize int) {
+func updateLogs(ctx context.Context, c <-chan string, l *logView, buffSize int) {
+	defer func() {
+		log.Debug().Msgf("updateLogs view bailing out!")
+	}()
 	buff, index := make([]string, buffSize), 0
 	for {
 		select {
@@ -155,6 +160,8 @@ func updateLogs(c <-chan string, l *logView, buffSize int) {
 		case <-time.After(flushTimeout):
 			l.flush(index, buff)
 			index = 0
+		case <-ctx.Done():
+			return
 		}
 	}
 }

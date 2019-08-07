@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
@@ -41,34 +40,6 @@ func TestFQN(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, fqn(u.ns, u.n))
 		})
-	}
-}
-
-func TestDeltas(t *testing.T) {
-	uu := []struct {
-		s1, s2, e string
-	}{
-		{"", "", ""},
-		{resource.MissingValue, "", deltaSign},
-		{resource.NAValue, "", ""},
-		{"fred", "fred", ""},
-		{"fred", "blee", deltaSign},
-		{"1", "1", ""},
-		{"1", "2", plusSign},
-		{"2", "1", minusSign},
-		{"2m33s", "2m33s", ""},
-		{"2m33s", "1m", minusSign},
-		{"33s", "1m", plusSign},
-		{"10Gi", "10Gi", ""},
-		{"10Gi", "20Gi", plusSign},
-		{"30Gi", "20Gi", minusSign},
-		{"15%", "15%", ""},
-		{"20%", "40%", plusSign},
-		{"5%", "2%", minusSign},
-	}
-
-	for _, u := range uu {
-		assert.Equal(t, u.e, deltas(u.s1, u.s2))
 	}
 }
 
@@ -130,28 +101,6 @@ func TestContainerID(t *testing.T) {
 	for k, u := range uu {
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, containerID(u.path, u.co))
-		})
-	}
-}
-
-func TestStripPort(t *testing.T) {
-	uu := map[string]struct {
-		port, e string
-	}{
-		"full": {
-			"fred:8000", "8000",
-		},
-		"port": {
-			"8000", "8000",
-		},
-		"protocol": {
-			"dns:53╱UDP", "53",
-		},
-	}
-
-	for k, u := range uu {
-		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, stripPort(u.port))
 		})
 	}
 }

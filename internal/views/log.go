@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -20,8 +21,8 @@ type (
 		*tview.Flex
 
 		app     *appView
-		actions keyActions
-		backFn  actionHandler
+		actions ui.KeyActions
+		backFn  ui.ActionHandler
 	}
 
 	logView struct {
@@ -35,22 +36,22 @@ type (
 	}
 )
 
-func newLogFrame(app *appView, backFn actionHandler) *logFrame {
+func newLogFrame(app *appView, backFn ui.ActionHandler) *logFrame {
 	f := logFrame{
 		Flex:    tview.NewFlex(),
 		app:     app,
 		backFn:  backFn,
-		actions: make(keyActions),
+		actions: make(ui.KeyActions),
 	}
 	f.SetBorder(true)
-	f.SetBackgroundColor(config.AsColor(app.styles.Views().Log.BgColor))
+	f.SetBackgroundColor(config.AsColor(app.Styles.Views().Log.BgColor))
 	f.SetBorderPadding(0, 0, 1, 1)
 	f.SetDirection(tview.FlexRow)
 
 	return &f
 }
 
-func newLogView(_ string, app *appView, backFn actionHandler) *logView {
+func newLogView(_ string, app *appView, backFn ui.ActionHandler) *logView {
 	v := logView{
 		logFrame:   newLogFrame(app, backFn),
 		autoScroll: 1,
@@ -61,13 +62,13 @@ func newLogView(_ string, app *appView, backFn actionHandler) *logView {
 		v.logs.SetBorder(false)
 		v.logs.setCategory("Logs")
 		v.logs.SetDynamicColors(true)
-		v.logs.SetTextColor(config.AsColor(app.styles.Views().Log.FgColor))
-		v.logs.SetBackgroundColor(config.AsColor(app.styles.Views().Log.BgColor))
+		v.logs.SetTextColor(config.AsColor(app.Styles.Views().Log.FgColor))
+		v.logs.SetBackgroundColor(config.AsColor(app.Styles.Views().Log.BgColor))
 		v.logs.SetWrap(true)
-		v.logs.SetMaxBuffer(app.config.K9s.LogBufferSize)
+		v.logs.SetMaxBuffer(app.Config.K9s.LogBufferSize)
 	}
-	v.ansiWriter = tview.ANSIWriter(v.logs, app.styles.Views().Log.FgColor, app.styles.Views().Log.BgColor)
-	v.status = newStatusView(app.styles)
+	v.ansiWriter = tview.ANSIWriter(v.logs, app.Styles.Views().Log.FgColor, app.Styles.Views().Log.BgColor)
+	v.status = newStatusView(app.Styles)
 	v.AddItem(v.status, 1, 1, false)
 	v.AddItem(v.logs, 0, 1, true)
 
@@ -78,32 +79,32 @@ func newLogView(_ string, app *appView, backFn actionHandler) *logView {
 }
 
 func (v *logView) bindKeys() {
-	v.actions = keyActions{
-		tcell.KeyEscape: newKeyAction("Back", v.backCmd, true),
-		KeyC:            newKeyAction("Clear", v.clearCmd, true),
-		KeyS:            newKeyAction("Toggle AutoScroll", v.toggleScrollCmd, true),
-		KeyG:            newKeyAction("Top", v.topCmd, false),
-		KeyShiftG:       newKeyAction("Bottom", v.bottomCmd, false),
-		KeyF:            newKeyAction("Up", v.pageUpCmd, false),
-		KeyB:            newKeyAction("Down", v.pageDownCmd, false),
-		tcell.KeyCtrlS:  newKeyAction("Save", v.saveCmd, true),
+	v.actions = ui.KeyActions{
+		tcell.KeyEscape: ui.NewKeyAction("Back", v.backCmd, true),
+		ui.KeyC:         ui.NewKeyAction("Clear", v.clearCmd, true),
+		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", v.toggleScrollCmd, true),
+		ui.KeyG:         ui.NewKeyAction("Top", v.topCmd, false),
+		ui.KeyShiftG:    ui.NewKeyAction("Bottom", v.bottomCmd, false),
+		ui.KeyF:         ui.NewKeyAction("Up", v.pageUpCmd, false),
+		ui.KeyB:         ui.NewKeyAction("Down", v.pageDownCmd, false),
+		tcell.KeyCtrlS:  ui.NewKeyAction("Save", v.saveCmd, true),
 	}
 }
 
 func (v *logView) setTitle(path, co string) {
 	var fmat string
 	if co == "" {
-		fmat = skinTitle(fmt.Sprintf(logFmt, path), v.app.styles.Frame())
+		fmat = skinTitle(fmt.Sprintf(logFmt, path), v.app.Styles.Frame())
 	} else {
-		fmat = skinTitle(fmt.Sprintf(logCoFmt, path, co), v.app.styles.Frame())
+		fmat = skinTitle(fmt.Sprintf(logCoFmt, path, co), v.app.Styles.Frame())
 	}
 	v.path = path
 	v.SetTitle(fmat)
 }
 
 // Hints show action hints
-func (v *logView) hints() hints {
-	return v.actions.toHints()
+func (v *logView) Hints() ui.Hints {
+	return v.actions.Hints()
 }
 
 func (v *logView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
@@ -113,7 +114,7 @@ func (v *logView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	if m, ok := v.actions[key]; ok {
 		log.Debug().Msgf(">> LogView handled %s", tcell.KeyNames[key])
-		return m.action(evt)
+		return m.Action(evt)
 	}
 
 	return evt
@@ -150,10 +151,10 @@ func (v *logView) update() {
 // Actions...
 
 func (v *logView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveData(v.app.config.K9s.CurrentCluster, v.path, v.logs.GetText(true)); err != nil {
-		v.app.flash().err(err)
+	if path, err := saveData(v.app.Config.K9s.CurrentCluster, v.path, v.logs.GetText(true)); err != nil {
+		v.app.Flash().Err(err)
 	} else {
-		v.app.flash().infof("Log %s saved successfully!", path)
+		v.app.Flash().Infof("Log %s saved successfully!", path)
 	}
 	return nil
 }
@@ -198,11 +199,11 @@ func (v *logView) toggleScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if atomic.LoadInt32(&v.autoScroll) == 1 {
-		v.app.flash().info("Autoscroll is on.")
+		v.app.Flash().Info("Autoscroll is on.")
 		v.logs.ScrollToEnd()
 	} else {
 		v.logs.LineUp()
-		v.app.flash().info("Autoscroll is off.")
+		v.app.Flash().Info("Autoscroll is off.")
 	}
 	v.update()
 
@@ -214,33 +215,33 @@ func (v *logView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *logView) topCmd(evt *tcell.EventKey) *tcell.EventKey {
-	v.app.flash().info("Top of logs...")
+	v.app.Flash().Info("Top of logs...")
 	v.logs.ScrollToBeginning()
 	return nil
 }
 
 func (v *logView) bottomCmd(*tcell.EventKey) *tcell.EventKey {
-	v.app.flash().info("Bottom of logs...")
+	v.app.Flash().Info("Bottom of logs...")
 	v.logs.ScrollToEnd()
 	return nil
 }
 
 func (v *logView) pageUpCmd(*tcell.EventKey) *tcell.EventKey {
 	if v.logs.PageUp() {
-		v.app.flash().info("Reached Top ...")
+		v.app.Flash().Info("Reached Top ...")
 	}
 	return nil
 }
 
 func (v *logView) pageDownCmd(*tcell.EventKey) *tcell.EventKey {
 	if v.logs.PageDown() {
-		v.app.flash().info("Reached Bottom ...")
+		v.app.Flash().Info("Reached Bottom ...")
 	}
 	return nil
 }
 
 func (v *logView) clearCmd(*tcell.EventKey) *tcell.EventKey {
-	v.app.flash().info("Clearing logs...")
+	v.app.Flash().Info("Clearing logs...")
 	v.logs.Clear()
 	v.logs.ScrollTo(0, 0)
 	return nil

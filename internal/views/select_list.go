@@ -2,6 +2,7 @@ package views
 
 import (
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 )
@@ -10,11 +11,11 @@ type selectList struct {
 	*tview.List
 
 	parent  loggable
-	actions keyActions
+	actions ui.KeyActions
 }
 
 func newSelectList(parent loggable) *selectList {
-	v := selectList{List: tview.NewList(), actions: keyActions{}}
+	v := selectList{List: tview.NewList(), actions: ui.KeyActions{}}
 	{
 		v.parent = parent
 		v.SetBorder(true)
@@ -25,7 +26,7 @@ func newSelectList(parent loggable) *selectList {
 		v.SetTitle(" [aqua::b]Container Selector ")
 		v.SetInputCapture(func(evt *tcell.EventKey) *tcell.EventKey {
 			if a, ok := v.actions[evt.Key()]; ok {
-				a.action(evt)
+				a.Action(evt)
 				evt = nil
 			}
 			return evt
@@ -56,13 +57,13 @@ func (v *selectList) getSelection() string {
 }
 
 // SetActions to handle keyboard events.
-func (v *selectList) setActions(aa keyActions) {
+func (v *selectList) setActions(aa ui.KeyActions) {
 	v.actions = aa
 }
 
-func (v *selectList) hints() hints {
+func (v *selectList) Hints() ui.Hints {
 	if v.actions != nil {
-		return v.actions.toHints()
+		return v.actions.Hints()
 	}
 
 	return nil

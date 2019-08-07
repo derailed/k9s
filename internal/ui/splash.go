@@ -1,4 +1,4 @@
-package views
+package ui
 
 import (
 	"fmt"
@@ -34,14 +34,14 @@ var Logo = []string{
 	`        \/            \/        \/        \/    `,
 }
 
-// Splash screen definition
-type splashView struct {
+// SplashView represents a splash screen.
+type SplashView struct {
 	*tview.Flex
 }
 
 // NewSplash instantiates a new splash screen with product and company info.
-func newSplash(styles *config.Styles, version string) *splashView {
-	v := splashView{Flex: tview.NewFlex()}
+func NewSplash(styles *config.Styles, version string) *SplashView {
+	v := SplashView{Flex: tview.NewFlex()}
 
 	logo := tview.NewTextView()
 	logo.SetDynamicColors(true)
@@ -62,7 +62,7 @@ func newSplash(styles *config.Styles, version string) *splashView {
 	return &v
 }
 
-func (v *splashView) layoutLogo(t *tview.TextView, styles *config.Styles) {
+func (v *SplashView) layoutLogo(t *tview.TextView, styles *config.Styles) {
 	logo := strings.Join(Logo, fmt.Sprintf("\n[%s::b]", styles.Body().LogoColor))
 	fmt.Fprintf(t, "%s[%s::b]%s\n",
 		strings.Repeat("\n", 2),
@@ -70,6 +70,6 @@ func (v *splashView) layoutLogo(t *tview.TextView, styles *config.Styles) {
 		logo)
 }
 
-func (v *splashView) layoutRev(t *tview.TextView, rev string, styles *config.Styles) {
+func (v *SplashView) layoutRev(t *tview.TextView, rev string, styles *config.Styles) {
 	fmt.Fprintf(t, "[%s::b]Revision [red::b]%s", styles.Body().FgColor, rev)
 }

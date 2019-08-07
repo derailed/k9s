@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 )
 
@@ -14,41 +15,44 @@ const (
 )
 
 type aliasView struct {
-	*tableView
+	*ui.Table
 
-	current igniter
+	app     *appView
+	current ui.Igniter
 	cancel  context.CancelFunc
 }
 
-func newAliasView(app *appView, current igniter) *aliasView {
-	v := aliasView{tableView: newTableView(app, aliasTitle)}
-	{
-		v.SetBorderFocusColor(tcell.ColorFuchsia)
-		v.SetSelectedStyle(tcell.ColorWhite, tcell.ColorFuchsia, tcell.AttrNone)
-		v.colorerFn = aliasColorer
-		v.current = current
-		v.currentNS = ""
-		v.registerActions()
+func newAliasView(app *appView, current ui.Igniter) *aliasView {
+	v := aliasView{
+		Table: ui.NewTable(aliasTitle, app.Styles),
+		app:   app,
 	}
+	v.SetBorderFocusColor(tcell.ColorFuchsia)
+	v.SetSelectedStyle(tcell.ColorWhite, tcell.ColorFuchsia, tcell.AttrNone)
+	v.SetColorerFn(aliasColorer)
+	v.current = current
+	v.SetActiveNS("")
+	v.registerActions()
+
 	return &v
 }
 
 // Init the view.
-func (v *aliasView) init(context.Context, string) {
-	v.update(v.hydrate())
+func (v *aliasView) Init(context.Context, string) {
+	v.Update(v.hydrate())
 	v.app.SetFocus(v)
 	v.resetTitle()
-	v.app.setHints(v.hints())
-
+	v.app.SetHints(v.Hints())
 }
 
 func (v *aliasView) registerActions() {
-	delete(v.actions, KeyShiftA)
-	v.actions[tcell.KeyEnter] = newKeyAction("Goto", v.gotoCmd, true)
-	v.actions[tcell.KeyEscape] = newKeyAction("Reset", v.resetCmd, false)
-	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd, false)
-	v.actions[KeyShiftR] = newKeyAction("Sort Resources", v.sortColCmd(1), true)
-	v.actions[KeyShiftO] = newKeyAction("Sort Groups", v.sortColCmd(2), true)
+	delete(v.KeyBindings(), ui.KeyShiftA)
+
+	v.KeyBindings()[tcell.KeyEnter] = ui.NewKeyAction("Goto", v.gotoCmd, true)
+	v.KeyBindings()[tcell.KeyEscape] = ui.NewKeyAction("Reset", v.resetCmd, false)
+	v.KeyBindings()[ui.KeySlash] = ui.NewKeyAction("Filter", v.ActivateCmd, false)
+	v.KeyBindings()[ui.KeyShiftR] = ui.NewKeyAction("Sort Resources", v.SortColCmd(1), true)
+	v.KeyBindings()[ui.KeyShiftO] = ui.NewKeyAction("Sort Groups", v.SortColCmd(2), true)
 }
 
 func (v *aliasView) getTitle() string {
@@ -56,8 +60,8 @@ func (v *aliasView) getTitle() string {
 }
 
 func (v *aliasView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.cmdBuff.empty() {
-		v.cmdBuff.reset()
+	if !v.Cmd().Empty() {
+		v.Cmd().Reset()
 		return nil
 	}
 
@@ -70,9 +74,9 @@ func (v *aliasView) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return v.runCmd(evt)
 	}
 
-	if v.cmdBuff.isActive() {
-		return v.filterCmd(evt)
-	}
+	// if v.Cmd().IsActive() {
+	// 	return v.filterCmd(evt)
+	// }
 
 	return evt
 }
@@ -82,8 +86,8 @@ func (v *aliasView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.cancel()
 	}
 
-	if v.cmdBuff.isActive() {
-		v.cmdBuff.reset()
+	if v.Cmd().IsActive() {
+		v.Cmd().Reset()
 	} else {
 		v.app.inject(v.current)
 	}
@@ -94,19 +98,19 @@ func (v *aliasView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (v *aliasView) runCmd(evt *tcell.EventKey) *tcell.EventKey {
 	r, _ := v.GetSelection()
 	if r > 0 {
-		v.app.gotoResource(trimCell(v.tableView, r, 0), true)
+		v.app.gotoResource(ui.TrimCell(v.Table, r, 0), true)
 	}
 
 	return nil
 }
 
-func (v *aliasView) hints() hints {
-	return v.actions.toHints()
+func (v *aliasView) Hints() ui.Hints {
+	return v.KeyBindings().Hints()
 }
 
 func (v *aliasView) hydrate() resource.TableData {
 	cmds := make(map[string]resCmd, 40)
-	aliasCmds(v.app.conn(), cmds)
+	aliasCmds(v.app.Conn(), cmds)
 
 	data := resource.TableData{
 		Header:    resource.Row{"NAME", "RESOURCE", "APIGROUP"},
@@ -116,9 +120,9 @@ func (v *aliasView) hydrate() resource.TableData {
 
 	for k := range cmds {
 		fields := resource.Row{
-			pad(k, 30),
-			pad(cmds[k].title, 30),
-			pad(cmds[k].api, 30),
+			ui.Pad(k, 30),
+			ui.Pad(cmds[k].title, 30),
+			ui.Pad(cmds[k].api, 30),
 		}
 		data.Rows[k] = &resource.RowEvent{
 			Action: resource.New,

@@ -1,6 +1,7 @@
 package views
 
 import (
+	"context"
 	"fmt"
 	"sync"
 	"testing"
@@ -17,7 +18,7 @@ func TestUpdateLogs(t *testing.T) {
 	c := make(chan string, 10)
 	go func() {
 		defer wg.Done()
-		updateLogs(c, v, 10)
+		updateLogs(context.Background(), c, v, 10)
 	}()
 
 	for i := 0; i < 500; i++ {

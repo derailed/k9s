@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,7 +26,7 @@ type (
 	subjectView struct {
 		*tableView
 
-		current      igniter
+		current      ui.Igniter
 		cancel       context.CancelFunc
 		subjectKind  string
 		selectedItem string
@@ -38,11 +39,11 @@ func newSubjectView(ns string, app *appView, list resource.List) resourceViewer 
 	{
 		v.tableView = newTableView(app, v.getTitle())
 		v.tableView.SetSelectionChangedFunc(v.selChanged)
-		v.colorerFn = rbacColorer
+		v.SetColorerFn(rbacColorer)
 		v.bindKeys()
 	}
 
-	if current, ok := app.content.GetPrimitive("main").(igniter); ok {
+	if current, ok := app.Frame().GetPrimitive("main").(ui.Igniter); ok {
 		v.current = current
 	} else {
 		v.current = &v
@@ -52,14 +53,14 @@ func newSubjectView(ns string, app *appView, list resource.List) resourceViewer 
 }
 
 // Init the view.
-func (v *subjectView) init(c context.Context, _ string) {
+func (v *subjectView) Init(c context.Context, _ string) {
 	if v.cancel != nil {
 		v.cancel()
 	}
 
-	v.sortCol = sortColumn{1, len(rbacHeader), true}
-	v.subjectKind = mapCmdSubject(v.app.config.K9s.ActiveCluster().View.Active)
-	v.baseTitle = v.getTitle()
+	v.SetSortCol(len(rbacHeader), true)
+	v.subjectKind = mapCmdSubject(v.app.Config.K9s.ActiveCluster().View.Active)
+	v.SetTitle(v.getTitle())
 
 	ctx, cancel := context.WithCancel(c)
 	v.cancel = cancel
@@ -69,7 +70,7 @@ func (v *subjectView) init(c context.Context, _ string) {
 			case <-ctx.Done():
 				log.Debug().Msgf("Subject:%s Watch bailing out!", v.subjectKind)
 				return
-			case <-time.After(time.Duration(v.app.config.K9s.GetRefreshRate()) * time.Second):
+			case <-time.After(time.Duration(v.app.Config.K9s.GetRefreshRate()) * time.Second):
 				v.refresh()
 				v.app.Draw()
 			}
@@ -80,21 +81,23 @@ func (v *subjectView) init(c context.Context, _ string) {
 	v.app.SetFocus(v)
 }
 
-func (v *subjectView) setExtraActionsFn(f actionsFn) {}
-func (v *subjectView) setColorerFn(f colorerFn)      {}
-func (v *subjectView) setEnterFn(f enterFn)          {}
-func (v *subjectView) setDecorateFn(f decorateFn)    {}
+func (v *subjectView) setExtraActionsFn(f ui.ActionsFunc) {}
+func (v *subjectView) setColorerFn(f ui.ColorerFunc)      {}
+func (v *subjectView) setEnterFn(f enterFn)               {}
+func (v *subjectView) setDecorateFn(f decorateFn)         {}
 
 func (v *subjectView) bindKeys() {
 	// No time data or ns
-	delete(v.actions, KeyShiftA)
-	delete(v.actions, KeyShiftP)
+	v.RmAction(ui.KeyShiftA)
+	v.RmAction(ui.KeyShiftP)
 
-	v.actions[tcell.KeyEnter] = newKeyAction("RBAC", v.rbackCmd, true)
-	v.actions[tcell.KeyEscape] = newKeyAction("Reset", v.resetCmd, false)
-	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd, false)
-	v.actions[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
-	v.actions[KeyShiftK] = newKeyAction("Sort Kind", v.sortColCmd(1), true)
+	v.SetActions(ui.KeyActions{
+		tcell.KeyEnter:  ui.NewKeyAction("RBAC", v.rbackCmd, true),
+		tcell.KeyEscape: ui.NewKeyAction("Reset", v.resetCmd, false),
+		ui.KeySlash:     ui.NewKeyAction("Filter", v.ActivateCmd, false),
+		ui.KeyP:         ui.NewKeyAction("Previous", v.app.prevCmd, false),
+		ui.KeyShiftK:    ui.NewKeyAction("Sort Kind", v.SortColCmd(1), true),
+	})
 }
 
 func (v *subjectView) getTitle() string {
@@ -106,7 +109,7 @@ func (v *subjectView) selChanged(r, _ int) {
 		v.selectedItem = ""
 		return
 	}
-	v.selectedItem = trimCell(v.tableView, r, 0)
+	v.selectedItem = ui.TrimCell(v.tableView.Table, r, 0)
 }
 
 func (v *subjectView) SetSubject(s string) {
@@ -118,7 +121,7 @@ func (v *subjectView) refresh() {
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to reconcile for %s", v.subjectKind)
 	}
-	v.update(data)
+	v.Update(data)
 }
 
 func (v *subjectView) rbackCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -137,8 +140,8 @@ func (v *subjectView) rbackCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *subjectView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.cmdBuff.empty() {
-		v.cmdBuff.reset()
+	if !v.Cmd().Empty() {
+		v.Cmd().Reset()
 		return nil
 	}
 
@@ -150,8 +153,8 @@ func (v *subjectView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.cancel()
 	}
 
-	if v.cmdBuff.isActive() {
-		v.cmdBuff.reset()
+	if v.Cmd().IsActive() {
+		v.Cmd().Reset()
 		return nil
 	}
 
@@ -160,8 +163,8 @@ func (v *subjectView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *subjectView) hints() hints {
-	return v.actions.toHints()
+func (v *subjectView) Hints() ui.Hints {
+	return v.Hints()
 }
 
 func (v *subjectView) reconcile() (resource.TableData, error) {
@@ -249,7 +252,7 @@ func buildTable(c cachedEventer, evts resource.RowEvents) resource.TableData {
 }
 
 func (v *subjectView) clusterSubjects() (resource.RowEvents, error) {
-	crbs, err := v.app.conn().DialOrDie().RbacV1().ClusterRoleBindings().List(metav1.ListOptions{})
+	crbs, err := v.app.Conn().DialOrDie().RbacV1().ClusterRoleBindings().List(metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +273,7 @@ func (v *subjectView) clusterSubjects() (resource.RowEvents, error) {
 }
 
 func (v *subjectView) namespacedSubjects() (resource.RowEvents, error) {
-	rbs, err := v.app.conn().DialOrDie().RbacV1().RoleBindings("").List(metav1.ListOptions{})
+	rbs, err := v.app.Conn().DialOrDie().RbacV1().RoleBindings("").List(metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}

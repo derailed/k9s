@@ -8,6 +8,7 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -30,17 +31,17 @@ func newReplicaSetView(t string, app *appView, list resource.List) resourceViewe
 	return &v
 }
 
-func (v *replicaSetView) extraActions(aa keyActions) {
-	aa[KeyShiftD] = newKeyAction("Sort Desired", v.sortColCmd(2, false), true)
-	aa[KeyShiftC] = newKeyAction("Sort Current", v.sortColCmd(3, false), true)
-	aa[tcell.KeyCtrlB] = newKeyAction("Rollback", v.rollbackCmd, true)
+func (v *replicaSetView) extraActions(aa ui.KeyActions) {
+	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", v.sortColCmd(2, false), true)
+	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", v.sortColCmd(3, false), true)
+	aa[tcell.KeyCtrlB] = ui.NewKeyAction("Rollback", v.rollbackCmd, true)
 }
 
 func (v *replicaSetView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		t := v.masterPage()
-		t.sortCol.index, t.sortCol.asc = t.nameColIndex()+col, asc
-		t.refresh()
+		t.SetSortCol(t.NameColIndex()+col, asc)
+		t.Refresh()
 
 		return nil
 	}
@@ -48,16 +49,16 @@ func (v *replicaSetView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey)
 
 func (v *replicaSetView) showPods(app *appView, ns, res, sel string) {
 	ns, n := namespaced(sel)
-	rset := k8s.NewReplicaSet(app.conn())
+	rset := k8s.NewReplicaSet(app.Conn())
 	r, err := rset.Get(ns, n)
 	if err != nil {
-		app.flash().errf("Replicaset failed %s", err)
+		app.Flash().Errf("Replicaset failed %s", err)
 	}
 
 	rs := r.(*v1.ReplicaSet)
 	l, err := metav1.LabelSelectorAsSelector(rs.Spec.Selector)
 	if err != nil {
-		app.flash().errf("Selector failed %s", err)
+		app.Flash().Errf("Selector failed %s", err)
 		return
 	}
 
@@ -77,11 +78,11 @@ func (v *replicaSetView) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	v.showModal(fmt.Sprintf("Rollback %s %s?", v.list.GetName(), v.selectedItem), func(_ int, button string) {
 		if button == "OK" {
-			v.app.flash().infof("Rolling back %s %s", v.list.GetName(), v.selectedItem)
-			if res, err := rollback(v.app.conn(), v.selectedItem); err != nil {
-				v.app.flash().err(err)
+			v.app.Flash().Infof("Rolling back %s %s", v.list.GetName(), v.selectedItem)
+			if res, err := rollback(v.app.Conn(), v.selectedItem); err != nil {
+				v.app.Flash().Err(err)
 			} else {
-				v.app.flash().info(res)
+				v.app.Flash().Info(res)
 			}
 			v.refresh()
 		}
@@ -109,8 +110,8 @@ func (v *replicaSetView) showModal(msg string, done func(int, string)) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func findRS(conn k8s.Connection, ns, n string) (*v1.ReplicaSet, error) {
-	rset := k8s.NewReplicaSet(conn)
+func findRS(Conn k8s.Connection, ns, n string) (*v1.ReplicaSet, error) {
+	rset := k8s.NewReplicaSet(Conn)
 	r, err := rset.Get(ns, n)
 	if err != nil {
 		return nil, err
@@ -118,8 +119,8 @@ func findRS(conn k8s.Connection, ns, n string) (*v1.ReplicaSet, error) {
 	return r.(*v1.ReplicaSet), nil
 }
 
-func findDP(conn k8s.Connection, ns, n string) (*appsv1.Deployment, error) {
-	dp, err := k8s.NewDeployment(conn).Get(ns, n)
+func findDP(Conn k8s.Connection, ns, n string) (*appsv1.Deployment, error) {
+	dp, err := k8s.NewDeployment(Conn).Get(ns, n)
 	if err != nil {
 		return nil, err
 	}
@@ -154,10 +155,10 @@ func getRevision(rs *v1.ReplicaSet) (int64, error) {
 	return int64(vers), nil
 }
 
-func rollback(conn k8s.Connection, selectedItem string) (string, error) {
+func rollback(Conn k8s.Connection, selectedItem string) (string, error) {
 	ns, n := namespaced(selectedItem)
 
-	rs, err := findRS(conn, ns, n)
+	rs, err := findRS(Conn, ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -170,11 +171,11 @@ func rollback(conn k8s.Connection, selectedItem string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	rb, err := kubectl.RollbackerFor(schema.GroupKind{apiGroup, kind}, conn.DialOrDie())
+	rb, err := kubectl.RollbackerFor(schema.GroupKind{apiGroup, kind}, Conn.DialOrDie())
 	if err != nil {
 		return "", err
 	}
-	dp, err := findDP(conn, ns, name)
+	dp, err := findDP(Conn, ns, name)
 	if err != nil {
 		return "", err
 	}

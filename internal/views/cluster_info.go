@@ -6,6 +6,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
@@ -40,7 +41,7 @@ func newClusterInfoView(app *appView, mx resource.MetricsServer) *clusterInfoVie
 }
 
 func (v *clusterInfoView) init(version string) {
-	cluster := resource.NewCluster(v.app.conn(), &log.Logger, v.mxs)
+	cluster := resource.NewCluster(v.app.Conn(), &log.Logger, v.mxs)
 
 	row := v.initInfo(version, cluster)
 	row = v.initVersion(row, version, cluster)
@@ -87,8 +88,8 @@ func (v *clusterInfoView) sectionCell(t string) *tview.TableCell {
 	c := tview.NewTableCell(t + ":")
 	c.SetAlign(tview.AlignLeft)
 	var s tcell.Style
-	c.SetStyle(s.Bold(true).Foreground(config.AsColor(v.app.styles.K9s.Info.SectionColor)))
-	c.SetBackgroundColor(v.app.styles.BgColor())
+	c.SetStyle(s.Bold(true).Foreground(config.AsColor(v.app.Styles.K9s.Info.SectionColor)))
+	c.SetBackgroundColor(v.app.Styles.BgColor())
 
 	return c
 }
@@ -96,15 +97,15 @@ func (v *clusterInfoView) sectionCell(t string) *tview.TableCell {
 func (v *clusterInfoView) infoCell(t string) *tview.TableCell {
 	c := tview.NewTableCell(t)
 	c.SetExpansion(2)
-	c.SetTextColor(config.AsColor(v.app.styles.K9s.Info.FgColor))
-	c.SetBackgroundColor(v.app.styles.BgColor())
+	c.SetTextColor(config.AsColor(v.app.Styles.K9s.Info.FgColor))
+	c.SetBackgroundColor(v.app.Styles.BgColor())
 
 	return c
 }
 
 func (v *clusterInfoView) refresh() {
 	var (
-		cluster = resource.NewCluster(v.app.conn(), &log.Logger, v.mxs)
+		cluster = resource.NewCluster(v.app.Conn(), &log.Logger, v.mxs)
 		row     int
 	)
 	v.GetCell(row, 1).SetText(cluster.ContextName())
@@ -152,7 +153,7 @@ func (v *clusterInfoView) refreshMetrics(cluster *resource.Cluster, row int) {
 	if cpu == "0" {
 		cpu = resource.NAValue
 	}
-	c.SetText(cpu + "%" + deltas(strip(c.Text), cpu))
+	c.SetText(cpu + "%" + ui.Deltas(strip(c.Text), cpu))
 	row++
 
 	c = v.GetCell(row, 1)
@@ -160,11 +161,11 @@ func (v *clusterInfoView) refreshMetrics(cluster *resource.Cluster, row int) {
 	if mem == "0" {
 		mem = resource.NAValue
 	}
-	c.SetText(mem + "%" + deltas(strip(c.Text), mem))
+	c.SetText(mem + "%" + ui.Deltas(strip(c.Text), mem))
 }
 
 func strip(s string) string {
-	t := strings.Replace(s, plusSign, "", 1)
-	t = strings.Replace(t, minusSign, "", 1)
+	t := strings.Replace(s, ui.PlusSign, "", 1)
+	t = strings.Replace(t, ui.MinusSign, "", 1)
 	return t
 }

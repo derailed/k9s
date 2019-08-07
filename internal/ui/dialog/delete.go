@@ -1,18 +1,19 @@
-package views
+package dialog
 
 import (
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 )
 
-const deleteDialogKey = "delete"
+const deleteKey = "delete"
 
 type (
-	doneFn   func(cascade, force bool)
-	cancelFn func()
+	okFunc     func(cascade, force bool)
+	cancelFunc func()
 )
 
-func showDeleteDialog(pages *tview.Pages, msg string, done doneFn, cancel cancelFn) {
+// ShowDelete pops a resource deletion dialog.
+func ShowDelete(pages *tview.Pages, msg string, ok okFunc, cancel cancelFunc) {
 	cascade, force := true, false
 	f := tview.NewForm()
 	f.SetItemPadding(0)
@@ -28,25 +29,25 @@ func showDeleteDialog(pages *tview.Pages, msg string, done doneFn, cancel cancel
 		force = checked
 	})
 	f.AddButton("Cancel", func() {
-		dismissDeleteDialog(pages)
+		dismissDelete(pages)
 		cancel()
 	})
 	f.AddButton("OK", func() {
-		done(cascade, force)
-		dismissDeleteDialog(pages)
+		ok(cascade, force)
+		dismissDelete(pages)
 		cancel()
 	})
 
 	confirm := tview.NewModalForm("<Delete>", f)
 	confirm.SetText(msg)
 	confirm.SetDoneFunc(func(int, string) {
-		dismissDeleteDialog(pages)
+		dismissDelete(pages)
 		cancel()
 	})
-	pages.AddPage(deleteDialogKey, confirm, false, false)
-	pages.ShowPage(deleteDialogKey)
+	pages.AddPage(deleteKey, confirm, false, false)
+	pages.ShowPage(deleteKey)
 }
 
-func dismissDeleteDialog(pages *tview.Pages) {
-	pages.RemovePage(deleteDialogKey)
+func dismissDelete(pages *tview.Pages) {
+	pages.RemovePage(deleteKey)
 }

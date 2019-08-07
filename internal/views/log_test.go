@@ -41,7 +41,7 @@ func TestLogViewSave(t *testing.T) {
 	v := newLogView("Logs", NewApp(config.NewConfig(ks{})), nil)
 	v.flush(2, []string{"blee", "bozo"})
 	v.path = "k9s-test"
-	dir := filepath.Join(config.K9sDumpDir, v.app.config.K9s.CurrentCluster)
+	dir := filepath.Join(config.K9sDumpDir, v.app.Config.K9s.CurrentCluster)
 	c1, _ := ioutil.ReadDir(dir)
 	v.saveCmd(nil)
 	c2, _ := ioutil.ReadDir(dir)

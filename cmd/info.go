@@ -5,7 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/views"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +30,7 @@ func printInfo() {
 }
 
 func printLogo(c color.Paint) {
-	for _, l := range views.LogoSmall {
+	for _, l := range ui.LogoSmall {
 		fmt.Println(color.Colorize(l, c))
 	}
 	fmt.Println()

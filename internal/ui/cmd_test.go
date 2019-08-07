@@ -1,4 +1,4 @@
-package views
+package ui
 
 import (
 	"testing"
@@ -9,20 +9,20 @@ import (
 
 func TestNewCmdUpdate(t *testing.T) {
 	defaults, _ := config.NewStyles("")
-	v := newCmdView(defaults, 'T')
+	v := NewCmdView(defaults, 'T')
 	v.update("blee")
 
 	assert.Equal(t, "T> blee\n", v.GetText(false))
 }
 
-func TestNewCmdActivate(t *testing.T) {
+func TestCmdInCmdMode(t *testing.T) {
 	defaults, _ := config.NewStyles("")
-	v := newCmdView(defaults, 'T')
+	v := NewCmdView(defaults, 'T')
 	v.update("blee")
 	v.append('!')
 
 	assert.Equal(t, "T> blee!\n", v.GetText(false))
-	assert.False(t, v.inCmdMode())
+	assert.False(t, v.InCmdMode())
 	v.active(true)
-	assert.True(t, v.inCmdMode())
+	assert.True(t, v.InCmdMode())
 }

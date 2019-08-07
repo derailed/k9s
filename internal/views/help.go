@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -23,16 +24,16 @@ type (
 		*tview.TextView
 
 		app     *appView
-		current igniter
-		actions keyActions
+		current ui.Igniter
+		actions ui.KeyActions
 	}
 )
 
-func newHelpView(app *appView, current igniter) *helpView {
+func newHelpView(app *appView, current ui.Igniter) *helpView {
 	v := helpView{
 		TextView: tview.NewTextView(),
 		app:      app,
-		actions:  make(keyActions),
+		actions:  make(ui.KeyActions),
 	}
 	v.SetTextColor(tcell.ColorAqua)
 	v.SetBorder(true)
@@ -46,9 +47,9 @@ func newHelpView(app *appView, current igniter) *helpView {
 }
 
 func (v *helpView) bindKeys() {
-	v.actions = keyActions{
-		tcell.KeyEsc:   newKeyAction("Back", v.backCmd, true),
-		tcell.KeyEnter: newKeyAction("Back", v.backCmd, false),
+	v.actions = ui.KeyActions{
+		tcell.KeyEsc:   ui.NewKeyAction("Back", v.backCmd, true),
+		tcell.KeyEnter: ui.NewKeyAction("Back", v.backCmd, false),
 	}
 }
 
@@ -60,7 +61,7 @@ func (v *helpView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 	if a, ok := v.actions[key]; ok {
 		log.Debug().Msgf(">> TableView handled %s", tcell.KeyNames[key])
-		return a.action(evt)
+		return a.Action(evt)
 	}
 	return evt
 }
@@ -70,13 +71,13 @@ func (v *helpView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *helpView) init(_ context.Context, _ string) {
+func (v *helpView) Init(_ context.Context, _ string) {
 	v.resetTitle()
 
 	v.showGeneral()
 	v.showNav()
 	v.showHelp()
-	v.app.setHints(v.hints())
+	v.app.SetHints(v.Hints())
 }
 
 func (v *helpView) showHelp() {
@@ -129,8 +130,8 @@ func (v *helpView) printHelp(key, desc string) {
 	fmt.Fprintf(v, "[dodgerblue::b]%9s [white::]%s\n", key, desc)
 }
 
-func (v *helpView) hints() hints {
-	return v.actions.toHints()
+func (v *helpView) Hints() ui.Hints {
+	return v.actions.Hints()
 }
 
 func (v *helpView) getTitle() string {

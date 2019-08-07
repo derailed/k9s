@@ -1,4 +1,4 @@
-package views
+package ui
 
 import (
 	"testing"
@@ -25,59 +25,59 @@ func (l *testListener) active(s bool) {
 }
 
 func TestCmdBuffActivate(t *testing.T) {
-	b, l := newCmdBuff('>'), testListener{}
-	b.addListener(&l)
+	b, l := NewCmdBuff('>'), testListener{}
+	b.AddListener(&l)
 
-	b.setActive(true)
+	b.SetActive(true)
 	assert.Equal(t, 1, l.act)
 	assert.Equal(t, 0, l.inact)
 	assert.True(t, b.active)
 }
 
 func TestCmdBuffDeactivate(t *testing.T) {
-	b, l := newCmdBuff('>'), testListener{}
-	b.addListener(&l)
+	b, l := NewCmdBuff('>'), testListener{}
+	b.AddListener(&l)
 
-	b.setActive(false)
+	b.SetActive(false)
 	assert.Equal(t, 0, l.act)
 	assert.Equal(t, 1, l.inact)
 	assert.False(t, b.active)
 }
 
 func TestCmdBuffChanged(t *testing.T) {
-	b, l := newCmdBuff('>'), testListener{}
-	b.addListener(&l)
+	b, l := NewCmdBuff('>'), testListener{}
+	b.AddListener(&l)
 
-	b.add('b')
+	b.Add('b')
 	assert.Equal(t, 0, l.act)
 	assert.Equal(t, 0, l.inact)
 	assert.Equal(t, "b", l.text)
 	assert.Equal(t, "b", b.String())
 
-	b.del()
+	b.Delete()
 	assert.Equal(t, 0, l.act)
 	assert.Equal(t, 0, l.inact)
 	assert.Equal(t, "", l.text)
 	assert.Equal(t, "", b.String())
 
-	b.add('c')
-	b.clear()
+	b.Add('c')
+	b.Clear()
 	assert.Equal(t, 0, l.act)
 	assert.Equal(t, 0, l.inact)
 	assert.Equal(t, "", l.text)
 	assert.Equal(t, "", b.String())
 
-	b.add('c')
-	b.reset()
+	b.Add('c')
+	b.Reset()
 	assert.Equal(t, 0, l.act)
 	assert.Equal(t, 1, l.inact)
 	assert.Equal(t, "", l.text)
 	assert.Equal(t, "", b.String())
-	assert.True(t, b.empty())
+	assert.True(t, b.Empty())
 }
 
 func TestCmdBuffAdd(t *testing.T) {
-	b := newCmdBuff('>')
+	b := NewCmdBuff('>')
 
 	uu := []struct {
 		runes []rune
@@ -90,15 +90,15 @@ func TestCmdBuffAdd(t *testing.T) {
 
 	for _, u := range uu {
 		for _, r := range u.runes {
-			b.add(r)
+			b.Add(r)
 		}
 		assert.Equal(t, u.cmd, b.String())
-		b.reset()
+		b.Reset()
 	}
 }
 
 func TestCmdBuffDel(t *testing.T) {
-	b := newCmdBuff('>')
+	b := NewCmdBuff('>')
 
 	uu := []struct {
 		runes []rune
@@ -111,16 +111,16 @@ func TestCmdBuffDel(t *testing.T) {
 
 	for _, u := range uu {
 		for _, r := range u.runes {
-			b.add(r)
+			b.Add(r)
 		}
-		b.del()
+		b.Delete()
 		assert.Equal(t, u.cmd, b.String())
-		b.reset()
+		b.Reset()
 	}
 }
 
 func TestCmdBuffEmpty(t *testing.T) {
-	b := newCmdBuff('>')
+	b := NewCmdBuff('>')
 
 	uu := []struct {
 		runes []rune
@@ -133,9 +133,9 @@ func TestCmdBuffEmpty(t *testing.T) {
 
 	for _, u := range uu {
 		for _, r := range u.runes {
-			b.add(r)
+			b.Add(r)
 		}
-		assert.Equal(t, u.empty, b.empty())
-		b.reset()
+		assert.Equal(t, u.empty, b.Empty())
+		b.Reset()
 	}
 }

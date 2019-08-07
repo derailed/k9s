@@ -11,6 +11,6 @@ func TestNewApp(t *testing.T) {
 	a := NewApp(config.NewConfig(ks{}))
 	a.Init("blee", 10)
 
-	assert.Equal(t, 10, len(a.actions))
-	assert.Equal(t, false, a.hasSkins)
+	assert.Equal(t, 10, len(a.GetActions()))
+	assert.Equal(t, false, a.HasSkins)
 }

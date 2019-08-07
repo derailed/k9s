@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -24,7 +25,7 @@ type (
 	policyView struct {
 		*tableView
 
-		current     igniter
+		current     ui.Igniter
 		cancel      context.CancelFunc
 		subjectKind string
 		subjectName string
@@ -37,8 +38,8 @@ func newPolicyView(app *appView, subject, name string) *policyView {
 	{
 		v.subjectKind, v.subjectName = mapSubject(subject), name
 		v.tableView = newTableView(app, v.getTitle())
-		v.colorerFn = rbacColorer
-		v.current = app.content.GetPrimitive("main").(igniter)
+		v.SetColorerFn(rbacColorer)
+		v.current = app.Frame().GetPrimitive("main").(ui.Igniter)
 		v.bindKeys()
 	}
 
@@ -46,8 +47,8 @@ func newPolicyView(app *appView, subject, name string) *policyView {
 }
 
 // Init the view.
-func (v *policyView) init(c context.Context, ns string) {
-	v.sortCol = sortColumn{1, len(rbacHeader), false}
+func (v *policyView) Init(c context.Context, ns string) {
+	v.SetSortCol(len(rbacHeader), false)
 
 	ctx, cancel := context.WithCancel(c)
 	v.cancel = cancel
@@ -56,7 +57,7 @@ func (v *policyView) init(c context.Context, ns string) {
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(time.Duration(v.app.config.K9s.GetRefreshRate()) * time.Second):
+			case <-time.After(time.Duration(v.app.Config.K9s.GetRefreshRate()) * time.Second):
 				v.refresh()
 				v.app.Draw()
 			}
@@ -68,16 +69,17 @@ func (v *policyView) init(c context.Context, ns string) {
 }
 
 func (v *policyView) bindKeys() {
-	delete(v.actions, KeyShiftA)
+	v.RmAction(ui.KeyShiftA)
 
-	v.actions[tcell.KeyEscape] = newKeyAction("Reset", v.resetCmd, false)
-	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd, false)
-	v.actions[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
-
-	v.actions[KeyShiftS] = newKeyAction("Sort Namespace", v.sortColCmd(0), true)
-	v.actions[KeyShiftN] = newKeyAction("Sort Name", v.sortColCmd(1), true)
-	v.actions[KeyShiftO] = newKeyAction("Sort Group", v.sortColCmd(2), true)
-	v.actions[KeyShiftB] = newKeyAction("Sort Binding", v.sortColCmd(3), true)
+	v.SetActions(ui.KeyActions{
+		tcell.KeyEscape: ui.NewKeyAction("Reset", v.resetCmd, false),
+		ui.KeySlash:     ui.NewKeyAction("Filter", v.ActivateCmd, false),
+		ui.KeyP:         ui.NewKeyAction("Previous", v.app.prevCmd, false),
+		ui.KeyShiftS:    ui.NewKeyAction("Sort Namespace", v.SortColCmd(0), true),
+		ui.KeyShiftN:    ui.NewKeyAction("Sort Name", v.SortColCmd(1), true),
+		ui.KeyShiftO:    ui.NewKeyAction("Sort Group", v.SortColCmd(2), true),
+		ui.KeyShiftB:    ui.NewKeyAction("Sort Binding", v.SortColCmd(3), true),
+	})
 }
 
 func (v *policyView) getTitle() string {
@@ -89,12 +91,12 @@ func (v *policyView) refresh() {
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to reconcile for %s:%s", v.subjectKind, v.subjectName)
 	}
-	v.update(data)
+	v.Update(data)
 }
 
 func (v *policyView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.cmdBuff.empty() {
-		v.cmdBuff.reset()
+	if !v.Cmd().Empty() {
+		v.Cmd().Reset()
 		return nil
 	}
 
@@ -106,8 +108,8 @@ func (v *policyView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.cancel()
 	}
 
-	if v.cmdBuff.isActive() {
-		v.cmdBuff.reset()
+	if v.Cmd().IsActive() {
+		v.Cmd().Reset()
 		return nil
 	}
 
@@ -116,8 +118,8 @@ func (v *policyView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *policyView) hints() hints {
-	return v.actions.toHints()
+func (v *policyView) Hints() ui.Hints {
+	return v.Hints()
 }
 
 func (v *policyView) reconcile() (resource.TableData, error) {
@@ -164,7 +166,7 @@ func (v *policyView) clusterPolicies() (resource.RowEvents, []error) {
 	var errs []error
 	evts := make(resource.RowEvents)
 
-	crbs, err := v.app.conn().DialOrDie().RbacV1().ClusterRoleBindings().List(metav1.ListOptions{})
+	crbs, err := v.app.Conn().DialOrDie().RbacV1().ClusterRoleBindings().List(metav1.ListOptions{})
 	if err != nil {
 		return evts, errs
 	}
@@ -179,7 +181,7 @@ func (v *policyView) clusterPolicies() (resource.RowEvents, []error) {
 	}
 
 	for _, r := range rr {
-		role, err := v.app.conn().DialOrDie().RbacV1().ClusterRoles().Get(r, metav1.GetOptions{})
+		role, err := v.app.Conn().DialOrDie().RbacV1().ClusterRoles().Get(r, metav1.GetOptions{})
 		if err != nil {
 			errs = append(errs, err)
 		}
@@ -194,7 +196,7 @@ func (v *policyView) clusterPolicies() (resource.RowEvents, []error) {
 func (v policyView) loadRoleBindings() ([]namespacedRole, error) {
 	var rr []namespacedRole
 
-	dial := v.app.conn().DialOrDie().RbacV1()
+	dial := v.app.Conn().DialOrDie().RbacV1()
 	rbs, err := dial.RoleBindings("").List(metav1.ListOptions{})
 	if err != nil {
 		return rr, err
@@ -213,7 +215,7 @@ func (v policyView) loadRoleBindings() ([]namespacedRole, error) {
 
 func (v *policyView) loadRoles(errs []error, rr []namespacedRole) (resource.RowEvents, []error) {
 	var (
-		dial = v.app.conn().DialOrDie().RbacV1()
+		dial = v.app.Conn().DialOrDie().RbacV1()
 		evts = make(resource.RowEvents)
 	)
 	for _, r := range rr {

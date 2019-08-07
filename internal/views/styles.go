@@ -1,6 +1,7 @@
 package views
 
 import (
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 )
@@ -22,7 +23,7 @@ func stylesFor(app *appView, res string, col int) styles {
 
 func podStyles(app *appView, col int) styles {
 	st := styles{
-		color: stdColor,
+		color: ui.StdColor,
 		attrs: tcell.AttrReverse,
 		align: tview.AlignLeft,
 	}

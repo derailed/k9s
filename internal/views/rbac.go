@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -70,7 +71,7 @@ type (
 		*tableView
 
 		app      *appView
-		current  igniter
+		current  ui.Igniter
 		cancel   context.CancelFunc
 		roleType roleKind
 		roleName string
@@ -82,17 +83,17 @@ func newRBACView(app *appView, ns, name string, kind roleKind) *rbacView {
 	v := rbacView{app: app}
 	v.roleName, v.roleType = name, kind
 	v.tableView = newTableView(app, v.getTitle())
-	v.currentNS = ns
-	v.colorerFn = rbacColorer
-	v.current = app.content.GetPrimitive("main").(igniter)
+	v.SetActiveNS(ns)
+	v.SetColorerFn(rbacColorer)
+	v.current = app.Frame().GetPrimitive("main").(ui.Igniter)
 	v.bindKeys()
 
 	return &v
 }
 
 // Init the view.
-func (v *rbacView) init(c context.Context, ns string) {
-	v.sortCol = sortColumn{1, len(rbacHeader), true}
+func (v *rbacView) Init(c context.Context, ns string) {
+	v.SetSortCol(len(rbacHeader), true)
 
 	ctx, cancel := context.WithCancel(c)
 	v.cancel = cancel
@@ -101,7 +102,7 @@ func (v *rbacView) init(c context.Context, ns string) {
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(time.Duration(v.app.config.K9s.GetRefreshRate()) * time.Second):
+			case <-time.After(time.Duration(v.app.Config.K9s.GetRefreshRate()) * time.Second):
 				v.app.QueueUpdateDraw(func() {
 					v.refresh()
 				})
@@ -110,38 +111,40 @@ func (v *rbacView) init(c context.Context, ns string) {
 	}(ctx)
 
 	v.refresh()
-	v.app.setHints(v.hints())
+	v.app.SetHints(v.Hints())
 	v.app.SetFocus(v)
 }
 
 func (v *rbacView) bindKeys() {
-	delete(v.actions, KeyShiftA)
+	v.RmAction(ui.KeyShiftA)
 
-	v.actions[tcell.KeyEscape] = newKeyAction("Reset", v.resetCmd, false)
-	v.actions[KeySlash] = newKeyAction("Filter", v.activateCmd, false)
-	v.actions[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
-	v.actions[KeyShiftO] = newKeyAction("Sort APIGroup", v.sortColCmd(1), true)
+	v.SetActions(ui.KeyActions{
+		tcell.KeyEscape: ui.NewKeyAction("Reset", v.resetCmd, false),
+		ui.KeySlash:     ui.NewKeyAction("Filter", v.ActivateCmd, false),
+		ui.KeyP:         ui.NewKeyAction("Previous", v.app.prevCmd, false),
+		ui.KeyShiftO:    ui.NewKeyAction("Sort APIGroup", v.SortColCmd(1), true),
+	})
 }
 
 func (v *rbacView) getTitle() string {
-	return skinTitle(fmt.Sprintf(rbacTitleFmt, rbacTitle, v.roleName), v.app.styles.Frame())
+	return skinTitle(fmt.Sprintf(rbacTitleFmt, rbacTitle, v.roleName), v.app.Styles.Frame())
 }
 
-func (v *rbacView) hints() hints {
-	return v.actions.toHints()
+func (v *rbacView) Hints() ui.Hints {
+	return v.Hints()
 }
 
 func (v *rbacView) refresh() {
-	data, err := v.reconcile(v.currentNS, v.roleName, v.roleType)
+	data, err := v.reconcile(v.ActiveNS(), v.roleName, v.roleType)
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to reconcile for %s:%d", v.roleName, v.roleType)
 	}
-	v.update(data)
+	v.Update(data)
 }
 
 func (v *rbacView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.cmdBuff.empty() {
-		v.cmdBuff.reset()
+	if !v.Cmd().Empty() {
+		v.Cmd().Reset()
 		return nil
 	}
 
@@ -153,8 +156,8 @@ func (v *rbacView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.cancel()
 	}
 
-	if v.cmdBuff.isActive() {
-		v.cmdBuff.reset()
+	if v.Cmd().IsActive() {
+		v.Cmd().Reset()
 		return nil
 	}
 
@@ -209,7 +212,7 @@ func (v *rbacView) rowEvents(ns, name string, kind roleKind) (resource.RowEvents
 }
 
 func (v *rbacView) clusterPolicies(name string) (resource.RowEvents, error) {
-	cr, err := v.app.conn().DialOrDie().RbacV1().ClusterRoles().Get(name, metav1.GetOptions{})
+	cr, err := v.app.Conn().DialOrDie().RbacV1().ClusterRoles().Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -219,7 +222,7 @@ func (v *rbacView) clusterPolicies(name string) (resource.RowEvents, error) {
 
 func (v *rbacView) namespacedPolicies(path string) (resource.RowEvents, error) {
 	ns, na := namespaced(path)
-	cr, err := v.app.conn().DialOrDie().RbacV1().Roles(ns).Get(na, metav1.GetOptions{})
+	cr, err := v.app.Conn().DialOrDie().RbacV1().Roles(ns).Get(na, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}

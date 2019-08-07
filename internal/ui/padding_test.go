@@ -1,4 +1,4 @@
-package views
+package ui
 
 import (
 	"testing"
@@ -11,7 +11,7 @@ func TestMaxColumn(t *testing.T) {
 	uu := []struct {
 		t resource.TableData
 		s int
-		e maxyPad
+		e MaxyPad
 	}{
 		{
 			resource.TableData{
@@ -22,7 +22,7 @@ func TestMaxColumn(t *testing.T) {
 				},
 			},
 			0,
-			maxyPad{6, 6},
+			MaxyPad{6, 6},
 		},
 		{
 			resource.TableData{
@@ -33,7 +33,7 @@ func TestMaxColumn(t *testing.T) {
 				},
 			},
 			1,
-			maxyPad{6, 6},
+			MaxyPad{6, 6},
 		},
 		{
 			resource.TableData{
@@ -44,13 +44,13 @@ func TestMaxColumn(t *testing.T) {
 				},
 			},
 			0,
-			maxyPad{32, 6},
+			MaxyPad{32, 6},
 		},
 	}
 
 	for _, u := range uu {
-		pads := make(maxyPad, len(u.t.Header))
-		computeMaxColumns(pads, u.s, u.t)
+		pads := make(MaxyPad, len(u.t.Header))
+		ComputeMaxColumns(pads, u.s, u.t)
 		assert.Equal(t, u.e, pads)
 	}
 }
@@ -66,7 +66,7 @@ func TestIsASCII(t *testing.T) {
 	}
 
 	for _, u := range uu {
-		assert.Equal(t, u.e, isASCII(u.s))
+		assert.Equal(t, u.e, IsASCII(u.s))
 	}
 }
 
@@ -84,7 +84,7 @@ func TestPad(t *testing.T) {
 	}
 
 	for _, u := range uu {
-		assert.Equal(t, u.e, pad(u.s, u.l))
+		assert.Equal(t, u.e, Pad(u.s, u.l))
 	}
 }
 
@@ -97,11 +97,11 @@ func BenchmarkMaxColumn(b *testing.B) {
 		},
 	}
 
-	pads := make(maxyPad, len(table.Header))
+	pads := make(MaxyPad, len(table.Header))
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		computeMaxColumns(pads, 0, table)
+		ComputeMaxColumns(pads, 0, table)
 	}
 }

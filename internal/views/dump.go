@@ -11,6 +11,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/fsnotify/fsnotify"
 	"github.com/gdamore/tcell"
@@ -33,13 +34,13 @@ type dumpView struct {
 	cancel       context.CancelFunc
 	selectedItem string
 	selectedRow  int
-	actions      keyActions
+	actions      ui.KeyActions
 }
 
 func newDumpView(_ string, app *appView, _ resource.List) resourceViewer {
 	v := dumpView{
 		Pages:   tview.NewPages(),
-		actions: make(keyActions),
+		actions: make(ui.KeyActions),
 		app:     app,
 	}
 
@@ -48,8 +49,8 @@ func newDumpView(_ string, app *appView, _ resource.List) resourceViewer {
 		tv.SetSelectionChangedFunc(v.selChanged)
 		tv.SetBorderFocusColor(tcell.ColorSteelBlue)
 		tv.SetSelectedStyle(tcell.ColorWhite, tcell.ColorRoyalBlue, tcell.AttrNone)
-		tv.colorerFn = dumpColorer
-		tv.currentNS = ""
+		tv.SetColorerFn(dumpColorer)
+		tv.SetActiveNS("")
 	}
 	v.AddPage("table", tv, true, true)
 
@@ -60,41 +61,41 @@ func newDumpView(_ string, app *appView, _ resource.List) resourceViewer {
 	return &v
 }
 
-func (v *dumpView) setEnterFn(enterFn)          {}
-func (v *dumpView) setColorerFn(colorerFn)      {}
-func (v *dumpView) setDecorateFn(decorateFn)    {}
-func (v *dumpView) setExtraActionsFn(actionsFn) {}
+func (v *dumpView) setEnterFn(enterFn)               {}
+func (v *dumpView) setColorerFn(ui.ColorerFunc)      {}
+func (v *dumpView) setDecorateFn(decorateFn)         {}
+func (v *dumpView) setExtraActionsFn(ui.ActionsFunc) {}
 
 // Init the view.
-func (v *dumpView) init(ctx context.Context, _ string) {
+func (v *dumpView) Init(ctx context.Context, _ string) {
 	if err := v.watchDumpDir(ctx); err != nil {
-		v.app.flash().errf("Unable to watch dumpmarks directory %s", err)
+		v.app.Flash().Errf("Unable to watch dumpmarks directory %s", err)
 	}
 
 	tv := v.getTV()
 	v.refresh()
-	tv.sortCol.index, tv.sortCol.asc = tv.nameColIndex()+1, true
-	tv.refresh()
+	tv.SetSortCol(tv.NameColIndex()+1, true)
+	tv.Refresh()
 	tv.Select(1, 0)
 	v.app.SetFocus(tv)
 }
 
 func (v *dumpView) refresh() {
 	tv := v.getTV()
-	tv.update(v.hydrate())
-	tv.resetTitle()
+	tv.Update(v.hydrate())
+	tv.UpdateTitle()
 	v.selChanged(v.selectedRow, 0)
 }
 
 func (v *dumpView) registerActions() {
-	v.actions[KeyP] = newKeyAction("Previous", v.app.prevCmd, false)
-	v.actions[tcell.KeyEnter] = newKeyAction("Enter", v.enterCmd, true)
-	v.actions[tcell.KeyCtrlD] = newKeyAction("Delete", v.deleteCmd, true)
-	v.actions[tcell.KeyCtrlS] = newKeyAction("Save", noopCmd, false)
+	v.actions[ui.KeyP] = ui.NewKeyAction("Previous", v.app.prevCmd, false)
+	v.actions[tcell.KeyEnter] = ui.NewKeyAction("Enter", v.enterCmd, true)
+	v.actions[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", v.deleteCmd, true)
+	v.actions[tcell.KeyCtrlS] = ui.NewKeyAction("Save", noopCmd, false)
 
 	vu := v.getTV()
-	vu.setActions(v.actions)
-	v.app.setHints(vu.hints())
+	vu.SetActions(v.actions)
+	v.app.SetHints(vu.Hints())
 }
 
 func (v *dumpView) getTitle() string {
@@ -109,20 +110,20 @@ func (v *dumpView) selChanged(r, c int) {
 		return
 	}
 	v.selectedRow = r
-	v.selectedItem = trimCell(tv, r, 0)
+	v.selectedItem = ui.TrimCell(tv.Table, r, 0)
 }
 
 func (v *dumpView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		tv := v.getTV()
-		tv.sortCol.index, tv.sortCol.asc = tv.nameColIndex()+col, asc
-		tv.refresh()
+		tv.SetSortCol(tv.NameColIndex()+col, asc)
+		tv.Refresh()
 		return nil
 	}
 }
 
 func (v *dumpView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if v.getTV().cmdBuff.isActive() {
+	if v.getTV().Cmd().IsActive() {
 		return v.getTV().filterCmd(evt)
 	}
 	sel := v.selectedItem
@@ -130,9 +131,9 @@ func (v *dumpView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	dir := filepath.Join(config.K9sDumpDir, v.app.config.K9s.CurrentCluster)
+	dir := filepath.Join(config.K9sDumpDir, v.app.Config.K9s.CurrentCluster)
 	if !edit(true, v.app, filepath.Join(dir, sel)) {
-		v.app.flash().err(errors.New("Failed to launch editor"))
+		v.app.Flash().Err(errors.New("Failed to launch editor"))
 	}
 
 	return nil
@@ -144,14 +145,14 @@ func (v *dumpView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	dir := filepath.Join(config.K9sDumpDir, v.app.config.K9s.CurrentCluster)
+	dir := filepath.Join(config.K9sDumpDir, v.app.Config.K9s.CurrentCluster)
 	showModal(v.Pages, fmt.Sprintf("Delete screen dump `%s?", sel), "table", func() {
 		if err := os.Remove(filepath.Join(dir, sel)); err != nil {
-			v.app.flash().errf("Unable to delete file %s", err)
+			v.app.Flash().Errf("Unable to delete file %s", err)
 			return
 		}
 		v.refresh()
-		v.app.flash().infof("ScreenDump file %s deleted!", sel)
+		v.app.Flash().Infof("ScreenDump file %s deleted!", sel)
 	})
 
 	return nil
@@ -165,8 +166,8 @@ func (v *dumpView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *dumpView) hints() hints {
-	return v.CurrentPage().Item.(hinter).hints()
+func (v *dumpView) hints() ui.Hints {
+	return v.CurrentPage().Item.(ui.Hinter).Hints()
 }
 
 func (v *dumpView) hydrate() resource.TableData {
@@ -176,10 +177,10 @@ func (v *dumpView) hydrate() resource.TableData {
 		Namespace: resource.NotNamespaced,
 	}
 
-	dir := filepath.Join(config.K9sDumpDir, v.app.config.K9s.CurrentCluster)
+	dir := filepath.Join(config.K9sDumpDir, v.app.Config.K9s.CurrentCluster)
 	ff, err := ioutil.ReadDir(dir)
 	if err != nil {
-		v.app.flash().errf("Unable to read dump directory %s", err)
+		v.app.Flash().Errf("Unable to read dump directory %s", err)
 	}
 
 	for _, f := range ff {
@@ -223,7 +224,7 @@ func (v *dumpView) watchDumpDir(ctx context.Context) error {
 		}
 	}()
 
-	return w.Add(filepath.Join(config.K9sDumpDir, v.app.config.K9s.CurrentCluster))
+	return w.Add(filepath.Join(config.K9sDumpDir, v.app.Config.K9s.CurrentCluster))
 }
 
 func (v *dumpView) getTV() *tableView {

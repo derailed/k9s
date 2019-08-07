@@ -2,6 +2,7 @@ package views
 
 import (
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 )
 
@@ -24,16 +25,16 @@ func newLogResourceView(ns string, app *appView, list resource.List) *logResourc
 	return &v
 }
 
-func (v *logResourceView) extraActions(aa keyActions) {
-	aa[KeyL] = newKeyAction("Logs", v.logsCmd, true)
-	aa[KeyShiftL] = newKeyAction("Logs Previous", v.prevLogsCmd, true)
+func (v *logResourceView) extraActions(aa ui.KeyActions) {
+	aa[ui.KeyL] = ui.NewKeyAction("Logs", v.logsCmd, true)
+	aa[ui.KeyShiftL] = ui.NewKeyAction("Logs Previous", v.prevLogsCmd, true)
 }
 
 func (v *logResourceView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		t := v.masterPage()
-		t.sortCol.index, t.sortCol.asc = t.nameColIndex()+col, asc
-		t.refresh()
+		t.SetSortCol(t.NameColIndex()+col, asc)
+		t.Refresh()
 
 		return nil
 	}
@@ -78,7 +79,7 @@ func (v *logResourceView) showLogs(prev bool) {
 
 func (v *logResourceView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	// Reset namespace to what it was
-	v.app.config.SetActiveNamespace(v.list.GetNamespace())
+	v.app.Config.SetActiveNamespace(v.list.GetNamespace())
 	v.app.inject(v)
 
 	return nil
