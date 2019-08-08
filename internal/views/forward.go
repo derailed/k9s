@@ -63,7 +63,7 @@ func (v *forwardView) Init(ctx context.Context, _ string) {
 
 	tv := v.getTV()
 	v.refresh()
-	tv.SetSortCol(tv.NameColIndex()+6, true)
+	tv.SetSortCol(tv.NameColIndex()+6, 0, true)
 	tv.Refresh()
 	tv.Select(1, 0)
 	v.app.SetFocus(tv)
@@ -100,7 +100,7 @@ func (v *forwardView) registerActions() {
 		tcell.KeyCtrlB: ui.NewKeyAction("Bench", v.benchCmd, true),
 		ui.KeyAltB:     ui.NewKeyAction("Bench Stop", v.benchStopCmd, true),
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", v.deleteCmd, true),
-		ui.KeySlash:    ui.NewKeyAction("Filter", tv.ActivateCmd, false),
+		ui.KeySlash:    ui.NewKeyAction("Filter", tv.activateCmd, false),
 		ui.KeyP:        ui.NewKeyAction("Previous", v.app.prevCmd, false),
 		ui.KeyShiftP:   ui.NewKeyAction("Sort Ports", v.sortColCmd(2, true), true),
 		ui.KeyShiftU:   ui.NewKeyAction("Sort URL", v.sortColCmd(4, true), true),
@@ -114,7 +114,7 @@ func (v *forwardView) getTitle() string {
 func (v *forwardView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		tv := v.getTV()
-		tv.SetSortCol(tv.NameColIndex()+col, asc)
+		tv.SetSortCol(tv.NameColIndex()+col, 0, asc)
 		v.refresh()
 
 		return nil

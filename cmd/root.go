@@ -96,7 +96,7 @@ func loadConfiguration() *config.Config {
 	}
 
 	if err := k9sCfg.Refine(k8sFlags); err != nil {
-		log.Panic().Err(err).Msg("Unable to locate K8s cluster configuration")
+		log.Panic().Err(err).Msg("Unable to locate kubeconfig file")
 	}
 	k9sCfg.SetConnection(k8s.InitConnectionOrDie(k8sCfg, log.Logger))
 

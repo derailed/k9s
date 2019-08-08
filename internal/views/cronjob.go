@@ -18,15 +18,16 @@ func newCronJobView(t string, app *appView, list resource.List) resourceViewer {
 }
 
 func (v *cronJobView) trigger(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
+	if !v.masterPage().RowSelected() {
 		return evt
 	}
 
-	if err := v.list.Resource().(resource.Runner).Run(v.selectedItem); err != nil {
+	sel := v.masterPage().GetSelectedItem()
+	if err := v.list.Resource().(resource.Runner).Run(sel); err != nil {
 		v.app.Flash().Errf("Cronjob trigger failed %v", err)
 		return evt
 	}
-	v.app.Flash().Infof("Triggering %s %s", v.list.GetName(), v.selectedItem)
+	v.app.Flash().Infof("Triggering %s %s", v.list.GetName(), sel)
 
 	return nil
 }

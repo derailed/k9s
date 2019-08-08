@@ -37,7 +37,7 @@ func (v *svcView) getList() resource.List {
 }
 
 func (v *svcView) getSelection() string {
-	return v.selectedItem
+	return v.masterPage().GetSelectedItem()
 }
 
 func (v *svcView) extraActions(aa ui.KeyActions) {
@@ -50,7 +50,7 @@ func (v *svcView) extraActions(aa ui.KeyActions) {
 func (v *svcView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		t := v.masterPage()
-		t.SetSortCol(t.NameColIndex()+col, asc)
+		t.SetSortCol(t.NameColIndex()+col, 0, asc)
 		t.Refresh()
 
 		return nil
@@ -72,7 +72,7 @@ func (v *svcView) showPods(app *appView, ns, res, sel string) {
 }
 
 func (v *svcView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
+	if !v.masterPage().RowSelected() {
 		return evt
 	}
 
@@ -134,7 +134,7 @@ func (v *svcView) reloadBenchCfg() error {
 }
 
 func (v *svcView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() || v.bench != nil {
+	if !v.masterPage().RowSelected() || v.bench != nil {
 		return evt
 	}
 
@@ -143,7 +143,7 @@ func (v *svcView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	sel := v.getSelectedItem()
+	sel := v.getSelection()
 	cfg, ok := v.app.Bench.Benchmarks.Services[sel]
 	if !ok {
 		v.app.Flash().Errf("No bench config found for service %s", sel)

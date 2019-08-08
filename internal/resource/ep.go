@@ -97,12 +97,10 @@ func (r *Endpoints) toEPs(ss []v1.EndpointSubset) string {
 	for _, s := range ss {
 		pp := make([]string, len(s.Ports))
 		portsToStrs(s.Ports, pp)
-		log.Debug().Msgf("Ports %#v", pp)
 		a := make([]string, len(s.Addresses))
 		proccessIPs(a, pp, s.Addresses)
 		aa = append(aa, strings.Join(a, ","))
 	}
-	log.Debug().Msgf("AA %#v", aa)
 	return strings.Join(aa, ",")
 }
 

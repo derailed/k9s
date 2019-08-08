@@ -80,8 +80,11 @@ type (
 )
 
 func newRBACView(app *appView, ns, name string, kind roleKind) *rbacView {
-	v := rbacView{app: app}
-	v.roleName, v.roleType = name, kind
+	v := rbacView{
+		app:      app,
+		roleName: name,
+		roleType: kind,
+	}
 	v.tableView = newTableView(app, v.getTitle())
 	v.SetActiveNS(ns)
 	v.SetColorerFn(rbacColorer)
@@ -93,7 +96,7 @@ func newRBACView(app *appView, ns, name string, kind roleKind) *rbacView {
 
 // Init the view.
 func (v *rbacView) Init(c context.Context, ns string) {
-	v.SetSortCol(len(rbacHeader), true)
+	v.SetSortCol(1, len(rbacHeader), true)
 
 	ctx, cancel := context.WithCancel(c)
 	v.cancel = cancel
@@ -120,7 +123,7 @@ func (v *rbacView) bindKeys() {
 
 	v.SetActions(ui.KeyActions{
 		tcell.KeyEscape: ui.NewKeyAction("Reset", v.resetCmd, false),
-		ui.KeySlash:     ui.NewKeyAction("Filter", v.ActivateCmd, false),
+		ui.KeySlash:     ui.NewKeyAction("Filter", v.activateCmd, false),
 		ui.KeyP:         ui.NewKeyAction("Previous", v.app.prevCmd, false),
 		ui.KeyShiftO:    ui.NewKeyAction("Sort APIGroup", v.SortColCmd(1), true),
 	})
@@ -128,10 +131,6 @@ func (v *rbacView) bindKeys() {
 
 func (v *rbacView) getTitle() string {
 	return skinTitle(fmt.Sprintf(rbacTitleFmt, rbacTitle, v.roleName), v.app.Styles.Frame())
-}
-
-func (v *rbacView) Hints() ui.Hints {
-	return v.Hints()
 }
 
 func (v *rbacView) refresh() {

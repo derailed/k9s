@@ -30,28 +30,21 @@ var (
 type dumpView struct {
 	*tview.Pages
 
-	app          *appView
-	cancel       context.CancelFunc
-	selectedItem string
-	selectedRow  int
-	actions      ui.KeyActions
+	app    *appView
+	cancel context.CancelFunc
 }
 
 func newDumpView(_ string, app *appView, _ resource.List) resourceViewer {
 	v := dumpView{
-		Pages:   tview.NewPages(),
-		actions: make(ui.KeyActions),
-		app:     app,
+		Pages: tview.NewPages(),
+		app:   app,
 	}
 
 	tv := newTableView(app, dumpTitle)
-	{
-		tv.SetSelectionChangedFunc(v.selChanged)
-		tv.SetBorderFocusColor(tcell.ColorSteelBlue)
-		tv.SetSelectedStyle(tcell.ColorWhite, tcell.ColorRoyalBlue, tcell.AttrNone)
-		tv.SetColorerFn(dumpColorer)
-		tv.SetActiveNS("")
-	}
+	tv.SetBorderFocusColor(tcell.ColorSteelBlue)
+	tv.SetSelectedStyle(tcell.ColorWhite, tcell.ColorRoyalBlue, tcell.AttrNone)
+	tv.SetColorerFn(dumpColorer)
+	tv.SetActiveNS("")
 	v.AddPage("table", tv, true, true)
 
 	details := newDetailsView(app, v.backCmd)
@@ -74,9 +67,9 @@ func (v *dumpView) Init(ctx context.Context, _ string) {
 
 	tv := v.getTV()
 	v.refresh()
-	tv.SetSortCol(tv.NameColIndex()+1, true)
+	tv.SetSortCol(tv.NameColIndex()+1, 0, true)
 	tv.Refresh()
-	tv.Select(1, 0)
+	tv.SelectRow(1, true)
 	v.app.SetFocus(tv)
 }
 
@@ -84,49 +77,41 @@ func (v *dumpView) refresh() {
 	tv := v.getTV()
 	tv.Update(v.hydrate())
 	tv.UpdateTitle()
-	v.selChanged(v.selectedRow, 0)
 }
 
 func (v *dumpView) registerActions() {
-	v.actions[ui.KeyP] = ui.NewKeyAction("Previous", v.app.prevCmd, false)
-	v.actions[tcell.KeyEnter] = ui.NewKeyAction("Enter", v.enterCmd, true)
-	v.actions[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", v.deleteCmd, true)
-	v.actions[tcell.KeyCtrlS] = ui.NewKeyAction("Save", noopCmd, false)
+	aa := ui.KeyActions{
+		ui.KeyP:        ui.NewKeyAction("Previous", v.app.prevCmd, false),
+		tcell.KeyEnter: ui.NewKeyAction("Enter", v.enterCmd, true),
+		tcell.KeyCtrlD: ui.NewKeyAction("Delete", v.deleteCmd, true),
+		tcell.KeyCtrlS: ui.NewKeyAction("Save", noopCmd, false),
+	}
 
-	vu := v.getTV()
-	vu.SetActions(v.actions)
-	v.app.SetHints(vu.Hints())
+	tv := v.getTV()
+	tv.SetActions(aa)
+	v.app.SetHints(tv.Hints())
 }
 
 func (v *dumpView) getTitle() string {
 	return dumpTitle
 }
 
-func (v *dumpView) selChanged(r, c int) {
-	log.Debug().Msgf("Selection changed %d:%c", r, c)
-	tv := v.getTV()
-	if r == 0 || tv.GetCell(r, 0) == nil {
-		v.selectedItem = ""
-		return
-	}
-	v.selectedRow = r
-	v.selectedItem = ui.TrimCell(tv.Table, r, 0)
-}
-
 func (v *dumpView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		tv := v.getTV()
-		tv.SetSortCol(tv.NameColIndex()+col, asc)
+		tv.SetSortCol(tv.NameColIndex()+col, 0, asc)
 		tv.Refresh()
 		return nil
 	}
 }
 
 func (v *dumpView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if v.getTV().Cmd().IsActive() {
-		return v.getTV().filterCmd(evt)
+	log.Debug().Msg("Dump enter!")
+	tv := v.getTV()
+	if tv.Cmd().IsActive() {
+		return tv.filterCmd(evt)
 	}
-	sel := v.selectedItem
+	sel := tv.GetSelectedItem()
 	if sel == "" {
 		return nil
 	}
@@ -140,7 +125,7 @@ func (v *dumpView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *dumpView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
-	sel := v.selectedItem
+	sel := v.getTV().GetSelectedItem()
 	if sel == "" {
 		return nil
 	}

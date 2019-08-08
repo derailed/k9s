@@ -40,7 +40,7 @@ func (v *replicaSetView) extraActions(aa ui.KeyActions) {
 func (v *replicaSetView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		t := v.masterPage()
-		t.SetSortCol(t.NameColIndex()+col, asc)
+		t.SetSortCol(t.NameColIndex()+col, 0, asc)
 		t.Refresh()
 
 		return nil
@@ -72,14 +72,15 @@ func (v *replicaSetView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *replicaSetView) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
+	if !v.masterPage().RowSelected() {
 		return evt
 	}
 
-	v.showModal(fmt.Sprintf("Rollback %s %s?", v.list.GetName(), v.selectedItem), func(_ int, button string) {
+	sel := v.masterPage().GetSelectedItem()
+	v.showModal(fmt.Sprintf("Rollback %s %s?", v.list.GetName(), sel), func(_ int, button string) {
 		if button == "OK" {
-			v.app.Flash().Infof("Rolling back %s %s", v.list.GetName(), v.selectedItem)
-			if res, err := rollback(v.app.Conn(), v.selectedItem); err != nil {
+			v.app.Flash().Infof("Rolling back %s %s", v.list.GetName(), sel)
+			if res, err := rollback(v.app.Conn(), sel); err != nil {
 				v.app.Flash().Err(err)
 			} else {
 				v.app.Flash().Info(res)

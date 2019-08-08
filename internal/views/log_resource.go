@@ -33,7 +33,7 @@ func (v *logResourceView) extraActions(aa ui.KeyActions) {
 func (v *logResourceView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		t := v.masterPage()
-		t.SetSortCol(t.NameColIndex()+col, asc)
+		t.SetSortCol(t.NameColIndex()+col, 0, asc)
 		t.Refresh()
 
 		return nil
@@ -50,7 +50,7 @@ func (v *logResourceView) getSelection() string {
 	if v.path != nil {
 		return *v.path
 	}
-	return v.selectedItem
+	return v.masterPage().GetSelectedItem()
 }
 
 func (v *logResourceView) prevLogsCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -64,7 +64,7 @@ func (v *logResourceView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *logResourceView) showLogs(prev bool) {
-	if !v.rowSelected() {
+	if !v.masterPage().RowSelected() {
 		return
 	}
 

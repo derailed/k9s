@@ -25,11 +25,11 @@ func (v *secretView) extraActions(aa ui.KeyActions) {
 }
 
 func (v *secretView) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
+	if !v.masterPage().RowSelected() {
 		return evt
 	}
 
-	sel := v.getSelectedItem()
+	sel := v.masterPage().GetSelectedItem()
 	ns, n := namespaced(sel)
 	sec, err := v.app.Conn().DialOrDie().CoreV1().Secrets(ns).Get(n, metav1.GetOptions{})
 	if err != nil {

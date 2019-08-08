@@ -60,7 +60,7 @@ func execute(clear bool, bin string, args ...string) error {
 	cmd := exec.Command(bin, args...)
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 	err := cmd.Run()
-	log.Debug().Msgf("Command return status %v", err)
+	log.Debug().Msgf("Command returned error?? %v", err)
 	select {
 	case <-ctx.Done():
 		return errors.New("canceled by operator")

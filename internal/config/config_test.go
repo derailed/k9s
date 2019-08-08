@@ -100,7 +100,7 @@ func TestConfigLoad(t *testing.T) {
 	assert.Equal(t, "minikube", cfg.K9s.CurrentCluster)
 	assert.NotNil(t, cfg.K9s.Clusters)
 	assert.Equal(t, 2, len(cfg.K9s.Clusters))
-	assert.Equal(t, 0, len(cfg.K9s.Aliases))
+	assert.Equal(t, 1, len(cfg.K9s.Plugins))
 
 	nn := []string{
 		"default",
@@ -293,6 +293,18 @@ var expectedConfig = `k9s:
         - kube-system
       view:
         active: ctx
+  plugins:
+    blah:
+      shortCut: shift-s
+      scopes:
+      - po
+      - dp
+      description: blee
+      command: duh
+      args:
+      - -n
+      - $NAMESPACE
+      - -boolean
 `
 
 var resetConfig = `k9s:
@@ -309,4 +321,16 @@ var resetConfig = `k9s:
         - default
       view:
         active: po
+  plugins:
+    blah:
+      shortCut: shift-s
+      scopes:
+      - po
+      - dp
+      description: blee
+      command: duh
+      args:
+      - -n
+      - $NAMESPACE
+      - -boolean
 `

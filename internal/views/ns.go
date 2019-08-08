@@ -7,7 +7,6 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -25,10 +24,9 @@ type namespaceView struct {
 func newNamespaceView(t string, app *appView, list resource.List) resourceViewer {
 	v := namespaceView{newResourceView(t, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
-	v.selectedFn = v.getSelectedItem
+	v.masterPage().SetSelectedFn(v.cleanser)
 	v.decorateFn = v.decorate
 	v.enterFn = v.switchNs
-	v.masterPage().cleanseFn = v.cleanser
 
 	return &v
 }
@@ -38,15 +36,15 @@ func (v *namespaceView) extraActions(aa ui.KeyActions) {
 }
 
 func (v *namespaceView) switchNs(app *appView, _, res, sel string) {
-	v.useNamespace(v.cleanser(sel))
+	v.useNamespace(sel)
 	app.gotoResource("po", true)
 }
 
 func (v *namespaceView) useNsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
+	if !v.masterPage().RowSelected() {
 		return evt
 	}
-	v.useNamespace(v.getSelectedItem())
+	v.useNamespace(v.masterPage().GetSelectedItem())
 
 	return nil
 }
@@ -60,12 +58,7 @@ func (v *namespaceView) useNamespace(ns string) {
 	v.app.Config.Save()
 }
 
-func (v *namespaceView) getSelectedItem() string {
-	return v.cleanser(v.selectedItem)
-}
-
 func (*namespaceView) cleanser(s string) string {
-	log.Debug().Msgf("SWITCHING: %s-%s", s, nsCleanser.ReplaceAllString(s, `$1`))
 	return nsCleanser.ReplaceAllString(s, `$1`)
 }
 

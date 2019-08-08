@@ -2,7 +2,7 @@ package ui
 
 import (
 	"fmt"
-	"regexp"
+	"path"
 	"strings"
 	"time"
 
@@ -10,26 +10,36 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
+	"github.com/ktr0731/go-fuzzyfinder/matching"
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
-// ColorerFunc represents a row colorer.
-type ColorerFunc func(ns string, evt *resource.RowEvent) tcell.Color
+type (
+	// ColorerFunc represents a row colorer.
+	ColorerFunc func(ns string, evt *resource.RowEvent) tcell.Color
+
+	// SelectedRowFunc a table selection callback.
+	SelectedRowFunc func(r, c int)
+)
 
 // Table represents tabular data.
 type Table struct {
 	*tview.Table
 
-	baseTitle string
-	data      resource.TableData
-	actions   KeyActions
-	cmdBuff   *CmdBuff
-	styles    *config.Styles
-	activeNS  string
-	sortCol   SortColumn
-	sortFn    SortFn
-	colorerFn ColorerFunc
+	baseTitle    string
+	data         resource.TableData
+	actions      KeyActions
+	cmdBuff      *CmdBuff
+	styles       *config.Styles
+	activeNS     string
+	sortCol      SortColumn
+	sortFn       SortFn
+	colorerFn    ColorerFunc
+	selectedItem string
+	selectedRow  int
+	selectedFn   func(string) string
+	selListeners []SelectedRowFunc
 }
 
 // NewTable returns a new table view.
@@ -57,9 +67,99 @@ func NewTable(title string, styles *config.Styles) *Table {
 		tcell.AttrBold,
 	)
 
+	v.SetSelectionChangedFunc(v.selChanged)
 	v.SetInputCapture(v.keyboard)
 
 	return &v
+}
+
+// AddSelectedRowListener add a new selected row listener.
+func (v *Table) AddSelectedRowListener(f SelectedRowFunc) {
+	v.selListeners = append(v.selListeners, f)
+}
+
+func (v *Table) selChanged(r, c int) {
+	// Changed?
+	if v.selectedRow == r {
+		return
+	}
+
+	v.selectedRow = r
+	v.updateSelectedItem(r)
+	if r == 0 {
+		return
+	}
+
+	cell := v.GetCell(r, c)
+	v.SetSelectedStyle(
+		tcell.ColorBlack,
+		cell.Color,
+		tcell.AttrBold,
+	)
+
+	for _, f := range v.selListeners {
+		f(r, c)
+	}
+}
+
+// UpdateSelection refresh selected row.
+func (v *Table) updateSelection(broadcast bool) {
+	v.SelectRow(v.selectedRow, false)
+}
+
+// SelectRow select a given row by index.
+func (v *Table) SelectRow(r int, broadcast bool) {
+	if !broadcast {
+		v.SetSelectionChangedFunc(nil)
+	}
+	defer v.SetSelectionChangedFunc(v.selChanged)
+	v.Select(r, 0)
+	v.updateSelectedItem(r)
+}
+
+func (v *Table) updateSelectedItem(r int) {
+	if r == 0 || v.GetCell(r, 0) == nil {
+		v.selectedItem = ""
+		return
+	}
+
+	col0 := TrimCell(v, r, 0)
+	switch v.activeNS {
+	case resource.NotNamespaced:
+		v.selectedItem = col0
+	case resource.AllNamespace, resource.AllNamespaces:
+		v.selectedItem = path.Join(col0, TrimCell(v, r, 1))
+	default:
+		v.selectedItem = path.Join(v.activeNS, col0)
+	}
+}
+
+// SetSelectedFn defines a function that cleanse the current selection.
+func (v *Table) SetSelectedFn(f func(string) string) {
+	v.selectedFn = f
+}
+
+// RowSelected checks if there is an active row selection.
+func (v *Table) RowSelected() bool {
+	return v.selectedItem != ""
+}
+
+// GetSelectedCell returns the contant of a cell for the currently selected row.
+func (v *Table) GetSelectedCell(col int) string {
+	return TrimCell(v, v.selectedRow, col)
+}
+
+// GetSelectedRow fetch the currently selected row index.
+func (v *Table) GetSelectedRow() int {
+	return v.selectedRow
+}
+
+// GetSelectedItem returns the currently selected item name.
+func (v *Table) GetSelectedItem() string {
+	if v.selectedFn != nil {
+		return v.selectedFn(v.selectedItem)
+	}
+	return v.selectedItem
 }
 
 func (v *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
@@ -114,8 +214,8 @@ func (v *Table) SetActiveNS(ns string) {
 }
 
 // SetSortCol sets in sort column index and order.
-func (v *Table) SetSortCol(index int, asc bool) {
-	v.sortCol.index, v.sortCol.asc = index, asc
+func (v *Table) SetSortCol(index, count int, asc bool) {
+	v.sortCol.index, v.sortCol.colCount, v.sortCol.asc = index, count, asc
 }
 
 // Update table content.
@@ -127,6 +227,7 @@ func (v *Table) Update(data resource.TableData) {
 		v.doUpdate(v.data)
 	}
 	v.UpdateTitle()
+	v.updateSelection(false)
 }
 
 func (v *Table) doUpdate(data resource.TableData) {
@@ -171,22 +272,6 @@ func (v *Table) SortColCmd(col int) func(evt *tcell.EventKey) *tcell.EventKey {
 
 		return nil
 	}
-}
-
-// ActivateCmd enters filter command mode
-func (v *Table) ActivateCmd(evt *tcell.EventKey) *tcell.EventKey {
-	// if v.app.inCmdMode() {
-	// 	return evt
-	// }
-
-	// v.app.flash().Info("Filter mode activated.")
-	if isLabelSelector(v.cmdBuff.String()) {
-		return nil
-	}
-	v.cmdBuff.Reset()
-	v.cmdBuff.SetActive(true)
-
-	return nil
 }
 
 func (v *Table) adjustSorter(data resource.TableData) {
@@ -283,16 +368,43 @@ func (v *Table) AddHeaderCell(numerical bool, col int, name string) {
 	v.SetCell(0, col, c)
 }
 
+// BOZO!! Nuke?
+// func (v *Table) depFiltered() resource.TableData {
+// 	if v.cmdBuff.Empty() || isLabelSelector(v.cmdBuff.String()) {
+// 		return v.data
+// 	}
+
+// 	rx, err := regexp.Compile(`(?i)` + v.cmdBuff.String())
+// 	if err != nil {
+// 		v.cmdBuff.Clear()
+// 		return v.data
+// 	}
+
+// 	filtered := resource.TableData{
+// 		Header:    v.data.Header,
+// 		Rows:      resource.RowEvents{},
+// 		Namespace: v.data.Namespace,
+// 	}
+// 	for k, row := range v.data.Rows {
+// 		f := strings.Join(row.Fields, " ")
+// 		if rx.MatchString(f) {
+// 			filtered.Rows[k] = row
+// 		}
+// 	}
+
+// 	return filtered
+// }
+
 func (v *Table) filtered() resource.TableData {
 	if v.cmdBuff.Empty() || isLabelSelector(v.cmdBuff.String()) {
 		return v.data
 	}
 
-	rx, err := regexp.Compile(`(?i)` + v.cmdBuff.String())
-	if err != nil {
-		// v.app.flash().Err(errors.New("Invalid filter expression"))
-		v.cmdBuff.Clear()
-		return v.data
+	q := v.cmdBuff.String()
+	var ss, kk []string
+	for k, row := range v.data.Rows {
+		ss = append(ss, strings.Join(row.Fields, " "))
+		kk = append(kk, k)
 	}
 
 	filtered := resource.TableData{
@@ -300,11 +412,9 @@ func (v *Table) filtered() resource.TableData {
 		Rows:      resource.RowEvents{},
 		Namespace: v.data.Namespace,
 	}
-	for k, row := range v.data.Rows {
-		f := strings.Join(row.Fields, " ")
-		if rx.MatchString(f) {
-			filtered.Rows[k] = row
-		}
+	mm := matching.FindAll(q, ss)
+	for _, m := range mm {
+		filtered.Rows[kk[m.Idx]] = v.data.Rows[kk[m.Idx]]
 	}
 
 	return filtered

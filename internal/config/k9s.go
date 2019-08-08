@@ -19,7 +19,7 @@ type K9s struct {
 	CurrentContext    string              `yaml:"currentContext"`
 	CurrentCluster    string              `yaml:"currentCluster"`
 	Clusters          map[string]*Cluster `yaml:"clusters,omitempty"`
-	Aliases           map[string]string   `yaml:"aliases,omitempty"`
+	Plugins           map[string]*Plugin  `yaml:"plugins,omitempty"`
 }
 
 // NewK9s create a new K9s configuration.
@@ -28,8 +28,8 @@ func NewK9s() *K9s {
 		RefreshRate:    defaultRefreshRate,
 		LogBufferSize:  defaultLogBufferSize,
 		LogRequestSize: defaultLogRequestSize,
-		Clusters:       map[string]*Cluster{},
-		Aliases:        map[string]string{},
+		Clusters:       make(map[string]*Cluster),
+		Plugins:        make(map[string]*Plugin),
 	}
 }
 

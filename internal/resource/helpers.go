@@ -35,15 +35,17 @@ const (
 	NAValue = "n/a"
 )
 
-func metaFQN(m metav1.ObjectMeta) string {
+// MetaFQN returns a fully qualified resource name.
+func MetaFQN(m metav1.ObjectMeta) string {
 	if m.Namespace == "" {
 		return m.Name
 	}
 
-	return fqn(m.Namespace, m.Name)
+	return FQN(m.Namespace, m.Name)
 }
 
-func fqn(ns, n string) string {
+// FQN returns a fully qualified resource name.
+func FQN(ns, n string) string {
 	if ns == "" {
 		return n
 	}

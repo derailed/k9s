@@ -26,22 +26,19 @@ type (
 	subjectView struct {
 		*tableView
 
-		current      ui.Igniter
-		cancel       context.CancelFunc
-		subjectKind  string
-		selectedItem string
-		cache        resource.RowEvents
+		current     ui.Igniter
+		cancel      context.CancelFunc
+		subjectKind string
+		cache       resource.RowEvents
 	}
 )
 
 func newSubjectView(ns string, app *appView, list resource.List) resourceViewer {
 	v := subjectView{}
-	{
-		v.tableView = newTableView(app, v.getTitle())
-		v.tableView.SetSelectionChangedFunc(v.selChanged)
-		v.SetColorerFn(rbacColorer)
-		v.bindKeys()
-	}
+	v.tableView = newTableView(app, "Subject")
+	v.SetActiveNS("*")
+	v.SetColorerFn(rbacColorer)
+	v.bindKeys()
 
 	if current, ok := app.Frame().GetPrimitive("main").(ui.Igniter); ok {
 		v.current = current
@@ -58,9 +55,9 @@ func (v *subjectView) Init(c context.Context, _ string) {
 		v.cancel()
 	}
 
-	v.SetSortCol(len(rbacHeader), true)
+	v.SetSortCol(1, len(rbacHeader), true)
 	v.subjectKind = mapCmdSubject(v.app.Config.K9s.ActiveCluster().View.Active)
-	v.SetTitle(v.getTitle())
+	v.SetBaseTitle(v.subjectKind)
 
 	ctx, cancel := context.WithCancel(c)
 	v.cancel = cancel
@@ -78,13 +75,11 @@ func (v *subjectView) Init(c context.Context, _ string) {
 	}(ctx)
 
 	v.refresh()
+	v.SelectRow(1, true)
 	v.app.SetFocus(v)
-}
+	v.app.SetHints(v.Hints())
 
-func (v *subjectView) setExtraActionsFn(f ui.ActionsFunc) {}
-func (v *subjectView) setColorerFn(f ui.ColorerFunc)      {}
-func (v *subjectView) setEnterFn(f enterFn)               {}
-func (v *subjectView) setDecorateFn(f decorateFn)         {}
+}
 
 func (v *subjectView) bindKeys() {
 	// No time data or ns
@@ -92,24 +87,21 @@ func (v *subjectView) bindKeys() {
 	v.RmAction(ui.KeyShiftP)
 
 	v.SetActions(ui.KeyActions{
-		tcell.KeyEnter:  ui.NewKeyAction("RBAC", v.rbackCmd, true),
+		tcell.KeyEnter:  ui.NewKeyAction("Policies", v.policyCmd, true),
 		tcell.KeyEscape: ui.NewKeyAction("Reset", v.resetCmd, false),
-		ui.KeySlash:     ui.NewKeyAction("Filter", v.ActivateCmd, false),
+		ui.KeySlash:     ui.NewKeyAction("Filter", v.activateCmd, false),
 		ui.KeyP:         ui.NewKeyAction("Previous", v.app.prevCmd, false),
 		ui.KeyShiftK:    ui.NewKeyAction("Sort Kind", v.SortColCmd(1), true),
 	})
 }
 
+func (v *subjectView) setExtraActionsFn(f ui.ActionsFunc) {}
+func (v *subjectView) setColorerFn(f ui.ColorerFunc)      {}
+func (v *subjectView) setEnterFn(f enterFn)               {}
+func (v *subjectView) setDecorateFn(f decorateFn)         {}
+
 func (v *subjectView) getTitle() string {
 	return fmt.Sprintf(rbacTitleFmt, "Subject", v.subjectKind)
-}
-
-func (v *subjectView) selChanged(r, _ int) {
-	if r == 0 {
-		v.selectedItem = ""
-		return
-	}
-	v.selectedItem = ui.TrimCell(v.tableView.Table, r, 0)
 }
 
 func (v *subjectView) SetSubject(s string) {
@@ -124,8 +116,8 @@ func (v *subjectView) refresh() {
 	v.Update(data)
 }
 
-func (v *subjectView) rbackCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if v.selectedItem == "" {
+func (v *subjectView) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !v.RowSelected() {
 		return evt
 	}
 
@@ -133,7 +125,7 @@ func (v *subjectView) rbackCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.cancel()
 	}
 
-	_, n := namespaced(v.selectedItem)
+	_, n := namespaced(v.GetSelectedItem())
 	v.app.inject(newPolicyView(v.app, mapFuSubject(v.subjectKind), n))
 
 	return nil
@@ -161,10 +153,6 @@ func (v *subjectView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.app.inject(v.current)
 
 	return nil
-}
-
-func (v *subjectView) Hints() ui.Hints {
-	return v.Hints()
 }
 
 func (v *subjectView) reconcile() (resource.TableData, error) {

@@ -28,11 +28,14 @@ k9s:
       view:
         active: po
   plugins:
-    sniff:
-      shortCut: ShiftS
+    blah:
+      shortCut: shift-s
+      description: blee
       scopes:
         - po
         - dp
+      command: duh
       args:
-        n: $NAMESPACE
-
+        - -n
+        - $NAMESPACE
+        - -boolean

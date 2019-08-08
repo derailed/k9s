@@ -15,7 +15,7 @@ const (
 )
 
 type aliasView struct {
-	*ui.Table
+	*tableView
 
 	app     *appView
 	current ui.Igniter
@@ -24,8 +24,8 @@ type aliasView struct {
 
 func newAliasView(app *appView, current ui.Igniter) *aliasView {
 	v := aliasView{
-		Table: ui.NewTable(aliasTitle, app.Styles),
-		app:   app,
+		tableView: newTableView(app, aliasTitle),
+		app:       app,
 	}
 	v.SetBorderFocusColor(tcell.ColorFuchsia)
 	v.SetSelectedStyle(tcell.ColorWhite, tcell.ColorFuchsia, tcell.AttrNone)
@@ -46,13 +46,15 @@ func (v *aliasView) Init(context.Context, string) {
 }
 
 func (v *aliasView) registerActions() {
-	delete(v.KeyBindings(), ui.KeyShiftA)
+	v.RmAction(ui.KeyShiftA)
 
-	v.KeyBindings()[tcell.KeyEnter] = ui.NewKeyAction("Goto", v.gotoCmd, true)
-	v.KeyBindings()[tcell.KeyEscape] = ui.NewKeyAction("Reset", v.resetCmd, false)
-	v.KeyBindings()[ui.KeySlash] = ui.NewKeyAction("Filter", v.ActivateCmd, false)
-	v.KeyBindings()[ui.KeyShiftR] = ui.NewKeyAction("Sort Resources", v.SortColCmd(1), true)
-	v.KeyBindings()[ui.KeyShiftO] = ui.NewKeyAction("Sort Groups", v.SortColCmd(2), true)
+	v.SetActions(ui.KeyActions{
+		tcell.KeyEnter:  ui.NewKeyAction("Goto", v.gotoCmd, true),
+		tcell.KeyEscape: ui.NewKeyAction("Reset", v.resetCmd, false),
+		ui.KeySlash:     ui.NewKeyAction("Filter", v.activateCmd, false),
+		ui.KeyShiftR:    ui.NewKeyAction("Sort Resources", v.SortColCmd(1), true),
+		ui.KeyShiftO:    ui.NewKeyAction("Sort Groups", v.SortColCmd(2), true),
+	})
 }
 
 func (v *aliasView) getTitle() string {
@@ -74,9 +76,9 @@ func (v *aliasView) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return v.runCmd(evt)
 	}
 
-	// if v.Cmd().IsActive() {
-	// 	return v.filterCmd(evt)
-	// }
+	if v.Cmd().IsActive() {
+		return v.activateCmd(evt)
+	}
 
 	return evt
 }
@@ -102,10 +104,6 @@ func (v *aliasView) runCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return nil
-}
-
-func (v *aliasView) Hints() ui.Hints {
-	return v.KeyBindings().Hints()
 }
 
 func (v *aliasView) hydrate() resource.TableData {

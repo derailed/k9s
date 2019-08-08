@@ -16,7 +16,7 @@ func newContextView(title string, app *appView, list resource.List) resourceView
 	v := contextView{newResourceView(title, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.useCtx
-	v.masterPage().cleanseFn = v.cleanser
+	v.masterPage().SetSelectedFn(v.cleanser)
 
 	return &v
 }

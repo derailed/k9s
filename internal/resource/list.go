@@ -253,13 +253,13 @@ func (l *list) fetchResource(informer *wa.Informer, r interface{}, ns string) (C
 	res := l.resource.New(r)
 	switch o := r.(type) {
 	case *v1.Node:
-		fqn := metaFQN(o.ObjectMeta)
+		fqn := MetaFQN(o.ObjectMeta)
 		nmx, err := informer.Get(wa.NodeMXIndex, fqn, metav1.GetOptions{})
 		if err == nil {
 			res.SetNodeMetrics(nmx.(*mv1beta1.NodeMetrics))
 		}
 	case *v1.Pod:
-		fqn := metaFQN(o.ObjectMeta)
+		fqn := MetaFQN(o.ObjectMeta)
 		pmx, err := informer.Get(wa.PodMXIndex, fqn, metav1.GetOptions{})
 		if err == nil {
 			res.SetPodMetrics(pmx.(*mv1beta1.PodMetrics))

@@ -54,11 +54,11 @@ func (v *containerView) extraActions(aa ui.KeyActions) {
 }
 
 func (v *containerView) selectedContainer() string {
-	return v.selectedItem
+	return v.masterPage().GetSelectedItem()
 }
 
 func (v *containerView) viewLogs(app *appView, _, res, sel string) {
-	status := ui.TrimCell(v.masterPage().Table, v.selectedRow, 3)
+	status := v.masterPage().GetSelectedCell(3)
 	if status == "Running" || status == "Completed" {
 		v.showLogs(false)
 		return
@@ -69,33 +69,34 @@ func (v *containerView) viewLogs(app *appView, _, res, sel string) {
 // Handlers...
 
 func (v *containerView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
+	if !v.masterPage().RowSelected() {
 		return evt
 	}
 
 	v.stopUpdates()
-	shellIn(v.app, *v.path, v.selectedItem)
+	shellIn(v.app, *v.path, v.masterPage().GetSelectedItem())
 	v.restartUpdates()
 	return nil
 }
 
 func (v *containerView) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
+	if !v.masterPage().RowSelected() {
 		return evt
 	}
 
-	if _, ok := v.app.forwarders[fwFQN(*v.path, v.selectedItem)]; ok {
+	sel := v.masterPage().GetSelectedItem()
+	if _, ok := v.app.forwarders[fwFQN(*v.path, sel)]; ok {
 		v.app.Flash().Err(fmt.Errorf("A PortForward already exist on container %s", *v.path))
 		return nil
 	}
 
-	state := ui.TrimCell(v.masterPage().Table, v.selectedRow, 3)
+	state := v.masterPage().GetSelectedCell(3)
 	if state != "Running" {
-		v.app.Flash().Err(fmt.Errorf("Container %s is not running?", v.selectedItem))
+		v.app.Flash().Err(fmt.Errorf("Container %s is not running?", sel))
 		return nil
 	}
 
-	portC := ui.TrimCell(v.masterPage().Table, v.selectedRow, 10)
+	portC := v.masterPage().GetSelectedCell(10)
 	ports := strings.Split(portC, ",")
 	if len(ports) == 0 {
 		v.app.Flash().Err(errors.New("Container exposes no ports"))
@@ -121,8 +122,7 @@ func (v *containerView) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *containerView) portForward(lport, cport string) {
-	co := strings.TrimSpace(v.masterPage().GetCell(v.selectedRow, 0).Text)
-
+	co := v.masterPage().GetSelectedCell(0)
 	pf := k8s.NewPortForward(v.app.Conn(), &log.Logger)
 	ports := []string{lport + ":" + cport}
 	fw, err := pf.Start(*v.path, co, ports)

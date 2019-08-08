@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
+	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
@@ -140,18 +142,30 @@ func (v *resourceView) switchPage(p string) {
 // ----------------------------------------------------------------------------
 // Actions...
 
+func (v *resourceView) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !v.masterPage().RowSelected() {
+		return evt
+	}
+
+	_, n := namespaced(v.masterPage().GetSelectedItem())
+	log.Debug().Msgf("Copied selection to clipboard %q", n)
+	v.app.Flash().Info("Current selection copied to clipboard...")
+	clipboard.WriteAll(n)
+
+	return nil
+}
+
 func (v *resourceView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msg("ResourceV Got Enter")
 	// If in command mode run filter otherwise enter function.
-	if v.masterPage().filterCmd(evt) == nil || !v.rowSelected() {
+	if v.masterPage().filterCmd(evt) == nil || !v.masterPage().RowSelected() {
 		return nil
 	}
 
+	sel := v.masterPage().GetSelectedItem()
 	if v.enterFn != nil {
-		log.Debug().Msg("Custom enter!!")
-		v.enterFn(v.app, v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
+		v.enterFn(v.app, v.list.GetNamespace(), v.list.GetName(), sel)
 	} else {
-		v.defaultEnter(v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
+		v.defaultEnter(v.list.GetNamespace(), v.list.GetName(), sel)
 	}
 
 	return nil
@@ -164,11 +178,11 @@ func (v *resourceView) refreshCmd(*tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *resourceView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
+	if !v.masterPage().RowSelected() {
 		return evt
 	}
 
-	sel := v.getSelectedItem()
+	sel := v.masterPage().GetSelectedItem()
 	msg := fmt.Sprintf("Delete %s %s?", v.list.GetName(), sel)
 	dialog.ShowDelete(v.Pages, msg, func(cascade, force bool) {
 		v.masterPage().ShowDeleted()
@@ -206,20 +220,20 @@ func (v *resourceView) defaultEnter(ns, _, selection string) {
 }
 
 func (v *resourceView) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
+	if !v.masterPage().RowSelected() {
 		return evt
 	}
 
-	v.defaultEnter(v.list.GetNamespace(), v.list.GetName(), v.selectedItem)
+	v.defaultEnter(v.list.GetNamespace(), v.list.GetName(), v.masterPage().GetSelectedItem())
 	return nil
 }
 
 func (v *resourceView) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
+	if !v.masterPage().RowSelected() {
 		return evt
 	}
 
-	sel := v.getSelectedItem()
+	sel := v.masterPage().GetSelectedItem()
 	raw, err := v.list.Resource().Marshal(sel)
 	if err != nil {
 		v.app.Flash().Errf("Unable to marshal resource %s", err)
@@ -237,14 +251,14 @@ func (v *resourceView) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *resourceView) editCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
+	if !v.masterPage().RowSelected() {
 		return evt
 	}
 
 	kcfg := v.app.Conn().Config().Flags().KubeConfig
 	v.stopUpdates()
 	{
-		ns, po := namespaced(v.selectedItem)
+		ns, po := namespaced(v.masterPage().GetSelectedItem())
 		args := make([]string, 0, 10)
 		args = append(args, "edit")
 		args = append(args, v.list.GetName())
@@ -281,8 +295,7 @@ func (v *resourceView) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.app.Flash().Infof("Viewing `%s namespace...", ns)
 	v.refresh()
 	v.masterPage().UpdateTitle()
-	v.masterPage().Select(1, 0)
-	v.selectItem(1, 0)
+	v.masterPage().SelectRow(1, true)
 	v.app.GetCmdBuff().Reset()
 	v.app.Config.SetActiveNamespace(v.currentNS)
 	v.app.Config.Save()
@@ -307,10 +320,9 @@ func (v *resourceView) refresh() {
 		data = v.decorateFn(data)
 	}
 	v.masterPage().Update(data)
-	v.selectItem(v.selectedRow, 0)
 }
 
-func (v *resourceView) namespaceActions() {
+func (v *resourceView) namespaceActions(aa ui.KeyActions) {
 	if !v.list.Access(resource.NamespaceAccess) {
 		return
 	}
@@ -319,40 +331,105 @@ func (v *resourceView) namespaceActions() {
 	if v.app.Conn().CheckListNSAccess() != nil {
 		return
 	}
-	v.actions[tcell.Key(ui.NumKeys[0])] = ui.NewKeyAction(resource.AllNamespace, v.switchNamespaceCmd, true)
+	aa[tcell.Key(ui.NumKeys[0])] = ui.NewKeyAction(resource.AllNamespace, v.switchNamespaceCmd, true)
 	v.namespaces[0] = resource.AllNamespace
 	index := 1
 	for _, n := range v.app.Config.FavNamespaces() {
 		if n == resource.AllNamespace {
 			continue
 		}
-		v.actions[tcell.Key(ui.NumKeys[index])] = ui.NewKeyAction(n, v.switchNamespaceCmd, true)
+		aa[tcell.Key(ui.NumKeys[index])] = ui.NewKeyAction(n, v.switchNamespaceCmd, true)
 		v.namespaces[index] = n
 		index++
 	}
 }
 
 func (v *resourceView) refreshActions() {
-	v.namespaceActions()
-	v.defaultActions()
-
-	v.actions[tcell.KeyEnter] = ui.NewKeyAction("Enter", v.enterCmd, false)
-	v.actions[tcell.KeyCtrlR] = ui.NewKeyAction("Refresh", v.refreshCmd, false)
+	aa := ui.KeyActions{
+		ui.KeyC:        ui.NewKeyAction("Copy", v.cpCmd, false),
+		tcell.KeyEnter: ui.NewKeyAction("Enter", v.enterCmd, false),
+		tcell.KeyCtrlR: ui.NewKeyAction("Refresh", v.refreshCmd, false),
+	}
+	v.namespaceActions(aa)
+	v.defaultActions(aa)
 
 	if v.list.Access(resource.EditAccess) {
-		v.actions[ui.KeyE] = ui.NewKeyAction("Edit", v.editCmd, true)
+		aa[ui.KeyE] = ui.NewKeyAction("Edit", v.editCmd, true)
 	}
 	if v.list.Access(resource.DeleteAccess) {
-		v.actions[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", v.deleteCmd, true)
+		aa[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", v.deleteCmd, true)
 	}
 	if v.list.Access(resource.ViewAccess) {
-		v.actions[ui.KeyY] = ui.NewKeyAction("YAML", v.viewCmd, true)
+		aa[ui.KeyY] = ui.NewKeyAction("YAML", v.viewCmd, true)
 	}
 	if v.list.Access(resource.DescribeAccess) {
-		v.actions[ui.KeyD] = ui.NewKeyAction("Describe", v.describeCmd, true)
+		aa[ui.KeyD] = ui.NewKeyAction("Describe", v.describeCmd, true)
 	}
+	v.customActions(aa)
 
 	t := v.masterPage()
-	t.SetActions(v.actions)
+	t.SetActions(aa)
 	v.app.SetHints(t.Hints())
+}
+
+func in(ss []string, s string) bool {
+	for _, v := range ss {
+		if v == s {
+			return true
+		}
+	}
+
+	return false
+}
+
+func asKey(key string) (tcell.Key, error) {
+	for k, v := range tcell.KeyNames {
+		if v == key {
+			return k, nil
+		}
+	}
+
+	return 0, fmt.Errorf("No matching key found %s", key)
+}
+
+func (v *resourceView) customActions(aa ui.KeyActions) {
+	for _, plugin := range v.app.Config.K9s.Plugins {
+		if !in(plugin.Scopes, v.list.GetName()) {
+			continue
+		}
+		key, err := asKey(strings.ToUpper(plugin.ShortCut))
+		if err != nil {
+			log.Error().Err(err).Msg("Unable to map shortcut to a key")
+			continue
+		}
+		aa[key] = ui.NewKeyAction(
+			plugin.Description,
+			v.execCmd(plugin.Command, plugin.Args...),
+			true)
+	}
+}
+
+func (v *resourceView) execCmd(bin string, args ...string) ui.ActionHandler {
+	return func(evt *tcell.EventKey) *tcell.EventKey {
+		if !v.masterPage().RowSelected() {
+			return evt
+		}
+
+		ns, n := namespaced(v.masterPage().GetSelectedItem())
+		for i, a := range args {
+			switch a {
+			case "$NAMESPACE":
+				args[i] = ns
+			case "$NAME":
+				args[i] = n
+			}
+		}
+
+		if run(true, v.app, bin, args...) {
+			v.app.Flash().Info("Custom CMD launched!")
+		} else {
+			v.app.Flash().Info("Custom CMD failed!")
+		}
+		return nil
+	}
 }

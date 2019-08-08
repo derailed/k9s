@@ -50,23 +50,21 @@ func newPodView(t string, app *appView, list resource.List) resourceViewer {
 }
 
 func (v *podView) extraActions(aa ui.KeyActions) {
-	actions := ui.KeyActions{
-		ui.KeyL:      ui.NewKeyAction("Logs", v.logsCmd, true),
-		ui.KeyShiftL: ui.NewKeyAction("Logs Previous", v.prevLogsCmd, true),
-		ui.KeyS:      ui.NewKeyAction("Shell", v.shellCmd, true),
-		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", v.sortColCmd(1, false), true),
-		ui.KeyShiftS: ui.NewKeyAction("Sort Status", v.sortColCmd(2, true), true),
-		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", v.sortColCmd(3, false), true),
-		ui.KeyShiftC: ui.NewKeyAction("Sort CPU", v.sortColCmd(4, false), true),
-		ui.KeyShiftM: ui.NewKeyAction("Sort MEM", v.sortColCmd(5, false), true),
-		ui.KeyAltC:   ui.NewKeyAction("Sort CPU%", v.sortColCmd(6, false), true),
-		ui.KeyAltM:   ui.NewKeyAction("Sort MEM%", v.sortColCmd(7, false), true),
-		ui.KeyShiftD: ui.NewKeyAction("Sort IP", v.sortColCmd(8, true), true),
-		ui.KeyShiftO: ui.NewKeyAction("Sort Node", v.sortColCmd(9, true), true),
-	}
-	for k, v := range actions {
-		aa[k] = v
-	}
+	aa[ui.KeyAltK] = ui.NewKeyAction("Kill", v.killCmd, true)
+	aa[ui.KeyS] = ui.NewKeyAction("Shell", v.shellCmd, true)
+
+	aa[ui.KeyL] = ui.NewKeyAction("Logs", v.logsCmd, true)
+	aa[ui.KeyShiftL] = ui.NewKeyAction("Logs Previous", v.prevLogsCmd, true)
+
+	aa[ui.KeyShiftR] = ui.NewKeyAction("Sort Ready", v.sortColCmd(1, false), true)
+	aa[ui.KeyShiftS] = ui.NewKeyAction("Sort Status", v.sortColCmd(2, true), true)
+	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Restart", v.sortColCmd(3, false), true)
+	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", v.sortColCmd(4, false), true)
+	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", v.sortColCmd(5, false), true)
+	aa[ui.KeyAltC] = ui.NewKeyAction("Sort CPU%", v.sortColCmd(6, false), true)
+	aa[ui.KeyAltM] = ui.NewKeyAction("Sort MEM%", v.sortColCmd(7, false), true)
+	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort IP", v.sortColCmd(8, true), true)
+	aa[ui.KeyShiftO] = ui.NewKeyAction("Sort Node", v.sortColCmd(9, true), true)
 }
 
 func (v *podView) listContainers(app *appView, _, res, sel string) {
@@ -109,15 +107,31 @@ func (v *podView) getList() resource.List {
 }
 
 func (v *podView) getSelection() string {
-	return v.selectedItem
+	return v.masterPage().GetSelectedItem()
 }
 
-func (v *podView) sniffCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
+func (v *podView) killCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !v.masterPage().RowSelected() {
 		return evt
 	}
 
-	ns, n := namespaced(v.selectedItem)
+	sel := v.masterPage().GetSelectedItem()
+	v.masterPage().ShowDeleted()
+	v.app.Flash().Infof("Delete resource %s %s", v.list.GetName(), sel)
+	if err := v.list.Resource().Delete(sel, true, false); err != nil {
+		v.app.Flash().Errf("Delete failed with %s", err)
+	} else {
+		v.refresh()
+	}
+	return nil
+}
+
+func (v *podView) sniffCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !v.masterPage().RowSelected() {
+		return evt
+	}
+
+	ns, n := namespaced(v.masterPage().GetSelectedItem())
 	var args []string
 	args = append(args, "sniff", n, "-n", ns)
 
@@ -146,10 +160,10 @@ func (v *podView) prevLogsCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *podView) viewLogs(prev bool) bool {
-	if !v.rowSelected() {
+	if !v.masterPage().RowSelected() {
 		return false
 	}
-	v.showLogs(v.selectedItem, "", v, prev)
+	v.showLogs(v.masterPage().GetSelectedItem(), "", v, prev)
 
 	return true
 }
@@ -161,23 +175,24 @@ func (v *podView) showLogs(path, co string, parent loggable, prev bool) {
 }
 
 func (v *podView) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
+	if !v.masterPage().RowSelected() {
 		return evt
 	}
 
-	cc, err := fetchContainers(v.list, v.selectedItem, false)
+	sel := v.masterPage().GetSelectedItem()
+	cc, err := fetchContainers(v.list, sel, false)
 	if err != nil {
 		v.app.Flash().Errf("Unable to retrieve containers %s", err)
 		return evt
 	}
 	if len(cc) == 1 {
-		v.shellIn(v.selectedItem, "")
+		v.shellIn(sel, "")
 		return nil
 	}
 	p := v.GetPrimitive("picker").(*selectList)
 	p.populate(cc)
 	p.SetSelectedFunc(func(i int, t, d string, r rune) {
-		v.shellIn(v.selectedItem, t)
+		v.shellIn(sel, t)
 	})
 	v.switchPage("picker")
 
@@ -193,7 +208,7 @@ func (v *podView) shellIn(path, co string) {
 func (v *podView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		t := v.masterPage()
-		t.SetSortCol(t.NameColIndex()+col, asc)
+		t.SetSortCol(t.NameColIndex()+col, 0, asc)
 		t.Refresh()
 
 		return nil

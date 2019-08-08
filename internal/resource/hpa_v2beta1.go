@@ -153,7 +153,6 @@ func (r *HorizontalPodAutoscalerV2Beta1) checkHPAType(i int, spec autoscalingv2b
 
 func (*HorizontalPodAutoscalerV2Beta1) externalMetrics(i int, spec autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {
 	current := "<unknown>"
-	log.Debug().Msg("YO!")
 	if spec.External.TargetAverageValue != nil {
 		if len(statuses) > i && statuses[i].External != nil && &statuses[i].External.CurrentAverageValue != nil {
 			current = statuses[i].External.CurrentAverageValue.String()

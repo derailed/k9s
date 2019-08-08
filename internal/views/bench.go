@@ -82,7 +82,7 @@ func (v *benchView) Init(ctx context.Context, _ string) {
 
 	v.refresh()
 	tv := v.getTV()
-	tv.SetSortCol(tv.NameColIndex()+7, true)
+	tv.SetSortCol(tv.NameColIndex()+7, 0, true)
 	tv.Refresh()
 	tv.Select(1, 0)
 	v.app.SetFocus(tv)
@@ -122,7 +122,7 @@ func (v *benchView) selChanged(r, c int) {
 func (v *benchView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		tv := v.getTV()
-		tv.SetSortCol(tv.NameColIndex()+col, asc)
+		tv.SetSortCol(tv.NameColIndex()+col, 0, asc)
 		tv.Refresh()
 
 		return nil

@@ -3,15 +3,13 @@ package views
 import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 type tableView struct {
 	*ui.Table
 
-	app       *appView
-	cleanseFn cleanseFn
-	filterFn  func(string)
+	app      *appView
+	filterFn func(string)
 }
 
 func newTableView(app *appView, title string) *tableView {
@@ -44,7 +42,7 @@ func (v *tableView) setFilterFn(fn func(string)) {
 func (v *tableView) bindKeys() {
 	v.SetActions(ui.KeyActions{
 		tcell.KeyCtrlS:      ui.NewKeyAction("Save", v.saveCmd, true),
-		ui.KeySlash:         ui.NewKeyAction("Filter Mode", v.ActivateCmd, false),
+		ui.KeySlash:         ui.NewKeyAction("Filter Mode", v.activateCmd, false),
 		tcell.KeyEscape:     ui.NewKeyAction("Filter Reset", v.resetCmd, false),
 		tcell.KeyEnter:      ui.NewKeyAction("Filter", v.filterCmd, false),
 		tcell.KeyBackspace2: ui.NewKeyAction("Erase", v.eraseCmd, false),
@@ -57,7 +55,6 @@ func (v *tableView) bindKeys() {
 }
 
 func (v *tableView) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msg("YO!!")
 	if !v.Cmd().IsActive() {
 		return evt
 	}
@@ -90,6 +87,21 @@ func (v *tableView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	v.Cmd().Reset()
 	v.Refresh()
+
+	return nil
+}
+
+func (v *tableView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if v.app.InCmdMode() {
+		return evt
+	}
+
+	v.app.Flash().Info("Filter mode activated.")
+	if isLabelSelector(v.Cmd().String()) {
+		return nil
+	}
+	v.Cmd().Reset()
+	v.Cmd().SetActive(true)
 
 	return nil
 }

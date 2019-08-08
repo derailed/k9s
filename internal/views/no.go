@@ -28,7 +28,7 @@ func (v *nodeView) extraActions(aa ui.KeyActions) {
 func (v *nodeView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		t := v.masterPage()
-		t.SetSortCol(t.NameColIndex()+col, asc)
+		t.SetSortCol(t.NameColIndex()+col, 0, asc)
 		t.Refresh()
 
 		return nil

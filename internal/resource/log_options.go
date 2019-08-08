@@ -31,7 +31,7 @@ func (o LogOptions) HasContainer() bool {
 
 // FQN returns resource fully qualified name.
 func (o LogOptions) FQN() string {
-	return fqn(o.Namespace, o.Name)
+	return FQN(o.Namespace, o.Name)
 }
 
 // Path returns resource descriptor path.

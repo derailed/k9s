@@ -48,7 +48,7 @@ func newPolicyView(app *appView, subject, name string) *policyView {
 
 // Init the view.
 func (v *policyView) Init(c context.Context, ns string) {
-	v.SetSortCol(len(rbacHeader), false)
+	v.SetSortCol(1, len(rbacHeader), false)
 
 	ctx, cancel := context.WithCancel(c)
 	v.cancel = cancel
@@ -65,6 +65,7 @@ func (v *policyView) Init(c context.Context, ns string) {
 	}(ctx)
 
 	v.refresh()
+	v.SelectRow(1, true)
 	v.app.SetFocus(v)
 }
 
@@ -73,7 +74,7 @@ func (v *policyView) bindKeys() {
 
 	v.SetActions(ui.KeyActions{
 		tcell.KeyEscape: ui.NewKeyAction("Reset", v.resetCmd, false),
-		ui.KeySlash:     ui.NewKeyAction("Filter", v.ActivateCmd, false),
+		ui.KeySlash:     ui.NewKeyAction("Filter", v.activateCmd, false),
 		ui.KeyP:         ui.NewKeyAction("Previous", v.app.prevCmd, false),
 		ui.KeyShiftS:    ui.NewKeyAction("Sort Namespace", v.SortColCmd(0), true),
 		ui.KeyShiftN:    ui.NewKeyAction("Sort Name", v.SortColCmd(1), true),
@@ -254,11 +255,11 @@ func (v *policyView) parseRules(ns, binding string, rules []rbacv1.PolicyRule) r
 				for _, na := range r.ResourceNames {
 					n := fqn(k, na)
 					m[fqn(ns, n)] = &resource.RowEvent{
-						Fields: append(policyRow(ns, n, grp, binding), r.Verbs...),
+						Fields: append(policyRow(ns, n, grp, binding), asVerbs(r.Verbs...)...),
 					}
 				}
 				m[fqn(ns, k)] = &resource.RowEvent{
-					Fields: append(policyRow(ns, k, grp, binding), r.Verbs...),
+					Fields: append(policyRow(ns, k, grp, binding), asVerbs(r.Verbs...)...),
 				}
 			}
 		}
@@ -267,7 +268,7 @@ func (v *policyView) parseRules(ns, binding string, rules []rbacv1.PolicyRule) r
 				nres = "/" + nres
 			}
 			m[fqn(ns, nres)] = &resource.RowEvent{
-				Fields: append(policyRow(ns, nres, resource.NAValue, binding), r.Verbs...),
+				Fields: append(policyRow(ns, nres, resource.NAValue, binding), asVerbs(r.Verbs...)...),
 			}
 		}
 	}
