@@ -50,7 +50,7 @@ func (r *ReplicaSet) New(i interface{}) Columnar {
 
 // Marshal a deployment given a namespaced name.
 func (r *ReplicaSet) Marshal(path string) (string, error) {
-	ns, n := namespaced(path)
+	ns, n := Namespaced(path)
 	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err

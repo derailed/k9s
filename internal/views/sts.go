@@ -25,14 +25,9 @@ func newStatefulSetView(t string, app *appView, list resource.List) resourceView
 
 func (v *statefulSetView) extraActions(aa ui.KeyActions) {
 	v.logResourceView.extraActions(aa)
-<<<<<<< HEAD
 	v.scalableResourceView.extraActions(aa)
 	aa[KeyShiftD] = newKeyAction("Sort Desired", v.sortColCmd(1, false), true)
 	aa[KeyShiftC] = newKeyAction("Sort Current", v.sortColCmd(2, false), true)
-=======
-	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", v.sortColCmd(1, false), true)
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", v.sortColCmd(2, false), true)
->>>>>>> checkpoint
 }
 
 func (v *statefulSetView) showPods(app *appView, ns, res, sel string) {

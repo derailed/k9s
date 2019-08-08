@@ -53,7 +53,7 @@ func (r *CustomResourceDefinition) New(i interface{}) Columnar {
 
 // Marshal a resource.
 func (r *CustomResourceDefinition) Marshal(path string) (string, error) {
-	ns, n := namespaced(path)
+	ns, n := Namespaced(path)
 	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err

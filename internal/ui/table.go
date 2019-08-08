@@ -3,15 +3,16 @@ package ui
 import (
 	"fmt"
 	"path"
-	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"github.com/ktr0731/go-fuzzyfinder/matching"
+
+	// "github.com/ktr0731/go-fuzzyfinder/matching"
 	"github.com/rs/zerolog/log"
+	"github.com/sahilm/fuzzy"
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
@@ -79,11 +80,6 @@ func (v *Table) AddSelectedRowListener(f SelectedRowFunc) {
 }
 
 func (v *Table) selChanged(r, c int) {
-	// Changed?
-	if v.selectedRow == r {
-		return
-	}
-
 	v.selectedRow = r
 	v.updateSelectedItem(r)
 	if r == 0 {
@@ -104,7 +100,7 @@ func (v *Table) selChanged(r, c int) {
 
 // UpdateSelection refresh selected row.
 func (v *Table) updateSelection(broadcast bool) {
-	v.SelectRow(v.selectedRow, false)
+	v.SelectRow(v.selectedRow, broadcast)
 }
 
 // SelectRow select a given row by index.
@@ -221,13 +217,13 @@ func (v *Table) SetSortCol(index, count int, asc bool) {
 // Update table content.
 func (v *Table) Update(data resource.TableData) {
 	v.data = data
-	if !v.cmdBuff.Empty() {
-		v.doUpdate(v.filtered())
-	} else {
+	if v.cmdBuff.Empty() {
 		v.doUpdate(v.data)
+	} else {
+		v.doUpdate(v.filtered())
 	}
 	v.UpdateTitle()
-	v.updateSelection(false)
+	v.updateSelection(true)
 }
 
 func (v *Table) doUpdate(data resource.TableData) {
@@ -368,33 +364,6 @@ func (v *Table) AddHeaderCell(numerical bool, col int, name string) {
 	v.SetCell(0, col, c)
 }
 
-// BOZO!! Nuke?
-// func (v *Table) depFiltered() resource.TableData {
-// 	if v.cmdBuff.Empty() || isLabelSelector(v.cmdBuff.String()) {
-// 		return v.data
-// 	}
-
-// 	rx, err := regexp.Compile(`(?i)` + v.cmdBuff.String())
-// 	if err != nil {
-// 		v.cmdBuff.Clear()
-// 		return v.data
-// 	}
-
-// 	filtered := resource.TableData{
-// 		Header:    v.data.Header,
-// 		Rows:      resource.RowEvents{},
-// 		Namespace: v.data.Namespace,
-// 	}
-// 	for k, row := range v.data.Rows {
-// 		f := strings.Join(row.Fields, " ")
-// 		if rx.MatchString(f) {
-// 			filtered.Rows[k] = row
-// 		}
-// 	}
-
-// 	return filtered
-// }
-
 func (v *Table) filtered() resource.TableData {
 	if v.cmdBuff.Empty() || isLabelSelector(v.cmdBuff.String()) {
 		return v.data
@@ -403,7 +372,7 @@ func (v *Table) filtered() resource.TableData {
 	q := v.cmdBuff.String()
 	var ss, kk []string
 	for k, row := range v.data.Rows {
-		ss = append(ss, strings.Join(row.Fields, " "))
+		ss = append(ss, row.Fields[v.NameColIndex()])
 		kk = append(kk, k)
 	}
 
@@ -412,9 +381,9 @@ func (v *Table) filtered() resource.TableData {
 		Rows:      resource.RowEvents{},
 		Namespace: v.data.Namespace,
 	}
-	mm := matching.FindAll(q, ss)
+	mm := fuzzy.Find(q, ss)
 	for _, m := range mm {
-		filtered.Rows[kk[m.Idx]] = v.data.Rows[kk[m.Idx]]
+		filtered.Rows[kk[m.Index]] = v.data.Rows[kk[m.Index]]
 	}
 
 	return filtered

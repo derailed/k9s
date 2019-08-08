@@ -99,7 +99,7 @@ func (r *Pod) SetPodMetrics(m *mv1beta1.PodMetrics) {
 
 // Marshal resource to yaml.
 func (r *Pod) Marshal(path string) (string, error) {
-	ns, n := namespaced(path)
+	ns, n := Namespaced(path)
 	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
@@ -113,7 +113,7 @@ func (r *Pod) Marshal(path string) (string, error) {
 
 // Containers lists out all the docker containers name contained in a pod.
 func (r *Pod) Containers(path string, includeInit bool) ([]string, error) {
-	ns, po := namespaced(path)
+	ns, po := Namespaced(path)
 
 	return r.Resource.(k8s.Loggable).Containers(ns, po, includeInit)
 }

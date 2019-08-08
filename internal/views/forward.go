@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
@@ -27,7 +28,7 @@ type forwardView struct {
 
 	app    *appView
 	cancel context.CancelFunc
-	bench  *benchmark
+	bench  *perf.Benchmark
 }
 
 var _ resourceViewer = &forwardView{}
@@ -131,7 +132,7 @@ func (v *forwardView) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.bench != nil {
 		log.Debug().Msg(">>> Benchmark canceled!!")
 		v.app.status(ui.FlashErr, "Benchmark Camceled!")
-		v.bench.cancel()
+		v.bench.Cancel()
 	}
 	v.app.StatusReset()
 
@@ -159,7 +160,7 @@ func (v *forwardView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	base := ui.TrimCell(tv.Table, r, 4)
 	var err error
-	if v.bench, err = newBenchmark(base, cfg); err != nil {
+	if v.bench, err = perf.NewBenchmark(base, cfg); err != nil {
 		v.app.Flash().Errf("Bench failed %v", err)
 		v.app.StatusReset()
 		return nil
@@ -173,14 +174,14 @@ func (v *forwardView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *forwardView) runBenchmark() {
-	v.bench.run(v.app.Config.K9s.CurrentCluster, func() {
+	v.bench.Run(v.app.Config.K9s.CurrentCluster, func() {
 		log.Debug().Msg("Bench Completed!")
 		v.app.QueueUpdate(func() {
-			if v.bench.canceled {
+			if v.bench.Canceled() {
 				v.app.status(ui.FlashInfo, "Benchmark canceled")
 			} else {
 				v.app.status(ui.FlashInfo, "Benchmark Completed!")
-				v.bench.cancel()
+				v.bench.Cancel()
 			}
 			v.bench = nil
 			go func() {
@@ -334,7 +335,7 @@ func showModal(pv *tview.Pages, msg, back string, ok func()) {
 			}
 			dismissModal(pv, back)
 		})
-	m.SetTitle("<Confirm>")
+	m.SetTitle("<Delete Benchmark>")
 	pv.AddPage(promptPage, m, false, false)
 	pv.ShowPage(promptPage)
 }

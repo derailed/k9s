@@ -108,7 +108,7 @@ func (*Base) ExtFields() Properties {
 
 // Get a resource by name
 func (b *Base) Get(path string) (Columnar, error) {
-	ns, n := namespaced(path)
+	ns, n := Namespaced(path)
 	i, err := b.Resource.Get(ns, n)
 	if err != nil {
 		return nil, err
@@ -157,7 +157,7 @@ func (b *Base) Describe(kind, pa string) (string, error) {
 }
 
 func (b *Base) doDescribe(pa string, mapping *meta.RESTMapping) (string, error) {
-	ns, n := namespaced(pa)
+	ns, n := Namespaced(pa)
 	d, err := versioned.Describer(b.Connection.Config().Flags(), mapping)
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to find describer for %#v", mapping)
@@ -169,7 +169,7 @@ func (b *Base) doDescribe(pa string, mapping *meta.RESTMapping) (string, error) 
 
 // Delete a resource by name.
 func (b *Base) Delete(path string, cascade, force bool) error {
-	ns, n := namespaced(path)
+	ns, n := Namespaced(path)
 
 	return b.Resource.Delete(ns, n, cascade, force)
 }

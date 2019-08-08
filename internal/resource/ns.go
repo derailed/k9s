@@ -48,7 +48,7 @@ func (r *Namespace) New(i interface{}) Columnar {
 
 // Marshal a resource to yaml.
 func (r *Namespace) Marshal(path string) (string, error) {
-	ns, n := namespaced(path)
+	ns, n := Namespaced(path)
 	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		log.Error().Err(err)

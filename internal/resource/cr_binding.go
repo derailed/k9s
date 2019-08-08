@@ -50,7 +50,7 @@ func (r *ClusterRoleBinding) New(i interface{}) Columnar {
 
 // Marshal resource to yaml.
 func (r *ClusterRoleBinding) Marshal(path string) (string, error) {
-	ns, n := namespaced(path)
+	ns, n := Namespaced(path)
 	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err

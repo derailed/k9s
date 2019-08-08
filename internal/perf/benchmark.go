@@ -1,4 +1,4 @@
-package views
+package perf
 
 import (
 	"bytes"
@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/resource"
 	"github.com/rakyll/hey/requester"
 	"github.com/rs/zerolog/log"
 )
@@ -20,24 +21,26 @@ const (
 	k9sUA     = "k9s/0.0.7"
 )
 
-// K9sBenchDir directory to store K9s benchmark files.
+// K9sBenchDir directory to store K9s Benchmark files.
 var K9sBenchDir = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-bench-%s", config.MustK9sUser()))
 
-type benchmark struct {
+// Benchmark puts a workload under load.
+type Benchmark struct {
 	canceled bool
 	config   config.BenchConfig
 	worker   *requester.Work
 }
 
-func newBenchmark(base string, cfg config.BenchConfig) (*benchmark, error) {
-	b := benchmark{config: cfg}
+// NewBenchmark returns a new benchmark.
+func NewBenchmark(base string, cfg config.BenchConfig) (*Benchmark, error) {
+	b := Benchmark{config: cfg}
 	if err := b.init(base); err != nil {
 		return nil, err
 	}
 	return &b, nil
 }
 
-func (b *benchmark) init(base string) error {
+func (b *Benchmark) init(base string) error {
 	req, err := http.NewRequest(b.config.HTTP.Method, base, nil)
 	if err != nil {
 		return err
@@ -71,11 +74,12 @@ func (b *benchmark) init(base string) error {
 	return nil
 }
 
-func (b *benchmark) annulled() bool {
+func (b *Benchmark) annulled() bool {
 	return b.canceled
 }
 
-func (b *benchmark) cancel() {
+// Cancel kills the benchmark in progress.
+func (b *Benchmark) Cancel() {
 	if b == nil {
 		return
 	}
@@ -83,25 +87,31 @@ func (b *benchmark) cancel() {
 	b.worker.Stop()
 }
 
-func (b *benchmark) run(cluster string, done func()) {
+// Canceled checks if the benchmark was canceled.
+func (b *Benchmark) Canceled() bool {
+	return b.canceled
+}
+
+// Run starts a benchmark,
+func (b *Benchmark) Run(cluster string, done func()) {
 	buff := new(bytes.Buffer)
 	b.worker.Writer = buff
 	b.worker.Run()
 	if !b.canceled {
 		if err := b.save(cluster, buff); err != nil {
-			log.Error().Err(err).Msg("Saving benchmark")
+			log.Error().Err(err).Msg("Saving Benchmark")
 		}
 	}
 	done()
 }
 
-func (b *benchmark) save(cluster string, r io.Reader) error {
+func (b *Benchmark) save(cluster string, r io.Reader) error {
 	dir := filepath.Join(K9sBenchDir, cluster)
 	if err := os.MkdirAll(dir, 0744); err != nil {
 		return err
 	}
 
-	ns, n := namespaced(b.config.Name)
+	ns, n := resource.Namespaced(b.config.Name)
 	file := filepath.Join(dir, fmt.Sprintf(benchFmat, ns, n, time.Now().UnixNano()))
 	f, err := os.Create(file)
 	if err != nil {

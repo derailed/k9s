@@ -47,15 +47,19 @@ require (
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/json-iterator/go v1.1.6 // indirect
+	github.com/junegunn/fzf v0.0.0-20190808063552-509589924557
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/ktr0731/go-fuzzyfinder v0.1.2
+	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mattn/go-runewidth v0.0.4
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
 	github.com/petergtz/pegomock v0.0.0-20181206220228-b113d17a7e81
 	github.com/rakyll/hey v0.1.2
 	github.com/rs/zerolog v1.14.3
-	github.com/spf13/cobra v0.0.5
+	github.com/sahilm/fuzzy v0.1.0
+	github.com/spf13/cobra v0.0.3
+	github.com/spf13/pflag v1.0.3 // indirect
 	github.com/stretchr/testify v1.3.0
 	golang.org/x/crypto v0.0.0-20190426145343-a29dc8fdc734 // indirect
 	golang.org/x/net v0.0.0-20190424112056-4829fb13d2c6 // indirect

@@ -57,7 +57,7 @@ func (r *Service) New(i interface{}) Columnar {
 // Marshal resource to yaml.
 // BOZO!! Why you need to fill type info??
 func (r *Service) Marshal(path string) (string, error) {
-	ns, n := namespaced(path)
+	ns, n := Namespaced(path)
 	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err

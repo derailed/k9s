@@ -66,8 +66,16 @@ func (v *masterDetail) setEnterFn(f enterFn) {
 	v.enterFn = f
 }
 
+func (v *masterDetail) showMaster() {
+	v.SwitchToPage("master")
+}
+
 func (v *masterDetail) masterPage() *tableView {
 	return v.GetPrimitive("master").(*tableView)
+}
+
+func (v *masterDetail) showDetails() {
+	v.SwitchToPage("details")
 }
 
 func (v *masterDetail) detailsPage() *detailsView {

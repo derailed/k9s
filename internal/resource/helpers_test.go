@@ -49,7 +49,7 @@ func TestNamespaced(t *testing.T) {
 	}
 
 	for _, u := range uu {
-		ns, n := namespaced(u.p)
+		ns, n := Namespaced(u.p)
 		assert.Equal(t, u.ns, ns)
 		assert.Equal(t, u.n, n)
 	}

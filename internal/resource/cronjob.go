@@ -63,7 +63,7 @@ func (r *CronJob) New(i interface{}) Columnar {
 
 // Marshal resource to yaml.
 func (r *CronJob) Marshal(path string) (string, error) {
-	ns, n := namespaced(path)
+	ns, n := Namespaced(path)
 	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
@@ -78,7 +78,7 @@ func (r *CronJob) Marshal(path string) (string, error) {
 
 // Run a given cronjob.
 func (r *CronJob) Run(pa string) error {
-	ns, n := namespaced(pa)
+	ns, n := Namespaced(pa)
 	if c, ok := r.Resource.(Runnable); ok {
 		return c.Run(ns, n)
 	}

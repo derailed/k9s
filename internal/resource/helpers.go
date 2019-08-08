@@ -118,7 +118,8 @@ func toPerc(v1, v2 float64) float64 {
 	return (v1 / v2) * 100
 }
 
-func namespaced(n string) (string, string) {
+// Namespaced return a namesapace and a name.
+func Namespaced(n string) (string, string) {
 	ns, po := path.Split(n)
 
 	return strings.Trim(ns, "/"), po

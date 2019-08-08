@@ -61,7 +61,7 @@ func (r *Job) New(i interface{}) Columnar {
 
 // Marshal resource to yaml.
 func (r *Job) Marshal(path string) (string, error) {
-	ns, n := namespaced(path)
+	ns, n := Namespaced(path)
 	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
@@ -76,7 +76,7 @@ func (r *Job) Marshal(path string) (string, error) {
 
 // Containers fetch all the containers on this job, may include init containers.
 func (r *Job) Containers(path string, includeInit bool) ([]string, error) {
-	ns, n := namespaced(path)
+	ns, n := Namespaced(path)
 
 	return r.Resource.(k8s.Loggable).Containers(ns, n, includeInit)
 }

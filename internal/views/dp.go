@@ -26,14 +26,9 @@ func newDeployView(title string, app *appView, list resource.List) resourceViewe
 
 func (v *deployView) extraActions(aa ui.KeyActions) {
 	v.logResourceView.extraActions(aa)
-<<<<<<< HEAD
 	v.scalableResourceView.extraActions(aa)
 	aa[KeyShiftD] = newKeyAction("Sort Desired", v.sortColCmd(2, false), true)
 	aa[KeyShiftC] = newKeyAction("Sort Current", v.sortColCmd(3, false), true)
-=======
-	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", v.sortColCmd(2, false), true)
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", v.sortColCmd(3, false), true)
->>>>>>> checkpoint
 }
 
 func (v *deployView) showPods(app *appView, _, res, sel string) {

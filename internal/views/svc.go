@@ -8,6 +8,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -18,11 +19,13 @@ import (
 type svcView struct {
 	*resourceView
 
-	bench *benchmark
+	bench *perf.Benchmark
 }
 
 func newSvcView(t string, app *appView, list resource.List) resourceViewer {
-	v := svcView{resourceView: newResourceView(t, app, list).(*resourceView)}
+	v := svcView{
+		resourceView: newResourceView(t, app, list).(*resourceView),
+	}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.showPods
 	v.AddPage("logs", newLogsView(list.GetName(), app, &v), true, false)
@@ -95,7 +98,7 @@ func (v *svcView) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.bench != nil {
 		log.Debug().Msg(">>> Benchmark canceled!!")
 		v.app.status(ui.FlashErr, "Benchmark Camceled!")
-		v.bench.cancel()
+		v.bench.Cancel()
 	}
 	v.app.StatusReset()
 
@@ -150,6 +153,7 @@ func (v *svcView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 	cfg.Name = sel
+	log.Debug().Msgf("Benchmark config %#v", cfg)
 
 	row, _ := v.masterPage().GetSelection()
 	if err := v.checkSvc(row); err != nil {
@@ -173,13 +177,13 @@ func (v *svcView) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (v *svcView) runBenchmark(port string, cfg config.BenchConfig) error {
 	var err error
 	base := "http://" + cfg.HTTP.Host + ":" + port + cfg.HTTP.Path
-	if v.bench, err = newBenchmark(base, cfg); err != nil {
+	if v.bench, err = perf.NewBenchmark(base, cfg); err != nil {
 		return err
 	}
 
 	v.app.status(ui.FlashWarn, "Benchmark in progress...")
 	log.Debug().Msg("Bench starting...")
-	go v.bench.run(v.app.Config.K9s.CurrentCluster, v.benchDone)
+	go v.bench.Run(v.app.Config.K9s.CurrentCluster, v.benchDone)
 
 	return nil
 }
@@ -187,11 +191,11 @@ func (v *svcView) runBenchmark(port string, cfg config.BenchConfig) error {
 func (v *svcView) benchDone() {
 	log.Debug().Msg("Bench Completed!")
 	v.app.QueueUpdate(func() {
-		if v.bench.canceled {
+		if v.bench.Canceled() {
 			v.app.status(ui.FlashInfo, "Benchmark canceled")
 		} else {
 			v.app.status(ui.FlashInfo, "Benchmark Completed!")
-			v.bench.cancel()
+			v.bench.Cancel()
 		}
 		v.bench = nil
 		go benchTimedOut(v.app)

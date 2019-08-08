@@ -85,7 +85,7 @@ func (r *Node) List(ns string) (Columnars, error) {
 
 // Marshal a resource to yaml.
 func (r *Node) Marshal(path string) (string, error) {
-	ns, n := namespaced(path)
+	ns, n := Namespaced(path)
 	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		log.Error().Err(err)
