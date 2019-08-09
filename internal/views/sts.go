@@ -10,10 +10,12 @@ import (
 
 type statefulSetView struct {
 	*logResourceView
+	scalableResourceView *scalableResourceView
 }
 
 func newStatefulSetView(t string, app *appView, list resource.List) resourceViewer {
-	v := statefulSetView{newLogResourceView(t, app, list)}
+	logResourceView := newLogResourceView(t, app, list)
+	v := statefulSetView{logResourceView, newScalableResourceViewForParent(logResourceView.resourceView)}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.showPods
 
@@ -22,6 +24,7 @@ func newStatefulSetView(t string, app *appView, list resource.List) resourceView
 
 func (v *statefulSetView) extraActions(aa keyActions) {
 	v.logResourceView.extraActions(aa)
+	v.scalableResourceView.extraActions(aa)
 	aa[KeyShiftD] = newKeyAction("Sort Desired", v.sortColCmd(1, false), true)
 	aa[KeyShiftC] = newKeyAction("Sort Current", v.sortColCmd(2, false), true)
 }

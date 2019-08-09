@@ -124,3 +124,8 @@ func (r *Deployment) Fields(ns string) Row {
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
 }
+
+// Scale the specified resource.
+func (r *Deployment) Scale(ns, n string, replicas int32) error {
+	return r.Resource.(Scalable).Scale(ns, n, replicas)
+}
