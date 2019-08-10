@@ -20,12 +20,12 @@ func runK(clear bool, app *appView, args ...string) bool {
 		return false
 	}
 
-	return run(clear, app, bin, args...)
+	return run(clear, app, bin, false, args...)
 }
 
-func run(clear bool, app *appView, bin string, args ...string) bool {
+func run(clear bool, app *appView, bin string, bg bool, args ...string) bool {
 	return app.Suspend(func() {
-		if err := execute(clear, bin, args...); err != nil {
+		if err := execute(clear, bin, bg, args...); err != nil {
 			app.Flash().Errf("Command exited: %v", err)
 		}
 	})
@@ -38,14 +38,13 @@ func edit(clear bool, app *appView, args ...string) bool {
 		return false
 	}
 
-	return run(clear, app, bin, args...)
+	return run(clear, app, bin, false, args...)
 }
 
-func execute(clear bool, bin string, args ...string) error {
+func execute(clear bool, bin string, bg bool, args ...string) error {
 	if clear {
 		clearScreen()
 	}
-	log.Debug().Msgf("Running command > %s %s", bin, strings.Join(args, " "))
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -57,9 +56,17 @@ func execute(clear bool, bin string, args ...string) error {
 		cancel()
 	}()
 
+	log.Debug().Msgf("Running command > %s %s", bin, strings.Join(args, " "))
+
 	cmd := exec.Command(bin, args...)
-	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-	err := cmd.Run()
+
+	var err error
+	if bg {
+		err = cmd.Start()
+	} else {
+		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+		err = cmd.Run()
+	}
 	log.Debug().Msgf("Command returned error?? %v", err)
 	select {
 	case <-ctx.Done():

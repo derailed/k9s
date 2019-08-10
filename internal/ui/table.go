@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
@@ -72,6 +73,16 @@ func NewTable(title string, styles *config.Styles) *Table {
 	v.SetInputCapture(v.keyboard)
 
 	return &v
+}
+
+// GetRow retrieves the entire selected row.
+func (v *Table) GetRow() resource.Row {
+	r := make(resource.Row, v.GetColumnCount())
+	for i := 0; i < v.GetColumnCount(); i++ {
+		c := v.GetCell(v.selectedRow, i)
+		r[i] = strings.TrimSpace(c.Text)
+	}
+	return r
 }
 
 // AddSelectedRowListener add a new selected row listener.

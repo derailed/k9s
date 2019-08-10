@@ -301,6 +301,7 @@ var expectedConfig = `k9s:
       - dp
       description: blee
       command: duh
+      background: false
       args:
       - -n
       - $NAMESPACE
@@ -329,6 +330,7 @@ var resetConfig = `k9s:
       - dp
       description: blee
       command: duh
+      background: false
       args:
       - -n
       - $NAMESPACE

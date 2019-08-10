@@ -121,27 +121,28 @@ func (v *podView) killCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if err := v.list.Resource().Delete(sel, true, false); err != nil {
 		v.app.Flash().Errf("Delete failed with %s", err)
 	} else {
+		deletePortForward(v.app.forwarders, sel)
 		v.refresh()
 	}
 	return nil
 }
 
-func (v *podView) sniffCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.masterPage().RowSelected() {
-		return evt
-	}
+// func (v *podView) sniffCmd(evt *tcell.EventKey) *tcell.EventKey {
+// 	if !v.masterPage().RowSelected() {
+// 		return evt
+// 	}
 
-	ns, n := namespaced(v.masterPage().GetSelectedItem())
-	var args []string
-	args = append(args, "sniff", n, "-n", ns)
+// 	ns, n := namespaced(v.masterPage().GetSelectedItem())
+// 	var args []string
+// 	args = append(args, "sniff", n, "-n", ns)
 
-	if runK(true, v.app, args...) {
-		v.app.Flash().Info("Sniff launched!")
-	} else {
-		v.app.Flash().Info("Sniff failed!")
-	}
-	return nil
-}
+// 	if runK(true, v.app, args...) {
+// 		v.app.Flash().Info("Sniff launched!")
+// 	} else {
+// 		v.app.Flash().Info("Sniff failed!")
+// 	}
+// 	return nil
+// }
 
 func (v *podView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.viewLogs(false) {

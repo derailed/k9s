@@ -51,12 +51,12 @@ func (s *StatefulSet) Delete(ns, n string, cascade, force bool) error {
 
 // Scale a StatefulSet.
 func (s *StatefulSet) Scale(ns, n string, replicas int32) error {
-	scale, err := s.DialOrDie().Apps().StatefulSets(ns).GetScale(n, metav1.GetOptions{})
+	scale, err := s.DialOrDie().AppsV1().StatefulSets(ns).GetScale(n, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
 	scale.Spec.Replicas = replicas
-	_, err = s.DialOrDie().Apps().StatefulSets(ns).UpdateScale(n, scale)
+	_, err = s.DialOrDie().AppsV1().StatefulSets(ns).UpdateScale(n, scale)
 	return err
 }

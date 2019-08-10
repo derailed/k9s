@@ -25,6 +25,7 @@ type containerView struct {
 func newContainerView(ns string, app *appView, list resource.List, path string, exitFn func()) resourceViewer {
 	v := containerView{logResourceView: newLogResourceView(ns, app, list)}
 	v.path = &path
+	v.envFn = v.k9sEnv
 	v.containerFn = v.selectedContainer
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.viewLogs
@@ -51,6 +52,17 @@ func (v *containerView) extraActions(aa ui.KeyActions) {
 	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", v.sortColCmd(7, false), true)
 	aa[ui.KeyAltC] = ui.NewKeyAction("Sort CPU%", v.sortColCmd(8, false), true)
 	aa[ui.KeyAltM] = ui.NewKeyAction("Sort MEM%", v.sortColCmd(9, false), true)
+}
+
+func (v *containerView) k9sEnv() K9sEnv {
+	env := v.defaultK9sEnv()
+
+	ns, n := namespaced(*v.path)
+	env["POD"] = n
+	env["NAMESPACE"] = ns
+	log.Debug().Msgf("OVER ENV %#v", env)
+
+	return env
 }
 
 func (v *containerView) selectedContainer() string {

@@ -1,13 +1,37 @@
 package views
 
 import (
+	"fmt"
 	"path"
 	"strings"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/gdamore/tcell"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
+
+// In check if a string belongs to a set.
+func in(ss []string, s string) bool {
+	for _, v := range ss {
+		if v == s {
+			return true
+		}
+	}
+
+	return false
+}
+
+// AsKey maps a string representation of a key to a tcell key.
+func asKey(key string) (tcell.Key, error) {
+	for k, v := range tcell.KeyNames {
+		if v == key {
+			return k, nil
+		}
+	}
+
+	return 0, fmt.Errorf("No matching key found %s", key)
+}
 
 // FwFQN returns a fully qualified ns/name:container id.
 func fwFQN(po, co string) string {

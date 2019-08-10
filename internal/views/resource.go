@@ -16,6 +16,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// EnvFn represent the current view exposed environment.
+type envFn func() K9sEnv
+
 type (
 	updatable interface {
 		restartUpdates()
@@ -33,12 +36,16 @@ type (
 		path       *string
 		colorerFn  ui.ColorerFunc
 		decorateFn decorateFn
+		envFn      envFn
 	}
 )
 
 func newResourceView(title string, app *appView, list resource.List) resourceViewer {
-	v := resourceView{list: list}
+	v := resourceView{
+		list: list,
+	}
 	v.masterDetail = newMasterDetail(title, list.GetNamespace(), app, v.backCmd)
+	v.envFn = v.defaultK9sEnv
 
 	return &v
 }
@@ -190,12 +197,23 @@ func (v *resourceView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		if err := v.list.Resource().Delete(sel, cascade, force); err != nil {
 			v.app.Flash().Errf("Delete failed with %s", err)
 		} else {
+			deletePortForward(v.app.forwarders, sel)
 			v.refresh()
 		}
 	}, func() {
 		v.switchPage("master")
 	})
 	return nil
+}
+
+func deletePortForward(ff map[string]forwarder, sel string) {
+	for k, v := range ff {
+		tokens := strings.Split(k, ":")
+		if tokens[0] == sel {
+			log.Debug().Msgf("Deleting associated portForward %s", k)
+			v.Stop()
+		}
+	}
 }
 
 func (v *resourceView) defaultEnter(ns, _, selection string) {
@@ -372,64 +390,66 @@ func (v *resourceView) refreshActions() {
 	v.app.SetHints(t.Hints())
 }
 
-func in(ss []string, s string) bool {
-	for _, v := range ss {
-		if v == s {
-			return true
-		}
-	}
-
-	return false
-}
-
-func asKey(key string) (tcell.Key, error) {
-	for k, v := range tcell.KeyNames {
-		if v == key {
-			return k, nil
-		}
-	}
-
-	return 0, fmt.Errorf("No matching key found %s", key)
-}
-
 func (v *resourceView) customActions(aa ui.KeyActions) {
-	for _, plugin := range v.app.Config.K9s.Plugins {
+	for k, plugin := range v.app.Config.K9s.Plugins {
 		if !in(plugin.Scopes, v.list.GetName()) {
 			continue
 		}
-		key, err := asKey(strings.ToUpper(plugin.ShortCut))
+		key, err := asKey(plugin.ShortCut)
 		if err != nil {
 			log.Error().Err(err).Msg("Unable to map shortcut to a key")
 			continue
 		}
+		_, ok := aa[key]
+		if ok {
+			log.Error().Err(fmt.Errorf("Doh! you are trying to overide an existing command `%s", k)).Msg("Invalid shortcut")
+			continue
+		}
 		aa[key] = ui.NewKeyAction(
 			plugin.Description,
-			v.execCmd(plugin.Command, plugin.Args...),
+			v.execCmd(plugin.Command, plugin.Background, plugin.Args...),
 			true)
 	}
 }
 
-func (v *resourceView) execCmd(bin string, args ...string) ui.ActionHandler {
+func (v *resourceView) execCmd(bin string, bg bool, args ...string) ui.ActionHandler {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		if !v.masterPage().RowSelected() {
 			return evt
 		}
 
-		ns, n := namespaced(v.masterPage().GetSelectedItem())
+		env := v.envFn()
+		aa := make([]string, len(args))
 		for i, a := range args {
-			switch a {
-			case "$NAMESPACE":
-				args[i] = ns
-			case "$NAME":
-				args[i] = n
+			var err error
+			aa[i], err = env.envFor(a)
+			if err != nil {
+				log.Error().Err(err).Msg("Args match failed")
+				return nil
 			}
 		}
 
-		if run(true, v.app, bin, args...) {
+		if run(true, v.app, bin, bg, aa...) {
 			v.app.Flash().Info("Custom CMD launched!")
 		} else {
 			v.app.Flash().Info("Custom CMD failed!")
 		}
 		return nil
 	}
+}
+
+func (v *resourceView) defaultK9sEnv() K9sEnv {
+	ns, n := namespaced(v.masterPage().GetSelectedItem())
+	env := K9sEnv{
+		"NAMESPACE": ns,
+		"NAME":      n,
+	}
+
+	row := v.masterPage().GetRow()
+	for i, r := range row {
+		env["COL-"+strconv.Itoa(i)] = r
+	}
+
+	log.Debug().Msgf("ENVs %#v", env)
+	return env
 }

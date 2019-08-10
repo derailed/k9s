@@ -6,5 +6,6 @@ type Plugin struct {
 	Scopes      []string `yaml:"scopes"`
 	Description string   `yaml:"description"`
 	Command     string   `yaml:"command"`
+	Background  bool     `yaml:"background"`
 	Args        []string `yaml:"args"`
 }

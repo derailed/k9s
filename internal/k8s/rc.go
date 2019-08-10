@@ -51,12 +51,12 @@ func (r *ReplicationController) Delete(ns, n string, cascade, force bool) error 
 
 // Scale a ReplicationController.
 func (r *ReplicationController) Scale(ns, n string, replicas int32) error {
-	scale, err := r.DialOrDie().Core().ReplicationControllers(ns).GetScale(n, metav1.GetOptions{})
+	scale, err := r.DialOrDie().CoreV1().ReplicationControllers(ns).GetScale(n, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
 	scale.Spec.Replicas = replicas
-	_, err = r.DialOrDie().Core().ReplicationControllers(ns).UpdateScale(n, scale)
+	_, err = r.DialOrDie().CoreV1().ReplicationControllers(ns).UpdateScale(n, scale)
 	return err
 }

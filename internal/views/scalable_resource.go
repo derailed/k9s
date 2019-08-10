@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 )
@@ -27,16 +28,16 @@ func newScalableResourceViewForParent(parent *resourceView) *scalableResourceVie
 	return &v
 }
 
-func (v *scalableResourceView) extraActions(aa keyActions) {
-	aa[KeyS] = newKeyAction("Scale", v.scaleCmd, true)
+func (v *scalableResourceView) extraActions(aa ui.KeyActions) {
+	aa[ui.KeyS] = ui.NewKeyAction("Scale", v.scaleCmd, true)
 }
 
 func (v *scalableResourceView) scaleCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.rowSelected() {
+	if !v.masterPage().RowSelected() {
 		return evt
 	}
 
-	v.showScaleDialog(v.list.GetName(), v.getSelectedItem())
+	v.showScaleDialog(v.list.GetName(), v.masterPage().GetSelectedItem())
 	return nil
 }
 
@@ -47,7 +48,7 @@ func (v *scalableResourceView) scale(selection string, replicas int) {
 
 	err := r.Scale(ns, n, int32(replicas))
 	if err != nil {
-		v.app.flash().err(err)
+		v.app.Flash().Err(err)
 	}
 }
 
@@ -98,9 +99,9 @@ func (v *scalableResourceView) createStyledForm() *tview.Form {
 
 func (v *scalableResourceView) okSelected(replicas string) {
 	if val, err := strconv.Atoi(replicas); err == nil {
-		v.scale(v.selectedItem, val)
+		v.scale(v.masterPage().GetSelectedItem(), val)
 	} else {
-		v.app.flash().err(err)
+		v.app.Flash().Err(err)
 	}
 
 	v.dismissScaleDialog()
