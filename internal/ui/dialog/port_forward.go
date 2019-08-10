@@ -42,7 +42,7 @@ func ShowPortForward(p *tview.Pages, port string, okFn func(lport, cport string)
 	p.ShowPage(portForwardKey)
 }
 
-// DismissPortForward dismiss the port foward dialog.
+// DismissPortForward dismiss the port forward dialog.
 func DismissPortForward(p *tview.Pages) {
 	p.RemovePage(portForwardKey)
 }
