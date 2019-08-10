@@ -15,7 +15,6 @@ install: true
 
 env:
   - GO111MODULE=on
-  - GOPROXY=https://proxy.golang.org
 
 script:
   - go build
