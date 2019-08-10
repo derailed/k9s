@@ -94,7 +94,7 @@ NOTE: This is experimental and the schema/behavior WILL change in the future, so
 
 ### That's a wrap!
 
-We hope you will find some of these features useful on your day to day work with K9s. We know they are now more vendors coming into this space, most with big teams, big names and big budgets. Hence more choices for you to assess which of those makes you most happy and productive. My goal is not to get bulldozed by bigC and to continue improving, speeding up and stabilizing K9s. My fuel is to see folks using it, file reports, contribute and seeing that occasional ATTA BOY! (which I must say is much more rewarding to me than money or fame...).
+We hope you will find some of these features useful on your day to day work with K9s. We know they are now more vendors coming into this space. Hence more choices for you to assess which of these tools makes you most happy and productive. My goal is to continue improving, speeding up and stabilizing K9s. My fuel is to see folks using it, file reports, contribute and seeing that occasional ATTA BOY! (which I must say is much more rewarding to me than money or fame...).
 
 Many thanks to all of you for your time, ideas, contributions and support!!
 
