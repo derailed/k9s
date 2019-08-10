@@ -23,6 +23,7 @@ var (
 	CompletedColor tcell.Color
 )
 
+// DefaultColorer set the default table row colors.
 func DefaultColorer(ns string, r *resource.RowEvent) tcell.Color {
 	c := StdColor
 	switch r.Action {

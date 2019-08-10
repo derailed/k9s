@@ -47,9 +47,7 @@ require (
 	github.com/hashicorp/golang-lru v0.5.1 // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/json-iterator/go v1.1.6 // indirect
-	github.com/junegunn/fzf v0.0.0-20190808063552-509589924557
 	github.com/kr/pretty v0.1.0 // indirect
-	github.com/ktr0731/go-fuzzyfinder v0.1.2
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mattn/go-runewidth v0.0.4
 	github.com/onsi/ginkgo v1.8.0 // indirect

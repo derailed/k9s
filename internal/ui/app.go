@@ -227,6 +227,7 @@ func (a *App) SetHints(h Hints) {
 	a.views["menu"].(*MenuView).HydrateMenu(h)
 }
 
+// StatusReset reset log back to normal.
 func (a *App) StatusReset() {
 	a.Logo().Reset()
 	a.Draw()
