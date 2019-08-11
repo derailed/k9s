@@ -1,5 +1,6 @@
 .vscode
 .idea
+.ide
 k9s.log
 .envrc
 cov.out

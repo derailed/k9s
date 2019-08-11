@@ -51,7 +51,13 @@ type (
 )
 
 // NewConfig creates a new default config.
-func NewConfig(ks KubeSettings) *Config {
+func NewConfig(ks KubeSettings, cfgPath string) *Config {
+	var passedCfg = filepath.Join(K9sHome, cfgPath)
+	if _, err := os.Stat(passedCfg); err == nil {
+		if !os.IsNotExist(err) {
+			K9sConfigFile = passedCfg
+		}
+	}
 	return &Config{K9s: NewK9s(), settings: ks}
 }
 

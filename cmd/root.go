@@ -28,6 +28,7 @@ var (
 	version, commit, date = "dev", "dev", "n/a"
 	refreshRate           int
 	logLevel              string
+	cfgPath               string
 	k8sFlags              *genericclioptions.ConfigFlags
 
 	rootCmd = &cobra.Command{
@@ -86,7 +87,7 @@ func loadConfiguration() *config.Config {
 
 	// Load K9s config file...
 	k8sCfg := k8s.NewConfig(k8sFlags)
-	k9sCfg := config.NewConfig(k8sCfg)
+	k9sCfg := config.NewConfig(k8sCfg, cfgPath)
 	if err := k9sCfg.Load(config.K9sConfigFile); err != nil {
 		log.Warn().Msg("Unable to locate K9s config. Generating new configuration...")
 	}
@@ -131,6 +132,12 @@ func initK9sFlags() {
 		"refresh", "r",
 		defaultRefreshRate,
 		"Specifies the default refresh rate as an integer (sec)",
+	)
+	rootCmd.Flags().StringVarP(
+		&cfgPath,
+		"cfg", "c",
+		"config.yml",
+		"Specify a config file path.",
 	)
 	rootCmd.Flags().StringVarP(
 		&logLevel,
