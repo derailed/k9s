@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -68,12 +69,12 @@ func (v *MenuView) buildMenuTable(hh Hints) [][]string {
 	firstCmd := true
 	maxKeys := make([]int, colCount+1)
 	for _, h := range hh {
-		isDigit := menuRX.MatchString(h.mnemonic)
+		isDigit := menuRX.MatchString(h.Mnemonic)
 		if !isDigit && firstCmd {
 			row, col, firstCmd = 0, col+1, false
 		}
-		if maxKeys[col] < len(h.mnemonic) {
-			maxKeys[col] = len(h.mnemonic)
+		if maxKeys[col] < len(h.Mnemonic) {
+			maxKeys[col] = len(h.Mnemonic)
 		}
 		table[row][col] = h
 		row++
@@ -89,7 +90,7 @@ func (v *MenuView) buildMenuTable(hh Hints) [][]string {
 	}
 	for row := range strTable {
 		for col := range strTable[row] {
-			strTable[row][col] = v.formatMenu(table[row][col], maxKeys[col])
+			strTable[row][col] = keyConv(v.formatMenu(table[row][col], maxKeys[col]))
 		}
 	}
 
@@ -98,6 +99,18 @@ func (v *MenuView) buildMenuTable(hh Hints) [][]string {
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func keyConv(s string) string {
+	if !strings.Contains(s, "alt") {
+		return s
+	}
+
+	if runtime.GOOS != "darwin" {
+		return s
+	}
+
+	return strings.Replace(s, "alt", "opt", 1)
+}
 
 func toMnemonic(s string) string {
 	if len(s) == 0 {
@@ -108,9 +121,9 @@ func toMnemonic(s string) string {
 }
 
 func (v *MenuView) formatMenu(h Hint, size int) string {
-	i, err := strconv.Atoi(h.mnemonic)
+	i, err := strconv.Atoi(h.Mnemonic)
 	if err == nil {
-		return formatNSMenu(i, h.description, v.styles.Frame())
+		return formatNSMenu(i, h.Description, v.styles.Frame())
 	}
 
 	return formatPlainMenu(h, size, v.styles.Frame())
@@ -128,7 +141,7 @@ func formatPlainMenu(h Hint, size int, styles config.Frame) string {
 	fmat := strings.Replace(menuFmt, "[key", "["+styles.Menu.KeyColor, 1)
 	fmat = strings.Replace(fmat, "[fg", "["+styles.Menu.FgColor, 1)
 	fmat = strings.Replace(fmat, ":bg:", ":"+styles.Title.BgColor+":", -1)
-	return fmt.Sprintf(fmat, toMnemonic(h.mnemonic), h.description)
+	return fmt.Sprintf(fmat, toMnemonic(h.Mnemonic), h.Description)
 }
 
 // -----------------------------------------------------------------------------

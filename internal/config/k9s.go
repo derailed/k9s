@@ -12,14 +12,16 @@ const (
 
 // K9s tracks K9s configuration options.
 type K9s struct {
-	RefreshRate       int `yaml:"refreshRate"`
-	manualRefreshRate int
+	RefreshRate       int                 `yaml:"refreshRate"`
+	Headless          bool                `yaml:"headless"`
 	LogBufferSize     int                 `yaml:"logBufferSize"`
 	LogRequestSize    int                 `yaml:"logRequestSize"`
 	CurrentContext    string              `yaml:"currentContext"`
 	CurrentCluster    string              `yaml:"currentCluster"`
 	Clusters          map[string]*Cluster `yaml:"clusters,omitempty"`
 	Plugins           map[string]*Plugin  `yaml:"plugins,omitempty"`
+	manualRefreshRate int
+	manualHeadless    *bool
 }
 
 // NewK9s create a new K9s configuration.
@@ -36,6 +38,21 @@ func NewK9s() *K9s {
 // OverrideRefreshRate set the refresh rate manually.
 func (k *K9s) OverrideRefreshRate(r int) {
 	k.manualRefreshRate = r
+}
+
+// OverrideHeadless set the headlessness manually.
+func (k *K9s) OverrideHeadless(b bool) {
+	k.manualHeadless = &b
+}
+
+// GetHeadless returns headless setting.
+func (k *K9s) GetHeadless() bool {
+	h := k.Headless
+	if k.manualHeadless != nil && *k.manualHeadless {
+		h = *k.manualHeadless
+	}
+
+	return h
 }
 
 // GetRefreshRate returns the current refresh rate.

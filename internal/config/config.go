@@ -174,6 +174,7 @@ func (c *Config) Load(path string) error {
 	if cfg.K9s != nil {
 		c.K9s = cfg.K9s
 	}
+	log.Debug().Msgf("Headless ? %t", c.K9s.Headless)
 	return nil
 }
 

@@ -45,6 +45,7 @@ func (b *Benchmark) init(base string) error {
 	if err != nil {
 		return err
 	}
+	log.Debug().Msgf("Benchmarking Request %s", req.URL.String())
 
 	if b.config.Auth.User != "" || b.config.Auth.Password != "" {
 		req.SetBasicAuth(b.config.Auth.User, b.config.Auth.Password)

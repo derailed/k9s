@@ -44,6 +44,7 @@ type (
 		content *tview.Pages
 		views   map[string]tview.Primitive
 		cmdBuff *CmdBuff
+		hints   Hints
 	}
 )
 
@@ -224,7 +225,13 @@ func (a *App) ActiveView() Igniter {
 
 // SetHints updates menu hints.
 func (a *App) SetHints(h Hints) {
+	a.hints = h
 	a.views["menu"].(*MenuView).HydrateMenu(h)
+}
+
+// GetHints retrieves the currently active hints.
+func (a *App) GetHints() Hints {
+	return a.hints
 }
 
 // StatusReset reset log back to normal.

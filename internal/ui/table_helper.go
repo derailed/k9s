@@ -26,6 +26,7 @@ var (
 	cpuRX    = regexp.MustCompile(`\A.{0,1}CPU`)
 	memRX    = regexp.MustCompile(`\A.{0,1}MEM`)
 	labelCmd = regexp.MustCompile(`\A\-l`)
+	fuzzyCmd = regexp.MustCompile(`\A\-f`)
 )
 
 type cleanseFn func(string) string
@@ -45,6 +46,13 @@ func isLabelSelector(s string) bool {
 		return false
 	}
 	return labelCmd.MatchString(s)
+}
+
+func isFuzzySelector(s string) bool {
+	if s == "" {
+		return false
+	}
+	return fuzzyCmd.MatchString(s)
 }
 
 func trimLabelSelector(s string) string {

@@ -41,8 +41,8 @@ func (a KeyActions) Hints() Hints {
 	for _, k := range kk {
 		if name, ok := tcell.KeyNames[tcell.Key(k)]; ok {
 			hh = append(hh, Hint{
-				mnemonic:    name,
-				description: a[tcell.Key(k)].Description})
+				Mnemonic:    name,
+				Description: a[tcell.Key(k)].Description})
 		} else {
 			log.Error().Msgf("Unable to locate KeyName for %#v", string(k))
 		}

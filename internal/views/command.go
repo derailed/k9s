@@ -55,10 +55,10 @@ func (c *command) isStdCmd(cmd string) bool {
 		c.app.BailOut()
 		return true
 	case cmd == "?", cmd == "help":
-		c.app.inject(newHelpView(c.app, c.app.ActiveView()))
+		c.app.helpCmd(nil)
 		return true
 	case cmd == "alias":
-		c.app.inject(newAliasView(c.app, c.app.ActiveView()))
+		c.app.aliasCmd(nil)
 		return true
 	case policyMatcher.MatchString(cmd):
 		tokens := policyMatcher.FindAllStringSubmatch(cmd, -1)

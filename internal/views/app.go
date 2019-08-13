@@ -2,10 +2,12 @@ package views
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tview"
@@ -17,7 +19,7 @@ import (
 const (
 	splashTime     = 1
 	devMode        = "dev"
-	clusterRefresh = time.Duration(15 * time.Second)
+	clusterRefresh = time.Duration(5 * time.Second)
 )
 
 type (
@@ -50,6 +52,7 @@ type (
 		informer   *watch.Informer
 		stopCh     chan struct{}
 		forwarders map[string]forwarder
+		version    string
 	}
 )
 
@@ -63,6 +66,7 @@ func NewApp(cfg *config.Config) *appView {
 	v.InitBench(cfg.K9s.CurrentCluster)
 	v.command = newCommand(&v)
 
+	v.Views()["indicator"] = ui.NewIndicatorView(v.App, v.Styles)
 	v.Views()["flash"] = ui.NewFlashView(v.Application, "Initializing...")
 	v.Views()["clusterInfo"] = newClusterInfoView(&v, k8s.NewMetricsServer(cfg.GetConnection()))
 
@@ -70,6 +74,7 @@ func NewApp(cfg *config.Config) *appView {
 }
 
 func (a *appView) Init(version string, rate int) {
+	a.version = version
 	a.App.Init()
 
 	a.AddActions(ui.KeyActions{
@@ -85,6 +90,9 @@ func (a *appView) Init(version string, rate int) {
 		}
 		a.startInformer(ns)
 		a.clusterInfo().init(version)
+		if a.Config.K9s.GetHeadless() {
+			a.refreshIndicator()
+		}
 	}
 
 	header := tview.NewFlex()
@@ -96,14 +104,17 @@ func (a *appView) Init(version string, rate int) {
 	}
 
 	main := tview.NewFlex()
-	{
-		main.SetDirection(tview.FlexRow)
+	main.SetDirection(tview.FlexRow)
+
+	if !a.Config.K9s.GetHeadless() {
 		main.AddItem(header, 7, 1, false)
-		main.AddItem(a.Cmd(), 3, 1, false)
-		main.AddItem(a.Frame(), 0, 10, true)
-		main.AddItem(a.Crumbs(), 2, 1, false)
-		main.AddItem(a.Flash(), 1, 1, false)
+	} else {
+		main.AddItem(a.indicator(), 1, 1, false)
 	}
+	main.AddItem(a.Cmd(), 3, 1, false)
+	main.AddItem(a.Frame(), 0, 10, true)
+	main.AddItem(a.Crumbs(), 2, 1, false)
+	main.AddItem(a.Flash(), 1, 1, false)
 
 	a.Main().AddPage("main", main, true, false)
 	a.Main().AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
@@ -117,10 +128,43 @@ func (a *appView) clusterUpdater(ctx context.Context) {
 			return
 		case <-time.After(clusterRefresh):
 			a.QueueUpdateDraw(func() {
+				if a.Config.K9s.GetHeadless() {
+					a.refreshIndicator()
+				}
 				a.clusterInfo().refresh()
 			})
 		}
 	}
+}
+
+func (a *appView) refreshIndicator() {
+	mx := k8s.NewMetricsServer(a.Conn())
+	cluster := resource.NewCluster(a.Conn(), &log.Logger, mx)
+	var cmx k8s.ClusterMetrics
+	nos, nmx, err := fetchResources(a)
+	cpu, mem := "0", "0"
+	if err == nil {
+		cluster.Metrics(nos, nmx, &cmx)
+		cpu = resource.AsPerc(cmx.PercCPU)
+		if cpu == "0" {
+			cpu = resource.NAValue
+		}
+		mem = resource.AsPerc(cmx.PercMEM)
+		if mem == "0" {
+			mem = resource.NAValue
+		}
+	}
+
+	info := fmt.Sprintf(
+		"[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s%%[white::]::[darkturquoise::]%s%%",
+		a.version,
+		cluster.ClusterName(),
+		cluster.UserName(),
+		cluster.Version(),
+		cpu,
+		mem,
+	)
+	a.indicator().SetPermanent(info)
 }
 
 func (a *appView) startInformer(ns string) {
@@ -135,6 +179,10 @@ func (a *appView) startInformer(ns string) {
 		log.Panic().Err(err).Msgf("%v", err)
 	}
 	a.informer.Run(a.stopCh)
+
+	if a.Config.K9s.GetHeadless() {
+		a.refreshIndicator()
+	}
 }
 
 // BailOut exists the application.
@@ -188,6 +236,15 @@ func (a *appView) Run() {
 
 func (a *appView) status(l ui.FlashLevel, msg string) {
 	a.Flash().Info(msg)
+	if a.Config.K9s.GetHeadless() {
+		a.setIndicator(l, msg)
+	} else {
+		a.setLogo(l, msg)
+	}
+	a.Draw()
+}
+
+func (a *appView) setLogo(l ui.FlashLevel, msg string) {
 	switch l {
 	case ui.FlashErr:
 		a.Logo().Err(msg)
@@ -197,6 +254,20 @@ func (a *appView) status(l ui.FlashLevel, msg string) {
 		a.Logo().Info(msg)
 	default:
 		a.Logo().Reset()
+	}
+	a.Draw()
+}
+
+func (a *appView) setIndicator(l ui.FlashLevel, msg string) {
+	switch l {
+	case ui.FlashErr:
+		a.indicator().Err(msg)
+	case ui.FlashWarn:
+		a.indicator().Warn(msg)
+	case ui.FlashInfo:
+		a.indicator().Info(msg)
+	default:
+		a.indicator().Reset()
 	}
 	a.Draw()
 }
@@ -225,7 +296,12 @@ func (a *appView) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.InCmdMode() {
 		return evt
 	}
-	a.inject(newHelpView(a, a.ActiveView()))
+	if _, ok := a.Frame().GetPrimitive("main").(*helpView); ok {
+		return evt
+	}
+
+	h := newHelpView(a, a.ActiveView(), a.GetHints())
+	a.inject(h)
 	return nil
 }
 
@@ -233,6 +309,10 @@ func (a *appView) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.InCmdMode() {
 		return evt
 	}
+	if _, ok := a.Frame().GetPrimitive("main").(*aliasView); ok {
+		return evt
+	}
+
 	a.inject(newAliasView(a, a.ActiveView()))
 
 	return nil
@@ -266,4 +346,8 @@ func (a *appView) inject(i ui.Igniter) {
 
 func (a *appView) clusterInfo() *clusterInfoView {
 	return a.Views()["clusterInfo"].(*clusterInfoView)
+}
+
+func (a *appView) indicator() *ui.IndicatorView {
+	return a.Views()["indicator"].(*ui.IndicatorView)
 }

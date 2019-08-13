@@ -8,7 +8,7 @@ import (
 type (
 	// Hint represents keyboard mnemonic.
 	Hint struct {
-		mnemonic, description string
+		Mnemonic, Description string
 	}
 	// Hints a collection of keyboard mnemonics.
 	Hints []Hint
@@ -28,8 +28,8 @@ func (h Hints) Swap(i, j int) {
 }
 
 func (h Hints) Less(i, j int) bool {
-	n, err1 := strconv.Atoi(h[i].mnemonic)
-	m, err2 := strconv.Atoi(h[j].mnemonic)
+	n, err1 := strconv.Atoi(h[i].Mnemonic)
+	m, err2 := strconv.Atoi(h[j].Mnemonic)
 	if err1 == nil && err2 == nil {
 		return n < m
 	}
@@ -39,5 +39,5 @@ func (h Hints) Less(i, j int) bool {
 	if err1 != nil && err2 == nil {
 		return false
 	}
-	return strings.Compare(h[i].description, h[j].description) < 0
+	return strings.Compare(h[i].Description, h[j].Description) < 0
 }

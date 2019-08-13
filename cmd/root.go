@@ -17,17 +17,14 @@ import (
 )
 
 const (
-	appName            = "k9s"
-	defaultRefreshRate = 2 // secs
-	defaultLogLevel    = "info"
-	shortAppDesc       = "A graphical CLI for your Kubernetes cluster management."
-	longAppDesc        = "K9s is a CLI to view and manage your Kubernetes clusters."
+	appName      = "k9s"
+	shortAppDesc = "A graphical CLI for your Kubernetes cluster management."
+	longAppDesc  = "K9s is a CLI to view and manage your Kubernetes clusters."
 )
 
 var (
 	version, commit, date = "dev", "dev", "n/a"
-	refreshRate           int
-	logLevel              string
+	k9sFlags              *config.Flags
 	k8sFlags              *genericclioptions.ConfigFlags
 
 	rootCmd = &cobra.Command{
@@ -71,12 +68,12 @@ func run(cmd *cobra.Command, args []string) {
 		}
 	}()
 
-	zerolog.SetGlobalLevel(parseLevel(logLevel))
+	zerolog.SetGlobalLevel(parseLevel(*k9sFlags.LogLevel))
 	cfg := loadConfiguration()
 	app := views.NewApp(cfg)
 	{
 		defer app.BailOut()
-		app.Init(version, refreshRate)
+		app.Init(version, *k9sFlags.RefreshRate)
 		app.Run()
 	}
 }
@@ -91,8 +88,12 @@ func loadConfiguration() *config.Config {
 		log.Warn().Msg("Unable to locate K9s config. Generating new configuration...")
 	}
 
-	if refreshRate != defaultRefreshRate {
-		k9sCfg.K9s.OverrideRefreshRate(refreshRate)
+	if *k9sFlags.RefreshRate != config.DefaultRefreshRate {
+		k9sCfg.K9s.OverrideRefreshRate(*k9sFlags.RefreshRate)
+	}
+
+	if k9sFlags.Headless != nil {
+		k9sCfg.K9s.OverrideHeadless(*k9sFlags.Headless)
 	}
 
 	if err := k9sCfg.Refine(k8sFlags); err != nil {
@@ -126,17 +127,24 @@ func parseLevel(level string) zerolog.Level {
 }
 
 func initK9sFlags() {
+	k9sFlags = config.NewFlags()
 	rootCmd.Flags().IntVarP(
-		&refreshRate,
+		k9sFlags.RefreshRate,
 		"refresh", "r",
-		defaultRefreshRate,
+		config.DefaultRefreshRate,
 		"Specifies the default refresh rate as an integer (sec)",
 	)
 	rootCmd.Flags().StringVarP(
-		&logLevel,
+		k9sFlags.LogLevel,
 		"logLevel", "l",
-		defaultLogLevel,
+		config.DefaultLogLevel,
 		"Specify a log level (info, warn, debug, error, fatal, panic, trace)",
+	)
+	rootCmd.Flags().BoolVar(
+		k9sFlags.Headless,
+		"headless",
+		false,
+		"Turn K9s header off",
 	)
 }
 

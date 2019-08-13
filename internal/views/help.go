@@ -3,6 +3,9 @@ package views
 import (
 	"context"
 	"fmt"
+	"runtime"
+	"sort"
+	"strings"
 
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
@@ -21,7 +24,7 @@ type (
 	}
 
 	helpView struct {
-		*tview.TextView
+		*tview.Table
 
 		app     *appView
 		current ui.Igniter
@@ -29,19 +32,18 @@ type (
 	}
 )
 
-func newHelpView(app *appView, current ui.Igniter) *helpView {
+func newHelpView(app *appView, current ui.Igniter, hh ui.Hints) *helpView {
 	v := helpView{
-		TextView: tview.NewTextView(),
-		app:      app,
-		actions:  make(ui.KeyActions),
+		Table:   tview.NewTable(),
+		app:     app,
+		actions: make(ui.KeyActions),
 	}
-	v.SetTextColor(tcell.ColorAqua)
 	v.SetBorder(true)
 	v.SetBorderPadding(0, 0, 1, 1)
-	v.SetDynamicColors(true)
 	v.SetInputCapture(v.keyboard)
 	v.current = current
 	v.bindKeys()
+	v.build(hh)
 
 	return &v
 }
@@ -73,26 +75,18 @@ func (v *helpView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (v *helpView) Init(_ context.Context, _ string) {
 	v.resetTitle()
-
-	v.showGeneral()
-	v.showNav()
-	v.showHelp()
 	v.app.SetHints(v.Hints())
 }
 
-func (v *helpView) showHelp() {
-	views := []helpItem{
+func (v *helpView) showHelp() ui.Hints {
+	return ui.Hints{
 		{"?", "Help"},
 		{"Ctrl-a", "Aliases view"},
 	}
-	fmt.Fprintf(v, "️️\n😱 [aqua::b]%s\n", "Help")
-	for _, h := range views {
-		v.printHelp(h.key, h.description)
-	}
 }
 
-func (v *helpView) showNav() {
-	navigation := []helpItem{
+func (v *helpView) showNav() ui.Hints {
+	return ui.Hints{
 		{"g", "Goto Top"},
 		{"G", "Goto Bottom"},
 		{"Ctrl-b", "Page Down"},
@@ -102,14 +96,10 @@ func (v *helpView) showNav() {
 		{"k", "Up"},
 		{"j", "Down"},
 	}
-	fmt.Fprintf(v, "\n🤖 [aqua::b]%s\n", "View Navigation")
-	for _, h := range navigation {
-		v.printHelp(h.key, h.description)
-	}
 }
 
-func (v *helpView) showGeneral() {
-	general := []helpItem{
+func (v *helpView) showGeneral() ui.Hints {
+	return ui.Hints{
 		{":<cmd>", "Command mode"},
 		{"/<term>", "Filter mode"},
 		{"esc", "Clear filter"},
@@ -120,14 +110,6 @@ func (v *helpView) showGeneral() {
 		{"p", "Previous resource view"},
 		{":q", "Quit"},
 	}
-	fmt.Fprintf(v, "🏠 [aqua::b]%s\n", "General")
-	for _, h := range general {
-		v.printHelp(h.key, h.description)
-	}
-}
-
-func (v *helpView) printHelp(key, desc string) {
-	fmt.Fprintf(v, "[dodgerblue::b]%9s [white::]%s\n", key, desc)
 }
 
 func (v *helpView) Hints() ui.Hints {
@@ -140,4 +122,56 @@ func (v *helpView) getTitle() string {
 
 func (v *helpView) resetTitle() {
 	v.SetTitle(fmt.Sprintf(helpTitleFmt, helpTitle))
+}
+
+func (v *helpView) build(hh ui.Hints) {
+	v.Clear()
+	sort.Sort(hh)
+	v.addSection(0, 0, "Resource", hh)
+	v.addSection(0, 4, "General", v.showGeneral())
+	v.addSection(0, 6, "Navigation", v.showNav())
+	v.addSection(0, 8, "Help", v.showHelp())
+}
+
+func (v *helpView) addSection(r, c int, title string, hh ui.Hints) {
+	row := r
+	cell := tview.NewTableCell(title)
+	cell.SetTextColor(tcell.ColorWhite)
+	cell.SetAttributes(tcell.AttrBold)
+	v.SetCell(r, c, cell)
+	row++
+
+	for _, h := range hh {
+		col := c
+		cell := tview.NewTableCell(toMnemonic(h.Mnemonic))
+		cell.SetTextColor(tcell.ColorDodgerBlue)
+		cell.SetAttributes(tcell.AttrBold)
+		cell.SetAlign(tview.AlignRight)
+		v.SetCell(row, col, cell)
+		col++
+		cell = tview.NewTableCell(h.Description)
+		cell.SetTextColor(tcell.ColorWhite)
+		v.SetCell(row, col, cell)
+		row++
+	}
+}
+
+func toMnemonic(s string) string {
+	if len(s) == 0 {
+		return s
+	}
+
+	return "<" + keyConv(strings.ToLower(s)) + ">"
+}
+
+func keyConv(s string) string {
+	if !strings.Contains(s, "alt") {
+		return s
+	}
+
+	if runtime.GOOS != "darwin" {
+		return s
+	}
+
+	return strings.Replace(s, "alt", "opt", 1)
 }

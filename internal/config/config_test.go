@@ -259,6 +259,7 @@ func TestSetup(t *testing.T) {
 
 var expectedConfig = `k9s:
   refreshRate: 100
+  headless: false
   logBufferSize: 500
   logRequestSize: 100
   currentContext: blee
@@ -310,6 +311,7 @@ var expectedConfig = `k9s:
 
 var resetConfig = `k9s:
   refreshRate: 2
+  headless: false
   logBufferSize: 200
   logRequestSize: 200
   currentContext: blee

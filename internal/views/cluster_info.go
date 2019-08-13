@@ -125,13 +125,13 @@ func (v *clusterInfoView) refresh() {
 	v.refreshMetrics(cluster, row)
 }
 
-func (v *clusterInfoView) fetchResources() (k8s.Collection, k8s.Collection, error) {
-	nos, err := v.app.informer.List(watch.NodeIndex, "", metav1.ListOptions{})
+func fetchResources(app *appView) (k8s.Collection, k8s.Collection, error) {
+	nos, err := app.informer.List(watch.NodeIndex, "", metav1.ListOptions{})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	nmx, err := v.app.informer.List(watch.NodeMXIndex, "", metav1.ListOptions{})
+	nmx, err := app.informer.List(watch.NodeMXIndex, "", metav1.ListOptions{})
 	if err != nil {
 		return nil, nil, err
 	}
@@ -140,7 +140,7 @@ func (v *clusterInfoView) fetchResources() (k8s.Collection, k8s.Collection, erro
 }
 
 func (v *clusterInfoView) refreshMetrics(cluster *resource.Cluster, row int) {
-	nos, nmx, err := v.fetchResources()
+	nos, nmx, err := fetchResources(v.app)
 	if err != nil {
 		log.Warn().Err(err).Msg("NodeMetrics")
 		return

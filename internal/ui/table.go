@@ -1,8 +1,10 @@
 package ui
 
 import (
+	"errors"
 	"fmt"
 	"path"
+	"regexp"
 	"strings"
 	"time"
 
@@ -381,6 +383,37 @@ func (v *Table) filtered() resource.TableData {
 	}
 
 	q := v.cmdBuff.String()
+	if isFuzzySelector(q) {
+		return v.fuzzFilter(q[2:])
+	}
+
+	return v.rxFilter(q)
+}
+
+func (v *Table) rxFilter(q string) resource.TableData {
+	rx, err := regexp.Compile(`(?i)` + v.cmdBuff.String())
+	if err != nil {
+		log.Error().Err(errors.New("Invalid filter expression")).Msg("Regexp")
+		v.cmdBuff.Clear()
+		return v.data
+	}
+
+	filtered := resource.TableData{
+		Header:    v.data.Header,
+		Rows:      resource.RowEvents{},
+		Namespace: v.data.Namespace,
+	}
+	for k, row := range v.data.Rows {
+		f := strings.Join(row.Fields, " ")
+		if rx.MatchString(f) {
+			filtered.Rows[k] = row
+		}
+	}
+
+	return filtered
+}
+
+func (v *Table) fuzzFilter(q string) resource.TableData {
 	var ss, kk []string
 	for k, row := range v.data.Rows {
 		ss = append(ss, row.Fields[v.NameColIndex()])
