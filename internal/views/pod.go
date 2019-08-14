@@ -50,7 +50,7 @@ func newPodView(t string, app *appView, list resource.List) resourceViewer {
 }
 
 func (v *podView) extraActions(aa ui.KeyActions) {
-	aa[ui.KeyAltK] = ui.NewKeyAction("Kill", v.killCmd, true)
+	aa[tcell.KeyCtrlK] = ui.NewKeyAction("Kill", v.killCmd, true)
 	aa[ui.KeyS] = ui.NewKeyAction("Shell", v.shellCmd, true)
 
 	aa[ui.KeyL] = ui.NewKeyAction("Logs", v.logsCmd, true)
@@ -61,8 +61,8 @@ func (v *podView) extraActions(aa ui.KeyActions) {
 	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Restart", v.sortColCmd(3, false), true)
 	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", v.sortColCmd(4, false), true)
 	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", v.sortColCmd(5, false), true)
-	aa[ui.KeyAltC] = ui.NewKeyAction("Sort CPU%", v.sortColCmd(6, false), true)
-	aa[ui.KeyAltM] = ui.NewKeyAction("Sort MEM%", v.sortColCmd(7, false), true)
+	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", v.sortColCmd(6, false), true)
+	aa[ui.KeyShiftZ] = ui.NewKeyAction("Sort MEM%", v.sortColCmd(7, false), true)
 	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort IP", v.sortColCmd(8, true), true)
 	aa[ui.KeyShiftO] = ui.NewKeyAction("Sort Node", v.sortColCmd(9, true), true)
 }

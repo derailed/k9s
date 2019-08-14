@@ -99,7 +99,7 @@ func (v *forwardView) registerActions() {
 	tv.SetActions(ui.KeyActions{
 		tcell.KeyEnter: ui.NewKeyAction("Goto", v.gotoBenchCmd, true),
 		tcell.KeyCtrlB: ui.NewKeyAction("Bench", v.benchCmd, true),
-		ui.KeyAltB:     ui.NewKeyAction("Bench Stop", v.benchStopCmd, true),
+		tcell.KeyCtrlK: ui.NewKeyAction("Bench Stop", v.benchStopCmd, true),
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", v.deleteCmd, true),
 		ui.KeySlash:    ui.NewKeyAction("Filter", tv.activateCmd, false),
 		ui.KeyP:        ui.NewKeyAction("Previous", v.app.prevCmd, false),

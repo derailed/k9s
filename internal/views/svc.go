@@ -46,7 +46,7 @@ func (v *svcView) getSelection() string {
 func (v *svcView) extraActions(aa ui.KeyActions) {
 	aa[ui.KeyL] = ui.NewKeyAction("Logs", v.logsCmd, true)
 	aa[tcell.KeyCtrlB] = ui.NewKeyAction("Bench", v.benchCmd, true)
-	aa[ui.KeyAltB] = ui.NewKeyAction("Bench Stop", v.benchStopCmd, true)
+	aa[tcell.KeyCtrlK] = ui.NewKeyAction("Bench Stop", v.benchStopCmd, true)
 	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Type", v.sortColCmd(1, false), true)
 }
 

@@ -100,8 +100,8 @@ func (v *helpView) showNav() ui.Hints {
 
 func (v *helpView) showGeneral() ui.Hints {
 	return ui.Hints{
-		{":<cmd>", "Command mode"},
-		{"/<term>", "Filter mode"},
+		{":cmd", "Command mode"},
+		{"/term", "Filter mode"},
 		{"esc", "Clear filter"},
 		{"tab", "Next term match"},
 		{"backtab", "Previous term match"},

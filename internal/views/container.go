@@ -50,8 +50,8 @@ func (v *containerView) extraActions(aa ui.KeyActions) {
 	aa[ui.KeyP] = ui.NewKeyAction("Previous", v.backCmd, false)
 	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", v.sortColCmd(6, false), true)
 	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", v.sortColCmd(7, false), true)
-	aa[ui.KeyAltC] = ui.NewKeyAction("Sort CPU%", v.sortColCmd(8, false), true)
-	aa[ui.KeyAltM] = ui.NewKeyAction("Sort MEM%", v.sortColCmd(9, false), true)
+	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", v.sortColCmd(8, false), true)
+	aa[ui.KeyShiftZ] = ui.NewKeyAction("Sort MEM%", v.sortColCmd(9, false), true)
 }
 
 func (v *containerView) k9sEnv() K9sEnv {
