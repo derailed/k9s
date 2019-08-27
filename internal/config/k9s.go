@@ -22,6 +22,7 @@ type K9s struct {
 	Plugins           map[string]*Plugin  `yaml:"plugins,omitempty"`
 	manualRefreshRate int
 	manualHeadless    *bool
+	manualCommand     *string
 }
 
 // NewK9s create a new K9s configuration.
@@ -43,6 +44,11 @@ func (k *K9s) OverrideRefreshRate(r int) {
 // OverrideHeadless set the headlessness manually.
 func (k *K9s) OverrideHeadless(b bool) {
 	k.manualHeadless = &b
+}
+
+// OverrideCommand set the command manually.
+func (k *K9s) OverrideCommand(cmd string) {
+	k.manualCommand = &cmd
 }
 
 // GetHeadless returns headless setting.

@@ -142,7 +142,7 @@ func fetchResources(app *appView) (k8s.Collection, k8s.Collection, error) {
 func (v *clusterInfoView) refreshMetrics(cluster *resource.Cluster, row int) {
 	nos, nmx, err := fetchResources(v.app)
 	if err != nil {
-		log.Warn().Err(err).Msg("NodeMetrics")
+		log.Warn().Msgf("NodeMetrics %#v", err)
 		return
 	}
 

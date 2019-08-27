@@ -14,9 +14,16 @@ type MockCruder struct {
 	fail func(message string, callerSkip ...int)
 }
 
-func NewMockCruder() *MockCruder {
-	return &MockCruder{fail: pegomock.GlobalFailHandler}
+func NewMockCruder(options ...pegomock.Option) *MockCruder {
+	mock := &MockCruder{}
+	for _, option := range options {
+		option.Apply(mock)
+	}
+	return mock
 }
+
+func (mock *MockCruder) SetFailHandler(fh pegomock.FailHandler) { mock.fail = fh }
+func (mock *MockCruder) FailHandler() pegomock.FailHandler      { return mock.fail }
 
 func (mock *MockCruder) Delete(_param0 string, _param1 string, _param2 bool, _param3 bool) error {
 	if mock == nil {
@@ -132,60 +139,60 @@ func (mock *MockCruder) SetLabelSelector(_param0 string) {
 	pegomock.GetGenericMockFrom(mock).Invoke("SetLabelSelector", params, []reflect.Type{})
 }
 
-func (mock *MockCruder) VerifyWasCalledOnce() *VerifierCruder {
-	return &VerifierCruder{
+func (mock *MockCruder) VerifyWasCalledOnce() *VerifierMockCruder {
+	return &VerifierMockCruder{
 		mock:                   mock,
 		invocationCountMatcher: pegomock.Times(1),
 	}
 }
 
-func (mock *MockCruder) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierCruder {
-	return &VerifierCruder{
+func (mock *MockCruder) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierMockCruder {
+	return &VerifierMockCruder{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 	}
 }
 
-func (mock *MockCruder) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierCruder {
-	return &VerifierCruder{
+func (mock *MockCruder) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierMockCruder {
+	return &VerifierMockCruder{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 		inOrderContext:         inOrderContext,
 	}
 }
 
-func (mock *MockCruder) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierCruder {
-	return &VerifierCruder{
+func (mock *MockCruder) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierMockCruder {
+	return &VerifierMockCruder{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 		timeout:                timeout,
 	}
 }
 
-type VerifierCruder struct {
+type VerifierMockCruder struct {
 	mock                   *MockCruder
 	invocationCountMatcher pegomock.Matcher
 	inOrderContext         *pegomock.InOrderContext
 	timeout                time.Duration
 }
 
-func (verifier *VerifierCruder) Delete(_param0 string, _param1 string, _param2 bool, _param3 bool) *Cruder_Delete_OngoingVerification {
+func (verifier *VerifierMockCruder) Delete(_param0 string, _param1 string, _param2 bool, _param3 bool) *MockCruder_Delete_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2, _param3}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Delete", params, verifier.timeout)
-	return &Cruder_Delete_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockCruder_Delete_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Cruder_Delete_OngoingVerification struct {
+type MockCruder_Delete_OngoingVerification struct {
 	mock              *MockCruder
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Cruder_Delete_OngoingVerification) GetCapturedArguments() (string, string, bool, bool) {
+func (c *MockCruder_Delete_OngoingVerification) GetCapturedArguments() (string, string, bool, bool) {
 	_param0, _param1, _param2, _param3 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1], _param3[len(_param3)-1]
 }
 
-func (c *Cruder_Delete_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []bool, _param3 []bool) {
+func (c *MockCruder_Delete_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 []bool, _param3 []bool) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -208,23 +215,23 @@ func (c *Cruder_Delete_OngoingVerification) GetAllCapturedArguments() (_param0 [
 	return
 }
 
-func (verifier *VerifierCruder) Get(_param0 string, _param1 string) *Cruder_Get_OngoingVerification {
+func (verifier *VerifierMockCruder) Get(_param0 string, _param1 string) *MockCruder_Get_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Get", params, verifier.timeout)
-	return &Cruder_Get_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockCruder_Get_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Cruder_Get_OngoingVerification struct {
+type MockCruder_Get_OngoingVerification struct {
 	mock              *MockCruder
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Cruder_Get_OngoingVerification) GetCapturedArguments() (string, string) {
+func (c *MockCruder_Get_OngoingVerification) GetCapturedArguments() (string, string) {
 	_param0, _param1 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1]
 }
 
-func (c *Cruder_Get_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
+func (c *MockCruder_Get_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -239,74 +246,74 @@ func (c *Cruder_Get_OngoingVerification) GetAllCapturedArguments() (_param0 []st
 	return
 }
 
-func (verifier *VerifierCruder) GetFieldSelector() *Cruder_GetFieldSelector_OngoingVerification {
+func (verifier *VerifierMockCruder) GetFieldSelector() *MockCruder_GetFieldSelector_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetFieldSelector", params, verifier.timeout)
-	return &Cruder_GetFieldSelector_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockCruder_GetFieldSelector_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Cruder_GetFieldSelector_OngoingVerification struct {
+type MockCruder_GetFieldSelector_OngoingVerification struct {
 	mock              *MockCruder
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Cruder_GetFieldSelector_OngoingVerification) GetCapturedArguments() {
+func (c *MockCruder_GetFieldSelector_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *Cruder_GetFieldSelector_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockCruder_GetFieldSelector_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierCruder) GetLabelSelector() *Cruder_GetLabelSelector_OngoingVerification {
+func (verifier *VerifierMockCruder) GetLabelSelector() *MockCruder_GetLabelSelector_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GetLabelSelector", params, verifier.timeout)
-	return &Cruder_GetLabelSelector_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockCruder_GetLabelSelector_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Cruder_GetLabelSelector_OngoingVerification struct {
+type MockCruder_GetLabelSelector_OngoingVerification struct {
 	mock              *MockCruder
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Cruder_GetLabelSelector_OngoingVerification) GetCapturedArguments() {
+func (c *MockCruder_GetLabelSelector_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *Cruder_GetLabelSelector_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockCruder_GetLabelSelector_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierCruder) HasSelectors() *Cruder_HasSelectors_OngoingVerification {
+func (verifier *VerifierMockCruder) HasSelectors() *MockCruder_HasSelectors_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "HasSelectors", params, verifier.timeout)
-	return &Cruder_HasSelectors_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockCruder_HasSelectors_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Cruder_HasSelectors_OngoingVerification struct {
+type MockCruder_HasSelectors_OngoingVerification struct {
 	mock              *MockCruder
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Cruder_HasSelectors_OngoingVerification) GetCapturedArguments() {
+func (c *MockCruder_HasSelectors_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *Cruder_HasSelectors_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockCruder_HasSelectors_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierCruder) List(_param0 string) *Cruder_List_OngoingVerification {
+func (verifier *VerifierMockCruder) List(_param0 string) *MockCruder_List_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "List", params, verifier.timeout)
-	return &Cruder_List_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockCruder_List_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Cruder_List_OngoingVerification struct {
+type MockCruder_List_OngoingVerification struct {
 	mock              *MockCruder
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Cruder_List_OngoingVerification) GetCapturedArguments() string {
+func (c *MockCruder_List_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *Cruder_List_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockCruder_List_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -317,23 +324,23 @@ func (c *Cruder_List_OngoingVerification) GetAllCapturedArguments() (_param0 []s
 	return
 }
 
-func (verifier *VerifierCruder) SetFieldSelector(_param0 string) *Cruder_SetFieldSelector_OngoingVerification {
+func (verifier *VerifierMockCruder) SetFieldSelector(_param0 string) *MockCruder_SetFieldSelector_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetFieldSelector", params, verifier.timeout)
-	return &Cruder_SetFieldSelector_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockCruder_SetFieldSelector_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Cruder_SetFieldSelector_OngoingVerification struct {
+type MockCruder_SetFieldSelector_OngoingVerification struct {
 	mock              *MockCruder
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Cruder_SetFieldSelector_OngoingVerification) GetCapturedArguments() string {
+func (c *MockCruder_SetFieldSelector_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *Cruder_SetFieldSelector_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockCruder_SetFieldSelector_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))
@@ -344,23 +351,23 @@ func (c *Cruder_SetFieldSelector_OngoingVerification) GetAllCapturedArguments() 
 	return
 }
 
-func (verifier *VerifierCruder) SetLabelSelector(_param0 string) *Cruder_SetLabelSelector_OngoingVerification {
+func (verifier *VerifierMockCruder) SetLabelSelector(_param0 string) *MockCruder_SetLabelSelector_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SetLabelSelector", params, verifier.timeout)
-	return &Cruder_SetLabelSelector_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockCruder_SetLabelSelector_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type Cruder_SetLabelSelector_OngoingVerification struct {
+type MockCruder_SetLabelSelector_OngoingVerification struct {
 	mock              *MockCruder
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *Cruder_SetLabelSelector_OngoingVerification) GetCapturedArguments() string {
+func (c *MockCruder_SetLabelSelector_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *Cruder_SetLabelSelector_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockCruder_SetLabelSelector_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))

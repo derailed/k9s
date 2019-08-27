@@ -243,6 +243,11 @@ var resMap = map[string]*meta.RESTMapping{
 		GroupVersionKind: schema.GroupVersionKind{Group: "apiextensions.k8s.io", Version: "v1beta1", Kind: "CustomResourceDefinition"},
 		Scope:            RestMapping,
 	},
+	"NetworkPolicies": {
+		Resource:         schema.GroupVersionResource{Group: "extensions", Version: "v1beta1", Resource: "networkpolicies"},
+		GroupVersionKind: schema.GroupVersionKind{Group: "extensions", Version: "v1beta1", Kind: "NetworkPolicy"},
+		Scope:            RestMapping,
+	},
 
 	"Events": {
 		Resource:         schema.GroupVersionResource{Group: "events.k8s.io", Version: "v1beta1", Resource: "events"},

@@ -14,9 +14,16 @@ type MockKubeSettings struct {
 	fail func(message string, callerSkip ...int)
 }
 
-func NewMockKubeSettings() *MockKubeSettings {
-	return &MockKubeSettings{fail: pegomock.GlobalFailHandler}
+func NewMockKubeSettings(options ...pegomock.Option) *MockKubeSettings {
+	mock := &MockKubeSettings{}
+	for _, option := range options {
+		option.Apply(mock)
+	}
+	return mock
 }
+
+func (mock *MockKubeSettings) SetFailHandler(fh pegomock.FailHandler) { mock.fail = fh }
+func (mock *MockKubeSettings) FailHandler() pegomock.FailHandler      { return mock.fail }
 
 func (mock *MockKubeSettings) ClusterNames() ([]string, error) {
 	if mock == nil {
@@ -109,128 +116,128 @@ func (mock *MockKubeSettings) NamespaceNames(_param0 []v1.Namespace) []string {
 	return ret0
 }
 
-func (mock *MockKubeSettings) VerifyWasCalledOnce() *VerifierKubeSettings {
-	return &VerifierKubeSettings{
+func (mock *MockKubeSettings) VerifyWasCalledOnce() *VerifierMockKubeSettings {
+	return &VerifierMockKubeSettings{
 		mock:                   mock,
 		invocationCountMatcher: pegomock.Times(1),
 	}
 }
 
-func (mock *MockKubeSettings) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierKubeSettings {
-	return &VerifierKubeSettings{
+func (mock *MockKubeSettings) VerifyWasCalled(invocationCountMatcher pegomock.Matcher) *VerifierMockKubeSettings {
+	return &VerifierMockKubeSettings{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 	}
 }
 
-func (mock *MockKubeSettings) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierKubeSettings {
-	return &VerifierKubeSettings{
+func (mock *MockKubeSettings) VerifyWasCalledInOrder(invocationCountMatcher pegomock.Matcher, inOrderContext *pegomock.InOrderContext) *VerifierMockKubeSettings {
+	return &VerifierMockKubeSettings{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 		inOrderContext:         inOrderContext,
 	}
 }
 
-func (mock *MockKubeSettings) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierKubeSettings {
-	return &VerifierKubeSettings{
+func (mock *MockKubeSettings) VerifyWasCalledEventually(invocationCountMatcher pegomock.Matcher, timeout time.Duration) *VerifierMockKubeSettings {
+	return &VerifierMockKubeSettings{
 		mock:                   mock,
 		invocationCountMatcher: invocationCountMatcher,
 		timeout:                timeout,
 	}
 }
 
-type VerifierKubeSettings struct {
+type VerifierMockKubeSettings struct {
 	mock                   *MockKubeSettings
 	invocationCountMatcher pegomock.Matcher
 	inOrderContext         *pegomock.InOrderContext
 	timeout                time.Duration
 }
 
-func (verifier *VerifierKubeSettings) ClusterNames() *KubeSettings_ClusterNames_OngoingVerification {
+func (verifier *VerifierMockKubeSettings) ClusterNames() *MockKubeSettings_ClusterNames_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ClusterNames", params, verifier.timeout)
-	return &KubeSettings_ClusterNames_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockKubeSettings_ClusterNames_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type KubeSettings_ClusterNames_OngoingVerification struct {
+type MockKubeSettings_ClusterNames_OngoingVerification struct {
 	mock              *MockKubeSettings
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *KubeSettings_ClusterNames_OngoingVerification) GetCapturedArguments() {
+func (c *MockKubeSettings_ClusterNames_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *KubeSettings_ClusterNames_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockKubeSettings_ClusterNames_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierKubeSettings) CurrentClusterName() *KubeSettings_CurrentClusterName_OngoingVerification {
+func (verifier *VerifierMockKubeSettings) CurrentClusterName() *MockKubeSettings_CurrentClusterName_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CurrentClusterName", params, verifier.timeout)
-	return &KubeSettings_CurrentClusterName_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockKubeSettings_CurrentClusterName_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type KubeSettings_CurrentClusterName_OngoingVerification struct {
+type MockKubeSettings_CurrentClusterName_OngoingVerification struct {
 	mock              *MockKubeSettings
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *KubeSettings_CurrentClusterName_OngoingVerification) GetCapturedArguments() {
+func (c *MockKubeSettings_CurrentClusterName_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *KubeSettings_CurrentClusterName_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockKubeSettings_CurrentClusterName_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierKubeSettings) CurrentContextName() *KubeSettings_CurrentContextName_OngoingVerification {
+func (verifier *VerifierMockKubeSettings) CurrentContextName() *MockKubeSettings_CurrentContextName_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CurrentContextName", params, verifier.timeout)
-	return &KubeSettings_CurrentContextName_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockKubeSettings_CurrentContextName_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type KubeSettings_CurrentContextName_OngoingVerification struct {
+type MockKubeSettings_CurrentContextName_OngoingVerification struct {
 	mock              *MockKubeSettings
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *KubeSettings_CurrentContextName_OngoingVerification) GetCapturedArguments() {
+func (c *MockKubeSettings_CurrentContextName_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *KubeSettings_CurrentContextName_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockKubeSettings_CurrentContextName_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierKubeSettings) CurrentNamespaceName() *KubeSettings_CurrentNamespaceName_OngoingVerification {
+func (verifier *VerifierMockKubeSettings) CurrentNamespaceName() *MockKubeSettings_CurrentNamespaceName_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CurrentNamespaceName", params, verifier.timeout)
-	return &KubeSettings_CurrentNamespaceName_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockKubeSettings_CurrentNamespaceName_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type KubeSettings_CurrentNamespaceName_OngoingVerification struct {
+type MockKubeSettings_CurrentNamespaceName_OngoingVerification struct {
 	mock              *MockKubeSettings
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *KubeSettings_CurrentNamespaceName_OngoingVerification) GetCapturedArguments() {
+func (c *MockKubeSettings_CurrentNamespaceName_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *KubeSettings_CurrentNamespaceName_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockKubeSettings_CurrentNamespaceName_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierKubeSettings) NamespaceNames(_param0 []v1.Namespace) *KubeSettings_NamespaceNames_OngoingVerification {
+func (verifier *VerifierMockKubeSettings) NamespaceNames(_param0 []v1.Namespace) *MockKubeSettings_NamespaceNames_OngoingVerification {
 	params := []pegomock.Param{_param0}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "NamespaceNames", params, verifier.timeout)
-	return &KubeSettings_NamespaceNames_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	return &MockKubeSettings_NamespaceNames_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type KubeSettings_NamespaceNames_OngoingVerification struct {
+type MockKubeSettings_NamespaceNames_OngoingVerification struct {
 	mock              *MockKubeSettings
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *KubeSettings_NamespaceNames_OngoingVerification) GetCapturedArguments() []v1.Namespace {
+func (c *MockKubeSettings_NamespaceNames_OngoingVerification) GetCapturedArguments() []v1.Namespace {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *KubeSettings_NamespaceNames_OngoingVerification) GetAllCapturedArguments() (_param0 [][]v1.Namespace) {
+func (c *MockKubeSettings_NamespaceNames_OngoingVerification) GetAllCapturedArguments() (_param0 [][]v1.Namespace) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([][]v1.Namespace, len(params[0]))

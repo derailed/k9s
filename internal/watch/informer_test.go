@@ -48,6 +48,7 @@ func TestInformerInitWithNS(t *testing.T) {
 	m.When(cmo.Config()).ThenReturn(k8s.NewConfig(f))
 	m.When(cmo.HasMetrics()).ThenReturn(true)
 	m.When(cmo.CheckNSAccess(ns)).ThenReturn(nil)
+	m.When(cmo.CanIAccess(ns, "pods.v1", []string{"list", "watch"})).ThenReturn(true, nil)
 	i, err := NewInformer(cmo, ns)
 	assert.NilError(t, err)
 

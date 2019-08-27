@@ -2,10 +2,14 @@ package views
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/rs/zerolog/log"
 )
 
 var (
@@ -49,4 +53,32 @@ func colorizeYAML(style config.Yaml, raw string) string {
 	}
 
 	return strings.Join(buff, "\n")
+}
+
+func saveYAML(cluster, name, data string) (string, error) {
+	dir := filepath.Join(config.K9sDumpDir, cluster)
+	if err := ensureDir(dir); err != nil {
+		return "", err
+	}
+
+	now := time.Now().UnixNano()
+	fName := fmt.Sprintf("%s-%d.yml", strings.Replace(name, "/", "-", -1), now)
+
+	path := filepath.Join(dir, fName)
+	mod := os.O_CREATE | os.O_WRONLY
+	file, err := os.OpenFile(path, mod, 0644)
+	defer func() {
+		if file != nil {
+			file.Close()
+		}
+	}()
+	if err != nil {
+		log.Error().Err(err).Msgf("YAML create %s", path)
+		return "", nil
+	}
+	if _, err := fmt.Fprintf(file, data); err != nil {
+		return "", err
+	}
+
+	return path, nil
 }

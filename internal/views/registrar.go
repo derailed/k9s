@@ -1,6 +1,8 @@
 package views
 
 import (
+	"strings"
+
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
@@ -87,6 +89,13 @@ func showRBAC(app *appView, ns, resource, selection string) {
 		kind = role
 	}
 	app.inject(newRBACView(app, ns, selection, kind))
+}
+
+func showCRD(app *appView, ns, resource, selection string) {
+	log.Debug().Msgf("Launching CRD %q -- %q -- %q", ns, resource, selection)
+	tokens := strings.Split(selection, ".")
+	app.gotoResource(tokens[0], true)
+
 }
 
 func showClusterRole(app *appView, ns, resource, selection string) {
@@ -345,8 +354,17 @@ func apiExtRes(m map[string]resCmd) {
 		crdCmd: crdCmd{
 			api: "apiextensions.k8s.io",
 		},
+		viewFn:  newResourceView,
+		listFn:  resource.NewCustomResourceDefinitionList,
+		enterFn: showCRD,
+	}
+	m["np"] = resCmd{
+		title: "NetworkPolicies",
+		crdCmd: crdCmd{
+			api: "apiextensions.k8s.io",
+		},
 		viewFn: newResourceView,
-		listFn: resource.NewCustomResourceDefinitionList,
+		listFn: resource.NewNetworkPolicyList,
 	}
 }
 

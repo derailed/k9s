@@ -138,7 +138,13 @@ func (c *Config) ActiveView() string {
 	if c.K9s.ActiveCluster() == nil {
 		return defaultView
 	}
-	return c.K9s.ActiveCluster().View.Active
+
+	cmd := c.K9s.ActiveCluster().View.Active
+	if c.K9s.manualCommand != nil && *c.K9s.manualCommand != "" {
+		cmd = *c.K9s.manualCommand
+	}
+
+	return cmd
 }
 
 // SetActiveView set the currently cluster active view

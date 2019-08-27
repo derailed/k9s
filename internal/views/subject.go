@@ -81,6 +81,10 @@ func (v *subjectView) Init(c context.Context, _ string) {
 
 }
 
+func (v *subjectView) masterPage() *tableView {
+	return v.tableView
+}
+
 func (v *subjectView) bindKeys() {
 	// No time data or ns
 	v.RmAction(ui.KeyShiftA)

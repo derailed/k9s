@@ -3,6 +3,7 @@ package views
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
@@ -67,7 +68,8 @@ func (v *scalableResourceView) showScaleDialog(resourceType string, resourceName
 func (v *scalableResourceView) createScaleForm() *tview.Form {
 	f := v.createStyledForm()
 
-	replicas := "1"
+	tv := v.masterPage()
+	replicas := strings.TrimSpace(tv.GetCell(tv.GetSelectedRow(), tv.NameColIndex()+1).Text)
 	f.AddInputField("Replicas:", replicas, 4, func(textToCheck string, lastChar rune) bool {
 		_, err := strconv.Atoi(textToCheck)
 		return err == nil

@@ -72,6 +72,7 @@ type (
 		CurrentNamespaceName() (string, error)
 		CheckNSAccess(ns string) error
 		CheckListNSAccess() error
+		CanIAccess(ns, resURL string, verbs []string) (bool, error)
 	}
 
 	k8sClient struct {
@@ -120,25 +121,27 @@ func (a *APIClient) CheckNSAccess(n string) error {
 	return err
 }
 
-func makeSAR(ns, name, resURL string) *authorizationv1.SelfSubjectAccessReview {
-	_, gr := schema.ParseResourceArg(strings.ToLower(resURL))
+func makeSAR(ns, resURL string) *authorizationv1.SelfSubjectAccessReview {
+	gvr, _ := schema.ParseResourceArg(strings.ToLower(resURL))
+	if gvr == nil {
+		panic(fmt.Errorf("Unable to get GVR from url %s", resURL))
+	}
+	log.Debug().Msgf("GVR for %s -- %#v", resURL, *gvr)
 	return &authorizationv1.SelfSubjectAccessReview{
 		Spec: authorizationv1.SelfSubjectAccessReviewSpec{
 			ResourceAttributes: &authorizationv1.ResourceAttributes{
-				Namespace:   ns,
-				Group:       gr.Group,
-				Resource:    gr.Resource,
-				Subresource: "",
-				Name:        name,
+				Namespace: ns,
+				Group:     gvr.Group,
+				Resource:  gvr.Resource,
 			},
 		},
 	}
 }
 
 // CanIAccess checks if user has access to a certain resource.
-func canIAccess(conn Connection, ns, name, resURL string, verbs []string) (bool, error) {
-	sar := makeSAR(ns, name, resURL)
-	dial := conn.DialOrDie().AuthorizationV1().SelfSubjectAccessReviews()
+func (a *APIClient) CanIAccess(ns, resURL string, verbs []string) (bool, error) {
+	sar := makeSAR(ns, resURL)
+	dial := a.DialOrDie().AuthorizationV1().SelfSubjectAccessReviews()
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
 		resp, err := dial.Create(sar)

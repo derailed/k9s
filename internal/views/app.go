@@ -42,6 +42,7 @@ type (
 		setColorerFn(ui.ColorerFunc)
 		setDecorateFn(decorateFn)
 		setExtraActionsFn(ui.ActionsFunc)
+		masterPage() *tableView
 	}
 
 	appView struct {

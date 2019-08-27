@@ -50,6 +50,10 @@ func newForwardView(ns string, app *appView, list resource.List) resourceViewer 
 	return &v
 }
 
+func (v *forwardView) masterPage() *tableView {
+	return v.GetPrimitive("table").(*tableView)
+}
+
 func (v *forwardView) setEnterFn(enterFn)               {}
 func (v *forwardView) setColorerFn(ui.ColorerFunc)      {}
 func (v *forwardView) setDecorateFn(decorateFn)         {}

@@ -30,7 +30,7 @@ func NewCustomList(c k8s.Connection, ns, group, version, name string) List {
 	return NewList(
 		ns,
 		name,
-		NewCustom(c, group, version, name), AllVerbsAccess,
+		NewCustom(c, group, version, name), AllVerbsAccess|DescribeAccess,
 	)
 }
 

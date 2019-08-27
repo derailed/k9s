@@ -26,6 +26,8 @@ replace (
 )
 
 require (
+	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
+	github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4 // indirect
 	github.com/atotto/clipboard v0.1.2
 	github.com/derailed/tview v0.2.1
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
@@ -34,7 +36,7 @@ require (
 	github.com/evanphx/json-patch v4.1.0+incompatible // indirect
 	github.com/fatih/camelcase v1.0.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.7
-	github.com/gdamore/tcell v1.2.0
+	github.com/gdamore/tcell v1.1.2
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/gogo/protobuf v1.2.1 // indirect
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
@@ -52,7 +54,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.4
 	github.com/onsi/ginkgo v1.8.0 // indirect
 	github.com/onsi/gomega v1.5.0 // indirect
-	github.com/petergtz/pegomock v0.0.0-20181206220228-b113d17a7e81
+	github.com/petergtz/pegomock v2.5.0+incompatible
 	github.com/rakyll/hey v0.1.2
 	github.com/rs/zerolog v1.14.3
 	github.com/sahilm/fuzzy v0.1.0
@@ -63,6 +65,7 @@ require (
 	golang.org/x/net v0.0.0-20190424112056-4829fb13d2c6 // indirect
 	golang.org/x/text v0.3.2
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
+	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect
 	gopkg.in/check.v1 v1.0.0-20180628173108-788fd7840127 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.2.2

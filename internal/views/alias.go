@@ -111,7 +111,7 @@ func (v *aliasView) hydrate() resource.TableData {
 	aliasCmds(v.app.Conn(), cmds)
 
 	data := resource.TableData{
-		Header:    resource.Row{"NAME", "RESOURCE", "APIGROUP"},
+		Header:    resource.Row{"ALIAS", "RESOURCE", "APIGROUP"},
 		Rows:      make(resource.RowEvents, len(cmds)),
 		Namespace: resource.NotNamespaced,
 	}

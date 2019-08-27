@@ -76,6 +76,7 @@ func (v *detailsView) bindKeys() {
 		tcell.KeyEscape:     ui.NewKeyAction("Back", v.backCmd, true),
 		tcell.KeyTab:        ui.NewKeyAction("Next Match", v.nextCmd, false),
 		tcell.KeyBacktab:    ui.NewKeyAction("Previous Match", v.prevCmd, false),
+		tcell.KeyCtrlS:      ui.NewKeyAction("Save", v.saveCmd, true),
 	}
 }
 
@@ -99,6 +100,15 @@ func (v *detailsView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		return a.Action(evt)
 	}
 	return evt
+}
+
+func (v *detailsView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if path, err := saveYAML(v.app.Config.K9s.CurrentCluster, v.title, v.GetText(true)); err != nil {
+		v.app.Flash().Err(err)
+	} else {
+		v.app.Flash().Infof("Log %s saved successfully!", path)
+	}
+	return nil
 }
 
 func (v *detailsView) backCmd(evt *tcell.EventKey) *tcell.EventKey {

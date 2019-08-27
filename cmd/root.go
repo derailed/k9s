@@ -96,6 +96,10 @@ func loadConfiguration() *config.Config {
 		k9sCfg.K9s.OverrideHeadless(*k9sFlags.Headless)
 	}
 
+	if k9sFlags.Command != nil {
+		k9sCfg.K9s.OverrideCommand(*k9sFlags.Command)
+	}
+
 	if err := k9sCfg.Refine(k8sFlags); err != nil {
 		log.Panic().Err(err).Msg("Unable to locate kubeconfig file")
 	}
@@ -132,7 +136,7 @@ func initK9sFlags() {
 		k9sFlags.RefreshRate,
 		"refresh", "r",
 		config.DefaultRefreshRate,
-		"Specifies the default refresh rate as an integer (sec)",
+		"Specify the default refresh rate as an integer (sec)",
 	)
 	rootCmd.Flags().StringVarP(
 		k9sFlags.LogLevel,
@@ -145,6 +149,12 @@ func initK9sFlags() {
 		"headless",
 		false,
 		"Turn K9s header off",
+	)
+	rootCmd.Flags().StringVarP(
+		k9sFlags.Command,
+		"command", "c",
+		config.DefaultCommand,
+		"Specify the default command to view when the application launches",
 	)
 }
 

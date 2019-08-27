@@ -88,7 +88,7 @@ func (v *helpView) showHelp() ui.Hints {
 func (v *helpView) showNav() ui.Hints {
 	return ui.Hints{
 		{"g", "Goto Top"},
-		{"G", "Goto Bottom"},
+		{"Shift-g", "Goto Bottom"},
 		{"Ctrl-b", "Page Down"},
 		{"Ctrl-f", "Page Up"},
 		{"h", "Left"},

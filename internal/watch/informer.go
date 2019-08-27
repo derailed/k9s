@@ -70,6 +70,7 @@ func NewInformer(client k8s.Connection, ns string) (*Informer, error) {
 	}
 
 	if err := client.CheckNSAccess(ns); err != nil {
+		log.Error().Err(err).Msg("Checking NS Access")
 		return nil, err
 	}
 
@@ -80,19 +81,39 @@ func NewInformer(client k8s.Connection, ns string) (*Informer, error) {
 func (i *Informer) init(ns string) {
 	log.Debug().Msgf(">>>>> Starting Informer in namespace %q", ns)
 
+	if ok, err := i.client.CanIAccess(ns, "pods.v1.", []string{"list", "watch"}); ok && err == nil {
+		log.Debug().Msgf("Pod access granted!")
+	} else {
+		log.Debug().Msgf("No pod access! %t -- %#v", ok, err)
+	}
+
 	i.initOnce.Do(func() {
 		po := NewPod(i.client, ns)
 		i.informers = map[string]StoreInformer{
 			PodIndex:       po,
 			ContainerIndex: NewContainer(po),
 		}
-		i.informers[NodeIndex] = NewNode(i.client)
+		if ok, err := i.client.CanIAccess(ns, "nodes.v1.", []string{"list", "watch"}); ok && err == nil {
+			log.Debug().Msgf("CanI access nodes %t -- %#v", ok, err)
+			i.informers[NodeIndex] = NewNode(i.client)
+		} else {
+			log.Debug().Msgf("No node access! %t -- %#v", ok, err)
+		}
 
 		if !i.client.HasMetrics() {
 			return
 		}
-		i.informers[NodeMXIndex] = NewNodeMetrics(i.client)
-		i.informers[PodMXIndex] = NewPodMetrics(i.client, ns)
+
+		if ok, err := i.client.CanIAccess(ns, "nodes.v1beta1.metrics.k8s.io", []string{"list", "watch"}); ok && err == nil {
+			i.informers[NodeMXIndex] = NewNodeMetrics(i.client)
+		} else {
+			log.Debug().Msg("No node metrics access!")
+		}
+		if ok, err := i.client.CanIAccess(ns, "pods.v1beta1.metrics.k8s.io", []string{"list", "watch"}); ok && err == nil {
+			i.informers[PodMXIndex] = NewPodMetrics(i.client, ns)
+		} else {
+			log.Debug().Msgf("No pod metrics access! %t -- %#v", ok, err)
+		}
 	})
 }
 

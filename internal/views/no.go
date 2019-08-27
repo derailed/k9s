@@ -52,8 +52,9 @@ func showPods(app *appView, ns, labelSel, fieldSel string, a ui.ActionHandler) {
 
 	pv := newPodView("Pods", app, list)
 	pv.setColorerFn(podColorer)
-	pv.setExtraActionsFn(func(aa ui.KeyActions) {
-		aa[tcell.KeyEsc] = ui.NewKeyAction("Back", a, true)
+	// pv.setExtraActionsFn(func(aa ui.KeyActions) {
+	pv.masterPage().SetActions(ui.KeyActions{
+		tcell.KeyEsc: ui.NewKeyAction("Back", a, true),
 	})
 	// Reset active namespace to all.
 	app.Config.SetActiveNamespace(ns)

@@ -15,7 +15,7 @@ import (
 
 const (
 	containerFmt = "[fg:bg:b]%s([hilite:bg:b]%s[fg:bg:-])"
-	shellCheck   = "command -v bash >/dev/null && exec bash || exec sh"
+	shellCheck   = "command -v bash >/dev/null && bash || sh"
 )
 
 type podView struct {

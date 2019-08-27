@@ -54,6 +54,10 @@ func newDumpView(_ string, app *appView, _ resource.List) resourceViewer {
 	return &v
 }
 
+func (v *dumpView) masterPage() *tableView {
+	return v.GetPrimitive("table").(*tableView)
+}
+
 func (v *dumpView) setEnterFn(enterFn)               {}
 func (v *dumpView) setColorerFn(ui.ColorerFunc)      {}
 func (v *dumpView) setDecorateFn(decorateFn)         {}
