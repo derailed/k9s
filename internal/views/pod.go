@@ -15,7 +15,7 @@ import (
 
 const (
 	containerFmt = "[fg:bg:b]%s([hilite:bg:b]%s[fg:bg:-])"
-	shellCheck   = "command -v bash >/dev/null && bash || sh"
+	shellCheck   = "command -v bash >/dev/null && exec bash || exec sh"
 )
 
 type podView struct {
@@ -126,23 +126,6 @@ func (v *podView) killCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	return nil
 }
-
-// func (v *podView) sniffCmd(evt *tcell.EventKey) *tcell.EventKey {
-// 	if !v.masterPage().RowSelected() {
-// 		return evt
-// 	}
-
-// 	ns, n := namespaced(v.masterPage().GetSelectedItem())
-// 	var args []string
-// 	args = append(args, "sniff", n, "-n", ns)
-
-// 	if runK(true, v.app, args...) {
-// 		v.app.Flash().Info("Sniff launched!")
-// 	} else {
-// 		v.app.Flash().Info("Sniff failed!")
-// 	}
-// 	return nil
-// }
 
 func (v *podView) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.viewLogs(false) {
