@@ -195,6 +195,8 @@ K9s uses aliases to navigate most K8s resources.
 | `<Esc>`                     | Bails out of command mode                          |                            |
 | `d`,`v`, `e`, `l`,...       | Key mapping to describe, view, edit, view logs,... | `d` (describes a resource) |
 | `:`ctx`<ENTER>`             | To view and switch to another Kubernetes context   | `:`+`ctx`+`<ENTER>`        |
+| `Ctrl-d`                    | To delete a resource (TAB and ENTER to confirm)    |                            |
+| `Ctrl-k`                    | To delete a resource (no confirmation dialog)      |                            |
 | `:q`, `Ctrl-c`              | To bail out of K9s                                 |                            |
 
 ---
