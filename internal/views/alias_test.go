@@ -13,6 +13,6 @@ func TestAliasView(t *testing.T) {
 	v.Init(nil, "")
 
 	assert.Equal(t, 3, len(td.Header))
-	assert.Equal(t, 32, len(td.Rows))
+	assert.Equal(t, 33, len(td.Rows))
 	assert.Equal(t, "Aliases", v.getTitle())
 }

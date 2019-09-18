@@ -174,6 +174,14 @@ func stateRes(m map[string]resCmd) {
 		viewFn: newSecretView,
 		listFn: resource.NewSecretList,
 	}
+	m["sc"] = resCmd{
+		title: "StorageClasses",
+		crdCmd: crdCmd{
+			api: "storage.k8s.io",
+		},
+		viewFn: newResourceView,
+		listFn: resource.NewStorageClassList,
+	}
 }
 
 func primRes(m map[string]resCmd) {
