@@ -97,7 +97,7 @@ func newPV() resource.Columnar {
 
 func pvYaml() string {
 	return `apiVersion: v1
-kind: PeristentVolume
+kind: PersistentVolume
 metadata:
   creationTimestamp: "2018-12-14T17:36:43Z"
   name: fred
