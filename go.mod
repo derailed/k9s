@@ -1,6 +1,6 @@
 module github.com/derailed/k9s
 
-go 1.12
+go 1.13
 
 replace (
 	k8s.io/api => k8s.io/api v0.0.0-20190718183219-b59d8169aab5
