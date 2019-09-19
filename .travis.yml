@@ -14,8 +14,7 @@ sudo: false
 install: true
 
 env:
-  - GO111MODULE=on
-  - GOPROXY=https://goproxy.io
+  - GO111MODULE=on GOPROXY=https://goproxy.io
 
 script:
   - go build
