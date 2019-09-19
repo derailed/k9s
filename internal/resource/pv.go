@@ -59,7 +59,7 @@ func (r *PersistentVolume) Marshal(path string) (string, error) {
 
 	pv := i.(*v1.PersistentVolume)
 	pv.TypeMeta.APIVersion = "v1"
-	pv.TypeMeta.Kind = "PeristentVolume"
+	pv.TypeMeta.Kind = "PersistentVolume"
 
 	return r.marshalObject(pv)
 }
