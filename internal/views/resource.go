@@ -157,7 +157,9 @@ func (v *resourceView) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	_, n := namespaced(v.masterPage().GetSelectedItem())
 	log.Debug().Msgf("Copied selection to clipboard %q", n)
 	v.app.Flash().Info("Current selection copied to clipboard...")
-	clipboard.WriteAll(n)
+	if err := clipboard.WriteAll(n); err != nil {
+		v.app.Flash().Err(err)
+	}
 
 	return nil
 }
