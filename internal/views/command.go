@@ -71,7 +71,7 @@ func (c *command) isStdCmd(cmd string) bool {
 }
 
 func (c *command) isAliasCmd(cmd string) bool {
-	cmds := make(map[string]resCmd, 30)
+	cmds := make(map[string]*resCmd, 30)
 	resourceViews(c.app.Conn(), cmds)
 	res, ok := cmds[cmd]
 	if !ok {
@@ -83,7 +83,7 @@ func (c *command) isAliasCmd(cmd string) bool {
 		r = res.listFn(c.app.Conn(), resource.DefaultNamespace)
 	}
 
-	v := res.viewFn(res.title, c.app, r)
+	v := res.viewFn(res.kind, c.app, r)
 	if res.colorerFn != nil {
 		v.setColorerFn(res.colorerFn)
 	}
@@ -94,8 +94,7 @@ func (c *command) isAliasCmd(cmd string) bool {
 		v.setDecorateFn(res.decorateFn)
 	}
 
-	const fmat = "Viewing resource %s..."
-	c.app.Flash().Infof(fmat, res.title)
+	c.app.Flash().Infof("Viewing resource %s...", res.kind)
 	log.Debug().Msgf("Running command %s", cmd)
 	c.exec(cmd, v)
 
@@ -103,7 +102,7 @@ func (c *command) isAliasCmd(cmd string) bool {
 }
 
 func (c *command) isCRDCmd(cmd string) bool {
-	crds := map[string]resCmd{}
+	crds := map[string]*resCmd{}
 	allCRDs(c.app.Conn(), crds)
 	res, ok := crds[cmd]
 	if !ok {
@@ -115,7 +114,7 @@ func (c *command) isCRDCmd(cmd string) bool {
 		name = res.singular
 	}
 	v := newResourceView(
-		res.title,
+		res.kind,
 		c.app,
 		resource.NewCustomList(c.app.Conn(), "", res.api, res.version, name),
 	)
