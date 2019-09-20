@@ -167,6 +167,11 @@ var resMap = map[string]*meta.RESTMapping{
 		GroupVersionKind: schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Secret"},
 		Scope:            RestMapping,
 	},
+	"StorageClasses": {
+		Resource:         schema.GroupVersionResource{Group: "storage.k8s.io", Version: "v1", Resource: "storageclass"},
+		GroupVersionKind: schema.GroupVersionKind{Group: "storage.k8s.io", Version: "v1", Kind: "StorageClass"},
+		Scope:            RestMapping,
+	},
 	"ServiceAccounts": {
 		Resource:         schema.GroupVersionResource{Group: "", Version: "v1", Resource: "serviceaccount"},
 		GroupVersionKind: schema.GroupVersionKind{Group: "", Version: "v1", Kind: "ServiceAccount"},
