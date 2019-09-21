@@ -16,7 +16,7 @@ import (
 	v1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/kubernetes/pkg/kubectl"
+	"k8s.io/kubectl/pkg/polymorphichelpers"
 )
 
 type replicaSetView struct {
@@ -172,7 +172,7 @@ func rollback(Conn k8s.Connection, selectedItem string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	rb, err := kubectl.RollbackerFor(schema.GroupKind{apiGroup, kind}, Conn.DialOrDie())
+	rb, err := polymorphichelpers.RollbackerFor(schema.GroupKind{apiGroup, kind}, Conn.DialOrDie())
 	if err != nil {
 		return "", err
 	}

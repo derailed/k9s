@@ -106,7 +106,7 @@ func (r *HorizontalPodAutoscalerV2Beta1) Fields(ns string) Row {
 
 func (r *HorizontalPodAutoscalerV2Beta1) toMetrics(specs []autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {
 	if len(specs) == 0 {
-		return "<none>"
+		return MissingValue
 	}
 
 	list, count := []string{}, 0

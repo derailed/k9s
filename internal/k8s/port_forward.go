@@ -19,7 +19,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
-	"k8s.io/kubernetes/pkg/kubectl/util"
+	"k8s.io/kubectl/pkg/util"
 )
 
 const localhost = "localhost"
@@ -106,8 +106,8 @@ func (p *PortForward) Start(path, co string, ports []string) (*portforward.PortF
 	rcfg := p.RestConfigOrDie()
 	rcfg.GroupVersion = &schema.GroupVersion{Group: "", Version: "v1"}
 	rcfg.APIPath = "/api"
-	codecs, _ := codecs()
-	rcfg.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: codecs}
+	codec, _ := codec()
+	rcfg.NegotiatedSerializer = codec.WithoutConversion()
 	clt, err := rest.RESTClientFor(rcfg)
 	if err != nil {
 		p.logger.Debug().Msgf("Boom! %#v", err)
@@ -140,7 +140,7 @@ func (p *PortForward) forwardPorts(method string, url *url.URL, ports []string) 
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func codecs() (serializer.CodecFactory, runtime.ParameterCodec) {
+func codec() (serializer.CodecFactory, runtime.ParameterCodec) {
 	scheme := runtime.NewScheme()
 	gv := schema.GroupVersion{Group: "", Version: "v1"}
 	metav1.AddToGroupVersion(scheme, gv)

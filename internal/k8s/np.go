@@ -17,7 +17,7 @@ func NewNetworkPolicy(c Connection) *NetworkPolicy {
 
 // Get a NetworkPolicy.
 func (d *NetworkPolicy) Get(ns, n string) (interface{}, error) {
-	return d.DialOrDie().ExtensionsV1beta1().NetworkPolicies(ns).Get(n, metav1.GetOptions{})
+	return d.DialOrDie().NetworkingV1().NetworkPolicies(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all NetworkPolicys in a given namespace.
@@ -26,7 +26,7 @@ func (d *NetworkPolicy) List(ns string) (Collection, error) {
 		LabelSelector: d.labelSelector,
 		FieldSelector: d.fieldSelector,
 	}
-	rr, err := d.DialOrDie().ExtensionsV1beta1().NetworkPolicies(ns).List(opts)
+	rr, err := d.DialOrDie().NetworkingV1().NetworkPolicies(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (d *NetworkPolicy) Delete(ns, n string, cascade, force bool) error {
 	if cascade {
 		p = metav1.DeletePropagationBackground
 	}
-	return d.DialOrDie().ExtensionsV1beta1().NetworkPolicies(ns).Delete(n, &metav1.DeleteOptions{
+	return d.DialOrDie().NetworkingV1().NetworkPolicies(ns).Delete(n, &metav1.DeleteOptions{
 		PropagationPolicy: &p,
 	})
 }

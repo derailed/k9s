@@ -4,7 +4,7 @@ import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
-	extv1beta1 "k8s.io/api/extensions/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -35,7 +35,7 @@ func (v *daemonSetView) showPods(app *appView, _, res, sel string) {
 		return
 	}
 
-	ds := dset.(*extv1beta1.DaemonSet)
+	ds := dset.(*appsv1.DaemonSet)
 	l, err := metav1.LabelSelectorAsSelector(ds.Spec.Selector)
 	if err != nil {
 		app.Flash().Err(err)

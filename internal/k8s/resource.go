@@ -65,7 +65,7 @@ const gvFmt = "application/json;as=Table;v=%s;g=%s, application/json"
 
 func (r *Resource) listAll(ns, n string) (runtime.Object, error) {
 	a := fmt.Sprintf(gvFmt, metav1beta1.SchemeGroupVersion.Version, metav1beta1.GroupName)
-	_, codec := r.codecs()
+	_, codec := r.codec()
 
 	c, err := r.getClient()
 	if err != nil {
@@ -87,8 +87,8 @@ func (r *Resource) getClient() (*rest.RESTClient, error) {
 	if len(r.group) == 0 {
 		crConfig.APIPath = "/api"
 	}
-	codecs, _ := r.codecs()
-	crConfig.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: codecs}
+	codec, _ := r.codec()
+	crConfig.NegotiatedSerializer = codec.WithoutConversion()
 
 	crRestClient, err := rest.RESTClientFor(crConfig)
 	if err != nil {
@@ -97,7 +97,7 @@ func (r *Resource) getClient() (*rest.RESTClient, error) {
 	return crRestClient, nil
 }
 
-func (r *Resource) codecs() (serializer.CodecFactory, runtime.ParameterCodec) {
+func (r *Resource) codec() (serializer.CodecFactory, runtime.ParameterCodec) {
 	scheme := runtime.NewScheme()
 	gv := schema.GroupVersion{Group: r.group, Version: r.version}
 	metav1.AddToGroupVersion(scheme, gv)

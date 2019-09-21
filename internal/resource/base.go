@@ -14,8 +14,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	genericprinters "k8s.io/cli-runtime/pkg/printers"
-	"k8s.io/kubernetes/pkg/kubectl/describe"
-	versioned "k8s.io/kubernetes/pkg/kubectl/describe/versioned"
+	"k8s.io/kubectl/pkg/describe"
+	versioned "k8s.io/kubectl/pkg/describe/versioned"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 

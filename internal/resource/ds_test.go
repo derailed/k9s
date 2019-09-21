@@ -7,7 +7,7 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
-	extv1beta1 "k8s.io/api/extensions/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -79,19 +79,19 @@ func TestDSListData(t *testing.T) {
 
 // Helpers...
 
-func k8sDS() *extv1beta1.DaemonSet {
-	return &extv1beta1.DaemonSet{
+func k8sDS() *appsv1.DaemonSet {
+	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:         "blee",
 			Name:              "fred",
 			CreationTimestamp: metav1.Time{Time: testTime()},
 		},
-		Spec: extv1beta1.DaemonSetSpec{
+		Spec: appsv1.DaemonSetSpec{
 			Selector: &metav1.LabelSelector{
 				MatchLabels: map[string]string{"fred": "blee"},
 			},
 		},
-		Status: extv1beta1.DaemonSetStatus{
+		Status: appsv1.DaemonSetStatus{
 			DesiredNumberScheduled: 1,
 			CurrentNumberScheduled: 1,
 			NumberReady:            1,
@@ -106,7 +106,7 @@ func newDS() resource.Columnar {
 }
 
 func dsYaml() string {
-	return `apiVersion: extensions/v1beta1
+	return `apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   creationTimestamp: "2018-12-14T17:36:43Z"

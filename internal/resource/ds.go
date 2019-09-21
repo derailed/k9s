@@ -7,13 +7,13 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
-	v1beta1 "k8s.io/api/extensions/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 )
 
 // DaemonSet tracks a kubernetes resource.
 type DaemonSet struct {
 	*Base
-	instance *v1beta1.DaemonSet
+	instance *appsv1.DaemonSet
 }
 
 // NewDaemonSetList returns a new resource list.
@@ -38,9 +38,9 @@ func NewDaemonSet(c Connection) *DaemonSet {
 func (r *DaemonSet) New(i interface{}) Columnar {
 	c := NewDaemonSet(r.Connection)
 	switch instance := i.(type) {
-	case *v1beta1.DaemonSet:
+	case *appsv1.DaemonSet:
 		c.instance = instance
-	case v1beta1.DaemonSet:
+	case appsv1.DaemonSet:
 		c.instance = &instance
 	default:
 		log.Fatal().Msgf("unknown DaemonSet type %#v", i)
@@ -58,8 +58,8 @@ func (r *DaemonSet) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	ds := i.(*v1beta1.DaemonSet)
-	ds.TypeMeta.APIVersion = "extensions/v1beta1"
+	ds := i.(*appsv1.DaemonSet)
+	ds.TypeMeta.APIVersion = "apps/v1"
 	ds.TypeMeta.Kind = "DaemonSet"
 
 	return r.marshalObject(ds)
@@ -72,7 +72,7 @@ func (r *DaemonSet) Logs(ctx context.Context, c chan<- string, opts LogOptions) 
 		return err
 	}
 
-	ds := instance.(*v1beta1.DaemonSet)
+	ds := instance.(*appsv1.DaemonSet)
 	if ds.Spec.Selector == nil || len(ds.Spec.Selector.MatchLabels) == 0 {
 		return fmt.Errorf("No valid selector found on daemonset %s", opts.FQN())
 	}

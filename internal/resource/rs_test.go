@@ -83,7 +83,7 @@ func newReplicaSet() resource.Columnar {
 }
 
 func rsYaml() string {
-	return `apiVersion: extensions/v1beta
+	return `apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
   creationTimestamp: "2018-12-14T17:36:43Z"
