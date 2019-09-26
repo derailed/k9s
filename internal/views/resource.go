@@ -312,7 +312,7 @@ func (v *resourceView) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	v.setNamespace(ns)
-	v.app.Flash().Infof("Viewing `%s namespace...", ns)
+	v.app.Flash().Infof("Viewing `%s` namespace...", ns)
 	v.refresh()
 	v.masterPage().UpdateTitle()
 	v.masterPage().SelectRow(1, true)
