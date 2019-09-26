@@ -119,7 +119,7 @@ func (v *aliasView) hydrate() resource.TableData {
 	for k := range cmds {
 		fields := resource.Row{
 			ui.Pad(k, 30),
-			ui.Pad(cmds[k].kind, 30),
+			ui.Pad(cmds[k].gvr, 30),
 			ui.Pad(cmds[k].api, 30),
 		}
 		data.Rows[k] = &resource.RowEvent{

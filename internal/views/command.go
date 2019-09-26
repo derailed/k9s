@@ -70,10 +70,8 @@ func (c *command) isStdCmd(cmd string) bool {
 	return false
 }
 
-func (c *command) isAliasCmd(cmd string) bool {
-	cmds := make(map[string]*resCmd, 30)
-	resourceViews(c.app.Conn(), cmds)
-	res, ok := cmds[cmd]
+func (c *command) isAliasCmd(alias string, cmds map[string]resCmd) bool {
+	res, ok := cmds[alias]
 	if !ok {
 		return false
 	}
@@ -83,7 +81,11 @@ func (c *command) isAliasCmd(cmd string) bool {
 		r = res.listFn(c.app.Conn(), resource.DefaultNamespace)
 	}
 
-	v := res.viewFn(res.kind, c.app, r)
+	v := newResourceView(res.gvr, c.app, r)
+	if res.viewFn != nil {
+		v = res.viewFn(res.gvr, c.app, r)
+	}
+
 	if res.colorerFn != nil {
 		v.setColorerFn(res.colorerFn)
 	}
@@ -94,16 +96,17 @@ func (c *command) isAliasCmd(cmd string) bool {
 		v.setDecorateFn(res.decorateFn)
 	}
 
-	c.app.Flash().Infof("Viewing resource %s...", res.kind)
-	log.Debug().Msgf("Running command %s", cmd)
-	c.exec(cmd, v)
+	const fmat = "Viewing resource %s..."
+	c.app.Flash().Infof(fmat, res.gvr)
+	log.Debug().Msgf("Running command %s", alias)
+	c.exec(alias, v)
 
 	return true
 }
 
 func (c *command) isCRDCmd(cmd string) bool {
-	crds := map[string]*resCmd{}
-	allCRDs(c.app.Conn(), crds)
+	crds := map[string]resCmd{}
+
 	res, ok := crds[cmd]
 	if !ok {
 		return false
@@ -114,7 +117,7 @@ func (c *command) isCRDCmd(cmd string) bool {
 		name = res.singular
 	}
 	v := newResourceView(
-		res.kind,
+		res.gvr,
 		c.app,
 		resource.NewCustomList(c.app.Conn(), "", res.api, res.version, name),
 	)
@@ -130,23 +133,23 @@ func (c *command) run(cmd string) bool {
 		return true
 	}
 
-	if c.isAliasCmd(cmd) {
-		return true
+	cmds := make(map[string]resCmd, 30)
+	resourceViews(c.app.Conn(), cmds)
+	allCRDs(c.app.Conn(), cmds)
+
+	a, ok := aliases[cmd]
+	if !ok {
+		c.app.Flash().Warnf("Huh? `%s` command not found", cmd)
+		return false
 	}
 
-	if c.isCRDCmd(cmd) {
-		return true
-	}
-
-	c.app.Flash().Warnf("Huh? `%s` command not found", cmd)
-	return false
+	return c.isAliasCmd(a, cmds)
 }
 
 func (c *command) exec(cmd string, v ui.Igniter) {
 	if v == nil {
 		return
 	}
-
 	c.app.Config.SetActiveView(cmd)
 	c.app.Config.Save()
 	c.app.inject(v)
