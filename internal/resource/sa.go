@@ -15,18 +15,18 @@ type ServiceAccount struct {
 }
 
 // NewServiceAccountList returns a new resource list.
-func NewServiceAccountList(c Connection, ns string) List {
+func NewServiceAccountList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"sa",
-		NewServiceAccount(c),
+		NewServiceAccount(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewServiceAccount instantiates a new ServiceAccount.
-func NewServiceAccount(c Connection) *ServiceAccount {
-	s := &ServiceAccount{&Base{Connection: c, Resource: k8s.NewServiceAccount(c)}, nil}
+func NewServiceAccount(c Connection, gvr k8s.GVR) *ServiceAccount {
+	s := &ServiceAccount{&Base{Connection: c, Resource: k8s.NewServiceAccount(c, gvr)}, nil}
 	s.Factory = s
 
 	return s
@@ -34,7 +34,7 @@ func NewServiceAccount(c Connection) *ServiceAccount {
 
 // New builds a new ServiceAccount instance from a k8s resource.
 func (r *ServiceAccount) New(i interface{}) Columnar {
-	c := NewServiceAccount(r.Connection)
+	c := NewServiceAccount(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1.ServiceAccount:
 		c.instance = instance

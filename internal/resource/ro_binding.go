@@ -13,18 +13,18 @@ type RoleBinding struct {
 }
 
 // NewRoleBindingList returns a new resource list.
-func NewRoleBindingList(c Connection, ns string) List {
+func NewRoleBindingList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"rolebinding",
-		NewRoleBinding(c),
+		NewRoleBinding(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewRoleBinding instantiates a new RoleBinding.
-func NewRoleBinding(c Connection) *RoleBinding {
-	r := &RoleBinding{&Base{Connection: c, Resource: k8s.NewRoleBinding(c)}, nil}
+func NewRoleBinding(c Connection, gvr k8s.GVR) *RoleBinding {
+	r := &RoleBinding{&Base{Connection: c, Resource: k8s.NewRoleBinding(c, gvr)}, nil}
 	r.Factory = r
 
 	return r
@@ -32,7 +32,7 @@ func NewRoleBinding(c Connection) *RoleBinding {
 
 // New builds a new RoleBinding instance from a k8s resource.
 func (r *RoleBinding) New(i interface{}) Columnar {
-	c := NewRoleBinding(r.Connection)
+	c := NewRoleBinding(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1.RoleBinding:
 		c.instance = instance

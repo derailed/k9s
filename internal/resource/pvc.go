@@ -13,18 +13,18 @@ type PersistentVolumeClaim struct {
 }
 
 // NewPersistentVolumeClaimList returns a new resource list.
-func NewPersistentVolumeClaimList(c Connection, ns string) List {
+func NewPersistentVolumeClaimList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"pvc",
-		NewPersistentVolumeClaim(c),
+		NewPersistentVolumeClaim(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewPersistentVolumeClaim instantiates a new PersistentVolumeClaim.
-func NewPersistentVolumeClaim(c Connection) *PersistentVolumeClaim {
-	p := &PersistentVolumeClaim{&Base{Connection: c, Resource: k8s.NewPersistentVolumeClaim(c)}, nil}
+func NewPersistentVolumeClaim(c Connection, gvr k8s.GVR) *PersistentVolumeClaim {
+	p := &PersistentVolumeClaim{&Base{Connection: c, Resource: k8s.NewPersistentVolumeClaim(c, gvr)}, nil}
 	p.Factory = p
 
 	return p
@@ -32,7 +32,7 @@ func NewPersistentVolumeClaim(c Connection) *PersistentVolumeClaim {
 
 // New builds a new PersistentVolumeClaim instance from a k8s resource.
 func (r *PersistentVolumeClaim) New(i interface{}) Columnar {
-	c := NewPersistentVolumeClaim(r.Connection)
+	c := NewPersistentVolumeClaim(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1.PersistentVolumeClaim:
 		c.instance = instance

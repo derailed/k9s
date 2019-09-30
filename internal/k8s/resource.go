@@ -12,50 +12,43 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-// Resource represents a Kubernetes Resource
-type Resource struct {
-	*base
+// CustomResource represents a Kubernetes CustomResource
+type CustomResource struct {
+	*Resource
 	Connection
-
-	group, version, name string
 }
 
-// NewResource returns a new Resource.
-func NewResource(c Connection, group, version, name string) *Resource {
-	return &Resource{base: &base{}, Connection: c, group: group, version: version, name: name}
+// NewCustomResource returns a new CustomResource.
+func NewCustomResource(c Connection, gvr GVR) *CustomResource {
+	return &CustomResource{Resource: &Resource{gvr: gvr}, Connection: c}
 }
 
-// GetInfo returns info about apigroup.
-func (r *Resource) GetInfo() (string, string, string) {
-	return r.group, r.version, r.name
-}
-
-func (r *Resource) nsRes() dynamic.NamespaceableResourceInterface {
+func (cr *CustomResource) nsRes() dynamic.NamespaceableResourceInterface {
 	g := schema.GroupVersionResource{
-		Group:    r.group,
-		Version:  r.version,
-		Resource: r.name,
+		Group:    cr.gvr.Group,
+		Version:  cr.gvr.Version,
+		Resource: cr.gvr.Resource,
 	}
-	return r.DynDialOrDie().Resource(g)
+	return cr.DynDialOrDie().Resource(g)
 }
 
-// Get a Resource.
-func (r *Resource) Get(ns, n string) (interface{}, error) {
-	return r.nsRes().Namespace(ns).Get(n, metav1.GetOptions{})
+// Get a CustomResource.
+func (cr *CustomResource) Get(ns, n string) (interface{}, error) {
+	return cr.nsRes().Namespace(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all Resources in a given namespace.
-func (r *Resource) List(ns string) (Collection, error) {
-	obj, err := r.listAll(ns, r.name)
+func (cr *CustomResource) List(ns string) (Collection, error) {
+	obj, err := cr.listAll(ns, cr.gvr.Resource)
 	if err != nil {
 		return nil, err
 	}
 	return Collection{obj.(*metav1beta1.Table)}, nil
 }
 
-// Delete a Resource.
-func (r *Resource) Delete(ns, n string, cascade, force bool) error {
-	return r.nsRes().Namespace(ns).Delete(n, nil)
+// Delete a CustomResource.
+func (cr *CustomResource) Delete(ns, n string, cascade, force bool) error {
+	return cr.nsRes().Namespace(ns).Delete(n, nil)
 }
 
 // ----------------------------------------------------------------------------
@@ -63,11 +56,11 @@ func (r *Resource) Delete(ns, n string, cascade, force bool) error {
 
 const gvFmt = "application/json;as=Table;v=%s;g=%s, application/json"
 
-func (r *Resource) listAll(ns, n string) (runtime.Object, error) {
+func (cr *CustomResource) listAll(ns, n string) (runtime.Object, error) {
 	a := fmt.Sprintf(gvFmt, metav1beta1.SchemeGroupVersion.Version, metav1beta1.GroupName)
-	_, codec := r.codecs()
+	_, codec := cr.codecs()
 
-	c, err := r.getClient()
+	c, err := cr.getClient()
 	if err != nil {
 		return nil, err
 	}
@@ -80,14 +73,14 @@ func (r *Resource) listAll(ns, n string) (runtime.Object, error) {
 		Do().Get()
 }
 
-func (r *Resource) getClient() (*rest.RESTClient, error) {
-	crConfig := r.RestConfigOrDie()
-	crConfig.GroupVersion = &schema.GroupVersion{Group: r.group, Version: r.version}
+func (cr *CustomResource) getClient() (*rest.RESTClient, error) {
+	crConfig := cr.RestConfigOrDie()
+	crConfig.GroupVersion = &schema.GroupVersion{Group: cr.gvr.Group, Version: cr.gvr.Version}
 	crConfig.APIPath = "/apis"
-	if len(r.group) == 0 {
+	if len(cr.gvr.Group) == 0 {
 		crConfig.APIPath = "/api"
 	}
-	codecs, _ := r.codecs()
+	codecs, _ := cr.codecs()
 	crConfig.NegotiatedSerializer = serializer.DirectCodecFactory{CodecFactory: codecs}
 
 	crRestClient, err := rest.RESTClientFor(crConfig)
@@ -97,9 +90,9 @@ func (r *Resource) getClient() (*rest.RESTClient, error) {
 	return crRestClient, nil
 }
 
-func (r *Resource) codecs() (serializer.CodecFactory, runtime.ParameterCodec) {
+func (cr *CustomResource) codecs() (serializer.CodecFactory, runtime.ParameterCodec) {
 	scheme := runtime.NewScheme()
-	gv := schema.GroupVersion{Group: r.group, Version: r.version}
+	gv := schema.GroupVersion{Group: cr.gvr.Group, Version: cr.gvr.Version}
 	metav1.AddToGroupVersion(scheme, gv)
 	scheme.AddKnownTypes(gv, &metav1beta1.Table{}, &metav1beta1.TableOptions{})
 	scheme.AddKnownTypes(metav1beta1.SchemeGroupVersion, &metav1beta1.Table{}, &metav1beta1.TableOptions{})

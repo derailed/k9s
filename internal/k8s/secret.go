@@ -6,13 +6,13 @@ import (
 
 // Secret represents a Kubernetes Secret.
 type Secret struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewSecret returns a new Secret.
-func NewSecret(c Connection) *Secret {
-	return &Secret{&base{}, c}
+func NewSecret(c Connection, gvr GVR) *Secret {
+	return &Secret{&Resource{gvr: gvr}, c}
 }
 
 // Get a Secret.

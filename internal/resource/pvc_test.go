@@ -100,7 +100,7 @@ func k8sPVC() *v1.PersistentVolumeClaim {
 
 func newPVC() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewPersistentVolumeClaim(mc).New(k8sPVC())
+	return resource.NewPersistentVolumeClaim(mc, k8s.GVR{}).New(k8sPVC())
 }
 
 func pvcYaml() string {

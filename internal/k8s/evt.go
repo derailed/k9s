@@ -6,13 +6,13 @@ import (
 
 // Event represents a Kubernetes Event.
 type Event struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewEvent returns a new Event.
-func NewEvent(c Connection) *Event {
-	return &Event{&base{}, c}
+func NewEvent(c Connection, gvr GVR) *Event {
+	return &Event{&Resource{gvr: gvr}, c}
 }
 
 // Get a Event.

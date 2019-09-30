@@ -6,13 +6,13 @@ import (
 
 // Endpoints represents a Kubernetes Endpoints.
 type Endpoints struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewEndpoints returns a new Endpoints.
-func NewEndpoints(c Connection) *Endpoints {
-	return &Endpoints{&base{}, c}
+func NewEndpoints(c Connection, gvr GVR) *Endpoints {
+	return &Endpoints{&Resource{gvr: gvr}, c}
 }
 
 // Get a Endpoint.

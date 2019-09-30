@@ -6,13 +6,13 @@ import (
 
 // PodDisruptionBudget represents a Kubernetes PodDisruptionBudget.
 type PodDisruptionBudget struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewPodDisruptionBudget returns a new PodDisruptionBudget.
-func NewPodDisruptionBudget(c Connection) *PodDisruptionBudget {
-	return &PodDisruptionBudget{&base{}, c}
+func NewPodDisruptionBudget(c Connection, gvr GVR) *PodDisruptionBudget {
+	return &PodDisruptionBudget{&Resource{gvr: gvr}, c}
 }
 
 // Get a pdb.

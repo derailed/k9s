@@ -6,13 +6,13 @@ import (
 
 // PersistentVolume represents a Kubernetes PersistentVolume.
 type PersistentVolume struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewPersistentVolume returns a new PersistentVolume.
-func NewPersistentVolume(c Connection) *PersistentVolume {
-	return &PersistentVolume{&base{}, c}
+func NewPersistentVolume(c Connection, gvr GVR) *PersistentVolume {
+	return &PersistentVolume{&Resource{gvr: gvr}, c}
 }
 
 // Get a PersistentVolume.

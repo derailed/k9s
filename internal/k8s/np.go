@@ -6,13 +6,13 @@ import (
 
 // NetworkPolicy represents a Kubernetes NetworkPolicy
 type NetworkPolicy struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewNetworkPolicy returns a new NetworkPolicy.
-func NewNetworkPolicy(c Connection) *NetworkPolicy {
-	return &NetworkPolicy{&base{}, c}
+func NewNetworkPolicy(c Connection, gvr GVR) *NetworkPolicy {
+	return &NetworkPolicy{&Resource{gvr: gvr}, c}
 }
 
 // Get a NetworkPolicy.

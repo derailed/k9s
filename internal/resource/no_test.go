@@ -127,7 +127,7 @@ func makeRes(c, m string) v1.ResourceList {
 
 func newNode() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewNode(mc).New(k8sNode())
+	return resource.NewNode(mc, k8s.GVR{}).New(k8sNode())
 }
 
 func noYaml() string {

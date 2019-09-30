@@ -81,6 +81,10 @@ func TestIngressListData(t *testing.T) {
 
 func k8sIngress() *v1beta1.Ingress {
 	return &v1beta1.Ingress{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Ingress",
+			APIVersion: "extensions/v1beta1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Namespace:         "blee",
 			Name:              "fred",
@@ -96,7 +100,7 @@ func k8sIngress() *v1beta1.Ingress {
 
 func newIngress() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewIngress(mc).New(k8sIngress())
+	return resource.NewIngress(mc, k8s.GVR{}).New(k8sIngress())
 }
 
 func ingYaml() string {

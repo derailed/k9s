@@ -17,18 +17,18 @@ type PodDisruptionBudget struct {
 }
 
 // NewPDBList returns a new resource list.
-func NewPDBList(c Connection, ns string) List {
+func NewPDBList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"pdb",
-		NewPDB(c),
+		NewPDB(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewPDB instantiates a new PDB.
-func NewPDB(c Connection) *PodDisruptionBudget {
-	p := &PodDisruptionBudget{&Base{Connection: c, Resource: k8s.NewPodDisruptionBudget(c)}, nil}
+func NewPDB(c Connection, gvr k8s.GVR) *PodDisruptionBudget {
+	p := &PodDisruptionBudget{&Base{Connection: c, Resource: k8s.NewPodDisruptionBudget(c, gvr)}, nil}
 	p.Factory = p
 
 	return p
@@ -36,7 +36,7 @@ func NewPDB(c Connection) *PodDisruptionBudget {
 
 // New builds a new PDB instance from a k8s resource.
 func (r *PodDisruptionBudget) New(i interface{}) Columnar {
-	c := NewPDB(r.Connection)
+	c := NewPDB(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1beta1.PodDisruptionBudget:
 		c.instance = instance

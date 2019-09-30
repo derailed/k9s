@@ -1,6 +1,7 @@
 package views
 
 import (
+	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -46,13 +47,12 @@ func (v *nodeView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func showPods(app *appView, ns, labelSel, fieldSel string, a ui.ActionHandler) {
-	list := resource.NewPodList(app.Conn(), ns)
+	list := resource.NewPodList(app.Conn(), ns, k8s.GVR{Resource: "pods"})
 	list.SetLabelSelector(labelSel)
 	list.SetFieldSelector(fieldSel)
 
 	pv := newPodView("Pods", app, list)
 	pv.setColorerFn(podColorer)
-	// pv.setExtraActionsFn(func(aa ui.KeyActions) {
 	pv.masterPage().SetActions(ui.KeyActions{
 		tcell.KeyEsc: ui.NewKeyAction("Back", a, true),
 	})

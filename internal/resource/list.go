@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/derailed/k9s/internal/k8s"
+
 	wa "github.com/derailed/k9s/internal/watch"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -96,9 +98,9 @@ type (
 	// Rows represents a collection of rows.
 	Rows []Row
 
-	// Resource represents a tabular Kubernetes resource.
+	// CustomResource represents a tabular Kubernetes resource.
 	Resource interface {
-		New(interface{}) Columnar
+		New(i interface{}) Columnar
 		Get(path string) (Columnar, error)
 		List(ns string) (Columnars, error)
 		Delete(path string, cascade, force bool) error
@@ -111,6 +113,7 @@ type (
 		GetFieldSelector() string
 		GetLabelSelector() string
 		HasSelectors() bool
+		GVR() k8s.GVR
 	}
 
 	list struct {
@@ -211,7 +214,7 @@ func (l *list) GetName() string {
 	return l.name
 }
 
-// Resource returns a resource api connection.
+// CustomResource returns a resource api connection.
 func (l *list) Resource() Resource {
 	return l.resource
 }

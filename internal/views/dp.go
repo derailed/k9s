@@ -33,7 +33,7 @@ func (v *deployView) extraActions(aa ui.KeyActions) {
 
 func (v *deployView) showPods(app *appView, _, res, sel string) {
 	ns, n := namespaced(sel)
-	d := k8s.NewDeployment(app.Conn())
+	d := k8s.NewDeployment(app.Conn(), k8s.GVR{})
 	dep, err := d.Get(ns, n)
 	if err != nil {
 		app.Flash().Err(err)

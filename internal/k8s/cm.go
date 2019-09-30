@@ -6,13 +6,13 @@ import (
 
 // ConfigMap represents a Kubernetes ConfigMap
 type ConfigMap struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewConfigMap returns a new ConfigMap.
-func NewConfigMap(c Connection) *ConfigMap {
-	return &ConfigMap{&base{}, c}
+func NewConfigMap(c Connection, gvr GVR) *ConfigMap {
+	return &ConfigMap{&Resource{gvr: gvr}, c}
 }
 
 // Get a ConfigMap.

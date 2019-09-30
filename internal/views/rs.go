@@ -49,7 +49,7 @@ func (v *replicaSetView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey)
 
 func (v *replicaSetView) showPods(app *appView, ns, res, sel string) {
 	ns, n := namespaced(sel)
-	rset := k8s.NewReplicaSet(app.Conn())
+	rset := k8s.NewReplicaSet(app.Conn(), v.list.Resource().GVR())
 	r, err := rset.Get(ns, n)
 	if err != nil {
 		app.Flash().Errf("Replicaset failed %s", err)
@@ -112,7 +112,7 @@ func (v *replicaSetView) showModal(msg string, done func(int, string)) {
 // Helpers...
 
 func findRS(Conn k8s.Connection, ns, n string) (*v1.ReplicaSet, error) {
-	rset := k8s.NewReplicaSet(Conn)
+	rset := k8s.NewReplicaSet(Conn, k8s.GVR{})
 	r, err := rset.Get(ns, n)
 	if err != nil {
 		return nil, err
@@ -121,7 +121,7 @@ func findRS(Conn k8s.Connection, ns, n string) (*v1.ReplicaSet, error) {
 }
 
 func findDP(Conn k8s.Connection, ns, n string) (*appsv1.Deployment, error) {
-	dp, err := k8s.NewDeployment(Conn).Get(ns, n)
+	dp, err := k8s.NewDeployment(Conn, k8s.GVR{}).Get(ns, n)
 	if err != nil {
 		return nil, err
 	}

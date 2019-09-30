@@ -71,7 +71,7 @@ func k8sRole() *v1.Role {
 
 func newRole() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewRole(mc).New(k8sRole())
+	return resource.NewRole(mc, k8s.GVR{}).New(k8sRole())
 }
 
 func roleYaml() string {

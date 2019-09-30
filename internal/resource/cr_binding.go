@@ -15,18 +15,18 @@ type ClusterRoleBinding struct {
 }
 
 // NewClusterRoleBindingList returns a new resource list.
-func NewClusterRoleBindingList(c Connection, _ string) List {
+func NewClusterRoleBindingList(c Connection, _ string, gvr k8s.GVR) List {
 	return NewList(
 		NotNamespaced,
 		"clusterrolebinding",
-		NewClusterRoleBinding(c),
+		NewClusterRoleBinding(c, gvr),
 		ViewAccess|DeleteAccess|DescribeAccess,
 	)
 }
 
 // NewClusterRoleBinding instantiates a new ClusterRoleBinding.
-func NewClusterRoleBinding(c Connection) *ClusterRoleBinding {
-	crb := &ClusterRoleBinding{&Base{Connection: c, Resource: k8s.NewClusterRoleBinding(c)}, nil}
+func NewClusterRoleBinding(c Connection, gvr k8s.GVR) *ClusterRoleBinding {
+	crb := &ClusterRoleBinding{&Base{Connection: c, Resource: k8s.NewClusterRoleBinding(c, gvr)}, nil}
 	crb.Factory = crb
 
 	return crb
@@ -34,7 +34,7 @@ func NewClusterRoleBinding(c Connection) *ClusterRoleBinding {
 
 // New builds a new tabular instance from a k8s resource.
 func (r *ClusterRoleBinding) New(i interface{}) Columnar {
-	crb := NewClusterRoleBinding(r.Connection)
+	crb := NewClusterRoleBinding(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1.ClusterRoleBinding:
 		crb.instance = instance

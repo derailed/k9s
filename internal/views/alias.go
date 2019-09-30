@@ -107,7 +107,7 @@ func (v *aliasView) runCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *aliasView) hydrate() resource.TableData {
-	cmds := make(map[string]*resCmd, 40)
+	cmds := make(map[string]*resourcesCommand, 40)
 	aliasCmds(v.app.Conn(), cmds)
 
 	data := resource.TableData{
@@ -120,7 +120,7 @@ func (v *aliasView) hydrate() resource.TableData {
 		fields := resource.Row{
 			ui.Pad(k, 30),
 			ui.Pad(cmds[k].kind, 30),
-			ui.Pad(cmds[k].api, 30),
+			ui.Pad(cmds[k].gvr.Group, 30),
 		}
 		data.Rows[k] = &resource.RowEvent{
 			Action: resource.New,

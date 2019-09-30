@@ -15,18 +15,18 @@ type ConfigMap struct {
 }
 
 // NewConfigMapList returns a new resource list.
-func NewConfigMapList(c Connection, ns string) List {
+func NewConfigMapList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"cm",
-		NewConfigMap(c),
+		NewConfigMap(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewConfigMap instantiates a new ConfigMap.
-func NewConfigMap(c Connection) *ConfigMap {
-	m := &ConfigMap{&Base{Connection: c, Resource: k8s.NewConfigMap(c)}, nil}
+func NewConfigMap(c Connection, gvr k8s.GVR) *ConfigMap {
+	m := &ConfigMap{&Base{Connection: c, Resource: k8s.NewConfigMap(c, gvr)}, nil}
 	m.Factory = m
 
 	return m
@@ -34,7 +34,7 @@ func NewConfigMap(c Connection) *ConfigMap {
 
 // New builds a new ConfigMap instance from a k8s resource.
 func (r *ConfigMap) New(i interface{}) Columnar {
-	cm := NewConfigMap(r.Connection)
+	cm := NewConfigMap(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1.ConfigMap:
 		cm.instance = instance

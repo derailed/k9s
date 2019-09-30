@@ -16,18 +16,18 @@ type PersistentVolume struct {
 }
 
 // NewPersistentVolumeList returns a new resource list.
-func NewPersistentVolumeList(c Connection, ns string) List {
+func NewPersistentVolumeList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		NotNamespaced,
 		"pv",
-		NewPersistentVolume(c),
+		NewPersistentVolume(c, gvr),
 		CRUDAccess|DescribeAccess,
 	)
 }
 
 // NewPersistentVolume instantiates a new PersistentVolume.
-func NewPersistentVolume(c Connection) *PersistentVolume {
-	p := &PersistentVolume{&Base{Connection: c, Resource: k8s.NewPersistentVolume(c)}, nil}
+func NewPersistentVolume(c Connection, gvr k8s.GVR) *PersistentVolume {
+	p := &PersistentVolume{&Base{Connection: c, Resource: k8s.NewPersistentVolume(c, gvr)}, nil}
 	p.Factory = p
 
 	return p
@@ -35,7 +35,7 @@ func NewPersistentVolume(c Connection) *PersistentVolume {
 
 // New builds a new PersistentVolume instance from a k8s resource.
 func (r *PersistentVolume) New(i interface{}) Columnar {
-	c := NewPersistentVolume(r.Connection)
+	c := NewPersistentVolume(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1.PersistentVolume:
 		c.instance = instance

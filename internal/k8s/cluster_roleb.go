@@ -6,13 +6,13 @@ import (
 
 // ClusterRoleBinding represents a Kubernetes ClusterRoleBinding
 type ClusterRoleBinding struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewClusterRoleBinding returns a new ClusterRoleBinding.
-func NewClusterRoleBinding(c Connection) *ClusterRoleBinding {
-	return &ClusterRoleBinding{&base{}, c}
+func NewClusterRoleBinding(c Connection, gvr GVR) *ClusterRoleBinding {
+	return &ClusterRoleBinding{&Resource{gvr: gvr}, c}
 }
 
 // Get a service.

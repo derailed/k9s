@@ -11,13 +11,13 @@ const maxJobNameSize = 42
 
 // CronJob represents a Kubernetes CronJob.
 type CronJob struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewCronJob returns a new CronJob.
-func NewCronJob(c Connection) *CronJob {
-	return &CronJob{&base{}, c}
+func NewCronJob(c Connection, gvr GVR) *CronJob {
+	return &CronJob{&Resource{gvr: gvr}, c}
 }
 
 // Get a CronJob.

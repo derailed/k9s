@@ -28,7 +28,7 @@ func (v *daemonSetView) extraActions(aa ui.KeyActions) {
 
 func (v *daemonSetView) showPods(app *appView, _, res, sel string) {
 	ns, n := namespaced(sel)
-	d := k8s.NewDaemonSet(app.Conn())
+	d := k8s.NewDaemonSet(app.Conn(), k8s.GVR{})
 	dset, err := d.Get(ns, n)
 	if err != nil {
 		v.app.Flash().Err(err)

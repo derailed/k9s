@@ -109,7 +109,7 @@ func k8sSA() *v1.ServiceAccount {
 
 func newSa() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewServiceAccount(mc).New(k8sSA())
+	return resource.NewServiceAccount(mc, k8s.GVR{}).New(k8sSA())
 }
 
 func saHeader() resource.Row {

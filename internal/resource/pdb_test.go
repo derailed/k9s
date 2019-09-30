@@ -92,7 +92,7 @@ func k8sPDB() *v1beta1.PodDisruptionBudget {
 
 func newPDB() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewPDB(mc).New(k8sPDB())
+	return resource.NewPDB(mc, k8s.GVR{}).New(k8sPDB())
 }
 
 func pdbYaml() string {

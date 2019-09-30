@@ -26,7 +26,7 @@ func (v *jobView) extraActions(aa ui.KeyActions) {
 
 func (v *jobView) showPods(app *appView, ns, res, sel string) {
 	ns, n := namespaced(sel)
-	j := k8s.NewJob(app.Conn())
+	j := k8s.NewJob(app.Conn(), k8s.GVR{})
 	job, err := j.Get(ns, n)
 	if err != nil {
 		app.Flash().Err(err)

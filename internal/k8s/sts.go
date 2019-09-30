@@ -6,13 +6,13 @@ import (
 
 // StatefulSet manages a Kubernetes StatefulSet.
 type StatefulSet struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewStatefulSet instantiates a new StatefulSet.
-func NewStatefulSet(c Connection) *StatefulSet {
-	return &StatefulSet{&base{}, c}
+func NewStatefulSet(c Connection, gvr GVR) *StatefulSet {
+	return &StatefulSet{&Resource{gvr: gvr}, c}
 }
 
 // Get a StatefulSet.

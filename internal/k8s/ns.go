@@ -6,13 +6,13 @@ import (
 
 // Namespace represents a Kubernetes namespace.
 type Namespace struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewNamespace returns a new Namespace.
-func NewNamespace(c Connection) *Namespace {
-	return &Namespace{&base{}, c}
+func NewNamespace(c Connection, gvr GVR) *Namespace {
+	return &Namespace{&Resource{gvr: gvr}, c}
 }
 
 // Get a active namespace.

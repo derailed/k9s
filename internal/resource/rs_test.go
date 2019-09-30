@@ -79,7 +79,7 @@ func k8sReplicaSet() *v1.ReplicaSet {
 
 func newReplicaSet() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewReplicaSet(mc).New(k8sReplicaSet())
+	return resource.NewReplicaSet(mc, k8s.GVR{}).New(k8sReplicaSet())
 }
 
 func rsYaml() string {

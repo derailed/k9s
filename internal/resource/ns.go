@@ -13,18 +13,18 @@ type Namespace struct {
 }
 
 // NewNamespaceList returns a new resource list.
-func NewNamespaceList(c Connection, ns string) List {
+func NewNamespaceList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		NotNamespaced,
 		"ns",
-		NewNamespace(c),
+		NewNamespace(c, gvr),
 		CRUDAccess|DescribeAccess,
 	)
 }
 
 // NewNamespace instantiates a new Namespace.
-func NewNamespace(c Connection) *Namespace {
-	n := &Namespace{&Base{Connection: c, Resource: k8s.NewNamespace(c)}, nil}
+func NewNamespace(c Connection, gvr k8s.GVR) *Namespace {
+	n := &Namespace{&Base{Connection: c, Resource: k8s.NewNamespace(c, gvr)}, nil}
 	n.Factory = n
 
 	return n
@@ -32,7 +32,7 @@ func NewNamespace(c Connection) *Namespace {
 
 // New builds a new Namespace instance from a k8s resource.
 func (r *Namespace) New(i interface{}) Columnar {
-	c := NewNamespace(r.Connection)
+	c := NewNamespace(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1.Namespace:
 		c.instance = instance

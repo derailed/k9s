@@ -17,18 +17,18 @@ type DaemonSet struct {
 }
 
 // NewDaemonSetList returns a new resource list.
-func NewDaemonSetList(c Connection, ns string) List {
+func NewDaemonSetList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"ds",
-		NewDaemonSet(c),
+		NewDaemonSet(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewDaemonSet instantiates a new DaemonSet.
-func NewDaemonSet(c Connection) *DaemonSet {
-	ds := &DaemonSet{&Base{Connection: c, Resource: k8s.NewDaemonSet(c)}, nil}
+func NewDaemonSet(c Connection, gvr k8s.GVR) *DaemonSet {
+	ds := &DaemonSet{&Base{Connection: c, Resource: k8s.NewDaemonSet(c, gvr)}, nil}
 	ds.Factory = ds
 
 	return ds
@@ -36,7 +36,7 @@ func NewDaemonSet(c Connection) *DaemonSet {
 
 // New builds a new DaemonSet instance from a k8s resource.
 func (r *DaemonSet) New(i interface{}) Columnar {
-	c := NewDaemonSet(r.Connection)
+	c := NewDaemonSet(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1beta1.DaemonSet:
 		c.instance = instance

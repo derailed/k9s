@@ -100,7 +100,7 @@ func k8sJob() *v1.Job {
 
 func newJob() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewJob(mc).New(k8sJob())
+	return resource.NewJob(mc, k8s.GVR{}).New(k8sJob())
 }
 
 func jobYaml() string {

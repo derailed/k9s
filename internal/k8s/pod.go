@@ -11,13 +11,13 @@ const defaultKillGrace int64 = 5
 
 // Pod represents a Kubernetes Pod.
 type Pod struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewPod returns a new Pod.
-func NewPod(c Connection) *Pod {
-	return &Pod{base: &base{}, Connection: c}
+func NewPod(c Connection, gvr GVR) *Pod {
+	return &Pod{Resource: &Resource{gvr: gvr}, Connection: c}
 }
 
 // Get a pod.

@@ -5,8 +5,10 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
+	yaml "gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
 // Ingress tracks a kubernetes resource.
@@ -16,18 +18,18 @@ type Ingress struct {
 }
 
 // NewIngressList returns a new resource list.
-func NewIngressList(c Connection, ns string) List {
+func NewIngressList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"ing",
-		NewIngress(c),
+		NewIngress(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewIngress instantiates a new Ingress.
-func NewIngress(c Connection) *Ingress {
-	ing := &Ingress{&Base{Connection: c, Resource: k8s.NewIngress(c)}, nil}
+func NewIngress(c Connection, gvr k8s.GVR) *Ingress {
+	ing := &Ingress{&Base{Connection: c, Resource: k8s.NewIngress(c, gvr)}, nil}
 	ing.Factory = ing
 
 	return ing
@@ -35,7 +37,7 @@ func NewIngress(c Connection) *Ingress {
 
 // New builds a new Ingress instance from a k8s resource.
 func (r *Ingress) New(i interface{}) Columnar {
-	c := NewIngress(r.Connection)
+	c := NewIngress(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1beta1.Ingress:
 		c.instance = instance
@@ -57,11 +59,21 @@ func (r *Ingress) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	ing := i.(*v1beta1.Ingress)
-	ing.TypeMeta.APIVersion = "extensions/v1beta1"
-	ing.TypeMeta.Kind = "Ingress"
+	switch instance := i.(type) {
+	case *unstructured.Unstructured:
+		return r.marshalObject(instance)
+	case unstructured.Unstructured:
+		return r.marshalObject(&instance)
+	case *v1beta1.Ingress:
+		return r.marshalObject(instance)
+	}
 
-	return r.marshalObject(ing)
+	raw, err := yaml.Marshal(i)
+	if err != nil {
+		return "", err
+	}
+
+	return string(raw), nil
 }
 
 // Header return resource header.

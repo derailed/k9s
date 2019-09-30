@@ -53,19 +53,19 @@ type (
 )
 
 // NewPodList returns a new resource list.
-func NewPodList(c Connection, ns string) List {
+func NewPodList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"po",
-		NewPod(c),
+		NewPod(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewPod instantiates a new Pod.
-func NewPod(c Connection) *Pod {
+func NewPod(c Connection, gvr k8s.GVR) *Pod {
 	p := &Pod{
-		Base: &Base{Connection: c, Resource: k8s.NewPod(c)},
+		Base: &Base{Connection: c, Resource: k8s.NewPod(c, gvr)},
 	}
 	p.Factory = p
 
@@ -74,7 +74,7 @@ func NewPod(c Connection) *Pod {
 
 // New builds a new Pod instance from a k8s resource.
 func (r *Pod) New(i interface{}) Columnar {
-	c := NewPod(r.Connection)
+	c := NewPod(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1.Pod:
 		c.instance = instance
@@ -159,7 +159,7 @@ func (r *Pod) Logs(ctx context.Context, c chan<- string, opts LogOptions) error 
 	}
 	res, ok := r.Resource.(k8s.Loggable)
 	if !ok {
-		return fmt.Errorf("Resource %T is not Loggable", r.Resource)
+		return fmt.Errorf("CustomResource %T is not Loggable", r.Resource)
 	}
 
 	return tailLogs(ctx, res, c, opts)

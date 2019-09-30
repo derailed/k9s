@@ -23,21 +23,21 @@ type Node struct {
 }
 
 // NewNodeList returns a new resource list.
-func NewNodeList(c Connection, _ string) List {
+func NewNodeList(c Connection, _ string, gvr k8s.GVR) List {
 	return NewList(
 		NotNamespaced,
 		"no",
-		NewNode(c),
+		NewNode(c, gvr),
 		ViewAccess|DescribeAccess,
 	)
 }
 
 // NewNode instantiates a new Node.
-func NewNode(c Connection) *Node {
+func NewNode(c Connection, gvr k8s.GVR) *Node {
 	n := &Node{
 		Base: &Base{
 			Connection: c,
-			Resource:   k8s.NewNode(c),
+			Resource:   k8s.NewNode(c, gvr),
 		},
 	}
 	n.Factory = n
@@ -47,7 +47,7 @@ func NewNode(c Connection) *Node {
 
 // New builds a new Node instance from a k8s resource.
 func (r *Node) New(i interface{}) Columnar {
-	c := NewNode(r.Connection)
+	c := NewNode(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1.Node:
 		c.instance = instance

@@ -17,18 +17,18 @@ type HorizontalPodAutoscaler struct {
 }
 
 // NewHorizontalPodAutoscalerList returns a new resource list.
-func NewHorizontalPodAutoscalerList(c Connection, ns string) List {
+func NewHorizontalPodAutoscalerList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"hpa",
-		NewHorizontalPodAutoscaler(c),
+		NewHorizontalPodAutoscaler(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewHorizontalPodAutoscaler instantiates a new HorizontalPodAutoscaler.
-func NewHorizontalPodAutoscaler(c Connection) *HorizontalPodAutoscaler {
-	hpa := &HorizontalPodAutoscaler{&Base{Connection: c, Resource: k8s.NewHorizontalPodAutoscalerV2Beta2(c)}, nil}
+func NewHorizontalPodAutoscaler(c Connection, gvr k8s.GVR) *HorizontalPodAutoscaler {
+	hpa := &HorizontalPodAutoscaler{&Base{Connection: c, Resource: k8s.NewHorizontalPodAutoscalerV2Beta2(c, gvr)}, nil}
 	hpa.Factory = hpa
 
 	return hpa
@@ -36,7 +36,7 @@ func NewHorizontalPodAutoscaler(c Connection) *HorizontalPodAutoscaler {
 
 // New builds a new HorizontalPodAutoscaler instance from a k8s resource.
 func (r *HorizontalPodAutoscaler) New(i interface{}) Columnar {
-	c := NewHorizontalPodAutoscaler(r.Connection)
+	c := NewHorizontalPodAutoscaler(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *autoscalingv2beta2.HorizontalPodAutoscaler:
 		c.instance = instance

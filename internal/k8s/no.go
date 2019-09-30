@@ -6,13 +6,13 @@ import (
 
 // Node represents a Kubernetes node.
 type Node struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewNode returns a new Node.
-func NewNode(c Connection) *Node {
-	return &Node{&base{}, c}
+func NewNode(c Connection, gvr GVR) *Node {
+	return &Node{&Resource{gvr: gvr}, c}
 }
 
 // Get a node.

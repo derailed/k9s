@@ -24,19 +24,19 @@ type Job struct {
 }
 
 // NewJobList returns a new resource list.
-func NewJobList(c Connection, ns string) List {
+func NewJobList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"job",
-		NewJob(c),
+		NewJob(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewJob instantiates a new Job.
-func NewJob(c Connection) *Job {
+func NewJob(c Connection, gvr k8s.GVR) *Job {
 	j := &Job{
-		Base: &Base{Connection: c, Resource: k8s.NewJob(c)},
+		Base: &Base{Connection: c, Resource: k8s.NewJob(c, gvr)},
 	}
 	j.Factory = j
 
@@ -45,7 +45,7 @@ func NewJob(c Connection) *Job {
 
 // New builds a new Job instance from a k8s resource.
 func (r *Job) New(i interface{}) Columnar {
-	c := NewJob(r.Connection)
+	c := NewJob(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *batchv1.Job:
 		c.instance = instance

@@ -32,7 +32,7 @@ func (v *statefulSetView) extraActions(aa ui.KeyActions) {
 
 func (v *statefulSetView) showPods(app *appView, ns, res, sel string) {
 	ns, n := namespaced(sel)
-	s := k8s.NewStatefulSet(app.Conn())
+	s := k8s.NewStatefulSet(app.Conn(), k8s.GVR{})
 	st, err := s.Get(ns, n)
 	if err != nil {
 		log.Error().Err(err).Msgf("Fetching StatefulSet %s", sel)

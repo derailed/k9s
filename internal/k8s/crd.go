@@ -6,13 +6,13 @@ import (
 
 // CustomResourceDefinition represents a Kubernetes CustomResourceDefinition
 type CustomResourceDefinition struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewCustomResourceDefinition returns a new CustomResourceDefinition.
-func NewCustomResourceDefinition(c Connection) *CustomResourceDefinition {
-	return &CustomResourceDefinition{&base{}, c}
+func NewCustomResourceDefinition(c Connection, gvr GVR) *CustomResourceDefinition {
+	return &CustomResourceDefinition{&Resource{gvr: gvr}, c}
 }
 
 // Get a CustomResourceDefinition.

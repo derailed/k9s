@@ -92,7 +92,7 @@ func k8sPV() *v1.PersistentVolume {
 
 func newPV() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewPersistentVolume(mc).New(k8sPV())
+	return resource.NewPersistentVolume(mc, k8s.GVR{}).New(k8sPV())
 }
 
 func pvYaml() string {

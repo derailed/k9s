@@ -71,7 +71,7 @@ func (c *command) isStdCmd(cmd string) bool {
 }
 
 func (c *command) isAliasCmd(cmd string) bool {
-	cmds := make(map[string]*resCmd, 30)
+	cmds := make(map[string]*resourcesCommand, 30)
 	resourceViews(c.app.Conn(), cmds)
 	res, ok := cmds[cmd]
 	if !ok {
@@ -80,7 +80,7 @@ func (c *command) isAliasCmd(cmd string) bool {
 
 	var r resource.List
 	if res.listFn != nil {
-		r = res.listFn(c.app.Conn(), resource.DefaultNamespace)
+		r = res.listFn(c.app.Conn(), resource.DefaultNamespace, res.gvr)
 	}
 
 	v := res.viewFn(res.kind, c.app, r)
@@ -102,7 +102,7 @@ func (c *command) isAliasCmd(cmd string) bool {
 }
 
 func (c *command) isCRDCmd(cmd string) bool {
-	crds := map[string]*resCmd{}
+	crds := map[string]*resourcesCommand{}
 	allCRDs(c.app.Conn(), crds)
 	res, ok := crds[cmd]
 	if !ok {
@@ -114,9 +114,9 @@ func (c *command) isCRDCmd(cmd string) bool {
 		name = res.singular
 	}
 	v := newResourceView(
-		res.kind,
+		name,
 		c.app,
-		resource.NewCustomList(c.app.Conn(), "", res.api, res.version, name),
+		resource.NewCustomList(c.app.Conn(), "", res.gvr),
 	)
 	v.setColorerFn(ui.DefaultColorer)
 	c.exec(cmd, v)

@@ -6,13 +6,13 @@ import (
 
 // StorageClass represents a Kubernetes StorageClass.
 type StorageClass struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewStorageClass returns a new StorageClass.
-func NewStorageClass(c Connection) *StorageClass {
-	return &StorageClass{&base{}, c}
+func NewStorageClass(c Connection, gvr GVR) *StorageClass {
+	return &StorageClass{&Resource{gvr: gvr}, c}
 }
 
 // Get a StorageClass.

@@ -35,7 +35,7 @@ func NewContainerList(c Connection, pod *v1.Pod) List {
 // NewContainer returns a new set of containers.
 func NewContainer(c Connection, pod *v1.Pod) *Container {
 	co := Container{
-		Base: &Base{Connection: c, Resource: k8s.NewPod(c)},
+		Base: &Base{Connection: c, Resource: k8s.NewPod(c, k8s.GVR{})},
 		pod:  pod,
 	}
 	co.Factory = &co

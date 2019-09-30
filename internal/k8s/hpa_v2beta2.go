@@ -8,13 +8,13 @@ var supportedAutoScalingAPIVersions = []string{"v2beta2", "v2beta1", "v1"}
 
 // HorizontalPodAutoscalerV2Beta2 represents am HorizontalPodAutoscaler.
 type HorizontalPodAutoscalerV2Beta2 struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewHorizontalPodAutoscalerV2Beta2 returns a new HorizontalPodAutoscalerV2Beta2.
-func NewHorizontalPodAutoscalerV2Beta2(c Connection) *HorizontalPodAutoscalerV2Beta2 {
-	return &HorizontalPodAutoscalerV2Beta2{&base{}, c}
+func NewHorizontalPodAutoscalerV2Beta2(c Connection, gvr GVR) *HorizontalPodAutoscalerV2Beta2 {
+	return &HorizontalPodAutoscalerV2Beta2{&Resource{gvr: gvr}, c}
 }
 
 // Get a HorizontalPodAutoscalerV2Beta2.

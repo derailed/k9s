@@ -3,6 +3,8 @@ package views
 import (
 	"strings"
 
+	"k8s.io/apimachinery/pkg/runtime/schema"
+
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
@@ -12,20 +14,24 @@ import (
 
 type (
 	viewFn     func(ns string, app *appView, list resource.List) resourceViewer
-	listFn     func(c resource.Connection, ns string) resource.List
+	listFn     func(c resource.Connection, ns string, gvr k8s.GVR) resource.List
 	enterFn    func(app *appView, ns, resource, selection string)
 	decorateFn func(resource.TableData) resource.TableData
 
-	crdCmd struct {
-		api      string
-		version  string
+	aliases struct {
 		plural   string
 		singular string
 	}
 
-	resCmd struct {
-		crdCmd
+	resourcesCommand struct {
+		aliases
 
+		gvr k8s.GVR
+
+		// groups are the possible groups a resource can be part of.
+		// E.g., ingresses can appear on both networking and extensions,
+		// this should be dynamically chosen based on the kubernetes cluster.
+		groups     []string
 		kind       string
 		viewFn     viewFn
 		listFn     listFn
@@ -41,69 +47,67 @@ type (
 
 var DefaultAliasConfig = AliasConfig{
 	Aliases: map[string]string{
-		"Deployment": "dp",
-		"Secret":     "sec",
-		"Jobs":       "jo",
+		"dp":  "Deployment",
+		"sec": "Secret",
+		"jo":  "Jobs",
 
-		"ClusterRoles":        "cr",
-		"ClusterRoleBindings": "crb",
-		"RoleBindings":        "rb",
-		"Roles":               "ro",
+		"cr":  "ClusterRoles",
+		"crb": "ClusterRoleBindings",
+		"rb":  "RoleBindings",
+		"ro":  "Roles",
 
-		"NetworkPolicies": "np",
+		"np": "NetworkPolicies",
 
-		"Contexts":    "ctx",
-		"Users":       "usr",
-		"Groups":      "grp",
-		"PortForward": "pf",
-		"Benchmark":   "be",
-		"ScreenDumps": "sd",
+		"ctx": "Contexts",
+		"usr": "Users",
+		"grp": "Groups",
+		"pf":  "PortForward",
+		"be":  "Benchmark",
+		"sd":  "ScreenDumps",
 	},
 }
 
-func aliasCmds(c k8s.Connection, m map[string]*resCmd) {
+func aliasCmds(c k8s.Connection, m map[string]*resourcesCommand) {
 	resourceViews(c, m)
 	if c != nil {
 		allCRDs(c, m)
 	}
 }
 
-func allCRDs(c k8s.Connection, m map[string]*resCmd) {
-	crds, _ := resource.NewCustomResourceDefinitionList(c, resource.AllNamespaces).
+func allCRDs(c k8s.Connection, m map[string]*resourcesCommand) {
+	crds, _ := resource.NewCustomResourceDefinitionList(c, resource.AllNamespaces, k8s.GVR{}).
 		Resource().
 		List(resource.AllNamespaces)
 
 	for _, crd := range crds {
-		ff := crd.ExtFields()
+		crdFields := crd.ExtFields()
 
-		grp := k8s.APIGroup{
-			GKV: k8s.GKV{
-				Group:   ff["group"].(string),
-				Kind:    ff["kind"].(string),
-				Version: ff["version"].(string),
+		rsc := resourcesCommand{
+			kind: crdFields["kind"].(string),
+			gvr: k8s.GVR{
+				Group:   crdFields["group"].(string),
+				Version: crdFields["version"].(string),
 			},
 		}
 
-		res := resCmd{
-			kind: grp.Kind,
-			crdCmd: crdCmd{
-				api:     grp.Group,
-				version: grp.Version,
-			},
-		}
-		if p, ok := ff["plural"].(string); ok {
-			res.plural = p
-			m[p] = &res
+		if p, ok := crdFields["plural"].(string); ok {
+			rsc.plural = p
+			m[p] = &rsc
+			rsc.gvr.Resource = p
 		}
 
-		if s, ok := ff["singular"].(string); ok {
-			res.singular = s
-			m[s] = &res
+		if s, ok := crdFields["singular"].(string); ok {
+			rsc.singular = s
+			m[s] = &rsc
+
+			if rsc.gvr.Resource == "" {
+				rsc.gvr.Resource = s
+			}
 		}
 
-		if aa, ok := ff["aliases"].([]interface{}); ok {
+		if aa, ok := crdFields["aliases"].([]interface{}); ok {
 			for _, a := range aa {
-				m[a.(string)] = &res
+				m[a.(string)] = &rsc
 			}
 		}
 	}
@@ -148,21 +152,22 @@ func showSAPolicy(app *appView, _, _, selection string) {
 	app.inject(newPolicyView(app, mapFuSubject("ServiceAccount"), n))
 }
 
-func collect(commandList ...[]*resCmd) (accum []*resCmd) {
+func collect(commandList ...[]*resourcesCommand) (accum []*resourcesCommand) {
 	for _, commands := range commandList {
 		accum = append(accum, commands...)
 	}
 	return
 }
 
-func resourceViews(c k8s.Connection, cmdMap map[string]*resCmd) {
+func resourceViews(c k8s.Connection, cmdMap map[string]*resourcesCommand) {
 	commands := collect(
-		primRes(), coreRes(), stateRes(), rbacRes(), apiExtRes(),
-		batchRes(), appsRes(), extRes(), v1beta1Res(), custRes(),
+		coreGroup(), storageGroup(), rbacGroup(), apiExtensionsGroup(),
+		batchGroup(), appsGroup(), networkingGroup(), policyGroup(),
+		customGroup(),
 	)
 
 	if c != nil {
-		commands = append(commands, hpaRes(c)...)
+		commands = append(commands, autoscalingGroup(c)...)
 	}
 
 	for _, rsc := range commands {
@@ -171,8 +176,8 @@ func resourceViews(c k8s.Connection, cmdMap map[string]*resCmd) {
 
 	// Add default aliases
 	// TODO: read aliases from a config file.
-	for rsc, alias := range DefaultAliasConfig.Aliases {
-		if cmd, ok := cmdMap[strings.ToLower(rsc)]; ok {
+	for alias, kind := range DefaultAliasConfig.Aliases {
+		if cmd, ok := cmdMap[strings.ToLower(kind)]; ok {
 			addAlias(cmdMap, cmd, alias)
 		}
 	}
@@ -182,7 +187,7 @@ func resourceViews(c k8s.Connection, cmdMap map[string]*resCmd) {
 	}
 }
 
-func addAlias(cmdMap map[string]*resCmd, cmd *resCmd, alias string) {
+func addAlias(cmdMap map[string]*resourcesCommand, cmd *resourcesCommand, alias string) {
 	if alias == "" {
 		return
 	}
@@ -193,33 +198,75 @@ func addAlias(cmdMap map[string]*resCmd, cmd *resCmd, alias string) {
 	}
 }
 
-func addAPIResourceAliases(cmds map[string]*resCmd, resource metav1.APIResource) {
+func addAPIResourceAliases(cmds map[string]*resourcesCommand, resource metav1.APIResource) {
 	if strings.Contains(resource.Name, "/") {
 		// Ignore resources that has slash, e.g.,
 		// deployment/status, namespace/finalizers and etc.
 		return
 	}
 
-	if cmd, ok := cmds[strings.ToLower(resource.Kind)]; ok {
-		addAlias(cmds, cmd, resource.Name)
-		addAlias(cmds, cmd, resource.SingularName)
-		for _, sn := range resource.ShortNames {
-			addAlias(cmds, cmd, sn)
+	cmd, ok := cmds[strings.ToLower(resource.Kind)]
+	if !ok {
+		return
+	}
+
+	// Check if the group is the same we specified
+	// or if it is one of the possible ones.
+	if cmd.gvr.Group != resource.Group {
+		found := false
+		for _, group := range cmd.groups {
+			if resource.Group == group {
+				found = true
+			}
 		}
+
+		if !found {
+			return
+		}
+	}
+
+	cmd.gvr.Version = resource.Version
+	cmd.gvr.Group = resource.Group
+	cmd.gvr.Resource = resource.Name
+
+	addAlias(cmds, cmd, resource.Name)
+	addAlias(cmds, cmd, resource.SingularName)
+	for _, sn := range resource.ShortNames {
+		addAlias(cmds, cmd, sn)
 	}
 }
 
-func discoverAliasesFromServer(con k8s.Connection, cmds map[string]*resCmd) {
+func discoverAliasesFromServer(con k8s.Connection, cmds map[string]*resourcesCommand) {
 	_, resourceLists, _ := con.DialOrDie().Discovery().ServerGroupsAndResources()
 	for _, resourceList := range resourceLists {
+		gv, err := schema.ParseGroupVersion(resourceList.GroupVersion)
+		if err != nil {
+			log.Fatal().Msgf("Invalid group version '%s' from server: %s", resourceList.GroupVersion, err.Error())
+		}
+
 		for _, resource := range resourceList.APIResources {
+			resource.Version = gv.Version
+			resource.Group = gv.Group
 			addAPIResourceAliases(cmds, resource)
 		}
 	}
 }
 
-func stateRes() []*resCmd {
-	return []*resCmd{
+func storageGroup() []*resourcesCommand {
+	return []*resourcesCommand{
+		{
+			kind: "StorageClass",
+			gvr: k8s.GVR{
+				Group: "storage.k8s.io",
+			},
+			viewFn: newResourceView,
+			listFn: resource.NewStorageClassList,
+		},
+	}
+}
+
+func coreGroup() []*resourcesCommand {
+	return []*resourcesCommand{
 		{
 			kind:   "ConfigMap",
 			viewFn: newResourceView,
@@ -242,19 +289,6 @@ func stateRes() []*resCmd {
 			viewFn: newSecretView,
 			listFn: resource.NewSecretList,
 		},
-		{
-			kind: "StorageClass",
-			crdCmd: crdCmd{
-				api: "storage.k8s.io",
-			},
-			viewFn: newResourceView,
-			listFn: resource.NewStorageClassList,
-		},
-	}
-}
-
-func primRes() []*resCmd {
-	return []*resCmd{
 		{
 			kind:      "Node",
 			viewFn:    newNodeView,
@@ -284,23 +318,6 @@ func primRes() []*resCmd {
 			viewFn: newSvcView,
 			listFn: resource.NewServiceList,
 		},
-	}
-}
-
-func coreRes() []*resCmd {
-	return []*resCmd{
-		{
-			kind:      "Contexts",
-			viewFn:    newContextView,
-			listFn:    resource.NewContextList,
-			colorerFn: ctxColorer,
-		},
-		{
-			kind:      "DaemonSet",
-			viewFn:    newDaemonSetView,
-			listFn:    resource.NewDaemonSetList,
-			colorerFn: dpColorer,
-		},
 		{
 			kind:   "EndPoints",
 			viewFn: newResourceView,
@@ -321,8 +338,14 @@ func coreRes() []*resCmd {
 	}
 }
 
-func custRes() []*resCmd {
-	return []*resCmd{
+func customGroup() []*resourcesCommand {
+	return []*resourcesCommand{
+		{
+			kind:      "Contexts",
+			viewFn:    newContextView,
+			listFn:    resource.NewContextList,
+			colorerFn: ctxColorer,
+		},
 		{
 			kind:   "Users",
 			viewFn: newSubjectView,
@@ -347,12 +370,12 @@ func custRes() []*resCmd {
 
 }
 
-func rbacRes() []*resCmd {
-	return []*resCmd{
+func rbacGroup() []*resourcesCommand {
+	return []*resourcesCommand{
 		{
 			kind: "ClusterRole",
-			crdCmd: crdCmd{
-				api: "rbac.authorization.k8s.io",
+			gvr: k8s.GVR{
+				Group: "rbac.authorization.k8s.io",
 			},
 			viewFn:  newResourceView,
 			listFn:  resource.NewClusterRoleList,
@@ -360,8 +383,8 @@ func rbacRes() []*resCmd {
 		},
 		{
 			kind: "ClusterRoleBinding",
-			crdCmd: crdCmd{
-				api: "rbac.authorization.k8s.io",
+			gvr: k8s.GVR{
+				Group: "rbac.authorization.k8s.io",
 			},
 			viewFn:  newResourceView,
 			listFn:  resource.NewClusterRoleBindingList,
@@ -369,8 +392,8 @@ func rbacRes() []*resCmd {
 		},
 		{
 			kind: "RoleBinding",
-			crdCmd: crdCmd{
-				api: "rbac.authorization.k8s.io",
+			gvr: k8s.GVR{
+				Group: "rbac.authorization.k8s.io",
 			},
 			viewFn:  newResourceView,
 			listFn:  resource.NewRoleBindingList,
@@ -378,8 +401,8 @@ func rbacRes() []*resCmd {
 		},
 		{
 			kind: "Role",
-			crdCmd: crdCmd{
-				api: "rbac.authorization.k8s.io",
+			gvr: k8s.GVR{
+				Group: "rbac.authorization.k8s.io",
 			},
 			viewFn:  newResourceView,
 			listFn:  resource.NewRoleList,
@@ -388,42 +411,34 @@ func rbacRes() []*resCmd {
 	}
 }
 
-func apiExtRes() []*resCmd {
-	return []*resCmd{
+func apiExtensionsGroup() []*resourcesCommand {
+	return []*resourcesCommand{
 		{
 			kind: "CustomResourceDefinition",
-			crdCmd: crdCmd{
-				api: "apiextensions.k8s.io",
+			gvr: k8s.GVR{
+				Group: "apiextensions.k8s.io",
 			},
 			viewFn:  newResourceView,
 			listFn:  resource.NewCustomResourceDefinitionList,
 			enterFn: showCRD,
 		},
-		{
-			kind: "NetworkPolicy",
-			crdCmd: crdCmd{
-				api: "apiextensions.k8s.io",
-			},
-			viewFn: newResourceView,
-			listFn: resource.NewNetworkPolicyList,
-		},
 	}
 }
 
-func batchRes() []*resCmd {
-	return []*resCmd{
+func batchGroup() []*resourcesCommand {
+	return []*resourcesCommand{
 		{
 			kind: "CronJob",
-			crdCmd: crdCmd{
-				api: "batch",
+			gvr: k8s.GVR{
+				Group: "batch",
 			},
 			viewFn: newCronJobView,
 			listFn: resource.NewCronJobList,
 		},
 		{
 			kind: "Job",
-			crdCmd: crdCmd{
-				api: "batch",
+			gvr: k8s.GVR{
+				Group: "batch",
 			},
 			viewFn: newJobView,
 			listFn: resource.NewJobList,
@@ -431,12 +446,12 @@ func batchRes() []*resCmd {
 	}
 }
 
-func appsRes() []*resCmd {
-	return []*resCmd{
+func appsGroup() []*resourcesCommand {
+	return []*resourcesCommand{
 		{
 			kind: "Deployment",
-			crdCmd: crdCmd{
-				api: "apps",
+			gvr: k8s.GVR{
+				Group: "apps",
 			},
 			viewFn:    newDeployView,
 			listFn:    resource.NewDeploymentList,
@@ -444,17 +459,26 @@ func appsRes() []*resCmd {
 		},
 		{
 			kind: "ReplicaSet",
-			crdCmd: crdCmd{
-				api: "apps",
+			gvr: k8s.GVR{
+				Group: "apps",
 			},
 			viewFn:    newReplicaSetView,
 			listFn:    resource.NewReplicaSetList,
 			colorerFn: rsColorer,
 		},
 		{
+			kind: "DaemonSet",
+			gvr: k8s.GVR{
+				Group: "apps",
+			},
+			viewFn:    newDaemonSetView,
+			listFn:    resource.NewDaemonSetList,
+			colorerFn: dpColorer,
+		},
+		{
 			kind: "StatefulSet",
-			crdCmd: crdCmd{
-				api: "apps",
+			gvr: k8s.GVR{
+				Group: "apps",
 			},
 			viewFn:    newStatefulSetView,
 			listFn:    resource.NewStatefulSetList,
@@ -464,25 +488,34 @@ func appsRes() []*resCmd {
 
 }
 
-func extRes() []*resCmd {
-	return []*resCmd{
+func networkingGroup() []*resourcesCommand {
+	return []*resourcesCommand{
 		{
 			kind: "Ingress",
-			crdCmd: crdCmd{
-				api: "extensions",
+			gvr: k8s.GVR{
+				Group: "networking.k8s.io",
 			},
+			groups: []string{"networking.k8s.io", "extensions"},
 			viewFn: newResourceView,
 			listFn: resource.NewIngressList,
+		},
+		{
+			kind: "NetworkPolicy",
+			gvr: k8s.GVR{
+				Group: "networking.k8s.io",
+			},
+			viewFn: newResourceView,
+			listFn: resource.NewNetworkPolicyList,
 		},
 	}
 }
 
-func v1beta1Res() []*resCmd {
-	return []*resCmd{
+func policyGroup() []*resourcesCommand {
+	return []*resourcesCommand{
 		{
 			kind: "PodDisruptionBudget",
-			crdCmd: crdCmd{
-				api: "v1.beta1",
+			gvr: k8s.GVR{
+				Group: "policy",
 			},
 			viewFn:    newResourceView,
 			listFn:    resource.NewPDBList,
@@ -491,7 +524,7 @@ func v1beta1Res() []*resCmd {
 	}
 }
 
-func hpaRes(c k8s.Connection) []*resCmd {
+func autoscalingGroup(c k8s.Connection) []*resourcesCommand {
 	rev, ok, err := c.SupportsRes("autoscaling", []string{"v1", "v2beta1", "v2beta2"})
 	if err != nil {
 		log.Error().Err(err).Msg("Checking HPA")
@@ -502,10 +535,10 @@ func hpaRes(c k8s.Connection) []*resCmd {
 		return nil
 	}
 
-	hpa := &resCmd{
+	hpa := &resourcesCommand{
 		kind: "HorizontalPodAutoscaler",
-		crdCmd: crdCmd{
-			api: "autoscaling",
+		gvr: k8s.GVR{
+			Group: "autoscaling",
 		},
 		viewFn: newResourceView,
 	}
@@ -521,5 +554,5 @@ func hpaRes(c k8s.Connection) []*resCmd {
 		log.Panic().Msgf("K9s unsupported HPA version. Exiting!")
 	}
 
-	return []*resCmd{hpa}
+	return []*resourcesCommand{hpa}
 }

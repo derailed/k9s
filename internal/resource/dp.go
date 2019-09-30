@@ -17,18 +17,18 @@ type Deployment struct {
 }
 
 // NewDeploymentList returns a new resource list.
-func NewDeploymentList(c Connection, ns string) List {
+func NewDeploymentList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"deploy",
-		NewDeployment(c),
+		NewDeployment(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewDeployment instantiates a new Deployment.
-func NewDeployment(c Connection) *Deployment {
-	d := &Deployment{&Base{Connection: c, Resource: k8s.NewDeployment(c)}, nil}
+func NewDeployment(c Connection, gvr k8s.GVR) *Deployment {
+	d := &Deployment{&Base{Connection: c, Resource: k8s.NewDeployment(c, gvr)}, nil}
 	d.Factory = d
 
 	return d
@@ -36,7 +36,7 @@ func NewDeployment(c Connection) *Deployment {
 
 // New builds a new Deployment instance from a k8s resource.
 func (r *Deployment) New(i interface{}) Columnar {
-	c := NewDeployment(r.Connection)
+	c := NewDeployment(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *appsv1.Deployment:
 		c.instance = instance

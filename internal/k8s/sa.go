@@ -6,13 +6,13 @@ import (
 
 // ServiceAccount manages a Kubernetes ServiceAccount.
 type ServiceAccount struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewServiceAccount instantiates a new ServiceAccount.
-func NewServiceAccount(c Connection) *ServiceAccount {
-	return &ServiceAccount{&base{}, c}
+func NewServiceAccount(c Connection, gvr GVR) *ServiceAccount {
+	return &ServiceAccount{&Resource{gvr: gvr}, c}
 }
 
 // Get a ServiceAccount.

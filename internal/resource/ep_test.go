@@ -99,7 +99,7 @@ func k8sEndpoints() *v1.Endpoints {
 
 func newEndpoints() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewEndpoints(mc).New(k8sEndpoints())
+	return resource.NewEndpoints(mc, k8s.GVR{}).New(k8sEndpoints())
 }
 
 func epYaml() string {

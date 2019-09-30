@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"github.com/derailed/k9s/internal/k8s"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -26,7 +27,7 @@ func TestNodeStatus(t *testing.T) {
 		},
 	}
 
-	no := NewNode(nil)
+	no := NewNode(nil, k8s.GVR{})
 	for _, u := range uu {
 		res := make([]string, 5)
 		no.status(u.s, false, res)
@@ -35,7 +36,7 @@ func TestNodeStatus(t *testing.T) {
 }
 
 func BenchmarkNodeFields(b *testing.B) {
-	n := NewNode(nil)
+	n := NewNode(nil, k8s.GVR{})
 	no := makeNode()
 
 	b.ResetTimer()

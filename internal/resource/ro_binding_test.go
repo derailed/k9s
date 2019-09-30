@@ -83,7 +83,7 @@ func k8sRB() *v1.RoleBinding {
 
 func newRB() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewRoleBinding(mc).New(k8sRB())
+	return resource.NewRoleBinding(mc, k8s.GVR{}).New(k8sRB())
 }
 
 func rbYaml() string {

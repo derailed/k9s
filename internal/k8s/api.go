@@ -26,31 +26,11 @@ const NA = "n/a"
 var supportedMetricsAPIVersions = []string{"v1beta1"}
 
 type (
-	// GKV tracks api resource version info.
-	GKV struct {
-		Group, Kind, Version string
-	}
-
-	// APIGroup represents a K8s resource descriptor.
-	APIGroup struct {
-		GKV
-
-		Resource         string
-		Plural, Singular string
-		Aliases          []string
-	}
+	// GVR tracks api resource version info.
+	GVR = schema.GroupVersionResource
 
 	// Collection of empty interfaces.
 	Collection []interface{}
-
-	// Cruder represent a crudable Kubernetes resource.
-	Cruder interface {
-		Get(ns string, name string) (interface{}, error)
-		List(ns string) (Collection, error)
-		Delete(ns string, name string) error
-		SetFieldSelector(string)
-		SetLabelSelector(string)
-	}
 
 	// Connection represents a Kubenetes apiserver connection.
 	Connection interface {
@@ -104,14 +84,14 @@ func InitConnectionOrDie(config *Config, logger zerolog.Logger) *APIClient {
 
 // CheckListNSAccess check if current user can list namespaces.
 func (a *APIClient) CheckListNSAccess() error {
-	ns := NewNamespace(a)
+	ns := NewNamespace(a, GVR{})
 	_, err := ns.List("")
 	return err
 }
 
 // CheckNSAccess asserts if user can access a namespace.
 func (a *APIClient) CheckNSAccess(n string) error {
-	ns := NewNamespace(a)
+	ns := NewNamespace(a, GVR{})
 	if n == "" {
 		_, err := ns.List(n)
 		return err

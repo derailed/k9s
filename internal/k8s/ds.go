@@ -6,13 +6,13 @@ import (
 
 // DaemonSet represents a Kubernetes DaemonSet
 type DaemonSet struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewDaemonSet returns a new DaemonSet.
-func NewDaemonSet(c Connection) *DaemonSet {
-	return &DaemonSet{&base{}, c}
+func NewDaemonSet(c Connection, gvr GVR) *DaemonSet {
+	return &DaemonSet{&Resource{gvr: gvr}, c}
 }
 
 // Get a DaemonSet.

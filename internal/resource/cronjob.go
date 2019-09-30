@@ -28,18 +28,18 @@ type (
 )
 
 // NewCronJobList returns a new resource list.
-func NewCronJobList(c Connection, ns string) List {
+func NewCronJobList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"cronjob",
-		NewCronJob(c),
+		NewCronJob(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewCronJob instantiates a new CronJob.
-func NewCronJob(c Connection) *CronJob {
-	cj := &CronJob{&Base{Connection: c, Resource: k8s.NewCronJob(c)}, nil}
+func NewCronJob(c Connection, gvr k8s.GVR) *CronJob {
+	cj := &CronJob{&Base{Connection: c, Resource: k8s.NewCronJob(c, gvr)}, nil}
 	cj.Factory = cj
 
 	return cj
@@ -47,7 +47,7 @@ func NewCronJob(c Connection) *CronJob {
 
 // New builds a new CronJob instance from a k8s resource.
 func (r *CronJob) New(i interface{}) Columnar {
-	c := NewCronJob(r.Connection)
+	c := NewCronJob(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *batchv1beta1.CronJob:
 		c.instance = instance

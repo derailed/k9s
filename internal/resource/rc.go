@@ -15,18 +15,18 @@ type ReplicationController struct {
 }
 
 // NewReplicationControllerList returns a new resource list.
-func NewReplicationControllerList(c Connection, ns string) List {
+func NewReplicationControllerList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"rc",
-		NewReplicationController(c),
+		NewReplicationController(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewReplicationController instantiates a new ReplicationController.
-func NewReplicationController(c Connection) *ReplicationController {
-	r := &ReplicationController{&Base{Connection: c, Resource: k8s.NewReplicationController(c)}, nil}
+func NewReplicationController(c Connection, gvr k8s.GVR) *ReplicationController {
+	r := &ReplicationController{&Base{Connection: c, Resource: k8s.NewReplicationController(c, gvr)}, nil}
 	r.Factory = r
 
 	return r
@@ -34,7 +34,7 @@ func NewReplicationController(c Connection) *ReplicationController {
 
 // New builds a new ReplicationController instance from a k8s resource.
 func (r *ReplicationController) New(i interface{}) Columnar {
-	c := NewReplicationController(r.Connection)
+	c := NewReplicationController(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1.ReplicationController:
 		c.instance = instance

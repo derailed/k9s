@@ -96,7 +96,7 @@ func k8sDeployment() *appsv1.Deployment {
 
 func newDeployment() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewDeployment(mc).New(k8sDeployment())
+	return resource.NewDeployment(mc, k8s.GVR{}).New(k8sDeployment())
 }
 
 func dpYaml() string {

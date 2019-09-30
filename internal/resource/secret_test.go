@@ -152,7 +152,7 @@ func TestSecretListData(t *testing.T) {
 
 func newSecret() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewSecret(mc).New(k8sSecret())
+	return resource.NewSecret(mc, k8s.GVR{}).New(k8sSecret())
 }
 
 func k8sSecret() *v1.Secret {

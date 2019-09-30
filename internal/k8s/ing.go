@@ -2,25 +2,36 @@ package k8s
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/client-go/dynamic"
 )
 
 // Ingress represents a Kubernetes Ingress.
 type Ingress struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewIngress returns a new Ingress.
-func NewIngress(c Connection) *Ingress {
-	return &Ingress{&base{}, c}
+func NewIngress(c Connection, gvr GVR) *Ingress {
+	return &Ingress{&Resource{gvr: gvr}, c}
+}
+
+func (i *Ingress) nsRes() dynamic.NamespaceableResourceInterface {
+	g := schema.GroupVersionResource{
+		Group:    i.gvr.Group,
+		Version:  i.gvr.Version,
+		Resource: i.gvr.Resource,
+	}
+	return i.DynDialOrDie().Resource(g)
 }
 
 // Get a Ingress.
 func (i *Ingress) Get(ns, n string) (interface{}, error) {
-	return i.DialOrDie().ExtensionsV1beta1().Ingresses(ns).Get(n, metav1.GetOptions{})
+	return i.nsRes().Namespace(ns).Get(n, metav1.GetOptions{})
 }
 
-// List all Ingresss in a given namespace.
+// List all Ingresses in a given namespace.
 func (i *Ingress) List(ns string) (Collection, error) {
 	opts := metav1.ListOptions{
 		LabelSelector: i.labelSelector,

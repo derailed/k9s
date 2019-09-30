@@ -4,13 +4,13 @@ import metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 // RoleBinding represents a Kubernetes RoleBinding.
 type RoleBinding struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewRoleBinding returns a new RoleBinding.
-func NewRoleBinding(c Connection) *RoleBinding {
-	return &RoleBinding{&base{}, c}
+func NewRoleBinding(c Connection, gvr GVR) *RoleBinding {
+	return &RoleBinding{&Resource{gvr: gvr}, c}
 }
 
 // Get a RoleBinding.

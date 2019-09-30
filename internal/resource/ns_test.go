@@ -92,7 +92,7 @@ func k8sNamespace() *v1.Namespace {
 
 func newNamespace() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewNamespace(mc).New(k8sNamespace())
+	return resource.NewNamespace(mc, k8s.GVR{}).New(k8sNamespace())
 }
 
 func nsYaml() string {

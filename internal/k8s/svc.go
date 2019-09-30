@@ -6,13 +6,13 @@ import (
 
 // Service represents a Kubernetes Service.
 type Service struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewService returns a new Service.
-func NewService(c Connection) *Service {
-	return &Service{&base{}, c}
+func NewService(c Connection, gvr GVR) *Service {
+	return &Service{&Resource{gvr: gvr}, c}
 }
 
 // Get a service.

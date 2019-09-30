@@ -6,13 +6,13 @@ import (
 
 // ReplicationController represents a Kubernetes ReplicationController.
 type ReplicationController struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewReplicationController returns a new ReplicationController.
-func NewReplicationController(c Connection) *ReplicationController {
-	return &ReplicationController{&base{}, c}
+func NewReplicationController(c Connection, gvr GVR) *ReplicationController {
+	return &ReplicationController{&Resource{gvr: gvr}, c}
 }
 
 // Get a RC.

@@ -7,13 +7,13 @@ import (
 
 // Role represents a Kubernetes Role.
 type Role struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewRole returns a new Role.
-func NewRole(c Connection) *Role {
-	return &Role{&base{}, c}
+func NewRole(c Connection, gvr GVR) *Role {
+	return &Role{&Resource{gvr: gvr}, c}
 }
 
 // Get a Role.

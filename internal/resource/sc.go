@@ -13,18 +13,18 @@ type StorageClass struct {
 }
 
 // NewStorageClassList returns a new resource list.
-func NewStorageClassList(c Connection, ns string) List {
+func NewStorageClassList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		NotNamespaced,
 		"sc",
-		NewStorageClass(c),
+		NewStorageClass(c, gvr),
 		CRUDAccess|DescribeAccess,
 	)
 }
 
 // NewStorageClass instantiates a new StorageClass.
-func NewStorageClass(c Connection) *StorageClass {
-	p := &StorageClass{&Base{Connection: c, Resource: k8s.NewStorageClass(c)}, nil}
+func NewStorageClass(c Connection, gvr k8s.GVR) *StorageClass {
+	p := &StorageClass{&Base{Connection: c, Resource: k8s.NewStorageClass(c, gvr)}, nil}
 	p.Factory = p
 
 	return p
@@ -32,7 +32,7 @@ func NewStorageClass(c Connection) *StorageClass {
 
 // New builds a new StorageClass instance from a k8s resource.
 func (r *StorageClass) New(i interface{}) Columnar {
-	c := NewStorageClass(r.Connection)
+	c := NewStorageClass(r.Connection, k8s.GVR{})
 	switch instance := i.(type) {
 	case *v1.StorageClass:
 		c.instance = instance

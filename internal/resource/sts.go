@@ -17,18 +17,18 @@ type StatefulSet struct {
 }
 
 // NewStatefulSetList returns a new resource list.
-func NewStatefulSetList(c Connection, ns string) List {
+func NewStatefulSetList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"sts",
-		NewStatefulSet(c),
+		NewStatefulSet(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewStatefulSet instantiates a new StatefulSet.
-func NewStatefulSet(c Connection) *StatefulSet {
-	s := &StatefulSet{&Base{Connection: c, Resource: k8s.NewStatefulSet(c)}, nil}
+func NewStatefulSet(c Connection, gvr k8s.GVR) *StatefulSet {
+	s := &StatefulSet{&Base{Connection: c, Resource: k8s.NewStatefulSet(c, gvr)}, nil}
 	s.Factory = s
 
 	return s
@@ -36,7 +36,7 @@ func NewStatefulSet(c Connection) *StatefulSet {
 
 // New builds a new StatefulSet instance from a k8s resource.
 func (r *StatefulSet) New(i interface{}) Columnar {
-	c := NewStatefulSet(r.Connection)
+	c := NewStatefulSet(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *appsv1.StatefulSet:
 		c.instance = instance

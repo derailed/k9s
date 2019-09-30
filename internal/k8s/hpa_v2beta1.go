@@ -7,13 +7,13 @@ import (
 
 // HorizontalPodAutoscalerV2Beta1 represents am HorizontalPodAutoscaler.
 type HorizontalPodAutoscalerV2Beta1 struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewHorizontalPodAutoscalerV2Beta1 returns a new HorizontalPodAutoscaler.
-func NewHorizontalPodAutoscalerV2Beta1(c Connection) *HorizontalPodAutoscalerV2Beta1 {
-	return &HorizontalPodAutoscalerV2Beta1{&base{}, c}
+func NewHorizontalPodAutoscalerV2Beta1(c Connection, gvr GVR) *HorizontalPodAutoscalerV2Beta1 {
+	return &HorizontalPodAutoscalerV2Beta1{&Resource{gvr: gvr}, c}
 }
 
 // Get a HorizontalPodAutoscaler.

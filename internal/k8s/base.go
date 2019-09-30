@@ -1,34 +1,39 @@
 package k8s
 
-type base struct {
+type Resource struct {
 	fieldSelector string
 	labelSelector string
+	gvr           GVR
+}
+
+func (r *Resource) GVR() GVR {
+	return r.gvr
 }
 
 // SetFieldSelector refines query results via selector.
-func (b *base) SetFieldSelector(s string) {
-	b.fieldSelector = s
+func (r *Resource) SetFieldSelector(s string) {
+	r.fieldSelector = s
 }
 
 // SetLabelSelector refines query results via labels.
-func (b *base) SetLabelSelector(s string) {
-	b.labelSelector = s
+func (r *Resource) SetLabelSelector(s string) {
+	r.labelSelector = s
 }
 
 // GetFieldSelector returns field selector.
-func (b *base) GetFieldSelector() string {
-	return b.fieldSelector
+func (r *Resource) GetFieldSelector() string {
+	return r.fieldSelector
 }
 
 // GetLabelSelector returns label selector.
-func (b *base) GetLabelSelector() string {
-	return b.labelSelector
+func (r *Resource) GetLabelSelector() string {
+	return r.labelSelector
 }
 
-func (b *base) HasSelectors() bool {
-	return b.labelSelector != "" || b.fieldSelector != ""
+func (r *Resource) HasSelectors() bool {
+	return r.labelSelector != "" || r.fieldSelector != ""
 }
 
-func (b *base) Kill(ns, n string) error {
+func (r *Resource) Kill(ns, n string) error {
 	return nil
 }

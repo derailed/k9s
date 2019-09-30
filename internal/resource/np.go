@@ -17,18 +17,18 @@ type NetworkPolicy struct {
 }
 
 // NewNetworkPolicyList returns a new resource list.
-func NewNetworkPolicyList(c Connection, ns string) List {
+func NewNetworkPolicyList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"np",
-		NewNetworkPolicy(c),
+		NewNetworkPolicy(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewNetworkPolicy instantiates a new NetworkPolicy.
-func NewNetworkPolicy(c Connection) *NetworkPolicy {
-	ds := &NetworkPolicy{&Base{Connection: c, Resource: k8s.NewNetworkPolicy(c)}, nil}
+func NewNetworkPolicy(c Connection, gvr k8s.GVR) *NetworkPolicy {
+	ds := &NetworkPolicy{&Base{Connection: c, Resource: k8s.NewNetworkPolicy(c, gvr)}, nil}
 	ds.Factory = ds
 
 	return ds
@@ -36,7 +36,7 @@ func NewNetworkPolicy(c Connection) *NetworkPolicy {
 
 // New builds a new NetworkPolicy instance from a k8s resource.
 func (r *NetworkPolicy) New(i interface{}) Columnar {
-	c := NewNetworkPolicy(r.Connection)
+	c := NewNetworkPolicy(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1beta1.NetworkPolicy:
 		c.instance = instance

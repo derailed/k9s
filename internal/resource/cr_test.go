@@ -108,7 +108,7 @@ func k8sCR() *rbacv1.ClusterRole {
 
 func newClusterRole() resource.Columnar {
 	conn := NewMockConnection()
-	return resource.NewClusterRole(conn).New(k8sCR())
+	return resource.NewClusterRole(conn, k8s.GVR{}).New(k8sCR())
 }
 
 func testTime() time.Time {

@@ -87,7 +87,7 @@ func TestPodListData(t *testing.T) {
 }
 
 func BenchmarkPodFields(b *testing.B) {
-	p := resource.NewPod(nil)
+	p := resource.NewPod(nil, k8s.GVR{})
 	po := makePod()
 
 	b.ResetTimer()
@@ -156,7 +156,7 @@ func makePod() *v1.Pod {
 
 func newPod() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewPod(mc).New(makePod())
+	return resource.NewPod(mc, k8s.GVR{}).New(makePod())
 }
 
 func poYaml() string {

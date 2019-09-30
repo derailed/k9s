@@ -6,13 +6,13 @@ import (
 
 // ReplicaSet represents a Kubernetes ReplicaSet.
 type ReplicaSet struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewReplicaSet returns a new ReplicaSet.
-func NewReplicaSet(c Connection) *ReplicaSet {
-	return &ReplicaSet{&base{}, c}
+func NewReplicaSet(c Connection, gvr GVR) *ReplicaSet {
+	return &ReplicaSet{&Resource{gvr: gvr}, c}
 }
 
 // Get a ReplicaSet.

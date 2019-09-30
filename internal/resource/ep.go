@@ -16,18 +16,18 @@ type Endpoints struct {
 }
 
 // NewEndpointsList returns a new resource list.
-func NewEndpointsList(c Connection, ns string) List {
+func NewEndpointsList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"ep",
-		NewEndpoints(c),
+		NewEndpoints(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewEndpoints instantiates a new Endpoints.
-func NewEndpoints(c Connection) *Endpoints {
-	ep := &Endpoints{&Base{Connection: c, Resource: k8s.NewEndpoints(c)}, nil}
+func NewEndpoints(c Connection, gvr k8s.GVR) *Endpoints {
+	ep := &Endpoints{&Base{Connection: c, Resource: k8s.NewEndpoints(c, gvr)}, nil}
 	ep.Factory = ep
 
 	return ep
@@ -35,7 +35,7 @@ func NewEndpoints(c Connection) *Endpoints {
 
 // New builds a new Endpoints instance from a k8s resource.
 func (r *Endpoints) New(i interface{}) Columnar {
-	c := NewEndpoints(r.Connection)
+	c := NewEndpoints(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1.Endpoints:
 		c.instance = instance

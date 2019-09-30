@@ -3,13 +3,15 @@ package views
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal/k8s"
+
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestContextView(t *testing.T) {
-	l := resource.NewContextList(nil, "fred")
+	l := resource.NewContextList(nil, "fred", k8s.GVR{})
 	v := newContextView("blee", NewApp(config.NewConfig(ks{})), l).(*contextView)
 
 	assert.Equal(t, 3, len(v.hints()))

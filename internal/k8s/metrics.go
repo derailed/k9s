@@ -9,7 +9,7 @@ import (
 type (
 	// MetricsServer serves cluster metrics for nodes and pods.
 	MetricsServer struct {
-		*base
+		*Resource
 		Connection
 	}
 
@@ -45,7 +45,7 @@ type (
 
 // NewMetricsServer return a metric server instance.
 func NewMetricsServer(c Connection) *MetricsServer {
-	return &MetricsServer{&base{}, c}
+	return &MetricsServer{&Resource{}, c}
 }
 
 // NodesMetrics retrieves metrics for a given set of nodes.

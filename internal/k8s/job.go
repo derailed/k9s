@@ -12,7 +12,7 @@ import (
 type (
 	// Job represents a Kubernetes Job.
 	Job struct {
-		*base
+		*Resource
 		Connection
 	}
 
@@ -24,8 +24,8 @@ type (
 )
 
 // NewJob returns a new Job.
-func NewJob(c Connection) *Job {
-	return &Job{&base{}, c}
+func NewJob(c Connection, gvr GVR) *Job {
+	return &Job{&Resource{gvr: gvr}, c}
 }
 
 // Get a Job.
@@ -62,7 +62,7 @@ func (j *Job) Containers(ns, n string, includeInit bool) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewPod(j).Containers(ns, pod, includeInit)
+	return NewPod(j, GVR{}).Containers(ns, pod, includeInit)
 }
 
 // Logs fetch container logs for a given job and container.
@@ -71,8 +71,7 @@ func (j *Job) Logs(ns, n string, opts *v1.PodLogOptions) *restclient.Request {
 	if err != nil {
 		return nil
 	}
-
-	return NewPod(j).Logs(ns, pod, opts)
+	return NewPod(j, GVR{}).Logs(ns, pod, opts)
 }
 
 // Events retrieved jobs events.

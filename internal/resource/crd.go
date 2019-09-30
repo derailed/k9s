@@ -17,18 +17,18 @@ type CustomResourceDefinition struct {
 }
 
 // NewCustomResourceDefinitionList returns a new resource list.
-func NewCustomResourceDefinitionList(c Connection, ns string) List {
+func NewCustomResourceDefinitionList(c Connection, _ string, gvr k8s.GVR) List {
 	return NewList(
 		NotNamespaced,
 		"crd",
-		NewCustomResourceDefinition(c),
+		NewCustomResourceDefinition(c, gvr),
 		CRUDAccess|DescribeAccess,
 	)
 }
 
 // NewCustomResourceDefinition instantiates a new CustomResourceDefinition.
-func NewCustomResourceDefinition(c Connection) *CustomResourceDefinition {
-	crd := &CustomResourceDefinition{&Base{Connection: c, Resource: k8s.NewCustomResourceDefinition(c)}, nil}
+func NewCustomResourceDefinition(c Connection, gvr k8s.GVR) *CustomResourceDefinition {
+	crd := &CustomResourceDefinition{&Base{Connection: c, Resource: k8s.NewCustomResourceDefinition(c, gvr)}, nil}
 	crd.Factory = crd
 
 	return crd
@@ -36,7 +36,7 @@ func NewCustomResourceDefinition(c Connection) *CustomResourceDefinition {
 
 // New builds a new CustomResourceDefinition instance from a k8s resource.
 func (r *CustomResourceDefinition) New(i interface{}) Columnar {
-	c := NewCustomResourceDefinition(r.Connection)
+	c := NewCustomResourceDefinition(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *unstructured.Unstructured:
 		c.instance = instance

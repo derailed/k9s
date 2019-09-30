@@ -6,13 +6,13 @@ import (
 
 // PersistentVolumeClaim represents a Kubernetes PersistentVolumeClaim.
 type PersistentVolumeClaim struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewPersistentVolumeClaim returns a new PersistentVolumeClaim.
-func NewPersistentVolumeClaim(c Connection) *PersistentVolumeClaim {
-	return &PersistentVolumeClaim{&base{}, c}
+func NewPersistentVolumeClaim(c Connection, gvr GVR) *PersistentVolumeClaim {
+	return &PersistentVolumeClaim{&Resource{gvr: gvr}, c}
 }
 
 // Get a PersistentVolumeClaim.

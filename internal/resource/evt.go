@@ -16,18 +16,18 @@ type Event struct {
 }
 
 // NewEventList returns a new resource list.
-func NewEventList(c Connection, ns string) List {
+func NewEventList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"ev",
-		NewEvent(c),
+		NewEvent(c, gvr),
 		ListAccess+NamespaceAccess,
 	)
 }
 
 // NewEvent instantiates a new Event.
-func NewEvent(c Connection) *Event {
-	ev := &Event{&Base{Connection: c, Resource: k8s.NewEvent(c)}, nil}
+func NewEvent(c Connection, gvr k8s.GVR) *Event {
+	ev := &Event{&Base{Connection: c, Resource: k8s.NewEvent(c, gvr)}, nil}
 	ev.Factory = ev
 
 	return ev
@@ -35,7 +35,7 @@ func NewEvent(c Connection) *Event {
 
 // New builds a new Event instance from a k8s resource.
 func (r *Event) New(i interface{}) Columnar {
-	c := NewEvent(r.Connection)
+	c := NewEvent(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1.Event:
 		c.instance = instance

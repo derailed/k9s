@@ -13,18 +13,18 @@ type ClusterRole struct {
 }
 
 // NewClusterRoleList returns a new resource list.
-func NewClusterRoleList(c Connection, ns string) List {
+func NewClusterRoleList(c Connection, _ string, gvr k8s.GVR) List {
 	return NewList(
 		NotNamespaced,
 		"clusterrole",
-		NewClusterRole(c),
+		NewClusterRole(c, gvr),
 		CRUDAccess|DescribeAccess,
 	)
 }
 
 // NewClusterRole instantiates a new ClusterRole.
-func NewClusterRole(c Connection) *ClusterRole {
-	cr := &ClusterRole{&Base{Connection: c, Resource: k8s.NewClusterRole(c)}, nil}
+func NewClusterRole(c Connection, gvr k8s.GVR) *ClusterRole {
+	cr := &ClusterRole{&Base{Connection: c, Resource: k8s.NewClusterRole(c, gvr)}, nil}
 	cr.Factory = cr
 
 	return cr
@@ -32,7 +32,7 @@ func NewClusterRole(c Connection) *ClusterRole {
 
 // New builds a new ClusterRole instance from a k8s resource.
 func (r *ClusterRole) New(i interface{}) Columnar {
-	c := NewClusterRole(r.Connection)
+	c := NewClusterRole(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1.ClusterRole:
 		c.instance = instance

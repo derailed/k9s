@@ -146,7 +146,7 @@ func TestCMListData(t *testing.T) {
 
 func newConfigMap() resource.Columnar {
 	rc := NewMockConnection()
-	return resource.NewConfigMap(rc).New(k8sCM())
+	return resource.NewConfigMap(rc, k8s.GVR{}).New(k8sCM())
 }
 
 func k8sCM() *v1.ConfigMap {

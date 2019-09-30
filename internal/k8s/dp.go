@@ -6,13 +6,13 @@ import (
 
 // Deployment represents a Kubernetes Deployment.
 type Deployment struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewDeployment returns a new Deployment.
-func NewDeployment(c Connection) *Deployment {
-	return &Deployment{&base{}, c}
+func NewDeployment(c Connection, gvr GVR) *Deployment {
+	return &Deployment{&Resource{gvr: gvr}, c}
 }
 
 // Get a deployment.

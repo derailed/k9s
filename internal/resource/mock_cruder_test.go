@@ -6,6 +6,7 @@ package resource_test
 import (
 	k8s "github.com/derailed/k9s/internal/k8s"
 	pegomock "github.com/petergtz/pegomock"
+	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	"reflect"
 	"time"
 )
@@ -35,6 +36,21 @@ func (mock *MockCruder) Delete(_param0 string, _param1 string, _param2 bool, _pa
 	if len(result) != 0 {
 		if result[0] != nil {
 			ret0 = result[0].(error)
+		}
+	}
+	return ret0
+}
+
+func (mock *MockCruder) GVR() schema.GroupVersionResource {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockCruder().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("GVR", params, []reflect.Type{reflect.TypeOf((*schema.GroupVersionResource)(nil)).Elem()})
+	var ret0 schema.GroupVersionResource
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(schema.GroupVersionResource)
 		}
 	}
 	return ret0
@@ -213,6 +229,23 @@ func (c *MockCruder_Delete_OngoingVerification) GetAllCapturedArguments() (_para
 		}
 	}
 	return
+}
+
+func (verifier *VerifierMockCruder) GVR() *MockCruder_GVR_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "GVR", params, verifier.timeout)
+	return &MockCruder_GVR_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockCruder_GVR_OngoingVerification struct {
+	mock              *MockCruder
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockCruder_GVR_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *MockCruder_GVR_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierMockCruder) Get(_param0 string, _param1 string) *MockCruder_Get_OngoingVerification {

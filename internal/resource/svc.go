@@ -21,18 +21,18 @@ type Service struct {
 }
 
 // NewServiceList returns a new resource list.
-func NewServiceList(c Connection, ns string) List {
+func NewServiceList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"svc",
-		NewService(c),
+		NewService(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewService instantiates a new Service.
-func NewService(c Connection) *Service {
-	s := &Service{&Base{Connection: c, Resource: k8s.NewService(c)}, nil}
+func NewService(c Connection, gvr k8s.GVR) *Service {
+	s := &Service{&Base{Connection: c, Resource: k8s.NewService(c, gvr)}, nil}
 	s.Factory = s
 
 	return s
@@ -40,7 +40,7 @@ func NewService(c Connection) *Service {
 
 // New builds a new Service instance from a k8s resource.
 func (r *Service) New(i interface{}) Columnar {
-	c := NewService(r.Connection)
+	c := NewService(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1.Service:
 		c.instance = instance

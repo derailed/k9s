@@ -17,35 +17,33 @@ import (
 type Custom struct {
 	*Base
 
-	instance             *metav1beta1.TableRow
-	group, version, name string
-	headers              Row
+	instance *metav1beta1.TableRow
+	headers  Row
 }
 
 // NewCustomList returns a new resource list.
-func NewCustomList(c k8s.Connection, ns, group, version, name string) List {
-	if !c.IsNamespaced(name) {
+func NewCustomList(c k8s.Connection, ns string, gvr k8s.GVR) List {
+	if !c.IsNamespaced(gvr.Resource) {
 		ns = NotNamespaced
 	}
 	return NewList(
 		ns,
-		name,
-		NewCustom(c, group, version, name), AllVerbsAccess|DescribeAccess,
+		gvr.Resource,
+		NewCustom(c, gvr), AllVerbsAccess|DescribeAccess,
 	)
 }
 
-// NewCustom instantiates a new Kubernetes Resource.
-func NewCustom(c k8s.Connection, group, version, name string) *Custom {
-	cr := &Custom{Base: &Base{Connection: c, Resource: k8s.NewResource(c, group, version, name)}}
+// NewCustom instantiates a new Kubernetes CustomResource.
+func NewCustom(c k8s.Connection, gvr k8s.GVR) *Custom {
+	cr := &Custom{Base: &Base{Connection: c, Resource: k8s.NewCustomResource(c, gvr)}}
 	cr.Factory = cr
-	cr.group, cr.version, cr.name = group, version, name
 
 	return cr
 }
 
 // New builds a new Custom instance from a k8s resource.
 func (r *Custom) New(i interface{}) Columnar {
-	cr := NewCustom(r.Connection, "", "", "")
+	cr := NewCustom(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *metav1beta1.TableRow:
 		cr.instance = instance
@@ -66,7 +64,6 @@ func (r *Custom) New(i interface{}) Columnar {
 	}
 	name := meta["name"].(string)
 	cr.path = path.Join(ns, name)
-	cr.group, cr.version, cr.name = obj["kind"].(string), obj["apiVersion"].(string), name
 
 	return cr
 }

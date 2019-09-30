@@ -61,7 +61,7 @@ func (v *svcView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell
 }
 
 func (v *svcView) showPods(app *appView, ns, res, sel string) {
-	s := k8s.NewService(app.Conn())
+	s := k8s.NewService(app.Conn(), k8s.GVR{})
 	ns, n := namespaced(sel)
 	svc, err := s.Get(ns, n)
 	if err != nil {
@@ -70,7 +70,13 @@ func (v *svcView) showPods(app *appView, ns, res, sel string) {
 	}
 
 	if s, ok := svc.(*v1.Service); ok {
-		v.showSvcPods(ns, s.Spec.Selector, v.backCmd)
+		var selector []string
+		for k, v := range s.Spec.Selector {
+			selector = append(selector, fmt.Sprintf("%s=%s", k, v))
+		}
+
+		showPods(app, ns, strings.Join(selector, ","), "", v.backCmd)
+
 	}
 }
 
@@ -207,22 +213,4 @@ func benchTimedOut(app *appView) {
 	app.QueueUpdate(func() {
 		app.StatusReset()
 	})
-}
-
-func (v *svcView) showSvcPods(ns string, sel map[string]string, b ui.ActionHandler) {
-	var s []string
-	for k, v := range sel {
-		s = append(s, fmt.Sprintf("%s=%s", k, v))
-	}
-	list := resource.NewPodList(v.app.Conn(), ns)
-	list.SetLabelSelector(strings.Join(s, ","))
-
-	pv := newPodView("Pods", v.app, list)
-	pv.setColorerFn(podColorer)
-	pv.setExtraActionsFn(func(aa ui.KeyActions) {
-		aa[tcell.KeyEsc] = ui.NewKeyAction("Back", b, true)
-	})
-	// set active namespace to service ns.
-	v.app.Config.SetActiveNamespace(ns)
-	v.app.inject(pv)
 }

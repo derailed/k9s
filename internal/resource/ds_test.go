@@ -102,7 +102,7 @@ func k8sDS() *extv1beta1.DaemonSet {
 
 func newDS() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewDaemonSet(mc).New(k8sDS())
+	return resource.NewDaemonSet(mc, k8s.GVR{}).New(k8sDS())
 }
 
 func dsYaml() string {

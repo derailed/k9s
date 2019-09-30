@@ -6,13 +6,13 @@ import (
 
 // ClusterRole represents a Kubernetes ClusterRole
 type ClusterRole struct {
-	*base
+	*Resource
 	Connection
 }
 
 // NewClusterRole returns a new ClusterRole.
-func NewClusterRole(c Connection) *ClusterRole {
-	return &ClusterRole{&base{}, c}
+func NewClusterRole(c Connection, gvr GVR) *ClusterRole {
+	return &ClusterRole{&Resource{gvr: gvr}, c}
 }
 
 // Get a cluster role.

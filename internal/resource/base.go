@@ -30,6 +30,7 @@ type (
 		GetLabelSelector() string
 		GetFieldSelector() string
 		HasSelectors() bool
+		GVR() k8s.GVR
 	}
 
 	// Scalable represents a scalable Kubernetes resource.
@@ -42,7 +43,7 @@ type (
 
 	// Factory creates new tabular resources.
 	Factory interface {
-		New(interface{}) Columnar
+		New(i interface{}) Columnar
 	}
 
 	// Base resource.
@@ -63,6 +64,10 @@ func NewBase(c Connection, r Cruder) *Base {
 // HasSelectors returns true if field or label selectors are set.
 func (b *Base) HasSelectors() bool {
 	return b.Resource.HasSelectors()
+}
+
+func (b *Base) GVR() k8s.GVR {
+	return b.Resource.GVR()
 }
 
 // SetPodMetrics attach pod metrics to resource.
@@ -134,20 +139,9 @@ func (b *Base) List(ns string) (Columnars, error) {
 
 // Describe a given resource.
 func (b *Base) Describe(kind, pa string) (string, error) {
-	mapping, err := k8s.RestMapping.Find(kind)
-	if err == nil {
-		return b.doDescribe(pa, mapping)
-	}
-
-	resource, ok := b.Resource.(*k8s.Resource)
-	if !ok {
-		log.Debug().Msgf("resource not a (*k8s.Resource) and %s", err)
-		return "", fmt.Errorf("resource not a (*k8s.Resource) and %s", err)
-	}
-	g, v, n := resource.GetInfo()
+	gvr := b.Resource.GVR()
 	mapper := k8s.RestMapper{Connection: b.Connection}
-	var e error
-	mapping, e = mapper.ResourceFor(fmt.Sprintf("%s.%s.%s", n, v, g))
+	mapping, e := mapper.ResourceFor(fmt.Sprintf("%s.%s.%s", gvr.Resource, gvr.Version, gvr.Group))
 	if e != nil {
 		log.Debug().Err(e).Msgf("Unable to find mapper for %s %s", kind, pa)
 		return "", e
@@ -204,7 +198,7 @@ func (b *Base) podLogs(ctx context.Context, c chan<- string, sel map[string]stri
 	if len(pods) > 1 {
 		opts.MultiPods = true
 	}
-	pr := NewPod(b.Connection)
+	pr := NewPod(b.Connection, b.GVR())
 	for _, p := range pods {
 		po := p.(*v1.Pod)
 		if po.Status.Phase == v1.PodRunning {

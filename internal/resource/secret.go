@@ -15,18 +15,18 @@ type Secret struct {
 }
 
 // NewSecretList returns a new resource list.
-func NewSecretList(c Connection, ns string) List {
+func NewSecretList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"secret",
-		NewSecret(c),
+		NewSecret(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewSecret instantiates a new Secret.
-func NewSecret(c Connection) *Secret {
-	s := &Secret{&Base{Connection: c, Resource: k8s.NewSecret(c)}, nil}
+func NewSecret(c Connection, gvr k8s.GVR) *Secret {
+	s := &Secret{&Base{Connection: c, Resource: k8s.NewSecret(c, gvr)}, nil}
 	s.Factory = s
 
 	return s
@@ -34,7 +34,7 @@ func NewSecret(c Connection) *Secret {
 
 // New builds a new Secret instance from a k8s resource.
 func (r *Secret) New(i interface{}) Columnar {
-	c := NewSecret(r.Connection)
+	c := NewSecret(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1.Secret:
 		c.instance = instance

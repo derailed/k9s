@@ -15,18 +15,18 @@ type ReplicaSet struct {
 }
 
 // NewReplicaSetList returns a new resource list.
-func NewReplicaSetList(c Connection, ns string) List {
+func NewReplicaSetList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"rs",
-		NewReplicaSet(c),
+		NewReplicaSet(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewReplicaSet instantiates a new ReplicaSet.
-func NewReplicaSet(c Connection) *ReplicaSet {
-	r := &ReplicaSet{&Base{Connection: c, Resource: k8s.NewReplicaSet(c)}, nil}
+func NewReplicaSet(c Connection, gvr k8s.GVR) *ReplicaSet {
+	r := &ReplicaSet{&Base{Connection: c, Resource: k8s.NewReplicaSet(c, gvr)}, nil}
 	r.Factory = r
 
 	return r
@@ -34,7 +34,7 @@ func NewReplicaSet(c Connection) *ReplicaSet {
 
 // New builds a new ReplicaSet instance from a k8s resource.
 func (r *ReplicaSet) New(i interface{}) Columnar {
-	c := NewReplicaSet(r.Connection)
+	c := NewReplicaSet(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1.ReplicaSet:
 		c.instance = instance

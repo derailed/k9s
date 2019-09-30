@@ -15,18 +15,18 @@ type Role struct {
 }
 
 // NewRoleList returns a new resource list.
-func NewRoleList(c Connection, ns string) List {
+func NewRoleList(c Connection, ns string, gvr k8s.GVR) List {
 	return NewList(
 		ns,
 		"role",
-		NewRole(c),
+		NewRole(c, gvr),
 		AllVerbsAccess|DescribeAccess,
 	)
 }
 
 // NewRole instantiates a new Role.
-func NewRole(c Connection) *Role {
-	r := &Role{&Base{Connection: c, Resource: k8s.NewRole(c)}, nil}
+func NewRole(c Connection, gvr k8s.GVR) *Role {
+	r := &Role{&Base{Connection: c, Resource: k8s.NewRole(c, gvr)}, nil}
 	r.Factory = r
 
 	return r
@@ -34,7 +34,7 @@ func NewRole(c Connection) *Role {
 
 // New builds a new Role instance from a k8s resource.
 func (r *Role) New(i interface{}) Columnar {
-	c := NewRole(r.Connection)
+	c := NewRole(r.Connection, r.GVR())
 	switch instance := i.(type) {
 	case *v1.Role:
 		c.instance = instance

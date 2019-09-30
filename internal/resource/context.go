@@ -26,7 +26,7 @@ type (
 )
 
 // NewContextList returns a new resource list.
-func NewContextList(c Connection, ns string) List {
+func NewContextList(c Connection, _ string, _ k8s.GVR) List {
 	return NewList(NotNamespaced, "ctx", NewContext(c), SwitchAccess)
 }
 

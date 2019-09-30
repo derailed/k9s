@@ -130,12 +130,12 @@ func k8sCRDFull() *unstructured.Unstructured {
 
 func newCRDFull() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewCustomResourceDefinition(mc).New(k8sCRDFull())
+	return resource.NewCustomResourceDefinition(mc, k8s.GVR{}).New(k8sCRDFull())
 }
 
 func newCRD() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewCustomResourceDefinition(mc).New(k8sCRD())
+	return resource.NewCustomResourceDefinition(mc, k8s.GVR{}).New(k8sCRD())
 }
 
 func crdYaml() string {

@@ -332,6 +332,7 @@ func (v *resourceView) refresh() {
 	if v.list.Namespaced() {
 		v.list.SetNamespace(v.currentNS)
 	}
+	// TODO: split load of information and updating data
 	if err := v.list.Reconcile(v.app.informer, v.path); err != nil {
 		v.app.Flash().Errf("Reconciliation for %s failed - %s", v.list.GetName(), err)
 	}
