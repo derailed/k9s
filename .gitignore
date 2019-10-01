@@ -16,3 +16,4 @@ cluster_info_test.go
 *.test
 *.log
 *~
+[._]*.sw[a-p]
