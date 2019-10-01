@@ -34,7 +34,7 @@ type dumpView struct {
 	cancel context.CancelFunc
 }
 
-func newDumpView(_ string, app *appView, _ resource.List) resourceViewer {
+func newDumpView(_, _ string, app *appView, _ resource.List) resourceViewer {
 	v := dumpView{
 		Pages: tview.NewPages(),
 		app:   app,
@@ -112,7 +112,7 @@ func (v *dumpView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcel
 func (v *dumpView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	log.Debug().Msg("Dump enter!")
 	tv := v.getTV()
-	if tv.Cmd().IsActive() {
+	if tv.SearchBuff().IsActive() {
 		return tv.filterCmd(evt)
 	}
 	sel := tv.GetSelectedItem()

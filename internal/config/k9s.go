@@ -80,7 +80,6 @@ func (k *K9s) ActiveCluster() *Cluster {
 	if c, ok := k.Clusters[k.CurrentCluster]; ok {
 		return c
 	}
-
 	k.Clusters[k.CurrentCluster] = NewCluster()
 
 	return k.Clusters[k.CurrentCluster]

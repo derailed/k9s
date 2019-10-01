@@ -125,7 +125,7 @@ func (v *rbacView) bindKeys() {
 		tcell.KeyEscape: ui.NewKeyAction("Reset", v.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", v.activateCmd, false),
 		ui.KeyP:         ui.NewKeyAction("Previous", v.app.prevCmd, false),
-		ui.KeyShiftO:    ui.NewKeyAction("Sort APIGroup", v.SortColCmd(1), true),
+		ui.KeyShiftO:    ui.NewKeyAction("Sort APIGroup", v.SortColCmd(1), false),
 	})
 }
 
@@ -142,8 +142,8 @@ func (v *rbacView) refresh() {
 }
 
 func (v *rbacView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.Cmd().Empty() {
-		v.Cmd().Reset()
+	if !v.SearchBuff().Empty() {
+		v.SearchBuff().Reset()
 		return nil
 	}
 
@@ -155,8 +155,8 @@ func (v *rbacView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.cancel()
 	}
 
-	if v.Cmd().IsActive() {
-		v.Cmd().Reset()
+	if v.SearchBuff().IsActive() {
+		v.SearchBuff().Reset()
 		return nil
 	}
 

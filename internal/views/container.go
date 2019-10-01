@@ -22,8 +22,8 @@ type containerView struct {
 	exitFn  func()
 }
 
-func newContainerView(ns string, app *appView, list resource.List, path string, exitFn func()) resourceViewer {
-	v := containerView{logResourceView: newLogResourceView(ns, app, list)}
+func newContainerView(title string, app *appView, list resource.List, path string, exitFn func()) resourceViewer {
+	v := containerView{logResourceView: newLogResourceView(title, "", app, list)}
 	v.path = &path
 	v.envFn = v.k9sEnv
 	v.containerFn = v.selectedContainer
@@ -48,10 +48,10 @@ func (v *containerView) extraActions(aa ui.KeyActions) {
 	aa[ui.KeyS] = ui.NewKeyAction("Shell", v.shellCmd, true)
 	aa[tcell.KeyEscape] = ui.NewKeyAction("Back", v.backCmd, false)
 	aa[ui.KeyP] = ui.NewKeyAction("Previous", v.backCmd, false)
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", v.sortColCmd(6, false), true)
-	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", v.sortColCmd(7, false), true)
-	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", v.sortColCmd(8, false), true)
-	aa[ui.KeyShiftZ] = ui.NewKeyAction("Sort MEM%", v.sortColCmd(9, false), true)
+	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", v.sortColCmd(6, false), false)
+	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", v.sortColCmd(7, false), false)
+	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", v.sortColCmd(8, false), false)
+	aa[ui.KeyShiftZ] = ui.NewKeyAction("Sort MEM%", v.sortColCmd(9, false), false)
 }
 
 func (v *containerView) k9sEnv() K9sEnv {

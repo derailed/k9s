@@ -30,19 +30,21 @@ func NewKeyAction(d string, a ActionHandler, display bool) KeyAction {
 // Hints returns a collection of hints.
 func (a KeyActions) Hints() Hints {
 	kk := make([]int, 0, len(a))
-	for k, v := range a {
-		if v.Visible {
-			kk = append(kk, int(k))
-		}
+	for k := range a {
+		kk = append(kk, int(k))
 	}
 	sort.Ints(kk)
 
 	hh := make(Hints, 0, len(kk))
 	for _, k := range kk {
 		if name, ok := tcell.KeyNames[tcell.Key(k)]; ok {
-			hh = append(hh, Hint{
-				Mnemonic:    name,
-				Description: a[tcell.Key(k)].Description})
+			hh = append(hh,
+				Hint{
+					Mnemonic:    name,
+					Description: a[tcell.Key(k)].Description,
+					Visible:     a[tcell.Key(k)].Visible,
+				},
+			)
 		} else {
 			log.Error().Msgf("Unable to locate KeyName for %#v", string(k))
 		}

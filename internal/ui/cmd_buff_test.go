@@ -12,11 +12,11 @@ type testListener struct {
 	inact int
 }
 
-func (l *testListener) changed(s string) {
+func (l *testListener) BufferChanged(s string) {
 	l.text = s
 }
 
-func (l *testListener) active(s bool) {
+func (l *testListener) BufferActive(s bool) {
 	if s {
 		l.act++
 		return

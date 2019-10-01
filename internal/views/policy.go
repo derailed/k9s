@@ -76,10 +76,10 @@ func (v *policyView) bindKeys() {
 		tcell.KeyEscape: ui.NewKeyAction("Reset", v.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", v.activateCmd, false),
 		ui.KeyP:         ui.NewKeyAction("Previous", v.app.prevCmd, false),
-		ui.KeyShiftS:    ui.NewKeyAction("Sort Namespace", v.SortColCmd(0), true),
-		ui.KeyShiftN:    ui.NewKeyAction("Sort Name", v.SortColCmd(1), true),
-		ui.KeyShiftO:    ui.NewKeyAction("Sort Group", v.SortColCmd(2), true),
-		ui.KeyShiftB:    ui.NewKeyAction("Sort Binding", v.SortColCmd(3), true),
+		ui.KeyShiftS:    ui.NewKeyAction("Sort Namespace", v.SortColCmd(0), false),
+		ui.KeyShiftN:    ui.NewKeyAction("Sort Name", v.SortColCmd(1), false),
+		ui.KeyShiftO:    ui.NewKeyAction("Sort Group", v.SortColCmd(2), false),
+		ui.KeyShiftB:    ui.NewKeyAction("Sort Binding", v.SortColCmd(3), false),
 	})
 }
 
@@ -96,8 +96,8 @@ func (v *policyView) refresh() {
 }
 
 func (v *policyView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.Cmd().Empty() {
-		v.Cmd().Reset()
+	if !v.SearchBuff().Empty() {
+		v.SearchBuff().Reset()
 		return nil
 	}
 
@@ -109,8 +109,8 @@ func (v *policyView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.cancel()
 	}
 
-	if v.Cmd().IsActive() {
-		v.Cmd().Reset()
+	if v.SearchBuff().IsActive() {
+		v.SearchBuff().Reset()
 		return nil
 	}
 

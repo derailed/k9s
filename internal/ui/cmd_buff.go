@@ -3,9 +3,13 @@ package ui
 const maxBuff = 10
 
 type (
-	buffWatcher interface {
-		changed(s string)
-		active(state bool)
+	// BuffWatcher represents a command buffer listener.
+	BuffWatcher interface {
+		// Changed indicates the buffer was changed.
+		BufferChanged(s string)
+
+		// Active indicates the buff activity changed.
+		BufferActive(state bool)
 	}
 
 	// CmdBuff represents user command input.
@@ -13,7 +17,7 @@ type (
 		buff      []rune
 		hotKey    rune
 		active    bool
-		listeners []buffWatcher
+		listeners []BuffWatcher
 	}
 )
 
@@ -22,7 +26,7 @@ func NewCmdBuff(key rune) *CmdBuff {
 	return &CmdBuff{
 		hotKey:    key,
 		buff:      make([]rune, 0, maxBuff),
-		listeners: []buffWatcher{},
+		listeners: []BuffWatcher{},
 	}
 }
 
@@ -88,18 +92,18 @@ func (c *CmdBuff) Empty() bool {
 // Event Listeners...
 
 // AddListener registers a cmd buffer listener.
-func (c *CmdBuff) AddListener(w ...buffWatcher) {
+func (c *CmdBuff) AddListener(w ...BuffWatcher) {
 	c.listeners = append(c.listeners, w...)
 }
 
 func (c *CmdBuff) fireChanged() {
 	for _, l := range c.listeners {
-		l.changed(c.String())
+		l.BufferChanged(c.String())
 	}
 }
 
 func (c *CmdBuff) fireActive(b bool) {
 	for _, l := range c.listeners {
-		l.active(b)
+		l.BufferActive(b)
 	}
 }

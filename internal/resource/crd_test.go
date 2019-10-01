@@ -43,12 +43,6 @@ func TestCRDFields(t *testing.T) {
 	assert.Equal(t, "fred", r[0])
 }
 
-func TestCRDExtFields(t *testing.T) {
-	p := newCRDFull().ExtFields()
-
-	assert.Equal(t, 7, len(p))
-}
-
 func TestCRDFieldsAllNS(t *testing.T) {
 	r := newCRD().Fields(resource.AllNamespaces)
 

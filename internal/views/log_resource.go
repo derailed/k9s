@@ -16,9 +16,9 @@ type (
 	}
 )
 
-func newLogResourceView(ns string, app *appView, list resource.List) *logResourceView {
+func newLogResourceView(title, gvr string, app *appView, list resource.List) *logResourceView {
 	v := logResourceView{
-		resourceView: newResourceView(ns, app, list).(*resourceView),
+		resourceView: newResourceView(title, gvr, app, list).(*resourceView),
 	}
 	v.AddPage("logs", newLogsView(list.GetName(), app, &v), true, false)
 

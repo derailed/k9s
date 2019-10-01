@@ -7,7 +7,6 @@ import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 // Igniter represents an initializable view.
@@ -125,8 +124,8 @@ func (a *App) GetCmd() string {
 	return a.cmdBuff.String()
 }
 
-// GetCmdBuff returns a cmd buffer.
-func (a *App) GetCmdBuff() *CmdBuff {
+// CmdBuff returns a cmd buffer.
+func (a *App) CmdBuff() *CmdBuff {
 	return a.cmdBuff
 }
 
@@ -177,7 +176,6 @@ func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if a, ok := a.actions[key]; ok {
-		log.Debug().Msgf(">> App handled key: %s", tcell.KeyNames[key])
 		return a.Action(evt)
 	}
 

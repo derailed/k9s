@@ -23,8 +23,8 @@ type replicaSetView struct {
 	*resourceView
 }
 
-func newReplicaSetView(t string, app *appView, list resource.List) resourceViewer {
-	v := replicaSetView{newResourceView(t, app, list).(*resourceView)}
+func newReplicaSetView(title, gvr string, app *appView, list resource.List) resourceViewer {
+	v := replicaSetView{newResourceView(title, gvr, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.showPods
 
@@ -32,8 +32,8 @@ func newReplicaSetView(t string, app *appView, list resource.List) resourceViewe
 }
 
 func (v *replicaSetView) extraActions(aa ui.KeyActions) {
-	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", v.sortColCmd(2, false), true)
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", v.sortColCmd(3, false), true)
+	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", v.sortColCmd(2, false), false)
+	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", v.sortColCmd(3, false), false)
 	aa[tcell.KeyCtrlB] = ui.NewKeyAction("Rollback", v.rollbackCmd, true)
 }
 

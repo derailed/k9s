@@ -1,10 +1,10 @@
 package views
 
 import (
-	"fmt"
-	"path"
 	"strings"
+	"time"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
@@ -13,22 +13,14 @@ import (
 )
 
 type (
-	viewFn     func(ns string, app *appView, list resource.List) resourceViewer
+	viewFn     func(title, gvr string, app *appView, list resource.List) resourceViewer
 	listFn     func(c resource.Connection, ns string) resource.List
 	enterFn    func(app *appView, ns, resource, selection string)
 	decorateFn func(resource.TableData) resource.TableData
 
-	crdCmd struct {
-		api      string
-		version  string
-		plural   string
-		singular string
-	}
-
-	resCmd struct {
-		crdCmd
-
+	viewer struct {
 		gvr        string
+		kind       string
 		namespaced bool
 		verbs      metav1.Verbs
 		viewFn     viewFn
@@ -38,51 +30,25 @@ type (
 		decorateFn decorateFn
 	}
 
-	AliasConfig struct {
-		Aliases map[string]string `yaml:"aliases"`
-	}
+	viewers map[string]viewer
 )
 
-var DefaultAliasConfig = AliasConfig{
-	Aliases: map[string]string{
-		"Deployment": "dp",
-		"Secret":     "sec",
-		"Jobs":       "jo",
-
-		"ClusterRoles":        "cr",
-		"ClusterRoleBindings": "crb",
-		"RoleBindings":        "rb",
-		"Roles":               "ro",
-
-		"NetworkPolicies": "np",
-
-		"Contexts":    "ctx",
-		"Users":       "usr",
-		"Groups":      "grp",
-		"PortForward": "pf",
-		"Benchmark":   "be",
-		"ScreenDumps": "sd",
-	},
-}
-
-func aliasCmds(c k8s.Connection, m map[string]resCmd) {
-	resourceViews(c, m)
+func aliasCmds(c k8s.Connection, vv viewers) {
+	resourceViews(c, vv)
 	if c != nil {
-		allCRDs(c, m)
+		allCRDs(c, vv)
 	}
 }
 
 func listFunc(l resource.List) viewFn {
-	return func(ns string, app *appView, list resource.List) resourceViewer {
-		return newResourceView(
-			ns,
-			app,
-			l,
-		)
+	return func(title, gvr string, app *appView, list resource.List) resourceViewer {
+		return newResourceView(title, gvr, app, l)
 	}
 }
 
-func allCRDs(c k8s.Connection, m map[string]resCmd) {
+var aliases = config.NewAliases()
+
+func allCRDs(c k8s.Connection, vv viewers) {
 	crds, err := resource.NewCustomResourceDefinitionList(c, resource.AllNamespaces).
 		Resource().
 		List(resource.AllNamespaces)
@@ -91,30 +57,31 @@ func allCRDs(c k8s.Connection, m map[string]resCmd) {
 		return
 	}
 
+	t := time.Now()
+	var meta resource.TypeMeta
 	for _, crd := range crds {
-		ff := crd.ExtFields()
+		crd.ExtFields(&meta)
 
-		gvr := path.Join(ff["group"].(string), ff["version"].(string), ff["kind"].(string))
-		var name string
-		if p, ok := ff["plural"].(string); ok {
-			aliases[p] = gvr
-			name = p
+		gvr := k8s.NewGVR(meta.Group, meta.Version, meta.Plural)
+		gvrs := gvr.String()
+		if meta.Plural != "" {
+			aliases.Define(meta.Plural, gvrs)
 		}
-		if s, ok := ff["singular"].(string); ok {
-			aliases[s] = gvr
-			name = s
+		if meta.Singular != "" {
+			aliases.Define(meta.Singular, gvrs)
 		}
-		if aa, ok := ff["aliases"].([]interface{}); ok {
-			for _, a := range aa {
-				aliases[a.(string)] = gvr
-			}
+		for _, a := range meta.ShortNames {
+			aliases.Define(a, gvrs)
 		}
-		m[gvr] = resCmd{
-			gvr:       gvr,
-			viewFn:    listFunc(resource.NewCustomList(c, "", ff["group"].(string), ff["version"].(string), name)),
+
+		vv[gvrs] = viewer{
+			gvr:       gvrs,
+			kind:      meta.Kind,
+			viewFn:    listFunc(resource.NewCustomList(c, meta.Namespaced, "", gvrs)),
 			colorerFn: ui.DefaultColorer,
 		}
 	}
+	log.Debug().Msgf("Loading CRDS %v", time.Since(t))
 }
 
 func showRBAC(app *appView, ns, resource, selection string) {
@@ -156,40 +123,44 @@ func showSAPolicy(app *appView, _, _, selection string) {
 	app.inject(newPolicyView(app, mapFuSubject("ServiceAccount"), n))
 }
 
-type Aliases map[string]string
-
-var aliases Aliases
-
-func load(c k8s.Connection, viewRes map[string]resCmd) {
-	// cc := map[string]resCmd{}
-	aliases = make(Aliases, len(viewRes))
+func load(c k8s.Connection, vv viewers) {
+	if err := aliases.Load(); err != nil {
+		log.Error().Err(err).Msg("No custom aliases defined in config")
+	}
 	rr, _ := c.DialOrDie().Discovery().ServerPreferredResources()
 	for _, r := range rr {
-		log.Debug().Msgf("Group %#v", r.GroupVersion)
 		for _, res := range r.APIResources {
-			log.Debug().Msgf("\tRes %s -- %q:%q -- %+v", res.Name, res.Group, res.Version, res.ShortNames)
-			gvr := path.Join(r.GroupVersion, res.Name)
-			// Get singular, plural, shortname and to alias under gvr name
-			if cmd, ok := viewRes[gvr]; !ok {
-				log.Error().Msgf(fmt.Sprintf(">> Missed %s", gvr))
-			} else {
-				log.Debug().Msgf("Res %#v", res)
-				cmd.namespaced = res.Namespaced
-				cmd.verbs = res.Verbs
-				cmd.gvr = gvr
-				viewRes[gvr] = cmd
-				aliases[strings.ToLower(res.Kind)] = gvr
-				aliases[res.Name] = gvr
-				aliases[res.SingularName] = gvr
-				for _, s := range res.ShortNames {
-					aliases[s] = gvr
-				}
+			gvr := k8s.ToGVR(r.GroupVersion, res.Name)
+			cmd, ok := vv[gvr.String()]
+			if !ok {
+				// log.Debug().Msgf(fmt.Sprintf(">> No viewer defined for `%s`", gvr))
+				continue
+			}
+			cmd.namespaced = res.Namespaced
+			cmd.kind = res.Kind
+			cmd.verbs = res.Verbs
+			cmd.gvr = gvr.String()
+			vv[gvr.String()] = cmd
+			gvrStr := gvr.String()
+			aliases.Define(
+				strings.ToLower(res.Kind), gvrStr,
+				res.Name, gvrStr,
+			)
+			if len(res.SingularName) > 0 {
+				aliases.Define(res.SingularName, gvrStr)
+			}
+			for _, s := range res.ShortNames {
+				aliases.Define(s, gvrStr)
 			}
 		}
 	}
 }
 
-func resourceViews(c k8s.Connection, m map[string]resCmd) {
+func resourceViews(c k8s.Connection, m viewers) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("Loading Views Elapsed %v", time.Since(t))
+	}(time.Now())
+
 	coreRes(m)
 	miscRes(m)
 	appsRes(m)
@@ -203,171 +174,170 @@ func resourceViews(c k8s.Connection, m map[string]resCmd) {
 	load(c, m)
 }
 
-func coreRes(m map[string]resCmd) {
-	m["v1/nodes"] = resCmd{
+func coreRes(vv viewers) {
+	vv["v1/nodes"] = viewer{
 		viewFn:    newNodeView,
 		listFn:    resource.NewNodeList,
 		colorerFn: nsColorer,
 	}
-	m["v1/namespaces"] = resCmd{
+	vv["v1/namespaces"] = viewer{
 		viewFn:    newNamespaceView,
 		listFn:    resource.NewNamespaceList,
 		colorerFn: nsColorer,
 	}
-	m["v1/pods"] = resCmd{
+	vv["v1/pods"] = viewer{
 		viewFn:    newPodView,
 		listFn:    resource.NewPodList,
 		colorerFn: podColorer,
 	}
-	m["v1/serviceaccounts"] = resCmd{
-		viewFn:  newResourceView,
+	vv["v1/serviceaccounts"] = viewer{
 		listFn:  resource.NewServiceAccountList,
 		enterFn: showSAPolicy,
 	}
-	m["v1/services"] = resCmd{
+	vv["v1/services"] = viewer{
 		viewFn: newSvcView,
 		listFn: resource.NewServiceList,
 	}
-	m["v1/configmaps"] = resCmd{
+	vv["v1/configmaps"] = viewer{
 		listFn: resource.NewConfigMapList,
 	}
-	m["v1/persistentvolumes"] = resCmd{
+	vv["v1/persistentvolumes"] = viewer{
 		listFn:    resource.NewPersistentVolumeList,
 		colorerFn: pvColorer,
 	}
-	m["v1/persistentvolumeclaims"] = resCmd{
+	vv["v1/persistentvolumeclaims"] = viewer{
 		listFn:    resource.NewPersistentVolumeClaimList,
 		colorerFn: pvcColorer,
 	}
-	m["v1/secrets"] = resCmd{
+	vv["v1/secrets"] = viewer{
 		viewFn: newSecretView,
 		listFn: resource.NewSecretList,
 	}
-	m["v1/endpoints"] = resCmd{
+	vv["v1/endpoints"] = viewer{
 		listFn: resource.NewEndpointsList,
 	}
-	m["v1/events"] = resCmd{
+	vv["v1/events"] = viewer{
 		listFn:    resource.NewEventList,
 		colorerFn: evColorer,
 	}
-	m["v1/replicationcontrollers"] = resCmd{
+	vv["v1/replicationcontrollers"] = viewer{
 		viewFn:    newScalableResourceView,
 		listFn:    resource.NewReplicationControllerList,
 		colorerFn: rsColorer,
 	}
 }
 
-func miscRes(m map[string]resCmd) {
-	m["storage.k8s.io/storageclasses"] = resCmd{
+func miscRes(vv viewers) {
+	vv["storage.k8s.io/v1/storageclasses"] = viewer{
 		listFn: resource.NewStorageClassList,
 	}
-	m["ctx"] = resCmd{
-		gvr:       "Contexts",
+	vv["contexts"] = viewer{
+		gvr:       "contexts",
+		kind:      "Contexts",
 		viewFn:    newContextView,
 		listFn:    resource.NewContextList,
 		colorerFn: ctxColorer,
 	}
-	m["usr"] = resCmd{
+	vv["users"] = viewer{
+		gvr:    "users",
 		viewFn: newSubjectView,
 	}
-	m["grp"] = resCmd{
+	vv["groups"] = viewer{
+		gvr:    "groups",
 		viewFn: newSubjectView,
 	}
-	m["pf"] = resCmd{
-		gvr:    "PortForward",
+	vv["portforwards"] = viewer{
+		gvr:    "portforwards",
 		viewFn: newForwardView,
 	}
-	m["be"] = resCmd{
-		gvr:    "Benchmark",
+	vv["benchmarks"] = viewer{
+		gvr:    "benchmarks",
 		viewFn: newBenchView,
 	}
-	m["sd"] = resCmd{
-		gvr:    "ScreenDumps",
+	vv["screendumps"] = viewer{
+		gvr:    "screendumps",
 		viewFn: newDumpView,
 	}
-
 }
 
-func appsRes(m map[string]resCmd) {
-	m["apps/v1/deployments"] = resCmd{
+func appsRes(vv viewers) {
+	vv["apps/v1/deployments"] = viewer{
 		viewFn:    newDeployView,
 		listFn:    resource.NewDeploymentList,
 		colorerFn: dpColorer,
 	}
-	m["apps/v1/replicasets"] = resCmd{
+	vv["apps/v1/replicasets"] = viewer{
 		viewFn:    newReplicaSetView,
 		listFn:    resource.NewReplicaSetList,
 		colorerFn: rsColorer,
 	}
-	m["apps/v1/statefulsets"] = resCmd{
+	vv["apps/v1/statefulsets"] = viewer{
 		viewFn:    newStatefulSetView,
 		listFn:    resource.NewStatefulSetList,
 		colorerFn: stsColorer,
 	}
-	m["apps/v1/daemonsets"] = resCmd{
+	vv["apps/v1/daemonsets"] = viewer{
 		viewFn:    newDaemonSetView,
 		listFn:    resource.NewDaemonSetList,
 		colorerFn: dpColorer,
 	}
 }
 
-func authRes(m map[string]resCmd) {
-	m["rbac.authorization.k8s.io/v1/clusterroles"] = resCmd{
+func authRes(vv viewers) {
+	vv["rbac.authorization.k8s.io/v1/clusterroles"] = viewer{
 		listFn:  resource.NewClusterRoleList,
 		enterFn: showRBAC,
 	}
-	m["rbac.authorization.k8s.io/v1/clusterrolebindings"] = resCmd{
+	vv["rbac.authorization.k8s.io/v1/clusterrolebindings"] = viewer{
 		listFn:  resource.NewClusterRoleBindingList,
 		enterFn: showClusterRole,
 	}
-	m["rbac.authorization.k8s.io/v1/rolebindings"] = resCmd{
+	vv["rbac.authorization.k8s.io/v1/rolebindings"] = viewer{
 		listFn:  resource.NewRoleBindingList,
 		enterFn: showRole,
 	}
-	m["rbac.authorization.k8s.io/v1/roles"] = resCmd{
+	vv["rbac.authorization.k8s.io/v1/roles"] = viewer{
 		listFn:  resource.NewRoleList,
 		enterFn: showRBAC,
 	}
 }
 
-func extRes(m map[string]resCmd) {
-	m["apiextensions.k8s.io/v1/customresourcedefinitions"] = resCmd{
+func extRes(vv viewers) {
+	vv["apiextensions.k8s.io/v1/customresourcedefinitions"] = viewer{
 		listFn:  resource.NewCustomResourceDefinitionList,
 		enterFn: showCRD,
 	}
 }
 
-func netRes(m map[string]resCmd) {
-	m["networking.k8s.io/v1/networkpolicies"] = resCmd{
-		gvr:    "apiextensions.k8s.io/NetworkPolicies",
+func netRes(vv viewers) {
+	vv["networking.k8s.io/v1/networkpolicies"] = viewer{
 		listFn: resource.NewNetworkPolicyList,
 	}
-	m["networking.k8s.io/v1beta1/ingresses"] = resCmd{
+	vv["extensions/v1beta1/ingresses"] = viewer{
 		listFn: resource.NewIngressList,
 	}
 }
 
-func batchRes(m map[string]resCmd) {
-	m["batch/v1/cronjobs"] = resCmd{
+func batchRes(vv viewers) {
+	vv["batch/v1beta1/cronjobs"] = viewer{
 		viewFn: newCronJobView,
 		listFn: resource.NewCronJobList,
 	}
-	m["batch/v1/jobs"] = resCmd{
+	vv["batch/v1/jobs"] = viewer{
 		viewFn: newJobView,
 		listFn: resource.NewJobList,
 	}
 }
 
-func policyRes(m map[string]resCmd) {
-	m["policy/v1beta1/poddisruptionbudgets"] = resCmd{
-		viewFn:    newResourceView,
+func policyRes(vv viewers) {
+	vv["policy/v1beta1/poddisruptionbudgets"] = viewer{
 		listFn:    resource.NewPDBList,
 		colorerFn: pdbColorer,
 	}
 }
 
-func hpaRes(m map[string]resCmd) {
-	m["autoscaling/v1/horizontalpodautoscalers"] = resCmd{
+func hpaRes(vv viewers) {
+	vv["autoscaling/v1/horizontalpodautoscalers"] = viewer{
 		listFn: resource.NewHorizontalPodAutoscalerV1List,
 	}
 }

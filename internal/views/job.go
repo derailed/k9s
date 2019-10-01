@@ -12,8 +12,8 @@ type jobView struct {
 	*logResourceView
 }
 
-func newJobView(t string, app *appView, list resource.List) resourceViewer {
-	v := jobView{newLogResourceView(t, app, list)}
+func newJobView(title, gvr string, app *appView, list resource.List) resourceViewer {
+	v := jobView{newLogResourceView(title, gvr, app, list)}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.showPods
 

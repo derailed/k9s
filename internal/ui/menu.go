@@ -69,6 +69,9 @@ func (v *MenuView) buildMenuTable(hh Hints) [][]string {
 	firstCmd := true
 	maxKeys := make([]int, colCount+1)
 	for _, h := range hh {
+		if !h.Visible {
+			continue
+		}
 		isDigit := menuRX.MatchString(h.Mnemonic)
 		if !isDigit && firstCmd {
 			row, col, firstCmd = 0, col+1, false

@@ -8,7 +8,9 @@ import (
 type (
 	// Hint represents keyboard mnemonic.
 	Hint struct {
-		Mnemonic, Description string
+		Mnemonic    string
+		Description string
+		Visible     bool
 	}
 	// Hints a collection of keyboard mnemonics.
 	Hints []Hint

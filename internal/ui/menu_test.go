@@ -12,9 +12,9 @@ func TestNewMenuView(t *testing.T) {
 	defaults, _ := config.NewStyles("")
 	v := NewMenuView(defaults)
 	v.HydrateMenu(Hints{
-		{"a", "bleeA"},
-		{"b", "bleeB"},
-		{"0", "zero"},
+		{"a", "bleeA", true},
+		{"b", "bleeB", true},
+		{"0", "zero", true},
 	})
 
 	assert.Equal(t, " [fuchsia:black:b]<0> [white:black:d]zero ", v.GetCell(0, 0).Text)
@@ -35,9 +35,10 @@ func TestKeyActions(t *testing.T) {
 				tcell.Key(Key1): NewKeyAction("one", nil, false),
 			},
 			e: Hints{
-				{"0", "zero"},
-				{"a", "bleeA"},
-				{"b", "bleeB"},
+				{"0", "zero", true},
+				{"1", "one", false},
+				{"a", "bleeA", true},
+				{"b", "bleeB", true},
 			},
 		},
 	}

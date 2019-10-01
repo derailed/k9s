@@ -37,12 +37,14 @@ type (
 		colorerFn  ui.ColorerFunc
 		decorateFn decorateFn
 		envFn      envFn
+		gvr        string
 	}
 )
 
-func newResourceView(title string, app *appView, list resource.List) resourceViewer {
+func newResourceView(title, gvr string, app *appView, list resource.List) resourceViewer {
 	v := resourceView{
 		list: list,
+		gvr:  gvr,
 	}
 	v.masterDetail = newMasterDetail(title, list.GetNamespace(), app, v.backCmd)
 	v.envFn = v.defaultK9sEnv
@@ -223,7 +225,7 @@ func (v *resourceView) defaultEnter(ns, _, selection string) {
 		return
 	}
 
-	yaml, err := v.list.Resource().Describe(v.masterPage().GetBaseTitle(), selection)
+	yaml, err := v.list.Resource().Describe(v.gvr, selection)
 	if err != nil {
 		v.app.Flash().Errf("Describe command failed: %s", err)
 		return
@@ -316,7 +318,7 @@ func (v *resourceView) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.refresh()
 	v.masterPage().UpdateTitle()
 	v.masterPage().SelectRow(1, true)
-	v.app.GetCmdBuff().Reset()
+	v.app.CmdBuff().Reset()
 	v.app.Config.SetActiveNamespace(v.currentNS)
 	v.app.Config.Save()
 

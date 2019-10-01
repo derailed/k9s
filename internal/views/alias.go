@@ -3,7 +3,9 @@ package views
 import (
 	"context"
 	"fmt"
+	"strings"
 
+	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -11,7 +13,7 @@ import (
 
 const (
 	aliasTitle    = "Aliases"
-	aliasTitleFmt = " [aqua::b]%s([fuchsia::b]%d[fuchsia::-])[aqua::-] "
+	aliasTitleFmt = " [aqua::b]%s([fuchsia::b]%d[fuchsia::-][aqua::-]) "
 )
 
 type aliasView struct {
@@ -52,8 +54,8 @@ func (v *aliasView) registerActions() {
 		tcell.KeyEnter:  ui.NewKeyAction("Goto", v.gotoCmd, true),
 		tcell.KeyEscape: ui.NewKeyAction("Reset", v.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", v.activateCmd, false),
-		ui.KeyShiftR:    ui.NewKeyAction("Sort Resources", v.SortColCmd(1), true),
-		ui.KeyShiftO:    ui.NewKeyAction("Sort Groups", v.SortColCmd(2), true),
+		ui.KeyShiftR:    ui.NewKeyAction("Sort Resources", v.SortColCmd(1), false),
+		ui.KeyShiftO:    ui.NewKeyAction("Sort Groups", v.SortColCmd(2), false),
 	})
 }
 
@@ -62,8 +64,8 @@ func (v *aliasView) getTitle() string {
 }
 
 func (v *aliasView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.Cmd().Empty() {
-		v.Cmd().Reset()
+	if !v.SearchBuff().Empty() {
+		v.SearchBuff().Reset()
 		return nil
 	}
 
@@ -73,13 +75,15 @@ func (v *aliasView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (v *aliasView) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	r, _ := v.GetSelection()
 	if r != 0 {
-		return v.runCmd(evt)
+		s := ui.TrimCell(v.Table, r, 1)
+		tokens := strings.Split(s, ",")
+		v.app.gotoResource(tokens[0], true)
+		return nil
 	}
 
-	if v.Cmd().IsActive() {
+	if v.SearchBuff().IsActive() {
 		return v.activateCmd(evt)
 	}
-
 	return evt
 }
 
@@ -88,8 +92,8 @@ func (v *aliasView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.cancel()
 	}
 
-	if v.Cmd().IsActive() {
-		v.Cmd().Reset()
+	if v.SearchBuff().IsActive() {
+		v.SearchBuff().Reset()
 	} else {
 		v.app.inject(v.current)
 	}
@@ -97,32 +101,30 @@ func (v *aliasView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *aliasView) runCmd(evt *tcell.EventKey) *tcell.EventKey {
-	r, _ := v.GetSelection()
-	if r > 0 {
-		v.app.gotoResource(ui.TrimCell(v.Table, r, 0), true)
-	}
-
-	return nil
-}
-
 func (v *aliasView) hydrate() resource.TableData {
-	cmds := make(map[string]*resCmd, 40)
-	aliasCmds(v.app.Conn(), cmds)
-
 	data := resource.TableData{
-		Header:    resource.Row{"ALIAS", "RESOURCE", "APIGROUP"},
-		Rows:      make(resource.RowEvents, len(cmds)),
+		Header:    resource.Row{"RESOURCE", "COMMAND", "APIGROUP"},
+		Rows:      make(resource.RowEvents, len(aliases.Alias)),
 		Namespace: resource.NotNamespaced,
 	}
 
-	for k := range cmds {
-		fields := resource.Row{
-			ui.Pad(k, 30),
-			ui.Pad(cmds[k].gvr, 30),
-			ui.Pad(cmds[k].api, 30),
+	aa := make(map[string][]string, len(aliases.Alias))
+	for alias, gvr := range aliases.Alias {
+		if _, ok := aa[gvr]; ok {
+			aa[gvr] = append(aa[gvr], alias)
+		} else {
+			aa[gvr] = []string{alias}
 		}
-		data.Rows[k] = &resource.RowEvent{
+	}
+
+	for gvr, aliases := range aa {
+		g := k8s.GVR(gvr)
+		fields := resource.Row{
+			ui.Pad(g.ToR(), 30),
+			ui.Pad(strings.Join(aliases, ","), 70),
+			ui.Pad(g.ToG(), 30),
+		}
+		data.Rows[string(gvr)] = &resource.RowEvent{
 			Action: resource.New,
 			Fields: fields,
 			Deltas: fields,

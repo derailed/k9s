@@ -17,24 +17,24 @@ type Resource struct {
 	*base
 	Connection
 
-	group, version, name string
+	gvr GVR
 }
 
 // NewResource returns a new Resource.
-func NewResource(c Connection, group, version, name string) *Resource {
-	return &Resource{base: &base{}, Connection: c, group: group, version: version, name: name}
+func NewResource(c Connection, gvr GVR) *Resource {
+	return &Resource{base: &base{}, Connection: c, gvr: gvr}
 }
 
 // GetInfo returns info about apigroup.
-func (r *Resource) GetInfo() (string, string, string) {
-	return r.group, r.version, r.name
+func (r *Resource) GetInfo() GVR {
+	return r.gvr
 }
 
 func (r *Resource) nsRes() dynamic.NamespaceableResourceInterface {
 	g := schema.GroupVersionResource{
-		Group:    r.group,
-		Version:  r.version,
-		Resource: r.name,
+		Group:    r.gvr.ToG(),
+		Version:  r.gvr.ToV(),
+		Resource: r.gvr.ToR(),
 	}
 	return r.DynDialOrDie().Resource(g)
 }
@@ -46,7 +46,7 @@ func (r *Resource) Get(ns, n string) (interface{}, error) {
 
 // List all Resources in a given namespace.
 func (r *Resource) List(ns string) (Collection, error) {
-	obj, err := r.listAll(ns, r.name)
+	obj, err := r.listAll(ns, r.gvr.ToR())
 	if err != nil {
 		return nil, err
 	}
@@ -82,9 +82,10 @@ func (r *Resource) listAll(ns, n string) (runtime.Object, error) {
 
 func (r *Resource) getClient() (*rest.RESTClient, error) {
 	crConfig := r.RestConfigOrDie()
-	crConfig.GroupVersion = &schema.GroupVersion{Group: r.group, Version: r.version}
+	gv := r.gvr.AsGR()
+	crConfig.GroupVersion = &gv
 	crConfig.APIPath = "/apis"
-	if len(r.group) == 0 {
+	if len(r.gvr.ToG()) == 0 {
 		crConfig.APIPath = "/api"
 	}
 	codec, _ := r.codec()
@@ -99,7 +100,7 @@ func (r *Resource) getClient() (*rest.RESTClient, error) {
 
 func (r *Resource) codec() (serializer.CodecFactory, runtime.ParameterCodec) {
 	scheme := runtime.NewScheme()
-	gv := schema.GroupVersion{Group: r.group, Version: r.version}
+	gv := r.gvr.AsGR()
 	metav1.AddToGroupVersion(scheme, gv)
 	scheme.AddKnownTypes(gv, &metav1beta1.Table{}, &metav1beta1.TableOptions{})
 	scheme.AddKnownTypes(metav1beta1.SchemeGroupVersion, &metav1beta1.Table{}, &metav1beta1.TableOptions{})

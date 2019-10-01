@@ -23,6 +23,6 @@ func TestCmdInCmdMode(t *testing.T) {
 
 	assert.Equal(t, "T> blee!\n", v.GetText(false))
 	assert.False(t, v.InCmdMode())
-	v.active(true)
+	v.BufferActive(true)
 	assert.True(t, v.InCmdMode())
 }

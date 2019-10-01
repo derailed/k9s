@@ -174,8 +174,8 @@ func (v *Table) GetSelectedItem() string {
 func (v *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	key := evt.Key()
 	if key == tcell.KeyRune {
-		if v.Cmd().IsActive() {
-			v.Cmd().Add(evt.Rune())
+		if v.SearchBuff().IsActive() {
+			v.SearchBuff().Add(evt.Rune())
 			v.ClearSelection()
 			v.doUpdate(v.filtered())
 			v.SelectFirstRow()
@@ -185,7 +185,6 @@ func (v *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if a, ok := v.actions[key]; ok {
-		log.Debug().Msgf(">> TableView handled %s", tcell.KeyNames[key])
 		return a.Action(evt)
 	}
 
@@ -242,7 +241,7 @@ func (v *Table) Update(data resource.TableData) {
 func (v *Table) doUpdate(data resource.TableData) {
 	v.activeNS = data.Namespace
 	if v.activeNS == resource.AllNamespaces && v.activeNS != "*" {
-		v.actions[KeyShiftP] = NewKeyAction("Sort Namespace", v.SortColCmd(-2), true)
+		v.actions[KeyShiftP] = NewKeyAction("Sort Namespace", v.SortColCmd(-2), false)
 	} else {
 		delete(v.actions, KeyShiftP)
 	}
@@ -438,8 +437,8 @@ func (v *Table) KeyBindings() KeyActions {
 	return v.actions
 }
 
-// Cmd returns the associated command buffer.
-func (v *Table) Cmd() *CmdBuff {
+// SearchBuff returns the associated command buffer.
+func (v *Table) SearchBuff() *CmdBuff {
 	return v.cmdBuff
 }
 

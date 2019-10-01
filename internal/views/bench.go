@@ -40,7 +40,7 @@ type benchView struct {
 	app *appView
 }
 
-func newBenchView(title string, app *appView, _ resource.List) resourceViewer {
+func newBenchView(title, gvr string, app *appView, _ resource.List) resourceViewer {
 	v := benchView{app: app}
 	v.masterDetail = newMasterDetail(benchTitle, "", app, v.backCmd)
 	v.keyBindings()
@@ -108,7 +108,7 @@ func (v *benchView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tce
 }
 
 func (v *benchView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if v.masterPage().Cmd().IsActive() {
+	if v.masterPage().SearchBuff().IsActive() {
 		return v.masterPage().filterCmd(evt)
 	}
 

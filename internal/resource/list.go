@@ -48,8 +48,17 @@ type (
 	// RowEvents tracks resource update events.
 	RowEvents map[string]*RowEvent
 
-	// Properties a collection of extra properties on a K8s resource.
-	Properties map[string]interface{}
+	// TypeMeta represents resource type meta data.
+	TypeMeta struct {
+		Name       string
+		Namespaced bool
+		Group      string
+		Version    string
+		Kind       string
+		Singular   string
+		Plural     string
+		ShortNames []string
+	}
 
 	// TableData tracks a K8s resource for tabular display.
 	TableData struct {
@@ -81,7 +90,7 @@ type (
 	Columnar interface {
 		Header(ns string) Row
 		Fields(ns string) Row
-		ExtFields() Properties
+		ExtFields(*TypeMeta)
 		Name() string
 		SetPodMetrics(*mv1beta1.PodMetrics)
 		SetNodeMetrics(*mv1beta1.NodeMetrics)
@@ -102,7 +111,7 @@ type (
 		Get(path string) (Columnar, error)
 		List(ns string) (Columnars, error)
 		Delete(path string, cascade, force bool) error
-		Describe(kind, pa string) (string, error)
+		Describe(gvr, pa string) (string, error)
 		Marshal(pa string) (string, error)
 		Header(ns string) Row
 		NumCols(ns string) map[string]bool

@@ -54,6 +54,7 @@ type (
 		stopCh     chan struct{}
 		forwarders map[string]forwarder
 		version    string
+		showHeader bool
 	}
 )
 
@@ -76,11 +77,13 @@ func NewApp(cfg *config.Config) *appView {
 
 func (a *appView) Init(version string, rate int) {
 	a.version = version
+	a.CmdBuff().AddListener(a)
 	a.App.Init()
 
 	a.AddActions(ui.KeyActions{
+		tcell.KeyCtrlH: ui.NewKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
 		ui.KeyHelp:     ui.NewKeyAction("Help", a.helpCmd, false),
-		tcell.KeyCtrlA: ui.NewKeyAction("Aliases", a.aliasCmd, true),
+		tcell.KeyCtrlA: ui.NewKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
 	})
 
@@ -96,29 +99,60 @@ func (a *appView) Init(version string, rate int) {
 		}
 	}
 
-	header := tview.NewFlex()
-	{
-		header.SetDirection(tview.FlexColumn)
-		header.AddItem(a.clusterInfo(), 35, 1, false)
-		header.AddItem(a.Menu(), 0, 1, false)
-		header.AddItem(a.Logo(), 26, 1, false)
-	}
-
 	main := tview.NewFlex()
 	main.SetDirection(tview.FlexRow)
+	a.Main().AddPage("main", main, true, false)
+	a.Main().AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
 
-	if !a.Config.K9s.GetHeadless() {
-		main.AddItem(header, 7, 1, false)
-	} else {
-		main.AddItem(a.indicator(), 1, 1, false)
-	}
-	main.AddItem(a.Cmd(), 3, 1, false)
+	main.AddItem(a.indicator(), 1, 1, false)
+	// main.AddItem(a.Cmd(), 3, 1, false)
 	main.AddItem(a.Frame(), 0, 10, true)
 	main.AddItem(a.Crumbs(), 2, 1, false)
 	main.AddItem(a.Flash(), 1, 1, false)
+	a.toggleHeader(!a.Config.K9s.GetHeadless())
+}
 
-	a.Main().AddPage("main", main, true, false)
-	a.Main().AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
+// Changed indicates the buffer was changed.
+func (a *appView) BufferChanged(s string) {}
+
+// Active indicates the buff activity changed.
+func (a *appView) BufferActive(state bool) {
+	flex, ok := a.Main().GetPrimitive("main").(*tview.Flex)
+	if !ok {
+		return
+	}
+	if state {
+		flex.AddItemAtIndex(1, a.Cmd(), 3, 1, false)
+	} else if flex.ItemAt(1) == a.Cmd() {
+		flex.RemoveItemAtIndex(1)
+	}
+	a.Draw()
+}
+
+func (a *appView) toggleHeader(flag bool) {
+	a.showHeader = flag
+	flex := a.Main().GetPrimitive("main").(*tview.Flex)
+	if a.showHeader {
+		flex.RemoveItemAtIndex(0)
+		flex.AddItemAtIndex(0, a.buildHeader(), 7, 1, false)
+	} else {
+		flex.RemoveItemAtIndex(0)
+		flex.AddItemAtIndex(0, a.indicator(), 1, 1, false)
+		a.refreshIndicator()
+	}
+}
+
+func (a *appView) buildHeader() tview.Primitive {
+	header := tview.NewFlex()
+	header.SetDirection(tview.FlexColumn)
+	if !a.showHeader {
+		return header
+	}
+	header.AddItem(a.clusterInfo(), 35, 1, false)
+	header.AddItem(a.Menu(), 0, 1, false)
+	header.AddItem(a.Logo(), 26, 1, false)
+
+	return header
 }
 
 func (a *appView) clusterUpdater(ctx context.Context) {
@@ -129,10 +163,11 @@ func (a *appView) clusterUpdater(ctx context.Context) {
 			return
 		case <-time.After(clusterRefresh):
 			a.QueueUpdateDraw(func() {
-				if a.Config.K9s.GetHeadless() {
+				if !a.showHeader {
 					a.refreshIndicator()
+				} else {
+					a.clusterInfo().refresh()
 				}
-				a.clusterInfo().refresh()
 			})
 		}
 	}
@@ -273,6 +308,14 @@ func (a *appView) setIndicator(l ui.FlashLevel, msg string) {
 	a.Draw()
 }
 
+func (a *appView) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
+	a.showHeader = !a.showHeader
+	a.toggleHeader(a.showHeader)
+	a.Draw()
+
+	return nil
+}
+
 func (a *appView) prevCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if top, ok := a.command.previousCmd(); ok {
 		log.Debug().Msgf("Previous command %s", top)
@@ -283,7 +326,7 @@ func (a *appView) prevCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *appView) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.GetCmdBuff().IsActive() && !a.GetCmdBuff().Empty() {
+	if a.CmdBuff().IsActive() && !a.CmdBuff().Empty() {
 		a.gotoResource(a.GetCmd(), true)
 		a.ResetCmd()
 		return nil
@@ -294,9 +337,6 @@ func (a *appView) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *appView) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.InCmdMode() {
-		return evt
-	}
 	if _, ok := a.Frame().GetPrimitive("main").(*helpView); ok {
 		return evt
 	}
@@ -307,9 +347,6 @@ func (a *appView) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *appView) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.InCmdMode() {
-		return evt
-	}
 	if _, ok := a.Frame().GetPrimitive("main").(*aliasView); ok {
 		return evt
 	}
@@ -337,10 +374,8 @@ func (a *appView) inject(i ui.Igniter) {
 	}
 	a.Frame().RemovePage("main")
 	var ctx context.Context
-	{
-		ctx, a.cancel = context.WithCancel(context.Background())
-		i.Init(ctx, a.Config.ActiveNamespace())
-	}
+	ctx, a.cancel = context.WithCancel(context.Background())
+	i.Init(ctx, a.Config.ActiveNamespace())
 	a.Frame().AddPage("main", i, true, true)
 	a.SetFocus(i)
 }

@@ -12,8 +12,8 @@ type contextView struct {
 	*resourceView
 }
 
-func newContextView(title string, app *appView, list resource.List) resourceViewer {
-	v := contextView{newResourceView(title, app, list).(*resourceView)}
+func newContextView(title, gvr string, app *appView, list resource.List) resourceViewer {
+	v := contextView{newResourceView(title, gvr, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.useCtx
 	v.masterPage().SetSelectedFn(v.cleanser)

@@ -13,8 +13,8 @@ type secretView struct {
 	*resourceView
 }
 
-func newSecretView(t string, app *appView, list resource.List) resourceViewer {
-	v := secretView{newResourceView(t, app, list).(*resourceView)}
+func newSecretView(title, gvr string, app *appView, list resource.List) resourceViewer {
+	v := secretView{newResourceView(title, gvr, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
 
 	return &v

@@ -32,8 +32,8 @@ type loggable interface {
 	switchPage(n string)
 }
 
-func newPodView(t string, app *appView, list resource.List) resourceViewer {
-	v := podView{resourceView: newResourceView(t, app, list).(*resourceView)}
+func newPodView(title, gvr string, app *appView, list resource.List) resourceViewer {
+	v := podView{resourceView: newResourceView(title, gvr, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.listContainers
 
@@ -56,15 +56,15 @@ func (v *podView) extraActions(aa ui.KeyActions) {
 	aa[ui.KeyL] = ui.NewKeyAction("Logs", v.logsCmd, true)
 	aa[ui.KeyShiftL] = ui.NewKeyAction("Logs Previous", v.prevLogsCmd, true)
 
-	aa[ui.KeyShiftR] = ui.NewKeyAction("Sort Ready", v.sortColCmd(1, false), true)
-	aa[ui.KeyShiftS] = ui.NewKeyAction("Sort Status", v.sortColCmd(2, true), true)
-	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Restart", v.sortColCmd(3, false), true)
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", v.sortColCmd(4, false), true)
-	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", v.sortColCmd(5, false), true)
-	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", v.sortColCmd(6, false), true)
-	aa[ui.KeyShiftZ] = ui.NewKeyAction("Sort MEM%", v.sortColCmd(7, false), true)
-	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort IP", v.sortColCmd(8, true), true)
-	aa[ui.KeyShiftO] = ui.NewKeyAction("Sort Node", v.sortColCmd(9, true), true)
+	aa[ui.KeyShiftR] = ui.NewKeyAction("Sort Ready", v.sortColCmd(1, false), false)
+	aa[ui.KeyShiftS] = ui.NewKeyAction("Sort Status", v.sortColCmd(2, true), false)
+	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Restart", v.sortColCmd(3, false), false)
+	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", v.sortColCmd(4, false), false)
+	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", v.sortColCmd(5, false), false)
+	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", v.sortColCmd(6, false), false)
+	aa[ui.KeyShiftZ] = ui.NewKeyAction("Sort MEM%", v.sortColCmd(7, false), false)
+	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort IP", v.sortColCmd(8, true), false)
+	aa[ui.KeyShiftO] = ui.NewKeyAction("Sort Node", v.sortColCmd(9, true), false)
 }
 
 func (v *podView) listContainers(app *appView, _, res, sel string) {

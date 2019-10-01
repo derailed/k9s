@@ -33,7 +33,7 @@ type (
 	}
 )
 
-func newSubjectView(ns string, app *appView, list resource.List) resourceViewer {
+func newSubjectView(title, gvr string, app *appView, list resource.List) resourceViewer {
 	v := subjectView{}
 	v.tableView = newTableView(app, "Subject")
 	v.SetActiveNS("*")
@@ -95,7 +95,7 @@ func (v *subjectView) bindKeys() {
 		tcell.KeyEscape: ui.NewKeyAction("Reset", v.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", v.activateCmd, false),
 		ui.KeyP:         ui.NewKeyAction("Previous", v.app.prevCmd, false),
-		ui.KeyShiftK:    ui.NewKeyAction("Sort Kind", v.SortColCmd(1), true),
+		ui.KeyShiftK:    ui.NewKeyAction("Sort Kind", v.SortColCmd(1), false),
 	})
 }
 
@@ -136,8 +136,8 @@ func (v *subjectView) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *subjectView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.Cmd().Empty() {
-		v.Cmd().Reset()
+	if !v.SearchBuff().Empty() {
+		v.SearchBuff().Reset()
 		return nil
 	}
 
@@ -149,8 +149,8 @@ func (v *subjectView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.cancel()
 	}
 
-	if v.Cmd().IsActive() {
-		v.Cmd().Reset()
+	if v.SearchBuff().IsActive() {
+		v.SearchBuff().Reset()
 		return nil
 	}
 
@@ -285,8 +285,9 @@ func (v *subjectView) namespacedSubjects() (resource.RowEvents, error) {
 }
 
 func mapCmdSubject(subject string) string {
+	log.Debug().Msgf("!!!!!!Subject %q", subject)
 	switch subject {
-	case "grp":
+	case "groups":
 		return "Group"
 	case "sas":
 		return "ServiceAccount"

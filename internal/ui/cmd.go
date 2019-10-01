@@ -61,11 +61,13 @@ func (v *CmdView) write(s string) {
 // ----------------------------------------------------------------------------
 // Event Listener protocol...
 
-func (v *CmdView) changed(s string) {
+// BufferChanged indicates the buffer was changed.
+func (v *CmdView) BufferChanged(s string) {
 	v.update(s)
 }
 
-func (v *CmdView) active(f bool) {
+// BufferActive indicates the buff activity changed.
+func (v *CmdView) BufferActive(f bool) {
 	v.activated = f
 	if f {
 		v.SetBorder(true)

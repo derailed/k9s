@@ -3,14 +3,12 @@ package resource
 import (
 	"bytes"
 	"context"
-	"fmt"
 	"path"
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	genericprinters "k8s.io/cli-runtime/pkg/printers"
@@ -102,9 +100,7 @@ func (*Base) NumCols(n string) map[string]bool {
 }
 
 // ExtFields returns extended fields in relation to headers.
-func (*Base) ExtFields() Properties {
-	return Properties{}
-}
+func (*Base) ExtFields(*TypeMeta) {}
 
 // Get a resource by name
 func (b *Base) Get(path string) (Columnar, error) {
@@ -133,30 +129,13 @@ func (b *Base) List(ns string) (Columnars, error) {
 }
 
 // Describe a given resource.
-func (b *Base) Describe(kind, pa string) (string, error) {
-	mapping, err := k8s.RestMapping.Find(kind)
-	if err == nil {
-		return b.doDescribe(pa, mapping)
-	}
-
-	resource, ok := b.Resource.(*k8s.Resource)
-	if !ok {
-		log.Debug().Msgf("resource not a (*k8s.Resource) and %s", err)
-		return "", fmt.Errorf("resource not a (*k8s.Resource) and %s", err)
-	}
-	g, v, n := resource.GetInfo()
+func (b *Base) Describe(gvr, pa string) (string, error) {
 	mapper := k8s.RestMapper{Connection: b.Connection}
-	var e error
-	mapping, e = mapper.ResourceFor(fmt.Sprintf("%s.%s.%s", n, v, g))
-	if e != nil {
-		log.Debug().Err(e).Msgf("Unable to find mapper for %s %s", kind, pa)
-		return "", e
+	mapping, err := mapper.ResourceFor(k8s.GVR(gvr).ResName())
+	if err != nil {
+		log.Debug().Err(err).Msgf("Unable to find mapper for %s %s", gvr, pa)
+		return "", err
 	}
-
-	return b.doDescribe(pa, mapping)
-}
-
-func (b *Base) doDescribe(pa string, mapping *meta.RESTMapping) (string, error) {
 	ns, n := Namespaced(pa)
 	d, err := versioned.Describer(b.Connection.Config().Flags(), mapping)
 	if err != nil {
