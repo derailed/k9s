@@ -203,22 +203,58 @@ func (a *appView) refreshIndicator() {
 	a.indicator().SetPermanent(info)
 }
 
-func (a *appView) startInformer(ns string) {
+func (a *appView) switchNS(ns string) bool {
+	if ns == a.Config.ActiveNamespace() {
+		log.Debug().Msgf("Namespace did not change %s", ns)
+		return true
+	}
+	a.Config.SetActiveNamespace(ns)
+
+	return a.startInformer(ns)
+}
+
+func (a *appView) switchCtx(ctx string, load bool) error {
+	l := resource.NewContext(a.Conn())
+	if err := l.Switch(ctx); err != nil {
+		return err
+	}
+
+	a.stopForwarders()
+	ns, err := a.Conn().Config().CurrentNamespaceName()
+	if err != nil {
+		log.Info().Err(err).Msg("No namespace specified using all namespaces")
+	}
+	a.startInformer(ns)
+	a.Config.Reset()
+	a.Config.Save()
+	a.Flash().Infof("Switching context to %s", ctx)
+	if load {
+		a.gotoResource("po", true)
+	}
+
+	return nil
+}
+
+func (a *appView) startInformer(ns string) bool {
 	if a.stopCh != nil {
 		close(a.stopCh)
+		a.stopCh = nil
 	}
 
 	var err error
-	a.stopCh = make(chan struct{})
 	a.informer, err = watch.NewInformer(a.Conn(), ns)
 	if err != nil {
-		log.Panic().Err(err).Msgf("%v", err)
+		log.Error().Err(err).Msgf("%v", err)
+		a.Flash().Err(err)
+		return false
 	}
+	a.stopCh = make(chan struct{})
 	a.informer.Run(a.stopCh)
-
 	if a.Config.K9s.GetHeadless() {
 		a.refreshIndicator()
 	}
+
+	return true
 }
 
 // BailOut exists the application.
@@ -340,9 +376,9 @@ func (a *appView) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if _, ok := a.Frame().GetPrimitive("main").(*helpView); ok {
 		return evt
 	}
-
 	h := newHelpView(a, a.ActiveView(), a.GetHints())
 	a.inject(h)
+
 	return nil
 }
 
@@ -350,7 +386,6 @@ func (a *appView) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if _, ok := a.Frame().GetPrimitive("main").(*aliasView); ok {
 		return evt
 	}
-
 	a.inject(newAliasView(a, a.ActiveView()))
 
 	return nil

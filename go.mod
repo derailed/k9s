@@ -27,10 +27,8 @@ replace (
 )
 
 require (
-	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
-	github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4 // indirect
 	github.com/atotto/clipboard v0.1.2
-	github.com/derailed/tview v0.2.1
+	github.com/derailed/tview v0.2.4
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/elazarl/goproxy v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect
@@ -44,7 +42,7 @@ require (
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mattn/go-runewidth v0.0.4
-	github.com/petergtz/pegomock v2.5.0+incompatible
+	github.com/petergtz/pegomock v2.6.0+incompatible
 	github.com/rakyll/hey v0.1.2
 	github.com/rs/zerolog v1.14.3
 	github.com/sahilm/fuzzy v0.1.0
@@ -52,7 +50,6 @@ require (
 	github.com/stretchr/testify v1.3.0
 	golang.org/x/text v0.3.2
 	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
-	gopkg.in/alecthomas/kingpin.v2 v2.2.6 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.2.2
 	gotest.tools v2.2.0+incompatible

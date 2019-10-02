@@ -209,20 +209,10 @@ func benchTimedOut(app *appView) {
 	})
 }
 
-func (v *svcView) showSvcPods(ns string, sel map[string]string, b ui.ActionHandler) {
+func (v *svcView) showSvcPods(ns string, sel map[string]string, a ui.ActionHandler) {
 	var s []string
 	for k, v := range sel {
 		s = append(s, fmt.Sprintf("%s=%s", k, v))
 	}
-	list := resource.NewPodList(v.app.Conn(), ns)
-	list.SetLabelSelector(strings.Join(s, ","))
-
-	pv := newPodView("Pods", "v1/pods", v.app, list)
-	pv.setColorerFn(podColorer)
-	pv.setExtraActionsFn(func(aa ui.KeyActions) {
-		aa[tcell.KeyEsc] = ui.NewKeyAction("Back", b, true)
-	})
-	// set active namespace to service ns.
-	v.app.Config.SetActiveNamespace(ns)
-	v.app.inject(pv)
+	showPods(v.app, ns, strings.Join(s, ","), "", a)
 }

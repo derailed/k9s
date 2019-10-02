@@ -136,7 +136,8 @@ func (v *rbacView) getTitle() string {
 func (v *rbacView) refresh() {
 	data, err := v.reconcile(v.ActiveNS(), v.roleName, v.roleType)
 	if err != nil {
-		log.Error().Err(err).Msgf("Unable to reconcile for %s:%d", v.roleName, v.roleType)
+		log.Error().Err(err).Msgf("Refresh for %s:%d", v.roleName, v.roleType)
+		v.app.Flash().Err(err)
 	}
 	v.Update(data)
 }

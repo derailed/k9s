@@ -133,7 +133,7 @@ func (b *Base) Describe(gvr, pa string) (string, error) {
 	mapper := k8s.RestMapper{Connection: b.Connection}
 	mapping, err := mapper.ResourceFor(k8s.GVR(gvr).ResName())
 	if err != nil {
-		log.Debug().Err(err).Msgf("Unable to find mapper for %s %s", gvr, pa)
+		log.Error().Err(err).Msgf("Unable to find mapper for %s %s", gvr, pa)
 		return "", err
 	}
 	ns, n := Namespaced(pa)

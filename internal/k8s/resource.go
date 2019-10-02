@@ -6,7 +6,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/rest"
@@ -31,12 +30,7 @@ func (r *Resource) GetInfo() GVR {
 }
 
 func (r *Resource) nsRes() dynamic.NamespaceableResourceInterface {
-	g := schema.GroupVersionResource{
-		Group:    r.gvr.ToG(),
-		Version:  r.gvr.ToV(),
-		Resource: r.gvr.ToR(),
-	}
-	return r.DynDialOrDie().Resource(g)
+	return r.DynDialOrDie().Resource(r.gvr.AsGVR())
 }
 
 // Get a Resource.

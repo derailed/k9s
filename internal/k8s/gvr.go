@@ -33,6 +33,15 @@ func (g GVR) AsGR() schema.GroupVersion {
 	}
 }
 
+// AsGVR returns a schema gvr instance.
+func (g GVR) AsGVR() schema.GroupVersionResource {
+	return schema.GroupVersionResource{
+		Group:    g.ToG(),
+		Version:  g.ToV(),
+		Resource: g.ToR(),
+	}
+}
+
 // String returns a GVR as a string.
 func (g GVR) String() string {
 	return string(g)
@@ -41,6 +50,9 @@ func (g GVR) String() string {
 // ToV returns the resource version.
 func (g GVR) ToV() string {
 	tokens := strings.Split(string(g), "/")
+	if len(tokens) < 2 {
+		return ""
+	}
 	return tokens[len(tokens)-2]
 }
 

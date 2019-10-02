@@ -56,6 +56,7 @@ func (v *namespaceView) useNamespace(ns string) {
 		v.app.Flash().Infof("Namespace %s is now active!", ns)
 	}
 	v.app.Config.Save()
+	v.app.startInformer(ns)
 }
 
 func (*namespaceView) cleanser(s string) string {

@@ -10,7 +10,7 @@ import (
 
 func TestContextView(t *testing.T) {
 	l := resource.NewContextList(nil, "fred")
-	v := newContextView("blee", NewApp(config.NewConfig(ks{})), l).(*contextView)
+	v := newContextView("blee", "", NewApp(config.NewConfig(ks{})), l).(*contextView)
 
 	assert.Equal(t, 10, len(v.hints()))
 }

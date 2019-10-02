@@ -90,7 +90,8 @@ func (v *policyView) getTitle() string {
 func (v *policyView) refresh() {
 	data, err := v.reconcile()
 	if err != nil {
-		log.Error().Err(err).Msgf("Unable to reconcile for %s:%s", v.subjectKind, v.subjectName)
+		log.Error().Err(err).Msgf("Refresh for %s:%s", v.subjectKind, v.subjectName)
+		v.app.Flash().Err(err)
 	}
 	v.Update(data)
 }
@@ -129,7 +130,7 @@ func (v *policyView) reconcile() (resource.TableData, error) {
 	evts, errs := v.clusterPolicies()
 	if len(errs) > 0 {
 		for _, err := range errs {
-			log.Debug().Err(err).Msg("Unable to find cluster policies")
+			log.Error().Err(err).Msg("Unable to find cluster policies")
 		}
 		return table, errs[0]
 	}
@@ -137,7 +138,7 @@ func (v *policyView) reconcile() (resource.TableData, error) {
 	nevts, errs := v.namespacedPolicies()
 	if len(errs) > 0 {
 		for _, err := range errs {
-			log.Debug().Err(err).Msg("Unable to find cluster policies")
+			log.Error().Err(err).Msg("Unable to find cluster policies")
 		}
 		return table, errs[0]
 	}

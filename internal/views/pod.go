@@ -76,7 +76,7 @@ func (v *podView) listContainers(app *appView, _, res, sel string) {
 
 	pod := po.(*v1.Pod)
 	list := resource.NewContainerList(app.Conn(), pod)
-	title := skinTitle(fmt.Sprintf(containerFmt, "Containers", sel), app.Styles.Frame())
+	title := skinTitle(fmt.Sprintf(containerFmt, "Container", sel), app.Styles.Frame())
 
 	// Stop my updater
 	if v.cancelFn != nil {

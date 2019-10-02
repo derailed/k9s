@@ -334,8 +334,9 @@ func (v *resourceView) refresh() {
 	if v.list.Namespaced() {
 		v.list.SetNamespace(v.currentNS)
 	}
+	log.Debug().Msgf("Reconcile with NS %q", v.currentNS)
 	if err := v.list.Reconcile(v.app.informer, v.path); err != nil {
-		v.app.Flash().Errf("Reconciliation for %s failed - %s", v.list.GetName(), err)
+		v.app.Flash().Err(err)
 	}
 	data := v.list.Data()
 	if v.decorateFn != nil {
@@ -345,6 +346,11 @@ func (v *resourceView) refresh() {
 }
 
 func (v *resourceView) namespaceActions(aa ui.KeyActions) {
+	ns, err := v.app.Conn().Config().CurrentNamespaceName()
+	log.Debug().Msgf("NAMESPACE %q -- %v", ns, err)
+	if err == nil && ns != resource.AllNamespace {
+		return
+	}
 	if !v.list.Access(resource.NamespaceAccess) {
 		return
 	}

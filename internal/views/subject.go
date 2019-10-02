@@ -115,7 +115,8 @@ func (v *subjectView) SetSubject(s string) {
 func (v *subjectView) refresh() {
 	data, err := v.reconcile()
 	if err != nil {
-		log.Error().Err(err).Msgf("Unable to reconcile for %s", v.subjectKind)
+		log.Error().Err(err).Msgf("Refresh for %s", v.subjectKind)
+		v.app.Flash().Err(err)
 	}
 	v.Update(data)
 }
