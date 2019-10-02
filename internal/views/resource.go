@@ -334,7 +334,6 @@ func (v *resourceView) refresh() {
 	if v.list.Namespaced() {
 		v.list.SetNamespace(v.currentNS)
 	}
-	log.Debug().Msgf("Reconcile with NS %q", v.currentNS)
 	if err := v.list.Reconcile(v.app.informer, v.path); err != nil {
 		v.app.Flash().Err(err)
 	}
@@ -347,7 +346,6 @@ func (v *resourceView) refresh() {
 
 func (v *resourceView) namespaceActions(aa ui.KeyActions) {
 	ns, err := v.app.Conn().Config().CurrentNamespaceName()
-	log.Debug().Msgf("NAMESPACE %q -- %v", ns, err)
 	if err == nil && ns != resource.AllNamespace {
 		return
 	}
@@ -401,7 +399,13 @@ func (v *resourceView) refreshActions() {
 }
 
 func (v *resourceView) customActions(aa ui.KeyActions) {
-	for k, plugin := range v.app.Config.K9s.Plugins {
+	pp := config.NewPlugins()
+	if err := pp.Load(); err != nil {
+		log.Warn().Msgf("No plugin configuration found")
+		return
+	}
+
+	for k, plugin := range pp.Plugin {
 		if !in(plugin.Scopes, v.list.GetName()) {
 			continue
 		}
@@ -428,10 +432,12 @@ func (v *resourceView) execCmd(bin string, bg bool, args ...string) ui.ActionHan
 			return evt
 		}
 
-		env := v.envFn()
-		aa := make([]string, len(args))
+		var (
+			env = v.envFn()
+			aa  = make([]string, len(args))
+			err error
+		)
 		for i, a := range args {
-			var err error
 			aa[i], err = env.envFor(a)
 			if err != nil {
 				log.Error().Err(err).Msg("Args match failed")
@@ -454,12 +460,10 @@ func (v *resourceView) defaultK9sEnv() K9sEnv {
 		"NAMESPACE": ns,
 		"NAME":      n,
 	}
-
 	row := v.masterPage().GetRow()
 	for i, r := range row {
-		env["COL-"+strconv.Itoa(i)] = r
+		env["COL"+strconv.Itoa(i)] = r
 	}
 
-	log.Debug().Msgf("ENVs %#v", env)
 	return env
 }

@@ -2,19 +2,30 @@ package ui
 
 const maxBuff = 10
 
+const (
+	// CommandBuff indicates a command buffer.
+	CommandBuff BufferKind = 1 << iota
+	// FilterBuff indicates a search buffer.
+	FilterBuff
+)
+
 type (
+	// BufferKind indicates a buffer type
+	BufferKind int8
+
 	// BuffWatcher represents a command buffer listener.
 	BuffWatcher interface {
 		// Changed indicates the buffer was changed.
 		BufferChanged(s string)
 
 		// Active indicates the buff activity changed.
-		BufferActive(state bool)
+		BufferActive(state bool, kind BufferKind)
 	}
 
 	// CmdBuff represents user command input.
 	CmdBuff struct {
 		buff      []rune
+		kind      BufferKind
 		hotKey    rune
 		active    bool
 		listeners []BuffWatcher
@@ -22,9 +33,10 @@ type (
 )
 
 // NewCmdBuff returns a new command buffer.
-func NewCmdBuff(key rune) *CmdBuff {
+func NewCmdBuff(key rune, kind BufferKind) *CmdBuff {
 	return &CmdBuff{
 		hotKey:    key,
+		kind:      kind,
 		buff:      make([]rune, 0, maxBuff),
 		listeners: []BuffWatcher{},
 	}
@@ -47,8 +59,9 @@ func (c *CmdBuff) String() string {
 }
 
 // Set initializes the buffer with a command.
-func (c *CmdBuff) Set(rr []rune) {
-	c.buff = rr
+func (c *CmdBuff) Set(cmd string) {
+	c.buff = []rune(cmd)
+	c.fireChanged()
 }
 
 // Add adds a new charater to the buffer.
@@ -104,6 +117,6 @@ func (c *CmdBuff) fireChanged() {
 
 func (c *CmdBuff) fireActive(b bool) {
 	for _, l := range c.listeners {
-		l.BufferActive(b)
+		l.BufferActive(b, c.kind)
 	}
 }

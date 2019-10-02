@@ -49,6 +49,7 @@ func (v *aliasView) Init(context.Context, string) {
 
 func (v *aliasView) registerActions() {
 	v.RmAction(ui.KeyShiftA)
+	v.RmAction(tcell.KeyCtrlS)
 
 	v.SetActions(ui.KeyActions{
 		tcell.KeyEnter:  ui.NewKeyAction("Goto", v.gotoCmd, true),

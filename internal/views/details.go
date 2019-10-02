@@ -55,7 +55,7 @@ func newDetailsView(app *appView, backFn ui.ActionHandler) *detailsView {
 	v.SetTitleColor(tcell.ColorAqua)
 	v.SetInputCapture(v.keyboard)
 
-	v.cmdBuff = ui.NewCmdBuff('/')
+	v.cmdBuff = ui.NewCmdBuff('/', ui.FilterBuff)
 	v.cmdBuff.AddListener(app.Cmd())
 	v.cmdBuff.Reset()
 

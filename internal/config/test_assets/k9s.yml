@@ -27,15 +27,3 @@ k9s:
           - kube-system
       view:
         active: po
-  plugins:
-    blah:
-      shortCut: shift-s
-      description: blee
-      scopes:
-        - po
-        - dp
-      command: duh
-      args:
-        - -n
-        - $NAMESPACE
-        - -boolean

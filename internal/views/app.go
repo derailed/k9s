@@ -20,6 +20,7 @@ const (
 	splashTime     = 1
 	devMode        = "dev"
 	clusterRefresh = time.Duration(5 * time.Second)
+	indicatorFmt   = "[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s%%[white::]::[darkturquoise::]%s%%"
 )
 
 type (
@@ -55,6 +56,7 @@ type (
 		forwarders map[string]forwarder
 		version    string
 		showHeader bool
+		filter     string
 	}
 )
 
@@ -105,7 +107,6 @@ func (a *appView) Init(version string, rate int) {
 	a.Main().AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
 
 	main.AddItem(a.indicator(), 1, 1, false)
-	// main.AddItem(a.Cmd(), 3, 1, false)
 	main.AddItem(a.Frame(), 0, 10, true)
 	main.AddItem(a.Crumbs(), 2, 1, false)
 	main.AddItem(a.Flash(), 1, 1, false)
@@ -116,7 +117,7 @@ func (a *appView) Init(version string, rate int) {
 func (a *appView) BufferChanged(s string) {}
 
 // Active indicates the buff activity changed.
-func (a *appView) BufferActive(state bool) {
+func (a *appView) BufferActive(state bool, _ ui.BufferKind) {
 	flex, ok := a.Main().GetPrimitive("main").(*tview.Flex)
 	if !ok {
 		return
@@ -144,6 +145,7 @@ func (a *appView) toggleHeader(flag bool) {
 
 func (a *appView) buildHeader() tview.Primitive {
 	header := tview.NewFlex()
+	header.SetBorderPadding(0, 0, 1, 1)
 	header.SetDirection(tview.FlexColumn)
 	if !a.showHeader {
 		return header
@@ -192,7 +194,7 @@ func (a *appView) refreshIndicator() {
 	}
 
 	info := fmt.Sprintf(
-		"[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s%%[white::]::[darkturquoise::]%s%%",
+		indicatorFmt,
 		a.version,
 		cluster.ClusterName(),
 		cluster.UserName(),

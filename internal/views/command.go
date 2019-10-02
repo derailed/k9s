@@ -54,7 +54,7 @@ func (c *command) defaultCmd() {
 
 // Helpers...
 
-var policyMatcher = regexp.MustCompile(`\Apol\s([u|g|s]):([\w-:]+)\b`)
+var authRX = regexp.MustCompile(`\Apol\s([u|g|s]):([\w-:]+)\b`)
 
 func (c *command) isK9sCmd(cmd string) bool {
 	cmds := strings.Split(cmd, " ")
@@ -69,10 +69,10 @@ func (c *command) isK9sCmd(cmd string) bool {
 		c.app.aliasCmd(nil)
 		return true
 	default:
-		if !policyMatcher.MatchString(cmd) {
+		if !authRX.MatchString(cmd) {
 			return false
 		}
-		tokens := policyMatcher.FindAllStringSubmatch(cmd, -1)
+		tokens := authRX.FindAllStringSubmatch(cmd, -1)
 		if len(tokens) == 1 && len(tokens[0]) == 3 {
 			c.app.inject(newPolicyView(c.app, tokens[0][1], tokens[0][2]))
 			return true
@@ -100,8 +100,8 @@ func (c *command) viewMetaFor(cmd string) (string, *viewer) {
 	}
 	v, ok := vv[gvr]
 	if !ok {
-		log.Error().Err(fmt.Errorf("Huh? `%s` viewer not found", cmd)).Msg("Viewer Failed")
-		c.app.Flash().Warnf("Huh? `%s` viewer not found", gvr)
+		log.Error().Err(fmt.Errorf("Huh? `%s` viewer not found", gvr)).Msg("Viewer Failed")
+		c.app.Flash().Warnf("Huh? viewer for %s not found", cmd)
 		return "", nil
 	}
 

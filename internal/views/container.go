@@ -60,7 +60,6 @@ func (v *containerView) k9sEnv() K9sEnv {
 	ns, n := namespaced(*v.path)
 	env["POD"] = n
 	env["NAMESPACE"] = ns
-	log.Debug().Msgf("OVER ENV %#v", env)
 
 	return env
 }

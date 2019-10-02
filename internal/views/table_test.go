@@ -73,7 +73,7 @@ func TestTableViewFilter(t *testing.T) {
 	}
 	v.Update(data)
 	v.SearchBuff().SetActive(true)
-	v.SearchBuff().Set([]rune("blee"))
+	v.SearchBuff().Set("blee")
 	v.filterCmd(nil)
 	assert.Equal(t, 2, v.GetRowCount())
 	v.resetCmd(nil)

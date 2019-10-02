@@ -8,7 +8,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// K9sAlias stores K9s command aliases.
+// K9sAlias manages K9s aliases.
 var K9sAlias = filepath.Join(K9sHome, "alias.yml")
 
 type Alias map[string]string
@@ -33,7 +33,7 @@ func (a Aliases) loadDefaults() {
 	a.Alias["crb"] = "rbac.authorization.k8s.io/v1/clusterrolebindings"
 	a.Alias["ro"] = "rbac.authorization.k8s.io/v1/roles"
 	a.Alias["rob"] = "rbac.authorization.k8s.io/v1/rolebindings"
-	a.Alias["np"] = "networking.k8s.io/v1beta1/rolebindings"
+	a.Alias["np"] = "networking.k8s.io/v1/networkpolicies"
 	{
 		a.Alias["ctx"] = "contexts"
 		a.Alias["contexts"] = "contexts"
@@ -87,7 +87,7 @@ func (a Aliases) Define(args ...string) {
 	}
 }
 
-// LoadAliases K9s alias from a given file.
+// LoadAliases loads alias from a given file.
 func (a Aliases) LoadAliases(path string) error {
 	f, err := ioutil.ReadFile(path)
 	if err != nil {

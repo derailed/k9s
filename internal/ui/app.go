@@ -54,7 +54,7 @@ func NewApp() *App {
 		actions:     make(KeyActions),
 		pages:       tview.NewPages(),
 		content:     tview.NewPages(),
-		cmdBuff:     NewCmdBuff(':'),
+		cmdBuff:     NewCmdBuff(':', CommandBuff),
 	}
 
 	s.RefreshStyles()
@@ -62,7 +62,7 @@ func NewApp() *App {
 	s.views = map[string]tview.Primitive{
 		"menu":   NewMenuView(s.Styles),
 		"logo":   NewLogoView(s.Styles),
-		"cmd":    NewCmdView(s.Styles, '🐶'),
+		"cmd":    NewCmdView(s.Styles),
 		"crumbs": NewCrumbsView(s.Styles),
 	}
 
@@ -186,7 +186,6 @@ func (a *App) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.InCmdMode() {
 		return evt
 	}
-	a.Flash().Info("Command mode activated.")
 	a.cmdBuff.SetActive(true)
 	a.cmdBuff.Clear()
 

@@ -1,0 +1,12 @@
+plugin:
+  blah:
+    shortCut: shift-s
+    description: blee
+    scopes:
+      - po
+      - dp
+    command: duh
+    args:
+      - -n
+      - $NAMESPACE
+      - -boolean

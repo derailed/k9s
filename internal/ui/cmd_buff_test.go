@@ -16,7 +16,7 @@ func (l *testListener) BufferChanged(s string) {
 	l.text = s
 }
 
-func (l *testListener) BufferActive(s bool) {
+func (l *testListener) BufferActive(s bool, _ BufferKind) {
 	if s {
 		l.act++
 		return
@@ -25,7 +25,7 @@ func (l *testListener) BufferActive(s bool) {
 }
 
 func TestCmdBuffActivate(t *testing.T) {
-	b, l := NewCmdBuff('>'), testListener{}
+	b, l := NewCmdBuff('>', CommandBuff), testListener{}
 	b.AddListener(&l)
 
 	b.SetActive(true)
@@ -35,7 +35,7 @@ func TestCmdBuffActivate(t *testing.T) {
 }
 
 func TestCmdBuffDeactivate(t *testing.T) {
-	b, l := NewCmdBuff('>'), testListener{}
+	b, l := NewCmdBuff('>', CommandBuff), testListener{}
 	b.AddListener(&l)
 
 	b.SetActive(false)
@@ -45,7 +45,7 @@ func TestCmdBuffDeactivate(t *testing.T) {
 }
 
 func TestCmdBuffChanged(t *testing.T) {
-	b, l := NewCmdBuff('>'), testListener{}
+	b, l := NewCmdBuff('>', CommandBuff), testListener{}
 	b.AddListener(&l)
 
 	b.Add('b')
@@ -77,7 +77,7 @@ func TestCmdBuffChanged(t *testing.T) {
 }
 
 func TestCmdBuffAdd(t *testing.T) {
-	b := NewCmdBuff('>')
+	b := NewCmdBuff('>', CommandBuff)
 
 	uu := []struct {
 		runes []rune
@@ -98,7 +98,7 @@ func TestCmdBuffAdd(t *testing.T) {
 }
 
 func TestCmdBuffDel(t *testing.T) {
-	b := NewCmdBuff('>')
+	b := NewCmdBuff('>', CommandBuff)
 
 	uu := []struct {
 		runes []rune
@@ -120,7 +120,7 @@ func TestCmdBuffDel(t *testing.T) {
 }
 
 func TestCmdBuffEmpty(t *testing.T) {
-	b := NewCmdBuff('>')
+	b := NewCmdBuff('>', CommandBuff)
 
 	uu := []struct {
 		runes []rune

@@ -12,9 +12,9 @@ func TestNewMenuView(t *testing.T) {
 	defaults, _ := config.NewStyles("")
 	v := NewMenuView(defaults)
 	v.HydrateMenu(Hints{
+		{"0", "zero", true},
 		{"a", "bleeA", true},
 		{"b", "bleeB", true},
-		{"0", "zero", true},
 	})
 
 	assert.Equal(t, " [fuchsia:black:b]<0> [white:black:d]zero ", v.GetCell(0, 0).Text)

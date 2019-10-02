@@ -16,7 +16,6 @@ import (
 
 var (
 	// RestMapping holds k8s resource mapping
-	// BOZO!! Has to be a better way...
 	RestMapping = &RestMapper{}
 	toFileName  = regexp.MustCompile(`[^(\w/\.)]`)
 )
