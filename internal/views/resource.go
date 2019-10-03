@@ -456,9 +456,29 @@ func (v *resourceView) execCmd(bin string, bg bool, args ...string) ui.ActionHan
 
 func (v *resourceView) defaultK9sEnv() K9sEnv {
 	ns, n := namespaced(v.masterPage().GetSelectedItem())
+	ctx, err := v.app.Conn().Config().CurrentContextName()
+	if err != nil {
+		ctx = "n/a"
+	}
+	cluster, err := v.app.Conn().Config().CurrentClusterName()
+	if err != nil {
+		cluster = "n/a"
+	}
+	user, err := v.app.Conn().Config().CurrentUserName()
+	if err != nil {
+		user = "n/a"
+	}
+	groups, err := v.app.Conn().Config().CurrentGroupNames()
+	if err != nil {
+		groups = []string{"n/a"}
+	}
 	env := K9sEnv{
 		"NAMESPACE": ns,
 		"NAME":      n,
+		"CONTEXT":   ctx,
+		"CLUSTER":   cluster,
+		"USER":      user,
+		"GROUPS":    strings.Join(groups, ","),
 	}
 	row := v.masterPage().GetRow()
 	for i, r := range row {

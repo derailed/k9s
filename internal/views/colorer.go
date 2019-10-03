@@ -29,7 +29,7 @@ func benchColorer(ns string, r *resource.RowEvent) tcell.Color {
 }
 
 func aliasColorer(string, *resource.RowEvent) tcell.Color {
-	return tcell.ColorFuchsia
+	return tcell.ColorMediumSpringGreen
 }
 
 func rbacColorer(ns string, r *resource.RowEvent) tcell.Color {

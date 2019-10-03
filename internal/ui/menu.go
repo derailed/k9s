@@ -257,7 +257,6 @@ func initKeys() {
 	initNumbKeys()
 	initStdKeys()
 	initShiftKeys()
-	initCtrlKeys()
 }
 
 func initNumbKeys() {

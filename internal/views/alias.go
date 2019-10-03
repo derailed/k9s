@@ -13,7 +13,7 @@ import (
 
 const (
 	aliasTitle    = "Aliases"
-	aliasTitleFmt = " [aqua::b]%s([fuchsia::b]%d[fuchsia::-][aqua::-]) "
+	aliasTitleFmt = " [mediumseagreen::b]%s([fuchsia::b]%d[fuchsia::-][mediumseagreen::-]) "
 )
 
 type aliasView struct {
@@ -29,8 +29,8 @@ func newAliasView(app *appView, current ui.Igniter) *aliasView {
 		tableView: newTableView(app, aliasTitle),
 		app:       app,
 	}
-	v.SetBorderFocusColor(tcell.ColorFuchsia)
-	v.SetSelectedStyle(tcell.ColorWhite, tcell.ColorFuchsia, tcell.AttrNone)
+	v.SetBorderFocusColor(tcell.ColorMediumSpringGreen)
+	v.SetSelectedStyle(tcell.ColorWhite, tcell.ColorMediumSpringGreen, tcell.AttrNone)
 	v.SetColorerFn(aliasColorer)
 	v.current = current
 	v.SetActiveNS("")
