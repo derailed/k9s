@@ -14,8 +14,8 @@ for changes and offers subsequent commands to interact with observed Kubernetes 
 [![Build Status](https://travis-ci.com/derailed/k9s.svg?branch=master)](https://travis-ci.com/derailed/k9s)
 [![release](https://img.shields.io/github/release-pre/derailed/k9s.svg)](https://github.com/derailed/k9s/releases)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/mum4k/termdash/blob/master/LICENSE)
-[![k9s](https://snapcraft.io/k9s/badge.svg)](https://snapcraft.io/k9s)
-[![Releases](https://img.shields.io/github/downloads/derailed/k9s/total.svg)]()
+<!-- [![k9s](https://snapcraft.io/k9s/badge.svg)](https://snapcraft.io/k9s)
+[![Releases](https://img.shields.io/github/downloads/derailed/k9s/total.svg)]() -->
 
 ---
 
@@ -32,10 +32,9 @@ K9s is available on Linux, OSX and Windows platforms.
    ```
 
 * Building from source
-   K9s was built using go 1.12 or above. In order to build K9 from source you must:
+   K9s was built using go 1.13 or above. In order to build K9 from source you must:
    1. Clone the repo
-   2. Set env var *GO111MODULE=on*
-   3. Add the following command in your go.mod file
+   2. Add the following command in your go.mod file
 
       ```text
       replace (
@@ -43,26 +42,11 @@ K9s is available on Linux, OSX and Windows platforms.
       )
       ```
 
-   4. Build and run the executable
+   3. Build and run the executable
 
         ```shell
         go run main.go
         ```
-
----
-
-## The Command Line
-
-```shell
-# List all available CLI options
-k9s -h
-# To get info about K9s runtime (logs, configs, etc..)
-k9s info
-# To run K9s in a given namespace
-k9s -n mycoolns
-# Start K9s in an existing KubeConfig context
-k9s --context coolCtx
-```
 
 ---
 
@@ -73,6 +57,58 @@ k9s --context coolCtx
     ```shell
     export TERM=xterm-256color
     ```
+
+---
+
+## The Command Line
+
+```shell
+# List all available CLI options
+k9s help
+# To get info about K9s runtime (logs, configs, etc..)
+k9s info
+# To run K9s in a given namespace
+k9s -n mycoolns
+# Start K9s in an existing KubeConfig context
+k9s --context coolCtx
+```
+
+---
+
+## Key Bindings
+
+K9s uses aliases to navigate most K8s resources.
+
+| Command                     | Result                                             | Example                    |
+|-----------------------------|----------------------------------------------------|----------------------------|
+| `:`alias`<ENTER>`           | View a Kubernetes resource aliases                 | `:po<ENTER>`               |
+| `?`                         | Show keyboard shortcuts and help                   |                            |
+| `Ctrl-a`                    | Show all available resource alias                  | select+`<ENTER>` to view   |
+| `/`filter`ENTER`            | Filter out a resource view given a filter          | `/bumblebeetuna`           |
+| `/`-l label-selector`ENTER` | Filter resource view by labels                     | `/-l app=fred`             |
+| `<Esc>`                     | Bails out of command mode                          |                            |
+| `d`,`v`, `e`, `l`,...       | Key mapping to describe, view, edit, view logs,... | `d` (describes a resource) |
+| `:`ctx`<ENTER>`             | To view and switch to another Kubernetes context   | `:`+`ctx`+`<ENTER>`        |
+| `Ctrl-d`                    | To delete a resource (TAB and ENTER to confirm)    |                            |
+| `Ctrl-k`                    | To delete a resource (no confirmation dialog)      |                            |
+| `:q`, `Ctrl-c`              | To bail out of K9s                                 |                            |
+
+---
+
+## Demo Video
+
+1. [K9s v0 Demo](https://youtu.be/k7zseUhaXeU)
+2. [K9s v0.7.0 Features](https://youtu.be/83jYehwlql8)
+
+
+## Screenshots
+
+1. Pods
+      <img src="assets/screen_po.png"/>
+1. Logs
+      <img src="assets/screen_logs.png"/>
+1. Deployments
+      <img src="assets/screen_dp.png"/>
 
 ---
 
@@ -117,7 +153,7 @@ k9s --context coolCtx
 
 ---
 
-## Benchmarking (Preview!)
+## Benchmarking
 
 K9s integrates [Hey](https://github.com/rakyll/hey) from the brilliant and super talented [Jaana Dogan](https://github.com/rakyll) of Google fame. Hey is a CLI tool to benchmak HTTP endpoints similar to AB bench. This preliminary feature currently supports benchmarking port-forwards and services (Read the paint on this is way fresh!).
 
@@ -178,44 +214,6 @@ benchmarks:
         user: jean-baptiste-emmanuel
         password: Zorg!
 ```
-
----
-
-## Key Bindings
-
-K9s uses aliases to navigate most K8s resources.
-
-| Command                     | Result                                             | Example                    |
-|-----------------------------|----------------------------------------------------|----------------------------|
-| `:`alias`<ENTER>`           | View a Kubernetes resource aliases                 | `:po<ENTER>`               |
-| `?`                         | Show keyboard shortcuts and help                   |                            |
-| `Ctrl-a`                    | Show all available resource alias                  | select+`<ENTER>` to view   |
-| `/`filter`ENTER`            | Filter out a resource view given a filter          | `/bumblebeetuna`           |
-| `/`-l label-selector`ENTER` | Filter resource view by labels                     | `/-l app=fred`             |
-| `<Esc>`                     | Bails out of command mode                          |                            |
-| `d`,`v`, `e`, `l`,...       | Key mapping to describe, view, edit, view logs,... | `d` (describes a resource) |
-| `:`ctx`<ENTER>`             | To view and switch to another Kubernetes context   | `:`+`ctx`+`<ENTER>`        |
-| `Ctrl-d`                    | To delete a resource (TAB and ENTER to confirm)    |                            |
-| `Ctrl-k`                    | To delete a resource (no confirmation dialog)      |                            |
-| `:q`, `Ctrl-c`              | To bail out of K9s                                 |                            |
-
----
-
-## Demo Video
-
-1. [K9s v0 Demo](https://youtu.be/k7zseUhaXeU)
-2. [K9s v0.7.0 Features](https://youtu.be/83jYehwlql8)
-
-
-## Screenshots
-
-1. Pods
-      <img src="assets/screen_po.png"/>
-1. Logs
-      <img src="assets/screen_logs.png"/>
-1. Deployments
-      <img src="assets/screen_dp.png"/>
-
 
 ---
 
@@ -450,14 +448,12 @@ K9s sits on top of many of opensource projects and libraries. Our *sincere*
 appreciations to all the OSS contributors that work nights and weekends
 to make this project a reality!
 
-
 ---
 
 ## Contact Info
 
 1. **Email**:   fernand@imhotep.io
 2. **Twitter**: [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
-
 
 ---
 
