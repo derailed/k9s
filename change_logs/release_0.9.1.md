@@ -12,7 +12,7 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ## Change Logs
 
-Maintenance release and updates in the v0.9.0 release.
+Maintenance release and updates in the v0.9.0 release aftermath.
 
 ---
 
