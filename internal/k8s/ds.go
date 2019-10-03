@@ -17,7 +17,7 @@ func NewDaemonSet(c Connection) *DaemonSet {
 
 // Get a DaemonSet.
 func (d *DaemonSet) Get(ns, n string) (interface{}, error) {
-	return d.DialOrDie().ExtensionsV1beta1().DaemonSets(ns).Get(n, metav1.GetOptions{})
+	return d.DialOrDie().AppsV1().DaemonSets(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all DaemonSets in a given namespace.
@@ -26,7 +26,7 @@ func (d *DaemonSet) List(ns string) (Collection, error) {
 		LabelSelector: d.labelSelector,
 		FieldSelector: d.fieldSelector,
 	}
-	rr, err := d.DialOrDie().ExtensionsV1beta1().DaemonSets(ns).List(opts)
+	rr, err := d.DialOrDie().AppsV1().DaemonSets(ns).List(opts)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func (d *DaemonSet) Delete(ns, n string, cascade, force bool) error {
 	if cascade {
 		p = metav1.DeletePropagationBackground
 	}
-	return d.DialOrDie().ExtensionsV1beta1().DaemonSets(ns).Delete(n, &metav1.DeleteOptions{
+	return d.DialOrDie().AppsV1().DaemonSets(ns).Delete(n, &metav1.DeleteOptions{
 		PropagationPolicy: &p,
 	})
 }

@@ -33,7 +33,7 @@ type forwardView struct {
 
 var _ resourceViewer = &forwardView{}
 
-func newForwardView(ns string, app *appView, list resource.List) resourceViewer {
+func newForwardView(title, gvr string, app *appView, list resource.List) resourceViewer {
 	v := forwardView{
 		Pages: tview.NewPages(),
 		app:   app,
@@ -107,8 +107,8 @@ func (v *forwardView) registerActions() {
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", v.deleteCmd, true),
 		ui.KeySlash:    ui.NewKeyAction("Filter", tv.activateCmd, false),
 		ui.KeyP:        ui.NewKeyAction("Previous", v.app.prevCmd, false),
-		ui.KeyShiftP:   ui.NewKeyAction("Sort Ports", v.sortColCmd(2, true), true),
-		ui.KeyShiftU:   ui.NewKeyAction("Sort URL", v.sortColCmd(4, true), true),
+		ui.KeyShiftP:   ui.NewKeyAction("Sort Ports", v.sortColCmd(2, true), false),
+		ui.KeyShiftU:   ui.NewKeyAction("Sort URL", v.sortColCmd(4, true), false),
 	})
 }
 
@@ -210,8 +210,8 @@ func (v *forwardView) getSelectedItem() string {
 
 func (v *forwardView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	tv := v.getTV()
-	if !tv.Cmd().Empty() {
-		tv.Cmd().Reset()
+	if !tv.SearchBuff().Empty() {
+		tv.SearchBuff().Reset()
 		return nil
 	}
 
@@ -243,8 +243,8 @@ func (v *forwardView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	tv := v.getTV()
-	if tv.Cmd().IsActive() {
-		tv.Cmd().Reset()
+	if tv.SearchBuff().IsActive() {
+		tv.SearchBuff().Reset()
 	} else {
 		v.app.inject(v.app.Frame().GetPrimitive("main").(ui.Igniter))
 	}

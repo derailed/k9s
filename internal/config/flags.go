@@ -8,7 +8,7 @@ const (
 	DefaultLogLevel = "info"
 
 	// DefaultCommand represents the default command to run.
-	DefaultCommand = "po"
+	DefaultCommand = ""
 )
 
 // Flags represents K9s configuration flags.

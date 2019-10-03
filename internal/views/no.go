@@ -10,8 +10,8 @@ type nodeView struct {
 	*resourceView
 }
 
-func newNodeView(t string, app *appView, list resource.List) resourceViewer {
-	v := nodeView{newResourceView(t, app, list).(*resourceView)}
+func newNodeView(title, gvr string, app *appView, list resource.List) resourceViewer {
+	v := nodeView{newResourceView(title, gvr, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.showPods
 
@@ -19,10 +19,10 @@ func newNodeView(t string, app *appView, list resource.List) resourceViewer {
 }
 
 func (v *nodeView) extraActions(aa ui.KeyActions) {
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", v.sortColCmd(7, false), true)
-	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", v.sortColCmd(8, false), true)
-	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", v.sortColCmd(9, false), true)
-	aa[ui.KeyShiftZ] = ui.NewKeyAction("Sort MEM%", v.sortColCmd(10, false), true)
+	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", v.sortColCmd(7, false), false)
+	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", v.sortColCmd(8, false), false)
+	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", v.sortColCmd(9, false), false)
+	aa[ui.KeyShiftZ] = ui.NewKeyAction("Sort MEM%", v.sortColCmd(10, false), false)
 }
 
 func (v *nodeView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
@@ -50,13 +50,13 @@ func showPods(app *appView, ns, labelSel, fieldSel string, a ui.ActionHandler) {
 	list.SetLabelSelector(labelSel)
 	list.SetFieldSelector(fieldSel)
 
-	pv := newPodView("Pods", app, list)
+	pv := newPodView("Pod", "v1/pods", app, list)
 	pv.setColorerFn(podColorer)
 	// pv.setExtraActionsFn(func(aa ui.KeyActions) {
 	pv.masterPage().SetActions(ui.KeyActions{
 		tcell.KeyEsc: ui.NewKeyAction("Back", a, true),
 	})
-	// Reset active namespace to all.
+	// Reset active namespace to ns.
 	app.Config.SetActiveNamespace(ns)
 	app.inject(pv)
 }

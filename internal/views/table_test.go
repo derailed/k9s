@@ -72,8 +72,8 @@ func TestTableViewFilter(t *testing.T) {
 		Namespace: "",
 	}
 	v.Update(data)
-	v.Cmd().SetActive(true)
-	v.Cmd().Set([]rune("blee"))
+	v.SearchBuff().SetActive(true)
+	v.SearchBuff().Set("blee")
 	v.filterCmd(nil)
 	assert.Equal(t, 2, v.GetRowCount())
 	v.resetCmd(nil)

@@ -89,24 +89,33 @@ func (r *CustomResourceDefinition) Fields(ns string) Row {
 }
 
 // ExtFields returns extended fields.
-func (r *CustomResourceDefinition) ExtFields() Properties {
-	var (
-		pp = Properties{}
-		i  = r.instance
-	)
-
-	if spec, ok := i.Object["spec"].(map[string]interface{}); ok {
-		if meta, ok := i.Object["metadata"].(map[string]interface{}); ok {
-			pp["name"] = meta["name"]
-		}
-		pp["group"], pp["version"] = spec["group"], spec["version"]
-
-		if names, ok := spec["names"].(map[string]interface{}); ok {
-			pp["kind"] = names["kind"]
-			pp["singular"], pp["plural"] = names["singular"], names["plural"]
-			pp["aliases"] = names["shortNames"]
-		}
+func (r *CustomResourceDefinition) ExtFields(m *TypeMeta) {
+	i := r.instance
+	spec, ok := i.Object["spec"].(map[string]interface{})
+	if !ok {
+		return
 	}
 
-	return pp
+	if meta, ok := i.Object["metadata"].(map[string]interface{}); ok {
+		m.Name = meta["name"].(string)
+	}
+	m.Group, m.Version = spec["group"].(string), spec["version"].(string)
+	m.Namespaced = isNamespaced(spec["scope"].(string))
+	names, ok := spec["names"].(map[string]interface{})
+	if !ok {
+		return
+	}
+	m.Kind = names["kind"].(string)
+	m.Singular, m.Plural = names["singular"].(string), names["plural"].(string)
+	if names["shortNames"] != nil {
+		for _, s := range names["shortNames"].([]interface{}) {
+			m.ShortNames = append(m.ShortNames, s.(string))
+		}
+	} else {
+		m.ShortNames = nil
+	}
+}
+
+func isNamespaced(scope string) bool {
+	return scope == "Namespaced"
 }

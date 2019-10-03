@@ -5,15 +5,14 @@ import (
 
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/rs/zerolog/log"
 )
 
 type contextView struct {
 	*resourceView
 }
 
-func newContextView(title string, app *appView, list resource.List) resourceViewer {
-	v := contextView{newResourceView(title, app, list).(*resourceView)}
+func newContextView(title, gvr string, app *appView, list resource.List) resourceViewer {
+	v := contextView{newResourceView(title, gvr, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.useCtx
 	v.masterPage().SetSelectedFn(v.cleanser)
@@ -50,18 +49,19 @@ func (v *contextView) useContext(name string) error {
 		return err
 	}
 
-	v.app.stopForwarders()
-	ns, err := v.app.Conn().Config().CurrentNamespaceName()
-	if err != nil {
-		log.Info().Err(err).Msg("No namespace specified using all namespaces")
-	}
-	v.app.startInformer(ns)
-	v.app.Config.Reset()
-	v.app.Config.Save()
-	v.app.Flash().Infof("Switching context to %s", ctx)
+	v.app.switchCtx(name, false)
+	// v.app.stopForwarders()
+	// ns, err := v.app.Conn().Config().CurrentNamespaceName()
+	// if err != nil {
+	// 	log.Info().Err(err).Msg("No namespace specified using all namespaces")
+	// }
+	// v.app.startInformer(ns)
+	// v.app.Config.Reset()
+	// v.app.Config.Save()
+	// v.app.Flash().Infof("Switching context to %s", ctx)
 	v.refresh()
 	if tv, ok := v.GetPrimitive("ctx").(*tableView); ok {
-		tv.Select(0, 0)
+		tv.Select(1, 0)
 	}
 
 	return nil

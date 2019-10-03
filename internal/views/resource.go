@@ -37,12 +37,14 @@ type (
 		colorerFn  ui.ColorerFunc
 		decorateFn decorateFn
 		envFn      envFn
+		gvr        string
 	}
 )
 
-func newResourceView(title string, app *appView, list resource.List) resourceViewer {
+func newResourceView(title, gvr string, app *appView, list resource.List) resourceViewer {
 	v := resourceView{
 		list: list,
+		gvr:  gvr,
 	}
 	v.masterDetail = newMasterDetail(title, list.GetNamespace(), app, v.backCmd)
 	v.envFn = v.defaultK9sEnv
@@ -223,7 +225,7 @@ func (v *resourceView) defaultEnter(ns, _, selection string) {
 		return
 	}
 
-	yaml, err := v.list.Resource().Describe(v.masterPage().GetBaseTitle(), selection)
+	yaml, err := v.list.Resource().Describe(v.gvr, selection)
 	if err != nil {
 		v.app.Flash().Errf("Describe command failed: %s", err)
 		return
@@ -316,7 +318,7 @@ func (v *resourceView) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.refresh()
 	v.masterPage().UpdateTitle()
 	v.masterPage().SelectRow(1, true)
-	v.app.GetCmdBuff().Reset()
+	v.app.CmdBuff().Reset()
 	v.app.Config.SetActiveNamespace(v.currentNS)
 	v.app.Config.Save()
 
@@ -333,7 +335,7 @@ func (v *resourceView) refresh() {
 		v.list.SetNamespace(v.currentNS)
 	}
 	if err := v.list.Reconcile(v.app.informer, v.path); err != nil {
-		v.app.Flash().Errf("Reconciliation for %s failed - %s", v.list.GetName(), err)
+		v.app.Flash().Err(err)
 	}
 	data := v.list.Data()
 	if v.decorateFn != nil {
@@ -343,6 +345,10 @@ func (v *resourceView) refresh() {
 }
 
 func (v *resourceView) namespaceActions(aa ui.KeyActions) {
+	ns, err := v.app.Conn().Config().CurrentNamespaceName()
+	if err == nil && ns != resource.AllNamespace {
+		return
+	}
 	if !v.list.Access(resource.NamespaceAccess) {
 		return
 	}
@@ -393,7 +399,13 @@ func (v *resourceView) refreshActions() {
 }
 
 func (v *resourceView) customActions(aa ui.KeyActions) {
-	for k, plugin := range v.app.Config.K9s.Plugins {
+	pp := config.NewPlugins()
+	if err := pp.Load(); err != nil {
+		log.Warn().Msgf("No plugin configuration found")
+		return
+	}
+
+	for k, plugin := range pp.Plugin {
 		if !in(plugin.Scopes, v.list.GetName()) {
 			continue
 		}
@@ -420,10 +432,12 @@ func (v *resourceView) execCmd(bin string, bg bool, args ...string) ui.ActionHan
 			return evt
 		}
 
-		env := v.envFn()
-		aa := make([]string, len(args))
+		var (
+			env = v.envFn()
+			aa  = make([]string, len(args))
+			err error
+		)
 		for i, a := range args {
-			var err error
 			aa[i], err = env.envFor(a)
 			if err != nil {
 				log.Error().Err(err).Msg("Args match failed")
@@ -442,16 +456,34 @@ func (v *resourceView) execCmd(bin string, bg bool, args ...string) ui.ActionHan
 
 func (v *resourceView) defaultK9sEnv() K9sEnv {
 	ns, n := namespaced(v.masterPage().GetSelectedItem())
+	ctx, err := v.app.Conn().Config().CurrentContextName()
+	if err != nil {
+		ctx = "n/a"
+	}
+	cluster, err := v.app.Conn().Config().CurrentClusterName()
+	if err != nil {
+		cluster = "n/a"
+	}
+	user, err := v.app.Conn().Config().CurrentUserName()
+	if err != nil {
+		user = "n/a"
+	}
+	groups, err := v.app.Conn().Config().CurrentGroupNames()
+	if err != nil {
+		groups = []string{"n/a"}
+	}
 	env := K9sEnv{
 		"NAMESPACE": ns,
 		"NAME":      n,
+		"CONTEXT":   ctx,
+		"CLUSTER":   cluster,
+		"USER":      user,
+		"GROUPS":    strings.Join(groups, ","),
 	}
-
 	row := v.masterPage().GetRow()
 	for i, r := range row {
-		env["COL-"+strconv.Itoa(i)] = r
+		env["COL"+strconv.Itoa(i)] = r
 	}
 
-	log.Debug().Msgf("ENVs %#v", env)
 	return env
 }

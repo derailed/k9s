@@ -26,20 +26,6 @@ const NA = "n/a"
 var supportedMetricsAPIVersions = []string{"v1beta1"}
 
 type (
-	// GKV tracks api resource version info.
-	GKV struct {
-		Group, Kind, Version string
-	}
-
-	// APIGroup represents a K8s resource descriptor.
-	APIGroup struct {
-		GKV
-
-		Resource         string
-		Plural, Singular string
-		Aliases          []string
-	}
-
 	// Collection of empty interfaces.
 	Collection []interface{}
 
@@ -72,7 +58,7 @@ type (
 		CurrentNamespaceName() (string, error)
 		CheckNSAccess(ns string) error
 		CheckListNSAccess() error
-		CanIAccess(ns, resURL string, verbs []string) (bool, error)
+		CanIAccess(ns, rvg string, verbs []string) (bool, error)
 	}
 
 	k8sClient struct {
@@ -121,12 +107,12 @@ func (a *APIClient) CheckNSAccess(n string) error {
 	return err
 }
 
-func makeSAR(ns, resURL string) *authorizationv1.SelfSubjectAccessReview {
-	gvr, _ := schema.ParseResourceArg(strings.ToLower(resURL))
+func makeSAR(ns, rvg string) *authorizationv1.SelfSubjectAccessReview {
+	gvr, _ := schema.ParseResourceArg(strings.ToLower(rvg))
 	if gvr == nil {
-		panic(fmt.Errorf("Unable to get GVR from url %s", resURL))
+		panic(fmt.Errorf("Unable to get GVR from url %s", rvg))
 	}
-	log.Debug().Msgf("GVR for %s -- %#v", resURL, *gvr)
+	log.Debug().Msgf("GVR for %s -- %#v", rvg, *gvr)
 	return &authorizationv1.SelfSubjectAccessReview{
 		Spec: authorizationv1.SelfSubjectAccessReviewSpec{
 			ResourceAttributes: &authorizationv1.ResourceAttributes{
@@ -139,8 +125,8 @@ func makeSAR(ns, resURL string) *authorizationv1.SelfSubjectAccessReview {
 }
 
 // CanIAccess checks if user has access to a certain resource.
-func (a *APIClient) CanIAccess(ns, resURL string, verbs []string) (bool, error) {
-	sar := makeSAR(ns, resURL)
+func (a *APIClient) CanIAccess(ns, rvg string, verbs []string) (bool, error) {
+	sar := makeSAR(ns, rvg)
 	dial := a.DialOrDie().AuthorizationV1().SelfSubjectAccessReviews()
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
@@ -210,7 +196,7 @@ func (a *APIClient) IsNamespaced(res string) bool {
 func (a *APIClient) SupportsResource(group string) bool {
 	list, err := a.DialOrDie().Discovery().ServerPreferredResources()
 	if err != nil {
-		log.Debug().Err(err).Msg("Unable to dial api server")
+		log.Error().Err(err).Msg("Unable to dial api server")
 		return false
 	}
 	for _, l := range list {
@@ -294,7 +280,7 @@ func (a *APIClient) MXDial() (*versioned.Clientset, error) {
 	}
 	var err error
 	if a.mxsClient, err = versioned.NewForConfig(a.RestConfigOrDie()); err != nil {
-		a.log.Debug().Err(err)
+		a.log.Error().Err(err)
 	}
 
 	return a.mxsClient, err

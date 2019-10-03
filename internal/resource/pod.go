@@ -16,7 +16,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/kubernetes/pkg/util/node"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -389,7 +388,7 @@ func isSet(s *string) bool {
 func (r *Pod) phase(po *v1.Pod) string {
 	status := string(po.Status.Phase)
 	if po.Status.Reason != "" {
-		if po.DeletionTimestamp != nil && po.Status.Reason == node.NodeUnreachablePodReason {
+		if po.DeletionTimestamp != nil && po.Status.Reason == "NodeLost" {
 			return "Unknown"
 		}
 		status = po.Status.Reason

@@ -14,16 +14,17 @@ func TestK9sEnv(t *testing.T) {
 		err error
 		e   string
 	}{
-		"match":   {q: "$A", err: nil, e: "10"},
+		"match":   {q: "$A", e: "10"},
 		"noMatch": {q: "$BLEE", err: errors.New("No matching for $BLEE"), e: ""},
-		"lower":   {q: "$b", err: nil, e: "blee"},
-		"dash":    {q: "$col-0", err: nil, e: "fred"},
+		"lower":   {q: "$b", e: "blee"},
+		"dash":    {q: "$col0", e: "fred"},
+		"mix":     {q: "$col0-blee", e: "fred-blee"},
 	}
 
 	e := K9sEnv{
-		"A":     "10",
-		"B":     "blee",
-		"COL-0": "fred",
+		"A":    "10",
+		"B":    "blee",
+		"COL0": "fred",
 	}
 
 	for k, u := range uu {

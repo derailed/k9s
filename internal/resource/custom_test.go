@@ -130,7 +130,7 @@ func k8sCustomRow() *metav1beta1.TableRow {
 
 func newCustom() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewCustom(mc, "g", "v1", "fred").New(k8sCustomRow())
+	return resource.NewCustom(mc, "g/v1/fred").New(k8sCustomRow())
 }
 
 func customYaml() string {

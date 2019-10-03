@@ -57,7 +57,7 @@ func (r *ReplicaSet) Marshal(path string) (string, error) {
 	}
 
 	rs := i.(*v1.ReplicaSet)
-	rs.TypeMeta.APIVersion = "extensions/v1beta"
+	rs.TypeMeta.APIVersion = "apps/v1"
 	rs.TypeMeta.Kind = "ReplicaSet"
 
 	return r.marshalObject(rs)

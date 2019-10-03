@@ -17,12 +17,20 @@ func newTableView(app *appView, title string) *tableView {
 		Table: ui.NewTable(title, app.Styles),
 		app:   app,
 	}
-	v.Cmd().AddListener(app.Cmd())
-	v.Cmd().Reset()
-
+	v.SearchBuff().AddListener(app.Cmd())
+	v.SearchBuff().AddListener(&v)
+	v.SearchBuff().Set(app.filter)
 	v.bindKeys()
 
 	return &v
+}
+
+// BufferChanged indicates the buffer was changed.
+func (v *tableView) BufferChanged(s string) {}
+
+// BufferActive indicates the buff activity changed.
+func (v *tableView) BufferActive(state bool, k ui.BufferKind) {
+	v.app.BufferActive(state, k)
 }
 
 func (v *tableView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -37,6 +45,11 @@ func (v *tableView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (v *tableView) setFilterFn(fn func(string)) {
 	v.filterFn = fn
+
+	cmd := v.SearchBuff().String()
+	if isLabelSelector(cmd) && v.filterFn != nil {
+		v.filterFn(trimLabelSelector(cmd))
+	}
 }
 
 func (v *tableView) bindKeys() {
@@ -49,18 +62,19 @@ func (v *tableView) bindKeys() {
 		tcell.KeyBackspace:  ui.NewKeyAction("Erase", v.eraseCmd, false),
 		tcell.KeyDelete:     ui.NewKeyAction("Erase", v.eraseCmd, false),
 		ui.KeyShiftI:        ui.NewKeyAction("Invert", v.SortInvertCmd, false),
-		ui.KeyShiftN:        ui.NewKeyAction("Sort Name", v.SortColCmd(0), true),
-		ui.KeyShiftA:        ui.NewKeyAction("Sort Age", v.SortColCmd(-1), true),
+		ui.KeyShiftN:        ui.NewKeyAction("Sort Name", v.SortColCmd(0), false),
+		ui.KeyShiftA:        ui.NewKeyAction("Sort Age", v.SortColCmd(-1), false),
 	})
 }
 
 func (v *tableView) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.Cmd().IsActive() {
+	if !v.SearchBuff().IsActive() {
 		return evt
 	}
 
-	v.Cmd().SetActive(false)
-	cmd := v.Cmd().String()
+	v.SearchBuff().SetActive(false)
+	cmd := v.SearchBuff().String()
+	v.app.filter = cmd
 	if isLabelSelector(cmd) && v.filterFn != nil {
 		v.filterFn(trimLabelSelector(cmd))
 		return nil
@@ -71,21 +85,22 @@ func (v *tableView) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *tableView) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if v.Cmd().IsActive() {
-		v.Cmd().Delete()
+	if v.SearchBuff().IsActive() {
+		v.SearchBuff().Delete()
 	}
 
 	return nil
 }
 
 func (v *tableView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.Cmd().Empty() {
+	if !v.SearchBuff().Empty() {
 		v.app.Flash().Info("Clearing filter...")
 	}
-	if isLabelSelector(v.Cmd().String()) {
+	v.app.filter = ""
+	if isLabelSelector(v.SearchBuff().String()) {
 		v.filterFn("")
 	}
-	v.Cmd().Reset()
+	v.SearchBuff().Reset()
 	v.Refresh()
 
 	return nil
@@ -97,11 +112,12 @@ func (v *tableView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	v.app.Flash().Info("Filter mode activated.")
-	if isLabelSelector(v.Cmd().String()) {
-		return nil
-	}
-	v.Cmd().Reset()
-	v.Cmd().SetActive(true)
+	// if isLabelSelector(v.SearchBuff().String()) {
+	// 	return nil
+	// }
+	// v.SearchBuff().Reset()
+	v.SearchBuff().SetActive(true)
+	v.SearchBuff().Set(v.app.filter)
 
 	return nil
 }

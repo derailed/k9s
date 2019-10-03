@@ -20,6 +20,7 @@ const (
 	splashTime     = 1
 	devMode        = "dev"
 	clusterRefresh = time.Duration(5 * time.Second)
+	indicatorFmt   = "[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s%%[white::]::[darkturquoise::]%s%%"
 )
 
 type (
@@ -54,6 +55,8 @@ type (
 		stopCh     chan struct{}
 		forwarders map[string]forwarder
 		version    string
+		showHeader bool
+		filter     string
 	}
 )
 
@@ -76,11 +79,13 @@ func NewApp(cfg *config.Config) *appView {
 
 func (a *appView) Init(version string, rate int) {
 	a.version = version
+	a.CmdBuff().AddListener(a)
 	a.App.Init()
 
 	a.AddActions(ui.KeyActions{
+		tcell.KeyCtrlH: ui.NewKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
 		ui.KeyHelp:     ui.NewKeyAction("Help", a.helpCmd, false),
-		tcell.KeyCtrlA: ui.NewKeyAction("Aliases", a.aliasCmd, true),
+		tcell.KeyCtrlA: ui.NewKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
 	})
 
@@ -96,29 +101,60 @@ func (a *appView) Init(version string, rate int) {
 		}
 	}
 
-	header := tview.NewFlex()
-	{
-		header.SetDirection(tview.FlexColumn)
-		header.AddItem(a.clusterInfo(), 35, 1, false)
-		header.AddItem(a.Menu(), 0, 1, false)
-		header.AddItem(a.Logo(), 26, 1, false)
-	}
-
 	main := tview.NewFlex()
 	main.SetDirection(tview.FlexRow)
+	a.Main().AddPage("main", main, true, false)
+	a.Main().AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
 
-	if !a.Config.K9s.GetHeadless() {
-		main.AddItem(header, 7, 1, false)
-	} else {
-		main.AddItem(a.indicator(), 1, 1, false)
-	}
-	main.AddItem(a.Cmd(), 3, 1, false)
+	main.AddItem(a.indicator(), 1, 1, false)
 	main.AddItem(a.Frame(), 0, 10, true)
 	main.AddItem(a.Crumbs(), 2, 1, false)
 	main.AddItem(a.Flash(), 1, 1, false)
+	a.toggleHeader(!a.Config.K9s.GetHeadless())
+}
 
-	a.Main().AddPage("main", main, true, false)
-	a.Main().AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
+// Changed indicates the buffer was changed.
+func (a *appView) BufferChanged(s string) {}
+
+// Active indicates the buff activity changed.
+func (a *appView) BufferActive(state bool, _ ui.BufferKind) {
+	flex, ok := a.Main().GetPrimitive("main").(*tview.Flex)
+	if !ok {
+		return
+	}
+	if state {
+		flex.AddItemAtIndex(1, a.Cmd(), 3, 1, false)
+	} else if flex.ItemAt(1) == a.Cmd() {
+		flex.RemoveItemAtIndex(1)
+	}
+	a.Draw()
+}
+
+func (a *appView) toggleHeader(flag bool) {
+	a.showHeader = flag
+	flex := a.Main().GetPrimitive("main").(*tview.Flex)
+	if a.showHeader {
+		flex.RemoveItemAtIndex(0)
+		flex.AddItemAtIndex(0, a.buildHeader(), 7, 1, false)
+	} else {
+		flex.RemoveItemAtIndex(0)
+		flex.AddItemAtIndex(0, a.indicator(), 1, 1, false)
+		a.refreshIndicator()
+	}
+}
+
+func (a *appView) buildHeader() tview.Primitive {
+	header := tview.NewFlex()
+	header.SetBorderPadding(0, 0, 1, 1)
+	header.SetDirection(tview.FlexColumn)
+	if !a.showHeader {
+		return header
+	}
+	header.AddItem(a.clusterInfo(), 35, 1, false)
+	header.AddItem(a.Menu(), 0, 1, false)
+	header.AddItem(a.Logo(), 26, 1, false)
+
+	return header
 }
 
 func (a *appView) clusterUpdater(ctx context.Context) {
@@ -129,10 +165,11 @@ func (a *appView) clusterUpdater(ctx context.Context) {
 			return
 		case <-time.After(clusterRefresh):
 			a.QueueUpdateDraw(func() {
-				if a.Config.K9s.GetHeadless() {
+				if !a.showHeader {
 					a.refreshIndicator()
+				} else {
+					a.clusterInfo().refresh()
 				}
-				a.clusterInfo().refresh()
 			})
 		}
 	}
@@ -157,7 +194,7 @@ func (a *appView) refreshIndicator() {
 	}
 
 	info := fmt.Sprintf(
-		"[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s%%[white::]::[darkturquoise::]%s%%",
+		indicatorFmt,
 		a.version,
 		cluster.ClusterName(),
 		cluster.UserName(),
@@ -168,22 +205,58 @@ func (a *appView) refreshIndicator() {
 	a.indicator().SetPermanent(info)
 }
 
-func (a *appView) startInformer(ns string) {
+func (a *appView) switchNS(ns string) bool {
+	if ns == a.Config.ActiveNamespace() {
+		log.Debug().Msgf("Namespace did not change %s", ns)
+		return true
+	}
+	a.Config.SetActiveNamespace(ns)
+
+	return a.startInformer(ns)
+}
+
+func (a *appView) switchCtx(ctx string, load bool) error {
+	l := resource.NewContext(a.Conn())
+	if err := l.Switch(ctx); err != nil {
+		return err
+	}
+
+	a.stopForwarders()
+	ns, err := a.Conn().Config().CurrentNamespaceName()
+	if err != nil {
+		log.Info().Err(err).Msg("No namespace specified using all namespaces")
+	}
+	a.startInformer(ns)
+	a.Config.Reset()
+	a.Config.Save()
+	a.Flash().Infof("Switching context to %s", ctx)
+	if load {
+		a.gotoResource("po", true)
+	}
+
+	return nil
+}
+
+func (a *appView) startInformer(ns string) bool {
 	if a.stopCh != nil {
 		close(a.stopCh)
+		a.stopCh = nil
 	}
 
 	var err error
-	a.stopCh = make(chan struct{})
 	a.informer, err = watch.NewInformer(a.Conn(), ns)
 	if err != nil {
-		log.Panic().Err(err).Msgf("%v", err)
+		log.Error().Err(err).Msgf("%v", err)
+		a.Flash().Err(err)
+		return false
 	}
+	a.stopCh = make(chan struct{})
 	a.informer.Run(a.stopCh)
-
 	if a.Config.K9s.GetHeadless() {
 		a.refreshIndicator()
 	}
+
+	return true
 }
 
 // BailOut exists the application.
@@ -273,6 +346,14 @@ func (a *appView) setIndicator(l ui.FlashLevel, msg string) {
 	a.Draw()
 }
 
+func (a *appView) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
+	a.showHeader = !a.showHeader
+	a.toggleHeader(a.showHeader)
+	a.Draw()
+
+	return nil
+}
+
 func (a *appView) prevCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if top, ok := a.command.previousCmd(); ok {
 		log.Debug().Msgf("Previous command %s", top)
@@ -283,7 +364,7 @@ func (a *appView) prevCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *appView) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.GetCmdBuff().IsActive() && !a.GetCmdBuff().Empty() {
+	if a.CmdBuff().IsActive() && !a.CmdBuff().Empty() {
 		a.gotoResource(a.GetCmd(), true)
 		a.ResetCmd()
 		return nil
@@ -294,26 +375,19 @@ func (a *appView) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *appView) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.InCmdMode() {
-		return evt
-	}
 	if _, ok := a.Frame().GetPrimitive("main").(*helpView); ok {
 		return evt
 	}
-
 	h := newHelpView(a, a.ActiveView(), a.GetHints())
 	a.inject(h)
+
 	return nil
 }
 
 func (a *appView) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.InCmdMode() {
-		return evt
-	}
 	if _, ok := a.Frame().GetPrimitive("main").(*aliasView); ok {
 		return evt
 	}
-
 	a.inject(newAliasView(a, a.ActiveView()))
 
 	return nil
@@ -337,10 +411,8 @@ func (a *appView) inject(i ui.Igniter) {
 	}
 	a.Frame().RemovePage("main")
 	var ctx context.Context
-	{
-		ctx, a.cancel = context.WithCancel(context.Background())
-		i.Init(ctx, a.Config.ActiveNamespace())
-	}
+	ctx, a.cancel = context.WithCancel(context.Background())
+	i.Init(ctx, a.Config.ActiveNamespace())
 	a.Frame().AddPage("main", i, true, true)
 	a.SetFocus(i)
 }

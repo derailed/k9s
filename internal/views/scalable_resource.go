@@ -17,8 +17,8 @@ type (
 	}
 )
 
-func newScalableResourceView(title string, app *appView, list resource.List) resourceViewer {
-	return *newScalableResourceViewForParent(newResourceView(title, app, list).(*resourceView))
+func newScalableResourceView(title, gvr string, app *appView, list resource.List) resourceViewer {
+	return *newScalableResourceViewForParent(newResourceView(title, gvr, app, list).(*resourceView))
 }
 
 func newScalableResourceViewForParent(parent *resourceView) *scalableResourceView {

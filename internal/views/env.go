@@ -10,7 +10,7 @@ import (
 type K9sEnv map[string]string
 
 // EnvRX match $XXX custom arg.
-var envRX = regexp.MustCompile(`\A\$([\w|-]+)`)
+var envRX = regexp.MustCompile(`\A\$([\w]+)`)
 
 func (e K9sEnv) envFor(n string) (string, error) {
 	envs := envRX.FindStringSubmatch(n)
@@ -22,5 +22,5 @@ func (e K9sEnv) envFor(n string) (string, error) {
 		return "", fmt.Errorf("No matching for %s", n)
 	}
 
-	return env, nil
+	return envRX.ReplaceAllString(n, env), nil
 }

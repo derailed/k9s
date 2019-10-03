@@ -12,8 +12,6 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-
-	// "github.com/ktr0731/go-fuzzyfinder/matching"
 	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 	"k8s.io/apimachinery/pkg/util/duration"
@@ -52,7 +50,7 @@ func NewTable(title string, styles *config.Styles) *Table {
 		Table:     tview.NewTable(),
 		styles:    styles,
 		actions:   make(KeyActions),
-		cmdBuff:   NewCmdBuff('/'),
+		cmdBuff:   NewCmdBuff('/', FilterBuff),
 		baseTitle: title,
 		sortCol:   SortColumn{0, 0, true},
 	}
@@ -174,10 +172,11 @@ func (v *Table) GetSelectedItem() string {
 func (v *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	key := evt.Key()
 	if key == tcell.KeyRune {
-		if v.Cmd().IsActive() {
-			v.Cmd().Add(evt.Rune())
+		if v.SearchBuff().IsActive() {
+			v.SearchBuff().Add(evt.Rune())
 			v.ClearSelection()
 			v.doUpdate(v.filtered())
+			v.UpdateTitle()
 			v.SelectFirstRow()
 			return nil
 		}
@@ -185,7 +184,6 @@ func (v *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if a, ok := v.actions[key]; ok {
-		log.Debug().Msgf(">> TableView handled %s", tcell.KeyNames[key])
 		return a.Action(evt)
 	}
 
@@ -242,7 +240,7 @@ func (v *Table) Update(data resource.TableData) {
 func (v *Table) doUpdate(data resource.TableData) {
 	v.activeNS = data.Namespace
 	if v.activeNS == resource.AllNamespaces && v.activeNS != "*" {
-		v.actions[KeyShiftP] = NewKeyAction("Sort Namespace", v.SortColCmd(-2), true)
+		v.actions[KeyShiftP] = NewKeyAction("Sort Namespace", v.SortColCmd(-2), false)
 	} else {
 		delete(v.actions, KeyShiftP)
 	}
@@ -384,7 +382,7 @@ func (v *Table) filtered() resource.TableData {
 
 	q := v.cmdBuff.String()
 	if isFuzzySelector(q) {
-		return v.fuzzFilter(q[2:])
+		return v.fuzzyFilter(q[2:])
 	}
 
 	return v.rxFilter(q)
@@ -413,7 +411,7 @@ func (v *Table) rxFilter(q string) resource.TableData {
 	return filtered
 }
 
-func (v *Table) fuzzFilter(q string) resource.TableData {
+func (v *Table) fuzzyFilter(q string) resource.TableData {
 	var ss, kk []string
 	for k, row := range v.data.Rows {
 		ss = append(ss, row.Fields[v.NameColIndex()])
@@ -438,8 +436,8 @@ func (v *Table) KeyBindings() KeyActions {
 	return v.actions
 }
 
-// Cmd returns the associated command buffer.
-func (v *Table) Cmd() *CmdBuff {
+// SearchBuff returns the associated command buffer.
+func (v *Table) SearchBuff() *CmdBuff {
 	return v.cmdBuff
 }
 
@@ -507,7 +505,7 @@ func (v *Table) UpdateTitle() {
 		title = skinTitle(fmt.Sprintf(nsTitleFmt, v.baseTitle, ns, rc), v.styles.Frame())
 	}
 
-	if !v.cmdBuff.IsActive() && !v.cmdBuff.Empty() {
+	if !v.cmdBuff.Empty() {
 		cmd := v.cmdBuff.String()
 		if isLabelSelector(cmd) {
 			cmd = trimLabelSelector(cmd)

@@ -21,8 +21,8 @@ type namespaceView struct {
 	*resourceView
 }
 
-func newNamespaceView(t string, app *appView, list resource.List) resourceViewer {
-	v := namespaceView{newResourceView(t, app, list).(*resourceView)}
+func newNamespaceView(title, gvr string, app *appView, list resource.List) resourceViewer {
+	v := namespaceView{newResourceView(title, gvr, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
 	v.masterPage().SetSelectedFn(v.cleanser)
 	v.decorateFn = v.decorate
@@ -56,6 +56,7 @@ func (v *namespaceView) useNamespace(ns string) {
 		v.app.Flash().Infof("Namespace %s is now active!", ns)
 	}
 	v.app.Config.Save()
+	v.app.startInformer(ns)
 }
 
 func (*namespaceView) cleanser(s string) string {

@@ -5,6 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
+	"github.com/gdamore/tcell"
 )
 
 const defaultPrompt = "%c> %s"
@@ -20,8 +21,8 @@ type CmdView struct {
 }
 
 // NewCmdView returns a new command view.
-func NewCmdView(styles *config.Styles, ic rune) *CmdView {
-	v := CmdView{styles: styles, icon: ic, TextView: tview.NewTextView()}
+func NewCmdView(styles *config.Styles) *CmdView {
+	v := CmdView{styles: styles, TextView: tview.NewTextView()}
 	{
 		v.SetWordWrap(true)
 		v.SetWrap(true)
@@ -29,7 +30,7 @@ func NewCmdView(styles *config.Styles, ic rune) *CmdView {
 		v.SetBorder(true)
 		v.SetBorderPadding(0, 0, 1, 1)
 		v.SetBackgroundColor(styles.BgColor())
-		v.SetBorderColor(config.AsColor(styles.Frame().Border.FocusColor))
+		// v.SetBorderColor(config.AsColor(styles.Frame().Border.FocusColor))
 		v.SetTextColor(styles.FgColor())
 	}
 	return &v
@@ -61,19 +62,40 @@ func (v *CmdView) write(s string) {
 // ----------------------------------------------------------------------------
 // Event Listener protocol...
 
-func (v *CmdView) changed(s string) {
+// BufferChanged indicates the buffer was changed.
+func (v *CmdView) BufferChanged(s string) {
 	v.update(s)
 }
 
-func (v *CmdView) active(f bool) {
+// BufferActive indicates the buff activity changed.
+func (v *CmdView) BufferActive(f bool, k BufferKind) {
 	v.activated = f
 	if f {
 		v.SetBorder(true)
+		v.icon = iconFor(k)
 		v.SetTextColor(v.styles.FgColor())
+		v.SetBorderColor(colorFor(k))
 		v.activate()
 	} else {
 		v.SetBorder(false)
 		v.SetBackgroundColor(v.styles.BgColor())
 		v.Clear()
+	}
+}
+
+func colorFor(k BufferKind) tcell.Color {
+	switch k {
+	case CommandBuff:
+		return tcell.ColorAqua
+	default:
+		return tcell.ColorSeaGreen
+	}
+}
+func iconFor(k BufferKind) rune {
+	switch k {
+	case CommandBuff:
+		return '🐶'
+	default:
+		return '🤓'
 	}
 }

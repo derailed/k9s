@@ -64,17 +64,12 @@ type Informer struct {
 // NewInformer creates a new cluster resource informer
 func NewInformer(client k8s.Connection, ns string) (*Informer, error) {
 	i := Informer{client: client, informers: map[string]StoreInformer{}}
-	if client.CheckListNSAccess() == nil {
-		i.init(allNamespaces)
-		return &i, nil
-	}
-
 	if err := client.CheckNSAccess(ns); err != nil {
 		log.Error().Err(err).Msg("Checking NS Access")
 		return nil, err
 	}
-
 	i.init(ns)
+
 	return &i, nil
 }
 

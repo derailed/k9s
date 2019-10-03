@@ -30,15 +30,24 @@ var (
 )
 
 type (
-	// Connection present a kubernetes api server connection.
+	// Connection represents a kubernetes api server connection.
 	Connection k8s.Connection
 
-	// KubeSettings exposes kubeconfig context informations.
+	// KubeSettings exposes kubeconfig context information.
 	KubeSettings interface {
+		// CurrentContextName returns the name of the current context.
 		CurrentContextName() (string, error)
+
+		// CurrentClusterName returns the name of the current cluster.
 		CurrentClusterName() (string, error)
+
+		// CurrentNamespace returns the name of the current namespace.
 		CurrentNamespaceName() (string, error)
+
+		// ClusterNames() returns all available cluster names.
 		ClusterNames() ([]string, error)
+
+		// NamespaceNames returns all available namespace names.
 		NamespaceNames(nn []v1.Namespace) []string
 	}
 
@@ -180,7 +189,6 @@ func (c *Config) Load(path string) error {
 	if cfg.K9s != nil {
 		c.K9s = cfg.K9s
 	}
-	log.Debug().Msgf("Headless ? %t", c.K9s.Headless)
 	return nil
 }
 

@@ -125,7 +125,7 @@ func (v *rbacView) bindKeys() {
 		tcell.KeyEscape: ui.NewKeyAction("Reset", v.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", v.activateCmd, false),
 		ui.KeyP:         ui.NewKeyAction("Previous", v.app.prevCmd, false),
-		ui.KeyShiftO:    ui.NewKeyAction("Sort APIGroup", v.SortColCmd(1), true),
+		ui.KeyShiftO:    ui.NewKeyAction("Sort APIGroup", v.SortColCmd(1), false),
 	})
 }
 
@@ -136,14 +136,15 @@ func (v *rbacView) getTitle() string {
 func (v *rbacView) refresh() {
 	data, err := v.reconcile(v.ActiveNS(), v.roleName, v.roleType)
 	if err != nil {
-		log.Error().Err(err).Msgf("Unable to reconcile for %s:%d", v.roleName, v.roleType)
+		log.Error().Err(err).Msgf("Refresh for %s:%d", v.roleName, v.roleType)
+		v.app.Flash().Err(err)
 	}
 	v.Update(data)
 }
 
 func (v *rbacView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.Cmd().Empty() {
-		v.Cmd().Reset()
+	if !v.SearchBuff().Empty() {
+		v.SearchBuff().Reset()
 		return nil
 	}
 
@@ -155,8 +156,8 @@ func (v *rbacView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.cancel()
 	}
 
-	if v.Cmd().IsActive() {
-		v.Cmd().Reset()
+	if v.SearchBuff().IsActive() {
+		v.SearchBuff().Reset()
 		return nil
 	}
 

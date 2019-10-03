@@ -7,7 +7,6 @@ import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 // Igniter represents an initializable view.
@@ -55,7 +54,7 @@ func NewApp() *App {
 		actions:     make(KeyActions),
 		pages:       tview.NewPages(),
 		content:     tview.NewPages(),
-		cmdBuff:     NewCmdBuff(':'),
+		cmdBuff:     NewCmdBuff(':', CommandBuff),
 	}
 
 	s.RefreshStyles()
@@ -63,7 +62,7 @@ func NewApp() *App {
 	s.views = map[string]tview.Primitive{
 		"menu":   NewMenuView(s.Styles),
 		"logo":   NewLogoView(s.Styles),
-		"cmd":    NewCmdView(s.Styles, '🐶'),
+		"cmd":    NewCmdView(s.Styles),
 		"crumbs": NewCrumbsView(s.Styles),
 	}
 
@@ -125,8 +124,8 @@ func (a *App) GetCmd() string {
 	return a.cmdBuff.String()
 }
 
-// GetCmdBuff returns a cmd buffer.
-func (a *App) GetCmdBuff() *CmdBuff {
+// CmdBuff returns a cmd buffer.
+func (a *App) CmdBuff() *CmdBuff {
 	return a.cmdBuff
 }
 
@@ -177,7 +176,6 @@ func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if a, ok := a.actions[key]; ok {
-		log.Debug().Msgf(">> App handled key: %s", tcell.KeyNames[key])
 		return a.Action(evt)
 	}
 
@@ -188,7 +186,6 @@ func (a *App) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.InCmdMode() {
 		return evt
 	}
-	a.Flash().Info("Command mode activated.")
 	a.cmdBuff.SetActive(true)
 	a.cmdBuff.Clear()
 

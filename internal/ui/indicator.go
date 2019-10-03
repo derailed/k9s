@@ -13,14 +13,14 @@ import (
 // IndicatorView represents a status indicator.
 type IndicatorView struct {
 	*tview.TextView
+
 	app       *App
 	styles    *config.Styles
 	permanent string
-
-	cancel context.CancelFunc
+	cancel    context.CancelFunc
 }
 
-// NewIndicatorView returns a new logo.
+// NewIndicatorView returns a new status indicator.
 func NewIndicatorView(app *App, styles *config.Styles) *IndicatorView {
 	v := IndicatorView{
 		TextView: tview.NewTextView(),

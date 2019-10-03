@@ -42,7 +42,7 @@ func TestNewHelpView(t *testing.T) {
 	cfg := config.NewConfig(ks{})
 	a := NewApp(cfg)
 
-	v := newHelpView(a, nil, ui.Hints{{"blee", "duh"}})
+	v := newHelpView(a, nil, ui.Hints{{Mnemonic: "blee", Description: "duh"}})
 	v.Init(nil, "")
 
 	assert.Equal(t, "<blee>", v.GetCell(1, 0).Text)

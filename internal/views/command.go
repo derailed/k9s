@@ -1,8 +1,12 @@
 package views
 
 import (
+	"fmt"
 	"regexp"
+	"strings"
+	"time"
 
+	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/rs/zerolog/log"
@@ -41,27 +45,34 @@ func (c *command) previousCmd() (string, bool) {
 
 // DefaultCmd reset default command ie show pods.
 func (c *command) defaultCmd() {
-	c.pushCmd(c.app.Config.ActiveView())
-	c.run(c.app.Config.ActiveView())
+	cmd := c.app.Config.ActiveView()
+	c.pushCmd(cmd)
+	if !c.run(cmd) {
+		log.Error().Err(fmt.Errorf("Unable to load command %s", cmd)).Msg("Command failed")
+	}
 }
 
 // Helpers...
 
-var policyMatcher = regexp.MustCompile(`\Apol\s([u|g|s]):([\w-:]+)\b`)
+var authRX = regexp.MustCompile(`\Apol\s([u|g|s]):([\w-:]+)\b`)
 
-func (c *command) isStdCmd(cmd string) bool {
-	switch {
-	case cmd == "q", cmd == "quit":
+func (c *command) isK9sCmd(cmd string) bool {
+	cmds := strings.Split(cmd, " ")
+	switch cmds[0] {
+	case "q", "quit":
 		c.app.BailOut()
 		return true
-	case cmd == "?", cmd == "help":
+	case "?", "help":
 		c.app.helpCmd(nil)
 		return true
-	case cmd == "alias":
+	case "alias":
 		c.app.aliasCmd(nil)
 		return true
-	case policyMatcher.MatchString(cmd):
-		tokens := policyMatcher.FindAllStringSubmatch(cmd, -1)
+	default:
+		if !authRX.MatchString(cmd) {
+			return false
+		}
+		tokens := authRX.FindAllStringSubmatch(cmd, -1)
 		if len(tokens) == 1 && len(tokens[0]) == 3 {
 			c.app.inject(newPolicyView(c.app, tokens[0][1], tokens[0][2]))
 			return true
@@ -70,84 +81,108 @@ func (c *command) isStdCmd(cmd string) bool {
 	return false
 }
 
-func (c *command) isAliasCmd(cmd string) bool {
-	cmds := make(map[string]*resCmd, 30)
-	resourceViews(c.app.Conn(), cmds)
-	res, ok := cmds[cmd]
-	if !ok {
-		return false
-	}
+// load scrape api for resources and populate aliases.
+func (c *command) load() viewers {
+	vv := make(viewers, 100)
+	resourceViews(c.app.Conn(), vv)
+	allCRDs(c.app.Conn(), vv)
 
-	var r resource.List
-	if res.listFn != nil {
-		r = res.listFn(c.app.Conn(), resource.DefaultNamespace)
-	}
-
-	v := res.viewFn(res.kind, c.app, r)
-	if res.colorerFn != nil {
-		v.setColorerFn(res.colorerFn)
-	}
-	if res.enterFn != nil {
-		v.setEnterFn(res.enterFn)
-	}
-	if res.decorateFn != nil {
-		v.setDecorateFn(res.decorateFn)
-	}
-
-	c.app.Flash().Infof("Viewing resource %s...", res.kind)
-	log.Debug().Msgf("Running command %s", cmd)
-	c.exec(cmd, v)
-
-	return true
+	return vv
 }
 
-func (c *command) isCRDCmd(cmd string) bool {
-	crds := map[string]*resCmd{}
-	allCRDs(c.app.Conn(), crds)
-	res, ok := crds[cmd]
+func (c *command) viewMetaFor(cmd string) (string, *viewer) {
+	vv := c.load()
+	gvr, ok := aliases.Get(cmd)
 	if !ok {
-		return false
+		log.Error().Err(fmt.Errorf("Huh? `%s` command not found", cmd)).Msg("Command Failed")
+		c.app.Flash().Warnf("Huh? `%s` command not found", cmd)
+		return "", nil
+	}
+	v, ok := vv[gvr]
+	if !ok {
+		log.Error().Err(fmt.Errorf("Huh? `%s` viewer not found", gvr)).Msg("Viewer Failed")
+		c.app.Flash().Warnf("Huh? viewer for %s not found", cmd)
+		return "", nil
 	}
 
-	name := res.plural
-	if name == "" {
-		name = res.singular
-	}
-	v := newResourceView(
-		res.kind,
-		c.app,
-		resource.NewCustomList(c.app.Conn(), "", res.api, res.version, name),
-	)
-	v.setColorerFn(ui.DefaultColorer)
-	c.exec(cmd, v)
-
-	return true
+	return gvr, &v
 }
 
 // Exec the command by showing associated display.
 func (c *command) run(cmd string) bool {
-	if c.isStdCmd(cmd) {
+	log.Debug().Msgf("Running command %v", cmd)
+	defer func(t time.Time) {
+		log.Debug().Msgf("RUN CMD Elapsed %v", time.Since(t))
+	}(time.Now())
+
+	if c.isK9sCmd(cmd) {
 		return true
 	}
 
-	if c.isAliasCmd(cmd) {
-		return true
+	cmds := strings.Split(cmd, " ")
+	gvr, v := c.viewMetaFor(cmds[0])
+	if v == nil {
+		return false
+	}
+	switch cmds[0] {
+	case "ctx", "context", "contexts":
+		if len(cmds) == 2 {
+			c.app.switchCtx(cmds[1], true)
+			return true
+		}
+		view := c.viewerFor(gvr, v)
+		return c.exec(gvr, "", view)
+	default:
+		ns := c.app.Config.ActiveNamespace()
+		if len(cmds) == 2 {
+			ns = cmds[1]
+		}
+		if !c.app.switchNS(ns) {
+			return false
+		}
+		return c.exec(gvr, ns, c.viewerFor(gvr, v))
 	}
 
-	if c.isCRDCmd(cmd) {
-		return true
-	}
-
-	c.app.Flash().Warnf("Huh? `%s` command not found", cmd)
 	return false
 }
 
-func (c *command) exec(cmd string, v ui.Igniter) {
-	if v == nil {
-		return
+func (c *command) viewerFor(gvr string, v *viewer) resourceViewer {
+	var r resource.List
+	if v.listFn != nil {
+		r = v.listFn(c.app.Conn(), resource.DefaultNamespace)
 	}
 
-	c.app.Config.SetActiveView(cmd)
+	var view resourceViewer
+	if v.viewFn != nil {
+		view = v.viewFn(v.kind, gvr, c.app, r)
+	} else {
+		view = newResourceView(v.kind, gvr, c.app, r)
+	}
+	if v.colorerFn != nil {
+		view.setColorerFn(v.colorerFn)
+	}
+	if v.enterFn != nil {
+		view.setEnterFn(v.enterFn)
+	}
+	if v.decorateFn != nil {
+		view.setDecorateFn(v.decorateFn)
+	}
+
+	return view
+}
+
+func (c *command) exec(gvr string, ns string, v ui.Igniter) bool {
+	if v == nil {
+		log.Error().Err(fmt.Errorf("No igniter given for %s", gvr))
+		return false
+	}
+
+	g := k8s.GVR(gvr)
+	c.app.Flash().Infof("Viewing resource %s...", g.ToR())
+	log.Debug().Msgf("Running command %s", gvr)
+	c.app.Config.SetActiveView(g.ToR())
 	c.app.Config.Save()
 	c.app.inject(v)
+
+	return true
 }

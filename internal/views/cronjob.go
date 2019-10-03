@@ -10,8 +10,8 @@ type cronJobView struct {
 	*resourceView
 }
 
-func newCronJobView(t string, app *appView, list resource.List) resourceViewer {
-	v := cronJobView{resourceView: newResourceView(t, app, list).(*resourceView)}
+func newCronJobView(title, gvr string, app *appView, list resource.List) resourceViewer {
+	v := cronJobView{resourceView: newResourceView(title, gvr, app, list).(*resourceView)}
 	v.extraActionsFn = v.extraActions
 
 	return &v

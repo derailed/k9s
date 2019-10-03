@@ -6,21 +6,21 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
-	v1beta1 "k8s.io/api/extensions/v1beta1"
+	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // NetworkPolicy tracks a kubernetes resource.
 type NetworkPolicy struct {
 	*Base
-	instance *v1beta1.NetworkPolicy
+	instance *networkingv1.NetworkPolicy
 }
 
 // NewNetworkPolicyList returns a new resource list.
 func NewNetworkPolicyList(c Connection, ns string) List {
 	return NewList(
 		ns,
-		"np",
+		"netpol",
 		NewNetworkPolicy(c),
 		AllVerbsAccess|DescribeAccess,
 	)
@@ -38,9 +38,9 @@ func NewNetworkPolicy(c Connection) *NetworkPolicy {
 func (r *NetworkPolicy) New(i interface{}) Columnar {
 	c := NewNetworkPolicy(r.Connection)
 	switch instance := i.(type) {
-	case *v1beta1.NetworkPolicy:
+	case *networkingv1.NetworkPolicy:
 		c.instance = instance
-	case v1beta1.NetworkPolicy:
+	case networkingv1.NetworkPolicy:
 		c.instance = &instance
 	default:
 		log.Fatal().Msgf("unknown NetworkPolicy type %#v", i)
@@ -58,8 +58,8 @@ func (r *NetworkPolicy) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	ds := i.(*v1beta1.NetworkPolicy)
-	ds.TypeMeta.APIVersion = "extensions/v1beta1"
+	ds := i.(*networkingv1.NetworkPolicy)
+	ds.TypeMeta.APIVersion = "networking.k8s.io/v1"
 	ds.TypeMeta.Kind = "NetworkPolicy"
 
 	return r.marshalObject(ds)
@@ -102,7 +102,7 @@ func (r *NetworkPolicy) Fields(ns string) Row {
 
 // Helpers...
 
-func ingress(ii []v1beta1.NetworkPolicyIngressRule) (string, string, string) {
+func ingress(ii []networkingv1.NetworkPolicyIngressRule) (string, string, string) {
 	var ports, sels, blocks []string
 	for _, i := range ii {
 		if p := portsToStr(i.Ports); p != "" {
@@ -119,7 +119,7 @@ func ingress(ii []v1beta1.NetworkPolicyIngressRule) (string, string, string) {
 	return strings.Join(ports, ","), strings.Join(sels, ","), strings.Join(blocks, ",")
 }
 
-func egress(ee []v1beta1.NetworkPolicyEgressRule) (string, string, string) {
+func egress(ee []networkingv1.NetworkPolicyEgressRule) (string, string, string) {
 	var ports, sels, blocks []string
 	for _, e := range ee {
 		if p := portsToStr(e.Ports); p != "" {
@@ -136,7 +136,7 @@ func egress(ee []v1beta1.NetworkPolicyEgressRule) (string, string, string) {
 	return strings.Join(ports, ","), strings.Join(sels, ","), strings.Join(blocks, ",")
 }
 
-func portsToStr(pp []v1beta1.NetworkPolicyPort) string {
+func portsToStr(pp []networkingv1.NetworkPolicyPort) string {
 	ports := make([]string, 0, len(pp))
 	for _, p := range pp {
 		ports = append(ports, string(*p.Protocol)+":"+p.Port.String())
@@ -144,7 +144,7 @@ func portsToStr(pp []v1beta1.NetworkPolicyPort) string {
 	return strings.Join(ports, ",")
 }
 
-func peersToStr(pp []v1beta1.NetworkPolicyPeer) (string, string) {
+func peersToStr(pp []networkingv1.NetworkPolicyPeer) (string, string) {
 	sels := make([]string, 0, len(pp))
 	ips := make([]string, 0, len(pp))
 	for _, p := range pp {
@@ -162,7 +162,7 @@ func peersToStr(pp []v1beta1.NetworkPolicyPeer) (string, string) {
 	return strings.Join(sels, ","), strings.Join(ips, ",")
 }
 
-func renderBlock(b *v1beta1.IPBlock) string {
+func renderBlock(b *networkingv1.IPBlock) string {
 	s := b.CIDR
 
 	if len(b.Except) == 0 {
@@ -179,23 +179,25 @@ func renderBlock(b *v1beta1.IPBlock) string {
 	return s + "[" + strings.Join(b.Except, ",") + "]"
 }
 
-func renderPeer(i v1beta1.NetworkPolicyPeer) string {
+func renderPeer(i networkingv1.NetworkPolicyPeer) string {
 	var s string
 
 	if i.PodSelector != nil {
-		if m := mapToStr(i.PodSelector.MatchLabels); m != "" {
+		if len(i.PodSelector.MatchLabels) == 0 {
+			s += "po:all"
+		} else if m := mapToStr(i.PodSelector.MatchLabels); m != "" {
 			s += "po:" + m
-		}
-		if e := expToStr(i.PodSelector.MatchExpressions); e != "" {
+		} else if e := expToStr(i.PodSelector.MatchExpressions); e != "" {
 			s += "--" + e
 		}
 	}
 
 	if i.NamespaceSelector != nil {
-		if m := mapToStr(i.NamespaceSelector.MatchLabels); m != "" {
+		if len(i.NamespaceSelector.MatchLabels) == 0 {
+			s += "ns:all"
+		} else if m := mapToStr(i.NamespaceSelector.MatchLabels); m != "" {
 			s += "ns:" + m
-		}
-		if e := expToStr(i.NamespaceSelector.MatchExpressions); e != "" {
+		} else if e := expToStr(i.NamespaceSelector.MatchExpressions); e != "" {
 			s += "--" + e
 		}
 	}

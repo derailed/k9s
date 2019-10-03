@@ -123,7 +123,7 @@ func stsHeader() resource.Row {
 }
 
 func stsYaml() string {
-	return `apiVersion: v1
+	return `apiVersion: apps/v1
 kind: StatefulSet
 metadata:
   creationTimestamp: "2018-12-14T17:36:43Z"

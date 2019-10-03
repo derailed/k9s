@@ -47,7 +47,7 @@ func (v *MenuView) HydrateMenu(hh Hints) {
 	t := v.buildMenuTable(hh)
 	for row := 0; row < len(t); row++ {
 		for col := 0; col < len(t[row]); col++ {
-			if len(t[row][col]) == 0 {
+			if t[row][col] == "" {
 				continue
 			}
 			c := tview.NewTableCell(t[row][col])
@@ -57,30 +57,42 @@ func (v *MenuView) HydrateMenu(hh Hints) {
 	}
 }
 
+func isDigit(s string) bool {
+	return menuRX.MatchString(s)
+}
+
 func (v *MenuView) buildMenuTable(hh Hints) [][]string {
-	table := make([][]Hint, maxRows+1)
-
-	colCount := (len(hh) / maxRows) + 1
-	for row := 0; row < maxRows; row++ {
-		table[row] = make([]Hint, colCount+1)
+	table := make([][]Hint, maxRows)
+	colCount := len(hh) / maxRows
+	if colCount == 0 {
+		colCount = 1
 	}
-
-	var row, col int
+	if isDigit(hh[0].Mnemonic) {
+		colCount++
+	}
+	for row := 0; row < maxRows; row++ {
+		table[row] = make([]Hint, colCount)
+	}
+	var row, col, added int
 	firstCmd := true
 	maxKeys := make([]int, colCount+1)
 	for _, h := range hh {
-		isDigit := menuRX.MatchString(h.Mnemonic)
-		if !isDigit && firstCmd {
+		if !h.Visible {
+			continue
+		}
+		if !isDigit(h.Mnemonic) && firstCmd {
 			row, col, firstCmd = 0, col+1, false
+			if added == 0 {
+				col = 0
+			}
 		}
 		if maxKeys[col] < len(h.Mnemonic) {
 			maxKeys[col] = len(h.Mnemonic)
 		}
 		table[row][col] = h
-		row++
+		added, row = added+1, row+1
 		if row >= maxRows {
-			col++
-			row = 0
+			row, col = 0, col+1
 		}
 	}
 
@@ -287,6 +299,12 @@ func initStdKeys() {
 	tcell.KeyNames[tcell.Key(KeyX)] = "x"
 	tcell.KeyNames[tcell.Key(KeyY)] = "y"
 	tcell.KeyNames[tcell.Key(KeyZ)] = "z"
+}
+
+// BOZO!! No sure why these aren't mapped??
+func initCtrlKeys() {
+	tcell.KeyNames[tcell.KeyCtrlI] = "Ctrl-I"
+	tcell.KeyNames[tcell.KeyCtrlM] = "Ctrl-M"
 }
 
 func initShiftKeys() {

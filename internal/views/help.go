@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"runtime"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal/ui"
@@ -80,35 +81,95 @@ func (v *helpView) Init(_ context.Context, _ string) {
 
 func (v *helpView) showHelp() ui.Hints {
 	return ui.Hints{
-		{"?", "Help"},
-		{"Ctrl-a", "Aliases view"},
+		{
+			Mnemonic:    "?",
+			Description: "Help",
+		},
+		{
+			Mnemonic:    "Ctrl-a",
+			Description: "Aliases",
+		},
 	}
 }
 
 func (v *helpView) showNav() ui.Hints {
 	return ui.Hints{
-		{"g", "Goto Top"},
-		{"Shift-g", "Goto Bottom"},
-		{"Ctrl-b", "Page Down"},
-		{"Ctrl-f", "Page Up"},
-		{"h", "Left"},
-		{"l", "Right"},
-		{"k", "Up"},
-		{"j", "Down"},
+		{
+			Mnemonic:    "g",
+			Description: "Goto Top",
+		},
+		{
+			Mnemonic:    "Shift-g",
+			Description: "Goto Bottom",
+		},
+		{
+			Mnemonic:    "Ctrl-b",
+			Description: "Page Down"},
+		{
+			Mnemonic:    "Ctrl-f",
+			Description: "Page Up",
+		},
+		{
+			Mnemonic:    "h",
+			Description: "Left",
+		},
+		{
+			Mnemonic:    "l",
+			Description: "Right",
+		},
+		{
+			Mnemonic:    "k",
+			Description: "Up",
+		},
+		{
+			Mnemonic:    "j",
+			Description: "Down",
+		},
 	}
 }
 
 func (v *helpView) showGeneral() ui.Hints {
 	return ui.Hints{
-		{":cmd", "Command mode"},
-		{"/term", "Filter mode"},
-		{"esc", "Clear filter"},
-		{"tab", "Next term match"},
-		{"backtab", "Previous term match"},
-		{"Ctrl-r", "Refresh"},
-		{"Shift-i", "Invert Sort"},
-		{"p", "Previous resource view"},
-		{":q", "Quit"},
+		{
+			Mnemonic:    ":cmd",
+			Description: "Command mode",
+		},
+		{
+			Mnemonic:    "/term",
+			Description: "Filter mode",
+		},
+		{
+			Mnemonic:    "esc",
+			Description: "Clear filter",
+		},
+		{
+			Mnemonic:    "tab",
+			Description: "Next Field",
+		},
+		{
+			Mnemonic:    "backtab",
+			Description: "Previous Field",
+		},
+		{
+			Mnemonic:    "Ctrl-r",
+			Description: "Refresh",
+		},
+		{
+			Mnemonic:    "Ctrl-h",
+			Description: "Toggle Header",
+		},
+		{
+			Mnemonic:    "Shift-i",
+			Description: "Invert Sort",
+		},
+		{
+			Mnemonic:    "p",
+			Description: "Previous View",
+		},
+		{
+			Mnemonic:    ":q",
+			Description: "Quit",
+		},
 	}
 }
 
@@ -127,24 +188,30 @@ func (v *helpView) resetTitle() {
 func (v *helpView) build(hh ui.Hints) {
 	v.Clear()
 	sort.Sort(hh)
-	v.addSection(0, 0, "Resource", hh)
-	v.addSection(0, 4, "General", v.showGeneral())
-	v.addSection(0, 6, "Navigation", v.showNav())
-	v.addSection(0, 8, "Help", v.showHelp())
+	v.addSection(0, 0, "RESOURCE", hh)
+	v.addSection(0, 4, "GENERAL", v.showGeneral())
+	v.addSection(0, 6, "NAVIGATION", v.showNav())
+	v.addSection(0, 8, "HELP", v.showHelp())
 }
 
 func (v *helpView) addSection(r, c int, title string, hh ui.Hints) {
 	row := r
 	cell := tview.NewTableCell(title)
-	cell.SetTextColor(tcell.ColorWhite)
+	cell.SetTextColor(tcell.ColorGreen)
 	cell.SetAttributes(tcell.AttrBold)
-	v.SetCell(r, c, cell)
+	cell.SetExpansion(2)
+	cell.SetAlign(tview.AlignLeft)
+	v.SetCell(r, c+1, cell)
 	row++
 
 	for _, h := range hh {
 		col := c
 		cell := tview.NewTableCell(toMnemonic(h.Mnemonic))
-		cell.SetTextColor(tcell.ColorDodgerBlue)
+		if _, err := strconv.Atoi(h.Mnemonic); err != nil {
+			cell.SetTextColor(tcell.ColorDodgerBlue)
+		} else {
+			cell.SetTextColor(tcell.ColorFuchsia)
+		}
 		cell.SetAttributes(tcell.AttrBold)
 		cell.SetAlign(tview.AlignRight)
 		v.SetCell(row, col, cell)

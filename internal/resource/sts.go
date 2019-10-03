@@ -59,7 +59,7 @@ func (r *StatefulSet) Marshal(path string) (string, error) {
 	}
 
 	sts := i.(*appsv1.StatefulSet)
-	sts.TypeMeta.APIVersion = "v1"
+	sts.TypeMeta.APIVersion = "apps/v1"
 	sts.TypeMeta.Kind = "StatefulSet"
 
 	return r.marshalObject(sts)

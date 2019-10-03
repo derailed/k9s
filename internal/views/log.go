@@ -130,16 +130,16 @@ func (v *logView) flush(index int, buff []string) {
 		return
 	}
 
-	v.log(strings.Join(buff[:index], "\n"))
 	if atomic.LoadInt32(&v.autoScroll) == 1 {
+		v.log(strings.Join(buff[:index], "\n"))
 		v.app.QueueUpdateDraw(func() {
-			v.update()
+			v.updateIndicator()
 			v.logs.ScrollToEnd()
 		})
 	}
 }
 
-func (v *logView) update() {
+func (v *logView) updateIndicator() {
 	status := "Off"
 	if v.autoScroll == 1 {
 		status = "On"
@@ -205,7 +205,7 @@ func (v *logView) toggleScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.logs.LineUp()
 		v.app.Flash().Info("Autoscroll is off.")
 	}
-	v.update()
+	v.updateIndicator()
 
 	return nil
 }

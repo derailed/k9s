@@ -197,7 +197,7 @@ func newTitle() Title {
 		BgColor:        "black",
 		HighlightColor: "fuchsia",
 		CounterColor:   "papayawhip",
-		FilterColor:    "orange",
+		FilterColor:    "seagreen",
 	}
 }
 

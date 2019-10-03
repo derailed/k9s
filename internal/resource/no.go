@@ -297,7 +297,7 @@ func (r *Node) podsResources(name string) (v1.ResourceList, v1.ResourceList, err
 		preq, plim := podResources(&p)
 		for k, v := range preq {
 			if value, ok := reqs[k]; !ok {
-				reqs[k] = *v.Copy()
+				reqs[k] = v.DeepCopy()
 			} else {
 				value.Add(v)
 				reqs[k] = value
@@ -305,7 +305,7 @@ func (r *Node) podsResources(name string) (v1.ResourceList, v1.ResourceList, err
 		}
 		for k, v := range plim {
 			if value, ok := limits[k]; !ok {
-				limits[k] = *v.Copy()
+				limits[k] = v.DeepCopy()
 			} else {
 				value.Add(v)
 				limits[k] = value
@@ -338,7 +338,7 @@ func addResources(l1, l2 v1.ResourceList) {
 			value.Add(quantity)
 			l1[name] = value
 		} else {
-			l1[name] = *quantity.Copy()
+			l1[name] = quantity.DeepCopy()
 		}
 	}
 }
@@ -348,10 +348,10 @@ func maxResources(l1, l2 v1.ResourceList) {
 	for name, quantity := range l2 {
 		if value, ok := l1[name]; ok {
 			if quantity.Cmp(value) > 0 {
-				l1[name] = *quantity.Copy()
+				l1[name] = quantity.DeepCopy()
 			}
 		} else {
-			l1[name] = *quantity.Copy()
+			l1[name] = quantity.DeepCopy()
 		}
 	}
 }

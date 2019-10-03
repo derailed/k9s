@@ -20,7 +20,7 @@ func (i *Ingress) Get(ns, n string) (interface{}, error) {
 	return i.DialOrDie().ExtensionsV1beta1().Ingresses(ns).Get(n, metav1.GetOptions{})
 }
 
-// List all Ingresss in a given namespace.
+// List all Ingresses in a given namespace.
 func (i *Ingress) List(ns string) (Collection, error) {
 	opts := metav1.ListOptions{
 		LabelSelector: i.labelSelector,

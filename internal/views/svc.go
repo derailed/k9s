@@ -22,9 +22,9 @@ type svcView struct {
 	bench *perf.Benchmark
 }
 
-func newSvcView(t string, app *appView, list resource.List) resourceViewer {
+func newSvcView(title, gvr string, app *appView, list resource.List) resourceViewer {
 	v := svcView{
-		resourceView: newResourceView(t, app, list).(*resourceView),
+		resourceView: newResourceView(title, gvr, app, list).(*resourceView),
 	}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.showPods
@@ -47,7 +47,7 @@ func (v *svcView) extraActions(aa ui.KeyActions) {
 	aa[ui.KeyL] = ui.NewKeyAction("Logs", v.logsCmd, true)
 	aa[tcell.KeyCtrlB] = ui.NewKeyAction("Bench", v.benchCmd, true)
 	aa[tcell.KeyCtrlK] = ui.NewKeyAction("Bench Stop", v.benchStopCmd, true)
-	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Type", v.sortColCmd(1, false), true)
+	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Type", v.sortColCmd(1, false), false)
 }
 
 func (v *svcView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
@@ -209,20 +209,10 @@ func benchTimedOut(app *appView) {
 	})
 }
 
-func (v *svcView) showSvcPods(ns string, sel map[string]string, b ui.ActionHandler) {
+func (v *svcView) showSvcPods(ns string, sel map[string]string, a ui.ActionHandler) {
 	var s []string
 	for k, v := range sel {
 		s = append(s, fmt.Sprintf("%s=%s", k, v))
 	}
-	list := resource.NewPodList(v.app.Conn(), ns)
-	list.SetLabelSelector(strings.Join(s, ","))
-
-	pv := newPodView("Pods", v.app, list)
-	pv.setColorerFn(podColorer)
-	pv.setExtraActionsFn(func(aa ui.KeyActions) {
-		aa[tcell.KeyEsc] = ui.NewKeyAction("Back", b, true)
-	})
-	// set active namespace to service ns.
-	v.app.Config.SetActiveNamespace(ns)
-	v.app.inject(pv)
+	showPods(v.app, ns, strings.Join(s, ","), "", a)
 }
