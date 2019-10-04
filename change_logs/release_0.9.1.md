@@ -12,13 +12,14 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ## Change Logs
 
-Maintenance release and updates in the v0.9.0 release aftermath.
+Maintenance release
 
 ---
 
 ## Resolved Bugs/Features
 
 * [Issue #325](https://github.com/derailed/k9s/issues/325)
+* [Issue #326](https://github.com/derailed/k9s/issues/326)
 
 ---
 
