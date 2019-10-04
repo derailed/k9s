@@ -35,8 +35,8 @@ func (v *nodeView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcel
 	}
 }
 
-func (v *nodeView) showPods(app *appView, _, res, sel string) {
-	showPods(app, "", "", "spec.nodeName="+sel, v.backCmd)
+func (v *nodeView) showPods(app *appView, _, _, sel string) {
+	showPods(app, app.Config.ActiveNamespace(), "", "spec.nodeName="+sel, v.backCmd)
 }
 
 func (v *nodeView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -46,6 +46,8 @@ func (v *nodeView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func showPods(app *appView, ns, labelSel, fieldSel string, a ui.ActionHandler) {
+	app.switchNS(ns)
+
 	list := resource.NewPodList(app.Conn(), ns)
 	list.SetLabelSelector(labelSel)
 	list.SetFieldSelector(fieldSel)

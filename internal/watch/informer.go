@@ -63,7 +63,10 @@ type Informer struct {
 
 // NewInformer creates a new cluster resource informer
 func NewInformer(client k8s.Connection, ns string) (*Informer, error) {
-	i := Informer{client: client, informers: map[string]StoreInformer{}}
+	i := Informer{
+		client:    client,
+		informers: map[string]StoreInformer{},
+	}
 	if ns == allNamespace {
 		ns = allNamespaces
 	}

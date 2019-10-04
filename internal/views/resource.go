@@ -313,6 +313,7 @@ func (v *resourceView) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
+	v.app.switchNS(ns)
 	v.setNamespace(ns)
 	v.app.Flash().Infof("Viewing `%s` namespace...", ns)
 	v.refresh()
