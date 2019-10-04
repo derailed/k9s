@@ -8,6 +8,7 @@ import (
 	pegomock "github.com/petergtz/pegomock"
 	v1 "k8s.io/api/core/v1"
 	version "k8s.io/apimachinery/pkg/version"
+	disk "k8s.io/client-go/discovery/cached/disk"
 	dynamic "k8s.io/client-go/dynamic"
 	kubernetes "k8s.io/client-go/kubernetes"
 	rest "k8s.io/client-go/rest"
@@ -30,6 +31,25 @@ func NewMockConnection(options ...pegomock.Option) *MockConnection {
 
 func (mock *MockConnection) SetFailHandler(fh pegomock.FailHandler) { mock.fail = fh }
 func (mock *MockConnection) FailHandler() pegomock.FailHandler      { return mock.fail }
+
+func (mock *MockConnection) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockConnection().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CachedDiscovery", params, []reflect.Type{reflect.TypeOf((**disk.CachedDiscoveryClient)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 *disk.CachedDiscoveryClient
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(*disk.CachedDiscoveryClient)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
 
 func (mock *MockConnection) CanIAccess(_param0 string, _param1 string, _param2 []string) (bool, error) {
 	if mock == nil {
@@ -380,6 +400,23 @@ type VerifierMockConnection struct {
 	invocationCountMatcher pegomock.Matcher
 	inOrderContext         *pegomock.InOrderContext
 	timeout                time.Duration
+}
+
+func (verifier *VerifierMockConnection) CachedDiscovery() *MockConnection_CachedDiscovery_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CachedDiscovery", params, verifier.timeout)
+	return &MockConnection_CachedDiscovery_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockConnection_CachedDiscovery_OngoingVerification struct {
+	mock              *MockConnection
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockConnection_CachedDiscovery_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *MockConnection_CachedDiscovery_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierMockConnection) CanIAccess(_param0 string, _param1 string, _param2 []string) *MockConnection_CanIAccess_OngoingVerification {

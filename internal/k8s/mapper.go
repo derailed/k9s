@@ -3,14 +3,11 @@ package k8s
 import (
 	"fmt"
 	"os/user"
-	"path/filepath"
 	"regexp"
 	"strings"
-	"time"
 
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/discovery/cached/disk"
 	"k8s.io/client-go/restmapper"
 )
 
@@ -27,12 +24,7 @@ type RestMapper struct {
 
 // ToRESTMapper map resources to kind, and map kind and version to interfaces for manipulating K8s objects.
 func (r *RestMapper) ToRESTMapper() (meta.RESTMapper, error) {
-	rc := r.RestConfigOrDie()
-
-	httpCacheDir := filepath.Join(mustHomeDir(), ".kube", "http-cache")
-	discCacheDir := filepath.Join(mustHomeDir(), ".kube", "cache", "discovery", toHostDir(rc.Host))
-
-	disc, err := disk.NewCachedDiscoveryClientForConfig(rc, discCacheDir, httpCacheDir, 10*time.Minute)
+	disc, err := r.CachedDiscovery()
 	if err != nil {
 		return nil, err
 	}

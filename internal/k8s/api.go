@@ -2,8 +2,12 @@ package k8s
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 	"sync"
+	"time"
+
+	"k8s.io/client-go/discovery/cached/disk"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -44,6 +48,7 @@ type (
 		DialOrDie() kubernetes.Interface
 		SwitchContextOrDie(ctx string)
 		NSDialOrDie() dynamic.NamespaceableResourceInterface
+		CachedDiscovery() (*disk.CachedDiscoveryClient, error)
 		RestConfigOrDie() *restclient.Config
 		MXDial() (*versioned.Clientset, error)
 		DynDialOrDie() dynamic.Interface
@@ -72,6 +77,7 @@ type (
 	APIClient struct {
 		k8sClient
 
+		cachedDiscovery *disk.CachedDiscoveryClient
 		config          *Config
 		useMetricServer bool
 		log             zerolog.Logger
@@ -149,7 +155,12 @@ func (a *APIClient) CurrentNamespaceName() (string, error) {
 
 // ServerVersion returns the current server version info.
 func (a *APIClient) ServerVersion() (*version.Info, error) {
-	return a.DialOrDie().Discovery().ServerVersion()
+	discovery, err := a.CachedDiscovery()
+	if err != nil {
+		return nil, err
+	}
+
+	return discovery.ServerVersion()
 }
 
 // FetchNodes returns all available nodes.
@@ -181,7 +192,12 @@ func (a *APIClient) NodePods(node string) (*v1.PodList, error) {
 
 // IsNamespaced check on server if given resource is namespaced
 func (a *APIClient) IsNamespaced(res string) bool {
-	list, _ := a.DialOrDie().Discovery().ServerPreferredResources()
+	discovery, err := a.CachedDiscovery()
+	if err != nil {
+		return false
+	}
+
+	list, _ := discovery.ServerPreferredResources()
 	for _, l := range list {
 		for _, r := range l.APIResources {
 			if r.Name == res {
@@ -194,7 +210,12 @@ func (a *APIClient) IsNamespaced(res string) bool {
 
 // SupportsResource checks for resource supported version against the server.
 func (a *APIClient) SupportsResource(group string) bool {
-	list, err := a.DialOrDie().Discovery().ServerPreferredResources()
+	discovery, err := a.CachedDiscovery()
+	if err != nil {
+		return false
+	}
+
+	list, err := discovery.ServerPreferredResources()
 	if err != nil {
 		log.Error().Err(err).Msg("Unable to dial api server")
 		return false
@@ -238,6 +259,23 @@ func (a *APIClient) RestConfigOrDie() *restclient.Config {
 		a.log.Panic().Msgf("Unable to connect to api server %v", err)
 	}
 	return cfg
+}
+
+func (a *APIClient) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
+	if a.cachedDiscovery != nil {
+		return a.cachedDiscovery, nil
+	}
+
+	rc := a.RestConfigOrDie()
+	httpCacheDir := filepath.Join(mustHomeDir(), ".kube", "http-cache")
+	discCacheDir := filepath.Join(mustHomeDir(), ".kube", "cache", "discovery", toHostDir(rc.Host))
+
+	var err error
+	a.cachedDiscovery, err = disk.NewCachedDiscoveryClientForConfig(rc, discCacheDir, httpCacheDir, 10*time.Minute)
+	return a.cachedDiscovery, err
 }
 
 // DynDialOrDie returns a handle to a dynamic interface.
@@ -310,7 +348,12 @@ func (a *APIClient) reset() {
 }
 
 func (a *APIClient) supportsMxServer() bool {
-	apiGroups, err := a.DialOrDie().Discovery().ServerGroups()
+	discovery, err := a.CachedDiscovery()
+	if err != nil {
+		return false
+	}
+
+	apiGroups, err := discovery.ServerGroups()
 	if err != nil {
 		return false
 	}
@@ -341,7 +384,12 @@ func checkMetricsVersion(grp metav1.APIGroup) bool {
 
 // SupportsRes checks latest supported version.
 func (a *APIClient) SupportsRes(group string, versions []string) (string, bool, error) {
-	apiGroups, err := a.DialOrDie().Discovery().ServerGroups()
+	discovery, err := a.CachedDiscovery()
+	if err != nil {
+		return "", false, err
+	}
+
+	apiGroups, err := discovery.ServerGroups()
 	if err != nil {
 		return "", false, err
 	}
