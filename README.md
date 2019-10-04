@@ -60,6 +60,26 @@ K9s is available on Linux, OSX and Windows platforms.
 
 ---
 
+## Screenshots
+
+1. Pods
+      <img src="assets/screen_po.png"/>
+1. Logs
+      <img src="assets/screen_logs.png"/>
+1. Deployments
+      <img src="assets/screen_dp.png"/>
+
+
+---
+
+## Demo Video
+
+* [K9s v0.9.0](https://www.youtube.com/watch?v=bxKfqumjW4I)
+* [K9s v0.7.0 Features](https://youtu.be/83jYehwlql8)
+* [K9s v0 Demo](https://youtu.be/k7zseUhaXeU)
+
+---
+
 ## The Command Line
 
 ```shell
@@ -80,35 +100,18 @@ k9s --context coolCtx
 K9s uses aliases to navigate most K8s resources.
 
 | Command                     | Result                                             | Example                    |
-|-----------------------------|----------------------------------------------------|----------------------------|
+| --------------------------- | -------------------------------------------------- | -------------------------- |
 | `:`alias`<ENTER>`           | View a Kubernetes resource aliases                 | `:po<ENTER>`               |
 | `?`                         | Show keyboard shortcuts and help                   |                            |
 | `Ctrl-a`                    | Show all available resource alias                  | select+`<ENTER>` to view   |
 | `/`filter`ENTER`            | Filter out a resource view given a filter          | `/bumblebeetuna`           |
 | `/`-l label-selector`ENTER` | Filter resource view by labels                     | `/-l app=fred`             |
-| `<Esc>`                     | Bails out of command mode                          |                            |
+| `<Esc>`                     | Bails out of command/filter mode                   |                            |
 | `d`,`v`, `e`, `l`,...       | Key mapping to describe, view, edit, view logs,... | `d` (describes a resource) |
 | `:`ctx`<ENTER>`             | To view and switch to another Kubernetes context   | `:`+`ctx`+`<ENTER>`        |
 | `Ctrl-d`                    | To delete a resource (TAB and ENTER to confirm)    |                            |
 | `Ctrl-k`                    | To delete a resource (no confirmation dialog)      |                            |
 | `:q`, `Ctrl-c`              | To bail out of K9s                                 |                            |
-
----
-
-## Demo Video
-
-1. [K9s v0 Demo](https://youtu.be/k7zseUhaXeU)
-2. [K9s v0.7.0 Features](https://youtu.be/83jYehwlql8)
-
-
-## Screenshots
-
-1. Pods
-      <img src="assets/screen_po.png"/>
-1. Logs
-      <img src="assets/screen_logs.png"/>
-1. Deployments
-      <img src="assets/screen_dp.png"/>
 
 ---
 
@@ -150,6 +153,62 @@ K9s uses aliases to navigate most K8s resources.
         view:
           active: dp
   ```
+
+---
+## Aliases
+
+In K9s you can define your own command aliases (shortnames) to access your resources. In your `$HOME/.k9s` define a file called `alias.yml`. A K9s alias defines pairs of alias:gvr. A gvr represents a fully qualified Kubernetes resource identifier. Here is an example of an alias file:
+
+```yaml
+# $HOME/.k9s/alias.yml
+alias:
+  pp: v1/pods
+  crb: rbac.authorization.k8s.io/v1/clusterrolebindings
+```
+
+Using this alias file, you can now type pp/crb to list pods, clusterrolebindings respectively.
+
+---
+## Plugins
+
+K9s allows you to define your own cluster commands via plugins. K9s will look at `$HOME/.k9s/plugin.yml` to locate available plugins. A plugin is defined as follows:
+
+```yaml
+# $HOME/.k9s/plugin.yml
+plugin:
+  fred:
+    shortCut: Ctrl-L
+    description: "Pod logs"
+    scopes:
+    - po
+    command: /usr/local/bin/kubectl
+    background: false
+    args:
+    - logs
+    - -f
+    - $NAME
+    - -n
+    - $NAMESPACE
+    - --context
+    - $CONTEXT
+```
+
+This defines a plugin for viewing logs on a selected pod using `CtrlL` mnemonic.
+
+The shortcut option represents the command a user would type to activate the plugin. The command represents adhoc commands the plugin runs upon activation. The scopes defines a collection of views shortnames for which the plugin shortcut will be made available to the user.
+
+K9s does provide additional enviroment variables for you to customize your plugins. Currently the available environment are as follows:
+
+* `$NAMESPACE` -- the selected resource namespace
+* `$NAME` -- the selected resource name
+* `$KUBECONFIG` -- the KubeConfig location.
+* `$CLUSTER` the active cluster name
+* `$CONTEXT` the active context name
+* `$USER` the active user
+* `$GROUPS` the active groups
+* `$COLX` the column at index X for the viewed resource
+
+NOTE: This is an experimental feature! Options and layout may change in future K9s releases as this feature solidifies.
 
 ---
 
@@ -391,7 +450,7 @@ k9s:
 Available color names are defined below:
 
 | Color Names          |                |                  |                   |                 |
-|----------------------|----------------|------------------|-------------------|-----------------|
+| -------------------- | -------------- | ---------------- | ----------------- | --------------- |
 | black                | maroon         | green            | olive             | navy            |
 | purple               | teal           | silver           | gray              | red             |
 | lime                 | yellow         | blue             | fuchsia           | aqua            |

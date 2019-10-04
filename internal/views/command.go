@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
@@ -51,8 +50,6 @@ func (c *command) defaultCmd() {
 		log.Error().Err(fmt.Errorf("Unable to load command %s", cmd)).Msg("Command failed")
 	}
 }
-
-// Helpers...
 
 var authRX = regexp.MustCompile(`\Apol\s([u|g|s]):([\w-:]+)\b`)
 
@@ -110,11 +107,6 @@ func (c *command) viewMetaFor(cmd string) (string, *viewer) {
 
 // Exec the command by showing associated display.
 func (c *command) run(cmd string) bool {
-	log.Debug().Msgf("Running command %v", cmd)
-	defer func(t time.Time) {
-		log.Debug().Msgf("RUN CMD Elapsed %v", time.Since(t))
-	}(time.Now())
-
 	if c.isK9sCmd(cmd) {
 		return true
 	}
@@ -178,7 +170,7 @@ func (c *command) exec(gvr string, ns string, v ui.Igniter) bool {
 	}
 
 	g := k8s.GVR(gvr)
-	c.app.Flash().Infof("Viewing resource %s...", g.ToR())
+	c.app.Flash().Infof("Viewing %s resource...", g.ToR())
 	log.Debug().Msgf("Running command %s", gvr)
 	c.app.Config.SetActiveView(g.ToR())
 	c.app.Config.Save()

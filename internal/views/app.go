@@ -109,7 +109,7 @@ func (a *appView) Init(version string, rate int) {
 	main.AddItem(a.indicator(), 1, 1, false)
 	main.AddItem(a.Frame(), 0, 10, true)
 	main.AddItem(a.Crumbs(), 2, 1, false)
-	main.AddItem(a.Flash(), 1, 1, false)
+	main.AddItem(a.Flash(), 2, 1, false)
 	a.toggleHeader(!a.Config.K9s.GetHeadless())
 }
 
@@ -206,6 +206,9 @@ func (a *appView) refreshIndicator() {
 }
 
 func (a *appView) switchNS(ns string) bool {
+	if ns == resource.AllNamespace {
+		ns = resource.AllNamespaces
+	}
 	if ns == a.Config.ActiveNamespace() {
 		log.Debug().Msgf("Namespace did not change %s", ns)
 		return true

@@ -172,12 +172,11 @@ func (v *resourceView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	sel := v.masterPage().GetSelectedItem()
+	f := v.defaultEnter
 	if v.enterFn != nil {
-		v.enterFn(v.app, v.list.GetNamespace(), v.list.GetName(), sel)
-	} else {
-		v.defaultEnter(v.list.GetNamespace(), v.list.GetName(), sel)
+		f = v.enterFn
 	}
+	f(v.app, v.list.GetNamespace(), v.list.GetName(), v.masterPage().GetSelectedItem())
 
 	return nil
 }
@@ -220,7 +219,7 @@ func deletePortForward(ff map[string]forwarder, sel string) {
 	}
 }
 
-func (v *resourceView) defaultEnter(ns, _, selection string) {
+func (v *resourceView) defaultEnter(app *appView, ns, _, selection string) {
 	if !v.list.Access(resource.DescribeAccess) {
 		return
 	}
@@ -245,8 +244,8 @@ func (v *resourceView) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.masterPage().RowSelected() {
 		return evt
 	}
+	v.defaultEnter(v.app, v.list.GetNamespace(), v.list.GetName(), v.masterPage().GetSelectedItem())
 
-	v.defaultEnter(v.list.GetNamespace(), v.list.GetName(), v.masterPage().GetSelectedItem())
 	return nil
 }
 
@@ -277,7 +276,6 @@ func (v *resourceView) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	kcfg := v.app.Conn().Config().Flags().KubeConfig
 	v.stopUpdates()
 	{
 		ns, po := namespaced(v.masterPage().GetSelectedItem())
@@ -286,8 +284,8 @@ func (v *resourceView) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		args = append(args, v.list.GetName())
 		args = append(args, "-n", ns)
 		args = append(args, "--context", v.app.Config.K9s.CurrentContext)
-		if kcfg != nil && *kcfg != "" {
-			args = append(args, "--kubeconfig", *kcfg)
+		if cfg := v.app.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
+			args = append(args, "--kubeconfig", *cfg)
 		}
 		runK(true, v.app, append(args, po)...)
 	}
@@ -315,7 +313,7 @@ func (v *resourceView) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	v.app.switchNS(ns)
 	v.setNamespace(ns)
-	v.app.Flash().Infof("Viewing `%s` namespace...", ns)
+	v.app.Flash().Infof("Viewing namespace `%s`...", ns)
 	v.refresh()
 	v.masterPage().UpdateTitle()
 	v.masterPage().SelectRow(1, true)
@@ -346,10 +344,6 @@ func (v *resourceView) refresh() {
 }
 
 func (v *resourceView) namespaceActions(aa ui.KeyActions) {
-	ns, err := v.app.Conn().Config().CurrentNamespaceName()
-	if err == nil && ns != resource.AllNamespace {
-		return
-	}
 	if !v.list.Access(resource.NamespaceAccess) {
 		return
 	}
@@ -473,14 +467,22 @@ func (v *resourceView) defaultK9sEnv() K9sEnv {
 	if err != nil {
 		groups = []string{"n/a"}
 	}
-	env := K9sEnv{
-		"NAMESPACE": ns,
-		"NAME":      n,
-		"CONTEXT":   ctx,
-		"CLUSTER":   cluster,
-		"USER":      user,
-		"GROUPS":    strings.Join(groups, ","),
+	var cfg string
+	kcfg := v.app.Conn().Config().Flags().KubeConfig
+	if kcfg != nil && *kcfg != "" {
+		cfg = *kcfg
 	}
+
+	env := K9sEnv{
+		"NAMESPACE":  ns,
+		"NAME":       n,
+		"CONTEXT":    ctx,
+		"CLUSTER":    cluster,
+		"USER":       user,
+		"GROUPS":     strings.Join(groups, ","),
+		"KUBECONFIG": cfg,
+	}
+
 	row := v.masterPage().GetRow()
 	for i, r := range row {
 		env["COL"+strconv.Itoa(i)] = r
