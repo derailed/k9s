@@ -33,13 +33,6 @@ type (
 	viewers map[string]viewer
 )
 
-func aliasCmds(c k8s.Connection, vv viewers) {
-	resourceViews(c, vv)
-	if c != nil {
-		allCRDs(c, vv)
-	}
-}
-
 func listFunc(l resource.List) viewFn {
 	return func(title, gvr string, app *appView, list resource.List) resourceViewer {
 		return newResourceView(title, gvr, app, l)
@@ -127,7 +120,13 @@ func load(c k8s.Connection, vv viewers) {
 	if err := aliases.Load(); err != nil {
 		log.Error().Err(err).Msg("No custom aliases defined in config")
 	}
-	rr, _ := c.DialOrDie().Discovery().ServerPreferredResources()
+	discovery, err := c.CachedDiscovery()
+	if err != nil {
+		log.Error().Err(err).Msgf("Error to get discovery client")
+		return
+	}
+
+	rr, _ := discovery.ServerPreferredResources()
 	for _, r := range rr {
 		for _, res := range r.APIResources {
 			gvr := k8s.ToGVR(r.GroupVersion, res.Name)
