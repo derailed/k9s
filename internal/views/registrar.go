@@ -51,9 +51,12 @@ func allCRDs(c k8s.Connection, vv viewers) {
 	}
 
 	t := time.Now()
-	var meta resource.TypeMeta
 	for _, crd := range crds {
-		crd.ExtFields(&meta)
+		meta, err := crd.ExtFields()
+		if err != nil {
+			log.Error().Err(err).Msgf("Error getting extended fields from %s", crd.Name())
+			continue
+		}
 
 		gvr := k8s.NewGVR(meta.Group, meta.Version, meta.Plural)
 		gvrs := gvr.String()
@@ -141,10 +144,8 @@ func load(c k8s.Connection, vv viewers) {
 			cmd.gvr = gvr.String()
 			vv[gvr.String()] = cmd
 			gvrStr := gvr.String()
-			aliases.Define(
-				strings.ToLower(res.Kind), gvrStr,
-				res.Name, gvrStr,
-			)
+			aliases.Define(strings.ToLower(res.Kind), gvrStr)
+			aliases.Define(res.Name, gvrStr)
 			if len(res.SingularName) > 0 {
 				aliases.Define(res.SingularName, gvrStr)
 			}

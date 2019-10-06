@@ -8,22 +8,61 @@ import (
 )
 
 func TestAliasDefine(t *testing.T) {
-	uu := map[string]struct {
-		aa []string
-	}{
-		"one":   {[]string{"blee", "duh"}},
-		"multi": {[]string{"blee", "duh", "fred", "zorg"}},
+	type aliasDef struct {
+		cmd     string
+		aliases []string
 	}
 
-	for k, u := range uu {
-		t.Run(k, func(t *testing.T) {
-			a := config.NewAliases()
-			a.Define(u.aa...)
-			for i := 0; i < len(u.aa); i += 2 {
-				v, ok := a.Get(u.aa[i])
+	tts := []struct {
+		name               string
+		aliases            []aliasDef
+		registeredCommands map[string]string
+	}{
+		{
+			name: "simple aliases",
+			aliases: []aliasDef{
+				{
+					cmd:     "one",
+					aliases: []string{"blee", "duh"},
+				},
+			},
+			registeredCommands: map[string]string{
+				"blee": "one",
+				"duh":  "one",
+			},
+		},
+		{
+			name: "duplicated aliases",
+			aliases: []aliasDef{
+				{
+					cmd:     "one",
+					aliases: []string{"blee", "duh"},
+				}, {
+					cmd:     "two",
+					aliases: []string{"blee", "duh", "fred", "zorg"},
+				},
+			},
+			registeredCommands: map[string]string{
+				"blee": "one",
+				"duh":  "one",
+				"fred": "two",
+				"zorg": "two",
+			},
+		},
+	}
 
+	for _, tt := range tts {
+		t.Run(tt.name, func(t *testing.T) {
+			configAlias := config.NewAliases()
+			for _, aliases := range tt.aliases {
+				for _, a := range aliases.aliases {
+					configAlias.Define(a, aliases.cmd)
+				}
+			}
+			for alias, cmd := range tt.registeredCommands {
+				v, ok := configAlias.Get(alias)
 				assert.True(t, ok)
-				assert.Equal(t, u.aa[i+1], v)
+				assert.Equal(t, cmd, v, "Wrong command for alias "+alias)
 			}
 		})
 	}

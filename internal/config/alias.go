@@ -79,13 +79,13 @@ func (a Aliases) Get(k string) (string, bool) {
 }
 
 // Define declares a new alias.
-func (a Aliases) Define(args ...string) {
-	if len(args)%2 != 0 {
-		panic("Invalid alias definition. You must specify pairs")
+func (a Aliases) Define(alias, command string) {
+	if _, ok := a.Alias[alias]; ok {
+		// Don't override aliases. Take order of alias registration as precedence.
+		return
 	}
-	for i := 0; i < len(args); i += 2 {
-		a.Alias[args[i]] = args[i+1]
-	}
+
+	a.Alias[alias] = command
 }
 
 // LoadAliases loads alias from a given file.

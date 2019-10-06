@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"errors"
 	"time"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -89,11 +90,12 @@ func (r *CustomResourceDefinition) Fields(ns string) Row {
 }
 
 // ExtFields returns extended fields.
-func (r *CustomResourceDefinition) ExtFields(m *TypeMeta) {
+func (r *CustomResourceDefinition) ExtFields() (*TypeMeta, error) {
+	m := &TypeMeta{}
 	i := r.instance
 	spec, ok := i.Object["spec"].(map[string]interface{})
 	if !ok {
-		return
+		return nil, errors.New("missing crd specs")
 	}
 
 	if meta, ok := i.Object["metadata"].(map[string]interface{}); ok {
@@ -103,7 +105,7 @@ func (r *CustomResourceDefinition) ExtFields(m *TypeMeta) {
 	m.Namespaced = isNamespaced(spec["scope"].(string))
 	names, ok := spec["names"].(map[string]interface{})
 	if !ok {
-		return
+		return nil, errors.New("missing crd names")
 	}
 	m.Kind = names["kind"].(string)
 	m.Singular, m.Plural = names["singular"].(string), names["plural"].(string)
@@ -114,6 +116,7 @@ func (r *CustomResourceDefinition) ExtFields(m *TypeMeta) {
 	} else {
 		m.ShortNames = nil
 	}
+	return m, nil
 }
 
 func isNamespaced(scope string) bool {

@@ -3,6 +3,7 @@ package resource
 import (
 	"bytes"
 	"context"
+	"errors"
 	"path"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -100,7 +101,9 @@ func (*Base) NumCols(n string) map[string]bool {
 }
 
 // ExtFields returns extended fields in relation to headers.
-func (*Base) ExtFields(*TypeMeta) {}
+func (*Base) ExtFields() (*TypeMeta, error) {
+	return nil, errors.New("Base does not have extended fields.")
+}
 
 // Get a resource by name
 func (b *Base) Get(path string) (Columnar, error) {
