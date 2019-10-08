@@ -427,3 +427,7 @@ func (a *appView) clusterInfo() *clusterInfoView {
 func (a *appView) indicator() *ui.IndicatorView {
 	return a.Views()["indicator"].(*ui.IndicatorView)
 }
+
+func (a *appView) activeFilter() string {
+	return a.filter
+}

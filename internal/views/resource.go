@@ -472,6 +472,7 @@ func (v *resourceView) defaultK9sEnv() K9sEnv {
 	if kcfg != nil && *kcfg != "" {
 		cfg = *kcfg
 	}
+	f := v.app.activeFilter()
 
 	env := K9sEnv{
 		"NAMESPACE":  ns,
@@ -481,6 +482,7 @@ func (v *resourceView) defaultK9sEnv() K9sEnv {
 		"USER":       user,
 		"GROUPS":     strings.Join(groups, ","),
 		"KUBECONFIG": cfg,
+		"FILTER":     f,
 	}
 
 	row := v.masterPage().GetRow()
