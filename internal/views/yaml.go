@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/derailed/tview"
+
 	"github.com/derailed/k9s/internal/config"
 	"github.com/rs/zerolog/log"
 )
@@ -24,7 +26,7 @@ const (
 )
 
 func colorizeYAML(style config.Yaml, raw string) string {
-	lines := strings.Split(raw, "\n")
+	lines := strings.Split(tview.Escape(raw), "\n")
 
 	fullFmt := strings.Replace(yamlFullFmt, "[key", "["+style.KeyColor, 1)
 	fullFmt = strings.Replace(fullFmt, "[colon", "["+style.ColonColor, 1)
