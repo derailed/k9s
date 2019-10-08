@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
@@ -77,6 +78,7 @@ func (v *detailsView) bindKeys() {
 		tcell.KeyTab:        ui.NewKeyAction("Next Match", v.nextCmd, false),
 		tcell.KeyBacktab:    ui.NewKeyAction("Previous Match", v.prevCmd, false),
 		tcell.KeyCtrlS:      ui.NewKeyAction("Save", v.saveCmd, true),
+		ui.KeyC:             ui.NewKeyAction("Copy", v.cpCmd, false),
 	}
 }
 
@@ -108,6 +110,16 @@ func (v *detailsView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	} else {
 		v.app.Flash().Infof("Log %s saved successfully!", path)
 	}
+	return nil
+}
+
+func (v *detailsView) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
+	log.Debug().Msgf("Copied YAML to clipboard")
+	v.app.Flash().Info("YAML copied to clipboard...")
+	if err := clipboard.WriteAll(v.GetText(true)); err != nil {
+		v.app.Flash().Err(err)
+	}
+
 	return nil
 }
 
