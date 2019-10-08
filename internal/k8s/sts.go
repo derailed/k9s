@@ -2,6 +2,8 @@ package k8s
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/kubectl/pkg/polymorphichelpers"
 )
 
 // StatefulSet manages a Kubernetes StatefulSet.
@@ -58,5 +60,21 @@ func (s *StatefulSet) Scale(ns, n string, replicas int32) error {
 
 	scale.Spec.Replicas = replicas
 	_, err = s.DialOrDie().AppsV1().StatefulSets(ns).UpdateScale(n, scale)
+	return err
+}
+
+// Restart a StatefulSet rollout.
+func (s *StatefulSet) Restart(ns, n string) error {
+
+	sts, err := s.DialOrDie().AppsV1().StatefulSets(ns).Get(n, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	update, err := polymorphichelpers.ObjectRestarterFn(sts)
+	if err != nil {
+		return err
+	}
+
+	_, err = s.DialOrDie().AppsV1().StatefulSets(ns).Patch(sts.Name, types.StrategicMergePatchType, update)
 	return err
 }

@@ -2,6 +2,8 @@ package k8s
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/kubectl/pkg/polymorphichelpers"
 )
 
 // DaemonSet represents a Kubernetes DaemonSet
@@ -47,4 +49,20 @@ func (d *DaemonSet) Delete(ns, n string, cascade, force bool) error {
 	return d.DialOrDie().AppsV1().DaemonSets(ns).Delete(n, &metav1.DeleteOptions{
 		PropagationPolicy: &p,
 	})
+}
+
+// Restart a DaemonSet rollout.
+func (d *DaemonSet) Restart(ns, n string) error {
+
+	ds, err := d.DialOrDie().AppsV1().DaemonSets(ns).Get(n, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	update, err := polymorphichelpers.ObjectRestarterFn(ds)
+	if err != nil {
+		return err
+	}
+
+	_, err = d.DialOrDie().AppsV1().DaemonSets(ns).Patch(ds.Name, types.StrategicMergePatchType, update)
+	return err
 }

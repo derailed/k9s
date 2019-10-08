@@ -10,6 +10,10 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 )
 
+// Compile time checks to ensure type satisfies interface
+var _ Restartable = (*Deployment)(nil)
+var _ Scalable = (*Deployment)(nil)
+
 // Deployment tracks a kubernetes resource.
 type Deployment struct {
 	*Base
@@ -128,4 +132,9 @@ func (r *Deployment) Fields(ns string) Row {
 // Scale the specified resource.
 func (r *Deployment) Scale(ns, n string, replicas int32) error {
 	return r.Resource.(Scalable).Scale(ns, n, replicas)
+}
+
+// Restart the rollout of the specified resource.
+func (r *Deployment) Restart(ns, n string) error {
+	return r.Resource.(Restartable).Restart(ns, n)
 }
