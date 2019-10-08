@@ -43,6 +43,10 @@ func TestYaml(t *testing.T) {
 			"certmanager.k8s.io/cluster-issuer: nameOfClusterIssuer",
 			"[steelblue::b]certmanager.k8s.io/cluster-issuer[white::-]: [papayawhip::]nameOfClusterIssuer",
 		},
+		{
+			"Message: Pod The node was low on resource: [DiskPressure].",
+			"[steelblue::b]Message[white::-]: [papayawhip::]Pod The node was low on resource: [DiskPressure[].",
+		},
 	}
 
 	s, _ := config.NewStyles("skins/stock.yml")
