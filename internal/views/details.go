@@ -114,7 +114,6 @@ func (v *detailsView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *detailsView) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msgf("Copied content to clipboard")
 	v.app.Flash().Info("Content copied to clipboard...")
 	if err := clipboard.WriteAll(v.GetText(true)); err != nil {
 		v.app.Flash().Err(err)
