@@ -1,11 +1,12 @@
 package resource
 
 import (
+	"errors"
 	"time"
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -15,6 +16,8 @@ type CustomResourceDefinition struct {
 	*Base
 	instance *unstructured.Unstructured
 }
+
+var _ Columnar = (*CustomResourceDefinition)(nil)
 
 // NewCustomResourceDefinitionList returns a new resource list.
 func NewCustomResourceDefinitionList(c Connection, ns string) List {
@@ -89,11 +92,12 @@ func (r *CustomResourceDefinition) Fields(ns string) Row {
 }
 
 // ExtFields returns extended fields.
-func (r *CustomResourceDefinition) ExtFields(m *TypeMeta) {
+func (r *CustomResourceDefinition) ExtFields() (TypeMeta, error) {
+	m := TypeMeta{}
 	i := r.instance
 	spec, ok := i.Object["spec"].(map[string]interface{})
 	if !ok {
-		return
+		return m, errors.New("missing crd specs")
 	}
 
 	if meta, ok := i.Object["metadata"].(map[string]interface{}); ok {
@@ -103,7 +107,7 @@ func (r *CustomResourceDefinition) ExtFields(m *TypeMeta) {
 	m.Namespaced = isNamespaced(spec["scope"].(string))
 	names, ok := spec["names"].(map[string]interface{})
 	if !ok {
-		return
+		return m, errors.New("missing crd names")
 	}
 	m.Kind = names["kind"].(string)
 	m.Singular, m.Plural = names["singular"].(string), names["plural"].(string)
@@ -114,6 +118,7 @@ func (r *CustomResourceDefinition) ExtFields(m *TypeMeta) {
 	} else {
 		m.ShortNames = nil
 	}
+	return m, nil
 }
 
 func isNamespaced(scope string) bool {
