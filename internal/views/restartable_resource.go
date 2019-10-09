@@ -23,7 +23,7 @@ func newRestartableResourceViewForParent(parent *resourceView) *restartableResou
 }
 
 func (v *restartableResourceView) extraActions(aa ui.KeyActions) {
-	aa[tcell.KeyCtrlR] = ui.NewKeyAction("Restart Rollout", v.restartCmd, true)
+	aa[tcell.KeyCtrlT] = ui.NewKeyAction("Restart Rollout", v.restartCmd, true)
 }
 
 func (v *restartableResourceView) restartCmd(evt *tcell.EventKey) *tcell.EventKey {

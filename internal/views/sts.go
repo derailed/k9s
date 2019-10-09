@@ -17,7 +17,11 @@ type statefulSetView struct {
 
 func newStatefulSetView(title, gvr string, app *appView, list resource.List) resourceViewer {
 	logResourceView := newLogResourceView(title, gvr, app, list)
-	v := statefulSetView{logResourceView: logResourceView, scalableResourceView: newScalableResourceViewForParent(logResourceView.resourceView), restartableResourceView: newRestartableResourceViewForParent(logResourceView.resourceView)}
+	v := statefulSetView{
+		logResourceView:         logResourceView,
+		scalableResourceView:    newScalableResourceViewForParent(logResourceView.resourceView),
+		restartableResourceView: newRestartableResourceViewForParent(logResourceView.resourceView),
+	}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.showPods
 
