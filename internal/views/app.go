@@ -83,7 +83,7 @@ func (a *appView) Init(version string, rate int) {
 	a.App.Init()
 
 	a.AddActions(ui.KeyActions{
-		tcell.KeyCtrlH: ui.NewKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
+		ui.KeyH:        ui.NewKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
 		ui.KeyHelp:     ui.NewKeyAction("Help", a.helpCmd, false),
 		tcell.KeyCtrlA: ui.NewKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),

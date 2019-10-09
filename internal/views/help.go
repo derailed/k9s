@@ -155,7 +155,7 @@ func (v *helpView) showGeneral() ui.Hints {
 			Description: "Refresh",
 		},
 		{
-			Mnemonic:    "Ctrl-h",
+			Mnemonic:    "h",
 			Description: "Toggle Header",
 		},
 		{
