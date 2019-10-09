@@ -56,7 +56,7 @@ func TestAliasDefine(t *testing.T) {
 			configAlias := config.NewAliases()
 			for _, aliases := range tt.aliases {
 				for _, a := range aliases.aliases {
-					configAlias.Define(a, aliases.cmd)
+					configAlias.Define(aliases.cmd, a)
 				}
 			}
 			for alias, cmd := range tt.registeredCommands {

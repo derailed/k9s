@@ -6,7 +6,7 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
@@ -16,6 +16,8 @@ type CustomResourceDefinition struct {
 	*Base
 	instance *unstructured.Unstructured
 }
+
+var _ Columnar = (*CustomResourceDefinition)(nil)
 
 // NewCustomResourceDefinitionList returns a new resource list.
 func NewCustomResourceDefinitionList(c Connection, ns string) List {

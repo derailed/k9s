@@ -61,13 +61,13 @@ func allCRDs(c k8s.Connection, vv viewers) {
 		gvr := k8s.NewGVR(meta.Group, meta.Version, meta.Plural)
 		gvrs := gvr.String()
 		if meta.Plural != "" {
-			aliases.Define(meta.Plural, gvrs)
+			aliases.Define(gvrs, meta.Plural)
 		}
 		if meta.Singular != "" {
-			aliases.Define(meta.Singular, gvrs)
+			aliases.Define(gvrs, meta.Singular)
 		}
 		for _, a := range meta.ShortNames {
-			aliases.Define(a, gvrs)
+			aliases.Define(gvrs, a)
 		}
 
 		vv[gvrs] = viewer{
@@ -144,13 +144,13 @@ func load(c k8s.Connection, vv viewers) {
 			cmd.gvr = gvr.String()
 			vv[gvr.String()] = cmd
 			gvrStr := gvr.String()
-			aliases.Define(strings.ToLower(res.Kind), gvrStr)
-			aliases.Define(res.Name, gvrStr)
+			aliases.Define(gvrStr, strings.ToLower(res.Kind))
+			aliases.Define(gvrStr, res.Name)
 			if len(res.SingularName) > 0 {
-				aliases.Define(res.SingularName, gvrStr)
+				aliases.Define(gvrStr, res.SingularName)
 			}
 			for _, s := range res.ShortNames {
-				aliases.Define(s, gvrStr)
+				aliases.Define(gvrStr, s)
 			}
 		}
 	}

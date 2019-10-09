@@ -79,7 +79,7 @@ func (a Aliases) Get(k string) (string, bool) {
 }
 
 // Define declares a new alias.
-func (a Aliases) Define(alias, command string) {
+func (a Aliases) Define(command, alias string) {
 	if _, ok := a.Alias[alias]; ok {
 		// Don't override aliases. Take order of alias registration as precedence.
 		return
