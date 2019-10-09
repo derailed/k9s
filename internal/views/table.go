@@ -38,9 +38,9 @@ func (v *tableView) BufferActive(state bool, k ui.BufferKind) {
 
 func (v *tableView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	colorPattern := regexp.MustCompile(`\[([a-zA-Z]+|#[0-9a-zA-Z]{6}|\-)?(:([a-zA-Z]+|#[0-9a-zA-Z]{6}|\-)?(:([lbdru]+|\-)?)?)?\]`)
-	fname := sanitize.Name(colorPattern.ReplaceAllString(v.GetBaseTitle(), ""))
+	title := sanitize.Name(colorPattern.ReplaceAllString(v.GetBaseTitle(), ""))
 
-	if path, err := saveTable(v.app.Config.K9s.CurrentCluster, fname, v.GetData()); err != nil {
+	if path, err := saveTable(v.app.Config.K9s.CurrentCluster, title, v.GetData()); err != nil {
 		v.app.Flash().Err(err)
 	} else {
 		v.app.Flash().Infof("File %s saved successfully!", path)
