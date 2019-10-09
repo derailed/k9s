@@ -26,9 +26,10 @@ const (
 )
 
 var (
-	cpuRX    = regexp.MustCompile(`\A.{0,1}CPU`)
-	memRX    = regexp.MustCompile(`\A.{0,1}MEM`)
-	labelCmd = regexp.MustCompile(`\A\-l`)
+	cpuRX        = regexp.MustCompile(`\A.{0,1}CPU`)
+	memRX        = regexp.MustCompile(`\A.{0,1}MEM`)
+	labelCmd     = regexp.MustCompile(`\A\-l`)
+	colorPattern = regexp.MustCompile(`\[([a-zA-Z]+|#[0-9a-zA-Z]{6}|\-)?(:([a-zA-Z]+|#[0-9a-zA-Z]{6}|\-)?(:([lbdru]+|\-)?)?)?\]`)
 )
 
 type cleanseFn func(string) string

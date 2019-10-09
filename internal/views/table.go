@@ -1,8 +1,6 @@
 package views
 
 import (
-	"regexp"
-
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/kennygrant/sanitize"
@@ -37,7 +35,6 @@ func (v *tableView) BufferActive(state bool, k ui.BufferKind) {
 }
 
 func (v *tableView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	colorPattern := regexp.MustCompile(`\[([a-zA-Z]+|#[0-9a-zA-Z]{6}|\-)?(:([a-zA-Z]+|#[0-9a-zA-Z]{6}|\-)?(:([lbdru]+|\-)?)?)?\]`)
 	title := sanitize.Name(colorPattern.ReplaceAllString(v.GetBaseTitle(), ""))
 
 	if path, err := saveTable(v.app.Config.K9s.CurrentCluster, title, v.GetData()); err != nil {
