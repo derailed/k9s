@@ -26,7 +26,6 @@ func printInfo() {
 	printLogo(color.Cyan)
 	printTuple(sectionFmt, "Configuration", config.K9sConfigFile)
 	printTuple(sectionFmt, "Logs", config.K9sLogs)
-	printTuple(sectionFmt, "Screen Dumps", config.K9sDumpDir)
 }
 
 func printLogo(c color.Paint) {

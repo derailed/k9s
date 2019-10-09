@@ -151,7 +151,8 @@ func (v *logView) updateIndicator() {
 // Actions...
 
 func (v *logView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveData(v.app.Config.K9s.CurrentCluster, v.path, v.logs.GetText(true)); err != nil {
+	dir := filepath.Join(v.app.Config.K9s.GetDumpDir(), v.app.Config.K9s.CurrentCluster)
+	if path, err := saveData(dir, v.path, v.logs.GetText(true)); err != nil {
 		v.app.Flash().Err(err)
 	} else {
 		v.app.Flash().Infof("Log %s saved successfully!", path)
@@ -163,8 +164,7 @@ func ensureDir(dir string) error {
 	return os.MkdirAll(dir, 0744)
 }
 
-func saveData(cluster, name, data string) (string, error) {
-	dir := filepath.Join(config.K9sDumpDir, cluster)
+func saveData(dir, name, data string) (string, error) {
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}

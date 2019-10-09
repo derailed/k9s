@@ -1,6 +1,8 @@
 package views
 
 import (
+	"path/filepath"
+
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 )
@@ -34,7 +36,8 @@ func (v *tableView) BufferActive(state bool, k ui.BufferKind) {
 }
 
 func (v *tableView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveTable(v.app.Config.K9s.CurrentCluster, v.GetBaseTitle(), v.GetData()); err != nil {
+	dir := filepath.Join(v.app.Config.K9s.GetDumpDir(), v.app.Config.K9s.CurrentCluster)
+	if path, err := saveTable(dir, v.GetBaseTitle(), v.GetData()); err != nil {
 		v.app.Flash().Err(err)
 	} else {
 		v.app.Flash().Infof("File %s saved successfully!", path)

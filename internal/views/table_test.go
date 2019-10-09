@@ -16,7 +16,7 @@ import (
 func TestTableViewSave(t *testing.T) {
 	v := newTableView(NewApp(config.NewConfig(ks{})), "test")
 	v.SetTitle("k9s-test")
-	dir := filepath.Join(config.K9sDumpDir, v.app.Config.K9s.CurrentCluster)
+	dir := filepath.Join(v.app.Config.K9s.GetDumpDir(), v.app.Config.K9s.CurrentCluster)
 	c1, _ := ioutil.ReadDir(dir)
 	v.saveCmd(nil)
 	c2, _ := ioutil.ReadDir(dir)

@@ -100,6 +100,7 @@ func TestConfigLoad(t *testing.T) {
 	assert.Equal(t, "minikube", cfg.K9s.CurrentCluster)
 	assert.NotNil(t, cfg.K9s.Clusters)
 	assert.Equal(t, 2, len(cfg.K9s.Clusters))
+	assert.Equal(t, "/test", cfg.K9s.DumpDir)
 
 	nn := []string{
 		"default",

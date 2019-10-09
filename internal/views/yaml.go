@@ -57,8 +57,7 @@ func colorizeYAML(style config.Yaml, raw string) string {
 	return strings.Join(buff, "\n")
 }
 
-func saveYAML(cluster, name, data string) (string, error) {
-	dir := filepath.Join(config.K9sDumpDir, cluster)
+func saveYAML(dir, name, data string) (string, error) {
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}

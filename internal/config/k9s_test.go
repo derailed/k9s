@@ -1,6 +1,7 @@
 package config_test
 
 import (
+	"os"
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
@@ -27,6 +28,7 @@ func TestK9sValidate(t *testing.T) {
 	assert.Equal(t, "ctx1", c.CurrentContext)
 	assert.Equal(t, "c1", c.CurrentCluster)
 	assert.Equal(t, 1, len(c.Clusters))
+	assert.Equal(t, os.TempDir(), c.DumpDir)
 	_, ok := c.Clusters[c.CurrentCluster]
 	assert.True(t, ok)
 }

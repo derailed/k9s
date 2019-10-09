@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
@@ -120,7 +119,7 @@ func (v *dumpView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	dir := filepath.Join(config.K9sDumpDir, v.app.Config.K9s.CurrentCluster)
+	dir := filepath.Join(v.app.Config.K9s.GetDumpDir(), v.app.Config.K9s.CurrentCluster)
 	if !edit(true, v.app, filepath.Join(dir, sel)) {
 		v.app.Flash().Err(errors.New("Failed to launch editor"))
 	}
@@ -134,7 +133,7 @@ func (v *dumpView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	dir := filepath.Join(config.K9sDumpDir, v.app.Config.K9s.CurrentCluster)
+	dir := filepath.Join(v.app.Config.K9s.GetDumpDir(), v.app.Config.K9s.CurrentCluster)
 	showModal(v.Pages, fmt.Sprintf("Delete screen dump `%s?", sel), "table", func() {
 		if err := os.Remove(filepath.Join(dir, sel)); err != nil {
 			v.app.Flash().Errf("Unable to delete file %s", err)
@@ -166,7 +165,7 @@ func (v *dumpView) hydrate() resource.TableData {
 		Namespace: resource.NotNamespaced,
 	}
 
-	dir := filepath.Join(config.K9sDumpDir, v.app.Config.K9s.CurrentCluster)
+	dir := filepath.Join(v.app.Config.K9s.GetDumpDir(), v.app.Config.K9s.CurrentCluster)
 	ff, err := ioutil.ReadDir(dir)
 	if err != nil {
 		v.app.Flash().Errf("Unable to read dump directory %s", err)
@@ -213,7 +212,7 @@ func (v *dumpView) watchDumpDir(ctx context.Context) error {
 		}
 	}()
 
-	return w.Add(filepath.Join(config.K9sDumpDir, v.app.Config.K9s.CurrentCluster))
+	return w.Add(filepath.Join(v.app.Config.K9s.GetDumpDir(), v.app.Config.K9s.CurrentCluster))
 }
 
 func (v *dumpView) getTV() *tableView {

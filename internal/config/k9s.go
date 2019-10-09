@@ -1,6 +1,10 @@
 package config
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/derailed/k9s/internal/k8s"
 )
 
@@ -19,6 +23,7 @@ type K9s struct {
 	CurrentContext    string              `yaml:"currentContext"`
 	CurrentCluster    string              `yaml:"currentCluster"`
 	Clusters          map[string]*Cluster `yaml:"clusters,omitempty"`
+	DumpDir           string              `yaml:"dumpDir"`
 	manualRefreshRate int
 	manualHeadless    *bool
 	manualCommand     *string
@@ -31,6 +36,7 @@ func NewK9s() *K9s {
 		LogBufferSize:  defaultLogBufferSize,
 		LogRequestSize: defaultLogRequestSize,
 		Clusters:       make(map[string]*Cluster),
+		DumpDir:        os.TempDir(),
 	}
 }
 
@@ -81,6 +87,11 @@ func (k *K9s) ActiveCluster() *Cluster {
 	k.Clusters[k.CurrentCluster] = NewCluster()
 
 	return k.Clusters[k.CurrentCluster]
+}
+
+// GetDumpDir returns the directory where screen dumps are persisted.
+func (k *K9s) GetDumpDir() string {
+	return filepath.Join(k.DumpDir, fmt.Sprintf("k9s-screens-%s", MustK9sUser()))
 }
 
 func (k *K9s) validateDefaults() {

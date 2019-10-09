@@ -4,6 +4,7 @@ k9s:
   logRequestSize: 200
   currentContext: minikube
   currentCluster: minikube
+  dumpDir: /test
   clusters:
     minikube:
       namespace:

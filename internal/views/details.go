@@ -2,6 +2,7 @@ package views
 
 import (
 	"fmt"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -103,7 +104,8 @@ func (v *detailsView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *detailsView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveYAML(v.app.Config.K9s.CurrentCluster, v.title, v.GetText(true)); err != nil {
+	dir := filepath.Join(v.app.Config.K9s.GetDumpDir(), v.app.Config.K9s.CurrentCluster)
+	if path, err := saveYAML(dir, v.title, v.GetText(true)); err != nil {
 		v.app.Flash().Err(err)
 	} else {
 		v.app.Flash().Infof("Log %s saved successfully!", path)

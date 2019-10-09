@@ -46,8 +46,7 @@ func trimCellRelative(tv *tableView, row, col int) string {
 // 	return strings.TrimSpace(c.Text)
 // }
 
-func saveTable(cluster, name string, data resource.TableData) (string, error) {
-	dir := filepath.Join(config.K9sDumpDir, cluster)
+func saveTable(dir, name string, data resource.TableData) (string, error) {
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}
