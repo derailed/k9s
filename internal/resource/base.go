@@ -101,8 +101,8 @@ func (*Base) NumCols(n string) map[string]bool {
 }
 
 // ExtFields returns extended fields in relation to headers.
-func (*Base) ExtFields() (*TypeMeta, error) {
-	return nil, errors.New("Base does not have extended fields.")
+func (*Base) ExtFields() (TypeMeta, error) {
+	return TypeMeta{}, errors.New("Base does not have extended fields.")
 }
 
 // Get a resource by name

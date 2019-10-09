@@ -92,12 +92,12 @@ func (r *CustomResourceDefinition) Fields(ns string) Row {
 }
 
 // ExtFields returns extended fields.
-func (r *CustomResourceDefinition) ExtFields() (*TypeMeta, error) {
-	m := &TypeMeta{}
+func (r *CustomResourceDefinition) ExtFields() (TypeMeta, error) {
+	m := TypeMeta{}
 	i := r.instance
 	spec, ok := i.Object["spec"].(map[string]interface{})
 	if !ok {
-		return nil, errors.New("missing crd specs")
+		return m, errors.New("missing crd specs")
 	}
 
 	if meta, ok := i.Object["metadata"].(map[string]interface{}); ok {
@@ -107,7 +107,7 @@ func (r *CustomResourceDefinition) ExtFields() (*TypeMeta, error) {
 	m.Namespaced = isNamespaced(spec["scope"].(string))
 	names, ok := spec["names"].(map[string]interface{})
 	if !ok {
-		return nil, errors.New("missing crd names")
+		return m, errors.New("missing crd names")
 	}
 	m.Kind = names["kind"].(string)
 	m.Singular, m.Plural = names["singular"].(string), names["plural"].(string)

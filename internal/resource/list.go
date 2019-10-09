@@ -90,7 +90,7 @@ type (
 	Columnar interface {
 		Header(ns string) Row
 		Fields(ns string) Row
-		ExtFields() (*TypeMeta, error)
+		ExtFields() (TypeMeta, error)
 		Name() string
 		SetPodMetrics(*mv1beta1.PodMetrics)
 		SetNodeMetrics(*mv1beta1.NodeMetrics)
