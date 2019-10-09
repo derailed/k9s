@@ -143,8 +143,7 @@ func (r *Node) Fields(ns string) Row {
 
 	sta := make([]string, 10)
 	r.status(no.Status, no.Spec.Unschedulable, sta)
-	ro := make([]string, 10)
-	r.nodeRoles(no, ro)
+	ro := r.findNodeRoles(no)
 
 	return append(ff,
 		no.Name,
@@ -203,28 +202,20 @@ func gatherNodeMX(no *v1.Node, mx *mv1beta1.NodeMetrics) (c metric, a metric, p 
 	return
 }
 
-func withPerc(v, p string) string {
-	return v + " (" + p + ")"
-}
-
-func (*Node) nodeRoles(node *v1.Node, res []string) {
-	index := 0
-	for k, v := range node.Labels {
+func (_ *Node) findNodeRoles(no *v1.Node) []string {
+	roles := sets.NewString()
+	for k, v := range no.Labels {
 		switch {
 		case strings.HasPrefix(k, labelNodeRolePrefix):
 			if role := strings.TrimPrefix(k, labelNodeRolePrefix); len(role) > 0 {
-				res[index] = role
-				index++
+				roles.Insert(role)
 			}
 		case k == nodeLabelRole && v != "":
-			res[index] = v
-			index++
+			roles.Insert(v)
 		}
 	}
 
-	if empty(res) {
-		res[index] = MissingValue
-	}
+	return roles.List()
 }
 
 func (*Node) getIPs(addrs []v1.NodeAddress) (iIP, eIP string) {
@@ -269,22 +260,6 @@ func (*Node) status(status v1.NodeStatus, exempt bool, res []string) {
 	if exempt {
 		res[index] = "SchedulingDisabled"
 	}
-}
-
-func findNodeRoles(no *v1.Node) []string {
-	roles := sets.NewString()
-	for k, v := range no.Labels {
-		switch {
-		case strings.HasPrefix(k, labelNodeRolePrefix):
-			if role := strings.TrimPrefix(k, labelNodeRolePrefix); len(role) > 0 {
-				roles.Insert(role)
-			}
-		case k == nodeLabelRole && v != "":
-			roles.Insert(v)
-		}
-	}
-
-	return roles.List()
 }
 
 func (r *Node) podsResources(name string) (v1.ResourceList, v1.ResourceList, error) {

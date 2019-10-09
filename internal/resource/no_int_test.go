@@ -34,6 +34,43 @@ func TestNodeStatus(t *testing.T) {
 	}
 }
 
+func TestNodeRoles(t *testing.T) {
+	uu := []struct {
+		node  v1.Node
+		roles []string
+	}{
+		{
+			node: v1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"node-role.kubernetes.io/master": "true",
+						"node-role.kubernetes.io/worker": "true",
+					},
+				},
+			},
+			roles: []string{"master", "worker"},
+		},
+
+		{
+			node: v1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"node-role.kubernetes.io/worker": "true",
+						"node-role.kubernetes.io/master": "true",
+					},
+				},
+			},
+			roles: []string{"master", "worker"},
+		},
+	}
+
+	no := NewNode(nil)
+	for _, u := range uu {
+		roles := no.findNodeRoles(&u.node)
+		assert.Equal(t, u.roles, roles)
+	}
+}
+
 func BenchmarkNodeFields(b *testing.B) {
 	n := NewNode(nil)
 	no := makeNode()
