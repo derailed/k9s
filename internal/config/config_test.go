@@ -209,6 +209,7 @@ func TestConfigSaveFile(t *testing.T) {
 	cfg.K9s.LogRequestSize = 100
 	cfg.K9s.CurrentContext = "blee"
 	cfg.K9s.CurrentCluster = "blee"
+	cfg.K9s.DumpDir = "/test"
 	cfg.Validate()
 	path := filepath.Join("/tmp", "k9s.yml")
 	err := cfg.SaveFile(path)
@@ -262,6 +263,7 @@ var expectedConfig = `k9s:
   headless: false
   logBufferSize: 500
   logRequestSize: 100
+  dumpDir: /test
   currentContext: blee
   currentCluster: blee
   clusters:
@@ -301,6 +303,7 @@ var resetConfig = `k9s:
   headless: false
   logBufferSize: 200
   logRequestSize: 200
+  dumpDir: /test
   currentContext: blee
   currentCluster: blee
   clusters:

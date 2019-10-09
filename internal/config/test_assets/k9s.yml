@@ -2,9 +2,9 @@ k9s:
   refreshRate: 2
   logBufferSize: 200
   logRequestSize: 200
+  dumpDir: /test
   currentContext: minikube
   currentCluster: minikube
-  dumpDir: /test
   clusters:
     minikube:
       namespace:

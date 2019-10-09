@@ -20,10 +20,10 @@ type K9s struct {
 	Headless          bool                `yaml:"headless"`
 	LogBufferSize     int                 `yaml:"logBufferSize"`
 	LogRequestSize    int                 `yaml:"logRequestSize"`
+	DumpDir           string              `yaml:"dumpDir"`
 	CurrentContext    string              `yaml:"currentContext"`
 	CurrentCluster    string              `yaml:"currentCluster"`
 	Clusters          map[string]*Cluster `yaml:"clusters,omitempty"`
-	DumpDir           string              `yaml:"dumpDir"`
 	manualRefreshRate int
 	manualHeadless    *bool
 	manualCommand     *string
@@ -35,8 +35,8 @@ func NewK9s() *K9s {
 		RefreshRate:    defaultRefreshRate,
 		LogBufferSize:  defaultLogBufferSize,
 		LogRequestSize: defaultLogRequestSize,
-		Clusters:       make(map[string]*Cluster),
 		DumpDir:        os.TempDir(),
+		Clusters:       make(map[string]*Cluster),
 	}
 }
 
