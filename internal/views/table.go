@@ -1,8 +1,11 @@
 package views
 
 import (
+	"regexp"
+
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
+	"github.com/kennygrant/sanitize"
 )
 
 type tableView struct {
@@ -34,7 +37,10 @@ func (v *tableView) BufferActive(state bool, k ui.BufferKind) {
 }
 
 func (v *tableView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveTable(v.app.Config.K9s.CurrentCluster, v.GetBaseTitle(), v.GetData()); err != nil {
+	colorPattern := regexp.MustCompile(`\[([a-zA-Z]+|#[0-9a-zA-Z]{6}|\-)?(:([a-zA-Z]+|#[0-9a-zA-Z]{6}|\-)?(:([lbdru]+|\-)?)?)?\]`)
+	fname := sanitize.Name(colorPattern.ReplaceAllString(v.GetBaseTitle(), ""))
+
+	if path, err := saveTable(v.app.Config.K9s.CurrentCluster, fname, v.GetData()); err != nil {
 		v.app.Flash().Err(err)
 	} else {
 		v.app.Flash().Infof("File %s saved successfully!", path)
