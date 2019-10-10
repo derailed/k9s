@@ -76,7 +76,8 @@ type (
 		AllNamespaces() bool
 		GetNamespace() string
 		SetNamespace(string)
-		Reconcile(informer *wa.Informer, path *string) error
+		Reconcile(informer *wa.Informer, path *string) (Columnars, error)
+		Update(items Columnars)
 		GetName() string
 		Access(flag int) bool
 		GetAccess() int
@@ -286,27 +287,20 @@ func (l *list) fetchResource(informer *wa.Informer, r interface{}, ns string) (C
 }
 
 // Reconcile previous vs current state and emits delta events.
-func (l *list) Reconcile(informer *wa.Informer, path *string) error {
+func (l *list) Reconcile(informer *wa.Informer, path *string) (Columnars, error) {
 	ns := l.namespace
 	if path != nil {
 		ns = *path
 	}
 
-	items, err := l.load(informer, ns)
-	if err == nil {
-		l.update(items)
-		return nil
+	if items, err := l.load(informer, ns); err == nil {
+		return items, nil
 	}
 
-	if items, err = l.resource.List(l.namespace); err != nil {
-		return err
-	}
-	l.update(items)
-
-	return nil
+	return l.resource.List(l.namespace)
 }
 
-func (l *list) update(items Columnars) {
+func (l *list) Update(items Columnars) {
 	first := len(l.cache) == 0
 	kk := make([]string, 0, len(items))
 	for _, i := range items {
@@ -317,11 +311,16 @@ func (l *list) update(items Columnars) {
 			continue
 		}
 		dd := make(Row, len(ff))
-		a := watch.Added
-		if evt, ok := l.cache[i.Name()]; ok {
-			a = computeDeltas(evt, ff[:len(ff)-1], dd)
+		evt, ok := l.cache[i.Name()]
+		if !ok {
+			l.cache[i.Name()] = newRowEvent(watch.Added, ff, dd)
+			continue
 		}
-		l.cache[i.Name()] = newRowEvent(a, ff, dd)
+
+		a := computeDeltas(evt, ff[:len(ff)-1], dd)
+		if a != Unchanged || evt.Action == watch.Added {
+			l.cache[i.Name()] = newRowEvent(a, ff, dd)
+		}
 	}
 
 	if first {

@@ -93,7 +93,7 @@ func (v *Table) AddSelectedRowListener(f SelectedRowFunc) {
 func (v *Table) selChanged(r, c int) {
 	v.selectedRow = r
 	v.updateSelectedItem(r)
-	if r == 0 {
+	if r <= 0 {
 		return
 	}
 
@@ -125,7 +125,7 @@ func (v *Table) SelectRow(r int, broadcast bool) {
 }
 
 func (v *Table) updateSelectedItem(r int) {
-	if r == 0 || v.GetCell(r, 0) == nil {
+	if r <= 0 || v.GetCell(r, 0) == nil {
 		v.selectedItem = ""
 		return
 	}

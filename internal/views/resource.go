@@ -118,9 +118,7 @@ func (v *resourceView) update(ctx context.Context) {
 				log.Debug().Msgf("%s updater canceled!", v.list.GetName())
 				return
 			case <-time.After(time.Duration(v.app.Config.K9s.GetRefreshRate()) * time.Second):
-				v.app.QueueUpdateDraw(func() {
-					v.refresh()
-				})
+				v.refresh()
 			}
 		}
 	}(ctx)
@@ -329,18 +327,34 @@ func (v *resourceView) refresh() {
 		return
 	}
 
-	v.refreshActions()
 	if v.list.Namespaced() {
 		v.list.SetNamespace(v.currentNS)
 	}
-	if err := v.list.Reconcile(v.app.informer, v.path); err != nil {
+
+	// Data is loaded before updating the screen. This should not be added inside a QueueUpdateDraw,
+	// otherwise when fetching a huge amount of data or with poor internet connection,
+	// the user would suffer from freezing screens.
+	items, err := v.list.Reconcile(v.app.informer, v.path)
+	if err != nil {
 		v.app.Flash().Err(err)
 	}
-	data := v.list.Data()
-	if v.decorateFn != nil {
-		data = v.decorateFn(data)
-	}
-	v.masterPage().Update(data)
+
+	v.app.QueueUpdateDraw(func() {
+		if _, ok := v.CurrentPage().Item.(*tableView); !ok {
+			return
+		}
+
+		v.refreshActions()
+		v.list.Update(items)
+
+		data := v.list.Data()
+		if v.decorateFn != nil {
+			data = v.decorateFn(data)
+		}
+
+		v.masterPage().Update(data)
+	})
+
 }
 
 func (v *resourceView) namespaceActions(aa ui.KeyActions) {

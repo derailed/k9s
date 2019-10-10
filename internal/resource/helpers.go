@@ -25,7 +25,7 @@ const (
 	NotNamespaced = "-"
 
 	// New track new resource events.
-	New watch.EventType = "NEW"
+	New watch.EventType = watch.Added
 	// Unchanged provides no change events.
 	Unchanged watch.EventType = "UNCHANGED"
 

@@ -70,8 +70,9 @@ func TestPodListData(t *testing.T) {
 	l := NewPodListWithArgs("blee", NewPodWithArgs(mc, mr, mx))
 	// Make sure we mcn get deltas!
 	for i := 0; i < 2; i++ {
-		err := l.Reconcile(nil, nil)
+		items, err := l.Reconcile(nil, nil)
 		assert.Nil(t, err)
+		l.Update(items)
 	}
 
 	mr.VerifyWasCalled(m.Times(2)).List("blee")

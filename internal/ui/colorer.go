@@ -27,7 +27,7 @@ var (
 func DefaultColorer(ns string, r *resource.RowEvent) tcell.Color {
 	c := StdColor
 	switch r.Action {
-	case watch.Added, resource.New:
+	case watch.Added:
 		c = AddColor
 	case watch.Modified:
 		c = ModColor

@@ -62,8 +62,9 @@ func TestRCListData(t *testing.T) {
 	l := NewRCListWithArgs("blee", NewRCWithArgs(mc, mr))
 	// Make sure we mrn get deltas!
 	for i := 0; i < 2; i++ {
-		err := l.Reconcile(nil, nil)
+		items, err := l.Reconcile(nil, nil)
 		assert.Nil(t, err)
+		l.Update(items)
 	}
 
 	mr.VerifyWasCalled(m.Times(2)).List("blee")

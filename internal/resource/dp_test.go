@@ -62,8 +62,9 @@ func TestDeploymentListData(t *testing.T) {
 	l := NewDeploymentListWithArgs("-", NewDeploymentWithArgs(mc, mr))
 	// Make sure we can get deltas!
 	for i := 0; i < 2; i++ {
-		err := l.Reconcile(nil, nil)
+		items, err := l.Reconcile(nil, nil)
 		assert.Nil(t, err)
+		l.Update(items)
 	}
 
 	mr.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
