@@ -2,13 +2,12 @@ package resource
 
 import (
 	"fmt"
-	"reflect"
-
 	wa "github.com/derailed/k9s/internal/watch"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	"reflect"
 )
 
 const (
@@ -317,9 +316,9 @@ func (l *list) Update(items Columnars) {
 			continue
 		}
 
-		a := computeDeltas(evt, ff[:len(ff)-1], dd)
-		if a != Unchanged || evt.Action == watch.Added {
-			l.cache[i.Name()] = newRowEvent(a, ff, dd)
+		delta := computeDeltas(evt, ff[:len(ff)-1], dd)
+		if evt.Action != delta {
+			l.cache[i.Name()] = newRowEvent(delta, ff, dd)
 		}
 	}
 
