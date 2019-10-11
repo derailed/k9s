@@ -35,6 +35,7 @@ k9s:
     fgColor: blue
     bgColor: black
     cursorColor: aqua
+    markColor: darkgoldenrod
     header:
       fgColor: white
       bgColor: black

@@ -169,6 +169,16 @@ func (v *Table) GetSelectedItem() string {
 	return v.selectedItem
 }
 
+// GetSelectedItems return currently marked or selected items names.
+func (v *Table) GetSelectedItems() []string {
+	if len(v.data.Marks) > 0 {
+		items := make([]string, len(v.data.Marks))
+		copy(items, v.data.Marks)
+		return items
+	}
+	return []string{v.GetSelectedItem()}
+}
+
 func (v *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	key := evt.Key()
 	if key == tcell.KeyRune {
@@ -318,6 +328,7 @@ func (v *Table) buildRow(row int, data resource.TableData, sk string, pads MaxyP
 	if v.colorerFn != nil {
 		f = v.colorerFn
 	}
+	m := data.IsMarked(sk)
 	for col, field := range data.Rows[sk].Fields {
 		header := data.Header[col]
 		field, align := v.formatCell(data.NumCols[header], header, field+Deltas(data.Rows[sk].Deltas[col], field), pads[col])
@@ -326,6 +337,9 @@ func (v *Table) buildRow(row int, data resource.TableData, sk string, pads MaxyP
 			c.SetExpansion(1)
 			c.SetAlign(align)
 			c.SetTextColor(f(data.Namespace, data.Rows[sk]))
+			if m {
+				c.SetBackgroundColor(config.AsColor(v.styles.Table().MarkColor))
+			}
 		}
 		v.SetCell(row, col, c)
 	}

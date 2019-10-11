@@ -37,6 +37,7 @@ k9s:
     fgColor: blue
     bgColor: darkblue
     cursorColor: aqua
+    markColor: mediumslateblue
     header:
       fgColor: white
       bgColor: darkblue

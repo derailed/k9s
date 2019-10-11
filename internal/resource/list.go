@@ -66,6 +66,7 @@ type (
 		Rows      RowEvents
 		NumCols   map[string]bool
 		Namespace string
+		Marks     []string
 	}
 
 	// List protocol to display and update a collection of resources
@@ -84,6 +85,7 @@ type (
 		SetFieldSelector(string)
 		SetLabelSelector(string)
 		HasSelectors() bool
+		ToggleMark(sk string)
 	}
 
 	// Columnar tracks resources that can be diplayed in a tabular fashion.
@@ -127,8 +129,19 @@ type (
 		verbs           int
 		resource        Resource
 		cache           RowEvents
+		marks           []string
 	}
 )
+
+// IsMarked checks if key is marked.
+func (t *TableData) IsMarked(sk string) bool {
+	for _, mark := range t.Marks {
+		if mark == sk {
+			return true
+		}
+	}
+	return false
+}
 
 func newRowEvent(a watch.EventType, f, d Row) *RowEvent {
 	return &RowEvent{Action: a, Fields: f, Deltas: d}
@@ -232,6 +245,7 @@ func (l *list) Data() TableData {
 		Rows:      l.cache,
 		NumCols:   l.resource.NumCols(l.namespace),
 		Namespace: l.namespace,
+		Marks:     l.marks,
 	}
 }
 
@@ -343,8 +357,27 @@ func (l *list) ensureDeletes(kk []string) {
 		}
 		if !found {
 			delete(l.cache, k)
+			l.removeMark(k)
 		}
 	}
+}
+
+func (l *list) removeMark(sk string) {
+	for index, mark := range l.marks {
+		if mark == sk {
+			l.marks = append(l.marks[:index], l.marks[index+1:]...)
+		}
+	}
+}
+
+func (l *list) ToggleMark(sk string) {
+	for index, mark := range l.marks {
+		if mark == sk {
+			l.marks = append(l.marks[:index], l.marks[index+1:]...)
+			return
+		}
+	}
+	l.marks = append(l.marks, sk)
 }
 
 // Helpers...

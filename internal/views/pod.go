@@ -115,15 +115,17 @@ func (v *podView) killCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	sel := v.masterPage().GetSelectedItem()
+	sel := v.masterPage().GetSelectedItems()
 	v.masterPage().ShowDeleted()
-	v.app.Flash().Infof("Delete resource %s %s", v.list.GetName(), sel)
-	if err := v.list.Resource().Delete(sel, true, false); err != nil {
-		v.app.Flash().Errf("Delete failed with %s", err)
-	} else {
-		deletePortForward(v.app.forwarders, sel)
-		v.refresh()
+	for _, res := range sel {
+		v.app.Flash().Infof("Delete resource %s %s", v.list.GetName(), res)
+		if err := v.list.Resource().Delete(res, true, false); err != nil {
+			v.app.Flash().Errf("Delete failed with %s", err)
+		} else {
+			deletePortForward(v.app.forwarders, res)
+		}
 	}
+	v.refresh()
 	return nil
 }
 
