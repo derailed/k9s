@@ -3,6 +3,8 @@ package resource_test
 import (
 	"testing"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
@@ -53,6 +55,19 @@ func TestCustomMarshal(t *testing.T) {
 
 	assert.Nil(t, err)
 	assert.Equal(t, customYaml(), ma)
+}
+
+func TestCustomMarshalWithUnstructured(t *testing.T) {
+	mc := NewMockConnection()
+	mr := NewMockCruder()
+	m.When(mr.Get("blee", "fred")).ThenReturn(k8sUnstructured(), nil)
+
+	cm := NewCustomWithArgs(mc, mr)
+	ma, err := cm.Marshal("blee/fred")
+	mr.VerifyWasCalledOnce().Get("blee", "fred")
+
+	assert.Nil(t, err)
+	assert.Equal(t, unstructuredYAML(), ma)
 }
 
 func TestCustomListData(t *testing.T) {
@@ -107,6 +122,28 @@ func k8sCustomTable() *metav1beta1.Table {
 			},
 		},
 	}
+}
+
+func k8sUnstructured() *unstructured.Unstructured {
+	return &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"kind":       "fred",
+			"apiVersion": "v1",
+			"metadata": map[string]interface{}{
+				"namespace": "blee",
+				"name":      "fred",
+			},
+		},
+	}
+}
+
+func unstructuredYAML() string {
+	return `apiVersion: v1
+kind: fred
+metadata:
+  name: fred
+  namespace: blee
+`
 }
 
 func k8sCustomRow() *metav1beta1.TableRow {
