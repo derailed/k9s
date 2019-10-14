@@ -3,6 +3,8 @@ package resource
 import (
 	"testing"
 
+	"k8s.io/apimachinery/pkg/util/sets"
+
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -31,6 +33,60 @@ func TestNodeStatus(t *testing.T) {
 		res := make([]string, 5)
 		no.status(u.s, false, res)
 		assert.Equal(t, "Ready", join(res, ","))
+	}
+}
+
+func TestNodeRoles(t *testing.T) {
+	uu := []struct {
+		node  v1.Node
+		roles []string
+	}{
+		{
+			node: v1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"kubernetes.io/role":             "master",
+						"node-role.kubernetes.io/worker": "true",
+					},
+				},
+			},
+			roles: []string{"master", "worker"},
+		},
+
+		{
+			node: v1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"node-role.kubernetes.io/worker": "true",
+						"kubernetes.io/role":             "master",
+					},
+				},
+			},
+			roles: []string{"master", "worker"},
+		},
+
+		{
+			node: v1.Node{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: map[string]string{
+						"kubernetes.io/role": "worker",
+					},
+				},
+			},
+			roles: []string{"worker"},
+		},
+
+		{
+			node:  v1.Node{},
+			roles: []string{"<none>"},
+		},
+	}
+
+	no := NewNode(nil)
+	for _, u := range uu {
+		roles := sets.NewString()
+		no.findNodeRoles(&u.node, &roles)
+		assert.Equal(t, u.roles, roles.List())
 	}
 }
 
