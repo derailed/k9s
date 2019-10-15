@@ -307,6 +307,10 @@ func extRes(vv viewers) {
 		listFn:  resource.NewCustomResourceDefinitionList,
 		enterFn: showCRD,
 	}
+	vv["apiextensions.k8s.io/v1beta1/customresourcedefinitions"] = viewer{
+		listFn:  resource.NewCustomResourceDefinitionList,
+		enterFn: showCRD,
+	}
 }
 
 func netRes(vv viewers) {
