@@ -23,6 +23,7 @@ func (v *nodeView) extraActions(aa ui.KeyActions) {
 	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", v.sortColCmd(8, false), false)
 	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", v.sortColCmd(9, false), false)
 	aa[ui.KeyShiftZ] = ui.NewKeyAction("Sort MEM%", v.sortColCmd(10, false), false)
+	aa[ui.KeyS] = ui.NewKeyAction("ssh", v.sshCmd, true)
 }
 
 func (v *nodeView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
@@ -61,4 +62,15 @@ func showPods(app *appView, ns, labelSel, fieldSel string, a ui.ActionHandler) {
 	// Reset active namespace to ns.
 	app.Config.SetActiveNamespace(ns)
 	app.inject(pv)
+}
+
+func (v *nodeView) sshCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !v.masterPage().RowSelected() {
+		return evt
+	}
+
+	v.stopUpdates()
+	run(true, v.app, "ssh", false, v.masterPage().GetSelectedItem())
+	v.restartUpdates()
+	return nil
 }
