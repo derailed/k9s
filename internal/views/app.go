@@ -350,6 +350,10 @@ func (a *appView) setIndicator(l ui.FlashLevel, msg string) {
 }
 
 func (a *appView) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.Cmd().InCmdMode() {
+		return evt
+	}
+
 	a.showHeader = !a.showHeader
 	a.toggleHeader(a.showHeader)
 	a.Draw()
