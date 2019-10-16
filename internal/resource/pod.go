@@ -407,7 +407,7 @@ func (r *Pod) phase(po *v1.Pod) string {
 		return status
 	}
 
-	return "Terminated"
+	return "Terminating"
 }
 
 func (*Pod) containerPhase(st v1.PodStatus, status string) (bool, string) {
