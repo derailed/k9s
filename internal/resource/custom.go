@@ -7,9 +7,11 @@ import (
 	"path"
 	"strings"
 
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 )
 
@@ -78,6 +80,10 @@ func (r *Custom) Marshal(path string) (string, error) {
 	i, err := r.Resource.Get(ns, n)
 	if err != nil {
 		return "", err
+	}
+	switch v := i.(type) {
+	case *unstructured.Unstructured:
+		i = v.Object
 	}
 
 	raw, err := yaml.Marshal(i)
