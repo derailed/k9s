@@ -96,6 +96,6 @@ func iconFor(k BufferKind) rune {
 	case CommandBuff:
 		return '🐶'
 	default:
-		return '🤓'
+		return '🐩'
 	}
 }
