@@ -49,14 +49,16 @@ func (v *aliasView) Init(context.Context, string) {
 
 func (v *aliasView) registerActions() {
 	v.RmAction(ui.KeyShiftA)
+	v.RmAction(ui.KeyShiftN)
 	v.RmAction(tcell.KeyCtrlS)
 
 	v.SetActions(ui.KeyActions{
 		tcell.KeyEnter:  ui.NewKeyAction("Goto", v.gotoCmd, true),
 		tcell.KeyEscape: ui.NewKeyAction("Reset", v.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", v.activateCmd, false),
-		ui.KeyShiftR:    ui.NewKeyAction("Sort Resources", v.SortColCmd(1), false),
-		ui.KeyShiftO:    ui.NewKeyAction("Sort Groups", v.SortColCmd(2), false),
+		ui.KeyShiftR:    ui.NewKeyAction("Sort Resource", v.SortColCmd(0), false),
+		ui.KeyShiftC:    ui.NewKeyAction("Sort Command", v.SortColCmd(1), false),
+		ui.KeyShiftA:    ui.NewKeyAction("Sort ApiGroup", v.SortColCmd(2), false),
 	})
 }
 
