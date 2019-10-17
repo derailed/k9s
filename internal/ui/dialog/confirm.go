@@ -38,8 +38,6 @@ func ShowConfirm(pages *tview.Pages, title, msg string, ack confirmFunc, cancel 
 	})
 	pages.AddPage(confirmKey, modal, false, false)
 	pages.ShowPage(confirmKey)
-
-	// pages.AddAndSwitchToPage(confirmKey, modal, false)
 }
 
 func dismissConfirm(pages *tview.Pages) {
