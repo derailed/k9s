@@ -55,7 +55,7 @@ func podColorer(ns string, r *resource.RowEvent) tcell.Color {
 	switch strings.TrimSpace(r.Fields[statusCol]) {
 	case "ContainerCreating", "PodInitializing":
 		return ui.AddColor
-	case "Terminating", "Initialized":
+	case "Initialized":
 		return ui.HighlightColor
 	case "Completed":
 		return ui.CompletedColor

@@ -83,9 +83,9 @@ func TestToState(t *testing.T) {
 			v1.ContainerState{Waiting: &v1.ContainerStateWaiting{Reason: "blee"}},
 			"blee",
 		},
-		"terminated": {
+		"terminating": {
 			v1.ContainerState{Terminated: &v1.ContainerStateTerminated{}},
-			"Terminated",
+			"Terminating",
 		},
 		"terminatedReason": {
 			v1.ContainerState{Terminated: &v1.ContainerStateTerminated{Reason: "blee"}},
