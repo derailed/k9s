@@ -10,6 +10,10 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 )
 
+// Compile time checks to ensure type satisfies interface
+var _ Restartable = (*StatefulSet)(nil)
+var _ Scalable = (*StatefulSet)(nil)
+
 // StatefulSet tracks a kubernetes resource.
 type StatefulSet struct {
 	*Base
@@ -117,4 +121,9 @@ func (r *StatefulSet) Fields(ns string) Row {
 // Scale the specified resource.
 func (r *StatefulSet) Scale(ns, n string, replicas int32) error {
 	return r.Resource.(Scalable).Scale(ns, n, replicas)
+}
+
+// Restart the rollout of the specified resource.
+func (r *StatefulSet) Restart(ns, n string) error {
+	return r.Resource.(Restartable).Restart(ns, n)
 }

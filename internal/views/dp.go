@@ -10,14 +10,19 @@ import (
 
 type deployView struct {
 	*logResourceView
-	scalableResourceView *scalableResourceView
+	scalableResourceView    *scalableResourceView
+	restartableResourceView *restartableResourceView
 }
 
 const scaleDialogKey = "scale"
 
 func newDeployView(title, gvr string, app *appView, list resource.List) resourceViewer {
 	logResourceView := newLogResourceView(title, gvr, app, list)
-	v := deployView{logResourceView, newScalableResourceViewForParent(logResourceView.resourceView)}
+	v := deployView{
+		logResourceView:         logResourceView,
+		scalableResourceView:    newScalableResourceViewForParent(logResourceView.resourceView),
+		restartableResourceView: newRestartableResourceViewForParent(logResourceView.resourceView),
+	}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.showPods
 
@@ -27,6 +32,7 @@ func newDeployView(title, gvr string, app *appView, list resource.List) resource
 func (v *deployView) extraActions(aa ui.KeyActions) {
 	v.logResourceView.extraActions(aa)
 	v.scalableResourceView.extraActions(aa)
+	v.restartableResourceView.extraActions(aa)
 	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", v.sortColCmd(2, false), false)
 	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", v.sortColCmd(3, false), false)
 }

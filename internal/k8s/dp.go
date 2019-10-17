@@ -2,6 +2,8 @@ package k8s
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/kubectl/pkg/polymorphichelpers"
 )
 
 // Deployment represents a Kubernetes Deployment.
@@ -52,5 +54,21 @@ func (d *Deployment) Scale(ns, n string, replicas int32) error {
 
 	scale.Spec.Replicas = replicas
 	_, err = d.DialOrDie().AppsV1().Deployments(ns).UpdateScale(n, scale)
+	return err
+}
+
+// Restart a Deployment rollout.
+func (d *Deployment) Restart(ns, n string) error {
+
+	dp, err := d.DialOrDie().AppsV1().Deployments(ns).Get(n, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+	update, err := polymorphichelpers.ObjectRestarterFn(dp)
+	if err != nil {
+		return err
+	}
+
+	_, err = d.DialOrDie().AppsV1().Deployments(ns).Patch(dp.Name, types.StrategicMergePatchType, update)
 	return err
 }

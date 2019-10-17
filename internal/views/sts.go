@@ -11,12 +11,17 @@ import (
 
 type statefulSetView struct {
 	*logResourceView
-	scalableResourceView *scalableResourceView
+	scalableResourceView    *scalableResourceView
+	restartableResourceView *restartableResourceView
 }
 
 func newStatefulSetView(title, gvr string, app *appView, list resource.List) resourceViewer {
 	logResourceView := newLogResourceView(title, gvr, app, list)
-	v := statefulSetView{logResourceView, newScalableResourceViewForParent(logResourceView.resourceView)}
+	v := statefulSetView{
+		logResourceView:         logResourceView,
+		scalableResourceView:    newScalableResourceViewForParent(logResourceView.resourceView),
+		restartableResourceView: newRestartableResourceViewForParent(logResourceView.resourceView),
+	}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.showPods
 
@@ -26,6 +31,7 @@ func newStatefulSetView(title, gvr string, app *appView, list resource.List) res
 func (v *statefulSetView) extraActions(aa ui.KeyActions) {
 	v.logResourceView.extraActions(aa)
 	v.scalableResourceView.extraActions(aa)
+	v.restartableResourceView.extraActions(aa)
 	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", v.sortColCmd(1, false), false)
 	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", v.sortColCmd(2, false), false)
 }

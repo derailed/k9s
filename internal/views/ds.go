@@ -10,10 +10,15 @@ import (
 
 type daemonSetView struct {
 	*logResourceView
+	restartableResourceView *restartableResourceView
 }
 
 func newDaemonSetView(title, gvr string, app *appView, list resource.List) resourceViewer {
-	v := daemonSetView{newLogResourceView(title, gvr, app, list)}
+	view := newLogResourceView(title, gvr, app, list)
+	v := daemonSetView{
+		logResourceView:         view,
+		restartableResourceView: newRestartableResourceViewForParent(view.resourceView),
+	}
 	v.extraActionsFn = v.extraActions
 	v.enterFn = v.showPods
 
@@ -22,6 +27,7 @@ func newDaemonSetView(title, gvr string, app *appView, list resource.List) resou
 
 func (v *daemonSetView) extraActions(aa ui.KeyActions) {
 	v.logResourceView.extraActions(aa)
+	v.restartableResourceView.extraActions(aa)
 	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", v.sortColCmd(2, false), false)
 	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", v.sortColCmd(3, false), false)
 }

@@ -10,6 +10,9 @@ import (
 	appsv1 "k8s.io/api/apps/v1"
 )
 
+// Compile time checks to ensure type satisfies interface
+var _ Restartable = (*DaemonSet)(nil)
+
 // DaemonSet tracks a kubernetes resource.
 type DaemonSet struct {
 	*Base
@@ -111,4 +114,9 @@ func (r *DaemonSet) Fields(ns string) Row {
 		mapToStr(i.Spec.Template.Spec.NodeSelector),
 		toAge(i.ObjectMeta.CreationTimestamp),
 	)
+}
+
+// Restart the rollout of the specified resource.
+func (r *DaemonSet) Restart(ns, n string) error {
+	return r.Resource.(Restartable).Restart(ns, n)
 }

@@ -36,6 +36,11 @@ type (
 		Scale(ns string, name string, replicas int32) error
 	}
 
+	// Restartable represents a rollout restartable Kubernetes resource.
+	Restartable interface {
+		Restart(ns string, name string) error
+	}
+
 	// Connection represents a Kubenetes apiserver connection.
 	Connection k8s.Connection
 
