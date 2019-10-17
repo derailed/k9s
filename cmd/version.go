@@ -8,28 +8,28 @@ import (
 )
 
 func versionCmd() *cobra.Command {
-	var silent bool
+	var short bool
 
 	command := cobra.Command{
 		Use:   "version",
 		Short: "Print version/build info",
 		Long:  "Print version/build information",
 		Run: func(cmd *cobra.Command, args []string) {
-			printVersion(silent)
+			printVersion(short)
 		},
 	}
 
-	command.PersistentFlags().BoolVarP(&silent, "short", "s", false, "Simplified print version for resumed printing")
+	command.PersistentFlags().BoolVarP(&short, "short", "s", false, "Simplified print version for resumed printing")
 
 	return &command
 }
 
-func printVersion(silent bool) {
+func printVersion(short bool) {
 	const secFmt = "%-10s "
 	var outputColor color.Paint
 
-	if silent {
-		outputColor = color.White
+	if short {
+		outputColor = -1
 	} else {
 		outputColor = color.Cyan
 		printLogo(outputColor)
@@ -40,6 +40,9 @@ func printVersion(silent bool) {
 }
 
 func printTuple(format, section, value string, outputColor color.Paint) {
-	fmt.Printf(color.Colorize(fmt.Sprintf(format, section+":"), outputColor))
-	fmt.Println(color.Colorize(value, color.White))
+	if outputColor != -1 {
+		section = color.Colorize(fmt.Sprintf(section+":"), outputColor)
+		value = color.Colorize(value, color.White)
+	}
+	fmt.Println(fmt.Sprintf(format, section), value)
 }
