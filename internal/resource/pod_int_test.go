@@ -66,11 +66,11 @@ func TestPodPhase(t *testing.T) {
 		{makePodCoInitWaiting("p1", "PodInitializing"), "Init:0/1"},
 		{makePodCoWaiting("p1", "Waiting"), "Waiting"},
 		{makePodCoWaiting("p1", ""), ""},
-		{makePodCoTerminated("p1", "OOMKilled", 0, true), "Terminated"},
+		{makePodCoTerminated("p1", "OOMKilled", 0, true), "Terminating"},
 		{makePodCoTerminated("p1", "OOMKilled", 0, false), "OOMKilled"},
-		{makePodCoTerminated("p1", "", 0, true), "Terminated"},
+		{makePodCoTerminated("p1", "", 0, true), "Terminating"},
 		{makePodCoTerminated("p1", "", 0, false), "ExitCode:1"},
-		{makePodCoTerminated("p1", "", 1, true), "Terminated"},
+		{makePodCoTerminated("p1", "", 1, true), "Terminating"},
 		{makePodCoTerminated("p1", "", 1, false), "Signal:1"},
 	}
 
