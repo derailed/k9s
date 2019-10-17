@@ -100,7 +100,7 @@ k9s --context coolCtx
 K9s uses aliases to navigate most K8s resources.
 
 | Command                     | Result                                             | Example                    |
-| --------------------------- | -------------------------------------------------- | -------------------------- |
+|-----------------------------|----------------------------------------------------|----------------------------|
 | `:`alias`<ENTER>`           | View a Kubernetes resource aliases                 | `:po<ENTER>`               |
 | `?`                         | Show keyboard shortcuts and help                   |                            |
 | `Ctrl-a`                    | Show all available resource alias                  | select+`<ENTER>` to view   |
@@ -450,7 +450,7 @@ k9s:
 Available color names are defined below:
 
 | Color Names          |                |                  |                   |                 |
-| -------------------- | -------------- | ---------------- | ----------------- | --------------- |
+|----------------------|----------------|------------------|-------------------|-----------------|
 | black                | maroon         | green            | olive             | navy            |
 | purple               | teal           | silver           | gray              | red             |
 | lime                 | yellow         | blue             | fuchsia           | aqua            |
@@ -509,10 +509,14 @@ to make this project a reality!
 
 ---
 
-## Contact Info
+## Meet The Core Team!
 
-1. **Email**:   fernand@imhotep.io
-2. **Twitter**: [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
+* [Gustavo Silva Paiva](https://github.com/paivagustavo)
+   * <img src="assets/mail.png" width="16" height="auto"/>   guustavo.paiva@gmail.com
+   * <img src="assets/twitter.png" width="16" height="auto"/>   [@paivagustavodev](https://twitter.com/paivagustavodev)
+* [Fernand Galiana](https://github.com/derailed)
+   * <img src="assets/mail.png" width="16" height="auto"/>  fernand@imhotep.io
+   * <img src="assets/twitter.png" width="16" height="auto"/> [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
 
 ---
 
