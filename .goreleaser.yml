@@ -44,19 +44,19 @@ changelog:
       - "^test:"
 
 # Homebrew
-brew:
-  name: k9s
-  github:
-    owner: derailed
-    name: k9s-homebrew-tap
-  commit_author:
-    name: derailed
-    email: fernand@imhotep.io
-  folder: Formula
-  homepage: https://k9ss.io
-  description: Kubernetes CLI To Manage Your Clusters In Style!
-  test: |
-    system "k9s version"
+brews:
+  - name: k9s
+    github:
+      owner: derailed
+      name: k9s-homebrew-tap
+    commit_author:
+      name: derailed
+      email: fernand@imhotep.io
+    folder: Formula
+    homepage: https://k9ss.io
+    description: Kubernetes CLI To Manage Your Clusters In Style!
+    test: |
+      system "k9s version"
 
 # Snapcraft
 # snapcraft:

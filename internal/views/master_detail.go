@@ -52,7 +52,6 @@ func (v *masterDetail) init(ctx context.Context, ns string) {
 
 func (v *masterDetail) setExtraActionsFn(f ui.ActionsFunc) {
 	v.extraActionsFn = f
-	// f(v.actions)
 }
 
 // Protocol...

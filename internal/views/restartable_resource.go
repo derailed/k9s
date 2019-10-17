@@ -5,6 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/gdamore/tcell"
 )
 
@@ -31,22 +32,29 @@ func (v *restartableResourceView) restartCmd(evt *tcell.EventKey) *tcell.EventKe
 		return evt
 	}
 
-	v.restartRollout(v.masterPage().GetSelectedItem())
+	sel := v.masterPage().GetSelectedItem()
+	v.stopUpdates()
+	defer v.restartUpdates()
+	msg := "Please confirm rollout restart for " + sel
+	dialog.ShowConfirm(v.Pages, "<Confirm Restart>", msg, func() {
+		if err := v.restartRollout(sel); err != nil {
+			v.app.Flash().Err(err)
+		} else {
+			v.app.Flash().Infof("Rollout restart in progress for `%s...", sel)
+		}
+	}, func() {
+		v.showMaster()
+	})
+
 	return nil
 }
 
-func (v *restartableResourceView) restartRollout(selection string) {
-	ns, n := namespaced(selection)
-
+func (v *restartableResourceView) restartRollout(selection string) error {
 	r, ok := v.list.Resource().(resource.Restartable)
 	if !ok {
-		v.app.Flash().Err(errors.New("resource is not of type resource.Restartable"))
-		return
+		return errors.New("resource is not of type resource.Restartable")
 	}
+	ns, n := namespaced(selection)
 
-	err := r.Restart(ns, n)
-	if err != nil {
-		v.app.Flash().Err(err)
-	}
-	v.app.Flash().Info("Restarted Rollout")
+	return r.Restart(ns, n)
 }
