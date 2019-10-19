@@ -1,6 +1,7 @@
 package watch
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -136,6 +137,15 @@ func (p *podMxWatcher) Run() {
 	}
 }
 
+func (p *podMxWatcher) notify(event watch.Event) error {
+	select {
+	case p.eventChan <- event:
+		return nil
+	case <-p.doneChan:
+		return errors.New("watcher has ben closed.")
+	}
+}
+
 func (p *podMxWatcher) update(list *mv1beta1.PodMetricsList, notify bool) {
 	fqns := map[string]runtime.Object{}
 	for i := range list.Items {
@@ -146,9 +156,8 @@ func (p *podMxWatcher) update(list *mv1beta1.PodMetricsList, notify bool) {
 	for k, v := range p.cache {
 		if _, ok := fqns[k]; !ok {
 			if notify {
-				p.eventChan <- watch.Event{
-					Type:   watch.Deleted,
-					Object: v,
+				if err := p.notify(watch.Event{Type: watch.Deleted, Object: v}); err != nil {
+					return
 				}
 			}
 			delete(p.cache, k)
@@ -164,7 +173,9 @@ func (p *podMxWatcher) update(list *mv1beta1.PodMetricsList, notify bool) {
 			kind = watch.Modified
 		}
 		if notify {
-			p.eventChan <- watch.Event{Type: kind, Object: v}
+			if err := p.notify(watch.Event{Type: kind, Object: v}); err != nil {
+				return
+			}
 		}
 		p.cache[k] = v
 	}

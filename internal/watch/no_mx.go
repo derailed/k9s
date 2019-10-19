@@ -1,6 +1,7 @@
 package watch
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -135,6 +136,15 @@ func (n *nodeMxWatcher) ResultChan() <-chan watch.Event {
 	return n.eventChan
 }
 
+func (n *nodeMxWatcher) notify(event watch.Event) error {
+	select {
+	case n.eventChan <- event:
+		return nil
+	case <-n.doneChan:
+		return errors.New("watcher has ben closed.")
+	}
+}
+
 func (n *nodeMxWatcher) update(list *mv1beta1.NodeMetricsList, notify bool) {
 	fqns := map[string]runtime.Object{}
 	for i := range list.Items {
@@ -144,9 +154,8 @@ func (n *nodeMxWatcher) update(list *mv1beta1.NodeMetricsList, notify bool) {
 	for k, v := range n.cache {
 		if _, ok := fqns[k]; !ok {
 			if notify {
-				n.eventChan <- watch.Event{
-					Type:   watch.Deleted,
-					Object: v,
+				if err := n.notify(watch.Event{Type: watch.Deleted, Object: v}); err != nil {
+					return
 				}
 			}
 			delete(n.cache, k)
@@ -161,7 +170,9 @@ func (n *nodeMxWatcher) update(list *mv1beta1.NodeMetricsList, notify bool) {
 			kind = watch.Modified
 		}
 		if notify {
-			n.eventChan <- watch.Event{Type: kind, Object: v}
+			if err := n.notify(watch.Event{Type: kind, Object: v}); err != nil {
+				return
+			}
 		}
 		n.cache[k] = v
 	}
