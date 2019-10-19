@@ -124,6 +124,7 @@ func (p *podMxWatcher) Run() {
 	for {
 		select {
 		case <-p.doneChan:
+			close(p.eventChan)
 			return
 		case <-time.After(podMXRefresh):
 			list, err := c.MetricsV1beta1().PodMetricses(p.ns).List(metav1.ListOptions{})
@@ -173,7 +174,6 @@ func (p *podMxWatcher) update(list *mv1beta1.PodMetricsList, notify bool) {
 func (p *podMxWatcher) Stop() {
 	log.Debug().Msg("Stopping PodMetrix informer!!")
 	close(p.doneChan)
-	close(p.eventChan)
 }
 
 // ResultChan retrieves event channel.

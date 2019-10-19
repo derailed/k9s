@@ -112,6 +112,7 @@ func (n *nodeMxWatcher) Run() {
 	for {
 		select {
 		case <-n.doneChan:
+			close(n.eventChan)
 			return
 		case <-time.After(nodeMXRefresh):
 			list, err := c.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{})
@@ -127,7 +128,6 @@ func (n *nodeMxWatcher) Run() {
 func (n *nodeMxWatcher) Stop() {
 	log.Debug().Msg("Stopping NodeMetrix informer!")
 	close(n.doneChan)
-	close(n.eventChan)
 }
 
 // ResultChan retrieves event channel.
