@@ -19,7 +19,7 @@ func versionCmd() *cobra.Command {
 		},
 	}
 
-	command.PersistentFlags().BoolVarP(&short, "short", "s", false, "Simplified print version for resumed printing")
+	command.PersistentFlags().BoolVarP(&short, "short", "s", false, "Prints K9s version info in short format")
 
 	return &command
 }
