@@ -8,26 +8,41 @@ import (
 )
 
 func versionCmd() *cobra.Command {
-	return &cobra.Command{
+	var short bool
+
+	command := cobra.Command{
 		Use:   "version",
 		Short: "Print version/build info",
 		Long:  "Print version/build information",
 		Run: func(cmd *cobra.Command, args []string) {
-			printVersion()
+			printVersion(short)
 		},
 	}
+
+	command.PersistentFlags().BoolVarP(&short, "short", "s", false, "Prints K9s version info in short format")
+
+	return &command
 }
 
-func printVersion() {
+func printVersion(short bool) {
 	const secFmt = "%-10s "
+	var outputColor color.Paint
 
-	printLogo(color.Cyan)
-	printTuple(secFmt, "Version", version)
-	printTuple(secFmt, "Commit", commit)
-	printTuple(secFmt, "Date", date)
+	if short {
+		outputColor = -1
+	} else {
+		outputColor = color.Cyan
+		printLogo(outputColor)
+	}
+	printTuple(secFmt, "Version", version, outputColor)
+	printTuple(secFmt, "Commit", commit, outputColor)
+	printTuple(secFmt, "Date", date, outputColor)
 }
 
-func printTuple(format, section, value string) {
-	fmt.Printf(color.Colorize(fmt.Sprintf(format, section+":"), color.Cyan))
-	fmt.Println(color.Colorize(value, color.White))
+func printTuple(format, section, value string, outputColor color.Paint) {
+	if outputColor != -1 {
+		section = color.Colorize(fmt.Sprintf(section+":"), outputColor)
+		value = color.Colorize(value, color.White)
+	}
+	fmt.Println(fmt.Sprintf(format, section), value)
 }
