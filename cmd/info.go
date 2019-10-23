@@ -24,9 +24,9 @@ func printInfo() {
 	const sectionFmt = "%-15s "
 
 	printLogo(color.Cyan)
-	printTuple(sectionFmt, "Configuration", config.K9sConfigFile)
-	printTuple(sectionFmt, "Logs", config.K9sLogs)
-	printTuple(sectionFmt, "Screen Dumps", config.K9sDumpDir)
+	printTuple(sectionFmt, "Configuration", config.K9sConfigFile, color.Cyan)
+	printTuple(sectionFmt, "Logs", config.K9sLogs, color.Cyan)
+	printTuple(sectionFmt, "Screen Dumps", config.K9sDumpDir, color.Cyan)
 }
 
 func printLogo(c color.Paint) {
