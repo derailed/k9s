@@ -378,6 +378,12 @@ roleRef:
 
 You can style K9s based on your own sense of style and look. This is very much an experimental feature at this time, more will be added/modified if this feature has legs so thread accordingly!
 
+By default a K9s view displays resource information using the following coloring scheme:
+
+1. Blue - All good.
+1. Orange/Red - Represents a potential issue with the resource ie a pod is not in a running state.
+1. Green - Indicates a row has changed. A change delta indicator indicates which column changed.
+
 Skins are YAML files, that enable a user to change K9s presentation layer. K9s skins are loaded from `$HOME/.k9s/skin.yml`. If a skin file is detected then the skin would be loaded if not the current stock skin remains in effect.
 
 Below is a sample skin file, more skins would be available in the skins directory, just simply copy any of these in your user's home dir as `skin.yml`.

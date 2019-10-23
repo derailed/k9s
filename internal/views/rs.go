@@ -32,8 +32,8 @@ func newReplicaSetView(title, gvr string, app *appView, list resource.List) reso
 }
 
 func (v *replicaSetView) extraActions(aa ui.KeyActions) {
-	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", v.sortColCmd(2, false), false)
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", v.sortColCmd(3, false), false)
+	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", v.sortColCmd(1, false), false)
+	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", v.sortColCmd(2, false), false)
 	aa[tcell.KeyCtrlB] = ui.NewKeyAction("Rollback", v.rollbackCmd, true)
 }
 
