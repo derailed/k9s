@@ -1,7 +1,6 @@
 package k8s
 
 import (
-	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -34,15 +33,6 @@ func (h *HorizontalPodAutoscalerV1) List(ns string) (Collection, error) {
 	cc := make(Collection, len(rr.Items))
 	for i, r := range rr.Items {
 		cc[i] = r
-	}
-
-	rr1, err := h.DialOrDie().AutoscalingV2beta2().HorizontalPodAutoscalers(ns).List(opts)
-	if err != nil {
-		return nil, err
-	}
-	for _, r := range rr1.Items {
-		log.Debug().Msgf("MX %#v", len(r.Spec.Metrics))
-		log.Debug().Msgf("HPA:%#v -- %s", r.TypeMeta.Kind, r.Name)
 	}
 
 	return cc, nil
