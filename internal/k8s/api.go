@@ -332,6 +332,7 @@ func (a *APIClient) SwitchContextOrDie(ctx string) {
 	}
 
 	if currentCtx != ctx {
+		a.cachedDiscovery = nil
 		a.reset()
 		if err := a.config.SwitchContext(ctx); err != nil {
 			panic(err)
