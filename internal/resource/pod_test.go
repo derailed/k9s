@@ -44,26 +44,37 @@ func TestPodFields(t *testing.T) {
 	assert.Equal(t, "fred", r[0])
 }
 
-func TestPodFieldsPercentageCpuAndMemRelatedToContainerRequestSpec(t *testing.T) {
-	metrics := makeMxPod("fred", "250m", "256Mi")
+func TestPodFieldsPercentageCpuAndMemRelatedToContainerRequestSpecAndFallbackToLimit(t *testing.T) {
+	percentageTests := []struct {
+		resources             v1.ResourceRequirements
+		metrics               mv1beta1.PodMetrics
+		expectedCpuPercentage string
+		expectedMemPercentage string
+	}{
+		{
+			v1.ResourceRequirements{
+				Requests: makeRes("500m", "512Mi"),
+			},
+			makeMxPod("fred", "250m", "256Mi"),
+			"150",
+			"150",
+		},
+		{
+			v1.ResourceRequirements{
+				Limits: makeRes("1000m", "1024Mi"),
+			},
+			makeMxPod("fred", "250m", "256Mi"),
+			"75",
+			"75",
+		},
+	}
 
-	r := NewPodWithMetrics(metrics, v1.ResourceRequirements{
-		Requests: makeRes("500m", "512Mi"),
-	}).Fields("blee")
+	for _, percentageTest := range percentageTests {
+		r := NewPodWithMetrics(percentageTest.metrics, percentageTest.resources).Fields("blee")
 
-	assert.Equal(t, "150", r[6])
-	assert.Equal(t, "150", r[7])
-}
-
-func TestPodFieldsPercentageCpuAndMemFallbackToContainerLimitSpecWhenRequestNotDefined(t *testing.T) {
-	metrics := makeMxPod("fred", "250m", "256Mi")
-
-	r := NewPodWithMetrics(metrics, v1.ResourceRequirements{
-		Limits:   makeRes("1000m", "1024Mi"),
-	}).Fields("blee")
-
-	assert.Equal(t, "75", r[6])
-	assert.Equal(t, "75", r[7])
+		assert.Equal(t, percentageTest.expectedCpuPercentage, r[6])
+		assert.Equal(t, percentageTest.expectedMemPercentage, r[7])
+	}
 }
 
 func TestPodMarshal(t *testing.T) {
