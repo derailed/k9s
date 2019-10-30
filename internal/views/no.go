@@ -36,7 +36,7 @@ func (v *nodeView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcel
 }
 
 func (v *nodeView) showPods(app *appView, _, _, sel string) {
-	showPods(app, app.Config.ActiveNamespace(), "", "spec.nodeName="+sel, v.backCmd)
+	showPods(app, "", "", "spec.nodeName="+sel, v.backCmd)
 }
 
 func (v *nodeView) backCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -54,7 +54,6 @@ func showPods(app *appView, ns, labelSel, fieldSel string, a ui.ActionHandler) {
 
 	pv := newPodView("Pod", "v1/pods", app, list)
 	pv.setColorerFn(podColorer)
-	// pv.setExtraActionsFn(func(aa ui.KeyActions) {
 	pv.masterPage().SetActions(ui.KeyActions{
 		tcell.KeyEsc: ui.NewKeyAction("Back", a, true),
 	})

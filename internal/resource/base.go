@@ -14,7 +14,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	genericprinters "k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/kubectl/pkg/describe"
-	versioned "k8s.io/kubectl/pkg/describe/versioned"
+	"k8s.io/kubectl/pkg/describe/versioned"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -139,7 +139,20 @@ func (b *Base) List(ns string) (Columnars, error) {
 // Describe a given resource.
 func (b *Base) Describe(gvr, pa string) (string, error) {
 	mapper := k8s.RestMapper{Connection: b.Connection}
-	mapping, err := mapper.ResourceFor(k8s.GVR(gvr).ResName())
+	m, err := mapper.ToRESTMapper()
+	if err != nil {
+		log.Error().Err(err).Msgf("No REST mapper for resource %s", gvr)
+		return "", err
+	}
+
+	GVR := k8s.GVR(gvr)
+	gvk, err := m.KindFor(GVR.AsGVR())
+	if err != nil {
+		log.Error().Err(err).Msgf("No GVK for resource %s", gvr)
+		return "", err
+	}
+
+	mapping, err := mapper.ResourceFor(GVR.ResName(), gvk.Kind)
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to find mapper for %s %s", gvr, pa)
 		return "", err

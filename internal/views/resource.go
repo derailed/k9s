@@ -224,6 +224,7 @@ func (v *resourceView) defaultEnter(app *appView, ns, _, selection string) {
 		return
 	}
 
+	log.Debug().Msgf("!!!!!! NAME %s", v.list.GetName())
 	yaml, err := v.list.Resource().Describe(v.gvr, selection)
 	if err != nil {
 		v.app.Flash().Errf("Describe command failed: %s", err)
@@ -236,6 +237,7 @@ func (v *resourceView) defaultEnter(app *appView, ns, _, selection string) {
 	details.SetTextColor(v.app.Styles.FgColor())
 	details.SetText(colorizeYAML(v.app.Styles.Views().Yaml, yaml))
 	details.ScrollToBeginning()
+	v.app.SetHints(details.hints())
 
 	v.switchPage("details")
 }
@@ -266,6 +268,8 @@ func (v *resourceView) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	details.SetTextColor(v.app.Styles.FgColor())
 	details.SetText(colorizeYAML(v.app.Styles.Views().Yaml, raw))
 	details.ScrollToBeginning()
+	v.app.SetHints(details.hints())
+
 	v.switchPage("details")
 
 	return nil

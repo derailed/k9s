@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/restmapper"
@@ -48,12 +49,12 @@ func mustHomeDir() string {
 
 // ResourceFor produces a rest mapping from a given resource.
 // Support full res name ie deployment.v1.apps.
-func (r *RestMapper) ResourceFor(resourceArg string) (*meta.RESTMapping, error) {
+func (r *RestMapper) ResourceFor(resourceArg, kind string) (*meta.RESTMapping, error) {
 	res, err := r.resourceFor(resourceArg)
 	if err != nil {
 		return nil, err
 	}
-	return r.toRESTMapping(res, resourceArg), nil
+	return r.toRESTMapping(res, kind), nil
 }
 
 func (r *RestMapper) resourceFor(resourceArg string) (schema.GroupVersionResource, error) {
@@ -72,6 +73,7 @@ func (r *RestMapper) resourceFor(resourceArg string) (schema.GroupVersionResourc
 	}
 
 	fullGVR, gr := schema.ParseResourceArg(strings.ToLower(resourceArg))
+	log.Debug().Msgf("GVR %#v -- %#v", fullGVR, gr)
 	if fullGVR != nil {
 		return mapper.ResourceFor(*fullGVR)
 	}
@@ -86,11 +88,15 @@ func (r *RestMapper) resourceFor(resourceArg string) (schema.GroupVersionResourc
 	return gvr, nil
 }
 
-func (*RestMapper) toRESTMapping(gvr schema.GroupVersionResource, res string) *meta.RESTMapping {
+func (*RestMapper) toRESTMapping(gvr schema.GroupVersionResource, kind string) *meta.RESTMapping {
 	return &meta.RESTMapping{
-		Resource:         gvr,
-		GroupVersionKind: schema.GroupVersionKind{Group: gvr.Group, Version: gvr.Version, Kind: res},
-		Scope:            RestMapping,
+		Resource: gvr,
+		GroupVersionKind: schema.GroupVersionKind{
+			Group:   gvr.Group,
+			Version: gvr.Version,
+			Kind:    kind,
+		},
+		Scope: RestMapping,
 	}
 }
 
