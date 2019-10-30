@@ -28,12 +28,12 @@ replace (
 
 require (
 	github.com/atotto/clipboard v0.1.2
-	github.com/derailed/tview v0.2.4
+	github.com/derailed/tview v0.3.2
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/elazarl/goproxy v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/fsnotify/fsnotify v1.4.7
-	github.com/gdamore/tcell v1.1.2
+	github.com/gdamore/tcell v1.3.0
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
 	github.com/google/btree v1.0.0 // indirect
@@ -41,7 +41,7 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc // indirect
 	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
-	github.com/mattn/go-runewidth v0.0.4
+	github.com/mattn/go-runewidth v0.0.5
 	github.com/petergtz/pegomock v2.6.0+incompatible
 	github.com/rakyll/hey v0.1.2
 	github.com/rs/zerolog v1.14.3

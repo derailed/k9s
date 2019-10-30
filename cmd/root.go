@@ -58,7 +58,7 @@ func Execute() {
 
 func run(cmd *cobra.Command, args []string) {
 	defer func() {
-		clearScreen()
+		// views.ClearScreen()
 		if err := recover(); err != nil {
 			log.Error().Msgf("Boom! %v", err)
 			log.Error().Msg(string(debug.Stack()))
@@ -259,11 +259,4 @@ func initCertFlags() {
 		"",
 		"Bearer token for authentication to the API server",
 	)
-}
-
-// ----------------------------------------------------------------------------
-// Helpers...
-
-func clearScreen() {
-	fmt.Print("\033[H\033[2J")
 }

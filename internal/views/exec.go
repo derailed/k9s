@@ -46,7 +46,10 @@ func execute(clear bool, bin string, bg bool, args ...string) error {
 		clearScreen()
 	}
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	defer func() {
+		cancel()
+		clearScreen()
+	}()
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
@@ -77,6 +80,5 @@ func execute(clear bool, bin string, bg bool, args ...string) error {
 }
 
 func clearScreen() {
-	log.Debug().Msg("Clearing screen...")
 	fmt.Print("\033[H\033[2J")
 }

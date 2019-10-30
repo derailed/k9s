@@ -19,7 +19,6 @@ func newTableView(app *appView, title string) *tableView {
 	}
 	v.SearchBuff().AddListener(app.Cmd())
 	v.SearchBuff().AddListener(&v)
-	v.SearchBuff().Set(app.filter)
 	v.bindKeys()
 
 	return &v
@@ -74,7 +73,6 @@ func (v *tableView) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	v.SearchBuff().SetActive(false)
 	cmd := v.SearchBuff().String()
-	v.app.filter = cmd
 	if isLabelSelector(cmd) && v.filterFn != nil {
 		v.filterFn(trimLabelSelector(cmd))
 		return nil
@@ -96,7 +94,6 @@ func (v *tableView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.SearchBuff().Empty() {
 		v.app.Flash().Info("Clearing filter...")
 	}
-	v.app.filter = ""
 	if isLabelSelector(v.SearchBuff().String()) {
 		v.filterFn("")
 	}
@@ -112,12 +109,7 @@ func (v *tableView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	v.app.Flash().Info("Filter mode activated.")
-	// if isLabelSelector(v.SearchBuff().String()) {
-	// 	return nil
-	// }
-	// v.SearchBuff().Reset()
 	v.SearchBuff().SetActive(true)
-	v.SearchBuff().Set(v.app.filter)
 
 	return nil
 }
