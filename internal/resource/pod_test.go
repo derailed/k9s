@@ -44,6 +44,39 @@ func TestPodFields(t *testing.T) {
 	assert.Equal(t, "fred", r[0])
 }
 
+func TestPodFieldsPercentageCpuAndMemRelatedToContainerRequestSpecAndFallbackToLimit(t *testing.T) {
+	percentageTests := []struct {
+		resources             v1.ResourceRequirements
+		metrics               mv1beta1.PodMetrics
+		expectedCpuPercentage string
+		expectedMemPercentage string
+	}{
+		{
+			v1.ResourceRequirements{
+				Requests: makeRes("500m", "512Mi"),
+			},
+			makeMxPod("fred", "250m", "256Mi"),
+			"150",
+			"150",
+		},
+		{
+			v1.ResourceRequirements{
+				Limits: makeRes("1000m", "1024Mi"),
+			},
+			makeMxPod("fred", "250m", "256Mi"),
+			"75",
+			"75",
+		},
+	}
+
+	for _, percentageTest := range percentageTests {
+		r := NewPodWithMetrics(percentageTest.metrics, percentageTest.resources).Fields("blee")
+
+		assert.Equal(t, percentageTest.expectedCpuPercentage, r[6])
+		assert.Equal(t, percentageTest.expectedMemPercentage, r[7])
+	}
+}
+
 func TestPodMarshal(t *testing.T) {
 	mc := NewMockConnection()
 	mr := NewMockCruder()
@@ -100,6 +133,11 @@ func BenchmarkPodFields(b *testing.B) {
 
 // ----------------------------------------------------------------------------
 // Helpers...
+func makePodWithContainerSpec(resources v1.ResourceRequirements) *v1.Pod {
+	pod := makePod()
+	pod.Spec.Containers[0].Resources = resources
+	return pod
+}
 
 func makePod() *v1.Pod {
 	var i int32 = 1
@@ -157,6 +195,13 @@ func makePod() *v1.Pod {
 func newPod() resource.Columnar {
 	mc := NewMockConnection()
 	return resource.NewPod(mc).New(makePod())
+}
+
+func NewPodWithMetrics(metrics mv1beta1.PodMetrics, resources v1.ResourceRequirements) resource.Columnar {
+	mc := NewMockConnection()
+	r := resource.NewPod(mc).New(makePodWithContainerSpec(resources))
+	r.SetPodMetrics(&metrics)
+	return r
 }
 
 func poYaml() string {
