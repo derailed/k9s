@@ -195,6 +195,11 @@ func (v *Table) GetData() resource.TableData {
 	return v.data
 }
 
+// GetFilteredData fetch filtered tabular data.
+func (v *Table) GetFilteredData() resource.TableData {
+	return v.filtered()
+}
+
 // SetBaseTitle set the table title.
 func (v *Table) SetBaseTitle(s string) {
 	v.baseTitle = s
