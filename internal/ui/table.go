@@ -172,8 +172,12 @@ func (v *Table) GetSelectedItem() string {
 // GetSelectedItems return currently marked or selected items names.
 func (v *Table) GetSelectedItems() []string {
 	if len(v.data.Marks) > 0 {
-		items := make([]string, len(v.data.Marks))
-		copy(items, v.data.Marks)
+		var items []string
+		for item, marked := range v.data.Marks {
+			if marked {
+				items = append(items, item)
+			}
+		}
 		return items
 	}
 	return []string{v.GetSelectedItem()}

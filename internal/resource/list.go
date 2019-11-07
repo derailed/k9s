@@ -66,7 +66,7 @@ type (
 		Rows      RowEvents
 		NumCols   map[string]bool
 		Namespace string
-		Marks     []string
+		Marks     map[string]bool
 	}
 
 	// List protocol to display and update a collection of resources
@@ -129,18 +129,13 @@ type (
 		verbs           int
 		resource        Resource
 		cache           RowEvents
-		marks           []string
+		marks           map[string]bool
 	}
 )
 
 // IsMarked checks if key is marked.
 func (t *TableData) IsMarked(sk string) bool {
-	for _, mark := range t.Marks {
-		if mark == sk {
-			return true
-		}
-	}
-	return false
+	return t.Marks[sk]
 }
 
 func newRowEvent(a watch.EventType, f, d Row) *RowEvent {
@@ -155,6 +150,7 @@ func NewList(ns, name string, res Resource, verbs int) *list {
 		verbs:     verbs,
 		resource:  res,
 		cache:     RowEvents{},
+		marks:     make(map[string]bool),
 	}
 }
 
@@ -363,21 +359,11 @@ func (l *list) ensureDeletes(kk []string) {
 }
 
 func (l *list) removeMark(sk string) {
-	for index, mark := range l.marks {
-		if mark == sk {
-			l.marks = append(l.marks[:index], l.marks[index+1:]...)
-		}
-	}
+	delete(l.marks, sk)
 }
 
 func (l *list) ToggleMark(sk string) {
-	for index, mark := range l.marks {
-		if mark == sk {
-			l.marks = append(l.marks[:index], l.marks[index+1:]...)
-			return
-		}
-	}
-	l.marks = append(l.marks, sk)
+	l.marks[sk] = !l.marks[sk]
 }
 
 // Helpers...
