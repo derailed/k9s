@@ -33,7 +33,7 @@ func (v *tableView) BufferActive(state bool, k ui.BufferKind) {
 }
 
 func (v *tableView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveTable(v.app.Config.K9s.CurrentCluster, v.GetBaseTitle(), v.GetData()); err != nil {
+	if path, err := saveTable(v.app.Config.K9s.CurrentCluster, v.GetBaseTitle(), v.GetFilteredData()); err != nil {
 		v.app.Flash().Err(err)
 	} else {
 		v.app.Flash().Infof("File %s saved successfully!", path)
