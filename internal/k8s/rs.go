@@ -21,11 +21,7 @@ func (r *ReplicaSet) Get(ns, n string) (interface{}, error) {
 }
 
 // List all ReplicaSets in a given namespace.
-func (r *ReplicaSet) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: r.labelSelector,
-		FieldSelector: r.fieldSelector,
-	}
+func (r *ReplicaSet) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := r.DialOrDie().AppsV1().ReplicaSets(ns).List(opts)
 	if err != nil {
 		return nil, err

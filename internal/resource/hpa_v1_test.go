@@ -58,7 +58,7 @@ func TestHPAMarshal(t *testing.T) {
 func TestHPAListData(t *testing.T) {
 	mc := NewMockConnection()
 	mr := NewMockCruder()
-	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sHPA()}, nil)
+	m.When(mr.List("blee", metav1.ListOptions{})).ThenReturn(k8s.Collection{*k8sHPA()}, nil)
 
 	l := NewHPAListWithArgs("blee", NewHPAWithArgs(mc, mr))
 	// Make sure we mrn get deltas!
@@ -67,7 +67,7 @@ func TestHPAListData(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	mr.VerifyWasCalled(m.Times(2)).List("blee")
+	mr.VerifyWasCalled(m.Times(2)).List("blee", metav1.ListOptions{})
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, "blee", l.GetNamespace())

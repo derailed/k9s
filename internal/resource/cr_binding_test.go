@@ -45,7 +45,7 @@ func TestCRBMarshal(t *testing.T) {
 func TestCRBListData(t *testing.T) {
 	conn := NewMockConnection()
 	ca := NewMockCruder()
-	m.When(ca.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sCRB()}, nil)
+	m.When(ca.List(resource.NotNamespaced, metav1.ListOptions{})).ThenReturn(k8s.Collection{*k8sCRB()}, nil)
 
 	l := NewClusterRoleBindingListWithArgs("-", NewClusterRoleBindingWithArgs(conn, ca))
 	// Make sure we can get deltas!
@@ -54,7 +54,7 @@ func TestCRBListData(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	ca.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	ca.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced, metav1.ListOptions{})
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())

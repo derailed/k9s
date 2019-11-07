@@ -21,11 +21,7 @@ func (r *ReplicationController) Get(ns, n string) (interface{}, error) {
 }
 
 // List all RCs in a given namespace.
-func (r *ReplicationController) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: r.labelSelector,
-		FieldSelector: r.fieldSelector,
-	}
+func (r *ReplicationController) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := r.DialOrDie().CoreV1().ReplicationControllers(ns).List(opts)
 	if err != nil {
 		return nil, err

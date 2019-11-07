@@ -34,11 +34,7 @@ func (j *Job) Get(ns, n string) (interface{}, error) {
 }
 
 // List all Jobs in a given namespace.
-func (j *Job) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: j.labelSelector,
-		FieldSelector: j.fieldSelector,
-	}
+func (j *Job) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := j.DialOrDie().BatchV1().Jobs(ns).List(opts)
 	if err != nil {
 		return nil, err

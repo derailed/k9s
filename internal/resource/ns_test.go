@@ -57,7 +57,7 @@ func TestNamespaceMarshal(t *testing.T) {
 func TestNamespaceListData(t *testing.T) {
 	mc := NewMockConnection()
 	mr := NewMockCruder()
-	m.When(mr.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sNamespace()}, nil)
+	m.When(mr.List(resource.NotNamespaced, metav1.ListOptions{})).ThenReturn(k8s.Collection{*k8sNamespace()}, nil)
 
 	l := NewNamespaceListWithArgs("-", NewNamespaceWithArgs(mc, mr))
 	// Make sure we mrn get deltas!
@@ -66,7 +66,7 @@ func TestNamespaceListData(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	mr.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	mr.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced, metav1.ListOptions{})
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())

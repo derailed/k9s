@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/derailed/k9s/internal/k8s"
 	v1 "k8s.io/api/core/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
@@ -78,7 +80,7 @@ func (r *Container) Logs(ctx context.Context, c chan<- string, opts LogOptions) 
 }
 
 // List resources for a given namespace.
-func (r *Container) List(ns string) (Columnars, error) {
+func (r *Container) List(ns string, opts metav1.ListOptions) (Columnars, error) {
 	icos := r.pod.Spec.InitContainers
 	cos := r.pod.Spec.Containers
 

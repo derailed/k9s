@@ -36,7 +36,7 @@ func TestRoleMarshal(t *testing.T) {
 func TestRoleListData(t *testing.T) {
 	mc := NewMockConnection()
 	mr := NewMockCruder()
-	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sRole()}, nil)
+	m.When(mr.List("blee", metav1.ListOptions{})).ThenReturn(k8s.Collection{*k8sRole()}, nil)
 
 	l := NewRoleListWithArgs("blee", NewRoleWithArgs(mc, mr))
 	// Make sure we mrn get deltas!
@@ -45,7 +45,7 @@ func TestRoleListData(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	mr.VerifyWasCalled(m.Times(2)).List("blee")
+	mr.VerifyWasCalled(m.Times(2)).List("blee", metav1.ListOptions{})
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, "blee", l.GetNamespace())

@@ -23,11 +23,7 @@ func (d *DaemonSet) Get(ns, n string) (interface{}, error) {
 }
 
 // List all DaemonSets in a given namespace.
-func (d *DaemonSet) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: d.labelSelector,
-		FieldSelector: d.fieldSelector,
-	}
+func (d *DaemonSet) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := d.DialOrDie().AppsV1().DaemonSets(ns).List(opts)
 	if err != nil {
 		return nil, err

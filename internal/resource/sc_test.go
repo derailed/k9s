@@ -56,7 +56,7 @@ func TestSCMarshal(t *testing.T) {
 func TestSCListData(t *testing.T) {
 	mc := NewMockConnection()
 	mr := NewMockCruder()
-	m.When(mr.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sSC()}, nil)
+	m.When(mr.List(resource.NotNamespaced, metav1.ListOptions{})).ThenReturn(k8s.Collection{*k8sSC()}, nil)
 
 	l := NewSCListWithArgs("-", NewSCWithArgs(mc, mr))
 	// Make sure we mrn get deltas!
@@ -65,7 +65,7 @@ func TestSCListData(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	mr.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	mr.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced, metav1.ListOptions{})
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())

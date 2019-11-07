@@ -26,11 +26,7 @@ func (c *CronJob) Get(ns, n string) (interface{}, error) {
 }
 
 // List all CronJobs in a given namespace.
-func (c *CronJob) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: c.labelSelector,
-		FieldSelector: c.fieldSelector,
-	}
+func (c *CronJob) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := c.DialOrDie().BatchV1beta1().CronJobs(ns).List(opts)
 	if err != nil {
 		return nil, err

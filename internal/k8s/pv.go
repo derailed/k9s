@@ -21,11 +21,7 @@ func (p *PersistentVolume) Get(_, n string) (interface{}, error) {
 }
 
 // List all PersistentVolumes in a given namespace.
-func (p *PersistentVolume) List(_ string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: p.labelSelector,
-		FieldSelector: p.fieldSelector,
-	}
+func (p *PersistentVolume) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := p.DialOrDie().CoreV1().PersistentVolumes().List(opts)
 	if err != nil {
 		return nil, err

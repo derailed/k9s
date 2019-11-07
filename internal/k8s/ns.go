@@ -21,11 +21,7 @@ func (n *Namespace) Get(_, name string) (interface{}, error) {
 }
 
 // List all active namespaces on the cluster.
-func (n *Namespace) List(_ string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: n.labelSelector,
-		FieldSelector: n.fieldSelector,
-	}
+func (n *Namespace) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := n.DialOrDie().CoreV1().Namespaces().List(opts)
 	if err != nil {
 		return nil, err

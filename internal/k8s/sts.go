@@ -23,11 +23,7 @@ func (s *StatefulSet) Get(ns, n string) (interface{}, error) {
 }
 
 // List all StatefulSets in a given namespace.
-func (s *StatefulSet) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: s.labelSelector,
-		FieldSelector: s.fieldSelector,
-	}
+func (s *StatefulSet) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := s.DialOrDie().AppsV1().StatefulSets(ns).List(opts)
 	if err != nil {
 		return nil, err

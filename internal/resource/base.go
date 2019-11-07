@@ -22,13 +22,8 @@ type (
 	// Cruder represents a crudable Kubernetes resource.
 	Cruder interface {
 		Get(ns string, name string) (interface{}, error)
-		List(ns string) (k8s.Collection, error)
+		List(ns string, opts metav1.ListOptions) (k8s.Collection, error)
 		Delete(ns string, name string, cascade, force bool) error
-		SetLabelSelector(string)
-		SetFieldSelector(string)
-		GetLabelSelector() string
-		GetFieldSelector() string
-		HasSelectors() bool
 	}
 
 	// Scalable represents a scalable Kubernetes resource.
@@ -64,36 +59,11 @@ func NewBase(c Connection, r Cruder) *Base {
 	return &Base{Connection: c, Resource: r}
 }
 
-// HasSelectors returns true if field or label selectors are set.
-func (b *Base) HasSelectors() bool {
-	return b.Resource.HasSelectors()
-}
-
 // SetPodMetrics attach pod metrics to resource.
 func (b *Base) SetPodMetrics(*mv1beta1.PodMetrics) {}
 
 // SetNodeMetrics attach node metrics to resource.
 func (b *Base) SetNodeMetrics(*mv1beta1.NodeMetrics) {}
-
-// SetFieldSelector refines query results via selector.
-func (b *Base) SetFieldSelector(s string) {
-	b.Resource.SetFieldSelector(s)
-}
-
-// SetLabelSelector refines query results via labels.
-func (b *Base) SetLabelSelector(s string) {
-	b.Resource.SetLabelSelector(s)
-}
-
-// GetFieldSelector returns field selector.
-func (b *Base) GetFieldSelector() string {
-	return b.Resource.GetFieldSelector()
-}
-
-// GetLabelSelector returns label selector.
-func (b *Base) GetLabelSelector() string {
-	return b.Resource.GetLabelSelector()
-}
 
 // Name returns the resource namespaced name.
 func (b *Base) Name() string {
@@ -122,8 +92,8 @@ func (b *Base) Get(path string) (Columnar, error) {
 }
 
 // List all resources
-func (b *Base) List(ns string) (Columnars, error) {
-	ii, err := b.Resource.List(ns)
+func (b *Base) List(ns string, opts metav1.ListOptions) (Columnars, error) {
+	ii, err := b.Resource.List(ns, opts)
 	if err != nil {
 		return nil, err
 	}

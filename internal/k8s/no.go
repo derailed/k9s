@@ -21,11 +21,7 @@ func (n *Node) Get(_, name string) (interface{}, error) {
 }
 
 // List all nodes on the cluster.
-func (n *Node) List(_ string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: n.labelSelector,
-		FieldSelector: n.fieldSelector,
-	}
+func (n *Node) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := n.DialOrDie().CoreV1().Nodes().List(opts)
 	if err != nil {
 		return nil, err

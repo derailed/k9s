@@ -57,7 +57,7 @@ func TestCronJobMarshal(t *testing.T) {
 func TestCronJobListData(t *testing.T) {
 	mc := NewMockConnection()
 	mr := NewMockCruder()
-	m.When(mr.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sCronJob()}, nil)
+	m.When(mr.List(resource.NotNamespaced, metav1.ListOptions{})).ThenReturn(k8s.Collection{*k8sCronJob()}, nil)
 
 	l := NewCronJobListWithArgs("-", NewCronJobWithArgs(mc, mr))
 	// Make sure we can get deltas!
@@ -66,7 +66,7 @@ func TestCronJobListData(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	mr.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	mr.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced, metav1.ListOptions{})
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())

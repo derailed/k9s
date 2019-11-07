@@ -21,11 +21,7 @@ func (p *StorageClass) Get(_, n string) (interface{}, error) {
 }
 
 // List all StorageClasses in a given namespace.
-func (p *StorageClass) List(_ string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: p.labelSelector,
-		FieldSelector: p.fieldSelector,
-	}
+func (p *StorageClass) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := p.DialOrDie().StorageV1().StorageClasses().List(opts)
 	if err != nil {
 		return nil, err

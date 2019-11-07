@@ -21,11 +21,7 @@ func (d *NetworkPolicy) Get(ns, n string) (interface{}, error) {
 }
 
 // List all NetworkPolicys in a given namespace.
-func (d *NetworkPolicy) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: d.labelSelector,
-		FieldSelector: d.fieldSelector,
-	}
+func (d *NetworkPolicy) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := d.DialOrDie().NetworkingV1().NetworkPolicies(ns).List(opts)
 	if err != nil {
 		return nil, err

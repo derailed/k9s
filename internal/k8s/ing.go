@@ -21,11 +21,7 @@ func (i *Ingress) Get(ns, n string) (interface{}, error) {
 }
 
 // List all Ingresses in a given namespace.
-func (i *Ingress) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: i.labelSelector,
-		FieldSelector: i.fieldSelector,
-	}
+func (i *Ingress) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := i.DialOrDie().ExtensionsV1beta1().Ingresses(ns).List(opts)
 	if err != nil {
 		return nil, err

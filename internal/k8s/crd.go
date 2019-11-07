@@ -21,11 +21,7 @@ func (c *CustomResourceDefinition) Get(_, n string) (interface{}, error) {
 }
 
 // List all CustomResourceDefinitions in a given namespace.
-func (c *CustomResourceDefinition) List(string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: c.labelSelector,
-		FieldSelector: c.fieldSelector,
-	}
+func (c *CustomResourceDefinition) List(_ string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := c.NSDialOrDie().List(opts)
 	if err != nil {
 		return nil, err

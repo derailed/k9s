@@ -21,11 +21,7 @@ func (c *ClusterRoleBinding) Get(_, n string) (interface{}, error) {
 }
 
 // List all ClusterRoleBindings on a cluster.
-func (c *ClusterRoleBinding) List(_ string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: c.labelSelector,
-		FieldSelector: c.fieldSelector,
-	}
+func (c *ClusterRoleBinding) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := c.DialOrDie().RbacV1().ClusterRoleBindings().List(opts)
 	if err != nil {
 		return Collection{}, err

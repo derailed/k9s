@@ -62,7 +62,7 @@ func TestNodeMarshal(t *testing.T) {
 func TestNodeListData(t *testing.T) {
 	mc := NewMockConnection()
 	mr := NewMockCruder()
-	m.When(mr.List("-")).ThenReturn(k8s.Collection{*k8sNode()}, nil)
+	m.When(mr.List("-", metav1.ListOptions{})).ThenReturn(k8s.Collection{*k8sNode()}, nil)
 	mx := NewMockMetricsServer()
 	m.When(mx.HasMetrics()).ThenReturn(true)
 	m.When(mx.FetchNodesMetrics()).
@@ -75,7 +75,7 @@ func TestNodeListData(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	mr.VerifyWasCalled(m.Times(2)).List("-")
+	mr.VerifyWasCalled(m.Times(2)).List("-", metav1.ListOptions{})
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())

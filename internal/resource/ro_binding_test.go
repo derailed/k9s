@@ -37,7 +37,7 @@ func TestRBMarshal(t *testing.T) {
 func TestRBListData(t *testing.T) {
 	mc := NewMockConnection()
 	mr := NewMockCruder()
-	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sRB()}, nil)
+	m.When(mr.List("blee", metav1.ListOptions{})).ThenReturn(k8s.Collection{*k8sRB()}, nil)
 
 	l := NewRBListWithArgs("blee", NewRBWithArgs(mc, mr))
 	// Make sure we mrn get deltas!
@@ -46,7 +46,7 @@ func TestRBListData(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	mr.VerifyWasCalled(m.Times(2)).List("blee")
+	mr.VerifyWasCalled(m.Times(2)).List("blee", metav1.ListOptions{})
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, "blee", l.GetNamespace())
