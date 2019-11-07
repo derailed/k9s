@@ -197,12 +197,16 @@ func (v *resourceView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if len(sel) > 1 {
 		msg = fmt.Sprintf("Delete %d selected %s?", len(sel), v.list.GetName())
 	} else {
-		msg = fmt.Sprintf("Delete %s %s?", v.list.GetName(), sel)
+		msg = fmt.Sprintf("Delete %s %s?", v.list.GetName(), sel[0])
 	}
 	dialog.ShowDelete(v.Pages, msg, func(cascade, force bool) {
 		v.masterPage().ShowDeleted()
+		if len(sel) > 1 {
+			v.app.Flash().Infof("Delete %d selected %s", len(sel), v.list.GetName())
+		} else {
+			v.app.Flash().Infof("Delete resource %s %s", v.list.GetName(), sel[0])
+		}
 		for _, res := range sel {
-			v.app.Flash().Infof("Delete resource %s %s", v.list.GetName(), res)
 			if err := v.list.Resource().Delete(res, cascade, force); err != nil {
 				v.app.Flash().Errf("Delete failed with %s", err)
 			} else {
