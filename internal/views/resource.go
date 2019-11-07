@@ -394,7 +394,7 @@ func (v *resourceView) refreshActions() {
 		tcell.KeyEnter: ui.NewKeyAction("Enter", v.enterCmd, false),
 		tcell.KeyCtrlR: ui.NewKeyAction("Refresh", v.refreshCmd, false),
 	}
-	aa[tcell.KeyCtrlSpace] = ui.NewKeyAction("Mark", v.markCmd, true)
+	aa[ui.KeySpace] = ui.NewKeyAction("Mark", v.markCmd, true)
 	v.namespaceActions(aa)
 	v.defaultActions(aa)
 

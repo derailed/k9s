@@ -204,6 +204,7 @@ const (
 	KeyHelp  = 63
 	KeySlash = 47
 	KeyColon = 58
+	KeySpace = 32
 )
 
 // Define Shift Keys
@@ -253,6 +254,7 @@ var NumKeys = map[int]int32{
 func initKeys() {
 	tcell.KeyNames[tcell.Key(KeyHelp)] = "?"
 	tcell.KeyNames[tcell.Key(KeySlash)] = "/"
+	tcell.KeyNames[tcell.Key(KeySpace)] = "space"
 
 	initNumbKeys()
 	initStdKeys()
