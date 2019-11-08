@@ -225,8 +225,7 @@ func (v *resourceView) markCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	sel := v.masterPage().GetSelectedItem()
-	v.list.ToggleMark(sel)
+	v.masterPage().ToggleMark()
 	v.refresh()
 	v.app.Draw()
 	return nil
