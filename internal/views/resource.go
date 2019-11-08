@@ -192,20 +192,42 @@ func (v *resourceView) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	sel := v.masterPage().GetSelectedItem()
-	msg := fmt.Sprintf("Delete %s %s?", v.list.GetName(), sel)
+	sel := v.masterPage().GetSelectedItems()
+	var msg string
+	if len(sel) > 1 {
+		msg = fmt.Sprintf("Delete %d selected %s?", len(sel), v.list.GetName())
+	} else {
+		msg = fmt.Sprintf("Delete %s %s?", v.list.GetName(), sel[0])
+	}
 	dialog.ShowDelete(v.Pages, msg, func(cascade, force bool) {
 		v.masterPage().ShowDeleted()
-		v.app.Flash().Infof("Delete resource %s %s", v.list.GetName(), sel)
-		if err := v.list.Resource().Delete(sel, cascade, force); err != nil {
-			v.app.Flash().Errf("Delete failed with %s", err)
+		if len(sel) > 1 {
+			v.app.Flash().Infof("Delete %d selected %s", len(sel), v.list.GetName())
 		} else {
-			deletePortForward(v.app.forwarders, sel)
-			v.refresh()
+			v.app.Flash().Infof("Delete resource %s %s", v.list.GetName(), sel[0])
 		}
+		for _, res := range sel {
+			if err := v.list.Resource().Delete(res, cascade, force); err != nil {
+				v.app.Flash().Errf("Delete failed with %s", err)
+			} else {
+				deletePortForward(v.app.forwarders, res)
+			}
+		}
+		v.refresh()
 	}, func() {
 		v.switchPage("master")
 	})
+	return nil
+}
+
+func (v *resourceView) markCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !v.masterPage().RowSelected() {
+		return evt
+	}
+
+	v.masterPage().ToggleMark()
+	v.refresh()
+	v.app.Draw()
 	return nil
 }
 
@@ -375,6 +397,7 @@ func (v *resourceView) refreshActions() {
 		tcell.KeyEnter: ui.NewKeyAction("Enter", v.enterCmd, false),
 		tcell.KeyCtrlR: ui.NewKeyAction("Refresh", v.refreshCmd, false),
 	}
+	aa[ui.KeySpace] = ui.NewKeyAction("Mark", v.markCmd, true)
 	v.namespaceActions(aa)
 	v.defaultActions(aa)
 

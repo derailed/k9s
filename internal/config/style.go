@@ -99,6 +99,7 @@ type (
 		FgColor     string      `yaml:"fgColor"`
 		BgColor     string      `yaml:"bgColor"`
 		CursorColor string      `yaml:"cursorColor"`
+		MarkColor   string      `yaml:"markColor"`
 		Header      TableHeader `yaml:"header"`
 	}
 
@@ -215,6 +216,7 @@ func newTable() Table {
 		FgColor:     "aqua",
 		BgColor:     "black",
 		CursorColor: "aqua",
+		MarkColor:   "darkgoldenrod",
 		Header:      newTableHeader(),
 	}
 }
