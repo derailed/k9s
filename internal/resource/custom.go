@@ -7,6 +7,8 @@ import (
 	"path"
 	"strings"
 
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -95,8 +97,8 @@ func (r *Custom) Marshal(path string) (string, error) {
 }
 
 // List all resources
-func (r *Custom) List(ns string) (Columnars, error) {
-	ii, err := r.Resource.List(ns)
+func (r *Custom) List(ns string, opts v1.ListOptions) (Columnars, error) {
+	ii, err := r.Resource.List(ns, opts)
 	if err != nil {
 		return nil, err
 	}

@@ -39,7 +39,7 @@ func (r *Resource) Get(ns, n string) (interface{}, error) {
 }
 
 // List all Resources in a given namespace.
-func (r *Resource) List(ns string) (Collection, error) {
+func (r *Resource) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	obj, err := r.listAll(ns, r.gvr.ToR())
 	if err != nil {
 		return nil, err

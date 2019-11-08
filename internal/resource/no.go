@@ -8,6 +8,7 @@ import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -68,8 +69,8 @@ func (r *Node) SetNodeMetrics(m *mv1beta1.NodeMetrics) {
 }
 
 // List all resources for a given namespace.
-func (r *Node) List(ns string) (Columnars, error) {
-	nn, err := r.Resource.List(ns)
+func (r *Node) List(ns string, opts metav1.ListOptions) (Columnars, error) {
+	nn, err := r.Resource.List(ns, opts)
 	if err != nil {
 		return nil, err
 	}

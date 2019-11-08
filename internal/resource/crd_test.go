@@ -3,6 +3,9 @@ package resource_test
 import (
 	"testing"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
@@ -65,7 +68,7 @@ func TestCRDMarshal(t *testing.T) {
 func TestCRDListData(t *testing.T) {
 	mc := NewMockConnection()
 	cr := NewMockCruder()
-	m.When(cr.List(resource.NotNamespaced)).ThenReturn(k8s.Collection{*k8sCRD()}, nil)
+	m.When(cr.List(resource.NotNamespaced, v1.ListOptions{})).ThenReturn(k8s.Collection{*k8sCRD()}, nil)
 
 	l := NewCRDListWithArgs("-", NewCRDWithArgs(mc, cr))
 	// Make sure we can get deltas!
@@ -74,7 +77,7 @@ func TestCRDListData(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	cr.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced)
+	cr.VerifyWasCalled(m.Times(2)).List(resource.NotNamespaced, metav1.ListOptions{})
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, resource.NotNamespaced, l.GetNamespace())

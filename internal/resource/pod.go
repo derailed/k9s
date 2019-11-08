@@ -219,8 +219,8 @@ func readLogs(ctx context.Context, stream io.ReadCloser, c chan<- string, opts L
 }
 
 // List resources for a given namespace.
-func (r *Pod) List(ns string) (Columnars, error) {
-	pods, err := r.Resource.List(ns)
+func (r *Pod) List(ns string, opts metav1.ListOptions) (Columnars, error) {
+	pods, err := r.Resource.List(ns, opts)
 	if err != nil {
 		return nil, err
 	}

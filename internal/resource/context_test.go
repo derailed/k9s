@@ -7,6 +7,7 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	api "k8s.io/client-go/tools/clientcmd/api"
 )
@@ -36,14 +37,14 @@ func TestCTXSwitch(t *testing.T) {
 func TestCTXList(t *testing.T) {
 	mc := NewMockConnection()
 	mr := NewMockSwitchableCruder()
-	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sNamedCTX()}, nil)
+	m.When(mr.List("blee", metav1.ListOptions{})).ThenReturn(k8s.Collection{*k8sNamedCTX()}, nil)
 
 	ctx := NewContextWithArgs(mc, mr)
-	cc, err := ctx.List("blee")
+	cc, err := ctx.List("blee", metav1.ListOptions{})
 
 	assert.Nil(t, err)
 	assert.Equal(t, resource.Columnars{ctx.New(k8sNamedCTX())}, cc)
-	mr.VerifyWasCalledOnce().List("blee")
+	mr.VerifyWasCalledOnce().List("blee", metav1.ListOptions{})
 }
 
 func TestCTXDelete(t *testing.T) {

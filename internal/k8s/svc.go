@@ -21,11 +21,7 @@ func (s *Service) Get(ns, n string) (interface{}, error) {
 }
 
 // List all Services in a given namespace.
-func (s *Service) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: s.labelSelector,
-		FieldSelector: s.fieldSelector,
-	}
+func (s *Service) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := s.DialOrDie().CoreV1().Services(ns).List(opts)
 	if err != nil {
 		return nil, err

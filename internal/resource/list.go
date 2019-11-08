@@ -109,17 +109,12 @@ type (
 	Resource interface {
 		New(interface{}) Columnar
 		Get(path string) (Columnar, error)
-		List(ns string) (Columnars, error)
+		List(ns string, opts metav1.ListOptions) (Columnars, error)
 		Delete(path string, cascade, force bool) error
 		Describe(gvr, pa string) (string, error)
 		Marshal(pa string) (string, error)
 		Header(ns string) Row
 		NumCols(ns string) map[string]bool
-		SetFieldSelector(string)
-		SetLabelSelector(string)
-		GetFieldSelector() string
-		GetLabelSelector() string
-		HasSelectors() bool
 	}
 
 	list struct {
@@ -127,6 +122,8 @@ type (
 		verbs           int
 		resource        Resource
 		cache           RowEvents
+		fieldSelector   string
+		labelSelector   string
 	}
 )
 
@@ -146,17 +143,17 @@ func NewList(ns, name string, res Resource, verbs int) *list {
 }
 
 func (l *list) HasSelectors() bool {
-	return l.resource.HasSelectors()
+	return l.fieldSelector != "" || l.labelSelector != ""
 }
 
 // SetFieldSelector narrows down resource query given fields selection.
 func (l *list) SetFieldSelector(s string) {
-	l.resource.SetFieldSelector(s)
+	l.fieldSelector = s
 }
 
 // SetLabelSelector narrows down resource query via labels selections.
 func (l *list) SetLabelSelector(s string) {
-	l.resource.SetLabelSelector(s)
+	l.labelSelector = s
 }
 
 // Access check access control on a given resource.
@@ -237,8 +234,8 @@ func (l *list) Data() TableData {
 
 func (l *list) load(informer *wa.Informer, ns string) (Columnars, error) {
 	rr, err := informer.List(l.name, ns, metav1.ListOptions{
-		FieldSelector: l.resource.GetFieldSelector(),
-		LabelSelector: l.resource.GetLabelSelector(),
+		FieldSelector: l.fieldSelector,
+		LabelSelector: l.labelSelector,
 	})
 	if err != nil {
 		return nil, err
@@ -298,7 +295,12 @@ func (l *list) Reconcile(informer *wa.Informer, path *string) error {
 		return nil
 	}
 
-	if items, err = l.resource.List(l.namespace); err != nil {
+	opts := metav1.ListOptions{
+		LabelSelector: l.labelSelector,
+		FieldSelector: l.fieldSelector,
+	}
+
+	if items, err = l.resource.List(l.namespace, opts); err != nil {
 		return err
 	}
 	l.update(items)

@@ -3,6 +3,8 @@ package k8s
 import (
 	"fmt"
 
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
@@ -51,7 +53,7 @@ func (c *Context) Get(_, n string) (interface{}, error) {
 }
 
 // List all Contexts on the current cluster.
-func (c *Context) List(string) (Collection, error) {
+func (c *Context) List(string, metav1.ListOptions) (Collection, error) {
 	ctxs, err := c.Config().Contexts()
 	if err != nil {
 		return nil, err

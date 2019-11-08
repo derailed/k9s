@@ -44,7 +44,7 @@ var aliases = config.NewAliases()
 func allCRDs(c k8s.Connection, vv viewers) {
 	crds, err := resource.NewCustomResourceDefinitionList(c, resource.AllNamespaces).
 		Resource().
-		List(resource.AllNamespaces)
+		List(resource.AllNamespaces, metav1.ListOptions{})
 	if err != nil {
 		log.Error().Err(err).Msg("CRDs load fail")
 		return

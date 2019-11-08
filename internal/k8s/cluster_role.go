@@ -21,11 +21,7 @@ func (c *ClusterRole) Get(_, n string) (interface{}, error) {
 }
 
 // List all ClusterRoles on a cluster.
-func (c *ClusterRole) List(_ string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: c.labelSelector,
-		FieldSelector: c.fieldSelector,
-	}
+func (c *ClusterRole) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := c.DialOrDie().RbacV1().ClusterRoles().List(opts)
 	if err != nil {
 		return nil, err

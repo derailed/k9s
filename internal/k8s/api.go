@@ -97,7 +97,7 @@ func InitConnectionOrDie(config *Config, logger zerolog.Logger) *APIClient {
 // CheckListNSAccess check if current user can list namespaces.
 func (a *APIClient) CheckListNSAccess() error {
 	ns := NewNamespace(a)
-	_, err := ns.List("")
+	_, err := ns.List("", metav1.ListOptions{})
 	return err
 }
 
@@ -105,7 +105,7 @@ func (a *APIClient) CheckListNSAccess() error {
 func (a *APIClient) CheckNSAccess(n string) error {
 	ns := NewNamespace(a)
 	if n == "" {
-		_, err := ns.List(n)
+		_, err := ns.List(n, metav1.ListOptions{})
 		return err
 	}
 

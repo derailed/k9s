@@ -22,11 +22,7 @@ func (h *HorizontalPodAutoscalerV2Beta1) Get(ns, n string) (interface{}, error) 
 }
 
 // List all HorizontalPodAutoscalers in a given namespace.
-func (h *HorizontalPodAutoscalerV2Beta1) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: h.labelSelector,
-		FieldSelector: h.fieldSelector,
-	}
+func (h *HorizontalPodAutoscalerV2Beta1) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := h.DialOrDie().AutoscalingV2beta1().HorizontalPodAutoscalers(ns).List(opts)
 	if err != nil {
 		log.Error().Err(err).Msg("Beta1 Failed!")

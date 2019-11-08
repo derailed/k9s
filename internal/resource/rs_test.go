@@ -36,7 +36,7 @@ func TestReplicaSetMarshal(t *testing.T) {
 func TestReplicaSetListData(t *testing.T) {
 	mc := NewMockConnection()
 	mr := NewMockCruder()
-	m.When(mr.List("blee")).ThenReturn(k8s.Collection{*k8sReplicaSet()}, nil)
+	m.When(mr.List("blee", metav1.ListOptions{})).ThenReturn(k8s.Collection{*k8sReplicaSet()}, nil)
 
 	l := NewReplicaSetListWithArgs("blee", NewReplicaSetWithArgs(mc, mr))
 	// Make sure we can get deltas!
@@ -45,7 +45,7 @@ func TestReplicaSetListData(t *testing.T) {
 		assert.Nil(t, err)
 	}
 
-	mr.VerifyWasCalled(m.Times(2)).List("blee")
+	mr.VerifyWasCalled(m.Times(2)).List("blee", metav1.ListOptions{})
 	td := l.Data()
 	assert.Equal(t, 1, len(td.Rows))
 	assert.Equal(t, "blee", l.GetNamespace())

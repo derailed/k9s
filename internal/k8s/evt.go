@@ -21,11 +21,7 @@ func (e *Event) Get(ns, n string) (interface{}, error) {
 }
 
 // List all Events in a given namespace.
-func (e *Event) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: e.labelSelector,
-		FieldSelector: e.fieldSelector,
-	}
+func (e *Event) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := e.DialOrDie().CoreV1().Events(ns).List(opts)
 	if err != nil {
 		return nil, err

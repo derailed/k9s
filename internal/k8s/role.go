@@ -22,11 +22,7 @@ func (r *Role) Get(ns, n string) (interface{}, error) {
 }
 
 // List all Roles in a given namespace.
-func (r *Role) List(ns string) (Collection, error) {
-	opts := metav1.ListOptions{
-		LabelSelector: r.labelSelector,
-		FieldSelector: r.fieldSelector,
-	}
+func (r *Role) List(ns string, opts metav1.ListOptions) (Collection, error) {
 	rr, err := r.DialOrDie().RbacV1().Roles(ns).List(opts)
 	if err != nil {
 		return nil, err
