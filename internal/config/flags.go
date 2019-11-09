@@ -13,19 +13,21 @@ const (
 
 // Flags represents K9s configuration flags.
 type Flags struct {
-	RefreshRate *int
-	LogLevel    *string
-	Headless    *bool
-	Command     *string
+	RefreshRate   *int
+	LogLevel      *string
+	Headless      *bool
+	Command       *string
+	AllNamespaces *bool
 }
 
 // NewFlags returns new configuration flags.
 func NewFlags() *Flags {
 	return &Flags{
-		RefreshRate: intPtr(DefaultRefreshRate),
-		LogLevel:    strPtr(DefaultLogLevel),
-		Headless:    boolPtr(false),
-		Command:     strPtr(DefaultCommand),
+		RefreshRate:   intPtr(DefaultRefreshRate),
+		LogLevel:      strPtr(DefaultLogLevel),
+		Headless:      boolPtr(false),
+		Command:       strPtr(DefaultCommand),
+		AllNamespaces: boolPtr(false),
 	}
 }
 

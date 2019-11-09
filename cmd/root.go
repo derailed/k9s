@@ -8,6 +8,7 @@ import (
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/views"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -100,6 +101,10 @@ func loadConfiguration() *config.Config {
 		k9sCfg.K9s.OverrideCommand(*k9sFlags.Command)
 	}
 
+	if k9sFlags.AllNamespaces != nil && *k9sFlags.AllNamespaces {
+		k9sCfg.SetActiveNamespace(resource.AllNamespaces)
+	}
+
 	if err := k9sCfg.Refine(k8sFlags); err != nil {
 		log.Panic().Err(err).Msg("Unable to locate kubeconfig file")
 	}
@@ -149,6 +154,12 @@ func initK9sFlags() {
 		"headless",
 		false,
 		"Turn K9s header off",
+	)
+	rootCmd.Flags().BoolVarP(
+		k9sFlags.AllNamespaces,
+		"all-namespaces", "A",
+		false,
+		"Launch K9s in all namespaces",
 	)
 	rootCmd.Flags().StringVarP(
 		k9sFlags.Command,
