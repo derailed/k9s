@@ -118,9 +118,10 @@ func (v *resourceView) update(ctx context.Context) {
 				log.Debug().Msgf("%s updater canceled!", v.list.GetName())
 				return
 			case <-time.After(time.Duration(v.app.Config.K9s.GetRefreshRate()) * time.Second):
-				v.app.QueueUpdateDraw(func() {
+				done := QueueUpdateDraw(v.app.Application, func() {
 					v.refresh()
 				})
+				<-done
 			}
 		}
 	}(ctx)

@@ -164,13 +164,14 @@ func (a *appView) clusterUpdater(ctx context.Context) {
 			log.Debug().Msg("Cluster updater canceled!")
 			return
 		case <-time.After(clusterRefresh):
-			a.QueueUpdateDraw(func() {
+			done := QueueUpdateDraw(a.Application, func() {
 				if !a.showHeader {
 					a.refreshIndicator()
 				} else {
 					a.clusterInfo().refresh()
 				}
 			})
+			<-done
 		}
 	}
 }
@@ -430,4 +431,15 @@ func (a *appView) clusterInfo() *clusterInfoView {
 
 func (a *appView) indicator() *ui.IndicatorView {
 	return a.Views()["indicator"].(*ui.IndicatorView)
+}
+
+// QueueUpdateDraw is a wrapper to the tview.Application#QueueUpdateDraw that includes a
+// done channel indicating this update has been executed.
+func QueueUpdateDraw(a *tview.Application, f func()) chan struct{} {
+	done := make(chan struct{})
+	a.QueueUpdateDraw(func() {
+		f()
+		done <- struct{}{}
+	})
+	return done
 }
