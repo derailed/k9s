@@ -17,8 +17,6 @@ const (
 	nsTitleFmt    = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
 	descIndicator = "↓"
 	ascIndicator  = "↑"
-	fullFmat      = "%s-%s-%d.csv"
-	noNSFmat      = "%s-%d.csv"
 )
 
 var (

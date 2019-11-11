@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"time"
 
@@ -15,21 +14,11 @@ import (
 )
 
 const (
-	titleFmt      = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]] "
-	searchFmt     = "<[filter:bg:r]/%s[fg:bg:-]> "
-	nsTitleFmt    = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
-	descIndicator = "↓"
-	ascIndicator  = "↑"
-	fullFmat      = "%s-%s-%d.csv"
-	noNSFmat      = "%s-%d.csv"
+	searchFmt  = "<[filter:bg:r]/%s[fg:bg:-]> "
+	nsTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
+	fullFmat   = "%s-%s-%d.csv"
+	noNSFmat   = "%s-%d.csv"
 )
-
-var (
-	cpuRX = regexp.MustCompile(`\A.{0,1}CPU`)
-	memRX = regexp.MustCompile(`\A.{0,1}MEM`)
-)
-
-type cleanseFn func(string) string
 
 func trimCellRelative(tv *tableView, row, col int) string {
 	return ui.TrimCell(tv.Table, row, tv.NameColIndex()+col)
