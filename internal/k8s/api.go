@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"k8s.io/apimachinery/pkg/util/cache"
 	"k8s.io/client-go/discovery/cached/disk"
 
 	"github.com/rs/zerolog"
@@ -82,13 +83,19 @@ type (
 		useMetricServer bool
 		log             zerolog.Logger
 		mx              sync.Mutex
+
+		cache *cache.LRUExpireCache
 	}
 )
 
 // InitConnectionOrDie initialize connection from command line args.
 // Checks for connectivity with the api server.
 func InitConnectionOrDie(config *Config, logger zerolog.Logger) *APIClient {
-	conn := APIClient{config: config, log: logger}
+	conn := APIClient{
+		config: config,
+		log:    logger,
+		cache:  cache.NewLRUExpireCache(500),
+	}
 	conn.useMetricServer = conn.supportsMxServer()
 
 	return &conn
@@ -96,20 +103,39 @@ func InitConnectionOrDie(config *Config, logger zerolog.Logger) *APIClient {
 
 // CheckListNSAccess check if current user can list namespaces.
 func (a *APIClient) CheckListNSAccess() error {
+	key := "CheckListNSAccess"
+	if e, ok := a.cache.Get(key); ok {
+		if e == nil {
+			return nil
+		}
+		return e.(error)
+	}
+
 	ns := NewNamespace(a)
-	_, err := ns.List("", metav1.ListOptions{})
+	_, err := ns.List("", metav1.ListOptions{Limit: 1})
+	a.cache.Add(key, err, 5*time.Minute)
+
 	return err
 }
 
 // CheckNSAccess asserts if user can access a namespace.
 func (a *APIClient) CheckNSAccess(n string) error {
-	ns := NewNamespace(a)
 	if n == "" {
-		_, err := ns.List(n, metav1.ListOptions{})
-		return err
+		return a.CheckListNSAccess()
 	}
 
+	key := "CheckNSAccess"
+	if e, ok := a.cache.Get(key); ok {
+		if e == nil {
+			return nil
+		}
+		return e.(error)
+	}
+
+	ns := NewNamespace(a)
 	_, err := ns.Get("", n)
+	a.cache.Add(key, err, 5*time.Minute)
+
 	return err
 }
 
@@ -332,7 +358,6 @@ func (a *APIClient) SwitchContextOrDie(ctx string) {
 	}
 
 	if currentCtx != ctx {
-		a.cachedDiscovery = nil
 		a.reset()
 		if err := a.config.SwitchContext(ctx); err != nil {
 			panic(err)
@@ -345,7 +370,12 @@ func (a *APIClient) reset() {
 	a.mx.Lock()
 	defer a.mx.Unlock()
 
-	a.client, a.dClient, a.nsClient, a.mxsClient = nil, nil, nil, nil
+	a.client = nil
+	a.dClient = nil
+	a.nsClient = nil
+	a.mxsClient = nil
+	a.cachedDiscovery = nil
+	a.cache = cache.NewLRUExpireCache(500)
 }
 
 func (a *APIClient) supportsMxServer() bool {
