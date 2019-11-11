@@ -12,21 +12,18 @@ import (
 )
 
 const (
-	titleFmt          = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]] "
-	searchFmt         = "<[filter:bg:r]/%s[fg:bg:-]> "
-	nsTitleFmt        = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
-	labelSelIndicator = "-l"
-	descIndicator     = "↓"
-	ascIndicator      = "↑"
-	fullFmat          = "%s-%s-%d.csv"
-	noNSFmat          = "%s-%d.csv"
+	titleFmt      = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]] "
+	searchFmt     = "<[filter:bg:r]%s/%s[fg:bg:-]> "
+	nsTitleFmt    = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
+	descIndicator = "↓"
+	ascIndicator  = "↑"
+	fullFmat      = "%s-%s-%d.csv"
+	noNSFmat      = "%s-%d.csv"
 )
 
 var (
-	cpuRX    = regexp.MustCompile(`\A.{0,1}CPU`)
-	memRX    = regexp.MustCompile(`\A.{0,1}MEM`)
-	labelCmd = regexp.MustCompile(`\A\-l`)
-	fuzzyCmd = regexp.MustCompile(`\A\-f`)
+	cpuRX = regexp.MustCompile(`\A.{0,1}CPU`)
+	memRX = regexp.MustCompile(`\A.{0,1}MEM`)
 )
 
 type cleanseFn func(string) string
@@ -39,24 +36,6 @@ func TrimCell(tv *Table, row, col int) string {
 		return ""
 	}
 	return strings.TrimSpace(c.Text)
-}
-
-func isLabelSelector(s string) bool {
-	if s == "" {
-		return false
-	}
-	return labelCmd.MatchString(s)
-}
-
-func isFuzzySelector(s string) bool {
-	if s == "" {
-		return false
-	}
-	return fuzzyCmd.MatchString(s)
-}
-
-func trimLabelSelector(s string) string {
-	return strings.TrimSpace(s[2:])
 }
 
 func skinTitle(fmat string, style config.Frame) string {

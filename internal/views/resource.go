@@ -55,7 +55,7 @@ func newResourceView(title, gvr string, app *appView, list resource.List) resour
 // Init watches all running pods in given namespace
 func (v *resourceView) Init(ctx context.Context, ns string) {
 	v.masterDetail.init(ctx, ns)
-	v.masterPage().setFilterFn(v.filterResource)
+	v.masterPage().setLabelFilterFn(v.filterResource)
 	if v.colorerFn != nil {
 		v.masterPage().SetColorerFn(v.colorerFn)
 	}

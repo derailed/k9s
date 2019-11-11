@@ -49,14 +49,15 @@ type (
 	appView struct {
 		*ui.App
 
-		command    *command
-		cancel     context.CancelFunc
-		informer   *watch.Informer
-		stopCh     chan struct{}
-		forwarders map[string]forwarder
-		version    string
-		showHeader bool
-		filter     string
+		command      *command
+		cancel       context.CancelFunc
+		informer     *watch.Informer
+		stopCh       chan struct{}
+		forwarders   map[string]forwarder
+		version      string
+		showHeader   bool
+		filter       string
+		stickyFilter bool
 	}
 )
 
@@ -86,6 +87,7 @@ func (a *appView) Init(version string, rate int) {
 		ui.KeyH:        ui.NewKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
 		ui.KeyHelp:     ui.NewKeyAction("Help", a.helpCmd, false),
 		tcell.KeyCtrlA: ui.NewKeyAction("Aliases", a.aliasCmd, false),
+		tcell.KeyCtrlF: ui.NewKeyAction("StickyFilter", a.stickyFilterCmd, true),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
 	})
 
@@ -398,6 +400,27 @@ func (a *appView) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	a.inject(newAliasView(a, a.ActiveView()))
 
 	return nil
+}
+
+func (a *appView) stickyFilterCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if _, ok := a.Frame().GetPrimitive("main").(*aliasView); ok {
+		return evt
+	}
+
+	a.stickyFilter = !a.stickyFilter
+	if a.stickyFilter {
+		a.Flash().Info("filters will stick now 📌")
+	} else {
+		a.Flash().Info("filters won't stick now")
+	}
+
+	//TODO(paivagustavo): find a way to refresh the view when this command is executed,
+	// it need to run the 'Refresh' method from the tableView to recalculate the title.
+	return nil
+}
+
+func (a *appView) updateFilter(filter string) {
+	a.filter = filter
 }
 
 func (a *appView) gotoResource(res string, record bool) bool {

@@ -54,7 +54,7 @@ func NewApp() *App {
 		actions:     make(KeyActions),
 		pages:       tview.NewPages(),
 		content:     tview.NewPages(),
-		cmdBuff:     NewCmdBuff(':', CommandBuff),
+		cmdBuff:     NewCmdBuff(CommandBuff),
 	}
 
 	s.RefreshStyles()

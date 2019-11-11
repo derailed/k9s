@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/filters"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
@@ -43,18 +44,20 @@ type Table struct {
 	selectedFn   func(string) string
 	selListeners []SelectedRowFunc
 	marks        map[string]bool
+	stickyFilter *bool
 }
 
 // NewTable returns a new table view.
-func NewTable(title string, styles *config.Styles) *Table {
+func NewTable(title string, styles *config.Styles, stickyFilter *bool) *Table {
 	v := Table{
-		Table:     tview.NewTable(),
-		styles:    styles,
-		actions:   make(KeyActions),
-		cmdBuff:   NewCmdBuff('/', FilterBuff),
-		baseTitle: title,
-		sortCol:   SortColumn{0, 0, true},
-		marks:     make(map[string]bool),
+		Table:        tview.NewTable(),
+		styles:       styles,
+		actions:      make(KeyActions),
+		cmdBuff:      NewCmdBuff(FilterBuff),
+		baseTitle:    title,
+		sortCol:      SortColumn{0, 0, true},
+		marks:        make(map[string]bool),
+		stickyFilter: stickyFilter,
 	}
 
 	v.SetFixed(1, 0)
@@ -401,20 +404,24 @@ func (v *Table) AddHeaderCell(numerical bool, col int, name string) {
 }
 
 func (v *Table) filtered() resource.TableData {
-	if v.cmdBuff.Empty() || isLabelSelector(v.cmdBuff.String()) {
+	if v.cmdBuff.Empty() {
 		return v.data
 	}
 
 	q := v.cmdBuff.String()
-	if isFuzzySelector(q) {
-		return v.fuzzyFilter(q[2:])
+	if _, ok := filters.LabelSelector(q); ok {
+		return v.data
+	}
+	if q, ok := filters.FuzzyFilter(q); ok {
+		return v.fuzzyFilter(q)
 	}
 
+	// Default filter is regex
 	return v.rxFilter(q)
 }
 
 func (v *Table) rxFilter(q string) resource.TableData {
-	rx, err := regexp.Compile(`(?i)` + v.cmdBuff.String())
+	rx, err := regexp.Compile(`(?i)` + q)
 	if err != nil {
 		log.Error().Err(errors.New("Invalid filter expression")).Msg("Regexp")
 		v.cmdBuff.Clear()
@@ -532,10 +539,13 @@ func (v *Table) UpdateTitle() {
 
 	if !v.cmdBuff.Empty() {
 		cmd := v.cmdBuff.String()
-		if isLabelSelector(cmd) {
-			cmd = trimLabelSelector(cmd)
+		cmd, _ = filters.LabelSelector(cmd)
+
+		icon := ""
+		if v.stickyFilter != nil && *v.stickyFilter {
+			icon += "📍"
 		}
-		title += skinTitle(fmt.Sprintf(searchFmt, cmd), v.styles.Frame())
+		title += skinTitle(fmt.Sprintf(searchFmt, icon, cmd), v.styles.Frame())
 	}
 	v.SetTitle(title)
 }

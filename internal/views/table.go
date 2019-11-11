@@ -1,6 +1,8 @@
 package views
 
 import (
+	"github.com/derailed/k9s/internal/filters"
+
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 )
@@ -8,19 +10,22 @@ import (
 type tableView struct {
 	*ui.Table
 
-	app      *appView
-	filterFn func(string)
+	app           *appView
+	labelFilterFn func(string)
 }
 
 func newTableView(app *appView, title string) *tableView {
 	v := tableView{
-		Table: ui.NewTable(title, app.Styles),
+		Table: ui.NewTable(title, app.Styles, &app.stickyFilter),
 		app:   app,
 	}
-	v.SearchBuff().AddListener(app.Cmd())
-	v.SearchBuff().AddListener(&v)
+	app.Cmd().Clear()
+	v.SearchBuff().AddListener(app.Cmd(), &v)
 	v.bindKeys()
 
+	if v.app.stickyFilter {
+		v.SearchBuff().Set(v.app.filter)
+	}
 	return &v
 }
 
@@ -42,12 +47,15 @@ func (v *tableView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (v *tableView) setFilterFn(fn func(string)) {
-	v.filterFn = fn
+func (v *tableView) setLabelFilterFn(fn func(string)) {
+	v.labelFilterFn = fn
+	if v.labelFilterFn == nil {
+		return
+	}
 
 	cmd := v.SearchBuff().String()
-	if isLabelSelector(cmd) && v.filterFn != nil {
-		v.filterFn(trimLabelSelector(cmd))
+	if q, ok := filters.LabelSelector(cmd); ok {
+		v.labelFilterFn(q)
 	}
 }
 
@@ -72,13 +80,22 @@ func (v *tableView) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	v.SearchBuff().SetActive(false)
-	cmd := v.SearchBuff().String()
-	if isLabelSelector(cmd) && v.filterFn != nil {
-		v.filterFn(trimLabelSelector(cmd))
+
+	filter := v.SearchBuff().String()
+	v.app.updateFilter(filter)
+
+	if v.labelFilterFn == nil {
+		v.Refresh()
 		return nil
 	}
-	v.Refresh()
 
+	if q, ok := filters.LabelSelector(filter); ok {
+		v.labelFilterFn(q)
+	} else {
+		v.labelFilterFn("")
+	}
+
+	v.Refresh()
 	return nil
 }
 
@@ -94,8 +111,13 @@ func (v *tableView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !v.SearchBuff().Empty() {
 		v.app.Flash().Info("Clearing filter...")
 	}
-	if isLabelSelector(v.SearchBuff().String()) {
-		v.filterFn("")
+
+	if !v.app.stickyFilter {
+		v.app.updateFilter("")
+	}
+
+	if _, ok := filters.LabelSelector(v.SearchBuff().String()); ok {
+		v.labelFilterFn("")
 	}
 	v.SearchBuff().Reset()
 	v.Refresh()
@@ -110,6 +132,5 @@ func (v *tableView) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	v.app.Flash().Info("Filter mode activated.")
 	v.SearchBuff().SetActive(true)
-
 	return nil
 }
