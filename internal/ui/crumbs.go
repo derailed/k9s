@@ -4,31 +4,53 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/tview"
+	"github.com/rs/zerolog/log"
 )
 
-// CrumbsView represents user breadcrumbs.
-type CrumbsView struct {
+// Crumbs represents user breadcrumbs.
+type Crumbs struct {
 	*tview.TextView
 
 	styles *config.Styles
+	stack  *model.Stack
 }
 
-// NewCrumbsView returns a new breadcrumb view.
-func NewCrumbsView(styles *config.Styles) *CrumbsView {
-	v := CrumbsView{styles: styles, TextView: tview.NewTextView()}
-	{
-		v.SetBackgroundColor(styles.BgColor())
-		v.SetTextAlign(tview.AlignLeft)
-		v.SetBorderPadding(0, 0, 1, 1)
-		v.SetDynamicColors(true)
+// NewCrumbs returns a new breadcrumb view.
+func NewCrumbs(styles *config.Styles) *Crumbs {
+	v := Crumbs{
+		stack:    model.NewStack(),
+		styles:   styles,
+		TextView: tview.NewTextView(),
 	}
+	v.SetBackgroundColor(styles.BgColor())
+	v.SetTextAlign(tview.AlignLeft)
+	v.SetBorderPadding(0, 0, 1, 1)
+	v.SetDynamicColors(true)
 
 	return &v
 }
 
+// StackPushed indicates a new item was added.
+func (v *Crumbs) StackPushed(c model.Component) {
+	v.stack.Push(c)
+	log.Debug().Msgf(">>> PUSH %v", v.stack.Flatten())
+	v.refresh(v.stack.Flatten())
+}
+
+// StackPopped indicates an item was deleted
+func (v *Crumbs) StackPopped(_, _ model.Component) {
+	v.stack.Pop()
+	log.Debug().Msgf("<<< POP %v", v.stack.Flatten())
+	v.refresh(v.stack.Flatten())
+}
+
+// StackTop indicates the top of the stack
+func (v *Crumbs) StackTop(top model.Component) {}
+
 // Refresh updates view with new crumbs.
-func (v *CrumbsView) Refresh(crumbs []string) {
+func (v *Crumbs) refresh(crumbs []string) {
 	v.Clear()
 	last, bgColor := len(crumbs)-1, v.styles.Frame().Crumb.BgColor
 	for i, c := range crumbs {

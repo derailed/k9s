@@ -14,7 +14,7 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ### NetworkPolicy
 
-NetworkPolicy resource is now available under the command `np` while in command mode. It behaves like other K9s resource views. You will get a bit more information in K9s vs `kubectl` as it includes information about ingress and egress rules.
+NetworkPolicy resource is now available under the command `np` while in command mode. It behaves like other K9s resource view. You will get a bit more information in K9s vs `kubectl` as it includes information about ingress and egress rules.
 
 ### Arrrggg! New CLI Argument
 

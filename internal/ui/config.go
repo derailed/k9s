@@ -10,9 +10,18 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Synchronizer manages ui event queue.
 type synchronizer interface {
 	QueueUpdateDraw(func()) *tview.Application
 	QueueUpdate(func()) *tview.Application
+}
+
+// Configurator represents an application configurationa.
+type Configurator struct {
+	HasSkins bool
+	Config   *config.Config
+	Styles   *config.Styles
+	Bench    *config.Bench
 }
 
 // StylesUpdater watches for skin file changes.
@@ -51,6 +60,11 @@ func (c *Configurator) InitBench(cluster string) {
 	}
 }
 
+// BenchConfig location of the benchmarks configuration file.
+func BenchConfig(cluster string) string {
+	return filepath.Join(config.K9sHome, config.K9sBench+"-"+cluster+".yml")
+}
+
 // RefreshStyles load for skin configuration changes.
 func (c *Configurator) RefreshStyles() {
 	var err error
@@ -68,9 +82,4 @@ func (c *Configurator) RefreshStyles() {
 	ErrColor = config.AsColor(c.Styles.Frame().Status.ErrorColor)
 	HighlightColor = config.AsColor(c.Styles.Frame().Status.HighlightColor)
 	CompletedColor = config.AsColor(c.Styles.Frame().Status.CompletedColor)
-}
-
-// BenchConfig location of the benchmarks configuration file.
-func BenchConfig(cluster string) string {
-	return filepath.Join(config.K9sHome, config.K9sBench+"-"+cluster+".yml")
 }

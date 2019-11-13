@@ -20,7 +20,7 @@ This is a maintenance release to mainly resolve outstanding issues and bugs.
 
 ### Tracking Percentages
 
-Added two new columns to track cpu/memory utilization on metrics-server enabled clusters. These apply to pod,container and node views.
+Added two new columns to track cpu/memory utilization on metrics-server enabled clusters. These apply to pod,container and node view.
 
 
 ---

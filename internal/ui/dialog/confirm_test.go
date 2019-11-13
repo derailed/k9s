@@ -3,13 +3,14 @@ package dialog
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestConfirmDialog(t *testing.T) {
 	a := tview.NewApplication()
-	p := tview.NewPages()
+	p := ui.NewPages()
 	a.SetRoot(p, false)
 
 	ackFunc := func() {

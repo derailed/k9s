@@ -9,7 +9,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
-	"github.com/derailed/k9s/internal/views"
+	"github.com/derailed/k9s/internal/view"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
@@ -59,7 +59,7 @@ func Execute() {
 
 func run(cmd *cobra.Command, args []string) {
 	defer func() {
-		// views.ClearScreen()
+		// view.ClearScreen()
 		if err := recover(); err != nil {
 			log.Error().Msgf("Boom! %v", err)
 			log.Error().Msg(string(debug.Stack()))
@@ -71,7 +71,7 @@ func run(cmd *cobra.Command, args []string) {
 
 	zerolog.SetGlobalLevel(parseLevel(*k9sFlags.LogLevel))
 	cfg := loadConfiguration()
-	app := views.NewApp(cfg)
+	app := view.NewApp(cfg)
 	{
 		defer app.BailOut()
 		app.Init(version, *k9sFlags.RefreshRate)

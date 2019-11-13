@@ -3,6 +3,7 @@ package dialog
 import (
 	"strings"
 
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 )
@@ -10,7 +11,7 @@ import (
 const portForwardKey = "portforward"
 
 // ShowPortForward pops a port forwarding configuration dialog.
-func ShowPortForward(p *tview.Pages, port string, okFn func(lport, cport string)) {
+func ShowPortForward(p *ui.Pages, port string, okFn func(lport, cport string)) {
 	f := tview.NewForm()
 	f.SetItemPadding(0)
 	f.SetButtonsAlign(tview.AlignCenter).
@@ -43,7 +44,7 @@ func ShowPortForward(p *tview.Pages, port string, okFn func(lport, cport string)
 }
 
 // DismissPortForward dismiss the port forward dialog.
-func DismissPortForward(p *tview.Pages) {
+func DismissPortForward(p *ui.Pages) {
 	p.RemovePage(portForwardKey)
 }
 

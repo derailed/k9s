@@ -3,12 +3,13 @@ package dialog
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPortForwardDialog(t *testing.T) {
-	p := tview.NewPages()
+	p := ui.NewPages()
 
 	okFunc := func(lport, cport string) {
 	}

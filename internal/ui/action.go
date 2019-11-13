@@ -3,6 +3,7 @@ package ui
 import (
 	"sort"
 
+	"github.com/derailed/k9s/internal/model"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 )
@@ -28,18 +29,18 @@ func NewKeyAction(d string, a ActionHandler, display bool) KeyAction {
 }
 
 // Hints returns a collection of hints.
-func (a KeyActions) Hints() Hints {
+func (a KeyActions) Hints() model.MenuHints {
 	kk := make([]int, 0, len(a))
 	for k := range a {
 		kk = append(kk, int(k))
 	}
 	sort.Ints(kk)
 
-	hh := make(Hints, 0, len(kk))
+	hh := make(model.MenuHints, 0, len(kk))
 	for _, k := range kk {
 		if name, ok := tcell.KeyNames[tcell.Key(k)]; ok {
 			hh = append(hh,
-				Hint{
+				model.MenuHint{
 					Mnemonic:    name,
 					Description: a[tcell.Key(k)].Description,
 					Visible:     a[tcell.Key(k)].Visible,

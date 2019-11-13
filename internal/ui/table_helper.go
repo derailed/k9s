@@ -12,24 +12,30 @@ import (
 )
 
 const (
-	titleFmt          = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]] "
-	searchFmt         = "<[filter:bg:r]/%s[fg:bg:-]> "
-	nsTitleFmt        = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
-	labelSelIndicator = "-l"
-	descIndicator     = "↓"
-	ascIndicator      = "↑"
-	fullFmat          = "%s-%s-%d.csv"
-	noNSFmat          = "%s-%d.csv"
+	// SearchFmt represents a filter view title.
+	SearchFmt = "<[filter:bg:r]/%s[fg:bg:-]> "
+
+	titleFmt      = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]] "
+	nsTitleFmt    = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
+	descIndicator = "↓"
+	ascIndicator  = "↑"
+
+	// FullFmat specifies a namespaced dump file name.
+	FullFmat = "%s-%s-%d.csv"
+
+	// NoNSFmat specifies a cluster wide dump file name.
+	NoNSFmat = "%s-%d.csv"
 )
 
 var (
-	cpuRX    = regexp.MustCompile(`\A.{0,1}CPU`)
-	memRX    = regexp.MustCompile(`\A.{0,1}MEM`)
-	labelCmd = regexp.MustCompile(`\A\-l`)
+	cpuRX = regexp.MustCompile(`\A.{0,1}CPU`)
+	memRX = regexp.MustCompile(`\A.{0,1}MEM`)
+
+	// LabelCmd identifies a label query
+	LabelCmd = regexp.MustCompile(`\A\-l`)
+
 	fuzzyCmd = regexp.MustCompile(`\A\-f`)
 )
-
-type cleanseFn func(string) string
 
 // TrimCell removes superfluous padding.
 func TrimCell(tv *Table, row, col int) string {
@@ -41,13 +47,15 @@ func TrimCell(tv *Table, row, col int) string {
 	return strings.TrimSpace(c.Text)
 }
 
-func isLabelSelector(s string) bool {
+// IsLabelSelector checks if query is a label query.
+func IsLabelSelector(s string) bool {
 	if s == "" {
 		return false
 	}
-	return labelCmd.MatchString(s)
+	return LabelCmd.MatchString(s)
 }
 
+// IsFuzztySelector checks if query is fuzzy.
 func isFuzzySelector(s string) bool {
 	if s == "" {
 		return false
@@ -55,7 +63,8 @@ func isFuzzySelector(s string) bool {
 	return fuzzyCmd.MatchString(s)
 }
 
-func trimLabelSelector(s string) string {
+// TrimLabelSelector extracts label query.
+func TrimLabelSelector(s string) string {
 	return strings.TrimSpace(s[2:])
 }
 

@@ -9,11 +9,6 @@ import (
 	"github.com/gdamore/tcell"
 )
 
-const (
-	company = "imhotep.io"
-	product = "Kubernetes CLI Island Style!"
-)
-
 // LogoSmall K9s small log.
 var LogoSmall = []string{
 	` ____  __.________       `,

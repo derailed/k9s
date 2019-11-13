@@ -39,12 +39,12 @@ type (
 		*tview.TextView
 
 		cancel context.CancelFunc
-		app    *tview.Application
+		app    *App
 	}
 )
 
 // NewFlashView returns a new flash view.
-func NewFlashView(app *tview.Application, m string) *FlashView {
+func NewFlashView(app *App, m string) *FlashView {
 	f := FlashView{app: app, TextView: tview.NewTextView()}
 	f.SetTextColor(tcell.ColorAqua)
 	f.SetTextAlign(tview.AlignLeft)

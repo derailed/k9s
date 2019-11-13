@@ -23,16 +23,14 @@ type CmdView struct {
 // NewCmdView returns a new command view.
 func NewCmdView(styles *config.Styles) *CmdView {
 	v := CmdView{styles: styles, TextView: tview.NewTextView()}
-	{
-		v.SetWordWrap(true)
-		v.SetWrap(true)
-		v.SetDynamicColors(true)
-		v.SetBorder(true)
-		v.SetBorderPadding(0, 0, 1, 1)
-		v.SetBackgroundColor(styles.BgColor())
-		// v.SetBorderColor(config.AsColor(styles.Frame().Border.FocusColor))
-		v.SetTextColor(styles.FgColor())
-	}
+	v.SetWordWrap(true)
+	v.SetWrap(true)
+	v.SetDynamicColors(true)
+	v.SetBorder(true)
+	v.SetBorderPadding(0, 0, 1, 1)
+	v.SetBackgroundColor(styles.BgColor())
+	v.SetTextColor(styles.FgColor())
+
 	return &v
 }
 
@@ -52,7 +50,7 @@ func (v *CmdView) update(s string) {
 }
 
 func (v *CmdView) append(r rune) {
-	fmt.Fprintf(v, string(r))
+	fmt.Fprintf(v, "%s", string(r))
 }
 
 func (v *CmdView) write(s string) {

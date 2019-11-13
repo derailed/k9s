@@ -43,7 +43,7 @@ dialogs. This was totally a reasonable thing to do! However in case of managed p
 
 This one is cool! I think this thought came about from (Markus)[https://github.com/Makusi75]. Thank you Markus!! This feature allows K9s users to now customize K9s with their own plugin commands. You will be able to add a new menu shortcut to the K9s menu and fire off a custom command on a selected resource. Some of you might be leveraging kubectl plugins and now you will be able to fire these off directly from K9s along with many other shell commands.
 
-In order to specify a custom plugin command, you will need to modify your .k9s/config.yml file. For example here is a sample extension to list out all the pods in the `fred` namespace while in a pod or deployment views. When this plugin is available a new command `<alt-p>` will show only while in pod and deploy views.
+In order to specify a custom plugin command, you will need to modify your .k9s/config.yml file. For example here is a sample extension to list out all the pods in the `fred` namespace while in a pod or deployment view. When this plugin is available a new command `<alt-p>` will show only while in pod and deploy view.
 
 ```yaml
 plugins:

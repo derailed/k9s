@@ -1,80 +1,78 @@
-package ui
+package ui_test
 
 import (
+	"context"
 	"testing"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/watch"
 )
 
-func TestTVSortRows(t *testing.T) {
-	uu := []struct {
-		rows  resource.RowEvents
-		col   int
-		asc   bool
-		first resource.Row
-		e     []string
-	}{
-		{
-			resource.RowEvents{
-				"row1": {Fields: resource.Row{"x", "y"}},
-				"row2": {Fields: resource.Row{"a", "b"}},
-			},
-			0,
-			true,
-			resource.Row{"a", "b"},
-			[]string{"row2", "row1"},
-		},
-		{
-			resource.RowEvents{
-				"row1": {Fields: resource.Row{"x", "y"}},
-				"row2": {Fields: resource.Row{"a", "b"}},
-			},
-			1,
-			true,
-			resource.Row{"a", "b"},
-			[]string{"row2", "row1"},
-		},
-		{
-			resource.RowEvents{
-				"row1": {Fields: resource.Row{"x", "y"}},
-				"row2": {Fields: resource.Row{"a", "b"}},
-			},
-			1,
-			false,
-			resource.Row{"x", "y"},
-			[]string{"row1", "row2"},
-		},
-		{
-			resource.RowEvents{
-				"row1": {Fields: resource.Row{"2175h48m0.06015s", "y"}},
-				"row2": {Fields: resource.Row{"403h42m34.060166s", "b"}},
-			},
-			0,
-			true,
-			resource.Row{"403h42m34.060166s", "b"},
-			[]string{"row2", "row1"},
-		},
-	}
+func TestTableNew(t *testing.T) {
+	v := ui.NewTable("fred")
+	s, _ := config.NewStyles("")
+	ctx := context.WithValue(context.Background(), ui.KeyStyles, s)
+	v.Init(ctx)
 
-	for _, u := range uu {
-		keys := make([]string, len(u.rows))
-		sortRows(u.rows, defaultSort, SortColumn{u.col, len(u.rows), u.asc}, keys)
-		assert.Equal(t, u.e, keys)
-		assert.Equal(t, u.first, u.rows[u.e[0]].Fields)
-	}
+	assert.Equal(t, "fred", v.GetBaseTitle())
+
+	v.SetBaseTitle("bozo")
+	assert.Equal(t, "bozo", v.GetBaseTitle())
+
 }
 
-func BenchmarkTableSortRows(b *testing.B) {
-	evts := resource.RowEvents{
-		"row1": {Fields: resource.Row{"x", "y"}},
-		"row2": {Fields: resource.Row{"a", "b"}},
-	}
-	sc := SortColumn{0, 2, true}
-	keys := make([]string, len(evts))
-	b.ResetTimer()
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		sortRows(evts, defaultSort, sc, keys)
+func TestTableUpdate(t *testing.T) {
+	v := ui.NewTable("fred")
+	s, _ := config.NewStyles("")
+	ctx := context.WithValue(context.Background(), ui.KeyStyles, s)
+	v.Init(ctx)
+
+	v.Update(makeTableData())
+
+	assert.Equal(t, 3, v.GetRowCount())
+	assert.Equal(t, 3, v.GetColumnCount())
+}
+
+func TestTableSelection(t *testing.T) {
+	v := ui.NewTable("fred")
+	s, _ := config.NewStyles("")
+	ctx := context.WithValue(context.Background(), ui.KeyStyles, s)
+	v.Init(ctx)
+
+	v.Update(makeTableData())
+
+	v.SelectRow(1, true)
+	assert.True(t, v.RowSelected())
+	assert.Equal(t, resource.Row{"blee", "duh", "fred"}, v.GetRow())
+	assert.Equal(t, "blee", v.GetSelectedCell(0))
+	assert.Equal(t, 1, v.GetSelectedRowIndex())
+	assert.Equal(t, []string{"blee/duh"}, v.GetSelectedItems())
+
+	v.ClearSelection()
+	v.SelectFirstRow()
+	assert.Equal(t, 1, v.GetSelectedRowIndex())
+}
+
+// Helpers...
+
+func makeTableData() resource.TableData {
+	return resource.TableData{
+		Namespace: "",
+		Header:    resource.Row{"a", "b", "c"},
+		Rows: resource.RowEvents{
+			"r1": &resource.RowEvent{
+				Action: watch.Added,
+				Fields: resource.Row{"blee", "duh", "fred"},
+				Deltas: resource.Row{"", "", ""},
+			},
+			"r2": &resource.RowEvent{
+				Action: watch.Added,
+				Fields: resource.Row{"fred", "duh", "zorg"},
+				Deltas: resource.Row{"", "", ""},
+			},
+		},
 	}
 }

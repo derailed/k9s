@@ -1,6 +1,7 @@
 package dialog
 
 import (
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 )
@@ -13,7 +14,7 @@ type (
 )
 
 // ShowDelete pops a resource deletion dialog.
-func ShowDelete(pages *tview.Pages, msg string, ok okFunc, cancel cancelFunc) {
+func ShowDelete(pages *ui.Pages, msg string, ok okFunc, cancel cancelFunc) {
 	cascade, force := true, false
 	f := tview.NewForm()
 	f.SetItemPadding(0)
@@ -48,6 +49,6 @@ func ShowDelete(pages *tview.Pages, msg string, ok okFunc, cancel cancelFunc) {
 	pages.ShowPage(deleteKey)
 }
 
-func dismissDelete(pages *tview.Pages) {
+func dismissDelete(pages *ui.Pages) {
 	pages.RemovePage(deleteKey)
 }

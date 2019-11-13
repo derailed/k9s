@@ -1,6 +1,7 @@
 package dialog
 
 import (
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 )
@@ -12,7 +13,7 @@ type (
 )
 
 // ShowConfirm pops a confirmation dialog.
-func ShowConfirm(pages *tview.Pages, title, msg string, ack confirmFunc, cancel cancelFunc) {
+func ShowConfirm(pages *ui.Pages, title, msg string, ack confirmFunc, cancel cancelFunc) {
 	f := tview.NewForm()
 	f.SetItemPadding(0)
 	f.SetButtonsAlign(tview.AlignCenter).
@@ -40,6 +41,6 @@ func ShowConfirm(pages *tview.Pages, title, msg string, ack confirmFunc, cancel 
 	pages.ShowPage(confirmKey)
 }
 
-func dismissConfirm(pages *tview.Pages) {
+func dismissConfirm(pages *ui.Pages) {
 	pages.RemovePage(confirmKey)
 }
