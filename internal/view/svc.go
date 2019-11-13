@@ -20,6 +20,7 @@ type Service struct {
 	*Resource
 
 	bench *perf.Benchmark
+	logs  *Logs
 }
 
 func NewService(title, gvr string, list resource.List) ResourceViewer {
@@ -28,31 +29,31 @@ func NewService(title, gvr string, list resource.List) ResourceViewer {
 	}
 	s.extraActionsFn = s.extraActions
 	s.enterFn = s.showPods
-	s.AddPage("logs", NewLogs(list.GetName(), &s), true, false)
+	s.logs = NewLogs(list.GetName(), &s)
 
 	return &s
 }
 
 // Protocol...
 
-func (v *Service) getList() resource.List {
-	return v.list
+func (s *Service) getList() resource.List {
+	return s.list
 }
 
-func (v *Service) getSelection() string {
-	return v.masterPage().GetSelectedItem()
+func (s *Service) getSelection() string {
+	return s.masterPage().GetSelectedItem()
 }
 
-func (v *Service) extraActions(aa ui.KeyActions) {
-	aa[ui.KeyL] = ui.NewKeyAction("Logs", v.logsCmd, true)
-	aa[tcell.KeyCtrlB] = ui.NewKeyAction("Bench", v.benchCmd, true)
-	aa[tcell.KeyCtrlK] = ui.NewKeyAction("Bench Stop", v.benchStopCmd, true)
-	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Type", v.sortColCmd(1, false), false)
+func (s *Service) extraActions(aa ui.KeyActions) {
+	aa[ui.KeyL] = ui.NewKeyAction("Logs", s.logsCmd, true)
+	aa[tcell.KeyCtrlB] = ui.NewKeyAction("Bench", s.benchCmd, true)
+	aa[tcell.KeyCtrlK] = ui.NewKeyAction("Bench Stop", s.benchStopCmd, true)
+	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Type", s.sortColCmd(1, false), false)
 }
 
-func (v *Service) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
+func (s *Service) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		t := v.masterPage()
+		t := s.masterPage()
 		t.SetSortCol(t.NameColIndex()+col, 0, asc)
 		t.Refresh()
 
@@ -60,63 +61,62 @@ func (v *Service) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell
 	}
 }
 
-func (v *Service) showPods(app *App, ns, res, sel string) {
-	s := k8s.NewService(app.Conn())
+func (s *Service) showPods(app *App, ns, res, sel string) {
 	ns, n := namespaced(sel)
-	svc, err := s.Get(ns, n)
+	svc, err := k8s.NewService(app.Conn()).Get(ns, n)
 	if err != nil {
 		app.Flash().Err(err)
 		return
 	}
 
-	if s, ok := svc.(*v1.Service); ok {
-		v.showSvcPods(ns, s.Spec.Selector, v.backCmd)
+	if sv, ok := svc.(*v1.Service); ok {
+		s.showSvcPods(ns, sv.Spec.Selector, s.backCmd)
 	}
 }
 
-func (v *Service) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.masterPage().RowSelected() {
+func (s *Service) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !s.masterPage().RowSelected() {
 		return evt
 	}
 
-	l := v.GetPrimitive("logs").(*Logs)
-	l.reload("", v, false)
-	v.switchPage("logs")
+	l := s.GetPrimitive("logs").(*Logs)
+	l.reload("", s, false)
+	s.Push(s.logs)
 
 	return nil
 }
 
-func (v *Service) backCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (s *Service) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	// Reset namespace to what it was
-	if err := v.app.Config.SetActiveNamespace(v.list.GetNamespace()); err != nil {
+	if err := s.app.Config.SetActiveNamespace(s.list.GetNamespace()); err != nil {
 		log.Error().Err(err).Msg("Unable to set active namespace")
 	}
-	v.app.inject(v)
+	s.app.inject(s)
 
 	return nil
 }
 
-func (v *Service) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if v.bench != nil {
+func (s *Service) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if s.bench != nil {
 		log.Debug().Msg(">>> Benchmark canceled!!")
-		v.app.status(ui.FlashErr, "Benchmark Canceled!")
-		v.bench.Cancel()
+		s.app.status(ui.FlashErr, "Benchmark Canceled!")
+		s.bench.Cancel()
 	}
-	v.app.StatusReset()
+	s.app.StatusReset()
 
 	return nil
 }
 
-func (v *Service) checkSvc(row int) error {
-	svcType := trimCellRelative(v.masterPage(), row, 1)
+func (s *Service) checkSvc(row int) error {
+	svcType := trimCellRelative(s.masterPage(), row, 1)
 	if svcType != "NodePort" && svcType != "LoadBalancer" {
 		return errors.New("You must select a reachable service")
 	}
 	return nil
 }
 
-func (v *Service) getExternalPort(row int) (string, error) {
-	ports := trimCellRelative(v.masterPage(), row, 5)
+func (s *Service) getExternalPort(row int) (string, error) {
+	ports := trimCellRelative(s.masterPage(), row, 5)
 
 	pp := strings.Split(ports, " ")
 	if len(pp) == 0 {
@@ -132,75 +132,75 @@ func (v *Service) getExternalPort(row int) (string, error) {
 	return tokens[1], nil
 }
 
-func (v *Service) reloadBenchCfg() error {
+func (s *Service) reloadBenchCfg() error {
 	// BOZO!! Poorman Reload bench to make sure we pick up updates if any.
-	path := ui.BenchConfig(v.app.Config.K9s.CurrentCluster)
-	return v.app.Bench.Reload(path)
+	path := ui.BenchConfig(s.app.Config.K9s.CurrentCluster)
+	return s.app.Bench.Reload(path)
 }
 
-func (v *Service) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !v.masterPage().RowSelected() || v.bench != nil {
+func (s *Service) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !s.masterPage().RowSelected() || s.bench != nil {
 		return evt
 	}
 
-	if err := v.reloadBenchCfg(); err != nil {
-		v.app.Flash().Err(err)
+	if err := s.reloadBenchCfg(); err != nil {
+		s.app.Flash().Err(err)
 		return nil
 	}
 
-	sel := v.getSelection()
-	cfg, ok := v.app.Bench.Benchmarks.Services[sel]
+	sel := s.getSelection()
+	cfg, ok := s.app.Bench.Benchmarks.Services[sel]
 	if !ok {
-		v.app.Flash().Errf("No bench config found for service %s", sel)
+		s.app.Flash().Errf("No bench config found for service %s", sel)
 		return nil
 	}
 	cfg.Name = sel
 	log.Debug().Msgf("Benchmark config %#v", cfg)
 
-	row, _ := v.masterPage().GetSelection()
-	if err := v.checkSvc(row); err != nil {
-		v.app.Flash().Err(err)
+	row, _ := s.masterPage().GetSelection()
+	if err := s.checkSvc(row); err != nil {
+		s.app.Flash().Err(err)
 		return nil
 	}
-	port, err := v.getExternalPort(row)
+	port, err := s.getExternalPort(row)
 	if err != nil {
-		v.app.Flash().Err(err)
+		s.app.Flash().Err(err)
 		return nil
 	}
-	if err := v.runBenchmark(port, cfg); err != nil {
-		v.app.Flash().Errf("Benchmark failed %v", err)
-		v.app.StatusReset()
-		v.bench = nil
+	if err := s.runBenchmark(port, cfg); err != nil {
+		s.app.Flash().Errf("Benchmark failed %v", err)
+		s.app.StatusReset()
+		s.bench = nil
 	}
 
 	return nil
 }
 
-func (v *Service) runBenchmark(port string, cfg config.BenchConfig) error {
+func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
 	var err error
 	base := "http://" + cfg.HTTP.Host + ":" + port + cfg.HTTP.Path
-	if v.bench, err = perf.NewBenchmark(base, cfg); err != nil {
+	if s.bench, err = perf.NewBenchmark(base, cfg); err != nil {
 		return err
 	}
 
-	v.app.status(ui.FlashWarn, "Benchmark in progress...")
+	s.app.status(ui.FlashWarn, "Benchmark in progress...")
 	log.Debug().Msg("Bench starting...")
-	go v.bench.Run(v.app.Config.K9s.CurrentCluster, v.benchDone)
+	go s.bench.Run(s.app.Config.K9s.CurrentCluster, s.benchDone)
 
 	return nil
 }
 
-func (v *Service) benchDone() {
+func (s *Service) benchDone() {
 	log.Debug().Msg("Bench Completed!")
-	v.app.QueueUpdate(func() {
-		if v.bench.Canceled() {
-			v.app.status(ui.FlashInfo, "Benchmark canceled")
+	s.app.QueueUpdate(func() {
+		if s.bench.Canceled() {
+			s.app.status(ui.FlashInfo, "Benchmark canceled")
 		} else {
-			v.app.status(ui.FlashInfo, "Benchmark Completed!")
-			v.bench.Cancel()
+			s.app.status(ui.FlashInfo, "Benchmark Completed!")
+			s.bench.Cancel()
 		}
-		v.bench = nil
-		go benchTimedOut(v.app)
+		s.bench = nil
+		go benchTimedOut(s.app)
 	})
 }
 
@@ -211,10 +211,10 @@ func benchTimedOut(app *App) {
 	})
 }
 
-func (v *Service) showSvcPods(ns string, sel map[string]string, a ui.ActionHandler) {
-	var s []string
+func (s *Service) showSvcPods(ns string, sel map[string]string, a ui.ActionHandler) {
+	var labels []string
 	for k, v := range sel {
-		s = append(s, fmt.Sprintf("%s=%s", k, v))
+		labels = append(labels, fmt.Sprintf("%s=%s", k, v))
 	}
-	showPods(v.app, ns, strings.Join(s, ","), "", a)
+	showPods(s.app, ns, strings.Join(labels, ","), "", a)
 }

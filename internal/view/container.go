@@ -1,7 +1,6 @@
 package view
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -33,11 +32,6 @@ func NewContainer(title string, list resource.List, path string) ResourceViewer 
 	c.colorerFn = containerColorer
 
 	return &c
-}
-
-// Init initializes a container view.
-func (c *Container) Init(ctx context.Context) {
-	c.Resource.Init(ctx)
 }
 
 // Start starts the component.

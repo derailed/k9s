@@ -1,6 +1,8 @@
 package view
 
 import (
+	"context"
+
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
@@ -37,16 +39,21 @@ func newSelectList(parent loggable) *selectList {
 	return &v
 }
 
+func (v *selectList) Init(context.Context) {}
+func (v *selectList) Start()               {}
+func (v *selectList) Stop()                {}
+func (v *selectList) Name() string         { return "picker" }
+
 func (v *selectList) back(evt *tcell.EventKey) *tcell.EventKey {
-	v.parent.switchPage("master")
+	v.parent.Pop()
 
 	return nil
 }
 
 // Protocol...
 
-func (v *selectList) switchPage(p string) {
-	v.parent.switchPage(p)
+func (v *selectList) Pop() {
+	v.parent.Pop()
 }
 
 func (v *selectList) getList() resource.List {

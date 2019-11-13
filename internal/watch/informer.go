@@ -118,7 +118,7 @@ func (i *Informer) init(ns string) {
 // List items from store.
 func (i *Informer) List(res, ns string, opts metav1.ListOptions) (k8s.Collection, error) {
 	if i == nil {
-		return nil, errors.New("Invalid informer")
+		return nil, errors.New("Invalid List informer")
 	}
 
 	if i, ok := i.informers[res]; ok {
@@ -131,7 +131,8 @@ func (i *Informer) List(res, ns string, opts metav1.ListOptions) (k8s.Collection
 // Get a resource by name.
 func (i *Informer) Get(res, fqn string, opts metav1.GetOptions) (interface{}, error) {
 	if i == nil {
-		return nil, errors.New("Invalid informer")
+		panic("blee")
+		return nil, errors.New("Invalid Get informer")
 	}
 
 	if informer, ok := i.informers[res]; ok {

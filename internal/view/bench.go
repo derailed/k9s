@@ -44,7 +44,7 @@ type Bench struct {
 
 func NewBench(title, gvr string, _ resource.List) ResourceViewer {
 	return &Bench{
-		MasterDetail: NewMasterDetail(),
+		MasterDetail: NewMasterDetail(title),
 	}
 }
 

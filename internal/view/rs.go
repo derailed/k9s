@@ -97,8 +97,7 @@ func (r *ReplicaSet) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (r *ReplicaSet) dismissModal() {
-	r.RemovePage("confirm")
-	r.switchPage("master")
+	r.Pop()
 }
 
 func (r *ReplicaSet) showModal(msg string, done func(int, string)) {

@@ -33,7 +33,7 @@ func (t *Table) Init(ctx context.Context) {
 
 func (t *Table) Start()       {}
 func (t *Table) Stop()        {}
-func (t *Table) Name() string { return "table" }
+func (t *Table) Name() string { return t.GetBaseTitle() }
 
 // BufferChanged indicates the buffer was changed.
 func (t *Table) BufferChanged(s string) {}

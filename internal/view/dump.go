@@ -35,9 +35,9 @@ type ScreenDump struct {
 	app      *App
 }
 
-func NewScreenDump(_, _ string, _ resource.List) ResourceViewer {
+func NewScreenDump(title, _ string, _ resource.List) ResourceViewer {
 	return &ScreenDump{
-		MasterDetail: NewMasterDetail(),
+		MasterDetail: NewMasterDetail(title),
 	}
 }
 

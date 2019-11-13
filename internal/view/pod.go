@@ -3,6 +3,7 @@ package view
 import (
 	"fmt"
 
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/watch"
@@ -20,12 +21,15 @@ const (
 type loggable interface {
 	getSelection() string
 	getList() resource.List
-	switchPage(n string)
+	Pop() (model.Component, bool)
 }
 
 // Pod represents a pod viewer.
 type Pod struct {
 	*Resource
+
+	logs   *Logs
+	picker *selectList
 }
 
 // NewPod returns a new viewer.
@@ -36,14 +40,12 @@ func NewPod(title, gvr string, list resource.List) ResourceViewer {
 	p.extraActionsFn = p.extraActions
 	p.enterFn = p.listContainers
 
-	picker := newSelectList(&p)
-	{
-		picker.setActions(ui.KeyActions{
-			tcell.KeyEscape: {Description: "Back", Action: p.backCmd, Visible: true},
-		})
-	}
-	p.AddPage("picker", picker, true, false)
-	p.AddPage("logs", NewLogs(list.GetName(), &p), true, false)
+	p.picker = newSelectList(&p)
+	p.picker.setActions(ui.KeyActions{
+		tcell.KeyEscape: {Description: "Back", Action: p.backCmd, Visible: true},
+	})
+
+	p.logs = NewLogs(list.GetName(), &p)
 
 	return &p
 }
@@ -144,7 +146,7 @@ func (p *Pod) viewLogs(prev bool) bool {
 func (p *Pod) showLogs(path, co string, parent loggable, prev bool) {
 	l := p.GetPrimitive("logs").(*Logs)
 	l.reload(co, parent, prev)
-	p.switchPage("logs")
+	p.Push(p.logs)
 }
 
 func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -167,7 +169,7 @@ func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	picker.SetSelectedFunc(func(i int, t, d string, r rune) {
 		p.shellIn(sel, t)
 	})
-	p.switchPage("picker")
+	p.Push(p.picker)
 
 	return evt
 }

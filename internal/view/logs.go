@@ -8,7 +8,6 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 )
@@ -29,7 +28,7 @@ type (
 
 	// Logs presents a collection of logs.
 	Logs struct {
-		*tview.Pages
+		*ui.Pages
 
 		app        *App
 		parent     loggable
@@ -41,10 +40,18 @@ type (
 // NewLogs returns a new logs viewer.
 func NewLogs(title string, parent loggable) *Logs {
 	return &Logs{
-		Pages:  tview.NewPages(),
+		Pages:  ui.NewPages(),
 		parent: parent,
 	}
 }
+
+func (l *Logs) Init(ctx context.Context) {
+	l.app = ctx.Value(ui.KeyApp).(*App)
+}
+
+func (l *Logs) Start()       {}
+func (l *Logs) Stop()        {}
+func (l *Logs) Name() string { return "logs" }
 
 // Protocol...
 
@@ -171,7 +178,7 @@ func updateLogs(ctx context.Context, c <-chan string, l *Log, buffSize int) {
 
 func (l *Logs) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	l.stop()
-	l.parent.switchPage("master")
+	l.parent.Pop()
 
 	return evt
 }

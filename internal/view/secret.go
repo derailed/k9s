@@ -57,7 +57,7 @@ func (s *Secret) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	details.SetTextColor(s.app.Styles.FgColor())
 	details.SetText(colorizeYAML(s.app.Styles.Views().Yaml, string(raw)))
 	details.ScrollToBeginning()
-	s.switchPage("details")
+	s.showDetails()
 
 	return nil
 }

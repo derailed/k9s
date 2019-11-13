@@ -13,12 +13,15 @@ type MasterDetail struct {
 	enterFn        enterFn
 	extraActionsFn func(ui.KeyActions)
 	details        *Details
+	currentNS      string
+	title          string
 }
 
 // NewMasterDetail returns a new master-detail viewer.
-func NewMasterDetail() *MasterDetail {
+func NewMasterDetail(title string) *MasterDetail {
 	return &MasterDetail{
 		PageStack: NewPageStack(),
+		title:     title,
 	}
 }
 
@@ -26,7 +29,7 @@ func NewMasterDetail() *MasterDetail {
 func (m *MasterDetail) Init(ctx context.Context) {
 	m.PageStack.Init(ctx)
 
-	t := NewTable("master")
+	t := NewTable(m.title)
 	t.Init(ctx)
 	m.Push(t)
 
@@ -49,7 +52,7 @@ func (m *MasterDetail) showMaster() {
 }
 
 func (m *MasterDetail) masterPage() *Table {
-	return m.GetPrimitive("table").(*Table)
+	return m.GetPrimitive(m.title).(*Table)
 }
 
 func (m *MasterDetail) showDetails() {

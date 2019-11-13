@@ -1,6 +1,8 @@
 package view
 
 import (
+	"context"
+
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -14,15 +16,21 @@ type LogResource struct {
 	*Resource
 
 	containerFn containerFn
+	logs        *Logs
 }
 
 func NewLogResource(title, gvr string, list resource.List) *LogResource {
 	l := LogResource{
 		Resource: NewResource(title, gvr, list),
 	}
-	l.AddPage("logs", NewLogs(list.GetName(), &l), true, false)
+	l.logs = NewLogs(list.GetName(), &l)
 
 	return &l
+}
+
+func (l *LogResource) Init(ctx context.Context) {
+	l.Resource.Init(ctx)
+	l.logs.Init(ctx)
 }
 
 func (l *LogResource) extraActions(aa ui.KeyActions) {
@@ -68,13 +76,12 @@ func (l *LogResource) showLogs(prev bool) {
 		return
 	}
 
-	logs := l.GetPrimitive("logs").(*Logs)
 	co := ""
 	if l.containerFn != nil {
 		co = l.containerFn()
 	}
-	logs.reload(co, l, prev)
-	l.switchPage("logs")
+	l.logs.reload(co, l, prev)
+	l.Push(l.logs)
 }
 
 func (l *LogResource) backCmd(evt *tcell.EventKey) *tcell.EventKey {

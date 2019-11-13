@@ -32,13 +32,12 @@ type Resource struct {
 	decorateFn decorateFn
 	envFn      envFn
 	gvr        string
-	currentNS  string
 }
 
 // NewResource returns a new viewer.
 func NewResource(title, gvr string, list resource.List) *Resource {
 	return &Resource{
-		MasterDetail: NewMasterDetail(),
+		MasterDetail: NewMasterDetail(title),
 		list:         list,
 		gvr:          gvr,
 	}
@@ -127,11 +126,12 @@ func (r *Resource) update(ctx context.Context) {
 }
 
 func (r *Resource) backCmd(*tcell.EventKey) *tcell.EventKey {
-	r.switchPage("master")
+	r.Pop()
+
 	return nil
 }
 
-func (r *Resource) switchPage(p string) {
+func (r *Resource) switchPage1(p string) {
 	log.Debug().Msgf("Switching page to %s", p)
 	if _, ok := r.CurrentPage().Item.(*Table); ok {
 		r.Stop()
@@ -211,7 +211,7 @@ func (r *Resource) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		}
 		r.refresh()
 	}, func() {
-		r.switchPage("master")
+		r.Pop()
 	})
 	return nil
 }
@@ -254,7 +254,7 @@ func (r *Resource) defaultEnter(app *App, ns, _, selection string) {
 	details.SetTextColor(r.app.Styles.FgColor())
 	details.SetText(colorizeYAML(r.app.Styles.Views().Yaml, yaml))
 	details.ScrollToBeginning()
-	r.switchPage("details")
+	r.showDetails()
 }
 
 func (r *Resource) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
