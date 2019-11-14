@@ -14,31 +14,24 @@ import (
 
 const (
 	logBuffSize  = 100
-	flushTimeout = 200 * time.Millisecond
+	FlushTimeout = 200 * time.Millisecond
 
 	logCoFmt = " Logs([fg:bg:]%s:[hilite:bg:b]%s[-:bg:-]) "
 	logFmt   = " Logs([fg:bg:]%s) "
 )
 
-type (
-	masterView interface {
-		backFn() ui.ActionHandler
-		App() *App
-	}
+// Logs presents a collection of logs.
+type Logs struct {
+	*ui.Pages
 
-	// Logs presents a collection of logs.
-	Logs struct {
-		*ui.Pages
-
-		app        *App
-		parent     loggable
-		actions    ui.KeyActions
-		cancelFunc context.CancelFunc
-	}
-)
+	app        *App
+	parent     Loggable
+	actions    ui.KeyActions
+	cancelFunc context.CancelFunc
+}
 
 // NewLogs returns a new logs viewer.
-func NewLogs(title string, parent loggable) *Logs {
+func NewLogs(title string, parent Loggable) *Logs {
 	return &Logs{
 		Pages:  ui.NewPages(),
 		parent: parent,
@@ -55,7 +48,7 @@ func (l *Logs) Name() string { return "logs" }
 
 // Protocol...
 
-func (l *Logs) reload(co string, parent loggable, prevLogs bool) {
+func (l *Logs) reload(co string, parent Loggable, prevLogs bool) {
 	l.parent = parent
 	l.deletePage()
 	l.AddPage("logs", NewLog(co, l.app, l.backCmd), true, true)
@@ -152,7 +145,7 @@ func updateLogs(ctx context.Context, c <-chan string, l *Log, buffSize int) {
 		case line, ok := <-c:
 			if !ok {
 				log.Debug().Msgf("Closed channel detected. Bailing out...")
-				l.flush(index, buff)
+				l.Flush(index, buff)
 				return
 			}
 			if index < buffSize {
@@ -160,12 +153,12 @@ func updateLogs(ctx context.Context, c <-chan string, l *Log, buffSize int) {
 				index++
 				continue
 			}
-			l.flush(index, buff)
+			l.Flush(index, buff)
 			index = 0
 			buff[index] = line
 			index++
-		case <-time.After(flushTimeout):
-			l.flush(index, buff)
+		case <-time.After(FlushTimeout):
+			l.Flush(index, buff)
 			index = 0
 		case <-ctx.Done():
 			return

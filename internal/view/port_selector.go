@@ -10,15 +10,6 @@ type portSelector struct {
 	ok, cancel  func()
 }
 
-func newSelector(title, port string, okFn, cancelFn func()) *portSelector {
-	return &portSelector{
-		title:  title,
-		port:   port,
-		ok:     okFn,
-		cancel: cancelFn,
-	}
-}
-
 func (p *portSelector) show(app *App) {
 	f := tview.NewForm()
 	f.SetItemPadding(0)

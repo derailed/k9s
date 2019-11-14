@@ -35,24 +35,27 @@ type ScreenDump struct {
 	app      *App
 }
 
-func NewScreenDump(title, _ string, _ resource.List) ResourceViewer {
+func NewScreenDump(_, _ string, _ resource.List) ResourceViewer {
 	return &ScreenDump{
-		MasterDetail: NewMasterDetail(title),
+		MasterDetail: NewMasterDetail(dumpTitle, ""),
 	}
 }
 
 // Init initializes the viewer.
 func (s *ScreenDump) Init(ctx context.Context) {
 	s.app = ctx.Value(ui.KeyApp).(*App)
+	s.MasterDetail.Init(ctx)
+	s.registerActions()
 
 	table := s.masterPage()
-	table.SetBorderFocusColor(tcell.ColorSteelBlue)
-	table.SetSelectedStyle(tcell.ColorWhite, tcell.ColorRoyalBlue, tcell.AttrNone)
-	table.SetColorerFn(dumpColorer)
-	table.SetActiveNS(resource.AllNamespaces)
-	table.SetSortCol(table.NameColIndex()+1, 0, true)
-	table.SelectRow(1, true)
-
+	{
+		table.SetBorderFocusColor(tcell.ColorSteelBlue)
+		table.SetSelectedStyle(tcell.ColorWhite, tcell.ColorRoyalBlue, tcell.AttrNone)
+		table.SetColorerFn(dumpColorer)
+		table.SetActiveNS(resource.AllNamespaces)
+		table.SetSortCol(table.NameColIndex(), 0, true)
+		table.SelectRow(1, true)
+	}
 	s.Start()
 	s.refresh()
 }
@@ -90,26 +93,16 @@ func (s *ScreenDump) refresh() {
 }
 
 func (s *ScreenDump) registerActions() {
-	aa := ui.KeyActions{
-		ui.KeyP:        ui.NewKeyAction("Previous", s.app.PrevCmd, false),
-		tcell.KeyEnter: ui.NewKeyAction("Enter", s.enterCmd, true),
+	s.masterPage().AddActions(ui.KeyActions{
+		tcell.KeyEsc:   ui.NewKeyAction("Back", s.app.PrevCmd, false),
+		tcell.KeyEnter: ui.NewKeyAction("View", s.enterCmd, true),
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", s.deleteCmd, true),
 		tcell.KeyCtrlS: ui.NewKeyAction("Save", noopCmd, false),
-	}
-	s.masterPage().AddActions(aa)
+	})
 }
 
 func (s *ScreenDump) getTitle() string {
 	return dumpTitle
-}
-
-func (s *ScreenDump) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		tv := s.masterPage()
-		tv.SetSortCol(tv.NameColIndex()+col, 0, asc)
-		tv.Refresh()
-		return nil
-	}
 }
 
 func (s *ScreenDump) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -160,7 +153,14 @@ func (s *ScreenDump) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (s *ScreenDump) Hints() model.MenuHints {
-	return s.Hints()
+	if s.CurrentPage() == nil {
+		return nil
+	}
+	if c, ok := s.CurrentPage().Item.(model.Hinter); ok {
+		return c.Hints()
+	}
+
+	return nil
 }
 
 func (s *ScreenDump) hydrate() resource.TableData {

@@ -1,6 +1,7 @@
 package view
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -25,13 +26,19 @@ func NewContainer(title string, list resource.List, path string) ResourceViewer 
 		LogResource: NewLogResource(title, "", list),
 	}
 	c.path = &path
+
+	return &c
+}
+
+// Init initializes the viewer.
+func (c *Container) Init(ctx context.Context) {
 	c.envFn = c.k9sEnv
 	c.containerFn = c.selectedContainer
 	c.extraActionsFn = c.extraActions
 	c.enterFn = c.viewLogs
 	c.colorerFn = containerColorer
 
-	return &c
+	c.LogResource.Init(ctx)
 }
 
 // Start starts the component.
@@ -49,8 +56,6 @@ func (c *Container) extraActions(aa ui.KeyActions) {
 	aa[ui.KeyShiftF] = ui.NewKeyAction("PortForward", c.portFwdCmd, true)
 	aa[ui.KeyShiftL] = ui.NewKeyAction("Logs Previous", c.prevLogsCmd, true)
 	aa[ui.KeyS] = ui.NewKeyAction("Shell", c.shellCmd, true)
-	aa[tcell.KeyEscape] = ui.NewKeyAction("Back", c.backCmd, false)
-	aa[ui.KeyP] = ui.NewKeyAction("Previous", c.backCmd, false)
 	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", c.sortColCmd(6, false), false)
 	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", c.sortColCmd(7, false), false)
 	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", c.sortColCmd(8, false), false)
@@ -168,8 +173,4 @@ func (c *Container) runForward(pf *k8s.PortForward, f *portforward.PortForwarder
 		delete(c.app.forwarders, pf.FQN())
 		pf.SetActive(false)
 	})
-}
-
-func (c *Container) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return c.app.PrevCmd(evt)
 }

@@ -18,7 +18,7 @@ import (
 
 const detailsTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
 
-// Details presents a generic text viewer.
+// Details represents a generic text viewer.
 type Details struct {
 	*tview.TextView
 
@@ -40,6 +40,7 @@ func NewDetails(app *App, backFn ui.ActionHandler) *Details {
 	}
 }
 
+// Init initializes the viewer.
 func (d *Details) Init(ctx context.Context) {
 	d.app = ctx.Value(ui.KeyApp).(*App)
 
@@ -63,9 +64,14 @@ func (d *Details) Init(ctx context.Context) {
 	})
 }
 
+// Name returns the component name.
 func (d *Details) Name() string { return "details" }
-func (d *Details) Start()       {}
-func (d *Details) Stop()        {}
+
+// Start starts the view updater.
+func (d *Details) Start() {}
+
+// Stop terminates the updater.
+func (d *Details) Stop() {}
 
 func (d *Details) bindKeys() {
 	d.actions = ui.KeyActions{
@@ -219,10 +225,7 @@ func (d *Details) setActions(aa ui.KeyActions) {
 
 // Hints fetch mmemonic and hints
 func (d *Details) Hints() model.MenuHints {
-	if d.actions != nil {
-		return d.actions.Hints()
-	}
-	return nil
+	return d.actions.Hints()
 }
 
 func (d *Details) refreshTitle() {

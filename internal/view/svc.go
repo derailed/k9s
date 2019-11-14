@@ -1,6 +1,7 @@
 package view
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -16,6 +17,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+// Service represents a service viewer.
 type Service struct {
 	*Resource
 
@@ -23,15 +25,21 @@ type Service struct {
 	logs  *Logs
 }
 
+// NewService returns a new viewer.
 func NewService(title, gvr string, list resource.List) ResourceViewer {
-	s := Service{
+	return &Service{
 		Resource: NewResource(title, gvr, list),
 	}
+}
+
+// Init initializes the viewer.
+func (s *Service) Init(ctx context.Context) {
 	s.extraActionsFn = s.extraActions
 	s.enterFn = s.showPods
-	s.logs = NewLogs(list.GetName(), &s)
+	s.Resource.Init(ctx)
 
-	return &s
+	s.logs = NewLogs(s.list.GetName(), s)
+	s.logs.Init(ctx)
 }
 
 // Protocol...
@@ -51,17 +59,7 @@ func (s *Service) extraActions(aa ui.KeyActions) {
 	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Type", s.sortColCmd(1, false), false)
 }
 
-func (s *Service) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		t := s.masterPage()
-		t.SetSortCol(t.NameColIndex()+col, 0, asc)
-		t.Refresh()
-
-		return nil
-	}
-}
-
-func (s *Service) showPods(app *App, ns, res, sel string) {
+func (s *Service) showPods(app *App, _, res, sel string) {
 	ns, n := namespaced(sel)
 	svc, err := k8s.NewService(app.Conn()).Get(ns, n)
 	if err != nil {
@@ -79,8 +77,7 @@ func (s *Service) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	l := s.GetPrimitive("logs").(*Logs)
-	l.reload("", s, false)
+	s.logs.reload("", s, false)
 	s.Push(s.logs)
 
 	return nil
@@ -177,6 +174,10 @@ func (s *Service) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
+	if cfg.HTTP.Host == "" {
+		return fmt.Errorf("Invalid benchmark host %q", cfg.HTTP.Host)
+	}
+
 	var err error
 	base := "http://" + cfg.HTTP.Host + ":" + port + cfg.HTTP.Path
 	if s.bench, err = perf.NewBenchmark(base, cfg); err != nil {

@@ -15,11 +15,11 @@ import (
 )
 
 const (
-	clusterRole roleKind = iota
-	role
+	ClusterRole roleKind = iota
+	Role
 
 	all          = "*"
-	rbacTitle    = "RBAC"
+	rbacTitle    = "Rbac"
 	rbacTitleFmt = " [fg:bg:b]%s([hilite:bg:b]%s[fg:bg:-])"
 )
 
@@ -49,15 +49,6 @@ var (
 		"delete",
 	}
 
-	httpVerbs = []string{
-		"get",
-		"post",
-		"put",
-		"patch",
-		"delete",
-		"options",
-	}
-
 	httpTok8sVerbs = map[string]string{
 		"post": "create",
 		"put":  "update",
@@ -66,8 +57,8 @@ var (
 
 type roleKind = int8
 
-// RBAC presents an RBAC policy viewer.
-type RBAC struct {
+// Rbac presents an RBAC policy viewer.
+type Rbac struct {
 	*Table
 
 	app      *App
@@ -77,24 +68,24 @@ type RBAC struct {
 	cache    resource.RowEvents
 }
 
-// NewRBAC returns a new viewer.
-func NewRBAC(app *App, ns, name string, kind roleKind) *RBAC {
-	r := RBAC{
+// NewRbac returns a new viewer.
+func NewRbac(app *App, ns, name string, kind roleKind) *Rbac {
+	r := Rbac{
 		app:      app,
 		roleName: name,
 		roleType: kind,
 	}
 	r.Table = NewTable(r.getTitle())
-	r.SetActiveNS(ns)
-	r.SetColorerFn(rbacColorer)
-	r.bindKeys()
 
 	return &r
 }
 
 // Init initializes the view.
-func (r *RBAC) Init(ctx context.Context) {
+func (r *Rbac) Init(ctx context.Context) {
+	r.SetActiveNS(r.app.Config.ActiveNamespace())
+	r.SetColorerFn(rbacColorer)
 	r.Table.Init(ctx)
+	r.bindKeys()
 
 	r.Start()
 	r.SetSortCol(1, len(rbacHeader), true)
@@ -102,7 +93,11 @@ func (r *RBAC) Init(ctx context.Context) {
 }
 
 // Start watches for viewer updates
-func (r *RBAC) Start() {
+func (r *Rbac) Start() {
+	if r.app.Conn() == nil {
+		return
+	}
+
 	r.Stop()
 
 	var ctx context.Context
@@ -123,33 +118,35 @@ func (r *RBAC) Start() {
 }
 
 // Stop terminates the viewer updater.
-func (r *RBAC) Stop() {
+func (r *Rbac) Stop() {
 	if r.cancelFn != nil {
 		r.cancelFn()
 	}
 }
 
 // Name returns the component name.
-func (r *RBAC) Name() string {
+func (r *Rbac) Name() string {
 	return rbacTitle
 }
 
-func (r *RBAC) bindKeys() {
+func (r *Rbac) bindKeys() {
 	r.RmAction(ui.KeyShiftA)
 
 	r.AddActions(ui.KeyActions{
 		tcell.KeyEscape: ui.NewKeyAction("Reset", r.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", r.activateCmd, false),
-		ui.KeyP:         ui.NewKeyAction("Previous", r.app.PrevCmd, false),
 		ui.KeyShiftO:    ui.NewKeyAction("Sort APIGroup", r.SortColCmd(1), false),
 	})
 }
 
-func (r *RBAC) getTitle() string {
+func (r *Rbac) getTitle() string {
 	return skinTitle(fmt.Sprintf(rbacTitleFmt, rbacTitle, r.roleName), r.app.Styles.Frame())
 }
 
-func (r *RBAC) refresh() {
+func (r *Rbac) refresh() {
+	if r.app.Conn() == nil {
+		return
+	}
 	data, err := r.reconcile(r.ActiveNS(), r.roleName, r.roleType)
 	if err != nil {
 		log.Error().Err(err).Msgf("Refresh for %s:%d", r.roleName, r.roleType)
@@ -158,7 +155,8 @@ func (r *RBAC) refresh() {
 	r.Update(data)
 }
 
-func (r *RBAC) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (r *Rbac) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
+	log.Debug().Msgf("!!!YO!!!!")
 	if !r.SearchBuff().Empty() {
 		r.SearchBuff().Reset()
 		return nil
@@ -167,7 +165,8 @@ func (r *RBAC) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return r.backCmd(evt)
 }
 
-func (r *RBAC) backCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (r *Rbac) backCmd(evt *tcell.EventKey) *tcell.EventKey {
+	log.Debug().Msgf("!!!!RBAC back!!!")
 	if r.cancelFn != nil {
 		r.cancelFn()
 	}
@@ -180,7 +179,7 @@ func (r *RBAC) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return r.app.PrevCmd(evt)
 }
 
-func (r *RBAC) reconcile(ns, name string, kind roleKind) (resource.TableData, error) {
+func (r *Rbac) reconcile(ns, name string, kind roleKind) (resource.TableData, error) {
 	var table resource.TableData
 
 	evts, err := r.rowEvents(ns, name, kind)
@@ -191,28 +190,28 @@ func (r *RBAC) reconcile(ns, name string, kind roleKind) (resource.TableData, er
 	return buildTable(r, evts), nil
 }
 
-func (r *RBAC) header() resource.Row {
+func (r *Rbac) header() resource.Row {
 	return rbacHeader
 }
 
-func (r *RBAC) getCache() resource.RowEvents {
+func (r *Rbac) getCache() resource.RowEvents {
 	return r.cache
 }
 
-func (r *RBAC) setCache(evts resource.RowEvents) {
+func (r *Rbac) setCache(evts resource.RowEvents) {
 	r.cache = evts
 }
 
-func (r *RBAC) rowEvents(ns, name string, kind roleKind) (resource.RowEvents, error) {
+func (r *Rbac) rowEvents(ns, name string, kind roleKind) (resource.RowEvents, error) {
 	var (
 		evts resource.RowEvents
 		err  error
 	)
 
 	switch kind {
-	case clusterRole:
+	case ClusterRole:
 		evts, err = r.clusterPolicies(name)
-	case role:
+	case Role:
 		evts, err = r.namespacedPolicies(name)
 	default:
 		return evts, fmt.Errorf("Expecting clusterrole/role but found %d", kind)
@@ -225,7 +224,7 @@ func (r *RBAC) rowEvents(ns, name string, kind roleKind) (resource.RowEvents, er
 	return evts, nil
 }
 
-func (r *RBAC) clusterPolicies(name string) (resource.RowEvents, error) {
+func (r *Rbac) clusterPolicies(name string) (resource.RowEvents, error) {
 	cr, err := r.app.Conn().DialOrDie().RbacV1().ClusterRoles().Get(name, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -234,7 +233,7 @@ func (r *RBAC) clusterPolicies(name string) (resource.RowEvents, error) {
 	return r.parseRules(cr.Rules), nil
 }
 
-func (r *RBAC) namespacedPolicies(path string) (resource.RowEvents, error) {
+func (r *Rbac) namespacedPolicies(path string) (resource.RowEvents, error) {
 	ns, na := namespaced(path)
 	cr, err := r.app.Conn().DialOrDie().RbacV1().Roles(ns).Get(na, metav1.GetOptions{})
 	if err != nil {
@@ -244,7 +243,7 @@ func (r *RBAC) namespacedPolicies(path string) (resource.RowEvents, error) {
 	return r.parseRules(cr.Rules), nil
 }
 
-func (r *RBAC) parseRules(rules []rbacv1.PolicyRule) resource.RowEvents {
+func (r *Rbac) parseRules(rules []rbacv1.PolicyRule) resource.RowEvents {
 	m := make(resource.RowEvents, len(rules))
 	for _, r := range rules {
 		for _, grp := range r.APIGroups {

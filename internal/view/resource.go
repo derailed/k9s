@@ -9,7 +9,6 @@ import (
 
 	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
@@ -37,7 +36,7 @@ type Resource struct {
 // NewResource returns a new viewer.
 func NewResource(title, gvr string, list resource.List) *Resource {
 	return &Resource{
-		MasterDetail: NewMasterDetail(title),
+		MasterDetail: NewMasterDetail(title, list.GetNamespace()),
 		list:         list,
 		gvr:          gvr,
 	}
@@ -49,19 +48,23 @@ func (r *Resource) Init(ctx context.Context) {
 	r.envFn = r.defaultK9sEnv
 
 	table := r.masterPage()
-	table.setFilterFn(r.filterResource)
-	colorer := ui.DefaultColorer
-	if r.colorerFn != nil {
-		colorer = r.colorerFn
+	{
+		table.setFilterFn(r.filterResource)
+		colorer := ui.DefaultColorer
+		if r.colorerFn != nil {
+			colorer = r.colorerFn
+		}
+		table.SetColorerFn(colorer)
 	}
-	table.SetColorerFn(colorer)
-	row, _ := table.GetSelection()
-	if row == 0 && table.GetRowCount() > 0 {
-		table.Select(1, 0)
-	}
-	r.DumpPages()
 
 	r.refresh()
+	{
+		row, _ := table.GetSelection()
+		if row == 0 && table.GetRowCount() > 0 {
+			table.Select(1, 0)
+		}
+	}
+	log.Debug().Msgf("<<<< RESOURCE INIT")
 }
 
 // Start initializes updates.
@@ -82,18 +85,6 @@ func (r *Resource) Stop() {
 // Name returns the component name.
 func (r *Resource) Name() string {
 	return r.list.GetName()
-}
-
-// Hints returns the current viewer hints
-func (r *Resource) Hints() model.MenuHints {
-	if r.CurrentPage() == nil {
-		return nil
-	}
-	if c, ok := r.CurrentPage().Item.(model.Hinter); ok {
-		return c.Hints()
-	}
-
-	return nil
 }
 
 func (r *Resource) setColorerFn(f ui.ColorerFunc) {
@@ -129,19 +120,6 @@ func (r *Resource) backCmd(*tcell.EventKey) *tcell.EventKey {
 	r.Pop()
 
 	return nil
-}
-
-func (r *Resource) switchPage1(p string) {
-	log.Debug().Msgf("Switching page to %s", p)
-	if _, ok := r.CurrentPage().Item.(*Table); ok {
-		r.Stop()
-	}
-
-	r.SwitchToPage(p)
-
-	if _, ok := r.CurrentPage().Item.(*Table); ok {
-		r.Start()
-	}
 }
 
 // ----------------------------------------------------------------------------
@@ -210,9 +188,7 @@ func (r *Resource) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 			}
 		}
 		r.refresh()
-	}, func() {
-		r.Pop()
-	})
+	}, func() {})
 	return nil
 }
 
@@ -283,7 +259,7 @@ func (r *Resource) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	details.SetTextColor(r.app.Styles.FgColor())
 	details.SetText(colorizeYAML(r.app.Styles.Views().Yaml, raw))
 	details.ScrollToBeginning()
-	r.app.Content.Push(details)
+	r.showDetails()
 
 	return nil
 }
@@ -313,6 +289,7 @@ func (r *Resource) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (r *Resource) setNamespace(ns string) {
 	if r.list.Namespaced() {
+		r.currentNS = ns
 		r.list.SetNamespace(ns)
 	}
 }
@@ -335,32 +312,34 @@ func (r *Resource) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	r.masterPage().SelectRow(1, true)
 	r.app.CmdBuff().Reset()
 	if err := r.app.Config.SetActiveNamespace(r.currentNS); err != nil {
+		log.Error().Err(err).Msg("Config save NS failed!")
+	}
+	if err := r.app.Config.Save(); err != nil {
 		log.Error().Err(err).Msg("Config save failed!")
 	}
-	r.app.Config.Save()
 
 	return nil
 }
 
 func (r *Resource) refresh() {
-	if r.CurrentPage() == nil {
-		return
-	}
-	if _, ok := r.CurrentPage().Item.(*Table); !ok {
+	if _, ok := r.Top().(*Table); !ok {
 		return
 	}
 
-	r.refreshActions()
 	if r.list.Namespaced() {
 		r.list.SetNamespace(r.currentNS)
 	}
-	if err := r.list.Reconcile(r.app.informer, r.path); err != nil {
-		r.app.Flash().Err(err)
+
+	if r.app.Conn() != nil {
+		if err := r.list.Reconcile(r.app.informer, r.path); err != nil {
+			r.app.Flash().Err(err)
+		}
 	}
 	data := r.list.Data()
 	if r.decorateFn != nil {
 		data = r.decorateFn(data)
 	}
+	r.refreshActions()
 	r.masterPage().Update(data)
 }
 

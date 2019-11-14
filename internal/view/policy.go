@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -85,9 +84,8 @@ func (p *Policy) bindKeys() {
 	p.RmAction(ui.KeyShiftA)
 
 	p.AddActions(ui.KeyActions{
-		tcell.KeyEscape: ui.NewKeyAction("Reset", p.resetCmd, false),
+		tcell.KeyEscape: ui.NewKeyAction("Back", p.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", p.activateCmd, false),
-		ui.KeyP:         ui.NewKeyAction("Previous", p.app.PrevCmd, false),
 		ui.KeyShiftS:    ui.NewKeyAction("Sort Namespace", p.SortColCmd(0), false),
 		ui.KeyShiftN:    ui.NewKeyAction("Sort Name", p.SortColCmd(1), false),
 		ui.KeyShiftO:    ui.NewKeyAction("Sort Group", p.SortColCmd(2), false),
@@ -128,10 +126,6 @@ func (p *Policy) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return p.app.PrevCmd(evt)
-}
-
-func (p *Policy) Hints() model.MenuHints {
-	return p.Hints()
 }
 
 func (p *Policy) reconcile() (resource.TableData, error) {

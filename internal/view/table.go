@@ -5,6 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 )
 
 type Table struct {
@@ -21,6 +22,8 @@ func NewTable(title string) *Table {
 }
 
 func (t *Table) Init(ctx context.Context) {
+	log.Debug().Msgf("VIEW Table INIT %q", t.GetBaseTitle())
+
 	t.app = ctx.Value(ui.KeyApp).(*App)
 
 	ctx = context.WithValue(ctx, ui.KeyStyles, t.app.Styles)
@@ -102,12 +105,15 @@ func (t *Table) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (t *Table) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !t.SearchBuff().Empty() {
-		t.app.Flash().Info("Clearing filter...")
+	log.Debug().Msgf("Table filter reset!")
+	if t.SearchBuff().Empty() {
+		return evt
 	}
+
 	if ui.IsLabelSelector(t.SearchBuff().String()) {
 		t.filterFn("")
 	}
+	t.app.Flash().Info("Clearing filter...")
 	t.SearchBuff().Reset()
 	t.Refresh()
 
@@ -115,6 +121,7 @@ func (t *Table) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (t *Table) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
+	log.Debug().Msgf("Table filter activated!")
 	if t.app.InCmdMode() {
 		return evt
 	}

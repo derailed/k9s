@@ -2,7 +2,6 @@ package ui
 
 import (
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 )
@@ -13,7 +12,6 @@ type App struct {
 	Configurator
 
 	Main *Pages
-	Hint *model.Hint
 
 	actions KeyActions
 
@@ -28,7 +26,6 @@ func NewApp() *App {
 		actions:     make(KeyActions),
 		Main:        NewPages(),
 		cmdBuff:     NewCmdBuff(':', CommandBuff),
-		Hint:        model.NewHint(),
 	}
 
 	a.RefreshStyles()
@@ -50,8 +47,6 @@ func (a *App) Init() {
 	a.SetInputCapture(a.keyboard)
 	a.cmdBuff.AddListener(a.Cmd())
 	a.SetRoot(a.Main, true)
-
-	a.Hint.AddListener(a.Menu())
 }
 
 // Conn returns an api server connection.

@@ -20,10 +20,6 @@ const (
 	helpTitleFmt = " [aqua::b]%s "
 )
 
-type helpItem struct {
-	key, description string
-}
-
 // Help presents a help viewer.
 type Help struct {
 	*ui.Table
@@ -49,13 +45,16 @@ func (v *Help) Init(ctx context.Context) {
 	v.SetBorderPadding(0, 0, 1, 1)
 	v.SetInputCapture(v.keyboard)
 	v.bindKeys()
-	v.build(v.app.Hint.Peek())
+	v.build(v.app.Content.Previous().Hints())
 }
 
-func (v *Help) Name() string           { return helpTitle }
-func (v *Help) Start()                 {}
-func (v *Help) Stop()                  {}
-func (v *Help) Hints() model.MenuHints { return v.actions.Hints() }
+func (v *Help) Name() string { return helpTitle }
+func (v *Help) Start()       {}
+func (v *Help) Stop()        {}
+func (v *Help) Hints() model.MenuHints {
+	log.Debug().Msgf("Help Hints %#v", v.actions.Hints())
+	return v.actions.Hints()
+}
 
 func (v *Help) bindKeys() {
 	v.actions = ui.KeyActions{
@@ -164,10 +163,6 @@ func (v *Help) showGeneral() model.MenuHints {
 		{
 			Mnemonic:    "Shift-i",
 			Description: "Invert Sort",
-		},
-		{
-			Mnemonic:    "p",
-			Description: "Previous View",
 		},
 		{
 			Mnemonic:    ":q",

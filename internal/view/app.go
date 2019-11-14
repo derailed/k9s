@@ -19,15 +19,12 @@ import (
 
 const (
 	splashTime     = 1
-	devMode        = "dev"
 	clusterRefresh = time.Duration(5 * time.Second)
 	indicatorFmt   = "[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s%%[white::]::[darkturquoise::]%s%%"
 )
 
 // ActionsFunc augments Keybindinga.
 type ActionsFunc func(ui.KeyActions)
-
-type focusHandler func(tview.Primitive)
 
 type forwarder interface {
 	Start(path, co string, ports []string) (*portforward.PortForwarder, error)
@@ -86,7 +83,9 @@ func (a *App) ActiveView() model.Component {
 }
 
 func (a *App) PrevCmd(evt *tcell.EventKey) *tcell.EventKey {
-	a.Content.Pop()
+	if !a.Content.IsLast() {
+		a.Content.Pop()
+	}
 
 	return nil
 }
@@ -95,6 +94,7 @@ func (a *App) Init(version string, rate int) {
 	ctx := context.WithValue(context.Background(), ui.KeyApp, a)
 	a.Content.Init(ctx)
 	a.Content.Stack.AddListener(a.Crumbs())
+	a.Content.Stack.AddListener(a.Menu())
 
 	a.version = version
 	a.CmdBuff().AddListener(a)
@@ -122,15 +122,6 @@ func (a *App) Init(version string, rate int) {
 	a.Main.AddPage("main", main, true, false)
 	a.Main.AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
 
-	// ctx := context.WithValue(context.Background(), ui.KeyApp, a)
-	// a.Content.Init(ctx)
-	// d := NewDetails(a, nil)
-	// d.SetText("Fuck!!")
-	// a.Content.Push(d)
-	// d = NewDetails(a, nil)
-	// d.SetText("Shit!!")
-	// a.Content.Push(d)
-
 	main.AddItem(a.indicator(), 1, 1, false)
 	main.AddItem(a.Content, 0, 10, true)
 	main.AddItem(a.Crumbs(), 2, 1, false)
@@ -138,31 +129,12 @@ func (a *App) Init(version string, rate int) {
 	a.toggleHeader(!a.Config.K9s.GetHeadless())
 }
 
-// func (a *App) StackPushed(c model.Component) {
-// 	ctx := context.WithValue(context.Background(), ui.KeyApp, a)
-// 	ctx, a.cancelFn = context.WithCancel(context.Background())
-// 	c.Init(ctx)
-
-// 	a.Frame().AddPage(c.Name(), c, true, true)
-// 	a.SetFocus(c)
-// 	a.setHints(c.Hints())
-// }
-
-// func (a *App) StackPopped(o, c model.Component) {
-// 	a.Frame().RemovePage(o.Name())
-// 	if c != nil {
-// 		a.StackPushed(c)
-// 	}
-// }
-
-// func (a *App) StackTop(model.Component) {
-// }
-
 // Changed indicates the buffer was changed.
 func (a *App) BufferChanged(s string) {}
 
 // Active indicates the buff activity changed.
 func (a *App) BufferActive(state bool, _ ui.BufferKind) {
+	log.Debug().Msgf("App Buffer Activated!")
 	flex, ok := a.Main.GetPrimitive("main").(*tview.Flex)
 	if !ok {
 		return
@@ -258,7 +230,9 @@ func (a *App) switchNS(ns string) bool {
 		log.Debug().Msgf("Namespace did not change %s", ns)
 		return true
 	}
-	a.Config.SetActiveNamespace(ns)
+	if err := a.Config.SetActiveNamespace(ns); err != nil {
+		log.Error().Err(err).Msg("Config Set NS failed!")
+	}
 
 	return a.startInformer(ns)
 }
@@ -276,7 +250,9 @@ func (a *App) switchCtx(ctx string, load bool) error {
 	}
 	a.startInformer(ns)
 	a.Config.Reset()
-	a.Config.Save()
+	if err := a.Config.Save(); err != nil {
+		log.Error().Err(err).Msg("Config save failed!")
+	}
 	a.Flash().Infof("Switching context to %s", ctx)
 	if load {
 		a.gotoResource("po", true)

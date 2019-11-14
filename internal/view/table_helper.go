@@ -45,9 +45,13 @@ func saveTable(cluster, name string, data resource.TableData) (string, error) {
 	}
 
 	w := csv.NewWriter(file)
-	w.Write(data.Header)
+	if err := w.Write(data.Header); err != nil {
+		return "", err
+	}
 	for _, r := range data.Rows {
-		w.Write(r.Fields)
+		if err := w.Write(r.Fields); err != nil {
+			return "", err
+		}
 	}
 	w.Flush()
 	if err := w.Error(); err != nil {
@@ -67,53 +71,3 @@ func skinTitle(fmat string, style config.Frame) string {
 
 	return fmat
 }
-
-func sortRows(evts resource.RowEvents, sortFn ui.SortFn, sortCol ui.SortColumn, keys []string) {
-	rows := make(resource.Rows, 0, len(evts))
-	for k, r := range evts {
-		rows = append(rows, append(r.Fields, k))
-	}
-	sortFn(rows, sortCol)
-
-	for i, r := range rows {
-		keys[i] = r[len(r)-1]
-	}
-}
-
-// func defaultSort(rows resource.Rows, sortCol ui.SortColumn) {
-// 	t := rowSorter{rows: rows, index: sortCol.index, asc: sortCol.asc}
-// 	sort.Sort(t)
-// }
-
-// func sortAllRows(col ui.SortColumn, rows resource.RowEvents, sortFn ui.SortFn) (resource.Row, map[string]resource.Row) {
-// 	keys := make([]string, len(rows))
-// 	sortRows(rows, sortFn, col, keys)
-
-// 	sec := make(map[string]resource.Row, len(rows))
-// 	for _, k := range keys {
-// 		grp := rows[k].Fields[col.index]
-// 		sec[grp] = append(sec[grp], k)
-// 	}
-
-// 	// Performs secondary to sort by name for each groups.
-// 	prim := make(resource.Row, 0, len(sec))
-// 	for k, v := range sec {
-// 		sort.Strings(v)
-// 		prim = append(prim, k)
-// 	}
-// 	sort.Sort(groupSorter{prim, col.asc})
-
-// 	return prim, sec
-// }
-
-// func sortIndicator(col ui.SortColumn, style config.Table, index int, name string) string {
-// 	if col.index != index {
-// 		return name
-// 	}
-
-// 	order := descIndicator
-// 	if col.asc {
-// 		order = ascIndicator
-// 	}
-// 	return fmt.Sprintf("%s[%s::]%s[::]", name, style.Header.SorterColor, order)
-// }

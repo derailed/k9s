@@ -1,12 +1,22 @@
-package view
+package view_test
 
-// import (
-// 	"testing"
+import (
+	"testing"
 
-// 	"github.com/derailed/k9s/internal/resource"
-// 	"github.com/stretchr/testify/assert"
-// 	rbacv1 "k8s.io/api/rbac/v1"
-// )
+	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/view"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestRbacNew(t *testing.T) {
+	cfg := config.NewConfig(ks{})
+	app := view.NewApp(cfg)
+	v := view.NewRbac(app, "", "fred", view.ClusterRole)
+	v.Init(makeCtx())
+
+	assert.Equal(t, "Rbac", v.Name())
+	assert.Equal(t, 10, len(v.Hints()))
+}
 
 // func TestHasVerb(t *testing.T) {
 // 	uu := []struct {
@@ -105,7 +115,7 @@ package view
 // 		},
 // 	}
 
-// 	var v rbacView
+// 	var v view.Rbac
 // 	for _, u := range uu {
 // 		evts := v.parseRules(u.pp)
 // 		for k, v := range u.e {

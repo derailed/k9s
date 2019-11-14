@@ -78,7 +78,7 @@ func saveYAML(cluster, name, data string) (string, error) {
 		log.Error().Err(err).Msgf("YAML create %s", path)
 		return "", nil
 	}
-	if _, err := fmt.Fprintf(file, data); err != nil {
+	if _, err := file.Write([]byte(data)); err != nil {
 		return "", err
 	}
 

@@ -96,9 +96,8 @@ func (s *Subject) bindKeys() {
 
 	s.AddActions(ui.KeyActions{
 		tcell.KeyEnter:  ui.NewKeyAction("Policies", s.policyCmd, true),
-		tcell.KeyEscape: ui.NewKeyAction("Reset", s.resetCmd, false),
+		tcell.KeyEscape: ui.NewKeyAction("Back", s.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", s.activateCmd, false),
-		ui.KeyP:         ui.NewKeyAction("Previous", s.app.PrevCmd, false),
 		ui.KeyShiftK:    ui.NewKeyAction("Sort Kind", s.SortColCmd(1), false),
 	})
 }

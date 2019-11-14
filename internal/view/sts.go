@@ -36,7 +36,7 @@ func (s *StatefulSet) extraActions(aa ui.KeyActions) {
 	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", s.sortColCmd(2, false), false)
 }
 
-func (s *StatefulSet) showPods(app *App, ns, res, sel string) {
+func (s *StatefulSet) showPods(app *App, _, res, sel string) {
 	ns, n := namespaced(sel)
 	st, err := k8s.NewStatefulSet(app.Conn()).Get(ns, n)
 	if err != nil {

@@ -64,11 +64,6 @@ func (r *Container) Marshal(path string) (string, error) {
 	return "", nil
 }
 
-// // PodLogs tail logs for all containers in a running Pod.
-// func (r *Container) PodLogs(ctx context.Context, c chan<- string, ns, n string, lines int64, prev bool) error {
-// 	return nil
-// }
-
 // Logs tails a given container logs
 func (r *Container) Logs(ctx context.Context, c chan<- string, opts LogOptions) error {
 	res, ok := r.Resource.(k8s.Loggable)

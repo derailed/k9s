@@ -12,6 +12,11 @@ type MenuHint struct {
 	Visible     bool
 }
 
+// IsBlank checks if menu hint is a place holder.
+func (m MenuHint) IsBlank() bool {
+	return m.Mnemonic == "" && m.Description == "" && m.Visible == false
+}
+
 // MenuHints represents a collection of hints.
 type MenuHints []MenuHint
 

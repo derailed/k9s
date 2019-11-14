@@ -22,7 +22,6 @@ This is a maintenance release to mainly resolve outstanding issues and bugs.
 
 Added two new columns to track cpu/memory utilization on metrics-server enabled clusters. These apply to pod,container and node view.
 
-
 ---
 
 ## Resolved Bugs

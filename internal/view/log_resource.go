@@ -6,6 +6,7 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 )
 
 // ContainerFn returns the active container name.
@@ -85,8 +86,9 @@ func (l *LogResource) showLogs(prev bool) {
 }
 
 func (l *LogResource) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	// Reset namespace to what it was
-	l.app.Config.SetActiveNamespace(l.list.GetNamespace())
+	if err := l.app.Config.SetActiveNamespace(l.list.GetNamespace()); err != nil {
+		log.Error().Err(err).Msg("Config NS set failed!")
+	}
 	l.app.inject(l)
 
 	return nil

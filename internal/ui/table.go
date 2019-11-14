@@ -60,6 +60,7 @@ func NewTable(title string) *Table {
 }
 
 func (t *Table) Init(ctx context.Context) {
+	log.Debug().Msgf("UI Table INIT %q", t.baseTitle)
 	t.styles = ctx.Value(KeyStyles).(*config.Styles)
 
 	t.SetFixed(1, 0)
@@ -78,7 +79,6 @@ func (t *Table) Init(ctx context.Context) {
 
 	t.SetSelectionChangedFunc(t.selChanged)
 	t.SetInputCapture(t.keyboard)
-
 }
 
 // SendKey sends an keyboard event (testing only!).

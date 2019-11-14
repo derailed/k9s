@@ -74,14 +74,9 @@ func (s *Stack) RemoveListener(l StackListener) {
 // AddListener registers a stack listener.
 func (s *Stack) AddListener(l StackListener) {
 	s.listeners = append(s.listeners, l)
-	log.Debug().Msgf("Stack Add listener %#v", s.components)
-	s.DumpStack()
-	if s.Empty() {
-		log.Debug().Msgf("Stack is empty!")
-	} else {
-		log.Debug().Msgf("TOP is %s", s.Top().Name())
+	if !s.Empty() {
+		l.StackTop(s.Top())
 	}
-	l.StackTop(s.Top())
 }
 
 // Dump prints out the stack.
@@ -114,7 +109,7 @@ func (s *Stack) Pop() (Component, bool) {
 	c.Stop()
 
 	if top := s.Top(); top != nil {
-		log.Debug().Msgf("Calling Restart on %s", top.Name())
+		log.Debug().Msgf("Calling Start on %s", top.Name())
 		top.Start()
 	}
 
@@ -129,6 +124,15 @@ func (s *Stack) Empty() bool {
 // IsLast indicates if stack only has one item left.
 func (s *Stack) IsLast() bool {
 	return len(s.components) == 1
+}
+
+// Previous returns the previous component if any.
+func (s *Stack) Previous() Component {
+	if s.IsLast() {
+		return s.Top()
+	}
+
+	return s.components[len(s.components)-2]
 }
 
 // Top returns the top most item or nil if the stack is empty.

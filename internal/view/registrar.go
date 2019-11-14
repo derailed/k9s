@@ -78,11 +78,11 @@ func allCRDs(c k8s.Connection, vv viewers) {
 }
 
 func showRBAC(app *App, ns, resource, selection string) {
-	kind := clusterRole
+	kind := ClusterRole
 	if resource == "role" {
-		kind = role
+		kind = Role
 	}
-	app.inject(NewRBAC(app, ns, selection, kind))
+	app.inject(NewRbac(app, ns, selection, kind))
 }
 
 func showCRD(app *App, ns, resource, selection string) {
@@ -98,7 +98,7 @@ func showClusterRole(app *App, ns, resource, selection string) {
 		app.Flash().Errf("Unable to retrieve clusterrolebindings for %s", selection)
 		return
 	}
-	app.inject(NewRBAC(app, ns, crb.RoleRef.Name, clusterRole))
+	app.inject(NewRbac(app, ns, crb.RoleRef.Name, ClusterRole))
 }
 
 func showRole(app *App, _, resource, selection string) {
@@ -108,7 +108,7 @@ func showRole(app *App, _, resource, selection string) {
 		app.Flash().Errf("Unable to retrieve rolebindings for %s", selection)
 		return
 	}
-	app.inject(NewRBAC(app, ns, fqn(ns, rb.RoleRef.Name), role))
+	app.inject(NewRbac(app, ns, fqn(ns, rb.RoleRef.Name), Role))
 }
 
 func showSAPolicy(app *App, _, _, selection string) {

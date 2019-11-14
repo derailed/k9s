@@ -41,17 +41,7 @@ func (r *ReplicaSet) extraActions(aa ui.KeyActions) {
 	aa[tcell.KeyCtrlB] = ui.NewKeyAction("Rollback", r.rollbackCmd, true)
 }
 
-func (r *ReplicaSet) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		t := r.masterPage()
-		t.SetSortCol(t.NameColIndex()+col, 0, asc)
-		t.Refresh()
-
-		return nil
-	}
-}
-
-func (r *ReplicaSet) showPods(app *App, ns, res, sel string) {
+func (r *ReplicaSet) showPods(app *App, _, res, sel string) {
 	ns, n := namespaced(sel)
 	s, err := k8s.NewReplicaSet(app.Conn()).Get(ns, n)
 	if err != nil {
@@ -174,7 +164,7 @@ func rollback(Conn k8s.Connection, selectedItem string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	rb, err := polymorphichelpers.RollbackerFor(schema.GroupKind{apiGroup, kind}, Conn.DialOrDie())
+	rb, err := polymorphichelpers.RollbackerFor(schema.GroupKind{Group: apiGroup, Kind: kind}, Conn.DialOrDie())
 	if err != nil {
 		return "", err
 	}

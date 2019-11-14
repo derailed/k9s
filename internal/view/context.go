@@ -53,7 +53,9 @@ func (c *Context) useContext(name string) error {
 		return err
 	}
 
-	c.app.switchCtx(name, false)
+	if err := c.app.switchCtx(name, false); err != nil {
+		return err
+	}
 	c.refresh()
 	if tv, ok := c.GetPrimitive("ctx").(*Table); ok {
 		tv.Select(1, 0)

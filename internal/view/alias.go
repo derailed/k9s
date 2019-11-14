@@ -55,7 +55,7 @@ func (a *Alias) registerActions() {
 	a.RmAction(tcell.KeyCtrlS)
 
 	a.AddActions(ui.KeyActions{
-		tcell.KeyEnter:  ui.NewKeyAction("Goto", a.gotoCmd, true),
+		tcell.KeyEnter:  ui.NewKeyAction("Goto Resource", a.gotoCmd, true),
 		tcell.KeyEscape: ui.NewKeyAction("Reset", a.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", a.activateCmd, false),
 		ui.KeyShiftR:    ui.NewKeyAction("Sort Resource", a.SortColCmd(0), false),
@@ -82,6 +82,7 @@ func (a *Alias) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if r != 0 {
 		s := ui.TrimCell(a.Table.Table, r, 1)
 		tokens := strings.Split(s, ",")
+		a.app.Content.Pop()
 		a.app.gotoResource(tokens[0], true)
 		return nil
 	}

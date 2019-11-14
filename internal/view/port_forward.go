@@ -19,14 +19,14 @@ import (
 )
 
 const (
-	forwardTitle    = "Port Forwards"
-	forwardTitleFmt = " [aqua::b]%s([fuchsia::b]%d[fuchsia::-])[aqua::-] "
-	promptPage      = "prompt"
+	portForwardTitle    = "PortForwards"
+	portForwardTitleFmt = " [aqua::b]%s([fuchsia::b]%d[fuchsia::-])[aqua::-] "
+	promptPage          = "prompt"
 )
 
 // PortForward presents active portforward viewer.
 type PortForward struct {
-	*ui.Pages
+	*MasterDetail
 
 	cancelFn context.CancelFunc
 	bench    *perf.Benchmark
@@ -34,27 +34,26 @@ type PortForward struct {
 }
 
 // NewPortForward returns a new viewer.
-func NewPortForward(title, _ string, list resource.List) ResourceViewer {
+func NewPortForward(title, gvr string, list resource.List) ResourceViewer {
 	return &PortForward{
-		Pages: ui.NewPages(),
+		MasterDetail: NewMasterDetail(portForwardTitle, ""),
 	}
 }
 
 // Init the view.
 func (p *PortForward) Init(ctx context.Context) {
 	p.app = ctx.Value(ui.KeyApp).(*App)
+	p.MasterDetail.Init(ctx)
+	p.registerActions()
 
-	tv := NewTable(forwardTitle)
-	tv.Init(ctx)
+	tv := p.masterPage()
 	tv.SetBorderFocusColor(tcell.ColorDodgerBlue)
 	tv.SetSelectedStyle(tcell.ColorWhite, tcell.ColorDodgerBlue, tcell.AttrNone)
 	tv.SetColorerFn(forwardColorer)
 	tv.SetActiveNS("")
 	tv.SetSortCol(tv.NameColIndex()+6, 0, true)
 	tv.Select(1, 0)
-	p.Push(tv)
 
-	p.registerActions()
 	p.Start()
 	p.refresh()
 }
@@ -71,24 +70,13 @@ func (p *PortForward) Start() {
 func (p *PortForward) Stop() {}
 
 func (p *PortForward) Name() string {
-	return "portForwards"
-}
-
-func (p *PortForward) masterPage() *Table {
-	return p.GetPrimitive("table").(*Table)
+	return portForwardTitle
 }
 
 func (p *PortForward) setEnterFn(enterFn)            {}
 func (p *PortForward) setColorerFn(ui.ColorerFunc)   {}
 func (p *PortForward) setDecorateFn(decorateFn)      {}
 func (p *PortForward) setExtraActionsFn(ActionsFunc) {}
-
-func (p *PortForward) getTV() *Table {
-	if vu, ok := p.GetPrimitive("table").(*Table); ok {
-		return vu
-	}
-	return nil
-}
 
 func (p *PortForward) reload() {
 	path := ui.BenchConfig(p.app.Config.K9s.CurrentCluster)
@@ -100,38 +88,28 @@ func (p *PortForward) reload() {
 }
 
 func (p *PortForward) refresh() {
-	tv := p.getTV()
+	tv := p.masterPage()
 	tv.Update(p.hydrate())
 	p.app.SetFocus(tv)
 	tv.UpdateTitle()
 }
 
 func (p *PortForward) registerActions() {
-	tv := p.getTV()
+	tv := p.masterPage()
 	tv.AddActions(ui.KeyActions{
-		tcell.KeyEnter: ui.NewKeyAction("Goto", p.gotoBenchCmd, true),
+		tcell.KeyEnter: ui.NewKeyAction("Benchmarks", p.gotoBenchCmd, true),
 		tcell.KeyCtrlB: ui.NewKeyAction("Bench", p.benchCmd, true),
 		tcell.KeyCtrlK: ui.NewKeyAction("Bench Stop", p.benchStopCmd, true),
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", p.deleteCmd, true),
 		ui.KeySlash:    ui.NewKeyAction("Filter", tv.activateCmd, false),
-		ui.KeyP:        ui.NewKeyAction("Previous", p.app.PrevCmd, false),
+		tcell.KeyEsc:   ui.NewKeyAction("Back", p.app.PrevCmd, false),
 		ui.KeyShiftP:   ui.NewKeyAction("Sort Ports", p.sortColCmd(2, true), false),
 		ui.KeyShiftU:   ui.NewKeyAction("Sort URL", p.sortColCmd(4, true), false),
 	})
 }
 
 func (p *PortForward) getTitle() string {
-	return forwardTitle
-}
-
-func (p *PortForward) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		tv := p.getTV()
-		tv.SetSortCol(tv.NameColIndex()+col, 0, asc)
-		p.refresh()
-
-		return nil
-	}
+	return portForwardTitle
 }
 
 func (p *PortForward) gotoBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -162,7 +140,7 @@ func (p *PortForward) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	tv := p.getTV()
+	tv := p.masterPage()
 	r, _ := tv.GetSelection()
 	cfg, co := defaultConfig(), ui.TrimCell(tv.Table, r, 2)
 	if b, ok := p.app.Bench.Benchmarks.Containers[containerID(sel, co)]; ok {
@@ -205,7 +183,7 @@ func (p *PortForward) runBenchmark() {
 }
 
 func (p *PortForward) getSelectedItem() string {
-	tv := p.getTV()
+	tv := p.masterPage()
 	r, _ := tv.GetSelection()
 	if r == 0 {
 		return ""
@@ -217,7 +195,7 @@ func (p *PortForward) getSelectedItem() string {
 }
 
 func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
-	tv := p.getTV()
+	tv := p.masterPage()
 	if !tv.SearchBuff().Empty() {
 		tv.SearchBuff().Reset()
 		return nil
@@ -238,7 +216,7 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		delete(p.app.forwarders, sel)
 
 		log.Debug().Msgf("PortForwards after delete: %#v", p.app.forwarders)
-		p.getTV().Update(p.hydrate())
+		p.masterPage().Update(p.hydrate())
 		p.app.Flash().Infof("PortForward %s deleted!", sel)
 	})
 
@@ -250,7 +228,7 @@ func (p *PortForward) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 		p.cancelFn()
 	}
 
-	tv := p.getTV()
+	tv := p.masterPage()
 	if tv.SearchBuff().IsActive() {
 		tv.SearchBuff().Reset()
 	} else {
@@ -258,10 +236,6 @@ func (p *PortForward) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return nil
-}
-
-func (p *PortForward) Hints() model.MenuHints {
-	return p.getTV().Hints()
 }
 
 func (p *PortForward) hydrate() resource.TableData {
@@ -293,7 +267,7 @@ func (p *PortForward) hydrate() resource.TableData {
 }
 
 func (p *PortForward) resetTitle() {
-	p.SetTitle(fmt.Sprintf(forwardTitleFmt, forwardTitle, p.getTV().GetRowCount()-1))
+	p.SetTitle(fmt.Sprintf(portForwardTitleFmt, portForwardTitle, p.masterPage().GetRowCount()-1))
 }
 
 // ----------------------------------------------------------------------------
@@ -354,7 +328,6 @@ func showModal(p *ui.Pages, msg, back string, ok func()) {
 
 func dismissModal(p *ui.Pages, page string) {
 	p.RemovePage(promptPage)
-	p.SwitchToPage(page)
 }
 
 func watchFS(ctx context.Context, app *App, dir, file string, cb func()) error {

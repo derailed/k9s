@@ -24,7 +24,7 @@ func (j *Job) extraActions(aa ui.KeyActions) {
 	j.LogResource.extraActions(aa)
 }
 
-func (j *Job) showPods(app *App, ns, res, sel string) {
+func (j *Job) showPods(app *App, _, res, sel string) {
 	ns, n := namespaced(sel)
 	job, err := k8s.NewJob(app.Conn()).Get(ns, n)
 	if err != nil {

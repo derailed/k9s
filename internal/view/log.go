@@ -6,7 +6,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync/atomic"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
@@ -17,44 +16,34 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type logFrame struct {
+// Log represents a generic log viewer.
+type Log struct {
 	*tview.Flex
 
-	app     *App
-	actions ui.KeyActions
-	backFn  ui.ActionHandler
+	app             *App
+	actions         ui.KeyActions
+	backFn          ui.ActionHandler
+	logs            *Details
+	scrollIndicator *AutoScrollIndicator
+	ansiWriter      io.Writer
+	path            string
 }
 
-func newLogFrame(app *App, backFn ui.ActionHandler) *logFrame {
-	f := logFrame{
+// NewLog returns a new viewer.
+func NewLog(_ string, app *App, backFn ui.ActionHandler) *Log {
+	l := Log{
 		Flex:    tview.NewFlex(),
 		app:     app,
 		backFn:  backFn,
 		actions: make(ui.KeyActions),
 	}
-	f.SetBorder(true)
-	f.SetBackgroundColor(config.AsColor(app.Styles.Views().Log.BgColor))
-	f.SetBorderPadding(0, 0, 1, 1)
-	f.SetDirection(tview.FlexRow)
+	l.SetBorder(true)
+	l.SetBackgroundColor(config.AsColor(app.Styles.Views().Log.BgColor))
+	l.SetBorderPadding(0, 0, 1, 1)
+	l.SetDirection(tview.FlexRow)
 
-	return &f
-}
-
-type Log struct {
-	*logFrame
-
-	logs       *Details
-	status     *statusView
-	ansiWriter io.Writer
-	autoScroll int32
-	path       string
-}
-
-func NewLog(_ string, app *App, backFn ui.ActionHandler) *Log {
-	l := Log{
-		logFrame:   newLogFrame(app, backFn),
-		autoScroll: 1,
-	}
+	l.scrollIndicator = NewAutoScrollIndicator(app.Styles)
+	l.AddItem(l.scrollIndicator, 1, 1, false)
 
 	l.logs = NewDetails(app, backFn)
 	{
@@ -67,8 +56,6 @@ func NewLog(_ string, app *App, backFn ui.ActionHandler) *Log {
 		l.logs.SetMaxBuffer(app.Config.K9s.LogBufferSize)
 	}
 	l.ansiWriter = tview.ANSIWriter(l.logs, app.Styles.Views().Log.FgColor, app.Styles.Views().Log.BgColor)
-	l.status = newStatusView(app.Styles)
-	l.AddItem(l.status, 1, 1, false)
 	l.AddItem(l.logs, 0, 1, true)
 
 	l.bindKeys()
@@ -77,16 +64,26 @@ func NewLog(_ string, app *App, backFn ui.ActionHandler) *Log {
 	return &l
 }
 
+// Logs return the viewer logs.
+func (l *Log) Logs() *Details {
+	return l.logs
+}
+
+// ScrollIndicator returns the scroll mode viewer.
+func (l *Log) ScrollIndicator() *AutoScrollIndicator {
+	return l.scrollIndicator
+}
+
 func (l *Log) bindKeys() {
 	l.actions = ui.KeyActions{
 		tcell.KeyEscape: ui.NewKeyAction("Back", l.backCmd, true),
 		ui.KeyC:         ui.NewKeyAction("Clear", l.clearCmd, true),
-		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", l.toggleScrollCmd, true),
+		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", l.ToggleAutoScrollCmd, true),
 		ui.KeyG:         ui.NewKeyAction("Top", l.topCmd, false),
 		ui.KeyShiftG:    ui.NewKeyAction("Bottom", l.bottomCmd, false),
 		ui.KeyF:         ui.NewKeyAction("Up", l.pageUpCmd, false),
 		ui.KeyB:         ui.NewKeyAction("Down", l.pageDownCmd, false),
-		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.saveCmd, true),
+		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.SaveCmd, true),
 	}
 }
 
@@ -124,32 +121,24 @@ func (l *Log) log(lines string) {
 	log.Debug().Msgf("LOG LINES %d", l.logs.GetLineCount())
 }
 
-func (l *Log) flush(index int, buff []string) {
-	if index == 0 {
+// Flush write logs to viewer.
+func (l *Log) Flush(index int, buff []string) {
+	if index == 0 || !l.scrollIndicator.AutoScroll() {
 		return
 	}
 
-	if atomic.LoadInt32(&l.autoScroll) == 1 {
-		l.log(strings.Join(buff[:index], "\n"))
-		l.app.QueueUpdateDraw(func() {
-			l.updateIndicator()
-			l.logs.ScrollToEnd()
-		})
-	}
-}
-
-func (l *Log) updateIndicator() {
-	status := "Off"
-	if l.autoScroll == 1 {
-		status = "On"
-	}
-	l.status.update([]string{fmt.Sprintf("Autoscroll: %s", status)})
+	l.log(strings.Join(buff[:index], "\n"))
+	l.app.QueueUpdateDraw(func() {
+		l.scrollIndicator.Refresh()
+		l.logs.ScrollToEnd()
+	})
 }
 
 // ----------------------------------------------------------------------------
 // Actions...
 
-func (l *Log) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
+// SaveCmd dumps the logs to file.
+func (l *Log) SaveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path, err := saveData(l.app.Config.K9s.CurrentCluster, l.path, l.logs.GetText(true)); err != nil {
 		l.app.Flash().Err(err)
 	} else {
@@ -183,28 +172,18 @@ func saveData(cluster, name, data string) (string, error) {
 		log.Error().Err(err).Msgf("LogFile create %s", path)
 		return "", nil
 	}
-	if _, err := fmt.Fprintf(file, data); err != nil {
+
+	if _, err := file.Write([]byte(data)); err != nil {
 		return "", err
 	}
 
 	return path, nil
 }
 
-func (l *Log) toggleScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if atomic.LoadInt32(&l.autoScroll) == 0 {
-		atomic.StoreInt32(&l.autoScroll, 1)
-	} else {
-		atomic.StoreInt32(&l.autoScroll, 0)
-	}
-
-	if atomic.LoadInt32(&l.autoScroll) == 1 {
-		l.app.Flash().Info("Autoscroll is on.")
-		l.logs.ScrollToEnd()
-	} else {
-		l.logs.LineUp()
-		l.app.Flash().Info("Autoscroll is off.")
-	}
-	l.updateIndicator()
+// ToggleAutoScrollCmd toggles auto scrolling of logs.
+func (l *Log) ToggleAutoScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
+	l.scrollIndicator.ToggleAutoScroll()
+	l.scrollIndicator.Refresh()
 
 	return nil
 }

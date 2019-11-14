@@ -55,7 +55,7 @@ type (
 func NewPodList(c Connection, ns string) List {
 	return NewList(
 		ns,
-		"po",
+		"pods",
 		NewPod(c),
 		AllVerbsAccess|DescribeAccess,
 	)

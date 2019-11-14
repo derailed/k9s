@@ -1,6 +1,7 @@
 package view
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/derailed/k9s/internal/model"
@@ -18,11 +19,13 @@ const (
 	shellCheck   = "command -v bash >/dev/null && exec bash || exec sh"
 )
 
-type loggable interface {
+type Loggable interface {
 	getSelection() string
 	getList() resource.List
 	Pop() (model.Component, bool)
 }
+
+var _ Loggable = &Pod{}
 
 // Pod represents a pod viewer.
 type Pod struct {
@@ -34,20 +37,23 @@ type Pod struct {
 
 // NewPod returns a new viewer.
 func NewPod(title, gvr string, list resource.List) ResourceViewer {
-	p := Pod{
+	return &Pod{
 		Resource: NewResource(title, gvr, list),
 	}
+}
+
+// Init initializes the viewer.
+func (p *Pod) Init(ctx context.Context) {
 	p.extraActionsFn = p.extraActions
 	p.enterFn = p.listContainers
+	p.Resource.Init(ctx)
 
-	p.picker = newSelectList(&p)
+	p.picker = newSelectList(p)
 	p.picker.setActions(ui.KeyActions{
 		tcell.KeyEscape: {Description: "Back", Action: p.backCmd, Visible: true},
 	})
-
-	p.logs = NewLogs(list.GetName(), &p)
-
-	return &p
+	p.logs = NewLogs(p.list.GetName(), p)
+	p.logs.Init(ctx)
 }
 
 func (p *Pod) extraActions(aa ui.KeyActions) {
@@ -143,9 +149,8 @@ func (p *Pod) viewLogs(prev bool) bool {
 	return true
 }
 
-func (p *Pod) showLogs(path, co string, parent loggable, prev bool) {
-	l := p.GetPrimitive("logs").(*Logs)
-	l.reload(co, parent, prev)
+func (p *Pod) showLogs(path, co string, parent Loggable, prev bool) {
+	p.logs.reload(co, parent, prev)
 	p.Push(p.logs)
 }
 
@@ -178,16 +183,6 @@ func (p *Pod) shellIn(path, co string) {
 	p.Stop()
 	shellIn(p.app, path, co)
 	p.Start()
-}
-
-func (p *Pod) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		t := p.masterPage()
-		t.SetSortCol(t.NameColIndex()+col, 0, asc)
-		t.Refresh()
-
-		return nil
-	}
 }
 
 // ----------------------------------------------------------------------------

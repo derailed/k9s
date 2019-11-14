@@ -40,9 +40,7 @@ func (r *RestartableResource) restartCmd(evt *tcell.EventKey) *tcell.EventKey {
 		} else {
 			r.app.Flash().Infof("Rollout restart in progress for `%s...", sel)
 		}
-	}, func() {
-		r.showMaster()
-	})
+	}, func() {})
 
 	return nil
 }

@@ -60,6 +60,8 @@ func podColorer(ns string, r *resource.RowEvent) tcell.Color {
 	case "Completed":
 		return ui.CompletedColor
 	case "Running":
+	case "Terminating":
+		return ui.KillColor
 	default:
 		c = ui.ErrColor
 	}

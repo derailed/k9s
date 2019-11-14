@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
@@ -22,8 +21,7 @@ import (
 )
 
 const (
-	benchTitle    = "Benchmarks"
-	benchTitleFmt = " [seagreen::b]%s([fuchsia::b]%d[fuchsia::-])[seagreen::-] "
+	benchTitle = "Benchmarks"
 )
 
 var (
@@ -42,13 +40,14 @@ type Bench struct {
 	cancelFn context.CancelFunc
 }
 
-func NewBench(title, gvr string, _ resource.List) ResourceViewer {
+// NewBench returns a new viewer.
+func NewBench(_, _ string, _ resource.List) ResourceViewer {
 	return &Bench{
-		MasterDetail: NewMasterDetail(title),
+		MasterDetail: NewMasterDetail(benchTitle, ""),
 	}
 }
 
-// Init the view.
+// Init initializes the viewer.
 func (b *Bench) Init(ctx context.Context) {
 	b.MasterDetail.Init(ctx)
 	b.keyBindings()
@@ -101,7 +100,7 @@ func (b *Bench) refresh() {
 
 func (b *Bench) keyBindings() {
 	aa := ui.KeyActions{
-		ui.KeyP:        ui.NewKeyAction("Previous", b.app.PrevCmd, false),
+		tcell.KeyEsc:   ui.NewKeyAction("Back", b.app.PrevCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Enter", b.enterCmd, false),
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", b.deleteCmd, false),
 	}
@@ -110,16 +109,6 @@ func (b *Bench) keyBindings() {
 
 func (b *Bench) getTitle() string {
 	return benchTitle
-}
-
-func (b *Bench) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		tv := b.masterPage()
-		tv.SetSortCol(tv.NameColIndex()+col, 0, asc)
-		tv.Refresh()
-
-		return nil
-	}
 }
 
 func (b *Bench) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -170,14 +159,6 @@ func (b *Bench) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (b *Bench) benchFile() string {
 	r := b.masterPage().GetSelectedRowIndex()
 	return ui.TrimCell(b.masterPage().Table, r, 7)
-}
-
-func (b *Bench) Hints() model.MenuHints {
-	if h, ok := b.CurrentPage().Item.(model.Hinter); ok {
-		return h.Hints()
-	}
-
-	return nil
 }
 
 func (b *Bench) hydrate() resource.TableData {

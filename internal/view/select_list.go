@@ -13,11 +13,11 @@ import (
 type selectList struct {
 	*tview.List
 
-	parent  loggable
+	parent  Loggable
 	actions ui.KeyActions
 }
 
-func newSelectList(parent loggable) *selectList {
+func newSelectList(parent Loggable) *selectList {
 	v := selectList{List: tview.NewList(), actions: ui.KeyActions{}}
 	{
 		v.parent = parent

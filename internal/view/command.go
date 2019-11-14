@@ -100,7 +100,10 @@ func (c *command) run(cmd string) bool {
 	switch cmds[0] {
 	case "ctx", "context", "contexts":
 		if len(cmds) == 2 {
-			c.app.switchCtx(cmds[1], true)
+			if err := c.app.switchCtx(cmds[1], true); err != nil {
+				log.Error().Err(err).Msg("Context switch failed!")
+				return false
+			}
 			return true
 		}
 		view := c.componentFor(gvr, v)

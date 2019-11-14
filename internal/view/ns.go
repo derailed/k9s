@@ -7,12 +7,12 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 )
 
 const (
 	favNSIndicator     = "+"
 	defaultNSIndicator = "(*)"
-	deltaNSIndicator   = "(𝜟)"
 )
 
 var nsCleanser = regexp.MustCompile(`(\w+)[+|(*)|(𝜟)]*`)
@@ -59,7 +59,9 @@ func (n *Namespace) useNamespace(ns string) {
 	} else {
 		n.app.Flash().Infof("Namespace %s is now active!", ns)
 	}
-	n.app.Config.Save()
+	if err := n.app.Config.Save(); err != nil {
+		log.Error().Err(err).Msg("Config file save failed!")
+	}
 	n.app.startInformer(ns)
 }
 
@@ -79,11 +81,11 @@ func (n *Namespace) decorate(data resource.TableData) resource.TableData {
 	}
 	for k, r := range data.Rows {
 		if config.InList(n.app.Config.FavNamespaces(), k) {
-			r.Fields[0] += "+"
+			r.Fields[0] += favNSIndicator
 			r.Action = resource.Unchanged
 		}
 		if n.app.Config.ActiveNamespace() == k {
-			r.Fields[0] += "(*)"
+			r.Fields[0] += defaultNSIndicator
 			r.Action = resource.Unchanged
 		}
 	}

@@ -17,6 +17,7 @@ import (
 const (
 	menuIndexFmt = " [key:bg:b]<%d> [fg:bg:d]%s "
 	maxRows      = 7
+	chopWidth    = 20
 )
 
 var menuRX = regexp.MustCompile(`\d`)
@@ -36,9 +37,16 @@ func NewMenu(styles *config.Styles) *Menu {
 	return &v
 }
 
-// HintsChanged updates the menu based on hints changing.
-func (v *Menu) HintsChanged(hh model.MenuHints) {
-	v.HydrateMenu(hh)
+func (v *Menu) StackPushed(c model.Component) {
+	v.HydrateMenu(c.Hints())
+}
+
+func (v *Menu) StackPopped(o, n model.Component) {
+	v.HydrateMenu(n.Hints())
+}
+
+func (v *Menu) StackTop(t model.Component) {
+	v.HydrateMenu(t.Hints())
 }
 
 // HydrateMenu populate menu ui from hints.
@@ -58,17 +66,34 @@ func (v *Menu) HydrateMenu(hh model.MenuHints) {
 	}
 }
 
+func (v *Menu) hasDigits(hh model.MenuHints) bool {
+	for _, h := range hh {
+		if !h.Visible {
+			continue
+		}
+		if menuRX.MatchString(h.Mnemonic) {
+			return true
+		}
+	}
+	return false
+}
+
 func (v *Menu) buildMenuTable(hh model.MenuHints) [][]string {
 	table := make([]model.MenuHints, maxRows+1)
 
 	colCount := (len(hh) / maxRows) + 1
+
+	if v.hasDigits(hh) {
+		colCount++
+	}
+
 	for row := 0; row < maxRows; row++ {
-		table[row] = make(model.MenuHints, colCount+1)
+		table[row] = make(model.MenuHints, colCount)
 	}
 
 	var row, col int
 	firstCmd := true
-	maxKeys := make([]int, colCount+1)
+	maxKeys := make([]int, colCount)
 	for _, h := range hh {
 		if !h.Visible {
 			continue
@@ -76,6 +101,9 @@ func (v *Menu) buildMenuTable(hh model.MenuHints) [][]string {
 		isDigit := menuRX.MatchString(h.Mnemonic)
 		if !isDigit && firstCmd {
 			row, col, firstCmd = 0, col+1, false
+			if table[0][0].IsBlank() {
+				col = 0
+			}
 		}
 		if maxKeys[col] < len(h.Mnemonic) {
 			maxKeys[col] = len(h.Mnemonic)
@@ -142,7 +170,7 @@ func formatNSMenu(i int, name string, styles config.Frame) string {
 	fmat := strings.Replace(menuIndexFmt, "[key", "["+styles.Menu.NumKeyColor, 1)
 	fmat = strings.Replace(fmat, ":bg:", ":"+styles.Title.BgColor+":", -1)
 	fmat = strings.Replace(fmat, "[fg", "["+styles.Menu.FgColor, 1)
-	return fmt.Sprintf(fmat, i, Truncate(name, 14))
+	return fmt.Sprintf(fmat, i, Truncate(name, chopWidth))
 }
 
 func formatPlainMenu(h model.MenuHint, size int, styles config.Frame) string {

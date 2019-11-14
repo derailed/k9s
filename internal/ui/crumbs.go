@@ -6,7 +6,6 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 )
 
 // Crumbs represents user breadcrumbs.
@@ -35,14 +34,12 @@ func NewCrumbs(styles *config.Styles) *Crumbs {
 // StackPushed indicates a new item was added.
 func (v *Crumbs) StackPushed(c model.Component) {
 	v.stack.Push(c)
-	log.Debug().Msgf(">>> PUSH %v", v.stack.Flatten())
 	v.refresh(v.stack.Flatten())
 }
 
 // StackPopped indicates an item was deleted
 func (v *Crumbs) StackPopped(_, _ model.Component) {
 	v.stack.Pop()
-	log.Debug().Msgf("<<< POP %v", v.stack.Flatten())
 	v.refresh(v.stack.Flatten())
 }
 
