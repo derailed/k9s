@@ -13,5 +13,5 @@ func TestDaemonSet(t *testing.T) {
 	v.Init(makeCtx())
 
 	assert.Equal(t, "ds", v.Name())
-	assert.Equal(t, 23, len(v.Hints()))
+	assert.Equal(t, 24, len(v.Hints()))
 }

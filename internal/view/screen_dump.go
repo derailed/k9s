@@ -48,7 +48,7 @@ func (s *ScreenDump) Init(ctx context.Context) {
 		table.SetBorderFocusColor(tcell.ColorSteelBlue)
 		table.SetSelectedStyle(tcell.ColorWhite, tcell.ColorRoyalBlue, tcell.AttrNone)
 		table.SetColorerFn(dumpColorer)
-		table.SetActiveNS(resource.AllNamespaces)
+		table.ActiveNS = resource.AllNamespaces
 		table.SetSortCol(table.NameColIndex(), 0, true)
 		table.SelectRow(1, true)
 	}

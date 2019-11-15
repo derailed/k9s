@@ -2,8 +2,8 @@ package view
 
 import (
 	"context"
+	"fmt"
 	"reflect"
-	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/resource"
@@ -42,7 +42,7 @@ func NewSubject(title, gvr string, list resource.List) ResourceViewer {
 
 // Init initializes the view.
 func (s *Subject) Init(ctx context.Context) {
-	s.SetActiveNS("*")
+	s.ActiveNS = "*"
 	s.SetColorerFn(rbacColorer)
 	s.Table.Init(ctx)
 	s.bindKeys()
@@ -66,8 +66,9 @@ func (s *Subject) Start() {
 				log.Debug().Msgf("Subject:%s Watch bailing out!", s.subjectKind)
 				return
 			case <-time.After(time.Duration(s.app.Config.K9s.GetRefreshRate()) * time.Second):
-				s.refresh()
-				s.app.Draw()
+				s.app.QueueUpdateDraw(func() {
+					s.refresh()
+				})
 			}
 		}
 	}(ctx)
@@ -88,9 +89,10 @@ func (s *Subject) masterPage() *Table {
 }
 
 func (s *Subject) bindKeys() {
-	// No time data or ns
 	s.RmAction(ui.KeyShiftA)
 	s.RmAction(ui.KeyShiftP)
+	s.RmAction(tcell.KeyCtrlSpace)
+	s.RmAction(ui.KeySpace)
 
 	s.AddActions(ui.KeyActions{
 		tcell.KeyEnter:  ui.NewKeyAction("Policies", s.policyCmd, true),
@@ -119,7 +121,6 @@ func (s *Subject) refresh() {
 }
 
 func (s *Subject) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msg("YO!!")
 	if !s.RowSelected() {
 		return evt
 	}
@@ -296,12 +297,14 @@ func mapCmdSubject(subject string) string {
 }
 
 func mapFuSubject(subject string) string {
-	switch strings.ToLower(subject) {
+	switch subject {
 	case group:
 		return "g"
 	case sa:
 		return "s"
-	default:
+	case user:
 		return "u"
+	default:
+		panic(fmt.Sprintf("Unknown FU subject %q", subject))
 	}
 }

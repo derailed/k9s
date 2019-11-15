@@ -7,6 +7,7 @@ import (
 
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/gdamore/tcell"
 )
 
 // Context presents a context viewer.
@@ -31,6 +32,8 @@ func (c *Context) Init(ctx context.Context) {
 
 func (c *Context) extraActions(aa ui.KeyActions) {
 	c.masterPage().RmAction(ui.KeyShiftA)
+	c.masterPage().RmAction(tcell.KeyCtrlSpace)
+	c.masterPage().RmAction(ui.KeySpace)
 }
 
 func (c *Context) useCtx(app *App, _, res, sel string) {

@@ -216,7 +216,7 @@ func newTable() Table {
 		FgColor:     "aqua",
 		BgColor:     "black",
 		CursorColor: "aqua",
-		MarkColor:   "darkgoldenrod",
+		MarkColor:   "dodgerblue",
 		Header:      newTableHeader(),
 	}
 }

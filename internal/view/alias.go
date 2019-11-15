@@ -35,7 +35,7 @@ func (a *Alias) Init(ctx context.Context) {
 	a.SetBorderFocusColor(tcell.ColorMediumSpringGreen)
 	a.SetSelectedStyle(tcell.ColorWhite, tcell.ColorMediumSpringGreen, tcell.AttrNone)
 	a.SetColorerFn(aliasColorer)
-	a.SetActiveNS("")
+	a.ActiveNS = resource.AllNamespaces
 	a.registerActions()
 
 	a.Update(a.hydrate())
@@ -53,6 +53,8 @@ func (a *Alias) registerActions() {
 	a.RmAction(ui.KeyShiftA)
 	a.RmAction(ui.KeyShiftN)
 	a.RmAction(tcell.KeyCtrlS)
+	a.RmAction(tcell.KeyCtrlSpace)
+	a.RmAction(ui.KeySpace)
 
 	a.AddActions(ui.KeyActions{
 		tcell.KeyEnter:  ui.NewKeyAction("Goto Resource", a.gotoCmd, true),
@@ -76,7 +78,7 @@ func (a *Alias) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (a *Alias) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	r, _ := a.GetSelection()
 	if r != 0 {
-		s := ui.TrimCell(a.Table.Table, r, 1)
+		s := ui.TrimCell(a.Table.SelectTable, r, 1)
 		tokens := strings.Split(s, ",")
 		a.app.Content.Pop()
 		if !a.app.gotoResource(tokens[0]) {

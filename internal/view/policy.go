@@ -55,9 +55,9 @@ func (p *Policy) Init(ctx context.Context) {
 	p.bindKeys()
 
 	p.SetSortCol(1, len(rbacHeader), false)
-	p.Start()
 	p.refresh()
 	p.SelectRow(1, true)
+	p.Start()
 }
 
 func (p *Policy) Name() string {
@@ -65,6 +65,7 @@ func (p *Policy) Name() string {
 }
 
 func (p *Policy) Start() {
+	p.Stop()
 	ctx, cancel := context.WithCancel(context.Background())
 	p.cancel = cancel
 	go func(ctx context.Context) {
@@ -74,7 +75,6 @@ func (p *Policy) Start() {
 				return
 			case <-time.After(time.Duration(p.app.Config.K9s.GetRefreshRate()) * time.Second):
 				p.refresh()
-				p.app.Draw()
 			}
 		}
 	}(ctx)
@@ -88,6 +88,8 @@ func (p *Policy) Stop() {
 
 func (p *Policy) bindKeys() {
 	p.RmAction(ui.KeyShiftA)
+	p.RmAction(tcell.KeyCtrlSpace)
+	p.RmAction(ui.KeySpace)
 
 	p.AddActions(ui.KeyActions{
 		tcell.KeyEscape: ui.NewKeyAction("Back", p.resetCmd, false),
@@ -109,7 +111,9 @@ func (p *Policy) refresh() {
 		log.Error().Err(err).Msgf("Refresh for %s:%s", p.subjectKind, p.subjectName)
 		p.app.Flash().Err(err)
 	}
-	p.Update(data)
+	p.app.QueueUpdateDraw(func() {
+		p.Update(data)
+	})
 }
 
 func (p *Policy) resetCmd(evt *tcell.EventKey) *tcell.EventKey {

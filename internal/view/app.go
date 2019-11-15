@@ -399,9 +399,8 @@ func (a *App) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.CmdBuff().IsActive() && !a.CmdBuff().Empty() {
-		a.Content.Stack.Reset()
-		if !a.gotoResource(a.GetCmd()) {
-			a.Flash().Errf("Goto %s failed!", a.GetCmd())
+		if a.gotoResource(a.GetCmd()) {
+			a.Content.Stack.ClearHistory()
 		}
 		a.ResetCmd()
 		return nil

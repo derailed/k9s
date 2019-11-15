@@ -148,7 +148,7 @@ func (b *Bench) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (b *Bench) benchFile() string {
 	r := b.masterPage().GetSelectedRowIndex()
-	return ui.TrimCell(b.masterPage().Table, r, 7)
+	return ui.TrimCell(b.masterPage().SelectTable, r, 7)
 }
 
 func (b *Bench) hydrate() resource.TableData {

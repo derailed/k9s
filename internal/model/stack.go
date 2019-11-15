@@ -121,11 +121,14 @@ func (s *Stack) Peek() []Component {
 	return s.components
 }
 
-// Reset clear out the stack.
-func (s *Stack) Reset() {
+// ClearHistory clear out the stack history up to most recent.
+func (s *Stack) ClearHistory() {
+	s.DumpStack()
+	top := s.Top()
 	for range s.components {
 		s.Pop()
 	}
+	s.Push(top)
 }
 
 // Empty returns true if the stack is empty.

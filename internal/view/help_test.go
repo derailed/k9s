@@ -20,7 +20,7 @@ func TestHelpNew(t *testing.T) {
 	v := view.NewHelp()
 	v.Init(ctx)
 
-	assert.Equal(t, 32, v.GetRowCount())
+	assert.Equal(t, 33, v.GetRowCount())
 	assert.Equal(t, 10, v.GetColumnCount())
 	assert.Equal(t, "<esc>", v.GetCell(1, 0).Text)
 	assert.Equal(t, "Back", v.GetCell(1, 1).Text)

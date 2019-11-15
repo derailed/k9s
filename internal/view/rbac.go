@@ -82,7 +82,7 @@ func NewRbac(app *App, ns, name string, kind roleKind) *Rbac {
 
 // Init initializes the view.
 func (r *Rbac) Init(ctx context.Context) {
-	r.SetActiveNS(r.app.Config.ActiveNamespace())
+	r.ActiveNS = r.app.Config.ActiveNamespace()
 	r.SetColorerFn(rbacColorer)
 	r.Table.Init(ctx)
 	r.bindKeys()
@@ -131,6 +131,8 @@ func (r *Rbac) Name() string {
 
 func (r *Rbac) bindKeys() {
 	r.RmAction(ui.KeyShiftA)
+	r.RmAction(tcell.KeyCtrlSpace)
+	r.RmAction(ui.KeySpace)
 
 	r.AddActions(ui.KeyActions{
 		tcell.KeyEscape: ui.NewKeyAction("Reset", r.resetCmd, false),
@@ -156,7 +158,6 @@ func (r *Rbac) refresh() {
 }
 
 func (r *Rbac) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msgf("!!!YO!!!!")
 	if !r.SearchBuff().Empty() {
 		r.SearchBuff().Reset()
 		return nil

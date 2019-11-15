@@ -57,6 +57,9 @@ func (v *Help) Hints() model.MenuHints {
 }
 
 func (v *Help) bindKeys() {
+	v.RmAction(tcell.KeyCtrlSpace)
+	v.RmAction(ui.KeySpace)
+
 	v.actions = ui.KeyActions{
 		tcell.KeyEsc:   ui.NewKeyAction("Back", v.backCmd, true),
 		tcell.KeyEnter: ui.NewKeyAction("Back", v.backCmd, false),

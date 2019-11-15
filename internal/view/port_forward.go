@@ -48,7 +48,7 @@ func (p *PortForward) Init(ctx context.Context) {
 	tv.SetBorderFocusColor(tcell.ColorDodgerBlue)
 	tv.SetSelectedStyle(tcell.ColorWhite, tcell.ColorDodgerBlue, tcell.AttrNone)
 	tv.SetColorerFn(forwardColorer)
-	tv.SetActiveNS("")
+	tv.ActiveNS = resource.AllNamespaces
 	tv.SetSortCol(tv.NameColIndex()+6, 0, true)
 	tv.Select(1, 0)
 
@@ -136,13 +136,13 @@ func (p *PortForward) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	tv := p.masterPage()
 	r, _ := tv.GetSelection()
-	cfg, co := defaultConfig(), ui.TrimCell(tv.Table, r, 2)
+	cfg, co := defaultConfig(), ui.TrimCell(tv.SelectTable, r, 2)
 	if b, ok := p.app.Bench.Benchmarks.Containers[containerID(sel, co)]; ok {
 		cfg = b
 	}
 	cfg.Name = sel
 
-	base := ui.TrimCell(tv.Table, r, 4)
+	base := ui.TrimCell(tv.SelectTable, r, 4)
 	var err error
 	if p.bench, err = perf.NewBenchmark(base, cfg); err != nil {
 		p.app.Flash().Errf("Bench failed %v", err)
@@ -183,8 +183,8 @@ func (p *PortForward) getSelectedItem() string {
 		return ""
 	}
 	return fwFQN(
-		fqn(ui.TrimCell(tv.Table, r, 0), ui.TrimCell(tv.Table, r, 1)),
-		ui.TrimCell(tv.Table, r, 2),
+		fqn(ui.TrimCell(tv.SelectTable, r, 0), ui.TrimCell(tv.SelectTable, r, 1)),
+		ui.TrimCell(tv.SelectTable, r, 2),
 	)
 }
 

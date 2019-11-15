@@ -15,7 +15,7 @@ import (
 )
 
 func trimCellRelative(t *Table, row, col int) string {
-	return ui.TrimCell(t.Table, row, t.NameColIndex()+col)
+	return ui.TrimCell(t.SelectTable, row, t.NameColIndex()+col)
 }
 
 func saveTable(cluster, name string, data resource.TableData) (string, error) {

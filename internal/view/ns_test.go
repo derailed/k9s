@@ -13,5 +13,5 @@ func TestNSCleanser(t *testing.T) {
 	ns.Init(makeCtx())
 
 	assert.Equal(t, "ns", ns.Name())
-	assert.Equal(t, 20, len(ns.Hints()))
+	assert.Equal(t, 21, len(ns.Hints()))
 }

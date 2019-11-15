@@ -23,7 +23,6 @@ func NewTable(title string) *Table {
 
 func (t *Table) Init(ctx context.Context) {
 	t.app = mustExtractApp(ctx)
-
 	ctx = context.WithValue(ctx, ui.KeyStyles, t.app.Styles)
 	t.Table.Init(ctx)
 
@@ -65,6 +64,8 @@ func (t *Table) setFilterFn(fn func(string)) {
 
 func (t *Table) bindKeys() {
 	t.AddActions(ui.KeyActions{
+		ui.KeySpace:         ui.NewKeyAction("Mark", t.markCmd, true),
+		tcell.KeyCtrlSpace:  ui.NewKeyAction("Marks Clear", t.clearMarksCmd, true),
 		tcell.KeyCtrlS:      ui.NewKeyAction("Save", t.saveCmd, true),
 		ui.KeySlash:         ui.NewKeyAction("Filter Mode", t.activateCmd, false),
 		tcell.KeyEscape:     ui.NewKeyAction("Filter Reset", t.resetCmd, false),
@@ -76,6 +77,25 @@ func (t *Table) bindKeys() {
 		ui.KeyShiftN:        ui.NewKeyAction("Sort Name", t.SortColCmd(0), false),
 		ui.KeyShiftA:        ui.NewKeyAction("Sort Age", t.SortColCmd(-1), false),
 	})
+}
+
+func (t *Table) markCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !t.RowSelected() {
+		return evt
+	}
+	t.ToggleMark()
+	t.Refresh()
+
+	return nil
+}
+
+func (t *Table) clearMarksCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !t.RowSelected() {
+		return evt
+	}
+	t.ClearMarks()
+
+	return nil
 }
 
 func (t *Table) filterCmd(evt *tcell.EventKey) *tcell.EventKey {

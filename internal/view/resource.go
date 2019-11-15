@@ -169,14 +169,14 @@ func (r *Resource) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	sel := r.masterPage().GetSelectedItems()
 	var msg string
 	if len(sel) > 1 {
-		msg = fmt.Sprintf("Delete %d selected %s?", len(sel), r.list.GetName())
+		msg = fmt.Sprintf("Delete %d marked %s?", len(sel), r.list.GetName())
 	} else {
 		msg = fmt.Sprintf("Delete %s %s?", r.list.GetName(), sel[0])
 	}
 	dialog.ShowDelete(r.Pages, msg, func(cascade, force bool) {
 		r.masterPage().ShowDeleted()
 		if len(sel) > 1 {
-			r.app.Flash().Infof("Delete %d selected %s", len(sel), r.list.GetName())
+			r.app.Flash().Infof("Delete %d marked %s", len(sel), r.list.GetName())
 		} else {
 			r.app.Flash().Infof("Delete resource %s %s", r.list.GetName(), sel[0])
 		}
@@ -189,17 +189,6 @@ func (r *Resource) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		}
 		r.refresh()
 	}, func() {})
-	return nil
-}
-
-func (r *Resource) markCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !r.masterPage().RowSelected() {
-		return evt
-	}
-	r.masterPage().ToggleMark()
-	r.refresh()
-	r.app.Draw()
-
 	return nil
 }
 
@@ -373,7 +362,6 @@ func (r *Resource) refreshActions() {
 		tcell.KeyEnter: ui.NewKeyAction("Enter", r.enterCmd, false),
 		tcell.KeyCtrlR: ui.NewKeyAction("Refresh", r.refreshCmd, false),
 	}
-	aa[ui.KeySpace] = ui.NewKeyAction("Mark", r.markCmd, true)
 	r.namespaceActions(aa)
 	r.defaultActions(aa)
 

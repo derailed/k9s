@@ -57,7 +57,17 @@ func (v *Menu) StackTop(t model.Component) {
 func (v *Menu) HydrateMenu(hh model.MenuHints) {
 	v.Clear()
 	sort.Sort(hh)
-	t := v.buildMenuTable(hh)
+
+	table := make([]model.MenuHints, maxRows+1)
+	colCount := (len(hh) / maxRows) + 1
+	if v.hasDigits(hh) {
+		colCount++
+	}
+	for row := 0; row < maxRows; row++ {
+		table[row] = make(model.MenuHints, colCount)
+	}
+	t := v.buildMenuTable(hh, table, colCount)
+
 	for row := 0; row < len(t); row++ {
 		for col := 0; col < len(t[row]); col++ {
 			if len(t[row][col]) == 0 {
@@ -82,16 +92,7 @@ func (v *Menu) hasDigits(hh model.MenuHints) bool {
 	return false
 }
 
-func (v *Menu) buildMenuTable(hh model.MenuHints) [][]string {
-	table := make([][]string, maxRows+1)
-	colCount := (len(hh) / maxRows) + 1
-	if v.hasDigits(hh) {
-		colCount++
-	}
-	for row := 0; row < maxRows; row++ {
-		table[row] = make([]string, colCount)
-	}
-
+func (v *Menu) buildMenuTable(hh model.MenuHints, table []model.MenuHints, colCount int) [][]string {
 	var row, col int
 	firstCmd := true
 	maxKeys := make([]int, colCount)
@@ -102,21 +103,44 @@ func (v *Menu) buildMenuTable(hh model.MenuHints) [][]string {
 
 		if !menuRX.MatchString(h.Mnemonic) && firstCmd {
 			row, col, firstCmd = 0, col+1, false
-			if table[0][0] == "" {
+			if table[0][0].IsBlank() {
 				col = 0
 			}
 		}
 		if maxKeys[col] < len(h.Mnemonic) {
 			maxKeys[col] = len(h.Mnemonic)
 		}
-		table[row][col] = keyConv(v.formatMenu(h, maxKeys[col]))
+		table[row][col] = h
 		row++
 		if row >= maxRows {
 			row, col = 0, col+1
 		}
 	}
 
-	return table
+	out := make([][]string, len(table))
+	for r := range out {
+		out[r] = make([]string, len(table[r]))
+	}
+	v.layout(table, maxKeys, out)
+
+	return out
+}
+
+func (v *Menu) layout(table []model.MenuHints, mm []int, out [][]string) {
+	for r := range table {
+		for c := range table[r] {
+			out[r][c] = keyConv(v.formatMenu(table[r][c], mm[c]))
+		}
+	}
+}
+
+func (v *Menu) formatMenu(h model.MenuHint, size int) string {
+	i, err := strconv.Atoi(h.Mnemonic)
+	if err == nil {
+		return formatNSMenu(i, h.Description, v.styles.Frame())
+	}
+
+	return formatPlainMenu(h, size, v.styles.Frame())
 }
 
 // ----------------------------------------------------------------------------
@@ -145,15 +169,6 @@ func toMnemonic(s string) string {
 	}
 
 	return "<" + keyConv(strings.ToLower(s)) + ">"
-}
-
-func (v *Menu) formatMenu(h model.MenuHint, size int) string {
-	i, err := strconv.Atoi(h.Mnemonic)
-	if err == nil {
-		return formatNSMenu(i, h.Description, v.styles.Frame())
-	}
-
-	return formatPlainMenu(h, size, v.styles.Frame())
 }
 
 func formatNSMenu(i int, name string, styles config.Frame) string {

@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"fmt"
 	"regexp"
 	"sort"
@@ -37,8 +38,16 @@ var (
 	fuzzyCmd = regexp.MustCompile(`\A\-f`)
 )
 
+func mustExtractSyles(ctx context.Context) *config.Styles {
+	styles, ok := ctx.Value(KeyStyles).(*config.Styles)
+	if !ok {
+		log.Fatal().Msg("Expecting valid styles")
+	}
+	return styles
+}
+
 // TrimCell removes superfluous padding.
-func TrimCell(tv *Table, row, col int) string {
+func TrimCell(tv *SelectTable, row, col int) string {
 	c := tv.GetCell(row, col)
 	if c == nil {
 		log.Error().Err(fmt.Errorf("No cell at location [%d:%d]", row, col)).Msg("Trim cell failed!")
