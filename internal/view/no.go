@@ -35,9 +35,6 @@ func (n *Node) showPods(app *App, _, _, sel string) {
 }
 
 func (n *Node) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	// BOZO!!
-	// n.App.inject(v)
-
 	return nil
 }
 
@@ -50,10 +47,6 @@ func showPods(app *App, ns, labelSel, fieldSel string, a ui.ActionHandler) {
 
 	v := NewPod("Pod", "v1/pods", list)
 	v.setColorerFn(podColorer)
-	// BOZO!!
-	// v.masterPage().AddActions(ui.KeyActions{
-	// 	tcell.KeyEsc: ui.NewKeyAction("Back", a, true),
-	// })
 	if err := app.Config.SetActiveNamespace(ns); err != nil {
 		log.Error().Err(err).Msg("Config NS set failed!")
 	}
