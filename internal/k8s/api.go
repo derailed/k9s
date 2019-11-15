@@ -66,17 +66,12 @@ type (
 		CanIAccess(ns, rvg string, verbs []string) (bool, error)
 	}
 
-	k8sClient struct {
-		client    kubernetes.Interface
-		dClient   dynamic.Interface
-		nsClient  dynamic.NamespaceableResourceInterface
-		mxsClient *versioned.Clientset
-	}
-
 	// APIClient represents a Kubernetes api client.
 	APIClient struct {
-		k8sClient
-
+		client          kubernetes.Interface
+		dClient         dynamic.Interface
+		nsClient        dynamic.NamespaceableResourceInterface
+		mxsClient       *versioned.Clientset
 		cachedDiscovery *disk.CachedDiscoveryClient
 		config          *Config
 		useMetricServer bool

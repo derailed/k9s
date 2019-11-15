@@ -13,7 +13,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const policyTitle = "Policy"
+const (
+	policyTitle = "Policy"
+	group       = "Group"
+	user        = "User"
+	sa          = "ServiceAccount"
+)
 
 var policyHeader = append(resource.Row{"NAMESPACE", "NAME", "API GROUP", "BINDING"}, rbacHeaderVerbs...)
 
@@ -294,10 +299,10 @@ func policyRow(ns, res, grp, binding string) resource.Row {
 func mapSubject(subject string) string {
 	switch subject {
 	case "g":
-		return "Group"
+		return group
 	case "s":
-		return "ServiceAccount"
+		return sa
 	default:
-		return "User"
+		return user
 	}
 }

@@ -88,8 +88,9 @@ func showRBAC(app *App, ns, resource, selection string) {
 func showCRD(app *App, ns, resource, selection string) {
 	log.Debug().Msgf("Launching CRD %q -- %q -- %q", ns, resource, selection)
 	tokens := strings.Split(selection, ".")
-	app.gotoResource(tokens[0], true)
-
+	if !app.gotoResource(tokens[0]) {
+		app.Flash().Errf("Goto %s failed", tokens[0])
+	}
 }
 
 func showClusterRole(app *App, ns, resource, selection string) {

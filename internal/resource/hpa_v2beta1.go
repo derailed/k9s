@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 
@@ -57,7 +58,10 @@ func (r *HorizontalPodAutoscalerV2Beta1) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	hpa := i.(*autoscalingv2beta1.HorizontalPodAutoscaler)
+	hpa, ok := i.(*autoscalingv2beta1.HorizontalPodAutoscaler)
+	if !ok {
+		return "", errors.New("expecting hpa resource")
+	}
 	hpa.TypeMeta.APIVersion = extractVersion(hpa.Annotations)
 	hpa.TypeMeta.Kind = "HorizontalPodAutoscaler"
 
@@ -129,7 +133,7 @@ func (r *HorizontalPodAutoscalerV2Beta1) toMetrics(specs []autoscalingv2beta1.Me
 }
 
 func (r *HorizontalPodAutoscalerV2Beta1) checkHPAType(i int, spec autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {
-	current := "<unknown>"
+	current := UnknownValue
 
 	switch spec.Type {
 	case autoscalingv2beta1.ExternalMetricSourceType:
@@ -152,7 +156,7 @@ func (r *HorizontalPodAutoscalerV2Beta1) checkHPAType(i int, spec autoscalingv2b
 }
 
 func (*HorizontalPodAutoscalerV2Beta1) externalMetrics(i int, spec autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {
-	current := "<unknown>"
+	current := UnknownValue
 	if spec.External.TargetAverageValue != nil {
 		if len(statuses) > i && statuses[i].External != nil && &statuses[i].External.CurrentAverageValue != nil {
 			current = statuses[i].External.CurrentAverageValue.String()
@@ -167,7 +171,7 @@ func (*HorizontalPodAutoscalerV2Beta1) externalMetrics(i int, spec autoscalingv2
 }
 
 func (*HorizontalPodAutoscalerV2Beta1) resourceMetrics(i int, spec autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {
-	current := "<unknown>"
+	current := UnknownValue
 
 	if status := checkTargetMetrics(i, spec, statuses); status != "" {
 		return status

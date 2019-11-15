@@ -9,11 +9,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const (
-	// ContainerIndex marker for stored containers.
-	ContainerIndex string = "co"
-	containerCols         = 12
-)
+// ContainerIndex marker for stored containers.
+const ContainerIndex = "co"
 
 // Container tracks container activities.
 type Container struct {
@@ -40,7 +37,10 @@ func (c *Container) Get(fqn string, opts metav1.GetOptions) (interface{}, error)
 	if !ok {
 		return nil, fmt.Errorf("Pod<containers> %s not found", fqn)
 	}
-	po := o.(*v1.Pod)
+	po, ok := o.(*v1.Pod)
+	if !ok {
+		log.Fatal().Msg("Expecting a valid pod")
+	}
 	cc := make(k8s.Collection, len(po.Spec.InitContainers)+len(po.Spec.Containers))
 	toContainers(po, cc)
 
@@ -58,7 +58,10 @@ func (c *Container) List(fqn string, opts metav1.ListOptions) k8s.Collection {
 		log.Error().Err(fmt.Errorf("Pod<containers> %s not found", fqn)).Msg("Pod<container>")
 		return nil
 	}
-	po := o.(*v1.Pod)
+	po, ok := o.(*v1.Pod)
+	if !ok {
+		log.Fatal().Msg("Expecting a valid pod")
+	}
 	cc := make(k8s.Collection, len(po.Spec.InitContainers)+len(po.Spec.Containers))
 	toContainers(po, cc)
 

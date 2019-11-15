@@ -254,32 +254,34 @@ func (l *list) load(informer *wa.Informer, ns string) (Columnars, error) {
 }
 
 func (l *list) fetchResource(informer *wa.Informer, r interface{}, ns string) (Columnar, error) {
-	var err error
-
 	res := l.resource.New(r)
+
 	switch o := r.(type) {
 	case *v1.Node:
 		fqn := MetaFQN(o.ObjectMeta)
-		nmx, err := informer.Get(wa.NodeMXIndex, fqn, metav1.GetOptions{})
-		if err == nil {
+		if nmx, err := informer.Get(wa.NodeMXIndex, fqn, metav1.GetOptions{}); err != nil {
+			return res, err
+		} else {
 			res.SetNodeMetrics(nmx.(*mv1beta1.NodeMetrics))
 		}
 	case *v1.Pod:
 		fqn := MetaFQN(o.ObjectMeta)
-		pmx, err := informer.Get(wa.PodMXIndex, fqn, metav1.GetOptions{})
-		if err == nil {
+		if pmx, err := informer.Get(wa.PodMXIndex, fqn, metav1.GetOptions{}); err != nil {
+			return res, err
+		} else {
 			res.SetPodMetrics(pmx.(*mv1beta1.PodMetrics))
 		}
 	case v1.Container:
-		pmx, err := informer.Get(wa.PodMXIndex, ns, metav1.GetOptions{})
-		if err == nil {
+		if pmx, err := informer.Get(wa.PodMXIndex, ns, metav1.GetOptions{}); err != nil {
+			return res, err
+		} else {
 			res.SetPodMetrics(pmx.(*mv1beta1.PodMetrics))
 		}
 	default:
-		err = fmt.Errorf("No informer matched %s:%s", l.name, ns)
+		return res, fmt.Errorf("No informer matched %s:%s", l.name, ns)
 	}
 
-	return res, err
+	return res, nil
 }
 
 // Reconcile previous vs current state and emits delta events.

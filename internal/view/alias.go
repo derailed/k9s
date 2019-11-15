@@ -64,10 +64,6 @@ func (a *Alias) registerActions() {
 	})
 }
 
-func (a *Alias) getTitle() string {
-	return aliasTitle
-}
-
 func (a *Alias) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !a.SearchBuff().Empty() {
 		a.SearchBuff().Reset()
@@ -83,7 +79,9 @@ func (a *Alias) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 		s := ui.TrimCell(a.Table.Table, r, 1)
 		tokens := strings.Split(s, ",")
 		a.app.Content.Pop()
-		a.app.gotoResource(tokens[0], true)
+		if !a.app.gotoResource(tokens[0]) {
+			a.app.Flash().Err(fmt.Errorf("Goto %s failed", tokens[0]))
+		}
 		return nil
 	}
 
@@ -94,7 +92,7 @@ func (a *Alias) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
-func (a *Alias) backCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (a *Alias) backCmd(_ *tcell.EventKey) *tcell.EventKey {
 	if a.SearchBuff().IsActive() {
 		a.SearchBuff().Reset()
 	} else {

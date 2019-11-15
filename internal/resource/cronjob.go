@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -69,7 +70,10 @@ func (r *CronJob) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	cj := i.(*batchv1beta1.CronJob)
+	cj, ok := i.(*batchv1beta1.CronJob)
+	if !ok {
+		return "", errors.New("expecting cronjob resource")
+	}
 	cj.TypeMeta.APIVersion = "extensions/batchv1beta1"
 	cj.TypeMeta.Kind = "CronJob"
 

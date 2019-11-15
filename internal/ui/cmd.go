@@ -49,10 +49,6 @@ func (v *CmdView) update(s string) {
 	v.write(s)
 }
 
-func (v *CmdView) append(r rune) {
-	fmt.Fprintf(v, "%s", string(r))
-}
-
 func (v *CmdView) write(s string) {
 	fmt.Fprintf(v, defaultPrompt, v.icon, s)
 }

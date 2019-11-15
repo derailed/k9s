@@ -22,7 +22,7 @@ type (
 func TestNSColorer(t *testing.T) {
 	var (
 		ns   = resource.Row{"blee", "Active"}
-		term = resource.Row{"blee", "Terminating"}
+		term = resource.Row{"blee", resource.Terminating}
 		dead = resource.Row{"blee", "Inactive"}
 	)
 

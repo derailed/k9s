@@ -12,13 +12,6 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-const (
-	// AllNamespaces designates all namespaces.
-	allNamespaces = ""
-	// AllNamespaces designate the special `all` namespace.
-	allNamespace = "all"
-)
-
 type (
 	// Row represents a collection of string fields.
 	Row []string
@@ -54,12 +47,10 @@ type StoreInformer interface {
 
 // Informer represents a collection of cluster wide watchers.
 type Informer struct {
-	Namespace   string
-	informers   map[string]StoreInformer
-	client      k8s.Connection
-	podInformer *Pod
-	listenerFn  TableListenerFn
-	initOnce    sync.Once
+	Namespace string
+	informers map[string]StoreInformer
+	client    k8s.Connection
+	initOnce  sync.Once
 }
 
 // NewInformer creates a new cluster resource informer

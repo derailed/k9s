@@ -1,6 +1,8 @@
 package resource
 
 import (
+	"errors"
+
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -54,7 +56,10 @@ func (r *PersistentVolumeClaim) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	pvc := i.(*v1.PersistentVolumeClaim)
+	pvc, ok := i.(*v1.PersistentVolumeClaim)
+	if !ok {
+		return "", errors.New("Expecting a pvc resource")
+	}
 	pvc.TypeMeta.APIVersion = "v1"
 	pvc.TypeMeta.Kind = "PersistentVolumeClaim"
 
@@ -81,7 +86,7 @@ func (r *PersistentVolumeClaim) Fields(ns string) Row {
 
 	phase := i.Status.Phase
 	if i.ObjectMeta.DeletionTimestamp != nil {
-		phase = "Terminating"
+		phase = Terminating
 	}
 
 	var pv PersistentVolume

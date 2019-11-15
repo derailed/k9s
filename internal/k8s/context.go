@@ -99,7 +99,9 @@ func (c *Context) KubeUpdate(n string) error {
 	if err != nil {
 		return err
 	}
-	c.Switch(n)
+	if err := c.Switch(n); err != nil {
+		return err
+	}
 	return clientcmd.ModifyConfig(
 		clientcmd.NewDefaultPathOptions(), config, true,
 	)

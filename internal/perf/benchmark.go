@@ -75,10 +75,6 @@ func (b *Benchmark) init(base string) error {
 	return nil
 }
 
-func (b *Benchmark) annulled() bool {
-	return b.canceled
-}
-
 // Cancel kills the benchmark in progress.
 func (b *Benchmark) Cancel() {
 	if b == nil {
@@ -118,14 +114,19 @@ func (b *Benchmark) save(cluster string, r io.Reader) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		if e := f.Close(); e != nil {
+			log.Fatal().Err(e).Msg("Bench save")
+		}
+	}()
 
 	bb, err := ioutil.ReadAll(r)
 	if err != nil {
 		return err
 	}
-
-	f.Write(bb)
+	if _, err := f.Write(bb); err != nil {
+		return err
+	}
 
 	return nil
 }

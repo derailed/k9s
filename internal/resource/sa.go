@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -56,7 +57,10 @@ func (r *ServiceAccount) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	sa := i.(*v1.ServiceAccount)
+	sa, ok := i.(*v1.ServiceAccount)
+	if !ok {
+		return "", errors.New("Expecting a sa resource")
+	}
 	sa.TypeMeta.APIVersion = "v1"
 	sa.TypeMeta.Kind = "ServiceAccount"
 

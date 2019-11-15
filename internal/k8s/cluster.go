@@ -5,6 +5,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+const na = "n/a"
+
 // Cluster represents a Kubernetes cluster.
 type Cluster struct {
 	Connection
@@ -32,7 +34,7 @@ func (c *Cluster) ContextName() string {
 	ctx, err := c.Config().CurrentContextName()
 	if err != nil {
 		c.logger.Warn().Msgf("%s", err)
-		return "N/A"
+		return na
 	}
 	return ctx
 }
@@ -42,7 +44,7 @@ func (c *Cluster) ClusterName() string {
 	ctx, err := c.Config().CurrentClusterName()
 	if err != nil {
 		c.logger.Warn().Msgf("%s", err)
-		return "N/A"
+		return na
 	}
 	return ctx
 }
@@ -52,7 +54,7 @@ func (c *Cluster) UserName() string {
 	usr, err := c.Config().CurrentUserName()
 	if err != nil {
 		c.logger.Warn().Msgf("%s", err)
-		return "N/A"
+		return na
 	}
 	return usr
 }

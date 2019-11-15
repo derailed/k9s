@@ -120,14 +120,6 @@ func k8sConfig() *k8s.Config {
 	return k8s.NewConfig(&f)
 }
 
-func k8sCTX() *api.Context {
-	return &api.Context{
-		LocationOfOrigin: "fred",
-		Cluster:          "blee",
-		AuthInfo:         "secret",
-	}
-}
-
 func k8sNamedCTX() *k8s.NamedContext {
 	return k8s.NewNamedContext(
 		k8sConfig(),

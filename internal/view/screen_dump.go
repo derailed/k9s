@@ -18,14 +18,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const (
-	dumpTitle    = "Screen Dumps"
-	dumpTitleFmt = " [mediumvioletred::b]%s([fuchsia::b]%d[fuchsia::-])[mediumvioletred::-] "
-)
+const dumpTitle = "Screen Dumps"
 
-var (
-	dumpHeader = resource.Row{"NAME", "AGE"}
-)
+var dumpHeader = resource.Row{"NAME", "AGE"}
 
 // ScreenDump presents a directory listing viewer.
 type ScreenDump struct {
@@ -35,6 +30,7 @@ type ScreenDump struct {
 	app      *App
 }
 
+// NewScreenDump returns a new viewer.
 func NewScreenDump(_, _ string, _ resource.List) ResourceViewer {
 	return &ScreenDump{
 		MasterDetail: NewMasterDetail(dumpTitle, ""),
@@ -43,7 +39,7 @@ func NewScreenDump(_, _ string, _ resource.List) ResourceViewer {
 
 // Init initializes the viewer.
 func (s *ScreenDump) Init(ctx context.Context) {
-	s.app = ctx.Value(ui.KeyApp).(*App)
+	s.app = mustExtractApp(ctx)
 	s.MasterDetail.Init(ctx)
 	s.registerActions()
 
@@ -101,10 +97,6 @@ func (s *ScreenDump) registerActions() {
 	})
 }
 
-func (s *ScreenDump) getTitle() string {
-	return dumpTitle
-}
-
 func (s *ScreenDump) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	log.Debug().Msg("Dump enter!")
 	tv := s.masterPage()
@@ -131,7 +123,7 @@ func (s *ScreenDump) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	dir := filepath.Join(config.K9sDumpDir, s.app.Config.K9s.CurrentCluster)
-	showModal(s.Pages, fmt.Sprintf("Delete screen dump `%s?", sel), "table", func() {
+	showModal(s.Pages, fmt.Sprintf("Delete screen dump `%s?", sel), func() {
 		if err := os.Remove(filepath.Join(dir, sel)); err != nil {
 			s.app.Flash().Errf("Unable to delete file %s", err)
 			return
@@ -139,15 +131,6 @@ func (s *ScreenDump) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		s.refresh()
 		s.app.Flash().Infof("ScreenDump file %s deleted!", sel)
 	})
-
-	return nil
-}
-
-func (s *ScreenDump) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if s.cancelFn != nil {
-		s.cancelFn()
-	}
-	s.SwitchToPage("table")
 
 	return nil
 }
@@ -188,10 +171,6 @@ func (s *ScreenDump) hydrate() resource.TableData {
 	return data
 }
 
-func (s *ScreenDump) resetTitle() {
-	s.SetTitle(fmt.Sprintf(dumpTitleFmt, dumpTitle, s.masterPage().GetRowCount()-1))
-}
-
 func (s *ScreenDump) watchDumpDir(ctx context.Context) error {
 	w, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -211,7 +190,9 @@ func (s *ScreenDump) watchDumpDir(ctx context.Context) error {
 				return
 			case <-ctx.Done():
 				log.Debug().Msg("!!!! FS WATCHER DONE!!")
-				w.Close()
+				if err := w.Close(); err != nil {
+					log.Error().Err(err).Msg("Closing dump watcher")
+				}
 				return
 			}
 		}

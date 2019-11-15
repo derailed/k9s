@@ -68,7 +68,7 @@ func (s *Service) showPods(app *App, _, res, sel string) {
 	}
 
 	if sv, ok := svc.(*v1.Service); ok {
-		s.showSvcPods(ns, sv.Spec.Selector, s.backCmd)
+		s.showSvcPods(ns, sv.Spec.Selector)
 	}
 }
 
@@ -79,16 +79,6 @@ func (s *Service) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	s.logs.reload("", s, false)
 	s.Push(s.logs)
-
-	return nil
-}
-
-func (s *Service) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	// Reset namespace to what it was
-	if err := s.app.Config.SetActiveNamespace(s.list.GetNamespace()); err != nil {
-		log.Error().Err(err).Msg("Unable to set active namespace")
-	}
-	s.app.inject(s)
 
 	return nil
 }
@@ -212,10 +202,10 @@ func benchTimedOut(app *App) {
 	})
 }
 
-func (s *Service) showSvcPods(ns string, sel map[string]string, a ui.ActionHandler) {
+func (s *Service) showSvcPods(ns string, sel map[string]string) {
 	var labels []string
 	for k, v := range sel {
 		labels = append(labels, fmt.Sprintf("%s=%s", k, v))
 	}
-	showPods(s.app, ns, strings.Join(labels, ","), "", a)
+	showPods(s.app, ns, strings.Join(labels, ","), "")
 }

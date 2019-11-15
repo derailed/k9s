@@ -2,6 +2,7 @@ package resource
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -62,7 +63,10 @@ func (r *StatefulSet) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	sts := i.(*appsv1.StatefulSet)
+	sts, ok := i.(*appsv1.StatefulSet)
+	if !ok {
+		return "", errors.New("Expecting an sts resource")
+	}
 	sts.TypeMeta.APIVersion = "apps/v1"
 	sts.TypeMeta.Kind = "StatefulSet"
 
@@ -76,7 +80,10 @@ func (r *StatefulSet) Logs(ctx context.Context, c chan<- string, opts LogOptions
 		return err
 	}
 
-	sts := instance.(*appsv1.StatefulSet)
+	sts, ok := instance.(*appsv1.StatefulSet)
+	if !ok {
+		return errors.New("Expecting an sts resource")
+	}
 	if sts.Spec.Selector == nil || len(sts.Spec.Selector.MatchLabels) == 0 {
 		return fmt.Errorf("No valid selector found on statefulset %s", opts.FQN())
 	}

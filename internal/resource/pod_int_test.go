@@ -55,22 +55,22 @@ func TestPodPhase(t *testing.T) {
 		e string
 	}{
 		{makePodStatus("p1", v1.PodRunning, ""), "Running"},
-		{makePodStatus("p1", v1.PodRunning, "Evicted"), "Evicted"},
+		{makePodStatus("p2", v1.PodRunning, "Evicted"), "Evicted"},
 		{makePodStatus("p1", v1.PodPending, ""), "Pending"},
 		{makePodStatus("p1", v1.PodSucceeded, ""), "Succeeded"},
 		{makePodStatus("p1", v1.PodFailed, ""), "Failed"},
 		{makePodStatus("p1", v1.PodUnknown, ""), "Unknown"},
 		{makePodCoInitTerminated("p1"), "Init:OOMKilled"},
 		{makePodCoInitWaiting("p1", ""), "Init:0/1"},
-		{makePodCoInitWaiting("p1", "Waiting"), "Init:Waiting"},
+		{makePodCoInitWaiting("p2", "Waiting"), "Init:Waiting"},
 		{makePodCoInitWaiting("p1", "PodInitializing"), "Init:0/1"},
 		{makePodCoWaiting("p1", "Waiting"), "Waiting"},
 		{makePodCoWaiting("p1", ""), ""},
-		{makePodCoTerminated("p1", "OOMKilled", 0, true), "Terminating"},
-		{makePodCoTerminated("p1", "OOMKilled", 0, false), "OOMKilled"},
-		{makePodCoTerminated("p1", "", 0, true), "Terminating"},
+		{makePodCoTerminated("p1", "OOMKilled", 0, true), Terminating},
+		{makePodCoTerminated("p2", "OOMKilled", 0, false), "OOMKilled"},
+		{makePodCoTerminated("p1", "", 0, true), Terminating},
 		{makePodCoTerminated("p1", "", 0, false), "ExitCode:1"},
-		{makePodCoTerminated("p1", "", 1, true), "Terminating"},
+		{makePodCoTerminated("p1", "", 1, true), Terminating},
 		{makePodCoTerminated("p1", "", 1, false), "Signal:1"},
 	}
 
@@ -127,7 +127,7 @@ func makePodCoTerminated(n, reason string, signal int32, deleted bool) *v1.Pod {
 	po := makePod(n)
 
 	if deleted {
-		po.DeletionTimestamp = &metav1.Time{time.Now()}
+		po.DeletionTimestamp = &metav1.Time{Time: time.Now()}
 	}
 	po.Status.ContainerStatuses = []v1.ContainerStatus{
 		{

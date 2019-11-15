@@ -56,10 +56,10 @@ func (c *Container) extraActions(aa ui.KeyActions) {
 	aa[ui.KeyShiftF] = ui.NewKeyAction("PortForward", c.portFwdCmd, true)
 	aa[ui.KeyShiftL] = ui.NewKeyAction("Logs Previous", c.prevLogsCmd, true)
 	aa[ui.KeyS] = ui.NewKeyAction("Shell", c.shellCmd, true)
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", c.sortColCmd(6, false), false)
-	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", c.sortColCmd(7, false), false)
-	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", c.sortColCmd(8, false), false)
-	aa[ui.KeyShiftZ] = ui.NewKeyAction("Sort MEM%", c.sortColCmd(9, false), false)
+	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", c.sortColCmd(6), false)
+	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", c.sortColCmd(7), false)
+	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", c.sortColCmd(8), false)
+	aa[ui.KeyShiftZ] = ui.NewKeyAction("Sort MEM%", c.sortColCmd(9), false)
 }
 
 func (c *Container) k9sEnv() K9sEnv {

@@ -22,7 +22,7 @@ func NewTable(title string) *Table {
 }
 
 func (t *Table) Init(ctx context.Context) {
-	t.app = ctx.Value(ui.KeyApp).(*App)
+	t.app = mustExtractApp(ctx)
 
 	ctx = context.WithValue(ctx, ui.KeyStyles, t.app.Styles)
 	t.Table.Init(ctx)

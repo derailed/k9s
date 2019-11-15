@@ -44,7 +44,8 @@ func TestComputeShellArgs(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			args := computeShellArgs(u.path, u.co, u.context, u.cfg)
 

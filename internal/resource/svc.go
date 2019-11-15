@@ -12,8 +12,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-const lbIPWidth = 16
-
 // Service tracks a kubernetes resource.
 type Service struct {
 	*Base
@@ -63,7 +61,10 @@ func (r *Service) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	svc := i.(*v1.Service)
+	svc, ok := i.(*v1.Service)
+	if !ok {
+		return "", errors.New("Expecting a service resource")
+	}
 	svc.TypeMeta.APIVersion = "v1"
 	svc.TypeMeta.Kind = "Service"
 
@@ -77,7 +78,10 @@ func (r *Service) Logs(ctx context.Context, c chan<- string, opts LogOptions) er
 		return err
 	}
 
-	svc := instance.(*v1.Service)
+	svc, ok := instance.(*v1.Service)
+	if !ok {
+		return errors.New("Expecting a service resource")
+	}
 	log.Debug().Msgf("Service %s--%s", svc.Name, svc.Spec.Selector)
 	if len(svc.Spec.Selector) == 0 {
 		return errors.New("No logs for headless service")

@@ -12,8 +12,6 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-const defaultNamespace = "default"
-
 // Config tracks a kubernetes configuration.
 type Config struct {
 	flags          *genericclioptions.ConfigFlags
@@ -283,7 +281,6 @@ func (c *Config) ensureConfig() {
 
 	log.Debug().Msg("Loading raw config from flags...")
 	c.clientConfig = c.flags.ToRawKubeConfigLoader()
-	return
 }
 
 // ----------------------------------------------------------------------------

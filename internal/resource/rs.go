@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -56,7 +57,10 @@ func (r *ReplicaSet) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	rs := i.(*v1.ReplicaSet)
+	rs, ok := i.(*v1.ReplicaSet)
+	if !ok {
+		return "", errors.New("Expecting a rs resource")
+	}
 	rs.TypeMeta.APIVersion = "apps/v1"
 	rs.TypeMeta.Kind = "ReplicaSet"
 

@@ -2,6 +2,7 @@ package resource
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -61,7 +62,10 @@ func (r *DaemonSet) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	ds := i.(*appsv1.DaemonSet)
+	ds, ok := i.(*appsv1.DaemonSet)
+	if !ok {
+		return "", errors.New("expecting ds resource")
+	}
 	ds.TypeMeta.APIVersion = "apps/v1"
 	ds.TypeMeta.Kind = "DaemonSet"
 
@@ -75,7 +79,10 @@ func (r *DaemonSet) Logs(ctx context.Context, c chan<- string, opts LogOptions) 
 		return err
 	}
 
-	ds := instance.(*appsv1.DaemonSet)
+	ds, ok := instance.(*appsv1.DaemonSet)
+	if !ok {
+		return errors.New("expecting ds resource")
+	}
 	if ds.Spec.Selector == nil || len(ds.Spec.Selector.MatchLabels) == 0 {
 		return fmt.Errorf("No valid selector found on daemonset %s", opts.FQN())
 	}

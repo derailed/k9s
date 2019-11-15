@@ -1,6 +1,7 @@
 package k8s
 
 import (
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
@@ -51,7 +52,10 @@ func NewMetricsServer(c Connection) *MetricsServer {
 // NodesMetrics retrieves metrics for a given set of nodes.
 func (m *MetricsServer) NodesMetrics(nodes Collection, metrics *mv1beta1.NodeMetricsList, mmx NodesMetrics) {
 	for _, n := range nodes {
-		no := n.(*v1.Node)
+		no, ok := n.(*v1.Node)
+		if !ok {
+			log.Fatal().Msg("Expecting a valid node")
+		}
 		mmx[no.Name] = NodeMetrics{
 			AvailCPU: no.Status.Allocatable.Cpu().MilliValue(),
 			AvailMEM: ToMB(no.Status.Allocatable.Memory().Value()),
@@ -73,7 +77,10 @@ func (m *MetricsServer) NodesMetrics(nodes Collection, metrics *mv1beta1.NodeMet
 func (m *MetricsServer) ClusterLoad(nos Collection, nmx Collection, mx *ClusterMetrics) {
 	nodeMetrics := make(NodesMetrics, len(nos))
 	for _, n := range nos {
-		no := n.(*v1.Node)
+		no, ok := n.(*v1.Node)
+		if !ok {
+			log.Fatal().Msg("Expecting valid node")
+		}
 		nodeMetrics[no.Name] = NodeMetrics{
 			AvailCPU: no.Status.Allocatable.Cpu().MilliValue(),
 			AvailMEM: ToMB(no.Status.Allocatable.Memory().Value()),
@@ -81,7 +88,10 @@ func (m *MetricsServer) ClusterLoad(nos Collection, nmx Collection, mx *ClusterM
 	}
 
 	for _, mx := range nmx {
-		mxx := mx.(*mv1beta1.NodeMetrics)
+		mxx, ok := mx.(*mv1beta1.NodeMetrics)
+		if !ok {
+			log.Fatal().Msg("Expecting a valid node metric")
+		}
 		if m, ok := nodeMetrics[mxx.Name]; ok {
 			m.CurrentCPU = mxx.Usage.Cpu().MilliValue()
 			m.CurrentMEM = ToMB(mxx.Usage.Memory().Value())

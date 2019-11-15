@@ -9,11 +9,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-const (
-	// NodeIndex marker for stored nodes.
-	NodeIndex string = "nodes"
-	nodeCols         = 12
-)
+// NodeIndex marker for stored nodes.
+const NodeIndex = "nodes"
 
 // Node tracks node activities.
 type Node struct {

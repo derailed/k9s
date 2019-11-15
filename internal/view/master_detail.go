@@ -30,9 +30,18 @@ func NewMasterDetail(title, ns string) *MasterDetail {
 	}
 }
 
+func mustExtractApp(ctx context.Context) *App {
+	app, ok := ctx.Value(ui.KeyApp).(*App)
+	if !ok {
+		panic("No application given in context")
+	}
+
+	return app
+}
+
 // Init initializes the viewer.
 func (m *MasterDetail) Init(ctx context.Context) {
-	app := ctx.Value(ui.KeyApp).(*App)
+	app := mustExtractApp(ctx)
 	if m.currentNS != resource.NotNamespaced {
 		m.currentNS = app.Config.ActiveNamespace()
 	}
@@ -66,10 +75,6 @@ func (m *MasterDetail) setExtraActionsFn(f ActionsFunc) {
 
 func (m *MasterDetail) setEnterFn(f enterFn) {
 	m.enterFn = f
-}
-
-func (m *MasterDetail) showMaster() {
-	m.Show(m.master)
 }
 
 func (m *MasterDetail) masterPage() *Table {

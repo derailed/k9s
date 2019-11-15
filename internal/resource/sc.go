@@ -1,6 +1,8 @@
 package resource
 
 import (
+	"errors"
+
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/storage/v1"
@@ -54,7 +56,10 @@ func (r *StorageClass) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	sc := i.(*v1.StorageClass)
+	sc, ok := i.(*v1.StorageClass)
+	if !ok {
+		return "", errors.New("Expecting a sc resource")
+	}
 	sc.TypeMeta.APIVersion = "storage.k8s.io/v1"
 	sc.TypeMeta.Kind = "StorageClass"
 

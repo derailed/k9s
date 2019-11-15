@@ -12,7 +12,7 @@ import (
 
 func TestJobToCompletion(t *testing.T) {
 	t0 := testTime()
-	t1, t2 := metav1.Time{t0}, metav1.Time{t0.Add(10 * time.Second)}
+	t1, t2 := metav1.Time{Time: t0}, metav1.Time{Time: t0.Add(10 * time.Second)}
 	var c, p int32 = 10, 20
 
 	uu := []struct {
@@ -81,7 +81,7 @@ func TestJobToCompletion(t *testing.T) {
 
 func TestJobToDuration(t *testing.T) {
 	t0 := testTime().UTC()
-	t1, t2 := metav1.Time{t0}, metav1.Time{t0.Add(10 * time.Second)}
+	t1, t2 := metav1.Time{Time: t0}, metav1.Time{Time: t0.Add(10 * time.Second)}
 
 	uu := []struct {
 		s batchv1.JobStatus
@@ -96,7 +96,7 @@ func TestJobToDuration(t *testing.T) {
 		},
 		{
 			batchv1.JobStatus{
-				StartTime: &metav1.Time{time.Now().Add(-10 * time.Second)},
+				StartTime: &metav1.Time{Time: time.Now().Add(-10 * time.Second)},
 			},
 			"10s",
 		},

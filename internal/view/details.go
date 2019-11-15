@@ -42,7 +42,7 @@ func NewDetails(app *App, backFn ui.ActionHandler) *Details {
 
 // Init initializes the viewer.
 func (d *Details) Init(ctx context.Context) {
-	d.app = ctx.Value(ui.KeyApp).(*App)
+	d.app = mustExtractApp(ctx)
 
 	d.SetScrollable(true)
 	d.SetWrap(true)
@@ -128,7 +128,7 @@ func (d *Details) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (d *Details) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !d.cmdBuff.Empty() {
 		d.cmdBuff.Reset()
-		d.search(evt)
+		d.search()
 		return nil
 	}
 	d.cmdBuff.Reset()
@@ -146,31 +146,7 @@ func (d *Details) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (d *Details) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !d.app.InCmdMode() {
-		d.cmdBuff.SetActive(true)
-		d.cmdBuff.Clear()
-		return nil
-	}
-	return evt
-}
-
-func (d *Details) searchCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if d.cmdBuff.IsActive() && !d.cmdBuff.Empty() {
-		d.app.Flash().Infof("Searching for %s...", d.cmdBuff)
-		d.search(evt)
-		highlights := d.GetHighlights()
-		if len(highlights) > 0 {
-			d.Highlight()
-		} else {
-			d.Highlight("0").ScrollToHighlight()
-		}
-	}
-	d.cmdBuff.SetActive(false)
-	return evt
-}
-
-func (d *Details) search(evt *tcell.EventKey) {
+func (d *Details) search() {
 	d.numSelections = 0
 	log.Debug().Msgf("Searching... %s - %d", d.cmdBuff, d.numSelections)
 	d.Highlight("")
@@ -214,13 +190,6 @@ func (d *Details) prevCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	d.Highlight(strconv.Itoa(index)).ScrollToHighlight()
 	return nil
-}
-
-// SetActions to handle keyboard inputs
-func (d *Details) setActions(aa ui.KeyActions) {
-	for k, a := range aa {
-		d.actions[k] = a
-	}
 }
 
 // Hints fetch mmemonic and hints

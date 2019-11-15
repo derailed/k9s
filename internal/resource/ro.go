@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -56,7 +57,10 @@ func (r *Role) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	role := i.(*v1.Role)
+	role, ok := i.(*v1.Role)
+	if !ok {
+		return "", errors.New("Expecting a role resource")
+	}
 	role.TypeMeta.APIVersion = "rbac.authorization.k8s.io/v1"
 	role.TypeMeta.Kind = "Role"
 

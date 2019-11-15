@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -56,7 +57,10 @@ func (r *ClusterRoleBinding) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	crb := i.(*v1.ClusterRoleBinding)
+	crb, ok := i.(*v1.ClusterRoleBinding)
+	if !ok {
+		return "", errors.New("Expecting a crb resource")
+	}
 	crb.TypeMeta.APIVersion = "rbac.authorization.k8s.io/v1"
 	crb.TypeMeta.Kind = "ClusterRoleBinding"
 

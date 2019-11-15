@@ -21,7 +21,8 @@ func TestDefaultColorer(t *testing.T) {
 		"upd": {resource.RowEvent{Action: watch.Modified}, ui.ModColor},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, ui.DefaultColorer("", &u.re))
 		})

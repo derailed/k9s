@@ -34,8 +34,8 @@ func (s *StatefulSet) extraActions(aa ui.KeyActions) {
 	s.LogResource.extraActions(aa)
 	s.scalableResource.extraActions(aa)
 	s.restartableResource.extraActions(aa)
-	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", s.sortColCmd(1, false), false)
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", s.sortColCmd(2, false), false)
+	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", s.sortColCmd(1), false)
+	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", s.sortColCmd(2), false)
 }
 
 func (s *StatefulSet) showPods(app *App, _, res, sel string) {
@@ -47,7 +47,10 @@ func (s *StatefulSet) showPods(app *App, _, res, sel string) {
 		return
 	}
 
-	sts := st.(*v1.StatefulSet)
+	sts, ok := st.(*v1.StatefulSet)
+	if !ok {
+		log.Fatal().Msg("Expecting a valid sts")
+	}
 	l, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
 	if err != nil {
 		log.Error().Err(err).Msgf("Converting selector for StatefulSet %s", sel)
@@ -55,5 +58,5 @@ func (s *StatefulSet) showPods(app *App, _, res, sel string) {
 		return
 	}
 
-	showPods(app, ns, l.String(), "", s.backCmd)
+	showPods(app, ns, l.String(), "")
 }

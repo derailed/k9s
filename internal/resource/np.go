@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -58,7 +59,10 @@ func (r *NetworkPolicy) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	ds := i.(*networkingv1.NetworkPolicy)
+	ds, ok := i.(*networkingv1.NetworkPolicy)
+	if !ok {
+		return "", errors.New("Expecting a np resource")
+	}
 	ds.TypeMeta.APIVersion = "networking.k8s.io/v1"
 	ds.TypeMeta.Kind = "NetworkPolicy"
 

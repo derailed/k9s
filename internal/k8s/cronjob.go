@@ -1,6 +1,8 @@
 package k8s
 
 import (
+	"errors"
+
 	batchv1 "k8s.io/api/batch/v1"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,8 +52,11 @@ func (c *CronJob) Run(ns, n string) error {
 	if err != nil {
 		return err
 	}
-	cronJob := cj.(*batchv1beta1.CronJob)
 
+	cronJob, ok := cj.(*batchv1beta1.CronJob)
+	if !ok {
+		return errors.New("Expecting valid cronjob")
+	}
 	var jobName = cronJob.Name
 	if len(cronJob.Name) >= maxJobNameSize {
 		jobName = cronJob.Name[0:maxJobNameSize]

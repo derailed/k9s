@@ -27,6 +27,15 @@ func NewAliases() Aliases {
 }
 
 func (a Aliases) loadDefaults() {
+	const (
+		contexts   = "contexts"
+		portFwds   = "portforwards"
+		benchmarks = "benchmarks"
+		dumps      = "screendumps"
+		groups     = "groups"
+		users      = "users"
+	)
+
 	a.Alias["dp"] = "apps/v1/deployments"
 	a.Alias["sec"] = "v1/secrets"
 	a.Alias["jo"] = "batch/v1/jobs"
@@ -36,34 +45,34 @@ func (a Aliases) loadDefaults() {
 	a.Alias["rob"] = "rbac.authorization.k8s.io/v1/rolebindings"
 	a.Alias["np"] = "networking.k8s.io/v1/networkpolicies"
 	{
-		a.Alias["ctx"] = "contexts"
-		a.Alias["contexts"] = "contexts"
-		a.Alias["context"] = "contexts"
+		a.Alias["ctx"] = contexts
+		a.Alias[contexts] = contexts
+		a.Alias["context"] = contexts
 	}
 	{
-		a.Alias["usr"] = "users"
-		a.Alias["users"] = "users"
-		a.Alias["user"] = "user"
+		a.Alias["usr"] = users
+		a.Alias[users] = users
+		a.Alias["user"] = users
 	}
 	{
-		a.Alias["grp"] = "groups"
-		a.Alias["group"] = "groups"
-		a.Alias["groups"] = "groups"
+		a.Alias["grp"] = groups
+		a.Alias["group"] = groups
+		a.Alias[groups] = groups
 	}
 	{
-		a.Alias["pf"] = "portforwards"
-		a.Alias["portforwards"] = "portforwards"
-		a.Alias["portforward"] = "portforwards"
+		a.Alias["pf"] = portFwds
+		a.Alias[portFwds] = portFwds
+		a.Alias["portforward"] = portFwds
 	}
 	{
-		a.Alias["be"] = "benchmarks"
-		a.Alias["benchmark"] = "benchmarks"
-		a.Alias["benchmarks"] = "benchmarks"
+		a.Alias["be"] = benchmarks
+		a.Alias["benchmark"] = benchmarks
+		a.Alias[benchmarks] = benchmarks
 	}
 	{
-		a.Alias["sd"] = "screendumps"
-		a.Alias["screendump"] = "screendumps"
-		a.Alias["screendumps"] = "screendumps"
+		a.Alias["sd"] = dumps
+		a.Alias["screendump"] = dumps
+		a.Alias[dumps] = dumps
 	}
 }
 

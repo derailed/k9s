@@ -4,8 +4,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-var supportedAutoScalingAPIVersions = []string{"v2beta2", "v2beta1", "v1"}
-
 // HorizontalPodAutoscalerV2Beta2 represents am HorizontalPodAutoscaler.
 type HorizontalPodAutoscalerV2Beta2 struct {
 	*base

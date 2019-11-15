@@ -2,8 +2,8 @@ package view
 
 import (
 	"context"
-	"fmt"
 	"reflect"
+	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/resource"
@@ -104,10 +104,6 @@ func (s *Subject) setExtraActionsFn(f ActionsFunc) {}
 func (s *Subject) setColorerFn(f ui.ColorerFunc)   {}
 func (s *Subject) setEnterFn(f enterFn)            {}
 func (s *Subject) setDecorateFn(f decorateFn)      {}
-
-func (s *Subject) getTitle() string {
-	return fmt.Sprintf(rbacTitleFmt, "Subject", s.subjectKind)
-}
 
 func (s *Subject) SetSubject(n string) {
 	s.subjectKind = mapSubject(n)
@@ -289,22 +285,21 @@ func (s *Subject) namespacedSubjects() (resource.RowEvents, error) {
 }
 
 func mapCmdSubject(subject string) string {
-	log.Debug().Msgf("!!!!!!Subject %q", subject)
 	switch subject {
 	case "groups":
-		return "Group"
+		return group
 	case "sas":
-		return "ServiceAccount"
+		return sa
 	default:
-		return "User"
+		return user
 	}
 }
 
 func mapFuSubject(subject string) string {
-	switch subject {
-	case "Group":
+	switch strings.ToLower(subject) {
+	case group:
 		return "g"
-	case "ServiceAccount":
+	case sa:
 		return "s"
 	default:
 		return "u"

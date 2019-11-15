@@ -55,7 +55,7 @@ func TestPodGatherMX(t *testing.T) {
 			v1.ResourceRequirements{
 				Requests: makeRes("500m", "512Mi"),
 			},
-			makeMxPod("fred", "250m", "256Mi"),
+			makeMxPod("p1", "250m", "256Mi"),
 			"150",
 			"150",
 		},
@@ -63,7 +63,7 @@ func TestPodGatherMX(t *testing.T) {
 			v1.ResourceRequirements{
 				Limits: makeRes("1000m", "1024Mi"),
 			},
-			makeMxPod("fred", "250m", "256Mi"),
+			makeMxPod("p2", "250m", "256Mi"),
 			"75",
 			"75",
 		},
@@ -72,13 +72,14 @@ func TestPodGatherMX(t *testing.T) {
 				Requests: makeRes("500m", "512Mi"),
 				Limits:   makeRes("1000m", "1024Mi"),
 			},
-			makeMxPod("fred", "250m", "256Mi"),
+			makeMxPod("p3", "250m", "256Mi"),
 			"150",
 			"150",
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			r := NewPodWithMetrics(u.metrics, u.resources).Fields("blee")
 
@@ -109,7 +110,7 @@ func TestPodListData(t *testing.T) {
 	mx := NewMockMetricsServer()
 	m.When(mx.HasMetrics()).ThenReturn(true)
 	m.When(mx.FetchPodsMetrics("blee")).
-		ThenReturn(&mv1beta1.PodMetricsList{Items: []mv1beta1.PodMetrics{makeMxPod("fred", "100m", "20Mi")}}, nil)
+		ThenReturn(&mv1beta1.PodMetricsList{Items: []mv1beta1.PodMetrics{makeMxPod("p1", "100m", "20Mi")}}, nil)
 
 	l := NewPodListWithArgs("blee", NewPodWithArgs(mc, mr, mx))
 	// Make sure we mcn get deltas!

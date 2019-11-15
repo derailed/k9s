@@ -22,8 +22,8 @@ func TestSvcExtIPs(t *testing.T) {
 func TestLbIngressIP(t *testing.T) {
 	lb := v1.LoadBalancerStatus{
 		Ingress: []v1.LoadBalancerIngress{
-			{"10.0.0.0", "fred"},
-			{"10.0.0.1", "blee"},
+			{IP: "10.0.0.0", Hostname: "fred"},
+			{IP: "10.0.0.1", Hostname: "blee"},
 		},
 	}
 
@@ -89,7 +89,7 @@ func k8sSVCLb() *v1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              "fred",
 			Namespace:         "blee",
-			CreationTimestamp: metav1.Time{testTime()},
+			CreationTimestamp: metav1.Time{Time: testTime()},
 		},
 		Spec: v1.ServiceSpec{
 			Type:        v1.ServiceTypeLoadBalancer,

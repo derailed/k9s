@@ -1,6 +1,8 @@
 package resource
 
 import (
+	"errors"
+
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/rbac/v1"
@@ -54,7 +56,10 @@ func (r *ClusterRole) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	cr := i.(*v1.ClusterRole)
+	cr, ok := i.(*v1.ClusterRole)
+	if !ok {
+		return "", errors.New("Expecting a cr resource")
+	}
 	cr.TypeMeta.APIVersion = "rbac.authorization.k8s.io/v1"
 	cr.TypeMeta.Kind = "ClusterRole"
 

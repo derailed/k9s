@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -56,7 +57,10 @@ func (r *HorizontalPodAutoscalerV1) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	hpa := i.(*autoscalingv1.HorizontalPodAutoscaler)
+	hpa, ok := i.(*autoscalingv1.HorizontalPodAutoscaler)
+	if !ok {
+		return "", errors.New("expecting hpa resource")
+	}
 	hpa.TypeMeta.APIVersion = extractVersion(hpa.Annotations)
 	hpa.TypeMeta.Kind = "HorizontalPodAutoscaler"
 
@@ -104,12 +108,12 @@ func (r *HorizontalPodAutoscalerV1) Fields(ns string) Row {
 // Helpers...
 
 func (r *HorizontalPodAutoscalerV1) toMetrics(spec autoscalingv1.HorizontalPodAutoscalerSpec, status autoscalingv1.HorizontalPodAutoscalerStatus) string {
-	current := "<unknown>"
+	current := UnknownValue
 	if status.CurrentCPUUtilizationPercentage != nil {
 		current = strconv.Itoa(int(*status.CurrentCPUUtilizationPercentage)) + "%"
 	}
 
-	target := "<unknown>"
+	target := UnknownValue
 	if spec.TargetCPUUtilizationPercentage != nil {
 		target = strconv.Itoa(int(*spec.TargetCPUUtilizationPercentage))
 	}

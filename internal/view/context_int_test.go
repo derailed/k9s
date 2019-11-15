@@ -16,7 +16,8 @@ func TestCleaner(t *testing.T) {
 	}
 
 	v := Context{}
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, v.cleanser(u.s))
 		})

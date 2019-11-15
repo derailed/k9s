@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"errors"
 	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -57,7 +58,10 @@ func (r *Ingress) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	ing := i.(*v1beta1.Ingress)
+	ing, ok := i.(*v1beta1.Ingress)
+	if !ok {
+		return "", errors.New("expecting ing resource")
+	}
 	ing.TypeMeta.APIVersion = "extensions/v1beta1"
 	ing.TypeMeta.Kind = "Ingress"
 

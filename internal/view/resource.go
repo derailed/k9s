@@ -2,6 +2,7 @@ package view
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -279,7 +280,9 @@ func (r *Resource) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		if cfg := r.app.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
 			args = append(args, "--kubeconfig", *cfg)
 		}
-		runK(true, r.app, append(args, po)...)
+		if !runK(true, r.app, append(args, po)...) {
+			r.app.Flash().Err(errors.New("Edit exec failed"))
+		}
 	}
 	r.Start()
 
@@ -452,19 +455,19 @@ func (r *Resource) defaultK9sEnv() K9sEnv {
 	ns, n := namespaced(r.masterPage().GetSelectedItem())
 	ctx, err := r.app.Conn().Config().CurrentContextName()
 	if err != nil {
-		ctx = "n/a"
+		ctx = resource.NAValue
 	}
 	cluster, err := r.app.Conn().Config().CurrentClusterName()
 	if err != nil {
-		cluster = "n/a"
+		cluster = resource.NAValue
 	}
 	user, err := r.app.Conn().Config().CurrentUserName()
 	if err != nil {
-		user = "n/a"
+		user = resource.NAValue
 	}
 	groups, err := r.app.Conn().Config().CurrentGroupNames()
 	if err != nil {
-		groups = []string{"n/a"}
+		groups = []string{resource.NAValue}
 	}
 	var cfg string
 	kcfg := r.app.Conn().Config().Flags().KubeConfig

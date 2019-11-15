@@ -1,7 +1,7 @@
 package resource
 
 import (
-	"regexp"
+	"errors"
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -57,7 +57,10 @@ func (r *Event) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	ev := i.(*v1.Event)
+	ev, ok := i.(*v1.Event)
+	if !ok {
+		return "", errors.New("expecting evt resource")
+	}
 	ev.TypeMeta.APIVersion = "v1"
 	ev.TypeMeta.Kind = "Event"
 
@@ -79,8 +82,6 @@ func (*Event) Header(ns string) Row {
 	return append(ff, "NAME", "REASON", "SOURCE", "COUNT", "MESSAGE", "AGE")
 }
 
-var rx = regexp.MustCompile(`(.+)\.(.+)`)
-
 // Fields returns display fields.
 func (r *Event) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
@@ -98,30 +99,4 @@ func (r *Event) Fields(ns string) Row {
 		Truncate(i.Message, 80),
 		toAge(i.LastTimestamp),
 	)
-}
-
-// ----------------------------------------------------------------------------
-// Helpers...
-
-func (*Event) toEmoji(t, r string) string {
-	switch t {
-	case "Warning":
-		switch r {
-		case "Failed":
-			return "😡"
-		case "Killing":
-			return "👿"
-		default:
-			return "😡"
-		}
-	default:
-		switch r {
-		case "Killing":
-			return "👿"
-		case "BackOff":
-			return "👹"
-		default:
-			return "😮"
-		}
-	}
 }

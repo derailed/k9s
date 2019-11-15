@@ -94,7 +94,7 @@ func k8sCR() *rbacv1.ClusterRole {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              "fred",
 			Namespace:         "blee",
-			CreationTimestamp: metav1.Time{testTime()},
+			CreationTimestamp: metav1.Time{Time: testTime()},
 		},
 		Rules: []rbacv1.PolicyRule{
 			{

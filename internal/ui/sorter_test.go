@@ -114,7 +114,8 @@ func TestIsDurationSort(t *testing.T) {
 		"ascGreater":  {"10h10m", "2h5m", true, false},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			less, ok := isDurationSort(u.asc, u.s1, u.s2)
 			assert.True(t, ok)

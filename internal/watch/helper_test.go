@@ -20,9 +20,10 @@ func TestMetaFQN(t *testing.T) {
 		"nons": {metav1.ObjectMeta{Name: "blee"}, "blee"},
 	}
 
-	for k, v := range uu {
+	for k := range uu {
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, v.e, MetaFQN(v.m))
+			assert.Equal(t, u.e, MetaFQN(u.m))
 		})
 	}
 }
@@ -39,9 +40,10 @@ func TestMxResourceDiff(t *testing.T) {
 		"ncpu": {makeRes("1m", "0Mi"), makeRes("2m", "0Mi"), true},
 	}
 
-	for k, v := range uu {
+	for k := range uu {
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, v.e, resourceDiff(v.r1, v.r2))
+			assert.Equal(t, u.e, resourceDiff(u.r1, u.r2))
 		})
 	}
 }
@@ -69,7 +71,8 @@ func TestToSelector(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			m := toSelector(u.s)
 			for k, v := range m {
@@ -102,7 +105,8 @@ func TestMatchesNode(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, matchesNode(u.n, u.s))
 		})
@@ -131,7 +135,8 @@ func TestMatchesLabels(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, matchesLabels(u.l, u.s))
 		})

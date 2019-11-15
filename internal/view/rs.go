@@ -48,20 +48,17 @@ func (r *ReplicaSet) showPods(app *App, _, res, sel string) {
 		app.Flash().Errf("Replicaset failed %s", err)
 	}
 
-	rs := s.(*v1.ReplicaSet)
+	rs, ok := s.(*v1.ReplicaSet)
+	if !ok {
+		log.Fatal().Msg("Expecting a valid rs")
+	}
 	l, err := metav1.LabelSelectorAsSelector(rs.Spec.Selector)
 	if err != nil {
 		app.Flash().Errf("Selector failed %s", err)
 		return
 	}
 
-	showPods(app, ns, l.String(), "", r.backCmd)
-}
-
-func (r *ReplicaSet) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	r.app.inject(r)
-
-	return nil
+	showPods(app, ns, l.String(), "")
 }
 
 func (r *ReplicaSet) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {

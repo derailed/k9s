@@ -43,7 +43,7 @@ func newClusterInfoView(app *App, mx resource.MetricsServer) *clusterInfoView {
 func (v *clusterInfoView) init(version string) {
 	cluster := resource.NewCluster(v.app.Conn(), &log.Logger, v.mxs)
 
-	row := v.initInfo(version, cluster)
+	row := v.initInfo(cluster)
 	row = v.initVersion(row, version, cluster)
 
 	v.SetCell(row, 0, v.sectionCell("CPU"))
@@ -55,7 +55,7 @@ func (v *clusterInfoView) init(version string) {
 	v.refresh()
 }
 
-func (v *clusterInfoView) initInfo(version string, cluster *resource.Cluster) int {
+func (v *clusterInfoView) initInfo(cluster *resource.Cluster) int {
 	var row int
 	v.SetCell(row, 0, v.sectionCell("Context"))
 	v.SetCell(row, 1, v.infoCell(cluster.ContextName()))

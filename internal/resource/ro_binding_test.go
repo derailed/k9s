@@ -81,11 +81,6 @@ func k8sRB() *v1.RoleBinding {
 	}
 }
 
-func newRB() resource.Columnar {
-	mc := NewMockConnection()
-	return resource.NewRoleBinding(mc).New(k8sRB())
-}
-
 func rbYaml() string {
 	return `apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

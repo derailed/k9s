@@ -84,7 +84,9 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags) error {
 	}
 	c.K9s.CurrentCluster = ctx.Cluster
 	if len(ctx.Namespace) != 0 {
-		c.SetActiveNamespace(ctx.Namespace)
+		if err := c.SetActiveNamespace(ctx.Namespace); err != nil {
+			return err
+		}
 	}
 
 	if isSet(flags.ClusterName) {
@@ -92,7 +94,9 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags) error {
 	}
 
 	if isSet(flags.Namespace) {
-		c.SetActiveNamespace(*flags.Namespace)
+		if err := c.SetActiveNamespace(*flags.Namespace); err != nil {
+			return err
+		}
 	}
 
 	return nil

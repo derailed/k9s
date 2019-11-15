@@ -21,7 +21,8 @@ func TestIsTCPPort(t *testing.T) {
 		"udp": {"80╱UDP", false},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, isTCPPort(u.p))
 		})
@@ -36,7 +37,8 @@ func TestFQN(t *testing.T) {
 		"allNS":   {"", "fred", "fred"},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, fqn(u.ns, u.n))
 		})
@@ -75,9 +77,10 @@ func TestUrlFor(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, urlFor(u.cfg, u.co, u.port))
+			assert.Equal(t, u.e, urlFor(u.cfg, u.port))
 		})
 	}
 }
@@ -98,7 +101,8 @@ func TestContainerID(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, containerID(u.path, u.co))
 		})

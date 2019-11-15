@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -56,7 +57,10 @@ func (r *ReplicationController) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	rc := i.(*v1.ReplicationController)
+	rc, ok := i.(*v1.ReplicationController)
+	if !ok {
+		return "", errors.New("Expecting a rc resource")
+	}
 	rc.TypeMeta.APIVersion = "v1"
 	rc.TypeMeta.Kind = "ReplicationController"
 

@@ -147,7 +147,7 @@ func (r *Rbac) refresh() {
 	if r.app.Conn() == nil {
 		return
 	}
-	data, err := r.reconcile(r.ActiveNS(), r.roleName, r.roleType)
+	data, err := r.reconcile(r.roleName, r.roleType)
 	if err != nil {
 		log.Error().Err(err).Msgf("Refresh for %s:%d", r.roleName, r.roleType)
 		r.app.Flash().Err(err)
@@ -179,10 +179,10 @@ func (r *Rbac) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return r.app.PrevCmd(evt)
 }
 
-func (r *Rbac) reconcile(ns, name string, kind roleKind) (resource.TableData, error) {
+func (r *Rbac) reconcile(name string, kind roleKind) (resource.TableData, error) {
 	var table resource.TableData
 
-	evts, err := r.rowEvents(ns, name, kind)
+	evts, err := r.rowEvents(name, kind)
 	if err != nil {
 		return table, err
 	}
@@ -202,7 +202,7 @@ func (r *Rbac) setCache(evts resource.RowEvents) {
 	r.cache = evts
 }
 
-func (r *Rbac) rowEvents(ns, name string, kind roleKind) (resource.RowEvents, error) {
+func (r *Rbac) rowEvents(name string, kind roleKind) (resource.RowEvents, error) {
 	var (
 		evts resource.RowEvents
 		err  error
@@ -277,11 +277,6 @@ func (r *Rbac) parseRules(rules []rbacv1.PolicyRule) resource.RowEvents {
 }
 
 func prepRow(res, grp string, verbs []string) resource.Row {
-	const (
-		nameLen  = 60
-		groupLen = 30
-	)
-
 	if grp != resource.NAValue {
 		grp = toGroup(grp)
 	}

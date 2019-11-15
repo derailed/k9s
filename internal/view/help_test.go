@@ -7,15 +7,7 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
-
-func newNS(n string) v1.Namespace {
-	return v1.Namespace{ObjectMeta: metav1.ObjectMeta{
-		Name: n,
-	}}
-}
 
 func TestHelpNew(t *testing.T) {
 	ctx := makeCtx()

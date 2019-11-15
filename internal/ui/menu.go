@@ -83,16 +83,13 @@ func (v *Menu) hasDigits(hh model.MenuHints) bool {
 }
 
 func (v *Menu) buildMenuTable(hh model.MenuHints) [][]string {
-	table := make([]model.MenuHints, maxRows+1)
-
+	table := make([][]string, maxRows+1)
 	colCount := (len(hh) / maxRows) + 1
-
 	if v.hasDigits(hh) {
 		colCount++
 	}
-
 	for row := 0; row < maxRows; row++ {
-		table[row] = make(model.MenuHints, colCount)
+		table[row] = make([]string, colCount)
 	}
 
 	var row, col int
@@ -102,35 +99,24 @@ func (v *Menu) buildMenuTable(hh model.MenuHints) [][]string {
 		if !h.Visible {
 			continue
 		}
-		isDigit := menuRX.MatchString(h.Mnemonic)
-		if !isDigit && firstCmd {
+
+		if !menuRX.MatchString(h.Mnemonic) && firstCmd {
 			row, col, firstCmd = 0, col+1, false
-			if table[0][0].IsBlank() {
+			if table[0][0] == "" {
 				col = 0
 			}
 		}
 		if maxKeys[col] < len(h.Mnemonic) {
 			maxKeys[col] = len(h.Mnemonic)
 		}
-		table[row][col] = h
+		table[row][col] = keyConv(v.formatMenu(h, maxKeys[col]))
 		row++
 		if row >= maxRows {
-			col++
-			row = 0
+			row, col = 0, col+1
 		}
 	}
 
-	strTable := make([][]string, maxRows+1)
-	for r := 0; r < len(table); r++ {
-		strTable[r] = make([]string, len(table[r]))
-	}
-	for row := range strTable {
-		for col := range strTable[row] {
-			strTable[row][col] = keyConv(v.formatMenu(table[row][col], maxKeys[col]))
-		}
-	}
-
-	return strTable
+	return table
 }
 
 // ----------------------------------------------------------------------------

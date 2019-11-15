@@ -20,7 +20,7 @@ func NewPageStack() *PageStack {
 }
 
 func (p *PageStack) Init(ctx context.Context) {
-	p.app = ctx.Value(ui.KeyApp).(*App)
+	p.app = mustExtractApp(ctx)
 	p.Stack.AddListener(p)
 }
 

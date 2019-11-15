@@ -39,13 +39,13 @@ func TestNodeMXUpdate(t *testing.T) {
 
 	mxx := &mv1beta1.NodeMetricsList{
 		Items: []mv1beta1.NodeMetrics{
-			*makeNodeMX("n1", "10m", "10Mi"),
+			*makeNodeMX("n2", "10m", "10Mi"),
 		},
 	}
 	no.update(mxx, false)
 
-	assert.Equal(t, toQty("10m"), *no.cache["n1"].(*mv1beta1.NodeMetrics).Usage.Cpu())
-	assert.Equal(t, toQty("10Mi"), *no.cache["n1"].(*mv1beta1.NodeMetrics).Usage.Memory())
+	assert.Equal(t, toQty("10m"), *no.cache["n2"].(*mv1beta1.NodeMetrics).Usage.Cpu())
+	assert.Equal(t, toQty("10Mi"), *no.cache["n2"].(*mv1beta1.NodeMetrics).Usage.Memory())
 }
 
 func TestNodeMXUpdateNoChange(t *testing.T) {

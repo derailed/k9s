@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/derailed/k9s/internal/model"
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
@@ -44,24 +43,10 @@ func (v *selectList) Start()               {}
 func (v *selectList) Stop()                {}
 func (v *selectList) Name() string         { return "picker" }
 
-func (v *selectList) back(evt *tcell.EventKey) *tcell.EventKey {
-	v.parent.Pop()
-
-	return nil
-}
-
 // Protocol...
 
 func (v *selectList) Pop() {
 	v.parent.Pop()
-}
-
-func (v *selectList) getList() resource.List {
-	return v.parent.getList()
-}
-
-func (v *selectList) getSelection() string {
-	return v.parent.getSelection()
 }
 
 // SetActions to handle keyboard events.

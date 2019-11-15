@@ -54,7 +54,7 @@ func TestNodesMetrics(t *testing.T) {
 
 	nodes := Collection{
 		makeNode("n1", "32", "128Gi", "50m", "2Mi"),
-		makeNode("n2", "8", "4Gi", "50m", "2Mi"),
+		makeNode("n2", "8", "4Gi", "50m", "10Mi"),
 	}
 
 	metrics := v1beta1.NodeMetricsList{
@@ -79,8 +79,8 @@ func TestNodesMetrics(t *testing.T) {
 
 func BenchmarkNodesMetrics(b *testing.B) {
 	nodes := Collection{
-		makeNode("n1", "100m", "4Mi", "50m", "2Mi"),
-		makeNode("n2", "100m", "4Mi", "50m", "2Mi"),
+		makeNode("n1", "100m", "4Mi", "100m", "2Mi"),
+		makeNode("n2", "100m", "4Mi", "100m", "2Mi"),
 	}
 
 	metrics := v1beta1.NodeMetricsList{

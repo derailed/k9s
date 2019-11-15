@@ -11,6 +11,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/rs/zerolog/log"
 )
 
 func trimCellRelative(t *Table, row, col int) string {
@@ -34,15 +35,15 @@ func saveTable(cluster, name string, data resource.TableData) (string, error) {
 
 	path := filepath.Join(dir, fName)
 	mod := os.O_CREATE | os.O_WRONLY
-	file, err := os.OpenFile(path, mod, 0644)
-	defer func() {
-		if file != nil {
-			file.Close()
-		}
-	}()
+	file, err := os.OpenFile(path, mod, 0600)
 	if err != nil {
 		return "", err
 	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Error().Err(err).Msg("Closing file")
+		}
+	}()
 
 	w := csv.NewWriter(file)
 	if err := w.Write(data.Header); err != nil {

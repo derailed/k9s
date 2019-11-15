@@ -17,8 +17,8 @@ type (
 		Fqn
 
 		Lines           int64
-		Previous        bool
 		Color           color.Paint
+		Previous        bool
 		SingleContainer bool
 		MultiPods       bool
 	}

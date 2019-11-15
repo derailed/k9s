@@ -4,6 +4,7 @@ import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -34,12 +35,15 @@ func (j *Job) showPods(app *App, _, res, sel string) {
 		return
 	}
 
-	jo := job.(*batchv1.Job)
+	jo, ok := job.(*batchv1.Job)
+	if !ok {
+		log.Fatal().Msg("Expecting a valid job")
+	}
 	l, err := metav1.LabelSelectorAsSelector(jo.Spec.Selector)
 	if err != nil {
 		app.Flash().Err(err)
 		return
 	}
 
-	showPods(app, ns, l.String(), "", j.backCmd)
+	showPods(app, ns, l.String(), "")
 }

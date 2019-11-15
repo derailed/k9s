@@ -3,6 +3,7 @@ package resource
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"strconv"
@@ -21,6 +22,10 @@ import (
 
 const (
 	defaultTimeout = 1 * time.Second
+	Terminating    = "Terminating"
+	Running        = "Running"
+	Initialized    = "Initialized"
+	Completed      = "Completed"
 )
 
 type (
@@ -81,7 +86,10 @@ func (r *Pod) New(i interface{}) Columnar {
 		c.instance = &instance
 	case *interface{}:
 		ptr := *instance
-		po := ptr.(v1.Pod)
+		po, ok := ptr.(v1.Pod)
+		if !ok {
+			log.Fatal().Msgf("Expecting a pod resource")
+		}
 		c.instance = &po
 	default:
 		log.Fatal().Msgf("unknown Pod type %#v", i)
@@ -103,7 +111,10 @@ func (r *Pod) Marshal(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	po := i.(*v1.Pod)
+	po, ok := i.(*v1.Pod)
+	if !ok {
+		return "", errors.New("Expecting a pod resource")
+	}
 	po.TypeMeta.APIVersion = "v1"
 	po.TypeMeta.Kind = "Pod"
 
@@ -119,13 +130,19 @@ func (r *Pod) Containers(path string, includeInit bool) ([]string, error) {
 
 // PodLogs tail logs for all containers in a running Pod.
 func (r *Pod) PodLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
-	i := ctx.Value(IKey("informer")).(*watch.Informer)
-	p, err := i.Get(watch.PodIndex, opts.FQN(), metav1.GetOptions{})
+	inf, ok := ctx.Value(IKey("informer")).(*watch.Informer)
+	if !ok {
+		return errors.New("Expecting an informer")
+	}
+	p, err := inf.Get(watch.PodIndex, opts.FQN(), metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 
-	po := p.(*v1.Pod)
+	po, ok := p.(*v1.Pod)
+	if !ok {
+		return errors.New("Expecting a pod resource")
+	}
 	opts.Color = asColor(po.Name)
 	if len(po.Spec.InitContainers)+len(po.Spec.Containers) == 1 {
 		opts.SingleContainer = true
@@ -192,19 +209,19 @@ func tailLogs(ctx context.Context, res k8s.Loggable, c chan<- string, opts LogOp
 }
 
 func logsTimeout(cancel context.CancelFunc, blocked *int32) {
-	select {
-	case <-time.After(defaultTimeout):
-		if atomic.LoadInt32(blocked) == 1 {
-			log.Debug().Msg("Timed out reading the log stream")
-			cancel()
-		}
+	<-time.After(defaultTimeout)
+	if atomic.LoadInt32(blocked) == 1 {
+		log.Debug().Msg("Timed out reading the log stream")
+		cancel()
 	}
 }
 
 func readLogs(ctx context.Context, stream io.ReadCloser, c chan<- string, opts LogOptions) {
 	defer func() {
 		log.Debug().Msgf(">>> Closing stream `%s", opts.Path())
-		stream.Close()
+		if err := stream.Close(); err != nil {
+			log.Error().Err(err).Msg("Cloing stream")
+		}
 	}()
 
 	scanner := bufio.NewScanner(stream)
@@ -227,7 +244,10 @@ func (r *Pod) List(ns string, opts metav1.ListOptions) (Columnars, error) {
 
 	cc := make(Columnars, 0, len(pods))
 	for i := range pods {
-		po := r.New(&pods[i]).(*Pod)
+		po, ok := r.New(&pods[i]).(*Pod)
+		if !ok {
+			return nil, errors.New("Expecting a pod resource")
+		}
 		cc = append(cc, po)
 	}
 
@@ -379,10 +399,6 @@ func (r *Pod) statuses(ss []v1.ContainerStatus) (cr, ct, rc int) {
 	return
 }
 
-func isSet(s *string) bool {
-	return s != nil && *s != ""
-}
-
 func (r *Pod) phase(po *v1.Pod) string {
 	status := string(po.Status.Phase)
 	if po.Status.Reason != "" {
@@ -405,7 +421,7 @@ func (r *Pod) phase(po *v1.Pod) string {
 		return status
 	}
 
-	return "Terminating"
+	return Terminating
 }
 
 func (*Pod) containerPhase(st v1.PodStatus, status string) (bool, string) {
@@ -433,11 +449,11 @@ func (*Pod) containerPhase(st v1.PodStatus, status string) (bool, string) {
 
 func (*Pod) initContainerPhase(st v1.PodStatus, initCount int, status string) (bool, string) {
 	for i, cs := range st.InitContainerStatuses {
-		status := checkContainerStatus(cs, i, initCount)
-		if status == "" {
+		if state := checkContainerStatus(cs, i, initCount); state == "" {
 			continue
+		} else {
+			return true, state
 		}
-		return true, status
 	}
 
 	return false, status

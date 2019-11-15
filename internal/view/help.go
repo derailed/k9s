@@ -37,7 +37,7 @@ func NewHelp() *Help {
 }
 
 func (v *Help) Init(ctx context.Context) {
-	v.app = ctx.Value(ui.KeyApp).(*App)
+	v.app = mustExtractApp(ctx)
 
 	v.resetTitle()
 
@@ -171,10 +171,6 @@ func (v *Help) showGeneral() model.MenuHints {
 	}
 }
 
-func (v *Help) getTitle() string {
-	return helpTitle
-}
-
 func (v *Help) resetTitle() {
 	v.SetTitle(fmt.Sprintf(helpTitleFmt, helpTitle))
 }
@@ -182,20 +178,20 @@ func (v *Help) resetTitle() {
 func (v *Help) build(hh model.MenuHints) {
 	v.Clear()
 	sort.Sort(hh)
-	v.addSection(0, 0, "RESOURCE", hh)
-	v.addSection(0, 4, "GENERAL", v.showGeneral())
-	v.addSection(0, 6, "NAVIGATION", v.showNav())
-	v.addSection(0, 8, "HELP", v.showHelp())
+	v.addSection(0, "RESOURCE", hh)
+	v.addSection(4, "GENERAL", v.showGeneral())
+	v.addSection(6, "NAVIGATION", v.showNav())
+	v.addSection(8, "HELP", v.showHelp())
 }
 
-func (v *Help) addSection(r, c int, title string, hh model.MenuHints) {
-	row := r
+func (v *Help) addSection(c int, title string, hh model.MenuHints) {
+	row := 0
 	cell := tview.NewTableCell(title)
 	cell.SetTextColor(tcell.ColorGreen)
 	cell.SetAttributes(tcell.AttrBold)
 	cell.SetExpansion(2)
 	cell.SetAlign(tview.AlignLeft)
-	v.SetCell(r, c+1, cell)
+	v.SetCell(row, c+1, cell)
 	row++
 
 	for _, h := range hh {

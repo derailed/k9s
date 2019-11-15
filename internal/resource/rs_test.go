@@ -77,11 +77,6 @@ func k8sReplicaSet() *v1.ReplicaSet {
 	}
 }
 
-func newReplicaSet() resource.Columnar {
-	mc := NewMockConnection()
-	return resource.NewReplicaSet(mc).New(k8sReplicaSet())
-}
-
 func rsYaml() string {
 	return `apiVersion: apps/v1
 kind: ReplicaSet

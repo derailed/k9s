@@ -39,15 +39,16 @@ func TestMxDeltas(t *testing.T) {
 		e      bool
 	}{
 		"same": {makePodMxCo("p1", "1m", "0Mi", 1), makePodMxCo("p1", "1m", "0Mi", 1), false},
-		"dcpu": {makePodMxCo("p1", "10m", "0Mi", 1), makePodMxCo("p1", "0m", "0Mi", 1), true},
+		"dcpu": {makePodMxCo("p1", "10m", "0Mi", 1), makePodMxCo("p2", "0m", "0Mi", 1), true},
 		"dmem": {makePodMxCo("p1", "0m", "10Mi", 1), makePodMxCo("p1", "0m", "0Mi", 1), true},
 		"dco":  {makePodMxCo("p1", "0m", "10Mi", 1), makePodMxCo("p1", "0m", "0Mi", 2), true},
 	}
 
 	var p podMxWatcher
-	for k, v := range uu {
+	for k := range uu {
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, v.e, p.deltas(v.m1, v.m2))
+			assert.Equal(t, u.e, p.deltas(u.m1, u.m2))
 		})
 	}
 }
@@ -76,12 +77,12 @@ func TestPodMXUpdate(t *testing.T) {
 
 	mxx := &mv1beta1.PodMetricsList{
 		Items: []mv1beta1.PodMetrics{
-			*makePodMX("p1", "10m", "10Mi"),
+			*makePodMX("p2", "10m", "10Mi"),
 		},
 	}
 	po.update(mxx, false)
 
-	pmx := po.cache["default/p1"].(*mv1beta1.PodMetrics)
+	pmx := po.cache["default/p2"].(*mv1beta1.PodMetrics)
 	assert.Equal(t, toQty("10m"), *pmx.Containers[0].Usage.Cpu())
 	assert.Equal(t, toQty("10Mi"), *pmx.Containers[0].Usage.Memory())
 }

@@ -68,16 +68,16 @@ func saveYAML(cluster, name, data string) (string, error) {
 
 	path := filepath.Join(dir, fName)
 	mod := os.O_CREATE | os.O_WRONLY
-	file, err := os.OpenFile(path, mod, 0644)
-	defer func() {
-		if file != nil {
-			file.Close()
-		}
-	}()
+	file, err := os.OpenFile(path, mod, 0600)
 	if err != nil {
 		log.Error().Err(err).Msgf("YAML create %s", path)
 		return "", nil
 	}
+	defer func() {
+		if err := file.Close(); err != nil {
+			log.Error().Err(err).Msg("Closing yaml file")
+		}
+	}()
 	if _, err := file.Write([]byte(data)); err != nil {
 		return "", err
 	}

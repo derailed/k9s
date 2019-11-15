@@ -1,6 +1,8 @@
 package resource
 
 import (
+	"errors"
+
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/rbac/v1"
@@ -54,7 +56,10 @@ func (r *RoleBinding) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	rb := i.(*v1.RoleBinding)
+	rb, ok := i.(*v1.RoleBinding)
+	if !ok {
+		return "", errors.New("Expecting a rb resource")
+	}
 	rb.TypeMeta.APIVersion = "rbac.authorization.k8s.io/v1"
 	rb.TypeMeta.Kind = "RoleBinding"
 

@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -19,7 +17,6 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
-	"k8s.io/kubectl/pkg/util"
 )
 
 const localhost = "localhost"
@@ -150,39 +147,40 @@ func codec() (serializer.CodecFactory, runtime.ParameterCodec) {
 	return serializer.NewCodecFactory(scheme), runtime.NewParameterCodec(scheme)
 }
 
-func svcPortToTargetPort(ports []string, svc v1.Service, pod v1.Pod) ([]string, error) {
-	var translated []string
-	for _, port := range ports {
-		localPort, remotePort := splitPort(port)
-		portnum, err := strconv.Atoi(remotePort)
-		if err != nil {
-			svcPort, err := util.LookupServicePortNumberByName(svc, remotePort)
-			if err != nil {
-				return nil, err
-			}
-			portnum = int(svcPort)
-			if localPort == remotePort {
-				localPort = strconv.Itoa(portnum)
-			}
-		}
-		containerPort, err := util.LookupContainerPortNumberByServicePort(svc, pod, int32(portnum))
-		if err != nil {
-			return nil, err
-		}
-		if int32(portnum) != containerPort {
-			port = fmt.Sprintf("%s:%d", localPort, containerPort)
-		}
-		translated = append(translated, port)
-	}
+// BOZO!!
+// func svcPortToTargetPort(ports []string, svc v1.Service, pod v1.Pod) ([]string, error) {
+// 	var translated []string
+// 	for _, port := range ports {
+// 		localPort, remotePort := splitPort(port)
+// 		portnum, err := strconv.Atoi(remotePort)
+// 		if err != nil {
+// 			svcPort, e := util.LookupServicePortNumberByName(svc, remotePort)
+// 			if e != nil {
+// 				return nil, e
+// 			}
+// 			portnum = int(svcPort)
+// 			if localPort == remotePort {
+// 				localPort = strconv.Itoa(portnum)
+// 			}
+// 		}
+// 		containerPort, err := util.LookupContainerPortNumberByServicePort(svc, pod, int32(portnum))
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		if int32(portnum) != containerPort {
+// 			port = fmt.Sprintf("%s:%d", localPort, containerPort)
+// 		}
+// 		translated = append(translated, port)
+// 	}
 
-	return translated, nil
-}
+// 	return translated, nil
+// }
 
-func splitPort(port string) (local, remote string) {
-	parts := strings.Split(port, ":")
-	if len(parts) == 2 {
-		return parts[0], parts[1]
-	}
+// func splitPort(port string) (local, remote string) {
+// 	parts := strings.Split(port, ":")
+// 	if len(parts) == 2 {
+// 		return parts[0], parts[1]
+// 	}
 
-	return parts[0], parts[0]
-}
+// 	return parts[0], parts[0]
+// }

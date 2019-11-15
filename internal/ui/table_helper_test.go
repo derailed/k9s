@@ -18,7 +18,8 @@ func TestIsLabelSelector(t *testing.T) {
 		"wrongLabel": {"-f app=fred,env=blee", false},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, IsLabelSelector(u.sel))
 		})
@@ -33,7 +34,8 @@ func TestTrimLabelSelector(t *testing.T) {
 		"noSpace": {"-lapp=fred,env=blee", "app=fred,env=blee"},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, TrimLabelSelector(u.sel))
 		})

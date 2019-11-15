@@ -97,11 +97,6 @@ func k8sEndpoints() *v1.Endpoints {
 	}
 }
 
-func newEndpoints() resource.Columnar {
-	mc := NewMockConnection()
-	return resource.NewEndpoints(mc).New(k8sEndpoints())
-}
-
 func epYaml() string {
 	return `apiVersion: v1
 kind: Endpoint

@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -44,7 +45,10 @@ func (r *PodDisruptionBudget) New(i interface{}) Columnar {
 		c.instance = &instance
 	case *interface{}:
 		ptr := *i.(*interface{})
-		pdbi := ptr.(v1beta1.PodDisruptionBudget)
+		pdbi, ok := ptr.(v1beta1.PodDisruptionBudget)
+		if !ok {
+			log.Fatal().Msg("Expecting a pdb resource")
+		}
 		c.instance = &pdbi
 	default:
 		log.Fatal().Msgf("unknown PDB type %#v", i)
@@ -62,7 +66,10 @@ func (r *PodDisruptionBudget) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	pdb := i.(*v1beta1.PodDisruptionBudget)
+	pdb, ok := i.(*v1beta1.PodDisruptionBudget)
+	if !ok {
+		return "", errors.New("Expecting a pdb resource")
+	}
 	pdb.TypeMeta.APIVersion = "v1beta1"
 	pdb.TypeMeta.Kind = "PodDisruptionBudget"
 

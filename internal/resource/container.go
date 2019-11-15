@@ -2,6 +2,7 @@ package resource
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
@@ -48,7 +50,12 @@ func NewContainer(c Connection, pod *v1.Pod) *Container {
 // New builds a new Container instance from a k8s resource.
 func (r *Container) New(i interface{}) Columnar {
 	co := NewContainer(r.Connection, r.pod)
-	co.instance = i.(v1.Container)
+	coi, ok := i.(v1.Container)
+	if !ok {
+		log.Error().Err(errors.New("Expecting a container resource"))
+		return nil
+	}
+	co.instance = coi
 	co.path = r.namespacedName(r.pod.ObjectMeta) + ":" + co.instance.Name
 
 	return co
@@ -228,9 +235,9 @@ func toState(s v1.ContainerState) string {
 		if s.Terminated.Reason != "" {
 			return s.Terminated.Reason
 		}
-		return "Terminating"
+		return Terminating
 	case s.Running != nil:
-		return "Running"
+		return Running
 	default:
 		return MissingValue
 	}

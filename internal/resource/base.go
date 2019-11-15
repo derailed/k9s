@@ -163,8 +163,11 @@ func (*Base) marshalObject(o runtime.Object) (string, error) {
 }
 
 func (b *Base) podLogs(ctx context.Context, c chan<- string, sel map[string]string, opts LogOptions) error {
-	i := ctx.Value(IKey("informer")).(*watch.Informer)
-	pods, err := i.List(watch.PodIndex, opts.Namespace, metav1.ListOptions{
+	inf, ok := ctx.Value(IKey("informer")).(*watch.Informer)
+	if !ok {
+		return errors.New("Expecting valid informer")
+	}
+	pods, err := inf.List(watch.PodIndex, opts.Namespace, metav1.ListOptions{
 		LabelSelector: toSelector(sel),
 	})
 	if err != nil {
@@ -176,7 +179,10 @@ func (b *Base) podLogs(ctx context.Context, c chan<- string, sel map[string]stri
 	}
 	pr := NewPod(b.Connection)
 	for _, p := range pods {
-		po := p.(*v1.Pod)
+		po, ok := p.(*v1.Pod)
+		if !ok {
+			return errors.New("Expecting valid pod")
+		}
 		if po.Status.Phase == v1.PodRunning {
 			opts.Namespace, opts.Name = po.Namespace, po.Name
 			if err := pr.PodLogs(ctx, c, opts); err != nil {

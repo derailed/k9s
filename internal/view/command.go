@@ -99,15 +99,12 @@ func (c *command) run(cmd string) bool {
 	}
 	switch cmds[0] {
 	case "ctx", "context", "contexts":
-		if len(cmds) == 2 {
-			if err := c.app.switchCtx(cmds[1], true); err != nil {
-				log.Error().Err(err).Msg("Context switch failed!")
-				return false
-			}
-			return true
+		if len(cmds) == 2 && c.app.switchCtx(cmds[1], true) != nil {
+			log.Error().Msg("Context switch failed!")
+			return false
 		}
 		view := c.componentFor(gvr, v)
-		return c.exec(gvr, "", view)
+		return c.exec(gvr, view)
 	default:
 		ns := c.app.Config.ActiveNamespace()
 		if len(cmds) == 2 {
@@ -116,7 +113,7 @@ func (c *command) run(cmd string) bool {
 		if !c.app.switchNS(ns) {
 			return false
 		}
-		return c.exec(gvr, ns, c.componentFor(gvr, v))
+		return c.exec(gvr, c.componentFor(gvr, v))
 	}
 }
 
@@ -145,7 +142,7 @@ func (c *command) componentFor(gvr string, v *viewer) ResourceViewer {
 	return view
 }
 
-func (c *command) exec(gvr string, ns string, comp model.Component) bool {
+func (c *command) exec(gvr string, comp model.Component) bool {
 	if comp == nil {
 		log.Error().Err(fmt.Errorf("No component given for %s", gvr))
 		return false

@@ -69,11 +69,6 @@ func k8sRole() *v1.Role {
 	}
 }
 
-func newRole() resource.Columnar {
-	mc := NewMockConnection()
-	return resource.NewRole(mc).New(k8sRole())
-}
-
 func roleYaml() string {
 	return `apiVersion: rbac.authorization.k8s.io/v1
 kind: Role

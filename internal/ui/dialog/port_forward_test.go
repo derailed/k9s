@@ -37,7 +37,8 @@ func TestStripPort(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, stripPort(u.port))
 		})

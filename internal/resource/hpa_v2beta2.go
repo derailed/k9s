@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"errors"
 	"regexp"
 	"strconv"
 	"strings"
@@ -58,7 +59,10 @@ func (r *HorizontalPodAutoscaler) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	hpa := i.(*autoscalingv2beta2.HorizontalPodAutoscaler)
+	hpa, ok := i.(*autoscalingv2beta2.HorizontalPodAutoscaler)
+	if !ok {
+		return "", errors.New("expecting hpa resource")
+	}
 	hpa.TypeMeta.APIVersion = extractVersion(hpa.Annotations)
 	hpa.TypeMeta.Kind = "HorizontalPodAutoscaler"
 
@@ -116,6 +120,20 @@ func (r *HorizontalPodAutoscaler) Fields(ns string) Row {
 // ----------------------------------------------------------------------------
 // Helpers...
 
+func computePodStatus(ss []autoscalingv2beta2.MetricStatus, index int, current string) string {
+	if len(ss) > index && ss[index].Pods != nil {
+		return ss[index].Pods.Current.AverageValue.String()
+	}
+	return current
+}
+
+func computeObjectStatus(ss []autoscalingv2beta2.MetricStatus, index int, current string) string {
+	if len(ss) > index && ss[index].Object != nil {
+		return ss[index].Object.Current.Value.String()
+	}
+	return current
+}
+
 func toMetrics(specs []autoscalingv2beta2.MetricSpec, statuses []autoscalingv2beta2.MetricStatus) string {
 	if len(specs) == 0 {
 		return MissingValue
@@ -123,21 +141,15 @@ func toMetrics(specs []autoscalingv2beta2.MetricSpec, statuses []autoscalingv2be
 
 	list, max, more, count := []string{}, 2, false, 0
 	for i, spec := range specs {
-		current := "<unknown>"
+		current := UnknownValue
 
 		switch spec.Type {
 		case autoscalingv2beta2.ExternalMetricSourceType:
 			list = append(list, externalMetrics(i, spec, statuses))
 		case autoscalingv2beta2.PodsMetricSourceType:
-			if len(statuses) > i && statuses[i].Pods != nil {
-				current = statuses[i].Pods.Current.AverageValue.String()
-			}
-			list = append(list, current+"/"+spec.Pods.Target.AverageValue.String())
+			list = append(list, computePodStatus(statuses, i, current)+"/"+spec.Pods.Target.AverageValue.String())
 		case autoscalingv2beta2.ObjectMetricSourceType:
-			if len(statuses) > i && statuses[i].Object != nil {
-				current = statuses[i].Object.Current.Value.String()
-			}
-			list = append(list, current+"/"+spec.Object.Target.Value.String())
+			list = append(list, computeObjectStatus(statuses, i, current)+"/"+spec.Object.Target.Value.String())
 		case autoscalingv2beta2.ResourceMetricSourceType:
 			list = append(list, resourceMetrics(i, spec, statuses))
 		default:
@@ -159,7 +171,7 @@ func toMetrics(specs []autoscalingv2beta2.MetricSpec, statuses []autoscalingv2be
 }
 
 func externalMetrics(i int, spec autoscalingv2beta2.MetricSpec, statuses []autoscalingv2beta2.MetricStatus) string {
-	current := "<unknown>"
+	current := UnknownValue
 
 	if spec.External.Target.AverageValue != nil {
 		if len(statuses) > i && statuses[i].External != nil && &statuses[i].External.Current.AverageValue != nil {
@@ -175,7 +187,7 @@ func externalMetrics(i int, spec autoscalingv2beta2.MetricSpec, statuses []autos
 }
 
 func resourceMetrics(i int, spec autoscalingv2beta2.MetricSpec, statuses []autoscalingv2beta2.MetricStatus) string {
-	current := "<unknown>"
+	current := UnknownValue
 
 	if spec.Resource.Target.AverageValue != nil {
 		if len(statuses) > i && statuses[i].Resource != nil {

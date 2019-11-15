@@ -26,7 +26,6 @@ type Logs struct {
 
 	app        *App
 	parent     Loggable
-	actions    ui.KeyActions
 	cancelFunc context.CancelFunc
 }
 
@@ -39,7 +38,7 @@ func NewLogs(title string, parent Loggable) *Logs {
 }
 
 func (l *Logs) Init(ctx context.Context) {
-	l.app = ctx.Value(ui.KeyApp).(*App)
+	l.app = mustExtractApp(ctx)
 }
 
 func (l *Logs) Start()       {}
@@ -55,19 +54,19 @@ func (l *Logs) reload(co string, parent Loggable, prevLogs bool) {
 	l.load(co, prevLogs)
 }
 
-// SetActions to handle keyboard events.
-func (l *Logs) setActions(aa ui.KeyActions) {
-	l.actions = aa
+func (l *Logs) mustLogViewer() *Log {
+	v, ok := l.CurrentPage().Item.(*Log)
+	if !ok {
+		log.Fatal().Msg("Expecting a log viewer")
+	}
+
+	return v
 }
 
 // Hints show action hints
 func (l *Logs) Hints() model.MenuHints {
-	v := l.CurrentPage().Item.(*Log)
+	v := l.mustLogViewer()
 	return v.actions.Hints()
-}
-
-func (l *Logs) backFn() ui.ActionHandler {
-	return l.backCmd
 }
 
 func (l *Logs) deletePage() {
@@ -86,8 +85,8 @@ func (l *Logs) stop() {
 func (l *Logs) load(container string, prevLogs bool) {
 	if err := l.doLoad(l.parent.getSelection(), container, prevLogs); err != nil {
 		l.app.Flash().Err(err)
-		l := l.CurrentPage().Item.(*Log)
-		l.log("😂 Doh! No logs are available at this time. Check again later on...")
+		v := l.mustLogViewer()
+		v.log("😂 Doh! No logs are available at this time. Check again later on...")
 		return
 	}
 	l.app.SetFocus(l)
@@ -96,7 +95,7 @@ func (l *Logs) load(container string, prevLogs bool) {
 func (l *Logs) doLoad(path, co string, prevLogs bool) error {
 	l.stop()
 
-	v := l.CurrentPage().Item.(*Log)
+	v := l.mustLogViewer()
 	v.logs.Clear()
 	v.setTitle(path, co)
 

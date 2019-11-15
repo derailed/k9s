@@ -2,6 +2,7 @@ package view
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -152,7 +153,10 @@ func (a *App) BufferActive(state bool, _ ui.BufferKind) {
 
 func (a *App) toggleHeader(flag bool) {
 	a.showHeader = flag
-	flex := a.Main.GetPrimitive("main").(*tview.Flex)
+	flex, ok := a.Main.GetPrimitive("main").(*tview.Flex)
+	if !ok {
+		log.Fatal().Msg("Expecting valid flex view")
+	}
 	if a.showHeader {
 		flex.RemoveItemAtIndex(0)
 		flex.AddItemAtIndex(0, a.buildHeader(), 7, 1, false)
@@ -262,8 +266,8 @@ func (a *App) switchCtx(ctx string, load bool) error {
 		log.Error().Err(err).Msg("Config save failed!")
 	}
 	a.Flash().Infof("Switching context to %s", ctx)
-	if load {
-		a.gotoResource("po", true)
+	if load && !a.gotoResource("po") {
+		a.Flash().Err(errors.New("Goto pod failed"))
 	}
 
 	return nil
@@ -396,7 +400,9 @@ func (a *App) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.CmdBuff().IsActive() && !a.CmdBuff().Empty() {
 		a.Content.Stack.Reset()
-		a.gotoResource(a.GetCmd(), true)
+		if !a.gotoResource(a.GetCmd()) {
+			a.Flash().Errf("Goto %s failed!", a.GetCmd())
+		}
 		a.ResetCmd()
 		return nil
 	}
@@ -423,7 +429,7 @@ func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (a *App) gotoResource(res string, record bool) bool {
+func (a *App) gotoResource(res string) bool {
 	return a.command.run(res)
 }
 

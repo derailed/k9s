@@ -9,6 +9,7 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 )
 
 // ScalableResource represents a resource that can be scaled.
@@ -46,7 +47,10 @@ func (s *ScalableResource) scaleCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (s *ScalableResource) scale(selection string, replicas int) {
 	ns, n := namespaced(selection)
 
-	r := s.list.Resource().(resource.Scalable)
+	r, ok := s.list.Resource().(resource.Scalable)
+	if !ok {
+		log.Fatal().Msg("Expecting a valid scalable resource")
+	}
 
 	err := r.Scale(ns, n, int32(replicas))
 	if err != nil {

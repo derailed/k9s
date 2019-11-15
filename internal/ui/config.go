@@ -43,7 +43,9 @@ func (c *Configurator) StylesUpdater(ctx context.Context, s synchronizer) error 
 				log.Info().Err(err).Msg("Skin watcher failed")
 				return
 			case <-ctx.Done():
-				w.Close()
+				if err := w.Close(); err != nil {
+					log.Error().Err(err).Msg("Closing watcher")
+				}
 				return
 			}
 		}

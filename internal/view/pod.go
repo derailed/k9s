@@ -2,6 +2,7 @@ package view
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/derailed/k9s/internal/model"
@@ -81,7 +82,10 @@ func (p *Pod) listContainers(app *App, _, res, sel string) {
 		return
 	}
 
-	pod := po.(*v1.Pod)
+	pod, ok := po.(*v1.Pod)
+	if !ok {
+		log.Fatal().Msg("Expecting a valid pod")
+	}
 	list := resource.NewContainerList(app.Conn(), pod)
 	title := skinTitle(fmt.Sprintf(containerFmt, "Container", sel), app.Styles.Frame())
 
@@ -144,12 +148,12 @@ func (p *Pod) viewLogs(prev bool) bool {
 	if !p.masterPage().RowSelected() {
 		return false
 	}
-	p.showLogs(p.masterPage().GetSelectedItem(), "", p, prev)
+	p.showLogs("", p, prev)
 
 	return true
 }
 
-func (p *Pod) showLogs(path, co string, parent Loggable, prev bool) {
+func (p *Pod) showLogs(co string, parent Loggable, prev bool) {
 	p.logs.reload(co, parent, prev)
 	p.Push(p.logs)
 }
@@ -169,7 +173,10 @@ func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 		p.shellIn(sel, "")
 		return nil
 	}
-	picker := p.GetPrimitive("picker").(*selectList)
+	picker, ok := p.GetPrimitive("picker").(*selectList)
+	if !ok {
+		log.Fatal().Msg("Expecting a valid selectlist")
+	}
 	picker.populate(cc)
 	picker.SetSelectedFunc(func(i int, t, d string, r rune) {
 		p.shellIn(sel, t)
@@ -198,7 +205,9 @@ func fetchContainers(l resource.List, po string, includeInit bool) ([]string, er
 func shellIn(a *App, path, co string) {
 	args := computeShellArgs(path, co, a.Config.K9s.CurrentContext, a.Conn().Config().Flags().KubeConfig)
 	log.Debug().Msgf("Shell args %v", args)
-	runK(true, a, args...)
+	if !runK(true, a, args...) {
+		a.Flash().Err(errors.New("Shell exec failed"))
+	}
 }
 
 func computeShellArgs(path, co, context string, kcfg *string) []string {

@@ -17,7 +17,8 @@ func TestProbe(t *testing.T) {
 		"undefined": {nil, "off"},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, probe(u.probe))
 		})
@@ -34,7 +35,8 @@ func TestAsMi(t *testing.T) {
 		"10Mb": {10 * 1024 * 1024, 1.048576e+07},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, asMi(u.mem))
 		})
@@ -55,7 +57,8 @@ func TestToRes(t *testing.T) {
 			"0", "0"},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			cpu, mem := toRes(u.res)
 			assert.Equal(t, u.ecpu, cpu)
@@ -93,7 +96,8 @@ func TestToState(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, toState(u.state))
 		})

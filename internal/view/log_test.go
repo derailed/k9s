@@ -23,7 +23,7 @@ func TestAnsi(t *testing.T) {
 	v.SetDynamicColors(true)
 	aw := tview.ANSIWriter(v, "white", "black")
 	s := "[2019-03-27T15:05:15,246][INFO ][o.e.c.r.a.AllocationService] [es-0] Cluster health status changed from [YELLOW] to [GREEN] (reason: [shards started [[.monitoring-es-6-2019.03.27][0]]"
-	fmt.Fprintf(aw, s)
+	fmt.Fprintf(aw, "%s", s)
 	assert.Equal(t, s+"\n", v.GetText(false))
 }
 

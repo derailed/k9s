@@ -32,7 +32,7 @@ func TestNodeStatus(t *testing.T) {
 	for _, u := range uu {
 		res := make([]string, 5)
 		no.status(u.s, false, res)
-		assert.Equal(t, "Ready", join(res, ","))
+		assert.Equal(t, "Ready", join(res))
 	}
 }
 

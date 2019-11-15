@@ -59,8 +59,16 @@ func NewTable(title string) *Table {
 	}
 }
 
+func mustExtractSyles(ctx context.Context) *config.Styles {
+	styles, ok := ctx.Value(KeyStyles).(*config.Styles)
+	if !ok {
+		log.Fatal().Msg("Expecting valid styles")
+	}
+	return styles
+}
+
 func (t *Table) Init(ctx context.Context) {
-	t.styles = ctx.Value(KeyStyles).(*config.Styles)
+	t.styles = mustExtractSyles(ctx)
 
 	t.SetFixed(1, 0)
 	t.SetBorder(true)
@@ -350,8 +358,8 @@ func (t *Table) buildRow(row int, data resource.TableData, sk string, pads MaxyP
 	m := t.isMarked(sk)
 	for col, field := range data.Rows[sk].Fields {
 		header := data.Header[col]
-		field, align := t.formatCell(data.NumCols[header], header, field+Deltas(data.Rows[sk].Deltas[col], field), pads[col])
-		c := tview.NewTableCell(field)
+		cell, align := t.formatCell(data.NumCols[header], header, field+Deltas(data.Rows[sk].Deltas[col], field), pads[col])
+		c := tview.NewTableCell(cell)
 		{
 			c.SetExpansion(1)
 			c.SetAlign(align)
@@ -418,10 +426,10 @@ func (t *Table) filtered() resource.TableData {
 		return t.fuzzyFilter(q[2:])
 	}
 
-	return t.rxFilter(q)
+	return t.rxFilter()
 }
 
-func (t *Table) rxFilter(q string) resource.TableData {
+func (t *Table) rxFilter() resource.TableData {
 	rx, err := regexp.Compile(`(?i)` + t.cmdBuff.String())
 	if err != nil {
 		log.Error().Err(errors.New("Invalid filter expression")).Msg("Regexp")

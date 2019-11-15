@@ -3,7 +3,6 @@ package view
 import (
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 )
 
@@ -31,14 +30,10 @@ func (n *Node) extraActions(aa ui.KeyActions) {
 }
 
 func (n *Node) showPods(app *App, _, _, sel string) {
-	showPods(app, "", "", "spec.nodeName="+sel, n.backCmd)
+	showPods(app, "", "", "spec.nodeName="+sel)
 }
 
-func (n *Node) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return nil
-}
-
-func showPods(app *App, ns, labelSel, fieldSel string, a ui.ActionHandler) {
+func showPods(app *App, ns, labelSel, fieldSel string) {
 	app.switchNS(ns)
 
 	list := resource.NewPodList(app.Conn(), ns)

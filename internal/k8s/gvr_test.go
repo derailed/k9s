@@ -13,12 +13,13 @@ func TestAsGR(t *testing.T) {
 		gvr string
 		e   schema.GroupVersion
 	}{
-		"full": {"apps/v1/deployments", schema.GroupVersion{"apps", "v1"}},
-		"core": {"v1/pods", schema.GroupVersion{"", "v1"}},
-		"bork": {"users", schema.GroupVersion{"", ""}},
+		"full": {"apps/v1/deployments", schema.GroupVersion{Group: "apps", Version: "v1"}},
+		"core": {"v1/pods", schema.GroupVersion{Group: "", Version: "v1"}},
+		"bork": {"users", schema.GroupVersion{Group: "", Version: ""}},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, k8s.GVR(u.gvr).AsGR())
 		})
@@ -34,7 +35,8 @@ func TestNewGVR(t *testing.T) {
 		"core": {"", "v1", "pods", "v1/pods"},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, k8s.NewGVR(u.g, u.v, u.r).String())
 		})
@@ -49,7 +51,8 @@ func TestToGVR(t *testing.T) {
 		"core": {"v1", "pods", "v1/pods"},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, k8s.ToGVR(u.gv, u.r).String())
 		})
@@ -67,7 +70,8 @@ func TestResName(t *testing.T) {
 		"empty": {"", ".."},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, k8s.GVR(u.gvr).ResName())
 		})
@@ -85,7 +89,8 @@ func TestToR(t *testing.T) {
 		"empty": {"", ""},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, k8s.GVR(u.gvr).ToR())
 		})
@@ -103,7 +108,8 @@ func TestToG(t *testing.T) {
 		"empty": {"", ""},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, k8s.GVR(u.gvr).ToG())
 		})
@@ -121,7 +127,8 @@ func TestToV(t *testing.T) {
 		"empty": {"", ""},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, k8s.GVR(u.gvr).ToV())
 		})
@@ -138,7 +145,8 @@ func TestToStringer(t *testing.T) {
 		"empty": {""},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.gvr, k8s.GVR(u.gvr).String())
 		})

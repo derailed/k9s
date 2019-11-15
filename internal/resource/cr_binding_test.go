@@ -73,7 +73,7 @@ func k8sCRB() *rbacv1.ClusterRoleBinding {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              "fred",
 			Namespace:         "blee",
-			CreationTimestamp: metav1.Time{testTime()},
+			CreationTimestamp: metav1.Time{Time: testTime()},
 		},
 		Subjects: []rbacv1.Subject{
 			{Kind: "test", Name: "fred", Namespace: "blee"},

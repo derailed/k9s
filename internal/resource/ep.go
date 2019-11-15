@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 
@@ -57,7 +58,10 @@ func (r *Endpoints) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	ep := i.(*v1.Endpoints)
+	ep, ok := i.(*v1.Endpoints)
+	if !ok {
+		return "", errors.New("expecting ep resource")
+	}
 	ep.TypeMeta.APIVersion = "v1"
 	ep.TypeMeta.Kind = "Endpoint"
 

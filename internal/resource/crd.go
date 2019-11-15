@@ -48,8 +48,16 @@ func (r *CustomResourceDefinition) New(i interface{}) Columnar {
 	default:
 		log.Fatal().Msgf("unknown CustomResourceDefinition type %#v", i)
 	}
-	meta := c.instance.Object["metadata"].(map[string]interface{})
-	c.path = meta["name"].(string)
+	meta, ok := c.instance.Object["metadata"].(map[string]interface{})
+	if !ok {
+		log.Error().Err(errors.New("Expecting a map interface")).Msg("CRD New")
+		return nil
+	}
+	c.path, ok = meta["name"].(string)
+	if !ok {
+		log.Error().Err(errors.New("Expecting a string name")).Msg("CRD New")
+		return nil
+	}
 
 	return c
 }
@@ -82,13 +90,16 @@ func (r *CustomResourceDefinition) Fields(ns string) Row {
 	ff := make(Row, 0, len(r.Header(ns)))
 
 	i := r.instance
-	meta := i.Object["metadata"].(map[string]interface{})
+	meta, ok := i.Object["metadata"].(map[string]interface{})
+	if !ok {
+		log.Fatal().Err(errors.New("Expecting a map interface")).Msg("CRD Fields")
+	}
 	t, err := time.Parse(time.RFC3339, meta["creationTimestamp"].(string))
 	if err != nil {
 		log.Error().Msgf("Fields timestamp %v", err)
 	}
 
-	return append(ff, meta["name"].(string), toAge(metav1.Time{t}))
+	return append(ff, meta["name"].(string), toAge(metav1.Time{Time: t}))
 }
 
 // ExtFields returns extended fields.
@@ -97,20 +108,33 @@ func (r *CustomResourceDefinition) ExtFields() (TypeMeta, error) {
 	i := r.instance
 	spec, ok := i.Object["spec"].(map[string]interface{})
 	if !ok {
-		return m, errors.New("missing crd specs")
+		return m, errors.New("expecting interface map spec")
 	}
 
-	if meta, ok := i.Object["metadata"].(map[string]interface{}); ok {
-		m.Name = meta["name"].(string)
+	if meta, k := i.Object["metadata"].(map[string]interface{}); k {
+		m.Name, ok = meta["name"].(string)
+		if !ok {
+			return m, errors.New("expecting meta string name")
+		}
 	}
 	m.Group, m.Version = spec["group"].(string), spec["version"].(string)
 	m.Namespaced = isNamespaced(spec["scope"].(string))
 	names, ok := spec["names"].(map[string]interface{})
 	if !ok {
-		return m, errors.New("missing crd names")
+		return m, errors.New("expecting crd interface map names")
 	}
-	m.Kind = names["kind"].(string)
-	m.Singular, m.Plural = names["singular"].(string), names["plural"].(string)
+	m.Kind, ok = names["kind"].(string)
+	if !ok {
+		return m, errors.New("expecting string kind")
+	}
+	m.Singular, ok = names["singular"].(string)
+	if !ok {
+		return m, errors.New("expecting string singular")
+	}
+	m.Plural, ok = names["plural"].(string)
+	if !ok {
+		return m, errors.New("expecting string plural")
+	}
 	if names["shortNames"] != nil {
 		for _, s := range names["shortNames"].([]interface{}) {
 			m.ShortNames = append(m.ShortNames, s.(string))

@@ -2,10 +2,10 @@ package resource
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -20,7 +20,6 @@ type Job struct {
 	*Base
 
 	instance *batchv1.Job
-	mx       sync.RWMutex
 }
 
 // NewJobList returns a new resource list.
@@ -67,7 +66,10 @@ func (r *Job) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	jo := i.(*batchv1.Job)
+	jo, ok := i.(*batchv1.Job)
+	if !ok {
+		return "", errors.New("expecting job resource")
+	}
 	jo.TypeMeta.APIVersion = "extensions/v1beta1"
 	jo.TypeMeta.Kind = "Job"
 
@@ -87,7 +89,10 @@ func (r *Job) Logs(ctx context.Context, c chan<- string, opts LogOptions) error 
 	if err != nil {
 		return err
 	}
-	jo := instance.(*batchv1.Job)
+	jo, ok := instance.(*batchv1.Job)
+	if !ok {
+		return errors.New("expecting job resource")
+	}
 	if jo.Spec.Selector == nil || len(jo.Spec.Selector.MatchLabels) == 0 {
 		return fmt.Errorf("No valid selector found on job %s", opts.FQN())
 	}

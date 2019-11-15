@@ -101,7 +101,7 @@ func k8sSA() *v1.ServiceAccount {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              "fred",
 			Namespace:         "blee",
-			CreationTimestamp: metav1.Time{testTime()},
+			CreationTimestamp: metav1.Time{Time: testTime()},
 		},
 		Secrets: []v1.ObjectReference{{Name: "blee"}},
 	}

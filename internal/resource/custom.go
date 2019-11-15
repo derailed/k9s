@@ -48,6 +48,20 @@ func NewCustom(c k8s.Connection, gvr k8s.GVR) *Custom {
 	return cr
 }
 
+func mustExtractMeta(o map[string]interface{}) map[string]interface{} {
+	if m, ok := o["metadata"].(map[string]interface{}); ok {
+		return m
+	}
+	panic("unable to extract meta")
+}
+
+func mustExtractStr(o map[string]interface{}, k string) string {
+	if s, ok := o[k].(string); ok {
+		return s
+	}
+	panic("unable to extract string for key `" + k)
+}
+
 // New builds a new Custom instance from a k8s resource.
 func (r *Custom) New(i interface{}) Columnar {
 	cr := NewCustom(r.Connection, "")
@@ -64,14 +78,10 @@ func (r *Custom) New(i interface{}) Columnar {
 	if err != nil {
 		log.Error().Err(err)
 	}
-	meta := obj["metadata"].(map[string]interface{})
-	ns := ""
-	if n, ok := meta["namespace"]; ok {
-		ns = n.(string)
-	}
-	name := meta["name"].(string)
-	cr.path = path.Join(ns, name)
-	cr.gvr = k8s.NewGVR(obj["kind"].(string), obj["apiVersion"].(string), name)
+	meta := mustExtractMeta(obj)
+	ns, n := mustExtractStr(meta, "namespace"), mustExtractStr(meta, "name")
+	cr.path = path.Join(ns, n)
+	cr.gvr = k8s.NewGVR(obj["kind"].(string), obj["apiVersion"].(string), n)
 
 	return cr
 }
@@ -107,7 +117,10 @@ func (r *Custom) List(ns string, opts v1.ListOptions) (Columnars, error) {
 		return Columnars{}, errors.New("no resources found")
 	}
 
-	table := ii[0].(*metav1beta1.Table)
+	table, ok := ii[0].(*metav1beta1.Table)
+	if !ok {
+		return nil, errors.New("expecting a table resource")
+	}
 	r.headers = make(Row, len(table.ColumnDefinitions))
 	for i, h := range table.ColumnDefinitions {
 		r.headers[i] = h.Name
@@ -146,9 +159,11 @@ func (r *Custom) Fields(ns string) Row {
 		return Row{}
 	}
 
-	meta := obj["metadata"].(map[string]interface{})
+	meta, ok := obj["metadata"].(map[string]interface{})
+	if !ok {
+		log.Fatal().Msg("expecting interface map meta")
+	}
 	rns, ok := meta["namespace"].(string)
-
 	if ns == AllNamespaces {
 		if ok {
 			ff = append(ff, rns)

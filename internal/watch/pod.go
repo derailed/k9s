@@ -11,11 +11,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 )
 
-const (
-	// PodIndex marker for stored pods.
-	PodIndex string = "pods"
-	podCols         = 11
-)
+// PodIndex marker for stored pods.
+const PodIndex = "pods"
 
 // Connection represents an client api server connection.
 type Connection k8s.Connection
@@ -40,7 +37,10 @@ func (p *Pod) List(ns string, opts metav1.ListOptions) k8s.Collection {
 		nodeSelector = true
 	}
 	for _, o := range p.GetStore().List() {
-		pod := o.(*v1.Pod)
+		pod, ok := o.(*v1.Pod)
+		if !ok {
+			panic("expecting pod")
+		}
 		if ns != "" && pod.Namespace != ns {
 			continue
 		}

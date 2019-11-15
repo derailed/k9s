@@ -42,7 +42,10 @@ func NewPodMetrics(c k8s.Connection, ns string) *PodMetrics {
 func (p *PodMetrics) List(ns string, opts metav1.ListOptions) k8s.Collection {
 	var res k8s.Collection
 	for _, o := range p.GetStore().List() {
-		mx := o.(*mv1beta1.PodMetrics)
+		mx, ok := o.(*mv1beta1.PodMetrics)
+		if !ok {
+			log.Fatal().Msg("Expecting a valid pod metric")
+		}
 		if ns == "" || mx.Namespace == ns {
 			res = append(res, mx)
 		}
@@ -153,18 +156,12 @@ func (p *podMxWatcher) update(list *mv1beta1.PodMetricsList, notify bool) {
 		fqns[fqn] = &list.Items[i]
 	}
 
-	for k, v := range p.cache {
-		if _, ok := fqns[k]; !ok {
-			if notify {
-				if err := p.notify(watch.Event{Type: watch.Deleted, Object: v}); err != nil {
-					return
-				}
-			}
-			delete(p.cache, k)
-		}
-	}
+	p.checkDeletes(fqns, notify)
+	p.checkAdds(fqns, notify)
+}
 
-	for k, v := range fqns {
+func (p *podMxWatcher) checkAdds(m map[string]runtime.Object, notify bool) {
+	for k, v := range m {
 		kind := watch.Added
 		if v1, ok := p.cache[k]; ok {
 			if !p.deltas(v1.(*mv1beta1.PodMetrics), v.(*mv1beta1.PodMetrics)) {
@@ -172,12 +169,22 @@ func (p *podMxWatcher) update(list *mv1beta1.PodMetricsList, notify bool) {
 			}
 			kind = watch.Modified
 		}
-		if notify {
-			if err := p.notify(watch.Event{Type: kind, Object: v}); err != nil {
-				return
-			}
-		}
 		p.cache[k] = v
+		if notify && p.notify(watch.Event{Type: kind, Object: v}) != nil {
+			return
+		}
+	}
+}
+
+func (p *podMxWatcher) checkDeletes(m map[string]runtime.Object, notify bool) {
+	for k, v := range p.cache {
+		if _, ok := m[k]; ok {
+			continue
+		}
+		delete(p.cache, k)
+		if notify && p.notify(watch.Event{Type: watch.Deleted, Object: v}) != nil {
+			return
+		}
 	}
 }
 

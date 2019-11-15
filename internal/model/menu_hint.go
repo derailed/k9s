@@ -14,7 +14,7 @@ type MenuHint struct {
 
 // IsBlank checks if menu hint is a place holder.
 func (m MenuHint) IsBlank() bool {
-	return m.Mnemonic == "" && m.Description == "" && m.Visible == false
+	return m.Mnemonic == "" && m.Description == "" && !m.Visible
 }
 
 // MenuHints represents a collection of hints.

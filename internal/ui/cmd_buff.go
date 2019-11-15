@@ -25,11 +25,11 @@ type (
 	// CmdBuff represents user command input.
 	CmdBuff struct {
 		buff      []rune
+		listeners []BuffWatcher
+		hotKey    rune
 		kind      BufferKind
 		sticky    bool
-		hotKey    rune
 		active    bool
-		listeners []BuffWatcher
 	}
 )
 
@@ -88,10 +88,6 @@ func (c *CmdBuff) Delete() {
 	}
 	c.buff = c.buff[:len(c.buff)-1]
 	c.fireChanged()
-}
-
-func (c *CmdBuff) wipe() {
-	c.buff = make([]rune, 0, maxBuff)
 }
 
 // Clear clears out command buffer.

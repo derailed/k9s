@@ -2,6 +2,7 @@ package view
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	"github.com/derailed/k9s/internal/resource"
@@ -37,7 +38,9 @@ func (c *Context) useCtx(app *App, _, res, sel string) {
 		app.Flash().Err(err)
 		return
 	}
-	app.gotoResource("po", true)
+	if !app.gotoResource("po") {
+		app.Flash().Err(errors.New("Goto pod failed"))
+	}
 }
 
 func (*Context) cleanser(s string) string {

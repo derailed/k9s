@@ -44,7 +44,7 @@ func (n *Namespace) extraActions(aa ui.KeyActions) {
 
 func (n *Namespace) switchNs(app *App, _, res, sel string) {
 	n.useNamespace(sel)
-	app.gotoResource("po", true)
+	app.gotoResource("po")
 }
 
 func (n *Namespace) useNsCmd(evt *tcell.EventKey) *tcell.EventKey {

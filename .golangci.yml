@@ -117,7 +117,7 @@ linters-settings:
     min-complexity: 10
   gocognit:
     # minimal code complexity to report, 30 by default (but we recommend 10-20)
-    min-complexity: 10
+    min-complexity: 20
   maligned:
     # print struct with more effective memory layout or not, false by default
     suggest-new: true
@@ -179,8 +179,8 @@ linters-settings:
     # See https://go-critic.github.io/overview#checks-overview
     # To check which checks are enabled run `GL_DEBUG=gocritic golangci-lint run`
     # By default list of stable checks is used.
-    enabled-checks:
-      - rangeValCopy
+    # enabled-checks:
+    # - rangeValCopy
 
     # Which checks should be disabled; can't be combined with 'enabled-checks'; default is empty
     disabled-checks:
@@ -230,9 +230,12 @@ linters:
   enable:
     - megacheck
     - govet
+    - funlen
+    - gocyclo
   disable:
     - maligned
     - prealloc
+    - gosec
   disable-all: false
   presets:
     - bugs
@@ -256,6 +259,9 @@ issues:
         - errcheck
         - dupl
         - gosec
+        - funlen
+        - goconst
+        - gocognit
 
     # Exclude known linters from partially hard-vendored code,
     # which is impossible to exclude via "nolint" comments.
@@ -296,6 +302,5 @@ issues:
 
   # Show only new issues created after git revision `REV`
   new-from-rev: REV
-
   # Show only new issues created in git patch with set file path.
-  new-from-patch: path/to/patch/file
+  # new-from-patch: path/to/patch/file

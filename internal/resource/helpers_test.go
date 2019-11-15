@@ -17,9 +17,10 @@ func TestJoin(t *testing.T) {
 		"sparse": {[]string{"a", "", "c"}, "a,c"},
 	}
 
-	for k, v := range uu {
+	for k := range uu {
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, v.e, join(v.i, ","))
+			assert.Equal(t, u.e, join(u.i))
 		})
 	}
 }

@@ -41,7 +41,8 @@ func TestStackPush(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			s := model.NewStack()
 			for _, c := range u.items {
@@ -77,7 +78,8 @@ func TestStackTop(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			s := model.NewStack()
 			for _, item := range u.items {

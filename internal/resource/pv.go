@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"errors"
 	"path"
 	"strings"
 
@@ -57,7 +58,10 @@ func (r *PersistentVolume) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	pv := i.(*v1.PersistentVolume)
+	pv, ok := i.(*v1.PersistentVolume)
+	if !ok {
+		return "", errors.New("Expecting a pv resource")
+	}
 	pv.TypeMeta.APIVersion = "v1"
 	pv.TypeMeta.Kind = "PersistentVolume"
 
@@ -84,7 +88,7 @@ func (r *PersistentVolume) Fields(ns string) Row {
 
 	phase := i.Status.Phase
 	if i.ObjectMeta.DeletionTimestamp != nil {
-		phase = "Terminating"
+		phase = Terminating
 	}
 
 	var claim string

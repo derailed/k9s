@@ -2,6 +2,7 @@ package resource
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 
@@ -62,7 +63,10 @@ func (r *Deployment) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	dp := i.(*appsv1.Deployment)
+	dp, ok := i.(*appsv1.Deployment)
+	if !ok {
+		return "", errors.New("expecting dp resource")
+	}
 	dp.TypeMeta.APIVersion = "apps/v1"
 	dp.TypeMeta.Kind = "Deployment"
 
@@ -75,7 +79,10 @@ func (r *Deployment) Logs(ctx context.Context, c chan<- string, opts LogOptions)
 	if err != nil {
 		return err
 	}
-	dp := instance.(*appsv1.Deployment)
+	dp, ok := instance.(*appsv1.Deployment)
+	if !ok {
+		return errors.New("Expecting valid deployment")
+	}
 	if dp.Spec.Selector == nil || len(dp.Spec.Selector.MatchLabels) == 0 {
 		return fmt.Errorf("No valid selector found on deployment %s", opts.Name)
 	}

@@ -1,6 +1,8 @@
 package resource
 
 import (
+	"errors"
+
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -55,7 +57,10 @@ func (r *Namespace) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	nss := i.(*v1.Namespace)
+	nss, ok := i.(*v1.Namespace)
+	if !ok {
+		return "", errors.New("Expecting a ns resource")
+	}
 	nss.TypeMeta.APIVersion = "v1"
 	nss.TypeMeta.Kind = "Namespace"
 

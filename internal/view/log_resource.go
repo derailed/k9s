@@ -6,7 +6,6 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 // ContainerFn returns the active container name.
@@ -39,10 +38,10 @@ func (l *LogResource) extraActions(aa ui.KeyActions) {
 	aa[ui.KeyShiftL] = ui.NewKeyAction("Logs Previous", l.prevLogsCmd, true)
 }
 
-func (l *LogResource) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
+func (l *LogResource) sortColCmd(col int) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		t := l.masterPage()
-		t.SetSortCol(t.NameColIndex()+col, 0, asc)
+		t.SetSortCol(t.NameColIndex()+col, 0, false)
 		t.Refresh()
 
 		return nil
@@ -83,13 +82,4 @@ func (l *LogResource) showLogs(prev bool) {
 	}
 	l.logs.reload(co, l, prev)
 	l.Push(l.logs)
-}
-
-func (l *LogResource) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if err := l.app.Config.SetActiveNamespace(l.list.GetNamespace()); err != nil {
-		log.Error().Err(err).Msg("Config NS set failed!")
-	}
-	l.app.inject(l)
-
-	return nil
 }

@@ -36,6 +36,18 @@ func rbacColorer(ns string, r *resource.RowEvent) tcell.Color {
 	return ui.DefaultColorer(ns, r)
 }
 
+func checkReadyCol(readyCol, statusCol string, c tcell.Color) tcell.Color {
+	if statusCol == "Completed" {
+		return c
+	}
+
+	tokens := strings.Split(readyCol, "/")
+	if len(tokens) == 2 && (tokens[0] == "0" || tokens[0] != tokens[1]) {
+		return ui.ErrColor
+	}
+	return c
+}
+
 func podColorer(ns string, r *resource.RowEvent) tcell.Color {
 	c := ui.DefaultColorer(ns, r)
 
@@ -45,25 +57,21 @@ func podColorer(ns string, r *resource.RowEvent) tcell.Color {
 	}
 	statusCol := readyCol + 1
 
-	tokens := strings.Split(strings.TrimSpace(r.Fields[readyCol]), "/")
-	if len(tokens) == 2 && (tokens[0] == "0" || tokens[0] != tokens[1]) {
-		if strings.TrimSpace(r.Fields[statusCol]) != "Completed" {
-			c = ui.ErrColor
-		}
-	}
+	ready, status := strings.TrimSpace(r.Fields[readyCol]), strings.TrimSpace(r.Fields[statusCol])
+	c = checkReadyCol(ready, status, c)
 
-	switch strings.TrimSpace(r.Fields[statusCol]) {
+	switch status {
 	case "ContainerCreating", "PodInitializing":
 		return ui.AddColor
-	case "Initialized":
+	case resource.Initialized:
 		return ui.HighlightColor
-	case "Completed":
+	case resource.Completed:
 		return ui.CompletedColor
-	case "Running":
-	case "Terminating":
+	case resource.Running:
+	case resource.Terminating:
 		return ui.KillColor
 	default:
-		c = ui.ErrColor
+		return ui.ErrColor
 	}
 
 	return c
@@ -81,11 +89,11 @@ func containerColorer(ns string, r *resource.RowEvent) tcell.Color {
 	switch strings.TrimSpace(r.Fields[stateCol]) {
 	case "ContainerCreating", "PodInitializing":
 		return ui.AddColor
-	case "Terminating", "Initialized":
+	case resource.Terminating, resource.Initialized:
 		return ui.HighlightColor
-	case "Completed":
+	case resource.Completed:
 		return ui.CompletedColor
-	case "Running":
+	case resource.Running:
 	default:
 		c = ui.ErrColor
 	}
@@ -236,7 +244,7 @@ func nsColorer(ns string, r *resource.RowEvent) tcell.Color {
 	}
 
 	switch strings.TrimSpace(r.Fields[1]) {
-	case "Inactive", "Terminating":
+	case "Inactive", resource.Terminating:
 		c = ui.ErrColor
 	}
 

@@ -59,7 +59,9 @@ func TestAppViews(t *testing.T) {
 	a := ui.NewApp()
 	a.Init()
 
-	for _, v := range []string{"crumbs", "logo", "cmd", "flash", "menu"} {
+	vv := []string{"crumbs", "logo", "cmd", "flash", "menu"}
+	for i := range vv {
+		v := vv[i]
 		t.Run(v, func(t *testing.T) {
 			assert.NotNil(t, a.Views()[v])
 		})

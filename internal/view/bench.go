@@ -106,10 +106,6 @@ func (b *Bench) keyBindings() {
 	b.masterPage().AddActions(aa)
 }
 
-func (b *Bench) getTitle() string {
-	return benchTitle
-}
-
 func (b *Bench) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if b.masterPage().SearchBuff().IsActive() {
 		return b.masterPage().filterCmd(evt)
@@ -139,7 +135,7 @@ func (b *Bench) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	sel, file := b.masterPage().GetSelectedItem(), b.benchFile()
 	dir := filepath.Join(perf.K9sBenchDir, b.app.Config.K9s.CurrentCluster)
-	showModal(b.Pages, fmt.Sprintf("Delete benchmark `%s?", file), "master", func() {
+	showModal(b.Pages, fmt.Sprintf("Delete benchmark `%s?", file), func() {
 		if err := os.Remove(filepath.Join(dir, file)); err != nil {
 			b.app.Flash().Errf("Unable to delete file %s", err)
 			return
@@ -147,11 +143,6 @@ func (b *Bench) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		b.app.Flash().Infof("Benchmark %s deleted!", sel)
 	})
 
-	return nil
-}
-
-func (b *Bench) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	b.showMaster()
 	return nil
 }
 
@@ -221,7 +212,9 @@ func (b *Bench) watchBenchDir(ctx context.Context) error {
 				return
 			case <-ctx.Done():
 				log.Debug().Msg("!!!! FS WATCHER DONE!!")
-				w.Close()
+				if err := w.Close(); err != nil {
+					log.Error().Err(err).Msg("Closing bench watched")
+				}
 				return
 			}
 		}
@@ -273,29 +266,25 @@ func augmentRow(fields resource.Row, data string) {
 	col++
 
 	ms := okRx.FindAllStringSubmatch(data, -1)
-	fields[col] = "0"
-	if len(ms) > 0 {
-		var sum int
-		for _, m := range ms {
-			if m, err := strconv.Atoi(string(m[1])); err == nil {
-				sum += m
-			}
-		}
-		fields[col] = asNum(sum)
-	}
+	fields[col] = countReq(ms)
 	col++
 
 	me := errRx.FindAllStringSubmatch(data, -1)
-	fields[col] = "0"
-	if len(me) > 0 {
-		var sum int
-		for _, m := range me {
-			if m, err := strconv.Atoi(string(m[1])); err == nil {
-				sum += m
-			}
-		}
-		fields[col] = asNum(sum)
+	fields[col] = countReq(me)
+}
+
+func countReq(rr [][]string) string {
+	if len(rr) == 0 {
+		return "0"
 	}
+
+	var sum int
+	for _, m := range rr {
+		if m, err := strconv.Atoi(string(m[1])); err == nil {
+			sum += m
+		}
+	}
+	return asNum(sum)
 }
 
 func benchDir(cfg *config.Config) string {

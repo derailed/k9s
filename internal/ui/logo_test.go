@@ -40,7 +40,8 @@ func TestLogoStatus(t *testing.T) {
 
 	defaults, _ := config.NewStyles("")
 	v := NewLogoView(defaults)
-	for k, u := range uu {
+	for n := range uu {
+		k, u := n, uu[n]
 		t.Run(k, func(t *testing.T) {
 			switch k {
 			case "info":

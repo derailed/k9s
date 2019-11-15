@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
@@ -19,9 +18,8 @@ import (
 )
 
 const (
-	portForwardTitle    = "PortForwards"
-	portForwardTitleFmt = " [aqua::b]%s([fuchsia::b]%d[fuchsia::-])[aqua::-] "
-	promptPage          = "prompt"
+	portForwardTitle = "PortForwards"
+	promptPage       = "prompt"
 )
 
 // PortForward presents active portforward viewer.
@@ -42,7 +40,7 @@ func NewPortForward(title, gvr string, list resource.List) ResourceViewer {
 
 // Init the view.
 func (p *PortForward) Init(ctx context.Context) {
-	p.app = ctx.Value(ui.KeyApp).(*App)
+	p.app = mustExtractApp(ctx)
 	p.MasterDetail.Init(ctx)
 	p.registerActions()
 
@@ -108,12 +106,8 @@ func (p *PortForward) registerActions() {
 	})
 }
 
-func (p *PortForward) getTitle() string {
-	return portForwardTitle
-}
-
 func (p *PortForward) gotoBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
-	p.app.gotoResource("be", true)
+	p.app.gotoResource("be")
 
 	return nil
 }
@@ -206,7 +200,7 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	showModal(p.Pages, fmt.Sprintf("Delete PortForward `%s?", sel), "table", func() {
+	showModal(p.Pages, fmt.Sprintf("Delete PortForward `%s?", sel), func() {
 		fw, ok := p.app.forwarders[sel]
 		if !ok {
 			log.Debug().Msgf("Unable to find forwarder %s", sel)
@@ -219,21 +213,6 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		p.masterPage().Update(p.hydrate())
 		p.app.Flash().Infof("PortForward %s deleted!", sel)
 	})
-
-	return nil
-}
-
-func (p *PortForward) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if p.cancelFn != nil {
-		p.cancelFn()
-	}
-
-	tv := p.masterPage()
-	if tv.SearchBuff().IsActive() {
-		tv.SearchBuff().Reset()
-	} else {
-		p.app.inject(p.app.Content.GetPrimitive("main").(model.Component))
-	}
 
 	return nil
 }
@@ -251,7 +230,7 @@ func (p *PortForward) hydrate() resource.TableData {
 			na,
 			f.Container(),
 			strings.Join(f.Ports(), ","),
-			urlFor(cfg, f.Container(), ports[0]),
+			urlFor(cfg, ports[0]),
 			asNum(c),
 			asNum(n),
 			f.Age(),
@@ -264,10 +243,6 @@ func (p *PortForward) hydrate() resource.TableData {
 	}
 
 	return data
-}
-
-func (p *PortForward) resetTitle() {
-	p.SetTitle(fmt.Sprintf(portForwardTitleFmt, portForwardTitle, p.masterPage().GetRowCount()-1))
 }
 
 // ----------------------------------------------------------------------------
@@ -310,7 +285,7 @@ func loadConfig(dc, dn int, id string, cc map[string]config.BenchConfig) (int, i
 	return c, n, cfg
 }
 
-func showModal(p *ui.Pages, msg, back string, ok func()) {
+func showModal(p *ui.Pages, msg string, ok func()) {
 	m := tview.NewModal().
 		AddButtons([]string{"Cancel", "OK"}).
 		SetTextColor(tcell.ColorFuchsia).
@@ -319,14 +294,14 @@ func showModal(p *ui.Pages, msg, back string, ok func()) {
 			if b == "OK" {
 				ok()
 			}
-			dismissModal(p, back)
+			dismissModal(p)
 		})
 	m.SetTitle("<Delete Benchmark>")
 	p.AddPage(promptPage, m, false, false)
 	p.ShowPage(promptPage)
 }
 
-func dismissModal(p *ui.Pages, page string) {
+func dismissModal(p *ui.Pages) {
 	p.RemovePage(promptPage)
 }
 
@@ -352,7 +327,9 @@ func watchFS(ctx context.Context, app *App, dir, file string, cb func()) error {
 				return
 			case <-ctx.Done():
 				log.Debug().Msgf("<<FS %s WATCHER DONE>>", dir)
-				w.Close()
+				if err := w.Close(); err != nil {
+					log.Error().Err(err).Msg("Closing portforward watcher")
+				}
 				return
 			}
 		}

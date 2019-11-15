@@ -151,17 +151,24 @@ func (n *nodeMxWatcher) update(list *mv1beta1.NodeMetricsList, notify bool) {
 		fqn := MetaFQN(list.Items[i].ObjectMeta)
 		fqns[fqn] = &list.Items[i]
 	}
+	n.checkDeletes(fqns, notify)
+	n.checkAdds(fqns, notify)
+}
+
+func (n *nodeMxWatcher) checkDeletes(m map[string]runtime.Object, notify bool) {
 	for k, v := range n.cache {
-		if _, ok := fqns[k]; !ok {
-			if notify {
-				if err := n.notify(watch.Event{Type: watch.Deleted, Object: v}); err != nil {
-					return
-				}
-			}
-			delete(n.cache, k)
+		if _, ok := m[k]; ok {
+			continue
+		}
+		delete(n.cache, k)
+		if notify && n.notify(watch.Event{Type: watch.Deleted, Object: v}) != nil {
+			return
 		}
 	}
-	for k, v := range fqns {
+}
+
+func (n *nodeMxWatcher) checkAdds(m map[string]runtime.Object, notify bool) {
+	for k, v := range m {
 		kind := watch.Added
 		if v1, ok := n.cache[k]; ok {
 			if !resourceDiff(v1.(*mv1beta1.NodeMetrics).Usage, v.(*mv1beta1.NodeMetrics).Usage) {
@@ -169,11 +176,9 @@ func (n *nodeMxWatcher) update(list *mv1beta1.NodeMetricsList, notify bool) {
 			}
 			kind = watch.Modified
 		}
-		if notify {
-			if err := n.notify(watch.Event{Type: kind, Object: v}); err != nil {
-				return
-			}
-		}
 		n.cache[k] = v
+		if notify && n.notify(watch.Event{Type: kind, Object: v}) != nil {
+			return
+		}
 	}
 }

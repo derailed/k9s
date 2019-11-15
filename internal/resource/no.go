@@ -1,6 +1,7 @@
 package resource
 
 import (
+	"errors"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -77,8 +78,14 @@ func (r *Node) List(ns string, opts metav1.ListOptions) (Columnars, error) {
 
 	cc := make(Columnars, 0, len(nn))
 	for i := range nn {
-		node := nn[i].(v1.Node)
-		no := r.New(&node).(*Node)
+		node, ok := nn[i].(v1.Node)
+		if !ok {
+			return nil, errors.New("Expecting a node resource")
+		}
+		no, ok := r.New(&node).(*Node)
+		if !ok {
+			return nil, errors.New("Expecting a node resource")
+		}
 		cc = append(cc, no)
 	}
 
@@ -94,7 +101,10 @@ func (r *Node) Marshal(path string) (string, error) {
 		return "", err
 	}
 
-	no := i.(*v1.Node)
+	no, ok := i.(*v1.Node)
+	if !ok {
+		return "", errors.New("Expecting a node resource")
+	}
 	no.TypeMeta.APIVersion = "v1"
 	no.TypeMeta.Kind = "Node"
 
@@ -150,8 +160,8 @@ func (r *Node) Fields(ns string) Row {
 
 	return append(ff,
 		no.Name,
-		join(sta, ","),
-		join(ro.List(), ","),
+		join(sta),
+		join(ro.List()),
 		no.Status.NodeInfo.KubeletVersion,
 		no.Status.NodeInfo.KernelVersion,
 		iIP,
@@ -205,7 +215,7 @@ func gatherNodeMX(no *v1.Node, mx *mv1beta1.NodeMetrics) (c metric, a metric, p 
 	return
 }
 
-func (_ *Node) findNodeRoles(no *v1.Node, roles *sets.String) []string {
+func (_ *Node) findNodeRoles(no *v1.Node, roles *sets.String) {
 	for k, v := range no.Labels {
 		switch {
 		case strings.HasPrefix(k, labelNodeRolePrefix):
@@ -220,8 +230,6 @@ func (_ *Node) findNodeRoles(no *v1.Node, roles *sets.String) []string {
 	if roles.Len() == 0 {
 		roles.Insert(MissingValue)
 	}
-
-	return roles.List()
 }
 
 func (*Node) getIPs(addrs []v1.NodeAddress) (iIP, eIP string) {
@@ -268,71 +276,72 @@ func (*Node) status(status v1.NodeStatus, exempt bool, res []string) {
 	}
 }
 
-func (r *Node) podsResources(name string) (v1.ResourceList, v1.ResourceList, error) {
-	reqs, limits := v1.ResourceList{}, v1.ResourceList{}
-	pods, err := r.Connection.NodePods(name)
-	if err != nil {
-		return reqs, limits, err
-	}
-	for _, p := range pods.Items {
-		preq, plim := podResources(&p)
-		for k, v := range preq {
-			if value, ok := reqs[k]; !ok {
-				reqs[k] = v.DeepCopy()
-			} else {
-				value.Add(v)
-				reqs[k] = value
-			}
-		}
-		for k, v := range plim {
-			if value, ok := limits[k]; !ok {
-				limits[k] = v.DeepCopy()
-			} else {
-				value.Add(v)
-				limits[k] = value
-			}
-		}
-	}
+// BOZO!!
+// func (r *Node) podsResources(name string) (v1.ResourceList, v1.ResourceList, error) {
+// 	reqs, limits := v1.ResourceList{}, v1.ResourceList{}
+// 	pods, err := r.Connection.NodePods(name)
+// 	if err != nil {
+// 		return reqs, limits, err
+// 	}
+// 	for _, p := range pods.Items {
+// 		preq, plim := podResources(&p)
+// 		for k, v := range preq {
+// 			if value, ok := reqs[k]; !ok {
+// 				reqs[k] = v.DeepCopy()
+// 			} else {
+// 				value.Add(v)
+// 				reqs[k] = value
+// 			}
+// 		}
+// 		for k, v := range plim {
+// 			if value, ok := limits[k]; !ok {
+// 				limits[k] = v.DeepCopy()
+// 			} else {
+// 				value.Add(v)
+// 				limits[k] = value
+// 			}
+// 		}
+// 	}
 
-	return reqs, limits, nil
-}
+// 	return reqs, limits, nil
+// }
 
-func podResources(pod *v1.Pod) (v1.ResourceList, v1.ResourceList) {
-	reqs, limits := v1.ResourceList{}, v1.ResourceList{}
-	for _, container := range pod.Spec.Containers {
-		addResources(reqs, container.Resources.Requests)
-		addResources(limits, container.Resources.Limits)
-	}
-	// init containers define the minimum of any resource
-	for _, container := range pod.Spec.InitContainers {
-		maxResources(reqs, container.Resources.Requests)
-		maxResources(limits, container.Resources.Limits)
-	}
+// func podResources(pod *v1.Pod) (v1.ResourceList, v1.ResourceList) {
+// 	reqs, limits := v1.ResourceList{}, v1.ResourceList{}
+// 	for _, container := range pod.Spec.Containers {
+// 		addResources(reqs, container.Resources.Requests)
+// 		addResources(limits, container.Resources.Limits)
+// 	}
+// 	// init containers define the minimum of any resource
+// 	for _, container := range pod.Spec.InitContainers {
+// 		maxResources(reqs, container.Resources.Requests)
+// 		maxResources(limits, container.Resources.Limits)
+// 	}
 
-	return reqs, limits
-}
+// 	return reqs, limits
+// }
 
-// AddResources adds the resources from l2 to l1.
-func addResources(l1, l2 v1.ResourceList) {
-	for name, quantity := range l2 {
-		if value, ok := l1[name]; ok {
-			value.Add(quantity)
-			l1[name] = value
-		} else {
-			l1[name] = quantity.DeepCopy()
-		}
-	}
-}
+// // AddResources adds the resources from l2 to l1.
+// func addResources(l1, l2 v1.ResourceList) {
+// 	for name, quantity := range l2 {
+// 		if value, ok := l1[name]; ok {
+// 			value.Add(quantity)
+// 			l1[name] = value
+// 		} else {
+// 			l1[name] = quantity.DeepCopy()
+// 		}
+// 	}
+// }
 
-// MaxResourceList sets list to the greater of l1/l2 for every resource.
-func maxResources(l1, l2 v1.ResourceList) {
-	for name, quantity := range l2 {
-		if value, ok := l1[name]; ok {
-			if quantity.Cmp(value) > 0 {
-				l1[name] = quantity.DeepCopy()
-			}
-		} else {
-			l1[name] = quantity.DeepCopy()
-		}
-	}
-}
+// // MaxResourceList sets list to the greater of l1/l2 for every resource.
+// func maxResources(l1, l2 v1.ResourceList) {
+// 	for name, quantity := range l2 {
+// 		if value, ok := l1[name]; ok {
+// 			if quantity.Cmp(value) > 0 {
+// 				l1[name] = quantity.DeepCopy()
+// 			}
+// 		} else {
+// 			l1[name] = quantity.DeepCopy()
+// 		}
+// 	}
+// }

@@ -103,33 +103,6 @@ func k8sCRD() *unstructured.Unstructured {
 	}
 }
 
-func k8sCRDFull() *unstructured.Unstructured {
-	return &unstructured.Unstructured{
-		Object: map[string]interface{}{
-			"metadata": map[string]interface{}{
-				"namespace":         "blee",
-				"name":              "fred",
-				"creationTimestamp": "2018-12-14T10:36:43.326972Z",
-			},
-			"spec": map[string]interface{}{
-				"group":   "apps",
-				"version": "v1",
-				"names": map[string]interface{}{
-					"kind":       "cool",
-					"singular":   "cool",
-					"plural":     "cools",
-					"shortNamed": []string{"co", "cos"},
-				},
-			},
-		},
-	}
-}
-
-func newCRDFull() resource.Columnar {
-	mc := NewMockConnection()
-	return resource.NewCustomResourceDefinition(mc).New(k8sCRDFull())
-}
-
 func newCRD() resource.Columnar {
 	mc := NewMockConnection()
 	return resource.NewCustomResourceDefinition(mc).New(k8sCRD())

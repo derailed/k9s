@@ -113,7 +113,7 @@ func k8sSVC() *v1.Service {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:              "fred",
 			Namespace:         "blee",
-			CreationTimestamp: metav1.Time{testTime()},
+			CreationTimestamp: metav1.Time{Time: testTime()},
 		},
 		Spec: v1.ServiceSpec{
 			Type:        v1.ServiceTypeClusterIP,
