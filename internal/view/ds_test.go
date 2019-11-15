@@ -1,21 +1,17 @@
 package view_test
 
-// import (
-// 	"context"
-// 	"testing"
+import (
+	"testing"
 
-// 	"github.com/derailed/k9s/internal/config"
-// 	"github.com/derailed/k9s/internal/resource"
-// 	"github.com/derailed/k9s/internal/ui"
-// 	"github.com/derailed/k9s/internal/view"
-// 	"github.com/stretchr/testify/assert"
-// )
+	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/view"
+	"github.com/stretchr/testify/assert"
+)
 
-// func TestDaemonSet(t *testing.T) {
-// 	l := resource.NewDaemonSetList(nil, "fred")
-// 	v := view.NewDaemonSet("blee", "", l)
-// 	ctx := context.WithValue(ui.KeyApp, NewApp(config.NewConfig(ks{})))
-// 	v.Init(ctx)
+func TestDaemonSet(t *testing.T) {
+	v := view.NewDaemonSet("blee", "", resource.NewDaemonSetList(nil, ""))
+	v.Init(makeCtx())
 
-// 	assert.Equal(t, 10, len(v.Hints()))
-// }
+	assert.Equal(t, "ds", v.Name())
+	assert.Equal(t, 23, len(v.Hints()))
+}

@@ -8,10 +8,12 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// Job represents a job viewer.
 type Job struct {
 	*LogResource
 }
 
+// NewJob returns a new viewer.
 func NewJob(title, gvr string, list resource.List) ResourceViewer {
 	j := Job{NewLogResource(title, gvr, list)}
 	j.extraActionsFn = j.extraActions
