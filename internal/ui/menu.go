@@ -41,8 +41,12 @@ func (v *Menu) StackPushed(c model.Component) {
 	v.HydrateMenu(c.Hints())
 }
 
-func (v *Menu) StackPopped(o, n model.Component) {
-	v.HydrateMenu(n.Hints())
+func (v *Menu) StackPopped(o, top model.Component) {
+	if top != nil {
+		v.HydrateMenu(top.Hints())
+	} else {
+		v.Clear()
+	}
 }
 
 func (v *Menu) StackTop(t model.Component) {

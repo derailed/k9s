@@ -9,12 +9,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+// StatefulSet represents a statefulset viewer.
 type StatefulSet struct {
 	*LogResource
 	scalableResource    *ScalableResource
 	restartableResource *RestartableResource
 }
 
+// NewStatefulSet returns a new viewer.
 func NewStatefulSet(title, gvr string, list resource.List) ResourceViewer {
 	l := NewLogResource(title, gvr, list)
 	s := StatefulSet{

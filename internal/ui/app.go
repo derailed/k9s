@@ -27,7 +27,6 @@ func NewApp() *App {
 		Main:        NewPages(),
 		cmdBuff:     NewCmdBuff(':', CommandBuff),
 	}
-
 	a.RefreshStyles()
 
 	a.views = map[string]tview.Primitive{

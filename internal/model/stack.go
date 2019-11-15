@@ -116,6 +116,18 @@ func (s *Stack) Pop() (Component, bool) {
 	return c, true
 }
 
+// Peek returns stack state.
+func (s *Stack) Peek() []Component {
+	return s.components
+}
+
+// Reset clear out the stack.
+func (s *Stack) Reset() {
+	for range s.components {
+		s.Pop()
+	}
+}
+
 // Empty returns true if the stack is empty.
 func (s *Stack) Empty() bool {
 	return len(s.components) == 0

@@ -22,8 +22,6 @@ func NewTable(title string) *Table {
 }
 
 func (t *Table) Init(ctx context.Context) {
-	log.Debug().Msgf("VIEW Table INIT %q", t.GetBaseTitle())
-
 	t.app = ctx.Value(ui.KeyApp).(*App)
 
 	ctx = context.WithValue(ctx, ui.KeyStyles, t.app.Styles)

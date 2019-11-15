@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"fmt"
+
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
@@ -21,40 +23,39 @@ func NewPages() *Pages {
 	return &p
 }
 
-// Get fetch a page given its name.
-func (p *Pages) get(n string) model.Component {
-	if comp, ok := p.GetPrimitive(n).(model.Component); ok {
-		return comp
+func (p *Pages) Show(c model.Component) {
+	p.SwitchToPage(componentID(c))
+}
+
+func (p *Pages) Current() model.Component {
+	c := p.CurrentPage()
+	if c == nil {
+		return nil
 	}
 
-	return nil
+	return c.Item.(model.Component)
 }
 
 // AddAndShow adds a new page and bring it to front.
 func (p *Pages) addAndShow(c model.Component) {
 	p.add(c)
-	p.Show(c.Name())
+	p.Show(c)
 }
 
 // Add adds a new page.
 func (p *Pages) add(c model.Component) {
-	p.AddPage(c.Name(), c, true, true)
+	p.AddPage(componentID(c), c, true, true)
 }
 
 // Delete removes a page.
 func (p *Pages) delete(c model.Component) {
-	p.RemovePage(c.Name())
-}
-
-// Show brings a named page forward.
-func (p *Pages) Show(n string) {
-	p.SwitchToPage(n)
+	p.RemovePage(componentID(c))
 }
 
 func (p *Pages) DumpPages() {
 	log.Debug().Msgf("Dumping Pages %p", p)
-	for i, n := range p.Stack.Flatten() {
-		log.Debug().Msgf("%d -- %s -- %#v", i, n, p.GetPrimitive(n))
+	for i, c := range p.Stack.Peek() {
+		log.Debug().Msgf("%d -- %s -- %#v", i, componentID(c), p.GetPrimitive(componentID(c)))
 	}
 }
 
@@ -72,5 +73,11 @@ func (p *Pages) StackTop(top model.Component) {
 	if top == nil {
 		return
 	}
-	p.Show(top.Name())
+	p.Show(top)
+}
+
+// Helpers...
+
+func componentID(c model.Component) string {
+	return fmt.Sprintf("%s-%p", c.Name(), c)
 }

@@ -47,6 +47,7 @@ func NewPolicy(app *App, subject, name string) *Policy {
 // Init the view.
 func (p *Policy) Init(ctx context.Context) {
 	p.Table.Init(ctx)
+	p.bindKeys()
 
 	p.SetSortCol(1, len(rbacHeader), false)
 	p.Start()

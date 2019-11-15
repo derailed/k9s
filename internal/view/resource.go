@@ -64,7 +64,6 @@ func (r *Resource) Init(ctx context.Context) {
 			table.Select(1, 0)
 		}
 	}
-	log.Debug().Msgf("<<<< RESOURCE INIT")
 }
 
 // Start initializes updates.

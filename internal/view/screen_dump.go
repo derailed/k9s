@@ -65,7 +65,7 @@ func (s *ScreenDump) Start() {
 	var ctx context.Context
 	ctx, s.cancelFn = context.WithCancel(context.Background())
 	if err := s.watchDumpDir(ctx); err != nil {
-		s.app.Flash().Errf("Unable to watch dumpmarks directory %s", err)
+		s.app.Flash().Errf("Unable to watch screen dumps directory %s", err)
 	}
 }
 

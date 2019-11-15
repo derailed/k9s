@@ -13,7 +13,7 @@ import (
 
 const (
 	// PodIndex marker for stored pods.
-	PodIndex string = "po"
+	PodIndex string = "pods"
 	podCols         = 11
 )
 

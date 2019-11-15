@@ -289,8 +289,7 @@ func (l *list) Reconcile(informer *wa.Informer, path *string) error {
 		ns = *path
 	}
 
-	items, err := l.load(informer, ns)
-	if err == nil {
+	if items, err := l.load(informer, ns); err == nil {
 		l.update(items)
 		return nil
 	}
@@ -299,11 +298,11 @@ func (l *list) Reconcile(informer *wa.Informer, path *string) error {
 		LabelSelector: l.labelSelector,
 		FieldSelector: l.fieldSelector,
 	}
-
-	if items, err = l.resource.List(l.namespace, opts); err != nil {
+	if items, err := l.resource.List(l.namespace, opts); err == nil {
+		l.update(items)
+	} else {
 		return err
 	}
-	l.update(items)
 
 	return nil
 }

@@ -1,6 +1,7 @@
 package view
 
 import (
+	"context"
 	"strings"
 
 	"github.com/derailed/k9s/internal/resource"
@@ -14,14 +15,17 @@ type Context struct {
 
 // NewContext return a new context viewer.
 func NewContext(title, gvr string, list resource.List) ResourceViewer {
-	c := Context{
+	return &Context{
 		Resource: NewResource(title, gvr, list),
 	}
+}
+
+func (c *Context) Init(ctx context.Context) {
 	c.extraActionsFn = c.extraActions
 	c.enterFn = c.useCtx
-	c.masterPage().SetSelectedFn(c.cleanser)
+	c.Resource.Init(ctx)
 
-	return &c
+	c.masterPage().SetSelectedFn(c.cleanser)
 }
 
 func (c *Context) extraActions(aa ui.KeyActions) {
@@ -57,9 +61,7 @@ func (c *Context) useContext(name string) error {
 		return err
 	}
 	c.refresh()
-	if tv, ok := c.GetPrimitive("ctx").(*Table); ok {
-		tv.Select(1, 0)
-	}
+	c.masterPage().Select(1, 0)
 
 	return nil
 }

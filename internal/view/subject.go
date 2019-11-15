@@ -35,25 +35,23 @@ type (
 
 // NewSubject returns a new subject viewer.
 func NewSubject(title, gvr string, list resource.List) ResourceViewer {
-	s := Subject{}
-	s.Table = NewTable("Subject")
-	s.SetActiveNS("*")
-	s.SetColorerFn(rbacColorer)
-	s.bindKeys()
-
-	return &s
+	return &Subject{
+		Table: NewTable("Subject"),
+	}
 }
 
 // Init initializes the view.
 func (s *Subject) Init(ctx context.Context) {
+	s.SetActiveNS("*")
+	s.SetColorerFn(rbacColorer)
 	s.Table.Init(ctx)
+	s.bindKeys()
 	s.SetSortCol(1, len(rbacHeader), true)
 	s.subjectKind = mapCmdSubject(s.app.Config.K9s.ActiveCluster().View.Active)
 	s.SetBaseTitle(s.subjectKind)
-
-	s.Start()
-	s.refresh()
 	s.SelectRow(1, true)
+
+	s.refresh()
 }
 
 func (s *Subject) Start() {
@@ -125,6 +123,7 @@ func (s *Subject) refresh() {
 }
 
 func (s *Subject) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
+	log.Debug().Msg("YO!!")
 	if !s.RowSelected() {
 		return evt
 	}
@@ -163,6 +162,9 @@ func (s *Subject) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (s *Subject) reconcile() (resource.TableData, error) {
 	var table resource.TableData
+	if s.app.Conn() == nil {
+		return table, nil
+	}
 
 	evts, err := s.clusterSubjects()
 	if err != nil {

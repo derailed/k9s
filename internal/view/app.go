@@ -83,6 +83,9 @@ func (a *App) ActiveView() model.Component {
 }
 
 func (a *App) PrevCmd(evt *tcell.EventKey) *tcell.EventKey {
+	log.Debug().Msgf("------ CONTENT PREVIOUS")
+	a.Content.DumpStack()
+	a.Content.DumpPages()
 	if !a.Content.IsLast() {
 		a.Content.Pop()
 	}
@@ -227,9 +230,9 @@ func (a *App) switchNS(ns string) bool {
 		ns = resource.AllNamespaces
 	}
 	if ns == a.Config.ActiveNamespace() {
-		log.Debug().Msgf("Namespace did not change %s", ns)
 		return true
 	}
+
 	if err := a.Config.SetActiveNamespace(ns); err != nil {
 		log.Error().Err(err).Msg("Config Set NS failed!")
 	}
@@ -248,6 +251,11 @@ func (a *App) switchCtx(ctx string, load bool) error {
 	if err != nil {
 		log.Info().Err(err).Msg("No namespace specified using all namespaces")
 	}
+	if a.stopCh != nil {
+		close(a.stopCh)
+		a.stopCh = nil
+	}
+	a.informer = nil
 	a.startInformer(ns)
 	a.Config.Reset()
 	if err := a.Config.Save(); err != nil {
@@ -262,6 +270,12 @@ func (a *App) switchCtx(ctx string, load bool) error {
 }
 
 func (a *App) startInformer(ns string) bool {
+	// if informer watches all ns - don't start a new informer then.
+	if a.informer != nil && a.informer.Namespace == resource.AllNamespaces {
+		log.Debug().Msgf(">>>> Informer is already watching all namespaces. No restart needed ;)")
+		return true
+	}
+
 	if a.stopCh != nil {
 		close(a.stopCh)
 		a.stopCh = nil
@@ -381,6 +395,7 @@ func (a *App) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.CmdBuff().IsActive() && !a.CmdBuff().Empty() {
+		a.Content.Stack.Reset()
 		a.gotoResource(a.GetCmd(), true)
 		a.ResetCmd()
 		return nil

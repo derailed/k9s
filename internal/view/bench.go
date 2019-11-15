@@ -100,7 +100,6 @@ func (b *Bench) refresh() {
 
 func (b *Bench) keyBindings() {
 	aa := ui.KeyActions{
-		tcell.KeyEsc:   ui.NewKeyAction("Back", b.app.PrevCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Enter", b.enterCmd, false),
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", b.deleteCmd, false),
 	}

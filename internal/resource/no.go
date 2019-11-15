@@ -28,7 +28,7 @@ type Node struct {
 func NewNodeList(c Connection, _ string) List {
 	return NewList(
 		NotNamespaced,
-		"no",
+		"nodes",
 		NewNode(c),
 		ViewAccess|DescribeAccess,
 	)

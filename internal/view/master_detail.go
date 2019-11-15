@@ -7,7 +7,6 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 // MasterDetail presents a master-detail viewer.
@@ -16,6 +15,7 @@ type MasterDetail struct {
 
 	enterFn        enterFn
 	extraActionsFn func(ui.KeyActions)
+	master         *Table
 	details        *Details
 	currentNS      string
 	title          string
@@ -32,7 +32,6 @@ func NewMasterDetail(title, ns string) *MasterDetail {
 
 // Init initializes the viewer.
 func (m *MasterDetail) Init(ctx context.Context) {
-	log.Debug().Msgf("\t>>>MasterDetail init %q", m.title)
 	app := ctx.Value(ui.KeyApp).(*App)
 	if m.currentNS != resource.NotNamespaced {
 		m.currentNS = app.Config.ActiveNamespace()
@@ -40,15 +39,14 @@ func (m *MasterDetail) Init(ctx context.Context) {
 	m.PageStack.Init(ctx)
 	m.AddListener(app.Menu())
 
-	t := NewTable(m.title)
-	m.Push(t)
+	m.master = NewTable(m.title)
+	m.Push(m.master)
 
 	m.details = NewDetails(m.app, func(evt *tcell.EventKey) *tcell.EventKey {
 		m.Pop()
 		return nil
 	})
 	m.details.Init(ctx)
-	log.Debug().Msgf("\t<<<<MasterDetail INIT DONE!!")
 }
 
 // Hints returns the current viewer hints
@@ -71,11 +69,11 @@ func (m *MasterDetail) setEnterFn(f enterFn) {
 }
 
 func (m *MasterDetail) showMaster() {
-	m.Show("table")
+	m.Show(m.master)
 }
 
 func (m *MasterDetail) masterPage() *Table {
-	return m.GetPrimitive(m.title).(*Table)
+	return m.master
 }
 
 func (m *MasterDetail) showDetails() {
@@ -87,13 +85,7 @@ func (m *MasterDetail) detailsPage() *Details {
 }
 
 func (m *MasterDetail) isMaster() bool {
-	p := m.CurrentPage()
-	if p == nil {
-		return false
-	}
-
-	log.Debug().Msgf("!!!!!Checking MASTER %q vs %q -- %t", p.Name, m.title, p.Name == m.title)
-	return p.Name == m.title
+	return m.Current() == m.master
 }
 
 // ----------------------------------------------------------------------------
@@ -109,6 +101,9 @@ func (m *MasterDetail) defaultActions(aa ui.KeyActions) {
 }
 
 func (m *MasterDetail) backCmd(evt *tcell.EventKey) *tcell.EventKey {
+	m.DumpPages()
+	m.DumpStack()
+
 	if !m.isMaster() {
 		return m.app.PrevCmd(evt)
 	}

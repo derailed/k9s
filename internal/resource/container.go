@@ -28,7 +28,7 @@ type (
 func NewContainerList(c Connection, pod *v1.Pod) List {
 	return NewList(
 		"",
-		"co",
+		"coontainers",
 		NewContainer(c, pod),
 		0,
 	)

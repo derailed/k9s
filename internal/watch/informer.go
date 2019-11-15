@@ -54,6 +54,7 @@ type StoreInformer interface {
 
 // Informer represents a collection of cluster wide watchers.
 type Informer struct {
+	Namespace   string
 	informers   map[string]StoreInformer
 	client      k8s.Connection
 	podInformer *Pod
@@ -65,6 +66,7 @@ type Informer struct {
 func NewInformer(client k8s.Connection, ns string) (*Informer, error) {
 	i := Informer{
 		client:    client,
+		Namespace: ns,
 		informers: map[string]StoreInformer{},
 	}
 	if err := client.CheckNSAccess(ns); err != nil {
@@ -74,6 +76,13 @@ func NewInformer(client k8s.Connection, ns string) (*Informer, error) {
 	i.init(ns)
 
 	return &i, nil
+}
+
+func (i *Informer) Dump() {
+	log.Debug().Msgf("Informer Dump")
+	for k := range i.informers {
+		log.Debug().Msgf("\t%s", k)
+	}
 }
 
 func (i *Informer) init(ns string) {

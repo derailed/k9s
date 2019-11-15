@@ -1,6 +1,7 @@
 package view
 
 import (
+	"context"
 	"regexp"
 
 	"github.com/derailed/k9s/internal/config"
@@ -24,15 +25,17 @@ type Namespace struct {
 
 // NewNamespace returns a new viewer
 func NewNamespace(title, gvr string, list resource.List) ResourceViewer {
-	n := Namespace{
+	return &Namespace{
 		Resource: NewResource(title, gvr, list),
 	}
+}
+
+func (n *Namespace) Init(ctx context.Context) {
 	n.extraActionsFn = n.extraActions
-	n.masterPage().SetSelectedFn(n.cleanser)
 	n.decorateFn = n.decorate
 	n.enterFn = n.switchNs
-
-	return &n
+	n.Resource.Init(ctx)
+	n.masterPage().SetSelectedFn(n.cleanser)
 }
 
 func (n *Namespace) extraActions(aa ui.KeyActions) {
@@ -62,7 +65,7 @@ func (n *Namespace) useNamespace(ns string) {
 	if err := n.app.Config.Save(); err != nil {
 		log.Error().Err(err).Msg("Config file save failed!")
 	}
-	n.app.startInformer(ns)
+	n.app.switchNS(ns)
 }
 
 func (*Namespace) cleanser(s string) string {
@@ -70,6 +73,10 @@ func (*Namespace) cleanser(s string) string {
 }
 
 func (n *Namespace) decorate(data resource.TableData) resource.TableData {
+	if n.app.Conn() == nil {
+		return resource.TableData{}
+	}
+
 	if _, ok := data.Rows[resource.AllNamespaces]; !ok {
 		if err := n.app.Conn().CheckNSAccess(""); err == nil {
 			data.Rows[resource.AllNamespace] = &resource.RowEvent{

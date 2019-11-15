@@ -11,7 +11,7 @@ import (
 
 const (
 	// NodeIndex marker for stored nodes.
-	NodeIndex string = "no"
+	NodeIndex string = "nodes"
 	nodeCols         = 12
 )
 
