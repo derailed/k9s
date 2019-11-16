@@ -132,9 +132,13 @@ func (v *Menu) layout(table []model.MenuHints, mm []int, out [][]string) {
 			out[r][c] = keyConv(v.formatMenu(table[r][c], mm[c]))
 		}
 	}
+
 }
 
 func (v *Menu) formatMenu(h model.MenuHint, size int) string {
+	if h.Mnemonic == "" || h.Description == "" {
+		return ""
+	}
 	i, err := strconv.Atoi(h.Mnemonic)
 	if err == nil {
 		return formatNSMenu(i, h.Description, v.styles.Frame())
