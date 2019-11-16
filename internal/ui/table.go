@@ -3,19 +3,12 @@ package ui
 import (
 	"context"
 	"errors"
-	"fmt"
-	"regexp"
-	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
-	"github.com/sahilm/fuzzy"
-	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 type (
@@ -29,10 +22,10 @@ type (
 // Table represents tabular data.
 type Table struct {
 	*SelectTable
+	KeyActions
 
-	baseTitle string
+	BaseTitle string
 	Data      resource.TableData
-	actions   KeyActions
 	cmdBuff   *CmdBuff
 	styles    *config.Styles
 	colorerFn ColorerFunc
@@ -47,10 +40,10 @@ func NewTable(title string) *Table {
 			Table: tview.NewTable(),
 			marks: make(map[string]bool),
 		},
-		actions:   make(KeyActions),
-		cmdBuff:   NewCmdBuff('/', FilterBuff),
-		baseTitle: title,
-		sortCol:   SortColumn{0, 0, true},
+		KeyActions: make(KeyActions),
+		cmdBuff:    NewCmdBuff('/', FilterBuff),
+		BaseTitle:  title,
+		sortCol:    SortColumn{0, 0, true},
 	}
 }
 
@@ -94,7 +87,7 @@ func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		key = asKey(evt)
 	}
 
-	if a, ok := t.actions[key]; ok {
+	if a, ok := t.KeyActions[key]; ok {
 		return a.Action(evt)
 	}
 
@@ -104,16 +97,6 @@ func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 // GetFilteredData fetch filtered tabular data.
 func (t *Table) GetFilteredData() resource.TableData {
 	return t.filtered()
-}
-
-// SetBaseTitle set the table title.
-func (t *Table) SetBaseTitle(s string) {
-	t.baseTitle = s
-}
-
-// GetBaseTitle fetch the current title.
-func (t *Table) GetBaseTitle() string {
-	return t.baseTitle
 }
 
 // SetColorerFn set the row colorer.
@@ -141,9 +124,9 @@ func (t *Table) Update(data resource.TableData) {
 func (t *Table) doUpdate(data resource.TableData) {
 	t.ActiveNS = data.Namespace
 	if t.ActiveNS == resource.AllNamespaces && t.ActiveNS != "*" {
-		t.actions[KeyShiftP] = NewKeyAction("Sort Namespace", t.SortColCmd(-2), false)
+		t.KeyActions[KeyShiftP] = NewKeyAction("Sort Namespace", t.SortColCmd(-2), false)
 	} else {
-		delete(t.actions, KeyShiftP)
+		t.KeyActions.RmActions(KeyShiftP)
 	}
 	t.Clear()
 
@@ -229,7 +212,7 @@ func (t *Table) buildRow(row int, data resource.TableData, sk string, pads MaxyP
 	m := t.IsMarked(sk)
 	for col, field := range data.Rows[sk].Fields {
 		header := data.Header[col]
-		cell, align := t.formatCell(data.NumCols[header], header, field+Deltas(data.Rows[sk].Deltas[col], field), pads[col])
+		cell, align := formatCell(data.NumCols[header], header, field+Deltas(data.Rows[sk].Deltas[col], field), pads[col])
 		c := tview.NewTableCell(cell)
 		{
 			c.SetExpansion(1)
@@ -241,26 +224,6 @@ func (t *Table) buildRow(row int, data resource.TableData, sk string, pads MaxyP
 		}
 		t.SetCell(row, col, c)
 	}
-}
-
-func (t *Table) formatCell(numerical bool, header, field string, padding int) (string, int) {
-	if header == "AGE" {
-		dur, err := time.ParseDuration(field)
-		if err == nil {
-			field = duration.HumanDuration(dur)
-		}
-	}
-
-	if numerical || cpuRX.MatchString(header) || memRX.MatchString(header) {
-		return field, tview.AlignRight
-	}
-
-	align := tview.AlignLeft
-	if IsASCII(field) {
-		return Pad(field, padding), align
-	}
-
-	return field, align
 }
 
 func (t *Table) ClearMarks() {
@@ -299,58 +262,17 @@ func (t *Table) filtered() resource.TableData {
 
 	q := t.cmdBuff.String()
 	if isFuzzySelector(q) {
-		return t.fuzzyFilter(q[2:])
+		return fuzzyFilter(q[2:], t.NameColIndex(), t.Data)
 	}
 
-	return t.rxFilter()
-}
-
-func (t *Table) rxFilter() resource.TableData {
-	rx, err := regexp.Compile(`(?i)` + t.cmdBuff.String())
+	data, err := rxFilter(t.cmdBuff.String(), t.Data)
 	if err != nil {
 		log.Error().Err(errors.New("Invalid filter expression")).Msg("Regexp")
 		t.cmdBuff.Clear()
 		return t.Data
 	}
 
-	filtered := resource.TableData{
-		Header:    t.Data.Header,
-		Rows:      resource.RowEvents{},
-		Namespace: t.Data.Namespace,
-	}
-	for k, row := range t.Data.Rows {
-		f := strings.Join(row.Fields, " ")
-		if rx.MatchString(f) {
-			filtered.Rows[k] = row
-		}
-	}
-
-	return filtered
-}
-
-func (t *Table) fuzzyFilter(q string) resource.TableData {
-	var ss, kk []string
-	for k, row := range t.Data.Rows {
-		ss = append(ss, row.Fields[t.NameColIndex()])
-		kk = append(kk, k)
-	}
-
-	filtered := resource.TableData{
-		Header:    t.Data.Header,
-		Rows:      resource.RowEvents{},
-		Namespace: t.Data.Namespace,
-	}
-	mm := fuzzy.Find(q, ss)
-	for _, m := range mm {
-		filtered.Rows[kk[m.Index]] = t.Data.Rows[kk[m.Index]]
-	}
-
-	return filtered
-}
-
-// KeyBindings returns the bounded keys.
-func (t *Table) KeyBindings() KeyActions {
-	return t.actions
+	return data
 }
 
 // SearchBuff returns the associated command buffer.
@@ -367,56 +289,9 @@ func (t *Table) ShowDeleted() {
 	}
 }
 
-// SetActions sets up keyboard action listener.
-func (t *Table) AddActions(aa KeyActions) {
-	for k, a := range aa {
-		t.actions[k] = a
-	}
-}
-
-// RmAction delete a keyed action.
-func (t *Table) RmAction(kk ...tcell.Key) {
-	for _, k := range kk {
-		delete(t.actions, k)
-	}
-}
-
-// Hints options
-func (t *Table) Hints() model.MenuHints {
-	if t.actions != nil {
-		return t.actions.Hints()
-	}
-
-	return nil
-}
-
 // UpdateTitle refreshes the table title.
 func (t *Table) UpdateTitle() {
-	var title string
-
-	rc := t.GetRowCount()
-	if rc > 0 {
-		rc--
-	}
-	switch t.ActiveNS {
-	case resource.NotNamespaced, "*":
-		title = skinTitle(fmt.Sprintf(titleFmt, t.baseTitle, rc), t.styles.Frame())
-	default:
-		ns := t.ActiveNS
-		if ns == resource.AllNamespaces {
-			ns = resource.AllNamespace
-		}
-		title = skinTitle(fmt.Sprintf(nsTitleFmt, t.baseTitle, ns, rc), t.styles.Frame())
-	}
-
-	if !t.cmdBuff.Empty() {
-		cmd := t.cmdBuff.String()
-		if IsLabelSelector(cmd) {
-			cmd = TrimLabelSelector(cmd)
-		}
-		title += skinTitle(fmt.Sprintf(SearchFmt, cmd), t.styles.Frame())
-	}
-	t.SetTitle(title)
+	t.SetTitle(styleTitle(t.GetRowCount(), t.ActiveNS, t.BaseTitle, t.cmdBuff.String(), t.styles))
 }
 
 // SortInvertCmd reverses sorting order.

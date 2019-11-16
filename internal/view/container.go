@@ -52,8 +52,7 @@ func (c *Container) Name() string { return "containers" }
 
 func (c *Container) extraActions(aa ui.KeyActions) {
 	c.LogResource.extraActions(aa)
-	c.masterPage().RmAction(tcell.KeyCtrlSpace)
-	c.masterPage().RmAction(ui.KeySpace)
+	c.masterPage().RmActions(tcell.KeyCtrlSpace, ui.KeySpace)
 
 	aa[ui.KeyShiftF] = ui.NewKeyAction("PortForward", c.portFwdCmd, true)
 	aa[ui.KeyShiftL] = ui.NewKeyAction("Logs Previous", c.prevLogsCmd, true)

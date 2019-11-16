@@ -28,6 +28,20 @@ func NewKeyAction(d string, a ActionHandler, display bool) KeyAction {
 	return KeyAction{Description: d, Action: a, Visible: display}
 }
 
+// Add sets up keyboard action listener.
+func (a KeyActions) AddActions(aa KeyActions) {
+	for k, v := range aa {
+		a[k] = v
+	}
+}
+
+// Remove delete a keyed action.
+func (a KeyActions) RmActions(kk ...tcell.Key) {
+	for _, k := range kk {
+		delete(a, k)
+	}
+}
+
 // Hints returns a collection of hints.
 func (a KeyActions) Hints() model.MenuHints {
 	kk := make([]int, 0, len(a))

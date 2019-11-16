@@ -130,10 +130,7 @@ func (r *Rbac) Name() string {
 }
 
 func (r *Rbac) bindKeys() {
-	r.RmAction(ui.KeyShiftA)
-	r.RmAction(tcell.KeyCtrlSpace)
-	r.RmAction(ui.KeySpace)
-
+	r.RmActions(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
 	r.AddActions(ui.KeyActions{
 		tcell.KeyEscape: ui.NewKeyAction("Reset", r.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", r.activateCmd, false),
@@ -142,7 +139,7 @@ func (r *Rbac) bindKeys() {
 }
 
 func (r *Rbac) getTitle() string {
-	return skinTitle(fmt.Sprintf(rbacTitleFmt, rbacTitle, r.roleName), r.app.Styles.Frame())
+	return ui.SkinTitle(fmt.Sprintf(rbacTitleFmt, rbacTitle, r.roleName), r.app.Styles.Frame())
 }
 
 func (r *Rbac) refresh() {

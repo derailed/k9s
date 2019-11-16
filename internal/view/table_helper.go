@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
@@ -60,15 +59,4 @@ func saveTable(cluster, name string, data resource.TableData) (string, error) {
 	}
 
 	return path, nil
-}
-
-func skinTitle(fmat string, style config.Frame) string {
-	fmat = strings.Replace(fmat, "[fg:bg", "["+style.Title.FgColor+":"+style.Title.BgColor, -1)
-	fmat = strings.Replace(fmat, "[hilite", "["+style.Title.HighlightColor, 1)
-	fmat = strings.Replace(fmat, "[key", "["+style.Menu.NumKeyColor, 1)
-	fmat = strings.Replace(fmat, "[filter", "["+style.Title.FilterColor, 1)
-	fmat = strings.Replace(fmat, "[count", "["+style.Title.CounterColor, 1)
-	fmat = strings.Replace(fmat, ":bg:", ":"+style.Title.BgColor+":", -1)
-
-	return fmat
 }

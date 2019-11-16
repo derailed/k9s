@@ -87,7 +87,7 @@ func (p *Pod) listContainers(app *App, _, res, sel string) {
 		log.Fatal().Msg("Expecting a valid pod")
 	}
 	list := resource.NewContainerList(app.Conn(), pod)
-	title := skinTitle(fmt.Sprintf(containerFmt, "Container", sel), app.Styles.Frame())
+	title := ui.SkinTitle(fmt.Sprintf(containerFmt, "Container", sel), app.Styles.Frame())
 
 	// Stop my updater
 	if p.cancelFn != nil {

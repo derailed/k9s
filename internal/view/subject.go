@@ -48,7 +48,7 @@ func (s *Subject) Init(ctx context.Context) {
 	s.bindKeys()
 	s.SetSortCol(1, len(rbacHeader), true)
 	s.subjectKind = mapCmdSubject(s.app.Config.K9s.ActiveCluster().View.Active)
-	s.SetBaseTitle(s.subjectKind)
+	s.BaseTitle = s.subjectKind
 	s.SelectRow(1, true)
 
 	s.refresh()
@@ -89,11 +89,7 @@ func (s *Subject) masterPage() *Table {
 }
 
 func (s *Subject) bindKeys() {
-	s.RmAction(ui.KeyShiftA)
-	s.RmAction(ui.KeyShiftP)
-	s.RmAction(tcell.KeyCtrlSpace)
-	s.RmAction(ui.KeySpace)
-
+	s.RmActions(ui.KeyShiftA, ui.KeyShiftP, tcell.KeyCtrlSpace, ui.KeySpace)
 	s.AddActions(ui.KeyActions{
 		tcell.KeyEnter:  ui.NewKeyAction("Policies", s.policyCmd, true),
 		tcell.KeyEscape: ui.NewKeyAction("Back", s.resetCmd, false),

@@ -90,9 +90,9 @@ func (l *Log) bindKeys() {
 func (l *Log) setTitle(path, co string) {
 	var fmat string
 	if co == "" {
-		fmat = skinTitle(fmt.Sprintf(logFmt, path), l.app.Styles.Frame())
+		fmat = ui.SkinTitle(fmt.Sprintf(logFmt, path), l.app.Styles.Frame())
 	} else {
-		fmat = skinTitle(fmt.Sprintf(logCoFmt, path, co), l.app.Styles.Frame())
+		fmat = ui.SkinTitle(fmt.Sprintf(logCoFmt, path, co), l.app.Styles.Frame())
 	}
 	l.path = path
 	l.SetTitle(fmat)

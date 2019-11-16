@@ -50,12 +50,7 @@ func (a *Alias) Start() {}
 func (a *Alias) Stop()  {}
 
 func (a *Alias) registerActions() {
-	a.RmAction(ui.KeyShiftA)
-	a.RmAction(ui.KeyShiftN)
-	a.RmAction(tcell.KeyCtrlS)
-	a.RmAction(tcell.KeyCtrlSpace)
-	a.RmAction(ui.KeySpace)
-
+	a.RmActions(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
 	a.AddActions(ui.KeyActions{
 		tcell.KeyEnter:  ui.NewKeyAction("Goto Resource", a.gotoCmd, true),
 		tcell.KeyEscape: ui.NewKeyAction("Reset", a.resetCmd, false),

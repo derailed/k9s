@@ -17,11 +17,7 @@ func TestTableNew(t *testing.T) {
 	ctx := context.WithValue(context.Background(), ui.KeyStyles, s)
 	v.Init(ctx)
 
-	assert.Equal(t, "fred", v.GetBaseTitle())
-
-	v.SetBaseTitle("bozo")
-	assert.Equal(t, "bozo", v.GetBaseTitle())
-
+	assert.Equal(t, "fred", v.BaseTitle)
 }
 
 func TestTableUpdate(t *testing.T) {

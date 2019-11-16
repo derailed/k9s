@@ -31,9 +31,7 @@ func (c *Context) Init(ctx context.Context) {
 }
 
 func (c *Context) extraActions(aa ui.KeyActions) {
-	c.masterPage().RmAction(ui.KeyShiftA)
-	c.masterPage().RmAction(tcell.KeyCtrlSpace)
-	c.masterPage().RmAction(ui.KeySpace)
+	c.masterPage().RmActions(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
 }
 
 func (c *Context) useCtx(app *App, _, res, sel string) {

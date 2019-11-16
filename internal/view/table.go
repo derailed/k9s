@@ -33,7 +33,7 @@ func (t *Table) Init(ctx context.Context) {
 
 func (t *Table) Start()       {}
 func (t *Table) Stop()        {}
-func (t *Table) Name() string { return t.GetBaseTitle() }
+func (t *Table) Name() string { return t.BaseTitle }
 
 // BufferChanged indicates the buffer was changed.
 func (t *Table) BufferChanged(s string) {}
@@ -44,7 +44,7 @@ func (t *Table) BufferActive(state bool, k ui.BufferKind) {
 }
 
 func (t *Table) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveTable(t.app.Config.K9s.CurrentCluster, t.GetBaseTitle(), t.GetFilteredData()); err != nil {
+	if path, err := saveTable(t.app.Config.K9s.CurrentCluster, t.BaseTitle, t.GetFilteredData()); err != nil {
 		t.app.Flash().Err(err)
 	} else {
 		t.app.Flash().Infof("File %s saved successfully!", path)

@@ -6,10 +6,14 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
+	"github.com/sahilm/fuzzy"
+	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 const (
@@ -77,7 +81,7 @@ func TrimLabelSelector(s string) string {
 	return strings.TrimSpace(s[2:])
 }
 
-func skinTitle(fmat string, style config.Frame) string {
+func SkinTitle(fmat string, style config.Frame) string {
 	fmat = strings.Replace(fmat, "[fg:bg", "["+style.Title.FgColor+":"+style.Title.BgColor, -1)
 	fmat = strings.Replace(fmat, "[hilite", "["+style.Title.HighlightColor, 1)
 	fmat = strings.Replace(fmat, "[key", "["+style.Menu.NumKeyColor, 1)
@@ -136,4 +140,92 @@ func sortIndicator(col SortColumn, style config.Table, index int, name string) s
 		order = ascIndicator
 	}
 	return fmt.Sprintf("%s[%s::]%s[::]", name, style.Header.SorterColor, order)
+}
+
+func formatCell(numerical bool, header, field string, padding int) (string, int) {
+	if header == "AGE" {
+		dur, err := time.ParseDuration(field)
+		if err == nil {
+			field = duration.HumanDuration(dur)
+		}
+	}
+
+	if numerical || cpuRX.MatchString(header) || memRX.MatchString(header) {
+		return field, tview.AlignRight
+	}
+
+	align := tview.AlignLeft
+	if IsASCII(field) {
+		return Pad(field, padding), align
+	}
+
+	return field, align
+}
+
+func rxFilter(q string, data resource.TableData) (resource.TableData, error) {
+	rx, err := regexp.Compile(`(?i)` + q)
+	if err != nil {
+		return data, err
+	}
+
+	filtered := resource.TableData{
+		Header:    data.Header,
+		Rows:      resource.RowEvents{},
+		Namespace: data.Namespace,
+	}
+	for k, row := range data.Rows {
+		f := strings.Join(row.Fields, " ")
+		if rx.MatchString(f) {
+			filtered.Rows[k] = row
+		}
+	}
+
+	return filtered, nil
+}
+
+func fuzzyFilter(q string, index int, data resource.TableData) resource.TableData {
+	var ss, kk []string
+	for k, row := range data.Rows {
+		ss = append(ss, row.Fields[index])
+		kk = append(kk, k)
+	}
+
+	filtered := resource.TableData{
+		Header:    data.Header,
+		Rows:      resource.RowEvents{},
+		Namespace: data.Namespace,
+	}
+	mm := fuzzy.Find(q, ss)
+	for _, m := range mm {
+		filtered.Rows[kk[m.Index]] = data.Rows[kk[m.Index]]
+	}
+
+	return filtered
+}
+
+// UpdateTitle refreshes the table title.
+func styleTitle(rc int, ns, base, buff string, styles *config.Styles) string {
+	var title string
+
+	if rc > 0 {
+		rc--
+	}
+	switch ns {
+	case resource.NotNamespaced, "*":
+		title = SkinTitle(fmt.Sprintf(titleFmt, base, rc), styles.Frame())
+	default:
+		if ns == resource.AllNamespaces {
+			ns = resource.AllNamespace
+		}
+		title = SkinTitle(fmt.Sprintf(nsTitleFmt, base, ns, rc), styles.Frame())
+	}
+
+	if buff != "" {
+		if IsLabelSelector(buff) {
+			buff = TrimLabelSelector(buff)
+		}
+		title += SkinTitle(fmt.Sprintf(SearchFmt, buff), styles.Frame())
+	}
+
+	return title
 }

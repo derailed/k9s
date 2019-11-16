@@ -87,10 +87,7 @@ func (p *Policy) Stop() {
 }
 
 func (p *Policy) bindKeys() {
-	p.RmAction(ui.KeyShiftA)
-	p.RmAction(tcell.KeyCtrlSpace)
-	p.RmAction(ui.KeySpace)
-
+	p.RmActions(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
 	p.AddActions(ui.KeyActions{
 		tcell.KeyEscape: ui.NewKeyAction("Back", p.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", p.activateCmd, false),

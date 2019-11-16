@@ -204,9 +204,9 @@ func (d *Details) refreshTitle() {
 func (d *Details) setTitle(t string) {
 	d.title = t
 
-	title := skinTitle(fmt.Sprintf(detailsTitleFmt, d.category, t), d.app.Styles.Frame())
+	title := ui.SkinTitle(fmt.Sprintf(detailsTitleFmt, d.category, t), d.app.Styles.Frame())
 	if !d.cmdBuff.Empty() {
-		title += skinTitle(fmt.Sprintf(ui.SearchFmt, d.cmdBuff.String()), d.app.Styles.Frame())
+		title += ui.SkinTitle(fmt.Sprintf(ui.SearchFmt, d.cmdBuff.String()), d.app.Styles.Frame())
 	}
 	d.SetTitle(title)
 }
