@@ -48,16 +48,22 @@ type (
 	// RowEvents tracks resource update events.
 	RowEvents map[string]*RowEvent
 
+	// TypeName captures resource names.
+	TypeName struct {
+		Singular   string
+		Plural     string
+		ShortNames []string
+	}
+
 	// TypeMeta represents resource type meta data.
 	TypeMeta struct {
+		TypeName
+
 		Name       string
 		Namespaced bool
 		Group      string
 		Version    string
 		Kind       string
-		Singular   string
-		Plural     string
-		ShortNames []string
 	}
 
 	// TableData tracks a K8s resource for tabular display.

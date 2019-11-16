@@ -9,24 +9,31 @@ import (
 	"github.com/gdamore/tcell"
 )
 
+type TableExtender struct {
+	extraActionsFn func(ui.KeyActions)
+	colorerFn      ui.ColorerFunc
+	decorateFn     decorateFn
+	enterFn        enterFn
+}
+
 // MasterDetail presents a master-detail viewer.
 type MasterDetail struct {
 	*PageStack
+	*TableExtender
 
-	enterFn        enterFn
-	extraActionsFn func(ui.KeyActions)
-	master         *Table
-	details        *Details
-	currentNS      string
-	title          string
+	master    *Table
+	details   *Details
+	currentNS string
+	title     string
 }
 
 // NewMasterDetail returns a new master-detail viewer.
 func NewMasterDetail(title, ns string) *MasterDetail {
 	return &MasterDetail{
-		PageStack: NewPageStack(),
-		title:     title,
-		currentNS: ns,
+		PageStack:     NewPageStack(),
+		TableExtender: &TableExtender{},
+		title:         title,
+		currentNS:     ns,
 	}
 }
 
@@ -106,9 +113,6 @@ func (m *MasterDetail) defaultActions(aa ui.KeyActions) {
 }
 
 func (m *MasterDetail) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	m.DumpPages()
-	m.DumpStack()
-
 	if !m.isMaster() {
 		return m.app.PrevCmd(evt)
 	}

@@ -65,8 +65,7 @@ func (c *Container) extraActions(aa ui.KeyActions) {
 }
 
 func (c *Container) k9sEnv() K9sEnv {
-	env := c.defaultK9sEnv()
-
+	env := defaultK9sEnv(c.app, c.masterPage().GetSelectedItem(), c.masterPage().GetRow())
 	ns, n := namespaced(*c.path)
 	env["POD"] = n
 	env["NAMESPACE"] = ns

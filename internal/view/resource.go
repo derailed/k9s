@@ -28,8 +28,6 @@ type Resource struct {
 	list       resource.List
 	cancelFn   context.CancelFunc
 	path       *string
-	colorerFn  ui.ColorerFunc
-	decorateFn decorateFn
 	envFn      envFn
 	gvr        string
 }
@@ -116,14 +114,14 @@ func (r *Resource) update(ctx context.Context) {
 	}(ctx)
 }
 
+// ----------------------------------------------------------------------------
+// Actions...
+
 func (r *Resource) backCmd(*tcell.EventKey) *tcell.EventKey {
 	r.Pop()
 
 	return nil
 }
-
-// ----------------------------------------------------------------------------
-// Actions...
 
 func (r *Resource) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !r.masterPage().RowSelected() {
@@ -440,43 +438,5 @@ func (r *Resource) execCmd(bin string, bg bool, args ...string) ui.ActionHandler
 }
 
 func (r *Resource) defaultK9sEnv() K9sEnv {
-	ns, n := namespaced(r.masterPage().GetSelectedItem())
-	ctx, err := r.app.Conn().Config().CurrentContextName()
-	if err != nil {
-		ctx = resource.NAValue
-	}
-	cluster, err := r.app.Conn().Config().CurrentClusterName()
-	if err != nil {
-		cluster = resource.NAValue
-	}
-	user, err := r.app.Conn().Config().CurrentUserName()
-	if err != nil {
-		user = resource.NAValue
-	}
-	groups, err := r.app.Conn().Config().CurrentGroupNames()
-	if err != nil {
-		groups = []string{resource.NAValue}
-	}
-	var cfg string
-	kcfg := r.app.Conn().Config().Flags().KubeConfig
-	if kcfg != nil && *kcfg != "" {
-		cfg = *kcfg
-	}
-
-	env := K9sEnv{
-		"NAMESPACE":  ns,
-		"NAME":       n,
-		"CONTEXT":    ctx,
-		"CLUSTER":    cluster,
-		"USER":       user,
-		"GROUPS":     strings.Join(groups, ","),
-		"KUBECONFIG": cfg,
-	}
-
-	row := r.masterPage().GetRow()
-	for i, r := range row {
-		env["COL"+strconv.Itoa(i)] = r
-	}
-
-	return env
+	return defaultK9sEnv(r.app, r.masterPage().GetSelectedItem(), r.masterPage().GetRow())
 }

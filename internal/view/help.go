@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
@@ -234,4 +235,45 @@ func keyConv(s string) string {
 	}
 
 	return strings.Replace(s, "alt", "opt", 1)
+}
+
+func defaultK9sEnv(app *App, sel string, row resource.Row) K9sEnv {
+	ns, n := namespaced(sel)
+	ctx, err := app.Conn().Config().CurrentContextName()
+	if err != nil {
+		ctx = resource.NAValue
+	}
+	cluster, err := app.Conn().Config().CurrentClusterName()
+	if err != nil {
+		cluster = resource.NAValue
+	}
+	user, err := app.Conn().Config().CurrentUserName()
+	if err != nil {
+		user = resource.NAValue
+	}
+	groups, err := app.Conn().Config().CurrentGroupNames()
+	if err != nil {
+		groups = []string{resource.NAValue}
+	}
+	var cfg string
+	kcfg := app.Conn().Config().Flags().KubeConfig
+	if kcfg != nil && *kcfg != "" {
+		cfg = *kcfg
+	}
+
+	env := K9sEnv{
+		"NAMESPACE":  ns,
+		"NAME":       n,
+		"CONTEXT":    ctx,
+		"CLUSTER":    cluster,
+		"USER":       user,
+		"GROUPS":     strings.Join(groups, ","),
+		"KUBECONFIG": cfg,
+	}
+
+	for i, r := range row {
+		env["COL"+strconv.Itoa(i)] = r
+	}
+
+	return env
 }

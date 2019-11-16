@@ -9,7 +9,6 @@ import (
 
 	"k8s.io/client-go/discovery/cached/disk"
 
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	v1 "k8s.io/api/core/v1"
@@ -66,24 +65,27 @@ type (
 		CanIAccess(ns, rvg string, verbs []string) (bool, error)
 	}
 
-	// APIClient represents a Kubernetes api client.
-	APIClient struct {
+	clients struct {
 		client          kubernetes.Interface
 		dClient         dynamic.Interface
 		nsClient        dynamic.NamespaceableResourceInterface
 		mxsClient       *versioned.Clientset
 		cachedDiscovery *disk.CachedDiscoveryClient
+	}
+
+	// APIClient represents a Kubernetes api client.
+	APIClient struct {
+		clients
 		config          *Config
 		useMetricServer bool
-		log             zerolog.Logger
 		mx              sync.Mutex
 	}
 )
 
 // InitConnectionOrDie initialize connection from command line args.
 // Checks for connectivity with the api server.
-func InitConnectionOrDie(config *Config, logger zerolog.Logger) *APIClient {
-	conn := APIClient{config: config, log: logger}
+func InitConnectionOrDie(config *Config) *APIClient {
+	conn := APIClient{config: config}
 	conn.useMetricServer = conn.supportsMxServer()
 
 	return &conn
@@ -242,7 +244,7 @@ func (a *APIClient) DialOrDie() kubernetes.Interface {
 
 	var err error
 	if a.client, err = kubernetes.NewForConfig(a.RestConfigOrDie()); err != nil {
-		a.log.Fatal().Msgf("Unable to connect to api server %v", err)
+		log.Fatal().Msgf("Unable to connect to api server %v", err)
 	}
 	return a.client
 }
@@ -251,7 +253,7 @@ func (a *APIClient) DialOrDie() kubernetes.Interface {
 func (a *APIClient) RestConfigOrDie() *restclient.Config {
 	cfg, err := a.config.RESTConfig()
 	if err != nil {
-		a.log.Panic().Msgf("Unable to connect to api server %v", err)
+		log.Panic().Msgf("Unable to connect to api server %v", err)
 	}
 	return cfg
 }
@@ -281,7 +283,7 @@ func (a *APIClient) DynDialOrDie() dynamic.Interface {
 
 	var err error
 	if a.dClient, err = dynamic.NewForConfig(a.RestConfigOrDie()); err != nil {
-		a.log.Panic().Err(err)
+		log.Panic().Err(err)
 	}
 	return a.dClient
 }
@@ -313,7 +315,7 @@ func (a *APIClient) MXDial() (*versioned.Clientset, error) {
 	}
 	var err error
 	if a.mxsClient, err = versioned.NewForConfig(a.RestConfigOrDie()); err != nil {
-		a.log.Error().Err(err)
+		log.Error().Err(err)
 	}
 
 	return a.mxsClient, err

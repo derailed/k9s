@@ -123,7 +123,6 @@ func (s *Stack) Peek() []Component {
 
 // ClearHistory clear out the stack history up to most recent.
 func (s *Stack) ClearHistory() {
-	s.DumpStack()
 	top := s.Top()
 	for range s.components {
 		s.Pop()
