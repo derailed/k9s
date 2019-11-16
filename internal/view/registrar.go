@@ -17,21 +17,16 @@ type (
 	enterFn    func(app *App, ns, resource, selection string)
 	decorateFn func(resource.TableData) resource.TableData
 
-	viewerCapability struct {
+	viewer struct {
+		gvr        string
+		kind       string
+		namespaced bool
+		verbs      metav1.Verbs
 		viewFn     viewFn
 		listFn     listFn
 		enterFn    enterFn
 		colorerFn  ui.ColorerFunc
 		decorateFn decorateFn
-	}
-
-	viewer struct {
-		viewerCapability
-
-		gvr        string
-		kind       string
-		namespaced bool
-		verbs      metav1.Verbs
 	}
 
 	viewers map[string]viewer
@@ -74,12 +69,10 @@ func allCRDs(c k8s.Connection, vv viewers) {
 		}
 
 		vv[gvrs] = viewer{
-			gvr:  gvrs,
-			kind: meta.Kind,
-			viewerCapability: viewerCapability{
-				viewFn:    listFunc(resource.NewCustomList(c, meta.Namespaced, "", gvrs)),
-				colorerFn: ui.DefaultColorer,
-			},
+			gvr:       gvrs,
+			kind:      meta.Kind,
+			viewFn:    listFunc(resource.NewCustomList(c, meta.Namespaced, "", gvrs)),
+			colorerFn: ui.DefaultColorer,
 		}
 	}
 }
@@ -177,242 +170,172 @@ func resourceViews(c k8s.Connection, m viewers) {
 
 func coreRes(vv viewers) {
 	vv["v1/nodes"] = viewer{
-		viewerCapability: viewerCapability{
-			viewFn:    NewNode,
-			listFn:    resource.NewNodeList,
-			colorerFn: nsColorer,
-		},
+		viewFn:    NewNode,
+		listFn:    resource.NewNodeList,
+		colorerFn: nsColorer,
 	}
 	vv["v1/namespaces"] = viewer{
-		viewerCapability: viewerCapability{
-			viewFn:    NewNamespace,
-			listFn:    resource.NewNamespaceList,
-			colorerFn: nsColorer,
-		},
+		viewFn:    NewNamespace,
+		listFn:    resource.NewNamespaceList,
+		colorerFn: nsColorer,
 	}
 	vv["v1/pods"] = viewer{
-		viewerCapability: viewerCapability{
-			viewFn:    NewPod,
-			listFn:    resource.NewPodList,
-			colorerFn: podColorer,
-		},
+		viewFn:    NewPod,
+		listFn:    resource.NewPodList,
+		colorerFn: podColorer,
 	}
 	vv["v1/serviceaccounts"] = viewer{
-		viewerCapability: viewerCapability{
-			listFn:  resource.NewServiceAccountList,
-			enterFn: showSAPolicy,
-		},
+		listFn:  resource.NewServiceAccountList,
+		enterFn: showSAPolicy,
 	}
 	vv["v1/services"] = viewer{
-		viewerCapability: viewerCapability{
-			viewFn: NewService,
-			listFn: resource.NewServiceList,
-		},
+		viewFn: NewService,
+		listFn: resource.NewServiceList,
 	}
 	vv["v1/configmaps"] = viewer{
-		viewerCapability: viewerCapability{
-			listFn: resource.NewConfigMapList,
-		},
+		listFn: resource.NewConfigMapList,
 	}
 	vv["v1/persistentvolumes"] = viewer{
-		viewerCapability: viewerCapability{
-			listFn:    resource.NewPersistentVolumeList,
-			colorerFn: pvColorer,
-		},
+		listFn:    resource.NewPersistentVolumeList,
+		colorerFn: pvColorer,
 	}
 	vv["v1/persistentvolumeclaims"] = viewer{
-		viewerCapability: viewerCapability{
-			listFn:    resource.NewPersistentVolumeClaimList,
-			colorerFn: pvcColorer,
-		},
+		listFn:    resource.NewPersistentVolumeClaimList,
+		colorerFn: pvcColorer,
 	}
 	vv["v1/secrets"] = viewer{
-		viewerCapability: viewerCapability{
-			viewFn: NewSecret,
-			listFn: resource.NewSecretList,
-		},
+		viewFn: NewSecret,
+		listFn: resource.NewSecretList,
 	}
 	vv["v1/endpoints"] = viewer{
-		viewerCapability: viewerCapability{
-			listFn: resource.NewEndpointsList,
-		},
+		listFn: resource.NewEndpointsList,
 	}
 	vv["v1/events"] = viewer{
-		viewerCapability: viewerCapability{
-			listFn:    resource.NewEventList,
-			colorerFn: evColorer,
-		},
+		listFn:    resource.NewEventList,
+		colorerFn: evColorer,
 	}
 	vv["v1/replicationcontrollers"] = viewer{
-		viewerCapability: viewerCapability{
-			viewFn:    NewScalableResource,
-			listFn:    resource.NewReplicationControllerList,
-			colorerFn: rsColorer,
-		},
+		viewFn:    NewScalableResource,
+		listFn:    resource.NewReplicationControllerList,
+		colorerFn: rsColorer,
 	}
 }
 
 func miscRes(vv viewers) {
 	vv["storage.k8s.io/v1/storageclasses"] = viewer{
-		viewerCapability: viewerCapability{
-			listFn: resource.NewStorageClassList,
-		},
+		listFn: resource.NewStorageClassList,
 	}
 	vv["contexts"] = viewer{
-		gvr:  "contexts",
-		kind: "Contexts",
-		viewerCapability: viewerCapability{
-			viewFn:    NewContext,
-			listFn:    resource.NewContextList,
-			colorerFn: ctxColorer,
-		},
+		gvr:       "contexts",
+		kind:      "Contexts",
+		viewFn:    NewContext,
+		listFn:    resource.NewContextList,
+		colorerFn: ctxColorer,
 	}
 	vv["users"] = viewer{
-		gvr: "users",
-		viewerCapability: viewerCapability{
-			viewFn: NewSubject,
-		},
+		gvr:    "users",
+		viewFn: NewSubject,
 	}
 	vv["groups"] = viewer{
-		gvr: "groups",
-		viewerCapability: viewerCapability{
-			viewFn: NewSubject,
-		},
+		gvr:    "groups",
+		viewFn: NewSubject,
 	}
 	vv["portforwards"] = viewer{
-		gvr: "portforwards",
-		viewerCapability: viewerCapability{
-			viewFn: NewPortForward,
-		},
+		gvr:    "portforwards",
+		viewFn: NewPortForward,
 	}
 	vv["benchmarks"] = viewer{
-		gvr: "benchmarks",
-		viewerCapability: viewerCapability{
-			viewFn: NewBench,
-		},
+		gvr:    "benchmarks",
+		viewFn: NewBench,
 	}
 	vv["screendumps"] = viewer{
-		gvr: "screendumps",
-		viewerCapability: viewerCapability{
-			viewFn: NewScreenDump,
-		},
+		gvr:    "screendumps",
+		viewFn: NewScreenDump,
 	}
 }
 
 func appsRes(vv viewers) {
 	vv["apps/v1/deployments"] = viewer{
-		viewerCapability: viewerCapability{
-			viewFn:    NewDeploy,
-			listFn:    resource.NewDeploymentList,
-			colorerFn: dpColorer,
-		},
+		viewFn:    NewDeploy,
+		listFn:    resource.NewDeploymentList,
+		colorerFn: dpColorer,
 	}
 	vv["apps/v1/replicasets"] = viewer{
-		viewerCapability: viewerCapability{
-			viewFn:    NewReplicaSet,
-			listFn:    resource.NewReplicaSetList,
-			colorerFn: rsColorer,
-		},
+		viewFn:    NewReplicaSet,
+		listFn:    resource.NewReplicaSetList,
+		colorerFn: rsColorer,
 	}
 	vv["apps/v1/statefulsets"] = viewer{
-		viewerCapability: viewerCapability{
-			viewFn:    NewStatefulSet,
-			listFn:    resource.NewStatefulSetList,
-			colorerFn: stsColorer,
-		},
+		viewFn:    NewStatefulSet,
+		listFn:    resource.NewStatefulSetList,
+		colorerFn: stsColorer,
 	}
 	vv["apps/v1/daemonsets"] = viewer{
-		viewerCapability: viewerCapability{
-			viewFn:    NewDaemonSet,
-			listFn:    resource.NewDaemonSetList,
-			colorerFn: dpColorer,
-		},
+		viewFn:    NewDaemonSet,
+		listFn:    resource.NewDaemonSetList,
+		colorerFn: dpColorer,
 	}
 }
 
 func authRes(vv viewers) {
 	vv["rbac.authorization.k8s.io/v1/clusterroles"] = viewer{
-		viewerCapability: viewerCapability{
-			listFn:  resource.NewClusterRoleList,
-			enterFn: showRBAC,
-		},
+		listFn:  resource.NewClusterRoleList,
+		enterFn: showRBAC,
 	}
 	vv["rbac.authorization.k8s.io/v1/clusterrolebindings"] = viewer{
-		viewerCapability: viewerCapability{
-			listFn:  resource.NewClusterRoleBindingList,
-			enterFn: showClusterRole,
-		},
+		listFn:  resource.NewClusterRoleBindingList,
+		enterFn: showClusterRole,
 	}
 	vv["rbac.authorization.k8s.io/v1/rolebindings"] = viewer{
-		viewerCapability: viewerCapability{
-			listFn:  resource.NewRoleBindingList,
-			enterFn: showRole,
-		},
+		listFn:  resource.NewRoleBindingList,
+		enterFn: showRole,
 	}
 	vv["rbac.authorization.k8s.io/v1/roles"] = viewer{
-		viewerCapability: viewerCapability{
-			listFn:  resource.NewRoleList,
-			enterFn: showRBAC,
-		},
+		listFn:  resource.NewRoleList,
+		enterFn: showRBAC,
 	}
 }
 
 func extRes(vv viewers) {
 	vv["apiextensions.k8s.io/v1/customresourcedefinitions"] = viewer{
-		viewerCapability: viewerCapability{
-			listFn:  resource.NewCustomResourceDefinitionList,
-			enterFn: showCRD,
-		},
+		listFn:  resource.NewCustomResourceDefinitionList,
+		enterFn: showCRD,
 	}
 	vv["apiextensions.k8s.io/v1beta1/customresourcedefinitions"] = viewer{
-		viewerCapability: viewerCapability{
-			listFn:  resource.NewCustomResourceDefinitionList,
-			enterFn: showCRD,
-		},
+		listFn:  resource.NewCustomResourceDefinitionList,
+		enterFn: showCRD,
 	}
 }
 
 func netRes(vv viewers) {
 	vv["networking.k8s.io/v1/networkpolicies"] = viewer{
-		viewerCapability: viewerCapability{
-			listFn: resource.NewNetworkPolicyList,
-		},
+		listFn: resource.NewNetworkPolicyList,
 	}
 	vv["extensions/v1beta1/ingresses"] = viewer{
-		viewerCapability: viewerCapability{
-			listFn: resource.NewIngressList,
-		},
+		listFn: resource.NewIngressList,
 	}
 }
 
 func batchRes(vv viewers) {
 	vv["batch/v1beta1/cronjobs"] = viewer{
-		viewerCapability: viewerCapability{
-			viewFn: NewCronJob,
-			listFn: resource.NewCronJobList,
-		},
+		viewFn: NewCronJob,
+		listFn: resource.NewCronJobList,
 	}
 	vv["batch/v1/jobs"] = viewer{
-		viewerCapability: viewerCapability{
-			viewFn: NewJob,
-			listFn: resource.NewJobList,
-		},
+		viewFn: NewJob,
+		listFn: resource.NewJobList,
 	}
 }
 
 func policyRes(vv viewers) {
 	vv["policy/v1beta1/poddisruptionbudgets"] = viewer{
-		viewerCapability: viewerCapability{
-			listFn:    resource.NewPDBList,
-			colorerFn: pdbColorer,
-		},
+		listFn:    resource.NewPDBList,
+		colorerFn: pdbColorer,
 	}
 }
 
 func hpaRes(vv viewers) {
 	vv["autoscaling/v1/horizontalpodautoscalers"] = viewer{
-		viewerCapability: viewerCapability{
-			listFn: resource.NewHorizontalPodAutoscalerV1List,
-		},
+		listFn: resource.NewHorizontalPodAutoscalerV1List,
 	}
 }

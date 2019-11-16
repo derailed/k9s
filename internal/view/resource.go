@@ -30,6 +30,8 @@ type Resource struct {
 	path       *string
 	envFn      envFn
 	gvr        string
+	colorerFn  ui.ColorerFunc
+	decorateFn decorateFn
 }
 
 // NewResource returns a new viewer.
