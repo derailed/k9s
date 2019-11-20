@@ -15,7 +15,7 @@ func TestAsGR(t *testing.T) {
 	}{
 		"full": {"apps/v1/deployments", schema.GroupVersion{Group: "apps", Version: "v1"}},
 		"core": {"v1/pods", schema.GroupVersion{Group: "", Version: "v1"}},
-		"bork": {"users", schema.GroupVersion{Group: "", Version: ""}},
+		"bork": {"users", schema.GroupVersion{}},
 	}
 
 	for k := range uu {
