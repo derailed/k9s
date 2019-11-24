@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -36,7 +35,7 @@ func NewNetworkPolicy(c Connection) *NetworkPolicy {
 }
 
 // New builds a new NetworkPolicy instance from a k8s resource.
-func (r *NetworkPolicy) New(i interface{}) Columnar {
+func (r *NetworkPolicy) New(i interface{}) (Columnar, error) {
 	c := NewNetworkPolicy(r.Connection)
 	switch instance := i.(type) {
 	case *networkingv1.NetworkPolicy:
@@ -44,11 +43,11 @@ func (r *NetworkPolicy) New(i interface{}) Columnar {
 	case networkingv1.NetworkPolicy:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown NetworkPolicy type %#v", i)
+		return nil, fmt.Errorf("Expecting NetworkPolicy but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // Marshal resource to yaml.

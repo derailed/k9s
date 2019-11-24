@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 )
 
@@ -39,7 +38,7 @@ func NewDaemonSet(c Connection) *DaemonSet {
 }
 
 // New builds a new DaemonSet instance from a k8s resource.
-func (r *DaemonSet) New(i interface{}) Columnar {
+func (r *DaemonSet) New(i interface{}) (Columnar, error) {
 	c := NewDaemonSet(r.Connection)
 	switch instance := i.(type) {
 	case *appsv1.DaemonSet:
@@ -47,11 +46,11 @@ func (r *DaemonSet) New(i interface{}) Columnar {
 	case appsv1.DaemonSet:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown DaemonSet type %#v", i)
+		return nil, fmt.Errorf("Expecting DaemonSet but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // Marshal resource to yaml.

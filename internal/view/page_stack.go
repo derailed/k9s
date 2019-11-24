@@ -5,6 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/rs/zerolog/log"
 )
 
 type PageStack struct {
@@ -19,14 +20,21 @@ func NewPageStack() *PageStack {
 	}
 }
 
-func (p *PageStack) Init(ctx context.Context) {
-	p.app = mustExtractApp(ctx)
+func (p *PageStack) Init(ctx context.Context) (err error) {
+	if p.app, err = extractApp(ctx); err != nil {
+		return err
+	}
+
 	p.Stack.AddListener(p)
+
+	return nil
 }
 
 func (p *PageStack) StackPushed(c model.Component) {
 	ctx := context.WithValue(context.Background(), ui.KeyApp, p.app)
-	c.Init(ctx)
+	if err := c.Init(ctx); err != nil {
+		log.Error().Err(err).Msgf("Component Init failed!")
+	}
 	c.Start()
 	p.app.SetFocus(c)
 }

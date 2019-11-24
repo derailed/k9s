@@ -29,14 +29,28 @@ func NewKeyAction(d string, a ActionHandler, display bool) KeyAction {
 }
 
 // Add sets up keyboard action listener.
-func (a KeyActions) AddActions(aa KeyActions) {
+func (a KeyActions) Add(aa KeyActions) {
 	for k, v := range aa {
 		a[k] = v
 	}
 }
 
-// Remove delete a keyed action.
-func (a KeyActions) RmActions(kk ...tcell.Key) {
+// Clear
+func (a KeyActions) Clear() {
+	for k := range a {
+		delete(a, k)
+	}
+}
+
+// SetActions replace actions with new ones.
+func (a KeyActions) Set(aa KeyActions) {
+	for k, v := range aa {
+		a[k] = v
+	}
+}
+
+// Delete deletes actions by the given keys.
+func (a KeyActions) Delete(kk ...tcell.Key) {
 	for _, k := range kk {
 		delete(a, k)
 	}

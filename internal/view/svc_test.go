@@ -13,5 +13,5 @@ func TestServiceNew(t *testing.T) {
 	s.Init(makeCtx())
 
 	assert.Equal(t, "svc", s.Name())
-	assert.Equal(t, 23, len(s.Hints()))
+	assert.Equal(t, 22, len(s.Hints()))
 }

@@ -2,9 +2,9 @@ package resource
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/rbac/v1"
 )
 
@@ -33,7 +33,7 @@ func NewClusterRole(c Connection) *ClusterRole {
 }
 
 // New builds a new ClusterRole instance from a k8s resource.
-func (r *ClusterRole) New(i interface{}) Columnar {
+func (r *ClusterRole) New(i interface{}) (Columnar, error) {
 	c := NewClusterRole(r.Connection)
 	switch instance := i.(type) {
 	case *v1.ClusterRole:
@@ -41,11 +41,11 @@ func (r *ClusterRole) New(i interface{}) Columnar {
 	case v1.ClusterRole:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown context type %#v", i)
+		return nil, fmt.Errorf("unknown context type %T", instance)
 	}
 	c.path = c.instance.Name
 
-	return c
+	return c, nil
 }
 
 // Marshal resource to yaml.

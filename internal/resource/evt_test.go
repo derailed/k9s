@@ -94,7 +94,8 @@ func k8sEvent() *v1.Event {
 
 func newEvent() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewEvent(mc).New(k8sEvent())
+	c, _ := resource.NewEvent(mc).New(k8sEvent())
+	return c
 }
 
 func evYaml() string {

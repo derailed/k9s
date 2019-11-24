@@ -24,37 +24,41 @@ const (
 
 // PortForward presents active portforward viewer.
 type PortForward struct {
-	*MasterDetail
+	*Table
 
-	cancelFn context.CancelFunc
-	bench    *perf.Benchmark
-	app      *App
+	bench *perf.Benchmark
 }
 
 // NewPortForward returns a new viewer.
 func NewPortForward(title, gvr string, list resource.List) ResourceViewer {
 	return &PortForward{
-		MasterDetail: NewMasterDetail(portForwardTitle, ""),
+		Table: NewTable(portForwardTitle),
 	}
 }
 
 // Init the view.
-func (p *PortForward) Init(ctx context.Context) {
-	p.app = mustExtractApp(ctx)
-	p.MasterDetail.Init(ctx)
+func (p *PortForward) Init(ctx context.Context) error {
+	if err := p.Table.Init(ctx); err != nil {
+		return err
+	}
 	p.registerActions()
 
-	tv := p.masterPage()
-	tv.SetBorderFocusColor(tcell.ColorDodgerBlue)
-	tv.SetSelectedStyle(tcell.ColorWhite, tcell.ColorDodgerBlue, tcell.AttrNone)
-	tv.SetColorerFn(forwardColorer)
-	tv.ActiveNS = resource.AllNamespaces
-	tv.SetSortCol(tv.NameColIndex()+6, 0, true)
-	tv.Select(1, 0)
+	p.SetBorderFocusColor(tcell.ColorDodgerBlue)
+	p.SetSelectedStyle(tcell.ColorWhite, tcell.ColorDodgerBlue, tcell.AttrNone)
+	p.SetColorerFn(forwardColorer)
+	p.ActiveNS = resource.AllNamespaces
+	p.SetSortCol(p.NameColIndex()+6, 0, true)
+	p.Select(1, 0)
 
 	p.Start()
 	p.refresh()
+
+	return nil
 }
+
+func (p *PortForward) List() resource.List { return nil }
+func (p *PortForward) GetTable() *Table    { return p.Table }
+func (p *PortForward) SetEnvFn(EnvFunc)    {}
 
 func (p *PortForward) Start() {
 	path := ui.BenchConfig(p.app.Config.K9s.CurrentCluster)
@@ -65,16 +69,9 @@ func (p *PortForward) Start() {
 	}
 }
 
-func (p *PortForward) Stop() {}
-
 func (p *PortForward) Name() string {
 	return portForwardTitle
 }
-
-func (p *PortForward) setEnterFn(enterFn)            {}
-func (p *PortForward) setColorerFn(ui.ColorerFunc)   {}
-func (p *PortForward) setDecorateFn(decorateFn)      {}
-func (p *PortForward) setExtraActionsFn(ActionsFunc) {}
 
 func (p *PortForward) reload() {
 	path := ui.BenchConfig(p.app.Config.K9s.CurrentCluster)
@@ -86,27 +83,25 @@ func (p *PortForward) reload() {
 }
 
 func (p *PortForward) refresh() {
-	tv := p.masterPage()
-	tv.Update(p.hydrate())
-	p.app.SetFocus(tv)
-	tv.UpdateTitle()
+	p.Update(p.hydrate())
+	p.app.SetFocus(p)
+	p.UpdateTitle()
 }
 
 func (p *PortForward) registerActions() {
-	tv := p.masterPage()
-	tv.AddActions(ui.KeyActions{
-		tcell.KeyEnter: ui.NewKeyAction("Benchmarks", p.gotoBenchCmd, true),
+	p.Actions().Add(ui.KeyActions{
+		tcell.KeyEnter: ui.NewKeyAction("Benchmarks", p.showBenchCmd, true),
 		tcell.KeyCtrlB: ui.NewKeyAction("Bench", p.benchCmd, true),
 		tcell.KeyCtrlK: ui.NewKeyAction("Bench Stop", p.benchStopCmd, true),
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", p.deleteCmd, true),
-		ui.KeySlash:    ui.NewKeyAction("Filter", tv.activateCmd, false),
+		ui.KeySlash:    ui.NewKeyAction("Filter", p.activateCmd, false),
 		tcell.KeyEsc:   ui.NewKeyAction("Back", p.app.PrevCmd, false),
-		ui.KeyShiftP:   ui.NewKeyAction("Sort Ports", p.sortColCmd(2, true), false),
-		ui.KeyShiftU:   ui.NewKeyAction("Sort URL", p.sortColCmd(4, true), false),
+		ui.KeyShiftP:   ui.NewKeyAction("Sort Ports", p.SortColCmd(2, true), false),
+		ui.KeyShiftU:   ui.NewKeyAction("Sort URL", p.SortColCmd(4, true), false),
 	})
 }
 
-func (p *PortForward) gotoBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (p *PortForward) showBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	p.app.gotoResource("be")
 
 	return nil
@@ -134,15 +129,14 @@ func (p *PortForward) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	tv := p.masterPage()
-	r, _ := tv.GetSelection()
-	cfg, co := defaultConfig(), ui.TrimCell(tv.SelectTable, r, 2)
+	r, _ := p.GetSelection()
+	cfg, co := defaultConfig(), ui.TrimCell(p.SelectTable, r, 2)
 	if b, ok := p.app.Bench.Benchmarks.Containers[containerID(sel, co)]; ok {
 		cfg = b
 	}
 	cfg.Name = sel
 
-	base := ui.TrimCell(tv.SelectTable, r, 4)
+	base := ui.TrimCell(p.SelectTable, r, 4)
 	var err error
 	if p.bench, err = perf.NewBenchmark(base, cfg); err != nil {
 		p.app.Flash().Errf("Bench failed %v", err)
@@ -177,21 +171,19 @@ func (p *PortForward) runBenchmark() {
 }
 
 func (p *PortForward) getSelectedItem() string {
-	tv := p.masterPage()
-	r, _ := tv.GetSelection()
+	r, _ := p.GetSelection()
 	if r == 0 {
 		return ""
 	}
 	return fwFQN(
-		fqn(ui.TrimCell(tv.SelectTable, r, 0), ui.TrimCell(tv.SelectTable, r, 1)),
-		ui.TrimCell(tv.SelectTable, r, 2),
+		fqn(ui.TrimCell(p.SelectTable, r, 0), ui.TrimCell(p.SelectTable, r, 1)),
+		ui.TrimCell(p.SelectTable, r, 2),
 	)
 }
 
 func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
-	tv := p.masterPage()
-	if !tv.SearchBuff().Empty() {
-		tv.SearchBuff().Reset()
+	if !p.SearchBuff().Empty() {
+		p.SearchBuff().Reset()
 		return nil
 	}
 
@@ -200,18 +192,11 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	showModal(p.Pages, fmt.Sprintf("Delete PortForward `%s?", sel), func() {
-		fw, ok := p.app.forwarders[sel]
-		if !ok {
-			log.Debug().Msgf("Unable to find forwarder %s", sel)
-			return
-		}
-		fw.Stop()
-		delete(p.app.forwarders, sel)
-
-		log.Debug().Msgf("PortForwards after delete: %#v", p.app.forwarders)
-		p.masterPage().Update(p.hydrate())
-		p.app.Flash().Infof("PortForward %s deleted!", sel)
+	showModal(p.app.Content.Pages, fmt.Sprintf("Delete PortForward `%s?", sel), func() {
+		stats := p.app.forwarders.Kill(sel)
+		log.Debug().Msgf("Deleted %d port-forwards", stats)
+		p.app.Flash().Infof("PortForward %s(%d) deleted!", sel, stats)
+		p.Update(p.hydrate())
 	})
 
 	return nil

@@ -133,7 +133,7 @@ func (p *podMxWatcher) Run() {
 		case <-time.After(podMXRefresh):
 			list, err := c.MetricsV1beta1().PodMetricses(p.ns).List(metav1.ListOptions{})
 			if err != nil {
-				log.Error().Err(err).Msg("PodMetrics List Failed!")
+				log.Error().Err(err).Msgf("PodMetrics List in NS %q Failed!", p.ns)
 			}
 			p.update(list, true)
 		}

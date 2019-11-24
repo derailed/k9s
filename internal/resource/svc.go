@@ -3,6 +3,7 @@ package resource
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sort"
 	"strconv"
 	"strings"
@@ -37,7 +38,7 @@ func NewService(c Connection) *Service {
 }
 
 // New builds a new Service instance from a k8s resource.
-func (r *Service) New(i interface{}) Columnar {
+func (r *Service) New(i interface{}) (Columnar, error) {
 	c := NewService(r.Connection)
 	switch instance := i.(type) {
 	case *v1.Service:
@@ -45,11 +46,11 @@ func (r *Service) New(i interface{}) Columnar {
 	case v1.Service:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown Service type %#v", i)
+		return nil, fmt.Errorf("Expecting Service but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // Marshal resource to yaml.

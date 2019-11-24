@@ -29,35 +29,31 @@ func NewAlias() *Alias {
 }
 
 // Init the view.
-func (a *Alias) Init(ctx context.Context) {
-	a.Table.Init(ctx)
+func (a *Alias) Init(ctx context.Context) error {
+	if err := a.Table.Init(ctx); err != nil {
+		return err
+	}
 
 	a.SetBorderFocusColor(tcell.ColorMediumSpringGreen)
 	a.SetSelectedStyle(tcell.ColorWhite, tcell.ColorMediumSpringGreen, tcell.AttrNone)
 	a.SetColorerFn(aliasColorer)
 	a.ActiveNS = resource.AllNamespaces
 	a.registerActions()
-
 	a.Update(a.hydrate())
 	a.resetTitle()
-}
 
-func (a *Alias) Name() string {
-	return aliasTitle
+	return nil
 }
-
-func (a *Alias) Start() {}
-func (a *Alias) Stop()  {}
 
 func (a *Alias) registerActions() {
-	a.RmActions(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
-	a.AddActions(ui.KeyActions{
+	a.Actions().Delete(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
+	a.Actions().Add(ui.KeyActions{
 		tcell.KeyEnter:  ui.NewKeyAction("Goto Resource", a.gotoCmd, true),
 		tcell.KeyEscape: ui.NewKeyAction("Reset", a.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", a.activateCmd, false),
-		ui.KeyShiftR:    ui.NewKeyAction("Sort Resource", a.SortColCmd(0), false),
-		ui.KeyShiftC:    ui.NewKeyAction("Sort Command", a.SortColCmd(1), false),
-		ui.KeyShiftA:    ui.NewKeyAction("Sort ApiGroup", a.SortColCmd(2), false),
+		ui.KeyShiftR:    ui.NewKeyAction("Sort Resource", a.SortColCmd(0, true), false),
+		ui.KeyShiftC:    ui.NewKeyAction("Sort Command", a.SortColCmd(1, true), false),
+		ui.KeyShiftA:    ui.NewKeyAction("Sort ApiGroup", a.SortColCmd(2, true), false),
 	})
 }
 

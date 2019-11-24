@@ -6,6 +6,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 )
 
 const defaultPrompt = "%c> %s"
@@ -44,13 +45,20 @@ func (v *CmdView) activate() {
 }
 
 func (v *CmdView) update(s string) {
+	if v.text == s {
+		return
+	}
 	v.text = s
 	v.Clear()
-	v.write(s)
+	v.write(v.text)
 }
 
 func (v *CmdView) write(s string) {
 	fmt.Fprintf(v, defaultPrompt, v.icon, s)
+}
+
+func (v *CmdView) reset() {
+	v.update("")
 }
 
 // ----------------------------------------------------------------------------
@@ -63,18 +71,19 @@ func (v *CmdView) BufferChanged(s string) {
 
 // BufferActive indicates the buff activity changed.
 func (v *CmdView) BufferActive(f bool, k BufferKind) {
-	v.activated = f
-	if f {
+	if v.activated = f; f {
 		v.SetBorder(true)
-		v.icon = iconFor(k)
 		v.SetTextColor(v.styles.FgColor())
 		v.SetBorderColor(colorFor(k))
+		v.icon = iconFor(k)
+		v.reset()
 		v.activate()
 	} else {
 		v.SetBorder(false)
 		v.SetBackgroundColor(v.styles.BgColor())
 		v.Clear()
 	}
+	log.Debug().Msgf("CmdView activated: %t", v.activated)
 }
 
 func colorFor(k BufferKind) tcell.Color {
@@ -85,6 +94,7 @@ func colorFor(k BufferKind) tcell.Color {
 		return tcell.ColorSeaGreen
 	}
 }
+
 func iconFor(k BufferKind) rune {
 	switch k {
 	case CommandBuff:

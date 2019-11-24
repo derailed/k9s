@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 )
 
@@ -40,7 +39,7 @@ func NewDeployment(c Connection) *Deployment {
 }
 
 // New builds a new Deployment instance from a k8s resource.
-func (r *Deployment) New(i interface{}) Columnar {
+func (r *Deployment) New(i interface{}) (Columnar, error) {
 	c := NewDeployment(r.Connection)
 	switch instance := i.(type) {
 	case *appsv1.Deployment:
@@ -48,11 +47,11 @@ func (r *Deployment) New(i interface{}) Columnar {
 	case appsv1.Deployment:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown Deployment type %#v", i)
+		return nil, fmt.Errorf("Expecting Deployment but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // Marshal resource to yaml.

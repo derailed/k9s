@@ -2,6 +2,7 @@ package resource
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
@@ -33,7 +34,7 @@ func NewNamespace(c Connection) *Namespace {
 }
 
 // New builds a new Namespace instance from a k8s resource.
-func (r *Namespace) New(i interface{}) Columnar {
+func (r *Namespace) New(i interface{}) (Columnar, error) {
 	c := NewNamespace(r.Connection)
 	switch instance := i.(type) {
 	case *v1.Namespace:
@@ -41,11 +42,11 @@ func (r *Namespace) New(i interface{}) Columnar {
 	case v1.Namespace:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown Namespace type %#v", i)
+		return nil, fmt.Errorf("Expecting Namespace but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // Marshal a resource to yaml.

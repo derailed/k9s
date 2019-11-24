@@ -18,41 +18,14 @@ import (
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
-type (
-	// Cruder represents a crudable Kubernetes resource.
-	Cruder interface {
-		Get(ns string, name string) (interface{}, error)
-		List(ns string, opts metav1.ListOptions) (k8s.Collection, error)
-		Delete(ns string, name string, cascade, force bool) error
-	}
+// Base resource.
+type Base struct {
+	Factory
 
-	// Scalable represents a scalable Kubernetes resource.
-	Scalable interface {
-		Scale(ns string, name string, replicas int32) error
-	}
-
-	// Restartable represents a rollout restartable Kubernetes resource.
-	Restartable interface {
-		Restart(ns string, name string) error
-	}
-
-	// Connection represents a Kubenetes apiserver connection.
-	Connection k8s.Connection
-
-	// Factory creates new tabular resources.
-	Factory interface {
-		New(interface{}) Columnar
-	}
-
-	// Base resource.
-	Base struct {
-		Factory
-
-		Connection Connection
-		path       string
-		Resource   Cruder
-	}
-)
+	Connection Connection
+	path       string
+	Resource   Cruder
+}
 
 // NewBase returns a new base
 func NewBase(c Connection, r Cruder) *Base {
@@ -88,7 +61,7 @@ func (b *Base) Get(path string) (Columnar, error) {
 		return nil, err
 	}
 
-	return b.New(i), nil
+	return b.New(i)
 }
 
 // List all resources
@@ -100,7 +73,11 @@ func (b *Base) List(ns string, opts metav1.ListOptions) (Columnars, error) {
 
 	cc := make(Columnars, 0, len(ii))
 	for i := 0; i < len(ii); i++ {
-		cc = append(cc, b.New(ii[i]))
+		res, err := b.New(ii[i])
+		if err != nil {
+			return nil, err
+		}
+		cc = append(cc, res)
 	}
 
 	return cc, nil

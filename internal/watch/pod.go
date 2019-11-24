@@ -1,10 +1,12 @@
 package watch
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	wv1 "k8s.io/client-go/informers/core/v1"
@@ -39,7 +41,8 @@ func (p *Pod) List(ns string, opts metav1.ListOptions) k8s.Collection {
 	for _, o := range p.GetStore().List() {
 		pod, ok := o.(*v1.Pod)
 		if !ok {
-			panic("expecting pod")
+			log.Error().Err(errors.New("Expecting a pod"))
+			return res
 		}
 		if ns != "" && pod.Namespace != ns {
 			continue

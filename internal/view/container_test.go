@@ -9,9 +9,9 @@ import (
 )
 
 func TestContainerNew(t *testing.T) {
-	po := view.NewContainer("Container", resource.NewContainerList(nil, nil), "fred/blee")
+	po := view.NewContainer("fred/p1", resource.NewContainerList(nil, nil))
 	po.Init(makeCtx())
 
-	assert.Equal(t, "containers", po.Name())
-	assert.Equal(t, 21, len(po.Hints()))
+	assert.Equal(t, "Containers", po.Name())
+	assert.Equal(t, 19, len(po.Hints()))
 }

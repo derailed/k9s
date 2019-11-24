@@ -11,36 +11,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-type (
-	viewFn     func(title, gvr string, list resource.List) ResourceViewer
-	listFn     func(c resource.Connection, ns string) resource.List
-	enterFn    func(app *App, ns, resource, selection string)
-	decorateFn func(resource.TableData) resource.TableData
+var aliases = config.NewAliases()
 
-	viewer struct {
-		gvr        string
-		kind       string
-		namespaced bool
-		verbs      metav1.Verbs
-		viewFn     viewFn
-		listFn     listFn
-		enterFn    enterFn
-		colorerFn  ui.ColorerFunc
-		decorateFn decorateFn
-	}
-
-	viewers map[string]viewer
-)
-
-func listFunc(l resource.List) viewFn {
+func resourceFn(l resource.List) ViewFunc {
 	return func(title, gvr string, list resource.List) ResourceViewer {
 		return NewResource(title, gvr, l)
 	}
 }
 
-var aliases = config.NewAliases()
-
-func allCRDs(c k8s.Connection, vv viewers) {
+func allCRDs(c k8s.Connection, vv MetaViewers) {
 	crds, err := resource.NewCustomResourceDefinitionList(c, resource.AllNamespaces).
 		Resource().
 		List(resource.AllNamespaces, metav1.ListOptions{})
@@ -68,10 +47,10 @@ func allCRDs(c k8s.Connection, vv viewers) {
 			aliases.Define(gvrs, a)
 		}
 
-		vv[gvrs] = viewer{
+		vv[gvrs] = MetaViewer{
 			gvr:       gvrs,
 			kind:      meta.Kind,
-			viewFn:    listFunc(resource.NewCustomList(c, meta.Namespaced, "", gvrs)),
+			viewFn:    resourceFn(resource.NewCustomList(c, meta.Namespaced, "", gvrs)),
 			colorerFn: ui.DefaultColorer,
 		}
 	}
@@ -82,7 +61,7 @@ func showRBAC(app *App, ns, resource, selection string) {
 	if resource == "role" {
 		kind = Role
 	}
-	app.inject(NewRbac(app, ns, selection, kind))
+	app.inject(NewRbac(selection, kind))
 }
 
 func showCRD(app *App, ns, resource, selection string) {
@@ -99,7 +78,7 @@ func showClusterRole(app *App, ns, resource, selection string) {
 		app.Flash().Errf("Unable to retrieve clusterrolebindings for %s", selection)
 		return
 	}
-	app.inject(NewRbac(app, ns, crb.RoleRef.Name, ClusterRole))
+	app.inject(NewRbac(crb.RoleRef.Name, ClusterRole))
 }
 
 func showRole(app *App, _, resource, selection string) {
@@ -109,15 +88,20 @@ func showRole(app *App, _, resource, selection string) {
 		app.Flash().Errf("Unable to retrieve rolebindings for %s", selection)
 		return
 	}
-	app.inject(NewRbac(app, ns, fqn(ns, rb.RoleRef.Name), Role))
+	app.inject(NewRbac(fqn(ns, rb.RoleRef.Name), Role))
 }
 
 func showSAPolicy(app *App, _, _, selection string) {
 	_, n := namespaced(selection)
-	app.inject(NewPolicy(app, mapFuSubject("ServiceAccount"), n))
+	subject, err := mapFuSubject("ServiceAccount")
+	if err != nil {
+		app.Flash().Err(err)
+		return
+	}
+	app.inject(NewPolicy(app, subject, n))
 }
 
-func load(c k8s.Connection, vv viewers) {
+func load(c k8s.Connection, vv MetaViewers) {
 	if err := aliases.Load(); err != nil {
 		log.Error().Err(err).Msg("No custom aliases defined in config")
 	}
@@ -154,7 +138,7 @@ func load(c k8s.Connection, vv viewers) {
 	}
 }
 
-func resourceViews(c k8s.Connection, m viewers) {
+func resourceViews(c k8s.Connection, m MetaViewers) {
 	coreRes(m)
 	miscRes(m)
 	appsRes(m)
@@ -168,174 +152,174 @@ func resourceViews(c k8s.Connection, m viewers) {
 	load(c, m)
 }
 
-func coreRes(vv viewers) {
-	vv["v1/nodes"] = viewer{
+func coreRes(vv MetaViewers) {
+	vv["v1/nodes"] = MetaViewer{
 		viewFn:    NewNode,
 		listFn:    resource.NewNodeList,
 		colorerFn: nsColorer,
 	}
-	vv["v1/namespaces"] = viewer{
+	vv["v1/namespaces"] = MetaViewer{
 		viewFn:    NewNamespace,
 		listFn:    resource.NewNamespaceList,
 		colorerFn: nsColorer,
 	}
-	vv["v1/pods"] = viewer{
+	vv["v1/pods"] = MetaViewer{
 		viewFn:    NewPod,
 		listFn:    resource.NewPodList,
 		colorerFn: podColorer,
 	}
-	vv["v1/serviceaccounts"] = viewer{
+	vv["v1/serviceaccounts"] = MetaViewer{
 		listFn:  resource.NewServiceAccountList,
 		enterFn: showSAPolicy,
 	}
-	vv["v1/services"] = viewer{
+	vv["v1/services"] = MetaViewer{
 		viewFn: NewService,
 		listFn: resource.NewServiceList,
 	}
-	vv["v1/configmaps"] = viewer{
+	vv["v1/configmaps"] = MetaViewer{
 		listFn: resource.NewConfigMapList,
 	}
-	vv["v1/persistentvolumes"] = viewer{
+	vv["v1/persistentvolumes"] = MetaViewer{
 		listFn:    resource.NewPersistentVolumeList,
 		colorerFn: pvColorer,
 	}
-	vv["v1/persistentvolumeclaims"] = viewer{
+	vv["v1/persistentvolumeclaims"] = MetaViewer{
 		listFn:    resource.NewPersistentVolumeClaimList,
 		colorerFn: pvcColorer,
 	}
-	vv["v1/secrets"] = viewer{
+	vv["v1/secrets"] = MetaViewer{
 		viewFn: NewSecret,
 		listFn: resource.NewSecretList,
 	}
-	vv["v1/endpoints"] = viewer{
+	vv["v1/endpoints"] = MetaViewer{
 		listFn: resource.NewEndpointsList,
 	}
-	vv["v1/events"] = viewer{
+	vv["v1/events"] = MetaViewer{
 		listFn:    resource.NewEventList,
 		colorerFn: evColorer,
 	}
-	vv["v1/replicationcontrollers"] = viewer{
-		viewFn:    NewScalableResource,
+	vv["v1/replicationcontrollers"] = MetaViewer{
+		viewFn:    NewReplicationController,
 		listFn:    resource.NewReplicationControllerList,
 		colorerFn: rsColorer,
 	}
 }
 
-func miscRes(vv viewers) {
-	vv["storage.k8s.io/v1/storageclasses"] = viewer{
+func miscRes(vv MetaViewers) {
+	vv["storage.k8s.io/v1/storageclasses"] = MetaViewer{
 		listFn: resource.NewStorageClassList,
 	}
-	vv["contexts"] = viewer{
+	vv["contexts"] = MetaViewer{
 		gvr:       "contexts",
 		kind:      "Contexts",
 		viewFn:    NewContext,
 		listFn:    resource.NewContextList,
 		colorerFn: ctxColorer,
 	}
-	vv["users"] = viewer{
+	vv["users"] = MetaViewer{
 		gvr:    "users",
 		viewFn: NewSubject,
 	}
-	vv["groups"] = viewer{
+	vv["groups"] = MetaViewer{
 		gvr:    "groups",
 		viewFn: NewSubject,
 	}
-	vv["portforwards"] = viewer{
+	vv["portforwards"] = MetaViewer{
 		gvr:    "portforwards",
 		viewFn: NewPortForward,
 	}
-	vv["benchmarks"] = viewer{
+	vv["benchmarks"] = MetaViewer{
 		gvr:    "benchmarks",
 		viewFn: NewBench,
 	}
-	vv["screendumps"] = viewer{
+	vv["screendumps"] = MetaViewer{
 		gvr:    "screendumps",
 		viewFn: NewScreenDump,
 	}
 }
 
-func appsRes(vv viewers) {
-	vv["apps/v1/deployments"] = viewer{
+func appsRes(vv MetaViewers) {
+	vv["apps/v1/deployments"] = MetaViewer{
 		viewFn:    NewDeploy,
 		listFn:    resource.NewDeploymentList,
 		colorerFn: dpColorer,
 	}
-	vv["apps/v1/replicasets"] = viewer{
+	vv["apps/v1/replicasets"] = MetaViewer{
 		viewFn:    NewReplicaSet,
 		listFn:    resource.NewReplicaSetList,
 		colorerFn: rsColorer,
 	}
-	vv["apps/v1/statefulsets"] = viewer{
+	vv["apps/v1/statefulsets"] = MetaViewer{
 		viewFn:    NewStatefulSet,
 		listFn:    resource.NewStatefulSetList,
 		colorerFn: stsColorer,
 	}
-	vv["apps/v1/daemonsets"] = viewer{
+	vv["apps/v1/daemonsets"] = MetaViewer{
 		viewFn:    NewDaemonSet,
 		listFn:    resource.NewDaemonSetList,
 		colorerFn: dpColorer,
 	}
 }
 
-func authRes(vv viewers) {
-	vv["rbac.authorization.k8s.io/v1/clusterroles"] = viewer{
+func authRes(vv MetaViewers) {
+	vv["rbac.authorization.k8s.io/v1/clusterroles"] = MetaViewer{
 		listFn:  resource.NewClusterRoleList,
 		enterFn: showRBAC,
 	}
-	vv["rbac.authorization.k8s.io/v1/clusterrolebindings"] = viewer{
+	vv["rbac.authorization.k8s.io/v1/clusterrolebindings"] = MetaViewer{
 		listFn:  resource.NewClusterRoleBindingList,
 		enterFn: showClusterRole,
 	}
-	vv["rbac.authorization.k8s.io/v1/rolebindings"] = viewer{
+	vv["rbac.authorization.k8s.io/v1/rolebindings"] = MetaViewer{
 		listFn:  resource.NewRoleBindingList,
 		enterFn: showRole,
 	}
-	vv["rbac.authorization.k8s.io/v1/roles"] = viewer{
+	vv["rbac.authorization.k8s.io/v1/roles"] = MetaViewer{
 		listFn:  resource.NewRoleList,
 		enterFn: showRBAC,
 	}
 }
 
-func extRes(vv viewers) {
-	vv["apiextensions.k8s.io/v1/customresourcedefinitions"] = viewer{
+func extRes(vv MetaViewers) {
+	vv["apiextensions.k8s.io/v1/customresourcedefinitions"] = MetaViewer{
 		listFn:  resource.NewCustomResourceDefinitionList,
 		enterFn: showCRD,
 	}
-	vv["apiextensions.k8s.io/v1beta1/customresourcedefinitions"] = viewer{
+	vv["apiextensions.k8s.io/v1beta1/customresourcedefinitions"] = MetaViewer{
 		listFn:  resource.NewCustomResourceDefinitionList,
 		enterFn: showCRD,
 	}
 }
 
-func netRes(vv viewers) {
-	vv["networking.k8s.io/v1/networkpolicies"] = viewer{
+func netRes(vv MetaViewers) {
+	vv["networking.k8s.io/v1/networkpolicies"] = MetaViewer{
 		listFn: resource.NewNetworkPolicyList,
 	}
-	vv["extensions/v1beta1/ingresses"] = viewer{
+	vv["extensions/v1beta1/ingresses"] = MetaViewer{
 		listFn: resource.NewIngressList,
 	}
 }
 
-func batchRes(vv viewers) {
-	vv["batch/v1beta1/cronjobs"] = viewer{
+func batchRes(vv MetaViewers) {
+	vv["batch/v1beta1/cronjobs"] = MetaViewer{
 		viewFn: NewCronJob,
 		listFn: resource.NewCronJobList,
 	}
-	vv["batch/v1/jobs"] = viewer{
+	vv["batch/v1/jobs"] = MetaViewer{
 		viewFn: NewJob,
 		listFn: resource.NewJobList,
 	}
 }
 
-func policyRes(vv viewers) {
-	vv["policy/v1beta1/poddisruptionbudgets"] = viewer{
+func policyRes(vv MetaViewers) {
+	vv["policy/v1beta1/poddisruptionbudgets"] = MetaViewer{
 		listFn:    resource.NewPDBList,
 		colorerFn: pdbColorer,
 	}
 }
 
-func hpaRes(vv viewers) {
-	vv["autoscaling/v1/horizontalpodautoscalers"] = viewer{
+func hpaRes(vv MetaViewers) {
+	vv["autoscaling/v1/horizontalpodautoscalers"] = MetaViewer{
 		listFn: resource.NewHorizontalPodAutoscalerV1List,
 	}
 }

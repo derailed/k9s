@@ -20,7 +20,6 @@ const (
 	// SearchFmt represents a filter view title.
 	SearchFmt = "<[filter:bg:r]/%s[fg:bg:-]> "
 
-	titleFmt      = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]] "
 	nsTitleFmt    = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
 	descIndicator = "↓"
 	ascIndicator  = "↑"
@@ -204,7 +203,7 @@ func fuzzyFilter(q string, index int, data resource.TableData) resource.TableDat
 }
 
 // UpdateTitle refreshes the table title.
-func styleTitle(rc int, ns, base, buff string, styles *config.Styles) string {
+func styleTitle(rc int, ns, base, path, buff string, styles *config.Styles) string {
 	var title string
 
 	if rc > 0 {
@@ -212,7 +211,7 @@ func styleTitle(rc int, ns, base, buff string, styles *config.Styles) string {
 	}
 	switch ns {
 	case resource.NotNamespaced, "*":
-		title = SkinTitle(fmt.Sprintf(titleFmt, base, rc), styles.Frame())
+		title = SkinTitle(fmt.Sprintf(nsTitleFmt, base, path, rc), styles.Frame())
 	default:
 		if ns == resource.AllNamespaces {
 			ns = resource.AllNamespace

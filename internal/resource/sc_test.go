@@ -90,7 +90,8 @@ func k8sSC() *v1.StorageClass {
 
 func newSC() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewStorageClass(mc).New(k8sSC())
+	c, _ := resource.NewStorageClass(mc).New(k8sSC())
+	return c
 }
 
 func scYaml() string {

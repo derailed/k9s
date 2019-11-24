@@ -3,6 +3,7 @@ package k8s
 import (
 	"fmt"
 
+	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/client-go/tools/clientcmd"
@@ -25,7 +26,7 @@ func NewNamedContext(c *Config, n string, ctx *api.Context) *NamedContext {
 func (c *NamedContext) MustCurrentContextName() string {
 	cl, err := c.config.CurrentContextName()
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("Fetching current context")
 	}
 	return cl
 }
@@ -82,7 +83,7 @@ func (c *Context) Delete(_, n string, cascade, force bool) error {
 func (c *Context) MustCurrentContextName() string {
 	cl, err := c.Config().CurrentContextName()
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("Fetching current context")
 	}
 	return cl
 }

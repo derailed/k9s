@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/watch"
 )
 
@@ -109,7 +110,7 @@ func TestTableViewSort(t *testing.T) {
 		Namespace: "",
 	}
 	v.Update(data)
-	v.SortColCmd(1)(nil)
+	v.SortColCmd(1, true)(nil)
 	assert.Equal(t, 3, v.GetRowCount())
 	assert.Equal(t, "blee ", v.GetCell(1, 1).Text)
 
@@ -124,4 +125,26 @@ func makeContext() context.Context {
 	a := NewApp(config.NewConfig(ks{}))
 	ctx := context.WithValue(context.Background(), ui.KeyApp, a)
 	return context.WithValue(ctx, ui.KeyStyles, a.Styles)
+}
+
+type ks struct{}
+
+func (k ks) CurrentContextName() (string, error) {
+	return "test", nil
+}
+
+func (k ks) CurrentClusterName() (string, error) {
+	return "test", nil
+}
+
+func (k ks) CurrentNamespaceName() (string, error) {
+	return "test", nil
+}
+
+func (k ks) ClusterNames() ([]string, error) {
+	return []string{"test"}, nil
+}
+
+func (k ks) NamespaceNames(nn []v1.Namespace) []string {
+	return []string{"test"}
 }

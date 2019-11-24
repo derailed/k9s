@@ -2,10 +2,10 @@ package resource
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 )
@@ -35,7 +35,7 @@ func NewIngress(c Connection) *Ingress {
 }
 
 // New builds a new Ingress instance from a k8s resource.
-func (r *Ingress) New(i interface{}) Columnar {
+func (r *Ingress) New(i interface{}) (Columnar, error) {
 	c := NewIngress(r.Connection)
 	switch instance := i.(type) {
 	case *v1beta1.Ingress:
@@ -43,11 +43,11 @@ func (r *Ingress) New(i interface{}) Columnar {
 	case v1beta1.Ingress:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown Ingress type %#v", i)
+		return nil, fmt.Errorf("Expecting Ingress but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // Marshal resource to yaml.

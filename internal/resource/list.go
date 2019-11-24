@@ -5,136 +5,20 @@ import (
 	"reflect"
 
 	wa "github.com/derailed/k9s/internal/watch"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
-const (
-	// GetAccess set if resource can be fetched.
-	GetAccess = 1 << iota
-	// ListAccess set if resource can be listed.
-	ListAccess
-	// EditAccess set if resource can be edited.
-	EditAccess
-	// DeleteAccess set if resource can be deleted.
-	DeleteAccess
-	// ViewAccess set if resource can be viewed.
-	ViewAccess
-	// NamespaceAccess set if namespaced resource.
-	NamespaceAccess
-	// DescribeAccess set if resource can be described.
-	DescribeAccess
-	// SwitchAccess set if resource can be switched (Context).
-	SwitchAccess
-
-	// CRUDAccess Verbs.
-	CRUDAccess = GetAccess | ListAccess | DeleteAccess | ViewAccess | EditAccess
-
-	// AllVerbsAccess super powers.
-	AllVerbsAccess = CRUDAccess | NamespaceAccess
-)
-
-type (
-	// RowEvent represents a call for action after a resource reconciliation.
-	// Tracks whether a resource got added, deleted or updated.
-	RowEvent struct {
-		Action watch.EventType
-		Fields Row
-		Deltas Row
-	}
-
-	// RowEvents tracks resource update events.
-	RowEvents map[string]*RowEvent
-
-	// TypeName captures resource names.
-	TypeName struct {
-		Singular   string
-		Plural     string
-		ShortNames []string
-	}
-
-	// TypeMeta represents resource type meta data.
-	TypeMeta struct {
-		TypeName
-
-		Name       string
-		Namespaced bool
-		Group      string
-		Version    string
-		Kind       string
-	}
-
-	// TableData tracks a K8s resource for tabular display.
-	TableData struct {
-		Header    Row
-		Rows      RowEvents
-		NumCols   map[string]bool
-		Namespace string
-	}
-
-	// List protocol to display and update a collection of resources
-	List interface {
-		Data() TableData
-		Resource() Resource
-		Namespaced() bool
-		AllNamespaces() bool
-		GetNamespace() string
-		SetNamespace(string)
-		Reconcile(informer *wa.Informer, path *string) error
-		GetName() string
-		Access(flag int) bool
-		GetAccess() int
-		SetAccess(int)
-		SetFieldSelector(string)
-		SetLabelSelector(string)
-		HasSelectors() bool
-	}
-
-	// Columnar tracks resources that can be diplayed in a tabular fashion.
-	Columnar interface {
-		Header(ns string) Row
-		Fields(ns string) Row
-		ExtFields() (TypeMeta, error)
-		Name() string
-		SetPodMetrics(*mv1beta1.PodMetrics)
-		SetNodeMetrics(*mv1beta1.NodeMetrics)
-	}
-
-	// Columnars a collection of columnars.
-	Columnars []Columnar
-
-	// Row represents a collection of string fields.
-	Row []string
-
-	// Rows represents a collection of rows.
-	Rows []Row
-
-	// Resource represents a tabular Kubernetes resource.
-	Resource interface {
-		New(interface{}) Columnar
-		Get(path string) (Columnar, error)
-		List(ns string, opts metav1.ListOptions) (Columnars, error)
-		Delete(path string, cascade, force bool) error
-		Describe(gvr, pa string) (string, error)
-		Marshal(pa string) (string, error)
-		Header(ns string) Row
-		NumCols(ns string) map[string]bool
-	}
-
-	list struct {
-		namespace, name string
-		verbs           int
-		resource        Resource
-		cache           RowEvents
-		fieldSelector   string
-		labelSelector   string
-	}
-)
-
-func newRowEvent(a watch.EventType, f, d Row) *RowEvent {
-	return &RowEvent{Action: a, Fields: f, Deltas: d}
+type list struct {
+	namespace, name string
+	verbs           int
+	resource        Resource
+	cache           RowEvents
+	fieldSelector   string
+	labelSelector   string
 }
 
 // NewList returns a new resource list.
@@ -260,29 +144,32 @@ func (l *list) load(informer *wa.Informer, ns string) (Columnars, error) {
 }
 
 func (l *list) fetchResource(informer *wa.Informer, r interface{}, ns string) (Columnar, error) {
-	res := l.resource.New(r)
+	res, err := l.resource.New(r)
+	if err != nil {
+		return nil, err
+	}
 
 	switch o := r.(type) {
 	case *v1.Node:
 		fqn := MetaFQN(o.ObjectMeta)
-		if nmx, err := informer.Get(wa.NodeMXIndex, fqn, metav1.GetOptions{}); err != nil {
+		nmx, err := informer.Get(wa.NodeMXIndex, fqn, metav1.GetOptions{})
+		if err != nil {
 			return res, err
-		} else {
-			res.SetNodeMetrics(nmx.(*mv1beta1.NodeMetrics))
 		}
+		res.SetNodeMetrics(nmx.(*mv1beta1.NodeMetrics))
 	case *v1.Pod:
 		fqn := MetaFQN(o.ObjectMeta)
-		if pmx, err := informer.Get(wa.PodMXIndex, fqn, metav1.GetOptions{}); err != nil {
+		pmx, err := informer.Get(wa.PodMXIndex, fqn, metav1.GetOptions{})
+		if err != nil {
 			return res, err
-		} else {
-			res.SetPodMetrics(pmx.(*mv1beta1.PodMetrics))
 		}
+		res.SetPodMetrics(pmx.(*mv1beta1.PodMetrics))
 	case v1.Container:
-		if pmx, err := informer.Get(wa.PodMXIndex, ns, metav1.GetOptions{}); err != nil {
+		pmx, err := informer.Get(wa.PodMXIndex, ns, metav1.GetOptions{})
+		if err != nil {
 			return res, err
-		} else {
-			res.SetPodMetrics(pmx.(*mv1beta1.PodMetrics))
 		}
+		res.SetPodMetrics(pmx.(*mv1beta1.PodMetrics))
 	default:
 		return res, fmt.Errorf("No informer matched %s:%s", l.name, ns)
 	}
@@ -296,7 +183,7 @@ func (l *list) Reconcile(informer *wa.Informer, path *string) error {
 	if path != nil {
 		ns = *path
 	}
-
+	log.Debug().Msgf("Reconcile in NS %q -- %#v", ns, path)
 	if items, err := l.load(informer, ns); err == nil {
 		l.update(items)
 		return nil
@@ -306,11 +193,11 @@ func (l *list) Reconcile(informer *wa.Informer, path *string) error {
 		LabelSelector: l.labelSelector,
 		FieldSelector: l.fieldSelector,
 	}
-	if items, err := l.resource.List(l.namespace, opts); err == nil {
-		l.update(items)
-	} else {
+	items, err := l.resource.List(l.namespace, opts)
+	if err != nil {
 		return err
 	}
+	l.update(items)
 
 	return nil
 }

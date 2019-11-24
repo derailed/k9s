@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 )
 
@@ -47,7 +46,7 @@ func NewCronJob(c Connection) *CronJob {
 }
 
 // New builds a new CronJob instance from a k8s resource.
-func (r *CronJob) New(i interface{}) Columnar {
+func (r *CronJob) New(i interface{}) (Columnar, error) {
 	c := NewCronJob(r.Connection)
 	switch instance := i.(type) {
 	case *batchv1beta1.CronJob:
@@ -55,11 +54,11 @@ func (r *CronJob) New(i interface{}) Columnar {
 	case batchv1beta1.CronJob:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown CronJob type %#v", i)
+		return nil, fmt.Errorf("Expecting CronJob but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // Marshal resource to yaml.

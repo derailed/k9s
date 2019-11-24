@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/atotto/clipboard"
@@ -17,69 +16,63 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// EnvFn represent the current view exposed environment.
-type envFn func() K9sEnv
-
 // Resource represents a generic resource viewer.
 type Resource struct {
-	*MasterDetail
+	*Table
 
 	namespaces map[int]string
 	list       resource.List
-	cancelFn   context.CancelFunc
 	path       *string
-	envFn      envFn
 	gvr        string
-	colorerFn  ui.ColorerFunc
-	decorateFn decorateFn
+	envFn      EnvFunc
+	currentNS  string
 }
 
 // NewResource returns a new viewer.
-func NewResource(title, gvr string, list resource.List) *Resource {
+func NewResource(title, gvr string, list resource.List) ResourceViewer {
 	return &Resource{
-		MasterDetail: NewMasterDetail(title, list.GetNamespace()),
-		list:         list,
-		gvr:          gvr,
+		Table: NewTable(title),
+		list:  list,
+		gvr:   gvr,
 	}
 }
 
 // Init watches all running pods in given namespace
-func (r *Resource) Init(ctx context.Context) {
-	r.MasterDetail.Init(ctx)
+func (r *Resource) Init(ctx context.Context) error {
+	log.Debug().Msgf(">>> RESOURCE INIT %s", r.list.GetName())
+
+	if err := r.Table.Init(ctx); err != nil {
+		return err
+	}
 	r.envFn = r.defaultK9sEnv
-
-	table := r.masterPage()
-	{
-		table.setFilterFn(r.filterResource)
-		colorer := ui.DefaultColorer
-		if r.colorerFn != nil {
-			colorer = r.colorerFn
-		}
-		table.SetColorerFn(colorer)
-	}
-
+	r.Table.setFilterFn(r.filterResource)
+	r.setNamespace(r.App().Config.ActiveNamespace())
 	r.refresh()
-	{
-		row, _ := table.GetSelection()
-		if row == 0 && table.GetRowCount() > 0 {
-			table.Select(1, 0)
-		}
+	row, _ := r.GetSelection()
+	if row == 0 && r.GetRowCount() > 0 {
+		r.Select(1, 0)
 	}
+
+	return nil
+}
+
+func (r *Resource) GetTable() *Table { return r.Table }
+
+// SetEnvFn sets the function to pull current viewer env vars.
+func (r *Resource) SetEnvFn(f EnvFunc) {
+	r.envFn = f
 }
 
 // Start initializes updates.
 func (r *Resource) Start() {
 	r.Stop()
+
+	log.Debug().Msgf(">>>>>>> START %s", r.list.GetName())
+	r.Table.Start()
+
 	var ctx context.Context
 	ctx, r.cancelFn = context.WithCancel(context.Background())
 	r.update(ctx)
-}
-
-// Stop terminates updates.
-func (r *Resource) Stop() {
-	if r.cancelFn != nil {
-		r.cancelFn()
-	}
 }
 
 // Name returns the component name.
@@ -87,12 +80,8 @@ func (r *Resource) Name() string {
 	return r.list.GetName()
 }
 
-func (r *Resource) setColorerFn(f ui.ColorerFunc) {
-	r.colorerFn = f
-}
-
-func (r *Resource) setDecorateFn(f decorateFn) {
-	r.decorateFn = f
+func (r *Resource) List() resource.List {
+	return r.list
 }
 
 func (r *Resource) filterResource(sel string) {
@@ -117,20 +106,14 @@ func (r *Resource) update(ctx context.Context) {
 }
 
 // ----------------------------------------------------------------------------
-// Actions...
-
-func (r *Resource) backCmd(*tcell.EventKey) *tcell.EventKey {
-	r.Pop()
-
-	return nil
-}
+// Actions()...
 
 func (r *Resource) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !r.masterPage().RowSelected() {
+	if !r.RowSelected() {
 		return evt
 	}
 
-	_, n := namespaced(r.masterPage().GetSelectedItem())
+	_, n := namespaced(r.GetSelectedItem())
 	log.Debug().Msgf("Copied selection to clipboard %q", n)
 	r.app.Flash().Info("Current selection copied to clipboard...")
 	if err := clipboard.WriteAll(n); err != nil {
@@ -141,16 +124,18 @@ func (r *Resource) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (r *Resource) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
+	log.Debug().Msgf("RES ENTER CMD...")
 	// If in command mode run filter otherwise enter function.
-	if r.masterPage().filterCmd(evt) == nil || !r.masterPage().RowSelected() {
+	if r.filterCmd(evt) == nil || !r.RowSelected() {
 		return nil
 	}
 
 	f := r.defaultEnter
 	if r.enterFn != nil {
+		log.Debug().Msgf("Found custom enter")
 		f = r.enterFn
 	}
-	f(r.app, r.list.GetNamespace(), r.list.GetName(), r.masterPage().GetSelectedItem())
+	f(r.app, r.list.GetNamespace(), r.list.GetName(), r.GetSelectedItem())
 
 	return nil
 }
@@ -162,19 +147,19 @@ func (r *Resource) refreshCmd(*tcell.EventKey) *tcell.EventKey {
 }
 
 func (r *Resource) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !r.masterPage().RowSelected() {
+	if !r.RowSelected() {
 		return evt
 	}
 
-	sel := r.masterPage().GetSelectedItems()
+	sel := r.GetSelectedItems()
 	var msg string
 	if len(sel) > 1 {
 		msg = fmt.Sprintf("Delete %d marked %s?", len(sel), r.list.GetName())
 	} else {
 		msg = fmt.Sprintf("Delete %s %s?", r.list.GetName(), sel[0])
 	}
-	dialog.ShowDelete(r.Pages, msg, func(cascade, force bool) {
-		r.masterPage().ShowDeleted()
+	dialog.ShowDelete(r.app.Content.Pages, msg, func(cascade, force bool) {
+		r.ShowDeleted()
 		if len(sel) > 1 {
 			r.app.Flash().Infof("Delete %d marked %s", len(sel), r.list.GetName())
 		} else {
@@ -184,7 +169,7 @@ func (r *Resource) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 			if err := r.list.Resource().Delete(res, cascade, force); err != nil {
 				r.app.Flash().Errf("Delete failed with %s", err)
 			} else {
-				deletePortForward(r.app.forwarders, res)
+				r.app.forwarders.Kill(res)
 			}
 		}
 		r.refresh()
@@ -192,75 +177,63 @@ func (r *Resource) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func deletePortForward(ff map[string]forwarder, sel string) {
-	for k, f := range ff {
-		tokens := strings.Split(k, ":")
-		if tokens[0] == sel {
-			log.Debug().Msgf("Deleting associated portForward %s", k)
-			f.Stop()
-		}
-	}
-}
-
-func (r *Resource) defaultEnter(app *App, ns, _, selection string) {
+func (r *Resource) defaultEnter(app *App, ns, _, sel string) {
 	if !r.list.Access(resource.DescribeAccess) {
 		return
 	}
 
-	yaml, err := r.list.Resource().Describe(r.gvr, selection)
+	yaml, err := r.list.Resource().Describe(r.gvr, sel)
 	if err != nil {
 		r.app.Flash().Errf("Describe command failed: %s", err)
 		return
 	}
 
-	details := r.detailsPage()
-	details.setCategory("Describe")
-	details.setTitle(selection)
+	details := NewDetails("Describe")
+	details.SetSubject(sel)
 	details.SetTextColor(r.app.Styles.FgColor())
 	details.SetText(colorizeYAML(r.app.Styles.Views().Yaml, yaml))
 	details.ScrollToBeginning()
-	r.showDetails()
+	r.app.inject(details)
 }
 
 func (r *Resource) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !r.masterPage().RowSelected() {
+	if !r.RowSelected() {
 		return evt
 	}
-	r.defaultEnter(r.app, r.list.GetNamespace(), r.list.GetName(), r.masterPage().GetSelectedItem())
+	r.defaultEnter(r.app, r.list.GetNamespace(), r.list.GetName(), r.GetSelectedItem())
 
 	return nil
 }
 
 func (r *Resource) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !r.masterPage().RowSelected() {
+	if !r.RowSelected() {
 		return evt
 	}
 
-	sel := r.masterPage().GetSelectedItem()
+	sel := r.GetSelectedItem()
 	raw, err := r.list.Resource().Marshal(sel)
 	if err != nil {
 		r.app.Flash().Errf("Unable to marshal resource %s", err)
 		return evt
 	}
-	details := r.detailsPage()
-	details.setCategory("YAML")
-	details.setTitle(sel)
+	details := NewDetails("YAML")
+	details.SetSubject(sel)
 	details.SetTextColor(r.app.Styles.FgColor())
 	details.SetText(colorizeYAML(r.app.Styles.Views().Yaml, raw))
 	details.ScrollToBeginning()
-	r.showDetails()
+	r.app.inject(details)
 
 	return nil
 }
 
 func (r *Resource) editCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !r.masterPage().RowSelected() {
+	if !r.RowSelected() {
 		return evt
 	}
 
 	r.Stop()
 	{
-		ns, po := namespaced(r.masterPage().GetSelectedItem())
+		ns, po := namespaced(r.GetSelectedItem())
 		args := make([]string, 0, 10)
 		args = append(args, "edit")
 		args = append(args, r.list.GetName())
@@ -279,6 +252,7 @@ func (r *Resource) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (r *Resource) setNamespace(ns string) {
+	log.Debug().Msgf("!!!!!! SETTING NS %q", ns)
 	if r.list.Namespaced() {
 		r.currentNS = ns
 		r.list.SetNamespace(ns)
@@ -299,8 +273,8 @@ func (r *Resource) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	r.setNamespace(ns)
 	r.app.Flash().Infof("Viewing namespace `%s`...", ns)
 	r.refresh()
-	r.masterPage().UpdateTitle()
-	r.masterPage().SelectRow(1, true)
+	r.UpdateTitle()
+	r.SelectRow(1, true)
 	r.app.CmdBuff().Reset()
 	if err := r.app.Config.SetActiveNamespace(r.currentNS); err != nil {
 		log.Error().Err(err).Msg("Config save NS failed!")
@@ -313,16 +287,13 @@ func (r *Resource) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (r *Resource) refresh() {
-	if _, ok := r.Top().(*Table); !ok {
-		return
-	}
-
+	log.Debug().Msgf("----> Refreshing (%q) -- %q -- `%s", r.currentNS, r.list.GetNamespace(), r.list.GetName())
 	if r.list.Namespaced() {
 		r.list.SetNamespace(r.currentNS)
 	}
 
 	if r.app.Conn() != nil {
-		if err := r.list.Reconcile(r.app.informer, r.path); err != nil {
+		if err := r.list.Reconcile(r.app.informers.ActiveInformer(), r.path); err != nil {
 			r.app.Flash().Err(err)
 		}
 	}
@@ -331,7 +302,7 @@ func (r *Resource) refresh() {
 		data = r.decorateFn(data)
 	}
 	r.refreshActions()
-	r.masterPage().Update(data)
+	r.Update(data)
 }
 
 func (r *Resource) namespaceActions(aa ui.KeyActions) {
@@ -363,7 +334,6 @@ func (r *Resource) refreshActions() {
 		tcell.KeyCtrlR: ui.NewKeyAction("Refresh", r.refreshCmd, false),
 	}
 	r.namespaceActions(aa)
-	r.defaultActions(aa)
 
 	if r.list.Access(resource.EditAccess) {
 		aa[ui.KeyE] = ui.NewKeyAction("Edit", r.editCmd, true)
@@ -378,9 +348,7 @@ func (r *Resource) refreshActions() {
 		aa[ui.KeyD] = ui.NewKeyAction("Describe", r.describeCmd, true)
 	}
 	r.customActions(aa)
-
-	t := r.masterPage()
-	t.AddActions(aa)
+	r.Actions().Set(aa)
 }
 
 func (r *Resource) customActions(aa ui.KeyActions) {
@@ -413,7 +381,7 @@ func (r *Resource) customActions(aa ui.KeyActions) {
 
 func (r *Resource) execCmd(bin string, bg bool, args ...string) ui.ActionHandler {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		if !r.masterPage().RowSelected() {
+		if !r.RowSelected() {
 			return evt
 		}
 
@@ -440,5 +408,5 @@ func (r *Resource) execCmd(bin string, bg bool, args ...string) ui.ActionHandler
 }
 
 func (r *Resource) defaultK9sEnv() K9sEnv {
-	return defaultK9sEnv(r.app, r.masterPage().GetSelectedItem(), r.masterPage().GetRow())
+	return defaultK9sEnv(r.app, r.GetSelectedItem(), r.GetRow())
 }

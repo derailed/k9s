@@ -2,10 +2,10 @@ package resource
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -34,7 +34,7 @@ func NewServiceAccount(c Connection) *ServiceAccount {
 }
 
 // New builds a new ServiceAccount instance from a k8s resource.
-func (r *ServiceAccount) New(i interface{}) Columnar {
+func (r *ServiceAccount) New(i interface{}) (Columnar, error) {
 	c := NewServiceAccount(r.Connection)
 	switch instance := i.(type) {
 	case *v1.ServiceAccount:
@@ -42,11 +42,11 @@ func (r *ServiceAccount) New(i interface{}) Columnar {
 	case v1.ServiceAccount:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown ServiceAccount type %#v", i)
+		return nil, fmt.Errorf("Expecting ServiceAccount but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // Marshal resource to yaml.

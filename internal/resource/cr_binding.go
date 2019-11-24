@@ -2,10 +2,10 @@ package resource
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/rbac/v1"
 )
 
@@ -34,7 +34,7 @@ func NewClusterRoleBinding(c Connection) *ClusterRoleBinding {
 }
 
 // New builds a new tabular instance from a k8s resource.
-func (r *ClusterRoleBinding) New(i interface{}) Columnar {
+func (r *ClusterRoleBinding) New(i interface{}) (Columnar, error) {
 	crb := NewClusterRoleBinding(r.Connection)
 	switch instance := i.(type) {
 	case *v1.ClusterRoleBinding:
@@ -42,11 +42,11 @@ func (r *ClusterRoleBinding) New(i interface{}) Columnar {
 	case v1.ClusterRoleBinding:
 		crb.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown context type %#v", i)
+		return nil, fmt.Errorf("unknown context type %T", instance)
 	}
 	crb.path = crb.instance.Name
 
-	return crb
+	return crb, nil
 }
 
 // Marshal resource to yaml.

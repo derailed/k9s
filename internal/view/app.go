@@ -15,7 +15,6 @@ import (
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
-	"k8s.io/client-go/tools/portforward"
 )
 
 const (
@@ -24,39 +23,15 @@ const (
 	indicatorFmt   = "[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s%%[white::]::[darkturquoise::]%s%%"
 )
 
-// ActionsFunc augments Keybindinga.
-type ActionsFunc func(ui.KeyActions)
-
-type forwarder interface {
-	Start(path, co string, ports []string) (*portforward.PortForwarder, error)
-	Stop()
-	Path() string
-	Container() string
-	Ports() []string
-	Active() bool
-	Age() string
-}
-
-// ResourceViewer represents a generic resource viewer.
-type ResourceViewer interface {
-	model.Component
-
-	setEnterFn(enterFn)
-	setColorerFn(ui.ColorerFunc)
-	setDecorateFn(decorateFn)
-	setExtraActionsFn(ActionsFunc)
-	masterPage() *Table
-}
-
 // App represents an application view.
 type App struct {
 	*ui.App
 
 	Content    *PageStack
 	command    *command
-	informer   *watch.Informer
+	informers  *watch.Informers
 	stopCh     chan struct{}
-	forwarders map[string]forwarder
+	forwarders model.Forwarders
 	version    string
 	showHeader bool
 }
@@ -66,7 +41,7 @@ func NewApp(cfg *config.Config) *App {
 	v := App{
 		App:        ui.NewApp(),
 		Content:    NewPageStack(),
-		forwarders: make(map[string]forwarder),
+		forwarders: model.NewForwarders(),
 	}
 	v.Config = cfg
 	v.InitBench(cfg.K9s.CurrentCluster)
@@ -91,43 +66,54 @@ func (a *App) PrevCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (a *App) Init(version string, rate int) {
+func (a *App) Init(version string, rate int) error {
 	ctx := context.WithValue(context.Background(), ui.KeyApp, a)
-	a.Content.Init(ctx)
+	if err := a.Content.Init(ctx); err != nil {
+		return err
+	}
 	a.Content.Stack.AddListener(a.Crumbs())
 	a.Content.Stack.AddListener(a.Menu())
 
 	a.version = version
-	a.CmdBuff().AddListener(a)
 	a.App.Init()
+	a.CmdBuff().AddListener(a)
+	a.bindKeys()
+	if a.Conn() == nil {
+		return errors.New("No client connection detected")
+	}
+	ns, err := a.Conn().Config().CurrentNamespaceName()
+	if err != nil {
+		log.Info().Msg("No namespace specified using all namespaces")
+	}
+	a.informers = watch.NewInformers(a.Conn())
+	if err := a.informers.SetActive(ns); err != nil {
+		return err
+	}
+	a.clusterInfo().init(version)
+	if a.Config.K9s.GetHeadless() {
+		a.refreshIndicator()
+	}
+
+	main := tview.NewFlex().SetDirection(tview.FlexRow)
+	main.AddItem(a.indicator(), 1, 1, false)
+	main.AddItem(a.Content, 0, 10, true)
+	main.AddItem(a.Crumbs(), 2, 1, false)
+	main.AddItem(a.Flash(), 2, 1, false)
+
+	a.Main.AddPage("main", main, true, false)
+	a.Main.AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
+	a.toggleHeader(!a.Config.K9s.GetHeadless())
+
+	return nil
+}
+
+func (a *App) bindKeys() {
 	a.AddActions(ui.KeyActions{
 		ui.KeyH:        ui.NewKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
 		ui.KeyHelp:     ui.NewKeyAction("Help", a.helpCmd, false),
 		tcell.KeyCtrlA: ui.NewKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
 	})
-
-	if a.Conn() != nil {
-		ns, err := a.Conn().Config().CurrentNamespaceName()
-		if err != nil {
-			log.Info().Msg("No namespace specified using all namespaces")
-		}
-		a.startInformer(ns)
-		a.clusterInfo().init(version)
-		if a.Config.K9s.GetHeadless() {
-			a.refreshIndicator()
-		}
-	}
-
-	main := tview.NewFlex().SetDirection(tview.FlexRow)
-	a.Main.AddPage("main", main, true, false)
-	a.Main.AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
-
-	main.AddItem(a.indicator(), 1, 1, false)
-	main.AddItem(a.Content, 0, 10, true)
-	main.AddItem(a.Crumbs(), 2, 1, false)
-	main.AddItem(a.Flash(), 2, 1, false)
-	a.toggleHeader(!a.Config.K9s.GetHeadless())
 }
 
 // Changed indicates the buffer was changed.
@@ -135,14 +121,14 @@ func (a *App) BufferChanged(s string) {}
 
 // Active indicates the buff activity changed.
 func (a *App) BufferActive(state bool, _ ui.BufferKind) {
-	log.Debug().Msgf("App Buffer Activated!")
 	flex, ok := a.Main.GetPrimitive("main").(*tview.Flex)
 	if !ok {
 		return
 	}
-	if state {
+
+	if state && flex.ItemAt(1) != a.Cmd() {
 		flex.AddItemAtIndex(1, a.Cmd(), 3, 1, false)
-	} else if flex.ItemAt(1) == a.Cmd() {
+	} else if !state && flex.ItemAt(1) == a.Cmd() {
 		flex.RemoveItemAtIndex(1)
 	}
 	a.Draw()
@@ -230,15 +216,17 @@ func (a *App) switchNS(ns string) bool {
 	if ns == resource.AllNamespace {
 		ns = resource.AllNamespaces
 	}
-	if ns == a.Config.ActiveNamespace() {
-		return true
-	}
-
 	if err := a.Config.SetActiveNamespace(ns); err != nil {
 		log.Error().Err(err).Msg("Config Set NS failed!")
+		return false
 	}
 
-	return a.startInformer(ns)
+	if err := a.informers.SetActive(ns); err != nil {
+		log.Error().Err(err).Msgf("Informer registration failed for namespace %q", ns)
+		return false
+	}
+
+	return true
 }
 
 func (a *App) switchCtx(ctx string, load bool) error {
@@ -247,17 +235,20 @@ func (a *App) switchCtx(ctx string, load bool) error {
 		return err
 	}
 
-	a.stopForwarders()
+	a.forwarders.DeleteAll()
 	ns, err := a.Conn().Config().CurrentNamespaceName()
 	if err != nil {
 		log.Info().Err(err).Msg("No namespace specified using all namespaces")
 	}
+	a.informers.Stop()
 	if a.stopCh != nil {
 		close(a.stopCh)
 		a.stopCh = nil
 	}
-	a.informer = nil
-	a.startInformer(ns)
+
+	if err := a.informers.Restart(ns); err != nil {
+		return err
+	}
 	a.Config.Reset()
 	if err := a.Config.Save(); err != nil {
 		log.Error().Err(err).Msg("Config save failed!")
@@ -266,36 +257,11 @@ func (a *App) switchCtx(ctx string, load bool) error {
 	if load && !a.gotoResource("po") {
 		a.Flash().Err(errors.New("Goto pod failed"))
 	}
-
-	return nil
-}
-
-func (a *App) startInformer(ns string) bool {
-	// if informer watches all ns - don't start a new informer then.
-	if a.informer != nil && a.informer.Namespace == resource.AllNamespaces {
-		log.Debug().Msgf(">>>> Informer is already watching all namespaces. No restart needed ;)")
-		return true
-	}
-
-	if a.stopCh != nil {
-		close(a.stopCh)
-		a.stopCh = nil
-	}
-
-	var err error
-	a.informer, err = watch.NewInformer(a.Conn(), ns)
-	if err != nil {
-		log.Error().Err(err).Msgf("%v", err)
-		a.Flash().Err(err)
-		return false
-	}
-	a.stopCh = make(chan struct{})
-	a.informer.Run(a.stopCh)
 	if a.Config.K9s.GetHeadless() {
 		a.refreshIndicator()
 	}
 
-	return true
+	return nil
 }
 
 // BailOut exists the application.
@@ -306,16 +272,8 @@ func (a *App) BailOut() {
 		a.stopCh = nil
 	}
 
-	a.stopForwarders()
+	a.forwarders.DeleteAll()
 	a.App.BailOut()
-}
-
-func (a *App) stopForwarders() {
-	for k, f := range a.forwarders {
-		log.Debug().Msgf("Deleting forwarder %s", f.Path())
-		f.Stop()
-		delete(a.forwarders, k)
-	}
 }
 
 // Run starts the application loop
@@ -396,8 +354,8 @@ func (a *App) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.CmdBuff().IsActive() && !a.CmdBuff().Empty() {
-		if a.gotoResource(a.GetCmd()) {
-			a.Content.Stack.ClearHistory()
+		if !a.gotoResource(a.GetCmd()) {
+			return nil
 		}
 		a.ResetCmd()
 		return nil
@@ -430,7 +388,6 @@ func (a *App) gotoResource(res string) bool {
 }
 
 func (a *App) inject(c model.Component) {
-	log.Debug().Msgf("Injecting component %#v", c)
 	a.Content.Push(c)
 }
 

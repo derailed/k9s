@@ -1,7 +1,6 @@
 package view
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strings"
@@ -19,47 +18,37 @@ import (
 
 // Service represents a service viewer.
 type Service struct {
-	*Resource
+	ResourceViewer
 
 	bench *perf.Benchmark
-	logs  *Logs
 }
 
 // NewService returns a new viewer.
 func NewService(title, gvr string, list resource.List) ResourceViewer {
-	return &Service{
-		Resource: NewResource(title, gvr, list),
+	s := Service{
+		ResourceViewer: NewLogsExtender(
+			NewResource(title, gvr, list),
+			func() string { return "" },
+		),
 	}
-}
+	s.BindKeys()
+	s.GetTable().SetEnterFn(s.showPods)
 
-// Init initializes the viewer.
-func (s *Service) Init(ctx context.Context) {
-	s.extraActionsFn = s.extraActions
-	s.enterFn = s.showPods
-	s.Resource.Init(ctx)
-
-	s.logs = NewLogs(s.list.GetName(), s)
-	s.logs.Init(ctx)
+	return &s
 }
 
 // Protocol...
 
-func (s *Service) getList() resource.List {
-	return s.list
+func (s *Service) BindKeys() {
+	s.Actions().Add(ui.KeyActions{
+		tcell.KeyCtrlB: ui.NewKeyAction("Bench", s.benchCmd, true),
+		tcell.KeyCtrlK: ui.NewKeyAction("Bench Stop", s.benchStopCmd, true),
+		ui.KeyShiftT:   ui.NewKeyAction("Sort Type", s.GetTable().SortColCmd(1, true), false),
+	})
 }
 
-func (s *Service) getSelection() string {
-	return s.masterPage().GetSelectedItem()
-}
-
-func (s *Service) extraActions(aa ui.KeyActions) {
-	aa[ui.KeyL] = ui.NewKeyAction("Logs", s.logsCmd, true)
-	aa[tcell.KeyCtrlB] = ui.NewKeyAction("Bench", s.benchCmd, true)
-	aa[tcell.KeyCtrlK] = ui.NewKeyAction("Bench Stop", s.benchStopCmd, true)
-	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Type", s.sortColCmd(1, false), false)
-}
-
-func (s *Service) showPods(app *App, _, res, sel string) {
+func (s *Service) showPods(app *App, ns, res, sel string) {
+	log.Debug().Msgf("SVC SHOW PODS %q -- %q -- %q", ns, res, sel)
 	ns, n := namespaced(sel)
 	svc, err := k8s.NewService(app.Conn()).Get(ns, n)
 	if err != nil {
@@ -67,35 +56,26 @@ func (s *Service) showPods(app *App, _, res, sel string) {
 		return
 	}
 
-	if sv, ok := svc.(*v1.Service); ok {
-		s.showSvcPods(ns, sv.Spec.Selector)
+	sv, ok := svc.(*v1.Service)
+	if !ok {
+		log.Fatal().Msg("Expecting a valid service")
 	}
-}
-
-func (s *Service) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !s.masterPage().RowSelected() {
-		return evt
-	}
-
-	s.logs.reload("", s, false)
-	s.Push(s.logs)
-
-	return nil
+	showPodsFromLabels(s.App(), sel, sv.Spec.Selector)
 }
 
 func (s *Service) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if s.bench != nil {
 		log.Debug().Msg(">>> Benchmark canceled!!")
-		s.app.status(ui.FlashErr, "Benchmark Canceled!")
+		s.App().status(ui.FlashErr, "Benchmark Canceled!")
 		s.bench.Cancel()
 	}
-	s.app.StatusReset()
+	s.App().StatusReset()
 
 	return nil
 }
 
 func (s *Service) checkSvc(row int) error {
-	svcType := trimCellRelative(s.masterPage(), row, 1)
+	svcType := trimCellRelative(s.GetTable(), row, 1)
 	if svcType != "NodePort" && svcType != "LoadBalancer" {
 		return errors.New("You must select a reachable service")
 	}
@@ -103,7 +83,7 @@ func (s *Service) checkSvc(row int) error {
 }
 
 func (s *Service) getExternalPort(row int) (string, error) {
-	ports := trimCellRelative(s.masterPage(), row, 5)
+	ports := trimCellRelative(s.GetTable(), row, 5)
 
 	pp := strings.Split(ports, " ")
 	if len(pp) == 0 {
@@ -120,43 +100,42 @@ func (s *Service) getExternalPort(row int) (string, error) {
 }
 
 func (s *Service) reloadBenchCfg() error {
-	// BOZO!! Poorman Reload bench to make sure we pick up updates if any.
-	path := ui.BenchConfig(s.app.Config.K9s.CurrentCluster)
-	return s.app.Bench.Reload(path)
+	path := ui.BenchConfig(s.App().Config.K9s.CurrentCluster)
+	return s.App().Bench.Reload(path)
 }
 
 func (s *Service) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !s.masterPage().RowSelected() || s.bench != nil {
+	sel := s.GetTable().GetSelectedItem()
+	if sel == "" || s.bench != nil {
 		return evt
 	}
 
 	if err := s.reloadBenchCfg(); err != nil {
-		s.app.Flash().Err(err)
+		s.App().Flash().Err(err)
 		return nil
 	}
 
-	sel := s.getSelection()
-	cfg, ok := s.app.Bench.Benchmarks.Services[sel]
+	cfg, ok := s.App().Bench.Benchmarks.Services[sel]
 	if !ok {
-		s.app.Flash().Errf("No bench config found for service %s", sel)
+		s.App().Flash().Errf("No bench config found for service %s", sel)
 		return nil
 	}
 	cfg.Name = sel
 	log.Debug().Msgf("Benchmark config %#v", cfg)
 
-	row, _ := s.masterPage().GetSelection()
+	row := s.GetTable().GetSelectedRowIndex()
 	if err := s.checkSvc(row); err != nil {
-		s.app.Flash().Err(err)
+		s.App().Flash().Err(err)
 		return nil
 	}
 	port, err := s.getExternalPort(row)
 	if err != nil {
-		s.app.Flash().Err(err)
+		s.App().Flash().Err(err)
 		return nil
 	}
 	if err := s.runBenchmark(port, cfg); err != nil {
-		s.app.Flash().Errf("Benchmark failed %v", err)
-		s.app.StatusReset()
+		s.App().Flash().Errf("Benchmark failed %v", err)
+		s.App().StatusReset()
 		s.bench = nil
 	}
 
@@ -174,24 +153,24 @@ func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
 		return err
 	}
 
-	s.app.status(ui.FlashWarn, "Benchmark in progress...")
+	s.App().status(ui.FlashWarn, "Benchmark in progress...")
 	log.Debug().Msg("Bench starting...")
-	go s.bench.Run(s.app.Config.K9s.CurrentCluster, s.benchDone)
+	go s.bench.Run(s.App().Config.K9s.CurrentCluster, s.benchDone)
 
 	return nil
 }
 
 func (s *Service) benchDone() {
 	log.Debug().Msg("Bench Completed!")
-	s.app.QueueUpdate(func() {
+	s.App().QueueUpdate(func() {
 		if s.bench.Canceled() {
-			s.app.status(ui.FlashInfo, "Benchmark canceled")
+			s.App().status(ui.FlashInfo, "Benchmark canceled")
 		} else {
-			s.app.status(ui.FlashInfo, "Benchmark Completed!")
+			s.App().status(ui.FlashInfo, "Benchmark Completed!")
 			s.bench.Cancel()
 		}
 		s.bench = nil
-		go benchTimedOut(s.app)
+		go benchTimedOut(s.App())
 	})
 }
 
@@ -202,10 +181,10 @@ func benchTimedOut(app *App) {
 	})
 }
 
-func (s *Service) showSvcPods(ns string, sel map[string]string) {
+func showPodsFromLabels(app *App, path string, sel map[string]string) {
 	var labels []string
 	for k, v := range sel {
 		labels = append(labels, fmt.Sprintf("%s=%s", k, v))
 	}
-	showPods(s.app, ns, strings.Join(labels, ","), "")
+	showPods(app, path, strings.Join(labels, ","), "")
 }

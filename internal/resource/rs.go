@@ -2,10 +2,10 @@ package resource
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/apps/v1"
 )
 
@@ -34,7 +34,7 @@ func NewReplicaSet(c Connection) *ReplicaSet {
 }
 
 // New builds a new ReplicaSet instance from a k8s resource.
-func (r *ReplicaSet) New(i interface{}) Columnar {
+func (r *ReplicaSet) New(i interface{}) (Columnar, error) {
 	c := NewReplicaSet(r.Connection)
 	switch instance := i.(type) {
 	case *v1.ReplicaSet:
@@ -42,11 +42,11 @@ func (r *ReplicaSet) New(i interface{}) Columnar {
 	case v1.ReplicaSet:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown ReplicaSet type %#v", i)
+		return nil, fmt.Errorf("Expecting ReplicaSet but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // Marshal a deployment given a namespaced name.

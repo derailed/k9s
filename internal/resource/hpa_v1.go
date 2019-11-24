@@ -2,10 +2,10 @@ package resource
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 )
 
@@ -34,7 +34,7 @@ func NewHorizontalPodAutoscalerV1(c Connection) *HorizontalPodAutoscalerV1 {
 }
 
 // New builds a new HorizontalPodAutoscalerV1 instance from a k8s resource.
-func (r *HorizontalPodAutoscalerV1) New(i interface{}) Columnar {
+func (r *HorizontalPodAutoscalerV1) New(i interface{}) (Columnar, error) {
 	c := NewHorizontalPodAutoscalerV1(r.Connection)
 	switch instance := i.(type) {
 	case *autoscalingv1.HorizontalPodAutoscaler:
@@ -42,11 +42,11 @@ func (r *HorizontalPodAutoscalerV1) New(i interface{}) Columnar {
 	case autoscalingv1.HorizontalPodAutoscaler:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown HorizontalPodAutoscalerV1 type %#v", i)
+		return nil, fmt.Errorf("Expecting HPAv1 but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // Marshal resource to yaml.

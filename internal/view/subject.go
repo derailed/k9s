@@ -27,38 +27,46 @@ type (
 	Subject struct {
 		*Table
 
-		cancel      context.CancelFunc
 		subjectKind string
 		cache       resource.RowEvents
 	}
 )
 
 // NewSubject returns a new subject viewer.
-func NewSubject(title, gvr string, list resource.List) ResourceViewer {
-	return &Subject{
-		Table: NewTable("Subject"),
-	}
+func NewSubject(title, _ string, _ resource.List) ResourceViewer {
+	return &Subject{Table: NewTable(title)}
 }
 
-// Init initializes the view.
-func (s *Subject) Init(ctx context.Context) {
-	s.ActiveNS = "*"
-	s.SetColorerFn(rbacColorer)
-	s.Table.Init(ctx)
-	s.bindKeys()
-	s.SetSortCol(1, len(rbacHeader), true)
-	s.subjectKind = mapCmdSubject(s.app.Config.K9s.ActiveCluster().View.Active)
-	s.BaseTitle = s.subjectKind
-	s.SelectRow(1, true)
+func (s *Subject) GetTable() *Table    { return s.Table }
+func (s *Subject) SetEnvFn(EnvFunc)    {}
+func (s *Subject) List() resource.List { return nil }
 
+// Init initializes the view.
+func (s *Subject) Init(ctx context.Context) error {
+	app, err := extractApp(ctx)
+	if err != nil {
+		return err
+	}
+	s.subjectKind = mapCmdSubject(app.Config.K9s.ActiveCluster().View.Active)
+	s.Table = NewTable(s.subjectKind)
+	s.SetColorerFn(rbacColorer)
+	if err := s.Table.Init(ctx); err != nil {
+		return err
+	}
+	s.ActiveNS = "*"
+	s.SetSortCol(1, len(rbacHeader), true)
+	s.SelectRow(1, true)
+	s.bindKeys()
 	s.refresh()
+
+	return nil
 }
 
 func (s *Subject) Start() {
 	s.Stop()
 
 	var ctx context.Context
-	ctx, s.cancel = context.WithCancel(context.Background())
+	ctx, s.cancelFn = context.WithCancel(context.Background())
 	go func(ctx context.Context) {
 		for {
 			select {
@@ -66,54 +74,40 @@ func (s *Subject) Start() {
 				log.Debug().Msgf("Subject:%s Watch bailing out!", s.subjectKind)
 				return
 			case <-time.After(time.Duration(s.app.Config.K9s.GetRefreshRate()) * time.Second):
-				s.app.QueueUpdateDraw(func() {
-					s.refresh()
-				})
+				s.refresh()
 			}
 		}
 	}(ctx)
-}
-
-func (s *Subject) Stop() {
-	if s.cancel != nil {
-		s.cancel()
-	}
 }
 
 func (s *Subject) Name() string {
 	return "subject"
 }
 
-func (s *Subject) masterPage() *Table {
-	return s.Table
-}
-
 func (s *Subject) bindKeys() {
-	s.RmActions(ui.KeyShiftA, ui.KeyShiftP, tcell.KeyCtrlSpace, ui.KeySpace)
-	s.AddActions(ui.KeyActions{
+	s.Actions().Delete(ui.KeyShiftA, ui.KeyShiftP, tcell.KeyCtrlSpace, ui.KeySpace)
+	s.Actions().Add(ui.KeyActions{
 		tcell.KeyEnter:  ui.NewKeyAction("Policies", s.policyCmd, true),
 		tcell.KeyEscape: ui.NewKeyAction("Back", s.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", s.activateCmd, false),
-		ui.KeyShiftK:    ui.NewKeyAction("Sort Kind", s.SortColCmd(1), false),
+		ui.KeyShiftK:    ui.NewKeyAction("Sort Kind", s.SortColCmd(1, true), false),
 	})
 }
-
-func (s *Subject) setExtraActionsFn(f ActionsFunc) {}
-func (s *Subject) setColorerFn(f ui.ColorerFunc)   {}
-func (s *Subject) setEnterFn(f enterFn)            {}
-func (s *Subject) setDecorateFn(f decorateFn)      {}
 
 func (s *Subject) SetSubject(n string) {
 	s.subjectKind = mapSubject(n)
 }
 
 func (s *Subject) refresh() {
+	log.Debug().Msgf("Refreshing Subject...")
 	data, err := s.reconcile()
 	if err != nil {
 		log.Error().Err(err).Msgf("Refresh for %s", s.subjectKind)
 		s.app.Flash().Err(err)
 	}
-	s.Update(data)
+	s.app.QueueUpdateDraw(func() {
+		s.Update(data)
+	})
 }
 
 func (s *Subject) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -121,12 +115,13 @@ func (s *Subject) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	if s.cancel != nil {
-		s.cancel()
-	}
-
 	_, n := namespaced(s.GetSelectedItem())
-	s.app.inject(NewPolicy(s.app, mapFuSubject(s.subjectKind), n))
+	subject, err := mapFuSubject(s.subjectKind)
+	if err != nil {
+		s.app.Flash().Err(err)
+		return nil
+	}
+	s.app.inject(NewPolicy(s.app, subject, n))
 
 	return nil
 }
@@ -141,10 +136,6 @@ func (s *Subject) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (s *Subject) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if s.cancel != nil {
-		s.cancel()
-	}
-
 	if s.SearchBuff().IsActive() {
 		s.SearchBuff().Reset()
 		return nil
@@ -292,15 +283,15 @@ func mapCmdSubject(subject string) string {
 	}
 }
 
-func mapFuSubject(subject string) string {
+func mapFuSubject(subject string) (string, error) {
 	switch subject {
 	case group:
-		return "g"
+		return "g", nil
 	case sa:
-		return "s"
+		return "s", nil
 	case user:
-		return "u"
+		return "u", nil
 	default:
-		panic(fmt.Sprintf("Unknown FU subject %q", subject))
+		return "", fmt.Errorf("Unknown subject %q should be one of user, group, serviceaccount", subject)
 	}
 }

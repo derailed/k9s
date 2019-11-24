@@ -127,7 +127,8 @@ func k8sHPA() *autoscalingv2beta2.HorizontalPodAutoscaler {
 
 func newHPA() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewHorizontalPodAutoscaler(mc).New(k8sHPA())
+	c, _ := resource.NewHorizontalPodAutoscaler(mc).New(k8sHPA())
+	return c
 }
 
 func hpaYaml() string {

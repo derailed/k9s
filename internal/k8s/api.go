@@ -109,7 +109,7 @@ func (a *APIClient) CheckNSAccess(n string) error {
 func makeSAR(ns, rvg string) *authorizationv1.SelfSubjectAccessReview {
 	gvr, _ := schema.ParseResourceArg(strings.ToLower(rvg))
 	if gvr == nil {
-		panic(fmt.Errorf("Unable to get GVR from url %s", rvg))
+		log.Fatal().Err(fmt.Errorf("Unable to get GVR from url %s", rvg)).Msg("Die checking user access")
 	}
 	log.Debug().Msgf("GVR for %s -- %#v", rvg, *gvr)
 	return &authorizationv1.SelfSubjectAccessReview{
@@ -321,14 +321,14 @@ func (a *APIClient) MXDial() (*versioned.Clientset, error) {
 func (a *APIClient) SwitchContextOrDie(ctx string) {
 	currentCtx, err := a.config.CurrentContextName()
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("Fetching current context")
 	}
 
 	if currentCtx != ctx {
 		a.cachedDiscovery = nil
 		a.reset()
 		if err := a.config.SwitchContext(ctx); err != nil {
-			panic(err)
+			log.Fatal().Err(err).Msg("Switching context")
 		}
 		a.useMetricServer = a.supportsMxServer()
 	}

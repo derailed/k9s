@@ -1,6 +1,8 @@
 package view
 
 import (
+	"context"
+
 	"sigs.k8s.io/yaml"
 
 	"github.com/derailed/k9s/internal/resource"
@@ -11,33 +13,41 @@ import (
 
 // Secret presents a secret viewer.
 type Secret struct {
-	*Resource
+	ResourceViewer
 }
 
 // NewSecrets returns a new viewer.
 func NewSecret(title, gvr string, list resource.List) ResourceViewer {
-	s := Secret{
-		Resource: NewResource(title, gvr, list),
+	return &Secret{
+		ResourceViewer: NewResource(title, gvr, list),
 	}
-	s.extraActionsFn = s.extraActions
-
-	return &s
 }
 
-func (s *Secret) extraActions(aa ui.KeyActions) {
-	aa[tcell.KeyCtrlX] = ui.NewKeyAction("Decode", s.decodeCmd, true)
+func (s *Secret) Init(ctx context.Context) error {
+	if err := s.ResourceViewer.Init(ctx); err != nil {
+		return err
+	}
+	s.bindKeys()
+
+	return nil
+}
+
+func (s *Secret) bindKeys() {
+	s.Actions().Add(ui.KeyActions{
+		tcell.KeyCtrlX: ui.NewKeyAction("Decode", s.decodeCmd, true),
+	})
 }
 
 func (s *Secret) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !s.masterPage().RowSelected() {
+	sel := s.GetTable().GetSelectedItem()
+	if sel == "" {
 		return evt
 	}
 
-	sel := s.masterPage().GetSelectedItem()
 	ns, n := namespaced(sel)
-	sec, err := s.app.Conn().DialOrDie().CoreV1().Secrets(ns).Get(n, metav1.GetOptions{})
+	sec, err := s.App().Conn().DialOrDie().CoreV1().Secrets(ns).Get(n, metav1.GetOptions{})
 	if err != nil {
-		s.app.Flash().Errf("Unable to retrieve secret %s", err)
+		s.App().Flash().Errf("Unable to retrieve secret %s", err)
 		return evt
 	}
 
@@ -47,17 +57,16 @@ func (s *Secret) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	raw, err := yaml.Marshal(d)
 	if err != nil {
-		s.app.Flash().Errf("Error decoding secret %s", err)
+		s.App().Flash().Errf("Error decoding secret %s", err)
 		return nil
 	}
 
-	details := s.detailsPage()
-	details.setCategory("Decoder")
-	details.setTitle(sel)
-	details.SetTextColor(s.app.Styles.FgColor())
-	details.SetText(colorizeYAML(s.app.Styles.Views().Yaml, string(raw)))
+	details := NewDetails("Decoder")
+	details.SetSubject(sel)
+	details.SetTextColor(s.App().Styles.FgColor())
+	details.SetText(colorizeYAML(s.App().Styles.Views().Yaml, string(raw)))
 	details.ScrollToBeginning()
-	s.showDetails()
+	s.App().inject(details)
 
 	return nil
 }

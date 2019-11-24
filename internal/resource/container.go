@@ -10,7 +10,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
@@ -29,8 +28,8 @@ type (
 // NewContainerList returns a collection of container.
 func NewContainerList(c Connection, pod *v1.Pod) List {
 	return NewList(
-		"",
-		"coontainers",
+		NotNamespaced,
+		"containers",
 		NewContainer(c, pod),
 		0,
 	)
@@ -48,17 +47,16 @@ func NewContainer(c Connection, pod *v1.Pod) *Container {
 }
 
 // New builds a new Container instance from a k8s resource.
-func (r *Container) New(i interface{}) Columnar {
+func (r *Container) New(i interface{}) (Columnar, error) {
 	co := NewContainer(r.Connection, r.pod)
 	coi, ok := i.(v1.Container)
 	if !ok {
-		log.Error().Err(errors.New("Expecting a container resource"))
-		return nil
+		return nil, errors.New("Expecting a container resource")
 	}
 	co.instance = coi
 	co.path = r.namespacedName(r.pod.ObjectMeta) + ":" + co.instance.Name
 
-	return co
+	return co, nil
 }
 
 // SetPodMetrics set the current k8s resource metrics on associated pod.
@@ -88,11 +86,18 @@ func (r *Container) List(ns string, opts metav1.ListOptions) (Columnars, error) 
 
 	cc := make(Columnars, 0, len(icos)+len(cos))
 	for _, co := range icos {
-		ci := r.New(co)
-		cc = append(cc, ci)
+		res, err := r.New(co)
+		if err != nil {
+			return nil, err
+		}
+		cc = append(cc, res)
 	}
 	for _, co := range cos {
-		cc = append(cc, r.New(co))
+		res, err := r.New(co)
+		if err != nil {
+			return nil, err
+		}
+		cc = append(cc, res)
 	}
 
 	return cc, nil

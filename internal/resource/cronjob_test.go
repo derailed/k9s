@@ -100,7 +100,8 @@ func k8sCronJob() *batchv1beta1.CronJob {
 
 func newCronJob() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewCronJob(mc).New(k8sCronJob())
+	c, _ := resource.NewCronJob(mc).New(k8sCronJob())
+	return c
 }
 
 func cronjobYaml() string {

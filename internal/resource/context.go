@@ -1,8 +1,9 @@
 package resource
 
 import (
+	"fmt"
+
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 )
 
 type (
@@ -39,7 +40,7 @@ func NewContext(c Connection) *Context {
 }
 
 // New builds a new Context instance from a k8s resource.
-func (r *Context) New(i interface{}) Columnar {
+func (r *Context) New(i interface{}) (Columnar, error) {
 	c := NewContext(r.Connection)
 	switch instance := i.(type) {
 	case *k8s.NamedContext:
@@ -47,11 +48,11 @@ func (r *Context) New(i interface{}) Columnar {
 	case k8s.NamedContext:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown context type %#v", i)
+		return nil, fmt.Errorf("unknown context type %T", instance)
 	}
 	c.path = c.instance.Name
 
-	return c
+	return c, nil
 }
 
 // Switch out current context.

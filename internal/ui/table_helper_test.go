@@ -19,7 +19,7 @@ func TestIsLabelSelector(t *testing.T) {
 	}
 
 	for k := range uu {
-   u := uu[k]
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, IsLabelSelector(u.sel))
 		})
@@ -35,7 +35,7 @@ func TestTrimLabelSelector(t *testing.T) {
 	}
 
 	for k := range uu {
-   u := uu[k]
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, TrimLabelSelector(u.sel))
 		})
@@ -94,7 +94,7 @@ func TestTVSortRows(t *testing.T) {
 
 	for _, u := range uu {
 		keys := make([]string, len(u.rows))
-		sortRows(u.rows, defaultSort, SortColumn{u.col, len(u.rows), u.asc}, keys)
+		sortRows(u.rows, defaultSort, SortColumn{index: u.col, colCount: len(u.rows), asc: u.asc}, keys)
 		assert.Equal(t, u.e, keys)
 		assert.Equal(t, u.first, u.rows[u.e[0]].Fields)
 	}
@@ -105,7 +105,7 @@ func BenchmarkTableSortRows(b *testing.B) {
 		"row1": {Fields: resource.Row{"x", "y"}},
 		"row2": {Fields: resource.Row{"a", "b"}},
 	}
-	sc := SortColumn{0, 2, true}
+	sc := SortColumn{index: 0, colCount: 2, asc: true}
 	keys := make([]string, len(evts))
 	b.ResetTimer()
 	b.ReportAllocs()

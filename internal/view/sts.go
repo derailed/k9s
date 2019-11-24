@@ -6,43 +6,43 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // StatefulSet represents a statefulset viewer.
 type StatefulSet struct {
-	*LogResource
-	scalableResource    *ScalableResource
-	restartableResource *RestartableResource
+	ResourceViewer
 }
 
 // NewStatefulSet returns a new viewer.
 func NewStatefulSet(title, gvr string, list resource.List) ResourceViewer {
-	l := NewLogResource(title, gvr, list)
 	s := StatefulSet{
-		LogResource:         l,
-		scalableResource:    newScalableResourceForParent(l.Resource),
-		restartableResource: newRestartableResourceForParent(l.Resource),
+		ResourceViewer: NewRestartExtender(
+			NewScaleExtender(
+				NewLogsExtender(
+					NewResource(title, gvr, list),
+					func() string { return "" },
+				),
+			),
+		),
 	}
-	s.extraActionsFn = s.extraActions
-	s.enterFn = s.showPods
+	s.BindKeys()
+	s.GetTable().SetEnterFn(s.showPods)
 
 	return &s
 }
 
-func (s *StatefulSet) extraActions(aa ui.KeyActions) {
-	s.LogResource.extraActions(aa)
-	s.scalableResource.extraActions(aa)
-	s.restartableResource.extraActions(aa)
-	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", s.sortColCmd(1), false)
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", s.sortColCmd(2), false)
+func (d *StatefulSet) BindKeys() {
+	d.Actions().Add(ui.KeyActions{
+		ui.KeyShiftD: ui.NewKeyAction("Sort Desired", d.GetTable().SortColCmd(1, true), false),
+		ui.KeyShiftC: ui.NewKeyAction("Sort Current", d.GetTable().SortColCmd(2, true), false),
+	})
 }
 
-func (s *StatefulSet) showPods(app *App, _, res, sel string) {
-	ns, n := namespaced(sel)
+func (s *StatefulSet) showPods(app *App, _, res, path string) {
+	ns, n := namespaced(path)
 	st, err := k8s.NewStatefulSet(app.Conn()).Get(ns, n)
 	if err != nil {
-		log.Error().Err(err).Msgf("Fetching StatefulSet %s", sel)
+		log.Error().Err(err).Msgf("Fetching StatefulSet %s", path)
 		app.Flash().Errf("Unable to fetch statefulset %s", err)
 		return
 	}
@@ -51,12 +51,5 @@ func (s *StatefulSet) showPods(app *App, _, res, sel string) {
 	if !ok {
 		log.Fatal().Msg("Expecting a valid sts")
 	}
-	l, err := metav1.LabelSelectorAsSelector(sts.Spec.Selector)
-	if err != nil {
-		log.Error().Err(err).Msgf("Converting selector for StatefulSet %s", sel)
-		app.Flash().Errf("Selector failed %s", err)
-		return
-	}
-
-	showPods(app, ns, l.String(), "")
+	showPodsFromSelector(app, ns, sts.Spec.Selector)
 }

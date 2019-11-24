@@ -12,5 +12,5 @@ func TestSubjectNew(t *testing.T) {
 	s.Init(makeCtx())
 
 	assert.Equal(t, "subject", s.Name())
-	assert.Equal(t, 11, len(s.Hints()))
+	assert.Equal(t, 9, len(s.Hints()))
 }

@@ -49,4 +49,4 @@ func (c c) Focus(func(tview.Primitive))                                {}
 func (c c) Blur()                                                      {}
 func (c c) Start()                                                     {}
 func (c c) Stop()                                                      {}
-func (c c) Init(context.Context)                                       {}
+func (c c) Init(context.Context) error                                 { return nil }

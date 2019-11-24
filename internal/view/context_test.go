@@ -13,5 +13,5 @@ func TestContext(t *testing.T) {
 	ctx.Init(makeCtx())
 
 	assert.Equal(t, "ctx", ctx.Name())
-	assert.Equal(t, 12, len(ctx.Hints()))
+	assert.Equal(t, 10, len(ctx.Hints()))
 }

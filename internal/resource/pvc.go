@@ -2,9 +2,9 @@ package resource
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -33,7 +33,7 @@ func NewPersistentVolumeClaim(c Connection) *PersistentVolumeClaim {
 }
 
 // New builds a new PersistentVolumeClaim instance from a k8s resource.
-func (r *PersistentVolumeClaim) New(i interface{}) Columnar {
+func (r *PersistentVolumeClaim) New(i interface{}) (Columnar, error) {
 	c := NewPersistentVolumeClaim(r.Connection)
 	switch instance := i.(type) {
 	case *v1.PersistentVolumeClaim:
@@ -41,11 +41,11 @@ func (r *PersistentVolumeClaim) New(i interface{}) Columnar {
 	case v1.PersistentVolumeClaim:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown PersistentVolumeClaim type %#v", i)
+		return nil, fmt.Errorf("Expecting PVC but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // Marshal resource to yaml.

@@ -1,6 +1,8 @@
 package resource
 
 import (
+	"errors"
+	"fmt"
 	"path"
 	"sort"
 	"strconv"
@@ -37,6 +39,20 @@ const (
 	// UnknownValue represents an unknown.
 	UnknownValue = "<unknown>"
 )
+
+func extractMeta(o map[string]interface{}) (map[string]interface{}, error) {
+	if m, ok := o["metadata"].(map[string]interface{}); ok {
+		return m, nil
+	}
+	return map[string]interface{}{}, errors.New("unable to extract resource metadata")
+}
+
+func extractString(o map[string]interface{}, k string) (string, error) {
+	if s, ok := o[k].(string); ok {
+		return s, nil
+	}
+	return "", fmt.Errorf("unable to extract string for key `%s", k)
+}
 
 // MetaFQN returns a fully qualified resource name.
 func MetaFQN(m metav1.ObjectMeta) string {

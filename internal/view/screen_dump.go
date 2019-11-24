@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/fsnotify/fsnotify"
@@ -24,36 +23,40 @@ var dumpHeader = resource.Row{"NAME", "AGE"}
 
 // ScreenDump presents a directory listing viewer.
 type ScreenDump struct {
-	*MasterDetail
-
-	cancelFn context.CancelFunc
-	app      *App
+	*Table
 }
 
 // NewScreenDump returns a new viewer.
 func NewScreenDump(_, _ string, _ resource.List) ResourceViewer {
 	return &ScreenDump{
-		MasterDetail: NewMasterDetail(dumpTitle, ""),
+		Table: NewTable(dumpTitle),
 	}
 }
 
 // Init initializes the viewer.
-func (s *ScreenDump) Init(ctx context.Context) {
-	s.app = mustExtractApp(ctx)
-	s.MasterDetail.Init(ctx)
-	s.registerActions()
-
-	table := s.masterPage()
-	{
-		table.SetBorderFocusColor(tcell.ColorSteelBlue)
-		table.SetSelectedStyle(tcell.ColorWhite, tcell.ColorRoyalBlue, tcell.AttrNone)
-		table.SetColorerFn(dumpColorer)
-		table.ActiveNS = resource.AllNamespaces
-		table.SetSortCol(table.NameColIndex(), 0, true)
-		table.SelectRow(1, true)
+func (s *ScreenDump) Init(ctx context.Context) error {
+	if err := s.Table.Init(ctx); err != nil {
+		return nil
 	}
+	s.bindKeys()
+	s.SetBorderFocusColor(tcell.ColorSteelBlue)
+	s.SetSelectedStyle(tcell.ColorWhite, tcell.ColorRoyalBlue, tcell.AttrNone)
+	s.SetColorerFn(dumpColorer)
+	s.ActiveNS = resource.AllNamespaces
+	s.SetSortCol(s.NameColIndex(), 0, true)
+	s.SelectRow(1, true)
+
 	s.Start()
 	s.refresh()
+
+	return nil
+}
+
+func (r *ScreenDump) GetTable() *Table { return r.Table }
+func (r *ScreenDump) SetEnvFn(EnvFunc) {}
+
+func (s *ScreenDump) List() resource.List {
+	return nil
 }
 
 // Start starts the directory watcher.
@@ -65,31 +68,18 @@ func (s *ScreenDump) Start() {
 	}
 }
 
-// Stop terminates the directory watcher.
-func (s *ScreenDump) Stop() {
-	if s.cancelFn != nil {
-		s.cancelFn()
-	}
-}
-
 // Name returns the component name.
 func (s *ScreenDump) Name() string {
 	return dumpTitle
 }
 
-func (s *ScreenDump) setEnterFn(enterFn)            {}
-func (s *ScreenDump) setColorerFn(ui.ColorerFunc)   {}
-func (s *ScreenDump) setDecorateFn(decorateFn)      {}
-func (s *ScreenDump) setExtraActionsFn(ActionsFunc) {}
-
 func (s *ScreenDump) refresh() {
-	tv := s.masterPage()
-	tv.Update(s.hydrate())
-	tv.UpdateTitle()
+	s.Update(s.hydrate())
+	s.UpdateTitle()
 }
 
-func (s *ScreenDump) registerActions() {
-	s.masterPage().AddActions(ui.KeyActions{
+func (s *ScreenDump) bindKeys() {
+	s.Actions().Add(ui.KeyActions{
 		tcell.KeyEsc:   ui.NewKeyAction("Back", s.app.PrevCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("View", s.enterCmd, true),
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", s.deleteCmd, true),
@@ -99,11 +89,10 @@ func (s *ScreenDump) registerActions() {
 
 func (s *ScreenDump) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	log.Debug().Msg("Dump enter!")
-	tv := s.masterPage()
-	if tv.SearchBuff().IsActive() {
-		return tv.filterCmd(evt)
+	if s.SearchBuff().IsActive() {
+		return s.filterCmd(evt)
 	}
-	sel := tv.GetSelectedItem()
+	sel := s.GetSelectedItem()
 	if sel == "" {
 		return nil
 	}
@@ -117,13 +106,13 @@ func (s *ScreenDump) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (s *ScreenDump) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
-	sel := s.masterPage().GetSelectedItem()
+	sel := s.GetSelectedItem()
 	if sel == "" {
 		return nil
 	}
 
 	dir := filepath.Join(config.K9sDumpDir, s.app.Config.K9s.CurrentCluster)
-	showModal(s.Pages, fmt.Sprintf("Delete screen dump `%s?", sel), func() {
+	showModal(s.app.Content.Pages, fmt.Sprintf("Delete screen dump `%s?", sel), func() {
 		if err := os.Remove(filepath.Join(dir, sel)); err != nil {
 			s.app.Flash().Errf("Unable to delete file %s", err)
 			return
@@ -131,17 +120,6 @@ func (s *ScreenDump) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		s.refresh()
 		s.app.Flash().Infof("ScreenDump file %s deleted!", sel)
 	})
-
-	return nil
-}
-
-func (s *ScreenDump) Hints() model.MenuHints {
-	if s.CurrentPage() == nil {
-		return nil
-	}
-	if c, ok := s.CurrentPage().Item.(model.Hinter); ok {
-		return c.Hints()
-	}
 
 	return nil
 }

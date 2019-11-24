@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAnsi(t *testing.T) {
+func TestLogAnsi(t *testing.T) {
 	buff := bytes.NewBufferString("")
 	w := tview.ANSIWriter(buff, "white", "black")
 	fmt.Fprintf(w, "[YELLOW] ok")
@@ -28,7 +28,8 @@ func TestAnsi(t *testing.T) {
 }
 
 func TestLogFlush(t *testing.T) {
-	v := view.NewLog("Logs", makeApp(), nil)
+	v := view.NewLog("fred/p1", "blee", nil, false)
+	v.Init(makeContext())
 	v.Flush(2, []string{"blee", "bozo"})
 
 	v.ToggleAutoScrollCmd(nil)
@@ -40,8 +41,10 @@ func TestLogFlush(t *testing.T) {
 }
 
 func TestLogViewSave(t *testing.T) {
+	v := view.NewLog("fred/p1", "blee", nil, false)
+	v.Init(makeContext())
+
 	app := makeApp()
-	v := view.NewLog("Logs", app, nil)
 	v.Flush(2, []string{"blee", "bozo"})
 	config.K9sDumpDir = "/tmp"
 	dir := filepath.Join(config.K9sDumpDir, app.Config.K9s.CurrentCluster)
@@ -52,7 +55,9 @@ func TestLogViewSave(t *testing.T) {
 }
 
 func TestLogViewNav(t *testing.T) {
-	v := view.NewLog("Logs", makeApp(), nil)
+	v := view.NewLog("fred/p1", "blee", nil, false)
+	v.Init(makeContext())
+
 	var buff []string
 	for i := 0; i < 100; i++ {
 		buff = append(buff, fmt.Sprintf("line-%d\n", i))
@@ -65,7 +70,9 @@ func TestLogViewNav(t *testing.T) {
 }
 
 func TestLogViewClear(t *testing.T) {
-	v := view.NewLog("Logs", makeApp(), nil)
+	v := view.NewLog("fred/p1", "blee", nil, false)
+	v.Init(makeContext())
+
 	v.Flush(2, []string{"blee", "bozo"})
 
 	v.ToggleAutoScrollCmd(nil)

@@ -36,7 +36,7 @@ type StackListener interface {
 	StackTop(Component)
 }
 
-// Stack represents a stacks of items.
+// Stack represents a stacks of components.
 type Stack struct {
 	components []Component
 	listeners  []StackListener
@@ -123,11 +123,10 @@ func (s *Stack) Peek() []Component {
 
 // ClearHistory clear out the stack history up to most recent.
 func (s *Stack) ClearHistory() {
-	top := s.Top()
+	log.Debug().Msgf("STACK CLEARED!!")
 	for range s.components {
 		s.Pop()
 	}
-	s.Push(top)
 }
 
 // Empty returns true if the stack is empty.

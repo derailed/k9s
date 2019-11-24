@@ -50,14 +50,18 @@ func NewPolicy(app *App, subject, name string) *Policy {
 }
 
 // Init the view.
-func (p *Policy) Init(ctx context.Context) {
-	p.Table.Init(ctx)
+func (p *Policy) Init(ctx context.Context) error {
+	if err := p.Table.Init(ctx); err != nil {
+		return err
+	}
 	p.bindKeys()
 
 	p.SetSortCol(1, len(rbacHeader), false)
 	p.refresh()
 	p.SelectRow(1, true)
 	p.Start()
+
+	return nil
 }
 
 func (p *Policy) Name() string {
@@ -80,21 +84,15 @@ func (p *Policy) Start() {
 	}(ctx)
 }
 
-func (p *Policy) Stop() {
-	if p.cancel != nil {
-		p.cancel()
-	}
-}
-
 func (p *Policy) bindKeys() {
-	p.RmActions(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
-	p.AddActions(ui.KeyActions{
+	p.Actions().Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
+	p.Actions().Add(ui.KeyActions{
 		tcell.KeyEscape: ui.NewKeyAction("Back", p.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", p.activateCmd, false),
-		ui.KeyShiftS:    ui.NewKeyAction("Sort Namespace", p.SortColCmd(0), false),
-		ui.KeyShiftN:    ui.NewKeyAction("Sort Name", p.SortColCmd(1), false),
-		ui.KeyShiftO:    ui.NewKeyAction("Sort Group", p.SortColCmd(2), false),
-		ui.KeyShiftB:    ui.NewKeyAction("Sort Binding", p.SortColCmd(3), false),
+		ui.KeyShiftS:    ui.NewKeyAction("Sort Namespace", p.SortColCmd(0, true), false),
+		ui.KeyShiftN:    ui.NewKeyAction("Sort Name", p.SortColCmd(1, true), false),
+		ui.KeyShiftO:    ui.NewKeyAction("Sort Group", p.SortColCmd(2, true), false),
+		ui.KeyShiftB:    ui.NewKeyAction("Sort Binding", p.SortColCmd(3, true), false),
 	})
 }
 

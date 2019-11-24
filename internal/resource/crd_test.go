@@ -105,7 +105,8 @@ func k8sCRD() *unstructured.Unstructured {
 
 func newCRD() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewCustomResourceDefinition(mc).New(k8sCRD())
+	c, _ := resource.NewCustomResourceDefinition(mc).New(k8sCRD())
+	return c
 }
 
 func crdYaml() string {

@@ -12,5 +12,5 @@ func TestPortForwardNew(t *testing.T) {
 	po.Init(makeCtx())
 
 	assert.Equal(t, "PortForwards", po.Name())
-	assert.Equal(t, 17, len(po.Hints()))
+	assert.Equal(t, 16, len(po.Hints()))
 }

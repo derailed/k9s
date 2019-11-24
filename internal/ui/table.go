@@ -5,6 +5,7 @@ import (
 	"errors"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
@@ -22,15 +23,16 @@ type (
 // Table represents tabular data.
 type Table struct {
 	*SelectTable
-	KeyActions
 
+	actions   KeyActions
 	BaseTitle string
+	Path      string
 	Data      resource.TableData
 	cmdBuff   *CmdBuff
 	styles    *config.Styles
-	colorerFn ColorerFunc
 	sortCol   SortColumn
 	sortFn    SortFn
+	colorerFn ColorerFunc
 }
 
 // NewTable returns a new table view.
@@ -40,10 +42,10 @@ func NewTable(title string) *Table {
 			Table: tview.NewTable(),
 			marks: make(map[string]bool),
 		},
-		KeyActions: make(KeyActions),
-		cmdBuff:    NewCmdBuff('/', FilterBuff),
-		BaseTitle:  title,
-		sortCol:    SortColumn{0, 0, true},
+		actions:   make(KeyActions),
+		cmdBuff:   NewCmdBuff('/', FilterBuff),
+		BaseTitle: title,
+		sortCol:   SortColumn{index: 0, colCount: 0, asc: true},
 	}
 }
 
@@ -68,6 +70,11 @@ func (t *Table) Init(ctx context.Context) {
 	t.SetInputCapture(t.keyboard)
 }
 
+// Actions returns active menu bindings.
+func (t *Table) Actions() KeyActions {
+	return t.actions
+}
+
 // SendKey sends an keyboard event (testing only!).
 func (t *Table) SendKey(evt *tcell.EventKey) {
 	t.keyboard(evt)
@@ -87,11 +94,15 @@ func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		key = asKey(evt)
 	}
 
-	if a, ok := t.KeyActions[key]; ok {
+	if a, ok := t.actions[key]; ok {
 		return a.Action(evt)
 	}
 
 	return evt
+}
+
+func (t *Table) Hints() model.MenuHints {
+	return t.actions.Hints()
 }
 
 // GetFilteredData fetch filtered tabular data.
@@ -99,8 +110,12 @@ func (t *Table) GetFilteredData() resource.TableData {
 	return t.filtered()
 }
 
-// SetColorerFn set the row colorer.
+// SetColorerFn specifies the default colorer.
 func (t *Table) SetColorerFn(f ColorerFunc) {
+	if f == nil {
+		return
+	}
+	log.Debug().Msgf("Setting Colorer %#v", f)
 	t.colorerFn = f
 }
 
@@ -124,9 +139,9 @@ func (t *Table) Update(data resource.TableData) {
 func (t *Table) doUpdate(data resource.TableData) {
 	t.ActiveNS = data.Namespace
 	if t.ActiveNS == resource.AllNamespaces && t.ActiveNS != "*" {
-		t.KeyActions[KeyShiftP] = NewKeyAction("Sort Namespace", t.SortColCmd(-2), false)
+		t.actions[KeyShiftP] = NewKeyAction("Sort Namespace", t.SortColCmd(-2, true), false)
 	} else {
-		t.KeyActions.RmActions(KeyShiftP)
+		t.actions.Delete(KeyShiftP)
 	}
 	t.Clear()
 
@@ -147,22 +162,33 @@ func (t *Table) doUpdate(data resource.TableData) {
 }
 
 // SortColCmd designates a sorted column.
-func (t *Table) SortColCmd(col int) func(evt *tcell.EventKey) *tcell.EventKey {
+func (t *Table) SortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		t.sortCol.asc = true
 		switch col {
 		case -2:
-			t.sortCol.index = 0
+			col = 0
 		case -1:
-			t.sortCol.index = t.GetColumnCount() - 1
+			col = t.GetColumnCount() - 1
 		default:
-			t.sortCol.index = t.NameColIndex() + col
-
+			col = t.NameColIndex() + col
 		}
+		t.sortCol.asc = !t.sortCol.asc
+		if t.sortCol.index != col {
+			t.sortCol.asc = asc
+		}
+		t.sortCol.index = col
 		t.Refresh()
 
 		return nil
 	}
+}
+
+// SortInvertCmd reverses sorting order.
+func (t *Table) SortInvertCmd(evt *tcell.EventKey) *tcell.EventKey {
+	t.sortCol.asc = !t.sortCol.asc
+	t.Refresh()
+
+	return nil
 }
 
 func (t *Table) adjustSorter(data resource.TableData) {
@@ -209,7 +235,7 @@ func (t *Table) buildRow(row int, data resource.TableData, sk string, pads MaxyP
 	if t.colorerFn != nil {
 		f = t.colorerFn
 	}
-	m := t.IsMarked(sk)
+	marked := t.IsMarked(sk)
 	for col, field := range data.Rows[sk].Fields {
 		header := data.Header[col]
 		cell, align := formatCell(data.NumCols[header], header, field+Deltas(data.Rows[sk].Deltas[col], field), pads[col])
@@ -218,8 +244,9 @@ func (t *Table) buildRow(row int, data resource.TableData, sk string, pads MaxyP
 			c.SetExpansion(1)
 			c.SetAlign(align)
 			c.SetTextColor(f(data.Namespace, data.Rows[sk]))
-			if m {
-				c.SetBackgroundColor(config.AsColor(t.styles.Table().MarkColor))
+			if marked {
+				c.SetTextColor(config.AsColor(t.styles.Table().MarkColor))
+				// c.SetBackgroundColor(config.AsColor(t.styles.Table().MarkColor))
 			}
 		}
 		t.SetCell(row, col, c)
@@ -291,13 +318,5 @@ func (t *Table) ShowDeleted() {
 
 // UpdateTitle refreshes the table title.
 func (t *Table) UpdateTitle() {
-	t.SetTitle(styleTitle(t.GetRowCount(), t.ActiveNS, t.BaseTitle, t.cmdBuff.String(), t.styles))
-}
-
-// SortInvertCmd reverses sorting order.
-func (t *Table) SortInvertCmd(evt *tcell.EventKey) *tcell.EventKey {
-	t.sortCol.asc = !t.sortCol.asc
-	t.Refresh()
-
-	return nil
+	t.SetTitle(styleTitle(t.GetRowCount(), t.ActiveNS, t.BaseTitle, t.Path, t.cmdBuff.String(), t.styles))
 }

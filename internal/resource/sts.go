@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 )
 
@@ -40,7 +39,7 @@ func NewStatefulSet(c Connection) *StatefulSet {
 }
 
 // New builds a new StatefulSet instance from a k8s resource.
-func (r *StatefulSet) New(i interface{}) Columnar {
+func (r *StatefulSet) New(i interface{}) (Columnar, error) {
 	c := NewStatefulSet(r.Connection)
 	switch instance := i.(type) {
 	case *appsv1.StatefulSet:
@@ -48,11 +47,11 @@ func (r *StatefulSet) New(i interface{}) Columnar {
 	case appsv1.StatefulSet:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown StatefulSet type %#v", i)
+		return nil, fmt.Errorf("Expecting STS but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // Marshal resource to yaml.

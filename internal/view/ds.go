@@ -10,35 +10,36 @@ import (
 )
 
 type DaemonSet struct {
-	*LogResource
-
-	restartableResource *RestartableResource
+	ResourceViewer
 }
 
 func NewDaemonSet(title, gvr string, list resource.List) ResourceViewer {
-	l := NewLogResource(title, gvr, list)
 	d := DaemonSet{
-		LogResource:         l,
-		restartableResource: newRestartableResourceForParent(l.Resource),
+		ResourceViewer: NewRestartExtender(
+			NewLogsExtender(
+				NewResource(title, gvr, list),
+				func() string { return "" },
+			),
+		),
 	}
-	d.extraActionsFn = d.extraActions
-	d.enterFn = d.showPods
+	d.BindKeys()
+	d.GetTable().SetEnterFn(d.showPods)
 
 	return &d
 }
 
-func (d *DaemonSet) extraActions(aa ui.KeyActions) {
-	d.LogResource.extraActions(aa)
-	d.restartableResource.extraActions(aa)
-	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", d.sortColCmd(1), false)
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", d.sortColCmd(2), false)
+func (d *DaemonSet) BindKeys() {
+	d.Actions().Add(ui.KeyActions{
+		ui.KeyShiftD: ui.NewKeyAction("Sort Desired", d.GetTable().SortColCmd(1, true), false),
+		ui.KeyShiftC: ui.NewKeyAction("Sort Current", d.GetTable().SortColCmd(2, true), false),
+	})
 }
 
 func (d *DaemonSet) showPods(app *App, _, res, sel string) {
 	ns, n := namespaced(sel)
 	dset, err := k8s.NewDaemonSet(app.Conn()).Get(ns, n)
 	if err != nil {
-		d.app.Flash().Err(err)
+		d.App().Flash().Err(err)
 		return
 	}
 

@@ -139,7 +139,8 @@ func BenchmarkPodFields(b *testing.B) {
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		_ = p.New(po).Fields("")
+		pod, _ := p.New(po)
+		pod.Fields("")
 	}
 }
 
@@ -206,12 +207,14 @@ func makePod() *v1.Pod {
 
 func newPod() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewPod(mc).New(makePod())
+	c, _ := resource.NewPod(mc).New(makePod())
+	return c
 }
 
 func NewPodWithMetrics(metrics mv1beta1.PodMetrics, resources v1.ResourceRequirements) resource.Columnar {
 	mc := NewMockConnection()
-	r := resource.NewPod(mc).New(makePodWithContainerSpec(resources))
+	p := resource.NewPod(mc)
+	r, _ := p.New(makePodWithContainerSpec(resources))
 	r.SetPodMetrics(&metrics)
 	return r
 }

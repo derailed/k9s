@@ -9,7 +9,7 @@ import (
 // Igniter represents a runnable view.
 type Igniter interface {
 	// Start starts a component.
-	Init(ctx context.Context)
+	Init(ctx context.Context) error
 
 	// Start starts a component.
 	Start()

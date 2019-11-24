@@ -2,9 +2,9 @@ package resource
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/storage/v1"
 )
 
@@ -33,7 +33,7 @@ func NewStorageClass(c Connection) *StorageClass {
 }
 
 // New builds a new StorageClass instance from a k8s resource.
-func (r *StorageClass) New(i interface{}) Columnar {
+func (r *StorageClass) New(i interface{}) (Columnar, error) {
 	c := NewStorageClass(r.Connection)
 	switch instance := i.(type) {
 	case *v1.StorageClass:
@@ -41,11 +41,11 @@ func (r *StorageClass) New(i interface{}) Columnar {
 	case v1.StorageClass:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown StorageClass type %#v", i)
+		return nil, fmt.Errorf("Expecting StorageClass but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // Marshal resource to yaml.

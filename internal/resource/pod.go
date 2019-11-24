@@ -28,33 +28,12 @@ const (
 	Completed      = "Completed"
 )
 
-type (
-	// IKey informer context key.
-	IKey string
-
-	// Containers represents a resource that supports containers.
-	Containers interface {
-		Containers(path string, includeInit bool) ([]string, error)
-	}
-
-	// Tailable represents a resource with tailable logs.
-	Tailable interface {
-		Logs(ctx context.Context, c chan<- string, opts LogOptions) error
-	}
-
-	// TailableResource is a resource that have tailable logs.
-	TailableResource interface {
-		Resource
-		Tailable
-	}
-
-	// Pod that can be displayed in a table and interacted with.
-	Pod struct {
-		*Base
-		instance *v1.Pod
-		metrics  *mv1beta1.PodMetrics
-	}
-)
+// Pod that can be displayed in a table and interacted with.
+type Pod struct {
+	*Base
+	instance *v1.Pod
+	metrics  *mv1beta1.PodMetrics
+}
 
 // NewPodList returns a new resource list.
 func NewPodList(c Connection, ns string) List {
@@ -77,7 +56,7 @@ func NewPod(c Connection) *Pod {
 }
 
 // New builds a new Pod instance from a k8s resource.
-func (r *Pod) New(i interface{}) Columnar {
+func (r *Pod) New(i interface{}) (Columnar, error) {
 	c := NewPod(r.Connection)
 	switch instance := i.(type) {
 	case *v1.Pod:
@@ -88,15 +67,15 @@ func (r *Pod) New(i interface{}) Columnar {
 		ptr := *instance
 		po, ok := ptr.(v1.Pod)
 		if !ok {
-			log.Fatal().Msgf("Expecting a pod resource")
+			return nil, fmt.Errorf("Expecting Pod but got %T", ptr)
 		}
 		c.instance = &po
 	default:
-		log.Fatal().Msgf("unknown Pod type %#v", i)
+		return nil, fmt.Errorf("Expecting Pod but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // SetPodMetrics set the current k8s resource metrics on a given pod.
@@ -244,8 +223,8 @@ func (r *Pod) List(ns string, opts metav1.ListOptions) (Columnars, error) {
 
 	cc := make(Columnars, 0, len(pods))
 	for i := range pods {
-		po, ok := r.New(&pods[i]).(*Pod)
-		if !ok {
+		po, err := r.New(&pods[i])
+		if err != nil {
 			return nil, errors.New("Expecting a pod resource")
 		}
 		cc = append(cc, po)

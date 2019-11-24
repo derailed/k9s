@@ -133,7 +133,8 @@ func k8sSVC() *v1.Service {
 
 func newSvc() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewService(mc).New(k8sSVC())
+	c, _ := resource.NewService(mc).New(k8sSVC())
+	return c
 }
 
 func svcHeader() resource.Row {

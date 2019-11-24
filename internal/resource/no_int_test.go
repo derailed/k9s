@@ -97,7 +97,8 @@ func BenchmarkNodeFields(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		_ = n.New(no).Fields("")
+		node, _ := n.New(no)
+		node.Fields("")
 	}
 }
 

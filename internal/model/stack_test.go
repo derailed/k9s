@@ -42,7 +42,7 @@ func TestStackPush(t *testing.T) {
 	}
 
 	for k := range uu {
-   u := uu[k]
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			s := model.NewStack()
 			for _, c := range u.items {
@@ -79,7 +79,7 @@ func TestStackTop(t *testing.T) {
 	}
 
 	for k := range uu {
-   u := uu[k]
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			s := model.NewStack()
 			for _, item := range u.items {
@@ -150,4 +150,4 @@ func (c c) Focus(func(tview.Primitive))                                {}
 func (c c) Blur()                                                      {}
 func (c c) Start()                                                     {}
 func (c c) Stop()                                                      {}
-func (c c) Init(context.Context)                                       {}
+func (c c) Init(context.Context) error                                 { return nil }

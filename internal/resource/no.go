@@ -2,6 +2,7 @@ package resource
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"k8s.io/apimachinery/pkg/util/sets"
@@ -49,7 +50,7 @@ func NewNode(c Connection) *Node {
 }
 
 // New builds a new Node instance from a k8s resource.
-func (r *Node) New(i interface{}) Columnar {
+func (r *Node) New(i interface{}) (Columnar, error) {
 	c := NewNode(r.Connection)
 	switch instance := i.(type) {
 	case *v1.Node:
@@ -57,11 +58,11 @@ func (r *Node) New(i interface{}) Columnar {
 	case v1.Node:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown Node type %#v", i)
+		return nil, fmt.Errorf("Expecting Node but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // SetNodeMetrics set the current k8s resource metrics on a given node.
@@ -82,9 +83,9 @@ func (r *Node) List(ns string, opts metav1.ListOptions) (Columnars, error) {
 		if !ok {
 			return nil, errors.New("Expecting a node resource")
 		}
-		no, ok := r.New(&node).(*Node)
-		if !ok {
-			return nil, errors.New("Expecting a node resource")
+		no, err := r.New(&node)
+		if err != nil {
+			return nil, err
 		}
 		cc = append(cc, no)
 	}
@@ -275,73 +276,3 @@ func (*Node) status(status v1.NodeStatus, exempt bool, res []string) {
 		res[index] = "SchedulingDisabled"
 	}
 }
-
-// BOZO!!
-// func (r *Node) podsResources(name string) (v1.ResourceList, v1.ResourceList, error) {
-// 	reqs, limits := v1.ResourceList{}, v1.ResourceList{}
-// 	pods, err := r.Connection.NodePods(name)
-// 	if err != nil {
-// 		return reqs, limits, err
-// 	}
-// 	for _, p := range pods.Items {
-// 		preq, plim := podResources(&p)
-// 		for k, v := range preq {
-// 			if value, ok := reqs[k]; !ok {
-// 				reqs[k] = v.DeepCopy()
-// 			} else {
-// 				value.Add(v)
-// 				reqs[k] = value
-// 			}
-// 		}
-// 		for k, v := range plim {
-// 			if value, ok := limits[k]; !ok {
-// 				limits[k] = v.DeepCopy()
-// 			} else {
-// 				value.Add(v)
-// 				limits[k] = value
-// 			}
-// 		}
-// 	}
-
-// 	return reqs, limits, nil
-// }
-
-// func podResources(pod *v1.Pod) (v1.ResourceList, v1.ResourceList) {
-// 	reqs, limits := v1.ResourceList{}, v1.ResourceList{}
-// 	for _, container := range pod.Spec.Containers {
-// 		addResources(reqs, container.Resources.Requests)
-// 		addResources(limits, container.Resources.Limits)
-// 	}
-// 	// init containers define the minimum of any resource
-// 	for _, container := range pod.Spec.InitContainers {
-// 		maxResources(reqs, container.Resources.Requests)
-// 		maxResources(limits, container.Resources.Limits)
-// 	}
-
-// 	return reqs, limits
-// }
-
-// // AddResources adds the resources from l2 to l1.
-// func addResources(l1, l2 v1.ResourceList) {
-// 	for name, quantity := range l2 {
-// 		if value, ok := l1[name]; ok {
-// 			value.Add(quantity)
-// 			l1[name] = value
-// 		} else {
-// 			l1[name] = quantity.DeepCopy()
-// 		}
-// 	}
-// }
-
-// // MaxResourceList sets list to the greater of l1/l2 for every resource.
-// func maxResources(l1, l2 v1.ResourceList) {
-// 	for name, quantity := range l2 {
-// 		if value, ok := l1[name]; ok {
-// 			if quantity.Cmp(value) > 0 {
-// 				l1[name] = quantity.DeepCopy()
-// 			}
-// 		} else {
-// 			l1[name] = quantity.DeepCopy()
-// 		}
-// 	}
-// }

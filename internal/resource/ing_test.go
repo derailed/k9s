@@ -96,7 +96,8 @@ func k8sIngress() *v1beta1.Ingress {
 
 func newIngress() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewIngress(mc).New(k8sIngress())
+	c, _ := resource.NewIngress(mc).New(k8sIngress())
+	return c
 }
 
 func ingYaml() string {

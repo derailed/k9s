@@ -2,11 +2,11 @@ package resource
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -35,7 +35,7 @@ func NewEndpoints(c Connection) *Endpoints {
 }
 
 // New builds a new Endpoints instance from a k8s resource.
-func (r *Endpoints) New(i interface{}) Columnar {
+func (r *Endpoints) New(i interface{}) (Columnar, error) {
 	c := NewEndpoints(r.Connection)
 	switch instance := i.(type) {
 	case *v1.Endpoints:
@@ -43,11 +43,11 @@ func (r *Endpoints) New(i interface{}) Columnar {
 	case v1.Endpoints:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown Endpoints type %#v", i)
+		return nil, fmt.Errorf("Expecting Endpoints but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // Marshal resource to yaml.

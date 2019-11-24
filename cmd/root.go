@@ -83,7 +83,9 @@ func run(cmd *cobra.Command, args []string) {
 	app := view.NewApp(cfg)
 	{
 		defer app.BailOut()
-		app.Init(version, *k9sFlags.RefreshRate)
+		if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
+			panic(err)
+		}
 		app.Run()
 	}
 }

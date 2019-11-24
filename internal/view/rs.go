@@ -1,6 +1,7 @@
 package view
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -21,24 +22,33 @@ import (
 
 // ReplicaSet presents a replicaset viewer.
 type ReplicaSet struct {
-	*Resource
+	ResourceViewer
 }
 
 // NewReplicaSet returns a new viewer.
 func NewReplicaSet(title, gvr string, list resource.List) ResourceViewer {
-	r := ReplicaSet{
-		Resource: NewResource(title, gvr, list),
+	return &ReplicaSet{
+		ResourceViewer: NewResource(title, gvr, list),
 	}
-	r.extraActionsFn = r.extraActions
-	r.enterFn = r.showPods
-
-	return &r
 }
 
-func (r *ReplicaSet) extraActions(aa ui.KeyActions) {
-	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", r.sortColCmd(1, false), false)
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", r.sortColCmd(2, false), false)
-	aa[tcell.KeyCtrlB] = ui.NewKeyAction("Rollback", r.rollbackCmd, true)
+// Init initializes the component.
+func (r *ReplicaSet) Init(ctx context.Context) error {
+	if err := r.ResourceViewer.Init(ctx); err != nil {
+		return err
+	}
+	r.bindKeys()
+	r.GetTable().SetEnterFn(r.showPods)
+
+	return nil
+}
+
+func (r *ReplicaSet) bindKeys() {
+	r.Actions().Add(ui.KeyActions{
+		ui.KeyShiftD:   ui.NewKeyAction("Sort Desired", r.GetTable().SortColCmd(1, true), false),
+		ui.KeyShiftC:   ui.NewKeyAction("Sort Current", r.GetTable().SortColCmd(2, true), false),
+		tcell.KeyCtrlB: ui.NewKeyAction("Rollback", r.rollbackCmd, true),
+	})
 }
 
 func (r *ReplicaSet) showPods(app *App, _, res, sel string) {
@@ -62,20 +72,20 @@ func (r *ReplicaSet) showPods(app *App, _, res, sel string) {
 }
 
 func (r *ReplicaSet) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !r.masterPage().RowSelected() {
+	sel := r.GetTable().GetSelectedItem()
+	if sel == "" {
 		return evt
 	}
 
-	sel := r.masterPage().GetSelectedItem()
-	r.showModal(fmt.Sprintf("Rollback %s %s?", r.list.GetName(), sel), func(_ int, button string) {
+	r.showModal(fmt.Sprintf("Rollback %s %s?", r.List().GetName(), sel), func(_ int, button string) {
 		if button == "OK" {
-			r.app.Flash().Infof("Rolling back %s %s", r.list.GetName(), sel)
-			if res, err := rollback(r.app.Conn(), sel); err != nil {
-				r.app.Flash().Err(err)
+			r.App().Flash().Infof("Rolling back %s %s", r.List().GetName(), sel)
+			if res, err := rollback(r.App().Conn(), sel); err != nil {
+				r.App().Flash().Err(err)
 			} else {
-				r.app.Flash().Info(res)
+				r.App().Flash().Info(res)
 			}
-			r.refresh()
+			r.Refresh()
 		}
 		r.dismissModal()
 	})
@@ -84,7 +94,7 @@ func (r *ReplicaSet) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (r *ReplicaSet) dismissModal() {
-	r.Pop()
+	r.App().Content.RemovePage("confirm")
 }
 
 func (r *ReplicaSet) showModal(msg string, done func(int, string)) {
@@ -93,8 +103,8 @@ func (r *ReplicaSet) showModal(msg string, done func(int, string)) {
 		SetTextColor(tcell.ColorFuchsia).
 		SetText(msg).
 		SetDoneFunc(done)
-	r.AddPage("confirm", confirm, false, false)
-	r.ShowPage("confirm")
+	r.App().Content.AddPage("confirm", confirm, false, false)
+	r.App().Content.ShowPage("confirm")
 }
 
 // ----------------------------------------------------------------------------

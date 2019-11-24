@@ -21,7 +21,8 @@ import (
 )
 
 const (
-	benchTitle = "Benchmarks"
+	benchTitle  = "Benchmarks"
+	resultTitle = "Benchmark Results"
 )
 
 var (
@@ -35,40 +36,49 @@ var (
 
 // Bench represents a service benchmark results view.
 type Bench struct {
-	*MasterDetail
+	*Table
 
-	cancelFn context.CancelFunc
+	details *Details
 }
 
 // NewBench returns a new viewer.
-func NewBench(_, _ string, _ resource.List) ResourceViewer {
+func NewBench(title, _ string, _ resource.List) ResourceViewer {
 	return &Bench{
-		MasterDetail: NewMasterDetail(benchTitle, ""),
+		Table:   NewTable(benchTitle),
+		details: NewDetails(resultTitle),
 	}
 }
 
 // Init initializes the viewer.
-func (b *Bench) Init(ctx context.Context) {
-	b.MasterDetail.Init(ctx)
-	b.keyBindings()
+func (b *Bench) Init(ctx context.Context) error {
+	log.Debug().Msgf(">>> Bench INIT")
+	if err := b.Table.Init(ctx); err != nil {
+		return err
+	}
+	b.SetBorderFocusColor(tcell.ColorSeaGreen)
+	b.SetSelectedStyle(tcell.ColorWhite, tcell.ColorSeaGreen, tcell.AttrNone)
+	b.SetColorerFn(benchColorer)
+	b.bindKeys()
 
-	tv := b.masterPage()
-	tv.SetBorderFocusColor(tcell.ColorSeaGreen)
-	tv.SetSelectedStyle(tcell.ColorWhite, tcell.ColorSeaGreen, tcell.AttrNone)
-	tv.SetColorerFn(benchColorer)
-
-	dv := b.detailsPage()
-	dv.setCategory("Bench")
-	dv.SetTextColor(tcell.ColorSeaGreen)
+	b.details.SetTextColor(tcell.ColorSeaGreen)
+	if err := b.details.Init(ctx); err != nil {
+		return nil
+	}
 
 	b.Start()
 	b.refresh()
-	tv.SetSortCol(tv.NameColIndex()+7, 0, true)
-	tv.Refresh()
-	tv.Select(1, 0)
+	b.SetSortCol(b.NameColIndex()+7, 0, true)
+	b.Refresh()
+	b.Select(1, 0)
+
+	return nil
 }
 
+func (b *Bench) SetEnvFn(EnvFunc) {}
+func (b *Bench) GetTable() *Table { return b.Table }
+
 func (b *Bench) Start() {
+	log.Debug().Msgf(">>>> Bench START")
 	var ctx context.Context
 
 	ctx, b.cancelFn = context.WithCancel(context.Background())
@@ -77,41 +87,29 @@ func (b *Bench) Start() {
 	}
 }
 
-func (b *Bench) Stop() {
-	if b.cancelFn != nil {
-		b.cancelFn()
-	}
+// List returns a resource list.
+func (b *Bench) List() resource.List {
+	return nil
 }
-
-func (b *Bench) Name() string {
-	return "benchmarks"
-}
-
-func (b *Bench) setEnterFn(enterFn)            {}
-func (b *Bench) setColorerFn(ui.ColorerFunc)   {}
-func (b *Bench) setDecorateFn(decorateFn)      {}
-func (b *Bench) setExtraActionsFn(ActionsFunc) {}
 
 func (b *Bench) refresh() {
-	tv := b.masterPage()
-	tv.Update(b.hydrate())
-	tv.UpdateTitle()
+	b.Update(b.hydrate())
+	b.UpdateTitle()
 }
 
-func (b *Bench) keyBindings() {
-	aa := ui.KeyActions{
+func (b *Bench) bindKeys() {
+	b.Actions().Add(ui.KeyActions{
 		tcell.KeyEnter: ui.NewKeyAction("Enter", b.enterCmd, false),
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", b.deleteCmd, false),
-	}
-	b.masterPage().AddActions(aa)
+	})
 }
 
 func (b *Bench) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if b.masterPage().SearchBuff().IsActive() {
-		return b.masterPage().filterCmd(evt)
+	if b.SearchBuff().IsActive() {
+		return b.filterCmd(evt)
 	}
 
-	if !b.masterPage().RowSelected() {
+	if !b.RowSelected() {
 		return nil
 	}
 
@@ -120,22 +118,22 @@ func (b *Bench) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 		b.app.Flash().Errf("Unable to load bench file %s", err)
 		return nil
 	}
-	vu := b.detailsPage()
-	vu.SetText(data)
-	vu.setTitle(b.masterPage().GetSelectedItem())
-	b.showDetails()
+
+	b.details.SetText(data)
+	b.details.SetSubject(b.GetSelectedItem())
+	b.app.inject(b.details)
 
 	return nil
 }
 
 func (b *Bench) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !b.masterPage().RowSelected() {
+	if !b.RowSelected() {
 		return nil
 	}
 
-	sel, file := b.masterPage().GetSelectedItem(), b.benchFile()
+	sel, file := b.GetSelectedItem(), b.benchFile()
 	dir := filepath.Join(perf.K9sBenchDir, b.app.Config.K9s.CurrentCluster)
-	showModal(b.Pages, fmt.Sprintf("Delete benchmark `%s?", file), func() {
+	showModal(b.app.Content.Pages, fmt.Sprintf("Delete benchmark `%s?", file), func() {
 		if err := os.Remove(filepath.Join(dir, file)); err != nil {
 			b.app.Flash().Errf("Unable to delete file %s", err)
 			return
@@ -147,8 +145,8 @@ func (b *Bench) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (b *Bench) benchFile() string {
-	r := b.masterPage().GetSelectedRowIndex()
-	return ui.TrimCell(b.masterPage().SelectTable, r, 7)
+	r := b.GetSelectedRowIndex()
+	return ui.TrimCell(b.SelectTable, r, 7)
 }
 
 func (b *Bench) hydrate() resource.TableData {

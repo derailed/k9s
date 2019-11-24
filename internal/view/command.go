@@ -11,12 +11,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-type SubjectViewer interface {
-	ResourceViewer
-
-	setSubject(s string)
-}
-
 type command struct {
 	app *App
 }
@@ -37,13 +31,13 @@ var authRX = regexp.MustCompile(`\Apol\s([u|g|s]):([\w-:]+)\b`)
 func (c *command) isK9sCmd(cmd string) bool {
 	cmds := strings.Split(cmd, " ")
 	switch cmds[0] {
-	case "q", "quit":
+	case "q", "Q", "quit":
 		c.app.BailOut()
 		return true
-	case "?", "help":
+	case "?", "h", "help":
 		c.app.helpCmd(nil)
 		return true
-	case "alias":
+	case "a", "alias":
 		c.app.aliasCmd(nil)
 		return true
 	default:
@@ -60,15 +54,15 @@ func (c *command) isK9sCmd(cmd string) bool {
 }
 
 // load scrape api for resources and populate aliases.
-func (c *command) load() viewers {
-	vv := make(viewers, 100)
+func (c *command) load() MetaViewers {
+	vv := make(MetaViewers, 100)
 	resourceViews(c.app.Conn(), vv)
 	allCRDs(c.app.Conn(), vv)
 
 	return vv
 }
 
-func (c *command) viewMetaFor(cmd string) (string, *viewer) {
+func (c *command) viewMetaFor(cmd string) (string, *MetaViewer) {
 	vv := c.load()
 	gvr, ok := aliases.Get(cmd)
 	if !ok {
@@ -78,7 +72,7 @@ func (c *command) viewMetaFor(cmd string) (string, *viewer) {
 	}
 	v, ok := vv[gvr]
 	if !ok {
-		log.Error().Err(fmt.Errorf("Huh? `%s` viewer not found", gvr)).Msg("Viewer Failed")
+		log.Error().Err(fmt.Errorf("Huh? `%s` viewer not found", gvr)).Msg("MetaViewer Failed")
 		c.app.Flash().Warnf("Huh? viewer for %s not found", cmd)
 		return "", nil
 	}
@@ -117,7 +111,7 @@ func (c *command) run(cmd string) bool {
 	}
 }
 
-func (c *command) componentFor(gvr string, v *viewer) ResourceViewer {
+func (c *command) componentFor(gvr string, v *MetaViewer) ResourceViewer {
 	var r resource.List
 	if v.listFn != nil {
 		r = v.listFn(c.app.Conn(), resource.DefaultNamespace)
@@ -125,18 +119,18 @@ func (c *command) componentFor(gvr string, v *viewer) ResourceViewer {
 
 	var view ResourceViewer
 	if v.viewFn != nil {
+		log.Debug().Msgf("Custom viewer for %s", gvr)
 		view = v.viewFn(v.kind, gvr, r)
 	} else {
+		log.Debug().Msgf("Standard viewer for %s", gvr)
 		view = NewResource(v.kind, gvr, r)
 	}
-	if v.colorerFn != nil {
-		view.setColorerFn(v.colorerFn)
-	}
-	if v.enterFn != nil {
-		view.setEnterFn(v.enterFn)
-	}
-	if v.decorateFn != nil {
-		view.setDecorateFn(v.decorateFn)
+
+	switch o := view.(type) {
+	case TableViewer:
+		o.GetTable().SetColorerFn(v.colorerFn)
+		o.GetTable().SetEnterFn(v.enterFn)
+		o.GetTable().SetDecorateFn(v.decorateFn)
 	}
 
 	return view
@@ -155,6 +149,7 @@ func (c *command) exec(gvr string, comp model.Component) bool {
 	if err := c.app.Config.Save(); err != nil {
 		log.Error().Err(err).Msg("Config save failed!")
 	}
+	c.app.Content.Stack.ClearHistory()
 	c.app.inject(comp)
 
 	return true

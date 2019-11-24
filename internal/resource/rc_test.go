@@ -96,7 +96,8 @@ func k8sRC() *v1.ReplicationController {
 
 func newRC() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewReplicationController(mc).New(k8sRC())
+	c, _ := resource.NewReplicationController(mc).New(k8sRC())
+	return c
 }
 
 func rcYaml() string {

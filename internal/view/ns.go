@@ -20,26 +20,32 @@ var nsCleanser = regexp.MustCompile(`(\w+)[+|(*)|(𝜟)]*`)
 
 // Namespace represents a namespace viewer.
 type Namespace struct {
-	*Resource
+	ResourceViewer
 }
 
 // NewNamespace returns a new viewer
 func NewNamespace(title, gvr string, list resource.List) ResourceViewer {
 	return &Namespace{
-		Resource: NewResource(title, gvr, list),
+		ResourceViewer: NewResource(title, gvr, list),
 	}
 }
 
-func (n *Namespace) Init(ctx context.Context) {
-	n.extraActionsFn = n.extraActions
-	n.decorateFn = n.decorate
-	n.enterFn = n.switchNs
-	n.Resource.Init(ctx)
-	n.masterPage().SetSelectedFn(n.cleanser)
+func (n *Namespace) Init(ctx context.Context) error {
+	n.GetTable().SetDecorateFn(n.decorate)
+	n.GetTable().SetEnterFn(n.switchNs)
+	if err := n.ResourceViewer.Init(ctx); err != nil {
+		return err
+	}
+	n.GetTable().SetSelectedFn(n.cleanser)
+	n.bindKeys()
+
+	return nil
 }
 
-func (n *Namespace) extraActions(aa ui.KeyActions) {
-	aa[ui.KeyU] = ui.NewKeyAction("Use", n.useNsCmd, true)
+func (n *Namespace) bindKeys() {
+	n.Actions().Add(ui.KeyActions{
+		ui.KeyU: ui.NewKeyAction("Use", n.useNsCmd, true),
+	})
 }
 
 func (n *Namespace) switchNs(app *App, _, res, sel string) {
@@ -48,24 +54,25 @@ func (n *Namespace) switchNs(app *App, _, res, sel string) {
 }
 
 func (n *Namespace) useNsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !n.masterPage().RowSelected() {
+	ns := n.GetTable().GetSelectedItem()
+	if ns == "" {
 		return evt
 	}
-	n.useNamespace(n.masterPage().GetSelectedItem())
+	n.useNamespace(ns)
 
 	return nil
 }
 
 func (n *Namespace) useNamespace(ns string) {
-	if err := n.app.Config.SetActiveNamespace(ns); err != nil {
-		n.app.Flash().Err(err)
+	if err := n.App().Config.SetActiveNamespace(ns); err != nil {
+		n.App().Flash().Err(err)
 	} else {
-		n.app.Flash().Infof("Namespace %s is now active!", ns)
+		n.App().Flash().Infof("Namespace %s is now active!", ns)
 	}
-	if err := n.app.Config.Save(); err != nil {
+	if err := n.App().Config.Save(); err != nil {
 		log.Error().Err(err).Msg("Config file save failed!")
 	}
-	n.app.switchNS(ns)
+	n.App().switchNS(ns)
 }
 
 func (*Namespace) cleanser(s string) string {
@@ -73,12 +80,12 @@ func (*Namespace) cleanser(s string) string {
 }
 
 func (n *Namespace) decorate(data resource.TableData) resource.TableData {
-	if n.app.Conn() == nil {
+	if n.App().Conn() == nil {
 		return resource.TableData{}
 	}
 
 	if _, ok := data.Rows[resource.AllNamespaces]; !ok {
-		if err := n.app.Conn().CheckNSAccess(""); err == nil {
+		if err := n.App().Conn().CheckNSAccess(""); err == nil {
 			data.Rows[resource.AllNamespace] = &resource.RowEvent{
 				Action: resource.Unchanged,
 				Fields: resource.Row{resource.AllNamespace, "Active", "0"},
@@ -87,11 +94,11 @@ func (n *Namespace) decorate(data resource.TableData) resource.TableData {
 		}
 	}
 	for k, r := range data.Rows {
-		if config.InList(n.app.Config.FavNamespaces(), k) {
+		if config.InList(n.App().Config.FavNamespaces(), k) {
 			r.Fields[0] += favNSIndicator
 			r.Action = resource.Unchanged
 		}
-		if n.app.Config.ActiveNamespace() == k {
+		if n.App().Config.ActiveNamespace() == k {
 			r.Fields[0] += defaultNSIndicator
 			r.Action = resource.Unchanged
 		}

@@ -2,9 +2,9 @@ package resource
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/rbac/v1"
 )
 
@@ -33,7 +33,7 @@ func NewRoleBinding(c Connection) *RoleBinding {
 }
 
 // New builds a new RoleBinding instance from a k8s resource.
-func (r *RoleBinding) New(i interface{}) Columnar {
+func (r *RoleBinding) New(i interface{}) (Columnar, error) {
 	c := NewRoleBinding(r.Connection)
 	switch instance := i.(type) {
 	case *v1.RoleBinding:
@@ -41,11 +41,11 @@ func (r *RoleBinding) New(i interface{}) Columnar {
 	case v1.RoleBinding:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown RoleBinding type %#v", i)
+		return nil, fmt.Errorf("Expecting RoleBinding but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // Marshal resource to yaml.

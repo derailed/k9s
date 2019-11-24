@@ -13,7 +13,6 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -23,61 +22,35 @@ const (
 
 // Help presents a help viewer.
 type Help struct {
-	*ui.Table
-
-	app     *App
-	actions ui.KeyActions
+	*Table
 }
 
 // NewHelp returns a new help viewer.
 func NewHelp() *Help {
 	return &Help{
-		Table:   ui.NewTable(helpTitle),
-		actions: make(ui.KeyActions),
+		Table: NewTable(helpTitle),
 	}
 }
 
-func (v *Help) Init(ctx context.Context) {
-	v.app = mustExtractApp(ctx)
-
+// Init initializes the component.
+func (v *Help) Init(ctx context.Context) (err error) {
+	if err := v.Table.Init(ctx); err != nil {
+		return nil
+	}
 	v.resetTitle()
-
 	v.SetBorder(true)
 	v.SetBorderPadding(0, 0, 1, 1)
-	v.SetInputCapture(v.keyboard)
 	v.bindKeys()
 	v.build(v.app.Content.Previous().Hints())
-}
 
-func (v *Help) Name() string { return helpTitle }
-func (v *Help) Start()       {}
-func (v *Help) Stop()        {}
-func (v *Help) Hints() model.MenuHints {
-	log.Debug().Msgf("Help Hints %#v", v.actions.Hints())
-	return v.actions.Hints()
+	return nil
 }
 
 func (v *Help) bindKeys() {
-	v.RmActions(tcell.KeyCtrlSpace, ui.KeySpace)
-
-	v.actions = ui.KeyActions{
+	v.Actions().Set(ui.KeyActions{
 		tcell.KeyEsc:   ui.NewKeyAction("Back", v.backCmd, true),
 		tcell.KeyEnter: ui.NewKeyAction("Back", v.backCmd, false),
-	}
-}
-
-func (v *Help) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	key := evt.Key()
-	if key == tcell.KeyRune {
-		key = tcell.Key(evt.Rune())
-	}
-
-	if a, ok := v.actions[key]; ok {
-		log.Debug().Msgf(">> TableView handled %s", tcell.KeyNames[key])
-		return a.Action(evt)
-	}
-
-	return evt
+	})
 }
 
 func (v *Help) backCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -162,10 +135,6 @@ func (v *Help) showGeneral() model.MenuHints {
 		{
 			Mnemonic:    "h",
 			Description: "Toggle Header",
-		},
-		{
-			Mnemonic:    "Shift-i",
-			Description: "Invert Sort",
 		},
 		{
 			Mnemonic:    ":q",

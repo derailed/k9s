@@ -2,10 +2,10 @@ package resource
 
 import (
 	"errors"
+	"fmt"
 	"strconv"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	v1beta1 "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -36,7 +36,7 @@ func NewPDB(c Connection) *PodDisruptionBudget {
 }
 
 // New builds a new PDB instance from a k8s resource.
-func (r *PodDisruptionBudget) New(i interface{}) Columnar {
+func (r *PodDisruptionBudget) New(i interface{}) (Columnar, error) {
 	c := NewPDB(r.Connection)
 	switch instance := i.(type) {
 	case *v1beta1.PodDisruptionBudget:
@@ -47,15 +47,15 @@ func (r *PodDisruptionBudget) New(i interface{}) Columnar {
 		ptr := *i.(*interface{})
 		pdbi, ok := ptr.(v1beta1.PodDisruptionBudget)
 		if !ok {
-			log.Fatal().Msg("Expecting a pdb resource")
+			return nil, fmt.Errorf("Expecting PDB but got %T", ptr)
 		}
 		c.instance = &pdbi
 	default:
-		log.Fatal().Msgf("unknown PDB type %#v", i)
+		return nil, fmt.Errorf("Expecting PDB but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // Marshal resource to yaml.

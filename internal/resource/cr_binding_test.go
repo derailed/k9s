@@ -82,7 +82,8 @@ func k8sCRB() *rbacv1.ClusterRoleBinding {
 }
 
 func newCRB(c resource.Connection) resource.Columnar {
-	return resource.NewClusterRoleBinding(c).New(k8sCRB())
+	co, _ := resource.NewClusterRoleBinding(c).New(k8sCRB())
+	return co
 }
 
 func crbYaml() string {

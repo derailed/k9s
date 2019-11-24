@@ -115,7 +115,8 @@ func k8sSTS() *v1.StatefulSet {
 
 func newSts() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewStatefulSet(mc).New(k8sSTS())
+	c, _ := resource.NewStatefulSet(mc).New(k8sSTS())
+	return c
 }
 
 func stsHeader() resource.Row {

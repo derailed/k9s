@@ -13,32 +13,32 @@ const scaleDialogKey = "scale"
 
 // Deploy represents a deployment view.
 type Deploy struct {
-	*LogResource
-
-	scalableResource    *ScalableResource
-	restartableResource *RestartableResource
+	ResourceViewer
 }
 
 // NewDeploy returns a new deployment view.
 func NewDeploy(title, gvr string, list resource.List) ResourceViewer {
-	l := NewLogResource(title, gvr, list)
 	d := Deploy{
-		LogResource:         l,
-		scalableResource:    newScalableResourceForParent(l.Resource),
-		restartableResource: newRestartableResourceForParent(l.Resource),
+		ResourceViewer: NewRestartExtender(
+			NewScaleExtender(
+				NewLogsExtender(
+					NewResource(title, gvr, list),
+					func() string { return "" },
+				),
+			),
+		),
 	}
-	d.extraActionsFn = d.extraActions
-	d.enterFn = d.showPods
+	d.BindKeys()
+	d.GetTable().SetEnterFn(d.showPods)
 
 	return &d
 }
 
-func (d *Deploy) extraActions(aa ui.KeyActions) {
-	d.LogResource.extraActions(aa)
-	d.scalableResource.extraActions(aa)
-	d.restartableResource.extraActions(aa)
-	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", d.sortColCmd(1), false)
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", d.sortColCmd(2), false)
+func (d *Deploy) BindKeys() {
+	d.Actions().Add(ui.KeyActions{
+		ui.KeyShiftD: ui.NewKeyAction("Sort Desired", d.GetTable().SortColCmd(1, true), false),
+		ui.KeyShiftC: ui.NewKeyAction("Sort Current", d.GetTable().SortColCmd(2, true), false),
+	})
 }
 
 func (d *Deploy) showPods(app *App, _, res, sel string) {
@@ -53,7 +53,13 @@ func (d *Deploy) showPods(app *App, _, res, sel string) {
 	if !ok {
 		log.Fatal().Msg("Expecting valid deployment")
 	}
-	l, err := metav1.LabelSelectorAsSelector(dp.Spec.Selector)
+	showPodsFromSelector(app, ns, dp.Spec.Selector)
+}
+
+// Helpers...
+
+func showPodsFromSelector(app *App, ns string, sel *metav1.LabelSelector) {
+	l, err := metav1.LabelSelectorAsSelector(sel)
 	if err != nil {
 		app.Flash().Err(err)
 		return

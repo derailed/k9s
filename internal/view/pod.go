@@ -1,11 +1,8 @@
 package view
 
 import (
-	"context"
 	"errors"
-	"fmt"
 
-	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/watch"
@@ -16,67 +13,47 @@ import (
 )
 
 const (
-	containerFmt = "[fg:bg:b]%s([hilite:bg:b]%s[fg:bg:-])"
-	shellCheck   = "command -v bash >/dev/null && exec bash || exec sh"
+	podTitle   = "Pods"
+	shellCheck = "command -v bash >/dev/null && exec bash || exec sh"
 )
-
-type Loggable interface {
-	getSelection() string
-	getList() resource.List
-	Pop() (model.Component, bool)
-}
-
-var _ Loggable = &Pod{}
 
 // Pod represents a pod viewer.
 type Pod struct {
-	*Resource
-
-	logs   *Logs
-	picker *selectList
+	ResourceViewer
 }
 
 // NewPod returns a new viewer.
 func NewPod(title, gvr string, list resource.List) ResourceViewer {
-	return &Pod{
-		Resource: NewResource(title, gvr, list),
+	p := Pod{
+		ResourceViewer: NewLogsExtender(
+			NewResource(podTitle, gvr, list),
+			func() string { return "" },
+		),
 	}
+	p.BindKeys()
+	p.GetTable().SetEnterFn(p.showContainers)
+
+	return &p
 }
 
-// Init initializes the viewer.
-func (p *Pod) Init(ctx context.Context) {
-	p.extraActionsFn = p.extraActions
-	p.enterFn = p.listContainers
-	p.Resource.Init(ctx)
-
-	p.picker = newSelectList(p)
-	p.picker.setActions(ui.KeyActions{
-		tcell.KeyEscape: {Description: "Back", Action: p.backCmd, Visible: true},
+func (p *Pod) BindKeys() {
+	p.Actions().Add(ui.KeyActions{
+		tcell.KeyCtrlK: ui.NewKeyAction("Kill", p.killCmd, true),
+		ui.KeyS:        ui.NewKeyAction("Shell", p.shellCmd, true),
+		ui.KeyShiftR:   ui.NewKeyAction("Sort Ready", p.GetTable().SortColCmd(1, true), false),
+		ui.KeyShiftS:   ui.NewKeyAction("Sort Status", p.GetTable().SortColCmd(2, true), false),
+		ui.KeyShiftT:   ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd(3, false), false),
+		ui.KeyShiftC:   ui.NewKeyAction("Sort CPU", p.GetTable().SortColCmd(4, false), false),
+		ui.KeyShiftM:   ui.NewKeyAction("Sort MEM", p.GetTable().SortColCmd(5, false), false),
+		ui.KeyShiftX:   ui.NewKeyAction("Sort CPU%", p.GetTable().SortColCmd(6, false), false),
+		ui.KeyShiftZ:   ui.NewKeyAction("Sort MEM%", p.GetTable().SortColCmd(7, false), false),
+		ui.KeyShiftD:   ui.NewKeyAction("Sort IP", p.GetTable().SortColCmd(8, true), false),
+		ui.KeyShiftO:   ui.NewKeyAction("Sort Node", p.GetTable().SortColCmd(9, true), false),
 	})
-	p.logs = NewLogs(p.list.GetName(), p)
-	p.logs.Init(ctx)
 }
 
-func (p *Pod) extraActions(aa ui.KeyActions) {
-	aa[tcell.KeyCtrlK] = ui.NewKeyAction("Kill", p.killCmd, true)
-	aa[ui.KeyS] = ui.NewKeyAction("Shell", p.shellCmd, true)
-
-	aa[ui.KeyL] = ui.NewKeyAction("Logs", p.logsCmd, true)
-	aa[ui.KeyShiftL] = ui.NewKeyAction("Logs Previous", p.prevLogsCmd, true)
-
-	aa[ui.KeyShiftR] = ui.NewKeyAction("Sort Ready", p.sortColCmd(1, false), false)
-	aa[ui.KeyShiftS] = ui.NewKeyAction("Sort Status", p.sortColCmd(2, true), false)
-	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Restart", p.sortColCmd(3, false), false)
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", p.sortColCmd(4, false), false)
-	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", p.sortColCmd(5, false), false)
-	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", p.sortColCmd(6, false), false)
-	aa[ui.KeyShiftZ] = ui.NewKeyAction("Sort MEM%", p.sortColCmd(7, false), false)
-	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort IP", p.sortColCmd(8, true), false)
-	aa[ui.KeyShiftO] = ui.NewKeyAction("Sort Node", p.sortColCmd(9, true), false)
-}
-
-func (p *Pod) listContainers(app *App, _, res, sel string) {
-	po, err := p.app.informer.Get(watch.PodIndex, sel, metav1.GetOptions{})
+func (p *Pod) showContainers(app *App, _, res, sel string) {
+	po, err := p.App().informers.ActiveInformer().Get(watch.PodIndex, sel, metav1.GetOptions{})
 	if err != nil {
 		app.Flash().Errf("Unable to retrieve pods %s", err)
 		return
@@ -87,108 +64,61 @@ func (p *Pod) listContainers(app *App, _, res, sel string) {
 		log.Fatal().Msg("Expecting a valid pod")
 	}
 	list := resource.NewContainerList(app.Conn(), pod)
-	title := ui.SkinTitle(fmt.Sprintf(containerFmt, "Container", sel), app.Styles.Frame())
 
-	// Stop my updater
-	if p.cancelFn != nil {
-		p.cancelFn()
-	}
-
-	// Span child view
-	v := NewContainer(title, list, fqn(pod.Namespace, pod.Name))
-	p.app.inject(v)
+	// Spawn child view
+	p.App().inject(NewContainer(fqn(pod.Namespace, pod.Name), list))
 }
 
 // Protocol...
 
-func (p *Pod) getList() resource.List {
-	return p.list
-}
-
-func (p *Pod) getSelection() string {
-	return p.masterPage().GetSelectedItem()
-}
-
 func (p *Pod) killCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !p.masterPage().RowSelected() {
+	sels := p.GetTable().GetSelectedItems()
+	if len(sels) == 0 {
 		return evt
 	}
-	sel := p.masterPage().GetSelectedItems()
-	p.masterPage().ShowDeleted()
-	for _, res := range sel {
-		p.app.Flash().Infof("Delete resource %s %s", p.list.GetName(), res)
-		if err := p.list.Resource().Delete(res, true, false); err != nil {
-			p.app.Flash().Errf("Delete failed with %s", err)
+
+	p.GetTable().ShowDeleted()
+	for _, res := range sels {
+		p.App().Flash().Infof("Delete resource %s %s", p.List().GetName(), res)
+		if err := p.List().Resource().Delete(res, true, false); err != nil {
+			p.App().Flash().Errf("Delete failed with %s", err)
 		} else {
-			deletePortForward(p.app.forwarders, res)
+			p.App().forwarders.Kill(res)
 		}
 	}
-	p.refresh()
+	p.Refresh()
 
 	return nil
 }
 
-func (p *Pod) logsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if p.viewLogs(false) {
-		return nil
-	}
-
-	return evt
-}
-
-func (p *Pod) prevLogsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if p.viewLogs(true) {
-		return nil
-	}
-
-	return evt
-}
-
-func (p *Pod) viewLogs(prev bool) bool {
-	if !p.masterPage().RowSelected() {
-		return false
-	}
-	p.showLogs("", p, prev)
-
-	return true
-}
-
-func (p *Pod) showLogs(co string, parent Loggable, prev bool) {
-	p.logs.reload(co, parent, prev)
-	p.Push(p.logs)
-}
-
 func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !p.masterPage().RowSelected() {
+	sel := p.GetTable().GetSelectedItem()
+	if sel == "" {
 		return evt
 	}
 
-	sel := p.masterPage().GetSelectedItem()
-	cc, err := fetchContainers(p.list, sel, false)
+	cc, err := fetchContainers(p.List(), sel, false)
 	if err != nil {
-		p.app.Flash().Errf("Unable to retrieve containers %s", err)
+		p.App().Flash().Errf("Unable to retrieve containers %s", err)
 		return evt
 	}
 	if len(cc) == 1 {
 		p.shellIn(sel, "")
 		return nil
 	}
-	picker, ok := p.GetPrimitive("picker").(*selectList)
-	if !ok {
-		log.Fatal().Msg("Expecting a valid selectlist")
-	}
+	picker := NewPicker()
 	picker.populate(cc)
 	picker.SetSelectedFunc(func(i int, t, d string, r rune) {
 		p.shellIn(sel, t)
 	})
-	p.Push(p.picker)
+	p.App().inject(picker)
 
 	return evt
 }
 
 func (p *Pod) shellIn(path, co string) {
 	p.Stop()
-	shellIn(p.app, path, co)
+	shellIn(p.App(), path, co)
 	p.Start()
 }
 

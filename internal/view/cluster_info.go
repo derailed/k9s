@@ -126,12 +126,12 @@ func (v *clusterInfoView) refresh() {
 }
 
 func fetchResources(app *App) (k8s.Collection, k8s.Collection, error) {
-	nos, err := app.informer.List(watch.NodeIndex, "", metav1.ListOptions{})
+	nos, err := app.informers.ActiveInformer().List(watch.NodeIndex, "", metav1.ListOptions{})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	nmx, err := app.informer.List(watch.NodeMXIndex, "", metav1.ListOptions{})
+	nmx, err := app.informers.ActiveInformer().List(watch.NodeMXIndex, "", metav1.ListOptions{})
 	if err != nil {
 		return nil, nil, err
 	}

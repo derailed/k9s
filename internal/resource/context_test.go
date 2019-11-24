@@ -43,7 +43,9 @@ func TestCTXList(t *testing.T) {
 	cc, err := ctx.List("blee", metav1.ListOptions{})
 
 	assert.Nil(t, err)
-	assert.Equal(t, resource.Columnars{ctx.New(k8sNamedCTX())}, cc)
+	c, err := ctx.New(k8sNamedCTX())
+	assert.Nil(t, err)
+	assert.Equal(t, resource.Columnars{c}, cc)
 	mr.VerifyWasCalledOnce().List("blee", metav1.ListOptions{})
 }
 
@@ -104,7 +106,8 @@ func TestCTXFields(t *testing.T) {
 	m.When(mr.MustCurrentContextName()).ThenReturn("test")
 
 	ctx := NewContextWithArgs(mc, mr)
-	c := ctx.New(k8sNamedCTX())
+	c, err := ctx.New(k8sNamedCTX())
+	assert.Nil(t, err)
 
 	assert.Equal(t, 4, len(c.Fields("")))
 	assert.Equal(t, "test*", c.Fields("")[0])

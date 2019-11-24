@@ -2,6 +2,7 @@ package resource
 
 import (
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/derailed/k9s/internal/k8s"
@@ -38,7 +39,7 @@ func NewCustomResourceDefinition(c Connection) *CustomResourceDefinition {
 }
 
 // New builds a new CustomResourceDefinition instance from a k8s resource.
-func (r *CustomResourceDefinition) New(i interface{}) Columnar {
+func (r *CustomResourceDefinition) New(i interface{}) (Columnar, error) {
 	c := NewCustomResourceDefinition(r.Connection)
 	switch instance := i.(type) {
 	case *unstructured.Unstructured:
@@ -46,20 +47,18 @@ func (r *CustomResourceDefinition) New(i interface{}) Columnar {
 	case unstructured.Unstructured:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown CustomResourceDefinition type %#v", i)
+		return nil, fmt.Errorf("unknown CRD type %T", instance)
 	}
-	meta, ok := c.instance.Object["metadata"].(map[string]interface{})
-	if !ok {
-		log.Error().Err(errors.New("Expecting a map interface")).Msg("CRD New")
-		return nil
+	meta, err := extractMeta(c.instance.Object)
+	if err != nil {
+		return nil, err
 	}
-	c.path, ok = meta["name"].(string)
-	if !ok {
-		log.Error().Err(errors.New("Expecting a string name")).Msg("CRD New")
-		return nil
+	c.path, err = extractString(meta, "name")
+	if err != nil {
+		return nil, err
 	}
 
-	return c
+	return c, nil
 }
 
 // Marshal a resource.

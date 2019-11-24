@@ -102,7 +102,8 @@ func k8sDS() *appsv1.DaemonSet {
 
 func newDS() resource.Columnar {
 	mc := NewMockConnection()
-	return resource.NewDaemonSet(mc).New(k8sDS())
+	c, _ := resource.NewDaemonSet(mc).New(k8sDS())
+	return c
 }
 
 func dsYaml() string {

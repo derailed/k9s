@@ -2,10 +2,10 @@ package resource
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/rbac/v1"
 )
 
@@ -34,7 +34,7 @@ func NewRole(c Connection) *Role {
 }
 
 // New builds a new Role instance from a k8s resource.
-func (r *Role) New(i interface{}) Columnar {
+func (r *Role) New(i interface{}) (Columnar, error) {
 	c := NewRole(r.Connection)
 	switch instance := i.(type) {
 	case *v1.Role:
@@ -42,11 +42,11 @@ func (r *Role) New(i interface{}) Columnar {
 	case v1.Role:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown Role type %#v", i)
+		return nil, fmt.Errorf("Expecting Role but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // Marshal resource to yaml.

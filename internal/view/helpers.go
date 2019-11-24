@@ -1,15 +1,27 @@
 package view
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"path"
 	"strings"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
+
+func extractApp(ctx context.Context) (*App, error) {
+	app, ok := ctx.Value(ui.KeyApp).(*App)
+	if !ok {
+		return nil, errors.New("No application found in context")
+	}
+
+	return app, nil
+}
 
 // In check if a string belongs to a set.
 func in(ss []string, s string) bool {

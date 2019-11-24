@@ -42,7 +42,7 @@ func toHostDir(host string) string {
 func mustHomeDir() string {
 	usr, err := user.Current()
 	if err != nil {
-		panic(err)
+		log.Fatal().Err(err).Msg("Die getting user home directory")
 	}
 	return usr.HomeDir
 }

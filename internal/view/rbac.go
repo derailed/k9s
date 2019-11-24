@@ -61,35 +61,34 @@ type roleKind = int8
 type Rbac struct {
 	*Table
 
-	app      *App
-	cancelFn context.CancelFunc
 	roleType roleKind
 	roleName string
 	cache    resource.RowEvents
 }
 
 // NewRbac returns a new viewer.
-func NewRbac(app *App, ns, name string, kind roleKind) *Rbac {
-	r := Rbac{
-		app:      app,
+func NewRbac(name string, kind roleKind) *Rbac {
+	return &Rbac{
+		Table:    NewTable(rbacTitle),
 		roleName: name,
 		roleType: kind,
 	}
-	r.Table = NewTable(r.getTitle())
-
-	return &r
 }
 
 // Init initializes the view.
-func (r *Rbac) Init(ctx context.Context) {
+func (r *Rbac) Init(ctx context.Context) error {
+	if err := r.Table.Init(ctx); err != nil {
+		return err
+	}
 	r.ActiveNS = r.app.Config.ActiveNamespace()
 	r.SetColorerFn(rbacColorer)
-	r.Table.Init(ctx)
 	r.bindKeys()
 
 	r.Start()
 	r.SetSortCol(1, len(rbacHeader), true)
 	r.refresh()
+
+	return nil
 }
 
 // Start watches for viewer updates
@@ -117,29 +116,18 @@ func (r *Rbac) Start() {
 	}(ctx)
 }
 
-// Stop terminates the viewer updater.
-func (r *Rbac) Stop() {
-	if r.cancelFn != nil {
-		r.cancelFn()
-	}
-}
-
 // Name returns the component name.
 func (r *Rbac) Name() string {
 	return rbacTitle
 }
 
 func (r *Rbac) bindKeys() {
-	r.RmActions(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
-	r.AddActions(ui.KeyActions{
+	r.Actions().Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
+	r.Actions().Add(ui.KeyActions{
 		tcell.KeyEscape: ui.NewKeyAction("Reset", r.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", r.activateCmd, false),
-		ui.KeyShiftO:    ui.NewKeyAction("Sort APIGroup", r.SortColCmd(1), false),
+		ui.KeyShiftO:    ui.NewKeyAction("Sort APIGroup", r.SortColCmd(1, true), false),
 	})
-}
-
-func (r *Rbac) getTitle() string {
-	return ui.SkinTitle(fmt.Sprintf(rbacTitleFmt, rbacTitle, r.roleName), r.app.Styles.Frame())
 }
 
 func (r *Rbac) refresh() {

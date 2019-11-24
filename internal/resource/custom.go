@@ -48,22 +48,8 @@ func NewCustom(c k8s.Connection, gvr k8s.GVR) *Custom {
 	return cr
 }
 
-func mustExtractMeta(o map[string]interface{}) map[string]interface{} {
-	if m, ok := o["metadata"].(map[string]interface{}); ok {
-		return m
-	}
-	panic("unable to extract meta")
-}
-
-func mustExtractStr(o map[string]interface{}, k string) string {
-	if s, ok := o[k].(string); ok {
-		return s
-	}
-	panic("unable to extract string for key `" + k)
-}
-
 // New builds a new Custom instance from a k8s resource.
-func (r *Custom) New(i interface{}) Columnar {
+func (r *Custom) New(i interface{}) (Columnar, error) {
 	cr := NewCustom(r.Connection, "")
 	switch instance := i.(type) {
 	case *metav1beta1.TableRow:
@@ -71,19 +57,29 @@ func (r *Custom) New(i interface{}) Columnar {
 	case metav1beta1.TableRow:
 		cr.instance = &instance
 	default:
-		log.Fatal().Msgf("Unknown %#v", i)
+		return nil, fmt.Errorf("Expecting TableRow but got %T", instance)
 	}
 	var obj map[string]interface{}
 	err := json.Unmarshal(cr.instance.Object.Raw, &obj)
 	if err != nil {
-		log.Error().Err(err)
+		return nil, err
 	}
-	meta := mustExtractMeta(obj)
-	ns, n := mustExtractStr(meta, "namespace"), mustExtractStr(meta, "name")
+	meta, err := extractMeta(obj)
+	if err != nil {
+		return nil, err
+	}
+	ns, err := extractString(meta, "namespace")
+	if err != nil {
+		return nil, err
+	}
+	n, err := extractString(meta, "name")
+	if err != nil {
+		return nil, err
+	}
 	cr.path = path.Join(ns, n)
 	cr.gvr = k8s.NewGVR(obj["kind"].(string), obj["apiVersion"].(string), n)
 
-	return cr
+	return cr, nil
 }
 
 // Marshal resource to yaml.
@@ -128,7 +124,11 @@ func (r *Custom) List(ns string, opts v1.ListOptions) (Columnars, error) {
 	rows := table.Rows
 	cc := make(Columnars, 0, len(rows))
 	for i := 0; i < len(rows); i++ {
-		cc = append(cc, r.New(rows[i]))
+		res, err := r.New(rows[i])
+		if err != nil {
+			return nil, err
+		}
+		cc = append(cc, res)
 	}
 
 	return cc, nil

@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
@@ -56,7 +57,7 @@ func (v *Crumbs) refresh(crumbs []string) {
 		}
 		fmt.Fprintf(v, "[%s:%s:b] <%s> [-:%s:-] ",
 			v.styles.Frame().Crumb.FgColor,
-			bgColor, c,
+			bgColor, strings.Replace(strings.ToLower(c), " ", "", -1),
 			v.styles.Body().BgColor)
 	}
 }

@@ -7,7 +7,6 @@ import (
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 // Selectable represents a table with selections.
@@ -146,10 +145,11 @@ func (s *SelectTable) ToggleMark() {
 	if !s.marks[s.GetSelectedItem()] {
 		return
 	}
-	log.Debug().Msgf("YO!!!!")
+
+	cell := s.GetCell(s.GetSelectedRowIndex(), 0)
 	s.SetSelectedStyle(
 		tcell.ColorBlack,
-		tcell.ColorViolet,
+		cell.Color,
 		tcell.AttrBold,
 	)
 }

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
@@ -43,7 +42,7 @@ func NewJob(c Connection) *Job {
 }
 
 // New builds a new Job instance from a k8s resource.
-func (r *Job) New(i interface{}) Columnar {
+func (r *Job) New(i interface{}) (Columnar, error) {
 	c := NewJob(r.Connection)
 	switch instance := i.(type) {
 	case *batchv1.Job:
@@ -51,11 +50,11 @@ func (r *Job) New(i interface{}) Columnar {
 	case batchv1.Job:
 		c.instance = &instance
 	default:
-		log.Fatal().Msgf("unknown Job type %#v", i)
+		return nil, fmt.Errorf("Expecting Job but got %T", instance)
 	}
 	c.path = c.namespacedName(c.instance.ObjectMeta)
 
-	return c
+	return c, nil
 }
 
 // Marshal resource to yaml.

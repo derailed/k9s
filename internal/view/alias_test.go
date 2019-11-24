@@ -19,7 +19,7 @@ func TestAliasNew(t *testing.T) {
 	assert.Equal(t, 3, v.GetColumnCount())
 	assert.Equal(t, 15, v.GetRowCount())
 	assert.Equal(t, "Aliases", v.Name())
-	assert.Equal(t, 10, len(v.Hints()))
+	assert.Equal(t, 9, len(v.Hints()))
 }
 
 func TestAliasSearch(t *testing.T) {
