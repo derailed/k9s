@@ -61,7 +61,7 @@ func TestClusterMetrics(t *testing.T) {
 	mxx := clusterMetric()
 
 	c := resource.NewClusterWithArgs(mm, mx)
-	c.Metrics(k8s.Collection{}, k8s.Collection{}, &mxx)
+	c.Metrics(nil, nil, &mxx)
 	assert.Equal(t, clusterMetric(), mxx)
 }
 

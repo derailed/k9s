@@ -51,12 +51,12 @@ func (mock *MockConnection) CachedDiscovery() (*disk.CachedDiscoveryClient, erro
 	return ret0, ret1
 }
 
-func (mock *MockConnection) CanIAccess(_param0 string, _param1 string, _param2 []string) (bool, error) {
+func (mock *MockConnection) CanI(_param0 string, _param1 string, _param2 []string) (bool, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")
 	}
 	params := []pegomock.Param{_param0, _param1, _param2}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CanIAccess", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CanI", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 bool
 	var ret1 error
 	if len(result) != 0 {
@@ -419,23 +419,23 @@ func (c *MockConnection_CachedDiscovery_OngoingVerification) GetCapturedArgument
 func (c *MockConnection_CachedDiscovery_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierMockConnection) CanIAccess(_param0 string, _param1 string, _param2 []string) *MockConnection_CanIAccess_OngoingVerification {
+func (verifier *VerifierMockConnection) CanI(_param0 string, _param1 string, _param2 []string) *MockConnection_CanI_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CanIAccess", params, verifier.timeout)
-	return &MockConnection_CanIAccess_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CanI", params, verifier.timeout)
+	return &MockConnection_CanI_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type MockConnection_CanIAccess_OngoingVerification struct {
+type MockConnection_CanI_OngoingVerification struct {
 	mock              *MockConnection
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockConnection_CanIAccess_OngoingVerification) GetCapturedArguments() (string, string, []string) {
+func (c *MockConnection_CanI_OngoingVerification) GetCapturedArguments() (string, string, []string) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *MockConnection_CanIAccess_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 [][]string) {
+func (c *MockConnection_CanI_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 [][]string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
 		_param0 = make([]string, len(params[0]))

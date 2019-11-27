@@ -12,11 +12,9 @@ import (
 
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -109,42 +107,43 @@ func (r *Pod) Containers(path string, includeInit bool) ([]string, error) {
 
 // PodLogs tail logs for all containers in a running Pod.
 func (r *Pod) PodLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
-	inf, ok := ctx.Value(IKey("informer")).(*watch.Informer)
-	if !ok {
-		return errors.New("Expecting an informer")
-	}
-	p, err := inf.Get(watch.PodIndex, opts.FQN(), metav1.GetOptions{})
-	if err != nil {
-		return err
-	}
-
-	po, ok := p.(*v1.Pod)
-	if !ok {
-		return errors.New("Expecting a pod resource")
-	}
-	opts.Color = asColor(po.Name)
-	if len(po.Spec.InitContainers)+len(po.Spec.Containers) == 1 {
-		opts.SingleContainer = true
-	}
-
-	for _, co := range po.Spec.InitContainers {
-		opts.Container = co.Name
-		if err := r.Logs(ctx, c, opts); err != nil {
-			return err
-		}
-	}
-	rcos := r.loggableContainers(po.Status)
-	for _, co := range po.Spec.Containers {
-		if in(rcos, co.Name) {
-			opts.Container = co.Name
-			if err := r.Logs(ctx, c, opts); err != nil {
-				log.Error().Err(err).Msgf("Getting logs for %s failed", co.Name)
-				return err
-			}
-		}
-	}
-
 	return nil
+	// inf, ok := ctx.Value(IKey("informer")).(*watch.Informer)
+	// if !ok {
+	// 	return errors.New("Expecting an informer")
+	// }
+	// p, err := inf.Get(watch.PodIndex, opts.FQN(), metav1.GetOptions{})
+	// if err != nil {
+	// 	return err
+	// }
+
+	// po, ok := p.(*v1.Pod)
+	// if !ok {
+	// 	return errors.New("Expecting a pod resource")
+	// }
+	// opts.Color = asColor(po.Name)
+	// if len(po.Spec.InitContainers)+len(po.Spec.Containers) == 1 {
+	// 	opts.SingleContainer = true
+	// }
+
+	// for _, co := range po.Spec.InitContainers {
+	// 	opts.Container = co.Name
+	// 	if err := r.Logs(ctx, c, opts); err != nil {
+	// 		return err
+	// 	}
+	// }
+	// rcos := r.loggableContainers(po.Status)
+	// for _, co := range po.Spec.Containers {
+	// 	if in(rcos, co.Name) {
+	// 		opts.Container = co.Name
+	// 		if err := r.Logs(ctx, c, opts); err != nil {
+	// 			log.Error().Err(err).Msgf("Getting logs for %s failed", co.Name)
+	// 			return err
+	// 		}
+	// 	}
+	// }
+
+	// return nil
 }
 
 // Logs tails a given container logs
@@ -214,24 +213,25 @@ func readLogs(ctx context.Context, stream io.ReadCloser, c chan<- string, opts L
 	}
 }
 
-// List resources for a given namespace.
-func (r *Pod) List(ns string, opts metav1.ListOptions) (Columnars, error) {
-	pods, err := r.Resource.List(ns, opts)
-	if err != nil {
-		return nil, err
-	}
+// BOZO!!
+// // List resources for a given namespace.
+// func (r *Pod) List(ns string, opts metav1.ListOptions) (Columnars, error) {
+// 	pods, err := r.Resource.List(ns, opts)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	cc := make(Columnars, 0, len(pods))
-	for i := range pods {
-		po, err := r.New(&pods[i])
-		if err != nil {
-			return nil, errors.New("Expecting a pod resource")
-		}
-		cc = append(cc, po)
-	}
+// 	cc := make(Columnars, 0, len(pods))
+// 	for i := range pods {
+// 		po, err := r.New(&pods[i])
+// 		if err != nil {
+// 			return nil, errors.New("Expecting a pod resource")
+// 		}
+// 		cc = append(cc, po)
+// 	}
 
-	return cc, nil
-}
+// 	return cc, nil
+// }
 
 // Header return resource header.
 func (*Pod) Header(ns string) Row {

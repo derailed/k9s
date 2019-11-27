@@ -2,12 +2,9 @@ package resource
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"path"
 	"strings"
-
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 
@@ -102,37 +99,38 @@ func (r *Custom) Marshal(path string) (string, error) {
 	return string(raw), nil
 }
 
+// BOZO!!
 // List all resources
-func (r *Custom) List(ns string, opts v1.ListOptions) (Columnars, error) {
-	ii, err := r.Resource.List(ns, opts)
-	if err != nil {
-		return nil, err
-	}
+// func (r *Custom) List(ns string, opts v1.ListOptions) (Columnars, error) {
+// 	ii, err := r.Resource.List(ns, opts)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	if len(ii) == 0 {
-		return Columnars{}, errors.New("no resources found")
-	}
+// 	if len(ii) == 0 {
+// 		return Columnars{}, errors.New("no resources found")
+// 	}
 
-	table, ok := ii[0].(*metav1beta1.Table)
-	if !ok {
-		return nil, errors.New("expecting a table resource")
-	}
-	r.headers = make(Row, len(table.ColumnDefinitions))
-	for i, h := range table.ColumnDefinitions {
-		r.headers[i] = h.Name
-	}
-	rows := table.Rows
-	cc := make(Columnars, 0, len(rows))
-	for i := 0; i < len(rows); i++ {
-		res, err := r.New(rows[i])
-		if err != nil {
-			return nil, err
-		}
-		cc = append(cc, res)
-	}
+// 	table, ok := ii[0].(*metav1beta1.Table)
+// 	if !ok {
+// 		return nil, errors.New("expecting a table resource")
+// 	}
+// 	r.headers = make(Row, len(table.ColumnDefinitions))
+// 	for i, h := range table.ColumnDefinitions {
+// 		r.headers[i] = h.Name
+// 	}
+// 	rows := table.Rows
+// 	cc := make(Columnars, 0, len(rows))
+// 	for i := 0; i < len(rows); i++ {
+// 		res, err := r.New(rows[i])
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		cc = append(cc, res)
+// 	}
 
-	return cc, nil
-}
+// 	return cc, nil
+// }
 
 // Header return resource header.
 func (r *Custom) Header(ns string) Row {

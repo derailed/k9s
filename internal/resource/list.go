@@ -1,24 +1,26 @@
 package resource
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"reflect"
 
-	wa "github.com/derailed/k9s/internal/watch"
+	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/render"
+	w "github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
-	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 type list struct {
 	namespace, name string
 	verbs           int
 	resource        Resource
-	cache           RowEvents
+	cache           render.RowEvents
 	fieldSelector   string
 	labelSelector   string
+	header          render.HeaderRow
 }
 
 // NewList returns a new resource list.
@@ -28,7 +30,6 @@ func NewList(ns, name string, res Resource, verbs int) *list {
 		name:      name,
 		verbs:     verbs,
 		resource:  res,
-		cache:     RowEvents{},
 	}
 }
 
@@ -93,7 +94,7 @@ func (l *list) SetNamespace(n string) {
 	if l.namespace == n {
 		return
 	}
-	l.cache = RowEvents{}
+	l.cache = nil
 	if l.Access(NamespaceAccess) {
 		l.namespace = n
 		if n == AllNamespace {
@@ -115,130 +116,193 @@ func (l *list) Resource() Resource {
 // Cache tracks previous resource state.
 func (l *list) Data() TableData {
 	return TableData{
-		Header:    l.resource.Header(l.namespace),
-		Rows:      l.cache,
-		NumCols:   l.resource.NumCols(l.namespace),
+		Header:    l.header,
+		RowEvents: l.cache,
 		Namespace: l.namespace,
 	}
 }
 
-func (l *list) load(informer *wa.Informer, ns string) (Columnars, error) {
-	rr, err := informer.List(l.name, ns, metav1.ListOptions{
-		FieldSelector: l.fieldSelector,
-		LabelSelector: l.labelSelector,
-	})
-	if err != nil {
-		return nil, err
-	}
+// func (l *list) load(informer *wa.Informer, ns string) (Columnars, error) {
+// 	rr, err := informer.List(l.name, ns, metav1.ListOptions{
+// 		FieldSelector: l.fieldSelector,
+// 		LabelSelector: l.labelSelector,
+// 	})
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	items := make(Columnars, 0, len(rr))
-	for _, r := range rr {
-		res, err := l.fetchResource(informer, r, ns)
-		if err != nil {
-			return nil, err
-		}
-		items = append(items, res)
-	}
+// 	items := make(Columnars, 0, len(rr))
+// 	for _, r := range rr {
+// 		res, err := l.fetchResource(informer, r, ns)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		items = append(items, res)
+// 	}
 
-	return items, nil
-}
+// 	return items, nil
+// }
 
-func (l *list) fetchResource(informer *wa.Informer, r interface{}, ns string) (Columnar, error) {
-	res, err := l.resource.New(r)
-	if err != nil {
-		return nil, err
-	}
+// BOZO!!
+// func (l *list) fetchResource(informer *wa.Informer, r interface{}, ns string) (Columnar, error) {
+// 	res, err := l.resource.New(r)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	switch o := r.(type) {
-	case *v1.Node:
-		fqn := MetaFQN(o.ObjectMeta)
-		nmx, err := informer.Get(wa.NodeMXIndex, fqn, metav1.GetOptions{})
-		if err != nil {
-			return res, err
-		}
-		res.SetNodeMetrics(nmx.(*mv1beta1.NodeMetrics))
-	case *v1.Pod:
-		fqn := MetaFQN(o.ObjectMeta)
-		pmx, err := informer.Get(wa.PodMXIndex, fqn, metav1.GetOptions{})
-		if err != nil {
-			return res, err
-		}
-		res.SetPodMetrics(pmx.(*mv1beta1.PodMetrics))
-	case v1.Container:
-		pmx, err := informer.Get(wa.PodMXIndex, ns, metav1.GetOptions{})
-		if err != nil {
-			return res, err
-		}
-		res.SetPodMetrics(pmx.(*mv1beta1.PodMetrics))
-	default:
-		return res, fmt.Errorf("No informer matched %s:%s", l.name, ns)
-	}
+// 	switch o := r.(type) {
+// 	case *v1.Node:
+// 		fqn := MetaFQN(o.ObjectMeta)
+// 		nmx, err := informer.Get(wa.NodeMXIndex, fqn, metav1.GetOptions{})
+// 		if err != nil {
+// 			return res, err
+// 		}
+// 		res.SetNodeMetrics(nmx.(*mv1beta1.NodeMetrics))
+// 	case *v1.Pod:
+// 		fqn := MetaFQN(o.ObjectMeta)
+// 		pmx, err := informer.Get(wa.PodMXIndex, fqn, metav1.GetOptions{})
+// 		if err != nil {
+// 			return res, err
+// 		}
+// 		res.SetPodMetrics(pmx.(*mv1beta1.PodMetrics))
+// 	case v1.Container:
+// 		pmx, err := informer.Get(wa.PodMXIndex, ns, metav1.GetOptions{})
+// 		if err != nil {
+// 			return res, err
+// 		}
+// 		res.SetPodMetrics(pmx.(*mv1beta1.PodMetrics))
+// 	default:
+// 		return res, fmt.Errorf("No informer matched %s:%s", l.name, ns)
+// 	}
 
-	return res, nil
-}
+// 	return res, nil
+// }
+
+type ContextKey string
+
+const KeyFactory ContextKey = "factory"
 
 // Reconcile previous vs current state and emits delta events.
-func (l *list) Reconcile(informer *wa.Informer, path *string) error {
+func (l *list) Reconcile(ctx context.Context, gvr, path string) error {
+	log.Debug().Msgf("Reconcile %q in path %q", gvr, path)
 	ns := l.namespace
-	if path != nil {
-		ns = *path
-	}
-	log.Debug().Msgf("Reconcile in NS %q -- %#v", ns, path)
-	if items, err := l.load(informer, ns); err == nil {
-		l.update(items)
-		return nil
+	if path != "" {
+		ns = path
 	}
 
-	opts := metav1.ListOptions{
-		LabelSelector: l.labelSelector,
-		FieldSelector: l.fieldSelector,
+	factory, ok := ctx.Value(KeyFactory).(*w.Factory)
+	if !ok {
+		return errors.New("no factory found in context")
 	}
-	items, err := l.resource.List(l.namespace, opts)
+	m, ok := model.Registry[gvr]
+	if !ok {
+		panic(fmt.Errorf("no model registered for %q", gvr))
+	}
+	m.Model.Init(ns, gvr, factory)
+	oo, err := m.Model.List(path)
 	if err != nil {
-		return err
+		panic(err)
 	}
-	l.update(items)
+	items := make(render.Rows, cap(oo))
+	if err := m.Model.Hydrate(oo, items, m.Renderer); err != nil {
+		panic(err)
+	}
+	l.update(ns, items)
+	l.header = m.Renderer.Header(ns)
 
 	return nil
 }
 
-func (l *list) update(items Columnars) {
-	first := len(l.cache) == 0
-	kk := make([]string, 0, len(items))
-	for _, i := range items {
-		kk = append(kk, i.Name())
-		ff := i.Fields(l.namespace)
-		if first {
-			l.cache[i.Name()] = newRowEvent(New, ff, make(Row, len(ff)))
+func (l *list) update(ns string, rows render.Rows) {
+	cacheEmpty := len(l.cache) == 0
+	kk := make([]string, 0, len(rows))
+	for _, row := range rows {
+		kk = append(kk, row.ID)
+		if cacheEmpty {
+			l.cache = append(l.cache, render.NewRowEvent(render.EventAdd, row))
 			continue
 		}
-		dd := make(Row, len(ff))
-		a := watch.Added
-		if evt, ok := l.cache[i.Name()]; ok {
-			a = computeDeltas(evt, ff[:len(ff)-1], dd)
+		if index, ok := l.cache.FindIndex(row.ID); ok {
+			delta := render.NewDeltaRow(l.cache[index].Row, row)
+			if delta.IsBlank() {
+				l.cache[index].Kind, l.cache[index].Deltas = render.EventUnchanged, delta
+			} else {
+				l.cache[index] = render.NewDeltaRowEvent(row, delta)
+			}
+			continue
 		}
-		l.cache[i.Name()] = newRowEvent(a, ff, dd)
+		l.cache = append(l.cache, render.NewRowEvent(render.EventAdd, row))
 	}
 
-	if first {
+	if cacheEmpty {
 		return
 	}
 	l.ensureDeletes(kk)
 }
 
+// BOZO!!
+// // Reconcile previous vs current state and emits delta events.
+// func (l *list) Reconcile(informer *wa.Informer, path *string) error {
+// 	ns := l.namespace
+// 	if path != nil {
+// 		ns = *path
+// 	}
+// 	log.Debug().Msgf("Reconcile in NS %q -- %#v", ns, path)
+// 	if items, err := l.load(informer, ns); err == nil {
+// 		l.update(items)
+// 		return nil
+// 	}
+
+// 	opts := metav1.ListOptions{
+// 		LabelSelector: l.labelSelector,
+// 		FieldSelector: l.fieldSelector,
+// 	}
+// 	items, err := l.resource.List(l.namespace, opts)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	l.update(items)
+
+// 	return nil
+// }
+
+// func (l *list) update(items Columnars) {
+// 	first := len(l.cache) == 0
+// 	kk := make([]string, 0, len(items))
+// 	for _, i := range items {
+// 		kk = append(kk, i.Name())
+// 		ff := i.Fields(l.namespace)
+// 		if first {
+// 			l.cache[i.Name()] = newRowEvent(New, ff, make(Row, len(ff)))
+// 			continue
+// 		}
+// 		dd := make(Row, len(ff))
+// 		a := watch.Added
+// 		if evt, ok := l.cache[i.Name()]; ok {
+// 			a = computeDeltas(evt, ff[:len(ff)-1], dd)
+// 		}
+// 		l.cache[i.Name()] = newRowEvent(a, ff, dd)
+// 	}
+
+// 	if first {
+// 		return
+// 	}
+// 	l.ensureDeletes(kk)
+// }
+
 // EnsureDeletes delete items in cache that are no longer valid.
-func (l *list) ensureDeletes(kk []string) {
-	for k := range l.cache {
+func (l *list) ensureDeletes(newKeys []string) {
+	for _, re := range l.cache {
 		var found bool
-		for i, key := range kk {
-			if k == key {
+		for i, key := range newKeys {
+			if key == re.Row.ID {
 				found = true
-				kk = append(kk[:i], kk[i+1:]...)
+				newKeys = append(newKeys[:i], newKeys[i+1:]...)
 				break
 			}
 		}
 		if !found {
-			delete(l.cache, k)
+			l.cache = l.cache.Delete(re.Row.ID)
 		}
 	}
 }

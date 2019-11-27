@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -97,8 +98,12 @@ func (a *Alias) backCmd(_ *tcell.EventKey) *tcell.EventKey {
 
 func (a *Alias) hydrate() resource.TableData {
 	data := resource.TableData{
-		Header:    resource.Row{"RESOURCE", "COMMAND", "APIGROUP"},
-		Rows:      make(resource.RowEvents, len(aliases.Alias)),
+		Header: render.HeaderRow{
+			render.Header{Name: "RESOURCE"},
+			render.Header{Name: "COMMAND"},
+			render.Header{Name: "APIGROUP"},
+		},
+		RowEvents: make(render.RowEvents, len(aliases.Alias)),
 		Namespace: resource.NotNamespaced,
 	}
 
@@ -113,16 +118,15 @@ func (a *Alias) hydrate() resource.TableData {
 
 	for gvr, aliases := range aa {
 		g := k8s.GVR(gvr)
-		fields := resource.Row{
-			ui.Pad(g.ToR(), 30),
-			ui.Pad(strings.Join(aliases, ","), 70),
-			ui.Pad(g.ToG(), 30),
+		row := render.Row{
+			ID: string(gvr),
+			Fields: render.Fields{
+				ui.Pad(g.ToR(), 30),
+				ui.Pad(strings.Join(aliases, ","), 70),
+				ui.Pad(g.ToG(), 30),
+			},
 		}
-		data.Rows[string(gvr)] = &resource.RowEvent{
-			Action: resource.New,
-			Fields: fields,
-			Deltas: fields,
-		}
+		data.RowEvents = append(data.RowEvents, render.RowEvent{Kind: render.EventAdd, Row: row})
 	}
 
 	return data

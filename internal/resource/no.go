@@ -10,7 +10,6 @@ import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -70,28 +69,29 @@ func (r *Node) SetNodeMetrics(m *mv1beta1.NodeMetrics) {
 	r.metrics = m
 }
 
-// List all resources for a given namespace.
-func (r *Node) List(ns string, opts metav1.ListOptions) (Columnars, error) {
-	nn, err := r.Resource.List(ns, opts)
-	if err != nil {
-		return nil, err
-	}
+// BOZO!!
+// // List all resources for a given namespace.
+// func (r *Node) List(ns string, opts metav1.ListOptions) (Columnars, error) {
+// 	nn, err := r.Resource.List(ns, opts)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	cc := make(Columnars, 0, len(nn))
-	for i := range nn {
-		node, ok := nn[i].(v1.Node)
-		if !ok {
-			return nil, errors.New("Expecting a node resource")
-		}
-		no, err := r.New(&node)
-		if err != nil {
-			return nil, err
-		}
-		cc = append(cc, no)
-	}
+// 	cc := make(Columnars, 0, len(nn))
+// 	for i := range nn {
+// 		node, ok := nn[i].(v1.Node)
+// 		if !ok {
+// 			return nil, errors.New("Expecting a node resource")
+// 		}
+// 		no, err := r.New(&node)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		cc = append(cc, no)
+// 	}
 
-	return cc, nil
-}
+// 	return cc, nil
+// }
 
 // Marshal a resource to yaml.
 func (r *Node) Marshal(path string) (string, error) {

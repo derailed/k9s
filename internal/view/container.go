@@ -27,7 +27,7 @@ type Container struct {
 // New Container returns a new container view.
 func NewContainer(path string, list resource.List) ResourceViewer {
 	return &Container{
-		ResourceViewer: NewResource(containerTitle, "", list),
+		ResourceViewer: NewResource(containerTitle, "containers", list),
 		podPath:        path,
 	}
 }
@@ -35,6 +35,7 @@ func NewContainer(path string, list resource.List) ResourceViewer {
 // Init initializes the viewer.
 func (c *Container) Init(ctx context.Context) error {
 	c.ResourceViewer = NewLogsExtender(c.ResourceViewer, c.selectedContainer)
+	c.ResourceViewer.SetPath(c.podPath)
 	c.GetTable().Path = c.podPath
 	if err := c.ResourceViewer.Init(ctx); err != nil {
 		return err

@@ -1,0 +1,80 @@
+{
+  "apiVersion": "extensions/v1beta1",
+  "kind": "NetworkPolicy",
+  "metadata": {
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"networking.k8s.io/v1\",\"kind\":\"NetworkPolicy\",\"metadata\":{\"annotations\":{},\"name\":\"fred\",\"namespace\":\"default\"},\"spec\":{\"egress\":[{\"ports\":[{\"port\":5978,\"protocol\":\"TCP\"}],\"to\":[{\"ipBlock\":{\"cidr\":\"10.0.0.0/24\"}}]}],\"ingress\":[{\"from\":[{\"ipBlock\":{\"cidr\":\"172.17.0.0/16\",\"except\":[\"172.17.1.0/24\",\"172.17.3.0/24\",\"172.17.4.0/24\"]}},{\"namespaceSelector\":{\"matchLabels\":{\"app\":\"blee\"}}},{\"podSelector\":{\"matchLabels\":{\"app\":\"fred\"}}}],\"ports\":[{\"port\":6379,\"protocol\":\"TCP\"}]}],\"podSelector\":{\"matchLabels\":{\"app\":\"nginx\"}},\"policyTypes\":[\"Ingress\",\"Egress\"]}}\n"
+    },
+    "creationTimestamp": "2019-08-27T19:07:20Z",
+    "generation": 2,
+    "name": "fred",
+    "namespace": "default",
+    "resourceVersion": "48999995",
+    "selfLink": "/apis/extensions/v1beta1/namespaces/default/networkpolicies/fred",
+    "uid": "e4aada4d-c8fd-11e9-990f-42010a800218"
+  },
+  "spec": {
+    "egress": [
+      {
+        "ports": [
+          {
+            "port": 5978,
+            "protocol": "TCP"
+          }
+        ],
+        "to": [
+          {
+            "ipBlock": {
+              "cidr": "10.0.0.0/24"
+            }
+          }
+        ]
+      }
+    ],
+    "ingress": [
+      {
+        "from": [
+          {
+            "ipBlock": {
+              "cidr": "172.17.0.0/16",
+              "except": [
+                "172.17.1.0/24",
+                "172.17.3.0/24",
+                "172.17.4.0/24"
+              ]
+            }
+          },
+          {
+            "namespaceSelector": {
+              "matchLabels": {
+                "app": "blee"
+              }
+            }
+          },
+          {
+            "podSelector": {
+              "matchLabels": {
+                "app": "fred"
+              }
+            }
+          }
+        ],
+        "ports": [
+          {
+            "port": 6379,
+            "protocol": "TCP"
+          }
+        ]
+      }
+    ],
+    "podSelector": {
+      "matchLabels": {
+        "app": "nginx"
+      }
+    },
+    "policyTypes": [
+      "Ingress",
+      "Egress"
+    ]
+  }
+}

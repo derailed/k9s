@@ -4,8 +4,7 @@ import (
 	"context"
 
 	"github.com/derailed/k9s/internal/k8s"
-	wa "github.com/derailed/k9s/internal/watch"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/derailed/k9s/internal/render"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -60,9 +59,8 @@ type TypeMeta struct {
 
 // TableData tracks a K8s resource for tabular display.
 type TableData struct {
-	Header    Row
-	Rows      RowEvents
-	NumCols   map[string]bool
+	Header    render.HeaderRow
+	RowEvents render.RowEvents
 	Namespace string
 }
 
@@ -74,7 +72,7 @@ type List interface {
 	AllNamespaces() bool
 	GetNamespace() string
 	SetNamespace(string)
-	Reconcile(informer *wa.Informer, path *string) error
+	Reconcile(ctx context.Context, gvr, path string) error
 	GetName() string
 	Access(flag int) bool
 	GetAccess() int
@@ -107,7 +105,8 @@ type Rows []Row
 type Resource interface {
 	New(interface{}) (Columnar, error)
 	Get(path string) (Columnar, error)
-	List(ns string, opts metav1.ListOptions) (Columnars, error)
+	// BOZO!!
+	// List(ctx context.Context, ns string) (Columnars, error)
 	Delete(path string, cascade, force bool) error
 	Describe(gvr, pa string) (string, error)
 	Marshal(pa string) (string, error)
@@ -120,8 +119,9 @@ type Cruder interface {
 	// Get retrieves a resource instance.
 	Get(ns string, name string) (interface{}, error)
 
+	// BOZO!!
 	// List retrieves a resource collection.
-	List(ns string, opts metav1.ListOptions) (k8s.Collection, error)
+	// List(ctx context.Context, ns string) (k8s.Collection, error)
 
 	// Delete remove a resource.
 	Delete(ns string, name string, cascade, force bool) error

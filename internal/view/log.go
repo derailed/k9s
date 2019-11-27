@@ -146,27 +146,28 @@ func (l *Log) bindKeys() {
 }
 
 func (l *Log) doLoad() error {
-	l.logs.Clear()
-	l.setTitle(l.path, l.container)
+	// BOZO!!
+	// l.logs.Clear()
+	// l.setTitle(l.path, l.container)
 
-	var ctx context.Context
-	ctx = context.WithValue(context.Background(), resource.IKey("informer"), l.app.informers.ActiveInformer())
-	ctx, l.cancelFn = context.WithCancel(ctx)
+	// var ctx context.Context
+	// ctx = context.WithValue(context.Background(), resource.IKey("informer"), l.app.informers.ActiveInformer())
+	// ctx, l.cancelFn = context.WithCancel(ctx)
 
-	c := make(chan string, 10)
-	go l.updateLogs(ctx, c, logBuffSize)
+	// c := make(chan string, 10)
+	// go l.updateLogs(ctx, c, logBuffSize)
 
-	res, ok := l.list.Resource().(resource.Tailable)
-	if !ok {
-		close(c)
-		return fmt.Errorf("Resource %T is not tailable", l.list.Resource())
-	}
+	// res, ok := l.list.Resource().(resource.Tailable)
+	// if !ok {
+	// 	close(c)
+	// 	return fmt.Errorf("Resource %T is not tailable", l.list.Resource())
+	// }
 
-	if err := res.Logs(ctx, c, l.logOpts(l.path, l.container, l.previous)); err != nil {
-		l.cancelFn()
-		close(c)
-		return err
-	}
+	// if err := res.Logs(ctx, c, l.logOpts(l.path, l.container, l.previous)); err != nil {
+	// 	l.cancelFn()
+	// 	close(c)
+	// 	return err
+	// }
 
 	return nil
 }

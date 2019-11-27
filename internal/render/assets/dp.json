@@ -1,0 +1,123 @@
+{
+  "apiVersion": "extensions/v1beta1",
+  "kind": "Deployment",
+  "metadata": {
+    "annotations": {
+      "deployment.kubernetes.io/revision": "1",
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1beta1\",\"kind\":\"Deployment\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"icx-db\"},\"name\":\"icx-db\",\"namespace\":\"icx\"},\"spec\":{\"replicas\":1,\"selector\":{\"matchLabels\":{\"app\":\"icx-db\"}},\"template\":{\"metadata\":{\"labels\":{\"app\":\"icx-db\"}},\"spec\":{\"containers\":[{\"env\":[{\"name\":\"POSTGRES_USER\",\"valueFrom\":{\"secretKeyRef\":{\"key\":\"pg_user\",\"name\":\"icx-creds\"}}},{\"name\":\"POSTGRES_PASSWORD\",\"valueFrom\":{\"secretKeyRef\":{\"key\":\"pg_pwd\",\"name\":\"icx-creds\"}}}],\"image\":\"postgres:9.2-alpine\",\"imagePullPolicy\":\"IfNotPresent\",\"name\":\"icx-db\",\"ports\":[{\"containerPort\":5432,\"name\":\"client\"}],\"resources\":{\"limits\":{\"cpu\":\"250m\",\"memory\":\"512Mi\"},\"requests\":{\"cpu\":\"250m\",\"memory\":\"256Mi\"}}}]}}}}\n"
+    },
+    "creationTimestamp": "2019-07-14T04:54:17Z",
+    "generation": 1,
+    "labels": {
+      "app": "icx-db"
+    },
+    "name": "icx-db",
+    "namespace": "icx",
+    "resourceVersion": "37116271",
+    "selfLink": "/apis/extensions/v1beta1/namespaces/icx/deployments/icx-db",
+    "uid": "6f6143bc-a5f3-11e9-990f-42010a800218"
+  },
+  "spec": {
+    "progressDeadlineSeconds": 600,
+    "replicas": 1,
+    "revisionHistoryLimit": 2,
+    "selector": {
+      "matchLabels": {
+        "app": "icx-db"
+      }
+    },
+    "strategy": {
+      "rollingUpdate": {
+        "maxSurge": "25%",
+        "maxUnavailable": "25%"
+      },
+      "type": "RollingUpdate"
+    },
+    "template": {
+      "metadata": {
+        "creationTimestamp": null,
+        "labels": {
+          "app": "icx-db"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "env": [
+              {
+                "name": "POSTGRES_USER",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "pg_user",
+                    "name": "icx-creds"
+                  }
+                }
+              },
+              {
+                "name": "POSTGRES_PASSWORD",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "pg_pwd",
+                    "name": "icx-creds"
+                  }
+                }
+              }
+            ],
+            "image": "postgres:9.2-alpine",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "icx-db",
+            "ports": [
+              {
+                "containerPort": 5432,
+                "name": "client",
+                "protocol": "TCP"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "250m",
+                "memory": "512Mi"
+              },
+              "requests": {
+                "cpu": "250m",
+                "memory": "256Mi"
+              }
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File"
+          }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "terminationGracePeriodSeconds": 30
+      }
+    }
+  },
+  "status": {
+    "availableReplicas": 1,
+    "conditions": [
+      {
+        "lastTransitionTime": "2019-07-14T04:54:20Z",
+        "lastUpdateTime": "2019-07-14T04:54:20Z",
+        "message": "Deployment has minimum availability.",
+        "reason": "MinimumReplicasAvailable",
+        "status": "True",
+        "type": "Available"
+      },
+      {
+        "lastTransitionTime": "2019-07-14T04:54:17Z",
+        "lastUpdateTime": "2019-07-14T04:54:20Z",
+        "message": "ReplicaSet \"icx-db-7d4b578979\" has successfully progressed.",
+        "reason": "NewReplicaSetAvailable",
+        "status": "True",
+        "type": "Progressing"
+      }
+    ],
+    "observedGeneration": 1,
+    "readyReplicas": 1,
+    "replicas": 1,
+    "updatedReplicas": 1
+  }
+}

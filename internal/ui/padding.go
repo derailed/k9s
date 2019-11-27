@@ -2,38 +2,29 @@ package ui
 
 import (
 	"strings"
-	"time"
 	"unicode"
 
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
-	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 // MaxyPad tracks uniform column padding.
 type MaxyPad []int
 
 // ComputeMaxColumns figures out column max size and necessary padding.
-func ComputeMaxColumns(pads MaxyPad, sortCol int, table resource.TableData) {
+func ComputeMaxColumns(pads MaxyPad, sortCol int, header render.HeaderRow, ee render.RowEvents) {
 	const colPadding = 1
 
-	for index, h := range table.Header {
-		pads[index] = len(h)
+	for index, h := range header {
+		pads[index] = len(h.Name)
 		if index == sortCol {
-			pads[index] = len(h) + 2
+			pads[index] = len(h.Name) + 2
 		}
 	}
 
 	var row int
-	for _, rev := range table.Rows {
-		ageIndex := len(rev.Fields) - 1
-		for index, field := range rev.Fields {
-			// Date field comes out as timestamp.
-			if index == ageIndex {
-				dur, err := time.ParseDuration(field)
-				if err == nil {
-					field = duration.HumanDuration(dur)
-				}
-			}
+	for _, e := range ee {
+		for index, field := range e.Row.Fields {
 			width := len(field) + colPadding
 			if width > pads[index] {
 				pads[index] = width

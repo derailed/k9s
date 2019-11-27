@@ -9,6 +9,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/perf"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
@@ -56,10 +57,19 @@ func (p *PortForward) Init(ctx context.Context) error {
 	return nil
 }
 
+// List returns the resource list.
 func (p *PortForward) List() resource.List { return nil }
-func (p *PortForward) GetTable() *Table    { return p.Table }
-func (p *PortForward) SetEnvFn(EnvFunc)    {}
 
+// GetTable returns the table view.
+func (p *PortForward) GetTable() *Table { return p.Table }
+
+// SetEnvFn sets the k9s env vars.
+func (p *PortForward) SetEnvFn(EnvFunc) {}
+
+// SetPath sets parent selector.
+func (p *PortForward) SetPath(s string) {}
+
+// Start runs the refresh loop.
 func (p *PortForward) Start() {
 	path := ui.BenchConfig(p.app.Config.K9s.CurrentCluster)
 	var ctx context.Context
@@ -69,6 +79,7 @@ func (p *PortForward) Start() {
 	}
 }
 
+// Name returns the component name.
 func (p *PortForward) Name() string {
 	return portForwardTitle
 }
@@ -210,21 +221,20 @@ func (p *PortForward) hydrate() resource.TableData {
 
 		ports := strings.Split(f.Ports()[0], ":")
 		ns, na := namespaced(f.Path())
-		fields := resource.Row{
-			ns,
-			na,
-			f.Container(),
-			strings.Join(f.Ports(), ","),
-			urlFor(cfg, ports[0]),
-			asNum(c),
-			asNum(n),
-			f.Age(),
+		row := render.Row{
+			ID: f.Path(),
+			Fields: render.Fields{
+				ns,
+				na,
+				f.Container(),
+				strings.Join(f.Ports(), ","),
+				urlFor(cfg, ports[0]),
+				asNum(c),
+				asNum(n),
+				f.Age(),
+			},
 		}
-		data.Rows[f.Path()] = &resource.RowEvent{
-			Action: resource.New,
-			Fields: fields,
-			Deltas: fields,
-		}
+		data.RowEvents = append(data.RowEvents, render.RowEvent{Kind: render.EventAdd, Row: row})
 	}
 
 	return data
@@ -246,9 +256,10 @@ func defaultConfig() config.BenchConfig {
 
 func initHeader(rows int) resource.TableData {
 	return resource.TableData{
-		Header:    resource.Row{"NAMESPACE", "NAME", "CONTAINER", "PORTS", "URL", "C", "N", "AGE"},
-		NumCols:   map[string]bool{"C": true, "N": true},
-		Rows:      make(resource.RowEvents, rows),
+		// BOZO!!
+		// Header:    resource.Row{"NAMESPACE", "NAME", "CONTAINER", "PORTS", "URL", "C", "N", "AGE"},
+		// NumCols:   map[string]bool{"C": true, "N": true},
+		// Rows:      make(resource.RowEvents, rows),
 		Namespace: resource.AllNamespaces,
 	}
 }

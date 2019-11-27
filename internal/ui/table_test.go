@@ -5,10 +5,10 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/apimachinery/pkg/watch"
 )
 
 func TestTableNew(t *testing.T) {
@@ -57,17 +57,17 @@ func TestTableSelection(t *testing.T) {
 func makeTableData() resource.TableData {
 	return resource.TableData{
 		Namespace: "",
-		Header:    resource.Row{"a", "b", "c"},
-		Rows: resource.RowEvents{
-			"r1": &resource.RowEvent{
-				Action: watch.Added,
-				Fields: resource.Row{"blee", "duh", "fred"},
-				Deltas: resource.Row{"", "", ""},
+		Header:    render.HeaderRow{render.Header{Name: "a"}, render.Header{Name: "b"}, render.Header{Name: "c"}},
+		RowEvents: render.RowEvents{
+			render.RowEvent{
+				Row: render.Row{
+					Fields: render.Fields{"blee", "duh", "fred"},
+				},
 			},
-			"r2": &resource.RowEvent{
-				Action: watch.Added,
-				Fields: resource.Row{"fred", "duh", "zorg"},
-				Deltas: resource.Row{"", "", ""},
+			render.RowEvent{
+				Row: render.Row{
+					Fields: render.Fields{"blee", "duh", "zorg"},
+				},
 			},
 		},
 	}

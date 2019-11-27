@@ -7,11 +7,12 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/watch"
 )
 
 func TestTableSave(t *testing.T) {
@@ -32,21 +33,23 @@ func TestTableNew(t *testing.T) {
 	v.Init(makeContext())
 
 	data := resource.TableData{
-		Header: resource.Row{"NAMESPACE", "NAME", "FRED", "AGE"},
-		Rows: resource.RowEvents{
-			"ns1/a": &resource.RowEvent{
-				Action: watch.Added,
-				Fields: resource.Row{"ns1", "a", "10", "3m"},
-				Deltas: resource.Row{"", "", "", ""},
-			},
-			"ns1/b": &resource.RowEvent{
-				Action: watch.Added,
-				Fields: resource.Row{"ns1", "b", "15", "1m"},
-				Deltas: resource.Row{"", "", "20", ""},
-			},
+		Header: render.HeaderRow{
+			render.Header{Name: "NAMESPACE"},
+			render.Header{Name: "NAME", Align: tview.AlignRight},
+			render.Header{Name: "FRED"},
+			render.Header{Name: "AGE"},
 		},
-		NumCols: map[string]bool{
-			"FRED": true,
+		RowEvents: render.RowEvents{
+			render.RowEvent{
+				Row: render.Row{
+					Fields: render.Fields{"ns1", "a", "10", "3m"},
+				},
+			},
+			render.RowEvent{
+				Row: render.Row{
+					Fields: render.Fields{"ns1", "b", "15", "1m"},
+				},
+			},
 		},
 		Namespace: "",
 	}
@@ -59,21 +62,23 @@ func TestTableViewFilter(t *testing.T) {
 	v.Init(makeContext())
 
 	data := resource.TableData{
-		Header: resource.Row{"NAMESPACE", "NAME", "FRED", "AGE"},
-		Rows: resource.RowEvents{
-			"ns1/blee": &resource.RowEvent{
-				Action: watch.Added,
-				Fields: resource.Row{"ns1", "blee", "10", "3m"},
-				Deltas: resource.Row{"", "", "", ""},
-			},
-			"ns1/fred": &resource.RowEvent{
-				Action: watch.Added,
-				Fields: resource.Row{"ns1", "fred", "15", "1m"},
-				Deltas: resource.Row{"", "", "20", ""},
-			},
+		Header: render.HeaderRow{
+			render.Header{Name: "NAMESPACE"},
+			render.Header{Name: "NAME", Align: tview.AlignRight},
+			render.Header{Name: "FRED"},
+			render.Header{Name: "AGE"},
 		},
-		NumCols: map[string]bool{
-			"FRED": true,
+		RowEvents: render.RowEvents{
+			render.RowEvent{
+				Row: render.Row{
+					Fields: render.Fields{"ns1", "blee", "10", "3m"},
+				},
+			},
+			render.RowEvent{
+				Row: render.Row{
+					Fields: render.Fields{"ns1", "fred", "15", "1m"},
+				},
+			},
 		},
 		Namespace: "",
 	}
@@ -91,21 +96,24 @@ func TestTableViewSort(t *testing.T) {
 	v.Init(makeContext())
 
 	data := resource.TableData{
-		Header: resource.Row{"NAMESPACE", "NAME", "FRED", "AGE"},
-		Rows: resource.RowEvents{
-			"ns1/blee": &resource.RowEvent{
-				Action: watch.Added,
-				Fields: resource.Row{"ns1", "blee", "10", "3m"},
-				Deltas: resource.Row{"", "", "", ""},
-			},
-			"ns1/fred": &resource.RowEvent{
-				Action: watch.Added,
-				Fields: resource.Row{"ns1", "fred", "15", "1m"},
-				Deltas: resource.Row{"", "", "20", ""},
-			},
+		Header: render.HeaderRow{
+			render.Header{Name: "NAMESPACE"},
+			render.Header{Name: "NAME", Align: tview.AlignRight},
+			render.Header{Name: "FRED"},
+			render.Header{Name: "AGE"},
 		},
-		NumCols: map[string]bool{
-			"FRED": true,
+		RowEvents: render.RowEvents{
+			render.RowEvent{
+				Row: render.Row{
+					Fields: render.Fields{"ns1", "blee", "10", "3m"},
+				},
+			},
+			render.RowEvent{
+				Row: render.Row{
+					Fields: render.Fields{"ns1", "fred", "15", "1m"},
+				},
+				Deltas: render.DeltaRow{"", "", "20", ""},
+			},
 		},
 		Namespace: "",
 	}

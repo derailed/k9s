@@ -89,7 +89,7 @@ func (s *SelectTable) GetRow() resource.Row {
 }
 
 func (s *SelectTable) updateSelectedItem(r int) {
-	if r == 0 || s.GetCell(r, 0) == nil {
+	if r <= 0 || s.GetCell(r, 0) == nil {
 		s.selectedItem = ""
 		return
 	}

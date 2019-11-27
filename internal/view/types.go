@@ -65,6 +65,9 @@ type ResourceViewer interface {
 
 	// SetEnvFn sets a function to pull viewer env vars for plugins.
 	SetEnvFn(EnvFunc)
+
+	// SetPath set parents selector.
+	SetPath(p string)
 }
 
 // TableViewer represents a tabular viewer.

@@ -74,28 +74,20 @@ func (m *MetricsServer) NodesMetrics(nodes Collection, metrics *mv1beta1.NodeMet
 }
 
 // ClusterLoad retrieves all cluster nodes metrics.
-func (m *MetricsServer) ClusterLoad(nos Collection, nmx Collection, mx *ClusterMetrics) {
-	nodeMetrics := make(NodesMetrics, len(nos))
-	for _, n := range nos {
-		no, ok := n.(*v1.Node)
-		if !ok {
-			log.Fatal().Msg("Expecting valid node")
-		}
+func (m *MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsList, mx *ClusterMetrics) error {
+	nodeMetrics := make(NodesMetrics, len(nos.Items))
+	for _, no := range nos.Items {
 		nodeMetrics[no.Name] = NodeMetrics{
 			AvailCPU: no.Status.Allocatable.Cpu().MilliValue(),
 			AvailMEM: ToMB(no.Status.Allocatable.Memory().Value()),
 		}
 	}
 
-	for _, mx := range nmx {
-		mxx, ok := mx.(*mv1beta1.NodeMetrics)
-		if !ok {
-			log.Fatal().Msg("Expecting a valid node metric")
-		}
-		if m, ok := nodeMetrics[mxx.Name]; ok {
-			m.CurrentCPU = mxx.Usage.Cpu().MilliValue()
-			m.CurrentMEM = ToMB(mxx.Usage.Memory().Value())
-			nodeMetrics[mxx.Name] = m
+	for _, mx := range nmx.Items {
+		if m, ok := nodeMetrics[mx.Name]; ok {
+			m.CurrentCPU = mx.Usage.Cpu().MilliValue()
+			m.CurrentMEM = ToMB(mx.Usage.Memory().Value())
+			nodeMetrics[mx.Name] = m
 		}
 	}
 
@@ -106,8 +98,9 @@ func (m *MetricsServer) ClusterLoad(nos Collection, nmx Collection, mx *ClusterM
 		mem += mx.CurrentMEM
 		tmem += mx.AvailMEM
 	}
-
 	mx.PercCPU, mx.PercMEM = toPerc(cpu, tcpu), toPerc(mem, tmem)
+
+	return nil
 }
 
 // FetchNodesMetrics return all metrics for pods in a given namespace.
@@ -128,6 +121,16 @@ func (m *MetricsServer) FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, e
 	}
 
 	return client.MetricsV1beta1().PodMetricses(ns).List(metav1.ListOptions{})
+}
+
+// FetchPodsMetrics return all metrics for pods in a given namespace.
+func (m *MetricsServer) FetchPodMetrics(ns, sel string) (*mv1beta1.PodMetrics, error) {
+	client, err := m.MXDial()
+	if err != nil {
+		return nil, err
+	}
+
+	return client.MetricsV1beta1().PodMetricses(ns).Get(sel, metav1.GetOptions{})
 }
 
 // PodsMetrics retrieves metrics for all pods in a given namespace.

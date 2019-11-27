@@ -4,7 +4,6 @@ import (
 	"context"
 	"regexp"
 
-	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -80,29 +79,31 @@ func (*Namespace) cleanser(s string) string {
 }
 
 func (n *Namespace) decorate(data resource.TableData) resource.TableData {
-	if n.App().Conn() == nil {
-		return resource.TableData{}
-	}
+	return resource.TableData{}
+	// BOZO!!
+	// if n.App().Conn() == nil {
+	// 	return resource.TableData{}
+	// }
 
-	if _, ok := data.Rows[resource.AllNamespaces]; !ok {
-		if err := n.App().Conn().CheckNSAccess(""); err == nil {
-			data.Rows[resource.AllNamespace] = &resource.RowEvent{
-				Action: resource.Unchanged,
-				Fields: resource.Row{resource.AllNamespace, "Active", "0"},
-				Deltas: resource.Row{"", "", ""},
-			}
-		}
-	}
-	for k, r := range data.Rows {
-		if config.InList(n.App().Config.FavNamespaces(), k) {
-			r.Fields[0] += favNSIndicator
-			r.Action = resource.Unchanged
-		}
-		if n.App().Config.ActiveNamespace() == k {
-			r.Fields[0] += defaultNSIndicator
-			r.Action = resource.Unchanged
-		}
-	}
+	// if _, ok := data.Rows[resource.AllNamespaces]; !ok {
+	// 	if err := n.App().Conn().CheckNSAccess(""); err == nil {
+	// 		data.Rows[resource.AllNamespace] = &resource.RowEvent{
+	// 			Action: resource.Unchanged,
+	// 			Fields: resource.Row{resource.AllNamespace, "Active", "0"},
+	// 			Deltas: resource.Row{"", "", ""},
+	// 		}
+	// 	}
+	// }
+	// for k, r := range data.Rows {
+	// 	if config.InList(n.App().Config.FavNamespaces(), k) {
+	// 		r.Fields[0] += favNSIndicator
+	// 		r.Action = resource.Unchanged
+	// 	}
+	// 	if n.App().Config.ActiveNamespace() == k {
+	// 		r.Fields[0] += defaultNSIndicator
+	// 		r.Action = resource.Unchanged
+	// 	}
+	// }
 
-	return data
+	// return data
 }

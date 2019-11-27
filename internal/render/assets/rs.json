@@ -1,0 +1,110 @@
+{
+  "apiVersion": "extensions/v1beta1",
+  "kind": "ReplicaSet",
+  "metadata": {
+    "annotations": {
+      "deployment.kubernetes.io/desired-replicas": "1",
+      "deployment.kubernetes.io/max-replicas": "2",
+      "deployment.kubernetes.io/revision": "1"
+    },
+    "creationTimestamp": "2019-07-14T04:54:17Z",
+    "generation": 1,
+    "labels": {
+      "app": "icx-db",
+      "pod-template-hash": "7d4b578979"
+    },
+    "name": "icx-db-7d4b578979",
+    "namespace": "icx",
+    "ownerReferences": [
+      {
+        "apiVersion": "apps/v1",
+        "blockOwnerDeletion": true,
+        "controller": true,
+        "kind": "Deployment",
+        "name": "icx-db",
+        "uid": "6f6143bc-a5f3-11e9-990f-42010a800218"
+      }
+    ],
+    "resourceVersion": "37116270",
+    "selfLink": "/apis/extensions/v1beta1/namespaces/icx/replicasets/icx-db-7d4b578979",
+    "uid": "6f637a60-a5f3-11e9-990f-42010a800218"
+  },
+  "spec": {
+    "replicas": 1,
+    "selector": {
+      "matchLabels": {
+        "app": "icx-db",
+        "pod-template-hash": "7d4b578979"
+      }
+    },
+    "template": {
+      "metadata": {
+        "creationTimestamp": null,
+        "labels": {
+          "app": "icx-db",
+          "pod-template-hash": "7d4b578979"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "env": [
+              {
+                "name": "POSTGRES_USER",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "pg_user",
+                    "name": "icx-creds"
+                  }
+                }
+              },
+              {
+                "name": "POSTGRES_PASSWORD",
+                "valueFrom": {
+                  "secretKeyRef": {
+                    "key": "pg_pwd",
+                    "name": "icx-creds"
+                  }
+                }
+              }
+            ],
+            "image": "postgres:9.2-alpine",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "icx-db",
+            "ports": [
+              {
+                "containerPort": 5432,
+                "name": "client",
+                "protocol": "TCP"
+              }
+            ],
+            "resources": {
+              "limits": {
+                "cpu": "250m",
+                "memory": "512Mi"
+              },
+              "requests": {
+                "cpu": "250m",
+                "memory": "256Mi"
+              }
+            },
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File"
+          }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "terminationGracePeriodSeconds": 30
+      }
+    }
+  },
+  "status": {
+    "availableReplicas": 1,
+    "fullyLabeledReplicas": 1,
+    "observedGeneration": 1,
+    "readyReplicas": 1,
+    "replicas": 1
+  }
+}

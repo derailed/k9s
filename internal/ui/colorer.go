@@ -1,9 +1,8 @@
 package ui
 
 import (
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/gdamore/tcell"
-	"k8s.io/apimachinery/pkg/watch"
 )
 
 var (
@@ -24,13 +23,16 @@ var (
 )
 
 // DefaultColorer set the default table row colors.
-func DefaultColorer(ns string, r *resource.RowEvent) tcell.Color {
+func DefaultColorer(ns string, r render.RowEvent) tcell.Color {
 	c := StdColor
-	switch r.Action {
-	case watch.Added, resource.New:
+	switch r.Kind {
+	case render.EventAdd:
 		c = AddColor
-	case watch.Modified:
+	case render.EventUpdate:
 		c = ModColor
+	case render.EventDelete:
+		c = KillColor
 	}
+
 	return c
 }

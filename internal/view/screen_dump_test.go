@@ -12,5 +12,5 @@ func TestScreenDumpNew(t *testing.T) {
 	po.Init(makeCtx())
 
 	assert.Equal(t, "Screen Dumps", po.Name())
-	assert.Equal(t, 12, len(po.Hints()))
+	assert.Equal(t, 13, len(po.Hints()))
 }

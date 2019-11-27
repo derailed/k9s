@@ -7,11 +7,12 @@ import (
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 type clusterInfoView struct {
@@ -125,13 +126,14 @@ func (v *clusterInfoView) refresh() {
 	v.refreshMetrics(cluster, row)
 }
 
-func fetchResources(app *App) (k8s.Collection, k8s.Collection, error) {
-	nos, err := app.informers.ActiveInformer().List(watch.NodeIndex, "", metav1.ListOptions{})
+func fetchResources(app *App) (*v1.NodeList, *mv1beta1.NodeMetricsList, error) {
+	nos, err := app.factory.Client().DialOrDie().CoreV1().Nodes().List(metav1.ListOptions{})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	nmx, err := app.informers.ActiveInformer().List(watch.NodeMXIndex, "", metav1.ListOptions{})
+	mx := k8s.NewMetricsServer(app.factory.Client().(k8s.Connection))
+	nmx, err := mx.FetchNodesMetrics()
 	if err != nil {
 		return nil, nil, err
 	}

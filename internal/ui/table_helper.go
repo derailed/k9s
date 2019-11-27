@@ -4,16 +4,13 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"sort"
 	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
-	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
-	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 const (
@@ -103,31 +100,32 @@ func sortRows(evts resource.RowEvents, sortFn SortFn, sortCol SortColumn, keys [
 	}
 }
 
-func defaultSort(rows resource.Rows, sortCol SortColumn) {
-	t := RowSorter{rows: rows, index: sortCol.index, asc: sortCol.asc}
-	sort.Sort(t)
-}
+// func defaultSort(rows resource.Rows, sortCol SortColumn) {
+// 	t := RowSorter{rows: rows, index: sortCol.index, asc: sortCol.asc}
+// 	sort.Sort(t)
+// }
 
-func sortAllRows(col SortColumn, rows resource.RowEvents, sortFn SortFn) (resource.Row, map[string]resource.Row) {
-	keys := make([]string, len(rows))
-	sortRows(rows, sortFn, col, keys)
+// BOZO!!
+// func sortAllRows(col SortColumn, rows resource.RowEvents, sortFn SortFn) (resource.Row, map[string]resource.Row) {
+// 	keys := make([]string, len(rows))
+// 	sortRows(rows, sortFn, col, keys)
 
-	sec := make(map[string]resource.Row, len(rows))
-	for _, k := range keys {
-		grp := rows[k].Fields[col.index]
-		sec[grp] = append(sec[grp], k)
-	}
+// 	sec := make(map[string]resource.Row, len(rows))
+// 	for _, k := range keys {
+// 		grp := rows[k].Fields[col.index]
+// 		sec[grp] = append(sec[grp], k)
+// 	}
 
-	// Performs secondary to sort by name for each groups.
-	prim := make(resource.Row, 0, len(sec))
-	for k, v := range sec {
-		sort.Strings(v)
-		prim = append(prim, k)
-	}
-	sort.Sort(GroupSorter{prim, col.asc})
+// 	// Performs secondary to sort by name for each groups.
+// 	prim := make(resource.Row, 0, len(sec))
+// 	for k, v := range sec {
+// 		sort.Strings(v)
+// 		prim = append(prim, k)
+// 	}
+// 	sort.Sort(GroupSorter{prim, col.asc})
 
-	return prim, sec
-}
+// 	return prim, sec
+// }
 
 func sortIndicator(col SortColumn, style config.Table, index int, name string) string {
 	if col.index != index {
@@ -141,24 +139,12 @@ func sortIndicator(col SortColumn, style config.Table, index int, name string) s
 	return fmt.Sprintf("%s[%s::]%s[::]", name, style.Header.SorterColor, order)
 }
 
-func formatCell(numerical bool, header, field string, padding int) (string, int) {
-	if header == "AGE" {
-		dur, err := time.ParseDuration(field)
-		if err == nil {
-			field = duration.HumanDuration(dur)
-		}
-	}
-
-	if numerical || cpuRX.MatchString(header) || memRX.MatchString(header) {
-		return field, tview.AlignRight
-	}
-
-	align := tview.AlignLeft
+func formatCell(field string, padding int) string {
 	if IsASCII(field) {
-		return Pad(field, padding), align
+		return Pad(field, padding)
 	}
 
-	return field, align
+	return field
 }
 
 func rxFilter(q string, data resource.TableData) (resource.TableData, error) {
@@ -169,13 +155,13 @@ func rxFilter(q string, data resource.TableData) (resource.TableData, error) {
 
 	filtered := resource.TableData{
 		Header:    data.Header,
-		Rows:      resource.RowEvents{},
+		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
 		Namespace: data.Namespace,
 	}
-	for k, row := range data.Rows {
-		f := strings.Join(row.Fields, " ")
+	for _, re := range data.RowEvents {
+		f := strings.Join(re.Row.Fields, " ")
 		if rx.MatchString(f) {
-			filtered.Rows[k] = row
+			filtered.RowEvents = append(filtered.RowEvents, re)
 		}
 	}
 
@@ -184,19 +170,19 @@ func rxFilter(q string, data resource.TableData) (resource.TableData, error) {
 
 func fuzzyFilter(q string, index int, data resource.TableData) resource.TableData {
 	var ss, kk []string
-	for k, row := range data.Rows {
-		ss = append(ss, row.Fields[index])
-		kk = append(kk, k)
+	for _, re := range data.RowEvents {
+		ss = append(ss, re.Row.Fields[index])
+		kk = append(kk, re.Row.ID)
 	}
 
 	filtered := resource.TableData{
 		Header:    data.Header,
-		Rows:      resource.RowEvents{},
+		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
 		Namespace: data.Namespace,
 	}
 	mm := fuzzy.Find(q, ss)
 	for _, m := range mm {
-		filtered.Rows[kk[m.Index]] = data.Rows[kk[m.Index]]
+		filtered.RowEvents = append(filtered.RowEvents, data.RowEvents[m.Index])
 	}
 
 	return filtered
@@ -208,6 +194,10 @@ func styleTitle(rc int, ns, base, path, buff string, styles *config.Styles) stri
 
 	if rc > 0 {
 		rc--
+	}
+
+	if path == "" {
+		path = "all"
 	}
 	switch ns {
 	case resource.NotNamespaced, "*":

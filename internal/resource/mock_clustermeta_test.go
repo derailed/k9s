@@ -51,12 +51,12 @@ func (mock *MockClusterMeta) CachedDiscovery() (*disk.CachedDiscoveryClient, err
 	return ret0, ret1
 }
 
-func (mock *MockClusterMeta) CanIAccess(_param0 string, _param1 string, _param2 []string) (bool, error) {
+func (mock *MockClusterMeta) CanI(_param0 string, _param1 string, _param2 []string) (bool, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockClusterMeta().")
 	}
 	params := []pegomock.Param{_param0, _param1, _param2}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CanIAccess", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CanI", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 bool
 	var ret1 error
 	if len(result) != 0 {
@@ -502,34 +502,34 @@ func (c *MockClusterMeta_CachedDiscovery_OngoingVerification) GetCapturedArgumen
 func (c *MockClusterMeta_CachedDiscovery_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierMockClusterMeta) CanIAccess(_param0 string, _param1 string, _param2 []string) *MockClusterMeta_CanIAccess_OngoingVerification {
+func (verifier *VerifierMockClusterMeta) CanI(_param0 string, _param1 string, _param2 []string) *MockClusterMeta_CanI_OngoingVerification {
 	params := []pegomock.Param{_param0, _param1, _param2}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CanIAccess", params, verifier.timeout)
-	return &MockClusterMeta_CanIAccess_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CanI", params, verifier.timeout)
+	return &MockClusterMeta_CanI_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type MockClusterMeta_CanIAccess_OngoingVerification struct {
+type MockClusterMeta_CanI_OngoingVerification struct {
 	mock              *MockClusterMeta
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockClusterMeta_CanIAccess_OngoingVerification) GetCapturedArguments() (string, string, []string) {
+func (c *MockClusterMeta_CanI_OngoingVerification) GetCapturedArguments() (string, string, []string) {
 	_param0, _param1, _param2 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1], _param1[len(_param1)-1], _param2[len(_param2)-1]
 }
 
-func (c *MockClusterMeta_CanIAccess_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 [][]string) {
+func (c *MockClusterMeta_CanI_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 [][]string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(c.methodInvocations))
+		_param0 = make([]string, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]string, len(c.methodInvocations))
+		_param1 = make([]string, len(params[1]))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([][]string, len(c.methodInvocations))
+		_param2 = make([][]string, len(params[2]))
 		for u, param := range params[2] {
 			_param2[u] = param.([]string)
 		}
@@ -573,7 +573,7 @@ func (c *MockClusterMeta_CheckNSAccess_OngoingVerification) GetCapturedArguments
 func (c *MockClusterMeta_CheckNSAccess_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(c.methodInvocations))
+		_param0 = make([]string, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -753,7 +753,7 @@ func (c *MockClusterMeta_IsNamespaced_OngoingVerification) GetCapturedArguments(
 func (c *MockClusterMeta_IsNamespaced_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(c.methodInvocations))
+		_param0 = make([]string, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -814,7 +814,7 @@ func (c *MockClusterMeta_NodePods_OngoingVerification) GetCapturedArguments() st
 func (c *MockClusterMeta_NodePods_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(c.methodInvocations))
+		_param0 = make([]string, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -875,11 +875,11 @@ func (c *MockClusterMeta_SupportsRes_OngoingVerification) GetCapturedArguments()
 func (c *MockClusterMeta_SupportsRes_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 [][]string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(c.methodInvocations))
+		_param0 = make([]string, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([][]string, len(c.methodInvocations))
+		_param1 = make([][]string, len(params[1]))
 		for u, param := range params[1] {
 			_param1[u] = param.([]string)
 		}
@@ -906,7 +906,7 @@ func (c *MockClusterMeta_SupportsResource_OngoingVerification) GetCapturedArgume
 func (c *MockClusterMeta_SupportsResource_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(c.methodInvocations))
+		_param0 = make([]string, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -933,7 +933,7 @@ func (c *MockClusterMeta_SwitchContextOrDie_OngoingVerification) GetCapturedArgu
 func (c *MockClusterMeta_SwitchContextOrDie_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(c.methodInvocations))
+		_param0 = make([]string, len(params[0]))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}

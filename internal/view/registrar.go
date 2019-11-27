@@ -5,10 +5,15 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 var aliases = config.NewAliases()
@@ -19,19 +24,23 @@ func resourceFn(l resource.List) ViewFunc {
 	}
 }
 
-func allCRDs(c k8s.Connection, vv MetaViewers) {
-	crds, err := resource.NewCustomResourceDefinitionList(c, resource.AllNamespaces).
-		Resource().
-		List(resource.AllNamespaces, metav1.ListOptions{})
+func ToResource(o *unstructured.Unstructured, obj interface{}) error {
+	return runtime.DefaultUnstructuredConverter.FromUnstructured(o.Object, &obj)
+}
+
+func allCRDs(f *watch.Factory, vv MetaViewers) {
+	log.Debug().Msgf(">>> Loading CRDS")
+	oo, err := f.List("", "apiextensions.k8s.io/v1beta1/customresourcedefinitions", labels.Everything())
 	if err != nil {
 		log.Error().Err(err).Msg("CRDs load fail")
 		return
 	}
 
-	for _, crd := range crds {
-		meta, err := crd.ExtFields()
+	var r render.CustomResourceDefinition
+	for _, o := range oo {
+		meta, err := r.Meta(o)
 		if err != nil {
-			log.Error().Err(err).Msgf("Error getting extended fields from %s", crd.Name())
+			log.Error().Err(err).Msgf("Error getting meta fields")
 			continue
 		}
 
@@ -50,7 +59,7 @@ func allCRDs(c k8s.Connection, vv MetaViewers) {
 		vv[gvrs] = MetaViewer{
 			gvr:       gvrs,
 			kind:      meta.Kind,
-			viewFn:    resourceFn(resource.NewCustomList(c, meta.Namespaced, "", gvrs)),
+			viewFn:    resourceFn(resource.NewCustomList(f.Client().(k8s.Connection), meta.Namespaced, "", gvrs)),
 			colorerFn: ui.DefaultColorer,
 		}
 	}

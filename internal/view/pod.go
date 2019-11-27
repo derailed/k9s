@@ -5,11 +5,12 @@ import (
 
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/k9s/internal/watch"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -52,18 +53,20 @@ func (p *Pod) BindKeys() {
 	})
 }
 
-func (p *Pod) showContainers(app *App, _, res, sel string) {
-	po, err := p.App().informers.ActiveInformer().Get(watch.PodIndex, sel, metav1.GetOptions{})
+func (p *Pod) showContainers(app *App, ns, res, sel string) {
+	ns, n := namespaced(sel)
+	o, err := p.App().factory.Get(ns, "v1/pods", n, labels.Everything())
 	if err != nil {
-		app.Flash().Errf("Unable to retrieve pods %s", err)
+		app.Flash().Err(err)
+		log.Error().Err(err).Msgf("Pod %s not found", sel)
 		return
 	}
 
-	pod, ok := po.(*v1.Pod)
-	if !ok {
-		log.Fatal().Msg("Expecting a valid pod")
+	var pod v1.Pod
+	if runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod); err != nil {
+		app.Flash().Err(err)
 	}
-	list := resource.NewContainerList(app.Conn(), pod)
+	list := resource.NewContainerList(app.Conn(), &pod)
 
 	// Spawn child view
 	p.App().inject(NewContainer(fqn(pod.Namespace, pod.Name), list))

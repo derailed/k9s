@@ -6,6 +6,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
@@ -14,7 +15,7 @@ import (
 
 type (
 	// ColorerFunc represents a row colorer.
-	ColorerFunc func(ns string, evt *resource.RowEvent) tcell.Color
+	ColorerFunc func(ns string, evt render.RowEvent) tcell.Color
 
 	// SelectedRowFunc a table selection callback.
 	SelectedRowFunc func(r, c int)
@@ -151,14 +152,21 @@ func (t *Table) doUpdate(data resource.TableData) {
 	fg := config.AsColor(t.styles.Table().Header.FgColor)
 	bg := config.AsColor(t.styles.Table().Header.BgColor)
 	for col, h := range data.Header {
-		t.AddHeaderCell(data.NumCols[h], col, h)
+		t.AddHeaderCell(col, h)
 		c := t.GetCell(0, col)
 		c.SetBackgroundColor(bg)
 		c.SetTextColor(fg)
 	}
 	row++
 
-	t.sort(data, row)
+	data.RowEvents.Sort(data.Namespace, t.sortCol.index, t.sortCol.asc)
+
+	pads := make(MaxyPad, len(data.Header))
+	ComputeMaxColumns(pads, t.sortCol.index, data.Header, data.RowEvents)
+	for i, r := range data.RowEvents {
+		t.buildRow(data.Namespace, i+1, r, data.Header, pads)
+	}
+	// t.resetSelection()
 }
 
 // SortColCmd designates a sorted column.
@@ -206,50 +214,53 @@ func (t *Table) adjustSorter(data resource.TableData) {
 	}
 }
 
-func (t *Table) sort(data resource.TableData, row int) {
-	pads := make(MaxyPad, len(data.Header))
-	ComputeMaxColumns(pads, t.sortCol.index, data)
+// BOZO!!
+// func (t *Table) sort(data resource.TableData, row int) {
+// 	pads := make(MaxyPad, len(data.Header))
+// 	ComputeMaxColumns(pads, t.sortCol.index, data.Header, data.RowEvents)
 
-	sortFn := defaultSort
-	if t.sortFn != nil {
-		sortFn = t.sortFn
-	}
-	prim, sec := sortAllRows(t.sortCol, data.Rows, sortFn)
-	for _, pk := range prim {
-		for _, sk := range sec[pk] {
-			t.buildRow(row, data, sk, pads)
-			row++
-		}
-	}
+// 	sortFn := defaultSort
+// 	if t.sortFn != nil {
+// 		sortFn = t.sortFn
+// 	}
 
-	// check marks if a row is deleted make sure we blow the mark too.
-	for k := range t.marks {
-		if _, ok := t.Data.Rows[k]; !ok {
-			delete(t.marks, k)
-		}
-	}
-}
+// 	prim, sec := sortAllRows(t.sortCol, data.RowEvents, sortFn)
+// 	for _, pk := range prim {
+// 		for _, sk := range sec[pk] {
+// 			t.buildRow(row, data, sk, pads)
+// 			row++
+// 		}
+// 	}
 
-func (t *Table) buildRow(row int, data resource.TableData, sk string, pads MaxyPad) {
-	f := DefaultColorer
+// 	// check marks if a row is deleted make sure we blow the mark too.
+// 	for k := range t.marks {
+// 		if _, ok := t.Data.Rows[k]; !ok {
+// 			delete(t.marks, k)
+// 		}
+// 	}
+// }
+
+func (t *Table) buildRow(ns string, r int, re render.RowEvent, header render.HeaderRow, pads MaxyPad) {
+	color := DefaultColorer
 	if t.colorerFn != nil {
-		f = t.colorerFn
+		color = t.colorerFn
 	}
-	marked := t.IsMarked(sk)
-	for col, field := range data.Rows[sk].Fields {
-		header := data.Header[col]
-		cell, align := formatCell(data.NumCols[header], header, field+Deltas(data.Rows[sk].Deltas[col], field), pads[col])
-		c := tview.NewTableCell(cell)
+	marked := t.IsMarked(re.Row.ID)
+	for col, field := range re.Row.Fields {
+		delta := field
+		if len(re.Deltas) > 0 {
+			delta = re.Deltas[col]
+		}
+		c := tview.NewTableCell(formatCell(field+Deltas(delta, field), pads[col]))
 		{
 			c.SetExpansion(1)
-			c.SetAlign(align)
-			c.SetTextColor(f(data.Namespace, data.Rows[sk]))
+			c.SetAlign(header[col].Align)
+			c.SetTextColor(color(ns, re))
 			if marked {
 				c.SetTextColor(config.AsColor(t.styles.Table().MarkColor))
-				// c.SetBackgroundColor(config.AsColor(t.styles.Table().MarkColor))
 			}
 		}
-		t.SetCell(row, col, c)
+		t.SetCell(r, col, c)
 	}
 }
 
@@ -273,12 +284,10 @@ func (t *Table) NameColIndex() int {
 }
 
 // AddHeaderCell configures a table cell header.
-func (t *Table) AddHeaderCell(numerical bool, col int, name string) {
-	c := tview.NewTableCell(sortIndicator(t.sortCol, t.styles.Table(), col, name))
+func (t *Table) AddHeaderCell(col int, h render.Header) {
+	c := tview.NewTableCell(sortIndicator(t.sortCol, t.styles.Table(), col, h.Name))
 	c.SetExpansion(1)
-	if numerical || cpuRX.MatchString(name) || memRX.MatchString(name) {
-		c.SetAlign(tview.AlignRight)
-	}
+	c.SetAlign(h.Align)
 	t.SetCell(0, col, c)
 }
 

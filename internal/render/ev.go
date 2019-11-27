@@ -1,0 +1,64 @@
+package render
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/derailed/tview"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
+)
+
+// Event renders a K8s Event to screen.
+type Event struct{}
+
+// ColorerFunc colors a resource row.
+func (Event) ColorerFunc() ColorerFunc {
+	return DefaultColorer
+}
+
+// Header returns a header rbw.
+func (Event) Header(ns string) HeaderRow {
+	var h HeaderRow
+	if isAllNamespace(ns) {
+		h = append(h, Header{Name: "NAMESPACE"})
+	}
+
+	return append(h,
+		Header{Name: "NAME"},
+		Header{Name: "REASON"},
+		Header{Name: "SOURCE"},
+		Header{Name: "COUNT", Align: tview.AlignRight},
+		Header{Name: "MESSAGE"},
+		Header{Name: "AGE"},
+	)
+}
+
+// Render renders a K8s resource to screen.
+func (Event) Render(o interface{}, ns string, r *Row) error {
+	raw, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		return fmt.Errorf("Expected Event, but got %T", o)
+	}
+	var ev v1.Event
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &ev)
+	if err != nil {
+		return err
+	}
+
+	fields := make(Fields, 0, len(r.Fields))
+	if isAllNamespace(ns) {
+		fields = append(fields, ev.Namespace)
+	}
+	fields = append(fields,
+		ev.Name,
+		ev.Reason,
+		ev.Source.Component,
+		strconv.Itoa(int(ev.Count)),
+		Truncate(ev.Message, 80),
+		toAge(ev.LastTimestamp))
+	r.ID, r.Fields = MetaFQN(ev.ObjectMeta), fields
+
+	return nil
+}

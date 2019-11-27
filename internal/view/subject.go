@@ -3,7 +3,6 @@ package view
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"time"
 
 	"github.com/derailed/k9s/internal/resource"
@@ -11,7 +10,6 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/watch"
 )
 
 var subjectHeader = resource.Row{"NAME", "KIND", "FIRST LOCATION"}
@@ -37,9 +35,17 @@ func NewSubject(title, _ string, _ resource.List) ResourceViewer {
 	return &Subject{Table: NewTable(title)}
 }
 
-func (s *Subject) GetTable() *Table    { return s.Table }
-func (s *Subject) SetEnvFn(EnvFunc)    {}
+// GetTable returns the table view.
+func (s *Subject) GetTable() *Table { return s.Table }
+
+// SetEnvFn sets up K9s env vars.
+func (s *Subject) SetEnvFn(EnvFunc) {}
+
+// List returns the resource lister.
 func (s *Subject) List() resource.List { return nil }
+
+// SetPath sets parent selector.
+func (s *Subject) SetPath(_ string) {}
 
 // Init initializes the view.
 func (s *Subject) Init(ctx context.Context) error {
@@ -62,6 +68,7 @@ func (s *Subject) Init(ctx context.Context) error {
 	return nil
 }
 
+// Start runs the refresh loop.
 func (s *Subject) Start() {
 	s.Stop()
 
@@ -80,6 +87,7 @@ func (s *Subject) Start() {
 	}(ctx)
 }
 
+// Name returns the component name
 func (s *Subject) Name() string {
 	return "subject"
 }
@@ -94,6 +102,7 @@ func (s *Subject) bindKeys() {
 	})
 }
 
+// SetSubject sets the subject name.
 func (s *Subject) SetSubject(n string) {
 	s.subjectKind = mapSubject(n)
 }
@@ -111,6 +120,10 @@ func (s *Subject) refresh() {
 }
 
 func (s *Subject) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
+	log.Debug().Msgf("SUBJECT!!!!")
+	defer func(t time.Time) {
+		log.Debug().Msgf(">>>>>> Subject elapsed %v", time.Since(t))
+	}(time.Now())
 	if !s.RowSelected() {
 		return evt
 	}
@@ -121,8 +134,9 @@ func (s *Subject) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
 		s.app.Flash().Err(err)
 		return nil
 	}
+	log.Debug().Msgf("  INJECTING...")
 	s.app.inject(NewPolicy(s.app, subject, n))
-
+	log.Debug().Msgf("  DONE...")
 	return nil
 }
 
@@ -179,56 +193,59 @@ func (s *Subject) setCache(evts resource.RowEvents) {
 }
 
 func buildTable(c cachedEventer, evts resource.RowEvents) resource.TableData {
-	table := resource.TableData{
-		Header:    c.header(),
-		Rows:      make(resource.RowEvents, len(evts)),
-		Namespace: "*",
-	}
+	return resource.TableData{}
 
-	noDeltas := make(resource.Row, len(c.header()))
-	cache := c.getCache()
-	if len(cache) == 0 {
-		for k, ev := range evts {
-			ev.Action = resource.New
-			ev.Deltas = noDeltas
-			table.Rows[k] = ev
-		}
-		c.setCache(evts)
-		return table
-	}
+	// BOZO!!
+	// table := resource.TableData{
+	// 	Header:    c.header(),
+	// 	Rows:      make(resource.RowEvents, len(evts)),
+	// 	Namespace: "*",
+	// }
 
-	for k, ev := range evts {
-		table.Rows[k] = ev
+	// noDeltas := make(resource.Row, len(c.header()))
+	// cache := c.getCache()
+	// if len(cache) == 0 {
+	// 	for k, ev := range evts {
+	// 		ev.Action = resource.New
+	// 		ev.Deltas = noDeltas
+	// 		table.Rows[k] = ev
+	// 	}
+	// 	c.setCache(evts)
+	// 	return table
+	// }
 
-		newr := ev.Fields
-		if _, ok := cache[k]; !ok {
-			ev.Action, ev.Deltas = watch.Added, noDeltas
-			continue
-		}
-		oldr := cache[k].Fields
-		deltas := make(resource.Row, len(newr))
-		if !reflect.DeepEqual(oldr, newr) {
-			ev.Action = watch.Modified
-			for i, field := range oldr {
-				if field != newr[i] {
-					deltas[i] = field
-				}
-			}
-			ev.Deltas = deltas
-		} else {
-			ev.Action = resource.Unchanged
-			ev.Deltas = noDeltas
-		}
-	}
+	// for k, ev := range evts {
+	// 	table.Rows[k] = ev
 
-	for k := range evts {
-		if _, ok := table.Rows[k]; !ok {
-			delete(evts, k)
-		}
-	}
-	c.setCache(evts)
+	// 	newr := ev.Fields
+	// 	if _, ok := cache[k]; !ok {
+	// 		ev.Action, ev.Deltas = watch.Added, noDeltas
+	// 		continue
+	// 	}
+	// 	oldr := cache[k].Fields
+	// 	deltas := make(resource.Row, len(newr))
+	// 	if !reflect.DeepEqual(oldr, newr) {
+	// 		ev.Action = watch.Modified
+	// 		for i, field := range oldr {
+	// 			if field != newr[i] {
+	// 				deltas[i] = field
+	// 			}
+	// 		}
+	// 		ev.Deltas = deltas
+	// 	} else {
+	// 		ev.Action = resource.Unchanged
+	// 		ev.Deltas = noDeltas
+	// 	}
+	// }
 
-	return table
+	// for k := range evts {
+	// 	if _, ok := table.Rows[k]; !ok {
+	// 		delete(evts, k)
+	// 	}
+	// }
+	// c.setCache(evts)
+
+	// return table
 }
 
 func (s *Subject) clusterSubjects() (resource.RowEvents, error) {

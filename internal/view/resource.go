@@ -22,7 +22,7 @@ type Resource struct {
 
 	namespaces map[int]string
 	list       resource.List
-	path       *string
+	path       string
 	gvr        string
 	envFn      EnvFunc
 	currentNS  string
@@ -56,6 +56,12 @@ func (r *Resource) Init(ctx context.Context) error {
 	return nil
 }
 
+// SetPath sets parent selector.
+func (r *Resource) SetPath(p string) {
+	r.path = p
+}
+
+// GetTable returns the underlying table view.
 func (r *Resource) GetTable() *Table { return r.Table }
 
 // SetEnvFn sets the function to pull current viewer env vars.
@@ -293,7 +299,8 @@ func (r *Resource) refresh() {
 	}
 
 	if r.app.Conn() != nil {
-		if err := r.list.Reconcile(r.app.informers.ActiveInformer(), r.path); err != nil {
+		ctx := context.WithValue(context.Background(), resource.KeyFactory, r.app.factory)
+		if err := r.list.Reconcile(ctx, r.gvr, r.path); err != nil {
 			r.app.Flash().Err(err)
 		}
 	}

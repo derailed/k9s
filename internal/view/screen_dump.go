@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
@@ -52,9 +50,16 @@ func (s *ScreenDump) Init(ctx context.Context) error {
 	return nil
 }
 
+// GetTable returns the table view.
 func (r *ScreenDump) GetTable() *Table { return r.Table }
+
+// SetEnvFn sets up k9s env vars.
 func (r *ScreenDump) SetEnvFn(EnvFunc) {}
 
+// SetPath sets parent selector.
+func (p *ScreenDump) SetPath(s string) {}
+
+// List returns the resource lister.
 func (s *ScreenDump) List() resource.List {
 	return nil
 }
@@ -125,28 +130,31 @@ func (s *ScreenDump) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (s *ScreenDump) hydrate() resource.TableData {
-	data := resource.TableData{
-		Header:    dumpHeader,
-		Rows:      make(resource.RowEvents, 10),
-		Namespace: resource.NotNamespaced,
-	}
+	return resource.TableData{}
 
-	dir := filepath.Join(config.K9sDumpDir, s.app.Config.K9s.CurrentCluster)
-	ff, err := ioutil.ReadDir(dir)
-	if err != nil {
-		s.app.Flash().Errf("Unable to read dump directory %s", err)
-	}
+	// BOZO!!
+	// data := resource.TableData{
+	// 	Header:    dumpHeader,
+	// 	Rows:      make(resource.RowEvents, 10),
+	// 	Namespace: resource.NotNamespaced,
+	// }
 
-	for _, f := range ff {
-		fields := resource.Row{f.Name(), time.Since(f.ModTime()).String()}
-		data.Rows[f.Name()] = &resource.RowEvent{
-			Action: resource.New,
-			Fields: fields,
-			Deltas: fields,
-		}
-	}
+	// dir := filepath.Join(config.K9sDumpDir, s.app.Config.K9s.CurrentCluster)
+	// ff, err := ioutil.ReadDir(dir)
+	// if err != nil {
+	// 	s.app.Flash().Errf("Unable to read dump directory %s", err)
+	// }
 
-	return data
+	// for _, f := range ff {
+	// 	fields := resource.Row{f.Name(), time.Since(f.ModTime()).String()}
+	// 	data.Rows[f.Name()] = &resource.RowEvent{
+	// 		Action: resource.New,
+	// 		Fields: fields,
+	// 		Deltas: fields,
+	// 	}
+	// }
+
+	// return data
 }
 
 func (s *ScreenDump) watchDumpDir(ctx context.Context) error {

@@ -57,7 +57,7 @@ func (c *command) isK9sCmd(cmd string) bool {
 func (c *command) load() MetaViewers {
 	vv := make(MetaViewers, 100)
 	resourceViews(c.app.Conn(), vv)
-	allCRDs(c.app.Conn(), vv)
+	allCRDs(c.app.factory, vv)
 
 	return vv
 }

@@ -1,0 +1,34 @@
+{
+  "apiVersion": "v1",
+  "count": 1,
+  "eventTime": null,
+  "firstTimestamp": "2019-08-30T20:43:05Z",
+  "involvedObject": {
+    "apiVersion": "v1",
+    "fieldPath": "spec.containers{c1}",
+    "kind": "Pod",
+    "name": "hello-1567197780-mn4mv",
+    "namespace": "default",
+    "resourceVersion": "49798867",
+    "uid": "c31fdeb8-cb66-11e9-990f-42010a800218"
+  },
+  "kind": "Event",
+  "lastTimestamp": "2019-08-30T20:43:05Z",
+  "message": "Successfully pulled image \"blang/busybox-bash\"",
+  "metadata": {
+    "creationTimestamp": "2019-08-30T20:43:05Z",
+    "name": "hello-1567197780-mn4mv.15bfce150bd764dd",
+    "namespace": "default",
+    "resourceVersion": "590733",
+    "selfLink": "/api/v1/namespaces/default/events/hello-1567197780-mn4mv.15bfce150bd764dd",
+    "uid": "c443d4b3-cb66-11e9-990f-42010a800218"
+  },
+  "reason": "Pulled",
+  "reportingComponent": "",
+  "reportingInstance": "",
+  "source": {
+    "component": "kubelet",
+    "host": "gke-k9s-default-pool-0fa2fb89-qnkc"
+  },
+  "type": "Normal"
+}

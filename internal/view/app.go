@@ -29,8 +29,8 @@ type App struct {
 
 	Content    *PageStack
 	command    *command
-	informers  *watch.Informers
-	stopCh     chan struct{}
+	factory    *watch.Factory
+	cancelFn   context.CancelFunc
 	forwarders model.Forwarders
 	version    string
 	showHeader bool
@@ -85,10 +85,10 @@ func (a *App) Init(version string, rate int) error {
 	if err != nil {
 		log.Info().Msg("No namespace specified using all namespaces")
 	}
-	a.informers = watch.NewInformers(a.Conn())
-	if err := a.informers.SetActive(ns); err != nil {
-		return err
-	}
+
+	a.factory = watch.NewFactory(a.Conn())
+	a.initFactory(ns)
+
 	a.clusterInfo().init(version)
 	if a.Config.K9s.GetHeadless() {
 		a.refreshIndicator()
@@ -220,18 +220,14 @@ func (a *App) switchNS(ns string) bool {
 		log.Error().Err(err).Msg("Config Set NS failed!")
 		return false
 	}
-
-	if err := a.informers.SetActive(ns); err != nil {
-		log.Error().Err(err).Msgf("Informer registration failed for namespace %q", ns)
-		return false
-	}
+	a.factory.SetActive(ns)
 
 	return true
 }
 
-func (a *App) switchCtx(ctx string, load bool) error {
+func (a *App) switchCtx(name string, load bool) error {
 	l := resource.NewContext(a.Conn())
-	if err := l.Switch(ctx); err != nil {
+	if err := l.Switch(name); err != nil {
 		return err
 	}
 
@@ -240,20 +236,13 @@ func (a *App) switchCtx(ctx string, load bool) error {
 	if err != nil {
 		log.Info().Err(err).Msg("No namespace specified using all namespaces")
 	}
-	a.informers.Stop()
-	if a.stopCh != nil {
-		close(a.stopCh)
-		a.stopCh = nil
-	}
+	a.initFactory(ns)
 
-	if err := a.informers.Restart(ns); err != nil {
-		return err
-	}
 	a.Config.Reset()
 	if err := a.Config.Save(); err != nil {
 		log.Error().Err(err).Msg("Config save failed!")
 	}
-	a.Flash().Infof("Switching context to %s", ctx)
+	a.Flash().Infof("Switching context to %s", name)
 	if load && !a.gotoResource("po") {
 		a.Flash().Err(errors.New("Goto pod failed"))
 	}
@@ -264,12 +253,23 @@ func (a *App) switchCtx(ctx string, load bool) error {
 	return nil
 }
 
+func (a *App) initFactory(ns string) {
+	if a.cancelFn != nil {
+		a.cancelFn()
+		a.cancelFn = nil
+	}
+	var ctx context.Context
+	ctx, a.cancelFn = context.WithCancel(context.Background())
+	a.factory.Init(ctx)
+	a.factory.SetActive(ns)
+}
+
 // BailOut exists the application.
 func (a *App) BailOut() {
-	if a.stopCh != nil {
-		log.Debug().Msg("<<<< Stopping Watcher")
-		close(a.stopCh)
-		a.stopCh = nil
+	if a.cancelFn != nil {
+		log.Debug().Msg("<<<< Stopping Factory")
+		a.cancelFn()
+		a.cancelFn = nil
 	}
 
 	a.forwarders.DeleteAll()

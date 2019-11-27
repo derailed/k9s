@@ -1,0 +1,27 @@
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "kind": "RoleBinding",
+  "metadata": {
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"RoleBinding\",\"metadata\":{\"annotations\":{},\"name\":\"blee\",\"namespace\":\"default\"},\"roleRef\":{\"apiGroup\":\"rbac.authorization.k8s.io\",\"kind\":\"Role\",\"name\":\"blee\"},\"subjects\":[{\"kind\":\"ServiceAccount\",\"name\":\"fernand\",\"namespace\":\"default\"}]}\n"
+    },
+    "creationTimestamp": "2019-03-27T22:26:49Z",
+    "name": "blee",
+    "namespace": "default",
+    "resourceVersion": "11177042",
+    "selfLink": "/apis/rbac.authorization.k8s.io/v1/namespaces/default/rolebindings/blee",
+    "uid": "69ed0b23-50df-11e9-83c8-42010a800018"
+  },
+  "roleRef": {
+    "apiGroup": "rbac.authorization.k8s.io",
+    "kind": "Role",
+    "name": "blee"
+  },
+  "subjects": [
+    {
+      "kind": "ServiceAccount",
+      "name": "fernand",
+      "namespace": "default"
+    }
+  ]
+}

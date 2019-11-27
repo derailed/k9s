@@ -3,7 +3,6 @@ package k8s
 import (
 	"fmt"
 	"path/filepath"
-	"strings"
 	"sync"
 	"time"
 
@@ -62,7 +61,7 @@ type (
 		CurrentNamespaceName() (string, error)
 		CheckNSAccess(ns string) error
 		CheckListNSAccess() error
-		CanIAccess(ns, rvg string, verbs []string) (bool, error)
+		CanI(ns, gvr string, verbs []string) (bool, error)
 	}
 
 	// APIClient represents a Kubernetes api client.
@@ -106,32 +105,29 @@ func (a *APIClient) CheckNSAccess(n string) error {
 	return err
 }
 
-func makeSAR(ns, rvg string) *authorizationv1.SelfSubjectAccessReview {
-	gvr, _ := schema.ParseResourceArg(strings.ToLower(rvg))
-	if gvr == nil {
-		log.Fatal().Err(fmt.Errorf("Unable to get GVR from url %s", rvg)).Msg("Die checking user access")
-	}
-	log.Debug().Msgf("GVR for %s -- %#v", rvg, *gvr)
+func makeSAR(ns, gvr string) *authorizationv1.SelfSubjectAccessReview {
+	res := GVR(gvr).AsGVR()
+	log.Debug().Msgf("GVR for %s -- %#v", gvr, res)
 	return &authorizationv1.SelfSubjectAccessReview{
 		Spec: authorizationv1.SelfSubjectAccessReviewSpec{
 			ResourceAttributes: &authorizationv1.ResourceAttributes{
 				Namespace: ns,
-				Group:     gvr.Group,
-				Resource:  gvr.Resource,
+				Group:     res.Group,
+				Resource:  res.Resource,
 			},
 		},
 	}
 }
 
-// CanIAccess checks if user has access to a certain resource.
-func (a *APIClient) CanIAccess(ns, rvg string, verbs []string) (bool, error) {
-	sar := makeSAR(ns, rvg)
+// CanI checks if user has access to a certain resource.
+func (a *APIClient) CanI(ns, gvr string, verbs []string) (bool, error) {
+	sar := makeSAR(ns, gvr)
 	dial := a.DialOrDie().AuthorizationV1().SelfSubjectAccessReviews()
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
 		resp, err := dial.Create(sar)
 		if err != nil {
-			log.Error().Err(err).Msgf("CanIAccess")
+			log.Error().Err(err).Msgf("CanI")
 			return false, err
 		}
 		if !resp.Status.Allowed {

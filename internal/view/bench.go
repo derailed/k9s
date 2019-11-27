@@ -13,8 +13,10 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/perf"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tview"
 	"github.com/fsnotify/fsnotify"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -31,7 +33,17 @@ var (
 	okRx        = regexp.MustCompile(`\[2\d{2}\]\s+(\d+)\s+responses`)
 	errRx       = regexp.MustCompile(`\[[4-5]\d{2}\]\s+(\d+)\s+responses`)
 	toastRx     = regexp.MustCompile(`Error distribution`)
-	benchHeader = resource.Row{"NAMESPACE", "NAME", "STATUS", "TIME", "REQ/S", "2XX", "4XX/5XX", "REPORT", "AGE"}
+	benchHeader = render.HeaderRow{
+		render.Header{Name: "NAMESPACE", Align: tview.AlignLeft},
+		render.Header{Name: "NAME", Align: tview.AlignLeft},
+		render.Header{Name: "STATUS", Align: tview.AlignLeft},
+		render.Header{Name: "TIME", Align: tview.AlignLeft},
+		render.Header{Name: "REQ/S", Align: tview.AlignRight},
+		render.Header{Name: "2XX", Align: tview.AlignRight},
+		render.Header{Name: "4XX/5XX", Align: tview.AlignRight},
+		render.Header{Name: "REPORT", Align: tview.AlignLeft},
+		render.Header{Name: "AGE", Align: tview.AlignLeft},
+	}
 )
 
 // Bench represents a service benchmark results view.
@@ -74,9 +86,16 @@ func (b *Bench) Init(ctx context.Context) error {
 	return nil
 }
 
+// SetEnvFn sets k9s env vars.
 func (b *Bench) SetEnvFn(EnvFunc) {}
+
+// GetTable returns the table view.
 func (b *Bench) GetTable() *Table { return b.Table }
 
+// SetPath sets parent selector.
+func (b *Bench) SetPath(s string) {}
+
+// Start runs the refresh loop
 func (b *Bench) Start() {
 	log.Debug().Msgf(">>>> Bench START")
 	var ctx context.Context
@@ -162,23 +181,22 @@ func (b *Bench) hydrate() resource.TableData {
 			log.Error().Err(err).Msgf("Unable to load bench file %s", f.Name())
 			continue
 		}
-		fields := make(resource.Row, len(benchHeader))
+		fields := make(render.Fields, len(benchHeader))
 		if err := initRow(fields, f); err != nil {
 			log.Error().Err(err).Msg("Load bench file")
 			continue
 		}
 		augmentRow(fields, bench)
-		data.Rows[f.Name()] = &resource.RowEvent{
-			Action: resource.New,
-			Fields: fields,
-			Deltas: fields,
-		}
+		data.RowEvents = append(data.RowEvents, render.RowEvent{
+			Kind: render.EventAdd,
+			Row:  render.Row{ID: f.Name(), Fields: fields},
+		})
 	}
 
 	return data
 }
 
-func initRow(row resource.Row, f os.FileInfo) error {
+func initRow(row render.Fields, f os.FileInfo) error {
 	tokens := strings.Split(f.Name(), "_")
 	if len(tokens) < 2 {
 		return fmt.Errorf("Invalid file name %s", f.Name())
@@ -226,19 +244,13 @@ func (b *Bench) watchBenchDir(ctx context.Context) error {
 
 func initTable() resource.TableData {
 	return resource.TableData{
-		Header: benchHeader,
-		Rows:   make(resource.RowEvents, 10),
-		NumCols: map[string]bool{
-			benchHeader[3]: true,
-			benchHeader[4]: true,
-			benchHeader[5]: true,
-			benchHeader[6]: true,
-		},
+		Header:    benchHeader,
+		RowEvents: make(render.RowEvents, 10),
 		Namespace: resource.AllNamespaces,
 	}
 }
 
-func augmentRow(fields resource.Row, data string) {
+func augmentRow(fields render.Fields, data string) {
 	if len(data) == 0 {
 		return
 	}

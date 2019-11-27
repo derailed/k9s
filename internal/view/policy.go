@@ -42,7 +42,8 @@ type (
 func NewPolicy(app *App, subject, name string) *Policy {
 	p := Policy{}
 	p.subjectKind, p.subjectName = mapSubject(subject), name
-	p.Table = NewTable(p.getTitle())
+	p.Table = NewTable(policyTitle)
+	p.Table.Path = p.subjectKind + ":" + p.subjectName
 	p.SetColorerFn(rbacColorer)
 	p.bindKeys()
 
@@ -51,11 +52,14 @@ func NewPolicy(app *App, subject, name string) *Policy {
 
 // Init the view.
 func (p *Policy) Init(ctx context.Context) error {
+	defer func(t time.Time) {
+		log.Debug().Msgf("Policy elapsed %v", time.Since(t))
+	}(time.Now())
+
 	if err := p.Table.Init(ctx); err != nil {
 		return err
 	}
 	p.bindKeys()
-
 	p.SetSortCol(1, len(rbacHeader), false)
 	p.refresh()
 	p.SelectRow(1, true)
@@ -89,7 +93,7 @@ func (p *Policy) bindKeys() {
 	p.Actions().Add(ui.KeyActions{
 		tcell.KeyEscape: ui.NewKeyAction("Back", p.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", p.activateCmd, false),
-		ui.KeyShiftS:    ui.NewKeyAction("Sort Namespace", p.SortColCmd(0, true), false),
+		ui.KeyShiftP:    ui.NewKeyAction("Sort Namespace", p.SortColCmd(0, true), false),
 		ui.KeyShiftN:    ui.NewKeyAction("Sort Name", p.SortColCmd(1, true), false),
 		ui.KeyShiftO:    ui.NewKeyAction("Sort Group", p.SortColCmd(2, true), false),
 		ui.KeyShiftB:    ui.NewKeyAction("Sort Binding", p.SortColCmd(3, true), false),
@@ -101,6 +105,10 @@ func (p *Policy) getTitle() string {
 }
 
 func (p *Policy) refresh() {
+	defer func(t time.Time) {
+		log.Debug().Msgf("Policy Refresh elapsed %v", time.Since(t))
+	}(time.Now())
+
 	data, err := p.reconcile()
 	if err != nil {
 		log.Error().Err(err).Msgf("Refresh for %s:%s", p.subjectKind, p.subjectName)
@@ -134,6 +142,10 @@ func (p *Policy) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (p *Policy) reconcile() (resource.TableData, error) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("Policy Reconcile elapsed %v", time.Since(t))
+	}(time.Now())
+
 	var table resource.TableData
 
 	evts, errs := p.clusterPolicies()

@@ -65,11 +65,17 @@ func saveTable(cluster, title, path string, data resource.TableData) (string, er
 	}()
 
 	w := csv.NewWriter(out)
-	if err := w.Write(data.Header); err != nil {
+	// BOZO!! Method on header
+	headers := make([]string, len(data.Header))
+	for i, h := range data.Header {
+		headers[i] = h.Name
+	}
+	if err := w.Write([]string(headers)); err != nil {
 		return "", err
 	}
-	for _, r := range data.Rows {
-		if err := w.Write(r.Fields); err != nil {
+
+	for _, re := range data.RowEvents {
+		if err := w.Write(re.Row.Fields); err != nil {
 			return "", err
 		}
 	}

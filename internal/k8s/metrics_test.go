@@ -7,6 +7,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -103,31 +104,39 @@ func BenchmarkNodesMetrics(b *testing.B) {
 func TestClusterLoad(t *testing.T) {
 	m := NewMetricsServer(nil)
 
-	nodes := Collection{
-		makeNode("n1", "100m", "4Mi", "50m", "2Mi"),
-		makeNode("n2", "100m", "4Mi", "50m", "2Mi"),
+	nodes := v1.NodeList{
+		Items: []v1.Node{
+			*makeNode("n1", "100m", "4Mi", "50m", "2Mi"),
+			*makeNode("n2", "100m", "4Mi", "50m", "2Mi"),
+		},
 	}
 
-	metrics := Collection{
-		makeMxNode("n1", "50m", "1Mi"),
-		makeMxNode("n2", "50m", "1Mi"),
+	metrics := mv1beta1.NodeMetricsList{
+		Items: []mv1beta1.NodeMetrics{
+			*makeMxNode("n1", "50m", "1Mi"),
+			*makeMxNode("n2", "50m", "1Mi"),
+		},
 	}
 
 	var mx ClusterMetrics
-	m.ClusterLoad(nodes, metrics, &mx)
+	m.ClusterLoad(&nodes, &metrics, &mx)
 	assert.Equal(t, 100.0, mx.PercCPU)
 	assert.Equal(t, 50.0, mx.PercMEM)
 }
 
 func BenchmarkClusterLoad(b *testing.B) {
-	nodes := Collection{
-		makeNode("n1", "100m", "4Mi", "50m", "2Mi"),
-		makeNode("n2", "100m", "4Mi", "50m", "2Mi"),
+	nodes := v1.NodeList{
+		Items: []v1.Node{
+			*makeNode("n1", "100m", "4Mi", "50m", "2Mi"),
+			*makeNode("n2", "100m", "4Mi", "50m", "2Mi"),
+		},
 	}
 
-	metrics := Collection{
-		makeMxNode("n1", "50m", "1Mi"),
-		makeMxNode("n2", "50m", "1Mi"),
+	metrics := mv1beta1.NodeMetricsList{
+		Items: []mv1beta1.NodeMetrics{
+			*makeMxNode("n1", "50m", "1Mi"),
+			*makeMxNode("n2", "50m", "1Mi"),
+		},
 	}
 
 	m := NewMetricsServer(nil)
@@ -135,7 +144,7 @@ func BenchmarkClusterLoad(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
-		m.ClusterLoad(nodes, metrics, &mx)
+		m.ClusterLoad(&nodes, &metrics, &mx)
 	}
 }
 
