@@ -30,7 +30,7 @@ func (CronJob) Header(ns string) HeaderRow {
 		Header{Name: "SUSPEND"},
 		Header{Name: "ACTIVE"},
 		Header{Name: "LAST_SCHEDULE"},
-		Header{Name: "AGE"},
+		Header{Name: "AGE", Decorator: ageDecorator},
 	)
 }
 

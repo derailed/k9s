@@ -28,9 +28,9 @@ type PodWithMetrics interface {
 type Pod struct{}
 
 // ColorerFunc colors a resource row.
-func (Pod) ColorerFunc() ColorerFunc {
-	return func(ns string, evt ResEvent, r Row) tcell.Color {
-		c := DefaultColorer(ns, evt, r)
+func (p Pod) ColorerFunc() ColorerFunc {
+	return func(ns string, re RowEvent) tcell.Color {
+		c := DefaultColorer(ns, re)
 
 		readyCol := 2
 		if len(ns) != 0 {
@@ -38,27 +38,37 @@ func (Pod) ColorerFunc() ColorerFunc {
 		}
 		statusCol := readyCol + 1
 
-		tokens := strings.Split(strings.TrimSpace(r.Fields[readyCol]), "/")
-		if len(tokens) == 2 && (tokens[0] == "0" || tokens[0] != tokens[1]) {
-			if strings.TrimSpace(r.Fields[statusCol]) != "Completed" {
-				c = ErrColor
-			}
-		}
+		ready, status := strings.TrimSpace(re.Row.Fields[readyCol]), strings.TrimSpace(re.Row.Fields[statusCol])
+		c = p.checkReadyCol(ready, status, c)
 
-		switch strings.TrimSpace(r.Fields[statusCol]) {
-		case "ContainerCreating", "PodInitializing":
+		switch status {
+		case ContainerCreating, PodInitializing:
 			return AddColor
-		case "Terminating", "Initialized":
+		case Initialized:
 			return HighlightColor
-		case "Completed":
+		case Completed:
 			return CompletedColor
-		case "Running":
+		case Running:
+		case Terminating:
+			return KillColor
 		default:
-			c = ErrColor
+			return ErrColor
 		}
 
 		return c
 	}
+}
+
+func (Pod) checkReadyCol(readyCol, statusCol string, c tcell.Color) tcell.Color {
+	if statusCol == "Completed" {
+		return c
+	}
+
+	tokens := strings.Split(readyCol, "/")
+	if len(tokens) == 2 && (tokens[0] == "0" || tokens[0] != tokens[1]) {
+		return ErrColor
+	}
+	return c
 }
 
 // Header returns a header row.
@@ -80,7 +90,7 @@ func (Pod) Header(ns string) HeaderRow {
 		Header{Name: "IP"},
 		Header{Name: "NODE"},
 		Header{Name: "QOS"},
-		Header{Name: "AGE"},
+		Header{Name: "AGE", Decorator: ageDecorator},
 	)
 }
 
@@ -94,7 +104,7 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 	var po v1.Pod
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(oo.Object().(*unstructured.Unstructured).Object, &po)
 	if err != nil {
-		log.Error().Err(err).Msg("Converting Pod")
+		log.Error().Err(err).Msg("Expecting a pod resource")
 		return err
 	}
 
@@ -102,11 +112,12 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 	cr, _, rc := p.statuses(ss)
 	c, perc := p.gatherPodMX(&po, oo.Metrics())
 
-	fields := make(Fields, 0, len(r.Fields))
+	r.ID = MetaFQN(po.ObjectMeta)
+	r.Fields = make(Fields, 0, len(p.Header(ns)))
 	if isAllNamespace(ns) {
-		fields = append(fields, po.Namespace)
+		r.Fields = append(r.Fields, po.Namespace)
 	}
-	fields = append(fields,
+	r.Fields = append(r.Fields,
 		po.ObjectMeta.Name,
 		strconv.Itoa(cr)+"/"+strconv.Itoa(len(ss)),
 		p.phase(&po),
@@ -120,11 +131,8 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 		p.mapQOS(po.Status.QOSClass),
 		toAge(po.ObjectMeta.CreationTimestamp),
 	)
-	r.ID = MetaFQN(po.ObjectMeta)
-	r.Fields = fields
 
 	return nil
-
 }
 
 // ----------------------------------------------------------------------------

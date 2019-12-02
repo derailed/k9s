@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	rbacv1 "k8s.io/api/rbac/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -19,8 +21,6 @@ const (
 	user        = "User"
 	sa          = "ServiceAccount"
 )
-
-var policyHeader = append(resource.Row{"NAMESPACE", "NAME", "API GROUP", "BINDING"}, rbacHeaderVerbs...)
 
 type (
 	namespacedRole struct {
@@ -34,36 +34,30 @@ type (
 		cancel      context.CancelFunc
 		subjectKind string
 		subjectName string
-		cache       resource.RowEvents
+		cache       render.RowEvents
 	}
 )
 
 // NewPolicy returns a new viewer.
 func NewPolicy(app *App, subject, name string) *Policy {
-	p := Policy{}
-	p.subjectKind, p.subjectName = mapSubject(subject), name
-	p.Table = NewTable(policyTitle)
-	p.Table.Path = p.subjectKind + ":" + p.subjectName
-	p.SetColorerFn(rbacColorer)
-	p.bindKeys()
-
-	return &p
+	return &Policy{
+		Table:       NewTable(policyTitle),
+		subjectKind: mapSubject(subject),
+		subjectName: name,
+	}
 }
 
 // Init the view.
 func (p *Policy) Init(ctx context.Context) error {
-	defer func(t time.Time) {
-		log.Debug().Msgf("Policy elapsed %v", time.Since(t))
-	}(time.Now())
-
+	p.Table.Path = p.subjectKind + ":" + p.subjectName
 	if err := p.Table.Init(ctx); err != nil {
 		return err
 	}
+	p.SetColorerFn(render.Policy{}.ColorerFunc())
 	p.bindKeys()
-	p.SetSortCol(1, len(rbacHeader), false)
+	p.SetSortCol(1, len(render.Policy{}.Header(render.AllNamespaces)), false)
 	p.refresh()
 	p.SelectRow(1, true)
-	p.Start()
 
 	return nil
 }
@@ -101,10 +95,12 @@ func (p *Policy) bindKeys() {
 }
 
 func (p *Policy) getTitle() string {
-	return fmt.Sprintf(rbacTitleFmt, policyTitle, p.subjectKind+":"+p.subjectName)
+	return fmt.Sprintf(rbacTitleFmt, policyTitle, p.subjectKind+":"+p.subjectName, p.GetRowCount())
 }
 
 func (p *Policy) refresh() {
+	log.Debug().Msgf(">>>>>>>>>>>>>>> Refreshing Policies")
+	// BOZO!!
 	defer func(t time.Time) {
 		log.Debug().Msgf("Policy Refresh elapsed %v", time.Since(t))
 	}(time.Now())
@@ -141,14 +137,15 @@ func (p *Policy) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return p.app.PrevCmd(evt)
 }
 
-func (p *Policy) reconcile() (resource.TableData, error) {
+func (p *Policy) reconcile() (render.TableData, error) {
+	// BOZO!!
 	defer func(t time.Time) {
 		log.Debug().Msgf("Policy Reconcile elapsed %v", time.Since(t))
 	}(time.Now())
 
-	var table resource.TableData
+	var table render.TableData
 
-	evts, errs := p.clusterPolicies()
+	evts, errs := p.fetchClusterRoleBindings()
 	if len(errs) > 0 {
 		for _, err := range errs {
 			log.Error().Err(err).Msg("Unable to find cluster policies")
@@ -164,8 +161,8 @@ func (p *Policy) reconcile() (resource.TableData, error) {
 		return table, errs[0]
 	}
 
-	for k, v := range nevts {
-		evts[k] = v
+	for _, v := range nevts {
+		evts = append(evts, v)
 	}
 
 	return buildTable(p, evts), nil
@@ -173,59 +170,74 @@ func (p *Policy) reconcile() (resource.TableData, error) {
 
 // Protocol...
 
-func (p *Policy) header() resource.Row {
-	return policyHeader
+func (p *Policy) Header() render.HeaderRow {
+	return render.Policy{}.Header(render.AllNamespaces)
 }
 
-func (p *Policy) getCache() resource.RowEvents {
+func (p *Policy) GetCache() render.RowEvents {
 	return p.cache
 }
 
-func (p *Policy) setCache(evts resource.RowEvents) {
+func (p *Policy) SetCache(evts render.RowEvents) {
 	p.cache = evts
 }
 
-func (p *Policy) clusterPolicies() (resource.RowEvents, []error) {
+func (p *Policy) fetchClusterRoleBindings() (render.Rows, []error) {
 	var errs []error
-	evts := make(resource.RowEvents)
-
-	crbs, err := p.app.Conn().DialOrDie().RbacV1().ClusterRoleBindings().List(metav1.ListOptions{})
+	oo, err := p.app.factory.List(render.ClusterWide, "rbac.authorization.k8s.io/v1/clusterrolebindings", labels.Everything())
 	if err != nil {
-		return evts, errs
+		return nil, append(errs, err)
 	}
 
-	var rr []string
-	for _, crb := range crbs.Items {
+	roles := make([]string, 0, len(oo))
+	for _, o := range oo {
+		var crb rbacv1.ClusterRoleBinding
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &crb)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
 		for _, s := range crb.Subjects {
 			if s.Kind == p.subjectKind && s.Name == p.subjectName {
-				rr = append(rr, crb.RoleRef.Name)
+				roles = append(roles, crb.RoleRef.Name)
 			}
 		}
 	}
 
-	for _, r := range rr {
-		role, err := p.app.Conn().DialOrDie().RbacV1().ClusterRoles().Get(r, metav1.GetOptions{})
+	rows := make(render.Rows, 0, len(oo))
+	for _, role := range roles {
+		o, err := p.app.factory.Get(render.ClusterWide, "rbac.authorization.k8s.io/v1/clusterroles", role, labels.Everything())
+		if err != nil {
+			return nil, append(errs, err)
+		}
+		var cr rbacv1.ClusterRole
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cr)
 		if err != nil {
 			errs = append(errs, err)
+			continue
 		}
-		for k, v := range p.parseRules("*", "CR:"+r, role.Rules) {
-			evts[k] = v
+
+		for _, v := range p.parseRules("*", "CR:"+role, cr.Rules) {
+			rows = append(rows, v)
 		}
 	}
 
-	return evts, errs
+	return rows, errs
 }
 
-func (p *Policy) loadRoleBindings() ([]namespacedRole, error) {
-	var rr []namespacedRole
-
-	dial := p.app.Conn().DialOrDie().RbacV1()
-	rbs, err := dial.RoleBindings("").List(metav1.ListOptions{})
+func (p *Policy) fetchRoleBindings() ([]namespacedRole, error) {
+	oo, err := p.app.factory.List(render.AllNamespaces, "rbac.authorization.k8s.io/v1/rolebindings", labels.Everything())
 	if err != nil {
-		return rr, err
+		return nil, err
 	}
 
-	for _, rb := range rbs.Items {
+	rr := make([]namespacedRole, 0, len(oo))
+	for _, o := range oo {
+		var rb rbacv1.RoleBinding
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &rb)
+		if err != nil {
+			return nil, err
+		}
 		for _, s := range rb.Subjects {
 			if s.Kind == p.subjectKind && s.Name == p.subjectName {
 				rr = append(rr, namespacedRole{rb.Namespace, rb.RoleRef.Name})
@@ -236,37 +248,38 @@ func (p *Policy) loadRoleBindings() ([]namespacedRole, error) {
 	return rr, nil
 }
 
-func (p *Policy) loadRoles(errs []error, rr []namespacedRole) (resource.RowEvents, []error) {
-	var (
-		dial = p.app.Conn().DialOrDie().RbacV1()
-		evts = make(resource.RowEvents)
-	)
+func (p *Policy) fetchClusterRoles(errs []error, rr []namespacedRole) (render.Rows, []error) {
+	rows := make(render.Rows, 0, len(rr))
 	for _, r := range rr {
-		if cr, err := dial.Roles(r.ns).Get(r.role, metav1.GetOptions{}); err != nil {
-			errs = append(errs, err)
-		} else {
-			for k, v := range p.parseRules(r.ns, "RO:"+r.role, cr.Rules) {
-				evts[k] = v
-			}
+		o, err := p.app.factory.Get(r.ns, "rbac.authorization.k8s.io/v1/clusterroles", r.role, labels.Everything())
+		if err != nil {
+			return nil, append(errs, err)
 		}
+
+		var cr rbacv1.ClusterRole
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cr)
+		if err != nil {
+			errs = append(errs, err)
+			continue
+		}
+		rows = append(rows, p.parseRules(r.ns, "RO:"+r.role, cr.Rules)...)
 	}
 
-	return evts, errs
+	return rows, errs
 }
 
-func (p *Policy) namespacedPolicies() (resource.RowEvents, []error) {
+func (p *Policy) namespacedPolicies() (render.Rows, []error) {
 	var errs []error
-	rr, err := p.loadRoleBindings()
+	roles, err := p.fetchRoleBindings()
 	if err != nil {
 		errs = append(errs, err)
 	}
 
-	evts, errs := p.loadRoles(errs, rr)
-	return evts, errs
+	return p.fetchClusterRoles(errs, roles)
 }
 
-func (p *Policy) parseRules(ns, binding string, rules []rbacv1.PolicyRule) resource.RowEvents {
-	m := make(resource.RowEvents, len(rules))
+func (p *Policy) parseRules(ns, binding string, rules []rbacv1.PolicyRule) render.Rows {
+	m := make(render.Rows, 0, len(rules))
 	for _, r := range rules {
 		for _, grp := range r.APIGroups {
 			for _, res := range r.Resources {
@@ -276,34 +289,37 @@ func (p *Policy) parseRules(ns, binding string, rules []rbacv1.PolicyRule) resou
 				}
 				for _, na := range r.ResourceNames {
 					n := fqn(k, na)
-					m[fqn(ns, n)] = &resource.RowEvent{
+					m = append(m, render.Row{
+						ID:     fqn(ns, n),
 						Fields: append(policyRow(ns, n, grp, binding), asVerbs(r.Verbs...)...),
-					}
+					})
 				}
-				m[fqn(ns, k)] = &resource.RowEvent{
+				m = append(m, render.Row{
+					ID:     fqn(ns, k),
 					Fields: append(policyRow(ns, k, grp, binding), asVerbs(r.Verbs...)...),
-				}
+				})
 			}
 		}
 		for _, nres := range r.NonResourceURLs {
 			if nres[0] != '/' {
 				nres = "/" + nres
 			}
-			m[fqn(ns, nres)] = &resource.RowEvent{
-				Fields: append(policyRow(ns, nres, resource.NAValue, binding), asVerbs(r.Verbs...)...),
-			}
+			m = append(m, render.Row{
+				ID:     fqn(ns, nres),
+				Fields: append(policyRow(ns, nres, "", binding), asVerbs(r.Verbs...)...),
+			})
 		}
 	}
 
 	return m
 }
 
-func policyRow(ns, res, grp, binding string) resource.Row {
-	if grp != resource.NAValue {
+func policyRow(ns, res, grp, binding string) render.Fields {
+	if grp != "" {
 		grp = toGroup(grp)
 	}
 
-	r := make(resource.Row, 0, len(policyHeader))
+	r := make(render.Fields, 0, len(render.Policy{}.Header(render.AllNamespaces)))
 	return append(r, ns, res, grp, binding)
 }
 
@@ -316,4 +332,14 @@ func mapSubject(subject string) string {
 	default:
 		return user
 	}
+}
+
+func showSAPolicy(app *App, _, _, selection string) {
+	_, n := namespaced(selection)
+	subject, err := mapFuSubject("ServiceAccount")
+	if err != nil {
+		app.Flash().Err(err)
+		return
+	}
+	app.inject(NewPolicy(app, subject, n))
 }

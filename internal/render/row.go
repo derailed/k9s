@@ -21,18 +21,39 @@ type Rows []Row
 
 // Header represent a table header
 type Header struct {
-	Name  string
-	Align int
+	Name      string
+	Align     int
+	Decorator DecoratorFunc
 }
 
 // HeaderRow represents a table header.
 type HeaderRow []Header
+
+func (h HeaderRow) AgeCol(col int) bool {
+	return col == len(h)-1
+}
 
 // RowSorter sorts rows.
 type RowSorter struct {
 	Rows  Rows
 	Index int
 	Asc   bool
+}
+
+func (r Row) Clone() Row {
+	return Row{
+		ID:     r.ID,
+		Fields: r.Fields.Clone(),
+	}
+}
+
+func (f Fields) Clone() Fields {
+	res := make(Fields, len(f))
+	for i, f := range f {
+		res[i] = f
+	}
+
+	return res
 }
 
 // Delete removes an element by id.
@@ -55,6 +76,16 @@ func (rr Rows) Delete(id string) Rows {
 // NewRow returns a new row with initialized fields.
 func NewRow(cols int) Row {
 	return Row{Fields: make([]string, cols)}
+}
+
+func (rr Rows) Upsert(r Row) Rows {
+	idx, ok := rr.Find(r.ID)
+	if !ok {
+		return append(rr, r)
+	}
+	rr[idx] = r
+
+	return rr
 }
 
 // Find locates a row by id. Retturns false is not found.

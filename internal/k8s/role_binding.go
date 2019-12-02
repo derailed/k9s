@@ -15,11 +15,13 @@ func NewRoleBinding(c Connection) *RoleBinding {
 
 // Get a RoleBinding.
 func (r *RoleBinding) Get(ns, n string) (interface{}, error) {
+	panic("NYI")
 	return r.DialOrDie().RbacV1().RoleBindings(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all RoleBindings in a given namespace.
 func (r *RoleBinding) List(ns string, opts metav1.ListOptions) (Collection, error) {
+	panic("NYI")
 	rr, err := r.DialOrDie().RbacV1().RoleBindings(ns).List(opts)
 	if err != nil {
 		return nil, err

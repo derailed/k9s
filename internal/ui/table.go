@@ -7,7 +7,6 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -17,6 +16,9 @@ type (
 	// ColorerFunc represents a row colorer.
 	ColorerFunc func(ns string, evt render.RowEvent) tcell.Color
 
+	// DecorateFunc represents a row decorator.
+	DecorateFunc func(render.TableData) render.TableData
+
 	// SelectedRowFunc a table selection callback.
 	SelectedRowFunc func(r, c int)
 )
@@ -25,15 +27,15 @@ type (
 type Table struct {
 	*SelectTable
 
-	actions   KeyActions
-	BaseTitle string
-	Path      string
-	Data      resource.TableData
-	cmdBuff   *CmdBuff
-	styles    *config.Styles
-	sortCol   SortColumn
-	sortFn    SortFn
-	colorerFn ColorerFunc
+	actions    KeyActions
+	BaseTitle  string
+	Path       string
+	cmdBuff    *CmdBuff
+	styles     *config.Styles
+	sortCol    SortColumn
+	sortFn     SortFn
+	colorerFn  render.ColorerFunc
+	decorateFn DecorateFunc
 }
 
 // NewTable returns a new table view.
@@ -66,7 +68,6 @@ func (t *Table) Init(ctx context.Context) {
 		config.AsColor(t.styles.Table().CursorColor),
 		tcell.AttrBold,
 	)
-
 	t.SetSelectionChangedFunc(t.selChanged)
 	t.SetInputCapture(t.keyboard)
 }
@@ -83,6 +84,10 @@ func (t *Table) SendKey(evt *tcell.EventKey) {
 
 func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	key := evt.Key()
+	if key == tcell.KeyUp || key == tcell.KeyDown {
+		return evt
+	}
+
 	if key == tcell.KeyRune {
 		if t.SearchBuff().IsActive() {
 			t.SearchBuff().Add(evt.Rune())
@@ -107,16 +112,20 @@ func (t *Table) Hints() model.MenuHints {
 }
 
 // GetFilteredData fetch filtered tabular data.
-func (t *Table) GetFilteredData() resource.TableData {
+func (t *Table) GetFilteredData() render.TableData {
 	return t.filtered()
 }
 
+// SetDecorateFn specifies the default row decorator.
+func (t *Table) SetDecorateFn(f DecorateFunc) {
+	t.decorateFn = f
+}
+
 // SetColorerFn specifies the default colorer.
-func (t *Table) SetColorerFn(f ColorerFunc) {
+func (t *Table) SetColorerFn(f render.ColorerFunc) {
 	if f == nil {
 		return
 	}
-	log.Debug().Msgf("Setting Colorer %#v", f)
 	t.colorerFn = f
 }
 
@@ -126,10 +135,14 @@ func (t *Table) SetSortCol(index, count int, asc bool) {
 }
 
 // Update table content.
-func (t *Table) Update(data resource.TableData) {
+func (t *Table) Update(data render.TableData) {
 	t.Data = data
+	if t.decorateFn != nil {
+		data = t.decorateFn(data)
+	}
+
 	if t.cmdBuff.Empty() {
-		t.doUpdate(t.Data)
+		t.doUpdate(data)
 	} else {
 		t.doUpdate(t.filtered())
 	}
@@ -137,9 +150,8 @@ func (t *Table) Update(data resource.TableData) {
 	t.updateSelection(true)
 }
 
-func (t *Table) doUpdate(data resource.TableData) {
-	t.ActiveNS = data.Namespace
-	if t.ActiveNS == resource.AllNamespaces && t.ActiveNS != "*" {
+func (t *Table) doUpdate(data render.TableData) {
+	if data.Namespace == render.AllNamespaces {
 		t.actions[KeyShiftP] = NewKeyAction("Sort Namespace", t.SortColCmd(-2, true), false)
 	} else {
 		t.actions.Delete(KeyShiftP)
@@ -166,25 +178,26 @@ func (t *Table) doUpdate(data resource.TableData) {
 	for i, r := range data.RowEvents {
 		t.buildRow(data.Namespace, i+1, r, data.Header, pads)
 	}
-	// t.resetSelection()
+	t.updateSelection(false)
 }
 
 // SortColCmd designates a sorted column.
 func (t *Table) SortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
+		var index int
 		switch col {
 		case -2:
-			col = 0
+			index = 0
 		case -1:
-			col = t.GetColumnCount() - 1
+			index = t.GetColumnCount() - 1
 		default:
-			col = t.NameColIndex() + col
+			index = t.NameColIndex() + col
 		}
 		t.sortCol.asc = !t.sortCol.asc
-		if t.sortCol.index != col {
+		if t.sortCol.index != index {
 			t.sortCol.asc = asc
 		}
-		t.sortCol.index = col
+		t.sortCol.index = index
 		t.Refresh()
 
 		return nil
@@ -199,7 +212,7 @@ func (t *Table) SortInvertCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (t *Table) adjustSorter(data resource.TableData) {
+func (t *Table) adjustSorter(data render.TableData) {
 	// Going from namespace to non namespace or vice-versa?
 	switch {
 	case t.sortCol.colCount == 0:
@@ -214,51 +227,30 @@ func (t *Table) adjustSorter(data resource.TableData) {
 	}
 }
 
-// BOZO!!
-// func (t *Table) sort(data resource.TableData, row int) {
-// 	pads := make(MaxyPad, len(data.Header))
-// 	ComputeMaxColumns(pads, t.sortCol.index, data.Header, data.RowEvents)
-
-// 	sortFn := defaultSort
-// 	if t.sortFn != nil {
-// 		sortFn = t.sortFn
-// 	}
-
-// 	prim, sec := sortAllRows(t.sortCol, data.RowEvents, sortFn)
-// 	for _, pk := range prim {
-// 		for _, sk := range sec[pk] {
-// 			t.buildRow(row, data, sk, pads)
-// 			row++
-// 		}
-// 	}
-
-// 	// check marks if a row is deleted make sure we blow the mark too.
-// 	for k := range t.marks {
-// 		if _, ok := t.Data.Rows[k]; !ok {
-// 			delete(t.marks, k)
-// 		}
-// 	}
-// }
-
 func (t *Table) buildRow(ns string, r int, re render.RowEvent, header render.HeaderRow, pads MaxyPad) {
-	color := DefaultColorer
+	color := render.DefaultColorer
 	if t.colorerFn != nil {
 		color = t.colorerFn
 	}
 	marked := t.IsMarked(re.Row.ID)
 	for col, field := range re.Row.Fields {
-		delta := field
-		if len(re.Deltas) > 0 {
-			delta = re.Deltas[col]
+		if !re.Deltas.IsBlank() && !header.AgeCol(col) {
+			field += Deltas(re.Deltas[col], field)
 		}
-		c := tview.NewTableCell(formatCell(field+Deltas(delta, field), pads[col]))
-		{
-			c.SetExpansion(1)
-			c.SetAlign(header[col].Align)
-			c.SetTextColor(color(ns, re))
-			if marked {
-				c.SetTextColor(config.AsColor(t.styles.Table().MarkColor))
-			}
+
+		if header[col].Decorator != nil {
+			field = header[col].Decorator(field)
+		}
+
+		if header[col].Align == tview.AlignLeft {
+			field = formatCell(field, pads[col])
+		}
+		c := tview.NewTableCell(field)
+		c.SetExpansion(1)
+		c.SetAlign(header[col].Align)
+		c.SetTextColor(color(ns, re))
+		if marked {
+			c.SetTextColor(config.AsColor(t.styles.Table().MarkColor))
 		}
 		t.SetCell(r, col, c)
 	}
@@ -277,7 +269,7 @@ func (t *Table) Refresh() {
 // NameColIndex returns the index of the resource name column.
 func (t *Table) NameColIndex() int {
 	col := 0
-	if t.ActiveNS == resource.AllNamespaces {
+	if t.Data.Namespace == render.AllNamespaces {
 		col++
 	}
 	return col
@@ -291,7 +283,7 @@ func (t *Table) AddHeaderCell(col int, h render.Header) {
 	t.SetCell(0, col, c)
 }
 
-func (t *Table) filtered() resource.TableData {
+func (t *Table) filtered() render.TableData {
 	if t.cmdBuff.Empty() || IsLabelSelector(t.cmdBuff.String()) {
 		return t.Data
 	}
@@ -327,5 +319,9 @@ func (t *Table) ShowDeleted() {
 
 // UpdateTitle refreshes the table title.
 func (t *Table) UpdateTitle() {
-	t.SetTitle(styleTitle(t.GetRowCount(), t.ActiveNS, t.BaseTitle, t.Path, t.cmdBuff.String(), t.styles))
+	ns := t.Data.Namespace
+	if ns == render.AllNamespaces {
+		ns = render.NamespaceAll
+	}
+	t.SetTitle(styleTitle(t.GetRowCount(), ns, t.BaseTitle, t.Path, t.cmdBuff.String(), t.styles))
 }

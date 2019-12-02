@@ -8,7 +8,6 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
@@ -32,12 +31,12 @@ func TestTableNew(t *testing.T) {
 	v := NewTable("test")
 	v.Init(makeContext())
 
-	data := resource.TableData{
+	data := render.TableData{
 		Header: render.HeaderRow{
 			render.Header{Name: "NAMESPACE"},
 			render.Header{Name: "NAME", Align: tview.AlignRight},
 			render.Header{Name: "FRED"},
-			render.Header{Name: "AGE"},
+			render.Header{Name: "AGE", Decorator: ageDecorator},
 		},
 		RowEvents: render.RowEvents{
 			render.RowEvent{
@@ -61,12 +60,12 @@ func TestTableViewFilter(t *testing.T) {
 	v := NewTable("test")
 	v.Init(makeContext())
 
-	data := resource.TableData{
+	data := render.TableData{
 		Header: render.HeaderRow{
 			render.Header{Name: "NAMESPACE"},
 			render.Header{Name: "NAME", Align: tview.AlignRight},
 			render.Header{Name: "FRED"},
-			render.Header{Name: "AGE"},
+			render.Header{Name: "AGE", Decorator: ageDecorator},
 		},
 		RowEvents: render.RowEvents{
 			render.RowEvent{
@@ -95,12 +94,12 @@ func TestTableViewSort(t *testing.T) {
 	v := NewTable("test")
 	v.Init(makeContext())
 
-	data := resource.TableData{
+	data := render.TableData{
 		Header: render.HeaderRow{
 			render.Header{Name: "NAMESPACE"},
 			render.Header{Name: "NAME", Align: tview.AlignRight},
 			render.Header{Name: "FRED"},
-			render.Header{Name: "AGE"},
+			render.Header{Name: "AGE", Decorator: ageDecorator},
 		},
 		RowEvents: render.RowEvents{
 			render.RowEvent{

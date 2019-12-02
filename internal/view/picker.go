@@ -25,12 +25,18 @@ func NewPicker() *Picker {
 }
 
 func (v *Picker) Init(ctx context.Context) error {
+	app, err := extractApp(ctx)
+	if err != nil {
+		return err
+	}
+	v.actions[tcell.KeyEscape] = ui.NewKeyAction("Back", app.PrevCmd, true)
+
 	v.SetBorder(true)
 	v.SetMainTextColor(tcell.ColorWhite)
 	v.ShowSecondaryText(false)
 	v.SetShortcutColor(tcell.ColorAqua)
 	v.SetSelectedBackgroundColor(tcell.ColorAqua)
-	v.SetTitle(" [aqua::b]Container Selector ")
+	v.SetTitle(" [aqua::b]Containers Picker ")
 	v.SetInputCapture(func(evt *tcell.EventKey) *tcell.EventKey {
 		if a, ok := v.actions[evt.Key()]; ok {
 			a.Action(evt)

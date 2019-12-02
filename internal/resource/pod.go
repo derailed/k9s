@@ -10,20 +10,26 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 const (
 	defaultTimeout = 1 * time.Second
-	Terminating    = "Terminating"
-	Running        = "Running"
-	Initialized    = "Initialized"
-	Completed      = "Completed"
+	// BOZO!!
+	Terminating = "Terminating"
+	Running     = "Running"
+	Initialized = "Initialized"
+	Completed   = "Completed"
 )
 
 // Pod that can be displayed in a table and interacted with.
@@ -83,6 +89,7 @@ func (r *Pod) SetPodMetrics(m *mv1beta1.PodMetrics) {
 
 // Marshal resource to yaml.
 func (r *Pod) Marshal(path string) (string, error) {
+	panic("Should not be called")
 	ns, n := Namespaced(path)
 	i, err := r.Resource.Get(ns, n)
 	if err != nil {
@@ -107,43 +114,43 @@ func (r *Pod) Containers(path string, includeInit bool) ([]string, error) {
 
 // PodLogs tail logs for all containers in a running Pod.
 func (r *Pod) PodLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
+	fac, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
+	if !ok {
+		return errors.New("Expecting an informer")
+	}
+	ns, n := Namespaced(opts.FQN())
+	o, err := fac.Get(ns, "v1/pods", n, labels.Everything())
+	if err != nil {
+		return err
+	}
+
+	var po v1.Pod
+	if runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &po); err != nil {
+		return err
+	}
+	opts.Color = asColor(po.Name)
+	if len(po.Spec.InitContainers)+len(po.Spec.Containers) == 1 {
+		opts.SingleContainer = true
+	}
+
+	for _, co := range po.Spec.InitContainers {
+		opts.Container = co.Name
+		if err := r.Logs(ctx, c, opts); err != nil {
+			return err
+		}
+	}
+	rcos := r.loggableContainers(po.Status)
+	for _, co := range po.Spec.Containers {
+		if in(rcos, co.Name) {
+			opts.Container = co.Name
+			if err := r.Logs(ctx, c, opts); err != nil {
+				log.Error().Err(err).Msgf("Getting logs for %s failed", co.Name)
+				return err
+			}
+		}
+	}
+
 	return nil
-	// inf, ok := ctx.Value(IKey("informer")).(*watch.Informer)
-	// if !ok {
-	// 	return errors.New("Expecting an informer")
-	// }
-	// p, err := inf.Get(watch.PodIndex, opts.FQN(), metav1.GetOptions{})
-	// if err != nil {
-	// 	return err
-	// }
-
-	// po, ok := p.(*v1.Pod)
-	// if !ok {
-	// 	return errors.New("Expecting a pod resource")
-	// }
-	// opts.Color = asColor(po.Name)
-	// if len(po.Spec.InitContainers)+len(po.Spec.Containers) == 1 {
-	// 	opts.SingleContainer = true
-	// }
-
-	// for _, co := range po.Spec.InitContainers {
-	// 	opts.Container = co.Name
-	// 	if err := r.Logs(ctx, c, opts); err != nil {
-	// 		return err
-	// 	}
-	// }
-	// rcos := r.loggableContainers(po.Status)
-	// for _, co := range po.Spec.Containers {
-	// 	if in(rcos, co.Name) {
-	// 		opts.Container = co.Name
-	// 		if err := r.Logs(ctx, c, opts); err != nil {
-	// 			log.Error().Err(err).Msgf("Getting logs for %s failed", co.Name)
-	// 			return err
-	// 		}
-	// 	}
-	// }
-
-	// return nil
 }
 
 // Logs tails a given container logs

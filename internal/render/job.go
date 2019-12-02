@@ -34,7 +34,7 @@ func (Job) Header(ns string) HeaderRow {
 		Header{Name: "DURATION"},
 		Header{Name: "CONTAINERS"},
 		Header{Name: "IMAGES"},
-		Header{Name: "AGE"},
+		Header{Name: "AGE", Decorator: ageDecorator},
 	)
 }
 

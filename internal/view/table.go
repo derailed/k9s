@@ -12,11 +12,10 @@ import (
 type Table struct {
 	*ui.Table
 
-	app        *App
-	filterFn   func(string)
-	cancelFn   context.CancelFunc
-	decorateFn DecorateFunc
-	enterFn    EnterFunc
+	app      *App
+	filterFn func(string)
+	cancelFn context.CancelFunc
+	enterFn  EnterFunc
 }
 
 func NewTable(title string) *Table {
@@ -33,7 +32,6 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	}
 	ctx = context.WithValue(ctx, ui.KeyStyles, t.app.Styles)
 	t.Table.Init(ctx)
-
 	t.bindKeys()
 
 	return nil
@@ -78,11 +76,6 @@ func (t *Table) SetEnterFn(f EnterFunc) {
 	}
 	log.Debug().Msgf("Setting ENTERFN on %s -- %v", t.BaseTitle, f)
 	t.enterFn = f
-}
-
-// SetDecorateFn specifies the default row decorator.
-func (t *Table) SetDecorateFn(f DecorateFunc) {
-	t.decorateFn = f
 }
 
 // SetExtraActionsFn specifies custom keyboard behavior.

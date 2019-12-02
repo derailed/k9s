@@ -17,11 +17,13 @@ func NewClusterRole(c Connection) *ClusterRole {
 
 // Get a cluster role.
 func (c *ClusterRole) Get(_, n string) (interface{}, error) {
+	panic("NYI")
 	return c.DialOrDie().RbacV1().ClusterRoles().Get(n, metav1.GetOptions{})
 }
 
 // List all ClusterRoles on a cluster.
 func (c *ClusterRole) List(ns string, opts metav1.ListOptions) (Collection, error) {
+	panic("NYI")
 	rr, err := c.DialOrDie().RbacV1().ClusterRoles().List(opts)
 	if err != nil {
 		return nil, err

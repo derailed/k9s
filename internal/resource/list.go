@@ -2,14 +2,9 @@ package resource
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"reflect"
 
-	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
-	w "github.com/derailed/k9s/internal/watch"
-	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/watch"
 )
 
@@ -67,6 +62,11 @@ func (l *list) Namespaced() bool {
 	return l.namespace != NotNamespaced
 }
 
+// IsClusterWide returns true if the resource is cluster scoped.
+func (l *list) IsCluterWide() bool {
+	return l.namespace == render.ClusterWide
+}
+
 // AllNamespaces checks if this resource spans all namespaces.
 func (l *list) AllNamespaces() bool {
 	return l.namespace == AllNamespaces
@@ -114,14 +114,15 @@ func (l *list) Resource() Resource {
 }
 
 // Cache tracks previous resource state.
-func (l *list) Data() TableData {
-	return TableData{
+func (l *list) Data() render.TableData {
+	return render.TableData{
 		Header:    l.header,
 		RowEvents: l.cache,
 		Namespace: l.namespace,
 	}
 }
 
+// BOZO!!
 // func (l *list) load(informer *wa.Informer, ns string) (Columnars, error) {
 // 	rr, err := informer.List(l.name, ns, metav1.ListOptions{
 // 		FieldSelector: l.fieldSelector,
@@ -178,39 +179,53 @@ func (l *list) Data() TableData {
 // 	return res, nil
 // }
 
-type ContextKey string
-
-const KeyFactory ContextKey = "factory"
-
 // Reconcile previous vs current state and emits delta events.
-func (l *list) Reconcile(ctx context.Context, gvr, path string) error {
-	log.Debug().Msgf("Reconcile %q in path %q", gvr, path)
-	ns := l.namespace
-	if path != "" {
-		ns = path
-	}
+func (l *list) Reconcile(ctx context.Context, gvr string) error {
+	panic("NYI")
+	// path := ctx.Value(internal.KeySelection).(string)
 
-	factory, ok := ctx.Value(KeyFactory).(*w.Factory)
-	if !ok {
-		return errors.New("no factory found in context")
-	}
-	m, ok := model.Registry[gvr]
-	if !ok {
-		panic(fmt.Errorf("no model registered for %q", gvr))
-	}
-	m.Model.Init(ns, gvr, factory)
-	oo, err := m.Model.List(path)
-	if err != nil {
-		panic(err)
-	}
-	items := make(render.Rows, cap(oo))
-	if err := m.Model.Hydrate(oo, items, m.Renderer); err != nil {
-		panic(err)
-	}
-	l.update(ns, items)
-	l.header = m.Renderer.Header(ns)
+	// log.Debug().Msgf("Reconcile %q in path %q", gvr, path)
+	// ns := l.namespace
+	// if path != "" {
+	// 	ns = path
+	// }
 
-	return nil
+	// factory, ok := ctx.Value(internal.KeyFactory).(*w.Factory)
+	// if !ok {
+	// 	return errors.New("no factory found in context")
+	// }
+	// m, ok := model.Registry[gvr]
+	// if !ok {
+	// 	log.Warn().Msgf("Resource %s not found in registry. Going generic!", gvr)
+	// 	m = model.ResourceMeta{
+	// 		Model:    &model.Generic{},
+	// 		Renderer: &render.Generic{},
+	// 	}
+	// }
+	// if m.Model == nil {
+	// 	m.Model = &model.Resource{}
+	// }
+	// m.Model.Init(ns, gvr, factory)
+
+	// if l.labelSelector != "" {
+	// 	ctx = context.WithValue(ctx, internal.KeyLabels, l.labelSelector)
+	// }
+	// if l.fieldSelector != "" {
+	// 	ctx = context.WithValue(ctx, internal.KeyFields, l.fieldSelector)
+	// }
+	// oo, err := m.Model.List(ctx)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// log.Debug().Msgf("Model returned [%d] items", len(oo))
+	// rows := make(render.Rows, len(oo))
+	// if err := m.Model.Hydrate(oo, rows, m.Renderer); err != nil {
+	// 	panic(err)
+	// }
+	// l.update(ns, rows)
+	// l.header = m.Renderer.Header(ns)
+
+	// return nil
 }
 
 func (l *list) update(ns string, rows render.Rows) {

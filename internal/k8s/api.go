@@ -6,8 +6,6 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/client-go/discovery/cached/disk"
-
 	"github.com/rs/zerolog/log"
 	authorizationv1 "k8s.io/api/authorization/v1"
 	v1 "k8s.io/api/core/v1"
@@ -15,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/version"
+	"k8s.io/client-go/discovery/cached/disk"
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
@@ -107,7 +106,6 @@ func (a *APIClient) CheckNSAccess(n string) error {
 
 func makeSAR(ns, gvr string) *authorizationv1.SelfSubjectAccessReview {
 	res := GVR(gvr).AsGVR()
-	log.Debug().Msgf("GVR for %s -- %#v", gvr, res)
 	return &authorizationv1.SelfSubjectAccessReview{
 		Spec: authorizationv1.SelfSubjectAccessReviewSpec{
 			ResourceAttributes: &authorizationv1.ResourceAttributes{
@@ -168,6 +166,7 @@ func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
 
 // NodePods returns a collection of all available pods on a given node.
 func (a *APIClient) NodePods(node string) (*v1.PodList, error) {
+	panic("NYI")
 	const selFmt = "spec.nodeName=%s,status.phase!=%s,status.phase!=%s"
 	fieldSelector, err := fields.ParseSelector(fmt.Sprintf(selFmt, node, v1.PodSucceeded, v1.PodFailed))
 	if err != nil {

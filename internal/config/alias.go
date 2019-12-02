@@ -14,6 +14,9 @@ var K9sAlias = filepath.Join(K9sHome, "alias.yml")
 // Alias tracks shortname to GVR mappings.
 type Alias map[string]string
 
+// ShortNames represents a collection of shortnames for aliases.
+type ShortNames map[string][]string
+
 // Aliases represents a collection of aliases.
 type Aliases struct {
 	Alias Alias `yaml:"alias"`
@@ -88,13 +91,13 @@ func (a Aliases) Get(k string) (string, bool) {
 }
 
 // Define declares a new alias.
-func (a Aliases) Define(command, alias string) {
-	if _, ok := a.Alias[alias]; ok {
-		// Don't override aliases. Take order of alias registration as precedence.
-		return
+func (a Aliases) Define(gvr string, aliases ...string) {
+	for _, alias := range aliases {
+		if _, ok := a.Alias[alias]; ok {
+			continue
+		}
+		a.Alias[alias] = gvr
 	}
-
-	a.Alias[alias] = command
 }
 
 // LoadAliases loads alias from a given file.

@@ -2,10 +2,12 @@ package ui
 
 import (
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
+	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 // MaxyPad tracks uniform column padding.
@@ -25,8 +27,11 @@ func ComputeMaxColumns(pads MaxyPad, sortCol int, header render.HeaderRow, ee re
 	var row int
 	for _, e := range ee {
 		for index, field := range e.Row.Fields {
+			if header.AgeCol(index) {
+				field = toAgeHuman(field)
+			}
 			width := len(field) + colPadding
-			if width > pads[index] {
+			if index < len(pads) && width > pads[index] {
 				pads[index] = width
 			}
 		}
@@ -55,4 +60,13 @@ func Pad(s string, width int) string {
 	}
 
 	return s + strings.Repeat(" ", width-len(s))
+}
+
+func toAgeHuman(s string) string {
+	d, err := time.ParseDuration(s)
+	if err != nil {
+		return "n/a"
+	}
+
+	return duration.HumanDuration(d)
 }

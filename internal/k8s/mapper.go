@@ -73,7 +73,6 @@ func (r *RestMapper) resourceFor(resourceArg string) (schema.GroupVersionResourc
 	}
 
 	fullGVR, gr := schema.ParseResourceArg(strings.ToLower(resourceArg))
-	log.Debug().Msgf("GVR %#v -- %#v", fullGVR, gr)
 	if fullGVR != nil {
 		return mapper.ResourceFor(*fullGVR)
 	}

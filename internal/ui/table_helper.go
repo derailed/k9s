@@ -18,6 +18,7 @@ const (
 	SearchFmt = "<[filter:bg:r]/%s[fg:bg:-]> "
 
 	nsTitleFmt    = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
+	titleFmt      = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
 	descIndicator = "↓"
 	ascIndicator  = "↑"
 
@@ -88,17 +89,18 @@ func SkinTitle(fmat string, style config.Frame) string {
 	return fmat
 }
 
-func sortRows(evts resource.RowEvents, sortFn SortFn, sortCol SortColumn, keys []string) {
-	rows := make(resource.Rows, 0, len(evts))
-	for k, r := range evts {
-		rows = append(rows, append(r.Fields, k))
-	}
-	sortFn(rows, sortCol)
+// BOZO!!
+// func sortRows(evts resource.RowEvents, sortFn SortFn, sortCol SortColumn, keys []string) {
+// 	rows := make(resource.Rows, 0, len(evts))
+// 	for k, r := range evts {
+// 		rows = append(rows, append(r.Fields, k))
+// 	}
+// 	sortFn(rows, sortCol)
 
-	for i, r := range rows {
-		keys[i] = r[len(r)-1]
-	}
-}
+// 	for i, r := range rows {
+// 		keys[i] = r[len(r)-1]
+// 	}
+// }
 
 // func defaultSort(rows resource.Rows, sortCol SortColumn) {
 // 	t := RowSorter{rows: rows, index: sortCol.index, asc: sortCol.asc}
@@ -147,13 +149,13 @@ func formatCell(field string, padding int) string {
 	return field
 }
 
-func rxFilter(q string, data resource.TableData) (resource.TableData, error) {
+func rxFilter(q string, data render.TableData) (render.TableData, error) {
 	rx, err := regexp.Compile(`(?i)` + q)
 	if err != nil {
 		return data, err
 	}
 
-	filtered := resource.TableData{
+	filtered := render.TableData{
 		Header:    data.Header,
 		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
 		Namespace: data.Namespace,
@@ -168,14 +170,14 @@ func rxFilter(q string, data resource.TableData) (resource.TableData, error) {
 	return filtered, nil
 }
 
-func fuzzyFilter(q string, index int, data resource.TableData) resource.TableData {
+func fuzzyFilter(q string, index int, data render.TableData) render.TableData {
 	var ss, kk []string
 	for _, re := range data.RowEvents {
 		ss = append(ss, re.Row.Fields[index])
 		kk = append(kk, re.Row.ID)
 	}
 
-	filtered := resource.TableData{
+	filtered := render.TableData{
 		Header:    data.Header,
 		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
 		Namespace: data.Namespace,
@@ -201,7 +203,7 @@ func styleTitle(rc int, ns, base, path, buff string, styles *config.Styles) stri
 	}
 	switch ns {
 	case resource.NotNamespaced, "*":
-		title = SkinTitle(fmt.Sprintf(nsTitleFmt, base, path, rc), styles.Frame())
+		title = SkinTitle(fmt.Sprintf(titleFmt, base, rc), styles.Frame())
 	default:
 		if ns == resource.AllNamespaces {
 			ns = resource.AllNamespace

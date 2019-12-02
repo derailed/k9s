@@ -36,9 +36,6 @@ const (
 // Connection represents an apiserver connection.
 type Connection k8s.Connection
 
-// RowEvents tracks resource update events.
-type RowEvents map[string]*RowEvent
-
 // TypeName captures resource names.
 type TypeName struct {
 	Singular   string
@@ -57,22 +54,15 @@ type TypeMeta struct {
 	Kind       string
 }
 
-// TableData tracks a K8s resource for tabular display.
-type TableData struct {
-	Header    render.HeaderRow
-	RowEvents render.RowEvents
-	Namespace string
-}
-
 // List protocol to display and update a collection of resources
 type List interface {
-	Data() TableData
+	Data() render.TableData
 	Resource() Resource
 	Namespaced() bool
 	AllNamespaces() bool
 	GetNamespace() string
 	SetNamespace(string)
-	Reconcile(ctx context.Context, gvr, path string) error
+	Reconcile(ctx context.Context, gvr string) error
 	GetName() string
 	Access(flag int) bool
 	GetAccess() int
@@ -143,9 +133,6 @@ type Restartable interface {
 type Factory interface {
 	New(interface{}) (Columnar, error)
 }
-
-// IKey informer context key.
-type IKey string
 
 // Containers represents a resource that supports containers.
 type Containers interface {

@@ -8,7 +8,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func TestAsGR(t *testing.T) {
+func TestAsGV(t *testing.T) {
 	uu := map[string]struct {
 		gvr string
 		e   schema.GroupVersion
@@ -21,7 +21,7 @@ func TestAsGR(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, k8s.GVR(u.gvr).AsGR())
+			assert.Equal(t, u.e, k8s.GVR(u.gvr).AsGV())
 		})
 	}
 }

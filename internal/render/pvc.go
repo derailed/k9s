@@ -2,7 +2,9 @@ package render
 
 import (
 	"fmt"
+	"strings"
 
+	"github.com/gdamore/tcell"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -13,7 +15,24 @@ type PersistentVolumeClaim struct{}
 
 // ColorerFunc colors a resource row.
 func (PersistentVolumeClaim) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+	return func(ns string, r RowEvent) tcell.Color {
+		c := DefaultColorer(ns, r)
+		if r.Kind == EventAdd || r.Kind == EventUpdate {
+			return c
+		}
+
+		markCol := 2
+		if ns != AllNamespaces {
+			markCol = 1
+		}
+
+		if strings.TrimSpace(r.Row.Fields[markCol]) != "Bound" {
+			c = ErrColor
+		}
+
+		return c
+	}
+
 }
 
 // Header returns a header rbw.
@@ -30,7 +49,7 @@ func (PersistentVolumeClaim) Header(ns string) HeaderRow {
 		Header{Name: "CAPACITY"},
 		Header{Name: "ACCESS MODES"},
 		Header{Name: "STORAGECLASS"},
-		Header{Name: "AGE"},
+		Header{Name: "AGE", Decorator: ageDecorator},
 	)
 }
 

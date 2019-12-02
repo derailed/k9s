@@ -33,7 +33,7 @@ func (Service) Header(ns string) HeaderRow {
 		Header{Name: "EXTERNAL-IP"},
 		Header{Name: "SELECTOR"},
 		Header{Name: "PORTS"},
-		Header{Name: "AGE"},
+		Header{Name: "AGE", Decorator: ageDecorator},
 	)
 }
 

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/rs/zerolog/log"
@@ -41,7 +42,7 @@ func computeFilename(cluster, ns, title, path string) (string, error) {
 	return strings.ToLower(filepath.Join(dir, fName)), nil
 }
 
-func saveTable(cluster, title, path string, data resource.TableData) (string, error) {
+func saveTable(cluster, title, path string, data render.TableData) (string, error) {
 	ns := data.Namespace
 	if ns == resource.AllNamespaces {
 		ns = resource.AllNamespace
@@ -84,5 +85,5 @@ func saveTable(cluster, title, path string, data resource.TableData) (string, er
 		return "", err
 	}
 
-	return path, nil
+	return fPath, nil
 }

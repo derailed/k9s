@@ -48,13 +48,9 @@ func (v *Help) Init(ctx context.Context) (err error) {
 
 func (v *Help) bindKeys() {
 	v.Actions().Set(ui.KeyActions{
-		tcell.KeyEsc:   ui.NewKeyAction("Back", v.backCmd, true),
-		tcell.KeyEnter: ui.NewKeyAction("Back", v.backCmd, false),
+		tcell.KeyEsc:   ui.NewKeyAction("Back", v.app.PrevCmd, true),
+		tcell.KeyEnter: ui.NewKeyAction("Back", v.app.PrevCmd, false),
 	})
-}
-
-func (v *Help) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return v.app.PrevCmd(evt)
 }
 
 func (v *Help) showHelp() model.MenuHints {

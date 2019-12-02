@@ -17,11 +17,13 @@ func NewClusterRoleBinding(c Connection) *ClusterRoleBinding {
 
 // Get a service.
 func (c *ClusterRoleBinding) Get(_, n string) (interface{}, error) {
+	panic("NYI")
 	return c.DialOrDie().RbacV1().ClusterRoleBindings().Get(n, metav1.GetOptions{})
 }
 
 // List all ClusterRoleBindings on a cluster.
 func (c *ClusterRoleBinding) List(ns string, opts metav1.ListOptions) (Collection, error) {
+	panic("NYI")
 	rr, err := c.DialOrDie().RbacV1().ClusterRoleBindings().List(opts)
 	if err != nil {
 		return Collection{}, err

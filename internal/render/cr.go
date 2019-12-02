@@ -20,7 +20,7 @@ func (ClusterRole) ColorerFunc() ColorerFunc {
 func (ClusterRole) Header(string) HeaderRow {
 	return HeaderRow{
 		Header{Name: "NAME"},
-		Header{Name: "AGE"},
+		Header{Name: "AGE", Decorator: ageDecorator},
 	}
 }
 

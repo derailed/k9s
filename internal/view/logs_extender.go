@@ -1,6 +1,7 @@
 package view
 
 import (
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 )
@@ -51,6 +52,6 @@ func (l *LogsExtender) showLogs(path string, prev bool) {
 	if l.containerFn != nil {
 		co = l.containerFn()
 	}
-	log := NewLog(path, co, l.List(), prev)
+	log := NewLog(dao.GVR(l.GVR()), path, co, l.List(), prev)
 	l.App().inject(log)
 }

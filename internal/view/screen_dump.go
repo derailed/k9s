@@ -3,13 +3,12 @@ package view
 import (
 	"context"
 	"errors"
-	"fmt"
-	"os"
 	"path/filepath"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/resource"
-	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/fsnotify/fsnotify"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -17,144 +16,55 @@ import (
 
 const dumpTitle = "Screen Dumps"
 
-var dumpHeader = resource.Row{"NAME", "AGE"}
-
 // ScreenDump presents a directory listing viewer.
 type ScreenDump struct {
-	*Table
+	ResourceViewer
 }
 
 // NewScreenDump returns a new viewer.
-func NewScreenDump(_, _ string, _ resource.List) ResourceViewer {
-	return &ScreenDump{
-		Table: NewTable(dumpTitle),
+func NewScreenDump(gvr dao.GVR) ResourceViewer {
+	s := ScreenDump{
+		ResourceViewer: NewGeneric(gvr),
 	}
-}
+	// BOZO!! Rename Table
+	s.GetTable().SetBorderFocusColor(tcell.ColorSteelBlue)
+	s.GetTable().SetSelectedStyle(tcell.ColorWhite, tcell.ColorRoyalBlue, tcell.AttrNone)
+	s.GetTable().SetColorerFn(render.ScreenDump{}.ColorerFunc())
+	s.GetTable().SetSortCol(s.GetTable().NameColIndex(), 0, true)
+	s.GetTable().SelectRow(1, true)
+	s.GetTable().SetEnterFn(s.edit)
+	s.SetContextFn(s.dirContext)
 
-// Init initializes the viewer.
-func (s *ScreenDump) Init(ctx context.Context) error {
-	if err := s.Table.Init(ctx); err != nil {
-		return nil
-	}
-	s.bindKeys()
-	s.SetBorderFocusColor(tcell.ColorSteelBlue)
-	s.SetSelectedStyle(tcell.ColorWhite, tcell.ColorRoyalBlue, tcell.AttrNone)
-	s.SetColorerFn(dumpColorer)
-	s.ActiveNS = resource.AllNamespaces
-	s.SetSortCol(s.NameColIndex(), 0, true)
-	s.SelectRow(1, true)
-
-	s.Start()
-	s.refresh()
-
-	return nil
-}
-
-// GetTable returns the table view.
-func (r *ScreenDump) GetTable() *Table { return r.Table }
-
-// SetEnvFn sets up k9s env vars.
-func (r *ScreenDump) SetEnvFn(EnvFunc) {}
-
-// SetPath sets parent selector.
-func (p *ScreenDump) SetPath(s string) {}
-
-// List returns the resource lister.
-func (s *ScreenDump) List() resource.List {
-	return nil
+	return &s
 }
 
 // Start starts the directory watcher.
 func (s *ScreenDump) Start() {
+	s.Stop()
+
+	s.GetTable().Actions().Delete(tcell.KeyCtrlS)
+
+	s.GetTable().Start()
 	var ctx context.Context
-	ctx, s.cancelFn = context.WithCancel(context.Background())
+	ctx, s.GetTable().cancelFn = context.WithCancel(context.Background())
 	if err := s.watchDumpDir(ctx); err != nil {
-		s.app.Flash().Errf("Unable to watch screen dumps directory %s", err)
+		s.App().Flash().Errf("Unable to watch screen dumps directory %s", err)
 	}
 }
 
-// Name returns the component name.
-func (s *ScreenDump) Name() string {
-	return dumpTitle
+func (s *ScreenDump) dirContext(ctx context.Context) context.Context {
+	dir := filepath.Join(config.K9sDumpDir, s.App().Config.K9s.CurrentCluster)
+	return context.WithValue(ctx, internal.KeyDir, dir)
 }
 
-func (s *ScreenDump) refresh() {
-	s.Update(s.hydrate())
-	s.UpdateTitle()
-}
+func (s *ScreenDump) edit(app *App, ns, resource, path string) {
+	log.Debug().Msgf("ScreenDump selection is %q", path)
 
-func (s *ScreenDump) bindKeys() {
-	s.Actions().Add(ui.KeyActions{
-		tcell.KeyEsc:   ui.NewKeyAction("Back", s.app.PrevCmd, false),
-		tcell.KeyEnter: ui.NewKeyAction("View", s.enterCmd, true),
-		tcell.KeyCtrlD: ui.NewKeyAction("Delete", s.deleteCmd, true),
-		tcell.KeyCtrlS: ui.NewKeyAction("Save", noopCmd, false),
-	})
-}
-
-func (s *ScreenDump) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msg("Dump enter!")
-	if s.SearchBuff().IsActive() {
-		return s.filterCmd(evt)
+	s.Stop()
+	defer s.Start()
+	if !edit(true, app, path) {
+		app.Flash().Err(errors.New("Failed to launch editor"))
 	}
-	sel := s.GetSelectedItem()
-	if sel == "" {
-		return nil
-	}
-
-	dir := filepath.Join(config.K9sDumpDir, s.app.Config.K9s.CurrentCluster)
-	if !edit(true, s.app, filepath.Join(dir, sel)) {
-		s.app.Flash().Err(errors.New("Failed to launch editor"))
-	}
-
-	return nil
-}
-
-func (s *ScreenDump) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
-	sel := s.GetSelectedItem()
-	if sel == "" {
-		return nil
-	}
-
-	dir := filepath.Join(config.K9sDumpDir, s.app.Config.K9s.CurrentCluster)
-	showModal(s.app.Content.Pages, fmt.Sprintf("Delete screen dump `%s?", sel), func() {
-		if err := os.Remove(filepath.Join(dir, sel)); err != nil {
-			s.app.Flash().Errf("Unable to delete file %s", err)
-			return
-		}
-		s.refresh()
-		s.app.Flash().Infof("ScreenDump file %s deleted!", sel)
-	})
-
-	return nil
-}
-
-func (s *ScreenDump) hydrate() resource.TableData {
-	return resource.TableData{}
-
-	// BOZO!!
-	// data := resource.TableData{
-	// 	Header:    dumpHeader,
-	// 	Rows:      make(resource.RowEvents, 10),
-	// 	Namespace: resource.NotNamespaced,
-	// }
-
-	// dir := filepath.Join(config.K9sDumpDir, s.app.Config.K9s.CurrentCluster)
-	// ff, err := ioutil.ReadDir(dir)
-	// if err != nil {
-	// 	s.app.Flash().Errf("Unable to read dump directory %s", err)
-	// }
-
-	// for _, f := range ff {
-	// 	fields := resource.Row{f.Name(), time.Since(f.ModTime()).String()}
-	// 	data.Rows[f.Name()] = &resource.RowEvent{
-	// 		Action: resource.New,
-	// 		Fields: fields,
-	// 		Deltas: fields,
-	// 	}
-	// }
-
-	// return data
 }
 
 func (s *ScreenDump) watchDumpDir(ctx context.Context) error {
@@ -167,15 +77,13 @@ func (s *ScreenDump) watchDumpDir(ctx context.Context) error {
 		for {
 			select {
 			case evt := <-w.Events:
-				log.Debug().Msgf("Dump event %#v", evt)
-				s.app.QueueUpdateDraw(func() {
-					s.refresh()
-				})
+				log.Debug().Msgf("ScreenDump event detected %#v", evt)
+				s.Refresh()
 			case err := <-w.Errors:
-				log.Info().Err(err).Msg("Dir Watcher failed")
+				log.Error().Err(err).Msg("Dir Watcher failed")
 				return
 			case <-ctx.Done():
-				log.Debug().Msg("!!!! FS WATCHER DONE!!")
+				log.Debug().Msg("!!!! ScreenDump WATCHER DONE!!")
 				if err := w.Close(); err != nil {
 					log.Error().Err(err).Msg("Closing dump watcher")
 				}
@@ -184,11 +92,5 @@ func (s *ScreenDump) watchDumpDir(ctx context.Context) error {
 		}
 	}()
 
-	return w.Add(filepath.Join(config.K9sDumpDir, s.app.Config.K9s.CurrentCluster))
-}
-
-// Helpers...
-
-func noopCmd(*tcell.EventKey) *tcell.EventKey {
-	return nil
+	return w.Add(filepath.Join(config.K9sDumpDir, s.App().Config.K9s.CurrentCluster))
 }

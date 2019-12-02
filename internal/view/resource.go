@@ -1,6 +1,7 @@
 package view
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -8,12 +9,16 @@ import (
 	"time"
 
 	"github.com/atotto/clipboard"
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/cli-runtime/pkg/printers"
 )
 
 // Resource represents a generic resource viewer.
@@ -54,6 +59,13 @@ func (r *Resource) Init(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (s *Resource) SetContextFn(ContextFunc) {}
+
+// GVR returns a resource descriptor.
+func (r *Resource) GVR() string {
+	return r.gvr
 }
 
 // SetPath sets parent selector.
@@ -153,11 +165,11 @@ func (r *Resource) refreshCmd(*tcell.EventKey) *tcell.EventKey {
 }
 
 func (r *Resource) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !r.RowSelected() {
+	sel := r.GetSelectedItems()
+	if len(sel) == 0 {
 		return evt
 	}
 
-	sel := r.GetSelectedItems()
 	var msg string
 	if len(sel) > 1 {
 		msg = fmt.Sprintf("Delete %d marked %s?", len(sel), r.list.GetName())
@@ -217,11 +229,23 @@ func (r *Resource) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	sel := r.GetSelectedItem()
-	raw, err := r.list.Resource().Marshal(sel)
+	ns, n := resource.Namespaced(sel)
+	if ns == "" {
+		ns = r.list.GetNamespace()
+	}
+	log.Debug().Msgf("------ NAMESPACES %q vs %q", ns, r.list.GetNamespace())
+	o, err := r.app.factory.Get(ns, r.gvr, n, labels.Everything())
+	if err != nil {
+		r.app.Flash().Errf("Unable to get resource %s", err)
+		return nil
+	}
+
+	raw, err := marshalObject(o)
 	if err != nil {
 		r.app.Flash().Errf("Unable to marshal resource %s", err)
-		return evt
+		return nil
 	}
+
 	details := NewDetails("YAML")
 	details.SetSubject(sel)
 	details.SetTextColor(r.app.Styles.FgColor())
@@ -232,12 +256,27 @@ func (r *Resource) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+func marshalObject(o runtime.Object) (string, error) {
+	var (
+		buff bytes.Buffer
+		p    printers.YAMLPrinter
+	)
+	err := p.PrintObj(o, &buff)
+	if err != nil {
+		log.Error().Msgf("Marshal Error %v", err)
+		return "", err
+	}
+
+	return buff.String(), nil
+}
+
 func (r *Resource) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !r.RowSelected() {
 		return evt
 	}
 
 	r.Stop()
+	defer r.Start()
 	{
 		ns, po := namespaced(r.GetSelectedItem())
 		args := make([]string, 0, 10)
@@ -252,7 +291,6 @@ func (r *Resource) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 			r.app.Flash().Err(errors.New("Edit exec failed"))
 		}
 	}
-	r.Start()
 
 	return evt
 }
@@ -298,29 +336,31 @@ func (r *Resource) refresh() {
 		r.list.SetNamespace(r.currentNS)
 	}
 
-	if r.app.Conn() != nil {
-		ctx := context.WithValue(context.Background(), resource.KeyFactory, r.app.factory)
-		if err := r.list.Reconcile(ctx, r.gvr, r.path); err != nil {
-			r.app.Flash().Err(err)
-		}
+	if r.app.Conn() == nil {
+		log.Error().Msg("No api connection")
+		return
 	}
+
+	ctx := context.WithValue(context.Background(), internal.KeyFactory, r.app.factory)
+	ctx = context.WithValue(ctx, internal.KeySelection, r.path)
+	if err := r.list.Reconcile(ctx, r.gvr); err != nil {
+		r.app.Flash().Err(err)
+	}
+
 	data := r.list.Data()
-	if r.decorateFn != nil {
-		data = r.decorateFn(data)
-	}
+	// BOZO!!
+	// if r.decorateFn != nil {
+	// 	data = r.decorateFn(data)
+	// }
 	r.refreshActions()
 	r.Update(data)
 }
 
 func (r *Resource) namespaceActions(aa ui.KeyActions) {
-	if !r.list.Access(resource.NamespaceAccess) {
+	if r.app.Conn() == nil || !r.list.Access(resource.NamespaceAccess) {
 		return
 	}
 	r.namespaces = make(map[int]string, config.MaxFavoritesNS)
-	// User can't list namespace. Don't offer a choice.
-	if r.app.Conn() == nil || r.app.Conn().CheckListNSAccess() != nil {
-		return
-	}
 	aa[tcell.Key(ui.NumKeys[0])] = ui.NewKeyAction(resource.AllNamespace, r.switchNamespaceCmd, true)
 	r.namespaces[0] = resource.AllNamespace
 	index := 1

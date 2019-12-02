@@ -19,11 +19,13 @@ func NewDeployment(c Connection) *Deployment {
 
 // Get a deployment.
 func (d *Deployment) Get(ns, n string) (interface{}, error) {
+	panic("NYI")
 	return d.DialOrDie().AppsV1().Deployments(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all Deployments in a given namespace.
 func (d *Deployment) List(ns string, opts metav1.ListOptions) (Collection, error) {
+	panic("NYI")
 	rr, err := d.DialOrDie().AppsV1().Deployments(ns).List(opts)
 	if err != nil {
 		return nil, err

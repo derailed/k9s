@@ -22,6 +22,6 @@ func TestHelpNew(t *testing.T) {
 
 	assert.Equal(t, 32, v.GetRowCount())
 	assert.Equal(t, 10, v.GetColumnCount())
-	assert.Equal(t, "<c>", v.GetCell(1, 0).Text)
-	assert.Equal(t, "Copy", v.GetCell(1, 1).Text)
+	assert.Equal(t, "<backspace>", v.GetCell(1, 0).Text)
+	assert.Equal(t, "Erase", v.GetCell(1, 1).Text)
 }

@@ -3,8 +3,10 @@ package render
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/derailed/tview"
+	"github.com/gdamore/tcell"
 	v1beta1 "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -16,7 +18,23 @@ type PodDisruptionBudget struct{}
 
 // ColorerFunc colors a resource row.
 func (PodDisruptionBudget) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+	return func(ns string, r RowEvent) tcell.Color {
+		c := DefaultColorer(ns, r)
+		if r.Kind == EventAdd || r.Kind == EventUpdate {
+			return c
+		}
+
+		markCol := 5
+		if ns != AllNamespaces {
+			markCol = 4
+		}
+		if strings.TrimSpace(r.Row.Fields[markCol]) != strings.TrimSpace(r.Row.Fields[markCol+1]) {
+			return ErrColor
+		}
+
+		return StdColor
+	}
+
 }
 
 // Header returns a header row.
@@ -34,7 +52,7 @@ func (PodDisruptionBudget) Header(ns string) HeaderRow {
 		Header{Name: "CURRENT", Align: tview.AlignRight},
 		Header{Name: "DESIRED", Align: tview.AlignRight},
 		Header{Name: "EXPECTED", Align: tview.AlignRight},
-		Header{Name: "AGE"},
+		Header{Name: "AGE", Decorator: ageDecorator},
 	)
 }
 

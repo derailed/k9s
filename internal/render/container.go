@@ -7,6 +7,7 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/tview"
+	"github.com/gdamore/tcell"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
@@ -35,7 +36,29 @@ type Container struct{}
 
 // ColorerFunc colors a resource row.
 func (Container) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+	return func(ns string, r RowEvent) tcell.Color {
+		c := DefaultColorer(ns, r)
+
+		readyCol := 2
+		if strings.TrimSpace(r.Row.Fields[readyCol]) == "false" {
+			c = ErrColor
+		}
+
+		stateCol := readyCol + 1
+		switch strings.TrimSpace(r.Row.Fields[stateCol]) {
+		case ContainerCreating, PodInitializing:
+			return AddColor
+		case Terminating, Initialized:
+			return HighlightColor
+		case Completed:
+			return CompletedColor
+		case Running:
+		default:
+			c = ErrColor
+		}
+
+		return c
+	}
 }
 
 // Header returns a header row.
@@ -53,12 +76,12 @@ func (Container) Header(ns string) HeaderRow {
 		Header{Name: "%CPU", Align: tview.AlignRight},
 		Header{Name: "%MEM", Align: tview.AlignRight},
 		Header{Name: "PORTS"},
-		Header{Name: "AGE"},
+		Header{Name: "AGE", Decorator: ageDecorator},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (Container) Render(o interface{}, name string, r *Row) error {
+func (c Container) Render(o interface{}, name string, r *Row) error {
 	oo, ok := o.(ContainerWithMetrics)
 	if !ok {
 		return fmt.Errorf("Expected ContainerWithMetrics, but got %T", o)
@@ -66,14 +89,15 @@ func (Container) Render(o interface{}, name string, r *Row) error {
 
 	co, cs := oo.Container(), oo.ContainerStatus()
 
-	c, p := gatherMetrics(co, oo.Metrics())
+	cur, perc := gatherMetrics(co, oo.Metrics())
 	ready, state, restarts := "false", MissingValue, "0"
 	if cs != nil {
 		ready, state, restarts = boolToStr(cs.Ready), toState(cs.State), strconv.Itoa(int(cs.RestartCount))
 	}
 
-	fields := make(Fields, 0, len(r.Fields))
-	fields = append(fields,
+	r.ID = co.Name
+	r.Fields = make(Fields, 0, len(c.Header(AllNamespaces)))
+	r.Fields = append(r.Fields,
 		co.Name,
 		co.Image,
 		ready,
@@ -81,35 +105,19 @@ func (Container) Render(o interface{}, name string, r *Row) error {
 		boolToStr(oo.IsInit()),
 		restarts,
 		probe(co.LivenessProbe)+":"+probe(co.ReadinessProbe),
-		c.cpu,
-		c.mem,
-		p.cpu,
-		p.mem,
+		cur.cpu,
+		cur.mem,
+		perc.cpu,
+		perc.mem,
 		toStrPorts(co.Ports),
 		toAge(oo.Age()),
 	)
-	r.ID, r.Fields = co.Name, fields
 
 	return nil
 }
 
 // ----------------------------------------------------------------------------
 // Helpers...
-
-// func findContainer(po v1.Pod, n string) *v1.Container {
-// 	for _, c := range po.Spec.InitContainers {
-// 		if c.Name == n {
-// 			return &c
-// 		}
-// 	}
-// 	for _, c := range po.Spec.Containers {
-// 		if c.Name == n {
-// 			return &c
-// 		}
-// 	}
-
-// 	return nil
-// }
 
 func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, p metric) {
 	c, p = noMetric(), noMetric()

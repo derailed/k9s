@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tview"
 	"github.com/fsnotify/fsnotify"
 	"github.com/rs/zerolog/log"
@@ -78,10 +79,10 @@ func (c *Configurator) RefreshStyles() {
 	}
 	c.Styles.Update()
 
-	StdColor = config.AsColor(c.Styles.Frame().Status.NewColor)
-	AddColor = config.AsColor(c.Styles.Frame().Status.AddColor)
-	ModColor = config.AsColor(c.Styles.Frame().Status.ModifyColor)
-	ErrColor = config.AsColor(c.Styles.Frame().Status.ErrorColor)
-	HighlightColor = config.AsColor(c.Styles.Frame().Status.HighlightColor)
-	CompletedColor = config.AsColor(c.Styles.Frame().Status.CompletedColor)
+	render.StdColor = config.AsColor(c.Styles.Frame().Status.NewColor)
+	render.AddColor = config.AsColor(c.Styles.Frame().Status.AddColor)
+	render.ModColor = config.AsColor(c.Styles.Frame().Status.ModifyColor)
+	render.ErrColor = config.AsColor(c.Styles.Frame().Status.ErrorColor)
+	render.HighlightColor = config.AsColor(c.Styles.Frame().Status.HighlightColor)
+	render.CompletedColor = config.AsColor(c.Styles.Frame().Status.CompletedColor)
 }

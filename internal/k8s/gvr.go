@@ -25,8 +25,8 @@ func (g GVR) ResName() string {
 	return g.ToR() + "." + g.ToV() + "." + g.ToG()
 }
 
-// AsGR returns the group version.
-func (g GVR) AsGR() schema.GroupVersion {
+// AsGV returns the group version.
+func (g GVR) AsGV() schema.GroupVersion {
 	return schema.GroupVersion{
 		Group:   g.ToG(),
 		Version: g.ToV(),

@@ -6,17 +6,12 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
-	"strconv"
-	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/tview"
 	"github.com/fsnotify/fsnotify"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -25,25 +20,6 @@ import (
 const (
 	benchTitle  = "Benchmarks"
 	resultTitle = "Benchmark Results"
-)
-
-var (
-	totalRx     = regexp.MustCompile(`Total:\s+([0-9.]+)\ssecs`)
-	reqRx       = regexp.MustCompile(`Requests/sec:\s+([0-9.]+)`)
-	okRx        = regexp.MustCompile(`\[2\d{2}\]\s+(\d+)\s+responses`)
-	errRx       = regexp.MustCompile(`\[[4-5]\d{2}\]\s+(\d+)\s+responses`)
-	toastRx     = regexp.MustCompile(`Error distribution`)
-	benchHeader = render.HeaderRow{
-		render.Header{Name: "NAMESPACE", Align: tview.AlignLeft},
-		render.Header{Name: "NAME", Align: tview.AlignLeft},
-		render.Header{Name: "STATUS", Align: tview.AlignLeft},
-		render.Header{Name: "TIME", Align: tview.AlignLeft},
-		render.Header{Name: "REQ/S", Align: tview.AlignRight},
-		render.Header{Name: "2XX", Align: tview.AlignRight},
-		render.Header{Name: "4XX/5XX", Align: tview.AlignRight},
-		render.Header{Name: "REPORT", Align: tview.AlignLeft},
-		render.Header{Name: "AGE", Align: tview.AlignLeft},
-	}
 )
 
 // Bench represents a service benchmark results view.
@@ -61,6 +37,8 @@ func NewBench(title, _ string, _ resource.List) ResourceViewer {
 	}
 }
 
+func (*Bench) SetContextFn(ContextFunc) {}
+
 // Init initializes the viewer.
 func (b *Bench) Init(ctx context.Context) error {
 	log.Debug().Msgf(">>> Bench INIT")
@@ -69,7 +47,7 @@ func (b *Bench) Init(ctx context.Context) error {
 	}
 	b.SetBorderFocusColor(tcell.ColorSeaGreen)
 	b.SetSelectedStyle(tcell.ColorWhite, tcell.ColorSeaGreen, tcell.AttrNone)
-	b.SetColorerFn(benchColorer)
+	b.SetColorerFn(render.Bench{}.ColorerFunc())
 	b.bindKeys()
 
 	b.details.SetTextColor(tcell.ColorSeaGreen)
@@ -84,6 +62,11 @@ func (b *Bench) Init(ctx context.Context) error {
 	b.Select(1, 0)
 
 	return nil
+}
+
+// GVR returns a resource descriptor.
+func (b *Bench) GVR() string {
+	return "n/a"
 }
 
 // SetEnvFn sets k9s env vars.
@@ -168,45 +151,37 @@ func (b *Bench) benchFile() string {
 	return ui.TrimCell(b.SelectTable, r, 7)
 }
 
-func (b *Bench) hydrate() resource.TableData {
+func (b *Bench) hydrate() render.TableData {
 	ff, err := loadBenchDir(b.app.Config)
 	if err != nil {
 		b.app.Flash().Errf("Unable to read bench directory %s", err)
 	}
 
-	data := initTable()
+	var re render.Bench
+	data := render.TableData{
+		Header:    re.Header(render.AllNamespaces),
+		RowEvents: make(render.RowEvents, 0, 10),
+		Namespace: render.AllNamespaces,
+	}
+
 	for _, f := range ff {
-		bench, err := readBenchFile(b.app.Config, f.Name())
-		if err != nil {
-			log.Error().Err(err).Msgf("Unable to load bench file %s", f.Name())
+		bench := render.BenchInfo{
+			File: f,
+			Path: filepath.Join(benchDir(b.app.Config), f.Name()),
+		}
+
+		var row render.Row
+		if err := re.Render(bench, render.AllNamespaces, &row); err != nil {
+			log.Error().Err(err).Msg("Bench render failed")
 			continue
 		}
-		fields := make(render.Fields, len(benchHeader))
-		if err := initRow(fields, f); err != nil {
-			log.Error().Err(err).Msg("Load bench file")
-			continue
-		}
-		augmentRow(fields, bench)
 		data.RowEvents = append(data.RowEvents, render.RowEvent{
 			Kind: render.EventAdd,
-			Row:  render.Row{ID: f.Name(), Fields: fields},
+			Row:  row,
 		})
 	}
 
 	return data
-}
-
-func initRow(row render.Fields, f os.FileInfo) error {
-	tokens := strings.Split(f.Name(), "_")
-	if len(tokens) < 2 {
-		return fmt.Errorf("Invalid file name %s", f.Name())
-	}
-	row[0] = tokens[0]
-	row[1] = tokens[1]
-	row[7] = f.Name()
-	row[8] = time.Since(f.ModTime()).String()
-
-	return nil
 }
 
 func (b *Bench) watchBenchDir(ctx context.Context) error {
@@ -241,61 +216,6 @@ func (b *Bench) watchBenchDir(ctx context.Context) error {
 
 // ----------------------------------------------------------------------------
 // Helpers...
-
-func initTable() resource.TableData {
-	return resource.TableData{
-		Header:    benchHeader,
-		RowEvents: make(render.RowEvents, 10),
-		Namespace: resource.AllNamespaces,
-	}
-}
-
-func augmentRow(fields render.Fields, data string) {
-	if len(data) == 0 {
-		return
-	}
-
-	col := 2
-	fields[col] = "pass"
-	mf := toastRx.FindAllStringSubmatch(data, 1)
-	if len(mf) > 0 {
-		fields[col] = "fail"
-	}
-	col++
-
-	mt := totalRx.FindAllStringSubmatch(data, 1)
-	if len(mt) > 0 {
-		fields[col] = mt[0][1]
-	}
-	col++
-
-	mr := reqRx.FindAllStringSubmatch(data, 1)
-	if len(mr) > 0 {
-		fields[col] = mr[0][1]
-	}
-	col++
-
-	ms := okRx.FindAllStringSubmatch(data, -1)
-	fields[col] = countReq(ms)
-	col++
-
-	me := errRx.FindAllStringSubmatch(data, -1)
-	fields[col] = countReq(me)
-}
-
-func countReq(rr [][]string) string {
-	if len(rr) == 0 {
-		return "0"
-	}
-
-	var sum int
-	for _, m := range rr {
-		if m, err := strconv.Atoi(string(m[1])); err == nil {
-			sum += m
-		}
-	}
-	return asNum(sum)
-}
 
 func benchDir(cfg *config.Config) string {
 	return filepath.Join(perf.K9sBenchDir, cfg.K9s.CurrentCluster)

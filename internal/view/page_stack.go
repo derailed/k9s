@@ -34,6 +34,8 @@ func (p *PageStack) StackPushed(c model.Component) {
 	ctx := context.WithValue(context.Background(), ui.KeyApp, p.app)
 	if err := c.Init(ctx); err != nil {
 		log.Error().Err(err).Msgf("Component Init failed!")
+		p.app.Flash().Err(err)
+		return
 	}
 	c.Start()
 	p.app.SetFocus(c)

@@ -152,13 +152,13 @@ func boolToStr(b bool) string {
 }
 
 func toAge(timestamp metav1.Time) string {
-	return toAgeHuman(time.Since(timestamp.Time).String())
+	return time.Since(timestamp.Time).String()
 }
 
 func toAgeHuman(s string) string {
 	d, err := time.ParseDuration(s)
 	if err != nil {
-		return "<unknown>"
+		return NAValue
 	}
 
 	return duration.HumanDuration(d)

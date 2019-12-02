@@ -31,7 +31,7 @@ func ShowConfirm(pages *ui.Pages, title, msg string, ack confirmFunc, cancel can
 		cancel()
 	})
 
-	modal := tview.NewModalForm(title, f)
+	modal := tview.NewModalForm(" <"+title+"> ", f)
 	modal.SetText(msg)
 	modal.SetDoneFunc(func(int, string) {
 		dismissConfirm(pages)

@@ -28,7 +28,7 @@ func (ConfigMap) Header(ns string) HeaderRow {
 	return append(h,
 		Header{Name: "NAME"},
 		Header{Name: "DATA", Align: tview.AlignRight},
-		Header{Name: "AGE"},
+		Header{Name: "AGE", Decorator: ageDecorator},
 	)
 }
 

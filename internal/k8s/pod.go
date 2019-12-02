@@ -22,11 +22,14 @@ func NewPod(c Connection) *Pod {
 
 // Get a pod.
 func (p *Pod) Get(ns, name string) (interface{}, error) {
+	panic("POd GEt")
 	return p.DialOrDie().CoreV1().Pods(ns).Get(name, metav1.GetOptions{})
 }
 
 // List all pods in a given namespace.
 func (p *Pod) List(ns string, opts metav1.ListOptions) (Collection, error) {
+	panic("POd List")
+
 	rr, err := p.DialOrDie().CoreV1().Pods(ns).List(opts)
 	if err != nil {
 		return nil, err

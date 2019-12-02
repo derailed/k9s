@@ -1,10 +1,10 @@
 package view
 
 import (
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type (
@@ -22,9 +22,6 @@ type (
 
 	// EnterFunc represents an enter key action.
 	EnterFunc func(app *App, ns, resource, selection string)
-
-	// DecorateFunc represents a row decorator.
-	DecorateFunc func(resource.TableData) resource.TableData
 
 	// ContainerFunc returns the active container name.
 	ContainerFunc func() string
@@ -68,6 +65,11 @@ type ResourceViewer interface {
 
 	// SetPath set parents selector.
 	SetPath(p string)
+
+	// GVR returns a resource descriptor.
+	GVR() string
+
+	SetContextFn(ContextFunc)
 }
 
 // TableViewer represents a tabular viewer.
@@ -100,18 +102,15 @@ type SubjectViewer interface {
 	SetSubject(s string)
 }
 
+type ViewerFunc func(dao.GVR) ResourceViewer
+
 // MetaViewer represents a registered meta viewer.
 type MetaViewer struct {
-	gvr        string
-	kind       string
-	namespaced bool
-	verbs      metav1.Verbs
-	viewFn     ViewFunc
-	listFn     ListFunc
-	enterFn    EnterFunc
-	colorerFn  ui.ColorerFunc
-	decorateFn DecorateFunc
+	viewerFn ViewerFunc
+	viewFn   ViewFunc
+	listFn   ListFunc
+	enterFn  EnterFunc
 }
 
 // MetaViewers represents a collection of meta viewers.
-type MetaViewers map[string]MetaViewer
+type MetaViewers map[dao.GVR]MetaViewer

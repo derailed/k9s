@@ -30,10 +30,10 @@ type App struct {
 	Content    *PageStack
 	command    *command
 	factory    *watch.Factory
-	cancelFn   context.CancelFunc
 	forwarders model.Forwarders
 	version    string
 	showHeader bool
+	cancelFn   context.CancelFunc
 }
 
 // NewApp returns a K9s app instance.
@@ -104,6 +104,10 @@ func (a *App) Init(version string, rate int) error {
 	a.Main.AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
 	a.toggleHeader(!a.Config.K9s.GetHeadless())
 
+	if err := a.command.Init(); err != nil {
+		panic(err)
+	}
+
 	return nil
 }
 
@@ -164,6 +168,18 @@ func (a *App) buildHeader() tview.Primitive {
 	return header
 }
 
+func (a *App) Halt() {
+	if a.cancelFn != nil {
+		a.cancelFn()
+	}
+}
+
+func (a *App) Resume() {
+	var ctx context.Context
+	ctx, a.cancelFn = context.WithCancel(context.Background())
+	go a.clusterUpdater(ctx)
+}
+
 func (a *App) clusterUpdater(ctx context.Context) {
 	for {
 		select {
@@ -172,13 +188,18 @@ func (a *App) clusterUpdater(ctx context.Context) {
 			return
 		case <-time.After(clusterRefresh):
 			a.QueueUpdateDraw(func() {
-				if !a.showHeader {
-					a.refreshIndicator()
-				} else {
-					a.clusterInfo().refresh()
-				}
+				a.refreshClusterInfo()
 			})
 		}
+	}
+}
+
+func (a *App) refreshClusterInfo() {
+	log.Debug().Msgf("***** REFRESHING CLUSTER ******")
+	if !a.showHeader {
+		a.refreshIndicator()
+	} else {
+		a.clusterInfo().refresh()
 	}
 }
 
@@ -225,53 +246,42 @@ func (a *App) switchNS(ns string) bool {
 	return true
 }
 
-func (a *App) switchCtx(name string, load bool) error {
-	l := resource.NewContext(a.Conn())
-	if err := l.Switch(name); err != nil {
-		return err
-	}
+func (a *App) switchCtx(name string, loadPods bool) error {
+	log.Debug().Msgf("Switching Context %q", name)
 
-	a.forwarders.DeleteAll()
-	ns, err := a.Conn().Config().CurrentNamespaceName()
-	if err != nil {
-		log.Info().Err(err).Msg("No namespace specified using all namespaces")
-	}
-	a.initFactory(ns)
+	a.Halt()
+	defer a.Resume()
+	{
+		a.forwarders.DeleteAll()
+		ns, err := a.Conn().Config().CurrentNamespaceName()
+		if err != nil {
+			log.Info().Err(err).Msg("No namespace specified in context. Using K9s config")
+		}
+		a.initFactory(ns)
 
-	a.Config.Reset()
-	if err := a.Config.Save(); err != nil {
-		log.Error().Err(err).Msg("Config save failed!")
-	}
-	a.Flash().Infof("Switching context to %s", name)
-	if load && !a.gotoResource("po") {
-		a.Flash().Err(errors.New("Goto pod failed"))
-	}
-	if a.Config.K9s.GetHeadless() {
-		a.refreshIndicator()
+		a.Config.Reset()
+		if err := a.Config.Save(); err != nil {
+			log.Error().Err(err).Msg("Config save failed!")
+		}
+		a.Flash().Infof("Switching context to %s", name)
+		if loadPods && !a.gotoResource("pods") {
+			a.Flash().Err(errors.New("Goto pods failed"))
+		}
+		a.refreshClusterInfo()
 	}
 
 	return nil
 }
 
 func (a *App) initFactory(ns string) {
-	if a.cancelFn != nil {
-		a.cancelFn()
-		a.cancelFn = nil
-	}
-	var ctx context.Context
-	ctx, a.cancelFn = context.WithCancel(context.Background())
-	a.factory.Init(ctx)
+	a.factory.Terminate()
+	a.factory.Init()
 	a.factory.SetActive(ns)
 }
 
 // BailOut exists the application.
 func (a *App) BailOut() {
-	if a.cancelFn != nil {
-		log.Debug().Msg("<<<< Stopping Factory")
-		a.cancelFn()
-		a.cancelFn = nil
-	}
-
+	a.factory.Terminate()
 	a.forwarders.DeleteAll()
 	a.App.BailOut()
 }
@@ -280,7 +290,7 @@ func (a *App) BailOut() {
 func (a *App) Run() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	go a.clusterUpdater(ctx)
+	a.Halt()
 
 	// Only enable skin updater while in dev mode.
 	if a.HasSkins {
@@ -304,11 +314,8 @@ func (a *App) Run() {
 
 func (a *App) status(l ui.FlashLevel, msg string) {
 	a.Flash().Info(msg)
-	if a.Config.K9s.GetHeadless() {
-		a.setIndicator(l, msg)
-	} else {
-		a.setLogo(l, msg)
-	}
+	a.setIndicator(l, msg)
+	a.setLogo(l, msg)
 	a.Draw()
 }
 
@@ -369,7 +376,11 @@ func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if _, ok := a.Content.GetPrimitive("main").(*Help); ok {
 		return evt
 	}
-	a.inject(NewHelp())
+	if a.Content.Top() != nil && a.Content.Top().Name() == helpTitle {
+		a.Content.Pop()
+	} else {
+		a.inject(NewHelp())
+	}
 
 	return nil
 }
@@ -378,7 +389,12 @@ func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if _, ok := a.Content.GetPrimitive("main").(*Alias); ok {
 		return evt
 	}
-	a.inject(NewAlias())
+
+	if a.Content.Top() != nil && a.Content.Top().Name() == aliasTitle {
+		a.Content.Pop()
+	} else {
+		a.inject(NewAlias())
+	}
 
 	return nil
 }

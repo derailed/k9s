@@ -3,6 +3,7 @@ package view
 import (
 	"context"
 
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -56,7 +57,7 @@ func showPods(app *App, path, labelSel, fieldSel string) {
 	list.SetFieldSelector(fieldSel)
 
 	v := NewPod(path, "v1/pods", list)
-	v.GetTable().SetColorerFn(podColorer)
+	v.GetTable().SetColorerFn(render.Pod{}.ColorerFunc())
 
 	ns, _ := namespaced(path)
 	if err := app.Config.SetActiveNamespace(ns); err != nil {

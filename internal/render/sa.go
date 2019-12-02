@@ -27,7 +27,7 @@ func (ServiceAccount) Header(ns string) HeaderRow {
 	return append(h,
 		Header{Name: "NAME"},
 		Header{Name: "SECRET"},
-		Header{Name: "AGE"},
+		Header{Name: "AGE", Decorator: ageDecorator},
 	)
 }
 

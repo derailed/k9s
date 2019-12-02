@@ -17,11 +17,13 @@ func NewNamespace(c Connection) *Namespace {
 
 // Get a active namespace.
 func (n *Namespace) Get(_, name string) (interface{}, error) {
+	panic("NYI")
 	return n.DialOrDie().CoreV1().Namespaces().Get(name, metav1.GetOptions{})
 }
 
 // List all active namespaces on the cluster.
 func (n *Namespace) List(ns string, opts metav1.ListOptions) (Collection, error) {
+	panic("NYI")
 	rr, err := n.DialOrDie().CoreV1().Namespaces().List(opts)
 	if err != nil {
 		return nil, err

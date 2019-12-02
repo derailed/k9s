@@ -25,7 +25,7 @@ func (Role) Header(ns string) HeaderRow {
 
 	return append(h,
 		Header{Name: "NAME"},
-		Header{Name: "AGE"},
+		Header{Name: "AGE", Decorator: ageDecorator},
 	)
 }
 

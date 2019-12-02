@@ -5,6 +5,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/gdamore/tcell"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -15,7 +16,25 @@ type PersistentVolume struct{}
 
 // ColorerFunc colors a resource row.
 func (PersistentVolume) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+	return func(ns string, r RowEvent) tcell.Color {
+		c := DefaultColorer(ns, r)
+		if r.Kind == EventAdd || r.Kind == EventUpdate {
+			return c
+		}
+
+		status := strings.TrimSpace(r.Row.Fields[4])
+		switch status {
+		case "Bound":
+			c = StdColor
+		case "Available":
+			c = tcell.ColorYellow
+		default:
+			c = ErrColor
+		}
+
+		return c
+	}
+
 }
 
 // Header returns a header rbw.
@@ -29,7 +48,7 @@ func (PersistentVolume) Header(string) HeaderRow {
 		Header{Name: "CLAIM"},
 		Header{Name: "STORAGECLASS"},
 		Header{Name: "REASON"},
-		Header{Name: "AGE"},
+		Header{Name: "AGE", Decorator: ageDecorator},
 	}
 }
 

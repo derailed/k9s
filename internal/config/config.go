@@ -11,7 +11,6 @@ import (
 	"path/filepath"
 
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
@@ -123,7 +122,7 @@ func (c *Config) ActiveNamespace() string {
 			return cl.Namespace.Active
 		}
 	}
-	return resource.DefaultNamespace
+	return ""
 }
 
 // FavNamespaces returns fav namespaces in the current cluster.

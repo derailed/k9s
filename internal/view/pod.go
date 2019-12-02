@@ -3,6 +3,7 @@ package view
 import (
 	"errors"
 
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -48,7 +49,7 @@ func (p *Pod) BindKeys() {
 		ui.KeyShiftM:   ui.NewKeyAction("Sort MEM", p.GetTable().SortColCmd(5, false), false),
 		ui.KeyShiftX:   ui.NewKeyAction("Sort CPU%", p.GetTable().SortColCmd(6, false), false),
 		ui.KeyShiftZ:   ui.NewKeyAction("Sort MEM%", p.GetTable().SortColCmd(7, false), false),
-		ui.KeyShiftD:   ui.NewKeyAction("Sort IP", p.GetTable().SortColCmd(8, true), false),
+		ui.KeyShiftI:   ui.NewKeyAction("Sort IP", p.GetTable().SortColCmd(8, true), false),
 		ui.KeyShiftO:   ui.NewKeyAction("Sort Node", p.GetTable().SortColCmd(9, true), false),
 	})
 }
@@ -100,6 +101,12 @@ func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
+	row := p.GetTable().GetSelectedRowIndex()
+	status := ui.TrimCell(p.GetTable().SelectTable, row, p.GetTable().NameColIndex()+2)
+	if status != render.Running {
+		p.App().Flash().Errf("%s is not in a running state", sel)
+		return nil
+	}
 	cc, err := fetchContainers(p.List(), sel, false)
 	if err != nil {
 		p.App().Flash().Errf("Unable to retrieve containers %s", err)

@@ -3,8 +3,10 @@ package render
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/derailed/tview"
+	"github.com/gdamore/tcell"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -15,7 +17,22 @@ type Event struct{}
 
 // ColorerFunc colors a resource row.
 func (Event) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+	return func(ns string, r RowEvent) tcell.Color {
+		c := DefaultColorer(ns, r)
+
+		markCol := 3
+		if ns != AllNamespaces {
+			markCol = 2
+		}
+		switch strings.TrimSpace(r.Row.Fields[markCol]) {
+		case "Failed":
+			c = ErrColor
+		case "Killing":
+			c = KillColor
+		}
+
+		return c
+	}
 }
 
 // Header returns a header rbw.
@@ -31,7 +48,7 @@ func (Event) Header(ns string) HeaderRow {
 		Header{Name: "SOURCE"},
 		Header{Name: "COUNT", Align: tview.AlignRight},
 		Header{Name: "MESSAGE"},
-		Header{Name: "AGE"},
+		Header{Name: "AGE", Decorator: ageDecorator},
 	)
 }
 

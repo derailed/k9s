@@ -18,11 +18,13 @@ func NewRole(c Connection) *Role {
 
 // Get a Role.
 func (r *Role) Get(ns, n string) (interface{}, error) {
+	panic("NYI")
 	return r.DialOrDie().RbacV1().Roles(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all Roles in a given namespace.
 func (r *Role) List(ns string, opts metav1.ListOptions) (Collection, error) {
+	panic("NYI")
 	rr, err := r.DialOrDie().RbacV1().Roles(ns).List(opts)
 	if err != nil {
 		return nil, err

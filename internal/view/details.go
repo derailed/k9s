@@ -85,7 +85,7 @@ func (d *Details) Hints() model.MenuHints {
 
 func (d *Details) bindKeys() {
 	d.actions.Set(ui.KeyActions{
-		tcell.KeyEscape: ui.NewKeyAction("Back", d.backCmd, true),
+		tcell.KeyEscape: ui.NewKeyAction("Back", d.app.PrevCmd, true),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", d.saveCmd, true),
 		ui.KeyC:         ui.NewKeyAction("Copy", d.cpCmd, true),
 	})
@@ -119,10 +119,6 @@ func (d *Details) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 		d.app.Flash().Err(err)
 	}
 	return nil
-}
-
-func (d *Details) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return d.app.PrevCmd(evt)
 }
 
 func (d *Details) SetSubject(s string) {

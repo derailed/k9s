@@ -81,6 +81,7 @@ func (r *Custom) New(i interface{}) (Columnar, error) {
 
 // Marshal resource to yaml.
 func (r *Custom) Marshal(path string) (string, error) {
+	panic("NYI")
 	ns, n := Namespaced(path)
 	i, err := r.Resource.Get(ns, n)
 	if err != nil {

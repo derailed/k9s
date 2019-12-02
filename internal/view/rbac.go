@@ -6,47 +6,37 @@ import (
 	"strings"
 	"time"
 
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
 	ClusterRole roleKind = iota
 	Role
 
-	all          = "*"
+	clusterWide  = "*"
 	rbacTitle    = "Rbac"
-	rbacTitleFmt = " [fg:bg:b]%s([hilite:bg:b]%s[fg:bg:-])"
+	rbacTitleFmt = " [fg:bg:b]%s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
 )
 
 var (
-	rbacHeaderVerbs = resource.Row{
-		"GET   ",
-		"LIST  ",
-		"DLIST ",
-		"WATCH ",
-		"CREATE",
-		"PATCH ",
-		"UPDATE",
-		"DELETE",
-		"EXTRAS",
-	}
-
-	rbacHeader = append(resource.Row{"NAME", "API GROUP"}, rbacHeaderVerbs...)
-
 	k8sVerbs = []string{
 		"get",
 		"list",
-		"deletecollection",
 		"watch",
 		"create",
 		"patch",
 		"update",
 		"delete",
+		"deletecollection",
 	}
 
 	httpTok8sVerbs = map[string]string{
@@ -63,15 +53,17 @@ type Rbac struct {
 
 	roleType roleKind
 	roleName string
-	cache    resource.RowEvents
+	path     string
+	cache    render.RowEvents
 }
 
 // NewRbac returns a new viewer.
-func NewRbac(name string, kind roleKind) *Rbac {
+func NewRbac(name string, kind roleKind, path string) *Rbac {
 	return &Rbac{
 		Table:    NewTable(rbacTitle),
 		roleName: name,
 		roleType: kind,
+		path:     path,
 	}
 }
 
@@ -80,15 +72,16 @@ func (r *Rbac) Init(ctx context.Context) error {
 	if err := r.Table.Init(ctx); err != nil {
 		return err
 	}
-	r.ActiveNS = r.app.Config.ActiveNamespace()
-	r.SetColorerFn(rbacColorer)
+	r.SetColorerFn(render.Rbac{}.ColorerFunc())
 	r.bindKeys()
-
-	r.Start()
-	r.SetSortCol(1, len(rbacHeader), true)
+	r.SetSortCol(1, len(r.Header()), true)
 	r.refresh()
 
 	return nil
+}
+
+func (r *Rbac) UpdateTitle() {
+	r.SetTitle(ui.SkinTitle(fmt.Sprintf(rbacTitleFmt, rbacTitle, r.path, r.GetRowCount()-1), r.app.Styles.Frame()))
 }
 
 // Start watches for viewer updates
@@ -140,6 +133,7 @@ func (r *Rbac) refresh() {
 		r.app.Flash().Err(err)
 	}
 	r.Update(data)
+	r.UpdateTitle()
 }
 
 func (r *Rbac) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -152,7 +146,6 @@ func (r *Rbac) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (r *Rbac) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msgf("!!!!RBAC back!!!")
 	if r.cancelFn != nil {
 		r.cancelFn()
 	}
@@ -165,53 +158,48 @@ func (r *Rbac) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return r.app.PrevCmd(evt)
 }
 
-func (r *Rbac) reconcile(name string, kind roleKind) (resource.TableData, error) {
-	var table resource.TableData
+func (r *Rbac) reconcile(name string, kind roleKind) (render.TableData, error) {
+	var table render.TableData
 
-	evts, err := r.rowEvents(name, kind)
+	rows, err := r.fetchRoles(name, kind)
 	if err != nil {
 		return table, err
 	}
 
-	return buildTable(r, evts), nil
+	return buildTable(r, rows), nil
 }
 
-func (r *Rbac) header() resource.Row {
-	return rbacHeader
+func (r *Rbac) Header() render.HeaderRow {
+	return render.Rbac{}.Header(render.AllNamespaces)
 }
 
-func (r *Rbac) getCache() resource.RowEvents {
+func (r *Rbac) GetCache() render.RowEvents {
 	return r.cache
 }
 
-func (r *Rbac) setCache(evts resource.RowEvents) {
+func (r *Rbac) SetCache(evts render.RowEvents) {
 	r.cache = evts
 }
 
-func (r *Rbac) rowEvents(name string, kind roleKind) (resource.RowEvents, error) {
-	var (
-		evts resource.RowEvents
-		err  error
-	)
-
+func (r *Rbac) fetchRoles(name string, kind roleKind) (render.Rows, error) {
 	switch kind {
 	case ClusterRole:
-		evts, err = r.clusterPolicies(name)
+		return r.loadClusterRoles(name)
 	case Role:
-		evts, err = r.namespacedPolicies(name)
+		return r.loadRoles(name)
 	default:
-		return evts, fmt.Errorf("Expecting clusterrole/role but found %d", kind)
+		return nil, fmt.Errorf("Expecting clusterrole/role but found %d", kind)
 	}
-	if err != nil {
-		log.Error().Err(err).Msg("Unable to load CR")
-		return evts, err
-	}
-
-	return evts, nil
 }
 
-func (r *Rbac) clusterPolicies(name string) (resource.RowEvents, error) {
-	cr, err := r.app.Conn().DialOrDie().RbacV1().ClusterRoles().Get(name, metav1.GetOptions{})
+func (r *Rbac) loadClusterRoles(name string) (render.Rows, error) {
+	o, err := r.app.factory.Get("-", "rbac.authorization.k8s.io/v1/clusterroles", name, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	var cr rbacv1.ClusterRole
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cr)
 	if err != nil {
 		return nil, err
 	}
@@ -219,71 +207,68 @@ func (r *Rbac) clusterPolicies(name string) (resource.RowEvents, error) {
 	return r.parseRules(cr.Rules), nil
 }
 
-func (r *Rbac) namespacedPolicies(path string) (resource.RowEvents, error) {
-	ns, na := namespaced(path)
-	cr, err := r.app.Conn().DialOrDie().RbacV1().Roles(ns).Get(na, metav1.GetOptions{})
+func (r *Rbac) loadRoles(path string) (render.Rows, error) {
+	ns, n := namespaced(path)
+	o, err := r.app.factory.Get(ns, "rbac.authorization.k8s.io/v1/roles", n, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
 
-	return r.parseRules(cr.Rules), nil
+	var ro rbacv1.Role
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &ro)
+	if err != nil {
+		return nil, err
+	}
+
+	return r.parseRules(ro.Rules), nil
 }
 
-func (r *Rbac) parseRules(rules []rbacv1.PolicyRule) resource.RowEvents {
-	m := make(resource.RowEvents, len(rules))
-	for _, r := range rules {
-		for _, grp := range r.APIGroups {
-			for _, res := range r.Resources {
+func (r *Rbac) parseRules(rules []rbacv1.PolicyRule) render.Rows {
+	m := make(render.Rows, 0, len(rules))
+	for _, rule := range rules {
+		for _, grp := range rule.APIGroups {
+			for _, res := range rule.Resources {
 				k := res
 				if grp != "" {
 					k = res + "." + grp
 				}
-				for _, na := range r.ResourceNames {
-					n := fqn(k, na)
-					m[n] = &resource.RowEvent{
-						Fields: prepRow(n, grp, r.Verbs),
-					}
+				for _, na := range rule.ResourceNames {
+					m = m.Upsert(r.prepRow(fqn(k, na), grp, rule.Verbs))
 				}
-				m[k] = &resource.RowEvent{
-					Fields: prepRow(k, grp, r.Verbs),
-				}
+				m = m.Upsert(r.prepRow(k, grp, rule.Verbs))
 			}
 		}
-		for _, nres := range r.NonResourceURLs {
+		for _, nres := range rule.NonResourceURLs {
 			if nres[0] != '/' {
 				nres = "/" + nres
 			}
-			m[nres] = &resource.RowEvent{
-				Fields: prepRow(nres, resource.NAValue, r.Verbs),
-			}
+			m = m.Upsert(r.prepRow(nres, "", rule.Verbs))
 		}
 	}
 
 	return m
 }
 
-func prepRow(res, grp string, verbs []string) resource.Row {
-	if grp != resource.NAValue {
+func (r *Rbac) prepRow(res, grp string, verbs []string) render.Row {
+	if grp != "" {
 		grp = toGroup(grp)
 	}
 
-	return makeRow(res, grp, asVerbs(verbs...))
+	fields := make(render.Fields, 0, len(r.Header()))
+	fields = append(fields, res, group)
+	return render.Row{
+		ID:     res,
+		Fields: append(fields, verbs...),
+	}
 }
 
-func makeRow(res, group string, verbs []string) resource.Row {
-	r := make(resource.Row, 0, len(rbacHeader))
-	r = append(r, res, group)
-
-	return append(r, verbs...)
-}
-
-func asVerbs(verbs ...string) resource.Row {
+func asVerbs(verbs ...string) []string {
 	const (
 		verbLen    = 4
 		unknownLen = 30
 	)
 
-	r := make(resource.Row, 0, len(k8sVerbs)+1)
+	r := make([]string, 0, len(k8sVerbs)+1)
 	for _, v := range k8sVerbs {
 		r = append(r, toVerbIcon(hasVerb(verbs, v)))
 	}
@@ -293,7 +278,7 @@ func asVerbs(verbs ...string) resource.Row {
 		if hv, ok := httpTok8sVerbs[v]; ok {
 			v = hv
 		}
-		if !hasVerb(k8sVerbs, v) && v != all {
+		if !hasVerb(k8sVerbs, v) && v != clusterWide {
 			unknowns = append(unknowns, v)
 		}
 	}
@@ -309,7 +294,7 @@ func toVerbIcon(ok bool) string {
 }
 
 func hasVerb(verbs []string, verb string) bool {
-	if len(verbs) == 1 && verbs[0] == all {
+	if len(verbs) == 1 && verbs[0] == clusterWide {
 		return true
 	}
 
@@ -332,4 +317,43 @@ func toGroup(g string) string {
 		return "v1"
 	}
 	return g
+}
+
+func showRoleBinding(app *App, _, resource, selection string) {
+	ns, n := namespaced(selection)
+	rb, err := app.Conn().DialOrDie().RbacV1().RoleBindings(ns).Get(n, metav1.GetOptions{})
+	if err != nil {
+		app.Flash().Errf("Unable to retrieve rolebindings for %s", selection)
+		return
+	}
+	app.inject(NewRbac(fqn(ns, rb.RoleRef.Name), Role, selection))
+}
+
+func showClusterRoleBinding(app *App, ns, resource, selection string) {
+	o, err := app.factory.Get("-", "rbac.authorization.k8s.io/v1/clusterrolebindings", selection, labels.Everything())
+	if err != nil {
+		app.Flash().Err(err)
+		return
+	}
+
+	var crb rbacv1.ClusterRoleBinding
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &crb)
+	if err != nil {
+		app.Flash().Errf("Unable to retrieve clusterrolebindings for %s", selection)
+		return
+	}
+
+	// BOZO!! Must make sure cluster roles are in cache prior to loading rbac view.
+	app.factory.ForResource("-", "rbac.authorization.k8s.io/v1/clusterroles")
+	app.factory.WaitForCacheSync()
+
+	app.inject(NewRbac(crb.RoleRef.Name, ClusterRole, selection))
+}
+
+func showRBAC(app *App, ns, resource, selection string) {
+	kind := ClusterRole
+	if resource == "role" {
+		kind = Role
+	}
+	app.inject(NewRbac(selection, kind, selection))
 }

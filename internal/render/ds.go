@@ -3,8 +3,10 @@ package render
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/derailed/tview"
+	"github.com/gdamore/tcell"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -15,7 +17,22 @@ type DaemonSet struct{}
 
 // ColorerFunc colors a resource row.
 func (DaemonSet) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+	return func(ns string, r RowEvent) tcell.Color {
+		c := DefaultColorer(ns, r)
+		if r.Kind == EventAdd || r.Kind == EventUpdate {
+			return c
+		}
+
+		markCol := 2
+		if ns != AllNamespaces {
+			markCol = 1
+		}
+		if strings.TrimSpace(r.Row.Fields[markCol]) != strings.TrimSpace(r.Row.Fields[markCol+2]) {
+			return ErrColor
+		}
+
+		return StdColor
+	}
 }
 
 // Header returns a header row.
@@ -33,12 +50,12 @@ func (DaemonSet) Header(ns string) HeaderRow {
 		Header{Name: "UP-TO-DATE", Align: tview.AlignRight},
 		Header{Name: "AVAILABLE", Align: tview.AlignRight},
 		Header{Name: "NODE_SELECTOR"},
-		Header{Name: "AGE"},
+		Header{Name: "AGE", Decorator: ageDecorator},
 	)
 }
 
 // Render renders a K8s resource to screen.
-func (DaemonSet) Render(o interface{}, ns string, r *Row) error {
+func (d DaemonSet) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected DaemonSet, but got %T", o)
@@ -49,11 +66,12 @@ func (DaemonSet) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	fields := make(Fields, 0, len(r.Fields))
+	r.ID = MetaFQN(ds.ObjectMeta)
+	r.Fields = make(Fields, 0, len(d.Header(ns)))
 	if isAllNamespace(ns) {
-		fields = append(fields, ds.Namespace)
+		r.Fields = append(r.Fields, ds.Namespace)
 	}
-	fields = append(fields,
+	r.Fields = append(r.Fields,
 		ds.Name,
 		strconv.Itoa(int(ds.Status.DesiredNumberScheduled)),
 		strconv.Itoa(int(ds.Status.CurrentNumberScheduled)),
@@ -63,7 +81,6 @@ func (DaemonSet) Render(o interface{}, ns string, r *Row) error {
 		mapToStr(ds.Spec.Template.Spec.NodeSelector),
 		toAge(ds.ObjectMeta.CreationTimestamp),
 	)
-	r.ID, r.Fields = MetaFQN(ds.ObjectMeta), fields
 
 	return nil
 }

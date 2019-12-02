@@ -52,7 +52,7 @@ func TestDefaultColorer(t *testing.T) {
 
 	for k, u := range uu {
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, render.DefaultColorer("", u.k, render.Row{}))
+			assert.Equal(t, u.e, render.DefaultColorer("", render.RowEvent{}))
 		})
 	}
 }

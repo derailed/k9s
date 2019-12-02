@@ -17,7 +17,7 @@ func TestAliasNew(t *testing.T) {
 	v.Init(makeContext())
 
 	assert.Equal(t, 3, v.GetColumnCount())
-	assert.Equal(t, 41, v.GetRowCount())
+	assert.Equal(t, 15, v.GetRowCount())
 	assert.Equal(t, "Aliases", v.Name())
 	assert.Equal(t, 9, len(v.Hints()))
 }

@@ -1,13 +1,14 @@
 package view
 
 import (
-	"context"
 	"errors"
 	"strings"
 
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 )
 
 // Context presents a context viewer.
@@ -16,24 +17,19 @@ type Context struct {
 }
 
 // NewContext return a new context viewer.
-func NewContext(title, gvr string, list resource.List) ResourceViewer {
-	return &Context{
-		ResourceViewer: NewResource(title, gvr, list).(ResourceViewer),
+func NewContext(gvr dao.GVR) ResourceViewer {
+	c := Context{
+		ResourceViewer: NewGeneric(gvr),
 	}
-}
-
-func (c *Context) Init(ctx context.Context) error {
 	c.GetTable().SetEnterFn(c.useCtx)
-	if err := c.ResourceViewer.Init(ctx); err != nil {
-		return err
-	}
 	c.GetTable().SetSelectedFn(c.cleanser)
-	c.bindKeys()
+	c.GetTable().SetColorerFn(render.Context{}.ColorerFunc())
+	c.BindKeys()
 
-	return nil
+	return &c
 }
 
-func (c *Context) bindKeys() {
+func (c *Context) BindKeys() {
 	c.Actions().Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
 }
 
@@ -43,14 +39,14 @@ func (c *Context) useCtx(app *App, _, res, sel string) {
 		return
 	}
 	if !app.gotoResource("po") {
-		app.Flash().Err(errors.New("Goto pod failed"))
+		app.Flash().Err(errors.New("goto pod failed"))
 	}
 }
 
 func (*Context) cleanser(s string) string {
 	name := strings.TrimSpace(s)
-	if strings.HasSuffix(name, "*") {
-		name = strings.TrimRight(name, "*")
+	if strings.HasSuffix(name, "(*)") {
+		name = strings.TrimRight(name, "(*)")
 	}
 	if strings.HasSuffix(name, "(𝜟)") {
 		name = strings.TrimRight(name, "(𝜟)")
@@ -59,12 +55,24 @@ func (*Context) cleanser(s string) string {
 }
 
 func (c *Context) useContext(name string) error {
-	ctx := c.cleanser(name)
-	if err := c.List().Resource().(*resource.Context).Switch(ctx); err != nil {
+	res, err := dao.AccessorFor(c.App().factory, dao.GVR(c.GVR()))
+	if err != nil {
+		return nil
+	}
+
+	switcher, ok := res.(dao.Switchable)
+	if !ok {
+		return errors.New("Expecting a switchable resource")
+	}
+
+	log.Debug().Msgf("Context %q", name)
+	ctx, _ := namespaced(name)
+	ctx = c.cleanser(ctx)
+	if err := switcher.Switch(ctx); err != nil {
 		return err
 	}
 
-	if err := c.App().switchCtx(name, false); err != nil {
+	if err := c.App().switchCtx(ctx, false); err != nil {
 		return err
 	}
 	c.Refresh()

@@ -9,7 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
@@ -39,13 +41,15 @@ type Log struct {
 	cancelFn        context.CancelFunc
 	previous        bool
 	list            resource.List
+	gvr             dao.GVR
 }
 
 var _ model.Component = &Log{}
 
 // NewLog returns a new viewer.
-func NewLog(path, co string, l resource.List, prev bool) *Log {
+func NewLog(gvr dao.GVR, path, co string, l resource.List, prev bool) *Log {
 	return &Log{
+		gvr:       gvr,
 		Flex:      tview.NewFlex(),
 		path:      path,
 		container: co,
@@ -134,7 +138,7 @@ func (l *Log) Name() string { return logTitle }
 
 func (l *Log) bindKeys() {
 	l.logs.Actions().Set(ui.KeyActions{
-		tcell.KeyEscape: ui.NewKeyAction("Back", l.backCmd, true),
+		tcell.KeyEscape: ui.NewKeyAction("Back", l.app.PrevCmd, true),
 		ui.KeyC:         ui.NewKeyAction("Clear", l.clearCmd, true),
 		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", l.ToggleAutoScrollCmd, true),
 		ui.KeyG:         ui.NewKeyAction("Top", l.topCmd, false),
@@ -146,36 +150,38 @@ func (l *Log) bindKeys() {
 }
 
 func (l *Log) doLoad() error {
-	// BOZO!!
-	// l.logs.Clear()
-	// l.setTitle(l.path, l.container)
+	l.logs.Clear()
+	l.setTitle(l.path, l.container)
 
-	// var ctx context.Context
-	// ctx = context.WithValue(context.Background(), resource.IKey("informer"), l.app.informers.ActiveInformer())
-	// ctx, l.cancelFn = context.WithCancel(ctx)
+	var ctx context.Context
+	ctx = context.WithValue(context.Background(), internal.KeyFactory, l.app.factory)
+	ctx, l.cancelFn = context.WithCancel(ctx)
 
-	// c := make(chan string, 10)
-	// go l.updateLogs(ctx, c, logBuffSize)
+	c := make(chan string, 10)
+	go l.updateLogs(ctx, c, logBuffSize)
 
-	// res, ok := l.list.Resource().(resource.Tailable)
-	// if !ok {
-	// 	close(c)
-	// 	return fmt.Errorf("Resource %T is not tailable", l.list.Resource())
-	// }
+	accessor, err := dao.AccessorFor(l.app.factory, l.gvr)
+	if err != nil {
+		return err
+	}
+	logger, ok := accessor.(dao.Loggable)
+	if !ok {
+		return fmt.Errorf("Resource %s is not tailable", l.gvr)
+	}
 
-	// if err := res.Logs(ctx, c, l.logOpts(l.path, l.container, l.previous)); err != nil {
-	// 	l.cancelFn()
-	// 	close(c)
-	// 	return err
-	// }
+	if err := logger.TailLogs(ctx, c, l.logOpts(l.path, l.container, l.previous)); err != nil {
+		l.cancelFn()
+		close(c)
+		return err
+	}
 
 	return nil
 }
 
-func (l *Log) logOpts(path, co string, prevLogs bool) resource.LogOptions {
+func (l *Log) logOpts(path, co string, prevLogs bool) dao.LogOptions {
 	ns, po := namespaced(path)
-	return resource.LogOptions{
-		Fqn: resource.Fqn{
+	return dao.LogOptions{
+		Fqn: dao.Fqn{
 			Namespace: ns,
 			Name:      po,
 			Container: co,
@@ -317,10 +323,6 @@ func (l *Log) ToggleAutoScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
 	l.scrollIndicator.Refresh()
 
 	return nil
-}
-
-func (l *Log) backCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return l.app.PrevCmd(evt)
 }
 
 func (l *Log) topCmd(evt *tcell.EventKey) *tcell.EventKey {

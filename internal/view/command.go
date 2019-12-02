@@ -5,11 +5,14 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/rs/zerolog/log"
 )
+
+var customViewers MetaViewers
 
 type command struct {
 	app *App
@@ -17,6 +20,18 @@ type command struct {
 
 func newCommand(app *App) *command {
 	return &command{app: app}
+}
+
+func (c *command) Init() error {
+	if err := dao.Load(c.app.factory); err != nil {
+		return err
+	}
+	if err := loadAliases(); err != nil {
+		return err
+	}
+	customViewers = loadCustomViewers()
+
+	return nil
 }
 
 func (c *command) defaultCmd() {
@@ -53,24 +68,14 @@ func (c *command) isK9sCmd(cmd string) bool {
 	return false
 }
 
-// load scrape api for resources and populate aliases.
-func (c *command) load() MetaViewers {
-	vv := make(MetaViewers, 100)
-	resourceViews(c.app.Conn(), vv)
-	allCRDs(c.app.factory, vv)
-
-	return vv
-}
-
 func (c *command) viewMetaFor(cmd string) (string, *MetaViewer) {
-	vv := c.load()
 	gvr, ok := aliases.Get(cmd)
 	if !ok {
 		log.Error().Err(fmt.Errorf("Huh? `%s` command not found", cmd)).Msg("Command Failed")
 		c.app.Flash().Warnf("Huh? `%s` command not found", cmd)
 		return "", nil
 	}
-	v, ok := vv[gvr]
+	v, ok := customViewers[dao.GVR(gvr)]
 	if !ok {
 		log.Error().Err(fmt.Errorf("Huh? `%s` viewer not found", gvr)).Msg("MetaViewer Failed")
 		c.app.Flash().Warnf("Huh? viewer for %s not found", cmd)
@@ -100,6 +105,7 @@ func (c *command) run(cmd string) bool {
 		view := c.componentFor(gvr, v)
 		return c.exec(gvr, view)
 	default:
+		// checks if command includes a namespace
 		ns := c.app.Config.ActiveNamespace()
 		if len(cmds) == 2 {
 			ns = cmds[1]
@@ -118,19 +124,20 @@ func (c *command) componentFor(gvr string, v *MetaViewer) ResourceViewer {
 	}
 
 	var view ResourceViewer
-	if v.viewFn != nil {
+	if v.viewerFn != nil {
 		log.Debug().Msgf("Custom viewer for %s", gvr)
-		view = v.viewFn(v.kind, gvr, r)
+		view = v.viewerFn(dao.GVR(gvr))
+		// view = NewGeneric(dao.GVR(gvr))
 	} else {
 		log.Debug().Msgf("Standard viewer for %s", gvr)
-		view = NewResource(v.kind, gvr, r)
+		view = NewResource("BLAH", gvr, r)
 	}
 
 	switch o := view.(type) {
 	case TableViewer:
-		o.GetTable().SetColorerFn(v.colorerFn)
-		o.GetTable().SetEnterFn(v.enterFn)
-		o.GetTable().SetDecorateFn(v.decorateFn)
+		if v.enterFn != nil {
+			o.GetTable().SetEnterFn(v.enterFn)
+		}
 	}
 
 	return view

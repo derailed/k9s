@@ -8,7 +8,7 @@ import (
 )
 
 func TestRbacNew(t *testing.T) {
-	v := view.NewRbac("fred", view.ClusterRole)
+	v := view.NewRbac("fred", view.ClusterRole, "")
 	v.Init(makeCtx())
 
 	assert.Equal(t, "Rbac", v.Name())

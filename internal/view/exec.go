@@ -24,6 +24,9 @@ func runK(clear bool, app *App, args ...string) bool {
 }
 
 func run(clear bool, app *App, bin string, bg bool, args ...string) bool {
+	app.Halt()
+	defer app.Resume()
+
 	return app.Suspend(func() {
 		if err := execute(clear, bin, bg, args...); err != nil {
 			app.Flash().Errf("Command exited: %v", err)

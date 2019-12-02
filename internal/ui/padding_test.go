@@ -4,18 +4,17 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMaxColumn(t *testing.T) {
 	uu := map[string]struct {
-		t resource.TableData
+		t render.TableData
 		s int
 		e MaxyPad
 	}{
 		"ascii col 0": {
-			resource.TableData{
+			render.TableData{
 				Header: render.HeaderRow{render.Header{Name: "A"}, render.Header{Name: "B"}},
 				RowEvents: render.RowEvents{
 					render.RowEvent{
@@ -34,7 +33,7 @@ func TestMaxColumn(t *testing.T) {
 			MaxyPad{6, 6},
 		},
 		"ascii col 1": {
-			resource.TableData{
+			render.TableData{
 				Header: render.HeaderRow{render.Header{Name: "A"}, render.Header{Name: "B"}},
 				RowEvents: render.RowEvents{
 					render.RowEvent{
@@ -53,7 +52,7 @@ func TestMaxColumn(t *testing.T) {
 			MaxyPad{6, 6},
 		},
 		"non_ascii": {
-			resource.TableData{
+			render.TableData{
 				Header: render.HeaderRow{render.Header{Name: "A"}, render.Header{Name: "B"}},
 				RowEvents: render.RowEvents{
 					render.RowEvent{
@@ -114,7 +113,7 @@ func TestPad(t *testing.T) {
 }
 
 func BenchmarkMaxColumn(b *testing.B) {
-	table := resource.TableData{
+	table := render.TableData{
 		Header: render.HeaderRow{render.Header{Name: "A"}, render.Header{Name: "B"}},
 		RowEvents: render.RowEvents{
 			render.RowEvent{

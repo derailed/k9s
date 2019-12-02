@@ -5,11 +5,12 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -35,10 +36,9 @@ func (a *Alias) Init(ctx context.Context) error {
 		return err
 	}
 
+	a.SetColorerFn(render.Alias{}.ColorerFunc())
 	a.SetBorderFocusColor(tcell.ColorMediumSpringGreen)
 	a.SetSelectedStyle(tcell.ColorWhite, tcell.ColorMediumSpringGreen, tcell.AttrNone)
-	a.SetColorerFn(aliasColorer)
-	a.ActiveNS = resource.AllNamespaces
 	a.registerActions()
 	a.Update(a.hydrate())
 	a.resetTitle()
@@ -96,18 +96,16 @@ func (a *Alias) backCmd(_ *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (a *Alias) hydrate() resource.TableData {
-	data := resource.TableData{
-		Header: render.HeaderRow{
-			render.Header{Name: "RESOURCE"},
-			render.Header{Name: "COMMAND"},
-			render.Header{Name: "APIGROUP"},
-		},
-		RowEvents: make(render.RowEvents, len(aliases.Alias)),
+func (a *Alias) hydrate() render.TableData {
+	var re render.Alias
+
+	data := render.TableData{
+		Header:    re.Header(render.AllNamespaces),
+		RowEvents: make(render.RowEvents, 0, len(aliases.Alias)),
 		Namespace: resource.NotNamespaced,
 	}
 
-	aa := make(map[string][]string, len(aliases.Alias))
+	aa := make(config.ShortNames, len(aliases.Alias))
 	for alias, gvr := range aliases.Alias {
 		if _, ok := aa[gvr]; ok {
 			aa[gvr] = append(aa[gvr], alias)
@@ -117,16 +115,15 @@ func (a *Alias) hydrate() resource.TableData {
 	}
 
 	for gvr, aliases := range aa {
-		g := k8s.GVR(gvr)
-		row := render.Row{
-			ID: string(gvr),
-			Fields: render.Fields{
-				ui.Pad(g.ToR(), 30),
-				ui.Pad(strings.Join(aliases, ","), 70),
-				ui.Pad(g.ToG(), 30),
-			},
+		var row render.Row
+		if err := re.Render(aliases, gvr, &row); err != nil {
+			log.Error().Err(err).Msgf("Alias render failed")
+			continue
 		}
-		data.RowEvents = append(data.RowEvents, render.RowEvent{Kind: render.EventAdd, Row: row})
+		data.RowEvents = append(data.RowEvents, render.RowEvent{
+			Kind: render.EventAdd,
+			Row:  row,
+		})
 	}
 
 	return data

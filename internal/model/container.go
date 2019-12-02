@@ -1,6 +1,9 @@
 package model
 
 import (
+	"context"
+
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
@@ -9,6 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -16,18 +20,15 @@ var _ render.ContainerWithMetrics = &ContainerWithMetrics{}
 
 // Container represents a container model.
 type Container struct {
-	*Resource
-}
+	Resource
 
-// NewContainer returns a new container model
-func NewContainer() *Container {
-	return &Container{
-		Resource: NewResource(),
-	}
+	pod *v1.Pod
 }
 
 // List returns a collection of containers
-func (c *Container) List(sel string) ([]runtime.Object, error) {
+func (c *Container) List(ctx context.Context) ([]runtime.Object, error) {
+	c.pod = nil
+	sel := ctx.Value(internal.KeySelection).(string)
 	ns, n := render.Namespaced(sel)
 	c.namespace = ns
 	o, err := c.factory.Get(ns, "v1/pods", n, labels.Everything())
@@ -40,46 +41,43 @@ func (c *Container) List(sel string) ([]runtime.Object, error) {
 	if err != nil {
 		return nil, err
 	}
+	c.pod = &po
 
-	res := make([]runtime.Object, 1, len(po.Spec.InitContainers)+len(po.Spec.Containers))
-	res[0] = &po
+	res := make([]runtime.Object, 0, len(po.Spec.InitContainers)+len(po.Spec.Containers))
+	for _, co := range po.Spec.InitContainers {
+		res = append(res, ContainerRes{co})
+	}
+	for _, co := range po.Spec.Containers {
+		res = append(res, ContainerRes{co})
+	}
+
 	return res, nil
 }
 
 // Hydrate returns a pod as container rows.
-func (c *Container) Hydrate(cc []runtime.Object, rr render.Rows, re Renderer) error {
-	po := cc[0].(*v1.Pod)
+func (c *Container) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
 	mx := k8s.NewMetricsServer(c.factory.Client().(k8s.Connection))
-	mmx, err := mx.FetchPodMetrics(c.namespace, po.Name)
+	mmx, err := mx.FetchPodMetrics(c.namespace, c.pod.Name)
 	if err != nil {
-		return err
+		log.Warn().Err(err).Msgf("No metrics found for pod %q:%q", c.namespace, c.pod.Name)
 	}
 
 	var index int
-	size := len(re.Header(c.namespace))
-	for _, co := range po.Spec.InitContainers {
-		row, err := renderCoRow(co.Name, index, size, coMetricsFor(co, po, mmx, true), re)
+	for _, o := range oo {
+		co := o.(ContainerRes)
+		row, err := renderCoRow(co.Container.Name, index, coMetricsFor(co.Container, c.pod, mmx, true), re)
 		if err != nil {
 			return err
 		}
 		rr[index] = row
-		log.Debug().Msgf("Init Containers %#v", rr[index])
 		index++
 	}
-	for _, co := range po.Spec.Containers {
-		row, err := renderCoRow(co.Name, index, size, coMetricsFor(co, po, mmx, false), re)
-		if err != nil {
-			return err
-		}
-		rr[index] = row
-		log.Debug().Msgf("Containers %#v", row)
-		index++
-	}
+
 	return nil
 }
 
-func renderCoRow(n string, index, size int, pmx *ContainerWithMetrics, re Renderer) (render.Row, error) {
-	row := render.Row{Fields: make([]string, size)}
+func renderCoRow(n string, index int, pmx *ContainerWithMetrics, re Renderer) (render.Row, error) {
+	var row render.Row
 	if err := re.Render(pmx, n, &row); err != nil {
 		return render.Row{}, err
 	}
@@ -98,9 +96,7 @@ func coMetricsFor(co v1.Container, po *v1.Pod, mmx *mv1beta1.PodMetrics, isInit 
 
 func containerMetrics(n string, mx runtime.Object) *mv1beta1.ContainerMetrics {
 	pmx := mx.(*mv1beta1.PodMetrics)
-	log.Debug().Msgf("CO MX fo %s", n)
 	for _, m := range pmx.Containers {
-		log.Debug().Msgf("Container Metrics %#v", m)
 		if m.Name == n {
 			return &m
 		}
@@ -154,4 +150,21 @@ func (c *ContainerWithMetrics) Metrics() *mv1beta1.ContainerMetrics {
 
 func (c *ContainerWithMetrics) Age() metav1.Time {
 	return c.age
+}
+
+// ----------------------------------------------------------------------------
+
+// ContainerRes represents a container K8s resource.
+type ContainerRes struct {
+	v1.Container
+}
+
+// GetObjectKind returns a schema object.
+func (c ContainerRes) GetObjectKind() schema.ObjectKind {
+	return nil
+}
+
+// DeepCopyObject returns a container copy.
+func (c ContainerRes) DeepCopyObject() runtime.Object {
+	return c
 }

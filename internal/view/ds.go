@@ -1,29 +1,31 @@
 package view
 
 import (
-	"github.com/derailed/k9s/internal/k8s"
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 type DaemonSet struct {
 	ResourceViewer
 }
 
-func NewDaemonSet(title, gvr string, list resource.List) ResourceViewer {
+func NewDaemonSet(gvr dao.GVR) ResourceViewer {
 	d := DaemonSet{
 		ResourceViewer: NewRestartExtender(
 			NewLogsExtender(
-				NewResource(title, gvr, list),
+				NewGeneric(gvr),
 				func() string { return "" },
 			),
 		),
 	}
 	d.BindKeys()
 	d.GetTable().SetEnterFn(d.showPods)
+	d.GetTable().SetColorerFn(render.DaemonSet{}.ColorerFunc())
 
 	return &d
 }
@@ -37,21 +39,17 @@ func (d *DaemonSet) BindKeys() {
 
 func (d *DaemonSet) showPods(app *App, _, res, sel string) {
 	ns, n := namespaced(sel)
-	dset, err := k8s.NewDaemonSet(app.Conn()).Get(ns, n)
+	o, err := app.factory.Get(ns, d.GVR(), n, labels.Everything())
 	if err != nil {
 		d.App().Flash().Err(err)
 		return
 	}
 
-	ds, ok := dset.(*appsv1.DaemonSet)
-	if !ok {
-		log.Fatal().Msg("Expecting a valid ds")
-	}
-	l, err := metav1.LabelSelectorAsSelector(ds.Spec.Selector)
+	var ds appsv1.DaemonSet
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &ds)
 	if err != nil {
-		app.Flash().Err(err)
-		return
+		d.App().Flash().Err(err)
 	}
 
-	showPods(app, ns, l.String(), "")
+	showPodsFromSelector(app, ns, ds.Spec.Selector)
 }

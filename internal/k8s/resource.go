@@ -76,7 +76,7 @@ func (r *Resource) listAll(ns, n string) (runtime.Object, error) {
 
 func (r *Resource) getClient() (*rest.RESTClient, error) {
 	crConfig := r.RestConfigOrDie()
-	gv := r.gvr.AsGR()
+	gv := r.gvr.AsGV()
 	crConfig.GroupVersion = &gv
 	crConfig.APIPath = "/apis"
 	if len(r.gvr.ToG()) == 0 {
@@ -94,7 +94,7 @@ func (r *Resource) getClient() (*rest.RESTClient, error) {
 
 func (r *Resource) codec() (serializer.CodecFactory, runtime.ParameterCodec) {
 	scheme := runtime.NewScheme()
-	gv := r.gvr.AsGR()
+	gv := r.gvr.AsGV()
 	metav1.AddToGroupVersion(scheme, gv)
 	scheme.AddKnownTypes(gv, &metav1beta1.Table{}, &metav1beta1.TableOptions{})
 	scheme.AddKnownTypes(metav1beta1.SchemeGroupVersion, &metav1beta1.Table{}, &metav1beta1.TableOptions{})

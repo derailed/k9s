@@ -33,7 +33,7 @@ func (NetworkPolicy) Header(ns string) HeaderRow {
 		Header{Name: "EGR-SELECTOR"},
 		Header{Name: "EGR-PORTS"},
 		Header{Name: "EGR-BLOCK"},
-		Header{Name: "AGE"},
+		Header{Name: "AGE", Decorator: ageDecorator},
 	)
 }
 

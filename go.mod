@@ -2,6 +2,8 @@ module github.com/derailed/k9s
 
 go 1.13
 
+replace github.com/derailed/tview => /Users/fernand/go_wk/derailed/src/github.com/derailed/tview
+
 replace (
 	k8s.io/api => k8s.io/api v0.0.0-20190918155943-95b840bb6a1f
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190918161926-8f644eb6e783
@@ -36,6 +38,7 @@ require (
 	github.com/gdamore/tcell v1.3.0
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
+	github.com/golang/mock v1.2.0
 	github.com/google/btree v1.0.0 // indirect
 	github.com/googleapis/gnostic v0.2.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc // indirect
@@ -44,7 +47,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.5
 	github.com/petergtz/pegomock v2.6.0+incompatible
 	github.com/rakyll/hey v0.1.2
-	github.com/rs/zerolog v1.14.3
+	github.com/rs/zerolog v1.17.2
 	github.com/sahilm/fuzzy v0.1.0
 	github.com/spf13/cobra v0.0.5
 	github.com/stretchr/testify v1.3.0

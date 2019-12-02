@@ -17,11 +17,13 @@ func NewService(c Connection) *Service {
 
 // Get a service.
 func (s *Service) Get(ns, n string) (interface{}, error) {
+	panic("NYI")
 	return s.DialOrDie().CoreV1().Services(ns).Get(n, metav1.GetOptions{})
 }
 
 // List all Services in a given namespace.
 func (s *Service) List(ns string, opts metav1.ListOptions) (Collection, error) {
+	panic("NYI")
 	rr, err := s.DialOrDie().CoreV1().Services(ns).List(opts)
 	if err != nil {
 		return nil, err

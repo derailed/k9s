@@ -4,8 +4,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"path"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
@@ -162,7 +164,10 @@ func (*Base) marshalObject(o runtime.Object) (string, error) {
 }
 
 func (b *Base) podLogs(ctx context.Context, c chan<- string, sel map[string]string, opts LogOptions) error {
-	f := ctx.Value(IKey("factory")).(*watch.Factory)
+	f, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
+	if !ok {
+		return fmt.Errorf("no factory in context for pod logs")
+	}
 
 	ls, err := metav1.ParseToLabelSelector(toSelector(sel))
 	if err != nil {

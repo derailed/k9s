@@ -3,7 +3,7 @@ package view
 import (
 	"errors"
 
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/gdamore/tcell"
@@ -50,11 +50,16 @@ func (r *RestartExtender) restartCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (r *RestartExtender) restartRollout(path string) error {
-	s, ok := r.List().Resource().(resource.Restartable)
+	ns, n := namespaced(path)
+	res, err := dao.AccessorFor(r.App().factory, dao.GVR(r.GVR()))
+	if err != nil {
+		return nil
+	}
+
+	s, ok := res.(dao.Restartable)
 	if !ok {
 		return errors.New("resource is not restartable")
 	}
-	ns, n := namespaced(path)
 
 	return s.Restart(ns, n)
 }

@@ -1,21 +1,23 @@
 package view
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
-	"github.com/derailed/k9s/internal/k8s"
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/kubectl/pkg/polymorphichelpers"
 )
@@ -26,21 +28,15 @@ type ReplicaSet struct {
 }
 
 // NewReplicaSet returns a new viewer.
-func NewReplicaSet(title, gvr string, list resource.List) ResourceViewer {
-	return &ReplicaSet{
-		ResourceViewer: NewResource(title, gvr, list),
-	}
-}
-
-// Init initializes the component.
-func (r *ReplicaSet) Init(ctx context.Context) error {
-	if err := r.ResourceViewer.Init(ctx); err != nil {
-		return err
+func NewReplicaSet(gvr dao.GVR) ResourceViewer {
+	r := ReplicaSet{
+		ResourceViewer: NewGeneric(gvr),
 	}
 	r.bindKeys()
 	r.GetTable().SetEnterFn(r.showPods)
+	r.GetTable().SetColorerFn(render.ReplicaSet{}.ColorerFunc())
 
-	return nil
+	return &r
 }
 
 func (r *ReplicaSet) bindKeys() {
@@ -53,22 +49,19 @@ func (r *ReplicaSet) bindKeys() {
 
 func (r *ReplicaSet) showPods(app *App, _, res, sel string) {
 	ns, n := namespaced(sel)
-	s, err := k8s.NewReplicaSet(app.Conn()).Get(ns, n)
+	o, err := app.factory.Get(ns, r.GVR(), n, labels.Everything())
 	if err != nil {
-		app.Flash().Errf("Replicaset failed %s", err)
-	}
-
-	rs, ok := s.(*v1.ReplicaSet)
-	if !ok {
-		log.Fatal().Msg("Expecting a valid rs")
-	}
-	l, err := metav1.LabelSelectorAsSelector(rs.Spec.Selector)
-	if err != nil {
-		app.Flash().Errf("Selector failed %s", err)
+		app.Flash().Err(err)
 		return
 	}
 
-	showPods(app, ns, l.String(), "")
+	var rs appsv1.ReplicaSet
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &rs)
+	if err != nil {
+		app.Flash().Err(err)
+	}
+
+	showPodsFromSelector(app, ns, rs.Spec.Selector)
 }
 
 func (r *ReplicaSet) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -80,7 +73,7 @@ func (r *ReplicaSet) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {
 	r.showModal(fmt.Sprintf("Rollback %s %s?", r.List().GetName(), sel), func(_ int, button string) {
 		if button == "OK" {
 			r.App().Flash().Infof("Rolling back %s %s", r.List().GetName(), sel)
-			if res, err := rollback(r.App().Conn(), sel); err != nil {
+			if res, err := rollback(r.App().factory, sel); err != nil {
 				r.App().Flash().Err(err)
 			} else {
 				r.App().Flash().Info(res)
@@ -110,21 +103,34 @@ func (r *ReplicaSet) showModal(msg string, done func(int, string)) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func findRS(Conn k8s.Connection, ns, n string) (*v1.ReplicaSet, error) {
-	rset := k8s.NewReplicaSet(Conn)
-	r, err := rset.Get(ns, n)
+func findRS(f *watch.Factory, ns, n string) (*v1.ReplicaSet, error) {
+	o, err := f.Get(ns, "apps/v1/replicasets", n, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
-	return r.(*v1.ReplicaSet), nil
+
+	var rs appsv1.ReplicaSet
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &rs)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rs, nil
 }
 
-func findDP(Conn k8s.Connection, ns, n string) (*appsv1.Deployment, error) {
-	dp, err := k8s.NewDeployment(Conn).Get(ns, n)
+func findDP(f *watch.Factory, ns, n string) (*appsv1.Deployment, error) {
+	o, err := f.Get(ns, "apps/v1/deployments", n, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
-	return dp.(*appsv1.Deployment), nil
+
+	var dp appsv1.Deployment
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &dp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dp, nil
 }
 
 func controllerInfo(rs *v1.ReplicaSet) (string, string, string, error) {
@@ -146,19 +152,19 @@ func controllerInfo(rs *v1.ReplicaSet) (string, string, string, error) {
 func getRevision(rs *v1.ReplicaSet) (int64, error) {
 	revision := rs.ObjectMeta.Annotations["deployment.kubernetes.io/revision"]
 	if rs.Status.Replicas != 0 {
-		return 0, errors.New("Can not rollback current replica")
+		return 0, errors.New("can not rollback current replica")
 	}
 	vers, err := strconv.Atoi(revision)
 	if err != nil {
-		return 0, errors.New("Revision conversion failed")
+		return 0, errors.New("revision conversion failed")
 	}
+
 	return int64(vers), nil
 }
 
-func rollback(Conn k8s.Connection, selectedItem string) (string, error) {
+func rollback(f *watch.Factory, selectedItem string) (string, error) {
 	ns, n := namespaced(selectedItem)
-
-	rs, err := findRS(Conn, ns, n)
+	rs, err := findRS(f, ns, n)
 	if err != nil {
 		return "", err
 	}
@@ -171,11 +177,11 @@ func rollback(Conn k8s.Connection, selectedItem string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	rb, err := polymorphichelpers.RollbackerFor(schema.GroupKind{Group: apiGroup, Kind: kind}, Conn.DialOrDie())
+	rb, err := polymorphichelpers.RollbackerFor(schema.GroupKind{Group: apiGroup, Kind: kind}, f.Client().DialOrDie())
 	if err != nil {
 		return "", err
 	}
-	dp, err := findDP(Conn, ns, name)
+	dp, err := findDP(f, ns, name)
 	if err != nil {
 		return "", err
 	}

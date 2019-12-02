@@ -1,12 +1,14 @@
 package view
 
 import (
-	"github.com/derailed/k9s/internal/k8s"
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/rs/zerolog/log"
-	v1 "k8s.io/api/apps/v1"
+	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const scaleDialogKey = "scale"
@@ -17,12 +19,12 @@ type Deploy struct {
 }
 
 // NewDeploy returns a new deployment view.
-func NewDeploy(title, gvr string, list resource.List) ResourceViewer {
+func NewDeploy(gvr dao.GVR) ResourceViewer {
 	d := Deploy{
 		ResourceViewer: NewRestartExtender(
 			NewScaleExtender(
 				NewLogsExtender(
-					NewResource(title, gvr, list),
+					NewGeneric(gvr),
 					func() string { return "" },
 				),
 			),
@@ -30,6 +32,7 @@ func NewDeploy(title, gvr string, list resource.List) ResourceViewer {
 	}
 	d.BindKeys()
 	d.GetTable().SetEnterFn(d.showPods)
+	d.GetTable().SetColorerFn(render.Deployment{}.ColorerFunc())
 
 	return &d
 }
@@ -43,16 +46,18 @@ func (d *Deploy) BindKeys() {
 
 func (d *Deploy) showPods(app *App, _, res, sel string) {
 	ns, n := namespaced(sel)
-	dep, err := k8s.NewDeployment(app.Conn()).Get(ns, n)
+	o, err := app.factory.Get(ns, d.GVR(), n, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return
 	}
 
-	dp, ok := dep.(*v1.Deployment)
-	if !ok {
-		log.Fatal().Msg("Expecting valid deployment")
+	var dp appsv1.Deployment
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &dp)
+	if err != nil {
+		app.Flash().Err(err)
 	}
+
 	showPodsFromSelector(app, ns, dp.Spec.Selector)
 }
 

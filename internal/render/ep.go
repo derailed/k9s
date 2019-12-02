@@ -28,7 +28,7 @@ func (Endpoints) Header(ns string) HeaderRow {
 	return append(h,
 		Header{Name: "NAME"},
 		Header{Name: "ENDPOINTS"},
-		Header{Name: "AGE"},
+		Header{Name: "AGE", Decorator: ageDecorator},
 	)
 }
 

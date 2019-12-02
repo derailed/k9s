@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
@@ -42,7 +43,7 @@ func (c *Container) Init(ctx context.Context) error {
 	}
 	c.SetEnvFn(c.k9sEnv)
 	c.GetTable().SetEnterFn(c.viewLogs)
-	c.GetTable().SetColorerFn(containerColorer)
+	c.GetTable().SetColorerFn(render.Container{}.ColorerFunc())
 	c.bindKeys()
 
 	return nil
@@ -54,12 +55,12 @@ func (c *Container) Name() string { return containerTitle }
 func (c *Container) bindKeys() {
 	c.Actions().Delete(tcell.KeyCtrlSpace, ui.KeySpace)
 	c.Actions().Add(ui.KeyActions{
-		ui.KeyShiftF: ui.NewKeyAction("PortForward", c.portFwdCmd, true),
-		ui.KeyS:      ui.NewKeyAction("Shell", c.shellCmd, true),
-		ui.KeyShiftC: ui.NewKeyAction("Sort CPU", c.GetTable().SortColCmd(6, false), false),
-		ui.KeyShiftM: ui.NewKeyAction("Sort MEM", c.GetTable().SortColCmd(7, false), false),
-		ui.KeyShiftX: ui.NewKeyAction("Sort CPU%", c.GetTable().SortColCmd(8, false), false),
-		ui.KeyShiftZ: ui.NewKeyAction("Sort MEM%", c.GetTable().SortColCmd(9, false), false),
+		tcell.KeyCtrlF: ui.NewKeyAction("PortForward", c.portFwdCmd, true),
+		ui.KeyS:        ui.NewKeyAction("Shell", c.shellCmd, true),
+		ui.KeyShiftC:   ui.NewKeyAction("Sort CPU", c.GetTable().SortColCmd(6, false), false),
+		ui.KeyShiftM:   ui.NewKeyAction("Sort MEM", c.GetTable().SortColCmd(7, false), false),
+		ui.KeyShiftX:   ui.NewKeyAction("Sort CPU%", c.GetTable().SortColCmd(8, false), false),
+		ui.KeyShiftZ:   ui.NewKeyAction("Sort MEM%", c.GetTable().SortColCmd(9, false), false),
 	})
 }
 
@@ -75,6 +76,7 @@ func (c *Container) k9sEnv() K9sEnv {
 func (c *Container) selectedContainer() string {
 	log.Debug().Msgf("Container SELECTED %s", c.GetTable().GetSelectedItem())
 	tokens := strings.Split(c.GetTable().GetSelectedItem(), "/")
+
 	return tokens[0]
 }
 
@@ -120,7 +122,7 @@ func (c *Container) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	portC := c.GetTable().GetSelectedCell(10)
+	portC := c.GetTable().GetSelectedCell(11)
 	ports := strings.Split(portC, ",")
 	if len(ports) == 0 {
 		c.App().Flash().Err(errors.New("Container exposes no ports"))

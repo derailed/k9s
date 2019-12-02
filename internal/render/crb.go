@@ -23,7 +23,7 @@ func (ClusterRoleBinding) Header(string) HeaderRow {
 		Header{Name: "ROLE"},
 		Header{Name: "KIND"},
 		Header{Name: "SUBJECTS"},
-		Header{Name: "AGE"},
+		Header{Name: "AGE", Decorator: ageDecorator},
 	}
 }
 

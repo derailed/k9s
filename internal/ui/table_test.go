@@ -54,8 +54,8 @@ func TestTableSelection(t *testing.T) {
 
 // Helpers...
 
-func makeTableData() resource.TableData {
-	return resource.TableData{
+func makeTableData() render.TableData {
+	return render.TableData{
 		Namespace: "",
 		Header:    render.HeaderRow{render.Header{Name: "a"}, render.Header{Name: "b"}, render.Header{Name: "c"}},
 		RowEvents: render.RowEvents{

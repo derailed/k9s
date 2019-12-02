@@ -1,9 +1,9 @@
 package ui
 
 import (
-	"path"
 	"strings"
 
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
@@ -13,7 +13,7 @@ import (
 type SelectTable struct {
 	*tview.Table
 
-	ActiveNS     string
+	Data         render.TableData
 	selectedItem string
 	selectedRow  int
 	selectedFn   func(string) string
@@ -89,20 +89,15 @@ func (s *SelectTable) GetRow() resource.Row {
 }
 
 func (s *SelectTable) updateSelectedItem(r int) {
-	if r <= 0 || s.GetCell(r, 0) == nil {
+	if r <= 0 || len(s.Data.RowEvents) == 0 {
 		s.selectedItem = ""
 		return
 	}
 
-	col0 := TrimCell(s, r, 0)
-	switch s.ActiveNS {
-	case resource.NotNamespaced:
-		s.selectedItem = col0
-	case resource.AllNamespace, resource.AllNamespaces:
-		s.selectedItem = path.Join(col0, TrimCell(s, r, 1))
-	default:
-		s.selectedItem = path.Join(s.ActiveNS, col0)
+	if r-1 >= len(s.Data.RowEvents) {
+		return
 	}
+	s.selectedItem = s.Data.RowEvents[r-1].Row.ID
 }
 
 // SelectRow select a given row by index.
@@ -137,6 +132,18 @@ func (s *SelectTable) selChanged(r, c int) {
 	for _, f := range s.selListeners {
 		f(r, c)
 	}
+}
+
+// ClearMarks delete all marked items.
+func (s *SelectTable) ClearMarks() {
+	for k := range s.marks {
+		delete(s.marks, k)
+	}
+}
+
+// DeleteMark delete a marked item.
+func (s *SelectTable) DeleteMark(k string) {
+	delete(s.marks, k)
 }
 
 // ToggleMark toggles marked row

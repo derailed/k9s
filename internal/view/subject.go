@@ -3,22 +3,25 @@ package view
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"time"
 
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
-var subjectHeader = resource.Row{"NAME", "KIND", "FIRST LOCATION"}
-
 type (
-	cachedEventer interface {
-		header() resource.Row
-		getCache() resource.RowEvents
-		setCache(resource.RowEvents)
+	TableInfo interface {
+		Header() render.HeaderRow
+		GetCache() render.RowEvents
+		SetCache(render.RowEvents)
 	}
 
 	// Subject presents a user/group viewer.
@@ -26,13 +29,20 @@ type (
 		*Table
 
 		subjectKind string
-		cache       resource.RowEvents
+		cache       render.RowEvents
 	}
 )
 
 // NewSubject returns a new subject viewer.
 func NewSubject(title, _ string, _ resource.List) ResourceViewer {
 	return &Subject{Table: NewTable(title)}
+}
+
+func (*Subject) SetContextFn(ContextFunc) {}
+
+// GVR returns a resource descriptor.
+func (s *Subject) GVR() string {
+	return "n/a"
 }
 
 // GetTable returns the table view.
@@ -55,12 +65,11 @@ func (s *Subject) Init(ctx context.Context) error {
 	}
 	s.subjectKind = mapCmdSubject(app.Config.K9s.ActiveCluster().View.Active)
 	s.Table = NewTable(s.subjectKind)
-	s.SetColorerFn(rbacColorer)
+	s.SetColorerFn(render.Subject{}.ColorerFunc())
 	if err := s.Table.Init(ctx); err != nil {
 		return err
 	}
-	s.ActiveNS = "*"
-	s.SetSortCol(1, len(rbacHeader), true)
+	s.SetSortCol(1, len(s.Header()), true)
 	s.SelectRow(1, true)
 	s.bindKeys()
 	s.refresh()
@@ -120,10 +129,6 @@ func (s *Subject) refresh() {
 }
 
 func (s *Subject) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msgf("SUBJECT!!!!")
-	defer func(t time.Time) {
-		log.Debug().Msgf(">>>>>> Subject elapsed %v", time.Since(t))
-	}(time.Now())
 	if !s.RowSelected() {
 		return evt
 	}
@@ -134,9 +139,8 @@ func (s *Subject) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
 		s.app.Flash().Err(err)
 		return nil
 	}
-	log.Debug().Msgf("  INJECTING...")
 	s.app.inject(NewPolicy(s.app, subject, n))
-	log.Debug().Msgf("  DONE...")
+
 	return nil
 }
 
@@ -158,135 +162,143 @@ func (s *Subject) backCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return s.app.PrevCmd(evt)
 }
 
-func (s *Subject) reconcile() (resource.TableData, error) {
-	var table resource.TableData
+func (s *Subject) reconcile() (render.TableData, error) {
+	var table render.TableData
 	if s.app.Conn() == nil {
 		return table, nil
 	}
 
-	evts, err := s.clusterSubjects()
+	rows, err := s.fetchClusterRoleBindings()
 	if err != nil {
 		return table, err
 	}
 
-	nevts, err := s.namespacedSubjects()
+	nrows, err := s.fetchRoleBindings()
 	if err != nil {
 		return table, err
 	}
-	for k, v := range nevts {
-		evts[k] = v
+	for k, v := range nrows {
+		rows[k] = v
 	}
 
-	return buildTable(s, evts), nil
+	return buildTable(s, rows), nil
 }
 
-func (s *Subject) header() resource.Row {
-	return subjectHeader
+func (s *Subject) Header() render.HeaderRow {
+	return render.Subject{}.Header(render.AllNamespaces)
 }
 
-func (s *Subject) getCache() resource.RowEvents {
+func (s *Subject) GetCache() render.RowEvents {
 	return s.cache
 }
 
-func (s *Subject) setCache(evts resource.RowEvents) {
-	s.cache = evts
+func (s *Subject) SetCache(rows render.RowEvents) {
+	s.cache = rows
 }
 
-func buildTable(c cachedEventer, evts resource.RowEvents) resource.TableData {
-	return resource.TableData{}
+func buildTable(c TableInfo, rows render.Rows) render.TableData {
+	table := render.TableData{
+		Header:    c.Header(),
+		Namespace: "*",
+	}
 
-	// BOZO!!
-	// table := resource.TableData{
-	// 	Header:    c.header(),
-	// 	Rows:      make(resource.RowEvents, len(evts)),
-	// 	Namespace: "*",
-	// }
+	cache := c.GetCache()
+	if len(cache) == 0 {
+		cache := make(render.RowEvents, 0, len(rows))
+		for _, row := range rows {
+			cache = append(cache, render.RowEvent{Kind: render.EventAdd, Row: row})
+		}
+		table.RowEvents = cache
+		return table
+	}
 
-	// noDeltas := make(resource.Row, len(c.header()))
-	// cache := c.getCache()
-	// if len(cache) == 0 {
-	// 	for k, ev := range evts {
-	// 		ev.Action = resource.New
-	// 		ev.Deltas = noDeltas
-	// 		table.Rows[k] = ev
-	// 	}
-	// 	c.setCache(evts)
-	// 	return table
-	// }
+	for _, row := range rows {
+		idx, ok := cache.FindIndex(row.ID)
+		if !ok {
+			cache = append(cache, render.RowEvent{Kind: render.EventAdd, Row: row})
+			continue
+		}
 
-	// for k, ev := range evts {
-	// 	table.Rows[k] = ev
+		old := cache[idx].Row
+		deltas := make(render.DeltaRow, len(row.Fields))
+		if reflect.DeepEqual(old, row) {
+			cache[idx].Kind = render.EventUnchanged
+			cache[idx].Deltas = deltas
+			continue
+		}
 
-	// 	newr := ev.Fields
-	// 	if _, ok := cache[k]; !ok {
-	// 		ev.Action, ev.Deltas = watch.Added, noDeltas
-	// 		continue
-	// 	}
-	// 	oldr := cache[k].Fields
-	// 	deltas := make(resource.Row, len(newr))
-	// 	if !reflect.DeepEqual(oldr, newr) {
-	// 		ev.Action = watch.Modified
-	// 		for i, field := range oldr {
-	// 			if field != newr[i] {
-	// 				deltas[i] = field
-	// 			}
-	// 		}
-	// 		ev.Deltas = deltas
-	// 	} else {
-	// 		ev.Action = resource.Unchanged
-	// 		ev.Deltas = noDeltas
-	// 	}
-	// }
+		cache[idx].Kind = render.EventUpdate
+		for i, field := range old.Fields {
+			if field != row.Fields[i] {
+				deltas[i] = field
+			}
+		}
+		cache[idx].Deltas = deltas
+	}
 
-	// for k := range evts {
-	// 	if _, ok := table.Rows[k]; !ok {
-	// 		delete(evts, k)
-	// 	}
-	// }
-	// c.setCache(evts)
+	for _, row := range rows {
+		if _, ok := cache.FindIndex(row.ID); !ok {
+			cache.Delete(row.ID)
+		}
+	}
+	table.RowEvents = cache
 
-	// return table
+	return table
 }
 
-func (s *Subject) clusterSubjects() (resource.RowEvents, error) {
-	crbs, err := s.app.Conn().DialOrDie().RbacV1().ClusterRoleBindings().List(metav1.ListOptions{})
+func (s *Subject) fetchClusterRoleBindings() (render.Rows, error) {
+	s.app.factory.Preload(render.ClusterWide, "rbac.authorization.k8s.io/v1/clusterroles")
+	oo, err := s.app.factory.List(render.ClusterWide, "rbac.authorization.k8s.io/v1/clusterrolebindings", labels.Everything())
 	if err != nil {
 		return nil, err
 	}
 
-	evts := make(resource.RowEvents, len(crbs.Items))
-	for _, crb := range crbs.Items {
+	rows := make(render.Rows, 0, len(oo))
+	for _, o := range oo {
+		var crb rbacv1.ClusterRoleBinding
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &crb)
+		if err != nil {
+			return nil, err
+		}
 		for _, subject := range crb.Subjects {
 			if subject.Kind != s.subjectKind {
 				continue
 			}
-			evts[subject.Name] = &resource.RowEvent{
-				Fields: resource.Row{subject.Name, "ClusterRoleBinding", crb.Name},
-			}
+			rows = append(rows, render.Row{
+				ID:     subject.Name,
+				Fields: render.Fields{subject.Name, "ClusterRoleBinding", crb.Name},
+			})
 		}
 	}
 
-	return evts, nil
+	return rows, nil
 }
 
-func (s *Subject) namespacedSubjects() (resource.RowEvents, error) {
-	rbs, err := s.app.Conn().DialOrDie().RbacV1().RoleBindings("").List(metav1.ListOptions{})
+func (s *Subject) fetchRoleBindings() (render.Rows, error) {
+	s.app.factory.Preload(render.ClusterWide, "rbac.authorization.k8s.io/v1/clusterroles")
+	oo, err := s.app.factory.List(render.ClusterWide, "rbac.authorization.k8s.io/v1/rolebindings", labels.Everything())
 	if err != nil {
 		return nil, err
 	}
 
-	evts := make(resource.RowEvents, len(rbs.Items))
-	for _, rb := range rbs.Items {
+	rows := make(render.Rows, 0, len(oo))
+	for _, o := range oo {
+		var rb rbacv1.RoleBinding
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &rb)
+		if err != nil {
+			return nil, err
+		}
 		for _, subject := range rb.Subjects {
 			if subject.Kind == s.subjectKind {
-				evts[subject.Name] = &resource.RowEvent{
-					Fields: resource.Row{subject.Name, "RoleBinding", rb.Name},
-				}
+				rows = append(rows, render.Row{
+					ID:     subject.Name,
+					Fields: render.Fields{subject.Name, "RoleBinding", rb.Name},
+				})
 			}
 		}
 	}
 
-	return evts, nil
+	return rows, nil
 }
 
 func mapCmdSubject(subject string) string {

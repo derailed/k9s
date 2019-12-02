@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
@@ -37,24 +36,27 @@ func NewPortForward(title, gvr string, list resource.List) ResourceViewer {
 	}
 }
 
+func (*PortForward) SetContextFn(ContextFunc) {}
+
 // Init the view.
 func (p *PortForward) Init(ctx context.Context) error {
 	if err := p.Table.Init(ctx); err != nil {
 		return err
 	}
 	p.registerActions()
-
 	p.SetBorderFocusColor(tcell.ColorDodgerBlue)
 	p.SetSelectedStyle(tcell.ColorWhite, tcell.ColorDodgerBlue, tcell.AttrNone)
-	p.SetColorerFn(forwardColorer)
-	p.ActiveNS = resource.AllNamespaces
+	p.SetColorerFn(render.Forward{}.ColorerFunc())
 	p.SetSortCol(p.NameColIndex()+6, 0, true)
 	p.Select(1, 0)
-
-	p.Start()
 	p.refresh()
 
 	return nil
+}
+
+// GVR returns a resource descriptor.
+func (p *PortForward) GVR() string {
+	return "n/a"
 }
 
 // List returns the resource list.
@@ -113,7 +115,7 @@ func (p *PortForward) registerActions() {
 }
 
 func (p *PortForward) showBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
-	p.app.gotoResource("be")
+	p.app.inject(NewBench("", "", nil))
 
 	return nil
 }
@@ -213,26 +215,35 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (p *PortForward) hydrate() resource.TableData {
-	data := initHeader(len(p.app.forwarders))
-	dc, dn := p.app.Bench.Benchmarks.Defaults.C, p.app.Bench.Benchmarks.Defaults.N
-	for _, f := range p.app.forwarders {
-		c, n, cfg := loadConfig(dc, dn, containerID(f.Path(), f.Container()), p.app.Bench.Benchmarks.Containers)
+func (p *PortForward) hydrate() render.TableData {
+	var re render.Forward
 
-		ports := strings.Split(f.Ports()[0], ":")
-		ns, na := namespaced(f.Path())
-		row := render.Row{
-			ID: f.Path(),
-			Fields: render.Fields{
-				ns,
-				na,
-				f.Container(),
-				strings.Join(f.Ports(), ","),
-				urlFor(cfg, ports[0]),
-				asNum(c),
-				asNum(n),
-				f.Age(),
-			},
+	data := render.TableData{
+		Header:    re.Header(render.AllNamespaces),
+		RowEvents: make(render.RowEvents, 0, len(p.app.forwarders)),
+		Namespace: render.AllNamespaces,
+	}
+
+	containers := p.app.Bench.Benchmarks.Containers
+	for _, f := range p.app.forwarders {
+		fqn := containerID(f.Path(), f.Container())
+		cfg := benchCfg{
+			c: p.app.Bench.Benchmarks.Defaults.C,
+			n: p.app.Bench.Benchmarks.Defaults.N,
+		}
+		if config, ok := containers[fqn]; ok {
+			cfg.c, cfg.n = config.C, config.N
+			cfg.host, cfg.path = config.HTTP.Host, config.HTTP.Path
+		}
+
+		var row render.Row
+		fwd := forwarder{
+			Forwarder:         f,
+			BenchConfigurator: cfg,
+		}
+		if err := re.Render(fwd, render.AllNamespaces, &row); err != nil {
+			log.Error().Err(err).Msgf("PortForward render failed")
+			continue
 		}
 		data.RowEvents = append(data.RowEvents, render.RowEvent{Kind: render.EventAdd, Row: row})
 	}
@@ -243,6 +254,23 @@ func (p *PortForward) hydrate() resource.TableData {
 // ----------------------------------------------------------------------------
 // Helpers...
 
+var _ render.PortForwarder = forwarder{}
+
+type forwarder struct {
+	render.Forwarder
+	render.BenchConfigurator
+}
+
+type benchCfg struct {
+	c, n       int
+	host, path string
+}
+
+func (b benchCfg) C() int           { return b.c }
+func (b benchCfg) N() int           { return b.n }
+func (b benchCfg) Host() string     { return b.host }
+func (b benchCfg) HttpPath() string { return b.path }
+
 func defaultConfig() config.BenchConfig {
 	return config.BenchConfig{
 		C: config.DefaultC,
@@ -252,33 +280,6 @@ func defaultConfig() config.BenchConfig {
 			Path:   "/",
 		},
 	}
-}
-
-func initHeader(rows int) resource.TableData {
-	return resource.TableData{
-		// BOZO!!
-		// Header:    resource.Row{"NAMESPACE", "NAME", "CONTAINER", "PORTS", "URL", "C", "N", "AGE"},
-		// NumCols:   map[string]bool{"C": true, "N": true},
-		// Rows:      make(resource.RowEvents, rows),
-		Namespace: resource.AllNamespaces,
-	}
-}
-
-func loadConfig(dc, dn int, id string, cc map[string]config.BenchConfig) (int, int, config.BenchConfig) {
-	c, n := dc, dn
-	cfg, ok := cc[id]
-	if !ok {
-		return c, n, cfg
-	}
-
-	if cfg.C != 0 {
-		c = cfg.C
-	}
-	if cfg.N != 0 {
-		n = cfg.N
-	}
-
-	return c, n, cfg
 }
 
 func showModal(p *ui.Pages, msg string, ok func()) {
@@ -313,7 +314,7 @@ func watchFS(ctx context.Context, app *App, dir, file string, cb func()) error {
 			case evt := <-w.Events:
 				log.Debug().Msgf("FS %s event %v", file, evt.Name)
 				if file == "" || evt.Name == file {
-					log.Debug().Msgf("Capuring Event %#v", evt)
+					log.Debug().Msgf("Capturing Event %#v", evt)
 					app.QueueUpdateDraw(func() {
 						cb()
 					})
