@@ -81,6 +81,7 @@ func newLogView(_ string, app *appView, backFn ui.ActionHandler) *logView {
 func (v *logView) bindKeys() {
 	v.actions = ui.KeyActions{
 		tcell.KeyEscape: ui.NewKeyAction("Back", v.backCmd, true),
+		ui.KeyQ:         ui.NewKeyAction("Back", v.backCmd, true),
 		ui.KeyC:         ui.NewKeyAction("Clear", v.clearCmd, true),
 		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", v.toggleScrollCmd, true),
 		ui.KeyG:         ui.NewKeyAction("Top", v.topCmd, false),

@@ -41,6 +41,7 @@ func newPodView(title, gvr string, app *appView, list resource.List) resourceVie
 	{
 		picker.setActions(ui.KeyActions{
 			tcell.KeyEscape: {Description: "Back", Action: v.backCmd, Visible: true},
+			ui.KeyQ:         {Description: "Back", Action: v.backCmd, Visible: true},
 		})
 	}
 	v.AddPage("picker", picker, true, false)

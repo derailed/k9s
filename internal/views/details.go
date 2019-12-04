@@ -75,6 +75,7 @@ func (v *detailsView) bindKeys() {
 		tcell.KeyBackspace:  ui.NewKeyAction("Erase", v.eraseCmd, false),
 		tcell.KeyDelete:     ui.NewKeyAction("Erase", v.eraseCmd, false),
 		tcell.KeyEscape:     ui.NewKeyAction("Back", v.backCmd, true),
+		ui.KeyQ:             ui.NewKeyAction("Back", v.backCmd, true),
 		tcell.KeyTab:        ui.NewKeyAction("Next Match", v.nextCmd, false),
 		tcell.KeyBacktab:    ui.NewKeyAction("Previous Match", v.prevCmd, false),
 		tcell.KeyCtrlS:      ui.NewKeyAction("Save", v.saveCmd, true),

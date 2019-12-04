@@ -47,6 +47,7 @@ func (v *containerView) extraActions(aa ui.KeyActions) {
 	aa[ui.KeyShiftL] = ui.NewKeyAction("Logs Previous", v.prevLogsCmd, true)
 	aa[ui.KeyS] = ui.NewKeyAction("Shell", v.shellCmd, true)
 	aa[tcell.KeyEscape] = ui.NewKeyAction("Back", v.backCmd, false)
+	aa[ui.KeyQ] = ui.NewKeyAction("Back", v.backCmd, false)
 	aa[ui.KeyP] = ui.NewKeyAction("Previous", v.backCmd, false)
 	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", v.sortColCmd(6, false), false)
 	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", v.sortColCmd(7, false), false)
