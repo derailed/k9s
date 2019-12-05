@@ -76,7 +76,7 @@ func (*Event) Header(ns string) Row {
 		ff = append(ff, "NAMESPACE")
 	}
 
-	return append(ff, "NAME", "REASON", "SOURCE", "COUNT", "MESSAGE", "AGE")
+	return append(ff, "TYPE", "REASON", "SOURCE", "COUNT", "MESSAGE", "AGE")
 }
 
 var rx = regexp.MustCompile(`(.+)\.(.+)`)
@@ -91,7 +91,7 @@ func (r *Event) Fields(ns string) Row {
 	}
 
 	return append(ff,
-		i.Name,
+		i.Type,
 		i.Reason,
 		i.Source.Component,
 		strconv.Itoa(int(i.Count)),

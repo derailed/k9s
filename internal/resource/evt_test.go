@@ -38,7 +38,7 @@ func TestEventAccess(t *testing.T) {
 
 func TestEventFields(t *testing.T) {
 	r := newEvent().Fields("blee")
-	assert.Equal(t, resource.Row{"fred", "blah", "", "1"}, r[:4])
+	assert.Equal(t, resource.Row{"Normal", "blah", "", "1"}, r[:4])
 }
 
 func TestEventMarshal(t *testing.T) {
@@ -74,7 +74,7 @@ func TestEventData(t *testing.T) {
 	for _, d := range row.Deltas {
 		assert.Equal(t, "", d)
 	}
-	assert.Equal(t, resource.Row{"fred"}, row.Fields[:1])
+	assert.Equal(t, resource.Row{"Normal"}, row.Fields[:1])
 }
 
 // Helpers...
@@ -86,6 +86,7 @@ func k8sEvent() *v1.Event {
 			Name:              "fred",
 			CreationTimestamp: metav1.Time{Time: testTime()},
 		},
+		Type:    "Normal",
 		Reason:  "blah",
 		Message: "blee",
 		Count:   1,
@@ -114,5 +115,6 @@ reason: blah
 reportingComponent: ""
 reportingInstance: ""
 source: {}
+type: Normal
 `
 }
