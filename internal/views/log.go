@@ -34,6 +34,7 @@ type (
 		autoScroll int32
 		path       string
 		fullScreen bool
+		textWrap   bool
 	}
 )
 
@@ -57,6 +58,7 @@ func newLogView(_ string, app *appView, backFn ui.ActionHandler) *logView {
 		logFrame:   newLogFrame(app, backFn),
 		autoScroll: 1,
 		fullScreen: false,
+		textWrap:   true,
 	}
 
 	v.logs = newDetailsView(app, backFn)
@@ -66,7 +68,7 @@ func newLogView(_ string, app *appView, backFn ui.ActionHandler) *logView {
 		v.logs.SetDynamicColors(true)
 		v.logs.SetTextColor(config.AsColor(app.Styles.Views().Log.FgColor))
 		v.logs.SetBackgroundColor(config.AsColor(app.Styles.Views().Log.BgColor))
-		v.logs.SetWrap(true)
+		v.logs.SetWrap(v.textWrap)
 		v.logs.SetMaxBuffer(app.Config.K9s.LogBufferSize)
 	}
 	v.ansiWriter = tview.ANSIWriter(v.logs, app.Styles.Views().Log.FgColor, app.Styles.Views().Log.BgColor)
@@ -90,6 +92,7 @@ func (v *logView) bindKeys() {
 		ui.KeyF:         ui.NewKeyAction("Up", v.pageUpCmd, false),
 		ui.KeyB:         ui.NewKeyAction("Down", v.pageDownCmd, false),
 		ui.KeyShiftF:    ui.NewKeyAction("FullScreen", v.fullScreenCmd, true),
+		ui.KeyW:         ui.NewKeyAction("Text Wrap", v.textWrapCmd, true),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", v.saveCmd, true),
 	}
 }
@@ -153,9 +156,14 @@ func (v *logView) updateIndicator() {
 		statusFullScreen = "On"
 	}
 
+	statusTextWrap := "Off"
+	if v.textWrap {
+		statusTextWrap = "On"
+	}
 	v.status.update([]string{
 		fmt.Sprintf("Autoscroll: %s", statusAutoScroll),
 		fmt.Sprintf("FullScreen: %s", statusFullScreen),
+		fmt.Sprintf("TextWrap: %s", statusTextWrap),
 	})
 }
 
@@ -273,5 +281,18 @@ func (v *logView) fullScreenCmd(*tcell.EventKey) *tcell.EventKey {
 	v.SetFullScreen(v.fullScreen)
 	v.Box.SetBorder(!v.fullScreen)
 	v.Flex.SetBorderPadding(0, 0, sidePadding, sidePadding)
+	return nil
+}
+
+func (v *logView) textWrapCmd(*tcell.EventKey) *tcell.EventKey {
+	if v.textWrap {
+		v.app.Flash().Info("Text Wrap is off.")
+		v.textWrap = false
+	} else {
+		v.app.Flash().Info("Text Wrap is on.")
+		v.textWrap = true
+	}
+	v.updateIndicator()
+	v.logs.SetWrap(v.textWrap)
 	return nil
 }
