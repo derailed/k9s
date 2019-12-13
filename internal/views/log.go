@@ -33,6 +33,7 @@ type (
 		ansiWriter io.Writer
 		autoScroll int32
 		path       string
+		fullScreen bool
 	}
 )
 
@@ -55,6 +56,7 @@ func newLogView(_ string, app *appView, backFn ui.ActionHandler) *logView {
 	v := logView{
 		logFrame:   newLogFrame(app, backFn),
 		autoScroll: 1,
+		fullScreen: false,
 	}
 
 	v.logs = newDetailsView(app, backFn)
@@ -87,6 +89,7 @@ func (v *logView) bindKeys() {
 		ui.KeyShiftG:    ui.NewKeyAction("Bottom", v.bottomCmd, false),
 		ui.KeyF:         ui.NewKeyAction("Up", v.pageUpCmd, false),
 		ui.KeyB:         ui.NewKeyAction("Down", v.pageDownCmd, false),
+		ui.KeyShiftF:    ui.NewKeyAction("FullScreen", v.fullScreenCmd, true),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", v.saveCmd, true),
 	}
 }
@@ -140,11 +143,20 @@ func (v *logView) flush(index int, buff []string) {
 }
 
 func (v *logView) updateIndicator() {
-	status := "Off"
+	statusAutoScroll := "Off"
 	if v.autoScroll == 1 {
-		status = "On"
+		statusAutoScroll = "On"
 	}
-	v.status.update([]string{fmt.Sprintf("Autoscroll: %s", status)})
+
+	statusFullScreen := "Off"
+	if v.fullScreen {
+		statusFullScreen = "On"
+	}
+
+	v.status.update([]string{
+		fmt.Sprintf("Autoscroll: %s", statusAutoScroll),
+		fmt.Sprintf("FullScreen: %s", statusFullScreen),
+	})
 }
 
 // ----------------------------------------------------------------------------
@@ -244,5 +256,22 @@ func (v *logView) clearCmd(*tcell.EventKey) *tcell.EventKey {
 	v.app.Flash().Info("Clearing logs...")
 	v.logs.Clear()
 	v.logs.ScrollTo(0, 0)
+	return nil
+}
+
+func (v *logView) fullScreenCmd(*tcell.EventKey) *tcell.EventKey {
+	sidePadding := 1
+	if v.fullScreen {
+		v.app.Flash().Info("FullScreen is off.")
+		v.fullScreen = false
+	} else {
+		v.app.Flash().Info("FullScreen is on.")
+		v.fullScreen = true
+		sidePadding = 0
+	}
+	v.updateIndicator()
+	v.SetFullScreen(v.fullScreen)
+	v.Box.SetBorder(!v.fullScreen)
+	v.Flex.SetBorderPadding(0, 0, sidePadding, sidePadding)
 	return nil
 }
