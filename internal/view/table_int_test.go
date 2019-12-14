@@ -36,7 +36,7 @@ func TestTableNew(t *testing.T) {
 			render.Header{Name: "NAMESPACE"},
 			render.Header{Name: "NAME", Align: tview.AlignRight},
 			render.Header{Name: "FRED"},
-			render.Header{Name: "AGE", Decorator: ageDecorator},
+			render.Header{Name: "AGE", Decorator: render.AgeDecorator},
 		},
 		RowEvents: render.RowEvents{
 			render.RowEvent{
@@ -65,7 +65,7 @@ func TestTableViewFilter(t *testing.T) {
 			render.Header{Name: "NAMESPACE"},
 			render.Header{Name: "NAME", Align: tview.AlignRight},
 			render.Header{Name: "FRED"},
-			render.Header{Name: "AGE", Decorator: ageDecorator},
+			render.Header{Name: "AGE", Decorator: render.AgeDecorator},
 		},
 		RowEvents: render.RowEvents{
 			render.RowEvent{
@@ -99,7 +99,7 @@ func TestTableViewSort(t *testing.T) {
 			render.Header{Name: "NAMESPACE"},
 			render.Header{Name: "NAME", Align: tview.AlignRight},
 			render.Header{Name: "FRED"},
-			render.Header{Name: "AGE", Decorator: ageDecorator},
+			render.Header{Name: "AGE", Decorator: render.AgeDecorator},
 		},
 		RowEvents: render.RowEvents{
 			render.RowEvent{

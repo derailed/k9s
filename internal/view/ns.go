@@ -1,8 +1,6 @@
 package view
 
 import (
-	"regexp"
-
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
@@ -15,8 +13,6 @@ const (
 	favNSIndicator     = "+"
 	defaultNSIndicator = "(*)"
 )
-
-var nsCleanser = regexp.MustCompile(`(\w+)[+|(*)|(𝜟)]*`)
 
 // Namespace represents a namespace viewer.
 type Namespace struct {

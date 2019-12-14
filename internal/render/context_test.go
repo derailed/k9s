@@ -16,18 +16,23 @@ func TestContextHeader(t *testing.T) {
 
 func TestContextRender(t *testing.T) {
 	uu := map[string]struct {
-		ctx *api.Context
+		ctx *render.NamedContext
 		e   render.Row
 	}{
 		"active": {
-			ctx: &api.Context{
-				LocationOfOrigin: "fred",
-				Cluster:          "c1",
-				AuthInfo:         "u1",
-				Namespace:        "ns1",
+			ctx: &render.NamedContext{
+				Name: "c1",
+				Context: &api.Context{
+					LocationOfOrigin: "fred",
+					Cluster:          "c1",
+					AuthInfo:         "u1",
+					Namespace:        "ns1",
+				},
+				Config: &config{},
 			},
 			e: render.Row{
-				Fields: render.Fields{"", "c1", "u1", "ns1"},
+				ID:     "c1",
+				Fields: render.Fields{"c1", "c1", "u1", "ns1"},
 			},
 		},
 	}

@@ -5,14 +5,14 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPodNew(t *testing.T) {
-	po := view.NewPod("Pod", "blee", resource.NewPodList(nil, ""))
+	po := view.NewPod(dao.GVR("v1/pods"))
 	po.Init(makeCtx())
 
 	assert.Equal(t, "pods", po.Name())

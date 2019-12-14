@@ -186,7 +186,7 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	showModal(p.App().Content.Pages, fmt.Sprintf("Delete PortForward `%s?", sel), func() {
 		p.App().factory.DeleteForwarder(sel)
-		p.App().Flash().Infof("PortForward %s(%d) deleted!", sel)
+		p.App().Flash().Infof("PortForward %s deleted!", sel)
 		p.GetTable().Refresh()
 	})
 

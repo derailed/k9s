@@ -44,7 +44,7 @@ func (Context) Header(ns string) HeaderRow {
 func (c Context) Render(o interface{}, _ string, r *Row) error {
 	ctx, ok := o.(*NamedContext)
 	if !ok {
-		return fmt.Errorf("Expected NamedContext, but got %T", o)
+		return fmt.Errorf("expected *NamedContext, but got %T", o)
 	}
 
 	name := ctx.Name
@@ -69,17 +69,21 @@ func (c Context) Render(o interface{}, _ string, r *Row) error {
 type NamedContext struct {
 	Name    string
 	Context *api.Context
-	config  *k8s.Config
+	Config  ContextNamer
+}
+
+type ContextNamer interface {
+	CurrentContextName() (string, error)
 }
 
 // NewNamedContext returns a new named context.
 func NewNamedContext(c *k8s.Config, n string, ctx *api.Context) *NamedContext {
-	return &NamedContext{Name: n, Context: ctx, config: c}
+	return &NamedContext{Name: n, Context: ctx, Config: c}
 }
 
 // MustCurrentContextName return the active context name.
 func (c *NamedContext) IsCurrentContext(n string) bool {
-	cl, err := c.config.CurrentContextName()
+	cl, err := c.Config.CurrentContextName()
 	if err != nil {
 		log.Fatal().Err(err).Msg("Fetching current context")
 		return false

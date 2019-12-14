@@ -49,14 +49,13 @@ func TestDelta(t *testing.T) {
 			n: render.Row{
 				Fields: render.Fields{"a", "b", "c1"},
 			},
-			e:     render.DeltaRow{"", "", ""},
-			blank: true,
+			e: render.DeltaRow{"", "", "c"},
 		},
 	}
 
 	for k, u := range uu {
 		t.Run(k, func(t *testing.T) {
-			d := render.NewDeltaRow(u.o, u.n)
+			d := render.NewDeltaRow(u.o, u.n, false)
 			assert.Equal(t, u.e, d)
 			assert.Equal(t, u.blank, d.IsBlank())
 		})

@@ -13,5 +13,5 @@ func TestDeploymentRender(t *testing.T) {
 	c.Render(load(t, "dp"), "", &r)
 
 	assert.Equal(t, "icx/icx-db", r.ID)
-	assert.Equal(t, render.Fields{"icx", "icx-db", "1/1", "1", "1", "app=icx-db"}, r.Fields[:6])
+	assert.Equal(t, render.Fields{"icx", "icx-db", "1/1", "1", "1"}, r.Fields[:5])
 }

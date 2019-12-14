@@ -13,5 +13,5 @@ func TestIngressRender(t *testing.T) {
 	c.Render(load(t, "ing"), "", &r)
 
 	assert.Equal(t, "default/test-ingress", r.ID)
-	assert.Equal(t, render.Fields{"default", "test-ingress", "", "", "80"}, r.Fields[:5])
+	assert.Equal(t, render.Fields{"default", "test-ingress", "*", "", "80"}, r.Fields[:5])
 }

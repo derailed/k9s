@@ -12,6 +12,6 @@ func TestClusterRoleRender(t *testing.T) {
 	r := render.NewRow(2)
 	c.Render(load(t, "cr"), "-", &r)
 
-	assert.Equal(t, "blee", r.ID)
+	assert.Equal(t, "-/blee", r.ID)
 	assert.Equal(t, render.Fields{"blee"}, r.Fields[:1])
 }

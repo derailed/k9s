@@ -5,7 +5,6 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -61,8 +60,6 @@ func loadCustomViewers() MetaViewers {
 	extRes(m)
 	netRes(m)
 	batchRes(m)
-	policyRes(m)
-	hpaRes(m)
 
 	return m
 }
@@ -205,14 +202,15 @@ func batchRes(vv MetaViewers) {
 	}
 }
 
-func policyRes(vv MetaViewers) {
-	vv["policy/v1beta1/poddisruptionbudgets"] = MetaViewer{
-		listFn: resource.NewPDBList,
-	}
-}
+// BOZO!!
+// func policyRes(vv MetaViewers) {
+// 	vv["policy/v1beta1/poddisruptionbudgets"] = MetaViewer{
+// 		listFn: resource.NewPDBList,
+// 	}
+// }
 
-func hpaRes(vv MetaViewers) {
-	vv["autoscaling/v1/horizontalpodautoscalers"] = MetaViewer{
-		listFn: resource.NewHorizontalPodAutoscalerV1List,
-	}
-}
+// func autoscalingRes(vv MetaViewers) {
+// 	vv["autoscaling/v1/horizontalpodautoscalers"] = MetaViewer{
+// 		listFn: resource.NewHorizontalPodAutoscalerV1List,
+// 	}
+// }
