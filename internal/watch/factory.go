@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	di "k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
-	"k8s.io/client-go/informers/internalinterfaces"
 )
 
 const (
@@ -22,46 +21,13 @@ const (
 	clusterScope  = "-"
 )
 
-// BOZO!!
-// // Authorizer checks what a user can or cannot do to a resource.
-// type Authorizer interface {
-// 	// CanI returns true if the user can use these actions for a given resource.
-// 	CanI(ns, gvr string, verbs []string) (bool, error)
-// }
-
-// type Connection interface {
-// 	Authorizer
-
-// 	// DialOrDie dials client api.
-// 	DialOrDie() kubernetes.Interface
-
-// 	// MXDial dials metrics api.
-// 	MXDial() (*versioned.Clientset, error)
-
-// 	// DynDialOrDie dials dynamic client api.
-// 	DynDialOrDie() dynamic.Interface
-
-// 	// RestConfigOrDie return a client configuration.
-// 	RestConfigOrDie() *restclient.Config
-
-// 	// Config returns the current kubeconfig.
-// 	Config() *k8s.Config
-
-// 	// CachedDiscovery returns a cached client.
-// 	CachedDiscovery() (*disk.CachedDiscoveryClient, error)
-
-// 	// SwithContextOrDie switch to a new kube context.
-// 	SwitchContextOrDie(ctx string)
-// }
-
 // Factory tracks various resource informers.
 type Factory struct {
-	factories        map[string]di.DynamicSharedInformerFactory
-	client           client.Connection
-	stopChan         chan struct{}
-	tweakListOptions internalinterfaces.TweakListOptionsFunc
-	activeNS         string
-	forwarders       Forwarders
+	factories  map[string]di.DynamicSharedInformerFactory
+	client     client.Connection
+	stopChan   chan struct{}
+	activeNS   string
+	forwarders Forwarders
 }
 
 // NewFactory returns a new informers factory.
@@ -257,14 +223,6 @@ func (f *Factory) ensureFactory(ns string) di.DynamicSharedInformerFactory {
 	f.preload(ns)
 
 	return f.factories[ns]
-}
-
-func (f *Factory) register(gvr, ns string, stopChan <-chan struct{}) error {
-	log.Debug().Msgf("Registering GVR %q - %s", ns, gvr)
-	f.factories[ns].ForResource(toGVR(gvr))
-	f.factories[ns].Start(stopChan)
-
-	return nil
 }
 
 func toGVR(gvr string) schema.GroupVersionResource {

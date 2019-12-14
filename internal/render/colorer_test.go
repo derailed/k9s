@@ -10,31 +10,22 @@ package render
 // 	colorerUCs []colorerUC
 // )
 
-// func TestNSColorer(t *testing.T) {
-// 	var (
-// 		ns   = Row{Fields: Fields{"blee", "Active"}}
-// 		term = Row{Fields: Fields{"blee", Terminating}}
-// 		dead = Row{Fields: Fields{"blee", "Inactive"}}
-// 	)
-
-// 	uu := colorerUCs{
-// 		// Add AllNS
-// 		{"", RowEvent{
-// 			Kind: EventAdd,
-// 			Row:  ns,
-// 		},
-// 			AddColor},
-// 		// Mod AllNS
-// 		{"", RowEvent{Kind: EventUpdate, Row: ns}, ModColor},
-// 		// MoChange AllNS
-// 		{"", RowEvent{Kind: EventUnchanged, Row: ns}, StdColor},
-// 		// Bust NS
-// 		{"", RowEvent{Kind: EventUnchanged, Row: term}, ErrColor},
-// 		// Bust NS
-// 		{"", RowEvent{Kind: EventUnchanged, Row: dead}, ErrColor},
+// func TestDefaultColorer(t *testing.T) {
+// 	uu := map[string]struct {
+// 		re render.RowEvent
+// 		e  tcell.Color
+// 	}{
+// 		"default": {render.RowEvent{}, ui.StdColor},
+// 		"add":     {render.RowEvent{Kind: render.EventAdd}, ui.AddColor},
+// 		"delete":  {render.RowEvent{Kind: render.EventDelete}, ui.KillColor},
+// 		"update":  {render.RowEvent{Kind: render.EventUpdate}, ui.ModColor},
 // 	}
-// 	for _, u := range uu {
-// 		assert.Equal(t, u.e, nsColorer(u.ns, u.r))
+
+// 	for k := range uu {
+// 		u := uu[k]
+// 		t.Run(k, func(t *testing.T) {
+// 			assert.Equal(t, u.e, ui.DefaultColorer("", u.re))
+// 		})
 // 	}
 // }
 

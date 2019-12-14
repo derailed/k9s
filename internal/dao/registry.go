@@ -100,83 +100,60 @@ func Load(f *watch.Factory) error {
 	return loadCRDs(f, resMetas)
 }
 
+// BOZO!! Need contermeasure for direct commands!
 func loadNonResource(m ResourceMetas) error {
 	m["aliases"] = metav1.APIResource{
-		Name:         "aliases",
-		SingularName: "alias",
-		Namespaced:   false,
-		Kind:         "Aliases",
-		Verbs:        []string{},
-		Categories:   []string{"k9s"},
+		Name:       "aliases",
+		Kind:       "Aliases",
+		Categories: []string{"k9s"},
 	}
 	m["contexts"] = metav1.APIResource{
-		Name:         "contexts",
-		SingularName: "context",
-		Namespaced:   false,
-		Kind:         "Contexts",
-		ShortNames:   []string{"ctx"},
-		Verbs:        []string{},
-		Categories:   []string{"k9s"},
+		Name:       "contexts",
+		Kind:       "Contexts",
+		ShortNames: []string{"ctx"},
+		Categories: []string{"k9s"},
 	}
 	m["screendumps"] = metav1.APIResource{
-		Name:         "screendumps",
-		SingularName: "screendump",
-		Namespaced:   false,
-		Kind:         "ScreenDumps",
-		ShortNames:   []string{"sd"},
-		Verbs:        []string{"delete"},
-		Categories:   []string{"k9s"},
+		Name:       "screendumps",
+		Kind:       "ScreenDumps",
+		ShortNames: []string{"sd"},
+		Verbs:      []string{"delete"},
+		Categories: []string{"k9s"},
 	}
 	m["benchmarks"] = metav1.APIResource{
-		Name:         "benchmarks",
-		SingularName: "benchmark",
-		Namespaced:   false,
-		Kind:         "Benchmarks",
-		ShortNames:   []string{"be"},
-		Verbs:        []string{"delete"},
-		Categories:   []string{"k9s"},
+		Name:       "benchmarks",
+		Kind:       "Benchmarks",
+		ShortNames: []string{"be"},
+		Verbs:      []string{"delete"},
+		Categories: []string{"k9s"},
 	}
 	m["portforwards"] = metav1.APIResource{
-		Name:         "portforwards",
-		SingularName: "portforward",
-		Namespaced:   true,
-		Kind:         "PortForwards",
-		ShortNames:   []string{"pf"},
-		Verbs:        []string{"delete"},
-		Categories:   []string{"k9s"},
+		Name:       "portforwards",
+		Namespaced: true,
+		Kind:       "PortForwards",
+		ShortNames: []string{"pf"},
+		Verbs:      []string{"delete"},
+		Categories: []string{"k9s"},
 	}
-	// BOZO!! policies can't be launch on command
 	m["rbac"] = metav1.APIResource{
-		Name:         "Rbac",
-		SingularName: "Rbac",
-		Namespaced:   false,
-		Kind:         "RBAC",
-		Categories:   []string{"k9s"},
+		Name:       "Rbac",
+		Kind:       "RBAC",
+		Categories: []string{"k9s"},
 	}
-	// BOZO!! Containers can't be launch on command
 	m["containers"] = metav1.APIResource{
-		Name:         "containers",
-		SingularName: "container",
-		Namespaced:   false,
-		Kind:         "Containers",
-		Verbs:        []string{},
-		Categories:   []string{"k9s"},
+		Name:       "containers",
+		Kind:       "Containers",
+		Categories: []string{"k9s"},
 	}
 	m["users"] = metav1.APIResource{
-		Name:         "users",
-		SingularName: "user",
-		Namespaced:   false,
-		Kind:         "User",
-		Verbs:        []string{},
-		Categories:   []string{"k9s"},
+		Name:       "users",
+		Kind:       "User",
+		Categories: []string{"k9s"},
 	}
 	m["groups"] = metav1.APIResource{
-		Name:         "groups",
-		SingularName: "group",
-		Namespaced:   false,
-		Kind:         "group",
-		Verbs:        []string{},
-		Categories:   []string{"k9s"},
+		Name:       "groups",
+		Kind:       "group",
+		Categories: []string{"k9s"},
 	}
 
 	return nil

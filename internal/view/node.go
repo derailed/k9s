@@ -8,8 +8,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const nodeTitle = "Nodes"
-
 // Node represents a node view.
 type Node struct {
 	ResourceViewer
@@ -65,7 +63,9 @@ func (n *Node) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	details.SetTextColor(n.App().Styles.FgColor())
 	details.SetText(colorizeYAML(n.App().Styles.Views().Yaml, raw))
 	details.ScrollToBeginning()
-	n.App().inject(details)
+	if err := n.App().inject(details); err != nil {
+		n.App().Flash().Err(err)
+	}
 
 	return nil
 }

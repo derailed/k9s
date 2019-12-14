@@ -67,7 +67,7 @@ type Lister interface {
 	List(context.Context) ([]runtime.Object, error)
 
 	// Hydrate converts resource rows into tabular data.
-	Hydrate([]runtime.Object, render.Rows, Renderer) error
+	Hydrate(oo []runtime.Object, rr render.Rows, r Renderer) error
 }
 
 type Factory interface {

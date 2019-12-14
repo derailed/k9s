@@ -38,7 +38,7 @@ func (Service) Header(ns string) HeaderRow {
 }
 
 // Render renders a K8s resource to screen.
-func (Service) Render(o interface{}, ns string, r *Row) error {
+func (s Service) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected Service, but got %T", o)
@@ -49,11 +49,12 @@ func (Service) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	fields := make(Fields, 0, len(r.Fields))
+	r.ID = MetaFQN(svc.ObjectMeta)
+	r.Fields = make(Fields, 0, len(s.Header(ns)))
 	if isAllNamespace(ns) {
-		fields = append(fields, svc.Namespace)
+		r.Fields = append(r.Fields, svc.Namespace)
 	}
-	fields = append(fields,
+	r.Fields = append(r.Fields,
 		svc.ObjectMeta.Name,
 		string(svc.Spec.Type),
 		svc.Spec.ClusterIP,
@@ -62,8 +63,6 @@ func (Service) Render(o interface{}, ns string, r *Row) error {
 		toPorts(svc.Spec.Ports),
 		toAge(svc.ObjectMeta.CreationTimestamp),
 	)
-
-	r.ID, r.Fields = MetaFQN(svc.ObjectMeta), fields
 
 	return nil
 }

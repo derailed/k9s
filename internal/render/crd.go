@@ -32,17 +32,36 @@ func (CustomResourceDefinition) Render(o interface{}, ns string, r *Row) error {
 		return fmt.Errorf("Expected CustomResourceDefinition, but got %T", o)
 	}
 
-	meta := crd.Object["metadata"].(map[string]interface{})
-	t, err := time.Parse(time.RFC3339, meta["creationTimestamp"].(string))
+	meta, ok := crd.Object["metadata"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("expecting an interface map but got %T", crd.Object["metadata"])
+	}
+	t, err := time.Parse(time.RFC3339, extractMetaField(meta, "creationTimestamp"))
 	if err != nil {
 		log.Error().Err(err).Msgf("Fields timestamp %v", err)
 	}
 
-	r.ID = FQN(ClusterScope, meta["name"].(string))
+	r.ID = FQN(ClusterScope, extractMetaField(meta, "name"))
 	r.Fields = Fields{
-		meta["name"].(string),
-		toAge(metav1.Time{t}),
+		extractMetaField(meta, "name"),
+		toAge(metav1.Time{Time: t}),
 	}
 
 	return nil
+}
+
+func extractMetaField(m map[string]interface{}, field string) string {
+	f, ok := m[field]
+	if !ok {
+		log.Error().Err(fmt.Errorf("failed to extract field from meta %s", field))
+		return "n/a"
+	}
+
+	fs, ok := f.(string)
+	if !ok {
+		log.Error().Err(fmt.Errorf("failed to extract string from field %s", field))
+		return "n/a"
+	}
+
+	return fs
 }

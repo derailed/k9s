@@ -131,7 +131,7 @@ func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, p metric
 		mem: ToMi(mem),
 	}
 
-	rcpu, rmem := containerResources(co)
+	rcpu, rmem := containerResources(*co)
 	if rcpu != nil {
 		p.cpu = AsPerc(toPerc(float64(cpu), float64(rcpu.MilliValue())))
 	}
@@ -177,19 +177,9 @@ func toState(s v1.ContainerState) string {
 	}
 }
 
-func toRes(r v1.ResourceList) (string, string) {
-	cpu, mem := r[v1.ResourceCPU], r[v1.ResourceMemory]
-
-	return ToMillicore(cpu.MilliValue()), ToMi(ToMB(mem.Value()))
-}
-
 func probe(p *v1.Probe) string {
 	if p == nil {
 		return "off"
 	}
 	return "on"
-}
-
-func asMi(v int64) float64 {
-	return float64(v) / 1024 * 1024
 }

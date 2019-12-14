@@ -38,7 +38,7 @@ func (NetworkPolicy) Header(ns string) HeaderRow {
 }
 
 // Render renders a K8s resource to screen.
-func (NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
+func (n NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected NetworkPolicy, but got %T", o)
@@ -52,11 +52,12 @@ func (NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
 	ip, is, ib := ingress(np.Spec.Ingress)
 	ep, es, eb := egress(np.Spec.Egress)
 
-	fields := make(Fields, 0, len(r.Fields))
+	r.ID = MetaFQN(np.ObjectMeta)
+	r.Fields = make(Fields, 0, len(n.Header(ns)))
 	if isAllNamespace(ns) {
-		fields = append(fields, np.Namespace)
+		r.Fields = append(r.Fields, np.Namespace)
 	}
-	fields = append(fields,
+	r.Fields = append(r.Fields,
 		np.Name,
 		is,
 		ip,
@@ -66,7 +67,6 @@ func (NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
 		eb,
 		toAge(np.ObjectMeta.CreationTimestamp),
 	)
-	r.ID, r.Fields = MetaFQN(np.ObjectMeta), fields
 
 	return nil
 }

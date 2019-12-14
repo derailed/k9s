@@ -40,7 +40,9 @@ func (n *Namespace) bindKeys(aa ui.KeyActions) {
 
 func (n *Namespace) switchNs(app *App, _, res, sel string) {
 	n.useNamespace(sel)
-	app.gotoResource("po")
+	if err := app.gotoResource("po"); err != nil {
+		app.Flash().Err(err)
+	}
 }
 
 func (n *Namespace) useNsCmd(evt *tcell.EventKey) *tcell.EventKey {

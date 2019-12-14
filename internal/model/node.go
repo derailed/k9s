@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
@@ -29,14 +30,28 @@ func (n *Node) List(_ context.Context) ([]runtime.Object, error) {
 	}
 
 	oo := make([]runtime.Object, len(nn.Items))
-	for i, no := range nn.Items {
-		o, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&no)
+	for i, n := range nn.Items {
+		o, err := runtime.DefaultUnstructuredConverter.ToUnstructured(n)
 		if err != nil {
 			return nil, err
 		}
 		oo[i] = &unstructured.Unstructured{Object: o}
 	}
 	return oo, nil
+}
+
+func nameFromMeta(m map[string]interface{}) string {
+	meta, ok := m["metadata"].(map[string]interface{})
+	if !ok {
+		return "n/a"
+	}
+
+	name, ok := meta["name"].(string)
+	if !ok {
+		return "n/a"
+	}
+
+	return name
 }
 
 // Hydrate returns nodes as rows.
@@ -47,23 +62,28 @@ func (n *Node) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
 		log.Warn().Err(err).Msg("No node metrics")
 	}
 
-	var index int
-	for _, no := range oo {
-		o := no.(*unstructured.Unstructured)
-		pods, err := n.nodePods(n.factory, o.Object["metadata"].(map[string]interface{})["name"].(string))
+	for i, o := range oo {
+		no, ok := o.(*unstructured.Unstructured)
+		if !ok {
+			return fmt.Errorf("expecting unstructured but got %T", o)
+		}
+		pods, err := n.nodePods(n.factory, nameFromMeta(no.Object))
 		if err != nil {
 			return err
 		}
 
 		var (
 			row render.Row
-			nmx = NodeWithMetrics{object: o, mx: nodeMetricsFor(o, mmx), pods: pods}
+			nmx = NodeWithMetrics{
+				object: no,
+				mx:     nodeMetricsFor(o, mmx),
+				pods:   pods,
+			}
 		)
 		if err := re.Render(&nmx, "", &row); err != nil {
 			return err
 		}
-		rr[index] = row
-		index++
+		rr[i] = row
 	}
 
 	return nil
@@ -87,8 +107,10 @@ func (n *Node) nodePods(f Factory, node string) ([]*v1.Pod, error) {
 
 	pods := make([]*v1.Pod, 0, len(pp))
 	for _, p := range pp {
-		o := p.(*unstructured.Unstructured)
-
+		o, ok := p.(*unstructured.Unstructured)
+		if !ok {
+			return nil, fmt.Errorf("expecting unstructured but got %T", p)
+		}
 		var pod v1.Pod
 		err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.Object, &pod)
 		if err != nil {

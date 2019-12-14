@@ -1,7 +1,6 @@
 package render
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -49,9 +48,10 @@ func TestToAge(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, toAge(metav1.Time{Time: u.t})[:2])
+			assert.Equal(t, uc.e, toAge(metav1.Time{Time: uc.t})[:2])
 		})
 	}
 }
@@ -67,10 +67,11 @@ func TestToAgeHuma(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			ti := toAge(metav1.Time{Time: u.t})
-			assert.Equal(t, u.e, toAgeHuman(ti)[:2])
+			ti := toAge(metav1.Time{Time: uc.t})
+			assert.Equal(t, uc.e, toAgeHuman(ti)[:2])
 		})
 	}
 }
@@ -86,9 +87,10 @@ func TestJoin(t *testing.T) {
 		"sparse": {[]string{"a", "", "c"}, "a,c"},
 	}
 
-	for k, v := range uu {
+	for k := range uu {
+		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, v.e, join(v.i, ","))
+			assert.Equal(t, uc.e, join(uc.i, ","))
 		})
 	}
 }
@@ -195,11 +197,12 @@ func TestToSelector(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			s := toSelector(u.m)
+			s := toSelector(uc.m)
 			var match bool
-			for _, e := range u.e {
+			for _, e := range uc.e {
 				if e == s {
 					match = true
 				}
@@ -225,9 +228,10 @@ func TestBlank(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, blank(u.a))
+			assert.Equal(t, uc.e, blank(uc.a))
 		})
 	}
 }
@@ -252,9 +256,10 @@ func TestIn(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, in(u.a, u.v))
+			assert.Equal(t, uc.e, in(uc.a, uc.v))
 		})
 	}
 }
@@ -268,9 +273,10 @@ func TestMetaFQN(t *testing.T) {
 		"nons": {metav1.ObjectMeta{Name: "blee"}, "blee"},
 	}
 
-	for k, v := range uu {
+	for k := range uu {
+		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, v.e, MetaFQN(v.m))
+			assert.Equal(t, uc.e, MetaFQN(uc.m))
 		})
 	}
 }
@@ -284,9 +290,10 @@ func TestFQN(t *testing.T) {
 		"nons": {n: "blee", e: "blee"},
 	}
 
-	for k, v := range uu {
+	for k := range uu {
+		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, v.e, FQN(v.ns, v.n))
+			assert.Equal(t, uc.e, FQN(uc.ns, uc.n))
 		})
 	}
 }
@@ -374,10 +381,11 @@ func BenchmarkAsPerc(b *testing.B) {
 
 // Helpers...
 
-func testTime() time.Time {
-	t, err := time.Parse(time.RFC3339, "2018-12-14T10:36:43.326972-07:00")
-	if err != nil {
-		fmt.Println("TestTime Failed", err)
-	}
-	return t
-}
+// BOZO!!
+// func testTime() time.Time {
+// 	t, err := time.Parse(time.RFC3339, "2018-12-14T10:36:43.326972-07:00")
+// 	if err != nil {
+// 		fmt.Println("TestTime Failed", err)
+// 	}
+// 	return t
+// }

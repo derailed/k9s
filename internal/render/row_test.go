@@ -58,10 +58,11 @@ func TestRowDelete(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			rows := u.rows.Delete(u.id)
-			assert.Equal(t, u.e, rows)
+			rows := uc.rows.Delete(uc.id)
+			assert.Equal(t, uc.e, rows)
 		})
 	}
 }
@@ -135,10 +136,11 @@ func TestSortText(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.rows.Sort(u.col, u.asc)
-			assert.Equal(t, u.e, u.rows)
+			uc.rows.Sort(uc.col, uc.asc)
+			assert.Equal(t, uc.e, uc.rows)
 		})
 	}
 }
@@ -175,10 +177,11 @@ func TestSortDuration(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.rows.Sort(u.col, u.asc)
-			assert.Equal(t, u.e, u.rows)
+			uc.rows.Sort(uc.col, uc.asc)
+			assert.Equal(t, uc.e, uc.rows)
 		})
 	}
 }
@@ -216,10 +219,11 @@ func TestSortMetrics(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.rows.Sort(u.col, u.asc)
-			assert.Equal(t, u.e, u.rows)
+			uc.rows.Sort(uc.col, uc.asc)
+			assert.Equal(t, uc.e, uc.rows)
 		})
 	}
 }

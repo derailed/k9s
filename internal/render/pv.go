@@ -53,7 +53,7 @@ func (PersistentVolume) Header(string) HeaderRow {
 }
 
 // Render renders a K8s resource to screen.
-func (PersistentVolume) Render(o interface{}, ns string, r *Row) error {
+func (p PersistentVolume) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected PersistentVolume, but got %T", o)
@@ -79,8 +79,8 @@ func (PersistentVolume) Render(o interface{}, ns string, r *Row) error {
 
 	size := pv.Spec.Capacity[v1.ResourceStorage]
 
-	fields := make(Fields, 0, len(r.Fields))
-	fields = append(fields,
+	r.ID = MetaFQN(pv.ObjectMeta)
+	r.Fields = Fields{
 		pv.Name,
 		size.String(),
 		accessMode(pv.Spec.AccessModes),
@@ -90,8 +90,7 @@ func (PersistentVolume) Render(o interface{}, ns string, r *Row) error {
 		class,
 		pv.Status.Reason,
 		toAge(pv.ObjectMeta.CreationTimestamp),
-	)
-	r.ID, r.Fields = MetaFQN(pv.ObjectMeta), fields
+	}
 
 	return nil
 }

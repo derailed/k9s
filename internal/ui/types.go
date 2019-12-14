@@ -1,8 +1,6 @@
 package ui
 
-import (
-	"github.com/derailed/k9s/internal/render"
-)
+import "github.com/derailed/k9s/internal/render"
 
 type (
 	// SortFn represent a function that can sort columnar data.

@@ -60,7 +60,7 @@ func (b *Browser) Init(ctx context.Context) error {
 		return err
 	}
 
-	if err := b.Table.Init(ctx); err != nil {
+	if err = b.Table.Init(ctx); err != nil {
 		return err
 	}
 	if !dao.IsK9sMeta(b.meta) {
@@ -79,7 +79,6 @@ func (b *Browser) Init(ctx context.Context) error {
 	log.Debug().Msgf("ACCESSOR FOR %s -- %#v", b.gvr, b.accessor)
 
 	b.envFn = b.defaultK9sEnv
-	b.Table.setFilterFn(b.filterBrowser)
 	b.setNamespace(b.App().Config.ActiveNamespace())
 	b.refresh()
 	row, _ := b.GetSelection()
@@ -111,10 +110,7 @@ func (b *Browser) Stop() {
 }
 
 func (b *Browser) Refresh() {
-	// BOZO!!
-	// b.app.QueueUpdateDraw(func() {
 	b.refresh()
-	// })
 }
 
 // Name returns the component name.
@@ -140,12 +136,6 @@ func (b *Browser) GVR() string { return string(b.gvr) }
 
 func (b *Browser) GetTable() *Table {
 	return b.Table
-}
-
-func (b *Browser) filterBrowser(sel string) {
-	panic("NYI")
-	// b.list.SetLabelSelector(sel)
-	b.refresh()
 }
 
 func (b *Browser) update(ctx context.Context) {
@@ -263,7 +253,7 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (b *Browser) defaultEnter(app *App, ns, _, sel string) {
+func (b *Browser) defaultEnter(app *App, _, _, sel string) {
 	log.Debug().Msgf("--------- Resource %q Verbs %v", sel, b.meta.Verbs)
 	ns, n := client.Namespaced(sel)
 	yaml, err := dao.Describe(b.app.Conn(), b.gvr, ns, n)
@@ -277,7 +267,6 @@ func (b *Browser) defaultEnter(app *App, ns, _, sel string) {
 	details.SetTextColor(b.app.Styles.FgColor())
 	details.SetText(colorizeYAML(b.app.Styles.Views().Yaml, yaml))
 	details.ScrollToBeginning()
-
 	if err := b.app.inject(details); err != nil {
 		b.app.Flash().Err(err)
 	}
@@ -317,7 +306,9 @@ func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	details.SetTextColor(b.app.Styles.FgColor())
 	details.SetText(colorizeYAML(b.app.Styles.Views().Yaml, raw))
 	details.ScrollToBeginning()
-	b.app.inject(details)
+	if err := b.app.inject(details); err != nil {
+		b.App().Flash().Err(err)
+	}
 
 	return nil
 }

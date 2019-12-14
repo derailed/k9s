@@ -25,6 +25,5 @@ func (Subject) Header(ns string) HeaderRow {
 
 // Render renders a K8s resource to screen.
 func (Subject) Render(o interface{}, gvr string, r *Row) error {
-	panic("NYI")
 	return nil
 }

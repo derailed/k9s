@@ -13,8 +13,6 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 )
 
 func showPodsWithLabels(app *App, path string, sel map[string]string) {
@@ -38,7 +36,9 @@ func showPods(app *App, path, labelSel, fieldSel string) {
 	if err := app.Config.SetActiveNamespace(ns); err != nil {
 		log.Error().Err(err).Msg("Config NS set failed!")
 	}
-	app.inject(v)
+	if err := app.inject(v); err != nil {
+		app.Flash().Err(err)
+	}
 }
 
 func podCtx(path, labelSel, fieldSel string) ContextFunc {
@@ -117,10 +117,4 @@ func fqn(ns, n string) string {
 		return n
 	}
 	return ns + "/" + n
-}
-
-// AsNumb prints a number with thousand separator.
-func asNum(n int) string {
-	p := message.NewPrinter(language.English)
-	return p.Sprintf("%d", n)
 }

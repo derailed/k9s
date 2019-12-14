@@ -49,7 +49,9 @@ func (c *CronJob) showJobs(app *App, ns, res, path string) {
 
 	v := NewJob(client.GVR("batch/v1/jobs"))
 	v.SetContextFn(jobCtx(path, string(cj.UID)))
-	app.inject(v)
+	if err := app.inject(v); err != nil {
+		app.Flash().Err(err)
+	}
 }
 
 func jobCtx(path, uid string) ContextFunc {

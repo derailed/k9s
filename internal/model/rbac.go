@@ -76,16 +76,15 @@ func (r *Rbac) loadRoleBinding(path string) ([]runtime.Object, error) {
 	}
 
 	var rb rbacv1.RoleBinding
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &rb)
-	if err != nil {
+	if err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &rb); err != nil {
 		return nil, err
 	}
 
 	if rb.RoleRef.Kind == "ClusterRole" {
 		kind := "rbac.authorization.k8s.io/v1/clusterroles"
-		o, err := r.factory.Get(kind, client.FQN("-", rb.RoleRef.Name), labels.Everything())
-		if err != nil {
-			return nil, err
+		o, e := r.factory.Get(kind, client.FQN("-", rb.RoleRef.Name), labels.Everything())
+		if e != nil {
+			return nil, e
 		}
 		var cr rbacv1.ClusterRole
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cr)
@@ -186,7 +185,11 @@ func upsert(rr []runtime.Object, p *render.PolicyRes) []runtime.Object {
 // Find locates a row by id. Retturns false is not found.
 func find(rr []runtime.Object, res string) (int, bool) {
 	for i, r := range rr {
-		p := r.(*render.PolicyRes)
+		p, ok := r.(*render.PolicyRes)
+		if !ok {
+			log.Error().Err(fmt.Errorf("expecting policyres but got `%T", r))
+			return 0, false
+		}
 		if p.Resource == res {
 			return i, true
 		}

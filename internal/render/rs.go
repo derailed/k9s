@@ -53,7 +53,7 @@ func (ReplicaSet) Header(ns string) HeaderRow {
 }
 
 // Render renders a K8s resource to screen.
-func (ReplicaSet) Render(o interface{}, ns string, r *Row) error {
+func (s ReplicaSet) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected ReplicaSet, but got %T", o)
@@ -64,18 +64,18 @@ func (ReplicaSet) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	fields := make(Fields, 0, len(r.Fields))
+	r.ID = MetaFQN(rs.ObjectMeta)
+	r.Fields = make(Fields, 0, len(s.Header(ns)))
 	if isAllNamespace(ns) {
-		fields = append(fields, rs.Namespace)
+		r.Fields = append(r.Fields, rs.Namespace)
 	}
-	fields = append(fields,
+	r.Fields = append(r.Fields,
 		rs.Name,
 		strconv.Itoa(int(*rs.Spec.Replicas)),
 		strconv.Itoa(int(rs.Status.Replicas)),
 		strconv.Itoa(int(rs.Status.ReadyReplicas)),
 		toAge(rs.ObjectMeta.CreationTimestamp),
 	)
-	r.ID, r.Fields = MetaFQN(rs.ObjectMeta), fields
 
 	return nil
 }

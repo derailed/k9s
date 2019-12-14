@@ -33,7 +33,7 @@ func (Endpoints) Header(ns string) HeaderRow {
 }
 
 // Render renders a K8s resource to screen.
-func (Endpoints) Render(o interface{}, ns string, r *Row) error {
+func (e Endpoints) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected Endpoints, but got %T", o)
@@ -44,16 +44,16 @@ func (Endpoints) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	fields := make(Fields, 0, len(r.Fields))
+	r.ID = MetaFQN(ep.ObjectMeta)
+	r.Fields = make(Fields, 0, len(e.Header(ns)))
 	if isAllNamespace(ns) {
-		fields = append(fields, ep.Namespace)
+		r.Fields = append(r.Fields, ep.Namespace)
 	}
-	fields = append(fields,
+	r.Fields = append(r.Fields,
 		ep.Name,
 		missing(toEPs(ep.Subsets)),
 		toAge(ep.ObjectMeta.CreationTimestamp),
 	)
-	r.ID, r.Fields = MetaFQN(ep.ObjectMeta), fields
 
 	return nil
 }

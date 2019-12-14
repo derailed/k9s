@@ -1,7 +1,6 @@
 package client
 
 import (
-	"fmt"
 	"path/filepath"
 	"sync"
 	"time"
@@ -10,7 +9,6 @@ import (
 	authorizationv1 "k8s.io/api/authorization/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/fields"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/discovery/cached/disk"
@@ -26,53 +24,46 @@ const NA = "n/a"
 
 var supportedMetricsAPIVersions = []string{"v1beta1"}
 
-type (
-	// Collection of empty interfaces.
-	Collection []interface{}
+// Authorizer checks what a user can or cannot do to a resource.
+type Authorizer interface {
+	// CanI returns true if the user can use these actions for a given resource.
+	CanI(ns, gvr string, verbs []string) (bool, error)
+}
 
-	// Cruder represent a crudable Kubernetes resource.
-	Cruder interface {
-		Get(ns string, name string) (interface{}, error)
-		List(ns string) (Collection, error)
-		Delete(ns string, name string) error
-		SetFieldSelector(string)
-		SetLabelSelector(string)
-	}
+// BOZO!! Refactor!
+// Connection represents a Kubenetes apiserver connection.
+type Connection interface {
+	Authorizer
 
-	// Connection represents a Kubenetes apiserver connection.
-	Connection interface {
-		Config() *Config
-		DialOrDie() kubernetes.Interface
-		SwitchContextOrDie(ctx string)
-		NSDialOrDie() dynamic.NamespaceableResourceInterface
-		CachedDiscovery() (*disk.CachedDiscoveryClient, error)
-		RestConfigOrDie() *restclient.Config
-		MXDial() (*versioned.Clientset, error)
-		DynDialOrDie() dynamic.Interface
-		HasMetrics() bool
-		IsNamespaced(n string) bool
-		SupportsResource(group string) bool
-		ValidNamespaces() ([]v1.Namespace, error)
-		NodePods(node string) (*v1.PodList, error)
-		SupportsRes(grp string, versions []string) (string, bool, error)
-		ServerVersion() (*version.Info, error)
-		FetchNodes() (*v1.NodeList, error)
-		CurrentNamespaceName() (string, error)
-		CanI(ns, gvr string, verbs []string) (bool, error)
-	}
+	Config() *Config
+	DialOrDie() kubernetes.Interface
+	SwitchContextOrDie(ctx string)
+	NSDialOrDie() dynamic.NamespaceableResourceInterface
+	CachedDiscovery() (*disk.CachedDiscoveryClient, error)
+	RestConfigOrDie() *restclient.Config
+	MXDial() (*versioned.Clientset, error)
+	DynDialOrDie() dynamic.Interface
+	HasMetrics() bool
+	IsNamespaced(n string) bool
+	SupportsResource(group string) bool
+	ValidNamespaces() ([]v1.Namespace, error)
+	SupportsRes(grp string, versions []string) (string, bool, error)
+	ServerVersion() (*version.Info, error)
+	FetchNodes() (*v1.NodeList, error)
+	CurrentNamespaceName() (string, error)
+}
 
-	// APIClient represents a Kubernetes api client.
-	APIClient struct {
-		client          kubernetes.Interface
-		dClient         dynamic.Interface
-		nsClient        dynamic.NamespaceableResourceInterface
-		mxsClient       *versioned.Clientset
-		cachedDiscovery *disk.CachedDiscoveryClient
-		config          *Config
-		useMetricServer bool
-		mx              sync.Mutex
-	}
-)
+// APIClient represents a Kubernetes api client.
+type APIClient struct {
+	client          kubernetes.Interface
+	dClient         dynamic.Interface
+	nsClient        dynamic.NamespaceableResourceInterface
+	mxsClient       *versioned.Clientset
+	cachedDiscovery *disk.CachedDiscoveryClient
+	config          *Config
+	useMetricServer bool
+	mx              sync.Mutex
+}
 
 // InitConnectionOrDie initialize connection from command line args.
 // Checks for connectivity with the api server.
@@ -141,20 +132,6 @@ func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
 		return nil, err
 	}
 	return nn.Items, nil
-}
-
-// NodePods returns a collection of all available pods on a given node.
-func (a *APIClient) NodePods(node string) (*v1.PodList, error) {
-	panic("NYI")
-	const selFmt = "spec.nodeName=%s,status.phase!=%s,status.phase!=%s"
-	fieldSelector, err := fields.ParseSelector(fmt.Sprintf(selFmt, node, v1.PodSucceeded, v1.PodFailed))
-	if err != nil {
-		return nil, err
-	}
-
-	return a.DialOrDie().CoreV1().Pods("").List(metav1.ListOptions{
-		FieldSelector: fieldSelector.String(),
-	})
 }
 
 // IsNamespaced check on server if given resource is namespaced

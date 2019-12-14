@@ -53,11 +53,12 @@ func TestDelta(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			d := render.NewDeltaRow(u.o, u.n, false)
-			assert.Equal(t, u.e, d)
-			assert.Equal(t, u.blank, d.IsBlank())
+			d := render.NewDeltaRow(uc.o, uc.n, false)
+			assert.Equal(t, uc.e, d)
+			assert.Equal(t, uc.blank, d.IsBlank())
 		})
 	}
 }
@@ -80,9 +81,10 @@ func TestDeltaBlank(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, u.r.IsBlank())
+			assert.Equal(t, uc.e, uc.r.IsBlank())
 		})
 	}
 }

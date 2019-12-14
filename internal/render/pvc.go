@@ -54,7 +54,7 @@ func (PersistentVolumeClaim) Header(ns string) HeaderRow {
 }
 
 // Render renders a K8s resource to screen.
-func (PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
+func (p PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected PersistentVolumeClaim, but got %T", o)
@@ -84,11 +84,12 @@ func (PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
 		}
 	}
 
-	fields := make(Fields, 0, len(r.Fields))
+	r.ID = MetaFQN(pvc.ObjectMeta)
+	r.Fields = make(Fields, 0, len(p.Header(ns)))
 	if isAllNamespace(ns) {
-		fields = append(fields, pvc.Namespace)
+		r.Fields = append(r.Fields, pvc.Namespace)
 	}
-	fields = append(fields,
+	r.Fields = append(r.Fields,
 		pvc.Name,
 		string(phase),
 		pvc.Spec.VolumeName,
@@ -97,7 +98,6 @@ func (PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
 		class,
 		toAge(pvc.ObjectMeta.CreationTimestamp),
 	)
-	r.ID, r.Fields = MetaFQN(pvc.ObjectMeta), fields
 
 	return nil
 }

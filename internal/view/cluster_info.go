@@ -150,7 +150,9 @@ func (v *clusterInfoView) refreshMetrics(cluster *model.Cluster, row int) {
 	}
 
 	var cmx client.ClusterMetrics
-	cluster.Metrics(nos, nmx, &cmx)
+	if err := cluster.Metrics(nos, nmx, &cmx); err != nil {
+		log.Error().Err(err).Msgf("failed to retrieve cluster metrics")
+	}
 	c := v.GetCell(row, 1)
 	cpu := render.AsPerc(cmx.PercCPU)
 	if cpu == "0" {

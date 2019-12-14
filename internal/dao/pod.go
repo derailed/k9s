@@ -29,7 +29,7 @@ type Pod struct {
 }
 
 var _ Accessor = &Pod{}
-var _Loggable = &Pod{}
+var _ Loggable = &Pod{}
 
 // Logs fetch container logs for a given pod and container.
 func (p *Pod) Logs(path string, opts *v1.PodLogOptions) *restclient.Request {
@@ -84,7 +84,7 @@ func (p *Pod) logs(ctx context.Context, c chan<- string, opts LogOptions) error 
 	}
 
 	var po v1.Pod
-	if runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &po); err != nil {
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &po); err != nil {
 		return err
 	}
 	opts.Color = asColor(po.Name)
@@ -166,6 +166,7 @@ func readLogs(ctx context.Context, stream io.ReadCloser, c chan<- string, opts L
 	}
 }
 
+// ----------------------------------------------------------------------------
 // Helpers...
 
 func loggableContainers(s v1.PodStatus) []string {

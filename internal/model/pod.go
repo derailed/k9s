@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -37,8 +38,14 @@ func (p *Pod) List(ctx context.Context) ([]runtime.Object, error) {
 
 	var res []runtime.Object
 	for _, o := range oo {
-		u := o.(*unstructured.Unstructured)
-		spec := u.Object["spec"].(map[string]interface{})
+		u, ok := o.(*unstructured.Unstructured)
+		if !ok {
+			return res, fmt.Errorf("expecting unstructured but got `%T", o)
+		}
+		spec, ok := u.Object["spec"].(map[string]interface{})
+		if !ok {
+			return res, fmt.Errorf("expecting interface map but got `%T", o)
+		}
 		if nodeName == "" || spec["nodeName"] == nodeName {
 			res = append(res, o)
 		}

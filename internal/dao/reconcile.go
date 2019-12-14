@@ -46,8 +46,8 @@ func Reconcile(ctx context.Context, table render.TableData, gvr client.GVR) (ren
 		return table, err
 	}
 	log.Debug().Msgf("Model returned [%d] items", len(oo))
+
 	rows := make(render.Rows, len(oo))
-	// BOZO!! Pass in header len to avoid recomputing the header.
 	if err := m.Model.Hydrate(oo, rows, m.Renderer); err != nil {
 		return table, err
 	}

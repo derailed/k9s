@@ -33,7 +33,6 @@ type Table struct {
 	cmdBuff    *CmdBuff
 	styles     *config.Styles
 	sortCol    SortColumn
-	sortFn     SortFn
 	colorerFn  render.ColorerFunc
 	decorateFn DecorateFunc
 }
@@ -158,7 +157,6 @@ func (t *Table) doUpdate(data render.TableData) {
 
 	t.adjustSorter(data)
 
-	var row int
 	fg := config.AsColor(t.styles.GetTable().Header.FgColor)
 	bg := config.AsColor(t.styles.GetTable().Header.BgColor)
 	for col, h := range data.Header {
@@ -167,8 +165,6 @@ func (t *Table) doUpdate(data render.TableData) {
 		c.SetBackgroundColor(bg)
 		c.SetTextColor(fg)
 	}
-	row++
-
 	data.RowEvents.Sort(data.Namespace, t.sortCol.index, t.sortCol.asc)
 
 	pads := make(MaxyPad, len(data.Header))

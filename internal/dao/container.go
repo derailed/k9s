@@ -7,7 +7,6 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/watch"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -24,9 +23,6 @@ var _ Loggable = &Container{}
 
 // Logs tails a given container logs
 func (c *Container) TailLogs(ctx context.Context, logChan chan<- string, opts LogOptions) error {
-	log.Debug().Msgf("CO TAILLOGS %#v", ctx)
-	log.Debug().Msgf("CO TAILLOGS %#v", opts)
-
 	fac, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
 	if !ok {
 		return errors.New("Expecting an informer")
@@ -37,7 +33,7 @@ func (c *Container) TailLogs(ctx context.Context, logChan chan<- string, opts Lo
 	}
 
 	var po v1.Pod
-	if runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &po); err != nil {
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &po); err != nil {
 		return err
 	}
 

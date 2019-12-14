@@ -31,10 +31,11 @@ func TestSort(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.re.Sort("", u.col, u.asc)
-			assert.Equal(t, u.e, u.re)
+			uc.re.Sort("", uc.col, uc.asc)
+			assert.Equal(t, uc.e, uc.re)
 		})
 	}
 }
@@ -50,9 +51,10 @@ func TestDefaultColorer(t *testing.T) {
 		"std":    {100, render.StdColor},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, render.DefaultColorer("", render.RowEvent{}))
+			assert.Equal(t, uc.e, render.DefaultColorer("", render.RowEvent{}))
 		})
 	}
 }

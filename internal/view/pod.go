@@ -19,10 +19,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-const (
-	podTitle   = "Pods"
-	shellCheck = "command -v bash >/dev/null && exec bash || exec sh"
-)
+const shellCheck = "command -v bash >/dev/null && exec bash || exec sh"
 
 // Pod represents a pod viewer.
 type Pod struct {
@@ -59,7 +56,9 @@ func (p *Pod) showContainers(app *App, ns, gvr, path string) {
 	log.Debug().Msgf("SHOW CONTAINERS %q -- %q -- %q", gvr, ns, path)
 	co := NewContainer(client.GVR("containers"))
 	co.SetContextFn(p.podContext)
-	app.inject(co)
+	if err := app.inject(co); err != nil {
+		app.Flash().Err(err)
+	}
 }
 
 func (p *Pod) podContext(ctx context.Context) context.Context {
@@ -124,7 +123,9 @@ func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	picker.SetSelectedFunc(func(i int, t, d string, r rune) {
 		p.shellIn(sel, t)
 	})
-	p.App().inject(picker)
+	if err := p.App().inject(picker); err != nil {
+		p.App().Flash().Err(err)
+	}
 
 	return evt
 }

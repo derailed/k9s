@@ -7,7 +7,6 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/render"
-	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -58,58 +57,59 @@ func (s *Subject) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) erro
 	return nil
 }
 
-func (s *Subject) fetchClusterRoleBindings() ([]runtime.Object, error) {
-	oo, err := s.factory.List(render.ClusterScope, "rbac.authorization.k8s.io/v1/clusterrolebindings", labels.Everything())
-	if err != nil {
-		return nil, err
-	}
+// BOZO!!
+// func (s *Subject) fetchClusterRoleBindings() ([]runtime.Object, error) {
+// 	oo, err := s.factory.List(render.ClusterScope, "rbac.authorization.k8s.io/v1/clusterrolebindings", labels.Everything())
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	rows := make([]runtime.Object, 0, len(oo))
-	for _, o := range oo {
-		var crb rbacv1.ClusterRoleBinding
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &crb)
-		if err != nil {
-			return nil, err
-		}
-		for _, subject := range crb.Subjects {
-			if subject.Kind != s.subjectKind {
-				continue
-			}
-			rows = append(rows, SubjectRes{
-				id:     subject.Name,
-				fields: render.Fields{subject.Name, "ClusterRoleBinding", crb.Name},
-			})
-		}
-	}
+// 	rows := make([]runtime.Object, 0, len(oo))
+// 	for _, o := range oo {
+// 		var crb rbacv1.ClusterRoleBinding
+// 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &crb)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		for _, subject := range crb.Subjects {
+// 			if subject.Kind != s.subjectKind {
+// 				continue
+// 			}
+// 			rows = append(rows, SubjectRes{
+// 				id:     subject.Name,
+// 				fields: render.Fields{subject.Name, "ClusterRoleBinding", crb.Name},
+// 			})
+// 		}
+// 	}
 
-	return rows, nil
-}
+// 	return rows, nil
+// }
 
-func (s *Subject) fetchRoleBindings() ([]runtime.Object, error) {
-	oo, err := s.factory.List(render.ClusterScope, "rbac.authorization.k8s.io/v1/rolebindings", labels.Everything())
-	if err != nil {
-		return nil, err
-	}
+// func (s *Subject) fetchRoleBindings() ([]runtime.Object, error) {
+// 	oo, err := s.factory.List(render.ClusterScope, "rbac.authorization.k8s.io/v1/rolebindings", labels.Everything())
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	rows := make([]runtime.Object, 0, len(oo))
-	for _, o := range oo {
-		var rb rbacv1.RoleBinding
-		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &rb)
-		if err != nil {
-			return nil, err
-		}
-		for _, subject := range rb.Subjects {
-			if subject.Kind == s.subjectKind {
-				rows = append(rows, SubjectRes{
-					id:     subject.Name,
-					fields: render.Fields{subject.Name, "RoleBinding", rb.Name},
-				})
-			}
-		}
-	}
+// 	rows := make([]runtime.Object, 0, len(oo))
+// 	for _, o := range oo {
+// 		var rb rbacv1.RoleBinding
+// 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &rb)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		for _, subject := range rb.Subjects {
+// 			if subject.Kind == s.subjectKind {
+// 				rows = append(rows, SubjectRes{
+// 					id:     subject.Name,
+// 					fields: render.Fields{subject.Name, "RoleBinding", rb.Name},
+// 				})
+// 			}
+// 		}
+// 	}
 
-	return rows, nil
-}
+// 	return rows, nil
+// }
 
 // ----------------------------------------------------------------------------
 

@@ -32,28 +32,27 @@ func (ServiceAccount) Header(ns string) HeaderRow {
 }
 
 // Render renders a K8s resource to screen.
-func (ServiceAccount) Render(o interface{}, ns string, r *Row) error {
+func (s ServiceAccount) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected ServiceAccount, but got %T", o)
 	}
-	var s v1.ServiceAccount
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &s)
+	var sa v1.ServiceAccount
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &sa)
 	if err != nil {
 		return err
 	}
 
-	fields := make(Fields, 0, len(r.Fields))
+	r.ID = MetaFQN(sa.ObjectMeta)
+	r.Fields = make(Fields, 0, len(s.Header(ns)))
 	if isAllNamespace(ns) {
-		fields = append(fields, s.Namespace)
+		r.Fields = append(r.Fields, sa.Namespace)
 	}
-	fields = append(fields,
-		s.Name,
-		strconv.Itoa(len(s.Secrets)),
-		toAge(s.ObjectMeta.CreationTimestamp),
+	r.Fields = append(r.Fields,
+		sa.Name,
+		strconv.Itoa(len(sa.Secrets)),
+		toAge(sa.ObjectMeta.CreationTimestamp),
 	)
-
-	r.ID, r.Fields = MetaFQN(s.ObjectMeta), fields
 
 	return nil
 }

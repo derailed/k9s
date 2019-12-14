@@ -140,7 +140,6 @@ func (c *command) exec(gvr string, comp model.Component) error {
 		log.Error().Err(err).Msg("Config save failed!")
 	}
 	c.app.Content.Stack.ClearHistory()
-	return c.app.inject(comp)
 
-	return nil
+	return c.app.inject(comp)
 }

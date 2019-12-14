@@ -29,9 +29,6 @@ const (
 )
 
 var (
-	cpuRX = regexp.MustCompile(`\A.{0,1}CPU`)
-	memRX = regexp.MustCompile(`\A.{0,1}MEM`)
-
 	// LabelCmd identifies a label query
 	LabelCmd = regexp.MustCompile(`\A\-l`)
 
@@ -88,46 +85,6 @@ func SkinTitle(fmat string, style config.Frame) string {
 	return fmat
 }
 
-// BOZO!!
-// func sortRows(evts resource.RowEvents, sortFn SortFn, sortCol SortColumn, keys []string) {
-// 	rows := make(resource.Rows, 0, len(evts))
-// 	for k, r := range evts {
-// 		rows = append(rows, append(r.Fields, k))
-// 	}
-// 	sortFn(rows, sortCol)
-
-// 	for i, r := range rows {
-// 		keys[i] = r[len(r)-1]
-// 	}
-// }
-
-// func defaultSort(rows resource.Rows, sortCol SortColumn) {
-// 	t := RowSorter{rows: rows, index: sortCol.index, asc: sortCol.asc}
-// 	sort.Sort(t)
-// }
-
-// BOZO!!
-// func sortAllRows(col SortColumn, rows resource.RowEvents, sortFn SortFn) (resource.Row, map[string]resource.Row) {
-// 	keys := make([]string, len(rows))
-// 	sortRows(rows, sortFn, col, keys)
-
-// 	sec := make(map[string]resource.Row, len(rows))
-// 	for _, k := range keys {
-// 		grp := rows[k].Fields[col.index]
-// 		sec[grp] = append(sec[grp], k)
-// 	}
-
-// 	// Performs secondary to sort by name for each groups.
-// 	prim := make(resource.Row, 0, len(sec))
-// 	for k, v := range sec {
-// 		sort.Strings(v)
-// 		prim = append(prim, k)
-// 	}
-// 	sort.Sort(GroupSorter{prim, col.asc})
-
-// 	return prim, sec
-// }
-
 func sortIndicator(col SortColumn, style config.Table, index int, name string) string {
 	if col.index != index {
 		return name
@@ -170,10 +127,9 @@ func rxFilter(q string, data render.TableData) (render.TableData, error) {
 }
 
 func fuzzyFilter(q string, index int, data render.TableData) render.TableData {
-	var ss, kk []string
+	var ss []string
 	for _, re := range data.RowEvents {
 		ss = append(ss, re.Row.Fields[index])
-		kk = append(kk, re.Row.ID)
 	}
 
 	filtered := render.TableData{

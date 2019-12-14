@@ -71,10 +71,6 @@ func (g *Generic) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) erro
 		if !ok {
 			return fmt.Errorf("expecting RowRes but got %#v", o)
 		}
-		count := len(res.Cells)
-		if g.namespace == "" {
-			count++
-		}
 		if err := gr.Render(res.TableRow, g.namespace, &rr[i]); err != nil {
 			return err
 		}

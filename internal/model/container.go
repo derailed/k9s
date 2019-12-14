@@ -68,8 +68,11 @@ func (c *Container) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) er
 
 	var index int
 	for _, o := range oo {
-		co := o.(ContainerRes)
-		row, err := renderCoRow(co.Container.Name, index, coMetricsFor(co.Container, c.pod, mmx, true), re)
+		co, ok := o.(ContainerRes)
+		if !ok {
+			return fmt.Errorf("expecting containerres but got `%T", o)
+		}
+		row, err := renderCoRow(co.Container.Name, coMetricsFor(co.Container, c.pod, mmx, true), re)
 		if err != nil {
 			return err
 		}
@@ -80,7 +83,7 @@ func (c *Container) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) er
 	return nil
 }
 
-func renderCoRow(n string, index int, pmx *ContainerWithMetrics, re Renderer) (render.Row, error) {
+func renderCoRow(n string, pmx *ContainerWithMetrics, re Renderer) (render.Row, error) {
 	var row render.Row
 	if err := re.Render(pmx, n, &row); err != nil {
 		return render.Row{}, err
@@ -99,7 +102,11 @@ func coMetricsFor(co v1.Container, po *v1.Pod, mmx *mv1beta1.PodMetrics, isInit 
 }
 
 func containerMetrics(n string, mx runtime.Object) *mv1beta1.ContainerMetrics {
-	pmx := mx.(*mv1beta1.PodMetrics)
+	pmx, ok := mx.(*mv1beta1.PodMetrics)
+	if !ok {
+		log.Error().Err(fmt.Errorf("expecting podmetrics but got `%T", mx))
+		return nil
+	}
 	for _, m := range pmx.Containers {
 		if m.Name == n {
 			return &m

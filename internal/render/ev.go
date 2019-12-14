@@ -53,7 +53,7 @@ func (Event) Header(ns string) HeaderRow {
 }
 
 // Render renders a K8s resource to screen.
-func (Event) Render(o interface{}, ns string, r *Row) error {
+func (e Event) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected Event, but got %T", o)
@@ -64,18 +64,18 @@ func (Event) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	fields := make(Fields, 0, len(r.Fields))
+	r.ID = MetaFQN(ev.ObjectMeta)
+	r.Fields = make(Fields, 0, len(e.Header(ns)))
 	if isAllNamespace(ns) {
-		fields = append(fields, ev.Namespace)
+		r.Fields = append(r.Fields, ev.Namespace)
 	}
-	fields = append(fields,
+	r.Fields = append(r.Fields,
 		ev.Name,
 		ev.Reason,
 		ev.Source.Component,
 		strconv.Itoa(int(ev.Count)),
 		Truncate(ev.Message, 80),
 		toAge(ev.LastTimestamp))
-	r.ID, r.Fields = MetaFQN(ev.ObjectMeta), fields
 
 	return nil
 }

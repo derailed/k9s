@@ -34,29 +34,28 @@ func (Secret) Header(ns string) HeaderRow {
 }
 
 // Render renders a K8s resource to screen.
-func (Secret) Render(o interface{}, ns string, r *Row) error {
+func (s Secret) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected Secret, but got %T", o)
 	}
-	var s v1.Secret
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &s)
+	var sec v1.Secret
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &sec)
 	if err != nil {
 		return err
 	}
 
-	fields := make(Fields, 0, len(r.Fields))
+	r.ID = MetaFQN(sec.ObjectMeta)
+	r.Fields = make(Fields, 0, len(s.Header(ns)))
 	if isAllNamespace(ns) {
-		fields = append(fields, s.Namespace)
+		r.Fields = append(r.Fields, sec.Namespace)
 	}
-	fields = append(fields,
-		s.Name,
-		string(s.Type),
-		strconv.Itoa(len(s.Data)),
-		toAge(s.ObjectMeta.CreationTimestamp),
+	r.Fields = append(r.Fields,
+		sec.Name,
+		string(sec.Type),
+		strconv.Itoa(len(sec.Data)),
+		toAge(sec.ObjectMeta.CreationTimestamp),
 	)
-
-	r.ID, r.Fields = MetaFQN(s.ObjectMeta), fields
 
 	return nil
 }

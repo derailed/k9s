@@ -23,7 +23,7 @@ func NewJob(gvr client.GVR) ResourceViewer {
 	return &j
 }
 
-// BOZO!! Change enter signature?
+// TODO!! Change enter signature?
 func (*Job) showPods(app *App, _, res, path string) {
 	o, err := app.factory.Get("batch/v1/jobs", path, labels.Everything())
 	if err != nil {

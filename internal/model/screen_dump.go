@@ -7,15 +7,12 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/render"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // ScreenDump represents a collections of screendumps.
 type ScreenDump struct {
 	Resource
-
-	pod *v1.Pod
 }
 
 // List returns a collection of screen dumps.

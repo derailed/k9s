@@ -55,5 +55,7 @@ func (l *LogsExtender) showLogs(path string, prev bool) {
 		log.Debug().Msgf("CUSTOM CO FUNC")
 		co = l.containerFn()
 	}
-	l.App().inject(NewLog(client.GVR(l.GVR()), path, co, prev))
+	if err := l.App().inject(NewLog(client.GVR(l.GVR()), path, co, prev)); err != nil {
+		l.App().Flash().Err(err)
+	}
 }

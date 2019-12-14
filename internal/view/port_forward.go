@@ -13,15 +13,11 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
-	"github.com/fsnotify/fsnotify"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 )
 
-const (
-	portForwardTitle = "PortForwards"
-	promptPage       = "prompt"
-)
+const promptPage = "prompt"
 
 // PortForward presents active portforward viewer.
 type PortForward struct {
@@ -49,37 +45,6 @@ func (p *PortForward) portForwardContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeyBenchCfg, p.App().Bench)
 }
 
-// BOZO!!
-// // Start runs the refresh loop.
-// func (p *PortForward) Start() {
-// 	path := ui.BenchConfig(p.App().Config.K9s.CurrentCluster)
-// 	var ctx context.Context
-// 	ctx, p.cancelFn = context.WithCancel(context.Background())
-// 	if err := watchFS(ctx, p.App(), config.K9sHome, path, p.reload); err != nil {
-// 		p.App().Flash().Errf("RuRoh! Unable to watch benchmarks directory %s : %s", config.K9sHome, err)
-// 	}
-// }
-
-// // Name returns the component name.
-// func (p *PortForward) Name() string {
-// 	return portForwardTitle
-// }
-
-// func (p *PortForward) reload() {
-// 	path := ui.BenchConfig(p.App().Config.K9s.CurrentCluster)
-// 	log.Debug().Msgf("Reloading Config %s", path)
-// 	if err := p.App().Bench.Reload(path); err != nil {
-// 		p.App().Flash().Err(err)
-// 	}
-// 	p.refresh()
-// }
-
-// func (p *PortForward) refresh() {
-// 	p.Update(p.hydrate())
-// 	p.App().SetFocus(p)
-// 	p.UpdateTitle()
-// }
-
 func (p *PortForward) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
 		tcell.KeyEnter: ui.NewKeyAction("Benchmarks", p.showBenchCmd, true),
@@ -94,7 +59,9 @@ func (p *PortForward) bindKeys(aa ui.KeyActions) {
 }
 
 func (p *PortForward) showBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
-	p.App().inject(NewBenchmark("benchmarks"))
+	if err := p.App().inject(NewBenchmark("benchmarks")); err != nil {
+		p.App().Flash().Err(err)
+	}
 
 	return nil
 }
@@ -193,61 +160,8 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-// func (p *PortForward) hydrate() render.TableData {
-// 	var re render.Forward
-
-// 	data := render.TableData{
-// 		Header:    re.Header(render.AllNamespaces),
-// 		RowEvents: make(render.RowEvents, 0, len(p.App().forwarders)),
-// 		Namespace: render.AllNamespaces,
-// 	}
-
-// 	containers := p.App().Bench.Benchmarks.Containers
-// 	for _, f := range p.App().forwarders {
-// 		fqn := containerID(f.Path(), f.Container())
-// 		cfg := benchCfg{
-// 			c: p.App().Bench.Benchmarks.Defaults.C,
-// 			n: p.App().Bench.Benchmarks.Defaults.N,
-// 		}
-// 		if config, ok := containers[fqn]; ok {
-// 			cfg.c, cfg.n = config.C, config.N
-// 			cfg.host, cfg.path = config.HTTP.Host, config.HTTP.Path
-// 		}
-
-// 		var row render.Row
-// 		fwd := forwarder{
-// 			Forwarder:         f,
-// 			BenchConfigurator: cfg,
-// 		}
-// 		if err := re.Render(fwd, render.AllNamespaces, &row); err != nil {
-// 			log.Error().Err(err).Msgf("PortForward render failed")
-// 			continue
-// 		}
-// 		data.RowEvents = append(data.RowEvents, render.RowEvent{Kind: render.EventAdd, Row: row})
-// 	}
-
-// 	return data
-// }
-
 // ----------------------------------------------------------------------------
 // Helpers...
-
-// var _ render.PortForwarder = forwarder{}
-
-// type forwarder struct {
-// 	render.Forwarder
-// 	render.BenchConfigurator
-// }
-
-// type benchCfg struct {
-// 	c, n       int
-// 	host, path string
-// }
-
-// func (b benchCfg) C() int           { return b.c }
-// func (b benchCfg) N() int           { return b.n }
-// func (b benchCfg) Host() string     { return b.host }
-// func (b benchCfg) HttpPath() string { return b.path }
 
 func defaultConfig() config.BenchConfig {
 	return config.BenchConfig{
@@ -278,37 +192,4 @@ func showModal(p *ui.Pages, msg string, ok func()) {
 
 func dismissModal(p *ui.Pages) {
 	p.RemovePage(promptPage)
-}
-
-func watchFS(ctx context.Context, app *App, dir, file string, cb func()) error {
-	w, err := fsnotify.NewWatcher()
-	if err != nil {
-		return err
-	}
-
-	go func() {
-		for {
-			select {
-			case evt := <-w.Events:
-				log.Debug().Msgf("FS %s event %v", file, evt.Name)
-				if file == "" || evt.Name == file {
-					log.Debug().Msgf("Capturing Event %#v", evt)
-					app.QueueUpdateDraw(func() {
-						cb()
-					})
-				}
-			case err := <-w.Errors:
-				log.Info().Err(err).Msgf("FS %s watcher failed", dir)
-				return
-			case <-ctx.Done():
-				log.Debug().Msgf("<<FS %s WATCHER DONE>>", dir)
-				if err := w.Close(); err != nil {
-					log.Error().Err(err).Msg("Closing portforward watcher")
-				}
-				return
-			}
-		}
-	}()
-
-	return w.Add(dir)
 }

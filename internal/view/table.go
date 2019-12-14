@@ -93,15 +93,6 @@ func (t *Table) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (t *Table) setFilterFn(fn func(string)) {
-	t.filterFn = fn
-
-	cmd := t.SearchBuff().String()
-	if ui.IsLabelSelector(cmd) && t.filterFn != nil {
-		t.filterFn(ui.TrimLabelSelector(cmd))
-	}
-}
-
 func (t *Table) bindKeys() {
 	t.Actions().Add(ui.KeyActions{
 		ui.KeySpace:         ui.NewKeyAction("Mark", t.markCmd, true),

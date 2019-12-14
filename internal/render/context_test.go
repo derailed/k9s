@@ -38,26 +38,20 @@ func TestContextRender(t *testing.T) {
 	}
 
 	var r render.Context
-	for k, u := range uu {
+	for k := range uu {
+		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
 			row := render.NewRow(4)
-			err := r.Render(u.ctx, "", &row)
+			err := r.Render(uc.ctx, "", &row)
 
 			assert.Nil(t, err)
-			assert.Equal(t, u.e, row)
+			assert.Equal(t, uc.e, row)
 		})
 	}
 }
 
+// ----------------------------------------------------------------------------
 // Helpers...
-
-func newContext(n string) *api.Context {
-	return &api.Context{
-		Cluster:   n,
-		AuthInfo:  "blee",
-		Namespace: "zorg",
-	}
-}
 
 type config struct{}
 

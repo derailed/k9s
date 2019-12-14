@@ -31,6 +31,16 @@ type Header struct {
 // HeaderRow represents a table header.
 type HeaderRow []Header
 
+// Columns return header row columns as strings.
+func (h HeaderRow) Columns() []string {
+	cc := make([]string, len(h))
+	for i, c := range h {
+		cc[i] = c.Name
+	}
+
+	return cc
+}
+
 // HasAge returns true if table has an age column.
 func (h HeaderRow) HasAge() bool {
 	for _, r := range h {

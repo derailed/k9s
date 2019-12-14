@@ -34,7 +34,7 @@ func NewHelp() *Help {
 }
 
 // Init initializes the component.
-func (v *Help) Init(ctx context.Context) (err error) {
+func (v *Help) Init(ctx context.Context) error {
 	if err := v.Table.Init(ctx); err != nil {
 		return nil
 	}

@@ -57,7 +57,7 @@ func (PodDisruptionBudget) Header(ns string) HeaderRow {
 }
 
 // Render renders a K8s resource to screen.
-func (PodDisruptionBudget) Render(o interface{}, ns string, r *Row) error {
+func (p PodDisruptionBudget) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected PodDisruptionBudget, but got %T", o)
@@ -68,11 +68,12 @@ func (PodDisruptionBudget) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	fields := make(Fields, 0, len(r.Fields))
+	r.ID = MetaFQN(pdb.ObjectMeta)
+	r.Fields = make(Fields, 0, len(p.Header(ns)))
 	if isAllNamespace(ns) {
-		fields = append(fields, pdb.Namespace)
+		r.Fields = append(r.Fields, pdb.Namespace)
 	}
-	fields = append(fields,
+	r.Fields = append(r.Fields,
 		pdb.Name,
 		numbToStr(pdb.Spec.MinAvailable),
 		numbToStr(pdb.Spec.MaxUnavailable),
@@ -82,7 +83,6 @@ func (PodDisruptionBudget) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(int(pdb.Status.ExpectedPods)),
 		toAge(pdb.ObjectMeta.CreationTimestamp),
 	)
-	r.ID, r.Fields = MetaFQN(pdb.ObjectMeta), fields
 
 	return nil
 }

@@ -37,7 +37,7 @@ func (HorizontalPodAutoscaler) Header(ns string) HeaderRow {
 }
 
 // Render renders a K8s resource to screen.
-func (HorizontalPodAutoscaler) Render(o interface{}, ns string, r *Row) error {
+func (h HorizontalPodAutoscaler) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected HorizontalPodAutoscaler, but got %T", o)
@@ -48,11 +48,12 @@ func (HorizontalPodAutoscaler) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	fields := make(Fields, 0, len(r.Fields))
+	r.ID = MetaFQN(hpa.ObjectMeta)
+	r.Fields = make(Fields, 0, len(h.Header(ns)))
 	if isAllNamespace(ns) {
-		fields = append(fields, hpa.Namespace)
+		r.Fields = append(r.Fields, hpa.Namespace)
 	}
-	fields = append(fields,
+	r.Fields = append(r.Fields,
 		hpa.ObjectMeta.Name,
 		hpa.Spec.ScaleTargetRef.Name,
 		toMetrics(hpa.Spec, hpa.Status),
@@ -61,7 +62,6 @@ func (HorizontalPodAutoscaler) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(int(hpa.Status.CurrentReplicas)),
 		toAge(hpa.ObjectMeta.CreationTimestamp),
 	)
-	r.ID, r.Fields = MetaFQN(hpa.ObjectMeta), fields
 
 	return nil
 }

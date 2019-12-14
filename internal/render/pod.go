@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -158,7 +157,7 @@ func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, p metric) {
 	return
 }
 
-func containerResources(co *v1.Container) (cpu, mem *resource.Quantity) {
+func containerResources(co v1.Container) (cpu, mem *resource.Quantity) {
 	req, limit := co.Resources.Requests, co.Resources.Limits
 	switch {
 	case len(req) != 0:
@@ -171,7 +170,7 @@ func containerResources(co *v1.Container) (cpu, mem *resource.Quantity) {
 
 func requestedRes(po *v1.Pod) (cpu, mem resource.Quantity) {
 	for _, co := range po.Spec.Containers {
-		c, m := containerResources(&co)
+		c, m := containerResources(co)
 		if c != nil {
 			cpu.Add(*c)
 		}
@@ -225,13 +224,13 @@ func (p *Pod) phase(po *v1.Pod) string {
 		status = po.Status.Reason
 	}
 
-	init, status := p.initContainerPhase(po.Status, len(po.Spec.InitContainers), status)
-	if init {
+	status, ok := p.initContainerPhase(po.Status, len(po.Spec.InitContainers), status)
+	if ok {
 		return status
 	}
 
-	running, status := p.containerPhase(po.Status, status)
-	if running && status == "Completed" {
+	status, ok = p.containerPhase(po.Status, status)
+	if ok && status == "Completed" {
 		status = "Running"
 	}
 	if po.DeletionTimestamp == nil {
@@ -241,7 +240,7 @@ func (p *Pod) phase(po *v1.Pod) string {
 	return "Terminated"
 }
 
-func (*Pod) containerPhase(st v1.PodStatus, status string) (bool, string) {
+func (*Pod) containerPhase(st v1.PodStatus, status string) (string, bool) {
 	var running bool
 	for i := len(st.ContainerStatuses) - 1; i >= 0; i-- {
 		cs := st.ContainerStatuses[i]
@@ -261,29 +260,22 @@ func (*Pod) containerPhase(st v1.PodStatus, status string) (bool, string) {
 		}
 	}
 
-	return running, status
+	return status, running
 }
 
-func (*Pod) initContainerPhase(st v1.PodStatus, initCount int, status string) (bool, string) {
+func (*Pod) initContainerPhase(st v1.PodStatus, initCount int, status string) (string, bool) {
 	for i, cs := range st.InitContainerStatuses {
-		status := checkContainerStatus(cs, i, initCount)
-		if status == "" {
+		s := checkContainerStatus(cs, i, initCount)
+		if s == "" {
 			continue
 		}
-		return true, status
+		return s, true
 	}
 
-	return false, status
+	return status, false
 }
 
-func (*Pod) loggableContainers(s v1.PodStatus) []string {
-	var rcos []string
-	for _, c := range s.ContainerStatuses {
-		rcos = append(rcos, c.Name)
-	}
-	return rcos
-}
-
+// ----------------------------------------------------------------------------
 // Helpers..
 
 func checkContainerStatus(cs v1.ContainerStatus, i, initCount int) string {
@@ -304,16 +296,4 @@ func checkContainerStatus(cs v1.ContainerStatus, i, initCount int) string {
 	default:
 		return "Init:" + strconv.Itoa(i) + "/" + strconv.Itoa(initCount)
 	}
-}
-
-func asColor(n string) color.Paint {
-	var sum int
-	for _, r := range n {
-		sum += int(r)
-	}
-	return color.Paint(30 + 2 + sum%6)
-}
-
-func isSet(s *string) bool {
-	return s != nil && *s != ""
 }

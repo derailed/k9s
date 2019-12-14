@@ -42,8 +42,5 @@ func (Policy) Header(ns string) HeaderRow {
 
 // Render renders a K8s resource to screen.
 func (Policy) Render(o interface{}, gvr string, r *Row) error {
-	panic("NYI")
 	return nil
 }
-
-// Helpers...

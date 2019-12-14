@@ -211,20 +211,26 @@ func (a *App) refreshIndicator() {
 	cluster := model.NewCluster(a.Conn(), mx)
 	var cmx client.ClusterMetrics
 	nos, nmx, err := fetchResources(a)
-	cpu, mem := "0", "0"
-	if err == nil {
-		cluster.Metrics(nos, nmx, &cmx)
-		cpu = render.AsPerc(cmx.PercCPU)
-		if cpu == "0" {
-			cpu = render.NAValue
-		}
-		mem = render.AsPerc(cmx.PercMEM)
-		if mem == "0" {
-			mem = render.NAValue
-		}
+	if err != nil {
+		log.Error().Err(err).Msgf("unable to refresh cluster indicator")
+		return
 	}
 
-	info := fmt.Sprintf(
+	if err := cluster.Metrics(nos, nmx, &cmx); err != nil {
+		log.Error().Err(err).Msgf("unable to refresh cluster indicator")
+		return
+	}
+
+	cpu := render.AsPerc(cmx.PercCPU)
+	if cpu == "0" {
+		cpu = render.NAValue
+	}
+	mem := render.AsPerc(cmx.PercMEM)
+	if mem == "0" {
+		mem = render.NAValue
+	}
+
+	a.indicator().SetPermanent(fmt.Sprintf(
 		indicatorFmt,
 		a.version,
 		cluster.ClusterName(),
@@ -232,8 +238,7 @@ func (a *App) refreshIndicator() {
 		cluster.Version(),
 		cpu,
 		mem,
-	)
-	a.indicator().SetPermanent(info)
+	))
 }
 
 func (a *App) switchNS(ns string) bool {
