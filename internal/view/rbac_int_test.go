@@ -13,12 +13,12 @@ func TestHasVerb(t *testing.T) {
 		e  bool
 	}{
 		{[]string{"*"}, "get", true},
-		// {[]string{"get", "list", "watch"}, "watch", true},
-		// {[]string{"get", "dope", "list"}, "watch", false},
-		// {[]string{"get"}, "get", true},
-		// {[]string{"post"}, "create", true},
-		// {[]string{"put"}, "update", true},
-		// {[]string{"list", "deletecollection"}, "deletecollection", true},
+		{[]string{"get", "list", "watch"}, "watch", true},
+		{[]string{"get", "dope", "list"}, "watch", false},
+		{[]string{"get"}, "get", true},
+		{[]string{"post"}, "create", true},
+		{[]string{"put"}, "update", true},
+		{[]string{"list", "deletecollection"}, "deletecollection", true},
 	}
 
 	for _, u := range uu {
