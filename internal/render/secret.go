@@ -29,7 +29,7 @@ func (Secret) Header(ns string) HeaderRow {
 		Header{Name: "NAME"},
 		Header{Name: "TYPE"},
 		Header{Name: "DATA", Align: tview.AlignRight},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
 

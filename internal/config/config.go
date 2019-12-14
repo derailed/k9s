@@ -122,7 +122,7 @@ func (c *Config) ActiveNamespace() string {
 			return cl.Namespace.Active
 		}
 	}
-	return ""
+	return "default"
 }
 
 // FavNamespaces returns fav namespaces in the current cluster.

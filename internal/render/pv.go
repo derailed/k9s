@@ -48,7 +48,7 @@ func (PersistentVolume) Header(string) HeaderRow {
 		Header{Name: "CLAIM"},
 		Header{Name: "STORAGECLASS"},
 		Header{Name: "REASON"},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	}
 }
 

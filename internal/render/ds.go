@@ -49,7 +49,7 @@ func (DaemonSet) Header(ns string) HeaderRow {
 		Header{Name: "READY", Align: tview.AlignRight},
 		Header{Name: "UP-TO-DATE", Align: tview.AlignRight},
 		Header{Name: "AVAILABLE", Align: tview.AlignRight},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
 

@@ -50,7 +50,7 @@ func (Node) Header(_ string) HeaderRow {
 		Header{Name: "%MEM", Align: tview.AlignRight},
 		Header{Name: "ACPU", Align: tview.AlignRight},
 		Header{Name: "AMEM", Align: tview.AlignRight},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	}
 }
 

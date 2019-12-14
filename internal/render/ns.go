@@ -41,7 +41,7 @@ func (Namespace) Header(string) HeaderRow {
 	return HeaderRow{
 		Header{Name: "NAME"},
 		Header{Name: "STATUS"},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	}
 }
 

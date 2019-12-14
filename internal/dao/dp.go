@@ -62,7 +62,7 @@ func (d *Deployment) Restart(path string) error {
 
 // Logs tail logs for all pods represented by this Deployment.
 func (d *Deployment) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
-	log.Debug().Msgf("Tailing Deployment %q -- %q", opts.Path)
+	log.Debug().Msgf("Tailing Deployment %q", opts.Path)
 	o, err := d.Get(string(d.gvr), opts.Path, labels.Everything())
 	if err != nil {
 		return err

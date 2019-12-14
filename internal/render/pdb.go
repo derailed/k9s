@@ -52,7 +52,7 @@ func (PodDisruptionBudget) Header(ns string) HeaderRow {
 		Header{Name: "CURRENT", Align: tview.AlignRight},
 		Header{Name: "DESIRED", Align: tview.AlignRight},
 		Header{Name: "EXPECTED", Align: tview.AlignRight},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
 

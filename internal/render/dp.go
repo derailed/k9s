@@ -48,7 +48,7 @@ func (Deployment) Header(ns string) HeaderRow {
 		Header{Name: "READY"},
 		Header{Name: "UP-TO-DATE", Align: tview.AlignRight},
 		Header{Name: "AVAILABLE", Align: tview.AlignRight},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
 

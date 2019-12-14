@@ -49,7 +49,7 @@ func (PersistentVolumeClaim) Header(ns string) HeaderRow {
 		Header{Name: "CAPACITY"},
 		Header{Name: "ACCESS MODES"},
 		Header{Name: "STORAGECLASS"},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
 

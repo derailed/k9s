@@ -76,7 +76,7 @@ func (Container) Header(ns string) HeaderRow {
 		Header{Name: "%CPU", Align: tview.AlignRight},
 		Header{Name: "%MEM", Align: tview.AlignRight},
 		Header{Name: "PORTS"},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	}
 }
 

@@ -26,7 +26,7 @@ func (Alias) Header(ns string) HeaderRow {
 		Header{Name: "RESOURCE"},
 		Header{Name: "COMMAND"},
 		Header{Name: "APIGROUP"},
-		// Header{Name: "AGE", Decorator: ageDecorator},
+		// Header{Name: "AGE", Decorator: AgeDecorator},
 	}
 }
 

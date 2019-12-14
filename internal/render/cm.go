@@ -28,12 +28,12 @@ func (ConfigMap) Header(ns string) HeaderRow {
 	return append(h,
 		Header{Name: "NAME"},
 		Header{Name: "DATA", Align: tview.AlignRight},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
 
 // Render renders a K8s resource to screen.
-func (ConfigMap) Render(o interface{}, ns string, r *Row) error {
+func (c ConfigMap) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected ConfigMap, but got %T", o)
@@ -44,17 +44,16 @@ func (ConfigMap) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	fields := make(Fields, 0, len(r.Fields))
+	r.ID = MetaFQN(cm.ObjectMeta)
+	r.Fields = make(Fields, 0, len(c.Header(ns)))
 	if isAllNamespace(ns) {
-		fields = append(fields, cm.Namespace)
+		r.Fields = append(r.Fields, cm.Namespace)
 	}
-	fields = append(fields,
+	r.Fields = append(r.Fields,
 		cm.Name,
 		strconv.Itoa(len(cm.Data)),
 		toAge(cm.ObjectMeta.CreationTimestamp),
 	)
-
-	r.ID, r.Fields = MetaFQN(cm.ObjectMeta), fields
 
 	return nil
 }

@@ -21,7 +21,7 @@ func (ClusterRole) ColorerFunc() ColorerFunc {
 func (ClusterRole) Header(string) HeaderRow {
 	return HeaderRow{
 		Header{Name: "NAME"},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	}
 }
 

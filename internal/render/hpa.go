@@ -32,7 +32,7 @@ func (HorizontalPodAutoscaler) Header(ns string) HeaderRow {
 		Header{Name: "MINPODS", Align: tview.AlignRight},
 		Header{Name: "MAXPODS", Align: tview.AlignRight},
 		Header{Name: "REPLICAS", Align: tview.AlignRight},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
 

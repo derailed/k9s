@@ -48,7 +48,7 @@ func (Event) Header(ns string) HeaderRow {
 		Header{Name: "SOURCE"},
 		Header{Name: "COUNT", Align: tview.AlignRight},
 		Header{Name: "MESSAGE"},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
 

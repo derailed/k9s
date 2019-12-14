@@ -48,7 +48,7 @@ func (ReplicaSet) Header(ns string) HeaderRow {
 		Header{Name: "DESIRED", Align: tview.AlignRight},
 		Header{Name: "CURRENT", Align: tview.AlignRight},
 		Header{Name: "READY", Align: tview.AlignRight},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
 

@@ -90,7 +90,7 @@ func (Pod) Header(ns string) HeaderRow {
 		Header{Name: "IP"},
 		Header{Name: "NODE"},
 		Header{Name: "QOS"},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
 

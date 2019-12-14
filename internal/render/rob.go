@@ -29,7 +29,7 @@ func (RoleBinding) Header(ns string) HeaderRow {
 		Header{Name: "ROLE"},
 		Header{Name: "KIND"},
 		Header{Name: "SUBJECTS"},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
 

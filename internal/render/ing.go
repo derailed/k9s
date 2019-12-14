@@ -30,7 +30,7 @@ func (Ingress) Header(ns string) HeaderRow {
 		Header{Name: "HOSTS"},
 		Header{Name: "ADDRESS"},
 		Header{Name: "PORT"},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
 

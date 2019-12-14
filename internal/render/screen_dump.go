@@ -23,7 +23,8 @@ func (ScreenDump) ColorerFunc() ColorerFunc {
 
 type DecoratorFunc func(string) string
 
-var ageDecorator = func(a string) string {
+// AgeDecorator represents a timestamped as human column.
+var AgeDecorator = func(a string) string {
 	return toAgeHuman(a)
 }
 
@@ -31,7 +32,7 @@ var ageDecorator = func(a string) string {
 func (ScreenDump) Header(ns string) HeaderRow {
 	return HeaderRow{
 		Header{Name: "NAME"},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	}
 }
 

@@ -47,7 +47,7 @@ func (PortForward) Header(ns string) HeaderRow {
 		Header{Name: "URL"},
 		Header{Name: "C"},
 		Header{Name: "N"},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	}
 }
 

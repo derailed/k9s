@@ -48,7 +48,7 @@ func (StatefulSet) Header(ns string) HeaderRow {
 		Header{Name: "READY"},
 		Header{Name: "SELECTOR"},
 		Header{Name: "SERVICE"},
-		Header{Name: "AGE", Decorator: ageDecorator},
+		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
 
