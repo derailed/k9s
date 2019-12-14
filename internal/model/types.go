@@ -5,6 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tview"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -69,45 +70,24 @@ type Lister interface {
 	Hydrate([]runtime.Object, render.Rows, Renderer) error
 }
 
-// BOZO!!
-// type Connection interface {
-// 	// DialOrDie dials client api.
-// 	DialOrDie() kubernetes.Interface
-
-// 	// MXDial dials metrics api.
-// 	MXDial() (*versioned.Clientset, error)
-
-// 	// DynDialOrDie dials dynamic client api.
-// 	DynDialOrDie() dynamic.Interface
-
-// 	// RestConfigOrDie return a client configuration.
-// 	RestConfigOrDie() *restclient.Config
-
-// 	// Config returns the current kubeconfig.
-// 	Config() *k8s.Config
-
-// 	// CachedDiscovery returns a cached client.
-// 	CachedDiscovery() (*disk.CachedDiscoveryClient, error)
-
-// 	// SwithContextOrDie switch to a new kube context.
-// 	SwitchContextOrDie(ctx string)
-// }
-
 type Factory interface {
 	// Client retrieves an api client.
 	Client() k8s.Connection
 
 	// Get fetch a given resource.
-	Get(ns, gvr, n string, sel labels.Selector) (runtime.Object, error)
+	Get(gvr, path string, sel labels.Selector) (runtime.Object, error)
 
 	// List fetch a collection of resources.
-	List(ns, gvr string, sel labels.Selector) ([]runtime.Object, error)
+	List(gvr, ns string, sel labels.Selector) ([]runtime.Object, error)
 
 	// ForResource fetch an informer for a given resource.
 	ForResource(ns, gvr string) informers.GenericInformer
 
 	// WaitForCacheSync synchronize the cache.
 	WaitForCacheSync() map[schema.GroupVersionResource]bool
+
+	// Forwards returns all portforwards.
+	Forwarders() watch.Forwarders
 }
 
 // ResourceMeta represents model info about a resource.

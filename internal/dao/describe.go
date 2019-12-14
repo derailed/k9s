@@ -33,5 +33,6 @@ func Describe(c k8s.Connection, gvr GVR, ns, n string) (string, error) {
 		return "", err
 	}
 
+	log.Debug().Msgf("DESCRIBE FOR %q -- %q:%q", gvr, ns, n)
 	return d.Describe(ns, n, describe.DescriberSettings{ShowEvents: true})
 }

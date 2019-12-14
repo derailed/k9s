@@ -57,15 +57,15 @@ func (t *Table) Init(ctx context.Context) {
 
 	t.SetFixed(1, 0)
 	t.SetBorder(true)
-	t.SetBackgroundColor(config.AsColor(t.styles.Table().BgColor))
-	t.SetBorderColor(config.AsColor(t.styles.Table().FgColor))
+	t.SetBackgroundColor(config.AsColor(t.styles.GetTable().BgColor))
+	t.SetBorderColor(config.AsColor(t.styles.GetTable().FgColor))
 	t.SetBorderFocusColor(config.AsColor(t.styles.Frame().Border.FocusColor))
 	t.SetBorderAttributes(tcell.AttrBold)
 	t.SetBorderPadding(0, 0, 1, 1)
 	t.SetSelectable(true, false)
 	t.SetSelectedStyle(
 		tcell.ColorBlack,
-		config.AsColor(t.styles.Table().CursorColor),
+		config.AsColor(t.styles.GetTable().CursorColor),
 		tcell.AttrBold,
 	)
 	t.SetSelectionChangedFunc(t.selChanged)
@@ -123,9 +123,6 @@ func (t *Table) SetDecorateFn(f DecorateFunc) {
 
 // SetColorerFn specifies the default colorer.
 func (t *Table) SetColorerFn(f render.ColorerFunc) {
-	if f == nil {
-		return
-	}
 	t.colorerFn = f
 }
 
@@ -146,6 +143,7 @@ func (t *Table) Update(data render.TableData) {
 	} else {
 		t.doUpdate(t.filtered())
 	}
+
 	t.UpdateTitle()
 	t.updateSelection(true)
 }
@@ -161,8 +159,8 @@ func (t *Table) doUpdate(data render.TableData) {
 	t.adjustSorter(data)
 
 	var row int
-	fg := config.AsColor(t.styles.Table().Header.FgColor)
-	bg := config.AsColor(t.styles.Table().Header.BgColor)
+	fg := config.AsColor(t.styles.GetTable().Header.FgColor)
+	bg := config.AsColor(t.styles.GetTable().Header.BgColor)
 	for col, h := range data.Header {
 		t.AddHeaderCell(col, h)
 		c := t.GetCell(0, col)
@@ -250,7 +248,8 @@ func (t *Table) buildRow(ns string, r int, re render.RowEvent, header render.Hea
 		c.SetAlign(header[col].Align)
 		c.SetTextColor(color(ns, re))
 		if marked {
-			c.SetTextColor(config.AsColor(t.styles.Table().MarkColor))
+			log.Debug().Msgf("Marked!")
+			c.SetTextColor(config.AsColor(t.styles.GetTable().MarkColor))
 		}
 		t.SetCell(r, col, c)
 	}
@@ -277,7 +276,7 @@ func (t *Table) NameColIndex() int {
 
 // AddHeaderCell configures a table cell header.
 func (t *Table) AddHeaderCell(col int, h render.Header) {
-	c := tview.NewTableCell(sortIndicator(t.sortCol, t.styles.Table(), col, h.Name))
+	c := tview.NewTableCell(sortIndicator(t.sortCol, t.styles.GetTable(), col, h.Name))
 	c.SetExpansion(1)
 	c.SetAlign(h.Align)
 	t.SetCell(0, col, c)

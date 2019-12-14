@@ -18,13 +18,13 @@ type ScaleExtender struct {
 
 func NewScaleExtender(r ResourceViewer) ResourceViewer {
 	s := ScaleExtender{ResourceViewer: r}
-	s.BindKeys()
+	s.bindKeys(s.Actions())
 
 	return &s
 }
 
-func (s *ScaleExtender) BindKeys() {
-	s.Actions().Add(ui.KeyActions{
+func (s *ScaleExtender) bindKeys(aa ui.KeyActions) {
+	aa.Add(ui.KeyActions{
 		ui.KeyS: ui.NewKeyAction("Scale", s.scaleCmd, true),
 	})
 }
@@ -103,16 +103,14 @@ func (s *ScaleExtender) makeStyledForm() *tview.Form {
 }
 
 func (s *ScaleExtender) scale(path string, replicas int) error {
-	ns, n := namespaced(path)
 	res, err := dao.AccessorFor(s.App().factory, dao.GVR(s.GVR()))
 	if err != nil {
 		return nil
 	}
-	log.Debug().Msgf("SCALER %#v", res)
 	scaler, ok := res.(dao.Scalable)
 	if !ok {
 		return fmt.Errorf("expecting a scalable resource for %q", s.GVR())
 	}
 
-	return scaler.Scale(ns, n, int32(replicas))
+	return scaler.Scale(path, int32(replicas))
 }

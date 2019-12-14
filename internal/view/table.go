@@ -14,7 +14,6 @@ type Table struct {
 
 	app      *App
 	filterFn func(string)
-	cancelFn context.CancelFunc
 	enterFn  EnterFunc
 }
 
@@ -47,21 +46,16 @@ func (t *Table) App() *App {
 
 // Start runs the component.
 func (t *Table) Start() {
-	log.Debug().Msgf("---- Table START %s", t.BaseTitle)
+	log.Debug().Msgf("Table START %s", t.BaseTitle)
 	t.SearchBuff().AddListener(t.app.Cmd())
 	t.SearchBuff().AddListener(t)
 }
 
 // Stop terminates the component.
 func (t *Table) Stop() {
+	log.Debug().Msgf("TABLE <STOP> %s", t.BaseTitle)
 	t.SearchBuff().RemoveListener(t.app.Cmd())
 	t.SearchBuff().RemoveListener(t)
-
-	if t.cancelFn != nil {
-		t.cancelFn()
-		t.cancelFn = nil
-		log.Debug().Msgf(">>>> Table STOP %s", t.BaseTitle)
-	}
 }
 
 // MasterComponent returns the master component.

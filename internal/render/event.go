@@ -224,16 +224,17 @@ type ColorerFunc func(ns string, evt RowEvent) tcell.Color
 
 // DefaultColorer set the default table row colors.
 func DefaultColorer(ns string, evt RowEvent) tcell.Color {
+	var col = StdColor
 	switch evt.Kind {
 	case EventAdd:
-		return AddColor
+		col = AddColor
 	case EventUpdate:
-		return ModColor
+		col = ModColor
 	case EventDelete:
-		return KillColor
-	default:
-		return StdColor
+		col = KillColor
 	}
+
+	return col
 }
 
 type StringSet []string

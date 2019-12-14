@@ -35,7 +35,7 @@ func (CronJob) Header(ns string) HeaderRow {
 }
 
 // Render renders a K8s resource to screen.
-func (CronJob) Render(o interface{}, ns string, r *Row) error {
+func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected CronJob, but got %T", o)
@@ -51,11 +51,12 @@ func (CronJob) Render(o interface{}, ns string, r *Row) error {
 		lastScheduled = toAgeHuman(toAge(*cj.Status.LastScheduleTime))
 	}
 
-	fields := make(Fields, 0, len(r.Fields))
+	r.ID = MetaFQN(cj.ObjectMeta)
+	r.Fields = make(Fields, 0, len(c.Header(ns)))
 	if isAllNamespace(ns) {
-		fields = append(fields, cj.Namespace)
+		r.Fields = append(r.Fields, cj.Namespace)
 	}
-	fields = append(fields,
+	r.Fields = append(r.Fields,
 		cj.Name,
 		cj.Spec.Schedule,
 		boolPtrToStr(cj.Spec.Suspend),
@@ -63,8 +64,6 @@ func (CronJob) Render(o interface{}, ns string, r *Row) error {
 		lastScheduled,
 		toAge(cj.ObjectMeta.CreationTimestamp),
 	)
-
-	r.ID, r.Fields = MetaFQN(cj.ObjectMeta), fields
 
 	return nil
 }

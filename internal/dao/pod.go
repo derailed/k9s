@@ -11,6 +11,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/color"
+	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -22,24 +23,23 @@ import (
 
 const defaultTimeout = 1 * time.Second
 
-type Logger interface {
-	Logs(ns, n string, opts *v1.PodLogOptions) *restclient.Request
-}
-
+// Pod represents a pod resource.
 type Pod struct {
-	Resource
+	Generic
 }
 
 var _ Accessor = &Pod{}
+var _Loggable = &Pod{}
 
 // Logs fetch container logs for a given pod and container.
-func (p *Pod) Logs(ns, n string, opts *v1.PodLogOptions) *restclient.Request {
+func (p *Pod) Logs(path string, opts *v1.PodLogOptions) *restclient.Request {
+	ns, n := k8s.Namespaced(path)
 	return p.Client().DialOrDie().CoreV1().Pods(ns).GetLogs(n, opts)
 }
 
 // Containers returns all container names on pod
-func (p *Pod) Containers(ns, n string, includeInit bool) ([]string, error) {
-	o, err := p.Get(ns, "v1/pod", n, labels.Everything())
+func (p *Pod) Containers(path string, includeInit bool) ([]string, error) {
+	o, err := p.Get("v1/pod", path, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -78,8 +78,7 @@ func (p *Pod) logs(ctx context.Context, c chan<- string, opts LogOptions) error 
 	if !ok {
 		return errors.New("Expecting an informer")
 	}
-	ns, n := Namespaced(opts.FQN())
-	o, err := fac.Get(ns, "v1/pods", n, labels.Everything())
+	o, err := fac.Get("v1/pods", opts.Path, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -114,14 +113,14 @@ func (p *Pod) logs(ctx context.Context, c chan<- string, opts LogOptions) error 
 }
 
 func tailLogs(ctx context.Context, logger Logger, c chan<- string, opts LogOptions) error {
-	log.Debug().Msgf("Tailing logs for %q -- %q -- %q", opts.Namespace, opts.Name, opts.Container)
+	log.Debug().Msgf("Tailing logs for %q -- %q", opts.Path, opts.Container)
 	o := v1.PodLogOptions{
 		Container: opts.Container,
 		Follow:    true,
 		TailLines: &opts.Lines,
 		Previous:  opts.Previous,
 	}
-	req := logger.Logs(opts.Namespace, opts.Name, &o)
+	req := logger.Logs(opts.Path, &o)
 	ctxt, cancelFunc := context.WithCancel(ctx)
 	req.Context(ctxt)
 
@@ -132,8 +131,8 @@ func tailLogs(ctx context.Context, logger Logger, c chan<- string, opts LogOptio
 	stream, err := req.Stream()
 	atomic.StoreInt32(&blocked, 0)
 	if err != nil {
-		log.Error().Err(err).Msgf("Log stream failed for `%s", opts.Path())
-		return fmt.Errorf("Unable to obtain log stream for %s", opts.Path())
+		log.Error().Err(err).Msgf("Log stream failed for `%s", opts.Path)
+		return fmt.Errorf("Unable to obtain log stream for %s", opts.Path)
 	}
 	go readLogs(ctx, stream, c, opts)
 
@@ -150,7 +149,7 @@ func logsTimeout(cancel context.CancelFunc, blocked *int32) {
 
 func readLogs(ctx context.Context, stream io.ReadCloser, c chan<- string, opts LogOptions) {
 	defer func() {
-		log.Debug().Msgf(">>> Closing stream `%s", opts.Path())
+		log.Debug().Msgf(">>> Closing stream `%s", opts.Path)
 		if err := stream.Close(); err != nil {
 			log.Error().Err(err).Msg("Cloing stream")
 		}

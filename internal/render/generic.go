@@ -26,8 +26,11 @@ func (Generic) ColorerFunc() ColorerFunc {
 
 // Header returns a header row.
 func (g *Generic) Header(ns string) HeaderRow {
-	h := make(HeaderRow, 0, len(g.table.ColumnDefinitions))
+	if g.table == nil {
+		return HeaderRow{}
+	}
 
+	h := make(HeaderRow, 0, len(g.table.ColumnDefinitions))
 	if ns == "" {
 		h = append(h, Header{Name: "NAMESPACE"})
 	}

@@ -4,6 +4,7 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 )
 
 // LogsExtender adds log actions to a given viewer.
@@ -14,19 +15,19 @@ type LogsExtender struct {
 }
 
 // NewLogsExtender returns a new extender.
-func NewLogsExtender(r ResourceViewer, f ContainerFunc) ResourceViewer {
+func NewLogsExtender(v ResourceViewer, f ContainerFunc) ResourceViewer {
 	l := LogsExtender{
-		ResourceViewer: r,
+		ResourceViewer: v,
 		containerFn:    f,
 	}
-	l.BindKeys()
+	l.bindKeys(l.Actions())
 
 	return &l
 }
 
 // BindKeys injects new menu actions.
-func (l *LogsExtender) BindKeys() {
-	l.Actions().Add(ui.KeyActions{
+func (l *LogsExtender) bindKeys(aa ui.KeyActions) {
+	aa.Add(ui.KeyActions{
 		ui.KeyL:      ui.NewKeyAction("Logs", l.logsCmd(false), true),
 		ui.KeyShiftL: ui.NewKeyAction("Logs Previous", l.logsCmd(true), true),
 	})
@@ -48,10 +49,11 @@ func (l *LogsExtender) logsCmd(prev bool) func(evt *tcell.EventKey) *tcell.Event
 }
 
 func (l *LogsExtender) showLogs(path string, prev bool) {
+	log.Debug().Msgf("SHOWING LOGS path %q", path)
 	co := ""
 	if l.containerFn != nil {
+		log.Debug().Msgf("CUSTOM CO FUNC")
 		co = l.containerFn()
 	}
-	log := NewLog(dao.GVR(l.GVR()), path, co, l.List(), prev)
-	l.App().inject(log)
+	l.App().inject(NewLog(dao.GVR(l.GVR()), path, co, prev))
 }

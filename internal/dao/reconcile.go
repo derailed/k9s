@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/model"
@@ -12,13 +13,13 @@ import (
 
 // Reconcile previous vs current state and emits delta events.
 func Reconcile(ctx context.Context, table render.TableData, gvr GVR) (render.TableData, error) {
-	path, ok := ctx.Value(internal.KeySelection).(string)
+	defer func(t time.Time) {
+		log.Debug().Msgf("Reconcile elapsed: %v", time.Since(t))
+	}(time.Now())
+
+	path, ok := ctx.Value(internal.KeyPath).(string)
 	if !ok {
 		return table, fmt.Errorf("no path specified for %s", gvr)
-	}
-	if path != "" {
-		log.Debug().Msgf("########## OVERRIDING NS %q", path)
-		table.Namespace = path
 	}
 	log.Debug().Msgf("  Reconcile %q in ns %q with path %q", gvr, table.Namespace, path)
 	factory, ok := ctx.Value(internal.KeyFactory).(Factory)
@@ -41,10 +42,11 @@ func Reconcile(ctx context.Context, table render.TableData, gvr GVR) (render.Tab
 	table.Header = m.Renderer.Header(table.Namespace)
 	oo, err := m.Model.List(ctx)
 	if err != nil {
-		panic(err)
+		return table, err
 	}
 	log.Debug().Msgf("Model returned [%d] items", len(oo))
 	rows := make(render.Rows, len(oo))
+	// BOZO!! Pass in header len to avoid recomputing the header.
 	if err := m.Model.Hydrate(oo, rows, m.Renderer); err != nil {
 		return table, err
 	}
@@ -65,7 +67,7 @@ func update(table *render.TableData, rows render.Rows) {
 			continue
 		}
 		if index, ok := table.RowEvents.FindIndex(row.ID); ok {
-			delta := render.NewDeltaRow(table.RowEvents[index].Row, row)
+			delta := render.NewDeltaRow(table.RowEvents[index].Row, row, table.Header.HasAge())
 			if delta.IsBlank() {
 				table.RowEvents[index].Kind, table.RowEvents[index].Deltas = render.EventUnchanged, blankDelta
 			} else {

@@ -17,9 +17,12 @@ type Namespace struct{}
 func (Namespace) ColorerFunc() ColorerFunc {
 	return func(ns string, r RowEvent) tcell.Color {
 		c := DefaultColorer(ns, r)
-
-		if r.Kind == EventAdd || r.Kind == EventUpdate {
+		if r.Kind == EventAdd {
 			return c
+		}
+
+		if r.Kind == EventUpdate {
+			c = StdColor
 		}
 		switch strings.TrimSpace(r.Row.Fields[1]) {
 		case "Inactive", Terminating:
@@ -54,13 +57,12 @@ func (Namespace) Render(o interface{}, _ string, r *Row) error {
 		return err
 	}
 
-	fields := make(Fields, 0, len(r.Fields))
-	fields = append(fields,
+	r.ID = MetaFQN(ns.ObjectMeta)
+	r.Fields = Fields{
 		ns.Name,
 		string(ns.Status.Phase),
 		toAge(ns.ObjectMeta.CreationTimestamp),
-	)
-	r.ID, r.Fields = MetaFQN(ns.ObjectMeta), fields
+	}
 
 	return nil
 }

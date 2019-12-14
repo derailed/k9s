@@ -40,7 +40,7 @@ func (g *Generic) List(ctx context.Context) ([]runtime.Object, error) {
 	// BOZO!! Need to know if gvr is namespaced or not
 	o, err := c.Get().
 		SetHeader("Accept", fmt.Sprintf(gvFmt, metav1beta1.SchemeGroupVersion.Version, metav1beta1.GroupName)).
-		// Namespace(g.namespace).
+		Namespace(g.namespace).
 		Resource(gvr.ToR()).
 		VersionedParams(&metav1beta1.TableOptions{}, codec).
 		Do().Get()

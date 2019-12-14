@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
@@ -20,7 +21,7 @@ import (
 )
 
 type DaemonSet struct {
-	Resource
+	Generic
 }
 
 var _ Accessor = &DaemonSet{}
@@ -28,8 +29,8 @@ var _ Loggable = &DaemonSet{}
 var _ Restartable = &DaemonSet{}
 
 // Restart a DaemonSet rollout.
-func (d *DaemonSet) Restart(ns, n string) error {
-	o, err := d.Get(ns, string(d.gvr), n, labels.Everything())
+func (d *DaemonSet) Restart(path string) error {
+	o, err := d.Get(string(d.gvr), path, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -45,14 +46,14 @@ func (d *DaemonSet) Restart(ns, n string) error {
 		return err
 	}
 
-	_, err = d.Client().DialOrDie().AppsV1().DaemonSets(ns).Patch(ds.Name, types.StrategicMergePatchType, update)
+	_, err = d.Client().DialOrDie().AppsV1().DaemonSets(ds.Namespace).Patch(ds.Name, types.StrategicMergePatchType, update)
 	return err
 }
 
 // Logs tail logs for all pods represented by this DaemonSet.
 func (d *DaemonSet) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
-	log.Debug().Msgf("Tailing DaemonSet %q -- %q", opts.Namespace, opts.Name)
-	o, err := d.Get(opts.Namespace, "apps/v1/daemonsets", opts.Name, labels.Everything())
+	log.Debug().Msgf("Tailing DaemonSet %q", opts.Path)
+	o, err := d.Get("apps/v1/daemonsets", opts.Path, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -64,7 +65,7 @@ func (d *DaemonSet) TailLogs(ctx context.Context, c chan<- string, opts LogOptio
 	}
 
 	if ds.Spec.Selector == nil || len(ds.Spec.Selector.MatchLabels) == 0 {
-		return fmt.Errorf("No valid selector found on daemonset %s", opts.FQN())
+		return fmt.Errorf("no valid selector found on daemonset %q", opts.Path)
 	}
 
 	return podLogs(ctx, c, ds.Spec.Selector.MatchLabels, opts)
@@ -84,7 +85,8 @@ func podLogs(ctx context.Context, c chan<- string, sel map[string]string, opts L
 		return err
 	}
 
-	oo, err := f.List(opts.Namespace, "v1/pods", lsel)
+	ns, _ := k8s.Namespaced(opts.Path)
+	oo, err := f.List("v1/pods", ns, lsel)
 	if err != nil {
 		return err
 	}
@@ -94,17 +96,17 @@ func podLogs(ctx context.Context, c chan<- string, sel map[string]string, opts L
 	}
 
 	po := Pod{}
+	po.Init(f, "v1/pods")
 	for _, o := range oo {
 		var pod v1.Pod
 		err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod)
 		if err != nil {
 			return err
 		}
-		if pod.Status.Phase == v1.PodRunning {
-			opts.Namespace, opts.Name = pod.Namespace, pod.Name
-			if err := po.TailLogs(ctx, c, opts); err != nil {
-				return err
-			}
+		log.Debug().Msgf("TAILING logs on pod %q", pod.Name)
+		opts.Path = k8s.FQN(pod.Namespace, pod.Name)
+		if err := po.TailLogs(ctx, c, opts); err != nil {
+			return err
 		}
 	}
 	return nil

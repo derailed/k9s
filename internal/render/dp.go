@@ -7,19 +7,13 @@ import (
 
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // Deployment renders a K8s Deployment to screen.
 type Deployment struct{}
-
-func isAllNamespace(ns string) bool {
-	return ns == ""
-}
 
 // ColorerFunc colors a resource row.
 func (Deployment) ColorerFunc() ColorerFunc {
@@ -54,7 +48,6 @@ func (Deployment) Header(ns string) HeaderRow {
 		Header{Name: "READY"},
 		Header{Name: "UP-TO-DATE", Align: tview.AlignRight},
 		Header{Name: "AVAILABLE", Align: tview.AlignRight},
-		Header{Name: "SELECTOR"},
 		Header{Name: "AGE", Decorator: ageDecorator},
 	)
 }
@@ -81,21 +74,8 @@ func (d Deployment) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(int(dp.Status.AvailableReplicas))+"/"+strconv.Itoa(int(*dp.Spec.Replicas)),
 		strconv.Itoa(int(dp.Status.UpdatedReplicas)),
 		strconv.Itoa(int(dp.Status.AvailableReplicas)),
-		asSelector(dp.Spec.Selector),
 		toAge(dp.ObjectMeta.CreationTimestamp),
 	)
 
 	return nil
-}
-
-//Helpers...
-
-func asSelector(s *metav1.LabelSelector) string {
-	sel, err := metav1.LabelSelectorAsSelector(s)
-	if err != nil {
-		log.Error().Err(err).Msg("Selector conversion failed")
-		return NAValue
-	}
-
-	return sel.String()
 }

@@ -53,31 +53,29 @@ type Viewer interface {
 	Refresh()
 }
 
-// ResourceViewer represents a generic resource viewer.
-type ResourceViewer interface {
-	TableViewer
-
-	// List returns a resource List.
-	List() resource.List
-
-	// SetEnvFn sets a function to pull viewer env vars for plugins.
-	SetEnvFn(EnvFunc)
-
-	// SetPath set parents selector.
-	SetPath(p string)
-
-	// GVR returns a resource descriptor.
-	GVR() string
-
-	SetContextFn(ContextFunc)
-}
-
 // TableViewer represents a tabular viewer.
 type TableViewer interface {
 	Viewer
 
 	// Table returns a table component.
 	GetTable() *Table
+}
+
+// ResourceViewer represents a generic resource viewer.
+type ResourceViewer interface {
+	TableViewer
+
+	// SetEnvFn sets a function to pull viewer env vars for plugins.
+	SetEnvFn(EnvFunc)
+
+	// GVR returns a resource descriptor.
+	GVR() string
+
+	// SetContextFn provision a custom context.
+	SetContextFn(ContextFunc)
+
+	// SetBindKeys provision additional key bindings.
+	SetBindKeysFn(BindKeysFunc)
 }
 
 type LogViewer interface {

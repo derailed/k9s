@@ -7,12 +7,13 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 var (
@@ -23,17 +24,11 @@ var (
 	toastRx = regexp.MustCompile(`Error distribution`)
 )
 
-// BenchInfo represents benchmark run info.
-type BenchInfo struct {
-	File os.FileInfo
-	Path string
-}
-
-// Bench renders a benchmarks to screen.
-type Bench struct{}
+// Benchmark renders a benchmarks to screen.
+type Benchmark struct{}
 
 // ColorerFunc colors a resource row.
-func (Bench) ColorerFunc() ColorerFunc {
+func (Benchmark) ColorerFunc() ColorerFunc {
 	return func(ns string, re RowEvent) tcell.Color {
 		c := tcell.ColorPaleGreen
 		statusCol := 2
@@ -45,25 +40,25 @@ func (Bench) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header row.
-func (Bench) Header(ns string) HeaderRow {
+func (Benchmark) Header(ns string) HeaderRow {
 	return HeaderRow{
-		Header{Name: "NAMESPACE", Align: tview.AlignLeft},
-		Header{Name: "NAME", Align: tview.AlignLeft},
-		Header{Name: "STATUS", Align: tview.AlignLeft},
-		Header{Name: "TIME", Align: tview.AlignLeft},
+		Header{Name: "NAMESPACE"},
+		Header{Name: "NAME"},
+		Header{Name: "STATUS"},
+		Header{Name: "TIME"},
 		Header{Name: "REQ/S", Align: tview.AlignRight},
 		Header{Name: "2XX", Align: tview.AlignRight},
 		Header{Name: "4XX/5XX", Align: tview.AlignRight},
-		Header{Name: "REPORT", Align: tview.AlignLeft},
-		Header{Name: "AGE", Align: tview.AlignLeft},
+		Header{Name: "REPORT"},
+		Header{Name: "AGE", Decorator: ageDecorator},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (b Bench) Render(o interface{}, ns string, r *Row) error {
+func (b Benchmark) Render(o interface{}, ns string, r *Row) error {
 	bench, ok := o.(BenchInfo)
 	if !ok {
-		return fmt.Errorf("Expected string, but got %T", o)
+		return fmt.Errorf("expecting benchinfo but got `%T", o)
 	}
 
 	data, err := b.readFile(bench.Path)
@@ -71,19 +66,20 @@ func (b Bench) Render(o interface{}, ns string, r *Row) error {
 		return fmt.Errorf("Unable to load bench file %s", bench.Path)
 	}
 
+	r.ID = bench.Path
 	r.Fields = make(Fields, len(b.Header(ns)))
 	if err := b.initRow(r.Fields, bench.File); err != nil {
 		return err
 	}
 	b.augmentRow(r.Fields, data)
-	r.ID = bench.Path
 
 	return nil
 }
 
+// ----------------------------------------------------------------------------
 // Helpers...
 
-func (Bench) readFile(file string) (string, error) {
+func (Benchmark) readFile(file string) (string, error) {
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return "", err
@@ -91,7 +87,7 @@ func (Bench) readFile(file string) (string, error) {
 	return string(data), nil
 }
 
-func (Bench) initRow(row Fields, f os.FileInfo) error {
+func (Benchmark) initRow(row Fields, f os.FileInfo) error {
 	tokens := strings.Split(f.Name(), "_")
 	if len(tokens) < 2 {
 		return fmt.Errorf("Invalid file name %s", f.Name())
@@ -99,12 +95,12 @@ func (Bench) initRow(row Fields, f os.FileInfo) error {
 	row[0] = tokens[0]
 	row[1] = tokens[1]
 	row[7] = f.Name()
-	row[8] = time.Since(f.ModTime()).String()
+	row[8] = timeToAge(f.ModTime())
 
 	return nil
 }
 
-func (b Bench) augmentRow(fields Fields, data string) {
+func (b Benchmark) augmentRow(fields Fields, data string) {
 	if len(data) == 0 {
 		return
 	}
@@ -137,7 +133,7 @@ func (b Bench) augmentRow(fields Fields, data string) {
 	fields[col] = b.countReq(me)
 }
 
-func (Bench) countReq(rr [][]string) string {
+func (Benchmark) countReq(rr [][]string) string {
 	if len(rr) == 0 {
 		return "0"
 	}
@@ -155,4 +151,20 @@ func (Bench) countReq(rr [][]string) string {
 func asNum(n int) string {
 	p := message.NewPrinter(language.English)
 	return p.Sprintf("%d", n)
+}
+
+// BenchInfo represents benchmark run info.
+type BenchInfo struct {
+	File os.FileInfo
+	Path string
+}
+
+// GetObjectKind returns a schema object.
+func (BenchInfo) GetObjectKind() schema.ObjectKind {
+	return nil
+}
+
+// DeepCopyObject returns a container copy.
+func (b BenchInfo) DeepCopyObject() runtime.Object {
+	return b
 }

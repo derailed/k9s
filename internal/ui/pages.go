@@ -66,6 +66,7 @@ func (p *Pages) StackPushed(c model.Component) {
 }
 
 func (p *Pages) StackPopped(o, top model.Component) {
+	log.Debug().Msgf("UI STACK POPPED!!!")
 	p.delete(o)
 }
 
@@ -79,5 +80,8 @@ func (p *Pages) StackTop(top model.Component) {
 // Helpers...
 
 func componentID(c model.Component) string {
+	if c.Name() == "" {
+		panic("Component has no name")
+	}
 	return fmt.Sprintf("%s-%p", c.Name(), c)
 }

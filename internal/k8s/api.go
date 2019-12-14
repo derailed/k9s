@@ -58,8 +58,6 @@ type (
 		ServerVersion() (*version.Info, error)
 		FetchNodes() (*v1.NodeList, error)
 		CurrentNamespaceName() (string, error)
-		CheckNSAccess(ns string) error
-		CheckListNSAccess() error
 		CanI(ns, gvr string, verbs []string) (bool, error)
 	}
 
@@ -83,25 +81,6 @@ func InitConnectionOrDie(config *Config) *APIClient {
 	conn.useMetricServer = conn.supportsMxServer()
 
 	return &conn
-}
-
-// CheckListNSAccess check if current user can list namespaces.
-func (a *APIClient) CheckListNSAccess() error {
-	ns := NewNamespace(a)
-	_, err := ns.List("", metav1.ListOptions{})
-	return err
-}
-
-// CheckNSAccess asserts if user can access a namespace.
-func (a *APIClient) CheckNSAccess(n string) error {
-	ns := NewNamespace(a)
-	if n == "" {
-		_, err := ns.List(n, metav1.ListOptions{})
-		return err
-	}
-
-	_, err := ns.Get("", n)
-	return err
 }
 
 func makeSAR(ns, gvr string) *authorizationv1.SelfSubjectAccessReview {

@@ -6,6 +6,7 @@ import (
 
 // BOZO!! Break up deps and merge into single registrar
 var Registry = map[string]ResourceMeta{
+	// Custom...
 	"containers": ResourceMeta{
 		Model:    &Container{},
 		Renderer: &render.Container{},
@@ -18,7 +19,24 @@ var Registry = map[string]ResourceMeta{
 		Model:    &ScreenDump{},
 		Renderer: &render.ScreenDump{},
 	},
+	"rbac": ResourceMeta{
+		Model:    &Rbac{},
+		Renderer: &render.Rbac{},
+	},
+	"portforwards": ResourceMeta{
+		Model:    &PortForward{},
+		Renderer: &render.PortForward{},
+	},
+	"benchmarks": ResourceMeta{
+		Model:    &Benchmark{},
+		Renderer: &render.Benchmark{},
+	},
+	"aliases": ResourceMeta{
+		Model:    &Alias{},
+		Renderer: &render.Alias{},
+	},
 
+	// Core...
 	"v1/pods": ResourceMeta{
 		Model:    &Pod{},
 		Renderer: &render.Pod{},
@@ -30,7 +48,20 @@ var Registry = map[string]ResourceMeta{
 	"v1/namespaces": ResourceMeta{
 		Renderer: &render.Namespace{},
 	},
+	"v1/endpoints": ResourceMeta{
+		Renderer: &render.Endpoints{},
+	},
+	"v1/services": ResourceMeta{
+		Renderer: &render.Service{},
+	},
+	"v1/configmaps": ResourceMeta{
+		Renderer: &render.ConfigMap{},
+	},
+	"v1/secrets": ResourceMeta{
+		Renderer: &render.Secret{},
+	},
 
+	// Apps...
 	"apps/v1/deployments": ResourceMeta{
 		Renderer: &render.Deployment{},
 	},
@@ -43,31 +74,32 @@ var Registry = map[string]ResourceMeta{
 	"apps/v1/daemonsets": ResourceMeta{
 		Renderer: &render.DaemonSet{},
 	},
+
+	// Extensions...
 	"extensions/v1beta1/daemonsets": ResourceMeta{
 		Renderer: &render.DaemonSet{},
 	},
+	"extensions/v1beta1/ingresses": ResourceMeta{
+		Renderer: &render.Ingress{},
+	},
 
-	// "v1/services": ResourceMeta{
-	// 	Renderer: &render.Service{},
-	// },
-	// "v1/configmaps": ResourceMeta{
-	// 	Renderer: &render.ConfigMap{},
-	// },
-	// "v1/secrets": ResourceMeta{
-	// 	Renderer: &render.ConfigMap{},
-	// },
-	// "batch/v1beta1/cronjobs": ResourceMeta{
-	// 	Renderer: &render.CronJob{},
-	// },
-	// "batch/v1/jobs": ResourceMeta{
-	// 	Renderer: &render.Job{},
-	// },
+	// Batch...
+	"batch/v1beta1/cronjobs": ResourceMeta{
+		Renderer: &render.CronJob{},
+	},
+	"batch/v1/jobs": ResourceMeta{
+		Model:    &Job{},
+		Renderer: &render.Job{},
+	},
 
+	// CRDs...
 	"apiextensions.k8s.io/v1beta1/customresourcedefinitions": ResourceMeta{
 		Renderer: &render.CustomResourceDefinition{},
 	},
 
+	// RBAC...
 	"rbac.authorization.k8s.io/v1/clusterroles": ResourceMeta{
+		Model:    &Rbac{},
 		Renderer: &render.ClusterRole{},
 	},
 	"rbac.authorization.k8s.io/v1/clusterrolebindings": ResourceMeta{

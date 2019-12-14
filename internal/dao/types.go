@@ -4,10 +4,13 @@ import (
 	"context"
 
 	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/watch"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/informers"
+	restclient "k8s.io/client-go/rest"
 )
 
 type Factory interface {
@@ -15,7 +18,7 @@ type Factory interface {
 	Client() k8s.Connection
 
 	// Get fetch a given resource.
-	Get(ns, gvr, n string, sel labels.Selector) (runtime.Object, error)
+	Get(gvr, path string, sel labels.Selector) (runtime.Object, error)
 
 	// List fetch a collection of resources.
 	List(ns, gvr string, sel labels.Selector) ([]runtime.Object, error)
@@ -25,6 +28,12 @@ type Factory interface {
 
 	// WaitForCacheSync synchronize the cache.
 	WaitForCacheSync() map[schema.GroupVersionResource]bool
+
+	// DeleteForwarder deletes a pod forwarder.
+	DeleteForwarder(path string)
+
+	// Forwards returns all portforwards.
+	Forwarders() watch.Forwarders
 }
 
 // Accessor represents an accessible k8s resource.
@@ -42,13 +51,13 @@ type Loggable interface {
 }
 
 type Scalable interface {
-	Scale(ns, n string, replicas int32) error
+	Scale(path string, replicas int32) error
 }
 
 // Nuker represents a resource deleter.
 type Nuker interface {
 	// Delete removes a resource from the api server.
-	Delete(ns, n string, cascade, force bool) error
+	Delete(path string, cascade, force bool) error
 }
 
 // Switchable represents a switchable resource.
@@ -60,5 +69,16 @@ type Switchable interface {
 // Restartable represents a restartable resource.
 type Restartable interface {
 	// Restart performs a rollout restart.
-	Restart(ns, n string) error
+	Restart(path string) error
+}
+
+// Runnable represents a runnable resource.
+type Runnable interface {
+	// Run triggers a run.
+	Run(path string) error
+}
+
+// Loggers represents a resource that exposes logs.
+type Logger interface {
+	Logs(path string, opts *v1.PodLogOptions) *restclient.Request
 }

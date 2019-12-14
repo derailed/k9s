@@ -20,8 +20,17 @@ func toPerc(v1, v2 float64) float64 {
 	return math.Round((v1 / v2) * 100)
 }
 
-func namespaced(n string) (string, string) {
+// Namespaced converts a resource path to namespace and resource name.
+func Namespaced(n string) (string, string) {
 	ns, po := path.Split(n)
 
 	return strings.Trim(ns, "/"), po
+}
+
+// FQN returns a fully qualified resource name.
+func FQN(ns, n string) string {
+	if ns == "" {
+		return n
+	}
+	return ns + "/" + n
 }

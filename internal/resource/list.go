@@ -238,7 +238,7 @@ func (l *list) update(ns string, rows render.Rows) {
 			continue
 		}
 		if index, ok := l.cache.FindIndex(row.ID); ok {
-			delta := render.NewDeltaRow(l.cache[index].Row, row)
+			delta := render.NewDeltaRow(l.cache[index].Row, row, true)
 			if delta.IsBlank() {
 				l.cache[index].Kind, l.cache[index].Deltas = render.EventUnchanged, delta
 			} else {

@@ -22,31 +22,25 @@ type Deploy struct {
 func NewDeploy(gvr dao.GVR) ResourceViewer {
 	d := Deploy{
 		ResourceViewer: NewRestartExtender(
-			NewScaleExtender(
-				NewLogsExtender(
-					NewGeneric(gvr),
-					func() string { return "" },
-				),
-			),
+			NewScaleExtender(NewLogsExtender(NewBrowser(gvr), nil)),
 		),
 	}
-	d.BindKeys()
+	d.SetBindKeysFn(d.bindKeys)
 	d.GetTable().SetEnterFn(d.showPods)
 	d.GetTable().SetColorerFn(render.Deployment{}.ColorerFunc())
 
 	return &d
 }
 
-func (d *Deploy) BindKeys() {
-	d.Actions().Add(ui.KeyActions{
+func (d *Deploy) bindKeys(aa ui.KeyActions) {
+	aa.Add(ui.KeyActions{
 		ui.KeyShiftD: ui.NewKeyAction("Sort Desired", d.GetTable().SortColCmd(1, true), false),
 		ui.KeyShiftC: ui.NewKeyAction("Sort Current", d.GetTable().SortColCmd(2, true), false),
 	})
 }
 
-func (d *Deploy) showPods(app *App, _, res, sel string) {
-	ns, n := namespaced(sel)
-	o, err := app.factory.Get(ns, d.GVR(), n, labels.Everything())
+func (d *Deploy) showPods(app *App, _, _, path string) {
+	o, err := app.factory.Get(d.GVR(), path, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return
@@ -58,17 +52,17 @@ func (d *Deploy) showPods(app *App, _, res, sel string) {
 		app.Flash().Err(err)
 	}
 
-	showPodsFromSelector(app, ns, dp.Spec.Selector)
+	showPodsFromSelector(app, path, dp.Spec.Selector)
 }
 
 // Helpers...
 
-func showPodsFromSelector(app *App, ns string, sel *metav1.LabelSelector) {
+func showPodsFromSelector(app *App, path string, sel *metav1.LabelSelector) {
 	l, err := metav1.LabelSelectorAsSelector(sel)
 	if err != nil {
 		app.Flash().Err(err)
 		return
 	}
 
-	showPods(app, ns, l.String(), "")
+	showPods(app, path, l.String(), "")
 }

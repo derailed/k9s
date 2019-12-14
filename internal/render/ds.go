@@ -49,7 +49,6 @@ func (DaemonSet) Header(ns string) HeaderRow {
 		Header{Name: "READY", Align: tview.AlignRight},
 		Header{Name: "UP-TO-DATE", Align: tview.AlignRight},
 		Header{Name: "AVAILABLE", Align: tview.AlignRight},
-		Header{Name: "NODE_SELECTOR"},
 		Header{Name: "AGE", Decorator: ageDecorator},
 	)
 }
@@ -78,7 +77,6 @@ func (d DaemonSet) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(int(ds.Status.NumberReady)),
 		strconv.Itoa(int(ds.Status.UpdatedNumberScheduled)),
 		strconv.Itoa(int(ds.Status.NumberAvailable)),
-		mapToStr(ds.Spec.Template.Spec.NodeSelector),
 		toAge(ds.ObjectMeta.CreationTimestamp),
 	)
 

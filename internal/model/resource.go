@@ -6,7 +6,6 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -28,8 +27,8 @@ func (r *Resource) List(ctx context.Context) ([]runtime.Object, error) {
 	if sel, err := labels.ConvertSelectorToLabelsMap(strLabel); ok && err == nil {
 		lsel = sel.AsSelector()
 	}
-
-	oo, err := r.factory.List(r.namespace, r.gvr, lsel)
+	log.Debug().Msgf("^^^^^Listing with selector %q:%q--%#v", r.namespace, r.gvr, lsel)
+	oo, err := r.factory.List(r.gvr, r.namespace, lsel)
 	r.factory.WaitForCacheSync()
 
 	return oo, err
@@ -41,9 +40,8 @@ func (r *Resource) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) err
 
 	var index int
 	for _, o := range oo {
-		res := o.(*unstructured.Unstructured)
 		var row render.Row
-		if err := re.Render(res, r.namespace, &row); err != nil {
+		if err := re.Render(o, r.namespace, &row); err != nil {
 			return err
 		}
 		rr[index] = row

@@ -15,21 +15,35 @@ import (
 // MetaViewers represents a collection of meta viewers.
 type ResourceMetas map[GVR]metav1.APIResource
 
+// Accessors represents a collection of dao accessors.
+type Accessors map[GVR]Accessor
+
 var resMetas ResourceMetas
 
+// AccessorFor returns a client accessor for a resource if registered.
+// Otherwise it returns a generic accessor.
+// Customize here for non resource types or types with metrics or logs.
 func AccessorFor(f Factory, gvr GVR) (Accessor, error) {
-	m := map[GVR]Accessor{
+	m := Accessors{
+		"alias":                         &Alias{},
 		"contexts":                      &Context{},
+		"containers":                    &Container{},
 		"screendumps":                   &ScreenDump{},
+		"benchmarks":                    &Benchmark{},
+		"portforwards":                  &PortForward{},
+		"v1/services":                   &Service{},
+		"v1/pods":                       &Pod{},
 		"apps/v1/deployments":           &Deployment{},
 		"apps/v1/daemonsets":            &DaemonSet{},
 		"extensions/v1beta1/daemonsets": &DaemonSet{},
 		"apps/v1/statefulsets":          &StatefulSet{},
+		"batch/v1beta1/cronjobs":        &CronJob{},
+		"batch/v1/jobs":                 &Job{},
 	}
 
 	r, ok := m[gvr]
 	if !ok {
-		r = &Resource{}
+		r = &Generic{}
 		log.Warn().Msgf("No DAO registry entry for %q. Going generic!", gvr)
 	}
 	r.Init(f, gvr)
@@ -56,6 +70,17 @@ func MetaFor(gvr GVR) (metav1.APIResource, error) {
 	return m, nil
 }
 
+// IsK9sMeta checks for non resource meta.
+func IsK9sMeta(m metav1.APIResource) bool {
+	for _, c := range m.Categories {
+		if c == "k9s" {
+			return true
+		}
+	}
+
+	return false
+}
+
 // Load hydrates server preferred+CRDs resource metadata.
 func Load(f *watch.Factory) error {
 	resMetas = make(ResourceMetas, 100)
@@ -70,23 +95,82 @@ func Load(f *watch.Factory) error {
 }
 
 func loadNonResource(m ResourceMetas) error {
+	m["aliases"] = metav1.APIResource{
+		Name:         "aliases",
+		SingularName: "alias",
+		Namespaced:   false,
+		Kind:         "Aliases",
+		Verbs:        []string{},
+		Categories:   []string{"k9s"},
+	}
 	m["contexts"] = metav1.APIResource{
 		Name:         "contexts",
 		SingularName: "context",
 		Namespaced:   false,
-		Kind:         "Context",
+		Kind:         "Contexts",
 		ShortNames:   []string{"ctx"},
 		Verbs:        []string{},
-		Categories:   []string{"K9s"},
+		Categories:   []string{"k9s"},
 	}
 	m["screendumps"] = metav1.APIResource{
 		Name:         "screendumps",
 		SingularName: "screendump",
 		Namespaced:   false,
-		Kind:         "ScreenDump",
+		Kind:         "ScreenDumps",
 		ShortNames:   []string{"sd"},
 		Verbs:        []string{"delete"},
-		Categories:   []string{"K9s"},
+		Categories:   []string{"k9s"},
+	}
+	m["benchmarks"] = metav1.APIResource{
+		Name:         "benchmarks",
+		SingularName: "benchmark",
+		Namespaced:   false,
+		Kind:         "Benchmarks",
+		ShortNames:   []string{"be"},
+		Verbs:        []string{"delete"},
+		Categories:   []string{"k9s"},
+	}
+	m["portforwards"] = metav1.APIResource{
+		Name:         "portforwards",
+		SingularName: "portforward",
+		Namespaced:   true,
+		Kind:         "PortForwards",
+		ShortNames:   []string{"pf"},
+		Verbs:        []string{"delete"},
+		Categories:   []string{"k9s"},
+	}
+	// BOZO!! policies can't be launch on command
+	m["rbac"] = metav1.APIResource{
+		Name:         "Rbac",
+		SingularName: "Rbac",
+		Namespaced:   false,
+		Kind:         "RBAC",
+		Categories:   []string{"k9s"},
+	}
+	// BOZO!! Containers can't be launch on command
+	m["containers"] = metav1.APIResource{
+		Name:         "containers",
+		SingularName: "container",
+		Namespaced:   false,
+		Kind:         "Containers",
+		Verbs:        []string{},
+		Categories:   []string{"k9s"},
+	}
+	m["users"] = metav1.APIResource{
+		Name:         "users",
+		SingularName: "user",
+		Namespaced:   false,
+		Kind:         "User",
+		Verbs:        []string{},
+		Categories:   []string{"k9s"},
+	}
+	m["groups"] = metav1.APIResource{
+		Name:         "groups",
+		SingularName: "group",
+		Namespaced:   false,
+		Kind:         "group",
+		Verbs:        []string{},
+		Categories:   []string{"k9s"},
 	}
 
 	return nil
@@ -113,7 +197,7 @@ func loadPreferred(f *watch.Factory, m ResourceMetas) error {
 }
 
 func loadCRDs(f *watch.Factory, m ResourceMetas) error {
-	oo, err := f.List("", "apiextensions.k8s.io/v1beta1/customresourcedefinitions", labels.Everything())
+	oo, err := f.List("apiextensions.k8s.io/v1beta1/customresourcedefinitions", "", labels.Everything())
 	if err != nil {
 		return err
 	}

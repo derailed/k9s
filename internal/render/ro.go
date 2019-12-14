@@ -30,7 +30,7 @@ func (Role) Header(ns string) HeaderRow {
 }
 
 // Render renders a K8s resource to screen.
-func (Role) Render(o interface{}, ns string, r *Row) error {
+func (r Role) Render(o interface{}, ns string, row *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected Role, but got %T", o)
@@ -41,15 +41,15 @@ func (Role) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	fields := make(Fields, 0, len(r.Fields))
+	row.ID = MetaFQN(ro.ObjectMeta)
+	row.Fields = make(Fields, 0, len(r.Header(ns)))
 	if isAllNamespace(ns) {
-		fields = append(fields, ro.Namespace)
+		row.Fields = append(row.Fields, ro.Namespace)
 	}
-	fields = append(fields,
+	row.Fields = append(row.Fields,
 		ro.Name,
 		toAge(ro.ObjectMeta.CreationTimestamp),
 	)
-	r.ID, r.Fields = MetaFQN(ro.ObjectMeta), fields
 
 	return nil
 }

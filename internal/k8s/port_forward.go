@@ -91,7 +91,7 @@ func (p *PortForward) FQN() string {
 func (p *PortForward) Start(path, co string, ports []string) (*portforward.PortForwarder, error) {
 	p.path, p.container, p.ports, p.age = path, co, ports, time.Now()
 
-	ns, n := namespaced(path)
+	ns, n := Namespaced(path)
 	pod, err := p.DialOrDie().CoreV1().Pods(ns).Get(n, metav1.GetOptions{})
 	if err != nil {
 		return nil, err

@@ -57,14 +57,16 @@ type Factory struct {
 	stopChan         chan struct{}
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	activeNS         string
+	forwarders       Forwarders
 }
 
 // NewFactory returns a new informers factory.
 func NewFactory(client k8s.Connection) *Factory {
 	return &Factory{
-		client:    client,
-		stopChan:  make(chan struct{}),
-		factories: make(map[string]di.DynamicSharedInformerFactory),
+		client:     client,
+		stopChan:   make(chan struct{}),
+		factories:  make(map[string]di.DynamicSharedInformerFactory),
+		forwarders: NewForwarders(),
 	}
 }
 
@@ -92,7 +94,7 @@ func (f *Factory) Show(ns, gvr string) {
 	}
 }
 
-func (f *Factory) List(ns, gvr string, sel labels.Selector) ([]runtime.Object, error) {
+func (f *Factory) List(gvr, ns string, sel labels.Selector) ([]runtime.Object, error) {
 	auth, err := f.Client().CanI(ns, gvr, []string{"list"})
 	if err != nil {
 		return nil, err
@@ -101,7 +103,7 @@ func (f *Factory) List(ns, gvr string, sel labels.Selector) ([]runtime.Object, e
 		return nil, fmt.Errorf("User has insufficient access to list %s", gvr)
 	}
 
-	log.Debug().Msgf(">>>>>>>>>>>>>> FACTORY LISTING %q -- %q", ns, gvr)
+	log.Debug().Msgf(">>> FACTORY LISTING %q -- %q", ns, gvr)
 	inf := f.ForResource(ns, gvr)
 	if inf == nil {
 		return nil, fmt.Errorf("No resource for GVR %s", gvr)
@@ -113,8 +115,9 @@ func (f *Factory) List(ns, gvr string, sel labels.Selector) ([]runtime.Object, e
 	return inf.Lister().ByNamespace(ns).List(sel)
 }
 
-func (f *Factory) Get(ns, gvr, name string, sel labels.Selector) (runtime.Object, error) {
-	log.Debug().Msgf("<<<<<<<<<<<<<<<<< FACTORY GET %q --- %q:%q", gvr, ns, name)
+func (f *Factory) Get(gvr, path string, sel labels.Selector) (runtime.Object, error) {
+	ns, n := k8s.Namespaced(path)
+	log.Debug().Msgf(">>> FACTORY GET %q --- %q:%q -- %q", gvr, ns, n, path)
 	auth, err := f.Client().CanI(ns, gvr, []string{"get"})
 	if err != nil {
 		return nil, err
@@ -124,15 +127,16 @@ func (f *Factory) Get(ns, gvr, name string, sel labels.Selector) (runtime.Object
 	}
 
 	fac := f.ensureFactory(ns)
+	log.Debug().Msgf("GVR: %#v", toGVR(gvr))
 	inf := fac.ForResource(toGVR(gvr))
 	if inf == nil {
 		return nil, fmt.Errorf("No resource for GVR %s", gvr)
 	}
 
 	if ns == render.ClusterWide {
-		return inf.Lister().Get(name)
+		return inf.Lister().Get(n)
 	}
-	return inf.Lister().ByNamespace(ns).Get(name)
+	return inf.Lister().ByNamespace(ns).Get(n)
 }
 
 func (f *Factory) WaitForCacheSync() map[schema.GroupVersionResource]bool {
@@ -161,6 +165,31 @@ func (f *Factory) Terminate() {
 	for k := range f.factories {
 		delete(f.factories, k)
 	}
+	f.forwarders.DeleteAll()
+}
+
+// DeleteForwarder deletes portforward for a given container.
+func (f *Factory) DeleteForwarder(path string) {
+	if fwd, ok := f.forwarders[path]; ok {
+		fwd.Stop()
+		delete(f.forwarders, path)
+	}
+}
+
+// RegisterForwarder registers a new portforward for a given container.
+func (f *Factory) RegisterForwarder(pf Forwarder) {
+	f.forwarders[pf.Path()] = pf
+}
+
+// Forwards returns all portforwards.
+func (f *Factory) Forwarders() Forwarders {
+	return f.forwarders
+}
+
+// ForwarderFor returns a portforward for a given container or nil if none exists.
+func (f *Factory) ForwarderFor(path string) (Forwarder, bool) {
+	fwd, ok := f.forwarders[path]
+	return fwd, ok
 }
 
 // Start initializes the informers until caller cancels the context.
@@ -187,6 +216,8 @@ func (f *Factory) isClusterWide() bool {
 func (f *Factory) preload(ns string) {
 	f.ForResource(ns, "v1/pods")
 	f.ForResource(render.AllNamespaces, "apiextensions.k8s.io/v1beta1/customresourcedefinitions")
+	f.ForResource(render.ClusterWide, "rbac.authorization.k8s.io/v1/clusterroles")
+	f.ForResource(render.AllNamespaces, "rbac.authorization.k8s.io/v1/roles")
 }
 
 func (f *Factory) FactoryFor(ns string) di.DynamicSharedInformerFactory {
@@ -198,12 +229,7 @@ func (f *Factory) Preload(ns, gvr string) {
 }
 
 func (f *Factory) ForResource(ns, gvr string) informers.GenericInformer {
-	defer func(t time.Time) {
-		log.Debug().Msgf("ForResource Elapsed %v", time.Since(t))
-	}(time.Now())
-
 	fact := f.ensureFactory(ns)
-	log.Debug().Msgf("--- FORRESOURCE %q -- %q -- %#v", ns, gvr, toGVR(gvr))
 	inf := fact.ForResource(toGVR(gvr))
 	fact.Start(f.stopChan)
 
@@ -225,8 +251,6 @@ func (f *Factory) ensureFactory(ns string) di.DynamicSharedInformerFactory {
 		nil,
 	)
 	f.preload(ns)
-	// f.WaitForCacheSync()
-	f.Dump()
 
 	return f.factories[ns]
 }
@@ -239,8 +263,9 @@ func (f *Factory) register(gvr, ns string, stopChan <-chan struct{}) error {
 	return nil
 }
 
-func toGVR(s string) schema.GroupVersionResource {
-	tokens := strings.Split(s, "/")
+func toGVR(gvr string) schema.GroupVersionResource {
+	log.Debug().Msgf("GVR -- %q", gvr)
+	tokens := strings.Split(gvr, "/")
 	if len(tokens) < 3 {
 		tokens = append([]string{""}, tokens...)
 	}

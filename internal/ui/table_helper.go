@@ -8,7 +8,6 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 )
@@ -192,31 +191,34 @@ func fuzzyFilter(q string, index int, data render.TableData) render.TableData {
 
 // UpdateTitle refreshes the table title.
 func styleTitle(rc int, ns, base, path, buff string, styles *config.Styles) string {
-	var title string
-
 	if rc > 0 {
 		rc--
 	}
 
-	if path == "" {
-		path = "all"
+	if ns == render.AllNamespaces {
+		ns = render.NamespaceAll
 	}
-	switch ns {
-	case resource.NotNamespaced, "*":
+	info := ns
+	if path != "" {
+		info = path
+		cns, n := render.Namespaced(path)
+		if cns == render.ClusterWide {
+			info = n
+		}
+	}
+
+	var title string
+	if info == "" || info == render.ClusterWide {
 		title = SkinTitle(fmt.Sprintf(titleFmt, base, rc), styles.Frame())
-	default:
-		if ns == resource.AllNamespaces {
-			ns = resource.AllNamespace
-		}
-		title = SkinTitle(fmt.Sprintf(nsTitleFmt, base, ns, rc), styles.Frame())
+	} else {
+		title = SkinTitle(fmt.Sprintf(nsTitleFmt, base, info, rc), styles.Frame())
+	}
+	if buff == "" {
+		return title
 	}
 
-	if buff != "" {
-		if IsLabelSelector(buff) {
-			buff = TrimLabelSelector(buff)
-		}
-		title += SkinTitle(fmt.Sprintf(SearchFmt, buff), styles.Frame())
+	if IsLabelSelector(buff) {
+		buff = TrimLabelSelector(buff)
 	}
-
-	return title
+	return title + SkinTitle(fmt.Sprintf(SearchFmt, buff), styles.Frame())
 }

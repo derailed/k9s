@@ -106,12 +106,6 @@ func (s *Stack) Pop() (Component, bool) {
 	c := s.components[s.size()]
 	s.components = s.components[:s.size()]
 	s.notify(StackPop, c)
-	c.Stop()
-
-	if top := s.Top(); top != nil {
-		log.Debug().Msgf("Calling Start on %s", top.Name())
-		top.Start()
-	}
 
 	return c, true
 }

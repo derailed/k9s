@@ -2,7 +2,6 @@ package model
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/k8s"
@@ -26,27 +25,21 @@ func (p *Pod) List(ctx context.Context) ([]runtime.Object, error) {
 		return oo, err
 	}
 
-	fieldSel, ok := ctx.Value(internal.KeyFields).(string)
+	sel, ok := ctx.Value(internal.KeyFields).(string)
 	if !ok {
 		return oo, nil
 	}
-
-	sel, err := labels.ConvertSelectorToLabelsMap(fieldSel)
+	fsel, err := labels.ConvertSelectorToLabelsMap(sel)
 	if err != nil {
 		return nil, err
 	}
-
-	nodeName, ok := sel["spec.nodeName"]
-	if !ok {
-		return nil, fmt.Errorf("NYI field selector %q", nodeName)
-	}
+	nodeName := fsel["spec.nodeName"]
 
 	var res []runtime.Object
 	for _, o := range oo {
 		u := o.(*unstructured.Unstructured)
 		spec := u.Object["spec"].(map[string]interface{})
-		log.Debug().Msgf("Spec node %q -- %q", nodeName, spec["nodeName"])
-		if spec["nodeName"] == nodeName {
+		if nodeName == "" || spec["nodeName"] == nodeName {
 			res = append(res, o)
 		}
 	}

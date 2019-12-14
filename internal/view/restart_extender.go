@@ -15,15 +15,15 @@ type RestartExtender struct {
 }
 
 // NewRestartExtender returns a new extender.
-func NewRestartExtender(r ResourceViewer) ResourceViewer {
-	re := RestartExtender{ResourceViewer: r}
-	re.BindKeys()
+func NewRestartExtender(v ResourceViewer) ResourceViewer {
+	r := RestartExtender{ResourceViewer: v}
+	r.SetBindKeysFn(r.bindKeys)
 
-	return &re
+	return &r
 }
 
 // BindKeys creates additional menu actions.
-func (r *RestartExtender) BindKeys() {
+func (r *RestartExtender) bindKeys(aa ui.KeyActions) {
 	r.Actions().Add(ui.KeyActions{
 		tcell.KeyCtrlT: ui.NewKeyAction("Restart", r.restartCmd, true),
 	})
@@ -50,7 +50,6 @@ func (r *RestartExtender) restartCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (r *RestartExtender) restartRollout(path string) error {
-	ns, n := namespaced(path)
 	res, err := dao.AccessorFor(r.App().factory, dao.GVR(r.GVR()))
 	if err != nil {
 		return nil
@@ -61,5 +60,5 @@ func (r *RestartExtender) restartRollout(path string) error {
 		return errors.New("resource is not restartable")
 	}
 
-	return s.Restart(ns, n)
+	return s.Restart(path)
 }

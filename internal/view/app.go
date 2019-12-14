@@ -30,7 +30,6 @@ type App struct {
 	Content    *PageStack
 	command    *command
 	factory    *watch.Factory
-	forwarders model.Forwarders
 	version    string
 	showHeader bool
 	cancelFn   context.CancelFunc
@@ -39,9 +38,8 @@ type App struct {
 // NewApp returns a K9s app instance.
 func NewApp(cfg *config.Config) *App {
 	v := App{
-		App:        ui.NewApp(),
-		Content:    NewPageStack(),
-		forwarders: model.NewForwarders(),
+		App:     ui.NewApp(),
+		Content: NewPageStack(),
 	}
 	v.Config = cfg
 	v.InitBench(cfg.K9s.CurrentCluster)
@@ -59,9 +57,14 @@ func (a *App) ActiveView() model.Component {
 }
 
 func (a *App) PrevCmd(evt *tcell.EventKey) *tcell.EventKey {
+	log.Debug().Msgf("PREVIOUS!!!")
+	a.Content.DumpStack()
+	a.Content.DumpPages()
 	if !a.Content.IsLast() {
 		a.Content.Pop()
 	}
+	a.Content.DumpStack()
+	a.Content.DumpPages()
 
 	return nil
 }
@@ -252,10 +255,9 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 	a.Halt()
 	defer a.Resume()
 	{
-		a.forwarders.DeleteAll()
 		ns, err := a.Conn().Config().CurrentNamespaceName()
 		if err != nil {
-			log.Info().Err(err).Msg("No namespace specified in context. Using K9s config")
+			log.Warn().Msg("No namespace specified in context. Using K9s config")
 		}
 		a.initFactory(ns)
 
@@ -264,8 +266,8 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 			log.Error().Err(err).Msg("Config save failed!")
 		}
 		a.Flash().Infof("Switching context to %s", name)
-		if loadPods && !a.gotoResource("pods") {
-			a.Flash().Err(errors.New("Goto pods failed"))
+		if err := a.gotoResource("pods"); loadPods && err != nil {
+			a.Flash().Err(err)
 		}
 		a.refreshClusterInfo()
 	}
@@ -282,7 +284,6 @@ func (a *App) initFactory(ns string) {
 // BailOut exists the application.
 func (a *App) BailOut() {
 	a.factory.Terminate()
-	a.forwarders.DeleteAll()
 	a.App.BailOut()
 }
 
@@ -306,7 +307,9 @@ func (a *App) Run() {
 		})
 	}()
 
-	a.command.defaultCmd()
+	if err := a.command.defaultCmd(); err != nil {
+		panic(err)
+	}
 	if err := a.Application.Run(); err != nil {
 		panic(err)
 	}
@@ -361,7 +364,9 @@ func (a *App) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.CmdBuff().IsActive() && !a.CmdBuff().Empty() {
-		if !a.gotoResource(a.GetCmd()) {
+		if err := a.gotoResource(a.GetCmd()); err != nil {
+			log.Error().Err(err).Msgf("Goto resource for %q failed", a.GetCmd())
+			a.Flash().Err(err)
 			return nil
 		}
 		a.ResetCmd()
@@ -378,8 +383,11 @@ func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	if a.Content.Top() != nil && a.Content.Top().Name() == helpTitle {
 		a.Content.Pop()
-	} else {
-		a.inject(NewHelp())
+		return nil
+	}
+
+	if err := a.inject(NewHelp()); err != nil {
+		a.Flash().Err(err)
 	}
 
 	return nil
@@ -392,19 +400,28 @@ func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	if a.Content.Top() != nil && a.Content.Top().Name() == aliasTitle {
 		a.Content.Pop()
-	} else {
-		a.inject(NewAlias())
+		return nil
+	}
+
+	if err := a.inject(NewAlias("aliases")); err != nil {
+		a.Flash().Err(err)
 	}
 
 	return nil
 }
 
-func (a *App) gotoResource(res string) bool {
+func (a *App) gotoResource(res string) error {
 	return a.command.run(res)
 }
 
-func (a *App) inject(c model.Component) {
+func (a *App) inject(c model.Component) error {
+	ctx := context.WithValue(context.Background(), ui.KeyApp, a)
+	if err := c.Init(ctx); err != nil {
+		return fmt.Errorf("component init failed for %q %v", c.Name(), err)
+	}
 	a.Content.Push(c)
+
+	return nil
 }
 
 func (a *App) clusterInfo() *clusterInfoView {

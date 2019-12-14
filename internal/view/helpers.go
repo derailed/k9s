@@ -4,15 +4,51 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"path"
 	"strings"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 )
+
+func showPodsWithLabels(app *App, path string, sel map[string]string) {
+	log.Debug().Msgf("SHOWING POD FOR %#v", sel)
+	var labels []string
+	for k, v := range sel {
+		labels = append(labels, fmt.Sprintf("%s=%s", k, v))
+	}
+	showPods(app, path, strings.Join(labels, ","), "")
+}
+
+func showPods(app *App, path, labelSel, fieldSel string) {
+	log.Debug().Msgf("SHOW PODS %q -- %q -- %q", path, labelSel, fieldSel)
+	app.switchNS("")
+
+	v := NewPod(dao.GVR("v1/pods"))
+	v.SetContextFn(podCtx(path, labelSel, fieldSel))
+	v.GetTable().SetColorerFn(render.Pod{}.ColorerFunc())
+
+	ns, _ := k8s.Namespaced(path)
+	if err := app.Config.SetActiveNamespace(ns); err != nil {
+		log.Error().Err(err).Msg("Config NS set failed!")
+	}
+	app.inject(v)
+}
+
+func podCtx(path, labelSel, fieldSel string) ContextFunc {
+	return func(ctx context.Context) context.Context {
+		ctx = context.WithValue(ctx, internal.KeyPath, path)
+		ctx = context.WithValue(ctx, internal.KeyLabels, labelSel)
+		return context.WithValue(ctx, internal.KeyFields, fieldSel)
+	}
+}
 
 func extractApp(ctx context.Context) (*App, error) {
 	app, ok := ctx.Value(ui.KeyApp).(*App)
@@ -54,15 +90,9 @@ func isTCPPort(p string) bool {
 	return !strings.Contains(p, "UDP")
 }
 
-// Namespaced converts an fqn resource name to ns and name.
-func namespaced(n string) (string, string) {
-	ns, po := path.Split(n)
-	return strings.Trim(ns, "/"), po
-}
-
 // ContainerID computes container ID based on ns/po/co.
 func containerID(path, co string) string {
-	ns, n := namespaced(path)
+	ns, n := k8s.Namespaced(path)
 	po := strings.Split(n, "-")[0]
 
 	return ns + "/" + po + ":" + co

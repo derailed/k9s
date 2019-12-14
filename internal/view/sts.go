@@ -20,30 +20,26 @@ func NewStatefulSet(gvr dao.GVR) ResourceViewer {
 	s := StatefulSet{
 		ResourceViewer: NewRestartExtender(
 			NewScaleExtender(
-				NewLogsExtender(
-					NewGeneric(gvr),
-					func() string { return "" },
-				),
+				NewLogsExtender(NewBrowser(gvr), nil),
 			),
 		),
 	}
-	s.BindKeys()
+	s.SetBindKeysFn(s.bindKeys)
 	s.GetTable().SetEnterFn(s.showPods)
 	s.GetTable().SetColorerFn(render.StatefulSet{}.ColorerFunc())
 
 	return &s
 }
 
-func (s *StatefulSet) BindKeys() {
-	s.Actions().Add(ui.KeyActions{
+func (s *StatefulSet) bindKeys(aa ui.KeyActions) {
+	aa.Add(ui.KeyActions{
 		ui.KeyShiftD: ui.NewKeyAction("Sort Desired", s.GetTable().SortColCmd(1, true), false),
 		ui.KeyShiftC: ui.NewKeyAction("Sort Current", s.GetTable().SortColCmd(2, true), false),
 	})
 }
 
-func (s *StatefulSet) showPods(app *App, _, res, sel string) {
-	ns, n := namespaced(sel)
-	o, err := app.factory.Get(ns, s.GVR(), n, labels.Everything())
+func (s *StatefulSet) showPods(app *App, _, gvr, path string) {
+	o, err := app.factory.Get(s.GVR(), path, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return
@@ -55,5 +51,5 @@ func (s *StatefulSet) showPods(app *App, _, res, sel string) {
 		app.Flash().Err(err)
 	}
 
-	showPodsFromSelector(app, ns, sts.Spec.Selector)
+	showPodsFromSelector(app, path, sts.Spec.Selector)
 }

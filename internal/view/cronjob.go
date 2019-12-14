@@ -2,35 +2,64 @@ package view
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// CronJob presents a cronjob viewer.
+// CronJob represents a cronjob viewer.
 type CronJob struct {
 	ResourceViewer
 }
 
 // NewCronJob returns a new viewer.
-func NewCronJob(title, gvr string, list resource.List) ResourceViewer {
-	return &CronJob{
-		ResourceViewer: NewResource(title, gvr, list).(ResourceViewer),
+func NewCronJob(gvr dao.GVR) ResourceViewer {
+	c := CronJob{ResourceViewer: NewBrowser(gvr)}
+	c.SetBindKeysFn(c.bindKeys)
+	c.GetTable().SetEnterFn(c.showJobs)
+	c.GetTable().SetColorerFn(render.CronJob{}.ColorerFunc())
+
+	return &c
+}
+
+func (c *CronJob) showJobs(app *App, ns, res, path string) {
+	log.Debug().Msgf("Showing Jobs %q:%q -- %q", ns, res, path)
+	o, err := app.factory.Get("batch/v1beta1/cronjobs", path, labels.Everything())
+	if err != nil {
+		app.Flash().Err(err)
+		return
+	}
+
+	var cj batchv1beta1.CronJob
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cj)
+	if err != nil {
+		app.Flash().Err(err)
+		return
+	}
+
+	v := NewJob(dao.GVR("batch/v1/jobs"))
+	v.SetContextFn(jobCtx(path, string(cj.UID)))
+	app.inject(v)
+}
+
+func jobCtx(path, uid string) ContextFunc {
+	return func(ctx context.Context) context.Context {
+		ctx = context.WithValue(ctx, internal.KeyPath, path)
+		return context.WithValue(ctx, internal.KeyUID, uid)
 	}
 }
 
-func (c *CronJob) Init(ctx context.Context) error {
-	if err := c.ResourceViewer.Init(ctx); err != nil {
-		return err
-	}
-	c.bindKeys()
-
-	return nil
-}
-
-func (c *CronJob) bindKeys() {
-	c.Actions().Add(ui.KeyActions{
+func (c *CronJob) bindKeys(aa ui.KeyActions) {
+	aa.Add(ui.KeyActions{
 		tcell.KeyCtrlT: ui.NewKeyAction("Trigger", c.trigger, true),
 	})
 }
@@ -41,11 +70,21 @@ func (c *CronJob) trigger(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	if err := c.List().Resource().(resource.Runner).Run(sel); err != nil {
+	res, err := dao.AccessorFor(c.App().factory, dao.GVR(c.GVR()))
+	if err != nil {
+		return nil
+	}
+	runner, ok := res.(dao.Runnable)
+	if !ok {
+		c.App().Flash().Err(fmt.Errorf("expecting a jobrunner resource for %q", c.GVR()))
+		return nil
+	}
+
+	if err := runner.Run(sel); err != nil {
 		c.App().Flash().Errf("Cronjob trigger failed %v", err)
 		return evt
 	}
-	c.App().Flash().Infof("Triggering %s %s", c.List().GetName(), sel)
+	c.App().Flash().Infof("Triggering Job %s %s", c.GVR(), sel)
 
 	return nil
 }

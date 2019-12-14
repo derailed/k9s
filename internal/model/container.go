@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/k8s"
@@ -28,10 +29,13 @@ type Container struct {
 // List returns a collection of containers
 func (c *Container) List(ctx context.Context) ([]runtime.Object, error) {
 	c.pod = nil
-	sel := ctx.Value(internal.KeySelection).(string)
-	ns, n := render.Namespaced(sel)
+	path, ok := ctx.Value(internal.KeyPath).(string)
+	if !ok {
+		return nil, fmt.Errorf("no context path for %q", c.gvr)
+	}
+	ns, _ := render.Namespaced(path)
 	c.namespace = ns
-	o, err := c.factory.Get(ns, "v1/pods", n, labels.Everything())
+	o, err := c.factory.Get("v1/pods", path, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

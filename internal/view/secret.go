@@ -1,14 +1,15 @@
 package view
 
 import (
-	"context"
-
 	"sigs.k8s.io/yaml"
 
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // Secret presents a secret viewer.
@@ -17,42 +18,42 @@ type Secret struct {
 }
 
 // NewSecrets returns a new viewer.
-func NewSecret(title, gvr string, list resource.List) ResourceViewer {
-	return &Secret{
-		ResourceViewer: NewResource(title, gvr, list),
+func NewSecret(gvr dao.GVR) ResourceViewer {
+	s := Secret{
+		ResourceViewer: NewBrowser(gvr),
 	}
+	s.SetBindKeysFn(s.bindKeys)
+
+	return &s
 }
 
-func (s *Secret) Init(ctx context.Context) error {
-	if err := s.ResourceViewer.Init(ctx); err != nil {
-		return err
-	}
-	s.bindKeys()
-
-	return nil
-}
-
-func (s *Secret) bindKeys() {
-	s.Actions().Add(ui.KeyActions{
+func (s *Secret) bindKeys(aa ui.KeyActions) {
+	aa.Add(ui.KeyActions{
 		tcell.KeyCtrlX: ui.NewKeyAction("Decode", s.decodeCmd, true),
 	})
 }
 
 func (s *Secret) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
-	sel := s.GetTable().GetSelectedItem()
-	if sel == "" {
+	path := s.GetTable().GetSelectedItem()
+	if path == "" {
 		return evt
 	}
 
-	ns, n := namespaced(sel)
-	sec, err := s.App().Conn().DialOrDie().CoreV1().Secrets(ns).Get(n, metav1.GetOptions{})
+	o, err := s.App().factory.Get("v1/secrets", path, labels.Everything())
 	if err != nil {
-		s.App().Flash().Errf("Unable to retrieve secret %s", err)
-		return evt
+		s.App().Flash().Err(err)
+		return nil
 	}
 
-	d := make(map[string]string, len(sec.Data))
-	for k, val := range sec.Data {
+	var secret v1.Secret
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &secret)
+	if err != nil {
+		s.App().Flash().Err(err)
+		return nil
+	}
+
+	d := make(map[string]string, len(secret.Data))
+	for k, val := range secret.Data {
 		d[k] = string(val)
 	}
 	raw, err := yaml.Marshal(d)
@@ -62,7 +63,7 @@ func (s *Secret) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	details := NewDetails("Decoder")
-	details.SetSubject(sel)
+	details.SetSubject(path)
 	details.SetTextColor(s.App().Styles.FgColor())
 	details.SetText(colorizeYAML(s.App().Styles.Views().Yaml, string(raw)))
 	details.ScrollToBeginning()

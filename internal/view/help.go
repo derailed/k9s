@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
@@ -41,12 +42,13 @@ func (v *Help) Init(ctx context.Context) (err error) {
 	v.SetBorder(true)
 	v.SetBorderPadding(0, 0, 1, 1)
 	v.bindKeys()
-	v.build(v.app.Content.Previous().Hints())
+	v.build(v.app.Content.Top().Hints())
 
 	return nil
 }
 
 func (v *Help) bindKeys() {
+	v.Actions().Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlS)
 	v.Actions().Set(ui.KeyActions{
 		tcell.KeyEsc:   ui.NewKeyAction("Back", v.app.PrevCmd, true),
 		tcell.KeyEnter: ui.NewKeyAction("Back", v.app.PrevCmd, false),
@@ -202,7 +204,7 @@ func keyConv(s string) string {
 }
 
 func defaultK9sEnv(app *App, sel string, row resource.Row) K9sEnv {
-	ns, n := namespaced(sel)
+	ns, n := k8s.Namespaced(sel)
 	ctx, err := app.Conn().Config().CurrentContextName()
 	if err != nil {
 		ctx = resource.NAValue

@@ -6,6 +6,8 @@ import (
 
 	"github.com/derailed/k9s/internal/k8s"
 	"github.com/gdamore/tcell"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // Alias renders a aliases to screen.
@@ -24,25 +26,24 @@ func (Alias) Header(ns string) HeaderRow {
 		Header{Name: "RESOURCE"},
 		Header{Name: "COMMAND"},
 		Header{Name: "APIGROUP"},
+		// Header{Name: "AGE", Decorator: ageDecorator},
 	}
 }
 
 // Render renders a K8s resource to screen.
 func (Alias) Render(o interface{}, gvr string, r *Row) error {
-	aliases, ok := o.([]string)
+	a, ok := o.(AliasRes)
 	if !ok {
-		return fmt.Errorf("Expected Alias, but got %T", o)
+		return fmt.Errorf("expected aliasres, but got %T", o)
 	}
 
-	g := k8s.GVR(gvr)
-	r.ID = string(gvr)
+	g := k8s.GVR(a.GVR)
+	r.ID = string(g)
 	r.Fields = Fields{
 		g.ToR(),
-		strings.Join(aliases, ","),
+		strings.Join(a.Aliases, ","),
 		g.ToG(),
-		// Pad(g.ToR(), 30),
-		// Pad(strings.Join(aliases, ","), 70),
-		// Pad(g.ToG(), 30),
+		// time.Now().String(),
 	}
 
 	return nil
@@ -50,15 +51,18 @@ func (Alias) Render(o interface{}, gvr string, r *Row) error {
 
 // Helpers...
 
-// Pad a string up to the given length or truncates if greater than length.
-func Pad(s string, width int) string {
-	if len(s) == width {
-		return s
-	}
+// AliasRes represents an alias resource.
+type AliasRes struct {
+	GVR     string
+	Aliases []string
+}
 
-	if len(s) > width {
-		return Truncate(s, width)
-	}
+// GetObjectKind returns a schema object.
+func (AliasRes) GetObjectKind() schema.ObjectKind {
+	return nil
+}
 
-	return s + strings.Repeat(" ", width-len(s))
+// DeepCopyObject returns a container copy.
+func (a AliasRes) DeepCopyObject() runtime.Object {
+	return a
 }

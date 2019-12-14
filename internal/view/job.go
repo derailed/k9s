@@ -1,10 +1,12 @@
 package view
 
 import (
-	"github.com/derailed/k9s/internal/k8s"
-	"github.com/derailed/k9s/internal/resource"
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/render"
 	batchv1 "k8s.io/api/batch/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // Job represents a job viewer.
@@ -13,29 +15,28 @@ type Job struct {
 }
 
 // NewJob returns a new viewer.
-func NewJob(title, gvr string, list resource.List) ResourceViewer {
-	j := Job{
-		ResourceViewer: NewLogsExtender(
-			NewResource(title, gvr, list),
-			func() string { return "" },
-		),
-	}
+func NewJob(gvr dao.GVR) ResourceViewer {
+	j := Job{ResourceViewer: NewLogsExtender(NewBrowser(gvr), nil)}
 	j.GetTable().SetEnterFn(j.showPods)
+	j.GetTable().SetColorerFn(render.Job{}.ColorerFunc())
 
 	return &j
 }
 
-func (j *Job) showPods(app *App, _, res, path string) {
-	ns, n := namespaced(path)
-	job, err := k8s.NewJob(app.Conn()).Get(ns, n)
+// BOZO!! Change enter signature?
+func (*Job) showPods(app *App, _, res, path string) {
+	o, err := app.factory.Get("batch/v1/jobs", path, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return
 	}
 
-	jo, ok := job.(*batchv1.Job)
-	if !ok {
-		log.Fatal().Msg("Expecting a valid job")
+	var job batchv1.Job
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &job)
+	if err != nil {
+		app.Flash().Err(err)
+		return
 	}
-	showPodsFromSelector(app, ns, jo.Spec.Selector)
+
+	showPodsFromSelector(app, path, job.Spec.Selector)
 }

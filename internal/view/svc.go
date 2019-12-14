@@ -7,13 +7,15 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/perf"
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // Service represents a service viewer.
@@ -24,14 +26,11 @@ type Service struct {
 }
 
 // NewService returns a new viewer.
-func NewService(title, gvr string, list resource.List) ResourceViewer {
+func NewService(gvr dao.GVR) ResourceViewer {
 	s := Service{
-		ResourceViewer: NewLogsExtender(
-			NewResource(title, gvr, list),
-			func() string { return "" },
-		),
+		ResourceViewer: NewLogsExtender(NewBrowser(gvr), nil),
 	}
-	s.BindKeys()
+	s.SetBindKeysFn(s.bindKeys)
 	s.GetTable().SetEnterFn(s.showPods)
 
 	return &s
@@ -39,28 +38,30 @@ func NewService(title, gvr string, list resource.List) ResourceViewer {
 
 // Protocol...
 
-func (s *Service) BindKeys() {
-	s.Actions().Add(ui.KeyActions{
+func (s *Service) bindKeys(aa ui.KeyActions) {
+	aa.Add(ui.KeyActions{
 		tcell.KeyCtrlB: ui.NewKeyAction("Bench", s.benchCmd, true),
 		tcell.KeyCtrlK: ui.NewKeyAction("Bench Stop", s.benchStopCmd, true),
 		ui.KeyShiftT:   ui.NewKeyAction("Sort Type", s.GetTable().SortColCmd(1, true), false),
 	})
 }
 
-func (s *Service) showPods(app *App, ns, res, sel string) {
-	log.Debug().Msgf("SVC SHOW PODS %q -- %q -- %q", ns, res, sel)
-	ns, n := namespaced(sel)
-	svc, err := k8s.NewService(app.Conn()).Get(ns, n)
+func (s *Service) showPods(app *App, ns, gvr, path string) {
+	log.Debug().Msgf("SVC SHOW PODS %q", path)
+	o, err := app.factory.Get(gvr, path, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return
 	}
 
-	sv, ok := svc.(*v1.Service)
-	if !ok {
-		log.Fatal().Msg("Expecting a valid service")
+	var svc v1.Service
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &svc)
+	if err != nil {
+		app.Flash().Err(err)
+		return
 	}
-	showPodsFromLabels(s.App(), sel, sv.Spec.Selector)
+
+	showPodsWithLabels(app, path, svc.Spec.Selector)
 }
 
 func (s *Service) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -179,12 +180,4 @@ func benchTimedOut(app *App) {
 	app.QueueUpdate(func() {
 		app.StatusReset()
 	})
-}
-
-func showPodsFromLabels(app *App, path string, sel map[string]string) {
-	var labels []string
-	for k, v := range sel {
-		labels = append(labels, fmt.Sprintf("%s=%s", k, v))
-	}
-	showPods(app, path, strings.Join(labels, ","), "")
 }

@@ -6,7 +6,7 @@ import (
 
 const (
 	// MaxFavoritesNS number # favorite namespaces to keep in the configuration.
-	MaxFavoritesNS = 10
+	MaxFavoritesNS = 9
 	defaultNS      = "default"
 	allNS          = "all"
 )

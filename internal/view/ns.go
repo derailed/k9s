@@ -26,19 +26,18 @@ type Namespace struct {
 // NewNamespace returns a new viewer
 func NewNamespace(gvr dao.GVR) ResourceViewer {
 	n := Namespace{
-		ResourceViewer: NewGeneric(gvr),
+		ResourceViewer: NewBrowser(gvr),
 	}
 	n.GetTable().SetDecorateFn(n.decorate)
 	n.GetTable().SetColorerFn(render.Namespace{}.ColorerFunc())
 	n.GetTable().SetEnterFn(n.switchNs)
-	n.GetTable().SetSelectedFn(n.cleanser)
-	n.BindKeys()
+	n.SetBindKeysFn(n.bindKeys)
 
 	return &n
 }
 
-func (n *Namespace) BindKeys() {
-	n.Actions().Add(ui.KeyActions{
+func (n *Namespace) bindKeys(aa ui.KeyActions) {
+	aa.Add(ui.KeyActions{
 		ui.KeyU: ui.NewKeyAction("Use", n.useNsCmd, true),
 	})
 }
@@ -49,16 +48,20 @@ func (n *Namespace) switchNs(app *App, _, res, sel string) {
 }
 
 func (n *Namespace) useNsCmd(evt *tcell.EventKey) *tcell.EventKey {
-	ns := n.GetTable().GetSelectedItem()
-	if ns == "" {
-		return evt
+	path := n.GetTable().GetSelectedItem()
+	if path == "" {
+		return nil
 	}
-	n.useNamespace(ns)
+	n.useNamespace(path)
+
+	log.Debug().Msgf("NS TABLE %#v", n.GetTable().Data)
 
 	return nil
 }
 
 func (n *Namespace) useNamespace(ns string) {
+	log.Debug().Msgf("SWITCHING NS %q", ns)
+	n.App().switchNS(ns)
 	if err := n.App().Config.SetActiveNamespace(ns); err != nil {
 		n.App().Flash().Err(err)
 	} else {
@@ -67,12 +70,6 @@ func (n *Namespace) useNamespace(ns string) {
 	if err := n.App().Config.Save(); err != nil {
 		log.Error().Err(err).Msg("Config file save failed!")
 	}
-	n.App().switchNS(ns)
-}
-
-func (*Namespace) cleanser(s string) string {
-	log.Debug().Msgf("NS CLEANZ %q", s)
-	return nsCleanser.ReplaceAllString(s, `$1`)
 }
 
 func (n *Namespace) decorate(data render.TableData) render.TableData {
@@ -80,12 +77,12 @@ func (n *Namespace) decorate(data render.TableData) render.TableData {
 		return render.TableData{}
 	}
 
-	log.Debug().Msgf("CLONING %q", data.Namespace)
+	// log.Debug().Msgf("CLONING %q", data.Namespace)
 	// don't want to change the cache here thus need to clone!!
-	res := data.Clone()
+	// res := data.Clone()
 	// checks if all ns is in the list if not add it.
 	if _, ok := data.RowEvents.FindIndex(render.NamespaceAll); !ok {
-		res.RowEvents = append(render.RowEvents{
+		data.RowEvents = append(data.RowEvents,
 			render.RowEvent{
 				Kind: render.EventUnchanged,
 				Row: render.Row{
@@ -93,11 +90,10 @@ func (n *Namespace) decorate(data render.TableData) render.TableData {
 					Fields: render.Fields{render.NamespaceAll, "Active", "0"},
 				},
 			},
-		},
-			res.RowEvents...)
+		)
 	}
 
-	for _, re := range res.RowEvents {
+	for _, re := range data.RowEvents {
 		if config.InList(n.App().Config.FavNamespaces(), re.Row.ID) {
 			re.Row.Fields[0] += favNSIndicator
 			re.Kind = render.EventUnchanged
@@ -108,5 +104,5 @@ func (n *Namespace) decorate(data render.TableData) render.TableData {
 		}
 	}
 
-	return res
+	return data
 }

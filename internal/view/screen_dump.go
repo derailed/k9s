@@ -24,7 +24,7 @@ type ScreenDump struct {
 // NewScreenDump returns a new viewer.
 func NewScreenDump(gvr dao.GVR) ResourceViewer {
 	s := ScreenDump{
-		ResourceViewer: NewGeneric(gvr),
+		ResourceViewer: NewBrowser(gvr),
 	}
 	// BOZO!! Rename Table
 	s.GetTable().SetBorderFocusColor(tcell.ColorSteelBlue)
@@ -38,19 +38,21 @@ func NewScreenDump(gvr dao.GVR) ResourceViewer {
 	return &s
 }
 
-// Start starts the directory watcher.
-func (s *ScreenDump) Start() {
-	s.Stop()
+// BOZO!!
+// BOZO !! Need model watcher!
+// // Start starts the directory watcher.
+// func (s *ScreenDump) Start() {
+// 	s.Stop()
 
-	s.GetTable().Actions().Delete(tcell.KeyCtrlS)
+// 	s.GetTable().Actions().Delete(tcell.KeyCtrlS)
 
-	s.GetTable().Start()
-	var ctx context.Context
-	ctx, s.GetTable().cancelFn = context.WithCancel(context.Background())
-	if err := s.watchDumpDir(ctx); err != nil {
-		s.App().Flash().Errf("Unable to watch screen dumps directory %s", err)
-	}
-}
+// 	s.GetTable().Start()
+// 	var ctx context.Context
+// 	ctx, s.GetTable().cancelFn = context.WithCancel(context.Background())
+// 	if err := s.watchDumpDir(ctx); err != nil {
+// 		s.App().Flash().Errf("Unable to watch screen dumps directory %s", err)
+// 	}
+// }
 
 func (s *ScreenDump) dirContext(ctx context.Context) context.Context {
 	dir := filepath.Join(config.K9sDumpDir, s.App().Config.K9s.CurrentCluster)

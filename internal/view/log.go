@@ -13,7 +13,6 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
@@ -40,20 +39,18 @@ type Log struct {
 	path, container string
 	cancelFn        context.CancelFunc
 	previous        bool
-	list            resource.List
 	gvr             dao.GVR
 }
 
 var _ model.Component = &Log{}
 
 // NewLog returns a new viewer.
-func NewLog(gvr dao.GVR, path, co string, l resource.List, prev bool) *Log {
+func NewLog(gvr dao.GVR, path, co string, prev bool) *Log {
 	return &Log{
 		gvr:       gvr,
 		Flex:      tview.NewFlex(),
 		path:      path,
 		container: co,
-		list:      l,
 		previous:  prev,
 	}
 }
@@ -93,11 +90,6 @@ func (l *Log) Init(ctx context.Context) (err error) {
 
 // Refresh refreshes the viewer.
 func (l *Log) Refresh() {}
-
-// List returns the resource list.
-func (l *Log) List() resource.List {
-	return l.list
-}
 
 // App returns an app handle.
 func (l *Log) App() *App {
@@ -179,15 +171,11 @@ func (l *Log) doLoad() error {
 }
 
 func (l *Log) logOpts(path, co string, prevLogs bool) dao.LogOptions {
-	ns, po := namespaced(path)
 	return dao.LogOptions{
-		Fqn: dao.Fqn{
-			Namespace: ns,
-			Name:      po,
-			Container: co,
-		},
-		Lines:    int64(l.app.Config.K9s.LogRequestSize),
-		Previous: prevLogs,
+		Path:      path,
+		Container: co,
+		Lines:     int64(l.app.Config.K9s.LogRequestSize),
+		Previous:  prevLogs,
 	}
 }
 

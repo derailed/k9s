@@ -45,7 +45,7 @@ func (a Aliases) loadDefaults() {
 	a.Alias["cr"] = "rbac.authorization.k8s.io/v1/clusterroles"
 	a.Alias["crb"] = "rbac.authorization.k8s.io/v1/clusterrolebindings"
 	a.Alias["ro"] = "rbac.authorization.k8s.io/v1/roles"
-	a.Alias["rob"] = "rbac.authorization.k8s.io/v1/rolebindings"
+	a.Alias["rb"] = "rbac.authorization.k8s.io/v1/rolebindings"
 	a.Alias["np"] = "networking.k8s.io/v1/networkpolicies"
 	{
 		a.Alias["ctx"] = contexts

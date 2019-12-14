@@ -38,13 +38,11 @@ func (CustomResourceDefinition) Render(o interface{}, ns string, r *Row) error {
 		log.Error().Err(err).Msgf("Fields timestamp %v", err)
 	}
 
-	fields := make(Fields, 0, len(r.Fields))
-	fields = append(fields,
+	r.ID = FQN(ClusterWide, meta["name"].(string))
+	r.Fields = Fields{
 		meta["name"].(string),
 		toAge(metav1.Time{t}),
-	)
-
-	r.ID, r.Fields = FQN("", meta["name"].(string)), fields
+	}
 
 	return nil
 }

@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/gdamore/tcell"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
 // ScreenDump renders a screendumps to screen.
@@ -35,27 +37,39 @@ func (ScreenDump) Header(ns string) HeaderRow {
 
 // Render renders a K8s resource to screen.
 func (b ScreenDump) Render(o interface{}, ns string, r *Row) error {
-	f, ok := o.(ScreenDumper)
+	f, ok := o.(FileRes)
 	if !ok {
-		return fmt.Errorf("Expected string, but got %T", o)
+		return fmt.Errorf("expecting screendumper, but got %T", o)
 	}
 
-	r.ID = filepath.Join(f.GetDir(), f.GetFile().Name())
+	r.ID = filepath.Join(f.Dir, f.File.Name())
 	r.Fields = Fields{
-		f.GetFile().Name(),
-		timeToAge(f.GetFile().ModTime()),
+		f.File.Name(),
+		timeToAge(f.File.ModTime()),
 	}
 
 	return nil
 }
 
+// ----------------------------------------------------------------------------
 // Helpers...
 
 func timeToAge(timestamp time.Time) string {
 	return time.Since(timestamp).String()
 }
 
-type ScreenDumper interface {
-	GetFile() os.FileInfo
-	GetDir() string
+// FileRes represents a file resource.
+type FileRes struct {
+	File os.FileInfo
+	Dir  string
+}
+
+// GetObjectKind returns a schema object.
+func (c FileRes) GetObjectKind() schema.ObjectKind {
+	return nil
+}
+
+// DeepCopyObject returns a container copy.
+func (c FileRes) DeepCopyObject() runtime.Object {
+	return c
 }

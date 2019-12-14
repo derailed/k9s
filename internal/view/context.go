@@ -2,7 +2,6 @@ package view
 
 import (
 	"errors"
-	"strings"
 
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
@@ -16,42 +15,31 @@ type Context struct {
 	ResourceViewer
 }
 
-// NewContext return a new context viewer.
+// NewContext returns a new viewer.
 func NewContext(gvr dao.GVR) ResourceViewer {
 	c := Context{
-		ResourceViewer: NewGeneric(gvr),
+		ResourceViewer: NewBrowser(gvr),
 	}
 	c.GetTable().SetEnterFn(c.useCtx)
-	c.GetTable().SetSelectedFn(c.cleanser)
 	c.GetTable().SetColorerFn(render.Context{}.ColorerFunc())
-	c.BindKeys()
+	c.SetBindKeysFn(c.bindKeys)
 
 	return &c
 }
 
-func (c *Context) BindKeys() {
-	c.Actions().Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
+func (c *Context) bindKeys(aa ui.KeyActions) {
+	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
 }
 
-func (c *Context) useCtx(app *App, _, res, sel string) {
-	if err := c.useContext(sel); err != nil {
+func (c *Context) useCtx(app *App, _, res, path string) {
+	log.Debug().Msgf("SWITCH CTX %q--%q", res, path)
+	if err := c.useContext(path); err != nil {
 		app.Flash().Err(err)
 		return
 	}
-	if !app.gotoResource("po") {
-		app.Flash().Err(errors.New("goto pod failed"))
+	if err := app.gotoResource("po"); err != nil {
+		app.Flash().Err(err)
 	}
-}
-
-func (*Context) cleanser(s string) string {
-	name := strings.TrimSpace(s)
-	if strings.HasSuffix(name, "(*)") {
-		name = strings.TrimRight(name, "(*)")
-	}
-	if strings.HasSuffix(name, "(𝜟)") {
-		name = strings.TrimRight(name, "(𝜟)")
-	}
-	return name
 }
 
 func (c *Context) useContext(name string) error {
@@ -64,15 +52,10 @@ func (c *Context) useContext(name string) error {
 	if !ok {
 		return errors.New("Expecting a switchable resource")
 	}
-
-	log.Debug().Msgf("Context %q", name)
-	ctx, _ := namespaced(name)
-	ctx = c.cleanser(ctx)
-	if err := switcher.Switch(ctx); err != nil {
+	if err := switcher.Switch(name); err != nil {
 		return err
 	}
-
-	if err := c.App().switchCtx(ctx, false); err != nil {
+	if err := c.App().switchCtx(name, false); err != nil {
 		return err
 	}
 	c.Refresh()

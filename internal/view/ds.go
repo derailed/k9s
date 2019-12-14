@@ -17,29 +17,25 @@ type DaemonSet struct {
 func NewDaemonSet(gvr dao.GVR) ResourceViewer {
 	d := DaemonSet{
 		ResourceViewer: NewRestartExtender(
-			NewLogsExtender(
-				NewGeneric(gvr),
-				func() string { return "" },
-			),
+			NewLogsExtender(NewBrowser(gvr), nil),
 		),
 	}
-	d.BindKeys()
+	d.SetBindKeysFn(d.bindKeys)
 	d.GetTable().SetEnterFn(d.showPods)
 	d.GetTable().SetColorerFn(render.DaemonSet{}.ColorerFunc())
 
 	return &d
 }
 
-func (d *DaemonSet) BindKeys() {
-	d.Actions().Add(ui.KeyActions{
+func (d *DaemonSet) bindKeys(aa ui.KeyActions) {
+	aa.Add(ui.KeyActions{
 		ui.KeyShiftD: ui.NewKeyAction("Sort Desired", d.GetTable().SortColCmd(1, true), false),
 		ui.KeyShiftC: ui.NewKeyAction("Sort Current", d.GetTable().SortColCmd(2, true), false),
 	})
 }
 
-func (d *DaemonSet) showPods(app *App, _, res, sel string) {
-	ns, n := namespaced(sel)
-	o, err := app.factory.Get(ns, d.GVR(), n, labels.Everything())
+func (d *DaemonSet) showPods(app *App, _, _, path string) {
+	o, err := app.factory.Get(d.GVR(), path, labels.Everything())
 	if err != nil {
 		d.App().Flash().Err(err)
 		return
@@ -51,5 +47,5 @@ func (d *DaemonSet) showPods(app *App, _, res, sel string) {
 		d.App().Flash().Err(err)
 	}
 
-	showPodsFromSelector(app, ns, ds.Spec.Selector)
+	showPodsFromSelector(app, path, ds.Spec.Selector)
 }

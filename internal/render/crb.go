@@ -3,6 +3,7 @@ package render
 import (
 	"fmt"
 
+	"github.com/derailed/k9s/internal/k8s"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -20,7 +21,7 @@ func (ClusterRoleBinding) ColorerFunc() ColorerFunc {
 func (ClusterRoleBinding) Header(string) HeaderRow {
 	return HeaderRow{
 		Header{Name: "NAME"},
-		Header{Name: "ROLE"},
+		Header{Name: "CLUSTERROLE"},
 		Header{Name: "KIND"},
 		Header{Name: "SUBJECTS"},
 		Header{Name: "AGE", Decorator: ageDecorator},
@@ -41,15 +42,14 @@ func (ClusterRoleBinding) Render(o interface{}, ns string, r *Row) error {
 
 	kind, ss := renderSubjects(crb.Subjects)
 
-	fields := make(Fields, 0, len(r.Fields))
-	fields = append(fields,
+	r.ID = k8s.FQN("-", crb.ObjectMeta.Name)
+	r.Fields = Fields{
 		crb.Name,
 		crb.RoleRef.Name,
 		kind,
 		ss,
 		toAge(crb.ObjectMeta.CreationTimestamp),
-	)
-	r.ID, r.Fields = MetaFQN(crb.ObjectMeta), fields
+	}
 
 	return nil
 }

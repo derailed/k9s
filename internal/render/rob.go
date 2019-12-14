@@ -34,7 +34,7 @@ func (RoleBinding) Header(ns string) HeaderRow {
 }
 
 // Render renders a K8s resource to screen.
-func (RoleBinding) Render(o interface{}, ns string, r *Row) error {
+func (r RoleBinding) Render(o interface{}, ns string, row *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected RoleBinding, but got %T", o)
@@ -47,18 +47,18 @@ func (RoleBinding) Render(o interface{}, ns string, r *Row) error {
 
 	kind, ss := renderSubjects(rb.Subjects)
 
-	fields := make(Fields, 0, len(r.Fields))
+	row.ID = MetaFQN(rb.ObjectMeta)
+	row.Fields = make(Fields, 0, len(r.Header(ns)))
 	if isAllNamespace(ns) {
-		fields = append(fields, rb.Namespace)
+		row.Fields = append(row.Fields, rb.Namespace)
 	}
-	fields = append(fields,
+	row.Fields = append(row.Fields,
 		rb.Name,
 		rb.RoleRef.Name,
 		kind,
 		ss,
 		toAge(rb.ObjectMeta.CreationTimestamp),
 	)
-	r.ID, r.Fields = MetaFQN(rb.ObjectMeta), fields
 
 	return nil
 }

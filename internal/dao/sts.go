@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/derailed/k9s/internal/k8s"
 	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -16,7 +17,7 @@ import (
 )
 
 type StatefulSet struct {
-	Resource
+	Generic
 }
 
 var _ Accessor = &StatefulSet{}
@@ -25,7 +26,8 @@ var _ Restartable = &StatefulSet{}
 var _ Scalable = &StatefulSet{}
 
 // Scale a StatefulSet.
-func (s *StatefulSet) Scale(ns, n string, replicas int32) error {
+func (s *StatefulSet) Scale(path string, replicas int32) error {
+	ns, n := k8s.Namespaced(path)
 	scale, err := s.Client().DialOrDie().AppsV1().StatefulSets(ns).GetScale(n, metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -37,8 +39,8 @@ func (s *StatefulSet) Scale(ns, n string, replicas int32) error {
 }
 
 // Restart a StatefulSet rollout.
-func (s *StatefulSet) Restart(ns, n string) error {
-	o, err := s.Get(ns, string(s.gvr), n, labels.Everything())
+func (s *StatefulSet) Restart(path string) error {
+	o, err := s.Get(string(s.gvr), path, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -54,14 +56,14 @@ func (s *StatefulSet) Restart(ns, n string) error {
 		return err
 	}
 
-	_, err = s.Client().DialOrDie().AppsV1().StatefulSets(ns).Patch(ds.Name, types.StrategicMergePatchType, update)
+	_, err = s.Client().DialOrDie().AppsV1().StatefulSets(ds.Namespace).Patch(ds.Name, types.StrategicMergePatchType, update)
 	return err
 }
 
 // Logs tail logs for all pods represented by this StatefulSet.
 func (s *StatefulSet) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
-	log.Debug().Msgf("Tailing StatefulSet %q -- %q", opts.Namespace, opts.Name)
-	o, err := s.Get(opts.Namespace, string(s.gvr), opts.Name, labels.Everything())
+	log.Debug().Msgf("Tailing StatefulSet %q", opts.Path)
+	o, err := s.Get(string(s.gvr), opts.Path, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -73,7 +75,7 @@ func (s *StatefulSet) TailLogs(ctx context.Context, c chan<- string, opts LogOpt
 	}
 
 	if dp.Spec.Selector == nil || len(dp.Spec.Selector.MatchLabels) == 0 {
-		return fmt.Errorf("No valid selector found on StatefulSet %s", opts.FQN())
+		return fmt.Errorf("No valid selector found on StatefulSet %s", opts.Path)
 	}
 
 	return podLogs(ctx, c, dp.Spec.Selector.MatchLabels, opts)

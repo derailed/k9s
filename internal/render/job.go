@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -39,37 +40,37 @@ func (Job) Header(ns string) HeaderRow {
 }
 
 // Render renders a K8s resource to screen.
-func (Job) Render(o interface{}, ns string, r *Row) error {
+func (j Job) Render(o interface{}, ns string, r *Row) error {
+	log.Debug().Msgf("JOB RENDER %q", ns)
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected Job, but got %T", o)
 	}
-	var j batchv1.Job
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &j)
+	var job batchv1.Job
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &job)
 	if err != nil {
 		return err
 	}
 
-	cc, ii := toContainers(j.Spec.Template.Spec)
-
-	fields := make(Fields, 0, len(r.Fields))
+	r.ID = MetaFQN(job.ObjectMeta)
+	r.Fields = make(Fields, 0, len(j.Header(ns)))
 	if isAllNamespace(ns) {
-		fields = append(fields, j.Namespace)
+		r.Fields = append(r.Fields, job.Namespace)
 	}
-	fields = append(fields,
-		j.Name,
-		toCompletion(j.Spec, j.Status),
-		toDuration(j.Status),
+	cc, ii := toContainers(job.Spec.Template.Spec)
+	r.Fields = append(r.Fields,
+		job.Name,
+		toCompletion(job.Spec, job.Status),
+		toDuration(job.Status),
 		cc,
 		ii,
-		toAge(j.ObjectMeta.CreationTimestamp),
+		toAge(job.ObjectMeta.CreationTimestamp),
 	)
-
-	r.ID, r.Fields = MetaFQN(j.ObjectMeta), fields
 
 	return nil
 }
 
+// ----------------------------------------------------------------------------
 // Helpers...
 
 const maxShow = 2

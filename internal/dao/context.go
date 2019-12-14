@@ -13,7 +13,7 @@ import (
 )
 
 type Context struct {
-	Resource
+	Generic
 }
 
 var _ Accessor = &Context{}
@@ -47,16 +47,16 @@ func (c *Context) List(string, metav1.ListOptions) ([]runtime.Object, error) {
 }
 
 // Delete a Context.
-func (c *Context) Delete(ns, n string, cascade, force bool) error {
+func (c *Context) Delete(path string, cascade, force bool) error {
 	ctx, err := c.config().CurrentContextName()
 	if err != nil {
 		return err
 	}
-	if ctx == n {
-		return fmt.Errorf("trying to delete your current context %s", n)
+	if ctx == path {
+		return fmt.Errorf("trying to delete your current context %s", path)
 	}
 
-	return c.config().DelContext(n)
+	return c.config().DelContext(path)
 }
 
 // MustCurrentContextName return the active context name.

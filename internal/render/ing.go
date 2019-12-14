@@ -35,7 +35,7 @@ func (Ingress) Header(ns string) HeaderRow {
 }
 
 // Render renders a K8s resource to screen.
-func (Ingress) Render(o interface{}, ns string, r *Row) error {
+func (i Ingress) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected Ingress, but got %T", o)
@@ -46,19 +46,18 @@ func (Ingress) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	fields := make(Fields, 0, len(r.Fields))
+	r.ID = MetaFQN(ing.ObjectMeta)
+	r.Fields = make(Fields, 0, len(i.Header(ns)))
 	if isAllNamespace(ns) {
-		fields = append(fields, ing.Namespace)
+		r.Fields = append(r.Fields, ing.Namespace)
 	}
-	fields = append(fields,
+	r.Fields = append(r.Fields,
 		ing.Name,
 		toHosts(ing.Spec.Rules),
 		toAddress(ing.Status.LoadBalancer),
 		toTLSPorts(ing.Spec.TLS),
 		toAge(ing.ObjectMeta.CreationTimestamp),
 	)
-
-	r.ID, r.Fields = MetaFQN(ing.ObjectMeta), fields
 
 	return nil
 }
@@ -89,15 +88,13 @@ func toTLSPorts(tls []v1beta1.IngressTLS) string {
 }
 
 func toHosts(rr []v1beta1.IngressRule) string {
-	var s string
-	var i int
+	hh := make([]string, 0, len(rr))
 	for _, r := range rr {
-		s += r.Host
-		if i < len(rr)-1 {
-			s += ","
+		if r.Host == "" {
+			r.Host = "*"
 		}
-		i++
+		hh = append(hh, r.Host)
 	}
 
-	return s
+	return strings.Join(hh, ",")
 }

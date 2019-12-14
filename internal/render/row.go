@@ -7,6 +7,8 @@ import (
 	"vbom.ml/util/sortorder"
 )
 
+const ageCol = "AGE"
+
 // Fields represents a collection of row fields.
 type Fields []string
 
@@ -29,7 +31,21 @@ type Header struct {
 // HeaderRow represents a table header.
 type HeaderRow []Header
 
+// HasAge returns true if table has an age column.
+func (h HeaderRow) HasAge() bool {
+	for _, r := range h {
+		if r.Name == ageCol {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (h HeaderRow) AgeCol(col int) bool {
+	if !h.HasAge() {
+		return false
+	}
 	return col == len(h)-1
 }
 

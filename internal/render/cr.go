@@ -3,6 +3,7 @@ package render
 import (
 	"fmt"
 
+	"github.com/derailed/k9s/internal/k8s"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -28,7 +29,7 @@ func (ClusterRole) Header(string) HeaderRow {
 func (ClusterRole) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected ClusterRole, but got %T", o)
+		return fmt.Errorf("expecting clusterrole, but got %T", o)
 	}
 	var cr rbacv1.ClusterRole
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &cr)
@@ -36,12 +37,11 @@ func (ClusterRole) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	fields := make(Fields, 0, len(r.Fields))
-	fields = append(fields,
+	r.ID = k8s.FQN("-", cr.ObjectMeta.Name)
+	r.Fields = Fields{
 		cr.Name,
 		toAge(cr.ObjectMeta.CreationTimestamp),
-	)
-	r.ID, r.Fields = MetaFQN(cr.ObjectMeta), fields
+	}
 
 	return nil
 }

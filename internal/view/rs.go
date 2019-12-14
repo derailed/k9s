@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/watch"
@@ -30,7 +31,7 @@ type ReplicaSet struct {
 // NewReplicaSet returns a new viewer.
 func NewReplicaSet(gvr dao.GVR) ResourceViewer {
 	r := ReplicaSet{
-		ResourceViewer: NewGeneric(gvr),
+		ResourceViewer: NewBrowser(gvr),
 	}
 	r.bindKeys()
 	r.GetTable().SetEnterFn(r.showPods)
@@ -47,9 +48,8 @@ func (r *ReplicaSet) bindKeys() {
 	})
 }
 
-func (r *ReplicaSet) showPods(app *App, _, res, sel string) {
-	ns, n := namespaced(sel)
-	o, err := app.factory.Get(ns, r.GVR(), n, labels.Everything())
+func (r *ReplicaSet) showPods(app *App, _, gvr, path string) {
+	o, err := app.factory.Get(r.GVR(), path, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return
@@ -61,7 +61,7 @@ func (r *ReplicaSet) showPods(app *App, _, res, sel string) {
 		app.Flash().Err(err)
 	}
 
-	showPodsFromSelector(app, ns, rs.Spec.Selector)
+	showPodsFromSelector(app, path, rs.Spec.Selector)
 }
 
 func (r *ReplicaSet) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -70,9 +70,9 @@ func (r *ReplicaSet) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	r.showModal(fmt.Sprintf("Rollback %s %s?", r.List().GetName(), sel), func(_ int, button string) {
+	r.showModal(fmt.Sprintf("Rollback %s %s?", r.GVR(), sel), func(_ int, button string) {
 		if button == "OK" {
-			r.App().Flash().Infof("Rolling back %s %s", r.List().GetName(), sel)
+			r.App().Flash().Infof("Rolling back %s %s", r.GVR(), sel)
 			if res, err := rollback(r.App().factory, sel); err != nil {
 				r.App().Flash().Err(err)
 			} else {
@@ -103,8 +103,8 @@ func (r *ReplicaSet) showModal(msg string, done func(int, string)) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func findRS(f *watch.Factory, ns, n string) (*v1.ReplicaSet, error) {
-	o, err := f.Get(ns, "apps/v1/replicasets", n, labels.Everything())
+func findRS(f *watch.Factory, path string) (*v1.ReplicaSet, error) {
+	o, err := f.Get("apps/v1/replicasets", path, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -118,8 +118,8 @@ func findRS(f *watch.Factory, ns, n string) (*v1.ReplicaSet, error) {
 	return &rs, nil
 }
 
-func findDP(f *watch.Factory, ns, n string) (*appsv1.Deployment, error) {
-	o, err := f.Get(ns, "apps/v1/deployments", n, labels.Everything())
+func findDP(f *watch.Factory, path string) (*appsv1.Deployment, error) {
+	o, err := f.Get("apps/v1/deployments", path, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -162,9 +162,8 @@ func getRevision(rs *v1.ReplicaSet) (int64, error) {
 	return int64(vers), nil
 }
 
-func rollback(f *watch.Factory, selectedItem string) (string, error) {
-	ns, n := namespaced(selectedItem)
-	rs, err := findRS(f, ns, n)
+func rollback(f *watch.Factory, path string) (string, error) {
+	rs, err := findRS(f, path)
 	if err != nil {
 		return "", err
 	}
@@ -181,7 +180,7 @@ func rollback(f *watch.Factory, selectedItem string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	dp, err := findDP(f, ns, name)
+	dp, err := findDP(f, k8s.FQN(rs.Namespace, name))
 	if err != nil {
 		return "", err
 	}

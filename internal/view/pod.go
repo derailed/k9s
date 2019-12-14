@@ -1,11 +1,16 @@
 package view
 
 import (
+	"context"
 	"errors"
+	"fmt"
 
+	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/watch"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -25,21 +30,17 @@ type Pod struct {
 }
 
 // NewPod returns a new viewer.
-func NewPod(title, gvr string, list resource.List) ResourceViewer {
-	p := Pod{
-		ResourceViewer: NewLogsExtender(
-			NewResource(podTitle, gvr, list),
-			func() string { return "" },
-		),
-	}
-	p.BindKeys()
+func NewPod(gvr dao.GVR) ResourceViewer {
+	p := Pod{ResourceViewer: NewLogsExtender(NewBrowser(gvr), nil)}
+	p.SetBindKeysFn(p.bindKeys)
 	p.GetTable().SetEnterFn(p.showContainers)
+	p.GetTable().SetColorerFn(render.Pod{}.ColorerFunc())
 
 	return &p
 }
 
-func (p *Pod) BindKeys() {
-	p.Actions().Add(ui.KeyActions{
+func (p *Pod) bindKeys(aa ui.KeyActions) {
+	aa.Add(ui.KeyActions{
 		tcell.KeyCtrlK: ui.NewKeyAction("Kill", p.killCmd, true),
 		ui.KeyS:        ui.NewKeyAction("Shell", p.shellCmd, true),
 		ui.KeyShiftR:   ui.NewKeyAction("Sort Ready", p.GetTable().SortColCmd(1, true), false),
@@ -54,26 +55,18 @@ func (p *Pod) BindKeys() {
 	})
 }
 
-func (p *Pod) showContainers(app *App, ns, res, sel string) {
-	ns, n := namespaced(sel)
-	o, err := p.App().factory.Get(ns, "v1/pods", n, labels.Everything())
-	if err != nil {
-		app.Flash().Err(err)
-		log.Error().Err(err).Msgf("Pod %s not found", sel)
-		return
-	}
-
-	var pod v1.Pod
-	if runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod); err != nil {
-		app.Flash().Err(err)
-	}
-	list := resource.NewContainerList(app.Conn(), &pod)
-
-	// Spawn child view
-	p.App().inject(NewContainer(fqn(pod.Namespace, pod.Name), list))
+func (p *Pod) showContainers(app *App, ns, gvr, path string) {
+	log.Debug().Msgf("SHOW CONTAINERS %q -- %q -- %q", gvr, ns, path)
+	co := NewContainer(dao.GVR("containers"))
+	co.SetContextFn(p.podContext)
+	app.inject(co)
 }
 
-// Protocol...
+func (p *Pod) podContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, internal.KeyPath, p.GetTable().GetSelectedItem())
+}
+
+// Commands...
 
 func (p *Pod) killCmd(evt *tcell.EventKey) *tcell.EventKey {
 	sels := p.GetTable().GetSelectedItems()
@@ -81,13 +74,23 @@ func (p *Pod) killCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
+	res, err := dao.AccessorFor(p.App().factory, dao.GVR(p.GVR()))
+	if err != nil {
+		p.App().Flash().Err(err)
+		return nil
+	}
+	nuker, ok := res.(dao.Nuker)
+	if !ok {
+		p.App().Flash().Err(fmt.Errorf("expecting a nuker for %q", p.GVR()))
+		return nil
+	}
 	p.GetTable().ShowDeleted()
 	for _, res := range sels {
-		p.App().Flash().Infof("Delete resource %s %s", p.List().GetName(), res)
-		if err := p.List().Resource().Delete(res, true, false); err != nil {
+		p.App().Flash().Infof("Delete resource %s -- %s", p.GVR(), res)
+		if err := nuker.Delete(res, true, false); err != nil {
 			p.App().Flash().Errf("Delete failed with %s", err)
 		} else {
-			p.App().forwarders.Kill(res)
+			p.App().factory.DeleteForwarder(res)
 		}
 	}
 	p.Refresh()
@@ -107,7 +110,7 @@ func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 		p.App().Flash().Errf("%s is not in a running state", sel)
 		return nil
 	}
-	cc, err := fetchContainers(p.List(), sel, false)
+	cc, err := fetchContainers(p.App().factory, sel, false)
 	if err != nil {
 		p.App().Flash().Errf("Unable to retrieve containers %s", err)
 		return evt
@@ -135,11 +138,28 @@ func (p *Pod) shellIn(path, co string) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func fetchContainers(l resource.List, po string, includeInit bool) ([]string, error) {
-	if len(po) == 0 {
-		return []string{}, nil
+func fetchContainers(f *watch.Factory, path string, includeInit bool) ([]string, error) {
+	o, err := f.Get("v1/pods", path, labels.Everything())
+	if err != nil {
+		return nil, err
 	}
-	return l.Resource().(resource.Containers).Containers(po, includeInit)
+
+	var pod v1.Pod
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod)
+	if err != nil {
+		return nil, err
+	}
+
+	nn := make([]string, 0, len(pod.Spec.Containers)+len(pod.Spec.InitContainers))
+	for _, c := range pod.Spec.Containers {
+		nn = append(nn, c.Name)
+	}
+	if includeInit {
+		for _, c := range pod.Spec.InitContainers {
+			nn = append(nn, c.Name)
+		}
+	}
+	return nn, nil
 }
 
 func shellIn(a *App, path, co string) {
@@ -154,7 +174,7 @@ func computeShellArgs(path, co, context string, kcfg *string) []string {
 	args := make([]string, 0, 15)
 	args = append(args, "exec", "-it")
 	args = append(args, "--context", context)
-	ns, po := namespaced(path)
+	ns, po := k8s.Namespaced(path)
 	args = append(args, "-n", ns)
 	args = append(args, po)
 	if kcfg != nil && *kcfg != "" {

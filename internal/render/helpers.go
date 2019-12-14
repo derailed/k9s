@@ -9,6 +9,7 @@ import (
 
 	"github.com/derailed/tview"
 	runewidth "github.com/mattn/go-runewidth"
+	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 	"k8s.io/apimachinery/pkg/watch"
@@ -25,6 +26,20 @@ const (
 	// NAValue indicates a value that does not pertain.
 	NAValue = "n/a"
 )
+
+func asSelector(s *metav1.LabelSelector) string {
+	sel, err := metav1.LabelSelectorAsSelector(s)
+	if err != nil {
+		log.Error().Err(err).Msg("Selector conversion failed")
+		return NAValue
+	}
+
+	return sel.String()
+}
+
+func isAllNamespace(ns string) bool {
+	return ns == AllNamespaces
+}
 
 type metric struct {
 	cpu, mem string
@@ -216,4 +231,17 @@ func in(ll []string, s string) bool {
 		}
 	}
 	return false
+}
+
+// Pad a string up to the given length or truncates if greater than length.
+func Pad(s string, width int) string {
+	if len(s) == width {
+		return s
+	}
+
+	if len(s) > width {
+		return Truncate(s, width)
+	}
+
+	return s + strings.Repeat(" ", width-len(s))
 }

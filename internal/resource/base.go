@@ -2,18 +2,12 @@ package resource
 
 import (
 	"bytes"
-	"context"
 	"errors"
-	"fmt"
 	"path"
 
-	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/k8s"
-	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	genericprinters "k8s.io/cli-runtime/pkg/printers"
 	"k8s.io/kubectl/pkg/describe"
@@ -163,43 +157,44 @@ func (*Base) marshalObject(o runtime.Object) (string, error) {
 	return buff.String(), nil
 }
 
-func (b *Base) podLogs(ctx context.Context, c chan<- string, sel map[string]string, opts LogOptions) error {
-	f, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
-	if !ok {
-		return fmt.Errorf("no factory in context for pod logs")
-	}
+// BOZO!!
+// func (b *Base) podLogs(ctx context.Context, c chan<- string, sel map[string]string, opts LogOptions) error {
+// 	f, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
+// 	if !ok {
+// 		return fmt.Errorf("no factory in context for pod logs")
+// 	}
 
-	ls, err := metav1.ParseToLabelSelector(toSelector(sel))
-	if err != nil {
-		return err
-	}
-	lsel, err := metav1.LabelSelectorAsSelector(ls)
-	if err != nil {
-		return err
-	}
-	inf := f.ForResource(opts.Namespace, "v1/pods")
-	pods, err := inf.Lister().List(lsel)
-	if err != nil {
-		return err
-	}
+// 	ls, err := metav1.ParseToLabelSelector(toSelector(sel))
+// 	if err != nil {
+// 		return err
+// 	}
+// 	lsel, err := metav1.LabelSelectorAsSelector(ls)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	inf := f.ForResource(opts.Namespace, "v1/pods")
+// 	pods, err := inf.Lister().List(lsel)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	if len(pods) > 1 {
-		opts.MultiPods = true
-	}
-	pr := NewPod(b.Connection)
-	for _, p := range pods {
-		var po v1.Pod
-		err := runtime.DefaultUnstructuredConverter.FromUnstructured(p.(*unstructured.Unstructured).Object, &po)
-		if err != nil {
-			// BOZO!!
-			panic(err)
-		}
-		if po.Status.Phase == v1.PodRunning {
-			opts.Namespace, opts.Name = po.Namespace, po.Name
-			if err := pr.PodLogs(ctx, c, opts); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
+// 	if len(pods) > 1 {
+// 		opts.MultiPods = true
+// 	}
+// 	pr := NewPod(b.Connection)
+// 	for _, p := range pods {
+// 		var po v1.Pod
+// 		err := runtime.DefaultUnstructuredConverter.FromUnstructured(p.(*unstructured.Unstructured).Object, &po)
+// 		if err != nil {
+// 			// BOZO!!
+// 			panic(err)
+// 		}
+// 		if po.Status.Phase == v1.PodRunning {
+// 			opts.Namespace, opts.Name = po.Namespace, po.Name
+// 			if err := pr.PodLogs(ctx, c, opts); err != nil {
+// 				return err
+// 			}
+// 		}
+// 	}
+// 	return nil
+// }

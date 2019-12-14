@@ -44,7 +44,7 @@ func (n *Node) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
 	mx := k8s.NewMetricsServer(n.factory.Client().(k8s.Connection))
 	mmx, err := mx.FetchNodesMetrics()
 	if err != nil {
-		return err
+		log.Warn().Err(err).Msg("No node metrics")
 	}
 
 	var index int
@@ -80,7 +80,7 @@ func nodeMetricsFor(o runtime.Object, mmx *mv1beta1.NodeMetricsList) *mv1beta1.N
 }
 
 func (n *Node) nodePods(f Factory, node string) ([]*v1.Pod, error) {
-	pp, err := f.List("", "v1/pods", labels.Everything())
+	pp, err := f.List("v1/pods", render.AllNamespaces, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

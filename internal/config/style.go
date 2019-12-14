@@ -132,7 +132,7 @@ func newStyle() Style {
 		Body:  newBody(),
 		Frame: newFrame(),
 		Info:  newInfo(),
-		Table: newTable(),
+		Table: newGetTable(),
 		Views: newViews(),
 	}
 }
@@ -211,7 +211,7 @@ func newInfo() Info {
 }
 
 // NewTable returns a new table style.
-func newTable() Table {
+func newGetTable() Table {
 	return Table{
 		FgColor:     "aqua",
 		BgColor:     "black",
@@ -293,7 +293,7 @@ func (s *Styles) Title() Title {
 }
 
 // Table returns table styles.
-func (s *Styles) Table() Table {
+func (s *Styles) GetTable() Table {
 	return s.K9s.Table
 }
 
