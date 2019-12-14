@@ -10,9 +10,9 @@ import (
 
 func TestDeploy(t *testing.T) {
 	v := view.NewDeploy(dao.GVR("apps/v1/deployments"))
-	v.Init(makeCtx())
 
-	assert.Equal(t, "deploy", v.Name())
-	assert.Equal(t, 23, len(v.Hints()))
+	assert.Nil(t, v.Init(makeCtx()))
+	assert.Equal(t, "Deployments", v.Name())
+	assert.Equal(t, 16, len(v.Hints()))
 
 }

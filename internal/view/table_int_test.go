@@ -119,11 +119,11 @@ func TestTableViewSort(t *testing.T) {
 	v.Update(data)
 	v.SortColCmd(1, true)(nil)
 	assert.Equal(t, 3, v.GetRowCount())
-	assert.Equal(t, "blee ", v.GetCell(1, 1).Text)
+	assert.Equal(t, "blee", v.GetCell(1, 1).Text)
 
 	v.SortInvertCmd(nil)
 	assert.Equal(t, 3, v.GetRowCount())
-	assert.Equal(t, "fred ", v.GetCell(1, 1).Text)
+	assert.Equal(t, "fred", v.GetCell(1, 1).Text)
 }
 
 // Helpers...

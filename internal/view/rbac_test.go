@@ -10,8 +10,8 @@ import (
 
 func TestRbacNew(t *testing.T) {
 	v := view.NewRbac(dao.GVR("rbac"))
-	v.Init(makeCtx())
 
+	assert.Nil(t, v.Init(makeCtx()))
 	assert.Equal(t, "Rbac", v.Name())
 	assert.Equal(t, 9, len(v.Hints()))
 }

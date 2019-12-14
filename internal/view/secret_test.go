@@ -10,8 +10,8 @@ import (
 
 func TestSecretNew(t *testing.T) {
 	s := view.NewSecret(dao.GVR("v1/secrets"))
-	s.Init(makeCtx())
 
-	assert.Equal(t, "secrets", s.Name())
-	assert.Equal(t, 18, len(s.Hints()))
+	assert.Nil(t, s.Init(makeCtx()))
+	assert.Equal(t, "Secrets", s.Name())
+	assert.Equal(t, 12, len(s.Hints()))
 }

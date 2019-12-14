@@ -10,8 +10,8 @@ import (
 
 func TestContext(t *testing.T) {
 	ctx := view.NewContext(dao.GVR("contexts"))
-	ctx.Init(makeCtx())
 
-	assert.Equal(t, "ctx", ctx.Name())
-	assert.Equal(t, 10, len(ctx.Hints()))
+	assert.Nil(t, ctx.Init(makeCtx()))
+	assert.Equal(t, "Contexts", ctx.Name())
+	assert.Equal(t, 8, len(ctx.Hints()))
 }

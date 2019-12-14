@@ -10,8 +10,8 @@ import (
 
 func TestStatefulSetNew(t *testing.T) {
 	s := view.NewStatefulSet(dao.GVR("apps/v1/statefulsets"))
-	s.Init(makeCtx())
 
-	assert.Equal(t, "sts", s.Name())
-	assert.Equal(t, 23, len(s.Hints()))
+	assert.Nil(t, s.Init(makeCtx()))
+	assert.Equal(t, "StatefulSets", s.Name())
+	assert.Equal(t, 16, len(s.Hints()))
 }

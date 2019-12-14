@@ -9,9 +9,9 @@ import (
 )
 
 func TestPortForwardNew(t *testing.T) {
-	po := view.NewPortForward(dao.GVR("forwards"))
-	po.Init(makeCtx())
+	pf := view.NewPortForward(dao.GVR("portforwards"))
 
-	assert.Equal(t, "PortForwards", po.Name())
-	assert.Equal(t, 16, len(po.Hints()))
+	assert.Nil(t, pf.Init(makeCtx()))
+	assert.Equal(t, "PortForwards", pf.Name())
+	assert.Equal(t, 16, len(pf.Hints()))
 }

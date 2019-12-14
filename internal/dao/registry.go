@@ -18,7 +18,7 @@ type ResourceMetas map[GVR]metav1.APIResource
 // Accessors represents a collection of dao accessors.
 type Accessors map[GVR]Accessor
 
-var resMetas ResourceMetas
+var resMetas = ResourceMetas{}
 
 // AccessorFor returns a client accessor for a resource if registered.
 // Otherwise it returns a generic accessor.
@@ -49,6 +49,11 @@ func AccessorFor(f Factory, gvr GVR) (Accessor, error) {
 	r.Init(f, gvr)
 
 	return r, nil
+}
+
+// RegisterMeta registers a new resource meta object.
+func RegisterMeta(gvr string, res metav1.APIResource) {
+	resMetas[GVR(gvr)] = res
 }
 
 func AllGVRs() []GVR {

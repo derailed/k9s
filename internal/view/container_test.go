@@ -10,8 +10,8 @@ import (
 
 func TestContainerNew(t *testing.T) {
 	po := view.NewContainer(dao.GVR("containers"))
-	po.Init(makeCtx())
 
+	assert.Nil(t, po.Init(makeCtx()))
 	assert.Equal(t, "Containers", po.Name())
-	assert.Equal(t, 19, len(po.Hints()))
+	assert.Equal(t, 17, len(po.Hints()))
 }

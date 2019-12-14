@@ -13,10 +13,10 @@ import (
 
 func TestPodNew(t *testing.T) {
 	po := view.NewPod(dao.GVR("v1/pods"))
-	po.Init(makeCtx())
 
-	assert.Equal(t, "pods", po.Name())
-	assert.Equal(t, 31, len(po.Hints()))
+	assert.Nil(t, po.Init(makeCtx()))
+	assert.Equal(t, "Pods", po.Name())
+	assert.Equal(t, 24, len(po.Hints()))
 }
 
 // Helpers...

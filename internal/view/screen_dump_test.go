@@ -10,8 +10,8 @@ import (
 
 func TestScreenDumpNew(t *testing.T) {
 	po := view.NewScreenDump(dao.GVR("screendumps"))
-	po.Init(makeCtx())
 
-	assert.Equal(t, "Screen Dumps", po.Name())
-	assert.Equal(t, 12, len(po.Hints()))
+	assert.Nil(t, po.Init(makeCtx()))
+	assert.Equal(t, "ScreenDumps", po.Name())
+	assert.Equal(t, 11, len(po.Hints()))
 }

@@ -10,8 +10,8 @@ import (
 
 func TestNSCleanser(t *testing.T) {
 	ns := view.NewNamespace(dao.GVR("v1/namespaces"))
-	ns.Init(makeCtx())
 
-	assert.Equal(t, "ns", ns.Name())
-	assert.Equal(t, 19, len(ns.Hints()))
+	assert.Nil(t, ns.Init(makeCtx()))
+	assert.Equal(t, "Namespaces", ns.Name())
+	assert.Equal(t, 12, len(ns.Hints()))
 }

@@ -14,6 +14,7 @@ const (
 	group       = "Group"
 	user        = "User"
 	sa          = "ServiceAccount"
+	allVerbs    = "*"
 )
 
 type (
@@ -331,7 +332,7 @@ func toGroup(g string) string {
 }
 
 func hasVerb(verbs []string, verb string) bool {
-	if len(verbs) == 1 && verbs[0] == render.ClusterWide {
+	if len(verbs) == 1 && verbs[0] == allVerbs {
 		return true
 	}
 
@@ -372,7 +373,7 @@ func asVerbs(verbs []string) []string {
 		if hv, ok := httpTok8sVerbs[v]; ok {
 			v = hv
 		}
-		if !hasVerb(k8sVerbs, v) && v != render.ClusterWide {
+		if !hasVerb(k8sVerbs, v) && v != allVerbs {
 			unknowns = append(unknowns, v)
 		}
 	}

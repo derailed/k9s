@@ -14,19 +14,17 @@ import (
 )
 
 func TestAliasNew(t *testing.T) {
-	v := view.NewAlias(dao.GVR("alias"))
-	v.Init(makeContext())
+	v := view.NewAlias(dao.GVR("aliases"))
 
-	assert.Equal(t, 3, v.GetTable().GetColumnCount())
-	assert.Equal(t, 15, v.GetTable().GetRowCount())
+	assert.Nil(t, v.Init(makeContext()))
 	assert.Equal(t, "Aliases", v.Name())
 	assert.Equal(t, 9, len(v.Hints()))
 }
 
 // BOZO!!
 // func TestAliasSearch(t *testing.T) {
-// 	v := view.NewAlias(dao.GVR("alias"))
-// 	v.Init(makeContext())
+// 	v := view.NewAlias(dao.GVR("aliases"))
+// 	assert.Nil(t, v.Init(makeContext()))
 // 	v.GetTable().SearchBuff().SetActive(true)
 // 	v.GetTable().SearchBuff().Set("dump")
 
@@ -37,8 +35,8 @@ func TestAliasNew(t *testing.T) {
 // }
 
 func TestAliasGoto(t *testing.T) {
-	v := view.NewAlias(dao.GVR("alias"))
-	v.Init(makeContext())
+	v := view.NewAlias(dao.GVR("aliases"))
+	assert.Nil(t, v.Init(makeContext()))
 	v.GetTable().Select(0, 0)
 
 	b := buffL{}

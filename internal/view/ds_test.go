@@ -10,8 +10,8 @@ import (
 
 func TestDaemonSet(t *testing.T) {
 	v := view.NewDaemonSet(dao.GVR("apps/v1/daemonsets"))
-	v.Init(makeCtx())
 
-	assert.Equal(t, "ds", v.Name())
-	assert.Equal(t, 22, len(v.Hints()))
+	assert.Nil(t, v.Init(makeCtx()))
+	assert.Equal(t, "DaemonSets", v.Name())
+	assert.Equal(t, 15, len(v.Hints()))
 }
