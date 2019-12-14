@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/derailed/k9s/internal"
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -49,7 +49,7 @@ func (p *Pod) List(ctx context.Context) ([]runtime.Object, error) {
 
 // Render returns pod resources as rows.
 func (p *Pod) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
-	mx := k8s.NewMetricsServer(p.factory.Client().(k8s.Connection))
+	mx := client.NewMetricsServer(p.factory.Client())
 	mmx, err := mx.FetchPodsMetrics(p.namespace)
 	if err != nil {
 		log.Warn().Err(err).Msgf("No metrics found for pod")

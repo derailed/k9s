@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -110,7 +110,7 @@ func (v *FlashView) setMessage(level FlashLevel, msg ...string) {
 	}
 	m := strings.Join(msg, " ")
 	v.SetTextColor(flashColor(level))
-	v.SetText(resource.Truncate(flashEmoji(level)+" "+m, width-3))
+	v.SetText(render.Truncate(flashEmoji(level)+" "+m, width-3))
 }
 
 func (v *FlashView) refresh(ctx1, ctx2 context.Context, cancel context.CancelFunc) {

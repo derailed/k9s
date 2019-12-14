@@ -29,12 +29,12 @@ func (s *Subject) List(ctx context.Context) ([]runtime.Object, error) {
 		return nil, errors.New("expecting a subject")
 	}
 
-	crbs, err := s.factory.List(render.ClusterWide, "rbac.authorization.k8s.io/v1/clusterrolebindings", labels.Everything())
+	crbs, err := s.factory.List(render.ClusterScope, "rbac.authorization.k8s.io/v1/clusterrolebindings", labels.Everything())
 	if err != nil {
 		return nil, err
 	}
 
-	rbs, err := s.factory.List(render.ClusterWide, "rbac.authorization.k8s.io/v1/rolebindings", labels.Everything())
+	rbs, err := s.factory.List(render.ClusterScope, "rbac.authorization.k8s.io/v1/rolebindings", labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +59,7 @@ func (s *Subject) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) erro
 }
 
 func (s *Subject) fetchClusterRoleBindings() ([]runtime.Object, error) {
-	oo, err := s.factory.List(render.ClusterWide, "rbac.authorization.k8s.io/v1/clusterrolebindings", labels.Everything())
+	oo, err := s.factory.List(render.ClusterScope, "rbac.authorization.k8s.io/v1/clusterrolebindings", labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +86,7 @@ func (s *Subject) fetchClusterRoleBindings() ([]runtime.Object, error) {
 }
 
 func (s *Subject) fetchRoleBindings() ([]runtime.Object, error) {
-	oo, err := s.factory.List(render.ClusterWide, "rbac.authorization.k8s.io/v1/rolebindings", labels.Everything())
+	oo, err := s.factory.List(render.ClusterScope, "rbac.authorization.k8s.io/v1/rolebindings", labels.Everything())
 	if err != nil {
 		return nil, err
 	}

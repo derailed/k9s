@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 )
@@ -9,10 +9,10 @@ import (
 type Generic struct {
 	Factory
 
-	gvr GVR
+	gvr client.GVR
 }
 
-func (r *Generic) Init(f Factory, gvr GVR) {
+func (r *Generic) Init(f Factory, gvr client.GVR) {
 	r.Factory, r.gvr = f, gvr
 }
 
@@ -23,7 +23,7 @@ func (g *Generic) Delete(path string, cascade, force bool) error {
 		p = metav1.DeletePropagationBackground
 	}
 
-	ns, n := k8s.Namespaced(path)
+	ns, n := client.Namespaced(path)
 	return g.dynClient().Namespace(ns).Delete(n, &metav1.DeleteOptions{
 		PropagationPolicy: &p,
 	})

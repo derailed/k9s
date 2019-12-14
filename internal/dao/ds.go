@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal"
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
@@ -85,7 +85,7 @@ func podLogs(ctx context.Context, c chan<- string, sel map[string]string, opts L
 		return err
 	}
 
-	ns, _ := k8s.Namespaced(opts.Path)
+	ns, _ := client.Namespaced(opts.Path)
 	oo, err := f.List("v1/pods", ns, lsel)
 	if err != nil {
 		return err
@@ -104,7 +104,7 @@ func podLogs(ctx context.Context, c chan<- string, sel map[string]string, opts L
 			return err
 		}
 		log.Debug().Msgf("TAILING logs on pod %q", pod.Name)
-		opts.Path = k8s.FQN(pod.Namespace, pod.Name)
+		opts.Path = client.FQN(pod.Namespace, pod.Name)
 		if err := po.TailLogs(ctx, c, opts); err != nil {
 			return err
 		}

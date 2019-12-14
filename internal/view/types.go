@@ -1,9 +1,8 @@
 package view
 
 import (
-	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model"
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 )
 
@@ -13,12 +12,6 @@ type (
 
 	// BoostActionFunc extends viewer keyboard actions.
 	BoostActionsFunc func(ui.KeyActions)
-
-	// ViewFunc represents a new resource viewer.
-	ViewFunc func(title, gvr string, list resource.List) ResourceViewer
-
-	// ListFunc represents a new resource list.
-	ListFunc func(c resource.Connection, ns string) resource.List
 
 	// EnterFunc represents an enter key action.
 	EnterFunc func(app *App, ns, resource, selection string)
@@ -100,15 +93,13 @@ type SubjectViewer interface {
 	SetSubject(s string)
 }
 
-type ViewerFunc func(dao.GVR) ResourceViewer
+type ViewerFunc func(client.GVR) ResourceViewer
 
 // MetaViewer represents a registered meta viewer.
 type MetaViewer struct {
 	viewerFn ViewerFunc
-	viewFn   ViewFunc
-	listFn   ListFunc
 	enterFn  EnterFunc
 }
 
 // MetaViewers represents a collection of meta viewers.
-type MetaViewers map[dao.GVR]MetaViewer
+type MetaViewers map[client.GVR]MetaViewer

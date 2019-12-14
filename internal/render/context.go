@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/derailed/k9s/internal/k8s"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -77,7 +76,7 @@ type ContextNamer interface {
 }
 
 // NewNamedContext returns a new named context.
-func NewNamedContext(c *k8s.Config, n string, ctx *api.Context) *NamedContext {
+func NewNamedContext(c ContextNamer, n string, ctx *api.Context) *NamedContext {
 	return &NamedContext{Name: n, Context: ctx, Config: c}
 }
 

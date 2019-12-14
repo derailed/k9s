@@ -1,7 +1,7 @@
 package view
 
 import (
-	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	appsv1 "k8s.io/api/apps/v1"
@@ -19,7 +19,7 @@ type Deploy struct {
 }
 
 // NewDeploy returns a new deployment view.
-func NewDeploy(gvr dao.GVR) ResourceViewer {
+func NewDeploy(gvr client.GVR) ResourceViewer {
 	d := Deploy{
 		ResourceViewer: NewRestartExtender(
 			NewScaleExtender(NewLogsExtender(NewBrowser(gvr), nil)),

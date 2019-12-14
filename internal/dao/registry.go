@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -13,17 +14,17 @@ import (
 )
 
 // MetaViewers represents a collection of meta viewers.
-type ResourceMetas map[GVR]metav1.APIResource
+type ResourceMetas map[client.GVR]metav1.APIResource
 
 // Accessors represents a collection of dao accessors.
-type Accessors map[GVR]Accessor
+type Accessors map[client.GVR]Accessor
 
 var resMetas = ResourceMetas{}
 
 // AccessorFor returns a client accessor for a resource if registered.
 // Otherwise it returns a generic accessor.
 // Customize here for non resource types or types with metrics or logs.
-func AccessorFor(f Factory, gvr GVR) (Accessor, error) {
+func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 	m := Accessors{
 		"alias":                         &Alias{},
 		"contexts":                      &Context{},
@@ -53,11 +54,11 @@ func AccessorFor(f Factory, gvr GVR) (Accessor, error) {
 
 // RegisterMeta registers a new resource meta object.
 func RegisterMeta(gvr string, res metav1.APIResource) {
-	resMetas[GVR(gvr)] = res
+	resMetas[client.GVR(gvr)] = res
 }
 
-func AllGVRs() []GVR {
-	kk := make(GVRs, 0, len(resMetas))
+func AllGVRs() []client.GVR {
+	kk := make(client.GVRs, 0, len(resMetas))
 	for k := range resMetas {
 		kk = append(kk, k)
 	}
@@ -67,7 +68,7 @@ func AllGVRs() []GVR {
 }
 
 // MetaFor returns a resource metadata for a given gvr.
-func MetaFor(gvr GVR) (metav1.APIResource, error) {
+func MetaFor(gvr client.GVR) (metav1.APIResource, error) {
 	m, ok := resMetas[gvr]
 	if !ok {
 		return metav1.APIResource{}, fmt.Errorf("no resource meta defined for %q", gvr)
@@ -192,7 +193,7 @@ func loadPreferred(f *watch.Factory, m ResourceMetas) error {
 	}
 	for _, r := range rr {
 		for _, res := range r.APIResources {
-			gvr := FromGVAndR(r.GroupVersion, res.Name)
+			gvr := client.FromGVAndR(r.GroupVersion, res.Name)
 			res.Group, res.Version = gvr.ToG(), gvr.ToV()
 			m[gvr] = res
 		}
@@ -214,7 +215,7 @@ func loadCRDs(f *watch.Factory, m ResourceMetas) error {
 			log.Error().Err(errs[0]).Msgf("Fail to extract CRD meta (%d) errors", len(errs))
 			continue
 		}
-		gvr := NewGVR(meta.Group, meta.Version, meta.Name)
+		gvr := client.NewGVR(meta.Group, meta.Version, meta.Name)
 		m[gvr] = meta
 	}
 

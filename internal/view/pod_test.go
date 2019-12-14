@@ -4,15 +4,15 @@ import (
 	"context"
 	"testing"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPodNew(t *testing.T) {
-	po := view.NewPod(dao.GVR("v1/pods"))
+	po := view.NewPod(client.GVR("v1/pods"))
 
 	assert.Nil(t, po.Init(makeCtx()))
 	assert.Equal(t, "Pods", po.Name())

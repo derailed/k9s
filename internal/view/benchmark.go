@@ -9,8 +9,8 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
@@ -31,7 +31,7 @@ type Benchmark struct {
 }
 
 // NewBench returns a new viewer.
-func NewBenchmark(gvr dao.GVR) ResourceViewer {
+func NewBenchmark(gvr client.GVR) ResourceViewer {
 	b := Benchmark{
 		ResourceViewer: NewBrowser(gvr),
 		details:        NewDetails(resultTitle),

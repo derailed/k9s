@@ -1,26 +1,21 @@
-package k8s
+package dao
 
 import (
 	"fmt"
-	"os/user"
-	"regexp"
 	"strings"
 
-	"github.com/rs/zerolog/log"
+	"github.com/derailed/k9s/internal/client"
 	"k8s.io/apimachinery/pkg/api/meta"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/restmapper"
 )
 
-var (
-	// RestMapping holds k8s resource mapping
-	RestMapping = &RestMapper{}
-	toFileName  = regexp.MustCompile(`[^(\w/\.)]`)
-)
+// RestMapping holds k8s resource mapping
+var RestMapping = &RestMapper{}
 
 // RestMapper map resource to REST mapping ie kind, group, version.
 type RestMapper struct {
-	Connection
+	client.Connection
 }
 
 // ToRESTMapper map resources to kind, and map kind and version to interfaces for manipulating K8s objects.
@@ -32,19 +27,6 @@ func (r *RestMapper) ToRESTMapper() (meta.RESTMapper, error) {
 	mapper := restmapper.NewDeferredDiscoveryRESTMapper(disc)
 	expander := restmapper.NewShortcutExpander(mapper, disc)
 	return expander, nil
-}
-
-func toHostDir(host string) string {
-	h := strings.Replace(strings.Replace(host, "https://", "", 1), "http://", "", 1)
-	return toFileName.ReplaceAllString(h, "_")
-}
-
-func mustHomeDir() string {
-	usr, err := user.Current()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Die getting user home directory")
-	}
-	return usr.HomeDir
 }
 
 // ResourceFor produces a rest mapping from a given resource.

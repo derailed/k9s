@@ -10,11 +10,10 @@ import (
 
 	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/gdamore/tcell"
@@ -35,7 +34,7 @@ type Browser struct {
 	*Table
 
 	namespaces map[int]string
-	gvr        dao.GVR
+	gvr        client.GVR
 	envFn      EnvFunc
 	meta       metav1.APIResource
 	accessor   dao.Accessor
@@ -45,7 +44,7 @@ type Browser struct {
 }
 
 // NewBrowser returns a new browser.
-func NewBrowser(gvr dao.GVR) ResourceViewer {
+func NewBrowser(gvr client.GVR) ResourceViewer {
 	return &Browser{
 		Table: NewTable(string(gvr)),
 		gvr:   gvr,
@@ -133,9 +132,6 @@ func (b *Browser) SetBindKeysFn(f BindKeysFunc) {
 	b.bindKeysFn = f
 }
 
-// List returns a resource List.
-func (b *Browser) List() resource.List { return nil }
-
 // SetEnvFn sets a function to pull viewer env vars for plugins.
 func (b *Browser) SetEnvFn(f EnvFunc) { b.envFn = f }
 
@@ -174,7 +170,7 @@ func (b *Browser) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	_, n := k8s.Namespaced(b.GetSelectedItem())
+	_, n := client.Namespaced(b.GetSelectedItem())
 	log.Debug().Msgf("Copied selection to clipboard %q", n)
 	b.app.Flash().Info("Current selection copied to clipboard...")
 	if err := clipboard.WriteAll(n); err != nil {
@@ -269,7 +265,7 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (b *Browser) defaultEnter(app *App, ns, _, sel string) {
 	log.Debug().Msgf("--------- Resource %q Verbs %v", sel, b.meta.Verbs)
-	ns, n := k8s.Namespaced(sel)
+	ns, n := client.Namespaced(sel)
 	yaml, err := dao.Describe(b.app.Conn(), b.gvr, ns, n)
 	if err != nil {
 		b.app.Flash().Errf("Describe command failed: %s", err)
@@ -348,7 +344,7 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	b.Stop()
 	defer b.Start()
 	{
-		ns, po := k8s.Namespaced(b.GetSelectedItem())
+		ns, po := client.Namespaced(b.GetSelectedItem())
 		args := make([]string, 0, 10)
 		args = append(args, "edit")
 		args = append(args, b.meta.Kind)
@@ -367,7 +363,7 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (b *Browser) setNamespace(ns string) {
 	if !b.meta.Namespaced {
-		b.Data.Namespace = render.ClusterWide
+		b.Data.Namespace = render.ClusterScope
 		return
 	}
 	if b.Data.Namespace == ns {
@@ -445,11 +441,11 @@ func (b *Browser) namespaceActions(aa ui.KeyActions) {
 		return
 	}
 	b.namespaces = make(map[int]string, config.MaxFavoritesNS)
-	aa[tcell.Key(ui.NumKeys[0])] = ui.NewKeyAction(resource.AllNamespace, b.switchNamespaceCmd, true)
-	b.namespaces[0] = resource.AllNamespace
+	aa[tcell.Key(ui.NumKeys[0])] = ui.NewKeyAction(render.NamespaceAll, b.switchNamespaceCmd, true)
+	b.namespaces[0] = render.NamespaceAll
 	index := 1
 	for _, n := range b.app.Config.FavNamespaces() {
-		if n == resource.AllNamespace {
+		if n == render.NamespaceAll {
 			continue
 		}
 		aa[tcell.Key(ui.NumKeys[index])] = ui.NewKeyAction(n, b.switchNamespaceCmd, true)
@@ -466,16 +462,16 @@ func (b *Browser) refreshActions() {
 	}
 	b.namespaceActions(aa)
 
-	if dao.Can(b.meta.Verbs, "edit") {
+	if client.Can(b.meta.Verbs, "edit") {
 		aa[ui.KeyE] = ui.NewKeyAction("Edit", b.editCmd, true)
 	}
-	if dao.Can(b.meta.Verbs, "delete") {
+	if client.Can(b.meta.Verbs, "delete") {
 		aa[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", b.deleteCmd, true)
 	}
-	if dao.Can(b.meta.Verbs, "view") {
+	if client.Can(b.meta.Verbs, "view") {
 		aa[ui.KeyY] = ui.NewKeyAction("YAML", b.viewCmd, true)
 	}
-	if dao.Can(b.meta.Verbs, "describe") {
+	if client.Can(b.meta.Verbs, "describe") {
 		aa[ui.KeyD] = ui.NewKeyAction("Describe", b.describeCmd, true)
 	}
 	b.customActions(aa)

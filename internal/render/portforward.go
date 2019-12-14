@@ -78,28 +78,6 @@ func (f PortForward) Render(o interface{}, gvr string, r *Row) error {
 
 // Helpers...
 
-// type PortForwarder interface {
-// 	Forwarder
-// 	BenchConfigurator
-// }
-
-// type BenchConfigurators map[string]BenchConfigurator
-
-// BOZO!!
-// type BenchConfigurator interface {
-// 	// C returns the number of concurent connections.
-// 	C() int
-
-// 	// N returns the number of requests.
-// 	N() int
-
-// 	// Host returns the forward host address.
-// 	Host() string
-
-// 	// Path returns the http path.
-// 	HttpPath() string
-// }
-
 // UrlFor computes fq url for a given benchmark configuration.
 func UrlFor(host, path, port string) string {
 	if host == "" {

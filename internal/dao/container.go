@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	"github.com/derailed/k9s/internal"
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -46,6 +46,6 @@ func (c *Container) TailLogs(ctx context.Context, logChan chan<- string, opts Lo
 
 // Logs fetch container logs for a given pod and container.
 func (c *Container) Logs(path string, opts *v1.PodLogOptions) *restclient.Request {
-	ns, n := k8s.Namespaced(path)
+	ns, n := client.Namespaced(path)
 	return c.Client().DialOrDie().CoreV1().Pods(ns).GetLogs(n, opts)
 }

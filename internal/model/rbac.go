@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal"
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -30,7 +30,7 @@ func (r *Rbac) List(ctx context.Context) ([]runtime.Object, error) {
 		return r.Resource.List(ctx)
 	}
 
-	switch k8s.GVR(r.gvr).ToR() {
+	switch client.GVR(r.gvr).ToR() {
 	case "clusterrolebindings":
 		return r.loadClusterRoleBinding(path)
 	case "rolebindings":
@@ -40,7 +40,7 @@ func (r *Rbac) List(ctx context.Context) ([]runtime.Object, error) {
 	case "roles":
 		return r.loadRole(path)
 	default:
-		return nil, fmt.Errorf("expecting clusterrole/role but found %s", k8s.GVR(r.gvr).ToR())
+		return nil, fmt.Errorf("expecting clusterrole/role but found %s", client.GVR(r.gvr).ToR())
 	}
 }
 
@@ -57,7 +57,7 @@ func (r *Rbac) loadClusterRoleBinding(path string) ([]runtime.Object, error) {
 	}
 
 	kind := "rbac.authorization.k8s.io/v1/clusterroles"
-	crbo, err := r.factory.Get(kind, k8s.FQN("-", crb.RoleRef.Name), labels.Everything())
+	crbo, err := r.factory.Get(kind, client.FQN("-", crb.RoleRef.Name), labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (r *Rbac) loadRoleBinding(path string) ([]runtime.Object, error) {
 
 	if rb.RoleRef.Kind == "ClusterRole" {
 		kind := "rbac.authorization.k8s.io/v1/clusterroles"
-		o, err := r.factory.Get(kind, k8s.FQN("-", rb.RoleRef.Name), labels.Everything())
+		o, err := r.factory.Get(kind, client.FQN("-", rb.RoleRef.Name), labels.Everything())
 		if err != nil {
 			return nil, err
 		}
@@ -96,7 +96,7 @@ func (r *Rbac) loadRoleBinding(path string) ([]runtime.Object, error) {
 	}
 
 	kind := "rbac.authorization.k8s.io/v1/roles"
-	ro, err := r.factory.Get(kind, k8s.FQN(rb.Namespace, rb.RoleRef.Name), labels.Everything())
+	ro, err := r.factory.Get(kind, client.FQN(rb.Namespace, rb.RoleRef.Name), labels.Everything())
 	if err != nil {
 		return nil, err
 	}

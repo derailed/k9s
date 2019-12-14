@@ -3,7 +3,7 @@ package model
 import (
 	"context"
 
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tview"
@@ -72,7 +72,7 @@ type Lister interface {
 
 type Factory interface {
 	// Client retrieves an api client.
-	Client() k8s.Connection
+	Client() client.Connection
 
 	// Get fetch a given resource.
 	Get(gvr, path string, sel labels.Selector) (runtime.Object, error)

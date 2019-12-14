@@ -1,4 +1,4 @@
-package k8s
+package dao
 
 import (
 	"testing"
@@ -17,20 +17,5 @@ func TestToPerc(t *testing.T) {
 
 	for _, u := range uu {
 		assert.Equal(t, u.e, toPerc(u.v1, u.v2))
-	}
-}
-
-func TestToMB(t *testing.T) {
-	uu := []struct {
-		v int64
-		e float64
-	}{
-		{0, 0},
-		{2 * megaByte, 2},
-		{10 * megaByte, 10},
-	}
-
-	for _, u := range uu {
-		assert.Equal(t, u.e, ToMB(u.v))
 	}
 }

@@ -10,7 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
@@ -29,9 +29,6 @@ var (
 )
 
 type (
-	// Connection represents a kubernetes api server connection.
-	Connection k8s.Connection
-
 	// KubeSettings exposes kubeconfig context information.
 	KubeSettings interface {
 		// CurrentContextName returns the name of the current context.
@@ -53,7 +50,7 @@ type (
 	// Config tracks K9s configuration options.
 	Config struct {
 		K9s      *K9s `yaml:"k9s"`
-		client   Connection
+		client   client.Connection
 		settings KubeSettings
 	}
 )
@@ -168,12 +165,12 @@ func (c *Config) SetActiveView(view string) {
 }
 
 // GetConnection return an api server connection.
-func (c *Config) GetConnection() Connection {
+func (c *Config) GetConnection() client.Connection {
 	return c.client
 }
 
 // SetConnection set an api server connection.
-func (c *Config) SetConnection(conn Connection) {
+func (c *Config) SetConnection(conn client.Connection) {
 	c.client = conn
 }
 

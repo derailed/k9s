@@ -1,5 +1,9 @@
 package model
 
+// import(
+// 	"testing"
+// )
+
 // BOZO!!
 // func TestParseRules(t *testing.T) {
 // 	ok, nok := toVerbIcon(true), toVerbIcon(false)

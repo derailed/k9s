@@ -202,13 +202,13 @@ func styleTitle(rc int, ns, base, path, buff string, styles *config.Styles) stri
 	if path != "" {
 		info = path
 		cns, n := render.Namespaced(path)
-		if cns == render.ClusterWide {
+		if cns == render.ClusterScope {
 			info = n
 		}
 	}
 
 	var title string
-	if info == "" || info == render.ClusterWide {
+	if info == "" || info == render.ClusterScope {
 		title = SkinTitle(fmt.Sprintf(titleFmt, base, rc), styles.Frame())
 	} else {
 		title = SkinTitle(fmt.Sprintf(nsTitleFmt, base, info, rc), styles.Frame())

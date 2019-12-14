@@ -3,6 +3,7 @@ package view_test
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
@@ -127,7 +128,7 @@ func init() {
 }
 
 func TestServiceNew(t *testing.T) {
-	s := view.NewService(dao.GVR("v1/services"))
+	s := view.NewService(client.GVR("v1/services"))
 
 	assert.Nil(t, s.Init(makeCtx()))
 	assert.Equal(t, "Services", s.Name())

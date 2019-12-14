@@ -1,4 +1,4 @@
-package k8s
+package dao
 
 import (
 	"fmt"
@@ -6,7 +6,8 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/rs/zerolog"
+	"github.com/derailed/k9s/internal/client"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
@@ -21,13 +22,12 @@ import (
 
 const localhost = "localhost"
 
-// PortForward tracks a port forward stream.
-type PortForward struct {
-	Connection
+// PortForwarder tracks a port forward stream.
+type PortForwarder struct {
+	client.Connection
 	genericclioptions.IOStreams
 
 	stopChan, readyChan chan struct{}
-	logger              *zerolog.Logger
 	active              bool
 	path                string
 	container           string
@@ -35,63 +35,62 @@ type PortForward struct {
 	age                 time.Time
 }
 
-// NewPortForward returns a new port forward streamer.
-func NewPortForward(c Connection, l *zerolog.Logger) *PortForward {
-	return &PortForward{
+// NewPortForwarder returns a new port forward streamer.
+func NewPortForwarder(c client.Connection) *PortForwarder {
+	return &PortForwarder{
 		Connection: c,
-		logger:     l,
 		stopChan:   make(chan struct{}),
 		readyChan:  make(chan struct{}),
 	}
 }
 
 // Age returns the port forward age.
-func (p *PortForward) Age() string {
+func (p *PortForwarder) Age() string {
 	return time.Since(p.age).String()
 }
 
 // Active returns the forward status.
-func (p *PortForward) Active() bool {
+func (p *PortForwarder) Active() bool {
 	return p.active
 }
 
 // SetActive mark a portforward as active.
-func (p *PortForward) SetActive(b bool) {
+func (p *PortForwarder) SetActive(b bool) {
 	p.active = b
 }
 
 // Ports returns the forwarded ports mappings.
-func (p *PortForward) Ports() []string {
+func (p *PortForwarder) Ports() []string {
 	return p.ports
 }
 
 // Path returns the pod resource path.
-func (p *PortForward) Path() string {
+func (p *PortForwarder) Path() string {
 	return p.path
 }
 
 // Container returns the targetes container.
-func (p *PortForward) Container() string {
+func (p *PortForwarder) Container() string {
 	return p.container
 }
 
 // Stop terminates a port forard
-func (p *PortForward) Stop() {
-	p.logger.Debug().Msgf("<<< Stopping port forward %q %v", p.path, p.ports)
+func (p *PortForwarder) Stop() {
+	log.Debug().Msgf("<<< Stopping port forward %q %v", p.path, p.ports)
 	p.active = false
 	close(p.stopChan)
 }
 
 // FQN returns the portforward unique id.
-func (p *PortForward) FQN() string {
+func (p *PortForwarder) FQN() string {
 	return p.path + ":" + p.container
 }
 
 // Start initiates a port forward session for a given pod and ports.
-func (p *PortForward) Start(path, co string, ports []string) (*portforward.PortForwarder, error) {
+func (p *PortForwarder) Start(path, co string, ports []string) (*portforward.PortForwarder, error) {
 	p.path, p.container, p.ports, p.age = path, co, ports, time.Now()
 
-	ns, n := Namespaced(path)
+	ns, n := client.Namespaced(path)
 	pod, err := p.DialOrDie().CoreV1().Pods(ns).Get(n, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
@@ -107,7 +106,7 @@ func (p *PortForward) Start(path, co string, ports []string) (*portforward.PortF
 	rcfg.NegotiatedSerializer = codec.WithoutConversion()
 	clt, err := rest.RESTClientFor(rcfg)
 	if err != nil {
-		p.logger.Debug().Msgf("Boom! %#v", err)
+		log.Debug().Msgf("Boom! %#v", err)
 		return nil, err
 	}
 	req := clt.Post().
@@ -119,7 +118,7 @@ func (p *PortForward) Start(path, co string, ports []string) (*portforward.PortF
 	return p.forwardPorts("POST", req.URL(), ports)
 }
 
-func (p *PortForward) forwardPorts(method string, url *url.URL, ports []string) (*portforward.PortForwarder, error) {
+func (p *PortForwarder) forwardPorts(method string, url *url.URL, ports []string) (*portforward.PortForwarder, error) {
 	cfg, err := p.Config().RESTConfig()
 	if err != nil {
 		return nil, err

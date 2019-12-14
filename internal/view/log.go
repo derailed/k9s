@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
@@ -39,13 +40,13 @@ type Log struct {
 	path, container string
 	cancelFn        context.CancelFunc
 	previous        bool
-	gvr             dao.GVR
+	gvr             client.GVR
 }
 
 var _ model.Component = &Log{}
 
 // NewLog returns a new viewer.
-func NewLog(gvr dao.GVR, path, co string, prev bool) *Log {
+func NewLog(gvr client.GVR, path, co string, prev bool) *Log {
 	return &Log{
 		gvr:       gvr,
 		Flex:      tview.NewFlex(),

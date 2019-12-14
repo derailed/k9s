@@ -3,7 +3,7 @@ package ui
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -12,8 +12,8 @@ func TestDeltas(t *testing.T) {
 		s1, s2, e string
 	}{
 		{"", "", ""},
-		{resource.MissingValue, "", DeltaSign},
-		{resource.NAValue, "", ""},
+		{render.MissingValue, "", DeltaSign},
+		{render.NAValue, "", ""},
 		{"fred", "fred", ""},
 		{"fred", "blee", DeltaSign},
 		{"1", "1", ""},

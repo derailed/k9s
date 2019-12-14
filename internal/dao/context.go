@@ -3,7 +3,7 @@ package dao
 import (
 	"fmt"
 
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,7 +19,7 @@ type Context struct {
 var _ Accessor = &Context{}
 var _ Switchable = &Context{}
 
-func (c *Context) config() *k8s.Config {
+func (c *Context) config() *client.Config {
 	return c.Factory.Client().Config()
 }
 
@@ -94,11 +94,11 @@ func (c *Context) KubeUpdate(n string) error {
 type NamedContext struct {
 	Name    string
 	Context *api.Context
-	config  *k8s.Config
+	config  *client.Config
 }
 
 // NewNamedContext returns a new named context.
-func NewNamedContext(c *k8s.Config, n string, ctx *api.Context) *NamedContext {
+func NewNamedContext(c *client.Config, n string, ctx *api.Context) *NamedContext {
 	return &NamedContext{Name: n, Context: ctx, config: c}
 }
 

@@ -6,8 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/watch"
@@ -29,7 +28,7 @@ type ReplicaSet struct {
 }
 
 // NewReplicaSet returns a new viewer.
-func NewReplicaSet(gvr dao.GVR) ResourceViewer {
+func NewReplicaSet(gvr client.GVR) ResourceViewer {
 	r := ReplicaSet{
 		ResourceViewer: NewBrowser(gvr),
 	}
@@ -180,7 +179,7 @@ func rollback(f *watch.Factory, path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	dp, err := findDP(f, k8s.FQN(rs.Namespace, name))
+	dp, err := findDP(f, client.FQN(rs.Namespace, name))
 	if err != nil {
 		return "", err
 	}

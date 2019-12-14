@@ -1,7 +1,7 @@
 package view
 
 import (
-	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -55,5 +55,5 @@ func (l *LogsExtender) showLogs(path string, prev bool) {
 		log.Debug().Msgf("CUSTOM CO FUNC")
 		co = l.containerFn()
 	}
-	l.App().inject(NewLog(dao.GVR(l.GVR()), path, co, prev))
+	l.App().inject(NewLog(client.GVR(l.GVR()), path, co, prev))
 }

@@ -1,9 +1,9 @@
-package k8s_test
+package client_test
 
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -21,7 +21,7 @@ func TestAsGV(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, k8s.GVR(u.gvr).AsGV())
+			assert.Equal(t, u.e, client.GVR(u.gvr).AsGV())
 		})
 	}
 }
@@ -38,23 +38,7 @@ func TestNewGVR(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, k8s.NewGVR(u.g, u.v, u.r).String())
-		})
-	}
-}
-
-func TestToGVR(t *testing.T) {
-	uu := map[string]struct {
-		gv, r, e string
-	}{
-		"full": {"apps/v1", "deployments", "apps/v1/deployments"},
-		"core": {"v1", "pods", "v1/pods"},
-	}
-
-	for k := range uu {
-		u := uu[k]
-		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, k8s.ToGVR(u.gv, u.r).String())
+			assert.Equal(t, u.e, client.NewGVR(u.g, u.v, u.r).String())
 		})
 	}
 }
@@ -73,7 +57,7 @@ func TestResName(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, k8s.GVR(u.gvr).ResName())
+			assert.Equal(t, u.e, client.GVR(u.gvr).ResName())
 		})
 	}
 }
@@ -92,7 +76,7 @@ func TestToR(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, k8s.GVR(u.gvr).ToR())
+			assert.Equal(t, u.e, client.GVR(u.gvr).ToR())
 		})
 	}
 }
@@ -111,7 +95,7 @@ func TestToG(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, k8s.GVR(u.gvr).ToG())
+			assert.Equal(t, u.e, client.GVR(u.gvr).ToG())
 		})
 	}
 }
@@ -130,7 +114,7 @@ func TestToV(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, k8s.GVR(u.gvr).ToV())
+			assert.Equal(t, u.e, client.GVR(u.gvr).ToV())
 		})
 	}
 }
@@ -148,7 +132,7 @@ func TestToStringer(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.gvr, k8s.GVR(u.gvr).String())
+			assert.Equal(t, u.gvr, client.GVR(u.gvr).String())
 		})
 	}
 }

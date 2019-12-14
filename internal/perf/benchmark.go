@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/rakyll/hey/requester"
 	"github.com/rs/zerolog/log"
 )
@@ -108,7 +108,7 @@ func (b *Benchmark) save(cluster string, r io.Reader) error {
 		return err
 	}
 
-	ns, n := resource.Namespaced(b.config.Name)
+	ns, n := client.Namespaced(b.config.Name)
 	file := filepath.Join(dir, fmt.Sprintf(benchFmat, ns, n, time.Now().UnixNano()))
 	f, err := os.Create(file)
 	if err != nil {

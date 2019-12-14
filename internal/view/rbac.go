@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/derailed/k9s/internal"
-	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -50,14 +50,14 @@ type Rbac struct {
 }
 
 // NewRbac returns a new viewer.
-func NewRbac(gvr dao.GVR) ResourceViewer {
+func NewRbac(gvr client.GVR) ResourceViewer {
 	log.Debug().Msgf(">>>>> NEWRBAC %v!!!!!", gvr)
 	r := Rbac{
 		ResourceViewer: NewBrowser(gvr),
 	}
 	r.GetTable().SetColorerFn(render.Rbac{}.ColorerFunc())
 	r.SetBindKeysFn(r.bindKeys)
-	r.GetTable().SetSortCol(1, len(render.Rbac{}.Header(render.ClusterWide)), true)
+	r.GetTable().SetSortCol(1, len(render.Rbac{}.Header(render.ClusterScope)), true)
 
 	return &r
 }
@@ -167,7 +167,7 @@ func (r *Rbac) bindKeys(aa ui.KeyActions) {
 // }
 
 // func (r *Rbac) loadRoles(path string) (render.Rows, error) {
-// 	ns, n := k8s.Namespaced(path)
+// 	ns, n := client.Namespaced(path)
 // 	o, err := r.app.factory.Get(ns, "rbac.authorization.k8s.io/v1/roles", n, labels.Everything())
 // 	if err != nil {
 // 		return nil, err
@@ -279,7 +279,7 @@ func (r *Rbac) bindKeys(aa ui.KeyActions) {
 // }
 
 func showRoleBinding(app *App, _, resource, selection string) {
-	// ns, n := k8s.Namespaced(selection)
+	// ns, n := client.Namespaced(selection)
 	// rb, err := app.Conn().DialOrDie().RbacV1().RoleBindings(ns).Get(n, metav1.GetOptions{})
 	// if err != nil {
 	// 	app.Flash().Errf("Unable to retrieve rolebindings for %s", selection)
@@ -313,7 +313,7 @@ func showClusterRoleBinding(app *App, ns, gvr, path string) {
 
 func showRBAC(app *App, _, gvr, path string) {
 	log.Debug().Msgf("Showing RBAC %q--%q", gvr, path)
-	v := NewRbac(dao.GVR("rbac"))
+	v := NewRbac(client.GVR("rbac"))
 	v.SetContextFn(rbacCtxt(app, gvr, path))
 	app.inject(v)
 }

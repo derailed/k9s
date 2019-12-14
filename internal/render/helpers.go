@@ -12,20 +12,14 @@ import (
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
-	"k8s.io/apimachinery/pkg/watch"
 )
 
-const (
-	// New track new resource events.
-	New watch.EventType = "NEW"
-	// Unchanged provides no change events.
-	Unchanged watch.EventType = "UNCHANGED"
+const megaByte = 1024 * 1024
 
-	// MissingValue indicates an unset value.
-	MissingValue = "<none>"
-	// NAValue indicates a value that does not pertain.
-	NAValue = "n/a"
-)
+// ToMB converts bytes to megabytes.
+func ToMB(v int64) float64 {
+	return float64(v) / megaByte
+}
 
 func asSelector(s *metav1.LabelSelector) string {
 	sel, err := metav1.LabelSelectorAsSelector(s)

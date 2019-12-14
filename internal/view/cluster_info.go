@@ -3,9 +3,10 @@ package view
 import (
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/k8s"
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
@@ -19,7 +20,7 @@ type clusterInfoView struct {
 	*tview.Table
 
 	app *App
-	mxs resource.MetricsServer
+	mxs *client.MetricsServer
 }
 
 // ClusterInfo tracks Kubernetes cluster and K9s information.
@@ -33,7 +34,7 @@ type ClusterInfo interface {
 	CurrentMEM() float64
 }
 
-func newClusterInfoView(app *App, mx resource.MetricsServer) *clusterInfoView {
+func newClusterInfoView(app *App, mx *client.MetricsServer) *clusterInfoView {
 	return &clusterInfoView{
 		app:   app,
 		Table: tview.NewTable(),
@@ -42,21 +43,21 @@ func newClusterInfoView(app *App, mx resource.MetricsServer) *clusterInfoView {
 }
 
 func (v *clusterInfoView) init(version string) {
-	cluster := resource.NewCluster(v.app.Conn(), &log.Logger, v.mxs)
+	cluster := model.NewCluster(v.app.Conn(), v.mxs)
 
 	row := v.initInfo(cluster)
 	row = v.initVersion(row, version, cluster)
 
 	v.SetCell(row, 0, v.sectionCell("CPU"))
-	v.SetCell(row, 1, v.infoCell(resource.NAValue))
+	v.SetCell(row, 1, v.infoCell(render.NAValue))
 	row++
 	v.SetCell(row, 0, v.sectionCell("MEM"))
-	v.SetCell(row, 1, v.infoCell(resource.NAValue))
+	v.SetCell(row, 1, v.infoCell(render.NAValue))
 
 	v.refresh()
 }
 
-func (v *clusterInfoView) initInfo(cluster *resource.Cluster) int {
+func (v *clusterInfoView) initInfo(cluster *model.Cluster) int {
 	var row int
 	v.SetCell(row, 0, v.sectionCell("Context"))
 	v.SetCell(row, 1, v.infoCell(cluster.ContextName()))
@@ -73,7 +74,7 @@ func (v *clusterInfoView) initInfo(cluster *resource.Cluster) int {
 	return row
 }
 
-func (v *clusterInfoView) initVersion(row int, version string, cluster *resource.Cluster) int {
+func (v *clusterInfoView) initVersion(row int, version string, cluster *model.Cluster) int {
 	v.SetCell(row, 0, v.sectionCell("K9s Rev"))
 	v.SetCell(row, 1, v.infoCell(version))
 	row++
@@ -106,7 +107,7 @@ func (v *clusterInfoView) infoCell(t string) *tview.TableCell {
 
 func (v *clusterInfoView) refresh() {
 	var (
-		cluster = resource.NewCluster(v.app.Conn(), &log.Logger, v.mxs)
+		cluster = model.NewCluster(v.app.Conn(), v.mxs)
 		row     int
 	)
 	v.GetCell(row, 1).SetText(cluster.ContextName())
@@ -119,9 +120,9 @@ func (v *clusterInfoView) refresh() {
 	row++
 
 	c := v.GetCell(row, 1)
-	c.SetText(resource.NAValue)
+	c.SetText(render.NAValue)
 	c = v.GetCell(row+1, 1)
-	c.SetText(resource.NAValue)
+	c.SetText(render.NAValue)
 
 	v.refreshMetrics(cluster, row)
 }
@@ -132,7 +133,7 @@ func fetchResources(app *App) (*v1.NodeList, *mv1beta1.NodeMetricsList, error) {
 		return nil, nil, err
 	}
 
-	mx := k8s.NewMetricsServer(app.factory.Client().(k8s.Connection))
+	mx := client.NewMetricsServer(app.factory.Client())
 	nmx, err := mx.FetchNodesMetrics()
 	if err != nil {
 		return nil, nil, err
@@ -141,27 +142,27 @@ func fetchResources(app *App) (*v1.NodeList, *mv1beta1.NodeMetricsList, error) {
 	return nos, nmx, nil
 }
 
-func (v *clusterInfoView) refreshMetrics(cluster *resource.Cluster, row int) {
+func (v *clusterInfoView) refreshMetrics(cluster *model.Cluster, row int) {
 	nos, nmx, err := fetchResources(v.app)
 	if err != nil {
 		log.Warn().Msgf("NodeMetrics %#v", err)
 		return
 	}
 
-	var cmx k8s.ClusterMetrics
+	var cmx client.ClusterMetrics
 	cluster.Metrics(nos, nmx, &cmx)
 	c := v.GetCell(row, 1)
-	cpu := resource.AsPerc(cmx.PercCPU)
+	cpu := render.AsPerc(cmx.PercCPU)
 	if cpu == "0" {
-		cpu = resource.NAValue
+		cpu = render.NAValue
 	}
 	c.SetText(cpu + "%" + ui.Deltas(strip(c.Text), cpu))
 	row++
 
 	c = v.GetCell(row, 1)
-	mem := resource.AsPerc(cmx.PercMEM)
+	mem := render.AsPerc(cmx.PercMEM)
 	if mem == "0" {
-		mem = resource.NAValue
+		mem = render.NAValue
 	}
 	c.SetText(mem + "%" + ui.Deltas(strip(c.Text), mem))
 }

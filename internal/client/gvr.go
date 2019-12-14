@@ -1,4 +1,4 @@
-package dao
+package client
 
 import (
 	"fmt"
@@ -27,6 +27,11 @@ func FromGVAndR(gv, r string) GVR {
 // ResName returns a resource . separated descriptor in the shape of kind.version.group.
 func (g GVR) ResName() string {
 	return g.ToR() + "." + g.ToV() + "." + g.ToG()
+}
+
+// String returns gvr as string.
+func (g GVR) String() string {
+	return string(g)
 }
 
 // AsGV returns the group version scheme representation.

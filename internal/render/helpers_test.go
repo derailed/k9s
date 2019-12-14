@@ -9,6 +9,21 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func TestToMB(t *testing.T) {
+	uu := []struct {
+		v int64
+		e float64
+	}{
+		{0, 0},
+		{2 * megaByte, 2},
+		{10 * megaByte, 10},
+	}
+
+	for _, u := range uu {
+		assert.Equal(t, u.e, ToMB(u.v))
+	}
+}
+
 func TestToPerc(t *testing.T) {
 	uu := []struct {
 		v1, v2, e float64

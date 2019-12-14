@@ -1,4 +1,4 @@
-package k8s
+package client
 
 import (
 	"testing"
@@ -53,9 +53,11 @@ func BenchmarkPodsMetrics(b *testing.B) {
 func TestNodesMetrics(t *testing.T) {
 	m := NewMetricsServer(nil)
 
-	nodes := Collection{
-		makeNode("n1", "32", "128Gi", "50m", "2Mi"),
-		makeNode("n2", "8", "4Gi", "50m", "10Mi"),
+	nodes := v1.NodeList{
+		Items: []v1.Node{
+			makeNode("n1", "32", "128Gi", "50m", "2Mi"),
+			makeNode("n2", "8", "4Gi", "50m", "10Mi"),
+		},
 	}
 
 	metrics := v1beta1.NodeMetricsList{
@@ -66,7 +68,7 @@ func TestNodesMetrics(t *testing.T) {
 	}
 
 	mmx := make(NodesMetrics)
-	m.NodesMetrics(nodes, &metrics, mmx)
+	m.NodesMetrics(&nodes, &metrics, mmx)
 	assert.Equal(t, 2, len(mmx))
 	mx, ok := mmx["n1"]
 	assert.True(t, ok)
@@ -79,9 +81,11 @@ func TestNodesMetrics(t *testing.T) {
 }
 
 func BenchmarkNodesMetrics(b *testing.B) {
-	nodes := Collection{
-		makeNode("n1", "100m", "4Mi", "100m", "2Mi"),
-		makeNode("n2", "100m", "4Mi", "100m", "2Mi"),
+	nodes := v1.NodeList{
+		Items: []v1.Node{
+			makeNode("n1", "100m", "4Mi", "100m", "2Mi"),
+			makeNode("n2", "100m", "4Mi", "100m", "2Mi"),
+		},
 	}
 
 	metrics := v1beta1.NodeMetricsList{
@@ -97,7 +101,7 @@ func BenchmarkNodesMetrics(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
-		m.NodesMetrics(nodes, &metrics, mmx)
+		m.NodesMetrics(&nodes, &metrics, mmx)
 	}
 }
 
@@ -106,8 +110,8 @@ func TestClusterLoad(t *testing.T) {
 
 	nodes := v1.NodeList{
 		Items: []v1.Node{
-			*makeNode("n1", "100m", "4Mi", "50m", "2Mi"),
-			*makeNode("n2", "100m", "4Mi", "50m", "2Mi"),
+			makeNode("n1", "100m", "4Mi", "50m", "2Mi"),
+			makeNode("n2", "100m", "4Mi", "50m", "2Mi"),
 		},
 	}
 
@@ -127,8 +131,8 @@ func TestClusterLoad(t *testing.T) {
 func BenchmarkClusterLoad(b *testing.B) {
 	nodes := v1.NodeList{
 		Items: []v1.Node{
-			*makeNode("n1", "100m", "4Mi", "50m", "2Mi"),
-			*makeNode("n2", "100m", "4Mi", "50m", "2Mi"),
+			makeNode("n1", "100m", "4Mi", "50m", "2Mi"),
+			makeNode("n2", "100m", "4Mi", "50m", "2Mi"),
 		},
 	}
 
@@ -165,8 +169,8 @@ func makeMxPod(name, cpu, mem string) *v1beta1.PodMetrics {
 	}
 }
 
-func makeNode(name, tcpu, tmem, acpu, amem string) *v1.Node {
-	return &v1.Node{
+func makeNode(name, tcpu, tmem, acpu, amem string) v1.Node {
+	return v1.Node{
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name,
 		},

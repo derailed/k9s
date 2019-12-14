@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -112,14 +111,14 @@ func gatherNodeMX(no *v1.Node, mx *mv1beta1.NodeMetrics) (c metric, a metric, p 
 	}
 
 	cpu := mx.Usage.Cpu().MilliValue()
-	mem := k8s.ToMB(mx.Usage.Memory().Value())
+	mem := ToMB(mx.Usage.Memory().Value())
 	c = metric{
 		cpu: ToMillicore(cpu),
 		mem: ToMi(mem),
 	}
 
 	acpu := no.Status.Allocatable.Cpu().MilliValue()
-	amem := k8s.ToMB(no.Status.Allocatable.Memory().Value())
+	amem := ToMB(no.Status.Allocatable.Memory().Value())
 	a = metric{
 		cpu: ToMillicore(acpu),
 		mem: ToMi(amem),

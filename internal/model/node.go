@@ -3,7 +3,7 @@ package model
 import (
 	"context"
 
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -41,7 +41,7 @@ func (n *Node) List(_ context.Context) ([]runtime.Object, error) {
 
 // Hydrate returns nodes as rows.
 func (n *Node) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
-	mx := k8s.NewMetricsServer(n.factory.Client().(k8s.Connection))
+	mx := client.NewMetricsServer(n.factory.Client())
 	mmx, err := mx.FetchNodesMetrics()
 	if err != nil {
 		log.Warn().Err(err).Msg("No node metrics")

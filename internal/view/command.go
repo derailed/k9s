@@ -5,8 +5,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/rs/zerolog/log"
 )
@@ -70,7 +70,7 @@ func (c *command) viewMetaFor(cmd string) (string, *MetaViewer, error) {
 	if !ok {
 		return "", nil, fmt.Errorf("Huh? `%s` command not found", cmd)
 	}
-	v, ok := customViewers[dao.GVR(gvr)]
+	v, ok := customViewers[client.GVR(gvr)]
 	if !ok {
 		return gvr, &MetaViewer{viewerFn: NewBrowser}, nil
 	}
@@ -113,10 +113,10 @@ func (c *command) componentFor(gvr string, v *MetaViewer) ResourceViewer {
 	var view ResourceViewer
 	if v.viewerFn != nil {
 		log.Debug().Msgf("Custom viewer for %s", gvr)
-		view = v.viewerFn(dao.GVR(gvr))
+		view = v.viewerFn(client.GVR(gvr))
 	} else {
 		log.Debug().Msgf("Generic viewer for %s", gvr)
-		view = NewBrowser(dao.GVR(gvr))
+		view = NewBrowser(client.GVR(gvr))
 	}
 
 	if v.enterFn != nil {
@@ -132,7 +132,7 @@ func (c *command) exec(gvr string, comp model.Component) error {
 		return fmt.Errorf("No component given for %s", gvr)
 	}
 
-	g := k8s.GVR(gvr)
+	g := client.GVR(gvr)
 	c.app.Flash().Infof("Viewing %s resource...", g.ToR())
 	log.Debug().Msgf("Running command %s", gvr)
 	c.app.Config.SetActiveView(g.ToR())

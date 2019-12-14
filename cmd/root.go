@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"runtime/debug"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/k8s"
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -34,7 +34,7 @@ var (
 		Long:  longAppDesc,
 		Run:   run,
 	}
-	_ config.KubeSettings = &k8s.Config{}
+	_ config.KubeSettings = &client.Config{}
 )
 
 func init() {
@@ -94,7 +94,7 @@ func loadConfiguration() *config.Config {
 	log.Info().Msg("🐶 K9s starting up...")
 
 	// Load K9s config file...
-	k8sCfg := k8s.NewConfig(k8sFlags)
+	k8sCfg := client.NewConfig(k8sFlags)
 	k9sCfg := config.NewConfig(k8sCfg)
 
 	if err := k9sCfg.Load(config.K9sConfigFile); err != nil {
@@ -113,14 +113,14 @@ func loadConfiguration() *config.Config {
 		k9sCfg.K9s.OverrideCommand(*k9sFlags.Command)
 	}
 
-	if isBoolSet(k9sFlags.AllNamespaces) && k9sCfg.SetActiveNamespace(resource.AllNamespaces) != nil {
+	if isBoolSet(k9sFlags.AllNamespaces) && k9sCfg.SetActiveNamespace(render.AllNamespaces) != nil {
 		log.Error().Msg("Setting active namespace")
 	}
 
 	if err := k9sCfg.Refine(k8sFlags); err != nil {
 		log.Panic().Err(err).Msg("Unable to locate kubeconfig file")
 	}
-	k9sCfg.SetConnection(k8s.InitConnectionOrDie(k8sCfg))
+	k9sCfg.SetConnection(client.InitConnectionOrDie(k8sCfg))
 
 	// Try to access server version if that fail. Connectivity issue?
 	if _, err := k9sCfg.GetConnection().ServerVersion(); err != nil {

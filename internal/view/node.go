@@ -1,7 +1,7 @@
 package view
 
 import (
-	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -16,7 +16,7 @@ type Node struct {
 }
 
 // NewNode returns a new node view.
-func NewNode(gvr dao.GVR) ResourceViewer {
+func NewNode(gvr client.GVR) ResourceViewer {
 	n := Node{
 		ResourceViewer: NewBrowser(gvr),
 	}
@@ -48,7 +48,7 @@ func (n *Node) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	sel := n.GetTable().GetSelectedItem()
 	log.Debug().Msgf("------ VIEW NODE %q", sel)
-	o, err := n.App().factory.Client().DynDialOrDie().Resource(dao.GVR(n.GVR()).AsGVR()).Get(sel, metav1.GetOptions{})
+	o, err := n.App().factory.Client().DynDialOrDie().Resource(client.GVR(n.GVR()).AsGVR()).Get(sel, metav1.GetOptions{})
 	if err != nil {
 		n.App().Flash().Errf("Unable to get resource %q -- %s", n.GVR(), err)
 		return nil

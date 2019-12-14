@@ -1,6 +1,8 @@
 package model
 
 import (
+	"github.com/derailed/tview"
+	runewidth "github.com/mattn/go-runewidth"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -31,4 +33,9 @@ func FQN(ns, n string) string {
 		return n
 	}
 	return ns + "/" + n
+}
+
+// Truncate a string to the given l and suffix ellipsis if needed.
+func Truncate(str string, width int) string {
+	return runewidth.Truncate(str, width, string(tview.SemigraphicsHorizontalEllipsis))
 }

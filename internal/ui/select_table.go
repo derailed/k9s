@@ -1,10 +1,7 @@
 package ui
 
 import (
-	"strings"
-
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 )
@@ -79,13 +76,8 @@ func (s *SelectTable) RowSelected() bool {
 }
 
 // GetRow retrieves the entire selected row.
-func (s *SelectTable) GetRow() resource.Row {
-	r := make(resource.Row, s.GetColumnCount())
-	for i := 0; i < s.GetColumnCount(); i++ {
-		c := s.GetCell(s.selectedRow, i)
-		r[i] = strings.TrimSpace(c.Text)
-	}
-	return r
+func (s *SelectTable) GetRow() render.Row {
+	return s.Data.RowEvents[s.GetSelectedRowIndex()].Row
 }
 
 func (s *SelectTable) updateSelectedItem(r int) {

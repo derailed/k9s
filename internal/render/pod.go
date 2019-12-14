@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/color"
-	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -147,13 +146,13 @@ func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, p metric) {
 	cpu, mem := currentRes(mx)
 	c = metric{
 		cpu: ToMillicore(cpu.MilliValue()),
-		mem: ToMi(k8s.ToMB(mem.Value())),
+		mem: ToMi(ToMB(mem.Value())),
 	}
 
 	rc, rm := requestedRes(pod)
 	p = metric{
 		cpu: AsPerc(toPerc(float64(cpu.MilliValue()), float64(rc.MilliValue()))),
-		mem: AsPerc(toPerc(k8s.ToMB(mem.Value()), k8s.ToMB(rm.Value()))),
+		mem: AsPerc(toPerc(ToMB(mem.Value()), ToMB(rm.Value()))),
 	}
 
 	return

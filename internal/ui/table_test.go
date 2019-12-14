@@ -6,7 +6,6 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
@@ -41,7 +40,7 @@ func TestTableSelection(t *testing.T) {
 	v.SelectRow(1, true)
 
 	assert.True(t, v.RowSelected())
-	assert.Equal(t, resource.Row{"blee", "duh", "fred"}, v.GetRow())
+	assert.Equal(t, render.Row{ID: "r2", Fields: render.Fields{"blee", "duh", "zorg"}}, v.GetRow())
 	assert.Equal(t, "blee", v.GetSelectedCell(0))
 	assert.Equal(t, 1, v.GetSelectedRowIndex())
 	assert.Equal(t, []string{"r1"}, v.GetSelectedItems())

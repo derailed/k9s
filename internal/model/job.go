@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal"
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
@@ -38,7 +38,7 @@ func (c *Job) List(ctx context.Context) ([]runtime.Object, error) {
 		return oo, nil
 	}
 
-	_, cronName := k8s.Namespaced(path)
+	_, cronName := client.Namespaced(path)
 	jj := make([]runtime.Object, 0, len(oo))
 	for _, j := range oo {
 		var job batchv1.Job

@@ -1,7 +1,8 @@
-package k8s
+package client
 
 import (
-	"github.com/rs/zerolog/log"
+	"math"
+
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
@@ -10,7 +11,6 @@ import (
 type (
 	// MetricsServer serves cluster metrics for nodes and pods.
 	MetricsServer struct {
-		*base
 		Connection
 	}
 
@@ -46,28 +46,24 @@ type (
 
 // NewMetricsServer return a metric server instance.
 func NewMetricsServer(c Connection) *MetricsServer {
-	return &MetricsServer{&base{}, c}
+	return &MetricsServer{Connection: c}
 }
 
 // NodesMetrics retrieves metrics for a given set of nodes.
-func (m *MetricsServer) NodesMetrics(nodes Collection, metrics *mv1beta1.NodeMetricsList, mmx NodesMetrics) {
-	for _, n := range nodes {
-		no, ok := n.(*v1.Node)
-		if !ok {
-			log.Fatal().Msg("Expecting a valid node")
-		}
+func (m *MetricsServer) NodesMetrics(nodes *v1.NodeList, metrics *mv1beta1.NodeMetricsList, mmx NodesMetrics) {
+	for _, no := range nodes.Items {
 		mmx[no.Name] = NodeMetrics{
 			AvailCPU: no.Status.Allocatable.Cpu().MilliValue(),
-			AvailMEM: ToMB(no.Status.Allocatable.Memory().Value()),
+			AvailMEM: toMB(no.Status.Allocatable.Memory().Value()),
 			TotalCPU: no.Status.Capacity.Cpu().MilliValue(),
-			TotalMEM: ToMB(no.Status.Capacity.Memory().Value()),
+			TotalMEM: toMB(no.Status.Capacity.Memory().Value()),
 		}
 	}
 
 	for _, c := range metrics.Items {
 		if mx, ok := mmx[c.Name]; ok {
 			mx.CurrentCPU = c.Usage.Cpu().MilliValue()
-			mx.CurrentMEM = ToMB(c.Usage.Memory().Value())
+			mx.CurrentMEM = toMB(c.Usage.Memory().Value())
 			mmx[c.Name] = mx
 		}
 	}
@@ -79,14 +75,14 @@ func (m *MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsL
 	for _, no := range nos.Items {
 		nodeMetrics[no.Name] = NodeMetrics{
 			AvailCPU: no.Status.Allocatable.Cpu().MilliValue(),
-			AvailMEM: ToMB(no.Status.Allocatable.Memory().Value()),
+			AvailMEM: toMB(no.Status.Allocatable.Memory().Value()),
 		}
 	}
 
 	for _, mx := range nmx.Items {
 		if m, ok := nodeMetrics[mx.Name]; ok {
 			m.CurrentCPU = mx.Usage.Cpu().MilliValue()
-			m.CurrentMEM = ToMB(mx.Usage.Memory().Value())
+			m.CurrentMEM = toMB(mx.Usage.Memory().Value())
 			nodeMetrics[mx.Name] = m
 		}
 	}
@@ -140,8 +136,25 @@ func (m *MetricsServer) PodsMetrics(pods *mv1beta1.PodMetricsList, mmx PodsMetri
 		var mx PodMetrics
 		for _, c := range p.Containers {
 			mx.CurrentCPU += c.Usage.Cpu().MilliValue()
-			mx.CurrentMEM += ToMB(c.Usage.Memory().Value())
+			mx.CurrentMEM += toMB(c.Usage.Memory().Value())
 		}
 		mmx[p.Namespace+"/"+p.Name] = mx
 	}
+}
+
+// 0---------------------------------------------------------------------------
+// Helpers...
+
+const megaByte = 1024 * 1024
+
+// toMB converts bytes to megabytes.
+func toMB(v int64) float64 {
+	return float64(v) / megaByte
+}
+
+func toPerc(v1, v2 float64) float64 {
+	if v2 == 0 {
+		return 0
+	}
+	return math.Round((v1 / v2) * 100)
 }

@@ -1,8 +1,8 @@
 package view
 
 import (
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -20,7 +20,7 @@ type Namespace struct {
 }
 
 // NewNamespace returns a new viewer
-func NewNamespace(gvr dao.GVR) ResourceViewer {
+func NewNamespace(gvr client.GVR) ResourceViewer {
 	n := Namespace{
 		ResourceViewer: NewBrowser(gvr),
 	}

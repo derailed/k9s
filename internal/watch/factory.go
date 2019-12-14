@@ -2,11 +2,11 @@ package watch
 
 import (
 	"fmt"
+	"path"
 	"strings"
 	"time"
 
-	"github.com/derailed/k9s/internal/k8s"
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -16,7 +16,11 @@ import (
 	"k8s.io/client-go/informers/internalinterfaces"
 )
 
-const defaultResync = 10 * time.Minute
+const (
+	defaultResync = 10 * time.Minute
+	allNamespaces = ""
+	clusterScope  = "-"
+)
 
 // BOZO!!
 // // Authorizer checks what a user can or cannot do to a resource.
@@ -53,7 +57,7 @@ const defaultResync = 10 * time.Minute
 // Factory tracks various resource informers.
 type Factory struct {
 	factories        map[string]di.DynamicSharedInformerFactory
-	client           k8s.Connection
+	client           client.Connection
 	stopChan         chan struct{}
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	activeNS         string
@@ -61,7 +65,7 @@ type Factory struct {
 }
 
 // NewFactory returns a new informers factory.
-func NewFactory(client k8s.Connection) *Factory {
+func NewFactory(client client.Connection) *Factory {
 	return &Factory{
 		client:     client,
 		stopChan:   make(chan struct{}),
@@ -80,7 +84,7 @@ func (f *Factory) Dump() {
 
 func (f *Factory) Debug(gvr string) {
 	log.Debug().Msgf("----------- DEBUG FACTORY (%s) -------------", gvr)
-	inf := f.factories[render.AllNamespaces].ForResource(toGVR(gvr))
+	inf := f.factories[allNamespaces].ForResource(toGVR(gvr))
 	for i, k := range inf.Informer().GetStore().ListKeys() {
 		log.Debug().Msgf("%d -- %s", i, k)
 	}
@@ -109,14 +113,14 @@ func (f *Factory) List(gvr, ns string, sel labels.Selector) ([]runtime.Object, e
 		return nil, fmt.Errorf("No resource for GVR %s", gvr)
 	}
 
-	if ns == render.ClusterWide {
+	if ns == clusterScope {
 		return inf.Lister().List(sel)
 	}
 	return inf.Lister().ByNamespace(ns).List(sel)
 }
 
 func (f *Factory) Get(gvr, path string, sel labels.Selector) (runtime.Object, error) {
-	ns, n := k8s.Namespaced(path)
+	ns, n := namespaced(path)
 	log.Debug().Msgf(">>> FACTORY GET %q --- %q:%q -- %q", gvr, ns, n, path)
 	auth, err := f.Client().CanI(ns, gvr, []string{"get"})
 	if err != nil {
@@ -133,7 +137,7 @@ func (f *Factory) Get(gvr, path string, sel labels.Selector) (runtime.Object, er
 		return nil, fmt.Errorf("No resource for GVR %s", gvr)
 	}
 
-	if ns == render.ClusterWide {
+	if ns == clusterScope {
 		return inf.Lister().Get(n)
 	}
 	return inf.Lister().ByNamespace(ns).Get(n)
@@ -202,22 +206,22 @@ func (f *Factory) Start(stopChan chan struct{}) {
 
 // BOZO!! Check ns access for resource??
 func (f *Factory) SetActive(ns string) {
-	if !f.isClusterWide() {
+	if !f.isclusterScope() {
 		f.ensureFactory(ns)
 	}
 	f.activeNS = ns
 }
 
-func (f *Factory) isClusterWide() bool {
-	_, ok := f.factories[render.AllNamespaces]
+func (f *Factory) isclusterScope() bool {
+	_, ok := f.factories[allNamespaces]
 	return ok
 }
 
 func (f *Factory) preload(ns string) {
 	f.ForResource(ns, "v1/pods")
-	f.ForResource(render.AllNamespaces, "apiextensions.k8s.io/v1beta1/customresourcedefinitions")
-	f.ForResource(render.ClusterWide, "rbac.authorization.k8s.io/v1/clusterroles")
-	f.ForResource(render.AllNamespaces, "rbac.authorization.k8s.io/v1/roles")
+	f.ForResource(allNamespaces, "apiextensions.k8s.io/v1beta1/customresourcedefinitions")
+	f.ForResource(clusterScope, "rbac.authorization.k8s.io/v1/clusterroles")
+	f.ForResource(allNamespaces, "rbac.authorization.k8s.io/v1/roles")
 }
 
 func (f *Factory) FactoryFor(ns string) di.DynamicSharedInformerFactory {
@@ -237,8 +241,8 @@ func (f *Factory) ForResource(ns, gvr string) informers.GenericInformer {
 }
 
 func (f *Factory) ensureFactory(ns string) di.DynamicSharedInformerFactory {
-	if f.isClusterWide() {
-		ns = render.AllNamespaces
+	if f.isclusterScope() {
+		ns = allNamespaces
 	}
 	if fac, ok := f.factories[ns]; ok {
 		return fac
@@ -278,6 +282,15 @@ func toGVR(gvr string) schema.GroupVersionResource {
 }
 
 // Client return the factory connection.
-func (f *Factory) Client() k8s.Connection {
+func (f *Factory) Client() client.Connection {
 	return f.client
+}
+
+// ----------------------------------------------------------------------------
+// Helpers...
+
+func namespaced(n string) (string, string) {
+	ns, po := path.Split(n)
+
+	return strings.Trim(ns, "/"), po
 }

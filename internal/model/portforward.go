@@ -6,8 +6,8 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -70,7 +70,7 @@ func (c *PortForward) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) 
 
 // ContainerID computes container ID based on ns/po/co.
 func containerID(path, co string) string {
-	ns, n := k8s.Namespaced(path)
+	ns, n := client.Namespaced(path)
 	po := strings.Split(n, "-")[0]
 
 	return ns + "/" + po + ":" + co

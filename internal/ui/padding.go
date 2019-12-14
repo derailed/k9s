@@ -6,7 +6,6 @@ import (
 	"unicode"
 
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/k9s/internal/resource"
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
@@ -56,7 +55,7 @@ func Pad(s string, width int) string {
 	}
 
 	if len(s) > width {
-		return resource.Truncate(s, width)
+		return render.Truncate(s, width)
 	}
 
 	return s + strings.Repeat(" ", width-len(s))

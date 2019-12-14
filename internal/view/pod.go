@@ -6,8 +6,8 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/watch"
@@ -30,7 +30,7 @@ type Pod struct {
 }
 
 // NewPod returns a new viewer.
-func NewPod(gvr dao.GVR) ResourceViewer {
+func NewPod(gvr client.GVR) ResourceViewer {
 	p := Pod{ResourceViewer: NewLogsExtender(NewBrowser(gvr), nil)}
 	p.SetBindKeysFn(p.bindKeys)
 	p.GetTable().SetEnterFn(p.showContainers)
@@ -57,7 +57,7 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 
 func (p *Pod) showContainers(app *App, ns, gvr, path string) {
 	log.Debug().Msgf("SHOW CONTAINERS %q -- %q -- %q", gvr, ns, path)
-	co := NewContainer(dao.GVR("containers"))
+	co := NewContainer(client.GVR("containers"))
 	co.SetContextFn(p.podContext)
 	app.inject(co)
 }
@@ -74,7 +74,7 @@ func (p *Pod) killCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	res, err := dao.AccessorFor(p.App().factory, dao.GVR(p.GVR()))
+	res, err := dao.AccessorFor(p.App().factory, client.GVR(p.GVR()))
 	if err != nil {
 		p.App().Flash().Err(err)
 		return nil
@@ -174,7 +174,7 @@ func computeShellArgs(path, co, context string, kcfg *string) []string {
 	args := make([]string, 0, 15)
 	args = append(args, "exec", "-it")
 	args = append(args, "--context", context)
-	ns, po := k8s.Namespaced(path)
+	ns, po := client.Namespaced(path)
 	args = append(args, "-n", ns)
 	args = append(args, po)
 	if kcfg != nil && *kcfg != "" {

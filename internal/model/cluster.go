@@ -1,8 +1,7 @@
-package resource
+package model
 
 import (
-	"github.com/derailed/k9s/internal/k8s"
-	"github.com/rs/zerolog"
+	"github.com/derailed/k9s/internal/client"
 	v1 "k8s.io/api/core/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
@@ -10,12 +9,12 @@ import (
 type (
 	// ClusterMeta represents metadata about a Kubernetes cluster.
 	ClusterMeta interface {
-		Connection
+		client.Connection
 
 		Version() (string, error)
-		ContextName() string
-		ClusterName() string
-		UserName() string
+		ContextName() (string, error)
+		ClusterName() (string, error)
+		UserName() (string, error)
 		GetNodes() (*v1.NodeList, error)
 	}
 
@@ -23,9 +22,9 @@ type (
 	MetricsServer interface {
 		MetricsService
 
-		ClusterLoad(nodes *v1.NodeList, metrics *mv1beta1.NodeMetricsList, cmx *k8s.ClusterMetrics) error
-		NodesMetrics(k8s.Collection, *mv1beta1.NodeMetricsList, k8s.NodesMetrics)
-		PodsMetrics(*mv1beta1.PodMetricsList, k8s.PodsMetrics)
+		ClusterLoad(*v1.NodeList, *mv1beta1.NodeMetricsList, *client.ClusterMetrics) error
+		NodesMetrics(*v1.NodeList, *mv1beta1.NodeMetricsList, client.NodesMetrics)
+		PodsMetrics(*mv1beta1.PodMetricsList, client.PodsMetrics)
 	}
 
 	// MetricsService calls the metrics server for metrics info.
@@ -43,8 +42,8 @@ type (
 )
 
 // NewCluster returns a new cluster info resource.
-func NewCluster(c Connection, log *zerolog.Logger, mx MetricsServer) *Cluster {
-	return NewClusterWithArgs(k8s.NewCluster(c, log), mx)
+func NewCluster(c client.Connection, mx MetricsServer) *Cluster {
+	return NewClusterWithArgs(client.NewCluster(c), mx)
 }
 
 // NewClusterWithArgs for tests only!
@@ -64,20 +63,32 @@ func (c *Cluster) Version() string {
 
 // ContextName returns the context name.
 func (c *Cluster) ContextName() string {
-	return c.api.ContextName()
+	n, err := c.api.ContextName()
+	if err != nil {
+		return "n/a"
+	}
+	return n
 }
 
 // ClusterName returns the cluster name.
 func (c *Cluster) ClusterName() string {
-	return c.api.ClusterName()
+	n, err := c.api.ClusterName()
+	if err != nil {
+		return "n/a"
+	}
+	return n
 }
 
 // UserName returns the user name.
 func (c *Cluster) UserName() string {
-	return c.api.UserName()
+	n, err := c.api.UserName()
+	if err != nil {
+		return "n/a"
+	}
+	return n
 }
 
 // Metrics gathers node level metrics and compute utilization percentages.
-func (c *Cluster) Metrics(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsList, mx *k8s.ClusterMetrics) error {
-	return c.mx.ClusterLoad(nos, nmx, mx)
+func (c *Cluster) Metrics(nn *v1.NodeList, nmx *mv1beta1.NodeMetricsList, mx *client.ClusterMetrics) error {
+	return c.mx.ClusterLoad(nn, nmx, mx)
 }

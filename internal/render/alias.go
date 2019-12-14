@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/gdamore/tcell"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -37,7 +37,7 @@ func (Alias) Render(o interface{}, gvr string, r *Row) error {
 		return fmt.Errorf("expected aliasres, but got %T", o)
 	}
 
-	g := k8s.GVR(a.GVR)
+	g := client.GVR(a.GVR)
 	r.ID = string(g)
 	r.Fields = Fields{
 		g.ToR(),

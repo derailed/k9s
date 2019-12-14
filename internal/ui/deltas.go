@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	res "github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/render"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
@@ -95,7 +95,7 @@ func deltaDur(o, n string) (string, bool) {
 // Deltas signals diffs between 2 strings.
 func Deltas(o, n string) string {
 	o, n = strings.TrimSpace(o), strings.TrimSpace(n)
-	if o == "" || o == res.NAValue {
+	if o == "" || o == render.NAValue {
 		return ""
 	}
 

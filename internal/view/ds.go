@@ -1,7 +1,7 @@
 package view
 
 import (
-	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	appsv1 "k8s.io/api/apps/v1"
@@ -14,7 +14,7 @@ type DaemonSet struct {
 	ResourceViewer
 }
 
-func NewDaemonSet(gvr dao.GVR) ResourceViewer {
+func NewDaemonSet(gvr client.GVR) ResourceViewer {
 	d := DaemonSet{
 		ResourceViewer: NewRestartExtender(
 			NewLogsExtender(NewBrowser(gvr), nil),

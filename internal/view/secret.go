@@ -3,7 +3,7 @@ package view
 import (
 	"sigs.k8s.io/yaml"
 
-	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	v1 "k8s.io/api/core/v1"
@@ -18,7 +18,7 @@ type Secret struct {
 }
 
 // NewSecrets returns a new viewer.
-func NewSecret(gvr dao.GVR) ResourceViewer {
+func NewSecret(gvr client.GVR) ResourceViewer {
 	s := Secret{
 		ResourceViewer: NewBrowser(gvr),
 	}

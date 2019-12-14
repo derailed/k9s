@@ -1,21 +1,21 @@
 package dao
 
 import (
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	"k8s.io/kubectl/pkg/describe"
 	"k8s.io/kubectl/pkg/describe/versioned"
 )
 
-func Describe(c k8s.Connection, gvr GVR, ns, n string) (string, error) {
-	mapper := k8s.RestMapper{Connection: c}
+func Describe(c client.Connection, gvr client.GVR, ns, n string) (string, error) {
+	mapper := RestMapper{Connection: c}
 	m, err := mapper.ToRESTMapper()
 	if err != nil {
 		log.Error().Err(err).Msgf("No REST mapper for resource %s", gvr)
 		return "", err
 	}
 
-	GVR := k8s.GVR(gvr)
+	GVR := client.GVR(gvr)
 	gvk, err := m.KindFor(GVR.AsGVR())
 	if err != nil {
 		log.Error().Err(err).Msgf("No GVK for resource %s", gvr)

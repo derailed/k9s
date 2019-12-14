@@ -1,7 +1,7 @@
 package dao
 
 import (
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	batchv1 "k8s.io/api/batch/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/rand"
@@ -18,7 +18,7 @@ var _ Runnable = &CronJob{}
 
 // Run a CronJob.
 func (c *CronJob) Run(path string) error {
-	ns, n := k8s.Namespaced(path)
+	ns, n := client.Namespaced(path)
 	cj, err := c.Client().DialOrDie().BatchV1beta1().CronJobs(ns).Get(n, metav1.GetOptions{})
 	if err != nil {
 		return err

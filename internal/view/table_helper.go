@@ -10,7 +10,6 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/rs/zerolog/log"
 )
@@ -33,7 +32,7 @@ func computeFilename(cluster, ns, title, path string) (string, error) {
 	}
 
 	var fName string
-	if ns == resource.NotNamespaced {
+	if ns == render.ClusterScope {
 		fName = fmt.Sprintf(ui.NoNSFmat, name, now)
 	} else {
 		fName = fmt.Sprintf(ui.FullFmat, name, ns, now)
@@ -44,8 +43,8 @@ func computeFilename(cluster, ns, title, path string) (string, error) {
 
 func saveTable(cluster, title, path string, data render.TableData) (string, error) {
 	ns := data.Namespace
-	if ns == resource.AllNamespaces {
-		ns = resource.AllNamespace
+	if ns == render.ClusterScope {
+		ns = render.NamespaceAll
 	}
 
 	fPath, err := computeFilename(cluster, ns, title, path)

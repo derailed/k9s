@@ -1,7 +1,7 @@
 package view
 
 import (
-	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	appsv1 "k8s.io/api/apps/v1"
@@ -16,7 +16,7 @@ type StatefulSet struct {
 }
 
 // NewStatefulSet returns a new viewer.
-func NewStatefulSet(gvr dao.GVR) ResourceViewer {
+func NewStatefulSet(gvr client.GVR) ResourceViewer {
 	s := StatefulSet{
 		ResourceViewer: NewRestartExtender(
 			NewScaleExtender(

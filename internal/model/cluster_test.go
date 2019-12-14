@@ -1,11 +1,11 @@
-package resource_test
+package model_test
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/derailed/k9s/internal/k8s"
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model"
 	m "github.com/petergtz/pegomock"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
@@ -19,7 +19,7 @@ func TestClusterVersion(t *testing.T) {
 	mm, mx := NewMockClusterMeta(), NewMockMetricsServer()
 	m.When(mm.Version()).ThenReturn("1.2.3", nil)
 
-	ci := resource.NewClusterWithArgs(mm, mx)
+	ci := model.NewClusterWithArgs(mm, mx)
 	assert.Equal(t, "1.2.3", ci.Version())
 }
 
@@ -27,31 +27,31 @@ func TestClusterNoVersion(t *testing.T) {
 	mm, mx := NewMockClusterMeta(), NewMockMetricsServer()
 	m.When(mm.Version()).ThenReturn("bad", fmt.Errorf("No data"))
 
-	ci := resource.NewClusterWithArgs(mm, mx)
+	ci := model.NewClusterWithArgs(mm, mx)
 	assert.Equal(t, "n/a", ci.Version())
 }
 
 func TestClusterName(t *testing.T) {
 	mm, mx := NewMockClusterMeta(), NewMockMetricsServer()
-	m.When(mm.ClusterName()).ThenReturn("fred")
+	m.When(mm.ClusterName()).ThenReturn("fred", nil)
 
-	ci := resource.NewClusterWithArgs(mm, mx)
+	ci := model.NewClusterWithArgs(mm, mx)
 	assert.Equal(t, "fred", ci.ClusterName())
 }
 
 func TestContextName(t *testing.T) {
 	mm, mx := NewMockClusterMeta(), NewMockMetricsServer()
-	m.When(mm.ContextName()).ThenReturn("fred")
+	m.When(mm.ContextName()).ThenReturn("fred", nil)
 
-	ci := resource.NewClusterWithArgs(mm, mx)
+	ci := model.NewClusterWithArgs(mm, mx)
 	assert.Equal(t, "fred", ci.ContextName())
 }
 
 func TestUserName(t *testing.T) {
 	mm, mx := NewMockClusterMeta(), NewMockMetricsServer()
-	m.When(mm.UserName()).ThenReturn("fred")
+	m.When(mm.UserName()).ThenReturn("fred", nil)
 
-	ci := resource.NewClusterWithArgs(mm, mx)
+	ci := model.NewClusterWithArgs(mm, mx)
 	assert.Equal(t, "fred", ci.UserName())
 }
 
@@ -60,7 +60,7 @@ func TestClusterMetrics(t *testing.T) {
 
 	mxx := clusterMetric()
 
-	c := resource.NewClusterWithArgs(mm, mx)
+	c := model.NewClusterWithArgs(mm, mx)
 	c.Metrics(nil, nil, &mxx)
 	assert.Equal(t, clusterMetric(), mxx)
 }
@@ -74,8 +74,8 @@ func TestUsingMocks(t *testing.T) {
 	})
 }
 
-func clusterMetric() k8s.ClusterMetrics {
-	return k8s.ClusterMetrics{
+func clusterMetric() client.ClusterMetrics {
+	return client.ClusterMetrics{
 		PercCPU: 100,
 		PercMEM: 1000,
 	}

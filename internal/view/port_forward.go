@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
@@ -31,7 +31,7 @@ type PortForward struct {
 }
 
 // NewPortForward returns a new viewer.
-func NewPortForward(gvr dao.GVR) ResourceViewer {
+func NewPortForward(gvr client.GVR) ResourceViewer {
 	p := PortForward{
 		ResourceViewer: NewBrowser(gvr),
 	}

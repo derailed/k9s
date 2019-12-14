@@ -6,13 +6,14 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 )
 
 // Reconcile previous vs current state and emits delta events.
-func Reconcile(ctx context.Context, table render.TableData, gvr GVR) (render.TableData, error) {
+func Reconcile(ctx context.Context, table render.TableData, gvr client.GVR) (render.TableData, error) {
 	defer func(t time.Time) {
 		log.Debug().Msgf("Reconcile elapsed: %v", time.Since(t))
 	}(time.Now())

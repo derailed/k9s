@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal"
-	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -23,7 +23,7 @@ type Alias struct {
 }
 
 // NewAlias returns a new alias view.
-func NewAlias(gvr dao.GVR) ResourceViewer {
+func NewAlias(gvr client.GVR) ResourceViewer {
 	a := Alias{
 		ResourceViewer: NewBrowser(gvr),
 	}
@@ -81,7 +81,7 @@ func (a *Alias) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *Alias) gotoCmd1(app *App, ns, res, path string) {
 	log.Debug().Msgf("GOTO %q -- %q -- %q", ns, res, path)
-	app.gotoResource(dao.GVR(path).ToR())
+	app.gotoResource(client.GVR(path).ToR())
 	// r, _ := a.GetTable().GetSelection()
 	// if r != 0 {
 	// 	s := ui.TrimCell(a.GetTable().SelectTable, r, 1)

@@ -10,8 +10,8 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
-	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -33,7 +33,7 @@ var _Loggable = &Pod{}
 
 // Logs fetch container logs for a given pod and container.
 func (p *Pod) Logs(path string, opts *v1.PodLogOptions) *restclient.Request {
-	ns, n := k8s.Namespaced(path)
+	ns, n := client.Namespaced(path)
 	return p.Client().DialOrDie().CoreV1().Pods(ns).GetLogs(n, opts)
 }
 

@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
@@ -22,7 +23,7 @@ type CronJob struct {
 }
 
 // NewCronJob returns a new viewer.
-func NewCronJob(gvr dao.GVR) ResourceViewer {
+func NewCronJob(gvr client.GVR) ResourceViewer {
 	c := CronJob{ResourceViewer: NewBrowser(gvr)}
 	c.SetBindKeysFn(c.bindKeys)
 	c.GetTable().SetEnterFn(c.showJobs)
@@ -46,7 +47,7 @@ func (c *CronJob) showJobs(app *App, ns, res, path string) {
 		return
 	}
 
-	v := NewJob(dao.GVR("batch/v1/jobs"))
+	v := NewJob(client.GVR("batch/v1/jobs"))
 	v.SetContextFn(jobCtx(path, string(cj.UID)))
 	app.inject(v)
 }
@@ -70,7 +71,7 @@ func (c *CronJob) trigger(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	res, err := dao.AccessorFor(c.App().factory, dao.GVR(c.GVR()))
+	res, err := dao.AccessorFor(c.App().factory, client.GVR(c.GVR()))
 	if err != nil {
 		return nil
 	}

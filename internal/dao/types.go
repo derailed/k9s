@@ -3,7 +3,7 @@ package dao
 import (
 	"context"
 
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/watch"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
@@ -15,7 +15,7 @@ import (
 
 type Factory interface {
 	// Client retrieves an api client.
-	Client() k8s.Connection
+	Client() client.Connection
 
 	// Get fetch a given resource.
 	Get(gvr, path string, sel labels.Selector) (runtime.Object, error)
@@ -41,7 +41,7 @@ type Accessor interface {
 	Nuker
 
 	// Init the resource with a factory object.
-	Init(Factory, GVR)
+	Init(Factory, client.GVR)
 }
 
 // Loggable represents resources with logs.

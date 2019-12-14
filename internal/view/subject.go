@@ -1,7 +1,7 @@
 package view
 
 import (
-	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -24,7 +24,7 @@ type (
 )
 
 // NewSubject returns a new subject viewer.
-func NewSubject(gvr dao.GVR) ResourceViewer {
+func NewSubject(gvr client.GVR) ResourceViewer {
 	s := Subject{ResourceViewer: NewBrowser(gvr)}
 	s.GetTable().SetColorerFn(render.Subject{}.ColorerFunc())
 	// s.GetTable().SetSortCol(1, len(s.Header()), true)
@@ -92,7 +92,7 @@ func (s *Subject) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	// _, n := k8s.Namespaced(s.GetSelectedItem())
+	// _, n := client.Namespaced(s.GetSelectedItem())
 	// subject, err := mapFuSubject(s.subjectKind)
 	// if err != nil {
 	// 	s.App().Flash().Err(err)
@@ -207,8 +207,8 @@ func (s *Subject) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
 // }
 
 // func (s *Subject) fetchClusterRoleBindings() (render.Rows, error) {
-// 	s.App().factory.Preload(render.ClusterWide, "rbac.authorization.k8s.io/v1/clusterroles")
-// 	oo, err := s.App().factory.List(render.ClusterWide, "rbac.authorization.k8s.io/v1/clusterrolebindings", labels.Everything())
+// 	s.App().factory.Preload(render.ClusterScope, "rbac.authorization.k8s.io/v1/clusterroles")
+// 	oo, err := s.App().factory.List(render.ClusterScope, "rbac.authorization.k8s.io/v1/clusterrolebindings", labels.Everything())
 // 	if err != nil {
 // 		return nil, err
 // 	}
@@ -235,8 +235,8 @@ func (s *Subject) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
 // }
 
 // func (s *Subject) fetchRoleBindings() (render.Rows, error) {
-// 	s.App().factory.Preload(render.ClusterWide, "rbac.authorization.k8s.io/v1/clusterroles")
-// 	oo, err := s.App().factory.List(render.ClusterWide, "rbac.authorization.k8s.io/v1/rolebindings", labels.Everything())
+// 	s.App().factory.Preload(render.ClusterScope, "rbac.authorization.k8s.io/v1/clusterroles")
+// 	oo, err := s.App().factory.List(render.ClusterScope, "rbac.authorization.k8s.io/v1/rolebindings", labels.Everything())
 // 	if err != nil {
 // 		return nil, err
 // 	}

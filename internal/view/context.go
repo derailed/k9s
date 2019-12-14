@@ -3,6 +3,7 @@ package view
 import (
 	"errors"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
@@ -16,7 +17,7 @@ type Context struct {
 }
 
 // NewContext returns a new viewer.
-func NewContext(gvr dao.GVR) ResourceViewer {
+func NewContext(gvr client.GVR) ResourceViewer {
 	c := Context{
 		ResourceViewer: NewBrowser(gvr),
 	}
@@ -43,7 +44,7 @@ func (c *Context) useCtx(app *App, _, res, path string) {
 }
 
 func (c *Context) useContext(name string) error {
-	res, err := dao.AccessorFor(c.App().factory, dao.GVR(c.GVR()))
+	res, err := dao.AccessorFor(c.App().factory, client.GVR(c.GVR()))
 	if err != nil {
 		return nil
 	}

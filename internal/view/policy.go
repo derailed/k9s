@@ -3,7 +3,7 @@ package view
 import (
 	"strings"
 
-	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -29,7 +29,7 @@ type (
 )
 
 // NewPolicy returns a new viewer.
-func NewPolicy(gvr dao.GVR) *Policy {
+func NewPolicy(gvr client.GVR) *Policy {
 	p := Policy{
 		ResourceViewer: NewBrowser(gvr),
 	}
@@ -164,7 +164,7 @@ func (p *Policy) getTitle() string {
 
 // func (p *Policy) fetchClusterRoleBindings() (render.Rows, []error) {
 // 	var errs []error
-// 	oo, err := p.app.factory.List(render.ClusterWide, "rbac.authorization.k8s.io/v1/clusterrolebindings", labels.Everything())
+// 	oo, err := p.app.factory.List(render.ClusterScope, "rbac.authorization.k8s.io/v1/clusterrolebindings", labels.Everything())
 // 	if err != nil {
 // 		return nil, append(errs, err)
 // 	}
@@ -186,7 +186,7 @@ func (p *Policy) getTitle() string {
 
 // 	rows := make(render.Rows, 0, len(oo))
 // 	for _, role := range roles {
-// 		o, err := p.app.factory.Get(render.ClusterWide, "rbac.authorization.k8s.io/v1/clusterroles", role, labels.Everything())
+// 		o, err := p.app.factory.Get(render.ClusterScope, "rbac.authorization.k8s.io/v1/clusterroles", role, labels.Everything())
 // 		if err != nil {
 // 			return nil, append(errs, err)
 // 		}
@@ -315,7 +315,7 @@ func mapSubject(subject string) string {
 }
 
 // func showSAPolicy(app *App, _, _, selection string) {
-// 	_, n := k8s.Namespaced(selection)
+// 	_, n := client.Namespaced(selection)
 // 	subject, err := mapFuSubject("ServiceAccount")
 // 	if err != nil {
 // 		app.Flash().Err(err)

@@ -1,11 +1,11 @@
-package k8s_test
+package client_test
 
 import (
 	"errors"
 	"fmt"
 	"testing"
 
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -28,7 +28,7 @@ func TestConfigCurrentContext(t *testing.T) {
 	}
 
 	for _, u := range uu {
-		cfg := k8s.NewConfig(u.flags)
+		cfg := client.NewConfig(u.flags)
 		ctx, err := cfg.CurrentContextName()
 		assert.Nil(t, err)
 		assert.Equal(t, u.context, ctx)
@@ -46,7 +46,7 @@ func TestConfigCurrentCluster(t *testing.T) {
 	}
 
 	for _, u := range uu {
-		cfg := k8s.NewConfig(u.flags)
+		cfg := client.NewConfig(u.flags)
 		ctx, err := cfg.CurrentClusterName()
 		assert.Nil(t, err)
 		assert.Equal(t, u.cluster, ctx)
@@ -64,7 +64,7 @@ func TestConfigCurrentUser(t *testing.T) {
 	}
 
 	for _, u := range uu {
-		cfg := k8s.NewConfig(u.flags)
+		cfg := client.NewConfig(u.flags)
 		ctx, err := cfg.CurrentUserName()
 		assert.Nil(t, err)
 		assert.Equal(t, u.user, ctx)
@@ -83,7 +83,7 @@ func TestConfigCurrentNamespace(t *testing.T) {
 	}
 
 	for _, u := range uu {
-		cfg := k8s.NewConfig(u.flags)
+		cfg := client.NewConfig(u.flags)
 		ns, err := cfg.CurrentNamespaceName()
 		assert.Equal(t, u.err, err)
 		assert.Equal(t, u.namespace, ns)
@@ -102,7 +102,7 @@ func TestConfigGetContext(t *testing.T) {
 	}
 
 	for _, u := range uu {
-		cfg := k8s.NewConfig(u.flags)
+		cfg := client.NewConfig(u.flags)
 		ctx, err := cfg.GetContext(u.cluster)
 		if err != nil {
 			assert.Equal(t, u.err, err)
@@ -120,7 +120,7 @@ func TestConfigSwitchContext(t *testing.T) {
 		ClusterName: &cluster,
 	}
 
-	cfg := k8s.NewConfig(&flags)
+	cfg := client.NewConfig(&flags)
 	err := cfg.SwitchContext("blee")
 	assert.Nil(t, err)
 	ctx, err := cfg.CurrentContextName()
@@ -135,7 +135,7 @@ func TestConfigClusterNameFromContext(t *testing.T) {
 		ClusterName: &cluster,
 	}
 
-	cfg := k8s.NewConfig(&flags)
+	cfg := client.NewConfig(&flags)
 	cl, err := cfg.ClusterNameFromContext("blee")
 	assert.Nil(t, err)
 	assert.Equal(t, "blee", cl)
@@ -148,7 +148,7 @@ func TestConfigAccess(t *testing.T) {
 		ClusterName: &cluster,
 	}
 
-	cfg := k8s.NewConfig(&flags)
+	cfg := client.NewConfig(&flags)
 	acc, err := cfg.ConfigAccess()
 	assert.Nil(t, err)
 	assert.True(t, len(acc.GetDefaultFilename()) > 0)
@@ -161,7 +161,7 @@ func TestConfigContexts(t *testing.T) {
 		ClusterName: &cluster,
 	}
 
-	cfg := k8s.NewConfig(&flags)
+	cfg := client.NewConfig(&flags)
 	cc, err := cfg.Contexts()
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(cc))
@@ -174,7 +174,7 @@ func TestConfigContextNames(t *testing.T) {
 		ClusterName: &cluster,
 	}
 
-	cfg := k8s.NewConfig(&flags)
+	cfg := client.NewConfig(&flags)
 	cc, err := cfg.ContextNames()
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(cc))
@@ -187,7 +187,7 @@ func TestConfigClusterNames(t *testing.T) {
 		ClusterName: &cluster,
 	}
 
-	cfg := k8s.NewConfig(&flags)
+	cfg := client.NewConfig(&flags)
 	cc, err := cfg.ClusterNames()
 	assert.Nil(t, err)
 	assert.Equal(t, 3, len(cc))
@@ -200,7 +200,7 @@ func TestConfigDelContext(t *testing.T) {
 		ClusterName: &cluster,
 	}
 
-	cfg := k8s.NewConfig(&flags)
+	cfg := client.NewConfig(&flags)
 	err := cfg.DelContext("fred")
 	assert.Nil(t, err)
 	cc, err := cfg.ContextNames()
@@ -214,7 +214,7 @@ func TestConfigRestConfig(t *testing.T) {
 		KubeConfig: &kubeConfig,
 	}
 
-	cfg := k8s.NewConfig(&flags)
+	cfg := client.NewConfig(&flags)
 	rc, err := cfg.RESTConfig()
 	assert.Nil(t, err)
 	assert.Equal(t, "https://localhost:3000", rc.Host)
@@ -226,7 +226,7 @@ func TestConfigBadConfig(t *testing.T) {
 		KubeConfig: &kubeConfig,
 	}
 
-	cfg := k8s.NewConfig(&flags)
+	cfg := client.NewConfig(&flags)
 	_, err := cfg.RESTConfig()
 	assert.NotNil(t, err)
 }
@@ -238,7 +238,7 @@ func TestNamespaceNames(t *testing.T) {
 		KubeConfig: &kubeConfig,
 	}
 
-	cfg := k8s.NewConfig(&flags)
+	cfg := client.NewConfig(&flags)
 
 	nn := []v1.Namespace{
 		{ObjectMeta: metav1.ObjectMeta{Name: "ns1"}},

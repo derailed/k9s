@@ -3,7 +3,6 @@ package render
 import (
 	"fmt"
 
-	"github.com/derailed/k9s/internal/k8s"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,7 +41,7 @@ func (ClusterRoleBinding) Render(o interface{}, ns string, r *Row) error {
 
 	kind, ss := renderSubjects(crb.Subjects)
 
-	r.ID = k8s.FQN("-", crb.ObjectMeta.Name)
+	r.ID = FQN("-", crb.ObjectMeta.Name)
 	r.Fields = Fields{
 		crb.Name,
 		crb.RoleRef.Name,

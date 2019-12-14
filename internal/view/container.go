@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
@@ -23,7 +23,7 @@ type Container struct {
 }
 
 // New Container returns a new container view.
-func NewContainer(gvr dao.GVR) ResourceViewer {
+func NewContainer(gvr client.GVR) ResourceViewer {
 	c := Container{}
 	c.ResourceViewer = NewLogsExtender(NewBrowser(gvr), c.selectedContainer)
 	c.SetEnvFn(c.k9sEnv)
@@ -51,7 +51,7 @@ func (c *Container) bindKeys(aa ui.KeyActions) {
 
 func (c *Container) k9sEnv() K9sEnv {
 	env := defaultK9sEnv(c.App(), c.GetTable().GetSelectedItem(), c.GetTable().GetRow())
-	ns, n := k8s.Namespaced(c.GetTable().Path)
+	ns, n := client.Namespaced(c.GetTable().Path)
 	env["POD"] = n
 	env["NAMESPACE"] = ns
 
@@ -138,7 +138,7 @@ func (c *Container) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (c *Container) portForward(lport, cport string) {
 	co := c.GetTable().GetSelectedCell(0)
-	pf := k8s.NewPortForward(c.App().Conn(), &log.Logger)
+	pf := dao.NewPortForwarder(c.App().Conn())
 	ports := []string{lport + ":" + cport}
 	fw, err := pf.Start(c.GetTable().Path, co, ports)
 	if err != nil {
@@ -150,7 +150,7 @@ func (c *Container) portForward(lport, cport string) {
 	go c.runForward(pf, fw)
 }
 
-func (c *Container) runForward(pf *k8s.PortForward, f *portforward.PortForwarder) {
+func (c *Container) runForward(pf *dao.PortForwarder, f *portforward.PortForwarder) {
 	c.App().QueueUpdateDraw(func() {
 		c.App().factory.RegisterForwarder(pf)
 		c.App().Flash().Infof("PortForward activated %s:%s", pf.Path(), pf.Ports()[0])

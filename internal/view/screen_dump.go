@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/fsnotify/fsnotify"
 	"github.com/gdamore/tcell"
@@ -22,7 +22,7 @@ type ScreenDump struct {
 }
 
 // NewScreenDump returns a new viewer.
-func NewScreenDump(gvr dao.GVR) ResourceViewer {
+func NewScreenDump(gvr client.GVR) ResourceViewer {
 	s := ScreenDump{
 		ResourceViewer: NewBrowser(gvr),
 	}

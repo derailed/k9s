@@ -7,8 +7,8 @@ const (
 	// NamespaceAll represent the all namespace.
 	NamespaceAll = "all"
 
-	// ClusterWide represents a cluster resources.
-	ClusterWide = "-"
+	// ClusterScope represents cluster wide resources.
+	ClusterScope = "-"
 
 	// NonResource represents a custom resource.
 	NonResource = "*"
@@ -32,4 +32,15 @@ const (
 
 	// PodInitializing represents a pod initializing status.
 	PodInitializing = "PodInitializing"
+)
+
+const (
+	// MissingValue indicates an unset value.
+	MissingValue = "<none>"
+
+	// NAValue indicates a value that does not pertain.
+	NAValue = "n/a"
+
+	// UnknownValue represents an unknown.
+	UnknownValue = "<unknown>"
 )

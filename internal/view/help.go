@@ -8,9 +8,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model"
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
@@ -203,23 +203,23 @@ func keyConv(s string) string {
 	return strings.Replace(s, "alt", "opt", 1)
 }
 
-func defaultK9sEnv(app *App, sel string, row resource.Row) K9sEnv {
-	ns, n := k8s.Namespaced(sel)
+func defaultK9sEnv(app *App, sel string, row render.Row) K9sEnv {
+	ns, n := client.Namespaced(sel)
 	ctx, err := app.Conn().Config().CurrentContextName()
 	if err != nil {
-		ctx = resource.NAValue
+		ctx = render.NAValue
 	}
 	cluster, err := app.Conn().Config().CurrentClusterName()
 	if err != nil {
-		cluster = resource.NAValue
+		cluster = render.NAValue
 	}
 	user, err := app.Conn().Config().CurrentUserName()
 	if err != nil {
-		user = resource.NAValue
+		user = render.NAValue
 	}
 	groups, err := app.Conn().Config().CurrentGroupNames()
 	if err != nil {
-		groups = []string{resource.NAValue}
+		groups = []string{render.NAValue}
 	}
 	var cfg string
 	kcfg := app.Conn().Config().Flags().KubeConfig
@@ -237,7 +237,7 @@ func defaultK9sEnv(app *App, sel string, row resource.Row) K9sEnv {
 		"KUBECONFIG": cfg,
 	}
 
-	for i, r := range row {
+	for i, r := range row.Fields {
 		env["COL"+strconv.Itoa(i)] = r
 	}
 

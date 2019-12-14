@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/k8s"
 	"github.com/derailed/k9s/internal/model"
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tview"
@@ -37,18 +37,18 @@ type App struct {
 
 // NewApp returns a K9s app instance.
 func NewApp(cfg *config.Config) *App {
-	v := App{
+	a := App{
 		App:     ui.NewApp(),
 		Content: NewPageStack(),
 	}
-	v.Config = cfg
-	v.InitBench(cfg.K9s.CurrentCluster)
-	v.command = newCommand(&v)
+	a.Config = cfg
+	a.InitBench(cfg.K9s.CurrentCluster)
+	a.command = newCommand(&a)
 
-	v.Views()["indicator"] = ui.NewIndicatorView(v.App, v.Styles)
-	v.Views()["clusterInfo"] = newClusterInfoView(&v, k8s.NewMetricsServer(cfg.GetConnection()))
+	a.Views()["indicator"] = ui.NewIndicatorView(a.App, a.Styles)
+	a.Views()["clusterInfo"] = newClusterInfoView(&a, client.NewMetricsServer(cfg.GetConnection()))
 
-	return &v
+	return &a
 }
 
 // ActiveView returns the currently active view.
@@ -207,20 +207,20 @@ func (a *App) refreshClusterInfo() {
 }
 
 func (a *App) refreshIndicator() {
-	mx := k8s.NewMetricsServer(a.Conn())
-	cluster := resource.NewCluster(a.Conn(), &log.Logger, mx)
-	var cmx k8s.ClusterMetrics
+	mx := client.NewMetricsServer(a.Conn())
+	cluster := model.NewCluster(a.Conn(), mx)
+	var cmx client.ClusterMetrics
 	nos, nmx, err := fetchResources(a)
 	cpu, mem := "0", "0"
 	if err == nil {
 		cluster.Metrics(nos, nmx, &cmx)
-		cpu = resource.AsPerc(cmx.PercCPU)
+		cpu = render.AsPerc(cmx.PercCPU)
 		if cpu == "0" {
-			cpu = resource.NAValue
+			cpu = render.NAValue
 		}
-		mem = resource.AsPerc(cmx.PercMEM)
+		mem = render.AsPerc(cmx.PercMEM)
 		if mem == "0" {
-			mem = resource.NAValue
+			mem = render.NAValue
 		}
 	}
 
@@ -237,8 +237,8 @@ func (a *App) refreshIndicator() {
 }
 
 func (a *App) switchNS(ns string) bool {
-	if ns == resource.AllNamespace {
-		ns = resource.AllNamespaces
+	if ns == render.ClusterScope {
+		ns = render.AllNamespaces
 	}
 	if err := a.Config.SetActiveNamespace(ns); err != nil {
 		log.Error().Err(err).Msg("Config Set NS failed!")

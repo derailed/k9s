@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -26,7 +26,7 @@ type Service struct {
 }
 
 // NewService returns a new viewer.
-func NewService(gvr dao.GVR) ResourceViewer {
+func NewService(gvr client.GVR) ResourceViewer {
 	s := Service{
 		ResourceViewer: NewLogsExtender(NewBrowser(gvr), nil),
 	}

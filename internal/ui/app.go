@@ -1,7 +1,7 @@
 package ui
 
 import (
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 )
@@ -49,7 +49,7 @@ func (a *App) Init() {
 }
 
 // Conn returns an api server connection.
-func (a *App) Conn() k8s.Connection {
+func (a *App) Conn() client.Connection {
 	return a.Config.GetConnection()
 }
 

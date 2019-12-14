@@ -14,7 +14,7 @@ package view_test
 // 	ctx := makeCtx()
 
 // 	app := ctx.Value(ui.KeyApp).(*view.App)
-// 	po := view.NewPod(dao.GVR("v1/pods"))
+// 	po := view.NewPod(client.GVR("v1/pods"))
 // 	po.Init(ctx)
 // 	app.Content.Push(po)
 

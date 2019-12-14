@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -29,7 +29,7 @@ func (g *Generic) List(ctx context.Context) ([]runtime.Object, error) {
 	// Ensures the factory is tracking this resource
 	_ = g.factory.ForResource(g.namespace, g.gvr)
 
-	gvr := k8s.GVR(g.gvr)
+	gvr := client.GVR(g.gvr)
 	fcodec, codec := g.codec(gvr.AsGV())
 
 	c, err := g.client(fcodec, gvr)
@@ -86,7 +86,7 @@ func (g *Generic) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) erro
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func (g *Generic) client(codec serializer.CodecFactory, gvr k8s.GVR) (*rest.RESTClient, error) {
+func (g *Generic) client(codec serializer.CodecFactory, gvr client.GVR) (*rest.RESTClient, error) {
 	crConfig := g.factory.Client().RestConfigOrDie()
 	gv := gvr.AsGV()
 	crConfig.GroupVersion = &gv

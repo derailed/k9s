@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/gdamore/tcell"
@@ -14,7 +14,7 @@ import (
 )
 
 func TestAliasNew(t *testing.T) {
-	v := view.NewAlias(dao.GVR("aliases"))
+	v := view.NewAlias(client.GVR("aliases"))
 
 	assert.Nil(t, v.Init(makeContext()))
 	assert.Equal(t, "Aliases", v.Name())
@@ -23,7 +23,7 @@ func TestAliasNew(t *testing.T) {
 
 // BOZO!!
 // func TestAliasSearch(t *testing.T) {
-// 	v := view.NewAlias(dao.GVR("aliases"))
+// 	v := view.NewAlias(client.GVR("aliases"))
 // 	assert.Nil(t, v.Init(makeContext()))
 // 	v.GetTable().SearchBuff().SetActive(true)
 // 	v.GetTable().SearchBuff().Set("dump")
@@ -35,7 +35,7 @@ func TestAliasNew(t *testing.T) {
 // }
 
 func TestAliasGoto(t *testing.T) {
-	v := view.NewAlias(dao.GVR("aliases"))
+	v := view.NewAlias(client.GVR("aliases"))
 	assert.Nil(t, v.Init(makeContext()))
 	v.GetTable().Select(0, 0)
 
