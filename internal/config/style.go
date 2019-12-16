@@ -327,12 +327,10 @@ func (s *Styles) Update() {
 
 // AsColor checks color index, if match return color otherwise pink it is.
 func AsColor(c string) tcell.Color {
-	if color, ok := tcell.ColorNames[c]; ok {
-		return color
-	} else {
-		// Use tcell.GetColor to support hex codes.
-		// "Creates a Color from a color name (W3C name). A hex value may be supplied as a string in the format "#ffffff"."
-		color := tcell.GetColor(c)
+	// Use tcell.GetColor to support hex codes.
+	// "Creates a Color from a color name (W3C name). A hex value may be supplied as a string in the format "#ffffff"."
+	if color := tcell.GetColor(c); color != -1 {
 		return color
 	}
+	return tcell.ColorPink
 }
