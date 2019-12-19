@@ -51,7 +51,8 @@ func newHelpView(app *appView, current ui.Igniter, hh ui.Hints) *helpView {
 
 func (v *helpView) bindKeys() {
 	v.actions = ui.KeyActions{
-		tcell.KeyEsc:   ui.NewKeyAction("Back", v.backCmd, true),
+		ui.KeyHelp:     ui.NewKeyAction("Back", v.backCmd, true),
+		tcell.KeyEsc:   ui.NewKeyAction("Back", v.backCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Back", v.backCmd, false),
 	}
 }
