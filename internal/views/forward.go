@@ -107,8 +107,8 @@ func (v *forwardView) registerActions() {
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", v.deleteCmd, true),
 		ui.KeySlash:    ui.NewKeyAction("Filter", tv.activateCmd, false),
 		ui.KeyP:        ui.NewKeyAction("Previous", v.app.prevCmd, false),
-		ui.KeyShiftP:   ui.NewKeyAction("Sort Ports", v.sortColCmd(2, true), false),
-		ui.KeyShiftU:   ui.NewKeyAction("Sort URL", v.sortColCmd(4, true), false),
+		ui.KeyShiftP:   ui.NewKeyAction("Sort Ports", sortColCmd(v, 2, true), false),
+		ui.KeyShiftU:   ui.NewKeyAction("Sort URL", sortColCmd(v, 4, true), false),
 	})
 }
 
@@ -116,14 +116,10 @@ func (v *forwardView) getTitle() string {
 	return forwardTitle
 }
 
-func (v *forwardView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		tv := v.getTV()
-		tv.SetSortCol(tv.NameColIndex()+col, 0, asc)
-		v.refresh()
-
-		return nil
-	}
+func (v *forwardView) sortColumn(col int, asc bool) {
+	tv := v.getTV()
+	tv.SetSortCol(tv.NameColIndex()+col, 0, asc)
+	v.refresh()
 }
 
 func (v *forwardView) gotoBenchCmd(evt *tcell.EventKey) *tcell.EventKey {

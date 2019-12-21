@@ -100,6 +100,12 @@ func (v *dumpView) getTitle() string {
 	return dumpTitle
 }
 
+func (v *dumpView) sortColumn(col int, asc bool) {
+	tv := v.getTV()
+	tv.SetSortCol(tv.NameColIndex()+col, 0, asc)
+	tv.Refresh()
+}
+
 func (v *dumpView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		tv := v.getTV()
