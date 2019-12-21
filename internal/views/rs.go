@@ -32,19 +32,9 @@ func newReplicaSetView(title, gvr string, app *appView, list resource.List) reso
 }
 
 func (v *replicaSetView) extraActions(aa ui.KeyActions) {
-	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", v.sortColCmd(1, false), false)
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", v.sortColCmd(2, false), false)
+	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", sortColCmd(v, 1, false), false)
+	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", sortColCmd(v, 2, false), false)
 	aa[tcell.KeyCtrlB] = ui.NewKeyAction("Rollback", v.rollbackCmd, true)
-}
-
-func (v *replicaSetView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		t := v.masterPage()
-		t.SetSortCol(t.NameColIndex()+col, 0, asc)
-		t.Refresh()
-
-		return nil
-	}
 }
 
 func (v *replicaSetView) showPods(app *appView, ns, res, sel string) {

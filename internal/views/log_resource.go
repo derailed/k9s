@@ -30,16 +30,6 @@ func (v *logResourceView) extraActions(aa ui.KeyActions) {
 	aa[ui.KeyShiftL] = ui.NewKeyAction("Logs Previous", v.prevLogsCmd, true)
 }
 
-func (v *logResourceView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		t := v.masterPage()
-		t.SetSortCol(t.NameColIndex()+col, 0, asc)
-		t.Refresh()
-
-		return nil
-	}
-}
-
 // Protocol...
 
 func (v *logResourceView) getList() resource.List {

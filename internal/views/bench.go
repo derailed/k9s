@@ -97,16 +97,6 @@ func (v *benchView) getTitle() string {
 	return benchTitle
 }
 
-func (v *benchView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		tv := v.masterPage()
-		tv.SetSortCol(tv.NameColIndex()+col, 0, asc)
-		tv.Refresh()
-
-		return nil
-	}
-}
-
 func (v *benchView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if v.masterPage().SearchBuff().IsActive() {
 		return v.masterPage().filterCmd(evt)
