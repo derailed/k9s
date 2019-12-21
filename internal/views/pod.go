@@ -56,15 +56,15 @@ func (v *podView) extraActions(aa ui.KeyActions) {
 	aa[ui.KeyL] = ui.NewKeyAction("Logs", v.logsCmd, true)
 	aa[ui.KeyShiftL] = ui.NewKeyAction("Logs Previous", v.prevLogsCmd, true)
 
-	aa[ui.KeyShiftR] = ui.NewKeyAction("Sort Ready", SortColCmd(v, 1, false), false)
-	aa[ui.KeyShiftS] = ui.NewKeyAction("Sort Status", SortColCmd(v, 2, true), false)
-	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Restart", SortColCmd(v, 3, false), false)
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", SortColCmd(v, 4, false), false)
-	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", SortColCmd(v, 5, false), false)
-	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", SortColCmd(v, 6, false), false)
-	aa[ui.KeyShiftZ] = ui.NewKeyAction("Sort MEM%", SortColCmd(v, 7, false), false)
-	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort IP", SortColCmd(v, 8, true), false)
-	aa[ui.KeyShiftO] = ui.NewKeyAction("Sort Node", SortColCmd(v, 9, true), false)
+	aa[ui.KeyShiftR] = ui.NewKeyAction("Sort Ready", ui.SortColCmd(v, 1, false), false)
+	aa[ui.KeyShiftS] = ui.NewKeyAction("Sort Status", ui.SortColCmd(v, 2, true), false)
+	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Restart", ui.SortColCmd(v, 3, false), false)
+	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", ui.SortColCmd(v, 4, false), false)
+	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", ui.SortColCmd(v, 5, false), false)
+	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", ui.SortColCmd(v, 6, false), false)
+	aa[ui.KeyShiftZ] = ui.NewKeyAction("Sort MEM%", ui.SortColCmd(v, 7, false), false)
+	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort IP", ui.SortColCmd(v, 8, true), false)
+	aa[ui.KeyShiftO] = ui.NewKeyAction("Sort Node", ui.SortColCmd(v, 9, true), false)
 }
 
 func (v *podView) listContainers(app *appView, _, res, sel string) {

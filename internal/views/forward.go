@@ -107,8 +107,8 @@ func (v *forwardView) registerActions() {
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", v.deleteCmd, true),
 		ui.KeySlash:    ui.NewKeyAction("Filter", tv.activateCmd, false),
 		ui.KeyP:        ui.NewKeyAction("Previous", v.app.prevCmd, false),
-		ui.KeyShiftP:   ui.NewKeyAction("Sort Ports", SortColCmd(v, 2, true), false),
-		ui.KeyShiftU:   ui.NewKeyAction("Sort URL", SortColCmd(v, 4, true), false),
+		ui.KeyShiftP:   ui.NewKeyAction("Sort Ports", ui.SortColCmd(v, 2, true), false),
+		ui.KeyShiftU:   ui.NewKeyAction("Sort URL", ui.SortColCmd(v, 4, true), false),
 	})
 }
 

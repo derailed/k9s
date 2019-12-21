@@ -47,7 +47,7 @@ func (v *svcView) extraActions(aa ui.KeyActions) {
 	aa[ui.KeyL] = ui.NewKeyAction("Logs", v.logsCmd, true)
 	aa[tcell.KeyCtrlB] = ui.NewKeyAction("Bench", v.benchCmd, true)
 	aa[tcell.KeyCtrlK] = ui.NewKeyAction("Bench Stop", v.benchStopCmd, true)
-	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Type", SortColCmd(v, 1, false), false)
+	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Type", ui.SortColCmd(v, 1, false), false)
 }
 
 func (v *svcView) showPods(app *appView, ns, res, sel string) {
