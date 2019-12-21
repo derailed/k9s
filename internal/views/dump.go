@@ -106,15 +106,6 @@ func (v *dumpView) sortColumn(col int, asc bool) {
 	tv.Refresh()
 }
 
-func (v *dumpView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		tv := v.getTV()
-		tv.SetSortCol(tv.NameColIndex()+col, 0, asc)
-		tv.Refresh()
-		return nil
-	}
-}
-
 func (v *dumpView) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	log.Debug().Msg("Dump enter!")
 	tv := v.getTV()
