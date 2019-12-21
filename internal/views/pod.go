@@ -56,15 +56,15 @@ func (v *podView) extraActions(aa ui.KeyActions) {
 	aa[ui.KeyL] = ui.NewKeyAction("Logs", v.logsCmd, true)
 	aa[ui.KeyShiftL] = ui.NewKeyAction("Logs Previous", v.prevLogsCmd, true)
 
-	aa[ui.KeyShiftR] = ui.NewKeyAction("Sort Ready", v.sortColCmd(1, false), false)
-	aa[ui.KeyShiftS] = ui.NewKeyAction("Sort Status", v.sortColCmd(2, true), false)
-	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Restart", v.sortColCmd(3, false), false)
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", v.sortColCmd(4, false), false)
-	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", v.sortColCmd(5, false), false)
-	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", v.sortColCmd(6, false), false)
-	aa[ui.KeyShiftZ] = ui.NewKeyAction("Sort MEM%", v.sortColCmd(7, false), false)
-	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort IP", v.sortColCmd(8, true), false)
-	aa[ui.KeyShiftO] = ui.NewKeyAction("Sort Node", v.sortColCmd(9, true), false)
+	aa[ui.KeyShiftR] = ui.NewKeyAction("Sort Ready", sortColCmd(v, 1, false), false)
+	aa[ui.KeyShiftS] = ui.NewKeyAction("Sort Status", sortColCmd(v, 2, true), false)
+	aa[ui.KeyShiftT] = ui.NewKeyAction("Sort Restart", sortColCmd(v, 3, false), false)
+	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", sortColCmd(v, 4, false), false)
+	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", sortColCmd(v, 5, false), false)
+	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", sortColCmd(v, 6, false), false)
+	aa[ui.KeyShiftZ] = ui.NewKeyAction("Sort MEM%", sortColCmd(v, 7, false), false)
+	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort IP", sortColCmd(v, 8, true), false)
+	aa[ui.KeyShiftO] = ui.NewKeyAction("Sort Node", sortColCmd(v, 9, true), false)
 }
 
 func (v *podView) listContainers(app *appView, _, res, sel string) {
@@ -191,11 +191,15 @@ func (v *podView) shellIn(path, co string) {
 	v.restartUpdates()
 }
 
-func (v *podView) sortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
+type columnSortable interface {
+	sortColumn(col int, asc bool)
+}
+
+func sortColCmd(colSortable columnSortable, col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
+	// TODO: use direction type instead of asc bool, move
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		t := v.masterPage()
-		t.SetSortCol(t.NameColIndex()+col, 0, asc)
-		t.Refresh()
+		colSortable.sortColumn(col, asc)
+		asc = !asc // flip sort direction for next call
 
 		return nil
 	}
