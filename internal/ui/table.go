@@ -286,7 +286,7 @@ func (v *Table) doUpdate(data resource.TableData) {
 // SortColCmd designates a sorted column.
 func (v *Table) SortColCmd(col int) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		v.sortCol.asc = true
+		v.sortCol.asc = !v.sortCol.asc
 		switch col {
 		case -2:
 			v.sortCol.index = 0
