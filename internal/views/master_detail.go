@@ -73,7 +73,7 @@ func (v *masterDetail) masterPage() *tableView {
 	return v.GetPrimitive("master").(*tableView)
 }
 
-func (v *masterDetail) sortColumn(col int, asc bool) {
+func (v *masterDetail) SortColumn(col int, asc bool) {
 	t := v.masterPage()
 	t.SetSortCol(t.NameColIndex()+col, 0, asc)
 	t.Refresh()

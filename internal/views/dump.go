@@ -100,7 +100,7 @@ func (v *dumpView) getTitle() string {
 	return dumpTitle
 }
 
-func (v *dumpView) sortColumn(col int, asc bool) {
+func (v *dumpView) SortColumn(col int, asc bool) {
 	tv := v.getTV()
 	tv.SetSortCol(tv.NameColIndex()+col, 0, asc)
 	tv.Refresh()

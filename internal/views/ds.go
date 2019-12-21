@@ -28,8 +28,8 @@ func newDaemonSetView(title, gvr string, app *appView, list resource.List) resou
 func (v *daemonSetView) extraActions(aa ui.KeyActions) {
 	v.logResourceView.extraActions(aa)
 	v.restartableResourceView.extraActions(aa)
-	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", sortColCmd(v, 1, false), false)
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", sortColCmd(v, 2, false), false)
+	aa[ui.KeyShiftD] = ui.NewKeyAction("Sort Desired", SortColCmd(v, 1, false), false)
+	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort Current", SortColCmd(v, 2, false), false)
 }
 
 func (v *daemonSetView) showPods(app *appView, _, res, sel string) {

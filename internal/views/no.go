@@ -19,10 +19,10 @@ func newNodeView(title, gvr string, app *appView, list resource.List) resourceVi
 }
 
 func (v *nodeView) extraActions(aa ui.KeyActions) {
-	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", sortColCmd(v, 7, false), false)
-	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", sortColCmd(v, 8, false), false)
-	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", sortColCmd(v, 9, false), false)
-	aa[ui.KeyShiftZ] = ui.NewKeyAction("Sort MEM%", sortColCmd(v, 10, false), false)
+	aa[ui.KeyShiftC] = ui.NewKeyAction("Sort CPU", SortColCmd(v, 7, false), false)
+	aa[ui.KeyShiftM] = ui.NewKeyAction("Sort MEM", SortColCmd(v, 8, false), false)
+	aa[ui.KeyShiftX] = ui.NewKeyAction("Sort CPU%", SortColCmd(v, 9, false), false)
+	aa[ui.KeyShiftZ] = ui.NewKeyAction("Sort MEM%", SortColCmd(v, 10, false), false)
 }
 
 func (v *nodeView) showPods(app *appView, _, _, sel string) {
