@@ -125,7 +125,7 @@ func (v *rbacView) bindKeys() {
 		tcell.KeyEscape: ui.NewKeyAction("Reset", v.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", v.activateCmd, false),
 		ui.KeyP:         ui.NewKeyAction("Previous", v.app.prevCmd, false),
-		ui.KeyShiftO:    ui.NewKeyAction("Sort APIGroup", v.SortColCmd(1), false),
+		ui.KeyShiftO:    ui.NewKeyAction("Sort APIGroup", ui.SortColCmd(v, 1, true), false),
 	})
 }
 

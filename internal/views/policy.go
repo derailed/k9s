@@ -76,10 +76,10 @@ func (v *policyView) bindKeys() {
 		tcell.KeyEscape: ui.NewKeyAction("Reset", v.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", v.activateCmd, false),
 		ui.KeyP:         ui.NewKeyAction("Previous", v.app.prevCmd, false),
-		ui.KeyShiftS:    ui.NewKeyAction("Sort Namespace", v.SortColCmd(0), false),
-		ui.KeyShiftN:    ui.NewKeyAction("Sort Name", v.SortColCmd(1), false),
-		ui.KeyShiftO:    ui.NewKeyAction("Sort Group", v.SortColCmd(2), false),
-		ui.KeyShiftB:    ui.NewKeyAction("Sort Binding", v.SortColCmd(3), false),
+		ui.KeyShiftS:    ui.NewKeyAction("Sort Namespace", ui.SortColCmd(v, 0, true), false),
+		ui.KeyShiftN:    ui.NewKeyAction("Sort Name", ui.SortColCmd(v, 1, true), false),
+		ui.KeyShiftO:    ui.NewKeyAction("Sort Group", ui.SortColCmd(v, 2, true), false),
+		ui.KeyShiftB:    ui.NewKeyAction("Sort Binding", ui.SortColCmd(v, 3, true), false),
 	})
 }
 

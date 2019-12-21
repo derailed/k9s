@@ -56,9 +56,9 @@ func (v *aliasView) registerActions() {
 		tcell.KeyEnter:  ui.NewKeyAction("Goto", v.gotoCmd, true),
 		tcell.KeyEscape: ui.NewKeyAction("Reset", v.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", v.activateCmd, false),
-		ui.KeyShiftR:    ui.NewKeyAction("Sort Resource", v.SortColCmd(0), false),
-		ui.KeyShiftC:    ui.NewKeyAction("Sort Command", v.SortColCmd(1), false),
-		ui.KeyShiftA:    ui.NewKeyAction("Sort ApiGroup", v.SortColCmd(2), false),
+		ui.KeyShiftR:    ui.NewKeyAction("Sort Resource", ui.SortColCmd(v, 0, true), false),
+		ui.KeyShiftC:    ui.NewKeyAction("Sort Command", ui.SortColCmd(v, 1, true), false),
+		ui.KeyShiftA:    ui.NewKeyAction("Sort ApiGroup", ui.SortColCmd(v, 2, true), false),
 	})
 }
 

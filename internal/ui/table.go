@@ -261,7 +261,7 @@ func (v *Table) Update(data resource.TableData) {
 func (v *Table) doUpdate(data resource.TableData) {
 	v.activeNS = data.Namespace
 	if v.activeNS == resource.AllNamespaces && v.activeNS != "*" {
-		v.actions[KeyShiftP] = NewKeyAction("Sort Namespace", v.SortColCmd(-2), false)
+		v.actions[KeyShiftP] = NewKeyAction("Sort Namespace", SortColCmd(v, -2, true), false)
 	} else {
 		delete(v.actions, KeyShiftP)
 	}
@@ -294,27 +294,6 @@ func (v *Table) SortColumn(col int, asc bool) {
 		v.sortCol.index = v.NameColIndex() + col
 	}
 	v.Refresh()
-}
-
-// SortColCmd designates a sorted column.
-//
-// DEPRECATED: no
-func (v *Table) SortColCmd(col int) func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		v.sortCol.asc = !v.sortCol.asc
-		switch col {
-		case -2:
-			v.sortCol.index = 0
-		case -1:
-			v.sortCol.index = v.GetColumnCount() - 1
-		default:
-			v.sortCol.index = v.NameColIndex() + col
-
-		}
-		v.Refresh()
-
-		return nil
-	}
 }
 
 func (v *Table) adjustSorter(data resource.TableData) {

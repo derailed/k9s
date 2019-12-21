@@ -95,7 +95,7 @@ func (v *subjectView) bindKeys() {
 		tcell.KeyEscape: ui.NewKeyAction("Reset", v.resetCmd, false),
 		ui.KeySlash:     ui.NewKeyAction("Filter", v.activateCmd, false),
 		ui.KeyP:         ui.NewKeyAction("Previous", v.app.prevCmd, false),
-		ui.KeyShiftK:    ui.NewKeyAction("Sort Kind", v.SortColCmd(1), false),
+		ui.KeyShiftK:    ui.NewKeyAction("Sort Kind", ui.SortColCmd(v, 1, true), false),
 	})
 }
 

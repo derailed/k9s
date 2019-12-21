@@ -61,8 +61,8 @@ func (v *tableView) bindKeys() {
 		tcell.KeyBackspace:  ui.NewKeyAction("Erase", v.eraseCmd, false),
 		tcell.KeyDelete:     ui.NewKeyAction("Erase", v.eraseCmd, false),
 		ui.KeyShiftI:        ui.NewKeyAction("Invert", v.SortInvertCmd, false),
-		ui.KeyShiftN:        ui.NewKeyAction("Sort Name", v.SortColCmd(0), false),
-		ui.KeyShiftA:        ui.NewKeyAction("Sort Age", v.SortColCmd(-1), false),
+		ui.KeyShiftN:        ui.NewKeyAction("Sort Name", ui.SortColCmd(v, 0, true), false),
+		ui.KeyShiftA:        ui.NewKeyAction("Sort Age", ui.SortColCmd(v, -1, true), false),
 	})
 }
 

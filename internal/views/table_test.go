@@ -9,6 +9,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/watch"
 )
@@ -103,7 +104,7 @@ func TestTableViewSort(t *testing.T) {
 		Namespace: "",
 	}
 	v.Update(data)
-	v.SortColCmd(1)(nil)
+	ui.SortColCmd(v, 1, true)(nil)
 	assert.Equal(t, 3, v.GetRowCount())
 	assert.Equal(t, "blee ", v.GetCell(1, 1).Text)
 
