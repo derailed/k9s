@@ -191,20 +191,6 @@ func (v *podView) shellIn(path, co string) {
 	v.restartUpdates()
 }
 
-type columnSortable interface {
-	sortColumn(col int, asc bool)
-}
-
-func sortColCmd(colSortable columnSortable, col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
-	// TODO: use direction type instead of asc bool, move
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		colSortable.sortColumn(col, asc)
-		asc = !asc // flip sort direction for next call
-
-		return nil
-	}
-}
-
 // ----------------------------------------------------------------------------
 // Helpers...
 
