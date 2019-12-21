@@ -283,7 +283,22 @@ func (v *Table) doUpdate(data resource.TableData) {
 	v.sort(data, row)
 }
 
+func (v *Table) SortColumn(col int, asc bool) {
+	v.sortCol.asc = asc
+	switch col {
+	case -2:
+		v.sortCol.index = 0
+	case -1:
+		v.sortCol.index = v.GetColumnCount() - 1
+	default:
+		v.sortCol.index = v.NameColIndex() + col
+	}
+	v.Refresh()
+}
+
 // SortColCmd designates a sorted column.
+//
+// DEPRECATED: no
 func (v *Table) SortColCmd(col int) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		v.sortCol.asc = !v.sortCol.asc
