@@ -12,10 +12,10 @@ import (
 var toFileName = regexp.MustCompile(`[^(\w/\.)]`)
 
 // Namespaced converts a resource path to namespace and resource name.
-func Namespaced(n string) (string, string) {
-	ns, po := path.Split(n)
+func Namespaced(p string) (string, string) {
+	ns, n := path.Split(p)
 
-	return strings.Trim(ns, "/"), po
+	return strings.Trim(ns, "/"), n
 }
 
 // FQN returns a fully qualified resource name.

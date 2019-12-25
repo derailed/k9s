@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	rt "runtime"
 	"strconv"
 	"time"
 
@@ -93,6 +94,8 @@ func (b *Browser) Init(ctx context.Context) error {
 func (b *Browser) Start() {
 	b.Stop()
 
+	log.Debug().Msgf("GOROUTINE %d", rt.NumGoroutine())
+
 	log.Debug().Msgf("BROWSER START %s", b.gvr)
 	b.Table.Start()
 
@@ -109,24 +112,28 @@ func (b *Browser) Stop() {
 	}
 }
 
-func (b *Browser) Refresh() {
-	b.refresh()
+func (b *Browser) update(ctx context.Context) {
+	defer log.Debug().Msgf("UPDATER BAIL For %s", b.gvr)
+	for {
+		select {
+		case <-ctx.Done():
+			log.Debug().Msgf("BROWSER <<CANCELED>> -- %s", b.gvr)
+			return
+		case <-time.After(time.Duration(b.app.Config.K9s.GetRefreshRate()) * time.Second):
+			log.Debug().Msgf("GOROUTINE %d", rt.NumGoroutine())
+			b.refresh()
+		}
+	}
 }
 
 // Name returns the component name.
-func (b *Browser) Name() string {
-	return b.meta.Kind
-}
+func (b *Browser) Name() string { return b.meta.Kind }
 
 // SetContextFn populates a custom context.
-func (b *Browser) SetContextFn(f ContextFunc) {
-	b.contextFn = f
-}
+func (b *Browser) SetContextFn(f ContextFunc) { b.contextFn = f }
 
 // SetBindKeysFn adds additional key bindings.
-func (b *Browser) SetBindKeysFn(f BindKeysFunc) {
-	b.bindKeysFn = f
-}
+func (b *Browser) SetBindKeysFn(f BindKeysFunc) { b.bindKeysFn = f }
 
 // SetEnvFn sets a function to pull viewer env vars for plugins.
 func (b *Browser) SetEnvFn(f EnvFunc) { b.envFn = f }
@@ -134,23 +141,8 @@ func (b *Browser) SetEnvFn(f EnvFunc) { b.envFn = f }
 // GVR returns a resource descriptor.
 func (b *Browser) GVR() string { return string(b.gvr) }
 
-func (b *Browser) GetTable() *Table {
-	return b.Table
-}
-
-func (b *Browser) update(ctx context.Context) {
-	for {
-		select {
-		case <-ctx.Done():
-			log.Debug().Msgf("BROWSER <<CANCELED>> -- %s", b.gvr)
-			return
-		case <-time.After(time.Duration(b.app.Config.K9s.GetRefreshRate()) * time.Second):
-			b.app.QueueUpdateDraw(func() {
-				b.refresh()
-			})
-		}
-	}
-}
+// GetTable returns the underlying table.
+func (b *Browser) GetTable() *Table { return b.Table }
 
 // ----------------------------------------------------------------------------
 // Actions()...
@@ -171,15 +163,12 @@ func (b *Browser) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (b *Browser) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msgf("GENERIC RES ENTER CMD FOR %q...", b.gvr)
-	// If in command mode run filter otherwise enter function.
 	if b.filterCmd(evt) == nil || !b.RowSelected() {
 		return nil
 	}
 
-	f := b.defaultEnter
+	f := b.describeResource
 	if b.enterFn != nil {
-		log.Debug().Msgf("Found custom enter")
 		f = b.enterFn
 	}
 	f(b.app, b.Data.Namespace, string(b.gvr), b.GetSelectedItem())
@@ -188,7 +177,7 @@ func (b *Browser) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (b *Browser) refreshCmd(*tcell.EventKey) *tcell.EventKey {
-	b.app.Flash().Info("Refreshinb...")
+	b.app.Flash().Info("Refreshing...")
 	b.refresh()
 	return nil
 }
@@ -253,8 +242,17 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (b *Browser) defaultEnter(app *App, _, _, sel string) {
-	log.Debug().Msgf("--------- Resource %q Verbs %v", sel, b.meta.Verbs)
+func (b *Browser) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
+	log.Debug().Msgf("DESCRIBE %t -- %#v", b.RowSelected(), b.GetSelectedItems())
+	if !b.RowSelected() {
+		return evt
+	}
+	b.describeResource(b.app, b.Data.Namespace, string(b.gvr), b.GetSelectedItem())
+
+	return nil
+}
+
+func (b *Browser) describeResource(app *App, _, _, sel string) {
 	ns, n := client.Namespaced(sel)
 	yaml, err := dao.Describe(b.app.Conn(), b.gvr, ns, n)
 	if err != nil {
@@ -270,16 +268,6 @@ func (b *Browser) defaultEnter(app *App, _, _, sel string) {
 	if err := b.app.inject(details); err != nil {
 		b.app.Flash().Err(err)
 	}
-}
-
-func (b *Browser) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msgf("DESCRIBE %t -- %#v", b.RowSelected(), b.GetSelectedItems())
-	if !b.RowSelected() {
-		return evt
-	}
-	b.defaultEnter(b.app, b.Data.Namespace, string(b.gvr), b.GetSelectedItem())
-
-	return nil
 }
 
 func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -394,27 +382,24 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (b *Browser) refresh() {
-	log.Debug().Msgf("REFRESHING (%q) in ns %q -- %q", b.gvr, b.Data.Namespace, b.Path)
-
 	if b.app.Conn() == nil {
-		log.Error().Msg("No api connection")
 		return
 	}
-
 	ctx := b.defaultContext()
 	if b.contextFn != nil {
-		log.Debug().Msgf("GOT CUSTOM CTX")
 		ctx = b.contextFn(ctx)
 	}
 	if path, ok := ctx.Value(internal.KeyPath).(string); ok && path != "" {
 		b.Path = path
 	}
 	data, err := dao.Reconcile(ctx, b.Table.Data, b.gvr)
-	if err != nil {
-		b.app.Flash().Err(err)
-	}
-	b.refreshActions()
-	b.Update(data)
+	b.app.QueueUpdateDraw(func() {
+		if err != nil {
+			b.app.Flash().Err(err)
+		}
+		b.refreshActions()
+		b.Update(data)
+	})
 }
 
 func (b *Browser) defaultContext() context.Context {
@@ -429,6 +414,7 @@ func (b *Browser) defaultContext() context.Context {
 
 func (b *Browser) namespaceActions(aa ui.KeyActions) {
 	if b.app.Conn() == nil || !b.meta.Namespaced || b.GetTable().Path != "" {
+		log.Warn().Msgf("NOT NAMESPACE RES %q -- %t -- %q", b.gvr, b.meta.Namespaced, b.GetTable().Path)
 		return
 	}
 	b.namespaces = make(map[int]string, config.MaxFavoritesNS)
@@ -471,6 +457,7 @@ func (b *Browser) refreshActions() {
 	if b.bindKeysFn != nil {
 		b.bindKeysFn(b.Actions())
 	}
+	b.app.Menu().HydrateMenu(b.Hints())
 }
 
 func (b *Browser) customActions(aa ui.KeyActions) {

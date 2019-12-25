@@ -88,6 +88,12 @@ func miscRes(vv MetaViewers) {
 	vv["aliases"] = MetaViewer{
 		viewerFn: NewAlias,
 	}
+	vv["users"] = MetaViewer{
+		viewerFn: NewUser,
+	}
+	vv["groups"] = MetaViewer{
+		viewerFn: NewGroup,
+	}
 }
 
 func appsRes(vv MetaViewers) {
@@ -110,19 +116,19 @@ func appsRes(vv MetaViewers) {
 
 func rbacRes(vv MetaViewers) {
 	vv["rbac"] = MetaViewer{
-		enterFn: showRBAC,
+		enterFn: showRules,
 	}
 	vv["rbac.authorization.k8s.io/v1/clusterroles"] = MetaViewer{
-		enterFn: showRBAC,
+		enterFn: showRules,
 	}
 	vv["rbac.authorization.k8s.io/v1/roles"] = MetaViewer{
-		enterFn: showRBAC,
+		enterFn: showRules,
 	}
 	vv["rbac.authorization.k8s.io/v1/clusterrolebindings"] = MetaViewer{
-		enterFn: showRBAC,
+		enterFn: showRules,
 	}
 	vv["rbac.authorization.k8s.io/v1/rolebindings"] = MetaViewer{
-		enterFn: showRBAC,
+		enterFn: showRules,
 	}
 }
 

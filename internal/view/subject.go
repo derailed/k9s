@@ -1,6 +1,9 @@
 package view
 
 import (
+	"context"
+
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
@@ -29,7 +32,7 @@ func NewSubject(gvr client.GVR) ResourceViewer {
 	// BOZO!!
 	// s.GetTable().SetSortCol(1, len(s.Header()), true)
 	s.SetBindKeysFn(s.bindKeys)
-
+	s.SetContextFn(s.subjectCtx)
 	return &s
 }
 
@@ -44,6 +47,10 @@ func (s *Subject) bindKeys(aa ui.KeyActions) {
 		tcell.KeyEnter: ui.NewKeyAction("Policies", s.policyCmd, true),
 		ui.KeyShiftK:   ui.NewKeyAction("Sort Kind", s.GetTable().SortColCmd(1, true), false),
 	})
+}
+
+func (s *Subject) subjectCtx(ctx context.Context) context.Context {
+	return context.WithValue(ctx, internal.KeySubjectKind, mapSubject(s.subjectKind))
 }
 
 // SetSubject sets the subject name.

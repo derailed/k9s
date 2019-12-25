@@ -6,11 +6,3 @@ type TableData struct {
 	RowEvents RowEvents
 	Namespace string
 }
-
-func (t TableData) Clone() TableData {
-	return TableData{
-		Header:    t.Header,
-		RowEvents: t.RowEvents.Clone(),
-		Namespace: t.Namespace,
-	}
-}

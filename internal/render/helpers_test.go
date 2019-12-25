@@ -378,14 +378,3 @@ func BenchmarkAsPerc(b *testing.B) {
 		AsPerc(v)
 	}
 }
-
-// Helpers...
-
-// BOZO!!
-// func testTime() time.Time {
-// 	t, err := time.Parse(time.RFC3339, "2018-12-14T10:36:43.326972-07:00")
-// 	if err != nil {
-// 		fmt.Println("TestTime Failed", err)
-// 	}
-// 	return t
-// }

@@ -1,8 +1,9 @@
 package view
 
 import (
-	"strings"
+	"context"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
@@ -16,34 +17,41 @@ const (
 	allVerbs = "*"
 )
 
-// Policy presents a RBAC policy viewer.
+// Policy presents a RBAC rules viewer.
 type Policy struct {
 	ResourceViewer
+
+	subjectKind, subjectName string
 }
 
 // NewPolicy returns a new viewer.
-func NewPolicy(gvr client.GVR) *Policy {
+func NewPolicy(app *App, subject, name string) *Policy {
 	p := Policy{
-		ResourceViewer: NewBrowser(gvr),
+		ResourceViewer: NewBrowser(client.GVR("policy")),
+		subjectKind:    subject,
+		subjectName:    name,
 	}
 	p.GetTable().SetColorerFn(render.Policy{}.ColorerFunc())
 	p.SetBindKeysFn(p.bindKeys)
 	p.GetTable().SetSortCol(1, len(render.Policy{}.Header(render.AllNamespaces)), false)
+	p.SetContextFn(p.subjectCtx)
+	p.GetTable().SetEnterFn(blankEnterFn)
 
 	return &p
 }
 
-func (p *Policy) Name() string {
-	return "policy"
+func (p *Policy) subjectCtx(ctx context.Context) context.Context {
+	ctx = context.WithValue(ctx, internal.KeySubjectKind, mapSubject(p.subjectKind))
+	ctx = context.WithValue(ctx, internal.KeyPath, mapSubject(p.subjectKind)+":"+p.subjectName)
+	return context.WithValue(ctx, internal.KeySubjectName, p.subjectName)
 }
 
 func (p *Policy) bindKeys(aa ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
 	aa.Add(ui.KeyActions{
-		ui.KeyShiftP: ui.NewKeyAction("Sort Namespace", p.GetTable().SortColCmd(0, true), false),
-		ui.KeyShiftN: ui.NewKeyAction("Sort Name", p.GetTable().SortColCmd(1, true), false),
-		ui.KeyShiftO: ui.NewKeyAction("Sort Group", p.GetTable().SortColCmd(2, true), false),
-		ui.KeyShiftB: ui.NewKeyAction("Sort Binding", p.GetTable().SortColCmd(3, true), false),
+		ui.KeyShiftN: ui.NewKeyAction("Sort Name", p.GetTable().SortColCmd(0, true), false),
+		ui.KeyShiftO: ui.NewKeyAction("Sort Group", p.GetTable().SortColCmd(1, true), false),
+		ui.KeyShiftB: ui.NewKeyAction("Sort Binding", p.GetTable().SortColCmd(2, true), false),
 	})
 }
 
@@ -53,57 +61,9 @@ func mapSubject(subject string) string {
 		return group
 	case "s":
 		return sa
-	default:
+	case "u":
 		return user
+	default:
+		return subject
 	}
-}
-
-func hasVerb(verbs []string, verb string) bool {
-	if len(verbs) == 1 && verbs[0] == allVerbs {
-		return true
-	}
-
-	for _, v := range verbs {
-		if hv, ok := httpTok8sVerbs[v]; ok {
-			if hv == verb {
-				return true
-			}
-		}
-		if v == verb {
-			return true
-		}
-	}
-
-	return false
-}
-
-func toVerbIcon(ok bool) string {
-	if ok {
-		return "[green::b] ✓ [::]"
-	}
-	return "[orangered::b] 𐄂 [::]"
-}
-
-func asVerbs(verbs []string) []string {
-	const (
-		verbLen    = 4
-		unknownLen = 30
-	)
-
-	r := make([]string, 0, len(k8sVerbs)+1)
-	for _, v := range k8sVerbs {
-		r = append(r, toVerbIcon(hasVerb(verbs, v)))
-	}
-
-	var unknowns []string
-	for _, v := range verbs {
-		if hv, ok := httpTok8sVerbs[v]; ok {
-			v = hv
-		}
-		if !hasVerb(k8sVerbs, v) && v != allVerbs {
-			unknowns = append(unknowns, v)
-		}
-	}
-
-	return append(r, render.Truncate(strings.Join(unknowns, ","), unknownLen))
 }

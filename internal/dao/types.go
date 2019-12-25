@@ -8,7 +8,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/informers"
 	restclient "k8s.io/client-go/rest"
 )
@@ -27,7 +26,7 @@ type Factory interface {
 	ForResource(ns, gvr string) informers.GenericInformer
 
 	// WaitForCacheSync synchronize the cache.
-	WaitForCacheSync() map[schema.GroupVersionResource]bool
+	WaitForCacheSync()
 
 	// DeleteForwarder deletes a pod forwarder.
 	DeleteForwarder(path string)

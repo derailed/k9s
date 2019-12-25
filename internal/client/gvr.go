@@ -60,6 +60,18 @@ func (g GVR) ToV() string {
 	return tokens[len(tokens)-2]
 }
 
+func (g GVR) ToRAndG() (string, string) {
+	tokens := strings.Split(string(g), "/")
+	switch len(tokens) {
+	case 3:
+		return tokens[0], tokens[2]
+	case 2:
+		return "", tokens[1]
+	default:
+		return "", tokens[0]
+	}
+}
+
 // ToR returns the resource name.
 func (g GVR) ToR() string {
 	tokens := strings.Split(string(g), "/")
@@ -77,6 +89,7 @@ func (g GVR) ToG() string {
 	}
 }
 
+//
 type GVRs []GVR
 
 func (g GVRs) Len() int {

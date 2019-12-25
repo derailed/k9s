@@ -9,7 +9,6 @@ import (
 	"github.com/derailed/tview"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/informers"
 )
 
@@ -84,7 +83,7 @@ type Factory interface {
 	ForResource(ns, gvr string) informers.GenericInformer
 
 	// WaitForCacheSync synchronize the cache.
-	WaitForCacheSync() map[schema.GroupVersionResource]bool
+	WaitForCacheSync()
 
 	// Forwards returns all portforwards.
 	Forwarders() watch.Forwarders

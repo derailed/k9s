@@ -7,17 +7,25 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+const (
+	crbGVR = "rbac.authorization.k8s.io/v1/clusterrolebindings"
+	crGVR  = "rbac.authorization.k8s.io/v1/clusterroles"
+	rbGVR  = "rbac.authorization.k8s.io/v1/rolebindings"
+	rGVR   = "rbac.authorization.k8s.io/v1/roles"
+)
+
+// Rbac represents a model for listing rbac resources.
 type Rbac struct {
 	Resource
 }
 
+// List lists out rbac resources.
 func (r *Rbac) List(ctx context.Context) ([]runtime.Object, error) {
 	gvr, ok := ctx.Value(internal.KeyGVR).(string)
 	if !ok {
@@ -25,7 +33,6 @@ func (r *Rbac) List(ctx context.Context) ([]runtime.Object, error) {
 	}
 	r.gvr = gvr
 	path, ok := ctx.Value(internal.KeyPath).(string)
-	log.Debug().Msgf("LISTING RBACK %q--%q", r.gvr, path)
 	if !ok || path == "" {
 		return r.Resource.List(ctx)
 	}
@@ -44,8 +51,9 @@ func (r *Rbac) List(ctx context.Context) ([]runtime.Object, error) {
 	}
 }
 
+// BOZO!!Refact gvr as const
 func (r *Rbac) loadClusterRoleBinding(path string) ([]runtime.Object, error) {
-	o, err := r.factory.Get("rbac.authorization.k8s.io/v1/clusterrolebindings", path, labels.Everything())
+	o, err := r.factory.Get(crbGVR, path, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -56,8 +64,7 @@ func (r *Rbac) loadClusterRoleBinding(path string) ([]runtime.Object, error) {
 		return nil, err
 	}
 
-	kind := "rbac.authorization.k8s.io/v1/clusterroles"
-	crbo, err := r.factory.Get(kind, client.FQN("-", crb.RoleRef.Name), labels.Everything())
+	crbo, err := r.factory.Get(crGVR, client.FQN("-", crb.RoleRef.Name), labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -66,11 +73,12 @@ func (r *Rbac) loadClusterRoleBinding(path string) ([]runtime.Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	return r.parseRules(cr.Rules), nil
+
+	return asRuntimeObjects(parseRules(render.ClusterScope, "-", cr.Rules)), nil
 }
 
 func (r *Rbac) loadRoleBinding(path string) ([]runtime.Object, error) {
-	o, err := r.factory.Get("rbac.authorization.k8s.io/v1/rolebindings", path, labels.Everything())
+	o, err := r.factory.Get(rbGVR, path, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -81,8 +89,7 @@ func (r *Rbac) loadRoleBinding(path string) ([]runtime.Object, error) {
 	}
 
 	if rb.RoleRef.Kind == "ClusterRole" {
-		kind := "rbac.authorization.k8s.io/v1/clusterroles"
-		o, e := r.factory.Get(kind, client.FQN("-", rb.RoleRef.Name), labels.Everything())
+		o, e := r.factory.Get(crGVR, client.FQN("-", rb.RoleRef.Name), labels.Everything())
 		if e != nil {
 			return nil, e
 		}
@@ -91,11 +98,10 @@ func (r *Rbac) loadRoleBinding(path string) ([]runtime.Object, error) {
 		if err != nil {
 			return nil, err
 		}
-		return r.parseRules(cr.Rules), nil
+		return asRuntimeObjects(parseRules(render.ClusterScope, "-", cr.Rules)), nil
 	}
 
-	kind := "rbac.authorization.k8s.io/v1/roles"
-	ro, err := r.factory.Get(kind, client.FQN(rb.Namespace, rb.RoleRef.Name), labels.Everything())
+	ro, err := r.factory.Get(rGVR, client.FQN(rb.Namespace, rb.RoleRef.Name), labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -105,11 +111,11 @@ func (r *Rbac) loadRoleBinding(path string) ([]runtime.Object, error) {
 		return nil, err
 	}
 
-	return r.parseRules(role.Rules), nil
+	return asRuntimeObjects(parseRules(render.ClusterScope, "-", role.Rules)), nil
 }
 
 func (r *Rbac) loadClusterRole(path string) ([]runtime.Object, error) {
-	o, err := r.factory.Get("rbac.authorization.k8s.io/v1/clusterroles", path, labels.Everything())
+	o, err := r.factory.Get(crGVR, path, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -120,11 +126,11 @@ func (r *Rbac) loadClusterRole(path string) ([]runtime.Object, error) {
 		return nil, err
 	}
 
-	return r.parseRules(cr.Rules), nil
+	return asRuntimeObjects(parseRules(render.ClusterScope, "-", cr.Rules)), nil
 }
 
 func (r *Rbac) loadRole(path string) ([]runtime.Object, error) {
-	o, err := r.factory.Get("rbac.authorization.k8s.io/v1/roles", path, labels.Everything())
+	o, err := r.factory.Get(rGVR, path, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -135,65 +141,14 @@ func (r *Rbac) loadRole(path string) ([]runtime.Object, error) {
 		return nil, err
 	}
 
-	return r.parseRules(ro.Rules), nil
+	return asRuntimeObjects(parseRules(render.ClusterScope, "-", ro.Rules)), nil
 }
 
-func makeRes(res, grp string, vv []string) *render.PolicyRes {
-	return &render.PolicyRes{
-		Resource: res,
-		Group:    grp,
-		Verbs:    vv,
-	}
-}
-
-func (r *Rbac) parseRules(rules []rbacv1.PolicyRule) []runtime.Object {
-	m := make([]runtime.Object, 0, len(rules))
-	for _, rule := range rules {
-		for _, grp := range rule.APIGroups {
-			for _, res := range rule.Resources {
-				k := res
-				if grp != "" {
-					k = res + "." + grp
-				}
-				for _, na := range rule.ResourceNames {
-					m = upsert(m, makeRes(FQN(k, na), grp, rule.Verbs))
-				}
-				m = upsert(m, makeRes(k, grp, rule.Verbs))
-			}
-		}
-		for _, nres := range rule.NonResourceURLs {
-			if nres[0] != '/' {
-				nres = "/" + nres
-			}
-			m = upsert(m, makeRes(nres, "", rule.Verbs))
-		}
-	}
-
-	return m
-}
-
-func upsert(rr []runtime.Object, p *render.PolicyRes) []runtime.Object {
-	idx, ok := find(rr, p.Resource)
-	if !ok {
-		return append(rr, p)
-	}
-	rr[idx] = p
-
-	return rr
-}
-
-// Find locates a row by id. Retturns false is not found.
-func find(rr []runtime.Object, res string) (int, bool) {
+func asRuntimeObjects(rr render.Policies) []runtime.Object {
+	oo := make([]runtime.Object, len(rr))
 	for i, r := range rr {
-		p, ok := r.(*render.PolicyRes)
-		if !ok {
-			log.Error().Err(fmt.Errorf("expecting policyres but got `%T", r))
-			return 0, false
-		}
-		if p.Resource == res {
-			return i, true
-		}
+		oo[i] = r
 	}
 
-	return 0, false
+	return oo
 }

@@ -23,17 +23,6 @@ type clusterInfoView struct {
 	mxs *client.MetricsServer
 }
 
-// ClusterInfo tracks Kubernetes cluster and K9s information.
-type ClusterInfo interface {
-	ContextName() string
-	ClusterName() string
-	UserName() string
-	K9sVersion() string
-	K8sVersion() string
-	CurrentCPU() float64
-	CurrentMEM() float64
-}
-
 func newClusterInfoView(app *App, mx *client.MetricsServer) *clusterInfoView {
 	return &clusterInfoView{
 		app:   app,

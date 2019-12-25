@@ -3,7 +3,6 @@ package view
 import (
 	"context"
 
-	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -58,17 +57,8 @@ func (t *Table) Stop() {
 	t.SearchBuff().RemoveListener(t)
 }
 
-// MasterComponent returns the master component.
-func (t *Table) MasterComponent() model.Component {
-	return t
-}
-
 // SetEnterFn specifies the default enter behavior.
 func (t *Table) SetEnterFn(f EnterFunc) {
-	if f == nil {
-		return
-	}
-	log.Debug().Msgf("Setting ENTERFN on %s -- %v", t.BaseTitle, f)
 	t.enterFn = f
 }
 
@@ -153,12 +143,10 @@ func (t *Table) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (t *Table) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msgf("Table Escape")
 	if !t.SearchBuff().InCmdMode() {
 		t.SearchBuff().Reset()
 		return t.app.PrevCmd(evt)
 	}
-	log.Debug().Msgf("\tClearing filter")
 	if ui.IsLabelSelector(t.SearchBuff().String()) {
 		t.filterFn("")
 	}

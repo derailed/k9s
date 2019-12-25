@@ -47,7 +47,7 @@ func NewTable(title string) *Table {
 		actions:   make(KeyActions),
 		cmdBuff:   NewCmdBuff('/', FilterBuff),
 		BaseTitle: title,
-		sortCol:   SortColumn{index: 0, colCount: 0, asc: true},
+		sortCol:   SortColumn{index: -1, colCount: 0, asc: true},
 	}
 }
 
@@ -91,7 +91,7 @@ func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		if t.SearchBuff().IsActive() {
 			t.SearchBuff().Add(evt.Rune())
 			t.ClearSelection()
-			t.doUpdate(t.filtered())
+			t.doUpdate(t.filtered(t.Data), len(t.Data.RowEvents) > 0)
 			t.UpdateTitle()
 			t.SelectFirstRow()
 			return nil
@@ -112,7 +112,7 @@ func (t *Table) Hints() model.MenuHints {
 
 // GetFilteredData fetch filtered tabular data.
 func (t *Table) GetFilteredData() render.TableData {
-	return t.filtered()
+	return t.filtered(t.Data)
 }
 
 // SetDecorateFn specifies the default row decorator.
@@ -132,31 +132,31 @@ func (t *Table) SetSortCol(index, count int, asc bool) {
 
 // Update table content.
 func (t *Table) Update(data render.TableData) {
+	var firstRow bool
+	if len(t.Data.RowEvents) == 0 {
+		firstRow = true
+	}
 	t.Data = data
+
 	if t.decorateFn != nil {
 		data = t.decorateFn(data)
 	}
-
-	if t.cmdBuff.Empty() {
-		t.doUpdate(data)
-	} else {
-		t.doUpdate(t.filtered())
+	if !t.cmdBuff.Empty() {
+		data = t.filtered(data)
 	}
-
+	t.doUpdate(data, firstRow)
 	t.UpdateTitle()
-	t.updateSelection(true)
 }
 
-func (t *Table) doUpdate(data render.TableData) {
+func (t *Table) doUpdate(data render.TableData, firstRow bool) {
 	if data.Namespace == render.AllNamespaces {
 		t.actions[KeyShiftP] = NewKeyAction("Sort Namespace", t.SortColCmd(-2, true), false)
 	} else {
 		t.actions.Delete(KeyShiftP)
 	}
+
 	t.Clear()
-
 	t.adjustSorter(data)
-
 	fg := config.AsColor(t.styles.GetTable().Header.FgColor)
 	bg := config.AsColor(t.styles.GetTable().Header.BgColor)
 	for col, h := range data.Header {
@@ -171,6 +171,10 @@ func (t *Table) doUpdate(data render.TableData) {
 	ComputeMaxColumns(pads, t.sortCol.index, data.Header, data.RowEvents)
 	for i, r := range data.RowEvents {
 		t.buildRow(data.Namespace, i+1, r, data.Header, pads)
+	}
+
+	if firstRow {
+		t.SelectFirstRow()
 	}
 	t.updateSelection(false)
 }
@@ -193,7 +197,6 @@ func (t *Table) SortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.E
 		}
 		t.sortCol.index = index
 		t.Refresh()
-
 		return nil
 	}
 }
@@ -278,24 +281,22 @@ func (t *Table) AddHeaderCell(col int, h render.Header) {
 	t.SetCell(0, col, c)
 }
 
-func (t *Table) filtered() render.TableData {
+func (t *Table) filtered(data render.TableData) render.TableData {
 	if t.cmdBuff.Empty() || IsLabelSelector(t.cmdBuff.String()) {
-		return t.Data
+		return data
 	}
-
 	q := t.cmdBuff.String()
 	if isFuzzySelector(q) {
-		return fuzzyFilter(q[2:], t.NameColIndex(), t.Data)
+		return fuzzyFilter(q[2:], t.NameColIndex(), data)
 	}
 
-	data, err := rxFilter(t.cmdBuff.String(), t.Data)
+	filtered, err := rxFilter(t.cmdBuff.String(), data)
 	if err != nil {
 		log.Error().Err(errors.New("Invalid filter expression")).Msg("Regexp")
 		t.cmdBuff.Clear()
-		return t.Data
+		return data
 	}
-
-	return data
+	return filtered
 }
 
 // SearchBuff returns the associated command buffer.

@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
@@ -26,6 +27,10 @@ type Generic struct {
 
 // List returns a collection of node resources.
 func (g *Generic) List(ctx context.Context) ([]runtime.Object, error) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("LIST elapsed: %v", time.Since(t))
+	}(time.Now())
+
 	// Ensures the factory is tracking this resource
 	_ = g.factory.ForResource(g.namespace, g.gvr)
 
@@ -47,7 +52,7 @@ func (g *Generic) List(ctx context.Context) ([]runtime.Object, error) {
 
 	table, ok := o.(*metav1beta1.Table)
 	if !ok {
-		return nil, fmt.Errorf("invalid table found on generic %s -- %T", g.gvr, o)
+		return nil, fmt.Errorf("expecting table but got %T", o)
 	}
 	g.table = table
 	res := make([]runtime.Object, len(g.table.Rows))
@@ -61,6 +66,10 @@ func (g *Generic) List(ctx context.Context) ([]runtime.Object, error) {
 
 // Hydrate returns nodes as rows.
 func (g *Generic) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
+	defer func(t time.Time) {
+		log.Debug().Msgf("HYDRATE elapsed: %v", time.Since(t))
+	}(time.Now())
+
 	gr, ok := re.(*render.Generic)
 	if !ok {
 		return fmt.Errorf("expecting generic renderer for %s but got %T", g.gvr, re)

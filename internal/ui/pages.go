@@ -66,7 +66,6 @@ func (p *Pages) StackPushed(c model.Component) {
 }
 
 func (p *Pages) StackPopped(o, top model.Component) {
-	log.Debug().Msgf("UI STACK POPPED!!!")
 	p.delete(o)
 }
 

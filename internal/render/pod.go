@@ -159,12 +159,14 @@ func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, p metric) {
 
 func containerResources(co v1.Container) (cpu, mem *resource.Quantity) {
 	req, limit := co.Resources.Requests, co.Resources.Limits
+
 	switch {
 	case len(req) != 0:
 		cpu, mem = req.Cpu(), req.Memory()
 	case len(limit) != 0:
 		cpu, mem = limit.Cpu(), limit.Memory()
 	}
+
 	return
 }
 

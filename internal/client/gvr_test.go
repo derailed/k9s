@@ -1,12 +1,59 @@
 package client_test
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
+
+func TestGVRSort(t *testing.T) {
+	gg := client.GVRs{"v1/pods", "v1/services", "apps/v1/deployments"}
+	sort.Sort(gg)
+	assert.Equal(t, client.GVRs{"v1/pods", "v1/services", "apps/v1/deployments"}, gg)
+}
+
+func TestGVRCan(t *testing.T) {
+	uu := map[string]struct {
+		vv []string
+		v  string
+		e  bool
+	}{
+		"describe":  {[]string{"get"}, "describe", true},
+		"view":      {[]string{"get", "list", "watch"}, "view", true},
+		"delete":    {[]string{"delete", "list", "watch"}, "delete", true},
+		"no_delete": {[]string{"get", "list", "watch"}, "delete", false},
+		"edit":      {[]string{"path", "update", "watch"}, "edit", true},
+		"no_edit":   {[]string{"get", "list", "watch"}, "edit", false},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, client.Can(u.vv, u.v))
+		})
+	}
+}
+
+func TestAsGVR(t *testing.T) {
+	uu := map[string]struct {
+		gvr string
+		e   schema.GroupVersionResource
+	}{
+		"full": {"apps/v1/deployments", schema.GroupVersionResource{Group: "apps", Version: "v1", Resource: "deployments"}},
+		"core": {"v1/pods", schema.GroupVersionResource{Version: "v1", Resource: "pods"}},
+		"bork": {"users", schema.GroupVersionResource{Resource: "users"}},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, client.GVR(u.gvr).AsGVR())
+		})
+	}
+}
 
 func TestAsGV(t *testing.T) {
 	uu := map[string]struct {
@@ -119,7 +166,7 @@ func TestToV(t *testing.T) {
 	}
 }
 
-func TestToStringer(t *testing.T) {
+func TestToString(t *testing.T) {
 	uu := map[string]struct {
 		gvr string
 	}{

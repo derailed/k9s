@@ -45,7 +45,7 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 	r, ok := m[gvr]
 	if !ok {
 		r = &Generic{}
-		log.Warn().Msgf("No DAO registry entry for %q. Going generic!", gvr)
+		log.Warn().Msgf("No DAO registry entry for %q. Using factory!", gvr)
 	}
 	r.Init(f, gvr)
 
@@ -57,7 +57,7 @@ func RegisterMeta(gvr string, res metav1.APIResource) {
 	resMetas[client.GVR(gvr)] = res
 }
 
-func AllGVRs() []client.GVR {
+func AllGVRs() client.GVRs {
 	kk := make(client.GVRs, 0, len(resMetas))
 	for k := range resMetas {
 		kk = append(kk, k)
@@ -137,7 +137,13 @@ func loadNonResource(m ResourceMetas) error {
 	}
 	m["rbac"] = metav1.APIResource{
 		Name:       "Rbac",
-		Kind:       "RBAC",
+		Kind:       "Rules",
+		Categories: []string{"k9s"},
+	}
+	m["policy"] = metav1.APIResource{
+		Name:       "Policy",
+		Kind:       "Rules",
+		Namespaced: true,
 		Categories: []string{"k9s"},
 	}
 	m["containers"] = metav1.APIResource{

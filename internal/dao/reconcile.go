@@ -15,14 +15,14 @@ import (
 // Reconcile previous vs current state and emits delta events.
 func Reconcile(ctx context.Context, table render.TableData, gvr client.GVR) (render.TableData, error) {
 	defer func(t time.Time) {
-		log.Debug().Msgf("Reconcile elapsed: %v", time.Since(t))
+		log.Debug().Msgf("RECONCILE elapsed: %v", time.Since(t))
 	}(time.Now())
 
 	path, ok := ctx.Value(internal.KeyPath).(string)
 	if !ok {
 		return table, fmt.Errorf("no path specified for %s", gvr)
 	}
-	log.Debug().Msgf("  Reconcile %q in ns %q with path %q", gvr, table.Namespace, path)
+	log.Debug().Msgf("Reconcile %q in ns %q with path %q", gvr, table.Namespace, path)
 	factory, ok := ctx.Value(internal.KeyFactory).(Factory)
 	if !ok {
 		return table, fmt.Errorf("no factory found for %s", gvr)

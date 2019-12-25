@@ -9,9 +9,9 @@ import (
 )
 
 func TestContainerNew(t *testing.T) {
-	po := view.NewContainer(client.GVR("containers"))
+	c := view.NewContainer(client.GVR("containers"))
 
-	assert.Nil(t, po.Init(makeCtx()))
-	assert.Equal(t, "Containers", po.Name())
-	assert.Equal(t, 17, len(po.Hints()))
+	assert.Nil(t, c.Init(makeCtx()))
+	assert.Equal(t, "Containers", c.Name())
+	assert.Equal(t, 17, len(c.Hints()))
 }

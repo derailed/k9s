@@ -7,17 +7,6 @@ import (
 )
 
 type (
-	// ClusterMeta represents metadata about a Kubernetes cluster.
-	ClusterMeta interface {
-		client.Connection
-
-		Version() (string, error)
-		ContextName() (string, error)
-		ClusterName() (string, error)
-		UserName() (string, error)
-		GetNodes() (*v1.NodeList, error)
-	}
-
 	// MetricsServer gather metrics information from pods and nodes.
 	MetricsServer interface {
 		MetricsService
@@ -36,34 +25,34 @@ type (
 
 	// Cluster represents a kubernetes resource.
 	Cluster struct {
-		api ClusterMeta
-		mx  MetricsServer
+		client client.Connection
+		mx     MetricsServer
 	}
 )
 
 // NewCluster returns a new cluster info resource.
 func NewCluster(c client.Connection, mx MetricsServer) *Cluster {
-	return NewClusterWithArgs(client.NewCluster(c), mx)
+	return NewClusterWithArgs(c, mx)
 }
 
 // NewClusterWithArgs for tests only!
-func NewClusterWithArgs(ci ClusterMeta, mx MetricsServer) *Cluster {
-	return &Cluster{api: ci, mx: mx}
+func NewClusterWithArgs(c client.Connection, mx MetricsServer) *Cluster {
+	return &Cluster{client: c, mx: mx}
 }
 
 // Version returns the current K8s cluster version.
 func (c *Cluster) Version() string {
-	info, err := c.api.Version()
+	info, err := c.client.ServerVersion()
 	if err != nil {
 		return "n/a"
 	}
 
-	return info
+	return info.GitVersion
 }
 
 // ContextName returns the context name.
 func (c *Cluster) ContextName() string {
-	n, err := c.api.ContextName()
+	n, err := c.client.Config().CurrentContextName()
 	if err != nil {
 		return "n/a"
 	}
@@ -72,7 +61,7 @@ func (c *Cluster) ContextName() string {
 
 // ClusterName returns the cluster name.
 func (c *Cluster) ClusterName() string {
-	n, err := c.api.ClusterName()
+	n, err := c.client.Config().CurrentClusterName()
 	if err != nil {
 		return "n/a"
 	}
@@ -81,7 +70,7 @@ func (c *Cluster) ClusterName() string {
 
 // UserName returns the user name.
 func (c *Cluster) UserName() string {
-	n, err := c.api.UserName()
+	n, err := c.client.Config().CurrentUserName()
 	if err != nil {
 		return "n/a"
 	}

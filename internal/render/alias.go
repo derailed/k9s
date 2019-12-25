@@ -26,25 +26,26 @@ func (Alias) Header(ns string) HeaderRow {
 		Header{Name: "RESOURCE"},
 		Header{Name: "COMMAND"},
 		Header{Name: "APIGROUP"},
-		// Header{Name: "AGE", Decorator: AgeDecorator},
 	}
 }
 
 // Render renders a K8s resource to screen.
+// BOZO!! Pass in a row with pre-alloc fields??
 func (Alias) Render(o interface{}, gvr string, r *Row) error {
 	a, ok := o.(AliasRes)
 	if !ok {
-		return fmt.Errorf("expected aliasres, but got %T", o)
+		return fmt.Errorf("expected AliasRes, but got %T", o)
 	}
+	_ = a
 
-	g := client.GVR(a.GVR)
-	r.ID = string(g)
-	r.Fields = Fields{
-		g.ToR(),
+	r.ID = gvr
+	gvr1 := client.GVR(a.GVR)
+	grp, res := gvr1.ToRAndG()
+	r.Fields = append(r.Fields,
+		res,
 		strings.Join(a.Aliases, ","),
-		g.ToG(),
-		// time.Now().String(),
-	}
+		grp,
+	)
 
 	return nil
 }

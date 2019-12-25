@@ -46,7 +46,7 @@ func (g *Generic) Header(ns string) HeaderRow {
 func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 	row, ok := o.(*metav1beta1.TableRow)
 	if !ok {
-		return fmt.Errorf("expecting a table but got %#v", o)
+		return fmt.Errorf("expecting a TableRow but got %T", o)
 	}
 
 	count := len(row.Cells)
@@ -57,8 +57,8 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 	if !ok {
 		return fmt.Errorf("expecting row id to be a string but got %#v", row.Cells[0])
 	}
-	r.Fields = make(Fields, count)
 
+	r.Fields = make(Fields, count)
 	var index int
 	if ns == AllNamespaces {
 		rns, err := extractNamespace(row.Object.Raw)

@@ -37,7 +37,7 @@ func (c *command) defaultCmd() error {
 	return c.run(c.app.Config.ActiveView())
 }
 
-var authRX = regexp.MustCompile(`\Apol\s([u|g|s]):([\w-:]+)\b`)
+var canRX = regexp.MustCompile(`\Acan\s([u|g|s]):([\w-:]+)\b`)
 
 func (c *command) isK9sCmd(cmd string) bool {
 	cmds := strings.Split(cmd, " ")
@@ -52,13 +52,15 @@ func (c *command) isK9sCmd(cmd string) bool {
 		c.app.aliasCmd(nil)
 		return true
 	default:
-		if !authRX.MatchString(cmd) {
+		if !canRX.MatchString(cmd) {
 			return false
 		}
-		tokens := authRX.FindAllStringSubmatch(cmd, -1)
+		tokens := canRX.FindAllStringSubmatch(cmd, -1)
 		if len(tokens) == 1 && len(tokens[0]) == 3 {
-			// BOZO!!
-			// c.app.inject(NewPolicy(c.app, tokens[0][1], tokens[0][2]))
+			if err := c.app.inject(NewPolicy(c.app, tokens[0][1], tokens[0][2])); err != nil {
+				log.Error().Err(err).Msgf("policy view load failed")
+				return false
+			}
 			return true
 		}
 	}

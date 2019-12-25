@@ -124,7 +124,6 @@ func (v *FlashView) refresh(ctx1, ctx2 context.Context, cancel context.CancelFun
 		case <-ctx2.Done():
 			v.app.QueueUpdateDraw(func() {
 				v.Clear()
-				v.app.Draw()
 			})
 			return
 		}

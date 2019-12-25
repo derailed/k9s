@@ -1,8 +1,5 @@
 package config
 
-// BOZO!! Once yaml is stable implement validation
-// go get gopkg.in/validator.v2
-
 import (
 	"errors"
 	"fmt"

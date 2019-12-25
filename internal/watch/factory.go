@@ -15,6 +15,7 @@ import (
 	"k8s.io/client-go/informers"
 )
 
+// Factory - *factories(ns) -> *informers
 const (
 	defaultResync = 10 * time.Minute
 	allNamespaces = ""
@@ -73,21 +74,19 @@ func (f *Factory) List(gvr, ns string, sel labels.Selector) ([]runtime.Object, e
 		return nil, fmt.Errorf("User has insufficient access to list %s", gvr)
 	}
 
-	log.Debug().Msgf(">>> FACTORY LISTING %q -- %q", ns, gvr)
 	inf := f.ForResource(ns, gvr)
 	if inf == nil {
 		return nil, fmt.Errorf("No resource for GVR %s", gvr)
 	}
-
 	if ns == clusterScope {
 		return inf.Lister().List(sel)
 	}
+
 	return inf.Lister().ByNamespace(ns).List(sel)
 }
 
 func (f *Factory) Get(gvr, path string, sel labels.Selector) (runtime.Object, error) {
 	ns, n := namespaced(path)
-	log.Debug().Msgf(">>> FACTORY GET %q --- %q:%q -- %q", gvr, ns, n, path)
 	auth, err := f.Client().CanI(ns, gvr, []string{"get"})
 	if err != nil {
 		return nil, err
@@ -96,31 +95,22 @@ func (f *Factory) Get(gvr, path string, sel labels.Selector) (runtime.Object, er
 		return nil, fmt.Errorf("User has insufficient access to get %s", gvr)
 	}
 
-	fac := f.ensureFactory(ns)
-	log.Debug().Msgf("GVR: %#v", toGVR(gvr))
-	inf := fac.ForResource(toGVR(gvr))
+	inf := f.ForResource(ns, gvr)
 	if inf == nil {
 		return nil, fmt.Errorf("No resource for GVR %s", gvr)
 	}
-
 	if ns == clusterScope {
 		return inf.Lister().Get(n)
 	}
+
+	log.Debug().Msgf("GET %q--%q:%q", gvr, ns, path)
 	return inf.Lister().ByNamespace(ns).Get(n)
 }
 
-func (f *Factory) WaitForCacheSync() map[schema.GroupVersionResource]bool {
-	r := make(map[schema.GroupVersionResource]bool)
-	for n, fac := range f.factories {
-		log.Debug().Msgf(">>> WAITING FOR FACTORY SYNC -- %q", n)
-		res := fac.WaitForCacheSync(f.stopChan)
-		for k, v := range res {
-			r[k] = v
-			log.Debug().Msgf("  GVR resource %v -- %v", k, v)
-		}
-		log.Debug().Msgf("<<< DONE!")
+func (f *Factory) WaitForCacheSync() {
+	for _, fac := range f.factories {
+		fac.WaitForCacheSync(f.stopChan)
 	}
-	return r
 }
 
 func (f *Factory) Init() {
@@ -172,13 +162,13 @@ func (f *Factory) Start(stopChan chan struct{}) {
 
 // BOZO!! Check ns access for resource??
 func (f *Factory) SetActive(ns string) {
-	if !f.isclusterScope() {
+	if !f.isClusterWide() {
 		f.ensureFactory(ns)
 	}
 	f.activeNS = ns
 }
 
-func (f *Factory) isclusterScope() bool {
+func (f *Factory) isClusterWide() bool {
 	_, ok := f.factories[allNamespaces]
 	return ok
 }
@@ -207,7 +197,7 @@ func (f *Factory) ForResource(ns, gvr string) informers.GenericInformer {
 }
 
 func (f *Factory) ensureFactory(ns string) di.DynamicSharedInformerFactory {
-	if f.isclusterScope() {
+	if f.isClusterWide() {
 		ns = allNamespaces
 	}
 	if fac, ok := f.factories[ns]; ok {

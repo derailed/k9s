@@ -23,6 +23,18 @@ var Registry = map[string]ResourceMeta{
 		Model:    &Rbac{},
 		Renderer: &render.Rbac{},
 	},
+	"policy": ResourceMeta{
+		Model:    &Policy{},
+		Renderer: &render.Policy{},
+	},
+	"users": ResourceMeta{
+		Model:    &Subject{},
+		Renderer: &render.Subject{},
+	},
+	"groups": ResourceMeta{
+		Model:    &Subject{},
+		Renderer: &render.Subject{},
+	},
 	"portforwards": ResourceMeta{
 		Model:    &PortForward{},
 		Renderer: &render.PortForward{},
