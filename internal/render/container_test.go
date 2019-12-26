@@ -16,9 +16,15 @@ import (
 func TestContainer(t *testing.T) {
 	var c render.Container
 
-	var cm coMX
+	cres := render.ContainerRes{
+		Container: makeContainer(),
+		Status:    makeContainerStatus(),
+		Metrics:   makeContainerMetrics(),
+		IsInit:    false,
+		Age:       makeAge(),
+	}
 	var r render.Row
-	assert.Nil(t, c.Render(cm, "blee", &r))
+	assert.Nil(t, c.Render(cres, "blee", &r))
 	assert.Equal(t, "fred", r.ID)
 	assert.Equal(t, render.Fields{
 		"fred",
@@ -47,19 +53,7 @@ func toQty(s string) resource.Quantity {
 
 }
 
-type coMX struct{}
-
-var _ render.ContainerWithMetrics = coMX{}
-
-func (c coMX) Container() *v1.Container {
-	return makeContainer()
-}
-
-func (c coMX) ContainerStatus() *v1.ContainerStatus {
-	return makeContainerStatus()
-}
-
-func (c coMX) Metrics() *mv1beta1.ContainerMetrics {
+func makeContainerMetrics() *mv1beta1.ContainerMetrics {
 	return &mv1beta1.ContainerMetrics{
 		Name: "fred",
 		Usage: v1.ResourceList{
@@ -69,16 +63,12 @@ func (c coMX) Metrics() *mv1beta1.ContainerMetrics {
 	}
 }
 
-func (c coMX) Age() metav1.Time {
+func makeAge() metav1.Time {
 	return metav1.Time{Time: testTime()}
 }
 
-func (c coMX) IsInit() bool {
-	return false
-}
-
-func makeContainer() *v1.Container {
-	return &v1.Container{
+func makeContainer() v1.Container {
+	return v1.Container{
 		Name:  "fred",
 		Image: "img",
 		Resources: v1.ResourceRequirements{

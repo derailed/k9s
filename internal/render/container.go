@@ -9,6 +9,8 @@ import (
 	"github.com/gdamore/tcell"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -81,35 +83,33 @@ func (Container) Header(ns string) HeaderRow {
 
 // Render renders a K8s resource to screen.
 func (c Container) Render(o interface{}, name string, r *Row) error {
-	oo, ok := o.(ContainerWithMetrics)
+	co, ok := o.(ContainerRes)
 	if !ok {
-		return fmt.Errorf("Expected ContainerWithMetrics, but got %T", o)
+		return fmt.Errorf("Expected ContainerRes, but got %T", o)
 	}
 
-	co, cs := oo.Container(), oo.ContainerStatus()
-
-	cur, perc := gatherMetrics(co, oo.Metrics())
+	cur, perc := gatherMetrics(co)
 	ready, state, restarts := "false", MissingValue, "0"
-	if cs != nil {
-		ready, state, restarts = boolToStr(cs.Ready), toState(cs.State), strconv.Itoa(int(cs.RestartCount))
+	if co.Status != nil {
+		ready, state, restarts = boolToStr(co.Status.Ready), toState(co.Status.State), strconv.Itoa(int(co.Status.RestartCount))
 	}
 
-	r.ID = co.Name
+	r.ID = co.Container.Name
 	r.Fields = make(Fields, 0, len(c.Header(AllNamespaces)))
 	r.Fields = append(r.Fields,
-		co.Name,
-		co.Image,
+		co.Container.Name,
+		co.Container.Image,
 		ready,
 		state,
-		boolToStr(oo.IsInit()),
+		boolToStr(co.IsInit),
 		restarts,
-		probe(co.LivenessProbe)+":"+probe(co.ReadinessProbe),
+		probe(co.Container.LivenessProbe)+":"+probe(co.Container.ReadinessProbe),
 		cur.cpu,
 		cur.mem,
 		perc.cpu,
 		perc.mem,
-		toStrPorts(co.Ports),
-		toAge(oo.Age()),
+		toStrPorts(co.Container.Ports),
+		toAge(co.Age),
 	)
 
 	return nil
@@ -118,20 +118,20 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, p metric) {
+func gatherMetrics(co ContainerRes) (c, p metric) {
 	c, p = noMetric(), noMetric()
-	if mx == nil {
+	if co.Metrics == nil {
 		return
 	}
 
-	cpu := mx.Usage.Cpu().MilliValue()
-	mem := ToMB(mx.Usage.Memory().Value())
+	cpu := co.Metrics.Usage.Cpu().MilliValue()
+	mem := ToMB(co.Metrics.Usage.Memory().Value())
 	c = metric{
 		cpu: ToMillicore(cpu),
 		mem: ToMi(mem),
 	}
 
-	rcpu, rmem := containerResources(*co)
+	rcpu, rmem := containerResources(co.Container)
 	if rcpu != nil {
 		p.cpu = AsPerc(toPerc(float64(cpu), float64(rcpu.MilliValue())))
 	}
@@ -182,4 +182,23 @@ func probe(p *v1.Probe) string {
 		return "off"
 	}
 	return "on"
+}
+
+// ContainerRes represents a container and its metrics.
+type ContainerRes struct {
+	Container v1.Container
+	Status    *v1.ContainerStatus
+	Metrics   *mv1beta1.ContainerMetrics
+	IsInit    bool
+	Age       metav1.Time
+}
+
+// GetObjectKind returns a schema object.
+func (c ContainerRes) GetObjectKind() schema.ObjectKind {
+	return nil
+}
+
+// DeepCopyObject returns a container copy.
+func (c ContainerRes) DeepCopyObject() runtime.Object {
+	return c
 }

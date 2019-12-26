@@ -31,16 +31,15 @@ func (Alias) Header(ns string) HeaderRow {
 
 // Render renders a K8s resource to screen.
 // BOZO!! Pass in a row with pre-alloc fields??
-func (Alias) Render(o interface{}, gvr string, r *Row) error {
+func (Alias) Render(o interface{}, ns string, r *Row) error {
 	a, ok := o.(AliasRes)
 	if !ok {
 		return fmt.Errorf("expected AliasRes, but got %T", o)
 	}
-	_ = a
 
-	r.ID = gvr
-	gvr1 := client.GVR(a.GVR)
-	grp, res := gvr1.ToRAndG()
+	r.ID = a.GVR
+	gvr := client.GVR(a.GVR)
+	res, grp := gvr.ToRAndG()
 	r.Fields = append(r.Fields,
 		res,
 		strings.Join(a.Aliases, ","),
@@ -50,6 +49,7 @@ func (Alias) Render(o interface{}, gvr string, r *Row) error {
 	return nil
 }
 
+// ----------------------------------------------------------------------------
 // Helpers...
 
 // AliasRes represents an alias resource.

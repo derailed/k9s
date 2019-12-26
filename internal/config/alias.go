@@ -24,9 +24,9 @@ type Aliases struct {
 
 // NewAliases return a new alias.
 func NewAliases() Aliases {
-	aa := Aliases{Alias: make(Alias, 50)}
-	aa.loadDefaults()
-	return aa
+	return Aliases{
+		Alias: make(Alias, 50),
+	}
 }
 
 func (a Aliases) loadDefaults() {
@@ -81,6 +81,7 @@ func (a Aliases) loadDefaults() {
 
 // Load K9s aliases.
 func (a Aliases) Load() error {
+	a.loadDefaults()
 	return a.LoadAliases(K9sAlias)
 }
 

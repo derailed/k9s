@@ -7,7 +7,6 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -62,15 +61,8 @@ func (c *Job) List(ctx context.Context) ([]runtime.Object, error) {
 	return jj, nil
 }
 
-// Hydrate returns a pod as container rows.
-func (c *Job) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
-	for i, o := range oo {
-		if err := re.Render(o, c.namespace, &rr[i]); err != nil {
-			return err
-		}
-	}
-	return nil
-}
+// ----------------------------------------------------------------------------
+// Helpers...
 
 func isControlledBy(cuid, id string) bool {
 	tokens := strings.Split(cuid, "-")

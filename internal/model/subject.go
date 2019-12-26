@@ -3,7 +3,6 @@ package model
 import (
 	"context"
 	"errors"
-	"fmt"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/render"
@@ -60,21 +59,8 @@ func (s *Subject) List(ctx context.Context) ([]runtime.Object, error) {
 	return oo, nil
 }
 
-// Hydrate returns a pod as container rows.
-func (s *Subject) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
-	for i, o := range oo {
-		res, ok := o.(render.SubjectRef)
-		if !ok {
-			return fmt.Errorf("expecting unstructured but got %T", o)
-		}
-
-		if err := re.Render(res, render.AllNamespaces, &rr[i]); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
+// ----------------------------------------------------------------------------
+// Helpers...
 
 func inSubjectRes(oo []runtime.Object, match string) bool {
 	for _, o := range oo {

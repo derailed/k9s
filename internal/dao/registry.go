@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -26,7 +25,6 @@ var resMetas = ResourceMetas{}
 // Customize here for non resource types or types with metrics or logs.
 func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 	m := Accessors{
-		"alias":                         &Alias{},
 		"contexts":                      &Context{},
 		"containers":                    &Container{},
 		"screendumps":                   &ScreenDump{},
@@ -88,7 +86,8 @@ func IsK9sMeta(m metav1.APIResource) bool {
 }
 
 // Load hydrates server preferred+CRDs resource metadata.
-func Load(f *watch.Factory) error {
+func LoadResources(f Factory) error {
+	log.Debug().Msgf("LOAD RES")
 	resMetas = make(ResourceMetas, 100)
 	if err := loadPreferred(f, resMetas); err != nil {
 		return err
@@ -136,12 +135,12 @@ func loadNonResource(m ResourceMetas) error {
 		Categories: []string{"k9s"},
 	}
 	m["rbac"] = metav1.APIResource{
-		Name:       "Rbac",
+		Name:       "rbacs",
 		Kind:       "Rules",
 		Categories: []string{"k9s"},
 	}
 	m["policy"] = metav1.APIResource{
-		Name:       "Policy",
+		Name:       "policies",
 		Kind:       "Rules",
 		Namespaced: true,
 		Categories: []string{"k9s"},
@@ -158,14 +157,14 @@ func loadNonResource(m ResourceMetas) error {
 	}
 	m["groups"] = metav1.APIResource{
 		Name:       "groups",
-		Kind:       "group",
+		Kind:       "Group",
 		Categories: []string{"k9s"},
 	}
 
 	return nil
 }
 
-func loadPreferred(f *watch.Factory, m ResourceMetas) error {
+func loadPreferred(f Factory, m ResourceMetas) error {
 	discovery, err := f.Client().CachedDiscovery()
 	if err != nil {
 		return err
@@ -185,7 +184,7 @@ func loadPreferred(f *watch.Factory, m ResourceMetas) error {
 	return nil
 }
 
-func loadCRDs(f *watch.Factory, m ResourceMetas) error {
+func loadCRDs(f Factory, m ResourceMetas) error {
 	oo, err := f.List("apiextensions.k8s.io/v1beta1/customresourcedefinitions", "", labels.Everything())
 	if err != nil {
 		return err

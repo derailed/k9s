@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -62,7 +61,6 @@ func (d *Deployment) Restart(path string) error {
 
 // Logs tail logs for all pods represented by this Deployment.
 func (d *Deployment) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
-	log.Debug().Msgf("Tailing Deployment %q", opts.Path)
 	o, err := d.Get(string(d.gvr), opts.Path, labels.Everything())
 	if err != nil {
 		return err

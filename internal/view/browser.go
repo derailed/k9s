@@ -14,6 +14,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
@@ -392,7 +393,7 @@ func (b *Browser) refresh() {
 	if path, ok := ctx.Value(internal.KeyPath).(string); ok && path != "" {
 		b.Path = path
 	}
-	data, err := dao.Reconcile(ctx, b.Table.Data, b.gvr)
+	data, err := model.Reconcile(ctx, b.Table.Data, b.gvr)
 	b.app.QueueUpdateDraw(func() {
 		if err != nil {
 			b.app.Flash().Err(err)

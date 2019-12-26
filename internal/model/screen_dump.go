@@ -34,13 +34,3 @@ func (c *ScreenDump) List(ctx context.Context) ([]runtime.Object, error) {
 
 	return oo, nil
 }
-
-// Hydrate returns a pod as container rows.
-func (c *ScreenDump) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
-	for i, o := range oo {
-		if err := re.Render(o, render.NonResource, &rr[i]); err != nil {
-			return err
-		}
-	}
-	return nil
-}

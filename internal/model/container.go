@@ -9,15 +9,11 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
-
-var _ render.ContainerWithMetrics = &ContainerWithMetrics{}
 
 // Container represents a container model.
 type Container struct {
@@ -46,76 +42,60 @@ func (c *Container) List(ctx context.Context) ([]runtime.Object, error) {
 		return nil, err
 	}
 	c.pod = &po
-
 	res := make([]runtime.Object, 0, len(po.Spec.InitContainers)+len(po.Spec.Containers))
+	mx := client.NewMetricsServer(c.factory.Client())
+	var pmx *mv1beta1.PodMetrics
+	if c.factory.Client() != nil {
+		var err error
+		pmx, err = mx.FetchPodMetrics(c.namespace, c.pod.Name)
+		if err != nil {
+			log.Warn().Err(err).Msgf("No metrics found for pod %q:%q", c.namespace, c.pod.Name)
+		}
+	}
+
 	for _, co := range po.Spec.InitContainers {
-		res = append(res, ContainerRes{co})
+		res = append(res, makeContainerRes(co, po, pmx, true))
 	}
 	for _, co := range po.Spec.Containers {
-		res = append(res, ContainerRes{co})
+		res = append(res, makeContainerRes(co, po, pmx, false))
 	}
 
 	return res, nil
 }
 
-// Hydrate returns a pod as container rows.
-func (c *Container) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
-	mx := client.NewMetricsServer(c.factory.Client().(client.Connection))
-	mmx, err := mx.FetchPodMetrics(c.namespace, c.pod.Name)
+// ----------------------------------------------------------------------------
+// Helpers...
+
+func makeContainerRes(co v1.Container, po v1.Pod, pmx *mv1beta1.PodMetrics, isInit bool) render.ContainerRes {
+	cmx, err := containerMetrics(co.Name, pmx)
 	if err != nil {
-		log.Warn().Err(err).Msgf("No metrics found for pod %q:%q", c.namespace, c.pod.Name)
+		log.Warn().Err(err).Msgf("Container metrics for %s", co.Name)
 	}
 
-	var index int
-	for _, o := range oo {
-		co, ok := o.(ContainerRes)
-		if !ok {
-			return fmt.Errorf("expecting containerres but got `%T", o)
-		}
-		row, err := renderCoRow(co.Container.Name, coMetricsFor(co.Container, c.pod, mmx, true), re)
-		if err != nil {
-			return err
-		}
-		rr[index] = row
-		index++
-	}
-
-	return nil
-}
-
-func renderCoRow(n string, pmx *ContainerWithMetrics, re Renderer) (render.Row, error) {
-	var row render.Row
-	if err := re.Render(pmx, n, &row); err != nil {
-		return render.Row{}, err
-	}
-	return row, nil
-}
-
-func coMetricsFor(co v1.Container, po *v1.Pod, mmx *mv1beta1.PodMetrics, isInit bool) *ContainerWithMetrics {
-	return &ContainerWithMetrics{
-		container: &co,
-		status:    getContainerStatus(co.Name, po.Status),
-		metrics:   containerMetrics(co.Name, mmx),
-		isInit:    isInit,
-		age:       po.ObjectMeta.CreationTimestamp,
+	return render.ContainerRes{
+		Container: co,
+		Status:    getContainerStatus(co.Name, po.Status),
+		Metrics:   cmx,
+		IsInit:    isInit,
+		Age:       po.ObjectMeta.CreationTimestamp,
 	}
 }
 
-func containerMetrics(n string, mx runtime.Object) *mv1beta1.ContainerMetrics {
+func containerMetrics(n string, mx runtime.Object) (*mv1beta1.ContainerMetrics, error) {
 	pmx, ok := mx.(*mv1beta1.PodMetrics)
 	if !ok {
-		log.Error().Err(fmt.Errorf("expecting podmetrics but got `%T", mx))
-		return nil
+		return nil, fmt.Errorf("expecting podmetrics but got `%T", mx)
+	}
+	if pmx == nil {
+		return nil, fmt.Errorf("no metrics for container %s", n)
 	}
 	for _, m := range pmx.Containers {
 		if m.Name == n {
-			return &m
+			return &m, nil
 		}
 	}
-	return nil
+	return nil, nil
 }
-
-// ----------------------------------------------------------------------------
 
 func getContainerStatus(co string, status v1.PodStatus) *v1.ContainerStatus {
 	for _, c := range status.ContainerStatuses {
@@ -131,51 +111,4 @@ func getContainerStatus(co string, status v1.PodStatus) *v1.ContainerStatus {
 	}
 
 	return nil
-}
-
-// ContainerWithMetrics represents a container and its metrics.
-type ContainerWithMetrics struct {
-	container *v1.Container
-	status    *v1.ContainerStatus
-	metrics   *mv1beta1.ContainerMetrics
-	isInit    bool
-	age       metav1.Time
-}
-
-func (c *ContainerWithMetrics) IsInit() bool {
-	return c.isInit
-}
-
-func (c *ContainerWithMetrics) Container() *v1.Container {
-	return c.container
-}
-
-func (c *ContainerWithMetrics) ContainerStatus() *v1.ContainerStatus {
-	return c.status
-}
-
-// Metrics returns the metrics associated with the pod.
-func (c *ContainerWithMetrics) Metrics() *mv1beta1.ContainerMetrics {
-	return c.metrics
-}
-
-func (c *ContainerWithMetrics) Age() metav1.Time {
-	return c.age
-}
-
-// ----------------------------------------------------------------------------
-
-// ContainerRes represents a container K8s resource.
-type ContainerRes struct {
-	v1.Container
-}
-
-// GetObjectKind returns a schema object.
-func (c ContainerRes) GetObjectKind() schema.ObjectKind {
-	return nil
-}
-
-// DeepCopyObject returns a container copy.
-func (c ContainerRes) DeepCopyObject() runtime.Object {
-	return c
 }

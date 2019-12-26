@@ -15,20 +15,33 @@ var customViewers MetaViewers
 
 type command struct {
 	app *App
+
+	alias *dao.Alias
 }
 
 func newCommand(app *App) *command {
-	return &command{app: app}
+	return &command{
+		app: app,
+	}
 }
 
 func (c *command) Init() error {
-	if err := dao.Load(c.app.factory); err != nil {
-		return err
-	}
-	if err := loadAliases(); err != nil {
+	log.Debug().Msgf("COMMAND INIT")
+	c.alias = dao.NewAlias(c.app.factory)
+	if _, err := c.alias.Ensure(); err != nil {
 		return err
 	}
 	customViewers = loadCustomViewers()
+
+	return nil
+}
+
+// Reset resets command and reload aliases.
+func (c *command) Reset() error {
+	c.alias.Clear()
+	if _, err := c.alias.Ensure(); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -68,7 +81,7 @@ func (c *command) isK9sCmd(cmd string) bool {
 }
 
 func (c *command) viewMetaFor(cmd string) (string, *MetaViewer, error) {
-	gvr, ok := aliases.Get(cmd)
+	gvr, ok := c.alias.Get(cmd)
 	if !ok {
 		return "", nil, fmt.Errorf("Huh? `%s` command not found", cmd)
 	}

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -21,7 +20,6 @@ var _ Loggable = &Job{}
 
 // Logs tail logs for all pods represented by this Job.
 func (j *Job) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
-	log.Debug().Msgf("Tailing Job %#v", opts)
 	o, err := j.Get(string(j.gvr), opts.Path, labels.Everything())
 	if err != nil {
 		return err

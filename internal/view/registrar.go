@@ -1,47 +1,7 @@
 package view
 
-import (
-	"strings"
-
-	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/dao"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
-)
-
-var aliases = config.NewAliases()
-
-func ToResource(o *unstructured.Unstructured, obj interface{}) error {
-	return runtime.DefaultUnstructuredConverter.FromUnstructured(o.Object, &obj)
-}
-
-func loadAliases() error {
-	if err := aliases.Load(); err != nil {
-		return err
-	}
-	for _, gvr := range dao.AllGVRs() {
-		meta, err := dao.MetaFor(gvr)
-		if err != nil {
-			return err
-		}
-		if _, ok := aliases.Alias[meta.Kind]; ok {
-			continue
-		}
-		aliases.Define(string(gvr), strings.ToLower(meta.Kind), meta.Name)
-		if meta.SingularName != "" {
-			aliases.Define(string(gvr), meta.SingularName)
-		}
-		if meta.ShortNames != nil {
-			aliases.Define(string(gvr), meta.ShortNames...)
-		}
-	}
-
-	return nil
-}
-
 func loadCustomViewers() MetaViewers {
 	m := make(MetaViewers, 30)
-
 	coreRes(m)
 	miscRes(m)
 	appsRes(m)
@@ -88,12 +48,6 @@ func miscRes(vv MetaViewers) {
 	vv["aliases"] = MetaViewer{
 		viewerFn: NewAlias,
 	}
-	vv["users"] = MetaViewer{
-		viewerFn: NewUser,
-	}
-	vv["groups"] = MetaViewer{
-		viewerFn: NewGroup,
-	}
 }
 
 func appsRes(vv MetaViewers) {
@@ -117,6 +71,12 @@ func appsRes(vv MetaViewers) {
 func rbacRes(vv MetaViewers) {
 	vv["rbac"] = MetaViewer{
 		enterFn: showRules,
+	}
+	vv["users"] = MetaViewer{
+		viewerFn: NewUser,
+	}
+	vv["groups"] = MetaViewer{
+		viewerFn: NewGroup,
 	}
 	vv["rbac.authorization.k8s.io/v1/clusterroles"] = MetaViewer{
 		enterFn: showRules,

@@ -1,4 +1,4 @@
-package dao
+package model
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 )
@@ -27,16 +26,16 @@ func Reconcile(ctx context.Context, table render.TableData, gvr client.GVR) (ren
 	if !ok {
 		return table, fmt.Errorf("no factory found for %s", gvr)
 	}
-	m, ok := model.Registry[string(gvr)]
+	m, ok := Registry[string(gvr)]
 	if !ok {
 		log.Warn().Msgf("Resource %s not found in registry. Going generic!", gvr)
-		m = model.ResourceMeta{
-			Model:    &model.Generic{},
+		m = ResourceMeta{
+			Model:    &Generic{},
 			Renderer: &render.Generic{},
 		}
 	}
 	if m.Model == nil {
-		m.Model = &model.Resource{}
+		m.Model = &Resource{}
 	}
 	m.Model.Init(table.Namespace, string(gvr), factory)
 

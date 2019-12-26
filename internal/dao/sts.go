@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -62,7 +61,6 @@ func (s *StatefulSet) Restart(path string) error {
 
 // Logs tail logs for all pods represented by this StatefulSet.
 func (s *StatefulSet) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
-	log.Debug().Msgf("Tailing StatefulSet %q", opts.Path)
 	o, err := s.Get(string(s.gvr), opts.Path, labels.Everything())
 	if err != nil {
 		return err

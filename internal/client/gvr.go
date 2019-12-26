@@ -64,11 +64,11 @@ func (g GVR) ToRAndG() (string, string) {
 	tokens := strings.Split(string(g), "/")
 	switch len(tokens) {
 	case 3:
-		return tokens[0], tokens[2]
+		return tokens[2], tokens[0]
 	case 2:
-		return "", tokens[1]
+		return tokens[1], "core"
 	default:
-		return "", tokens[0]
+		return tokens[0], "core"
 	}
 }
 

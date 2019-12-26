@@ -2,7 +2,6 @@ package dao
 
 import (
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/dynamic"
 )
@@ -25,7 +24,6 @@ func (g *Generic) Delete(path string, cascade, force bool) error {
 	}
 
 	ns, n := client.Namespaced(path)
-	log.Debug().Msgf("DELETING %q:%q -- %q", ns, n, path)
 	opts := metav1.DeleteOptions{PropagationPolicy: &p}
 	if ns != "-" {
 		return g.dynClient().Namespace(ns).Delete(n, &opts)

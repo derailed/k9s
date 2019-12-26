@@ -41,30 +41,6 @@ func NewFactory(client client.Connection) *Factory {
 	}
 }
 
-func (f *Factory) Dump() {
-	log.Debug().Msgf("----------- FACTORIES -------------")
-	for ns := range f.factories {
-		log.Debug().Msgf("  Factory for NS %q", ns)
-	}
-	log.Debug().Msgf("-----------------------------------")
-}
-
-func (f *Factory) Debug(gvr string) {
-	log.Debug().Msgf("----------- DEBUG FACTORY (%s) -------------", gvr)
-	inf := f.factories[allNamespaces].ForResource(toGVR(gvr))
-	for i, k := range inf.Informer().GetStore().ListKeys() {
-		log.Debug().Msgf("%d -- %s", i, k)
-	}
-}
-
-func (f *Factory) Show(ns, gvr string) {
-	log.Debug().Msgf("----------- SHOW FACTORIES %q -------------", ns)
-	inf := f.ForResource(ns, gvr)
-	for _, k := range inf.Informer().GetStore().ListKeys() {
-		log.Debug().Msgf("  Key: %s", k)
-	}
-}
-
 func (f *Factory) List(gvr, ns string, sel labels.Selector) ([]runtime.Object, error) {
 	auth, err := f.Client().CanI(ns, gvr, []string{"list"})
 	if err != nil {
@@ -236,6 +212,30 @@ func (f *Factory) Client() client.Connection {
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func (f *Factory) Dump() {
+	log.Debug().Msgf("----------- FACTORIES -------------")
+	for ns := range f.factories {
+		log.Debug().Msgf("  Factory for NS %q", ns)
+	}
+	log.Debug().Msgf("-----------------------------------")
+}
+
+func (f *Factory) Debug(gvr string) {
+	log.Debug().Msgf("----------- DEBUG FACTORY (%s) -------------", gvr)
+	inf := f.factories[allNamespaces].ForResource(toGVR(gvr))
+	for i, k := range inf.Informer().GetStore().ListKeys() {
+		log.Debug().Msgf("%d -- %s", i, k)
+	}
+}
+
+func (f *Factory) Show(ns, gvr string) {
+	log.Debug().Msgf("----------- SHOW FACTORIES %q -------------", ns)
+	inf := f.ForResource(ns, gvr)
+	for _, k := range inf.Informer().GetStore().ListKeys() {
+		log.Debug().Msgf("  Key: %s", k)
+	}
+}
 
 func namespaced(n string) (string, string) {
 	ns, po := path.Split(n)

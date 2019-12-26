@@ -7,6 +7,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -18,13 +19,13 @@ type Alias struct {
 
 // List returns a collection of screen dumps.
 func (b *Alias) List(ctx context.Context) ([]runtime.Object, error) {
-	aa, ok := ctx.Value(internal.KeyAliases).(config.Alias)
+	a, ok := ctx.Value(internal.KeyAliases).(*dao.Alias)
 	if !ok {
 		return nil, errors.New("no aliases found in context")
 	}
 
-	m := make(config.ShortNames, len(aa))
-	for alias, gvr := range aa {
+	m := make(config.ShortNames, len(a.Alias))
+	for alias, gvr := range a.Alias {
 		if _, ok := m[gvr]; ok {
 			m[gvr] = append(m[gvr], alias)
 		} else {
@@ -39,14 +40,4 @@ func (b *Alias) List(ctx context.Context) ([]runtime.Object, error) {
 	}
 
 	return oo, nil
-}
-
-// Hydrate returns a pod as container rows.
-func (b *Alias) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
-	for i, o := range oo {
-		if err := re.Render(o, render.NonResource, &rr[i]); err != nil {
-			return err
-		}
-	}
-	return nil
 }

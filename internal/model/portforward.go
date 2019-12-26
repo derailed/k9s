@@ -44,22 +44,6 @@ func (c *PortForward) List(ctx context.Context) ([]runtime.Object, error) {
 	return oo, nil
 }
 
-// Hydrate returns a pod as container rows.
-func (c *PortForward) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
-	for i, o := range oo {
-		res, ok := o.(render.ForwardRes)
-		if !ok {
-			return fmt.Errorf("expecting a forwardres but got %T", o)
-		}
-
-		if err := re.Render(res, render.NonResource, &rr[i]); err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
 // ----------------------------------------------------------------------------
 // Helpers...
 

@@ -41,14 +41,10 @@ func (r *Resource) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) err
 		log.Debug().Msgf("HYDRATE elapsed: %v", time.Since(t))
 	}(time.Now())
 
-	var index int
-	for _, o := range oo {
-		var row render.Row
-		if err := re.Render(o, r.namespace, &row); err != nil {
+	for i, o := range oo {
+		if err := re.Render(o, r.namespace, &rr[i]); err != nil {
 			return err
 		}
-		rr[index] = row
-		index++
 	}
 
 	return nil

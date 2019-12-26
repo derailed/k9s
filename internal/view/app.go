@@ -43,7 +43,6 @@ func NewApp(cfg *config.Config) *App {
 	}
 	a.Config = cfg
 	a.InitBench(cfg.K9s.CurrentCluster)
-	a.command = newCommand(&a)
 
 	a.Views()["indicator"] = ui.NewIndicatorView(a.App, a.Styles)
 	a.Views()["clusterInfo"] = newClusterInfoView(&a, client.NewMetricsServer(cfg.GetConnection()))
@@ -57,7 +56,6 @@ func (a *App) ActiveView() model.Component {
 }
 
 func (a *App) PrevCmd(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msgf("PREVIOUS!!!")
 	a.Content.DumpStack()
 	a.Content.DumpPages()
 	if !a.Content.IsLast() {
@@ -92,6 +90,11 @@ func (a *App) Init(version string, rate int) error {
 	a.factory = watch.NewFactory(a.Conn())
 	a.initFactory(ns)
 
+	a.command = newCommand(a)
+	if err := a.command.Init(); err != nil {
+		return err
+	}
+
 	a.clusterInfo().init(version)
 	if a.Config.K9s.GetHeadless() {
 		a.refreshIndicator()
@@ -106,10 +109,6 @@ func (a *App) Init(version string, rate int) error {
 	a.Main.AddPage("main", main, true, false)
 	a.Main.AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
 	a.toggleHeader(!a.Config.K9s.GetHeadless())
-
-	if err := a.command.Init(); err != nil {
-		panic(err)
-	}
 
 	return nil
 }
@@ -266,6 +265,9 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 		}
 		a.initFactory(ns)
 
+		if err := a.command.Reset(); err != nil {
+			return err
+		}
 		a.Config.Reset()
 		if err := a.Config.Save(); err != nil {
 			log.Error().Err(err).Msg("Config save failed!")

@@ -34,7 +34,7 @@ func NewAlias(gvr client.GVR) ResourceViewer {
 }
 
 func (a *Alias) aliasContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, internal.KeyAliases, aliases.Alias)
+	return context.WithValue(ctx, internal.KeyAliases, a.App().command.alias)
 }
 
 func (a *Alias) bindKeys(aa ui.KeyActions) {

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -21,7 +20,6 @@ var _ Loggable = &Service{}
 
 // Logs tail logs for all pods represented by this Service.
 func (s *Service) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
-	log.Debug().Msgf("Tailing Service %q", opts.Path)
 	o, err := s.Get(string(s.gvr), opts.Path, labels.Everything())
 	if err != nil {
 		return err

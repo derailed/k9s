@@ -4,12 +4,11 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/tools/clientcmd"
-	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 type Context struct {
@@ -29,7 +28,7 @@ func (c *Context) Get(_, n string) (runtime.Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &NamedContext{Name: n, Context: ctx}, nil
+	return &render.NamedContext{Name: n, Context: ctx}, nil
 }
 
 // List all Contexts on the current cluster.
@@ -40,7 +39,7 @@ func (c *Context) List(string, metav1.ListOptions) ([]runtime.Object, error) {
 	}
 	cc := make([]runtime.Object, 0, len(ctxs))
 	for k, v := range ctxs {
-		cc = append(cc, NewNamedContext(c.config(), k, v))
+		cc = append(cc, render.NewNamedContext(c.config(), k, v))
 	}
 
 	return cc, nil
@@ -90,33 +89,33 @@ func (c *Context) KubeUpdate(n string) error {
 
 // ----------------------------------------------------------------------------
 
-// NamedContext represents a named cluster context.
-type NamedContext struct {
-	Name    string
-	Context *api.Context
-	config  *client.Config
-}
+// // NamedContext represents a named cluster context.
+// type NamedContext struct {
+// 	Name    string
+// 	Context *api.Context
+// 	config  *client.Config
+// }
 
-// NewNamedContext returns a new named context.
-func NewNamedContext(c *client.Config, n string, ctx *api.Context) *NamedContext {
-	return &NamedContext{Name: n, Context: ctx, config: c}
-}
+// // NewNamedContext returns a new named context.
+// func NewNamedContext(c *client.Config, n string, ctx *api.Context) *NamedContext {
+// 	return &NamedContext{Name: n, Context: ctx, config: c}
+// }
 
-// MustCurrentContextName return the active context name.
-func (c *NamedContext) MustCurrentContextName() string {
-	cl, err := c.config.CurrentContextName()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Fetching current context")
-	}
-	return cl
-}
+// // MustCurrentContextName return the active context name.
+// func (c *NamedContext) MustCurrentContextName() string {
+// 	cl, err := c.config.CurrentContextName()
+// 	if err != nil {
+// 		log.Fatal().Err(err).Msg("Fetching current context")
+// 	}
+// 	return cl
+// }
 
-// GetObjectKind returns a schema object.
-func (c *NamedContext) GetObjectKind() schema.ObjectKind {
-	return nil
-}
+// // GetObjectKind returns a schema object.
+// func (c *NamedContext) GetObjectKind() schema.ObjectKind {
+// 	return nil
+// }
 
-// DeepCopyObject returns a container copy.
-func (c *NamedContext) DeepCopyObject() runtime.Object {
-	return c
-}
+// // DeepCopyObject returns a container copy.
+// func (c *NamedContext) DeepCopyObject() runtime.Object {
+// 	return c
+// }

@@ -2,7 +2,6 @@ package model
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/derailed/k9s/internal/render"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,24 +25,4 @@ func (c *Context) List(_ context.Context) ([]runtime.Object, error) {
 	}
 
 	return cc, nil
-}
-
-// Hydrate returns nodes as rows.
-func (n *Context) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
-	var index int
-	for _, o := range oo {
-		ctx, ok := o.(*render.NamedContext)
-		if !ok {
-			return fmt.Errorf("expecting named context but got %T", o)
-		}
-
-		var row render.Row
-		if err := re.Render(ctx, "", &row); err != nil {
-			return err
-		}
-		rr[index] = row
-		index++
-	}
-
-	return nil
 }

@@ -11,13 +11,12 @@ import (
 )
 
 const (
-	group    = "Group"
-	user     = "User"
-	sa       = "ServiceAccount"
-	allVerbs = "*"
+	group = "Group"
+	user  = "User"
+	sa    = "ServiceAccount"
 )
 
-// Policy presents a RBAC rules viewer.
+// Policy presents a RBAC rules viewer based on what a given user/group or sa can do.
 type Policy struct {
 	ResourceViewer
 

@@ -36,7 +36,7 @@ require (
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/gdamore/tcell v1.3.0
-	github.com/ghodss/yaml v1.0.0 // indirect
+	github.com/ghodss/yaml v1.0.0
 	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
 	github.com/golang/mock v1.2.0
 	github.com/google/btree v1.0.0 // indirect
