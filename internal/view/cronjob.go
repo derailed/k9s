@@ -32,9 +32,9 @@ func NewCronJob(gvr client.GVR) ResourceViewer {
 	return &c
 }
 
-func (c *CronJob) showJobs(app *App, ns, res, path string) {
-	log.Debug().Msgf("Showing Jobs %q:%q -- %q", ns, res, path)
-	o, err := app.factory.Get("batch/v1beta1/cronjobs", path, labels.Everything())
+func (c *CronJob) showJobs(app *App, ns, gvr, path string) {
+	log.Debug().Msgf("Showing Jobs %q:%q -- %q", ns, gvr, path)
+	o, err := app.factory.Get(gvr, path, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return

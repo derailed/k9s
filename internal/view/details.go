@@ -85,8 +85,8 @@ func (d *Details) Hints() model.MenuHints {
 
 func (d *Details) bindKeys() {
 	d.actions.Set(ui.KeyActions{
-		tcell.KeyEscape: ui.NewKeyAction("Back", d.app.PrevCmd, true),
-		tcell.KeyCtrlS:  ui.NewKeyAction("Save", d.saveCmd, true),
+		tcell.KeyEscape: ui.NewKeyAction("Back", d.app.PrevCmd, false),
+		tcell.KeyCtrlS:  ui.NewKeyAction("Save", d.saveCmd, false),
 		ui.KeyC:         ui.NewKeyAction("Copy", d.cpCmd, true),
 	})
 }

@@ -31,7 +31,7 @@ func (n *Node) List(_ context.Context) ([]runtime.Object, error) {
 
 	oo := make([]runtime.Object, len(nn.Items))
 	for i, n := range nn.Items {
-		o, err := runtime.DefaultUnstructuredConverter.ToUnstructured(n)
+		o, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&n)
 		if err != nil {
 			return nil, err
 		}

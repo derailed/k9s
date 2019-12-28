@@ -17,31 +17,33 @@ type User struct {
 
 // NewUser returns a new subject viewer.
 func NewUser(gvr client.GVR) ResourceViewer {
-	s := User{ResourceViewer: NewBrowser(gvr)}
-	s.GetTable().SetColorerFn(render.Subject{}.ColorerFunc())
-	s.SetBindKeysFn(s.bindKeys)
-	s.SetContextFn(s.subjectCtx)
-	return &s
+	u := User{ResourceViewer: NewBrowser(gvr)}
+	u.GetTable().SetColorerFn(render.Subject{}.ColorerFunc())
+	u.SetBindKeysFn(u.bindKeys)
+	u.SetContextFn(u.subjectCtx)
+
+	return &u
 }
 
-func (s *User) bindKeys(aa ui.KeyActions) {
+func (u *User) bindKeys(aa ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, ui.KeyShiftP, tcell.KeyCtrlSpace, ui.KeySpace)
 	aa.Add(ui.KeyActions{
-		tcell.KeyEnter: ui.NewKeyAction("Rules", s.policyCmd, true),
-		ui.KeyShiftK:   ui.NewKeyAction("Sort Kind", s.GetTable().SortColCmd(1, true), false),
+		tcell.KeyEnter: ui.NewKeyAction("Rules", u.policyCmd, true),
+		ui.KeyShiftK:   ui.NewKeyAction("Sort Kind", u.GetTable().SortColCmd(1, true), false),
 	})
 }
 
-func (s *User) subjectCtx(ctx context.Context) context.Context {
+func (u *User) subjectCtx(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeySubjectKind, "User")
 }
 
-func (s *User) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !s.GetTable().RowSelected() {
+func (u *User) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := u.GetTable().GetSelectedItem()
+	if path == "" {
 		return evt
 	}
-	if err := s.App().inject(NewPolicy(s.App(), "User", s.GetTable().GetSelectedItem())); err != nil {
-		s.App().Flash().Err(err)
+	if err := u.App().inject(NewPolicy(u.App(), "User", path)); err != nil {
+		u.App().Flash().Err(err)
 	}
 
 	return nil

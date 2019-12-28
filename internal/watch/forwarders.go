@@ -50,18 +50,18 @@ func (ff Forwarders) DeleteAll() {
 }
 
 // Kill stops and delete a port-forwards associated with pod.
-func (ff Forwarders) Kill(pod string) int {
+func (ff Forwarders) Kill(path string) int {
 	ff.Dump()
 
-	log.Debug().Msgf("Delete port-forward %q", pod)
-	hasContainer := strings.Contains(pod, ":")
+	log.Debug().Msgf("Delete port-forward %q", path)
+	hasContainer := strings.Contains(path, ":")
 	var stats int
 	for k, f := range ff {
 		victim := k
 		if !hasContainer {
 			victim = strings.Split(k, ":")[0]
 		}
-		if victim == pod {
+		if victim == path {
 			stats++
 			log.Debug().Msgf("Stopping and delete port-forward %s", k)
 			f.Stop()

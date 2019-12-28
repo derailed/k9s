@@ -7,10 +7,19 @@ import (
 	"vbom.ml/util/sortorder"
 )
 
-const ageCol = "AGE"
-
 // Fields represents a collection of row fields.
 type Fields []string
+
+// Clone returns a copy of the fields.
+func (f Fields) Clone() Fields {
+	cp := make(Fields, len(f))
+	for i, v := range f {
+		cp[i] = v
+	}
+	return cp
+}
+
+// ----------------------------------------------------------------------------
 
 // Row represents a colllection of columns.
 type Row struct {
@@ -18,54 +27,12 @@ type Row struct {
 	Fields Fields
 }
 
-// Rows represents a collection of rows.
-type Rows []Row
-
-// Header represent a table header
-type Header struct {
-	Name      string
-	Align     int
-	Decorator DecoratorFunc
+// NewRow returns a new row with initialized fields.
+func NewRow(cols int) Row {
+	return Row{Fields: make([]string, cols)}
 }
 
-// HeaderRow represents a table header.
-type HeaderRow []Header
-
-// Columns return header row columns as strings.
-func (h HeaderRow) Columns() []string {
-	cc := make([]string, len(h))
-	for i, c := range h {
-		cc[i] = c.Name
-	}
-
-	return cc
-}
-
-// HasAge returns true if table has an age column.
-func (h HeaderRow) HasAge() bool {
-	for _, r := range h {
-		if r.Name == ageCol {
-			return true
-		}
-	}
-
-	return false
-}
-
-func (h HeaderRow) AgeCol(col int) bool {
-	if !h.HasAge() {
-		return false
-	}
-	return col == len(h)-1
-}
-
-// RowSorter sorts rows.
-type RowSorter struct {
-	Rows  Rows
-	Index int
-	Asc   bool
-}
-
+// Clone copies a row.
 func (r Row) Clone() Row {
 	return Row{
 		ID:     r.ID,
@@ -73,14 +40,10 @@ func (r Row) Clone() Row {
 	}
 }
 
-func (f Fields) Clone() Fields {
-	res := make(Fields, len(f))
-	for i, f := range f {
-		res[i] = f
-	}
+// ----------------------------------------------------------------------------
 
-	return res
-}
+// Rows represents a collection of rows.
+type Rows []Row
 
 // Delete removes an element by id.
 func (rr Rows) Delete(id string) Rows {
@@ -97,11 +60,6 @@ func (rr Rows) Delete(id string) Rows {
 	}
 
 	return append(rr[:idx], rr[idx+1:]...)
-}
-
-// NewRow returns a new row with initialized fields.
-func NewRow(cols int) Row {
-	return Row{Fields: make([]string, cols)}
 }
 
 func (rr Rows) Upsert(r Row) Rows {
@@ -131,6 +89,15 @@ func (rr Rows) Sort(col int, asc bool) {
 	sort.Sort(t)
 }
 
+// ----------------------------------------------------------------------------
+
+// RowSorter sorts rows.
+type RowSorter struct {
+	Rows  Rows
+	Index int
+	Asc   bool
+}
+
 func (s RowSorter) Len() int {
 	return len(s.Rows)
 }
@@ -142,6 +109,9 @@ func (s RowSorter) Swap(i, j int) {
 func (s RowSorter) Less(i, j int) bool {
 	return Less(s.Asc, s.Rows[i].Fields[s.Index], s.Rows[j].Fields[s.Index])
 }
+
+// ----------------------------------------------------------------------------
+// Helpers...
 
 func Less(asc bool, c1, c2 string) bool {
 	if o, ok := isDurationSort(asc, c1, c2); ok {

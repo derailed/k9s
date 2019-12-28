@@ -76,7 +76,7 @@ func (v *CmdView) BufferActive(f bool, k BufferKind) {
 		v.SetTextColor(v.styles.FgColor())
 		v.SetBorderColor(colorFor(k))
 		v.icon = iconFor(k)
-		v.reset()
+		// v.reset()
 		v.activate()
 	} else {
 		v.SetBorder(false)

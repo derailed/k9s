@@ -52,7 +52,7 @@ func (c *command) defaultCmd() error {
 
 var canRX = regexp.MustCompile(`\Acan\s([u|g|s]):([\w-:]+)\b`)
 
-func (c *command) isK9sCmd(cmd string) bool {
+func (c *command) specialCmd(cmd string) bool {
 	cmds := strings.Split(cmd, " ")
 	switch cmds[0] {
 	case "q", "Q", "quit":
@@ -85,6 +85,10 @@ func (c *command) viewMetaFor(cmd string) (string, *MetaViewer, error) {
 	if !ok {
 		return "", nil, fmt.Errorf("Huh? `%s` command not found", cmd)
 	}
+	if _, err := c.app.factory.CanForResource(c.app.Config.ActiveNamespace(), gvr); err != nil {
+		return "", nil, err
+	}
+
 	v, ok := customViewers[client.GVR(gvr)]
 	if !ok {
 		return gvr, &MetaViewer{viewerFn: NewBrowser}, nil
@@ -95,7 +99,7 @@ func (c *command) viewMetaFor(cmd string) (string, *MetaViewer, error) {
 
 // Exec the command by showing associated display.
 func (c *command) run(cmd string) error {
-	if c.isK9sCmd(cmd) {
+	if c.specialCmd(cmd) {
 		return nil
 	}
 

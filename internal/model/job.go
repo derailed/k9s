@@ -29,6 +29,7 @@ func (c *Job) List(ctx context.Context) ([]runtime.Object, error) {
 		return nil, errors.New("no cronjob path found in context")
 	}
 
+	log.Debug().Msgf("Listing jobs %q %q--%q", c.gvr, uid, path)
 	oo, err := c.Resource.List(ctx)
 	if err != nil {
 		return nil, err
@@ -45,17 +46,12 @@ func (c *Job) List(ctx context.Context) ([]runtime.Object, error) {
 		if err != nil {
 			return nil, err
 		}
+		log.Debug().Msgf("Looking at job %q -- %q", job.Name, cronName)
 		if !isNamedAfter(cronName, job.Name) {
 			continue
 		}
-		id, ok := job.Spec.Selector.MatchLabels["controller-uid"]
-		if !ok {
-			continue
-		}
-		if isControlledBy(uid, id) {
-			log.Debug().Msgf("Job %s -- %#v -- %q -- %q", job.Name, job.Labels, uid, path)
-			jj = append(jj, j)
-		}
+		log.Debug().Msgf("GOT Job %s -- %#v -- %q -- %q", job.Name, job.Labels, uid, path)
+		jj = append(jj, j)
 	}
 
 	return jj, nil

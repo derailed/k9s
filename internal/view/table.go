@@ -2,6 +2,7 @@ package view
 
 import (
 	"context"
+	"time"
 
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -16,21 +17,22 @@ type Table struct {
 	enterFn  EnterFunc
 }
 
-func NewTable(title string) *Table {
+func NewTable(gvr string) *Table {
 	return &Table{
-		Table: ui.NewTable(title),
+		Table: ui.NewTable(gvr),
 	}
 }
 
 // Init initializes the component
 func (t *Table) Init(ctx context.Context) (err error) {
-	log.Debug().Msgf(">>>> Table INIT %s", t.BaseTitle)
 	if t.app, err = extractApp(ctx); err != nil {
 		return err
 	}
 	ctx = context.WithValue(ctx, ui.KeyStyles, t.app.Styles)
 	t.Table.Init(ctx)
 	t.bindKeys()
+
+	t.GetModel().SetRefreshRate(time.Duration(t.app.Config.K9s.GetRefreshRate()) * time.Second)
 
 	return nil
 }
@@ -45,14 +47,13 @@ func (t *Table) App() *App {
 
 // Start runs the component.
 func (t *Table) Start() {
-	log.Debug().Msgf("Table START %s", t.BaseTitle)
+	t.Stop()
 	t.SearchBuff().AddListener(t.app.Cmd())
 	t.SearchBuff().AddListener(t)
 }
 
 // Stop terminates the component.
 func (t *Table) Stop() {
-	log.Debug().Msgf("TABLE <STOP> %s", t.BaseTitle)
 	t.SearchBuff().RemoveListener(t.app.Cmd())
 	t.SearchBuff().RemoveListener(t)
 }
@@ -85,9 +86,9 @@ func (t *Table) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (t *Table) bindKeys() {
 	t.Actions().Add(ui.KeyActions{
-		ui.KeySpace:         ui.NewKeyAction("Mark", t.markCmd, true),
-		tcell.KeyCtrlSpace:  ui.NewKeyAction("Marks Clear", t.clearMarksCmd, true),
-		tcell.KeyCtrlS:      ui.NewKeyAction("Save", t.saveCmd, true),
+		ui.KeySpace:         ui.NewKeyAction("Mark", t.markCmd, false),
+		tcell.KeyCtrlSpace:  ui.NewKeyAction("Marks Clear", t.clearMarksCmd, false),
+		tcell.KeyCtrlS:      ui.NewKeyAction("Save", t.saveCmd, false),
 		ui.KeySlash:         ui.NewKeyAction("Filter Mode", t.activateCmd, false),
 		tcell.KeyEscape:     ui.NewKeyAction("Filter Reset", t.resetCmd, false),
 		tcell.KeyEnter:      ui.NewKeyAction("Filter", t.filterCmd, false),
@@ -100,7 +101,8 @@ func (t *Table) bindKeys() {
 }
 
 func (t *Table) markCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !t.RowSelected() {
+	path := t.GetSelectedItem()
+	if path == "" {
 		return evt
 	}
 	t.ToggleMark()
@@ -110,7 +112,8 @@ func (t *Table) markCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (t *Table) clearMarksCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !t.RowSelected() {
+	path := t.GetSelectedItem()
+	if path == "" {
 		return evt
 	}
 	t.ClearMarks()
@@ -147,6 +150,7 @@ func (t *Table) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 		t.SearchBuff().Reset()
 		return t.app.PrevCmd(evt)
 	}
+
 	if ui.IsLabelSelector(t.SearchBuff().String()) {
 		t.filterFn("")
 	}

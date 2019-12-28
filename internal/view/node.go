@@ -40,7 +40,8 @@ func (n *Node) showPods(app *App, ns, res, sel string) {
 }
 
 func (n *Node) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !n.GetTable().RowSelected() {
+	path := n.GetTable().GetSelectedItem()
+	if path == "" {
 		return evt
 	}
 

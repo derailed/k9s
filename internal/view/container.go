@@ -50,7 +50,7 @@ func (c *Container) bindKeys(aa ui.KeyActions) {
 }
 
 func (c *Container) k9sEnv() K9sEnv {
-	env := defaultK9sEnv(c.App(), c.GetTable().GetSelectedItem(), c.GetTable().GetRow())
+	env := defaultK9sEnv(c.App(), c.GetTable().GetSelectedItem(), c.GetTable().GetSelectedRow())
 	ns, n := client.Namespaced(c.GetTable().Path)
 	env["POD"] = n
 	env["NAMESPACE"] = ns
@@ -59,9 +59,7 @@ func (c *Container) k9sEnv() K9sEnv {
 }
 
 func (c *Container) selectedContainer() string {
-	log.Debug().Msgf("Container SELECTED %s", c.GetTable().GetSelectedItem())
 	tokens := strings.Split(c.GetTable().GetSelectedItem(), "/")
-
 	return tokens[0]
 }
 
@@ -152,7 +150,7 @@ func (c *Container) portForward(lport, cport string) {
 
 func (c *Container) runForward(pf *dao.PortForwarder, f *portforward.PortForwarder) {
 	c.App().QueueUpdateDraw(func() {
-		c.App().factory.RegisterForwarder(pf)
+		c.App().factory.AddForwarder(pf)
 		c.App().Flash().Infof("PortForward activated %s:%s", pf.Path(), pf.Ports()[0])
 		dialog.DismissPortForward(c.App().Content.Pages)
 	})

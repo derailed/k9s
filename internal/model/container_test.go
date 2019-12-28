@@ -63,8 +63,11 @@ func (f podFactory) List(gvr, ns string, sel labels.Selector) ([]runtime.Object,
 	return nil, nil
 }
 func (f podFactory) ForResource(ns, gvr string) informers.GenericInformer { return nil }
-func (f podFactory) WaitForCacheSync()                                    {}
-func (f podFactory) Forwarders() watch.Forwarders                         { return nil }
+func (f podFactory) CanForResource(ns, gvr string, verbs ...string) (informers.GenericInformer, error) {
+	return nil, nil
+}
+func (f podFactory) WaitForCacheSync()            {}
+func (f podFactory) Forwarders() watch.Forwarders { return nil }
 
 func makePodFactory() model.Factory {
 	return podFactory{}

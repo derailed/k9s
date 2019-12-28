@@ -116,7 +116,7 @@ func (v *Help) showGeneral() model.MenuHints {
 		},
 		{
 			Mnemonic:    "esc",
-			Description: "Clear filter",
+			Description: "Back/Clear",
 		},
 		{
 			Mnemonic:    "tab",
@@ -137,6 +137,18 @@ func (v *Help) showGeneral() model.MenuHints {
 		{
 			Mnemonic:    ":q",
 			Description: "Quit",
+		},
+		{
+			Mnemonic:    "space",
+			Description: "Mark",
+		},
+		{
+			Mnemonic:    "Ctrl-space",
+			Description: "Clear Marks",
+		},
+		{
+			Mnemonic:    "Ctrl-s",
+			Description: "Save",
 		},
 	}
 }

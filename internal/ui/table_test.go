@@ -3,8 +3,10 @@ package ui_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/stretchr/testify/assert"
@@ -36,11 +38,13 @@ func TestTableSelection(t *testing.T) {
 	s, _ := config.NewStyles("")
 	ctx := context.WithValue(context.Background(), ui.KeyStyles, s)
 	v.Init(ctx)
-	v.Update(makeTableData())
+	m := &testModel{}
+	v.SetModel(m)
+	v.Update(m.Peek())
 	v.SelectRow(1, true)
 
-	assert.True(t, v.RowSelected())
-	assert.Equal(t, render.Row{ID: "r2", Fields: render.Fields{"blee", "duh", "zorg"}}, v.GetRow())
+	assert.Equal(t, "r1", v.GetSelectedItem())
+	assert.Equal(t, render.Row{ID: "r2", Fields: render.Fields{"blee", "duh", "zorg"}}, v.GetSelectedRow())
 	assert.Equal(t, "blee", v.GetSelectedCell(0))
 	assert.Equal(t, 1, v.GetSelectedRowIndex())
 	assert.Equal(t, []string{"r1"}, v.GetSelectedItems())
@@ -50,7 +54,22 @@ func TestTableSelection(t *testing.T) {
 	assert.Equal(t, 1, v.GetSelectedRowIndex())
 }
 
+// ----------------------------------------------------------------------------
 // Helpers...
+
+type testModel struct{}
+
+var _ ui.Tabular = &testModel{}
+
+func (t *testModel) Empty() bool                     { return false }
+func (t *testModel) Peek() render.TableData          { return makeTableData() }
+func (t *testModel) ClusterWide() bool               { return false }
+func (t *testModel) GetNamespace() string            { return "blee" }
+func (t *testModel) SetNamespace(string)             {}
+func (t *testModel) AddListener(model.TableListener) {}
+func (t *testModel) Start(context.Context)           {}
+func (t *testModel) InNamespace(string) bool         { return true }
+func (t *testModel) SetRefreshRate(time.Duration)    {}
 
 func makeTableData() render.TableData {
 	return render.TableData{

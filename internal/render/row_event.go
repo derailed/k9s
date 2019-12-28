@@ -2,9 +2,9 @@ package render
 
 import (
 	"fmt"
+	"reflect"
 	"sort"
 
-	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 )
 
@@ -35,9 +35,6 @@ type RowEvent struct {
 	Deltas DeltaRow
 }
 
-// RowEvents a collection of row events.
-type RowEvents []RowEvent
-
 // NewRowEvent returns a new row event.
 func NewRowEvent(kind ResEvent, row Row) RowEvent {
 	return RowEvent{
@@ -62,6 +59,39 @@ func (r RowEvent) Clone() RowEvent {
 		Row:    r.Row.Clone(),
 		Deltas: r.Deltas.Clone(),
 	}
+}
+
+func (r RowEvent) Changed(re RowEvent) bool {
+	if r.Kind != re.Kind {
+		log.Debug().Msgf("KIND Changed")
+		return true
+	}
+	if !reflect.DeepEqual(r.Deltas, re.Deltas) {
+		log.Debug().Msgf("DELTAS CHANGED")
+		return true
+	}
+
+	return !reflect.DeepEqual(r.Row.Fields[:len(r.Row.Fields)-1], re.Row.Fields[:len(re.Row.Fields)-1])
+}
+
+// ----------------------------------------------------------------------------
+
+// RowEvents a collection of row events.
+type RowEvents []RowEvent
+
+// Changed returns true if the header changed.
+func (rr RowEvents) Changed(r RowEvents) bool {
+	if len(rr) != len(r) {
+		return true
+	}
+
+	for i := range rr {
+		if rr[i].Changed(r[i]) {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Clone returns a rowevents deep copy.
@@ -103,10 +133,7 @@ func (rr RowEvents) Delete(id string) RowEvents {
 
 // Clear delete all row events
 func (rr RowEvents) Clear() RowEvents {
-	for _, e := range rr {
-		rr = rr.Delete(e.Row.ID)
-	}
-	return rr
+	return RowEvents{}
 }
 
 // FindIndex locates a row index by id. Returns false is not found.
@@ -201,41 +228,6 @@ func findIndex(ss []string, s string) int {
 }
 
 // ----------------------------------------------------------------------------
-
-var (
-	// ModColor row modified color.
-	ModColor tcell.Color
-	// AddColor row added color.
-	AddColor tcell.Color
-	// ErrColor row err color.
-	ErrColor tcell.Color
-	// StdColor row default color.
-	StdColor tcell.Color
-	// HighlightColor row highlight color.
-	HighlightColor tcell.Color
-	// KillColor row deleted color.
-	KillColor tcell.Color
-	// CompletedColor row completed color.
-	CompletedColor tcell.Color
-)
-
-// ColorerFunc represents a resource row colorer.
-type ColorerFunc func(ns string, evt RowEvent) tcell.Color
-
-// DefaultColorer set the default table row colors.
-func DefaultColorer(ns string, evt RowEvent) tcell.Color {
-	var col = StdColor
-	switch evt.Kind {
-	case EventAdd:
-		col = AddColor
-	case EventUpdate:
-		col = ModColor
-	case EventDelete:
-		col = KillColor
-	}
-
-	return col
-}
 
 type StringSet []string
 

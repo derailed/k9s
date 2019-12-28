@@ -7,14 +7,12 @@ import (
 	"fmt"
 	rt "runtime"
 	"strconv"
-	"time"
 
 	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
@@ -55,7 +53,6 @@ func NewBrowser(gvr client.GVR) ResourceViewer {
 
 // Init watches all running pods in given namespace
 func (b *Browser) Init(ctx context.Context) error {
-	log.Debug().Msgf("BROWSER INIT %s", b.gvr)
 	var err error
 	b.meta, err = dao.MetaFor(b.gvr)
 	if err != nil {
@@ -66,14 +63,16 @@ func (b *Browser) Init(ctx context.Context) error {
 		return err
 	}
 	if !dao.IsK9sMeta(b.meta) {
-		_ = b.app.factory.ForResource(b.app.Config.ActiveNamespace(), b.GVR())
-		b.app.factory.WaitForCacheSync()
+		if _, err := b.app.factory.CanForResource(b.app.Config.ActiveNamespace(), b.GVR()); err != nil {
+			return err
+		}
 	}
 
 	if b.bindKeysFn != nil {
 		b.bindKeysFn(b.Actions())
 	}
-	b.Table.BaseTitle = b.meta.Kind
+	b.BaseTitle = b.meta.Kind
+	b.SetTitle(" [orange:i:]LOADING... ")
 	b.accessor, err = dao.AccessorFor(b.app.factory, b.gvr)
 	if err != nil {
 		return err
@@ -82,49 +81,47 @@ func (b *Browser) Init(ctx context.Context) error {
 
 	b.envFn = b.defaultK9sEnv
 	b.setNamespace(b.App().Config.ActiveNamespace())
-	b.refresh()
 	row, _ := b.GetSelection()
 	if row == 0 && b.GetRowCount() > 0 {
 		b.Select(1, 0)
 	}
+	b.GetModel().AddListener(b)
 
 	return nil
 }
 
-// Start initializes updates.
+// Start initializes browser updates.
 func (b *Browser) Start() {
 	b.Stop()
-
 	log.Debug().Msgf("GOROUTINE %d", rt.NumGoroutine())
-
 	log.Debug().Msgf("BROWSER START %s", b.gvr)
+
 	b.Table.Start()
+	ctx := b.defaultContext()
+	ctx, b.cancelFn = context.WithCancel(ctx)
+	if b.contextFn != nil {
+		ctx = b.contextFn(ctx)
+	}
+	if path, ok := ctx.Value(internal.KeyPath).(string); ok && path != "" {
+		b.Path = path
+	}
 
-	var ctx context.Context
-	ctx, b.cancelFn = context.WithCancel(context.Background())
-	go b.update(ctx)
+	b.GetModel().Start(ctx)
 }
 
+// Stop terminates browser updates.
 func (b *Browser) Stop() {
-	if b.cancelFn != nil {
-		b.cancelFn()
-		b.cancelFn = nil
-		log.Debug().Msgf("BROWSER <STOP> %s", b.BaseTitle)
+	if b.cancelFn == nil {
+		return
 	}
+	b.Table.Stop()
+	log.Debug().Msgf("BROWSER <STOP> %q", b.gvr)
+	b.cancelFn()
+	b.cancelFn = nil
 }
 
-func (b *Browser) update(ctx context.Context) {
-	defer log.Debug().Msgf("UPDATER BAIL For %s", b.gvr)
-	for {
-		select {
-		case <-ctx.Done():
-			log.Debug().Msgf("BROWSER <<CANCELED>> -- %s", b.gvr)
-			return
-		case <-time.After(time.Duration(b.app.Config.K9s.GetRefreshRate()) * time.Second):
-			log.Debug().Msgf("GOROUTINE %d", rt.NumGoroutine())
-			b.refresh()
-		}
-	}
+func (b *Browser) refresh() {
+	b.Start()
 }
 
 // Name returns the component name.
@@ -149,11 +146,12 @@ func (b *Browser) GetTable() *Table { return b.Table }
 // Actions()...
 
 func (b *Browser) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !b.RowSelected() {
+	path := b.GetSelectedItem()
+	if path == "" {
 		return evt
 	}
 
-	_, n := client.Namespaced(b.GetSelectedItem())
+	_, n := client.Namespaced(path)
 	log.Debug().Msgf("Copied selection to clipboard %q", n)
 	b.app.Flash().Info("Current selection copied to clipboard...")
 	if err := clipboard.WriteAll(n); err != nil {
@@ -164,7 +162,8 @@ func (b *Browser) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (b *Browser) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if b.filterCmd(evt) == nil || !b.RowSelected() {
+	path := b.GetSelectedItem()
+	if b.filterCmd(evt) == nil || path == "" {
 		return nil
 	}
 
@@ -172,7 +171,7 @@ func (b *Browser) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if b.enterFn != nil {
 		f = b.enterFn
 	}
-	f(b.app, b.Data.Namespace, string(b.gvr), b.GetSelectedItem())
+	f(b.app, b.GetModel().GetNamespace(), string(b.gvr), path)
 
 	return nil
 }
@@ -244,11 +243,11 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (b *Browser) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msgf("DESCRIBE %t -- %#v", b.RowSelected(), b.GetSelectedItems())
-	if !b.RowSelected() {
+	path := b.GetSelectedItem()
+	if path == "" {
 		return evt
 	}
-	b.describeResource(b.app, b.Data.Namespace, string(b.gvr), b.GetSelectedItem())
+	b.describeResource(b.app, b.GetModel().GetNamespace(), string(b.gvr), path)
 
 	return nil
 }
@@ -272,12 +271,12 @@ func (b *Browser) describeResource(app *App, _, _, sel string) {
 }
 
 func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !b.RowSelected() {
+	path := b.GetSelectedItem()
+	if path == "" {
 		return evt
 	}
 
-	path := b.GetSelectedItem()
-	log.Debug().Msgf("------ NAMESPACES %q vs %q", path, b.Data.Namespace)
+	log.Debug().Msgf("------ NAMESPACES %q vs %q", path, b.GetModel().GetNamespace())
 	o, err := b.app.factory.Get(string(b.gvr), path, labels.Everything())
 	if err != nil {
 		b.app.Flash().Errf("Unable to get resource %q -- %s", b.gvr, err)
@@ -317,14 +316,15 @@ func toYAML(o runtime.Object) (string, error) {
 }
 
 func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !b.RowSelected() {
+	path := b.GetSelectedItem()
+	if path == "" {
 		return evt
 	}
 
 	b.Stop()
 	defer b.Start()
 	{
-		ns, po := client.Namespaced(b.GetSelectedItem())
+		ns, n := client.Namespaced(path)
 		args := make([]string, 0, 10)
 		args = append(args, "edit")
 		args = append(args, b.meta.Kind)
@@ -333,7 +333,7 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		if cfg := b.app.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
 			args = append(args, "--kubeconfig", *cfg)
 		}
-		if !runK(true, b.app, append(args, po)...) {
+		if !runK(true, b.app, append(args, n)...) {
 			b.app.Flash().Err(errors.New("Edit exec failed"))
 		}
 	}
@@ -343,10 +343,10 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (b *Browser) setNamespace(ns string) {
 	if !b.meta.Namespaced {
-		b.Data.Namespace = render.ClusterScope
+		b.GetModel().SetNamespace(render.ClusterScope)
 		return
 	}
-	if b.Data.Namespace == ns {
+	if b.GetModel().InNamespace(ns) {
 		return
 	}
 
@@ -354,8 +354,7 @@ func (b *Browser) setNamespace(ns string) {
 		ns = render.AllNamespaces
 	}
 	log.Debug().Msgf("!!!!!! SETTING NS %q", ns)
-	b.Data.Namespace = ns
-	b.Data.RowEvents = b.Data.RowEvents.Clear()
+	b.GetModel().SetNamespace(ns)
 }
 
 func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -372,7 +371,7 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	b.UpdateTitle()
 	b.SelectRow(1, true)
 	b.app.CmdBuff().Reset()
-	if err := b.app.Config.SetActiveNamespace(b.Data.Namespace); err != nil {
+	if err := b.app.Config.SetActiveNamespace(b.GetModel().GetNamespace()); err != nil {
 		log.Error().Err(err).Msg("Config save NS failed!")
 	}
 	if err := b.app.Config.Save(); err != nil {
@@ -382,33 +381,30 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (b *Browser) refresh() {
-	if b.app.Conn() == nil {
-		return
-	}
-	ctx := b.defaultContext()
-	if b.contextFn != nil {
-		ctx = b.contextFn(ctx)
-	}
-	if path, ok := ctx.Value(internal.KeyPath).(string); ok && path != "" {
-		b.Path = path
-	}
-	data, err := model.Reconcile(ctx, b.Table.Data, b.gvr)
+// TableLoadChanged notifies view something went south.
+func (b *Browser) TableLoadFailed(err error) {
 	b.app.QueueUpdateDraw(func() {
-		if err != nil {
-			b.app.Flash().Err(err)
-		}
+		b.app.Flash().Err(err)
+	})
+}
+
+// TableDataChanged notifies view new data is available.
+func (b *Browser) TableDataChanged(data render.TableData) {
+	b.Update(data)
+	b.app.QueueUpdateDraw(func() {
 		b.refreshActions()
-		b.Update(data)
 	})
 }
 
 func (b *Browser) defaultContext() context.Context {
-	ctx := context.WithValue(context.Background(), internal.KeyFactory, b.app.factory)
+	ctx := context.Background()
+
+	ctx = context.WithValue(ctx, internal.KeyFactory, b.app.factory)
 	ctx = context.WithValue(ctx, internal.KeyGVR, string(b.gvr))
 	ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
 	ctx = context.WithValue(ctx, internal.KeyLabels, "")
 	ctx = context.WithValue(ctx, internal.KeyFields, "")
+	ctx = context.WithValue(ctx, internal.KeyNamespace, b.App().Config.ActiveNamespace())
 
 	return ctx
 }
@@ -491,8 +487,8 @@ func (b *Browser) customActions(aa ui.KeyActions) {
 
 func (b *Browser) execCmd(bin string, bg bool, args ...string) ui.ActionHandler {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		if !b.RowSelected() {
-
+		path := b.GetSelectedItem()
+		if path == "" {
 			return evt
 		}
 
@@ -519,5 +515,5 @@ func (b *Browser) execCmd(bin string, bg bool, args ...string) ui.ActionHandler 
 }
 
 func (b *Browser) defaultK9sEnv() K9sEnv {
-	return defaultK9sEnv(b.app, b.GetSelectedItem(), b.GetRow())
+	return defaultK9sEnv(b.app, b.GetSelectedItem(), b.GetSelectedRow())
 }

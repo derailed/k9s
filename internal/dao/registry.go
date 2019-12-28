@@ -187,7 +187,8 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 func loadCRDs(f Factory, m ResourceMetas) error {
 	oo, err := f.List("apiextensions.k8s.io/v1beta1/customresourcedefinitions", "", labels.Everything())
 	if err != nil {
-		return err
+		log.Error().Err(err).Msgf("Fail CRDs load")
+		return nil
 	}
 	f.WaitForCacheSync()
 

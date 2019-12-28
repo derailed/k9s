@@ -1,5 +1,12 @@
 package view
 
+import (
+	"strings"
+
+	"github.com/derailed/k9s/internal/client"
+	"github.com/rs/zerolog/log"
+)
+
 func loadCustomViewers() MetaViewers {
 	m := make(MetaViewers, 30)
 	coreRes(m)
@@ -7,6 +14,7 @@ func loadCustomViewers() MetaViewers {
 	appsRes(m)
 	rbacRes(m)
 	batchRes(m)
+	extRes(m)
 
 	return m
 }
@@ -98,5 +106,24 @@ func batchRes(vv MetaViewers) {
 	}
 	vv["batch/v1/jobs"] = MetaViewer{
 		viewerFn: NewJob,
+	}
+}
+
+func extRes(vv MetaViewers) {
+	vv["apiextensions.k8s.io/v1/customresourcedefinitions"] = MetaViewer{
+		enterFn: showCRD,
+	}
+	vv["apiextensions.k8s.io/v1beta1/customresourcedefinitions"] = MetaViewer{
+		enterFn: showCRD,
+	}
+}
+
+func showCRD(app *App, ns, gvr, path string) {
+	log.Debug().Msgf(">>> CRD View %q -- %q -- %q", ns, gvr, path)
+	_, crdGVR := client.Namespaced(path)
+	log.Debug().Msgf("CRD %q", crdGVR)
+	tokens := strings.Split(crdGVR, ".")
+	if err := app.gotoResource(tokens[0]); err != nil {
+		app.Flash().Err(err)
 	}
 }

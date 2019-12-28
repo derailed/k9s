@@ -19,12 +19,12 @@ func Reconcile(ctx context.Context, table render.TableData, gvr client.GVR) (ren
 
 	path, ok := ctx.Value(internal.KeyPath).(string)
 	if !ok {
-		return table, fmt.Errorf("no path specified for %s", gvr)
+		return table, fmt.Errorf("no path in context for %s", gvr)
 	}
 	log.Debug().Msgf("Reconcile %q in ns %q with path %q", gvr, table.Namespace, path)
 	factory, ok := ctx.Value(internal.KeyFactory).(Factory)
 	if !ok {
-		return table, fmt.Errorf("no factory found for %s", gvr)
+		return table, fmt.Errorf("no Factory in context for %s", gvr)
 	}
 	m, ok := Registry[string(gvr)]
 	if !ok {
@@ -39,7 +39,6 @@ func Reconcile(ctx context.Context, table render.TableData, gvr client.GVR) (ren
 	}
 	m.Model.Init(table.Namespace, string(gvr), factory)
 
-	table.Header = m.Renderer.Header(table.Namespace)
 	oo, err := m.Model.List(ctx)
 	if err != nil {
 		return table, err
@@ -51,6 +50,7 @@ func Reconcile(ctx context.Context, table render.TableData, gvr client.GVR) (ren
 		return table, err
 	}
 	update(&table, rows)
+	table.Header = m.Renderer.Header(table.Namespace)
 
 	log.Debug().Msgf("Table returned [%d] events", len(table.RowEvents))
 	return table, nil

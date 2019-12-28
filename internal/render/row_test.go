@@ -1,13 +1,23 @@
 package render_test
 
 import (
+	"fmt"
+	"reflect"
 	"testing"
 
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRowDelete(t *testing.T) {
+func TestFieldClone(t *testing.T) {
+	f := render.Fields{"a", "b", "c"}
+	f1 := f.Clone()
+
+	assert.True(t, reflect.DeepEqual(f, f1))
+	assert.NotEqual(t, fmt.Sprintf("%p", f), fmt.Sprintf("%p", f1))
+}
+
+func TestRowsDelete(t *testing.T) {
 	uu := map[string]struct {
 		rows render.Rows
 		id   string
@@ -67,7 +77,7 @@ func TestRowDelete(t *testing.T) {
 	}
 }
 
-func TestSortText(t *testing.T) {
+func TestRowsSortText(t *testing.T) {
 	uu := map[string]struct {
 		rows render.Rows
 		col  int
@@ -145,7 +155,7 @@ func TestSortText(t *testing.T) {
 	}
 }
 
-func TestSortDuration(t *testing.T) {
+func TestRowsSortDuration(t *testing.T) {
 	uu := map[string]struct {
 		rows render.Rows
 		col  int
@@ -186,7 +196,7 @@ func TestSortDuration(t *testing.T) {
 	}
 }
 
-func TestSortMetrics(t *testing.T) {
+func TestRowsSortMetrics(t *testing.T) {
 	uu := map[string]struct {
 		rows render.Rows
 		col  int

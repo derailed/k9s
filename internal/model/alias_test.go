@@ -74,6 +74,9 @@ func (f testFactory) List(gvr, ns string, sel labels.Selector) ([]runtime.Object
 func (f testFactory) ForResource(ns, gvr string) informers.GenericInformer {
 	return nil
 }
+func (f testFactory) CanForResource(ns, gvr string, verbs ...string) (informers.GenericInformer, error) {
+	return nil, nil
+}
 func (f testFactory) WaitForCacheSync() {}
 func (f testFactory) Forwarders() watch.Forwarders {
 	return nil

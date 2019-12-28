@@ -66,7 +66,7 @@ func (p *PortForwarder) Ports() []string {
 
 // Path returns the pod resource path.
 func (p *PortForwarder) Path() string {
-	return p.path
+	return p.path + ":" + p.container
 }
 
 // Container returns the targetes container.
@@ -76,7 +76,7 @@ func (p *PortForwarder) Container() string {
 
 // Stop terminates a port forard
 func (p *PortForwarder) Stop() {
-	log.Debug().Msgf("<<< Stopping port forward %q %v", p.path, p.ports)
+	log.Debug().Msgf("<<< Stopping PortForward %q %v", p.path, p.ports)
 	p.active = false
 	close(p.stopChan)
 }

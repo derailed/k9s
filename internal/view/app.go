@@ -56,13 +56,9 @@ func (a *App) ActiveView() model.Component {
 }
 
 func (a *App) PrevCmd(evt *tcell.EventKey) *tcell.EventKey {
-	a.Content.DumpStack()
-	a.Content.DumpPages()
 	if !a.Content.IsLast() {
 		a.Content.Pop()
 	}
-	a.Content.DumpStack()
-	a.Content.DumpPages()
 
 	return nil
 }

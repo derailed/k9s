@@ -51,10 +51,8 @@ func (p *PortForward) bindKeys(aa ui.KeyActions) {
 		tcell.KeyCtrlB: ui.NewKeyAction("Bench", p.benchCmd, true),
 		tcell.KeyCtrlK: ui.NewKeyAction("Bench Stop", p.benchStopCmd, true),
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", p.deleteCmd, true),
-		// ui.KeySlash:    ui.NewKeyAction("Filter", p.activateCmd, false),
-		tcell.KeyEsc: ui.NewKeyAction("Back", p.App().PrevCmd, false),
-		ui.KeyShiftP: ui.NewKeyAction("Sort Ports", p.GetTable().SortColCmd(2, true), false),
-		ui.KeyShiftU: ui.NewKeyAction("Sort URL", p.GetTable().SortColCmd(4, true), false),
+		ui.KeyShiftP:   ui.NewKeyAction("Sort Ports", p.GetTable().SortColCmd(2, true), false),
+		ui.KeyShiftU:   ui.NewKeyAction("Sort URL", p.GetTable().SortColCmd(4, true), false),
 	})
 }
 
@@ -78,7 +76,7 @@ func (p *PortForward) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (p *PortForward) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
-	sel := p.getSelectedItem()
+	sel := p.GetTable().GetSelectedItem()
 	if sel == "" {
 		return nil
 	}
@@ -89,8 +87,8 @@ func (p *PortForward) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	r, _ := p.GetTable().GetSelection()
-	cfg, co := defaultConfig(), ui.TrimCell(p.GetTable().SelectTable, r, 2)
-	if b, ok := p.App().Bench.Benchmarks.Containers[containerID(sel, co)]; ok {
+	cfg := defaultConfig()
+	if b, ok := p.App().Bench.Benchmarks.Containers[sel]; ok {
 		cfg = b
 	}
 	cfg.Name = sel
@@ -129,27 +127,17 @@ func (p *PortForward) runBenchmark() {
 	})
 }
 
-func (p *PortForward) getSelectedItem() string {
-	r, _ := p.GetTable().GetSelection()
-	if r == 0 {
-		return ""
-	}
-	return fwFQN(
-		fqn(ui.TrimCell(p.GetTable().SelectTable, r, 0), ui.TrimCell(p.GetTable().SelectTable, r, 1)),
-		ui.TrimCell(p.GetTable().SelectTable, r, 2),
-	)
-}
-
 func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !p.GetTable().SearchBuff().Empty() {
 		p.GetTable().SearchBuff().Reset()
 		return nil
 	}
 
-	sel := p.getSelectedItem()
+	sel := p.GetTable().GetSelectedItem()
 	if sel == "" {
 		return nil
 	}
+	log.Debug().Msgf("PF DELETE %q", sel)
 
 	showModal(p.App().Content.Pages, fmt.Sprintf("Delete PortForward `%s?", sel), func() {
 		p.App().factory.DeleteForwarder(sel)

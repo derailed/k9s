@@ -20,7 +20,7 @@ type (
 	DecorateFunc func(render.TableData) render.TableData
 
 	// SelectedRowFunc a table selection callback.
-	SelectedRowFunc func(r, c int)
+	SelectedRowFunc func(r int)
 )
 
 // Table represents tabular data.
@@ -38,15 +38,16 @@ type Table struct {
 }
 
 // NewTable returns a new table view.
-func NewTable(title string) *Table {
+func NewTable(gvr string) *Table {
 	return &Table{
 		SelectTable: &SelectTable{
 			Table: tview.NewTable(),
+			model: model.NewTable(gvr),
 			marks: make(map[string]bool),
 		},
 		actions:   make(KeyActions),
 		cmdBuff:   NewCmdBuff('/', FilterBuff),
-		BaseTitle: title,
+		BaseTitle: gvr,
 		sortCol:   SortColumn{index: -1, colCount: 0, asc: true},
 	}
 }
@@ -67,7 +68,7 @@ func (t *Table) Init(ctx context.Context) {
 		config.AsColor(t.styles.GetTable().CursorColor),
 		tcell.AttrBold,
 	)
-	t.SetSelectionChangedFunc(t.selChanged)
+	t.SetSelectionChangedFunc(t.selectionChanged)
 	t.SetInputCapture(t.keyboard)
 }
 
@@ -91,7 +92,8 @@ func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		if t.SearchBuff().IsActive() {
 			t.SearchBuff().Add(evt.Rune())
 			t.ClearSelection()
-			t.doUpdate(t.filtered(t.Data), len(t.Data.RowEvents) > 0)
+			data := t.GetModel().Peek()
+			t.doUpdate(t.filtered(data), len(data.RowEvents) > 0)
 			t.UpdateTitle()
 			t.SelectFirstRow()
 			return nil
@@ -112,7 +114,7 @@ func (t *Table) Hints() model.MenuHints {
 
 // GetFilteredData fetch filtered tabular data.
 func (t *Table) GetFilteredData() render.TableData {
-	return t.filtered(t.Data)
+	return t.filtered(t.GetModel().Peek())
 }
 
 // SetDecorateFn specifies the default row decorator.
@@ -133,10 +135,9 @@ func (t *Table) SetSortCol(index, count int, asc bool) {
 // Update table content.
 func (t *Table) Update(data render.TableData) {
 	var firstRow bool
-	if len(t.Data.RowEvents) == 0 {
+	if t.GetRowCount() == 0 {
 		firstRow = true
 	}
-	t.Data = data
 
 	if t.decorateFn != nil {
 		data = t.decorateFn(data)
@@ -176,7 +177,7 @@ func (t *Table) doUpdate(data render.TableData, firstRow bool) {
 	if firstRow {
 		t.SelectFirstRow()
 	}
-	t.updateSelection(false)
+	t.updateSelection(true)
 }
 
 // SortColCmd designates a sorted column.
@@ -250,6 +251,9 @@ func (t *Table) buildRow(ns string, r int, re render.RowEvent, header render.Hea
 			log.Debug().Msgf("Marked!")
 			c.SetTextColor(config.AsColor(t.styles.GetTable().MarkColor))
 		}
+		if col == 0 {
+			c.SetReference(re.Row.ID)
+		}
 		t.SetCell(r, col, c)
 	}
 }
@@ -261,13 +265,17 @@ func (t *Table) ClearMarks() {
 
 // Refresh update the table data.
 func (t *Table) Refresh() {
-	t.Update(t.Data)
+	t.Update(t.model.Peek())
+}
+
+func (t *Table) GetSelectedRow() render.Row {
+	return t.model.Peek().RowEvents[t.GetSelectedRowIndex()].Row
 }
 
 // NameColIndex returns the index of the resource name column.
 func (t *Table) NameColIndex() int {
 	col := 0
-	if t.Data.Namespace == render.AllNamespaces {
+	if t.GetModel().ClusterWide() {
 		col++
 	}
 	return col
@@ -315,7 +323,7 @@ func (t *Table) ShowDeleted() {
 
 // UpdateTitle refreshes the table title.
 func (t *Table) UpdateTitle() {
-	ns := t.Data.Namespace
+	ns := t.GetModel().GetNamespace()
 	if ns == render.AllNamespaces {
 		ns = render.NamespaceAll
 	}

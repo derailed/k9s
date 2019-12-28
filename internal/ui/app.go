@@ -11,10 +11,8 @@ type App struct {
 	*tview.Application
 	Configurator
 
-	Main *Pages
-
+	Main    *Pages
 	actions KeyActions
-
 	views   map[string]tview.Primitive
 	cmdBuff *CmdBuff
 }

@@ -52,8 +52,6 @@ func (n *Namespace) useNsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	n.useNamespace(path)
 
-	log.Debug().Msgf("NS TABLE %#v", n.GetTable().Data)
-
 	return nil
 }
 
@@ -71,13 +69,10 @@ func (n *Namespace) useNamespace(ns string) {
 }
 
 func (n *Namespace) decorate(data render.TableData) render.TableData {
-	if n.App().Conn() == nil {
-		return render.TableData{}
+	if n.App().Conn() == nil || len(data.RowEvents) == 0 {
+		return data
 	}
 
-	// log.Debug().Msgf("CLONING %q", data.Namespace)
-	// don't want to change the cache here thus need to clone!!
-	// res := data.Clone()
 	// checks if all ns is in the list if not add it.
 	if _, ok := data.RowEvents.FindIndex(render.NamespaceAll); !ok {
 		data.RowEvents = append(data.RowEvents,

@@ -1,21 +1,46 @@
 package ui
 
 import (
+	"context"
+	"time"
+
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 )
 
+type Tabular interface {
+	Empty() bool
+	Peek() render.TableData
+	ClusterWide() bool
+	GetNamespace() string
+	SetNamespace(string)
+	AddListener(model.TableListener)
+	Start(context.Context)
+	InNamespace(string) bool
+	SetRefreshRate(time.Duration)
+}
+
 // Selectable represents a table with selections.
 type SelectTable struct {
 	*tview.Table
 
-	Data         render.TableData
-	selectedItem string
-	selectedRow  int
-	selectedFn   func(string) string
-	selListeners []SelectedRowFunc
-	marks        map[string]bool
+	model              Tabular
+	selectedRow        int
+	selectedFn         func(string) string
+	selectionListeners []SelectedRowFunc
+	marks              map[string]bool
+}
+
+// SetModel sets the table model.
+func (s *SelectTable) SetModel(m Tabular) {
+	s.model = m
+}
+
+// GetModel returns the current model.
+func (s *SelectTable) GetModel() Tabular {
+	return s.model
 }
 
 // ClearSelection reset selected row.
@@ -49,10 +74,17 @@ func (s *SelectTable) GetSelectedItems() []string {
 
 // GetSelectedItem returns the currently selected item name.
 func (s *SelectTable) GetSelectedItem() string {
-	if s.selectedFn != nil {
-		return s.selectedFn(s.selectedItem)
+	if s.GetSelectedRowIndex() == 0 || s.model.Empty() {
+		return ""
 	}
-	return s.selectedItem
+	sel, ok := s.GetCell(s.GetSelectedRowIndex(), 0).GetReference().(string)
+	if !ok {
+		return ""
+	}
+	if s.selectedFn != nil {
+		return s.selectedFn(sel)
+	}
+	return sel
 }
 
 // GetSelectedCell returns the content of a cell for the currently selected row.
@@ -70,36 +102,13 @@ func (s *SelectTable) GetSelectedRowIndex() int {
 	return s.selectedRow
 }
 
-// RowSelected checks if there is an active row selection.
-func (s *SelectTable) RowSelected() bool {
-	return s.selectedItem != ""
-}
-
-// GetRow retrieves the entire selected row.
-func (s *SelectTable) GetRow() render.Row {
-	return s.Data.RowEvents[s.GetSelectedRowIndex()].Row
-}
-
-func (s *SelectTable) updateSelectedItem(r int) {
-	if r <= 0 || len(s.Data.RowEvents) == 0 {
-		s.selectedItem = ""
-		return
-	}
-
-	if r-1 >= len(s.Data.RowEvents) {
-		return
-	}
-	s.selectedItem = s.Data.RowEvents[r-1].Row.ID
-}
-
 // SelectRow select a given row by index.
 func (s *SelectTable) SelectRow(r int, broadcast bool) {
 	if !broadcast {
 		s.SetSelectionChangedFunc(nil)
 	}
-	defer s.SetSelectionChangedFunc(s.selChanged)
+	defer s.SetSelectionChangedFunc(s.selectionChanged)
 	s.Select(r, 0)
-	s.updateSelectedItem(r)
 }
 
 // UpdateSelection refresh selected row.
@@ -107,9 +116,8 @@ func (s *SelectTable) updateSelection(broadcast bool) {
 	s.SelectRow(s.selectedRow, broadcast)
 }
 
-func (s *SelectTable) selChanged(r, c int) {
+func (s *SelectTable) selectionChanged(r, c int) {
 	s.selectedRow = r
-	s.updateSelectedItem(r)
 	if r == 0 {
 		return
 	}
@@ -121,8 +129,8 @@ func (s *SelectTable) selChanged(r, c int) {
 		s.SetSelectedStyle(tcell.ColorBlack, cell.Color, tcell.AttrBold)
 	}
 
-	for _, f := range s.selListeners {
-		f(r, c)
+	for _, f := range s.selectionListeners {
+		f(r)
 	}
 }
 
@@ -159,5 +167,5 @@ func (s *Table) IsMarked(item string) bool {
 
 // AddSelectedRowListener add a new selected row listener.
 func (s *SelectTable) AddSelectedRowListener(f SelectedRowFunc) {
-	s.selListeners = append(s.selListeners, f)
+	s.selectionListeners = append(s.selectionListeners, f)
 }

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rs/zerolog/log"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 )
 
@@ -38,7 +37,6 @@ func (g *Generic) Header(ns string) HeaderRow {
 		h = append(h, Header{Name: strings.ToUpper(c.Name)})
 	}
 
-	log.Debug().Msgf("Generic Header %#v", h)
 	return h
 }
 
@@ -69,12 +67,10 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 		r.ID = FQN(rns, r.ID)
 		index++
 	}
-
 	for _, c := range row.Cells {
 		r.Fields[index] = fmt.Sprintf("%v", c)
 		index++
 	}
-	log.Debug().Msgf("Generic row %#v", r)
 
 	return nil
 }

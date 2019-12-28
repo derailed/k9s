@@ -32,7 +32,10 @@ func (g *Generic) List(ctx context.Context) ([]runtime.Object, error) {
 	}(time.Now())
 
 	// Ensures the factory is tracking this resource
-	_ = g.factory.ForResource(g.namespace, g.gvr)
+	_, err := g.factory.CanForResource(g.namespace, g.gvr)
+	if err != nil {
+		return nil, err
+	}
 
 	gvr := client.GVR(g.gvr)
 	fcodec, codec := g.codec(gvr.AsGV())
@@ -49,7 +52,9 @@ func (g *Generic) List(ctx context.Context) ([]runtime.Object, error) {
 		Resource(gvr.ToR()).
 		VersionedParams(&metav1beta1.TableOptions{}, codec).
 		Do().Get()
-
+	if err != nil {
+		return nil, err
+	}
 	table, ok := o.(*metav1beta1.Table)
 	if !ok {
 		return nil, fmt.Errorf("expecting table but got %T", o)

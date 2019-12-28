@@ -15,7 +15,6 @@ import (
 	"k8s.io/client-go/informers"
 )
 
-// Factory - *factories(ns) -> *informers
 const (
 	defaultResync = 10 * time.Minute
 	allNamespaces = ""
@@ -41,18 +40,15 @@ func NewFactory(client client.Connection) *Factory {
 	}
 }
 
+func (f *Factory) String() string {
+	return fmt.Sprintf("Factory ActiveNS %s", f.activeNS)
+}
+
+// List returns a resource collection.
 func (f *Factory) List(gvr, ns string, sel labels.Selector) ([]runtime.Object, error) {
-	auth, err := f.Client().CanI(ns, gvr, []string{"list"})
+	inf, err := f.CanForResource(ns, gvr, "list")
 	if err != nil {
 		return nil, err
-	}
-	if !auth {
-		return nil, fmt.Errorf("User has insufficient access to list %s", gvr)
-	}
-
-	inf := f.ForResource(ns, gvr)
-	if inf == nil {
-		return nil, fmt.Errorf("No resource for GVR %s", gvr)
 	}
 	if ns == clusterScope {
 		return inf.Lister().List(sel)
@@ -61,38 +57,33 @@ func (f *Factory) List(gvr, ns string, sel labels.Selector) ([]runtime.Object, e
 	return inf.Lister().ByNamespace(ns).List(sel)
 }
 
+// Get retrieves a given resource.
 func (f *Factory) Get(gvr, path string, sel labels.Selector) (runtime.Object, error) {
 	ns, n := namespaced(path)
-	auth, err := f.Client().CanI(ns, gvr, []string{"get"})
+	inf, err := f.CanForResource(ns, gvr, "get")
 	if err != nil {
 		return nil, err
-	}
-	if !auth {
-		return nil, fmt.Errorf("User has insufficient access to get %s", gvr)
-	}
-
-	inf := f.ForResource(ns, gvr)
-	if inf == nil {
-		return nil, fmt.Errorf("No resource for GVR %s", gvr)
 	}
 	if ns == clusterScope {
 		return inf.Lister().Get(n)
 	}
 
-	log.Debug().Msgf("GET %q--%q:%q", gvr, ns, path)
 	return inf.Lister().ByNamespace(ns).Get(n)
 }
 
+// WaitForCachesync waits for all factories to update their cache.
 func (f *Factory) WaitForCacheSync() {
 	for _, fac := range f.factories {
 		fac.WaitForCacheSync(f.stopChan)
 	}
 }
 
+// Init starts a factory.
 func (f *Factory) Init() {
 	f.Start(f.stopChan)
 }
 
+// Terminate terminates all watchers and forwards.
 func (f *Factory) Terminate() {
 	if f.stopChan != nil {
 		close(f.stopChan)
@@ -104,17 +95,23 @@ func (f *Factory) Terminate() {
 	f.forwarders.DeleteAll()
 }
 
-// DeleteForwarder deletes portforward for a given container.
-func (f *Factory) DeleteForwarder(path string) {
-	if fwd, ok := f.forwarders[path]; ok {
-		fwd.Stop()
-		delete(f.forwarders, path)
-	}
+// RegisterForwarder registers a new portforward for a given container.
+func (f *Factory) AddForwarder(pf Forwarder) {
+	f.forwarders[pf.Path()] = pf
+	f.forwarders.Dump()
 }
 
-// RegisterForwarder registers a new portforward for a given container.
-func (f *Factory) RegisterForwarder(pf Forwarder) {
-	f.forwarders[pf.Path()] = pf
+// DeleteForwarder deletes portforward for a given container.
+func (f *Factory) DeleteForwarder(path string) {
+	f.forwarders.Dump()
+	fwd, ok := f.forwarders[path]
+	if !ok {
+		log.Warn().Msgf("Unable to delete portForward %q", path)
+		return
+	}
+	fwd.Stop()
+	delete(f.forwarders, path)
+	f.forwarders.Dump()
 }
 
 // Forwards returns all portforwards.
@@ -150,20 +147,32 @@ func (f *Factory) isClusterWide() bool {
 }
 
 func (f *Factory) preload(ns string) {
-	f.ForResource(ns, "v1/pods")
-	f.ForResource(allNamespaces, "apiextensions.k8s.io/v1beta1/customresourcedefinitions")
-	f.ForResource(clusterScope, "rbac.authorization.k8s.io/v1/clusterroles")
-	f.ForResource(allNamespaces, "rbac.authorization.k8s.io/v1/roles")
+	verbs := []string{"get", "list", "watch"}
+	_, _ = f.CanForResource(ns, "v1/pods", verbs...)
+	_, _ = f.CanForResource(allNamespaces, "apiextensions.k8s.io/v1beta1/customresourcedefinitions", verbs...)
+	_, _ = f.CanForResource(clusterScope, "rbac.authorization.k8s.io/v1/clusterroles", verbs...)
+	_, _ = f.CanForResource(allNamespaces, "rbac.authorization.k8s.io/v1/roles", verbs...)
 }
 
+// CanForResource return an informer is user has access.
+func (f *Factory) CanForResource(ns, gvr string, verbs ...string) (informers.GenericInformer, error) {
+	auth, err := f.Client().CanI(ns, gvr, verbs)
+	if err != nil {
+		return nil, err
+	}
+	if !auth {
+		return nil, fmt.Errorf("%v access denied on resource %q:%q", verbs, ns, gvr)
+	}
+
+	return f.ForResource(ns, gvr), nil
+}
+
+// FactoryFor returns a factory for a given namespace.
 func (f *Factory) FactoryFor(ns string) di.DynamicSharedInformerFactory {
 	return f.factories[ns]
 }
 
-func (f *Factory) Preload(ns, gvr string) {
-	_ = f.ForResource(ns, gvr)
-}
-
+// ForResource returns an informer for a given resource.
 func (f *Factory) ForResource(ns, gvr string) informers.GenericInformer {
 	fact := f.ensureFactory(ns)
 	inf := fact.ForResource(toGVR(gvr))
@@ -192,7 +201,6 @@ func (f *Factory) ensureFactory(ns string) di.DynamicSharedInformerFactory {
 }
 
 func toGVR(gvr string) schema.GroupVersionResource {
-	log.Debug().Msgf("GVR -- %q", gvr)
 	tokens := strings.Split(gvr, "/")
 	if len(tokens) < 3 {
 		tokens = append([]string{""}, tokens...)

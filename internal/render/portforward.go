@@ -41,7 +41,7 @@ func (PortForward) ColorerFunc() ColorerFunc {
 func (PortForward) Header(ns string) HeaderRow {
 	return HeaderRow{
 		Header{Name: "NAMESPACE"},
-		Header{Name: "NAME"},
+		Header{Name: "POD"},
 		Header{Name: "CONTAINER"},
 		Header{Name: "PORTS"},
 		Header{Name: "URL"},
@@ -59,12 +59,12 @@ func (f PortForward) Render(o interface{}, gvr string, r *Row) error {
 	}
 
 	ports := strings.Split(pf.Ports()[0], ":")
-	ns, na := Namespaced(pf.Path())
+	ns, n := Namespaced(pf.Path())
 
 	r.ID = pf.Path()
 	r.Fields = Fields{
 		ns,
-		na,
+		trimContainer(n),
 		pf.Container(),
 		strings.Join(pf.Ports(), ","),
 		UrlFor(pf.Config.Host, pf.Config.Path, ports[0]),
@@ -77,6 +77,14 @@ func (f PortForward) Render(o interface{}, gvr string, r *Row) error {
 }
 
 // Helpers...
+
+func trimContainer(n string) string {
+	tokens := strings.Split(n, ":")
+	if len(tokens) == 0 {
+		return n
+	}
+	return tokens[0]
+}
 
 // UrlFor computes fq url for a given benchmark configuration.
 func UrlFor(host, path, port string) string {

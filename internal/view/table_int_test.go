@@ -5,8 +5,10 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
@@ -59,29 +61,7 @@ func TestTableNew(t *testing.T) {
 func TestTableViewFilter(t *testing.T) {
 	v := NewTable("test")
 	v.Init(makeContext())
-
-	data := render.TableData{
-		Header: render.HeaderRow{
-			render.Header{Name: "NAMESPACE"},
-			render.Header{Name: "NAME", Align: tview.AlignRight},
-			render.Header{Name: "FRED"},
-			render.Header{Name: "AGE", Decorator: render.AgeDecorator},
-		},
-		RowEvents: render.RowEvents{
-			render.RowEvent{
-				Row: render.Row{
-					Fields: render.Fields{"ns1", "blee", "10", "3m"},
-				},
-			},
-			render.RowEvent{
-				Row: render.Row{
-					Fields: render.Fields{"ns1", "fred", "15", "1m"},
-				},
-			},
-		},
-		Namespace: "",
-	}
-	v.Update(data)
+	v.SetModel(&testTableModel{})
 	v.SearchBuff().SetActive(true)
 	v.SearchBuff().Set("blee")
 	v.filterCmd(nil)
@@ -93,8 +73,35 @@ func TestTableViewFilter(t *testing.T) {
 func TestTableViewSort(t *testing.T) {
 	v := NewTable("test")
 	v.Init(makeContext())
+	v.SetModel(&testTableModel{})
+	v.SortColCmd(1, true)(nil)
+	assert.Equal(t, 3, v.GetRowCount())
+	assert.Equal(t, "blee", v.GetCell(1, 1).Text)
 
-	data := render.TableData{
+	v.SortInvertCmd(nil)
+	assert.Equal(t, 3, v.GetRowCount())
+	assert.Equal(t, "fred", v.GetCell(1, 1).Text)
+}
+
+// ----------------------------------------------------------------------------
+// Helpers...
+
+type testTableModel struct{}
+
+var _ ui.Tabular = &testTableModel{}
+
+func (t *testTableModel) Empty() bool                     { return false }
+func (t *testTableModel) Peek() render.TableData          { return makeTableData() }
+func (t *testTableModel) ClusterWide() bool               { return false }
+func (t *testTableModel) GetNamespace() string            { return "blee" }
+func (t *testTableModel) SetNamespace(string)             {}
+func (t *testTableModel) AddListener(model.TableListener) {}
+func (t *testTableModel) Start(context.Context)           {}
+func (t *testTableModel) InNamespace(string) bool         { return true }
+func (t *testTableModel) SetRefreshRate(time.Duration)    {}
+
+func makeTableData() render.TableData {
+	return render.TableData{
 		Header: render.HeaderRow{
 			render.Header{Name: "NAMESPACE"},
 			render.Header{Name: "NAME", Align: tview.AlignRight},
@@ -116,17 +123,7 @@ func TestTableViewSort(t *testing.T) {
 		},
 		Namespace: "",
 	}
-	v.Update(data)
-	v.SortColCmd(1, true)(nil)
-	assert.Equal(t, 3, v.GetRowCount())
-	assert.Equal(t, "blee", v.GetCell(1, 1).Text)
-
-	v.SortInvertCmd(nil)
-	assert.Equal(t, 3, v.GetRowCount())
-	assert.Equal(t, "fred", v.GetCell(1, 1).Text)
 }
-
-// Helpers...
 
 func makeContext() context.Context {
 	a := NewApp(config.NewConfig(ks{}))
