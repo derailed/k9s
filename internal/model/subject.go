@@ -21,10 +21,25 @@ func (s *Subject) List(ctx context.Context) ([]runtime.Object, error) {
 		return nil, errors.New("expecting a SubjectKind")
 	}
 
+	crbs, err := s.listClusterRoleBindings(kind)
+	if err != nil {
+		return nil, err
+	}
+
+	rbs, err := s.listRoleBindings(kind)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(crbs, rbs...), nil
+}
+
+func (s *Subject) listClusterRoleBindings(kind string) ([]runtime.Object, error) {
 	crbs, err := fetchClusterRoleBindings(s.factory)
 	if err != nil {
 		return nil, err
 	}
+
 	oo := make([]runtime.Object, 0, len(crbs))
 	for _, crb := range crbs {
 		for _, su := range crb.Subjects {
@@ -39,10 +54,16 @@ func (s *Subject) List(ctx context.Context) ([]runtime.Object, error) {
 		}
 	}
 
+	return oo, nil
+}
+
+func (s *Subject) listRoleBindings(kind string) ([]runtime.Object, error) {
 	rbs, err := fetchRoleBindings(s.factory)
 	if err != nil {
 		return nil, err
 	}
+
+	oo := make([]runtime.Object, 0, len(rbs))
 	for _, rb := range rbs {
 		for _, su := range rb.Subjects {
 			if su.Kind != kind || inSubjectRes(oo, su.Name) {

@@ -87,20 +87,17 @@ func IsK9sMeta(m metav1.APIResource) bool {
 
 // Load hydrates server preferred+CRDs resource metadata.
 func LoadResources(f Factory) error {
-	log.Debug().Msgf("LOAD RES")
 	resMetas = make(ResourceMetas, 100)
 	if err := loadPreferred(f, resMetas); err != nil {
 		return err
 	}
-	if err := loadNonResource(resMetas); err != nil {
-		return err
-	}
+	loadNonResource(resMetas)
 
 	return loadCRDs(f, resMetas)
 }
 
 // BOZO!! Need contermeasure for direct commands!
-func loadNonResource(m ResourceMetas) error {
+func loadNonResource(m ResourceMetas) {
 	m["aliases"] = metav1.APIResource{
 		Name:       "aliases",
 		Kind:       "Aliases",
@@ -134,6 +131,16 @@ func loadNonResource(m ResourceMetas) error {
 		Verbs:      []string{"delete"},
 		Categories: []string{"k9s"},
 	}
+	m["containers"] = metav1.APIResource{
+		Name:       "containers",
+		Kind:       "Containers",
+		Categories: []string{"k9s"},
+	}
+
+	loadRBAC(m)
+}
+
+func loadRBAC(m ResourceMetas) {
 	m["rbac"] = metav1.APIResource{
 		Name:       "rbacs",
 		Kind:       "Rules",
@@ -143,11 +150,6 @@ func loadNonResource(m ResourceMetas) error {
 		Name:       "policies",
 		Kind:       "Rules",
 		Namespaced: true,
-		Categories: []string{"k9s"},
-	}
-	m["containers"] = metav1.APIResource{
-		Name:       "containers",
-		Kind:       "Containers",
 		Categories: []string{"k9s"},
 	}
 	m["users"] = metav1.APIResource{
@@ -160,8 +162,6 @@ func loadNonResource(m ResourceMetas) error {
 		Kind:       "Group",
 		Categories: []string{"k9s"},
 	}
-
-	return nil
 }
 
 func loadPreferred(f Factory, m ResourceMetas) error {
@@ -221,8 +221,8 @@ func extractMeta(o runtime.Object) (metav1.APIResource, []error) {
 
 	var meta map[string]interface{}
 	meta, errs = extractMap(crd.Object, "metadata", errs)
-
 	m.Name, errs = extractStr(meta, "name", errs)
+
 	m.Group, errs = extractStr(spec, "group", errs)
 	m.Version, errs = extractStr(spec, "version", errs)
 

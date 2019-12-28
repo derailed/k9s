@@ -34,8 +34,8 @@ func NewTable(gvr string) *Table {
 	}
 }
 
-// Start initiates model updates.
-func (t *Table) Start(ctx context.Context) {
+// Watch initiates model updates.
+func (t *Table) Watch(ctx context.Context) {
 	t.Refresh(ctx)
 	go t.updater(ctx)
 }

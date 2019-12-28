@@ -30,8 +30,8 @@ func (n *Node) List(_ context.Context) ([]runtime.Object, error) {
 	}
 
 	oo := make([]runtime.Object, len(nn.Items))
-	for i, n := range nn.Items {
-		o, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&n)
+	for i := range nn.Items {
+		o, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&nn.Items[i])
 		if err != nil {
 			return nil, err
 		}

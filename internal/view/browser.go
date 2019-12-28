@@ -63,8 +63,8 @@ func (b *Browser) Init(ctx context.Context) error {
 		return err
 	}
 	if !dao.IsK9sMeta(b.meta) {
-		if _, err := b.app.factory.CanForResource(b.app.Config.ActiveNamespace(), b.GVR()); err != nil {
-			return err
+		if _, e := b.app.factory.CanForResource(b.app.Config.ActiveNamespace(), b.GVR()); e != nil {
+			return e
 		}
 	}
 
@@ -105,8 +105,7 @@ func (b *Browser) Start() {
 	if path, ok := ctx.Value(internal.KeyPath).(string); ok && path != "" {
 		b.Path = path
 	}
-
-	b.GetModel().Start(ctx)
+	b.GetModel().Watch(ctx)
 }
 
 // Stop terminates browser updates.

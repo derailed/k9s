@@ -60,12 +60,6 @@ func (c *Job) List(ctx context.Context) ([]runtime.Object, error) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func isControlledBy(cuid, id string) bool {
-	tokens := strings.Split(cuid, "-")
-	root := strings.Join(tokens[2:], "-")
-	return strings.Contains(id, root)
-}
-
 func isNamedAfter(p, n string) bool {
 	tokens := strings.Split(n, "-")
 	if len(tokens) == 0 || tokens[0] != p {

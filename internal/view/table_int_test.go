@@ -96,7 +96,7 @@ func (t *testTableModel) ClusterWide() bool               { return false }
 func (t *testTableModel) GetNamespace() string            { return "blee" }
 func (t *testTableModel) SetNamespace(string)             {}
 func (t *testTableModel) AddListener(model.TableListener) {}
-func (t *testTableModel) Start(context.Context)           {}
+func (t *testTableModel) Watch(context.Context)           {}
 func (t *testTableModel) InNamespace(string) bool         { return true }
 func (t *testTableModel) SetRefreshRate(time.Duration)    {}
 

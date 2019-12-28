@@ -10,16 +10,39 @@ import (
 	"github.com/gdamore/tcell"
 )
 
-type Tabular interface {
-	Empty() bool
-	Peek() render.TableData
+// Namespaceable represents a namespaceable model.
+type Namespaceable interface {
+	// ClusterWide returns true if the model represents resource in all namespaces.
 	ClusterWide() bool
+
+	// GetNamespace returns the model namespace.
 	GetNamespace() string
+
+	// SetNamespace changes the model namespace.
 	SetNamespace(string)
-	AddListener(model.TableListener)
-	Start(context.Context)
+
+	// InNamespace check if current namespace matches models.
 	InNamespace(string) bool
+}
+
+// Tabular represents a tabular model.
+type Tabular interface {
+	Namespaceable
+
+	// Empty returns true if model has no data.
+	Empty() bool
+
+	// Peek returns current model data.
+	Peek() render.TableData
+
+	// Watch watches a given resource for changes.
+	Watch(context.Context)
+
+	// SetRefreshRate sets the model watch loop rate.
 	SetRefreshRate(time.Duration)
+
+	// AddListener registers a model listener.
+	AddListener(model.TableListener)
 }
 
 // Selectable represents a table with selections.

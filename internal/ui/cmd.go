@@ -57,10 +57,6 @@ func (v *CmdView) write(s string) {
 	fmt.Fprintf(v, defaultPrompt, v.icon, s)
 }
 
-func (v *CmdView) reset() {
-	v.update("")
-}
-
 // ----------------------------------------------------------------------------
 // Event Listener protocol...
 
