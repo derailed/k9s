@@ -10,7 +10,7 @@ import (
 // Forwarder represents a port forwarder.
 type Forwarder interface {
 	// Start initializes a port forward.
-	Start(path, co string, ports []string) (*portforward.PortForwarder, error)
+	Start(path, co, address string, ports []string) (*portforward.PortForwarder, error)
 
 	// Stop terminates a port forward.
 	Stop()

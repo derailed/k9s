@@ -11,7 +11,7 @@ import (
 func TestPortForwardDialog(t *testing.T) {
 	p := ui.NewPages()
 
-	okFunc := func(lport, cport string) {
+	okFunc := func(address, lport, cport string) {
 	}
 	ShowPortForward(p, "8080", okFunc)
 
@@ -38,7 +38,7 @@ func TestStripPort(t *testing.T) {
 	}
 
 	for k := range uu {
-   u := uu[k]
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, stripPort(u.port))
 		})

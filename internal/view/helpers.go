@@ -58,17 +58,6 @@ func extractApp(ctx context.Context) (*App, error) {
 	return app, nil
 }
 
-// In check if a string belongs to a set.
-func in(ss []string, s string) bool {
-	for _, v := range ss {
-		if v == s {
-			return true
-		}
-	}
-
-	return false
-}
-
 // AsKey maps a string representation of a key to a tcell key.
 func asKey(key string) (tcell.Key, error) {
 	for k, v := range tcell.KeyNames {

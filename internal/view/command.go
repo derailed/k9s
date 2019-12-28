@@ -85,9 +85,6 @@ func (c *command) viewMetaFor(cmd string) (string, *MetaViewer, error) {
 	if !ok {
 		return "", nil, fmt.Errorf("Huh? `%s` command not found", cmd)
 	}
-	if _, err := c.app.factory.CanForResource(c.app.Config.ActiveNamespace(), gvr); err != nil {
-		return "", nil, err
-	}
 
 	v, ok := customViewers[client.GVR(gvr)]
 	if !ok {

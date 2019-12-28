@@ -201,6 +201,7 @@ func (f *Factory) ensureFactory(ns string) di.DynamicSharedInformerFactory {
 }
 
 func toGVR(gvr string) schema.GroupVersionResource {
+	log.Debug().Msgf(">>> Convert GVR %q", gvr)
 	tokens := strings.Split(gvr, "/")
 	if len(tokens) < 3 {
 		tokens = append([]string{""}, tokens...)

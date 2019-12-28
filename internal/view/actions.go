@@ -1,0 +1,139 @@
+package view
+
+import (
+	"fmt"
+
+	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/ui"
+	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
+)
+
+type Runner interface {
+	App() *App
+	GetSelectedItem() string
+	Aliases() []string
+	EnvFn() EnvFunc
+}
+
+func hasAll(scopes []string) bool {
+	for _, s := range scopes {
+		if s == "all" {
+			return true
+		}
+	}
+	return false
+}
+
+func includes(aliases []string, s string) bool {
+	for _, a := range aliases {
+		if a == s {
+			return true
+		}
+	}
+	return false
+}
+
+func inScope(scopes, aliases []string) bool {
+	if hasAll(scopes) {
+		return true
+	}
+	for _, s := range scopes {
+		if includes(aliases, s) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func hotKeyActions(r Runner, aa ui.KeyActions) {
+	hh := config.NewHotKeys()
+	if err := hh.Load(); err != nil {
+		log.Warn().Msgf("No HotKey configuration found")
+		return
+	}
+
+	for k, hk := range hh.HotKey {
+		key, err := asKey(hk.ShortCut)
+		if err != nil {
+			log.Error().Err(err).Msg("Unable to map hotkey shortcut to a key")
+			continue
+		}
+		_, ok := aa[key]
+		if ok {
+			log.Error().Err(fmt.Errorf("Doh! you are trying to overide an existing command `%s", k)).Msg("Invalid shortcut")
+			continue
+		}
+		aa[key] = ui.NewKeyAction(
+			hk.Description,
+			gotoCmd(r, hk.Command),
+			true)
+	}
+}
+
+func gotoCmd(r Runner, cmd string) ui.ActionHandler {
+	return func(evt *tcell.EventKey) *tcell.EventKey {
+		if err := r.App().gotoResource(cmd); err != nil {
+			r.App().Flash().Err(err)
+		}
+		return nil
+	}
+}
+
+func pluginActions(r Runner, aa ui.KeyActions) {
+	pp := config.NewPlugins()
+	if err := pp.Load(); err != nil {
+		log.Warn().Msgf("No plugin configuration found")
+		return
+	}
+
+	for k, plugin := range pp.Plugin {
+		if !inScope(plugin.Scopes, r.Aliases()) {
+			continue
+		}
+		key, err := asKey(plugin.ShortCut)
+		if err != nil {
+			log.Error().Err(err).Msg("Unable to map plugin shortcut to a key")
+			continue
+		}
+		_, ok := aa[key]
+		if ok {
+			log.Error().Err(fmt.Errorf("Doh! you are trying to overide an existing command `%s", k)).Msg("Invalid shortcut")
+			continue
+		}
+		aa[key] = ui.NewKeyAction(
+			plugin.Description,
+			execCmd(r, plugin.Command, plugin.Background, plugin.Args...),
+			true)
+	}
+}
+
+func execCmd(r Runner, bin string, bg bool, args ...string) ui.ActionHandler {
+	return func(evt *tcell.EventKey) *tcell.EventKey {
+		path := r.GetSelectedItem()
+		if path == "" {
+			return evt
+		}
+
+		var (
+			env = r.EnvFn()()
+			aa  = make([]string, len(args))
+			err error
+		)
+		for i, a := range args {
+			aa[i], err = env.envFor(a)
+			if err != nil {
+				log.Error().Err(err).Msg("Args match failed")
+				return nil
+			}
+		}
+		if run(true, r.App(), bin, bg, aa...) {
+			r.App().Flash().Info("Custom CMD launched!")
+		} else {
+			r.App().Flash().Info("Custom CMD failed!")
+		}
+
+		return nil
+	}
+}

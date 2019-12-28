@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
@@ -87,7 +88,7 @@ func (p *PortForwarder) FQN() string {
 }
 
 // Start initiates a port forward session for a given pod and ports.
-func (p *PortForwarder) Start(path, co string, ports []string) (*portforward.PortForwarder, error) {
+func (p *PortForwarder) Start(path, co, address string, ports []string) (*portforward.PortForwarder, error) {
 	p.path, p.container, p.ports, p.age = path, co, ports, time.Now()
 
 	ns, n := client.Namespaced(path)
@@ -115,10 +116,10 @@ func (p *PortForwarder) Start(path, co string, ports []string) (*portforward.Por
 		Name(n).
 		SubResource("portforward")
 
-	return p.forwardPorts("POST", req.URL(), ports)
+	return p.forwardPorts("POST", req.URL(), address, ports)
 }
 
-func (p *PortForwarder) forwardPorts(method string, url *url.URL, ports []string) (*portforward.PortForwarder, error) {
+func (p *PortForwarder) forwardPorts(method string, url *url.URL, address string, ports []string) (*portforward.PortForwarder, error) {
 	cfg, err := p.Config().RESTConfig()
 	if err != nil {
 		return nil, err
@@ -129,7 +130,10 @@ func (p *PortForwarder) forwardPorts(method string, url *url.URL, ports []string
 	}
 
 	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, method, url)
-	addrs := []string{localhost}
+	if address == "" {
+		address = localhost
+	}
+	addrs := strings.Split(address, ",")
 	return portforward.NewOnAddresses(dialer, addrs, ports, p.stopChan, p.readyChan, p.Out, p.ErrOut)
 }
 

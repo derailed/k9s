@@ -447,7 +447,8 @@ func (b *Browser) refreshActions() {
 	if client.Can(b.meta.Verbs, "describe") {
 		aa[ui.KeyD] = ui.NewKeyAction("Describe", b.describeCmd, true)
 	}
-	b.customActions(aa)
+	pluginActions(b, aa)
+	hotKeyActions(b, aa)
 	b.Actions().Add(aa)
 
 	if b.bindKeysFn != nil {
@@ -456,61 +457,12 @@ func (b *Browser) refreshActions() {
 	b.app.Menu().HydrateMenu(b.Hints())
 }
 
-func (b *Browser) customActions(aa ui.KeyActions) {
-	pp := config.NewPlugins()
-	if err := pp.Load(); err != nil {
-		log.Warn().Msgf("No plugin configuration found")
-		return
-	}
-
-	for k, plugin := range pp.Plugin {
-		if !in(plugin.Scopes, b.meta.Name) {
-			continue
-		}
-		key, err := asKey(plugin.ShortCut)
-		if err != nil {
-			log.Error().Err(err).Msg("Unable to map shortcut to a key")
-			continue
-		}
-		_, ok := aa[key]
-		if ok {
-			log.Error().Err(fmt.Errorf("Doh! you are trying to overide an existing command `%s", k)).Msg("Invalid shortcut")
-			continue
-		}
-		aa[key] = ui.NewKeyAction(
-			plugin.Description,
-			b.execCmd(plugin.Command, plugin.Background, plugin.Args...),
-			true)
-	}
+func (b *Browser) Aliases() []string {
+	return append(b.meta.ShortNames, b.meta.SingularName, b.meta.Name)
 }
 
-func (b *Browser) execCmd(bin string, bg bool, args ...string) ui.ActionHandler {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		path := b.GetSelectedItem()
-		if path == "" {
-			return evt
-		}
-
-		var (
-			env = b.envFn()
-			aa  = make([]string, len(args))
-			err error
-		)
-		for i, a := range args {
-			aa[i], err = env.envFor(a)
-			if err != nil {
-				log.Error().Err(err).Msg("Args match failed")
-				return nil
-			}
-		}
-
-		if run(true, b.app, bin, bg, aa...) {
-			b.app.Flash().Info("Custom CMD launched!")
-		} else {
-			b.app.Flash().Info("Custom CMD failed!")
-		}
-		return nil
-	}
+func (b *Browser) EnvFn() EnvFunc {
+	return b.envFn
 }
 
 func (b *Browser) defaultK9sEnv() K9sEnv {

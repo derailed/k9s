@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
@@ -104,6 +105,22 @@ func (v *Help) showNav() model.MenuHints {
 	}
 }
 
+func (v *Help) showHotKeys() (model.MenuHints, error) {
+	hh := config.NewHotKeys()
+	if err := hh.Load(); err != nil {
+		return nil, fmt.Errorf("no hotkey configuration found")
+	}
+	m := make(model.MenuHints, 0, len(hh.HotKey))
+	for _, hk := range hh.HotKey {
+		m = append(m, model.MenuHint{
+			Mnemonic:    hk.ShortCut,
+			Description: hk.Description,
+		})
+	}
+
+	return m, nil
+}
+
 func (v *Help) showGeneral() model.MenuHints {
 	return model.MenuHints{
 		{
@@ -160,10 +177,18 @@ func (v *Help) resetTitle() {
 func (v *Help) build(hh model.MenuHints) {
 	v.Clear()
 	sort.Sort(hh)
-	v.addSection(0, "RESOURCE", hh)
-	v.addSection(4, "GENERAL", v.showGeneral())
-	v.addSection(6, "NAVIGATION", v.showNav())
-	v.addSection(8, "HELP", v.showHelp())
+	var col int
+	v.addSection(col, "RESOURCE", hh)
+	col += 2
+	v.addSection(col, "GENERAL", v.showGeneral())
+	col += 2
+	v.addSection(col, "NAVIGATION", v.showNav())
+	col += 2
+	if h, err := v.showHotKeys(); err == nil {
+		v.addSection(col, "HOTKEYS", h)
+		col += 2
+	}
+	v.addSection(col, "HELP", v.showHelp())
 }
 
 func (v *Help) addSection(c int, title string, hh model.MenuHints) {

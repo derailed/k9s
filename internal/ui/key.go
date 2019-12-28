@@ -30,6 +30,20 @@ const (
 	Key9
 )
 
+// Defines numeric keys for container actions
+const (
+	KeyShift0 int32 = 41
+	KeyShift1 int32 = 33
+	KeyShift2 int32 = 64
+	KeyShift3 int32 = 35
+	KeyShift4 int32 = 36
+	KeyShift5 int32 = 37
+	KeyShift6 int32 = 94
+	KeyShift7 int32 = 38
+	KeyShift8 int32 = 42
+	KeyShift9 int32 = 40
+)
+
 // Defines char keystrokes
 const (
 	KeyA tcell.Key = iota + 97
@@ -151,6 +165,17 @@ func initStdKeys() {
 }
 
 func initShiftKeys() {
+	tcell.KeyNames[tcell.Key(KeyShift0)] = "Shift-0"
+	tcell.KeyNames[tcell.Key(KeyShift1)] = "Shift-1"
+	tcell.KeyNames[tcell.Key(KeyShift2)] = "Shift-2"
+	tcell.KeyNames[tcell.Key(KeyShift3)] = "Shift-3"
+	tcell.KeyNames[tcell.Key(KeyShift4)] = "Shift-4"
+	tcell.KeyNames[tcell.Key(KeyShift5)] = "Shift-5"
+	tcell.KeyNames[tcell.Key(KeyShift6)] = "Shift-6"
+	tcell.KeyNames[tcell.Key(KeyShift7)] = "Shift-7"
+	tcell.KeyNames[tcell.Key(KeyShift8)] = "Shift-8"
+	tcell.KeyNames[tcell.Key(KeyShift9)] = "Shift-9"
+
 	tcell.KeyNames[tcell.Key(KeyShiftA)] = "Shift-A"
 	tcell.KeyNames[tcell.Key(KeyShiftB)] = "Shift-B"
 	tcell.KeyNames[tcell.Key(KeyShiftC)] = "Shift-C"

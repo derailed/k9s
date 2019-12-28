@@ -64,7 +64,6 @@ func (c *Container) selectedContainer() string {
 }
 
 func (c *Container) viewLogs(app *App, ns, res, path string) {
-	log.Debug().Msgf(">>>>>>>> ViewLOgs %q -- %q -- %q", ns, res, path)
 	status := c.GetTable().GetSelectedCell(3)
 	if status != "Running" && status != "Completed" {
 		app.Flash().Err(errors.New("No logs available"))
@@ -134,11 +133,11 @@ func (c *Container) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (c *Container) portForward(lport, cport string) {
+func (c *Container) portForward(address, lport, cport string) {
 	co := c.GetTable().GetSelectedCell(0)
 	pf := dao.NewPortForwarder(c.App().Conn())
 	ports := []string{lport + ":" + cport}
-	fw, err := pf.Start(c.GetTable().Path, co, ports)
+	fw, err := pf.Start(c.GetTable().Path, co, address, ports)
 	if err != nil {
 		c.App().Flash().Err(err)
 		return
