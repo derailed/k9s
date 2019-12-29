@@ -105,7 +105,8 @@ func (a Aliases) Define(gvr string, aliases ...string) {
 func (a Aliases) LoadAliases(path string) error {
 	f, err := ioutil.ReadFile(path)
 	if err != nil {
-		return err
+		log.Warn().Err(err).Msgf("No custom aliases found")
+		return nil
 	}
 
 	var aa Aliases

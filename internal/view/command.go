@@ -26,7 +26,6 @@ func newCommand(app *App) *command {
 }
 
 func (c *command) Init() error {
-	log.Debug().Msgf("COMMAND INIT")
 	c.alias = dao.NewAlias(c.app.factory)
 	if _, err := c.alias.Ensure(); err != nil {
 		return err

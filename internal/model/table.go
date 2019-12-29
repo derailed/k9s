@@ -11,6 +11,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const refreshRate = 1 * time.Second
+
 type TableListener interface {
 	TableDataChanged(render.TableData)
 	TableLoadFailed(error)
@@ -87,7 +89,7 @@ func (t *Table) updater(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(t.refreshRate):
+		case <-time.After(refreshRate):
 			t.refresh(ctx)
 		}
 	}
