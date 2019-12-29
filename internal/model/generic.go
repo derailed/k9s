@@ -27,10 +27,6 @@ type Generic struct {
 
 // List returns a collection of node resources.
 func (g *Generic) List(ctx context.Context) ([]runtime.Object, error) {
-	defer func(t time.Time) {
-		log.Debug().Msgf("LIST elapsed: %v", time.Since(t))
-	}(time.Now())
-
 	// Ensures the factory is tracking this resource
 	_, err := g.factory.CanForResource(g.namespace, g.gvr)
 	if err != nil {

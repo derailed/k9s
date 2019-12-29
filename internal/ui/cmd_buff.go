@@ -1,7 +1,5 @@
 package ui
 
-import "github.com/rs/zerolog/log"
-
 const maxBuff = 10
 
 const (
@@ -67,7 +65,6 @@ func (c *CmdBuff) IsActive() bool {
 
 // SetActive toggles cmd buffer active state.
 func (c *CmdBuff) SetActive(b bool) {
-	log.Debug().Msgf("CMDBUFF -- Active %t", b)
 	c.active = b
 	c.fireActive(c.active)
 }
@@ -146,9 +143,7 @@ func (c *CmdBuff) fireChanged() {
 }
 
 func (c *CmdBuff) fireActive(b bool) {
-	log.Debug().Msgf("CMDBUFF LIST SIZE %d", len(c.listeners))
 	for _, l := range c.listeners {
-		log.Debug().Msgf("CMDBUFF LIST -- %T", l)
 		l.BufferActive(b, c.kind)
 	}
 }

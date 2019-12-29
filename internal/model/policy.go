@@ -52,7 +52,6 @@ func (p *Policy) List(ctx context.Context) ([]runtime.Object, error) {
 	return oo, nil
 }
 
-// BOZO!! refactor!
 func (p *Policy) loadClusterRoleBinding(kind, name string) (render.Policies, error) {
 	crbs, err := fetchClusterRoleBindings(p.factory)
 	if err != nil {

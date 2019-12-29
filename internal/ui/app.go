@@ -18,20 +18,20 @@ type App struct {
 }
 
 // NewApp returns a new app.
-func NewApp() *App {
+func NewApp(cluster string) *App {
 	a := App{
 		Application: tview.NewApplication(),
 		actions:     make(KeyActions),
 		Main:        NewPages(),
 		cmdBuff:     NewCmdBuff(':', CommandBuff),
 	}
-	a.RefreshStyles()
+	a.ReloadStyles(cluster)
 
 	a.views = map[string]tview.Primitive{
 		"menu":   NewMenu(a.Styles),
-		"logo":   NewLogoView(a.Styles),
-		"cmd":    NewCmdView(a.Styles),
-		"flash":  NewFlashView(&a, "Initializing..."),
+		"logo":   NewLogo(a.Styles),
+		"cmd":    NewCommand(a.Styles),
+		"flash":  NewFlash(&a, "Initializing..."),
 		"crumbs": NewCrumbs(a.Styles),
 	}
 
@@ -44,6 +44,10 @@ func (a *App) Init() {
 	a.SetInputCapture(a.keyboard)
 	a.cmdBuff.AddListener(a.Cmd())
 	a.SetRoot(a.Main, true)
+}
+
+func (a *App) ReloadStyles(cluster string) {
+	a.RefreshStyles(cluster)
 }
 
 // Conn returns an api server connection.
@@ -188,18 +192,18 @@ func (a *App) Crumbs() *Crumbs {
 }
 
 // Logo return the app logo.
-func (a *App) Logo() *LogoView {
-	return a.views["logo"].(*LogoView)
+func (a *App) Logo() *Logo {
+	return a.views["logo"].(*Logo)
 }
 
 // Flash returns app flash.
-func (a *App) Flash() *FlashView {
-	return a.views["flash"].(*FlashView)
+func (a *App) Flash() *Flash {
+	return a.views["flash"].(*Flash)
 }
 
 // Cmd returns app cmd.
-func (a *App) Cmd() *CmdView {
-	return a.views["cmd"].(*CmdView)
+func (a *App) Cmd() *Command {
+	return a.views["cmd"].(*Command)
 }
 
 // Menu returns app menu.

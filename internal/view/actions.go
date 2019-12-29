@@ -65,10 +65,10 @@ func hotKeyActions(r Runner, aa ui.KeyActions) {
 			log.Error().Err(fmt.Errorf("Doh! you are trying to overide an existing command `%s", k)).Msg("Invalid shortcut")
 			continue
 		}
-		aa[key] = ui.NewKeyAction(
+		aa[key] = ui.NewSharedKeyAction(
 			hk.Description,
 			gotoCmd(r, hk.Command),
-			true)
+			false)
 	}
 }
 

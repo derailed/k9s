@@ -51,7 +51,6 @@ func (r *Rbac) List(ctx context.Context) ([]runtime.Object, error) {
 	}
 }
 
-// BOZO!!Refact gvr as const
 func (r *Rbac) loadClusterRoleBinding(path string) ([]runtime.Object, error) {
 	o, err := r.factory.Get(crbGVR, path, labels.Everything())
 	if err != nil {

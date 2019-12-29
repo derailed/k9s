@@ -31,56 +31,65 @@ type Menu struct {
 
 // NewMenu returns a new menu.
 func NewMenu(styles *config.Styles) *Menu {
-	v := Menu{Table: tview.NewTable(), styles: styles}
-	v.SetBackgroundColor(styles.BgColor())
+	m := Menu{
+		Table:  tview.NewTable(),
+		styles: styles,
+	}
+	m.SetBackgroundColor(styles.BgColor())
+	styles.AddListener(&m)
 
-	return &v
+	return &m
 }
 
-func (v *Menu) StackPushed(c model.Component) {
-	v.HydrateMenu(c.Hints())
+func (m *Menu) StylesChanged(s *config.Styles) {
+	m.styles = s
+	m.SetBackgroundColor(s.BgColor())
 }
 
-func (v *Menu) StackPopped(o, top model.Component) {
+func (m *Menu) StackPushed(c model.Component) {
+	m.HydrateMenu(c.Hints())
+}
+
+func (m *Menu) StackPopped(o, top model.Component) {
 	if top != nil {
-		v.HydrateMenu(top.Hints())
+		m.HydrateMenu(top.Hints())
 	} else {
-		v.Clear()
+		m.Clear()
 	}
 }
 
-func (v *Menu) StackTop(t model.Component) {
-	v.HydrateMenu(t.Hints())
+func (m *Menu) StackTop(t model.Component) {
+	m.HydrateMenu(t.Hints())
 }
 
 // HydrateMenu populate menu ui from hints.
-func (v *Menu) HydrateMenu(hh model.MenuHints) {
-	v.Clear()
+func (m *Menu) HydrateMenu(hh model.MenuHints) {
+	m.Clear()
 	sort.Sort(hh)
 
 	table := make([]model.MenuHints, maxRows+1)
 	colCount := (len(hh) / maxRows) + 1
-	if v.hasDigits(hh) {
+	if m.hasDigits(hh) {
 		colCount++
 	}
 	for row := 0; row < maxRows; row++ {
 		table[row] = make(model.MenuHints, colCount)
 	}
-	t := v.buildMenuTable(hh, table, colCount)
+	t := m.buildMenuTable(hh, table, colCount)
 
 	for row := 0; row < len(t); row++ {
 		for col := 0; col < len(t[row]); col++ {
-			if len(t[row][col]) == 0 {
-				continue
-			}
 			c := tview.NewTableCell(t[row][col])
-			c.SetBackgroundColor(v.styles.BgColor())
-			v.SetCell(row, col, c)
+			if len(t[row][col]) == 0 {
+				c = tview.NewTableCell("")
+			}
+			c.SetBackgroundColor(m.styles.BgColor())
+			m.SetCell(row, col, c)
 		}
 	}
 }
 
-func (v *Menu) hasDigits(hh model.MenuHints) bool {
+func (m *Menu) hasDigits(hh model.MenuHints) bool {
 	for _, h := range hh {
 		if !h.Visible {
 			continue
@@ -92,7 +101,7 @@ func (v *Menu) hasDigits(hh model.MenuHints) bool {
 	return false
 }
 
-func (v *Menu) buildMenuTable(hh model.MenuHints, table []model.MenuHints, colCount int) [][]string {
+func (m *Menu) buildMenuTable(hh model.MenuHints, table []model.MenuHints, colCount int) [][]string {
 	var row, col int
 	firstCmd := true
 	maxKeys := make([]int, colCount)
@@ -121,30 +130,30 @@ func (v *Menu) buildMenuTable(hh model.MenuHints, table []model.MenuHints, colCo
 	for r := range out {
 		out[r] = make([]string, len(table[r]))
 	}
-	v.layout(table, maxKeys, out)
+	m.layout(table, maxKeys, out)
 
 	return out
 }
 
-func (v *Menu) layout(table []model.MenuHints, mm []int, out [][]string) {
+func (m *Menu) layout(table []model.MenuHints, mm []int, out [][]string) {
 	for r := range table {
 		for c := range table[r] {
-			out[r][c] = keyConv(v.formatMenu(table[r][c], mm[c]))
+			out[r][c] = keyConv(m.formatMenu(table[r][c], mm[c]))
 		}
 	}
 
 }
 
-func (v *Menu) formatMenu(h model.MenuHint, size int) string {
+func (m *Menu) formatMenu(h model.MenuHint, size int) string {
 	if h.Mnemonic == "" || h.Description == "" {
 		return ""
 	}
 	i, err := strconv.Atoi(h.Mnemonic)
 	if err == nil {
-		return formatNSMenu(i, h.Description, v.styles.Frame())
+		return formatNSMenu(i, h.Description, m.styles.Frame())
 	}
 
-	return formatPlainMenu(h, size, v.styles.Frame())
+	return formatPlainMenu(h, size, m.styles.Frame())
 }
 
 // ----------------------------------------------------------------------------

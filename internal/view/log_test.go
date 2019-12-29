@@ -1,4 +1,4 @@
-package view_test
+package view
 
 import (
 	"bytes"
@@ -9,7 +9,6 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/view"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,20 +28,20 @@ func TestLogAnsi(t *testing.T) {
 }
 
 func TestLogFlush(t *testing.T) {
-	v := view.NewLog(client.GVR("v1/pods"), "fred/p1", "blee", false)
+	v := NewLog(client.GVR("v1/pods"), "fred/p1", "blee", false)
 	v.Init(makeContext())
 	v.Flush(2, []string{"blee", "bozo"})
 
-	v.ToggleAutoScrollCmd(nil)
+	v.toggleAutoScrollCmd(nil)
 	assert.Equal(t, "blee\nbozo\n", v.Logs().GetText(true))
-	assert.Equal(t, " Autoscroll: Off ", v.ScrollIndicator().GetText(true))
-	v.ToggleAutoScrollCmd(nil)
-	assert.Equal(t, " Autoscroll: On  ", v.ScrollIndicator().GetText(true))
-	assert.Equal(t, 8, len(v.Hints()))
+	assert.Equal(t, " Autoscroll: Off  FullScreen: Off  Wrap: Off       ", v.Indicator().GetText(true))
+	v.toggleAutoScrollCmd(nil)
+	assert.Equal(t, " Autoscroll: On   FullScreen: Off  Wrap: Off       ", v.Indicator().GetText(true))
+	assert.Equal(t, 10, len(v.Hints()))
 }
 
 func TestLogViewSave(t *testing.T) {
-	v := view.NewLog(client.GVR("v1/pods"), "fred/p1", "blee", false)
+	v := NewLog(client.GVR("v1/pods"), "fred/p1", "blee", false)
 	v.Init(makeContext())
 
 	app := makeApp()
@@ -56,7 +55,7 @@ func TestLogViewSave(t *testing.T) {
 }
 
 func TestLogViewNav(t *testing.T) {
-	v := view.NewLog(client.GVR("v1/pods"), "fred/p1", "blee", false)
+	v := NewLog(client.GVR("v1/pods"), "fred/p1", "blee", false)
 	v.Init(makeContext())
 
 	var buff []string
@@ -64,26 +63,27 @@ func TestLogViewNav(t *testing.T) {
 		buff = append(buff, fmt.Sprintf("line-%d\n", i))
 	}
 	v.Flush(100, buff)
-	v.ToggleAutoScrollCmd(nil)
+	v.toggleAutoScrollCmd(nil)
 
 	r, _ := v.Logs().GetScrollOffset()
 	assert.Equal(t, -1, r)
 }
 
 func TestLogViewClear(t *testing.T) {
-	v := view.NewLog(client.GVR("v1/pods"), "fred/p1", "blee", false)
+	v := NewLog(client.GVR("v1/pods"), "fred/p1", "blee", false)
 	v.Init(makeContext())
 
 	v.Flush(2, []string{"blee", "bozo"})
 
-	v.ToggleAutoScrollCmd(nil)
+	v.toggleAutoScrollCmd(nil)
 	assert.Equal(t, "blee\nbozo\n", v.Logs().GetText(true))
 	v.Logs().Clear()
 	assert.Equal(t, "", v.Logs().GetText(true))
 }
 
+// ----------------------------------------------------------------------------
 // Helpers...
 
-func makeApp() *view.App {
-	return view.NewApp(config.NewConfig(ks{}))
+func makeApp() *App {
+	return NewApp(config.NewConfig(ks{}))
 }

@@ -20,9 +20,9 @@ func TestConfiguratorRefreshStyle(t *testing.T) {
 	config.K9sStylesFile = filepath.Join("..", "config", "test_assets", "black_and_wtf.yml")
 
 	cfg := ui.Configurator{}
-	cfg.RefreshStyles()
+	cfg.RefreshStyles("")
 
-	assert.True(t, cfg.HasSkins)
+	assert.True(t, cfg.HasSkins())
 	assert.Equal(t, tcell.ColorGhostWhite, render.StdColor)
 	assert.Equal(t, tcell.ColorWhiteSmoke, render.ErrColor)
 }

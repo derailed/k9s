@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"runtime"
 	"sync/atomic"
 	"time"
 
@@ -143,16 +144,8 @@ func (t *Table) fireTableLoadFailed(err error) {
 }
 
 func (t *Table) reconcile(ctx context.Context) error {
-	defer func(t time.Time) {
-		log.Debug().Msgf("RECONCILE elapsed: %v", time.Since(t))
-	}(time.Now())
+	log.Debug().Msgf("GOROUTINE %d", runtime.NumGoroutine())
 
-	path, ok := ctx.Value(internal.KeyPath).(string)
-	if !ok {
-		return fmt.Errorf("no path in context for %s", t.gvr)
-	}
-
-	log.Debug().Msgf("Reconcile %q in %q:%q", t.gvr, t.namespace, path)
 	factory, ok := ctx.Value(internal.KeyFactory).(Factory)
 	if !ok {
 		return fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
@@ -182,6 +175,5 @@ func (t *Table) reconcile(ctx context.Context) error {
 	t.data.Update(rows)
 	t.data.Namespace, t.data.Header = t.namespace, m.Renderer.Header(t.namespace)
 
-	log.Debug().Msgf("Table returned [%d] events", len(t.data.RowEvents))
 	return nil
 }

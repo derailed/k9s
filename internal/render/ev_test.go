@@ -13,5 +13,5 @@ func TestEventRender(t *testing.T) {
 	c.Render(load(t, "ev"), "", &r)
 
 	assert.Equal(t, "default/hello-1567197780-mn4mv.15bfce150bd764dd", r.ID)
-	assert.Equal(t, render.Fields{"default", "hello-1567197780-mn4mv.15bfce150bd764dd", "Pulled", "kubelet", "1", `Successfully pulled image "blang/busybox-bash"`}, r.Fields[:6])
+	assert.Equal(t, render.Fields{"default", "pod:hello-1567197780-mn4mv", "Pulled", "kubelet", "1", `Successfully pulled image "blang/busybox-bash"`}, r.Fields[:6])
 }

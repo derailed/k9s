@@ -7,67 +7,84 @@ import (
 	"github.com/derailed/tview"
 )
 
-// LogoView represents a K9s logo.
-type LogoView struct {
+// Logo represents a K9s logo.
+type Logo struct {
 	*tview.Flex
+
 	logo, status *tview.TextView
 	styles       *config.Styles
 }
 
-// NewLogoView returns a new logo.
-func NewLogoView(styles *config.Styles) *LogoView {
-	v := LogoView{
+// NewLogo returns a new logo.
+func NewLogo(styles *config.Styles) *Logo {
+	l := Logo{
 		Flex:   tview.NewFlex(),
 		logo:   logo(),
 		status: status(),
 		styles: styles,
 	}
-	v.SetDirection(tview.FlexRow)
-	v.AddItem(v.logo, 0, 6, false)
-	v.AddItem(v.status, 0, 1, false)
-	v.refreshLogo(styles.Body().LogoColor)
+	l.SetDirection(tview.FlexRow)
+	l.AddItem(l.logo, 0, 6, false)
+	l.AddItem(l.status, 0, 1, false)
+	l.refreshLogo(styles.Body().LogoColor)
+	styles.AddListener(&l)
 
-	return &v
+	return &l
+}
+
+func (l *Logo) Logo() *tview.TextView {
+	return l.logo
+}
+
+func (l *Logo) Status() *tview.TextView {
+	return l.status
+}
+
+func (l *Logo) StylesChanged(s *config.Styles) {
+	l.styles = s
+	l.Reset()
 }
 
 // Reset clears out the logo view and resets colors.
-func (v *LogoView) Reset() {
-	v.status.Clear()
-	v.status.SetBackgroundColor(v.styles.BgColor())
-	v.refreshLogo(v.styles.Body().LogoColor)
+func (l *Logo) Reset() {
+	l.status.Clear()
+	l.SetBackgroundColor(l.styles.BgColor())
+	l.status.SetBackgroundColor(l.styles.BgColor())
+	l.logo.SetBackgroundColor(l.styles.BgColor())
+	l.refreshLogo(l.styles.Body().LogoColor)
 }
 
 // Err displays a log error state.
-func (v *LogoView) Err(msg string) {
-	v.update(msg, "red")
+func (l *Logo) Err(msg string) {
+	l.update(msg, "red")
 }
 
 // Warn displays a log warning state.
-func (v *LogoView) Warn(msg string) {
-	v.update(msg, "mediumvioletred")
+func (l *Logo) Warn(msg string) {
+	l.update(msg, "mediumvioletred")
 }
 
 // Info displays a log info state.
-func (v *LogoView) Info(msg string) {
-	v.update(msg, "green")
+func (l *Logo) Info(msg string) {
+	l.update(msg, "green")
 }
 
-func (v *LogoView) update(msg, c string) {
-	v.refreshStatus(msg, c)
-	v.refreshLogo(c)
+func (l *Logo) update(msg, c string) {
+	l.refreshStatus(msg, c)
+	l.refreshLogo(c)
 }
 
-func (v *LogoView) refreshStatus(msg, c string) {
-	v.status.SetBackgroundColor(config.AsColor(c))
-	v.status.SetText(fmt.Sprintf("[white::b]%s", msg))
+func (l *Logo) refreshStatus(msg, c string) {
+	l.status.SetBackgroundColor(config.AsColor(c))
+	l.status.SetText(fmt.Sprintf("[white::b]%s", msg))
 }
 
-func (v *LogoView) refreshLogo(c string) {
-	v.logo.Clear()
+func (l *Logo) refreshLogo(c string) {
+	l.logo.Clear()
 	for i, s := range LogoSmall {
-		fmt.Fprintf(v.logo, "[%s::b]%s", c, s)
+		fmt.Fprintf(l.logo, "[%s::b]%s", c, s)
 		if i+1 < len(LogoSmall) {
-			fmt.Fprintf(v.logo, "\n")
+			fmt.Fprintf(l.logo, "\n")
 		}
 	}
 }

@@ -147,11 +147,11 @@ func (f *Factory) isClusterWide() bool {
 }
 
 func (f *Factory) preload(ns string) {
-	verbs := []string{"get", "list", "watch"}
-	_, _ = f.CanForResource(ns, "v1/pods", verbs...)
-	_, _ = f.CanForResource(allNamespaces, "apiextensions.k8s.io/v1beta1/customresourcedefinitions", verbs...)
-	_, _ = f.CanForResource(clusterScope, "rbac.authorization.k8s.io/v1/clusterroles", verbs...)
-	_, _ = f.CanForResource(allNamespaces, "rbac.authorization.k8s.io/v1/roles", verbs...)
+	// verbs := []string{"get", "list", "watch"}
+	// _, _ = f.CanForResource(ns, "v1/pods", verbs...)
+	// _, _ = f.CanForResource(allNamespaces, "apiextensions.k8s.io/v1beta1/customresourcedefinitions", verbs...)
+	// _, _ = f.CanForResource(clusterScope, "rbac.authorization.k8s.io/v1/clusterroles", verbs...)
+	// _, _ = f.CanForResource(allNamespaces, "rbac.authorization.k8s.io/v1/roles", verbs...)
 }
 
 // CanForResource return an informer is user has access.
@@ -201,7 +201,6 @@ func (f *Factory) ensureFactory(ns string) di.DynamicSharedInformerFactory {
 }
 
 func toGVR(gvr string) schema.GroupVersionResource {
-	log.Debug().Msgf(">>> Convert GVR %q", gvr)
 	tokens := strings.Split(gvr, "/")
 	if len(tokens) < 3 {
 		tokens = append([]string{""}, tokens...)

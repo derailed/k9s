@@ -13,6 +13,6 @@ func TestDeploy(t *testing.T) {
 
 	assert.Nil(t, v.Init(makeCtx()))
 	assert.Equal(t, "Deployments", v.Name())
-	assert.Equal(t, 17, len(v.Hints()))
+	assert.Equal(t, 7, len(v.Hints()))
 
 }

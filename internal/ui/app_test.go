@@ -8,7 +8,7 @@ import (
 )
 
 func TestAppGetCmd(t *testing.T) {
-	a := ui.NewApp()
+	a := ui.NewApp("")
 	a.Init()
 	a.CmdBuff().Set("blee")
 
@@ -16,7 +16,7 @@ func TestAppGetCmd(t *testing.T) {
 }
 
 func TestAppInCmdMode(t *testing.T) {
-	a := ui.NewApp()
+	a := ui.NewApp("")
 	a.Init()
 	a.CmdBuff().Set("blee")
 	assert.False(t, a.InCmdMode())
@@ -26,7 +26,7 @@ func TestAppInCmdMode(t *testing.T) {
 }
 
 func TestAppResetCmd(t *testing.T) {
-	a := ui.NewApp()
+	a := ui.NewApp("")
 	a.Init()
 	a.CmdBuff().Set("blee")
 
@@ -36,7 +36,7 @@ func TestAppResetCmd(t *testing.T) {
 }
 
 func TestAppHasCmd(t *testing.T) {
-	a := ui.NewApp()
+	a := ui.NewApp("")
 	a.Init()
 
 	a.ActivateCmd(true)
@@ -47,7 +47,7 @@ func TestAppHasCmd(t *testing.T) {
 }
 
 func TestAppGetActions(t *testing.T) {
-	a := ui.NewApp()
+	a := ui.NewApp("")
 	a.Init()
 
 	a.AddActions(ui.KeyActions{ui.KeyZ: ui.KeyAction{Description: "zorg"}})
@@ -56,7 +56,7 @@ func TestAppGetActions(t *testing.T) {
 }
 
 func TestAppViews(t *testing.T) {
-	a := ui.NewApp()
+	a := ui.NewApp("")
 	a.Init()
 
 	vv := []string{"crumbs", "logo", "cmd", "flash", "menu"}

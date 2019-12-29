@@ -70,7 +70,7 @@ func (e Event) Render(o interface{}, ns string, r *Row) error {
 		r.Fields = append(r.Fields, ev.Namespace)
 	}
 	r.Fields = append(r.Fields,
-		ev.Name,
+		asRef(ev.InvolvedObject),
 		ev.Reason,
 		ev.Source.Component,
 		strconv.Itoa(int(ev.Count)),
@@ -78,4 +78,8 @@ func (e Event) Render(o interface{}, ns string, r *Row) error {
 		toAge(ev.LastTimestamp))
 
 	return nil
+}
+
+func asRef(r v1.ObjectReference) string {
+	return strings.ToLower(r.Kind) + ":" + r.Name
 }

@@ -2,8 +2,6 @@ module github.com/derailed/k9s
 
 go 1.13
 
-replace github.com/derailed/tview => /Users/fernand/go_wk/derailed/src/github.com/derailed/tview
-
 replace (
 	k8s.io/api => k8s.io/api v0.0.0-20190918155943-95b840bb6a1f
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190918161926-8f644eb6e783
@@ -30,7 +28,7 @@ replace (
 
 require (
 	github.com/atotto/clipboard v0.1.2
-	github.com/derailed/tview v0.3.2
+	github.com/derailed/tview v0.3.3
 	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/elazarl/goproxy v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect

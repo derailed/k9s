@@ -17,6 +17,7 @@ type (
 		Description string
 		Action      ActionHandler
 		Visible     bool
+		Shared      bool
 	}
 
 	// KeyActions tracks mappings between keystrokes and actions.
@@ -26,6 +27,10 @@ type (
 // NewKeyAction returns a new keyboard action.
 func NewKeyAction(d string, a ActionHandler, display bool) KeyAction {
 	return KeyAction{Description: d, Action: a, Visible: display}
+}
+
+func NewSharedKeyAction(d string, a ActionHandler, display bool) KeyAction {
+	return KeyAction{Description: d, Action: a, Visible: display, Shared: true}
 }
 
 // Add sets up keyboard action listener.
@@ -60,7 +65,9 @@ func (a KeyActions) Delete(kk ...tcell.Key) {
 func (a KeyActions) Hints() model.MenuHints {
 	kk := make([]int, 0, len(a))
 	for k := range a {
-		kk = append(kk, int(k))
+		if !a[k].Shared {
+			kk = append(kk, int(k))
+		}
 	}
 	sort.Ints(kk)
 

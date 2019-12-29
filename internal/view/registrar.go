@@ -23,6 +23,9 @@ func coreRes(vv MetaViewers) {
 	vv["v1/namespaces"] = MetaViewer{
 		viewerFn: NewNamespace,
 	}
+	vv["v1/events"] = MetaViewer{
+		viewerFn: NewEvent,
+	}
 	vv["v1/pods"] = MetaViewer{
 		viewerFn: NewPod,
 	}

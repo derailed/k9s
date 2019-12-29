@@ -86,15 +86,15 @@ func (t *Table) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (t *Table) bindKeys() {
 	t.Actions().Add(ui.KeyActions{
-		ui.KeySpace:         ui.NewKeyAction("Mark", t.markCmd, false),
-		tcell.KeyCtrlSpace:  ui.NewKeyAction("Marks Clear", t.clearMarksCmd, false),
-		tcell.KeyCtrlS:      ui.NewKeyAction("Save", t.saveCmd, false),
-		ui.KeySlash:         ui.NewKeyAction("Filter Mode", t.activateCmd, false),
-		tcell.KeyEscape:     ui.NewKeyAction("Filter Reset", t.resetCmd, false),
-		tcell.KeyEnter:      ui.NewKeyAction("Filter", t.filterCmd, false),
-		tcell.KeyBackspace2: ui.NewKeyAction("Erase", t.eraseCmd, false),
-		tcell.KeyBackspace:  ui.NewKeyAction("Erase", t.eraseCmd, false),
-		tcell.KeyDelete:     ui.NewKeyAction("Erase", t.eraseCmd, false),
+		ui.KeySpace:         ui.NewSharedKeyAction("Mark", t.markCmd, false),
+		tcell.KeyCtrlSpace:  ui.NewSharedKeyAction("Marks Clear", t.clearMarksCmd, false),
+		tcell.KeyCtrlS:      ui.NewSharedKeyAction("Save", t.saveCmd, false),
+		ui.KeySlash:         ui.NewSharedKeyAction("Filter Mode", t.activateCmd, false),
+		tcell.KeyEscape:     ui.NewSharedKeyAction("Filter Reset", t.resetCmd, false),
+		tcell.KeyEnter:      ui.NewSharedKeyAction("Filter", t.filterCmd, false),
+		tcell.KeyBackspace2: ui.NewSharedKeyAction("Erase", t.eraseCmd, false),
+		tcell.KeyBackspace:  ui.NewSharedKeyAction("Erase", t.eraseCmd, false),
+		tcell.KeyDelete:     ui.NewSharedKeyAction("Erase", t.eraseCmd, false),
 		ui.KeyShiftN:        ui.NewKeyAction("Sort Name", t.SortColCmd(0, true), false),
 		ui.KeyShiftA:        ui.NewKeyAction("Sort Age", t.SortColCmd(-1, true), false),
 	})

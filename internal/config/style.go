@@ -14,10 +14,15 @@ var (
 	K9sStylesFile = filepath.Join(K9sHome, "skin.yml")
 )
 
+type StyleListener interface {
+	StylesChanged(*Styles)
+}
+
 type (
 	// Styles tracks K9s styling options.
 	Styles struct {
-		K9s Style `yaml:"k9s"`
+		K9s       Style `yaml:"k9s"`
+		listeners []StyleListener
 	}
 
 	// Body tracks body styles.
@@ -257,9 +262,10 @@ func newMenu() Menu {
 }
 
 // NewStyles creates a new default config.
-func NewStyles(path string) (*Styles, error) {
-	s := &Styles{K9s: newStyle()}
-	return s, s.load(path)
+func NewStyles() *Styles {
+	return &Styles{
+		K9s: newStyle(),
+	}
 }
 
 // FgColor returns the foreground color.
@@ -270,6 +276,30 @@ func (s *Styles) FgColor() tcell.Color {
 // BgColor returns the background color.
 func (s *Styles) BgColor() tcell.Color {
 	return AsColor(s.Body().BgColor)
+}
+
+func (s *Styles) AddListener(l StyleListener) {
+	s.listeners = append(s.listeners, l)
+}
+
+func (s *Styles) RemoveListener(l StyleListener) {
+	victim := -1
+	for i, lis := range s.listeners {
+		if lis == l {
+			victim = i
+			break
+		}
+	}
+	if victim == -1 {
+		return
+	}
+	s.listeners = append(s.listeners[:victim], s.listeners[victim+1:]...)
+}
+
+func (s *Styles) fireStylesChanged() {
+	for _, list := range s.listeners {
+		list.StylesChanged(s)
+	}
 }
 
 // Body returns body styles.
@@ -303,7 +333,7 @@ func (s *Styles) Views() Views {
 }
 
 // Load K9s configuration from file
-func (s *Styles) load(path string) error {
+func (s *Styles) Load(path string) error {
 	f, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
@@ -312,6 +342,7 @@ func (s *Styles) load(path string) error {
 	if err := yaml.Unmarshal(f, s); err != nil {
 		return err
 	}
+	s.fireStylesChanged()
 
 	return nil
 }
@@ -330,6 +361,5 @@ func AsColor(c string) tcell.Color {
 	if color, ok := tcell.ColorNames[c]; ok {
 		return color
 	}
-
-	return tcell.ColorPink
+	return tcell.GetColor(c)
 }

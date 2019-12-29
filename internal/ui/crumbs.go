@@ -19,45 +19,52 @@ type Crumbs struct {
 
 // NewCrumbs returns a new breadcrumb view.
 func NewCrumbs(styles *config.Styles) *Crumbs {
-	v := Crumbs{
+	c := Crumbs{
 		stack:    model.NewStack(),
 		styles:   styles,
 		TextView: tview.NewTextView(),
 	}
-	v.SetBackgroundColor(styles.BgColor())
-	v.SetTextAlign(tview.AlignLeft)
-	v.SetBorderPadding(0, 0, 1, 1)
-	v.SetDynamicColors(true)
+	c.SetBackgroundColor(styles.BgColor())
+	c.SetTextAlign(tview.AlignLeft)
+	c.SetBorderPadding(0, 0, 1, 1)
+	c.SetDynamicColors(true)
+	styles.AddListener(&c)
 
-	return &v
+	return &c
+}
+
+func (c *Crumbs) StylesChanged(s *config.Styles) {
+	c.styles = s
+	c.SetBackgroundColor(s.BgColor())
+	c.refresh(c.stack.Flatten())
 }
 
 // StackPushed indicates a new item was added.
-func (v *Crumbs) StackPushed(c model.Component) {
-	v.stack.Push(c)
-	v.refresh(v.stack.Flatten())
+func (c *Crumbs) StackPushed(comp model.Component) {
+	c.stack.Push(comp)
+	c.refresh(c.stack.Flatten())
 }
 
 // StackPopped indicates an item was deleted
-func (v *Crumbs) StackPopped(_, _ model.Component) {
-	v.stack.Pop()
-	v.refresh(v.stack.Flatten())
+func (c *Crumbs) StackPopped(_, _ model.Component) {
+	c.stack.Pop()
+	c.refresh(c.stack.Flatten())
 }
 
 // StackTop indicates the top of the stack
-func (v *Crumbs) StackTop(top model.Component) {}
+func (c *Crumbs) StackTop(top model.Component) {}
 
 // Refresh updates view with new crumbs.
-func (v *Crumbs) refresh(crumbs []string) {
-	v.Clear()
-	last, bgColor := len(crumbs)-1, v.styles.Frame().Crumb.BgColor
-	for i, c := range crumbs {
+func (c *Crumbs) refresh(crumbs []string) {
+	c.Clear()
+	last, bgColor := len(crumbs)-1, c.styles.Frame().Crumb.BgColor
+	for i, crumb := range crumbs {
 		if i == last {
-			bgColor = v.styles.Frame().Crumb.ActiveColor
+			bgColor = c.styles.Frame().Crumb.ActiveColor
 		}
-		fmt.Fprintf(v, "[%s:%s:b] <%s> [-:%s:-] ",
-			v.styles.Frame().Crumb.FgColor,
-			bgColor, strings.Replace(strings.ToLower(c), " ", "", -1),
-			v.styles.Body().BgColor)
+		fmt.Fprintf(c, "[%s:%s:b] <%s> [-:%s:-] ",
+			c.styles.Frame().Crumb.FgColor,
+			bgColor, strings.Replace(strings.ToLower(crumb), " ", "", -1),
+			c.styles.Body().BgColor)
 	}
 }

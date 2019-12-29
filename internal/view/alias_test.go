@@ -21,10 +21,9 @@ func TestAliasNew(t *testing.T) {
 
 	assert.Nil(t, v.Init(makeContext()))
 	assert.Equal(t, "Aliases", v.Name())
-	assert.Equal(t, 10, len(v.Hints()))
+	assert.Equal(t, 4, len(v.Hints()))
 }
 
-// BOZO!!
 func TestAliasSearch(t *testing.T) {
 	v := view.NewAlias(client.GVR("aliases"))
 	assert.Nil(t, v.Init(makeContext()))

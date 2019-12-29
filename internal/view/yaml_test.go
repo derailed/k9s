@@ -49,7 +49,7 @@ func TestYaml(t *testing.T) {
 		},
 	}
 
-	s, _ := config.NewStyles("skins/stock.yml")
+	s := config.NewStyles()
 	for _, u := range uu {
 		assert.Equal(t, u.e, colorizeYAML(s.Views().Yaml, u.s))
 	}

@@ -83,7 +83,6 @@ func (t *Table) SendKey(evt *tcell.EventKey) {
 }
 
 func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msgf("KEY PRESS %#v", evt)
 	key := evt.Key()
 	if key == tcell.KeyUp || key == tcell.KeyDown {
 		return evt

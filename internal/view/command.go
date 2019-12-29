@@ -13,19 +13,19 @@ import (
 
 var customViewers MetaViewers
 
-type command struct {
+type Command struct {
 	app *App
 
 	alias *dao.Alias
 }
 
-func newCommand(app *App) *command {
-	return &command{
+func NewCommand(app *App) *Command {
+	return &Command{
 		app: app,
 	}
 }
 
-func (c *command) Init() error {
+func (c *Command) Init() error {
 	c.alias = dao.NewAlias(c.app.factory)
 	if _, err := c.alias.Ensure(); err != nil {
 		return err
@@ -35,8 +35,8 @@ func (c *command) Init() error {
 	return nil
 }
 
-// Reset resets command and reload aliases.
-func (c *command) Reset() error {
+// Reset resets Command and reload aliases.
+func (c *Command) Reset() error {
 	c.alias.Clear()
 	if _, err := c.alias.Ensure(); err != nil {
 		return err
@@ -45,13 +45,13 @@ func (c *command) Reset() error {
 	return nil
 }
 
-func (c *command) defaultCmd() error {
+func (c *Command) defaultCmd() error {
 	return c.run(c.app.Config.ActiveView())
 }
 
 var canRX = regexp.MustCompile(`\Acan\s([u|g|s]):([\w-:]+)\b`)
 
-func (c *command) specialCmd(cmd string) bool {
+func (c *Command) specialCmd(cmd string) bool {
 	cmds := strings.Split(cmd, " ")
 	switch cmds[0] {
 	case "q", "Q", "quit":
@@ -79,10 +79,10 @@ func (c *command) specialCmd(cmd string) bool {
 	return false
 }
 
-func (c *command) viewMetaFor(cmd string) (string, *MetaViewer, error) {
+func (c *Command) viewMetaFor(cmd string) (string, *MetaViewer, error) {
 	gvr, ok := c.alias.Get(cmd)
 	if !ok {
-		return "", nil, fmt.Errorf("Huh? `%s` command not found", cmd)
+		return "", nil, fmt.Errorf("Huh? `%s` Command not found", cmd)
 	}
 
 	v, ok := customViewers[client.GVR(gvr)]
@@ -93,8 +93,8 @@ func (c *command) viewMetaFor(cmd string) (string, *MetaViewer, error) {
 	return gvr, &v, nil
 }
 
-// Exec the command by showing associated display.
-func (c *command) run(cmd string) error {
+// Exec the Command by showing associated display.
+func (c *Command) run(cmd string) error {
 	if c.specialCmd(cmd) {
 		return nil
 	}
@@ -112,7 +112,7 @@ func (c *command) run(cmd string) error {
 		view := c.componentFor(gvr, v)
 		return c.exec(gvr, view)
 	default:
-		// checks if command includes a namespace
+		// checks if Command includes a namespace
 		ns := c.app.Config.ActiveNamespace()
 		if len(cmds) == 2 {
 			ns = cmds[1]
@@ -124,7 +124,7 @@ func (c *command) run(cmd string) error {
 	}
 }
 
-func (c *command) componentFor(gvr string, v *MetaViewer) ResourceViewer {
+func (c *Command) componentFor(gvr string, v *MetaViewer) ResourceViewer {
 	var view ResourceViewer
 	if v.viewerFn != nil {
 		log.Debug().Msgf("Custom viewer for %s", gvr)
@@ -142,14 +142,14 @@ func (c *command) componentFor(gvr string, v *MetaViewer) ResourceViewer {
 	return view
 }
 
-func (c *command) exec(gvr string, comp model.Component) error {
+func (c *Command) exec(gvr string, comp model.Component) error {
 	if comp == nil {
 		return fmt.Errorf("No component given for %s", gvr)
 	}
 
 	g := client.GVR(gvr)
 	c.app.Flash().Infof("Viewing %s resource...", g.ToR())
-	log.Debug().Msgf("Running command %s", gvr)
+	log.Debug().Msgf("Running Command %s", gvr)
 	c.app.Config.SetActiveView(g.ToR())
 	if err := c.app.Config.Save(); err != nil {
 		log.Error().Err(err).Msg("Config save failed!")

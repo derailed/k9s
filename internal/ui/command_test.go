@@ -9,8 +9,7 @@ import (
 )
 
 func TestCmdNew(t *testing.T) {
-	defaults, _ := config.NewStyles("")
-	v := ui.NewCmdView(defaults)
+	v := ui.NewCommand(config.NewStyles())
 
 	buff := ui.NewCmdBuff(':', ui.CommandBuff)
 	buff.AddListener(v)
@@ -20,8 +19,7 @@ func TestCmdNew(t *testing.T) {
 }
 
 func TestCmdUpdate(t *testing.T) {
-	defaults, _ := config.NewStyles("")
-	v := ui.NewCmdView(defaults)
+	v := ui.NewCommand(config.NewStyles())
 
 	buff := ui.NewCmdBuff(':', ui.CommandBuff)
 	buff.AddListener(v)
@@ -34,8 +32,7 @@ func TestCmdUpdate(t *testing.T) {
 }
 
 func TestCmdMode(t *testing.T) {
-	defaults, _ := config.NewStyles("")
-	v := ui.NewCmdView(defaults)
+	v := ui.NewCommand(config.NewStyles())
 
 	buff := ui.NewCmdBuff(':', ui.CommandBuff)
 	buff.AddListener(v)

@@ -11,8 +11,7 @@ import (
 )
 
 func TestNewMenu(t *testing.T) {
-	defaults, _ := config.NewStyles("")
-	v := ui.NewMenu(defaults)
+	v := ui.NewMenu(config.NewStyles())
 	v.HydrateMenu(model.MenuHints{
 		{Mnemonic: "a", Description: "bleeA", Visible: true},
 		{Mnemonic: "b", Description: "bleeB", Visible: true},

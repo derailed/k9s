@@ -18,9 +18,9 @@ import (
 )
 
 const (
-	splashTime     = 1
-	clusterRefresh = time.Duration(5 * time.Second)
-	indicatorFmt   = "[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s%%[white::]::[darkturquoise::]%s%%"
+	splashTime         = 1
+	clusterRefresh     = time.Duration(5 * time.Second)
+	statusIndicatorFmt = "[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s%%[white::]::[darkturquoise::]%s%%"
 )
 
 // App represents an application view.
@@ -28,7 +28,7 @@ type App struct {
 	*ui.App
 
 	Content    *PageStack
-	command    *command
+	command    *Command
 	factory    *watch.Factory
 	version    string
 	showHeader bool
@@ -38,14 +38,14 @@ type App struct {
 // NewApp returns a K9s app instance.
 func NewApp(cfg *config.Config) *App {
 	a := App{
-		App:     ui.NewApp(),
+		App:     ui.NewApp(cfg.K9s.CurrentCluster),
 		Content: NewPageStack(),
 	}
 	a.Config = cfg
 	a.InitBench(cfg.K9s.CurrentCluster)
 
-	a.Views()["indicator"] = ui.NewIndicatorView(a.App, a.Styles)
-	a.Views()["clusterInfo"] = newClusterInfoView(&a, client.NewMetricsServer(cfg.GetConnection()))
+	a.Views()["statusIndicator"] = ui.NewStatusIndicator(a.App, a.Styles)
+	a.Views()["clusterInfo"] = NewClusterInfo(&a, client.NewMetricsServer(cfg.GetConnection()))
 
 	return &a
 }
@@ -86,7 +86,7 @@ func (a *App) Init(version string, rate int) error {
 	a.factory = watch.NewFactory(a.Conn())
 	a.initFactory(ns)
 
-	a.command = newCommand(a)
+	a.command = NewCommand(a)
 	if err := a.command.Init(); err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func (a *App) Init(version string, rate int) error {
 	}
 
 	main := tview.NewFlex().SetDirection(tview.FlexRow)
-	main.AddItem(a.indicator(), 1, 1, false)
+	main.AddItem(a.statusIndicator(), 1, 1, false)
 	main.AddItem(a.Content, 0, 10, true)
 	main.AddItem(a.Crumbs(), 2, 1, false)
 	main.AddItem(a.Flash(), 2, 1, false)
@@ -106,7 +106,23 @@ func (a *App) Init(version string, rate int) error {
 	a.Main.AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
 	a.toggleHeader(!a.Config.K9s.GetHeadless())
 
+	a.Styles.AddListener(a)
+
 	return nil
+}
+
+func (a *App) StylesChanged(s *config.Styles) {
+	a.Main.SetBackgroundColor(s.BgColor())
+	if f, ok := a.Main.GetPrimitive("main").(*tview.Flex); ok {
+		f.SetBackgroundColor(s.BgColor())
+		if h, ok := f.ItemAt(0).(*tview.Flex); ok {
+			h.SetBackgroundColor(s.BgColor())
+		} else {
+			log.Error().Msgf("Header not found")
+		}
+	} else {
+		log.Error().Msgf("Main not found")
+	}
 }
 
 func (a *App) bindKeys() {
@@ -147,13 +163,14 @@ func (a *App) toggleHeader(flag bool) {
 		flex.AddItemAtIndex(0, a.buildHeader(), 7, 1, false)
 	} else {
 		flex.RemoveItemAtIndex(0)
-		flex.AddItemAtIndex(0, a.indicator(), 1, 1, false)
+		flex.AddItemAtIndex(0, a.statusIndicator(), 1, 1, false)
 		a.refreshIndicator()
 	}
 }
 
 func (a *App) buildHeader() tview.Primitive {
 	header := tview.NewFlex()
+	header.SetBackgroundColor(a.Styles.BgColor())
 	header.SetBorderPadding(0, 0, 1, 1)
 	header.SetDirection(tview.FlexColumn)
 	if !a.showHeader {
@@ -176,6 +193,7 @@ func (a *App) Resume() {
 	var ctx context.Context
 	ctx, a.cancelFn = context.WithCancel(context.Background())
 	go a.clusterUpdater(ctx)
+	a.StylesUpdater(ctx, a)
 }
 
 func (a *App) clusterUpdater(ctx context.Context) {
@@ -192,8 +210,8 @@ func (a *App) clusterUpdater(ctx context.Context) {
 	}
 }
 
+// BOZO!! Refact to use model/view strategy.
 func (a *App) refreshClusterInfo() {
-	log.Debug().Msgf("***** REFRESHING CLUSTER ******")
 	if !a.showHeader {
 		a.refreshIndicator()
 	} else {
@@ -207,12 +225,12 @@ func (a *App) refreshIndicator() {
 	var cmx client.ClusterMetrics
 	nos, nmx, err := fetchResources(a)
 	if err != nil {
-		log.Error().Err(err).Msgf("unable to refresh cluster indicator")
+		log.Error().Err(err).Msgf("unable to refresh cluster statusIndicator")
 		return
 	}
 
 	if err := cluster.Metrics(nos, nmx, &cmx); err != nil {
-		log.Error().Err(err).Msgf("unable to refresh cluster indicator")
+		log.Error().Err(err).Msgf("unable to refresh cluster statusIndicator")
 		return
 	}
 
@@ -225,8 +243,8 @@ func (a *App) refreshIndicator() {
 		mem = render.NAValue
 	}
 
-	a.indicator().SetPermanent(fmt.Sprintf(
-		indicatorFmt,
+	a.statusIndicator().SetPermanent(fmt.Sprintf(
+		statusIndicatorFmt,
 		a.version,
 		cluster.ClusterName(),
 		cluster.UserName(),
@@ -273,6 +291,7 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 			a.Flash().Err(err)
 		}
 		a.refreshClusterInfo()
+		a.ReloadStyles(name)
 	}
 
 	return nil
@@ -296,11 +315,8 @@ func (a *App) Run() {
 	defer cancel()
 	a.Halt()
 
-	// Only enable skin updater while in dev mode.
-	if a.HasSkins {
-		if err := a.StylesUpdater(ctx, a); err != nil {
-			log.Error().Err(err).Msg("Unable to track skin changes")
-		}
+	if err := a.StylesUpdater(ctx, a); err != nil {
+		log.Error().Err(err).Msg("Unable to track skin changes")
 	}
 
 	go func() {
@@ -342,13 +358,13 @@ func (a *App) setLogo(l ui.FlashLevel, msg string) {
 func (a *App) setIndicator(l ui.FlashLevel, msg string) {
 	switch l {
 	case ui.FlashErr:
-		a.indicator().Err(msg)
+		a.statusIndicator().Err(msg)
 	case ui.FlashWarn:
-		a.indicator().Warn(msg)
+		a.statusIndicator().Warn(msg)
 	case ui.FlashInfo:
-		a.indicator().Info(msg)
+		a.statusIndicator().Info(msg)
 	default:
-		a.indicator().Reset()
+		a.statusIndicator().Reset()
 	}
 	a.Draw()
 }
@@ -427,10 +443,10 @@ func (a *App) inject(c model.Component) error {
 	return nil
 }
 
-func (a *App) clusterInfo() *clusterInfoView {
-	return a.Views()["clusterInfo"].(*clusterInfoView)
+func (a *App) clusterInfo() *ClusterInfo {
+	return a.Views()["clusterInfo"].(*ClusterInfo)
 }
 
-func (a *App) indicator() *ui.IndicatorView {
-	return a.Views()["indicator"].(*ui.IndicatorView)
+func (a *App) statusIndicator() *ui.StatusIndicator {
+	return a.Views()["statusIndicator"].(*ui.StatusIndicator)
 }

@@ -18,8 +18,7 @@ func init() {
 }
 
 func TestNewCrumbs(t *testing.T) {
-	defaults, _ := config.NewStyles("")
-	v := ui.NewCrumbs(defaults)
+	v := ui.NewCrumbs(config.NewStyles())
 	v.StackPushed(makeComponent("c1"))
 	v.StackPushed(makeComponent("c2"))
 	v.StackPushed(makeComponent("c3"))

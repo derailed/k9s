@@ -14,8 +14,7 @@ import (
 
 func TestTableNew(t *testing.T) {
 	v := ui.NewTable("fred")
-	s, _ := config.NewStyles("")
-	ctx := context.WithValue(context.Background(), ui.KeyStyles, s)
+	ctx := context.WithValue(context.Background(), ui.KeyStyles, config.NewStyles())
 	v.Init(ctx)
 
 	assert.Equal(t, "fred", v.BaseTitle)
@@ -23,8 +22,7 @@ func TestTableNew(t *testing.T) {
 
 func TestTableUpdate(t *testing.T) {
 	v := ui.NewTable("fred")
-	s, _ := config.NewStyles("")
-	ctx := context.WithValue(context.Background(), ui.KeyStyles, s)
+	ctx := context.WithValue(context.Background(), ui.KeyStyles, config.NewStyles())
 	v.Init(ctx)
 
 	v.Update(makeTableData())
@@ -35,8 +33,7 @@ func TestTableUpdate(t *testing.T) {
 
 func TestTableSelection(t *testing.T) {
 	v := ui.NewTable("fred")
-	s, _ := config.NewStyles("")
-	ctx := context.WithValue(context.Background(), ui.KeyStyles, s)
+	ctx := context.WithValue(context.Background(), ui.KeyStyles, config.NewStyles())
 	v.Init(ctx)
 	m := &testModel{}
 	v.SetModel(m)

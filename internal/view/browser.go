@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	rt "runtime"
 	"strconv"
 
 	"github.com/atotto/clipboard"
@@ -77,7 +76,6 @@ func (b *Browser) Init(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	log.Debug().Msgf("ACCESSOR FOR %s -- %#v", b.gvr, b.accessor)
 
 	b.envFn = b.defaultK9sEnv
 	b.setNamespace(b.App().Config.ActiveNamespace())
@@ -93,8 +91,6 @@ func (b *Browser) Init(ctx context.Context) error {
 // Start initializes browser updates.
 func (b *Browser) Start() {
 	b.Stop()
-	log.Debug().Msgf("GOROUTINE %d", rt.NumGoroutine())
-	log.Debug().Msgf("BROWSER START %s", b.gvr)
 
 	b.Table.Start()
 	ctx := b.defaultContext()
@@ -389,9 +385,9 @@ func (b *Browser) TableLoadFailed(err error) {
 
 // TableDataChanged notifies view new data is available.
 func (b *Browser) TableDataChanged(data render.TableData) {
-	b.Update(data)
 	b.app.QueueUpdateDraw(func() {
 		b.refreshActions()
+		b.Update(data)
 	})
 }
 
@@ -410,7 +406,6 @@ func (b *Browser) defaultContext() context.Context {
 
 func (b *Browser) namespaceActions(aa ui.KeyActions) {
 	if b.app.Conn() == nil || !b.meta.Namespaced || b.GetTable().Path != "" {
-		log.Warn().Msgf("NOT NAMESPACE RES %q -- %t -- %q", b.gvr, b.meta.Namespaced, b.GetTable().Path)
 		return
 	}
 	b.namespaces = make(map[int]string, config.MaxFavoritesNS)

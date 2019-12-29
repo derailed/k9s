@@ -51,7 +51,8 @@ func (v *Help) Init(ctx context.Context) error {
 func (v *Help) bindKeys() {
 	v.Actions().Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlS)
 	v.Actions().Set(ui.KeyActions{
-		tcell.KeyEsc:   ui.NewKeyAction("Back", v.app.PrevCmd, true),
+		tcell.KeyEsc:   ui.NewKeyAction("Back", v.app.PrevCmd, false),
+		ui.KeyHelp:     ui.NewKeyAction("Back", v.app.PrevCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Back", v.app.PrevCmd, false),
 	})
 }
@@ -110,15 +111,20 @@ func (v *Help) showHotKeys() (model.MenuHints, error) {
 	if err := hh.Load(); err != nil {
 		return nil, fmt.Errorf("no hotkey configuration found")
 	}
-	m := make(model.MenuHints, 0, len(hh.HotKey))
-	for _, hk := range hh.HotKey {
-		m = append(m, model.MenuHint{
-			Mnemonic:    hk.ShortCut,
-			Description: hk.Description,
+	kk := make(sort.StringSlice, 0, len(hh.HotKey))
+	for k := range hh.HotKey {
+		kk = append(kk, k)
+	}
+	kk.Sort()
+	mm := make(model.MenuHints, 0, len(hh.HotKey))
+	for _, k := range kk {
+		mm = append(mm, model.MenuHint{
+			Mnemonic:    hh.HotKey[k].ShortCut,
+			Description: hh.HotKey[k].Description,
 		})
 	}
 
-	return m, nil
+	return mm, nil
 }
 
 func (v *Help) showGeneral() model.MenuHints {

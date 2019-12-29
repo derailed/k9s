@@ -35,12 +35,13 @@ type Log struct {
 
 	app             *App
 	logs            *Details
-	scrollIndicator *AutoScrollIndicator
+	indicator       *LogIndicator
 	ansiWriter      io.Writer
 	path, container string
 	cancelFn        context.CancelFunc
 	previous        bool
 	gvr             client.GVR
+	fullScreen      bool
 }
 
 var _ model.Component = &Log{}
@@ -68,8 +69,8 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	l.SetBorderPadding(0, 0, 1, 1)
 	l.SetDirection(tview.FlexRow)
 
-	l.scrollIndicator = NewAutoScrollIndicator(l.app.Styles)
-	l.AddItem(l.scrollIndicator, 1, 1, false)
+	l.indicator = NewLogIndicator(l.app.Styles)
+	l.AddItem(l.indicator, 1, 1, false)
 
 	l.logs = NewDetails("")
 	l.logs.SetBorder(false)
@@ -89,22 +90,9 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	return nil
 }
 
-// Refresh refreshes the viewer.
-func (l *Log) Refresh() {}
-
-// App returns an app handle.
-func (l *Log) App() *App {
-	return l.app
-}
-
 // Hints returns a collection of menu hints.
 func (l *Log) Hints() model.MenuHints {
-	return l.Actions().Hints()
-}
-
-// Actions returns available actions.
-func (l *Log) Actions() ui.KeyActions {
-	return l.logs.actions
+	return l.logs.Actions().Hints()
 }
 
 // Start runs the component.
@@ -133,8 +121,10 @@ func (l *Log) bindKeys() {
 	l.logs.Actions().Set(ui.KeyActions{
 		tcell.KeyEscape: ui.NewKeyAction("Back", l.app.PrevCmd, true),
 		ui.KeyC:         ui.NewKeyAction("Clear", l.clearCmd, true),
-		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", l.ToggleAutoScrollCmd, true),
+		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", l.toggleAutoScrollCmd, true),
 		ui.KeyG:         ui.NewKeyAction("Top", l.topCmd, false),
+		ui.KeyShiftF:    ui.NewKeyAction("FullScreen", l.fullScreenCmd, true),
+		ui.KeyW:         ui.NewKeyAction("Toggle Wrap", l.textWrapCmd, true),
 		ui.KeyShiftG:    ui.NewKeyAction("Bottom", l.bottomCmd, false),
 		ui.KeyF:         ui.NewKeyAction("Up", l.pageUpCmd, false),
 		ui.KeyB:         ui.NewKeyAction("Down", l.pageDownCmd, false),
@@ -212,8 +202,8 @@ func (l *Log) updateLogs(ctx context.Context, c <-chan string, buffSize int) {
 }
 
 // ScrollIndicator returns the scroll mode viewer.
-func (l *Log) ScrollIndicator() *AutoScrollIndicator {
-	return l.scrollIndicator
+func (l *Log) Indicator() *LogIndicator {
+	return l.indicator
 }
 
 func (l *Log) setTitle(path, co string) {
@@ -251,12 +241,12 @@ func (l *Log) log(lines string) {
 
 // Flush write logs to viewer.
 func (l *Log) Flush(index int, buff []string) {
-	if index == 0 || !l.scrollIndicator.AutoScroll() {
+	if index == 0 || !l.indicator.AutoScroll() {
 		return
 	}
 	l.log(strings.Join(buff[:index], "\n"))
 	l.app.QueueUpdateDraw(func() {
-		l.scrollIndicator.Refresh()
+		l.indicator.Refresh()
 		l.logs.ScrollToEnd()
 	})
 }
@@ -306,14 +296,6 @@ func saveData(cluster, name, data string) (string, error) {
 	return path, nil
 }
 
-// ToggleAutoScrollCmd toggles auto scrolling of logs.
-func (l *Log) ToggleAutoScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
-	l.scrollIndicator.ToggleAutoScroll()
-	l.scrollIndicator.Refresh()
-
-	return nil
-}
-
 func (l *Log) topCmd(evt *tcell.EventKey) *tcell.EventKey {
 	l.app.Flash().Info("Top of logs...")
 	l.logs.ScrollToBeginning()
@@ -344,5 +326,29 @@ func (l *Log) clearCmd(*tcell.EventKey) *tcell.EventKey {
 	l.app.Flash().Info("Clearing logs...")
 	l.logs.Clear()
 	l.logs.ScrollTo(0, 0)
+	return nil
+}
+
+func (l *Log) textWrapCmd(*tcell.EventKey) *tcell.EventKey {
+	l.indicator.ToggleTextWrap()
+	l.logs.SetWrap(l.indicator.textWrap)
+	return nil
+}
+
+func (l *Log) toggleAutoScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
+	l.indicator.ToggleAutoScroll()
+	return nil
+}
+
+func (l *Log) fullScreenCmd(*tcell.EventKey) *tcell.EventKey {
+	l.indicator.ToggleFullScreen()
+	sidePadding := 1
+	if l.indicator.FullScreen() {
+		sidePadding = 0
+	}
+	l.SetFullScreen(l.indicator.FullScreen())
+	l.Box.SetBorder(!l.indicator.FullScreen())
+	l.Flex.SetBorderPadding(0, 0, sidePadding, sidePadding)
+
 	return nil
 }
