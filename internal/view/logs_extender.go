@@ -39,7 +39,7 @@ func (l *LogsExtender) logsCmd(prev bool) func(evt *tcell.EventKey) *tcell.Event
 		if path == "" {
 			return nil
 		}
-		if l.GetTable().Path != "" {
+		if isResourcePath(l.GetTable().Path) {
 			path = l.GetTable().Path
 		}
 		l.showLogs(path, prev)
@@ -48,11 +48,15 @@ func (l *LogsExtender) logsCmd(prev bool) func(evt *tcell.EventKey) *tcell.Event
 	}
 }
 
+func isResourcePath(p string) bool {
+	ns, n := client.Namespaced(p)
+	return ns != "" && n != ""
+}
+
 func (l *LogsExtender) showLogs(path string, prev bool) {
 	log.Debug().Msgf("SHOWING LOGS path %q", path)
 	co := ""
 	if l.containerFn != nil {
-		log.Debug().Msgf("CUSTOM CO FUNC")
 		co = l.containerFn()
 	}
 	if err := l.App().inject(NewLog(client.GVR(l.GVR()), path, co, prev)); err != nil {

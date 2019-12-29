@@ -134,6 +134,9 @@ func (t *Table) SetSortCol(index, count int, asc bool) {
 
 // Update table content.
 func (t *Table) Update(data render.TableData) {
+	data.Mutex.RLock()
+	defer data.Mutex.RUnlock()
+
 	var firstRow bool
 	if t.GetRowCount() == 0 {
 		firstRow = true

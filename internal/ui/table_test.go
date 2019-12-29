@@ -69,26 +69,27 @@ func (t *testModel) InNamespace(string) bool         { return true }
 func (t *testModel) SetRefreshRate(time.Duration)    {}
 
 func makeTableData() render.TableData {
-	return render.TableData{
-		Namespace: "",
-		Header: render.HeaderRow{
-			render.Header{Name: "a"},
-			render.Header{Name: "b"},
-			render.Header{Name: "c"},
-		},
-		RowEvents: render.RowEvents{
-			render.RowEvent{
-				Row: render.Row{
-					ID:     "r1",
-					Fields: render.Fields{"blee", "duh", "fred"},
-				},
+	t := render.NewTableData()
+	t.Namespace = ""
+	t.Header = render.HeaderRow{
+		render.Header{Name: "a"},
+		render.Header{Name: "b"},
+		render.Header{Name: "c"},
+	}
+	t.RowEvents = render.RowEvents{
+		render.RowEvent{
+			Row: render.Row{
+				ID:     "r1",
+				Fields: render.Fields{"blee", "duh", "fred"},
 			},
-			render.RowEvent{
-				Row: render.Row{
-					ID:     "r2",
-					Fields: render.Fields{"blee", "duh", "zorg"},
-				},
+		},
+		render.RowEvent{
+			Row: render.Row{
+				ID:     "r2",
+				Fields: render.Fields{"blee", "duh", "zorg"},
 			},
 		},
 	}
+
+	return *t
 }

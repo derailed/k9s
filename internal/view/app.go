@@ -193,7 +193,9 @@ func (a *App) Resume() {
 	var ctx context.Context
 	ctx, a.cancelFn = context.WithCancel(context.Background())
 	go a.clusterUpdater(ctx)
-	a.StylesUpdater(ctx, a)
+	if err := a.StylesUpdater(ctx, a); err != nil {
+		log.Error().Err(err).Msgf("Styles update failed")
+	}
 }
 
 func (a *App) clusterUpdater(ctx context.Context) {

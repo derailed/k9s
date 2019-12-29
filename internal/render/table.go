@@ -1,10 +1,18 @@
 package render
 
+import "sync"
+
 // TableData tracks a K8s resource for tabular display.
 type TableData struct {
 	Header    HeaderRow
 	RowEvents RowEvents
 	Namespace string
+	Mutex     *sync.RWMutex
+}
+
+// NewTableData returns a new table.
+func NewTableData() *TableData {
+	return &TableData{Mutex: &sync.RWMutex{}}
 }
 
 // Clear clears out the entire table.

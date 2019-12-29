@@ -3,6 +3,7 @@ package client
 import (
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -19,11 +20,15 @@ type Config struct {
 	currentContext string
 	rawConfig      *clientcmdapi.Config
 	restConfig     *restclient.Config
+	mutex          *sync.RWMutex
 }
 
 // NewConfig returns a new k8s config or an error if the flags are invalid.
 func NewConfig(f *genericclioptions.ConfigFlags) *Config {
-	return &Config{flags: f}
+	return &Config{
+		flags: f,
+		mutex: &sync.RWMutex{},
+	}
 }
 
 // Flags returns configuration flags.
@@ -231,12 +236,18 @@ func (c *Config) NamespaceNames(nns []v1.Namespace) []string {
 
 // ConfigAccess return the current kubeconfig api server access configuration.
 func (c *Config) ConfigAccess() (clientcmd.ConfigAccess, error) {
+	c.mutex.RLock()
+	defer c.mutex.RUnlock()
+
 	c.ensureConfig()
 	return c.clientConfig.ConfigAccess(), nil
 }
 
 // RawConfig fetch the current kubeconfig with no overrides.
 func (c *Config) RawConfig() (clientcmdapi.Config, error) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	if c.rawConfig != nil {
 		if c.rawConfig.CurrentContext == c.currentContext {
 			return *c.rawConfig, nil

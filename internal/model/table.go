@@ -22,7 +22,7 @@ type TableListener interface {
 type Table struct {
 	gvr         string
 	namespace   string
-	data        render.TableData
+	data        *render.TableData
 	listeners   []TableListener
 	inUpdate    int32
 	refreshRate time.Duration
@@ -32,7 +32,7 @@ type Table struct {
 func NewTable(gvr string) *Table {
 	return &Table{
 		gvr:         gvr,
-		data:        render.TableData{},
+		data:        render.NewTableData(),
 		refreshRate: 2 * time.Second,
 	}
 }
@@ -81,7 +81,7 @@ func (t *Table) Empty() bool {
 
 // Peek returns model data.
 func (t *Table) Peek() render.TableData {
-	return t.data
+	return *t.data
 }
 
 func (t *Table) updater(ctx context.Context) {
@@ -107,13 +107,13 @@ func (t *Table) refresh(ctx context.Context) {
 		log.Error().Err(err).Msg("Reconcile failed")
 		t.fireTableLoadFailed(err)
 	}
-	t.fireTableChanged(t.data)
+	t.fireTableChanged(*t.data)
 }
 
 // AddListener adds a new model listener.
 func (t *Table) AddListener(l TableListener) {
 	t.listeners = append(t.listeners, l)
-	t.fireTableChanged(t.data)
+	t.fireTableChanged(*t.data)
 }
 
 // RemoveListener delete a listener from the list.
@@ -144,6 +144,9 @@ func (t *Table) fireTableLoadFailed(err error) {
 }
 
 func (t *Table) reconcile(ctx context.Context) error {
+	t.data.Mutex.Lock()
+	defer t.data.Mutex.Unlock()
+
 	log.Debug().Msgf("GOROUTINE %d", runtime.NumGoroutine())
 
 	factory, ok := ctx.Value(internal.KeyFactory).(Factory)

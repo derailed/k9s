@@ -8,9 +8,6 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-
-	"net/http"
-	_ "net/http/pprof"
 )
 
 func init() {
@@ -23,11 +20,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
-	go func() {
-		http.ListenAndServe("localhost:6060", nil)
-	}()
-
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: file})
 
 	cmd.Execute()

@@ -1,6 +1,8 @@
 package view
 
 import (
+	"strings"
+
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
@@ -51,5 +53,5 @@ func (s *StatefulSet) showPods(app *App, _, gvr, path string) {
 		app.Flash().Err(err)
 	}
 
-	showPodsFromSelector(app, path, sts.Spec.Selector)
+	showPodsFromSelector(app, strings.Replace(path, "/", "::", 1), sts.Spec.Selector)
 }

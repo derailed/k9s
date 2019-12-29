@@ -33,28 +33,28 @@ func TestTableNew(t *testing.T) {
 	v := NewTable("test")
 	v.Init(makeContext())
 
-	data := render.TableData{
-		Header: render.HeaderRow{
-			render.Header{Name: "NAMESPACE"},
-			render.Header{Name: "NAME", Align: tview.AlignRight},
-			render.Header{Name: "FRED"},
-			render.Header{Name: "AGE", Decorator: render.AgeDecorator},
-		},
-		RowEvents: render.RowEvents{
-			render.RowEvent{
-				Row: render.Row{
-					Fields: render.Fields{"ns1", "a", "10", "3m"},
-				},
-			},
-			render.RowEvent{
-				Row: render.Row{
-					Fields: render.Fields{"ns1", "b", "15", "1m"},
-				},
-			},
-		},
-		Namespace: "",
+	data := render.NewTableData()
+	data.Header = render.HeaderRow{
+		render.Header{Name: "NAMESPACE"},
+		render.Header{Name: "NAME", Align: tview.AlignRight},
+		render.Header{Name: "FRED"},
+		render.Header{Name: "AGE", Decorator: render.AgeDecorator},
 	}
-	v.Update(data)
+	data.RowEvents = render.RowEvents{
+		render.RowEvent{
+			Row: render.Row{
+				Fields: render.Fields{"ns1", "a", "10", "3m"},
+			},
+		},
+		render.RowEvent{
+			Row: render.Row{
+				Fields: render.Fields{"ns1", "b", "15", "1m"},
+			},
+		},
+	}
+	data.Namespace = ""
+
+	v.Update(*data)
 	assert.Equal(t, 3, v.GetRowCount())
 }
 
@@ -101,28 +101,30 @@ func (t *testTableModel) InNamespace(string) bool         { return true }
 func (t *testTableModel) SetRefreshRate(time.Duration)    {}
 
 func makeTableData() render.TableData {
-	return render.TableData{
-		Header: render.HeaderRow{
-			render.Header{Name: "NAMESPACE"},
-			render.Header{Name: "NAME", Align: tview.AlignRight},
-			render.Header{Name: "FRED"},
-			render.Header{Name: "AGE", Decorator: render.AgeDecorator},
-		},
-		RowEvents: render.RowEvents{
-			render.RowEvent{
-				Row: render.Row{
-					Fields: render.Fields{"ns1", "blee", "10", "3m"},
-				},
-			},
-			render.RowEvent{
-				Row: render.Row{
-					Fields: render.Fields{"ns1", "fred", "15", "1m"},
-				},
-				Deltas: render.DeltaRow{"", "", "20", ""},
-			},
-		},
-		Namespace: "",
+	t := render.NewTableData()
+
+	t.Header = render.HeaderRow{
+		render.Header{Name: "NAMESPACE"},
+		render.Header{Name: "NAME", Align: tview.AlignRight},
+		render.Header{Name: "FRED"},
+		render.Header{Name: "AGE", Decorator: render.AgeDecorator},
 	}
+	t.RowEvents = render.RowEvents{
+		render.RowEvent{
+			Row: render.Row{
+				Fields: render.Fields{"ns1", "blee", "10", "3m"},
+			},
+		},
+		render.RowEvent{
+			Row: render.Row{
+				Fields: render.Fields{"ns1", "fred", "15", "1m"},
+			},
+			Deltas: render.DeltaRow{"", "", "20", ""},
+		},
+	}
+	t.Namespace = ""
+
+	return *t
 }
 
 func makeContext() context.Context {

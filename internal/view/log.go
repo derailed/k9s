@@ -41,7 +41,6 @@ type Log struct {
 	cancelFn        context.CancelFunc
 	previous        bool
 	gvr             client.GVR
-	fullScreen      bool
 }
 
 var _ model.Component = &Log{}
