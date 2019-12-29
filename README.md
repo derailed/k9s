@@ -31,6 +31,12 @@ K9s is available on Linux, OSX and Windows platforms.
    brew install derailed/k9s/k9s
    ```
 
+* Via [MacPorts](https://www.macports.org)
+
+   ```shell
+   sudo port install k9s
+   ```
+
 * Building from source
    K9s was built using go 1.13 or above. In order to build K9 from source you must:
    1. Clone the repo
