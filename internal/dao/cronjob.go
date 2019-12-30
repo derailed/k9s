@@ -9,6 +9,7 @@ import (
 
 const maxJobNameSize = 42
 
+// CronJob represents a cronjob K8s resource.
 type CronJob struct {
 	Generic
 }

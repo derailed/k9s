@@ -52,7 +52,7 @@ func (c *ClusterInfo) init(version string) {
 	c.refresh()
 }
 
-// StylesChanges notifies skin changed.
+// StylesChanged notifies skin changed.
 func (c *ClusterInfo) StylesChanged(s *config.Styles) {
 	c.styles = s
 	c.SetBackgroundColor(s.BgColor())

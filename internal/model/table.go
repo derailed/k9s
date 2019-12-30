@@ -16,11 +16,16 @@ const (
 	noDataCount = 2
 )
 
+// TableListener represents a table model listener.
 type TableListener interface {
+	// TableDataChanged notifies the model data changed.
 	TableDataChanged(render.TableData)
+
+	// TableLoadFailed notifies the load failed.
 	TableLoadFailed(error)
 }
 
+// Table represents a table model.
 type Table struct {
 	gvr         string
 	namespace   string

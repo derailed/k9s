@@ -116,6 +116,7 @@ func hasVerb(verbs []string, verb string) bool {
 	return false
 }
 
+// RuleRes represents an rbac rule.
 type RuleRes struct {
 	Resource, Group string
 	ResourceName    string
@@ -123,6 +124,7 @@ type RuleRes struct {
 	Verbs           []string
 }
 
+// NewRuleRes returns a new rule.
 func NewRuleRes(res, grp string, vv []string) RuleRes {
 	return RuleRes{
 		Resource: res,
@@ -141,8 +143,10 @@ func (r RuleRes) DeepCopyObject() runtime.Object {
 	return r
 }
 
+// Rules represents a collection of rules.
 type Rules []RuleRes
 
+// Upsert adds a new rule.
 func (rr Rules) Upsert(r RuleRes) Rules {
 	idx, ok := rr.find(r.Resource)
 	if !ok {

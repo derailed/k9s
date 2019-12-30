@@ -71,6 +71,7 @@ type NamedContext struct {
 	Config  ContextNamer
 }
 
+// ContextNamer represents a named context.
 type ContextNamer interface {
 	CurrentContextName() (string, error)
 }
@@ -80,7 +81,7 @@ func NewNamedContext(c ContextNamer, n string, ctx *api.Context) *NamedContext {
 	return &NamedContext{Name: n, Context: ctx, Config: c}
 }
 
-// MustCurrentContextName return the active context name.
+// IsCurrentContext return the active context name.
 func (c *NamedContext) IsCurrentContext(n string) bool {
 	cl, err := c.Config.CurrentContextName()
 	if err != nil {

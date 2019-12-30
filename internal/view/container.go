@@ -22,7 +22,7 @@ type Container struct {
 	ResourceViewer
 }
 
-// New Container returns a new container view.
+// NewContainer returns a new container view.
 func NewContainer(gvr client.GVR) ResourceViewer {
 	c := Container{}
 	c.ResourceViewer = NewLogsExtender(NewBrowser(gvr), c.selectedContainer)

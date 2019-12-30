@@ -14,6 +14,7 @@ import (
 	restclient "k8s.io/client-go/rest"
 )
 
+// Container represents a pod's container dao.
 type Container struct {
 	Generic
 }
@@ -21,7 +22,7 @@ type Container struct {
 var _ Accessor = &Container{}
 var _ Loggable = &Container{}
 
-// Logs tails a given container logs
+// TailLogs tails a given container logs
 func (c *Container) TailLogs(ctx context.Context, logChan chan<- string, opts LogOptions) error {
 	fac, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
 	if !ok {

@@ -26,6 +26,7 @@ import (
 // ContextFunc enhances a given context.
 type ContextFunc func(context.Context) context.Context
 
+// BindKeysFunc adds new menu actions.
 type BindKeysFunc func(ui.KeyActions)
 
 // Browser represents a generic resource browser.
@@ -181,7 +182,7 @@ func (b *Browser) GVR() string { return string(b.gvr) }
 // GetTable returns the underlying table.
 func (b *Browser) GetTable() *Table { return b.Table }
 
-// TableLoadChanged notifies view something went south.
+// TableLoadFailed notifies view something went south.
 func (b *Browser) TableLoadFailed(err error) {
 	b.app.QueueUpdateDraw(func() {
 		b.app.Flash().Err(err)
@@ -497,10 +498,12 @@ func (b *Browser) refreshActions() {
 	b.app.Menu().HydrateMenu(b.Hints())
 }
 
+// Aliases returns all available aliases.
 func (b *Browser) Aliases() []string {
 	return append(b.meta.ShortNames, b.meta.SingularName, b.meta.Name)
 }
 
+// EnvFn returns an plugin env function if available.
 func (b *Browser) EnvFn() EnvFunc {
 	return b.envFn
 }

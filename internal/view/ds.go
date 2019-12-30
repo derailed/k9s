@@ -12,10 +12,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// DaemonSet represents a daemon set custom viewer.
 type DaemonSet struct {
 	ResourceViewer
 }
 
+// NewDaemonSet returns a new viewer.
 func NewDaemonSet(gvr client.GVR) ResourceViewer {
 	d := DaemonSet{
 		ResourceViewer: NewRestartExtender(

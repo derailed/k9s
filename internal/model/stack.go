@@ -20,7 +20,7 @@ type StackEvent struct {
 	// Kind represents the event condition.
 	Action StackAction
 
-	// Item represents the targetted item.
+	// Item represents the targeted item.
 	Component Component
 }
 
@@ -47,7 +47,7 @@ func NewStack() *Stack {
 	return &Stack{}
 }
 
-// Flatten retuns a string representation of the component stack.
+// Flatten returns a string representation of the component stack.
 func (s *Stack) Flatten() []string {
 	ss := make([]string, len(s.components))
 	for i, c := range s.components {

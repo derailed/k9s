@@ -6,12 +6,14 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
+// Generic represents a generic resource.
 type Generic struct {
 	Factory
 
 	gvr client.GVR
 }
 
+// Init initializes the resource.
 func (r *Generic) Init(f Factory, gvr client.GVR) {
 	r.Factory, r.gvr = f, gvr
 }

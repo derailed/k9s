@@ -15,6 +15,7 @@ import (
 	"k8s.io/kubectl/pkg/polymorphichelpers"
 )
 
+// StatefulSet represents a K8s sts.
 type StatefulSet struct {
 	Generic
 }
@@ -59,22 +60,22 @@ func (s *StatefulSet) Restart(path string) error {
 	return err
 }
 
-// Logs tail logs for all pods represented by this StatefulSet.
+// TailLogs tail logs for all pods represented by this StatefulSet.
 func (s *StatefulSet) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
 	o, err := s.Get(string(s.gvr), opts.Path, labels.Everything())
 	if err != nil {
 		return err
 	}
 
-	var dp appsv1.StatefulSet
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &dp)
+	var sts appsv1.StatefulSet
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &sts)
 	if err != nil {
 		return errors.New("expecting StatefulSet resource")
 	}
 
-	if dp.Spec.Selector == nil || len(dp.Spec.Selector.MatchLabels) == 0 {
+	if sts.Spec.Selector == nil || len(sts.Spec.Selector.MatchLabels) == 0 {
 		return fmt.Errorf("No valid selector found on StatefulSet %s", opts.Path)
 	}
 
-	return podLogs(ctx, c, dp.Spec.Selector.MatchLabels, opts)
+	return podLogs(ctx, c, sts.Spec.Selector.MatchLabels, opts)
 }

@@ -61,6 +61,7 @@ func (r RowEvent) Clone() RowEvent {
 	}
 }
 
+// Changed returns true if the row changed.
 func (r RowEvent) Changed(re RowEvent) bool {
 	if r.Kind != re.Kind {
 		log.Debug().Msgf("KIND Changed")
@@ -229,8 +230,10 @@ func findIndex(ss []string, s string) int {
 
 // ----------------------------------------------------------------------------
 
+// StringSet represents a collection of unique strings.
 type StringSet []string
 
+// Add adds a new item in the set.
 func (ss StringSet) Add(item string) StringSet {
 	if ss.In(item) {
 		return ss
@@ -238,6 +241,7 @@ func (ss StringSet) Add(item string) StringSet {
 	return append(ss, item)
 }
 
+// In checks if a string is in the set.
 func (ss StringSet) In(item string) bool {
 	return ss.indexOf(item) >= 0
 }

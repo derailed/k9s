@@ -21,8 +21,10 @@ import (
 )
 
 const (
-	logTitle     = "logs"
-	logBuffSize  = 100
+	logTitle    = "logs"
+	logBuffSize = 100
+
+	// FlushTimeout represents a duration between log flushes.
 	FlushTimeout = 200 * time.Millisecond
 
 	logCoFmt = " Logs([fg:bg:]%s:[hilite:bg:b]%s[-:bg:-]) "
@@ -88,6 +90,7 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	return nil
 }
 
+// StylesChanged reports skin changes.
 func (l *Log) StylesChanged(s *config.Styles) {
 	l.SetBackgroundColor(config.AsColor(s.Views().Log.BgColor))
 	l.logs.SetTextColor(config.AsColor(s.Views().Log.FgColor))
@@ -120,6 +123,7 @@ func (l *Log) Stop() {
 	l.app.Styles.RemoveListener(l)
 }
 
+// Name returns the component name.
 func (l *Log) Name() string { return logTitle }
 
 func (l *Log) bindKeys() {
@@ -235,6 +239,7 @@ func (l *Log) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
+// Logs returns the log viewer.
 func (l *Log) Logs() *Details {
 	return l.logs
 }

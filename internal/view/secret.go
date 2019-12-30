@@ -17,7 +17,7 @@ type Secret struct {
 	ResourceViewer
 }
 
-// NewSecrets returns a new viewer.
+// NewSecret returns a new viewer.
 func NewSecret(gvr client.GVR) ResourceViewer {
 	s := Secret{
 		ResourceViewer: NewBrowser(gvr),

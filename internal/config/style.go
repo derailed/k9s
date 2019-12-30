@@ -14,7 +14,9 @@ var (
 	K9sStylesFile = filepath.Join(K9sHome, "skin.yml")
 )
 
+// StyleListener represents a skin's listener.
 type StyleListener interface {
+	// StylesChanged notifies listener the skin changed.
 	StylesChanged(*Styles)
 }
 
@@ -278,10 +280,12 @@ func (s *Styles) BgColor() tcell.Color {
 	return AsColor(s.Body().BgColor)
 }
 
+// AddListener registers a new listener.
 func (s *Styles) AddListener(l StyleListener) {
 	s.listeners = append(s.listeners, l)
 }
 
+// RemoveListener unregister a listener.
 func (s *Styles) RemoveListener(l StyleListener) {
 	victim := -1
 	for i, lis := range s.listeners {
@@ -322,7 +326,7 @@ func (s *Styles) Title() Title {
 	return s.Frame().Title
 }
 
-// Table returns table styles.
+// GetTable returns table styles.
 func (s *Styles) GetTable() Table {
 	return s.K9s.Table
 }

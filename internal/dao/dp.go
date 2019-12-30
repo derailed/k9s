@@ -15,6 +15,7 @@ import (
 	"k8s.io/kubectl/pkg/polymorphichelpers"
 )
 
+// Deployment represents a deployment K8s resource.
 type Deployment struct {
 	Generic
 }
@@ -59,7 +60,7 @@ func (d *Deployment) Restart(path string) error {
 	return err
 }
 
-// Logs tail logs for all pods represented by this Deployment.
+// TailLogs tail logs for all pods represented by this Deployment.
 func (d *Deployment) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
 	o, err := d.Get(string(d.gvr), opts.Path, labels.Everything())
 	if err != nil {

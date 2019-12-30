@@ -56,6 +56,7 @@ func NewFlash(app *App, m string) *Flash {
 	return &f
 }
 
+// StylesChanged notifies listener the skin changed.
 func (f *Flash) StylesChanged(s *config.Styles) {
 	f.SetBackgroundColor(s.BgColor())
 	f.SetTextColor(s.FgColor())

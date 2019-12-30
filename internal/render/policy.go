@@ -68,6 +68,7 @@ func cleanseResource(r string) string {
 	return n
 }
 
+// PolicyRes represents a rback policy rule.
 type PolicyRes struct {
 	Namespace, Binding string
 	Resource, Group    string
@@ -76,6 +77,7 @@ type PolicyRes struct {
 	Verbs              []string
 }
 
+// NewPolicyRes returns a new policy.
 func NewPolicyRes(ns, binding, res, grp string, vv []string) PolicyRes {
 	return PolicyRes{
 		Namespace: ns,
@@ -96,8 +98,10 @@ func (p PolicyRes) DeepCopyObject() runtime.Object {
 	return p
 }
 
+// Policies represents a collection of RBAC policies.
 type Policies []PolicyRes
 
+// Upsert adds a new policy.
 func (pp Policies) Upsert(p PolicyRes) Policies {
 	idx, ok := pp.findPol(p.Resource)
 	if !ok {

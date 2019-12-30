@@ -29,8 +29,8 @@ type Authorizer interface {
 	CanI(ns, gvr string, verbs []string) (bool, error)
 }
 
-// BOZO!! Refactor!
 // Connection represents a Kubenetes apiserver connection.
+// BOZO!! Refactor!
 type Connection interface {
 	Authorizer
 
@@ -203,6 +203,7 @@ func (a *APIClient) RestConfigOrDie() *restclient.Config {
 	return cfg
 }
 
+// CachedDiscovery returns a cached discovery client.
 func (a *APIClient) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
 	a.mx.Lock()
 	defer a.mx.Unlock()

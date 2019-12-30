@@ -32,28 +32,34 @@ func NewLogIndicator(styles *config.Styles) *LogIndicator {
 	return &l
 }
 
+// AutoScroll reports the current scrolling status.
 func (l *LogIndicator) AutoScroll() bool {
 	return atomic.LoadInt32(&l.scrollStatus) == 1
 }
 
+// TextWrap reports the current wrap mode.
 func (l *LogIndicator) TextWrap() bool {
 	return l.textWrap
 }
 
+// FullScreen reports the current screen mode.
 func (l *LogIndicator) FullScreen() bool {
 	return l.fullScreen
 }
 
+// ToggleFullScreen toggles the screen mode.
 func (l *LogIndicator) ToggleFullScreen() {
 	l.fullScreen = !l.fullScreen
 	l.Refresh()
 }
 
+// ToggleTextWrap toggles the wrap mode.
 func (l *LogIndicator) ToggleTextWrap() {
 	l.textWrap = !l.textWrap
 	l.Refresh()
 }
 
+// ToggleAutoScroll toggles the scroll mode.
 func (l *LogIndicator) ToggleAutoScroll() {
 	var val int32 = 1
 	if l.AutoScroll() {
@@ -63,6 +69,7 @@ func (l *LogIndicator) ToggleAutoScroll() {
 	l.Refresh()
 }
 
+// Refresh updates the view.
 func (l *LogIndicator) Refresh() {
 	l.Clear()
 	l.update("Autoscroll: " + l.onOff(l.AutoScroll()))

@@ -19,7 +19,7 @@ var LogoSmall = []string{
 	`        \/            \/ `,
 }
 
-// Logo K9s big logo for splash page.
+// LogoBig K9s big logo for splash page.
 var LogoBig = []string{
 	` ____  __.________      _________ .____    .___ `,
 	`|    |/ _/   __   \_____\_   ___ \|    |   |   |`,

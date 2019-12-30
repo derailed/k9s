@@ -13,18 +13,21 @@ import (
 
 var customViewers MetaViewers
 
+// Command represents a user command.
 type Command struct {
 	app *App
 
 	alias *dao.Alias
 }
 
+// NewCommand returns a new command.
 func NewCommand(app *App) *Command {
 	return &Command{
 		app: app,
 	}
 }
 
+// Init initializes the command.
 func (c *Command) Init() error {
 	c.alias = dao.NewAlias(c.app.factory)
 	if _, err := c.alias.Ensure(); err != nil {

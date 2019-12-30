@@ -1,5 +1,6 @@
 package dao
 
+// PortForward represents a port forward dao.
 type PortForward struct {
 	Generic
 }

@@ -20,7 +20,7 @@ func NewAlias(f Factory) *Alias {
 	}
 }
 
-// ClearAliases remove all aliases.
+// Clear remove all aliases.
 func (a *Alias) Clear() {
 	for k := range a.Alias {
 		delete(a.Alias, k)

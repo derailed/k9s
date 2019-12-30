@@ -56,6 +56,7 @@ func (a *App) ActiveView() model.Component {
 	return a.Content.GetPrimitive("main").(model.Component)
 }
 
+// PrevCmd pops the command stack.
 func (a *App) PrevCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !a.Content.IsLast() {
 		a.Content.Pop()
@@ -64,6 +65,7 @@ func (a *App) PrevCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+// Init initializes the application.
 func (a *App) Init(version string, rate int) error {
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	if err := a.Content.Init(ctx); err != nil {
@@ -112,6 +114,7 @@ func (a *App) Init(version string, rate int) error {
 	return nil
 }
 
+// StylesChanges notifies the skin changed.
 func (a *App) StylesChanged(s *config.Styles) {
 	a.Main.SetBackgroundColor(s.BgColor())
 	if f, ok := a.Main.GetPrimitive("main").(*tview.Flex); ok {
@@ -136,10 +139,10 @@ func (a *App) bindKeys() {
 	})
 }
 
-// Changed indicates the buffer was changed.
+// BufferChanged indicates the buffer was changed.
 func (a *App) BufferChanged(s string) {}
 
-// Active indicates the buff activity changed.
+// BufferActive indicates the buff activity changed.
 func (a *App) BufferActive(state bool, _ ui.BufferKind) {
 	flex, ok := a.Main.GetPrimitive("main").(*tview.Flex)
 	if !ok {
@@ -185,12 +188,14 @@ func (a *App) buildHeader() tview.Primitive {
 	return header
 }
 
+// Halt stop the application event loop.
 func (a *App) Halt() {
 	if a.cancelFn != nil {
 		a.cancelFn()
 	}
 }
 
+// Resume restarts the app event loop.
 func (a *App) Resume() {
 	var ctx context.Context
 	ctx, a.cancelFn = context.WithCancel(context.Background())
@@ -338,6 +343,7 @@ func (a *App) Run() {
 	}
 }
 
+// Status reports a new app status for display.
 func (a *App) Status(l ui.FlashLevel, msg string) {
 	a.Flash().Info(msg)
 	a.setIndicator(l, msg)
@@ -345,7 +351,7 @@ func (a *App) Status(l ui.FlashLevel, msg string) {
 	a.Draw()
 }
 
-// StatusReset reset log back to normal.
+// ClearStatus reset log back to normal.
 func (a *App) ClearStatus() {
 	a.Logo().Reset()
 	a.Flash().Clear()

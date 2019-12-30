@@ -45,7 +45,7 @@ type Tabular interface {
 	AddListener(model.TableListener)
 }
 
-// Selectable represents a table with selections.
+// SelectTable represents a table with selections.
 type SelectTable struct {
 	*tview.Table
 
@@ -120,7 +120,7 @@ func (s *SelectTable) SetSelectedFn(f func(string) string) {
 	s.selectedFn = f
 }
 
-// GetSelectedRow fetch the currently selected row index.
+// GetSelectedRowIndex fetch the currently selected row index.
 func (s *SelectTable) GetSelectedRowIndex() int {
 	return s.selectedRow
 }
@@ -184,6 +184,7 @@ func (s *SelectTable) ToggleMark() {
 	)
 }
 
+// IsMarked returns true if this item was marked.
 func (s *Table) IsMarked(item string) bool {
 	return s.marks[item]
 }

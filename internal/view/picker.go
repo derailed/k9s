@@ -24,6 +24,7 @@ func NewPicker() *Picker {
 	}
 }
 
+// Init initializes the view.
 func (v *Picker) Init(ctx context.Context) error {
 	app, err := extractApp(ctx)
 	if err != nil {
@@ -47,12 +48,17 @@ func (v *Picker) Init(ctx context.Context) error {
 
 	return nil
 }
-func (v *Picker) Start()       {}
-func (v *Picker) Stop()        {}
+
+// Start starts the view.
+func (v *Picker) Start() {}
+
+// Stop stops the view.
+func (v *Picker) Stop() {}
+
+// Name returns the component name.
 func (v *Picker) Name() string { return "picker" }
 
-// Protocol...
-
+// Hints returns the view hints.
 func (v *Picker) Hints() model.MenuHints {
 	return v.actions.Hints()
 }

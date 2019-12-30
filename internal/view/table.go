@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Table represents a table viewer.
 type Table struct {
 	*ui.Table
 
@@ -17,6 +18,7 @@ type Table struct {
 	enterFn EnterFunc
 }
 
+// NewTable returns a new viewer.
 func NewTable(gvr string) *Table {
 	return &Table{
 		Table: ui.NewTable(gvr),

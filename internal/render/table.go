@@ -58,7 +58,7 @@ func (t *TableData) Update(rows Rows) {
 	}
 }
 
-// EnsureDeletes delete items in cache that are no longer valid.
+// Delete delete items in cache that are no longer valid.
 func (t *TableData) Delete(newKeys []string) {
 	for _, re := range t.RowEvents {
 		var found bool

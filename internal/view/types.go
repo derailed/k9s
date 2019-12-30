@@ -10,7 +10,7 @@ type (
 	// EnvFunc represent the current view exposed environment.
 	EnvFunc func() K9sEnv
 
-	// BoostActionFunc extends viewer keyboard actions.
+	// BoostActionsFunc extends viewer keyboard actions.
 	BoostActionsFunc func(ui.KeyActions)
 
 	// EnterFunc represents an enter key action.
@@ -71,16 +71,19 @@ type ResourceViewer interface {
 	SetBindKeysFn(BindKeysFunc)
 }
 
+// LogViewer represents a log viewer.
 type LogViewer interface {
 	ResourceViewer
 
 	ShowLogs(prev bool)
 }
 
+// RestartableViewer represents a viewer with restartable resources.
 type RestartableViewer interface {
 	LogViewer
 }
 
+// ScalableViewer represents a viewer with scalable resources.
 type ScalableViewer interface {
 	LogViewer
 }
@@ -93,6 +96,7 @@ type SubjectViewer interface {
 	SetSubject(s string)
 }
 
+// ViewerFunc returns a viewer matching a given gvr.
 type ViewerFunc func(client.GVR) ResourceViewer
 
 // MetaViewer represents a registered meta viewer.

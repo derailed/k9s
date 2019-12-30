@@ -28,7 +28,7 @@ func TestK9sEnv(t *testing.T) {
 	}
 
 	for k := range uu {
-   u := uu[k]
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			a, err := e.envFor(u.q)
 			assert.Equal(t, u.err, err)

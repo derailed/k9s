@@ -46,6 +46,7 @@ func (a *App) Init() {
 	a.SetRoot(a.Main, true)
 }
 
+// ReloadStyles reloads skin file.
 func (a *App) ReloadStyles(cluster string) {
 	a.RefreshStyles(cluster)
 }

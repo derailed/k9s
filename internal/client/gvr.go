@@ -60,6 +60,7 @@ func (g GVR) ToV() string {
 	return tokens[len(tokens)-2]
 }
 
+// ToRAndG returns the resource and group.
 func (g GVR) ToRAndG() (string, string) {
 	tokens := strings.Split(string(g), "/")
 	switch len(tokens) {
@@ -89,17 +90,20 @@ func (g GVR) ToG() string {
 	}
 }
 
-//
+// GVRs represents a collection of gvr.
 type GVRs []GVR
 
+// Len returns the list size.
 func (g GVRs) Len() int {
 	return len(g)
 }
 
+// Swap swaps list values.
 func (g GVRs) Swap(i, j int) {
 	g[i], g[j] = g[j], g[i]
 }
 
+// Less returns true if i < j.
 func (g GVRs) Less(i, j int) bool {
 	g1, g2 := g[i].ToG(), g[j].ToG()
 

@@ -69,6 +69,7 @@ type Lister interface {
 	Hydrate(oo []runtime.Object, rr render.Rows, r Renderer) error
 }
 
+// Factory represents a K8s resource factory.
 type Factory interface {
 	// Client retrieves an api client.
 	Client() client.Connection

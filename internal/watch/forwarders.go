@@ -39,7 +39,7 @@ func NewForwarders() Forwarders {
 	return make(map[string]Forwarder)
 }
 
-// KillAll stops and delete all port-forwards.
+// DeleteAll stops and delete all port-forwards.
 func (ff Forwarders) DeleteAll() {
 	for k, f := range ff {
 		log.Debug().Msgf("Deleting forwarder %s", f.Path())
@@ -68,6 +68,7 @@ func (ff Forwarders) Kill(path string) int {
 	return stats
 }
 
+// Dump for debug!
 func (ff Forwarders) Dump() {
 	log.Debug().Msgf("----------- PORT-FORWARDS --------------")
 	for k, f := range ff {

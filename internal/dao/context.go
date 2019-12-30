@@ -11,6 +11,7 @@ import (
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+// Context represents a kubenetes context.
 type Context struct {
 	Generic
 }

@@ -119,7 +119,7 @@ func (m *MetricsServer) FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, e
 	return client.MetricsV1beta1().PodMetricses(ns).List(metav1.ListOptions{})
 }
 
-// FetchPodsMetrics return all metrics for pods in a given namespace.
+// FetchPodMetrics return all metrics for pods in a given namespace.
 func (m *MetricsServer) FetchPodMetrics(ns, sel string) (*mv1beta1.PodMetrics, error) {
 	client, err := m.MXDial()
 	if err != nil {

@@ -26,6 +26,7 @@ type Configurator struct {
 	Bench    *config.Bench
 }
 
+// HasSkins returns true if a skin file was located.
 func (c *Configurator) HasSkins() bool {
 	return c.skinFile != ""
 }
