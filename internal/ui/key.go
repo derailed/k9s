@@ -14,6 +14,7 @@ func initKeys() {
 	initNumbKeys()
 	initStdKeys()
 	initShiftKeys()
+	initShiftNumKeys()
 }
 
 // Defines numeric keys for container actions
@@ -164,7 +165,7 @@ func initStdKeys() {
 	tcell.KeyNames[tcell.Key(KeyZ)] = "z"
 }
 
-func initShiftKeys() {
+func initShiftNumKeys() {
 	tcell.KeyNames[tcell.Key(KeyShift0)] = "Shift-0"
 	tcell.KeyNames[tcell.Key(KeyShift1)] = "Shift-1"
 	tcell.KeyNames[tcell.Key(KeyShift2)] = "Shift-2"
@@ -175,7 +176,9 @@ func initShiftKeys() {
 	tcell.KeyNames[tcell.Key(KeyShift7)] = "Shift-7"
 	tcell.KeyNames[tcell.Key(KeyShift8)] = "Shift-8"
 	tcell.KeyNames[tcell.Key(KeyShift9)] = "Shift-9"
+}
 
+func initShiftKeys() {
 	tcell.KeyNames[tcell.Key(KeyShiftA)] = "Shift-A"
 	tcell.KeyNames[tcell.Key(KeyShiftB)] = "Shift-B"
 	tcell.KeyNames[tcell.Key(KeyShiftC)] = "Shift-C"

@@ -3,6 +3,8 @@ package ui
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
@@ -340,9 +342,46 @@ func (t *Table) ShowDeleted() {
 
 // UpdateTitle refreshes the table title.
 func (t *Table) UpdateTitle() {
+	t.SetTitle(t.styleTitle())
+}
+
+// UpdateTitle refreshes the table title.
+func (t *Table) styleTitle() string {
 	ns := t.GetModel().GetNamespace()
 	if ns == render.AllNamespaces {
 		ns = render.NamespaceAll
 	}
-	t.SetTitle(styleTitle(t.GetRowCount(), ns, t.BaseTitle, t.Path, t.cmdBuff.String(), t.styles))
+	rc := t.GetRowCount()
+	if rc > 0 {
+		rc--
+	}
+
+	base, path := strings.Title(t.BaseTitle), t.Path
+	if ns == render.AllNamespaces {
+		ns = render.NamespaceAll
+	}
+	info := ns
+	if path != "" {
+		info = path
+		cns, n := render.Namespaced(path)
+		if cns == render.ClusterScope {
+			info = n
+		}
+	}
+
+	buff := t.SearchBuff().String()
+	var title string
+	if info == "" || info == render.ClusterScope {
+		title = SkinTitle(fmt.Sprintf(titleFmt, base, rc), t.styles.Frame())
+	} else {
+		title = SkinTitle(fmt.Sprintf(nsTitleFmt, base, info, rc), t.styles.Frame())
+	}
+	if buff == "" {
+		return title
+	}
+
+	if IsLabelSelector(buff) {
+		buff = TrimLabelSelector(buff)
+	}
+	return title + SkinTitle(fmt.Sprintf(SearchFmt, buff), t.styles.Frame())
 }
