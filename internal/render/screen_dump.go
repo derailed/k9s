@@ -21,6 +21,7 @@ func (ScreenDump) ColorerFunc() ColorerFunc {
 	}
 }
 
+// DecoratorFunc decorates a string.
 type DecoratorFunc func(string) string
 
 // AgeDecorator represents a timestamped as human column.

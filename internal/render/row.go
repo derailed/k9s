@@ -62,7 +62,7 @@ func (rr Rows) Delete(id string) Rows {
 	return append(rr[:idx], rr[idx+1:]...)
 }
 
-// Upserts adds a new item.
+// Upsert adds a new item.
 func (rr Rows) Upsert(r Row) Rows {
 	idx, ok := rr.Find(r.ID)
 	if !ok {

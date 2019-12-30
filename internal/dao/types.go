@@ -80,7 +80,7 @@ type Runnable interface {
 	Run(path string) error
 }
 
-// Loggers represents a resource that exposes logs.
+// Logger represents a resource that exposes logs.
 type Logger interface {
 	// Logs tails a resource logs.
 	Logs(path string, opts *v1.PodLogOptions) *restclient.Request

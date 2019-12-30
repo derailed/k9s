@@ -13,7 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// ScaleExtenders adds scaling extensions.
+// ScaleExtender adds scaling extensions.
 type ScaleExtender struct {
 	ResourceViewer
 }

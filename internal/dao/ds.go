@@ -51,7 +51,7 @@ func (d *DaemonSet) Restart(path string) error {
 	return err
 }
 
-// Logs tail logs for all pods represented by this DaemonSet.
+// TailLogs tail logs for all pods represented by this DaemonSet.
 func (d *DaemonSet) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
 	o, err := d.Get("apps/v1/daemonsets", opts.Path, labels.Everything())
 	if err != nil {

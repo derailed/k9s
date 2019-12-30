@@ -77,7 +77,7 @@ func (d *Details) Update(buff string) *Details {
 	return d
 }
 
-// SetSubjects updates the subject.
+// SetSubject updates the subject.
 func (d *Details) SetSubject(s string) {
 	d.subject = s
 }
