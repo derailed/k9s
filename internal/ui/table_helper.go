@@ -75,6 +75,7 @@ func TrimLabelSelector(s string) string {
 	return strings.TrimSpace(s[2:])
 }
 
+// SkinTitle decorates a title.
 func SkinTitle(fmat string, style config.Frame) string {
 	fmat = strings.Replace(fmat, "[fg:bg", "["+style.Title.FgColor+":"+style.Title.BgColor, -1)
 	fmat = strings.Replace(fmat, "[hilite", "["+style.Title.HighlightColor, 1)

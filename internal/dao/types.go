@@ -12,6 +12,7 @@ import (
 	restclient "k8s.io/client-go/rest"
 )
 
+// Factory represents a resource factory.
 type Factory interface {
 	// Client retrieves an api client.
 	Client() client.Connection
@@ -49,7 +50,9 @@ type Loggable interface {
 	TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error
 }
 
+// Scalable represents resources that can scale.
 type Scalable interface {
+	// Scale scales a resource up or down.
 	Scale(path string, replicas int32) error
 }
 
@@ -79,5 +82,6 @@ type Runnable interface {
 
 // Loggers represents a resource that exposes logs.
 type Logger interface {
+	// Logs tails a resource logs.
 	Logs(path string, opts *v1.PodLogOptions) *restclient.Request
 }

@@ -21,6 +21,7 @@ func (h Header) Clone() Header {
 // HeaderRow represents a table header.
 type HeaderRow []Header
 
+// Clone duplicates a header.
 func (hh HeaderRow) Clone() HeaderRow {
 	h := make(HeaderRow, len(hh))
 	for i, v := range hh {
@@ -44,9 +45,9 @@ func (hh HeaderRow) Changed(h HeaderRow) bool {
 }
 
 // Columns return header  as a collection of strings.
-func (h HeaderRow) Columns() []string {
-	cc := make([]string, len(h))
-	for i, c := range h {
+func (hh HeaderRow) Columns() []string {
+	cc := make([]string, len(hh))
+	for i, c := range hh {
 		cc[i] = c.Name
 	}
 
@@ -54,8 +55,8 @@ func (h HeaderRow) Columns() []string {
 }
 
 // HasAge returns true if table has an age column.
-func (h HeaderRow) HasAge() bool {
-	for _, r := range h {
+func (hh HeaderRow) HasAge() bool {
+	for _, r := range hh {
 		if r.Name == ageCol {
 			return true
 		}
@@ -65,9 +66,9 @@ func (h HeaderRow) HasAge() bool {
 }
 
 // AgeCol checks if given column index is the age column.
-func (h HeaderRow) AgeCol(col int) bool {
-	if !h.HasAge() {
+func (hh HeaderRow) AgeCol(col int) bool {
+	if !hh.HasAge() {
 		return false
 	}
-	return col == len(h)-1
+	return col == len(hh)-1
 }

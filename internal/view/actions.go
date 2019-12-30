@@ -9,6 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Runner represents a runnable action handler.
 type Runner interface {
 	App() *App
 	GetSelectedItem() string
@@ -50,7 +51,6 @@ func inScope(scopes, aliases []string) bool {
 func hotKeyActions(r Runner, aa ui.KeyActions) {
 	hh := config.NewHotKeys()
 	if err := hh.Load(); err != nil {
-		log.Warn().Msgf("No HotKey configuration found")
 		return
 	}
 

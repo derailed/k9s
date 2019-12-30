@@ -62,6 +62,7 @@ func (rr Rows) Delete(id string) Rows {
 	return append(rr[:idx], rr[idx+1:]...)
 }
 
+// Upserts adds a new item.
 func (rr Rows) Upsert(r Row) Rows {
 	idx, ok := rr.Find(r.ID)
 	if !ok {
@@ -113,6 +114,7 @@ func (s RowSorter) Less(i, j int) bool {
 // ----------------------------------------------------------------------------
 // Helpers...
 
+// Less return true if c1 < c2.
 func Less(asc bool, c1, c2 string) bool {
 	if o, ok := isDurationSort(asc, c1, c2); ok {
 		return o

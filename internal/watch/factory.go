@@ -71,7 +71,7 @@ func (f *Factory) Get(gvr, path string, sel labels.Selector) (runtime.Object, er
 	return inf.Lister().ByNamespace(ns).Get(n)
 }
 
-// WaitForCachesync waits for all factories to update their cache.
+// WaitForCacheSync waits for all factories to update their cache.
 func (f *Factory) WaitForCacheSync() {
 	for _, fac := range f.factories {
 		m := fac.WaitForCacheSync(f.stopChan)
@@ -98,7 +98,7 @@ func (f *Factory) Terminate() {
 	f.forwarders.DeleteAll()
 }
 
-// RegisterForwarder registers a new portforward for a given container.
+// AddForwarder registers a new portforward for a given container.
 func (f *Factory) AddForwarder(pf Forwarder) {
 	f.forwarders[pf.Path()] = pf
 }
@@ -114,7 +114,7 @@ func (f *Factory) DeleteForwarder(path string) {
 	delete(f.forwarders, path)
 }
 
-// Forwards returns all portforwards.
+// Forwarders returns all portforwards.
 func (f *Factory) Forwarders() Forwarders {
 	return f.forwarders
 }
@@ -133,6 +133,7 @@ func (f *Factory) Start(stopChan chan struct{}) {
 	}
 }
 
+// SetActive sets the active namespace.
 // BOZO!! Check ns access for resource??
 func (f *Factory) SetActive(ns string) {
 	if !f.isClusterWide() {
@@ -222,6 +223,7 @@ func (f *Factory) Client() client.Connection {
 // ----------------------------------------------------------------------------
 // Helpers...
 
+// Dump for debug.
 func (f *Factory) Dump() {
 	log.Debug().Msgf("----------- FACTORIES -------------")
 	for ns := range f.factories {
@@ -230,6 +232,7 @@ func (f *Factory) Dump() {
 	log.Debug().Msgf("-----------------------------------")
 }
 
+// Debug for debug.
 func (f *Factory) Debug(gvr string) {
 	log.Debug().Msgf("----------- DEBUG FACTORY (%s) -------------", gvr)
 	inf := f.factories[allNamespaces].ForResource(toGVR(gvr))
@@ -238,6 +241,7 @@ func (f *Factory) Debug(gvr string) {
 	}
 }
 
+// Show for debug.
 func (f *Factory) Show(ns, gvr string) {
 	log.Debug().Msgf("----------- SHOW FACTORIES %q -------------", ns)
 	inf := f.ForResource(ns, gvr)

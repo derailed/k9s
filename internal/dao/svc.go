@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// Service represents a k8s service.
 type Service struct {
 	Generic
 }
@@ -18,7 +19,7 @@ type Service struct {
 var _ Accessor = &Service{}
 var _ Loggable = &Service{}
 
-// Logs tail logs for all pods represented by this Service.
+// TailLogs tail logs for all pods represented by this Service.
 func (s *Service) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
 	o, err := s.Get(string(s.gvr), opts.Path, labels.Everything())
 	if err != nil {

@@ -7,6 +7,7 @@ import (
 	"k8s.io/kubectl/pkg/describe/versioned"
 )
 
+// Describe describes a resource.
 func Describe(c client.Connection, gvr client.GVR, ns, n string) (string, error) {
 	mapper := RestMapper{Connection: c}
 	m, err := mapper.ToRESTMapper()

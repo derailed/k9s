@@ -29,6 +29,7 @@ func NewKeyAction(d string, a ActionHandler, display bool) KeyAction {
 	return KeyAction{Description: d, Action: a, Visible: display}
 }
 
+// NewSharedKeyAction returns a new shared keyboard action.
 func NewSharedKeyAction(d string, a ActionHandler, display bool) KeyAction {
 	return KeyAction{Description: d, Action: a, Visible: display, Shared: true}
 }
@@ -40,14 +41,14 @@ func (a KeyActions) Add(aa KeyActions) {
 	}
 }
 
-// Clear
+// Clear remove all actions.
 func (a KeyActions) Clear() {
 	for k := range a {
 		delete(a, k)
 	}
 }
 
-// SetActions replace actions with new ones.
+// Set replace actions with new ones.
 func (a KeyActions) Set(aa KeyActions) {
 	for k, v := range aa {
 		a[k] = v

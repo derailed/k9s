@@ -13,10 +13,12 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// Policy represent rbac policy.
 type Policy struct {
 	Resource
 }
 
+// List returns available policies.
 func (p *Policy) List(ctx context.Context) ([]runtime.Object, error) {
 	gvr, ok := ctx.Value(internal.KeyGVR).(string)
 	if !ok {

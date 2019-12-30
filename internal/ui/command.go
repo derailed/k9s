@@ -35,6 +35,7 @@ func NewCommand(styles *config.Styles) *Command {
 	return &c
 }
 
+// StylesChanged notifies skin changed.
 func (c *Command) StylesChanged(s *config.Styles) {
 	c.styles = s
 	c.SetBackgroundColor(s.BgColor())

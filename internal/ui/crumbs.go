@@ -33,6 +33,7 @@ func NewCrumbs(styles *config.Styles) *Crumbs {
 	return &c
 }
 
+// StylesChanged notifies skin changed.
 func (c *Crumbs) StylesChanged(s *config.Styles) {
 	c.styles = s
 	c.SetBackgroundColor(s.BgColor())

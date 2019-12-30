@@ -15,6 +15,7 @@ type Resource struct {
 	factory        Factory
 }
 
+// Init initializes the model.
 func (r *Resource) Init(ns, gvr string, f Factory) {
 	r.namespace, r.gvr, r.factory = ns, gvr, f
 }
@@ -29,7 +30,7 @@ func (r *Resource) List(ctx context.Context) ([]runtime.Object, error) {
 	return r.factory.List(r.gvr, r.namespace, lsel)
 }
 
-// Render returns a node as a row.
+// Hydrate renders all rows.
 func (r *Resource) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
 	for i, o := range oo {
 		if err := re.Render(o, r.namespace, &rr[i]); err != nil {

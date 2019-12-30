@@ -13,10 +13,12 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// ScaleExtenders adds scaling extensions.
 type ScaleExtender struct {
 	ResourceViewer
 }
 
+// NewScaleExtender returns a new extender.
 func NewScaleExtender(r ResourceViewer) ResourceViewer {
 	s := ScaleExtender{ResourceViewer: r}
 	s.bindKeys(s.Actions())

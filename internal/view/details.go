@@ -59,6 +59,7 @@ func (d *Details) Init(_ context.Context) error {
 	return nil
 }
 
+// StylesChanged notifies the skin changed.
 func (d *Details) StylesChanged(s *config.Styles) {
 	d.SetBackgroundColor(d.app.Styles.BgColor())
 	d.SetTextColor(d.app.Styles.FgColor())
@@ -67,6 +68,7 @@ func (d *Details) StylesChanged(s *config.Styles) {
 	d.Update(d.buff)
 }
 
+// Update updates the view content.
 func (d *Details) Update(buff string) *Details {
 	d.buff = buff
 	d.SetText(colorizeYAML(d.app.Styles.Views().Yaml, buff))
@@ -75,6 +77,12 @@ func (d *Details) Update(buff string) *Details {
 	return d
 }
 
+// SetSubjects updates the subject.
+func (d *Details) SetSubject(s string) {
+	d.subject = s
+}
+
+// Actions returns menu actions
 func (d *Details) Actions() ui.KeyActions {
 	return d.actions
 }
@@ -130,10 +138,6 @@ func (d *Details) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 		d.app.Flash().Err(err)
 	}
 	return nil
-}
-
-func (d *Details) SetSubject(s string) {
-	d.subject = s
 }
 
 func (d *Details) updateTitle() {

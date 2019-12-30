@@ -20,6 +20,7 @@ import (
 	"k8s.io/kubectl/pkg/polymorphichelpers"
 )
 
+// DaemonSet represents a K8s daemonset.
 type DaemonSet struct {
 	Generic
 }

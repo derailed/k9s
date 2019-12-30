@@ -8,11 +8,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// Pages represents a stack of view pages.
 type Pages struct {
 	*tview.Pages
 	*model.Stack
 }
 
+// NewPages return a new view.
 func NewPages() *Pages {
 	p := Pages{
 		Pages: tview.NewPages(),
@@ -23,10 +25,12 @@ func NewPages() *Pages {
 	return &p
 }
 
+// Show displays a given page.
 func (p *Pages) Show(c model.Component) {
 	p.SwitchToPage(componentID(c))
 }
 
+// Current returns the current component.
 func (p *Pages) Current() model.Component {
 	c := p.CurrentPage()
 	if c == nil {
@@ -52,7 +56,8 @@ func (p *Pages) delete(c model.Component) {
 	p.RemovePage(componentID(c))
 }
 
-func (p *Pages) DumpPages() {
+// Dump for debug.
+func (p *Pages) Dump() {
 	log.Debug().Msgf("Dumping Pages %p", p)
 	for i, c := range p.Stack.Peek() {
 		log.Debug().Msgf("%d -- %s -- %#v", i, componentID(c), p.GetPrimitive(componentID(c)))
@@ -61,14 +66,17 @@ func (p *Pages) DumpPages() {
 
 // Stack Protocol...
 
+// StackPushed notifies a new component was pushed.
 func (p *Pages) StackPushed(c model.Component) {
 	p.addAndShow(c)
 }
 
+// StackPopped notifies a component was removed.
 func (p *Pages) StackPopped(o, top model.Component) {
 	p.delete(o)
 }
 
+// StackTop notifies a new component is at the top of the stack.
 func (p *Pages) StackTop(top model.Component) {
 	if top == nil {
 		return

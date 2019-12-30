@@ -36,7 +36,7 @@ func NewStatusIndicator(app *App, styles *config.Styles) *StatusIndicator {
 	return &s
 }
 
-// StyleChanged notifies the skins changed.
+// StylesChanged notifies the skins changed.
 func (s *StatusIndicator) StylesChanged(styles *config.Styles) {
 	s.styles = styles
 	s.SetBackgroundColor(styles.BgColor())

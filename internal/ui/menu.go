@@ -41,15 +41,18 @@ func NewMenu(styles *config.Styles) *Menu {
 	return &m
 }
 
+// StylesChanged notifies skin changed.
 func (m *Menu) StylesChanged(s *config.Styles) {
 	m.styles = s
 	m.SetBackgroundColor(s.BgColor())
 }
 
+// StackPushed notifies a component was added.
 func (m *Menu) StackPushed(c model.Component) {
 	m.HydrateMenu(c.Hints())
 }
 
+// StackPopped notifies a component was removed.
 func (m *Menu) StackPopped(o, top model.Component) {
 	if top != nil {
 		m.HydrateMenu(top.Hints())
@@ -58,6 +61,7 @@ func (m *Menu) StackPopped(o, top model.Component) {
 	}
 }
 
+// StackTop notifies the top component.
 func (m *Menu) StackTop(t model.Component) {
 	m.HydrateMenu(t.Hints())
 }

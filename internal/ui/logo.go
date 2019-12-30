@@ -32,14 +32,17 @@ func NewLogo(styles *config.Styles) *Logo {
 	return &l
 }
 
+// Logo returns the logo viewer.
 func (l *Logo) Logo() *tview.TextView {
 	return l.logo
 }
 
+// Status returns the status viewer.
 func (l *Logo) Status() *tview.TextView {
 	return l.status
 }
 
+// StylesChanged notifies the skin changed.
 func (l *Logo) StylesChanged(s *config.Styles) {
 	l.styles = s
 	l.Reset()

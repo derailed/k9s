@@ -4,6 +4,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 )
 
+// Registy tracks resources metadata.
 // BOZO!! Break up deps and merge into single registrar
 var Registry = map[string]ResourceMeta{
 	// Custom...

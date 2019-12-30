@@ -14,8 +14,8 @@ type Generic struct {
 }
 
 // Init initializes the resource.
-func (r *Generic) Init(f Factory, gvr client.GVR) {
-	r.Factory, r.gvr = f, gvr
+func (g *Generic) Init(f Factory, gvr client.GVR) {
+	g.Factory, g.gvr = f, gvr
 }
 
 // Delete a Generic.

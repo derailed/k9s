@@ -96,6 +96,7 @@ func (c *Configurator) RefreshStyles(cluster string) {
 
 	if err := c.Styles.Load(config.K9sStylesFile); err != nil {
 		log.Info().Msgf("No skin file found -- %s. Loading stock skins.", config.K9sStylesFile)
+		c.updateStyles("")
 		return
 	}
 	c.updateStyles(config.K9sStylesFile)

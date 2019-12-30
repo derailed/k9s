@@ -4,6 +4,7 @@ import (
 	"os"
 )
 
+// ScreenDump represents a scraped resources.
 type ScreenDump struct {
 	Generic
 }

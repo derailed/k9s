@@ -210,7 +210,7 @@ func (l *Log) updateLogs(ctx context.Context, c <-chan string, buffSize int) {
 	}
 }
 
-// ScrollIndicator returns the scroll mode viewer.
+// Indicator returns the scroll mode viewer.
 func (l *Log) Indicator() *LogIndicator {
 	return l.indicator
 }

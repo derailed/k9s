@@ -14,6 +14,7 @@ type Generic struct {
 	table *metav1beta1.Table
 }
 
+// SetTable sets the tabular resource.
 func (g *Generic) SetTable(t *metav1beta1.Table) {
 	g.table = t
 }

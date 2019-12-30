@@ -121,6 +121,7 @@ func (c *CmdBuff) AddListener(w ...BuffWatcher) {
 	c.listeners = append(c.listeners, w...)
 }
 
+// RemoveListener unregisters a listener.
 func (c *CmdBuff) RemoveListener(l BuffWatcher) {
 	victim := -1
 	for i, lis := range c.listeners {

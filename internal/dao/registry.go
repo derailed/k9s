@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// MetaViewers represents a collection of meta viewers.
+// ResourceMetas represents a collection of resource metadata.
 type ResourceMetas map[client.GVR]metav1.APIResource
 
 // Accessors represents a collection of dao accessors.
@@ -55,6 +55,7 @@ func RegisterMeta(gvr string, res metav1.APIResource) {
 	resMetas[client.GVR(gvr)] = res
 }
 
+// AllGVRs returns all cluster resources.
 func AllGVRs() client.GVRs {
 	kk := make(client.GVRs, 0, len(resMetas))
 	for k := range resMetas {
@@ -85,7 +86,7 @@ func IsK9sMeta(m metav1.APIResource) bool {
 	return false
 }
 
-// Load hydrates server preferred+CRDs resource metadata.
+// LoadResources hydrates server preferred+CRDs resource metadata.
 func LoadResources(f Factory) error {
 	resMetas = make(ResourceMetas, 100)
 	if err := loadPreferred(f, resMetas); err != nil {

@@ -52,8 +52,8 @@ func NewTable(gvr string) *Table {
 	}
 }
 
+// Init initializes the component.
 func (t *Table) Init(ctx context.Context) {
-
 	t.SetFixed(1, 0)
 	t.SetBorder(true)
 	t.SetBorderAttributes(tcell.AttrBold)
@@ -61,14 +61,16 @@ func (t *Table) Init(ctx context.Context) {
 	t.SetSelectable(true, false)
 	t.SetSelectionChangedFunc(t.selectionChanged)
 	t.SetInputCapture(t.keyboard)
-	t.StylesChanged(mustExtractSyles(ctx))
+
+	t.styles = mustExtractSyles(ctx)
+	t.StylesChanged(t.styles)
 }
 
+// StylesChanged notifies the skin changed.
 func (t *Table) StylesChanged(s *config.Styles) {
-	t.styles = s
-	t.SetBackgroundColor(config.AsColor(t.styles.GetTable().BgColor))
-	t.SetBorderColor(config.AsColor(t.styles.GetTable().FgColor))
-	t.SetBorderFocusColor(config.AsColor(t.styles.Frame().Border.FocusColor))
+	t.SetBackgroundColor(config.AsColor(s.GetTable().BgColor))
+	t.SetBorderColor(config.AsColor(s.GetTable().FgColor))
+	t.SetBorderFocusColor(config.AsColor(s.Frame().Border.FocusColor))
 	t.SetSelectedStyle(
 		tcell.ColorBlack,
 		config.AsColor(t.styles.GetTable().CursorColor),
@@ -118,6 +120,7 @@ func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
+// Hints returns the view hints.
 func (t *Table) Hints() model.MenuHints {
 	return t.actions.Hints()
 }
@@ -261,7 +264,6 @@ func (t *Table) buildRow(ns string, r int, re render.RowEvent, header render.Hea
 		c.SetAlign(header[col].Align)
 		c.SetTextColor(color(ns, re))
 		if marked {
-			log.Debug().Msgf("Marked!")
 			c.SetTextColor(config.AsColor(t.styles.GetTable().MarkColor))
 		}
 		if col == 0 {
@@ -271,6 +273,7 @@ func (t *Table) buildRow(ns string, r int, re render.RowEvent, header render.Hea
 	}
 }
 
+// ClearMarks clear out marked items.
 func (t *Table) ClearMarks() {
 	t.marks = map[string]bool{}
 	t.Refresh()
@@ -281,6 +284,7 @@ func (t *Table) Refresh() {
 	t.Update(t.model.Peek())
 }
 
+// GetSelectedRow returns the entire selected row.
 func (t *Table) GetSelectedRow() render.Row {
 	return t.model.Peek().RowEvents[t.GetSelectedRowIndex()].Row
 }

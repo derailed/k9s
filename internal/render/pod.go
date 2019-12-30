@@ -41,16 +41,16 @@ func (p Pod) ColorerFunc() ColorerFunc {
 
 		switch status {
 		case ContainerCreating, PodInitializing:
-			return AddColor
+			c = AddColor
 		case Initialized:
-			return HighlightColor
+			c = HighlightColor
 		case Completed:
-			return CompletedColor
+			c = CompletedColor
 		case Running:
 		case Terminating:
-			return KillColor
+			c = KillColor
 		default:
-			return ErrColor
+			c = ErrColor
 		}
 
 		return c

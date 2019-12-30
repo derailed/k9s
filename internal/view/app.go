@@ -114,7 +114,7 @@ func (a *App) Init(version string, rate int) error {
 	return nil
 }
 
-// StylesChanges notifies the skin changed.
+// StylesChanged notifies the skin changed.
 func (a *App) StylesChanged(s *config.Styles) {
 	a.Main.SetBackgroundColor(s.BgColor())
 	if f, ok := a.Main.GetPrimitive("main").(*tview.Flex); ok {

@@ -54,7 +54,7 @@ func (p *Pod) List(ctx context.Context) ([]runtime.Object, error) {
 	return res, nil
 }
 
-// Render returns pod resources as rows.
+// Hydrate returns pod resources as rows.
 func (p *Pod) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
 	mx := client.NewMetricsServer(p.factory.Client())
 	mmx, err := mx.FetchPodsMetrics(p.namespace)

@@ -64,7 +64,7 @@ func (p *Pod) Containers(path string, includeInit bool) ([]string, error) {
 	return cc, nil
 }
 
-// Logs tails a given container logs
+// TailLogs tails a given container logs
 func (p *Pod) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
 	if !opts.HasContainer() {
 		return p.logs(ctx, c, opts)
@@ -72,7 +72,6 @@ func (p *Pod) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) er
 	return tailLogs(ctx, p, c, opts)
 }
 
-// PodLogs tail logs for all containers in a running Pod.
 func (p *Pod) logs(ctx context.Context, c chan<- string, opts LogOptions) error {
 	fac, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
 	if !ok {

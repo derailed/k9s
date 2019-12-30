@@ -80,7 +80,7 @@ func (s *Stack) AddListener(l StackListener) {
 }
 
 // Dump prints out the stack.
-func (s *Stack) DumpStack() {
+func (s *Stack) Dump() {
 	log.Debug().Msgf("--- Stack Dump %p---", s)
 	for i, c := range s.components {
 		log.Debug().Msgf("%d -- %s -- %#v", i, c.Name(), c)

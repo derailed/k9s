@@ -48,6 +48,7 @@ func (s Subject) Render(o interface{}, ns string, r *Row) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
+// SubjectRef represents a subject rule.
 type SubjectRef struct {
 	Name, Kind, FirstLocation string
 }

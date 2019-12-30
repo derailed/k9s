@@ -20,7 +20,7 @@ type Benchmark struct {
 	ResourceViewer
 }
 
-// NewBench returns a new viewer.
+// NewBenchmark returns a new viewer.
 func NewBenchmark(gvr client.GVR) ResourceViewer {
 	b := Benchmark{
 		ResourceViewer: NewBrowser(gvr),
