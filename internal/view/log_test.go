@@ -66,7 +66,7 @@ func TestLogViewNav(t *testing.T) {
 	v.toggleAutoScrollCmd(nil)
 
 	r, _ := v.Logs().GetScrollOffset()
-	assert.Equal(t, -1, r)
+	assert.Equal(t, 0, r)
 }
 
 func TestLogViewClear(t *testing.T) {
