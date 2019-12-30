@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
@@ -14,7 +15,7 @@ import (
 
 func TestTableNew(t *testing.T) {
 	v := ui.NewTable("fred")
-	ctx := context.WithValue(context.Background(), ui.KeyStyles, config.NewStyles())
+	ctx := context.WithValue(context.Background(), internal.KeyStyles, config.NewStyles())
 	v.Init(ctx)
 
 	assert.Equal(t, "fred", v.BaseTitle)
@@ -22,7 +23,7 @@ func TestTableNew(t *testing.T) {
 
 func TestTableUpdate(t *testing.T) {
 	v := ui.NewTable("fred")
-	ctx := context.WithValue(context.Background(), ui.KeyStyles, config.NewStyles())
+	ctx := context.WithValue(context.Background(), internal.KeyStyles, config.NewStyles())
 	v.Init(ctx)
 
 	v.Update(makeTableData())
@@ -33,7 +34,7 @@ func TestTableUpdate(t *testing.T) {
 
 func TestTableSelection(t *testing.T) {
 	v := ui.NewTable("fred")
-	ctx := context.WithValue(context.Background(), ui.KeyStyles, config.NewStyles())
+	ctx := context.WithValue(context.Background(), internal.KeyStyles, config.NewStyles())
 	v.Init(ctx)
 	m := &testModel{}
 	v.SetModel(m)

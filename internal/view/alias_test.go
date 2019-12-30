@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
@@ -67,8 +68,8 @@ func (b *buffL) BufferActive(state bool, kind ui.BufferKind) {
 
 func makeContext() context.Context {
 	a := view.NewApp(config.NewConfig(ks{}))
-	ctx := context.WithValue(context.Background(), ui.KeyApp, a)
-	return context.WithValue(ctx, ui.KeyStyles, a.Styles)
+	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
+	return context.WithValue(ctx, internal.KeyStyles, a.Styles)
 }
 
 type ks struct{}

@@ -67,25 +67,6 @@ func fileToSubject(path string) string {
 	return ee[0] + "/" + ee[1]
 }
 
-// BOZO!!
-// func (b *Benchmark) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
-// 	if !b.GetTable().RowSelected() {
-// 		return nil
-// 	}
-
-// 	sel, file := b.GetTable().GetSelectedItem(), b.benchFile()
-// 	dir := filepath.Join(perf.K9sBenchDir, b.App().Config.K9s.CurrentCluster)
-// 	showModal(b.App().Content.Pages, fmt.Sprintf("Delete benchmark `%s?", file), func() {
-// 		if err := os.Remove(filepath.Join(dir, file)); err != nil {
-// 			b.App().Flash().Errf("Unable to delete file %s", err)
-// 			return
-// 		}
-// 		b.App().Flash().Infof("Benchmark %s deleted!", sel)
-// 	})
-
-// 	return nil
-// }
-
 func (b *Benchmark) benchFile() string {
 	r := b.GetTable().GetSelectedRowIndex()
 	return ui.TrimCell(b.GetTable().SelectTable, r, 7)

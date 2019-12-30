@@ -4,7 +4,6 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
 )
 
 func loadCustomViewers() MetaViewers {
@@ -122,11 +121,9 @@ func extRes(vv MetaViewers) {
 }
 
 func showCRD(app *App, ns, gvr, path string) {
-	log.Debug().Msgf(">>> CRD View %q -- %q -- %q", ns, gvr, path)
 	_, crdGVR := client.Namespaced(path)
-	log.Debug().Msgf("CRD %q", crdGVR)
 	tokens := strings.Split(crdGVR, ".")
-	if err := app.gotoResource(tokens[0]); err != nil {
+	if err := app.gotoResource(tokens[0], false); err != nil {
 		app.Flash().Err(err)
 	}
 }

@@ -5,10 +5,8 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	// ext "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	// "k8s.io/apimachinery/pkg/runtime"
 )
 
 // CustomResourceDefinition renders a K8s CustomResourceDefinition to screen.
@@ -33,15 +31,6 @@ func (CustomResourceDefinition) Render(o interface{}, ns string, r *Row) error {
 	if !ok {
 		return fmt.Errorf("Expected CustomResourceDefinition, but got %T", o)
 	}
-
-	// BOZO!!
-	// log.Debug().Msgf("CRDO %#v", crd)
-	// var cr ext.CustomResourceDefinition
-	// err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cr)
-	// if err != nil {
-	// 	return err
-	// }
-	// log.Debug().Msgf("\n%#v", cr)
 
 	meta, ok := crd.Object["metadata"].(map[string]interface{})
 	if !ok {

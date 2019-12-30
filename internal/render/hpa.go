@@ -42,6 +42,7 @@ func (h HorizontalPodAutoscaler) Render(o interface{}, ns string, r *Row) error 
 	if !ok {
 		return fmt.Errorf("Expected HorizontalPodAutoscaler, but got %T", o)
 	}
+
 	var hpa autoscalingv1.HorizontalPodAutoscaler
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &hpa)
 	if err != nil {

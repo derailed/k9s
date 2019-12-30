@@ -22,4 +22,6 @@ const (
 	KeySubjectName ContextKey = "subjectName"
 	KeyNamespace   ContextKey = "namespace"
 	KeyCluster     ContextKey = "cluster"
+	KeyApp         ContextKey = "app"
+	KeyStyles      ContextKey = "styles"
 )

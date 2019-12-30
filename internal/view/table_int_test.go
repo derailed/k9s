@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
@@ -64,10 +65,8 @@ func TestTableViewFilter(t *testing.T) {
 	v.SetModel(&testTableModel{})
 	v.SearchBuff().SetActive(true)
 	v.SearchBuff().Set("blee")
-	v.filterCmd(nil)
+	v.Refresh()
 	assert.Equal(t, 2, v.GetRowCount())
-	v.resetCmd(nil)
-	assert.Equal(t, 3, v.GetRowCount())
 }
 
 func TestTableViewSort(t *testing.T) {
@@ -129,8 +128,8 @@ func makeTableData() render.TableData {
 
 func makeContext() context.Context {
 	a := NewApp(config.NewConfig(ks{}))
-	ctx := context.WithValue(context.Background(), ui.KeyApp, a)
-	return context.WithValue(ctx, ui.KeyStyles, a.Styles)
+	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
+	return context.WithValue(ctx, internal.KeyStyles, a.Styles)
 }
 
 type ks struct{}

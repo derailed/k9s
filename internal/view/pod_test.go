@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,5 +23,5 @@ func TestPodNew(t *testing.T) {
 
 func makeCtx() context.Context {
 	cfg := config.NewConfig(ks{})
-	return context.WithValue(context.Background(), ui.KeyApp, view.NewApp(cfg))
+	return context.WithValue(context.Background(), internal.KeyApp, view.NewApp(cfg))
 }

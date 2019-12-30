@@ -67,6 +67,7 @@ func (b *Browser) Init(ctx context.Context) error {
 		}
 	}
 
+	b.bindKeys()
 	if b.bindKeysFn != nil {
 		b.bindKeysFn(b.Actions())
 	}
@@ -88,6 +89,13 @@ func (b *Browser) Init(ctx context.Context) error {
 	return nil
 }
 
+func (b *Browser) bindKeys() {
+	b.Actions().Add(ui.KeyActions{
+		tcell.KeyEscape: ui.NewSharedKeyAction("Filter Reset", b.resetCmd, false),
+		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", b.filterCmd, false),
+	})
+}
+
 // Start initializes browser updates.
 func (b *Browser) Start() {
 	b.Stop()
@@ -102,6 +110,42 @@ func (b *Browser) Start() {
 		b.Path = path
 	}
 	b.GetModel().Watch(ctx)
+}
+
+func (b *Browser) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !b.SearchBuff().InCmdMode() {
+		b.SearchBuff().Reset()
+		return b.App().PrevCmd(evt)
+	}
+
+	cmd := b.SearchBuff().String()
+	b.App().Flash().Info("Clearing filter...")
+	b.SearchBuff().Reset()
+
+	if ui.IsLabelSelector(cmd) {
+		b.Start()
+	} else {
+		b.Refresh()
+	}
+
+	return nil
+}
+
+func (b *Browser) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !b.SearchBuff().IsActive() {
+		return evt
+	}
+
+	b.SearchBuff().SetActive(false)
+
+	cmd := b.SearchBuff().String()
+	if ui.IsLabelSelector(cmd) {
+		b.Start()
+		return nil
+	}
+	b.Refresh()
+
+	return nil
 }
 
 // Stop terminates browser updates.
@@ -256,10 +300,17 @@ func (b *Browser) describeResource(app *App, _, _, sel string) {
 	}
 
 	details := NewDetails("Describe")
+	ctx := context.WithValue(context.Background(), internal.KeyApp, b.App())
+	if err := details.Init(ctx); err != nil {
+		log.Error().Err(err).Msg("Details init failed")
+		return
+	}
 	details.SetSubject(sel)
 	details.SetTextColor(b.app.Styles.FgColor())
-	details.SetText(colorizeYAML(b.app.Styles.Views().Yaml, yaml))
-	details.ScrollToBeginning()
+	details.Update(yaml)
+	// BOZO!!
+	// details.SetText(colorizeYAML(b.app.Styles.Views().Yaml, yaml))
+	// details.ScrollToBeginning()
 	if err := b.app.inject(details); err != nil {
 		b.app.Flash().Err(err)
 	}
@@ -397,7 +448,11 @@ func (b *Browser) defaultContext() context.Context {
 	ctx = context.WithValue(ctx, internal.KeyFactory, b.app.factory)
 	ctx = context.WithValue(ctx, internal.KeyGVR, string(b.gvr))
 	ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
+
 	ctx = context.WithValue(ctx, internal.KeyLabels, "")
+	if ui.IsLabelSelector(b.SearchBuff().String()) {
+		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(b.SearchBuff().String()))
+	}
 	ctx = context.WithValue(ctx, internal.KeyFields, "")
 	ctx = context.WithValue(ctx, internal.KeyNamespace, b.App().Config.ActiveNamespace())
 

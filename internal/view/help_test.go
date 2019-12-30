@@ -3,8 +3,8 @@ package view_test
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/stretchr/testify/assert"
 )
@@ -12,7 +12,7 @@ import (
 func TestHelp(t *testing.T) {
 	ctx := makeCtx()
 
-	app := ctx.Value(ui.KeyApp).(*view.App)
+	app := ctx.Value(internal.KeyApp).(*view.App)
 	po := view.NewPod(client.GVR("v1/pods"))
 	po.Init(ctx)
 	app.Content.Push(po)

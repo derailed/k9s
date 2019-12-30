@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
@@ -36,7 +37,7 @@ var (
 )
 
 func mustExtractSyles(ctx context.Context) *config.Styles {
-	styles, ok := ctx.Value(KeyStyles).(*config.Styles)
+	styles, ok := ctx.Value(internal.KeyStyles).(*config.Styles)
 	if !ok {
 		log.Fatal().Msg("Expecting valid styles")
 	}

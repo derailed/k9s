@@ -107,7 +107,7 @@ K9s uses aliases to navigate most K8s resources.
 | `Ctrl-a`                    | Show all available resource alias                  | select+`<ENTER>` to view   |
 | `/`filter`ENTER`            | Filter out a resource view given a filter          | `/bumblebeetuna`           |
 | `/`-l label-selector`ENTER` | Filter resource view by labels                     | `/-l app=fred`             |
-| `<Esc>`                     | Bails out of command/filter mode                   |                            |
+| `<Esc>`                     | Bails out of view/command/filter mode              |                            |
 | `d`,`v`, `e`, `l`,...       | Key mapping to describe, view, edit, view logs,... | `d` (describes a resource) |
 | `:`ctx`<ENTER>`             | To view and switch to another Kubernetes context   | `:`+`ctx`+`<ENTER>`        |
 | `:`ns`<ENTER>`              | To view and switch to another Kubernetes namespace | `:`+`ns`+`<ENTER>`         |
@@ -119,11 +119,12 @@ K9s uses aliases to navigate most K8s resources.
 
 ## K9s config file ($HOME/.k9s/config.yml)
 
-  K9s keeps its configurations in a dot file in your home directory.
+  K9s keeps its configurations in a .k9s directory in your home directory.
 
   > NOTE: This is still in flux and will change while in pre-release stage!
 
   ```yaml
+  # config.yml
   k9s:
     # Indicates api-server poll intervals.
     refreshRate: 2
@@ -159,7 +160,7 @@ K9s uses aliases to navigate most K8s resources.
 ---
 ## Aliases
 
-In K9s you can define your own command aliases (shortnames) to access your resources. In your `$HOME/.k9s` define a file called `alias.yml`. A K9s alias defines pairs of alias:gvr. A gvr represents a fully qualified Kubernetes resource identifier. Here is an example of an alias file:
+In K9s, you can define your own command aliases (shortnames) to access your resources. In your `$HOME/.k9s` define a file called `alias.yml`. A K9s alias defines pairs of alias:gvr. A gvr represents a fully qualified Kubernetes resource identifier. Here is an example of an alias file:
 
 ```yaml
 # $HOME/.k9s/alias.yml
@@ -168,7 +169,7 @@ alias:
   crb: rbac.authorization.k8s.io/v1/clusterrolebindings
 ```
 
-Using this alias file, you can now type pp/crb to list pods, clusterrolebindings respectively.
+Using this alias file, you can now type pp/crb to list pods or clusterrolebindings respectively.
 
 ---
 ## Plugins
@@ -178,9 +179,10 @@ K9s allows you to define your own cluster commands via plugins. K9s will look at
 ```yaml
 # $HOME/.k9s/plugin.yml
 plugin:
+  # Defines a plugin to provide a `Ctrl-L` shorcut to tail the logs while in pod view.
   fred:
     shortCut: Ctrl-L
-    description: "Pod logs"
+    description: Pod logs
     scopes:
     - po
     command: /usr/local/bin/kubectl
@@ -197,7 +199,7 @@ plugin:
 
 This defines a plugin for viewing logs on a selected pod using `CtrlL` mnemonic.
 
-The shortcut option represents the command a user would type to activate the plugin. The command represents adhoc commands the plugin runs upon activation. The scopes defines a collection of views shortnames for which the plugin shortcut will be made available to the user.
+The shortcut option represents the command a user would type to activate the plugin. The command represents adhoc commands the plugin runs upon activation. The scopes defines a collection of resources names/shortnames for which the plugin shortcut will be made available to the user. You can specify all to provide this shortcut for all views.
 
 K9s does provide additional environment variables for you to customize your plugins. Currently, the available environment variables are as follows:
 
@@ -278,6 +280,41 @@ benchmarks:
 
 ---
 
+## HotKeys
+
+Entering the command mode and typing a resource name or alias, could be cumbersome for navigating thru often used resources. We're introducing hotkeys that allows a user to define their own hotkeys to activate their favorite resource views. In order to enable hotkeys please follow these steps:
+
+1. In your .k9s home directory create a file named `hotkey.yml`
+2. Add the following to your `hotkey.yml`. You can use short names or resource name to specify a command ie same as typing it in command mode.
+
+      ```yaml
+      hotKey:
+        shift-0:
+          shortCut: Shift-0
+          description: View pods
+          command: pods
+        shift-1:
+          shortCut: Shift-1
+          description: View deployments
+          command: dp
+        shift-2:
+          shortCut: Shift-2
+          description: View services
+          command: service
+        shift-3:
+          shortCut: Shift-3
+          description: View statefulsets
+          command: sts
+      ```
+
+ Not feeling so hot? Your custom hotkeys list will be listed in the help view.`<?>`. Also your hotkey file will be automatically reloaded so you can readily use your hotkeys as you define them.
+
+ You can choose any keyboard shotcuts that make sense to you, provided they are not part of the standard K9s shortcuts list.
+
+NOTE: This feature/configuration might change in future releases!
+
+---
+
 ## K9s RBAC FU
 
 On RBAC enabled clusters, you would need to give your users/groups capabilities so that they can use K9s to explore their Kubernetes cluster. K9s needs minimally read privileges at both the cluster and namespace level to display resources and metrics.
@@ -310,7 +347,7 @@ rules:
   - apiGroups: ["apiextensions.k8s.io"]
     resources: ["customresourcedefinitions"]
     verbs: ["get", "list", "watch"]
-  # Grants RO access to metric server
+  # Grants RO access to metric server (if present)
   - apiGroups: ["metrics.k8s.io"]
     resources: ["nodes", "pods"]
     verbs: ["get", "list", "watch"]
@@ -350,7 +387,7 @@ rules:
     verbs: ["get", "list", "watch"]
   # Grants RO access to metric server
   - apiGroups: ["metrics.k8s.io"]
-    resources: ["pods"]
+    resources: ["pods", "nodes"]
     verbs:
       - get
       - list
@@ -377,7 +414,7 @@ roleRef:
 
 ## Skins
 
-You can style K9s based on your own sense of style and look. This is very much an experimental feature at this time, more will be added/modified if this feature has legs so thread accordingly!
+You can style K9s based on your own sense of look and style. This is very much an experimental feature at this time, more will be added/modified if this feature has legs so thread accordingly!
 
 By default a K9s view displays resource information using the following coloring scheme:
 
@@ -387,7 +424,8 @@ By default a K9s view displays resource information using the following coloring
 
 Skins are YAML files, that enable a user to change K9s presentation layer. K9s skins are loaded from `$HOME/.k9s/skin.yml`. If a skin file is detected then the skin would be loaded if not the current stock skin remains in effect.
 
-Below is a sample skin file, more skins would be available in the skins directory, just simply copy any of these in your user's home dir as `skin.yml`.
+You can also change K9s skins based on the cluster you are connecting too. In this case, you can specify the skin file name as `$HOME/.k9s/mycluster_skin.yml`
+Below is a sample skin file, more skins are available in the skins directory in this repo, just simply copy any of these in your user's home dir as `skin.yml`.
 
 ```yaml
 # InTheNavy Skin...
@@ -419,7 +457,8 @@ k9s:
       activeColor: skyblue
     # Resource status and update styles
     status:
-      newColor: blue
+      # You can also use hex colors!
+      newColor: #0000ff
       modifyColor: powderblue
       addColor: lightskyblue
       errorColor: indianred
@@ -496,7 +535,7 @@ Available color names are defined below:
 
 This initial drop is brittle. K9s will most likely blow up...
 
-1. You're running older versions of Kubernetes. K9s works best Kubernetes 1.12+.
+1. You're running older versions of Kubernetes. K9s works best Kubernetes 1.15+.
 2. You don't have enough RBAC fu to manage your cluster.
 
 ---
@@ -511,7 +550,7 @@ dig this effort, please let us know that too!
 
 ## ATTA Girls/Boys!
 
-K9s sits on top of many of opensource projects and libraries. Our *sincere*
+K9s sits on top of many open source projects and libraries. Our *sincere*
 appreciations to all the OSS contributors that work nights and weekends
 to make this project a reality!
 

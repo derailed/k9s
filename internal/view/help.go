@@ -39,11 +39,13 @@ func (v *Help) Init(ctx context.Context) error {
 	if err := v.Table.Init(ctx); err != nil {
 		return nil
 	}
+	v.SetSelectable(false, false)
 	v.resetTitle()
 	v.SetBorder(true)
 	v.SetBorderPadding(0, 0, 1, 1)
 	v.bindKeys()
 	v.build(v.app.Content.Top().Hints())
+	v.SetBackgroundColor(v.App().Styles.BgColor())
 
 	return nil
 }
@@ -154,6 +156,10 @@ func (v *Help) showGeneral() model.MenuHints {
 			Description: "Refresh",
 		},
 		{
+			Mnemonic:    "Ctrl-u",
+			Description: "Clear command",
+		},
+		{
 			Mnemonic:    "h",
 			Description: "Toggle Header",
 		},
@@ -183,6 +189,7 @@ func (v *Help) resetTitle() {
 func (v *Help) build(hh model.MenuHints) {
 	v.Clear()
 	sort.Sort(hh)
+
 	var col int
 	v.addSection(col, "RESOURCE", hh)
 	col += 2
@@ -197,12 +204,20 @@ func (v *Help) build(hh model.MenuHints) {
 	v.addSection(col, "HELP", v.showHelp())
 }
 
+func (v *Help) addSpacer(c int) {
+	cell := tview.NewTableCell("")
+	cell.SetBackgroundColor(v.App().Styles.BgColor())
+	cell.SetExpansion(1)
+	v.SetCell(0, c, cell)
+}
+
 func (v *Help) addSection(c int, title string, hh model.MenuHints) {
 	row := 0
+	v.addSpacer(c)
 	cell := tview.NewTableCell(title)
 	cell.SetTextColor(tcell.ColorGreen)
 	cell.SetAttributes(tcell.AttrBold)
-	cell.SetExpansion(2)
+	cell.SetExpansion(1)
 	cell.SetAlign(tview.AlignLeft)
 	v.SetCell(row, c+1, cell)
 	row++

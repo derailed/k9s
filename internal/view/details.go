@@ -10,7 +10,6 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 const detailsTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
@@ -22,6 +21,7 @@ type Details struct {
 	actions        ui.KeyActions
 	app            *App
 	title, subject string
+	buff           string
 }
 
 // NewDetails returns a details viewer.
@@ -35,7 +35,6 @@ func NewDetails(title string) *Details {
 
 // Init initializes the viewer.
 func (d *Details) Init(ctx context.Context) error {
-	log.Debug().Msgf(">>>> Details INIT %s", d.title)
 	var err error
 	if d.app, err = extractApp(ctx); err != nil {
 		return err
@@ -44,6 +43,8 @@ func (d *Details) Init(ctx context.Context) error {
 	if d.title != "" {
 		d.SetBorder(true)
 	}
+	d.SetBackgroundColor(d.app.Styles.BgColor())
+	d.SetTextColor(d.app.Styles.FgColor())
 	d.SetScrollable(true)
 	d.SetWrap(true)
 	d.SetDynamicColors(true)
@@ -56,8 +57,21 @@ func (d *Details) Init(ctx context.Context) error {
 		d.app.Draw()
 	})
 	d.updateTitle()
+	d.app.Styles.AddListener(d)
 
 	return nil
+}
+
+func (d *Details) StylesChanged(s *config.Styles) {
+	d.SetBackgroundColor(d.app.Styles.BgColor())
+	d.SetTextColor(d.app.Styles.FgColor())
+	d.Update(d.buff)
+}
+
+func (d *Details) Update(buff string) {
+	d.buff = buff
+	d.SetText(colorizeYAML(d.app.Styles.Views().Yaml, buff))
+	d.ScrollToBeginning()
 }
 
 func (d *Details) Actions() ui.KeyActions {
@@ -68,18 +82,15 @@ func (d *Details) Actions() ui.KeyActions {
 func (d *Details) Name() string { return d.title }
 
 // Start starts the view updater.
-func (d *Details) Start() {
-	log.Debug().Msgf("---- Details START %s", d.title)
-}
+func (d *Details) Start() {}
 
 // Stop terminates the updater.
 func (d *Details) Stop() {
-	log.Debug().Msgf("<<<< Details STOPPED %s", d.title)
+	d.app.Styles.RemoveListener(d)
 }
 
 // Hints returns menu hints.
 func (d *Details) Hints() model.MenuHints {
-	log.Debug().Msgf("Details hints %#v", d.actions.Hints())
 	return d.actions.Hints()
 }
 
@@ -98,7 +109,6 @@ func (d *Details) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if a, ok := d.actions[key]; ok {
-		log.Debug().Msgf(">> DetailsView handled %s", tcell.KeyNames[key])
 		return a.Action(evt)
 	}
 	return evt

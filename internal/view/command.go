@@ -46,7 +46,7 @@ func (c *Command) Reset() error {
 }
 
 func (c *Command) defaultCmd() error {
-	return c.run(c.app.Config.ActiveView())
+	return c.run(c.app.Config.ActiveView(), true)
 }
 
 var canRX = regexp.MustCompile(`\Acan\s([u|g|s]):([\w-:]+)\b`)
@@ -94,7 +94,7 @@ func (c *Command) viewMetaFor(cmd string) (string, *MetaViewer, error) {
 }
 
 // Exec the Command by showing associated display.
-func (c *Command) run(cmd string) error {
+func (c *Command) run(cmd string, clearStack bool) error {
 	if c.specialCmd(cmd) {
 		return nil
 	}
@@ -110,7 +110,7 @@ func (c *Command) run(cmd string) error {
 			return fmt.Errorf("context switch failed!")
 		}
 		view := c.componentFor(gvr, v)
-		return c.exec(gvr, view)
+		return c.exec(gvr, view, clearStack)
 	default:
 		// checks if Command includes a namespace
 		ns := c.app.Config.ActiveNamespace()
@@ -120,7 +120,7 @@ func (c *Command) run(cmd string) error {
 		if !c.app.switchNS(ns) {
 			return fmt.Errorf("namespace switch failed for ns %q", ns)
 		}
-		return c.exec(gvr, c.componentFor(gvr, v))
+		return c.exec(gvr, c.componentFor(gvr, v), clearStack)
 	}
 }
 
@@ -142,7 +142,7 @@ func (c *Command) componentFor(gvr string, v *MetaViewer) ResourceViewer {
 	return view
 }
 
-func (c *Command) exec(gvr string, comp model.Component) error {
+func (c *Command) exec(gvr string, comp model.Component, clearStack bool) error {
 	if comp == nil {
 		return fmt.Errorf("No component given for %s", gvr)
 	}
@@ -154,7 +154,9 @@ func (c *Command) exec(gvr string, comp model.Component) error {
 	if err := c.app.Config.Save(); err != nil {
 		log.Error().Err(err).Msg("Config save failed!")
 	}
-	c.app.Content.Stack.ClearHistory()
+	if clearStack {
+		c.app.Content.Stack.ClearHistory()
+	}
 
 	return c.app.inject(comp)
 }

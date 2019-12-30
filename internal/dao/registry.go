@@ -176,6 +176,7 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 	for _, r := range rr {
 		for _, res := range r.APIResources {
 			gvr := client.FromGVAndR(r.GroupVersion, res.Name)
+			log.Debug().Msgf("GVR %s", gvr)
 			res.Group, res.Version = gvr.ToG(), gvr.ToV()
 			m[gvr] = res
 		}

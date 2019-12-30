@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
@@ -64,7 +65,7 @@ func (a *App) PrevCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *App) Init(version string, rate int) error {
-	ctx := context.WithValue(context.Background(), ui.KeyApp, a)
+	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	if err := a.Content.Init(ctx); err != nil {
 		return err
 	}
@@ -127,10 +128,11 @@ func (a *App) StylesChanged(s *config.Styles) {
 
 func (a *App) bindKeys() {
 	a.AddActions(ui.KeyActions{
-		ui.KeyH:        ui.NewKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
-		ui.KeyHelp:     ui.NewKeyAction("Help", a.helpCmd, false),
-		tcell.KeyCtrlA: ui.NewKeyAction("Aliases", a.aliasCmd, false),
+		ui.KeyH:        ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
+		ui.KeyHelp:     ui.NewSharedKeyAction("Help", a.helpCmd, false),
+		tcell.KeyCtrlA: ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
+		tcell.KeyCtrlU: ui.NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 	})
 }
 
@@ -289,7 +291,7 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 			log.Error().Err(err).Msg("Config save failed!")
 		}
 		a.Flash().Infof("Switching context to %s", name)
-		if err := a.gotoResource("pods"); loadPods && err != nil {
+		if err := a.gotoResource("pods", true); loadPods && err != nil {
 			a.Flash().Err(err)
 		}
 		a.refreshClusterInfo()
@@ -383,9 +385,18 @@ func (a *App) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+func (a *App) clearCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !a.CmdBuff().IsActive() {
+		return evt
+	}
+	a.CmdBuff().Clear()
+
+	return nil
+}
+
 func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.CmdBuff().IsActive() && !a.CmdBuff().Empty() {
-		if err := a.gotoResource(a.GetCmd()); err != nil {
+		if err := a.gotoResource(a.GetCmd(), true); err != nil {
 			log.Error().Err(err).Msgf("Goto resource for %q failed", a.GetCmd())
 			a.Flash().Err(err)
 			return nil
@@ -431,12 +442,12 @@ func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (a *App) gotoResource(res string) error {
-	return a.command.run(res)
+func (a *App) gotoResource(res string, clearStack bool) error {
+	return a.command.run(res, clearStack)
 }
 
 func (a *App) inject(c model.Component) error {
-	ctx := context.WithValue(context.Background(), ui.KeyApp, a)
+	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	if err := c.Init(ctx); err != nil {
 		return fmt.Errorf("component init failed for %q %v", c.Name(), err)
 	}

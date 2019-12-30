@@ -10,7 +10,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 )
@@ -50,7 +49,7 @@ func podCtx(path, labelSel, fieldSel string) ContextFunc {
 }
 
 func extractApp(ctx context.Context) (*App, error) {
-	app, ok := ctx.Value(ui.KeyApp).(*App)
+	app, ok := ctx.Value(internal.KeyApp).(*App)
 	if !ok {
 		return nil, errors.New("No application found in context")
 	}

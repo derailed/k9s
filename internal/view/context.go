@@ -38,7 +38,7 @@ func (c *Context) useCtx(app *App, _, res, path string) {
 		app.Flash().Err(err)
 		return
 	}
-	if err := app.gotoResource("po"); err != nil {
+	if err := app.gotoResource("po", true); err != nil {
 		app.Flash().Err(err)
 	}
 }

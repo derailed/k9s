@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -12,9 +13,8 @@ import (
 type Table struct {
 	*ui.Table
 
-	app      *App
-	filterFn func(string)
-	enterFn  EnterFunc
+	app     *App
+	enterFn EnterFunc
 }
 
 func NewTable(gvr string) *Table {
@@ -28,7 +28,7 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	if t.app, err = extractApp(ctx); err != nil {
 		return err
 	}
-	ctx = context.WithValue(ctx, ui.KeyStyles, t.app.Styles)
+	ctx = context.WithValue(ctx, internal.KeyStyles, t.app.Styles)
 	t.Table.Init(ctx)
 	t.bindKeys()
 
@@ -90,8 +90,7 @@ func (t *Table) bindKeys() {
 		tcell.KeyCtrlSpace:  ui.NewSharedKeyAction("Marks Clear", t.clearMarksCmd, false),
 		tcell.KeyCtrlS:      ui.NewSharedKeyAction("Save", t.saveCmd, false),
 		ui.KeySlash:         ui.NewSharedKeyAction("Filter Mode", t.activateCmd, false),
-		tcell.KeyEscape:     ui.NewSharedKeyAction("Filter Reset", t.resetCmd, false),
-		tcell.KeyEnter:      ui.NewSharedKeyAction("Filter", t.filterCmd, false),
+		tcell.KeyCtrlU:      ui.NewSharedKeyAction("Clear Filter", t.clearCmd, false),
 		tcell.KeyBackspace2: ui.NewSharedKeyAction("Erase", t.eraseCmd, false),
 		tcell.KeyBackspace:  ui.NewSharedKeyAction("Erase", t.eraseCmd, false),
 		tcell.KeyDelete:     ui.NewSharedKeyAction("Erase", t.eraseCmd, false),
@@ -121,18 +120,11 @@ func (t *Table) clearMarksCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (t *Table) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (t *Table) clearCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !t.SearchBuff().IsActive() {
 		return evt
 	}
-
-	t.SearchBuff().SetActive(false)
-	cmd := t.SearchBuff().String()
-	if ui.IsLabelSelector(cmd) && t.filterFn != nil {
-		t.filterFn(ui.TrimLabelSelector(cmd))
-		return nil
-	}
-	t.Refresh()
+	t.SearchBuff().Clear()
 
 	return nil
 }
@@ -141,22 +133,6 @@ func (t *Table) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if t.SearchBuff().IsActive() {
 		t.SearchBuff().Delete()
 	}
-
-	return nil
-}
-
-func (t *Table) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !t.SearchBuff().InCmdMode() {
-		t.SearchBuff().Reset()
-		return t.app.PrevCmd(evt)
-	}
-
-	if ui.IsLabelSelector(t.SearchBuff().String()) {
-		t.filterFn("")
-	}
-	t.app.Flash().Info("Clearing filter...")
-	t.SearchBuff().Reset()
-	t.Refresh()
 
 	return nil
 }

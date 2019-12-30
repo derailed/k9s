@@ -166,6 +166,7 @@ func (t *Table) reconcile(ctx context.Context) error {
 		m.Model = &Resource{}
 	}
 	m.Model.Init(t.namespace, string(t.gvr), factory)
+
 	oo, err := m.Model.List(ctx)
 	if err != nil {
 		return err
@@ -175,6 +176,13 @@ func (t *Table) reconcile(ctx context.Context) error {
 	if err := m.Model.Hydrate(oo, rows, m.Renderer); err != nil {
 		return err
 	}
+
+	// if labelSelector in place might as well clear the model data.
+	sel, ok := ctx.Value(internal.KeyLabels).(string)
+	if ok && sel != "" {
+		t.data.Clear()
+	}
+
 	t.data.Update(rows)
 	t.data.Namespace, t.data.Header = t.namespace, m.Renderer.Header(t.namespace)
 
