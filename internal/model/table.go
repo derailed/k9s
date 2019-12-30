@@ -3,7 +3,6 @@ package model
 import (
 	"context"
 	"fmt"
-	"runtime"
 	"sync/atomic"
 	"time"
 
@@ -146,8 +145,6 @@ func (t *Table) fireTableLoadFailed(err error) {
 func (t *Table) reconcile(ctx context.Context) error {
 	t.data.Mutex.Lock()
 	defer t.data.Mutex.Unlock()
-
-	log.Debug().Msgf("GOROUTINE %d", runtime.NumGoroutine())
 
 	factory, ok := ctx.Value(internal.KeyFactory).(Factory)
 	if !ok {
