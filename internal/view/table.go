@@ -49,12 +49,14 @@ func (t *Table) Start() {
 	t.Stop()
 	t.SearchBuff().AddListener(t.app.Cmd())
 	t.SearchBuff().AddListener(t)
+	t.Styles().AddListener(t.Table)
 }
 
 // Stop terminates the component.
 func (t *Table) Stop() {
 	t.SearchBuff().RemoveListener(t.app.Cmd())
 	t.SearchBuff().RemoveListener(t)
+	t.Styles().RemoveListener(t.Table)
 }
 
 // SetEnterFn specifies the default enter behavior.

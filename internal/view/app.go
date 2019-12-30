@@ -348,6 +348,7 @@ func (a *App) Status(l ui.FlashLevel, msg string) {
 // StatusReset reset log back to normal.
 func (a *App) ClearStatus() {
 	a.Logo().Reset()
+	a.Flash().Clear()
 	a.Draw()
 }
 

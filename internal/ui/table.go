@@ -53,28 +53,38 @@ func NewTable(gvr string) *Table {
 }
 
 func (t *Table) Init(ctx context.Context) {
-	t.styles = mustExtractSyles(ctx)
 
 	t.SetFixed(1, 0)
 	t.SetBorder(true)
-	t.SetBackgroundColor(config.AsColor(t.styles.GetTable().BgColor))
-	t.SetBorderColor(config.AsColor(t.styles.GetTable().FgColor))
-	t.SetBorderFocusColor(config.AsColor(t.styles.Frame().Border.FocusColor))
 	t.SetBorderAttributes(tcell.AttrBold)
 	t.SetBorderPadding(0, 0, 1, 1)
 	t.SetSelectable(true, false)
+	t.SetSelectionChangedFunc(t.selectionChanged)
+	t.SetInputCapture(t.keyboard)
+	t.StylesChanged(mustExtractSyles(ctx))
+}
+
+func (t *Table) StylesChanged(s *config.Styles) {
+	t.styles = s
+	t.SetBackgroundColor(config.AsColor(t.styles.GetTable().BgColor))
+	t.SetBorderColor(config.AsColor(t.styles.GetTable().FgColor))
+	t.SetBorderFocusColor(config.AsColor(t.styles.Frame().Border.FocusColor))
 	t.SetSelectedStyle(
 		tcell.ColorBlack,
 		config.AsColor(t.styles.GetTable().CursorColor),
 		tcell.AttrBold,
 	)
-	t.SetSelectionChangedFunc(t.selectionChanged)
-	t.SetInputCapture(t.keyboard)
+	t.Refresh()
 }
 
 // Actions returns active menu bindings.
 func (t *Table) Actions() KeyActions {
 	return t.actions
+}
+
+// Styles returns styling configurator.
+func (t *Table) Styles() *config.Styles {
+	return t.styles
 }
 
 // SendKey sends an keyboard event (testing only!).

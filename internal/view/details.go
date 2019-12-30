@@ -42,12 +42,9 @@ func (d *Details) Init(_ context.Context) error {
 	if d.title != "" {
 		d.SetBorder(true)
 	}
-	d.SetBackgroundColor(d.app.Styles.BgColor())
-	d.SetTextColor(d.app.Styles.FgColor())
 	d.SetScrollable(true)
 	d.SetWrap(true)
 	d.SetDynamicColors(true)
-	d.SetBorderFocusColor(config.AsColor(d.app.Styles.Frame().Border.FocusColor))
 	d.SetHighlightColor(tcell.ColorOrange)
 	d.SetTitleColor(tcell.ColorAqua)
 	d.SetInputCapture(d.keyboard)
@@ -57,6 +54,7 @@ func (d *Details) Init(_ context.Context) error {
 	})
 	d.updateTitle()
 	d.app.Styles.AddListener(d)
+	d.StylesChanged(d.app.Styles)
 
 	return nil
 }
@@ -64,6 +62,8 @@ func (d *Details) Init(_ context.Context) error {
 func (d *Details) StylesChanged(s *config.Styles) {
 	d.SetBackgroundColor(d.app.Styles.BgColor())
 	d.SetTextColor(d.app.Styles.FgColor())
+	d.SetBorderFocusColor(config.AsColor(d.app.Styles.Frame().Border.FocusColor))
+
 	d.Update(d.buff)
 }
 

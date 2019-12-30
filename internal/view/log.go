@@ -64,7 +64,6 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	}
 
 	l.SetBorder(true)
-	l.SetBackgroundColor(config.AsColor(l.app.Styles.Views().Log.BgColor))
 	l.SetBorderPadding(0, 0, 1, 1)
 	l.SetDirection(tview.FlexRow)
 
@@ -77,15 +76,22 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	}
 	l.logs.SetWrap(false)
 	l.logs.SetMaxBuffer(l.app.Config.K9s.LogBufferSize)
-	l.logs.SetTextColor(config.AsColor(l.app.Styles.Views().Log.FgColor))
-	l.logs.SetBackgroundColor(config.AsColor(l.app.Styles.Views().Log.BgColor))
 
 	l.ansiWriter = tview.ANSIWriter(l.logs, l.app.Styles.Views().Log.FgColor, l.app.Styles.Views().Log.BgColor)
 	l.AddItem(l.logs, 0, 1, true)
 	l.bindKeys()
 	l.logs.SetInputCapture(l.keyboard)
 
+	l.StylesChanged(l.app.Styles)
+	l.app.Styles.AddListener(l)
+
 	return nil
+}
+
+func (l *Log) StylesChanged(s *config.Styles) {
+	l.SetBackgroundColor(config.AsColor(s.Views().Log.BgColor))
+	l.logs.SetTextColor(config.AsColor(s.Views().Log.FgColor))
+	l.logs.SetBackgroundColor(config.AsColor(s.Views().Log.BgColor))
 }
 
 // Hints returns a collection of menu hints.
@@ -111,6 +117,7 @@ func (l *Log) Stop() {
 		l.cancelFn()
 		l.cancelFn = nil
 	}
+	l.app.Styles.RemoveListener(l)
 }
 
 func (l *Log) Name() string { return logTitle }
