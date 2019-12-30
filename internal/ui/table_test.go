@@ -1,80 +1,96 @@
-package ui
+package ui_test
 
 import (
+	"context"
 	"testing"
+	"time"
 
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestTVSortRows(t *testing.T) {
-	uu := []struct {
-		rows  resource.RowEvents
-		col   int
-		asc   bool
-		first resource.Row
-		e     []string
-	}{
-		{
-			resource.RowEvents{
-				"row1": {Fields: resource.Row{"x", "y"}},
-				"row2": {Fields: resource.Row{"a", "b"}},
-			},
-			0,
-			true,
-			resource.Row{"a", "b"},
-			[]string{"row2", "row1"},
-		},
-		{
-			resource.RowEvents{
-				"row1": {Fields: resource.Row{"x", "y"}},
-				"row2": {Fields: resource.Row{"a", "b"}},
-			},
-			1,
-			true,
-			resource.Row{"a", "b"},
-			[]string{"row2", "row1"},
-		},
-		{
-			resource.RowEvents{
-				"row1": {Fields: resource.Row{"x", "y"}},
-				"row2": {Fields: resource.Row{"a", "b"}},
-			},
-			1,
-			false,
-			resource.Row{"x", "y"},
-			[]string{"row1", "row2"},
-		},
-		{
-			resource.RowEvents{
-				"row1": {Fields: resource.Row{"2175h48m0.06015s", "y"}},
-				"row2": {Fields: resource.Row{"403h42m34.060166s", "b"}},
-			},
-			0,
-			true,
-			resource.Row{"403h42m34.060166s", "b"},
-			[]string{"row2", "row1"},
-		},
-	}
+func TestTableNew(t *testing.T) {
+	v := ui.NewTable("fred")
+	ctx := context.WithValue(context.Background(), internal.KeyStyles, config.NewStyles())
+	v.Init(ctx)
 
-	for _, u := range uu {
-		keys := make([]string, len(u.rows))
-		sortRows(u.rows, defaultSort, SortColumn{u.col, len(u.rows), u.asc}, keys)
-		assert.Equal(t, u.e, keys)
-		assert.Equal(t, u.first, u.rows[u.e[0]].Fields)
-	}
+	assert.Equal(t, "fred", v.BaseTitle)
 }
 
-func BenchmarkTableSortRows(b *testing.B) {
-	evts := resource.RowEvents{
-		"row1": {Fields: resource.Row{"x", "y"}},
-		"row2": {Fields: resource.Row{"a", "b"}},
+func TestTableUpdate(t *testing.T) {
+	v := ui.NewTable("fred")
+	ctx := context.WithValue(context.Background(), internal.KeyStyles, config.NewStyles())
+	v.Init(ctx)
+
+	v.Update(makeTableData())
+
+	assert.Equal(t, 3, v.GetRowCount())
+	assert.Equal(t, 3, v.GetColumnCount())
+}
+
+func TestTableSelection(t *testing.T) {
+	v := ui.NewTable("fred")
+	ctx := context.WithValue(context.Background(), internal.KeyStyles, config.NewStyles())
+	v.Init(ctx)
+	m := &testModel{}
+	v.SetModel(m)
+	v.Update(m.Peek())
+	v.SelectRow(1, true)
+
+	assert.Equal(t, "r1", v.GetSelectedItem())
+	assert.Equal(t, render.Row{ID: "r2", Fields: render.Fields{"blee", "duh", "zorg"}}, v.GetSelectedRow())
+	assert.Equal(t, "blee", v.GetSelectedCell(0))
+	assert.Equal(t, 1, v.GetSelectedRowIndex())
+	assert.Equal(t, []string{"r1"}, v.GetSelectedItems())
+
+	v.ClearSelection()
+	v.SelectFirstRow()
+	assert.Equal(t, 1, v.GetSelectedRowIndex())
+}
+
+// ----------------------------------------------------------------------------
+// Helpers...
+
+type testModel struct{}
+
+var _ ui.Tabular = &testModel{}
+
+func (t *testModel) Empty() bool                     { return false }
+func (t *testModel) Peek() render.TableData          { return makeTableData() }
+func (t *testModel) ClusterWide() bool               { return false }
+func (t *testModel) GetNamespace() string            { return "blee" }
+func (t *testModel) SetNamespace(string)             {}
+func (t *testModel) AddListener(model.TableListener) {}
+func (t *testModel) Watch(context.Context)           {}
+func (t *testModel) InNamespace(string) bool         { return true }
+func (t *testModel) SetRefreshRate(time.Duration)    {}
+
+func makeTableData() render.TableData {
+	t := render.NewTableData()
+	t.Namespace = ""
+	t.Header = render.HeaderRow{
+		render.Header{Name: "a"},
+		render.Header{Name: "b"},
+		render.Header{Name: "c"},
 	}
-	sc := SortColumn{0, 2, true}
-	keys := make([]string, len(evts))
-	b.ResetTimer()
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		sortRows(evts, defaultSort, sc, keys)
+	t.RowEvents = render.RowEvents{
+		render.RowEvent{
+			Row: render.Row{
+				ID:     "r1",
+				Fields: render.Fields{"blee", "duh", "fred"},
+			},
+		},
+		render.RowEvent{
+			Row: render.Row{
+				ID:     "r2",
+				Fields: render.Fields{"blee", "duh", "zorg"},
+			},
+		},
 	}
+
+	return *t
 }

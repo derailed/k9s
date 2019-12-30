@@ -36,7 +36,7 @@ This feature is still work in progress. It does require a new config file to hel
 
 This is one feature that I think is, pardon my french.., totally `Bitch'n`! K9s now bundles [Hey](https://github.com/rakyll/hey) CLI tool from the extremely talented Jaana Dogan of Google fame. Hey allows you to benchmark HTTP service endpoints similar to apache bench.
 
-Benchmarking is enabled via keyboard shortcuts `Ctrl-B` and `Alt-B` to activate/cancel a benchmark while in PortForward and Service views. Benchmarking a service assumes the HTTP service is exposed either as NodePort or LoadBalancer. To view your benchmarks, navigate to the new Benchmark view aka `:be<ENTER>` to list your benchmarks and runs statistics.
+Benchmarking is enabled via keyboard shortcuts `Ctrl-B` and `Alt-B` to activate/cancel a benchmark while in PortForward and Service view. Benchmarking a service assumes the HTTP service is exposed either as NodePort or LoadBalancer. To view your benchmarks, navigate to the new Benchmark view aka `:be<ENTER>` to list your benchmarks and runs statistics.
 
 So you now have the ability to stretch out your cluster legs by benchmarking your pods and services and gather all kind of interesting statistics directly in K9s. Generating load on your resources will help you tune your cluster resources, exercise your auto scalers, compare Canary builds perf, etc...
 

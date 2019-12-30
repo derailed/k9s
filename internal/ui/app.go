@@ -1,87 +1,41 @@
 package ui
 
 import (
-	"context"
-
-	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/k8s"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 )
 
-// Igniter represents an initializable view.
-type Igniter interface {
-	tview.Primitive
+// App represents an application.
+type App struct {
+	*tview.Application
+	Configurator
 
-	// Init initializes the view.
-	Init(ctx context.Context, ns string)
+	Main    *Pages
+	actions KeyActions
+	views   map[string]tview.Primitive
+	cmdBuff *CmdBuff
 }
-
-type (
-	keyHandler interface {
-		keyboard(evt *tcell.EventKey) *tcell.EventKey
-	}
-
-	// ActionsFunc augments Keybindings.
-	ActionsFunc func(KeyActions)
-
-	// Configurator represents an application configurations.
-	Configurator struct {
-		HasSkins bool
-		Config   *config.Config
-		Styles   *config.Styles
-		Bench    *config.Bench
-	}
-
-	// App represents an application.
-	App struct {
-		*tview.Application
-		Configurator
-
-		actions KeyActions
-		pages   *tview.Pages
-		content *tview.Pages
-		views   map[string]tview.Primitive
-		cmdBuff *CmdBuff
-		hints   Hints
-	}
-)
 
 // NewApp returns a new app.
-func NewApp() *App {
-	s := App{
+func NewApp(cluster string) *App {
+	a := App{
 		Application: tview.NewApplication(),
 		actions:     make(KeyActions),
-		pages:       tview.NewPages(),
-		content:     tview.NewPages(),
+		Main:        NewPages(),
 		cmdBuff:     NewCmdBuff(':', CommandBuff),
 	}
+	a.ReloadStyles(cluster)
 
-	s.RefreshStyles()
-
-	s.views = map[string]tview.Primitive{
-		"menu":   NewMenuView(s.Styles),
-		"logo":   NewLogoView(s.Styles),
-		"cmd":    NewCmdView(s.Styles),
-		"crumbs": NewCrumbsView(s.Styles),
+	a.views = map[string]tview.Primitive{
+		"menu":   NewMenu(a.Styles),
+		"logo":   NewLogo(a.Styles),
+		"cmd":    NewCommand(a.Styles),
+		"flash":  NewFlash(&a, "Initializing..."),
+		"crumbs": NewCrumbs(a.Styles),
 	}
 
-	return &s
-}
-
-// Main returns main app frame.
-func (a *App) Main() *tview.Pages {
-	return a.pages
-}
-
-// Frame returns main app content frame.
-func (a *App) Frame() *tview.Pages {
-	return a.content
-}
-
-// Conn returns an api server connection.
-func (a *App) Conn() k8s.Connection {
-	return a.Config.GetConnection()
+	return &a
 }
 
 // Init initializes the application.
@@ -89,7 +43,16 @@ func (a *App) Init() {
 	a.bindKeys()
 	a.SetInputCapture(a.keyboard)
 	a.cmdBuff.AddListener(a.Cmd())
-	a.SetRoot(a.pages, true)
+	a.SetRoot(a.Main, true)
+}
+
+func (a *App) ReloadStyles(cluster string) {
+	a.RefreshStyles(cluster)
+}
+
+// Conn returns an api server connection.
+func (a *App) Conn() client.Connection {
+	return a.Config.GetConnection()
 }
 
 func (a *App) bindKeys() {
@@ -148,19 +111,19 @@ func (a *App) InCmdMode() bool {
 	return a.Cmd().InCmdMode()
 }
 
-// GetActions returns a collection of actions.
+// GetActions returns a collection of actiona.
 func (a *App) GetActions() KeyActions {
 	return a.actions
 }
 
-// AddActions returns the application actions.
+// AddActions returns the application actiona.
 func (a *App) AddActions(aa KeyActions) {
 	for k, v := range aa {
 		a.actions[k] = v
 	}
 }
 
-// Views return the application root views.
+// Views return the application root viewa.
 func (a *App) Views() map[string]tview.Primitive {
 	return a.views
 }
@@ -215,53 +178,37 @@ func (a *App) redrawCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
-// ActiveView returns the currently active view.
-func (a *App) ActiveView() Igniter {
-	return a.content.GetPrimitive("main").(Igniter)
-}
-
-// SetHints updates menu hints.
-func (a *App) SetHints(h Hints) {
-	a.hints = h
-	a.views["menu"].(*MenuView).HydrateMenu(h)
-}
-
-// GetHints retrieves the currently active hints.
-func (a *App) GetHints() Hints {
-	return a.hints
-}
-
 // StatusReset reset log back to normal.
 func (a *App) StatusReset() {
 	a.Logo().Reset()
 	a.Draw()
 }
 
-// View Accessors...
+// View Accessora...
 
-// Crumbs return app crumbs.
-func (a *App) Crumbs() *CrumbsView {
-	return a.views["crumbs"].(*CrumbsView)
+// Crumbs return app crumba.
+func (a *App) Crumbs() *Crumbs {
+	return a.views["crumbs"].(*Crumbs)
 }
 
 // Logo return the app logo.
-func (a *App) Logo() *LogoView {
-	return a.views["logo"].(*LogoView)
+func (a *App) Logo() *Logo {
+	return a.views["logo"].(*Logo)
 }
 
 // Flash returns app flash.
-func (a *App) Flash() *FlashView {
-	return a.views["flash"].(*FlashView)
+func (a *App) Flash() *Flash {
+	return a.views["flash"].(*Flash)
 }
 
 // Cmd returns app cmd.
-func (a *App) Cmd() *CmdView {
-	return a.views["cmd"].(*CmdView)
+func (a *App) Cmd() *Command {
+	return a.views["cmd"].(*Command)
 }
 
 // Menu returns app menu.
-func (a *App) Menu() *MenuView {
-	return a.views["menu"].(*MenuView)
+func (a *App) Menu() *Menu {
+	return a.views["menu"].(*Menu)
 }
 
 // AsKey converts rune to keyboard key.,

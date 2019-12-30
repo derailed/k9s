@@ -3,6 +3,7 @@ package dialog
 import (
 	"strings"
 
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 )
@@ -10,7 +11,7 @@ import (
 const portForwardKey = "portforward"
 
 // ShowPortForward pops a port forwarding configuration dialog.
-func ShowPortForward(p *tview.Pages, port string, okFn func(lport, cport string)) {
+func ShowPortForward(p *ui.Pages, port string, okFn func(address, lport, cport string)) {
 	f := tview.NewForm()
 	f.SetItemPadding(0)
 	f.SetButtonsAlign(tview.AlignCenter).
@@ -19,16 +20,19 @@ func ShowPortForward(p *tview.Pages, port string, okFn func(lport, cport string)
 		SetLabelColor(tcell.ColorAqua).
 		SetFieldTextColor(tcell.ColorOrange)
 
-	p1, p2 := port, port
-	f.AddInputField("Pod Port:", p1, 20, nil, func(port string) {
-		p1 = port
+	p1, p2, address := port, port, "localhost"
+	f.AddInputField("Pod Port:", p1, 20, nil, func(p string) {
+		p1 = p
 	})
-	f.AddInputField("Local Port:", p2, 20, nil, func(port string) {
-		p2 = port
+	f.AddInputField("Local Port:", p2, 20, nil, func(p string) {
+		p2 = p
+	})
+	f.AddInputField("Address:", address, 20, nil, func(h string) {
+		address = h
 	})
 
 	f.AddButton("OK", func() {
-		okFn(stripPort(p2), stripPort(p1))
+		okFn(address, stripPort(p2), stripPort(p1))
 	})
 	f.AddButton("Cancel", func() {
 		DismissPortForward(p)
@@ -43,10 +47,11 @@ func ShowPortForward(p *tview.Pages, port string, okFn func(lport, cport string)
 }
 
 // DismissPortForward dismiss the port forward dialog.
-func DismissPortForward(p *tview.Pages) {
+func DismissPortForward(p *ui.Pages) {
 	p.RemovePage(portForwardKey)
 }
 
+// ----------------------------------------------------------------------------
 // Helpers...
 
 // StripPort removes the named port id if present.

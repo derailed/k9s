@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/resource"
 	"github.com/rakyll/hey/requester"
 	"github.com/rs/zerolog/log"
 )
@@ -75,10 +75,6 @@ func (b *Benchmark) init(base string) error {
 	return nil
 }
 
-func (b *Benchmark) annulled() bool {
-	return b.canceled
-}
-
 // Cancel kills the benchmark in progress.
 func (b *Benchmark) Cancel() {
 	if b == nil {
@@ -112,20 +108,25 @@ func (b *Benchmark) save(cluster string, r io.Reader) error {
 		return err
 	}
 
-	ns, n := resource.Namespaced(b.config.Name)
+	ns, n := client.Namespaced(b.config.Name)
 	file := filepath.Join(dir, fmt.Sprintf(benchFmat, ns, n, time.Now().UnixNano()))
 	f, err := os.Create(file)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		if e := f.Close(); e != nil {
+			log.Fatal().Err(e).Msg("Bench save")
+		}
+	}()
 
 	bb, err := ioutil.ReadAll(r)
 	if err != nil {
 		return err
 	}
-
-	f.Write(bb)
+	if _, err := f.Write(bb); err != nil {
+		return err
+	}
 
 	return nil
 }

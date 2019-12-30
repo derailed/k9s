@@ -1,8 +1,6 @@
 package config
 
-import (
-	"github.com/derailed/k9s/internal/k8s"
-)
+import "github.com/derailed/k9s/internal/client"
 
 const (
 	defaultRefreshRate    = 2
@@ -114,7 +112,7 @@ func (k *K9s) checkClusters(ks KubeSettings) {
 }
 
 // Validate the current configuration.
-func (k *K9s) Validate(c k8s.Connection, ks KubeSettings) {
+func (k *K9s) Validate(c client.Connection, ks KubeSettings) {
 	k.validateDefaults()
 
 	if k.Clusters == nil {

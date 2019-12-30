@@ -25,11 +25,11 @@ type (
 	// CmdBuff represents user command input.
 	CmdBuff struct {
 		buff      []rune
+		listeners []BuffWatcher
+		hotKey    rune
 		kind      BufferKind
 		sticky    bool
-		hotKey    rune
 		active    bool
-		listeners []BuffWatcher
 	}
 )
 
@@ -51,6 +51,11 @@ func (c *CmdBuff) IsSticky() bool {
 // SetSticky returns cmd stickness.
 func (c *CmdBuff) SetSticky(b bool) {
 	c.sticky = b
+}
+
+// InCmdMode checks if a command exists and the buffer is active.
+func (c *CmdBuff) InCmdMode() bool {
+	return c.active || len(c.buff) > 0
 }
 
 // IsActive checks if command buffer is active.
@@ -90,17 +95,13 @@ func (c *CmdBuff) Delete() {
 	c.fireChanged()
 }
 
-func (c *CmdBuff) wipe() {
-	c.buff = make([]rune, 0, maxBuff)
-}
-
 // Clear clears out command buffer.
 func (c *CmdBuff) Clear() {
 	c.buff = make([]rune, 0, maxBuff)
 	c.fireChanged()
 }
 
-// Reset clears out the command buffer.
+// Reset clears out the command buffer and deactives it.
 func (c *CmdBuff) Reset() {
 	c.Clear()
 	c.fireChanged()
@@ -118,6 +119,21 @@ func (c *CmdBuff) Empty() bool {
 // AddListener registers a cmd buffer listener.
 func (c *CmdBuff) AddListener(w ...BuffWatcher) {
 	c.listeners = append(c.listeners, w...)
+}
+
+func (c *CmdBuff) RemoveListener(l BuffWatcher) {
+	victim := -1
+	for i, lis := range c.listeners {
+		if l == lis {
+			victim = i
+			break
+		}
+	}
+
+	if victim == -1 {
+		return
+	}
+	c.listeners = append(c.listeners[:victim], c.listeners[victim+1:]...)
 }
 
 func (c *CmdBuff) fireChanged() {

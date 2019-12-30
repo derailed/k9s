@@ -17,7 +17,8 @@ func TestColorize(t *testing.T) {
 		"default": {"blee", 0, "\x1b[37mblee\x1b[0m"},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, Colorize(u.s, u.c))
 		})

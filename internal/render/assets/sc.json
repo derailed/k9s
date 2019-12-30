@@ -1,0 +1,24 @@
+{
+  "apiVersion": "storage.k8s.io/v1",
+  "kind": "StorageClass",
+  "metadata": {
+    "annotations": {
+      "storageclass.beta.kubernetes.io/is-default-class": "true"
+    },
+    "creationTimestamp": "2019-02-05T22:04:14Z",
+    "labels": {
+      "addonmanager.kubernetes.io/mode": "EnsureExists",
+      "kubernetes.io/cluster-service": "true"
+    },
+    "name": "standard",
+    "resourceVersion": "277",
+    "selfLink": "/apis/storage.k8s.io/v1/storageclasses/standard",
+    "uid": "f9d4c94a-2991-11e9-81cd-42010a80005b"
+  },
+  "parameters": {
+    "type": "pd-standard"
+  },
+  "provisioner": "kubernetes.io/gce-pd",
+  "reclaimPolicy": "Delete",
+  "volumeBindingMode": "Immediate"
+}

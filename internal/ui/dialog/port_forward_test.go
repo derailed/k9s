@@ -3,14 +3,15 @@ package dialog
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPortForwardDialog(t *testing.T) {
-	p := tview.NewPages()
+	p := ui.NewPages()
 
-	okFunc := func(lport, cport string) {
+	okFunc := func(address, lport, cport string) {
 	}
 	ShowPortForward(p, "8080", okFunc)
 
@@ -36,7 +37,8 @@ func TestStripPort(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, stripPort(u.port))
 		})

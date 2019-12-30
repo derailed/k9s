@@ -14,6 +14,9 @@ var K9sAlias = filepath.Join(K9sHome, "alias.yml")
 // Alias tracks shortname to GVR mappings.
 type Alias map[string]string
 
+// ShortNames represents a collection of shortnames for aliases.
+type ShortNames map[string][]string
+
 // Aliases represents a collection of aliases.
 type Aliases struct {
 	Alias Alias `yaml:"alias"`
@@ -21,54 +24,64 @@ type Aliases struct {
 
 // NewAliases return a new alias.
 func NewAliases() Aliases {
-	aa := Aliases{Alias: make(Alias, 50)}
-	aa.loadDefaults()
-	return aa
+	return Aliases{
+		Alias: make(Alias, 50),
+	}
 }
 
 func (a Aliases) loadDefaults() {
+	const (
+		contexts   = "contexts"
+		portFwds   = "portforwards"
+		benchmarks = "benchmarks"
+		dumps      = "screendumps"
+		groups     = "groups"
+		users      = "users"
+	)
+
 	a.Alias["dp"] = "apps/v1/deployments"
 	a.Alias["sec"] = "v1/secrets"
 	a.Alias["jo"] = "batch/v1/jobs"
 	a.Alias["cr"] = "rbac.authorization.k8s.io/v1/clusterroles"
 	a.Alias["crb"] = "rbac.authorization.k8s.io/v1/clusterrolebindings"
 	a.Alias["ro"] = "rbac.authorization.k8s.io/v1/roles"
-	a.Alias["rob"] = "rbac.authorization.k8s.io/v1/rolebindings"
+	a.Alias["rb"] = "rbac.authorization.k8s.io/v1/rolebindings"
 	a.Alias["np"] = "networking.k8s.io/v1/networkpolicies"
 	{
-		a.Alias["ctx"] = "contexts"
-		a.Alias["contexts"] = "contexts"
-		a.Alias["context"] = "contexts"
+		a.Alias["ctx"] = contexts
+		a.Alias[contexts] = contexts
+		a.Alias["context"] = contexts
 	}
 	{
-		a.Alias["usr"] = "users"
-		a.Alias["users"] = "users"
-		a.Alias["user"] = "user"
+		a.Alias["usr"] = users
+		a.Alias[users] = users
+		a.Alias["user"] = users
 	}
 	{
-		a.Alias["grp"] = "groups"
-		a.Alias["group"] = "groups"
-		a.Alias["groups"] = "groups"
+		a.Alias["grp"] = groups
+		a.Alias["group"] = groups
+		a.Alias[groups] = groups
 	}
 	{
-		a.Alias["pf"] = "portforwards"
-		a.Alias["portforwards"] = "portforwards"
-		a.Alias["portforward"] = "portforwards"
+		a.Alias["pf"] = portFwds
+		a.Alias[portFwds] = portFwds
+		a.Alias["portforward"] = portFwds
 	}
 	{
-		a.Alias["be"] = "benchmarks"
-		a.Alias["benchmark"] = "benchmarks"
-		a.Alias["benchmarks"] = "benchmarks"
+		a.Alias["be"] = benchmarks
+		a.Alias["benchmark"] = benchmarks
+		a.Alias[benchmarks] = benchmarks
 	}
 	{
-		a.Alias["sd"] = "screendumps"
-		a.Alias["screendump"] = "screendumps"
-		a.Alias["screendumps"] = "screendumps"
+		a.Alias["sd"] = dumps
+		a.Alias["screendump"] = dumps
+		a.Alias[dumps] = dumps
 	}
 }
 
 // Load K9s aliases.
 func (a Aliases) Load() error {
+	a.loadDefaults()
 	return a.LoadAliases(K9sAlias)
 }
 
@@ -79,20 +92,21 @@ func (a Aliases) Get(k string) (string, bool) {
 }
 
 // Define declares a new alias.
-func (a Aliases) Define(command, alias string) {
-	if _, ok := a.Alias[alias]; ok {
-		// Don't override aliases. Take order of alias registration as precedence.
-		return
+func (a Aliases) Define(gvr string, aliases ...string) {
+	for _, alias := range aliases {
+		if _, ok := a.Alias[alias]; ok {
+			continue
+		}
+		a.Alias[alias] = gvr
 	}
-
-	a.Alias[alias] = command
 }
 
 // LoadAliases loads alias from a given file.
 func (a Aliases) LoadAliases(path string) error {
 	f, err := ioutil.ReadFile(path)
 	if err != nil {
-		return err
+		log.Warn().Err(err).Msgf("No custom aliases found")
+		return nil
 	}
 
 	var aa Aliases

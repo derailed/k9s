@@ -1,15 +1,15 @@
-package ui
+package ui_test
 
 import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewSplash(t *testing.T) {
-	defaults, _ := config.NewStyles("")
-	s := NewSplash(defaults, "bozo")
+	s := ui.NewSplash(config.NewStyles(), "bozo")
 
 	x, y, w, h := s.GetRect()
 	assert.Equal(t, 0, x)

@@ -1,20 +1,20 @@
-package ui
+package ui_test
 
 import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewLogoView(t *testing.T) {
-	defaults, _ := config.NewStyles("")
-	v := NewLogoView(defaults)
+	v := ui.NewLogo(config.NewStyles())
 	v.Reset()
 
 	const elogo = "[orange::b] ____  __.________       \n[orange::b]|    |/ _/   __   \\______\n[orange::b]|      < \\____    /  ___/\n[orange::b]|    |  \\   /    /\\___ \\ \n[orange::b]|____|__ \\ /____//____  >\n[orange::b]        \\/            \\/ \n"
-	assert.Equal(t, elogo, v.logo.GetText(false))
-	assert.Equal(t, "", v.status.GetText(false))
+	assert.Equal(t, elogo, v.Logo().GetText(false))
+	assert.Equal(t, "", v.Status().GetText(false))
 }
 
 func TestLogoStatus(t *testing.T) {
@@ -38,9 +38,9 @@ func TestLogoStatus(t *testing.T) {
 		},
 	}
 
-	defaults, _ := config.NewStyles("")
-	v := NewLogoView(defaults)
-	for k, u := range uu {
+	v := ui.NewLogo(config.NewStyles())
+	for n := range uu {
+		k, u := n, uu[n]
 		t.Run(k, func(t *testing.T) {
 			switch k {
 			case "info":
@@ -50,8 +50,8 @@ func TestLogoStatus(t *testing.T) {
 			case "err":
 				v.Err(u.msg)
 			}
-			assert.Equal(t, u.logo, v.logo.GetText(false))
-			assert.Equal(t, u.e, v.status.GetText(false))
+			assert.Equal(t, u.logo, v.Logo().GetText(false))
+			assert.Equal(t, u.e, v.Status().GetText(false))
 		})
 	}
 

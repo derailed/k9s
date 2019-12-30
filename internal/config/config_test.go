@@ -54,7 +54,8 @@ func TestConfigRefine(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			mc := NewMockConnection()
 			m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
@@ -142,7 +143,7 @@ func TestConfigSetActiveNamespace(t *testing.T) {
 	cfg := config.NewConfig(mk)
 
 	assert.Nil(t, cfg.Load("test_assets/k9s.yml"))
-	cfg.SetActiveNamespace("default")
+	assert.Nil(t, cfg.SetActiveNamespace("default"))
 	assert.Equal(t, "default", cfg.ActiveNamespace())
 }
 
@@ -202,7 +203,7 @@ func TestConfigSaveFile(t *testing.T) {
 
 	cfg := config.NewConfig(mk)
 	cfg.SetConnection(mc)
-	cfg.Load("test_assets/k9s.yml")
+	assert.Nil(t, cfg.Load("test_assets/k9s.yml"))
 	cfg.K9s.RefreshRate = 100
 	cfg.K9s.LogBufferSize = 500
 	cfg.K9s.LogRequestSize = 100
@@ -231,7 +232,7 @@ func TestConfigReset(t *testing.T) {
 
 	cfg := config.NewConfig(mk)
 	cfg.SetConnection(mc)
-	cfg.Load("test_assets/k9s.yml")
+	assert.Nil(t, cfg.Load("test_assets/k9s.yml"))
 	cfg.Reset()
 	cfg.Validate()
 

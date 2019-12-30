@@ -26,7 +26,7 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ### o YAML Highlighter
 
-  Describe and YAML commands will now yield syntax highlighted views.
+  Describe and YAML commands will now yield syntax highlighted view.
   [Feature #142](https://github.com/derailed/k9s/issues/142)
 
 ---

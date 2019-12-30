@@ -2,42 +2,69 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/tview"
 )
 
-// CrumbsView represents user breadcrumbs.
-type CrumbsView struct {
+// Crumbs represents user breadcrumbs.
+type Crumbs struct {
 	*tview.TextView
 
 	styles *config.Styles
+	stack  *model.Stack
 }
 
-// NewCrumbsView returns a new breadcrumb view.
-func NewCrumbsView(styles *config.Styles) *CrumbsView {
-	v := CrumbsView{styles: styles, TextView: tview.NewTextView()}
-	{
-		v.SetBackgroundColor(styles.BgColor())
-		v.SetTextAlign(tview.AlignLeft)
-		v.SetBorderPadding(0, 0, 1, 1)
-		v.SetDynamicColors(true)
+// NewCrumbs returns a new breadcrumb view.
+func NewCrumbs(styles *config.Styles) *Crumbs {
+	c := Crumbs{
+		stack:    model.NewStack(),
+		styles:   styles,
+		TextView: tview.NewTextView(),
 	}
+	c.SetBackgroundColor(styles.BgColor())
+	c.SetTextAlign(tview.AlignLeft)
+	c.SetBorderPadding(0, 0, 1, 1)
+	c.SetDynamicColors(true)
+	styles.AddListener(&c)
 
-	return &v
+	return &c
 }
+
+func (c *Crumbs) StylesChanged(s *config.Styles) {
+	c.styles = s
+	c.SetBackgroundColor(s.BgColor())
+	c.refresh(c.stack.Flatten())
+}
+
+// StackPushed indicates a new item was added.
+func (c *Crumbs) StackPushed(comp model.Component) {
+	c.stack.Push(comp)
+	c.refresh(c.stack.Flatten())
+}
+
+// StackPopped indicates an item was deleted
+func (c *Crumbs) StackPopped(_, _ model.Component) {
+	c.stack.Pop()
+	c.refresh(c.stack.Flatten())
+}
+
+// StackTop indicates the top of the stack
+func (c *Crumbs) StackTop(top model.Component) {}
 
 // Refresh updates view with new crumbs.
-func (v *CrumbsView) Refresh(crumbs []string) {
-	v.Clear()
-	last, bgColor := len(crumbs)-1, v.styles.Frame().Crumb.BgColor
-	for i, c := range crumbs {
+func (c *Crumbs) refresh(crumbs []string) {
+	c.Clear()
+	last, bgColor := len(crumbs)-1, c.styles.Frame().Crumb.BgColor
+	for i, crumb := range crumbs {
 		if i == last {
-			bgColor = v.styles.Frame().Crumb.ActiveColor
+			bgColor = c.styles.Frame().Crumb.ActiveColor
 		}
-		fmt.Fprintf(v, "[%s:%s:b] <%s> [-:%s:-] ",
-			v.styles.Frame().Crumb.FgColor,
-			bgColor, c,
-			v.styles.Body().BgColor)
+		fmt.Fprintf(c, "[%s:%s:b] <%s> [-:%s:-] ",
+			c.styles.Frame().Crumb.FgColor,
+			bgColor, strings.Replace(strings.ToLower(crumb), " ", "", -1),
+			c.styles.Body().BgColor)
 	}
 }

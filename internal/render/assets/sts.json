@@ -1,0 +1,110 @@
+{
+  "apiVersion": "apps/v1",
+  "kind": "StatefulSet",
+  "metadata": {
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"StatefulSet\",\"metadata\":{\"annotations\":{},\"labels\":{\"app\":\"nginx-sts\"},\"name\":\"nginx-sts\",\"namespace\":\"default\"},\"spec\":{\"replicas\":2,\"selector\":{\"matchLabels\":{\"app\":\"nginx-sts\"}},\"serviceName\":\"nginx-sts\",\"template\":{\"metadata\":{\"labels\":{\"app\":\"nginx-sts\"}},\"spec\":{\"containers\":[{\"image\":\"k8s.gcr.io/nginx-slim:0.8\",\"name\":\"nginx\",\"ports\":[{\"containerPort\":80,\"name\":\"web\"}],\"volumeMounts\":[{\"mountPath\":\"/usr/share/nginx/html\",\"name\":\"www\"}]}]}},\"volumeClaimTemplates\":[{\"metadata\":{\"name\":\"www\"},\"spec\":{\"accessModes\":[\"ReadWriteOnce\"],\"resources\":{\"requests\":{\"storage\":\"1Mi\"}}}}]}}\n"
+    },
+    "creationTimestamp": "2019-11-30T15:41:42Z",
+    "generation": 5,
+    "labels": {
+      "app": "nginx-sts"
+    },
+    "name": "nginx-sts",
+    "namespace": "default",
+    "resourceVersion": "82973198",
+    "selfLink": "/apis/apps/v1/namespaces/default/statefulsets/nginx-sts",
+    "uid": "e87310a8-1387-11ea-aa02-42010a800053"
+  },
+  "spec": {
+    "podManagementPolicy": "OrderedReady",
+    "replicas": 4,
+    "revisionHistoryLimit": 10,
+    "selector": {
+      "matchLabels": {
+        "app": "nginx-sts"
+      }
+    },
+    "serviceName": "nginx-sts",
+    "template": {
+      "metadata": {
+        "annotations": {
+          "kubectl.kubernetes.io/restartedAt": "2019-12-01T13:50:44-07:00"
+        },
+        "creationTimestamp": null,
+        "labels": {
+          "app": "nginx-sts"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "image": "k8s.gcr.io/nginx-slim:0.8",
+            "imagePullPolicy": "IfNotPresent",
+            "name": "nginx",
+            "ports": [
+              {
+                "containerPort": 80,
+                "name": "web",
+                "protocol": "TCP"
+              }
+            ],
+            "resources": {},
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File",
+            "volumeMounts": [
+              {
+                "mountPath": "/usr/share/nginx/html",
+                "name": "www"
+              }
+            ]
+          }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "terminationGracePeriodSeconds": 30
+      }
+    },
+    "updateStrategy": {
+      "rollingUpdate": {
+        "partition": 0
+      },
+      "type": "RollingUpdate"
+    },
+    "volumeClaimTemplates": [
+      {
+        "metadata": {
+          "creationTimestamp": null,
+          "name": "www"
+        },
+        "spec": {
+          "accessModes": [
+            "ReadWriteOnce"
+          ],
+          "dataSource": null,
+          "resources": {
+            "requests": {
+              "storage": "1Mi"
+            }
+          },
+          "volumeMode": "Filesystem"
+        },
+        "status": {
+          "phase": "Pending"
+        }
+      }
+    ]
+  },
+  "status": {
+    "collisionCount": 0,
+    "currentReplicas": 4,
+    "currentRevision": "nginx-sts-5b89ffb894",
+    "observedGeneration": 5,
+    "readyReplicas": 4,
+    "replicas": 4,
+    "updateRevision": "nginx-sts-5b89ffb894",
+    "updatedReplicas": 4
+  }
+}

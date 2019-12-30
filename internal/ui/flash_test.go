@@ -1,41 +1,40 @@
-package ui
+package ui_test
 
 import (
+	"errors"
 	"testing"
 
-	"github.com/gdamore/tcell"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFlashEmoji(t *testing.T) {
-	uu := []struct {
-		level FlashLevel
-		emoji string
-	}{
-		{FlashWarn, emoDoh},
-		{FlashErr, emoRed},
-		{FlashFatal, emoDead},
-		{FlashInfo, emoHappy},
-	}
+func TestFlashInfo(t *testing.T) {
+	f := ui.NewFlash(ui.NewApp(""), "YO!")
 
-	for _, u := range uu {
-		assert.Equal(t, u.emoji, flashEmoji(u.level))
-	}
+	f.Info("Blee")
+	assert.Equal(t, "😎 Blee\n", f.GetText(false))
+
+	f.Infof("Blee %s", "duh")
+	assert.Equal(t, "😎 Blee duh\n", f.GetText(false))
 }
 
-func TestFlashColor(t *testing.T) {
-	uu := []struct {
-		level FlashLevel
-		color tcell.Color
-	}{
-		{FlashWarn, tcell.ColorOrange},
-		{FlashErr, tcell.ColorOrangeRed},
-		{FlashFatal, tcell.ColorFuchsia},
-		{FlashInfo, tcell.ColorNavajoWhite},
-	}
+func TestFlashWarn(t *testing.T) {
+	f := ui.NewFlash(ui.NewApp(""), "YO!")
 
-	for _, u := range uu {
-		assert.Equal(t, u.color, flashColor(u.level))
-	}
+	f.Warn("Blee")
+	assert.Equal(t, "😗 Blee\n", f.GetText(false))
+
+	f.Warnf("Blee %s", "duh")
+	assert.Equal(t, "😗 Blee duh\n", f.GetText(false))
+}
+
+func TestFlashErr(t *testing.T) {
+	f := ui.NewFlash(ui.NewApp(""), "YO!")
+
+	f.Err(errors.New("Blee"))
+	assert.Equal(t, "😡 Blee\n", f.GetText(false))
+
+	f.Errf("Blee %s", "duh")
+	assert.Equal(t, "😡 Blee duh\n", f.GetText(false))
 
 }

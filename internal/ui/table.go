@@ -1,558 +1,334 @@
 package ui
 
 import (
+	"context"
 	"errors"
-	"fmt"
-	"path"
-	"regexp"
-	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
-	"github.com/sahilm/fuzzy"
-	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 type (
 	// ColorerFunc represents a row colorer.
-	ColorerFunc func(ns string, evt *resource.RowEvent) tcell.Color
+	ColorerFunc func(ns string, evt render.RowEvent) tcell.Color
+
+	// DecorateFunc represents a row decorator.
+	DecorateFunc func(render.TableData) render.TableData
 
 	// SelectedRowFunc a table selection callback.
-	SelectedRowFunc func(r, c int)
+	SelectedRowFunc func(r int)
 )
 
 // Table represents tabular data.
 type Table struct {
-	*tview.Table
+	*SelectTable
 
-	baseTitle    string
-	data         resource.TableData
-	actions      KeyActions
-	cmdBuff      *CmdBuff
-	styles       *config.Styles
-	activeNS     string
-	sortCol      SortColumn
-	sortFn       SortFn
-	colorerFn    ColorerFunc
-	selectedItem string
-	selectedRow  int
-	selectedFn   func(string) string
-	selListeners []SelectedRowFunc
-	marks        map[string]bool
+	actions    KeyActions
+	BaseTitle  string
+	Path       string
+	cmdBuff    *CmdBuff
+	styles     *config.Styles
+	sortCol    SortColumn
+	colorerFn  render.ColorerFunc
+	decorateFn DecorateFunc
 }
 
 // NewTable returns a new table view.
-func NewTable(title string, styles *config.Styles) *Table {
-	v := Table{
-		Table:     tview.NewTable(),
-		styles:    styles,
+func NewTable(gvr string) *Table {
+	return &Table{
+		SelectTable: &SelectTable{
+			Table: tview.NewTable(),
+			model: model.NewTable(gvr),
+			marks: make(map[string]bool),
+		},
 		actions:   make(KeyActions),
 		cmdBuff:   NewCmdBuff('/', FilterBuff),
-		baseTitle: title,
-		sortCol:   SortColumn{0, 0, true},
-		marks:     make(map[string]bool),
+		BaseTitle: gvr,
+		sortCol:   SortColumn{index: -1, colCount: 0, asc: true},
 	}
+}
 
-	v.SetFixed(1, 0)
-	v.SetBorder(true)
-	v.SetBackgroundColor(config.AsColor(styles.Table().BgColor))
-	v.SetBorderColor(config.AsColor(styles.Table().FgColor))
-	v.SetBorderFocusColor(config.AsColor(styles.Frame().Border.FocusColor))
-	v.SetBorderAttributes(tcell.AttrBold)
-	v.SetBorderPadding(0, 0, 1, 1)
-	v.SetSelectable(true, false)
-	v.SetSelectedStyle(
+func (t *Table) Init(ctx context.Context) {
+	t.styles = mustExtractSyles(ctx)
+
+	t.SetFixed(1, 0)
+	t.SetBorder(true)
+	t.SetBackgroundColor(config.AsColor(t.styles.GetTable().BgColor))
+	t.SetBorderColor(config.AsColor(t.styles.GetTable().FgColor))
+	t.SetBorderFocusColor(config.AsColor(t.styles.Frame().Border.FocusColor))
+	t.SetBorderAttributes(tcell.AttrBold)
+	t.SetBorderPadding(0, 0, 1, 1)
+	t.SetSelectable(true, false)
+	t.SetSelectedStyle(
 		tcell.ColorBlack,
-		config.AsColor(styles.Table().CursorColor),
+		config.AsColor(t.styles.GetTable().CursorColor),
 		tcell.AttrBold,
 	)
-
-	v.SetSelectionChangedFunc(v.selChanged)
-	v.SetInputCapture(v.keyboard)
-
-	return &v
+	t.SetSelectionChangedFunc(t.selectionChanged)
+	t.SetInputCapture(t.keyboard)
 }
 
-// GetRow retrieves the entire selected row.
-func (v *Table) GetRow() resource.Row {
-	r := make(resource.Row, v.GetColumnCount())
-	for i := 0; i < v.GetColumnCount(); i++ {
-		c := v.GetCell(v.selectedRow, i)
-		r[i] = strings.TrimSpace(c.Text)
-	}
-	return r
+// Actions returns active menu bindings.
+func (t *Table) Actions() KeyActions {
+	return t.actions
 }
 
-// AddSelectedRowListener add a new selected row listener.
-func (v *Table) AddSelectedRowListener(f SelectedRowFunc) {
-	v.selListeners = append(v.selListeners, f)
+// SendKey sends an keyboard event (testing only!).
+func (t *Table) SendKey(evt *tcell.EventKey) {
+	t.keyboard(evt)
 }
 
-func (v *Table) selChanged(r, c int) {
-	v.selectedRow = r
-	v.updateSelectedItem(r)
-	if r == 0 {
-		return
-	}
-
-	cell := v.GetCell(r, c)
-	v.SetSelectedStyle(
-		tcell.ColorBlack,
-		cell.Color,
-		tcell.AttrBold,
-	)
-
-	for _, f := range v.selListeners {
-		f(r, c)
-	}
-}
-
-// UpdateSelection refresh selected row.
-func (v *Table) updateSelection(broadcast bool) {
-	v.SelectRow(v.selectedRow, broadcast)
-}
-
-// SelectRow select a given row by index.
-func (v *Table) SelectRow(r int, broadcast bool) {
-	if !broadcast {
-		v.SetSelectionChangedFunc(nil)
-	}
-	defer v.SetSelectionChangedFunc(v.selChanged)
-	v.Select(r, 0)
-	v.updateSelectedItem(r)
-}
-
-func (v *Table) updateSelectedItem(r int) {
-	if r == 0 || v.GetCell(r, 0) == nil {
-		v.selectedItem = ""
-		return
-	}
-
-	col0 := TrimCell(v, r, 0)
-	switch v.activeNS {
-	case resource.NotNamespaced:
-		v.selectedItem = col0
-	case resource.AllNamespace, resource.AllNamespaces:
-		v.selectedItem = path.Join(col0, TrimCell(v, r, 1))
-	default:
-		v.selectedItem = path.Join(v.activeNS, col0)
-	}
-}
-
-// SetSelectedFn defines a function that cleanse the current selection.
-func (v *Table) SetSelectedFn(f func(string) string) {
-	v.selectedFn = f
-}
-
-// RowSelected checks if there is an active row selection.
-func (v *Table) RowSelected() bool {
-	return v.selectedItem != ""
-}
-
-// GetSelectedCell returns the contant of a cell for the currently selected row.
-func (v *Table) GetSelectedCell(col int) string {
-	return TrimCell(v, v.selectedRow, col)
-}
-
-// GetSelectedRow fetch the currently selected row index.
-func (v *Table) GetSelectedRow() int {
-	return v.selectedRow
-}
-
-// GetSelectedItem returns the currently selected item name.
-func (v *Table) GetSelectedItem() string {
-	if v.selectedFn != nil {
-		return v.selectedFn(v.selectedItem)
-	}
-	return v.selectedItem
-}
-
-// GetSelectedItems return currently marked or selected items names.
-func (v *Table) GetSelectedItems() []string {
-	if len(v.marks) > 0 {
-		var items []string
-		for item, marked := range v.marks {
-			if marked {
-				items = append(items, item)
-			}
-		}
-		return items
-	}
-	return []string{v.GetSelectedItem()}
-}
-
-func (v *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
+func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	key := evt.Key()
+	if key == tcell.KeyUp || key == tcell.KeyDown {
+		return evt
+	}
+
 	if key == tcell.KeyRune {
-		if v.SearchBuff().IsActive() {
-			v.SearchBuff().Add(evt.Rune())
-			v.ClearSelection()
-			v.doUpdate(v.filtered())
-			v.UpdateTitle()
-			v.SelectFirstRow()
+		if t.SearchBuff().IsActive() {
+			t.SearchBuff().Add(evt.Rune())
+			t.ClearSelection()
+			data := t.GetModel().Peek()
+			t.doUpdate(t.filtered(data), len(data.RowEvents) > 0)
+			t.UpdateTitle()
+			t.SelectFirstRow()
 			return nil
 		}
 		key = asKey(evt)
 	}
 
-	if a, ok := v.actions[key]; ok {
+	if a, ok := t.actions[key]; ok {
 		return a.Action(evt)
 	}
 
 	return evt
 }
 
-// GetData fetch tabular data.
-func (v *Table) GetData() resource.TableData {
-	return v.data
+func (t *Table) Hints() model.MenuHints {
+	return t.actions.Hints()
 }
 
 // GetFilteredData fetch filtered tabular data.
-func (v *Table) GetFilteredData() resource.TableData {
-	return v.filtered()
+func (t *Table) GetFilteredData() render.TableData {
+	return t.filtered(t.GetModel().Peek())
 }
 
-// SetBaseTitle set the table title.
-func (v *Table) SetBaseTitle(s string) {
-	v.baseTitle = s
+// SetDecorateFn specifies the default row decorator.
+func (t *Table) SetDecorateFn(f DecorateFunc) {
+	t.decorateFn = f
 }
 
-// GetBaseTitle fetch the current title.
-func (v *Table) GetBaseTitle() string {
-	return v.baseTitle
-}
-
-// SetColorerFn set the row colorer.
-func (v *Table) SetColorerFn(f ColorerFunc) {
-	v.colorerFn = f
-}
-
-// ActiveNS get the resource namespace.
-func (v *Table) ActiveNS() string {
-	return v.activeNS
-}
-
-// SetActiveNS set the resource namespace.
-func (v *Table) SetActiveNS(ns string) {
-	v.activeNS = ns
+// SetColorerFn specifies the default colorer.
+func (t *Table) SetColorerFn(f render.ColorerFunc) {
+	t.colorerFn = f
 }
 
 // SetSortCol sets in sort column index and order.
-func (v *Table) SetSortCol(index, count int, asc bool) {
-	v.sortCol.index, v.sortCol.colCount, v.sortCol.asc = index, count, asc
+func (t *Table) SetSortCol(index, count int, asc bool) {
+	t.sortCol.index, t.sortCol.colCount, t.sortCol.asc = index, count, asc
 }
 
 // Update table content.
-func (v *Table) Update(data resource.TableData) {
-	v.data = data
-	if v.cmdBuff.Empty() {
-		v.doUpdate(v.data)
-	} else {
-		v.doUpdate(v.filtered())
+func (t *Table) Update(data render.TableData) {
+	data.Mutex.RLock()
+	defer data.Mutex.RUnlock()
+
+	var firstRow bool
+	if t.GetRowCount() == 0 {
+		firstRow = true
 	}
-	v.UpdateTitle()
-	v.updateSelection(true)
+
+	if t.decorateFn != nil {
+		data = t.decorateFn(data)
+	}
+	if !t.cmdBuff.Empty() {
+		data = t.filtered(data)
+	}
+	t.doUpdate(data, firstRow)
+	t.UpdateTitle()
 }
 
-func (v *Table) doUpdate(data resource.TableData) {
-	v.activeNS = data.Namespace
-	if v.activeNS == resource.AllNamespaces && v.activeNS != "*" {
-		v.actions[KeyShiftP] = NewKeyAction("Sort Namespace", v.SortColCmd(-2), false)
+func (t *Table) doUpdate(data render.TableData, firstRow bool) {
+	if data.Namespace == render.AllNamespaces {
+		t.actions[KeyShiftP] = NewKeyAction("Sort Namespace", t.SortColCmd(-2, true), false)
 	} else {
-		delete(v.actions, KeyShiftP)
+		t.actions.Delete(KeyShiftP)
 	}
-	v.Clear()
 
-	v.adjustSorter(data)
-
-	var row int
-	fg := config.AsColor(v.styles.Table().Header.FgColor)
-	bg := config.AsColor(v.styles.Table().Header.BgColor)
+	t.Clear()
+	t.adjustSorter(data)
+	fg := config.AsColor(t.styles.GetTable().Header.FgColor)
+	bg := config.AsColor(t.styles.GetTable().Header.BgColor)
 	for col, h := range data.Header {
-		v.AddHeaderCell(data.NumCols[h], col, h)
-		c := v.GetCell(0, col)
+		t.AddHeaderCell(col, h)
+		c := t.GetCell(0, col)
 		c.SetBackgroundColor(bg)
 		c.SetTextColor(fg)
 	}
-	row++
+	data.RowEvents.Sort(data.Namespace, t.sortCol.index, t.sortCol.asc)
 
-	v.sort(data, row)
+	pads := make(MaxyPad, len(data.Header))
+	ComputeMaxColumns(pads, t.sortCol.index, data.Header, data.RowEvents)
+	for i, r := range data.RowEvents {
+		t.buildRow(data.Namespace, i+1, r, data.Header, pads)
+	}
+
+	if firstRow {
+		t.SelectFirstRow()
+	}
+	t.updateSelection(true)
 }
 
 // SortColCmd designates a sorted column.
-func (v *Table) SortColCmd(col int) func(evt *tcell.EventKey) *tcell.EventKey {
+func (t *Table) SortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		v.sortCol.asc = true
+		var index int
 		switch col {
 		case -2:
-			v.sortCol.index = 0
+			index = 0
 		case -1:
-			v.sortCol.index = v.GetColumnCount() - 1
+			index = t.GetColumnCount() - 1
 		default:
-			v.sortCol.index = v.NameColIndex() + col
-
+			index = t.NameColIndex() + col
 		}
-		v.Refresh()
-
+		t.sortCol.asc = !t.sortCol.asc
+		if t.sortCol.index != index {
+			t.sortCol.asc = asc
+		}
+		t.sortCol.index = index
+		t.Refresh()
 		return nil
 	}
 }
 
-func (v *Table) adjustSorter(data resource.TableData) {
+// SortInvertCmd reverses sorting order.
+func (t *Table) SortInvertCmd(evt *tcell.EventKey) *tcell.EventKey {
+	t.sortCol.asc = !t.sortCol.asc
+	t.Refresh()
+
+	return nil
+}
+
+func (t *Table) adjustSorter(data render.TableData) {
 	// Going from namespace to non namespace or vice-versa?
 	switch {
-	case v.sortCol.colCount == 0:
-	case len(data.Header) > v.sortCol.colCount:
-		v.sortCol.index++
-	case len(data.Header) < v.sortCol.colCount:
-		v.sortCol.index--
+	case t.sortCol.colCount == 0:
+	case len(data.Header) > t.sortCol.colCount:
+		t.sortCol.index++
+	case len(data.Header) < t.sortCol.colCount:
+		t.sortCol.index--
 	}
-	v.sortCol.colCount = len(data.Header)
-	if v.sortCol.index < 0 {
-		v.sortCol.index = 0
+	t.sortCol.colCount = len(data.Header)
+	if t.sortCol.index < 0 {
+		t.sortCol.index = 0
 	}
 }
 
-func (v *Table) sort(data resource.TableData, row int) {
-	pads := make(MaxyPad, len(data.Header))
-	ComputeMaxColumns(pads, v.sortCol.index, data)
-
-	sortFn := defaultSort
-	if v.sortFn != nil {
-		sortFn = v.sortFn
+func (t *Table) buildRow(ns string, r int, re render.RowEvent, header render.HeaderRow, pads MaxyPad) {
+	color := render.DefaultColorer
+	if t.colorerFn != nil {
+		color = t.colorerFn
 	}
-	prim, sec := sortAllRows(v.sortCol, data.Rows, sortFn)
-	for _, pk := range prim {
-		for _, sk := range sec[pk] {
-			v.buildRow(row, data, sk, pads)
-			row++
+	marked := t.IsMarked(re.Row.ID)
+	for col, field := range re.Row.Fields {
+		if !re.Deltas.IsBlank() && !header.AgeCol(col) {
+			field += Deltas(re.Deltas[col], field)
 		}
-	}
-}
 
-func (v *Table) buildRow(row int, data resource.TableData, sk string, pads MaxyPad) {
-	f := DefaultColorer
-	if v.colorerFn != nil {
-		f = v.colorerFn
-	}
-	m := v.isMarked(sk)
-	for col, field := range data.Rows[sk].Fields {
-		header := data.Header[col]
-		field, align := v.formatCell(data.NumCols[header], header, field+Deltas(data.Rows[sk].Deltas[col], field), pads[col])
+		if header[col].Decorator != nil {
+			field = header[col].Decorator(field)
+		}
+
+		if header[col].Align == tview.AlignLeft {
+			field = formatCell(field, pads[col])
+		}
 		c := tview.NewTableCell(field)
-		{
-			c.SetExpansion(1)
-			c.SetAlign(align)
-			c.SetTextColor(f(data.Namespace, data.Rows[sk]))
-			if m {
-				c.SetBackgroundColor(config.AsColor(v.styles.Table().MarkColor))
-			}
+		c.SetExpansion(1)
+		c.SetAlign(header[col].Align)
+		c.SetTextColor(color(ns, re))
+		if marked {
+			log.Debug().Msgf("Marked!")
+			c.SetTextColor(config.AsColor(t.styles.GetTable().MarkColor))
 		}
-		v.SetCell(row, col, c)
+		if col == 0 {
+			c.SetReference(re.Row.ID)
+		}
+		t.SetCell(r, col, c)
 	}
 }
 
-func (v *Table) formatCell(numerical bool, header, field string, padding int) (string, int) {
-	if header == "AGE" {
-		dur, err := time.ParseDuration(field)
-		if err == nil {
-			field = duration.HumanDuration(dur)
-		}
-	}
-
-	if numerical || cpuRX.MatchString(header) || memRX.MatchString(header) {
-		return field, tview.AlignRight
-	}
-
-	align := tview.AlignLeft
-	if IsASCII(field) {
-		return Pad(field, padding), align
-	}
-
-	return field, align
+func (t *Table) ClearMarks() {
+	t.marks = map[string]bool{}
+	t.Refresh()
 }
 
 // Refresh update the table data.
-func (v *Table) Refresh() {
-	v.Update(v.data)
+func (t *Table) Refresh() {
+	t.Update(t.model.Peek())
+}
+
+func (t *Table) GetSelectedRow() render.Row {
+	return t.model.Peek().RowEvents[t.GetSelectedRowIndex()].Row
 }
 
 // NameColIndex returns the index of the resource name column.
-func (v *Table) NameColIndex() int {
+func (t *Table) NameColIndex() int {
 	col := 0
-	if v.activeNS == resource.AllNamespaces {
+	if t.GetModel().ClusterWide() {
 		col++
 	}
 	return col
 }
 
 // AddHeaderCell configures a table cell header.
-func (v *Table) AddHeaderCell(numerical bool, col int, name string) {
-	c := tview.NewTableCell(sortIndicator(v.sortCol, v.styles.Table(), col, name))
+func (t *Table) AddHeaderCell(col int, h render.Header) {
+	c := tview.NewTableCell(sortIndicator(t.sortCol, t.styles.GetTable(), col, h.Name))
 	c.SetExpansion(1)
-	if numerical || cpuRX.MatchString(name) || memRX.MatchString(name) {
-		c.SetAlign(tview.AlignRight)
-	}
-	v.SetCell(0, col, c)
+	c.SetAlign(h.Align)
+	t.SetCell(0, col, c)
 }
 
-func (v *Table) filtered() resource.TableData {
-	if v.cmdBuff.Empty() || isLabelSelector(v.cmdBuff.String()) {
-		return v.data
+func (t *Table) filtered(data render.TableData) render.TableData {
+	if t.cmdBuff.Empty() || IsLabelSelector(t.cmdBuff.String()) {
+		return data
 	}
-
-	q := v.cmdBuff.String()
+	q := t.cmdBuff.String()
 	if isFuzzySelector(q) {
-		return v.fuzzyFilter(q[2:])
+		return fuzzyFilter(q[2:], t.NameColIndex(), data)
 	}
 
-	return v.rxFilter(q)
-}
-
-func (v *Table) rxFilter(q string) resource.TableData {
-	rx, err := regexp.Compile(`(?i)` + v.cmdBuff.String())
+	filtered, err := rxFilter(t.cmdBuff.String(), data)
 	if err != nil {
 		log.Error().Err(errors.New("Invalid filter expression")).Msg("Regexp")
-		v.cmdBuff.Clear()
-		return v.data
+		t.cmdBuff.Clear()
+		return data
 	}
-
-	filtered := resource.TableData{
-		Header:    v.data.Header,
-		Rows:      resource.RowEvents{},
-		Namespace: v.data.Namespace,
-	}
-	for k, row := range v.data.Rows {
-		f := strings.Join(row.Fields, " ")
-		if rx.MatchString(f) {
-			filtered.Rows[k] = row
-		}
-	}
-
 	return filtered
-}
-
-func (v *Table) fuzzyFilter(q string) resource.TableData {
-	var ss, kk []string
-	for k, row := range v.data.Rows {
-		ss = append(ss, row.Fields[v.NameColIndex()])
-		kk = append(kk, k)
-	}
-
-	filtered := resource.TableData{
-		Header:    v.data.Header,
-		Rows:      resource.RowEvents{},
-		Namespace: v.data.Namespace,
-	}
-	mm := fuzzy.Find(q, ss)
-	for _, m := range mm {
-		filtered.Rows[kk[m.Index]] = v.data.Rows[kk[m.Index]]
-	}
-
-	return filtered
-}
-
-// KeyBindings returns the bounded keys.
-func (v *Table) KeyBindings() KeyActions {
-	return v.actions
 }
 
 // SearchBuff returns the associated command buffer.
-func (v *Table) SearchBuff() *CmdBuff {
-	return v.cmdBuff
-}
-
-// ClearSelection reset selected row.
-func (v *Table) ClearSelection() {
-	v.Select(0, 0)
-	v.ScrollToBeginning()
-}
-
-// SelectFirstRow select first data row if any.
-func (v *Table) SelectFirstRow() {
-	if v.GetRowCount() > 0 {
-		v.Select(1, 0)
-	}
+func (t *Table) SearchBuff() *CmdBuff {
+	return t.cmdBuff
 }
 
 // ShowDeleted marks row as deleted.
-func (v *Table) ShowDeleted() {
-	r, _ := v.GetSelection()
-	cols := v.GetColumnCount()
+func (t *Table) ShowDeleted() {
+	r, _ := t.GetSelection()
+	cols := t.GetColumnCount()
 	for x := 0; x < cols; x++ {
-		v.GetCell(r, x).SetAttributes(tcell.AttrDim)
+		t.GetCell(r, x).SetAttributes(tcell.AttrDim)
 	}
-}
-
-// SetActions sets up keyboard action listener.
-func (v *Table) SetActions(aa KeyActions) {
-	for k, a := range aa {
-		v.actions[k] = a
-	}
-}
-
-// RmAction delete a keyed action.
-func (v *Table) RmAction(kk ...tcell.Key) {
-	for _, k := range kk {
-		delete(v.actions, k)
-	}
-}
-
-// Hints options
-func (v *Table) Hints() Hints {
-	if v.actions != nil {
-		return v.actions.Hints()
-	}
-
-	return nil
 }
 
 // UpdateTitle refreshes the table title.
-func (v *Table) UpdateTitle() {
-	var title string
-
-	rc := v.GetRowCount()
-	if rc > 0 {
-		rc--
+func (t *Table) UpdateTitle() {
+	ns := t.GetModel().GetNamespace()
+	if ns == render.AllNamespaces {
+		ns = render.NamespaceAll
 	}
-	switch v.activeNS {
-	case resource.NotNamespaced, "*":
-		title = skinTitle(fmt.Sprintf(titleFmt, v.baseTitle, rc), v.styles.Frame())
-	default:
-		ns := v.activeNS
-		if ns == resource.AllNamespaces {
-			ns = resource.AllNamespace
-		}
-		title = skinTitle(fmt.Sprintf(nsTitleFmt, v.baseTitle, ns, rc), v.styles.Frame())
-	}
-
-	if !v.cmdBuff.Empty() {
-		cmd := v.cmdBuff.String()
-		if isLabelSelector(cmd) {
-			cmd = trimLabelSelector(cmd)
-		}
-		title += skinTitle(fmt.Sprintf(searchFmt, cmd), v.styles.Frame())
-	}
-	v.SetTitle(title)
-}
-
-// SortInvertCmd reverses sorting order.
-func (v *Table) SortInvertCmd(evt *tcell.EventKey) *tcell.EventKey {
-	v.sortCol.asc = !v.sortCol.asc
-	v.Refresh()
-
-	return nil
-}
-
-// ToggleMark toggles marked row
-func (v *Table) ToggleMark() {
-	v.marks[v.GetSelectedItem()] = !v.marks[v.GetSelectedItem()]
-}
-
-func (v *Table) isMarked(item string) bool {
-	return v.marks[item]
+	t.SetTitle(styleTitle(t.GetRowCount(), ns, t.BaseTitle, t.Path, t.cmdBuff.String(), t.styles))
 }

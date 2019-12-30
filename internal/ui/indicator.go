@@ -10,8 +10,8 @@ import (
 	"github.com/gdamore/tcell"
 )
 
-// IndicatorView represents a status indicator.
-type IndicatorView struct {
+// StatusIndicator represents a status indicator when main header is collapsed.
+type StatusIndicator struct {
 	*tview.TextView
 
 	app       *App
@@ -20,67 +20,74 @@ type IndicatorView struct {
 	cancel    context.CancelFunc
 }
 
-// NewIndicatorView returns a new status indicator.
-func NewIndicatorView(app *App, styles *config.Styles) *IndicatorView {
-	v := IndicatorView{
+// NewStatusIndicator returns a new status indicator.
+func NewStatusIndicator(app *App, styles *config.Styles) *StatusIndicator {
+	s := StatusIndicator{
 		TextView: tview.NewTextView(),
 		app:      app,
 		styles:   styles,
 	}
-	v.SetTextAlign(tview.AlignCenter)
-	v.SetTextColor(tcell.ColorWhite)
-	v.SetBackgroundColor(styles.BgColor())
-	v.SetDynamicColors(true)
+	s.SetTextAlign(tview.AlignCenter)
+	s.SetTextColor(tcell.ColorWhite)
+	s.SetBackgroundColor(styles.BgColor())
+	s.SetDynamicColors(true)
+	styles.AddListener(&s)
 
-	return &v
+	return &s
+}
+
+func (s *StatusIndicator) StylesChanged(styles *config.Styles) {
+	s.styles = styles
+	s.SetBackgroundColor(styles.BgColor())
+	s.SetTextColor(styles.FgColor())
 }
 
 // SetPermanent sets permanent title to be reset to after updates
-func (v *IndicatorView) SetPermanent(info string) {
-	v.permanent = info
-	v.SetText(info)
+func (s *StatusIndicator) SetPermanent(info string) {
+	s.permanent = info
+	s.SetText(info)
 }
 
 // Reset clears out the logo view and resets colors.
-func (v *IndicatorView) Reset() {
-	v.Clear()
-	v.SetPermanent(v.permanent)
+func (s *StatusIndicator) Reset() {
+	s.Clear()
+	s.SetPermanent(s.permanent)
 }
 
 // Err displays a log error state.
-func (v *IndicatorView) Err(msg string) {
-	v.update(msg, "orangered")
+func (s *StatusIndicator) Err(msg string) {
+	s.update(msg, "orangered")
 }
 
 // Warn displays a log warning state.
-func (v *IndicatorView) Warn(msg string) {
-	v.update(msg, "mediumvioletred")
+func (s *StatusIndicator) Warn(msg string) {
+	s.update(msg, "mediumvioletred")
 }
 
 // Info displays a log info state.
-func (v *IndicatorView) Info(msg string) {
-	v.update(msg, "lawngreen")
+func (s *StatusIndicator) Info(msg string) {
+	s.update(msg, "lawngreen")
 }
 
-func (v *IndicatorView) update(msg, c string) {
-	v.setText(fmt.Sprintf("[%s::b] <%s> ", c, msg))
+func (s *StatusIndicator) update(msg, c string) {
+	s.setText(fmt.Sprintf("[%s::b] <%s> ", c, msg))
 }
 
-func (v *IndicatorView) setText(msg string) {
-	if v.cancel != nil {
-		v.cancel()
+func (s *StatusIndicator) setText(msg string) {
+	if s.cancel != nil {
+		s.cancel()
 	}
-	v.SetText(msg)
+	s.SetText(msg)
 
 	var ctx context.Context
-	ctx, v.cancel = context.WithCancel(context.Background())
+	ctx, s.cancel = context.WithCancel(context.Background())
 	go func(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
 		case <-time.After(5 * time.Second):
-			v.app.QueueUpdateDraw(func() {
-				v.Reset()
+			s.app.QueueUpdateDraw(func() {
+				s.Reset()
 			})
 		}
 	}(ctx)

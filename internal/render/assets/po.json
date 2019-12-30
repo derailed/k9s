@@ -1,0 +1,140 @@
+{
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": {
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Pod\",\"metadata\":{\"annotations\":{},\"name\":\"nginx\",\"namespace\":\"default\"},\"spec\":{\"containers\":[{\"image\":\"nginx:alpine\",\"name\":\"nginx\",\"ports\":[{\"containerPort\":80}],\"volumeMounts\":[{\"mountPath\":\"/usr/share/nginx/html\",\"name\":\"index\"}]}],\"terminationGracePeriodSeconds\":0,\"volumes\":[{\"name\":\"index\",\"persistentVolumeClaim\":{\"claimName\":\"web\"}}]}}\n"
+    },
+    "creationTimestamp": "2019-08-09T05:12:19Z",
+    "name": "nginx",
+    "namespace": "default",
+    "resourceVersion": "1482816",
+    "selfLink": "/api/v1/namespaces/default/pods/nginx",
+    "uid": "614908ed-415b-4506-8370-e3e36fa8cc13"
+  },
+  "spec": {
+    "containers": [
+      {
+        "image": "nginx:alpine",
+        "imagePullPolicy": "IfNotPresent",
+        "name": "nginx",
+        "ports": [
+          {
+            "containerPort": 80,
+            "protocol": "TCP"
+          }
+        ],
+        "resources": {
+          "limits": {
+            "memory": "170Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "70Mi"
+          }
+        },
+        "terminationMessagePath": "/dev/termination-log",
+        "terminationMessagePolicy": "File",
+        "volumeMounts": [
+          {
+            "mountPath": "/usr/share/nginx/html",
+            "name": "index"
+          },
+          {
+            "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+            "name": "default-token-9ph8s",
+            "readOnly": true
+          }
+        ]
+      }
+    ],
+    "dnsPolicy": "ClusterFirst",
+    "enableServiceLinks": true,
+    "nodeName": "minikube",
+    "priority": 0,
+    "restartPolicy": "Always",
+    "schedulerName": "default-scheduler",
+    "securityContext": {},
+    "serviceAccount": "default",
+    "serviceAccountName": "default",
+    "terminationGracePeriodSeconds": 0,
+    "tolerations": [
+      {
+        "effect": "NoExecute",
+        "key": "node.kubernetes.io/not-ready",
+        "operator": "Exists",
+        "tolerationSeconds": 300
+      },
+      {
+        "effect": "NoExecute",
+        "key": "node.kubernetes.io/unreachable",
+        "operator": "Exists",
+        "tolerationSeconds": 300
+      }
+    ],
+    "volumes": [
+      {
+        "name": "index",
+        "persistentVolumeClaim": {
+          "claimName": "web"
+        }
+      },
+      {
+        "name": "default-token-9ph8s",
+        "secret": {
+          "defaultMode": 420,
+          "secretName": "default-token-9ph8s"
+        }
+      }
+    ]
+  },
+  "status": {
+    "conditions": [
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2019-08-09T05:12:19Z",
+        "status": "True",
+        "type": "Initialized"
+      },
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2019-08-09T05:12:21Z",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2019-08-09T05:12:21Z",
+        "status": "True",
+        "type": "ContainersReady"
+      },
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2019-08-09T05:12:19Z",
+        "status": "True",
+        "type": "PodScheduled"
+      }
+    ],
+    "containerStatuses": [
+      {
+        "containerID": "docker://421bd26d6c682f14b5ea1dcaf06e14a509b2b702fc7793e820520eb1e28e2eaf",
+        "image": "nginx:alpine",
+        "imageID": "docker-pullable://nginx@sha256:482ead44b2203fa32b3390abdaf97cbdc8ad15c07fb03a3e68d7c35a19ad7595",
+        "lastState": {},
+        "name": "nginx",
+        "ready": true,
+        "restartCount": 0,
+        "state": {
+          "running": {
+            "startedAt": "2019-08-09T05:12:20Z"
+          }
+        }
+      }
+    ],
+    "hostIP": "192.168.64.104",
+    "phase": "Running",
+    "podIP": "172.17.0.6",
+    "qosClass": "BestEffort",
+    "startTime": "2019-08-09T05:12:19Z"
+  }
+}

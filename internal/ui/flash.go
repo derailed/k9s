@@ -6,7 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/derailed/k9s/internal/resource"
+	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -34,54 +35,60 @@ type (
 	// FlashLevel represents flash message severity.
 	FlashLevel int
 
-	// FlashView represents a flash message indicator.
-	FlashView struct {
+	// Flash represents a flash message indicator.
+	Flash struct {
 		*tview.TextView
 
 		cancel context.CancelFunc
-		app    *tview.Application
+		app    *App
 	}
 )
 
-// NewFlashView returns a new flash view.
-func NewFlashView(app *tview.Application, m string) *FlashView {
-	f := FlashView{app: app, TextView: tview.NewTextView()}
+// NewFlash returns a new flash view.
+func NewFlash(app *App, m string) *Flash {
+	f := Flash{app: app, TextView: tview.NewTextView()}
 	f.SetTextColor(tcell.ColorAqua)
 	f.SetTextAlign(tview.AlignLeft)
 	f.SetBorderPadding(0, 0, 1, 1)
 	f.SetText("")
+	f.app.Styles.AddListener(&f)
 
 	return &f
 }
 
+func (f *Flash) StylesChanged(s *config.Styles) {
+	f.SetBackgroundColor(s.BgColor())
+	f.SetTextColor(s.FgColor())
+}
+
 // Info displays an info flash message.
-func (v *FlashView) Info(msg string) {
-	v.setMessage(FlashInfo, msg)
+func (f *Flash) Info(msg string) {
+	f.setMessage(FlashInfo, msg)
 }
 
 // Infof displays a formatted info flash message.
-func (v *FlashView) Infof(fmat string, args ...interface{}) {
-	v.Info(fmt.Sprintf(fmat, args...))
+func (f *Flash) Infof(fmat string, args ...interface{}) {
+	f.Info(fmt.Sprintf(fmat, args...))
 }
 
 // Warn displays a warning flash message.
-func (v *FlashView) Warn(msg string) {
-	v.setMessage(FlashWarn, msg)
+func (f *Flash) Warn(msg string) {
+	f.setMessage(FlashWarn, msg)
 }
 
 // Warnf displays a formatted warning flash message.
-func (v *FlashView) Warnf(fmat string, args ...interface{}) {
-	v.Warn(fmt.Sprintf(fmat, args...))
+func (f *Flash) Warnf(fmat string, args ...interface{}) {
+	f.Warn(fmt.Sprintf(fmat, args...))
 }
 
 // Err displays an error flash message.
-func (v *FlashView) Err(err error) {
+func (f *Flash) Err(err error) {
 	log.Error().Err(err).Msgf("%v", err)
-	v.setMessage(FlashErr, err.Error())
+	f.setMessage(FlashErr, err.Error())
 }
 
 // Errf displays a formatted error flash message.
-func (v *FlashView) Errf(fmat string, args ...interface{}) {
+func (f *Flash) Errf(fmat string, args ...interface{}) {
 	var err error
 	for _, a := range args {
 		switch e := a.(type) {
@@ -90,30 +97,30 @@ func (v *FlashView) Errf(fmat string, args ...interface{}) {
 		}
 	}
 	log.Error().Err(err).Msgf(fmat, args...)
-	v.setMessage(FlashErr, fmt.Sprintf(fmat, args...))
+	f.setMessage(FlashErr, fmt.Sprintf(fmat, args...))
 }
 
-func (v *FlashView) setMessage(level FlashLevel, msg ...string) {
-	if v.cancel != nil {
-		v.cancel()
+func (f *Flash) setMessage(level FlashLevel, msg ...string) {
+	if f.cancel != nil {
+		f.cancel()
 	}
 	var ctx1, ctx2 context.Context
 	{
 		var timerCancel context.CancelFunc
-		ctx1, v.cancel = context.WithCancel(context.TODO())
+		ctx1, f.cancel = context.WithCancel(context.TODO())
 		ctx2, timerCancel = context.WithTimeout(context.TODO(), flashDelay*time.Second)
-		go v.refresh(ctx1, ctx2, timerCancel)
+		go f.refresh(ctx1, ctx2, timerCancel)
 	}
-	_, _, width, _ := v.GetRect()
+	_, _, width, _ := f.GetRect()
 	if width <= 15 {
 		width = 100
 	}
 	m := strings.Join(msg, " ")
-	v.SetTextColor(flashColor(level))
-	v.SetText(resource.Truncate(flashEmoji(level)+" "+m, width-3))
+	f.SetTextColor(flashColor(level))
+	f.SetText(render.Truncate(flashEmoji(level)+" "+m, width-3))
 }
 
-func (v *FlashView) refresh(ctx1, ctx2 context.Context, cancel context.CancelFunc) {
+func (f *Flash) refresh(ctx1, ctx2 context.Context, cancel context.CancelFunc) {
 	defer cancel()
 	for {
 		select {
@@ -122,9 +129,8 @@ func (v *FlashView) refresh(ctx1, ctx2 context.Context, cancel context.CancelFun
 			return
 		// Timed out clear and bail
 		case <-ctx2.Done():
-			v.app.QueueUpdateDraw(func() {
-				v.Clear()
-				v.app.Draw()
+			f.app.QueueUpdateDraw(func() {
+				f.Clear()
 			})
 			return
 		}

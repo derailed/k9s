@@ -20,7 +20,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: file})
 
 	cmd.Execute()

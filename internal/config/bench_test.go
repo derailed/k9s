@@ -16,7 +16,8 @@ func TestBenchEmpty(t *testing.T) {
 		"notEmpty": {newBenchmark(), false},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, u.b.empty())
 		})
@@ -46,7 +47,8 @@ func TestBenchLoad(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			b, err := NewBench(u.file)
 
@@ -95,7 +97,8 @@ func TestBenchServiceLoad(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			b, err := NewBench("test_assets/b_good.yml")
 
@@ -165,7 +168,8 @@ func TestBenchContainerLoad(t *testing.T) {
 		},
 	}
 
-	for k, u := range uu {
+	for k := range uu {
+   u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			b, err := NewBench("test_assets/b_containers.yml")
 

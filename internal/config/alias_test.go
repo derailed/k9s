@@ -13,7 +13,7 @@ func TestAliasDefine(t *testing.T) {
 		aliases []string
 	}
 
-	tts := []struct {
+	uu := []struct {
 		name               string
 		aliases            []aliasDef
 		registeredCommands map[string]string
@@ -51,15 +51,16 @@ func TestAliasDefine(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tts {
-		t.Run(tt.name, func(t *testing.T) {
+	for i := range uu {
+		u := uu[i]
+		t.Run(u.name, func(t *testing.T) {
 			configAlias := config.NewAliases()
-			for _, aliases := range tt.aliases {
+			for _, aliases := range u.aliases {
 				for _, a := range aliases.aliases {
 					configAlias.Define(aliases.cmd, a)
 				}
 			}
-			for alias, cmd := range tt.registeredCommands {
+			for alias, cmd := range u.registeredCommands {
 				v, ok := configAlias.Get(alias)
 				assert.True(t, ok)
 				assert.Equal(t, cmd, v, "Wrong command for alias "+alias)
@@ -70,18 +71,17 @@ func TestAliasDefine(t *testing.T) {
 
 func TestAliasesLoad(t *testing.T) {
 	a := config.NewAliases()
-	assert.Nil(t, a.LoadAliases("test_assets/alias.yml"))
 
-	assert.Equal(t, 27, len(a.Alias))
+	assert.Nil(t, a.LoadAliases("test_assets/alias.yml"))
+	assert.Equal(t, 2, len(a.Alias))
 }
 
 func TestAliasesSave(t *testing.T) {
 	a := config.NewAliases()
-
 	a.Alias["test"] = "fred"
 	a.Alias["blee"] = "duh"
-	a.SaveAliases("/tmp/a.yml")
 
+	assert.Nil(t, a.SaveAliases("/tmp/a.yml"))
 	assert.Nil(t, a.LoadAliases("/tmp/a.yml"))
-	assert.Equal(t, 28, len(a.Alias))
+	assert.Equal(t, 2, len(a.Alias))
 }
