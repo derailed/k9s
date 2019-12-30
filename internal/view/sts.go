@@ -35,8 +35,7 @@ func NewStatefulSet(gvr client.GVR) ResourceViewer {
 
 func (s *StatefulSet) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		ui.KeyShiftD: ui.NewKeyAction("Sort Desired", s.GetTable().SortColCmd(1, true), false),
-		ui.KeyShiftC: ui.NewKeyAction("Sort Current", s.GetTable().SortColCmd(2, true), false),
+		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", s.GetTable().SortColCmd(1, true), false),
 	})
 }
 

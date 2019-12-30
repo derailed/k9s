@@ -43,6 +43,7 @@ func (r *ReplicaSet) bindKeys() {
 	r.Actions().Add(ui.KeyActions{
 		ui.KeyShiftD:   ui.NewKeyAction("Sort Desired", r.GetTable().SortColCmd(1, true), false),
 		ui.KeyShiftC:   ui.NewKeyAction("Sort Current", r.GetTable().SortColCmd(2, true), false),
+		ui.KeyShiftR:   ui.NewKeyAction("Sort Ready", r.GetTable().SortColCmd(3, true), false),
 		tcell.KeyCtrlB: ui.NewKeyAction("Rollback", r.rollbackCmd, true),
 	})
 }
