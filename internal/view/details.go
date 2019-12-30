@@ -25,21 +25,20 @@ type Details struct {
 }
 
 // NewDetails returns a details viewer.
-func NewDetails(title string) *Details {
-	return &Details{
+func NewDetails(app *App, title, subject string) *Details {
+	d := Details{
 		TextView: tview.NewTextView(),
+		app:      app,
 		title:    title,
+		subject:  subject,
 		actions:  make(ui.KeyActions),
 	}
+
+	return &d
 }
 
 // Init initializes the viewer.
-func (d *Details) Init(ctx context.Context) error {
-	var err error
-	if d.app, err = extractApp(ctx); err != nil {
-		return err
-	}
-
+func (d *Details) Init(_ context.Context) error {
 	if d.title != "" {
 		d.SetBorder(true)
 	}
@@ -68,10 +67,12 @@ func (d *Details) StylesChanged(s *config.Styles) {
 	d.Update(d.buff)
 }
 
-func (d *Details) Update(buff string) {
+func (d *Details) Update(buff string) *Details {
 	d.buff = buff
 	d.SetText(colorizeYAML(d.app.Styles.Views().Yaml, buff))
 	d.ScrollToBeginning()
+
+	return d
 }
 
 func (d *Details) Actions() ui.KeyActions {
@@ -107,10 +108,10 @@ func (d *Details) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	if key == tcell.KeyRune {
 		key = tcell.Key(evt.Rune())
 	}
-
 	if a, ok := d.actions[key]; ok {
 		return a.Action(evt)
 	}
+
 	return evt
 }
 

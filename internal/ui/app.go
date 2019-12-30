@@ -178,12 +178,6 @@ func (a *App) redrawCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
-// StatusReset reset log back to normal.
-func (a *App) StatusReset() {
-	a.Logo().Reset()
-	a.Draw()
-}
-
 // View Accessora...
 
 // Crumbs return app crumba.

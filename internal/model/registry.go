@@ -115,11 +115,25 @@ var Registry = map[string]ResourceMeta{
 
 	// Autoscaling...
 	"autoscaling/v1/horizontalpodautoscalers": ResourceMeta{
+		Model:    &HorizontalPodAutoscaler{},
+		Renderer: &render.HorizontalPodAutoscaler{},
+	},
+	"autoscaling/v2beta1/horizontalpodautoscalers": ResourceMeta{
+		Model:    &HorizontalPodAutoscaler{},
+		Renderer: &render.HorizontalPodAutoscaler{},
+	},
+	"autoscaling/v2beta2/horizontalpodautoscalers": ResourceMeta{
+		Model:    &HorizontalPodAutoscaler{},
 		Renderer: &render.HorizontalPodAutoscaler{},
 	},
 
 	// CRDs...
+	"apiextensions.k8s.io/v1/customresourcedefinitions": ResourceMeta{
+		Model:    &CustomResourceDefinition{},
+		Renderer: &render.CustomResourceDefinition{},
+	},
 	"apiextensions.k8s.io/v1beta1/customresourcedefinitions": ResourceMeta{
+		Model:    &CustomResourceDefinition{},
 		Renderer: &render.CustomResourceDefinition{},
 	},
 

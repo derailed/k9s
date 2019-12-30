@@ -67,10 +67,10 @@ func (p *PortForward) showBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (p *PortForward) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if p.bench != nil {
 		log.Debug().Msg(">>> Benchmark cancelFned!!")
-		p.App().status(ui.FlashErr, "Benchmark Camceled!")
+		p.App().Status(ui.FlashErr, "Benchmark Camceled!")
 		p.bench.Cancel()
 	}
-	p.App().StatusReset()
+	p.App().ClearStatus()
 
 	return nil
 }
@@ -97,11 +97,11 @@ func (p *PortForward) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	var err error
 	if p.bench, err = perf.NewBenchmark(base, cfg); err != nil {
 		p.App().Flash().Errf("Bench failed %v", err)
-		p.App().StatusReset()
+		p.App().ClearStatus()
 		return nil
 	}
 
-	p.App().status(ui.FlashWarn, "Benchmark in progress...")
+	p.App().Status(ui.FlashWarn, "Benchmark in progress...")
 	log.Debug().Msg("Bench starting...")
 	go p.runBenchmark()
 
@@ -113,15 +113,15 @@ func (p *PortForward) runBenchmark() {
 		log.Debug().Msg("Bench Completed!")
 		p.App().QueueUpdate(func() {
 			if p.bench.Canceled() {
-				p.App().status(ui.FlashInfo, "Benchmark cancelFned")
+				p.App().Status(ui.FlashInfo, "Benchmark canceled")
 			} else {
-				p.App().status(ui.FlashInfo, "Benchmark Completed!")
+				p.App().Status(ui.FlashInfo, "Benchmark Completed!")
 				p.bench.Cancel()
 			}
 			p.bench = nil
 			go func() {
 				<-time.After(2 * time.Second)
-				p.App().QueueUpdate(func() { p.App().StatusReset() })
+				p.App().QueueUpdate(func() { p.App().ClearStatus() })
 			}()
 		})
 	})

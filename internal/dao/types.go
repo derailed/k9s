@@ -20,7 +20,7 @@ type Factory interface {
 	Get(gvr, path string, sel labels.Selector) (runtime.Object, error)
 
 	// List fetch a collection of resources.
-	List(ns, gvr string, sel labels.Selector) ([]runtime.Object, error)
+	List(gvr, ns string, sel labels.Selector) ([]runtime.Object, error)
 
 	// ForResource fetch an informer for a given resource.
 	ForResource(ns, gvr string) informers.GenericInformer

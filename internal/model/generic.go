@@ -3,11 +3,9 @@ package model
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -61,16 +59,11 @@ func (g *Generic) List(ctx context.Context) ([]runtime.Object, error) {
 		res[i] = RowRes{&g.table.Rows[i]}
 	}
 
-	log.Debug().Msgf("!!!!GENERIC lister returns %d", len(res))
 	return res, err
 }
 
 // Hydrate returns nodes as rows.
 func (g *Generic) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
-	defer func(t time.Time) {
-		log.Debug().Msgf("HYDRATE elapsed: %v", time.Since(t))
-	}(time.Now())
-
 	gr, ok := re.(*render.Generic)
 	if !ok {
 		return fmt.Errorf("expecting generic renderer for %s but got %T", g.gvr, re)

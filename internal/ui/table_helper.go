@@ -152,6 +152,7 @@ func styleTitle(rc int, ns, base, path, buff string, styles *config.Styles) stri
 		rc--
 	}
 
+	base = strings.Title(base)
 	if ns == render.AllNamespaces {
 		ns = render.NamespaceAll
 	}

@@ -71,16 +71,15 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	l.indicator = NewLogIndicator(l.app.Styles)
 	l.AddItem(l.indicator, 1, 1, false)
 
-	l.logs = NewDetails("")
-	l.logs.SetBorder(false)
-	l.logs.SetDynamicColors(true)
-	l.logs.SetTextColor(config.AsColor(l.app.Styles.Views().Log.FgColor))
-	l.logs.SetBackgroundColor(config.AsColor(l.app.Styles.Views().Log.BgColor))
-	l.logs.SetWrap(true)
-	l.logs.SetMaxBuffer(l.app.Config.K9s.LogBufferSize)
+	l.logs = NewDetails(l.app, "", "")
 	if err = l.logs.Init(ctx); err != nil {
 		return err
 	}
+	l.logs.SetWrap(false)
+	l.logs.SetMaxBuffer(l.app.Config.K9s.LogBufferSize)
+	l.logs.SetTextColor(config.AsColor(l.app.Styles.Views().Log.FgColor))
+	l.logs.SetBackgroundColor(config.AsColor(l.app.Styles.Views().Log.BgColor))
+
 	l.ansiWriter = tview.ANSIWriter(l.logs, l.app.Styles.Views().Log.FgColor, l.app.Styles.Views().Log.BgColor)
 	l.AddItem(l.logs, 0, 1, true)
 	l.bindKeys()

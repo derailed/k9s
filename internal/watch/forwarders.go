@@ -41,7 +41,6 @@ func NewForwarders() Forwarders {
 
 // KillAll stops and delete all port-forwards.
 func (ff Forwarders) DeleteAll() {
-	ff.Dump()
 	for k, f := range ff {
 		log.Debug().Msgf("Deleting forwarder %s", f.Path())
 		f.Stop()
@@ -51,9 +50,6 @@ func (ff Forwarders) DeleteAll() {
 
 // Kill stops and delete a port-forwards associated with pod.
 func (ff Forwarders) Kill(path string) int {
-	ff.Dump()
-
-	log.Debug().Msgf("Delete port-forward %q", path)
 	hasContainer := strings.Contains(path, ":")
 	var stats int
 	for k, f := range ff {
@@ -63,7 +59,7 @@ func (ff Forwarders) Kill(path string) int {
 		}
 		if victim == path {
 			stats++
-			log.Debug().Msgf("Stopping and delete port-forward %s", k)
+			log.Debug().Msgf("Stop + Delete port-forward %s", k)
 			f.Stop()
 			delete(ff, k)
 		}

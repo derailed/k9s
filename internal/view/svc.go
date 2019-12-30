@@ -67,10 +67,10 @@ func (s *Service) showPods(app *App, ns, gvr, path string) {
 func (s *Service) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if s.bench != nil {
 		log.Debug().Msg(">>> Benchmark canceled!!")
-		s.App().status(ui.FlashErr, "Benchmark Canceled!")
+		s.App().Status(ui.FlashErr, "Benchmark Canceled!")
 		s.bench.Cancel()
 	}
-	s.App().StatusReset()
+	s.App().ClearStatus()
 
 	return nil
 }
@@ -136,13 +136,14 @@ func (s *Service) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	if err := s.runBenchmark(port, cfg); err != nil {
 		s.App().Flash().Errf("Benchmark failed %v", err)
-		s.App().StatusReset()
+		s.App().ClearStatus()
 		s.bench = nil
 	}
 
 	return nil
 }
 
+// BOZO!! Refactor used by forwards
 func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
 	if cfg.HTTP.Host == "" {
 		return fmt.Errorf("Invalid benchmark host %q", cfg.HTTP.Host)
@@ -154,7 +155,7 @@ func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
 		return err
 	}
 
-	s.App().status(ui.FlashWarn, "Benchmark in progress...")
+	s.App().Status(ui.FlashWarn, "Benchmark in progress...")
 	log.Debug().Msg("Bench starting...")
 	go s.bench.Run(s.App().Config.K9s.CurrentCluster, s.benchDone)
 
@@ -165,9 +166,9 @@ func (s *Service) benchDone() {
 	log.Debug().Msg("Bench Completed!")
 	s.App().QueueUpdate(func() {
 		if s.bench.Canceled() {
-			s.App().status(ui.FlashInfo, "Benchmark canceled")
+			s.App().Status(ui.FlashInfo, "Benchmark canceled")
 		} else {
-			s.App().status(ui.FlashInfo, "Benchmark Completed!")
+			s.App().Status(ui.FlashInfo, "Benchmark Completed!")
 			s.bench.Cancel()
 		}
 		s.bench = nil
@@ -178,6 +179,6 @@ func (s *Service) benchDone() {
 func benchTimedOut(app *App) {
 	<-time.After(2 * time.Second)
 	app.QueueUpdate(func() {
-		app.StatusReset()
+		app.ClearStatus()
 	})
 }

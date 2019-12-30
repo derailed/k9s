@@ -62,11 +62,7 @@ func (s *Secret) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails("Decoder")
-	details.SetSubject(path)
-	details.SetTextColor(s.App().Styles.FgColor())
-	details.SetText(colorizeYAML(s.App().Styles.Views().Yaml, string(raw)))
-	details.ScrollToBeginning()
+	details := NewDetails(s.App(), "Secret Decoder", path).Update(string(raw))
 	if err := s.App().inject(details); err != nil {
 		s.App().Flash().Err(err)
 	}

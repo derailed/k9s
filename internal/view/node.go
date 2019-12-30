@@ -4,7 +4,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -46,8 +45,8 @@ func (n *Node) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	sel := n.GetTable().GetSelectedItem()
-	log.Debug().Msgf("------ VIEW NODE %q", sel)
-	o, err := n.App().factory.Client().DynDialOrDie().Resource(client.GVR(n.GVR()).AsGVR()).Get(sel, metav1.GetOptions{})
+	gvr := client.GVR(n.GVR()).AsGVR()
+	o, err := n.App().factory.Client().DynDialOrDie().Resource(gvr).Get(sel, metav1.GetOptions{})
 	if err != nil {
 		n.App().Flash().Errf("Unable to get resource %q -- %s", n.GVR(), err)
 		return nil
@@ -59,11 +58,7 @@ func (n *Node) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails("YAML")
-	details.SetSubject(sel)
-	details.SetTextColor(n.App().Styles.FgColor())
-	details.SetText(colorizeYAML(n.App().Styles.Views().Yaml, raw))
-	details.ScrollToBeginning()
+	details := NewDetails(n.App(), "YAML", sel).Update(raw)
 	if err := n.App().inject(details); err != nil {
 		n.App().Flash().Err(err)
 	}

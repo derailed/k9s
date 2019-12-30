@@ -74,7 +74,10 @@ func (f *Factory) Get(gvr, path string, sel labels.Selector) (runtime.Object, er
 // WaitForCachesync waits for all factories to update their cache.
 func (f *Factory) WaitForCacheSync() {
 	for _, fac := range f.factories {
-		fac.WaitForCacheSync(f.stopChan)
+		m := fac.WaitForCacheSync(f.stopChan)
+		for k, v := range m {
+			log.Debug().Msgf("CACHE -- Loaded %q:%v", k, v)
+		}
 	}
 }
 
@@ -98,12 +101,10 @@ func (f *Factory) Terminate() {
 // RegisterForwarder registers a new portforward for a given container.
 func (f *Factory) AddForwarder(pf Forwarder) {
 	f.forwarders[pf.Path()] = pf
-	f.forwarders.Dump()
 }
 
 // DeleteForwarder deletes portforward for a given container.
 func (f *Factory) DeleteForwarder(path string) {
-	f.forwarders.Dump()
 	fwd, ok := f.forwarders[path]
 	if !ok {
 		log.Warn().Msgf("Unable to delete portForward %q", path)
@@ -111,7 +112,6 @@ func (f *Factory) DeleteForwarder(path string) {
 	}
 	fwd.Stop()
 	delete(f.forwarders, path)
-	f.forwarders.Dump()
 }
 
 // Forwards returns all portforwards.
@@ -146,10 +146,11 @@ func (f *Factory) isClusterWide() bool {
 	return ok
 }
 
-func (f *Factory) preload(ns string) {
-	// verbs := []string{"get", "list", "watch"}
+func (f *Factory) preload(_ string) {
+	// BOZO!!
+	verbs := []string{"get", "list", "watch"}
 	// _, _ = f.CanForResource(ns, "v1/pods", verbs...)
-	// _, _ = f.CanForResource(allNamespaces, "apiextensions.k8s.io/v1beta1/customresourcedefinitions", verbs...)
+	_, _ = f.CanForResource("", "apiextensions.k8s.io/v1beta1/customresourcedefinitions", verbs...)
 	// _, _ = f.CanForResource(clusterScope, "rbac.authorization.k8s.io/v1/clusterroles", verbs...)
 	// _, _ = f.CanForResource(allNamespaces, "rbac.authorization.k8s.io/v1/roles", verbs...)
 }

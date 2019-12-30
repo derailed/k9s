@@ -4,6 +4,9 @@
 package model_test
 
 import (
+	"reflect"
+	"time"
+
 	client "github.com/derailed/k9s/internal/client"
 	pegomock "github.com/petergtz/pegomock"
 	v1 "k8s.io/api/core/v1"
@@ -13,8 +16,6 @@ import (
 	kubernetes "k8s.io/client-go/kubernetes"
 	rest "k8s.io/client-go/rest"
 	versioned "k8s.io/metrics/pkg/client/clientset/versioned"
-	"reflect"
-	"time"
 )
 
 type MockClusterMeta struct {
@@ -257,21 +258,6 @@ func (mock *MockClusterMeta) MXDial() (*versioned.Clientset, error) {
 		}
 	}
 	return ret0, ret1
-}
-
-func (mock *MockClusterMeta) NSDialOrDie() dynamic.NamespaceableResourceInterface {
-	if mock == nil {
-		panic("mock must not be nil. Use myMock := NewMockClusterMeta().")
-	}
-	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("NSDialOrDie", params, []reflect.Type{reflect.TypeOf((*dynamic.NamespaceableResourceInterface)(nil)).Elem()})
-	var ret0 dynamic.NamespaceableResourceInterface
-	if len(result) != 0 {
-		if result[0] != nil {
-			ret0 = result[0].(dynamic.NamespaceableResourceInterface)
-		}
-	}
-	return ret0
 }
 
 func (mock *MockClusterMeta) NodePods(_param0 string) (*v1.PodList, error) {
@@ -714,23 +700,6 @@ func (c *MockClusterMeta_MXDial_OngoingVerification) GetCapturedArguments() {
 }
 
 func (c *MockClusterMeta_MXDial_OngoingVerification) GetAllCapturedArguments() {
-}
-
-func (verifier *VerifierMockClusterMeta) NSDialOrDie() *MockClusterMeta_NSDialOrDie_OngoingVerification {
-	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "NSDialOrDie", params, verifier.timeout)
-	return &MockClusterMeta_NSDialOrDie_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
-}
-
-type MockClusterMeta_NSDialOrDie_OngoingVerification struct {
-	mock              *MockClusterMeta
-	methodInvocations []pegomock.MethodInvocation
-}
-
-func (c *MockClusterMeta_NSDialOrDie_OngoingVerification) GetCapturedArguments() {
-}
-
-func (c *MockClusterMeta_NSDialOrDie_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierMockClusterMeta) NodePods(_param0 string) *MockClusterMeta_NodePods_OngoingVerification {

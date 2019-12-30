@@ -11,7 +11,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const refreshRate = 1 * time.Second
+const (
+	refreshRate = 1 * time.Second
+	noDataCount = 2
+)
 
 type TableListener interface {
 	TableDataChanged(render.TableData)
@@ -25,6 +28,7 @@ type Table struct {
 	listeners   []TableListener
 	inUpdate    int32
 	refreshRate time.Duration
+	zeroCount   int32
 }
 
 // NewTable returns a new table model.
@@ -112,7 +116,6 @@ func (t *Table) refresh(ctx context.Context) {
 // AddListener adds a new model listener.
 func (t *Table) AddListener(l TableListener) {
 	t.listeners = append(t.listeners, l)
-	t.fireTableChanged(*t.data)
 }
 
 // RemoveListener delete a listener from the list.
@@ -131,6 +134,12 @@ func (t *Table) RemoveListener(l TableListener) {
 }
 
 func (t *Table) fireTableChanged(data render.TableData) {
+	// Needed to wait for the cache to populate but if there is no data at all
+	// after X ticks need to tell the view no data is present
+	if len(data.RowEvents) == 0 && atomic.LoadInt32(&t.zeroCount) < noDataCount {
+		atomic.AddInt32(&t.zeroCount, 1)
+		return
+	}
 	for _, l := range t.listeners {
 		l.TableDataChanged(data)
 	}
@@ -152,7 +161,7 @@ func (t *Table) reconcile(ctx context.Context) error {
 	}
 	m, ok := Registry[string(t.gvr)]
 	if !ok {
-		log.Warn().Msgf("Resource %s not found in registry. Going generic!", t.gvr)
+		log.Debug().Msgf("Resource %s not found in registry. Going generic!", t.gvr)
 		m = ResourceMeta{
 			Model:    &Generic{},
 			Renderer: &render.Generic{},

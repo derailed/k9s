@@ -6,7 +6,6 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 const defaultPrompt = "%c> %s"
@@ -86,7 +85,6 @@ func (c *Command) BufferActive(f bool, k BufferKind) {
 		c.SetBackgroundColor(c.styles.BgColor())
 		c.Clear()
 	}
-	log.Debug().Msgf("Command activated: %t", c.activated)
 }
 
 func colorFor(k BufferKind) tcell.Color {

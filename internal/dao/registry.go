@@ -176,7 +176,6 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 	for _, r := range rr {
 		for _, res := range r.APIResources {
 			gvr := client.FromGVAndR(r.GroupVersion, res.Name)
-			log.Debug().Msgf("GVR %s", gvr)
 			res.Group, res.Version = gvr.ToG(), gvr.ToV()
 			m[gvr] = res
 		}
@@ -186,12 +185,14 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 }
 
 func loadCRDs(f Factory, m ResourceMetas) error {
+	log.Debug().Msgf("Loading CRDs...")
 	oo, err := f.List("apiextensions.k8s.io/v1beta1/customresourcedefinitions", "", labels.Everything())
 	if err != nil {
 		log.Error().Err(err).Msgf("Fail CRDs load")
 		return nil
 	}
 	f.WaitForCacheSync()
+	log.Debug().Msgf("CRDS count %d", len(oo))
 
 	for _, o := range oo {
 		meta, errs := extractMeta(o)
@@ -200,6 +201,7 @@ func loadCRDs(f Factory, m ResourceMetas) error {
 			continue
 		}
 		gvr := client.NewGVR(meta.Group, meta.Version, meta.Name)
+		log.Debug().Msgf("CRD %q", gvr)
 		m[gvr] = meta
 	}
 

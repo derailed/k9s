@@ -34,9 +34,9 @@ type Browser struct {
 
 	namespaces map[int]string
 	gvr        client.GVR
-	envFn      EnvFunc
 	meta       metav1.APIResource
 	accessor   dao.Accessor
+	envFn      EnvFunc
 	contextFn  ContextFunc
 	bindKeysFn BindKeysFunc
 	cancelFn   context.CancelFunc
@@ -72,7 +72,6 @@ func (b *Browser) Init(ctx context.Context) error {
 		b.bindKeysFn(b.Actions())
 	}
 	b.BaseTitle = b.meta.Kind
-	b.SetTitle(" [orange:i:]LOADING... ")
 	b.accessor, err = dao.AccessorFor(b.app.factory, b.gvr)
 	if err != nil {
 		return err
@@ -85,6 +84,7 @@ func (b *Browser) Init(ctx context.Context) error {
 		b.Select(1, 0)
 	}
 	b.GetModel().AddListener(b)
+	b.App().Status(ui.FlashWarn, "Loading...")
 
 	return nil
 }
@@ -181,6 +181,23 @@ func (b *Browser) GVR() string { return string(b.gvr) }
 // GetTable returns the underlying table.
 func (b *Browser) GetTable() *Table { return b.Table }
 
+// TableLoadChanged notifies view something went south.
+func (b *Browser) TableLoadFailed(err error) {
+	b.app.QueueUpdateDraw(func() {
+		b.app.Flash().Err(err)
+		b.App().ClearStatus()
+	})
+}
+
+// TableDataChanged notifies view new data is available.
+func (b *Browser) TableDataChanged(data render.TableData) {
+	b.app.QueueUpdateDraw(func() {
+		b.refreshActions()
+		b.Update(data)
+		b.App().ClearStatus()
+	})
+}
+
 // ----------------------------------------------------------------------------
 // Actions()...
 
@@ -218,6 +235,7 @@ func (b *Browser) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (b *Browser) refreshCmd(*tcell.EventKey) *tcell.EventKey {
 	b.app.Flash().Info("Refreshing...")
 	b.refresh()
+
 	return nil
 }
 
@@ -226,7 +244,6 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if len(selections) == 0 {
 		return evt
 	}
-	log.Debug().Msgf("DEL SELECTIONS %#v", selections)
 
 	b.Stop()
 	defer b.Start()
@@ -235,50 +252,55 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		if len(selections) > 1 {
 			msg = fmt.Sprintf("Delete %d marked %s?", len(selections), b.gvr)
 		}
-
-		cancelFn := func() {}
 		if dao.IsK9sMeta(b.meta) {
-			dialog.ShowConfirm(b.app.Content.Pages, "Confirm Delete", msg, func() {
-				b.ShowDeleted()
-				if len(selections) > 1 {
-					b.app.Flash().Infof("Delete %d marked %s", len(selections), b.gvr)
-				} else {
-					b.app.Flash().Infof("Delete resource %s %s", b.gvr, selections[0])
-				}
-				for _, sel := range selections {
-					if err := b.accessor.(dao.Nuker).Delete(sel, true, true); err != nil {
-						b.app.Flash().Errf("Delete failed with `%s", err)
-					} else {
-						b.GetTable().DeleteMark(sel)
-					}
-				}
-				b.refresh()
-				b.SelectRow(1, true)
-			}, cancelFn)
+			b.simpleDelete(selections, msg)
 			return nil
 		}
-
-		dialog.ShowDelete(b.app.Content.Pages, msg, func(cascade, force bool) {
-			b.ShowDeleted()
-			if len(selections) > 1 {
-				b.app.Flash().Infof("Delete %d marked %s", len(selections), b.gvr)
-			} else {
-				b.app.Flash().Infof("Delete resource %s %s", b.gvr, selections[0])
-			}
-			for _, sel := range selections {
-				if err := b.accessor.(dao.Nuker).Delete(sel, cascade, force); err != nil {
-					b.app.Flash().Errf("Delete failed with `%s", err)
-				} else {
-					b.app.factory.DeleteForwarder(sel)
-					b.GetTable().DeleteMark(sel)
-				}
-			}
-			b.refresh()
-			b.SelectRow(1, true)
-		}, cancelFn)
+		b.resourceDelete(selections, msg)
 	}
 
 	return nil
+}
+
+func (b *Browser) simpleDelete(selections []string, msg string) {
+	dialog.ShowConfirm(b.app.Content.Pages, "Confirm Delete", msg, func() {
+		b.ShowDeleted()
+		if len(selections) > 1 {
+			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.gvr)
+		} else {
+			b.app.Flash().Infof("Delete resource %s %s", b.gvr, selections[0])
+		}
+		for _, sel := range selections {
+			if err := b.accessor.(dao.Nuker).Delete(sel, true, true); err != nil {
+				b.app.Flash().Errf("Delete failed with `%s", err)
+			} else {
+				b.GetTable().DeleteMark(sel)
+			}
+		}
+		b.refresh()
+		b.SelectRow(1, true)
+	}, func() {})
+}
+
+func (b *Browser) resourceDelete(selections []string, msg string) {
+	dialog.ShowDelete(b.app.Content.Pages, msg, func(cascade, force bool) {
+		b.ShowDeleted()
+		if len(selections) > 1 {
+			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.gvr)
+		} else {
+			b.app.Flash().Infof("Delete resource %s %s", b.gvr, selections[0])
+		}
+		for _, sel := range selections {
+			if err := b.accessor.(dao.Nuker).Delete(sel, cascade, force); err != nil {
+				b.app.Flash().Errf("Delete failed with `%s", err)
+			} else {
+				b.app.factory.DeleteForwarder(sel)
+				b.GetTable().DeleteMark(sel)
+			}
+		}
+		b.refresh()
+		b.SelectRow(1, true)
+	}, func() {})
 }
 
 func (b *Browser) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -299,18 +321,7 @@ func (b *Browser) describeResource(app *App, _, _, sel string) {
 		return
 	}
 
-	details := NewDetails("Describe")
-	ctx := context.WithValue(context.Background(), internal.KeyApp, b.App())
-	if err := details.Init(ctx); err != nil {
-		log.Error().Err(err).Msg("Details init failed")
-		return
-	}
-	details.SetSubject(sel)
-	details.SetTextColor(b.app.Styles.FgColor())
-	details.Update(yaml)
-	// BOZO!!
-	// details.SetText(colorizeYAML(b.app.Styles.Views().Yaml, yaml))
-	// details.ScrollToBeginning()
+	details := NewDetails(b.App(), "Describe", sel).Update(yaml)
 	if err := b.app.inject(details); err != nil {
 		b.app.Flash().Err(err)
 	}
@@ -322,7 +333,6 @@ func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	log.Debug().Msgf("------ NAMESPACES %q vs %q", path, b.GetModel().GetNamespace())
 	o, err := b.app.factory.Get(string(b.gvr), path, labels.Everything())
 	if err != nil {
 		b.app.Flash().Errf("Unable to get resource %q -- %s", b.gvr, err)
@@ -335,11 +345,7 @@ func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails("YAML")
-	details.SetSubject(path)
-	details.SetTextColor(b.app.Styles.FgColor())
-	details.SetText(colorizeYAML(b.app.Styles.Views().Yaml, raw))
-	details.ScrollToBeginning()
+	details := NewDetails(b.app, "YAML", path).Update(raw)
 	if err := b.app.inject(details); err != nil {
 		b.App().Flash().Err(err)
 	}
@@ -399,7 +405,6 @@ func (b *Browser) setNamespace(ns string) {
 	if ns == render.NamespaceAll {
 		ns = render.AllNamespaces
 	}
-	log.Debug().Msgf("!!!!!! SETTING NS %q", ns)
 	b.GetModel().SetNamespace(ns)
 }
 
@@ -425,21 +430,6 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return nil
-}
-
-// TableLoadChanged notifies view something went south.
-func (b *Browser) TableLoadFailed(err error) {
-	b.app.QueueUpdateDraw(func() {
-		b.app.Flash().Err(err)
-	})
-}
-
-// TableDataChanged notifies view new data is available.
-func (b *Browser) TableDataChanged(data render.TableData) {
-	b.app.QueueUpdateDraw(func() {
-		b.refreshActions()
-		b.Update(data)
-	})
 }
 
 func (b *Browser) defaultContext() context.Context {

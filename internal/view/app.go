@@ -338,10 +338,16 @@ func (a *App) Run() {
 	}
 }
 
-func (a *App) status(l ui.FlashLevel, msg string) {
+func (a *App) Status(l ui.FlashLevel, msg string) {
 	a.Flash().Info(msg)
 	a.setIndicator(l, msg)
 	a.setLogo(l, msg)
+	a.Draw()
+}
+
+// StatusReset reset log back to normal.
+func (a *App) ClearStatus() {
+	a.Logo().Reset()
 	a.Draw()
 }
 

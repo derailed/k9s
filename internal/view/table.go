@@ -31,7 +31,6 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	ctx = context.WithValue(ctx, internal.KeyStyles, t.app.Styles)
 	t.Table.Init(ctx)
 	t.bindKeys()
-
 	t.GetModel().SetRefreshRate(time.Duration(t.app.Config.K9s.GetRefreshRate()) * time.Second)
 
 	return nil
