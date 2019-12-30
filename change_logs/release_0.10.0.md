@@ -14,21 +14,21 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 First off, Happy 2020 to you and yours!! Best wishes for good health and good fortune!
 
-This release represents a major overall of K9s core. It's been a long time coming and indeed a long day in the saddle ;( There has been many code changes and hopefully improvements from previous releases. I think some of it is better but I've probably borked a bunch of functionality in the process. I look to you to help me flesh out issues and bugs, so we can move on to bigger and exciting features in 2020! Please do thread lightly on this one and make sure to keep a previous release handy just in case... This was a boatload of work to make this happen, my hope is you'll enjoy some of the improvements... In any case, and as always, if you feel they're better ways or imperfections by all means please pipe in!
+This release represents a major overall of K9s core. It's been a long time coming and indeed a long day in the saddle. There has been many code changes and hopefully improvements from previous releases. I think some of it is better but I've probably borked a bunch of functionality in the process ;( I look to you to help me flesh out issues and bugs, so we can move on to bigger and exciting features in 2020! Please do thread lightly on this one and make sure to keep a previous release handy just in case... This was a boatload of work to make this happen, my hope is you'll enjoy some of the improvements... In any case, and as always, if you feel they're better ways or imperfections by all means please pipe in!
 
 I would also like to take this opportunity to thank all of you for your kind PRs and issues and for your support and patience with K9s. I understand this release might be a bit torked, but I will work hard to make sure we reach stability quickly in the next few drops. Thank you for your understanding!!
 
 ## VatDoesDisDo?
 
-Most of the refactors are around K8s resource fetching and viewing as well as navigation changes. Based on our observations this release might load resources a bit slower than usual but should make navigation much faster once the cache is primed. We've made some improvements to be more consistent with navigation and shortcuts management. We've got ride off the breadcrumbs navigation ie no more `p` to nav back. Crumbs are now just tracking a natural resoure navigation ie pod -> containers -> logs and no longer commands history. Each new command will now load a brand new breadcrumb. You can press `<esc>` to nav back to the previous page. We're also introducing a new hotkeys feature, that afforts creating shortcuts to navigate to your favorite resources ie shift-0 -> view pods, shift-1 -> view deployments (See HotKey section below). I know there were many outstanding PRS (Thank you to all that I've submitted!) and given the extent of the changes, I've resolved to incorporate them in manually vs having to deal with merge conflicts.
+Most of the refactors are around K8s resource fetching and viewing as well as navigation changes. Based on our observations this release might load resources a bit slower than usual but should make navigation much faster once the cache is primed. We've made some improvements to be more consistent with navigation, menus and shortcuts management. We've got ride off the breadcrumbs navigation ie no more `p` to nav back. Crumbs are now just tracking a natural resoure navigation ie pod -> containers -> logs and no longer commands history. Each new command will now load a brand new breadcrumb. You can press `<esc>` to nav back to the previous page. We're also introducing a new hotkeys feature, that afforts creating shortcuts to navigate to your favorite resources ie shift-0 -> view pods, shift-1 -> view deployments (See HotKey section below). I know there were many outstanding PRS (Thank you to all that I've submitted!) and given the extent of the changes, I've resolved to incorporate them in manually vs having to deal with merge conflicts.
 
 ## Custom Skins Per Cluster
 
-In this release, we've added support for skins at the cluster level. Do you want K9s to look differently based on which cluster you're connecting to? All you'll need is to name the skin file in the K9s home directory as follows `mycluster_skin.yml`. If no cluster specific skin file is found, the standard `skin.yml` file will be loaded if present. Please checkout the `skins` directory in this repo or PR me if you have cool skins you'd like to share with your fellow K9ers as they will be featured in these release notes and the project README.
+In this release, we've added support for skins at the cluster level. Do you want K9s to look differently based on which cluster you're connecting to? All you'll need is to name the skin file in the K9s home directory as follows `mycluster_skin.yml`. If no cluster specific skin file is found, the standard `skin.yml` file will be loaded if present. Please checkout the `skins` directory in this repo or PR me if you have cool skins you'd like to share with your fellow K9ers as they will be featured in these release notes and in the project README.
 
 ## Hot(Ness)?
 
-Feeling like you want to be able to quickly switch around your favorite resources with your very own shortcut? Wouldn't it be dandy to navigate to your deployments using shift-0 vs entering a command `:dp`? Here is what you'll need to do to add HotKeys to your K9s sessions:
+Feeling like you want to be able to quickly switch around your favorite resources with your very own shortcut? Wouldn't it be dandy to navigate to your deployments via a shortcut vs entering a command `:deploy`? Here is what you'll need to do to add HotKeys to your K9s sessions:
 
 1. In your .k9s home directory create a file named `hotkey.yml`
 2. For example add the following to your `hotkey.yml`. You can use short names or resource name to specify a command ie same as typing it in command mode.
@@ -82,6 +82,7 @@ Feeling like you want to be able to quickly switch around your favorite resource
 * [Issue #408](https://github.com/derailed/k9s/issues/408) Same key toggle inverse sort.
 * [Issue #402](https://github.com/derailed/k9s/issues/402) Add `all` support to plugin scope.
 * [Issue #401](https://github.com/derailed/k9s/issues/401) Add support for custom plugins on all views.
+* [Issue #397](https://github.com/derailed/k9s/issues/397) Support HPA v2beta1 + v2beta2.
 
 ---
 
