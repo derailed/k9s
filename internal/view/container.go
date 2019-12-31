@@ -88,32 +88,46 @@ func (c *Container) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (c *Container) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
-	sel := c.GetTable().GetSelectedItem()
-	if sel == "" {
+	path := c.GetTable().GetSelectedItem()
+	if path == "" {
 		return evt
 	}
 
-	if _, ok := c.App().factory.ForwarderFor(fwFQN(c.GetTable().Path, sel)); ok {
+	if _, ok := c.App().factory.ForwarderFor(fwFQN(c.GetTable().Path, path)); ok {
 		c.App().Flash().Err(fmt.Errorf("A PortForward already exist on container %s", c.GetTable().Path))
 		return nil
 	}
 
+	ports, ok := c.isForwardable(path)
+	if !ok {
+		return nil
+	}
+
+	dialog.ShowPortForward(c.App().Content.Pages, c.preparePort(ports), c.portForward)
+
+	return nil
+}
+
+func (c *Container) isForwardable(path string) ([]string, bool) {
 	state := c.GetTable().GetSelectedCell(3)
 	if state != "Running" {
-		c.App().Flash().Err(fmt.Errorf("Container %s is not running?", sel))
-		return nil
+		c.App().Flash().Err(fmt.Errorf("Container %s is not running?", path))
+		return nil, false
 	}
 
 	portC := c.GetTable().GetSelectedCell(11)
 	ports := strings.Split(portC, ",")
 	if len(ports) == 0 {
 		c.App().Flash().Err(errors.New("Container exposes no ports"))
-		return nil
+		return nil, false
 	}
 
+	return ports, true
+}
+
+func (c *Container) preparePort(pp []string) string {
 	var port string
-	for _, p := range ports {
-		log.Debug().Msgf("Checking port %q", p)
+	for _, p := range pp {
 		if !isTCPPort(p) {
 			continue
 		}
@@ -126,11 +140,10 @@ func (c *Container) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	if port == "" {
 		c.App().Flash().Warn("No valid TCP port found on this container. User will specify...")
-		port = "MY_TCP_PORT!"
+		return "MY_TCP_PORT!"
 	}
-	dialog.ShowPortForward(c.App().Content.Pages, port, c.portForward)
 
-	return nil
+	return port
 }
 
 func (c *Container) portForward(address, lport, cport string) {
