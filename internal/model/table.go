@@ -9,6 +9,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -156,46 +157,48 @@ func (t *Table) fireTableLoadFailed(err error) {
 	}
 }
 
-func (t *Table) reconcile(ctx context.Context) error {
-	t.data.Mutex.Lock()
-	defer t.data.Mutex.Unlock()
-
+func (t *Table) list(ctx context.Context, l Lister) ([]runtime.Object, error) {
 	factory, ok := ctx.Value(internal.KeyFactory).(Factory)
 	if !ok {
-		return fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
+		return nil, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
 	}
-	m, ok := Registry[string(t.gvr)]
+	l.Init(t.namespace, string(t.gvr), factory)
+
+	return l.List(ctx)
+}
+
+func (t *Table) reconcile(ctx context.Context) error {
+	meta, ok := Registry[string(t.gvr)]
 	if !ok {
 		log.Debug().Msgf("Resource %s not found in registry. Going generic!", t.gvr)
-		m = ResourceMeta{
+		meta = ResourceMeta{
 			Model:    &Generic{},
 			Renderer: &render.Generic{},
 		}
 	}
-
-	if m.Model == nil {
-		m.Model = &Resource{}
+	if meta.Model == nil {
+		meta.Model = &Resource{}
 	}
-	m.Model.Init(t.namespace, string(t.gvr), factory)
 
-	oo, err := m.Model.List(ctx)
+	oo, err := t.list(ctx, meta.Model)
 	if err != nil {
 		return err
 	}
 
 	rows := make(render.Rows, len(oo))
-	if err := m.Model.Hydrate(oo, rows, m.Renderer); err != nil {
+	if err := meta.Model.Hydrate(oo, rows, meta.Renderer); err != nil {
 		return err
 	}
 
+	t.data.Mutex.Lock()
+	defer t.data.Mutex.Unlock()
 	// if labelSelector in place might as well clear the model data.
 	sel, ok := ctx.Value(internal.KeyLabels).(string)
 	if ok && sel != "" {
 		t.data.Clear()
 	}
-
 	t.data.Update(rows)
-	t.data.Namespace, t.data.Header = t.namespace, m.Renderer.Header(t.namespace)
+	t.data.Namespace, t.data.Header = t.namespace, meta.Renderer.Header(t.namespace)
 
 	return nil
 }

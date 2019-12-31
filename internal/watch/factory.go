@@ -175,7 +175,6 @@ func (f *Factory) AddForwarder(pf Forwarder) {
 func (f *Factory) DeleteForwarder(path string) {
 	fwd, ok := f.forwarders[path]
 	if !ok {
-		log.Warn().Msgf("Unable to delete portForward %q", path)
 		return
 	}
 	fwd.Stop()
