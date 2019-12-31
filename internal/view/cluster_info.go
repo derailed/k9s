@@ -35,7 +35,8 @@ func NewClusterInfo(app *App, mx *client.MetricsServer) *ClusterInfo {
 	}
 }
 
-func (c *ClusterInfo) init(version string) {
+// Init initializes the view.
+func (c *ClusterInfo) Init(version string) {
 	cluster := model.NewCluster(c.app.Conn(), c.mxs)
 
 	c.app.Styles.AddListener(c)

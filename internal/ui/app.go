@@ -2,8 +2,10 @@ package ui
 
 import (
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 )
 
 // App represents an application.
@@ -43,7 +45,43 @@ func (a *App) Init() {
 	a.bindKeys()
 	a.SetInputCapture(a.keyboard)
 	a.cmdBuff.AddListener(a.Cmd())
+	a.Styles.AddListener(a)
+	a.CmdBuff().AddListener(a)
+
 	a.SetRoot(a.Main, true)
+}
+
+// BufferChanged indicates the buffer was changed.
+func (a *App) BufferChanged(s string) {}
+
+// BufferActive indicates the buff activity changed.
+func (a *App) BufferActive(state bool, _ BufferKind) {
+	flex, ok := a.Main.GetPrimitive("main").(*tview.Flex)
+	if !ok {
+		return
+	}
+
+	if state && flex.ItemAt(1) != a.Cmd() {
+		flex.AddItemAtIndex(1, a.Cmd(), 3, 1, false)
+	} else if !state && flex.ItemAt(1) == a.Cmd() {
+		flex.RemoveItemAtIndex(1)
+	}
+	a.Draw()
+}
+
+// StylesChanged notifies the skin changed.
+func (a *App) StylesChanged(s *config.Styles) {
+	a.Main.SetBackgroundColor(s.BgColor())
+	if f, ok := a.Main.GetPrimitive("main").(*tview.Flex); ok {
+		f.SetBackgroundColor(s.BgColor())
+		if h, ok := f.ItemAt(0).(*tview.Flex); ok {
+			h.SetBackgroundColor(s.BgColor())
+		} else {
+			log.Error().Msgf("Header not found")
+		}
+	} else {
+		log.Error().Msgf("Main not found")
+	}
 }
 
 // ReloadStyles reloads skin file.
@@ -65,6 +103,7 @@ func (a *App) bindKeys() {
 		tcell.KeyBackspace2: NewKeyAction("Erase", a.eraseCmd, false),
 		tcell.KeyBackspace:  NewKeyAction("Erase", a.eraseCmd, false),
 		tcell.KeyDelete:     NewKeyAction("Erase", a.eraseCmd, false),
+		tcell.KeyCtrlU:      NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 	}
 }
 
@@ -146,6 +185,15 @@ func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
+func (a *App) clearCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !a.CmdBuff().IsActive() {
+		return evt
+	}
+	a.CmdBuff().Clear()
+
+	return nil
+}
+
 func (a *App) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.InCmdMode() {
 		return evt
@@ -205,6 +253,9 @@ func (a *App) Cmd() *Command {
 func (a *App) Menu() *Menu {
 	return a.views["menu"].(*Menu)
 }
+
+// ----------------------------------------------------------------------------
+// Helpers...
 
 // AsKey converts rune to keyboard key.,
 func asKey(evt *tcell.EventKey) tcell.Key {

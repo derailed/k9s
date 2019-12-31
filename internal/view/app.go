@@ -51,22 +51,10 @@ func NewApp(cfg *config.Config) *App {
 	return &a
 }
 
-// ActiveView returns the currently active view.
-func (a *App) ActiveView() model.Component {
-	return a.Content.GetPrimitive("main").(model.Component)
-}
-
-// PrevCmd pops the command stack.
-func (a *App) PrevCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !a.Content.IsLast() {
-		a.Content.Pop()
-	}
-
-	return nil
-}
-
 // Init initializes the application.
 func (a *App) Init(version string, rate int) error {
+	a.version = version
+
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	if err := a.Content.Init(ctx); err != nil {
 		return err
@@ -74,9 +62,7 @@ func (a *App) Init(version string, rate int) error {
 	a.Content.Stack.AddListener(a.Crumbs())
 	a.Content.Stack.AddListener(a.Menu())
 
-	a.version = version
 	a.App.Init()
-	a.CmdBuff().AddListener(a)
 	a.bindKeys()
 	if a.Conn() == nil {
 		return errors.New("No client connection detected")
@@ -94,7 +80,7 @@ func (a *App) Init(version string, rate int) error {
 		return err
 	}
 
-	a.clusterInfo().init(version)
+	a.clusterInfo().Init(version)
 	if a.Config.K9s.GetHeadless() {
 		a.refreshIndicator()
 	}
@@ -109,24 +95,7 @@ func (a *App) Init(version string, rate int) error {
 	a.Main.AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
 	a.toggleHeader(!a.Config.K9s.GetHeadless())
 
-	a.Styles.AddListener(a)
-
 	return nil
-}
-
-// StylesChanged notifies the skin changed.
-func (a *App) StylesChanged(s *config.Styles) {
-	a.Main.SetBackgroundColor(s.BgColor())
-	if f, ok := a.Main.GetPrimitive("main").(*tview.Flex); ok {
-		f.SetBackgroundColor(s.BgColor())
-		if h, ok := f.ItemAt(0).(*tview.Flex); ok {
-			h.SetBackgroundColor(s.BgColor())
-		} else {
-			log.Error().Msgf("Header not found")
-		}
-	} else {
-		log.Error().Msgf("Main not found")
-	}
 }
 
 func (a *App) bindKeys() {
@@ -135,26 +104,12 @@ func (a *App) bindKeys() {
 		ui.KeyHelp:     ui.NewSharedKeyAction("Help", a.helpCmd, false),
 		tcell.KeyCtrlA: ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
-		tcell.KeyCtrlU: ui.NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 	})
 }
 
-// BufferChanged indicates the buffer was changed.
-func (a *App) BufferChanged(s string) {}
-
-// BufferActive indicates the buff activity changed.
-func (a *App) BufferActive(state bool, _ ui.BufferKind) {
-	flex, ok := a.Main.GetPrimitive("main").(*tview.Flex)
-	if !ok {
-		return
-	}
-
-	if state && flex.ItemAt(1) != a.Cmd() {
-		flex.AddItemAtIndex(1, a.Cmd(), 3, 1, false)
-	} else if !state && flex.ItemAt(1) == a.Cmd() {
-		flex.RemoveItemAtIndex(1)
-	}
-	a.Draw()
+// ActiveView returns the currently active view.
+func (a *App) ActiveView() model.Component {
+	return a.Content.GetPrimitive("main").(model.Component)
 }
 
 func (a *App) toggleHeader(flag bool) {
@@ -385,6 +340,15 @@ func (a *App) setIndicator(l ui.FlashLevel, msg string) {
 	a.Draw()
 }
 
+// PrevCmd pops the command stack.
+func (a *App) PrevCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !a.Content.IsLast() {
+		a.Content.Pop()
+	}
+
+	return nil
+}
+
 func (a *App) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.Cmd().InCmdMode() {
 		return evt
@@ -393,15 +357,6 @@ func (a *App) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
 	a.showHeader = !a.showHeader
 	a.toggleHeader(a.showHeader)
 	a.Draw()
-
-	return nil
-}
-
-func (a *App) clearCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !a.CmdBuff().IsActive() {
-		return evt
-	}
-	a.CmdBuff().Clear()
 
 	return nil
 }
