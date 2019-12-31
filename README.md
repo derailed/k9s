@@ -38,7 +38,8 @@ K9s is available on Linux, OSX and Windows platforms.
    ```
 
 * Archlinux (AUR)
-  K9s is available in the Arch User Repository under the name [k9s-bin](https://aur.archlinux.org/packages/k9s-bin/), you can install it with your favourite AUR helper like so:
+
+  K9s is available in the Arch User Repository under the name [k9s-bin](https://aur.archlinux.org/packages/k9s-bin/), you can install it with your favorite AUR helper like so:
 
   ```shell
   yay -S k9s-bin
