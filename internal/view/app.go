@@ -271,7 +271,7 @@ func (a *App) switchNS(ns string) bool {
 		log.Error().Err(err).Msg("Config Set NS failed!")
 		return false
 	}
-	a.factory.SetActive(ns)
+	a.factory.SetActiveNS(ns)
 
 	return true
 }
@@ -308,8 +308,7 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 
 func (a *App) initFactory(ns string) {
 	a.factory.Terminate()
-	a.factory.Init()
-	a.factory.SetActive(ns)
+	a.factory.Start(ns)
 }
 
 // BailOut exists the application.

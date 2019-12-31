@@ -2,15 +2,12 @@ package watch
 
 import (
 	"fmt"
-	"path"
-	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
 	di "k8s.io/client-go/dynamic/dynamicinformer"
 	"k8s.io/client-go/informers"
 )
@@ -26,7 +23,6 @@ type Factory struct {
 	factories  map[string]di.DynamicSharedInformerFactory
 	client     client.Connection
 	stopChan   chan struct{}
-	activeNS   string
 	forwarders Forwarders
 }
 
@@ -34,14 +30,30 @@ type Factory struct {
 func NewFactory(client client.Connection) *Factory {
 	return &Factory{
 		client:     client,
-		stopChan:   make(chan struct{}),
 		factories:  make(map[string]di.DynamicSharedInformerFactory),
 		forwarders: NewForwarders(),
 	}
 }
 
-func (f *Factory) String() string {
-	return fmt.Sprintf("Factory ActiveNS %s", f.activeNS)
+// Start initializes the informers until caller cancels the context.
+func (f *Factory) Start(ns string) {
+	f.stopChan = make(chan struct{})
+	for ns, fac := range f.factories {
+		log.Debug().Msgf("Starting factory in ns %q", ns)
+		fac.Start(f.stopChan)
+	}
+}
+
+// Terminate terminates all watchers and forwards.
+func (f *Factory) Terminate() {
+	if f.stopChan != nil {
+		close(f.stopChan)
+		f.stopChan = nil
+	}
+	for k := range f.factories {
+		delete(f.factories, k)
+	}
+	f.forwarders.DeleteAll()
 }
 
 // List returns a resource collection.
@@ -81,65 +93,22 @@ func (f *Factory) WaitForCacheSync() {
 	}
 }
 
-// Init starts a factory.
-func (f *Factory) Init() {
-	f.Start(f.stopChan)
+// Client return the factory connection.
+func (f *Factory) Client() client.Connection {
+	return f.client
 }
 
-// Terminate terminates all watchers and forwards.
-func (f *Factory) Terminate() {
-	if f.stopChan != nil {
-		close(f.stopChan)
-		f.stopChan = nil
-	}
-	for k := range f.factories {
-		delete(f.factories, k)
-	}
-	f.forwarders.DeleteAll()
-}
-
-// AddForwarder registers a new portforward for a given container.
-func (f *Factory) AddForwarder(pf Forwarder) {
-	f.forwarders[pf.Path()] = pf
-}
-
-// DeleteForwarder deletes portforward for a given container.
-func (f *Factory) DeleteForwarder(path string) {
-	fwd, ok := f.forwarders[path]
-	if !ok {
-		log.Warn().Msgf("Unable to delete portForward %q", path)
-		return
-	}
-	fwd.Stop()
-	delete(f.forwarders, path)
-}
-
-// Forwarders returns all portforwards.
-func (f *Factory) Forwarders() Forwarders {
-	return f.forwarders
-}
-
-// ForwarderFor returns a portforward for a given container or nil if none exists.
-func (f *Factory) ForwarderFor(path string) (Forwarder, bool) {
-	fwd, ok := f.forwarders[path]
-	return fwd, ok
-}
-
-// Start initializes the informers until caller cancels the context.
-func (f *Factory) Start(stopChan chan struct{}) {
-	for ns, fac := range f.factories {
-		log.Debug().Msgf("Starting factory in ns %q", ns)
-		fac.Start(stopChan)
-	}
+// FactoryFor returns a factory for a given namespace.
+func (f *Factory) FactoryFor(ns string) di.DynamicSharedInformerFactory {
+	return f.factories[ns]
 }
 
 // SetActive sets the active namespace.
 // BOZO!! Check ns access for resource??
-func (f *Factory) SetActive(ns string) {
+func (f *Factory) SetActiveNS(ns string) {
 	if !f.isClusterWide() {
 		f.ensureFactory(ns)
 	}
-	f.activeNS = ns
 }
 
 func (f *Factory) isClusterWide() bool {
@@ -148,10 +117,10 @@ func (f *Factory) isClusterWide() bool {
 }
 
 func (f *Factory) preload(_ string) {
-	// BOZO!!
 	verbs := []string{"get", "list", "watch"}
-	// _, _ = f.CanForResource(ns, "v1/pods", verbs...)
 	_, _ = f.CanForResource("", "apiextensions.k8s.io/v1beta1/customresourcedefinitions", verbs...)
+	// BOZO!!
+	// _, _ = f.CanForResource(ns, "v1/pods", verbs...)
 	// _, _ = f.CanForResource(clusterScope, "rbac.authorization.k8s.io/v1/clusterroles", verbs...)
 	// _, _ = f.CanForResource(allNamespaces, "rbac.authorization.k8s.io/v1/roles", verbs...)
 }
@@ -167,11 +136,6 @@ func (f *Factory) CanForResource(ns, gvr string, verbs ...string) (informers.Gen
 	}
 
 	return f.ForResource(ns, gvr), nil
-}
-
-// FactoryFor returns a factory for a given namespace.
-func (f *Factory) FactoryFor(ns string) di.DynamicSharedInformerFactory {
-	return f.factories[ns]
 }
 
 // ForResource returns an informer for a given resource.
@@ -202,56 +166,29 @@ func (f *Factory) ensureFactory(ns string) di.DynamicSharedInformerFactory {
 	return f.factories[ns]
 }
 
-func toGVR(gvr string) schema.GroupVersionResource {
-	tokens := strings.Split(gvr, "/")
-	if len(tokens) < 3 {
-		tokens = append([]string{""}, tokens...)
-	}
-
-	return schema.GroupVersionResource{
-		Group:    tokens[0],
-		Version:  tokens[1],
-		Resource: tokens[2],
-	}
+// AddForwarder registers a new portforward for a given container.
+func (f *Factory) AddForwarder(pf Forwarder) {
+	f.forwarders[pf.Path()] = pf
 }
 
-// Client return the factory connection.
-func (f *Factory) Client() client.Connection {
-	return f.client
-}
-
-// ----------------------------------------------------------------------------
-// Helpers...
-
-// Dump for debug.
-func (f *Factory) Dump() {
-	log.Debug().Msgf("----------- FACTORIES -------------")
-	for ns := range f.factories {
-		log.Debug().Msgf("  Factory for NS %q", ns)
+// DeleteForwarder deletes portforward for a given container.
+func (f *Factory) DeleteForwarder(path string) {
+	fwd, ok := f.forwarders[path]
+	if !ok {
+		log.Warn().Msgf("Unable to delete portForward %q", path)
+		return
 	}
-	log.Debug().Msgf("-----------------------------------")
+	fwd.Stop()
+	delete(f.forwarders, path)
 }
 
-// Debug for debug.
-func (f *Factory) Debug(gvr string) {
-	log.Debug().Msgf("----------- DEBUG FACTORY (%s) -------------", gvr)
-	inf := f.factories[allNamespaces].ForResource(toGVR(gvr))
-	for i, k := range inf.Informer().GetStore().ListKeys() {
-		log.Debug().Msgf("%d -- %s", i, k)
-	}
+// Forwarders returns all portforwards.
+func (f *Factory) Forwarders() Forwarders {
+	return f.forwarders
 }
 
-// Show for debug.
-func (f *Factory) Show(ns, gvr string) {
-	log.Debug().Msgf("----------- SHOW FACTORIES %q -------------", ns)
-	inf := f.ForResource(ns, gvr)
-	for _, k := range inf.Informer().GetStore().ListKeys() {
-		log.Debug().Msgf("  Key: %s", k)
-	}
-}
-
-func namespaced(n string) (string, string) {
-	ns, po := path.Split(n)
-
-	return strings.Trim(ns, "/"), po
+// ForwarderFor returns a portforward for a given container or nil if none exists.
+func (f *Factory) ForwarderFor(path string) (Forwarder, bool) {
+	fwd, ok := f.forwarders[path]
+	return fwd, ok
 }

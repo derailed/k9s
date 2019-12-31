@@ -1,6 +1,8 @@
 package view
 
 import (
+	"context"
+
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
@@ -18,6 +20,12 @@ type (
 
 	// ContainerFunc returns the active container name.
 	ContainerFunc func() string
+
+	// ContextFunc enhances a given context.
+	ContextFunc func(context.Context) context.Context
+
+	// BindKeysFunc adds new menu actions.
+	BindKeysFunc func(ui.KeyActions)
 )
 
 // ActionExtender enhances a given viewer by adding new menu actions.

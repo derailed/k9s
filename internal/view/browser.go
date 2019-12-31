@@ -23,12 +23,6 @@ import (
 	"k8s.io/cli-runtime/pkg/printers"
 )
 
-// ContextFunc enhances a given context.
-type ContextFunc func(context.Context) context.Context
-
-// BindKeysFunc adds new menu actions.
-type BindKeysFunc func(ui.KeyActions)
-
 // Browser represents a generic resource browser.
 type Browser struct {
 	*Table
