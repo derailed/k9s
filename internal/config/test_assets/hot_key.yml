@@ -1,0 +1,5 @@
+hotKey:
+  pods:
+    shortCut: shift-0
+    description: Launch pod view
+    command: pods

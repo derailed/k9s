@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Config
+preferences: {}
+clusters:
+- cluster:
+    insecure-skip-tls-verify: true
+    server: https://localhost:3000
+  name: fred
+- cluster:
+    insecure-skip-tls-verify: true
+    server: https://localhost:3001
+  name: blee
+- cluster:
+    insecure-skip-tls-verify: true
+    server: https://localhost:3002
+  name: duh
+contexts:
+- context:
+    cluster: fred
+    user: fred
+  name: fred
+- context:
+    cluster: blee
+    user: blee
+  name: blee
+- context:
+    cluster: duh
+    user: duh
+  name: duh
+current-context: fred
+users:
+- name: fred
+  user:
+    client-certificate-data: ZnJlZA==
+    client-key-data: ZnJlZA==
+- name: blee
+  user:
+    client-certificate-data: ZnJlZA==
+    client-key-data: ZnJlZA==
+- name: duh
+  user:
+    client-certificate-data: ZnJlZA==
+    client-key-data: ZnJlZA==

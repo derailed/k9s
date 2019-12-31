@@ -1,0 +1,50 @@
+k9s:
+  body:
+    fgColor: white
+    bgColor: black
+    logoColor: white
+  info:
+    fgColor: navajowhite
+    sectionColor: white
+  frame:
+    border:
+      fgColor: white
+      focusColor: white
+    menu:
+      fgColor: white
+      keyColor: white
+      numKeyColor: navajowhite
+    crumbs:
+      fgColor: black
+      bgColor: navajowhite
+      activeColor: whitesmoke
+    status:
+      newColor: ghostwhite
+      modifyColor: navajowhite
+      addColor: darkslategray
+      errorColor: whitesmoke
+      highlightcolor: dimgray
+      killColor: slategray
+      completedColor: gray
+    title:
+      fgColor: ghostwhite
+      highlightColor: navajowhite
+      counterColor: navajowhite
+      filterColor: slategray
+  table:
+    fgColor: white
+    bgColor: black
+    cursorColor: white
+    markColor: darkgoldenrod
+    header:
+      fgColor: darkgray
+      bgColor: black
+      sorterColor: white
+  views:
+    yaml:
+      keyColor: ghostwhite
+      colorColor: slategray
+      valueColor: navajowhite
+    logs:
+      fgColor: ghostwhite
+      bgColor: black

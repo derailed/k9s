@@ -1,8 +1,7 @@
 language: go
 go_import_path: github.com/derailed/k9s
 go:
-  - 1.11.2
-  # - master
+  - "1.13"
 
 os:
   - linux
@@ -12,9 +11,6 @@ dist: trusty
 sudo: false
 
 install: true
-
-env:
-  - GO111MODULE=on
 
 script:
   - go build

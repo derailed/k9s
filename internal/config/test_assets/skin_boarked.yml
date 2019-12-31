@@ -1,0 +1,7 @@
+k9s:
+  fgColor: blee
+  bgColor: black
+  logoColor: white
+  info:
+    - fgColor: fred
+    - sectionColor: white

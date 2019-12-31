@@ -1,0 +1,59 @@
+{
+  "apiVersion": "batch/v1beta1",
+  "kind": "CronJob",
+  "metadata": {
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"batch/v1beta1\",\"kind\":\"CronJob\",\"metadata\":{\"annotations\":{},\"name\":\"hello\",\"namespace\":\"default\"},\"spec\":{\"concurrencyPolicy\":\"Forbid\",\"jobTemplate\":{\"spec\":{\"template\":{\"spec\":{\"containers\":[{\"args\":[\"/bin/bash\",\"-c\",\"for i in {1..5}; do echo c1 $i; sleep 1; done\"],\"image\":\"blang/busybox-bash\",\"name\":\"c1\"}],\"restartPolicy\":\"OnFailure\"}}}},\"schedule\":\"*/1 * * * *\"}}\n"
+    },
+    "creationTimestamp": "2019-08-30T15:19:01Z",
+    "name": "hello",
+    "namespace": "default",
+    "resourceVersion": "49753699",
+    "selfLink": "/apis/batch/v1beta1/namespaces/default/cronjobs/hello",
+    "uid": "7f0b856c-cb39-11e9-990f-42010a800218"
+  },
+  "spec": {
+    "concurrencyPolicy": "Forbid",
+    "failedJobsHistoryLimit": 1,
+    "jobTemplate": {
+      "metadata": {
+        "creationTimestamp": null
+      },
+      "spec": {
+        "template": {
+          "metadata": {
+            "creationTimestamp": null
+          },
+          "spec": {
+            "containers": [
+              {
+                "args": [
+                  "/bin/bash",
+                  "-c",
+                  "for i in {1..5}; do echo c1 $i; sleep 1; done"
+                ],
+                "image": "blang/busybox-bash",
+                "imagePullPolicy": "Always",
+                "name": "c1",
+                "resources": {},
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File"
+              }
+            ],
+            "dnsPolicy": "ClusterFirst",
+            "restartPolicy": "OnFailure",
+            "schedulerName": "default-scheduler",
+            "securityContext": {},
+            "terminationGracePeriodSeconds": 30
+          }
+        }
+      }
+    },
+    "schedule": "*/1 * * * *",
+    "successfulJobsHistoryLimit": 3,
+    "suspend": false
+  },
+  "status": {
+    "lastScheduleTime": "2019-08-30T17:01:00Z"
+  }
+}

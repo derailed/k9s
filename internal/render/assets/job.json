@@ -1,0 +1,80 @@
+{
+  "apiVersion": "batch/v1",
+  "kind": "Job",
+  "metadata": {
+    "creationTimestamp": "2019-08-30T15:33:02Z",
+    "labels": {
+      "controller-uid": "7473e6d0-cb3b-11e9-990f-42010a800218",
+      "job-name": "hello-1567179180"
+    },
+    "name": "hello-1567179180",
+    "namespace": "default",
+    "ownerReferences": [
+      {
+        "apiVersion": "batch/v1beta1",
+        "blockOwnerDeletion": true,
+        "controller": true,
+        "kind": "CronJob",
+        "name": "hello",
+        "uid": "7f0b856c-cb39-11e9-990f-42010a800218"
+      }
+    ],
+    "resourceVersion": "49735780",
+    "selfLink": "/apis/batch/v1/namespaces/default/jobs/hello-1567179180",
+    "uid": "7473e6d0-cb3b-11e9-990f-42010a800218"
+  },
+  "spec": {
+    "backoffLimit": 6,
+    "completions": 1,
+    "parallelism": 1,
+    "selector": {
+      "matchLabels": {
+        "controller-uid": "7473e6d0-cb3b-11e9-990f-42010a800218"
+      }
+    },
+    "template": {
+      "metadata": {
+        "creationTimestamp": null,
+        "labels": {
+          "controller-uid": "7473e6d0-cb3b-11e9-990f-42010a800218",
+          "job-name": "hello-1567179180"
+        }
+      },
+      "spec": {
+        "containers": [
+          {
+            "args": [
+              "/bin/bash",
+              "-c",
+              "for i in {1..5}; do echo c1 $i; sleep 1; done"
+            ],
+            "image": "blang/busybox-bash",
+            "imagePullPolicy": "Always",
+            "name": "c1",
+            "resources": {},
+            "terminationMessagePath": "/dev/termination-log",
+            "terminationMessagePolicy": "File"
+          }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "restartPolicy": "OnFailure",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "terminationGracePeriodSeconds": 30
+      }
+    }
+  },
+  "status": {
+    "completionTime": "2019-08-30T15:33:10Z",
+    "conditions": [
+      {
+        "lastProbeTime": "2019-08-30T15:33:10Z",
+        "lastTransitionTime": "2019-08-30T15:33:10Z",
+        "status": "True",
+        "type": "Complete"
+      }
+    ],
+    "startTime": "2019-08-30T15:33:02Z",
+    "succeeded": 1
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "kind": "Role",
+  "metadata": {
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"Role\",\"metadata\":{\"annotations\":{},\"name\":\"blee\",\"namespace\":\"default\"},\"rules\":[{\"apiGroups\":[\"\"],\"resources\":[\"pods\",\"namespaces\"],\"verbs\":[\"get\",\"list\",\"deletecollection\",\"patch\",\"watch\"]}]}\n"
+    },
+    "creationTimestamp": "2019-05-24T02:58:58Z",
+    "name": "blee",
+    "namespace": "default",
+    "resourceVersion": "23720646",
+    "selfLink": "/apis/rbac.authorization.k8s.io/v1/namespaces/default/roles/blee",
+    "uid": "e017e058-7dcf-11e9-b9e0-42010a800003"
+  },
+  "rules": [
+    {
+      "apiGroups": [
+        ""
+      ],
+      "resources": [
+        "pods",
+        "namespaces"
+      ],
+      "verbs": [
+        "get",
+        "list",
+        "deletecollection",
+        "patch",
+        "watch"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+Summary:
+  Total:	816.6403 secs
+  Slowest:	0.0000 secs
+  Fastest:	0.0000 secs
+  Average:	 NaN secs
+  Requests/sec:	0.0122
+
+
+Response time histogram:
+
+
+Latency distribution:
+
+Details (average, fastest, slowest):
+  DNS+dialup:	 NaN secs, 0.0000 secs, 0.0000 secs
+  DNS-lookup:	 NaN secs, 0.0000 secs, 0.0000 secs
+  req write:	 NaN secs, 0.0000 secs, 0.0000 secs
+  resp wait:	 NaN secs, 0.0000 secs, 0.0000 secs
+  resp read:	 NaN secs, 0.0000 secs, 0.0000 secs
+
+Status code distribution:
+
+Error distribution:
+  [10]	Get http://192.168.64.126:30805/: dial tcp 192.168.64.126:30805: connect: operation timed out

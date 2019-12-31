@@ -1,0 +1,30 @@
+{
+  "apiVersion": "autoscaling/v1",
+  "kind": "HorizontalPodAutoscaler",
+  "metadata": {
+    "annotations": {
+      "autoscaling.alpha.kubernetes.io/conditions": "[{\"type\":\"AbleToScale\",\"status\":\"False\",\"lastTransitionTime\":\"2019-07-19T20:56:05Z\",\"reason\":\"FailedGetScale\",\"message\":\"the HPA controller was unable to get the target's current scale: deployments/scale.extensions \\\"nginx\\\" not found\"}]",
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"autoscaling/v1\",\"kind\":\"HorizontalPodAutoscaler\",\"metadata\":{\"annotations\":{},\"name\":\"nginx\",\"namespace\":\"default\"},\"spec\":{\"maxReplicas\":10,\"minReplicas\":1,\"scaleTargetRef\":{\"apiVersion\":\"apps/v1\",\"kind\":\"Deployment\",\"name\":\"nginx\"},\"targetCPUUtilizationPercentage\":10}}\n"
+    },
+    "creationTimestamp": "2019-07-19T20:55:50Z",
+    "name": "nginx",
+    "namespace": "default",
+    "resourceVersion": "38623948",
+    "selfLink": "/apis/autoscaling/v1/namespaces/default/horizontalpodautoscalers/nginx",
+    "uid": "97104229-aa67-11e9-990f-42010a800218"
+  },
+  "spec": {
+    "maxReplicas": 10,
+    "minReplicas": 1,
+    "scaleTargetRef": {
+      "apiVersion": "apps/v1",
+      "kind": "Deployment",
+      "name": "nginx"
+    },
+    "targetCPUUtilizationPercentage": 10
+  },
+  "status": {
+    "currentReplicas": 0,
+    "desiredReplicas": 0
+  }
+}

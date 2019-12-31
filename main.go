@@ -2,21 +2,25 @@ package main
 
 import (
 	"os"
-	"path"
 
 	"github.com/derailed/k9s/cmd"
-	log "github.com/sirupsen/logrus"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	"github.com/derailed/k9s/internal/config"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 )
 
 func init() {
-	file, err := os.OpenFile(path.Join("/tmp", "k9s.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-	if err != nil {
-		panic(err)
-	}
-	log.SetOutput(file)
+	config.EnsurePath(config.K9sLogs, config.DefaultDirMod)
 }
 
 func main() {
+	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
+	file, err := os.OpenFile(config.K9sLogs, mod, config.DefaultFileMod)
+	if err != nil {
+		panic(err)
+	}
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: file})
+
 	cmd.Execute()
 }
