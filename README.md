@@ -37,6 +37,13 @@ K9s is available on Linux, OSX and Windows platforms.
    sudo port install k9s
    ```
 
+* Archlinux (AUR)
+  K9s is available in the Arch User Repository under the name [k9s-bin](https://aur.archlinux.org/packages/k9s-bin/), you can install it with your favourite AUR helper like so:
+
+  ```shell
+  yay -S k9s-bin
+  ```
+
 * Building from source
    K9s was built using go 1.13 or above. In order to build K9 from source you must:
    1. Clone the repo
@@ -97,8 +104,6 @@ k9s -n mycoolns
 # Start K9s in an existing KubeConfig context
 k9s --context coolCtx
 ```
-
----
 
 ## Key Bindings
 
