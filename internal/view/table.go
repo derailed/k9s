@@ -4,24 +4,31 @@ import (
 	"context"
 	"time"
 
+	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 // Table represents a table viewer.
 type Table struct {
 	*ui.Table
 
-	app     *App
-	enterFn EnterFunc
+	gvr        client.GVR
+	app        *App
+	enterFn    EnterFunc
+	envFn      EnvFunc
+	bindKeysFn BindKeysFunc
 }
 
 // NewTable returns a new viewer.
-func NewTable(gvr string) *Table {
+func NewTable(gvr client.GVR) *Table {
 	return &Table{
-		Table: ui.NewTable(gvr),
+		Table: ui.NewTable(string(gvr)),
+		gvr:   gvr,
 	}
 }
 
@@ -34,12 +41,31 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	t.Table.Init(ctx)
 	t.bindKeys()
 	t.GetModel().SetRefreshRate(time.Duration(t.app.Config.K9s.GetRefreshRate()) * time.Second)
+	t.envFn = t.defaultK9sEnv
 
 	return nil
 }
 
 // Name returns the table name.
 func (t *Table) Name() string { return t.BaseTitle }
+
+// GVR returns a resource descriptor.
+func (t *Table) GVR() string { return string(t.gvr) }
+
+// SetBindKeysFn adds additional key bindings.
+func (t *Table) SetBindKeysFn(f BindKeysFunc) { t.bindKeysFn = f }
+
+// SetEnvFn sets a function to pull viewer env vars for plugins.
+func (t *Table) SetEnvFn(f EnvFunc) { t.envFn = f }
+
+// EnvFn returns an plugin env function if available.
+func (t *Table) EnvFn() EnvFunc {
+	return t.envFn
+}
+
+func (t *Table) defaultK9sEnv() K9sEnv {
+	return defaultK9sEnv(t.app, t.GetSelectedItem(), t.GetSelectedRow())
+}
 
 // App returns the current app handle.
 func (t *Table) App() *App {
@@ -100,6 +126,48 @@ func (t *Table) bindKeys() {
 		ui.KeyShiftN:        ui.NewKeyAction("Sort Name", t.SortColCmd(0, true), false),
 		ui.KeyShiftA:        ui.NewKeyAction("Sort Age", t.SortColCmd(-1, true), false),
 	})
+}
+
+func (t *Table) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := t.GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	o, err := t.app.factory.Get(string(t.gvr), path, labels.Everything())
+	if err != nil {
+		t.app.Flash().Errf("Unable to get resource %q -- %s", t.gvr, err)
+		return nil
+	}
+
+	raw, err := toYAML(o)
+	if err != nil {
+		t.app.Flash().Errf("Unable to marshal resource %s", err)
+		return nil
+	}
+
+	details := NewDetails(t.app, "YAML", path).Update(raw)
+	if err := t.app.inject(details); err != nil {
+		t.App().Flash().Err(err)
+	}
+
+	return nil
+}
+
+func (t *Table) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := t.GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	_, n := client.Namespaced(path)
+	log.Debug().Msgf("Copied selection to clipboard %q", n)
+	t.app.Flash().Info("Current selection copied to clipboard...")
+	if err := clipboard.WriteAll(n); err != nil {
+		t.app.Flash().Err(err)
+	}
+
+	return nil
 }
 
 func (t *Table) markCmd(evt *tcell.EventKey) *tcell.EventKey {

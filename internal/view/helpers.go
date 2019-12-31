@@ -1,6 +1,7 @@
 package view
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -9,10 +10,41 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/cli-runtime/pkg/printers"
 )
+
+func describeResource(app *App, _, gvr, path string) {
+	ns, n := client.Namespaced(path)
+	yaml, err := dao.Describe(app.Conn(), client.GVR(gvr), ns, n)
+	if err != nil {
+		app.Flash().Errf("Describe command failed: %s", err)
+		return
+	}
+
+	details := NewDetails(app, "Describe", path).Update(yaml)
+	if err := app.inject(details); err != nil {
+		app.Flash().Err(err)
+	}
+}
+
+func toYAML(o runtime.Object) (string, error) {
+	var (
+		buff bytes.Buffer
+		p    printers.YAMLPrinter
+	)
+	err := p.PrintObj(o, &buff)
+	if err != nil {
+		log.Error().Msgf("Marshal Error %v", err)
+		return "", err
+	}
+
+	return buff.String(), nil
+}
 
 func showPodsWithLabels(app *App, path string, sel map[string]string) {
 	log.Debug().Msgf("SHOWING POD FOR %#v", sel)

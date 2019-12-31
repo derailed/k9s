@@ -1,13 +1,11 @@
 package view
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"strconv"
 
-	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -18,9 +16,6 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/cli-runtime/pkg/printers"
 )
 
 // Browser represents a generic resource browser.
@@ -28,20 +23,16 @@ type Browser struct {
 	*Table
 
 	namespaces map[int]string
-	gvr        client.GVR
 	meta       metav1.APIResource
 	accessor   dao.Accessor
-	envFn      EnvFunc
 	contextFn  ContextFunc
-	bindKeysFn BindKeysFunc
 	cancelFn   context.CancelFunc
 }
 
 // NewBrowser returns a new browser.
 func NewBrowser(gvr client.GVR) ResourceViewer {
 	return &Browser{
-		Table: NewTable(string(gvr)),
-		gvr:   gvr,
+		Table: NewTable(gvr),
 	}
 }
 
@@ -52,6 +43,7 @@ func (b *Browser) Init(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	b.BaseTitle = b.meta.Kind
 
 	if err = b.Table.Init(ctx); err != nil {
 		return err
@@ -66,13 +58,11 @@ func (b *Browser) Init(ctx context.Context) error {
 	if b.bindKeysFn != nil {
 		b.bindKeysFn(b.Actions())
 	}
-	b.BaseTitle = b.meta.Kind
 	b.accessor, err = dao.AccessorFor(b.app.factory, b.gvr)
 	if err != nil {
 		return err
 	}
 
-	b.envFn = b.defaultK9sEnv
 	b.setNamespace(b.App().Config.ActiveNamespace())
 	row, _ := b.GetSelection()
 	if row == 0 && b.GetRowCount() > 0 {
@@ -106,6 +96,58 @@ func (b *Browser) Start() {
 	}
 	b.GetModel().Watch(ctx)
 }
+
+// Stop terminates browser updates.
+func (b *Browser) Stop() {
+	if b.cancelFn == nil {
+		return
+	}
+	b.Table.Stop()
+	log.Debug().Msgf("BROWSER <STOP> %q", b.gvr)
+	b.cancelFn()
+	b.cancelFn = nil
+}
+
+func (b *Browser) refresh() {
+	b.Start()
+}
+
+// Name returns the component name.
+func (b *Browser) Name() string { return b.meta.Kind }
+
+// SetContextFn populates a custom context.
+func (b *Browser) SetContextFn(f ContextFunc) { b.contextFn = f }
+
+// GetTable returns the underlying table.
+func (b *Browser) GetTable() *Table { return b.Table }
+
+// Aliases returns all available aliases.
+func (b *Browser) Aliases() []string {
+	return append(b.meta.ShortNames, b.meta.SingularName, b.meta.Name)
+}
+
+// ----------------------------------------------------------------------------
+// Model Protocol...
+
+// TableLoadFailed notifies view something went south.
+func (b *Browser) TableLoadFailed(err error) {
+	b.app.QueueUpdateDraw(func() {
+		b.app.Flash().Err(err)
+		b.App().ClearStatus()
+	})
+}
+
+// TableDataChanged notifies view new data is available.
+func (b *Browser) TableDataChanged(data render.TableData) {
+	b.app.QueueUpdateDraw(func() {
+		b.refreshActions()
+		b.Update(data)
+		b.App().ClearStatus()
+	})
+}
+
+// ----------------------------------------------------------------------------
+// Actions...
 
 func (b *Browser) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !b.SearchBuff().InCmdMode() {
@@ -143,82 +185,13 @@ func (b *Browser) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-// Stop terminates browser updates.
-func (b *Browser) Stop() {
-	if b.cancelFn == nil {
-		return
-	}
-	b.Table.Stop()
-	log.Debug().Msgf("BROWSER <STOP> %q", b.gvr)
-	b.cancelFn()
-	b.cancelFn = nil
-}
-
-func (b *Browser) refresh() {
-	b.Start()
-}
-
-// Name returns the component name.
-func (b *Browser) Name() string { return b.meta.Kind }
-
-// SetContextFn populates a custom context.
-func (b *Browser) SetContextFn(f ContextFunc) { b.contextFn = f }
-
-// SetBindKeysFn adds additional key bindings.
-func (b *Browser) SetBindKeysFn(f BindKeysFunc) { b.bindKeysFn = f }
-
-// SetEnvFn sets a function to pull viewer env vars for plugins.
-func (b *Browser) SetEnvFn(f EnvFunc) { b.envFn = f }
-
-// GVR returns a resource descriptor.
-func (b *Browser) GVR() string { return string(b.gvr) }
-
-// GetTable returns the underlying table.
-func (b *Browser) GetTable() *Table { return b.Table }
-
-// TableLoadFailed notifies view something went south.
-func (b *Browser) TableLoadFailed(err error) {
-	b.app.QueueUpdateDraw(func() {
-		b.app.Flash().Err(err)
-		b.App().ClearStatus()
-	})
-}
-
-// TableDataChanged notifies view new data is available.
-func (b *Browser) TableDataChanged(data render.TableData) {
-	b.app.QueueUpdateDraw(func() {
-		b.refreshActions()
-		b.Update(data)
-		b.App().ClearStatus()
-	})
-}
-
-// ----------------------------------------------------------------------------
-// Actions()...
-
-func (b *Browser) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	path := b.GetSelectedItem()
-	if path == "" {
-		return evt
-	}
-
-	_, n := client.Namespaced(path)
-	log.Debug().Msgf("Copied selection to clipboard %q", n)
-	b.app.Flash().Info("Current selection copied to clipboard...")
-	if err := clipboard.WriteAll(n); err != nil {
-		b.app.Flash().Err(err)
-	}
-
-	return nil
-}
-
 func (b *Browser) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := b.GetSelectedItem()
 	if b.filterCmd(evt) == nil || path == "" {
 		return nil
 	}
 
-	f := b.describeResource
+	f := describeResource
 	if b.enterFn != nil {
 		f = b.enterFn
 	}
@@ -257,109 +230,14 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (b *Browser) simpleDelete(selections []string, msg string) {
-	dialog.ShowConfirm(b.app.Content.Pages, "Confirm Delete", msg, func() {
-		b.ShowDeleted()
-		if len(selections) > 1 {
-			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.gvr)
-		} else {
-			b.app.Flash().Infof("Delete resource %s %s", b.gvr, selections[0])
-		}
-		for _, sel := range selections {
-			if err := b.accessor.(dao.Nuker).Delete(sel, true, true); err != nil {
-				b.app.Flash().Errf("Delete failed with `%s", err)
-			} else {
-				b.GetTable().DeleteMark(sel)
-			}
-		}
-		b.refresh()
-		b.SelectRow(1, true)
-	}, func() {})
-}
-
-func (b *Browser) resourceDelete(selections []string, msg string) {
-	dialog.ShowDelete(b.app.Content.Pages, msg, func(cascade, force bool) {
-		b.ShowDeleted()
-		if len(selections) > 1 {
-			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.gvr)
-		} else {
-			b.app.Flash().Infof("Delete resource %s %s", b.gvr, selections[0])
-		}
-		for _, sel := range selections {
-			if err := b.accessor.(dao.Nuker).Delete(sel, cascade, force); err != nil {
-				b.app.Flash().Errf("Delete failed with `%s", err)
-			} else {
-				b.app.factory.DeleteForwarder(sel)
-				b.GetTable().DeleteMark(sel)
-			}
-		}
-		b.refresh()
-		b.SelectRow(1, true)
-	}, func() {})
-}
-
 func (b *Browser) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := b.GetSelectedItem()
 	if path == "" {
 		return evt
 	}
-	b.describeResource(b.app, b.GetModel().GetNamespace(), string(b.gvr), path)
+	describeResource(b.app, b.GetModel().GetNamespace(), string(b.gvr), path)
 
 	return nil
-}
-
-func (b *Browser) describeResource(app *App, _, _, sel string) {
-	ns, n := client.Namespaced(sel)
-	yaml, err := dao.Describe(b.app.Conn(), b.gvr, ns, n)
-	if err != nil {
-		b.app.Flash().Errf("Describe command failed: %s", err)
-		return
-	}
-
-	details := NewDetails(b.App(), "Describe", sel).Update(yaml)
-	if err := b.app.inject(details); err != nil {
-		b.app.Flash().Err(err)
-	}
-}
-
-func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
-	path := b.GetSelectedItem()
-	if path == "" {
-		return evt
-	}
-
-	o, err := b.app.factory.Get(string(b.gvr), path, labels.Everything())
-	if err != nil {
-		b.app.Flash().Errf("Unable to get resource %q -- %s", b.gvr, err)
-		return nil
-	}
-
-	raw, err := toYAML(o)
-	if err != nil {
-		b.app.Flash().Errf("Unable to marshal resource %s", err)
-		return nil
-	}
-
-	details := NewDetails(b.app, "YAML", path).Update(raw)
-	if err := b.app.inject(details); err != nil {
-		b.App().Flash().Err(err)
-	}
-
-	return nil
-}
-
-func toYAML(o runtime.Object) (string, error) {
-	var (
-		buff bytes.Buffer
-		p    printers.YAMLPrinter
-	)
-	err := p.PrintObj(o, &buff)
-	if err != nil {
-		log.Error().Msgf("Marshal Error %v", err)
-		return "", err
-	}
-
-	return buff.String(), nil
 }
 
 func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -388,21 +266,6 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
-func (b *Browser) setNamespace(ns string) {
-	if !b.meta.Namespaced {
-		b.GetModel().SetNamespace(render.ClusterScope)
-		return
-	}
-	if b.GetModel().InNamespace(ns) {
-		return
-	}
-
-	if ns == render.NamespaceAll {
-		ns = render.AllNamespaces
-	}
-	b.GetModel().SetNamespace(ns)
-}
-
 func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	i, _ := strconv.Atoi(string(evt.Rune()))
 	ns := b.namespaces[i]
@@ -425,6 +288,24 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return nil
+}
+
+// ----------------------------------------------------------------------------
+// Helpers...
+
+func (b *Browser) setNamespace(ns string) {
+	if !b.meta.Namespaced {
+		b.GetModel().SetNamespace(render.ClusterScope)
+		return
+	}
+	if b.GetModel().InNamespace(ns) {
+		return
+	}
+
+	if ns == render.NamespaceAll {
+		ns = render.AllNamespaces
+	}
+	b.GetModel().SetNamespace(ns)
 }
 
 func (b *Browser) defaultContext() context.Context {
@@ -492,16 +373,43 @@ func (b *Browser) refreshActions() {
 	b.app.Menu().HydrateMenu(b.Hints())
 }
 
-// Aliases returns all available aliases.
-func (b *Browser) Aliases() []string {
-	return append(b.meta.ShortNames, b.meta.SingularName, b.meta.Name)
+func (b *Browser) simpleDelete(selections []string, msg string) {
+	dialog.ShowConfirm(b.app.Content.Pages, "Confirm Delete", msg, func() {
+		b.ShowDeleted()
+		if len(selections) > 1 {
+			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.gvr)
+		} else {
+			b.app.Flash().Infof("Delete resource %s %s", b.gvr, selections[0])
+		}
+		for _, sel := range selections {
+			if err := b.accessor.(dao.Nuker).Delete(sel, true, true); err != nil {
+				b.app.Flash().Errf("Delete failed with `%s", err)
+			} else {
+				b.GetTable().DeleteMark(sel)
+			}
+		}
+		b.refresh()
+		b.SelectRow(1, true)
+	}, func() {})
 }
 
-// EnvFn returns an plugin env function if available.
-func (b *Browser) EnvFn() EnvFunc {
-	return b.envFn
-}
-
-func (b *Browser) defaultK9sEnv() K9sEnv {
-	return defaultK9sEnv(b.app, b.GetSelectedItem(), b.GetSelectedRow())
+func (b *Browser) resourceDelete(selections []string, msg string) {
+	dialog.ShowDelete(b.app.Content.Pages, msg, func(cascade, force bool) {
+		b.ShowDeleted()
+		if len(selections) > 1 {
+			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.gvr)
+		} else {
+			b.app.Flash().Infof("Delete resource %s %s", b.gvr, selections[0])
+		}
+		for _, sel := range selections {
+			if err := b.accessor.(dao.Nuker).Delete(sel, cascade, force); err != nil {
+				b.app.Flash().Errf("Delete failed with `%s", err)
+			} else {
+				b.app.factory.DeleteForwarder(sel)
+				b.GetTable().DeleteMark(sel)
+			}
+		}
+		b.refresh()
+		b.SelectRow(1, true)
+	}, func() {})
 }
