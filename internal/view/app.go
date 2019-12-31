@@ -181,7 +181,7 @@ func (a *App) buildHeader() tview.Primitive {
 	if !a.showHeader {
 		return header
 	}
-	header.AddItem(a.clusterInfo(), 35, 1, false)
+	header.AddItem(a.clusterInfo(), 40, 1, false)
 	header.AddItem(a.Menu(), 0, 1, false)
 	header.AddItem(a.Logo(), 26, 1, false)
 

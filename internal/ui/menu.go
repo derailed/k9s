@@ -17,7 +17,6 @@ import (
 const (
 	menuIndexFmt = " [key:bg:b]<%d> [fg:bg:d]%s "
 	maxRows      = 7
-	chopWidth    = 20
 )
 
 var menuRX = regexp.MustCompile(`\d`)
@@ -192,7 +191,7 @@ func formatNSMenu(i int, name string, styles config.Frame) string {
 	fmat := strings.Replace(menuIndexFmt, "[key", "["+styles.Menu.NumKeyColor, 1)
 	fmat = strings.Replace(fmat, ":bg:", ":"+styles.Title.BgColor+":", -1)
 	fmat = strings.Replace(fmat, "[fg", "["+styles.Menu.FgColor, 1)
-	return fmt.Sprintf(fmat, i, Truncate(name, chopWidth))
+	return fmt.Sprintf(fmat, i, name)
 }
 
 func formatPlainMenu(h model.MenuHint, size int, styles config.Frame) string {
