@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -27,6 +28,7 @@ var _ Scalable = &Deployment{}
 
 // Scale a Deployment.
 func (d *Deployment) Scale(path string, replicas int32) error {
+	log.Debug().Msgf("SCALING DEPLOYMENT!! %q:%d", path, replicas)
 	ns, n := client.Namespaced(path)
 	scale, err := d.Client().DialOrDie().AppsV1().Deployments(ns).GetScale(n, metav1.GetOptions{})
 	if err != nil {

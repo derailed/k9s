@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
@@ -25,6 +24,8 @@ const (
 // Help presents a help viewer.
 type Help struct {
 	*Table
+
+	maxKey, maxDesc, maxRows int
 }
 
 // NewHelp returns a new help viewer.
@@ -44,7 +45,7 @@ func (v *Help) Init(ctx context.Context) error {
 	v.SetBorder(true)
 	v.SetBorderPadding(0, 0, 1, 1)
 	v.bindKeys()
-	v.build(v.app.Content.Top().Hints())
+	v.build()
 	v.SetBackgroundColor(v.App().Styles.BgColor())
 
 	return nil
@@ -57,6 +58,40 @@ func (v *Help) bindKeys() {
 		ui.KeyHelp:     ui.NewKeyAction("Back", v.app.PrevCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Back", v.app.PrevCmd, false),
 	})
+}
+
+func (v *Help) computeMaxes(hh model.MenuHints) {
+	v.maxKey, v.maxDesc = 0, 0
+	for _, h := range hh {
+		if len(h.Mnemonic) > v.maxKey {
+			v.maxKey = len(h.Mnemonic)
+		}
+		if len(h.Description) > v.maxDesc {
+			v.maxDesc = len(h.Description)
+		}
+	}
+	v.maxKey += 2
+}
+
+type HelpFunc func() model.MenuHints
+
+func (v *Help) build() {
+	v.Clear()
+
+	ff := []HelpFunc{v.app.Content.Top().Hints, v.showGeneral, v.showNav, v.showHelp}
+	var col int
+	for i, section := range []string{"RESOURCE", "GENERAL", "NAVIGATION", "HELP"} {
+		hh := ff[i]()
+		sort.Sort(hh)
+		v.computeMaxes(hh)
+		v.addSection(col, section, hh)
+		col += 2
+	}
+
+	if h, err := v.showHotKeys(); err == nil {
+		v.computeMaxes(h)
+		v.addSection(col, "HOTKEYS", h)
+	}
 }
 
 func (v *Help) showHelp() model.MenuHints {
@@ -186,58 +221,54 @@ func (v *Help) resetTitle() {
 	v.SetTitle(fmt.Sprintf(helpTitleFmt, helpTitle))
 }
 
-func (v *Help) build(hh model.MenuHints) {
-	v.Clear()
-	sort.Sort(hh)
-
-	var col int
-	v.addSection(col, "RESOURCE", hh)
-	col += 2
-	v.addSection(col, "GENERAL", v.showGeneral())
-	col += 2
-	v.addSection(col, "NAVIGATION", v.showNav())
-	col += 2
-	if h, err := v.showHotKeys(); err == nil {
-		v.addSection(col, "HOTKEYS", h)
-		col += 2
-	}
-	v.addSection(col, "HELP", v.showHelp())
-}
-
 func (v *Help) addSpacer(c int) {
-	cell := tview.NewTableCell("")
+	cell := tview.NewTableCell(render.Pad("", v.maxKey))
 	cell.SetBackgroundColor(v.App().Styles.BgColor())
 	cell.SetExpansion(1)
 	v.SetCell(0, c, cell)
 }
 
 func (v *Help) addSection(c int, title string, hh model.MenuHints) {
+	if len(hh) > v.maxRows {
+		v.maxRows = len(hh)
+	}
 	row := 0
-	v.addSpacer(c)
 	cell := tview.NewTableCell(title)
 	cell.SetTextColor(tcell.ColorGreen)
 	cell.SetAttributes(tcell.AttrBold)
 	cell.SetExpansion(1)
 	cell.SetAlign(tview.AlignLeft)
-	v.SetCell(row, c+1, cell)
+	v.SetCell(row, c, cell)
+	v.addSpacer(c + 1)
 	row++
 
 	for _, h := range hh {
 		col := c
-		cell := tview.NewTableCell(toMnemonic(h.Mnemonic))
+		cell := tview.NewTableCell(render.Pad(toMnemonic(h.Mnemonic), v.maxKey))
 		if _, err := strconv.Atoi(h.Mnemonic); err != nil {
 			cell.SetTextColor(tcell.ColorDodgerBlue)
 		} else {
 			cell.SetTextColor(tcell.ColorFuchsia)
 		}
 		cell.SetAttributes(tcell.AttrBold)
-		cell.SetAlign(tview.AlignRight)
 		v.SetCell(row, col, cell)
 		col++
-		cell = tview.NewTableCell(h.Description)
+		cell = tview.NewTableCell(render.Pad(h.Description, v.maxDesc))
 		cell.SetTextColor(tcell.ColorWhite)
 		v.SetCell(row, col, cell)
 		row++
+	}
+
+	if len(hh) < v.maxRows {
+		for i := v.maxRows - len(hh); i > 0; i-- {
+			col := c
+			cell := tview.NewTableCell(render.Pad("", v.maxKey))
+			v.SetCell(row, col, cell)
+			col++
+			cell = tview.NewTableCell(render.Pad("", v.maxDesc))
+			v.SetCell(row, col, cell)
+			row++
+		}
 	}
 }
 
@@ -259,45 +290,4 @@ func keyConv(s string) string {
 	}
 
 	return strings.Replace(s, "alt", "opt", 1)
-}
-
-func defaultK9sEnv(app *App, sel string, row render.Row) K9sEnv {
-	ns, n := client.Namespaced(sel)
-	ctx, err := app.Conn().Config().CurrentContextName()
-	if err != nil {
-		ctx = render.NAValue
-	}
-	cluster, err := app.Conn().Config().CurrentClusterName()
-	if err != nil {
-		cluster = render.NAValue
-	}
-	user, err := app.Conn().Config().CurrentUserName()
-	if err != nil {
-		user = render.NAValue
-	}
-	groups, err := app.Conn().Config().CurrentGroupNames()
-	if err != nil {
-		groups = []string{render.NAValue}
-	}
-	var cfg string
-	kcfg := app.Conn().Config().Flags().KubeConfig
-	if kcfg != nil && *kcfg != "" {
-		cfg = *kcfg
-	}
-
-	env := K9sEnv{
-		"NAMESPACE":  ns,
-		"NAME":       n,
-		"CONTEXT":    ctx,
-		"CLUSTER":    cluster,
-		"USER":       user,
-		"GROUPS":     strings.Join(groups, ","),
-		"KUBECONFIG": cfg,
-	}
-
-	for i, r := range row.Fields {
-		env["COL"+strconv.Itoa(i)] = r
-	}
-
-	return env
 }

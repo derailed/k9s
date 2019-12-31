@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
@@ -17,6 +18,47 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/printers"
 )
+
+func defaultK9sEnv(app *App, sel string, row render.Row) K9sEnv {
+	ns, n := client.Namespaced(sel)
+	ctx, err := app.Conn().Config().CurrentContextName()
+	if err != nil {
+		ctx = render.NAValue
+	}
+	cluster, err := app.Conn().Config().CurrentClusterName()
+	if err != nil {
+		cluster = render.NAValue
+	}
+	user, err := app.Conn().Config().CurrentUserName()
+	if err != nil {
+		user = render.NAValue
+	}
+	groups, err := app.Conn().Config().CurrentGroupNames()
+	if err != nil {
+		groups = []string{render.NAValue}
+	}
+	var cfg string
+	kcfg := app.Conn().Config().Flags().KubeConfig
+	if kcfg != nil && *kcfg != "" {
+		cfg = *kcfg
+	}
+
+	env := K9sEnv{
+		"NAMESPACE":  ns,
+		"NAME":       n,
+		"CONTEXT":    ctx,
+		"CLUSTER":    cluster,
+		"USER":       user,
+		"GROUPS":     strings.Join(groups, ","),
+		"KUBECONFIG": cfg,
+	}
+
+	for i, r := range row.Fields {
+		env["COL"+strconv.Itoa(i)] = r
+	}
+
+	return env
+}
 
 func describeResource(app *App, _, gvr, path string) {
 	ns, n := client.Namespaced(path)

@@ -45,7 +45,7 @@ func NewTable(gvr string) *Table {
 		SelectTable: &SelectTable{
 			Table: tview.NewTable(),
 			model: model.NewTable(gvr),
-			marks: make(map[string]bool),
+			marks: make(map[string]struct{}),
 		},
 		actions:   make(KeyActions),
 		cmdBuff:   NewCmdBuff('/', FilterBuff),
@@ -277,7 +277,7 @@ func (t *Table) buildRow(ns string, r int, re render.RowEvent, header render.Hea
 
 // ClearMarks clear out marked items.
 func (t *Table) ClearMarks() {
-	t.marks = map[string]bool{}
+	t.SelectTable.ClearMarks()
 	t.Refresh()
 }
 

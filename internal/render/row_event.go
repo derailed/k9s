@@ -117,19 +117,11 @@ func (rr RowEvents) Upsert(e RowEvent) RowEvents {
 
 // Delete removes an element by id.
 func (rr RowEvents) Delete(id string) RowEvents {
-	idx, ok := rr.FindIndex(id)
+	victim, ok := rr.FindIndex(id)
 	if !ok {
 		return rr
 	}
-
-	if idx == 0 {
-		return rr[1:]
-	}
-	if idx == len(rr)-1 {
-		return rr[:len(rr)-1]
-	}
-
-	return append(rr[:idx], rr[idx+1:]...)
+	return append(rr[0:victim], rr[victim+1:]...)
 }
 
 // Clear delete all row events

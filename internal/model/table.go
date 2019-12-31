@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	refreshRate = 1 * time.Second
+	refreshRate = 2 * time.Second
 	noDataCount = 2
 )
 

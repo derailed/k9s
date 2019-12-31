@@ -8,6 +8,58 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestRowEventsDelete(t *testing.T) {
+	uu := map[string]struct {
+		re render.RowEvents
+		id string
+		e  render.RowEvents
+	}{
+		"first": {
+			re: render.RowEvents{
+				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+			},
+			id: "A",
+			e: render.RowEvents{
+				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+			},
+		},
+		"middle": {
+			re: render.RowEvents{
+				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+			},
+			id: "B",
+			e: render.RowEvents{
+				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+			},
+		},
+		"last": {
+			re: render.RowEvents{
+				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+			},
+			id: "C",
+			e: render.RowEvents{
+				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+			},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, u.re.Delete(u.id))
+		})
+	}
+}
+
 func TestSort(t *testing.T) {
 	uu := map[string]struct {
 		re  render.RowEvents
@@ -32,10 +84,10 @@ func TestSort(t *testing.T) {
 	}
 
 	for k := range uu {
-		uc := uu[k]
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			uc.re.Sort("", uc.col, uc.asc)
-			assert.Equal(t, uc.e, uc.re)
+			u.re.Sort("", u.col, u.asc)
+			assert.Equal(t, u.e, u.re)
 		})
 	}
 }
@@ -52,9 +104,9 @@ func TestDefaultColorer(t *testing.T) {
 	}
 
 	for k := range uu {
-		uc := uu[k]
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, uc.e, render.DefaultColorer("", render.RowEvent{}))
+			assert.Equal(t, u.e, render.DefaultColorer("", render.RowEvent{}))
 		})
 	}
 }

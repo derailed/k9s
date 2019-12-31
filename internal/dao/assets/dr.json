@@ -1,0 +1,99 @@
+{
+  "apiVersion": "apiextensions.k8s.io/v1",
+  "kind": "CustomResourceDefinition",
+  "metadata": {
+    "annotations": {
+      "helm.sh/resource-policy": "keep",
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apiextensions.k8s.io/v1beta1\",\"kind\":\"CustomResourceDefinition\",\"metadata\":{\"annotations\":{\"helm.sh/resource-policy\":\"keep\"},\"labels\":{\"app\":\"istio-pilot\",\"chart\":\"istio\",\"heritage\":\"Tiller\",\"release\":\"istio\"},\"name\":\"destinationrules.networking.istio.io\"},\"spec\":{\"additionalPrinterColumns\":[{\"JSONPath\":\".spec.host\",\"description\":\"The name of a service from the service registry\",\"name\":\"Host\",\"type\":\"string\"},{\"JSONPath\":\".metadata.creationTimestamp\",\"description\":\"CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.\\n\\nPopulated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata\",\"name\":\"Age\",\"type\":\"date\"}],\"group\":\"networking.istio.io\",\"names\":{\"categories\":[\"istio-io\",\"networking-istio-io\"],\"kind\":\"DestinationRule\",\"listKind\":\"DestinationRuleList\",\"plural\":\"destinationrules\",\"shortNames\":[\"dr\"],\"singular\":\"destinationrule\"},\"scope\":\"Namespaced\",\"version\":\"v1alpha3\"}}\n"
+    },
+    "creationTimestamp": "2019-12-30T16:13:02Z",
+    "generation": 1,
+    "labels": {
+      "app": "istio-pilot",
+      "chart": "istio",
+      "heritage": "Tiller",
+      "release": "istio"
+    },
+    "name": "destinationrules.networking.istio.io",
+    "resourceVersion": "2773373",
+    "selfLink": "/apis/apiextensions.k8s.io/v1/customresourcedefinitions/destinationrules.networking.istio.io",
+    "uid": "123a30f8-8fcf-44b5-84b7-35f8c7869828"
+  },
+  "spec": {
+    "conversion": {
+      "strategy": "None"
+    },
+    "group": "networking.istio.io",
+    "version": "v1alpha3",
+    "names": {
+      "categories": [
+        "istio-io",
+        "networking-istio-io"
+      ],
+      "kind": "DestinationRule",
+      "listKind": "DestinationRuleList",
+      "plural": "destinationrules",
+      "shortNames": [
+        "dr"
+      ],
+      "singular": "destinationrule"
+    },
+    "preserveUnknownFields": true,
+    "scope": "Namespaced",
+    "versions": [
+      {
+        "additionalPrinterColumns": [
+          {
+            "description": "The name of a service from the service registry",
+            "jsonPath": ".spec.host",
+            "name": "Host",
+            "type": "string"
+          },
+          {
+            "description": "CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.\n\nPopulated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata",
+            "jsonPath": ".metadata.creationTimestamp",
+            "name": "Age",
+            "type": "date"
+          }
+        ],
+        "name": "v1alpha3",
+        "served": true,
+        "storage": true
+      }
+    ]
+  },
+  "status": {
+    "acceptedNames": {
+      "categories": [
+        "istio-io",
+        "networking-istio-io"
+      ],
+      "kind": "DestinationRule",
+      "listKind": "DestinationRuleList",
+      "plural": "destinationrules",
+      "shortNames": [
+        "dr"
+      ],
+      "singular": "destinationrule"
+    },
+    "conditions": [
+      {
+        "lastTransitionTime": "2019-12-30T16:13:02Z",
+        "message": "no conflicts found",
+        "reason": "NoConflicts",
+        "status": "True",
+        "type": "NamesAccepted"
+      },
+      {
+        "lastTransitionTime": "2019-12-30T16:13:02Z",
+        "message": "the initial names have been accepted",
+        "reason": "InitialNamesAccepted",
+        "status": "True",
+        "type": "Established"
+      }
+    ],
+    "storedVersions": [
+      "v1alpha3"
+    ]
+  }
+}

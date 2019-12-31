@@ -218,7 +218,7 @@ func extractMeta(o runtime.Object) (metav1.APIResource, []error) {
 
 	crd, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return m, append(errs, fmt.Errorf("Expected CustomResourceDefinition, but got %T", o))
+		return m, append(errs, fmt.Errorf("Expected Unstructured, but got %T", o))
 	}
 
 	var spec map[string]interface{}
@@ -254,6 +254,7 @@ func extractSlice(m map[string]interface{}, n string, errs []error) ([]string, [
 	if m[n] == nil {
 		return nil, errs
 	}
+
 	s, ok := m[n].([]string)
 	if ok {
 		return s, errs
@@ -268,10 +269,11 @@ func extractSlice(m map[string]interface{}, n string, errs []error) ([]string, [
 	for i, name := range ii {
 		ss[i], ok = name.(string)
 		if !ok {
-			return s, append(errs, fmt.Errorf("expecting string shortnames"))
+			return ss, append(errs, fmt.Errorf("expecting string shortnames"))
 		}
 	}
-	return s, errs
+
+	return ss, errs
 }
 
 func extractStr(m map[string]interface{}, n string, errs []error) (string, []error) {

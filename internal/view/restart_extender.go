@@ -18,14 +18,14 @@ type RestartExtender struct {
 // NewRestartExtender returns a new extender.
 func NewRestartExtender(v ResourceViewer) ResourceViewer {
 	r := RestartExtender{ResourceViewer: v}
-	r.SetBindKeysFn(r.bindKeys)
+	r.bindKeys(v.Actions())
 
 	return &r
 }
 
 // BindKeys creates additional menu actions.
 func (r *RestartExtender) bindKeys(aa ui.KeyActions) {
-	r.Actions().Add(ui.KeyActions{
+	aa.Add(ui.KeyActions{
 		tcell.KeyCtrlT: ui.NewKeyAction("Restart", r.restartCmd, true),
 	})
 }

@@ -53,7 +53,7 @@ type SelectTable struct {
 	selectedRow        int
 	selectedFn         func(string) string
 	selectionListeners []SelectedRowFunc
-	marks              map[string]bool
+	marks              map[string]struct{}
 }
 
 // SetModel sets the table model.
@@ -86,10 +86,8 @@ func (s *SelectTable) GetSelectedItems() []string {
 	}
 
 	var items []string
-	for item, marked := range s.marks {
-		if marked {
-			items = append(items, item)
-		}
+	for item := range s.marks {
+		items = append(items, item)
 	}
 
 	return items
@@ -145,7 +143,7 @@ func (s *SelectTable) selectionChanged(r, c int) {
 		return
 	}
 
-	if s.marks[s.GetSelectedItem()] {
+	if _, ok := s.marks[s.GetSelectedItem()]; ok {
 		s.SetSelectedStyle(tcell.ColorBlack, tcell.ColorCadetBlue, tcell.AttrBold)
 	} else {
 		cell := s.GetCell(r, c)
@@ -171,9 +169,14 @@ func (s *SelectTable) DeleteMark(k string) {
 
 // ToggleMark toggles marked row
 func (s *SelectTable) ToggleMark() {
-	s.marks[s.GetSelectedItem()] = !s.marks[s.GetSelectedItem()]
-	if !s.marks[s.GetSelectedItem()] {
+	sel := s.GetSelectedItem()
+	if sel == "" {
 		return
+	}
+	if _, ok := s.marks[sel]; ok {
+		delete(s.marks, s.GetSelectedItem())
+	} else {
+		s.marks[sel] = struct{}{}
 	}
 
 	cell := s.GetCell(s.GetSelectedRowIndex(), 0)
@@ -186,7 +189,8 @@ func (s *SelectTable) ToggleMark() {
 
 // IsMarked returns true if this item was marked.
 func (s *Table) IsMarked(item string) bool {
-	return s.marks[item]
+	_, ok := s.marks[item]
+	return ok
 }
 
 // AddSelectedRowListener add a new selected row listener.

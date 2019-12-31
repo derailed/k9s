@@ -1,6 +1,10 @@
 package render
 
-import "sync"
+import (
+	"sync"
+
+	"github.com/rs/zerolog/log"
+)
 
 // TableData tracks a K8s resource for tabular display.
 type TableData struct {
@@ -40,6 +44,7 @@ func (t *TableData) Update(rows Rows) {
 			t.RowEvents = append(t.RowEvents, NewRowEvent(EventAdd, row))
 			continue
 		}
+
 		if index, ok := t.RowEvents.FindIndex(row.ID); ok {
 			delta := NewDeltaRow(t.RowEvents[index].Row, row, t.Header.HasAge())
 			if delta.IsBlank() {
@@ -60,6 +65,7 @@ func (t *TableData) Update(rows Rows) {
 
 // Delete delete items in cache that are no longer valid.
 func (t *TableData) Delete(newKeys []string) {
+	var victims []string
 	for _, re := range t.RowEvents {
 		var found bool
 		for i, key := range newKeys {
@@ -70,8 +76,13 @@ func (t *TableData) Delete(newKeys []string) {
 			}
 		}
 		if !found {
-			t.RowEvents = t.RowEvents.Delete(re.Row.ID)
+			victims = append(victims, re.Row.ID)
 		}
+	}
+
+	for _, id := range victims {
+		log.Debug().Msgf("Deleting %s", id)
+		t.RowEvents = t.RowEvents.Delete(id)
 	}
 }
 

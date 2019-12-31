@@ -357,12 +357,12 @@ func (b *Browser) refreshActions() {
 	if client.Can(b.meta.Verbs, "delete") {
 		aa[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", b.deleteCmd, true)
 	}
-	if client.Can(b.meta.Verbs, "view") {
+
+	if !dao.IsK9sMeta(b.meta) {
 		aa[ui.KeyY] = ui.NewKeyAction("YAML", b.viewCmd, true)
-	}
-	if client.Can(b.meta.Verbs, "describe") {
 		aa[ui.KeyD] = ui.NewKeyAction("Describe", b.describeCmd, true)
 	}
+
 	pluginActions(b, aa)
 	hotKeyActions(b, aa)
 	b.Actions().Add(aa)
