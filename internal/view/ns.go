@@ -79,7 +79,7 @@ func (n *Namespace) decorate(data render.TableData) render.TableData {
 			render.RowEvent{
 				Kind: render.EventUnchanged,
 				Row: render.Row{
-					ID:     render.AllNamespaces,
+					ID:     render.NamespaceAll,
 					Fields: render.Fields{render.NamespaceAll, "Active", "0"},
 				},
 			},

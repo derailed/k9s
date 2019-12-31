@@ -146,38 +146,3 @@ func fuzzyFilter(q string, index int, data render.TableData) render.TableData {
 
 	return filtered
 }
-
-// UpdateTitle refreshes the table title.
-func styleTitle(rc int, ns, base, path, buff string, styles *config.Styles) string {
-	if rc > 0 {
-		rc--
-	}
-
-	base = strings.Title(base)
-	if ns == render.AllNamespaces {
-		ns = render.NamespaceAll
-	}
-	info := ns
-	if path != "" {
-		info = path
-		cns, n := render.Namespaced(path)
-		if cns == render.ClusterScope {
-			info = n
-		}
-	}
-
-	var title string
-	if info == "" || info == render.ClusterScope {
-		title = SkinTitle(fmt.Sprintf(titleFmt, base, rc), styles.Frame())
-	} else {
-		title = SkinTitle(fmt.Sprintf(nsTitleFmt, base, info, rc), styles.Frame())
-	}
-	if buff == "" {
-		return title
-	}
-
-	if IsLabelSelector(buff) {
-		buff = TrimLabelSelector(buff)
-	}
-	return title + SkinTitle(fmt.Sprintf(SearchFmt, buff), styles.Frame())
-}
