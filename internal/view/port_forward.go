@@ -48,8 +48,8 @@ func (p *PortForward) portForwardContext(ctx context.Context) context.Context {
 func (p *PortForward) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
 		tcell.KeyEnter: ui.NewKeyAction("Benchmarks", p.showBenchCmd, true),
-		tcell.KeyCtrlB: ui.NewKeyAction("Bench", p.benchCmd, true),
-		tcell.KeyCtrlK: ui.NewKeyAction("Bench Stop", p.benchStopCmd, true),
+		ui.KeyB:        ui.NewKeyAction("Bench", p.benchCmd, true),
+		ui.KeyK:        ui.NewKeyAction("Bench Stop", p.benchStopCmd, true),
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", p.deleteCmd, true),
 		ui.KeyShiftP:   ui.NewKeyAction("Sort Ports", p.GetTable().SortColCmd(2, true), false),
 		ui.KeyShiftU:   ui.NewKeyAction("Sort URL", p.GetTable().SortColCmd(4, true), false),
@@ -70,7 +70,7 @@ func (p *PortForward) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
 		p.App().Status(ui.FlashErr, "Benchmark Camceled!")
 		p.bench.Cancel()
 	}
-	p.App().ClearStatus()
+	p.App().ClearStatus(true)
 
 	return nil
 }
@@ -95,9 +95,9 @@ func (p *PortForward) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	base := ui.TrimCell(p.GetTable().SelectTable, r, 4)
 	var err error
-	if p.bench, err = perf.NewBenchmark(base, cfg); err != nil {
+	if p.bench, err = perf.NewBenchmark(base, p.App().version, cfg); err != nil {
 		p.App().Flash().Errf("Bench failed %v", err)
-		p.App().ClearStatus()
+		p.App().ClearStatus(false)
 		return nil
 	}
 
@@ -121,7 +121,7 @@ func (p *PortForward) runBenchmark() {
 			p.bench = nil
 			go func() {
 				<-time.After(2 * time.Second)
-				p.App().QueueUpdate(func() { p.App().ClearStatus() })
+				p.App().QueueUpdate(func() { p.App().ClearStatus(true) })
 			}()
 		})
 	})

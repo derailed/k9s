@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	refreshRate = 2 * time.Second
+	refreshRate = 1 * time.Second
 	noDataCount = 2
 )
 
@@ -115,6 +115,7 @@ func (t *Table) refresh(ctx context.Context) {
 	if err := t.reconcile(ctx); err != nil {
 		log.Error().Err(err).Msg("Reconcile failed")
 		t.fireTableLoadFailed(err)
+		return
 	}
 	t.fireTableChanged(*t.data)
 }

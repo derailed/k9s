@@ -2,8 +2,10 @@ package model
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -14,33 +16,32 @@ type HorizontalPodAutoscaler struct {
 }
 
 // List returns a collection of nodes.
-func (c *HorizontalPodAutoscaler) List(ctx context.Context) ([]runtime.Object, error) {
+func (h *HorizontalPodAutoscaler) List(ctx context.Context) ([]runtime.Object, error) {
 	strLabel, ok := ctx.Value(internal.KeyLabels).(string)
 	lsel := labels.Everything()
 	if sel, err := labels.ConvertSelectorToLabelsMap(strLabel); ok && err == nil {
 		lsel = sel.AsSelector()
 	}
 
-	gvr := "autoscaling/v2beta2/horizontalpodautoscalers"
-	ooV2b2, err := c.factory.List(gvr, c.namespace, lsel)
-	if err != nil {
-		return nil, err
-	}
-	if len(ooV2b2) > 0 {
-		return ooV2b2, nil
+	gvrs := []string{
+		"autoscaling/v2beta2/horizontalpodautoscalers",
+		"autoscaling/v2beta1/horizontalpodautoscalers",
+		"autoscaling/v1/horizontalpodautoscalers",
 	}
 
-	gvr = "autoscaling/v2beta1/horizontalpodautoscalers"
-	ooV2b1, err := c.factory.List(gvr, c.namespace, lsel)
-	if err != nil {
-		return nil, err
+	for _, gvr := range gvrs {
+		oo, err := h.list(gvr, lsel)
+		if err == nil && len(oo) > 0 {
+			return oo, nil
+		}
 	}
-	if len(ooV2b1) > 0 {
-		return ooV2b1, nil
-	}
+	log.Error().Err(fmt.Errorf("No results for any known HPA versions"))
 
-	gvr = "autoscaling/v1/horizontalpodautoscalers"
-	oo, err := c.factory.List(gvr, c.namespace, lsel)
+	return []runtime.Object{}, nil
+}
+
+func (h *HorizontalPodAutoscaler) list(gvr string, sel labels.Selector) ([]runtime.Object, error) {
+	oo, err := h.factory.List(gvr, h.namespace, sel)
 	if err != nil {
 		return nil, err
 	}

@@ -171,7 +171,9 @@ func (p *Policy) fetchRoleBindingSubjects(kind, name string) ([]string, error) {
 }
 
 func (p *Policy) fetchClusterRoles() ([]rbacv1.ClusterRole, error) {
-	oo, err := p.factory.List("rbac.authorization.k8s.io/v1/clusterroles", render.ClusterScope, labels.Everything())
+	const gvr = "rbac.authorization.k8s.io/v1/clusterroles"
+
+	oo, err := p.factory.List(gvr, render.ClusterScope, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -189,7 +191,9 @@ func (p *Policy) fetchClusterRoles() ([]rbacv1.ClusterRole, error) {
 }
 
 func (p *Policy) fetchRoles() ([]rbacv1.Role, error) {
-	oo, err := p.factory.List("rbac.authorization.k8s.io/v1/roles", render.AllNamespaces, labels.Everything())
+	const gvr = "rbac.authorization.k8s.io/v1/roles"
+
+	oo, err := p.factory.List(gvr, render.AllNamespaces, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

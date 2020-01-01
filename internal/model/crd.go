@@ -17,7 +17,7 @@ type CustomResourceDefinition struct {
 func (c *CustomResourceDefinition) List(ctx context.Context) ([]runtime.Object, error) {
 	strLabel, ok := ctx.Value(internal.KeyLabels).(string)
 	lsel := labels.Everything()
-	if sel, err := labels.ConvertSelectorToLabelsMap(strLabel); ok && err == nil {
+	if sel, e := labels.ConvertSelectorToLabelsMap(strLabel); ok && e == nil {
 		lsel = sel.AsSelector()
 	}
 

@@ -40,17 +40,26 @@ func (s *StatefulSet) bindKeys(aa ui.KeyActions) {
 }
 
 func (s *StatefulSet) showPods(app *App, _, gvr, path string) {
-	o, err := app.factory.Get(s.GVR(), path, labels.Everything())
+	sts, err := s.sts(path)
 	if err != nil {
 		app.Flash().Err(err)
 		return
 	}
 
+	showPodsFromSelector(app, strings.Replace(path, "/", "::", 1), sts.Spec.Selector)
+}
+
+func (s *StatefulSet) sts(path string) (*appsv1.StatefulSet, error) {
+	o, err := s.App().factory.Get(s.GVR(), path, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
 	var sts appsv1.StatefulSet
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &sts)
 	if err != nil {
-		app.Flash().Err(err)
+		return nil, err
 	}
 
-	showPodsFromSelector(app, strings.Replace(path, "/", "::", 1), sts.Spec.Selector)
+	return &sts, nil
 }

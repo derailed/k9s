@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"path/filepath"
 	"sync"
 	"time"
@@ -97,7 +98,7 @@ func (a *APIClient) CanI(ns, gvr string, verbs []string) (bool, error) {
 			return false, err
 		}
 		if !resp.Status.Allowed {
-			return false, err
+			return false, fmt.Errorf("%s access denied for current user on %q:%s", v, ns, gvr)
 		}
 	}
 	return true, nil

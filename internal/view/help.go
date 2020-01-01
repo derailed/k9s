@@ -188,7 +188,7 @@ func (v *Help) showGeneral() model.MenuHints {
 		},
 		{
 			Mnemonic:    "Ctrl-r",
-			Description: "Refresh",
+			Description: "Reload",
 		},
 		{
 			Mnemonic:    "Ctrl-u",

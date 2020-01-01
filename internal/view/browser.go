@@ -13,6 +13,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
+	"github.com/derailed/k9s/internal/watch"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -133,7 +134,7 @@ func (b *Browser) Aliases() []string {
 func (b *Browser) TableLoadFailed(err error) {
 	b.app.QueueUpdateDraw(func() {
 		b.app.Flash().Err(err)
-		b.App().ClearStatus()
+		b.App().ClearStatus(false)
 	})
 }
 
@@ -142,7 +143,7 @@ func (b *Browser) TableDataChanged(data render.TableData) {
 	b.app.QueueUpdateDraw(func() {
 		b.refreshActions()
 		b.Update(data)
-		b.App().ClearStatus()
+		b.App().ClearStatus(false)
 	})
 }
 
@@ -271,6 +272,12 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	ns := b.namespaces[i]
 	if ns == "" {
 		ns = render.NamespaceAll
+	}
+
+	auth, err := b.App().factory.Client().CanI(ns, b.GVR(), watch.ReadVerbs)
+	if !auth {
+		b.App().Flash().Err(err)
+		return nil
 	}
 
 	b.app.switchNS(ns)

@@ -29,13 +29,13 @@ func (a *Alias) Clear() {
 
 // Ensure makes sure alias are loaded.
 func (a *Alias) Ensure() (config.Alias, error) {
-	if len(a.Alias) == 0 {
-		if err := LoadResources(a.factory); err != nil {
-			return config.Alias{}, err
-		}
-		return a.Alias, a.load()
+	// if len(a.Alias) > 0 {
+	// 	return a.Alias, nil
+	// }
+	if err := LoadResources(a.factory); err != nil {
+		return config.Alias{}, err
 	}
-	return a.Alias, nil
+	return a.Alias, a.load()
 }
 
 func (a *Alias) load() error {

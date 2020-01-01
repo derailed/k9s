@@ -11,7 +11,11 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var customViewers MetaViewers
+var (
+	customViewers MetaViewers
+
+	canRX = regexp.MustCompile(`\Acan\s([u|g|s]):([\w-:]+)\b`)
+)
 
 // Command represents a user command.
 type Command struct {
@@ -38,6 +42,37 @@ func (c *Command) Init() error {
 	return nil
 }
 
+// Exec the Command by showing associated display.
+func (c *Command) run(cmd string, clearStack bool) error {
+	if c.specialCmd(cmd) {
+		return nil
+	}
+
+	cmds := strings.Split(cmd, " ")
+	gvr, v, err := c.viewMetaFor(cmds[0])
+	if err != nil {
+		return err
+	}
+	switch cmds[0] {
+	case "ctx", "context", "contexts":
+		if len(cmds) == 2 && c.app.switchCtx(cmds[1], true) != nil {
+			return fmt.Errorf("context switch failed!")
+		}
+		view := c.componentFor(gvr, v)
+		return c.exec(gvr, view, clearStack)
+	default:
+		// checks if Command includes a namespace
+		ns := c.app.Config.ActiveNamespace()
+		if len(cmds) == 2 {
+			ns = cmds[1]
+		}
+		if !c.app.switchNS(ns) {
+			return fmt.Errorf("namespace switch failed for ns %q", ns)
+		}
+		return c.exec(gvr, c.componentFor(gvr, v), clearStack)
+	}
+}
+
 // Reset resets Command and reload aliases.
 func (c *Command) Reset() error {
 	c.alias.Clear()
@@ -51,8 +86,6 @@ func (c *Command) Reset() error {
 func (c *Command) defaultCmd() error {
 	return c.run(c.app.Config.ActiveView(), true)
 }
-
-var canRX = regexp.MustCompile(`\Acan\s([u|g|s]):([\w-:]+)\b`)
 
 func (c *Command) specialCmd(cmd string) bool {
 	cmds := strings.Split(cmd, " ")
@@ -94,37 +127,6 @@ func (c *Command) viewMetaFor(cmd string) (string, *MetaViewer, error) {
 	}
 
 	return gvr, &v, nil
-}
-
-// Exec the Command by showing associated display.
-func (c *Command) run(cmd string, clearStack bool) error {
-	if c.specialCmd(cmd) {
-		return nil
-	}
-
-	cmds := strings.Split(cmd, " ")
-	gvr, v, err := c.viewMetaFor(cmds[0])
-	if err != nil {
-		return err
-	}
-	switch cmds[0] {
-	case "ctx", "context", "contexts":
-		if len(cmds) == 2 && c.app.switchCtx(cmds[1], true) != nil {
-			return fmt.Errorf("context switch failed!")
-		}
-		view := c.componentFor(gvr, v)
-		return c.exec(gvr, view, clearStack)
-	default:
-		// checks if Command includes a namespace
-		ns := c.app.Config.ActiveNamespace()
-		if len(cmds) == 2 {
-			ns = cmds[1]
-		}
-		if !c.app.switchNS(ns) {
-			return fmt.Errorf("namespace switch failed for ns %q", ns)
-		}
-		return c.exec(gvr, c.componentFor(gvr, v), clearStack)
-	}
 }
 
 func (c *Command) componentFor(gvr string, v *MetaViewer) ResourceViewer {

@@ -131,12 +131,8 @@ func (l *Log) bindKeys() {
 		tcell.KeyEscape: ui.NewKeyAction("Back", l.app.PrevCmd, true),
 		ui.KeyC:         ui.NewKeyAction("Clear", l.clearCmd, true),
 		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", l.toggleAutoScrollCmd, true),
-		ui.KeyG:         ui.NewKeyAction("Top", l.topCmd, false),
-		ui.KeyShiftF:    ui.NewKeyAction("FullScreen", l.fullScreenCmd, true),
+		ui.KeyF:         ui.NewKeyAction("FullScreen", l.fullScreenCmd, true),
 		ui.KeyW:         ui.NewKeyAction("Toggle Wrap", l.textWrapCmd, true),
-		ui.KeyShiftG:    ui.NewKeyAction("Bottom", l.bottomCmd, false),
-		ui.KeyF:         ui.NewKeyAction("Up", l.pageUpCmd, false),
-		ui.KeyB:         ui.NewKeyAction("Down", l.pageDownCmd, false),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.SaveCmd, true),
 	})
 }
@@ -304,32 +300,6 @@ func saveData(cluster, name, data string) (string, error) {
 	}
 
 	return path, nil
-}
-
-func (l *Log) topCmd(evt *tcell.EventKey) *tcell.EventKey {
-	l.app.Flash().Info("Top of logs...")
-	l.logs.ScrollToBeginning()
-	return nil
-}
-
-func (l *Log) bottomCmd(*tcell.EventKey) *tcell.EventKey {
-	l.app.Flash().Info("Bottom of logs...")
-	l.logs.ScrollToEnd()
-	return nil
-}
-
-func (l *Log) pageUpCmd(*tcell.EventKey) *tcell.EventKey {
-	if l.logs.PageUp() {
-		l.app.Flash().Info("Reached Top ...")
-	}
-	return nil
-}
-
-func (l *Log) pageDownCmd(*tcell.EventKey) *tcell.EventKey {
-	if l.logs.PageDown() {
-		l.app.Flash().Info("Reached Bottom ...")
-	}
-	return nil
 }
 
 func (l *Log) clearCmd(*tcell.EventKey) *tcell.EventKey {

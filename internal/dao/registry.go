@@ -94,7 +94,10 @@ func LoadResources(f Factory) error {
 	}
 	loadNonResource(resMetas)
 
-	return loadCRDs(f, resMetas)
+	if err := loadCRDs(f, resMetas); err != nil {
+		log.Warn().Err(err).Msgf("CRDs load failed!")
+	}
+	return nil
 }
 
 // BOZO!! Need contermeasure for direct commands!
@@ -172,7 +175,7 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 	}
 	rr, err := discovery.ServerPreferredResources()
 	if err != nil {
-		return err
+		log.Warn().Err(err).Msgf("Failed to load preferred resources")
 	}
 	for _, r := range rr {
 		for _, res := range r.APIResources {
@@ -188,11 +191,13 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 func loadCRDs(f Factory, m ResourceMetas) error {
 	log.Debug().Msgf("Loading CRDs...")
 	const crdGVR = "apiextensions.k8s.io/v1beta1/customresourcedefinitions"
-	_ = f.ForResource("", crdGVR)
-	f.WaitForCacheSync()
+	_, err := f.CanForResource("", crdGVR, "list")
+	if err != nil {
+		return err
+	}
 	oo, err := f.List(crdGVR, "", labels.Everything())
 	if err != nil {
-		log.Error().Err(err).Msgf("Fail CRDs load")
+		log.Warn().Err(err).Msgf("Fail CRDs load")
 		return nil
 	}
 	log.Debug().Msgf(">>> CRDS count %d", len(oo))

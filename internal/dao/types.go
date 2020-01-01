@@ -26,6 +26,9 @@ type Factory interface {
 	// ForResource fetch an informer for a given resource.
 	ForResource(ns, gvr string) informers.GenericInformer
 
+	// CanForResource fetch an informer for a given resource if authorized
+	CanForResource(ns, gvr string, verbs ...string) (informers.GenericInformer, error)
+
 	// WaitForCacheSync synchronize the cache.
 	WaitForCacheSync()
 

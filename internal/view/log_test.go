@@ -37,7 +37,7 @@ func TestLogFlush(t *testing.T) {
 	assert.Equal(t, " Autoscroll: Off  FullScreen: Off  Wrap: Off       ", v.Indicator().GetText(true))
 	v.toggleAutoScrollCmd(nil)
 	assert.Equal(t, " Autoscroll: On   FullScreen: Off  Wrap: Off       ", v.Indicator().GetText(true))
-	assert.Equal(t, 10, len(v.Hints()))
+	assert.Equal(t, 6, len(v.Hints()))
 }
 
 func TestLogViewSave(t *testing.T) {

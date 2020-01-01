@@ -40,14 +40,13 @@ func NewService(gvr client.GVR) ResourceViewer {
 
 func (s *Service) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		tcell.KeyCtrlB: ui.NewKeyAction("Bench", s.benchCmd, true),
-		tcell.KeyCtrlK: ui.NewKeyAction("Bench Stop", s.benchStopCmd, true),
-		ui.KeyShiftT:   ui.NewKeyAction("Sort Type", s.GetTable().SortColCmd(1, true), false),
+		ui.KeyB:      ui.NewKeyAction("Bench", s.benchCmd, true),
+		ui.KeyK:      ui.NewKeyAction("Bench Stop", s.benchStopCmd, true),
+		ui.KeyShiftT: ui.NewKeyAction("Sort Type", s.GetTable().SortColCmd(1, true), false),
 	})
 }
 
 func (s *Service) showPods(app *App, ns, gvr, path string) {
-	log.Debug().Msgf("SVC SHOW PODS %q", path)
 	o, err := app.factory.Get(gvr, path, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
@@ -61,7 +60,7 @@ func (s *Service) showPods(app *App, ns, gvr, path string) {
 		return
 	}
 
-	showPodsWithLabels(app, path, svc.Spec.Selector)
+	showPodsWithLabels(app, strings.Replace(path, "/", "::", 1), svc.Spec.Selector)
 }
 
 func (s *Service) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -70,7 +69,7 @@ func (s *Service) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
 		s.App().Status(ui.FlashErr, "Benchmark Canceled!")
 		s.bench.Cancel()
 	}
-	s.App().ClearStatus()
+	s.App().ClearStatus(true)
 
 	return nil
 }
@@ -136,7 +135,7 @@ func (s *Service) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	if err := s.runBenchmark(port, cfg); err != nil {
 		s.App().Flash().Errf("Benchmark failed %v", err)
-		s.App().ClearStatus()
+		s.App().ClearStatus(false)
 		s.bench = nil
 	}
 
@@ -151,7 +150,7 @@ func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
 
 	var err error
 	base := "http://" + cfg.HTTP.Host + ":" + port + cfg.HTTP.Path
-	if s.bench, err = perf.NewBenchmark(base, cfg); err != nil {
+	if s.bench, err = perf.NewBenchmark(base, s.App().version, cfg); err != nil {
 		return err
 	}
 
@@ -179,6 +178,6 @@ func (s *Service) benchDone() {
 func benchTimedOut(app *App) {
 	<-time.After(2 * time.Second)
 	app.QueueUpdate(func() {
-		app.ClearStatus()
+		app.ClearStatus(true)
 	})
 }

@@ -89,7 +89,6 @@ func toYAML(o runtime.Object) (string, error) {
 }
 
 func showPodsWithLabels(app *App, path string, sel map[string]string) {
-	log.Debug().Msgf("SHOWING POD FOR %#v", sel)
 	var labels []string
 	for k, v := range sel {
 		labels = append(labels, fmt.Sprintf("%s=%s", k, v))

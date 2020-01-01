@@ -18,6 +18,8 @@ const (
 	clusterScope  = "-"
 )
 
+var ReadVerbs = []string{"get", "list", "watch"}
+
 // Factory tracks various resource informers.
 type Factory struct {
 	factories  map[string]di.DynamicSharedInformerFactory
@@ -37,6 +39,7 @@ func NewFactory(client client.Connection) *Factory {
 
 // Start initializes the informers until caller cancels the context.
 func (f *Factory) Start(ns string) {
+	log.Debug().Msgf("Starting factory in ns `%q", ns)
 	f.stopChan = make(chan struct{})
 	for ns, fac := range f.factories {
 		log.Debug().Msgf("Starting factory in ns %q", ns)
@@ -62,10 +65,10 @@ func (f *Factory) List(gvr, ns string, sel labels.Selector) ([]runtime.Object, e
 	if err != nil {
 		return nil, err
 	}
+	log.Debug().Msgf("LISTING %q:%q", ns, gvr)
 	if ns == clusterScope {
 		return inf.Lister().List(sel)
 	}
-
 	return inf.Lister().ByNamespace(ns).List(sel)
 }
 
@@ -76,6 +79,8 @@ func (f *Factory) Get(gvr, path string, sel labels.Selector) (runtime.Object, er
 	if err != nil {
 		return nil, err
 	}
+	log.Debug().Msgf("GETTING %q:%q", ns, gvr)
+
 	if ns == clusterScope {
 		return inf.Lister().Get(n)
 	}
@@ -117,8 +122,7 @@ func (f *Factory) isClusterWide() bool {
 }
 
 func (f *Factory) preload(_ string) {
-	verbs := []string{"get", "list", "watch"}
-	_, _ = f.CanForResource("", "apiextensions.k8s.io/v1beta1/customresourcedefinitions", verbs...)
+	_, _ = f.CanForResource("", "apiextensions.k8s.io/v1beta1/customresourcedefinitions", ReadVerbs...)
 	// BOZO!!
 	// _, _ = f.CanForResource(ns, "v1/pods", verbs...)
 	// _, _ = f.CanForResource(clusterScope, "rbac.authorization.k8s.io/v1/clusterroles", verbs...)
@@ -148,9 +152,6 @@ func (f *Factory) ForResource(ns, gvr string) informers.GenericInformer {
 }
 
 func (f *Factory) ensureFactory(ns string) di.DynamicSharedInformerFactory {
-	if f.isClusterWide() {
-		ns = allNamespaces
-	}
 	if fac, ok := f.factories[ns]; ok {
 		return fac
 	}
@@ -173,12 +174,9 @@ func (f *Factory) AddForwarder(pf Forwarder) {
 
 // DeleteForwarder deletes portforward for a given container.
 func (f *Factory) DeleteForwarder(path string) {
-	fwd, ok := f.forwarders[path]
-	if !ok {
-		return
-	}
-	fwd.Stop()
-	delete(f.forwarders, path)
+	f.forwarders.Dump()
+	count := f.forwarders.Kill(path)
+	log.Warn().Msgf("Deleted (%d) portforward for %q", count, path)
 }
 
 // Forwarders returns all portforwards.

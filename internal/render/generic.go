@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/rs/zerolog/log"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 )
 
@@ -48,30 +49,25 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 		return fmt.Errorf("expecting a TableRow but got %T", o)
 	}
 
-	count := len(row.Cells)
-	if ns == AllNamespaces {
-		count++
-	}
 	r.ID, ok = row.Cells[0].(string)
 	if !ok {
 		return fmt.Errorf("expecting row id to be a string but got %#v", row.Cells[0])
 	}
 
-	r.Fields = make(Fields, count)
-	var index int
-	if ns == AllNamespaces {
-		rns, err := extractNamespace(row.Object.Raw)
-		if err != nil {
-			return err
-		}
-		r.Fields[index] = rns
-		r.ID = FQN(rns, r.ID)
-		index++
+	rns, err := extractNamespace(row.Object.Raw)
+	if err != nil {
+		return err
+	}
+
+	r.ID = FQN(rns, r.ID)
+	r.Fields = make(Fields, 0, len(g.Header(ns)))
+	if isAllNamespace(ns) {
+		r.Fields = append(r.Fields, rns)
 	}
 	for _, c := range row.Cells {
-		r.Fields[index] = fmt.Sprintf("%v", c)
-		index++
+		r.Fields = append(r.Fields, fmt.Sprintf("%v", c))
 	}
+	log.Debug().Msgf("GENERIC %#v", r)
 
 	return nil
 }

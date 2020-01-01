@@ -16,7 +16,7 @@ func TestGenericRender(t *testing.T) {
 	row := makeGeneric().Rows[0]
 	assert.Nil(t, g.Render(&row, "blee", &r))
 
-	assert.Equal(t, "a", r.ID)
+	assert.Equal(t, "blee/a", r.ID)
 	assert.Equal(t, render.Fields{"a", "b", "c"}, r.Fields)
 }
 
