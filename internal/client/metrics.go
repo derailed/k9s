@@ -101,6 +101,11 @@ func (m *MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsL
 
 // FetchNodesMetrics return all metrics for pods in a given namespace.
 func (m *MetricsServer) FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error) {
+	auth, err := m.CanI("", "metrics.k8s.io/v1beta1/nodes", []string{"list"})
+	if !auth || err != nil {
+		return nil, err
+	}
+
 	client, err := m.MXDial()
 	if err != nil {
 		return nil, err
@@ -111,6 +116,11 @@ func (m *MetricsServer) FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error) {
 
 // FetchPodsMetrics return all metrics for pods in a given namespace.
 func (m *MetricsServer) FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, error) {
+	auth, err := m.CanI(ns, "metrics.k8s.io/v1beta1/pods", []string{"list"})
+	if !auth || err != nil {
+		return &mv1beta1.PodMetricsList{}, err
+	}
+
 	client, err := m.MXDial()
 	if err != nil {
 		return nil, err
@@ -121,6 +131,11 @@ func (m *MetricsServer) FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, e
 
 // FetchPodMetrics return all metrics for pods in a given namespace.
 func (m *MetricsServer) FetchPodMetrics(ns, sel string) (*mv1beta1.PodMetrics, error) {
+	auth, err := m.CanI(ns, "metrics.k8s.io/v1beta1/pods", []string{"get"})
+	if !auth || err != nil {
+		return nil, err
+	}
+
 	client, err := m.MXDial()
 	if err != nil {
 		return nil, err

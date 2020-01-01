@@ -31,33 +31,35 @@ var _ Restartable = &DaemonSet{}
 
 // Restart a DaemonSet rollout.
 func (d *DaemonSet) Restart(path string) error {
-	o, err := d.Get(string(d.gvr), path, labels.Everything())
+	o, err := d.Get(d.gvr.String(), path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
-
 	var ds appsv1.DaemonSet
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &ds)
 	if err != nil {
 		return err
 	}
 
+	auth, err := d.Client().CanI(ds.Namespace, "apps/v1/daemonsets", []string{"patch"})
+	if !auth || err != nil {
+		return err
+	}
 	update, err := polymorphichelpers.ObjectRestarterFn(&ds)
 	if err != nil {
 		return err
 	}
-
 	_, err = d.Client().DialOrDie().AppsV1().DaemonSets(ds.Namespace).Patch(ds.Name, types.StrategicMergePatchType, update)
+
 	return err
 }
 
 // TailLogs tail logs for all pods represented by this DaemonSet.
 func (d *DaemonSet) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
-	o, err := d.Get("apps/v1/daemonsets", opts.Path, labels.Everything())
+	o, err := d.Get(d.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
-
 	var ds appsv1.DaemonSet
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &ds)
 	if err != nil {
@@ -86,7 +88,7 @@ func podLogs(ctx context.Context, c chan<- string, sel map[string]string, opts L
 	}
 
 	ns, _ := client.Namespaced(opts.Path)
-	oo, err := f.List("v1/pods", ns, lsel)
+	oo, err := f.List("v1/pods", ns, true, lsel)
 	if err != nil {
 		return err
 	}
@@ -96,7 +98,7 @@ func podLogs(ctx context.Context, c chan<- string, sel map[string]string, opts L
 	}
 
 	po := Pod{}
-	po.Init(f, "v1/pods")
+	po.Init(f, client.NewGVR("v1/pods"))
 	for _, o := range oo {
 		var pod v1.Pod
 		err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod)

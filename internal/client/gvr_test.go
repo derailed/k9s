@@ -1,6 +1,7 @@
 package client_test
 
 import (
+	"path"
 	"sort"
 	"testing"
 
@@ -10,9 +11,17 @@ import (
 )
 
 func TestGVRSort(t *testing.T) {
-	gg := client.GVRs{"v1/pods", "v1/services", "apps/v1/deployments"}
+	gg := client.GVRs{
+		client.NewGVR("v1/pods"),
+		client.NewGVR("v1/services"),
+		client.NewGVR("apps/v1/deployments"),
+	}
 	sort.Sort(gg)
-	assert.Equal(t, client.GVRs{"v1/pods", "v1/services", "apps/v1/deployments"}, gg)
+	assert.Equal(t, client.GVRs{
+		client.NewGVR("v1/pods"),
+		client.NewGVR("v1/services"),
+		client.NewGVR("apps/v1/deployments"),
+	}, gg)
 }
 
 func TestGVRCan(t *testing.T) {
@@ -50,7 +59,7 @@ func TestAsGVR(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, client.GVR(u.gvr).AsGVR())
+			assert.Equal(t, u.e, client.NewGVR(u.gvr).AsGVR())
 		})
 	}
 }
@@ -68,7 +77,7 @@ func TestAsGV(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, client.GVR(u.gvr).AsGV())
+			assert.Equal(t, u.e, client.NewGVR(u.gvr).AsGV())
 		})
 	}
 }
@@ -85,12 +94,12 @@ func TestNewGVR(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, client.NewGVR(u.g, u.v, u.r).String())
+			assert.Equal(t, u.e, client.NewGVR(path.Join(u.g, u.v, u.r)).String())
 		})
 	}
 }
 
-func TestResName(t *testing.T) {
+func TestGVRAsResourceName(t *testing.T) {
 	uu := map[string]struct {
 		gvr string
 		e   string
@@ -104,7 +113,7 @@ func TestResName(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, client.GVR(u.gvr).ResName())
+			assert.Equal(t, u.e, client.NewGVR(u.gvr).AsResourceName())
 		})
 	}
 }
@@ -123,7 +132,7 @@ func TestToR(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, client.GVR(u.gvr).ToR())
+			assert.Equal(t, u.e, client.NewGVR(u.gvr).ToR())
 		})
 	}
 }
@@ -142,7 +151,7 @@ func TestToG(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, client.GVR(u.gvr).ToG())
+			assert.Equal(t, u.e, client.NewGVR(u.gvr).ToG())
 		})
 	}
 }
@@ -161,7 +170,7 @@ func TestToV(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, client.GVR(u.gvr).ToV())
+			assert.Equal(t, u.e, client.NewGVR(u.gvr).ToV())
 		})
 	}
 }
@@ -179,7 +188,7 @@ func TestToString(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.gvr, client.GVR(u.gvr).String())
+			assert.Equal(t, u.gvr, client.NewGVR(u.gvr).String())
 		})
 	}
 }

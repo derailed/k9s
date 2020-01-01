@@ -62,7 +62,7 @@ func defaultK9sEnv(app *App, sel string, row render.Row) K9sEnv {
 
 func describeResource(app *App, _, gvr, path string) {
 	ns, n := client.Namespaced(path)
-	yaml, err := dao.Describe(app.Conn(), client.GVR(gvr), ns, n)
+	yaml, err := dao.Describe(app.Conn(), client.NewGVR(gvr), ns, n)
 	if err != nil {
 		app.Flash().Errf("Describe command failed: %s", err)
 		return
@@ -100,7 +100,7 @@ func showPods(app *App, path, labelSel, fieldSel string) {
 	log.Debug().Msgf("SHOW PODS %q -- %q -- %q", path, labelSel, fieldSel)
 	app.switchNS("")
 
-	v := NewPod(client.GVR("v1/pods"))
+	v := NewPod(client.NewGVR("v1/pods"))
 	v.SetContextFn(podCtx(path, labelSel, fieldSel))
 	v.GetTable().SetColorerFn(render.Pod{}.ColorerFunc())
 

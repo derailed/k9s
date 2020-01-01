@@ -31,7 +31,7 @@ func (c *Container) List(ctx context.Context) ([]runtime.Object, error) {
 	}
 	ns, _ := render.Namespaced(path)
 	c.namespace = ns
-	o, err := c.factory.Get("v1/pods", path, labels.Everything())
+	o, err := c.factory.Get("v1/pods", path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

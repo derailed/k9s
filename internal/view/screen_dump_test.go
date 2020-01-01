@@ -9,7 +9,7 @@ import (
 )
 
 func TestScreenDumpNew(t *testing.T) {
-	po := view.NewScreenDump(client.GVR("screendumps"))
+	po := view.NewScreenDump(client.NewGVR("screendumps"))
 
 	assert.Nil(t, po.Init(makeCtx()))
 	assert.Equal(t, "ScreenDumps", po.Name())

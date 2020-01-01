@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -117,8 +118,8 @@ func (p *Policy) loadRoleBinding(kind, name string) (render.Policies, error) {
 	return rows, nil
 }
 
-func fetchClusterRoleBindings(f Factory) ([]rbacv1.ClusterRoleBinding, error) {
-	oo, err := f.List("rbac.authorization.k8s.io/v1/clusterrolebindings", render.ClusterScope, labels.Everything())
+func fetchClusterRoleBindings(f dao.Factory) ([]rbacv1.ClusterRoleBinding, error) {
+	oo, err := f.List(crbGVR, render.ClusterScope, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -135,8 +136,8 @@ func fetchClusterRoleBindings(f Factory) ([]rbacv1.ClusterRoleBinding, error) {
 	return crbs, nil
 }
 
-func fetchRoleBindings(f Factory) ([]rbacv1.RoleBinding, error) {
-	oo, err := f.List("rbac.authorization.k8s.io/v1/rolebindings", render.ClusterScope, labels.Everything())
+func fetchRoleBindings(f dao.Factory) ([]rbacv1.RoleBinding, error) {
+	oo, err := f.List(rbGVR, render.ClusterScope, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -173,7 +174,7 @@ func (p *Policy) fetchRoleBindingSubjects(kind, name string) ([]string, error) {
 func (p *Policy) fetchClusterRoles() ([]rbacv1.ClusterRole, error) {
 	const gvr = "rbac.authorization.k8s.io/v1/clusterroles"
 
-	oo, err := p.factory.List(gvr, render.ClusterScope, labels.Everything())
+	oo, err := p.factory.List(gvr, render.ClusterScope, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +194,7 @@ func (p *Policy) fetchClusterRoles() ([]rbacv1.ClusterRole, error) {
 func (p *Policy) fetchRoles() ([]rbacv1.Role, error) {
 	const gvr = "rbac.authorization.k8s.io/v1/roles"
 
-	oo, err := p.factory.List(gvr, render.AllNamespaces, labels.Everything())
+	oo, err := p.factory.List(gvr, render.AllNamespaces, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

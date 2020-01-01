@@ -36,7 +36,7 @@ func (r *Rbac) bindKeys(aa ui.KeyActions) {
 }
 
 func showRules(app *App, _, gvr, path string) {
-	v := NewRbac(client.GVR("rbac"))
+	v := NewRbac(client.NewGVR("rbac"))
 	v.SetContextFn(rbacCtxt(gvr, path))
 
 	if err := app.inject(v); err != nil {

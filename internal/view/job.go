@@ -24,7 +24,7 @@ func NewJob(gvr client.GVR) ResourceViewer {
 }
 
 func (*Job) showPods(app *App, _, gvr, path string) {
-	o, err := app.factory.Get(gvr, path, labels.Everything())
+	o, err := app.factory.Get(gvr, path, true, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return

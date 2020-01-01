@@ -7,13 +7,14 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
-	refreshRate = 1 * time.Second
+	refreshRate = 2 * time.Second
 	noDataCount = 2
 )
 
@@ -159,17 +160,17 @@ func (t *Table) fireTableLoadFailed(err error) {
 }
 
 func (t *Table) list(ctx context.Context, l Lister) ([]runtime.Object, error) {
-	factory, ok := ctx.Value(internal.KeyFactory).(Factory)
+	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
 	if !ok {
 		return nil, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
 	}
-	l.Init(t.namespace, string(t.gvr), factory)
+	l.Init(t.namespace, t.gvr, factory)
 
 	return l.List(ctx)
 }
 
 func (t *Table) reconcile(ctx context.Context) error {
-	meta, ok := Registry[string(t.gvr)]
+	meta, ok := Registry[t.gvr]
 	if !ok {
 		log.Debug().Msgf("Resource %s not found in registry. Going generic!", t.gvr)
 		meta = ResourceMeta{

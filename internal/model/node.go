@@ -5,10 +5,10 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -24,7 +24,7 @@ type Node struct {
 
 // List returns a collection of node resources.
 func (n *Node) List(_ context.Context) ([]runtime.Object, error) {
-	nn, err := n.factory.Client().DialOrDie().CoreV1().Nodes().List(metav1.ListOptions{})
+	nn, err := dao.FetchNodes(n.factory)
 	if err != nil {
 		return nil, err
 	}
@@ -37,6 +37,7 @@ func (n *Node) List(_ context.Context) ([]runtime.Object, error) {
 		}
 		oo[i] = &unstructured.Unstructured{Object: o}
 	}
+
 	return oo, nil
 }
 
@@ -99,8 +100,8 @@ func nodeMetricsFor(o runtime.Object, mmx *mv1beta1.NodeMetricsList) *mv1beta1.N
 	return nil
 }
 
-func (n *Node) nodePods(f Factory, node string) ([]*v1.Pod, error) {
-	pp, err := f.List("v1/pods", render.AllNamespaces, labels.Everything())
+func (n *Node) nodePods(f dao.Factory, node string) ([]*v1.Pod, error) {
+	pp, err := f.List("v1/pods", render.AllNamespaces, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

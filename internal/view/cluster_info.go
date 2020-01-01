@@ -5,6 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
@@ -12,7 +13,6 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -142,7 +142,7 @@ func (c *ClusterInfo) updateStyle() {
 }
 
 func fetchResources(app *App) (*v1.NodeList, *mv1beta1.NodeMetricsList, error) {
-	nos, err := app.factory.Client().DialOrDie().CoreV1().Nodes().List(metav1.ListOptions{})
+	nn, err := dao.FetchNodes(app.factory)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -153,7 +153,7 @@ func fetchResources(app *App) (*v1.NodeList, *mv1beta1.NodeMetricsList, error) {
 		return nil, nil, err
 	}
 
-	return nos, nmx, nil
+	return nn, nmx, nil
 }
 
 func (c *ClusterInfo) refreshMetrics(cluster *model.Cluster, row int) {

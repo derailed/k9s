@@ -59,7 +59,7 @@ func (l *LogsExtender) showLogs(path string, prev bool) {
 	log.Debug().Msgf("SHOWING LOGS path %q", path)
 	// Need to load and wait for pods
 	ns, _ := render.Namespaced(path)
-	_, err := l.App().factory.CanForResource(ns, "v1/pods", watch.ReadVerbs...)
+	_, err := l.App().factory.CanForResource(ns, "v1/pods", watch.ReadVerbs)
 	if err != nil {
 		l.App().Flash().Err(err)
 		return
@@ -70,7 +70,7 @@ func (l *LogsExtender) showLogs(path string, prev bool) {
 	if l.containerFn != nil {
 		co = l.containerFn()
 	}
-	if err := l.App().inject(NewLog(client.GVR(l.GVR()), path, co, prev)); err != nil {
+	if err := l.App().inject(NewLog(client.NewGVR(l.GVR()), path, co, prev)); err != nil {
 		l.App().Flash().Err(err)
 	}
 }

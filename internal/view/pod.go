@@ -54,7 +54,7 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 
 func (p *Pod) showContainers(app *App, ns, gvr, path string) {
 	log.Debug().Msgf("SHOW CONTAINERS %q -- %q -- %q", gvr, ns, path)
-	co := NewContainer(client.GVR("containers"))
+	co := NewContainer(client.NewGVR("containers"))
 	co.SetContextFn(p.podContext)
 	if err := app.inject(co); err != nil {
 		app.Flash().Err(err)
@@ -73,7 +73,7 @@ func (p *Pod) killCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	res, err := dao.AccessorFor(p.App().factory, client.GVR(p.GVR()))
+	res, err := dao.AccessorFor(p.App().factory, client.NewGVR(p.GVR()))
 	if err != nil {
 		p.App().Flash().Err(err)
 		return nil
@@ -140,7 +140,7 @@ func (p *Pod) shellIn(path, co string) {
 // Helpers...
 
 func fetchContainers(f *watch.Factory, path string, includeInit bool) ([]string, error) {
-	o, err := f.Get("v1/pods", path, labels.Everything())
+	o, err := f.Get("v1/pods", path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

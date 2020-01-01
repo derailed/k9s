@@ -37,19 +37,10 @@ func Dump(f *Factory) {
 }
 
 // Debug for debug.
-func Debug(f *Factory, gvr string) {
+func Debug(f *Factory, ns string, gvr string) {
 	log.Debug().Msgf("----------- DEBUG FACTORY (%s) -------------", gvr)
-	inf := f.factories[allNamespaces].ForResource(toGVR(gvr))
+	inf := f.factories[ns].ForResource(toGVR(gvr))
 	for i, k := range inf.Informer().GetStore().ListKeys() {
 		log.Debug().Msgf("%d -- %s", i, k)
-	}
-}
-
-// Show for debug.
-func Show(f *Factory, ns, gvr string) {
-	log.Debug().Msgf("----------- SHOW FACTORIES %q -------------", ns)
-	inf := f.ForResource(ns, gvr)
-	for _, k := range inf.Informer().GetStore().ListKeys() {
-		log.Debug().Msgf("  Key: %s", k)
 	}
 }

@@ -44,7 +44,7 @@ func (c *Context) useCtx(app *App, _, res, path string) {
 }
 
 func (c *Context) useContext(name string) error {
-	res, err := dao.AccessorFor(c.App().factory, client.GVR(c.GVR()))
+	res, err := dao.AccessorFor(c.App().factory, client.NewGVR(c.GVR()))
 	if err != nil {
 		return nil
 	}

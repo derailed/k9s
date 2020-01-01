@@ -60,28 +60,29 @@ func makeAliases() *dao.Alias {
 
 type testFactory struct{}
 
-var _ model.Factory = testFactory{}
+var _ dao.Factory = testFactory{}
 
 func (f testFactory) Client() client.Connection {
 	return nil
 }
-func (f testFactory) Get(gvr, path string, sel labels.Selector) (runtime.Object, error) {
+func (f testFactory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
 	return nil, nil
 }
-func (f testFactory) List(gvr, ns string, sel labels.Selector) ([]runtime.Object, error) {
+func (f testFactory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error) {
 	return nil, nil
 }
 func (f testFactory) ForResource(ns, gvr string) informers.GenericInformer {
 	return nil
 }
-func (f testFactory) CanForResource(ns, gvr string, verbs ...string) (informers.GenericInformer, error) {
+func (f testFactory) CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error) {
 	return nil, nil
 }
 func (f testFactory) WaitForCacheSync() {}
 func (f testFactory) Forwarders() watch.Forwarders {
 	return nil
 }
+func (f testFactory) DeleteForwarder(string) {}
 
-func makeFactory() model.Factory {
+func makeFactory() dao.Factory {
 	return testFactory{}
 }

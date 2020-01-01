@@ -16,14 +16,13 @@ func Describe(c client.Connection, gvr client.GVR, ns, n string) (string, error)
 		return "", err
 	}
 
-	GVR := client.GVR(gvr)
-	gvk, err := m.KindFor(GVR.AsGVR())
+	gvk, err := m.KindFor(gvr.AsGVR())
 	if err != nil {
 		log.Error().Err(err).Msgf("No GVK for resource %s", gvr)
 		return "", err
 	}
 
-	mapping, err := mapper.ResourceFor(GVR.ResName(), gvk.Kind)
+	mapping, err := mapper.ResourceFor(gvr.AsResourceName(), gvk.Kind)
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to find mapper for %s %s", gvr, n)
 		return "", err
@@ -34,6 +33,5 @@ func Describe(c client.Connection, gvr client.GVR, ns, n string) (string, error)
 		return "", err
 	}
 
-	log.Debug().Msgf("DESCRIBE FOR %q -- %q:%q", gvr, ns, n)
 	return d.Describe(ns, n, describe.DescriberSettings{ShowEvents: true})
 }

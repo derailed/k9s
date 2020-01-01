@@ -9,6 +9,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
@@ -57,7 +58,7 @@ func (p *PortForward) bindKeys(aa ui.KeyActions) {
 }
 
 func (p *PortForward) showBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if err := p.App().inject(NewBenchmark("benchmarks")); err != nil {
+	if err := p.App().inject(NewBenchmark(client.NewGVR("benchmarks"))); err != nil {
 		p.App().Flash().Err(err)
 	}
 
@@ -133,15 +134,20 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	sel := p.GetTable().GetSelectedItem()
-	if sel == "" {
+	path := p.GetTable().GetSelectedItem()
+	if path == "" {
 		return nil
 	}
-	log.Debug().Msgf("PF DELETE %q", sel)
+	log.Debug().Msgf("PF DELETE %q", path)
 
-	showModal(p.App().Content.Pages, fmt.Sprintf("Delete PortForward `%s?", sel), func() {
-		p.App().factory.DeleteForwarder(sel)
-		p.App().Flash().Infof("PortForward %s deleted!", sel)
+	showModal(p.App().Content.Pages, fmt.Sprintf("Delete PortForward `%s?", path), func() {
+		var pf dao.PortForward
+		pf.Init(p.App().factory, client.NewGVR("portforwards"))
+		if err := pf.Delete(path, true, true); err != nil {
+			p.App().Flash().Err(err)
+			return
+		}
+		p.App().Flash().Infof("PortForward %s deleted!", path)
 		p.GetTable().Refresh()
 	})
 

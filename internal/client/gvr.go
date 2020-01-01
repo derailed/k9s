@@ -6,39 +6,75 @@ import (
 	"strings"
 
 	"github.com/rs/zerolog/log"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"vbom.ml/util/sortorder"
 )
 
 // GVR represents a kubernetes resource schema as a string.
 // Format is group/version/resources
-type GVR string
+type GVR struct {
+	raw, g, v, r, sr string
+}
 
 // NewGVR builds a new gvr from a group, version, resource.
-func NewGVR(g, v, r string) GVR {
-	return GVR(path.Join(g, v, r))
+func NewGVR(gvr string) GVR {
+	var g, v, r, sr string
+
+	tokens := strings.Split(gvr, ":")
+	raw := gvr
+	if len(tokens) == 2 {
+		raw, sr = tokens[0], tokens[1]
+	}
+	tokens = strings.Split(raw, "/")
+	switch len(tokens) {
+	case 3:
+		g, v, r = tokens[0], tokens[1], tokens[2]
+	case 2:
+		v, r = tokens[0], tokens[1]
+	case 1:
+		r = tokens[0]
+	default:
+		panic(fmt.Sprintf("can't parse GVR %q", gvr))
+	}
+
+	return GVR{raw: gvr, g: g, v: v, r: r, sr: sr}
+}
+
+func NewGVRFromMeta(a metav1.APIResource) GVR {
+	return GVR{
+		raw: path.Join(a.Group, a.Version, a.Name),
+		g:   a.Group,
+		v:   a.Version,
+		r:   a.Name,
+	}
 }
 
 // FromGVAndR builds a gvr from a group/version and resource.
 func FromGVAndR(gv, r string) GVR {
-	return GVR(path.Join(gv, r))
+	return NewGVR(path.Join(gv, r))
 }
 
-// ResName returns a resource . separated descriptor in the shape of kind.version.group.
-func (g GVR) ResName() string {
-	return g.ToR() + "." + g.ToV() + "." + g.ToG()
+// AsResourceName returns a resource . separated descriptor in the shape of kind.version.group.
+func (g GVR) AsResourceName() string {
+	return g.r + "." + g.v + "." + g.g
+}
+
+// SubResource returns a sub resource if available.
+func (g GVR) SubResource() string {
+	return g.sr
 }
 
 // String returns gvr as string.
 func (g GVR) String() string {
-	return string(g)
+	return g.raw
 }
 
 // AsGV returns the group version scheme representation.
 func (g GVR) AsGV() schema.GroupVersion {
 	return schema.GroupVersion{
-		Group:   g.ToG(),
-		Version: g.ToV(),
+		Group:   g.g,
+		Version: g.v,
 	}
 }
 
@@ -53,41 +89,22 @@ func (g GVR) AsGVR() schema.GroupVersionResource {
 
 // ToV returns the resource version.
 func (g GVR) ToV() string {
-	tokens := strings.Split(string(g), "/")
-	if len(tokens) < 2 {
-		return ""
-	}
-	return tokens[len(tokens)-2]
+	return g.v
 }
 
 // ToRAndG returns the resource and group.
 func (g GVR) ToRAndG() (string, string) {
-	tokens := strings.Split(string(g), "/")
-	switch len(tokens) {
-	case 3:
-		return tokens[2], tokens[0]
-	case 2:
-		return tokens[1], "core"
-	default:
-		return tokens[0], "core"
-	}
+	return g.r, g.g
 }
 
 // ToR returns the resource name.
 func (g GVR) ToR() string {
-	tokens := strings.Split(string(g), "/")
-	return tokens[len(tokens)-1]
+	return g.r
 }
 
 // ToG returns the resource group name.
 func (g GVR) ToG() string {
-	tokens := strings.Split(string(g), "/")
-	switch len(tokens) {
-	case 3:
-		return tokens[0]
-	default:
-		return ""
-	}
+	return g.g
 }
 
 // GVRs represents a collection of gvr.

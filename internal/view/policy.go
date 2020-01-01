@@ -26,7 +26,7 @@ type Policy struct {
 // NewPolicy returns a new viewer.
 func NewPolicy(app *App, subject, name string) *Policy {
 	p := Policy{
-		ResourceViewer: NewBrowser(client.GVR("policy")),
+		ResourceViewer: NewBrowser(client.NewGVR("policy")),
 		subjectKind:    subject,
 		subjectName:    name,
 	}

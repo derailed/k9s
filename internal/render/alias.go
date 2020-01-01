@@ -38,7 +38,7 @@ func (Alias) Render(o interface{}, ns string, r *Row) error {
 	}
 
 	r.ID = a.GVR
-	gvr := client.GVR(a.GVR)
+	gvr := client.NewGVR(a.GVR)
 	res, grp := gvr.ToRAndG()
 	r.Fields = append(r.Fields,
 		res,

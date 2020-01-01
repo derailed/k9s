@@ -29,9 +29,6 @@ func (a *Alias) Clear() {
 
 // Ensure makes sure alias are loaded.
 func (a *Alias) Ensure() (config.Alias, error) {
-	// if len(a.Alias) > 0 {
-	// 	return a.Alias, nil
-	// }
 	if err := LoadResources(a.factory); err != nil {
 		return config.Alias{}, err
 	}
@@ -51,12 +48,12 @@ func (a *Alias) load() error {
 		if _, ok := a.Alias[meta.Kind]; ok {
 			continue
 		}
-		a.Define(string(gvr), strings.ToLower(meta.Kind), meta.Name)
+		a.Define(gvr.String(), strings.ToLower(meta.Kind), meta.Name)
 		if meta.SingularName != "" {
-			a.Define(string(gvr), meta.SingularName)
+			a.Define(gvr.String(), meta.SingularName)
 		}
 		if meta.ShortNames != nil {
-			a.Define(string(gvr), meta.ShortNames...)
+			a.Define(gvr.String(), meta.ShortNames...)
 		}
 	}
 

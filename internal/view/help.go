@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
@@ -34,7 +35,7 @@ type Help struct {
 // NewHelp returns a new help viewer.
 func NewHelp() *Help {
 	return &Help{
-		Table: NewTable(helpTitle),
+		Table: NewTable(client.NewGVR("help")),
 	}
 }
 

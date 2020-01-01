@@ -25,19 +25,19 @@ var resMetas = ResourceMetas{}
 // Customize here for non resource types or types with metrics or logs.
 func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 	m := Accessors{
-		"contexts":                      &Context{},
-		"containers":                    &Container{},
-		"screendumps":                   &ScreenDump{},
-		"benchmarks":                    &Benchmark{},
-		"portforwards":                  &PortForward{},
-		"v1/services":                   &Service{},
-		"v1/pods":                       &Pod{},
-		"apps/v1/deployments":           &Deployment{},
-		"apps/v1/daemonsets":            &DaemonSet{},
-		"extensions/v1beta1/daemonsets": &DaemonSet{},
-		"apps/v1/statefulsets":          &StatefulSet{},
-		"batch/v1beta1/cronjobs":        &CronJob{},
-		"batch/v1/jobs":                 &Job{},
+		client.NewGVR("contexts"):                      &Context{},
+		client.NewGVR("containers"):                    &Container{},
+		client.NewGVR("screendumps"):                   &ScreenDump{},
+		client.NewGVR("benchmarks"):                    &Benchmark{},
+		client.NewGVR("portforwards"):                  &PortForward{},
+		client.NewGVR("v1/services"):                   &Service{},
+		client.NewGVR("v1/pods"):                       &Pod{},
+		client.NewGVR("apps/v1/deployments"):           &Deployment{},
+		client.NewGVR("apps/v1/daemonsets"):            &DaemonSet{},
+		client.NewGVR("extensions/v1beta1/daemonsets"): &DaemonSet{},
+		client.NewGVR("apps/v1/statefulsets"):          &StatefulSet{},
+		client.NewGVR("batch/v1beta1/cronjobs"):        &CronJob{},
+		client.NewGVR("batch/v1/jobs"):                 &Job{},
 	}
 
 	r, ok := m[gvr]
@@ -52,7 +52,7 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 
 // RegisterMeta registers a new resource meta object.
 func RegisterMeta(gvr string, res metav1.APIResource) {
-	resMetas[client.GVR(gvr)] = res
+	resMetas[client.NewGVR(gvr)] = res
 }
 
 // AllGVRs returns all cluster resources.
@@ -93,41 +93,39 @@ func LoadResources(f Factory) error {
 		return err
 	}
 	loadNonResource(resMetas)
+	loadCRDs(f, resMetas)
 
-	if err := loadCRDs(f, resMetas); err != nil {
-		log.Warn().Err(err).Msgf("CRDs load failed!")
-	}
 	return nil
 }
 
 // BOZO!! Need contermeasure for direct commands!
 func loadNonResource(m ResourceMetas) {
-	m["aliases"] = metav1.APIResource{
+	m[client.NewGVR("aliases")] = metav1.APIResource{
 		Name:       "aliases",
 		Kind:       "Aliases",
 		Categories: []string{"k9s"},
 	}
-	m["contexts"] = metav1.APIResource{
+	m[client.NewGVR("contexts")] = metav1.APIResource{
 		Name:       "contexts",
 		Kind:       "Contexts",
 		ShortNames: []string{"ctx"},
 		Categories: []string{"k9s"},
 	}
-	m["screendumps"] = metav1.APIResource{
+	m[client.NewGVR("screendumps")] = metav1.APIResource{
 		Name:       "screendumps",
 		Kind:       "ScreenDumps",
 		ShortNames: []string{"sd"},
 		Verbs:      []string{"delete"},
 		Categories: []string{"k9s"},
 	}
-	m["benchmarks"] = metav1.APIResource{
+	m[client.NewGVR("benchmarks")] = metav1.APIResource{
 		Name:       "benchmarks",
 		Kind:       "Benchmarks",
 		ShortNames: []string{"be"},
 		Verbs:      []string{"delete"},
 		Categories: []string{"k9s"},
 	}
-	m["portforwards"] = metav1.APIResource{
+	m[client.NewGVR("portforwards")] = metav1.APIResource{
 		Name:       "portforwards",
 		Namespaced: true,
 		Kind:       "PortForwards",
@@ -135,7 +133,7 @@ func loadNonResource(m ResourceMetas) {
 		Verbs:      []string{"delete"},
 		Categories: []string{"k9s"},
 	}
-	m["containers"] = metav1.APIResource{
+	m[client.NewGVR("containers")] = metav1.APIResource{
 		Name:       "containers",
 		Kind:       "Containers",
 		Categories: []string{"k9s"},
@@ -145,23 +143,23 @@ func loadNonResource(m ResourceMetas) {
 }
 
 func loadRBAC(m ResourceMetas) {
-	m["rbac"] = metav1.APIResource{
+	m[client.NewGVR("rbac")] = metav1.APIResource{
 		Name:       "rbacs",
 		Kind:       "Rules",
 		Categories: []string{"k9s"},
 	}
-	m["policy"] = metav1.APIResource{
+	m[client.NewGVR("policy")] = metav1.APIResource{
 		Name:       "policies",
 		Kind:       "Rules",
 		Namespaced: true,
 		Categories: []string{"k9s"},
 	}
-	m["users"] = metav1.APIResource{
+	m[client.NewGVR("users")] = metav1.APIResource{
 		Name:       "users",
 		Kind:       "User",
 		Categories: []string{"k9s"},
 	}
-	m["groups"] = metav1.APIResource{
+	m[client.NewGVR("groups")] = metav1.APIResource{
 		Name:       "groups",
 		Kind:       "Group",
 		Categories: []string{"k9s"},
@@ -188,17 +186,13 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 	return nil
 }
 
-func loadCRDs(f Factory, m ResourceMetas) error {
+func loadCRDs(f Factory, m ResourceMetas) {
 	log.Debug().Msgf("Loading CRDs...")
 	const crdGVR = "apiextensions.k8s.io/v1beta1/customresourcedefinitions"
-	_, err := f.CanForResource("", crdGVR, "list")
-	if err != nil {
-		return err
-	}
-	oo, err := f.List(crdGVR, "", labels.Everything())
+	oo, err := f.List(crdGVR, "", true, labels.Everything())
 	if err != nil {
 		log.Warn().Err(err).Msgf("Fail CRDs load")
-		return nil
+		return
 	}
 	log.Debug().Msgf(">>> CRDS count %d", len(oo))
 
@@ -208,11 +202,9 @@ func loadCRDs(f Factory, m ResourceMetas) error {
 			log.Error().Err(errs[0]).Msgf("Fail to extract CRD meta (%d) errors", len(errs))
 			continue
 		}
-		gvr := client.NewGVR(meta.Group, meta.Version, meta.Name)
+		gvr := client.NewGVRFromMeta(meta)
 		m[gvr] = meta
 	}
-
-	return nil
 }
 
 func extractMeta(o runtime.Object) (metav1.APIResource, []error) {

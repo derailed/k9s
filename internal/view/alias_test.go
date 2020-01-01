@@ -18,7 +18,7 @@ import (
 )
 
 func TestAliasNew(t *testing.T) {
-	v := view.NewAlias(client.GVR("aliases"))
+	v := view.NewAlias(client.NewGVR("aliases"))
 
 	assert.Nil(t, v.Init(makeContext()))
 	assert.Equal(t, "Aliases", v.Name())
@@ -26,7 +26,7 @@ func TestAliasNew(t *testing.T) {
 }
 
 func TestAliasSearch(t *testing.T) {
-	v := view.NewAlias(client.GVR("aliases"))
+	v := view.NewAlias(client.NewGVR("aliases"))
 	assert.Nil(t, v.Init(makeContext()))
 	v.GetTable().SetModel(&testModel{})
 	v.GetTable().SearchBuff().SetActive(true)
@@ -39,7 +39,7 @@ func TestAliasSearch(t *testing.T) {
 }
 
 func TestAliasGoto(t *testing.T) {
-	v := view.NewAlias(client.GVR("aliases"))
+	v := view.NewAlias(client.NewGVR("aliases"))
 	assert.Nil(t, v.Init(makeContext()))
 	v.GetTable().Select(0, 0)
 

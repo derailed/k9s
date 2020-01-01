@@ -9,7 +9,7 @@ import (
 )
 
 func TestNSCleanser(t *testing.T) {
-	ns := view.NewNamespace(client.GVR("v1/namespaces"))
+	ns := view.NewNamespace(client.NewGVR("v1/namespaces"))
 
 	assert.Nil(t, ns.Init(makeCtx()))
 	assert.Equal(t, "Namespaces", ns.Name())

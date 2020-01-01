@@ -128,7 +128,7 @@ func init() {
 }
 
 func TestServiceNew(t *testing.T) {
-	s := view.NewService(client.GVR("v1/services"))
+	s := view.NewService(client.NewGVR("v1/services"))
 
 	assert.Nil(t, s.Init(makeCtx()))
 	assert.Equal(t, "Services", s.Name())

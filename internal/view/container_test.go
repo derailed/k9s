@@ -9,7 +9,7 @@ import (
 )
 
 func TestContainerNew(t *testing.T) {
-	c := view.NewContainer(client.GVR("containers"))
+	c := view.NewContainer(client.NewGVR("containers"))
 
 	assert.Nil(t, c.Init(makeCtx()))
 	assert.Equal(t, "Containers", c.Name())

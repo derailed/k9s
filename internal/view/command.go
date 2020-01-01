@@ -121,7 +121,7 @@ func (c *Command) viewMetaFor(cmd string) (string, *MetaViewer, error) {
 		return "", nil, fmt.Errorf("Huh? `%s` Command not found", cmd)
 	}
 
-	v, ok := customViewers[client.GVR(gvr)]
+	v, ok := customViewers[client.NewGVR(gvr)]
 	if !ok {
 		return gvr, &MetaViewer{viewerFn: NewBrowser}, nil
 	}
@@ -133,10 +133,10 @@ func (c *Command) componentFor(gvr string, v *MetaViewer) ResourceViewer {
 	var view ResourceViewer
 	if v.viewerFn != nil {
 		log.Debug().Msgf("Custom viewer for %s", gvr)
-		view = v.viewerFn(client.GVR(gvr))
+		view = v.viewerFn(client.NewGVR(gvr))
 	} else {
 		log.Debug().Msgf("Generic viewer for %s", gvr)
-		view = NewBrowser(client.GVR(gvr))
+		view = NewBrowser(client.NewGVR(gvr))
 	}
 
 	if v.enterFn != nil {
@@ -152,7 +152,7 @@ func (c *Command) exec(gvr string, comp model.Component, clearStack bool) error 
 		return fmt.Errorf("No component given for %s", gvr)
 	}
 
-	g := client.GVR(gvr)
+	g := client.NewGVR(gvr)
 	c.app.Flash().Infof("Viewing %s resource...", g.ToR())
 	log.Debug().Msgf("Running Command %s", gvr)
 	c.app.Config.SetActiveView(g.ToR())

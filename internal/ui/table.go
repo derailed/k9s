@@ -283,6 +283,7 @@ func (t *Table) ClearMarks() {
 
 // Refresh update the table data.
 func (t *Table) Refresh() {
+	// BOZO!! Really want to tell model reload now. Refactor!
 	t.Update(t.model.Peek())
 }
 

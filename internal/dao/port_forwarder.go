@@ -92,12 +92,21 @@ func (p *PortForwarder) Start(path, co, address string, ports []string) (*portfo
 	p.path, p.container, p.ports, p.age = path, co, ports, time.Now()
 
 	ns, n := client.Namespaced(path)
+	auth, err := p.CanI(ns, "v1/pods", []string{"get"})
+	if !auth || err != nil {
+		return nil, err
+	}
 	pod, err := p.DialOrDie().CoreV1().Pods(ns).Get(n, metav1.GetOptions{})
 	if err != nil {
 		return nil, err
 	}
 	if pod.Status.Phase != v1.PodRunning {
 		return nil, fmt.Errorf("unable to forward port because pod is not running. Current status=%v", pod.Status.Phase)
+	}
+
+	auth, err = p.CanI(ns, "v1/pods:portforward", []string{"update"})
+	if !auth || err != nil {
+		return nil, err
 	}
 
 	rcfg := p.RestConfigOrDie()

@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -28,8 +27,12 @@ var _ Scalable = &Deployment{}
 
 // Scale a Deployment.
 func (d *Deployment) Scale(path string, replicas int32) error {
-	log.Debug().Msgf("SCALING DEPLOYMENT!! %q:%d", path, replicas)
 	ns, n := client.Namespaced(path)
+	auth, err := d.Client().CanI(ns, "apps/v1/deployments:scale", []string{"get", "update"})
+	if !auth || err != nil {
+		return err
+	}
+
 	scale, err := d.Client().DialOrDie().AppsV1().Deployments(ns).GetScale(n, metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -42,29 +45,33 @@ func (d *Deployment) Scale(path string, replicas int32) error {
 
 // Restart a Deployment rollout.
 func (d *Deployment) Restart(path string) error {
-	o, err := d.Get(string(d.gvr), path, labels.Everything())
+	o, err := d.Get(d.gvr.String(), path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
-
 	var ds appsv1.Deployment
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &ds)
 	if err != nil {
 		return err
 	}
 
+	ns, _ := client.Namespaced(path)
+	auth, err := d.Client().CanI(ns, "apps/v1/deployments", []string{"patch"})
+	if !auth || err != nil {
+		return err
+	}
 	update, err := polymorphichelpers.ObjectRestarterFn(&ds)
 	if err != nil {
 		return err
 	}
-
 	_, err = d.Client().DialOrDie().AppsV1().Deployments(ds.Namespace).Patch(ds.Name, types.StrategicMergePatchType, update)
+
 	return err
 }
 
 // TailLogs tail logs for all pods represented by this Deployment.
 func (d *Deployment) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
-	o, err := d.Get(string(d.gvr), opts.Path, labels.Everything())
+	o, err := d.Get(d.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -74,7 +81,6 @@ func (d *Deployment) TailLogs(ctx context.Context, c chan<- string, opts LogOpti
 	if err != nil {
 		return errors.New("expecting Deployment resource")
 	}
-
 	if dp.Spec.Selector == nil || len(dp.Spec.Selector.MatchLabels) == 0 {
 		return fmt.Errorf("No valid selector found on Deployment %s", opts.Path)
 	}

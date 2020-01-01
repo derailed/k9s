@@ -42,7 +42,7 @@ func (d *DaemonSet) bindKeys(aa ui.KeyActions) {
 }
 
 func (d *DaemonSet) showPods(app *App, _, _, path string) {
-	o, err := app.factory.Get(d.GVR(), path, labels.Everything())
+	o, err := app.factory.Get(d.GVR(), path, true, labels.Everything())
 	if err != nil {
 		d.App().Flash().Err(err)
 		return

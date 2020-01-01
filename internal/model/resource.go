@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -12,11 +13,11 @@ import (
 // Resource represents a generic resource model.
 type Resource struct {
 	namespace, gvr string
-	factory        Factory
+	factory        dao.Factory
 }
 
 // Init initializes the model.
-func (r *Resource) Init(ns, gvr string, f Factory) {
+func (r *Resource) Init(ns, gvr string, f dao.Factory) {
 	r.namespace, r.gvr, r.factory = ns, gvr, f
 }
 
@@ -28,7 +29,7 @@ func (r *Resource) List(ctx context.Context) ([]runtime.Object, error) {
 		lsel = sel.AsSelector()
 	}
 
-	return r.factory.List(r.gvr, r.namespace, lsel)
+	return r.factory.List(r.gvr, r.namespace, true, lsel)
 }
 
 // Hydrate renders all rows.

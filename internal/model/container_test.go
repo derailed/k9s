@@ -6,6 +6,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/watch"
@@ -47,29 +48,30 @@ func TestContainerHydrate(t *testing.T) {
 
 type podFactory struct{}
 
-var _ model.Factory = testFactory{}
+var _ dao.Factory = testFactory{}
 
 func (f podFactory) Client() client.Connection {
 	return nil
 }
-func (f podFactory) Get(gvr, path string, sel labels.Selector) (runtime.Object, error) {
+func (f podFactory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
 	var m map[string]interface{}
 	if err := yaml.Unmarshal([]byte(poYaml()), &m); err != nil {
 		return nil, err
 	}
 	return &unstructured.Unstructured{Object: m}, nil
 }
-func (f podFactory) List(gvr, ns string, sel labels.Selector) ([]runtime.Object, error) {
+func (f podFactory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error) {
 	return nil, nil
 }
 func (f podFactory) ForResource(ns, gvr string) informers.GenericInformer { return nil }
-func (f podFactory) CanForResource(ns, gvr string, verbs ...string) (informers.GenericInformer, error) {
+func (f podFactory) CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error) {
 	return nil, nil
 }
 func (f podFactory) WaitForCacheSync()            {}
 func (f podFactory) Forwarders() watch.Forwarders { return nil }
+func (f podFactory) DeleteForwarder(string)       {}
 
-func makePodFactory() model.Factory {
+func makePodFactory() dao.Factory {
 	return podFactory{}
 }
 

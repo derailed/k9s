@@ -9,7 +9,7 @@ import (
 )
 
 func TestDaemonSet(t *testing.T) {
-	v := view.NewDaemonSet(client.GVR("apps/v1/daemonsets"))
+	v := view.NewDaemonSet(client.NewGVR("apps/v1/daemonsets"))
 
 	assert.Nil(t, v.Init(makeCtx()))
 	assert.Equal(t, "DaemonSets", v.Name())

@@ -21,7 +21,7 @@ var _ Loggable = &Service{}
 
 // TailLogs tail logs for all pods represented by this Service.
 func (s *Service) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
-	o, err := s.Get(string(s.gvr), opts.Path, labels.Everything())
+	o, err := s.Get(s.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return err
 	}

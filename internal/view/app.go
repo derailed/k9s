@@ -404,7 +404,7 @@ func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	if err := a.inject(NewAlias("aliases")); err != nil {
+	if err := a.inject(NewAlias(client.NewGVR("aliases"))); err != nil {
 		a.Flash().Err(err)
 	}
 

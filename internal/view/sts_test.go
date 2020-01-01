@@ -9,7 +9,7 @@ import (
 )
 
 func TestStatefulSetNew(t *testing.T) {
-	s := view.NewStatefulSet(client.GVR("apps/v1/statefulsets"))
+	s := view.NewStatefulSet(client.NewGVR("apps/v1/statefulsets"))
 
 	assert.Nil(t, s.Init(makeCtx()))
 	assert.Equal(t, "StatefulSets", s.Name())

@@ -20,6 +20,11 @@ var _ Runnable = &CronJob{}
 // Run a CronJob.
 func (c *CronJob) Run(path string) error {
 	ns, n := client.Namespaced(path)
+	auth, err := c.Client().CanI(ns, "batch/v1beta1/cronjobs", []string{"get", "create"})
+	if !auth || err != nil {
+		return err
+	}
+
 	cj, err := c.Client().DialOrDie().BatchV1beta1().CronJobs(ns).Get(n, metav1.GetOptions{})
 	if err != nil {
 		return err

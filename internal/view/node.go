@@ -45,7 +45,7 @@ func (n *Node) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	sel := n.GetTable().GetSelectedItem()
-	gvr := client.GVR(n.GVR()).AsGVR()
+	gvr := client.NewGVR(n.GVR()).AsGVR()
 	o, err := n.App().factory.Client().DynDialOrDie().Resource(gvr).Get(sel, metav1.GetOptions{})
 	if err != nil {
 		n.App().Flash().Errf("Unable to get resource %q -- %s", n.GVR(), err)

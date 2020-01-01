@@ -12,7 +12,7 @@ import (
 )
 
 func TestPodNew(t *testing.T) {
-	po := view.NewPod(client.GVR("v1/pods"))
+	po := view.NewPod(client.NewGVR("v1/pods"))
 
 	assert.Nil(t, po.Init(makeCtx()))
 	assert.Equal(t, "Pods", po.Name())

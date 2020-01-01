@@ -6,7 +6,6 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/watch"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -24,11 +23,11 @@ var _ Loggable = &Container{}
 
 // TailLogs tails a given container logs
 func (c *Container) TailLogs(ctx context.Context, logChan chan<- string, opts LogOptions) error {
-	fac, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
+	fac, ok := ctx.Value(internal.KeyFactory).(Factory)
 	if !ok {
 		return errors.New("Expecting an informer")
 	}
-	o, err := fac.Get("v1/pods", opts.Path, labels.Everything())
+	o, err := fac.Get("v1/pods", opts.Path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -42,7 +41,13 @@ func (c *Container) TailLogs(ctx context.Context, logChan chan<- string, opts Lo
 }
 
 // Logs fetch container logs for a given pod and container.
-func (c *Container) Logs(path string, opts *v1.PodLogOptions) *restclient.Request {
+func (c *Container) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, error) {
+	ns, _ := client.Namespaced(path)
+	auth, err := c.Client().CanI(ns, "v1/pods:log", []string{"get"})
+	if !auth || err != nil {
+		return nil, err
+	}
+
 	ns, n := client.Namespaced(path)
-	return c.Client().DialOrDie().CoreV1().Pods(ns).GetLogs(n, opts)
+	return c.Client().DialOrDie().CoreV1().Pods(ns).GetLogs(n, opts), nil
 }

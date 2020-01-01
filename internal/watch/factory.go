@@ -40,7 +40,7 @@ func NewFactory(client client.Connection) *Factory {
 
 // Start initializes the informers until caller cancels the context.
 func (f *Factory) Start(ns string) {
-	log.Debug().Msgf("Starting factory in ns `%q", ns)
+	log.Debug().Msgf("Factory START with ns `%q", ns)
 	f.stopChan = make(chan struct{})
 	for ns, fac := range f.factories {
 		log.Debug().Msgf("Starting factory in ns %q", ns)
@@ -61,38 +61,60 @@ func (f *Factory) Terminate() {
 }
 
 // List returns a resource collection.
-func (f *Factory) List(gvr, ns string, sel labels.Selector) ([]runtime.Object, error) {
-	inf, err := f.CanForResource(ns, gvr, "list")
+func (f *Factory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("LIST time %v", time.Since(t))
+	}(time.Now())
+
+	Dump(f)
+	log.Debug().Msgf("List %q:%q", ns, gvr)
+	inf, err := f.CanForResource(ns, gvr, []string{"list", "watch"})
 	if err != nil {
 		return nil, err
 	}
 	if ns == clusterScope {
-		return inf.Lister().List(sel)
+		ns = allNamespaces
 	}
 
+	if wait {
+		f.waitForCacheSync(ns)
+	}
 	return inf.Lister().ByNamespace(ns).List(sel)
 }
 
 // Get retrieves a given resource.
-func (f *Factory) Get(gvr, path string, sel labels.Selector) (runtime.Object, error) {
+func (f *Factory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("GET time %v", time.Since(t))
+	}(time.Now())
+
 	ns, n := namespaced(path)
-	inf, err := f.CanForResource(ns, gvr, "get")
+	inf, err := f.CanForResource(ns, gvr, []string{"get"})
 	if err != nil {
 		return nil, err
 	}
 	if ns == clusterScope {
-		return inf.Lister().Get(n)
+		ns = allNamespaces
 	}
 
+	if wait {
+		f.waitForCacheSync(ns)
+	}
 	return inf.Lister().ByNamespace(ns).Get(n)
+}
+
+func (f *Factory) waitForCacheSync(ns string) {
+	if fac, ok := f.factories[ns]; ok {
+		fac.WaitForCacheSync(f.stopChan)
+	}
 }
 
 // WaitForCacheSync waits for all factories to update their cache.
 func (f *Factory) WaitForCacheSync() {
-	for _, fac := range f.factories {
+	for ns, fac := range f.factories {
 		m := fac.WaitForCacheSync(f.stopChan)
 		for k, v := range m {
-			log.Debug().Msgf("CACHE -- Loaded %q:%v", k, v)
+			log.Debug().Msgf("CACHE `%q Loaded %t:%s", ns, v, k)
 		}
 	}
 }
@@ -120,16 +142,15 @@ func (f *Factory) isClusterWide() bool {
 	return ok
 }
 
-func (f *Factory) preload(_ string) {
-	_, _ = f.CanForResource("", "apiextensions.k8s.io/v1beta1/customresourcedefinitions", ReadVerbs...)
-	// BOZO!!
-	// _, _ = f.CanForResource(ns, "v1/pods", verbs...)
-	// _, _ = f.CanForResource(clusterScope, "rbac.authorization.k8s.io/v1/clusterroles", verbs...)
-	// _, _ = f.CanForResource(allNamespaces, "rbac.authorization.k8s.io/v1/roles", verbs...)
-}
-
 // CanForResource return an informer is user has access.
-func (f *Factory) CanForResource(ns, gvr string, verbs ...string) (informers.GenericInformer, error) {
+func (f *Factory) CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error) {
+	// If user can access resource cluster wide, prefer cluster wide factory.
+	if ns != allNamespaces {
+		auth, err := f.Client().CanI(allNamespaces, gvr, verbs)
+		if auth && err == nil {
+			return f.ForResource(allNamespaces, gvr), nil
+		}
+	}
 	auth, err := f.Client().CanI(ns, gvr, verbs)
 	if err != nil {
 		return nil, err
@@ -145,23 +166,31 @@ func (f *Factory) CanForResource(ns, gvr string, verbs ...string) (informers.Gen
 func (f *Factory) ForResource(ns, gvr string) informers.GenericInformer {
 	fact := f.ensureFactory(ns)
 	inf := fact.ForResource(toGVR(gvr))
+	if inf == nil {
+		log.Error().Err(fmt.Errorf("MEOW! No informer for %q:%q", ns, gvr))
+		return inf
+	}
+	log.Debug().Msgf("FOR_RESOURCE %q:%q", ns, gvr)
 	fact.Start(f.stopChan)
 
 	return inf
 }
 
 func (f *Factory) ensureFactory(ns string) di.DynamicSharedInformerFactory {
+	if ns == clusterScope {
+		ns = allNamespaces
+	}
 	if fac, ok := f.factories[ns]; ok {
 		return fac
 	}
 
+	log.Debug().Msgf("FACTORY_NEW for ns %q", ns)
 	f.factories[ns] = di.NewFilteredDynamicSharedInformerFactory(
 		f.client.DynDialOrDie(),
 		defaultResync,
 		ns,
 		nil,
 	)
-	f.preload(ns)
 
 	return f.factories[ns]
 }
@@ -173,6 +202,7 @@ func (f *Factory) AddForwarder(pf Forwarder) {
 
 // DeleteForwarder deletes portforward for a given container.
 func (f *Factory) DeleteForwarder(path string) {
+
 	f.forwarders.Dump()
 	count := f.forwarders.Kill(path)
 	log.Warn().Msgf("Deleted (%d) portforward for %q", count, path)

@@ -43,7 +43,7 @@ func (d *Deploy) bindKeys(aa ui.KeyActions) {
 }
 
 func (d *Deploy) showPods(app *App, _, _, path string) {
-	o, err := app.factory.Get(d.GVR(), path, labels.Everything())
+	o, err := app.factory.Get(d.GVR(), path, true, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return

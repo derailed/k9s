@@ -27,7 +27,7 @@ type Table struct {
 // NewTable returns a new viewer.
 func NewTable(gvr client.GVR) *Table {
 	return &Table{
-		Table: ui.NewTable(string(gvr)),
+		Table: ui.NewTable(gvr.String()),
 		gvr:   gvr,
 	}
 }
@@ -50,7 +50,7 @@ func (t *Table) Init(ctx context.Context) (err error) {
 func (t *Table) Name() string { return t.BaseTitle }
 
 // GVR returns a resource descriptor.
-func (t *Table) GVR() string { return string(t.gvr) }
+func (t *Table) GVR() string { return t.gvr.String() }
 
 // SetBindKeysFn adds additional key bindings.
 func (t *Table) SetBindKeysFn(f BindKeysFunc) { t.bindKeysFn = f }
@@ -134,7 +134,7 @@ func (t *Table) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	o, err := t.app.factory.Get(string(t.gvr), path, labels.Everything())
+	o, err := t.app.factory.Get(t.GVR(), path, true, labels.Everything())
 	if err != nil {
 		t.app.Flash().Errf("Unable to get resource %q -- %s", t.gvr, err)
 		return nil

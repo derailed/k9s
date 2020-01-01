@@ -9,7 +9,7 @@ import (
 )
 
 func TestPortForwardNew(t *testing.T) {
-	pf := view.NewPortForward(client.GVR("portforwards"))
+	pf := view.NewPortForward(client.NewGVR("portforwards"))
 
 	assert.Nil(t, pf.Init(makeCtx()))
 	assert.Equal(t, "PortForwards", pf.Name())

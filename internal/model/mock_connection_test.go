@@ -135,25 +135,6 @@ func (mock *MockConnection) DynDialOrDie() dynamic.Interface {
 	return ret0
 }
 
-func (mock *MockConnection) FetchNodes() (*v1.NodeList, error) {
-	if mock == nil {
-		panic("mock must not be nil. Use myMock := NewMockConnection().")
-	}
-	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("FetchNodes", params, []reflect.Type{reflect.TypeOf((**v1.NodeList)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 *v1.NodeList
-	var ret1 error
-	if len(result) != 0 {
-		if result[0] != nil {
-			ret0 = result[0].(*v1.NodeList)
-		}
-		if result[1] != nil {
-			ret1 = result[1].(error)
-		}
-	}
-	return ret0, ret1
-}
-
 func (mock *MockConnection) HasMetrics() bool {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")
@@ -476,23 +457,6 @@ func (c *MockConnection_DynDialOrDie_OngoingVerification) GetCapturedArguments()
 }
 
 func (c *MockConnection_DynDialOrDie_OngoingVerification) GetAllCapturedArguments() {
-}
-
-func (verifier *VerifierMockConnection) FetchNodes() *MockConnection_FetchNodes_OngoingVerification {
-	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "FetchNodes", params, verifier.timeout)
-	return &MockConnection_FetchNodes_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
-}
-
-type MockConnection_FetchNodes_OngoingVerification struct {
-	mock              *MockConnection
-	methodInvocations []pegomock.MethodInvocation
-}
-
-func (c *MockConnection_FetchNodes_OngoingVerification) GetCapturedArguments() {
-}
-
-func (c *MockConnection_FetchNodes_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierMockConnection) HasMetrics() *MockConnection_HasMetrics_OngoingVerification {

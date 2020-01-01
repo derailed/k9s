@@ -48,7 +48,6 @@ type Connection interface {
 	ValidNamespaces() ([]v1.Namespace, error)
 	SupportsRes(grp string, versions []string) (string, bool, error)
 	ServerVersion() (*version.Info, error)
-	FetchNodes() (*v1.NodeList, error)
 	CurrentNamespaceName() (string, error)
 }
 
@@ -74,13 +73,18 @@ func InitConnectionOrDie(config *Config) *APIClient {
 }
 
 func makeSAR(ns, gvr string) *authorizationv1.SelfSubjectAccessReview {
-	res := GVR(gvr).AsGVR()
+	if ns == "-" {
+		ns = ""
+	}
+	spec := NewGVR(gvr)
+	res := spec.AsGVR()
 	return &authorizationv1.SelfSubjectAccessReview{
 		Spec: authorizationv1.SelfSubjectAccessReviewSpec{
 			ResourceAttributes: &authorizationv1.ResourceAttributes{
-				Namespace: ns,
-				Group:     res.Group,
-				Resource:  res.Resource,
+				Namespace:   ns,
+				Group:       res.Group,
+				Resource:    res.Resource,
+				Subresource: spec.SubResource(),
 			},
 		},
 	}
@@ -88,19 +92,22 @@ func makeSAR(ns, gvr string) *authorizationv1.SelfSubjectAccessReview {
 
 // CanI checks if user has access to a certain resource.
 func (a *APIClient) CanI(ns, gvr string, verbs []string) (bool, error) {
+	log.Debug().Msgf("AUTH %q:%q -- %v", ns, gvr, verbs)
 	sar := makeSAR(ns, gvr)
 	dial := a.DialOrDie().AuthorizationV1().SelfSubjectAccessReviews()
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
 		resp, err := dial.Create(sar)
 		if err != nil {
-			log.Error().Err(err).Msgf("CanI")
+			log.Warn().Err(err).Msgf("  Dial Failed!")
 			return false, err
 		}
 		if !resp.Status.Allowed {
-			return false, fmt.Errorf("%s access denied for current user on %q:%s", v, ns, gvr)
+			log.Debug().Msgf("  NO %q ;(", v)
+			return false, fmt.Errorf("`%s access denied for user on %q:%s", v, ns, gvr)
 		}
 	}
+	log.Debug().Msgf("  YES!")
 	return true, nil
 }
 
@@ -117,11 +124,6 @@ func (a *APIClient) ServerVersion() (*version.Info, error) {
 	}
 
 	return discovery.ServerVersion()
-}
-
-// FetchNodes returns all available nodes.
-func (a *APIClient) FetchNodes() (*v1.NodeList, error) {
-	return a.DialOrDie().CoreV1().Nodes().List(metav1.ListOptions{})
 }
 
 // ValidNamespaces returns all available namespaces.

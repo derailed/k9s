@@ -32,14 +32,20 @@ var _ Accessor = &Pod{}
 var _ Loggable = &Pod{}
 
 // Logs fetch container logs for a given pod and container.
-func (p *Pod) Logs(path string, opts *v1.PodLogOptions) *restclient.Request {
+func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, error) {
+	ns, _ := client.Namespaced(path)
+	auth, err := p.Client().CanI(ns, "v1/pods:log", []string{"get"})
+	if !auth || err != nil {
+		return nil, err
+	}
+
 	ns, n := client.Namespaced(path)
-	return p.Client().DialOrDie().CoreV1().Pods(ns).GetLogs(n, opts)
+	return p.Client().DialOrDie().CoreV1().Pods(ns).GetLogs(n, opts), nil
 }
 
 // Containers returns all container names on pod
 func (p *Pod) Containers(path string, includeInit bool) ([]string, error) {
-	o, err := p.Get("v1/pod", path, labels.Everything())
+	o, err := p.Get(p.gvr.String(), path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +83,7 @@ func (p *Pod) logs(ctx context.Context, c chan<- string, opts LogOptions) error 
 	if !ok {
 		return errors.New("Expecting an informer")
 	}
-	o, err := fac.Get("v1/pods", opts.Path, labels.Everything())
+	o, err := fac.Get(p.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -119,7 +125,10 @@ func tailLogs(ctx context.Context, logger Logger, c chan<- string, opts LogOptio
 		TailLines: &opts.Lines,
 		Previous:  opts.Previous,
 	}
-	req := logger.Logs(opts.Path, &o)
+	req, err := logger.Logs(opts.Path, &o)
+	if err != nil {
+		return err
+	}
 	ctxt, cancelFunc := context.WithCancel(ctx)
 	req.Context(ctxt)
 

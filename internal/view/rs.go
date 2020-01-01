@@ -49,7 +49,7 @@ func (r *ReplicaSet) bindKeys(aa ui.KeyActions) {
 }
 
 func (r *ReplicaSet) showPods(app *App, _, gvr, path string) {
-	o, err := app.factory.Get(r.GVR(), path, labels.Everything())
+	o, err := app.factory.Get(r.GVR(), path, true, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return
@@ -104,7 +104,7 @@ func (r *ReplicaSet) showModal(msg string, done func(int, string)) {
 // Helpers...
 
 func findRS(f *watch.Factory, path string) (*v1.ReplicaSet, error) {
-	o, err := f.Get("apps/v1/replicasets", path, labels.Everything())
+	o, err := f.Get("apps/v1/replicasets", path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -119,7 +119,7 @@ func findRS(f *watch.Factory, path string) (*v1.ReplicaSet, error) {
 }
 
 func findDP(f *watch.Factory, path string) (*appsv1.Deployment, error) {
-	o, err := f.Get("apps/v1/deployments", path, labels.Everything())
+	o, err := f.Get("apps/v1/deployments", path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

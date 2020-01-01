@@ -21,7 +21,7 @@ var _ Loggable = &Job{}
 
 // TailLogs tail logs for all pods represented by this Job.
 func (j *Job) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
-	o, err := j.Get(string(j.gvr), opts.Path, labels.Everything())
+	o, err := j.Get(j.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return err
 	}

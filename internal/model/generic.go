@@ -26,12 +26,12 @@ type Generic struct {
 // List returns a collection of node resources.
 func (g *Generic) List(ctx context.Context) ([]runtime.Object, error) {
 	// Ensures the factory is tracking this resource
-	_, err := g.factory.CanForResource(g.namespace, g.gvr)
+	_, err := g.factory.CanForResource(g.namespace, g.gvr, []string{"list"})
 	if err != nil {
 		return nil, err
 	}
 
-	gvr := client.GVR(g.gvr)
+	gvr := client.NewGVR(g.gvr)
 	fcodec, codec := g.codec(gvr.AsGV())
 
 	c, err := g.client(fcodec, gvr)

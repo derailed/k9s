@@ -50,7 +50,7 @@ func (s *StatefulSet) showPods(app *App, _, gvr, path string) {
 }
 
 func (s *StatefulSet) sts(path string) (*appsv1.StatefulSet, error) {
-	o, err := s.App().factory.Get(s.GVR(), path, labels.Everything())
+	o, err := s.App().factory.Get(s.GVR(), path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

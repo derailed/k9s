@@ -9,7 +9,7 @@ import (
 )
 
 func TestDeploy(t *testing.T) {
-	v := view.NewDeploy(client.GVR("apps/v1/deployments"))
+	v := view.NewDeploy(client.NewGVR("apps/v1/deployments"))
 
 	assert.Nil(t, v.Init(makeCtx()))
 	assert.Equal(t, "Deployments", v.Name())

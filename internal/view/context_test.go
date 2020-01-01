@@ -9,7 +9,7 @@ import (
 )
 
 func TestContext(t *testing.T) {
-	ctx := view.NewContext(client.GVR("contexts"))
+	ctx := view.NewContext(client.NewGVR("contexts"))
 
 	assert.Nil(t, ctx.Init(makeCtx()))
 	assert.Equal(t, "Contexts", ctx.Name())

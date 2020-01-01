@@ -28,7 +28,7 @@ func TestLogAnsi(t *testing.T) {
 }
 
 func TestLogFlush(t *testing.T) {
-	v := NewLog(client.GVR("v1/pods"), "fred/p1", "blee", false)
+	v := NewLog(client.NewGVR("v1/pods"), "fred/p1", "blee", false)
 	v.Init(makeContext())
 	v.Flush(2, []string{"blee", "bozo"})
 
@@ -41,7 +41,7 @@ func TestLogFlush(t *testing.T) {
 }
 
 func TestLogViewSave(t *testing.T) {
-	v := NewLog(client.GVR("v1/pods"), "fred/p1", "blee", false)
+	v := NewLog(client.NewGVR("v1/pods"), "fred/p1", "blee", false)
 	v.Init(makeContext())
 
 	app := makeApp()
@@ -55,7 +55,7 @@ func TestLogViewSave(t *testing.T) {
 }
 
 func TestLogViewNav(t *testing.T) {
-	v := NewLog(client.GVR("v1/pods"), "fred/p1", "blee", false)
+	v := NewLog(client.NewGVR("v1/pods"), "fred/p1", "blee", false)
 	v.Init(makeContext())
 
 	var buff []string
@@ -70,7 +70,7 @@ func TestLogViewNav(t *testing.T) {
 }
 
 func TestLogViewClear(t *testing.T) {
-	v := NewLog(client.GVR("v1/pods"), "fred/p1", "blee", false)
+	v := NewLog(client.NewGVR("v1/pods"), "fred/p1", "blee", false)
 	v.Init(makeContext())
 
 	v.Flush(2, []string{"blee", "bozo"})

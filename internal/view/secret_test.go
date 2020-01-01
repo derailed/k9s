@@ -9,7 +9,7 @@ import (
 )
 
 func TestSecretNew(t *testing.T) {
-	s := view.NewSecret(client.GVR("v1/secrets"))
+	s := view.NewSecret(client.NewGVR("v1/secrets"))
 
 	assert.Nil(t, s.Init(makeCtx()))
 	assert.Equal(t, "Secrets", s.Name())

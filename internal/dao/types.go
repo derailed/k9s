@@ -18,16 +18,16 @@ type Factory interface {
 	Client() client.Connection
 
 	// Get fetch a given resource.
-	Get(gvr, path string, sel labels.Selector) (runtime.Object, error)
+	Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error)
 
 	// List fetch a collection of resources.
-	List(gvr, ns string, sel labels.Selector) ([]runtime.Object, error)
+	List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error)
 
 	// ForResource fetch an informer for a given resource.
 	ForResource(ns, gvr string) informers.GenericInformer
 
 	// CanForResource fetch an informer for a given resource if authorized
-	CanForResource(ns, gvr string, verbs ...string) (informers.GenericInformer, error)
+	CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error)
 
 	// WaitForCacheSync synchronize the cache.
 	WaitForCacheSync()
@@ -86,5 +86,5 @@ type Runnable interface {
 // Logger represents a resource that exposes logs.
 type Logger interface {
 	// Logs tails a resource logs.
-	Logs(path string, opts *v1.PodLogOptions) *restclient.Request
+	Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, error)
 }

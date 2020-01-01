@@ -50,7 +50,8 @@ func (b *Browser) Init(ctx context.Context) error {
 		return err
 	}
 	if !dao.IsK9sMeta(b.meta) {
-		if _, e := b.app.factory.CanForResource(b.app.Config.ActiveNamespace(), b.GVR()); e != nil {
+		log.Debug().Msgf("BROWSER ACTIVE_NS %q", b.app.Config.ActiveNamespace())
+		if _, e := b.app.factory.CanForResource(b.app.Config.ActiveNamespace(), b.GVR(), []string{"list", "watch"}); e != nil {
 			return e
 		}
 	}
@@ -196,7 +197,7 @@ func (b *Browser) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if b.enterFn != nil {
 		f = b.enterFn
 	}
-	f(b.app, b.GetModel().GetNamespace(), string(b.gvr), path)
+	f(b.app, b.GetModel().GetNamespace(), b.gvr.String(), path)
 
 	return nil
 }
@@ -236,7 +237,7 @@ func (b *Browser) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path == "" {
 		return evt
 	}
-	describeResource(b.app, b.GetModel().GetNamespace(), string(b.gvr), path)
+	describeResource(b.app, b.GetModel().GetNamespace(), b.gvr.String(), path)
 
 	return nil
 }
@@ -319,7 +320,7 @@ func (b *Browser) defaultContext() context.Context {
 	ctx := context.Background()
 
 	ctx = context.WithValue(ctx, internal.KeyFactory, b.app.factory)
-	ctx = context.WithValue(ctx, internal.KeyGVR, string(b.gvr))
+	ctx = context.WithValue(ctx, internal.KeyGVR, b.gvr.String())
 	ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
 
 	ctx = context.WithValue(ctx, internal.KeyLabels, "")

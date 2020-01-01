@@ -41,7 +41,7 @@ func (h *HorizontalPodAutoscaler) List(ctx context.Context) ([]runtime.Object, e
 }
 
 func (h *HorizontalPodAutoscaler) list(gvr string, sel labels.Selector) ([]runtime.Object, error) {
-	oo, err := h.factory.List(gvr, h.namespace, sel)
+	oo, err := h.factory.List(gvr, h.namespace, true, sel)
 	if err != nil {
 		return nil, err
 	}

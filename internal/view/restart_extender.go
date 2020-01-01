@@ -51,7 +51,7 @@ func (r *RestartExtender) restartCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (r *RestartExtender) restartRollout(path string) error {
-	res, err := dao.AccessorFor(r.App().factory, client.GVR(r.GVR()))
+	res, err := dao.AccessorFor(r.App().factory, client.NewGVR(r.GVR()))
 	if err != nil {
 		return nil
 	}

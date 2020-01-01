@@ -34,7 +34,7 @@ func NewCronJob(gvr client.GVR) ResourceViewer {
 
 func (c *CronJob) showJobs(app *App, ns, gvr, path string) {
 	log.Debug().Msgf("Showing Jobs %q:%q -- %q", ns, gvr, path)
-	o, err := app.factory.Get(gvr, path, labels.Everything())
+	o, err := app.factory.Get(gvr, path, true, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return
@@ -47,7 +47,7 @@ func (c *CronJob) showJobs(app *App, ns, gvr, path string) {
 		return
 	}
 
-	v := NewJob(client.GVR("batch/v1/jobs"))
+	v := NewJob(client.NewGVR("batch/v1/jobs"))
 	v.SetContextFn(jobCtx(path, string(cj.UID)))
 	if err := app.inject(v); err != nil {
 		app.Flash().Err(err)
@@ -73,7 +73,7 @@ func (c *CronJob) trigger(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	res, err := dao.AccessorFor(c.App().factory, client.GVR(c.GVR()))
+	res, err := dao.AccessorFor(c.App().factory, client.NewGVR(c.GVR()))
 	if err != nil {
 		return nil
 	}

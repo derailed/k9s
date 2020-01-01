@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
@@ -18,7 +19,7 @@ import (
 )
 
 func TestTableSave(t *testing.T) {
-	v := NewTable("test")
+	v := NewTable(client.NewGVR("test"))
 	v.Init(makeContext())
 	v.SetTitle("k9s-test")
 
@@ -31,7 +32,7 @@ func TestTableSave(t *testing.T) {
 }
 
 func TestTableNew(t *testing.T) {
-	v := NewTable("test")
+	v := NewTable(client.NewGVR("test"))
 	v.Init(makeContext())
 
 	data := render.NewTableData()
@@ -60,7 +61,7 @@ func TestTableNew(t *testing.T) {
 }
 
 func TestTableViewFilter(t *testing.T) {
-	v := NewTable("test")
+	v := NewTable(client.NewGVR("test"))
 	v.Init(makeContext())
 	v.SetModel(&testTableModel{})
 	v.SearchBuff().SetActive(true)
@@ -70,7 +71,7 @@ func TestTableViewFilter(t *testing.T) {
 }
 
 func TestTableViewSort(t *testing.T) {
-	v := NewTable("test")
+	v := NewTable(client.NewGVR("test"))
 	v.Init(makeContext())
 	v.SetModel(&testTableModel{})
 	v.SortColCmd(1, true)(nil)

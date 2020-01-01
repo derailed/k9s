@@ -21,8 +21,8 @@ func (c *CustomResourceDefinition) List(ctx context.Context) ([]runtime.Object, 
 		lsel = sel.AsSelector()
 	}
 
-	gvr := "apiextensions.k8s.io/v1beta1/customresourcedefinitions"
-	oo, err := c.factory.List(gvr, "-", lsel)
+	const gvr = "apiextensions.k8s.io/v1beta1/customresourcedefinitions"
+	oo, err := c.factory.List(gvr, "-", true, lsel)
 	if err != nil {
 		return nil, err
 	}

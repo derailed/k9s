@@ -3,13 +3,10 @@ package model
 import (
 	"context"
 
-	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tview"
-	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/informers"
 )
 
 // Igniter represents a runnable view.
@@ -60,37 +57,13 @@ type Renderer interface {
 // Lister represents a resource lister.
 type Lister interface {
 	// Init initializes a resource.
-	Init(ns, gvr string, f Factory)
+	Init(ns, gvr string, f dao.Factory)
 
 	// List returns a collection of resources.
 	List(context.Context) ([]runtime.Object, error)
 
 	// Hydrate converts resource rows into tabular data.
 	Hydrate(oo []runtime.Object, rr render.Rows, r Renderer) error
-}
-
-// Factory represents a K8s resource factory.
-type Factory interface {
-	// Client retrieves an api client.
-	Client() client.Connection
-
-	// Get fetch a given resource.
-	Get(gvr, path string, sel labels.Selector) (runtime.Object, error)
-
-	// List fetch a collection of resources.
-	List(gvr, ns string, sel labels.Selector) ([]runtime.Object, error)
-
-	// ForResource fetch an informer for a given resource.
-	ForResource(ns, gvr string) informers.GenericInformer
-
-	// CanForResource fetch an informer for a given resource.
-	CanForResource(ns, gvr string, verbs ...string) (informers.GenericInformer, error)
-
-	// WaitForCacheSync synchronize the cache.
-	WaitForCacheSync()
-
-	// Forwards returns all portforwards.
-	Forwarders() watch.Forwarders
 }
 
 // ResourceMeta represents model info about a resource.

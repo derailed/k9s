@@ -28,6 +28,10 @@ var _ Scalable = &StatefulSet{}
 // Scale a StatefulSet.
 func (s *StatefulSet) Scale(path string, replicas int32) error {
 	ns, n := client.Namespaced(path)
+	auth, err := s.Client().CanI(ns, "apps/v1/statefulsets:scale", []string{"get", "update"})
+	if !auth || err != nil {
+		return err
+	}
 	scale, err := s.Client().DialOrDie().AppsV1().StatefulSets(ns).GetScale(n, metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -40,29 +44,33 @@ func (s *StatefulSet) Scale(path string, replicas int32) error {
 
 // Restart a StatefulSet rollout.
 func (s *StatefulSet) Restart(path string) error {
-	o, err := s.Get(string(s.gvr), path, labels.Everything())
+	o, err := s.Get(s.gvr.String(), path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
-
 	var ds appsv1.StatefulSet
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &ds)
 	if err != nil {
 		return err
 	}
 
+	ns, _ := client.Namespaced(path)
+	auth, err := s.Client().CanI(ns, "apps/v1/statefulsets", []string{"patch"})
+	if !auth || err != nil {
+		return err
+	}
 	update, err := polymorphichelpers.ObjectRestarterFn(&ds)
 	if err != nil {
 		return err
 	}
-
 	_, err = s.Client().DialOrDie().AppsV1().StatefulSets(ds.Namespace).Patch(ds.Name, types.StrategicMergePatchType, update)
+
 	return err
 }
 
 // TailLogs tail logs for all pods represented by this StatefulSet.
 func (s *StatefulSet) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
-	o, err := s.Get(string(s.gvr), opts.Path, labels.Everything())
+	o, err := s.Get(s.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -72,7 +80,6 @@ func (s *StatefulSet) TailLogs(ctx context.Context, c chan<- string, opts LogOpt
 	if err != nil {
 		return errors.New("expecting StatefulSet resource")
 	}
-
 	if sts.Spec.Selector == nil || len(sts.Spec.Selector.MatchLabels) == 0 {
 		return fmt.Errorf("No valid selector found on StatefulSet %s", opts.Path)
 	}

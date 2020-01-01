@@ -9,7 +9,7 @@ import (
 )
 
 func TestRbacNew(t *testing.T) {
-	v := view.NewRbac(client.GVR("rbac"))
+	v := view.NewRbac(client.NewGVR("rbac"))
 
 	assert.Nil(t, v.Init(makeCtx()))
 	assert.Equal(t, "Rbac", v.Name())
