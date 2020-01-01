@@ -18,6 +18,7 @@ const (
 	clusterScope  = "-"
 )
 
+// ReadVerbs lists out RO verbs.
 var ReadVerbs = []string{"get", "list", "watch"}
 
 // Factory tracks various resource informers.
@@ -106,7 +107,7 @@ func (f *Factory) FactoryFor(ns string) di.DynamicSharedInformerFactory {
 	return f.factories[ns]
 }
 
-// SetActive sets the active namespace.
+// SetActiveNS sets the active namespace.
 // BOZO!! Check ns access for resource??
 func (f *Factory) SetActiveNS(ns string) {
 	if !f.isClusterWide() {

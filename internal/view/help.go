@@ -21,6 +21,9 @@ const (
 	helpTitleFmt = " [aqua::b]%s "
 )
 
+// HelpFunc processes menu hints.
+type HelpFunc func() model.MenuHints
+
 // Help presents a help viewer.
 type Help struct {
 	*Table
@@ -72,8 +75,6 @@ func (v *Help) computeMaxes(hh model.MenuHints) {
 	}
 	v.maxKey += 2
 }
-
-type HelpFunc func() model.MenuHints
 
 func (v *Help) build() {
 	v.Clear()
