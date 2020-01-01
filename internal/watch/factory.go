@@ -65,10 +65,10 @@ func (f *Factory) List(gvr, ns string, sel labels.Selector) ([]runtime.Object, e
 	if err != nil {
 		return nil, err
 	}
-	log.Debug().Msgf("LISTING %q:%q", ns, gvr)
 	if ns == clusterScope {
 		return inf.Lister().List(sel)
 	}
+
 	return inf.Lister().ByNamespace(ns).List(sel)
 }
 
@@ -79,8 +79,6 @@ func (f *Factory) Get(gvr, path string, sel labels.Selector) (runtime.Object, er
 	if err != nil {
 		return nil, err
 	}
-	log.Debug().Msgf("GETTING %q:%q", ns, gvr)
-
 	if ns == clusterScope {
 		return inf.Lister().Get(n)
 	}

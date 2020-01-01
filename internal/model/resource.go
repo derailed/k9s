@@ -5,7 +5,6 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -23,7 +22,6 @@ func (r *Resource) Init(ns, gvr string, f Factory) {
 
 // List returns a collection of nodes.
 func (r *Resource) List(ctx context.Context) ([]runtime.Object, error) {
-	log.Debug().Msgf("MODELLIST %q:%q", r.namespace, r.gvr)
 	strLabel, ok := ctx.Value(internal.KeyLabels).(string)
 	lsel := labels.Everything()
 	if sel, err := labels.ConvertSelectorToLabelsMap(strLabel); ok && err == nil {
