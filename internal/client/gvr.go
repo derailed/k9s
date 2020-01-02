@@ -41,6 +41,7 @@ func NewGVR(gvr string) GVR {
 	return GVR{raw: gvr, g: g, v: v, r: r, sr: sr}
 }
 
+// NewGVRFromMeta builds a gvr from resource metadata.
 func NewGVRFromMeta(a metav1.APIResource) GVR {
 	return GVR{
 		raw: path.Join(a.Group, a.Version, a.Name),

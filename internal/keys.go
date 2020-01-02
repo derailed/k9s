@@ -24,4 +24,5 @@ const (
 	KeyCluster     ContextKey = "cluster"
 	KeyApp         ContextKey = "app"
 	KeyStyles      ContextKey = "styles"
+	KeyMetrics     ContextKey = "metrics"
 )

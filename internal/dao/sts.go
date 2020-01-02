@@ -20,10 +20,10 @@ type StatefulSet struct {
 	Generic
 }
 
-var _ Accessor = &StatefulSet{}
-var _ Loggable = &StatefulSet{}
-var _ Restartable = &StatefulSet{}
-var _ Scalable = &StatefulSet{}
+var _ Accessor = (*StatefulSet)(nil)
+var _ Loggable = (*StatefulSet)(nil)
+var _ Restartable = (*StatefulSet)(nil)
+var _ Scalable = (*StatefulSet)(nil)
 
 // Scale a StatefulSet.
 func (s *StatefulSet) Scale(path string, replicas int32) error {

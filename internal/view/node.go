@@ -1,9 +1,13 @@
 package view
 
 import (
+	"context"
+
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -19,6 +23,7 @@ func NewNode(gvr client.GVR) ResourceViewer {
 	}
 	n.SetBindKeysFn(n.bindKeys)
 	n.GetTable().SetEnterFn(n.showPods)
+	n.SetContextFn(n.nodeContext)
 
 	return &n
 }
@@ -32,6 +37,16 @@ func (n *Node) bindKeys(aa ui.KeyActions) {
 		ui.KeyShiftX: ui.NewKeyAction("Sort CPU%", n.GetTable().SortColCmd(9, false), false),
 		ui.KeyShiftZ: ui.NewKeyAction("Sort MEM%", n.GetTable().SortColCmd(10, false), false),
 	})
+}
+
+func (n *Node) nodeContext(ctx context.Context) context.Context {
+	mx := client.NewMetricsServer(n.App().factory.Client())
+	nmx, err := mx.FetchNodesMetrics()
+	if err != nil {
+		log.Warn().Err(err).Msgf("No node metrics")
+	}
+
+	return context.WithValue(ctx, internal.KeyMetrics, nmx)
 }
 
 func (n *Node) showPods(app *App, ns, res, sel string) {

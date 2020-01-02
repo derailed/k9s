@@ -64,7 +64,6 @@ func (l *LogsExtender) showLogs(path string, prev bool) {
 		l.App().Flash().Err(err)
 		return
 	}
-	l.App().factory.WaitForCacheSync()
 
 	co := ""
 	if l.containerFn != nil {

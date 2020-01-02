@@ -9,8 +9,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	res "k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -61,11 +59,14 @@ func TestPodColorer(t *testing.T) {
 }
 
 func TestPodRender(t *testing.T) {
-	pom := podMetrics{load(t, "po"), makePodMX("nginx", "10m", "10Mi")}
+	pom := render.PodWithMetrics{
+		Raw: load(t, "po"),
+		MX:  makePodMX("nginx", "10m", "10Mi"),
+	}
 
 	var po render.Pod
 	r := render.NewRow(12)
-	err := po.Render(pom, "", &r)
+	err := po.Render(&pom, "", &r)
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
@@ -73,12 +74,30 @@ func TestPodRender(t *testing.T) {
 	assert.Equal(t, e, r.Fields[:12])
 }
 
+func BenchmarkPodRender(b *testing.B) {
+	pom := render.PodWithMetrics{
+		Raw: load(b, "po"),
+		MX:  makePodMX("nginx", "10m", "10Mi"),
+	}
+	var po render.Pod
+	r := render.NewRow(12)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		_ = po.Render(&pom, "", &r)
+	}
+}
+
 func TestPodInitRender(t *testing.T) {
-	pom := podMetrics{load(t, "po_init"), makePodMX("nginx", "10m", "10Mi")}
+	pom := render.PodWithMetrics{
+		Raw: load(t, "po_init"),
+		MX:  makePodMX("nginx", "10m", "10Mi"),
+	}
 
 	var po render.Pod
 	r := render.NewRow(12)
-	err := po.Render(pom, "", &r)
+	err := po.Render(&pom, "", &r)
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
@@ -88,19 +107,6 @@ func TestPodInitRender(t *testing.T) {
 
 // ----------------------------------------------------------------------------
 // Helpers...
-
-type podMetrics struct {
-	o *unstructured.Unstructured
-	m *mv1beta1.PodMetrics
-}
-
-func (p podMetrics) Object() runtime.Object {
-	return p.o
-}
-
-func (p podMetrics) Metrics() *mv1beta1.PodMetrics {
-	return p.m
-}
 
 func makePodMX(name, cpu, mem string) *mv1beta1.PodMetrics {
 	return &mv1beta1.PodMetrics{

@@ -7,20 +7,14 @@ import (
 
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/kubernetes/pkg/util/node"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
-
-// PodWithMetrics represents a resourve object with usage metrics.
-type PodWithMetrics interface {
-	Object() runtime.Object
-	Metrics() *mv1beta1.PodMetrics
-}
 
 // Pod renders a K8s Pod to screen.
 type Pod struct{}
@@ -94,21 +88,20 @@ func (Pod) Header(ns string) HeaderRow {
 
 // Render renders a K8s resource to screen.
 func (p Pod) Render(o interface{}, ns string, r *Row) error {
-	oo, ok := o.(PodWithMetrics)
+	oo, ok := o.(*PodWithMetrics)
 	if !ok {
-		return fmt.Errorf("Expected PodAndMetrics, but got %T", o)
+		return fmt.Errorf("Expected PodWithMetrics, but got %T", o)
 	}
 
 	var po v1.Pod
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(oo.Object().(*unstructured.Unstructured).Object, &po)
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(oo.Raw.Object, &po)
 	if err != nil {
-		log.Error().Err(err).Msg("Expecting a pod resource")
 		return err
 	}
 
 	ss := po.Status.ContainerStatuses
 	cr, _, rc := p.statuses(ss)
-	c, perc := p.gatherPodMX(&po, oo.Metrics())
+	c, perc := p.gatherPodMX(&po, oo.MX)
 
 	r.ID = MetaFQN(po.ObjectMeta)
 	r.Fields = make(Fields, 0, len(p.Header(ns)))
@@ -135,6 +128,22 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+// PodWithMetrics represents a pod and its metrics.
+type PodWithMetrics struct {
+	Raw *unstructured.Unstructured
+	MX  *mv1beta1.PodMetrics
+}
+
+// GetObjectKind returns a schema object.
+func (p *PodWithMetrics) GetObjectKind() schema.ObjectKind {
+	return nil
+}
+
+// DeepCopyObject returns a container copy.
+func (p *PodWithMetrics) DeepCopyObject() runtime.Object {
+	return p
+}
 
 func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, p metric) {
 	c, p = noMetric(), noMetric()

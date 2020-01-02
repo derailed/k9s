@@ -9,8 +9,8 @@ type ScreenDump struct {
 	Generic
 }
 
-var _ Accessor = &ScreenDump{}
-var _ Nuker = &ScreenDump{}
+var _ Accessor = (*ScreenDump)(nil)
+var _ Nuker = (*ScreenDump)(nil)
 
 // Delete a ScreenDump.
 func (d *ScreenDump) Delete(path string, cascade, force bool) error {

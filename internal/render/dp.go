@@ -58,6 +58,7 @@ func (d Deployment) Render(o interface{}, ns string, r *Row) error {
 	if !ok {
 		return fmt.Errorf("Expected Deployment, but got %T", o)
 	}
+
 	var dp appsv1.Deployment
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &dp)
 	if err != nil {

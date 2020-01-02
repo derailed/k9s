@@ -9,8 +9,8 @@ type PortForward struct {
 	Generic
 }
 
-var _ Accessor = &PortForward{}
-var _ Nuker = &PortForward{}
+var _ Accessor = (*PortForward)(nil)
+var _ Nuker = (*PortForward)(nil)
 
 // Delete a portforward.
 func (p *PortForward) Delete(path string, cascade, force bool) error {

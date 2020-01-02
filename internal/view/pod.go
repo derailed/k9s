@@ -32,6 +32,7 @@ func NewPod(gvr client.GVR) ResourceViewer {
 	p.SetBindKeysFn(p.bindKeys)
 	p.GetTable().SetEnterFn(p.showContainers)
 	p.GetTable().SetColorerFn(render.Pod{}.ColorerFunc())
+	p.SetContextFn(p.podMXContext)
 
 	return &p
 }
@@ -50,6 +51,21 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 		ui.KeyShiftI:   ui.NewKeyAction("Sort IP", p.GetTable().SortColCmd(8, true), false),
 		ui.KeyShiftO:   ui.NewKeyAction("Sort Node", p.GetTable().SortColCmd(9, true), false),
 	})
+}
+
+func (p *Pod) podMXContext(ctx context.Context) context.Context {
+	ns, ok := ctx.Value(internal.KeyNamespace).(string)
+	if !ok {
+		log.Error().Err(fmt.Errorf("Expecting context namespace"))
+	}
+	log.Debug().Msgf("POD METRICS in NS %q", ns)
+	mx := client.NewMetricsServer(p.App().factory.Client())
+	nmx, err := mx.FetchPodsMetrics(ns)
+	if err != nil {
+		log.Warn().Err(err).Msgf("No pods metrics")
+	}
+
+	return context.WithValue(ctx, internal.KeyMetrics, nmx)
 }
 
 func (p *Pod) showContainers(app *App, ns, gvr, path string) {

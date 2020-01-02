@@ -18,8 +18,8 @@ type Container struct {
 	Generic
 }
 
-var _ Accessor = &Container{}
-var _ Loggable = &Container{}
+var _ Accessor = (*Container)(nil)
+var _ Loggable = (*Container)(nil)
 
 // TailLogs tails a given container logs
 func (c *Container) TailLogs(ctx context.Context, logChan chan<- string, opts LogOptions) error {

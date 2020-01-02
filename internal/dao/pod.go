@@ -28,8 +28,8 @@ type Pod struct {
 	Generic
 }
 
-var _ Accessor = &Pod{}
-var _ Loggable = &Pod{}
+var _ Accessor = (*Pod)(nil)
+var _ Loggable = (*Pod)(nil)
 
 // Logs fetch container logs for a given pod and container.
 func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, error) {

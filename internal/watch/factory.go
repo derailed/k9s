@@ -63,7 +63,7 @@ func (f *Factory) Terminate() {
 // List returns a resource collection.
 func (f *Factory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error) {
 	defer func(t time.Time) {
-		log.Debug().Msgf("LIST time %v", time.Since(t))
+		log.Debug().Msgf("LIST elapsed %v", time.Since(t))
 	}(time.Now())
 
 	Dump(f)
@@ -85,7 +85,7 @@ func (f *Factory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtim
 // Get retrieves a given resource.
 func (f *Factory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
 	defer func(t time.Time) {
-		log.Debug().Msgf("GET time %v", time.Since(t))
+		log.Debug().Msgf("GET elapsed %v", time.Since(t))
 	}(time.Now())
 
 	ns, n := namespaced(path)
@@ -105,7 +105,15 @@ func (f *Factory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime
 
 func (f *Factory) waitForCacheSync(ns string) {
 	if fac, ok := f.factories[ns]; ok {
-		fac.WaitForCacheSync(f.stopChan)
+		// Hang for a sec for the cache to refresh if still not done bail out!
+		const dur = 1 * time.Second
+		c := make(chan struct{})
+		go func(c chan struct{}) {
+			<-time.After(dur)
+			log.Warn().Msgf("Wait for sync timed out!")
+			close(c)
+		}(c)
+		fac.WaitForCacheSync(c)
 	}
 }
 

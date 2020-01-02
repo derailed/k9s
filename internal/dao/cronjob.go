@@ -14,8 +14,8 @@ type CronJob struct {
 	Generic
 }
 
-var _ Accessor = &CronJob{}
-var _ Runnable = &CronJob{}
+var _ Accessor = (*CronJob)(nil)
+var _ Runnable = (*CronJob)(nil)
 
 // Run a CronJob.
 func (c *CronJob) Run(path string) error {

@@ -16,8 +16,8 @@ type Service struct {
 	Generic
 }
 
-var _ Accessor = &Service{}
-var _ Loggable = &Service{}
+var _ Accessor = (*Service)(nil)
+var _ Loggable = (*Service)(nil)
 
 // TailLogs tail logs for all pods represented by this Service.
 func (s *Service) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {

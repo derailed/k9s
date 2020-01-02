@@ -16,8 +16,8 @@ type Job struct {
 	Generic
 }
 
-var _ Accessor = &Job{}
-var _ Loggable = &Job{}
+var _ Accessor = (*Job)(nil)
+var _ Loggable = (*Job)(nil)
 
 // TailLogs tail logs for all pods represented by this Job.
 func (j *Job) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {

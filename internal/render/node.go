@@ -5,10 +5,10 @@ import (
 	"strings"
 
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -16,13 +16,6 @@ const (
 	labelNodeRolePrefix = "node-role.kubernetes.io/"
 	nodeLabelRole       = "kubernetes.io/role"
 )
-
-// NodeWithMetrics represents a resourve object with usage metrics.
-type NodeWithMetrics interface {
-	Object() runtime.Object
-	Metrics() *mv1beta1.NodeMetrics
-	Pods() []*v1.Pod
-}
 
 // Node renders a K8s Node to screen.
 type Node struct{}
@@ -54,29 +47,33 @@ func (Node) Header(_ string) HeaderRow {
 
 // Render renders a K8s resource to screen.
 func (n Node) Render(o interface{}, ns string, r *Row) error {
-	oo, ok := o.(NodeWithMetrics)
+	oo, ok := o.(*NodeWithMetrics)
 	if !ok {
-		return fmt.Errorf("Expected NodeAndMetrics, but got %T", o)
+		return fmt.Errorf("Expected *NodeAndMetrics, but got %T", o)
 	}
 
+	meta, ok := oo.Raw.Object["metadata"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("Unable to extract meta")
+	}
+	na := extractMetaField(meta, "name")
 	var no v1.Node
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(oo.Object().(*unstructured.Unstructured).Object, &no)
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(oo.Raw.Object, &no)
 	if err != nil {
-		log.Error().Err(err).Msg("Converting Node")
 		return err
 	}
 
 	iIP, eIP := getIPs(no.Status.Addresses)
 	iIP, eIP = missing(iIP), missing(eIP)
 
-	c, a, p := gatherNodeMX(&no, oo.Metrics())
+	c, a, p := gatherNodeMX(&no, oo.MX)
 
 	sta := make([]string, 10)
 	status(no.Status, no.Spec.Unschedulable, sta)
 	ro := make([]string, 10)
 	nodeRoles(&no, ro)
 
-	r.ID = MetaFQN(no.ObjectMeta)
+	r.ID = FQN("", na)
 	r.Fields = make(Fields, 0, len(n.Header(ns)))
 	r.Fields = append(r.Fields,
 		no.Name,
@@ -100,6 +97,22 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+// NodeWithMetrics represents a node with its associated metrics.
+type NodeWithMetrics struct {
+	Raw *unstructured.Unstructured
+	MX  *mv1beta1.NodeMetrics
+}
+
+// GetObjectKind returns a schema object.
+func (n *NodeWithMetrics) GetObjectKind() schema.ObjectKind {
+	return nil
+}
+
+// DeepCopyObject returns a container copy.
+func (n *NodeWithMetrics) DeepCopyObject() runtime.Object {
+	return n
+}
 
 func gatherNodeMX(no *v1.Node, mx *mv1beta1.NodeMetrics) (c metric, a metric, p metric) {
 	c, a, p = noMetric(), noMetric(), noMetric()

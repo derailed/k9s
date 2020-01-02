@@ -16,8 +16,8 @@ type Context struct {
 	Generic
 }
 
-var _ Accessor = &Context{}
-var _ Switchable = &Context{}
+var _ Accessor = (*Context)(nil)
+var _ Switchable = (*Context)(nil)
 
 func (c *Context) config() *client.Config {
 	return c.Factory.Client().Config()

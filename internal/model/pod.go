@@ -3,9 +3,9 @@ package model
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/derailed/k9s/internal"
-	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -21,9 +21,18 @@ type Pod struct {
 
 // List returns a collection of nodes.
 func (p *Pod) List(ctx context.Context) ([]runtime.Object, error) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("LIST PODS elapsed %v", time.Since(t))
+	}(time.Now())
+
 	oo, err := p.Resource.List(ctx)
 	if err != nil {
 		return oo, err
+	}
+
+	pmx, ok := ctx.Value(internal.KeyMetrics).(*mv1beta1.PodMetricsList)
+	if !ok {
+		log.Warn().Msgf("expecting context PodMetricsList")
 	}
 
 	sel, ok := ctx.Value(internal.KeyFields).(string)
@@ -40,14 +49,19 @@ func (p *Pod) List(ctx context.Context) ([]runtime.Object, error) {
 	for _, o := range oo {
 		u, ok := o.(*unstructured.Unstructured)
 		if !ok {
-			return res, fmt.Errorf("expecting unstructured but got `%T", o)
+			return res, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
 		}
+		if nodeName == "" {
+			res = append(res, &render.PodWithMetrics{Raw: u, MX: podMetricsFor(o, pmx)})
+			continue
+		}
+
 		spec, ok := u.Object["spec"].(map[string]interface{})
 		if !ok {
 			return res, fmt.Errorf("expecting interface map but got `%T", o)
 		}
-		if nodeName == "" || spec["nodeName"] == nodeName {
-			res = append(res, o)
+		if spec["nodeName"] == nodeName {
+			res = append(res, &render.PodWithMetrics{Raw: u, MX: podMetricsFor(o, pmx)})
 		}
 	}
 
@@ -56,19 +70,18 @@ func (p *Pod) List(ctx context.Context) ([]runtime.Object, error) {
 
 // Hydrate returns pod resources as rows.
 func (p *Pod) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
-	mx := client.NewMetricsServer(p.factory.Client())
-	mmx, err := mx.FetchPodsMetrics(p.namespace)
-	if err != nil {
-		log.Warn().Err(err).Msgf("No metrics found for pod")
-	}
+	defer func(t time.Time) {
+		log.Debug().Msgf("HYDRATE PODS elapsed %v", time.Since(t))
+	}(time.Now())
 
 	var index int
 	for _, o := range oo {
-		var (
-			row render.Row
-			pmx = PodWithMetrics{object: o, mx: podMetricsFor(o, mmx)}
-		)
-		if err := re.Render(&pmx, p.namespace, &row); err != nil {
+		po, ok := o.(*render.PodWithMetrics)
+		if !ok {
+			return fmt.Errorf("expecting *PodWithMetric but got %T", po)
+		}
+		var row render.Row
+		if err := re.Render(po, p.namespace, &row); err != nil {
 			return err
 		}
 		rr[index] = row
@@ -78,6 +91,9 @@ func (p *Pod) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
 	return nil
 }
 
+// ----------------------------------------------------------------------------
+// Helpers...
+
 func podMetricsFor(o runtime.Object, mmx *mv1beta1.PodMetricsList) *mv1beta1.PodMetrics {
 	fqn := extractFQN(o)
 	for _, mx := range mmx.Items {
@@ -86,20 +102,4 @@ func podMetricsFor(o runtime.Object, mmx *mv1beta1.PodMetricsList) *mv1beta1.Pod
 		}
 	}
 	return nil
-}
-
-// PodWithMetrics represents a pod and its metrics.
-type PodWithMetrics struct {
-	object runtime.Object
-	mx     *mv1beta1.PodMetrics
-}
-
-// Object returns a pod.
-func (p *PodWithMetrics) Object() runtime.Object {
-	return p.object
-}
-
-// Metrics returns the metrics associated with the pod.
-func (p *PodWithMetrics) Metrics() *mv1beta1.PodMetrics {
-	return p.mx
 }

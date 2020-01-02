@@ -20,10 +20,10 @@ type Deployment struct {
 	Generic
 }
 
-var _ Accessor = &Deployment{}
-var _ Loggable = &Deployment{}
-var _ Restartable = &Deployment{}
-var _ Scalable = &Deployment{}
+var _ Accessor = (*Deployment)(nil)
+var _ Loggable = (*Deployment)(nil)
+var _ Restartable = (*Deployment)(nil)
+var _ Scalable = (*Deployment)(nil)
 
 // Scale a Deployment.
 func (d *Deployment) Scale(path string, replicas int32) error {

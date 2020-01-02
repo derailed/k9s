@@ -3,11 +3,11 @@ package render
 import (
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/derailed/tview"
-	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // ConfigMap renders a K8s ConfigMap to screen.
@@ -33,27 +33,78 @@ func (ConfigMap) Header(ns string) HeaderRow {
 }
 
 // Render renders a K8s resource to screen.
+// BOZO!! 44allocs down to 5allocs avoiding marshal??
 func (c ConfigMap) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected ConfigMap, but got %T", o)
 	}
-	var cm v1.ConfigMap
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &cm)
+
+	meta, ok := raw.Object["metadata"].(map[string]interface{})
+	if !ok {
+		return fmt.Errorf("No meta")
+	}
+
+	n, nss := extractMetaField(meta, "name"), extractMetaField(meta, "namespace")
+	r.ID = FQN(nss, n)
+	r.Fields = make(Fields, 0, len(c.Header(ns)))
+	if isAllNamespace(ns) {
+		r.Fields = append(r.Fields, nss)
+	}
+
+	var size int
+	data, ok := raw.Object["data"]
+	if ok {
+		d, ok := data.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("expecting map but got %T", raw.Object["data"])
+		}
+		size = len(d)
+	}
+	t, err := extractMetaTime(meta)
 	if err != nil {
 		return err
 	}
-
-	r.ID = MetaFQN(cm.ObjectMeta)
-	r.Fields = make(Fields, 0, len(c.Header(ns)))
-	if isAllNamespace(ns) {
-		r.Fields = append(r.Fields, cm.Namespace)
-	}
 	r.Fields = append(r.Fields,
-		cm.Name,
-		strconv.Itoa(len(cm.Data)),
-		toAge(cm.ObjectMeta.CreationTimestamp),
+		n,
+		strconv.Itoa(size),
+		toAge(t),
 	)
 
+	// var cm v1.ConfigMap
+	// err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &cm)
+	// if err != nil {
+	// 	return err
+	// }
+
+	// r.ID = MetaFQN(cm.ObjectMeta)
+	// r.Fields = make(Fields, 0, len(c.Header(ns)))
+	// if isAllNamespace(ns) {
+	// 	r.Fields = append(r.Fields, cm.Namespace)
+	// }
+	// r.Fields = append(r.Fields,
+	// 	cm.Name,
+	// 	strconv.Itoa(len(cm.Data)),
+	// 	toAge(cm.ObjectMeta.CreationTimestamp),
+	// )
+
 	return nil
+}
+
+func extractMetaTime(m map[string]interface{}) (metav1.Time, error) {
+	f, ok := m["creationTimestamp"]
+	if !ok {
+		return metav1.Time{}, fmt.Errorf("failed to extract time from meta")
+	}
+
+	t, ok := f.(string)
+	if !ok {
+		return metav1.Time{}, fmt.Errorf("failed to extract time from field")
+	}
+
+	ti, err := time.Parse(time.RFC3339, t)
+	if err != nil {
+		return metav1.Time{}, err
+	}
+	return metav1.Time{Time: ti}, nil
 }

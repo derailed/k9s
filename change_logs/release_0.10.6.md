@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s_small.png" align="right" width="200" height="auto"/>
 
-# Release v0.10.5
+# Release v0.10.6
 
 ## Notes
 
@@ -14,15 +14,11 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 Maintenance release!
 
-Starting the new year with a ... Bug!
-
-Hopefully moving the needle a bit more in the right direction??
-
 ---
 
 ## Resolved Bugs/Features
 
-* [Issue #457](https://github.com/derailed/k9s/issues/457)
+* [Issue #452](https://github.com/derailed/k9s/issues/452)
 
 ---
 

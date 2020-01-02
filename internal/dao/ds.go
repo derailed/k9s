@@ -25,9 +25,9 @@ type DaemonSet struct {
 	Generic
 }
 
-var _ Accessor = &DaemonSet{}
-var _ Loggable = &DaemonSet{}
-var _ Restartable = &DaemonSet{}
+var _ Accessor = (*DaemonSet)(nil)
+var _ Loggable = (*DaemonSet)(nil)
+var _ Restartable = (*DaemonSet)(nil)
 
 // Restart a DaemonSet rollout.
 func (d *DaemonSet) Restart(path string) error {
