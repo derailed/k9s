@@ -50,9 +50,6 @@ var Registry = map[string]ResourceMeta{
 	},
 
 	// Core...
-	"v1/configmaps": {
-		Renderer: &render.ConfigMap{},
-	},
 	"v1/endpoints": {
 		Renderer: &render.Endpoints{},
 	},
@@ -69,9 +66,6 @@ var Registry = map[string]ResourceMeta{
 	"v1/nodes": {
 		Model:    &Node{},
 		Renderer: &render.Node{},
-	},
-	"v1/secrets": {
-		Renderer: &render.Secret{},
 	},
 	"v1/services": {
 		Renderer: &render.Service{},

@@ -13,11 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-const (
-	refreshRate = 2 * time.Second
-	noDataCount = 2
-)
-
 // TableListener represents a table model listener.
 type TableListener interface {
 	// TableDataChanged notifies the model data changed.
@@ -35,7 +30,6 @@ type Table struct {
 	listeners   []TableListener
 	inUpdate    int32
 	refreshRate time.Duration
-	zeroCount   int32
 }
 
 // NewTable returns a new table model.
@@ -100,13 +94,14 @@ func (t *Table) updater(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(refreshRate):
+		case <-time.After(t.refreshRate):
 			t.refresh(ctx)
 		}
 	}
 }
 
 func (t *Table) refresh(ctx context.Context) {
+	log.Debug().Msgf("RECONCILING")
 	if !atomic.CompareAndSwapInt32(&t.inUpdate, 0, 1) {
 		log.Debug().Msgf("Dropping update...")
 		return
@@ -142,12 +137,6 @@ func (t *Table) RemoveListener(l TableListener) {
 }
 
 func (t *Table) fireTableChanged(data render.TableData) {
-	// Needed to wait for the cache to populate but if there is no data at all
-	// after X ticks need to tell the view no data is present
-	if len(data.RowEvents) == 0 && atomic.LoadInt32(&t.zeroCount) < noDataCount {
-		atomic.AddInt32(&t.zeroCount, 1)
-		return
-	}
 	for _, l := range t.listeners {
 		l.TableDataChanged(data)
 	}
@@ -170,6 +159,10 @@ func (t *Table) list(ctx context.Context, l Lister) ([]runtime.Object, error) {
 }
 
 func (t *Table) reconcile(ctx context.Context) error {
+	defer func(t time.Time) {
+		log.Debug().Msgf("RECONCILE elapsed %v", time.Since(t))
+	}(time.Now())
+
 	meta, ok := Registry[t.gvr]
 	if !ok {
 		log.Debug().Msgf("Resource %s not found in registry. Going generic!", t.gvr)
@@ -186,6 +179,7 @@ func (t *Table) reconcile(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	log.Debug().Msgf("LIST returned %d rows", len(oo))
 
 	rows := make(render.Rows, len(oo))
 	if err := meta.Model.Hydrate(oo, rows, meta.Renderer); err != nil {
@@ -201,6 +195,7 @@ func (t *Table) reconcile(ctx context.Context) error {
 	}
 	t.data.Update(rows)
 	t.data.Namespace, t.data.Header = t.namespace, meta.Renderer.Header(t.namespace)
+	log.Debug().Msgf("TABLE_DATA returns %d rows", len(t.data.RowEvents))
 
 	return nil
 }

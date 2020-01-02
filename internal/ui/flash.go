@@ -64,7 +64,7 @@ func (f *Flash) StylesChanged(s *config.Styles) {
 
 // Info displays an info flash message.
 func (f *Flash) Info(msg string) {
-	f.setMessage(FlashInfo, msg)
+	f.SetMessage(FlashInfo, msg)
 }
 
 // Infof displays a formatted info flash message.
@@ -74,7 +74,7 @@ func (f *Flash) Infof(fmat string, args ...interface{}) {
 
 // Warn displays a warning flash message.
 func (f *Flash) Warn(msg string) {
-	f.setMessage(FlashWarn, msg)
+	f.SetMessage(FlashWarn, msg)
 }
 
 // Warnf displays a formatted warning flash message.
@@ -85,7 +85,7 @@ func (f *Flash) Warnf(fmat string, args ...interface{}) {
 // Err displays an error flash message.
 func (f *Flash) Err(err error) {
 	log.Error().Err(err).Msgf("%v", err)
-	f.setMessage(FlashErr, err.Error())
+	f.SetMessage(FlashErr, err.Error())
 }
 
 // Errf displays a formatted error flash message.
@@ -98,10 +98,10 @@ func (f *Flash) Errf(fmat string, args ...interface{}) {
 		}
 	}
 	log.Error().Err(err).Msgf(fmat, args...)
-	f.setMessage(FlashErr, fmt.Sprintf(fmat, args...))
+	f.SetMessage(FlashErr, fmt.Sprintf(fmat, args...))
 }
 
-func (f *Flash) setMessage(level FlashLevel, msg ...string) {
+func (f *Flash) SetMessage(level FlashLevel, msg ...string) {
 	if f.cancel != nil {
 		f.cancel()
 	}

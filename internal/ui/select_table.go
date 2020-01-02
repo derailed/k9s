@@ -49,11 +49,10 @@ type Tabular interface {
 type SelectTable struct {
 	*tview.Table
 
-	model              Tabular
-	selectedRow        int
-	selectedFn         func(string) string
-	selectionListeners []SelectedRowFunc
-	marks              map[string]struct{}
+	model       Tabular
+	selectedRow int
+	selectedFn  func(string) string
+	marks       map[string]struct{}
 }
 
 // SetModel sets the table model.
@@ -138,21 +137,12 @@ func (s *SelectTable) updateSelection(broadcast bool) {
 }
 
 func (s *SelectTable) selectionChanged(r, c int) {
-	s.selectedRow = r
-	if r == 0 {
+	if r <= 0 {
 		return
 	}
-
-	if _, ok := s.marks[s.GetSelectedItem()]; ok {
-		s.SetSelectedStyle(tcell.ColorBlack, tcell.ColorCadetBlue, tcell.AttrBold)
-	} else {
-		cell := s.GetCell(r, c)
-		s.SetSelectedStyle(tcell.ColorBlack, cell.Color, tcell.AttrBold)
-	}
-
-	for _, f := range s.selectionListeners {
-		f(r)
-	}
+	s.selectedRow = r
+	cell := s.GetCell(r, c)
+	s.SetSelectedStyle(tcell.ColorBlack, cell.Color, tcell.AttrBold)
 }
 
 // ClearMarks delete all marked items.
@@ -191,9 +181,4 @@ func (s *SelectTable) ToggleMark() {
 func (s *Table) IsMarked(item string) bool {
 	_, ok := s.marks[item]
 	return ok
-}
-
-// AddSelectedRowListener add a new selected row listener.
-func (s *SelectTable) AddSelectedRowListener(f SelectedRowFunc) {
-	s.selectionListeners = append(s.selectionListeners, f)
 }

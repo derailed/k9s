@@ -299,7 +299,7 @@ func (a *App) Run() {
 
 // Status reports a new app status for display.
 func (a *App) Status(l ui.FlashLevel, msg string) {
-	a.Flash().Info(msg)
+	a.Flash().SetMessage(l, msg)
 	a.setIndicator(l, msg)
 	a.setLogo(l, msg)
 	a.Draw()

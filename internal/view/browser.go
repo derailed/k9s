@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -50,7 +51,6 @@ func (b *Browser) Init(ctx context.Context) error {
 		return err
 	}
 	if !dao.IsK9sMeta(b.meta) {
-		log.Debug().Msgf("BROWSER ACTIVE_NS %q", b.app.Config.ActiveNamespace())
 		if _, e := b.app.factory.CanForResource(b.app.Config.ActiveNamespace(), b.GVR(), []string{"list", "watch"}); e != nil {
 			return e
 		}
@@ -71,7 +71,7 @@ func (b *Browser) Init(ctx context.Context) error {
 		b.Select(1, 0)
 	}
 	b.GetModel().AddListener(b)
-	b.App().Status(ui.FlashWarn, "Loading...")
+	b.GetModel().SetRefreshRate(time.Duration(b.App().Config.K9s.GetRefreshRate()) * time.Second)
 
 	return nil
 }
@@ -87,6 +87,7 @@ func (b *Browser) bindKeys() {
 func (b *Browser) Start() {
 	b.Stop()
 
+	b.App().Status(ui.FlashInfo, "Loading...")
 	b.Table.Start()
 	ctx := b.defaultContext()
 	ctx, b.cancelFn = context.WithCancel(ctx)
@@ -105,7 +106,6 @@ func (b *Browser) Stop() {
 		return
 	}
 	b.Table.Stop()
-	log.Debug().Msgf("BROWSER <STOP> %q", b.gvr)
 	b.cancelFn()
 	b.cancelFn = nil
 }
@@ -131,19 +131,19 @@ func (b *Browser) Aliases() []string {
 // ----------------------------------------------------------------------------
 // Model Protocol...
 
-// TableLoadFailed notifies view something went south.
-func (b *Browser) TableLoadFailed(err error) {
-	b.app.QueueUpdateDraw(func() {
-		b.app.Flash().Err(err)
-		b.App().ClearStatus(false)
-	})
-}
-
 // TableDataChanged notifies view new data is available.
 func (b *Browser) TableDataChanged(data render.TableData) {
 	b.app.QueueUpdateDraw(func() {
 		b.refreshActions()
 		b.Update(data)
+		b.App().ClearStatus(true)
+	})
+}
+
+// TableLoadFailed notifies view something went south.
+func (b *Browser) TableLoadFailed(err error) {
+	b.app.QueueUpdateDraw(func() {
+		b.app.Flash().Err(err)
 		b.App().ClearStatus(false)
 	})
 }

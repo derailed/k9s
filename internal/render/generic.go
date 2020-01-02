@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/rs/zerolog/log"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 )
 
@@ -67,7 +66,6 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 	for _, c := range row.Cells {
 		r.Fields = append(r.Fields, fmt.Sprintf("%v", c))
 	}
-	log.Debug().Msgf("GENERIC %#v", r)
 
 	return nil
 }

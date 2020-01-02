@@ -223,7 +223,7 @@ func newGetTable() Table {
 		FgColor:     "aqua",
 		BgColor:     "black",
 		CursorColor: "aqua",
-		MarkColor:   "violet",
+		MarkColor:   "palegreen",
 		Header:      newTableHeader(),
 	}
 }
