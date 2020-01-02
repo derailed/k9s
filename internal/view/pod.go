@@ -32,7 +32,7 @@ func NewPod(gvr client.GVR) ResourceViewer {
 	p.SetBindKeysFn(p.bindKeys)
 	p.GetTable().SetEnterFn(p.showContainers)
 	p.GetTable().SetColorerFn(render.Pod{}.ColorerFunc())
-	p.SetContextFn(p.podMXContext)
+	p.SetContextFn(p.podContext)
 
 	return &p
 }
@@ -53,31 +53,31 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (p *Pod) podMXContext(ctx context.Context) context.Context {
-	ns, ok := ctx.Value(internal.KeyNamespace).(string)
-	if !ok {
-		log.Error().Err(fmt.Errorf("Expecting context namespace"))
-	}
-	log.Debug().Msgf("POD METRICS in NS %q", ns)
-	mx := client.NewMetricsServer(p.App().factory.Client())
-	nmx, err := mx.FetchPodsMetrics(ns)
-	if err != nil {
-		log.Warn().Err(err).Msgf("No pods metrics")
-	}
-
-	return context.WithValue(ctx, internal.KeyMetrics, nmx)
-}
-
 func (p *Pod) showContainers(app *App, ns, gvr, path string) {
 	log.Debug().Msgf("SHOW CONTAINERS %q -- %q -- %q", gvr, ns, path)
 	co := NewContainer(client.NewGVR("containers"))
-	co.SetContextFn(p.podContext)
+	co.SetContextFn(p.coContext)
 	if err := app.inject(co); err != nil {
 		app.Flash().Err(err)
 	}
 }
 
 func (p *Pod) podContext(ctx context.Context) context.Context {
+	ns, ok := ctx.Value(internal.KeyNamespace).(string)
+	if !ok {
+		log.Error().Err(fmt.Errorf("Expecting context namespace"))
+	}
+
+	log.Debug().Msgf("POD METRICS in NS %q", ns)
+	mx := client.NewMetricsServer(p.App().factory.Client())
+	nmx, err := mx.FetchPodsMetrics(ns)
+	if err != nil {
+		log.Warn().Err(err).Msgf("No pods metrics")
+	}
+	return context.WithValue(ctx, internal.KeyMetrics, nmx)
+}
+
+func (p *Pod) coContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeyPath, p.GetTable().GetSelectedItem())
 }
 

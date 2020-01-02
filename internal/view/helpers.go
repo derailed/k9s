@@ -101,7 +101,7 @@ func showPods(app *App, path, labelSel, fieldSel string) {
 	app.switchNS("")
 
 	v := NewPod(client.NewGVR("v1/pods"))
-	v.SetContextFn(podCtx(path, labelSel, fieldSel))
+	v.SetContextFn(podCtx(app, path, labelSel, fieldSel))
 	v.GetTable().SetColorerFn(render.Pod{}.ColorerFunc())
 
 	ns, _ := client.Namespaced(path)
@@ -113,10 +113,20 @@ func showPods(app *App, path, labelSel, fieldSel string) {
 	}
 }
 
-func podCtx(path, labelSel, fieldSel string) ContextFunc {
+func podCtx(app *App, path, labelSel, fieldSel string) ContextFunc {
 	return func(ctx context.Context) context.Context {
 		ctx = context.WithValue(ctx, internal.KeyPath, path)
 		ctx = context.WithValue(ctx, internal.KeyLabels, labelSel)
+
+		ns, _ := client.Namespaced(path)
+		log.Debug().Msgf("POD METRICS in NS %q", ns)
+		mx := client.NewMetricsServer(app.factory.Client())
+		nmx, err := mx.FetchPodsMetrics(ns)
+		if err != nil {
+			log.Warn().Err(err).Msgf("No pods metrics")
+		}
+		ctx = context.WithValue(ctx, internal.KeyMetrics, nmx)
+
 		return context.WithValue(ctx, internal.KeyFields, fieldSel)
 	}
 }

@@ -110,10 +110,11 @@ func (f *Factory) waitForCacheSync(ns string) {
 		c := make(chan struct{})
 		go func(c chan struct{}) {
 			<-time.After(dur)
-			log.Warn().Msgf("Wait for sync timed out!")
+			log.Debug().Msgf("Wait for sync timed out!")
 			close(c)
 		}(c)
 		fac.WaitForCacheSync(c)
+		log.Debug().Msgf("Sync completed for ns %q", ns)
 	}
 }
 
