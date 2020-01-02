@@ -119,7 +119,6 @@ func podCtx(app *App, path, labelSel, fieldSel string) ContextFunc {
 		ctx = context.WithValue(ctx, internal.KeyLabels, labelSel)
 
 		ns, _ := client.Namespaced(path)
-		log.Debug().Msgf("POD METRICS in NS %q", ns)
 		mx := client.NewMetricsServer(app.factory.Client())
 		nmx, err := mx.FetchPodsMetrics(ns)
 		if err != nil {
