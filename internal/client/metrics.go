@@ -8,6 +8,11 @@ import (
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
+const (
+	NamespaceAll  = "all"
+	AllNamespaces = ""
+)
+
 type (
 	// MetricsServer serves cluster metrics for nodes and pods.
 	MetricsServer struct {
@@ -116,6 +121,10 @@ func (m *MetricsServer) FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error) {
 
 // FetchPodsMetrics return all metrics for pods in a given namespace.
 func (m *MetricsServer) FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, error) {
+	if ns == NamespaceAll {
+		ns = AllNamespaces
+	}
+
 	auth, err := m.CanI(ns, "metrics.k8s.io/v1beta1/pods", []string{"list"})
 	if !auth || err != nil {
 		return &mv1beta1.PodMetricsList{}, err
@@ -131,6 +140,9 @@ func (m *MetricsServer) FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, e
 
 // FetchPodMetrics return all metrics for pods in a given namespace.
 func (m *MetricsServer) FetchPodMetrics(ns, sel string) (*mv1beta1.PodMetrics, error) {
+	if ns == NamespaceAll {
+		ns = AllNamespaces
+	}
 	auth, err := m.CanI(ns, "metrics.k8s.io/v1beta1/pods", []string{"get"})
 	if !auth || err != nil {
 		return nil, err

@@ -68,7 +68,6 @@ func (p *Pod) podContext(ctx context.Context) context.Context {
 		log.Error().Err(fmt.Errorf("Expecting context namespace"))
 	}
 
-	log.Debug().Msgf("POD METRICS in NS %q", ns)
 	mx := client.NewMetricsServer(p.App().factory.Client())
 	nmx, err := mx.FetchPodsMetrics(ns)
 	if err != nil {
