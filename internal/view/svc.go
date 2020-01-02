@@ -60,7 +60,7 @@ func (s *Service) showPods(app *App, ns, gvr, path string) {
 		return
 	}
 
-	showPodsWithLabels(app, strings.Replace(path, "/", "::", 1), svc.Spec.Selector)
+	showPodsWithLabels(app, path, svc.Spec.Selector)
 }
 
 func (s *Service) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {

@@ -3,7 +3,6 @@ package model
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/render"
@@ -21,10 +20,6 @@ type Pod struct {
 
 // List returns a collection of nodes.
 func (p *Pod) List(ctx context.Context) ([]runtime.Object, error) {
-	defer func(t time.Time) {
-		log.Debug().Msgf("LIST PODS elapsed %v", time.Since(t))
-	}(time.Now())
-
 	oo, err := p.Resource.List(ctx)
 	if err != nil {
 		return oo, err
@@ -70,10 +65,6 @@ func (p *Pod) List(ctx context.Context) ([]runtime.Object, error) {
 
 // Hydrate returns pod resources as rows.
 func (p *Pod) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
-	defer func(t time.Time) {
-		log.Debug().Msgf("HYDRATE PODS elapsed %v", time.Since(t))
-	}(time.Now())
-
 	var index int
 	for _, o := range oo {
 		po, ok := o.(*render.PodWithMetrics)

@@ -62,11 +62,6 @@ func (f *Factory) Terminate() {
 
 // List returns a resource collection.
 func (f *Factory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error) {
-	defer func(t time.Time) {
-		log.Debug().Msgf("LIST elapsed %v", time.Since(t))
-	}(time.Now())
-
-	Dump(f)
 	log.Debug().Msgf("List %q:%q", ns, gvr)
 	inf, err := f.CanForResource(ns, gvr, []string{"list", "watch"})
 	if err != nil {
@@ -84,10 +79,6 @@ func (f *Factory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtim
 
 // Get retrieves a given resource.
 func (f *Factory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
-	defer func(t time.Time) {
-		log.Debug().Msgf("GET elapsed %v", time.Since(t))
-	}(time.Now())
-
 	ns, n := namespaced(path)
 	inf, err := f.CanForResource(ns, gvr, []string{"get"})
 	if err != nil {

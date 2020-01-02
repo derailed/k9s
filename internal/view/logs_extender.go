@@ -41,7 +41,8 @@ func (l *LogsExtender) logsCmd(prev bool) func(evt *tcell.EventKey) *tcell.Event
 		if path == "" {
 			return nil
 		}
-		if isResourcePath(l.GetTable().Path) {
+
+		if !isResourcePath(path) {
 			path = l.GetTable().Path
 		}
 		l.showLogs(path, prev)

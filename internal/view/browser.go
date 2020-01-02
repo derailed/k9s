@@ -218,7 +218,7 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	b.Stop()
 	defer b.Start()
 	{
-		msg := fmt.Sprintf("Delete %s %s?", b.gvr, selections[0])
+		msg := fmt.Sprintf("Delete %s %s?", b.gvr.ToR(), selections[0])
 		if len(selections) > 1 {
 			msg = fmt.Sprintf("Delete %d marked %s?", len(selections), b.gvr)
 		}

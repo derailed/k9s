@@ -3,7 +3,6 @@ package model
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/dao"
@@ -23,10 +22,6 @@ type Node struct {
 
 // List returns a collection of node resources.
 func (n *Node) List(ctx context.Context) ([]runtime.Object, error) {
-	defer func(t time.Time) {
-		log.Debug().Msgf("LIST NODES elapsed %v", time.Since(t))
-	}(time.Now())
-
 	nmx, ok := ctx.Value(internal.KeyMetrics).(*mv1beta1.NodeMetricsList)
 	if !ok {
 		log.Warn().Msgf("No node metrics available in context")
@@ -54,10 +49,6 @@ func (n *Node) List(ctx context.Context) ([]runtime.Object, error) {
 
 // Hydrate returns nodes as rows.
 func (n *Node) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
-	defer func(t time.Time) {
-		log.Debug().Msgf("HYDRATE NODES elapsed %v", time.Since(t))
-	}(time.Now())
-
 	for i, o := range oo {
 		nmx, ok := o.(*render.NodeWithMetrics)
 		if !ok {

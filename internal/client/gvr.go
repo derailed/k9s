@@ -12,7 +12,7 @@ import (
 )
 
 // GVR represents a kubernetes resource schema as a string.
-// Format is group/version/resources
+// Format is group/version/resources:subresource
 type GVR struct {
 	raw, g, v, r, sr string
 }
@@ -35,7 +35,7 @@ func NewGVR(gvr string) GVR {
 	case 1:
 		r = tokens[0]
 	default:
-		panic(fmt.Sprintf("can't parse GVR %q", gvr))
+		log.Error().Err(fmt.Errorf("can't parse GVR %q", gvr)).Msg("GVR init failed!")
 	}
 
 	return GVR{raw: gvr, g: g, v: v, r: r, sr: sr}
