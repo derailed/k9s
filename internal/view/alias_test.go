@@ -15,6 +15,7 @@ import (
 	"github.com/gdamore/tcell"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestAliasNew(t *testing.T) {
@@ -105,8 +106,11 @@ func (t *testModel) GetNamespace() string            { return "blee" }
 func (t *testModel) SetNamespace(string)             {}
 func (t *testModel) AddListener(model.TableListener) {}
 func (t *testModel) Watch(context.Context)           {}
-func (t *testModel) InNamespace(string) bool         { return true }
-func (t *testModel) SetRefreshRate(time.Duration)    {}
+func (t *testModel) Get(ctx context.Context, path string) (runtime.Object, error) {
+	return nil, nil
+}
+func (t *testModel) InNamespace(string) bool      { return true }
+func (t *testModel) SetRefreshRate(time.Duration) {}
 
 func makeTableData() render.TableData {
 	return render.TableData{

@@ -569,12 +569,12 @@ to make this project a reality!
 
 ## Meet The Core Team!
 
-* [Gustavo Silva Paiva](https://github.com/paivagustavo)
-   * <img src="assets/mail.png" width="16" height="auto"/>   guustavo.paiva@gmail.com
-   * <img src="assets/twitter.png" width="16" height="auto"/>   [@paivagustavodev](https://twitter.com/paivagustavodev)
 * [Fernand Galiana](https://github.com/derailed)
    * <img src="assets/mail.png" width="16" height="auto"/>  fernand@imhotep.io
    * <img src="assets/twitter.png" width="16" height="auto"/> [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
+* [Gustavo Silva Paiva](https://github.com/paivagustavo)
+   * <img src="assets/mail.png" width="16" height="auto"/>   guustavo.paiva@gmail.com
+   * <img src="assets/twitter.png" width="16" height="auto"/>   [@paivagustavodev](https://twitter.com/paivagustavodev)
 
 ---
 

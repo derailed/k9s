@@ -62,6 +62,9 @@ type Lister interface {
 	// List returns a collection of resources.
 	List(context.Context) ([]runtime.Object, error)
 
+	// Get returns a resource instance.
+	Get(ctx context.Context, path string) (runtime.Object, error)
+
 	// Hydrate converts resource rows into tabular data.
 	Hydrate(oo []runtime.Object, rr render.Rows, r Renderer) error
 }

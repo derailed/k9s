@@ -47,6 +47,18 @@ func (t *Table) Watch(ctx context.Context) {
 	go t.updater(ctx)
 }
 
+// Get returns a resource instance if found, else an error.
+func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
+	meta := t.resourceMeta()
+	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
+	if !ok {
+		return nil, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
+	}
+	meta.Model.Init(t.namespace, t.gvr, factory)
+
+	return meta.Model.Get(ctx, path)
+}
+
 // Refresh update the model now.
 func (t *Table) Refresh(ctx context.Context) {
 	t.refresh(ctx)
@@ -158,11 +170,7 @@ func (t *Table) list(ctx context.Context, l Lister) ([]runtime.Object, error) {
 	return l.List(ctx)
 }
 
-func (t *Table) reconcile(ctx context.Context) error {
-	defer func(t time.Time) {
-		log.Debug().Msgf("RECONCILE elapsed %v", time.Since(t))
-	}(time.Now())
-
+func (t *Table) resourceMeta() ResourceMeta {
 	meta, ok := Registry[t.gvr]
 	if !ok {
 		log.Debug().Msgf("Resource %s not found in registry. Going generic!", t.gvr)
@@ -175,6 +183,15 @@ func (t *Table) reconcile(ctx context.Context) error {
 		meta.Model = &Resource{}
 	}
 
+	return meta
+}
+
+func (t *Table) reconcile(ctx context.Context) error {
+	defer func(t time.Time) {
+		log.Debug().Msgf("RECONCILE elapsed %v", time.Since(t))
+	}(time.Now())
+
+	meta := t.resourceMeta()
 	oo, err := t.list(ctx, meta.Model)
 	if err != nil {
 		return err

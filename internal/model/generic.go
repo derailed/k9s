@@ -6,6 +6,7 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -24,6 +25,20 @@ type Generic struct {
 }
 
 // List returns a collection of node resources.
+func (g *Generic) Get(ctx context.Context, path string) (runtime.Object, error) {
+	var opts metav1.GetOptions
+
+	ns, n := client.Namespaced(path)
+	gvr := client.NewGVR(g.gvr)
+	req := g.factory.Client().DynDialOrDie().Resource(gvr.AsGVR())
+	if ns == "" {
+		return req.Get(n, opts)
+	}
+
+	return req.Namespace(ns).Get(n, opts)
+}
+
+// List returns a collection of node resources.
 func (g *Generic) List(ctx context.Context) ([]runtime.Object, error) {
 	// Ensures the factory is tracking this resource
 	_, err := g.factory.CanForResource(g.namespace, g.gvr, []string{"list"})
@@ -39,13 +54,19 @@ func (g *Generic) List(ctx context.Context) ([]runtime.Object, error) {
 		return nil, err
 	}
 
-	// BOZO!! Need to know if gvr is namespaced or not
+	ns := g.namespace
+	if g.namespace == render.ClusterScope {
+		ns = render.AllNamespaces
+	}
+
+	log.Debug().Msgf("GENERIC LIST %q:%q", g.namespace, g.gvr)
 	o, err := c.Get().
 		SetHeader("Accept", fmt.Sprintf(gvFmt, metav1beta1.SchemeGroupVersion.Version, metav1beta1.GroupName)).
-		Namespace(g.namespace).
 		Resource(gvr.ToR()).
 		VersionedParams(&metav1beta1.TableOptions{}, codec).
-		Do().Get()
+		Namespace(ns).
+		Do().
+		Get()
 	if err != nil {
 		return nil, err
 	}

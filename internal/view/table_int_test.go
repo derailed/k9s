@@ -16,6 +16,7 @@ import (
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestTableSave(t *testing.T) {
@@ -97,8 +98,11 @@ func (t *testTableModel) GetNamespace() string            { return "blee" }
 func (t *testTableModel) SetNamespace(string)             {}
 func (t *testTableModel) AddListener(model.TableListener) {}
 func (t *testTableModel) Watch(context.Context)           {}
-func (t *testTableModel) InNamespace(string) bool         { return true }
-func (t *testTableModel) SetRefreshRate(time.Duration)    {}
+func (t *testTableModel) Get(ctx context.Context, path string) (runtime.Object, error) {
+	return nil, nil
+}
+func (t *testTableModel) InNamespace(string) bool      { return true }
+func (t *testTableModel) SetRefreshRate(time.Duration) {}
 
 func makeTableData() render.TableData {
 	t := render.NewTableData()

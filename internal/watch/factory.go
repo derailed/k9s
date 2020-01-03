@@ -62,35 +62,36 @@ func (f *Factory) Terminate() {
 
 // List returns a resource collection.
 func (f *Factory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error) {
+	if ns == clusterScope {
+		ns = allNamespaces
+	}
 	log.Debug().Msgf("List %q:%q", ns, gvr)
 	inf, err := f.CanForResource(ns, gvr, []string{"list", "watch"})
 	if err != nil {
 		return nil, err
 	}
-	if ns == clusterScope {
-		ns = allNamespaces
-	}
-
 	if wait {
 		f.waitForCacheSync(ns)
 	}
+
 	return inf.Lister().ByNamespace(ns).List(sel)
 }
 
 // Get retrieves a given resource.
 func (f *Factory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
 	ns, n := namespaced(path)
+	if ns == clusterScope {
+		ns = allNamespaces
+	}
+	log.Debug().Msgf("GET %q:%q::%q", ns, gvr, n)
 	inf, err := f.CanForResource(ns, gvr, []string{"get"})
 	if err != nil {
 		return nil, err
 	}
-	if ns == clusterScope {
-		ns = allNamespaces
-	}
-
 	if wait {
 		f.waitForCacheSync(ns)
 	}
+
 	return inf.Lister().ByNamespace(ns).Get(n)
 }
 

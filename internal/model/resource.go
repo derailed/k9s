@@ -21,6 +21,11 @@ func (r *Resource) Init(ns, gvr string, f dao.Factory) {
 	r.namespace, r.gvr, r.factory = ns, gvr, f
 }
 
+// Get returns a resource instance if found, else an error.
+func (r *Resource) Get(ctx context.Context, path string) (runtime.Object, error) {
+	return r.factory.Get(r.gvr, path, true, labels.Everything())
+}
+
 // List returns a collection of nodes.
 func (r *Resource) List(ctx context.Context) ([]runtime.Object, error) {
 	strLabel, ok := ctx.Value(internal.KeyLabels).(string)

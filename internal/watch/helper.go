@@ -39,7 +39,11 @@ func Dump(f *Factory) {
 // Debug for debug.
 func Debug(f *Factory, ns string, gvr string) {
 	log.Debug().Msgf("----------- DEBUG FACTORY (%s) -------------", gvr)
-	inf := f.factories[ns].ForResource(toGVR(gvr))
+	fac, ok := f.factories[ns]
+	if !ok {
+		return
+	}
+	inf := fac.ForResource(toGVR(gvr))
 	for i, k := range inf.Informer().GetStore().ListKeys() {
 		log.Debug().Msgf("%d -- %s", i, k)
 	}

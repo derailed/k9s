@@ -10,7 +10,6 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
-	"k8s.io/apimachinery/pkg/labels"
 )
 
 // Table represents a table viewer.
@@ -126,32 +125,6 @@ func (t *Table) bindKeys() {
 		ui.KeyShiftN:        ui.NewKeyAction("Sort Name", t.SortColCmd(0, true), false),
 		ui.KeyShiftA:        ui.NewKeyAction("Sort Age", t.SortColCmd(-1, true), false),
 	})
-}
-
-func (t *Table) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
-	path := t.GetSelectedItem()
-	if path == "" {
-		return evt
-	}
-
-	o, err := t.app.factory.Get(t.GVR(), path, true, labels.Everything())
-	if err != nil {
-		t.app.Flash().Errf("Unable to get resource %q -- %s", t.gvr, err)
-		return nil
-	}
-
-	raw, err := toYAML(o)
-	if err != nil {
-		t.app.Flash().Errf("Unable to marshal resource %s", err)
-		return nil
-	}
-
-	details := NewDetails(t.app, "YAML", path).Update(raw)
-	if err := t.app.inject(details); err != nil {
-		t.App().Flash().Err(err)
-	}
-
-	return nil
 }
 
 func (t *Table) cpCmd(evt *tcell.EventKey) *tcell.EventKey {

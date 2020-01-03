@@ -151,6 +151,33 @@ func (b *Browser) TableLoadFailed(err error) {
 // ----------------------------------------------------------------------------
 // Actions...
 
+func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := b.GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	ctx := b.defaultContext()
+	o, err := b.GetModel().Get(ctx, path)
+	if err != nil {
+		b.App().Flash().Errf("unable to get resource %q -- %s", b.gvr, err)
+		return nil
+	}
+
+	raw, err := toYAML(o)
+	if err != nil {
+		b.App().Flash().Errf("unable to marshal resource %s", err)
+		return nil
+	}
+
+	details := NewDetails(b.app, "YAML", path).Update(raw)
+	if err := b.App().inject(details); err != nil {
+		b.App().Flash().Err(err)
+	}
+
+	return nil
+}
+
 func (b *Browser) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !b.SearchBuff().InCmdMode() {
 		b.SearchBuff().Reset()
