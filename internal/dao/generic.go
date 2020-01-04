@@ -21,7 +21,7 @@ type Generic struct {
 	NonResource
 }
 
-// Describe describes a k8s resource.
+// Describe describes a resource.
 func (g *Generic) Describe(path string) (string, error) {
 	return Describe(g.Client(), g.gvr, path)
 }
@@ -40,7 +40,7 @@ func (g *Generic) ToYAML(path string) (string, error) {
 	return raw, nil
 }
 
-// List returns a collection of nodes.
+// List returns a collection of resources.
 func (g *Generic) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	labelSel, ok := ctx.Value(internal.KeyLabels).(string)
 	if !ok {
@@ -72,7 +72,7 @@ func (g *Generic) List(ctx context.Context, ns string) ([]runtime.Object, error)
 	return oo, nil
 }
 
-// List returns a collection of node resources.
+// Get returns a given resource.
 func (g *Generic) Get(ctx context.Context, path string) (runtime.Object, error) {
 	var opts metav1.GetOptions
 

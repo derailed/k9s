@@ -101,6 +101,7 @@ func (f *Flash) Errf(fmat string, args ...interface{}) {
 	f.SetMessage(FlashErr, fmt.Sprintf(fmat, args...))
 }
 
+// SetMessage sets flash message and level.
 func (f *Flash) SetMessage(level FlashLevel, msg ...string) {
 	if f.cancel != nil {
 		f.cancel()
@@ -125,10 +126,8 @@ func (f *Flash) refresh(ctx1, ctx2 context.Context, cancel context.CancelFunc) {
 	defer cancel()
 	for {
 		select {
-		// Timer canceled bail now
 		case <-ctx1.Done():
 			return
-		// Timed out clear and bail
 		case <-ctx2.Done():
 			f.app.QueueUpdateDraw(func() {
 				f.Clear()

@@ -39,7 +39,7 @@ func (r *Resource) Get(ctx context.Context, path string) (runtime.Object, error)
 	return r.Factory.Get(r.gvr.String(), path, true, labels.Everything())
 }
 
-// List returns a collection of nodes.
+// List returns a collection of resources.
 func (r *Resource) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	strLabel, ok := ctx.Value(internal.KeyLabels).(string)
 	lsel := labels.Everything()
