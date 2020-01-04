@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	v1beta1 "k8s.io/api/extensions/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -21,7 +22,7 @@ func (NetworkPolicy) ColorerFunc() ColorerFunc {
 // Header returns a header row.
 func (NetworkPolicy) Header(ns string) HeaderRow {
 	var h HeaderRow
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		h = append(h, Header{Name: "NAMESPACE"})
 	}
 
@@ -54,7 +55,7 @@ func (n NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
 
 	r.ID = MetaFQN(np.ObjectMeta)
 	r.Fields = make(Fields, 0, len(n.Header(ns)))
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, np.Namespace)
 	}
 	r.Fields = append(r.Fields,

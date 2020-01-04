@@ -1,15 +1,6 @@
 package render
 
 const (
-	// AllNamespaces represents all namespaces.
-	AllNamespaces = ""
-
-	// NamespaceAll represent the all namespace.
-	NamespaceAll = "all"
-
-	// ClusterScope represents cluster wide resources.
-	ClusterScope = "-"
-
 	// NonResource represents a custom resource.
 	NonResource = "*"
 )

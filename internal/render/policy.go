@@ -103,7 +103,7 @@ type Policies []PolicyRes
 
 // Upsert adds a new policy.
 func (pp Policies) Upsert(p PolicyRes) Policies {
-	idx, ok := pp.findPol(p.Resource)
+	idx, ok := pp.find(p.Resource)
 	if !ok {
 		return append(pp, p)
 	}
@@ -113,7 +113,7 @@ func (pp Policies) Upsert(p PolicyRes) Policies {
 }
 
 // Find locates a row by id. Retturns false is not found.
-func (pp Policies) findPol(res string) (int, bool) {
+func (pp Policies) find(res string) (int, bool) {
 	for i, p := range pp {
 		if p.Resource == res {
 			return i, true

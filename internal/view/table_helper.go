@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
@@ -32,7 +33,7 @@ func computeFilename(cluster, ns, title, path string) (string, error) {
 	}
 
 	var fName string
-	if ns == render.ClusterScope {
+	if ns == client.ClusterScope {
 		fName = fmt.Sprintf(ui.NoNSFmat, name, now)
 	} else {
 		fName = fmt.Sprintf(ui.FullFmat, name, ns, now)
@@ -43,8 +44,8 @@ func computeFilename(cluster, ns, title, path string) (string, error) {
 
 func saveTable(cluster, title, path string, data render.TableData) (string, error) {
 	ns := data.Namespace
-	if ns == render.ClusterScope {
-		ns = render.NamespaceAll
+	if client.IsClusterWide(ns) {
+		ns = client.NamespaceAll
 	}
 
 	fPath, err := computeFilename(cluster, ns, title, path)

@@ -32,7 +32,7 @@ func NewPolicy(app *App, subject, name string) *Policy {
 	}
 	p.GetTable().SetColorerFn(render.Policy{}.ColorerFunc())
 	p.SetBindKeysFn(p.bindKeys)
-	p.GetTable().SetSortCol(1, len(render.Policy{}.Header(render.AllNamespaces)), false)
+	p.GetTable().SetSortCol(1, len(render.Policy{}.Header(client.AllNamespaces)), false)
 	p.SetContextFn(p.subjectCtx)
 	p.GetTable().SetEnterFn(blankEnterFn)
 

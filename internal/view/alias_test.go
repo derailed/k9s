@@ -106,15 +106,25 @@ func (t *testModel) GetNamespace() string            { return "blee" }
 func (t *testModel) SetNamespace(string)             {}
 func (t *testModel) AddListener(model.TableListener) {}
 func (t *testModel) Watch(context.Context)           {}
-func (t *testModel) Get(ctx context.Context, path string) (runtime.Object, error) {
+func (t *testModel) Get(context.Context, string) (runtime.Object, error) {
 	return nil, nil
 }
+func (t *testModel) Delete(context.Context, string, bool, bool) error {
+	return nil
+}
+func (t *testModel) Describe(context.Context, string) (string, error) {
+	return "", nil
+}
+func (t *testModel) ToYAML(ctx context.Context, path string) (string, error) {
+	return "", nil
+}
+
 func (t *testModel) InNamespace(string) bool      { return true }
 func (t *testModel) SetRefreshRate(time.Duration) {}
 
 func makeTableData() render.TableData {
 	return render.TableData{
-		Namespace: render.ClusterScope,
+		Namespace: client.ClusterScope,
 		Header: render.HeaderRow{
 			render.Header{Name: "RESOURCE"},
 			render.Header{Name: "COMMAND"},

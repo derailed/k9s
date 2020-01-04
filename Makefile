@@ -10,7 +10,8 @@ IMAGE    := ${IMG_NAME}:${VERSION}
 default: help
 
 test:      ## Run all tests
-	@go test ./...
+	@go clean --testcache && go test ./...
+
 
 cover:     ## Run test coverage suite
 	@go test ./... --coverprofile=cov.out

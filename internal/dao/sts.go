@@ -15,15 +15,18 @@ import (
 	"k8s.io/kubectl/pkg/polymorphichelpers"
 )
 
+var (
+	_ Accessor    = (*StatefulSet)(nil)
+	_ Nuker       = (*StatefulSet)(nil)
+	_ Loggable    = (*StatefulSet)(nil)
+	_ Restartable = (*StatefulSet)(nil)
+	_ Scalable    = (*StatefulSet)(nil)
+)
+
 // StatefulSet represents a K8s sts.
 type StatefulSet struct {
-	Generic
+	Resource
 }
-
-var _ Accessor = (*StatefulSet)(nil)
-var _ Loggable = (*StatefulSet)(nil)
-var _ Restartable = (*StatefulSet)(nil)
-var _ Scalable = (*StatefulSet)(nil)
 
 // Scale a StatefulSet.
 func (s *StatefulSet) Scale(path string, replicas int32) error {
@@ -44,7 +47,7 @@ func (s *StatefulSet) Scale(path string, replicas int32) error {
 
 // Restart a StatefulSet rollout.
 func (s *StatefulSet) Restart(path string) error {
-	o, err := s.Get(s.gvr.String(), path, true, labels.Everything())
+	o, err := s.Factory.Get(s.gvr.String(), path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -70,7 +73,7 @@ func (s *StatefulSet) Restart(path string) error {
 
 // TailLogs tail logs for all pods represented by this StatefulSet.
 func (s *StatefulSet) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
-	o, err := s.Get(s.gvr.String(), opts.Path, true, labels.Everything())
+	o, err := s.Factory.Get(s.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return err
 	}

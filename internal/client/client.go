@@ -19,36 +19,12 @@ import (
 	versioned "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
-// NA Not available
-const NA = "n/a"
-
 var supportedMetricsAPIVersions = []string{"v1beta1"}
 
 // Authorizer checks what a user can or cannot do to a resource.
 type Authorizer interface {
 	// CanI returns true if the user can use these actions for a given resource.
 	CanI(ns, gvr string, verbs []string) (bool, error)
-}
-
-// Connection represents a Kubenetes apiserver connection.
-// BOZO!! Refactor!
-type Connection interface {
-	Authorizer
-
-	Config() *Config
-	DialOrDie() kubernetes.Interface
-	SwitchContextOrDie(ctx string)
-	CachedDiscovery() (*disk.CachedDiscoveryClient, error)
-	RestConfigOrDie() *restclient.Config
-	MXDial() (*versioned.Clientset, error)
-	DynDialOrDie() dynamic.Interface
-	HasMetrics() bool
-	IsNamespaced(n string) bool
-	SupportsResource(group string) bool
-	ValidNamespaces() ([]v1.Namespace, error)
-	SupportsRes(grp string, versions []string) (string, bool, error)
-	ServerVersion() (*version.Info, error)
-	CurrentNamespaceName() (string, error)
 }
 
 // APIClient represents a Kubernetes api client.

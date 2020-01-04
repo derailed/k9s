@@ -1,7 +1,6 @@
 package view
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -11,12 +10,10 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
-	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/cli-runtime/pkg/printers"
 )
 
 func defaultK9sEnv(app *App, sel string, row render.Row) K9sEnv {
@@ -60,9 +57,11 @@ func defaultK9sEnv(app *App, sel string, row render.Row) K9sEnv {
 	return env
 }
 
-func describeResource(app *App, _, gvr, path string) {
-	ns, n := client.Namespaced(path)
-	yaml, err := dao.Describe(app.Conn(), client.NewGVR(gvr), ns, n)
+func describeResource(app *App, model ui.Tabular, gvr, path string) {
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, internal.KeyFactory, app.factory)
+
+	yaml, err := model.Describe(ctx, path)
 	if err != nil {
 		app.Flash().Errf("Describe command failed: %s", err)
 		return
@@ -72,20 +71,6 @@ func describeResource(app *App, _, gvr, path string) {
 	if err := app.inject(details); err != nil {
 		app.Flash().Err(err)
 	}
-}
-
-func toYAML(o runtime.Object) (string, error) {
-	var (
-		buff bytes.Buffer
-		p    printers.YAMLPrinter
-	)
-	err := p.PrintObj(o, &buff)
-	if err != nil {
-		log.Error().Msgf("Marshal Error %v", err)
-		return "", err
-	}
-
-	return buff.String(), nil
 }
 
 func showPodsWithLabels(app *App, path string, sel map[string]string) {

@@ -6,11 +6,18 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/watch"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/informers"
 	restclient "k8s.io/client-go/rest"
 )
+
+// ResourceMetas represents a collection of resource metadata.
+type ResourceMetas map[client.GVR]metav1.APIResource
+
+// Accessors represents a collection of dao accessors.
+type Accessors map[client.GVR]Accessor
 
 // Factory represents a resource factory.
 type Factory interface {
@@ -39,18 +46,42 @@ type Factory interface {
 	Forwarders() watch.Forwarders
 }
 
+// Getter represents a resource getter.
+type Getter interface {
+	// Get return a given resource.
+	Get(ctx context.Context, path string) (runtime.Object, error)
+}
+
+// Lister represents a resource lister.
+type Lister interface {
+	// List returns a resource collection.
+	List(ctx context.Context, ns string) ([]runtime.Object, error)
+}
+
 // Accessor represents an accessible k8s resource.
 type Accessor interface {
-	Nuker
+	Lister
+	Getter
 
 	// Init the resource with a factory object.
 	Init(Factory, client.GVR)
+
+	GVR() string
 }
 
 // Loggable represents resources with logs.
 type Loggable interface {
 	// TaiLogs streams resource logs.
 	TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error
+}
+
+// Describer describes a resource.
+type Describer interface {
+	// Describe describes a resource.
+	Describe(path string) (string, error)
+
+	// ToYAML dumps a resource to YAML.
+	ToYAML(path string) (string, error)
 }
 
 // Scalable represents resources that can scale.

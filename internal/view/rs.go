@@ -48,7 +48,7 @@ func (r *ReplicaSet) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (r *ReplicaSet) showPods(app *App, _, gvr, path string) {
+func (r *ReplicaSet) showPods(app *App, model ui.Tabular, gvr, path string) {
 	o, err := app.factory.Get(r.GVR(), path, true, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)

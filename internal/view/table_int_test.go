@@ -98,9 +98,19 @@ func (t *testTableModel) GetNamespace() string            { return "blee" }
 func (t *testTableModel) SetNamespace(string)             {}
 func (t *testTableModel) AddListener(model.TableListener) {}
 func (t *testTableModel) Watch(context.Context)           {}
-func (t *testTableModel) Get(ctx context.Context, path string) (runtime.Object, error) {
+func (t *testTableModel) Get(context.Context, string) (runtime.Object, error) {
 	return nil, nil
 }
+func (t *testTableModel) Delete(context.Context, string, bool, bool) error {
+	return nil
+}
+func (t *testTableModel) Describe(context.Context, string) (string, error) {
+	return "", nil
+}
+func (t *testTableModel) ToYAML(ctx context.Context, path string) (string, error) {
+	return "", nil
+}
+
 func (t *testTableModel) InNamespace(string) bool      { return true }
 func (t *testTableModel) SetRefreshRate(time.Duration) {}
 

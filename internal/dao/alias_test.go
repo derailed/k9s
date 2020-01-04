@@ -1,4 +1,4 @@
-package model_test
+package dao_test
 
 import (
 	"context"
@@ -8,7 +8,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/stretchr/testify/assert"
@@ -18,28 +17,15 @@ import (
 )
 
 func TestAliasList(t *testing.T) {
-	a := model.Alias{}
-	a.Init(render.ClusterScope, "aliases", makeFactory())
+	a := dao.Alias{}
+	a.Init(makeFactory(), client.NewGVR("aliases"))
 
 	ctx := context.WithValue(context.Background(), internal.KeyAliases, makeAliases())
-	oo, err := a.List(ctx)
+	oo, err := a.List(ctx, "-")
 
 	assert.Nil(t, err)
 	assert.Equal(t, 2, len(oo))
 	assert.Equal(t, 2, len(oo[0].(render.AliasRes).Aliases))
-}
-
-func TestAliasHydrate(t *testing.T) {
-	a := model.Alias{}
-	a.Init(render.ClusterScope, "aliases", makeFactory())
-
-	ctx := context.WithValue(context.Background(), internal.KeyAliases, makeAliases())
-	oo, err := a.List(ctx)
-	assert.Nil(t, err)
-
-	rr := make(render.Rows, len(oo))
-	assert.Nil(t, a.Hydrate(oo, rr, render.Alias{}))
-	assert.Equal(t, 2, len(rr))
 }
 
 // ----------------------------------------------------------------------------

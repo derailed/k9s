@@ -46,7 +46,7 @@ func (s *Service) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (s *Service) showPods(app *App, ns, gvr, path string) {
+func (s *Service) showPods(app *App, _ ui.Tabular, gvr, path string) {
 	o, err := app.factory.Get(gvr, path, true, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)

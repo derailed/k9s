@@ -11,6 +11,41 @@ import (
 
 var toFileName = regexp.MustCompile(`[^(\w/\.)]`)
 
+// ClusterWide returns true if ns designates cluster scope, false otherwise.
+func IsClusterWide(ns string) bool {
+	return ns == NamespaceAll || ns == AllNamespaces || ns == ClusterScope
+}
+
+// IsAllNamespace returns true if ns == all.
+func IsAllNamespace(ns string) bool {
+	return ns == NamespaceAll
+}
+
+// IsAllNamespaces returns true if all namespaces, false otherwise.
+func IsAllNamespaces(ns string) bool {
+	return ns == NamespaceAll || ns == AllNamespaces
+}
+
+// IsNamespaced returns true if a specific ns is given.
+func IsNamespaced(ns string) bool {
+	return !IsClusterScoped(ns)
+}
+
+// IsClusterScoped returns true if resource is not namespaced.
+func IsClusterScoped(ns string) bool {
+	return ns == ClusterScope
+}
+
+// NormalizeNS normalizes a namespace name to a k8s ns known designation.
+func NormalizeNS(ns string) string {
+	switch ns {
+	case NamespaceAll, ClusterScope:
+		return ""
+	default:
+		return ns
+	}
+}
+
 // Namespaced converts a resource path to namespace and resource name.
 func Namespaced(p string) (string, string) {
 	ns, n := path.Split(p)

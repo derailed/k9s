@@ -5,6 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -49,8 +50,8 @@ func (n *Node) nodeContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeyMetrics, nmx)
 }
 
-func (n *Node) showPods(app *App, ns, res, sel string) {
-	showPods(app, n.GetTable().GetSelectedItem(), "", "spec.nodeName="+sel)
+func (n *Node) showPods(app *App, _ ui.Tabular, _, path string) {
+	showPods(app, n.GetTable().GetSelectedItem(), "", "spec.nodeName="+path)
 }
 
 func (n *Node) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -67,7 +68,7 @@ func (n *Node) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	raw, err := toYAML(o)
+	raw, err := dao.ToYAML(o)
 	if err != nil {
 		n.App().Flash().Errf("Unable to marshal resource %s", err)
 		return nil

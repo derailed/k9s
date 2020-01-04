@@ -8,7 +8,8 @@ import (
 )
 
 // Describe describes a resource.
-func Describe(c client.Connection, gvr client.GVR, ns, n string) (string, error) {
+func Describe(c client.Connection, gvr client.GVR, path string) (string, error) {
+	log.Debug().Msgf("DESCRIBE %q::%q", gvr, path)
 	mapper := RestMapper{Connection: c}
 	m, err := mapper.ToRESTMapper()
 	if err != nil {
@@ -22,6 +23,10 @@ func Describe(c client.Connection, gvr client.GVR, ns, n string) (string, error)
 		return "", err
 	}
 
+	ns, n := client.Namespaced(path)
+	if client.IsClusterScoped(ns) {
+		ns = client.AllNamespaces
+	}
 	mapping, err := mapper.ResourceFor(gvr.AsResourceName(), gvk.Kind)
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to find mapper for %s %s", gvr, n)

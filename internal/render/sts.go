@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/gdamore/tcell"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -23,7 +24,7 @@ func (StatefulSet) ColorerFunc() ColorerFunc {
 		}
 
 		readyCol := 2
-		if ns != AllNamespaces {
+		if client.IsNamespaced(ns) {
 			readyCol--
 		}
 		tokens := strings.Split(strings.TrimSpace(r.Row.Fields[readyCol]), "/")
@@ -39,7 +40,7 @@ func (StatefulSet) ColorerFunc() ColorerFunc {
 // Header returns a header row.
 func (StatefulSet) Header(ns string) HeaderRow {
 	var h HeaderRow
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		h = append(h, Header{Name: "NAMESPACE"})
 	}
 
@@ -66,7 +67,7 @@ func (s StatefulSet) Render(o interface{}, ns string, r *Row) error {
 
 	r.ID = MetaFQN(sts.ObjectMeta)
 	r.Fields = make(Fields, 0, len(s.Header(ns)))
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, sts.Namespace)
 	}
 	r.Fields = append(r.Fields,

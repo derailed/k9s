@@ -20,18 +20,21 @@ import (
 	"k8s.io/kubectl/pkg/polymorphichelpers"
 )
 
+var (
+	_ Accessor    = (*DaemonSet)(nil)
+	_ Nuker       = (*DaemonSet)(nil)
+	_ Loggable    = (*DaemonSet)(nil)
+	_ Restartable = (*DaemonSet)(nil)
+)
+
 // DaemonSet represents a K8s daemonset.
 type DaemonSet struct {
-	Generic
+	Resource
 }
-
-var _ Accessor = (*DaemonSet)(nil)
-var _ Loggable = (*DaemonSet)(nil)
-var _ Restartable = (*DaemonSet)(nil)
 
 // Restart a DaemonSet rollout.
 func (d *DaemonSet) Restart(path string) error {
-	o, err := d.Get(d.gvr.String(), path, true, labels.Everything())
+	o, err := d.Factory.Get(d.gvr.String(), path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -56,7 +59,7 @@ func (d *DaemonSet) Restart(path string) error {
 
 // TailLogs tail logs for all pods represented by this DaemonSet.
 func (d *DaemonSet) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
-	o, err := d.Get(d.gvr.String(), opts.Path, true, labels.Everything())
+	o, err := d.Factory.Get(d.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return err
 	}

@@ -38,8 +38,8 @@ func (n *Namespace) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (n *Namespace) switchNs(app *App, _, res, sel string) {
-	n.useNamespace(sel)
+func (n *Namespace) switchNs(app *App, model ui.Tabular, gvr, path string) {
+	n.useNamespace(path)
 	if err := app.gotoResource("pods", true); err != nil {
 		app.Flash().Err(err)
 	}
@@ -74,13 +74,13 @@ func (n *Namespace) decorate(data render.TableData) render.TableData {
 	}
 
 	// checks if all ns is in the list if not add it.
-	if _, ok := data.RowEvents.FindIndex(render.NamespaceAll); !ok {
+	if _, ok := data.RowEvents.FindIndex(client.NamespaceAll); !ok {
 		data.RowEvents = append(data.RowEvents,
 			render.RowEvent{
 				Kind: render.EventUnchanged,
 				Row: render.Row{
-					ID:     render.NamespaceAll,
-					Fields: render.Fields{render.NamespaceAll, "Active", "0"},
+					ID:     client.NamespaceAll,
+					Fields: render.Fields{client.NamespaceAll, "Active", "0"},
 				},
 			},
 		)

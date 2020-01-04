@@ -61,7 +61,7 @@ func (f *Factory) Terminate() {
 }
 
 // List returns a resource collection.
-func (f *Factory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error) {
+func (f *Factory) List(gvr, ns string, wait bool, labels labels.Selector) ([]runtime.Object, error) {
 	if ns == clusterScope {
 		ns = allNamespaces
 	}
@@ -73,23 +73,27 @@ func (f *Factory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtim
 	if wait {
 		f.waitForCacheSync(ns)
 	}
+	if client.IsClusterScoped(ns) {
+		return inf.Lister().List(labels)
+	}
 
-	return inf.Lister().ByNamespace(ns).List(sel)
+	return inf.Lister().ByNamespace(ns).List(labels)
 }
 
 // Get retrieves a given resource.
 func (f *Factory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
 	ns, n := namespaced(path)
-	if ns == clusterScope {
-		ns = allNamespaces
-	}
 	log.Debug().Msgf("GET %q:%q::%q", ns, gvr, n)
+	Debug(f, "", gvr)
 	inf, err := f.CanForResource(ns, gvr, []string{"get"})
 	if err != nil {
 		return nil, err
 	}
 	if wait {
 		f.waitForCacheSync(ns)
+	}
+	if client.IsClusterScoped(ns) {
+		return inf.Lister().Get(n)
 	}
 
 	return inf.Lister().ByNamespace(ns).Get(n)
@@ -131,7 +135,6 @@ func (f *Factory) FactoryFor(ns string) di.DynamicSharedInformerFactory {
 }
 
 // SetActiveNS sets the active namespace.
-// BOZO!! Check ns access for resource??
 func (f *Factory) SetActiveNS(ns string) {
 	if !f.isClusterWide() {
 		f.ensureFactory(ns)

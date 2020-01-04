@@ -1,16 +1,20 @@
-package model
+package dao
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/derailed/k9s/internal"
-	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+)
+
+var (
+	_ Accessor = (*Node)(nil)
 )
 
 type NodeMetricsFunc func() (*mv1beta1.NodeMetricsList, error)
@@ -21,13 +25,13 @@ type Node struct {
 }
 
 // List returns a collection of node resources.
-func (n *Node) List(ctx context.Context) ([]runtime.Object, error) {
+func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	nmx, ok := ctx.Value(internal.KeyMetrics).(*mv1beta1.NodeMetricsList)
 	if !ok {
 		log.Warn().Msgf("No node metrics available in context")
 	}
 
-	nn, err := dao.FetchNodes(n.factory)
+	nn, err := FetchNodes(n.Factory)
 	if err != nil {
 		return nil, err
 	}
@@ -47,26 +51,17 @@ func (n *Node) List(ctx context.Context) ([]runtime.Object, error) {
 	return oo, nil
 }
 
-// Hydrate returns nodes as rows.
-func (n *Node) Hydrate(oo []runtime.Object, rr render.Rows, re Renderer) error {
-	for i, o := range oo {
-		nmx, ok := o.(*render.NodeWithMetrics)
-		if !ok {
-			return fmt.Errorf("expecting *NodeWithMetrics but got %T", o)
-		}
-
-		var row render.Row
-		if err := re.Render(nmx, render.ClusterScope, &row); err != nil {
-			return err
-		}
-		rr[i] = row
-	}
-
-	return nil
-}
-
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func FetchNodes(f Factory) (*v1.NodeList, error) {
+	auth, err := f.Client().CanI("", "v1/nodes", []string{"list"})
+	if !auth || err != nil {
+		return nil, err
+	}
+
+	return f.Client().DialOrDie().CoreV1().Nodes().List(metav1.ListOptions{})
+}
 
 func nodeMetricsFor(fqn string, mmx *mv1beta1.NodeMetricsList) *mv1beta1.NodeMetrics {
 	for _, mx := range mmx.Items {

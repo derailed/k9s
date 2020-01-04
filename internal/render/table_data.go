@@ -2,8 +2,6 @@ package render
 
 import (
 	"sync"
-
-	"github.com/rs/zerolog/log"
 )
 
 // TableData tracks a K8s resource for tabular display.
@@ -81,7 +79,6 @@ func (t *TableData) Delete(newKeys []string) {
 	}
 
 	for _, id := range victims {
-		log.Debug().Msgf("Deleting %s", id)
 		t.RowEvents = t.RowEvents.Delete(id)
 	}
 }

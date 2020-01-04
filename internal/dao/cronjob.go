@@ -9,13 +9,15 @@ import (
 
 const maxJobNameSize = 42
 
+var (
+	_ Accessor = (*CronJob)(nil)
+	_ Runnable = (*CronJob)(nil)
+)
+
 // CronJob represents a cronjob K8s resource.
 type CronJob struct {
 	Generic
 }
-
-var _ Accessor = (*CronJob)(nil)
-var _ Runnable = (*CronJob)(nil)
 
 // Run a CronJob.
 func (c *CronJob) Run(path string) error {
@@ -25,6 +27,7 @@ func (c *CronJob) Run(path string) error {
 		return err
 	}
 
+	// BOZO!! Factory resource??
 	cj, err := c.Client().DialOrDie().BatchV1beta1().CronJobs(ns).Get(n, metav1.GetOptions{})
 	if err != nil {
 		return err

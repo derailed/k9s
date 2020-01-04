@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -21,7 +22,7 @@ func (ConfigMap) ColorerFunc() ColorerFunc {
 // Header returns a header row.
 func (ConfigMap) Header(ns string) HeaderRow {
 	var h HeaderRow
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		h = append(h, Header{Name: "NAMESPACE"})
 	}
 
@@ -48,7 +49,7 @@ func (c ConfigMap) Render(o interface{}, ns string, r *Row) error {
 	n, nss := extractMetaField(meta, "name"), extractMetaField(meta, "namespace")
 	r.ID = FQN(nss, n)
 	r.Fields = make(Fields, 0, len(c.Header(ns)))
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, nss)
 	}
 
@@ -79,7 +80,7 @@ func (c ConfigMap) Render(o interface{}, ns string, r *Row) error {
 
 	// r.ID = MetaFQN(cm.ObjectMeta)
 	// r.Fields = make(Fields, 0, len(c.Header(ns)))
-	// if isAllNamespace(ns) {
+	// if client.IsAllNamespaces(ns) {
 	// 	r.Fields = append(r.Fields, cm.Namespace)
 	// }
 	// r.Fields = append(r.Fields,

@@ -1,4 +1,4 @@
-package model
+package dao
 
 import (
 	"context"
@@ -9,13 +9,18 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var (
+	_ Accessor = (*Subject)(nil)
+	_ Nuker    = (*Subject)(nil)
+)
+
 // Subject represents a subject model.
 type Subject struct {
 	Resource
 }
 
 // List returns a collection of subjects.
-func (s *Subject) List(ctx context.Context) ([]runtime.Object, error) {
+func (s *Subject) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	kind, ok := ctx.Value(internal.KeySubjectKind).(string)
 	if !ok {
 		return nil, errors.New("expecting a SubjectKind")
@@ -31,22 +36,30 @@ func (s *Subject) List(ctx context.Context) ([]runtime.Object, error) {
 		return nil, err
 	}
 
-	return append(crbs, rbs...), nil
+	for _, rb := range rbs {
+		crbs = crbs.Upsert(rb)
+	}
+
+	oo := make([]runtime.Object, len(crbs))
+	for i, o := range crbs {
+		oo[i] = o
+	}
+	return oo, nil
 }
 
-func (s *Subject) listClusterRoleBindings(kind string) ([]runtime.Object, error) {
-	crbs, err := fetchClusterRoleBindings(s.factory)
+func (s *Subject) listClusterRoleBindings(kind string) (render.Subjects, error) {
+	crbs, err := fetchClusterRoleBindings(s.Factory)
 	if err != nil {
 		return nil, err
 	}
 
-	oo := make([]runtime.Object, 0, len(crbs))
+	oo := make(render.Subjects, 0, len(crbs))
 	for _, crb := range crbs {
 		for _, su := range crb.Subjects {
-			if su.Kind != kind || inSubjectRes(oo, su.Name) {
+			if su.Kind != kind {
 				continue
 			}
-			oo = append(oo, render.SubjectRef{
+			oo = oo.Upsert(render.SubjectRes{
 				Name:          su.Name,
 				Kind:          "ClusterRoleBinding",
 				FirstLocation: crb.Name,
@@ -57,19 +70,19 @@ func (s *Subject) listClusterRoleBindings(kind string) ([]runtime.Object, error)
 	return oo, nil
 }
 
-func (s *Subject) listRoleBindings(kind string) ([]runtime.Object, error) {
-	rbs, err := fetchRoleBindings(s.factory)
+func (s *Subject) listRoleBindings(kind string) (render.Subjects, error) {
+	rbs, err := fetchRoleBindings(s.Factory)
 	if err != nil {
 		return nil, err
 	}
 
-	oo := make([]runtime.Object, 0, len(rbs))
+	oo := make(render.Subjects, 0, len(rbs))
 	for _, rb := range rbs {
 		for _, su := range rb.Subjects {
-			if su.Kind != kind || inSubjectRes(oo, su.Name) {
+			if su.Kind != kind {
 				continue
 			}
-			oo = append(oo, render.SubjectRef{
+			oo = oo.Upsert(render.SubjectRes{
 				Name:          su.Name,
 				Kind:          "RoleBinding",
 				FirstLocation: rb.Name,
@@ -78,20 +91,4 @@ func (s *Subject) listRoleBindings(kind string) ([]runtime.Object, error) {
 	}
 
 	return oo, nil
-}
-
-// ----------------------------------------------------------------------------
-// Helpers...
-
-func inSubjectRes(oo []runtime.Object, match string) bool {
-	for _, o := range oo {
-		res, ok := o.(render.SubjectRef)
-		if !ok {
-			continue
-		}
-		if res.Name == match {
-			return true
-		}
-	}
-	return false
 }

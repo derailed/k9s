@@ -1,4 +1,4 @@
-package model
+package dao
 
 import (
 	"context"
@@ -10,13 +10,18 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var (
+	_ Accessor = (*HorizontalPodAutoscaler)(nil)
+	_ Nuker    = (*HorizontalPodAutoscaler)(nil)
+)
+
 // HorizontalPodAutoscaler represents a HPA resource model.
 type HorizontalPodAutoscaler struct {
 	Resource
 }
 
 // List returns a collection of nodes.
-func (h *HorizontalPodAutoscaler) List(ctx context.Context) ([]runtime.Object, error) {
+func (h *HorizontalPodAutoscaler) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	strLabel, ok := ctx.Value(internal.KeyLabels).(string)
 	lsel := labels.Everything()
 	if sel, err := labels.ConvertSelectorToLabelsMap(strLabel); ok && err == nil {
@@ -30,7 +35,7 @@ func (h *HorizontalPodAutoscaler) List(ctx context.Context) ([]runtime.Object, e
 	}
 
 	for _, gvr := range gvrs {
-		oo, err := h.list(gvr, lsel)
+		oo, err := h.list(gvr, ns, lsel)
 		if err == nil && len(oo) > 0 {
 			return oo, nil
 		}
@@ -40,8 +45,8 @@ func (h *HorizontalPodAutoscaler) List(ctx context.Context) ([]runtime.Object, e
 	return []runtime.Object{}, nil
 }
 
-func (h *HorizontalPodAutoscaler) list(gvr string, sel labels.Selector) ([]runtime.Object, error) {
-	oo, err := h.factory.List(gvr, h.namespace, true, sel)
+func (h *HorizontalPodAutoscaler) list(gvr, ns string, sel labels.Selector) ([]runtime.Object, error) {
+	oo, err := h.Factory.List(gvr, ns, true, sel)
 	if err != nil {
 		return nil, err
 	}

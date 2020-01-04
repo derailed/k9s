@@ -1,0 +1,26 @@
+{
+  "apiVersion": "rbac.authorization.k8s.io/v1",
+  "kind": "ClusterRoleBinding",
+  "metadata": {
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"rbac.authorization.k8s.io/v1\",\"kind\":\"ClusterRoleBinding\",\"metadata\":{\"annotations\":{},\"name\":\"blee\"},\"roleRef\":{\"apiGroup\":\"rbac.authorization.k8s.io\",\"kind\":\"ClusterRole\",\"name\":\"blee\"},\"subjects\":[{\"apiGroup\":\"rbac.authorization.k8s.io\",\"kind\":\"User\",\"name\":\"fernand\"}]}\n"
+    },
+    "creationTimestamp": "2019-06-04T16:48:35Z",
+    "name": "blee",
+    "resourceVersion": "26689100",
+    "selfLink": "/apis/rbac.authorization.k8s.io/v1/clusterrolebindings/blee",
+    "uid": "97e5f84d-86e8-11e9-a8e8-42010a80015b"
+  },
+  "roleRef": {
+    "apiGroup": "rbac.authorization.k8s.io",
+    "kind": "ClusterRole",
+    "name": "blee"
+  },
+  "subjects": [
+    {
+      "apiGroup": "rbac.authorization.k8s.io",
+      "kind": "User",
+      "name": "fernand"
+    }
+  ]
+}

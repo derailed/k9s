@@ -36,9 +36,22 @@ type Namespaceable interface {
 	InNamespace(string) bool
 }
 
+// Lister represents a viewable resource.
+type Lister interface {
+	// Get returns a resource instance.
+	Get(ctx context.Context, path string) (runtime.Object, error)
+
+	// ToYAML returns a resource yaml representation.
+	ToYAML(ctx context.Context, path string) (string, error)
+
+	// Describes describes a given resource.
+	Describe(ctx context.Context, path string) (string, error)
+}
+
 // Tabular represents a tabular model.
 type Tabular interface {
 	Namespaceable
+	Lister
 
 	// Empty returns true if model has no data.
 	Empty() bool
@@ -55,6 +68,6 @@ type Tabular interface {
 	// AddListener registers a model listener.
 	AddListener(model.TableListener)
 
-	// Get returns a resource instance.
-	Get(ctx context.Context, path string) (runtime.Object, error)
+	// Delete a resource.
+	Delete(ctx context.Context, path string, cascade, force bool) error
 }

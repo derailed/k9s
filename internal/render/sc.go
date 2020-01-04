@@ -3,6 +3,7 @@ package render
 import (
 	"fmt"
 
+	"github.com/derailed/k9s/internal/client"
 	storagev1 "k8s.io/api/storage/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -37,7 +38,7 @@ func (StorageClass) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	r.ID = FQN(ClusterScope, sc.ObjectMeta.Name)
+	r.ID = FQN(client.ClusterScope, sc.ObjectMeta.Name)
 	r.Fields = Fields{
 		sc.Name,
 		string(sc.Provisioner),

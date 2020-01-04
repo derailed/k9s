@@ -1,4 +1,4 @@
-package model_test
+package dao_test
 
 import (
 	"context"
@@ -7,8 +7,6 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/model"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/ghodss/yaml"
 	"github.com/stretchr/testify/assert"
@@ -19,28 +17,13 @@ import (
 )
 
 func TestContainerList(t *testing.T) {
-	c := model.Container{}
-	c.Init(render.ClusterScope, "containers", makePodFactory())
+	c := dao.Container{}
+	c.Init(makePodFactory(), client.NewGVR("containers"))
 
 	ctx := context.WithValue(context.Background(), internal.KeyPath, "fred/p1")
-	oo, err := c.List(ctx)
+	oo, err := c.List(ctx, "")
 	assert.Nil(t, err)
 	assert.Equal(t, 1, len(oo))
-}
-
-func TestContainerHydrate(t *testing.T) {
-	c := model.Container{}
-	c.Init(render.ClusterScope, "containers", makePodFactory())
-
-	ctx := context.WithValue(context.Background(), internal.KeyPath, "fred/p1")
-	oo, err := c.List(ctx)
-	assert.Nil(t, err)
-
-	rr := make(render.Rows, len(oo))
-	assert.Nil(t, c.Hydrate(oo, rr, render.Container{}))
-	assert.Equal(t, 1, len(rr))
-	assert.Equal(t, "fred", rr[0].ID)
-	assert.Equal(t, render.Fields{"fred", "blee", "false", "Running", "false", "0", "off:off", "n/a", "n/a", "n/a", "n/a", ""}, rr[0].Fields[0:len(rr[0].Fields)-1])
 }
 
 // ----------------------------------------------------------------------------

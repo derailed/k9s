@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	appsv1 "k8s.io/api/apps/v1"
@@ -24,7 +25,7 @@ func (Deployment) ColorerFunc() ColorerFunc {
 		}
 
 		markCol := 2
-		if ns != AllNamespaces {
+		if !client.IsAllNamespaces(ns) {
 			markCol = 1
 		}
 		tokens := strings.Split(r.Row.Fields[markCol], "/")
@@ -39,7 +40,7 @@ func (Deployment) ColorerFunc() ColorerFunc {
 // Header returns a header row.
 func (Deployment) Header(ns string) HeaderRow {
 	var h HeaderRow
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		h = append(h, Header{Name: "NAMESPACE"})
 	}
 
@@ -67,7 +68,7 @@ func (d Deployment) Render(o interface{}, ns string, r *Row) error {
 
 	r.ID = MetaFQN(dp.ObjectMeta)
 	r.Fields = make(Fields, 0, len(d.Header(ns)))
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, dp.Namespace)
 	}
 	r.Fields = append(r.Fields,

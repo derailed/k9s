@@ -70,6 +70,15 @@ func (t *testModel) Watch(context.Context)           {}
 func (t *testModel) Get(ctx context.Context, path string) (runtime.Object, error) {
 	return nil, nil
 }
+func (t *testModel) Delete(ctx context.Context, path string, c, f bool) error {
+	return nil
+}
+func (t *testModel) Describe(context.Context, string) (string, error) {
+	return "", nil
+}
+func (t *testModel) ToYAML(ctx context.Context, path string) (string, error) {
+	return "", nil
+}
 func (t *testModel) InNamespace(string) bool      { return true }
 func (t *testModel) SetRefreshRate(time.Duration) {}
 

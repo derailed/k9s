@@ -3,6 +3,7 @@ module github.com/derailed/k9s
 go 1.13
 
 replace (
+	github.com/docker/docker => github.com/docker/docker v1.4.2-0.20181221150755-2cb26cfe9cbf
 	k8s.io/api => k8s.io/api v0.0.0-20190918155943-95b840bb6a1f
 	k8s.io/apiextensions-apiserver => k8s.io/apiextensions-apiserver v0.0.0-20190918161926-8f644eb6e783
 	k8s.io/apimachinery => k8s.io/apimachinery v0.0.0-20190913080033-27d36303b655
@@ -27,19 +28,15 @@ replace (
 )
 
 require (
+	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/atotto/clipboard v0.1.2
 	github.com/derailed/tview v0.3.3
-	github.com/docker/spdystream v0.0.0-20181023171402-6480d4af844c // indirect
 	github.com/elazarl/goproxy v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/gdamore/tcell v1.3.0
 	github.com/ghodss/yaml v1.0.0
-	github.com/golang/groupcache v0.0.0-20190129154638-5b532d6fd5ef // indirect
-	github.com/google/btree v1.0.0 // indirect
-	github.com/googleapis/gnostic v0.2.0 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc // indirect
-	github.com/imdario/mergo v0.3.7 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mattn/go-runewidth v0.0.5
 	github.com/petergtz/pegomock v2.6.0+incompatible
@@ -47,16 +44,15 @@ require (
 	github.com/rs/zerolog v1.17.2
 	github.com/sahilm/fuzzy v0.1.0
 	github.com/spf13/cobra v0.0.5
-	github.com/stretchr/testify v1.3.0
+	github.com/stretchr/testify v1.4.0
 	golang.org/x/text v0.3.2
-	golang.org/x/time v0.0.0-20190308202827-9d24e82272b4 // indirect
-	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.2.4
+	helm.sh/helm/v3 v3.0.2
 	k8s.io/api v0.0.0
 	k8s.io/apimachinery v0.0.0
 	k8s.io/cli-runtime v0.0.0
 	k8s.io/client-go v0.0.0
-	k8s.io/klog v0.4.0
+	k8s.io/klog v1.0.0
 	k8s.io/kubectl v0.0.0
 	k8s.io/kubernetes v1.16.3
 	k8s.io/metrics v0.0.0

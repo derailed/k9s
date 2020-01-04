@@ -97,7 +97,7 @@ func (s *SelectTable) updateSelection(broadcast bool) {
 }
 
 func (s *SelectTable) selectionChanged(r, c int) {
-	if r <= 0 {
+	if r < 0 {
 		return
 	}
 	s.selectedRow = r

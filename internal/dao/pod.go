@@ -12,24 +12,75 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	restclient "k8s.io/client-go/rest"
+	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 const defaultTimeout = 1 * time.Second
 
+var (
+	_ Accessor = (*Pod)(nil)
+	_ Nuker    = (*Pod)(nil)
+	_ Loggable = (*Pod)(nil)
+)
+
 // Pod represents a pod resource.
 type Pod struct {
-	Generic
+	Resource
 }
 
-var _ Accessor = (*Pod)(nil)
-var _ Loggable = (*Pod)(nil)
+// List returns a collection of nodes.
+func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+	oo, err := p.Resource.List(ctx, ns)
+	if err != nil {
+		return oo, err
+	}
+
+	pmx, ok := ctx.Value(internal.KeyMetrics).(*mv1beta1.PodMetricsList)
+	if !ok {
+		log.Warn().Msgf("expecting context PodMetricsList")
+	}
+
+	sel, ok := ctx.Value(internal.KeyFields).(string)
+	if !ok {
+		return oo, nil
+	}
+	fsel, err := labels.ConvertSelectorToLabelsMap(sel)
+	if err != nil {
+		return nil, err
+	}
+	nodeName := fsel["spec.nodeName"]
+
+	var res []runtime.Object
+	for _, o := range oo {
+		u, ok := o.(*unstructured.Unstructured)
+		if !ok {
+			return res, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
+		}
+		if nodeName == "" {
+			res = append(res, &render.PodWithMetrics{Raw: u, MX: podMetricsFor(o, pmx)})
+			continue
+		}
+
+		spec, ok := u.Object["spec"].(map[string]interface{})
+		if !ok {
+			return res, fmt.Errorf("expecting interface map but got `%T", o)
+		}
+		if spec["nodeName"] == nodeName {
+			res = append(res, &render.PodWithMetrics{Raw: u, MX: podMetricsFor(o, pmx)})
+		}
+	}
+
+	return res, nil
+}
 
 // Logs fetch container logs for a given pod and container.
 func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, error) {
@@ -45,7 +96,7 @@ func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, er
 
 // Containers returns all container names on pod
 func (p *Pod) Containers(path string, includeInit bool) ([]string, error) {
-	o, err := p.Get(p.gvr.String(), path, true, labels.Everything())
+	o, err := p.Factory.Get(p.gvr.String(), path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -176,6 +227,59 @@ func readLogs(ctx context.Context, stream io.ReadCloser, c chan<- string, opts L
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func podMetricsFor(o runtime.Object, mmx *mv1beta1.PodMetricsList) *mv1beta1.PodMetrics {
+	fqn := extractFQN(o)
+	for _, mx := range mmx.Items {
+		if MetaFQN(mx.ObjectMeta) == fqn {
+			return &mx
+		}
+	}
+	return nil
+}
+
+// MetaFQN returns a fully qualified resource name.
+func MetaFQN(m metav1.ObjectMeta) string {
+	if m.Namespace == "" {
+		return m.Name
+	}
+
+	return FQN(m.Namespace, m.Name)
+}
+
+// FQN returns a fully qualified resource name.
+func FQN(ns, n string) string {
+	if ns == "" {
+		return n
+	}
+	return ns + "/" + n
+}
+
+func extractFQN(o runtime.Object) string {
+	u, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		log.Error().Err(fmt.Errorf("expecting unstructured but got %T", o))
+		return "na"
+	}
+	m, ok := u.Object["metadata"].(map[string]interface{})
+	if !ok {
+		log.Error().Err(fmt.Errorf("expecting interface map for metadata but got %T", u.Object["metadata"]))
+		return "na"
+	}
+
+	n, ok := m["name"].(string)
+	if !ok {
+		log.Error().Err(fmt.Errorf("expecting interface map for name but got %T", m["name"]))
+		return "na"
+	}
+
+	ns, ok := m["namespace"].(string)
+	if !ok {
+		return FQN("", n)
+	}
+
+	return FQN(ns, n)
+}
 
 func loggableContainers(s v1.PodStatus) []string {
 	var rcos []string

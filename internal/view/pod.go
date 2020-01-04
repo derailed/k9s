@@ -53,8 +53,8 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (p *Pod) showContainers(app *App, ns, gvr, path string) {
-	log.Debug().Msgf("SHOW CONTAINERS %q -- %q -- %q", gvr, ns, path)
+func (p *Pod) showContainers(app *App, model ui.Tabular, gvr, path string) {
+	log.Debug().Msgf("SHOW CONTAINERS %q -- %q -- %q", gvr, model.GetNamespace(), path)
 	co := NewContainer(client.NewGVR("containers"))
 	co.SetContextFn(p.coContext)
 	if err := app.inject(co); err != nil {

@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 )
 
@@ -8,44 +9,48 @@ import (
 // BOZO!! Break up deps and merge into single registrar
 var Registry = map[string]ResourceMeta{
 	// Custom...
+	"charts": {
+		DAO:      &dao.Chart{},
+		Renderer: &render.Chart{},
+	},
 	"containers": {
-		Model:    &Container{},
+		DAO:      &dao.Container{},
 		Renderer: &render.Container{},
 	},
 	"contexts": {
-		Model:    &Context{},
+		DAO:      &dao.Context{},
 		Renderer: &render.Context{},
 	},
 	"screendumps": {
-		Model:    &ScreenDump{},
+		DAO:      &dao.ScreenDump{},
 		Renderer: &render.ScreenDump{},
 	},
 	"rbac": {
-		Model:    &Rbac{},
+		DAO:      &dao.Rbac{},
 		Renderer: &render.Rbac{},
 	},
 	"policy": {
-		Model:    &Policy{},
+		DAO:      &dao.Policy{},
 		Renderer: &render.Policy{},
 	},
 	"users": {
-		Model:    &Subject{},
+		DAO:      &dao.Subject{},
 		Renderer: &render.Subject{},
 	},
 	"groups": {
-		Model:    &Subject{},
+		DAO:      &dao.Subject{},
 		Renderer: &render.Subject{},
 	},
 	"portforwards": {
-		Model:    &PortForward{},
+		DAO:      &dao.PortForward{},
 		Renderer: &render.PortForward{},
 	},
 	"benchmarks": {
-		Model:    &Benchmark{},
+		DAO:      &dao.Benchmark{},
 		Renderer: &render.Benchmark{},
 	},
 	"aliases": {
-		Model:    &Alias{},
+		DAO:      &dao.Alias{},
 		Renderer: &render.Alias{},
 	},
 
@@ -57,14 +62,14 @@ var Registry = map[string]ResourceMeta{
 		Renderer: &render.Event{},
 	},
 	"v1/pods": {
-		Model:    &Pod{},
+		DAO:      &dao.Pod{},
 		Renderer: &render.Pod{},
 	},
 	"v1/namespaces": {
 		Renderer: &render.Namespace{},
 	},
 	"v1/nodes": {
-		Model:    &Node{},
+		DAO:      &dao.Node{},
 		Renderer: &render.Node{},
 	},
 	"v1/services": {
@@ -72,6 +77,12 @@ var Registry = map[string]ResourceMeta{
 	},
 	"v1/serviceaccounts": {
 		Renderer: &render.ServiceAccount{},
+	},
+	"v1/persistentvolumes": {
+		Renderer: &render.PersistentVolume{},
+	},
+	"v1/persistentvolumeclaims": {
+		Renderer: &render.PersistentVolumeClaim{},
 	},
 
 	// Apps...
@@ -98,37 +109,40 @@ var Registry = map[string]ResourceMeta{
 	"extensions/v1beta1/networkpolicies": {
 		Renderer: &render.NetworkPolicy{},
 	},
+	"networking.k8s.io/v1/networkpolicies": {
+		Renderer: &render.NetworkPolicy{},
+	},
 
 	// Batch...
 	"batch/v1beta1/cronjobs": {
 		Renderer: &render.CronJob{},
 	},
 	"batch/v1/jobs": {
-		Model:    &Job{},
+		DAO:      &dao.Job{},
 		Renderer: &render.Job{},
 	},
 
 	// Autoscaling...
 	"autoscaling/v1/horizontalpodautoscalers": {
-		Model:    &HorizontalPodAutoscaler{},
+		DAO:      &dao.HorizontalPodAutoscaler{},
 		Renderer: &render.HorizontalPodAutoscaler{},
 	},
 	"autoscaling/v2beta1/horizontalpodautoscalers": {
-		Model:    &HorizontalPodAutoscaler{},
+		DAO:      &dao.HorizontalPodAutoscaler{},
 		Renderer: &render.HorizontalPodAutoscaler{},
 	},
 	"autoscaling/v2beta2/horizontalpodautoscalers": {
-		Model:    &HorizontalPodAutoscaler{},
+		DAO:      &dao.HorizontalPodAutoscaler{},
 		Renderer: &render.HorizontalPodAutoscaler{},
 	},
 
 	// CRDs...
 	"apiextensions.k8s.io/v1/customresourcedefinitions": {
-		Model:    &CustomResourceDefinition{},
+		DAO:      &dao.CustomResourceDefinition{},
 		Renderer: &render.CustomResourceDefinition{},
 	},
 	"apiextensions.k8s.io/v1beta1/customresourcedefinitions": {
-		Model:    &CustomResourceDefinition{},
+		DAO:      &dao.CustomResourceDefinition{},
 		Renderer: &render.CustomResourceDefinition{},
 	},
 
@@ -144,7 +158,7 @@ var Registry = map[string]ResourceMeta{
 
 	// RBAC...
 	"rbac.authorization.k8s.io/v1/clusterroles": {
-		Model:    &Rbac{},
+		DAO:      &dao.Rbac{},
 		Renderer: &render.ClusterRole{},
 	},
 	"rbac.authorization.k8s.io/v1/clusterrolebindings": {

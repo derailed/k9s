@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/derailed/k9s/internal/client"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -20,7 +21,7 @@ func (CronJob) ColorerFunc() ColorerFunc {
 // Header returns a header row.
 func (CronJob) Header(ns string) HeaderRow {
 	var h HeaderRow
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		h = append(h, Header{Name: "NAMESPACE"})
 	}
 
@@ -53,7 +54,7 @@ func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 
 	r.ID = MetaFQN(cj.ObjectMeta)
 	r.Fields = make(Fields, 0, len(c.Header(ns)))
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, cj.Namespace)
 	}
 	r.Fields = append(r.Fields,

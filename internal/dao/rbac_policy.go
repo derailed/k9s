@@ -1,11 +1,11 @@
-package model
+package dao
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/derailed/k9s/internal"
-	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -14,17 +14,18 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var (
+	_ Accessor = (*Policy)(nil)
+	_ Nuker    = (*Policy)(nil)
+)
+
 // Policy represent rbac policy.
 type Policy struct {
 	Resource
 }
 
 // List returns available policies.
-func (p *Policy) List(ctx context.Context) ([]runtime.Object, error) {
-	gvr, ok := ctx.Value(internal.KeyGVR).(string)
-	if !ok {
-		return nil, fmt.Errorf("expecting a context gvr")
-	}
+func (p *Policy) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	kind, ok := ctx.Value(internal.KeySubjectKind).(string)
 	if !ok {
 		return nil, fmt.Errorf("expecting a context subject kind")
@@ -34,7 +35,6 @@ func (p *Policy) List(ctx context.Context) ([]runtime.Object, error) {
 		return nil, fmt.Errorf("expecting a context subject name")
 	}
 
-	p.gvr = gvr
 	crps, err := p.loadClusterRoleBinding(kind, name)
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func (p *Policy) List(ctx context.Context) ([]runtime.Object, error) {
 }
 
 func (p *Policy) loadClusterRoleBinding(kind, name string) (render.Policies, error) {
-	crbs, err := fetchClusterRoleBindings(p.factory)
+	crbs, err := fetchClusterRoleBindings(p.Factory)
 	if err != nil {
 		return nil, err
 	}
@@ -118,8 +118,8 @@ func (p *Policy) loadRoleBinding(kind, name string) (render.Policies, error) {
 	return rows, nil
 }
 
-func fetchClusterRoleBindings(f dao.Factory) ([]rbacv1.ClusterRoleBinding, error) {
-	oo, err := f.List(crbGVR, render.ClusterScope, true, labels.Everything())
+func fetchClusterRoleBindings(f Factory) ([]rbacv1.ClusterRoleBinding, error) {
+	oo, err := f.List(crbGVR, client.ClusterScope, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -136,8 +136,8 @@ func fetchClusterRoleBindings(f dao.Factory) ([]rbacv1.ClusterRoleBinding, error
 	return crbs, nil
 }
 
-func fetchRoleBindings(f dao.Factory) ([]rbacv1.RoleBinding, error) {
-	oo, err := f.List(rbGVR, render.ClusterScope, true, labels.Everything())
+func fetchRoleBindings(f Factory) ([]rbacv1.RoleBinding, error) {
+	oo, err := f.List(rbGVR, client.ClusterScope, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func fetchRoleBindings(f dao.Factory) ([]rbacv1.RoleBinding, error) {
 }
 
 func (p *Policy) fetchRoleBindingSubjects(kind, name string) ([]string, error) {
-	rbs, err := fetchRoleBindings(p.factory)
+	rbs, err := fetchRoleBindings(p.Factory)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +174,7 @@ func (p *Policy) fetchRoleBindingSubjects(kind, name string) ([]string, error) {
 func (p *Policy) fetchClusterRoles() ([]rbacv1.ClusterRole, error) {
 	const gvr = "rbac.authorization.k8s.io/v1/clusterroles"
 
-	oo, err := p.factory.List(gvr, render.ClusterScope, true, labels.Everything())
+	oo, err := p.Factory.List(gvr, client.ClusterScope, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func (p *Policy) fetchClusterRoles() ([]rbacv1.ClusterRole, error) {
 func (p *Policy) fetchRoles() ([]rbacv1.Role, error) {
 	const gvr = "rbac.authorization.k8s.io/v1/roles"
 
-	oo, err := p.factory.List(gvr, render.AllNamespaces, true, labels.Everything())
+	oo, err := p.Factory.List(gvr, client.AllNamespaces, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -209,35 +209,4 @@ func (p *Policy) fetchRoles() ([]rbacv1.Role, error) {
 	}
 
 	return rr, nil
-}
-
-func in(nn []string, match string) bool {
-	for _, n := range nn {
-		if n == match {
-			return true
-		}
-	}
-	return false
-}
-
-func parseRules(ns, binding string, rules []rbacv1.PolicyRule) render.Policies {
-	pp := make(render.Policies, 0, len(rules))
-	for _, rule := range rules {
-		for _, grp := range rule.APIGroups {
-			for _, res := range rule.Resources {
-				for _, na := range rule.ResourceNames {
-					pp = pp.Upsert(render.NewPolicyRes(ns, binding, FQN(res, na), grp, rule.Verbs))
-				}
-				pp = pp.Upsert(render.NewPolicyRes(ns, binding, FQN(grp, res), grp, rule.Verbs))
-			}
-		}
-		for _, nres := range rule.NonResourceURLs {
-			if nres[0] != '/' {
-				nres = "/" + nres
-			}
-			pp = pp.Upsert(render.NewPolicyRes(ns, binding, nres, "n/a", rule.Verbs))
-		}
-	}
-
-	return pp
 }

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 )
 
@@ -35,7 +36,7 @@ func (g *Generic) Header(ns string) HeaderRow {
 	}
 
 	h := make(HeaderRow, 0, len(g.table.ColumnDefinitions))
-	if ns == "" {
+	if client.IsAllNamespaces(ns) {
 		h = append(h, Header{Name: "NAMESPACE"})
 	}
 	for i, c := range g.table.ColumnDefinitions {
@@ -59,22 +60,19 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 		return fmt.Errorf("expecting a TableRow but got %T", o)
 	}
 
-	var nns = AllNamespaces
-	if ns != ClusterScope {
-		var err error
-		nns, err = extractNamespace(row.Object.Raw)
-		if err != nil {
-			return err
-		}
+	_, nns, err := resourceNS(row.Object.Raw)
+	if err != nil {
+		return err
 	}
+
 	n, ok := row.Cells[0].(string)
 	if !ok {
-		return fmt.Errorf("expecting row id to be a string but got %#v", row.Cells[0])
+		return fmt.Errorf("expecting row 0 to be a string but got %T", row.Cells[0])
 	}
 
 	r.ID = FQN(nns, n)
 	r.Fields = make(Fields, 0, len(g.Header(ns)))
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) && nns != "" {
 		r.Fields = append(r.Fields, nns)
 	}
 	var ageCell interface{}
@@ -95,21 +93,26 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func extractNamespace(raw []byte) (string, error) {
+func resourceNS(raw []byte) (bool, string, error) {
 	var obj map[string]interface{}
 	err := json.Unmarshal(raw, &obj)
 	if err != nil {
-		return "", err
+		return false, "", err
 	}
 
 	meta, ok := obj["metadata"].(map[string]interface{})
 	if !ok {
-		return "", errors.New("no metadata found on generic resource")
-	}
-	ns, ok := meta["namespace"].(string)
-	if !ok {
-		return "", errors.New("invalid namespace found on generic metadata")
+		return false, "", errors.New("no metadata found on generic resource")
 	}
 
-	return ns, nil
+	ns, ok := meta["namespace"]
+	if !ok {
+		return true, "", nil
+	}
+
+	nns, ok := ns.(string)
+	if !ok {
+		return false, "", fmt.Errorf("expecting namespace string type but got %T", ns)
+	}
+	return false, nns, nil
 }

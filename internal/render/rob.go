@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -20,7 +21,7 @@ func (RoleBinding) ColorerFunc() ColorerFunc {
 // Header returns a header rbw.
 func (RoleBinding) Header(ns string) HeaderRow {
 	var h HeaderRow
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		h = append(h, Header{Name: "NAMESPACE"})
 	}
 
@@ -49,7 +50,7 @@ func (r RoleBinding) Render(o interface{}, ns string, row *Row) error {
 
 	row.ID = MetaFQN(rb.ObjectMeta)
 	row.Fields = make(Fields, 0, len(r.Header(ns)))
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		row.Fields = append(row.Fields, rb.Namespace)
 	}
 	row.Fields = append(row.Fields,

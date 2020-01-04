@@ -3,6 +3,7 @@ package render_test
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/gdamore/tcell"
 	"github.com/stretchr/testify/assert"
@@ -18,15 +19,15 @@ func TestAliasColorer(t *testing.T) {
 		e  tcell.Color
 	}{
 		"addAll": {
-			ns: render.AllNamespaces,
+			ns: client.AllNamespaces,
 			re: render.RowEvent{Kind: render.EventAdd, Row: r},
 			e:  tcell.ColorMediumSpringGreen},
 		"deleteAll": {
-			ns: render.AllNamespaces,
+			ns: client.AllNamespaces,
 			re: render.RowEvent{Kind: render.EventDelete, Row: r},
 			e:  tcell.ColorMediumSpringGreen},
 		"updateAll": {
-			ns: render.AllNamespaces,
+			ns: client.AllNamespaces,
 			re: render.RowEvent{Kind: render.EventUpdate, Row: r},
 			e:  tcell.ColorMediumSpringGreen,
 		},
@@ -49,7 +50,7 @@ func TestAliasHeader(t *testing.T) {
 
 	var a render.Alias
 	assert.Equal(t, h, a.Header("fred"))
-	assert.Equal(t, h, a.Header(render.AllNamespaces))
+	assert.Equal(t, h, a.Header(client.AllNamespaces))
 }
 
 func TestAliasRender(t *testing.T) {

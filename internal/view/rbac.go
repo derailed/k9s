@@ -22,7 +22,7 @@ func NewRbac(gvr client.GVR) ResourceViewer {
 	}
 	r.GetTable().SetColorerFn(render.Rbac{}.ColorerFunc())
 	r.SetBindKeysFn(r.bindKeys)
-	r.GetTable().SetSortCol(1, len(render.Rbac{}.Header(render.ClusterScope)), true)
+	r.GetTable().SetSortCol(1, len(render.Rbac{}.Header(client.ClusterScope)), true)
 	r.GetTable().SetEnterFn(blankEnterFn)
 
 	return &r
@@ -35,7 +35,7 @@ func (r *Rbac) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func showRules(app *App, _, gvr, path string) {
+func showRules(app *App, _ ui.Tabular, gvr, path string) {
 	v := NewRbac(client.NewGVR("rbac"))
 	v.SetContextFn(rbacCtxt(gvr, path))
 
@@ -51,4 +51,4 @@ func rbacCtxt(gvr, path string) ContextFunc {
 	}
 }
 
-func blankEnterFn(_ *App, _, _, _ string) {}
+func blankEnterFn(_ *App, _ ui.Tabular, _, _ string) {}

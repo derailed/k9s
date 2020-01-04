@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	v1 "k8s.io/api/core/v1"
@@ -66,7 +67,7 @@ func (Pod) checkReadyCol(readyCol, statusCol string, c tcell.Color) tcell.Color 
 // Header returns a header row.
 func (Pod) Header(ns string) HeaderRow {
 	var h HeaderRow
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		h = append(h, Header{Name: "NAMESPACE"})
 	}
 
@@ -105,7 +106,7 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 
 	r.ID = MetaFQN(po.ObjectMeta)
 	r.Fields = make(Fields, 0, len(p.Header(ns)))
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, po.Namespace)
 	}
 	r.Fields = append(r.Fields,

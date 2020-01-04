@@ -1,12 +1,15 @@
 package dao
 
 import (
+	"bytes"
+	"errors"
 	"math"
 
 	"github.com/derailed/tview"
 	runewidth "github.com/mattn/go-runewidth"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/rs/zerolog/log"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/cli-runtime/pkg/printers"
 )
 
 func toPerc(v1, v2 float64) float64 {
@@ -21,12 +24,20 @@ func Truncate(str string, width int) string {
 	return runewidth.Truncate(str, width, string(tview.SemigraphicsHorizontalEllipsis))
 }
 
-// FetchNodes returns a collection of nodes.
-func FetchNodes(f Factory) (*v1.NodeList, error) {
-	auth, err := f.Client().CanI("", "v1/nodes", []string{"list"})
-	if !auth || err != nil {
-		return nil, err
+// ToYAML converts a resource to its YAML representation.
+func ToYAML(o runtime.Object) (string, error) {
+	if o == nil {
+		return "", errors.New("no object to yamlize")
+	}
+	var (
+		buff bytes.Buffer
+		p    printers.YAMLPrinter
+	)
+	err := p.PrintObj(o, &buff)
+	if err != nil {
+		log.Error().Msgf("Marshal Error %v", err)
+		return "", err
 	}
 
-	return f.Client().DialOrDie().CoreV1().Nodes().List(metav1.ListOptions{})
+	return buff.String(), nil
 }

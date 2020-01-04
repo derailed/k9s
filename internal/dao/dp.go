@@ -15,15 +15,18 @@ import (
 	"k8s.io/kubectl/pkg/polymorphichelpers"
 )
 
+var (
+	_ Accessor    = (*Deployment)(nil)
+	_ Nuker       = (*Deployment)(nil)
+	_ Loggable    = (*Deployment)(nil)
+	_ Restartable = (*Deployment)(nil)
+	_ Scalable    = (*Deployment)(nil)
+)
+
 // Deployment represents a deployment K8s resource.
 type Deployment struct {
-	Generic
+	Resource
 }
-
-var _ Accessor = (*Deployment)(nil)
-var _ Loggable = (*Deployment)(nil)
-var _ Restartable = (*Deployment)(nil)
-var _ Scalable = (*Deployment)(nil)
 
 // Scale a Deployment.
 func (d *Deployment) Scale(path string, replicas int32) error {
@@ -45,7 +48,7 @@ func (d *Deployment) Scale(path string, replicas int32) error {
 
 // Restart a Deployment rollout.
 func (d *Deployment) Restart(path string) error {
-	o, err := d.Get(d.gvr.String(), path, true, labels.Everything())
+	o, err := d.Factory.Get(d.gvr.String(), path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -71,7 +74,7 @@ func (d *Deployment) Restart(path string) error {
 
 // TailLogs tail logs for all pods represented by this Deployment.
 func (d *Deployment) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
-	o, err := d.Get(d.gvr.String(), opts.Path, true, labels.Everything())
+	o, err := d.Factory.Get(d.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return err
 	}

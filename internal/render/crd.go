@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -41,7 +42,7 @@ func (CustomResourceDefinition) Render(o interface{}, ns string, r *Row) error {
 		log.Error().Err(err).Msgf("Fields timestamp %v", err)
 	}
 
-	r.ID = FQN(ClusterScope, extractMetaField(meta, "name"))
+	r.ID = FQN(client.ClusterScope, extractMetaField(meta, "name"))
 	r.Fields = Fields{
 		extractMetaField(meta, "name"),
 		toAge(metav1.Time{Time: t}),

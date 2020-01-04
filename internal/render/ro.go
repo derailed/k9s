@@ -3,6 +3,7 @@ package render
 import (
 	"fmt"
 
+	"github.com/derailed/k9s/internal/client"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -19,7 +20,7 @@ func (Role) ColorerFunc() ColorerFunc {
 // Header returns a header row.
 func (Role) Header(ns string) HeaderRow {
 	var h HeaderRow
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		h = append(h, Header{Name: "NAMESPACE"})
 	}
 
@@ -43,7 +44,7 @@ func (r Role) Render(o interface{}, ns string, row *Row) error {
 
 	row.ID = MetaFQN(ro.ObjectMeta)
 	row.Fields = make(Fields, 0, len(r.Header(ns)))
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		row.Fields = append(row.Fields, ro.Namespace)
 	}
 	row.Fields = append(row.Fields,

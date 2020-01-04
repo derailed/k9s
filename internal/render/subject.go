@@ -29,9 +29,9 @@ func (Subject) Header(ns string) HeaderRow {
 
 // Render renders a K8s resource to screen.
 func (s Subject) Render(o interface{}, ns string, r *Row) error {
-	res, ok := o.(SubjectRef)
+	res, ok := o.(SubjectRes)
 	if !ok {
-		return fmt.Errorf("Expected SubjectRef, but got %T", s)
+		return fmt.Errorf("Expected SubjectRes, but got %T", s)
 	}
 
 	r.ID = res.Name
@@ -48,17 +48,42 @@ func (s Subject) Render(o interface{}, ns string, r *Row) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-// SubjectRef represents a subject rule.
-type SubjectRef struct {
+// SubjectRes represents a subject rule.
+type SubjectRes struct {
 	Name, Kind, FirstLocation string
 }
 
 // GetObjectKind returns a schema object.
-func (SubjectRef) GetObjectKind() schema.ObjectKind {
+func (SubjectRes) GetObjectKind() schema.ObjectKind {
 	return nil
 }
 
 // DeepCopyObject returns a container copy.
-func (s SubjectRef) DeepCopyObject() runtime.Object {
+func (s SubjectRes) DeepCopyObject() runtime.Object {
 	return s
+}
+
+// Subjects represents a collection of RBAC policies.
+type Subjects []SubjectRes
+
+// Upsert adds a new subject.
+func (ss Subjects) Upsert(s SubjectRes) Subjects {
+	idx, ok := ss.find(s.Name)
+	if !ok {
+		return append(ss, s)
+	}
+	ss[idx] = s
+
+	return ss
+}
+
+// Find locates a row by id. Retturns false is not found.
+func (ss Subjects) find(res string) (int, bool) {
+	for i, s := range ss {
+		if s.Name == res {
+			return i, true
+		}
+	}
+
+	return 0, false
 }

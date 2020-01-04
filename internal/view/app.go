@@ -219,8 +219,8 @@ func (a *App) refreshIndicator() {
 }
 
 func (a *App) switchNS(ns string) bool {
-	if ns == render.ClusterScope {
-		ns = render.AllNamespaces
+	if ns == client.ClusterScope {
+		ns = client.AllNamespaces
 	}
 	if err := a.Config.SetActiveNamespace(ns); err != nil {
 		log.Error().Err(err).Msg("Config Set NS failed!")

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
@@ -43,9 +44,10 @@ type Table struct {
 func NewTable(gvr string) *Table {
 	return &Table{
 		SelectTable: &SelectTable{
-			Table: tview.NewTable(),
-			model: model.NewTable(gvr),
-			marks: make(map[string]struct{}),
+			Table:       tview.NewTable(),
+			model:       model.NewTable(gvr),
+			selectedRow: 1,
+			marks:       make(map[string]struct{}),
 		},
 		actions:   make(KeyActions),
 		cmdBuff:   NewCmdBuff('/', FilterBuff),
@@ -107,7 +109,7 @@ func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 			t.SearchBuff().Add(evt.Rune())
 			t.ClearSelection()
 			data := t.GetModel().Peek()
-			t.doUpdate(t.filtered(data), len(data.RowEvents) > 0)
+			t.doUpdate(t.filtered(data))
 			t.UpdateTitle()
 			t.SelectFirstRow()
 			return nil
@@ -152,23 +154,18 @@ func (t *Table) Update(data render.TableData) {
 	data.Mutex.RLock()
 	defer data.Mutex.RUnlock()
 
-	var firstRow bool
-	if t.GetRowCount() == 0 {
-		firstRow = true
-	}
-
 	if t.decorateFn != nil {
 		data = t.decorateFn(data)
 	}
 	if !t.cmdBuff.Empty() {
 		data = t.filtered(data)
 	}
-	t.doUpdate(data, firstRow)
+	t.doUpdate(data)
 	t.UpdateTitle()
 }
 
-func (t *Table) doUpdate(data render.TableData, firstRow bool) {
-	if data.Namespace == render.AllNamespaces {
+func (t *Table) doUpdate(data render.TableData) {
+	if client.IsAllNamespaces(data.Namespace) {
 		t.actions[KeyShiftP] = NewKeyAction("Sort Namespace", t.SortColCmd(-2, true), false)
 	} else {
 		t.actions.Delete(KeyShiftP)
@@ -190,10 +187,6 @@ func (t *Table) doUpdate(data render.TableData, firstRow bool) {
 	ComputeMaxColumns(pads, t.sortCol.index, data.Header, data.RowEvents)
 	for i, r := range data.RowEvents {
 		t.buildRow(data.Namespace, i+1, r, data.Header, pads)
-	}
-
-	if firstRow {
-		t.SelectFirstRow()
 	}
 	t.updateSelection(true)
 }
@@ -348,34 +341,32 @@ func (t *Table) UpdateTitle() {
 
 // UpdateTitle refreshes the table title.
 func (t *Table) styleTitle() string {
-	ns := t.GetModel().GetNamespace()
-	if ns == render.AllNamespaces {
-		ns = render.NamespaceAll
-	}
 	rc := t.GetRowCount()
 	if rc > 0 {
 		rc--
 	}
 
-	base, path := strings.Title(t.BaseTitle), t.Path
-	if ns == render.AllNamespaces {
-		ns = render.NamespaceAll
+	base := strings.Title(t.BaseTitle)
+	ns := t.GetModel().GetNamespace()
+	if ns == client.AllNamespaces {
+		ns = client.NamespaceAll
 	}
-	info := ns
+	path := t.Path
 	if path != "" {
-		info = path
-		cns, n := render.Namespaced(path)
-		if cns == render.ClusterScope {
-			info = n
+		cns, n := client.Namespaced(path)
+		if cns == client.ClusterScope {
+			ns = n
+		} else {
+			ns = path
 		}
 	}
 
 	buff := t.SearchBuff().String()
 	var title string
-	if info == "" || info == render.ClusterScope {
+	if ns == client.ClusterScope {
 		title = SkinTitle(fmt.Sprintf(titleFmt, base, rc), t.styles.Frame())
 	} else {
-		title = SkinTitle(fmt.Sprintf(nsTitleFmt, base, info, rc), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(nsTitleFmt, base, ns, rc), t.styles.Frame())
 	}
 	if buff == "" {
 		return title
@@ -384,5 +375,6 @@ func (t *Table) styleTitle() string {
 	if IsLabelSelector(buff) {
 		buff = TrimLabelSelector(buff)
 	}
+
 	return title + SkinTitle(fmt.Sprintf(SearchFmt, buff), t.styles.Frame())
 }

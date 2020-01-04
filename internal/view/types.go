@@ -16,7 +16,7 @@ type (
 	BoostActionsFunc func(ui.KeyActions)
 
 	// EnterFunc represents an enter key action.
-	EnterFunc func(app *App, ns, resource, selection string)
+	EnterFunc func(app *App, model ui.Tabular, gvr, path string)
 
 	// ContainerFunc returns the active container name.
 	ContainerFunc func() string

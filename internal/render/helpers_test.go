@@ -270,7 +270,7 @@ func TestMetaFQN(t *testing.T) {
 		e string
 	}{
 		"full": {metav1.ObjectMeta{Namespace: "fred", Name: "blee"}, "fred/blee"},
-		"nons": {metav1.ObjectMeta{Name: "blee"}, "blee"},
+		"nons": {metav1.ObjectMeta{Name: "blee"}, "-/blee"},
 	}
 
 	for k := range uu {

@@ -116,17 +116,17 @@ func (c *Command) specialCmd(cmd string) bool {
 }
 
 func (c *Command) viewMetaFor(cmd string) (string, *MetaViewer, error) {
-	gvr, ok := c.alias.Get(cmd)
+	gvr, ok := c.alias.AsGVR(cmd)
 	if !ok {
 		return "", nil, fmt.Errorf("Huh? `%s` Command not found", cmd)
 	}
 
-	v, ok := customViewers[client.NewGVR(gvr)]
+	v, ok := customViewers[gvr]
 	if !ok {
-		return gvr, &MetaViewer{viewerFn: NewBrowser}, nil
+		return gvr.String(), &MetaViewer{viewerFn: NewBrowser}, nil
 	}
 
-	return gvr, &v, nil
+	return gvr.String(), &v, nil
 }
 
 func (c *Command) componentFor(gvr string, v *MetaViewer) ResourceViewer {

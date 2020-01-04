@@ -12,12 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// ResourceMetas represents a collection of resource metadata.
-type ResourceMetas map[client.GVR]metav1.APIResource
-
-// Accessors represents a collection of dao accessors.
-type Accessors map[client.GVR]Accessor
-
 var resMetas = ResourceMetas{}
 
 // AccessorFor returns a client accessor for a resource if registered.
@@ -38,6 +32,7 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		client.NewGVR("apps/v1/statefulsets"):          &StatefulSet{},
 		client.NewGVR("batch/v1beta1/cronjobs"):        &CronJob{},
 		client.NewGVR("batch/v1/jobs"):                 &Job{},
+		client.NewGVR("charts"):                        &Chart{},
 	}
 
 	r, ok := m[gvr]
@@ -75,6 +70,17 @@ func MetaFor(gvr client.GVR) (metav1.APIResource, error) {
 	return m, nil
 }
 
+// IsK8sMeta checks for non resource meta.
+func IsK8sMeta(m metav1.APIResource) bool {
+	for _, c := range m.Categories {
+		if c == "k9s" || c == "helm" {
+			return false
+		}
+	}
+
+	return true
+}
+
 // IsK9sMeta checks for non resource meta.
 func IsK9sMeta(m metav1.APIResource) bool {
 	for _, c := range m.Categories {
@@ -100,6 +106,12 @@ func LoadResources(f Factory) error {
 
 // BOZO!! Need contermeasure for direct commands!
 func loadNonResource(m ResourceMetas) {
+	loadK9s(m)
+	loadRBAC(m)
+	loadHelm(m)
+}
+
+func loadK9s(m ResourceMetas) {
 	m[client.NewGVR("aliases")] = metav1.APIResource{
 		Name:       "aliases",
 		Kind:       "Aliases",
@@ -138,8 +150,16 @@ func loadNonResource(m ResourceMetas) {
 		Kind:       "Containers",
 		Categories: []string{"k9s"},
 	}
+}
 
-	loadRBAC(m)
+func loadHelm(m ResourceMetas) {
+	m[client.NewGVR("charts")] = metav1.APIResource{
+		Name:       "charts",
+		Kind:       "Charts",
+		Namespaced: true,
+		Verbs:      []string{"delete"},
+		Categories: []string{"helm"},
+	}
 }
 
 func loadRBAC(m ResourceMetas) {

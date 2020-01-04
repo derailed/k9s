@@ -32,8 +32,8 @@ func (c *Context) bindKeys(aa ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
 }
 
-func (c *Context) useCtx(app *App, _, res, path string) {
-	log.Debug().Msgf("SWITCH CTX %q--%q", res, path)
+func (c *Context) useCtx(app *App, model ui.Tabular, gvr, path string) {
+	log.Debug().Msgf("SWITCH CTX %q--%q", gvr, path)
 	if err := c.useContext(path); err != nil {
 		app.Flash().Err(err)
 		return

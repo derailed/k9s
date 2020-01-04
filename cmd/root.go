@@ -8,7 +8,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
@@ -113,7 +112,7 @@ func loadConfiguration() *config.Config {
 		k9sCfg.K9s.OverrideCommand(*k9sFlags.Command)
 	}
 
-	if isBoolSet(k9sFlags.AllNamespaces) && k9sCfg.SetActiveNamespace(render.AllNamespaces) != nil {
+	if isBoolSet(k9sFlags.AllNamespaces) && k9sCfg.SetActiveNamespace(client.AllNamespaces) != nil {
 		log.Error().Msg("Setting active namespace")
 	}
 

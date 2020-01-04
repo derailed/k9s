@@ -8,46 +8,10 @@ import (
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
-const (
-	NamespaceAll  = "all"
-	AllNamespaces = ""
-)
-
-type (
-	// MetricsServer serves cluster metrics for nodes and pods.
-	MetricsServer struct {
-		Connection
-	}
-
-	currentMetrics struct {
-		CurrentCPU int64
-		CurrentMEM float64
-	}
-
-	// PodMetrics represent an aggregation of all pod containers metrics.
-	PodMetrics currentMetrics
-
-	// NodeMetrics describes raw node metrics.
-	NodeMetrics struct {
-		currentMetrics
-		AvailCPU int64
-		AvailMEM float64
-		TotalCPU int64
-		TotalMEM float64
-	}
-
-	// ClusterMetrics summarizes total node metrics as percentages.
-	ClusterMetrics struct {
-		PercCPU float64
-		PercMEM float64
-	}
-
-	// NodesMetrics tracks usage metrics per nodes.
-	NodesMetrics map[string]NodeMetrics
-
-	// PodsMetrics tracks usage metrics per pods.
-	PodsMetrics map[string]PodMetrics
-)
+// MetricsServer serves cluster metrics for nodes and pods.
+type MetricsServer struct {
+	Connection
+}
 
 // NewMetricsServer return a metric server instance.
 func NewMetricsServer(c Connection) *MetricsServer {

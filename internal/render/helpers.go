@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	runewidth "github.com/mattn/go-runewidth"
 	"github.com/rs/zerolog/log"
@@ -31,10 +32,6 @@ func asSelector(s *metav1.LabelSelector) string {
 	return sel.String()
 }
 
-func isAllNamespace(ns string) bool {
-	return ns == AllNamespaces
-}
-
 type metric struct {
 	cpu, mem string
 }
@@ -46,7 +43,7 @@ func noMetric() metric {
 // MetaFQN returns a fully qualified resource name.
 func MetaFQN(m metav1.ObjectMeta) string {
 	if m.Namespace == "" {
-		return m.Name
+		return FQN(client.ClusterScope, m.Name)
 	}
 
 	return FQN(m.Namespace, m.Name)

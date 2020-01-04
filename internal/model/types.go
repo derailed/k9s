@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tview"
@@ -54,23 +55,40 @@ type Renderer interface {
 	ColorerFunc() render.ColorerFunc
 }
 
-// Lister represents a resource lister.
-type Lister interface {
-	// Init initializes a resource.
-	Init(ns, gvr string, f dao.Factory)
-
+type Cruder interface {
 	// List returns a collection of resources.
-	List(context.Context) ([]runtime.Object, error)
+	List(ctx context.Context, ns string) ([]runtime.Object, error)
 
 	// Get returns a resource instance.
 	Get(ctx context.Context, path string) (runtime.Object, error)
 
+	// Delete removes a resource.
+	// Delete(ctx context.Context, path string) error
+}
+
+// Lister represents a resource lister.
+type Lister interface {
+	Cruder
+	// Describer
+
+	// Init initializes a resource.
+	Init(ns, gvr string, f dao.Factory)
+
 	// Hydrate converts resource rows into tabular data.
-	Hydrate(oo []runtime.Object, rr render.Rows, r Renderer) error
+	// Hydrate(oo []runtime.Object, rr render.Rows, r Renderer) error
+}
+
+// Describer represents a resource describer.
+type Describer interface {
+	// ToYAML return resource yaml.
+	ToYAML(ctx context.Context, path string) (string, error)
+
+	// Describe returns a resource description.
+	Describe(client client.Connection, gvr, path string) (string, error)
 }
 
 // ResourceMeta represents model info about a resource.
 type ResourceMeta struct {
-	Model    Lister
+	DAO      dao.Accessor
 	Renderer Renderer
 }

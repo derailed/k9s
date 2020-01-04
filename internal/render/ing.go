@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -21,7 +22,7 @@ func (Ingress) ColorerFunc() ColorerFunc {
 // Header returns a header row.
 func (Ingress) Header(ns string) HeaderRow {
 	var h HeaderRow
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		h = append(h, Header{Name: "NAMESPACE"})
 	}
 
@@ -48,7 +49,7 @@ func (i Ingress) Render(o interface{}, ns string, r *Row) error {
 
 	r.ID = MetaFQN(ing.ObjectMeta)
 	r.Fields = make(Fields, 0, len(i.Header(ns)))
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, ing.Namespace)
 	}
 	r.Fields = append(r.Fields,

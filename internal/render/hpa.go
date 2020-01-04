@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	autoscalingv1 "k8s.io/api/autoscaling/v1"
 	autoscalingv2beta1 "k8s.io/api/autoscaling/v2beta1"
@@ -24,7 +25,7 @@ func (HorizontalPodAutoscaler) ColorerFunc() ColorerFunc {
 // Header returns a header row.
 func (HorizontalPodAutoscaler) Header(ns string) HeaderRow {
 	var h HeaderRow
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		h = append(h, Header{Name: "NAMESPACE"})
 	}
 
@@ -69,7 +70,7 @@ func (h HorizontalPodAutoscaler) renderV1(raw *unstructured.Unstructured, ns str
 
 	r.ID = MetaFQN(hpa.ObjectMeta)
 	r.Fields = make(Fields, 0, len(h.Header(ns)))
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, hpa.Namespace)
 	}
 	r.Fields = append(r.Fields,
@@ -94,7 +95,7 @@ func (h HorizontalPodAutoscaler) renderV2b1(raw *unstructured.Unstructured, ns s
 
 	r.ID = MetaFQN(hpa.ObjectMeta)
 	r.Fields = make(Fields, 0, len(h.Header(ns)))
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, hpa.Namespace)
 	}
 
@@ -120,7 +121,7 @@ func (h HorizontalPodAutoscaler) renderV2b2(raw *unstructured.Unstructured, ns s
 
 	r.ID = MetaFQN(hpa.ObjectMeta)
 	r.Fields = make(Fields, 0, len(h.Header(ns)))
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, hpa.Namespace)
 	}
 

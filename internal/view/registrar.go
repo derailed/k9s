@@ -4,21 +4,29 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/ui"
 )
 
 func loadCustomViewers() MetaViewers {
 	m := make(MetaViewers, 30)
-	coreRes(m)
-	miscRes(m)
-	appsRes(m)
-	rbacRes(m)
-	batchRes(m)
-	extRes(m)
+	coreViewers(m)
+	miscViewers(m)
+	appsViewers(m)
+	rbacViewers(m)
+	batchViewers(m)
+	extViewers(m)
+	helmViewers(m)
 
 	return m
 }
 
-func coreRes(vv MetaViewers) {
+func helmViewers(vv MetaViewers) {
+	vv[client.NewGVR("charts")] = MetaViewer{
+		viewerFn: NewChart,
+	}
+}
+
+func coreViewers(vv MetaViewers) {
 	vv[client.NewGVR("v1/namespaces")] = MetaViewer{
 		viewerFn: NewNamespace,
 	}
@@ -39,7 +47,7 @@ func coreRes(vv MetaViewers) {
 	}
 }
 
-func miscRes(vv MetaViewers) {
+func miscViewers(vv MetaViewers) {
 	vv[client.NewGVR("contexts")] = MetaViewer{
 		viewerFn: NewContext,
 	}
@@ -60,7 +68,7 @@ func miscRes(vv MetaViewers) {
 	}
 }
 
-func appsRes(vv MetaViewers) {
+func appsViewers(vv MetaViewers) {
 	vv[client.NewGVR("apps/v1/deployments")] = MetaViewer{
 		viewerFn: NewDeploy,
 	}
@@ -78,7 +86,7 @@ func appsRes(vv MetaViewers) {
 	}
 }
 
-func rbacRes(vv MetaViewers) {
+func rbacViewers(vv MetaViewers) {
 	vv[client.NewGVR("rbac")] = MetaViewer{
 		enterFn: showRules,
 	}
@@ -102,7 +110,7 @@ func rbacRes(vv MetaViewers) {
 	}
 }
 
-func batchRes(vv MetaViewers) {
+func batchViewers(vv MetaViewers) {
 	vv[client.NewGVR("batch/v1beta1/cronjobs")] = MetaViewer{
 		viewerFn: NewCronJob,
 	}
@@ -111,7 +119,7 @@ func batchRes(vv MetaViewers) {
 	}
 }
 
-func extRes(vv MetaViewers) {
+func extViewers(vv MetaViewers) {
 	vv[client.NewGVR("apiextensions.k8s.io/v1/customresourcedefinitions")] = MetaViewer{
 		enterFn: showCRD,
 	}
@@ -120,7 +128,7 @@ func extRes(vv MetaViewers) {
 	}
 }
 
-func showCRD(app *App, ns, gvr, path string) {
+func showCRD(app *App, _ ui.Tabular, _, path string) {
 	_, crdGVR := client.Namespaced(path)
 	tokens := strings.Split(crdGVR, ".")
 	if err := app.gotoResource(tokens[0], false); err != nil {

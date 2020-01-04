@@ -1,4 +1,4 @@
-package model
+package dao
 
 import (
 	"context"
@@ -8,13 +8,18 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var (
+	_ Accessor = (*CustomResourceDefinition)(nil)
+	_ Nuker    = (*CustomResourceDefinition)(nil)
+)
+
 // CustomResourceDefinition represents a CRD resource model.
 type CustomResourceDefinition struct {
 	Resource
 }
 
 // List returns a collection of nodes.
-func (c *CustomResourceDefinition) List(ctx context.Context) ([]runtime.Object, error) {
+func (c *CustomResourceDefinition) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	strLabel, ok := ctx.Value(internal.KeyLabels).(string)
 	lsel := labels.Everything()
 	if sel, e := labels.ConvertSelectorToLabelsMap(strLabel); ok && e == nil {
@@ -22,7 +27,7 @@ func (c *CustomResourceDefinition) List(ctx context.Context) ([]runtime.Object, 
 	}
 
 	const gvr = "apiextensions.k8s.io/v1beta1/customresourcedefinitions"
-	oo, err := c.factory.List(gvr, "-", true, lsel)
+	oo, err := c.Factory.List(gvr, "-", true, lsel)
 	if err != nil {
 		return nil, err
 	}

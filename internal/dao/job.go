@@ -11,17 +11,20 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+var (
+	_ Accessor = (*Job)(nil)
+	_ Nuker    = (*Job)(nil)
+	_ Loggable = (*Job)(nil)
+)
+
 // Job represents a K8s job resource.
 type Job struct {
-	Generic
+	Resource
 }
-
-var _ Accessor = (*Job)(nil)
-var _ Loggable = (*Job)(nil)
 
 // TailLogs tail logs for all pods represented by this Job.
 func (j *Job) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
-	o, err := j.Get(j.gvr.String(), opts.Path, true, labels.Everything())
+	o, err := j.Factory.Get(j.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return err
 	}

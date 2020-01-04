@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -21,7 +22,7 @@ func (Secret) ColorerFunc() ColorerFunc {
 // Header returns a header row.
 func (Secret) Header(ns string) HeaderRow {
 	var h HeaderRow
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		h = append(h, Header{Name: "NAMESPACE"})
 	}
 
@@ -47,7 +48,7 @@ func (s Secret) Render(o interface{}, ns string, r *Row) error {
 
 	r.ID = MetaFQN(sec.ObjectMeta)
 	r.Fields = make(Fields, 0, len(s.Header(ns)))
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, sec.Namespace)
 	}
 	r.Fields = append(r.Fields,

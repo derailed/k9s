@@ -3,6 +3,7 @@ package view
 import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/ui"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -23,7 +24,7 @@ func NewJob(gvr client.GVR) ResourceViewer {
 	return &j
 }
 
-func (*Job) showPods(app *App, _, gvr, path string) {
+func (*Job) showPods(app *App, model ui.Tabular, gvr, path string) {
 	o, err := app.factory.Get(gvr, path, true, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)

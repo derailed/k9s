@@ -9,6 +9,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 )
@@ -39,7 +40,7 @@ func (s *ScreenDump) dirContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeyDir, dir)
 }
 
-func (s *ScreenDump) edit(app *App, ns, resource, path string) {
+func (s *ScreenDump) edit(app *App, model ui.Tabular, gvr, path string) {
 	log.Debug().Msgf("ScreenDump selection is %q", path)
 
 	s.Stop()

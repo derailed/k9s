@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/gdamore/tcell"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -22,7 +23,7 @@ func (PersistentVolumeClaim) ColorerFunc() ColorerFunc {
 		}
 
 		markCol := 2
-		if ns != AllNamespaces {
+		if client.IsNamespaced(ns) {
 			markCol = 1
 		}
 
@@ -38,7 +39,7 @@ func (PersistentVolumeClaim) ColorerFunc() ColorerFunc {
 // Header returns a header rbw.
 func (PersistentVolumeClaim) Header(ns string) HeaderRow {
 	var h HeaderRow
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		h = append(h, Header{Name: "NAMESPACE"})
 	}
 
@@ -86,7 +87,7 @@ func (p PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
 
 	r.ID = MetaFQN(pvc.ObjectMeta)
 	r.Fields = make(Fields, 0, len(p.Header(ns)))
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, pvc.Namespace)
 	}
 	r.Fields = append(r.Fields,

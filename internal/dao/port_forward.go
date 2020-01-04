@@ -1,4 +1,4 @@
-package model
+package dao
 
 import (
 	"context"
@@ -12,21 +12,38 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// PortForward represents a portforward model.
+var (
+	_ Accessor = (*PortForward)(nil)
+	_ Nuker    = (*PortForward)(nil)
+)
+
+// PortForward represents a port forward dao.
 type PortForward struct {
-	Resource
+	NonResource
+}
+
+// Delete a portforward.
+func (p *PortForward) Delete(path string, cascade, force bool) error {
+	ns, _ := client.Namespaced(path)
+	auth, err := p.Client().CanI(ns, "v1/pods:portforward", []string{"delete"})
+	if !auth || err != nil {
+		return err
+	}
+	p.Factory.DeleteForwarder(path)
+
+	return nil
 }
 
 // List returns a collection of screen dumps.
-func (c *PortForward) List(ctx context.Context) ([]runtime.Object, error) {
+func (c *PortForward) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	config, ok := ctx.Value(internal.KeyBenchCfg).(*config.Bench)
 	if !ok {
 		return nil, fmt.Errorf("no benchconfig found in context")
 	}
 
 	cc := config.Benchmarks.Containers
-	oo := make([]runtime.Object, 0, len(c.factory.Forwarders()))
-	for _, f := range c.factory.Forwarders() {
+	oo := make([]runtime.Object, 0, len(c.Factory.Forwarders()))
+	for _, f := range c.Factory.Forwarders() {
 		cfg := render.BenchCfg{
 			C: config.Benchmarks.Defaults.C,
 			N: config.Benchmarks.Defaults.N,

@@ -1,4 +1,4 @@
-package model
+package dao
 
 import (
 	"context"
@@ -20,24 +20,28 @@ const (
 	rGVR   = "rbac.authorization.k8s.io/v1/roles"
 )
 
+var (
+	_ Accessor = (*Rbac)(nil)
+	_ Nuker    = (*Rbac)(nil)
+)
+
 // Rbac represents a model for listing rbac resources.
 type Rbac struct {
 	Resource
 }
 
 // List lists out rbac resources.
-func (r *Rbac) List(ctx context.Context) ([]runtime.Object, error) {
+func (r *Rbac) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	gvr, ok := ctx.Value(internal.KeyGVR).(string)
 	if !ok {
 		return nil, fmt.Errorf("expecting a context gvr")
 	}
-	r.gvr = gvr
 	path, ok := ctx.Value(internal.KeyPath).(string)
 	if !ok || path == "" {
-		return r.Resource.List(ctx)
+		return r.Resource.List(ctx, ns)
 	}
 
-	res := client.NewGVR(r.gvr)
+	res := client.NewGVR(gvr)
 	switch res.ToR() {
 	case "clusterrolebindings":
 		return r.loadClusterRoleBinding(path)
@@ -53,7 +57,7 @@ func (r *Rbac) List(ctx context.Context) ([]runtime.Object, error) {
 }
 
 func (r *Rbac) loadClusterRoleBinding(path string) ([]runtime.Object, error) {
-	o, err := r.factory.Get(crbGVR, path, true, labels.Everything())
+	o, err := r.Factory.Get(crbGVR, path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -64,7 +68,7 @@ func (r *Rbac) loadClusterRoleBinding(path string) ([]runtime.Object, error) {
 		return nil, err
 	}
 
-	crbo, err := r.factory.Get(crGVR, client.FQN("-", crb.RoleRef.Name), true, labels.Everything())
+	crbo, err := r.Factory.Get(crGVR, client.FQN("-", crb.RoleRef.Name), true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -74,11 +78,11 @@ func (r *Rbac) loadClusterRoleBinding(path string) ([]runtime.Object, error) {
 		return nil, err
 	}
 
-	return asRuntimeObjects(parseRules(render.ClusterScope, "-", cr.Rules)), nil
+	return asRuntimeObjects(parseRules(client.ClusterScope, "-", cr.Rules)), nil
 }
 
 func (r *Rbac) loadRoleBinding(path string) ([]runtime.Object, error) {
-	o, err := r.factory.Get(rbGVR, path, true, labels.Everything())
+	o, err := r.Factory.Get(rbGVR, path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +93,7 @@ func (r *Rbac) loadRoleBinding(path string) ([]runtime.Object, error) {
 	}
 
 	if rb.RoleRef.Kind == "ClusterRole" {
-		o, e := r.factory.Get(crGVR, client.FQN("-", rb.RoleRef.Name), true, labels.Everything())
+		o, e := r.Factory.Get(crGVR, client.FQN("-", rb.RoleRef.Name), true, labels.Everything())
 		if e != nil {
 			return nil, e
 		}
@@ -98,10 +102,10 @@ func (r *Rbac) loadRoleBinding(path string) ([]runtime.Object, error) {
 		if err != nil {
 			return nil, err
 		}
-		return asRuntimeObjects(parseRules(render.ClusterScope, "-", cr.Rules)), nil
+		return asRuntimeObjects(parseRules(client.ClusterScope, "-", cr.Rules)), nil
 	}
 
-	ro, err := r.factory.Get(rGVR, client.FQN(rb.Namespace, rb.RoleRef.Name), true, labels.Everything())
+	ro, err := r.Factory.Get(rGVR, client.FQN(rb.Namespace, rb.RoleRef.Name), true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -111,11 +115,11 @@ func (r *Rbac) loadRoleBinding(path string) ([]runtime.Object, error) {
 		return nil, err
 	}
 
-	return asRuntimeObjects(parseRules(render.ClusterScope, "-", role.Rules)), nil
+	return asRuntimeObjects(parseRules(client.ClusterScope, "-", role.Rules)), nil
 }
 
 func (r *Rbac) loadClusterRole(path string) ([]runtime.Object, error) {
-	o, err := r.factory.Get(crGVR, path, true, labels.Everything())
+	o, err := r.Factory.Get(crGVR, path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -126,11 +130,11 @@ func (r *Rbac) loadClusterRole(path string) ([]runtime.Object, error) {
 		return nil, err
 	}
 
-	return asRuntimeObjects(parseRules(render.ClusterScope, "-", cr.Rules)), nil
+	return asRuntimeObjects(parseRules(client.ClusterScope, "-", cr.Rules)), nil
 }
 
 func (r *Rbac) loadRole(path string) ([]runtime.Object, error) {
-	o, err := r.factory.Get(rGVR, path, true, labels.Everything())
+	o, err := r.Factory.Get(rGVR, path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +145,7 @@ func (r *Rbac) loadRole(path string) ([]runtime.Object, error) {
 		return nil, err
 	}
 
-	return asRuntimeObjects(parseRules(render.ClusterScope, "-", ro.Rules)), nil
+	return asRuntimeObjects(parseRules(client.ClusterScope, "-", ro.Rules)), nil
 }
 
 func asRuntimeObjects(rr render.Policies) []runtime.Object {
@@ -151,4 +155,26 @@ func asRuntimeObjects(rr render.Policies) []runtime.Object {
 	}
 
 	return oo
+}
+
+func parseRules(ns, binding string, rules []rbacv1.PolicyRule) render.Policies {
+	pp := make(render.Policies, 0, len(rules))
+	for _, rule := range rules {
+		for _, grp := range rule.APIGroups {
+			for _, res := range rule.Resources {
+				for _, na := range rule.ResourceNames {
+					pp = pp.Upsert(render.NewPolicyRes(ns, binding, FQN(res, na), grp, rule.Verbs))
+				}
+				pp = pp.Upsert(render.NewPolicyRes(ns, binding, FQN(grp, res), grp, rule.Verbs))
+			}
+		}
+		for _, nres := range rule.NonResourceURLs {
+			if nres[0] != '/' {
+				nres = "/" + nres
+			}
+			pp = pp.Upsert(render.NewPolicyRes(ns, binding, nres, "n/a", rule.Verbs))
+		}
+	}
+
+	return pp
 }

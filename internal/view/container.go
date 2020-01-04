@@ -63,7 +63,7 @@ func (c *Container) selectedContainer() string {
 	return tokens[0]
 }
 
-func (c *Container) viewLogs(app *App, ns, res, path string) {
+func (c *Container) viewLogs(app *App, model ui.Tabular, gvr, path string) {
 	status := c.GetTable().GetSelectedCell(3)
 	if status != "Running" && status != "Completed" {
 		app.Flash().Err(errors.New("No logs available"))

@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	v1 "k8s.io/api/core/v1"
@@ -95,7 +96,7 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 	}
 
 	r.ID = co.Container.Name
-	r.Fields = make(Fields, 0, len(c.Header(AllNamespaces)))
+	r.Fields = make(Fields, 0, len(c.Header(client.AllNamespaces)))
 	r.Fields = append(r.Fields,
 		co.Container.Name,
 		co.Container.Image,

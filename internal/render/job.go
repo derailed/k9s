@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
@@ -25,7 +26,7 @@ func (Job) ColorerFunc() ColorerFunc {
 // Header returns a header row.
 func (Job) Header(ns string) HeaderRow {
 	var h HeaderRow
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		h = append(h, Header{Name: "NAMESPACE"})
 	}
 
@@ -54,7 +55,7 @@ func (j Job) Render(o interface{}, ns string, r *Row) error {
 
 	r.ID = MetaFQN(job.ObjectMeta)
 	r.Fields = make(Fields, 0, len(j.Header(ns)))
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, job.Namespace)
 	}
 	cc, ii := toContainers(job.Spec.Template.Spec)

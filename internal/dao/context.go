@@ -1,39 +1,40 @@
 package dao
 
 import (
-	"fmt"
+	"context"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/tools/clientcmd"
 )
 
+var (
+	_ Accessor   = (*Context)(nil)
+	_ Switchable = (*Context)(nil)
+)
+
 // Context represents a kubenetes context.
 type Context struct {
-	Generic
+	NonResource
 }
-
-var _ Accessor = (*Context)(nil)
-var _ Switchable = (*Context)(nil)
 
 func (c *Context) config() *client.Config {
 	return c.Factory.Client().Config()
 }
 
 // Get a Context.
-func (c *Context) Get(_, n string) (runtime.Object, error) {
-	ctx, err := c.config().GetContext(n)
+func (c *Context) Get(ctx context.Context, path string) (runtime.Object, error) {
+	co, err := c.config().GetContext(path)
 	if err != nil {
 		return nil, err
 	}
-	return &render.NamedContext{Name: n, Context: ctx}, nil
+	return &render.NamedContext{Name: path, Context: co}, nil
 }
 
 // List all Contexts on the current cluster.
-func (c *Context) List(string, metav1.ListOptions) ([]runtime.Object, error) {
+func (c *Context) List(_ context.Context, _ string) ([]runtime.Object, error) {
 	ctxs, err := c.config().Contexts()
 	if err != nil {
 		return nil, err
@@ -44,19 +45,6 @@ func (c *Context) List(string, metav1.ListOptions) ([]runtime.Object, error) {
 	}
 
 	return cc, nil
-}
-
-// Delete a Context.
-func (c *Context) Delete(path string, cascade, force bool) error {
-	ctx, err := c.config().CurrentContextName()
-	if err != nil {
-		return err
-	}
-	if ctx == path {
-		return fmt.Errorf("trying to delete your current context %s", path)
-	}
-
-	return c.config().DelContext(path)
 }
 
 // MustCurrentContextName return the active context name.
@@ -87,36 +75,3 @@ func (c *Context) KubeUpdate(n string) error {
 		clientcmd.NewDefaultPathOptions(), config, true,
 	)
 }
-
-// ----------------------------------------------------------------------------
-
-// // NamedContext represents a named cluster context.
-// type NamedContext struct {
-// 	Name    string
-// 	Context *api.Context
-// 	config  *client.Config
-// }
-
-// // NewNamedContext returns a new named context.
-// func NewNamedContext(c *client.Config, n string, ctx *api.Context) *NamedContext {
-// 	return &NamedContext{Name: n, Context: ctx, config: c}
-// }
-
-// // MustCurrentContextName return the active context name.
-// func (c *NamedContext) MustCurrentContextName() string {
-// 	cl, err := c.config.CurrentContextName()
-// 	if err != nil {
-// 		log.Fatal().Err(err).Msg("Fetching current context")
-// 	}
-// 	return cl
-// }
-
-// // GetObjectKind returns a schema object.
-// func (c *NamedContext) GetObjectKind() schema.ObjectKind {
-// 	return nil
-// }
-
-// // DeepCopyObject returns a container copy.
-// func (c *NamedContext) DeepCopyObject() runtime.Object {
-// 	return c
-// }

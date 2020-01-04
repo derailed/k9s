@@ -50,7 +50,7 @@ func (b *Browser) Init(ctx context.Context) error {
 	if err = b.Table.Init(ctx); err != nil {
 		return err
 	}
-	if !dao.IsK9sMeta(b.meta) {
+	if dao.IsK8sMeta(b.meta) {
 		if _, e := b.app.factory.CanForResource(b.app.Config.ActiveNamespace(), b.GVR(), []string{"list", "watch"}); e != nil {
 			return e
 		}
@@ -158,15 +158,9 @@ func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	ctx := b.defaultContext()
-	o, err := b.GetModel().Get(ctx, path)
+	raw, err := b.GetModel().ToYAML(ctx, path)
 	if err != nil {
 		b.App().Flash().Errf("unable to get resource %q -- %s", b.gvr, err)
-		return nil
-	}
-
-	raw, err := toYAML(o)
-	if err != nil {
-		b.App().Flash().Errf("unable to marshal resource %s", err)
 		return nil
 	}
 
@@ -224,7 +218,7 @@ func (b *Browser) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if b.enterFn != nil {
 		f = b.enterFn
 	}
-	f(b.app, b.GetModel().GetNamespace(), b.gvr.String(), path)
+	f(b.app, b.GetModel(), b.gvr.String(), path)
 
 	return nil
 }
@@ -249,7 +243,7 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		if len(selections) > 1 {
 			msg = fmt.Sprintf("Delete %d marked %s?", len(selections), b.gvr)
 		}
-		if dao.IsK9sMeta(b.meta) {
+		if !dao.IsK8sMeta(b.meta) {
 			b.simpleDelete(selections, msg)
 			return nil
 		}
@@ -264,7 +258,7 @@ func (b *Browser) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path == "" {
 		return evt
 	}
-	describeResource(b.app, b.GetModel().GetNamespace(), b.gvr.String(), path)
+	describeResource(b.app, b.GetModel(), b.gvr.String(), path)
 
 	return nil
 }
@@ -299,7 +293,7 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	i, _ := strconv.Atoi(string(evt.Rune()))
 	ns := b.namespaces[i]
 	if ns == "" {
-		ns = render.NamespaceAll
+		ns = client.NamespaceAll
 	}
 
 	auth, err := b.App().factory.Client().CanI(ns, b.GVR(), watch.ReadVerbs)
@@ -330,22 +324,18 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (b *Browser) setNamespace(ns string) {
 	if !b.meta.Namespaced {
-		b.GetModel().SetNamespace(render.ClusterScope)
+		b.GetModel().SetNamespace(client.ClusterScope)
 		return
 	}
 	if b.GetModel().InNamespace(ns) {
 		return
 	}
 
-	if ns == render.NamespaceAll {
-		ns = render.AllNamespaces
-	}
-	b.GetModel().SetNamespace(ns)
+	b.GetModel().SetNamespace(client.NormalizeNS(ns))
 }
 
 func (b *Browser) defaultContext() context.Context {
 	ctx := context.Background()
-
 	ctx = context.WithValue(ctx, internal.KeyFactory, b.app.factory)
 	ctx = context.WithValue(ctx, internal.KeyGVR, b.gvr.String())
 	ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
@@ -355,7 +345,7 @@ func (b *Browser) defaultContext() context.Context {
 		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(b.SearchBuff().String()))
 	}
 	ctx = context.WithValue(ctx, internal.KeyFields, "")
-	ctx = context.WithValue(ctx, internal.KeyNamespace, b.App().Config.ActiveNamespace())
+	ctx = context.WithValue(ctx, internal.KeyNamespace, client.NormalizeNS(b.App().Config.ActiveNamespace()))
 
 	return ctx
 }
@@ -365,11 +355,11 @@ func (b *Browser) namespaceActions(aa ui.KeyActions) {
 		return
 	}
 	b.namespaces = make(map[int]string, config.MaxFavoritesNS)
-	aa[tcell.Key(ui.NumKeys[0])] = ui.NewKeyAction(render.NamespaceAll, b.switchNamespaceCmd, true)
-	b.namespaces[0] = render.NamespaceAll
+	aa[tcell.Key(ui.NumKeys[0])] = ui.NewKeyAction(client.NamespaceAll, b.switchNamespaceCmd, true)
+	b.namespaces[0] = client.NamespaceAll
 	index := 1
 	for _, n := range b.app.Config.FavNamespaces() {
-		if n == render.NamespaceAll {
+		if n == client.NamespaceAll {
 			continue
 		}
 		aa[tcell.Key(ui.NumKeys[index])] = ui.NewKeyAction(n, b.switchNamespaceCmd, true)
@@ -417,14 +407,19 @@ func (b *Browser) simpleDelete(selections []string, msg string) {
 			b.app.Flash().Infof("Delete resource %s %s", b.gvr, selections[0])
 		}
 		for _, sel := range selections {
-			if err := b.accessor.(dao.Nuker).Delete(sel, true, true); err != nil {
+			log.Debug().Msgf("YO!! %#v", b.accessor)
+			nuker, ok := b.accessor.(dao.Nuker)
+			if !ok {
+				b.app.Flash().Errf("Invalid nuker %T", b.accessor)
+				return
+			}
+			if err := nuker.Delete(sel, true, true); err != nil {
 				b.app.Flash().Errf("Delete failed with `%s", err)
 			} else {
 				b.GetTable().DeleteMark(sel)
 			}
 		}
 		b.refresh()
-		b.SelectRow(1, true)
 	}, func() {})
 }
 
@@ -437,14 +432,14 @@ func (b *Browser) resourceDelete(selections []string, msg string) {
 			b.app.Flash().Infof("Delete resource %s %s", b.gvr, selections[0])
 		}
 		for _, sel := range selections {
-			if err := b.accessor.(dao.Nuker).Delete(sel, cascade, force); err != nil {
+			if err := b.GetModel().Delete(b.defaultContext(), sel, cascade, force); err != nil {
 				b.app.Flash().Errf("Delete failed with `%s", err)
 			} else {
+				b.app.Flash().Infof("%s `%s deleted successfully", b.GVR(), sel)
 				b.app.factory.DeleteForwarder(sel)
 				b.GetTable().DeleteMark(sel)
 			}
 		}
 		b.refresh()
-		b.SelectRow(1, true)
 	}, func() {})
 }

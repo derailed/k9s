@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	appsv1 "k8s.io/api/apps/v1"
@@ -24,7 +25,7 @@ func (ReplicaSet) ColorerFunc() ColorerFunc {
 		}
 
 		markCol := 2
-		if ns != AllNamespaces {
+		if client.IsNamespaced(ns) {
 			markCol = 1
 		}
 		if strings.TrimSpace(r.Row.Fields[markCol]) != strings.TrimSpace(r.Row.Fields[markCol+1]) {
@@ -39,7 +40,7 @@ func (ReplicaSet) ColorerFunc() ColorerFunc {
 // Header returns a header row.
 func (ReplicaSet) Header(ns string) HeaderRow {
 	var h HeaderRow
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		h = append(h, Header{Name: "NAMESPACE"})
 	}
 
@@ -66,7 +67,7 @@ func (s ReplicaSet) Render(o interface{}, ns string, r *Row) error {
 
 	r.ID = MetaFQN(rs.ObjectMeta)
 	r.Fields = make(Fields, 0, len(s.Header(ns)))
-	if isAllNamespace(ns) {
+	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, rs.Namespace)
 	}
 	r.Fields = append(r.Fields,
