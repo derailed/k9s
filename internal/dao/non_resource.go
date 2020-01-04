@@ -16,16 +16,16 @@ type NonResource struct {
 }
 
 // Init initializes the resource.
-func (g *NonResource) Init(f Factory, gvr client.GVR) {
-	g.Factory, g.gvr = f, gvr
+func (n *NonResource) Init(f Factory, gvr client.GVR) {
+	n.Factory, n.gvr = f, gvr
 }
 
 // GVR returns a gvr.
-func (g *NonResource) GVR() string {
-	return g.gvr.String()
+func (n *NonResource) GVR() string {
+	return n.gvr.String()
 }
 
 // Get returns the given resource.
-func (c *NonResource) Get(context.Context, string) (runtime.Object, error) {
+func (n *NonResource) Get(context.Context, string) (runtime.Object, error) {
 	return nil, fmt.Errorf("NYI!")
 }
