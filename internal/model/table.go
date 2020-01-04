@@ -78,8 +78,8 @@ func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
 	return meta.DAO.Get(ctx, path)
 }
 
+// Delete removes a resource.
 func (t *Table) Delete(ctx context.Context, path string, cascade, force bool) error {
-	log.Debug().Msgf("TABLE DELETE %q", path)
 	meta, err := t.getMeta(ctx)
 	if err != nil {
 		return err

@@ -109,6 +109,7 @@ func (c *Chart) Delete(path string, cascade, force bool) error {
 	return nil
 }
 
+// EnsureHelmConfig return a new configuration.
 func (c *Chart) EnsureHelmConfig(ns string) (*action.Configuration, error) {
 	cfg := new(action.Configuration)
 	flags := c.Client().Config().Flags()

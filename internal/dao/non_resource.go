@@ -20,6 +20,7 @@ func (g *NonResource) Init(f Factory, gvr client.GVR) {
 	g.Factory, g.gvr = f, gvr
 }
 
+// GVR returns a gvr.
 func (g *NonResource) GVR() string {
 	return g.gvr.String()
 }

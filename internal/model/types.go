@@ -55,27 +55,21 @@ type Renderer interface {
 	ColorerFunc() render.ColorerFunc
 }
 
+// Cruder performs crud operations.
 type Cruder interface {
 	// List returns a collection of resources.
 	List(ctx context.Context, ns string) ([]runtime.Object, error)
 
 	// Get returns a resource instance.
 	Get(ctx context.Context, path string) (runtime.Object, error)
-
-	// Delete removes a resource.
-	// Delete(ctx context.Context, path string) error
 }
 
 // Lister represents a resource lister.
 type Lister interface {
 	Cruder
-	// Describer
 
 	// Init initializes a resource.
 	Init(ns, gvr string, f dao.Factory)
-
-	// Hydrate converts resource rows into tabular data.
-	// Hydrate(oo []runtime.Object, rr render.Rows, r Renderer) error
 }
 
 // Describer represents a resource describer.

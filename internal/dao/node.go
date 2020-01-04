@@ -17,6 +17,7 @@ var (
 	_ Accessor = (*Node)(nil)
 )
 
+// NodeMetricsFunc retrieves node metrics.
 type NodeMetricsFunc func() (*mv1beta1.NodeMetricsList, error)
 
 // Node represents a node model.
@@ -54,6 +55,7 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
+// FetchNodes retrieves all nodes.
 func FetchNodes(f Factory) (*v1.NodeList, error) {
 	auth, err := f.Client().CanI("", "v1/nodes", []string{"list"})
 	if !auth || err != nil {

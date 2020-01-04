@@ -11,7 +11,7 @@ import (
 
 var toFileName = regexp.MustCompile(`[^(\w/\.)]`)
 
-// ClusterWide returns true if ns designates cluster scope, false otherwise.
+// IsClusterWide returns true if ns designates cluster scope, false otherwise.
 func IsClusterWide(ns string) bool {
 	return ns == NamespaceAll || ns == AllNamespaces || ns == ClusterScope
 }

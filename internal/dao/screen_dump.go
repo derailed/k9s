@@ -27,7 +27,7 @@ func (d *ScreenDump) Delete(path string, cascade, force bool) error {
 }
 
 // List returns a collection of screen dumps.
-func (c *ScreenDump) List(ctx context.Context, _ string) ([]runtime.Object, error) {
+func (d *ScreenDump) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	dir, ok := ctx.Value(internal.KeyDir).(string)
 	if !ok {
 		return nil, errors.New("no screendump dir found in context")

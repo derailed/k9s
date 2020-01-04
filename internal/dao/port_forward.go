@@ -35,15 +35,15 @@ func (p *PortForward) Delete(path string, cascade, force bool) error {
 }
 
 // List returns a collection of screen dumps.
-func (c *PortForward) List(ctx context.Context, _ string) ([]runtime.Object, error) {
+func (p *PortForward) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	config, ok := ctx.Value(internal.KeyBenchCfg).(*config.Bench)
 	if !ok {
 		return nil, fmt.Errorf("no benchconfig found in context")
 	}
 
 	cc := config.Benchmarks.Containers
-	oo := make([]runtime.Object, 0, len(c.Factory.Forwarders()))
-	for _, f := range c.Factory.Forwarders() {
+	oo := make([]runtime.Object, 0, len(p.Factory.Forwarders()))
+	for _, f := range p.Factory.Forwarders() {
 		cfg := render.BenchCfg{
 			C: config.Benchmarks.Defaults.C,
 			N: config.Benchmarks.Defaults.N,
