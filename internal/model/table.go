@@ -249,7 +249,7 @@ func (t *Table) resourceMeta() ResourceMeta {
 		log.Debug().Msgf("Resource %s not found in registry. Going generic!", t.gvr)
 		meta = ResourceMeta{
 			DAO:      &dao.Generic{},
-			Renderer: &render.Generic{},
+			Renderer: &render.CustomResourceDefinition{},
 		}
 	}
 	if meta.DAO == nil {
