@@ -23,10 +23,9 @@ func (PersistentVolumeClaim) ColorerFunc() ColorerFunc {
 		}
 
 		markCol := 2
-		if client.IsNamespaced(ns) {
-			markCol = 1
+		if !client.IsAllNamespaces(ns) {
+			markCol--
 		}
-
 		if strings.TrimSpace(r.Row.Fields[markCol]) != "Bound" {
 			c = ErrColor
 		}

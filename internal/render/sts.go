@@ -24,7 +24,7 @@ func (StatefulSet) ColorerFunc() ColorerFunc {
 		}
 
 		readyCol := 2
-		if client.IsNamespaced(ns) {
+		if !client.IsAllNamespaces(ns) {
 			readyCol--
 		}
 		tokens := strings.Split(strings.TrimSpace(r.Row.Fields[readyCol]), "/")

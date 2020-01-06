@@ -26,8 +26,8 @@ func (PodDisruptionBudget) ColorerFunc() ColorerFunc {
 		}
 
 		markCol := 5
-		if client.IsNamespaced(ns) {
-			markCol = 4
+		if !client.IsAllNamespaces(ns) {
+			markCol--
 		}
 		if strings.TrimSpace(r.Row.Fields[markCol]) != strings.TrimSpace(r.Row.Fields[markCol+1]) {
 			return ErrColor

@@ -47,5 +47,5 @@ func (r *Resource) List(ctx context.Context, ns string) ([]runtime.Object, error
 		lsel = sel.AsSelector()
 	}
 
-	return r.Factory.List(r.gvr.String(), ns, true, lsel)
+	return r.Factory.List(r.gvr.String(), ns, false, lsel)
 }

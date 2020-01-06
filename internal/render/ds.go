@@ -24,11 +24,11 @@ func (DaemonSet) ColorerFunc() ColorerFunc {
 			return c
 		}
 
-		markCol := 2
+		desiredCol := 2
 		if !client.IsAllNamespaces(ns) {
-			markCol = 1
+			desiredCol = 1
 		}
-		if strings.TrimSpace(r.Row.Fields[markCol]) != strings.TrimSpace(r.Row.Fields[markCol+2]) {
+		if strings.TrimSpace(r.Row.Fields[desiredCol]) != strings.TrimSpace(r.Row.Fields[desiredCol+2]) {
 			return ErrColor
 		}
 

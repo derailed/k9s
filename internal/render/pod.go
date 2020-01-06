@@ -26,8 +26,8 @@ func (p Pod) ColorerFunc() ColorerFunc {
 		c := DefaultColorer(ns, re)
 
 		readyCol := 2
-		if len(ns) != 0 {
-			readyCol = 1
+		if !client.IsAllNamespaces(ns) {
+			readyCol--
 		}
 		statusCol := readyCol + 1
 
@@ -75,7 +75,7 @@ func (Pod) Header(ns string) HeaderRow {
 		Header{Name: "NAME"},
 		Header{Name: "READY"},
 		Header{Name: "STATUS"},
-		Header{Name: "RS", Align: tview.AlignRight},
+		Header{Name: "RESTART", Align: tview.AlignRight},
 		Header{Name: "CPU", Align: tview.AlignRight},
 		Header{Name: "MEM", Align: tview.AlignRight},
 		Header{Name: "%CPU", Align: tview.AlignRight},

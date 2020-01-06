@@ -193,6 +193,10 @@ func (t *Table) refresh(ctx context.Context) {
 }
 
 func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, error) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("  LIST elapsed %v", time.Since(t))
+	}(time.Now())
+
 	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
 	if !ok {
 		return nil, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
@@ -212,7 +216,7 @@ func (t *Table) reconcile(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	log.Debug().Msgf("LIST returned %d rows", len(oo))
+	log.Debug().Msgf("  LIST returned %d rows", len(oo))
 
 	var rows render.Rows
 	if _, ok := meta.Renderer.(*render.Generic); ok {
@@ -221,7 +225,7 @@ func (t *Table) reconcile(ctx context.Context) error {
 			return fmt.Errorf("expecting a meta table but got %T", oo[0])
 		}
 		rows = make(render.Rows, len(table.Rows))
-		if err := tableHydrate(t.namespace, table, rows, meta.Renderer); err != nil {
+		if err := genericHydrate(t.namespace, table, rows, meta.Renderer); err != nil {
 			return err
 		}
 	} else {
@@ -287,6 +291,10 @@ func (t *Table) fireTableLoadFailed(err error) {
 // Helpers...
 
 func hydrate(ns string, oo []runtime.Object, rr render.Rows, re Renderer) error {
+	defer func(t time.Time) {
+		log.Debug().Msgf("  HYDRATE elapsed %v", time.Since(t))
+	}(time.Now())
+
 	for i, o := range oo {
 		if err := re.Render(o, ns, &rr[i]); err != nil {
 			return err
@@ -296,7 +304,7 @@ func hydrate(ns string, oo []runtime.Object, rr render.Rows, re Renderer) error 
 	return nil
 }
 
-func tableHydrate(ns string, table *metav1beta1.Table, rr render.Rows, re Renderer) error {
+func genericHydrate(ns string, table *metav1beta1.Table, rr render.Rows, re Renderer) error {
 	gr, ok := re.(*render.Generic)
 	if !ok {
 		return fmt.Errorf("expecting generic renderer but got %T", re)

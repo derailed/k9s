@@ -24,11 +24,11 @@ func (Deployment) ColorerFunc() ColorerFunc {
 			return c
 		}
 
-		markCol := 2
+		readyCol := 2
 		if !client.IsAllNamespaces(ns) {
-			markCol = 1
+			readyCol--
 		}
-		tokens := strings.Split(r.Row.Fields[markCol], "/")
+		tokens := strings.Split(r.Row.Fields[readyCol], "/")
 		if tokens[0] != tokens[1] {
 			return ErrColor
 		}

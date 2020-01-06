@@ -55,7 +55,8 @@ func (n *Namespace) useNsCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (n *Namespace) useNamespace(ns string) {
+func (n *Namespace) useNamespace(fqn string) {
+	_, ns := client.Namespaced(fqn)
 	log.Debug().Msgf("SWITCHING NS %q", ns)
 	n.App().switchNS(ns)
 	if err := n.App().Config.SetActiveNamespace(ns); err != nil {

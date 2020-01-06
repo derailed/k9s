@@ -49,7 +49,7 @@ func (t *Table) getClient() (*rest.RESTClient, error) {
 	gv := t.gvr.AsGV()
 	crConfig.GroupVersion = &gv
 	crConfig.APIPath = "/apis"
-	if len(t.gvr.ToG()) == 0 {
+	if t.gvr.ToG() == "" {
 		crConfig.APIPath = "/api"
 	}
 	codec, _ := t.codec()

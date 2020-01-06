@@ -39,25 +39,25 @@ type Pod struct {
 
 // List returns a collection of nodes.
 func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	oo, err := p.Resource.List(ctx, ns)
-	if err != nil {
-		return oo, err
-	}
-
 	pmx, ok := ctx.Value(internal.KeyMetrics).(*mv1beta1.PodMetricsList)
 	if !ok {
-		log.Warn().Msgf("expecting context PodMetricsList")
+		log.Warn().Msgf("no metrics available for %q", p.gvr)
 	}
 
 	sel, ok := ctx.Value(internal.KeyFields).(string)
 	if !ok {
-		return oo, nil
+		return nil, fmt.Errorf("expecting a fieldSelector in context")
 	}
 	fsel, err := labels.ConvertSelectorToLabelsMap(sel)
 	if err != nil {
 		return nil, err
 	}
 	nodeName := fsel["spec.nodeName"]
+
+	oo, err := p.Resource.List(ctx, ns)
+	if err != nil {
+		return oo, err
+	}
 
 	var res []runtime.Object
 	for _, o := range oo {
