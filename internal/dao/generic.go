@@ -21,27 +21,9 @@ type Generic struct {
 	NonResource
 }
 
-// Describe describes a resource.
-func (g *Generic) Describe(path string) (string, error) {
-	return Describe(g.Client(), g.gvr, path)
-}
-
-// ToYAML returns a resource yaml.
-func (g *Generic) ToYAML(path string) (string, error) {
-	o, err := g.Get(context.Background(), path)
-	if err != nil {
-		return "", err
-	}
-
-	raw, err := ToYAML(o)
-	if err != nil {
-		return "", fmt.Errorf("unable to marshal resource %s", err)
-	}
-	return raw, nil
-}
-
 // List returns a collection of resources.
 func (g *Generic) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+	log.Debug().Msgf("GENERIC LIST %q:%q", ns, g.gvr)
 	labelSel, ok := ctx.Value(internal.KeyLabels).(string)
 	if !ok {
 		log.Warn().Msgf("No label selector found in context. Listing all resources")
@@ -83,6 +65,25 @@ func (g *Generic) Get(ctx context.Context, path string) (runtime.Object, error) 
 	}
 
 	return req.Namespace(ns).Get(n, opts)
+}
+
+// Describe describes a resource.
+func (g *Generic) Describe(path string) (string, error) {
+	return Describe(g.Client(), g.gvr, path)
+}
+
+// ToYAML returns a resource yaml.
+func (g *Generic) ToYAML(path string) (string, error) {
+	o, err := g.Get(context.Background(), path)
+	if err != nil {
+		return "", err
+	}
+
+	raw, err := ToYAML(o)
+	if err != nil {
+		return "", fmt.Errorf("unable to marshal resource %s", err)
+	}
+	return raw, nil
 }
 
 // Delete deletes a resource.

@@ -55,7 +55,7 @@ func (g *Generic) Header(ns string) HeaderRow {
 
 // Render renders a K8s resource to screen.
 func (g *Generic) Render(o interface{}, ns string, r *Row) error {
-	row, ok := o.(*metav1beta1.TableRow)
+	row, ok := o.(metav1beta1.TableRow)
 	if !ok {
 		return fmt.Errorf("expecting a TableRow but got %T", o)
 	}

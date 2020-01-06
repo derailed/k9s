@@ -85,7 +85,7 @@ func TestGenericRender(t *testing.T) {
 			re.SetTable(u.table)
 
 			assert.Equal(t, u.eHeader, re.Header(u.ns))
-			assert.Nil(t, re.Render(&u.table.Rows[0], u.ns, &r))
+			assert.Nil(t, re.Render(u.table.Rows[0], u.ns, &r))
 			assert.Equal(t, u.eID, r.ID)
 			assert.Equal(t, u.eFields, r.Fields)
 		})

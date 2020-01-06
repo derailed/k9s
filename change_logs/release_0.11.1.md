@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s_small.png" align="right" width="200" height="auto"/>
 
-# Release v0.10.10
+# Release v0.11.1
 
 ## Notes
 
@@ -10,15 +10,15 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ---
 
-## Change Logs
+<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s_helm.png" align="center" width="300" height="auto"/>
 
-Maintenance release!
+Maintenance Release!
 
 ---
 
 ## Resolved Bugs/Features
 
-* [Issue #463](https://github.com/derailed/k9s/issues/463)
+* [Issue #466](https://github.com/derailed/k9s/issues/466)
 
 ---
 

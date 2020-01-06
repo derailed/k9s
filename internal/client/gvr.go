@@ -88,6 +88,14 @@ func (g GVR) AsGVR() schema.GroupVersionResource {
 	}
 }
 
+// AsGR returns a a full schema representation.
+func (g GVR) AsGR() *schema.GroupResource {
+	return &schema.GroupResource{
+		Group:    g.ToG(),
+		Resource: g.ToR(),
+	}
+}
+
 // ToV returns the resource version.
 func (g GVR) ToV() string {
 	return g.v

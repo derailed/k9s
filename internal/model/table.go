@@ -11,6 +11,7 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
+	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -213,9 +214,21 @@ func (t *Table) reconcile(ctx context.Context) error {
 	}
 	log.Debug().Msgf("LIST returned %d rows", len(oo))
 
-	rows := make(render.Rows, len(oo))
-	if err := hydrate(t.namespace, oo, rows, meta.Renderer); err != nil {
-		return err
+	var rows render.Rows
+	if _, ok := meta.Renderer.(*render.Generic); ok {
+		table, ok := oo[0].(*metav1beta1.Table)
+		if !ok {
+			return fmt.Errorf("expecting a meta table but got %T", oo[0])
+		}
+		rows = make(render.Rows, len(table.Rows))
+		if err := tableHydrate(t.namespace, table, rows, meta.Renderer); err != nil {
+			return err
+		}
+	} else {
+		rows = make(render.Rows, len(oo))
+		if err := hydrate(t.namespace, oo, rows, meta.Renderer); err != nil {
+			return err
+		}
 	}
 
 	t.data.Mutex.Lock()
@@ -248,7 +261,7 @@ func (t *Table) resourceMeta() ResourceMeta {
 	if !ok {
 		log.Debug().Msgf("Resource %s not found in registry. Going generic!", t.gvr)
 		meta = ResourceMeta{
-			DAO:      &dao.Generic{},
+			DAO:      &dao.Table{},
 			Renderer: &render.Generic{},
 		}
 	}
@@ -276,6 +289,21 @@ func (t *Table) fireTableLoadFailed(err error) {
 func hydrate(ns string, oo []runtime.Object, rr render.Rows, re Renderer) error {
 	for i, o := range oo {
 		if err := re.Render(o, ns, &rr[i]); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func tableHydrate(ns string, table *metav1beta1.Table, rr render.Rows, re Renderer) error {
+	gr, ok := re.(*render.Generic)
+	if !ok {
+		return fmt.Errorf("expecting generic renderer but got %T", re)
+	}
+	gr.SetTable(table)
+	for i, row := range table.Rows {
+		if err := gr.Render(row, ns, &rr[i]); err != nil {
 			return err
 		}
 	}
