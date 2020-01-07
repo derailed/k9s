@@ -1,5 +1,5 @@
 NAME    := k9s
-PACKAGE := github.com/derailed/$(NAME)/internal
+PACKAGE := github.com/derailed/$(NAME)
 VERSION := dev
 GIT     := $(shell git rev-parse --short HEAD)
 DATE    := $(shell date +%FT%T%Z)
