@@ -62,6 +62,10 @@ func (f *Factory) Terminate() {
 
 // List returns a resource collection.
 func (f *Factory) List(gvr, ns string, wait bool, labels labels.Selector) ([]runtime.Object, error) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("FACTORY-LIST %q::%q elapsed %v", ns, gvr, time.Since(t))
+	}(time.Now())
+
 	if ns == clusterScope {
 		ns = allNamespaces
 	}

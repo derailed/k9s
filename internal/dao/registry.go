@@ -187,11 +187,7 @@ func loadRBAC(m ResourceMetas) {
 }
 
 func loadPreferred(f Factory, m ResourceMetas) error {
-	discovery, err := f.Client().CachedDiscovery()
-	if err != nil {
-		return err
-	}
-	rr, err := discovery.ServerPreferredResources()
+	rr, err := f.Client().CachedDiscoveryOrDie().ServerPreferredResources()
 	if err != nil {
 		log.Warn().Err(err).Msgf("Failed to load preferred resources")
 	}

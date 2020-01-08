@@ -140,6 +140,9 @@ func (g GVRs) Less(i, j int) bool {
 
 // Can determines the available actions for a given resource.
 func Can(verbs []string, v string) bool {
+	if len(verbs) == 0 {
+		return true
+	}
 	for _, verb := range verbs {
 		candidates, err := mapVerb(v)
 		if err != nil {

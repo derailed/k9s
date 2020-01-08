@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -18,6 +19,7 @@ type Table struct {
 
 // List all Resources in a given namespace.
 func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+	log.Debug().Msgf("TABLE-LIST %q:%q", ns, t.gvr)
 	a := fmt.Sprintf(gvFmt, metav1beta1.SchemeGroupVersion.Version, metav1beta1.GroupName)
 	_, codec := t.codec()
 

@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"math"
 
 	v1 "k8s.io/api/core/v1"
@@ -70,33 +71,41 @@ func (m *MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsL
 
 // FetchNodesMetrics return all metrics for pods in a given namespace.
 func (m *MetricsServer) FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error) {
+	var mx mv1beta1.NodeMetricsList
+	if !m.HasMetrics() {
+		return &mx, fmt.Errorf("No metrics-server detected on cluster")
+	}
+
 	auth, err := m.CanI("", "metrics.k8s.io/v1beta1/nodes", []string{"list"})
 	if !auth || err != nil {
-		return nil, err
+		return &mx, err
 	}
 
 	client, err := m.MXDial()
 	if err != nil {
-		return nil, err
+		return &mx, err
 	}
-
 	return client.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{})
 }
 
 // FetchPodsMetrics return all metrics for pods in a given namespace.
 func (m *MetricsServer) FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, error) {
+	var mx mv1beta1.PodMetricsList
+	if !m.HasMetrics() {
+		return &mx, fmt.Errorf("No metrics-server detected on cluster")
+	}
 	if ns == NamespaceAll {
 		ns = AllNamespaces
 	}
 
 	auth, err := m.CanI(ns, "metrics.k8s.io/v1beta1/pods", []string{"list"})
 	if !auth || err != nil {
-		return &mv1beta1.PodMetricsList{}, err
+		return &mx, err
 	}
 
 	client, err := m.MXDial()
 	if err != nil {
-		return nil, err
+		return &mx, err
 	}
 
 	return client.MetricsV1beta1().PodMetricses(ns).List(metav1.ListOptions{})
@@ -104,17 +113,22 @@ func (m *MetricsServer) FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, e
 
 // FetchPodMetrics return all metrics for pods in a given namespace.
 func (m *MetricsServer) FetchPodMetrics(ns, sel string) (*mv1beta1.PodMetrics, error) {
+	var mx mv1beta1.PodMetrics
+	if !m.HasMetrics() {
+		return &mx, fmt.Errorf("No metrics-server detected on cluster")
+	}
+
 	if ns == NamespaceAll {
 		ns = AllNamespaces
 	}
 	auth, err := m.CanI(ns, "metrics.k8s.io/v1beta1/pods", []string{"get"})
 	if !auth || err != nil {
-		return nil, err
+		return &mx, err
 	}
 
 	client, err := m.MXDial()
 	if err != nil {
-		return nil, err
+		return &mx, err
 	}
 
 	return client.MetricsV1beta1().PodMetricses(ns).Get(sel, metav1.GetOptions{})

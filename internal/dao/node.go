@@ -27,6 +27,8 @@ type Node struct {
 
 // List returns a collection of node resources.
 func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+	log.Debug().Msgf("NODE-LIST %q:%q", ns, n.gvr)
+
 	nmx, ok := ctx.Value(internal.KeyMetrics).(*mv1beta1.NodeMetricsList)
 	if !ok {
 		log.Warn().Msgf("No node metrics available in context")

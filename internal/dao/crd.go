@@ -27,10 +27,5 @@ func (c *CustomResourceDefinition) List(ctx context.Context, _ string) ([]runtim
 	}
 
 	const gvr = "apiextensions.k8s.io/v1beta1/customresourcedefinitions"
-	oo, err := c.Factory.List(gvr, "-", true, lsel)
-	if err != nil {
-		return nil, err
-	}
-
-	return oo, nil
+	return c.Factory.List(gvr, "-", true, lsel)
 }

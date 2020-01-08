@@ -71,7 +71,7 @@ func (c *Configurator) StylesUpdater(ctx context.Context, s synchronizer) error 
 func (c *Configurator) InitBench(cluster string) {
 	var err error
 	if c.Bench, err = config.NewBench(BenchConfig(cluster)); err != nil {
-		log.Info().Err(err).Msg("No benchmark config file found, using defaults.")
+		log.Info().Msg("No benchmark config file found, using defaults.")
 	}
 }
 

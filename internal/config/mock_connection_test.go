@@ -33,23 +33,19 @@ func NewMockConnection(options ...pegomock.Option) *MockConnection {
 func (mock *MockConnection) SetFailHandler(fh pegomock.FailHandler) { mock.fail = fh }
 func (mock *MockConnection) FailHandler() pegomock.FailHandler      { return mock.fail }
 
-func (mock *MockConnection) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
+func (mock *MockConnection) CachedDiscoveryOrDie() *disk.CachedDiscoveryClient {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CachedDiscovery", params, []reflect.Type{reflect.TypeOf((**disk.CachedDiscoveryClient)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CachedDiscoveryOrDie", params, []reflect.Type{reflect.TypeOf((**disk.CachedDiscoveryClient)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 *disk.CachedDiscoveryClient
-	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
 			ret0 = result[0].(*disk.CachedDiscoveryClient)
 		}
-		if result[1] != nil {
-			ret1 = result[1].(error)
-		}
 	}
-	return ret0, ret1
+	return ret0
 }
 
 func (mock *MockConnection) CanI(_param0 string, _param1 string, _param2 []string) (bool, error) {

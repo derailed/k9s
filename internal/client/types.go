@@ -32,7 +32,7 @@ type Connection interface {
 	Config() *Config
 	DialOrDie() kubernetes.Interface
 	SwitchContextOrDie(ctx string)
-	CachedDiscovery() (*disk.CachedDiscoveryClient, error)
+	CachedDiscoveryOrDie() *disk.CachedDiscoveryClient
 	RestConfigOrDie() *restclient.Config
 	MXDial() (*versioned.Clientset, error)
 	DynDialOrDie() dynamic.Interface

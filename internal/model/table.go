@@ -193,8 +193,8 @@ func (t *Table) refresh(ctx context.Context) {
 }
 
 func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, error) {
-	defer func(t time.Time) {
-		log.Debug().Msgf("  LIST elapsed %v", time.Since(t))
+	defer func(ti time.Time) {
+		log.Debug().Msgf("  LIST %q:%q elapsed %v", t.namespace, t.gvr, time.Since(ti))
 	}(time.Now())
 
 	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
@@ -207,8 +207,8 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 }
 
 func (t *Table) reconcile(ctx context.Context) error {
-	defer func(t time.Time) {
-		log.Debug().Msgf("RECONCILE elapsed %v", time.Since(t))
+	defer func(ti time.Time) {
+		log.Debug().Msgf("RECONCILE %q:%q elapsed %v", t.namespace, t.gvr, time.Since(ti))
 	}(time.Now())
 
 	meta := t.resourceMeta()

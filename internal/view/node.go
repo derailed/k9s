@@ -41,6 +41,10 @@ func (n *Node) bindKeys(aa ui.KeyActions) {
 }
 
 func (n *Node) nodeContext(ctx context.Context) context.Context {
+	if !n.App().Conn().HasMetrics() {
+		return ctx
+	}
+
 	mx := client.NewMetricsServer(n.App().factory.Client())
 	nmx, err := mx.FetchNodesMetrics()
 	if err != nil {

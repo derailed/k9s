@@ -3,6 +3,7 @@ package client
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 	"sync"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	authorizationv1 "k8s.io/api/authorization/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/cache"
 	"k8s.io/apimachinery/pkg/version"
 	"k8s.io/client-go/discovery/cached/disk"
 	"k8s.io/client-go/dynamic"
@@ -17,6 +19,12 @@ import (
 	restclient "k8s.io/client-go/rest"
 	metricsapi "k8s.io/metrics/pkg/apis/metrics"
 	versioned "k8s.io/metrics/pkg/client/clientset/versioned"
+)
+
+const (
+	cacheSize   = 100
+	cacheExpiry = 5 * time.Minute
+	cacheMXKey  = "metrics"
 )
 
 var supportedMetricsAPIVersions = []string{"v1beta1"}
@@ -29,23 +37,26 @@ type Authorizer interface {
 
 // APIClient represents a Kubernetes api client.
 type APIClient struct {
-	client          kubernetes.Interface
-	dClient         dynamic.Interface
-	nsClient        dynamic.NamespaceableResourceInterface
-	mxsClient       *versioned.Clientset
-	cachedDiscovery *disk.CachedDiscoveryClient
-	config          *Config
-	useMetricServer bool
-	mx              sync.Mutex
+	client       kubernetes.Interface
+	dClient      dynamic.Interface
+	nsClient     dynamic.NamespaceableResourceInterface
+	mxsClient    *versioned.Clientset
+	cachedClient *disk.CachedDiscoveryClient
+	config       *Config
+	mx           sync.Mutex
+	cache        *cache.LRUExpireCache
 }
 
 // InitConnectionOrDie initialize connection from command line args.
 // Checks for connectivity with the api server.
 func InitConnectionOrDie(config *Config) *APIClient {
-	conn := APIClient{config: config}
-	conn.useMetricServer = conn.supportsMxServer()
+	a := APIClient{
+		config: config,
+		cache:  cache.NewLRUExpireCache(cacheSize),
+	}
+	a.HasMetrics()
 
-	return &conn
+	return &a
 }
 
 func makeSAR(ns, gvr string) *authorizationv1.SelfSubjectAccessReview {
@@ -66,24 +77,44 @@ func makeSAR(ns, gvr string) *authorizationv1.SelfSubjectAccessReview {
 	}
 }
 
+func makeKey(ns, gvr string, vv []string) string {
+	return ns + ":" + gvr + "::" + strings.Join(vv, ",")
+}
+
 // CanI checks if user has access to a certain resource.
 func (a *APIClient) CanI(ns, gvr string, verbs []string) (bool, error) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("AUTH elapsed %v", time.Since(t))
+	}(time.Now())
+
 	log.Debug().Msgf("AUTH %q:%q -- %v", ns, gvr, verbs)
 	sar := makeSAR(ns, gvr)
+
+	key := makeKey(ns, gvr, verbs)
+	if v, ok := a.cache.Get(key); ok {
+		if auth, ok := v.(bool); ok {
+			return auth, nil
+		}
+	}
+
 	dial := a.DialOrDie().AuthorizationV1().SelfSubjectAccessReviews()
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
 		resp, err := dial.Create(sar)
 		if err != nil {
 			log.Warn().Err(err).Msgf("  Dial Failed!")
+			a.cache.Add(key, false, cacheExpiry)
 			return false, err
 		}
 		if !resp.Status.Allowed {
 			log.Debug().Msgf("  NO %q ;(", v)
+			a.cache.Add(key, false, cacheExpiry)
 			return false, fmt.Errorf("`%s access denied for user on %q:%s", v, ns, gvr)
 		}
 	}
+
 	log.Debug().Msgf("  YES!")
+	a.cache.Add(key, true, cacheExpiry)
 	return true, nil
 }
 
@@ -94,12 +125,7 @@ func (a *APIClient) CurrentNamespaceName() (string, error) {
 
 // ServerVersion returns the current server version info.
 func (a *APIClient) ServerVersion() (*version.Info, error) {
-	discovery, err := a.CachedDiscovery()
-	if err != nil {
-		return nil, err
-	}
-
-	return discovery.ServerVersion()
+	return a.CachedDiscoveryOrDie().ServerVersion()
 }
 
 // ValidNamespaces returns all available namespaces.
@@ -113,12 +139,7 @@ func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
 
 // IsNamespaced check on server if given resource is namespaced
 func (a *APIClient) IsNamespaced(res string) bool {
-	discovery, err := a.CachedDiscovery()
-	if err != nil {
-		return false
-	}
-
-	list, _ := discovery.ServerPreferredResources()
+	list, _ := a.CachedDiscoveryOrDie().ServerPreferredResources()
 	for _, l := range list {
 		for _, r := range l.APIResources {
 			if r.Name == res {
@@ -131,12 +152,7 @@ func (a *APIClient) IsNamespaced(res string) bool {
 
 // SupportsResource checks for resource supported version against the server.
 func (a *APIClient) SupportsResource(group string) bool {
-	discovery, err := a.CachedDiscovery()
-	if err != nil {
-		return false
-	}
-
-	list, err := discovery.ServerPreferredResources()
+	list, err := a.CachedDiscoveryOrDie().ServerPreferredResources()
 	if err != nil {
 		log.Error().Err(err).Msg("Unable to dial api server")
 		return false
@@ -157,7 +173,13 @@ func (a *APIClient) Config() *Config {
 
 // HasMetrics returns true if the cluster supports metrics.
 func (a *APIClient) HasMetrics() bool {
-	return a.useMetricServer
+	v, ok := a.cache.Get(cacheMXKey)
+	if !ok {
+		return a.supportsMxServer()
+	}
+
+	flag, ok := v.(bool)
+	return ok && flag
 }
 
 // DialOrDie returns a handle to api server or die.
@@ -183,12 +205,12 @@ func (a *APIClient) RestConfigOrDie() *restclient.Config {
 }
 
 // CachedDiscovery returns a cached discovery client.
-func (a *APIClient) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
+func (a *APIClient) CachedDiscoveryOrDie() *disk.CachedDiscoveryClient {
 	a.mx.Lock()
 	defer a.mx.Unlock()
 
-	if a.cachedDiscovery != nil {
-		return a.cachedDiscovery, nil
+	if a.cachedClient != nil {
+		return a.cachedClient
 	}
 
 	rc := a.RestConfigOrDie()
@@ -196,8 +218,11 @@ func (a *APIClient) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
 	discCacheDir := filepath.Join(mustHomeDir(), ".kube", "cache", "discovery", toHostDir(rc.Host))
 
 	var err error
-	a.cachedDiscovery, err = disk.NewCachedDiscoveryClientForConfig(rc, discCacheDir, httpCacheDir, 10*time.Minute)
-	return a.cachedDiscovery, err
+	a.cachedClient, err = disk.NewCachedDiscoveryClientForConfig(rc, discCacheDir, httpCacheDir, 10*time.Minute)
+	if err != nil {
+		log.Panic().Msgf("Unable to connect to discovery client %v", err)
+	}
+	return a.cachedClient
 }
 
 // DynDialOrDie returns a handle to a dynamic interface.
@@ -237,12 +262,12 @@ func (a *APIClient) SwitchContextOrDie(ctx string) {
 	}
 
 	if currentCtx != ctx {
-		a.cachedDiscovery = nil
+		a.cachedClient = nil
 		a.reset()
 		if err := a.config.SwitchContext(ctx); err != nil {
 			log.Fatal().Err(err).Msg("Switching context")
 		}
-		a.useMetricServer = a.supportsMxServer()
+		_ = a.supportsMxServer()
 	}
 }
 
@@ -253,27 +278,26 @@ func (a *APIClient) reset() {
 	a.client, a.dClient, a.nsClient, a.mxsClient = nil, nil, nil, nil
 }
 
-func (a *APIClient) supportsMxServer() bool {
-	discovery, err := a.CachedDiscovery()
-	if err != nil {
-		return false
-	}
+func (a *APIClient) supportsMxServer() (supported bool) {
+	defer func() {
+		a.cache.Add(cacheMXKey, supported, cacheExpiry)
+	}()
 
-	apiGroups, err := discovery.ServerGroups()
+	apiGroups, err := a.CachedDiscoveryOrDie().ServerGroups()
 	if err != nil {
-		return false
+		return
 	}
-
 	for _, grp := range apiGroups.Groups {
 		if grp.Name != metricsapi.GroupName {
 			continue
 		}
 		if checkMetricsVersion(grp) {
-			return true
+			supported = true
+			return
 		}
 	}
 
-	return false
+	return
 }
 
 func checkMetricsVersion(grp metav1.APIGroup) bool {
@@ -290,16 +314,10 @@ func checkMetricsVersion(grp metav1.APIGroup) bool {
 
 // SupportsRes checks latest supported version.
 func (a *APIClient) SupportsRes(group string, versions []string) (string, bool, error) {
-	discovery, err := a.CachedDiscovery()
+	apiGroups, err := a.CachedDiscoveryOrDie().ServerGroups()
 	if err != nil {
 		return "", false, err
 	}
-
-	apiGroups, err := discovery.ServerGroups()
-	if err != nil {
-		return "", false, err
-	}
-
 	for _, grp := range apiGroups.Groups {
 		if grp.Name != group {
 			continue

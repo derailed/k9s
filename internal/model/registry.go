@@ -73,6 +73,7 @@ var Registry = map[string]ResourceMeta{
 		Renderer: &render.Node{},
 	},
 	"v1/services": {
+		DAO:      &dao.Service{},
 		Renderer: &render.Service{},
 	},
 	"v1/serviceaccounts": {
@@ -87,15 +88,18 @@ var Registry = map[string]ResourceMeta{
 
 	// Apps...
 	"apps/v1/deployments": {
+		DAO:      &dao.Deployment{},
 		Renderer: &render.Deployment{},
 	},
 	"apps/v1/replicasets": {
 		Renderer: &render.ReplicaSet{},
 	},
 	"apps/v1/statefulsets": {
+		DAO:      &dao.StatefulSet{},
 		Renderer: &render.StatefulSet{},
 	},
 	"apps/v1/daemonsets": {
+		DAO:      &dao.DaemonSet{},
 		Renderer: &render.DaemonSet{},
 	},
 
@@ -115,6 +119,7 @@ var Registry = map[string]ResourceMeta{
 
 	// Batch...
 	"batch/v1beta1/cronjobs": {
+		DAO:      &dao.CronJob{},
 		Renderer: &render.CronJob{},
 	},
 	"batch/v1/jobs": {
@@ -138,11 +143,13 @@ var Registry = map[string]ResourceMeta{
 
 	// CRDs...
 	"apiextensions.k8s.io/v1/customresourcedefinitions": {
-		DAO:      &dao.CustomResourceDefinition{},
+		// BOZO!!
+		// DAO:      &dao.CustomResourceDefinition{},
 		Renderer: &render.CustomResourceDefinition{},
 	},
 	"apiextensions.k8s.io/v1beta1/customresourcedefinitions": {
-		DAO:      &dao.CustomResourceDefinition{},
+		// BOZO!!
+		// DAO:      &dao.CustomResourceDefinition{},
 		Renderer: &render.CustomResourceDefinition{},
 	},
 
