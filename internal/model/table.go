@@ -15,6 +15,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+const iniRefreshRate = 300 * time.Millisecond
+
 // TableListener represents a table model listener.
 type TableListener interface {
 	// TableDataChanged notifies the model data changed.
@@ -167,11 +169,14 @@ func (t *Table) Peek() render.TableData {
 
 func (t *Table) updater(ctx context.Context) {
 	defer log.Debug().Msgf("Model canceled -- %q", t.gvr)
+
+	rate := iniRefreshRate
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(t.refreshRate):
+		case <-time.After(rate):
+			rate = t.refreshRate
 			t.refresh(ctx)
 		}
 	}

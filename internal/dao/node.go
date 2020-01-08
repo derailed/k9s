@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -59,7 +60,7 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 // FetchNodes retrieves all nodes.
 func FetchNodes(f Factory) (*v1.NodeList, error) {
-	auth, err := f.Client().CanI("", "v1/nodes", []string{"list"})
+	auth, err := f.Client().CanI("", "v1/nodes", []string{client.ListVerb})
 	if !auth || err != nil {
 		return nil, err
 	}

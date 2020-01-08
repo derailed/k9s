@@ -27,7 +27,6 @@ func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	o, err := c.Get().
 		SetHeader("Accept", a).
 		Namespace(ns).

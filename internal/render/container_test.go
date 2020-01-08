@@ -67,8 +67,8 @@ func makeAge() metav1.Time {
 	return metav1.Time{Time: testTime()}
 }
 
-func makeContainer() v1.Container {
-	return v1.Container{
+func makeContainer() *v1.Container {
+	return &v1.Container{
 		Name:  "fred",
 		Image: "img",
 		Resources: v1.ResourceRequirements{

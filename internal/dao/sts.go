@@ -31,7 +31,7 @@ type StatefulSet struct {
 // Scale a StatefulSet.
 func (s *StatefulSet) Scale(path string, replicas int32) error {
 	ns, n := client.Namespaced(path)
-	auth, err := s.Client().CanI(ns, "apps/v1/statefulsets:scale", []string{"get", "update"})
+	auth, err := s.Client().CanI(ns, "apps/v1/statefulsets:scale", []string{client.GetVerb, client.UpdateVerb})
 	if !auth || err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (s *StatefulSet) Restart(path string) error {
 	}
 
 	ns, _ := client.Namespaced(path)
-	auth, err := s.Client().CanI(ns, "apps/v1/statefulsets", []string{"patch"})
+	auth, err := s.Client().CanI(ns, "apps/v1/statefulsets", []string{client.PatchVerb})
 	if !auth || err != nil {
 		return err
 	}

@@ -31,7 +31,7 @@ type Deployment struct {
 // Scale a Deployment.
 func (d *Deployment) Scale(path string, replicas int32) error {
 	ns, n := client.Namespaced(path)
-	auth, err := d.Client().CanI(ns, "apps/v1/deployments:scale", []string{"get", "update"})
+	auth, err := d.Client().CanI(ns, "apps/v1/deployments:scale", []string{client.GetVerb, client.UpdateVerb})
 	if !auth || err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func (d *Deployment) Restart(path string) error {
 	}
 
 	ns, _ := client.Namespaced(path)
-	auth, err := d.Client().CanI(ns, "apps/v1/deployments", []string{"patch"})
+	auth, err := d.Client().CanI(ns, "apps/v1/deployments", []string{client.PatchVerb})
 	if !auth || err != nil {
 		return err
 	}

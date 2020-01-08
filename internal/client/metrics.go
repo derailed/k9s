@@ -76,7 +76,7 @@ func (m *MetricsServer) FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error) {
 		return &mx, fmt.Errorf("No metrics-server detected on cluster")
 	}
 
-	auth, err := m.CanI("", "metrics.k8s.io/v1beta1/nodes", []string{"list"})
+	auth, err := m.CanI("", "metrics.k8s.io/v1beta1/nodes", ListAccess)
 	if !auth || err != nil {
 		return &mx, err
 	}
@@ -98,7 +98,7 @@ func (m *MetricsServer) FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, e
 		ns = AllNamespaces
 	}
 
-	auth, err := m.CanI(ns, "metrics.k8s.io/v1beta1/pods", []string{"list"})
+	auth, err := m.CanI(ns, "metrics.k8s.io/v1beta1/pods", ListAccess)
 	if !auth || err != nil {
 		return &mx, err
 	}
@@ -121,7 +121,7 @@ func (m *MetricsServer) FetchPodMetrics(ns, sel string) (*mv1beta1.PodMetrics, e
 	if ns == NamespaceAll {
 		ns = AllNamespaces
 	}
-	auth, err := m.CanI(ns, "metrics.k8s.io/v1beta1/pods", []string{"get"})
+	auth, err := m.CanI(ns, "metrics.k8s.io/v1beta1/pods", GetAccess)
 	if !auth || err != nil {
 		return &mx, err
 	}

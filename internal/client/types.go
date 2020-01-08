@@ -24,6 +24,34 @@ const (
 	ClusterScope = "-"
 )
 
+const (
+	// CreateVerb represents create access on a resource.
+	CreateVerb = "create"
+	// UpdateVerb represents an update access on a resource.
+	UpdateVerb = "update"
+	// UpdateVerb represents a patch access on a resource.
+	PatchVerb = "patch"
+	// DeleteVerb represents a delete access on a resource.
+	DeleteVerb = "delete"
+	// GetVerb represents a get access on a resource.
+	GetVerb = "get"
+	// ListVerb represents a list access on a resource.
+	ListVerb = "list"
+	// WatchVerb represents a watch access on a resource.
+	WatchVerb = "watch"
+)
+
+var (
+	// GetAccess reads a resource.
+	GetAccess = []string{GetVerb}
+	// ListAccess list resources.
+	ListAccess = []string{ListVerb}
+	// MonitorAcces monitors a collection of resources.
+	MonitorAccess = []string{ListVerb, WatchVerb}
+	// ReadAllAccess represents an all read access to a resource.
+	ReadAllAccess = []string{GetVerb, ListVerb, WatchVerb}
+)
+
 // Connection represents a Kubenetes apiserver connection.
 // BOZO!! Refactor!
 type Connection interface {

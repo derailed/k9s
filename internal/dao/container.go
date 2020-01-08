@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -29,32 +30,29 @@ type Container struct {
 
 // List returns a collection of containers.
 func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error) {
-	path, ok := ctx.Value(internal.KeyPath).(string)
+	fqn, ok := ctx.Value(internal.KeyPath).(string)
 	if !ok {
 		return nil, fmt.Errorf("no context path for %q", c.gvr)
 	}
-	ns, _ := render.Namespaced(path)
-	o, err := c.Factory.Get("v1/pods", path, true, labels.Everything())
+	po, err := c.fetchPod(fqn)
 	if err != nil {
 		return nil, err
 	}
 
-	var po v1.Pod
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &po)
-	if err != nil {
-		return nil, err
-	}
-	res := make([]runtime.Object, 0, len(po.Spec.InitContainers)+len(po.Spec.Containers))
-	mx := client.NewMetricsServer(c.Client())
+	ns, _ := render.Namespaced(fqn)
 	var pmx *mv1beta1.PodMetrics
-	if c.Client() != nil {
-		var err error
-		pmx, err = mx.FetchPodMetrics(ns, po.Name)
-		if err != nil {
-			log.Warn().Err(err).Msgf("No metrics found for pod %q:%q", ns, po.Name)
+	if c.Client().HasMetrics() {
+		mx := client.NewMetricsServer(c.Client())
+		if c.Client() != nil {
+			var err error
+			pmx, err = mx.FetchPodMetrics(ns, po.Name)
+			if err != nil {
+				log.Warn().Err(err).Msgf("No metrics found for pod %q:%q", ns, po.Name)
+			}
 		}
 	}
 
+	res := make([]runtime.Object, 0, len(po.Spec.InitContainers)+len(po.Spec.Containers))
 	for _, co := range po.Spec.InitContainers {
 		res = append(res, makeContainerRes(co, po, pmx, true))
 	}
@@ -87,7 +85,7 @@ func (c *Container) TailLogs(ctx context.Context, logChan chan<- string, opts Lo
 // Logs fetch container logs for a given pod and container.
 func (c *Container) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, error) {
 	ns, _ := client.Namespaced(path)
-	auth, err := c.Client().CanI(ns, "v1/pods:log", []string{"get"})
+	auth, err := c.Client().CanI(ns, "v1/pods:log", client.GetAccess)
 	if !auth || err != nil {
 		return nil, err
 	}
@@ -99,14 +97,18 @@ func (c *Container) Logs(path string, opts *v1.PodLogOptions) (*restclient.Reque
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func makeContainerRes(co v1.Container, po v1.Pod, pmx *mv1beta1.PodMetrics, isInit bool) render.ContainerRes {
+func makeContainerRes(co v1.Container, po *v1.Pod, pmx *mv1beta1.PodMetrics, isInit bool) render.ContainerRes {
+	defer func(t time.Time) {
+		log.Debug().Msgf("MAKE-CO %s -- %v", co.Name, time.Since(t))
+	}(time.Now())
+
 	cmx, err := containerMetrics(co.Name, pmx)
 	if err != nil {
-		log.Warn().Err(err).Msgf("Container metrics for %s", co.Name)
+		log.Warn().Err(err).Msgf("Fail container metrics for %s", co.Name)
 	}
 
 	return render.ContainerRes{
-		Container: co,
+		Container: &co,
 		Status:    getContainerStatus(co.Name, po.Status),
 		Metrics:   cmx,
 		IsInit:    isInit,
@@ -114,11 +116,7 @@ func makeContainerRes(co v1.Container, po v1.Pod, pmx *mv1beta1.PodMetrics, isIn
 	}
 }
 
-func containerMetrics(n string, mx runtime.Object) (*mv1beta1.ContainerMetrics, error) {
-	pmx, ok := mx.(*mv1beta1.PodMetrics)
-	if !ok {
-		return nil, fmt.Errorf("expecting podmetrics but got `%T", mx)
-	}
+func containerMetrics(n string, pmx *mv1beta1.PodMetrics) (*mv1beta1.ContainerMetrics, error) {
 	if pmx == nil {
 		return nil, fmt.Errorf("no metrics for container %s", n)
 	}
@@ -136,7 +134,6 @@ func getContainerStatus(co string, status v1.PodStatus) *v1.ContainerStatus {
 			return &c
 		}
 	}
-
 	for _, c := range status.InitContainerStatuses {
 		if c.Name == co {
 			return &c
@@ -144,4 +141,18 @@ func getContainerStatus(co string, status v1.PodStatus) *v1.ContainerStatus {
 	}
 
 	return nil
+}
+
+func (c *Container) fetchPod(fqn string) (*v1.Pod, error) {
+	o, err := c.Factory.Get("v1/pods", fqn, true, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+	var po v1.Pod
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &po)
+	if err != nil {
+		return nil, err
+	}
+
+	return &po, nil
 }

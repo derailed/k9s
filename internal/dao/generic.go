@@ -29,7 +29,6 @@ func (g *Generic) List(ctx context.Context, ns string) ([]runtime.Object, error)
 	if !ok {
 		log.Warn().Msgf("No label selector found in context. Listing all resources")
 	}
-
 	if client.IsAllNamespace(ns) {
 		ns = client.AllNamespaces
 	}
@@ -90,7 +89,7 @@ func (g *Generic) ToYAML(path string) (string, error) {
 // Delete deletes a resource.
 func (g *Generic) Delete(path string, cascade, force bool) error {
 	ns, n := client.Namespaced(path)
-	auth, err := g.Client().CanI(ns, g.gvr.String(), []string{"delete"})
+	auth, err := g.Client().CanI(ns, g.gvr.String(), []string{client.DeleteVerb})
 	if !auth || err != nil {
 		return err
 	}

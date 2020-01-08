@@ -22,7 +22,7 @@ type CronJob struct {
 // Run a CronJob.
 func (c *CronJob) Run(path string) error {
 	ns, n := client.Namespaced(path)
-	auth, err := c.Client().CanI(ns, "batch/v1beta1/cronjobs", []string{"get", "create"})
+	auth, err := c.Client().CanI(ns, "batch/v1beta1/cronjobs", []string{client.GetVerb, client.CreateVerb})
 	if !auth || err != nil {
 		return err
 	}

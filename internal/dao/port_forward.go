@@ -25,7 +25,7 @@ type PortForward struct {
 // Delete a portforward.
 func (p *PortForward) Delete(path string, cascade, force bool) error {
 	ns, _ := client.Namespaced(path)
-	auth, err := p.Client().CanI(ns, "v1/pods:portforward", []string{"delete"})
+	auth, err := p.Client().CanI(ns, "v1/pods:portforward", []string{client.DeleteVerb})
 	if !auth || err != nil {
 		return err
 	}

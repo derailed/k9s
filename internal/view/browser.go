@@ -14,7 +14,6 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
-	"github.com/derailed/k9s/internal/watch"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,8 +49,9 @@ func (b *Browser) Init(ctx context.Context) error {
 	if err = b.Table.Init(ctx); err != nil {
 		return err
 	}
+	ns := b.app.Config.ActiveNamespace()
 	if dao.IsK8sMeta(b.meta) {
-		if _, e := b.app.factory.CanForResource(b.app.Config.ActiveNamespace(), b.GVR(), []string{"list", "watch"}); e != nil {
+		if _, e := b.app.factory.CanForResource(ns, b.GVR(), client.MonitorAccess); e != nil {
 			return e
 		}
 	}
@@ -65,7 +65,7 @@ func (b *Browser) Init(ctx context.Context) error {
 		return err
 	}
 
-	b.setNamespace(b.App().Config.ActiveNamespace())
+	b.setNamespace(ns)
 	row, _ := b.GetSelection()
 	if row == 0 && b.GetRowCount() > 0 {
 		b.Select(1, 0)
@@ -296,7 +296,7 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 		ns = client.NamespaceAll
 	}
 
-	auth, err := b.App().factory.Client().CanI(ns, b.GVR(), watch.ReadVerbs)
+	auth, err := b.App().factory.Client().CanI(ns, b.GVR(), client.MonitorAccess)
 	if !auth {
 		b.App().Flash().Err(err)
 		return nil

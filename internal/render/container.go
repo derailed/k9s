@@ -132,7 +132,7 @@ func gatherMetrics(co ContainerRes) (c, p metric) {
 		mem: ToMi(mem),
 	}
 
-	rcpu, rmem := containerResources(co.Container)
+	rcpu, rmem := containerResources(*co.Container)
 	if rcpu != nil {
 		p.cpu = AsPerc(toPerc(float64(cpu), float64(rcpu.MilliValue())))
 	}
@@ -187,7 +187,7 @@ func probe(p *v1.Probe) string {
 
 // ContainerRes represents a container and its metrics.
 type ContainerRes struct {
-	Container v1.Container
+	Container *v1.Container
 	Status    *v1.ContainerStatus
 	Metrics   *mv1beta1.ContainerMetrics
 	IsInit    bool

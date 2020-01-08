@@ -85,7 +85,7 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 // Logs fetch container logs for a given pod and container.
 func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, error) {
 	ns, _ := client.Namespaced(path)
-	auth, err := p.Client().CanI(ns, "v1/pods:log", []string{"get"})
+	auth, err := p.Client().CanI(ns, "v1/pods:log", []string{client.GetVerb})
 	if !auth || err != nil {
 		return nil, err
 	}

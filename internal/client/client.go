@@ -77,45 +77,42 @@ func makeSAR(ns, gvr string) *authorizationv1.SelfSubjectAccessReview {
 	}
 }
 
-func makeKey(ns, gvr string, vv []string) string {
+func makeCacheKey(ns, gvr string, vv []string) string {
 	return ns + ":" + gvr + "::" + strings.Join(vv, ",")
 }
 
 // CanI checks if user has access to a certain resource.
-func (a *APIClient) CanI(ns, gvr string, verbs []string) (bool, error) {
-	defer func(t time.Time) {
-		log.Debug().Msgf("AUTH elapsed %v", time.Since(t))
+func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) {
+	key := makeCacheKey(ns, gvr, verbs)
+	defer func(t time.Time) string {
+		log.Debug().Msgf("AUTH elapsed %t--%q %v", auth, key, time.Since(t))
+		return "s"
 	}(time.Now())
 
-	log.Debug().Msgf("AUTH %q:%q -- %v", ns, gvr, verbs)
-	sar := makeSAR(ns, gvr)
-
-	key := makeKey(ns, gvr, verbs)
 	if v, ok := a.cache.Get(key); ok {
-		if auth, ok := v.(bool); ok {
+		if auth, ok = v.(bool); ok {
 			return auth, nil
 		}
 	}
-
-	dial := a.DialOrDie().AuthorizationV1().SelfSubjectAccessReviews()
+	dial, sar := a.DialOrDie().AuthorizationV1().SelfSubjectAccessReviews(), makeSAR(ns, gvr)
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
 		resp, err := dial.Create(sar)
 		if err != nil {
 			log.Warn().Err(err).Msgf("  Dial Failed!")
 			a.cache.Add(key, false, cacheExpiry)
-			return false, err
+			return auth, err
 		}
 		if !resp.Status.Allowed {
 			log.Debug().Msgf("  NO %q ;(", v)
 			a.cache.Add(key, false, cacheExpiry)
-			return false, fmt.Errorf("`%s access denied for user on %q:%s", v, ns, gvr)
+			return auth, fmt.Errorf("`%s access denied for user on %q:%s", v, ns, gvr)
 		}
 	}
 
-	log.Debug().Msgf("  YES!")
+	auth = true
 	a.cache.Add(key, true, cacheExpiry)
-	return true, nil
+	return
 }
 
 // CurrentNamespaceName return namespace name set via either cli arg or cluster config.

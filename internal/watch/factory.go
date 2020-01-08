@@ -2,6 +2,7 @@ package watch
 
 import (
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
@@ -18,15 +19,13 @@ const (
 	clusterScope  = "-"
 )
 
-// ReadVerbs lists out RO verbs.
-var ReadVerbs = []string{"get", "list", "watch"}
-
 // Factory tracks various resource informers.
 type Factory struct {
 	factories  map[string]di.DynamicSharedInformerFactory
 	client     client.Connection
 	stopChan   chan struct{}
 	forwarders Forwarders
+	mx         sync.RWMutex
 }
 
 // NewFactory returns a new informers factory.
@@ -54,6 +53,9 @@ func (f *Factory) Terminate() {
 		close(f.stopChan)
 		f.stopChan = nil
 	}
+
+	f.mx.Lock()
+	defer f.mx.Unlock()
 	for k := range f.factories {
 		delete(f.factories, k)
 	}
@@ -70,7 +72,7 @@ func (f *Factory) List(gvr, ns string, wait bool, labels labels.Selector) ([]run
 		ns = allNamespaces
 	}
 	log.Debug().Msgf("List %q:%q", ns, gvr)
-	inf, err := f.CanForResource(ns, gvr, []string{"list", "watch"})
+	inf, err := f.CanForResource(ns, gvr, client.MonitorAccess)
 	if err != nil {
 		return nil, err
 	}
@@ -86,13 +88,18 @@ func (f *Factory) List(gvr, ns string, wait bool, labels labels.Selector) ([]run
 
 // Get retrieves a given resource.
 func (f *Factory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("FACTORY-GET %q--%q elapsed %v", gvr, path, time.Since(t))
+	}(time.Now())
+
 	ns, n := namespaced(path)
 	log.Debug().Msgf("GET %q:%q::%q", ns, gvr, n)
-	Debug(f, "", gvr)
-	inf, err := f.CanForResource(ns, gvr, []string{"get"})
+	inf, err := f.CanForResource(ns, gvr, []string{client.GetVerb})
 	if err != nil {
 		return nil, err
 	}
+
+	DumpFactory(f)
 	if wait {
 		f.waitForCacheSync(ns)
 	}
@@ -193,6 +200,8 @@ func (f *Factory) ensureFactory(ns string) di.DynamicSharedInformerFactory {
 	}
 
 	log.Debug().Msgf("FACTORY_NEW for ns %q", ns)
+	f.mx.Lock()
+	defer f.mx.Unlock()
 	f.factories[ns] = di.NewFilteredDynamicSharedInformerFactory(
 		f.client.DynDialOrDie(),
 		defaultResync,
@@ -210,8 +219,6 @@ func (f *Factory) AddForwarder(pf Forwarder) {
 
 // DeleteForwarder deletes portforward for a given container.
 func (f *Factory) DeleteForwarder(path string) {
-
-	f.forwarders.Dump()
 	count := f.forwarders.Kill(path)
 	log.Warn().Msgf("Deleted (%d) portforward for %q", count, path)
 }

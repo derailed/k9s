@@ -44,7 +44,7 @@ func (d *DaemonSet) Restart(path string) error {
 		return err
 	}
 
-	auth, err := d.Client().CanI(ds.Namespace, "apps/v1/daemonsets", []string{"patch"})
+	auth, err := d.Client().CanI(ds.Namespace, "apps/v1/daemonsets", []string{client.PatchVerb})
 	if !auth || err != nil {
 		return err
 	}
