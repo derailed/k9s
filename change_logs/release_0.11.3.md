@@ -16,7 +16,7 @@ Maintenance Release!
 
 ### Speedy Gonzales?
 
-In this drop, we took a bit of a perf pass in light of recent issues and thanks to [Chris Werner Rau](https://github.com/cwrau) pushing me and keeping me up to speed, I've digged a bit deeper and found that there might be some seamingly innocent calls that sucked a bit of cycles during K9s refreshes. Long story short, I think this drop will improve perf by a factor of ~10x in some instances. Typically the initial load will be slower but subsequent loads should be much faster. Famous last words right? Anyhow, can't really take credit for this one as the awesome [Gustavo Silva Paiva](https://github.com/paivagustavo) suggested doing this a while back, but since I was already in flight with the refactor decided to punt until back online. And there we are...
+In this drop, we took a bit of a perf pass in light of recent issues and thanks to [Chris Werner Rau](https://github.com/cwrau) pushing me and keeping me up to speed, I've digged a bit deeper and found that there might be some seamingly innocent calls that sucked a bit of cycles during K9s refreshes. Long story short, I think this drop will improve perf by a factor of ~10x in some instances. Typically the initial load will be slower but subsequent loads should be much faster. Famous last words right? Anyhow, can't really take credit for this one as the awesome [Gustavo Silva Paiva](https://github.com/paivagustavo) suggested doing this a while back, but since I was already in flight with the refactor decided to punt until back online. And here we are...
 
 Hopefully these findings will coalesce with yours?? If not, please forward bulk Prozac patches at the address below ;)
 
