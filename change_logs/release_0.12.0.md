@@ -40,6 +40,14 @@ k9s:
   ...
 ```
 
+### K9s Slackers
+
+I've enabled a [K9s slack channel](https://join.slack.com/t/k9sers/shared_invite/enQtOTAzNTczMDYwNjc5LWJlZjRkNzE2MzgzYWM0MzRiYjZhYTE3NDc1YjNhYmM2NTk2MjUxMWNkZGMzNjJiYzEyZmJiODBmZDYzOGQ5NWM) dedicated to all K9ers. This would be a place for us to meet and discuss ideas and use cases. I'll be honest here I am not a big slack afficionado as I don't do very well with interrupt drive workflows. But I think it would be a great resource for us all.
+
+NOTE: Please be kind to each others and threat everyone with respect as I would like this to be a safe and fun place for folks to hangout. Thank you for you support and understanding!!
+
+NOTE: I'll admit my slackFU is pretty low, so if you're a slack master, feel free to advise me for best practices around setup and management, etc... Thank you!
+
 ---
 
 ## Resolved Bugs/Features
