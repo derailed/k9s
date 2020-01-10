@@ -103,12 +103,12 @@ func (l *Log) LogCleared() {
 	})
 }
 
-// LogErrored notifies an error occurred.
+// LogFailed notifies an error occurred.
 func (l *Log) LogFailed(err error) {
 	l.app.Flash().Err(err)
 }
 
-// LogsChanged updates the logs.
+// LogChanged updates the logs.
 func (l *Log) LogChanged(lines []string) {
 	log.Debug().Msgf("LOG-CHANGED %d", len(lines))
 	l.app.QueueUpdateDraw(func() {
@@ -351,6 +351,7 @@ func (l *Log) textWrapCmd(*tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+// ToggleAutoScrollCmd toggles autoscroll status.
 func (l *Log) ToggleAutoScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
 	l.indicator.ToggleAutoScroll()
 	return nil

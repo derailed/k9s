@@ -216,7 +216,7 @@ func (a *APIClient) RestConfigOrDie() *restclient.Config {
 	return cfg
 }
 
-// CachedDiscovery returns a cached discovery client.
+// CachedDiscoveryOrDie returns a cached discovery client.
 func (a *APIClient) CachedDiscoveryOrDie() *disk.CachedDiscoveryClient {
 	a.mx.Lock()
 	defer a.mx.Unlock()
