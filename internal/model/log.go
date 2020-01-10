@@ -145,6 +145,7 @@ func (l *Log) load() error {
 	return nil
 }
 
+// Append adds a log line.
 func (l *Log) Append(line string) {
 	if line == "" {
 		return
@@ -171,6 +172,7 @@ func (l *Log) Append(line string) {
 	log.Debug().Msgf("MODEL %d--%d", len(l.lines), l.lastSent)
 }
 
+// Notify fires of notifications to the listeners.
 func (l *Log) Notify(timedOut bool) {
 	l.mx.Lock()
 	defer l.mx.Unlock()

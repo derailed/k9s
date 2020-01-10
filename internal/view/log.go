@@ -26,7 +26,7 @@ const (
 	logFmt     = " Logs([fg:bg:]%s) "
 
 	// BOZO!! Canned! Need config tail line counts!
-	tailLineCount  = 1_000
+	tailLineCount  = 1000
 	defaultTimeout = 200 * time.Millisecond
 )
 

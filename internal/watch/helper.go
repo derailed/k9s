@@ -27,7 +27,7 @@ func namespaced(n string) (string, string) {
 	return strings.Trim(ns, "/"), po
 }
 
-// Dump for debug.
+// DumpFactory for debug.
 func DumpFactory(f *Factory) {
 	log.Debug().Msgf("----------- FACTORIES -------------")
 	for ns := range f.factories {
@@ -36,7 +36,7 @@ func DumpFactory(f *Factory) {
 	log.Debug().Msgf("-----------------------------------")
 }
 
-// Debug for debug.
+// DebugFactory for debug.
 func DebugFactory(f *Factory, ns string, gvr string) {
 	log.Debug().Msgf("----------- DEBUG FACTORY (%s) -------------", gvr)
 	fac, ok := f.factories[ns]

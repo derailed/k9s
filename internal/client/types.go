@@ -29,7 +29,7 @@ const (
 	CreateVerb = "create"
 	// UpdateVerb represents an update access on a resource.
 	UpdateVerb = "update"
-	// UpdateVerb represents a patch access on a resource.
+	// PatchVerb represents a patch access on a resource.
 	PatchVerb = "patch"
 	// DeleteVerb represents a delete access on a resource.
 	DeleteVerb = "delete"
@@ -46,7 +46,7 @@ var (
 	GetAccess = []string{GetVerb}
 	// ListAccess list resources.
 	ListAccess = []string{ListVerb}
-	// MonitorAcces monitors a collection of resources.
+	// MonitorAccess monitors a collection of resources.
 	MonitorAccess = []string{ListVerb, WatchVerb}
 	// ReadAllAccess represents an all read access to a resource.
 	ReadAllAccess = []string{GetVerb, ListVerb, WatchVerb}

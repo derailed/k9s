@@ -62,7 +62,7 @@ func IsLabelSelector(s string) bool {
 	return LableRx.MatchString(s)
 }
 
-// IsFuzztySelector checks if query is fuzzy.
+// IsFuzzySelector checks if query is fuzzy.
 func IsFuzzySelector(s string) bool {
 	if s == "" {
 		return false
