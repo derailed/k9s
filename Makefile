@@ -3,7 +3,7 @@ PACKAGE := github.com/derailed/$(NAME)/internal
 VERSION := dev
 GIT     := $(shell git rev-parse --short HEAD)
 DATE    := $(shell date +%FT%T%Z)
-VERSION  := v0.9.3
+VERSION  := v0.12.0
 IMG_NAME := derailed/k9s
 IMAGE    := ${IMG_NAME}:${VERSION}
 
