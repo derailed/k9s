@@ -16,6 +16,7 @@ type K9s struct {
 	LogRequestSize    int                 `yaml:"logRequestSize"`
 	CurrentContext    string              `yaml:"currentContext"`
 	CurrentCluster    string              `yaml:"currentCluster"`
+	FullScreenLogs    bool                `yaml:"fullScreenLogs"`
 	Clusters          map[string]*Cluster `yaml:"clusters,omitempty"`
 	manualRefreshRate int
 	manualHeadless    *bool

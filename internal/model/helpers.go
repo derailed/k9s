@@ -8,10 +8,6 @@ import (
 
 // MetaFQN returns a fully qualified resource name.
 func MetaFQN(m metav1.ObjectMeta) string {
-	if m.Namespace == "" {
-		return m.Name
-	}
-
 	return FQN(m.Namespace, m.Name)
 }
 

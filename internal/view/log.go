@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
@@ -21,41 +20,39 @@ import (
 )
 
 const (
-	logTitle    = "logs"
-	logBuffSize = 100
+	logTitle   = "logs"
+	logMessage = "Waiting for logs..."
+	logCoFmt   = " Logs([fg:bg:]%s:[hilite:bg:b]%s[-:bg:-]) "
+	logFmt     = " Logs([fg:bg:]%s) "
 
-	// FlushTimeout represents a duration between log flushes.
-	FlushTimeout = 200 * time.Millisecond
-
-	logCoFmt = " Logs([fg:bg:]%s:[hilite:bg:b]%s[-:bg:-]) "
-	logFmt   = " Logs([fg:bg:]%s) "
+	// BOZO!! Canned! Need config tail line counts!
+	tailLineCount  = 1_000
+	defaultTimeout = 200 * time.Millisecond
 )
 
 // Log represents a generic log viewer.
 type Log struct {
 	*tview.Flex
 
-	app             *App
-	logs            *Details
-	indicator       *LogIndicator
-	ansiWriter      io.Writer
-	path, container string
-	cancelFn        context.CancelFunc
-	previous        bool
-	gvr             client.GVR
+	app        *App
+	logs       *Details
+	indicator  *LogIndicator
+	ansiWriter io.Writer
+	cmdBuff    *ui.CmdBuff
+	model      *model.Log
 }
 
-var _ model.Component = &Log{}
+var _ model.Component = (*Log)(nil)
 
 // NewLog returns a new viewer.
 func NewLog(gvr client.GVR, path, co string, prev bool) *Log {
-	return &Log{
-		gvr:       gvr,
-		Flex:      tview.NewFlex(),
-		path:      path,
-		container: co,
-		previous:  prev,
+	l := Log{
+		Flex:    tview.NewFlex(),
+		cmdBuff: ui.NewCmdBuff('/', ui.FilterBuff),
+		model:   model.NewLog(gvr, logMessage, buildLogOpts(path, co, prev, tailLineCount), defaultTimeout),
 	}
+
+	return &l
 }
 
 // Init initialiazes the viewer.
@@ -64,12 +61,11 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	if l.app, err = extractApp(ctx); err != nil {
 		return err
 	}
-
 	l.SetBorder(true)
 	l.SetBorderPadding(0, 0, 1, 1)
 	l.SetDirection(tview.FlexRow)
 
-	l.indicator = NewLogIndicator(l.app.Styles)
+	l.indicator = NewLogIndicator(l.app.Config, l.app.Styles)
 	l.AddItem(l.indicator, 1, 1, false)
 
 	l.logs = NewDetails(l.app, "", "")
@@ -86,8 +82,46 @@ func (l *Log) Init(ctx context.Context) (err error) {
 
 	l.StylesChanged(l.app.Styles)
 	l.app.Styles.AddListener(l)
+	l.goFullScreen()
+
+	l.model.Init(l.app.factory)
+	l.model.AddListener(l)
+	l.updateTitle()
+
+	l.cmdBuff.AddListener(l.app.Cmd())
+	l.cmdBuff.AddListener(l)
 
 	return nil
+}
+
+// LogCleared clears the logs.
+func (l *Log) LogCleared() {
+	log.Debug().Msgf("LOG-CLEARED")
+	l.app.QueueUpdateDraw(func() {
+		l.logs.Clear()
+		l.logs.ScrollTo(0, 0)
+	})
+}
+
+// LogErrored notifies an error occurred.
+func (l *Log) LogFailed(err error) {
+	l.app.Flash().Err(err)
+}
+
+// LogsChanged updates the logs.
+func (l *Log) LogChanged(lines []string) {
+	log.Debug().Msgf("LOG-CHANGED %d", len(lines))
+	l.app.QueueUpdateDraw(func() {
+		l.Flush(lines)
+	})
+}
+
+// BufferChanged indicates the buffer was changed.
+func (l *Log) BufferChanged(s string) {}
+
+// BufferActive indicates the buff activity changed.
+func (l *Log) BufferActive(state bool, k ui.BufferKind) {
+	l.app.BufferActive(state, k)
 }
 
 // StylesChanged reports skin changes.
@@ -97,6 +131,11 @@ func (l *Log) StylesChanged(s *config.Styles) {
 	l.logs.SetBackgroundColor(config.AsColor(s.Views().Log.BgColor))
 }
 
+// GetModel returns the log model.
+func (l *Log) GetModel() *model.Log {
+	return l.model
+}
+
 // Hints returns a collection of menu hints.
 func (l *Log) Hints() model.MenuHints {
 	return l.logs.Actions().Hints()
@@ -104,23 +143,17 @@ func (l *Log) Hints() model.MenuHints {
 
 // Start runs the component.
 func (l *Log) Start() {
-	l.Stop()
-	if err := l.doLoad(); err != nil {
-		l.app.Flash().Err(err)
-		l.log("😂 Doh! No logs are available at this time. Check again later on...")
-		return
-	}
+	l.model.Start()
 	l.app.SetFocus(l)
 }
 
 // Stop terminates the component.
 func (l *Log) Stop() {
-	if l.cancelFn != nil {
-		log.Debug().Msgf("<<<< Logger STOP!")
-		l.cancelFn()
-		l.cancelFn = nil
-	}
+	l.model.Stop()
+	l.model.RemoveListener(l)
 	l.app.Styles.RemoveListener(l)
+	l.cmdBuff.RemoveListener(l)
+	l.cmdBuff.RemoveListener(l.app.Cmd())
 }
 
 // Name returns the component name.
@@ -128,82 +161,43 @@ func (l *Log) Name() string { return logTitle }
 
 func (l *Log) bindKeys() {
 	l.logs.Actions().Set(ui.KeyActions{
-		tcell.KeyEscape: ui.NewKeyAction("Back", l.app.PrevCmd, true),
-		ui.KeyC:         ui.NewKeyAction("Clear", l.clearCmd, true),
-		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", l.toggleAutoScrollCmd, true),
-		ui.KeyF:         ui.NewKeyAction("FullScreen", l.fullScreenCmd, true),
-		ui.KeyW:         ui.NewKeyAction("Toggle Wrap", l.textWrapCmd, true),
-		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.SaveCmd, true),
+		tcell.KeyEnter:      ui.NewSharedKeyAction("Filter", l.filterCmd, false),
+		tcell.KeyEscape:     ui.NewKeyAction("Back", l.resetCmd, true),
+		ui.KeyC:             ui.NewKeyAction("Clear", l.clearCmd, true),
+		ui.KeyS:             ui.NewKeyAction("Toggle AutoScroll", l.ToggleAutoScrollCmd, true),
+		ui.KeyF:             ui.NewKeyAction("FullScreen", l.fullScreenCmd, true),
+		ui.KeyW:             ui.NewKeyAction("Toggle Wrap", l.textWrapCmd, true),
+		tcell.KeyCtrlS:      ui.NewKeyAction("Save", l.SaveCmd, true),
+		ui.KeySlash:         ui.NewSharedKeyAction("Filter Mode", l.activateCmd, false),
+		tcell.KeyCtrlU:      ui.NewSharedKeyAction("Clear Filter", l.clearCmd, false),
+		tcell.KeyBackspace2: ui.NewSharedKeyAction("Erase", l.eraseCmd, false),
+		tcell.KeyBackspace:  ui.NewSharedKeyAction("Erase", l.eraseCmd, false),
+		tcell.KeyDelete:     ui.NewSharedKeyAction("Erase", l.eraseCmd, false),
 	})
 }
 
-func (l *Log) doLoad() error {
-	l.logs.Clear()
-	l.setTitle(l.path, l.container)
-
-	var ctx context.Context
-	ctx = context.WithValue(context.Background(), internal.KeyFactory, l.app.factory)
-	ctx, l.cancelFn = context.WithCancel(ctx)
-
-	c := make(chan string, 10)
-	go l.updateLogs(ctx, c, logBuffSize)
-
-	accessor, err := dao.AccessorFor(l.app.factory, l.gvr)
-	if err != nil {
-		return err
+func (l *Log) keyboard(evt *tcell.EventKey) *tcell.EventKey {
+	key := evt.Key()
+	if key == tcell.KeyUp || key == tcell.KeyDown {
+		return evt
 	}
-	logger, ok := accessor.(dao.Loggable)
-	if !ok {
-		return fmt.Errorf("Resource %s is not tailable", l.gvr)
-	}
-
-	if err := logger.TailLogs(ctx, c, l.logOpts(l.path, l.container, l.previous)); err != nil {
-		l.cancelFn()
-		close(c)
-		return err
-	}
-
-	return nil
-}
-
-func (l *Log) logOpts(path, co string, prevLogs bool) dao.LogOptions {
-	return dao.LogOptions{
-		Path:      path,
-		Container: co,
-		Lines:     int64(l.app.Config.K9s.LogRequestSize),
-		Previous:  prevLogs,
-	}
-}
-
-func (l *Log) updateLogs(ctx context.Context, c <-chan string, buffSize int) {
-	defer func() {
-		log.Debug().Msgf("updateLogs view bailing out!")
-	}()
-	buff, index := make([]string, buffSize), 0
-	for {
-		select {
-		case line, ok := <-c:
-			if !ok {
-				log.Debug().Msgf("Closed channel detected. Bailing out...")
-				l.Flush(index, buff)
-				return
+	if key == tcell.KeyRune {
+		if l.cmdBuff.IsActive() {
+			l.cmdBuff.Add(evt.Rune())
+			if err := l.model.Filter(l.cmdBuff.String()); err != nil {
+				l.app.Flash().Err(err)
 			}
-			if index < buffSize {
-				buff[index] = line
-				index++
-				continue
-			}
-			l.Flush(index, buff)
-			index = 0
-			buff[index] = line
-			index++
-		case <-time.After(FlushTimeout):
-			l.Flush(index, buff)
-			index = 0
-		case <-ctx.Done():
-			return
+			l.updateTitle()
+			return nil
 		}
+		key = extractKey(evt)
 	}
+
+	if a, ok := l.logs.Actions()[key]; ok {
+		return a.Action(evt)
+	}
+
+	return evt
 }
 
 // Indicator returns the scroll mode viewer.
@@ -211,28 +205,20 @@ func (l *Log) Indicator() *LogIndicator {
 	return l.indicator
 }
 
-func (l *Log) setTitle(path, co string) {
+func (l *Log) updateTitle() {
 	var fmat string
+	path, co := l.model.GetPath(), l.model.GetContainer()
 	if co == "" {
 		fmat = ui.SkinTitle(fmt.Sprintf(logFmt, path), l.app.Styles.Frame())
 	} else {
 		fmat = ui.SkinTitle(fmt.Sprintf(logCoFmt, path, co), l.app.Styles.Frame())
 	}
-	l.path = path
+
+	buff := l.cmdBuff.String()
+	if buff != "" {
+		fmat += ui.SkinTitle(fmt.Sprintf(ui.SearchFmt, buff), l.app.Styles.Frame())
+	}
 	l.SetTitle(fmat)
-}
-
-func (l *Log) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	key := evt.Key()
-	if key == tcell.KeyRune {
-		key = tcell.Key(evt.Rune())
-	}
-	if m, ok := l.logs.Actions()[key]; ok {
-		log.Debug().Msgf(">> LogView handled %s", tcell.KeyNames[key])
-		return m.Action(evt)
-	}
-
-	return evt
 }
 
 // Logs returns the log viewer.
@@ -240,29 +226,80 @@ func (l *Log) Logs() *Details {
 	return l.logs
 }
 
-func (l *Log) log(lines string) {
+func (l *Log) write(lines string) {
 	fmt.Fprintln(l.ansiWriter, tview.Escape(lines))
 	log.Debug().Msgf("LOG LINES %d", l.logs.GetLineCount())
 }
 
 // Flush write logs to viewer.
-func (l *Log) Flush(index int, buff []string) {
-	if index == 0 || !l.indicator.AutoScroll() {
+func (l *Log) Flush(lines []string) {
+	if !l.indicator.AutoScroll() {
 		return
 	}
-	l.log(strings.Join(buff[:index], "\n"))
-	l.app.QueueUpdateDraw(func() {
-		l.indicator.Refresh()
-		l.logs.ScrollToEnd()
-	})
+	l.write(strings.Join(lines, "\n"))
+	l.indicator.Refresh()
+	l.logs.ScrollToEnd()
 }
 
 // ----------------------------------------------------------------------------
 // Actions()...
 
+func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !l.cmdBuff.IsActive() {
+		return evt
+	}
+	l.cmdBuff.SetActive(false)
+	if err := l.model.Filter(l.cmdBuff.String()); err != nil {
+		l.app.Flash().Err(err)
+	}
+	l.updateTitle()
+
+	return nil
+}
+
+func (l *Log) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() {
+		return evt
+	}
+	l.app.Flash().Info("Filter mode activated.")
+	l.cmdBuff.SetActive(true)
+
+	return nil
+}
+
+func (l *Log) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !l.cmdBuff.IsActive() {
+		return nil
+	}
+	l.cmdBuff.Delete()
+	if err := l.model.Filter(l.cmdBuff.String()); err != nil {
+		l.app.Flash().Err(err)
+	}
+	l.updateTitle()
+
+	return nil
+}
+
+func (l *Log) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !l.cmdBuff.InCmdMode() {
+		l.cmdBuff.Reset()
+		return l.app.PrevCmd(evt)
+	}
+
+	if l.cmdBuff.String() != "" {
+		l.model.ClearFilter()
+	}
+	l.app.Flash().Info("Clearing filter...")
+	l.cmdBuff.SetActive(false)
+	l.cmdBuff.Reset()
+	l.updateTitle()
+
+	return nil
+}
+
 // SaveCmd dumps the logs to file.
 func (l *Log) SaveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveData(l.app.Config.K9s.CurrentCluster, l.path, l.logs.GetText(true)); err != nil {
+	if path, err := saveData(l.app.Config.K9s.CurrentCluster, l.model.GetPath(), l.logs.GetText(true)); err != nil {
 		l.app.Flash().Err(err)
 	} else {
 		l.app.Flash().Infof("Log %s saved successfully!", path)
@@ -304,8 +341,7 @@ func saveData(cluster, name, data string) (string, error) {
 
 func (l *Log) clearCmd(*tcell.EventKey) *tcell.EventKey {
 	l.app.Flash().Info("Clearing logs...")
-	l.logs.Clear()
-	l.logs.ScrollTo(0, 0)
+	l.model.Clear()
 	return nil
 }
 
@@ -315,13 +351,18 @@ func (l *Log) textWrapCmd(*tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (l *Log) toggleAutoScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (l *Log) ToggleAutoScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
 	l.indicator.ToggleAutoScroll()
 	return nil
 }
 
 func (l *Log) fullScreenCmd(*tcell.EventKey) *tcell.EventKey {
 	l.indicator.ToggleFullScreen()
+	l.goFullScreen()
+	return nil
+}
+
+func (l *Log) goFullScreen() {
 	sidePadding := 1
 	if l.indicator.FullScreen() {
 		sidePadding = 0
@@ -329,6 +370,25 @@ func (l *Log) fullScreenCmd(*tcell.EventKey) *tcell.EventKey {
 	l.SetFullScreen(l.indicator.FullScreen())
 	l.Box.SetBorder(!l.indicator.FullScreen())
 	l.Flex.SetBorderPadding(0, 0, sidePadding, sidePadding)
+}
 
-	return nil
+// ----------------------------------------------------------------------------
+// Helpers...
+
+// AsKey converts rune to keyboard key.,
+func extractKey(evt *tcell.EventKey) tcell.Key {
+	key := tcell.Key(evt.Rune())
+	if evt.Modifiers() == tcell.ModAlt {
+		key = tcell.Key(int16(evt.Rune()) * int16(evt.Modifiers()))
+	}
+	return key
+}
+
+func buildLogOpts(path, co string, prevLogs bool, tailLineCount int) dao.LogOptions {
+	return dao.LogOptions{
+		Path:      path,
+		Container: co,
+		Lines:     int64(tailLineCount),
+		Previous:  prevLogs,
+	}
 }

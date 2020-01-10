@@ -69,6 +69,9 @@ func FetchNodes(f Factory) (*v1.NodeList, error) {
 }
 
 func nodeMetricsFor(fqn string, mmx *mv1beta1.NodeMetricsList) *mv1beta1.NodeMetrics {
+	if mmx == nil {
+		return nil
+	}
 	for _, mx := range mmx.Items {
 		if MetaFQN(mx.ObjectMeta) == fqn {
 			return &mx

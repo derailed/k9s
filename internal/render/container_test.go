@@ -19,7 +19,7 @@ func TestContainer(t *testing.T) {
 	cres := render.ContainerRes{
 		Container: makeContainer(),
 		Status:    makeContainerStatus(),
-		Metrics:   makeContainerMetrics(),
+		MX:        makeContainerMetrics(),
 		IsInit:    false,
 		Age:       makeAge(),
 	}

@@ -49,7 +49,7 @@ func (b *Browser) Init(ctx context.Context) error {
 	if err = b.Table.Init(ctx); err != nil {
 		return err
 	}
-	ns := b.app.Config.ActiveNamespace()
+	ns := client.CleanseNamespace(b.app.Config.ActiveNamespace())
 	if dao.IsK8sMeta(b.meta) {
 		if _, e := b.app.factory.CanForResource(ns, b.GVR(), client.MonitorAccess); e != nil {
 			return e
@@ -290,11 +290,12 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
-	i, _ := strconv.Atoi(string(evt.Rune()))
-	ns := b.namespaces[i]
-	if ns == "" {
-		ns = client.NamespaceAll
+	i, err := strconv.Atoi(string(evt.Rune()))
+	if err != nil {
+		log.Error().Err(err).Msgf("Fail to switch namespace")
+		return nil
 	}
+	ns := b.namespaces[i]
 
 	auth, err := b.App().factory.Client().CanI(ns, b.GVR(), client.MonitorAccess)
 	if !auth {
@@ -323,15 +324,14 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 // Helpers...
 
 func (b *Browser) setNamespace(ns string) {
+	if b.GetModel().InNamespace(ns) {
+		return
+	}
 	if !b.meta.Namespaced {
 		b.GetModel().SetNamespace(client.ClusterScope)
 		return
 	}
-	if b.GetModel().InNamespace(ns) {
-		return
-	}
-
-	b.GetModel().SetNamespace(client.NormalizeNS(ns))
+	b.GetModel().SetNamespace(client.CleanseNamespace(ns))
 }
 
 func (b *Browser) defaultContext() context.Context {
@@ -345,7 +345,7 @@ func (b *Browser) defaultContext() context.Context {
 		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(b.SearchBuff().String()))
 	}
 	ctx = context.WithValue(ctx, internal.KeyFields, "")
-	ctx = context.WithValue(ctx, internal.KeyNamespace, client.NormalizeNS(b.App().Config.ActiveNamespace()))
+	ctx = context.WithValue(ctx, internal.KeyNamespace, client.CleanseNamespace((b.App().Config.ActiveNamespace())))
 
 	return ctx
 }
@@ -358,12 +358,12 @@ func (b *Browser) namespaceActions(aa ui.KeyActions) {
 	aa[tcell.Key(ui.NumKeys[0])] = ui.NewKeyAction(client.NamespaceAll, b.switchNamespaceCmd, true)
 	b.namespaces[0] = client.NamespaceAll
 	index := 1
-	for _, n := range b.app.Config.FavNamespaces() {
-		if n == client.NamespaceAll {
+	for _, ns := range b.app.Config.FavNamespaces() {
+		if ns == client.NamespaceAll {
 			continue
 		}
-		aa[tcell.Key(ui.NumKeys[index])] = ui.NewKeyAction(n, b.switchNamespaceCmd, true)
-		b.namespaces[index] = n
+		aa[tcell.Key(ui.NumKeys[index])] = ui.NewKeyAction(ns, b.switchNamespaceCmd, true)
+		b.namespaces[index] = ns
 		index++
 	}
 }
@@ -407,7 +407,6 @@ func (b *Browser) simpleDelete(selections []string, msg string) {
 			b.app.Flash().Infof("Delete resource %s %s", b.gvr, selections[0])
 		}
 		for _, sel := range selections {
-			log.Debug().Msgf("YO!! %#v", b.accessor)
 			nuker, ok := b.accessor.(dao.Nuker)
 			if !ok {
 				b.app.Flash().Errf("Invalid nuker %T", b.accessor)

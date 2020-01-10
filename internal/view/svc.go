@@ -52,7 +52,6 @@ func (s *Service) showPods(app *App, _ ui.Tabular, gvr, path string) {
 		app.Flash().Err(err)
 		return
 	}
-
 	var svc v1.Service
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &svc)
 	if err != nil {

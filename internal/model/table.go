@@ -208,7 +208,7 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 	}
 	a.Init(factory, client.NewGVR(t.gvr))
 
-	return a.List(ctx, t.namespace)
+	return a.List(ctx, client.CleanseNamespace(t.namespace))
 }
 
 func (t *Table) reconcile(ctx context.Context) error {
@@ -230,12 +230,12 @@ func (t *Table) reconcile(ctx context.Context) error {
 			return fmt.Errorf("expecting a meta table but got %T", oo[0])
 		}
 		rows = make(render.Rows, len(table.Rows))
-		if err := genericHydrate(t.namespace, table, rows, meta.Renderer); err != nil {
+		if err := genericHydrate(client.CleanseNamespace(t.namespace), table, rows, meta.Renderer); err != nil {
 			return err
 		}
 	} else {
 		rows = make(render.Rows, len(oo))
-		if err := hydrate(t.namespace, oo, rows, meta.Renderer); err != nil {
+		if err := hydrate(client.CleanseNamespace(t.namespace), oo, rows, meta.Renderer); err != nil {
 			return err
 		}
 	}

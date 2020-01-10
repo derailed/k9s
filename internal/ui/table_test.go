@@ -43,7 +43,7 @@ func TestTableSelection(t *testing.T) {
 	v.SelectRow(1, true)
 
 	assert.Equal(t, "r1", v.GetSelectedItem())
-	assert.Equal(t, render.Row{ID: "r2", Fields: render.Fields{"blee", "duh", "zorg"}}, v.GetSelectedRow())
+	assert.Equal(t, render.Row{ID: "r1", Fields: render.Fields{"blee", "duh", "fred"}}, v.GetSelectedRow())
 	assert.Equal(t, "blee", v.GetSelectedCell(0))
 	assert.Equal(t, 1, v.GetSelectedRowIndex())
 	assert.Equal(t, []string{"r1"}, v.GetSelectedItems())

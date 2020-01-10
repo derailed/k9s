@@ -66,6 +66,7 @@ type Accessor interface {
 	// Init the resource with a factory object.
 	Init(Factory, client.GVR)
 
+	// GVR returns a gvr a string.
 	GVR() string
 }
 

@@ -14,9 +14,8 @@ import (
 )
 
 const (
-	defaultResync = 10 * time.Minute
-	allNamespaces = ""
-	clusterScope  = "-"
+	defaultResync   = 10 * time.Minute
+	defaultWaitTime = 500 * time.Millisecond
 )
 
 // Factory tracks various resource informers.
@@ -65,12 +64,9 @@ func (f *Factory) Terminate() {
 // List returns a resource collection.
 func (f *Factory) List(gvr, ns string, wait bool, labels labels.Selector) ([]runtime.Object, error) {
 	defer func(t time.Time) {
-		log.Debug().Msgf("FACTORY-LIST %q::%q elapsed %v", ns, gvr, time.Since(t))
+		log.Debug().Msgf("FACTORY-LIST [%t] %q::%q elapsed %v", wait, ns, gvr, time.Since(t))
 	}(time.Now())
 
-	if ns == clusterScope {
-		ns = allNamespaces
-	}
 	log.Debug().Msgf("List %q:%q", ns, gvr)
 	inf, err := f.CanForResource(ns, gvr, client.MonitorAccess)
 	if err != nil {
@@ -83,13 +79,16 @@ func (f *Factory) List(gvr, ns string, wait bool, labels labels.Selector) ([]run
 		return inf.Lister().List(labels)
 	}
 
+	if client.IsAllNamespace(ns) {
+		ns = client.AllNamespaces
+	}
 	return inf.Lister().ByNamespace(ns).List(labels)
 }
 
 // Get retrieves a given resource.
 func (f *Factory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
 	defer func(t time.Time) {
-		log.Debug().Msgf("FACTORY-GET %q--%q elapsed %v", gvr, path, time.Since(t))
+		log.Debug().Msgf("FACTORY-GET [%t] %q--%q elapsed %v", wait, gvr, path, time.Since(t))
 	}(time.Now())
 
 	ns, n := namespaced(path)
@@ -111,18 +110,30 @@ func (f *Factory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime
 }
 
 func (f *Factory) waitForCacheSync(ns string) {
-	if fac, ok := f.factories[ns]; ok {
-		// Hang for a sec for the cache to refresh if still not done bail out!
-		const dur = 1 * time.Second
-		c := make(chan struct{})
-		go func(c chan struct{}) {
-			<-time.After(dur)
-			log.Debug().Msgf("Wait for sync timed out!")
-			close(c)
-		}(c)
-		fac.WaitForCacheSync(c)
-		log.Debug().Msgf("Sync completed for ns %q", ns)
+	if client.IsClusterWide(ns) {
+		ns = client.AllNamespaces
 	}
+
+	if f.isClusterWide() {
+		ns = client.AllNamespaces
+	}
+	fac, ok := f.factories[ns]
+	if !ok {
+		return
+	}
+	log.Debug().Msgf("!!!!!! WAIT FOR CACHE-SYNC %q", ns)
+	// Hang for a sec for the cache to refresh if still not done bail out!
+	c := make(chan struct{})
+	go func(c chan struct{}) {
+		<-time.After(defaultWaitTime)
+		log.Debug().Msgf("Wait for sync timed out!")
+		close(c)
+	}(c)
+	mm := fac.WaitForCacheSync(c)
+	for k, v := range mm {
+		log.Debug().Msgf("%t -- %s", v, k)
+	}
+	log.Debug().Msgf("Sync completed for ns %q", ns)
 }
 
 // WaitForCacheSync waits for all factories to update their cache.
@@ -153,17 +164,17 @@ func (f *Factory) SetActiveNS(ns string) {
 }
 
 func (f *Factory) isClusterWide() bool {
-	_, ok := f.factories[allNamespaces]
+	_, ok := f.factories[client.AllNamespaces]
 	return ok
 }
 
 // CanForResource return an informer is user has access.
 func (f *Factory) CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error) {
 	// If user can access resource cluster wide, prefer cluster wide factory.
-	if ns != allNamespaces {
-		auth, err := f.Client().CanI(allNamespaces, gvr, verbs)
+	if !client.IsClusterWide(ns) {
+		auth, err := f.Client().CanI(client.AllNamespaces, gvr, verbs)
 		if auth && err == nil {
-			return f.ForResource(allNamespaces, gvr), nil
+			return f.ForResource(client.AllNamespaces, gvr), nil
 		}
 	}
 	auth, err := f.Client().CanI(ns, gvr, verbs)
@@ -192,16 +203,15 @@ func (f *Factory) ForResource(ns, gvr string) informers.GenericInformer {
 }
 
 func (f *Factory) ensureFactory(ns string) di.DynamicSharedInformerFactory {
-	if ns == clusterScope {
-		ns = allNamespaces
+	if client.IsClusterWide(ns) {
+		ns = client.AllNamespaces
 	}
+	f.mx.Lock()
+	defer f.mx.Unlock()
 	if fac, ok := f.factories[ns]; ok {
 		return fac
 	}
-
-	log.Debug().Msgf("FACTORY_NEW for ns %q", ns)
-	f.mx.Lock()
-	defer f.mx.Unlock()
+	log.Debug().Msgf("FACTORY_CREATE for ns %q", ns)
 	f.factories[ns] = di.NewFilteredDynamicSharedInformerFactory(
 		f.client.DynDialOrDie(),
 		defaultResync,

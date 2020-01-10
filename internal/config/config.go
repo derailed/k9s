@@ -69,11 +69,13 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags) error {
 	} else {
 		c.K9s.CurrentContext = cfg.CurrentContext
 	}
-	log.Debug().Msgf("Active Context `%v`", c.K9s.CurrentContext)
-
+	log.Debug().Msgf("Active Context %q", c.K9s.CurrentContext)
+	if c.K9s.CurrentContext == "" {
+		return errors.New("Invalid kubeconfig context detected")
+	}
 	ctx, ok := cfg.Contexts[c.K9s.CurrentContext]
 	if !ok {
-		return fmt.Errorf("The specified context `%s does not exists in kubeconfig", c.K9s.CurrentContext)
+		return fmt.Errorf("The specified context %q does not exists in kubeconfig", c.K9s.CurrentContext)
 	}
 	c.K9s.CurrentCluster = ctx.Cluster
 	if len(ctx.Namespace) != 0 {

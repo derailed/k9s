@@ -3,7 +3,11 @@ package client
 import (
 	"errors"
 	"fmt"
+	"net"
+	"regexp"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -12,6 +16,8 @@ import (
 	clientcmd "k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
+
+const dialTimeout = 1 * time.Second
 
 // Config tracks a kubernetes configuration.
 type Config struct {
@@ -29,6 +35,21 @@ func NewConfig(f *genericclioptions.ConfigFlags) *Config {
 		flags: f,
 		mutex: &sync.RWMutex{},
 	}
+}
+
+// CheckConnectivity return true if api server is cool or false otherwise.
+func (c *Config) CheckConnectivity() bool {
+	address := strings.Replace(c.restConfig.Host, "https://", "", 1)
+	rx := regexp.MustCompile(`\A.+:\d+`)
+	if !rx.MatchString(address) {
+		address += ":443"
+	}
+
+	if _, err := net.DialTimeout("tcp", address, dialTimeout); err != nil {
+		log.Error().Err(err).Msgf("DIAL TIMEDOUT!")
+		return false
+	}
+	return true
 }
 
 // Flags returns configuration flags.

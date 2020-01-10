@@ -67,7 +67,6 @@ func Execute() {
 
 func run(cmd *cobra.Command, args []string) {
 	defer func() {
-		// view.ClearScreen()
 		if err := recover(); err != nil {
 			log.Error().Msgf("Boom! %v", err)
 			log.Error().Msg(string(debug.Stack()))
@@ -117,7 +116,7 @@ func loadConfiguration() *config.Config {
 	}
 
 	if err := k9sCfg.Refine(k8sFlags); err != nil {
-		log.Panic().Err(err).Msg("Unable to locate kubeconfig file")
+		log.Panic().Err(err)
 	}
 	k9sCfg.SetConnection(client.InitConnectionOrDie(k8sCfg))
 

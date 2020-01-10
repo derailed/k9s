@@ -1,0 +1,146 @@
+{
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": {
+    "annotations": {
+      "kubectl.kubernetes.io/restartedAt": "2019-12-31T12:26:47-07:00"
+    },
+    "creationTimestamp": "2019-12-31T19:27:22Z",
+    "generateName": "nginx-7fb78fb6d8-",
+    "labels": {
+      "app": "nginx",
+      "pod-template-hash": "7fb78fb6d8"
+    },
+    "name": "nginx-7fb78fb6d8-2w75j",
+    "namespace": "default",
+    "ownerReferences": [
+      {
+        "apiVersion": "apps/v1",
+        "blockOwnerDeletion": true,
+        "controller": true,
+        "kind": "ReplicaSet",
+        "name": "nginx-7fb78fb6d8",
+        "uid": "7ccd0600-2c03-11ea-883f-42010a800044"
+      }
+    ],
+    "resourceVersion": "87290191",
+    "selfLink": "/api/v1/namespaces/default/pods/nginx-7fb78fb6d8-2w75j",
+    "uid": "91bb1cf2-2c03-11ea-883f-42010a800044"
+  },
+  "spec": {
+    "containers": [
+      {
+        "image": "k8s.gcr.io/nginx-slim:0.8",
+        "imagePullPolicy": "IfNotPresent",
+        "name": "nginx",
+        "ports": [
+          {
+            "containerPort": 80,
+            "protocol": "TCP"
+          }
+        ],
+        "resources": {
+          "limits": {
+            "cpu": "200m",
+            "memory": "20Mi"
+          },
+          "requests": {
+            "cpu": "200m",
+            "memory": "20Mi"
+          }
+        },
+        "terminationMessagePath": "/dev/termination-log",
+        "terminationMessagePolicy": "File",
+        "volumeMounts": [
+          {
+            "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+            "name": "default-token-dsl46",
+            "readOnly": true
+          }
+        ]
+      }
+    ],
+    "dnsPolicy": "ClusterFirst",
+    "enableServiceLinks": true,
+    "nodeName": "gke-k9s-default-pool-0fa2fb89-lbtf",
+    "priority": 0,
+    "restartPolicy": "Always",
+    "schedulerName": "default-scheduler",
+    "securityContext": {},
+    "serviceAccount": "default",
+    "serviceAccountName": "default",
+    "terminationGracePeriodSeconds": 30,
+    "tolerations": [
+      {
+        "effect": "NoExecute",
+        "key": "node.kubernetes.io/not-ready",
+        "operator": "Exists",
+        "tolerationSeconds": 300
+      },
+      {
+        "effect": "NoExecute",
+        "key": "node.kubernetes.io/unreachable",
+        "operator": "Exists",
+        "tolerationSeconds": 300
+      }
+    ],
+    "volumes": [
+      {
+        "name": "default-token-dsl46",
+        "secret": {
+          "defaultMode": 420,
+          "secretName": "default-token-dsl46"
+        }
+      }
+    ]
+  },
+  "status": {
+    "conditions": [
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2019-12-31T19:27:23Z",
+        "status": "True",
+        "type": "Initialized"
+      },
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2019-12-31T19:27:25Z",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2019-12-31T19:27:25Z",
+        "status": "True",
+        "type": "ContainersReady"
+      },
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2019-12-31T19:27:22Z",
+        "status": "True",
+        "type": "PodScheduled"
+      }
+    ],
+    "containerStatuses": [
+      {
+        "containerID": "docker://90e0abf7a779dd76d36038883312baed57a8351428a1d6340df3cff698f51809",
+        "image": "k8s.gcr.io/nginx-slim:0.8",
+        "imageID": "docker-pullable://k8s.gcr.io/nginx-slim@sha256:8b4501fe0fe221df663c22e16539f399e89594552f400408303c42f3dd8d0e52",
+        "lastState": {},
+        "name": "nginx",
+        "ready": true,
+        "restartCount": 0,
+        "state": {
+          "running": {
+            "startedAt": "2019-12-31T19:27:24Z"
+          }
+        }
+      }
+    ],
+    "hostIP": "10.128.0.15",
+    "phase": "Running",
+    "podIP": "10.44.0.229",
+    "qosClass": "Guaranteed",
+    "startTime": "2019-12-31T19:27:23Z"
+  }
+}

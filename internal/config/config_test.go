@@ -264,6 +264,7 @@ var expectedConfig = `k9s:
   logRequestSize: 100
   currentContext: blee
   currentCluster: blee
+  fullScreenLogs: false
   clusters:
     blee:
       namespace:
@@ -303,6 +304,7 @@ var resetConfig = `k9s:
   logRequestSize: 200
   currentContext: blee
   currentCluster: blee
+  fullScreenLogs: false
   clusters:
     blee:
       namespace:

@@ -30,10 +30,10 @@ const (
 )
 
 var (
-	// LabelCmd identifies a label query
-	LabelCmd = regexp.MustCompile(`\A\-l`)
+	// LableRx identifies a label query
+	LableRx = regexp.MustCompile(`\A\-l`)
 
-	fuzzyCmd = regexp.MustCompile(`\A\-f`)
+	fuzzyRx = regexp.MustCompile(`\A\-f`)
 )
 
 func mustExtractSyles(ctx context.Context) *config.Styles {
@@ -59,15 +59,15 @@ func IsLabelSelector(s string) bool {
 	if s == "" {
 		return false
 	}
-	return LabelCmd.MatchString(s)
+	return LableRx.MatchString(s)
 }
 
 // IsFuzztySelector checks if query is fuzzy.
-func isFuzzySelector(s string) bool {
+func IsFuzzySelector(s string) bool {
 	if s == "" {
 		return false
 	}
-	return fuzzyCmd.MatchString(s)
+	return fuzzyRx.MatchString(s)
 }
 
 // TrimLabelSelector extracts label query.

@@ -83,6 +83,9 @@ func makeCacheKey(ns, gvr string, vv []string) string {
 
 // CanI checks if user has access to a certain resource.
 func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) {
+	if IsClusterWide(ns) {
+		ns = AllNamespaces
+	}
 	key := makeCacheKey(ns, gvr, verbs)
 	defer func(t time.Time) string {
 		log.Debug().Msgf("AUTH elapsed %t--%q %v", auth, key, time.Since(t))
@@ -171,12 +174,24 @@ func (a *APIClient) Config() *Config {
 // HasMetrics returns true if the cluster supports metrics.
 func (a *APIClient) HasMetrics() bool {
 	v, ok := a.cache.Get(cacheMXKey)
-	if !ok {
-		return a.supportsMxServer()
+	if ok {
+		flag, k := v.(bool)
+		return k && flag
 	}
 
-	flag, ok := v.(bool)
-	return ok && flag
+	var flag bool
+	dial, err := a.MXDial()
+	if err != nil {
+		a.cache.Add(cacheMXKey, flag, cacheExpiry)
+		return flag
+	}
+
+	if _, err := dial.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{Limit: 1}); err == nil {
+		flag = true
+	}
+	a.cache.Add(cacheMXKey, flag, cacheExpiry)
+
+	return flag
 }
 
 // DialOrDie returns a handle to api server or die.

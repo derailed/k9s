@@ -19,11 +19,12 @@ type LogIndicator struct {
 }
 
 // NewLogIndicator returns a new indicator.
-func NewLogIndicator(styles *config.Styles) *LogIndicator {
+func NewLogIndicator(cfg *config.Config, styles *config.Styles) *LogIndicator {
 	l := LogIndicator{
 		styles:       styles,
 		TextView:     tview.NewTextView(),
 		scrollStatus: 1,
+		fullScreen:   cfg.K9s.FullScreenLogs,
 	}
 	l.SetBackgroundColor(config.AsColor(styles.Views().Log.BgColor))
 	l.SetTextAlign(tview.AlignRight)

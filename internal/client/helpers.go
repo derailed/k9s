@@ -16,6 +16,15 @@ func IsClusterWide(ns string) bool {
 	return ns == NamespaceAll || ns == AllNamespaces || ns == ClusterScope
 }
 
+// CleanseNamespace ensures all ns maps to blank.
+func CleanseNamespace(ns string) string {
+	if IsAllNamespace(ns) {
+		return AllNamespaces
+	}
+
+	return ns
+}
+
 // IsAllNamespace returns true if ns == all.
 func IsAllNamespace(ns string) bool {
 	return ns == NamespaceAll
@@ -34,16 +43,6 @@ func IsNamespaced(ns string) bool {
 // IsClusterScoped returns true if resource is not namespaced.
 func IsClusterScoped(ns string) bool {
 	return ns == ClusterScope
-}
-
-// NormalizeNS normalizes a namespace name to a k8s ns known designation.
-func NormalizeNS(ns string) string {
-	switch ns {
-	case NamespaceAll, ClusterScope:
-		return ""
-	default:
-		return ns
-	}
 }
 
 // Namespaced converts a resource path to namespace and resource name.

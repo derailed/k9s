@@ -89,7 +89,7 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 		return fmt.Errorf("Expected ContainerRes, but got %T", o)
 	}
 
-	cur, perc := gatherMetrics(co)
+	cur, perc := gatherMetrics(co.Container, co.MX)
 	ready, state, restarts := "false", MissingValue, "0"
 	if co.Status != nil {
 		ready, state, restarts = boolToStr(co.Status.Ready), toState(co.Status.State), strconv.Itoa(int(co.Status.RestartCount))
@@ -119,20 +119,20 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func gatherMetrics(co ContainerRes) (c, p metric) {
+func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, p metric) {
 	c, p = noMetric(), noMetric()
-	if co.Metrics == nil {
+	if mx == nil {
 		return
 	}
 
-	cpu := co.Metrics.Usage.Cpu().MilliValue()
-	mem := ToMB(co.Metrics.Usage.Memory().Value())
+	cpu := mx.Usage.Cpu().MilliValue()
+	mem := ToMB(mx.Usage.Memory().Value())
 	c = metric{
 		cpu: ToMillicore(cpu),
 		mem: ToMi(mem),
 	}
 
-	rcpu, rmem := containerResources(*co.Container)
+	rcpu, rmem := containerResources(*co)
 	if rcpu != nil {
 		p.cpu = AsPerc(toPerc(float64(cpu), float64(rcpu.MilliValue())))
 	}
@@ -189,7 +189,7 @@ func probe(p *v1.Probe) string {
 type ContainerRes struct {
 	Container *v1.Container
 	Status    *v1.ContainerStatus
-	Metrics   *mv1beta1.ContainerMetrics
+	MX        *mv1beta1.ContainerMetrics
 	IsInit    bool
 	Age       metav1.Time
 }

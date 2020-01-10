@@ -128,7 +128,9 @@ func (c *ClusterInfo) refresh() {
 	cell = c.GetCell(row+1, 1)
 	cell.SetText(render.NAValue)
 
-	c.refreshMetrics(cluster, row)
+	if c.app.Conn().HasMetrics() {
+		c.refreshMetrics(cluster, row)
+	}
 	c.updateStyle()
 }
 

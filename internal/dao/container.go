@@ -104,13 +104,13 @@ func makeContainerRes(co v1.Container, po *v1.Pod, pmx *mv1beta1.PodMetrics, isI
 
 	cmx, err := containerMetrics(co.Name, pmx)
 	if err != nil {
-		log.Warn().Err(err).Msgf("Fail container metrics for %s", co.Name)
+		log.Warn().Err(err).Msgf("No container metrics found for %s::%s", po.Name, co.Name)
 	}
 
 	return render.ContainerRes{
 		Container: &co,
 		Status:    getContainerStatus(co.Name, po.Status),
-		Metrics:   cmx,
+		MX:        cmx,
 		IsInit:    isInit,
 		Age:       po.ObjectMeta.CreationTimestamp,
 	}
@@ -144,7 +144,7 @@ func getContainerStatus(co string, status v1.PodStatus) *v1.ContainerStatus {
 }
 
 func (c *Container) fetchPod(fqn string) (*v1.Pod, error) {
-	o, err := c.Factory.Get("v1/pods", fqn, true, labels.Everything())
+	o, err := c.Factory.Get("v1/pods", fqn, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

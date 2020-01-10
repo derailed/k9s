@@ -20,7 +20,7 @@ import (
 
 const (
 	splashTime         = 1
-	clusterRefresh     = time.Duration(5 * time.Second)
+	clusterRefresh     = 5 * time.Second
 	statusIndicatorFmt = "[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s%%[white::]::[darkturquoise::]%s%%"
 	clusterInfoWidth   = 50
 	clusterInfoPad     = 15
@@ -178,20 +178,26 @@ func (a *App) clusterUpdater(ctx context.Context) {
 			log.Debug().Msg("Cluster updater canceled!")
 			return
 		case <-time.After(clusterRefresh):
-			a.QueueUpdateDraw(func() {
-				a.refreshClusterInfo()
-			})
+			// BOZO!! refact - should not hold ui for updating clusterinfo
+			a.refreshClusterInfo()
 		}
 	}
 }
 
 // BOZO!! Refact to use model/view strategy.
 func (a *App) refreshClusterInfo() {
-	if !a.showHeader {
-		a.refreshIndicator()
-	} else {
-		a.clusterInfo().refresh()
+	if !a.Conn().Config().CheckConnectivity() {
+		log.Error().Msgf("Something is wrong with the connection. Bailing out!")
+		a.BailOut()
 	}
+
+	a.QueueUpdateDraw(func() {
+		if !a.showHeader {
+			a.refreshIndicator()
+		} else {
+			a.clusterInfo().refresh()
+		}
+	})
 }
 
 func (a *App) refreshIndicator() {
@@ -379,7 +385,6 @@ func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 		if err := a.gotoResource(a.GetCmd(), true); err != nil {
 			log.Error().Err(err).Msgf("Goto resource for %q failed", a.GetCmd())
 			a.Flash().Err(err)
-			return nil
 		}
 		a.ResetCmd()
 		return nil

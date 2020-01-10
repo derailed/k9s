@@ -79,15 +79,6 @@ func (s *Stack) AddListener(l StackListener) {
 	}
 }
 
-// Dump prints out the stack.
-func (s *Stack) Dump() {
-	log.Debug().Msgf("--- Stack Dump %p---", s)
-	for i, c := range s.components {
-		log.Debug().Msgf("%d -- %s -- %#v", i, c.Name(), c)
-	}
-	log.Debug().Msg("------------------")
-}
-
 // Push adds a new item.
 func (s *Stack) Push(c Component) {
 	if top := s.Top(); top != nil {
@@ -115,8 +106,8 @@ func (s *Stack) Peek() []Component {
 	return s.components
 }
 
-// ClearHistory clear out the stack history up to most recent.
-func (s *Stack) ClearHistory() {
+// Clear clear out the stack using pops.
+func (s *Stack) Clear() {
 	for range s.components {
 		s.Pop()
 	}
@@ -134,6 +125,9 @@ func (s *Stack) IsLast() bool {
 
 // Previous returns the previous component if any.
 func (s *Stack) Previous() Component {
+	if s.Empty() {
+		return nil
+	}
 	if s.IsLast() {
 		return s.Top()
 	}
@@ -163,4 +157,16 @@ func (s *Stack) notify(a StackAction, c Component) {
 			l.StackPopped(c, s.Top())
 		}
 	}
+}
+
+// ----------------------------------------------------------------------------
+// Helpers...
+
+// Dump prints out the stack.
+func (s *Stack) Dump() {
+	log.Debug().Msgf("--- Stack Dump %p---", s)
+	for i, c := range s.components {
+		log.Debug().Msgf("%d -- %s -- %#v", i, c.Name(), c)
+	}
+	log.Debug().Msg("------------------")
 }

@@ -71,7 +71,7 @@ func (m *MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsL
 
 // FetchNodesMetrics return all metrics for pods in a given namespace.
 func (m *MetricsServer) FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error) {
-	var mx mv1beta1.NodeMetricsList
+	mx := mv1beta1.NodeMetricsList{}
 	if !m.HasMetrics() {
 		return &mx, fmt.Errorf("No metrics-server detected on cluster")
 	}
@@ -90,7 +90,7 @@ func (m *MetricsServer) FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error) {
 
 // FetchPodsMetrics return all metrics for pods in a given namespace.
 func (m *MetricsServer) FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, error) {
-	var mx mv1beta1.PodMetricsList
+	mx := mv1beta1.PodMetricsList{}
 	if !m.HasMetrics() {
 		return &mx, fmt.Errorf("No metrics-server detected on cluster")
 	}

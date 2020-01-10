@@ -59,7 +59,6 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 	if !ok {
 		return fmt.Errorf("expecting a TableRow but got %T", o)
 	}
-
 	_, nns, err := resourceNS(row.Object.Raw)
 	if err != nil {
 		return err

@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestHints(t *testing.T) {
+func TestHint(t *testing.T) {
 	uu := map[string]struct {
 		hh model.MenuHints
 		e  int
@@ -34,6 +34,7 @@ func TestHints(t *testing.T) {
 			h.SetHints(u.hh)
 
 			assert.Equal(t, u.e, l.count)
+			assert.Equal(t, u.e, len(h.Peek()))
 		})
 	}
 }
@@ -43,7 +44,6 @@ func TestHintRemoveListener(t *testing.T) {
 	l1, l2, l3 := &hintL{}, &hintL{}, &hintL{}
 	h.AddListener(l1)
 	h.AddListener(l2)
-	h.AddListener(l3)
 
 	h.RemoveListener(l2)
 	h.RemoveListener(l3)
@@ -57,6 +57,9 @@ func TestHintRemoveListener(t *testing.T) {
 	assert.Equal(t, 0, l2.count)
 	assert.Equal(t, 0, l3.count)
 }
+
+// ----------------------------------------------------------------------------
+// Helpers...
 
 type hintL struct {
 	count int

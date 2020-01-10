@@ -15,6 +15,134 @@ func init() {
 	zerolog.SetGlobalLevel(zerolog.FatalLevel)
 }
 
+func TestStackClear(t *testing.T) {
+	comps := []model.Component{makeC("c1"), makeC("c2"), makeC("c3")}
+	uu := map[string]struct {
+		items []model.Component
+	}{
+		"empty": {
+			items: []model.Component{},
+		},
+		"items": {
+			items: comps,
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			s := model.NewStack()
+			for _, c := range u.items {
+				s.Push(c)
+			}
+			s.Clear()
+			assert.True(t, s.Empty())
+		})
+	}
+}
+
+func TestStackPrevious(t *testing.T) {
+	comps := []model.Component{makeC("c1"), makeC("c2"), makeC("c3")}
+	uu := map[string]struct {
+		items []model.Component
+		pops  int
+		e     model.Component
+	}{
+		"empty": {
+			items: []model.Component{},
+			pops:  0,
+			e:     nil,
+		},
+		"one_left": {
+			items: comps,
+			pops:  1,
+			e:     comps[0],
+		},
+		"none_left": {
+			items: comps,
+			pops:  2,
+			e:     comps[0],
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			s := model.NewStack()
+			for _, c := range u.items {
+				s.Push(c)
+			}
+			for i := 0; i < u.pops; i++ {
+				s.Pop()
+			}
+			assert.Equal(t, u.e, s.Previous())
+		})
+	}
+}
+
+func TestStackIsLast(t *testing.T) {
+	uu := map[string]struct {
+		items []model.Component
+		pops  int
+		e     bool
+	}{
+		"empty": {
+			items: []model.Component{},
+		},
+		"normal": {
+			items: []model.Component{makeC("c1"), makeC("c2"), makeC("c3")},
+			pops:  1,
+		},
+		"last": {
+			items: []model.Component{makeC("c1"), makeC("c2"), makeC("c3")},
+			pops:  2,
+			e:     true,
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			s := model.NewStack()
+			for _, c := range u.items {
+				s.Push(c)
+			}
+			for i := 0; i < u.pops; i++ {
+				s.Pop()
+			}
+			assert.Equal(t, u.e, s.IsLast())
+		})
+	}
+}
+
+func TestStackFlatten(t *testing.T) {
+	uu := map[string]struct {
+		items []model.Component
+		e     []string
+	}{
+		"empty": {
+			items: []model.Component{},
+			e:     []string{},
+		},
+		"normal": {
+			items: []model.Component{makeC("c1"), makeC("c2"), makeC("c3")},
+			e:     []string{"c1", "c2", "c3"},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			s := model.NewStack()
+			for _, c := range u.items {
+				s.Push(c)
+			}
+			assert.Equal(t, u.e, s.Flatten())
+			assert.Equal(t, len(u.e), len(s.Peek()))
+		})
+	}
+}
+
 func TestStackPush(t *testing.T) {
 	top := c{}
 	uu := map[string]struct {
@@ -91,7 +219,7 @@ func TestStackTop(t *testing.T) {
 	}
 }
 
-func TestStackListener(t *testing.T) {
+func TestStackAddListener(t *testing.T) {
 	items := []model.Component{c{}, c{}, c{}}
 	s := model.NewStack()
 	l := stackL{}
@@ -107,12 +235,23 @@ func TestStackListener(t *testing.T) {
 	assert.Equal(t, 0, l.count)
 }
 
+func TestStackAddListenerAfter(t *testing.T) {
+	items := []model.Component{c{}, c{}, c{}}
+	s := model.NewStack()
+	l := stackL{}
+	for _, item := range items {
+		s.Push(item)
+	}
+	s.AddListener(&l)
+	assert.Equal(t, 1, l.tops)
+	assert.Equal(t, 0, l.count)
+}
+
 func TestStackRemoveListener(t *testing.T) {
 	s := model.NewStack()
 	l1, l2, l3 := &stackL{}, &stackL{}, &stackL{}
 	s.AddListener(l1)
 	s.AddListener(l2)
-	s.AddListener(l3)
 
 	s.RemoveListener(l2)
 	s.RemoveListener(l3)
@@ -125,8 +264,11 @@ func TestStackRemoveListener(t *testing.T) {
 	assert.Equal(t, 0, l3.count)
 }
 
+// ----------------------------------------------------------------------------
+// Helpers...
+
 type stackL struct {
-	count int
+	count, tops int
 }
 
 func (s *stackL) StackPushed(model.Component) {
@@ -135,11 +277,17 @@ func (s *stackL) StackPushed(model.Component) {
 func (s *stackL) StackPopped(c, top model.Component) {
 	s.count--
 }
-func (s *stackL) StackTop(model.Component) {}
+func (s *stackL) StackTop(model.Component) { s.tops++ }
 
-type c struct{}
+type c struct {
+	name string
+}
 
-func (c c) Name() string                                               { return "test" }
+func makeC(n string) c {
+	return c{name: n}
+}
+
+func (c c) Name() string                                               { return c.name }
 func (c c) Hints() model.MenuHints                                     { return nil }
 func (c c) Draw(tcell.Screen)                                          {}
 func (c c) InputHandler() func(*tcell.EventKey, func(tview.Primitive)) { return nil }

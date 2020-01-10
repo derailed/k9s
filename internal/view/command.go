@@ -53,6 +53,7 @@ func (c *Command) run(cmd string, clearStack bool) error {
 	if err != nil {
 		return err
 	}
+	log.Debug().Msgf("CMD %v %v %v", gvr, v, err)
 	switch cmds[0] {
 	case "ctx", "context", "contexts":
 		if len(cmds) == 2 && c.app.switchCtx(cmds[1], true) != nil {
@@ -160,7 +161,7 @@ func (c *Command) exec(gvr string, comp model.Component, clearStack bool) error 
 		log.Error().Err(err).Msg("Config save failed!")
 	}
 	if clearStack {
-		c.app.Content.Stack.ClearHistory()
+		c.app.Content.Stack.Clear()
 	}
 
 	return c.app.inject(comp)

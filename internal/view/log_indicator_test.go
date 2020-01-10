@@ -10,7 +10,7 @@ import (
 
 func TestLogIndicatorRefresh(t *testing.T) {
 	defaults := config.NewStyles()
-	v := view.NewLogIndicator(defaults)
+	v := view.NewLogIndicator(config.NewConfig(nil), defaults)
 	v.Refresh()
 
 	assert.Equal(t, "[black:orange:b] Autoscroll: On  [black:orange:b] FullScreen: Off [black:orange:b] Wrap: Off       \n", v.GetText(false))

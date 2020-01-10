@@ -282,7 +282,8 @@ func (t *Table) Refresh() {
 
 // GetSelectedRow returns the entire selected row.
 func (t *Table) GetSelectedRow() render.Row {
-	return t.model.Peek().RowEvents[t.GetSelectedRowIndex()].Row
+	log.Debug().Msgf("INDEX %d", t.GetSelectedRowIndex())
+	return t.model.Peek().RowEvents[t.GetSelectedRowIndex()-1].Row
 }
 
 // NameColIndex returns the index of the resource name column.
@@ -307,7 +308,7 @@ func (t *Table) filtered(data render.TableData) render.TableData {
 		return data
 	}
 	q := t.cmdBuff.String()
-	if isFuzzySelector(q) {
+	if IsFuzzySelector(q) {
 		return fuzzyFilter(q[2:], t.NameColIndex(), data)
 	}
 
@@ -348,7 +349,7 @@ func (t *Table) styleTitle() string {
 
 	base := strings.Title(t.BaseTitle)
 	ns := t.GetModel().GetNamespace()
-	if ns == client.AllNamespaces {
+	if client.IsAllNamespaces(ns) {
 		ns = client.NamespaceAll
 	}
 	path := t.Path

@@ -427,18 +427,14 @@ roleRef:
 
 ## Skins
 
-You can style K9s based on your own sense of look and style. This is very much an experimental feature at this time, more will be added/modified if this feature has legs so thread accordingly!
-
-By default a K9s view displays resource information using the following coloring scheme:
-
-1. Blue - All good.
-1. Orange/Red - Represents a potential issue with the resource ie a pod is not in a running state.
-1. Green - Indicates a row has changed. A change delta indicator indicates which column changed.
-
-Skins are YAML files, that enable a user to change K9s presentation layer. K9s skins are loaded from `$HOME/.k9s/skin.yml`. If a skin file is detected then the skin would be loaded if not the current stock skin remains in effect.
+You can style K9s based on your own sense of look and style. Skins are YAML files, that enable a user to change the K9s presentation layer. K9s skins are loaded from `$HOME/.k9s/skin.yml`. If a skin file is detected then the skin would be loaded if not the current stock skin remains in effect.
 
 You can also change K9s skins based on the cluster you are connecting too. In this case, you can specify the skin file name as `$HOME/.k9s/mycluster_skin.yml`
 Below is a sample skin file, more skins are available in the skins directory in this repo, just simply copy any of these in your user's home dir as `skin.yml`.
+
+Colors can be defined by name or uing an hex representation.
+
+> NOTE: This is very much an experimental feature at this time, more will be added/modified if this feature has legs so thread accordingly!
 
 ```yaml
 # InTheNavy Skin...
@@ -446,8 +442,8 @@ k9s:
   # General K9s styles
   body:
     fgColor: dodgerblue
-    bgColor: white
-    logoColor: blue
+    bgColor: #ffffff
+    logoColor: #0000ff
   # ClusterInfoView styles.
   info:
     fgColor: lightskyblue
@@ -470,8 +466,7 @@ k9s:
       activeColor: skyblue
     # Resource status and update styles
     status:
-      # You can also use hex colors!
-      newColor: #0000ff
+      newColor: #00ff00
       modifyColor: powderblue
       addColor: lightskyblue
       errorColor: indianred
@@ -507,7 +502,7 @@ k9s:
       bgColor: black
 ```
 
-Available color names are defined below:
+Here is a list of all available color names.
 
 | Color Names          |                |                  |                   |                 |
 |----------------------|----------------|------------------|-------------------|-----------------|
@@ -548,7 +543,7 @@ Available color names are defined below:
 
 This initial drop is brittle. K9s will most likely blow up...
 
-1. You're running older versions of Kubernetes. K9s works best Kubernetes 1.15+.
+1. You're running older versions of Kubernetes. K9s works best on Kubernetes latest.
 2. You don't have enough RBAC fu to manage your cluster.
 
 ---
@@ -577,4 +572,4 @@ to make this project a reality!
 
 ---
 
-<img src="assets/imhotep_logo.png" width="32" height="auto"/> © 2020 Imhotep Software LLC. All materials licensed under [Apache v2.0](http://www.apache.org/licenses/LICENSE-2.0)
+<img src="assets/imhotep_logo.png" width="32" height="auto"/> &nbsp;© 2020 Imhotep Software LLC. All materials licensed under [Apache v2.0](http://www.apache.org/licenses/LICENSE-2.0)

@@ -229,6 +229,9 @@ func readLogs(ctx context.Context, stream io.ReadCloser, c chan<- string, opts L
 // Helpers...
 
 func podMetricsFor(o runtime.Object, mmx *mv1beta1.PodMetricsList) *mv1beta1.PodMetrics {
+	if mmx == nil {
+		return nil
+	}
 	fqn := extractFQN(o)
 	for _, mx := range mmx.Items {
 		if MetaFQN(mx.ObjectMeta) == fqn {

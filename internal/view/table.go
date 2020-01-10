@@ -25,10 +25,13 @@ type Table struct {
 
 // NewTable returns a new viewer.
 func NewTable(gvr client.GVR) *Table {
-	return &Table{
+	t := Table{
 		Table: ui.NewTable(gvr.String()),
 		gvr:   gvr,
 	}
+	t.envFn = t.defaultK9sEnv
+
+	return &t
 }
 
 // Init initializes the component
@@ -40,7 +43,6 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	t.Table.Init(ctx)
 	t.bindKeys()
 	t.GetModel().SetRefreshRate(time.Duration(t.app.Config.K9s.GetRefreshRate()) * time.Second)
-	t.envFn = t.defaultK9sEnv
 
 	return nil
 }

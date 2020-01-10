@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -65,6 +66,7 @@ func (a *Alias) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 // AsGVR returns a matching gvr if it exists.
 func (a *Alias) AsGVR(cmd string) (client.GVR, bool) {
 	gvr, ok := a.Aliases.Get(cmd)
+	log.Debug().Msgf("ASGVR %q %q %v", cmd, gvr, ok)
 	if ok {
 		return client.NewGVR(gvr), true
 	}
@@ -94,7 +96,7 @@ func (a *Alias) load() error {
 		if err != nil {
 			return err
 		}
-		if _, ok := a.Alias[meta.Kind]; ok {
+		if _, ok := a.Alias[meta.Kind]; ok || IsK9sMeta(meta) {
 			continue
 		}
 		a.Define(gvr.String(), strings.ToLower(meta.Kind), meta.Name)
