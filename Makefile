@@ -1,6 +1,5 @@
 NAME    := k9s
 PACKAGE := github.com/derailed/$(NAME)/internal
-VERSION := dev
 GIT     := $(shell git rev-parse --short HEAD)
 DATE    := $(shell date +%FT%T%Z)
 VERSION  := v0.12.0
