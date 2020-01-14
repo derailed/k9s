@@ -31,11 +31,11 @@ func asSelector(s *metav1.LabelSelector) string {
 }
 
 type metric struct {
-	cpu, mem string
+	cpu, mem, cpuLim, memLim string
 }
 
 func noMetric() metric {
-	return metric{cpu: NAValue, mem: NAValue}
+	return metric{cpu: NAValue, mem: NAValue, cpuLim: NAValue, memLim: NAValue}
 }
 
 // ToSelector flattens a map selector to a string selector.

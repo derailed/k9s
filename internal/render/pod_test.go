@@ -70,7 +70,7 @@ func TestPodRender(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := render.Fields{"default", "nginx", "1/1", "Running", "0", "10", "10", "10", "14", "172.17.0.6", "minikube", "BE"}
+	e := render.Fields{"default", "nginx", "1/1", "Running", "0", "10", "10", "10 (  0)", "14 (  5)", "172.17.0.6", "minikube", "BE"}
 	assert.Equal(t, e, r.Fields[:12])
 }
 
@@ -101,7 +101,7 @@ func TestPodInitRender(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := render.Fields{"default", "nginx", "1/1", "Init:0/1", "0", "10", "10", "10", "14", "172.17.0.6", "minikube", "BE"}
+	e := render.Fields{"default", "nginx", "1/1", "Init:0/1", "0", "10", "10", "10 (  0)", "14 (  5)", "172.17.0.6", "minikube", "BE"}
 	assert.Equal(t, e, r.Fields[:12])
 }
 
