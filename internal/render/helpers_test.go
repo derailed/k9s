@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -120,7 +121,7 @@ func TestNamespaced(t *testing.T) {
 	}
 
 	for _, u := range uu {
-		ns, n := Namespaced(u.p)
+		ns, n := client.Namespaced(u.p)
 		assert.Equal(t, u.ns, ns)
 		assert.Equal(t, u.n, n)
 	}
@@ -276,7 +277,7 @@ func TestMetaFQN(t *testing.T) {
 	for k := range uu {
 		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, uc.e, MetaFQN(uc.m))
+			assert.Equal(t, uc.e, client.MetaFQN(uc.m))
 		})
 	}
 }
@@ -293,7 +294,7 @@ func TestFQN(t *testing.T) {
 	for k := range uu {
 		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, uc.e, FQN(uc.ns, uc.n))
+			assert.Equal(t, uc.e, client.FQN(uc.ns, uc.n))
 		})
 	}
 }

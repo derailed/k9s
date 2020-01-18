@@ -42,7 +42,7 @@ func (r Role) Render(o interface{}, ns string, row *Row) error {
 		return err
 	}
 
-	row.ID = MetaFQN(ro.ObjectMeta)
+	row.ID = client.MetaFQN(ro.ObjectMeta)
 	row.Fields = make(Fields, 0, len(r.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		row.Fields = append(row.Fields, ro.Namespace)

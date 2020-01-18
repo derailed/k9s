@@ -34,6 +34,7 @@ type Table struct {
 	listeners   []TableListener
 	inUpdate    int32
 	refreshRate time.Duration
+	instance    string
 }
 
 // NewTable returns a new table model.
@@ -43,6 +44,10 @@ func NewTable(gvr string) *Table {
 		data:        render.NewTableData(),
 		refreshRate: 2 * time.Second,
 	}
+}
+
+func (t *Table) SetInstance(s string) {
+	t.instance = s
 }
 
 // AddListener adds a new model listener.
@@ -217,25 +222,36 @@ func (t *Table) reconcile(ctx context.Context) error {
 	}(time.Now())
 
 	meta := t.resourceMeta()
-	oo, err := t.list(ctx, meta.DAO)
+	var (
+		oo  []runtime.Object
+		err error
+	)
+	if t.instance == "" {
+		oo, err = t.list(ctx, meta.DAO)
+	} else {
+		o, e := t.Get(ctx, t.instance)
+		oo, err = []runtime.Object{o}, e
+	}
 	if err != nil {
 		return err
 	}
 	log.Debug().Msgf("  LIST returned %d rows", len(oo))
 
 	var rows render.Rows
+	ns := client.CleanseNamespace(t.namespace)
 	if _, ok := meta.Renderer.(*render.Generic); ok {
 		table, ok := oo[0].(*metav1beta1.Table)
 		if !ok {
 			return fmt.Errorf("expecting a meta table but got %T", oo[0])
 		}
+		log.Debug().Msgf("!!!!YO!!!")
 		rows = make(render.Rows, len(table.Rows))
-		if err := genericHydrate(client.CleanseNamespace(t.namespace), table, rows, meta.Renderer); err != nil {
+		if err := genericHydrate(ns, table, rows, meta.Renderer); err != nil {
 			return err
 		}
 	} else {
 		rows = make(render.Rows, len(oo))
-		if err := hydrate(client.CleanseNamespace(t.namespace), oo, rows, meta.Renderer); err != nil {
+		if err := hydrate(ns, oo, rows, meta.Renderer); err != nil {
 			return err
 		}
 	}
@@ -293,6 +309,7 @@ func (t *Table) fireTableLoadFailed(err error) {
 	}
 }
 
+// ----------------------------------------------------------------------------
 // Helpers...
 
 func hydrate(ns string, oo []runtime.Object, rr render.Rows, re Renderer) error {

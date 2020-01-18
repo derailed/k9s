@@ -65,7 +65,7 @@ func (s StatefulSet) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	r.ID = MetaFQN(sts.ObjectMeta)
+	r.ID = client.MetaFQN(sts.ObjectMeta)
 	r.Fields = make(Fields, 0, len(s.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, sts.Namespace)

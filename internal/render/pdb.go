@@ -69,7 +69,7 @@ func (p PodDisruptionBudget) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	r.ID = MetaFQN(pdb.ObjectMeta)
+	r.ID = client.MetaFQN(pdb.ObjectMeta)
 	r.Fields = make(Fields, 0, len(p.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, pdb.Namespace)

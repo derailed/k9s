@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/gdamore/tcell"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -59,7 +60,7 @@ func (f PortForward) Render(o interface{}, gvr string, r *Row) error {
 	}
 
 	ports := strings.Split(pf.Ports()[0], ":")
-	ns, n := Namespaced(pf.Path())
+	ns, n := client.Namespaced(pf.Path())
 
 	r.ID = pf.Path()
 	r.Fields = Fields{

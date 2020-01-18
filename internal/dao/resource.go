@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal"
-	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -23,7 +22,6 @@ type Resource struct {
 
 // List returns a collection of resources.
 func (r *Resource) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	log.Debug().Msgf("INF-LIST %q:%q", ns, r.gvr)
 	strLabel, ok := ctx.Value(internal.KeyLabels).(string)
 	lsel := labels.Everything()
 	if sel, err := labels.ConvertSelectorToLabelsMap(strLabel); ok && err == nil {

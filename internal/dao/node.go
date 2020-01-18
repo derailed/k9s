@@ -30,12 +30,17 @@ type Node struct {
 func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	log.Debug().Msgf("NODE-LIST %q:%q", ns, n.gvr)
 
+	labels, ok := ctx.Value(internal.KeyLabels).(string)
+	if !ok {
+		log.Warn().Msgf("No label selector found in context")
+	}
+
 	nmx, ok := ctx.Value(internal.KeyMetrics).(*mv1beta1.NodeMetricsList)
 	if !ok {
 		log.Warn().Msgf("No node metrics available in context")
 	}
 
-	nn, err := FetchNodes(n.Factory)
+	nn, err := FetchNodes(n.Factory, labels)
 	if err != nil {
 		return nil, err
 	}
@@ -59,13 +64,15 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 // Helpers...
 
 // FetchNodes retrieves all nodes.
-func FetchNodes(f Factory) (*v1.NodeList, error) {
+func FetchNodes(f Factory, labelsSel string) (*v1.NodeList, error) {
 	auth, err := f.Client().CanI("", "v1/nodes", []string{client.ListVerb})
 	if !auth || err != nil {
 		return nil, err
 	}
 
-	return f.Client().DialOrDie().CoreV1().Nodes().List(metav1.ListOptions{})
+	return f.Client().DialOrDie().CoreV1().Nodes().List(metav1.ListOptions{
+		LabelSelector: labelsSel,
+	})
 }
 
 func nodeMetricsFor(fqn string, mmx *mv1beta1.NodeMetricsList) *mv1beta1.NodeMetrics {

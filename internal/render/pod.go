@@ -89,22 +89,22 @@ func (Pod) Header(ns string) HeaderRow {
 
 // Render renders a K8s resource to screen.
 func (p Pod) Render(o interface{}, ns string, r *Row) error {
-	oo, ok := o.(*PodWithMetrics)
+	pwm, ok := o.(*PodWithMetrics)
 	if !ok {
 		return fmt.Errorf("Expected PodWithMetrics, but got %T", o)
 	}
 
 	var po v1.Pod
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(oo.Raw.Object, &po)
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(pwm.Raw.Object, &po)
 	if err != nil {
 		return err
 	}
 
 	ss := po.Status.ContainerStatuses
 	cr, _, rc := p.statuses(ss)
-	c, perc := p.gatherPodMX(&po, oo.MX)
+	c, perc := p.gatherPodMX(&po, pwm.MX)
 
-	r.ID = MetaFQN(po.ObjectMeta)
+	r.ID = client.MetaFQN(po.ObjectMeta)
 	r.Fields = make(Fields, 0, len(p.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, po.Namespace)

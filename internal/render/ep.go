@@ -45,7 +45,7 @@ func (e Endpoints) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	r.ID = MetaFQN(ep.ObjectMeta)
+	r.ID = client.MetaFQN(ep.ObjectMeta)
 	r.Fields = make(Fields, 0, len(e.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, ep.Namespace)

@@ -102,7 +102,7 @@ func (a *App) Init(version string, rate int) error {
 
 func (a *App) bindKeys() {
 	a.AddActions(ui.KeyActions{
-		ui.KeyH:        ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
+		tcell.KeyCtrlH: ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
 		ui.KeyHelp:     ui.NewSharedKeyAction("Help", a.helpCmd, false),
 		tcell.KeyCtrlA: ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
@@ -427,8 +427,12 @@ func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (a *App) gotoResource(res string, clearStack bool) error {
-	return a.command.run(res, clearStack)
+func (a *App) viewResource(gvr, path string, clearStack bool) error {
+	return a.command.run(gvr, path, clearStack)
+}
+
+func (a *App) gotoResource(cmd string, clearStack bool) error {
+	return a.command.run(cmd, "", clearStack)
 }
 
 func (a *App) inject(c model.Component) error {

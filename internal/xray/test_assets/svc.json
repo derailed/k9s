@@ -1,0 +1,35 @@
+{
+    "apiVersion": "v1",
+    "kind": "Service",
+    "metadata": {
+        "annotations": {
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Service\",\"metadata\":{\"annotations\":{},\"name\":\"nginx\",\"namespace\":\"default\"},\"spec\":{\"ports\":[{\"nodePort\":30805,\"port\":8080,\"protocol\":\"TCP\",\"targetPort\":80}],\"selector\":{\"app\":\"nginx\"},\"type\":\"NodePort\"}}\n"
+        },
+        "creationTimestamp": "2020-01-16T04:18:04Z",
+        "name": "nginx",
+        "namespace": "default",
+        "resourceVersion": "3066081",
+        "selfLink": "/api/v1/namespaces/default/services/nginx",
+        "uid": "3dc94561-06ce-4e56-8002-7c4679203d5b"
+    },
+    "spec": {
+        "clusterIP": "10.96.10.89",
+        "externalTrafficPolicy": "Cluster",
+        "ports": [
+            {
+                "nodePort": 30805,
+                "port": 8080,
+                "protocol": "TCP",
+                "targetPort": 80
+            }
+        ],
+        "selector": {
+            "app": "nginx"
+        },
+        "sessionAffinity": "None",
+        "type": "NodePort"
+    },
+    "status": {
+        "loadBalancer": {}
+    }
+}

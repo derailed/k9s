@@ -144,7 +144,7 @@ func (c *ClusterInfo) updateStyle() {
 }
 
 func fetchResources(app *App) (*v1.NodeList, *mv1beta1.NodeMetricsList, error) {
-	nn, err := dao.FetchNodes(app.factory)
+	nn, err := dao.FetchNodes(app.factory, "")
 	if err != nil {
 		return nil, nil, err
 	}

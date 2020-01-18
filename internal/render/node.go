@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -73,7 +74,7 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 	ro := make([]string, 10)
 	nodeRoles(&no, ro)
 
-	r.ID = FQN("", na)
+	r.ID = client.FQN("", na)
 	r.Fields = make(Fields, 0, len(n.Header(ns)))
 	r.Fields = append(r.Fields,
 		no.Name,

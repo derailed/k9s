@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/gdamore/tcell"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -57,7 +58,7 @@ func (Namespace) Render(o interface{}, _ string, r *Row) error {
 		return err
 	}
 
-	r.ID = MetaFQN(ns.ObjectMeta)
+	r.ID = client.MetaFQN(ns.ObjectMeta)
 	r.Fields = Fields{
 		ns.Name,
 		string(ns.Status.Phase),

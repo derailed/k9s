@@ -1,6 +1,7 @@
 package view
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -42,8 +43,42 @@ func (c *Command) Init() error {
 	return nil
 }
 
+func (c *Command) xrayCmd(cmd string) error {
+
+	// if _, ok := c.app.Content.GetPrimitive("main").(*Xray); ok {
+	// 	return errors.New("unable to locate main panel")
+	// }
+
+	// if c.app.Content.Top() != nil && c.app.Content.Top().Name() == xrayTitle {
+	// 	c.app.Content.Pop()
+	// 	return nil
+	// }
+
+	tokens := strings.Split(cmd, " ")
+	if len(tokens) < 2 {
+		return errors.New("You must specify a resource")
+	}
+	gvr, ok := c.alias.AsGVR(tokens[1])
+	if !ok {
+		return fmt.Errorf("Huh? `%s` Command not found", cmd)
+	}
+	return c.exec(cmd, "xrays", NewXray(gvr), true)
+
+	// if err := c.app.inject(NewXray(gvr)); err != nil {
+	// 	c.app.Flash().Err(err)
+	// 	return nil
+	// }
+
+	// c.app.Config.SetActiveView(cmd)
+	// if err := c.app.Config.Save(); err != nil {
+	// 	log.Error().Err(err).Msg("Config save failed!")
+	// }
+
+	// return nil
+}
+
 // Exec the Command by showing associated display.
-func (c *Command) run(cmd string, clearStack bool) error {
+func (c *Command) run(cmd, path string, clearStack bool) error {
 	if c.specialCmd(cmd) {
 		return nil
 	}
@@ -59,8 +94,8 @@ func (c *Command) run(cmd string, clearStack bool) error {
 		if len(cmds) == 2 && c.app.switchCtx(cmds[1], true) != nil {
 			return fmt.Errorf("context switch failed!")
 		}
-		view := c.componentFor(gvr, v)
-		return c.exec(gvr, view, clearStack)
+		view := c.componentFor(gvr, path, v)
+		return c.exec(cmd, gvr, view, clearStack)
 	default:
 		// checks if Command includes a namespace
 		ns := c.app.Config.ActiveNamespace()
@@ -70,7 +105,8 @@ func (c *Command) run(cmd string, clearStack bool) error {
 		if !c.app.switchNS(ns) {
 			return fmt.Errorf("namespace switch failed for ns %q", ns)
 		}
-		return c.exec(gvr, c.componentFor(gvr, v), clearStack)
+
+		return c.exec(cmd, gvr, c.componentFor(gvr, path, v), clearStack)
 	}
 }
 
@@ -85,7 +121,7 @@ func (c *Command) Reset() error {
 }
 
 func (c *Command) defaultCmd() error {
-	return c.run(c.app.Config.ActiveView(), true)
+	return c.run(c.app.Config.ActiveView(), "", true)
 }
 
 func (c *Command) specialCmd(cmd string) bool {
@@ -99,6 +135,11 @@ func (c *Command) specialCmd(cmd string) bool {
 		return true
 	case "a", "alias":
 		c.app.aliasCmd(nil)
+		return true
+	case "x", "xray":
+		if err := c.xrayCmd(cmd); err != nil {
+			log.Error().Err(err).Msgf("Invalid command")
+		}
 		return true
 	default:
 		if !canRX.MatchString(cmd) {
@@ -130,7 +171,7 @@ func (c *Command) viewMetaFor(cmd string) (string, *MetaViewer, error) {
 	return gvr.String(), &v, nil
 }
 
-func (c *Command) componentFor(gvr string, v *MetaViewer) ResourceViewer {
+func (c *Command) componentFor(gvr, path string, v *MetaViewer) ResourceViewer {
 	var view ResourceViewer
 	if v.viewerFn != nil {
 		log.Debug().Msgf("Custom viewer for %s", gvr)
@@ -140,6 +181,7 @@ func (c *Command) componentFor(gvr string, v *MetaViewer) ResourceViewer {
 		view = NewBrowser(client.NewGVR(gvr))
 	}
 
+	view.SetInstance(path)
 	if v.enterFn != nil {
 		log.Debug().Msgf("SETTING CUSTOM ENTER ON %s", gvr)
 		view.GetTable().SetEnterFn(v.enterFn)
@@ -148,15 +190,13 @@ func (c *Command) componentFor(gvr string, v *MetaViewer) ResourceViewer {
 	return view
 }
 
-func (c *Command) exec(gvr string, comp model.Component, clearStack bool) error {
+func (c *Command) exec(cmd, gvr string, comp model.Component, clearStack bool) error {
 	if comp == nil {
 		return fmt.Errorf("No component given for %s", gvr)
 	}
 
-	g := client.NewGVR(gvr)
-	c.app.Flash().Infof("Viewing %s resource...", g.ToR())
-	log.Debug().Msgf("Running Command %s", gvr)
-	c.app.Config.SetActiveView(g.ToR())
+	c.app.Flash().Infof("Running command %s", cmd)
+	c.app.Config.SetActiveView(cmd)
 	if err := c.app.Config.Save(); err != nil {
 		log.Error().Err(err).Msg("Config save failed!")
 	}

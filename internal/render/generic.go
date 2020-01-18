@@ -69,7 +69,7 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 		return fmt.Errorf("expecting row 0 to be a string but got %T", row.Cells[0])
 	}
 
-	r.ID = FQN(nns, n)
+	r.ID = client.FQN(nns, n)
 	r.Fields = make(Fields, 0, len(g.Header(ns)))
 	if client.IsAllNamespaces(ns) && nns != "" {
 		r.Fields = append(r.Fields, nns)

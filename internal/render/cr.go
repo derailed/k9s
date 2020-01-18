@@ -3,6 +3,7 @@ package render
 import (
 	"fmt"
 
+	"github.com/derailed/k9s/internal/client"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -36,7 +37,7 @@ func (ClusterRole) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	r.ID = FQN("-", cr.ObjectMeta.Name)
+	r.ID = client.FQN("-", cr.ObjectMeta.Name)
 	r.Fields = Fields{
 		cr.Name,
 		toAge(cr.ObjectMeta.CreationTimestamp),

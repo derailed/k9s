@@ -81,8 +81,13 @@ type Describer interface {
 	Describe(client client.Connection, gvr, path string) (string, error)
 }
 
+type TreeRenderer interface {
+	Render(ctx context.Context, ns string, o interface{}) error
+}
+
 // ResourceMeta represents model info about a resource.
 type ResourceMeta struct {
-	DAO      dao.Accessor
-	Renderer Renderer
+	DAO          dao.Accessor
+	Renderer     Renderer
+	TreeRenderer TreeRenderer
 }

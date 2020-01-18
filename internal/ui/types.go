@@ -53,6 +53,8 @@ type Tabular interface {
 	Namespaceable
 	Lister
 
+	SetInstance(string)
+
 	// Empty returns true if model has no data.
 	Empty() bool
 

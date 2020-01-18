@@ -1,0 +1,187 @@
+{
+  "apiVersion": "v1",
+  "kind": "Pod",
+  "metadata": {
+    "annotations": {
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"v1\",\"kind\":\"Pod\",\"metadata\":{\"annotations\":{},\"name\":\"hurry-up-and-wait\",\"namespace\":\"default\"},\"spec\":{\"containers\":[{\"command\":[\"sh\",\"-c\",\"echo The app is running! \\u0026\\u0026 sleep 3600\"],\"image\":\"busybox\",\"name\":\"busy\",\"resources\":{\"limits\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}}}],\"initContainers\":[{\"command\":[\"sh\",\"-c\",\"echo \\\"sleeping...\\\"; sleep 10\"],\"image\":\"busybox\",\"name\":\"init-sleep\",\"resources\":{\"limits\":{\"cpu\":\"100m\",\"memory\":\"100Mi\"}}}]}}\n"
+    },
+    "creationTimestamp": "2020-01-18T06:31:29Z",
+    "name": "hurry-up-and-wait",
+    "namespace": "default",
+    "resourceVersion": "3381576",
+    "selfLink": "/api/v1/namespaces/default/pods/hurry-up-and-wait",
+    "uid": "6b29055a-433b-4398-bfde-0fd371759bbf"
+  },
+  "spec": {
+    "containers": [
+      {
+        "command": [
+          "sh",
+          "-c",
+          "echo The app is running! \u0026\u0026 sleep 3600"
+        ],
+        "image": "busybox",
+        "imagePullPolicy": "Always",
+        "name": "busy",
+        "resources": {
+          "limits": {
+            "cpu": "100m",
+            "memory": "100Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "100Mi"
+          }
+        },
+        "terminationMessagePath": "/dev/termination-log",
+        "terminationMessagePolicy": "File",
+        "volumeMounts": [
+          {
+            "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+            "name": "default-token-rr22g",
+            "readOnly": true
+          }
+        ]
+      }
+    ],
+    "dnsPolicy": "ClusterFirst",
+    "enableServiceLinks": true,
+    "initContainers": [
+      {
+        "command": [
+          "sh",
+          "-c",
+          "echo \"sleeping...\"; sleep 10"
+        ],
+        "image": "busybox",
+        "imagePullPolicy": "Always",
+        "name": "init-sleep",
+        "resources": {
+          "limits": {
+            "cpu": "100m",
+            "memory": "100Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "100Mi"
+          }
+        },
+        "terminationMessagePath": "/dev/termination-log",
+        "terminationMessagePolicy": "File",
+        "volumeMounts": [
+          {
+            "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+            "name": "default-token-rr22g",
+            "readOnly": true
+          }
+        ]
+      }
+    ],
+    "nodeName": "minikube",
+    "priority": 0,
+    "restartPolicy": "Always",
+    "schedulerName": "default-scheduler",
+    "securityContext": {},
+    "serviceAccount": "default",
+    "serviceAccountName": "default",
+    "terminationGracePeriodSeconds": 30,
+    "tolerations": [
+      {
+        "effect": "NoExecute",
+        "key": "node.kubernetes.io/not-ready",
+        "operator": "Exists",
+        "tolerationSeconds": 300
+      },
+      {
+        "effect": "NoExecute",
+        "key": "node.kubernetes.io/unreachable",
+        "operator": "Exists",
+        "tolerationSeconds": 300
+      }
+    ],
+    "volumes": [
+      {
+        "name": "default-token-rr22g",
+        "secret": {
+          "defaultMode": 420,
+          "secretName": "default-token-rr22g"
+        }
+      }
+    ]
+  },
+  "status": {
+    "conditions": [
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2020-01-18T06:31:42Z",
+        "status": "True",
+        "type": "Initialized"
+      },
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2020-01-18T06:31:44Z",
+        "status": "True",
+        "type": "Ready"
+      },
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2020-01-18T06:31:44Z",
+        "status": "True",
+        "type": "ContainersReady"
+      },
+      {
+        "lastProbeTime": null,
+        "lastTransitionTime": "2020-01-18T06:31:29Z",
+        "status": "True",
+        "type": "PodScheduled"
+      }
+    ],
+    "containerStatuses": [
+      {
+        "containerID": "docker://3c4de1de5d3c8f78bcce5f65218d5cbe4ed7b7b86261dd74dcc0f96e832e7db3",
+        "image": "busybox:latest",
+        "imageID": "docker-pullable://busybox@sha256:6915be4043561d64e0ab0f8f098dc2ac48e077fe23f488ac24b665166898115a",
+        "lastState": {},
+        "name": "busy",
+        "ready": true,
+        "restartCount": 0,
+        "started": true,
+        "state": {
+          "running": {
+            "startedAt": "2020-01-18T06:31:43Z"
+          }
+        }
+      }
+    ],
+    "hostIP": "192.168.64.6",
+    "initContainerStatuses": [
+      {
+        "containerID": "docker://87f5d5f73827b402263ef77ca72b715c4ad858e7da71abc5655cc049e4c2ae20",
+        "image": "busybox:latest",
+        "imageID": "docker-pullable://busybox@sha256:6915be4043561d64e0ab0f8f098dc2ac48e077fe23f488ac24b665166898115a",
+        "lastState": {},
+        "name": "init-sleep",
+        "ready": true,
+        "restartCount": 0,
+        "state": {
+          "terminated": {
+            "containerID": "docker://87f5d5f73827b402263ef77ca72b715c4ad858e7da71abc5655cc049e4c2ae20",
+            "exitCode": 0,
+            "finishedAt": "2020-01-18T06:31:42Z",
+            "reason": "Completed",
+            "startedAt": "2020-01-18T06:31:32Z"
+          }
+        }
+      }
+    ],
+    "phase": "Running",
+    "podIP": "172.17.0.11",
+    "podIPs": [
+      {
+        "ip": "172.17.0.11"
+      }
+    ],
+    "qosClass": "Guaranteed",
+    "startTime": "2020-01-18T06:31:29Z"
+  }
+}

@@ -16,6 +16,8 @@ import (
 
 var _ Describer = (*Generic)(nil)
 
+var defaultKillGrace int64 = 0
+
 // Generic represents a generic resource.
 type Generic struct {
 	NonResource
@@ -37,10 +39,10 @@ func (g *Generic) List(ctx context.Context, ns string) ([]runtime.Object, error)
 		ll  *unstructured.UnstructuredList
 		err error
 	)
-	if client.IsNamespaced(ns) {
-		ll, err = g.dynClient().Namespace(ns).List(metav1.ListOptions{LabelSelector: labelSel})
-	} else {
+	if client.IsClusterScoped(ns) {
 		ll, err = g.dynClient().List(metav1.ListOptions{LabelSelector: labelSel})
+	} else {
+		ll, err = g.dynClient().Namespace(ns).List(metav1.ListOptions{LabelSelector: labelSel})
 	}
 	if err != nil {
 		return nil, err
@@ -59,12 +61,12 @@ func (g *Generic) Get(ctx context.Context, path string) (runtime.Object, error) 
 	var opts metav1.GetOptions
 
 	ns, n := client.Namespaced(path)
-	req := g.dynClient()
+	dial := g.dynClient()
 	if client.IsClusterScoped(ns) {
-		return req.Get(n, opts)
+		return dial.Get(n, opts)
 	}
 
-	return req.Namespace(ns).Get(n, opts)
+	return dial.Namespace(ns).Get(n, opts)
 }
 
 // Describe describes a resource.
@@ -98,7 +100,14 @@ func (g *Generic) Delete(path string, cascade, force bool) error {
 	if cascade {
 		p = metav1.DeletePropagationBackground
 	}
-	opts := metav1.DeleteOptions{PropagationPolicy: &p}
+	var grace *int64
+	if force {
+		grace = &defaultKillGrace
+	}
+	opts := metav1.DeleteOptions{
+		PropagationPolicy:  &p,
+		GracePeriodSeconds: grace,
+	}
 	if client.IsClusterScoped(ns) {
 		return g.dynClient().Delete(n, &opts)
 	}

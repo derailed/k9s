@@ -108,8 +108,7 @@ func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		if t.SearchBuff().IsActive() {
 			t.SearchBuff().Add(evt.Rune())
 			t.ClearSelection()
-			data := t.GetModel().Peek()
-			t.doUpdate(t.filtered(data))
+			t.doUpdate(t.filtered(t.GetModel().Peek()))
 			t.UpdateTitle()
 			t.SelectFirstRow()
 			return nil
@@ -340,7 +339,6 @@ func (t *Table) UpdateTitle() {
 	t.SetTitle(t.styleTitle())
 }
 
-// UpdateTitle refreshes the table title.
 func (t *Table) styleTitle() string {
 	rc := t.GetRowCount()
 	if rc > 0 {
@@ -365,9 +363,9 @@ func (t *Table) styleTitle() string {
 	buff := t.SearchBuff().String()
 	var title string
 	if ns == client.ClusterScope {
-		title = SkinTitle(fmt.Sprintf(titleFmt, base, rc), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(TitleFmt, base, rc), t.styles.Frame())
 	} else {
-		title = SkinTitle(fmt.Sprintf(nsTitleFmt, base, ns, rc), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(NSTitleFmt, base, ns, rc), t.styles.Frame())
 	}
 	if buff == "" {
 		return title

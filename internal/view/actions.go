@@ -3,6 +3,7 @@ package view
 import (
 	"fmt"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -116,22 +117,23 @@ func execCmd(r Runner, bin string, bg bool, args ...string) ui.ActionHandler {
 			return evt
 		}
 
+		ns, _ := client.Namespaced(path)
 		var (
 			env = r.EnvFn()()
 			aa  = make([]string, len(args))
 			err error
 		)
 		for i, a := range args {
-			aa[i], err = env.envFor(a)
+			aa[i], err = env.envFor(ns, a)
 			if err != nil {
-				log.Error().Err(err).Msg("Args match failed")
+				log.Error().Err(err).Msg("Plugin Args match failed")
 				return nil
 			}
 		}
 		if run(true, r.App(), bin, bg, aa...) {
-			r.App().Flash().Info("Custom CMD launched!")
+			r.App().Flash().Info("Plugin command launched successfully!")
 		} else {
-			r.App().Flash().Info("Custom CMD failed!")
+			r.App().Flash().Info("Plugin command failed!")
 		}
 
 		return nil

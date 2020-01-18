@@ -39,7 +39,7 @@ func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error
 		return nil, err
 	}
 
-	ns, _ := render.Namespaced(fqn)
+	ns, _ := client.Namespaced(fqn)
 	var pmx *mv1beta1.PodMetrics
 	if c.Client().HasMetrics() {
 		mx := client.NewMetricsServer(c.Client())

@@ -37,13 +37,28 @@ type Pod struct {
 	Resource
 }
 
-// List returns a collection of nodes.
-func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+// Get returns a resource instance if found, else an error.
+func (p *Pod) Get(ctx context.Context, path string) (runtime.Object, error) {
+	o, err := p.Resource.Get(ctx, path)
+	if err != nil {
+		return o, err
+	}
+
+	u, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		return nil, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
+	}
+
 	pmx, ok := ctx.Value(internal.KeyMetrics).(*mv1beta1.PodMetricsList)
 	if !ok {
 		log.Warn().Msgf("no metrics available for %q", p.gvr)
 	}
 
+	return &render.PodWithMetrics{Raw: u, MX: podMetricsFor(o, pmx)}, nil
+}
+
+// List returns a collection of nodes.
+func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	sel, ok := ctx.Value(internal.KeyFields).(string)
 	if !ok {
 		return nil, fmt.Errorf("expecting a fieldSelector in context")
@@ -57,6 +72,11 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	oo, err := p.Resource.List(ctx, ns)
 	if err != nil {
 		return oo, err
+	}
+
+	pmx, ok := ctx.Value(internal.KeyMetrics).(*mv1beta1.PodMetricsList)
+	if !ok {
+		log.Warn().Msgf("no metrics available for %q", p.gvr)
 	}
 
 	var res []runtime.Object

@@ -48,7 +48,7 @@ func (r RoleBinding) Render(o interface{}, ns string, row *Row) error {
 
 	kind, ss := renderSubjects(rb.Subjects)
 
-	row.ID = MetaFQN(rb.ObjectMeta)
+	row.ID = client.MetaFQN(rb.ObjectMeta)
 	row.Fields = make(Fields, 0, len(r.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		row.Fields = append(row.Fields, rb.Namespace)

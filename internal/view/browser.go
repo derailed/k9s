@@ -83,6 +83,10 @@ func (b *Browser) bindKeys() {
 	})
 }
 
+func (b *Browser) SetInstance(path string) {
+	b.GetModel().SetInstance(path)
+}
+
 // Start initializes browser updates.
 func (b *Browser) Start() {
 	b.Stop()

@@ -1,0 +1,109 @@
+{
+    "apiVersion": "apps/v1",
+    "kind": "DaemonSet",
+    "metadata": {
+        "annotations": {
+            "deprecated.daemonset.template.generation": "1",
+            "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apps/v1\",\"kind\":\"DaemonSet\",\"metadata\":{\"annotations\":{},\"labels\":{\"k8s-app\":\"fluentd-logging\"},\"name\":\"fluentd-elasticsearch\",\"namespace\":\"default\"},\"spec\":{\"selector\":{\"matchLabels\":{\"name\":\"fluentd-elasticsearch\"}},\"template\":{\"metadata\":{\"labels\":{\"name\":\"fluentd-elasticsearch\"}},\"spec\":{\"containers\":[{\"image\":\"fluentd\",\"name\":\"fluentd-elasticsearch\",\"resources\":{\"limits\":{\"memory\":\"200Mi\"},\"requests\":{\"cpu\":\"100m\",\"memory\":\"200Mi\"}},\"volumeMounts\":[{\"mountPath\":\"/var/log\",\"name\":\"varlog\"},{\"mountPath\":\"/var/lib/docker/containers\",\"name\":\"varlibdockercontainers\",\"readOnly\":true}]}],\"terminationGracePeriodSeconds\":1,\"tolerations\":[{\"effect\":\"NoSchedule\",\"key\":\"node-role.kubernetes.io/master\"}],\"volumes\":[{\"hostPath\":{\"path\":\"/var/log\"},\"name\":\"varlog\"},{\"hostPath\":{\"path\":\"/var/lib/docker/containers\"},\"name\":\"varlibdockercontainers\"}]}}}}\n"
+        },
+        "creationTimestamp": "2020-01-18T14:43:04Z",
+        "generation": 1,
+        "labels": {
+            "k8s-app": "fluentd-logging"
+        },
+        "name": "fluentd-elasticsearch",
+        "namespace": "default",
+        "resourceVersion": "3450170",
+        "selfLink": "/apis/apps/v1/namespaces/default/daemonsets/fluentd-elasticsearch",
+        "uid": "8c03864a-a428-4769-b89c-11d66e01614d"
+    },
+    "spec": {
+        "revisionHistoryLimit": 10,
+        "selector": {
+            "matchLabels": {
+                "name": "fluentd-elasticsearch"
+            }
+        },
+        "template": {
+            "metadata": {
+                "creationTimestamp": null,
+                "labels": {
+                    "name": "fluentd-elasticsearch"
+                }
+            },
+            "spec": {
+                "containers": [
+                    {
+                        "image": "fluentd",
+                        "imagePullPolicy": "Always",
+                        "name": "fluentd-elasticsearch",
+                        "resources": {
+                            "limits": {
+                                "memory": "200Mi"
+                            },
+                            "requests": {
+                                "cpu": "100m",
+                                "memory": "200Mi"
+                            }
+                        },
+                        "terminationMessagePath": "/dev/termination-log",
+                        "terminationMessagePolicy": "File",
+                        "volumeMounts": [
+                            {
+                                "mountPath": "/var/log",
+                                "name": "varlog"
+                            },
+                            {
+                                "mountPath": "/var/lib/docker/containers",
+                                "name": "varlibdockercontainers",
+                                "readOnly": true
+                            }
+                        ]
+                    }
+                ],
+                "dnsPolicy": "ClusterFirst",
+                "restartPolicy": "Always",
+                "schedulerName": "default-scheduler",
+                "securityContext": {},
+                "terminationGracePeriodSeconds": 1,
+                "tolerations": [
+                    {
+                        "effect": "NoSchedule",
+                        "key": "node-role.kubernetes.io/master"
+                    }
+                ],
+                "volumes": [
+                    {
+                        "hostPath": {
+                            "path": "/var/log",
+                            "type": ""
+                        },
+                        "name": "varlog"
+                    },
+                    {
+                        "hostPath": {
+                            "path": "/var/lib/docker/containers",
+                            "type": ""
+                        },
+                        "name": "varlibdockercontainers"
+                    }
+                ]
+            }
+        },
+        "updateStrategy": {
+            "rollingUpdate": {
+                "maxUnavailable": 1
+            },
+            "type": "RollingUpdate"
+        }
+    },
+    "status": {
+        "currentNumberScheduled": 1,
+        "desiredNumberScheduled": 1,
+        "numberAvailable": 1,
+        "numberMisscheduled": 0,
+        "numberReady": 1,
+        "observedGeneration": 1,
+        "updatedNumberScheduled": 1
+    }
+}

@@ -65,7 +65,7 @@ func (s ReplicaSet) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	r.ID = MetaFQN(rs.ObjectMeta)
+	r.ID = client.MetaFQN(rs.ObjectMeta)
 	r.Fields = make(Fields, 0, len(s.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, rs.Namespace)

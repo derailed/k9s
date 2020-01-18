@@ -77,6 +77,7 @@ type ResourceViewer interface {
 
 	// SetBindKeys provision additional key bindings.
 	SetBindKeysFn(BindKeysFunc)
+	SetInstance(string)
 }
 
 // LogViewer represents a log viewer.

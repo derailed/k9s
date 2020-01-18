@@ -91,6 +91,7 @@ type testTableModel struct{}
 
 var _ ui.Tabular = &testTableModel{}
 
+func (t *testTableModel) SetInstance(string)              {}
 func (t *testTableModel) Empty() bool                     { return false }
 func (t *testTableModel) Peek() render.TableData          { return makeTableData() }
 func (t *testTableModel) ClusterWide() bool               { return false }

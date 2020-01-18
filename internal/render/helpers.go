@@ -1,13 +1,11 @@
 package render
 
 import (
-	"path"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	runewidth "github.com/mattn/go-runewidth"
 	"github.com/rs/zerolog/log"
@@ -38,23 +36,6 @@ type metric struct {
 
 func noMetric() metric {
 	return metric{cpu: NAValue, mem: NAValue}
-}
-
-// MetaFQN returns a fully qualified resource name.
-func MetaFQN(m metav1.ObjectMeta) string {
-	if m.Namespace == "" {
-		return FQN(client.ClusterScope, m.Name)
-	}
-
-	return FQN(m.Namespace, m.Name)
-}
-
-// FQN returns a fully qualified resource name.
-func FQN(ns, n string) string {
-	if ns == "" {
-		return n
-	}
-	return ns + "/" + n
 }
 
 // ToSelector flattens a map selector to a string selector.
@@ -123,13 +104,6 @@ func toPerc(v1, v2 float64) float64 {
 		return 0
 	}
 	return (v1 / v2) * 100
-}
-
-// Namespaced return a namesapace and a name.
-func Namespaced(n string) (string, string) {
-	ns, po := path.Split(n)
-
-	return strings.Trim(ns, "/"), po
 }
 
 func missing(s string) string {

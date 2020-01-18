@@ -2,7 +2,6 @@ package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -57,7 +56,7 @@ func isResourcePath(p string) bool {
 func (l *LogsExtender) showLogs(path string, prev bool) {
 	log.Debug().Msgf("SHOWING LOGS path %q", path)
 	// Need to load and wait for pods
-	ns, _ := render.Namespaced(path)
+	ns, _ := client.Namespaced(path)
 	_, err := l.App().factory.CanForResource(ns, "v1/pods", client.MonitorAccess)
 	if err != nil {
 		l.App().Flash().Err(err)

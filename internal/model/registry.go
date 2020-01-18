@@ -3,6 +3,7 @@ package model
 import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/xray"
 )
 
 // Registry tracks resources metadata.
@@ -14,8 +15,9 @@ var Registry = map[string]ResourceMeta{
 		Renderer: &render.Chart{},
 	},
 	"containers": {
-		DAO:      &dao.Container{},
-		Renderer: &render.Container{},
+		DAO:          &dao.Container{},
+		Renderer:     &render.Container{},
+		TreeRenderer: &xray.Container{},
 	},
 	"contexts": {
 		DAO:      &dao.Context{},
@@ -62,8 +64,9 @@ var Registry = map[string]ResourceMeta{
 		Renderer: &render.Event{},
 	},
 	"v1/pods": {
-		DAO:      &dao.Pod{},
-		Renderer: &render.Pod{},
+		DAO:          &dao.Pod{},
+		Renderer:     &render.Pod{},
+		TreeRenderer: &xray.Pod{},
 	},
 	"v1/namespaces": {
 		Renderer: &render.Namespace{},
@@ -73,8 +76,9 @@ var Registry = map[string]ResourceMeta{
 		Renderer: &render.Node{},
 	},
 	"v1/services": {
-		DAO:      &dao.Service{},
-		Renderer: &render.Service{},
+		DAO:          &dao.Service{},
+		Renderer:     &render.Service{},
+		TreeRenderer: &xray.Service{},
 	},
 	"v1/serviceaccounts": {
 		Renderer: &render.ServiceAccount{},
@@ -88,19 +92,22 @@ var Registry = map[string]ResourceMeta{
 
 	// Apps...
 	"apps/v1/deployments": {
-		DAO:      &dao.Deployment{},
-		Renderer: &render.Deployment{},
+		DAO:          &dao.Deployment{},
+		Renderer:     &render.Deployment{},
+		TreeRenderer: &xray.Deployment{},
 	},
 	"apps/v1/replicasets": {
 		Renderer: &render.ReplicaSet{},
 	},
 	"apps/v1/statefulsets": {
-		DAO:      &dao.StatefulSet{},
-		Renderer: &render.StatefulSet{},
+		DAO:          &dao.StatefulSet{},
+		Renderer:     &render.StatefulSet{},
+		TreeRenderer: &xray.StatefulSet{},
 	},
 	"apps/v1/daemonsets": {
-		DAO:      &dao.DaemonSet{},
-		Renderer: &render.DaemonSet{},
+		DAO:          &dao.DaemonSet{},
+		Renderer:     &render.DaemonSet{},
+		TreeRenderer: &xray.DaemonSet{},
 	},
 
 	// Extensions...

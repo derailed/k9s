@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
@@ -15,6 +16,32 @@ import (
 // Table retrieves K8s resources as tabular data.
 type Table struct {
 	Generic
+}
+
+// Get returns a given resource.
+func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
+	ns, n := client.Namespaced(path)
+
+	log.Debug().Msgf("TABLE-GET %q:%q", ns, t.gvr)
+	a := fmt.Sprintf(gvFmt, metav1beta1.SchemeGroupVersion.Version, metav1beta1.GroupName)
+	_, codec := t.codec()
+
+	c, err := t.getClient()
+	if err != nil {
+		return nil, err
+	}
+	o, err := c.Get().
+		SetHeader("Accept", a).
+		Namespace(ns).
+		Name(n).
+		Resource(t.gvr.ToR()).
+		VersionedParams(&metav1beta1.TableOptions{}, codec).
+		Do().Get()
+	if err != nil {
+		return nil, err
+	}
+
+	return o, nil
 }
 
 // List all Resources in a given namespace.

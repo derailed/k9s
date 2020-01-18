@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/rs/zerolog/log"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var toFileName = regexp.MustCompile(`[^(\w/\.)]`)
@@ -37,7 +38,7 @@ func IsAllNamespaces(ns string) bool {
 
 // IsNamespaced returns true if a specific ns is given.
 func IsNamespaced(ns string) bool {
-	return !IsClusterScoped(ns)
+	return !IsAllNamespaces(ns)
 }
 
 // IsClusterScoped returns true if resource is not namespaced.
@@ -58,6 +59,15 @@ func FQN(ns, n string) string {
 		return n
 	}
 	return ns + "/" + n
+}
+
+// MetaFQN returns a fully qualified resource name.
+func MetaFQN(m metav1.ObjectMeta) string {
+	if m.Namespace == "" {
+		return FQN(ClusterScope, m.Name)
+	}
+
+	return FQN(m.Namespace, m.Name)
 }
 
 func mustHomeDir() string {

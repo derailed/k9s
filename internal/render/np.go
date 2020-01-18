@@ -53,7 +53,7 @@ func (n NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
 	ip, is, ib := ingress(np.Spec.Ingress)
 	ep, es, eb := egress(np.Spec.Egress)
 
-	r.ID = MetaFQN(np.ObjectMeta)
+	r.ID = client.MetaFQN(np.ObjectMeta)
 	r.Fields = make(Fields, 0, len(n.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, np.Namespace)

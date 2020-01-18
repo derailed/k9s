@@ -42,7 +42,7 @@ func (CustomResourceDefinition) Render(o interface{}, ns string, r *Row) error {
 		log.Error().Err(err).Msgf("Fields timestamp %v", err)
 	}
 
-	r.ID = FQN(client.ClusterScope, extractMetaField(meta, "name"))
+	r.ID = client.FQN(client.ClusterScope, extractMetaField(meta, "name"))
 	r.Fields = Fields{
 		extractMetaField(meta, "name"),
 		toAge(metav1.Time{Time: t}),

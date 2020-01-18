@@ -5,6 +5,7 @@ import (
 	"path"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/gdamore/tcell"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -79,7 +80,7 @@ func (p PersistentVolume) Render(o interface{}, ns string, r *Row) error {
 
 	size := pv.Spec.Capacity[v1.ResourceStorage]
 
-	r.ID = MetaFQN(pv.ObjectMeta)
+	r.ID = client.MetaFQN(pv.ObjectMeta)
 	r.Fields = Fields{
 		pv.Name,
 		size.String(),

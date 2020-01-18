@@ -46,7 +46,7 @@ func (c Chart) Render(o interface{}, ns string, r *Row) error {
 		return fmt.Errorf("expected ChartRes, but got %T", o)
 	}
 
-	r.ID = FQN(h.Release.Namespace, h.Release.Name)
+	r.ID = client.FQN(h.Release.Namespace, h.Release.Name)
 	r.Fields = make(Fields, 0, len(c.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, h.Release.Namespace)

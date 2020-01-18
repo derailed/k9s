@@ -65,7 +65,7 @@ func (e Event) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	r.ID = MetaFQN(ev.ObjectMeta)
+	r.ID = client.MetaFQN(ev.ObjectMeta)
 	r.Fields = make(Fields, 0, len(e.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, ev.Namespace)

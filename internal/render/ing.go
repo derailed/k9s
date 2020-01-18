@@ -47,7 +47,7 @@ func (i Ingress) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	r.ID = MetaFQN(ing.ObjectMeta)
+	r.ID = client.MetaFQN(ing.ObjectMeta)
 	r.Fields = make(Fields, 0, len(i.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, ing.Namespace)

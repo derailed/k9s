@@ -53,7 +53,7 @@ func (j Job) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	r.ID = MetaFQN(job.ObjectMeta)
+	r.ID = client.MetaFQN(job.ObjectMeta)
 	r.Fields = make(Fields, 0, len(j.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, job.Namespace)

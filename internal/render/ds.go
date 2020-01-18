@@ -66,7 +66,7 @@ func (d DaemonSet) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	r.ID = MetaFQN(ds.ObjectMeta)
+	r.ID = client.MetaFQN(ds.ObjectMeta)
 	r.Fields = make(Fields, 0, len(d.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, ds.Namespace)

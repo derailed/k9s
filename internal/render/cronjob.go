@@ -52,7 +52,7 @@ func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 		lastScheduled = toAgeHuman(toAge(*cj.Status.LastScheduleTime))
 	}
 
-	r.ID = MetaFQN(cj.ObjectMeta)
+	r.ID = client.MetaFQN(cj.ObjectMeta)
 	r.Fields = make(Fields, 0, len(c.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, cj.Namespace)

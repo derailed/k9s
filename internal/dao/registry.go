@@ -112,6 +112,11 @@ func loadNonResource(m ResourceMetas) {
 }
 
 func loadK9s(m ResourceMetas) {
+	m[client.NewGVR("xrays")] = metav1.APIResource{
+		Name:       "xray",
+		Kind:       "XRays",
+		Categories: []string{"k9s"},
+	}
 	m[client.NewGVR("aliases")] = metav1.APIResource{
 		Name:       "aliases",
 		Kind:       "Aliases",

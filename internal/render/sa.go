@@ -44,7 +44,7 @@ func (s ServiceAccount) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 
-	r.ID = MetaFQN(sa.ObjectMeta)
+	r.ID = client.MetaFQN(sa.ObjectMeta)
 	r.Fields = make(Fields, 0, len(s.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, sa.Namespace)

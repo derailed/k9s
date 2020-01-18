@@ -68,7 +68,7 @@ func (h HorizontalPodAutoscaler) renderV1(raw *unstructured.Unstructured, ns str
 		return err
 	}
 
-	r.ID = MetaFQN(hpa.ObjectMeta)
+	r.ID = client.MetaFQN(hpa.ObjectMeta)
 	r.Fields = make(Fields, 0, len(h.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, hpa.Namespace)
@@ -93,7 +93,7 @@ func (h HorizontalPodAutoscaler) renderV2b1(raw *unstructured.Unstructured, ns s
 		return err
 	}
 
-	r.ID = MetaFQN(hpa.ObjectMeta)
+	r.ID = client.MetaFQN(hpa.ObjectMeta)
 	r.Fields = make(Fields, 0, len(h.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, hpa.Namespace)
@@ -119,7 +119,7 @@ func (h HorizontalPodAutoscaler) renderV2b2(raw *unstructured.Unstructured, ns s
 		return err
 	}
 
-	r.ID = MetaFQN(hpa.ObjectMeta)
+	r.ID = client.MetaFQN(hpa.ObjectMeta)
 	r.Fields = make(Fields, 0, len(h.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, hpa.Namespace)

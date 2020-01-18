@@ -58,7 +58,7 @@ func TestTableGet(t *testing.T) {
 	row, err := ta.Get(ctx, "fred")
 	assert.Nil(t, err)
 	assert.NotNil(t, row)
-	assert.Equal(t, 5, len(row.(*unstructured.Unstructured).Object))
+	assert.Equal(t, 5, len(row.(*render.PodWithMetrics).Raw.Object))
 }
 
 func TestTableMeta(t *testing.T) {
@@ -172,6 +172,10 @@ func raw(t *testing.T, n string) []byte {
 
 // ----------------------------------------------------------------------------
 
+func makeFactory() testFactory {
+	return testFactory{}
+}
+
 type testFactory struct {
 	rows []runtime.Object
 }
@@ -204,10 +208,6 @@ func (f testFactory) Forwarders() watch.Forwarders {
 	return nil
 }
 func (f testFactory) DeleteForwarder(string) {}
-
-func makeFactory() testFactory {
-	return testFactory{}
-}
 
 // ----------------------------------------------------------------------------
 

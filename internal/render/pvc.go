@@ -84,7 +84,7 @@ func (p PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
 		}
 	}
 
-	r.ID = MetaFQN(pvc.ObjectMeta)
+	r.ID = client.MetaFQN(pvc.ObjectMeta)
 	r.Fields = make(Fields, 0, len(p.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, pvc.Namespace)

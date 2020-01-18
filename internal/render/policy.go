@@ -3,6 +3,7 @@ package render
 import (
 	"fmt"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/gdamore/tcell"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -50,7 +51,7 @@ func (Policy) Render(o interface{}, gvr string, r *Row) error {
 		return fmt.Errorf("expecting PolicyRes but got %T", o)
 	}
 
-	r.ID = FQN(p.Namespace, p.Resource)
+	r.ID = client.FQN(p.Namespace, p.Resource)
 	r.Fields = append(r.Fields, p.Namespace, cleanseResource(p.Resource), p.Group, p.Binding)
 	r.Fields = append(r.Fields, asVerbs(p.Verbs)...)
 
@@ -64,7 +65,7 @@ func cleanseResource(r string) string {
 	if r[0] == '/' {
 		return r
 	}
-	_, n := Namespaced(r)
+	_, n := client.Namespaced(r)
 	return n
 }
 
