@@ -10,15 +10,12 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/kubernetes/pkg/util/node"
 )
 
 type Pod struct{}
-
-func (p *Pod) Status(po *v1.Pod) {
-
-}
 
 func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 	pwm, ok := o.(*render.PodWithMetrics)
@@ -37,6 +34,25 @@ func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 		return fmt.Errorf("no factory found in context")
 	}
 
+	node := NewTreeNode("v1/pods", client.FQN(po.Namespace, po.Name))
+	parent, ok := ctx.Value(KeyParent).(*TreeNode)
+	if !ok {
+		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
+	}
+	parent.Add(node)
+
+	if err := p.containerRefs(ctx, node, po.Namespace, po.Spec); err != nil {
+		return err
+	}
+	p.podVolumeRefs(f, node, po.Namespace, po.Spec.Volumes)
+	if err := p.serviceAccountRef(f, ctx, node, po.Namespace, po.Spec.ServiceAccountName); err != nil {
+		return err
+	}
+
+	return p.validate(node, po)
+}
+
+func (p *Pod) validate(node *TreeNode, po v1.Pod) error {
 	phase := p.phase(&po)
 	ss := po.Status.ContainerStatuses
 	cr, _, _ := p.statuses(ss)
@@ -48,30 +64,48 @@ func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 		status = CompletedStatus
 	}
 
-	node := NewTreeNode("v1/pods", client.FQN(po.Namespace, po.Name))
 	node.Extras[StatusKey] = status
 	node.Extras[StateKey] = strconv.Itoa(cr) + "/" + strconv.Itoa(len(ss))
-	parent, ok := ctx.Value(KeyParent).(*TreeNode)
-	if !ok {
-		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
-	}
-	parent.Add(node)
-
-	ctx = context.WithValue(ctx, KeyParent, node)
-	var cre Container
-	for i := 0; i < len(po.Spec.InitContainers); i++ {
-		if err := cre.Render(ctx, ns, render.ContainerRes{Container: &po.Spec.InitContainers[i]}); err != nil {
-			return err
-		}
-	}
-	for i := 0; i < len(po.Spec.Containers); i++ {
-		if err := cre.Render(ctx, ns, render.ContainerRes{Container: &po.Spec.Containers[i]}); err != nil {
-			return err
-		}
-	}
-	p.podVolumeRefs(f, node, po.Namespace, po.Spec.Volumes)
 
 	return nil
+}
+
+func (*Pod) containerRefs(ctx context.Context, parent *TreeNode, ns string, spec v1.PodSpec) error {
+	ctx = context.WithValue(ctx, KeyParent, parent)
+	var cre Container
+	for i := 0; i < len(spec.InitContainers); i++ {
+		if err := cre.Render(ctx, ns, render.ContainerRes{Container: &spec.InitContainers[i]}); err != nil {
+			return err
+		}
+	}
+	for i := 0; i < len(spec.Containers); i++ {
+		if err := cre.Render(ctx, ns, render.ContainerRes{Container: &spec.Containers[i]}); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (*Pod) serviceAccountRef(f dao.Factory, ctx context.Context, parent *TreeNode, ns, sa string) error {
+	if sa == "" {
+		return nil
+	}
+
+	id := client.FQN(ns, sa)
+	o, err := f.Get("v1/serviceaccounts", id, false, labels.Everything())
+	if err != nil {
+		return err
+	}
+	if o == nil {
+		addRef(f, parent, "v1/serviceaccounts", id, nil)
+		return nil
+	}
+
+	var saRE ServiceAccount
+	ctx = context.WithValue(ctx, KeyParent, parent)
+
+	return saRE.Render(ctx, ns, o)
 }
 
 func (*Pod) podVolumeRefs(f dao.Factory, parent *TreeNode, ns string, vv []v1.Volume) {

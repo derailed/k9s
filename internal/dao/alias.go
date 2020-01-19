@@ -10,7 +10,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -66,7 +65,6 @@ func (a *Alias) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 // AsGVR returns a matching gvr if it exists.
 func (a *Alias) AsGVR(cmd string) (client.GVR, bool) {
 	gvr, ok := a.Aliases.Get(cmd)
-	log.Debug().Msgf("ASGVR %q %q %v", cmd, gvr, ok)
 	if ok {
 		return client.NewGVR(gvr), true
 	}
@@ -75,6 +73,7 @@ func (a *Alias) AsGVR(cmd string) (client.GVR, bool) {
 
 // Get fetch a resource.
 func (a *Alias) Get(_ context.Context, _ string) (runtime.Object, error) {
+	// BOZO!! NYI
 	panic("NYI!")
 }
 

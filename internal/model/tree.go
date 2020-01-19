@@ -227,8 +227,6 @@ func (t *Tree) reconcile(ctx context.Context) error {
 		t.fireTreeTreeChanged(t.root)
 	}
 
-	log.Debug().Msgf("TREE ROOT returns %d children", len(t.root.Children))
-
 	return nil
 }
 

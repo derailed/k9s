@@ -91,7 +91,7 @@ func addRef(f dao.Factory, parent *TreeNode, gvr, id string, optional *bool) {
 func validate(f dao.Factory, n *TreeNode, _ *bool) {
 	res, err := f.Get(n.GVR, n.ID, false, labels.Everything())
 	if err != nil || res == nil {
-		log.Debug().Msgf("Fail to located ref %q::%q -- %#v-%#v", n.GVR, n.ID, err, res)
+		log.Warn().Err(err).Msgf("Missing ref %q::%q", n.GVR, n.ID)
 		n.Extras[StatusKey] = MissingRefStatus
 		return
 	}

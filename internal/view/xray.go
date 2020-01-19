@@ -265,14 +265,14 @@ func (x *Xray) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	log.Debug().Msgf("STATUS %q", ref.Status)
 	if ref.Status != "" {
 		x.app.Flash().Errf("%s is not in a running state", ref.Path)
 		return nil
 	}
 
 	if ref.Parent != nil {
-		x.shellIn(ref.Parent.Path, ref.Path)
+		_, co := client.Namespaced(ref.Path)
+		x.shellIn(ref.Parent.Path, co)
 	} else {
 		log.Error().Msgf("No parent found on container node %q", ref.Path)
 	}
@@ -544,7 +544,6 @@ func (x *Xray) update(node *xray.TreeNode) {
 
 // XrayDataChanged notifies the model data changed.
 func (x *Xray) TreeChanged(node *xray.TreeNode) {
-	log.Debug().Msgf("Tree Changed %d", len(node.Children))
 	x.count = node.Count(x.gvr.String())
 	x.update(x.filter(node))
 	x.UpdateTitle()
@@ -589,10 +588,8 @@ func (x *Xray) defaultContext() context.Context {
 func (x *Xray) Start() {
 	x.Stop()
 
-	log.Debug().Msgf("XRAY STARTING! -- %q", x.selectedNode)
 	x.cmdBuff.AddListener(x.app.Cmd())
 	x.cmdBuff.AddListener(x)
-	// x.app.SetFocus(x)
 
 	ctx := x.defaultContext()
 	ctx, x.cancelFn = context.WithCancel(ctx)
@@ -602,7 +599,6 @@ func (x *Xray) Start() {
 
 // Stop terminates watch loop.
 func (x *Xray) Stop() {
-	log.Debug().Msgf("XRAY STOPPING!")
 	if x.cancelFn == nil {
 		return
 	}

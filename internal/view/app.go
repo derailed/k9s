@@ -175,10 +175,9 @@ func (a *App) clusterUpdater(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			log.Debug().Msg("Cluster updater canceled!")
+			log.Debug().Msg("ClusterInfo updater canceled!")
 			return
 		case <-time.After(clusterRefresh):
-			// BOZO!! refact - should not hold ui for updating clusterinfo
 			a.refreshClusterInfo()
 		}
 	}
@@ -190,7 +189,6 @@ func (a *App) refreshClusterInfo() {
 		log.Error().Msgf("Something is wrong with the connection. Bailing out!")
 		a.BailOut()
 	}
-
 	a.QueueUpdateDraw(func() {
 		if !a.showHeader {
 			a.refreshIndicator()
@@ -291,13 +289,7 @@ func (a *App) BailOut() {
 
 // Run starts the application loop
 func (a *App) Run() {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	a.Halt()
-
-	if err := a.StylesUpdater(ctx, a); err != nil {
-		log.Error().Err(err).Msg("Unable to track skin changes")
-	}
+	a.Resume()
 
 	go func() {
 		<-time.After(splashTime * time.Second)

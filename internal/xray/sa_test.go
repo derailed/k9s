@@ -7,37 +7,30 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/xray"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
-func TestDeployRender(t *testing.T) {
+func TestSARender(t *testing.T) {
 	uu := map[string]struct {
 		file           string
 		level1, level2 int
 		status         string
 	}{
 		"plain": {
-			file:   "dp",
+			file:   "sa",
 			level1: 1,
-			level2: 1,
+			level2: 2,
 			status: xray.OkStatus,
 		},
 	}
 
-	var re xray.Deployment
+	var re xray.ServiceAccount
 	for k := range uu {
-		f := makeFactory()
-		f.rows = map[string][]runtime.Object{
-			"v1/pods":            []runtime.Object{load(t, "po")},
-			"v1/serviceaccounts": []runtime.Object{load(t, "sa")},
-		}
-
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			o := load(t, u.file)
-			root := xray.NewTreeNode("deployments", "deployments")
+			root := xray.NewTreeNode("serviceaccounts", "serviceaccounts")
 			ctx := context.WithValue(context.Background(), xray.KeyParent, root)
-			ctx = context.WithValue(ctx, internal.KeyFactory, f)
+			ctx = context.WithValue(ctx, internal.KeyFactory, makeFactory())
 
 			assert.Nil(t, re.Render(ctx, "", o))
 			assert.Equal(t, u.level1, root.CountChildren())

@@ -27,7 +27,7 @@ func TestServiceRender(t *testing.T) {
 	var re xray.Service
 	for k := range uu {
 		f := makeFactory()
-		f.rows = []runtime.Object{load(t, "po")}
+		f.rows = map[string][]runtime.Object{"v1/pods": []runtime.Object{load(t, "po")}}
 
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {

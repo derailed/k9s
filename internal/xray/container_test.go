@@ -106,7 +106,7 @@ func makeFactory() testFactory {
 }
 
 type testFactory struct {
-	rows []runtime.Object
+	rows map[string][]runtime.Object
 }
 
 var _ dao.Factory = testFactory{}
@@ -115,14 +115,16 @@ func (f testFactory) Client() client.Connection {
 	return nil
 }
 func (f testFactory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
-	if len(f.rows) > 0 {
-		return f.rows[0], nil
+	oo, ok := f.rows[gvr]
+	if ok && len(oo) > 0 {
+		return oo[0], nil
 	}
 	return nil, nil
 }
 func (f testFactory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error) {
-	if len(f.rows) > 0 {
-		return f.rows, nil
+	oo, ok := f.rows[gvr]
+	if ok {
+		return oo, nil
 	}
 	return nil, nil
 }

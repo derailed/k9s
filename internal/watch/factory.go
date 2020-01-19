@@ -63,11 +63,6 @@ func (f *Factory) Terminate() {
 
 // List returns a resource collection.
 func (f *Factory) List(gvr, ns string, wait bool, labels labels.Selector) ([]runtime.Object, error) {
-	defer func(t time.Time) {
-		log.Debug().Msgf("FACTORY-LIST [%t] %q::%q elapsed %v", wait, ns, gvr, time.Since(t))
-	}(time.Now())
-
-	log.Debug().Msgf("List %q:%q", ns, gvr)
 	inf, err := f.CanForResource(ns, gvr, client.MonitorAccess)
 	if err != nil {
 		return nil, err
@@ -87,18 +82,12 @@ func (f *Factory) List(gvr, ns string, wait bool, labels labels.Selector) ([]run
 
 // Get retrieves a given resource.
 func (f *Factory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
-	defer func(t time.Time) {
-		log.Debug().Msgf("FACTORY-GET [%t] %q--%q elapsed %v", wait, gvr, path, time.Since(t))
-	}(time.Now())
-
 	ns, n := namespaced(path)
-	log.Debug().Msgf("GET %q:%q::%q", ns, gvr, n)
 	inf, err := f.CanForResource(ns, gvr, []string{client.GetVerb})
 	if err != nil {
 		return nil, err
 	}
 
-	DumpFactory(f)
 	if wait {
 		f.waitForCacheSync(ns)
 	}
@@ -121,19 +110,13 @@ func (f *Factory) waitForCacheSync(ns string) {
 	if !ok {
 		return
 	}
-	log.Debug().Msgf("!!!!!! WAIT FOR CACHE-SYNC %q", ns)
 	// Hang for a sec for the cache to refresh if still not done bail out!
 	c := make(chan struct{})
 	go func(c chan struct{}) {
 		<-time.After(defaultWaitTime)
-		log.Debug().Msgf("Wait for sync timed out!")
 		close(c)
 	}(c)
-	mm := fac.WaitForCacheSync(c)
-	for k, v := range mm {
-		log.Debug().Msgf("%t -- %s", v, k)
-	}
-	log.Debug().Msgf("Sync completed for ns %q", ns)
+	_ = fac.WaitForCacheSync(c)
 }
 
 // WaitForCacheSync waits for all factories to update their cache.
@@ -196,7 +179,6 @@ func (f *Factory) ForResource(ns, gvr string) informers.GenericInformer {
 		log.Error().Err(fmt.Errorf("MEOW! No informer for %q:%q", ns, gvr))
 		return inf
 	}
-	log.Debug().Msgf("FOR_RESOURCE %q:%q", ns, gvr)
 	fact.Start(f.stopChan)
 
 	return inf

@@ -208,14 +208,12 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 }
 
 func loadCRDs(f Factory, m ResourceMetas) {
-	log.Debug().Msgf("Loading CRDs...")
 	const crdGVR = "apiextensions.k8s.io/v1beta1/customresourcedefinitions"
 	oo, err := f.List(crdGVR, "", true, labels.Everything())
 	if err != nil {
 		log.Warn().Err(err).Msgf("Fail CRDs load")
 		return
 	}
-	log.Debug().Msgf(">>> CRDS count %d", len(oo))
 
 	for _, o := range oo {
 		meta, errs := extractMeta(o)

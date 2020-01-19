@@ -19,13 +19,13 @@ func TestPodRender(t *testing.T) {
 		"plain": {
 			file:   "po",
 			level1: 1,
-			level2: 2,
+			level2: 3,
 			status: xray.OkStatus,
 		},
 		"withInit": {
 			file:   "init",
 			level1: 1,
-			level2: 1,
+			level2: 2,
 			status: xray.OkStatus,
 		},
 	}

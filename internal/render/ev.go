@@ -75,7 +75,7 @@ func (e Event) Render(o interface{}, ns string, r *Row) error {
 		ev.Reason,
 		ev.Source.Component,
 		strconv.Itoa(int(ev.Count)),
-		Truncate(ev.Message, 80),
+		ev.Message,
 		toAge(ev.LastTimestamp))
 
 	return nil

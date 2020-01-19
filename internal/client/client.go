@@ -87,11 +87,6 @@ func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) 
 		ns = AllNamespaces
 	}
 	key := makeCacheKey(ns, gvr, verbs)
-	defer func(t time.Time) string {
-		log.Debug().Msgf("AUTH elapsed %t--%q %v", auth, key, time.Since(t))
-		return "s"
-	}(time.Now())
-
 	if v, ok := a.cache.Get(key); ok {
 		if auth, ok = v.(bool); ok {
 			return auth, nil
@@ -107,7 +102,6 @@ func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) 
 			return auth, err
 		}
 		if !resp.Status.Allowed {
-			log.Debug().Msgf("  NO %q ;(", v)
 			a.cache.Add(key, false, cacheExpiry)
 			return auth, fmt.Errorf("`%s access denied for user on %q:%s", v, ns, gvr)
 		}

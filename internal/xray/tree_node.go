@@ -116,17 +116,14 @@ func (t *TreeNode) Diff(d *TreeNode) bool {
 	}
 
 	if t.CountChildren() != d.CountChildren() {
-		log.Debug().Msgf("SIZE-DIFF")
 		return true
 	}
 
 	if t.ID != d.ID || t.GVR != d.GVR || !reflect.DeepEqual(t.Extras, d.Extras) {
-		log.Debug().Msgf("ID DIFF")
 		return true
 	}
 	for i := 0; i < len(t.Children); i++ {
 		if t.Children[i].Diff(d.Children[i]) {
-			log.Debug().Msgf("CHILD-DIFF")
 			return true
 		}
 	}
@@ -355,7 +352,7 @@ func toEmoji(gvr string) string {
 	case "containers":
 		return "🐳"
 	case "v1/serviceaccounts":
-		return "🛎"
+		return "💁‍♀️"
 	case "v1/persistentvolumes":
 		return "📚"
 	case "v1/persistentvolumeclaims":
@@ -363,14 +360,14 @@ func toEmoji(gvr string) string {
 	case "v1/secrets":
 		return "🔒"
 	case "v1/configmaps":
-		return "🗄"
+		return "🔑"
 	default:
 		return "📎"
 	}
 }
 
 func (t TreeNode) colorize() string {
-	const colorFmt = "%s %s [%s::b]%s[::]"
+	const colorFmt = "%s [gray::-][%s[gray::-]] [%s::b]%s[::]"
 
 	_, n := client.Namespaced(t.ID)
 	color, flag := "white", "[green::b]OK"

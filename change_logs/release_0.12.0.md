@@ -10,10 +10,6 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ---
 
-<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s_helm.png" align="center" width="300" height="auto"/>
-
-This was a long week in the saddle, you guys have been so awesome and supportive thru these last few drops. Thank you!!
-
 ### Searchable Logs
 
 There has been quiet a few demands for this feature. It should now be generally available in this drop. It works the same as the resource view ie `/fred`, you can also specify a fuzzy filter using `/-f blee-duh`. The paint is still fresh on that deal and not super confident that it will work nominaly as I had to rework the logs to enable. So totally possible I've hosed something in the process.
@@ -39,7 +35,6 @@ k9s:
   fullScreenLogs: true
   ...
 ```
-
 
 ### K9s Slackers
 

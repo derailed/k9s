@@ -116,7 +116,7 @@ func (c *Command) specialCmd(cmd string) bool {
 		return true
 	case "x", "xray":
 		if err := c.xrayCmd(cmd); err != nil {
-			log.Error().Err(err).Msgf("Invalid command")
+			c.app.Flash().Err(err)
 		}
 		return true
 	default:
