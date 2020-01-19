@@ -155,7 +155,7 @@ func (t *Tree) ToYAML(ctx context.Context, gvr, path string) (string, error) {
 }
 
 func (t *Tree) updater(ctx context.Context) {
-	defer log.Debug().Msgf("Model canceled -- %q", t.gvr)
+	defer log.Debug().Msgf("Tree-model canceled -- %q", t.gvr)
 
 	rate := iniRefreshRate
 	for {
@@ -185,10 +185,6 @@ func (t *Tree) refresh(ctx context.Context) {
 }
 
 func (t *Tree) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, error) {
-	defer func(ti time.Time) {
-		log.Debug().Msgf("  TREE-LIST %q:%q elapsed %v", t.namespace, t.gvr, time.Since(ti))
-	}(time.Now())
-
 	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
 	if !ok {
 		return nil, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
@@ -199,16 +195,11 @@ func (t *Tree) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, erro
 }
 
 func (t *Tree) reconcile(ctx context.Context) error {
-	defer func(ti time.Time) {
-		log.Debug().Msgf("TREE-RECONCILE %q:%q elapsed %v", t.namespace, t.gvr, time.Since(ti))
-	}(time.Now())
-
 	meta := t.resourceMeta()
 	oo, err := t.list(ctx, meta.DAO)
 	if err != nil {
 		return err
 	}
-	log.Debug().Msgf("  TREE returned %d rows", len(oo))
 
 	ns := client.CleanseNamespace(t.namespace)
 	root := xray.NewTreeNode("root", client.NewGVR(t.gvr).ToR())
@@ -232,7 +223,6 @@ func (t *Tree) reconcile(ctx context.Context) error {
 		t.root = root.Filter(t.query, rxFilter)
 	}
 	if t.root == nil || t.root.Diff(root) {
-		log.Debug().Msgf(">>>> DIFFERENCE!!!!")
 		t.root = root
 		t.fireTreeTreeChanged(t.root)
 	}
@@ -297,10 +287,6 @@ func rxFilter(q, path string) bool {
 }
 
 func treeHydrate(ctx context.Context, ns string, oo []runtime.Object, re TreeRenderer) error {
-	defer func(t time.Time) {
-		log.Debug().Msgf("  TREE-HYDRATE elapsed %v", time.Since(t))
-	}(time.Now())
-
 	for _, o := range oo {
 		if err := re.Render(ctx, ns, o); err != nil {
 			return err

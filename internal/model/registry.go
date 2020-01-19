@@ -150,13 +150,9 @@ var Registry = map[string]ResourceMeta{
 
 	// CRDs...
 	"apiextensions.k8s.io/v1/customresourcedefinitions": {
-		// BOZO!!
-		// DAO:      &dao.CustomResourceDefinition{},
 		Renderer: &render.CustomResourceDefinition{},
 	},
 	"apiextensions.k8s.io/v1beta1/customresourcedefinitions": {
-		// BOZO!!
-		// DAO:      &dao.CustomResourceDefinition{},
 		Renderer: &render.CustomResourceDefinition{},
 	},
 

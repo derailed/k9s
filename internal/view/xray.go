@@ -115,6 +115,7 @@ func (x *Xray) Hints() model.MenuHints {
 
 func (x *Xray) bindKeys() {
 	x.Actions().Add(ui.KeyActions{
+		tcell.KeyEnter:      ui.NewKeyAction("Goto", x.gotoCmd, true),
 		ui.KeySpace:         ui.NewKeyAction("Expand/Collapse", x.noopCmd, true),
 		ui.KeyX:             ui.NewKeyAction("Expand/Collapse All", x.toggleCollapseCmd, true),
 		ui.KeySlash:         ui.NewSharedKeyAction("Filter Mode", x.activateCmd, false),
@@ -178,9 +179,6 @@ func (x *Xray) refreshActions() {
 	}
 	if client.Can(x.meta.Verbs, "delete") {
 		aa[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", x.deleteCmd, true)
-	}
-	if client.Can(x.meta.Verbs, "view") {
-		aa[tcell.KeyEnter] = ui.NewKeyAction("Goto", x.gotoCmd, true)
 	}
 	if !dao.IsK9sMeta(x.meta) {
 		aa[ui.KeyY] = ui.NewKeyAction("YAML", x.viewCmd, true)
@@ -439,25 +437,22 @@ func (x *Xray) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 			x.Start()
 		}
 		x.cmdBuff.SetActive(false)
-		return nil
-	}
-	n := x.GetCurrentNode()
-	if n == nil {
+		x.GetRoot().ExpandAll()
+
 		return nil
 	}
 
-	ref, ok := n.GetReference().(xray.NodeSpec)
-	if !ok {
-		log.Error().Msgf("Expecting a NodeSpec!")
+	ref := x.selectedSpec()
+	if ref == nil {
 		return nil
 	}
 	if len(strings.Split(ref.Path, "/")) == 1 {
 		return nil
 	}
-
 	if err := x.app.viewResource(client.NewGVR(ref.GVR).ToR(), ref.Path, false); err != nil {
 		x.app.Flash().Err(err)
 	}
+
 	return nil
 }
 
@@ -528,7 +523,7 @@ func (x *Xray) update(node *xray.TreeNode) {
 		root.Walk(func(node, parent *tview.TreeNode) bool {
 			ref, ok := node.GetReference().(xray.NodeSpec)
 			if !ok {
-				log.Error().Msgf("Expeting a NodeSpec but got %T", node.GetReference())
+				log.Error().Msgf("Expecting a NodeSpec but got %T", node.GetReference())
 				return false
 			}
 			// BOZO!! Figure this out expand/collapse but the root
