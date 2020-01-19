@@ -65,7 +65,6 @@ func (v *Help) bindKeys() {
 }
 
 func (v *Help) computeMaxes(hh model.MenuHints) {
-	v.maxKey, v.maxDesc = 0, 0
 	for _, h := range hh {
 		if len(h.Mnemonic) > v.maxKey {
 			v.maxKey = len(h.Mnemonic)
@@ -80,6 +79,7 @@ func (v *Help) computeMaxes(hh model.MenuHints) {
 func (v *Help) build() {
 	v.Clear()
 
+	v.maxRows = len(v.showGeneral())
 	ff := []HelpFunc{v.app.Content.Top().Hints, v.showGeneral, v.showNav, v.showHelp}
 	var col int
 	for i, section := range []string{"RESOURCE", "GENERAL", "NAVIGATION", "HELP"} {
@@ -197,7 +197,7 @@ func (v *Help) showGeneral() model.MenuHints {
 			Description: "Clear command",
 		},
 		{
-			Mnemonic:    "h",
+			Mnemonic:    "Ctrl-h",
 			Description: "Toggle Header",
 		},
 		{

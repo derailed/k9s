@@ -44,16 +44,6 @@ func (c *Command) Init() error {
 }
 
 func (c *Command) xrayCmd(cmd string) error {
-
-	// if _, ok := c.app.Content.GetPrimitive("main").(*Xray); ok {
-	// 	return errors.New("unable to locate main panel")
-	// }
-
-	// if c.app.Content.Top() != nil && c.app.Content.Top().Name() == xrayTitle {
-	// 	c.app.Content.Pop()
-	// 	return nil
-	// }
-
 	tokens := strings.Split(cmd, " ")
 	if len(tokens) < 2 {
 		return errors.New("You must specify a resource")
@@ -63,18 +53,6 @@ func (c *Command) xrayCmd(cmd string) error {
 		return fmt.Errorf("Huh? `%s` Command not found", cmd)
 	}
 	return c.exec(cmd, "xrays", NewXray(gvr), true)
-
-	// if err := c.app.inject(NewXray(gvr)); err != nil {
-	// 	c.app.Flash().Err(err)
-	// 	return nil
-	// }
-
-	// c.app.Config.SetActiveView(cmd)
-	// if err := c.app.Config.Save(); err != nil {
-	// 	log.Error().Err(err).Msg("Config save failed!")
-	// }
-
-	// return nil
 }
 
 // Exec the Command by showing associated display.

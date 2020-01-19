@@ -9,6 +9,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestTreeNodeCount(t *testing.T) {
+	uu := map[string]struct {
+		root *xray.TreeNode
+		e    int
+	}{
+		"simple": {
+			root: root1(),
+			e:    3,
+		},
+		"complex": {
+			root: root3(),
+			e:    26,
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, u.root.Count(""))
+		})
+	}
+}
+
 func TestTreeNodeFilter(t *testing.T) {
 	uu := map[string]struct {
 		q       string
@@ -63,6 +86,9 @@ func TestTreeNodeFilter(t *testing.T) {
 }
 
 func TestTreeNodeHydrate(t *testing.T) {
+	threeOK := strings.Join([]string{"ok", "ok", "ok"}, xray.PathSeparator)
+	fiveOK := strings.Join([]string{"ok", "ok", "ok", "ok", "ok"}, xray.PathSeparator)
+
 	uu := map[string]struct {
 		spec []xray.NodeSpec
 		e    *xray.TreeNode
@@ -70,12 +96,14 @@ func TestTreeNodeHydrate(t *testing.T) {
 		"flat_simple": {
 			spec: []xray.NodeSpec{
 				{
-					GVR:  "containers::v1/pods",
-					Path: "c1::default/p1",
+					GVR:    "containers::v1/pods",
+					Path:   "c1::default/p1",
+					Status: threeOK,
 				},
 				{
-					GVR:  "containers::v1/pods",
-					Path: "c2::default/p1",
+					GVR:    "containers::v1/pods",
+					Path:   "c2::default/p1",
+					Status: threeOK,
 				},
 			},
 			e: root1(),
@@ -83,12 +111,14 @@ func TestTreeNodeHydrate(t *testing.T) {
 		"flat_complex": {
 			spec: []xray.NodeSpec{
 				{
-					GVR:  "v1/secrets::containers::v1/pods",
-					Path: "s1::c1::default/p1",
+					GVR:    "v1/secrets::containers::v1/pods",
+					Path:   "s1::c1::default/p1",
+					Status: threeOK,
 				},
 				{
-					GVR:  "v1/secrets::containers::v1/pods",
-					Path: "s2::c2::default/p1",
+					GVR:    "v1/secrets::containers::v1/pods",
+					Path:   "s2::c2::default/p1",
+					Status: threeOK,
 				},
 			},
 			e: root2(),
@@ -96,40 +126,49 @@ func TestTreeNodeHydrate(t *testing.T) {
 		"complex1": {
 			spec: []xray.NodeSpec{
 				{
-					GVR:  "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
-					Path: "default/default-token-rr22g::default/nginx-6b866d578b-c6tcn::default/nginx::-/default::deployments",
+					GVR:    "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
+					Path:   "default/default-token-rr22g::default/nginx-6b866d578b-c6tcn::default/nginx::-/default::deployments",
+					Status: fiveOK,
 				},
 				{
-					GVR:  "v1/configmaps::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
-					Path: "kube-system/coredns::kube-system/coredns-6955765f44-89q2p::kube-system/coredns::-/kube-system::deployments",
+					GVR:    "v1/configmaps::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
+					Path:   "kube-system/coredns::kube-system/coredns-6955765f44-89q2p::kube-system/coredns::-/kube-system::deployments",
+					Status: fiveOK,
 				},
 				{
-					GVR:  "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
-					Path: "kube-system/coredns-token-5cq9j::kube-system/coredns-6955765f44-89q2p::kube-system/coredns::-/kube-system::deployments",
+					GVR:    "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
+					Path:   "kube-system/coredns-token-5cq9j::kube-system/coredns-6955765f44-89q2p::kube-system/coredns::-/kube-system::deployments",
+					Status: fiveOK,
 				},
 				{
-					GVR:  "v1/configmaps::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
-					Path: "kube-system/coredns::kube-system/coredns-6955765f44-r9j9t::kube-system/coredns::-/kube-system::deployments",
+					GVR:    "v1/configmaps::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
+					Path:   "kube-system/coredns::kube-system/coredns-6955765f44-r9j9t::kube-system/coredns::-/kube-system::deployments",
+					Status: fiveOK,
 				},
 				{
-					GVR:  "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
-					Path: "kube-system/coredns-token-5cq9j::kube-system/coredns-6955765f44-r9j9t::kube-system/coredns::-/kube-system::deployments",
+					GVR:    "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
+					Path:   "kube-system/coredns-token-5cq9j::kube-system/coredns-6955765f44-r9j9t::kube-system/coredns::-/kube-system::deployments",
+					Status: fiveOK,
 				},
 				{
-					GVR:  "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
-					Path: "kube-system/default-token-thzt8::kube-system/metrics-server-6754dbc9df-88bk4::kube-system/metrics-server::-/kube-system::deployments",
+					GVR:    "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
+					Path:   "kube-system/default-token-thzt8::kube-system/metrics-server-6754dbc9df-88bk4::kube-system/metrics-server::-/kube-system::deployments",
+					Status: fiveOK,
 				},
 				{
-					GVR:  "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
-					Path: "kube-system/nginx-ingress-token-kff5q::kube-system/nginx-ingress-controller-6fc5bcc8c9-cwp55::kube-system/nginx-ingress-controller::-/kube-system::deployments",
+					GVR:    "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
+					Path:   "kube-system/nginx-ingress-token-kff5q::kube-system/nginx-ingress-controller-6fc5bcc8c9-cwp55::kube-system/nginx-ingress-controller::-/kube-system::deployments",
+					Status: fiveOK,
 				},
 				{
-					GVR:  "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
-					Path: "kubernetes-dashboard/kubernetes-dashboard-token-d6rt4::kubernetes-dashboard/dashboard-metrics-scraper-7b64584c5c-c7b56::kubernetes-dashboard/dashboard-metrics-scraper::-/kubernetes-dashboard::deployments",
+					GVR:    "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
+					Path:   "kubernetes-dashboard/kubernetes-dashboard-token-d6rt4::kubernetes-dashboard/dashboard-metrics-scraper-7b64584c5c-c7b56::kubernetes-dashboard/dashboard-metrics-scraper::-/kubernetes-dashboard::deployments",
+					Status: fiveOK,
 				},
 				{
-					GVR:  "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
-					Path: "kubernetes-dashboard/kubernetes-dashboard-token-d6rt4::kubernetes-dashboard/kubernetes-dashboard-79d9cd965-b4c7d::kubernetes-dashboard/kubernetes-dashboard::-/kubernetes-dashboard::deployments",
+					GVR:    "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
+					Path:   "kubernetes-dashboard/kubernetes-dashboard-token-d6rt4::kubernetes-dashboard/kubernetes-dashboard-79d9cd965-b4c7d::kubernetes-dashboard/kubernetes-dashboard::-/kubernetes-dashboard::deployments",
+					Status: fiveOK,
 				},
 			},
 			e: root3(),
@@ -154,12 +193,14 @@ func TestTreeNodeFlatten(t *testing.T) {
 			root: root1(),
 			e: []xray.NodeSpec{
 				{
-					GVR:  "containers::v1/pods",
-					Path: "c1::default/p1",
+					GVR:    "containers::v1/pods",
+					Path:   "c1::default/p1",
+					Status: strings.Join([]string{"ok", "ok"}, xray.PathSeparator),
 				},
 				{
-					GVR:  "containers::v1/pods",
-					Path: "c2::default/p1",
+					GVR:    "containers::v1/pods",
+					Path:   "c2::default/p1",
+					Status: strings.Join([]string{"ok", "ok"}, xray.PathSeparator),
 				},
 			},
 		},
@@ -167,12 +208,14 @@ func TestTreeNodeFlatten(t *testing.T) {
 			root: root2(),
 			e: []xray.NodeSpec{
 				{
-					GVR:  "v1/secrets::containers::v1/pods",
-					Path: "s1::c1::default/p1",
+					GVR:    "v1/secrets::containers::v1/pods",
+					Path:   "s1::c1::default/p1",
+					Status: strings.Join([]string{"ok", "ok", "ok"}, xray.PathSeparator),
 				},
 				{
-					GVR:  "v1/secrets::containers::v1/pods",
-					Path: "s2::c2::default/p1",
+					GVR:    "v1/secrets::containers::v1/pods",
+					Path:   "s2::c2::default/p1",
+					Status: strings.Join([]string{"ok", "ok", "ok"}, xray.PathSeparator),
 				},
 			},
 		},
@@ -226,7 +269,7 @@ func TestTreeNodeRoot(t *testing.T) {
 	n.Add(c1)
 	n.Add(c2)
 
-	assert.Equal(t, 2, n.Size())
+	assert.Equal(t, 2, n.CountChildren())
 	assert.Equal(t, n, n.Root())
 	assert.True(t, n.IsRoot())
 	assert.False(t, n.IsLeaf())

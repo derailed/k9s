@@ -12,7 +12,7 @@ import (
 
 type Namespace struct{}
 
-func (p *Namespace) Render(ctx context.Context, ns string, o interface{}) error {
+func (n *Namespace) Render(ctx context.Context, ns string, o interface{}) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected NamespaceWithMetrics, but got %T", o)
@@ -30,6 +30,15 @@ func (p *Namespace) Render(ctx context.Context, ns string, o interface{}) error 
 		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 	parent.Add(root)
+
+	return n.validate(root, nss)
+}
+
+func (*Namespace) validate(root *TreeNode, ns v1.Namespace) error {
+	root.Extras[StatusKey] = OkStatus
+	if ns.Status.Phase == v1.NamespaceTerminating {
+		root.Extras[StatusKey] = ToastStatus
+	}
 
 	return nil
 }

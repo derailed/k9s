@@ -27,15 +27,16 @@ func (c *Container) Render(ctx context.Context, ns string, o interface{}) error 
 	}
 
 	root := NewTreeNode("containers", client.FQN(ns, co.Container.Name))
-	parent := ctx.Value(KeyParent).(*TreeNode)
+	parent, ok := ctx.Value(KeyParent).(*TreeNode)
 	if !ok {
 		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 	pns, _ := client.Namespaced(parent.ID)
 	c.envRefs(f, root, pns, co.Container)
-	if !root.Empty() {
+	if !root.IsLeaf() {
 		parent.Add(root)
 	}
+
 	return nil
 }
 
@@ -51,11 +52,11 @@ func (c *Container) envRefs(f dao.Factory, parent *TreeNode, ns string, co *v1.C
 	for _, e := range co.EnvFrom {
 		if e.ConfigMapRef != nil {
 			gvr, id := "v1/configmaps", client.FQN(ns, e.ConfigMapRef.Name)
-			c.addRef(f, parent, gvr, id, e.ConfigMapRef.Optional)
+			addRef(f, parent, gvr, id, e.ConfigMapRef.Optional)
 		}
 		if e.SecretRef != nil {
 			gvr, id := "v1/secrets", client.FQN(ns, e.SecretRef.Name)
-			c.addRef(f, parent, gvr, id, e.SecretRef.Optional)
+			addRef(f, parent, gvr, id, e.SecretRef.Optional)
 		}
 	}
 }
@@ -65,7 +66,7 @@ func (c *Container) secretRefs(f dao.Factory, parent *TreeNode, ns string, ref *
 		return
 	}
 	gvr, id := "v1/secrets", client.FQN(ns, ref.LocalObjectReference.Name)
-	c.addRef(f, parent, id, gvr, ref.Optional)
+	addRef(f, parent, id, gvr, ref.Optional)
 }
 
 func (c *Container) configMapRefs(f dao.Factory, parent *TreeNode, ns string, ref *v1.ConfigMapKeySelector) {
@@ -73,10 +74,13 @@ func (c *Container) configMapRefs(f dao.Factory, parent *TreeNode, ns string, re
 		return
 	}
 	gvr, id := "v1/configmaps", client.FQN(ns, ref.LocalObjectReference.Name)
-	c.addRef(f, parent, gvr, id, ref.Optional)
+	addRef(f, parent, gvr, id, ref.Optional)
 }
 
-func (c *Container) addRef(f dao.Factory, parent *TreeNode, gvr, id string, optional *bool) {
+// ----------------------------------------------------------------------------
+// Helpers...
+
+func addRef(f dao.Factory, parent *TreeNode, gvr, id string, optional *bool) {
 	if parent.Find(gvr, id) == nil {
 		n := NewTreeNode(gvr, id)
 		validate(f, n, optional)
@@ -84,13 +88,7 @@ func (c *Container) addRef(f dao.Factory, parent *TreeNode, gvr, id string, opti
 	}
 }
 
-// Helpers...
-
-func validate(f dao.Factory, n *TreeNode, optional *bool) {
-	if optional == nil || *optional {
-		n.Extras[StatusKey] = OkStatus
-		return
-	}
+func validate(f dao.Factory, n *TreeNode, _ *bool) {
 	res, err := f.Get(n.GVR, n.ID, false, labels.Everything())
 	if err != nil || res == nil {
 		log.Debug().Msgf("Fail to located ref %q::%q -- %#v-%#v", n.GVR, n.ID, err, res)

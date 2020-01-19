@@ -20,6 +20,13 @@ for changes and offers subsequent commands to interact with observed Kubernetes 
 
 ---
 
+## Slack Channel
+
+Wanna discuss K9s features with your fellow `K9sers` or simply show your support for this tool?
+Please Dial [K9s Slack](https://k9sers.slack.com/)
+
+---
+
 ## Installation
 
 K9s is available on Linux, OSX and Windows platforms.

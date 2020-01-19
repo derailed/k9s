@@ -52,18 +52,19 @@ func inScope(scopes, aliases []string) bool {
 func hotKeyActions(r Runner, aa ui.KeyActions) {
 	hh := config.NewHotKeys()
 	if err := hh.Load(); err != nil {
+		log.Error().Err(err).Msgf("Loading HOTKEYS")
 		return
 	}
 
 	for k, hk := range hh.HotKey {
 		key, err := asKey(hk.ShortCut)
 		if err != nil {
-			log.Error().Err(err).Msg("Unable to map hotkey shortcut to a key")
+			log.Error().Err(err).Msg("HOT-KEY Unable to map hotkey shortcut to a key")
 			continue
 		}
 		_, ok := aa[key]
 		if ok {
-			log.Error().Err(fmt.Errorf("Doh! you are trying to overide an existing command `%s", k)).Msg("Invalid shortcut")
+			log.Error().Err(fmt.Errorf("HOT-KEY Doh! you are trying to overide an existing command `%s", k)).Msg("Invalid shortcut")
 			continue
 		}
 		aa[key] = ui.NewSharedKeyAction(

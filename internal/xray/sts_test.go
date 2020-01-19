@@ -7,6 +7,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/xray"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestStatefulSetRender(t *testing.T) {
@@ -27,14 +28,17 @@ func TestStatefulSetRender(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
+			f := makeFactory()
+			f.rows = []runtime.Object{load(t, "po")}
+
 			o := load(t, u.file)
 			root := xray.NewTreeNode("statefulsets", "statefulsets")
 			ctx := context.WithValue(context.Background(), xray.KeyParent, root)
-			ctx = context.WithValue(ctx, internal.KeyFactory, makeFactory())
+			ctx = context.WithValue(ctx, internal.KeyFactory, f)
 
 			assert.Nil(t, re.Render(ctx, "", o))
-			assert.Equal(t, u.level1, root.Size())
-			assert.Equal(t, u.level2, root.Children[0].Size())
+			assert.Equal(t, u.level1, root.CountChildren())
+			assert.Equal(t, u.level2, root.Children[0].CountChildren())
 		})
 	}
 }

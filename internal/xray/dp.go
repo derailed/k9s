@@ -34,15 +34,7 @@ func (d *Deployment) Render(ctx context.Context, ns string, o interface{}) error
 		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 
-	nsID, gvr := client.FQN(client.ClusterScope, dp.Namespace), "v1/namespaces"
-	nsn := parent.Find(gvr, nsID)
-	if nsn == nil {
-		nsn = NewTreeNode(gvr, nsID)
-		parent.Add(nsn)
-	}
 	root := NewTreeNode("apps/v1/deployments", client.FQN(dp.Namespace, dp.Name))
-	nsn.Add(root)
-
 	oo, err := locatePods(ctx, dp.Namespace, dp.Spec.Selector)
 	if err != nil {
 		return err
@@ -50,11 +42,25 @@ func (d *Deployment) Render(ctx context.Context, ns string, o interface{}) error
 	ctx = context.WithValue(ctx, KeyParent, root)
 	var re Pod
 	for _, o := range oo {
-		p := o.(*unstructured.Unstructured)
+		p, ok := o.(*unstructured.Unstructured)
+		if !ok {
+			return fmt.Errorf("expecting *Unstructured but got %T", o)
+		}
 		if err := re.Render(ctx, ns, &render.PodWithMetrics{Raw: p}); err != nil {
 			return err
 		}
 	}
+
+	if root.IsLeaf() {
+		return nil
+	}
+	gvr, nsID := "v1/namespaces", client.FQN(client.ClusterScope, dp.Namespace)
+	nsn := parent.Find(gvr, nsID)
+	if nsn == nil {
+		nsn = NewTreeNode(gvr, nsID)
+		parent.Add(nsn)
+	}
+	nsn.Add(root)
 
 	return d.validate(root, dp)
 }

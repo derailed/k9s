@@ -35,29 +35,34 @@ func (s *Service) Render(ctx context.Context, ns string, o interface{}) error {
 		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 
-	nsID, gvr := client.FQN(client.ClusterScope, svc.Namespace), "v1/namespaces"
-	nsn := parent.Find(gvr, nsID)
-	if nsn == nil {
-		nsn = NewTreeNode(gvr, nsID)
-		parent.Add(nsn)
-	}
 	root := NewTreeNode("apps/v1/services", client.FQN(svc.Namespace, svc.Name))
-	nsn.Add(root)
-
 	oo, err := s.locatePods(ctx, svc.Namespace, svc.Spec.Selector)
 	if err != nil {
 		return err
 	}
-
 	ctx = context.WithValue(ctx, KeyParent, root)
 	var re Pod
 	for _, o := range oo {
-		p := o.(*unstructured.Unstructured)
+		p, ok := o.(*unstructured.Unstructured)
+		if !ok {
+			return fmt.Errorf("expecting *Unstructured but got %T", o)
+		}
 		if err := re.Render(ctx, ns, &render.PodWithMetrics{Raw: p}); err != nil {
 			return err
 		}
 	}
 	root.Extras[StatusKey] = OkStatus
+
+	if root.IsLeaf() {
+		return nil
+	}
+	gvr, nsID := "v1/namespaces", client.FQN(client.ClusterScope, svc.Namespace)
+	nsn := parent.Find(gvr, nsID)
+	if nsn == nil {
+		nsn = NewTreeNode(gvr, nsID)
+		parent.Add(nsn)
+	}
+	nsn.Add(root)
 
 	return nil
 }

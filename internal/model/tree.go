@@ -116,12 +116,42 @@ func (t *Tree) InNamespace(ns string) bool {
 
 // Empty return true if no model data.
 func (t *Tree) Empty() bool {
-	return t.root.Empty()
+	return t.root.IsLeaf()
 }
 
 // Peek returns model data.
 func (t *Tree) Peek() *xray.TreeNode {
 	return t.root
+}
+
+// Describe describes a given resource.
+func (t *Tree) Describe(ctx context.Context, gvr, path string) (string, error) {
+	meta, err := t.getMeta(ctx, gvr)
+	if err != nil {
+		return "", err
+	}
+
+	desc, ok := meta.DAO.(dao.Describer)
+	if !ok {
+		return "", fmt.Errorf("no describer for %q", meta.DAO.GVR())
+	}
+
+	return desc.Describe(path)
+}
+
+// ToYAML returns a resource yaml.
+func (t *Tree) ToYAML(ctx context.Context, gvr, path string) (string, error) {
+	meta, err := t.getMeta(ctx, gvr)
+	if err != nil {
+		return "", err
+	}
+
+	desc, ok := meta.DAO.(dao.Describer)
+	if !ok {
+		return "", fmt.Errorf("no describer for %q", meta.DAO.GVR())
+	}
+
+	return desc.ToYAML(path)
 }
 
 func (t *Tree) updater(ctx context.Context) {
@@ -181,7 +211,7 @@ func (t *Tree) reconcile(ctx context.Context) error {
 	log.Debug().Msgf("  TREE returned %d rows", len(oo))
 
 	ns := client.CleanseNamespace(t.namespace)
-	root := xray.NewTreeNode(t.gvr, client.NewGVR(t.gvr).ToR())
+	root := xray.NewTreeNode("root", client.NewGVR(t.gvr).ToR())
 	ctx = context.WithValue(ctx, xray.KeyParent, root)
 	if _, ok := meta.TreeRenderer.(*xray.Generic); ok {
 		table, ok := oo[0].(*metav1beta1.Table)
@@ -212,17 +242,6 @@ func (t *Tree) reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (t *Tree) getMeta(ctx context.Context) (ResourceMeta, error) {
-	meta := t.resourceMeta()
-	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
-	if !ok {
-		return ResourceMeta{}, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
-	}
-	meta.DAO.Init(factory, client.NewGVR(t.gvr))
-
-	return meta, nil
-}
-
 func (t *Tree) resourceMeta() ResourceMeta {
 	meta, ok := Registry[t.gvr]
 	if !ok {
@@ -249,6 +268,17 @@ func (t *Tree) fireTreeLoadFailed(err error) {
 	for _, l := range t.listeners {
 		l.TreeLoadFailed(err)
 	}
+}
+
+func (t *Tree) getMeta(ctx context.Context, gvr string) (ResourceMeta, error) {
+	meta := t.resourceMeta()
+	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
+	if !ok {
+		return ResourceMeta{}, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
+	}
+	meta.DAO.Init(factory, client.NewGVR(gvr))
+
+	return meta, nil
 }
 
 // ----------------------------------------------------------------------------

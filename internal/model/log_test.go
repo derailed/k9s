@@ -31,7 +31,7 @@ func TestLogFullBuffer(t *testing.T) {
 	}
 	m.Notify(false)
 
-	assert.Equal(t, 2, v.dataCalled)
+	assert.Equal(t, 1, v.dataCalled)
 	assert.Equal(t, 1, v.clearCalled)
 	assert.Equal(t, 0, v.errCalled)
 	assert.Equal(t, data[4:], v.data)
@@ -74,13 +74,13 @@ func TestLogFilter(t *testing.T) {
 			}
 
 			m.Notify(true)
-			assert.Equal(t, 3, v.dataCalled)
+			assert.Equal(t, 2, v.dataCalled)
 			assert.Equal(t, 2, v.clearCalled)
 			assert.Equal(t, 0, v.errCalled)
 			assert.Equal(t, u.e, len(v.data))
 
 			m.ClearFilter()
-			assert.Equal(t, 4, v.dataCalled)
+			assert.Equal(t, 3, v.dataCalled)
 			assert.Equal(t, 2, v.clearCalled)
 			assert.Equal(t, 0, v.errCalled)
 			assert.Equal(t, size, len(v.data))
@@ -103,7 +103,7 @@ func TestLogStartStop(t *testing.T) {
 	m.Notify(true)
 	m.Stop()
 
-	assert.Equal(t, 2, v.dataCalled)
+	assert.Equal(t, 1, v.dataCalled)
 	assert.Equal(t, 1, v.clearCalled)
 	assert.Equal(t, 0, v.errCalled)
 	assert.Equal(t, 2, len(v.data))
@@ -125,7 +125,7 @@ func TestLogClear(t *testing.T) {
 	m.Notify(true)
 	m.Clear()
 
-	assert.Equal(t, 2, v.dataCalled)
+	assert.Equal(t, 1, v.dataCalled)
 	assert.Equal(t, 2, v.clearCalled)
 	assert.Equal(t, 0, v.errCalled)
 	assert.Equal(t, 0, len(v.data))
@@ -141,7 +141,7 @@ func TestLogBasic(t *testing.T) {
 	data := []string{"line1", "line2"}
 	m.Set(data)
 
-	assert.Equal(t, 2, v.dataCalled)
+	assert.Equal(t, 1, v.dataCalled)
 	assert.Equal(t, 0, v.clearCalled)
 	assert.Equal(t, 0, v.errCalled)
 	assert.Equal(t, data, v.data)
@@ -153,6 +153,7 @@ func TestLogAppend(t *testing.T) {
 
 	v := newTestView()
 	m.AddListener(v)
+	m.Set([]string{"blah blah"})
 	assert.Equal(t, []string{"blah blah"}, v.data)
 
 	data := []string{"line1", "line2"}
@@ -182,7 +183,7 @@ func TestLogTimedout(t *testing.T) {
 		m.Append(d)
 	}
 	m.Notify(true)
-	assert.Equal(t, 3, v.dataCalled)
+	assert.Equal(t, 2, v.dataCalled)
 	assert.Equal(t, 2, v.clearCalled)
 	assert.Equal(t, 0, v.errCalled)
 	assert.Equal(t, []string{"line1"}, v.data)

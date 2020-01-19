@@ -2,8 +2,6 @@ package xray
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
@@ -33,35 +31,11 @@ func (g *Generic) Render(ctx context.Context, ns string, o interface{}) error {
 	}
 
 	root := NewTreeNode("generic", client.FQN(ns, n))
-	parent := ctx.Value(KeyParent).(*TreeNode)
+	parent, ok := ctx.Value(KeyParent).(*TreeNode)
+	if !ok {
+		return fmt.Errorf("expecting TreeNode but got %T", ctx.Value(KeyParent))
+	}
 	parent.Add(root)
 
 	return nil
-}
-
-// ----------------------------------------------------------------------------
-// Helpers...
-
-func resourceNS(raw []byte) (bool, string, error) {
-	var obj map[string]interface{}
-	err := json.Unmarshal(raw, &obj)
-	if err != nil {
-		return false, "", err
-	}
-
-	meta, ok := obj["metadata"].(map[string]interface{})
-	if !ok {
-		return false, "", errors.New("no metadata found on generic resource")
-	}
-
-	ns, ok := meta["namespace"]
-	if !ok {
-		return true, "", nil
-	}
-
-	nns, ok := ns.(string)
-	if !ok {
-		return false, "", fmt.Errorf("expecting namespace string type but got %T", ns)
-	}
-	return false, nns, nil
 }

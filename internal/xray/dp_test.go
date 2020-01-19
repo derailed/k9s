@@ -7,6 +7,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/xray"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func TestDeployRender(t *testing.T) {
@@ -25,16 +26,19 @@ func TestDeployRender(t *testing.T) {
 
 	var re xray.Deployment
 	for k := range uu {
+		f := makeFactory()
+		f.rows = []runtime.Object{load(t, "po")}
+
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			o := load(t, u.file)
 			root := xray.NewTreeNode("deployments", "deployments")
 			ctx := context.WithValue(context.Background(), xray.KeyParent, root)
-			ctx = context.WithValue(ctx, internal.KeyFactory, makeFactory())
+			ctx = context.WithValue(ctx, internal.KeyFactory, f)
 
 			assert.Nil(t, re.Render(ctx, "", o))
-			assert.Equal(t, u.level1, root.Size())
-			assert.Equal(t, u.level2, root.Children[0].Size())
+			assert.Equal(t, u.level1, root.CountChildren())
+			assert.Equal(t, u.level2, root.Children[0].CountChildren())
 		})
 	}
 }

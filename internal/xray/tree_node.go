@@ -11,14 +11,11 @@ import (
 	"vbom.ml/util/sortorder"
 )
 
-// TreeRef namespaces tree context values.
-type TreeRef string
-
 const (
 	// KeyParent indicates a parent node context key.
 	KeyParent TreeRef = "parent"
 
-	// PathSeparator represents a node path separator.
+	// PathSeparator represents a node path separatot.
 	PathSeparator = "::"
 
 	// StatusKey status map key.
@@ -41,6 +38,22 @@ const (
 	MissingRefStatus = "noref"
 )
 
+// ----------------------------------------------------------------------------
+
+// TreeRef namespaces tree context values.
+type TreeRef string
+
+// ----------------------------------------------------------------------------
+
+// NodeSpec represents a node resource specification.
+type NodeSpec struct {
+	GVR, Path, Status string
+	Parent            *NodeSpec
+}
+
+// ----------------------------------------------------------------------------
+
+// Childrens represents a collection of children nodes.
 type Childrens []*TreeNode
 
 // Len returns the list size.
@@ -60,6 +73,9 @@ func (c Childrens) Less(i, j int) bool {
 	return sortorder.NaturalLess(id1, id2)
 }
 
+// ----------------------------------------------------------------------------
+
+// TreeNode represents a resource tree node.
 type TreeNode struct {
 	GVR, ID  string
 	Children Childrens
@@ -67,31 +83,39 @@ type TreeNode struct {
 	Extras   map[string]string
 }
 
+// NewTreeNode returns a new instance.
 func NewTreeNode(gvr, id string) *TreeNode {
 	return &TreeNode{
 		GVR:    gvr,
 		ID:     id,
-		Extras: make(map[string]string),
+		Extras: map[string]string{StatusKey: OkStatus},
 	}
 }
 
-func (t *TreeNode) Size() int {
+// CountChildren returns the children count.
+func (t *TreeNode) CountChildren() int {
 	return len(t.Children)
 }
 
-func count(t *TreeNode, counter int) int {
+// Count all the nodes from this node
+func (t *TreeNode) Count(gvr string) int {
+	counter := 0
+	if t.GVR == gvr || gvr == "" {
+		counter++
+	}
 	for _, c := range t.Children {
-		counter += count(c, counter)
+		counter += c.Count(gvr)
 	}
 	return counter
 }
 
+// Diff computes a tree diff.
 func (t *TreeNode) Diff(d *TreeNode) bool {
 	if t == nil {
 		return d != nil
 	}
 
-	if t.Size() != d.Size() {
+	if t.CountChildren() != d.CountChildren() {
 		log.Debug().Msgf("SIZE-DIFF")
 		return true
 	}
@@ -109,36 +133,33 @@ func (t *TreeNode) Diff(d *TreeNode) bool {
 	return false
 }
 
+// Sort sorts the tree nodes.
 func (t *TreeNode) Sort() {
-	sortChildren(t)
-}
-
-func sortChildren(t *TreeNode) {
 	sort.Sort(t.Children)
 	for _, c := range t.Children {
-		sortChildren(c)
+		c.Sort()
 	}
 }
 
-type NodeSpec struct {
-	GVR, Path string
-}
-
+// Spec returns this node specification.
 func (t *TreeNode) Spec() NodeSpec {
 	parent := t
-	var gvr, path []string
+	var gvr, path, status []string
 	for parent != nil {
 		gvr = append(gvr, parent.GVR)
 		path = append(path, parent.ID)
+		status = append(status, parent.Extras[StatusKey])
 		parent = parent.Parent
 	}
 
 	return NodeSpec{
-		GVR:  strings.Join(gvr, PathSeparator),
-		Path: strings.Join(path, PathSeparator),
+		GVR:    strings.Join(gvr, PathSeparator),
+		Path:   strings.Join(path, PathSeparator),
+		Status: strings.Join(status, PathSeparator),
 	}
 }
 
+// Flatten returns a collection of node specs.
 func (t *TreeNode) Flatten() []NodeSpec {
 	var refs []NodeSpec
 	for _, c := range t.Children {
@@ -151,23 +172,27 @@ func (t *TreeNode) Flatten() []NodeSpec {
 	return refs
 }
 
+// Blank returns true if this node is unset.
 func (t *TreeNode) Blank() bool {
 	return t.GVR == "" && t.ID == ""
 }
 
+// Hydrate hydrates a full tree bases on a collection of specifications.
 func Hydrate(refs []NodeSpec) *TreeNode {
 	root := NewTreeNode("", "")
 	nav := root
 	for _, ref := range refs {
-		ids := strings.Split(ref.Path, PathSeparator)
 		gvrs := strings.Split(ref.GVR, PathSeparator)
-		for i := len(ids) - 1; i >= 0; i-- {
+		paths := strings.Split(ref.Path, PathSeparator)
+		statuses := strings.Split(ref.Status, PathSeparator)
+		for i := len(paths) - 1; i >= 0; i-- {
 			if nav.Blank() {
-				nav.GVR, nav.ID = gvrs[i], ids[i]
+				nav.GVR, nav.ID, nav.Extras[StatusKey] = gvrs[i], paths[i], statuses[i]
 				continue
 			}
-			c := NewTreeNode(gvrs[i], ids[i])
-			if n := nav.Find(gvrs[i], ids[i]); n == nil {
+			c := NewTreeNode(gvrs[i], paths[i])
+			c.Extras[StatusKey] = statuses[i]
+			if n := nav.Find(gvrs[i], paths[i]); n == nil {
 				nav.Add(c)
 				nav = c
 			} else {
@@ -180,6 +205,7 @@ func Hydrate(refs []NodeSpec) *TreeNode {
 	return root
 }
 
+// Level computes the current node level.
 func (t *TreeNode) Level() int {
 	var level int
 	p := t
@@ -190,6 +216,7 @@ func (t *TreeNode) Level() int {
 	return level - 1
 }
 
+// MaxDepth computes the max tree depth.
 func (t *TreeNode) MaxDepth(depth int) int {
 	max := depth
 	for _, c := range t.Children {
@@ -201,10 +228,7 @@ func (t *TreeNode) MaxDepth(depth int) int {
 	return max
 }
 
-func makeSpacer(d int) string {
-	return strings.Repeat("   ", d)
-}
-
+// Root returns the current tree root node.
 func (t *TreeNode) Root() *TreeNode {
 	for p := t; p != nil; p = p.Parent {
 		if p.Parent == nil {
@@ -214,23 +238,27 @@ func (t *TreeNode) Root() *TreeNode {
 	return nil
 }
 
-func (r *TreeNode) IsLeaf() bool {
-	return r.Empty()
+// IsLeaf returns true if node has no children.
+func (t *TreeNode) IsLeaf() bool {
+	return t.CountChildren() == 0
 }
 
-func (r *TreeNode) IsRoot() bool {
-	return r.Parent == nil
+// IsRoot returns true if node is top node.
+func (t *TreeNode) IsRoot() bool {
+	return t.Parent == nil
 }
 
-func (r *TreeNode) ShallowClone() *TreeNode {
-	return &TreeNode{GVR: r.GVR, ID: r.ID, Extras: r.Extras}
+// ShallowClone performs a shallow node clone.
+func (t *TreeNode) ShallowClone() *TreeNode {
+	return &TreeNode{GVR: t.GVR, ID: t.ID, Extras: t.Extras}
 }
 
-func (r *TreeNode) Filter(q string, filter func(q, path string) bool) *TreeNode {
-	specs := r.Flatten()
+// Filter filters the node based on query.
+func (t *TreeNode) Filter(q string, filter func(q, path string) bool) *TreeNode {
+	specs := t.Flatten()
 	matches := make([]NodeSpec, 0, len(specs))
 	for _, s := range specs {
-		if filter(q, s.Path) {
+		if filter(q, s.Path+s.Status) {
 			matches = append(matches, s)
 		}
 	}
@@ -241,6 +269,18 @@ func (r *TreeNode) Filter(q string, filter func(q, path string) bool) *TreeNode 
 	return Hydrate(matches)
 }
 
+// Add adds a new child node.
+func (t *TreeNode) Add(c *TreeNode) {
+	c.Parent = t
+	t.Children = append(t.Children, c)
+}
+
+// Clear delete all descendant nodes.
+func (t *TreeNode) Clear() {
+	t.Children = []*TreeNode{}
+}
+
+// Find locates a node given a gvr/id spec.
 func (t *TreeNode) Find(gvr, id string) *TreeNode {
 	if t.GVR == gvr && t.ID == id {
 		return t
@@ -253,26 +293,23 @@ func (t *TreeNode) Find(gvr, id string) *TreeNode {
 	return nil
 }
 
+// Title computes the node title.
 func (t *TreeNode) Title() string {
 	const withNS = "[white::b]%s[-::d]"
 
 	title := fmt.Sprintf(withNS, t.colorize())
 
-	if t.Size() > 0 {
-		title += fmt.Sprintf("([white::d]%d[-::d])[-::-]", t.Size())
+	if t.CountChildren() > 0 {
+		title += fmt.Sprintf("([white::d]%d[-::d])[-::-]", t.CountChildren())
 	}
 
 	return title
 }
 
-func (t *TreeNode) Empty() bool {
-	return len(t.Children) == 0
-}
+// ----------------------------------------------------------------------------
+// Helpers...
 
-func (t *TreeNode) Clear() {
-	t.Children = []*TreeNode{}
-}
-
+// Dump for debug...
 func (t *TreeNode) Dump() {
 	dump(t, 0)
 }
@@ -288,6 +325,7 @@ func dump(n *TreeNode, level int) {
 	}
 }
 
+// Dump to stdout for debug.
 func (t *TreeNode) DumpStdOut() {
 	dumpStdOut(t, 0)
 }
@@ -300,26 +338,6 @@ func dumpStdOut(n *TreeNode, level int) {
 	fmt.Printf("%s%s::%s\n", strings.Repeat("  ", level), n.GVR, n.ID)
 	for _, c := range n.Children {
 		dumpStdOut(c, level+1)
-	}
-}
-
-func (t *TreeNode) Add(c *TreeNode) {
-	c.Parent = t
-	t.Children = append(t.Children, c)
-}
-
-// Helpers...
-
-func statusEmoji(s string) string {
-	switch s {
-	case "ok":
-		return "[green::b]✔︎"
-	case "done":
-		return "[gray::b]🏁"
-	case "bad":
-		return "[red::b]𐄂"
-	default:
-		return ""
 	}
 }
 
@@ -361,7 +379,7 @@ func (t TreeNode) colorize() string {
 		case ToastStatus:
 			color, flag = "orangered", "[red::b]TOAST"
 		case MissingRefStatus:
-			color, flag = "orange", "[orange::b]MISSING_REF"
+			color, flag = "orange", "[orange::b]TOAST_REF"
 		}
 	}
 

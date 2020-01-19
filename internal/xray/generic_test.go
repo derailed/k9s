@@ -30,7 +30,7 @@ func TestGenericRender(t *testing.T) {
 			ctx = context.WithValue(ctx, internal.KeyFactory, makeFactory())
 
 			assert.Nil(t, re.Render(ctx, "", makeTable()))
-			assert.Equal(t, u.level1, root.Size())
+			assert.Equal(t, u.level1, root.CountChildren())
 		})
 	}
 }

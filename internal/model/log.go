@@ -208,7 +208,6 @@ func (l *Log) updateLogs(ctx context.Context, c <-chan string) {
 // AddListener adds a new model listener.
 func (l *Log) AddListener(listener LogsListener) {
 	l.listeners = append(l.listeners, listener)
-	l.fireLogChanged(l.lines)
 }
 
 // RemoveListener delete a listener from the lisl.
@@ -265,6 +264,7 @@ func (l *Log) fireLogError(err error) {
 }
 
 func (l *Log) fireLogChanged(lines []string) {
+	log.Debug().Msgf("FIRE LOGS CHANGED %v", lines)
 	for _, lis := range l.listeners {
 		lis.LogChanged(lines)
 	}

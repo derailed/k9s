@@ -54,7 +54,7 @@ func TestCORefs(t *testing.T) {
 			co:     render.ContainerRes{Container: makeCMContainer("c1", true)},
 			level1: 1,
 			level2: 1,
-			e:      xray.OkStatus,
+			e:      xray.MissingRefStatus,
 		},
 		"cm_doubleRef": {
 			co:     render.ContainerRes{Container: makeDoubleCMKeysContainer("c1", false)},
@@ -72,7 +72,7 @@ func TestCORefs(t *testing.T) {
 			co:     render.ContainerRes{Container: makeSecContainer("c1", true)},
 			level1: 1,
 			level2: 1,
-			e:      xray.OkStatus,
+			e:      xray.MissingRefStatus,
 		},
 		"envFrom_optional": {
 			co:     render.ContainerRes{Container: makeCMEnvFromContainer("c1", false)},
@@ -91,8 +91,8 @@ func TestCORefs(t *testing.T) {
 			ctx = context.WithValue(ctx, internal.KeyFactory, makeFactory())
 
 			assert.Nil(t, re.Render(ctx, "", u.co))
-			assert.Equal(t, u.level1, root.Size())
-			assert.Equal(t, u.level2, root.Children[0].Size())
+			assert.Equal(t, u.level1, root.CountChildren())
+			assert.Equal(t, u.level2, root.Children[0].CountChildren())
 			assert.Equal(t, u.e, root.Children[0].Children[0].Extras[xray.StatusKey])
 		})
 	}

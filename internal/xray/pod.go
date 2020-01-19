@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -30,6 +32,11 @@ func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 		return err
 	}
 
+	f, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
+	if !ok {
+		return fmt.Errorf("no factory found in context")
+	}
+
 	phase := p.phase(&po)
 	ss := po.Status.ContainerStatuses
 	cr, _, _ := p.statuses(ss)
@@ -41,16 +48,16 @@ func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 		status = CompletedStatus
 	}
 
-	root := NewTreeNode("v1/pods", client.FQN(po.Namespace, po.Name))
-	root.Extras[StatusKey] = status
-	root.Extras[StateKey] = strconv.Itoa(cr) + "/" + strconv.Itoa(len(ss))
+	node := NewTreeNode("v1/pods", client.FQN(po.Namespace, po.Name))
+	node.Extras[StatusKey] = status
+	node.Extras[StateKey] = strconv.Itoa(cr) + "/" + strconv.Itoa(len(ss))
 	parent, ok := ctx.Value(KeyParent).(*TreeNode)
 	if !ok {
 		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
-	parent.Add(root)
+	parent.Add(node)
 
-	ctx = context.WithValue(ctx, KeyParent, root)
+	ctx = context.WithValue(ctx, KeyParent, node)
 	var cre Container
 	for i := 0; i < len(po.Spec.InitContainers); i++ {
 		if err := cre.Render(ctx, ns, render.ContainerRes{Container: &po.Spec.InitContainers[i]}); err != nil {
@@ -62,22 +69,28 @@ func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 			return err
 		}
 	}
-	p.podVolumeRefs(root, po.Namespace, po.Spec.Volumes)
+	p.podVolumeRefs(f, node, po.Namespace, po.Spec.Volumes)
 
 	return nil
 }
 
-func (*Pod) podVolumeRefs(parent *TreeNode, ns string, vv []v1.Volume) {
+func (*Pod) podVolumeRefs(f dao.Factory, parent *TreeNode, ns string, vv []v1.Volume) {
 	for _, v := range vv {
-		sv := v.VolumeSource.Secret
-		if sv != nil {
-			parent.Add(NewTreeNode("v1/secrets", client.FQN(ns, sv.SecretName)))
+		sec := v.VolumeSource.Secret
+		if sec != nil {
+			addRef(f, parent, "v1/secrets", client.FQN(ns, sec.SecretName), nil)
 			continue
 		}
 
-		cmv := v.VolumeSource.ConfigMap
-		if cmv != nil {
-			parent.Add(NewTreeNode("v1/configmaps", client.FQN(ns, cmv.LocalObjectReference.Name)))
+		cm := v.VolumeSource.ConfigMap
+		if cm != nil {
+			addRef(f, parent, "v1/configmaps", client.FQN(ns, cm.LocalObjectReference.Name), nil)
+			continue
+		}
+
+		pvc := v.VolumeSource.PersistentVolumeClaim
+		if pvc != nil {
+			addRef(f, parent, "v1/persistentvolumeclaims", client.FQN(ns, pvc.ClaimName), nil)
 		}
 	}
 }
