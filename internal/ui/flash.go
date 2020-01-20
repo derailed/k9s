@@ -128,7 +128,6 @@ func (f *Flash) SetMessage(level FlashLevel, msg ...string) {
 		f.SetText(render.Truncate(flashEmoji(level)+" "+m, width-3))
 	} else {
 		f.app.QueueUpdateDraw(func() {
-			log.Debug().Msgf("FLASH %q", m)
 			f.SetTextColor(flashColor(level))
 			f.SetText(render.Truncate(flashEmoji(level)+" "+m, width-3))
 		})
@@ -143,7 +142,6 @@ func (f *Flash) SetMessage(level FlashLevel, msg ...string) {
 func (f *Flash) refresh(ctx context.Context) {
 	<-ctx.Done()
 	f.app.QueueUpdateDraw(func() {
-		log.Debug().Msgf("FLASH-CLEAR %q", f.GetText(true))
 		f.Clear()
 	})
 }
