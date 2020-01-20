@@ -29,7 +29,7 @@ func TestStatefulSetRender(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			f := makeFactory()
-			f.rows = map[string][]runtime.Object{"v1/pods": []runtime.Object{load(t, "po")}}
+			f.rows = map[string][]runtime.Object{"v1/pods": {load(t, "po")}}
 
 			o := load(t, u.file)
 			root := xray.NewTreeNode("statefulsets", "statefulsets")

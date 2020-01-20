@@ -12,8 +12,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// ServiceAcccount represents an xray renderer.
 type ServiceAccount struct{}
 
+// Render renders an xray node.
 func (s *ServiceAccount) Render(ctx context.Context, ns string, o interface{}) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {

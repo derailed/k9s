@@ -11,8 +11,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// DaemonSet represents an xray renderer.
 type DaemonSet struct{}
 
+// Render renders an xray node.
 func (d *DaemonSet) Render(ctx context.Context, ns string, o interface{}) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {

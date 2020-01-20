@@ -194,6 +194,7 @@ func (x *Xray) refreshActions() {
 	x.actions.Add(aa)
 }
 
+// GetSelectedItem returns the current selection as string.
 func (x *Xray) GetSelectedItem() string {
 	ref := x.selectedSpec()
 	if ref == nil {
@@ -497,7 +498,7 @@ func (x *Xray) TreeNodeSelected() {
 	})
 }
 
-// XrayLoadFailed notifies the load failed.
+// TreeLoadFailed notifies the load failed.
 func (x *Xray) TreeLoadFailed(err error) {
 	x.app.Flash().Err(err)
 }
@@ -542,7 +543,7 @@ func (x *Xray) update(node *xray.TreeNode) {
 	})
 }
 
-// XrayDataChanged notifies the model data changed.
+// TreeChanged notifies the model data changed.
 func (x *Xray) TreeChanged(node *xray.TreeNode) {
 	x.count = node.Count(x.gvr.String())
 	x.update(x.filter(node))

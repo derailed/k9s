@@ -10,8 +10,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// Namespace represents an xray renderer.
 type Namespace struct{}
 
+// Render renders an xray node.
 func (n *Namespace) Render(ctx context.Context, ns string, o interface{}) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {

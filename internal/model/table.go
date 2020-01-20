@@ -46,8 +46,9 @@ func NewTable(gvr string) *Table {
 	}
 }
 
-func (t *Table) SetInstance(s string) {
-	t.instance = s
+// SetInstance sets a single entry table.
+func (t *Table) SetInstance(path string) {
+	t.instance = path
 }
 
 // AddListener adds a new model listener.

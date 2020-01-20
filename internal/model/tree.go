@@ -46,10 +46,12 @@ func NewTree(gvr string) *Tree {
 	}
 }
 
+// ClearFilter clears out active filter.
 func (t *Tree) ClearFilter() {
 	t.query = ""
 }
 
+// SetFiltersets the current filter.
 func (t *Tree) SetFilter(q string) {
 	t.query = q
 }

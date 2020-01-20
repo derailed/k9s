@@ -27,7 +27,7 @@ func TestDaemonSetRender(t *testing.T) {
 	var re xray.DaemonSet
 	for k := range uu {
 		f := makeFactory()
-		f.rows = map[string][]runtime.Object{"v1/pods": []runtime.Object{load(t, "po")}}
+		f.rows = map[string][]runtime.Object{"v1/pods": {load(t, "po")}}
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			o := load(t, u.file)

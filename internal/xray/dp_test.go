@@ -28,8 +28,8 @@ func TestDeployRender(t *testing.T) {
 	for k := range uu {
 		f := makeFactory()
 		f.rows = map[string][]runtime.Object{
-			"v1/pods":            []runtime.Object{load(t, "po")},
-			"v1/serviceaccounts": []runtime.Object{load(t, "sa")},
+			"v1/pods":            {load(t, "po")},
+			"v1/serviceaccounts": {load(t, "sa")},
 		}
 
 		u := uu[k]

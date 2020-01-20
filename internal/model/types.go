@@ -81,6 +81,7 @@ type Describer interface {
 	Describe(client client.Connection, gvr, path string) (string, error)
 }
 
+// TreeRenderer represents an xray node.
 type TreeRenderer interface {
 	Render(ctx context.Context, ns string, o interface{}) error
 }

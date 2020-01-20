@@ -11,8 +11,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// StatefulSet represents an xray renderer.
 type StatefulSet struct{}
 
+// Render renders an xray node.
 func (s *StatefulSet) Render(ctx context.Context, ns string, o interface{}) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {

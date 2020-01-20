@@ -31,7 +31,7 @@ const (
 	OkStatus = "ok"
 
 	// ToastStatus stands for a resource is not up to snuff
-	// aka not running or imcomplete.
+	// aka not running or incomplete.
 	ToastStatus = "toast"
 
 	// CompletedStatus stands for a completed resource.
@@ -325,7 +325,7 @@ func dump(n *TreeNode, level int) {
 	}
 }
 
-// Dump to stdout for debug.
+// DumpStdOut to stdout for debug.
 func (t *TreeNode) DumpStdOut() {
 	dumpStdOut(t, 0)
 }
@@ -341,7 +341,6 @@ func dumpStdOut(n *TreeNode, level int) {
 	}
 }
 
-// 😡👎💥🧨💣🎭 🟥🟩✅✔︎☑️✔️✓
 func toEmoji(gvr string) string {
 	switch gvr {
 	case "v1/pods":
@@ -369,6 +368,7 @@ func toEmoji(gvr string) string {
 	}
 }
 
+// AsString transforms a node as a string for viewing.
 func (t TreeNode) AsString() string {
 	const colorFmt = "%s [gray::-][%s[gray::-]] [%s::b]%s[::]"
 

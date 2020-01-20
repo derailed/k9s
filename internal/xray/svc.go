@@ -16,8 +16,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// Service represents an xray renderer.
 type Service struct{}
 
+// Render renders an xray node.
 func (s *Service) Render(ctx context.Context, ns string, o interface{}) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {

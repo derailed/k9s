@@ -16,8 +16,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// Deployment represents an xray renderer.
 type Deployment struct{}
 
+// Render renders an xray node.
 func (d *Deployment) Render(ctx context.Context, ns string, o interface{}) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {

@@ -15,8 +15,10 @@ import (
 	"k8s.io/kubernetes/pkg/util/node"
 )
 
+// Pod represents an xray renderer.
 type Pod struct{}
 
+// Render renders an xray node.
 func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 	pwm, ok := o.(*render.PodWithMetrics)
 	if !ok {
@@ -45,7 +47,7 @@ func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 		return err
 	}
 	p.podVolumeRefs(f, node, po.Namespace, po.Spec.Volumes)
-	if err := p.serviceAccountRef(f, ctx, node, po.Namespace, po.Spec); err != nil {
+	if err := p.serviceAccountRef(ctx, f, node, po.Namespace, po.Spec); err != nil {
 		return err
 	}
 
@@ -87,7 +89,7 @@ func (*Pod) containerRefs(ctx context.Context, parent *TreeNode, ns string, spec
 	return nil
 }
 
-func (*Pod) serviceAccountRef(f dao.Factory, ctx context.Context, parent *TreeNode, ns string, spec v1.PodSpec) error {
+func (*Pod) serviceAccountRef(ctx context.Context, f dao.Factory, parent *TreeNode, ns string, spec v1.PodSpec) error {
 	if spec.ServiceAccountName == "" {
 		return nil
 	}

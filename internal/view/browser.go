@@ -83,6 +83,7 @@ func (b *Browser) bindKeys() {
 	})
 }
 
+// SetInstance sets a single instance view.
 func (b *Browser) SetInstance(path string) {
 	b.GetModel().SetInstance(path)
 }

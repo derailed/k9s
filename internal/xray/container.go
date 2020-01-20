@@ -13,8 +13,10 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 )
 
+// Container represents an xray renderer.
 type Container struct{}
 
+// Render renders an xray node.
 func (c *Container) Render(ctx context.Context, ns string, o interface{}) error {
 	co, ok := o.(render.ContainerRes)
 	if !ok {

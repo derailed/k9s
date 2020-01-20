@@ -16,7 +16,7 @@ import (
 
 var _ Describer = (*Generic)(nil)
 
-var defaultKillGrace int64 = 0
+var defaultKillGrace int64
 
 // Generic represents a generic resource.
 type Generic struct {
