@@ -45,7 +45,7 @@ func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 		return err
 	}
 	p.podVolumeRefs(f, node, po.Namespace, po.Spec.Volumes)
-	if err := p.serviceAccountRef(f, ctx, node, po.Namespace, po.Spec.ServiceAccountName); err != nil {
+	if err := p.serviceAccountRef(f, ctx, node, po.Namespace, po.Spec); err != nil {
 		return err
 	}
 
@@ -65,7 +65,7 @@ func (p *Pod) validate(node *TreeNode, po v1.Pod) error {
 	}
 
 	node.Extras[StatusKey] = status
-	node.Extras[StateKey] = strconv.Itoa(cr) + "/" + strconv.Itoa(len(ss))
+	node.Extras[InfoKey] = strconv.Itoa(cr) + "/" + strconv.Itoa(len(ss))
 
 	return nil
 }
@@ -87,12 +87,12 @@ func (*Pod) containerRefs(ctx context.Context, parent *TreeNode, ns string, spec
 	return nil
 }
 
-func (*Pod) serviceAccountRef(f dao.Factory, ctx context.Context, parent *TreeNode, ns, sa string) error {
-	if sa == "" {
+func (*Pod) serviceAccountRef(f dao.Factory, ctx context.Context, parent *TreeNode, ns string, spec v1.PodSpec) error {
+	if spec.ServiceAccountName == "" {
 		return nil
 	}
 
-	id := client.FQN(ns, sa)
+	id := client.FQN(ns, spec.ServiceAccountName)
 	o, err := f.Get("v1/serviceaccounts", id, false, labels.Everything())
 	if err != nil {
 		return err
@@ -104,7 +104,7 @@ func (*Pod) serviceAccountRef(f dao.Factory, ctx context.Context, parent *TreeNo
 
 	var saRE ServiceAccount
 	ctx = context.WithValue(ctx, KeyParent, parent)
-
+	ctx = context.WithValue(ctx, KeySAAutomount, spec.AutomountServiceAccountToken)
 	return saRE.Render(ctx, ns, o)
 }
 

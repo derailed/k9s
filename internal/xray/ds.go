@@ -67,6 +67,7 @@ func (*DaemonSet) validate(root *TreeNode, ds appsv1.DaemonSet) error {
 	if d != a {
 		root.Extras[StatusKey] = ToastStatus
 	}
+	root.Extras[InfoKey] = fmt.Sprintf("%d/%d", a, d)
 
 	return nil
 }

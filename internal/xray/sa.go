@@ -30,9 +30,8 @@ func (s *ServiceAccount) Render(ctx context.Context, ns string, o interface{}) e
 	if !ok {
 		return fmt.Errorf("no factory found in context")
 	}
-
 	node := NewTreeNode("v1/serviceaccounts", client.FQN(sa.Namespace, sa.Name))
-	node.Extras[StatusKey] = OkStatus
+
 	parent, ok := ctx.Value(KeyParent).(*TreeNode)
 	if !ok {
 		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
@@ -44,6 +43,19 @@ func (s *ServiceAccount) Render(ctx context.Context, ns string, o interface{}) e
 	}
 	for _, sec := range sa.ImagePullSecrets {
 		addRef(f, node, "v1/secrets", client.FQN(sa.Namespace, sec.Name), nil)
+	}
+
+	auto, _ := ctx.Value(KeySAAutomount).(*bool)
+	return s.validate(node, sa, auto)
+}
+
+func (*ServiceAccount) validate(node *TreeNode, sa v1.ServiceAccount, auto *bool) error {
+	node.Extras[StatusKey] = OkStatus
+	if sa.AutomountServiceAccountToken != nil {
+		node.Extras[InfoKey] = fmt.Sprintf("automount=%t", *sa.AutomountServiceAccountToken)
+	}
+	if auto != nil {
+		node.Extras[InfoKey] = fmt.Sprintf("automount=%t", *auto)
 	}
 
 	return nil

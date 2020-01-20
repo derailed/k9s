@@ -40,63 +40,64 @@ func NewHelp() *Help {
 }
 
 // Init initializes the component.
-func (v *Help) Init(ctx context.Context) error {
-	if err := v.Table.Init(ctx); err != nil {
+func (h *Help) Init(ctx context.Context) error {
+	if err := h.Table.Init(ctx); err != nil {
 		return nil
 	}
-	v.SetSelectable(false, false)
-	v.resetTitle()
-	v.SetBorder(true)
-	v.SetBorderPadding(0, 0, 1, 1)
-	v.bindKeys()
-	v.build()
-	v.SetBackgroundColor(v.App().Styles.BgColor())
+	h.SetSelectable(false, false)
+	h.resetTitle()
+	h.SetBorder(true)
+	h.SetBorderPadding(0, 0, 1, 1)
+	h.bindKeys()
+	h.build()
+	h.SetBackgroundColor(h.App().Styles.BgColor())
 
 	return nil
 }
 
-func (v *Help) bindKeys() {
-	v.Actions().Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlS)
-	v.Actions().Set(ui.KeyActions{
-		tcell.KeyEsc:   ui.NewKeyAction("Back", v.app.PrevCmd, false),
-		ui.KeyHelp:     ui.NewKeyAction("Back", v.app.PrevCmd, false),
-		tcell.KeyEnter: ui.NewKeyAction("Back", v.app.PrevCmd, false),
+func (h *Help) bindKeys() {
+	h.Actions().Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlS)
+	h.Actions().Set(ui.KeyActions{
+		tcell.KeyEsc:   ui.NewKeyAction("Back", h.app.PrevCmd, false),
+		ui.KeyHelp:     ui.NewKeyAction("Back", h.app.PrevCmd, false),
+		tcell.KeyEnter: ui.NewKeyAction("Back", h.app.PrevCmd, false),
 	})
 }
 
-func (v *Help) computeMaxes(hh model.MenuHints) {
-	for _, h := range hh {
-		if len(h.Mnemonic) > v.maxKey {
-			v.maxKey = len(h.Mnemonic)
+func (h *Help) computeMaxes(hh model.MenuHints) {
+	h.maxKey, h.maxDesc = 0, 0
+	for _, hint := range hh {
+		if len(hint.Mnemonic) > h.maxKey {
+			h.maxKey = len(hint.Mnemonic)
 		}
-		if len(h.Description) > v.maxDesc {
-			v.maxDesc = len(h.Description)
+		if len(hint.Description) > h.maxDesc {
+			h.maxDesc = len(hint.Description)
 		}
 	}
-	v.maxKey += 2
+	h.maxKey += 2
 }
 
-func (v *Help) build() {
-	v.Clear()
+func (h *Help) build() {
+	h.Clear()
 
-	v.maxRows = len(v.showGeneral())
-	ff := []HelpFunc{v.app.Content.Top().Hints, v.showGeneral, v.showNav, v.showHelp}
+	h.maxRows = len(h.showGeneral())
+	ff := []HelpFunc{h.app.Content.Top().Hints, h.showGeneral, h.showNav, h.showHelp}
 	var col int
 	for i, section := range []string{"RESOURCE", "GENERAL", "NAVIGATION", "HELP"} {
 		hh := ff[i]()
 		sort.Sort(hh)
-		v.computeMaxes(hh)
-		v.addSection(col, section, hh)
+		h.computeMaxes(hh)
+		h.addSection(col, section, hh)
 		col += 2
 	}
 
-	if h, err := v.showHotKeys(); err == nil {
-		v.computeMaxes(h)
-		v.addSection(col, "HOTKEYS", h)
+	if hh, err := h.showHotKeys(); err == nil {
+		h.computeMaxes(hh)
+		h.addSection(col, "HOTKEYS", hh)
 	}
 }
 
-func (v *Help) showHelp() model.MenuHints {
+func (h *Help) showHelp() model.MenuHints {
 	return model.MenuHints{
 		{
 			Mnemonic:    "?",
@@ -109,7 +110,7 @@ func (v *Help) showHelp() model.MenuHints {
 	}
 }
 
-func (v *Help) showNav() model.MenuHints {
+func (h *Help) showNav() model.MenuHints {
 	return model.MenuHints{
 		{
 			Mnemonic:    "g",
@@ -145,7 +146,7 @@ func (v *Help) showNav() model.MenuHints {
 	}
 }
 
-func (v *Help) showHotKeys() (model.MenuHints, error) {
+func (h *Help) showHotKeys() (model.MenuHints, error) {
 	hh := config.NewHotKeys()
 	if err := hh.Load(); err != nil {
 		return nil, fmt.Errorf("no hotkey configuration found")
@@ -166,7 +167,7 @@ func (v *Help) showHotKeys() (model.MenuHints, error) {
 	return mm, nil
 }
 
-func (v *Help) showGeneral() model.MenuHints {
+func (h *Help) showGeneral() model.MenuHints {
 	return model.MenuHints{
 		{
 			Mnemonic:    ":cmd",
@@ -219,20 +220,20 @@ func (v *Help) showGeneral() model.MenuHints {
 	}
 }
 
-func (v *Help) resetTitle() {
-	v.SetTitle(fmt.Sprintf(helpTitleFmt, helpTitle))
+func (h *Help) resetTitle() {
+	h.SetTitle(fmt.Sprintf(helpTitleFmt, helpTitle))
 }
 
-func (v *Help) addSpacer(c int) {
-	cell := tview.NewTableCell(render.Pad("", v.maxKey))
-	cell.SetBackgroundColor(v.App().Styles.BgColor())
+func (h *Help) addSpacer(c int) {
+	cell := tview.NewTableCell(render.Pad("", h.maxKey))
+	cell.SetBackgroundColor(h.App().Styles.BgColor())
 	cell.SetExpansion(1)
-	v.SetCell(0, c, cell)
+	h.SetCell(0, c, cell)
 }
 
-func (v *Help) addSection(c int, title string, hh model.MenuHints) {
-	if len(hh) > v.maxRows {
-		v.maxRows = len(hh)
+func (h *Help) addSection(c int, title string, hh model.MenuHints) {
+	if len(hh) > h.maxRows {
+		h.maxRows = len(hh)
 	}
 	row := 0
 	cell := tview.NewTableCell(title)
@@ -240,39 +241,42 @@ func (v *Help) addSection(c int, title string, hh model.MenuHints) {
 	cell.SetAttributes(tcell.AttrBold)
 	cell.SetExpansion(1)
 	cell.SetAlign(tview.AlignLeft)
-	v.SetCell(row, c, cell)
-	v.addSpacer(c + 1)
+	h.SetCell(row, c, cell)
+	h.addSpacer(c + 1)
 	row++
 
-	for _, h := range hh {
+	for _, hint := range hh {
 		col := c
-		cell := tview.NewTableCell(render.Pad(toMnemonic(h.Mnemonic), v.maxKey))
-		if _, err := strconv.Atoi(h.Mnemonic); err != nil {
+		cell := tview.NewTableCell(render.Pad(toMnemonic(hint.Mnemonic), h.maxKey))
+		if _, err := strconv.Atoi(hint.Mnemonic); err != nil {
 			cell.SetTextColor(tcell.ColorDodgerBlue)
 		} else {
 			cell.SetTextColor(tcell.ColorFuchsia)
 		}
 		cell.SetAttributes(tcell.AttrBold)
-		v.SetCell(row, col, cell)
+		h.SetCell(row, col, cell)
 		col++
-		cell = tview.NewTableCell(render.Pad(h.Description, v.maxDesc))
+		cell = tview.NewTableCell(render.Pad(hint.Description, h.maxDesc))
 		cell.SetTextColor(tcell.ColorWhite)
-		v.SetCell(row, col, cell)
+		h.SetCell(row, col, cell)
 		row++
 	}
 
-	if len(hh) < v.maxRows {
-		for i := v.maxRows - len(hh); i > 0; i-- {
+	if len(hh) < h.maxRows {
+		for i := h.maxRows - len(hh); i > 0; i-- {
 			col := c
-			cell := tview.NewTableCell(render.Pad("", v.maxKey))
-			v.SetCell(row, col, cell)
+			cell := tview.NewTableCell(render.Pad("", h.maxKey))
+			h.SetCell(row, col, cell)
 			col++
-			cell = tview.NewTableCell(render.Pad("", v.maxDesc))
-			v.SetCell(row, col, cell)
+			cell = tview.NewTableCell(render.Pad("", h.maxDesc))
+			h.SetCell(row, col, cell)
 			row++
 		}
 	}
 }
+
+// ----------------------------------------------------------------------------
+// Helpers...
 
 func toMnemonic(s string) string {
 	if len(s) == 0 {

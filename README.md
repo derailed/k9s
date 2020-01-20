@@ -95,6 +95,7 @@ K9s is available on Linux, OSX and Windows platforms.
 
 ## Demo Video
 
+* [K9s v0.13.0](https://www.youtube.com/watch?v=qaeR2iK7U0o&t=15s)
 * [K9s v0.9.0](https://www.youtube.com/watch?v=bxKfqumjW4I)
 * [K9s v0.7.0 Features](https://youtu.be/83jYehwlql8)
 * [K9s v0 Demo](https://youtu.be/k7zseUhaXeU)
@@ -433,6 +434,10 @@ roleRef:
 ---
 
 ## Skins
+
+Example: Dracula Skin ;)
+
+<img src="assets/skins/dracula.png">
 
 You can style K9s based on your own sense of look and style. Skins are YAML files, that enable a user to change the K9s presentation layer. K9s skins are loaded from `$HOME/.k9s/skin.yml`. If a skin file is detected then the skin would be loaded if not the current stock skin remains in effect.
 

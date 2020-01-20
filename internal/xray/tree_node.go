@@ -15,14 +15,17 @@ const (
 	// KeyParent indicates a parent node context key.
 	KeyParent TreeRef = "parent"
 
+	// KeySAAutomount indicates whether an automount sa token is active or not.
+	KeySAAutomount TreeRef = "automount"
+
 	// PathSeparator represents a node path separatot.
 	PathSeparator = "::"
 
 	// StatusKey status map key.
 	StatusKey = "status"
 
-	// StateKey state map key.
-	StateKey = "state"
+	// InfoKey state map key.
+	InfoKey = "info"
 
 	// OkStatus stands for all is cool.
 	OkStatus = "ok"
@@ -294,7 +297,7 @@ func (t *TreeNode) Find(gvr, id string) *TreeNode {
 func (t *TreeNode) Title() string {
 	const withNS = "[white::b]%s[-::d]"
 
-	title := fmt.Sprintf(withNS, t.colorize())
+	title := fmt.Sprintf(withNS, t.AsString())
 
 	if t.CountChildren() > 0 {
 		title += fmt.Sprintf("([white::d]%d[-::d])[-::-]", t.CountChildren())
@@ -366,7 +369,7 @@ func toEmoji(gvr string) string {
 	}
 }
 
-func (t TreeNode) colorize() string {
+func (t TreeNode) AsString() string {
 	const colorFmt = "%s [gray::-][%s[gray::-]] [%s::b]%s[::]"
 
 	_, n := client.Namespaced(t.ID)
@@ -379,6 +382,12 @@ func (t TreeNode) colorize() string {
 			color, flag = "orange", "[orange::b]TOAST_REF"
 		}
 	}
+	str := fmt.Sprintf(colorFmt, toEmoji(t.GVR), flag, color, n)
 
-	return fmt.Sprintf(colorFmt, toEmoji(t.GVR), flag, color, n)
+	i, ok := t.Extras[InfoKey]
+	if !ok {
+		return str
+	}
+
+	return fmt.Sprintf("%s [antiquewhite::][%s][::] ", str, i)
 }

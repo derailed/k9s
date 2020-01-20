@@ -17,7 +17,7 @@ import (
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
 
-const dialTimeout = 1 * time.Second
+const dialTimeout = 5 * time.Second
 
 // Config tracks a kubernetes configuration.
 type Config struct {

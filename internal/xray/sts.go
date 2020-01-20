@@ -68,10 +68,11 @@ func (*StatefulSet) validate(root *TreeNode, sts appsv1.StatefulSet) error {
 	if sts.Spec.Replicas != nil {
 		r = int32(*sts.Spec.Replicas)
 	}
-	a := sts.Status.Replicas
+	a := sts.Status.CurrentReplicas
 	if a != r {
 		root.Extras[StatusKey] = ToastStatus
 	}
+	root.Extras[InfoKey] = fmt.Sprintf("%d/%d", a, r)
 
 	return nil
 }

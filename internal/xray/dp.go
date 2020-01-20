@@ -72,9 +72,11 @@ func (*Deployment) validate(root *TreeNode, dp appsv1.Deployment) error {
 		r = int32(*dp.Spec.Replicas)
 	}
 	a := dp.Status.AvailableReplicas
-	if a != r {
+	if a != r || dp.Status.UnavailableReplicas != 0 {
 		root.Extras[StatusKey] = ToastStatus
 	}
+	root.Extras[InfoKey] = fmt.Sprintf("%d/%d/%d", a, r, dp.Status.UnavailableReplicas)
+
 	return nil
 }
 

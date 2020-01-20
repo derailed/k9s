@@ -10,17 +10,16 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ---
 
-### GH Sponsor
-
-I know a lot of you have voiced in the past for other ways to contribute to this project ie liquids budget or prozac supplies whichever best applies here... So I've enabled github sponsors and the button should now be available on this repo.
+### GitHub Sponsors
 
 I'd like to personally thank the following folks for their support and efforts with this project as I know some of you have been around since it's inception almost a year ago!
 
 * [Norbert Csibra](https://github.com/ncsibra)
 * [Andrew Roth](https://github.com/RothAndrew)
 * [James Smith](https://github.com/sedders123)
+* [Daniel Koopmans](https://github.com/fsdaniel)
 
-Big thanks in full effect to you all, I am so humbled and honored by your gesture!
+Big thanks in full effect to you all, I am so humbled and honored by your kind actions!
 
 ### Dracula Skin
 
@@ -32,7 +31,7 @@ Since we're in the thank you phase, might as well lasso in `Josh Symmonds` for c
 
 <img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s_xray.png"/>
 
-Since we've launched K9s, we've longed for a view that would display the relationships among resources. For instance, pods may reference configmaps/secrets directly via volumes or indirectly with containers referencing configmaps/secrets via say env vars. Having the ability to know which pods/deployments use a given configmap may involve some serious `kubectl` wizardry. K9s now has xray vision which allows one to view and traverse these relationships/associations.
+Since we've launched K9s, we've longed for a view that would display the relationships among resources. For instance, pods may reference configmaps/secrets directly via volumes or indirectly with containers referencing configmaps/secrets via say env vars. Having the ability to know which pods/deployments use a given configmap may involve some serious `kubectl` wizardry. K9s now has xray vision which allows one to view and traverse these relationships/associations as well as check for referential integrity.
 
 For this, we are introducing a new command aka `xray`. Xray initally supports the following resources (more to come later...)
 
@@ -45,7 +44,7 @@ To enable cluster xray vision for deployments simply type `:xray deploy`. You ca
 
 Xray not only will tell you when a resource is considered `TOAST` ie the resource is in a bad state, but also will tell you if a dependency is actually broken via `TOAST_REF` status. For example a pod referencing a configmap that has been deleted from the cluster.
 
-Xray view also supports for filtering the resources by leveraging regex, labels or fuzzy filters. This affords for getting more of an application view across several resources.
+Xray view also supports for filtering the resources by leveraging regex, labels or fuzzy filters. This affords for getting more of an application `cross-cut` among several resources.
 
 As it stands Xray will check for following resource dependencies:
 
@@ -56,7 +55,7 @@ As it stands Xray will check for following resource dependencies:
 * serviceaccounts
 * persistentvolumeclaims
 
-Keep in mind these can be expensive traversals and the view is eventually consistent as dependent resources would be lazy loaded.
+Keep in mind these can be expensive traversals and the view is eventually consistent as dependent resources will be lazy loaded.
 
 We hope you'll find this feature useful? Keep in mind this is an initial drop and more will be coming in this area in subsequent releases. As always, your comments/suggestions are encouraged and welcomed.
 
