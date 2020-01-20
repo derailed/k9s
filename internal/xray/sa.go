@@ -12,7 +12,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-// ServiceAcccount represents an xray renderer.
+// ServiceAccount represents an xray renderer.
 type ServiceAccount struct{}
 
 // Render renders an xray node.

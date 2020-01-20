@@ -51,7 +51,7 @@ func (t *Tree) ClearFilter() {
 	t.query = ""
 }
 
-// SetFiltersets the current filter.
+// SetFilter sets the current filter.
 func (t *Tree) SetFilter(q string) {
 	t.query = q
 }
