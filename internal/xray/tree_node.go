@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/rs/zerolog/log"
 	"vbom.ml/util/sortorder"
 )
@@ -295,15 +296,7 @@ func (t *TreeNode) Find(gvr, id string) *TreeNode {
 
 // Title computes the node title.
 func (t *TreeNode) Title() string {
-	const withNS = "[white::b]%s[-::d]"
-
-	title := fmt.Sprintf(withNS, t.AsString())
-
-	if t.CountChildren() > 0 {
-		title += fmt.Sprintf("([white::d]%d[-::d])[-::-]", t.CountChildren())
-	}
-
-	return title
+	return t.toTitle()
 }
 
 // ----------------------------------------------------------------------------
@@ -341,53 +334,55 @@ func dumpStdOut(n *TreeNode, level int) {
 	}
 }
 
-func toEmoji(gvr string) string {
-	switch gvr {
-	case "v1/pods":
-		return "🚛"
-	case "apps/v1/deployments":
-		return "🪂"
-	case "apps/v1/statefulset":
-		return "🎎"
-	case "apps/v1/daemonsets":
-		return "😈"
-	case "containers":
-		return "🐳"
-	case "v1/serviceaccounts":
-		return "💁‍♀️"
-	case "v1/persistentvolumes":
-		return "📚"
-	case "v1/persistentvolumeclaims":
-		return "🎟"
-	case "v1/secrets":
-		return "🔒"
-	case "v1/configmaps":
-		return "🔑"
-	default:
-		return "📎"
+func category(gvr string) string {
+	meta, err := dao.MetaFor(client.NewGVR(gvr))
+	if err != nil {
+		return ""
 	}
+
+	return meta.SingularName
 }
 
-// AsString transforms a node as a string for viewing.
-func (t TreeNode) AsString() string {
-	const colorFmt = "%s [gray::-][%s[gray::-]] [%s::b]%s[::]"
+const (
+	titleFmt    = " [gray::-]%s/[white::b][%s::b]%s[::]"
+	topTitleFmt = " [white::b][%s::b]%s[::]"
+	toast       = "TOAST"
+)
 
+func (t TreeNode) toTitle() (title string) {
 	_, n := client.Namespaced(t.ID)
-	color, flag := "white", "[green::b]OK"
+	color, status := "white", "OK"
 	if v, ok := t.Extras[StatusKey]; ok {
 		switch v {
 		case ToastStatus:
-			color, flag = "orangered", "[red::b]TOAST"
+			color, status = "orangered", toast
 		case MissingRefStatus:
-			color, flag = "orange", "[orange::b]TOAST_REF"
+			color, status = "orange", toast+"_REF"
 		}
 	}
-	str := fmt.Sprintf(colorFmt, toEmoji(t.GVR), flag, color, n)
 
-	i, ok := t.Extras[InfoKey]
-	if !ok {
-		return str
+	defer func() {
+		if status != "OK" {
+			title += fmt.Sprintf("  [gray::-][[%s::b]%s[gray::-]]", color, status)
+		}
+	}()
+
+	categ := category(t.GVR)
+	if categ == "" {
+		title = fmt.Sprintf(topTitleFmt, color, n)
+	} else {
+		title = fmt.Sprintf(titleFmt, categ, color, n)
 	}
 
-	return fmt.Sprintf("%s [antiquewhite::][%s][::] ", str, i)
+	if !t.IsLeaf() {
+		title += fmt.Sprintf("[white::d](%d[-::d])[-::-]", t.CountChildren())
+	}
+
+	info, ok := t.Extras[InfoKey]
+	if !ok {
+		return
+	}
+
+	title += fmt.Sprintf(" [antiquewhite::][%s][::]", info)
+	return
 }

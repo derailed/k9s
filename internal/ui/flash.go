@@ -23,7 +23,7 @@ const (
 	// FlashFatal represents an fatal message.
 	FlashFatal
 
-	flashDelay = 3
+	flashDelay = 3 * time.Second
 
 	emoDoh   = "😗"
 	emoRed   = "😡"
@@ -39,21 +39,30 @@ type (
 	Flash struct {
 		*tview.TextView
 
-		cancel context.CancelFunc
-		app    *App
+		cancel   context.CancelFunc
+		app      *App
+		flushNow bool
 	}
 )
 
 // NewFlash returns a new flash view.
 func NewFlash(app *App, m string) *Flash {
-	f := Flash{app: app, TextView: tview.NewTextView()}
+	f := Flash{
+		app:      app,
+		TextView: tview.NewTextView(),
+	}
 	f.SetTextColor(tcell.ColorAqua)
 	f.SetTextAlign(tview.AlignLeft)
 	f.SetBorderPadding(0, 0, 1, 1)
-	f.SetText("")
+	f.SetText(m)
 	f.app.Styles.AddListener(&f)
 
 	return &f
+}
+
+// TestMode for testing...
+func (f *Flash) TestMode() {
+	f.flushNow = true
 }
 
 // StylesChanged notifies listener the skin changed.
@@ -64,6 +73,7 @@ func (f *Flash) StylesChanged(s *config.Styles) {
 
 // Info displays an info flash message.
 func (f *Flash) Info(msg string) {
+	log.Info().Msg(msg)
 	f.SetMessage(FlashInfo, msg)
 }
 
@@ -74,6 +84,7 @@ func (f *Flash) Infof(fmat string, args ...interface{}) {
 
 // Warn displays a warning flash message.
 func (f *Flash) Warn(msg string) {
+	log.Warn().Msg(msg)
 	f.SetMessage(FlashWarn, msg)
 }
 
@@ -84,7 +95,7 @@ func (f *Flash) Warnf(fmat string, args ...interface{}) {
 
 // Err displays an error flash message.
 func (f *Flash) Err(err error) {
-	log.Error().Err(err).Msgf("%v", err)
+	log.Error().Msg(err.Error())
 	f.SetMessage(FlashErr, err.Error())
 }
 
@@ -106,35 +117,35 @@ func (f *Flash) SetMessage(level FlashLevel, msg ...string) {
 	if f.cancel != nil {
 		f.cancel()
 	}
-	var ctx1, ctx2 context.Context
-	{
-		var timerCancel context.CancelFunc
-		ctx1, f.cancel = context.WithCancel(context.TODO())
-		ctx2, timerCancel = context.WithTimeout(context.TODO(), flashDelay*time.Second)
-		go f.refresh(ctx1, ctx2, timerCancel)
-	}
+
 	_, _, width, _ := f.GetRect()
 	if width <= 15 {
 		width = 100
 	}
 	m := strings.Join(msg, " ")
-	f.SetTextColor(flashColor(level))
-	f.SetText(render.Truncate(flashEmoji(level)+" "+m, width-3))
+	if f.flushNow {
+		f.SetTextColor(flashColor(level))
+		f.SetText(render.Truncate(flashEmoji(level)+" "+m, width-3))
+	} else {
+		f.app.QueueUpdateDraw(func() {
+			log.Debug().Msgf("FLASH %q", m)
+			f.SetTextColor(flashColor(level))
+			f.SetText(render.Truncate(flashEmoji(level)+" "+m, width-3))
+		})
+	}
+
+	var ctx context.Context
+	ctx, f.cancel = context.WithCancel(context.TODO())
+	ctx, f.cancel = context.WithTimeout(ctx, flashDelay)
+	go f.refresh(ctx)
 }
 
-func (f *Flash) refresh(ctx1, ctx2 context.Context, cancel context.CancelFunc) {
-	defer cancel()
-	for {
-		select {
-		case <-ctx1.Done():
-			return
-		case <-ctx2.Done():
-			f.app.QueueUpdateDraw(func() {
-				f.Clear()
-			})
-			return
-		}
-	}
+func (f *Flash) refresh(ctx context.Context) {
+	<-ctx.Done()
+	f.app.QueueUpdateDraw(func() {
+		log.Debug().Msgf("FLASH-CLEAR %q", f.GetText(true))
+		f.Clear()
+	})
 }
 
 func flashEmoji(l FlashLevel) string {

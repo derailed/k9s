@@ -97,7 +97,8 @@ var Registry = map[string]ResourceMeta{
 		TreeRenderer: &xray.Deployment{},
 	},
 	"apps/v1/replicasets": {
-		Renderer: &render.ReplicaSet{},
+		Renderer:     &render.ReplicaSet{},
+		TreeRenderer: &xray.ReplicaSet{},
 	},
 	"apps/v1/statefulsets": {
 		DAO:          &dao.StatefulSet{},

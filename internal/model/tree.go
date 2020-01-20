@@ -18,6 +18,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+const initTreeRefreshRate = 500 * time.Millisecond
+
 // TreeListener represents a tree model listener.
 type TreeListener interface {
 	// TreeChanged notifies the model data changed.
@@ -159,7 +161,7 @@ func (t *Tree) ToYAML(ctx context.Context, gvr, path string) (string, error) {
 func (t *Tree) updater(ctx context.Context) {
 	defer log.Debug().Msgf("Tree-model canceled -- %q", t.gvr)
 
-	rate := iniRefreshRate
+	rate := initTreeRefreshRate
 	for {
 		select {
 		case <-ctx.Done():
@@ -204,7 +206,8 @@ func (t *Tree) reconcile(ctx context.Context) error {
 	}
 
 	ns := client.CleanseNamespace(t.namespace)
-	root := xray.NewTreeNode("root", client.NewGVR(t.gvr).ToR())
+	res := client.NewGVR(t.gvr).R()
+	root := xray.NewTreeNode(res, res)
 	ctx = context.WithValue(ctx, xray.KeyParent, root)
 	if _, ok := meta.TreeRenderer.(*xray.Generic); ok {
 		table, ok := oo[0].(*metav1beta1.Table)
@@ -287,6 +290,9 @@ func rxFilter(q, path string) bool {
 }
 
 func treeHydrate(ctx context.Context, ns string, oo []runtime.Object, re TreeRenderer) error {
+	if re == nil {
+		return fmt.Errorf("no tree renderer defined for this resource")
+	}
 	for _, o := range oo {
 		if err := re.Render(ctx, ns, o); err != nil {
 			return err

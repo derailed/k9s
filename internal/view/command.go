@@ -43,13 +43,32 @@ func (c *Command) Init() error {
 	return nil
 }
 
+func allowedXRay(gvr client.GVR) bool {
+	gg := []string{
+		"v1/pods",
+		"v1/services",
+		"apps/v1/deployments",
+		"apps/v1/daemonsets",
+		"apps/v1/statefulsets",
+		"apps/v1/replicasets",
+	}
+
+	for _, g := range gg {
+		if g == gvr.String() {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (c *Command) xrayCmd(cmd string) error {
 	tokens := strings.Split(cmd, " ")
 	if len(tokens) < 2 {
 		return errors.New("You must specify a resource")
 	}
 	gvr, ok := c.alias.AsGVR(tokens[1])
-	if !ok {
+	if !ok || !allowedXRay(gvr) {
 		return fmt.Errorf("Huh? `%s` Command not found", cmd)
 	}
 	return c.exec(cmd, "xrays", NewXray(gvr), true)
@@ -172,8 +191,7 @@ func (c *Command) exec(cmd, gvr string, comp model.Component, clearStack bool) e
 	if comp == nil {
 		return fmt.Errorf("No component given for %s", gvr)
 	}
-
-	c.app.Flash().Infof("Running command %s", cmd)
+	c.app.Flash().Infof("Viewing %s...", client.NewGVR(gvr).R())
 	c.app.Config.SetActiveView(cmd)
 	if err := c.app.Config.Save(); err != nil {
 		log.Error().Err(err).Msg("Config save failed!")

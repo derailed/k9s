@@ -64,7 +64,7 @@ func makeSAR(ns, gvr string) *authorizationv1.SelfSubjectAccessReview {
 		ns = ""
 	}
 	spec := NewGVR(gvr)
-	res := spec.AsGVR()
+	res := spec.GVR()
 	return &authorizationv1.SelfSubjectAccessReview{
 		Spec: authorizationv1.SelfSubjectAccessReviewSpec{
 			ResourceAttributes: &authorizationv1.ResourceAttributes{

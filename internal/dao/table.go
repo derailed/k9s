@@ -34,7 +34,7 @@ func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
 		SetHeader("Accept", a).
 		Namespace(ns).
 		Name(n).
-		Resource(t.gvr.ToR()).
+		Resource(t.gvr.R()).
 		VersionedParams(&metav1beta1.TableOptions{}, codec).
 		Do().Get()
 	if err != nil {
@@ -57,7 +57,7 @@ func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	o, err := c.Get().
 		SetHeader("Accept", a).
 		Namespace(ns).
-		Resource(t.gvr.ToR()).
+		Resource(t.gvr.R()).
 		VersionedParams(&metav1beta1.TableOptions{}, codec).
 		Do().Get()
 	if err != nil {
@@ -74,10 +74,10 @@ const gvFmt = "application/json;as=Table;v=%s;g=%s, application/json"
 
 func (t *Table) getClient() (*rest.RESTClient, error) {
 	crConfig := t.Client().RestConfigOrDie()
-	gv := t.gvr.AsGV()
+	gv := t.gvr.GV()
 	crConfig.GroupVersion = &gv
 	crConfig.APIPath = "/apis"
-	if t.gvr.ToG() == "" {
+	if t.gvr.G() == "" {
 		crConfig.APIPath = "/api"
 	}
 	codec, _ := t.codec()
@@ -92,7 +92,7 @@ func (t *Table) getClient() (*rest.RESTClient, error) {
 
 func (t *Table) codec() (serializer.CodecFactory, runtime.ParameterCodec) {
 	scheme := runtime.NewScheme()
-	gv := t.gvr.AsGV()
+	gv := t.gvr.GV()
 	metav1.AddToGroupVersion(scheme, gv)
 	scheme.AddKnownTypes(gv, &metav1beta1.Table{}, &metav1beta1.TableOptions{})
 	scheme.AddKnownTypes(metav1beta1.SchemeGroupVersion, &metav1beta1.Table{}, &metav1beta1.TableOptions{})

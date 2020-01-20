@@ -72,7 +72,7 @@ func (g GVR) String() string {
 }
 
 // AsGV returns the group version scheme representation.
-func (g GVR) AsGV() schema.GroupVersion {
+func (g GVR) GV() schema.GroupVersion {
 	return schema.GroupVersion{
 		Group:   g.g,
 		Version: g.v,
@@ -80,39 +80,39 @@ func (g GVR) AsGV() schema.GroupVersion {
 }
 
 // AsGVR returns a a full schema representation.
-func (g GVR) AsGVR() schema.GroupVersionResource {
+func (g GVR) GVR() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
-		Group:    g.ToG(),
-		Version:  g.ToV(),
-		Resource: g.ToR(),
+		Group:    g.G(),
+		Version:  g.V(),
+		Resource: g.R(),
 	}
 }
 
 // AsGR returns a a full schema representation.
-func (g GVR) AsGR() *schema.GroupResource {
+func (g GVR) GR() *schema.GroupResource {
 	return &schema.GroupResource{
-		Group:    g.ToG(),
-		Resource: g.ToR(),
+		Group:    g.G(),
+		Resource: g.R(),
 	}
 }
 
 // ToV returns the resource version.
-func (g GVR) ToV() string {
+func (g GVR) V() string {
 	return g.v
 }
 
 // ToRAndG returns the resource and group.
-func (g GVR) ToRAndG() (string, string) {
+func (g GVR) RG() (string, string) {
 	return g.r, g.g
 }
 
 // ToR returns the resource name.
-func (g GVR) ToR() string {
+func (g GVR) R() string {
 	return g.r
 }
 
 // ToG returns the resource group name.
-func (g GVR) ToG() string {
+func (g GVR) G() string {
 	return g.g
 }
 
@@ -131,7 +131,7 @@ func (g GVRs) Swap(i, j int) {
 
 // Less returns true if i < j.
 func (g GVRs) Less(i, j int) bool {
-	g1, g2 := g[i].ToG(), g[j].ToG()
+	g1, g2 := g[i].G(), g[j].G()
 
 	return sortorder.NaturalLess(g1, g2)
 }

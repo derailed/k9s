@@ -42,7 +42,7 @@ func (r *Rbac) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	}
 
 	res := client.NewGVR(gvr)
-	switch res.ToR() {
+	switch res.R() {
 	case "clusterrolebindings":
 		return r.loadClusterRoleBinding(path)
 	case "rolebindings":
@@ -52,7 +52,7 @@ func (r *Rbac) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	case "roles":
 		return r.loadRole(path)
 	default:
-		return nil, fmt.Errorf("expecting clusterrole/role but found %s", res.ToR())
+		return nil, fmt.Errorf("expecting clusterrole/role but found %s", res.R())
 	}
 }
 

@@ -59,7 +59,7 @@ func TestAsGVR(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, client.NewGVR(u.gvr).AsGVR())
+			assert.Equal(t, u.e, client.NewGVR(u.gvr).GVR())
 		})
 	}
 }
@@ -77,7 +77,7 @@ func TestAsGV(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, client.NewGVR(u.gvr).AsGV())
+			assert.Equal(t, u.e, client.NewGVR(u.gvr).GV())
 		})
 	}
 }
@@ -132,7 +132,7 @@ func TestToR(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, client.NewGVR(u.gvr).ToR())
+			assert.Equal(t, u.e, client.NewGVR(u.gvr).R())
 		})
 	}
 }
@@ -151,7 +151,7 @@ func TestToG(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, client.NewGVR(u.gvr).ToG())
+			assert.Equal(t, u.e, client.NewGVR(u.gvr).G())
 		})
 	}
 }
@@ -170,7 +170,7 @@ func TestToV(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, client.NewGVR(u.gvr).ToV())
+			assert.Equal(t, u.e, client.NewGVR(u.gvr).V())
 		})
 	}
 }

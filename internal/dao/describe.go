@@ -17,7 +17,7 @@ func Describe(c client.Connection, gvr client.GVR, path string) (string, error) 
 		return "", err
 	}
 
-	gvk, err := m.KindFor(gvr.AsGVR())
+	gvk, err := m.KindFor(gvr.GVR())
 	if err != nil {
 		log.Error().Err(err).Msgf("No GVK for resource %s", gvr)
 		return "", err

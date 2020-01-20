@@ -26,7 +26,6 @@ type Generic struct {
 // List returns a collection of resources.
 // BOZO!! no auth check??
 func (g *Generic) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	log.Debug().Msgf("GENERIC-LIST %q:%q", ns, g.gvr)
 	labelSel, ok := ctx.Value(internal.KeyLabels).(string)
 	if !ok {
 		log.Warn().Msgf("No label selector found in context. Listing all resources")
@@ -116,5 +115,5 @@ func (g *Generic) Delete(path string, cascade, force bool) error {
 }
 
 func (g *Generic) dynClient() dynamic.NamespaceableResourceInterface {
-	return g.Client().DynDialOrDie().Resource(g.gvr.AsGVR())
+	return g.Client().DynDialOrDie().Resource(g.gvr.GVR())
 }

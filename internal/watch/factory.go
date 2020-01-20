@@ -38,6 +38,9 @@ func NewFactory(client client.Connection) *Factory {
 
 // Start initializes the informers until caller cancels the context.
 func (f *Factory) Start(ns string) {
+	f.mx.Lock()
+	defer f.mx.Unlock()
+
 	log.Debug().Msgf("Factory START with ns `%q", ns)
 	f.stopChan = make(chan struct{})
 	for ns, fac := range f.factories {
@@ -48,13 +51,13 @@ func (f *Factory) Start(ns string) {
 
 // Terminate terminates all watchers and forwards.
 func (f *Factory) Terminate() {
+	f.mx.Lock()
+	defer f.mx.Unlock()
+
 	if f.stopChan != nil {
 		close(f.stopChan)
 		f.stopChan = nil
 	}
-
-	f.mx.Lock()
-	defer f.mx.Unlock()
 	for k := range f.factories {
 		delete(f.factories, k)
 	}
@@ -179,6 +182,9 @@ func (f *Factory) ForResource(ns, gvr string) informers.GenericInformer {
 		log.Error().Err(fmt.Errorf("MEOW! No informer for %q:%q", ns, gvr))
 		return inf
 	}
+
+	f.mx.RLock()
+	defer f.mx.RUnlock()
 	fact.Start(f.stopChan)
 
 	return inf
@@ -193,7 +199,6 @@ func (f *Factory) ensureFactory(ns string) di.DynamicSharedInformerFactory {
 	if fac, ok := f.factories[ns]; ok {
 		return fac
 	}
-	log.Debug().Msgf("FACTORY_CREATE for ns %q", ns)
 	f.factories[ns] = di.NewFilteredDynamicSharedInformerFactory(
 		f.client.DynDialOrDie(),
 		defaultResync,

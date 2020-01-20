@@ -77,9 +77,9 @@ func (x *Xray) Init(ctx context.Context) error {
 	x.SetBackgroundColor(config.AsColor(x.app.Styles.GetTable().BgColor))
 	x.SetBorderColor(config.AsColor(x.app.Styles.GetTable().FgColor))
 	x.SetBorderFocusColor(config.AsColor(x.app.Styles.Frame().Border.FocusColor))
-	x.SetTitle(fmt.Sprintf(" %s-%s ", xrayTitle, strings.Title(x.gvr.ToR())))
+	x.SetTitle(fmt.Sprintf(" %s-%s ", xrayTitle, strings.Title(x.gvr.R())))
 	x.SetGraphics(true)
-	x.SetGraphicsColor(tcell.ColorDimGray)
+	x.SetGraphicsColor(tcell.ColorFloralWhite)
 	x.SetInputCapture(x.keyboard)
 
 	x.model.SetRefreshRate(time.Duration(x.app.Config.K9s.GetRefreshRate()) * time.Second)
@@ -370,7 +370,7 @@ func (x *Xray) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		ns, n := client.Namespaced(ref.Path)
 		args := make([]string, 0, 10)
 		args = append(args, "edit")
-		args = append(args, client.NewGVR(ref.GVR).ToR())
+		args = append(args, client.NewGVR(ref.GVR).R())
 		args = append(args, "-n", ns)
 		args = append(args, "--context", x.app.Config.K9s.CurrentContext)
 		if cfg := x.app.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
@@ -450,7 +450,7 @@ func (x *Xray) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if len(strings.Split(ref.Path, "/")) == 1 {
 		return nil
 	}
-	if err := x.app.viewResource(client.NewGVR(ref.GVR).ToR(), ref.Path, false); err != nil {
+	if err := x.app.viewResource(client.NewGVR(ref.GVR).R(), ref.Path, false); err != nil {
 		x.app.Flash().Err(err)
 	}
 
@@ -632,11 +632,14 @@ func (x *Xray) App() *App {
 
 // UpdateTitle updates the view title.
 func (x *Xray) UpdateTitle() {
-	x.SetTitle(x.styleTitle())
+	t := x.styleTitle()
+	x.app.QueueUpdateDraw(func() {
+		x.SetTitle(t)
+	})
 }
 
 func (x *Xray) styleTitle() string {
-	base := fmt.Sprintf("%s-%s", xrayTitle, strings.Title(x.gvr.ToR()))
+	base := fmt.Sprintf("%s-%s", xrayTitle, strings.Title(x.gvr.R()))
 	ns := x.model.GetNamespace()
 	if client.IsAllNamespaces(ns) {
 		ns = client.NamespaceAll

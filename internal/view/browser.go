@@ -92,7 +92,6 @@ func (b *Browser) SetInstance(path string) {
 func (b *Browser) Start() {
 	b.Stop()
 
-	b.App().Status(ui.FlashInfo, "Loading...")
 	b.Table.Start()
 	ctx := b.defaultContext()
 	ctx, b.cancelFn = context.WithCancel(ctx)
@@ -141,7 +140,7 @@ func (b *Browser) TableDataChanged(data render.TableData) {
 	b.app.QueueUpdateDraw(func() {
 		b.refreshActions()
 		b.Update(data)
-		b.App().ClearStatus(true)
+		b.App().ClearStatus(false)
 	})
 }
 
@@ -244,7 +243,7 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	b.Stop()
 	defer b.Start()
 	{
-		msg := fmt.Sprintf("Delete %s %s?", b.gvr.ToR(), selections[0])
+		msg := fmt.Sprintf("Delete %s %s?", b.gvr.R(), selections[0])
 		if len(selections) > 1 {
 			msg = fmt.Sprintf("Delete %d marked %s?", len(selections), b.gvr)
 		}

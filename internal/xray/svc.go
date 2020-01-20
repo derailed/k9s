@@ -37,7 +37,7 @@ func (s *Service) Render(ctx context.Context, ns string, o interface{}) error {
 		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
 
-	root := NewTreeNode("apps/v1/services", client.FQN(svc.Namespace, svc.Name))
+	root := NewTreeNode("v1/services", client.FQN(svc.Namespace, svc.Name))
 	oo, err := s.locatePods(ctx, svc.Namespace, svc.Spec.Selector)
 	if err != nil {
 		return err

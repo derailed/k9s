@@ -3,6 +3,7 @@ package dao
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
@@ -113,47 +114,54 @@ func loadNonResource(m ResourceMetas) {
 
 func loadK9s(m ResourceMetas) {
 	m[client.NewGVR("xrays")] = metav1.APIResource{
-		Name:       "xray",
-		Kind:       "XRays",
-		Categories: []string{"k9s"},
+		Name:         "xray",
+		Kind:         "XRays",
+		SingularName: "xray",
+		Categories:   []string{"k9s"},
 	}
 	m[client.NewGVR("aliases")] = metav1.APIResource{
-		Name:       "aliases",
-		Kind:       "Aliases",
-		Categories: []string{"k9s"},
+		Name:         "aliases",
+		Kind:         "Aliases",
+		SingularName: "alias",
+		Categories:   []string{"k9s"},
 	}
 	m[client.NewGVR("contexts")] = metav1.APIResource{
-		Name:       "contexts",
-		Kind:       "Contexts",
-		ShortNames: []string{"ctx"},
-		Categories: []string{"k9s"},
+		Name:         "contexts",
+		Kind:         "Contexts",
+		SingularName: "context",
+		ShortNames:   []string{"ctx"},
+		Categories:   []string{"k9s"},
 	}
 	m[client.NewGVR("screendumps")] = metav1.APIResource{
-		Name:       "screendumps",
-		Kind:       "ScreenDumps",
-		ShortNames: []string{"sd"},
-		Verbs:      []string{"delete"},
-		Categories: []string{"k9s"},
+		Name:         "screendumps",
+		Kind:         "ScreenDumps",
+		SingularName: "screendump",
+		ShortNames:   []string{"sd"},
+		Verbs:        []string{"delete"},
+		Categories:   []string{"k9s"},
 	}
 	m[client.NewGVR("benchmarks")] = metav1.APIResource{
-		Name:       "benchmarks",
-		Kind:       "Benchmarks",
-		ShortNames: []string{"be"},
-		Verbs:      []string{"delete"},
-		Categories: []string{"k9s"},
+		Name:         "benchmarks",
+		Kind:         "Benchmarks",
+		SingularName: "benchmark",
+		ShortNames:   []string{"be"},
+		Verbs:        []string{"delete"},
+		Categories:   []string{"k9s"},
 	}
 	m[client.NewGVR("portforwards")] = metav1.APIResource{
-		Name:       "portforwards",
-		Namespaced: true,
-		Kind:       "PortForwards",
-		ShortNames: []string{"pf"},
-		Verbs:      []string{"delete"},
-		Categories: []string{"k9s"},
+		Name:         "portforwards",
+		Namespaced:   true,
+		Kind:         "PortForwards",
+		SingularName: "portforward",
+		ShortNames:   []string{"pf"},
+		Verbs:        []string{"delete"},
+		Categories:   []string{"k9s"},
 	}
 	m[client.NewGVR("containers")] = metav1.APIResource{
-		Name:       "containers",
-		Kind:       "Containers",
-		Categories: []string{"k9s"},
+		Name:         "containers",
+		Kind:         "Containers",
+		SingularName: "container",
+		Categories:   []string{"k9s"},
 	}
 }
 
@@ -199,7 +207,10 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 	for _, r := range rr {
 		for _, res := range r.APIResources {
 			gvr := client.FromGVAndR(r.GroupVersion, res.Name)
-			res.Group, res.Version = gvr.ToG(), gvr.ToV()
+			res.Group, res.Version = gvr.G(), gvr.V()
+			if res.SingularName == "" {
+				res.SingularName = strings.ToLower(res.Kind)
+			}
 			m[gvr] = res
 		}
 	}

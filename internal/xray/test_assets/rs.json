@@ -1,0 +1,122 @@
+{
+    "apiVersion": "apps/v1",
+    "kind": "ReplicaSet",
+    "metadata": {
+        "annotations": {
+            "deployment.kubernetes.io/desired-replicas": "1",
+            "deployment.kubernetes.io/max-replicas": "2",
+            "deployment.kubernetes.io/revision": "2"
+        },
+        "creationTimestamp": "2020-01-20T01:34:11Z",
+        "generation": 1,
+        "labels": {
+            "app": "nginx-pv",
+            "pod-template-hash": "6476d7d5c8"
+        },
+        "name": "nginx-pv-6476d7d5c8",
+        "namespace": "default",
+        "ownerReferences": [
+            {
+                "apiVersion": "apps/v1",
+                "blockOwnerDeletion": true,
+                "controller": true,
+                "kind": "Deployment",
+                "name": "nginx-pv",
+                "uid": "68aa70ff-ff7c-4a67-8d4f-fc31ef27ec35"
+            }
+        ],
+        "resourceVersion": "3743997",
+        "selfLink": "/apis/apps/v1/namespaces/default/replicasets/nginx-pv-6476d7d5c8",
+        "uid": "547a036d-94d9-4818-bd9e-ec2939019471"
+    },
+    "spec": {
+        "replicas": 1,
+        "selector": {
+            "matchLabels": {
+                "app": "nginx-pv",
+                "pod-template-hash": "6476d7d5c8"
+            }
+        },
+        "template": {
+            "metadata": {
+                "creationTimestamp": null,
+                "labels": {
+                    "app": "nginx-pv",
+                    "pod-template-hash": "6476d7d5c8"
+                }
+            },
+            "spec": {
+                "automountServiceAccountToken": true,
+                "containers": [
+                    {
+                        "env": [
+                            {
+                                "name": "FRED",
+                                "valueFrom": {
+                                    "configMapKeyRef": {
+                                        "key": "fred",
+                                        "name": "busy"
+                                    }
+                                }
+                            },
+                            {
+                                "name": "PROPS",
+                                "valueFrom": {
+                                    "configMapKeyRef": {
+                                        "key": "props",
+                                        "name": "busy"
+                                    }
+                                }
+                            }
+                        ],
+                        "image": "k8s.gcr.io/nginx-slim:0.8",
+                        "imagePullPolicy": "IfNotPresent",
+                        "name": "nginx",
+                        "ports": [
+                            {
+                                "containerPort": 80,
+                                "protocol": "TCP"
+                            }
+                        ],
+                        "resources": {
+                            "limits": {
+                                "cpu": "100m",
+                                "memory": "200Mi"
+                            }
+                        },
+                        "terminationMessagePath": "/dev/termination-log",
+                        "terminationMessagePolicy": "File",
+                        "volumeMounts": [
+                            {
+                                "mountPath": "/usr/share/nginx/html",
+                                "name": "index"
+                            }
+                        ]
+                    }
+                ],
+                "dnsPolicy": "ClusterFirst",
+                "restartPolicy": "Always",
+                "schedulerName": "default-scheduler",
+                "securityContext": {},
+                "serviceAccount": "zorg",
+                "serviceAccountName": "zorg",
+                "terminationGracePeriodSeconds": 30,
+                "volumes": [
+                    {
+                        "name": "index",
+                        "persistentVolumeClaim": {
+                            "claimName": "web"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "status": {
+        "availableReplicas": 1,
+        "fullyLabeledReplicas": 1,
+        "observedGeneration": 1,
+        "readyReplicas": 1,
+        "replicas": 1
+    }
+}

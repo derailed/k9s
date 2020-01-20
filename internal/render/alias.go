@@ -39,7 +39,7 @@ func (Alias) Render(o interface{}, ns string, r *Row) error {
 
 	r.ID = a.GVR
 	gvr := client.NewGVR(a.GVR)
-	res, grp := gvr.ToRAndG()
+	res, grp := gvr.RG()
 	r.Fields = append(r.Fields,
 		res,
 		strings.Join(a.Aliases, ","),
