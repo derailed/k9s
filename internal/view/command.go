@@ -80,7 +80,9 @@ func (c *Command) xrayCmd(cmd string) error {
 	if len(tokens) == 3 {
 		ns = tokens[2]
 	}
-	c.app.Config.SetActiveNamespace(client.CleanseNamespace(ns))
+	if err := c.app.Config.SetActiveNamespace(client.CleanseNamespace(ns)); err != nil {
+		return err
+	}
 	if err := c.app.Config.Save(); err != nil {
 		return err
 	}
