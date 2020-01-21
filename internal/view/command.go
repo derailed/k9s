@@ -74,7 +74,18 @@ func (c *Command) xrayCmd(cmd string) error {
 	if !allowedXRay(gvr) {
 		return fmt.Errorf("Huh? `%s` Command not found", cmd)
 	}
-	return c.exec(cmd, "xrays", NewXray(gvr), true)
+
+	x := NewXray(gvr)
+	ns := c.app.Config.ActiveNamespace()
+	if len(tokens) == 3 {
+		ns = tokens[2]
+	}
+	c.app.Config.SetActiveNamespace(client.CleanseNamespace(ns))
+	if err := c.app.Config.Save(); err != nil {
+		return err
+	}
+
+	return c.exec(cmd, "xrays", x, true)
 }
 
 // Exec the Command by showing associated display.

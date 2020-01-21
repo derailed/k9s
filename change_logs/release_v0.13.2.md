@@ -17,6 +17,8 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 Found a waffle thin issue in the Beryllium(Be) core causing K9s xray vision to only operate on one eye ;)
 Should be all betta' now...
 
+The `xray` command now takes an **optional** third argument for the target namespace ie `:xray dp fred` will show the Xray view for deployments in the `fred` namespace.
+
 Supported resources:
 
 * Pods
@@ -26,7 +28,7 @@ Supported resources:
 * DaemonSets
 * ReplicaSets
 
-Still watch out for that overbite!! so please proceed with caution...
+Still watch out for that overbite!! hence please proceed with caution...
 
 ---
 

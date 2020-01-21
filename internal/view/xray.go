@@ -83,7 +83,7 @@ func (x *Xray) Init(ctx context.Context) error {
 	x.SetInputCapture(x.keyboard)
 
 	x.model.SetRefreshRate(time.Duration(x.app.Config.K9s.GetRefreshRate()) * time.Second)
-	x.model.SetNamespace(client.AllNamespaces)
+	x.model.SetNamespace(client.CleanseNamespace(x.app.Config.ActiveNamespace()))
 	x.model.AddListener(x)
 
 	x.SetChangedFunc(func(n *tview.TreeNode) {
