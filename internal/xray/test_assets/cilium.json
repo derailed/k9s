@@ -1,0 +1,285 @@
+{
+    "apiVersion": "v1",
+    "kind": "Pod",
+    "metadata": {
+        "creationTimestamp": "2020-01-21T00:06:31Z",
+        "generateName": "cilium-operator-55658fb5c4-",
+        "labels": {
+            "io.cilium/app": "operator",
+            "name": "cilium-operator",
+            "pod-template-hash": "55658fb5c4"
+        },
+        "name": "cilium-operator-55658fb5c4-rxtnl",
+        "namespace": "kube-system",
+        "ownerReferences": [
+            {
+                "apiVersion": "apps/v1",
+                "blockOwnerDeletion": true,
+                "controller": true,
+                "kind": "ReplicaSet",
+                "name": "cilium-operator-55658fb5c4",
+                "uid": "aa49a24b-e5b7-4349-88ce-c275ee36097c"
+            }
+        ],
+        "resourceVersion": "1255",
+        "selfLink": "/api/v1/namespaces/kube-system/pods/cilium-operator-55658fb5c4-rxtnl",
+        "uid": "db060299-45c3-40c6-9a87-d8643f0d51e2"
+    },
+    "spec": {
+        "containers": [
+            {
+                "args": [
+                    "--debug=$(CILIUM_DEBUG)",
+                    "--identity-allocation-mode=$(CILIUM_IDENTITY_ALLOCATION_MODE)"
+                ],
+                "command": [
+                    "cilium-operator"
+                ],
+                "env": [
+                    {
+                        "name": "CILIUM_K8S_NAMESPACE",
+                        "valueFrom": {
+                            "fieldRef": {
+                                "apiVersion": "v1",
+                                "fieldPath": "metadata.namespace"
+                            }
+                        }
+                    },
+                    {
+                        "name": "K8S_NODE_NAME",
+                        "valueFrom": {
+                            "fieldRef": {
+                                "apiVersion": "v1",
+                                "fieldPath": "spec.nodeName"
+                            }
+                        }
+                    },
+                    {
+                        "name": "CILIUM_DEBUG",
+                        "valueFrom": {
+                            "configMapKeyRef": {
+                                "key": "debug",
+                                "name": "cilium-config",
+                                "optional": true
+                            }
+                        }
+                    },
+                    {
+                        "name": "CILIUM_CLUSTER_NAME",
+                        "valueFrom": {
+                            "configMapKeyRef": {
+                                "key": "cluster-name",
+                                "name": "cilium-config",
+                                "optional": true
+                            }
+                        }
+                    },
+                    {
+                        "name": "CILIUM_CLUSTER_ID",
+                        "valueFrom": {
+                            "configMapKeyRef": {
+                                "key": "cluster-id",
+                                "name": "cilium-config",
+                                "optional": true
+                            }
+                        }
+                    },
+                    {
+                        "name": "CILIUM_IPAM",
+                        "valueFrom": {
+                            "configMapKeyRef": {
+                                "key": "ipam",
+                                "name": "cilium-config",
+                                "optional": true
+                            }
+                        }
+                    },
+                    {
+                        "name": "CILIUM_DISABLE_ENDPOINT_CRD",
+                        "valueFrom": {
+                            "configMapKeyRef": {
+                                "key": "disable-endpoint-crd",
+                                "name": "cilium-config",
+                                "optional": true
+                            }
+                        }
+                    },
+                    {
+                        "name": "CILIUM_KVSTORE",
+                        "valueFrom": {
+                            "configMapKeyRef": {
+                                "key": "kvstore",
+                                "name": "cilium-config",
+                                "optional": true
+                            }
+                        }
+                    },
+                    {
+                        "name": "CILIUM_KVSTORE_OPT",
+                        "valueFrom": {
+                            "configMapKeyRef": {
+                                "key": "kvstore-opt",
+                                "name": "cilium-config",
+                                "optional": true
+                            }
+                        }
+                    },
+                    {
+                        "name": "AWS_ACCESS_KEY_ID",
+                        "valueFrom": {
+                            "secretKeyRef": {
+                                "key": "AWS_ACCESS_KEY_ID",
+                                "name": "cilium-aws",
+                                "optional": true
+                            }
+                        }
+                    },
+                    {
+                        "name": "AWS_SECRET_ACCESS_KEY",
+                        "valueFrom": {
+                            "secretKeyRef": {
+                                "key": "AWS_SECRET_ACCESS_KEY",
+                                "name": "cilium-aws",
+                                "optional": true
+                            }
+                        }
+                    },
+                    {
+                        "name": "AWS_DEFAULT_REGION",
+                        "valueFrom": {
+                            "secretKeyRef": {
+                                "key": "AWS_DEFAULT_REGION",
+                                "name": "cilium-aws",
+                                "optional": true
+                            }
+                        }
+                    },
+                    {
+                        "name": "CILIUM_IDENTITY_ALLOCATION_MODE",
+                        "valueFrom": {
+                            "configMapKeyRef": {
+                                "key": "identity-allocation-mode",
+                                "name": "cilium-config",
+                                "optional": true
+                            }
+                        }
+                    }
+                ],
+                "image": "docker.io/cilium/operator:v1.6.5",
+                "imagePullPolicy": "IfNotPresent",
+                "livenessProbe": {
+                    "failureThreshold": 3,
+                    "httpGet": {
+                        "path": "/healthz",
+                        "port": 9234,
+                        "scheme": "HTTP"
+                    },
+                    "initialDelaySeconds": 60,
+                    "periodSeconds": 10,
+                    "successThreshold": 1,
+                    "timeoutSeconds": 3
+                },
+                "name": "cilium-operator",
+                "resources": {},
+                "terminationMessagePath": "/dev/termination-log",
+                "terminationMessagePolicy": "File",
+                "volumeMounts": [
+                    {
+                        "mountPath": "/var/run/secrets/kubernetes.io/serviceaccount",
+                        "name": "cilium-operator-token-r9t5t",
+                        "readOnly": true
+                    }
+                ]
+            }
+        ],
+        "dnsPolicy": "ClusterFirst",
+        "enableServiceLinks": true,
+        "hostNetwork": true,
+        "nodeName": "minikube",
+        "priority": 0,
+        "restartPolicy": "Always",
+        "schedulerName": "default-scheduler",
+        "securityContext": {},
+        "serviceAccount": "cilium-operator",
+        "serviceAccountName": "cilium-operator",
+        "terminationGracePeriodSeconds": 30,
+        "tolerations": [
+            {
+                "effect": "NoExecute",
+                "key": "node.kubernetes.io/not-ready",
+                "operator": "Exists",
+                "tolerationSeconds": 300
+            },
+            {
+                "effect": "NoExecute",
+                "key": "node.kubernetes.io/unreachable",
+                "operator": "Exists",
+                "tolerationSeconds": 300
+            }
+        ],
+        "volumes": [
+            {
+                "name": "cilium-operator-token-r9t5t",
+                "secret": {
+                    "defaultMode": 420,
+                    "secretName": "cilium-operator-token-r9t5t"
+                }
+            }
+        ]
+    },
+    "status": {
+        "conditions": [
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2020-01-21T00:07:39Z",
+                "status": "True",
+                "type": "Initialized"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2020-01-21T00:07:47Z",
+                "status": "True",
+                "type": "Ready"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2020-01-21T00:07:47Z",
+                "status": "True",
+                "type": "ContainersReady"
+            },
+            {
+                "lastProbeTime": null,
+                "lastTransitionTime": "2020-01-21T00:07:39Z",
+                "status": "True",
+                "type": "PodScheduled"
+            }
+        ],
+        "containerStatuses": [
+            {
+                "containerID": "docker://9bc42a0d9395adafd9f8d922350c9029f8fa234060df9b03dd5e256804613f68",
+                "image": "cilium/operator:v1.6.5",
+                "imageID": "docker-pullable://cilium/operator@sha256:bcf273e7af15e7a0c9eb8df2f87fc81fe56323217ec8b2b35cd9cd5115920055",
+                "lastState": {},
+                "name": "cilium-operator",
+                "ready": true,
+                "restartCount": 0,
+                "started": true,
+                "state": {
+                    "running": {
+                        "startedAt": "2020-01-21T00:07:46Z"
+                    }
+                }
+            }
+        ],
+        "hostIP": "192.168.64.7",
+        "phase": "Running",
+        "podIP": "192.168.64.7",
+        "podIPs": [
+            {
+                "ip": "192.168.64.7"
+            }
+        ],
+        "qosClass": "BestEffort",
+        "startTime": "2020-01-21T00:07:39Z"
+    }
+}

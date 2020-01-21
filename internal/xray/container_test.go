@@ -54,7 +54,7 @@ func TestCORefs(t *testing.T) {
 			co:     render.ContainerRes{Container: makeCMContainer("c1", true)},
 			level1: 1,
 			level2: 1,
-			e:      xray.MissingRefStatus,
+			e:      xray.OkStatus,
 		},
 		"cm_doubleRef": {
 			co:     render.ContainerRes{Container: makeDoubleCMKeysContainer("c1", false)},
@@ -72,7 +72,7 @@ func TestCORefs(t *testing.T) {
 			co:     render.ContainerRes{Container: makeSecContainer("c1", true)},
 			level1: 1,
 			level2: 1,
-			e:      xray.MissingRefStatus,
+			e:      xray.OkStatus,
 		},
 		"envFrom_optional": {
 			co:     render.ContainerRes{Container: makeCMEnvFromContainer("c1", false)},

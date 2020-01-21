@@ -68,7 +68,10 @@ func (c *Command) xrayCmd(cmd string) error {
 		return errors.New("You must specify a resource")
 	}
 	gvr, ok := c.alias.AsGVR(tokens[1])
-	if !ok || !allowedXRay(gvr) {
+	if !ok {
+		return fmt.Errorf("Huh? `%s` Command not found", cmd)
+	}
+	if !allowedXRay(gvr) {
 		return fmt.Errorf("Huh? `%s` Command not found", cmd)
 	}
 	return c.exec(cmd, "xrays", NewXray(gvr), true)
@@ -85,11 +88,10 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 	if err != nil {
 		return err
 	}
-	log.Debug().Msgf("CMD %v %v %v", gvr, v, err)
 	switch cmds[0] {
 	case "ctx", "context", "contexts":
-		if len(cmds) == 2 && c.app.switchCtx(cmds[1], true) != nil {
-			return fmt.Errorf("context switch failed!")
+		if len(cmds) == 2 {
+			return useContext(c.app, cmds[1])
 		}
 		view := c.componentFor(gvr, path, v)
 		return c.exec(cmd, gvr, view, clearStack)

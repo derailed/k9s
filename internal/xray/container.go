@@ -68,7 +68,7 @@ func (c *Container) secretRefs(f dao.Factory, parent *TreeNode, ns string, ref *
 		return
 	}
 	gvr, id := "v1/secrets", client.FQN(ns, ref.LocalObjectReference.Name)
-	addRef(f, parent, id, gvr, ref.Optional)
+	addRef(f, parent, gvr, id, ref.Optional)
 }
 
 func (c *Container) configMapRefs(f dao.Factory, parent *TreeNode, ns string, ref *v1.ConfigMapKeySelector) {
@@ -90,11 +90,13 @@ func addRef(f dao.Factory, parent *TreeNode, gvr, id string, optional *bool) {
 	}
 }
 
-func validate(f dao.Factory, n *TreeNode, _ *bool) {
+func validate(f dao.Factory, n *TreeNode, optional *bool) {
 	res, err := f.Get(n.GVR, n.ID, false, labels.Everything())
 	if err != nil || res == nil {
-		log.Warn().Err(err).Msgf("Missing ref %q::%q", n.GVR, n.ID)
-		n.Extras[StatusKey] = MissingRefStatus
+		if optional == nil || !*optional {
+			log.Warn().Err(err).Msgf("Missing ref %q::%q", n.GVR, n.ID)
+			n.Extras[StatusKey] = MissingRefStatus
+		}
 		return
 	}
 	n.Extras[StatusKey] = OkStatus

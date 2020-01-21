@@ -28,6 +28,12 @@ func TestPodRender(t *testing.T) {
 			level2: 2,
 			status: xray.OkStatus,
 		},
+		"cilium": {
+			file:   "cilium",
+			level1: 1,
+			level2: 3,
+			status: xray.OkStatus,
+		},
 	}
 
 	var re xray.Pod

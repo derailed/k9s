@@ -114,13 +114,13 @@ func (*Pod) podVolumeRefs(f dao.Factory, parent *TreeNode, ns string, vv []v1.Vo
 	for _, v := range vv {
 		sec := v.VolumeSource.Secret
 		if sec != nil {
-			addRef(f, parent, "v1/secrets", client.FQN(ns, sec.SecretName), nil)
+			addRef(f, parent, "v1/secrets", client.FQN(ns, sec.SecretName), sec.Optional)
 			continue
 		}
 
 		cm := v.VolumeSource.ConfigMap
 		if cm != nil {
-			addRef(f, parent, "v1/configmaps", client.FQN(ns, cm.LocalObjectReference.Name), nil)
+			addRef(f, parent, "v1/configmaps", client.FQN(ns, cm.LocalObjectReference.Name), cm.Optional)
 			continue
 		}
 

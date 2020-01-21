@@ -34,21 +34,19 @@ func (c *Context) bindKeys(aa ui.KeyActions) {
 
 func (c *Context) useCtx(app *App, model ui.Tabular, gvr, path string) {
 	log.Debug().Msgf("SWITCH CTX %q--%q", gvr, path)
-	if err := c.useContext(path); err != nil {
+	if err := useContext(app, path); err != nil {
 		app.Flash().Err(err)
 		return
 	}
-	if err := app.gotoResource("po", true); err != nil {
-		app.Flash().Err(err)
-	}
+	c.Refresh()
+	c.GetTable().Select(1, 0)
 }
 
-func (c *Context) useContext(name string) error {
-	res, err := dao.AccessorFor(c.App().factory, client.NewGVR(c.GVR()))
+func useContext(app *App, name string) error {
+	res, err := dao.AccessorFor(app.factory, client.NewGVR("contexts"))
 	if err != nil {
 		return nil
 	}
-
 	switcher, ok := res.(dao.Switchable)
 	if !ok {
 		return errors.New("Expecting a switchable resource")
@@ -56,11 +54,9 @@ func (c *Context) useContext(name string) error {
 	if err := switcher.Switch(name); err != nil {
 		return err
 	}
-	if err := c.App().switchCtx(name, false); err != nil {
+	if err := app.switchCtx(name, false); err != nil {
 		return err
 	}
-	c.Refresh()
-	c.GetTable().Select(1, 0)
 
 	return nil
 }
