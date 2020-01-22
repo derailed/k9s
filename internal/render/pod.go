@@ -78,8 +78,8 @@ func (Pod) Header(ns string) HeaderRow {
 		Header{Name: "RESTART", Align: tview.AlignRight},
 		Header{Name: "CPU", Align: tview.AlignRight},
 		Header{Name: "MEM", Align: tview.AlignRight},
-		Header{Name: "%CPU", Align: tview.AlignRight},
-		Header{Name: "%MEM", Align: tview.AlignRight},
+		Header{Name: "%CPU (LIM)", Align: tview.AlignRight},
+		Header{Name: "%MEM (LIM)", Align: tview.AlignRight},
 		Header{Name: "IP"},
 		Header{Name: "NODE"},
 		Header{Name: "QOS"},
@@ -116,8 +116,8 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(rc),
 		c.cpu,
 		c.mem,
-		perc.cpu,
-		perc.mem,
+		perc.cpu+" ("+fmt.Sprintf("%3v",perc.cpuLim)+")",
+		perc.mem+" ("+fmt.Sprintf("%3v",perc.memLim)+")",
 		na(po.Status.PodIP),
 		na(po.Spec.NodeName),
 		p.mapQOS(po.Status.QOSClass),
@@ -159,9 +159,12 @@ func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, p metric) {
 	}
 
 	rc, rm := requestedRes(pod)
+	lc, lm := resourceLimits(pod)
 	p = metric{
 		cpu: AsPerc(toPerc(float64(cpu.MilliValue()), float64(rc.MilliValue()))),
 		mem: AsPerc(toPerc(ToMB(mem.Value()), ToMB(rm.Value()))),
+		cpuLim: AsPerc(toPerc(float64(cpu.MilliValue()), float64(lc.MilliValue()))),
+		memLim: AsPerc(toPerc(ToMB(mem.Value()), ToMB(lm.Value()))),
 	}
 
 	return
@@ -177,6 +180,21 @@ func containerResources(co v1.Container) (cpu, mem *resource.Quantity) {
 		cpu, mem = limit.Cpu(), limit.Memory()
 	}
 
+	return
+}
+
+func resourceLimits(po *v1.Pod) (cpu, mem resource.Quantity) {
+	for _, co := range po.Spec.Containers {
+		limit := co.Resources.Limits
+		if len(limit) != 0 {
+			if limit.Cpu() != nil {
+				cpu.Add(*limit.Cpu())
+			}
+			if limit.Memory() != nil {
+				mem.Add(*limit.Memory())
+			}
+		}
+	}
 	return
 }
 
