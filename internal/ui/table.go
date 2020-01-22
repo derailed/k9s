@@ -72,12 +72,12 @@ func (t *Table) Init(ctx context.Context) {
 
 // StylesChanged notifies the skin changed.
 func (t *Table) StylesChanged(s *config.Styles) {
-	t.SetBackgroundColor(config.AsColor(s.GetTable().BgColor))
-	t.SetBorderColor(config.AsColor(s.GetTable().FgColor))
+	t.SetBackgroundColor(config.AsColor(s.Table().BgColor))
+	t.SetBorderColor(config.AsColor(s.Table().FgColor))
 	t.SetBorderFocusColor(config.AsColor(s.Frame().Border.FocusColor))
 	t.SetSelectedStyle(
 		tcell.ColorBlack,
-		config.AsColor(t.styles.GetTable().CursorColor),
+		config.AsColor(t.styles.Table().CursorColor),
 		tcell.AttrBold,
 	)
 	t.Refresh()
@@ -128,6 +128,11 @@ func (t *Table) Hints() model.MenuHints {
 	return t.actions.Hints()
 }
 
+// ExtraHints returns additional hints.
+func (t *Table) ExtraHints() map[string]string {
+	return nil
+}
+
 // GetFilteredData fetch filtered tabular data.
 func (t *Table) GetFilteredData() render.TableData {
 	return t.filtered(t.GetModel().Peek())
@@ -172,8 +177,8 @@ func (t *Table) doUpdate(data render.TableData) {
 
 	t.Clear()
 	t.adjustSorter(data)
-	fg := config.AsColor(t.styles.GetTable().Header.FgColor)
-	bg := config.AsColor(t.styles.GetTable().Header.BgColor)
+	fg := config.AsColor(t.styles.Table().Header.FgColor)
+	bg := config.AsColor(t.styles.Table().Header.BgColor)
 	for col, h := range data.Header {
 		t.AddHeaderCell(col, h)
 		c := t.GetCell(0, col)
@@ -258,7 +263,7 @@ func (t *Table) buildRow(ns string, r int, re render.RowEvent, header render.Hea
 		c.SetAlign(header[col].Align)
 		c.SetTextColor(color(ns, re))
 		if marked {
-			c.SetTextColor(config.AsColor(t.styles.GetTable().MarkColor))
+			c.SetTextColor(config.AsColor(t.styles.Table().MarkColor))
 		}
 		if col == 0 {
 			c.SetReference(re.Row.ID)
@@ -296,7 +301,7 @@ func (t *Table) NameColIndex() int {
 
 // AddHeaderCell configures a table cell header.
 func (t *Table) AddHeaderCell(col int, h render.Header) {
-	c := tview.NewTableCell(sortIndicator(t.sortCol, t.styles.GetTable(), col, h.Name))
+	c := tview.NewTableCell(sortIndicator(t.sortCol, t.styles.Table(), col, h.Name))
 	c.SetExpansion(1)
 	c.SetAlign(h.Align)
 	t.SetCell(0, col, c)

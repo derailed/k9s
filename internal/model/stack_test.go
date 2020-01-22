@@ -289,6 +289,7 @@ func makeC(n string) c {
 
 func (c c) Name() string                                               { return c.name }
 func (c c) Hints() model.MenuHints                                     { return nil }
+func (c c) ExtraHints() map[string]string                              { return nil }
 func (c c) Draw(tcell.Screen)                                          {}
 func (c c) InputHandler() func(*tcell.EventKey, func(tview.Primitive)) { return nil }
 func (c c) SetRect(int, int, int, int)                                 {}

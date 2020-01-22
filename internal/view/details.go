@@ -103,6 +103,11 @@ func (d *Details) Hints() model.MenuHints {
 	return d.actions.Hints()
 }
 
+// ExtraHints returns additional hints.
+func (d *Details) ExtraHints() map[string]string {
+	return nil
+}
+
 func (d *Details) bindKeys() {
 	d.actions.Set(ui.KeyActions{
 		tcell.KeyEscape: ui.NewKeyAction("Back", d.app.PrevCmd, false),

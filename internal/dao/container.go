@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -86,8 +85,11 @@ func (c *Container) TailLogs(ctx context.Context, logChan chan<- string, opts Lo
 func (c *Container) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, error) {
 	ns, _ := client.Namespaced(path)
 	auth, err := c.Client().CanI(ns, "v1/pods:log", client.GetAccess)
-	if !auth || err != nil {
+	if err != nil {
 		return nil, err
+	}
+	if !auth {
+		return nil, fmt.Errorf("user is not authorized to view pod logs")
 	}
 
 	ns, n := client.Namespaced(path)
@@ -98,10 +100,6 @@ func (c *Container) Logs(path string, opts *v1.PodLogOptions) (*restclient.Reque
 // Helpers...
 
 func makeContainerRes(co v1.Container, po *v1.Pod, pmx *mv1beta1.PodMetrics, isInit bool) render.ContainerRes {
-	defer func(t time.Time) {
-		log.Debug().Msgf("MAKE-CO %s -- %v", co.Name, time.Since(t))
-	}(time.Now())
-
 	cmx, err := containerMetrics(co.Name, pmx)
 	if err != nil {
 		log.Warn().Err(err).Msgf("No container metrics found for %s::%s", po.Name, co.Name)

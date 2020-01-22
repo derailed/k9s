@@ -12,7 +12,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/kubernetes/pkg/util/node"
 )
 
 // Pod represents an xray renderer.
@@ -55,9 +54,11 @@ func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 }
 
 func (p *Pod) validate(node *TreeNode, po v1.Pod) error {
-	phase := p.phase(&po)
+	var re render.Pod
+
+	phase := re.Phase(&po)
 	ss := po.Status.ContainerStatuses
-	cr, _, _ := p.statuses(ss)
+	cr, _, _ := re.Statuses(ss)
 	status := OkStatus
 	if cr != len(ss) {
 		status = ToastStatus
@@ -128,100 +129,5 @@ func (*Pod) podVolumeRefs(f dao.Factory, parent *TreeNode, ns string, vv []v1.Vo
 		if pvc != nil {
 			addRef(f, parent, "v1/persistentvolumeclaims", client.FQN(ns, pvc.ClaimName), nil)
 		}
-	}
-}
-
-// BOZO!! Dedup...
-func (*Pod) statuses(ss []v1.ContainerStatus) (cr, ct, rc int) {
-	for _, c := range ss {
-		if c.State.Terminated != nil {
-			ct++
-		}
-		if c.Ready {
-			cr = cr + 1
-		}
-		rc += int(c.RestartCount)
-	}
-
-	return
-}
-
-func (p *Pod) phase(po *v1.Pod) string {
-	status := string(po.Status.Phase)
-	if po.Status.Reason != "" {
-		if po.DeletionTimestamp != nil && po.Status.Reason == node.NodeUnreachablePodReason {
-			return "Unknown"
-		}
-		status = po.Status.Reason
-	}
-
-	status, ok := p.initContainerPhase(po.Status, len(po.Spec.InitContainers), status)
-	if ok {
-		return status
-	}
-
-	status, ok = p.containerPhase(po.Status, status)
-	if ok && status == "Completed" {
-		status = "Running"
-	}
-	if po.DeletionTimestamp == nil {
-		return status
-	}
-
-	return "Terminated"
-}
-
-func (*Pod) containerPhase(st v1.PodStatus, status string) (string, bool) {
-	var running bool
-	for i := len(st.ContainerStatuses) - 1; i >= 0; i-- {
-		cs := st.ContainerStatuses[i]
-		switch {
-		case cs.State.Waiting != nil && cs.State.Waiting.Reason != "":
-			status = cs.State.Waiting.Reason
-		case cs.State.Terminated != nil && cs.State.Terminated.Reason != "":
-			status = cs.State.Terminated.Reason
-		case cs.State.Terminated != nil:
-			if cs.State.Terminated.Signal != 0 {
-				status = "Signal:" + strconv.Itoa(int(cs.State.Terminated.Signal))
-			} else {
-				status = "ExitCode:" + strconv.Itoa(int(cs.State.Terminated.ExitCode))
-			}
-		case cs.Ready && cs.State.Running != nil:
-			running = true
-		}
-	}
-
-	return status, running
-}
-
-func (p *Pod) initContainerPhase(st v1.PodStatus, initCount int, status string) (string, bool) {
-	for i, cs := range st.InitContainerStatuses {
-		s := checkContainerStatus(cs, i, initCount)
-		if s == "" {
-			continue
-		}
-		return s, true
-	}
-
-	return status, false
-}
-
-func checkContainerStatus(cs v1.ContainerStatus, i, initCount int) string {
-	switch {
-	case cs.State.Terminated != nil:
-		if cs.State.Terminated.ExitCode == 0 {
-			return ""
-		}
-		if cs.State.Terminated.Reason != "" {
-			return "Init:" + cs.State.Terminated.Reason
-		}
-		if cs.State.Terminated.Signal != 0 {
-			return "Init:Signal:" + strconv.Itoa(int(cs.State.Terminated.Signal))
-		}
-		return "Init:ExitCode:" + strconv.Itoa(int(cs.State.Terminated.ExitCode))
-	case cs.State.Waiting != nil && cs.State.Waiting.Reason != "" && cs.State.Waiting.Reason != "PodInitializing":
-		return "Init:" + cs.State.Waiting.Reason
-	default:
-		return "Init:" + strconv.Itoa(i) + "/" + strconv.Itoa(initCount)
 	}
 }

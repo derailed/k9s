@@ -41,6 +41,12 @@ k9s:
       fgColor: white
       bgColor: "#282a36"
       sorterColor: orange
+  xray:
+    fgColor: "#57c7ff"
+    bgColor: "#282a36"
+    cursorColor: "#5af78e"
+    graphicColor: darkgoldenrod
+    emojiOn: false
   views:
     yaml:
       keyColor: "#ff5c57"

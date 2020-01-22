@@ -27,39 +27,34 @@ const xrayTitle = "Xray"
 
 // Xray represents an xray tree view.
 type Xray struct {
-	*tview.TreeView
+	*ui.Tree
 
-	actions      ui.KeyActions
-	app          *App
-	gvr          client.GVR
-	selectedNode string
-	model        *model.Tree
-	cancelFn     context.CancelFunc
-	cmdBuff      *ui.CmdBuff
-	expandNodes  bool
-	meta         metav1.APIResource
-	count        int
-	envFn        EnvFunc
+	app      *App
+	gvr      client.GVR
+	meta     metav1.APIResource
+	model    *model.Tree
+	cancelFn context.CancelFunc
+	envFn    EnvFunc
 }
 
 var _ ResourceViewer = (*Xray)(nil)
 
 // NewXray returns a new view.
 func NewXray(gvr client.GVR) ResourceViewer {
-	a := Xray{
-		gvr:         gvr,
-		TreeView:    tview.NewTreeView(),
-		model:       model.NewTree(gvr.String()),
-		expandNodes: true,
-		actions:     make(ui.KeyActions),
-		cmdBuff:     ui.NewCmdBuff('/', ui.FilterBuff),
+	return &Xray{
+		gvr:   gvr,
+		Tree:  ui.NewTree(),
+		model: model.NewTree(gvr.String()),
 	}
-
-	return &a
 }
 
 // Init initializes the view
 func (x *Xray) Init(ctx context.Context) error {
+	if err := x.Tree.Init(ctx); err != nil {
+		return err
+	}
+	x.SetKeyListenerFn(x.keyEntered)
+
 	var err error
 	x.meta, err = dao.MetaFor(x.gvr)
 	if err != nil {
@@ -71,16 +66,11 @@ func (x *Xray) Init(ctx context.Context) error {
 	}
 
 	x.bindKeys()
-	x.SetBorder(true)
-	x.SetBorderAttributes(tcell.AttrBold)
-	x.SetBorderPadding(0, 0, 1, 1)
-	x.SetBackgroundColor(config.AsColor(x.app.Styles.GetTable().BgColor))
-	x.SetBorderColor(config.AsColor(x.app.Styles.GetTable().FgColor))
+	x.SetBackgroundColor(config.AsColor(x.app.Styles.Xray().BgColor))
+	x.SetBorderColor(config.AsColor(x.app.Styles.Xray().FgColor))
 	x.SetBorderFocusColor(config.AsColor(x.app.Styles.Frame().Border.FocusColor))
+	x.SetGraphicsColor(config.AsColor(x.app.Styles.Xray().GraphicColor))
 	x.SetTitle(fmt.Sprintf(" %s-%s ", xrayTitle, strings.Title(x.gvr.R())))
-	x.SetGraphics(true)
-	x.SetGraphicsColor(tcell.ColorFloralWhite)
-	x.SetInputCapture(x.keyboard)
 
 	x.model.SetRefreshRate(time.Duration(x.app.Config.K9s.GetRefreshRate()) * time.Second)
 	x.model.SetNamespace(client.CleanseNamespace(x.app.Config.ActiveNamespace()))
@@ -92,7 +82,7 @@ func (x *Xray) Init(ctx context.Context) error {
 			log.Error().Msgf("No ref found on node %s", n.GetText())
 			return
 		}
-		x.selectedNode = ref.Path
+		x.SetSelectedItem(ref.Path)
 		x.refreshActions()
 	})
 	x.refreshActions()
@@ -100,24 +90,20 @@ func (x *Xray) Init(ctx context.Context) error {
 	return nil
 }
 
+// ExtraHints returns additional hints.
+func (x *Xray) ExtraHints() map[string]string {
+	if !x.app.Styles.Xray().ShowIcons {
+		return nil
+	}
+	return xray.EmojiInfo()
+}
+
 // SetInstance sets specific resource instance.
 func (x *Xray) SetInstance(string) {}
-
-// Actions returns active menu bindings.
-func (x *Xray) Actions() ui.KeyActions {
-	return x.actions
-}
-
-// Hints returns the view hints.
-func (x *Xray) Hints() model.MenuHints {
-	return x.actions.Hints()
-}
 
 func (x *Xray) bindKeys() {
 	x.Actions().Add(ui.KeyActions{
 		tcell.KeyEnter:      ui.NewKeyAction("Goto", x.gotoCmd, true),
-		ui.KeySpace:         ui.NewKeyAction("Expand/Collapse", x.noopCmd, true),
-		ui.KeyX:             ui.NewKeyAction("Expand/Collapse All", x.toggleCollapseCmd, true),
 		ui.KeySlash:         ui.NewSharedKeyAction("Filter Mode", x.activateCmd, false),
 		tcell.KeyBackspace2: ui.NewSharedKeyAction("Erase", x.eraseCmd, false),
 		tcell.KeyBackspace:  ui.NewSharedKeyAction("Erase", x.eraseCmd, false),
@@ -127,25 +113,9 @@ func (x *Xray) bindKeys() {
 	})
 }
 
-func (x *Xray) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	key := evt.Key()
-	if key == tcell.KeyRune {
-		if x.cmdBuff.IsActive() {
-			x.cmdBuff.Add(evt.Rune())
-			x.ClearSelection()
-			x.update(x.filter(x.model.Peek()))
-			x.UpdateTitle()
-			return nil
-		}
-
-		key = mapKey(evt)
-	}
-
-	if a, ok := x.actions[key]; ok {
-		return a.Action(evt)
-	}
-
-	return evt
+func (x *Xray) keyEntered() {
+	x.ClearSelection()
+	x.update(x.filter(x.model.Peek()))
 }
 
 func (x *Xray) refreshActions() {
@@ -155,11 +125,11 @@ func (x *Xray) refreshActions() {
 		pluginActions(x, aa)
 		hotKeyActions(x, aa)
 
-		x.actions.Add(aa)
+		x.Actions().Add(aa)
 		x.app.Menu().HydrateMenu(x.Hints())
 	}()
 
-	x.actions.Clear()
+	x.Actions().Clear()
 	x.bindKeys()
 
 	ref := x.selectedSpec()
@@ -191,26 +161,16 @@ func (x *Xray) refreshActions() {
 		aa[ui.KeyShiftL] = ui.NewKeyAction("Logs Previous", x.logsCmd(true), true)
 	}
 
-	x.actions.Add(aa)
+	x.Actions().Add(aa)
 }
 
-// GetSelectedItem returns the current selection as string.
-func (x *Xray) GetSelectedItem() string {
+// GetSelectedPath returns the current selection as string.
+func (x *Xray) GetSelectedPath() string {
 	ref := x.selectedSpec()
 	if ref == nil {
 		return ""
 	}
 	return ref.Path
-}
-
-// EnvFn returns an plugin env function if available.
-func (x *Xray) EnvFn() EnvFunc {
-	return x.envFn
-}
-
-// Aliases returns all available aliases.
-func (x *Xray) Aliases() []string {
-	return append(x.meta.ShortNames, x.meta.SingularName, x.meta.Name)
 }
 
 func (x *Xray) selectedSpec() *xray.NodeSpec {
@@ -226,6 +186,16 @@ func (x *Xray) selectedSpec() *xray.NodeSpec {
 	}
 
 	return &ref
+}
+
+// EnvFn returns an plugin env function if available.
+func (x *Xray) EnvFn() EnvFunc {
+	return x.envFn
+}
+
+// Aliases returns all available aliases.
+func (x *Xray) Aliases() []string {
+	return append(x.meta.ShortNames, x.meta.SingularName, x.meta.Name)
 }
 
 func (x *Xray) logsCmd(prev bool) func(evt *tcell.EventKey) *tcell.EventKey {
@@ -246,7 +216,6 @@ func (x *Xray) logsCmd(prev bool) func(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (x *Xray) showLogs(pod, co *xray.NodeSpec, prev bool) {
-	log.Debug().Msgf("SHOWING LOGS path %q", co.Path)
 	// Need to load and wait for pods
 	ns, _ := client.Namespaced(pod.Path)
 	_, err := x.app.factory.CanForResource(ns, "v1/pods", client.MonitorAccess)
@@ -384,25 +353,21 @@ func (x *Xray) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
-func (x *Xray) noopCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return evt
-}
-
 func (x *Xray) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if x.app.InCmdMode() {
 		return evt
 	}
 	x.app.Flash().Info("Filter mode activated.")
-	x.cmdBuff.SetActive(true)
+	x.CmdBuff().SetActive(true)
 
 	return nil
 }
 
 func (x *Xray) clearCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !x.cmdBuff.IsActive() {
+	if !x.CmdBuff().IsActive() {
 		return evt
 	}
-	x.cmdBuff.Clear()
+	x.CmdBuff().Clear()
 	x.model.ClearFilter()
 	x.Start()
 
@@ -410,8 +375,8 @@ func (x *Xray) clearCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (x *Xray) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if x.cmdBuff.IsActive() {
-		x.cmdBuff.Delete()
+	if x.CmdBuff().IsActive() {
+		x.CmdBuff().Delete()
 	}
 	x.UpdateTitle()
 
@@ -419,13 +384,13 @@ func (x *Xray) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (x *Xray) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !x.cmdBuff.InCmdMode() {
-		x.cmdBuff.Reset()
+	if !x.CmdBuff().InCmdMode() {
+		x.CmdBuff().Reset()
 		return x.app.PrevCmd(evt)
 	}
 
 	x.app.Flash().Info("Clearing filter...")
-	x.cmdBuff.Reset()
+	x.CmdBuff().Reset()
 	x.model.ClearFilter()
 	x.Start()
 
@@ -433,11 +398,11 @@ func (x *Xray) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (x *Xray) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if x.cmdBuff.IsActive() {
-		if ui.IsLabelSelector(x.cmdBuff.String()) {
+	if x.CmdBuff().IsActive() {
+		if ui.IsLabelSelector(x.CmdBuff().String()) {
 			x.Start()
 		}
-		x.cmdBuff.SetActive(false)
+		x.CmdBuff().SetActive(false)
 		x.GetRoot().ExpandAll()
 
 		return nil
@@ -457,26 +422,9 @@ func (x *Xray) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (x *Xray) toggleCollapseCmd(evt *tcell.EventKey) *tcell.EventKey {
-	x.expandNodes = !x.expandNodes
-	x.GetRoot().Walk(func(node, parent *tview.TreeNode) bool {
-		if parent != nil {
-			node.SetExpanded(x.expandNodes)
-		}
-		return true
-	})
-	return nil
-}
-
-// ClearSelection clears the currently selected node.
-func (x *Xray) ClearSelection() {
-	x.selectedNode = ""
-	x.SetCurrentNode(nil)
-}
-
 func (x *Xray) filter(root *xray.TreeNode) *xray.TreeNode {
-	q := x.cmdBuff.String()
-	if x.cmdBuff.Empty() || ui.IsLabelSelector(q) {
+	q := x.CmdBuff().String()
+	if x.CmdBuff().Empty() || ui.IsLabelSelector(q) {
 		return root
 	}
 
@@ -493,7 +441,7 @@ func (x *Xray) TreeNodeSelected() {
 	x.app.QueueUpdateDraw(func() {
 		n := x.GetCurrentNode()
 		if n != nil {
-			n.SetColor(config.AsColor(x.app.Styles.GetTable().CursorColor))
+			n.SetColor(config.AsColor(x.app.Styles.Xray().CursorColor))
 		}
 	})
 }
@@ -504,7 +452,7 @@ func (x *Xray) TreeLoadFailed(err error) {
 }
 
 func (x *Xray) update(node *xray.TreeNode) {
-	root := makeTreeNode(node, x.expandNodes, x.app.Styles)
+	root := makeTreeNode(node, x.ExpandNodes(), x.app.Styles)
 	if node == nil {
 		x.app.QueueUpdateDraw(func() {
 			x.SetRoot(root)
@@ -515,8 +463,8 @@ func (x *Xray) update(node *xray.TreeNode) {
 	for _, c := range node.Children {
 		x.hydrate(root, c)
 	}
-	if x.selectedNode == "" {
-		x.selectedNode = node.ID
+	if x.GetSelectedItem() == "" {
+		x.SetSelectedItem(node.ID)
 	}
 
 	x.app.QueueUpdateDraw(func() {
@@ -529,12 +477,12 @@ func (x *Xray) update(node *xray.TreeNode) {
 			}
 			// BOZO!! Figure this out expand/collapse but the root
 			if parent != nil {
-				node.SetExpanded(x.expandNodes)
+				node.SetExpanded(x.ExpandNodes())
 			} else {
 				node.SetExpanded(true)
 			}
 
-			if ref.Path == x.selectedNode {
+			if ref.Path == x.GetSelectedItem() {
 				node.SetExpanded(true).SetSelectable(true)
 				x.SetCurrentNode(node)
 			}
@@ -545,13 +493,13 @@ func (x *Xray) update(node *xray.TreeNode) {
 
 // TreeChanged notifies the model data changed.
 func (x *Xray) TreeChanged(node *xray.TreeNode) {
-	x.count = node.Count(x.gvr.String())
+	x.Count = node.Count(x.gvr.String())
 	x.update(x.filter(node))
 	x.UpdateTitle()
 }
 
 func (x *Xray) hydrate(parent *tview.TreeNode, n *xray.TreeNode) {
-	node := makeTreeNode(n, x.expandNodes, x.app.Styles)
+	node := makeTreeNode(n, x.ExpandNodes(), x.app.Styles)
 	for _, c := range n.Children {
 		x.hydrate(node, c)
 	}
@@ -576,10 +524,10 @@ func (x *Xray) BufferActive(state bool, k ui.BufferKind) {
 func (x *Xray) defaultContext() context.Context {
 	ctx := context.WithValue(context.Background(), internal.KeyFactory, x.app.factory)
 	ctx = context.WithValue(ctx, internal.KeyFields, "")
-	if x.cmdBuff.Empty() {
+	if x.CmdBuff().Empty() {
 		ctx = context.WithValue(ctx, internal.KeyLabels, "")
 	} else {
-		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(x.cmdBuff.String()))
+		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(x.CmdBuff().String()))
 	}
 
 	return ctx
@@ -589,8 +537,8 @@ func (x *Xray) defaultContext() context.Context {
 func (x *Xray) Start() {
 	x.Stop()
 
-	x.cmdBuff.AddListener(x.app.Cmd())
-	x.cmdBuff.AddListener(x)
+	x.CmdBuff().AddListener(x.app.Cmd())
+	x.CmdBuff().AddListener(x)
 
 	ctx := x.defaultContext()
 	ctx, x.cancelFn = context.WithCancel(ctx)
@@ -606,8 +554,8 @@ func (x *Xray) Stop() {
 	x.cancelFn()
 	x.cancelFn = nil
 
-	x.cmdBuff.RemoveListener(x.app.Cmd())
-	x.cmdBuff.RemoveListener(x)
+	x.CmdBuff().RemoveListener(x.app.Cmd())
+	x.CmdBuff().RemoveListener(x)
 }
 
 // SetBindKeysFn sets up extra key bindings.
@@ -645,12 +593,12 @@ func (x *Xray) styleTitle() string {
 		ns = client.NamespaceAll
 	}
 
-	buff := x.cmdBuff.String()
+	buff := x.CmdBuff().String()
 	var title string
 	if ns == client.ClusterScope {
-		title = ui.SkinTitle(fmt.Sprintf(ui.TitleFmt, base, x.count), x.app.Styles.Frame())
+		title = ui.SkinTitle(fmt.Sprintf(ui.TitleFmt, base, x.Count), x.app.Styles.Frame())
 	} else {
-		title = ui.SkinTitle(fmt.Sprintf(ui.NSTitleFmt, base, ns, x.count), x.app.Styles.Frame())
+		title = ui.SkinTitle(fmt.Sprintf(ui.NSTitleFmt, base, ns, x.Count), x.app.Styles.Frame())
 	}
 	if buff == "" {
 		return title
@@ -690,14 +638,6 @@ func (x *Xray) resourceDelete(gvr client.GVR, ref *xray.NodeSpec, msg string) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func mapKey(evt *tcell.EventKey) tcell.Key {
-	key := tcell.Key(evt.Rune())
-	if evt.Modifiers() == tcell.ModAlt {
-		key = tcell.Key(int16(evt.Rune()) * int16(evt.Modifiers()))
-	}
-	return key
-}
-
 func fuzzyFilter(q, path string) bool {
 	q = strings.TrimSpace(q[2:])
 	mm := fuzzy.Find(q, []string{path})
@@ -720,7 +660,7 @@ func rxFilter(q, path string) bool {
 func makeTreeNode(node *xray.TreeNode, expanded bool, styles *config.Styles) *tview.TreeNode {
 	n := tview.NewTreeNode("No data...")
 	if node != nil {
-		n.SetText(node.Title())
+		n.SetText(node.Title(styles.Xray()))
 		spec := xray.NodeSpec{}
 		if p := node.Parent; p != nil {
 			spec.GVR, spec.Path = p.GVR, p.ID
@@ -733,7 +673,7 @@ func makeTreeNode(node *xray.TreeNode, expanded bool, styles *config.Styles) *tv
 	}
 	n.SetSelectable(true)
 	n.SetExpanded(expanded)
-	n.SetColor(config.AsColor(styles.GetTable().CursorColor))
+	n.SetColor(config.AsColor(styles.Xray().CursorColor))
 	n.SetSelectedFunc(func() {
 		n.SetExpanded(!n.IsExpanded())
 	})

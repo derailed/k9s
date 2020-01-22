@@ -73,17 +73,18 @@ type Connection interface {
 	CurrentNamespaceName() (string, error)
 }
 
-type currentMetrics struct {
+// CurrentMetrics tracks current cpu/mem.
+type CurrentMetrics struct {
 	CurrentCPU int64
 	CurrentMEM float64
 }
 
 // PodMetrics represent an aggregation of all pod containers metrics.
-type PodMetrics currentMetrics
+type PodMetrics CurrentMetrics
 
 // NodeMetrics describes raw node metrics.
 type NodeMetrics struct {
-	currentMetrics
+	CurrentMetrics
 	AvailCPU int64
 	AvailMEM float64
 	TotalCPU int64

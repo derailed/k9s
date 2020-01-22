@@ -122,7 +122,7 @@ func loadConfiguration() *config.Config {
 
 	// Try to access server version if that fail. Connectivity issue?
 	if _, err := k9sCfg.GetConnection().ServerVersion(); err != nil {
-		log.Panic().Err(err).Msg("K9s can't connect to cluster")
+		log.Panic().Msgf("K9s can't connect to cluster -- %s", err)
 	}
 	log.Info().Msg("✅ Kubernetes connectivity")
 	if err := k9sCfg.Save(); err != nil {

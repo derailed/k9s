@@ -81,15 +81,15 @@ func BenchConfig(cluster string) string {
 }
 
 // RefreshStyles load for skin configuration changes.
-func (c *Configurator) RefreshStyles(cluster string) {
-	clusterSkins := filepath.Join(config.K9sHome, fmt.Sprintf("%s_skin.yml", cluster))
+func (c *Configurator) RefreshStyles(context string) {
+	clusterSkins := filepath.Join(config.K9sHome, fmt.Sprintf("%s_skin.yml", context))
 	if c.Styles == nil {
 		c.Styles = config.NewStyles()
 	}
 	if err := c.Styles.Load(clusterSkins); err != nil {
-		log.Info().Msgf("No cluster specific skin file found -- %s", clusterSkins)
+		log.Info().Msgf("No context specific skin file found -- %s", clusterSkins)
 	} else {
-		log.Debug().Msgf("Found cluster skins %s", clusterSkins)
+		log.Debug().Msgf("Found context skins %s", clusterSkins)
 		c.updateStyles(clusterSkins)
 		return
 	}

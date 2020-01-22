@@ -77,23 +77,60 @@ func (h *Help) computeMaxes(hh model.MenuHints) {
 	h.maxKey += 2
 }
 
+func (h *Help) computeExtraMaxes(ee map[string]string) {
+	h.maxDesc = 0
+	for k := range ee {
+		if len(k) > h.maxDesc {
+			h.maxDesc = len(k)
+		}
+	}
+}
+
 func (h *Help) build() {
 	h.Clear()
 
+	sections := []string{"RESOURCE", "GENERAL", "NAVIGATION", "HELP"}
+
 	h.maxRows = len(h.showGeneral())
-	ff := []HelpFunc{h.app.Content.Top().Hints, h.showGeneral, h.showNav, h.showHelp}
+	ff := []HelpFunc{
+		h.app.Content.Top().Hints,
+		h.showGeneral,
+		h.showNav,
+		h.showHelp,
+	}
 	var col int
-	for i, section := range []string{"RESOURCE", "GENERAL", "NAVIGATION", "HELP"} {
+	extras := h.app.Content.Top().ExtraHints()
+	for i, section := range sections {
 		hh := ff[i]()
 		sort.Sort(hh)
 		h.computeMaxes(hh)
+		if extras != nil {
+			h.computeExtraMaxes(extras)
+		}
 		h.addSection(col, section, hh)
+		if i == 0 && extras != nil {
+			h.addExtras(extras, col, len(hh))
+		}
 		col += 2
 	}
 
 	if hh, err := h.showHotKeys(); err == nil {
 		h.computeMaxes(hh)
 		h.addSection(col, "HOTKEYS", hh)
+	}
+}
+
+func (h *Help) addExtras(extras map[string]string, col, size int) {
+	kk := make([]string, 0, len(extras))
+	for k := range extras {
+		kk = append(kk, k)
+	}
+	sort.StringSlice(kk).Sort()
+	row := size + 1
+	for _, k := range kk {
+		h.SetCell(row, col, padCell(extras[k], h.maxKey))
+		h.SetCell(row, col+1, padCell(k, h.maxDesc))
+		row++
 	}
 }
 
@@ -236,42 +273,28 @@ func (h *Help) addSection(c int, title string, hh model.MenuHints) {
 		h.maxRows = len(hh)
 	}
 	row := 0
-	cell := tview.NewTableCell(title)
-	cell.SetTextColor(tcell.ColorGreen)
-	cell.SetAttributes(tcell.AttrBold)
-	cell.SetExpansion(1)
-	cell.SetAlign(tview.AlignLeft)
-	h.SetCell(row, c, cell)
+	h.SetCell(row, c, titleCell(title))
 	h.addSpacer(c + 1)
 	row++
 
 	for _, hint := range hh {
 		col := c
-		cell := tview.NewTableCell(render.Pad(toMnemonic(hint.Mnemonic), h.maxKey))
-		if _, err := strconv.Atoi(hint.Mnemonic); err != nil {
-			cell.SetTextColor(tcell.ColorDodgerBlue)
-		} else {
-			cell.SetTextColor(tcell.ColorFuchsia)
-		}
-		cell.SetAttributes(tcell.AttrBold)
-		h.SetCell(row, col, cell)
+		h.SetCell(row, col, keyCell(hint.Mnemonic, h.maxKey))
 		col++
-		cell = tview.NewTableCell(render.Pad(hint.Description, h.maxDesc))
-		cell.SetTextColor(tcell.ColorWhite)
-		h.SetCell(row, col, cell)
+		h.SetCell(row, col, infoCell(hint.Description, h.maxDesc))
 		row++
 	}
 
-	if len(hh) < h.maxRows {
-		for i := h.maxRows - len(hh); i > 0; i-- {
-			col := c
-			cell := tview.NewTableCell(render.Pad("", h.maxKey))
-			h.SetCell(row, col, cell)
-			col++
-			cell = tview.NewTableCell(render.Pad("", h.maxDesc))
-			h.SetCell(row, col, cell)
-			row++
-		}
+	if len(hh) >= h.maxRows {
+		return
+	}
+
+	for i := h.maxRows - len(hh); i > 0; i-- {
+		col := c
+		h.SetCell(row, col, padCell("", h.maxKey))
+		col++
+		h.SetCell(row, col, padCell("", h.maxDesc))
+		row++
 	}
 }
 
@@ -296,4 +319,37 @@ func keyConv(s string) string {
 	}
 
 	return strings.Replace(s, "alt", "opt", 1)
+}
+
+func titleCell(title string) *tview.TableCell {
+	c := tview.NewTableCell(title)
+	c.SetTextColor(tcell.ColorGreen)
+	c.SetAttributes(tcell.AttrBold)
+	c.SetExpansion(1)
+	c.SetAlign(tview.AlignLeft)
+
+	return c
+}
+
+func keyCell(k string, width int) *tview.TableCell {
+	c := padCell(toMnemonic(k), width)
+	if _, err := strconv.Atoi(k); err != nil {
+		c.SetTextColor(tcell.ColorDodgerBlue)
+	} else {
+		c.SetTextColor(tcell.ColorFuchsia)
+	}
+	c.SetAttributes(tcell.AttrBold)
+
+	return c
+}
+
+func infoCell(info string, width int) *tview.TableCell {
+	c := padCell(info, width)
+	c.SetTextColor(tcell.ColorWhite)
+
+	return c
+}
+
+func padCell(s string, width int) *tview.TableCell {
+	return tview.NewTableCell(render.Pad(s, width))
 }

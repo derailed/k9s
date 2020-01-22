@@ -159,7 +159,6 @@ func (l *Log) Append(line string) {
 		l.initialized = false
 		l.fireLogCleared()
 	}
-	log.Debug().Msgf("APPEND %s", line)
 	if len(l.lines) < int(l.logOptions.Lines) {
 		l.lines = append(l.lines, line)
 	} else {
@@ -169,7 +168,6 @@ func (l *Log) Append(line string) {
 			l.lastSent = 0
 		}
 	}
-	log.Debug().Msgf("MODEL %d--%d", len(l.lines), l.lastSent)
 }
 
 // Notify fires of notifications to the listeners.
@@ -264,7 +262,6 @@ func (l *Log) fireLogError(err error) {
 }
 
 func (l *Log) fireLogChanged(lines []string) {
-	log.Debug().Msgf("FIRE LOGS CHANGED %v", lines)
 	for _, lis := range l.listeners {
 		lis.LogChanged(lines)
 	}

@@ -20,14 +20,14 @@ type App struct {
 }
 
 // NewApp returns a new app.
-func NewApp(cluster string) *App {
+func NewApp(context string) *App {
 	a := App{
 		Application: tview.NewApplication(),
 		actions:     make(KeyActions),
 		Main:        NewPages(),
 		cmdBuff:     NewCmdBuff(':', CommandBuff),
 	}
-	a.ReloadStyles(cluster)
+	a.ReloadStyles(context)
 
 	a.views = map[string]tview.Primitive{
 		"menu":   NewMenu(a.Styles),
@@ -85,8 +85,8 @@ func (a *App) StylesChanged(s *config.Styles) {
 }
 
 // ReloadStyles reloads skin file.
-func (a *App) ReloadStyles(cluster string) {
-	a.RefreshStyles(cluster)
+func (a *App) ReloadStyles(context string) {
+	a.RefreshStyles(context)
 }
 
 // Conn returns an api server connection.

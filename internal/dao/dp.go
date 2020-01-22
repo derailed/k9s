@@ -32,8 +32,11 @@ type Deployment struct {
 func (d *Deployment) Scale(path string, replicas int32) error {
 	ns, n := client.Namespaced(path)
 	auth, err := d.Client().CanI(ns, "apps/v1/deployments:scale", []string{client.GetVerb, client.UpdateVerb})
-	if !auth || err != nil {
+	if err != nil {
 		return err
+	}
+	if !auth {
+		return fmt.Errorf("user is not authorized to scale a deployment")
 	}
 
 	scale, err := d.Client().DialOrDie().AppsV1().Deployments(ns).GetScale(n, metav1.GetOptions{})
@@ -60,8 +63,11 @@ func (d *Deployment) Restart(path string) error {
 
 	ns, _ := client.Namespaced(path)
 	auth, err := d.Client().CanI(ns, "apps/v1/deployments", []string{client.PatchVerb})
-	if !auth || err != nil {
+	if err != nil {
 		return err
+	}
+	if !auth {
+		return fmt.Errorf("user is not authorized to restart a deployment")
 	}
 	update, err := polymorphichelpers.ObjectRestarterFn(&ds)
 	if err != nil {

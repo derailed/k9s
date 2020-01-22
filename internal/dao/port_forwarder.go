@@ -93,8 +93,11 @@ func (p *PortForwarder) Start(path, co, address string, ports []string) (*portfo
 
 	ns, n := client.Namespaced(path)
 	auth, err := p.CanI(ns, "v1/pods", []string{client.GetVerb})
-	if !auth || err != nil {
+	if err != nil {
 		return nil, err
+	}
+	if !auth {
+		return nil, fmt.Errorf("user is not authorized to get pods")
 	}
 	pod, err := p.DialOrDie().CoreV1().Pods(ns).Get(n, metav1.GetOptions{})
 	if err != nil {
@@ -105,8 +108,11 @@ func (p *PortForwarder) Start(path, co, address string, ports []string) (*portfo
 	}
 
 	auth, err = p.CanI(ns, "v1/pods:portforward", []string{client.UpdateVerb})
-	if !auth || err != nil {
+	if err != nil {
 		return nil, err
+	}
+	if !auth {
+		return nil, fmt.Errorf("user is not authorized to update portforward")
 	}
 
 	rcfg := p.RestConfigOrDie()

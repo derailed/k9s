@@ -148,6 +148,11 @@ func (t *Table) SetNamespace(ns string) {
 	t.data.Clear()
 }
 
+// InNamespace checks if current namespace matches desired namespace.
+func (t *Table) InNamespace(ns string) bool {
+	return len(t.data.RowEvents) > 0 && t.namespace == ns
+}
+
 // SetRefreshRate sets model refresh duration.
 func (t *Table) SetRefreshRate(d time.Duration) {
 	t.refreshRate = d
@@ -156,11 +161,6 @@ func (t *Table) SetRefreshRate(d time.Duration) {
 // ClusterWide checks if resource is scope for all namespaces.
 func (t *Table) ClusterWide() bool {
 	return client.IsClusterWide(t.namespace)
-}
-
-// InNamespace checks if current namespace matches desired namespace.
-func (t *Table) InNamespace(ns string) bool {
-	return t.namespace == ns
 }
 
 // Empty return true if no model data.
@@ -210,7 +210,11 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 	}
 	a.Init(factory, client.NewGVR(t.gvr))
 
-	return a.List(ctx, client.CleanseNamespace(t.namespace))
+	ns := client.CleanseNamespace(t.namespace)
+	if client.IsClusterScoped(t.namespace) {
+		ns = client.AllNamespaces
+	}
+	return a.List(ctx, ns)
 }
 
 func (t *Table) reconcile(ctx context.Context) error {
@@ -230,19 +234,18 @@ func (t *Table) reconcile(ctx context.Context) error {
 	}
 
 	var rows render.Rows
-	ns := client.CleanseNamespace(t.namespace)
 	if _, ok := meta.Renderer.(*render.Generic); ok {
 		table, ok := oo[0].(*metav1beta1.Table)
 		if !ok {
 			return fmt.Errorf("expecting a meta table but got %T", oo[0])
 		}
 		rows = make(render.Rows, len(table.Rows))
-		if err := genericHydrate(ns, table, rows, meta.Renderer); err != nil {
+		if err := genericHydrate(t.namespace, table, rows, meta.Renderer); err != nil {
 			return err
 		}
 	} else {
 		rows = make(render.Rows, len(oo))
-		if err := hydrate(ns, oo, rows, meta.Renderer); err != nil {
+		if err := hydrate(t.namespace, oo, rows, meta.Renderer); err != nil {
 			return err
 		}
 	}

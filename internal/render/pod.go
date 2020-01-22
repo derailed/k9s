@@ -101,7 +101,7 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 	}
 
 	ss := po.Status.ContainerStatuses
-	cr, _, rc := p.statuses(ss)
+	cr, _, rc := p.Statuses(ss)
 	c, perc := p.gatherPodMX(&po, pwm.MX)
 
 	r.ID = client.MetaFQN(po.ObjectMeta)
@@ -112,7 +112,7 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = append(r.Fields,
 		po.ObjectMeta.Name,
 		strconv.Itoa(cr)+"/"+strconv.Itoa(len(ss)),
-		p.phase(&po),
+		p.Phase(&po),
 		strconv.Itoa(rc),
 		c.cpu,
 		c.mem,
@@ -213,7 +213,8 @@ func (*Pod) mapQOS(class v1.PodQOSClass) string {
 	}
 }
 
-func (*Pod) statuses(ss []v1.ContainerStatus) (cr, ct, rc int) {
+// Status reports current pod container statuses.
+func (*Pod) Statuses(ss []v1.ContainerStatus) (cr, ct, rc int) {
 	for _, c := range ss {
 		if c.State.Terminated != nil {
 			ct++
@@ -227,7 +228,8 @@ func (*Pod) statuses(ss []v1.ContainerStatus) (cr, ct, rc int) {
 	return
 }
 
-func (p *Pod) phase(po *v1.Pod) string {
+// Phase reports the given pod phase.
+func (p *Pod) Phase(po *v1.Pod) string {
 	status := string(po.Status.Phase)
 	if po.Status.Reason != "" {
 		if po.DeletionTimestamp != nil && po.Status.Reason == node.NodeUnreachablePodReason {

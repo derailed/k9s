@@ -26,6 +26,9 @@ type Igniter interface {
 type Hinter interface {
 	// Hints returns a collection of menu hints.
 	Hints() MenuHints
+
+	// ExtraHints returns additional hints.
+	ExtraHints() map[string]string
 }
 
 // Primitive represents a UI primitive.

@@ -41,7 +41,7 @@ type App struct {
 // NewApp returns a K9s app instance.
 func NewApp(cfg *config.Config) *App {
 	a := App{
-		App:     ui.NewApp(cfg.K9s.CurrentCluster),
+		App:     ui.NewApp(cfg.K9s.CurrentContext),
 		Content: NewPageStack(),
 	}
 	a.Config = cfg
@@ -318,7 +318,6 @@ func (a *App) Status(l ui.FlashLevel, msg string) {
 func (a *App) ClearStatus(flash bool) {
 	a.Logo().Reset()
 	if flash {
-		log.Debug().Msgf("FLASH CLEARED!!")
 		a.Flash().Clear()
 	}
 	a.Draw()

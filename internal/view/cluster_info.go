@@ -161,7 +161,7 @@ func fetchResources(app *App) (*v1.NodeList, *mv1beta1.NodeMetricsList, error) {
 func (c *ClusterInfo) refreshMetrics(cluster *model.Cluster, row int) {
 	nos, nmx, err := fetchResources(c.app)
 	if err != nil {
-		log.Warn().Msgf("NodeMetrics %#v", err)
+		log.Warn().Err(err).Msgf("NodeMetrics failed")
 		return
 	}
 

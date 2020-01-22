@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/rs/zerolog/log"
 	"vbom.ml/util/sortorder"
@@ -295,8 +296,8 @@ func (t *TreeNode) Find(gvr, id string) *TreeNode {
 }
 
 // Title computes the node title.
-func (t *TreeNode) Title() string {
-	return t.toTitle()
+func (t *TreeNode) Title(styles config.Xray) string {
+	return t.computeTitle(styles)
 }
 
 // ----------------------------------------------------------------------------
@@ -343,6 +344,14 @@ func category(gvr string) string {
 	return meta.SingularName
 }
 
+func (t TreeNode) computeTitle(styles config.Xray) string {
+	if styles.ShowIcons {
+		return t.toEmojiTitle()
+	}
+
+	return t.toTitle()
+}
+
 const (
 	titleFmt    = " [gray::-]%s/[white::b][%s::b]%s[::]"
 	topTitleFmt = " [white::b][%s::b]%s[::]"
@@ -360,10 +369,9 @@ func (t TreeNode) toTitle() (title string) {
 			color, status = "orange", toast+"_REF"
 		}
 	}
-
 	defer func() {
 		if status != "OK" {
-			title += fmt.Sprintf("  [gray::-][[%s::b]%s[gray::-]]", color, status)
+			title += fmt.Sprintf("  [gray::-][yellow:%s:b]%s[gray::-]", color, status)
 		}
 	}()
 
@@ -382,7 +390,96 @@ func (t TreeNode) toTitle() (title string) {
 	if !ok {
 		return
 	}
-
 	title += fmt.Sprintf(" [antiquewhite::][%s][::]", info)
+
 	return
+}
+
+const colorFmt = "%s [%s::b]%s[::]"
+
+func (t TreeNode) toEmojiTitle() (title string) {
+	_, n := client.Namespaced(t.ID)
+	color, status := "white", "OK"
+	if v, ok := t.Extras[StatusKey]; ok {
+		switch v {
+		case ToastStatus:
+			color, status = "orangered", toast
+		case MissingRefStatus:
+			color, status = "orange", toast+"_REF"
+		}
+	}
+	defer func() {
+		if status != "OK" {
+			title += fmt.Sprintf(" [gray::-][yellow:%s:b]%s[gray::-]", color, status)
+		}
+	}()
+
+	title = fmt.Sprintf(colorFmt, toEmoji(t.GVR), color, n)
+	if !t.IsLeaf() {
+		title += fmt.Sprintf("[white::d](%d[-::d])[-::-]", t.CountChildren())
+	}
+
+	info, ok := t.Extras[InfoKey]
+	if !ok {
+		return
+	}
+	title += fmt.Sprintf(" [antiquewhite::][%s][::]", info)
+
+	return
+}
+
+func toEmoji(gvr string) string {
+	switch gvr {
+	case "containers":
+		return "🐳"
+	case "v1/namespaces", "namespaces":
+		return "🗂"
+	case "v1/pods", "pods":
+		return "🚛"
+	case "v1/services", "services":
+		return "💁‍♀️"
+	case "v1/serviceaccounts", "serviceaccounts":
+		return "💳"
+	case "v1/persistentvolumes", "persistentvolumes":
+		return "📚"
+	case "v1/persistentvolumeclaims", "persistentvolumeclaims":
+		return "🎟"
+	case "v1/secrets", "secrets":
+		return "🔒"
+	case "v1/configmaps", "configmaps":
+		return "🗺"
+	case "apps/v1/deployments", "deployments":
+		return "🪂"
+	case "apps/v1/statefulsets", "statefulsets":
+		return "🎎"
+	case "apps/v1/daemonsets", "daemonsets":
+		return "😈"
+	default:
+		return "📎"
+	}
+}
+
+// EmojiInfo returns emoji help.
+func EmojiInfo() map[string]string {
+	gvrs := []string{
+		"containers",
+		"v1/namespaces",
+		"v1/pods",
+		"v1/services",
+		"v1/serviceaccounts",
+		"v1/persistentvolumes",
+		"v1/persistentvolumeclaims",
+		"v1/secrets",
+		"v1/configmaps",
+		"apps/v1/deployments",
+		"apps/v1/statefulsets",
+		"apps/v1/daemonsets",
+	}
+
+	m := make(map[string]string, len(gvrs))
+	for _, g := range gvrs {
+		m[client.NewGVR(g).R()] = toEmoji(g)
+	}
+
+	return m
 }

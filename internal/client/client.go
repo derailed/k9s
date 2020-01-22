@@ -196,7 +196,7 @@ func (a *APIClient) DialOrDie() kubernetes.Interface {
 
 	var err error
 	if a.client, err = kubernetes.NewForConfig(a.RestConfigOrDie()); err != nil {
-		log.Fatal().Msgf("Unable to connect to api server %v", err)
+		log.Fatal().Err(err).Msgf("Unable to connect to api server")
 	}
 	return a.client
 }
@@ -205,7 +205,7 @@ func (a *APIClient) DialOrDie() kubernetes.Interface {
 func (a *APIClient) RestConfigOrDie() *restclient.Config {
 	cfg, err := a.config.RESTConfig()
 	if err != nil {
-		log.Panic().Msgf("Unable to connect to api server %v", err)
+		log.Fatal().Err(err).Msgf("Unable to connect to api server")
 	}
 	return cfg
 }

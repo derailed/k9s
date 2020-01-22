@@ -3,21 +3,16 @@ package client
 import (
 	"errors"
 	"fmt"
-	"net"
-	"regexp"
-	"strings"
 	"sync"
-	"time"
 
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	clientcmd "k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
 )
-
-const dialTimeout = 5 * time.Second
 
 // Config tracks a kubernetes configuration.
 type Config struct {
@@ -38,17 +33,23 @@ func NewConfig(f *genericclioptions.ConfigFlags) *Config {
 }
 
 // CheckConnectivity return true if api server is cool or false otherwise.
+// BOZO!! No super sure about this approach either??
 func (c *Config) CheckConnectivity() bool {
-	address := strings.Replace(c.restConfig.Host, "https://", "", 1)
-	rx := regexp.MustCompile(`\A.+:\d+`)
-	if !rx.MatchString(address) {
-		address += ":443"
-	}
-
-	if _, err := net.DialTimeout("tcp", address, dialTimeout); err != nil {
-		log.Error().Err(err).Msgf("DIAL TIMEDOUT!")
+	cfg, err := c.RESTConfig()
+	if err != nil {
+		log.Error().Err(err).Msgf("K9s can't connect to cluster (config)")
 		return false
 	}
+	client, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		log.Error().Err(err).Msgf("K9s can't connect to cluster (client)")
+		return false
+	}
+	if _, err := client.ServerVersion(); err != nil {
+		log.Error().Err(err).Msgf("K9s can't connect to cluster (serverVersion)")
+		return false
+	}
+
 	return true
 }
 

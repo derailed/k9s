@@ -61,6 +61,13 @@ k9s:
       fgColor: *foreground
       bgColor: *background
       sorterColor: *cyan
+  # Xray view attributes.
+  xray:
+    fgColor: *foreground
+    bgColor: *background
+    cursorColor: *current_line
+    graphicColor: *purple
+    emojiOn: false
   views:
     # YAML info styles.
     yaml:

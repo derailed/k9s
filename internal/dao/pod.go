@@ -106,8 +106,11 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, error) {
 	ns, _ := client.Namespaced(path)
 	auth, err := p.Client().CanI(ns, "v1/pods:log", []string{client.GetVerb})
-	if !auth || err != nil {
+	if err != nil {
 		return nil, err
+	}
+	if !auth {
+		return nil, fmt.Errorf("user is not authorized to view pod logs")
 	}
 
 	ns, n := client.Namespaced(path)

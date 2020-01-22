@@ -25,21 +25,21 @@ func NewPicker() *Picker {
 }
 
 // Init initializes the view.
-func (v *Picker) Init(ctx context.Context) error {
+func (p *Picker) Init(ctx context.Context) error {
 	app, err := extractApp(ctx)
 	if err != nil {
 		return err
 	}
-	v.actions[tcell.KeyEscape] = ui.NewKeyAction("Back", app.PrevCmd, true)
+	p.actions[tcell.KeyEscape] = ui.NewKeyAction("Back", app.PrevCmd, true)
 
-	v.SetBorder(true)
-	v.SetMainTextColor(tcell.ColorWhite)
-	v.ShowSecondaryText(false)
-	v.SetShortcutColor(tcell.ColorAqua)
-	v.SetSelectedBackgroundColor(tcell.ColorAqua)
-	v.SetTitle(" [aqua::b]Containers Picker ")
-	v.SetInputCapture(func(evt *tcell.EventKey) *tcell.EventKey {
-		if a, ok := v.actions[evt.Key()]; ok {
+	p.SetBorder(true)
+	p.SetMainTextColor(tcell.ColorWhite)
+	p.ShowSecondaryText(false)
+	p.SetShortcutColor(tcell.ColorAqua)
+	p.SetSelectedBackgroundColor(tcell.ColorAqua)
+	p.SetTitle(" [aqua::b]Containers Picker ")
+	p.SetInputCapture(func(evt *tcell.EventKey) *tcell.EventKey {
+		if a, ok := p.actions[evt.Key()]; ok {
 			a.Action(evt)
 			evt = nil
 		}
@@ -50,22 +50,27 @@ func (v *Picker) Init(ctx context.Context) error {
 }
 
 // Start starts the view.
-func (v *Picker) Start() {}
+func (p *Picker) Start() {}
 
 // Stop stops the view.
-func (v *Picker) Stop() {}
+func (p *Picker) Stop() {}
 
 // Name returns the component name.
-func (v *Picker) Name() string { return "picker" }
+func (p *Picker) Name() string { return "picker" }
 
 // Hints returns the view hints.
-func (v *Picker) Hints() model.MenuHints {
-	return v.actions.Hints()
+func (p *Picker) Hints() model.MenuHints {
+	return p.actions.Hints()
 }
 
-func (v *Picker) populate(ss []string) {
-	v.Clear()
+// ExtraHints returns additional hints.
+func (p *Picker) ExtraHints() map[string]string {
+	return nil
+}
+
+func (p *Picker) populate(ss []string) {
+	p.Clear()
 	for i, s := range ss {
-		v.AddItem(s, "Select a container", rune('a'+i), nil)
+		p.AddItem(s, "Select a container", rune('a'+i), nil)
 	}
 }

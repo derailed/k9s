@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -65,9 +66,13 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 // FetchNodes retrieves all nodes.
 func FetchNodes(f Factory, labelsSel string) (*v1.NodeList, error) {
+	var list v1.NodeList
 	auth, err := f.Client().CanI("", "v1/nodes", []string{client.ListVerb})
-	if !auth || err != nil {
-		return nil, err
+	if err != nil {
+		return &list, err
+	}
+	if !auth {
+		return &list, fmt.Errorf("user is not authorized to list nodes")
 	}
 
 	return f.Client().DialOrDie().CoreV1().Nodes().List(metav1.ListOptions{

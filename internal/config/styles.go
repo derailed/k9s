@@ -117,6 +117,15 @@ type (
 		SorterColor string `yaml:"sorterColor"`
 	}
 
+	// Xray tracks xray styles.
+	Xray struct {
+		FgColor      string `yaml:"fgColor"`
+		BgColor      string `yaml:"bgColor"`
+		CursorColor  string `yaml:"cursorColor"`
+		GraphicColor string `yaml:"graphicColor"`
+		ShowIcons    bool   `yaml:"showIcons"`
+	}
+
 	// Menu tracks menu styles.
 	Menu struct {
 		FgColor     string `yaml:"fgColor"`
@@ -130,6 +139,7 @@ type (
 		Frame Frame `yaml:"frame"`
 		Info  Info  `yaml:"info"`
 		Table Table `yaml:"table"`
+		Xray  Xray  `yaml:"xray"`
 		Views Views `yaml:"views"`
 	}
 )
@@ -139,8 +149,9 @@ func newStyle() Style {
 		Body:  newBody(),
 		Frame: newFrame(),
 		Info:  newInfo(),
-		Table: newGetTable(),
+		Table: newTable(),
 		Views: newViews(),
+		Xray:  newXray(),
 	}
 }
 
@@ -217,8 +228,19 @@ func newInfo() Info {
 	}
 }
 
+// NewXray returns a new xray style.
+func newXray() Xray {
+	return Xray{
+		FgColor:      "aqua",
+		BgColor:      "black",
+		CursorColor:  "whitesmoke",
+		GraphicColor: "floralwhite",
+		ShowIcons:    true,
+	}
+}
+
 // NewTable returns a new table style.
-func newGetTable() Table {
+func newTable() Table {
 	return Table{
 		FgColor:     "aqua",
 		BgColor:     "black",
@@ -327,8 +349,13 @@ func (s *Styles) Title() Title {
 }
 
 // GetTable returns table styles.
-func (s *Styles) GetTable() Table {
+func (s *Styles) Table() Table {
 	return s.K9s.Table
+}
+
+// Xray returns xray styles.
+func (s *Styles) Xray() Xray {
+	return s.K9s.Xray
 }
 
 // Views returns views styles.

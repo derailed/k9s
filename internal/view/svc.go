@@ -40,9 +40,8 @@ func NewService(gvr client.GVR) ResourceViewer {
 
 func (s *Service) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		ui.KeyB:      ui.NewKeyAction("Bench", s.benchCmd, true),
-		ui.KeyK:      ui.NewKeyAction("Bench Stop", s.benchStopCmd, true),
-		ui.KeyShiftT: ui.NewKeyAction("Sort Type", s.GetTable().SortColCmd(1, true), false),
+		tcell.KeyCtrlB: ui.NewKeyAction("Bench Run/Stop", s.toggleBenchCmd, true),
+		ui.KeyShiftT:   ui.NewKeyAction("Sort Type", s.GetTable().SortColCmd(1, true), false),
 	})
 }
 
@@ -60,17 +59,6 @@ func (s *Service) showPods(app *App, _ ui.Tabular, gvr, path string) {
 	}
 
 	showPodsWithLabels(app, path, svc.Spec.Selector)
-}
-
-func (s *Service) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if s.bench != nil {
-		log.Debug().Msg(">>> Benchmark canceled!!")
-		s.App().Status(ui.FlashErr, "Benchmark Canceled!")
-		s.bench.Cancel()
-	}
-	s.App().ClearStatus(true)
-
-	return nil
 }
 
 func (s *Service) checkSvc(row int) error {
@@ -103,7 +91,15 @@ func (s *Service) reloadBenchCfg() error {
 	return s.App().Bench.Reload(path)
 }
 
-func (s *Service) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if s.bench != nil {
+		log.Debug().Msg(">>> Benchmark canceled!!")
+		s.App().Status(ui.FlashErr, "Benchmark Canceled!")
+		s.bench.Cancel()
+		s.App().ClearStatus(true)
+		return nil
+	}
+
 	sel := s.GetTable().GetSelectedItem()
 	if sel == "" || s.bench != nil {
 		return evt

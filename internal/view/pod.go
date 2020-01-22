@@ -101,7 +101,7 @@ func (p *Pod) killCmd(evt *tcell.EventKey) *tcell.EventKey {
 	p.GetTable().ShowDeleted()
 	for _, res := range sels {
 		p.App().Flash().Infof("Delete resource %s -- %s", p.GVR(), res)
-		if err := nuker.Delete(res, true, false); err != nil {
+		if err := nuker.Delete(res, true, true); err != nil {
 			p.App().Flash().Errf("Delete failed with %s", err)
 		} else {
 			p.App().factory.DeleteForwarder(res)

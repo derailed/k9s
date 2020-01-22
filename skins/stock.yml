@@ -40,6 +40,12 @@ k9s:
       fgColor: white
       bgColor: black
       sorterColor: orange
+  xray:
+    fgColor: blue
+    bgColor: black
+    cursorColor: aqua
+    graphicColor: darkgoldenrod
+    emojiOn: false
   views:
     yaml:
       keyColor: steelblue

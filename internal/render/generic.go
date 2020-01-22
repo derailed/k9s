@@ -59,7 +59,7 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 	if !ok {
 		return fmt.Errorf("expecting a TableRow but got %T", o)
 	}
-	_, nns, err := resourceNS(row.Object.Raw)
+	nns, err := resourceNS(row.Object.Raw)
 	if err != nil {
 		return err
 	}
@@ -92,26 +92,26 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func resourceNS(raw []byte) (bool, string, error) {
+func resourceNS(raw []byte) (string, error) {
 	var obj map[string]interface{}
 	err := json.Unmarshal(raw, &obj)
 	if err != nil {
-		return false, "", err
+		return "", err
 	}
 
 	meta, ok := obj["metadata"].(map[string]interface{})
 	if !ok {
-		return false, "", errors.New("no metadata found on generic resource")
+		return "", errors.New("no metadata found on generic resource")
 	}
 
 	ns, ok := meta["namespace"]
 	if !ok {
-		return true, "", nil
+		return client.ClusterScope, nil
 	}
 
 	nns, ok := ns.(string)
 	if !ok {
-		return false, "", fmt.Errorf("expecting namespace string type but got %T", ns)
+		return "", fmt.Errorf("expecting namespace string type but got %T", ns)
 	}
-	return false, nns, nil
+	return nns, nil
 }

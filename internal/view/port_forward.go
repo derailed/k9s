@@ -2,7 +2,6 @@ package view
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -48,9 +47,8 @@ func (p *PortForward) portForwardContext(ctx context.Context) context.Context {
 
 func (p *PortForward) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		tcell.KeyEnter: ui.NewKeyAction("Benchmarks", p.showBenchCmd, true),
-		ui.KeyB:        ui.NewKeyAction("Bench", p.benchCmd, true),
-		ui.KeyK:        ui.NewKeyAction("Bench Stop", p.benchStopCmd, true),
+		tcell.KeyEnter: ui.NewKeyAction("View Benchmarks", p.showBenchCmd, true),
+		tcell.KeyCtrlB: ui.NewKeyAction("Bench Run/Stop", p.toggleBenchCmd, true),
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", p.deleteCmd, true),
 		ui.KeyShiftP:   ui.NewKeyAction("Sort Ports", p.GetTable().SortColCmd(2, true), false),
 		ui.KeyShiftU:   ui.NewKeyAction("Sort URL", p.GetTable().SortColCmd(4, true), false),
@@ -65,25 +63,16 @@ func (p *PortForward) showBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (p *PortForward) benchStopCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if p.bench != nil {
-		log.Debug().Msg(">>> Benchmark cancelFned!!")
 		p.App().Status(ui.FlashErr, "Benchmark Camceled!")
 		p.bench.Cancel()
-	}
-	p.App().ClearStatus(true)
-
-	return nil
-}
-
-func (p *PortForward) benchCmd(evt *tcell.EventKey) *tcell.EventKey {
-	sel := p.GetTable().GetSelectedItem()
-	if sel == "" {
+		p.App().ClearStatus(true)
 		return nil
 	}
 
-	if p.bench != nil {
-		p.App().Flash().Err(errors.New("Only one benchmark allowed at a time"))
+	sel := p.GetTable().GetSelectedItem()
+	if sel == "" {
 		return nil
 	}
 

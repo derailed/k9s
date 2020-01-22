@@ -56,7 +56,7 @@ func TestGenericRender(t *testing.T) {
 		"clusterWide": {
 			ns:      client.ClusterScope,
 			table:   makeNoNSGeneric(),
-			eID:     "c1",
+			eID:     "-/c1",
 			eFields: render.Fields{"c1", "c2", "c3"},
 			eHeader: render.HeaderRow{
 				render.Header{Name: "A"},
@@ -67,7 +67,7 @@ func TestGenericRender(t *testing.T) {
 		"age": {
 			ns:      client.ClusterScope,
 			table:   makeAgeGeneric(),
-			eID:     "c1",
+			eID:     "-/c1",
 			eFields: render.Fields{"c1", "c2", "Age"},
 			eHeader: render.HeaderRow{
 				render.Header{Name: "A"},

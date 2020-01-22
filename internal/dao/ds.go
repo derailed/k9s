@@ -45,8 +45,11 @@ func (d *DaemonSet) Restart(path string) error {
 	}
 
 	auth, err := d.Client().CanI(ds.Namespace, "apps/v1/daemonsets", []string{client.PatchVerb})
-	if !auth || err != nil {
+	if err != nil {
 		return err
+	}
+	if !auth {
+		return fmt.Errorf("user is not authorized to restart a daemonset")
 	}
 	update, err := polymorphichelpers.ObjectRestarterFn(&ds)
 	if err != nil {

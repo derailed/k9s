@@ -32,9 +32,13 @@ type StatefulSet struct {
 func (s *StatefulSet) Scale(path string, replicas int32) error {
 	ns, n := client.Namespaced(path)
 	auth, err := s.Client().CanI(ns, "apps/v1/statefulsets:scale", []string{client.GetVerb, client.UpdateVerb})
-	if !auth || err != nil {
+	if err != nil {
 		return err
 	}
+	if !auth {
+		return fmt.Errorf("user is not authorized to scale statefulsets")
+	}
+
 	scale, err := s.Client().DialOrDie().AppsV1().StatefulSets(ns).GetScale(n, metav1.GetOptions{})
 	if err != nil {
 		return err
@@ -59,9 +63,13 @@ func (s *StatefulSet) Restart(path string) error {
 
 	ns, _ := client.Namespaced(path)
 	auth, err := s.Client().CanI(ns, "apps/v1/statefulsets", []string{client.PatchVerb})
-	if !auth || err != nil {
+	if err != nil {
 		return err
 	}
+	if !auth {
+		return fmt.Errorf("user is not authorized to update statefulsets")
+	}
+
 	update, err := polymorphichelpers.ObjectRestarterFn(&ds)
 	if err != nil {
 		return err

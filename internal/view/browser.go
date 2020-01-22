@@ -328,12 +328,12 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 // Helpers...
 
 func (b *Browser) setNamespace(ns string) {
+	ns = client.CleanseNamespace(ns)
 	if b.GetModel().InNamespace(ns) {
 		return
 	}
 	if !b.meta.Namespaced {
-		b.GetModel().SetNamespace(client.ClusterScope)
-		return
+		ns = client.ClusterScope
 	}
 	b.GetModel().SetNamespace(client.CleanseNamespace(ns))
 }

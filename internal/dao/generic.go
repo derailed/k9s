@@ -89,10 +89,14 @@ func (g *Generic) ToYAML(path string) (string, error) {
 
 // Delete deletes a resource.
 func (g *Generic) Delete(path string, cascade, force bool) error {
+	log.Debug().Msgf("DELETE %q -- %t:%t", path, cascade, force)
 	ns, n := client.Namespaced(path)
 	auth, err := g.Client().CanI(ns, g.gvr.String(), []string{client.DeleteVerb})
-	if !auth || err != nil {
+	if err != nil {
 		return err
+	}
+	if !auth {
+		return fmt.Errorf("user is not authorized to delete %s", path)
 	}
 
 	p := metav1.DeletePropagationOrphan

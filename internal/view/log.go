@@ -96,7 +96,6 @@ func (l *Log) Init(ctx context.Context) (err error) {
 
 // LogCleared clears the logs.
 func (l *Log) LogCleared() {
-	log.Debug().Msgf("LOG-CLEARED")
 	l.app.QueueUpdateDraw(func() {
 		l.logs.Clear()
 		l.logs.ScrollTo(0, 0)
@@ -110,7 +109,6 @@ func (l *Log) LogFailed(err error) {
 
 // LogChanged updates the logs.
 func (l *Log) LogChanged(lines []string) {
-	log.Debug().Msgf("LOG-CHANGED %d", len(lines))
 	l.app.QueueUpdateDraw(func() {
 		l.Flush(lines)
 	})
@@ -139,6 +137,11 @@ func (l *Log) GetModel() *model.Log {
 // Hints returns a collection of menu hints.
 func (l *Log) Hints() model.MenuHints {
 	return l.logs.Actions().Hints()
+}
+
+// ExtraHints returns additional hints.
+func (l *Log) ExtraHints() map[string]string {
+	return nil
 }
 
 // Start runs the component.
@@ -228,7 +231,6 @@ func (l *Log) Logs() *Details {
 
 func (l *Log) write(lines string) {
 	fmt.Fprintln(l.ansiWriter, tview.Escape(lines))
-	log.Debug().Msgf("LOG LINES %d", l.logs.GetLineCount())
 }
 
 // Flush write logs to viewer.
