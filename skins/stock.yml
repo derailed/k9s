@@ -45,7 +45,7 @@ k9s:
     bgColor: black
     cursorColor: aqua
     graphicColor: darkgoldenrod
-    emojiOn: false
+    showIcons: false
   views:
     yaml:
       keyColor: steelblue

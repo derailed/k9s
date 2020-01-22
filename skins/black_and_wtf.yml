@@ -45,7 +45,7 @@ k9s:
     bgColor: black
     cursorColor: whitesmoke
     graphicColor: gray
-    emojiOn: true
+    showIcons: false
   views:
     yaml:
       keyColor: ghostwhite

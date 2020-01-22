@@ -46,7 +46,7 @@ k9s:
     bgColor: "#282a36"
     cursorColor: "#5af78e"
     graphicColor: darkgoldenrod
-    emojiOn: false
+    showIcons: false
   views:
     yaml:
       keyColor: "#ff5c57"

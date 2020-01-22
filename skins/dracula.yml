@@ -67,7 +67,7 @@ k9s:
     bgColor: *background
     cursorColor: *current_line
     graphicColor: *purple
-    emojiOn: false
+    showIcons: false
   views:
     # YAML info styles.
     yaml:
