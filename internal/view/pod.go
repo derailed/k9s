@@ -48,8 +48,10 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 		ui.KeyShiftM:   ui.NewKeyAction("Sort MEM", p.GetTable().SortColCmd(5, false), false),
 		ui.KeyShiftX:   ui.NewKeyAction("Sort CPU%", p.GetTable().SortColCmd(6, false), false),
 		ui.KeyShiftZ:   ui.NewKeyAction("Sort MEM%", p.GetTable().SortColCmd(7, false), false),
-		ui.KeyShiftI:   ui.NewKeyAction("Sort IP", p.GetTable().SortColCmd(8, true), false),
-		ui.KeyShiftO:   ui.NewKeyAction("Sort Node", p.GetTable().SortColCmd(9, true), false),
+		tcell.KeyCtrlX: ui.NewKeyAction("Sort CPU% LIMITS", p.GetTable().SortColCmd(8, false), false),
+		tcell.KeyCtrlZ: ui.NewKeyAction("Sort MEM% LIMITS", p.GetTable().SortColCmd(9, false), false),
+		ui.KeyShiftI:   ui.NewKeyAction("Sort IP", p.GetTable().SortColCmd(10, true), false),
+		ui.KeyShiftO:   ui.NewKeyAction("Sort Node", p.GetTable().SortColCmd(11, true), false),
 	})
 }
 

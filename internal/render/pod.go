@@ -75,11 +75,13 @@ func (Pod) Header(ns string) HeaderRow {
 		Header{Name: "NAME"},
 		Header{Name: "READY"},
 		Header{Name: "STATUS"},
-		Header{Name: "RESTART", Align: tview.AlignRight},
+		Header{Name: "RS", Align: tview.AlignRight},
 		Header{Name: "CPU", Align: tview.AlignRight},
 		Header{Name: "MEM", Align: tview.AlignRight},
-		Header{Name: "%CPU (LIM)", Align: tview.AlignRight},
-		Header{Name: "%MEM (LIM)", Align: tview.AlignRight},
+		Header{Name: "%CPU", Align: tview.AlignRight},
+		Header{Name: "%MEM", Align: tview.AlignRight},
+		Header{Name: "%MAX_CPU", Align: tview.AlignRight},
+		Header{Name: "%MAX_MEM", Align: tview.AlignRight},
 		Header{Name: "IP"},
 		Header{Name: "NODE"},
 		Header{Name: "QOS"},
@@ -116,8 +118,10 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(rc),
 		c.cpu,
 		c.mem,
-		perc.cpu+" ("+fmt.Sprintf("%3v",perc.cpuLim)+")",
-		perc.mem+" ("+fmt.Sprintf("%3v",perc.memLim)+")",
+		perc.cpu,
+		perc.mem,
+		perc.cpuLim,
+		perc.memLim,
 		na(po.Status.PodIP),
 		na(po.Spec.NodeName),
 		p.mapQOS(po.Status.QOSClass),
@@ -158,11 +162,11 @@ func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, p metric) {
 		mem: ToMi(ToMB(mem.Value())),
 	}
 
-	rc, rm := requestedRes(pod)
-	lc, lm := resourceLimits(pod)
+	rc, rm := requestedRes(pod.Spec.Containers)
+	lc, lm := resourceLimits(pod.Spec.Containers)
 	p = metric{
-		cpu: AsPerc(toPerc(float64(cpu.MilliValue()), float64(rc.MilliValue()))),
-		mem: AsPerc(toPerc(ToMB(mem.Value()), ToMB(rm.Value()))),
+		cpu:    AsPerc(toPerc(float64(cpu.MilliValue()), float64(rc.MilliValue()))),
+		mem:    AsPerc(toPerc(ToMB(mem.Value()), ToMB(rm.Value()))),
 		cpuLim: AsPerc(toPerc(float64(cpu.MilliValue()), float64(lc.MilliValue()))),
 		memLim: AsPerc(toPerc(ToMB(mem.Value()), ToMB(lm.Value()))),
 	}
@@ -172,7 +176,6 @@ func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, p metric) {
 
 func containerResources(co v1.Container) (cpu, mem *resource.Quantity) {
 	req, limit := co.Resources.Requests, co.Resources.Limits
-
 	switch {
 	case len(req) != 0:
 		cpu, mem = req.Cpu(), req.Memory()
@@ -183,23 +186,32 @@ func containerResources(co v1.Container) (cpu, mem *resource.Quantity) {
 	return
 }
 
-func resourceLimits(po *v1.Pod) (cpu, mem resource.Quantity) {
-	for _, co := range po.Spec.Containers {
+func containerLimits(co v1.Container) (cpu, mem *resource.Quantity) {
+	limit := co.Resources.Limits
+	if len(limit) == 0 {
+		return nil, nil
+	}
+	return limit.Cpu(), limit.Memory()
+}
+
+func resourceLimits(cc []v1.Container) (cpu, mem resource.Quantity) {
+	for _, co := range cc {
 		limit := co.Resources.Limits
-		if len(limit) != 0 {
-			if limit.Cpu() != nil {
-				cpu.Add(*limit.Cpu())
-			}
-			if limit.Memory() != nil {
-				mem.Add(*limit.Memory())
-			}
+		if len(limit) == 0 {
+			continue
+		}
+		if limit.Cpu() != nil {
+			cpu.Add(*limit.Cpu())
+		}
+		if limit.Memory() != nil {
+			mem.Add(*limit.Memory())
 		}
 	}
 	return
 }
 
-func requestedRes(po *v1.Pod) (cpu, mem resource.Quantity) {
-	for _, co := range po.Spec.Containers {
+func requestedRes(cc []v1.Container) (cpu, mem resource.Quantity) {
+	for _, co := range cc {
 		c, m := containerResources(co)
 		if c != nil {
 			cpu.Add(*c)
@@ -212,6 +224,9 @@ func requestedRes(po *v1.Pod) (cpu, mem resource.Quantity) {
 }
 
 func currentRes(mx *mv1beta1.PodMetrics) (cpu, mem resource.Quantity) {
+	if mx == nil {
+		return
+	}
 	for _, co := range mx.Containers {
 		c, m := co.Usage.Cpu(), co.Usage.Memory()
 		cpu.Add(*c)

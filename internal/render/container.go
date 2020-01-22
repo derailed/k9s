@@ -77,6 +77,8 @@ func (Container) Header(ns string) HeaderRow {
 		Header{Name: "MEM", Align: tview.AlignRight},
 		Header{Name: "%CPU", Align: tview.AlignRight},
 		Header{Name: "%MEM", Align: tview.AlignRight},
+		Header{Name: "%MAX-CPU", Align: tview.AlignRight},
+		Header{Name: "%MAX-MEM", Align: tview.AlignRight},
 		Header{Name: "PORTS"},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	}
@@ -89,7 +91,7 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 		return fmt.Errorf("Expected ContainerRes, but got %T", o)
 	}
 
-	cur, perc := gatherMetrics(co.Container, co.MX)
+	cur, perc, limit := gatherMetrics(co.Container, co.MX)
 	ready, state, restarts := "false", MissingValue, "0"
 	if co.Status != nil {
 		ready, state, restarts = boolToStr(co.Status.Ready), toState(co.Status.State), strconv.Itoa(int(co.Status.RestartCount))
@@ -109,6 +111,8 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 		cur.mem,
 		perc.cpu,
 		perc.mem,
+		limit.cpu,
+		limit.mem,
 		toStrPorts(co.Container.Ports),
 		toAge(co.Age),
 	)
@@ -119,8 +123,8 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, p metric) {
-	c, p = noMetric(), noMetric()
+func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, p, l metric) {
+	c, p, l = noMetric(), noMetric(), noMetric()
 	if mx == nil {
 		return
 	}
@@ -138,6 +142,14 @@ func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, p metric
 	}
 	if rmem != nil {
 		p.mem = AsPerc(toPerc(mem, ToMB(rmem.Value())))
+	}
+
+	lcpu, lmem := containerLimits(*co)
+	if lcpu != nil {
+		l.cpu = AsPerc(toPerc(float64(cpu), float64(lcpu.MilliValue())))
+	}
+	if lmem != nil {
+		l.mem = AsPerc(toPerc(mem, ToMB(lmem.Value())))
 	}
 
 	return

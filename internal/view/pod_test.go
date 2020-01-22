@@ -16,7 +16,7 @@ func TestPodNew(t *testing.T) {
 
 	assert.Nil(t, po.Init(makeCtx()))
 	assert.Equal(t, "Pods", po.Name())
-	assert.Equal(t, 16, len(po.Hints()))
+	assert.Equal(t, 18, len(po.Hints()))
 }
 
 // Helpers...

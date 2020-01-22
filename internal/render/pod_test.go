@@ -65,13 +65,13 @@ func TestPodRender(t *testing.T) {
 	}
 
 	var po render.Pod
-	r := render.NewRow(12)
+	r := render.NewRow(14)
 	err := po.Render(&pom, "", &r)
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := render.Fields{"default", "nginx", "1/1", "Running", "0", "10", "10", "10 (  0)", "14 (  5)", "172.17.0.6", "minikube", "BE"}
-	assert.Equal(t, e, r.Fields[:12])
+	e := render.Fields{"default", "nginx", "1/1", "Running", "0", "10", "10", "10", "14", "0", "5", "172.17.0.6", "minikube", "BE"}
+	assert.Equal(t, e, r.Fields[:14])
 }
 
 func BenchmarkPodRender(b *testing.B) {
@@ -96,13 +96,13 @@ func TestPodInitRender(t *testing.T) {
 	}
 
 	var po render.Pod
-	r := render.NewRow(12)
+	r := render.NewRow(14)
 	err := po.Render(&pom, "", &r)
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := render.Fields{"default", "nginx", "1/1", "Init:0/1", "0", "10", "10", "10 (  0)", "14 (  5)", "172.17.0.6", "minikube", "BE"}
-	assert.Equal(t, e, r.Fields[:12])
+	e := render.Fields{"default", "nginx", "1/1", "Init:0/1", "0", "10", "10", "10", "14", "0", "5", "172.17.0.6", "minikube", "BE"}
+	assert.Equal(t, e, r.Fields[:14])
 }
 
 // ----------------------------------------------------------------------------

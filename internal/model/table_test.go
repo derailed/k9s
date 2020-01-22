@@ -32,7 +32,7 @@ func TestTableRefresh(t *testing.T) {
 	ctx = context.WithValue(ctx, internal.KeyFields, "")
 	ta.Refresh(ctx)
 	data := ta.Peek()
-	assert.Equal(t, 13, len(data.Header))
+	assert.Equal(t, 15, len(data.Header))
 	assert.Equal(t, 1, len(data.RowEvents))
 	assert.Equal(t, client.NamespaceAll, data.Namespace)
 	assert.Equal(t, 1, l.count)
