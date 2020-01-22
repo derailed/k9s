@@ -213,7 +213,7 @@ func (*Pod) mapQOS(class v1.PodQOSClass) string {
 	}
 }
 
-// Status reports current pod container statuses.
+// Statuses reports current pod container statuses.
 func (*Pod) Statuses(ss []v1.ContainerStatus) (cr, ct, rc int) {
 	for _, c := range ss {
 		if c.State.Terminated != nil {

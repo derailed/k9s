@@ -8,6 +8,7 @@ import (
 	"github.com/gdamore/tcell"
 )
 
+// KeyListenerFunc listens to key presses.
 type KeyListenerFunc func()
 
 // Tree represents a tree view.

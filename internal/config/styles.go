@@ -348,7 +348,7 @@ func (s *Styles) Title() Title {
 	return s.Frame().Title
 }
 
-// GetTable returns table styles.
+// Table returns table styles.
 func (s *Styles) Table() Table {
 	return s.K9s.Table
 }

@@ -71,7 +71,7 @@ func (g GVR) String() string {
 	return g.raw
 }
 
-// AsGV returns the group version scheme representation.
+// GV returns the group version scheme representation.
 func (g GVR) GV() schema.GroupVersion {
 	return schema.GroupVersion{
 		Group:   g.g,
@@ -79,7 +79,7 @@ func (g GVR) GV() schema.GroupVersion {
 	}
 }
 
-// AsGVR returns a a full schema representation.
+// GVR returns a a full schema representation.
 func (g GVR) GVR() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Group:    g.G(),
@@ -88,7 +88,7 @@ func (g GVR) GVR() schema.GroupVersionResource {
 	}
 }
 
-// AsGR returns a a full schema representation.
+// GR returns a a full schema representation.
 func (g GVR) GR() *schema.GroupResource {
 	return &schema.GroupResource{
 		Group:    g.G(),
@@ -96,22 +96,22 @@ func (g GVR) GR() *schema.GroupResource {
 	}
 }
 
-// ToV returns the resource version.
+// V returns the resource version.
 func (g GVR) V() string {
 	return g.v
 }
 
-// ToRAndG returns the resource and group.
+// RG returns the resource and group.
 func (g GVR) RG() (string, string) {
 	return g.r, g.g
 }
 
-// ToR returns the resource name.
+// R returns the resource name.
 func (g GVR) R() string {
 	return g.r
 }
 
-// ToG returns the resource group name.
+// G returns the resource group name.
 func (g GVR) G() string {
 	return g.g
 }
