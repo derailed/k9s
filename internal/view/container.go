@@ -40,12 +40,14 @@ func (c *Container) Name() string { return containerTitle }
 func (c *Container) bindKeys(aa ui.KeyActions) {
 	aa.Delete(tcell.KeyCtrlSpace, ui.KeySpace)
 	aa.Add(ui.KeyActions{
-		ui.KeyShiftF: ui.NewKeyAction("PortForward", c.portFwdCmd, true),
-		ui.KeyS:      ui.NewKeyAction("Shell", c.shellCmd, true),
-		ui.KeyShiftC: ui.NewKeyAction("Sort CPU", c.GetTable().SortColCmd(6, false), false),
-		ui.KeyShiftM: ui.NewKeyAction("Sort MEM", c.GetTable().SortColCmd(7, false), false),
-		ui.KeyShiftX: ui.NewKeyAction("Sort CPU%", c.GetTable().SortColCmd(8, false), false),
-		ui.KeyShiftZ: ui.NewKeyAction("Sort MEM%", c.GetTable().SortColCmd(9, false), false),
+		ui.KeyShiftF:   ui.NewKeyAction("PortForward", c.portFwdCmd, true),
+		ui.KeyS:        ui.NewKeyAction("Shell", c.shellCmd, true),
+		ui.KeyShiftC:   ui.NewKeyAction("Sort CPU", c.GetTable().SortColCmd(6, false), false),
+		ui.KeyShiftM:   ui.NewKeyAction("Sort MEM", c.GetTable().SortColCmd(7, false), false),
+		ui.KeyShiftX:   ui.NewKeyAction("Sort %CPU (REQ)", c.GetTable().SortColCmd(8, false), false),
+		ui.KeyShiftZ:   ui.NewKeyAction("Sort %MEM (REQ)", c.GetTable().SortColCmd(9, false), false),
+		tcell.KeyCtrlX: ui.NewKeyAction("Sort %CPU (LIM)", c.GetTable().SortColCmd(8, false), false),
+		tcell.KeyCtrlZ: ui.NewKeyAction("Sort %MEM (LIM)", c.GetTable().SortColCmd(9, false), false),
 	})
 }
 

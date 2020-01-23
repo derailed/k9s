@@ -22,6 +22,8 @@ const (
 	longAppDesc  = "K9s is a CLI to view and manage your Kubernetes clusters."
 )
 
+var _ config.KubeSettings = (*client.Config)(nil)
+
 var (
 	version, commit, date = "dev", "dev", "n/a"
 	k9sFlags              *config.Flags
@@ -33,7 +35,6 @@ var (
 		Long:  longAppDesc,
 		Run:   run,
 	}
-	_ config.KubeSettings = &client.Config{}
 )
 
 func init() {
@@ -84,7 +85,12 @@ func run(cmd *cobra.Command, args []string) {
 		if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
 			panic(err)
 		}
-		app.Run()
+		if err := app.Run(); err != nil {
+			panic(err)
+		}
+		if view.ExitStatus != "" {
+			panic(view.ExitStatus)
+		}
 	}
 }
 
@@ -121,8 +127,8 @@ func loadConfiguration() *config.Config {
 	k9sCfg.SetConnection(client.InitConnectionOrDie(k8sCfg))
 
 	// Try to access server version if that fail. Connectivity issue?
-	if _, err := k9sCfg.GetConnection().ServerVersion(); err != nil {
-		log.Panic().Msgf("K9s can't connect to cluster -- %s", err)
+	if !k9sCfg.GetConnection().CheckConnectivity() {
+		log.Panic().Msgf("K9s can't connect to cluster")
 	}
 	log.Info().Msg("✅ Kubernetes connectivity")
 	if err := k9sCfg.Save(); err != nil {

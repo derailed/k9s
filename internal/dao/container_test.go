@@ -50,6 +50,7 @@ func (c *conn) RestConfigOrDie() *restclient.Config               { return nil }
 func (c *conn) MXDial() (*versioned.Clientset, error)             { return nil, nil }
 func (c *conn) DynDialOrDie() dynamic.Interface                   { return nil }
 func (c *conn) HasMetrics() bool                                  { return false }
+func (c *conn) CheckConnectivity() bool                           { return false }
 func (c *conn) IsNamespaced(n string) bool                        { return false }
 func (c *conn) SupportsResource(group string) bool                { return false }
 func (c *conn) ValidNamespaces() ([]v1.Namespace, error)          { return nil, nil }

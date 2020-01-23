@@ -18,6 +18,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// ExitStatus indicates UI exit conditions.
+var ExitStatus = ""
+
 const (
 	splashTime         = 1
 	clusterRefresh     = 5 * time.Second
@@ -185,9 +188,13 @@ func (a *App) clusterUpdater(ctx context.Context) {
 
 // BOZO!! Refact to use model/view strategy.
 func (a *App) refreshClusterInfo() {
-	if !a.Conn().Config().CheckConnectivity() {
-		log.Error().Msgf("Something is wrong with the connection. Bailing out!")
+	if !a.Conn().CheckConnectivity() {
+		ExitStatus = "Lost K8s connection. Bailing out!"
 		a.BailOut()
+	}
+	// Reload alias
+	if err := a.command.Reset(); err != nil {
+		log.Error().Err(err).Msgf("Command reset failed")
 	}
 	a.QueueUpdateDraw(func() {
 		if !a.showHeader {
@@ -288,7 +295,7 @@ func (a *App) BailOut() {
 }
 
 // Run starts the application loop
-func (a *App) Run() {
+func (a *App) Run() error {
 	a.Resume()
 
 	go func() {
@@ -299,11 +306,13 @@ func (a *App) Run() {
 	}()
 
 	if err := a.command.defaultCmd(); err != nil {
-		panic(err)
+		return err
 	}
 	if err := a.Application.Run(); err != nil {
-		panic(err)
+		return err
 	}
+
+	return nil
 }
 
 // Status reports a new app status for display.

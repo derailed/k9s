@@ -36,7 +36,13 @@ func (a *Alias) Clear() {
 	}
 }
 
-// List returns a collection of screen dumps.
+// Check verifies an alias is defined for this command.
+func (a *Alias) Check(cmd string) bool {
+	_, ok := a.Aliases.Get(cmd)
+	return ok
+}
+
+// List returns a collection of aliases.
 // BOZO!! Already have aliases here. Refact!!
 func (a *Alias) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	a, ok := ctx.Value(internal.KeyAliases).(*Alias)
@@ -73,8 +79,7 @@ func (a *Alias) AsGVR(cmd string) (client.GVR, bool) {
 
 // Get fetch a resource.
 func (a *Alias) Get(_ context.Context, _ string) (runtime.Object, error) {
-	// BOZO!! NYI
-	panic("NYI!")
+	return nil, errors.New("NYI!!")
 }
 
 // Ensure makes sure alias are loaded.

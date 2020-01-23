@@ -52,8 +52,13 @@ var (
 	ReadAllAccess = []string{GetVerb, ListVerb, WatchVerb}
 )
 
+// Authorizer checks what a user can or cannot do to a resource.
+type Authorizer interface {
+	// CanI returns true if the user can use these actions for a given resource.
+	CanI(ns, gvr string, verbs []string) (bool, error)
+}
+
 // Connection represents a Kubenetes apiserver connection.
-// BOZO!! Refactor!
 type Connection interface {
 	Authorizer
 
@@ -65,12 +70,9 @@ type Connection interface {
 	MXDial() (*versioned.Clientset, error)
 	DynDialOrDie() dynamic.Interface
 	HasMetrics() bool
-	IsNamespaced(n string) bool
-	SupportsResource(group string) bool
 	ValidNamespaces() ([]v1.Namespace, error)
-	SupportsRes(grp string, versions []string) (string, bool, error)
 	ServerVersion() (*version.Info, error)
-	CurrentNamespaceName() (string, error)
+	CheckConnectivity() bool
 }
 
 // CurrentMetrics tracks current cpu/mem.

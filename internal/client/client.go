@@ -29,12 +29,6 @@ const (
 
 var supportedMetricsAPIVersions = []string{"v1beta1"}
 
-// Authorizer checks what a user can or cannot do to a resource.
-type Authorizer interface {
-	// CanI returns true if the user can use these actions for a given resource.
-	CanI(ns, gvr string, verbs []string) (bool, error)
-}
-
 // APIClient represents a Kubernetes api client.
 type APIClient struct {
 	client       kubernetes.Interface
@@ -131,33 +125,26 @@ func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
 	return nn.Items, nil
 }
 
-// IsNamespaced check on server if given resource is namespaced
-func (a *APIClient) IsNamespaced(res string) bool {
-	list, _ := a.CachedDiscoveryOrDie().ServerPreferredResources()
-	for _, l := range list {
-		for _, r := range l.APIResources {
-			if r.Name == res {
-				return r.Namespaced
-			}
+// CheckConnectivity return true if api server is cool or false otherwise.
+// BOZO!! No super sure about this approach either??
+func (a *APIClient) CheckConnectivity() (status bool) {
+	defer func() {
+		if err := recover(); err != nil {
+			status = false
 		}
-	}
-	return false
-}
+	}()
 
-// SupportsResource checks for resource supported version against the server.
-func (a *APIClient) SupportsResource(group string) bool {
-	list, err := a.CachedDiscoveryOrDie().ServerPreferredResources()
-	if err != nil {
-		log.Error().Err(err).Msg("Unable to dial api server")
-		return false
+	client, ok := a.DialOrDie().(*kubernetes.Clientset)
+	if !ok {
+		return status
 	}
-	for _, l := range list {
-		log.Debug().Msgf(">>> Group %s", l.GroupVersion)
-		if l.GroupVersion == group {
-			return true
-		}
+	if _, err := client.ServerVersion(); err != nil {
+		log.Error().Err(err).Msgf("K9s can't connect to cluster")
+	} else {
+		status = true
 	}
-	return false
+
+	return status
 }
 
 // Config return a kubernetes configuration.
@@ -316,20 +303,4 @@ func checkMetricsVersion(grp metav1.APIGroup) bool {
 	}
 
 	return false
-}
-
-// SupportsRes checks latest supported version.
-func (a *APIClient) SupportsRes(group string, versions []string) (string, bool, error) {
-	apiGroups, err := a.CachedDiscoveryOrDie().ServerGroups()
-	if err != nil {
-		return "", false, err
-	}
-	for _, grp := range apiGroups.Groups {
-		if grp.Name != group {
-			continue
-		}
-		return grp.Versions[len(grp.Versions)-1].Version, true, nil
-	}
-
-	return "", false, nil
 }

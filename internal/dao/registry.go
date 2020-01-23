@@ -161,6 +161,7 @@ func loadK9s(m ResourceMetas) {
 		Name:         "containers",
 		Kind:         "Containers",
 		SingularName: "container",
+		Verbs:        []string{},
 		Categories:   []string{"k9s"},
 	}
 }

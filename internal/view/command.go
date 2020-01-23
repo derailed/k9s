@@ -43,6 +43,16 @@ func (c *Command) Init() error {
 	return nil
 }
 
+// Reset resets Command and reload aliases.
+func (c *Command) Reset() error {
+	c.alias.Clear()
+	if _, err := c.alias.Ensure(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func allowedXRay(gvr client.GVR) bool {
 	gg := []string{
 		"v1/pods",
@@ -52,7 +62,6 @@ func allowedXRay(gvr client.GVR) bool {
 		"apps/v1/statefulsets",
 		"apps/v1/replicasets",
 	}
-
 	for _, g := range gg {
 		if g == gvr.String() {
 			return true
@@ -117,23 +126,18 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 		if !c.app.switchNS(ns) {
 			return fmt.Errorf("namespace switch failed for ns %q", ns)
 		}
-
+		if !c.alias.Check(cmds[0]) {
+			return fmt.Errorf("Huh? `%s` Command not found", cmd)
+		}
 		return c.exec(cmd, gvr, c.componentFor(gvr, path, v), clearStack)
 	}
 }
 
-// Reset resets Command and reload aliases.
-func (c *Command) Reset() error {
-	c.alias.Clear()
-	if _, err := c.alias.Ensure(); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (c *Command) defaultCmd() error {
-	return c.run(c.app.Config.ActiveView(), "", true)
+	if err := c.run(c.app.Config.ActiveView(), "", true); err != nil {
+		log.Error().Err(err).Msgf("Saved command failed. Loading default view")
+	}
+	return c.run("pod", "", true)
 }
 
 func (c *Command) specialCmd(cmd string) bool {
@@ -204,7 +208,7 @@ func (c *Command) componentFor(gvr, path string, v *MetaViewer) ResourceViewer {
 
 func (c *Command) exec(cmd, gvr string, comp model.Component, clearStack bool) error {
 	if comp == nil {
-		return fmt.Errorf("No component given for %s", gvr)
+		return fmt.Errorf("No component found for %s", gvr)
 	}
 	c.app.Flash().Infof("Viewing %s...", client.NewGVR(gvr).R())
 	c.app.Config.SetActiveView(cmd)

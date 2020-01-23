@@ -82,23 +82,19 @@ func (mock *MockConnection) Config() *client.Config {
 	return ret0
 }
 
-func (mock *MockConnection) CurrentNamespaceName() (string, error) {
+func (mock *MockConnection) CheckConnectivity() bool {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CurrentNamespaceName", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 string
-	var ret1 error
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CheckConnectivity", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
+	var ret0 bool
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].(string)
-		}
-		if result[1] != nil {
-			ret1 = result[1].(error)
+			ret0 = result[0].(bool)
 		}
 	}
-	return ret0, ret1
+	return ret0
 }
 
 func (mock *MockConnection) DialOrDie() kubernetes.Interface {

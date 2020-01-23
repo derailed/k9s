@@ -8,7 +8,6 @@ import (
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	clientcmd "k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
@@ -30,27 +29,6 @@ func NewConfig(f *genericclioptions.ConfigFlags) *Config {
 		flags: f,
 		mutex: &sync.RWMutex{},
 	}
-}
-
-// CheckConnectivity return true if api server is cool or false otherwise.
-// BOZO!! No super sure about this approach either??
-func (c *Config) CheckConnectivity() bool {
-	cfg, err := c.RESTConfig()
-	if err != nil {
-		log.Error().Err(err).Msgf("K9s can't connect to cluster (config)")
-		return false
-	}
-	client, err := kubernetes.NewForConfig(cfg)
-	if err != nil {
-		log.Error().Err(err).Msgf("K9s can't connect to cluster (client)")
-		return false
-	}
-	if _, err := client.ServerVersion(); err != nil {
-		log.Error().Err(err).Msgf("K9s can't connect to cluster (serverVersion)")
-		return false
-	}
-
-	return true
 }
 
 // Flags returns configuration flags.
