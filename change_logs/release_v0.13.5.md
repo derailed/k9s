@@ -50,7 +50,7 @@ plugin:
 
 ## Resolved Bugs/Features/PRs
 
-* [Issue #507](https://github.com/derailed/k9s/issues/511)
+* [Issue #507](https://github.com/derailed/k9s/issues/507)
 * [PR #510](https://github.com/derailed/k9s/pull/510) Thank you!! [Vimal Kumar](https://github.com/vimalk78)
 * [PR #340](https://github.com/derailed/k9s/pull/340) ATTA Boy! [Tuomo Syvänperä](https://github.com/syvanpera)
 
