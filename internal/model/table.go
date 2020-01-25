@@ -234,19 +234,21 @@ func (t *Table) reconcile(ctx context.Context) error {
 	}
 
 	var rows render.Rows
-	if _, ok := meta.Renderer.(*render.Generic); ok {
-		table, ok := oo[0].(*metav1beta1.Table)
-		if !ok {
-			return fmt.Errorf("expecting a meta table but got %T", oo[0])
-		}
-		rows = make(render.Rows, len(table.Rows))
-		if err := genericHydrate(t.namespace, table, rows, meta.Renderer); err != nil {
-			return err
-		}
-	} else {
-		rows = make(render.Rows, len(oo))
-		if err := hydrate(t.namespace, oo, rows, meta.Renderer); err != nil {
-			return err
+	if len(oo) > 0 {
+		if _, ok := meta.Renderer.(*render.Generic); ok {
+			table, ok := oo[0].(*metav1beta1.Table)
+			if !ok {
+				return fmt.Errorf("expecting a meta table but got %T", oo[0])
+			}
+			rows = make(render.Rows, len(table.Rows))
+			if err := genericHydrate(t.namespace, table, rows, meta.Renderer); err != nil {
+				return err
+			}
+		} else {
+			rows = make(render.Rows, len(oo))
+			if err := hydrate(t.namespace, oo, rows, meta.Renderer); err != nil {
+				return err
+			}
 		}
 	}
 
