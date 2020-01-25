@@ -32,7 +32,6 @@ func NewPod(gvr client.GVR) ResourceViewer {
 	p.SetBindKeysFn(p.bindKeys)
 	p.GetTable().SetEnterFn(p.showContainers)
 	p.GetTable().SetColorerFn(render.Pod{}.ColorerFunc())
-	p.SetContextFn(p.podContext)
 
 	return &p
 }
@@ -62,20 +61,6 @@ func (p *Pod) showContainers(app *App, model ui.Tabular, gvr, path string) {
 	if err := app.inject(co); err != nil {
 		app.Flash().Err(err)
 	}
-}
-
-func (p *Pod) podContext(ctx context.Context) context.Context {
-	ns, ok := ctx.Value(internal.KeyNamespace).(string)
-	if !ok {
-		log.Error().Err(fmt.Errorf("Expecting context namespace"))
-	}
-
-	mx := client.NewMetricsServer(p.App().factory.Client())
-	nmx, err := mx.FetchPodsMetrics(ns)
-	if err != nil {
-		log.Warn().Err(err).Msgf("No pods metrics")
-	}
-	return context.WithValue(ctx, internal.KeyMetrics, nmx)
 }
 
 func (p *Pod) coContext(ctx context.Context) context.Context {

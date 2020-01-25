@@ -56,8 +56,8 @@ func (s *StatusIndicator) ClusterInfoUpdated(data model.ClusterMeta) {
 			data.Cluster,
 			data.User,
 			data.K8sVer,
-			render.AsPerc(data.Cpu)+"%",
-			render.AsPerc(data.Mem)+"%",
+			render.AsPerc(data.Cpu),
+			render.AsPerc(data.Mem),
 		))
 	})
 }

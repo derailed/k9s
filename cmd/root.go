@@ -48,7 +48,7 @@ func init() {
 	if err := flag.Set("log_file", config.K9sLogs); err != nil {
 		log.Error().Err(err)
 	}
-	if err := flag.Set("stderrthreshold", "fatal"); err != nil {
+	if err := flag.Set("stderrthreshold", "error"); err != nil {
 		log.Error().Err(err)
 	}
 	if err := flag.Set("alsologtostderr", falseFlag); err != nil {

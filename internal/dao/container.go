@@ -38,15 +38,14 @@ func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error
 		return nil, err
 	}
 
-	ns, _ := client.Namespaced(fqn)
 	var pmx *mv1beta1.PodMetrics
 	if c.Client().HasMetrics() {
 		mx := client.NewMetricsServer(c.Client())
 		if c.Client() != nil {
 			var err error
-			pmx, err = mx.FetchPodMetrics(ns, po.Name)
+			pmx, err = mx.FetchPodMetrics(fqn)
 			if err != nil {
-				log.Warn().Err(err).Msgf("No metrics found for pod %q:%q", ns, po.Name)
+				log.Warn().Err(err).Msgf("No metrics found for pod %q", fqn)
 			}
 		}
 	}

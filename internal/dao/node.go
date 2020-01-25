@@ -36,16 +36,16 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		log.Warn().Msgf("No label selector found in context")
 	}
 
-	nmx, ok := ctx.Value(internal.KeyMetrics).(*mv1beta1.NodeMetricsList)
-	if !ok {
-		log.Warn().Msgf("No node metrics available in context")
+	mx := client.NewMetricsServer(n.Client())
+	nmx, err := mx.FetchNodesMetrics()
+	if err != nil {
+		log.Warn().Err(err).Msgf("No node metrics")
 	}
 
 	nn, err := FetchNodes(n.Factory, labels)
 	if err != nil {
 		return nil, err
 	}
-
 	oo := make([]runtime.Object, len(nn.Items))
 	for i, no := range nn.Items {
 		o, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&nn.Items[i])

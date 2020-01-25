@@ -89,7 +89,6 @@ func (c *Configurator) RefreshStyles(context string) {
 	if err := c.Styles.Load(clusterSkins); err != nil {
 		log.Info().Msgf("No context specific skin file found -- %s", clusterSkins)
 	} else {
-		log.Debug().Msgf("Found context skins %s", clusterSkins)
 		c.updateStyles(clusterSkins)
 		return
 	}

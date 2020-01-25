@@ -50,9 +50,13 @@ func (p *Pod) Get(ctx context.Context, path string) (runtime.Object, error) {
 	}
 
 	// No Deal!
-	pmx, _ := ctx.Value(internal.KeyMetrics).(*mv1beta1.PodMetricsList)
+	mx := client.NewMetricsServer(p.Client())
+	pmx, err := mx.FetchPodMetrics(path)
+	if err != nil {
+		log.Warn().Err(err).Msgf("No pods metrics")
+	}
 
-	return &render.PodWithMetrics{Raw: u, MX: podMetricsFor(o, pmx)}, nil
+	return &render.PodWithMetrics{Raw: u, MX: pmx}, nil
 }
 
 // List returns a collection of nodes.
@@ -72,8 +76,11 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		return oo, err
 	}
 
-	// No Deal!
-	pmx, _ := ctx.Value(internal.KeyMetrics).(*mv1beta1.PodMetricsList)
+	mx := client.NewMetricsServer(p.Client())
+	pmx, err := mx.FetchPodsMetrics(ns)
+	if err != nil {
+		log.Warn().Err(err).Msgf("No pods metrics")
+	}
 
 	var res []runtime.Object
 	for _, o := range oo {
