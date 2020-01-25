@@ -130,6 +130,7 @@ func (s *StatusIndicator) setText(msg string) {
 
 // Helpers...
 
+// AsPercDelta represents a percentage with a delta indicator.
 func AsPercDelta(ov, nv float64) string {
 	prev, cur := render.AsPerc(ov), render.AsPerc(nv)
 	if cur == "0" {

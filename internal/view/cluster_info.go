@@ -67,7 +67,7 @@ func (c *ClusterInfo) infoCell(t string) *tview.TableCell {
 	return cell
 }
 
-// ClusterInfoChanged notifies the cluster meta was updated.
+// ClusterInfoUpdated notifies the cluster meta was updated.
 func (c *ClusterInfo) ClusterInfoUpdated(data model.ClusterMeta) {
 	c.app.QueueUpdateDraw(func() {
 		var row int

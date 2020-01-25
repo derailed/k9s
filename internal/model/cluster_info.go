@@ -16,6 +16,7 @@ type ClusterInfoListener interface {
 	ClusterInfoUpdated(ClusterMeta)
 }
 
+// NA indicates data is missing at this time.
 const NA = "n/a"
 
 // ClusterMeta represents cluster meta data.
