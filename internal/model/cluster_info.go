@@ -4,7 +4,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/rs/zerolog/log"
 )
 
 // ClusterInfoListener registers a listener for model changes.
@@ -81,7 +80,6 @@ func (c *ClusterInfo) Reset(f dao.Factory) {
 
 // Refresh fetches latest cluster meta.
 func (c *ClusterInfo) Refresh() {
-	log.Debug().Msgf("Refreshing ClusterInfo...")
 	data := NewClusterMeta()
 	data.Context = c.cluster.ContextName()
 	data.Cluster = c.cluster.ClusterName()
