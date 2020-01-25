@@ -287,11 +287,9 @@ func (c *Config) RESTConfig() (*restclient.Config, error) {
 	if c.restConfig, err = c.flags.ToRESTConfig(); err != nil {
 		return nil, err
 	}
-	log.Debug().Msgf("REST_CONFIG %#v", c.restConfig)
 	c.restConfig.QPS = defaultQPS
 	c.restConfig.Burst = defaultBurst
 	c.restConfig.Timeout = defaultTimeout
-
 	log.Debug().Msgf("Connecting to API Server %s", c.restConfig.Host)
 
 	return c.restConfig, nil

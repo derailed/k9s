@@ -7,8 +7,12 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+// ClusterInfoListener registers a listener for model changes.
 type ClusterInfoListener interface {
+	// ClusterInfoChanged notifies the cluster meta was changed.
 	ClusterInfoChanged(prev, curr ClusterMeta)
+
+	// ClusterInfoUpdated notifies the cluster meta was updated.
 	ClusterInfoUpdated(ClusterMeta)
 }
 

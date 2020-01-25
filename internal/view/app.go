@@ -195,8 +195,6 @@ func (a *App) clusterUpdater(ctx context.Context) {
 
 func (a *App) refreshCluster() {
 	c := a.Content.Top()
-
-	// Check conns
 	if ok := a.Conn().CheckConnectivity(); ok {
 		if a.conRetry > 0 {
 			if c != nil {
@@ -207,14 +205,14 @@ func (a *App) refreshCluster() {
 		a.conRetry = 0
 	} else {
 		a.conRetry++
-		log.Warn().Msgf("Conn check failed (%d)", a.conRetry)
+		log.Warn().Msgf("Conn check failed (%d/%d)", a.conRetry, maxConRetry)
 		if c != nil {
 			c.Stop()
 		}
 		a.Status(ui.FlashWarn, fmt.Sprintf("Dial K8s failed (%d)", a.conRetry))
 
 	}
-	if a.conRetry > maxConRetry {
+	if a.conRetry >= maxConRetry {
 		ExitStatus = fmt.Sprintf("Lost K8s connection (%d). Bailing out!", a.conRetry)
 		a.BailOut()
 	}
