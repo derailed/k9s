@@ -49,10 +49,8 @@ func (p *Pod) Get(ctx context.Context, path string) (runtime.Object, error) {
 		return nil, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
 	}
 
-	pmx, ok := ctx.Value(internal.KeyMetrics).(*mv1beta1.PodMetricsList)
-	if !ok {
-		log.Warn().Msgf("no metrics available for %q", p.gvr)
-	}
+	// No Deal!
+	pmx, _ := ctx.Value(internal.KeyMetrics).(*mv1beta1.PodMetricsList)
 
 	return &render.PodWithMetrics{Raw: u, MX: podMetricsFor(o, pmx)}, nil
 }
@@ -74,10 +72,8 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		return oo, err
 	}
 
-	pmx, ok := ctx.Value(internal.KeyMetrics).(*mv1beta1.PodMetricsList)
-	if !ok {
-		log.Warn().Msgf("no metrics available for %q", p.gvr)
-	}
+	// No Deal!
+	pmx, _ := ctx.Value(internal.KeyMetrics).(*mv1beta1.PodMetricsList)
 
 	var res []runtime.Object
 	for _, o := range oo {

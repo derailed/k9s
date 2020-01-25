@@ -43,6 +43,9 @@ func (c *Context) useCtx(app *App, model ui.Tabular, gvr, path string) {
 }
 
 func useContext(app *App, name string) error {
+	if app.Content.Top() != nil {
+		app.Content.Top().Stop()
+	}
 	res, err := dao.AccessorFor(app.factory, client.NewGVR("contexts"))
 	if err != nil {
 		return nil

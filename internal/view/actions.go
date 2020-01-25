@@ -52,19 +52,18 @@ func inScope(scopes, aliases []string) bool {
 func hotKeyActions(r Runner, aa ui.KeyActions) {
 	hh := config.NewHotKeys()
 	if err := hh.Load(); err != nil {
-		log.Error().Err(err).Msgf("Loading HOTKEYS")
 		return
 	}
 
 	for k, hk := range hh.HotKey {
 		key, err := asKey(hk.ShortCut)
 		if err != nil {
-			log.Error().Err(err).Msg("HOT-KEY Unable to map hotkey shortcut to a key")
+			log.Warn().Err(err).Msg("HOT-KEY Unable to map hotkey shortcut to a key")
 			continue
 		}
 		_, ok := aa[key]
 		if ok {
-			log.Error().Err(fmt.Errorf("HOT-KEY Doh! you are trying to overide an existing command `%s", k)).Msg("Invalid shortcut")
+			log.Warn().Err(fmt.Errorf("HOT-KEY Doh! you are trying to overide an existing command `%s", k)).Msg("Invalid shortcut")
 			continue
 		}
 		aa[key] = ui.NewSharedKeyAction(
@@ -86,7 +85,6 @@ func gotoCmd(r Runner, cmd string) ui.ActionHandler {
 func pluginActions(r Runner, aa ui.KeyActions) {
 	pp := config.NewPlugins()
 	if err := pp.Load(); err != nil {
-		log.Warn().Msgf("No plugin configuration found")
 		return
 	}
 
@@ -96,12 +94,12 @@ func pluginActions(r Runner, aa ui.KeyActions) {
 		}
 		key, err := asKey(plugin.ShortCut)
 		if err != nil {
-			log.Error().Err(err).Msg("Unable to map plugin shortcut to a key")
+			log.Warn().Err(err).Msg("Unable to map plugin shortcut to a key")
 			continue
 		}
 		_, ok := aa[key]
 		if ok {
-			log.Error().Err(fmt.Errorf("Doh! you are trying to overide an existing command `%s", k)).Msg("Invalid shortcut")
+			log.Warn().Err(fmt.Errorf("Doh! you are trying to overide an existing command `%s", k)).Msg("Invalid shortcut")
 			continue
 		}
 		aa[key] = ui.NewKeyAction(

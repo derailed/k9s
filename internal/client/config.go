@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -11,6 +12,12 @@ import (
 	restclient "k8s.io/client-go/rest"
 	clientcmd "k8s.io/client-go/tools/clientcmd"
 	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+)
+
+const (
+	defaultQPS     = 100
+	defaultBurst   = 50
+	defaultTimeout = 10 * time.Second
 )
 
 // Config tracks a kubernetes configuration.
@@ -280,6 +287,11 @@ func (c *Config) RESTConfig() (*restclient.Config, error) {
 	if c.restConfig, err = c.flags.ToRESTConfig(); err != nil {
 		return nil, err
 	}
+	log.Debug().Msgf("REST_CONFIG %#v", c.restConfig)
+	c.restConfig.QPS = defaultQPS
+	c.restConfig.Burst = defaultBurst
+	c.restConfig.Timeout = defaultTimeout
+
 	log.Debug().Msgf("Connecting to API Server %s", c.restConfig.Host)
 
 	return c.restConfig, nil

@@ -88,10 +88,10 @@ func (t *TableData) Diff(table TableData) bool {
 	if t.Namespace != table.Namespace {
 		return true
 	}
-	if t.Header.Changed(table.Header) {
+	if t.Header.Diff(table.Header) {
 		return true
 	}
-	if t.RowEvents.Changed(table.RowEvents) {
+	if t.RowEvents.Diff(table.RowEvents) {
 		return true
 	}
 

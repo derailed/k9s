@@ -23,7 +23,9 @@ for changes and offers subsequent commands to interact with observed Kubernetes 
 ## Slack Channel
 
 Wanna discuss K9s features with your fellow `K9sers` or simply show your support for this tool?
-Please Dial [K9s Slack](https://k9sers.slack.com/)
+
+* Channel: [K9ersSlack](https://k9sers.slack.com/)
+* Invite: [K9slackers Invite](https://join.slack.com/t/k9sers/shared_invite/enQtOTA5MDEyNzI5MTU0LWQ1ZGI3MzliYzZhZWEyNzYxYzA3NjE0YTk1YmFmNzViZjIyNzhkZGI0MmJjYzhlNjdlMGJhYzE2ZGU1NjkyNTM)
 
 ---
 

@@ -50,7 +50,7 @@ func (b *Browser) Init(ctx context.Context) error {
 		return err
 	}
 	ns := client.CleanseNamespace(b.app.Config.ActiveNamespace())
-	if dao.IsK8sMeta(b.meta) {
+	if dao.IsK8sMeta(b.meta) && b.app.ConOK() {
 		if _, e := b.app.factory.CanForResource(ns, b.GVR(), client.MonitorAccess); e != nil {
 			return e
 		}
@@ -92,6 +92,7 @@ func (b *Browser) SetInstance(path string) {
 func (b *Browser) Start() {
 	b.Stop()
 
+	log.Debug().Msgf("BROWSER started!")
 	b.Table.Start()
 	ctx := b.defaultContext()
 	ctx, b.cancelFn = context.WithCancel(ctx)
@@ -109,6 +110,7 @@ func (b *Browser) Stop() {
 	if b.cancelFn == nil {
 		return
 	}
+	log.Debug().Msgf("BROWSER Stopped!")
 	b.Table.Stop()
 	b.cancelFn()
 	b.cancelFn = nil
@@ -137,6 +139,10 @@ func (b *Browser) Aliases() []string {
 
 // TableDataChanged notifies view new data is available.
 func (b *Browser) TableDataChanged(data render.TableData) {
+	if !b.app.ConOK() {
+		return
+	}
+
 	b.app.QueueUpdateDraw(func() {
 		b.refreshActions()
 		b.Update(data)
@@ -354,37 +360,22 @@ func (b *Browser) defaultContext() context.Context {
 	return ctx
 }
 
-func (b *Browser) namespaceActions(aa ui.KeyActions) {
-	if b.app.Conn() == nil || !b.meta.Namespaced || b.GetTable().Path != "" {
-		return
-	}
-	b.namespaces = make(map[int]string, config.MaxFavoritesNS)
-	aa[tcell.Key(ui.NumKeys[0])] = ui.NewKeyAction(client.NamespaceAll, b.switchNamespaceCmd, true)
-	b.namespaces[0] = client.NamespaceAll
-	index := 1
-	for _, ns := range b.app.Config.FavNamespaces() {
-		if ns == client.NamespaceAll {
-			continue
-		}
-		aa[tcell.Key(ui.NumKeys[index])] = ui.NewKeyAction(ns, b.switchNamespaceCmd, true)
-		b.namespaces[index] = ns
-		index++
-	}
-}
-
 func (b *Browser) refreshActions() {
 	aa := ui.KeyActions{
 		ui.KeyC:        ui.NewKeyAction("Copy", b.cpCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("View", b.enterCmd, false),
 		tcell.KeyCtrlR: ui.NewKeyAction("Refresh", b.refreshCmd, false),
 	}
-	b.namespaceActions(aa)
 
-	if client.Can(b.meta.Verbs, "edit") {
-		aa[ui.KeyE] = ui.NewKeyAction("Edit", b.editCmd, true)
-	}
-	if client.Can(b.meta.Verbs, "delete") {
-		aa[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", b.deleteCmd, true)
+	if b.app.ConOK() {
+		b.namespaceActions(aa)
+
+		if client.Can(b.meta.Verbs, "edit") {
+			aa[ui.KeyE] = ui.NewKeyAction("Edit", b.editCmd, true)
+		}
+		if client.Can(b.meta.Verbs, "delete") {
+			aa[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", b.deleteCmd, true)
+		}
 	}
 
 	if !dao.IsK9sMeta(b.meta) {
@@ -400,6 +391,24 @@ func (b *Browser) refreshActions() {
 		b.bindKeysFn(b.Actions())
 	}
 	b.app.Menu().HydrateMenu(b.Hints())
+}
+
+func (b *Browser) namespaceActions(aa ui.KeyActions) {
+	if !b.meta.Namespaced || b.GetTable().Path != "" {
+		return
+	}
+	b.namespaces = make(map[int]string, config.MaxFavoritesNS)
+	aa[tcell.Key(ui.NumKeys[0])] = ui.NewKeyAction(client.NamespaceAll, b.switchNamespaceCmd, true)
+	b.namespaces[0] = client.NamespaceAll
+	index := 1
+	for _, ns := range b.app.Config.FavNamespaces() {
+		if ns == client.NamespaceAll {
+			continue
+		}
+		aa[tcell.Key(ui.NumKeys[index])] = ui.NewKeyAction(ns, b.switchNamespaceCmd, true)
+		b.namespaces[index] = ns
+		index++
+	}
 }
 
 func (b *Browser) simpleDelete(selections []string, msg string) {

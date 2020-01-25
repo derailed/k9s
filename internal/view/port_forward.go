@@ -65,7 +65,7 @@ func (p *PortForward) showBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if p.bench != nil {
-		p.App().Status(ui.FlashErr, "Benchmark Camceled!")
+		p.App().Status(ui.FlashErr, "Benchmark Canceled!")
 		p.bench.Cancel()
 		p.App().ClearStatus(true)
 		return nil

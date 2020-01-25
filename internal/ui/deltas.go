@@ -14,9 +14,9 @@ const (
 	// DeltaSign signals a diff.
 	DeltaSign = "Δ"
 	// PlusSign signals inc.
-	PlusSign = "↑"
+	PlusSign = "[red::b]↑"
 	// MinusSign signal dec.
-	MinusSign = "↓"
+	MinusSign = "[green::b]↓"
 )
 
 var percent = regexp.MustCompile(`\A(\d+)\%\z`)

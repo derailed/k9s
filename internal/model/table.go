@@ -230,7 +230,7 @@ func (t *Table) reconcile(ctx context.Context) error {
 		oo, err = []runtime.Object{o}, e
 	}
 	if err != nil {
-		return err
+		log.Error().Err(err).Msg("Reconcile failed to list resource")
 	}
 
 	var rows render.Rows

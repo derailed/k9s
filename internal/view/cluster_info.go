@@ -1,92 +1,51 @@
 package view
 
 import (
-	"strings"
-
-	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
-	v1 "k8s.io/api/core/v1"
-	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
+
+var _ model.ClusterInfoListener = (*ClusterInfo)(nil)
 
 // ClusterInfo represents a cluster info view.
 type ClusterInfo struct {
 	*tview.Table
 
 	app    *App
-	mxs    *client.MetricsServer
 	styles *config.Styles
 }
 
 // NewClusterInfo returns a new cluster info view.
-func NewClusterInfo(app *App, mx *client.MetricsServer) *ClusterInfo {
+func NewClusterInfo(app *App) *ClusterInfo {
 	return &ClusterInfo{
-		app:    app,
 		Table:  tview.NewTable(),
-		mxs:    mx,
+		app:    app,
 		styles: app.Styles,
 	}
 }
 
 // Init initializes the view.
-func (c *ClusterInfo) Init(version string) {
-	cluster := model.NewCluster(c.app.Conn(), c.mxs)
-
+func (c *ClusterInfo) Init() {
 	c.app.Styles.AddListener(c)
-
-	row := c.initInfo(cluster)
-	row = c.initVersion(row, version, cluster)
-
-	c.SetCell(row, 0, c.sectionCell("CPU"))
-	c.SetCell(row, 1, c.infoCell(render.NAValue))
-	row++
-	c.SetCell(row, 0, c.sectionCell("MEM"))
-	c.SetCell(row, 1, c.infoCell(render.NAValue))
-
-	c.refresh()
+	c.layout()
 }
 
 // StylesChanged notifies skin changed.
 func (c *ClusterInfo) StylesChanged(s *config.Styles) {
 	c.styles = s
 	c.SetBackgroundColor(s.BgColor())
-	c.refresh()
+	c.updateStyle()
 }
 
-func (c *ClusterInfo) initInfo(cluster *model.Cluster) int {
-	var row int
-	c.SetCell(row, 0, c.sectionCell("Context"))
-	c.SetCell(row, 1, c.infoCell(cluster.ContextName()))
-	row++
-
-	c.SetCell(row, 0, c.sectionCell("Cluster"))
-	c.SetCell(row, 1, c.infoCell(cluster.ClusterName()))
-	row++
-
-	c.SetCell(row, 0, c.sectionCell("User"))
-	c.SetCell(row, 1, c.infoCell(cluster.UserName()))
-	row++
-
-	return row
-}
-
-func (c *ClusterInfo) initVersion(row int, version string, cluster *model.Cluster) int {
-	c.SetCell(row, 0, c.sectionCell("K9s Rev"))
-	c.SetCell(row, 1, c.infoCell(version))
-	row++
-
-	c.SetCell(row, 0, c.sectionCell("K8s Rev"))
-	c.SetCell(row, 1, c.infoCell(cluster.Version()))
-	row++
-
-	return row
+func (c *ClusterInfo) layout() {
+	for row, v := range []string{"Context", "Cluster", "User", "K9s Rev", "K8s Rev", "CPU", "MEM"} {
+		c.SetCell(row, 0, c.sectionCell(v))
+		c.SetCell(row, 1, c.infoCell(render.NAValue))
+	}
 }
 
 func (c *ClusterInfo) sectionCell(t string) *tview.TableCell {
@@ -108,30 +67,46 @@ func (c *ClusterInfo) infoCell(t string) *tview.TableCell {
 	return cell
 }
 
-func (c *ClusterInfo) refresh() {
-	var (
-		cluster = model.NewCluster(c.app.Conn(), c.mxs)
-		row     int
-	)
+func (c *ClusterInfo) ClusterInfoUpdated(data model.ClusterMeta) {
+	c.app.QueueUpdateDraw(func() {
+		var row int
+		c.GetCell(row, 1).SetText(data.Context)
+		row++
+		c.GetCell(row, 1).SetText(data.Cluster)
+		row++
+		c.GetCell(row, 1).SetText(data.User)
+		row++
+		c.GetCell(row, 1).SetText(data.K9sVer)
+		row++
+		c.GetCell(row, 1).SetText(data.K8sVer)
+		row++
+		c.GetCell(row, 1).SetText(render.AsPerc(data.Cpu) + "%")
+		row++
+		c.GetCell(row, 1).SetText(render.AsPerc(data.Mem) + "%")
 
-	c.GetCell(row, 1).SetText(cluster.ContextName())
-	row++
-	c.GetCell(row, 1).SetText(cluster.ClusterName())
-	row++
-	c.GetCell(row, 1).SetText(cluster.UserName())
-	row += 2
-	c.GetCell(row, 1).SetText(cluster.Version())
-	row++
+		c.updateStyle()
+	})
+}
 
-	cell := c.GetCell(row, 1)
-	cell.SetText(render.NAValue)
-	cell = c.GetCell(row+1, 1)
-	cell.SetText(render.NAValue)
+func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
+	c.app.QueueUpdateDraw(func() {
+		var row int
+		c.GetCell(row, 1).SetText(curr.Context)
+		row++
+		c.GetCell(row, 1).SetText(curr.Cluster)
+		row++
+		c.GetCell(row, 1).SetText(curr.User)
+		row++
+		c.GetCell(row, 1).SetText(curr.K9sVer)
+		row++
+		c.GetCell(row, 1).SetText(curr.K8sVer)
+		row++
+		c.GetCell(row, 1).SetText(ui.AsPercDelta(prev.Cpu, curr.Cpu))
+		row++
+		c.GetCell(row, 1).SetText(ui.AsPercDelta(prev.Mem, curr.Mem))
 
-	if c.app.Conn().HasMetrics() {
-		c.refreshMetrics(cluster, row)
-	}
-	c.updateStyle()
+		c.updateStyle()
+	})
 }
 
 func (c *ClusterInfo) updateStyle() {
@@ -141,52 +116,4 @@ func (c *ClusterInfo) updateStyle() {
 		var s tcell.Style
 		c.GetCell(row, 1).SetStyle(s.Bold(true).Foreground(config.AsColor(c.styles.K9s.Info.SectionColor)))
 	}
-}
-
-func fetchResources(app *App) (*v1.NodeList, *mv1beta1.NodeMetricsList, error) {
-	nn, err := dao.FetchNodes(app.factory, "")
-	if err != nil {
-		return nil, nil, err
-	}
-
-	mx := client.NewMetricsServer(app.factory.Client())
-	nmx, err := mx.FetchNodesMetrics()
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return nn, nmx, nil
-}
-
-func (c *ClusterInfo) refreshMetrics(cluster *model.Cluster, row int) {
-	nos, nmx, err := fetchResources(c.app)
-	if err != nil {
-		log.Warn().Err(err).Msgf("NodeMetrics failed")
-		return
-	}
-
-	var cmx client.ClusterMetrics
-	if err := cluster.Metrics(nos, nmx, &cmx); err != nil {
-		log.Error().Err(err).Msgf("failed to retrieve cluster metrics")
-	}
-	cell := c.GetCell(row, 1)
-	cpu := render.AsPerc(cmx.PercCPU)
-	if cpu == "0" {
-		cpu = render.NAValue
-	}
-	cell.SetText(cpu + "%" + ui.Deltas(strip(cell.Text), cpu))
-	row++
-
-	cell = c.GetCell(row, 1)
-	mem := render.AsPerc(cmx.PercMEM)
-	if mem == "0" {
-		mem = render.NAValue
-	}
-	cell.SetText(mem + "%" + ui.Deltas(strip(cell.Text), mem))
-}
-
-func strip(s string) string {
-	t := strings.Replace(s, ui.PlusSign, "", 1)
-	t = strings.Replace(t, ui.MinusSign, "", 1)
-	return t
 }

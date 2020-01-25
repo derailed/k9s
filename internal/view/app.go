@@ -10,7 +10,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tview"
@@ -22,23 +21,25 @@ import (
 var ExitStatus = ""
 
 const (
-	splashTime         = 1
-	clusterRefresh     = 5 * time.Second
-	statusIndicatorFmt = "[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s%%[white::]::[darkturquoise::]%s%%"
-	clusterInfoWidth   = 50
-	clusterInfoPad     = 15
+	splashDelay      = 1 * time.Second
+	clusterRefresh   = 5 * time.Second
+	maxConRetry      = 5
+	clusterInfoWidth = 50
+	clusterInfoPad   = 15
 )
 
 // App represents an application view.
 type App struct {
 	*ui.App
 
-	Content    *PageStack
-	command    *Command
-	factory    *watch.Factory
-	version    string
-	showHeader bool
-	cancelFn   context.CancelFunc
+	Content      *PageStack
+	command      *Command
+	factory      *watch.Factory
+	version      string
+	showHeader   bool
+	cancelFn     context.CancelFunc
+	conRetry     int
+	clusterModel *model.ClusterInfo
 }
 
 // NewApp returns a K9s app instance.
@@ -51,9 +52,14 @@ func NewApp(cfg *config.Config) *App {
 	a.InitBench(cfg.K9s.CurrentCluster)
 
 	a.Views()["statusIndicator"] = ui.NewStatusIndicator(a.App, a.Styles)
-	a.Views()["clusterInfo"] = NewClusterInfo(&a, client.NewMetricsServer(cfg.GetConnection()))
+	a.Views()["clusterInfo"] = NewClusterInfo(&a)
 
 	return &a
+}
+
+// ConOK checks the connection is cool, returns false otherwise.
+func (a *App) ConOK() bool {
+	return a.conRetry == 0
 }
 
 // Init initializes the application.
@@ -80,15 +86,17 @@ func (a *App) Init(version string, rate int) error {
 	a.factory = watch.NewFactory(a.Conn())
 	a.initFactory(ns)
 
+	a.clusterModel = model.NewClusterInfo(a.factory, version)
+	a.clusterModel.AddListener(a.clusterInfo())
+	a.clusterModel.AddListener(a.statusIndicator())
+	a.clusterModel.Refresh()
+
 	a.command = NewCommand(a)
 	if err := a.command.Init(); err != nil {
 		return err
 	}
 
-	a.clusterInfo().Init(version)
-	if a.Config.K9s.GetHeadless() {
-		a.refreshIndicator()
-	}
+	a.clusterInfo().Init()
 
 	main := tview.NewFlex().SetDirection(tview.FlexRow)
 	main.AddItem(a.statusIndicator(), 1, 1, false)
@@ -129,7 +137,6 @@ func (a *App) toggleHeader(flag bool) {
 	} else {
 		flex.RemoveItemAtIndex(0)
 		flex.AddItemAtIndex(0, a.statusIndicator(), 1, 1, false)
-		a.refreshIndicator()
 	}
 }
 
@@ -181,63 +188,49 @@ func (a *App) clusterUpdater(ctx context.Context) {
 			log.Debug().Msg("ClusterInfo updater canceled!")
 			return
 		case <-time.After(clusterRefresh):
-			a.refreshClusterInfo()
+			a.refreshCluster()
 		}
 	}
 }
 
-// BOZO!! Refact to use model/view strategy.
-func (a *App) refreshClusterInfo() {
-	if !a.Conn().CheckConnectivity() {
-		ExitStatus = "Lost K8s connection. Bailing out!"
+func (a *App) refreshCluster() {
+	c := a.Content.Top()
+
+	// Check conns
+	if ok := a.Conn().CheckConnectivity(); ok {
+		if a.conRetry > 0 {
+			if c != nil {
+				c.Start()
+			}
+			a.Status(ui.FlashInfo, "K8s connectivity OK")
+		}
+		a.conRetry = 0
+	} else {
+		a.conRetry++
+		log.Warn().Msgf("Conn check failed (%d)", a.conRetry)
+		if c != nil {
+			c.Stop()
+		}
+		a.Status(ui.FlashWarn, fmt.Sprintf("Dial K8s failed (%d)", a.conRetry))
+
+	}
+	if a.conRetry > maxConRetry {
+		ExitStatus = fmt.Sprintf("Lost K8s connection (%d). Bailing out!", a.conRetry)
 		a.BailOut()
 	}
+	if a.conRetry > 0 {
+		return
+	}
+
 	// Reload alias
-	if err := a.command.Reset(); err != nil {
-		log.Error().Err(err).Msgf("Command reset failed")
-	}
-	a.QueueUpdateDraw(func() {
-		if !a.showHeader {
-			a.refreshIndicator()
-		} else {
-			a.clusterInfo().refresh()
+	go func() {
+		if err := a.command.Reset(); err != nil {
+			log.Error().Err(err).Msgf("Command reset failed")
 		}
-	})
-}
+	}()
 
-func (a *App) refreshIndicator() {
-	mx := client.NewMetricsServer(a.Conn())
-	cluster := model.NewCluster(a.Conn(), mx)
-	var cmx client.ClusterMetrics
-	nos, nmx, err := fetchResources(a)
-	if err != nil {
-		log.Error().Err(err).Msgf("unable to refresh cluster statusIndicator")
-		return
-	}
-
-	if err := cluster.Metrics(nos, nmx, &cmx); err != nil {
-		log.Error().Err(err).Msgf("unable to refresh cluster statusIndicator")
-		return
-	}
-
-	cpu := render.AsPerc(cmx.PercCPU)
-	if cpu == "0" {
-		cpu = render.NAValue
-	}
-	mem := render.AsPerc(cmx.PercMEM)
-	if mem == "0" {
-		mem = render.NAValue
-	}
-
-	a.statusIndicator().SetPermanent(fmt.Sprintf(
-		statusIndicatorFmt,
-		a.version,
-		cluster.ClusterName(),
-		cluster.UserName(),
-		cluster.Version(),
-		cpu,
-		mem,
-	))
+	// Update cluster info
+	a.clusterModel.Refresh()
 }
 
 func (a *App) switchNS(ns string) bool {
@@ -276,7 +269,7 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 		if err := a.gotoResource("pods", true); loadPods && err != nil {
 			a.Flash().Err(err)
 		}
-		a.refreshClusterInfo()
+		a.clusterModel.Reset(a.factory)
 		a.ReloadStyles(name)
 	}
 
@@ -299,7 +292,7 @@ func (a *App) Run() error {
 	a.Resume()
 
 	go func() {
-		<-time.After(splashTime * time.Second)
+		<-time.After(splashDelay)
 		a.QueueUpdateDraw(func() {
 			a.Main.SwitchToPage("main")
 		})

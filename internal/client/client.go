@@ -268,6 +268,7 @@ func (a *APIClient) reset() {
 	a.mx.Lock()
 	defer a.mx.Unlock()
 
+	a.cache = cache.NewLRUExpireCache(cacheSize)
 	a.client, a.dClient, a.nsClient, a.mxsClient = nil, nil, nil, nil
 }
 

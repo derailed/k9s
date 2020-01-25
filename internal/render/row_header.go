@@ -36,8 +36,8 @@ func (hh HeaderRow) Clear() HeaderRow {
 	return HeaderRow{}
 }
 
-// Changed returns true if the header changed.
-func (hh HeaderRow) Changed(h HeaderRow) bool {
+// Diff returns true if the header changed.
+func (hh HeaderRow) Diff(h HeaderRow) bool {
 	if len(hh) != len(h) {
 		return true
 	}

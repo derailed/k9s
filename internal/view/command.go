@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"sync"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
@@ -23,6 +24,7 @@ type Command struct {
 	app *App
 
 	alias *dao.Alias
+	mx    sync.Mutex
 }
 
 // NewCommand returns a new command.
@@ -45,6 +47,9 @@ func (c *Command) Init() error {
 
 // Reset resets Command and reload aliases.
 func (c *Command) Reset() error {
+	c.mx.Lock()
+	defer c.mx.Unlock()
+
 	c.alias.Clear()
 	if _, err := c.alias.Ensure(); err != nil {
 		return err
@@ -134,10 +139,12 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 }
 
 func (c *Command) defaultCmd() error {
-	if err := c.run(c.app.Config.ActiveView(), "", true); err != nil {
+	err := c.run(c.app.Config.ActiveView(), "", true)
+	if err != nil {
 		log.Error().Err(err).Msgf("Saved command failed. Loading default view")
+		return c.run("pod", "", true)
 	}
-	return c.run("pod", "", true)
+	return nil
 }
 
 func (c *Command) specialCmd(cmd string) bool {
@@ -190,16 +197,13 @@ func (c *Command) viewMetaFor(cmd string) (string, *MetaViewer, error) {
 func (c *Command) componentFor(gvr, path string, v *MetaViewer) ResourceViewer {
 	var view ResourceViewer
 	if v.viewerFn != nil {
-		log.Debug().Msgf("Custom viewer for %s", gvr)
 		view = v.viewerFn(client.NewGVR(gvr))
 	} else {
-		log.Debug().Msgf("Generic viewer for %s", gvr)
 		view = NewBrowser(client.NewGVR(gvr))
 	}
 
 	view.SetInstance(path)
 	if v.enterFn != nil {
-		log.Debug().Msgf("SETTING CUSTOM ENTER ON %s", gvr)
 		view.GetTable().SetEnterFn(v.enterFn)
 	}
 

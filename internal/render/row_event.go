@@ -61,17 +61,16 @@ func (r RowEvent) Clone() RowEvent {
 	}
 }
 
-// Changed returns true if the row changed.
-func (r RowEvent) Changed(re RowEvent) bool {
+// Diff returns true if the row changed.
+func (r RowEvent) Diff(re RowEvent) bool {
 	if r.Kind != re.Kind {
-		log.Debug().Msgf("KIND Changed")
 		return true
 	}
 	if !reflect.DeepEqual(r.Deltas, re.Deltas) {
-		log.Debug().Msgf("DELTAS CHANGED")
 		return true
 	}
 
+	// BOZO!! Canned?? Skip age colum
 	return !reflect.DeepEqual(r.Row.Fields[:len(r.Row.Fields)-1], re.Row.Fields[:len(re.Row.Fields)-1])
 }
 
@@ -80,14 +79,14 @@ func (r RowEvent) Changed(re RowEvent) bool {
 // RowEvents a collection of row events.
 type RowEvents []RowEvent
 
-// Changed returns true if the header changed.
-func (rr RowEvents) Changed(r RowEvents) bool {
+// Diff returns true if the event changed.
+func (rr RowEvents) Diff(r RowEvents) bool {
 	if len(rr) != len(r) {
 		return true
 	}
 
 	for i := range rr {
-		if rr[i].Changed(r[i]) {
+		if rr[i].Diff(r[i]) {
 			return true
 		}
 	}
