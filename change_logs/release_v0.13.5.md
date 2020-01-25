@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s_small.png" align="right" width="200" height="auto"/>
 
-# Release v0.13.6
+# Release v0.13.5
 
 ## Notes
 
@@ -12,47 +12,12 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ---
 
-### GH Sponsorships
-
-WOOT!! Big Thank you in this release to [shiv3](https://github.com/shiv3) for your contributions and support for K9s!
-Duly noted and so much appreciated!!
+Maintenance Release!
 
 ---
-
-### Bow Or Stern?
-
-Some of you had voiced wanting to enable the multi pod logger [Stern](https://github.com/wercker/stern) from the good folks at [Wercker](https://github.com/wercker). Well now you can!
-
-To make this work the awesome [Tuomo Syvänperä](https://github.com/syvanpera) contributed a PR to enable to plug this in with K9s. Thank you Tuomo!!
-By default the filter will be set to the currently selected pod. If you need to change the filter, simply filter the pod view to using your own regex and that's the filter K9s will use. Here is a sample plugin that defines a new K9s shortcut to launch Stern provided of course it is installed on your box...
-
-```yaml
-# K9s plugin.yml
-plugin:
-  stern:
-    shortCut: Ctrl-L
-    description: "Logs (Stern)"
-    scopes:
-      - pods
-    command: /usr/local/bin/stern # NOTE! Look for the command at this location.
-    background: false
-    args:
-    - --tail
-    - 50
-    - $FILTER # NOTE! Pulls the filter out of the pod view.
-    - -n
-    - $NAMESPACE
-    - --context
-    - $CONTEXT
-```
-
----
-
-## Resolved Bugs/Features/PRs
+## Resolved Bugs/Features
 
 * [Issue #507](https://github.com/derailed/k9s/issues/507)
-* [PR #510](https://github.com/derailed/k9s/pull/510) Thank you!! [Vimal Kumar](https://github.com/vimalk78)
-* [PR #340](https://github.com/derailed/k9s/pull/340) ATTA Boy! [Tuomo Syvänperä](https://github.com/syvanpera)
 
 ---
 
