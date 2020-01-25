@@ -38,6 +38,7 @@ func ShowDelete(pages *ui.Pages, msg string, ok okFunc, cancel cancelFunc) {
 		dismissDelete(pages)
 		cancel()
 	})
+	f.SetFocus(2)
 
 	confirm := tview.NewModalForm("<Delete>", f)
 	confirm.SetText(msg)

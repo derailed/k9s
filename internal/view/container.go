@@ -15,7 +15,10 @@ import (
 	"k8s.io/client-go/tools/portforward"
 )
 
-const containerTitle = "Containers"
+const (
+	containerTitle = "Containers"
+	portsCol       = 13
+)
 
 // Container represents a container view.
 type Container struct {
@@ -117,7 +120,7 @@ func (c *Container) isForwardable(path string) ([]string, bool) {
 		return nil, false
 	}
 
-	portC := c.GetTable().GetSelectedCell(11)
+	portC := c.GetTable().GetSelectedCell(portsCol)
 	ports := strings.Split(portC, ",")
 	if len(ports) == 0 {
 		c.App().Flash().Err(errors.New("Container exposes no ports"))

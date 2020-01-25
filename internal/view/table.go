@@ -65,7 +65,14 @@ func (t *Table) EnvFn() EnvFunc {
 }
 
 func (t *Table) defaultK9sEnv() K9sEnv {
-	return defaultK9sEnv(t.app, t.GetSelectedItem(), t.GetSelectedRow())
+	env := defaultK9sEnv(t.app, t.GetSelectedItem(), t.GetSelectedRow())
+	env["FILTER"] = t.SearchBuff().String()
+	if env["FILTER"] == "" {
+		ns, n := client.Namespaced(t.GetSelectedItem())
+		env["NAMESPACE"], env["FILTER"] = ns, n
+	}
+
+	return env
 }
 
 // App returns the current app handle.

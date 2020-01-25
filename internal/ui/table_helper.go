@@ -100,7 +100,7 @@ func sortIndicator(col SortColumn, style config.Table, index int, name string) s
 	if col.asc {
 		order = ascIndicator
 	}
-	return fmt.Sprintf("%s[%s::]%s[::]", name, style.Header.SorterColor, order)
+	return fmt.Sprintf("%s[%s::b]%s[::]", name, style.Header.SorterColor, order)
 }
 
 func formatCell(field string, padding int) string {
