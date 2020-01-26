@@ -31,11 +31,11 @@ Wanna discuss K9s features with your fellow `K9sers` or simply show your support
 
 ## Installation
 
-K9s is available on Linux, OSX and Windows platforms.
+K9s is available on Linux, macOS and Windows platforms.
 
 * Binaries for Linux, Windows and Mac are available as tarballs in the [release](https://github.com/derailed/k9s/releases) page.
 
-* Via Homebrew or LinuxBrew for OSX and Linux
+* Via Homebrew or LinuxBrew for macOS and Linux
 
    ```shell
    brew install derailed/k9s/k9s
@@ -47,12 +47,10 @@ K9s is available on Linux, OSX and Windows platforms.
    sudo port install k9s
    ```
 
-* Archlinux (AUR)
-
-  K9s is available in the Arch User Repository under the name [k9s-bin](https://aur.archlinux.org/packages/k9s-bin/), you can install it with your favorite AUR helper like so:
+* On Arch Linux
 
   ```shell
-  yay -S k9s-bin
+  pacman -S k9s
   ```
 
 * Building from source
