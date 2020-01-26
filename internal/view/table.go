@@ -191,9 +191,7 @@ func (t *Table) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (t *Table) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msgf("Table filter activated!")
 	if t.app.InCmdMode() {
-		log.Debug().Msgf("App Is in Command mode!")
 		return evt
 	}
 	t.app.Flash().Info("Filter mode activated.")

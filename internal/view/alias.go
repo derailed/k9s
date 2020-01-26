@@ -9,7 +9,6 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 const aliasTitle = "Aliases"
@@ -48,7 +47,6 @@ func (a *Alias) bindKeys(aa ui.KeyActions) {
 }
 
 func (a *Alias) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msgf("GOTO CMD")
 	r, _ := a.GetTable().GetSelection()
 	if r != 0 {
 		s := ui.TrimCell(a.GetTable().SelectTable, r, 1)

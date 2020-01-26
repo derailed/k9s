@@ -98,6 +98,17 @@ func (t *Table) SendKey(evt *tcell.EventKey) {
 	t.keyboard(evt)
 }
 
+func (t *Table) filterInput(r rune) {
+	if !t.cmdBuff.IsActive() {
+		return
+	}
+	t.cmdBuff.Add(r)
+	t.ClearSelection()
+	t.doUpdate(t.filtered(t.GetModel().Peek()))
+	t.UpdateTitle()
+	t.SelectFirstRow()
+}
+
 func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	key := evt.Key()
 	if key == tcell.KeyUp || key == tcell.KeyDown {
@@ -105,14 +116,7 @@ func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if key == tcell.KeyRune {
-		if t.SearchBuff().IsActive() {
-			t.SearchBuff().Add(evt.Rune())
-			t.ClearSelection()
-			t.doUpdate(t.filtered(t.GetModel().Peek()))
-			t.UpdateTitle()
-			t.SelectFirstRow()
-			return nil
-		}
+		t.filterInput(evt.Rune())
 		key = asKey(evt)
 	}
 
@@ -365,7 +369,7 @@ func (t *Table) styleTitle() string {
 		}
 	}
 
-	buff := t.SearchBuff().String()
+	buff := t.cmdBuff.String()
 	var title string
 	if ns == client.ClusterScope {
 		title = SkinTitle(fmt.Sprintf(TitleFmt, base, rc), t.styles.Frame())

@@ -46,11 +46,13 @@ func (c *Command) Init() error {
 }
 
 // Reset resets Command and reload aliases.
-func (c *Command) Reset() error {
+func (c *Command) Reset(clear bool) error {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 
-	c.alias.Clear()
+	if clear {
+		c.alias.Clear()
+	}
 	if _, err := c.alias.Ensure(); err != nil {
 		return err
 	}

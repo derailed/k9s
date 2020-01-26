@@ -222,7 +222,7 @@ func (a *App) refreshCluster() {
 
 	// Reload alias
 	go func() {
-		if err := a.command.Reset(); err != nil {
+		if err := a.command.Reset(false); err != nil {
 			log.Error().Err(err).Msgf("Command reset failed")
 		}
 	}()
@@ -256,7 +256,7 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 		}
 		a.initFactory(ns)
 
-		if err := a.command.Reset(); err != nil {
+		if err := a.command.Reset(true); err != nil {
 			return err
 		}
 		a.Config.Reset()

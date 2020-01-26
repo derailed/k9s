@@ -123,6 +123,7 @@ func loadK9s(m ResourceMetas) {
 		Name:         "aliases",
 		Kind:         "Aliases",
 		SingularName: "alias",
+		Verbs:        []string{},
 		Categories:   []string{"k9s"},
 	}
 	m[client.NewGVR("contexts")] = metav1.APIResource{
@@ -130,6 +131,7 @@ func loadK9s(m ResourceMetas) {
 		Kind:         "Contexts",
 		SingularName: "context",
 		ShortNames:   []string{"ctx"},
+		Verbs:        []string{},
 		Categories:   []string{"k9s"},
 	}
 	m[client.NewGVR("screendumps")] = metav1.APIResource{
