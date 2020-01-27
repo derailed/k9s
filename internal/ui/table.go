@@ -98,15 +98,17 @@ func (t *Table) SendKey(evt *tcell.EventKey) {
 	t.keyboard(evt)
 }
 
-func (t *Table) filterInput(r rune) {
+func (t *Table) filterInput(r rune) bool {
 	if !t.cmdBuff.IsActive() {
-		return
+		return false
 	}
 	t.cmdBuff.Add(r)
 	t.ClearSelection()
 	t.doUpdate(t.filtered(t.GetModel().Peek()))
 	t.UpdateTitle()
 	t.SelectFirstRow()
+
+	return true
 }
 
 func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
@@ -116,7 +118,9 @@ func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if key == tcell.KeyRune {
-		t.filterInput(evt.Rune())
+		if t.filterInput(evt.Rune()) {
+			return nil
+		}
 		key = asKey(evt)
 	}
 
