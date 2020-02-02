@@ -34,11 +34,10 @@ func TestLogAutoScroll(t *testing.T) {
 	v.GetModel().Set([]string{"blee", "bozo"})
 	v.GetModel().Notify(true)
 
+	assert.Equal(t, 6, len(v.Hints()))
+
 	v.ToggleAutoScrollCmd(nil)
 	assert.Equal(t, " Autoscroll: Off  FullScreen: Off  Wrap: Off       ", v.Indicator().GetText(true))
-	v.ToggleAutoScrollCmd(nil)
-	assert.Equal(t, " Autoscroll: On   FullScreen: Off  Wrap: Off       ", v.Indicator().GetText(true))
-	assert.Equal(t, 6, len(v.Hints()))
 }
 
 func TestLogViewSave(t *testing.T) {

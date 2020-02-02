@@ -57,7 +57,6 @@ func NewLog(gvr client.GVR, path, co string, prev bool) *Log {
 
 // Init initialiazes the viewer.
 func (l *Log) Init(ctx context.Context) (err error) {
-	log.Debug().Msgf(">>> Logs INIT")
 	if l.app, err = extractApp(ctx); err != nil {
 		return err
 	}
@@ -235,9 +234,6 @@ func (l *Log) write(lines string) {
 
 // Flush write logs to viewer.
 func (l *Log) Flush(lines []string) {
-	if !l.indicator.AutoScroll() {
-		return
-	}
 	l.write(strings.Join(lines, "\n"))
 	l.indicator.Refresh()
 	l.logs.ScrollToEnd()
@@ -356,6 +352,11 @@ func (l *Log) textWrapCmd(*tcell.EventKey) *tcell.EventKey {
 // ToggleAutoScrollCmd toggles autoscroll status.
 func (l *Log) ToggleAutoScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
 	l.indicator.ToggleAutoScroll()
+	if l.indicator.AutoScroll() {
+		l.model.Start()
+	} else {
+		l.model.Stop()
+	}
 	return nil
 }
 

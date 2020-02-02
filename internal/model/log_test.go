@@ -29,7 +29,7 @@ func TestLogFullBuffer(t *testing.T) {
 		data = append(data, "line"+strconv.Itoa(i))
 		m.Append(data[i])
 	}
-	m.Notify(false)
+	m.Notify(true)
 
 	assert.Equal(t, 1, v.dataCalled)
 	assert.Equal(t, 1, v.clearCalled)

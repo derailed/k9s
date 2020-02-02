@@ -137,7 +137,9 @@ func (l *Log) load() error {
 	}
 
 	if err := logger.TailLogs(ctx, c, l.logOptions); err != nil {
-		l.cancelFn()
+		if l.cancelFn != nil {
+			l.cancelFn()
+		}
 		close(c)
 		return err
 	}
@@ -150,7 +152,6 @@ func (l *Log) Append(line string) {
 	if line == "" {
 		return
 	}
-	log.Debug().Msgf("LINE %q", line)
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
@@ -168,7 +169,6 @@ func (l *Log) Append(line string) {
 	if l.lastSent < 0 {
 		l.lastSent = 0
 	}
-	log.Debug().Msgf("LINES %v -- %v", l.lines, l.lastSent)
 }
 
 // Notify fires of notifications to the listeners.
@@ -176,7 +176,7 @@ func (l *Log) Notify(timedOut bool) {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
-	if timedOut || l.lastSent < len(l.lines) {
+	if timedOut && l.lastSent < len(l.lines) {
 		l.fireLogBuffChanged(l.lines[l.lastSent:])
 		l.lastSent = len(l.lines)
 	}
@@ -225,6 +225,9 @@ func (l *Log) RemoveListener(listener LogsListener) {
 }
 
 func applyFilter(q string, lines []string) ([]string, error) {
+	if q == "" {
+		return lines, nil
+	}
 	indexes, err := filter(q, lines)
 	if err != nil {
 		return nil, err
