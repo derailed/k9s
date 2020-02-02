@@ -137,7 +137,9 @@ func (l *Log) load() error {
 	}
 
 	if err := logger.TailLogs(ctx, c, l.logOptions); err != nil {
-		l.cancelFn()
+		if l.cancelFn != nil {
+			l.cancelFn()
+		}
 		close(c)
 		return err
 	}
@@ -155,7 +157,7 @@ func (l *Log) Append(line string) {
 	defer l.mx.Unlock()
 
 	if l.initialized {
-		l.lines = []string{}
+		l.lines, l.lastSent = []string{}, 0
 		l.initialized = false
 		l.fireLogCleared()
 	}
@@ -175,7 +177,7 @@ func (l *Log) Notify(timedOut bool) {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
-	if timedOut || l.lastSent < len(l.lines) {
+	if timedOut && l.lastSent < len(l.lines) {
 		l.fireLogBuffChanged(l.lines[l.lastSent:])
 		l.lastSent = len(l.lines)
 	}
@@ -224,6 +226,9 @@ func (l *Log) RemoveListener(listener LogsListener) {
 }
 
 func applyFilter(q string, lines []string) ([]string, error) {
+	if q == "" {
+		return lines, nil
+	}
 	indexes, err := filter(q, lines)
 	if err != nil {
 		return nil, err

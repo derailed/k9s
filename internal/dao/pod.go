@@ -249,6 +249,7 @@ func readLogs(ctx context.Context, stream io.ReadCloser, c chan<- string, opts L
 			c <- opts.DecorateLog(scanner.Text())
 		}
 	}
+	log.Error().Msgf("SCAN_ERR %#v", scanner.Err())
 }
 
 // ----------------------------------------------------------------------------

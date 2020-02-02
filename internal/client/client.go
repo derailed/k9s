@@ -22,23 +22,25 @@ import (
 )
 
 const (
-	cacheSize   = 100
-	cacheExpiry = 5 * time.Minute
-	cacheMXKey  = "metrics"
+	cacheSize        = 100
+	cacheExpiry      = 5 * time.Minute
+	cacheMXKey       = "metrics"
+	checkConnTimeout = 10 * time.Second
 )
 
 var supportedMetricsAPIVersions = []string{"v1beta1"}
 
 // APIClient represents a Kubernetes api client.
 type APIClient struct {
-	client       kubernetes.Interface
-	dClient      dynamic.Interface
-	nsClient     dynamic.NamespaceableResourceInterface
-	mxsClient    *versioned.Clientset
-	cachedClient *disk.CachedDiscoveryClient
-	config       *Config
-	mx           sync.Mutex
-	cache        *cache.LRUExpireCache
+	checkClientSet *kubernetes.Clientset
+	client         kubernetes.Interface
+	dClient        dynamic.Interface
+	nsClient       dynamic.NamespaceableResourceInterface
+	mxsClient      *versioned.Clientset
+	cachedClient   *disk.CachedDiscoveryClient
+	config         *Config
+	mx             sync.Mutex
+	cache          *cache.LRUExpireCache
 }
 
 // InitConnectionOrDie initialize connection from command line args.
@@ -134,17 +136,26 @@ func (a *APIClient) CheckConnectivity() (status bool) {
 		}
 	}()
 
-	client, ok := a.DialOrDie().(*kubernetes.Clientset)
-	if !ok {
-		return status
+	if a.checkClientSet == nil {
+		cfg, err := a.config.flags.ToRESTConfig()
+		if err != nil {
+			return
+		}
+		cfg.Timeout = checkConnTimeout
+
+		if a.checkClientSet, err = kubernetes.NewForConfig(cfg); err != nil {
+			log.Error().Err(err).Msgf("Unable to connect to api server")
+			return
+		}
 	}
-	if _, err := client.ServerVersion(); err != nil {
+
+	if _, err := a.checkClientSet.ServerVersion(); err != nil {
 		log.Error().Err(err).Msgf("K9s can't connect to cluster")
 	} else {
 		status = true
 	}
 
-	return status
+	return
 }
 
 // Config return a kubernetes configuration.
