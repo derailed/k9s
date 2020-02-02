@@ -285,7 +285,7 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		ns, n := client.Namespaced(path)
 		args := make([]string, 0, 10)
 		args = append(args, "edit")
-		args = append(args, b.meta.Kind)
+		args = append(args, b.meta.SingularName)
 		args = append(args, "-n", ns)
 		args = append(args, "--context", b.app.Config.K9s.CurrentContext)
 		if cfg := b.app.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
