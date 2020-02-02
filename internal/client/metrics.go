@@ -136,7 +136,7 @@ func (m *MetricsServer) FetchPodMetrics(fqn string) (*mv1beta1.PodMetrics, error
 		return &mx, fmt.Errorf("No metrics-server detected on cluster")
 	}
 
-	ns, _ := Namespaced(fqn)
+	ns, n := Namespaced(fqn)
 	if ns == NamespaceAll {
 		ns = AllNamespaces
 	}
@@ -153,7 +153,7 @@ func (m *MetricsServer) FetchPodMetrics(fqn string) (*mv1beta1.PodMetrics, error
 		return &mx, err
 	}
 
-	return client.MetricsV1beta1().PodMetricses(ns).Get(fqn, metav1.GetOptions{})
+	return client.MetricsV1beta1().PodMetricses(ns).Get(n, metav1.GetOptions{})
 }
 
 // PodsMetrics retrieves metrics for all pods in a given namespace.

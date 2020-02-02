@@ -150,24 +150,25 @@ func (l *Log) Append(line string) {
 	if line == "" {
 		return
 	}
-
+	log.Debug().Msgf("LINE %q", line)
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
 	if l.initialized {
-		l.lines = []string{}
-		l.initialized = false
+		l.lines, l.initialized, l.lastSent = []string{}, false, 0
 		l.fireLogCleared()
 	}
+
 	if len(l.lines) < int(l.logOptions.Lines) {
 		l.lines = append(l.lines, line)
-	} else {
-		l.lines = append(l.lines[1:], line)
-		l.lastSent--
-		if l.lastSent < 0 {
-			l.lastSent = 0
-		}
+		return
 	}
+	l.lines = append(l.lines[1:], line)
+	l.lastSent--
+	if l.lastSent < 0 {
+		l.lastSent = 0
+	}
+	log.Debug().Msgf("LINES %v -- %v", l.lines, l.lastSent)
 }
 
 // Notify fires of notifications to the listeners.
