@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
@@ -36,9 +35,18 @@ func NewPod(gvr client.GVR) ResourceViewer {
 	return &p
 }
 
-func (p *Pod) bindKeys(aa ui.KeyActions) {
+func (p *Pod) bindDangerousKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
 		tcell.KeyCtrlK: ui.NewKeyAction("Kill", p.killCmd, true),
+	})
+}
+
+func (p *Pod) bindKeys(aa ui.KeyActions) {
+	if !p.App().Config.K9s.GetReadOnly() {
+		p.bindDangerousKeys(aa)
+	}
+
+	aa.Add(ui.KeyActions{
 		ui.KeyS:        ui.NewKeyAction("Shell", p.shellCmd, true),
 		ui.KeyShiftR:   ui.NewKeyAction("Sort Ready", p.GetTable().SortColCmd(1, true), false),
 		ui.KeyShiftS:   ui.NewKeyAction("Sort Status", p.GetTable().SortColCmd(2, true), false),
