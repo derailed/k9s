@@ -6,12 +6,14 @@ const (
 	defaultRefreshRate    = 2
 	defaultLogRequestSize = 200
 	defaultLogBufferSize  = 1000
+	defaultReadOnly       = false
 )
 
 // K9s tracks K9s configuration options.
 type K9s struct {
 	RefreshRate       int                 `yaml:"refreshRate"`
 	Headless          bool                `yaml:"headless"`
+	ReadOnly          bool                `yaml:"readOnly"`
 	LogBufferSize     int                 `yaml:"logBufferSize"`
 	LogRequestSize    int                 `yaml:"logRequestSize"`
 	CurrentContext    string              `yaml:"currentContext"`
@@ -20,6 +22,7 @@ type K9s struct {
 	Clusters          map[string]*Cluster `yaml:"clusters,omitempty"`
 	manualRefreshRate int
 	manualHeadless    *bool
+	manualReadOnly    *bool
 	manualCommand     *string
 }
 
@@ -27,6 +30,7 @@ type K9s struct {
 func NewK9s() *K9s {
 	return &K9s{
 		RefreshRate:    defaultRefreshRate,
+		ReadOnly:       defaultReadOnly,
 		LogBufferSize:  defaultLogBufferSize,
 		LogRequestSize: defaultLogRequestSize,
 		Clusters:       make(map[string]*Cluster),
@@ -41,6 +45,11 @@ func (k *K9s) OverrideRefreshRate(r int) {
 // OverrideHeadless set the headlessness manually.
 func (k *K9s) OverrideHeadless(b bool) {
 	k.manualHeadless = &b
+}
+
+// OverrideReadOnly set the readonly mode manually.
+func (k *K9s) OverrideReadOnly(b bool) {
+	k.manualReadOnly = &b
 }
 
 // OverrideCommand set the command manually.
@@ -66,6 +75,15 @@ func (k *K9s) GetRefreshRate() int {
 	}
 
 	return rate
+}
+
+// GetReadOnly returns the readonly setting.
+func (k *K9s) GetReadOnly() bool {
+	readOnly := k.ReadOnly
+	if k.manualReadOnly != nil && *k.manualReadOnly {
+		readOnly = *k.manualReadOnly
+	}
+	return readOnly
 }
 
 // ActiveCluster returns the currently active cluster.
