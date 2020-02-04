@@ -355,7 +355,7 @@ func (b *Browser) defaultContext() context.Context {
 		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(b.SearchBuff().String()))
 	}
 	ctx = context.WithValue(ctx, internal.KeyFields, "")
-	ctx = context.WithValue(ctx, internal.KeyNamespace, client.CleanseNamespace((b.App().Config.ActiveNamespace())))
+	ctx = context.WithValue(ctx, internal.KeyNamespace, client.CleanseNamespace(b.App().Config.ActiveNamespace()))
 
 	return ctx
 }
