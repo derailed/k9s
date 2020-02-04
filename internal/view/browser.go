@@ -370,11 +370,13 @@ func (b *Browser) refreshActions() {
 	if b.app.ConOK() {
 		b.namespaceActions(aa)
 
-		if client.Can(b.meta.Verbs, "edit") {
-			aa[ui.KeyE] = ui.NewKeyAction("Edit", b.editCmd, true)
-		}
-		if client.Can(b.meta.Verbs, "delete") {
-			aa[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", b.deleteCmd, true)
+		if !b.app.Config.K9s.GetReadOnly() {
+			if client.Can(b.meta.Verbs, "edit") {
+				aa[ui.KeyE] = ui.NewKeyAction("Edit", b.editCmd, true)
+			}
+			if client.Can(b.meta.Verbs, "delete") {
+				aa[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", b.deleteCmd, true)
+			}
 		}
 	}
 
