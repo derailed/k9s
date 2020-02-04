@@ -40,11 +40,21 @@ func NewContainer(gvr client.GVR) ResourceViewer {
 // Name returns the component name.
 func (c *Container) Name() string { return containerTitle }
 
+func (c *Container) bindDangerousKeys(aa ui.KeyActions) {
+	aa.Add(ui.KeyActions{
+		ui.KeyS: ui.NewKeyAction("Shell", c.shellCmd, true),
+	})
+}
+
 func (c *Container) bindKeys(aa ui.KeyActions) {
 	aa.Delete(tcell.KeyCtrlSpace, ui.KeySpace)
+
+	if !c.App().Config.K9s.GetReadOnly() {
+		c.bindDangerousKeys(aa)
+	}
+
 	aa.Add(ui.KeyActions{
 		ui.KeyShiftF:   ui.NewKeyAction("PortForward", c.portFwdCmd, true),
-		ui.KeyS:        ui.NewKeyAction("Shell", c.shellCmd, true),
 		ui.KeyShiftC:   ui.NewKeyAction("Sort CPU", c.GetTable().SortColCmd(6, false), false),
 		ui.KeyShiftM:   ui.NewKeyAction("Sort MEM", c.GetTable().SortColCmd(7, false), false),
 		ui.KeyShiftX:   ui.NewKeyAction("Sort %CPU (REQ)", c.GetTable().SortColCmd(8, false), false),
