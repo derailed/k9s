@@ -113,6 +113,10 @@ func loadConfiguration() *config.Config {
 		k9sCfg.K9s.OverrideHeadless(*k9sFlags.Headless)
 	}
 
+	if k9sFlags.ReadOnly != nil {
+		k9sCfg.K9s.OverrideReadOnly(*k9sFlags.ReadOnly)
+	}
+
 	if k9sFlags.Command != nil {
 		k9sCfg.K9s.OverrideCommand(*k9sFlags.Command)
 	}
@@ -188,6 +192,12 @@ func initK9sFlags() {
 		"command", "c",
 		config.DefaultCommand,
 		"Specify the default command to view when the application launches",
+	)
+	rootCmd.Flags().BoolVar(
+		k9sFlags.ReadOnly,
+		"readonly",
+		false,
+		"Disable all commands that modify the cluster",
 	)
 }
 
