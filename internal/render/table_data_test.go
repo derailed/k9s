@@ -19,7 +19,7 @@ func TestTableDataDelete(t *testing.T) {
 				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
 				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
 			},
-			kk: map[string]struct{}{"A": struct{}{}, "C": struct{}{}},
+			kk: map[string]struct{}{"A": {}, "C": {}},
 			e: render.RowEvents{
 				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
 				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
@@ -32,7 +32,7 @@ func TestTableDataDelete(t *testing.T) {
 				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
 				{Row: render.Row{ID: "D", Fields: render.Fields{"10", "2", "3"}}},
 			},
-			kk: map[string]struct{}{"C": struct{}{}, "A": struct{}{}},
+			kk: map[string]struct{}{"C": {}, "A": {}},
 			e: render.RowEvents{
 				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
 				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
