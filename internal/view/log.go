@@ -103,7 +103,9 @@ func (l *Log) LogCleared() {
 
 // LogFailed notifies an error occurred.
 func (l *Log) LogFailed(err error) {
-	l.app.Flash().Err(err)
+	l.app.QueueUpdateDraw(func() {
+		l.app.Flash().Err(err)
+	})
 }
 
 // LogChanged updates the logs.

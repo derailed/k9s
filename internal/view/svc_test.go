@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	dao.RegisterMeta("v1/pods", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta("v1/pods", metav1.APIResource{
 		Name:         "pods",
 		SingularName: "pod",
 		Namespaced:   true,
@@ -19,7 +19,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.RegisterMeta("v1/namespaces", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta("v1/namespaces", metav1.APIResource{
 		Name:         "namespaces",
 		SingularName: "namespace",
 		Namespaced:   true,
@@ -27,7 +27,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.RegisterMeta("v1/services", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta("v1/services", metav1.APIResource{
 		Name:         "services",
 		SingularName: "service",
 		Namespaced:   true,
@@ -35,7 +35,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.RegisterMeta("v1/secrets", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta("v1/secrets", metav1.APIResource{
 		Name:         "secrets",
 		SingularName: "secret",
 		Namespaced:   true,
@@ -44,7 +44,7 @@ func init() {
 		Categories:   []string{"k9s"},
 	})
 
-	dao.RegisterMeta("aliases", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta("aliases", metav1.APIResource{
 		Name:         "aliases",
 		SingularName: "alias",
 		Namespaced:   true,
@@ -52,7 +52,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.RegisterMeta("containers", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta("containers", metav1.APIResource{
 		Name:         "containers",
 		SingularName: "container",
 		Namespaced:   true,
@@ -60,7 +60,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.RegisterMeta("contexts", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta("contexts", metav1.APIResource{
 		Name:         "contexts",
 		SingularName: "context",
 		Namespaced:   true,
@@ -68,7 +68,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.RegisterMeta("subjects", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta("subjects", metav1.APIResource{
 		Name:         "subjects",
 		SingularName: "subject",
 		Namespaced:   true,
@@ -76,7 +76,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.RegisterMeta("rbac", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta("rbac", metav1.APIResource{
 		Name:         "rbacs",
 		SingularName: "rbac",
 		Namespaced:   true,
@@ -84,7 +84,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.RegisterMeta("portforwards", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta("portforwards", metav1.APIResource{
 		Name:         "portforwards",
 		SingularName: "portforward",
 		Namespaced:   true,
@@ -93,7 +93,7 @@ func init() {
 		Categories:   []string{"k9s"},
 	})
 
-	dao.RegisterMeta("screendumps", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta("screendumps", metav1.APIResource{
 		Name:         "screendumps",
 		SingularName: "screendump",
 		Namespaced:   true,
@@ -101,7 +101,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.RegisterMeta("apps/v1/statefulsets", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta("apps/v1/statefulsets", metav1.APIResource{
 		Name:         "statefulsets",
 		SingularName: "statefulset",
 		Namespaced:   true,
@@ -109,7 +109,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.RegisterMeta("apps/v1/daemonsets", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta("apps/v1/daemonsets", metav1.APIResource{
 		Name:         "daemonsets",
 		SingularName: "daemonset",
 		Namespaced:   true,
@@ -117,7 +117,7 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
-	dao.RegisterMeta("apps/v1/deployments", metav1.APIResource{
+	dao.MetaAccess.RegisterMeta("apps/v1/deployments", metav1.APIResource{
 		Name:         "deployments",
 		SingularName: "deployment",
 		Namespaced:   true,

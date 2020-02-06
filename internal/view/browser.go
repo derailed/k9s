@@ -40,7 +40,7 @@ func NewBrowser(gvr client.GVR) ResourceViewer {
 // Init watches all running pods in given namespace
 func (b *Browser) Init(ctx context.Context) error {
 	var err error
-	b.meta, err = dao.MetaFor(b.gvr)
+	b.meta, err = dao.MetaAccess.MetaFor(b.gvr)
 	if err != nil {
 		return err
 	}
@@ -55,6 +55,7 @@ func (b *Browser) Init(ctx context.Context) error {
 			return e
 		}
 	}
+	b.app.CmdBuff().Reset()
 
 	b.bindKeys()
 	if b.bindKeysFn != nil {

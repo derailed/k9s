@@ -336,7 +336,7 @@ func dumpStdOut(n *TreeNode, level int) {
 }
 
 func category(gvr string) string {
-	meta, err := dao.MetaFor(client.NewGVR(gvr))
+	meta, err := dao.MetaAccess.MetaFor(client.NewGVR(gvr))
 	if err != nil {
 		return ""
 	}

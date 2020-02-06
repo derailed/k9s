@@ -1,20 +1,15 @@
 package render
 
-import (
-	"sync"
-)
-
 // TableData tracks a K8s resource for tabular display.
 type TableData struct {
 	Header    HeaderRow
 	RowEvents RowEvents
 	Namespace string
-	Mutex     *sync.RWMutex
 }
 
 // NewTableData returns a new table.
 func NewTableData() *TableData {
-	return &TableData{Mutex: &sync.RWMutex{}}
+	return &TableData{}
 }
 
 // Clear clears out the entire table.
@@ -31,13 +26,18 @@ func cloneTable(t TableData) TableData {
 	return t
 }
 
+// SetHeader sets table header.
+func (t *TableData) SetHeader(ns string, h HeaderRow) {
+	t.Namespace, t.Header = ns, h
+}
+
 // Update computes row deltas and update the table data.
 func (t *TableData) Update(rows Rows) {
 	empty := len(t.RowEvents) == 0
-	kk := make([]string, 0, len(rows))
+	kk := make(map[string]struct{}, len(rows))
 	var blankDelta DeltaRow
 	for _, row := range rows {
-		kk = append(kk, row.ID)
+		kk[row.ID] = struct{}{}
 		if empty {
 			t.RowEvents = append(t.RowEvents, NewRowEvent(EventAdd, row))
 			continue
@@ -61,19 +61,11 @@ func (t *TableData) Update(rows Rows) {
 	}
 }
 
-// Delete delete items in cache that are no longer valid.
-func (t *TableData) Delete(newKeys []string) {
+// Delete removes items in cache that are no longer valid.
+func (t *TableData) Delete(newKeys map[string]struct{}) {
 	var victims []string
 	for _, re := range t.RowEvents {
-		var found bool
-		for i, key := range newKeys {
-			if key == re.Row.ID {
-				found = true
-				newKeys = append(newKeys[:i], newKeys[i+1:]...)
-				break
-			}
-		}
-		if !found {
+		if _, ok := newKeys[re.Row.ID]; !ok {
 			victims = append(victims, re.Row.ID)
 		}
 	}
@@ -88,12 +80,10 @@ func (t *TableData) Diff(table TableData) bool {
 	if t.Namespace != table.Namespace {
 		return true
 	}
+
 	if t.Header.Diff(table.Header) {
 		return true
 	}
-	if t.RowEvents.Diff(table.RowEvents) {
-		return true
-	}
 
-	return false
+	return t.RowEvents.Diff(table.RowEvents)
 }

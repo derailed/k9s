@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/derailed/k9s/internal"
@@ -40,6 +41,7 @@ type App struct {
 	cancelFn     context.CancelFunc
 	conRetry     int
 	clusterModel *model.ClusterInfo
+	mx           sync.Mutex
 }
 
 // NewApp returns a K9s app instance.
@@ -59,6 +61,8 @@ func NewApp(cfg *config.Config) *App {
 
 // ConOK checks the connection is cool, returns false otherwise.
 func (a *App) ConOK() bool {
+	a.mx.Lock()
+	defer a.mx.Unlock()
 	return a.conRetry == 0
 }
 
@@ -194,6 +198,9 @@ func (a *App) clusterUpdater(ctx context.Context) {
 }
 
 func (a *App) refreshCluster() {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
 	c := a.Content.Top()
 	if ok := a.Conn().CheckConnectivity(); ok {
 		if a.conRetry > 0 {

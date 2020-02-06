@@ -33,7 +33,7 @@ func TestAliasList(t *testing.T) {
 
 func makeAliases() *dao.Alias {
 	return &dao.Alias{
-		Aliases: config.Aliases{
+		Aliases: &config.Aliases{
 			Alias: config.Alias{
 				"fred": "v1/fred",
 				"f":    "v1/fred",

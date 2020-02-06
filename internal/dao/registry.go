@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
@@ -13,7 +14,19 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-var resMetas = ResourceMetas{}
+// MetaAccess tracks resources metadata.
+var MetaAccess = NewMeta()
+
+// Meta represents available resource metas.
+type Meta struct {
+	resMetas ResourceMetas
+	mx       sync.RWMutex
+}
+
+// NewMeta returns a resource meta.
+func NewMeta() *Meta {
+	return &Meta{resMetas: make(ResourceMetas)}
+}
 
 // AccessorFor returns a client accessor for a resource if registered.
 // Otherwise it returns a generic accessor.
@@ -47,14 +60,20 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 }
 
 // RegisterMeta registers a new resource meta object.
-func RegisterMeta(gvr string, res metav1.APIResource) {
-	resMetas[client.NewGVR(gvr)] = res
+func (m *Meta) RegisterMeta(gvr string, res metav1.APIResource) {
+	m.mx.Lock()
+	defer m.mx.Unlock()
+
+	m.resMetas[client.NewGVR(gvr)] = res
 }
 
 // AllGVRs returns all cluster resources.
-func AllGVRs() client.GVRs {
-	kk := make(client.GVRs, 0, len(resMetas))
-	for k := range resMetas {
+func (m *Meta) AllGVRs() client.GVRs {
+	m.mx.RLock()
+	defer m.mx.RUnlock()
+
+	kk := make(client.GVRs, 0, len(m.resMetas))
+	for k := range m.resMetas {
 		kk = append(kk, k)
 	}
 	sort.Sort(kk)
@@ -63,12 +82,15 @@ func AllGVRs() client.GVRs {
 }
 
 // MetaFor returns a resource metadata for a given gvr.
-func MetaFor(gvr client.GVR) (metav1.APIResource, error) {
-	m, ok := resMetas[gvr]
+func (m *Meta) MetaFor(gvr client.GVR) (metav1.APIResource, error) {
+	m.mx.RLock()
+	defer m.mx.RUnlock()
+
+	meta, ok := m.resMetas[gvr]
 	if !ok {
 		return metav1.APIResource{}, fmt.Errorf("no resource meta defined for %q", gvr)
 	}
-	return m, nil
+	return meta, nil
 }
 
 // IsK8sMeta checks for non resource meta.
@@ -94,13 +116,16 @@ func IsK9sMeta(m metav1.APIResource) bool {
 }
 
 // LoadResources hydrates server preferred+CRDs resource metadata.
-func LoadResources(f Factory) error {
-	resMetas = make(ResourceMetas, 100)
-	if err := loadPreferred(f, resMetas); err != nil {
+func (m *Meta) LoadResources(f Factory) error {
+	m.mx.Lock()
+	defer m.mx.Unlock()
+
+	m.resMetas = make(ResourceMetas, 100)
+	if err := loadPreferred(f, m.resMetas); err != nil {
 		return err
 	}
-	loadNonResource(resMetas)
-	loadCRDs(f, resMetas)
+	loadNonResource(m.resMetas)
+	loadCRDs(f, m.resMetas)
 
 	return nil
 }

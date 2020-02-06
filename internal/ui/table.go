@@ -163,9 +163,6 @@ func (t *Table) SetSortCol(index, count int, asc bool) {
 
 // Update table content.
 func (t *Table) Update(data render.TableData) {
-	data.Mutex.RLock()
-	defer data.Mutex.RUnlock()
-
 	if t.decorateFn != nil {
 		data = t.decorateFn(data)
 	}

@@ -10,7 +10,7 @@ import (
 func TestTableDataDelete(t *testing.T) {
 	uu := map[string]struct {
 		re render.RowEvents
-		kk []string
+		kk map[string]struct{}
 		e  render.RowEvents
 	}{
 		"ordered": {
@@ -19,7 +19,7 @@ func TestTableDataDelete(t *testing.T) {
 				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
 				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
 			},
-			kk: []string{"A", "C"},
+			kk: map[string]struct{}{"A": struct{}{}, "C": struct{}{}},
 			e: render.RowEvents{
 				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
 				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
@@ -32,7 +32,7 @@ func TestTableDataDelete(t *testing.T) {
 				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
 				{Row: render.Row{ID: "D", Fields: render.Fields{"10", "2", "3"}}},
 			},
-			kk: []string{"C", "A"},
+			kk: map[string]struct{}{"C": struct{}{}, "A": struct{}{}},
 			e: render.RowEvents{
 				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
 				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},

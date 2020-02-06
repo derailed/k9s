@@ -1,6 +1,8 @@
 package model
 
 import (
+	"sync"
+
 	"github.com/rs/zerolog/log"
 )
 
@@ -40,6 +42,7 @@ type StackListener interface {
 type Stack struct {
 	components []Component
 	listeners  []StackListener
+	mx         sync.RWMutex
 }
 
 // NewStack returns a new initialized stack.
@@ -49,6 +52,9 @@ func NewStack() *Stack {
 
 // Flatten returns a string representation of the component stack.
 func (s *Stack) Flatten() []string {
+	s.mx.RLock()
+	defer s.mx.RUnlock()
+
 	ss := make([]string, len(s.components))
 	for i, c := range s.components {
 		ss[i] = c.Name()
@@ -84,7 +90,12 @@ func (s *Stack) Push(c Component) {
 	if top := s.Top(); top != nil {
 		top.Stop()
 	}
-	s.components = append(s.components, c)
+
+	s.mx.Lock()
+	{
+		s.components = append(s.components, c)
+	}
+	s.mx.Unlock()
 	s.notify(StackPush, c)
 }
 
@@ -94,8 +105,13 @@ func (s *Stack) Pop() (Component, bool) {
 		return nil, false
 	}
 
-	c := s.components[s.size()]
-	s.components = s.components[:s.size()]
+	var c Component
+	s.mx.Lock()
+	{
+		c = s.components[s.size()]
+		s.components = s.components[:s.size()]
+	}
+	s.mx.Unlock()
 	s.notify(StackPop, c)
 
 	return c, true
@@ -103,6 +119,9 @@ func (s *Stack) Pop() (Component, bool) {
 
 // Peek returns stack state.
 func (s *Stack) Peek() []Component {
+	s.mx.RLock()
+	defer s.mx.RUnlock()
+
 	return s.components
 }
 
@@ -115,6 +134,9 @@ func (s *Stack) Clear() {
 
 // Empty returns true if the stack is empty.
 func (s *Stack) Empty() bool {
+	s.mx.RLock()
+	defer s.mx.RUnlock()
+
 	return len(s.components) == 0
 }
 

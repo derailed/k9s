@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 
@@ -18,7 +19,7 @@ var _ Accessor = (*Alias)(nil)
 // Alias tracks standard and custom command aliases.
 type Alias struct {
 	NonResource
-	config.Aliases
+	*config.Aliases
 }
 
 // NewAlias returns a new set of aliases.
@@ -29,13 +30,6 @@ func NewAlias(f Factory) *Alias {
 	return &a
 }
 
-// Clear remove all aliases.
-func (a *Alias) Clear() {
-	for k := range a.Alias {
-		delete(a.Alias, k)
-	}
-}
-
 // Check verifies an alias is defined for this command.
 func (a *Alias) Check(cmd string) bool {
 	_, ok := a.Aliases.Get(cmd)
@@ -43,22 +37,12 @@ func (a *Alias) Check(cmd string) bool {
 }
 
 // List returns a collection of aliases.
-// BOZO!! Already have aliases here. Refact!!
 func (a *Alias) List(ctx context.Context, _ string) ([]runtime.Object, error) {
-	a, ok := ctx.Value(internal.KeyAliases).(*Alias)
+	aa, ok := ctx.Value(internal.KeyAliases).(*Alias)
 	if !ok {
-		return nil, errors.New("no aliases found in context")
+		return nil, fmt.Errorf("expecting *Alias but got %T", ctx.Value(internal.KeyAliases))
 	}
-
-	m := make(config.ShortNames, len(a.Alias))
-	for alias, gvr := range a.Alias {
-		if _, ok := m[gvr]; ok {
-			m[gvr] = append(m[gvr], alias)
-		} else {
-			m[gvr] = []string{alias}
-		}
-	}
-
+	m := aa.ShortNames()
 	oo := make([]runtime.Object, 0, len(m))
 	for gvr, aliases := range m {
 		sort.StringSlice(aliases).Sort()
@@ -84,7 +68,7 @@ func (a *Alias) Get(_ context.Context, _ string) (runtime.Object, error) {
 
 // Ensure makes sure alias are loaded.
 func (a *Alias) Ensure() (config.Alias, error) {
-	if err := LoadResources(a.Factory); err != nil {
+	if err := MetaAccess.LoadResources(a.Factory); err != nil {
 		return config.Alias{}, err
 	}
 	return a.Alias, a.load()
@@ -95,8 +79,8 @@ func (a *Alias) load() error {
 		return err
 	}
 
-	for _, gvr := range AllGVRs() {
-		meta, err := MetaFor(gvr)
+	for _, gvr := range MetaAccess.AllGVRs() {
+		meta, err := MetaAccess.MetaFor(gvr)
 		if err != nil {
 			return err
 		}

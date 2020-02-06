@@ -15,6 +15,8 @@ import (
 	"github.com/sahilm/fuzzy"
 )
 
+const logMaxBufferSize = 50
+
 // LogsListener represents a log model listener.
 type LogsListener interface {
 	// LogChanged notifies the model changed.
@@ -65,8 +67,10 @@ func (l *Log) Init(f dao.Factory) {
 // Clear the logs.
 func (l *Log) Clear() {
 	l.mx.Lock()
-	defer l.mx.Unlock()
-	l.lines, l.lastSent = []string{}, 0
+	{
+		l.lines, l.lastSent = []string{}, 0
+	}
+	l.mx.Unlock()
 	l.fireLogCleared()
 }
 
@@ -74,6 +78,7 @@ func (l *Log) Clear() {
 func (l *Log) Start() {
 	if err := l.load(); err != nil {
 		log.Error().Err(err).Msgf("Tail logs failed!")
+		l.fireLogError(err)
 	}
 }
 
@@ -91,6 +96,7 @@ func (l *Log) Stop() {
 func (l *Log) Set(lines []string) {
 	l.mx.Lock()
 	defer l.mx.Unlock()
+
 	l.lines = lines
 	l.fireLogChanged(lines)
 }
@@ -99,6 +105,7 @@ func (l *Log) Set(lines []string) {
 func (l *Log) ClearFilter() {
 	l.mx.RLock()
 	defer l.mx.RUnlock()
+
 	l.filter = ""
 	l.fireLogChanged(l.lines)
 }
@@ -133,7 +140,7 @@ func (l *Log) load() error {
 	}
 	logger, ok := accessor.(dao.Loggable)
 	if !ok {
-		return fmt.Errorf("Resource %s is not tailable", l.gvr)
+		return fmt.Errorf("Resource %s is not Loggable", l.gvr)
 	}
 
 	if err := logger.TailLogs(ctx, c, l.logOptions); err != nil {
@@ -152,6 +159,7 @@ func (l *Log) Append(line string) {
 	if line == "" {
 		return
 	}
+
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
@@ -196,6 +204,15 @@ func (l *Log) updateLogs(ctx context.Context, c <-chan string) {
 				return
 			}
 			l.Append(line)
+			var overflow bool
+			l.mx.RLock()
+			{
+				overflow = len(l.lines)-l.lastSent > logMaxBufferSize
+			}
+			l.mx.RUnlock()
+			if overflow {
+				l.Notify(true)
+			}
 		case <-time.After(200 * time.Millisecond):
 			l.Notify(true)
 		case <-ctx.Done():

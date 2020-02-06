@@ -69,11 +69,6 @@ func (c *Container) selectedContainer() string {
 }
 
 func (c *Container) viewLogs(app *App, model ui.Tabular, gvr, path string) {
-	status := c.GetTable().GetSelectedCell(3)
-	if status != "Running" && status != "Completed" {
-		app.Flash().Err(errors.New("No logs available"))
-		return
-	}
 	c.ResourceViewer.(*LogsExtender).showLogs(c.GetTable().Path, false)
 }
 

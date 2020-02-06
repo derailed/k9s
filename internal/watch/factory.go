@@ -150,6 +150,9 @@ func (f *Factory) SetActiveNS(ns string) {
 }
 
 func (f *Factory) isClusterWide() bool {
+	f.mx.RLock()
+	defer f.mx.RUnlock()
+
 	_, ok := f.factories[client.AllNamespaces]
 	return ok
 }

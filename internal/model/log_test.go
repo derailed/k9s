@@ -105,7 +105,7 @@ func TestLogStartStop(t *testing.T) {
 
 	assert.Equal(t, 1, v.dataCalled)
 	assert.Equal(t, 1, v.clearCalled)
-	assert.Equal(t, 0, v.errCalled)
+	assert.Equal(t, 1, v.errCalled)
 	assert.Equal(t, 2, len(v.data))
 }
 

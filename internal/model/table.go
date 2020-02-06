@@ -3,6 +3,7 @@ package model
 import (
 	"context"
 	"fmt"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -35,6 +36,7 @@ type Table struct {
 	inUpdate    int32
 	refreshRate time.Duration
 	instance    string
+	mx          sync.RWMutex
 }
 
 // NewTable returns a new table model.
@@ -170,7 +172,10 @@ func (t *Table) Empty() bool {
 
 // Peek returns model data.
 func (t *Table) Peek() render.TableData {
-	return *t.data
+	t.mx.RLock()
+	defer t.mx.RUnlock()
+
+	return t.data.Clone()
 }
 
 func (t *Table) updater(ctx context.Context) {
@@ -200,7 +205,7 @@ func (t *Table) refresh(ctx context.Context) {
 		t.fireTableLoadFailed(err)
 		return
 	}
-	t.fireTableChanged(*t.data)
+	t.fireTableChanged()
 }
 
 func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, error) {
@@ -252,15 +257,16 @@ func (t *Table) reconcile(ctx context.Context) error {
 		}
 	}
 
-	t.data.Mutex.Lock()
-	defer t.data.Mutex.Unlock()
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
 	// if labelSelector in place might as well clear the model data.
 	sel, ok := ctx.Value(internal.KeyLabels).(string)
 	if ok && sel != "" {
 		t.data.Clear()
 	}
 	t.data.Update(rows)
-	t.data.Namespace, t.data.Header = t.namespace, meta.Renderer.Header(t.namespace)
+	t.data.SetHeader(t.namespace, meta.Renderer.Header(t.namespace))
 
 	return nil
 }
@@ -292,7 +298,8 @@ func (t *Table) resourceMeta() ResourceMeta {
 	return meta
 }
 
-func (t *Table) fireTableChanged(data render.TableData) {
+func (t *Table) fireTableChanged() {
+	data := t.Peek()
 	for _, l := range t.listeners {
 		l.TableDataChanged(data)
 	}

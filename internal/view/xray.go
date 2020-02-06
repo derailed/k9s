@@ -56,7 +56,7 @@ func (x *Xray) Init(ctx context.Context) error {
 	x.SetKeyListenerFn(x.keyEntered)
 
 	var err error
-	x.meta, err = dao.MetaFor(x.gvr)
+	x.meta, err = dao.MetaAccess.MetaFor(x.gvr)
 	if err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func (x *Xray) refreshActions() {
 	}
 
 	var err error
-	x.meta, err = dao.MetaFor(client.NewGVR(ref.GVR))
+	x.meta, err = dao.MetaAccess.MetaFor(client.NewGVR(ref.GVR))
 	if err != nil {
 		log.Warn().Msgf("NO meta for %q -- %s", ref.GVR, err)
 		return
@@ -288,7 +288,7 @@ func (x *Xray) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	defer x.Start()
 	{
 		gvr := client.NewGVR(ref.GVR)
-		meta, err := dao.MetaFor(gvr)
+		meta, err := dao.MetaAccess.MetaFor(gvr)
 		if err != nil {
 			log.Warn().Msgf("NO meta for %q -- %s", ref.GVR, err)
 			return nil
