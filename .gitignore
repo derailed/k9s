@@ -17,3 +17,4 @@ cluster_info_test.go
 *.log
 *~
 pod1.go
+.project
