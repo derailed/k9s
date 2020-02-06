@@ -205,6 +205,7 @@ func TestConfigSaveFile(t *testing.T) {
 	cfg.SetConnection(mc)
 	assert.Nil(t, cfg.Load("test_assets/k9s.yml"))
 	cfg.K9s.RefreshRate = 100
+	cfg.K9s.ReadOnly = true
 	cfg.K9s.LogBufferSize = 500
 	cfg.K9s.LogRequestSize = 100
 	cfg.K9s.CurrentContext = "blee"
@@ -260,6 +261,7 @@ func TestSetup(t *testing.T) {
 var expectedConfig = `k9s:
   refreshRate: 100
   headless: false
+  readOnly: true
   logBufferSize: 500
   logRequestSize: 100
   currentContext: blee
@@ -300,6 +302,7 @@ var expectedConfig = `k9s:
 var resetConfig = `k9s:
   refreshRate: 2
   headless: false
+  readOnly: false
   logBufferSize: 200
   logRequestSize: 200
   currentContext: blee

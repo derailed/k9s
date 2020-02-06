@@ -355,7 +355,7 @@ func (b *Browser) defaultContext() context.Context {
 		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(b.SearchBuff().String()))
 	}
 	ctx = context.WithValue(ctx, internal.KeyFields, "")
-	ctx = context.WithValue(ctx, internal.KeyNamespace, client.CleanseNamespace((b.App().Config.ActiveNamespace())))
+	ctx = context.WithValue(ctx, internal.KeyNamespace, client.CleanseNamespace(b.App().Config.ActiveNamespace()))
 
 	return ctx
 }
@@ -370,11 +370,13 @@ func (b *Browser) refreshActions() {
 	if b.app.ConOK() {
 		b.namespaceActions(aa)
 
-		if client.Can(b.meta.Verbs, "edit") {
-			aa[ui.KeyE] = ui.NewKeyAction("Edit", b.editCmd, true)
-		}
-		if client.Can(b.meta.Verbs, "delete") {
-			aa[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", b.deleteCmd, true)
+		if !b.app.Config.K9s.GetReadOnly() {
+			if client.Can(b.meta.Verbs, "edit") {
+				aa[ui.KeyE] = ui.NewKeyAction("Edit", b.editCmd, true)
+			}
+			if client.Can(b.meta.Verbs, "delete") {
+				aa[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", b.deleteCmd, true)
+			}
 		}
 	}
 

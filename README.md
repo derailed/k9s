@@ -115,6 +115,8 @@ k9s info
 k9s -n mycoolns
 # Start K9s in an existing KubeConfig context
 k9s --context coolCtx
+# Start K9s in readonly mode - with all modification commands disabled
+k9s --readonly
 ```
 
 ## Key Bindings
@@ -150,6 +152,8 @@ K9s uses aliases to navigate most K8s resources.
   k9s:
     # Indicates api-server poll intervals.
     refreshRate: 2
+    # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
+    readOnly: false
     # Indicates log view maximum buffer size. Default 1k lines.
     logBufferSize: 200
     # Indicates how many lines of logs to retrieve from the api-server. Default 200 lines.
