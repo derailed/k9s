@@ -157,6 +157,7 @@ func (x *Xray) refreshActions() {
 
 	if ref.GVR == "containers" {
 		aa[ui.KeyS] = ui.NewKeyAction("Shell", x.shellCmd, true)
+		aa[ui.KeyA] = ui.NewKeyAction("Attach", x.attachCmd, true)
 		aa[ui.KeyL] = ui.NewKeyAction("Logs", x.logsCmd(false), true)
 		aa[ui.KeyShiftL] = ui.NewKeyAction("Logs Previous", x.logsCmd(true), true)
 	}
@@ -253,6 +254,33 @@ func (x *Xray) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (x *Xray) shellIn(path, co string) {
 	x.Stop()
 	shellIn(x.app, path, co)
+	x.Start()
+}
+
+func (x *Xray) attachCmd(evt *tcell.EventKey) *tcell.EventKey {
+	ref := x.selectedSpec()
+	if ref == nil {
+		return nil
+	}
+
+	if ref.Status != "" {
+		x.app.Flash().Errf("%s is not in a running state", ref.Path)
+		return nil
+	}
+
+	if ref.Parent != nil {
+		_, co := client.Namespaced(ref.Path)
+		x.attachIn(ref.Parent.Path, co)
+	} else {
+		log.Error().Msgf("No parent found on container node %q", ref.Path)
+	}
+
+	return nil
+}
+
+func (x *Xray) attachIn(path, co string) {
+	x.Stop()
+	attachIn(x.app, path, co)
 	x.Start()
 }
 

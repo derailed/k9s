@@ -39,6 +39,7 @@ func (p *Pod) bindDangerousKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
 		tcell.KeyCtrlK: ui.NewKeyAction("Kill", p.killCmd, true),
 		ui.KeyS:        ui.NewKeyAction("Shell", p.shellCmd, true),
+		ui.KeyA:        ui.NewKeyAction("Attach", p.attachCmd, true),
 	})
 }
 
@@ -140,9 +141,48 @@ func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
+func (p *Pod) attachCmd(evt *tcell.EventKey) *tcell.EventKey {
+	sel := p.GetTable().GetSelectedItem()
+	if sel == "" {
+		return evt
+	}
+
+	row := p.GetTable().GetSelectedRowIndex()
+	status := ui.TrimCell(p.GetTable().SelectTable, row, p.GetTable().NameColIndex()+2)
+	if status != render.Running {
+		p.App().Flash().Errf("%s is not in a running state", sel)
+		return nil
+	}
+	cc, err := fetchContainers(p.App().factory, sel, false)
+	if err != nil {
+		p.App().Flash().Errf("Unable to retrieve containers %s", err)
+		return evt
+	}
+	if len(cc) == 1 {
+		p.attachIn(sel, "")
+		return nil
+	}
+	picker := NewPicker()
+	picker.populate(cc)
+	picker.SetSelectedFunc(func(i int, t, d string, r rune) {
+		p.attachIn(sel, t)
+	})
+	if err := p.App().inject(picker); err != nil {
+		p.App().Flash().Err(err)
+	}
+
+	return evt
+}
+
 func (p *Pod) shellIn(path, co string) {
 	p.Stop()
 	shellIn(p.App(), path, co)
+	p.Start()
+}
+
+func (p *Pod) attachIn(path, co string) {
+	p.Stop()
+	attachIn(p.App(), path, co)
 	p.Start()
 }
 
@@ -181,6 +221,14 @@ func shellIn(a *App, path, co string) {
 	}
 }
 
+func attachIn(a *App, path, co string) {
+	args := computeAttachArgs(path, a.Config.K9s.CurrentContext, a.Conn().Config().Flags().KubeConfig)
+	log.Debug().Msgf("Attach args %v", args)
+	if !runK(true, a, args...) {
+		a.Flash().Err(errors.New("Attach exec failed"))
+	}
+}
+
 func computeShellArgs(path, co, context string, kcfg *string) []string {
 	args := make([]string, 0, 15)
 	args = append(args, "exec", "-it")
@@ -196,4 +244,17 @@ func computeShellArgs(path, co, context string, kcfg *string) []string {
 	}
 
 	return append(args, "--", "sh", "-c", shellCheck)
+}
+
+func computeAttachArgs(path, context string, kcfg *string) []string {
+	args := make([]string, 0, 15)
+	args = append(args, "attach", "-it")
+	args = append(args, "--context", context)
+	ns, po := client.Namespaced(path)
+	args = append(args, "-n", ns)
+	args = append(args, po)
+	if kcfg != nil && *kcfg != "" {
+		args = append(args, "--kubeconfig", *kcfg)
+	}
+	return args
 }
