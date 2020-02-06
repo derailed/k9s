@@ -147,7 +147,7 @@ func (a *Aliases) LoadAliases(path string) error {
 		return nil
 	}
 
-	var aa *Aliases
+	var aa Aliases
 	if err := yaml.Unmarshal(f, &aa); err != nil {
 		return err
 	}
