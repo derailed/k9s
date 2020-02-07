@@ -91,6 +91,7 @@ func (a *Aliases) Load() error {
 
 	_, err := os.Stat(K9sAlias)
 	if os.IsNotExist(err) {
+		log.Debug().Err(err).Msgf("No custom aliases found")
 		return nil
 	}
 
