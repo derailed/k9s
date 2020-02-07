@@ -177,7 +177,7 @@ func shellIn(a *App, path, co string) {
 	args := computeShellArgs(path, co, a.Config.K9s.CurrentContext, a.Conn().Config().Flags().KubeConfig)
 	log.Debug().Msgf("Shell args %v", args)
 
-	if !runK(true, a, fmt.Sprintf("Pod: %s\n\n", path, co), args...) {
+	if !runK(true, a, fmt.Sprintf("Pod: %s | Container: %s\n\n", path, co), args...) {
 		a.Flash().Err(errors.New("Shell exec failed"))
 	}
 }
