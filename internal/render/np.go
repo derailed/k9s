@@ -111,7 +111,14 @@ func egress(ee []v1beta1.NetworkPolicyEgressRule) (string, string, string) {
 func portsToStr(pp []v1beta1.NetworkPolicyPort) string {
 	ports := make([]string, 0, len(pp))
 	for _, p := range pp {
-		ports = append(ports, string(*p.Protocol)+":"+p.Port.String())
+		proto, port := NAValue, NAValue
+		if p.Protocol != nil {
+			proto = string(*p.Protocol)
+		}
+		if p.Port != nil {
+			port = p.Port.String()
+		}
+		ports = append(ports, proto+":"+port)
 	}
 	return strings.Join(ports, ",")
 }
