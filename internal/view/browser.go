@@ -310,6 +310,9 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	auth, err := b.App().factory.Client().CanI(ns, b.GVR(), client.MonitorAccess)
 	if !auth {
+		if err == nil {
+			err = fmt.Errorf("current user can't access namespace %s", ns)
+		}
 		b.App().Flash().Err(err)
 		return nil
 	}
