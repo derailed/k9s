@@ -2,6 +2,7 @@ package config
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sync"
 
@@ -87,6 +88,12 @@ func (a *Aliases) loadDefaults() {
 // Load K9s aliases.
 func (a *Aliases) Load() error {
 	a.loadDefaults()
+
+	_, err := os.Stat(K9sAlias)
+	if os.IsNotExist(err) {
+		return nil
+	}
+
 	return a.LoadAliases(K9sAlias)
 }
 
@@ -143,8 +150,7 @@ func (a *Aliases) Define(gvr string, aliases ...string) {
 func (a *Aliases) LoadAliases(path string) error {
 	f, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Warn().Err(err).Msgf("No custom aliases found")
-		return nil
+		return err
 	}
 
 	var aa Aliases
