@@ -3,6 +3,7 @@ package view
 import (
 	"errors"
 	"fmt"
+	"net"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
@@ -157,6 +158,12 @@ func (c *Container) preparePort(pp []string) string {
 }
 
 func (c *Container) portForward(address, lport, cport string) {
+	err := tryListenPort(lport)
+	if err != nil {
+		c.App().Flash().Err(err)
+		return
+	}
+
 	co := c.GetTable().GetSelectedCell(0)
 	pf := dao.NewPortForwarder(c.App().Conn())
 	ports := []string{lport + ":" + cport}
@@ -186,4 +193,12 @@ func (c *Container) runForward(pf *dao.PortForwarder, f *portforward.PortForward
 		c.App().factory.DeleteForwarder(pf.FQN())
 		pf.SetActive(false)
 	})
+}
+
+func tryListenPort(port string) error {
+	server, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
+	if err != nil {
+		return err
+	}
+	return server.Close()
 }
