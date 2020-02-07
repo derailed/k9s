@@ -125,7 +125,7 @@ func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	if len(cc) == 1 {
-		p.shellIn(sel, "")
+		p.shellIn(sel, cc[0])
 		return nil
 	}
 	picker := NewPicker()
