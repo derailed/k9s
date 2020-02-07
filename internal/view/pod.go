@@ -176,7 +176,8 @@ func fetchContainers(f *watch.Factory, path string, includeInit bool) ([]string,
 func shellIn(a *App, path, co string) {
 	args := computeShellArgs(path, co, a.Config.K9s.CurrentContext, a.Conn().Config().Flags().KubeConfig)
 	log.Debug().Msgf("Shell args %v", args)
-	if !runK(true, a, args...) {
+
+	if !runK(true, a, "", args...) {
 		a.Flash().Err(errors.New("Shell exec failed"))
 	}
 }

@@ -345,7 +345,7 @@ func (x *Xray) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		if cfg := x.app.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
 			args = append(args, "--kubeconfig", *cfg)
 		}
-		if !runK(true, x.app, append(args, n)...) {
+		if !runK(true, x.app, "", append(args, n)...) {
 			x.app.Flash().Err(errors.New("Edit exec failed"))
 		}
 	}

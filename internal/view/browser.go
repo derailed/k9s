@@ -292,7 +292,7 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		if cfg := b.app.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
 			args = append(args, "--kubeconfig", *cfg)
 		}
-		if !runK(true, b.app, append(args, n)...) {
+		if !runK(true, b.app, "", append(args, n)...) {
 			b.app.Flash().Err(errors.New("Edit exec failed"))
 		}
 	}
