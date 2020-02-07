@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/watch"
+	"github.com/fatih/color"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -177,7 +178,8 @@ func shellIn(a *App, path, co string) {
 	args := computeShellArgs(path, co, a.Config.K9s.CurrentContext, a.Conn().Config().Flags().KubeConfig)
 	log.Debug().Msgf("Shell args %v", args)
 
-	if !runK(true, a, fmt.Sprintf("Pod: %s | Container: %s\n\n", path, co), args...) {
+	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
+	if !runK(true, a, c.Sprintf("Pod: %s | Container: %s\n\n", path, co), args...) {
 		a.Flash().Err(errors.New("Shell exec failed"))
 	}
 }
