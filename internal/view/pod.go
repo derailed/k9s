@@ -179,7 +179,7 @@ func shellIn(a *App, path, co string) {
 	log.Debug().Msgf("Shell args %v", args)
 
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
-	if !runK(true, a, c.Sprintf("Pod: %s | Container: %s\n\n", path, co), args...) {
+	if !runK(true, a, c.Sprintf(" Pod: %s | Container: %s \n\n", path, co), args...) {
 		a.Flash().Err(errors.New("Shell exec failed"))
 	}
 }
