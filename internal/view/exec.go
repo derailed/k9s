@@ -13,22 +13,22 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func runK(clear bool, app *App, args ...string) bool {
+func runK(clear bool, app *App, info string, args ...string) bool {
 	bin, err := exec.LookPath("kubectl")
 	if err != nil {
 		log.Error().Msgf("Unable to find kubectl command in path %v", err)
 		return false
 	}
 
-	return run(clear, app, bin, false, args...)
+	return run(clear, app, bin, false, info, args...)
 }
 
-func run(clear bool, app *App, bin string, bg bool, args ...string) bool {
+func run(clear bool, app *App, bin string, bg bool, info string, args ...string) bool {
 	app.Halt()
 	defer app.Resume()
 
 	return app.Suspend(func() {
-		if err := execute(clear, bin, bg, args...); err != nil {
+		if err := execute(clear, bin, bg, info, args...); err != nil {
 			app.Flash().Errf("Command exited: %v", err)
 		}
 	})
@@ -41,10 +41,10 @@ func edit(clear bool, app *App, args ...string) bool {
 		return false
 	}
 
-	return run(clear, app, bin, false, args...)
+	return run(clear, app, bin, false, "", args...)
 }
 
-func execute(clear bool, bin string, bg bool, args ...string) error {
+func execute(clear bool, bin string, bg bool, info string, args ...string) error {
 	if clear {
 		clearScreen()
 	}
@@ -71,6 +71,8 @@ func execute(clear bool, bin string, bg bool, args ...string) error {
 		err = cmd.Start()
 	} else {
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+
+		_, _ = cmd.Stdout.Write([]byte(info))
 		err = cmd.Run()
 	}
 	log.Debug().Msgf("Command returned error?? %v", err)

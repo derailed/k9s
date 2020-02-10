@@ -129,7 +129,7 @@ func execCmd(r Runner, bin string, bg bool, args ...string) ui.ActionHandler {
 				return nil
 			}
 		}
-		if run(true, r.App(), bin, bg, aa...) {
+		if run(true, r.App(), bin, bg, "", aa...) {
 			r.App().Flash().Info("Plugin command launched successfully!")
 		} else {
 			r.App().Flash().Info("Plugin command failed!")
