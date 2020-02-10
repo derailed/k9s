@@ -53,6 +53,12 @@ K9s is available on Linux, macOS and Windows platforms.
   pacman -S k9s
   ```
 
+* Via [Scoop](https://scoop.sh) for Windows
+
+  ```shell
+  scoop install k9s
+  ```
+
 * Building from source
    K9s was built using go 1.13 or above. In order to build K9 from source you must:
    1. Clone the repo
