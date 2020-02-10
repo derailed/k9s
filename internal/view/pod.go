@@ -11,6 +11,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/watch"
+	"github.com/fatih/color"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -124,7 +125,7 @@ func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	if len(cc) == 1 {
-		p.shellIn(sel, "")
+		p.shellIn(sel, cc[0])
 		return nil
 	}
 	picker := NewPicker()
@@ -175,7 +176,9 @@ func fetchContainers(f *watch.Factory, path string, includeInit bool) ([]string,
 func shellIn(a *App, path, co string) {
 	args := computeShellArgs(path, co, a.Config.K9s.CurrentContext, a.Conn().Config().Flags().KubeConfig)
 	log.Debug().Msgf("Shell args %v", args)
-	if !runK(true, a, args...) {
+
+	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
+	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, path, co), args: args}) {
 		a.Flash().Err(errors.New("Shell exec failed"))
 	}
 }

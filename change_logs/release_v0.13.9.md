@@ -18,7 +18,7 @@ Maintenance Release!
 
 * [Issue #536](https://github.com/derailed/k9s/issues/536)
 * [Issue #526](https://github.com/derailed/k9s/issues/526)
-* [Issue #564](https://github.com/derailed/k9s/issues/464)
+* [Issue #464](https://github.com/derailed/k9s/issues/464)
 
 * [PR #532](https://github.com/derailed/k9s/pull/532) Thank you!! [Joscha Alisch](https://github.com/joscha-alisch)
 * [PR #525](https://github.com/derailed/k9s/pull/525) Big Thanks!! [darklore](https://github.com/darklore)

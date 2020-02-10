@@ -13,41 +13,53 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const shellCheck = `command -v bash >/dev/null && exec bash || exec sh`
+const (
+	shellCheck = `command -v bash >/dev/null && exec bash || exec sh`
+	bannerFmt  = "<<K9s-Shell>> Pod: %s | Container: %s \n"
+)
 
-func runK(clear bool, app *App, args ...string) bool {
+type shellOpts struct {
+	clear, background bool
+	binary            string
+	banner            string
+	args              []string
+}
+
+func runK(app *App, opts shellOpts) bool {
 	bin, err := exec.LookPath("kubectl")
 	if err != nil {
 		log.Error().Msgf("Unable to find kubectl command in path %v", err)
 		return false
 	}
+	opts.binary, opts.background = bin, false
 
-	return run(clear, app, bin, false, args...)
+	return run(app, opts)
 }
 
-func run(clear bool, app *App, bin string, bg bool, args ...string) bool {
+func run(app *App, opts shellOpts) bool {
 	app.Halt()
 	defer app.Resume()
 
 	return app.Suspend(func() {
-		if err := execute(clear, bin, bg, args...); err != nil {
+		if err := execute(opts); err != nil {
 			app.Flash().Errf("Command exited: %v", err)
 		}
 	})
 }
 
-func edit(clear bool, app *App, args ...string) bool {
+func edit(app *App, opts shellOpts) bool {
 	bin, err := exec.LookPath(os.Getenv("EDITOR"))
 	if err != nil {
 		log.Error().Msgf("Unable to find editor command in path %v", err)
 		return false
 	}
+	opts.binary, opts.background = bin, false
 
-	return run(clear, app, bin, false, args...)
+	return run(app, opts)
 }
 
-func execute(clear bool, bin string, bg bool, args ...string) error {
-	if clear {
+func execute(opts shellOpts) error {
+	if opts.clear {
 		clearScreen()
 	}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -64,15 +76,17 @@ func execute(clear bool, bin string, bg bool, args ...string) error {
 		cancel()
 	}()
 
-	log.Debug().Msgf("Running command > %s %s", bin, strings.Join(args, " "))
+	log.Debug().Msgf("Running command > %s %s", opts.binary, strings.Join(opts.args, " "))
 
-	cmd := exec.Command(bin, args...)
+	cmd := exec.Command(opts.binary, opts.args...)
 
 	var err error
-	if bg {
+	if opts.background {
 		err = cmd.Start()
 	} else {
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+
+		_, _ = cmd.Stdout.Write([]byte(opts.banner))
 		err = cmd.Run()
 	}
 

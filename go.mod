@@ -33,6 +33,7 @@ require (
 	github.com/derailed/tview v0.3.3
 	github.com/elazarl/goproxy v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect
+	github.com/fatih/color v1.6.0
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/gdamore/tcell v1.3.0
 	github.com/ghodss/yaml v1.0.0
