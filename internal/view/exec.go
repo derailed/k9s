@@ -13,6 +13,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const shellCheck = `command -v bash >/dev/null && exec bash || exec sh`
+
 func runK(clear bool, app *App, args ...string) bool {
 	bin, err := exec.LookPath("kubectl")
 	if err != nil {
@@ -73,7 +75,7 @@ func execute(clear bool, bin string, bg bool, args ...string) error {
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 		err = cmd.Run()
 	}
-	log.Debug().Msgf("Command returned error?? %v", err)
+
 	select {
 	case <-ctx.Done():
 		return errors.New("canceled by operator")

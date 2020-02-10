@@ -67,7 +67,7 @@ func describeResource(app *App, model ui.Tabular, gvr, path string) {
 		return
 	}
 
-	details := NewDetails(app, "Describe", path).Update(yaml)
+	details := NewDetails(app, "Describe", path, true).Update(yaml)
 	if err := app.inject(details); err != nil {
 		app.Flash().Err(err)
 	}

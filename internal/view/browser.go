@@ -175,7 +175,7 @@ func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails(b.app, "YAML", path).Update(raw)
+	details := NewDetails(b.app, "YAML", path, true).Update(raw)
 	if err := b.App().inject(details); err != nil {
 		b.App().Flash().Err(err)
 	}

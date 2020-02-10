@@ -175,7 +175,7 @@ func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 			a.cmdBuff.Add(evt.Rune())
 			return nil
 		}
-		key = asKey(evt)
+		key = AsKey(evt)
 	}
 
 	if a, ok := a.actions[key]; ok {
@@ -258,7 +258,7 @@ func (a *App) Menu() *Menu {
 // Helpers...
 
 // AsKey converts rune to keyboard key.,
-func asKey(evt *tcell.EventKey) tcell.Key {
+func AsKey(evt *tcell.EventKey) tcell.Key {
 	key := tcell.Key(evt.Rune())
 	if evt.Modifiers() == tcell.ModAlt {
 		key = tcell.Key(int16(evt.Rune()) * int16(evt.Modifiers()))

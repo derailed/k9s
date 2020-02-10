@@ -269,7 +269,7 @@ func (x *Xray) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails(x.app, "YAML", ref.Path).Update(raw)
+	details := NewDetails(x.app, "YAML", ref.Path, true).Update(raw)
 	if err := x.app.inject(details); err != nil {
 		x.app.Flash().Err(err)
 	}
@@ -321,7 +321,7 @@ func (x *Xray) describe(gvr, path string) {
 		return
 	}
 
-	details := NewDetails(x.app, "Describe", path).Update(yaml)
+	details := NewDetails(x.app, "Describe", path, true).Update(yaml)
 	if err := x.app.inject(details); err != nil {
 		x.app.Flash().Err(err)
 	}

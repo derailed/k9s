@@ -121,7 +121,7 @@ func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		if t.filterInput(evt.Rune()) {
 			return nil
 		}
-		key = asKey(evt)
+		key = AsKey(evt)
 	}
 
 	if a, ok := t.actions[key]; ok {
@@ -370,17 +370,17 @@ func (t *Table) styleTitle() string {
 		}
 	}
 
-	buff := t.cmdBuff.String()
 	var title string
 	if ns == client.ClusterScope {
 		title = SkinTitle(fmt.Sprintf(TitleFmt, base, rc), t.styles.Frame())
 	} else {
 		title = SkinTitle(fmt.Sprintf(NSTitleFmt, base, ns, rc), t.styles.Frame())
 	}
+
+	buff := t.cmdBuff.String()
 	if buff == "" {
 		return title
 	}
-
 	if IsLabelSelector(buff) {
 		buff = TrimLabelSelector(buff)
 	}

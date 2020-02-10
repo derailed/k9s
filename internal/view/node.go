@@ -59,7 +59,7 @@ func (n *Node) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails(n.App(), "YAML", sel).Update(raw)
+	details := NewDetails(n.App(), "YAML", sel, true).Update(raw)
 	if err := n.App().inject(details); err != nil {
 		n.App().Flash().Err(err)
 	}
