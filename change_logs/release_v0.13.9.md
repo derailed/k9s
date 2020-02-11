@@ -12,7 +12,39 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ---
 
-Maintenance Release!
+## Happy Birthday K9s!!
+
+🎉🥳🎊 Doh! Almost missed it... 🎉🥳🎊
+
+ Yes sir, it's been a year (already...) since K9s was first launched 🎉. I can't tell you what a year this has been 🙀. Difficult? sure. However, you guys are making this project a total gas, by your candor, kindness and for giving back via your creative issues, prs, sponsorships, slack channel help to name a few... I do think, you've all been all too quiet tho 🐭... So if K9s helps make your K8s life bett'a on a day to day basis, please reach out for your shoe-phones and dial up [@kitesurfer](https://twitter.com/kitesurfer) or write an article/blog and /cc the K8s/CNCF royalties. Lastly I am so humbled by this... but we're closing on 5k stars/136k downloads in this repo, so please invite 28 of your closest friends soon...
+
+Major Thanks to all of you for you patience and for making this project a reality to all our K8s friends! You're all redefining awesomeness!!
+
+Also I'd like to take this opportunity to recognize and thank a few folks that have willingly volunteered their own time to track down issues and help improve K9s for all of us!!
+
+* [Gustavo Silva Paiva](https://github.com/paivagustavo)
+* [Joscha Alisch](https://github.com/joscha-alisch)
+* [Michael Christina](https://github.com/mcristina422)
+* [Bruno Meneguello](https://github.com/bkmeneguello)
+* [Tuomo Syvänperä](https://github.com/syvanpera)
+* [Oskar F](https://github.com/fridokus)
+* [Bruno Ohms](https://github.com/brunohms)
+* [IgorRamalho](https://github.com/IgorRamalho)
+* [Benjamin](https://github.com/binarycoded)
+* [Norbert Csibra](https://github.com/ncsibra)
+* [Andrew Roth](https://github.com/RothAndrew)
+* [Sgandon](https://github.com/sgandon)
+* [Chris Werner Rau](https://github.com/cwrau)
+* [Eldad Assis](https://github.com/eldada)
+* [Tobias](https://github.com/mycrEEpy)
+* [Helge Sychla](https://github.com/hsychla)
+* [Markusi75](https://github.com/Makusi75)
+* [Swe-Covis](https://github.com/swe-covis)
+* [Evgeniy Shubin](https://github.com/com30n)
+
+## And On Another Note...
+
+More bugz...😿
 
 ## Resolved Bugs/Features/PRs
 
