@@ -73,11 +73,13 @@ func (d *Details) Init(_ context.Context) error {
 	return nil
 }
 
+// TextChanged notifies the model changed.
 func (d *Details) TextChanged(lines []string) {
 	d.SetText(colorizeYAML(d.app.Styles.Views().Yaml, strings.Join(lines, "\n")))
 	d.ScrollToBeginning()
 }
 
+// TextFiltered notifies when the filter changed.
 func (d *Details) TextFiltered(lines []string, matches fuzzy.Matches) {
 	d.currentRegion, d.maxRegions = 0, 0
 
