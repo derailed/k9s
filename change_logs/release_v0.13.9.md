@@ -16,7 +16,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 🎉🥳🎊 Doh! Almost missed it... 🎉🥳🎊
 
- Yes sir, it's been a year (already...) since K9s was first launched 🎉. I can't tell you what a year this has been 🙀. Difficult? sure. However, you guys are making this project a total gas, by your candor, kindness and for giving back via your creative issues, prs, sponsorships, slack channel help to name a few... I do think, you've all been all too quiet tho 🐭... So if K9s helps make your K8s life bett'a on a day to day basis, please reach out for your shoe-phones and dial up [@kitesurfer](https://twitter.com/kitesurfer) or write an article/blog and /cc the K8s/CNCF royalties. Lastly I am so humbled by this... but we're closing on 5k stars/136k downloads in this repo, so please invite 28 of your closest friends soon...
+ Yes sir, it's been a year (already...) since K9s was first launched 🎉. I can't tell you what a year this has been 🙀. Difficult? sure. However, you guys are making this project a total gas, by your candor, kindness and for giving back via your creative issues, prs, sponsorships, slack channel help to name a few... I do think, you've all been all too quiet tho 🐭... So if K9s helps make your K8s life bett'a on a day to day basis, please reach out for your shoe-phones and dial up [@kitesurfer](https://twitter.com/kitesurfer) or write an article/blog and share it! Lastly I am so humbled by this... but we're closing on 5k stars/136k downloads in this repo, so please invite 28 of your closest friends soon...
 
 Major Thanks to all of you for you patience and for making this project a reality to all our K8s friends! You're all redefining awesomeness!!
 
