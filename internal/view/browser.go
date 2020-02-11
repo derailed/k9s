@@ -93,7 +93,6 @@ func (b *Browser) SetInstance(path string) {
 func (b *Browser) Start() {
 	b.Stop()
 
-	log.Debug().Msgf("BROWSER started!")
 	b.Table.Start()
 	ctx := b.defaultContext()
 	ctx, b.cancelFn = context.WithCancel(ctx)
@@ -111,7 +110,6 @@ func (b *Browser) Stop() {
 	if b.cancelFn == nil {
 		return
 	}
-	log.Debug().Msgf("BROWSER Stopped!")
 	b.Table.Stop()
 	b.cancelFn()
 	b.cancelFn = nil
@@ -373,7 +371,6 @@ func (b *Browser) refreshActions() {
 
 	if b.app.ConOK() {
 		b.namespaceActions(aa)
-
 		if !b.app.Config.K9s.GetReadOnly() {
 			if client.Can(b.meta.Verbs, "edit") {
 				aa[ui.KeyE] = ui.NewKeyAction("Edit", b.editCmd, true)

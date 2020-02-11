@@ -8,6 +8,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/watch"
@@ -108,46 +109,85 @@ func (p *Pod) killCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
-	sel := p.GetTable().GetSelectedItem()
-	if sel == "" {
+	path := p.GetTable().GetSelectedItem()
+	if path == "" {
 		return evt
 	}
 
 	row := p.GetTable().GetSelectedRowIndex()
 	status := ui.TrimCell(p.GetTable().SelectTable, row, p.GetTable().NameColIndex()+2)
 	if status != render.Running {
-		p.App().Flash().Errf("%s is not in a running state", sel)
+		p.App().Flash().Errf("%s is not in a running state", path)
 		return nil
 	}
-	cc, err := fetchContainers(p.App().factory, sel, false)
-	if err != nil {
-		p.App().Flash().Errf("Unable to retrieve containers %s", err)
-		return evt
-	}
-	if len(cc) == 1 {
-		p.shellIn(sel, cc[0])
-		return nil
-	}
-	picker := NewPicker()
-	picker.populate(cc)
-	picker.SetSelectedFunc(func(i int, t, d string, r rune) {
-		p.shellIn(sel, t)
-	})
-	if err := p.App().inject(picker); err != nil {
+
+	if err := containerShellin(p.App(), p, path, ""); err != nil {
 		p.App().Flash().Err(err)
 	}
 
-	return evt
-}
-
-func (p *Pod) shellIn(path, co string) {
-	p.Stop()
-	shellIn(p.App(), path, co)
-	p.Start()
+	return nil
 }
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func containerShellin(a *App, comp model.Component, path, co string) error {
+	if co != "" {
+		resumeShellIn(a, comp, path, co)
+		return nil
+	}
+
+	cc, err := fetchContainers(a.factory, path, false)
+	if err != nil {
+		return err
+	}
+	if len(cc) == 1 {
+		resumeShellIn(a, comp, path, cc[0])
+		return nil
+	}
+	picker := NewPicker()
+	picker.populate(cc)
+	picker.SetSelectedFunc(func(_ int, co, _ string, _ rune) {
+		resumeShellIn(a, comp, path, co)
+	})
+	if err := a.inject(picker); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func resumeShellIn(a *App, c model.Component, path, co string) {
+	c.Stop()
+	defer c.Start()
+	shellIn(a, path, co)
+}
+
+func shellIn(a *App, path, co string) {
+	args := computeShellArgs(path, co, a.Config.K9s.CurrentContext, a.Conn().Config().Flags().KubeConfig)
+
+	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
+	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, path, co), args: args}) {
+		a.Flash().Err(errors.New("Shell exec failed"))
+	}
+}
+
+func computeShellArgs(path, co, context string, kcfg *string) []string {
+	args := make([]string, 0, 15)
+	args = append(args, "exec", "-it")
+	args = append(args, "--context", context)
+	ns, po := client.Namespaced(path)
+	args = append(args, "-n", ns)
+	args = append(args, po)
+	if kcfg != nil && *kcfg != "" {
+		args = append(args, "--kubeconfig", *kcfg)
+	}
+	if co != "" {
+		args = append(args, "-c", co)
+	}
+
+	return append(args, "--", "sh", "-c", shellCheck)
+}
 
 func fetchContainers(f *watch.Factory, path string, includeInit bool) ([]string, error) {
 	o, err := f.Get("v1/pods", path, true, labels.Everything())
@@ -171,31 +211,4 @@ func fetchContainers(f *watch.Factory, path string, includeInit bool) ([]string,
 		}
 	}
 	return nn, nil
-}
-
-func shellIn(a *App, path, co string) {
-	args := computeShellArgs(path, co, a.Config.K9s.CurrentContext, a.Conn().Config().Flags().KubeConfig)
-	log.Debug().Msgf("Shell args %v", args)
-
-	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
-	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, path, co), args: args}) {
-		a.Flash().Err(errors.New("Shell exec failed"))
-	}
-}
-
-func computeShellArgs(path, co, context string, kcfg *string) []string {
-	args := make([]string, 0, 15)
-	args = append(args, "exec", "-it")
-	args = append(args, "--context", context)
-	ns, po := client.Namespaced(path)
-	args = append(args, "-n", ns)
-	args = append(args, po)
-	if kcfg != nil && *kcfg != "" {
-		args = append(args, "--kubeconfig", *kcfg)
-	}
-	if co != "" {
-		args = append(args, "-c", co)
-	}
-
-	return append(args, "--", "sh", "-c", shellCheck)
 }

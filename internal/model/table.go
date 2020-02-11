@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -75,8 +76,13 @@ func (t *Table) RemoveListener(l TableListener) {
 
 // Watch initiates model updates.
 func (t *Table) Watch(ctx context.Context) {
-	t.Refresh(ctx)
+	t.refresh(ctx)
 	go t.updater(ctx)
+}
+
+// Refresh updates the table content.
+func (t *Table) Refresh(ctx context.Context) {
+	t.refresh(ctx)
 }
 
 // Get returns a resource instance if found, else an error.
@@ -134,11 +140,6 @@ func (t *Table) ToYAML(ctx context.Context, path string) (string, error) {
 	return desc.ToYAML(path)
 }
 
-// Refresh update the model now.
-func (t *Table) Refresh(ctx context.Context) {
-	t.refresh(ctx)
-}
-
 // GetNamespace returns the model namespace.
 func (t *Table) GetNamespace() string {
 	return t.namespace
@@ -185,6 +186,7 @@ func (t *Table) updater(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
+			t.fireTableLoadFailed(errors.New("operation canceled"))
 			return
 		case <-time.After(rate):
 			rate = t.refreshRate

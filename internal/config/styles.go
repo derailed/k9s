@@ -389,6 +389,9 @@ func (s *Styles) Update() {
 
 // AsColor checks color index, if match return color otherwise pink it is.
 func AsColor(c string) tcell.Color {
+	if c == "default" {
+		return tcell.ColorDefault
+	}
 	if color, ok := tcell.ColorNames[c]; ok {
 		return color
 	}

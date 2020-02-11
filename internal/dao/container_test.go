@@ -44,7 +44,7 @@ func makeConn() *conn {
 
 func (c *conn) Config() *client.Config                            { return nil }
 func (c *conn) DialOrDie() kubernetes.Interface                   { return nil }
-func (c *conn) SwitchContextOrDie(ctx string)                     {}
+func (c *conn) SwitchContext(ctx string) error                    { return nil }
 func (c *conn) CachedDiscoveryOrDie() *disk.CachedDiscoveryClient { return nil }
 func (c *conn) RestConfigOrDie() *restclient.Config               { return nil }
 func (c *conn) MXDial() (*versioned.Clientset, error)             { return nil, nil }

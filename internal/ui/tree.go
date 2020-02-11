@@ -35,7 +35,7 @@ func NewTree() *Tree {
 
 // Init initializes the view
 func (t *Tree) Init(ctx context.Context) error {
-	t.bindKeys()
+	t.BindKeys()
 	t.SetBorder(true)
 	t.SetBorderAttributes(tcell.AttrBold)
 	t.SetBorderPadding(0, 0, 1, 1)
@@ -86,7 +86,7 @@ func (t *Tree) ExtraHints() map[string]string {
 	return nil
 }
 
-func (t *Tree) bindKeys() {
+func (t *Tree) BindKeys() {
 	t.Actions().Add(KeyActions{
 		KeySpace: NewKeyAction("Expand/Collapse", t.noopCmd, true),
 		KeyX:     NewKeyAction("Expand/Collapse All", t.toggleCollapseCmd, true),

@@ -118,12 +118,16 @@ func execCmd(r Runner, bin string, bg bool, args ...string) ui.ActionHandler {
 
 		ns, _ := client.Namespaced(path)
 		var (
-			env = r.EnvFn()()
 			aa  = make([]string, len(args))
 			err error
 		)
+
+		if r.EnvFn() == nil {
+			return nil
+		}
+
 		for i, a := range args {
-			aa[i], err = env.envFor(ns, a)
+			aa[i], err = r.EnvFn()().envFor(ns, a)
 			if err != nil {
 				log.Error().Err(err).Msg("Plugin Args match failed")
 				return nil

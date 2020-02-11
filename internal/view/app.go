@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/derailed/k9s/internal"
@@ -24,7 +24,7 @@ var ExitStatus = ""
 const (
 	splashDelay      = 1 * time.Second
 	clusterRefresh   = 5 * time.Second
-	maxConRetry      = 5
+	maxConRetry      = 10
 	clusterInfoWidth = 50
 	clusterInfoPad   = 15
 )
@@ -39,9 +39,8 @@ type App struct {
 	version      string
 	showHeader   bool
 	cancelFn     context.CancelFunc
-	conRetry     int
+	conRetry     int32
 	clusterModel *model.ClusterInfo
-	mx           sync.Mutex
 }
 
 // NewApp returns a K9s app instance.
@@ -61,9 +60,7 @@ func NewApp(cfg *config.Config) *App {
 
 // ConOK checks the connection is cool, returns false otherwise.
 func (a *App) ConOK() bool {
-	a.mx.Lock()
-	defer a.mx.Unlock()
-	return a.conRetry == 0
+	return atomic.LoadInt32(&a.conRetry) == 0
 }
 
 // Init initializes the application.
@@ -198,32 +195,31 @@ func (a *App) clusterUpdater(ctx context.Context) {
 }
 
 func (a *App) refreshCluster() {
-	a.mx.Lock()
-	defer a.mx.Unlock()
-
 	c := a.Content.Top()
 	if ok := a.Conn().CheckConnectivity(); ok {
-		if a.conRetry > 0 {
+		if atomic.LoadInt32(&a.conRetry) > 0 {
+			atomic.StoreInt32(&a.conRetry, 0)
+			a.Status(ui.FlashInfo, "K8s connectivity OK")
 			if c != nil {
 				c.Start()
 			}
-			a.Status(ui.FlashInfo, "K8s connectivity OK")
 		}
-		a.conRetry = 0
 	} else {
-		a.conRetry++
-		log.Warn().Msgf("Conn check failed (%d/%d)", a.conRetry, maxConRetry)
+		atomic.AddInt32(&a.conRetry, 1)
 		if c != nil {
 			c.Stop()
 		}
-		a.Status(ui.FlashWarn, fmt.Sprintf("Dial K8s failed (%d)", a.conRetry))
-
+		count := atomic.LoadInt32(&a.conRetry)
+		log.Warn().Msgf("Conn check failed (%d/%d)", count, maxConRetry)
+		a.Status(ui.FlashWarn, fmt.Sprintf("Dial K8s failed (%d)", count))
 	}
-	if a.conRetry >= maxConRetry {
-		ExitStatus = fmt.Sprintf("Lost K8s connection (%d). Bailing out!", a.conRetry)
+
+	count := atomic.LoadInt32(&a.conRetry)
+	if count >= maxConRetry {
+		ExitStatus = fmt.Sprintf("Lost K8s connection (%d). Bailing out!", count)
 		a.BailOut()
 	}
-	if a.conRetry > 0 {
+	if count > 0 {
 		return
 	}
 

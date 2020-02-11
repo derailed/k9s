@@ -29,8 +29,6 @@ type Node struct {
 
 // List returns a collection of node resources.
 func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	log.Debug().Msgf("NODE-LIST %q:%q", ns, n.gvr)
-
 	labels, ok := ctx.Value(internal.KeyLabels).(string)
 	if !ok {
 		log.Warn().Msgf("No label selector found in context")

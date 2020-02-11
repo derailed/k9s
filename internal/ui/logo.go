@@ -3,6 +3,8 @@ package ui
 import (
 	"fmt"
 
+	"github.com/gdamore/tcell"
+
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
 )
@@ -94,6 +96,7 @@ func (l *Logo) refreshLogo(c string) {
 
 func logo() *tview.TextView {
 	v := tview.NewTextView()
+	v.SetBackgroundColor(tcell.ColorDefault)
 	v.SetWordWrap(false)
 	v.SetWrap(false)
 	v.SetTextAlign(tview.AlignLeft)
@@ -104,6 +107,7 @@ func logo() *tview.TextView {
 
 func status() *tview.TextView {
 	v := tview.NewTextView()
+	v.SetBackgroundColor(tcell.ColorDefault)
 	v.SetWordWrap(false)
 	v.SetWrap(false)
 	v.SetTextAlign(tview.AlignCenter)

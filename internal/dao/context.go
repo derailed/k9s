@@ -58,8 +58,7 @@ func (c *Context) MustCurrentContextName() string {
 
 // Switch to another context.
 func (c *Context) Switch(ctx string) error {
-	c.Factory.Client().SwitchContextOrDie(ctx)
-	return nil
+	return c.Factory.Client().SwitchContext(ctx)
 }
 
 // KubeUpdate modifies kubeconfig default context.

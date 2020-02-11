@@ -76,7 +76,7 @@ func execute(opts shellOpts) error {
 		cancel()
 	}()
 
-	log.Debug().Msgf("Running command > %s %s", opts.binary, strings.Join(opts.args, " "))
+	log.Debug().Msgf("Running command> %s %s", opts.binary, strings.Join(opts.args, " "))
 
 	cmd := exec.Command(opts.binary, opts.args...)
 
