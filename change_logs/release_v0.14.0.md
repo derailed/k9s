@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s_small.png" align="right" width="200" height="auto"/>
 
-# Release v0.13.9
+# Release v0.14.0
 
 ## Notes
 
@@ -41,6 +41,10 @@ Also I'd like to take this opportunity to recognize and thank a few folks that h
 * [Markusi75](https://github.com/Makusi75)
 * [Swe-Covis](https://github.com/swe-covis)
 * [Evgeniy Shubin](https://github.com/com30n)
+
+## Search Enabled For Describe/YAML views
+
+In this drop we made the Describe/YAML views searchable. So you no longer need to plow thru your resource configurations and get directly to the just of it by using the search command ie `/elvis` + `enter`. You can use the familiar keys `n` and `N` to nav back and forth to the next occurrence in a circular buffer fashion once you've reached the BOF/EOF. It's the little things in life...
 
 ## And On Another Note...
 
