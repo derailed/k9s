@@ -79,7 +79,7 @@ func (d *Deployment) Restart(path string) error {
 }
 
 // TailLogs tail logs for all pods represented by this Deployment.
-func (d *Deployment) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
+func (d *Deployment) TailLogs(ctx context.Context, c chan<- []byte, opts LogOptions) error {
 	o, err := d.Factory.Get(d.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return err

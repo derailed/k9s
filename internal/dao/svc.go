@@ -22,7 +22,7 @@ type Service struct {
 }
 
 // TailLogs tail logs for all pods represented by this Service.
-func (s *Service) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
+func (s *Service) TailLogs(ctx context.Context, c chan<- []byte, opts LogOptions) error {
 	o, err := s.Factory.Get(s.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return err

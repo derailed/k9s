@@ -134,7 +134,7 @@ func (a *App) toggleHeader(flag bool) {
 	}
 	if a.showHeader {
 		flex.RemoveItemAtIndex(0)
-		flex.AddItemAtIndex(0, a.buildHeader(), 7, 1, false)
+		flex.AddItemAtIndex(0, a.buildHeader(), 8, 1, false)
 	} else {
 		flex.RemoveItemAtIndex(0)
 		flex.AddItemAtIndex(0, a.statusIndicator(), 1, 1, false)
@@ -144,7 +144,6 @@ func (a *App) toggleHeader(flag bool) {
 func (a *App) buildHeader() tview.Primitive {
 	header := tview.NewFlex()
 	header.SetBackgroundColor(a.Styles.BgColor())
-	header.SetBorderPadding(0, 0, 1, 1)
 	header.SetDirection(tview.FlexColumn)
 	if !a.showHeader {
 		return header

@@ -73,7 +73,7 @@ type Accessor interface {
 // Loggable represents resources with logs.
 type Loggable interface {
 	// TaiLogs streams resource logs.
-	TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error
+	TailLogs(ctx context.Context, c chan<- []byte, opts LogOptions) error
 }
 
 // Describer describes a resource.

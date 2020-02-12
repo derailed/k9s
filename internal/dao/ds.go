@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -61,7 +62,7 @@ func (d *DaemonSet) Restart(path string) error {
 }
 
 // TailLogs tail logs for all pods represented by this DaemonSet.
-func (d *DaemonSet) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
+func (d *DaemonSet) TailLogs(ctx context.Context, c chan<- []byte, opts LogOptions) error {
 	o, err := d.Factory.Get(d.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return err
@@ -79,7 +80,11 @@ func (d *DaemonSet) TailLogs(ctx context.Context, c chan<- string, opts LogOptio
 	return podLogs(ctx, c, ds.Spec.Selector.MatchLabels, opts)
 }
 
-func podLogs(ctx context.Context, c chan<- string, sel map[string]string, opts LogOptions) error {
+func podLogs(ctx context.Context, c chan<- []byte, sel map[string]string, opts LogOptions) error {
+	defer func(t time.Time) {
+		log.Debug().Msgf("POD LOGS %v", time.Since(t))
+	}(time.Now())
+
 	f, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
 	if !ok {
 		return errors.New("expecting a context factory")
@@ -94,7 +99,7 @@ func podLogs(ctx context.Context, c chan<- string, sel map[string]string, opts L
 	}
 
 	ns, _ := client.Namespaced(opts.Path)
-	oo, err := f.List("v1/pods", ns, true, lsel)
+	oo, err := f.List("v1/pods", ns, false, lsel)
 	if err != nil {
 		return err
 	}

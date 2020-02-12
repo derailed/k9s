@@ -21,7 +21,7 @@ import (
 
 const (
 	logTitle   = "logs"
-	logMessage = "Waiting for logs..."
+	logMessage = "[:orange:b]Waiting for logs...[::]"
 	logCoFmt   = " Logs([fg:bg:]%s:[hilite:bg:b]%s[-:bg:-]) "
 	logFmt     = " Logs([fg:bg:]%s) "
 
@@ -49,7 +49,7 @@ func NewLog(gvr client.GVR, path, co string, prev bool) *Log {
 	l := Log{
 		Flex:    tview.NewFlex(),
 		cmdBuff: ui.NewCmdBuff('/', ui.FilterBuff),
-		model:   model.NewLog(gvr, logMessage, buildLogOpts(path, co, prev, tailLineCount), defaultTimeout),
+		model:   model.NewLog(gvr, buildLogOpts(path, co, prev, tailLineCount), defaultTimeout),
 	}
 
 	return &l
@@ -66,11 +66,13 @@ func (l *Log) Init(ctx context.Context) (err error) {
 
 	l.indicator = NewLogIndicator(l.app.Config, l.app.Styles)
 	l.AddItem(l.indicator, 1, 1, false)
+	l.indicator.Refresh()
 
 	l.logs = NewDetails(l.app, "", "", false)
 	if err = l.logs.Init(ctx); err != nil {
 		return err
 	}
+	l.logs.SetText(logMessage)
 	l.logs.SetWrap(false)
 	l.logs.SetMaxBuffer(l.app.Config.K9s.LogBufferSize)
 

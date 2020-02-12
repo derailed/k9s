@@ -21,11 +21,11 @@ type CustomResourceDefinition struct {
 // List returns a collection of nodes.
 func (c *CustomResourceDefinition) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	strLabel, ok := ctx.Value(internal.KeyLabels).(string)
-	lsel := labels.Everything()
+	labelSel := labels.Everything()
 	if sel, e := labels.ConvertSelectorToLabelsMap(strLabel); ok && e == nil {
-		lsel = sel.AsSelector()
+		labelSel = sel.AsSelector()
 	}
 
 	const gvr = "apiextensions.k8s.io/v1beta1/customresourcedefinitions"
-	return c.Factory.List(gvr, "-", true, lsel)
+	return c.Factory.List(gvr, "-", true, labelSel)
 }

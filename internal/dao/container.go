@@ -62,7 +62,7 @@ func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error
 }
 
 // TailLogs tails a given container logs
-func (c *Container) TailLogs(ctx context.Context, logChan chan<- string, opts LogOptions) error {
+func (c *Container) TailLogs(ctx context.Context, logChan chan<- []byte, opts LogOptions) error {
 	fac, ok := ctx.Value(internal.KeyFactory).(Factory)
 	if !ok {
 		return errors.New("Expecting an informer")

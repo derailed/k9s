@@ -145,16 +145,16 @@ K9s uses aliases to navigate most K8s resources.
 
 ---
 
-## K9s config file ($HOME/.k9s/config.yml)
+## K9s Configuration
 
-  K9s keeps its configurations in a .k9s directory in your home directory.
+  K9s keeps its configurations in a .k9s directory in your home directory `$HOME/.k9s/config.yml`.
 
   > NOTE: This is still in flux and will change while in pre-release stage!
 
   ```yaml
   # config.yml
   k9s:
-    # Indicates api-server poll intervals.
+    # Represents ui poll intervals.
     refreshRate: 2
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
     readOnly: false
@@ -189,9 +189,9 @@ K9s uses aliases to navigate most K8s resources.
 
 ---
 
-## Aliases
+## Command Aliases
 
-In K9s, you can define your own command aliases (shortnames) to access your resources. In your `$HOME/.k9s` define a file called `alias.yml`. A K9s alias defines pairs of alias:gvr. A gvr represents a fully qualified Kubernetes resource identifier. Here is an example of an alias file:
+In K9s, you can define your very own command aliases (shortnames) to access your resources. In your `$HOME/.k9s` define a file called `alias.yml`. A K9s alias defines pairs of alias:gvr. A gvr (Group/Version/Resource) represents a fully qualified Kubernetes resource identifier. Here is an example of an alias file:
 
 ```yaml
 # $HOME/.k9s/alias.yml
@@ -204,9 +204,44 @@ Using this alias file, you can now type pp/crb to list pods or clusterrolebindin
 
 ---
 
+## HotKey Support
+
+Entering the command mode and typing a resource name or alias, could be cumbersome for navigating thru often used resources. We're introducing hotkeys that allows a user to define their own hotkeys to activate their favorite resource views. In order to enable hotkeys please follow these steps:
+
+1. Create a file named `$HOME/.k9s/hotkey.yml`
+2. Add the following to your `hotkey.yml`. You can use resource name/short name to specify a command ie same as typing it while in command mode.
+
+      ```yaml
+      # $HOME/.k9s/hotkey.yml
+      hotKey:
+        # Hitting Shift-0 navigates to your pod view
+        shift-0:
+          shortCut:    Shift-0
+          description: Viewing pods
+          command:     pods
+        # Hitting Shift-1 navigates to your deployments
+        shift-1:
+          shortCut:    Shift-1
+          description: View deployments
+          command:     dp
+        # Hitting Shift-2 navigates to your xray deployments
+        shift-2:
+          shortCut:    Shift-4
+          description: Xray Deployments
+          command:     xray deploy
+      ```
+
+ Not feeling so hot? Your custom hotkeys will be listed in the help view `?`. Also your hotkey file will be automatically reloaded so you can readily use your hotkeys as you define them.
+
+ You can choose any keyboard shotcuts that make sense to you, provided they are not part of the standard K9s shortcuts list.
+
+> NOTE: This feature/configuration might change in future releases!
+
+---
+
 ## Plugins
 
-K9s allows you to define your own cluster commands via plugins. K9s will look at `$HOME/.k9s/plugin.yml` to locate available plugins. A plugin is defined as follows:
+K9s allows you to extend your command line and tooling by defining your very own cluster commands via plugins. K9s will look at `$HOME/.k9s/plugin.yml` to locate all available plugins. A plugin is defined as follows:
 
 ```yaml
 # $HOME/.k9s/plugin.yml
@@ -217,7 +252,7 @@ plugin:
     description: Pod logs
     scopes:
     - po
-    command: /usr/local/bin/kubectl
+    command: kubectl
     background: false
     args:
     - logs
@@ -237,6 +272,8 @@ K9s does provide additional environment variables for you to customize your plug
 
 * `$NAMESPACE` -- the selected resource namespace
 * `$NAME` -- the selected resource name
+* `$CONTAINER` -- the current container if applicable
+* `$FILTER` -- the current filter if any
 * `$KUBECONFIG` -- the KubeConfig location.
 * `$CLUSTER` the active cluster name
 * `$CONTEXT` the active context name
@@ -244,13 +281,13 @@ K9s does provide additional environment variables for you to customize your plug
 * `$GROUPS` the active groups
 * `$COLX` the column at index X for the viewed resource
 
-NOTE: This is an experimental feature! Options and layout may change in future K9s releases as this feature solidifies.
+> NOTE: This is an experimental feature! Options and layout may change in future K9s releases as this feature solidifies.
 
 ---
 
-## Benchmarking
+## Benchmark Your Applications
 
-K9s integrates [Hey](https://github.com/rakyll/hey) from the brilliant and super talented [Jaana Dogan](https://github.com/rakyll) of Google fame. Hey is a CLI tool to benchmark HTTP endpoints similar to AB bench. This preliminary feature currently supports benchmarking port-forwards and services (Read the paint on this is way fresh!).
+K9s integrates [Hey](https://github.com/rakyll/hey) from the brilliant and super talented [Jaana Dogan](https://github.com/rakyll). `Hey` is a CLI tool to benchmark HTTP endpoints similar to AB bench. This preliminary feature currently supports benchmarking port-forwards and services (Read the paint on this is way fresh!).
 
 To setup a port-forward, you will need to navigate to the PodView, select a pod and a container that exposes a given port. Using `SHIFT-F` a dialog comes up to allow you to specify a local port to forward. Once acknowledged, you can navigate to the PortForward view (alias `pf`) listing out your active port-forwards. Selecting a port-forward and using `CTRL-B` will run a benchmark on that HTTP endpoint. To view the results of your benchmark runs, go to the Benchmarks view (alias `be`). You should now be able to select a benchmark and view the run stats details by pressing `<ENTER>`. NOTE: Port-forwards only last for the duration of the K9s session and will be terminated upon exit.
 
@@ -272,11 +309,11 @@ benchmarks:
   defaults:
     # One concurrent connection
     concurrency: 1
-    # 500 requests will be sent to an endpoint
+    # Number of requests that will be sent to an endpoint
     requests: 500
   containers:
     # Containers section allows you to configure your http container's endpoints and benchmarking settings.
-    # NOTE: the container ID syntax uses namespace/pod_name:container_name
+    # NOTE: the container ID syntax uses namespace/pod-name:container-name
     default/nginx:nginx:
       # Benchmark a container named nginx using POST HTTP verb using http://localhost:port/bozo URL and headers.
       concurrency: 1
@@ -295,55 +332,20 @@ benchmarks:
     # Similary you can Benchmark an HTTP service exposed either via nodeport, loadbalancer types.
     # Service ID is ns/svc-name
     default/nginx:
-      # Hit the service with 5 concurrent sessions
+      # Set the concurrency level
       concurrency: 5
-      # Issues a total of 500 requests
+      # Number of requests to be sent
       requests: 500
       http:
         method: GET
         # This setting will depend on whether service is nodeport or loadbalancer. Nodeport may require vendor port tuneling setting.
         # Set this to a node if nodeport or LB if applicable. IP or dns name.
-        host: 10.11.13.14
+        host: A.B.C.D
         path: /bumblebeetuna
       auth:
         user: jean-baptiste-emmanuel
         password: Zorg!
 ```
-
----
-
-## HotKeys
-
-Entering the command mode and typing a resource name or alias, could be cumbersome for navigating thru often used resources. We're introducing hotkeys that allows a user to define their own hotkeys to activate their favorite resource views. In order to enable hotkeys please follow these steps:
-
-1. In your .k9s home directory create a file named `hotkey.yml`
-2. Add the following to your `hotkey.yml`. You can use short names or resource name to specify a command ie same as typing it in command mode.
-
-      ```yaml
-      hotKey:
-        shift-0:
-          shortCut: Shift-0
-          description: View pods
-          command: pods
-        shift-1:
-          shortCut: Shift-1
-          description: View deployments
-          command: dp
-        shift-2:
-          shortCut: Shift-2
-          description: View services
-          command: service
-        shift-3:
-          shortCut: Shift-3
-          description: View statefulsets
-          command: sts
-      ```
-
- Not feeling so hot? Your custom hotkeys list will be listed in the help view.`<?>`. Also your hotkey file will be automatically reloaded so you can readily use your hotkeys as you define them.
-
- You can choose any keyboard shotcuts that make sense to you, provided they are not part of the standard K9s shortcuts list.
-
-NOTE: This feature/configuration might change in future releases!
 
 ---
 
@@ -459,7 +461,7 @@ Colors can be defined by name or uing an hex representation. Of recent, we've ad
 > NOTE: This is very much an experimental feature at this time, more will be added/modified if this feature has legs so thread accordingly!
 
 ```yaml
-# InTheNavy Skin...
+# Skin InTheNavy...
 k9s:
   # General K9s styles
   body:
@@ -589,8 +591,8 @@ to make this project a reality!
 ## Meet The Core Team!
 
 * [Fernand Galiana](https://github.com/derailed)
-   * <img src="assets/mail.png" width="16" height="auto"/>  fernand@imhotep.io
-   * <img src="assets/twitter.png" width="16" height="auto"/> [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
+  * <img src="assets/mail.png" width="16" height="auto"/>  fernand@imhotep.io
+  * <img src="assets/twitter.png" width="16" height="auto"/> [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
 
 ---
 

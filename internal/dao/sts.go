@@ -80,7 +80,7 @@ func (s *StatefulSet) Restart(path string) error {
 }
 
 // TailLogs tail logs for all pods represented by this StatefulSet.
-func (s *StatefulSet) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
+func (s *StatefulSet) TailLogs(ctx context.Context, c chan<- []byte, opts LogOptions) error {
 	o, err := s.Factory.Get(s.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return err

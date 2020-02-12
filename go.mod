@@ -32,6 +32,7 @@ require (
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/atotto/clipboard v0.1.2
 	github.com/derailed/tview v0.3.4
+	github.com/drone/envsubst v1.0.2 // indirect
 	github.com/elazarl/goproxy v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/fatih/color v1.6.0
@@ -41,9 +42,13 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mattn/go-runewidth v0.0.5
+	github.com/openfaas/faas v0.0.0-20200207215241-6afae214e3ec // indirect
+	github.com/openfaas/faas-cli v0.0.0-20200124160744-30b7cec9634c
+	github.com/openfaas/faas-provider v0.15.0 // indirect
 	github.com/petergtz/pegomock v2.6.0+incompatible
 	github.com/rakyll/hey v0.1.2
 	github.com/rs/zerolog v1.17.2
+	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sahilm/fuzzy v0.1.0
 	github.com/spf13/cobra v0.0.5
 	github.com/stretchr/testify v1.4.0

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,7 +23,6 @@ type Table struct {
 func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
 	ns, n := client.Namespaced(path)
 
-	log.Debug().Msgf("TABLE-GET %q:%q", ns, t.gvr)
 	a := fmt.Sprintf(gvFmt, metav1beta1.SchemeGroupVersion.Version, metav1beta1.GroupName)
 	_, codec := t.codec()
 
@@ -46,6 +46,11 @@ func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
 
 // List all Resources in a given namespace.
 func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+	labelSel, ok := ctx.Value(internal.KeyLabels).(string)
+	if !ok {
+		log.Debug().Msgf("No label selector found in context. Listing all resources")
+	}
+
 	a := fmt.Sprintf(gvFmt, metav1beta1.SchemeGroupVersion.Version, metav1beta1.GroupName)
 	_, codec := t.codec()
 
@@ -57,7 +62,7 @@ func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		SetHeader("Accept", a).
 		Namespace(ns).
 		Resource(t.gvr.R()).
-		VersionedParams(&metav1beta1.TableOptions{}, codec).
+		VersionedParams(&metav1.ListOptions{LabelSelector: labelSel}, codec).
 		Do().Get()
 	if err != nil {
 		return nil, err
