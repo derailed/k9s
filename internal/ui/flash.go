@@ -134,8 +134,7 @@ func (f *Flash) SetMessage(level FlashLevel, msg ...string) {
 	}
 
 	var ctx context.Context
-	ctx, f.cancel = context.WithCancel(context.TODO())
-	ctx, f.cancel = context.WithTimeout(ctx, flashDelay)
+	ctx, f.cancel = context.WithTimeout(context.Background(), flashDelay)
 	go f.refresh(ctx)
 }
 

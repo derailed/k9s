@@ -2,7 +2,6 @@ package model
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -186,7 +185,6 @@ func (t *Table) updater(ctx context.Context) {
 	for {
 		select {
 		case <-ctx.Done():
-			t.fireTableLoadFailed(errors.New("operation canceled"))
 			return
 		case <-time.After(rate):
 			rate = t.refreshRate
@@ -207,7 +205,7 @@ func (t *Table) refresh(ctx context.Context) {
 		t.fireTableLoadFailed(err)
 		return
 	}
-	t.fireTableChanged()
+	t.fireTableChanged(t.Peek())
 }
 
 func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, error) {
@@ -261,7 +259,6 @@ func (t *Table) reconcile(ctx context.Context) error {
 
 	t.mx.Lock()
 	defer t.mx.Unlock()
-
 	// if labelSelector in place might as well clear the model data.
 	sel, ok := ctx.Value(internal.KeyLabels).(string)
 	if ok && sel != "" {
@@ -300,8 +297,7 @@ func (t *Table) resourceMeta() ResourceMeta {
 	return meta
 }
 
-func (t *Table) fireTableChanged() {
-	data := t.Peek()
+func (t *Table) fireTableChanged(data render.TableData) {
 	for _, l := range t.listeners {
 		l.TableDataChanged(data)
 	}

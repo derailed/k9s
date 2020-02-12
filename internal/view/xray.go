@@ -160,6 +160,8 @@ func (x *Xray) refreshActions() {
 	}
 
 	switch gvr {
+	case "v1/namespaces":
+		x.Actions().Delete(tcell.KeyEnter)
 	case "containers":
 		x.Actions().Delete(tcell.KeyEnter)
 		aa[ui.KeyS] = ui.NewKeyAction("Shell", x.shellCmd, true)

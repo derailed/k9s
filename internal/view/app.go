@@ -169,6 +169,7 @@ func (a *App) buildHeader() tview.Primitive {
 func (a *App) Halt() {
 	if a.cancelFn != nil {
 		a.cancelFn()
+		a.cancelFn = nil
 	}
 }
 
@@ -311,19 +312,21 @@ func (a *App) Run() error {
 
 // Status reports a new app status for display.
 func (a *App) Status(l ui.FlashLevel, msg string) {
-	a.Flash().SetMessage(l, msg)
-	a.setIndicator(l, msg)
-	a.setLogo(l, msg)
-	a.Draw()
+	a.QueueUpdateDraw(func() {
+		a.Flash().SetMessage(l, msg)
+		a.setIndicator(l, msg)
+		a.setLogo(l, msg)
+	})
 }
 
 // ClearStatus reset logo back to normal.
 func (a *App) ClearStatus(flash bool) {
-	a.Logo().Reset()
-	if flash {
-		a.Flash().Clear()
-	}
-	a.Draw()
+	a.QueueUpdateDraw(func() {
+		a.Logo().Reset()
+		if flash {
+			a.Flash().Clear()
+		}
+	})
 }
 
 func (a *App) setLogo(l ui.FlashLevel, msg string) {

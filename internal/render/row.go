@@ -13,9 +13,8 @@ type Fields []string
 // Clone returns a copy of the fields.
 func (f Fields) Clone() Fields {
 	cp := make(Fields, len(f))
-	for i, v := range f {
-		cp[i] = v
-	}
+	copy(cp, f)
+
 	return cp
 }
 

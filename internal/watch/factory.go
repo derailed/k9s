@@ -109,10 +109,14 @@ func (f *Factory) waitForCacheSync(ns string) {
 	if f.isClusterWide() {
 		ns = client.AllNamespaces
 	}
+
+	f.mx.RLock()
+	defer f.mx.RUnlock()
 	fac, ok := f.factories[ns]
 	if !ok {
 		return
 	}
+
 	// Hang for a sec for the cache to refresh if still not done bail out!
 	c := make(chan struct{})
 	go func(c chan struct{}) {

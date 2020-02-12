@@ -46,7 +46,6 @@ func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
 
 // List all Resources in a given namespace.
 func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	log.Debug().Msgf("TABLE-LIST %q:%q", ns, t.gvr)
 	a := fmt.Sprintf(gvFmt, metav1beta1.SchemeGroupVersion.Version, metav1beta1.GroupName)
 	_, codec := t.codec()
 
