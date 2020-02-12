@@ -138,6 +138,7 @@ K9s uses aliases to navigate most K8s resources.
 | `d`,`v`, `e`, `l`,...       | Key mapping to describe, view, edit, view logs,... | `d` (describes a resource) |
 | `:`ctx`<ENTER>`             | To view and switch to another Kubernetes context   | `:`+`ctx`+`<ENTER>`        |
 | `:`ns`<ENTER>`              | To view and switch to another Kubernetes namespace | `:`+`ns`+`<ENTER>`         |
+| `:`jobs`<ENTER>`            | To view and switch to jobs                         | `:`+`jobs`+`<ENTER>`       |
 | `:screendump`, `:sd`        | To view all saved resources                        |                            |
 | `Ctrl-d`                    | To delete a resource (TAB and ENTER to confirm)    |                            |
 | `Ctrl-k`                    | To delete a resource (no confirmation dialog)      |                            |
