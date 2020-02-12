@@ -454,7 +454,7 @@ You can style K9s based on your own sense of look and style. Skins are YAML file
 You can also change K9s skins based on the cluster you are connecting too. In this case, you can specify the skin file name as `$HOME/.k9s/mycluster_skin.yml`
 Below is a sample skin file, more skins are available in the skins directory in this repo, just simply copy any of these in your user's home dir as `skin.yml`.
 
-Colors can be defined by name or uing an hex representation.
+Colors can be defined by name or uing an hex representation. Of recent, we've added a color named `default` to indicate a transparent background color to preserve your terminal background color settings if so desired.
 
 > NOTE: This is very much an experimental feature at this time, more will be added/modified if this feature has legs so thread accordingly!
 
@@ -464,8 +464,8 @@ k9s:
   # General K9s styles
   body:
     fgColor: dodgerblue
-    bgColor: #ffffff
-    logoColor: #0000ff
+    bgColor: '#ffffff'
+    logoColor: '#0000ff'
   # ClusterInfoView styles.
   info:
     fgColor: lightskyblue
@@ -488,7 +488,7 @@ k9s:
       activeColor: skyblue
     # Resource status and update styles
     status:
-      newColor: #00ff00
+      newColor: '#00ff00'
       modifyColor: powderblue
       addColor: lightskyblue
       errorColor: indianred

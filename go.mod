@@ -31,7 +31,7 @@ require (
 	fyne.io/fyne v1.2.2 // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/atotto/clipboard v0.1.2
-	github.com/derailed/tview v0.3.3
+	github.com/derailed/tview v0.3.4
 	github.com/elazarl/goproxy v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/fatih/color v1.6.0

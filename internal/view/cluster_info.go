@@ -32,6 +32,7 @@ func NewClusterInfo(app *App) *ClusterInfo {
 func (c *ClusterInfo) Init() {
 	c.app.Styles.AddListener(c)
 	c.layout()
+	c.StylesChanged(c.app.Styles)
 }
 
 // StylesChanged notifies skin changed.
@@ -51,9 +52,14 @@ func (c *ClusterInfo) layout() {
 func (c *ClusterInfo) sectionCell(t string) *tview.TableCell {
 	cell := tview.NewTableCell(t + ":")
 	cell.SetAlign(tview.AlignLeft)
-	var s tcell.Style
-	cell.SetStyle(s.Bold(true).Foreground(config.AsColor(c.styles.K9s.Info.SectionColor)))
-	cell.SetBackgroundColor(c.app.Styles.BgColor())
+	// var style tcell.Style
+	// style.Bold(true).
+	// 	Background(tcell.ColorGreen).
+	// 	Foreground(config.AsColor(c.styles.K9s.Info.SectionColor))
+	// cell.SetStyle(style)
+	// cell.SetBackgroundColor(c.app.Styles.BgColor())
+	// cell.SetBackgroundColor(tcell.ColorDefault)
+	cell.SetBackgroundColor(tcell.ColorGreen)
 
 	return cell
 }

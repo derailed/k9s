@@ -267,11 +267,11 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 			log.Error().Err(err).Msg("Config save failed!")
 		}
 		a.Flash().Infof("Switching context to %s", name)
+		a.ReloadStyles(name)
 		if err := a.gotoResource("pods", true); loadPods && err != nil {
 			a.Flash().Err(err)
 		}
 		a.clusterModel.Reset(a.factory)
-		a.ReloadStyles(name)
 	}
 
 	return nil

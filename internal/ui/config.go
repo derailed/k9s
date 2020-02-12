@@ -103,6 +103,9 @@ func (c *Configurator) RefreshStyles(context string) {
 
 func (c *Configurator) updateStyles(f string) {
 	c.skinFile = f
+	if !c.HasSkins() {
+		c.Styles.DefaultSkins()
+	}
 	c.Styles.Update()
 
 	render.StdColor = config.AsColor(c.Styles.Frame().Status.NewColor)
