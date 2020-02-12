@@ -86,6 +86,7 @@ func (t *Tree) ExtraHints() map[string]string {
 	return nil
 }
 
+// BindKeys binds default mnemonics.
 func (t *Tree) BindKeys() {
 	t.Actions().Add(KeyActions{
 		KeySpace: NewKeyAction("Expand/Collapse", t.noopCmd, true),

@@ -55,6 +55,7 @@ type NodeSpec struct {
 	GVRs, Paths, Statuses []string
 }
 
+// ParentGVR returns the parent GVR.
 func (s NodeSpec) ParentGVR() *string {
 	if len(s.GVRs) > 1 {
 		return &s.GVRs[1]
@@ -62,6 +63,7 @@ func (s NodeSpec) ParentGVR() *string {
 	return nil
 }
 
+// ParentPath returns the parent path.
 func (s NodeSpec) ParentPath() *string {
 	if len(s.Paths) > 1 {
 		return &s.Paths[1]

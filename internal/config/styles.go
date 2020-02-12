@@ -292,8 +292,8 @@ func NewStyles() *Styles {
 	}
 }
 
-// LoadDefaults loads the default skin
-func (s *Styles) DefaultSkins() {
+// DefaultSkin loads the default skin
+func (s *Styles) DefaultSkin() {
 	s.K9s = newStyle()
 }
 

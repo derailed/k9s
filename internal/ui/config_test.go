@@ -22,7 +22,7 @@ func TestConfiguratorRefreshStyle(t *testing.T) {
 	cfg := ui.Configurator{}
 	cfg.RefreshStyles("")
 
-	assert.True(t, cfg.HasSkins())
+	assert.True(t, cfg.HasSkin())
 	assert.Equal(t, tcell.ColorGhostWhite, render.StdColor)
 	assert.Equal(t, tcell.ColorWhiteSmoke, render.ErrColor)
 }
