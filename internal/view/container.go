@@ -159,31 +159,35 @@ func (c *Container) preparePort(pp []string) string {
 func (c *Container) portForward(address, lport, cport string) {
 	co := c.GetTable().GetSelectedCell(0)
 	pf := dao.NewPortForwarder(c.App().Conn())
+	path := c.GetTable().GetSelectedItem()
 	ports := []string{lport + ":" + cport}
-	fw, err := pf.Start(c.GetTable().Path, co, address, ports)
+	fw, err := pf.Start(path, co, address, ports)
 	if err != nil {
 		c.App().Flash().Err(err)
 		return
 	}
 
-	log.Debug().Msgf(">>> Starting port forward %q %v", c.GetTable().Path, ports)
-	go c.runForward(pf, fw)
+	log.Debug().Msgf(">>> Starting port forward %q %v", path, ports)
+	go runForward(c.App(), pf, fw)
 }
 
-func (c *Container) runForward(pf *dao.PortForwarder, f *portforward.PortForwarder) {
-	c.App().QueueUpdateDraw(func() {
-		c.App().factory.AddForwarder(pf)
-		c.App().Flash().Infof("PortForward activated %s:%s", pf.Path(), pf.Ports()[0])
-		dialog.DismissPortForward(c.App().Content.Pages)
+// ----------------------------------------------------------------------------
+// Helpers...
+
+func runForward(a *App, pf *dao.PortForwarder, f *portforward.PortForwarder) {
+	a.QueueUpdateDraw(func() {
+		a.factory.AddForwarder(pf)
+		a.Flash().Infof("PortForward activated %s:%s", pf.Path(), pf.Ports()[0])
+		dialog.DismissPortForward(a.Content.Pages)
 	})
 
 	pf.SetActive(true)
 	if err := f.ForwardPorts(); err != nil {
-		c.App().Flash().Err(err)
+		a.Flash().Err(err)
 		return
 	}
-	c.App().QueueUpdateDraw(func() {
-		c.App().factory.DeleteForwarder(pf.FQN())
+	a.QueueUpdateDraw(func() {
+		a.factory.DeleteForwarder(pf.FQN())
 		pf.SetActive(false)
 	})
 }

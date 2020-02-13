@@ -8,8 +8,10 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -40,19 +42,92 @@ func NewService(gvr client.GVR) ResourceViewer {
 
 func (s *Service) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
+		ui.KeyShiftF:   ui.NewKeyAction("Port-Forward", s.portFwdCmd, true),
 		tcell.KeyCtrlB: ui.NewKeyAction("Bench Run/Stop", s.toggleBenchCmd, true),
 		ui.KeyShiftT:   ui.NewKeyAction("Sort Type", s.GetTable().SortColCmd(1, true), false),
 	})
 }
 
-func (s *Service) showPods(app *App, _ ui.Tabular, gvr, path string) {
-	o, err := app.factory.Get(gvr, path, true, labels.Everything())
+func podFromSelector(f dao.Factory, ns string, sel map[string]string) (string, error) {
+	log.Debug().Msgf("Looking for pods %q:%v -- %v", ns, sel, labels.Set(sel).AsSelector())
+	oo, err := f.List("v1/pods", ns, true, labels.Set(sel).AsSelector())
 	if err != nil {
-		app.Flash().Err(err)
+		return "", err
+	}
+
+	if len(oo) == 0 {
+		return "", fmt.Errorf("no matching pods for %v", sel)
+	}
+
+	var pod v1.Pod
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(oo[0].(*unstructured.Unstructured).Object, &pod)
+	if err != nil {
+		return "", err
+	}
+
+	return client.FQN(pod.Namespace, pod.Name), nil
+}
+
+func (s *Service) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := s.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	svc, err := fetchService(s.App().factory, s.GVR(), path)
+	if err != nil {
+		s.App().Flash().Err(err)
+		return nil
+	}
+
+	ns, _ := client.Namespaced(path)
+	pod, err := podFromSelector(s.App().factory, ns, svc.Spec.Selector)
+	if err != nil {
+		s.App().Flash().Err(err)
+		return nil
+	}
+
+	pp, err := fetchPodPorts(s.App().factory, pod)
+	if err != nil {
+		s.App().Flash().Err(err)
+		return nil
+	}
+	ports := make([]string, 0, len(pp))
+	for _, p := range pp {
+		if p.Protocol == v1.ProtocolTCP {
+			port := fmt.Sprintf("%s:%d", p.Name, p.ContainerPort)
+			if p.Name == "" {
+				port = fmt.Sprintf("%d", p.ContainerPort)
+			}
+			ports = append(ports, port)
+		}
+	}
+
+	if len(ports) == 0 {
+		s.App().Flash().Err(fmt.Errorf("no tcp ports found on %s", path))
+		return nil
+	}
+
+	dialog.ShowPortForwards(s.App().Content.Pages, s.App().Styles, pod, ports, s.portForward)
+
+	return nil
+}
+
+func (s *Service) portForward(path, address, lport, cport string) {
+	pf := dao.NewPortForwarder(s.App().Conn())
+	ports := []string{lport + ":" + cport}
+	fw, err := pf.Start(path, "", address, ports)
+	if err != nil {
+		s.App().Flash().Err(err)
 		return
 	}
-	var svc v1.Service
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &svc)
+
+	log.Debug().Msgf(">>> Starting port forward %q %v", path, ports)
+	go runForward(s.App(), pf, fw)
+}
+
+func (s *Service) showPods(app *App, _ ui.Tabular, gvr, path string) {
+	svc, err := fetchService(app.factory, gvr, path)
 	if err != nil {
 		app.Flash().Err(err)
 		return
@@ -168,6 +243,21 @@ func (s *Service) benchDone() {
 		s.bench = nil
 		go benchTimedOut(s.App())
 	})
+}
+
+// ----------------------------------------------------------------------------
+// Helpers...
+
+func fetchService(f dao.Factory, gvr, path string) (*v1.Service, error) {
+	o, err := f.Get(gvr, path, true, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	var svc v1.Service
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &svc)
+
+	return &svc, err
 }
 
 func benchTimedOut(app *App) {

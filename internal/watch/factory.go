@@ -229,6 +229,9 @@ func (f *Factory) DeleteForwarder(path string) {
 
 // Forwarders returns all portforwards.
 func (f *Factory) Forwarders() Forwarders {
+	f.mx.RLock()
+	defer f.mx.RUnlock()
+
 	return f.forwarders
 }
 
