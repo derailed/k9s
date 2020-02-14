@@ -4,13 +4,13 @@ import (
 	"strings"
 
 	"github.com/rs/zerolog/log"
-	"k8s.io/client-go/tools/portforward"
 )
 
 // Forwarder represents a port forwarder.
 type Forwarder interface {
-	// Start initializes a port forward.
-	Start(path, co, address string, ports []string) (*portforward.PortForwarder, error)
+	// BOZO!!
+	// // Start initializes a port forward.
+	// Start(path, co, string, t dao.Tunnel) (*portforward.PortForwarder, error)
 
 	// Stop terminates a port forward.
 	Stop()

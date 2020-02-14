@@ -3,6 +3,8 @@ package view
 import (
 	"context"
 	"fmt"
+	"regexp"
+	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal"
@@ -63,6 +65,8 @@ func (p *PortForward) showBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+var podNameRX = regexp.MustCompile(`\A(.+)\-(\w{10})\-(\w{5})\z`)
+
 func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if p.bench != nil {
 		p.App().Status(ui.FlashErr, "Benchmark Canceled!")
@@ -71,18 +75,34 @@ func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	sel := p.GetTable().GetSelectedItem()
-	if sel == "" {
+	path := p.GetTable().GetSelectedItem()
+	if path == "" {
 		return nil
 	}
+	tokens := strings.Split(path, ":")
+	ns, po := client.Namespaced(tokens[0])
+	sections := podNameRX.FindStringSubmatch(po)
+	log.Debug().Msgf("SECTIONS %q::%q--%#v", ns, po, sections)
+	if len(sections) >= 1 {
+		po = sections[1]
+	}
+	key := client.FQN(ns, po) + ":" + tokens[1]
 
-	r, _ := p.GetTable().GetSelection()
 	cfg := defaultConfig()
-	if b, ok := p.App().Bench.Benchmarks.Containers[sel]; ok {
+	if defaults := p.App().Bench.Benchmarks.Defaults; !defaults.Empty() {
+		cfg.C, cfg.N = defaults.C, defaults.N
+	}
+
+	log.Debug().Msgf("CUST-CFG %q -- %#v", path, key)
+	if b, ok := p.App().Bench.Benchmarks.Containers[key]; ok {
+		log.Debug().Msgf("FOUND CUST BENCH_CFG!")
 		cfg = b
 	}
-	cfg.Name = sel
+	cfg.Name = path
 
+	log.Debug().Msgf("BenchCFG %q::%#v", path, cfg)
+
+	r, _ := p.GetTable().GetSelection()
 	base := ui.TrimCell(p.GetTable().SelectTable, r, 4)
 	var err error
 	if p.bench, err = perf.NewBenchmark(base, p.App().version, cfg); err != nil {

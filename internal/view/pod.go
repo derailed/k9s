@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -135,47 +136,50 @@ func (p *Pod) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	pp, err := fetchPodPorts(p.App().factory, path)
-	if err != nil {
+	if err := showFwdDialog(p.App(), path, p.portForward); err != nil {
 		p.App().Flash().Err(err)
-		return nil
 	}
-	ports := make([]string, 0, len(pp))
-	for _, p := range pp {
-		if p.Protocol == v1.ProtocolTCP {
-			port := fmt.Sprintf("%s:%d", p.Name, p.ContainerPort)
-			if p.Name == "" {
-				port = fmt.Sprintf("%d", p.ContainerPort)
-			}
-			ports = append(ports, port)
-		}
-	}
-
-	if len(ports) == 0 {
-		p.App().Flash().Err(fmt.Errorf("no tcp ports found on %s", path))
-		return nil
-	}
-
-	dialog.ShowPortForwards(p.App().Content.Pages, p.App().Styles, path, ports, p.portForward)
 
 	return nil
 }
 
-func (p *Pod) portForward(path, address, lport, cport string) {
+func (p *Pod) portForward(path, co string, t dao.Tunnel) {
 	pf := dao.NewPortForwarder(p.App().Conn())
-	ports := []string{lport + ":" + cport}
-	fw, err := pf.Start(path, "", address, ports)
+	fw, err := pf.Start(path, co, t)
 	if err != nil {
 		p.App().Flash().Err(err)
 		return
 	}
 
-	log.Debug().Msgf(">>> Starting port forward %q %v", path, ports)
+	log.Debug().Msgf(">>> Starting port forward %q:%s %v", path, co, t)
 	go runForward(p.App(), pf, fw)
 }
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func showFwdDialog(a *App, path string, cb dialog.PortForwardFunc) error {
+	mm, err := fetchPodPorts(a.factory, path)
+	if err != nil {
+		return nil
+	}
+	ports := make([]string, 0, len(mm))
+	for co, pp := range mm {
+		for _, p := range pp {
+			if p.Protocol != v1.ProtocolTCP {
+				continue
+			}
+			ports = append(ports, client.FQN(co, p.Name)+":"+strconv.Itoa(int(p.ContainerPort)))
+		}
+	}
+
+	if len(ports) == 0 {
+		return fmt.Errorf("no tcp ports found on %s", path)
+	}
+	dialog.ShowPortForwards(a.Content.Pages, a.Styles, path, ports, cb)
+
+	return nil
+}
 
 func containerShellin(a *App, comp model.Component, path, co string) error {
 	if co != "" {
@@ -262,7 +266,7 @@ func fetchContainers(f *watch.Factory, path string, includeInit bool) ([]string,
 	return nn, nil
 }
 
-func fetchPodPorts(f *watch.Factory, path string) ([]v1.ContainerPort, error) {
+func fetchPodPorts(f *watch.Factory, path string) (map[string][]v1.ContainerPort, error) {
 	log.Debug().Msgf("Fetching ports on pod %q", path)
 	o, err := f.Get("v1/pods", path, false, labels.Everything())
 	if err != nil {
@@ -275,9 +279,9 @@ func fetchPodPorts(f *watch.Factory, path string) ([]v1.ContainerPort, error) {
 		return nil, err
 	}
 
-	pp := make([]v1.ContainerPort, 0, len(pod.Spec.Containers))
-	for _, c := range pod.Spec.Containers {
-		pp = append(pp, c.Ports...)
+	pp := make(map[string][]v1.ContainerPort)
+	for _, co := range pod.Spec.Containers {
+		pp[co.Name] = co.Ports
 	}
 
 	return pp, nil

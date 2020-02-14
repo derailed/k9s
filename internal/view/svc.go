@@ -11,7 +11,6 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -87,42 +86,22 @@ func (s *Service) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	pp, err := fetchPodPorts(s.App().factory, pod)
-	if err != nil {
+	if err := showFwdDialog(s.App(), pod, s.portForward); err != nil {
 		s.App().Flash().Err(err)
-		return nil
 	}
-	ports := make([]string, 0, len(pp))
-	for _, p := range pp {
-		if p.Protocol == v1.ProtocolTCP {
-			port := fmt.Sprintf("%s:%d", p.Name, p.ContainerPort)
-			if p.Name == "" {
-				port = fmt.Sprintf("%d", p.ContainerPort)
-			}
-			ports = append(ports, port)
-		}
-	}
-
-	if len(ports) == 0 {
-		s.App().Flash().Err(fmt.Errorf("no tcp ports found on %s", path))
-		return nil
-	}
-
-	dialog.ShowPortForwards(s.App().Content.Pages, s.App().Styles, pod, ports, s.portForward)
 
 	return nil
 }
 
-func (s *Service) portForward(path, address, lport, cport string) {
+func (s *Service) portForward(path, co string, t dao.Tunnel) {
 	pf := dao.NewPortForwarder(s.App().Conn())
-	ports := []string{lport + ":" + cport}
-	fw, err := pf.Start(path, "", address, ports)
+	fw, err := pf.Start(path, co, t)
 	if err != nil {
 		s.App().Flash().Err(err)
 		return
 	}
 
-	log.Debug().Msgf(">>> Starting port forward %q %v", path, ports)
+	log.Debug().Msgf(">>> Starting port forward %q %#v", path, t)
 	go runForward(s.App(), pf, fw)
 }
 

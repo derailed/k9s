@@ -103,6 +103,7 @@ func (c *Container) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
+	log.Debug().Msgf("CONTAINER-SEL %q", path)
 	if _, ok := c.App().factory.ForwarderFor(fwFQN(c.GetTable().Path, path)); ok {
 		c.App().Flash().Err(fmt.Errorf("A PortForward already exist on container %s", c.GetTable().Path))
 		return nil
@@ -112,10 +113,22 @@ func (c *Container) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !ok {
 		return nil
 	}
-
-	dialog.ShowPortForward(c.App().Content.Pages, c.preparePort(ports), c.portForward)
+	log.Debug().Msgf("CONTAINER-PORTS %#v", ports)
+	dialog.ShowPortForwards(c.App().Content.Pages, c.App().Styles, c.GetTable().Path, ports, c.portForward)
 
 	return nil
+}
+
+func (c *Container) portForward(path, co string, t dao.Tunnel) {
+	pf := dao.NewPortForwarder(c.App().Conn())
+	fw, err := pf.Start(path, co, t)
+	if err != nil {
+		c.App().Flash().Err(err)
+		return
+	}
+
+	log.Debug().Msgf(">>> Starting port forward %q %#v", path, t)
+	go runForward(c.App(), pf, fw)
 }
 
 func (c *Container) isForwardable(path string) ([]string, bool) {
@@ -132,43 +145,15 @@ func (c *Container) isForwardable(path string) ([]string, bool) {
 		return nil, false
 	}
 
-	return ports, true
-}
-
-func (c *Container) preparePort(pp []string) string {
-	var port string
-	for _, p := range pp {
+	pp := make([]string, 0, len(ports))
+	for _, p := range ports {
 		if !isTCPPort(p) {
 			continue
 		}
-		port = strings.TrimSpace(p)
-		tokens := strings.Split(port, ":")
-		if len(tokens) == 2 {
-			port = tokens[1]
-		}
-		break
-	}
-	if port == "" {
-		c.App().Flash().Warn("No valid TCP port found on this container. User will specify...")
-		return "MY_TCP_PORT!"
+		pp = append(pp, path+"/"+p)
 	}
 
-	return port
-}
-
-func (c *Container) portForward(address, lport, cport string) {
-	co := c.GetTable().GetSelectedCell(0)
-	pf := dao.NewPortForwarder(c.App().Conn())
-	path := c.GetTable().GetSelectedItem()
-	ports := []string{lport + ":" + cport}
-	fw, err := pf.Start(path, co, address, ports)
-	if err != nil {
-		c.App().Flash().Err(err)
-		return
-	}
-
-	log.Debug().Msgf(">>> Starting port forward %q %v", path, ports)
-	go runForward(c.App(), pf, fw)
+	return pp, true
 }
 
 // ----------------------------------------------------------------------------
@@ -178,7 +163,7 @@ func runForward(a *App, pf *dao.PortForwarder, f *portforward.PortForwarder) {
 	a.QueueUpdateDraw(func() {
 		a.factory.AddForwarder(pf)
 		a.Flash().Infof("PortForward activated %s:%s", pf.Path(), pf.Ports()[0])
-		dialog.DismissPortForward(a.Content.Pages)
+		dialog.DismissPortForwards(a.Content.Pages)
 	})
 
 	pf.SetActive(true)

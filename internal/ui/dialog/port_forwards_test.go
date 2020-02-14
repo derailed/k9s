@@ -3,26 +3,27 @@ package dialog
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPortForwardDialog(t *testing.T) {
+func TestPortForwards(t *testing.T) {
 	p := ui.NewPages()
 
-	okFunc := func(address, lport, cport string) {
-	}
-	ShowPortForward(p, "8080", okFunc)
+	cbFunc := func(path, co string, t dao.Tunnel) {}
+	ShowPortForwards(p, config.NewStyles(), "fred", []string{"8080"}, cbFunc)
 
 	d := p.GetPrimitive(portForwardKey).(*tview.ModalForm)
 	assert.NotNil(t, d)
 
-	DismissPortForward(p)
+	DismissPortForwards(p)
 	assert.Nil(t, p.GetPrimitive(portForwardKey))
 }
 
-func TestStripPort(t *testing.T) {
+func TestExtractPort(t *testing.T) {
 	uu := map[string]struct {
 		port, e string
 	}{
@@ -40,7 +41,7 @@ func TestStripPort(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, stripPort(u.port))
+			assert.Equal(t, u.e, extractPort(u.port))
 		})
 	}
 }

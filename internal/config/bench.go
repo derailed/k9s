@@ -49,11 +49,11 @@ type (
 
 	// BenchConfig represents a service benchmark.
 	BenchConfig struct {
+		Name string
 		C    int  `yaml:"concurrency"`
 		N    int  `yaml:"requests"`
 		Auth Auth `yaml:"auth"`
 		HTTP HTTP `yaml:"http"`
-		Name string
 	}
 )
 
@@ -73,7 +73,8 @@ func newBenchmark() Benchmark {
 	}
 }
 
-func (b Benchmark) empty() bool {
+// Empty checks if the benchmark is set
+func (b Benchmark) Empty() bool {
 	return b.C == 0 && b.N == 0
 }
 
