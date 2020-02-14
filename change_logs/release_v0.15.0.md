@@ -12,7 +12,9 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ---
 
-## Does This FaaS Look Familiar?
+<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s_fez.png" align="center" width="400" height="auto"/>
+
+## Seen This Fez Before?
 
 The awesome and ever so smart and creative [Alex Ellis](https://github.com/alexellis) of [OpenFaas Fame](https://www.openfaas.com) fame, had pinged me when I had launched K9s to add support for OpenFaas functions. It's been a long time coming indeed, but we now have a very (VERY!) primitive integration with this very cool framework.
 
