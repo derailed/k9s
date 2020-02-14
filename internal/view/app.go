@@ -18,7 +18,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// ExitStatus indicates UI exit conditions.
+// // ExitStatus indicates UI exit conditions.
 var ExitStatus = ""
 
 const (
@@ -50,7 +50,6 @@ func NewApp(cfg *config.Config) *App {
 		Content: NewPageStack(),
 	}
 	a.Config = cfg
-	a.InitBench(cfg.K9s.CurrentCluster)
 
 	a.Views()["statusIndicator"] = ui.NewStatusIndicator(a.App, a.Styles)
 	a.Views()["clusterInfo"] = NewClusterInfo(&a)

@@ -16,7 +16,7 @@ import (
 
 const (
 	menuIndexFmt = " [key:-:b]<%d> [fg:-:d]%s "
-	maxRows      = 7
+	maxRows      = 6
 )
 
 var menuRX = regexp.MustCompile(`\d`)

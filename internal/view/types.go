@@ -77,6 +77,8 @@ type ResourceViewer interface {
 
 	// SetBindKeys provision additional key bindings.
 	SetBindKeysFn(BindKeysFunc)
+
+	// SetInstance sets a parent FQN
 	SetInstance(string)
 }
 

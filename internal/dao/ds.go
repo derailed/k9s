@@ -5,12 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/watch"
-	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -26,6 +24,7 @@ var (
 	_ Nuker       = (*DaemonSet)(nil)
 	_ Loggable    = (*DaemonSet)(nil)
 	_ Restartable = (*DaemonSet)(nil)
+	_ Controller  = (*DaemonSet)(nil)
 )
 
 // DaemonSet represents a K8s daemonset.
@@ -35,12 +34,7 @@ type DaemonSet struct {
 
 // Restart a DaemonSet rollout.
 func (d *DaemonSet) Restart(path string) error {
-	o, err := d.Factory.Get(d.gvr.String(), path, true, labels.Everything())
-	if err != nil {
-		return err
-	}
-	var ds appsv1.DaemonSet
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &ds)
+	ds, err := d.GetInstance(path)
 	if err != nil {
 		return err
 	}
@@ -52,25 +46,20 @@ func (d *DaemonSet) Restart(path string) error {
 	if !auth {
 		return fmt.Errorf("user is not authorized to restart a daemonset")
 	}
-	update, err := polymorphichelpers.ObjectRestarterFn(&ds)
+	update, err := polymorphichelpers.ObjectRestarterFn(ds)
 	if err != nil {
 		return err
 	}
-	_, err = d.Client().DialOrDie().AppsV1().DaemonSets(ds.Namespace).Patch(ds.Name, types.StrategicMergePatchType, update)
 
+	_, err = d.Client().DialOrDie().AppsV1().DaemonSets(ds.Namespace).Patch(ds.Name, types.StrategicMergePatchType, update)
 	return err
 }
 
 // TailLogs tail logs for all pods represented by this DaemonSet.
 func (d *DaemonSet) TailLogs(ctx context.Context, c chan<- []byte, opts LogOptions) error {
-	o, err := d.Factory.Get(d.gvr.String(), opts.Path, true, labels.Everything())
+	ds, err := d.GetInstance(opts.Path)
 	if err != nil {
 		return err
-	}
-	var ds appsv1.DaemonSet
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &ds)
-	if err != nil {
-		return errors.New("expecting daemonset resource")
 	}
 
 	if ds.Spec.Selector == nil || len(ds.Spec.Selector.MatchLabels) == 0 {
@@ -81,10 +70,6 @@ func (d *DaemonSet) TailLogs(ctx context.Context, c chan<- []byte, opts LogOptio
 }
 
 func podLogs(ctx context.Context, c chan<- []byte, sel map[string]string, opts LogOptions) error {
-	defer func(t time.Time) {
-		log.Debug().Msgf("POD LOGS %v", time.Since(t))
-	}(time.Now())
-
 	f, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
 	if !ok {
 		return errors.New("expecting a context factory")
@@ -116,13 +101,38 @@ func podLogs(ctx context.Context, c chan<- []byte, sel map[string]string, opts L
 		if err != nil {
 			return err
 		}
-		log.Debug().Msgf("TAILING logs on pod %q", pod.Name)
 		opts.Path = client.FQN(pod.Namespace, pod.Name)
 		if err := po.TailLogs(ctx, c, opts); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// Pod returns a pod victim by name.
+func (d *DaemonSet) Pod(fqn string) (string, error) {
+	ds, err := d.GetInstance(fqn)
+	if err != nil {
+		return "", err
+	}
+
+	return podFromSelector(d.Factory, ds.Namespace, ds.Spec.Selector.MatchLabels)
+}
+
+// GetInstance returns a daemonset instance.
+func (d *DaemonSet) GetInstance(fqn string) (*appsv1.DaemonSet, error) {
+	o, err := d.Factory.Get(d.gvr.String(), fqn, false, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	var ds appsv1.DaemonSet
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &ds)
+	if err != nil {
+		return nil, errors.New("expecting DaemonSet resource")
+	}
+
+	return &ds, nil
 }
 
 // ----------------------------------------------------------------------------

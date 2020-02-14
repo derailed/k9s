@@ -29,7 +29,7 @@ func TestCruiserSlice(t *testing.T) {
 // Helpers...
 
 func loadJSON(t assert.TestingT, n string) *unstructured.Unstructured {
-	raw, err := ioutil.ReadFile(fmt.Sprintf("test_assets/%s.json", n))
+	raw, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", n))
 	assert.Nil(t, err)
 
 	var o unstructured.Unstructured

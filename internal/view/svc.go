@@ -13,10 +13,6 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // Service represents a service viewer.
@@ -29,7 +25,9 @@ type Service struct {
 // NewService returns a new viewer.
 func NewService(gvr client.GVR) ResourceViewer {
 	s := Service{
-		ResourceViewer: NewLogsExtender(NewBrowser(gvr), nil),
+		ResourceViewer: NewPortForwardExtender(
+			NewLogsExtender(NewBrowser(gvr), nil),
+		),
 	}
 	s.SetBindKeysFn(s.bindKeys)
 	s.GetTable().SetEnterFn(s.showPods)
@@ -41,78 +39,22 @@ func NewService(gvr client.GVR) ResourceViewer {
 
 func (s *Service) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		ui.KeyShiftF:   ui.NewKeyAction("Port-Forward", s.portFwdCmd, true),
 		tcell.KeyCtrlB: ui.NewKeyAction("Bench Run/Stop", s.toggleBenchCmd, true),
 		ui.KeyShiftT:   ui.NewKeyAction("Sort Type", s.GetTable().SortColCmd(1, true), false),
 	})
 }
 
-func podFromSelector(f dao.Factory, ns string, sel map[string]string) (string, error) {
-	log.Debug().Msgf("Looking for pods %q:%v -- %v", ns, sel, labels.Set(sel).AsSelector())
-	oo, err := f.List("v1/pods", ns, true, labels.Set(sel).AsSelector())
+func (s *Service) showPods(a *App, _ ui.Tabular, gvr, path string) {
+	var res dao.Service
+	res.Init(a.factory, client.NewGVR(s.GVR()))
+
+	svc, err := res.GetInstance(path)
 	if err != nil {
-		return "", err
-	}
-
-	if len(oo) == 0 {
-		return "", fmt.Errorf("no matching pods for %v", sel)
-	}
-
-	var pod v1.Pod
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(oo[0].(*unstructured.Unstructured).Object, &pod)
-	if err != nil {
-		return "", err
-	}
-
-	return client.FQN(pod.Namespace, pod.Name), nil
-}
-
-func (s *Service) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
-	path := s.GetTable().GetSelectedItem()
-	if path == "" {
-		return evt
-	}
-
-	svc, err := fetchService(s.App().factory, s.GVR(), path)
-	if err != nil {
-		s.App().Flash().Err(err)
-		return nil
-	}
-
-	ns, _ := client.Namespaced(path)
-	pod, err := podFromSelector(s.App().factory, ns, svc.Spec.Selector)
-	if err != nil {
-		s.App().Flash().Err(err)
-		return nil
-	}
-
-	if err := showFwdDialog(s.App(), pod, s.portForward); err != nil {
-		s.App().Flash().Err(err)
-	}
-
-	return nil
-}
-
-func (s *Service) portForward(path, co string, t dao.Tunnel) {
-	pf := dao.NewPortForwarder(s.App().Conn())
-	fw, err := pf.Start(path, co, t)
-	if err != nil {
-		s.App().Flash().Err(err)
+		a.Flash().Err(err)
 		return
 	}
 
-	log.Debug().Msgf(">>> Starting port forward %q %#v", path, t)
-	go runForward(s.App(), pf, fw)
-}
-
-func (s *Service) showPods(app *App, _ ui.Tabular, gvr, path string) {
-	svc, err := fetchService(app.factory, gvr, path)
-	if err != nil {
-		app.Flash().Err(err)
-		return
-	}
-
-	showPodsWithLabels(app, path, svc.Spec.Selector)
+	showPodsWithLabels(a, path, svc.Spec.Selector)
 }
 
 func (s *Service) checkSvc(row int) error {
@@ -140,11 +82,6 @@ func (s *Service) getExternalPort(row int) (string, error) {
 	return tokens[1], nil
 }
 
-func (s *Service) reloadBenchCfg() error {
-	path := ui.BenchConfig(s.App().Config.K9s.CurrentCluster)
-	return s.App().Bench.Reload(path)
-}
-
 func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if s.bench != nil {
 		log.Debug().Msg(">>> Benchmark canceled!!")
@@ -159,12 +96,12 @@ func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	if err := s.reloadBenchCfg(); err != nil {
-		s.App().Flash().Err(err)
-		return nil
+	cust, err := config.NewBench(s.App().BenchFile)
+	if err != nil {
+		log.Debug().Msgf("No custom benchmark config file found")
 	}
 
-	cfg, ok := s.App().Bench.Benchmarks.Services[sel]
+	cfg, ok := cust.Benchmarks.Services[sel]
 	if !ok {
 		s.App().Flash().Errf("No bench config found for service %s", sel)
 		return nil
@@ -173,8 +110,8 @@ func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	log.Debug().Msgf("Benchmark config %#v", cfg)
 
 	row := s.GetTable().GetSelectedRowIndex()
-	if err := s.checkSvc(row); err != nil {
-		s.App().Flash().Err(err)
+	if e := s.checkSvc(row); e != nil {
+		s.App().Flash().Err(e)
 		return nil
 	}
 	port, err := s.getExternalPort(row)
@@ -226,18 +163,6 @@ func (s *Service) benchDone() {
 
 // ----------------------------------------------------------------------------
 // Helpers...
-
-func fetchService(f dao.Factory, gvr, path string) (*v1.Service, error) {
-	o, err := f.Get(gvr, path, true, labels.Everything())
-	if err != nil {
-		return nil, err
-	}
-
-	var svc v1.Service
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &svc)
-
-	return &svc, err
-}
 
 func benchTimedOut(app *App) {
 	<-time.After(2 * time.Second)

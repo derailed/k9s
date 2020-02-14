@@ -21,6 +21,7 @@ var (
 	_ Loggable    = (*StatefulSet)(nil)
 	_ Restartable = (*StatefulSet)(nil)
 	_ Scalable    = (*StatefulSet)(nil)
+	_ Controller  = (*StatefulSet)(nil)
 )
 
 // StatefulSet represents a K8s sts.
@@ -51,12 +52,7 @@ func (s *StatefulSet) Scale(path string, replicas int32) error {
 
 // Restart a StatefulSet rollout.
 func (s *StatefulSet) Restart(path string) error {
-	o, err := s.Factory.Get(s.gvr.String(), path, true, labels.Everything())
-	if err != nil {
-		return err
-	}
-	var ds appsv1.StatefulSet
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &ds)
+	sts, err := s.getStatefulSet(path)
 	if err != nil {
 		return err
 	}
@@ -70,24 +66,18 @@ func (s *StatefulSet) Restart(path string) error {
 		return fmt.Errorf("user is not authorized to update statefulsets")
 	}
 
-	update, err := polymorphichelpers.ObjectRestarterFn(&ds)
+	update, err := polymorphichelpers.ObjectRestarterFn(sts)
 	if err != nil {
 		return err
 	}
-	_, err = s.Client().DialOrDie().AppsV1().StatefulSets(ds.Namespace).Patch(ds.Name, types.StrategicMergePatchType, update)
 
+	_, err = s.Client().DialOrDie().AppsV1().StatefulSets(sts.Namespace).Patch(sts.Name, types.StrategicMergePatchType, update)
 	return err
 }
 
 // TailLogs tail logs for all pods represented by this StatefulSet.
 func (s *StatefulSet) TailLogs(ctx context.Context, c chan<- []byte, opts LogOptions) error {
-	o, err := s.Factory.Get(s.gvr.String(), opts.Path, true, labels.Everything())
-	if err != nil {
-		return err
-	}
-
-	var sts appsv1.StatefulSet
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &sts)
+	sts, err := s.getStatefulSet(opts.Path)
 	if err != nil {
 		return errors.New("expecting StatefulSet resource")
 	}
@@ -96,4 +86,29 @@ func (s *StatefulSet) TailLogs(ctx context.Context, c chan<- []byte, opts LogOpt
 	}
 
 	return podLogs(ctx, c, sts.Spec.Selector.MatchLabels, opts)
+}
+
+// Pod returns a pod victim by name.
+func (s *StatefulSet) Pod(fqn string) (string, error) {
+	sts, err := s.getStatefulSet(fqn)
+	if err != nil {
+		return "", err
+	}
+
+	return podFromSelector(s.Factory, sts.Namespace, sts.Spec.Selector.MatchLabels)
+}
+
+func (s *StatefulSet) getStatefulSet(fqn string) (*appsv1.StatefulSet, error) {
+	o, err := s.Factory.Get(s.gvr.String(), fqn, false, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	var sts appsv1.StatefulSet
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &sts)
+	if err != nil {
+		return nil, errors.New("expecting Service resource")
+	}
+
+	return &sts, nil
 }

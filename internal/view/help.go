@@ -235,11 +235,11 @@ func (h *Help) showGeneral() model.MenuHints {
 			Description: "Clear command",
 		},
 		{
-			Mnemonic:    "Ctrl-h",
+			Mnemonic:    "t",
 			Description: "Toggle Header",
 		},
 		{
-			Mnemonic:    ":q",
+			Mnemonic:    "q",
 			Description: "Quit",
 		},
 		{

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -12,11 +11,9 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/fatih/color"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -30,7 +27,11 @@ type Pod struct {
 
 // NewPod returns a new viewer.
 func NewPod(gvr client.GVR) ResourceViewer {
-	p := Pod{ResourceViewer: NewLogsExtender(NewBrowser(gvr), nil)}
+	p := Pod{
+		ResourceViewer: NewPortForwardExtender(
+			NewLogsExtender(NewBrowser(gvr), nil),
+		),
+	}
 	p.SetBindKeysFn(p.bindKeys)
 	p.GetTable().SetEnterFn(p.showContainers)
 	p.GetTable().SetColorerFn(render.Pod{}.ColorerFunc())
@@ -51,7 +52,6 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 	}
 
 	aa.Add(ui.KeyActions{
-		ui.KeyShiftF:   ui.NewKeyAction("Port-Forward", p.portFwdCmd, true),
 		ui.KeyShiftR:   ui.NewKeyAction("Sort Ready", p.GetTable().SortColCmd(1, true), false),
 		ui.KeyShiftS:   ui.NewKeyAction("Sort Status", p.GetTable().SortColCmd(2, true), false),
 		ui.KeyShiftT:   ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd(3, false), false),
@@ -130,56 +130,8 @@ func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (p *Pod) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
-	path := p.GetTable().GetSelectedItem()
-	if path == "" {
-		return evt
-	}
-
-	if err := showFwdDialog(p.App(), path, p.portForward); err != nil {
-		p.App().Flash().Err(err)
-	}
-
-	return nil
-}
-
-func (p *Pod) portForward(path, co string, t dao.Tunnel) {
-	pf := dao.NewPortForwarder(p.App().Conn())
-	fw, err := pf.Start(path, co, t)
-	if err != nil {
-		p.App().Flash().Err(err)
-		return
-	}
-
-	log.Debug().Msgf(">>> Starting port forward %q:%s %v", path, co, t)
-	go runForward(p.App(), pf, fw)
-}
-
 // ----------------------------------------------------------------------------
 // Helpers...
-
-func showFwdDialog(a *App, path string, cb dialog.PortForwardFunc) error {
-	mm, err := fetchPodPorts(a.factory, path)
-	if err != nil {
-		return nil
-	}
-	ports := make([]string, 0, len(mm))
-	for co, pp := range mm {
-		for _, p := range pp {
-			if p.Protocol != v1.ProtocolTCP {
-				continue
-			}
-			ports = append(ports, client.FQN(co, p.Name)+":"+strconv.Itoa(int(p.ContainerPort)))
-		}
-	}
-
-	if len(ports) == 0 {
-		return fmt.Errorf("no tcp ports found on %s", path)
-	}
-	dialog.ShowPortForwards(a.Content.Pages, a.Styles, path, ports, cb)
-
-	return nil
-}
 
 func containerShellin(a *App, comp model.Component, path, co string) error {
 	if co != "" {
@@ -264,25 +216,4 @@ func fetchContainers(f *watch.Factory, path string, includeInit bool) ([]string,
 	}
 
 	return nn, nil
-}
-
-func fetchPodPorts(f *watch.Factory, path string) (map[string][]v1.ContainerPort, error) {
-	log.Debug().Msgf("Fetching ports on pod %q", path)
-	o, err := f.Get("v1/pods", path, false, labels.Everything())
-	if err != nil {
-		return nil, err
-	}
-
-	var pod v1.Pod
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod)
-	if err != nil {
-		return nil, err
-	}
-
-	pp := make(map[string][]v1.ContainerPort)
-	for _, co := range pod.Spec.Containers {
-		pp[co.Name] = co.Ports
-	}
-
-	return pp, nil
 }

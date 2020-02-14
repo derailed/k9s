@@ -105,3 +105,15 @@ func (s *Bench) load(path string) error {
 
 	return yaml.Unmarshal(f, &s)
 }
+
+// DefaultBenchSpec returns a default bench spec.
+func DefaultBenchSpec() BenchConfig {
+	return BenchConfig{
+		C: DefaultC,
+		N: DefaultN,
+		HTTP: HTTP{
+			Method: DefaultMethod,
+			Path:   "/",
+		},
+	}
+}

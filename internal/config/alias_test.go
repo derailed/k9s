@@ -72,7 +72,7 @@ func TestAliasDefine(t *testing.T) {
 func TestAliasesLoad(t *testing.T) {
 	a := config.NewAliases()
 
-	assert.Nil(t, a.LoadAliases("test_assets/alias.yml"))
+	assert.Nil(t, a.LoadAliases("testdata/alias.yml"))
 	assert.Equal(t, 2, len(a.Alias))
 }
 

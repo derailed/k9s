@@ -3,13 +3,10 @@ package view
 import (
 	"context"
 	"fmt"
-	"regexp"
-	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/render"
@@ -44,7 +41,7 @@ func NewPortForward(gvr client.GVR) ResourceViewer {
 }
 
 func (p *PortForward) portForwardContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, internal.KeyBenchCfg, p.App().Bench)
+	return context.WithValue(ctx, internal.KeyBenchCfg, p.App().BenchFile)
 }
 
 func (p *PortForward) bindKeys(aa ui.KeyActions) {
@@ -65,8 +62,6 @@ func (p *PortForward) showBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-var podNameRX = regexp.MustCompile(`\A(.+)\-(\w{10})\-(\w{5})\z`)
-
 func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if p.bench != nil {
 		p.App().Status(ui.FlashErr, "Benchmark Canceled!")
@@ -79,46 +74,28 @@ func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path == "" {
 		return nil
 	}
-	tokens := strings.Split(path, ":")
-	ns, po := client.Namespaced(tokens[0])
-	sections := podNameRX.FindStringSubmatch(po)
-	log.Debug().Msgf("SECTIONS %q::%q--%#v", ns, po, sections)
-	if len(sections) >= 1 {
-		po = sections[1]
-	}
-	key := client.FQN(ns, po) + ":" + tokens[1]
-
-	cfg := defaultConfig()
-	if defaults := p.App().Bench.Benchmarks.Defaults; !defaults.Empty() {
-		cfg.C, cfg.N = defaults.C, defaults.N
-	}
-
-	log.Debug().Msgf("CUST-CFG %q -- %#v", path, key)
-	if b, ok := p.App().Bench.Benchmarks.Containers[key]; ok {
-		log.Debug().Msgf("FOUND CUST BENCH_CFG!")
-		cfg = b
-	}
+	cfg := dao.BenchConfigFor(p.App().BenchFile, path)
 	cfg.Name = path
-
-	log.Debug().Msgf("BenchCFG %q::%#v", path, cfg)
 
 	r, _ := p.GetTable().GetSelection()
 	base := ui.TrimCell(p.GetTable().SelectTable, r, 4)
 	var err error
-	if p.bench, err = perf.NewBenchmark(base, p.App().version, cfg); err != nil {
+	p.bench, err = perf.NewBenchmark(base, p.App().version, cfg)
+	if err != nil {
 		p.App().Flash().Errf("Bench failed %v", err)
 		p.App().ClearStatus(false)
 		return nil
 	}
 
 	p.App().Status(ui.FlashWarn, "Benchmark in progress...")
-	log.Debug().Msg("Bench starting...")
 	go p.runBenchmark()
 
 	return nil
 }
 
 func (p *PortForward) runBenchmark() {
+	log.Debug().Msg("Bench starting...")
+
 	p.bench.Run(p.App().Config.K9s.CurrentCluster, func() {
 		log.Debug().Msg("Bench Completed!")
 		p.App().QueueUpdate(func() {
@@ -147,7 +124,6 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path == "" {
 		return nil
 	}
-	log.Debug().Msgf("PF DELETE %q", path)
 
 	showModal(p.App().Content.Pages, fmt.Sprintf("Delete PortForward `%s?", path), func() {
 		var pf dao.PortForward
@@ -165,17 +141,6 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 // ----------------------------------------------------------------------------
 // Helpers...
-
-func defaultConfig() config.BenchConfig {
-	return config.BenchConfig{
-		C: config.DefaultC,
-		N: config.DefaultN,
-		HTTP: config.HTTP{
-			Method: config.DefaultMethod,
-			Path:   "/",
-		},
-	}
-}
 
 func showModal(p *ui.Pages, msg string, ok func()) {
 	m := tview.NewModal().

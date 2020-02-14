@@ -1,0 +1,19 @@
+benchmarks:
+  defaults:
+    concurrency: 2
+    requests: 500
+  containers:
+    default/nginx:nginx:
+      concurrency: 2
+      requests: 3000
+      http:
+        method: GET
+        path: /
+  services:
+    default/nginx:
+      concurrency: 1
+      requests: 666
+      http:
+        method: GET
+        host: 192.168.64.1
+        path: /

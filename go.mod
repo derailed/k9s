@@ -29,6 +29,7 @@ replace (
 
 require (
 	fyne.io/fyne v1.2.2 // indirect
+	github.com/GeertJohan/gomatrix v0.0.0-20190924221747-74328b69a02f // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/alexellis/go-execute v0.0.0-20200124154445-8697e4e28c5e // indirect
 	github.com/alexellis/hmac v0.0.0-20180624211220-5c52ab81c0de // indirect

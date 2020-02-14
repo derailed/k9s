@@ -27,9 +27,10 @@ import (
 const defaultTimeout = 1 * time.Second
 
 var (
-	_ Accessor = (*Pod)(nil)
-	_ Nuker    = (*Pod)(nil)
-	_ Loggable = (*Pod)(nil)
+	_ Accessor   = (*Pod)(nil)
+	_ Nuker      = (*Pod)(nil)
+	_ Loggable   = (*Pod)(nil)
+	_ Controller = (*Pod)(nil)
 )
 
 // Pod represents a pod resource.
@@ -122,13 +123,7 @@ func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, er
 
 // Containers returns all container names on pod
 func (p *Pod) Containers(path string, includeInit bool) ([]string, error) {
-	o, err := p.Factory.Get(p.gvr.String(), path, true, labels.Everything())
-	if err != nil {
-		return nil, err
-	}
-
-	var pod v1.Pod
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod)
+	pod, err := p.GetInstance(path)
 	if err != nil {
 		return nil, err
 	}
@@ -145,6 +140,27 @@ func (p *Pod) Containers(path string, includeInit bool) ([]string, error) {
 	}
 
 	return cc, nil
+}
+
+// Pod returns a pod victim by name.
+func (p *Pod) Pod(fqn string) (string, error) {
+	return fqn, nil
+}
+
+// GetInstance returns a pod instance.
+func (p *Pod) GetInstance(fqn string) (*v1.Pod, error) {
+	o, err := p.Factory.Get(p.gvr.String(), fqn, false, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	var pod v1.Pod
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pod, nil
 }
 
 // TailLogs tails a given container logs

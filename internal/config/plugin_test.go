@@ -9,7 +9,7 @@ import (
 
 func TestPluginLoad(t *testing.T) {
 	p := config.NewPlugins()
-	assert.Nil(t, p.LoadPlugins("test_assets/plugin.yml"))
+	assert.Nil(t, p.LoadPlugins("testdata/plugin.yml"))
 
 	assert.Equal(t, 1, len(p.Plugin))
 	k, ok := p.Plugin["blah"]

@@ -91,6 +91,12 @@ type Scalable interface {
 	Scale(path string, replicas int32) error
 }
 
+// Controller represents a pod controller.
+type Controller interface {
+	// Pod returns a pod instance matching the selector.
+	Pod(path string) (string, error)
+}
+
 // Nuker represents a resource deleter.
 type Nuker interface {
 	// Delete removes a resource from the api server.

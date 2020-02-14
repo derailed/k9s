@@ -6,13 +6,10 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
-	"k8s.io/client-go/tools/portforward"
 )
 
 const (
@@ -114,21 +111,9 @@ func (c *Container) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 	log.Debug().Msgf("CONTAINER-PORTS %#v", ports)
-	dialog.ShowPortForwards(c.App().Content.Pages, c.App().Styles, c.GetTable().Path, ports, c.portForward)
+	ShowPortForwards(c, c.GetTable().Path, ports, startFwdCB)
 
 	return nil
-}
-
-func (c *Container) portForward(path, co string, t dao.Tunnel) {
-	pf := dao.NewPortForwarder(c.App().Conn())
-	fw, err := pf.Start(path, co, t)
-	if err != nil {
-		c.App().Flash().Err(err)
-		return
-	}
-
-	log.Debug().Msgf(">>> Starting port forward %q %#v", path, t)
-	go runForward(c.App(), pf, fw)
 }
 
 func (c *Container) isForwardable(path string) ([]string, bool) {
@@ -154,25 +139,4 @@ func (c *Container) isForwardable(path string) ([]string, bool) {
 	}
 
 	return pp, true
-}
-
-// ----------------------------------------------------------------------------
-// Helpers...
-
-func runForward(a *App, pf *dao.PortForwarder, f *portforward.PortForwarder) {
-	a.QueueUpdateDraw(func() {
-		a.factory.AddForwarder(pf)
-		a.Flash().Infof("PortForward activated %s:%s", pf.Path(), pf.Ports()[0])
-		dialog.DismissPortForwards(a.Content.Pages)
-	})
-
-	pf.SetActive(true)
-	if err := f.ForwardPorts(); err != nil {
-		a.Flash().Err(err)
-		return
-	}
-	a.QueueUpdateDraw(func() {
-		a.factory.DeleteForwarder(pf.FQN())
-		pf.SetActive(false)
-	})
 }

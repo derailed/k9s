@@ -145,7 +145,6 @@ func (b *Browser) TableDataChanged(data render.TableData) {
 	b.app.QueueUpdateDraw(func() {
 		b.refreshActions()
 		b.Update(data)
-		b.App().ClearStatus(false)
 	})
 }
 
