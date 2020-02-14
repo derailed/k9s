@@ -33,7 +33,7 @@ func (o *OpenFaas) bindKeys(aa ui.KeyActions) {
 }
 
 func (o *OpenFaas) showPods(a *App, _ ui.Tabular, _, path string) {
-	labels := o.GetTable().GetSelectedCell(4)
+	labels := o.GetTable().GetSelectedCell(o.GetTable().NameColIndex() + 3)
 	sels := make(map[string]string)
 
 	tokens := strings.Split(labels, ",")
