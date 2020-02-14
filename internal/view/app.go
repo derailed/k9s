@@ -114,7 +114,7 @@ func (a *App) Init(version string, rate int) error {
 
 func (a *App) bindKeys() {
 	a.AddActions(ui.KeyActions{
-		tcell.KeyCtrlH: ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
+		ui.KeyT:        ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
 		ui.KeyHelp:     ui.NewSharedKeyAction("Help", a.helpCmd, false),
 		tcell.KeyCtrlA: ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
