@@ -8,6 +8,7 @@ import (
 	"github.com/derailed/tview"
 )
 
+// PortForwardFunc represents a port-forward callback function.
 type PortForwardFunc func(path, address, lport, cport string)
 
 // ShowPortForwards pops a port forwarding configuration dialog.
@@ -56,7 +57,7 @@ func ShowPortForwards(p *ui.Pages, s *config.Styles, path string, ports []string
 	p.ShowPage(portForwardKey)
 }
 
-// DismissPortForward dismiss the port forward dialog.
+// DismissPortForwards dismiss the port forward dialog.
 func DismissPortForwards(p *ui.Pages) {
 	p.RemovePage(portForwardKey)
 }

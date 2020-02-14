@@ -55,7 +55,7 @@ func getOpenFAASFlags() (string, string, bool) {
 	return gw, token, tlsInsecure
 }
 
-// List returns a collection of functions
+// Get returns a function by name.
 func (f *OpenFaas) Get(ctx context.Context, path string) (runtime.Object, error) {
 	ns, n := client.Namespaced(path)
 
@@ -83,7 +83,7 @@ func (f *OpenFaas) Get(ctx context.Context, path string) (runtime.Object, error)
 	return found, nil
 }
 
-// List returns a collection of functions
+// List returns a collection of functions.
 func (f *OpenFaas) List(_ context.Context, ns string) ([]runtime.Object, error) {
 	if !IsOpenFaasEnabled() {
 		return nil, errors.New("OpenFAAS is not enabled on this cluster")
@@ -103,6 +103,7 @@ func (f *OpenFaas) List(_ context.Context, ns string) ([]runtime.Object, error) 
 	return oo, nil
 }
 
+// Delete removes a function.
 func (f *OpenFaas) Delete(path string, _, _ bool) error {
 	gw, token, tls := getOpenFAASFlags()
 	ns, n := client.Namespaced(path)
@@ -111,10 +112,12 @@ func (f *OpenFaas) Delete(path string, _, _ bool) error {
 	return deleteFunctionToken(gw, n, tls, token, ns)
 }
 
+// ToYAML dumps a function to yaml.
 func (f *OpenFaas) ToYAML(path string) (string, error) {
 	return f.Describe(path)
 }
 
+// Describe describes a function.
 func (f *OpenFaas) Describe(path string) (string, error) {
 	o, err := f.Get(context.Background(), path)
 	if err != nil {
