@@ -226,7 +226,7 @@ Entering the command mode and typing a resource name or alias, could be cumberso
           command:     dp
         # Hitting Shift-2 navigates to your xray deployments
         shift-2:
-          shortCut:    Shift-4
+          shortCut:    Shift-2
           description: Xray Deployments
           command:     xray deploy
       ```
