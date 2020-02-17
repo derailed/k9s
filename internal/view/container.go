@@ -103,7 +103,7 @@ func (c *Container) attachCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	c.Stop()
 	defer c.Start()
-	attachIn(c.App(), c.GetTable().Path)
+	attachIn(c.App(), c.GetTable().Path, sel)
 
 	return nil
 }

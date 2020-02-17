@@ -296,28 +296,32 @@ func (x *Xray) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (x *Xray) attachCmd(evt *tcell.EventKey) *tcell.EventKey {
-	ref := x.selectedSpec()
-	if ref == nil {
+	
+	spec := x.selectedSpec()
+	if spec == nil {
 		return nil
 	}
 
-	if ref.Status != "" {
-		x.app.Flash().Errf("%s is not in a running state", ref.Path)
+	if spec.Status() != "ok" {
+		x.app.Flash().Errf("%s is not in a running state", spec.Path())
 		return nil
 	}
 
-	if ref.Parent != nil {
-		x.attachIn(ref.Parent.Path)
-	} else {
-		log.Error().Msgf("No parent found on container node %q", ref.Path)
+	path, co := spec.Path(), ""
+	if spec.GVR() == "containers" {
+		path = *spec.ParentPath()
+	}
+
+	if err := containerAttachIn(x.app, x, path, co); err != nil {
+		x.app.Flash().Err(err)
 	}
 
 	return nil
 }
 
-func (x *Xray) attachIn(path string) {
+func (x *Xray) attachIn(path, co string) {
 	x.Stop()
-	attachIn(x.app, path)
+	attachIn(x.app, path, co)
 	x.Start()
 }
 
