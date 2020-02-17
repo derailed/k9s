@@ -159,13 +159,13 @@ func (p *Pod) attachCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	if len(cc) == 1 {
-		p.attachIn(sel, "")
+		p.attachIn(sel)
 		return nil
 	}
 	picker := NewPicker()
 	picker.populate(cc)
 	picker.SetSelectedFunc(func(i int, t, d string, r rune) {
-		p.attachIn(sel, t)
+		p.attachIn(sel)
 	})
 	if err := p.App().inject(picker); err != nil {
 		p.App().Flash().Err(err)
@@ -180,9 +180,9 @@ func (p *Pod) shellIn(path, co string) {
 	p.Start()
 }
 
-func (p *Pod) attachIn(path, co string) {
+func (p *Pod) attachIn(path string) {
 	p.Stop()
-	attachIn(p.App(), path, co)
+	attachIn(p.App(), path)
 	p.Start()
 }
 
@@ -221,7 +221,7 @@ func shellIn(a *App, path, co string) {
 	}
 }
 
-func attachIn(a *App, path, co string) {
+func attachIn(a *App, path string) {
 	args := computeAttachArgs(path, a.Config.K9s.CurrentContext, a.Conn().Config().Flags().KubeConfig)
 	log.Debug().Msgf("Attach args %v", args)
 	if !runK(true, a, args...) {

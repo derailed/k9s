@@ -269,8 +269,7 @@ func (x *Xray) attachCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if ref.Parent != nil {
-		_, co := client.Namespaced(ref.Path)
-		x.attachIn(ref.Parent.Path, co)
+		x.attachIn(ref.Parent.Path)
 	} else {
 		log.Error().Msgf("No parent found on container node %q", ref.Path)
 	}
@@ -278,9 +277,9 @@ func (x *Xray) attachCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (x *Xray) attachIn(path, co string) {
+func (x *Xray) attachIn(path string) {
 	x.Stop()
-	attachIn(x.app, path, co)
+	attachIn(x.app, path)
 	x.Start()
 }
 
