@@ -151,7 +151,7 @@ func Truncate(str string, width int) string {
 
 func mapToStr(m map[string]string) (s string) {
 	if len(m) == 0 {
-		return MissingValue
+		return ""
 	}
 
 	kk := make([]string, 0, len(m))

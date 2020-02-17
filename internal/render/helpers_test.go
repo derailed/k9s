@@ -305,7 +305,7 @@ func TestMapToStr(t *testing.T) {
 		e string
 	}{
 		{map[string]string{"blee": "duh", "aa": "bb"}, "aa=bb,blee=duh"},
-		{map[string]string{}, MissingValue},
+		{map[string]string{}, ""},
 	}
 	for _, u := range uu {
 		assert.Equal(t, u.e, mapToStr(u.i))

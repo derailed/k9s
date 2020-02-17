@@ -47,19 +47,26 @@ func colorize(c color.Paint, txt string) string {
 }
 
 // DecorateLog add a log header to display po/co information along with the log message.
-func (o LogOptions) DecorateLog(msg string) string {
-	_, n := client.Namespaced(o.Path)
-	if msg == "" {
-		return msg
+func (o LogOptions) DecorateLog(bytes []byte) []byte {
+	if len(bytes) == 0 {
+		return bytes
 	}
 
+	bytes = bytes[:len(bytes)-1]
+	_, n := client.Namespaced(o.Path)
+
+	var prefix []byte
 	if o.MultiPods {
-		return colorize(o.Color, n+":"+o.Container+" ") + msg
+		prefix = []byte(colorize(o.Color, n+":"+o.Container+" "))
 	}
 
 	if !o.SingleContainer {
-		return colorize(o.Color, o.Container+" ") + msg
+		prefix = []byte(colorize(o.Color, o.Container+" "))
 	}
 
-	return msg
+	if len(prefix) == 0 {
+		return bytes
+	}
+
+	return append(prefix, bytes...)
 }

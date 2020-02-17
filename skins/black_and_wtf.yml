@@ -1,56 +1,70 @@
+# Styles...
+fg: &fg "white"
+bg: &bg "black"
+mark: &mark "darkgoldenrod"
+active: &active "dimgray"
+text: &text "navajowhite"
+white: &white "whitesmoke"
+ghost: &ghost "ghostwhite"
+dslate: &dslate "darkslategray"
+err: &err "pink"
+slate: &slate "slategray"
+gray: &gray "gray"
+
+# Skin
 k9s:
   body:
-    fgColor: white
-    bgColor: black
-    logoColor: white
+    fgColor: *fg
+    bgColor: *bg
+    logoColor: *fg
   info:
-    fgColor: navajowhite
-    sectionColor: white
+    fgColor: *text
+    sectionColor: *fg
   frame:
     border:
-      fgColor: white
-      focusColor: white
+      fgColor: *fg
+      focusColor: *fg
     menu:
-      fgColor: white
-      keyColor: white
-      numKeyColor: navajowhite
+      fgColor: *fg
+      keyColor: *fg
+      numKeyColor: *text
     crumbs:
-      fgColor: black
-      bgColor: navajowhite
-      activeColor: whitesmoke
+      fgColor: *fg
+      bgColor: *bg
+      activeColor: *active
     status:
-      newColor: ghostwhite
-      modifyColor: navajowhite
-      addColor: darkslategray
-      errorColor: whitesmoke
-      highlightcolor: dimgray
-      killColor: slategray
-      completedColor: gray
+      newColor: *white
+      modifyColor: *text
+      addColor: *ghost
+      errorColor: *err
+      highlightcolor: *dslate
+      killColor: *slate
+      completedColor: *gray
     title:
-      fgColor: ghostwhite
-      highlightColor: navajowhite
-      counterColor: navajowhite
-      filterColor: slategray
+      fgColor: *fg
+      highlightColor: *active
+      counterColor: *text
+      filterColor: *slate
   table:
-    fgColor: white
-    bgColor: black
-    cursorColor: white
-    markColor: darkgoldenrod
+    fgColor: *fg
+    bgColor: *bg
+    cursorColor: *fg
+    markColor: *mark
     header:
-      fgColor: darkgray
-      bgColor: black
-      sorterColor: white
+      fgColor: *dslate
+      bgColor: *bg
+      sorterColor: *fg
   xray:
-    fgColor: white
-    bgColor: black
-    cursorColor: whitesmoke
+    fgColor: *fg
+    bgColor: *bg
+    cursorColor: *ghost
     graphicColor: gray
     showIcons: false
   views:
     yaml:
-      keyColor: ghostwhite
-      colorColor: slategray
-      valueColor: navajowhite
+      keyColor: *ghost
+      colorColor: *slate
+      valueColor: *text
     logs:
-      fgColor: ghostwhite
-      bgColor: black
+      fgColor: *ghost
+      bgColor: *bg

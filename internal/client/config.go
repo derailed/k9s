@@ -48,6 +48,10 @@ func (c *Config) SwitchContext(name string) error {
 		return err
 	}
 
+	if _, err := c.GetContext(name); err != nil {
+		return fmt.Errorf("context %s does not exist", name)
+	}
+
 	if currentCtx != name {
 		c.reset()
 		c.flags.Context, c.currentContext = &name, name

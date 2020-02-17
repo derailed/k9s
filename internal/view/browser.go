@@ -93,7 +93,6 @@ func (b *Browser) SetInstance(path string) {
 func (b *Browser) Start() {
 	b.Stop()
 
-	log.Debug().Msgf("BROWSER started!")
 	b.Table.Start()
 	ctx := b.defaultContext()
 	ctx, b.cancelFn = context.WithCancel(ctx)
@@ -111,7 +110,6 @@ func (b *Browser) Stop() {
 	if b.cancelFn == nil {
 		return
 	}
-	log.Debug().Msgf("BROWSER Stopped!")
 	b.Table.Stop()
 	b.cancelFn()
 	b.cancelFn = nil
@@ -147,7 +145,6 @@ func (b *Browser) TableDataChanged(data render.TableData) {
 	b.app.QueueUpdateDraw(func() {
 		b.refreshActions()
 		b.Update(data)
-		b.App().ClearStatus(false)
 	})
 }
 
@@ -175,7 +172,7 @@ func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails(b.app, "YAML", path).Update(raw)
+	details := NewDetails(b.app, "YAML", path, true).Update(raw)
 	if err := b.App().inject(details); err != nil {
 		b.App().Flash().Err(err)
 	}
@@ -292,7 +289,7 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		if cfg := b.app.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
 			args = append(args, "--kubeconfig", *cfg)
 		}
-		if !runK(true, b.app, append(args, n)...) {
+		if !runK(b.app, shellOpts{clear: true, args: append(args, n)}) {
 			b.app.Flash().Err(errors.New("Edit exec failed"))
 		}
 	}
@@ -310,6 +307,9 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	auth, err := b.App().factory.Client().CanI(ns, b.GVR(), client.MonitorAccess)
 	if !auth {
+		if err == nil {
+			err = fmt.Errorf("current user can't access namespace %s", ns)
+		}
 		b.App().Flash().Err(err)
 		return nil
 	}
@@ -370,7 +370,6 @@ func (b *Browser) refreshActions() {
 
 	if b.app.ConOK() {
 		b.namespaceActions(aa)
-
 		if !b.app.Config.K9s.GetReadOnly() {
 			if client.Can(b.meta.Verbs, "edit") {
 				aa[ui.KeyE] = ui.NewKeyAction("Edit", b.editCmd, true)

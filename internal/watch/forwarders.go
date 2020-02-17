@@ -3,14 +3,15 @@ package watch
 import (
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	"k8s.io/client-go/tools/portforward"
 )
 
 // Forwarder represents a port forwarder.
 type Forwarder interface {
-	// Start initializes a port forward.
-	Start(path, co, address string, ports []string) (*portforward.PortForwarder, error)
+	// Start starts a port-forward.
+	Start(path, co string, t client.PortTunnel) (*portforward.PortForwarder, error)
 
 	// Stop terminates a port forward.
 	Stop()
@@ -24,11 +25,20 @@ type Forwarder interface {
 	// Ports returns container exposed ports.
 	Ports() []string
 
+	// FQN returns the full port-forward name.
+	FQN() string
+
 	// Active returns forwarder current state.
 	Active() bool
 
+	// SetActive sets port-forward state.
+	SetActive(bool)
+
 	// Age returns forwarder age.
 	Age() string
+
+	// HasPortMapping returns true if port mapping exists.
+	HasPortMapping(string) bool
 }
 
 // Forwarders tracks active port forwards.

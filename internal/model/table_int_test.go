@@ -69,12 +69,6 @@ func TestTableMeta(t *testing.T) {
 		accessor dao.Accessor
 		renderer Renderer
 	}{
-		// BOZO!!
-		// "full": {
-		// 	gvr:      "v1/pods",
-		// 	accessor: &pd,
-		// 	renderer: &render.Pod{},
-		// },
 		"generic": {
 			gvr:      "containers",
 			accessor: &dao.Container{},
@@ -144,7 +138,7 @@ func TestTableGenericHydrate(t *testing.T) {
 // Helpers...
 
 func mustLoad(n string) *unstructured.Unstructured {
-	raw, err := ioutil.ReadFile(fmt.Sprintf("test_assets/%s.json", n))
+	raw, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", n))
 	if err != nil {
 		panic(err)
 	}
@@ -156,7 +150,7 @@ func mustLoad(n string) *unstructured.Unstructured {
 }
 
 func load(t *testing.T, n string) *unstructured.Unstructured {
-	raw, err := ioutil.ReadFile(fmt.Sprintf("test_assets/%s.json", n))
+	raw, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", n))
 	assert.Nil(t, err)
 	var o unstructured.Unstructured
 	err = json.Unmarshal(raw, &o)
@@ -165,7 +159,7 @@ func load(t *testing.T, n string) *unstructured.Unstructured {
 }
 
 func raw(t *testing.T, n string) []byte {
-	raw, err := ioutil.ReadFile(fmt.Sprintf("test_assets/%s.json", n))
+	raw, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", n))
 	assert.Nil(t, err)
 	return raw
 }

@@ -64,6 +64,8 @@ func (b *Benchmark) init(base, version string) error {
 	}
 	req.Header.Set("User-Agent", ua)
 
+	log.Debug().Msgf("Benching %d:%d", b.config.N, b.config.C)
+
 	b.worker = &requester.Work{
 		Request:     req,
 		RequestBody: []byte(b.config.HTTP.Body),

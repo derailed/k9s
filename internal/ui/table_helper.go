@@ -14,6 +14,9 @@ import (
 )
 
 const (
+	// DefaultColorName indicator to keep term colors.
+	DefaultColorName = "default"
+
 	// SearchFmt represents a filter view title.
 	SearchFmt = "<[filter:bg:r]/%s[fg:bg:-]> "
 
@@ -81,12 +84,16 @@ func TrimLabelSelector(s string) string {
 
 // SkinTitle decorates a title.
 func SkinTitle(fmat string, style config.Frame) string {
-	fmat = strings.Replace(fmat, "[fg:bg", "["+style.Title.FgColor+":"+style.Title.BgColor, -1)
+	bgColor := style.Title.BgColor
+	if bgColor == "default" {
+		bgColor = "-"
+	}
+	fmat = strings.Replace(fmat, "[fg:bg", "["+style.Title.FgColor+":"+bgColor, -1)
 	fmat = strings.Replace(fmat, "[hilite", "["+style.Title.HighlightColor, 1)
 	fmat = strings.Replace(fmat, "[key", "["+style.Menu.NumKeyColor, 1)
 	fmat = strings.Replace(fmat, "[filter", "["+style.Title.FilterColor, 1)
 	fmat = strings.Replace(fmat, "[count", "["+style.Title.CounterColor, 1)
-	fmat = strings.Replace(fmat, ":bg:", ":"+style.Title.BgColor+":", -1)
+	fmat = strings.Replace(fmat, ":bg:", ":"+bgColor+":", -1)
 
 	return fmat
 }

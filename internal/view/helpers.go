@@ -16,39 +16,44 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func defaultK9sEnv(app *App, sel string, row render.Row) K9sEnv {
-	ns, n := client.Namespaced(sel)
-	ctx, err := app.Conn().Config().CurrentContextName()
+func generalEnv(a *App) K9sEnv {
+	ctx, err := a.Conn().Config().CurrentContextName()
 	if err != nil {
 		ctx = render.NAValue
 	}
-	cluster, err := app.Conn().Config().CurrentClusterName()
+	cluster, err := a.Conn().Config().CurrentClusterName()
 	if err != nil {
 		cluster = render.NAValue
 	}
-	user, err := app.Conn().Config().CurrentUserName()
+	user, err := a.Conn().Config().CurrentUserName()
 	if err != nil {
 		user = render.NAValue
 	}
-	groups, err := app.Conn().Config().CurrentGroupNames()
+	groups, err := a.Conn().Config().CurrentGroupNames()
 	if err != nil {
 		groups = []string{render.NAValue}
 	}
+
 	var cfg string
-	kcfg := app.Conn().Config().Flags().KubeConfig
+	kcfg := a.Conn().Config().Flags().KubeConfig
 	if kcfg != nil && *kcfg != "" {
 		cfg = *kcfg
 	}
 
-	env := K9sEnv{
-		"NAMESPACE":  ns,
-		"NAME":       n,
+	return K9sEnv{
 		"CONTEXT":    ctx,
 		"CLUSTER":    cluster,
 		"USER":       user,
 		"GROUPS":     strings.Join(groups, ","),
 		"KUBECONFIG": cfg,
 	}
+}
+
+func defaultK9sEnv(a *App, sel string, row render.Row) K9sEnv {
+	ns, n := client.Namespaced(sel)
+
+	env := generalEnv(a)
+	env["NAMESPACE"], env["NAME"] = ns, n
 
 	for i, r := range row.Fields {
 		env["COL"+strconv.Itoa(i)] = r
@@ -67,7 +72,7 @@ func describeResource(app *App, model ui.Tabular, gvr, path string) {
 		return
 	}
 
-	details := NewDetails(app, "Describe", path).Update(yaml)
+	details := NewDetails(app, "Describe", path, true).Update(yaml)
 	if err := app.inject(details); err != nil {
 		app.Flash().Err(err)
 	}

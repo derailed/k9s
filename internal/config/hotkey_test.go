@@ -9,7 +9,7 @@ import (
 
 func TestHotKeyLoad(t *testing.T) {
 	h := config.NewHotKeys()
-	assert.Nil(t, h.LoadHotKeys("test_assets/hot_key.yml"))
+	assert.Nil(t, h.LoadHotKeys("testdata/hot_key.yml"))
 
 	assert.Equal(t, 1, len(h.HotKey))
 

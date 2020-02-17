@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"reflect"
 	"sort"
+	"time"
 
 	"github.com/rs/zerolog/log"
+	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 const (
@@ -139,19 +141,31 @@ func (rr RowEvents) FindIndex(id string) (int, bool) {
 	return 0, false
 }
 
+func (rr RowEvents) isAgeCol(col int) bool {
+	var age bool
+	if len(rr) == 0 {
+		return age
+	}
+	return col == len(rr[0].Row.Fields)-1
+}
+
 // Sort rows based on column index and order.
 func (rr RowEvents) Sort(ns string, col int, asc bool) {
 	t := RowEventSorter{NS: ns, Events: rr, Index: col, Asc: asc}
 	sort.Sort(t)
 
+	ageCol := rr.isAgeCol(col)
 	gg, kk := map[string][]string{}, make(StringSet, 0, len(rr))
-	for _, e := range rr {
-		g := e.Row.Fields[col]
+	for _, r := range rr {
+		g := r.Row.Fields[col]
+		if ageCol {
+			g = toAgeDuration(g)
+		}
 		kk = kk.Add(g)
 		if ss, ok := gg[g]; ok {
-			gg[g] = append(ss, e.Row.ID)
+			gg[g] = append(ss, r.Row.ID)
 		} else {
-			gg[g] = []string{e.Row.ID}
+			gg[g] = []string{r.Row.ID}
 		}
 	}
 
@@ -162,6 +176,14 @@ func (rr RowEvents) Sort(ns string, col int, asc bool) {
 	}
 	s := IdSorter{Ids: ids, Events: rr}
 	sort.Sort(s)
+}
+
+func toAgeDuration(dur string) string {
+	d, err := time.ParseDuration(dur)
+	if err != nil {
+		return "n/a"
+	}
+	return duration.HumanDuration(d)
 }
 
 // ----------------------------------------------------------------------------

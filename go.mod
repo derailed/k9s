@@ -28,20 +28,30 @@ replace (
 )
 
 require (
+	fyne.io/fyne v1.2.2 // indirect
+	github.com/GeertJohan/gomatrix v0.0.0-20190924221747-74328b69a02f // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
+	github.com/alexellis/go-execute v0.0.0-20200124154445-8697e4e28c5e // indirect
+	github.com/alexellis/hmac v0.0.0-20180624211220-5c52ab81c0de // indirect
 	github.com/atotto/clipboard v0.1.2
-	github.com/derailed/tview v0.3.3
+	github.com/derailed/tview v0.3.5
+	github.com/drone/envsubst v1.0.2 // indirect
 	github.com/elazarl/goproxy v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect
+	github.com/fatih/color v1.6.0
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/gdamore/tcell v1.3.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mattn/go-runewidth v0.0.5
+	github.com/openfaas/faas v0.0.0-20200207215241-6afae214e3ec
+	github.com/openfaas/faas-cli v0.0.0-20200124160744-30b7cec9634c
+	github.com/openfaas/faas-provider v0.15.0
 	github.com/petergtz/pegomock v2.6.0+incompatible
 	github.com/rakyll/hey v0.1.2
 	github.com/rs/zerolog v1.17.2
+	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sahilm/fuzzy v0.1.0
 	github.com/spf13/cobra v0.0.5
 	github.com/stretchr/testify v1.4.0

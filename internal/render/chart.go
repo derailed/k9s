@@ -66,7 +66,7 @@ func (c Chart) Render(o interface{}, ns string, r *Row) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-// ChartRes represents an alias resource.
+// ChartRes represents an helm chart resource.
 type ChartRes struct {
 	Release *release.Release
 }

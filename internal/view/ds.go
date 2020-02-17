@@ -2,12 +2,9 @@ package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // DaemonSet represents a daemon set custom viewer.
@@ -18,8 +15,10 @@ type DaemonSet struct {
 // NewDaemonSet returns a new viewer.
 func NewDaemonSet(gvr client.GVR) ResourceViewer {
 	d := DaemonSet{
-		ResourceViewer: NewRestartExtender(
-			NewLogsExtender(NewBrowser(gvr), nil),
+		ResourceViewer: NewPortForwardExtender(
+			NewRestartExtender(
+				NewLogsExtender(NewBrowser(gvr), nil),
+			),
 		),
 	}
 	d.SetBindKeysFn(d.bindKeys)
@@ -40,14 +39,10 @@ func (d *DaemonSet) bindKeys(aa ui.KeyActions) {
 }
 
 func (d *DaemonSet) showPods(app *App, model ui.Tabular, _, path string) {
-	o, err := app.factory.Get(d.GVR(), path, true, labels.Everything())
-	if err != nil {
-		d.App().Flash().Err(err)
-		return
-	}
+	var res dao.DaemonSet
+	res.Init(app.factory, client.NewGVR(d.GVR()))
 
-	var ds appsv1.DaemonSet
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &ds)
+	ds, err := res.GetInstance(path)
 	if err != nil {
 		d.App().Flash().Err(err)
 	}

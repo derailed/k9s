@@ -116,7 +116,7 @@ func makeTableFactory() tableFactory {
 }
 
 func mustLoad(n string) *unstructured.Unstructured {
-	raw, err := ioutil.ReadFile(fmt.Sprintf("test_assets/%s.json", n))
+	raw, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", n))
 	if err != nil {
 		panic(err)
 	}

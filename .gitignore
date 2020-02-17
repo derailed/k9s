@@ -1,6 +1,5 @@
 .vscode
 .idea
-k9s.log
 .envrc
 cov.out
 execs
@@ -10,11 +9,10 @@ dist
 notes
 vendor
 go.mod1
-popeye1.go
 gen.sh
-cluster_info_test.go
 *.test
 *.log
 *~
 pod1.go
 .project
+faas

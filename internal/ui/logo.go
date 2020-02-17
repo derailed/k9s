@@ -27,6 +27,7 @@ func NewLogo(styles *config.Styles) *Logo {
 	l.AddItem(l.logo, 0, 6, false)
 	l.AddItem(l.status, 0, 1, false)
 	l.refreshLogo(styles.Body().LogoColor)
+	l.SetBackgroundColor(styles.BgColor())
 	styles.AddListener(&l)
 
 	return &l

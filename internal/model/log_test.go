@@ -18,7 +18,7 @@ import (
 
 func TestLogFullBuffer(t *testing.T) {
 	size := 4
-	m := model.NewLog(client.NewGVR("fred"), "Blee", makeLogOpts(size), 10*time.Millisecond)
+	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(size), 10*time.Millisecond)
 	m.Init(makeFactory())
 
 	v := newTestView()
@@ -60,7 +60,7 @@ func TestLogFilter(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			m := model.NewLog(client.NewGVR("fred"), "Blee", makeLogOpts(size), 10*time.Millisecond)
+			m := model.NewLog(client.NewGVR("fred"), makeLogOpts(size), 10*time.Millisecond)
 			m.Init(makeFactory())
 
 			v := newTestView()
@@ -89,7 +89,7 @@ func TestLogFilter(t *testing.T) {
 }
 
 func TestLogStartStop(t *testing.T) {
-	m := model.NewLog(client.NewGVR("fred"), "Blee", makeLogOpts(4), 10*time.Millisecond)
+	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(4), 10*time.Millisecond)
 	m.Init(makeFactory())
 
 	v := newTestView()
@@ -110,7 +110,7 @@ func TestLogStartStop(t *testing.T) {
 }
 
 func TestLogClear(t *testing.T) {
-	m := model.NewLog(client.NewGVR("fred"), "Blee", makeLogOpts(4), 10*time.Millisecond)
+	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(4), 10*time.Millisecond)
 	m.Init(makeFactory())
 	assert.Equal(t, "fred", m.GetPath())
 	assert.Equal(t, "blee", m.GetContainer())
@@ -132,7 +132,7 @@ func TestLogClear(t *testing.T) {
 }
 
 func TestLogBasic(t *testing.T) {
-	m := model.NewLog(client.NewGVR("fred"), "Blee", makeLogOpts(2), 10*time.Millisecond)
+	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(2), 10*time.Millisecond)
 	m.Init(makeFactory())
 
 	v := newTestView()
@@ -148,7 +148,7 @@ func TestLogBasic(t *testing.T) {
 }
 
 func TestLogAppend(t *testing.T) {
-	m := model.NewLog(client.NewGVR("fred"), "blah blah", makeLogOpts(4), 5*time.Millisecond)
+	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(4), 5*time.Millisecond)
 	m.Init(makeFactory())
 
 	v := newTestView()
@@ -161,17 +161,17 @@ func TestLogAppend(t *testing.T) {
 		m.Append(d)
 	}
 	assert.Equal(t, 1, v.dataCalled)
-	assert.Equal(t, []string{}, v.data)
+	assert.Equal(t, []string{"blah blah"}, v.data)
 
 	m.Notify(true)
 	assert.Equal(t, 2, v.dataCalled)
-	assert.Equal(t, 1, v.clearCalled)
+	assert.Equal(t, 0, v.clearCalled)
 	assert.Equal(t, 0, v.errCalled)
-	assert.Equal(t, data, v.data)
+	assert.Equal(t, append([]string{"blah blah"}, data...), v.data)
 }
 
 func TestLogTimedout(t *testing.T) {
-	m := model.NewLog(client.NewGVR("fred"), "Blee", makeLogOpts(4), 10*time.Millisecond)
+	m := model.NewLog(client.NewGVR("fred"), makeLogOpts(4), 10*time.Millisecond)
 	m.Init(makeFactory())
 
 	v := newTestView()

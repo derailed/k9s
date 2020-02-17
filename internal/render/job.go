@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -42,7 +41,6 @@ func (Job) Header(ns string) HeaderRow {
 
 // Render renders a K8s resource to screen.
 func (j Job) Render(o interface{}, ns string, r *Row) error {
-	log.Debug().Msgf("JOB RENDER %q", ns)
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected Job, but got %T", o)

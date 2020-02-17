@@ -292,6 +292,11 @@ func NewStyles() *Styles {
 	}
 }
 
+// DefaultSkin loads the default skin
+func (s *Styles) DefaultSkin() {
+	s.K9s = newStyle()
+}
+
 // FgColor returns the foreground color.
 func (s *Styles) FgColor() tcell.Color {
 	return AsColor(s.Body().FgColor)
@@ -385,10 +390,14 @@ func (s *Styles) Update() {
 	tview.Styles.PrimaryTextColor = s.FgColor()
 	tview.Styles.BorderColor = AsColor(s.K9s.Frame.Border.FgColor)
 	tview.Styles.FocusColor = AsColor(s.K9s.Frame.Border.FocusColor)
+	s.fireStylesChanged()
 }
 
 // AsColor checks color index, if match return color otherwise pink it is.
 func AsColor(c string) tcell.Color {
+	if c == "default" {
+		return tcell.ColorDefault
+	}
 	if color, ok := tcell.ColorNames[c]; ok {
 		return color
 	}

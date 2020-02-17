@@ -15,23 +15,23 @@ builds:
     goarch:
       - 386
       - amd64
-      - arm
       - arm64
     goarm:
       - 6
       - 7
     ldflags:
       - -s -w -X github.com/derailed/k9s/cmd.version={{.Version}} -X github.com/derailed/k9s/cmd.commit={{.Commit}} -X github.com/derailed/k9s/cmd.date={{.Date}}
-archive:
-  replacements:
-    darwin: Darwin
-    linux: Linux
-    windows: Windows
-    bit: Arm
-    bitv6: Arm6
-    bitv7: Arm7
-    386: i386
-    amd64: x86_64
+archives:
+  - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
+    replacements:
+      darwin: Darwin
+      linux: Linux
+      windows: Windows
+      bit: Arm
+      bitv6: Arm6
+      bitv7: Arm7
+      386: i386
+      amd64: x86_64
 checksum:
   name_template: "checksums.txt"
 snapshot:
@@ -43,7 +43,7 @@ changelog:
       - "^docs:"
       - "^test:"
 
-# Homebrew
+# Homebrews
 brews:
   - name: k9s
     github:

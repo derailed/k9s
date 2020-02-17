@@ -1,3 +1,4 @@
+# Styles...
 foreground: &foreground "#f8f8f2"
 background: &background "#282a36"
 current_line: &current_line "#44475a"
@@ -10,6 +11,8 @@ pink: &pink "#ff79c6"
 purple: &purple "#bd93f9"
 red: &red "#ff5555"
 yellow: &yellow "#f1fa8c"
+
+# Skin...
 k9s:
   # General K9s styles
   body:

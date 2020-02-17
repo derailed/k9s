@@ -75,8 +75,13 @@ func (t *Table) RemoveListener(l TableListener) {
 
 // Watch initiates model updates.
 func (t *Table) Watch(ctx context.Context) {
-	t.Refresh(ctx)
+	t.refresh(ctx)
 	go t.updater(ctx)
+}
+
+// Refresh updates the table content.
+func (t *Table) Refresh(ctx context.Context) {
+	t.refresh(ctx)
 }
 
 // Get returns a resource instance if found, else an error.
@@ -132,11 +137,6 @@ func (t *Table) ToYAML(ctx context.Context, path string) (string, error) {
 	}
 
 	return desc.ToYAML(path)
-}
-
-// Refresh update the model now.
-func (t *Table) Refresh(ctx context.Context) {
-	t.refresh(ctx)
 }
 
 // GetNamespace returns the model namespace.
@@ -205,7 +205,7 @@ func (t *Table) refresh(ctx context.Context) {
 		t.fireTableLoadFailed(err)
 		return
 	}
-	t.fireTableChanged()
+	t.fireTableChanged(t.Peek())
 }
 
 func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, error) {
@@ -259,7 +259,6 @@ func (t *Table) reconcile(ctx context.Context) error {
 
 	t.mx.Lock()
 	defer t.mx.Unlock()
-
 	// if labelSelector in place might as well clear the model data.
 	sel, ok := ctx.Value(internal.KeyLabels).(string)
 	if ok && sel != "" {
@@ -298,8 +297,7 @@ func (t *Table) resourceMeta() ResourceMeta {
 	return meta
 }
 
-func (t *Table) fireTableChanged() {
-	data := t.Peek()
+func (t *Table) fireTableChanged(data render.TableData) {
 	for _, l := range t.listeners {
 		l.TableDataChanged(data)
 	}

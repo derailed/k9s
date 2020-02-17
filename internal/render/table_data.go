@@ -19,11 +19,11 @@ func (t *TableData) Clear() {
 
 // Clone returns a copy of the table
 func (t *TableData) Clone() TableData {
-	return cloneTable(*t)
-}
-
-func cloneTable(t TableData) TableData {
-	return t
+	return TableData{
+		Header:    t.Header.Clone(),
+		RowEvents: t.RowEvents.Clone(),
+		Namespace: t.Namespace,
+	}
 }
 
 // SetHeader sets table header.

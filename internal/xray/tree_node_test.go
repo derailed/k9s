@@ -86,8 +86,8 @@ func TestTreeNodeFilter(t *testing.T) {
 }
 
 func TestTreeNodeHydrate(t *testing.T) {
-	threeOK := strings.Join([]string{"ok", "ok", "ok"}, xray.PathSeparator)
-	fiveOK := strings.Join([]string{"ok", "ok", "ok", "ok", "ok"}, xray.PathSeparator)
+	threeOK := []string{"ok", "ok", "ok"}
+	fiveOK := append(threeOK, "ok", "ok")
 
 	uu := map[string]struct {
 		spec []xray.NodeSpec
@@ -96,14 +96,14 @@ func TestTreeNodeHydrate(t *testing.T) {
 		"flat_simple": {
 			spec: []xray.NodeSpec{
 				{
-					GVR:    "containers::v1/pods",
-					Path:   "c1::default/p1",
-					Status: threeOK,
+					GVRs:     []string{"containers", "v1/pods"},
+					Paths:    []string{"c1", "default/p1"},
+					Statuses: threeOK,
 				},
 				{
-					GVR:    "containers::v1/pods",
-					Path:   "c2::default/p1",
-					Status: threeOK,
+					GVRs:     []string{"containers", "v1/pods"},
+					Paths:    []string{"c2", "default/p1"},
+					Statuses: threeOK,
 				},
 			},
 			e: root1(),
@@ -111,14 +111,14 @@ func TestTreeNodeHydrate(t *testing.T) {
 		"flat_complex": {
 			spec: []xray.NodeSpec{
 				{
-					GVR:    "v1/secrets::containers::v1/pods",
-					Path:   "s1::c1::default/p1",
-					Status: threeOK,
+					GVRs:     []string{"v1/secrets", "containers", "v1/pods"},
+					Paths:    []string{"s1", "c1", "default/p1"},
+					Statuses: threeOK,
 				},
 				{
-					GVR:    "v1/secrets::containers::v1/pods",
-					Path:   "s2::c2::default/p1",
-					Status: threeOK,
+					GVRs:     []string{"v1/secrets", "containers", "v1/pods"},
+					Paths:    []string{"s2", "c2", "default/p1"},
+					Statuses: threeOK,
 				},
 			},
 			e: root2(),
@@ -126,49 +126,49 @@ func TestTreeNodeHydrate(t *testing.T) {
 		"complex1": {
 			spec: []xray.NodeSpec{
 				{
-					GVR:    "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
-					Path:   "default/default-token-rr22g::default/nginx-6b866d578b-c6tcn::default/nginx::-/default::deployments",
-					Status: fiveOK,
+					GVRs:     []string{"v1/secrets", "v1/pods", "apps/v1/deployments", "v1/namespaces", "apps/v1/deployments"},
+					Paths:    []string{"default/default-token-rr22g", "default/nginx-6b866d578b-c6tcn", "default/nginx", "-/default", "deployments"},
+					Statuses: fiveOK,
 				},
 				{
-					GVR:    "v1/configmaps::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
-					Path:   "kube-system/coredns::kube-system/coredns-6955765f44-89q2p::kube-system/coredns::-/kube-system::deployments",
-					Status: fiveOK,
+					GVRs:     []string{"v1/configmaps", "v1/pods", "apps/v1/deployments", "v1/namespaces", "apps/v1/deployments"},
+					Paths:    []string{"kube-system/coredns", "kube-system/coredns-6955765f44-89q2p", "kube-system/coredns", "-/kube-system", "deployments"},
+					Statuses: fiveOK,
 				},
 				{
-					GVR:    "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
-					Path:   "kube-system/coredns-token-5cq9j::kube-system/coredns-6955765f44-89q2p::kube-system/coredns::-/kube-system::deployments",
-					Status: fiveOK,
+					GVRs:     []string{"v1/secrets", "v1/pods", "apps/v1/deployments", "v1/namespaces", "apps/v1/deployments"},
+					Paths:    []string{"kube-system/coredns-token-5cq9j", "kube-system/coredns-6955765f44-89q2p", "kube-system/coredns", "-/kube-system", "deployments"},
+					Statuses: fiveOK,
 				},
 				{
-					GVR:    "v1/configmaps::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
-					Path:   "kube-system/coredns::kube-system/coredns-6955765f44-r9j9t::kube-system/coredns::-/kube-system::deployments",
-					Status: fiveOK,
+					GVRs:     []string{"v1/configmaps", "v1/pods", "apps/v1/deployments", "v1/namespaces", "apps/v1/deployments"},
+					Paths:    []string{"kube-system/coredns", "kube-system/coredns-6955765f44-r9j9t", "kube-system/coredns", "-/kube-system", "deployments"},
+					Statuses: fiveOK,
 				},
 				{
-					GVR:    "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
-					Path:   "kube-system/coredns-token-5cq9j::kube-system/coredns-6955765f44-r9j9t::kube-system/coredns::-/kube-system::deployments",
-					Status: fiveOK,
+					GVRs:     []string{"v1/secrets", "v1/pods", "apps/v1/deployments", "v1/namespaces", "apps/v1/deployments"},
+					Paths:    []string{"kube-system/coredns-token-5cq9j", "kube-system/coredns-6955765f44-r9j9t", "kube-system/coredns", "-/kube-system", "deployments"},
+					Statuses: fiveOK,
 				},
 				{
-					GVR:    "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
-					Path:   "kube-system/default-token-thzt8::kube-system/metrics-server-6754dbc9df-88bk4::kube-system/metrics-server::-/kube-system::deployments",
-					Status: fiveOK,
+					GVRs:     []string{"v1/secrets", "v1/pods", "apps/v1/deployments", "v1/namespaces", "apps/v1/deployments"},
+					Paths:    []string{"kube-system/default-token-thzt8", "kube-system/metrics-server-6754dbc9df-88bk4", "kube-system/metrics-server", "-/kube-system", "deployments"},
+					Statuses: fiveOK,
 				},
 				{
-					GVR:    "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
-					Path:   "kube-system/nginx-ingress-token-kff5q::kube-system/nginx-ingress-controller-6fc5bcc8c9-cwp55::kube-system/nginx-ingress-controller::-/kube-system::deployments",
-					Status: fiveOK,
+					GVRs:     []string{"v1/secrets", "v1/pods", "apps/v1/deployments", "v1/namespaces", "apps/v1/deployments"},
+					Paths:    []string{"kube-system/nginx-ingress-token-kff5q", "kube-system/nginx-ingress-controller-6fc5bcc8c9-cwp55", "kube-system/nginx-ingress-controller", "-/kube-system", "deployments"},
+					Statuses: fiveOK,
 				},
 				{
-					GVR:    "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
-					Path:   "kubernetes-dashboard/kubernetes-dashboard-token-d6rt4::kubernetes-dashboard/dashboard-metrics-scraper-7b64584c5c-c7b56::kubernetes-dashboard/dashboard-metrics-scraper::-/kubernetes-dashboard::deployments",
-					Status: fiveOK,
+					GVRs:     []string{"v1/secrets", "v1/pods", "apps/v1/deployments", "v1/namespaces", "apps/v1/deployments"},
+					Paths:    []string{"kubernetes-dashboard/kubernetes-dashboard-token-d6rt4", "kubernetes-dashboard/dashboard-metrics-scraper-7b64584c5c-c7b56", "kubernetes-dashboard/dashboard-metrics-scraper", "-/kubernetes-dashboard", "deployments"},
+					Statuses: fiveOK,
 				},
 				{
-					GVR:    "v1/secrets::v1/pods::apps/v1/deployments::v1/namespaces::apps/v1/deployments",
-					Path:   "kubernetes-dashboard/kubernetes-dashboard-token-d6rt4::kubernetes-dashboard/kubernetes-dashboard-79d9cd965-b4c7d::kubernetes-dashboard/kubernetes-dashboard::-/kubernetes-dashboard::deployments",
-					Status: fiveOK,
+					GVRs:     []string{"v1/secrets", "v1/pods", "apps/v1/deployments", "v1/namespaces", "apps/v1/deployments"},
+					Paths:    []string{"kubernetes-dashboard/kubernetes-dashboard-token-d6rt4", "kubernetes-dashboard/kubernetes-dashboard-79d9cd965-b4c7d", "kubernetes-dashboard/kubernetes-dashboard", "-/kubernetes-dashboard", "deployments"},
+					Statuses: fiveOK,
 				},
 			},
 			e: root3(),
@@ -193,14 +193,14 @@ func TestTreeNodeFlatten(t *testing.T) {
 			root: root1(),
 			e: []xray.NodeSpec{
 				{
-					GVR:    "containers::v1/pods",
-					Path:   "c1::default/p1",
-					Status: strings.Join([]string{"ok", "ok"}, xray.PathSeparator),
+					GVRs:     []string{"containers", "v1/pods"},
+					Paths:    []string{"c1", "default/p1"},
+					Statuses: []string{"ok", "ok"},
 				},
 				{
-					GVR:    "containers::v1/pods",
-					Path:   "c2::default/p1",
-					Status: strings.Join([]string{"ok", "ok"}, xray.PathSeparator),
+					GVRs:     []string{"containers", "v1/pods"},
+					Paths:    []string{"c2", "default/p1"},
+					Statuses: []string{"ok", "ok"},
 				},
 			},
 		},
@@ -208,14 +208,14 @@ func TestTreeNodeFlatten(t *testing.T) {
 			root: root2(),
 			e: []xray.NodeSpec{
 				{
-					GVR:    "v1/secrets::containers::v1/pods",
-					Path:   "s1::c1::default/p1",
-					Status: strings.Join([]string{"ok", "ok", "ok"}, xray.PathSeparator),
+					GVRs:     []string{"v1/secrets", "containers", "v1/pods"},
+					Paths:    []string{"s1", "c1", "default/p1"},
+					Statuses: []string{"ok", "ok", "ok"},
 				},
 				{
-					GVR:    "v1/secrets::containers::v1/pods",
-					Path:   "s2::c2::default/p1",
-					Status: strings.Join([]string{"ok", "ok", "ok"}, xray.PathSeparator),
+					GVRs:     []string{"v1/secrets", "containers", "v1/pods"},
+					Paths:    []string{"s2", "c2", "default/p1"},
+					Statuses: []string{"ok", "ok", "ok"},
 				},
 			},
 		},
@@ -323,17 +323,17 @@ func diff1() *xray.TreeNode {
 }
 
 func root2() *xray.TreeNode {
-	n := xray.NewTreeNode("v1/pods", "default/p1")
 	c1 := xray.NewTreeNode("containers", "c1")
-	c2 := xray.NewTreeNode("containers", "c2")
-	n.Add(c1)
-	n.Add(c2)
-
 	s1 := xray.NewTreeNode("v1/secrets", "s1")
 	c1.Add(s1)
 
+	c2 := xray.NewTreeNode("containers", "c2")
 	s2 := xray.NewTreeNode("v1/secrets", "s2")
 	c2.Add(s2)
+
+	n := xray.NewTreeNode("v1/pods", "default/p1")
+	n.Add(c1)
+	n.Add(c2)
 
 	return n
 }

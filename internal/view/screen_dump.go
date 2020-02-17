@@ -45,7 +45,7 @@ func (s *ScreenDump) edit(app *App, model ui.Tabular, gvr, path string) {
 
 	s.Stop()
 	defer s.Start()
-	if !edit(true, app, path) {
+	if !edit(app, shellOpts{clear: true, args: []string{path}}) {
 		app.Flash().Err(errors.New("Failed to launch editor"))
 	}
 }

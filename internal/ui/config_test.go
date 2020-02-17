@@ -17,24 +17,12 @@ func TestBenchConfig(t *testing.T) {
 }
 
 func TestConfiguratorRefreshStyle(t *testing.T) {
-	config.K9sStylesFile = filepath.Join("..", "config", "test_assets", "black_and_wtf.yml")
+	config.K9sStylesFile = filepath.Join("..", "config", "testdata", "black_and_wtf.yml")
 
 	cfg := ui.Configurator{}
 	cfg.RefreshStyles("")
 
-	assert.True(t, cfg.HasSkins())
+	assert.True(t, cfg.HasSkin())
 	assert.Equal(t, tcell.ColorGhostWhite, render.StdColor)
 	assert.Equal(t, tcell.ColorWhiteSmoke, render.ErrColor)
-}
-
-func TestInitBench(t *testing.T) {
-	config.K9sHome = filepath.Join("..", "config", "test_assets")
-
-	cfg := ui.Configurator{}
-	cfg.InitBench("fred")
-
-	assert.NotNil(t, cfg.Bench)
-	assert.Equal(t, 2, cfg.Bench.Benchmarks.Defaults.C)
-	assert.Equal(t, 1000, cfg.Bench.Benchmarks.Defaults.N)
-	assert.Equal(t, 2, len(cfg.Bench.Benchmarks.Services))
 }
