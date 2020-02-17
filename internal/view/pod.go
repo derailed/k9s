@@ -151,18 +151,6 @@ func (p *Pod) attachCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (p *Pod) shellIn(path, co string) {
-	p.Stop()
-	shellIn(p.App(), path, co)
-	p.Start()
-}
-
-func (p *Pod) attachIn(path, co string) {
-	p.Stop()
-	attachIn(p.App(), path, co)
-	p.Start()
-}
-
 // ----------------------------------------------------------------------------
 // Helpers...
 

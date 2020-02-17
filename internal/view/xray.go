@@ -319,12 +319,6 @@ func (x *Xray) attachCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (x *Xray) attachIn(path, co string) {
-	x.Stop()
-	attachIn(x.app, path, co)
-	x.Start()
-}
-
 func (x *Xray) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	spec := x.selectedSpec()
 	if spec == nil {
