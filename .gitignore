@@ -16,3 +16,4 @@ gen.sh
 pod1.go
 .project
 faas
+.settings/*
