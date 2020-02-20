@@ -40,7 +40,7 @@ func (d *Deploy) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
 		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", d.GetTable().SortColCmd(1, true), false),
 		ui.KeyShiftU: ui.NewKeyAction("Sort UpToDate", d.GetTable().SortColCmd(2, true), false),
-		ui.KeyShiftV: ui.NewKeyAction("Sort Available", d.GetTable().SortColCmd(3, true), false),
+		ui.KeyShiftL: ui.NewKeyAction("Sort Available", d.GetTable().SortColCmd(3, true), false),
 	})
 }
 

@@ -22,8 +22,9 @@ func (ClusterRoleBinding) Header(string) HeaderRow {
 	return HeaderRow{
 		Header{Name: "NAME"},
 		Header{Name: "CLUSTERROLE"},
-		Header{Name: "KIND"},
+		Header{Name: "SUBJECT-KIND"},
 		Header{Name: "SUBJECTS"},
+		Header{Name: "LABELS", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	}
 }
@@ -48,6 +49,7 @@ func (ClusterRoleBinding) Render(o interface{}, ns string, r *Row) error {
 		crb.RoleRef.Name,
 		kind,
 		ss,
+		mapToStr(crb.Labels),
 		toAge(crb.ObjectMeta.CreationTimestamp),
 	}
 

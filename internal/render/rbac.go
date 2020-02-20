@@ -46,7 +46,10 @@ func (Rbac) Header(ns string) HeaderRow {
 		Header{Name: "API GROUP"},
 	}
 
-	return append(h, rbacVerbHeader()...)
+	h = append(h, rbacVerbHeader()...)
+	h = append(h, Header{Name: "VALID", Wide: true})
+
+	return h
 }
 
 // Render renders a K8s resource to screen.
@@ -57,8 +60,12 @@ func (Rbac) Render(o interface{}, gvr string, r *Row) error {
 	}
 
 	r.ID = p.Resource
-	r.Fields = append(r.Fields, cleanseResource(p.Resource), p.Group)
+	r.Fields = append(r.Fields,
+		cleanseResource(p.Resource),
+		p.Group,
+	)
 	r.Fields = append(r.Fields, asVerbs(p.Verbs)...)
+	r.Fields = append(r.Fields, "")
 
 	return nil
 }

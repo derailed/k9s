@@ -30,6 +30,7 @@ func TestPortForwardRender(t *testing.T) {
 		"http://0.0.0.0:p1/",
 		"1",
 		"1",
+		"",
 		"2m",
 	}, r.Fields)
 }

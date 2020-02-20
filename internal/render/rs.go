@@ -3,7 +3,6 @@ package render
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
@@ -17,24 +16,19 @@ import (
 type ReplicaSet struct{}
 
 // ColorerFunc colors a resource row.
-func (ReplicaSet) ColorerFunc() ColorerFunc {
-	return func(ns string, r RowEvent) tcell.Color {
-		c := DefaultColorer(ns, r)
-		if r.Kind == EventAdd || r.Kind == EventUpdate {
+func (r ReplicaSet) ColorerFunc() ColorerFunc {
+	return func(ns string, re RowEvent) tcell.Color {
+		c := DefaultColorer(ns, re)
+		if re.Kind == EventAdd || re.Kind == EventUpdate {
 			return c
 		}
 
-		markCol := 2
-		if !client.IsAllNamespaces(ns) {
-			markCol--
-		}
-		if strings.TrimSpace(r.Row.Fields[markCol]) != strings.TrimSpace(r.Row.Fields[markCol+1]) {
+		if !Happy(ns, re.Row) {
 			return ErrColor
 		}
 
 		return StdColor
 	}
-
 }
 
 // Header returns a header row.
@@ -49,6 +43,8 @@ func (ReplicaSet) Header(ns string) HeaderRow {
 		Header{Name: "DESIRED", Align: tview.AlignRight},
 		Header{Name: "CURRENT", Align: tview.AlignRight},
 		Header{Name: "READY", Align: tview.AlignRight},
+		Header{Name: "LABELS", Wide: true},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
@@ -75,8 +71,21 @@ func (s ReplicaSet) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(int(*rs.Spec.Replicas)),
 		strconv.Itoa(int(rs.Status.Replicas)),
 		strconv.Itoa(int(rs.Status.ReadyReplicas)),
+		mapToStr(rs.Labels),
+		asStatus(s.diagnose(rs)),
 		toAge(rs.ObjectMeta.CreationTimestamp),
 	)
+
+	return nil
+}
+
+func (s ReplicaSet) diagnose(rs appsv1.ReplicaSet) error {
+	if rs.Status.Replicas != rs.Status.ReadyReplicas {
+		if rs.Status.Replicas == 0 {
+			return fmt.Errorf("did not phase down correctly expecting 0 replicas but got %d", rs.Status.ReadyReplicas)
+		}
+		return fmt.Errorf("mismatch desired(%d) vs ready(%d)", rs.Status.Replicas, rs.Status.ReadyReplicas)
+	}
 
 	return nil
 }

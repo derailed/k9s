@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 )
@@ -24,27 +23,17 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 	f.SetButtonsAlign(tview.AlignCenter).
 		SetButtonBackgroundColor(styles.BgColor()).
 		SetButtonTextColor(styles.FgColor()).
-		SetLabelColor(config.AsColor(styles.K9s.Info.FgColor)).
-		SetFieldTextColor(config.AsColor(styles.K9s.Info.SectionColor))
+		SetLabelColor(styles.K9s.Info.FgColor.Color()).
+		SetFieldTextColor(styles.K9s.Info.SectionColor.Color())
 
-	p1, p2, address := ports[0], ports[0], "localhost"
-	f.AddDropDown("Container Ports", ports, 0, func(sel string, _ int) {
-		p1, p2 = sel, extractPort(sel)
+	p1, p2, address := ports[0], extractPort(ports[0]), "localhost"
+	f.AddInputField("Container Port:", p1, 30, nil, func(p string) {
+		p1 = p
 	})
-
-	dropD, ok := f.GetFormItem(0).(*tview.DropDown)
-	if ok {
-		dropD.SetFieldBackgroundColor(styles.BgColor())
-		list := dropD.GetList()
-		list.SetMainTextColor(styles.FgColor())
-		list.SetSelectedTextColor(styles.FgColor())
-		list.SetSelectedBackgroundColor(config.AsColor(styles.Table().CursorColor))
-		list.SetBackgroundColor(styles.BgColor() + 100)
-	}
-	f.AddInputField("Local Port:", p2, 20, nil, func(p string) {
+	f.AddInputField("Local Port:", p2, 30, nil, func(p string) {
 		p2 = p
 	})
-	f.AddInputField("Address:", address, 20, nil, func(h string) {
+	f.AddInputField("Address:", address, 30, nil, func(h string) {
 		address = h
 	})
 
@@ -59,21 +48,24 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 		okFn(v, path, extractContainer(p1), tunnel)
 	})
 	f.AddButton("Cancel", func() {
-		DismissPortForwards(pages)
+		DismissPortForwards(v.App(), pages)
 	})
 
 	modal := tview.NewModalForm(fmt.Sprintf("<PortForward on %s>", path), f)
+	modal.SetText("Exposed Ports: " + strings.Join(ports, ","))
 	modal.SetDoneFunc(func(_ int, b string) {
-		DismissPortForwards(pages)
+		DismissPortForwards(v.App(), pages)
 	})
 
-	pages.AddPage(portForwardKey, modal, false, false)
+	pages.AddPage(portForwardKey, modal, false, true)
 	pages.ShowPage(portForwardKey)
+	v.App().SetFocus(pages.GetPrimitive(portForwardKey))
 }
 
 // DismissPortForwards dismiss the port forward dialog.
-func DismissPortForwards(p *ui.Pages) {
+func DismissPortForwards(app *App, p *ui.Pages) {
 	p.RemovePage(portForwardKey)
+	app.SetFocus(p.CurrentPage().Item)
 }
 
 // ----------------------------------------------------------------------------

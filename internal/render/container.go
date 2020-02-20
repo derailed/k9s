@@ -1,6 +1,7 @@
 package render
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -36,18 +37,18 @@ type ContainerWithMetrics interface {
 // Container renders a K8s Container to screen.
 type Container struct{}
 
+const readyCol = 2
+
 // ColorerFunc colors a resource row.
-func (Container) ColorerFunc() ColorerFunc {
-	return func(ns string, r RowEvent) tcell.Color {
-		c := DefaultColorer(ns, r)
+func (c Container) ColorerFunc() ColorerFunc {
+	return func(ns string, re RowEvent) tcell.Color {
+		color := DefaultColorer(ns, re)
 
-		readyCol := 2
-		if strings.TrimSpace(r.Row.Fields[readyCol]) == "false" {
-			c = ErrColor
+		if !Happy(ns, re.Row) {
+			color = ErrColor
 		}
-
 		stateCol := readyCol + 1
-		switch strings.TrimSpace(r.Row.Fields[stateCol]) {
+		switch strings.TrimSpace(re.Row.Fields[stateCol]) {
 		case ContainerCreating, PodInitializing:
 			return AddColor
 		case Terminating, Initialized:
@@ -56,10 +57,10 @@ func (Container) ColorerFunc() ColorerFunc {
 			return CompletedColor
 		case Running:
 		default:
-			c = ErrColor
+			color = ErrColor
 		}
 
-		return c
+		return color
 	}
 }
 
@@ -80,6 +81,7 @@ func (Container) Header(ns string) HeaderRow {
 		Header{Name: "%CPU/L", Align: tview.AlignRight},
 		Header{Name: "%MEM/L", Align: tview.AlignRight},
 		Header{Name: "PORTS"},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	}
 }
@@ -114,9 +116,22 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 		limit.cpu,
 		limit.mem,
 		toStrPorts(co.Container.Ports),
+		asStatus(c.diagnose(state, ready)),
 		toAge(co.Age),
 	)
 
+	return nil
+}
+
+// Happy returns true if resoure is happy, false otherwise
+func (Container) diagnose(state, ready string) error {
+	if state == "Completed" {
+		return nil
+	}
+
+	if ready == "false" {
+		return errors.New("container is not ready")
+	}
 	return nil
 }
 

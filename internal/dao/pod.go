@@ -38,6 +38,16 @@ type Pod struct {
 	Resource
 }
 
+// IsHappy check for happy deployments.
+func (p *Pod) IsHappy(po v1.Pod) bool {
+	for _, c := range po.Status.Conditions {
+		if c.Status == v1.ConditionFalse {
+			return false
+		}
+	}
+	return true
+}
+
 // Get returns a resource instance if found, else an error.
 func (p *Pod) Get(ctx context.Context, path string) (runtime.Object, error) {
 	o, err := p.Resource.Get(ctx, path)
@@ -50,11 +60,11 @@ func (p *Pod) Get(ctx context.Context, path string) (runtime.Object, error) {
 		return nil, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
 	}
 
-	// No Deal!
-	mx := client.NewMetricsServer(p.Client())
-	pmx, err := mx.FetchPodMetrics(path)
-	if err != nil {
-		log.Warn().Err(err).Msgf("No pods metrics")
+	var pmx *mv1beta1.PodMetrics
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
+		if pmx, err = client.DialMetrics(p.Client()).FetchPodMetrics(path); err != nil {
+			log.Warn().Err(err).Msgf("No pod metrics")
+		}
 	}
 
 	return &render.PodWithMetrics{Raw: u, MX: pmx}, nil
@@ -77,10 +87,11 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		return oo, err
 	}
 
-	mx := client.NewMetricsServer(p.Client())
-	pmx, err := mx.FetchPodsMetrics(ns)
-	if err != nil {
-		log.Warn().Err(err).Msgf("No pods metrics")
+	var pmx *mv1beta1.PodMetricsList
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
+		if pmx, err = client.DialMetrics(p.Client()).FetchPodsMetrics(ns); err != nil {
+			log.Warn().Err(err).Msgf("No pods metrics")
+		}
 	}
 
 	var res []runtime.Object
@@ -128,7 +139,7 @@ func (p *Pod) Containers(path string, includeInit bool) ([]string, error) {
 		return nil, err
 	}
 
-	cc := []string{}
+	cc := make([]string, 0, len(pod.Spec.Containers)+len(pod.Spec.InitContainers))
 	for _, c := range pod.Spec.Containers {
 		cc = append(cc, c.Name)
 	}

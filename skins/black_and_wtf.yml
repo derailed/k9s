@@ -45,22 +45,22 @@ k9s:
       highlightColor: *active
       counterColor: *text
       filterColor: *slate
-  table:
-    fgColor: *fg
-    bgColor: *bg
-    cursorColor: *fg
-    markColor: *mark
-    header:
-      fgColor: *dslate
-      bgColor: *bg
-      sorterColor: *fg
-  xray:
-    fgColor: *fg
-    bgColor: *bg
-    cursorColor: *ghost
-    graphicColor: gray
-    showIcons: false
   views:
+    table:
+      fgColor: *fg
+      bgColor: *bg
+      cursorColor: *fg
+      markColor: *mark
+      header:
+        fgColor: *dslate
+        bgColor: *bg
+        sorterColor: *fg
+    xray:
+      fgColor: *fg
+      bgColor: *bg
+      cursorColor: *ghost
+      graphicColor: gray
+      showIcons: false
     yaml:
       keyColor: *ghost
       colorColor: *slate
@@ -68,3 +68,11 @@ k9s:
     logs:
       fgColor: *ghost
       bgColor: *bg
+    charts:
+      bgColor: default
+      defaultDialColors:
+        - *white
+        - *err
+      defaultChartColors:
+        - *white
+        - *err

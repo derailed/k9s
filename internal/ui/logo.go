@@ -25,7 +25,7 @@ func NewLogo(styles *config.Styles) *Logo {
 	}
 	l.SetDirection(tview.FlexRow)
 	l.AddItem(l.logo, 0, 6, false)
-	l.AddItem(l.status, 0, 1, false)
+	l.AddItem(l.status, 1, 0, false)
 	l.refreshLogo(styles.Body().LogoColor)
 	l.SetBackgroundColor(styles.BgColor())
 	styles.AddListener(&l)
@@ -60,30 +60,30 @@ func (l *Logo) Reset() {
 
 // Err displays a log error state.
 func (l *Logo) Err(msg string) {
-	l.update(msg, "red")
+	l.update(msg, config.NewColor("red"))
 }
 
 // Warn displays a log warning state.
 func (l *Logo) Warn(msg string) {
-	l.update(msg, "mediumvioletred")
+	l.update(msg, config.NewColor("mediumvioletred"))
 }
 
 // Info displays a log info state.
 func (l *Logo) Info(msg string) {
-	l.update(msg, "green")
+	l.update(msg, config.NewColor("green"))
 }
 
-func (l *Logo) update(msg, c string) {
+func (l *Logo) update(msg string, c config.Color) {
 	l.refreshStatus(msg, c)
 	l.refreshLogo(c)
 }
 
-func (l *Logo) refreshStatus(msg, c string) {
-	l.status.SetBackgroundColor(config.AsColor(c))
+func (l *Logo) refreshStatus(msg string, c config.Color) {
+	l.status.SetBackgroundColor(c.Color())
 	l.status.SetText(fmt.Sprintf("[white::b]%s", msg))
 }
 
-func (l *Logo) refreshLogo(c string) {
+func (l *Logo) refreshLogo(c config.Color) {
 	l.logo.Clear()
 	for i, s := range LogoSmall {
 		fmt.Fprintf(l.logo, "[%s::b]%s", c, s)

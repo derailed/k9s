@@ -76,7 +76,7 @@ func runForward(v ResourceViewer, pf watch.Forwarder, f *portforward.PortForward
 
 	v.App().QueueUpdateDraw(func() {
 		v.App().Flash().Infof("PortForward activated %s:%s", pf.Path(), pf.Ports()[0])
-		DismissPortForwards(v.App().Content.Pages)
+		DismissPortForwards(v.App(), v.App().Content.Pages)
 	})
 
 	pf.SetActive(true)
@@ -124,7 +124,6 @@ func showFwdDialog(v ResourceViewer, path string, cb PortForwardFunc) error {
 			ports = append(ports, client.FQN(co, p.Name)+":"+strconv.Itoa(int(p.ContainerPort)))
 		}
 	}
-
 	if len(ports) == 0 {
 		return fmt.Errorf("no tcp ports found on %s", path)
 	}

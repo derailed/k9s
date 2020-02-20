@@ -79,6 +79,8 @@ func (c *Configurator) RefreshStyles(context string) {
 	clusterSkins := filepath.Join(config.K9sHome, fmt.Sprintf("%s_skin.yml", context))
 	if c.Styles == nil {
 		c.Styles = config.NewStyles()
+	} else {
+		c.Styles.Reset()
 	}
 	if err := c.Styles.Load(clusterSkins); err != nil {
 		log.Info().Msgf("No context specific skin file found -- %s", clusterSkins)
@@ -102,10 +104,10 @@ func (c *Configurator) updateStyles(f string) {
 	}
 	c.Styles.Update()
 
-	render.StdColor = config.AsColor(c.Styles.Frame().Status.NewColor)
-	render.AddColor = config.AsColor(c.Styles.Frame().Status.AddColor)
-	render.ModColor = config.AsColor(c.Styles.Frame().Status.ModifyColor)
-	render.ErrColor = config.AsColor(c.Styles.Frame().Status.ErrorColor)
-	render.HighlightColor = config.AsColor(c.Styles.Frame().Status.HighlightColor)
-	render.CompletedColor = config.AsColor(c.Styles.Frame().Status.CompletedColor)
+	render.StdColor = c.Styles.Frame().Status.NewColor.Color()
+	render.AddColor = c.Styles.Frame().Status.AddColor.Color()
+	render.ModColor = c.Styles.Frame().Status.ModifyColor.Color()
+	render.ErrColor = c.Styles.Frame().Status.ErrorColor.Color()
+	render.HighlightColor = c.Styles.Frame().Status.HighlightColor.Color()
+	render.CompletedColor = c.Styles.Frame().Status.CompletedColor.Color()
 }

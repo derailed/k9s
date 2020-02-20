@@ -8,6 +8,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
@@ -64,7 +65,7 @@ func (p *PortForward) showBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if p.bench != nil {
-		p.App().Status(ui.FlashErr, "Benchmark Canceled!")
+		p.App().Status(model.FlashErr, "Benchmark Canceled!")
 		p.bench.Cancel()
 		p.App().ClearStatus(true)
 		return nil
@@ -87,7 +88,7 @@ func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	p.App().Status(ui.FlashWarn, "Benchmark in progress...")
+	p.App().Status(model.FlashWarn, "Benchmark in progress...")
 	go p.runBenchmark()
 
 	return nil
@@ -100,9 +101,9 @@ func (p *PortForward) runBenchmark() {
 		log.Debug().Msg("Bench Completed!")
 		p.App().QueueUpdate(func() {
 			if p.bench.Canceled() {
-				p.App().Status(ui.FlashInfo, "Benchmark canceled")
+				p.App().Status(model.FlashInfo, "Benchmark canceled")
 			} else {
-				p.App().Status(ui.FlashInfo, "Benchmark Completed!")
+				p.App().Status(model.FlashInfo, "Benchmark Completed!")
 				p.bench.Cancel()
 			}
 			p.bench = nil

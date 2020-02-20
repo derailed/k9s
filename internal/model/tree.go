@@ -229,7 +229,7 @@ func (t *Tree) reconcile(ctx context.Context) error {
 	}
 	if t.root == nil || t.root.Diff(root) {
 		t.root = root
-		t.fireTreeTreeChanged(t.root)
+		t.fireTreeChanged(t.root)
 	}
 
 	return nil
@@ -251,7 +251,7 @@ func (t *Tree) resourceMeta() ResourceMeta {
 	return meta
 }
 
-func (t *Tree) fireTreeTreeChanged(root *xray.TreeNode) {
+func (t *Tree) fireTreeChanged(root *xray.TreeNode) {
 	for _, l := range t.listeners {
 		l.TreeChanged(root)
 	}

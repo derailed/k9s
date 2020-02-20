@@ -28,14 +28,14 @@ func colorizeYAML(style config.Yaml, raw string) string {
 	// lines := strings.Split(raw, "\n")
 	lines := strings.Split(tview.Escape(raw), "\n")
 
-	fullFmt := strings.Replace(yamlFullFmt, "[key", "["+style.KeyColor, 1)
-	fullFmt = strings.Replace(fullFmt, "[colon", "["+style.ColonColor, 1)
-	fullFmt = strings.Replace(fullFmt, "[val", "["+style.ValueColor, 1)
+	fullFmt := strings.Replace(yamlFullFmt, "[key", "["+style.KeyColor.String(), 1)
+	fullFmt = strings.Replace(fullFmt, "[colon", "["+style.ColonColor.String(), 1)
+	fullFmt = strings.Replace(fullFmt, "[val", "["+style.ValueColor.String(), 1)
 
-	keyFmt := strings.Replace(yamlKeyFmt, "[key", "["+style.KeyColor, 1)
-	keyFmt = strings.Replace(keyFmt, "[colon", "["+style.ColonColor, 1)
+	keyFmt := strings.Replace(yamlKeyFmt, "[key", "["+style.KeyColor.String(), 1)
+	keyFmt = strings.Replace(keyFmt, "[colon", "["+style.ColonColor.String(), 1)
 
-	valFmt := strings.Replace(yamlValueFmt, "[val", "["+style.ValueColor, 1)
+	valFmt := strings.Replace(yamlValueFmt, "[val", "["+style.ValueColor.String(), 1)
 
 	buff := make([]string, 0, len(lines))
 	for _, l := range lines {

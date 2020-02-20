@@ -31,22 +31,31 @@ k9s:
       highlightColor: fuchsia
       counterColor: papayawhip
       filterColor: steelblue
-  table:
-    fgColor: blue
-    bgColor: black
-    cursorColor: aqua
-    markColor: darkgoldenrod
-    header:
-      fgColor: white
-      bgColor: black
-      sorterColor: orange
-  xray:
-    fgColor: blue
-    bgColor: black
-    cursorColor: aqua
-    graphicColor: darkgoldenrod
-    showIcons: false
   views:
+    # Charts skins...
+    charts:
+      bgColor: black
+      defaultDialColors:
+        - linegreen
+        - orangered
+      defaultChartColors:
+        - linegreen
+        - orangered
+    table:
+      fgColor: blue
+      bgColor: black
+      cursorColor: aqua
+      markColor: darkgoldenrod
+      header:
+        fgColor: white
+        bgColor: black
+        sorterColor: orange
+    xray:
+      fgColor: blue
+      bgColor: black
+      cursorColor: aqua
+      graphicColor: darkgoldenrod
+      showIcons: false
     yaml:
       keyColor: steelblue
       colonColor: white

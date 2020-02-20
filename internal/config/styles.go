@@ -21,17 +21,31 @@ type StyleListener interface {
 }
 
 type (
+	// Color represents a color.
+	Color string
+
+	// Colors tracks multiple colors.
+	Colors []Color
+
 	// Styles tracks K9s styling options.
 	Styles struct {
 		K9s       Style `yaml:"k9s"`
 		listeners []StyleListener
 	}
 
+	// Style tracks K9s styles.
+	Style struct {
+		Body  Body  `yaml:"body"`
+		Frame Frame `yaml:"frame"`
+		Info  Info  `yaml:"info"`
+		Views Views `yaml:"views"`
+	}
+
 	// Body tracks body styles.
 	Body struct {
-		FgColor   string `yaml:"fgColor"`
-		BgColor   string `yaml:"bgColor"`
-		LogoColor string `yaml:"logoColor"`
+		FgColor   Color `yaml:"fgColor"`
+		BgColor   Color `yaml:"bgColor"`
+		LogoColor Color `yaml:"logoColor"`
 	}
 
 	// Frame tracks frame styles.
@@ -45,120 +59,171 @@ type (
 
 	// Views tracks individual view styles.
 	Views struct {
-		Yaml Yaml `yaml:"yaml"`
-		Log  Log  `yaml:"logs"`
+		Table  Table  `yaml:"table"`
+		Xray   Xray   `yaml:"xray"`
+		Charts Charts `yaml:"charts"`
+		Yaml   Yaml   `yaml:"yaml"`
+		Log    Log    `yaml:"logs"`
 	}
 
 	// Status tracks resource status styles.
 	Status struct {
-		NewColor       string `yaml:"newColor"`
-		ModifyColor    string `yaml:"modifyColor"`
-		AddColor       string `yaml:"addColor"`
-		ErrorColor     string `yaml:"errorColor"`
-		HighlightColor string `yaml:"highlightColor"`
-		KillColor      string `yaml:"killColor"`
-		CompletedColor string `yaml:"completedColor"`
+		NewColor       Color `yaml:"newColor"`
+		ModifyColor    Color `yaml:"modifyColor"`
+		AddColor       Color `yaml:"addColor"`
+		ErrorColor     Color `yaml:"errorColor"`
+		HighlightColor Color `yaml:"highlightColor"`
+		KillColor      Color `yaml:"killColor"`
+		CompletedColor Color `yaml:"completedColor"`
 	}
 
 	// Log tracks Log styles.
 	Log struct {
-		FgColor string `yaml:"fgColor"`
-		BgColor string `yaml:"bgColor"`
+		FgColor Color `yaml:"fgColor"`
+		BgColor Color `yaml:"bgColor"`
 	}
 
 	// Yaml tracks yaml styles.
 	Yaml struct {
-		KeyColor   string `yaml:"keyColor"`
-		ValueColor string `yaml:"valueColor"`
-		ColonColor string `yaml:"colonColor"`
+		KeyColor   Color `yaml:"keyColor"`
+		ValueColor Color `yaml:"valueColor"`
+		ColonColor Color `yaml:"colonColor"`
 	}
 
 	// Title tracks title styles.
 	Title struct {
-		FgColor        string `yaml:"fgColor"`
-		BgColor        string `yaml:"bgColor"`
-		HighlightColor string `yaml:"highlightColor"`
-		CounterColor   string `yaml:"counterColor"`
-		FilterColor    string `yaml:"filterColor"`
+		FgColor        Color `yaml:"fgColor"`
+		BgColor        Color `yaml:"bgColor"`
+		HighlightColor Color `yaml:"highlightColor"`
+		CounterColor   Color `yaml:"counterColor"`
+		FilterColor    Color `yaml:"filterColor"`
 	}
 
 	// Info tracks info styles.
 	Info struct {
-		SectionColor string `yaml:"sectionColor"`
-		FgColor      string `yaml:"fgColor"`
+		SectionColor Color `yaml:"sectionColor"`
+		FgColor      Color `yaml:"fgColor"`
 	}
 
-	// Border tracks border styles.
+	// ColorBorder tracks border styles.
 	Border struct {
-		FgColor    string `yaml:"fgColor"`
-		FocusColor string `yaml:"focusColor"`
+		FgColor    Color `yaml:"fgColor"`
+		FocusColor Color `yaml:"focusColor"`
 	}
 
 	// Crumb tracks crumbs styles.
 	Crumb struct {
-		FgColor     string `yaml:"fgColor"`
-		BgColor     string `yaml:"bgColor"`
-		ActiveColor string `yaml:"activeColor"`
+		FgColor     Color `yaml:"fgColor"`
+		BgColor     Color `yaml:"bgColor"`
+		ActiveColor Color `yaml:"activeColor"`
 	}
 
 	// Table tracks table styles.
 	Table struct {
-		FgColor     string      `yaml:"fgColor"`
-		BgColor     string      `yaml:"bgColor"`
-		CursorColor string      `yaml:"cursorColor"`
-		MarkColor   string      `yaml:"markColor"`
+		FgColor     Color       `yaml:"fgColor"`
+		BgColor     Color       `yaml:"bgColor"`
+		CursorColor Color       `yaml:"cursorColor"`
+		MarkColor   Color       `yaml:"markColor"`
 		Header      TableHeader `yaml:"header"`
 	}
 
 	// TableHeader tracks table header styles.
 	TableHeader struct {
-		FgColor     string `yaml:"fgColor"`
-		BgColor     string `yaml:"bgColor"`
-		SorterColor string `yaml:"sorterColor"`
+		FgColor     Color `yaml:"fgColor"`
+		BgColor     Color `yaml:"bgColor"`
+		SorterColor Color `yaml:"sorterColor"`
 	}
 
 	// Xray tracks xray styles.
 	Xray struct {
-		FgColor      string `yaml:"fgColor"`
-		BgColor      string `yaml:"bgColor"`
-		CursorColor  string `yaml:"cursorColor"`
-		GraphicColor string `yaml:"graphicColor"`
-		ShowIcons    bool   `yaml:"showIcons"`
+		FgColor      Color `yaml:"fgColor"`
+		BgColor      Color `yaml:"bgColor"`
+		CursorColor  Color `yaml:"cursorColor"`
+		GraphicColor Color `yaml:"graphicColor"`
+		ShowIcons    bool  `yaml:"showIcons"`
 	}
 
 	// Menu tracks menu styles.
 	Menu struct {
-		FgColor     string `yaml:"fgColor"`
-		KeyColor    string `yaml:"keyColor"`
-		NumKeyColor string `yaml:"numKeyColor"`
+		FgColor     Color `yaml:"fgColor"`
+		KeyColor    Color `yaml:"keyColor"`
+		NumKeyColor Color `yaml:"numKeyColor"`
 	}
 
-	// Style tracks K9s styles.
-	Style struct {
-		Body  Body  `yaml:"body"`
-		Frame Frame `yaml:"frame"`
-		Info  Info  `yaml:"info"`
-		Table Table `yaml:"table"`
-		Xray  Xray  `yaml:"xray"`
-		Views Views `yaml:"views"`
+	// Charts tracks charts styles.
+	Charts struct {
+		BgColor            Color             `yaml:"bgColor"`
+		DialBgColor        Color             `yaml:"dialBgColor"`
+		ChartBgColor       Color             `yaml:"chartBgColor"`
+		DefaultDialColors  Colors            `yaml:"defaultDialColors"`
+		DefaultChartColors Colors            `yaml:"defaultChartColors"`
+		ResourceColors     map[string]Colors `yaml:"resourceColors"`
 	}
 )
+
+const (
+	// DefaultColor represents  a default color.
+	DefaultColor Color = "default"
+
+	// TransparentColor represents the terminal bg color.
+	TransparentColor Color = "-"
+)
+
+// NewColor returns a new color.
+func NewColor(c string) Color {
+	return Color(c)
+}
+
+// String returns color as string.
+func (c Color) String() string {
+	return string(c)
+}
+
+// AsColor returns a view color.
+func (c Color) Color() tcell.Color {
+	if c == DefaultColor {
+		return tcell.ColorDefault
+	}
+	if color, ok := tcell.ColorNames[c.String()]; ok {
+		return color
+	}
+	return tcell.GetColor(c.String())
+}
+
+// AsColors converts series string colors to colors.
+func (c Colors) Colors() []tcell.Color {
+	cc := make([]tcell.Color, 0, len(c))
+	for _, color := range c {
+		cc = append(cc, color.Color())
+	}
+	return cc
+}
 
 func newStyle() Style {
 	return Style{
 		Body:  newBody(),
 		Frame: newFrame(),
 		Info:  newInfo(),
-		Table: newTable(),
 		Views: newViews(),
-		Xray:  newXray(),
 	}
 }
 
+func newCharts() Charts {
+	return Charts{
+		BgColor:            "default",
+		DialBgColor:        "default",
+		ChartBgColor:       "default",
+		DefaultDialColors:  Colors{Color("palegreen"), Color("orangered")},
+		DefaultChartColors: Colors{Color("palegreen"), Color("orangered")},
+	}
+}
 func newViews() Views {
 	return Views{
-		Yaml: newYaml(),
-		Log:  newLog(),
+		Table:  newTable(),
+		Xray:   newXray(),
+		Charts: newCharts(),
+		Yaml:   newYaml(),
+		Log:    newLog(),
 	}
 }
 
@@ -188,7 +253,7 @@ func newStatus() Status {
 		ErrorColor:     "orangered",
 		HighlightColor: "aqua",
 		KillColor:      "mediumpurple",
-		CompletedColor: "gray",
+		CompletedColor: "lightgray",
 	}
 }
 
@@ -292,6 +357,11 @@ func NewStyles() *Styles {
 	}
 }
 
+// Reset resets styles.
+func (s *Styles) Reset() {
+	s.K9s = newStyle()
+}
+
 // DefaultSkin loads the default skin
 func (s *Styles) DefaultSkin() {
 	s.K9s = newStyle()
@@ -299,12 +369,12 @@ func (s *Styles) DefaultSkin() {
 
 // FgColor returns the foreground color.
 func (s *Styles) FgColor() tcell.Color {
-	return AsColor(s.Body().FgColor)
+	return s.Body().FgColor.Color()
 }
 
 // BgColor returns the background color.
 func (s *Styles) BgColor() tcell.Color {
-	return AsColor(s.Body().BgColor)
+	return s.Body().BgColor.Color()
 }
 
 // AddListener registers a new listener.
@@ -353,14 +423,19 @@ func (s *Styles) Title() Title {
 	return s.Frame().Title
 }
 
+// Charts returns charts styles.
+func (s *Styles) Charts() Charts {
+	return s.K9s.Views.Charts
+}
+
 // Table returns table styles.
 func (s *Styles) Table() Table {
-	return s.K9s.Table
+	return s.K9s.Views.Table
 }
 
 // Xray returns xray styles.
 func (s *Styles) Xray() Xray {
-	return s.K9s.Xray
+	return s.K9s.Views.Xray
 }
 
 // Views returns views styles.
@@ -388,19 +463,7 @@ func (s *Styles) Update() {
 	tview.Styles.PrimitiveBackgroundColor = s.BgColor()
 	tview.Styles.ContrastBackgroundColor = s.BgColor()
 	tview.Styles.PrimaryTextColor = s.FgColor()
-	tview.Styles.BorderColor = AsColor(s.K9s.Frame.Border.FgColor)
-	tview.Styles.FocusColor = AsColor(s.K9s.Frame.Border.FocusColor)
+	tview.Styles.BorderColor = s.K9s.Frame.Border.FgColor.Color()
+	tview.Styles.FocusColor = s.K9s.Frame.Border.FocusColor.Color()
 	s.fireStylesChanged()
-}
-
-// AsColor checks color index, if match return color otherwise pink it is.
-func AsColor(c string) tcell.Color {
-	if c == "default" {
-		return tcell.ColorDefault
-	}
-	if color, ok := tcell.ColorNames[c]; ok {
-		return color
-	}
-
-	return tcell.GetColor(c)
 }

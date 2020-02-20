@@ -31,6 +31,7 @@ func (Ingress) Header(ns string) HeaderRow {
 		Header{Name: "HOSTS"},
 		Header{Name: "ADDRESS"},
 		Header{Name: "PORT"},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
@@ -57,6 +58,7 @@ func (i Ingress) Render(o interface{}, ns string, r *Row) error {
 		toHosts(ing.Spec.Rules),
 		toAddress(ing.Status.LoadBalancer),
 		toTLSPorts(ing.Spec.TLS),
+		"",
 		toAge(ing.ObjectMeta.CreationTimestamp),
 	)
 

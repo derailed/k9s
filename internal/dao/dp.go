@@ -29,6 +29,11 @@ type Deployment struct {
 	Resource
 }
 
+// IsHappy check for happy deployments.
+func (d *Deployment) IsHappy(dp appsv1.Deployment) bool {
+	return dp.Status.Replicas == dp.Status.AvailableReplicas
+}
+
 // Scale a Deployment.
 func (d *Deployment) Scale(path string, replicas int32) error {
 	ns, n := client.Namespaced(path)

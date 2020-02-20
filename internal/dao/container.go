@@ -33,23 +33,21 @@ func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error
 	if !ok {
 		return nil, fmt.Errorf("no context path for %q", c.gvr)
 	}
+
+	var (
+		pmx *mv1beta1.PodMetrics
+		err error
+	)
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
+		if pmx, err = client.DialMetrics(c.Client()).FetchPodMetrics(fqn); err != nil {
+			log.Warn().Err(err).Msgf("No metrics found for pod %q", fqn)
+		}
+	}
+
 	po, err := c.fetchPod(fqn)
 	if err != nil {
 		return nil, err
 	}
-
-	var pmx *mv1beta1.PodMetrics
-	if c.Client().HasMetrics() {
-		mx := client.NewMetricsServer(c.Client())
-		if c.Client() != nil {
-			var err error
-			pmx, err = mx.FetchPodMetrics(fqn)
-			if err != nil {
-				log.Warn().Err(err).Msgf("No metrics found for pod %q", fqn)
-			}
-		}
-	}
-
 	res := make([]runtime.Object, 0, len(po.Spec.InitContainers)+len(po.Spec.Containers))
 	for _, co := range po.Spec.InitContainers {
 		res = append(res, makeContainerRes(co, po, pmx, true))

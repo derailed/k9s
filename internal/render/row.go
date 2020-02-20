@@ -39,6 +39,11 @@ func (r Row) Clone() Row {
 	}
 }
 
+// Len returns the length of the row.
+func (r Row) Len() int {
+	return len(r.Fields)
+}
+
 // ----------------------------------------------------------------------------
 
 // Rows represents a collection of rows.

@@ -132,8 +132,22 @@ func (t *Table) bindKeys() {
 		tcell.KeyBackspace:  ui.NewSharedKeyAction("Erase", t.eraseCmd, false),
 		tcell.KeyDelete:     ui.NewSharedKeyAction("Erase", t.eraseCmd, false),
 		ui.KeyShiftN:        ui.NewKeyAction("Sort Name", t.SortColCmd(0, true), false),
+		tcell.KeyCtrlZ:      ui.NewKeyAction("Toggle Faults", t.toggleFaultCmd, false),
 		ui.KeyShiftA:        ui.NewKeyAction("Sort Age", t.SortColCmd(-1, true), false),
+		tcell.KeyCtrlW:      ui.NewKeyAction("Show Wide", t.toggleWideCmd, false),
 	})
+}
+
+func (t *Table) toggleFaultCmd(evt *tcell.EventKey) *tcell.EventKey {
+	t.ToggleToast()
+
+	return nil
+}
+
+func (t *Table) toggleWideCmd(evt *tcell.EventKey) *tcell.EventKey {
+	t.ToggleWide()
+
+	return nil
 }
 
 func (t *Table) cpCmd(evt *tcell.EventKey) *tcell.EventKey {

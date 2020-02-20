@@ -37,5 +37,6 @@ func TestPolicyRender(t *testing.T) {
 		"[orangered::b] 𐄂 [::]",
 		"[orangered::b] 𐄂 [::]",
 		"",
+		"",
 	}, r.Fields)
 }

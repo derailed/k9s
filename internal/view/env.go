@@ -13,7 +13,7 @@ import (
 type K9sEnv map[string]string
 
 // EnvRX match $XXX custom arg.
-var envRX = regexp.MustCompile(`\$([\w]+)(\d*)`)
+var envRX = regexp.MustCompile(`\$(\!?[\w]+)(\d*)`)
 
 func (e K9sEnv) envFor(ns, args string) (string, error) {
 	envs := envRX.FindStringSubmatch(args)
@@ -41,9 +41,22 @@ func (e K9sEnv) envFor(ns, args string) (string, error) {
 }
 
 func (e K9sEnv) subOut(args, q string) (string, error) {
+	var reverse bool
+	if q[0] == '!' {
+		reverse = true
+		q = q[1:]
+	}
 	env, ok := e[strings.ToUpper(q)]
 	if !ok {
 		return "", fmt.Errorf("no env vars exists for argument %q using key %q", args, q)
+	}
+
+	if b, err := strconv.ParseBool(env); err == nil {
+		if reverse {
+			env = fmt.Sprintf("%t", !b)
+		} else {
+			env = fmt.Sprintf("%t", b)
+		}
 	}
 
 	return envRX.ReplaceAllString(args, env), nil
