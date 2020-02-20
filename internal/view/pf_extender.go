@@ -3,6 +3,7 @@ package view
 import (
 	"errors"
 	"fmt"
+	"net"
 	"strconv"
 
 	"github.com/derailed/k9s/internal/client"
@@ -71,6 +72,14 @@ func (p *PortForwardExtender) fetchPodName(path string) (string, error) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
+func tryListenPort(port string) error {
+	server, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
+	if err != nil {
+		return err
+	}
+	return server.Close()
+}
+
 func runForward(v ResourceViewer, pf watch.Forwarder, f *portforward.PortForwarder) {
 	v.App().factory.AddForwarder(pf)
 
@@ -92,7 +101,11 @@ func runForward(v ResourceViewer, pf watch.Forwarder, f *portforward.PortForward
 }
 
 func startFwdCB(v ResourceViewer, path, co string, t client.PortTunnel) {
-	log.Debug().Msgf("CURRENT-FWD %#v", v.App().factory.Forwarders())
+	err := tryListenPort(t.LocalPort)
+	if err != nil {
+		v.App().Flash().Err(err)
+		return
+	}
 
 	if _, ok := v.App().factory.ForwarderFor(dao.PortForwardID(path, co)); ok {
 		v.App().Flash().Err(errors.New("A port-forward is already active on this pod"))

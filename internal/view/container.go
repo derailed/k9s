@@ -3,7 +3,6 @@ package view
 import (
 	"errors"
 	"fmt"
-	"net"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
@@ -154,12 +153,4 @@ func (c *Container) isForwardable(path string) ([]string, bool) {
 	}
 
 	return pp, true
-}
-
-func tryListenPort(port string) error {
-	server, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
-	if err != nil {
-		return err
-	}
-	return server.Close()
 }

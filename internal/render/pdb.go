@@ -79,16 +79,19 @@ func (p PodDisruptionBudget) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(int(pdb.Status.DesiredHealthy)),
 		strconv.Itoa(int(pdb.Status.ExpectedPods)),
 		mapToStr(pdb.Labels),
-		asStatus(p.diagnose(pdb.Spec.MinAvailable.IntVal, pdb.Status.CurrentHealthy)),
+		asStatus(p.diagnose(pdb.Spec.MinAvailable, pdb.Status.CurrentHealthy)),
 		toAge(pdb.ObjectMeta.CreationTimestamp),
 	)
 
 	return nil
 }
 
-func (PodDisruptionBudget) diagnose(min, healthy int32) error {
-	if min > healthy {
-		return fmt.Errorf("expected %d but got %d", min, healthy)
+func (PodDisruptionBudget) diagnose(min *intstr.IntOrString, healthy int32) error {
+	if min == nil {
+		return nil
+	}
+	if min.IntVal > healthy {
+		return fmt.Errorf("expected %d but got %d", min.IntVal, healthy)
 	}
 	return nil
 }
