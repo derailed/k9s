@@ -65,7 +65,7 @@ func TestFlashBurst(t *testing.T) {
 	}
 
 	time.Sleep(2 * delay)
-	s, c, l, m := v.getMetrics()
+	s, _, l, m := v.getMetrics()
 	assert.Equal(t, count, s)
 	assert.Equal(t, model.FlashInfo, l)
 	assert.Equal(t, fmt.Sprintf("test-%d", count), m)
