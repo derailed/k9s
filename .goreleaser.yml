@@ -12,7 +12,6 @@ builds:
       - linux
       - darwin
       - windows
-      - debian
     goarch:
       - 386
       - amd64
