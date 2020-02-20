@@ -45,8 +45,6 @@ func TestFlash(t *testing.T) {
 			assert.Equal(t, 1, s)
 			assert.Equal(t, u.level, l)
 			assert.Equal(t, u.e, m)
-
-			close(f.Channel())
 		})
 	}
 }
