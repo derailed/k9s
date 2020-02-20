@@ -40,7 +40,7 @@ func TestFlash(t *testing.T) {
 				f.Err(errors.New(u.e))
 			}
 
-			time.Sleep(2 * delay)
+			time.Sleep(5 * delay)
 			s, c, l, m := v.getMetrics()
 			assert.Equal(t, 1, s)
 			assert.Equal(t, u.level, l)
