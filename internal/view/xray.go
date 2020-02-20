@@ -296,7 +296,6 @@ func (x *Xray) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (x *Xray) attachCmd(evt *tcell.EventKey) *tcell.EventKey {
-	
 	spec := x.selectedSpec()
 	if spec == nil {
 		return nil
@@ -359,7 +358,6 @@ func (x *Xray) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return nil
-
 }
 
 func (x *Xray) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
