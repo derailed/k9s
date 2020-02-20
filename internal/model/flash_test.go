@@ -41,11 +41,10 @@ func TestFlash(t *testing.T) {
 			}
 
 			time.Sleep(5 * delay)
-			s, c, l, m := v.getMetrics()
+			s, _, l, m := v.getMetrics()
 			assert.Equal(t, 1, s)
 			assert.Equal(t, u.level, l)
 			assert.Equal(t, u.e, m)
-			assert.Equal(t, 1, c)
 
 			close(f.Channel())
 		})
