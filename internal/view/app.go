@@ -18,7 +18,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// // ExitStatus indicates UI exit conditions.
+// ExitStatus indicates UI exit conditions.
 var ExitStatus = ""
 
 const (

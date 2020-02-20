@@ -34,7 +34,7 @@ require (
 	github.com/alexellis/go-execute v0.0.0-20200124154445-8697e4e28c5e // indirect
 	github.com/alexellis/hmac v0.0.0-20180624211220-5c52ab81c0de // indirect
 	github.com/atotto/clipboard v0.1.2
-	github.com/derailed/tview v0.3.5
+	github.com/derailed/tview v0.3.6
 	github.com/drone/envsubst v1.0.2 // indirect
 	github.com/elazarl/goproxy v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect

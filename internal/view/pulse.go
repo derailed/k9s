@@ -157,7 +157,7 @@ func (p *Pulse) PulseChanged(c *health.Check) {
 	v.Add(tchart.Metric{OK: c.Tally(health.OK), Fault: c.Tally(health.Toast)})
 }
 
-// PulseLoadFailed notifies the load failed.
+// PulseFailed notifies the load failed.
 func (p *Pulse) PulseFailed(err error) {
 	p.app.Flash().Err(err)
 }

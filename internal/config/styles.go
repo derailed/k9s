@@ -105,7 +105,7 @@ type (
 		FgColor      Color `yaml:"fgColor"`
 	}
 
-	// ColorBorder tracks border styles.
+	// Border tracks border styles.
 	Border struct {
 		FgColor    Color `yaml:"fgColor"`
 		FocusColor Color `yaml:"focusColor"`
@@ -179,7 +179,7 @@ func (c Color) String() string {
 	return string(c)
 }
 
-// AsColor returns a view color.
+// Color returns a view color.
 func (c Color) Color() tcell.Color {
 	if c == DefaultColor {
 		return tcell.ColorDefault
@@ -190,7 +190,7 @@ func (c Color) Color() tcell.Color {
 	return tcell.GetColor(c.String())
 }
 
-// AsColors converts series string colors to colors.
+// Colors converts series string colors to colors.
 func (c Colors) Colors() []tcell.Color {
 	cc := make([]tcell.Color, 0, len(c))
 	for _, color := range c {

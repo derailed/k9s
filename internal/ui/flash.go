@@ -49,6 +49,7 @@ func (f *Flash) StylesChanged(s *config.Styles) {
 	f.SetTextColor(s.FgColor())
 }
 
+// Watch watches for flash changes.
 func (f *Flash) Watch(ctx context.Context, c model.FlashChan) {
 	defer log.Debug().Msgf("Flash Canceled!")
 	for {

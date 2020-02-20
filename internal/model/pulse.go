@@ -35,6 +35,7 @@ type Pulse struct {
 	data        health.Checks
 }
 
+// NewPulse returns a new pulse.
 func NewPulse(gvr string) *Pulse {
 	return &Pulse{
 		gvr:         gvr,
@@ -42,6 +43,7 @@ func NewPulse(gvr string) *Pulse {
 	}
 }
 
+// Watch monitors pulses.
 func (p *Pulse) Watch(ctx context.Context) {
 	p.Refresh(ctx)
 	go p.updater(ctx)

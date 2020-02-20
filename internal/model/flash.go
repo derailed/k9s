@@ -20,6 +20,7 @@ const (
 	FlashErr
 )
 
+// LevelMessage tracks an message and severity.
 type LevelMessage struct {
 	Level FlashLevel
 	Text  string
@@ -29,6 +30,7 @@ func newClearMessage() LevelMessage {
 	return LevelMessage{}
 }
 
+// IsClear returns true if message is empty.
 func (l LevelMessage) IsClear() bool {
 	return l.Text == ""
 }
@@ -56,6 +58,7 @@ type Flash struct {
 	msgChan chan LevelMessage
 }
 
+// NewFlash returns a new instance.
 func NewFlash(dur time.Duration) *Flash {
 	return &Flash{
 		delay:   dur,

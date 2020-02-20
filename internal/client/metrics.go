@@ -16,8 +16,10 @@ const (
 	mxCacheExpiry = 1 * time.Minute
 )
 
+// MetricsDial tracks global metric server handle.
 var MetricsDial *MetricsServer
 
+// DialMetrics dials the metrics server.
 func DialMetrics(c Connection) *MetricsServer {
 	if MetricsDial == nil {
 		MetricsDial = NewMetricsServer(c)
@@ -26,6 +28,7 @@ func DialMetrics(c Connection) *MetricsServer {
 	return MetricsDial
 }
 
+// ResetMetrics resets the metric server handle.
 func ResetMetrics() {
 	MetricsDial = nil
 }

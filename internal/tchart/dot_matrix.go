@@ -4,23 +4,26 @@ import (
 	"fmt"
 )
 
-// var dots = []rune{' ', '⠂', '⠶', '⠿'}
 var dots = []rune{' ', '⠂', '▤', '▥'}
 
-// var dots = []rune{' ', '⠂', '▤', '▇'}
-
+// Segment represents a dial segment.
 type Segment []int
 
+// Segments represents a collection of segments.
 type Segments []Segment
 
+// Matrics represents a number dial.
 type Matrix [][]rune
 
+// Orientation tracks char orientations.
 type Orientation int
 
+// DotMatrix tracks a char matrix.
 type DotMatrix struct {
 	row, col int
 }
 
+// NewDotMatrix returns a new matrix.
 func NewDotMatrix(row, col int) DotMatrix {
 	return DotMatrix{
 		row: row,
@@ -28,6 +31,7 @@ func NewDotMatrix(row, col int) DotMatrix {
 	}
 }
 
+// Print prints the matrix.
 func (d DotMatrix) Print(n int) Matrix {
 	m := make(Matrix, d.row)
 	segs := asSegments(n)
@@ -67,6 +71,7 @@ func asSegments(n int) Segment {
 	}
 }
 
+// CharFor return a char based on row/col.
 func (s Segment) CharFor(row, col int) rune {
 	c := ' '
 	segs := ToSegments(row, col)
@@ -101,6 +106,7 @@ var segs = map[int][][]int{
 	4: [][]int{[]int{4, 6}, []int{6}, []int{5, 6}},
 }
 
+// ToSegments return path segments.
 func ToSegments(row, col int) []int {
 	return segs[row][col]
 }

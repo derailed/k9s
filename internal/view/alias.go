@@ -32,6 +32,7 @@ func NewAlias(gvr client.GVR) ResourceViewer {
 	return &a
 }
 
+// Init initialiazes the view.
 func (a *Alias) Init(ctx context.Context) error {
 	if err := a.ResourceViewer.Init(ctx); err != nil {
 		return err

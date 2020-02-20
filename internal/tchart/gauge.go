@@ -9,8 +9,13 @@ import (
 )
 
 const (
+	// DeltaSame represents no difference.
 	DeltaSame delta = iota
+
+	// DeltaMore represents a higher value.
 	DeltaMore
+
+	// DeltaLess represents a lower value.
 	DeltaLess
 
 	gaugeFmt = "0%dd"
@@ -38,6 +43,7 @@ func (g *Gauge) IsDial() bool {
 	return true
 }
 
+// Add adds a new metric.
 func (g *Gauge) Add(m Metric) {
 	g.mx.Lock()
 	defer g.mx.Unlock()
@@ -73,6 +79,7 @@ func (g *Gauge) drawNum(sc tcell.Screen, ok bool, o image.Point, n int, dn delta
 	}
 }
 
+// Draw draws the primitive.
 func (g *Gauge) Draw(sc tcell.Screen) {
 	g.Component.Draw(sc)
 

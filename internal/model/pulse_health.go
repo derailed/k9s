@@ -14,16 +14,19 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// PulseHealth tracks resources health.
 type PulseHealth struct {
 	factory dao.Factory
 }
 
+// NewPulseHealth returns a new instance.
 func NewPulseHealth(f dao.Factory) *PulseHealth {
 	return &PulseHealth{
 		factory: f,
 	}
 }
 
+// List returns a canned collection of resources health.
 func (h *PulseHealth) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	defer func(t time.Time) {
 		log.Debug().Msgf("PulseHealthCheck %v", time.Since(t))
