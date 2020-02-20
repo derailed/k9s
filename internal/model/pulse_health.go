@@ -14,19 +14,19 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-type Health struct {
+type PulseHealth struct {
 	factory dao.Factory
 }
 
-func NewHealth(f dao.Factory) *Health {
-	return &Health{
+func NewPulseHealth(f dao.Factory) *PulseHealth {
+	return &PulseHealth{
 		factory: f,
 	}
 }
 
-func (h *Health) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+func (h *PulseHealth) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	defer func(t time.Time) {
-		log.Debug().Msgf("HealthCheck %v", time.Since(t))
+		log.Debug().Msgf("PulseHealthCheck %v", time.Since(t))
 	}(time.Now())
 
 	gvrs := []string{
@@ -60,7 +60,7 @@ func (h *Health) List(ctx context.Context, ns string) ([]runtime.Object, error) 
 	return hh, nil
 }
 
-func (h *Health) checkMetrics() (health.Checks, error) {
+func (h *PulseHealth) checkMetrics() (health.Checks, error) {
 	dial := client.DialMetrics(h.factory.Client())
 	nmx, err := dial.FetchNodesMetrics()
 	if err != nil {
@@ -81,11 +81,7 @@ func (h *Health) checkMetrics() (health.Checks, error) {
 	return health.Checks{c1, c2}, nil
 }
 
-func (h *Health) check(ctx context.Context, ns, gvr string) (*health.Check, error) {
-	defer func(t time.Time) {
-		log.Debug().Msgf("  CHECK %s - %v", gvr, time.Since(t))
-	}(time.Now())
-
+func (h *PulseHealth) check(ctx context.Context, ns, gvr string) (*health.Check, error) {
 	meta, ok := Registry[gvr]
 	if !ok {
 		return nil, fmt.Errorf("No meta for %q", gvr)

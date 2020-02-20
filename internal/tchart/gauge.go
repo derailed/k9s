@@ -56,6 +56,9 @@ func (g *Gauge) drawNum(sc tcell.Screen, ok bool, o image.Point, n int, dn delta
 	}
 
 	dm, sig := NewDotMatrix(5, 3), n == 0
+	if n == 0 {
+		style = g.dimmed
+	}
 	for i := 0; i < len(ns); i++ {
 		if ns[i] == '0' && !sig {
 			g.drawDial(sc, dm.Print(int(ns[i]-48)), o, g.dimmed)
@@ -102,7 +105,7 @@ func (g *Gauge) Draw(sc tcell.Screen) {
 		if g.HasFocus() {
 			legend = "[:aqua]" + g.legend + "[::]"
 		}
-		tview.Print(sc, legend, rect.Min.X, rect.Max.Y-1, rect.Dx(), tview.AlignCenter, tcell.ColorWhite)
+		tview.Print(sc, legend, rect.Min.X, rect.Max.Y, rect.Dx(), tview.AlignCenter, tcell.ColorWhite)
 	}
 }
 

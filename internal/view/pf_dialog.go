@@ -27,13 +27,13 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 		SetFieldTextColor(styles.K9s.Info.SectionColor.Color())
 
 	p1, p2, address := ports[0], extractPort(ports[0]), "localhost"
-	f.AddInputField("Container Port:", p1, 20, nil, func(p string) {
+	f.AddInputField("Container Port:", p1, 30, nil, func(p string) {
 		p1 = p
 	})
-	f.AddInputField("Local Port:", p2, 20, nil, func(p string) {
+	f.AddInputField("Local Port:", p2, 30, nil, func(p string) {
 		p2 = p
 	})
-	f.AddInputField("Address:", address, 20, nil, func(h string) {
+	f.AddInputField("Address:", address, 30, nil, func(h string) {
 		address = h
 	})
 
@@ -48,22 +48,24 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 		okFn(v, path, extractContainer(p1), tunnel)
 	})
 	f.AddButton("Cancel", func() {
-		DismissPortForwards(pages)
+		DismissPortForwards(v.App(), pages)
 	})
 
 	modal := tview.NewModalForm(fmt.Sprintf("<PortForward on %s>", path), f)
 	modal.SetText("Exposed Ports: " + strings.Join(ports, ","))
 	modal.SetDoneFunc(func(_ int, b string) {
-		DismissPortForwards(pages)
+		DismissPortForwards(v.App(), pages)
 	})
 
-	pages.AddPage(portForwardKey, modal, false, false)
+	pages.AddPage(portForwardKey, modal, false, true)
 	pages.ShowPage(portForwardKey)
+	v.App().SetFocus(pages.GetPrimitive(portForwardKey))
 }
 
 // DismissPortForwards dismiss the port forward dialog.
-func DismissPortForwards(p *ui.Pages) {
+func DismissPortForwards(app *App, p *ui.Pages) {
 	p.RemovePage(portForwardKey)
+	app.SetFocus(p.CurrentPage().Item)
 }
 
 // ----------------------------------------------------------------------------

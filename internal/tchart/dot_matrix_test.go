@@ -50,7 +50,7 @@ func TestDial(t *testing.T) {
 
 // Helpers...
 
-const hChar, vChar = '⠶', '⠿'
+const hChar, vChar = '▤', '▥'
 
 var numbers = []tchart.Matrix{
 	[][]rune{

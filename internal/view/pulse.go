@@ -141,15 +141,19 @@ func (p *Pulse) PulseChanged(c *health.Check) {
 		v.SetLegend(fmt.Sprintf(" %s - %dMi", strings.Title(gvr.R()), c.Tally(health.OK)))
 	default:
 		nn := v.GetSeriesColorNames()
-		v.SetLegend(fmt.Sprintf(" %s(%d:[%s::]%d:[%s::b]%d[-::])",
+		if c.Tally(health.OK) == 0 {
+			nn[0] = "gray"
+		}
+		if c.Tally(health.Toast) == 0 {
+			nn[1] = "gray"
+		}
+		v.SetLegend(fmt.Sprintf(" %s - [%s::]%d/[%s::b]%d[-::]",
 			strings.Title(gvr.R()),
-			c.Tally(health.Corpus),
 			nn[0],
 			c.Tally(health.OK),
 			nn[1],
 			c.Tally(health.Toast),
-		),
-		)
+		))
 	}
 	v.Add(tchart.Metric{OK: c.Tally(health.OK), Fault: c.Tally(health.Toast)})
 }
@@ -173,12 +177,10 @@ func (p *Pulse) bindKeys() {
 }
 
 func (p *Pulse) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	log.Debug().Msgf("Pulse GOT EVENT %#v", evt)
 	key := evt.Key()
 	if key == tcell.KeyRune {
 		key = tcell.Key(evt.Rune())
 	}
-
 	if a, ok := p.actions[key]; ok {
 		return a.Action(evt)
 	}
@@ -275,7 +277,7 @@ func (p *Pulse) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	log.Debug().Msgf("Selected %s", s.ID())
 	gvr := client.NewGVR(s.ID())
-	if err := p.App().gotoResource(gvr.R(), false); err != nil {
+	if err := p.App().gotoResource(gvr.R(), "", false); err != nil {
 		p.App().Flash().Err(err)
 	}
 

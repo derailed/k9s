@@ -30,6 +30,7 @@ func NewClusterInfo(app *App) *ClusterInfo {
 
 // Init initializes the view.
 func (c *ClusterInfo) Init() {
+	c.SetBorderPadding(0, 0, 1, 0)
 	c.app.Styles.AddListener(c)
 	c.layout()
 	c.StylesChanged(c.app.Styles)

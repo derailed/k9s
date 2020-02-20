@@ -40,8 +40,7 @@ func (m Metric) Sum() int {
 type SparkLine struct {
 	*Component
 
-	data      []Metric
-	lastWidth int
+	data []Metric
 }
 
 // NewSparkLine returns a new graph.
@@ -75,24 +74,24 @@ func (s *SparkLine) Draw(screen tcell.Screen) {
 	}
 
 	rect := s.asRect()
-	s.lastWidth = rect.Dx()
 	s.cutSet(rect.Dx())
 	max := s.computeMax()
 
-	cX := rect.Min.X + 1
-	if len(s.data) < rect.Dx() {
-		cX = rect.Max.X - len(s.data)
+	cX, idx := rect.Min.X+1, 0
+	if len(s.data)*2 < rect.Dx() {
+		cX = rect.Max.X - len(s.data)*2
+	} else {
+		idx = len(s.data) - rect.Dx()/2
 	}
 
 	scale := float64(len(sparks)) * float64((rect.Dy() - pad)) / float64(max)
-
 	c1, c2 := s.colorForSeries()
-	for _, d := range s.data {
+	for _, d := range s.data[idx:] {
 		b := toBlocks(d, scale)
 		cY := rect.Max.Y - pad
-		cY = s.drawBlock(screen, cX, cY, b.oks, c1)
+		s.drawBlock(screen, cX, cY, b.oks, c1)
 		s.drawBlock(screen, cX, cY, b.errs, c2)
-		cX++
+		cX += 2
 	}
 
 	if rect.Dx() > 0 && rect.Dy() > 0 && s.legend != "" {
@@ -100,11 +99,11 @@ func (s *SparkLine) Draw(screen tcell.Screen) {
 		if s.HasFocus() {
 			legend = "[:aqua:]" + s.legend + "[::]"
 		}
-		tview.Print(screen, legend, rect.Min.X, rect.Max.Y-1, rect.Dx(), tview.AlignCenter, tcell.ColorWhite)
+		tview.Print(screen, legend, rect.Min.X, rect.Max.Y, rect.Dx(), tview.AlignCenter, tcell.ColorWhite)
 	}
 }
 
-func (s *SparkLine) drawBlock(screen tcell.Screen, x, y int, b block, c tcell.Color) int {
+func (s *SparkLine) drawBlock(screen tcell.Screen, x, y int, b block, c tcell.Color) {
 	style := tcell.StyleDefault.Foreground(c).Background(s.bgColor)
 
 	for i := 0; i < b.full; i++ {
@@ -114,48 +113,46 @@ func (s *SparkLine) drawBlock(screen tcell.Screen, x, y int, b block, c tcell.Co
 	if b.partial != 0 {
 		screen.SetContent(x, y, b.partial, nil, style)
 	}
-
-	return y
 }
 
-func (s *SparkLine) cutSet(w int) {
-	if w <= 0 || len(s.data) == 0 {
+func (s *SparkLine) cutSet(width int) {
+	if width <= 0 || len(s.data) == 0 {
 		return
 	}
 
-	if w < len(s.data) {
-		s.data = s.data[len(s.data)-w:]
+	if len(s.data) >= width*2 {
+		s.data = s.data[len(s.data)-width:]
 	}
 }
 
 func (s *SparkLine) computeMax() int {
 	var max int
 	for _, d := range s.data {
-		sum := d.Sum()
-		if sum > max {
-			max = sum
+		if max < d.OK {
+			max = d.OK
 		}
 	}
 
 	return max
 }
 
-func toBlocks(value Metric, scale float64) blocks {
-	if value.Sum() <= 0 {
+func toBlocks(m Metric, scale float64) blocks {
+	if m.Sum() <= 0 {
 		return blocks{}
 	}
+	return blocks{oks: makeBlocks(m.OK, false, scale), errs: makeBlocks(m.Fault, true, scale)}
+}
 
-	oks := int(math.Floor(float64(value.OK) * scale))
-	part, okB := oks%len(sparks), block{full: oks / len(sparks)}
+func makeBlocks(v int, isErr bool, scale float64) block {
+	scaled := int(math.Round(float64(v) * scale))
+	part, b := scaled%len(sparks), block{full: scaled / len(sparks)}
+	// Err might get scaled way down if so nudge.
+	if v > 0 && isErr && scaled == 0 {
+		part = 1
+	}
 	if part > 0 {
-		okB.partial = sparks[part-1]
+		b.partial = sparks[part-1]
 	}
 
-	errs := int(math.Round(float64(value.Fault) * scale))
-	part, errB := errs%len(sparks), block{full: errs / len(sparks)}
-	if part > 0 {
-		errB.partial = sparks[part-1]
-	}
-
-	return blocks{oks: okB, errs: errB}
+	return b
 }

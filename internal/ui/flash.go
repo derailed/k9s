@@ -31,7 +31,7 @@ func NewFlash(app *App) *Flash {
 		TextView: tview.NewTextView(),
 	}
 	f.SetTextColor(tcell.ColorAqua)
-	f.SetTextAlign(tview.AlignLeft)
+	f.SetTextAlign(tview.AlignCenter)
 	f.SetBorderPadding(0, 0, 1, 1)
 	f.app.Styles.AddListener(&f)
 

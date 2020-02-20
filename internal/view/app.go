@@ -104,8 +104,8 @@ func (a *App) Init(version string, rate int) error {
 	main := tview.NewFlex().SetDirection(tview.FlexRow)
 	main.AddItem(a.statusIndicator(), 1, 1, false)
 	main.AddItem(a.Content, 0, 10, true)
-	main.AddItem(a.Crumbs(), 2, 1, false)
-	main.AddItem(flash, 2, 1, false)
+	main.AddItem(a.Crumbs(), 1, 1, false)
+	main.AddItem(flash, 1, 1, false)
 
 	a.Main.AddPage("main", main, true, false)
 	a.Main.AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
@@ -136,7 +136,7 @@ func (a *App) toggleHeader(flag bool) {
 	}
 	if a.showHeader {
 		flex.RemoveItemAtIndex(0)
-		flex.AddItemAtIndex(0, a.buildHeader(), 7, 1, false)
+		flex.AddItemAtIndex(0, a.buildHeader(), 8, 1, false)
 	} else {
 		flex.RemoveItemAtIndex(0)
 		flex.AddItemAtIndex(0, a.statusIndicator(), 1, 1, false)
@@ -271,7 +271,7 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 		}
 		a.Flash().Infof("Switching context to %s", name)
 		a.ReloadStyles(name)
-		if err := a.gotoResource("pods", true); loadPods && err != nil {
+		if err := a.gotoResource("pods", "", true); loadPods && err != nil {
 			a.Flash().Err(err)
 		}
 		a.clusterModel.Reset(a.factory)
@@ -382,7 +382,7 @@ func (a *App) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.CmdBuff().IsActive() && !a.CmdBuff().Empty() {
-		if err := a.gotoResource(a.GetCmd(), true); err != nil {
+		if err := a.gotoResource(a.GetCmd(), "", true); err != nil {
 			log.Error().Err(err).Msgf("Goto resource for %q failed", a.GetCmd())
 			a.Flash().Err(err)
 		}
@@ -431,8 +431,8 @@ func (a *App) viewResource(gvr, path string, clearStack bool) error {
 	return a.command.run(gvr, path, clearStack)
 }
 
-func (a *App) gotoResource(cmd string, clearStack bool) error {
-	return a.command.run(cmd, "", clearStack)
+func (a *App) gotoResource(cmd, path string, clearStack bool) error {
+	return a.command.run(cmd, path, clearStack)
 }
 
 func (a *App) inject(c model.Component) error {

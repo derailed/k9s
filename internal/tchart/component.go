@@ -31,7 +31,7 @@ func NewComponent(id string) *Component {
 	return &Component{
 		Box:          tview.NewBox(),
 		id:           id,
-		noColor:      tcell.ColorBlack,
+		noColor:      tcell.ColorDefault,
 		seriesColors: []tcell.Color{tview.Styles.PrimaryTextColor, tview.Styles.FocusColor},
 		dimmed:       tcell.StyleDefault.Background(tview.Styles.PrimitiveBackgroundColor).Foreground(tcell.ColorGray).Dim(true),
 	}

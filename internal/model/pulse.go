@@ -13,6 +13,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+const defaultRefreshRate = 5 * time.Second
+
 // PulseListener represents a health model listener.
 type PulseListener interface {
 	// PulseChanged notifies the model data changed.
@@ -29,14 +31,14 @@ type Pulse struct {
 	inUpdate    int32
 	listeners   []PulseListener
 	refreshRate time.Duration
-	health      *Health
+	health      *PulseHealth
 	data        health.Checks
 }
 
 func NewPulse(gvr string) *Pulse {
 	return &Pulse{
 		gvr:         gvr,
-		refreshRate: 2 * time.Second,
+		refreshRate: defaultRefreshRate,
 	}
 }
 
@@ -48,7 +50,7 @@ func (p *Pulse) Watch(ctx context.Context) {
 func (p *Pulse) updater(ctx context.Context) {
 	defer log.Debug().Msgf("Pulse canceled -- %q", p.gvr)
 
-	rate := initTreeRefreshRate
+	rate := initRefreshRate
 	for {
 		select {
 		case <-ctx.Done():
@@ -88,7 +90,7 @@ func (p *Pulse) list(ctx context.Context) ([]runtime.Object, error) {
 		return nil, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
 	}
 	if p.health == nil {
-		p.health = NewHealth(f)
+		p.health = NewPulseHealth(f)
 	}
 	ctx = context.WithValue(ctx, internal.KeyFields, "")
 	ctx = context.WithValue(ctx, internal.KeyWithMetrics, false)
