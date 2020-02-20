@@ -32,11 +32,11 @@ func runK(a *App, opts shellOpts) bool {
 		return false
 	}
 	var args []string
-	if u, err := a.Conn().Config().CurrentUserName(); err == nil {
+	if u, err := a.Conn().Config().ImpersonateUser(); err == nil {
 		args = append(args, "--as", u)
 	}
-	if g, err := a.Conn().Config().CurrentGroupNames(); err == nil {
-		args = append(args, "--as-group", strings.Join(g, ","))
+	if g, err := a.Conn().Config().ImpersonateGroups(); err == nil {
+		args = append(args, "--as-group", g)
 	}
 	args = append(args, "--context", a.Config.K9s.CurrentContext)
 	if cfg := a.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
