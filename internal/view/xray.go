@@ -169,6 +169,7 @@ func (x *Xray) refreshActions() {
 		aa[ui.KeyShiftL] = ui.NewKeyAction("Logs Previous", x.logsCmd(true), true)
 	case "v1/pods":
 		aa[ui.KeyS] = ui.NewKeyAction("Shell", x.shellCmd, true)
+		aa[ui.KeyA] = ui.NewKeyAction("Attach", x.attachCmd, true)
 		aa[ui.KeyL] = ui.NewKeyAction("Logs", x.logsCmd(false), true)
 		aa[ui.KeyShiftL] = ui.NewKeyAction("Logs Previous", x.logsCmd(true), true)
 	}
@@ -288,6 +289,30 @@ func (x *Xray) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if err := containerShellin(x.app, x, path, co); err != nil {
+		x.app.Flash().Err(err)
+	}
+
+	return nil
+}
+
+func (x *Xray) attachCmd(evt *tcell.EventKey) *tcell.EventKey {
+	
+	spec := x.selectedSpec()
+	if spec == nil {
+		return nil
+	}
+
+	if spec.Status() != "ok" {
+		x.app.Flash().Errf("%s is not in a running state", spec.Path())
+		return nil
+	}
+
+	path, co := spec.Path(), ""
+	if spec.GVR() == "containers" {
+		path = *spec.ParentPath()
+	}
+
+	if err := containerAttachIn(x.app, x, path, co); err != nil {
 		x.app.Flash().Err(err)
 	}
 

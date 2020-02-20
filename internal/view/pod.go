@@ -43,6 +43,7 @@ func (p *Pod) bindDangerousKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
 		tcell.KeyCtrlK: ui.NewKeyAction("Kill", p.killCmd, true),
 		ui.KeyS:        ui.NewKeyAction("Shell", p.shellCmd, true),
+		ui.KeyA:        ui.NewKeyAction("Attach", p.attachCmd, true),
 	})
 }
 
@@ -130,6 +131,26 @@ func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+func (p *Pod) attachCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := p.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	row := p.GetTable().GetSelectedRowIndex()
+	status := ui.TrimCell(p.GetTable().SelectTable, row, p.GetTable().NameColIndex()+2)
+	if status != render.Running {
+		p.App().Flash().Errf("%s is not in a running state", path)
+		return nil
+	}
+
+	if err := containerAttachIn(p.App(), p, path, ""); err != nil {
+		p.App().Flash().Err(err)
+	}
+
+	return nil
+}
+
 // ----------------------------------------------------------------------------
 // Helpers...
 
@@ -175,6 +196,49 @@ func shellIn(a *App, path, co string) {
 	}
 }
 
+func containerAttachIn(a *App, comp model.Component, path, co string) error {
+	if co != "" {
+		resumeAttachIn(a, comp, path, co)
+		return nil
+	}
+
+	cc, err := fetchContainers(a.factory, path, false)
+	if err != nil {
+		return err
+	}
+	if len(cc) == 1 {
+		resumeAttachIn(a, comp, path, cc[0])
+		return nil
+	}
+	picker := NewPicker()
+	picker.populate(cc)
+	picker.SetSelectedFunc(func(_ int, co, _ string, _ rune) {
+		resumeAttachIn(a, comp, path, co)
+	})
+	if err := a.inject(picker); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func resumeAttachIn(a *App, c model.Component, path, co string) {
+	c.Stop()
+	defer c.Start()
+
+	attachIn(a, path, co)
+}
+
+func attachIn(a *App, path, co string) {
+	args := computeAttachArgs(path, co, a.Config.K9s.CurrentContext, a.Conn().Config().Flags().KubeConfig)
+	
+	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
+	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, path, co), args: args}) {
+		a.Flash().Err(errors.New("Attach exec failed"))
+	}
+	
+}
+
 func computeShellArgs(path, co, context string, kcfg *string) []string {
 	args := make([]string, 0, 15)
 	args = append(args, "exec", "-it")
@@ -190,6 +254,23 @@ func computeShellArgs(path, co, context string, kcfg *string) []string {
 	}
 
 	return append(args, "--", "sh", "-c", shellCheck)
+}
+
+func computeAttachArgs(path, co, context string, kcfg *string) []string {
+	args := make([]string, 0, 15)
+	args = append(args, "attach", "-it")
+	args = append(args, "--context", context)
+	ns, po := client.Namespaced(path)
+	args = append(args, "-n", ns)
+	args = append(args, po)
+	if kcfg != nil && *kcfg != "" {
+		args = append(args, "--kubeconfig", *kcfg)
+	}
+	if co != "" {
+		args = append(args, "-c", co)
+	}
+	
+	return args
 }
 
 func fetchContainers(f *watch.Factory, path string, includeInit bool) ([]string, error) {
