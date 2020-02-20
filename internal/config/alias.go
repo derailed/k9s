@@ -2,6 +2,7 @@ package config
 
 import (
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sync"
 
@@ -29,6 +30,72 @@ func NewAliases() *Aliases {
 	return &Aliases{
 		Alias: make(Alias, 50),
 	}
+}
+
+func (a *Aliases) loadDefaults() {
+	const (
+		contexts   = "contexts"
+		portFwds   = "portforwards"
+		benchmarks = "benchmarks"
+		dumps      = "screendumps"
+		groups     = "groups"
+		users      = "users"
+	)
+
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
+	a.Alias["dp"] = "apps/v1/deployments"
+	a.Alias["sec"] = "v1/secrets"
+	a.Alias["jo"] = "batch/v1/jobs"
+	a.Alias["cr"] = "rbac.authorization.k8s.io/v1/clusterroles"
+	a.Alias["crb"] = "rbac.authorization.k8s.io/v1/clusterrolebindings"
+	a.Alias["ro"] = "rbac.authorization.k8s.io/v1/roles"
+	a.Alias["rb"] = "rbac.authorization.k8s.io/v1/rolebindings"
+	a.Alias["np"] = "networking.k8s.io/v1/networkpolicies"
+	{
+		a.Alias["ctx"] = contexts
+		a.Alias[contexts] = contexts
+		a.Alias["context"] = contexts
+	}
+	{
+		a.Alias["usr"] = users
+		a.Alias[users] = users
+		a.Alias["user"] = users
+	}
+	{
+		a.Alias["grp"] = groups
+		a.Alias["group"] = groups
+		a.Alias[groups] = groups
+	}
+	{
+		a.Alias["pf"] = portFwds
+		a.Alias[portFwds] = portFwds
+		a.Alias["portforward"] = portFwds
+	}
+	{
+		a.Alias["be"] = benchmarks
+		a.Alias["benchmark"] = benchmarks
+		a.Alias[benchmarks] = benchmarks
+	}
+	{
+		a.Alias["sd"] = dumps
+		a.Alias["screendump"] = dumps
+		a.Alias[dumps] = dumps
+	}
+}
+
+// Load K9s aliases.
+func (a *Aliases) Load() error {
+	a.loadDefaults()
+
+	_, err := os.Stat(K9sAlias)
+	if os.IsNotExist(err) {
+		log.Debug().Err(err).Msgf("No custom aliases found")
+		return nil
+	}
+
+	return a.LoadAliases(K9sAlias)
 }
 
 // ShortNames return all shortnames.
