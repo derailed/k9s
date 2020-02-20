@@ -79,7 +79,7 @@ func (r ReplicaSet) Render(o interface{}, ns string, row *Row) error {
 	return nil
 }
 
-func (s ReplicaSet) diagnose(rs appsv1.ReplicaSet) error {
+func (ReplicaSet) diagnose(rs appsv1.ReplicaSet) error {
 	if rs.Status.Replicas != rs.Status.ReadyReplicas {
 		if rs.Status.Replicas == 0 {
 			return fmt.Errorf("did not phase down correctly expecting 0 replicas but got %d", rs.Status.ReadyReplicas)

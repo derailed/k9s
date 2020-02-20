@@ -24,7 +24,7 @@ type Metric struct {
 	OK, Fault int
 }
 
-// Max returns the max of the metric.
+// MaxDigits returns the max of the metric.
 func (m Metric) MaxDigits() int {
 	max := int(math.Max(float64(m.OK), float64(m.Fault)))
 	s := fmt.Sprintf("%d", max)
@@ -36,7 +36,7 @@ func (m Metric) Sum() int {
 	return m.OK + m.Fault
 }
 
-// Sparkline represents a sparkline component.
+// SparkLine represents a sparkline component.
 type SparkLine struct {
 	*Component
 

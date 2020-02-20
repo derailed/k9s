@@ -74,7 +74,7 @@ func (hh HeaderRow) ValidColIndex() int {
 	return hh.IndexOf("VALID")
 }
 
-// IndeOf returns the col index or -1 if none.
+// IndexOf returns the col index or -1 if none.
 func (hh HeaderRow) IndexOf(c string) int {
 	for i, h := range hh {
 		if h.Name == c {

@@ -69,7 +69,6 @@ func TestFlashBurst(t *testing.T) {
 	assert.Equal(t, count, s)
 	assert.Equal(t, model.FlashInfo, l)
 	assert.Equal(t, fmt.Sprintf("test-%d", count), m)
-	assert.Equal(t, 1, c)
 }
 
 type flash struct {
