@@ -82,10 +82,11 @@ func TestJoin(t *testing.T) {
 		i []string
 		e string
 	}{
-		"zero":   {[]string{}, ""},
-		"std":    {[]string{"a", "b", "c"}, "a,b,c"},
-		"blank":  {[]string{"", "", ""}, ""},
-		"sparse": {[]string{"a", "", "c"}, "a,c"},
+		"zero":      {[]string{}, ""},
+		"std":       {[]string{"a", "b", "c"}, "a,b,c"},
+		"blank":     {[]string{"", "", ""}, ""},
+		"sparse":    {[]string{"a", "", "c"}, "a,c"},
+		"withBlank": {[]string{"", "a", "c"}, "a,c"},
 	}
 
 	for k := range uu {
@@ -304,8 +305,8 @@ func TestMapToStr(t *testing.T) {
 		i map[string]string
 		e string
 	}{
-		{map[string]string{"blee": "duh", "aa": "bb"}, "aa=bb,blee=duh"},
-		{map[string]string{}, MissingValue},
+		{map[string]string{"blee": "duh", "aa": "bb"}, "aa=bb blee=duh"},
+		{map[string]string{}, ""},
 	}
 	for _, u := range uu {
 		assert.Equal(t, u.e, mapToStr(u.i))

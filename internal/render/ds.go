@@ -3,7 +3,6 @@ package render
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
@@ -17,18 +16,14 @@ import (
 type DaemonSet struct{}
 
 // ColorerFunc colors a resource row.
-func (DaemonSet) ColorerFunc() ColorerFunc {
+func (d DaemonSet) ColorerFunc() ColorerFunc {
 	return func(ns string, r RowEvent) tcell.Color {
 		c := DefaultColorer(ns, r)
 		if r.Kind == EventAdd || r.Kind == EventUpdate {
 			return c
 		}
 
-		desiredCol := 2
-		if !client.IsAllNamespaces(ns) {
-			desiredCol = 1
-		}
-		if strings.TrimSpace(r.Row.Fields[desiredCol]) != strings.TrimSpace(r.Row.Fields[desiredCol+2]) {
+		if !Happy(ns, r.Row) {
 			return ErrColor
 		}
 
@@ -50,6 +45,8 @@ func (DaemonSet) Header(ns string) HeaderRow {
 		Header{Name: "READY", Align: tview.AlignRight},
 		Header{Name: "UP-TO-DATE", Align: tview.AlignRight},
 		Header{Name: "AVAILABLE", Align: tview.AlignRight},
+		Header{Name: "LABELS", Wide: true},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
@@ -78,8 +75,18 @@ func (d DaemonSet) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(int(ds.Status.NumberReady)),
 		strconv.Itoa(int(ds.Status.UpdatedNumberScheduled)),
 		strconv.Itoa(int(ds.Status.NumberAvailable)),
+		mapToStr(ds.Labels),
+		asStatus(d.diagnose(ds.Status.DesiredNumberScheduled, ds.Status.NumberReady)),
 		toAge(ds.ObjectMeta.CreationTimestamp),
 	)
 
+	return nil
+}
+
+// Happy returns true if resoure is happy, false otherwise
+func (DaemonSet) diagnose(d, r int32) error {
+	if d != r {
+		return fmt.Errorf("desiring %d replicas but %d ready", d, r)
+	}
 	return nil
 }

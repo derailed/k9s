@@ -6,7 +6,6 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
 )
 
 // LogoSmall K9s small log.
@@ -37,16 +36,15 @@ type Splash struct {
 // NewSplash instantiates a new splash screen with product and company info.
 func NewSplash(styles *config.Styles, version string) *Splash {
 	s := Splash{Flex: tview.NewFlex()}
+	s.SetBackgroundColor(styles.BgColor())
 
 	logo := tview.NewTextView()
 	logo.SetDynamicColors(true)
-	logo.SetBackgroundColor(tcell.ColorDefault)
 	logo.SetTextAlign(tview.AlignCenter)
 	s.layoutLogo(logo, styles)
 
 	vers := tview.NewTextView()
 	vers.SetDynamicColors(true)
-	vers.SetBackgroundColor(tcell.ColorDefault)
 	vers.SetTextAlign(tview.AlignCenter)
 	s.layoutRev(vers, version, styles)
 

@@ -1,0 +1,3 @@
+#!/bin/bash
+
+/usr/local/bin/kubectl logs -f $1 -n $2 --context $3 | jq -r '.message'

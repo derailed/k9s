@@ -13,15 +13,21 @@ func TestYaml(t *testing.T) {
 	}{
 		{
 			`api: fred
-		version: v1`,
+		   version: v1`,
 			`[steelblue::b]api[white::-]: [papayawhip::]fred
-		[steelblue::b]version[white::-]: [papayawhip::]v1`,
+		   [steelblue::b]version[white::-]: [papayawhip::]v1`,
+		},
+		{
+			`api: <<<"search_0">>>fred<<<"">>>
+		   version: v1`,
+			`[steelblue::b]api[white::-]: [papayawhip::]["search_0"]fred[""]
+		   [steelblue::b]version[white::-]: [papayawhip::]v1`,
 		},
 		{
 			`api:
-		version: v1`,
+			version: v1`,
 			`[steelblue::b]api[white::-]:
-		[steelblue::b]version[white::-]: [papayawhip::]v1`,
+			[steelblue::b]version[white::-]: [papayawhip::]v1`,
 		},
 		{
 			"      fred:blee",

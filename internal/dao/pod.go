@@ -27,14 +27,25 @@ import (
 const defaultTimeout = 1 * time.Second
 
 var (
-	_ Accessor = (*Pod)(nil)
-	_ Nuker    = (*Pod)(nil)
-	_ Loggable = (*Pod)(nil)
+	_ Accessor   = (*Pod)(nil)
+	_ Nuker      = (*Pod)(nil)
+	_ Loggable   = (*Pod)(nil)
+	_ Controller = (*Pod)(nil)
 )
 
 // Pod represents a pod resource.
 type Pod struct {
 	Resource
+}
+
+// IsHappy check for happy deployments.
+func (p *Pod) IsHappy(po v1.Pod) bool {
+	for _, c := range po.Status.Conditions {
+		if c.Status == v1.ConditionFalse {
+			return false
+		}
+	}
+	return true
 }
 
 // Get returns a resource instance if found, else an error.
@@ -49,11 +60,11 @@ func (p *Pod) Get(ctx context.Context, path string) (runtime.Object, error) {
 		return nil, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
 	}
 
-	// No Deal!
-	mx := client.NewMetricsServer(p.Client())
-	pmx, err := mx.FetchPodMetrics(path)
-	if err != nil {
-		log.Warn().Err(err).Msgf("No pods metrics")
+	var pmx *mv1beta1.PodMetrics
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
+		if pmx, err = client.DialMetrics(p.Client()).FetchPodMetrics(path); err != nil {
+			log.Warn().Err(err).Msgf("No pod metrics")
+		}
 	}
 
 	return &render.PodWithMetrics{Raw: u, MX: pmx}, nil
@@ -76,10 +87,11 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		return oo, err
 	}
 
-	mx := client.NewMetricsServer(p.Client())
-	pmx, err := mx.FetchPodsMetrics(ns)
-	if err != nil {
-		log.Warn().Err(err).Msgf("No pods metrics")
+	var pmx *mv1beta1.PodMetricsList
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
+		if pmx, err = client.DialMetrics(p.Client()).FetchPodsMetrics(ns); err != nil {
+			log.Warn().Err(err).Msgf("No pods metrics")
+		}
 	}
 
 	var res []runtime.Object
@@ -122,18 +134,12 @@ func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, er
 
 // Containers returns all container names on pod
 func (p *Pod) Containers(path string, includeInit bool) ([]string, error) {
-	o, err := p.Factory.Get(p.gvr.String(), path, true, labels.Everything())
+	pod, err := p.GetInstance(path)
 	if err != nil {
 		return nil, err
 	}
 
-	var pod v1.Pod
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod)
-	if err != nil {
-		return nil, err
-	}
-
-	cc := []string{}
+	cc := make([]string, 0, len(pod.Spec.Containers)+len(pod.Spec.InitContainers))
 	for _, c := range pod.Spec.Containers {
 		cc = append(cc, c.Name)
 	}
@@ -147,15 +153,36 @@ func (p *Pod) Containers(path string, includeInit bool) ([]string, error) {
 	return cc, nil
 }
 
+// Pod returns a pod victim by name.
+func (p *Pod) Pod(fqn string) (string, error) {
+	return fqn, nil
+}
+
+// GetInstance returns a pod instance.
+func (p *Pod) GetInstance(fqn string) (*v1.Pod, error) {
+	o, err := p.Factory.Get(p.gvr.String(), fqn, false, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	var pod v1.Pod
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod)
+	if err != nil {
+		return nil, err
+	}
+
+	return &pod, nil
+}
+
 // TailLogs tails a given container logs
-func (p *Pod) TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error {
+func (p *Pod) TailLogs(ctx context.Context, c chan<- []byte, opts LogOptions) error {
 	if !opts.HasContainer() {
 		return p.logs(ctx, c, opts)
 	}
 	return tailLogs(ctx, p, c, opts)
 }
 
-func (p *Pod) logs(ctx context.Context, c chan<- string, opts LogOptions) error {
+func (p *Pod) logs(ctx context.Context, c chan<- []byte, opts LogOptions) error {
 	fac, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
 	if !ok {
 		return errors.New("Expecting an informer")
@@ -194,7 +221,7 @@ func (p *Pod) logs(ctx context.Context, c chan<- string, opts LogOptions) error 
 	return nil
 }
 
-func tailLogs(ctx context.Context, logger Logger, c chan<- string, opts LogOptions) error {
+func tailLogs(ctx context.Context, logger Logger, c chan<- []byte, opts LogOptions) error {
 	log.Debug().Msgf("Tailing logs for %q -- %q", opts.Path, opts.Container)
 	o := v1.PodLogOptions{
 		Container: opts.Container,
@@ -206,11 +233,13 @@ func tailLogs(ctx context.Context, logger Logger, c chan<- string, opts LogOptio
 	if err != nil {
 		return err
 	}
-	ctxt, cancelFunc := context.WithCancel(ctx)
-	req.Context(ctxt)
+
+	var cancel context.CancelFunc
+	ctx, cancel = context.WithCancel(ctx)
+	req.Context(ctx)
 
 	var blocked int32 = 1
-	go logsTimeout(cancelFunc, &blocked)
+	go logsTimeout(cancel, &blocked)
 
 	// This call will block if nothing is in the stream!!
 	stream, err := req.Stream()
@@ -219,7 +248,7 @@ func tailLogs(ctx context.Context, logger Logger, c chan<- string, opts LogOptio
 		log.Error().Err(err).Msgf("Log stream failed for `%s", opts.Path)
 		return fmt.Errorf("Unable to obtain log stream for %s", opts.Path)
 	}
-	go readLogs(ctx, stream, c, opts)
+	go readLogs(stream, c, opts)
 
 	return nil
 }
@@ -232,7 +261,7 @@ func logsTimeout(cancel context.CancelFunc, blocked *int32) {
 	}
 }
 
-func readLogs(ctx context.Context, stream io.ReadCloser, c chan<- string, opts LogOptions) {
+func readLogs(stream io.ReadCloser, c chan<- []byte, opts LogOptions) {
 	defer func() {
 		log.Debug().Msgf(">>> Closing stream `%s", opts.Path)
 		if err := stream.Close(); err != nil {
@@ -240,16 +269,18 @@ func readLogs(ctx context.Context, stream io.ReadCloser, c chan<- string, opts L
 		}
 	}()
 
-	scanner := bufio.NewScanner(stream)
-	for scanner.Scan() {
-		select {
-		case <-ctx.Done():
+	r := bufio.NewReader(stream)
+	for {
+		bytes, err := r.ReadBytes('\n')
+		if err != nil {
+			log.Warn().Err(err).Msg("Read error")
+			if err != io.EOF {
+				log.Error().Err(err).Msgf("stream reader failed")
+			}
 			return
-		default:
-			c <- opts.DecorateLog(scanner.Text())
 		}
+		c <- opts.DecorateLog(bytes)
 	}
-	log.Error().Msgf("SCAN_ERR %#v", scanner.Err())
 }
 
 // ----------------------------------------------------------------------------

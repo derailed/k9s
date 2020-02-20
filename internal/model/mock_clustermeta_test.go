@@ -332,12 +332,14 @@ func (mock *MockClusterMeta) SupportsResource(_param0 string) bool {
 	return ret0
 }
 
-func (mock *MockClusterMeta) SwitchContextOrDie(_param0 string) {
+func (mock *MockClusterMeta) SwitchContext(_param0 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockClusterMeta().")
 	}
 	params := []pegomock.Param{_param0}
-	pegomock.GetGenericMockFrom(mock).Invoke("SwitchContextOrDie", params, []reflect.Type{})
+	pegomock.GetGenericMockFrom(mock).Invoke("SwitchContext", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+
+	return nil
 }
 
 func (mock *MockClusterMeta) UserName() (string, error) {

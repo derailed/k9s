@@ -81,6 +81,26 @@ func TestSort(t *testing.T) {
 				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
 			},
 		},
+		"id_preserve": {
+			re: render.RowEvents{
+				{Row: render.Row{ID: "ns1/B", Fields: render.Fields{"B", "2", "3"}}},
+				{Row: render.Row{ID: "ns1/A", Fields: render.Fields{"A", "2", "3"}}},
+				{Row: render.Row{ID: "ns1/C", Fields: render.Fields{"C", "2", "3"}}},
+				{Row: render.Row{ID: "ns2/B", Fields: render.Fields{"B", "2", "3"}}},
+				{Row: render.Row{ID: "ns2/A", Fields: render.Fields{"A", "2", "3"}}},
+				{Row: render.Row{ID: "ns2/C", Fields: render.Fields{"C", "2", "3"}}},
+			},
+			col: 1,
+			asc: true,
+			e: render.RowEvents{
+				{Row: render.Row{ID: "ns1/A", Fields: render.Fields{"A", "2", "3"}}},
+				{Row: render.Row{ID: "ns1/B", Fields: render.Fields{"B", "2", "3"}}},
+				{Row: render.Row{ID: "ns1/C", Fields: render.Fields{"C", "2", "3"}}},
+				{Row: render.Row{ID: "ns2/A", Fields: render.Fields{"A", "2", "3"}}},
+				{Row: render.Row{ID: "ns2/B", Fields: render.Fields{"B", "2", "3"}}},
+				{Row: render.Row{ID: "ns2/C", Fields: render.Fields{"C", "2", "3"}}},
+			},
+		},
 	}
 
 	for k := range uu {

@@ -28,12 +28,14 @@ func (NetworkPolicy) Header(ns string) HeaderRow {
 
 	return append(h,
 		Header{Name: "NAME"},
-		Header{Name: "ING-SELECTOR"},
+		Header{Name: "ING-SELECTOR", Wide: true},
 		Header{Name: "ING-PORTS"},
 		Header{Name: "ING-BLOCK"},
-		Header{Name: "EGR-SELECTOR"},
+		Header{Name: "EGR-SELECTOR", Wide: true},
 		Header{Name: "EGR-PORTS"},
 		Header{Name: "EGR-BLOCK"},
+		Header{Name: "LABELS", Wide: true},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
@@ -66,6 +68,8 @@ func (n NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
 		es,
 		ep,
 		eb,
+		mapToStr(np.Labels),
+		"",
 		toAge(np.ObjectMeta.CreationTimestamp),
 	)
 
@@ -111,7 +115,14 @@ func egress(ee []v1beta1.NetworkPolicyEgressRule) (string, string, string) {
 func portsToStr(pp []v1beta1.NetworkPolicyPort) string {
 	ports := make([]string, 0, len(pp))
 	for _, p := range pp {
-		ports = append(ports, string(*p.Protocol)+":"+p.Port.String())
+		proto, port := NAValue, NAValue
+		if p.Protocol != nil {
+			proto = string(*p.Protocol)
+		}
+		if p.Port != nil {
+			port = p.Port.String()
+		}
+		ports = append(ports, proto+":"+port)
 	}
 	return strings.Join(ports, ",")
 }

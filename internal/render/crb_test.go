@@ -13,5 +13,5 @@ func TestClusterRoleBindingRender(t *testing.T) {
 	c.Render(load(t, "crb"), "-", &r)
 
 	assert.Equal(t, "-/blee", r.ID)
-	assert.Equal(t, render.Fields{"blee", "blee", "USR", "fernand"}, r.Fields[:4])
+	assert.Equal(t, render.Fields{"blee", "blee", "User", "fernand"}, r.Fields[:4])
 }

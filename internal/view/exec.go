@@ -13,39 +13,68 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func runK(clear bool, app *App, args ...string) bool {
+const (
+	shellCheck = `command -v bash >/dev/null && exec bash || exec sh`
+	bannerFmt  = "<<K9s-Shell>> Pod: %s | Container: %s \n"
+)
+
+type shellOpts struct {
+	clear, background bool
+	binary            string
+	banner            string
+	args              []string
+}
+
+func runK(a *App, opts shellOpts) bool {
 	bin, err := exec.LookPath("kubectl")
 	if err != nil {
 		log.Error().Msgf("Unable to find kubectl command in path %v", err)
 		return false
 	}
+	var args []string
+	if u, err := a.Conn().Config().ImpersonateUser(); err == nil {
+		args = append(args, "--as", u)
+	}
+	if g, err := a.Conn().Config().ImpersonateGroups(); err == nil {
+		args = append(args, "--as-group", g)
+	}
+	args = append(args, "--context", a.Config.K9s.CurrentContext)
+	if cfg := a.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
+		args = append(args, "--kubeconfig", *cfg)
+	}
+	if len(args) > 0 {
+		opts.args = append(opts.args, args...)
+	}
 
-	return run(clear, app, bin, false, args...)
+	opts.binary, opts.background = bin, false
+
+	return run(a, opts)
 }
 
-func run(clear bool, app *App, bin string, bg bool, args ...string) bool {
-	app.Halt()
-	defer app.Resume()
+func run(a *App, opts shellOpts) bool {
+	a.Halt()
+	defer a.Resume()
 
-	return app.Suspend(func() {
-		if err := execute(clear, bin, bg, args...); err != nil {
-			app.Flash().Errf("Command exited: %v", err)
+	return a.Suspend(func() {
+		if err := execute(opts); err != nil {
+			a.Flash().Errf("Command exited: %v", err)
 		}
 	})
 }
 
-func edit(clear bool, app *App, args ...string) bool {
+func edit(a *App, opts shellOpts) bool {
 	bin, err := exec.LookPath(os.Getenv("EDITOR"))
 	if err != nil {
 		log.Error().Msgf("Unable to find editor command in path %v", err)
 		return false
 	}
+	opts.binary, opts.background = bin, false
 
-	return run(clear, app, bin, false, args...)
+	return run(a, opts)
 }
 
-func execute(clear bool, bin string, bg bool, args ...string) error {
-	if clear {
+func execute(opts shellOpts) error {
+	if opts.clear {
 		clearScreen()
 	}
 	ctx, cancel := context.WithCancel(context.Background())
@@ -62,18 +91,19 @@ func execute(clear bool, bin string, bg bool, args ...string) error {
 		cancel()
 	}()
 
-	log.Debug().Msgf("Running command > %s %s", bin, strings.Join(args, " "))
+	log.Debug().Msgf("Running command> %s %s", opts.binary, strings.Join(opts.args, " "))
 
-	cmd := exec.Command(bin, args...)
+	cmd := exec.Command(opts.binary, opts.args...)
 
 	var err error
-	if bg {
+	if opts.background {
 		err = cmd.Start()
 	} else {
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+		_, _ = cmd.Stdout.Write([]byte(opts.banner))
 		err = cmd.Run()
 	}
-	log.Debug().Msgf("Command returned error?? %v", err)
+
 	select {
 	case <-ctx.Done():
 		return errors.New("canceled by operator")

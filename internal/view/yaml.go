@@ -8,9 +8,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/derailed/tview"
-
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
 )
 
@@ -26,35 +25,40 @@ const (
 )
 
 func colorizeYAML(style config.Yaml, raw string) string {
+	// lines := strings.Split(raw, "\n")
 	lines := strings.Split(tview.Escape(raw), "\n")
 
-	fullFmt := strings.Replace(yamlFullFmt, "[key", "["+style.KeyColor, 1)
-	fullFmt = strings.Replace(fullFmt, "[colon", "["+style.ColonColor, 1)
-	fullFmt = strings.Replace(fullFmt, "[val", "["+style.ValueColor, 1)
+	fullFmt := strings.Replace(yamlFullFmt, "[key", "["+style.KeyColor.String(), 1)
+	fullFmt = strings.Replace(fullFmt, "[colon", "["+style.ColonColor.String(), 1)
+	fullFmt = strings.Replace(fullFmt, "[val", "["+style.ValueColor.String(), 1)
 
-	keyFmt := strings.Replace(yamlKeyFmt, "[key", "["+style.KeyColor, 1)
-	keyFmt = strings.Replace(keyFmt, "[colon", "["+style.ColonColor, 1)
+	keyFmt := strings.Replace(yamlKeyFmt, "[key", "["+style.KeyColor.String(), 1)
+	keyFmt = strings.Replace(keyFmt, "[colon", "["+style.ColonColor.String(), 1)
 
-	valFmt := strings.Replace(yamlValueFmt, "[val", "["+style.ValueColor, 1)
+	valFmt := strings.Replace(yamlValueFmt, "[val", "["+style.ValueColor.String(), 1)
 
 	buff := make([]string, 0, len(lines))
 	for _, l := range lines {
 		res := keyValRX.FindStringSubmatch(l)
 		if len(res) == 4 {
-			buff = append(buff, fmt.Sprintf(fullFmt, res[1], res[2], res[3]))
+			buff = append(buff, enableRegion(fmt.Sprintf(fullFmt, res[1], res[2], res[3])))
 			continue
 		}
 
 		res = keyRX.FindStringSubmatch(l)
 		if len(res) == 3 {
-			buff = append(buff, fmt.Sprintf(keyFmt, res[1], res[2]))
+			buff = append(buff, enableRegion(fmt.Sprintf(keyFmt, res[1], res[2])))
 			continue
 		}
 
-		buff = append(buff, fmt.Sprintf(valFmt, l))
+		buff = append(buff, enableRegion(fmt.Sprintf(valFmt, l)))
 	}
 
 	return strings.Join(buff, "\n")
+}
+
+func enableRegion(str string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(str, "<<<", "["), ">>>", "]")
 }
 
 func saveYAML(cluster, name, data string) (string, error) {

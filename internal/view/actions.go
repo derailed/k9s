@@ -68,14 +68,14 @@ func hotKeyActions(r Runner, aa ui.KeyActions) {
 		}
 		aa[key] = ui.NewSharedKeyAction(
 			hk.Description,
-			gotoCmd(r, hk.Command),
+			gotoCmd(r, "", hk.Command),
 			false)
 	}
 }
 
-func gotoCmd(r Runner, cmd string) ui.ActionHandler {
+func gotoCmd(r Runner, cmd, path string) ui.ActionHandler {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		if err := r.App().gotoResource(cmd, true); err != nil {
+		if err := r.App().gotoResource(cmd, path, true); err != nil {
 			r.App().Flash().Err(err)
 		}
 		return nil
@@ -118,18 +118,22 @@ func execCmd(r Runner, bin string, bg bool, args ...string) ui.ActionHandler {
 
 		ns, _ := client.Namespaced(path)
 		var (
-			env = r.EnvFn()()
 			aa  = make([]string, len(args))
 			err error
 		)
+
+		if r.EnvFn() == nil {
+			return nil
+		}
+
 		for i, a := range args {
-			aa[i], err = env.envFor(ns, a)
+			aa[i], err = r.EnvFn()().envFor(ns, a)
 			if err != nil {
 				log.Error().Err(err).Msg("Plugin Args match failed")
 				return nil
 			}
 		}
-		if run(true, r.App(), bin, bg, aa...) {
+		if run(r.App(), shellOpts{clear: true, binary: bin, background: bg, args: aa}) {
 			r.App().Flash().Info("Plugin command launched successfully!")
 		} else {
 			r.App().Flash().Info("Plugin command failed!")

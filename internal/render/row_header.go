@@ -9,6 +9,8 @@ type Header struct {
 	Name      string
 	Align     int
 	Decorator DecoratorFunc
+	Hide      bool
+	Wide      bool
 }
 
 // Clone copies a header.
@@ -56,13 +58,7 @@ func (hh HeaderRow) Columns() []string {
 
 // HasAge returns true if table has an age column.
 func (hh HeaderRow) HasAge() bool {
-	for _, r := range hh {
-		if r.Name == ageCol {
-			return true
-		}
-	}
-
-	return false
+	return hh.IndexOf(ageCol) != -1
 }
 
 // AgeCol checks if given column index is the age column.
@@ -71,4 +67,19 @@ func (hh HeaderRow) AgeCol(col int) bool {
 		return false
 	}
 	return col == len(hh)-1
+}
+
+// ValidColIndex returns the valid col index or -1 if none.
+func (hh HeaderRow) ValidColIndex() int {
+	return hh.IndexOf("VALID")
+}
+
+// IndexOf returns the col index or -1 if none.
+func (hh HeaderRow) IndexOf(c string) int {
+	for i, h := range hh {
+		if h.Name == c {
+			return i
+		}
+	}
+	return -1
 }

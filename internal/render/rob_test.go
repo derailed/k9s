@@ -13,5 +13,5 @@ func TestRoleBindingRender(t *testing.T) {
 	c.Render(load(t, "rb"), "", &r)
 
 	assert.Equal(t, "default/blee", r.ID)
-	assert.Equal(t, render.Fields{"default", "blee", "blee", "SA", "fernand"}, r.Fields[:5])
+	assert.Equal(t, render.Fields{"default", "blee", "blee", "SvcAcct", "fernand"}, r.Fields[:5])
 }

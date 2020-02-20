@@ -12,27 +12,27 @@ import (
 
 func TestPodRender(t *testing.T) {
 	uu := map[string]struct {
-		file           string
-		level1, level2 int
-		status         string
+		file            string
+		count, children int
+		status          string
 	}{
 		"plain": {
-			file:   "po",
-			level1: 1,
-			level2: 3,
-			status: xray.OkStatus,
+			file:     "po",
+			children: 1,
+			count:    7,
+			status:   xray.OkStatus,
 		},
 		"withInit": {
-			file:   "init",
-			level1: 1,
-			level2: 2,
-			status: xray.OkStatus,
+			file:     "init",
+			children: 1,
+			count:    7,
+			status:   xray.OkStatus,
 		},
 		"cilium": {
-			file:   "cilium",
-			level1: 1,
-			level2: 3,
-			status: xray.OkStatus,
+			file:     "cilium",
+			children: 1,
+			count:    8,
+			status:   xray.OkStatus,
 		},
 	}
 
@@ -46,8 +46,8 @@ func TestPodRender(t *testing.T) {
 			ctx = context.WithValue(ctx, internal.KeyFactory, makeFactory())
 
 			assert.Nil(t, re.Render(ctx, "", &render.PodWithMetrics{Raw: o}))
-			assert.Equal(t, u.level1, root.CountChildren())
-			assert.Equal(t, u.level2, root.Children[0].CountChildren())
+			assert.Equal(t, u.children, root.CountChildren())
+			assert.Equal(t, u.count, root.Count(""))
 		})
 	}
 }

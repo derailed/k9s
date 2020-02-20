@@ -25,7 +25,7 @@ const localhost = "localhost"
 
 // PortForwarder tracks a port forward stream.
 type PortForwarder struct {
-	client.Connection
+	Factory
 	genericclioptions.IOStreams
 
 	stopChan, readyChan chan struct{}
@@ -37,11 +37,11 @@ type PortForwarder struct {
 }
 
 // NewPortForwarder returns a new port forward streamer.
-func NewPortForwarder(c client.Connection) *PortForwarder {
+func NewPortForwarder(f Factory) *PortForwarder {
 	return &PortForwarder{
-		Connection: c,
-		stopChan:   make(chan struct{}),
-		readyChan:  make(chan struct{}),
+		Factory:   f,
+		stopChan:  make(chan struct{}),
+		readyChan: make(chan struct{}),
 	}
 }
 
@@ -67,7 +67,12 @@ func (p *PortForwarder) Ports() []string {
 
 // Path returns the pod resource path.
 func (p *PortForwarder) Path() string {
-	return p.path + ":" + p.container
+	return PortForwardID(p.path, p.container)
+}
+
+// PortForwardID computes port-forward identifier.
+func PortForwardID(path, co string) string {
+	return path + ":" + co
 }
 
 // Container returns the targetes container.
@@ -87,19 +92,33 @@ func (p *PortForwarder) FQN() string {
 	return p.path + ":" + p.container
 }
 
+// HasPortMapping checks if port mapping is defined for this fwd.
+func (p *PortForwarder) HasPortMapping(m string) bool {
+	for _, mapping := range p.ports {
+		if mapping == m {
+			return true
+		}
+	}
+	return false
+}
+
 // Start initiates a port forward session for a given pod and ports.
-func (p *PortForwarder) Start(path, co, address string, ports []string) (*portforward.PortForwarder, error) {
-	p.path, p.container, p.ports, p.age = path, co, ports, time.Now()
+func (p *PortForwarder) Start(path, co string, t client.PortTunnel) (*portforward.PortForwarder, error) {
+	fwds := []string{t.PortMap()}
+	p.path, p.container, p.ports, p.age = path, co, fwds, time.Now()
 
 	ns, n := client.Namespaced(path)
-	auth, err := p.CanI(ns, "v1/pods", []string{client.GetVerb})
+	auth, err := p.Client().CanI(ns, "v1/pods", []string{client.GetVerb})
 	if err != nil {
 		return nil, err
 	}
 	if !auth {
 		return nil, fmt.Errorf("user is not authorized to get pods")
 	}
-	pod, err := p.DialOrDie().CoreV1().Pods(ns).Get(n, metav1.GetOptions{})
+
+	var res Pod
+	res.Init(p, client.NewGVR("v1/pods"))
+	pod, err := res.GetInstance(path)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +126,7 @@ func (p *PortForwarder) Start(path, co, address string, ports []string) (*portfo
 		return nil, fmt.Errorf("unable to forward port because pod is not running. Current status=%v", pod.Status.Phase)
 	}
 
-	auth, err = p.CanI(ns, "v1/pods:portforward", []string{client.UpdateVerb})
+	auth, err = p.Client().CanI(ns, "v1/pods:portforward", []string{client.UpdateVerb})
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +134,7 @@ func (p *PortForwarder) Start(path, co, address string, ports []string) (*portfo
 		return nil, fmt.Errorf("user is not authorized to update portforward")
 	}
 
-	rcfg := p.RestConfigOrDie()
+	rcfg := p.Client().RestConfigOrDie()
 	rcfg.GroupVersion = &schema.GroupVersion{Group: "", Version: "v1"}
 	rcfg.APIPath = "/api"
 	codec, _ := codec()
@@ -131,11 +150,11 @@ func (p *PortForwarder) Start(path, co, address string, ports []string) (*portfo
 		Name(n).
 		SubResource("portforward")
 
-	return p.forwardPorts("POST", req.URL(), address, ports)
+	return p.forwardPorts("POST", req.URL(), t.Address, fwds)
 }
 
 func (p *PortForwarder) forwardPorts(method string, url *url.URL, address string, ports []string) (*portforward.PortForwarder, error) {
-	cfg, err := p.Config().RESTConfig()
+	cfg, err := p.Client().Config().RESTConfig()
 	if err != nil {
 		return nil, err
 	}

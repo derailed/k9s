@@ -73,7 +73,7 @@ type Accessor interface {
 // Loggable represents resources with logs.
 type Loggable interface {
 	// TaiLogs streams resource logs.
-	TailLogs(ctx context.Context, c chan<- string, opts LogOptions) error
+	TailLogs(ctx context.Context, c chan<- []byte, opts LogOptions) error
 }
 
 // Describer describes a resource.
@@ -89,6 +89,12 @@ type Describer interface {
 type Scalable interface {
 	// Scale scales a resource up or down.
 	Scale(path string, replicas int32) error
+}
+
+// Controller represents a pod controller.
+type Controller interface {
+	// Pod returns a pod instance matching the selector.
+	Pod(path string) (string, error)
 }
 
 // Nuker represents a resource deleter.

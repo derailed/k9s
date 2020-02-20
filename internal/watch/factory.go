@@ -109,10 +109,14 @@ func (f *Factory) waitForCacheSync(ns string) {
 	if f.isClusterWide() {
 		ns = client.AllNamespaces
 	}
+
+	f.mx.RLock()
+	defer f.mx.RUnlock()
 	fac, ok := f.factories[ns]
 	if !ok {
 		return
 	}
+
 	// Hang for a sec for the cache to refresh if still not done bail out!
 	c := make(chan struct{})
 	go func(c chan struct{}) {
@@ -214,6 +218,9 @@ func (f *Factory) ensureFactory(ns string) di.DynamicSharedInformerFactory {
 
 // AddForwarder registers a new portforward for a given container.
 func (f *Factory) AddForwarder(pf Forwarder) {
+	f.mx.Lock()
+	defer f.mx.Unlock()
+
 	f.forwarders[pf.Path()] = pf
 }
 
@@ -225,11 +232,17 @@ func (f *Factory) DeleteForwarder(path string) {
 
 // Forwarders returns all portforwards.
 func (f *Factory) Forwarders() Forwarders {
+	f.mx.RLock()
+	defer f.mx.RUnlock()
+
 	return f.forwarders
 }
 
 // ForwarderFor returns a portforward for a given container or nil if none exists.
 func (f *Factory) ForwarderFor(path string) (Forwarder, bool) {
+	f.mx.RLock()
+	defer f.mx.RUnlock()
+
 	fwd, ok := f.forwarders[path]
 	return fwd, ok
 }

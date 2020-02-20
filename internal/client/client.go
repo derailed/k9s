@@ -77,6 +77,12 @@ func makeCacheKey(ns, gvr string, vv []string) string {
 	return ns + ":" + gvr + "::" + strings.Join(vv, ",")
 }
 
+func (a *APIClient) clearCache() {
+	for _, k := range a.cache.Keys() {
+		a.cache.Remove(k)
+	}
+}
+
 // CanI checks if user has access to a certain resource.
 func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) {
 	if IsClusterWide(ns) {
@@ -131,6 +137,9 @@ func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
 // BOZO!! No super sure about this approach either??
 func (a *APIClient) CheckConnectivity() (status bool) {
 	defer func() {
+		if !status {
+			a.clearCache()
+		}
 		if err := recover(); err != nil {
 			status = false
 		}
@@ -149,10 +158,10 @@ func (a *APIClient) CheckConnectivity() (status bool) {
 		}
 	}
 
-	if _, err := a.checkClientSet.ServerVersion(); err != nil {
-		log.Error().Err(err).Msgf("K9s can't connect to cluster")
-	} else {
+	if _, err := a.checkClientSet.ServerVersion(); err == nil {
 		status = true
+	} else {
+		log.Error().Err(err).Msgf("K9s can't connect to cluster")
 	}
 
 	return
@@ -258,21 +267,24 @@ func (a *APIClient) MXDial() (*versioned.Clientset, error) {
 	return a.mxsClient, err
 }
 
-// SwitchContextOrDie handles kubeconfig context switches.
-func (a *APIClient) SwitchContextOrDie(ctx string) {
+// SwitchContext handles kubeconfig context switches.
+func (a *APIClient) SwitchContext(ctx string) error {
 	currentCtx, err := a.config.CurrentContextName()
 	if err != nil {
-		log.Fatal().Err(err).Msg("Fetching current context")
+		return err
+	}
+	if currentCtx == ctx {
+		return nil
 	}
 
-	if currentCtx != ctx {
-		a.cachedClient = nil
-		a.reset()
-		if err := a.config.SwitchContext(ctx); err != nil {
-			log.Fatal().Err(err).Msg("Switching context")
-		}
-		_ = a.supportsMxServer()
+	if err := a.config.SwitchContext(ctx); err != nil {
+		return err
 	}
+	a.clearCache()
+	a.reset()
+	_ = a.supportsMxServer()
+
+	return nil
 }
 
 func (a *APIClient) reset() {

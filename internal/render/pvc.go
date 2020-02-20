@@ -2,7 +2,6 @@ package render
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/gdamore/tcell"
@@ -15,19 +14,14 @@ import (
 type PersistentVolumeClaim struct{}
 
 // ColorerFunc colors a resource row.
-func (PersistentVolumeClaim) ColorerFunc() ColorerFunc {
-	return func(ns string, r RowEvent) tcell.Color {
-		c := DefaultColorer(ns, r)
-		if r.Kind == EventAdd || r.Kind == EventUpdate {
+func (p PersistentVolumeClaim) ColorerFunc() ColorerFunc {
+	return func(ns string, re RowEvent) tcell.Color {
+		c := DefaultColorer(ns, re)
+		if re.Kind == EventAdd || re.Kind == EventUpdate {
 			return c
 		}
-
-		markCol := 2
-		if !client.IsAllNamespaces(ns) {
-			markCol--
-		}
-		if strings.TrimSpace(r.Row.Fields[markCol]) != "Bound" {
-			c = ErrColor
+		if !Happy(ns, re.Row) {
+			return ErrColor
 		}
 
 		return c
@@ -49,6 +43,8 @@ func (PersistentVolumeClaim) Header(ns string) HeaderRow {
 		Header{Name: "CAPACITY"},
 		Header{Name: "ACCESS MODES"},
 		Header{Name: "STORAGECLASS"},
+		Header{Name: "LABELS", Wide: true},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
@@ -96,8 +92,17 @@ func (p PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
 		capacity,
 		accessModes,
 		class,
+		mapToStr(pvc.Labels),
+		asStatus(p.diagnose(string(phase))),
 		toAge(pvc.ObjectMeta.CreationTimestamp),
 	)
 
+	return nil
+}
+
+func (PersistentVolumeClaim) diagnose(r string) error {
+	if r != "Bound" && r != "Available" {
+		return fmt.Errorf("unexpected status %s", r)
+	}
 	return nil
 }

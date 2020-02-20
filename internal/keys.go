@@ -25,4 +25,6 @@ const (
 	KeyApp         ContextKey = "app"
 	KeyStyles      ContextKey = "styles"
 	KeyMetrics     ContextKey = "metrics"
+	KeyToast       ContextKey = "toast"
+	KeyWithMetrics ContextKey = "withMetrics"
 )

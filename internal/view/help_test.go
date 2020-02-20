@@ -21,7 +21,7 @@ func TestHelp(t *testing.T) {
 	v := view.NewHelp()
 
 	assert.Nil(t, v.Init(ctx))
-	assert.Equal(t, 19, v.GetRowCount())
+	assert.Equal(t, 22, v.GetRowCount())
 	assert.Equal(t, 8, v.GetColumnCount())
 	assert.Equal(t, "<ctrl-k>", strings.TrimSpace(v.GetCell(1, 0).Text))
 	assert.Equal(t, "Kill", strings.TrimSpace(v.GetCell(1, 1).Text))

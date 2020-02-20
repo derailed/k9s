@@ -18,9 +18,11 @@ type StatefulSet struct {
 // NewStatefulSet returns a new viewer.
 func NewStatefulSet(gvr client.GVR) ResourceViewer {
 	s := StatefulSet{
-		ResourceViewer: NewRestartExtender(
-			NewScaleExtender(
-				NewLogsExtender(NewBrowser(gvr), nil),
+		ResourceViewer: NewPortForwardExtender(
+			NewRestartExtender(
+				NewScaleExtender(
+					NewLogsExtender(NewBrowser(gvr), nil),
+				),
 			),
 		),
 	}

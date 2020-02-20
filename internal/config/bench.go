@@ -49,11 +49,11 @@ type (
 
 	// BenchConfig represents a service benchmark.
 	BenchConfig struct {
+		Name string
 		C    int  `yaml:"concurrency"`
 		N    int  `yaml:"requests"`
 		Auth Auth `yaml:"auth"`
 		HTTP HTTP `yaml:"http"`
-		Name string
 	}
 )
 
@@ -73,7 +73,8 @@ func newBenchmark() Benchmark {
 	}
 }
 
-func (b Benchmark) empty() bool {
+// Empty checks if the benchmark is set
+func (b Benchmark) Empty() bool {
 	return b.C == 0 && b.N == 0
 }
 
@@ -103,4 +104,16 @@ func (s *Bench) load(path string) error {
 	}
 
 	return yaml.Unmarshal(f, &s)
+}
+
+// DefaultBenchSpec returns a default bench spec.
+func DefaultBenchSpec() BenchConfig {
+	return BenchConfig{
+		C: DefaultC,
+		N: DefaultN,
+		HTTP: HTTP{
+			Method: DefaultMethod,
+			Path:   "/",
+		},
+	}
 }

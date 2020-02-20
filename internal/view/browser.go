@@ -93,8 +93,11 @@ func (b *Browser) SetInstance(path string) {
 func (b *Browser) Start() {
 	b.Stop()
 
-	log.Debug().Msgf("BROWSER started!")
 	b.Table.Start()
+	b.GetModel().Watch(b.prepareContext())
+}
+
+func (b *Browser) prepareContext() context.Context {
 	ctx := b.defaultContext()
 	ctx, b.cancelFn = context.WithCancel(ctx)
 	if b.contextFn != nil {
@@ -103,7 +106,8 @@ func (b *Browser) Start() {
 	if path, ok := ctx.Value(internal.KeyPath).(string); ok && path != "" {
 		b.Path = path
 	}
-	b.GetModel().Watch(ctx)
+
+	return ctx
 }
 
 // Stop terminates browser updates.
@@ -111,7 +115,6 @@ func (b *Browser) Stop() {
 	if b.cancelFn == nil {
 		return
 	}
-	log.Debug().Msgf("BROWSER Stopped!")
 	b.Table.Stop()
 	b.cancelFn()
 	b.cancelFn = nil
@@ -147,7 +150,6 @@ func (b *Browser) TableDataChanged(data render.TableData) {
 	b.app.QueueUpdateDraw(func() {
 		b.refreshActions()
 		b.Update(data)
-		b.App().ClearStatus(false)
 	})
 }
 
@@ -175,7 +177,7 @@ func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails(b.app, "YAML", path).Update(raw)
+	details := NewDetails(b.app, "YAML", path, true).Update(raw)
 	if err := b.App().inject(details); err != nil {
 		b.App().Flash().Err(err)
 	}
@@ -278,21 +280,23 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := b.GetSelectedItem()
 	if path == "" {
 		return evt
+
+	}
+	ns, n := client.Namespaced(path)
+
+	if ok, err := b.app.Conn().CanI(ns, b.GVR(), []string{"edit"}); !ok || err != nil {
+		b.App().Flash().Err(fmt.Errorf("Current user can't edit resource %s", b.GVR()))
+		return nil
 	}
 
 	b.Stop()
 	defer b.Start()
 	{
-		ns, n := client.Namespaced(path)
 		args := make([]string, 0, 10)
 		args = append(args, "edit")
 		args = append(args, b.meta.SingularName)
 		args = append(args, "-n", ns)
-		args = append(args, "--context", b.app.Config.K9s.CurrentContext)
-		if cfg := b.app.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
-			args = append(args, "--kubeconfig", *cfg)
-		}
-		if !runK(true, b.app, append(args, n)...) {
+		if !runK(b.app, shellOpts{clear: true, args: append(args, n)}) {
 			b.app.Flash().Err(errors.New("Edit exec failed"))
 		}
 	}
@@ -310,6 +314,9 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	auth, err := b.App().factory.Client().CanI(ns, b.GVR(), client.MonitorAccess)
 	if !auth {
+		if err == nil {
+			err = fmt.Errorf("current user can't access namespace %s", ns)
+		}
 		b.App().Flash().Err(err)
 		return nil
 	}
@@ -370,7 +377,6 @@ func (b *Browser) refreshActions() {
 
 	if b.app.ConOK() {
 		b.namespaceActions(aa)
-
 		if !b.app.Config.K9s.GetReadOnly() {
 			if client.Can(b.meta.Verbs, "edit") {
 				aa[ui.KeyE] = ui.NewKeyAction("Edit", b.editCmd, true)

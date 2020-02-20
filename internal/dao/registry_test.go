@@ -89,7 +89,7 @@ func TestExtractString(t *testing.T) {
 // Helpers...
 
 func load(t *testing.T, n string) *unstructured.Unstructured {
-	raw, err := ioutil.ReadFile(fmt.Sprintf("assets/%s.json", n))
+	raw, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", n))
 	assert.Nil(t, err)
 
 	var o unstructured.Unstructured

@@ -4,21 +4,21 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/watch"
+	"github.com/fatih/color"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
-
-const shellCheck = "command -v bash >/dev/null && exec bash || exec sh"
 
 // Pod represents a pod viewer.
 type Pod struct {
@@ -27,7 +27,11 @@ type Pod struct {
 
 // NewPod returns a new viewer.
 func NewPod(gvr client.GVR) ResourceViewer {
-	p := Pod{ResourceViewer: NewLogsExtender(NewBrowser(gvr), nil)}
+	p := Pod{
+		ResourceViewer: NewPortForwardExtender(
+			NewLogsExtender(NewBrowser(gvr), nil),
+		),
+	}
 	p.SetBindKeysFn(p.bindKeys)
 	p.GetTable().SetEnterFn(p.showContainers)
 	p.GetTable().SetColorerFn(render.Pod{}.ColorerFunc())
@@ -49,21 +53,20 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 
 	aa.Add(ui.KeyActions{
 		ui.KeyShiftR:   ui.NewKeyAction("Sort Ready", p.GetTable().SortColCmd(1, true), false),
-		ui.KeyShiftS:   ui.NewKeyAction("Sort Status", p.GetTable().SortColCmd(2, true), false),
-		ui.KeyShiftT:   ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd(3, false), false),
+		ui.KeyShiftT:   ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd(2, false), false),
+		ui.KeyShiftS:   ui.NewKeyAction("Sort Status", p.GetTable().SortColCmd(3, true), false),
 		ui.KeyShiftC:   ui.NewKeyAction("Sort CPU", p.GetTable().SortColCmd(4, false), false),
 		ui.KeyShiftM:   ui.NewKeyAction("Sort MEM", p.GetTable().SortColCmd(5, false), false),
 		ui.KeyShiftX:   ui.NewKeyAction("Sort %CPU (REQ)", p.GetTable().SortColCmd(6, false), false),
 		ui.KeyShiftZ:   ui.NewKeyAction("Sort %MEM (REQ)", p.GetTable().SortColCmd(7, false), false),
 		tcell.KeyCtrlX: ui.NewKeyAction("Sort %CPU (LIM)", p.GetTable().SortColCmd(8, false), false),
-		tcell.KeyCtrlZ: ui.NewKeyAction("Sort %MEM (LIM)", p.GetTable().SortColCmd(9, false), false),
+		tcell.KeyCtrlQ: ui.NewKeyAction("Sort %MEM (LIM)", p.GetTable().SortColCmd(9, false), false),
 		ui.KeyShiftI:   ui.NewKeyAction("Sort IP", p.GetTable().SortColCmd(10, true), false),
 		ui.KeyShiftO:   ui.NewKeyAction("Sort Node", p.GetTable().SortColCmd(11, true), false),
 	})
 }
 
 func (p *Pod) showContainers(app *App, model ui.Tabular, gvr, path string) {
-	log.Debug().Msgf("SHOW CONTAINERS %q -- %q -- %q", gvr, model.GetNamespace(), path)
 	co := NewContainer(client.NewGVR("containers"))
 	co.SetContextFn(p.coContext)
 	if err := app.inject(co); err != nil {
@@ -108,75 +111,66 @@ func (p *Pod) killCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
-	sel := p.GetTable().GetSelectedItem()
-	if sel == "" {
+	path := p.GetTable().GetSelectedItem()
+	if path == "" {
 		return evt
 	}
 
 	row := p.GetTable().GetSelectedRowIndex()
-	status := ui.TrimCell(p.GetTable().SelectTable, row, p.GetTable().NameColIndex()+2)
+	status := ui.TrimCell(p.GetTable().SelectTable, row, p.GetTable().NameColIndex()+3)
 	if status != render.Running {
-		p.App().Flash().Errf("%s is not in a running state", sel)
+		p.App().Flash().Errf("%s is not in a running state", path)
 		return nil
 	}
-	cc, err := fetchContainers(p.App().factory, sel, false)
-	if err != nil {
-		p.App().Flash().Errf("Unable to retrieve containers %s", err)
-		return evt
-	}
-	if len(cc) == 1 {
-		p.shellIn(sel, "")
-		return nil
-	}
-	picker := NewPicker()
-	picker.populate(cc)
-	picker.SetSelectedFunc(func(i int, t, d string, r rune) {
-		p.shellIn(sel, t)
-	})
-	if err := p.App().inject(picker); err != nil {
+
+	if err := containerShellin(p.App(), p, path, ""); err != nil {
 		p.App().Flash().Err(err)
 	}
 
-	return evt
-}
-
-func (p *Pod) shellIn(path, co string) {
-	p.Stop()
-	shellIn(p.App(), path, co)
-	p.Start()
+	return nil
 }
 
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func fetchContainers(f *watch.Factory, path string, includeInit bool) ([]string, error) {
-	o, err := f.Get("v1/pods", path, true, labels.Everything())
-	if err != nil {
-		return nil, err
+func containerShellin(a *App, comp model.Component, path, co string) error {
+	if co != "" {
+		resumeShellIn(a, comp, path, co)
+		return nil
 	}
 
-	var pod v1.Pod
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod)
+	cc, err := fetchContainers(a.factory, path, false)
 	if err != nil {
-		return nil, err
+		return err
+	}
+	if len(cc) == 1 {
+		resumeShellIn(a, comp, path, cc[0])
+		return nil
+	}
+	picker := NewPicker()
+	picker.populate(cc)
+	picker.SetSelectedFunc(func(_ int, co, _ string, _ rune) {
+		resumeShellIn(a, comp, path, co)
+	})
+	if err := a.inject(picker); err != nil {
+		return err
 	}
 
-	nn := make([]string, 0, len(pod.Spec.Containers)+len(pod.Spec.InitContainers))
-	for _, c := range pod.Spec.Containers {
-		nn = append(nn, c.Name)
-	}
-	if includeInit {
-		for _, c := range pod.Spec.InitContainers {
-			nn = append(nn, c.Name)
-		}
-	}
-	return nn, nil
+	return nil
+}
+
+func resumeShellIn(a *App, c model.Component, path, co string) {
+	c.Stop()
+	defer c.Start()
+
+	shellIn(a, path, co)
 }
 
 func shellIn(a *App, path, co string) {
 	args := computeShellArgs(path, co, a.Config.K9s.CurrentContext, a.Conn().Config().Flags().KubeConfig)
-	log.Debug().Msgf("Shell args %v", args)
-	if !runK(true, a, args...) {
+
+	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
+	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, path, co), args: args}) {
 		a.Flash().Err(errors.New("Shell exec failed"))
 	}
 }
@@ -196,4 +190,30 @@ func computeShellArgs(path, co, context string, kcfg *string) []string {
 	}
 
 	return append(args, "--", "sh", "-c", shellCheck)
+}
+
+func fetchContainers(f *watch.Factory, path string, includeInit bool) ([]string, error) {
+	o, err := f.Get("v1/pods", path, true, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	var pod v1.Pod
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod)
+	if err != nil {
+		return nil, err
+	}
+
+	nn := make([]string, 0, len(pod.Spec.Containers)+len(pod.Spec.InitContainers))
+	for _, c := range pod.Spec.Containers {
+		nn = append(nn, c.Name)
+	}
+	if !includeInit {
+		return nn, nil
+	}
+	for _, c := range pod.Spec.InitContainers {
+		nn = append(nn, c.Name)
+	}
+
+	return nn, nil
 }

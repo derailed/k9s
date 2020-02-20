@@ -267,12 +267,14 @@ func (mock *MockConnection) SupportsResource(_param0 string) bool {
 	return ret0
 }
 
-func (mock *MockConnection) SwitchContextOrDie(_param0 string) {
+func (mock *MockConnection) SwitchContext(_param0 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")
 	}
 	params := []pegomock.Param{_param0}
-	pegomock.GetGenericMockFrom(mock).Invoke("SwitchContextOrDie", params, []reflect.Type{})
+	pegomock.GetGenericMockFrom(mock).Invoke("SwitchContext", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+
+	return nil
 }
 
 func (mock *MockConnection) ValidNamespaces() ([]v1.Namespace, error) {

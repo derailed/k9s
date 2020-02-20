@@ -31,25 +31,23 @@ type LogsListener interface {
 
 // Log represents a resource logger.
 type Log struct {
-	factory     dao.Factory
-	lines       []string
-	listeners   []LogsListener
-	gvr         client.GVR
-	logOptions  dao.LogOptions
-	cancelFn    context.CancelFunc
-	initialized bool
-	mx          sync.RWMutex
-	filter      string
-	lastSent    int
+	factory    dao.Factory
+	lines      []string
+	listeners  []LogsListener
+	gvr        client.GVR
+	logOptions dao.LogOptions
+	cancelFn   context.CancelFunc
+	mx         sync.RWMutex
+	filter     string
+	lastSent   int
 }
 
 // NewLog returns a new model.
-func NewLog(gvr client.GVR, msg string, opts dao.LogOptions, timeOut time.Duration) *Log {
+func NewLog(gvr client.GVR, opts dao.LogOptions, timeOut time.Duration) *Log {
 	return &Log{
-		gvr:         gvr,
-		logOptions:  opts,
-		initialized: true,
-		lines:       []string{msg},
+		gvr:        gvr,
+		logOptions: opts,
+		lines:      nil,
 	}
 }
 
@@ -84,12 +82,11 @@ func (l *Log) Start() {
 
 // Stop terminates log tailing.
 func (l *Log) Stop() {
-	if l.cancelFn == nil {
-		return
+	defer log.Debug().Msgf("<<<< Logger STOPPED!")
+	if l.cancelFn != nil {
+		l.cancelFn()
+		l.cancelFn = nil
 	}
-	log.Debug().Msgf("<<<< Logger STOP!")
-	l.cancelFn()
-	l.cancelFn = nil
 }
 
 // Set sets the log lines (for testing only!)
@@ -131,7 +128,7 @@ func (l *Log) load() error {
 	ctx = context.WithValue(context.Background(), internal.KeyFactory, l.factory)
 	ctx, l.cancelFn = context.WithCancel(ctx)
 
-	c := make(chan string, 10)
+	c := make(chan []byte, 10)
 	go l.updateLogs(ctx, c)
 
 	accessor, err := dao.AccessorFor(l.factory, l.gvr)
@@ -163,8 +160,7 @@ func (l *Log) Append(line string) {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
-	if l.initialized {
-		l.lines, l.initialized, l.lastSent = []string{}, false, 0
+	if l.lines == nil {
 		l.fireLogCleared()
 	}
 
@@ -190,20 +186,20 @@ func (l *Log) Notify(timedOut bool) {
 	}
 }
 
-func (l *Log) updateLogs(ctx context.Context, c <-chan string) {
+func (l *Log) updateLogs(ctx context.Context, c <-chan []byte) {
 	defer func() {
 		log.Debug().Msgf("updateLogs view bailing out!")
 	}()
 	for {
 		select {
-		case line, ok := <-c:
+		case bytes, ok := <-c:
 			if !ok {
 				log.Debug().Msgf("Closed channel detected. Bailing out...")
-				l.Append(line)
+				l.Append(string(bytes))
 				l.Notify(false)
 				return
 			}
-			l.Append(line)
+			l.Append(string(bytes))
 			var overflow bool
 			l.mx.RLock()
 			{

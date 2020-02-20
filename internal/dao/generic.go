@@ -28,7 +28,7 @@ type Generic struct {
 func (g *Generic) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	labelSel, ok := ctx.Value(internal.KeyLabels).(string)
 	if !ok {
-		log.Warn().Msgf("No label selector found in context. Listing all resources")
+		log.Debug().Msgf("No label selector found in context. Listing all resources")
 	}
 	if client.IsAllNamespace(ns) {
 		ns = client.AllNamespaces

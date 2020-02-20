@@ -29,6 +29,7 @@ func ToYAML(o runtime.Object) (string, error) {
 	if o == nil {
 		return "", errors.New("no object to yamlize")
 	}
+
 	var (
 		buff bytes.Buffer
 		p    printers.YAMLPrinter

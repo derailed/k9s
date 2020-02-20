@@ -22,6 +22,9 @@ const (
 
 	// ClusterScope designates a resource is not namespaced.
 	ClusterScope = "-"
+
+	// NotNamespaced designates a non resource namespace.
+	NotNamespaced = "*"
 )
 
 const (
@@ -64,7 +67,7 @@ type Connection interface {
 
 	Config() *Config
 	DialOrDie() kubernetes.Interface
-	SwitchContextOrDie(ctx string)
+	SwitchContext(ctx string) error
 	CachedDiscoveryOrDie() *disk.CachedDiscoveryClient
 	RestConfigOrDie() *restclient.Config
 	MXDial() (*versioned.Clientset, error)

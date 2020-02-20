@@ -40,7 +40,6 @@ func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 	if !ok {
 		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
 	}
-	parent.Add(node)
 
 	if err := p.containerRefs(ctx, node, po.Namespace, po.Spec); err != nil {
 		return err
@@ -49,6 +48,14 @@ func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 	if err := p.serviceAccountRef(ctx, f, node, po.Namespace, po.Spec); err != nil {
 		return err
 	}
+
+	gvr, nsID := "v1/namespaces", client.FQN(client.ClusterScope, po.Namespace)
+	nsn := parent.Find(gvr, nsID)
+	if nsn == nil {
+		nsn = NewTreeNode(gvr, nsID)
+		parent.Add(nsn)
+	}
+	nsn.Add(node)
 
 	return p.validate(node, po)
 }

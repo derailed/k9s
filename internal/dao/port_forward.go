@@ -3,12 +3,14 @@ package dao
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -40,21 +42,26 @@ func (p *PortForward) Delete(path string, cascade, force bool) error {
 
 // List returns a collection of screen dumps.
 func (p *PortForward) List(ctx context.Context, _ string) ([]runtime.Object, error) {
-	config, ok := ctx.Value(internal.KeyBenchCfg).(*config.Bench)
+	benchFile, ok := ctx.Value(internal.KeyBenchCfg).(string)
 	if !ok {
-		return nil, fmt.Errorf("no benchconfig found in context")
+		return nil, fmt.Errorf("no bench file found in context")
+	}
+
+	config, err := config.NewBench(benchFile)
+	if err != nil {
+		log.Debug().Msgf("No custom benchmark config file found")
 	}
 
 	cc := config.Benchmarks.Containers
 	oo := make([]runtime.Object, 0, len(p.Factory.Forwarders()))
-	for _, f := range p.Factory.Forwarders() {
+	for k, f := range p.Factory.Forwarders() {
 		cfg := render.BenchCfg{
 			C: config.Benchmarks.Defaults.C,
 			N: config.Benchmarks.Defaults.N,
 		}
-		if config, ok := cc[containerID(f.Path(), f.Container())]; ok {
-			cfg.C, cfg.N = config.C, config.N
-			cfg.Host, cfg.Path = config.HTTP.Host, config.HTTP.Path
+		if cust, ok := cc[PodToKey(k)]; ok {
+			cfg.C, cfg.N = cust.C, cust.N
+			cfg.Host, cfg.Path = cust.HTTP.Host, cust.HTTP.Path
 		}
 		oo = append(oo, render.ForwardRes{
 			Forwarder: f,
@@ -68,10 +75,31 @@ func (p *PortForward) List(ctx context.Context, _ string) ([]runtime.Object, err
 // ----------------------------------------------------------------------------
 // Helpers...
 
-// ContainerID computes container ID based on ns/po/co.
-func containerID(path, co string) string {
-	ns, n := client.Namespaced(path)
-	po := strings.Split(n, "-")[0]
+var podNameRX = regexp.MustCompile(`\A(.+)\-(\w{10})\-(\w{5})\z`)
 
-	return ns + "/" + po + ":" + co
+// PodToKey converts a pod path to a generic bench config key
+func PodToKey(path string) string {
+	tokens := strings.Split(path, ":")
+	ns, po := client.Namespaced(tokens[0])
+	sections := podNameRX.FindStringSubmatch(po)
+	if len(sections) >= 1 {
+		po = sections[1]
+	}
+	return client.FQN(ns, po) + ":" + tokens[1]
+}
+
+// BenchConfigFor returns a custom bench spec if defined otherwise returns the default one.
+func BenchConfigFor(benchFile, path string) config.BenchConfig {
+	def := config.DefaultBenchSpec()
+	cust, err := config.NewBench(benchFile)
+	if err != nil {
+		log.Debug().Msgf("No custom benchmark config file found")
+		return def
+	}
+	if b, ok := cust.Benchmarks.Containers[PodToKey(path)]; ok {
+		return b
+	}
+
+	def.C, def.N = cust.Benchmarks.Defaults.C, cust.Benchmarks.Defaults.N
+	return def
 }

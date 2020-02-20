@@ -21,7 +21,7 @@ import (
 
 const (
 	logTitle   = "logs"
-	logMessage = "Waiting for logs..."
+	logMessage = "[:orange:b]Waiting for logs...[::]"
 	logCoFmt   = " Logs([fg:bg:]%s:[hilite:bg:b]%s[-:bg:-]) "
 	logFmt     = " Logs([fg:bg:]%s) "
 
@@ -49,7 +49,7 @@ func NewLog(gvr client.GVR, path, co string, prev bool) *Log {
 	l := Log{
 		Flex:    tview.NewFlex(),
 		cmdBuff: ui.NewCmdBuff('/', ui.FilterBuff),
-		model:   model.NewLog(gvr, logMessage, buildLogOpts(path, co, prev, tailLineCount), defaultTimeout),
+		model:   model.NewLog(gvr, buildLogOpts(path, co, prev, tailLineCount), defaultTimeout),
 	}
 
 	return &l
@@ -66,15 +66,17 @@ func (l *Log) Init(ctx context.Context) (err error) {
 
 	l.indicator = NewLogIndicator(l.app.Config, l.app.Styles)
 	l.AddItem(l.indicator, 1, 1, false)
+	l.indicator.Refresh()
 
-	l.logs = NewDetails(l.app, "", "")
+	l.logs = NewDetails(l.app, "", "", false)
 	if err = l.logs.Init(ctx); err != nil {
 		return err
 	}
+	l.logs.SetText(logMessage)
 	l.logs.SetWrap(false)
 	l.logs.SetMaxBuffer(l.app.Config.K9s.LogBufferSize)
 
-	l.ansiWriter = tview.ANSIWriter(l.logs, l.app.Styles.Views().Log.FgColor, l.app.Styles.Views().Log.BgColor)
+	l.ansiWriter = tview.ANSIWriter(l.logs, l.app.Styles.Views().Log.FgColor.String(), l.app.Styles.Views().Log.BgColor.String())
 	l.AddItem(l.logs, 0, 1, true)
 	l.bindKeys()
 	l.logs.SetInputCapture(l.keyboard)
@@ -125,9 +127,9 @@ func (l *Log) BufferActive(state bool, k ui.BufferKind) {
 
 // StylesChanged reports skin changes.
 func (l *Log) StylesChanged(s *config.Styles) {
-	l.SetBackgroundColor(config.AsColor(s.Views().Log.BgColor))
-	l.logs.SetTextColor(config.AsColor(s.Views().Log.FgColor))
-	l.logs.SetBackgroundColor(config.AsColor(s.Views().Log.BgColor))
+	l.SetBackgroundColor(s.Views().Log.BgColor.Color())
+	l.logs.SetTextColor(s.Views().Log.FgColor.Color())
+	l.logs.SetBackgroundColor(s.Views().Log.BgColor.Color())
 }
 
 // GetModel returns the log model.
@@ -173,7 +175,7 @@ func (l *Log) bindKeys() {
 		ui.KeyW:             ui.NewKeyAction("Toggle Wrap", l.textWrapCmd, true),
 		tcell.KeyCtrlS:      ui.NewKeyAction("Save", l.SaveCmd, true),
 		ui.KeySlash:         ui.NewSharedKeyAction("Filter Mode", l.activateCmd, false),
-		tcell.KeyCtrlU:      ui.NewSharedKeyAction("Clear Filter", l.clearCmd, false),
+		tcell.KeyCtrlU:      ui.NewSharedKeyAction("Clear Filter", l.resetCmd, false),
 		tcell.KeyBackspace2: ui.NewSharedKeyAction("Erase", l.eraseCmd, false),
 		tcell.KeyBackspace:  ui.NewSharedKeyAction("Erase", l.eraseCmd, false),
 		tcell.KeyDelete:     ui.NewSharedKeyAction("Erase", l.eraseCmd, false),
