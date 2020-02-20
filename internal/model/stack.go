@@ -108,8 +108,8 @@ func (s *Stack) Pop() (Component, bool) {
 	var c Component
 	s.mx.Lock()
 	{
-		c = s.components[s.size()]
-		s.components = s.components[:s.size()]
+		c = s.components[len(s.components)-1]
+		s.components = s.components[:len(s.components)-1]
 	}
 	s.mx.Unlock()
 	s.notify(StackPop, c)
@@ -163,11 +163,7 @@ func (s *Stack) Top() Component {
 		return nil
 	}
 
-	return s.components[s.size()]
-}
-
-func (s *Stack) size() int {
-	return len(s.components) - 1
+	return s.components[len(s.components)-1]
 }
 
 func (s *Stack) notify(a StackAction, c Component) {

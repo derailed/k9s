@@ -59,7 +59,7 @@ func TestAppViews(t *testing.T) {
 	a := ui.NewApp("")
 	a.Init()
 
-	vv := []string{"crumbs", "logo", "cmd", "flash", "menu"}
+	vv := []string{"crumbs", "logo", "cmd", "menu"}
 	for i := range vv {
 		v := vv[i]
 		t.Run(v, func(t *testing.T) {
@@ -68,7 +68,6 @@ func TestAppViews(t *testing.T) {
 	}
 
 	assert.NotNil(t, a.Crumbs())
-	assert.NotNil(t, a.Flash())
 	assert.NotNil(t, a.Logo())
 	assert.NotNil(t, a.Cmd())
 	assert.NotNil(t, a.Menu())

@@ -1,6 +1,7 @@
 package render
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"time"
@@ -23,8 +24,12 @@ const (
 type OpenFaas struct{}
 
 // ColorerFunc colors a resource row.
-func (OpenFaas) ColorerFunc() ColorerFunc {
+func (o OpenFaas) ColorerFunc() ColorerFunc {
 	return func(ns string, re RowEvent) tcell.Color {
+		if !Happy(ns, re.Row) {
+			return ErrColor
+		}
+
 		return tcell.ColorPaleTurquoise
 	}
 }
@@ -44,13 +49,14 @@ func (OpenFaas) Header(ns string) HeaderRow {
 		Header{Name: "INVOCATIONS", Align: tview.AlignRight},
 		Header{Name: "REPLICAS", Align: tview.AlignRight},
 		Header{Name: "AVAILABLE", Align: tview.AlignRight},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
 
 // Render renders a chart to screen.
-func (f OpenFaas) Render(o interface{}, ns string, r *Row) error {
-	fn, ok := o.(OpenFaasRes)
+func (o OpenFaas) Render(i interface{}, ns string, r *Row) error {
+	fn, ok := i.(OpenFaasRes)
 	if !ok {
 		return fmt.Errorf("expected OpenFaasRes, but got %T", o)
 	}
@@ -65,7 +71,7 @@ func (f OpenFaas) Render(o interface{}, ns string, r *Row) error {
 	}
 
 	r.ID = client.FQN(fn.Function.Namespace, fn.Function.Name)
-	r.Fields = make(Fields, 0, len(f.Header(ns)))
+	r.Fields = make(Fields, 0, len(o.Header(ns)))
 	if client.IsAllNamespaces(ns) {
 		r.Fields = append(r.Fields, fn.Function.Namespace)
 	}
@@ -77,8 +83,17 @@ func (f OpenFaas) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(int(fn.Function.InvocationCount)),
 		strconv.Itoa(int(fn.Function.Replicas)),
 		strconv.Itoa(int(fn.Function.AvailableReplicas)),
+		asStatus(o.diagnose(status)),
 		toAge(metav1.Time{Time: time.Now()}),
 	)
+
+	return nil
+}
+
+func (OpenFaas) diagnose(status string) error {
+	if status != "Ready" {
+		return errors.New("function not ready")
+	}
 
 	return nil
 }

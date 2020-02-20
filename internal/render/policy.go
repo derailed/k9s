@@ -18,8 +18,8 @@ func rbacVerbHeader() HeaderRow {
 		Header{Name: "PATCH "},
 		Header{Name: "UPDATE"},
 		Header{Name: "DELETE"},
-		Header{Name: "DLIST "},
-		Header{Name: "EXTRAS"},
+		Header{Name: "DEL-LIST "},
+		Header{Name: "EXTRAS", Wide: true},
 	}
 }
 
@@ -41,7 +41,10 @@ func (Policy) Header(ns string) HeaderRow {
 		Header{Name: "API GROUP"},
 		Header{Name: "BINDING"},
 	}
-	return append(h, rbacVerbHeader()...)
+	h = append(h, rbacVerbHeader()...)
+	h = append(h, Header{Name: "VALID", Wide: true})
+
+	return h
 }
 
 // Render renders a K8s resource to screen.
@@ -52,8 +55,14 @@ func (Policy) Render(o interface{}, gvr string, r *Row) error {
 	}
 
 	r.ID = client.FQN(p.Namespace, p.Resource)
-	r.Fields = append(r.Fields, p.Namespace, cleanseResource(p.Resource), p.Group, p.Binding)
+	r.Fields = append(r.Fields,
+		p.Namespace,
+		cleanseResource(p.Resource),
+		p.Group,
+		p.Binding,
+	)
 	r.Fields = append(r.Fields, asVerbs(p.Verbs)...)
+	r.Fields = append(r.Fields, "")
 
 	return nil
 }

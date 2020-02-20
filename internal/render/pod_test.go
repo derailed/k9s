@@ -24,12 +24,12 @@ type (
 
 func TestPodColorer(t *testing.T) {
 	var (
-		nsRow      = render.Row{Fields: render.Fields{"blee", "fred", "1/1", "Running"}}
-		toastNS    = render.Row{Fields: render.Fields{"blee", "fred", "1/1", "Boom"}}
-		notReadyNS = render.Row{Fields: render.Fields{"blee", "fred", "0/1", "Boom"}}
-		row        = render.Row{Fields: render.Fields{"fred", "1/1", "Running"}}
-		toast      = render.Row{Fields: render.Fields{"fred", "1/1", "Boom"}}
-		notReady   = render.Row{Fields: render.Fields{"fred", "0/1", "Boom"}}
+		nsRow      = render.Row{Fields: render.Fields{"blee", "fred", "1/1", "0", "Running"}}
+		toastNS    = render.Row{Fields: render.Fields{"blee", "fred", "1/1", "0", "Boom"}}
+		notReadyNS = render.Row{Fields: render.Fields{"blee", "fred", "0/1", "0", "Boom"}}
+		row        = render.Row{Fields: render.Fields{"fred", "1/1", "0", "Running"}}
+		toast      = render.Row{Fields: render.Fields{"fred", "1/1", "0", "Boom"}}
+		notReady   = render.Row{Fields: render.Fields{"fred", "0/1", "0", "Boom"}}
 	)
 
 	uu := colorerUCs{
@@ -70,7 +70,7 @@ func TestPodRender(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := render.Fields{"default", "nginx", "1/1", "Running", "0", "10", "10", "10", "14", "0", "5", "172.17.0.6", "minikube", "BE"}
+	e := render.Fields{"default", "nginx", "1/1", "0", "Running", "10", "10", "10", "14", "0", "5", "172.17.0.6", "minikube", "BE"}
 	assert.Equal(t, e, r.Fields[:14])
 }
 
@@ -101,7 +101,7 @@ func TestPodInitRender(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := render.Fields{"default", "nginx", "1/1", "Init:0/1", "0", "10", "10", "10", "14", "0", "5", "172.17.0.6", "minikube", "BE"}
+	e := render.Fields{"default", "nginx", "1/1", "0", "Init:0/1", "10", "10", "10", "14", "0", "5", "172.17.0.6", "minikube", "BE"}
 	assert.Equal(t, e, r.Fields[:14])
 }
 

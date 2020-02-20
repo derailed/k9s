@@ -161,7 +161,7 @@ func (d *Details) filterInput(r rune) bool {
 func (d *Details) StylesChanged(s *config.Styles) {
 	d.SetBackgroundColor(d.app.Styles.BgColor())
 	d.SetTextColor(d.app.Styles.FgColor())
-	d.SetBorderFocusColor(config.AsColor(d.app.Styles.Frame().Border.FocusColor))
+	d.SetBorderFocusColor(d.app.Styles.Frame().Border.FocusColor.Color())
 
 	d.TextChanged(d.model.Peek())
 }

@@ -11,9 +11,9 @@ plugin:
       - patch
       - cronjobs
       - $NAME
-      - ns
+      - -n
       - $NAMESPACE
       - --context
       - $CONTEXT
       - -p
-      - '{"spec" : {"suspend" : $COL3 }}'
+      - '{"spec" : {"suspend" : $!COL3 }}'

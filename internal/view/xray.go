@@ -25,6 +25,8 @@ import (
 
 const xrayTitle = "Xray"
 
+var _ ResourceViewer = (*Xray)(nil)
+
 // Xray represents an xray tree view.
 type Xray struct {
 	*ui.Tree
@@ -36,8 +38,6 @@ type Xray struct {
 	cancelFn context.CancelFunc
 	envFn    EnvFunc
 }
-
-var _ ResourceViewer = (*Xray)(nil)
 
 // NewXray returns a new view.
 func NewXray(gvr client.GVR) ResourceViewer {
@@ -68,10 +68,10 @@ func (x *Xray) Init(ctx context.Context) error {
 	}
 
 	x.bindKeys()
-	x.SetBackgroundColor(config.AsColor(x.app.Styles.Xray().BgColor))
-	x.SetBorderColor(config.AsColor(x.app.Styles.Xray().FgColor))
-	x.SetBorderFocusColor(config.AsColor(x.app.Styles.Frame().Border.FocusColor))
-	x.SetGraphicsColor(config.AsColor(x.app.Styles.Xray().GraphicColor))
+	x.SetBackgroundColor(x.app.Styles.Xray().BgColor.Color())
+	x.SetBorderColor(x.app.Styles.Xray().FgColor.Color())
+	x.SetBorderFocusColor(x.app.Styles.Frame().Border.FocusColor.Color())
+	x.SetGraphicsColor(x.app.Styles.Xray().GraphicColor.Color())
 	x.SetTitle(fmt.Sprintf(" %s-%s ", xrayTitle, strings.Title(x.gvr.R())))
 
 	x.model.SetRefreshRate(time.Duration(x.app.Config.K9s.GetRefreshRate()) * time.Second)
@@ -504,7 +504,7 @@ func (x *Xray) TreeNodeSelected() {
 	x.app.QueueUpdateDraw(func() {
 		n := x.GetCurrentNode()
 		if n != nil {
-			n.SetColor(config.AsColor(x.app.Styles.Xray().CursorColor))
+			n.SetColor(x.app.Styles.Xray().CursorColor.Color())
 		}
 	})
 }
@@ -573,7 +573,7 @@ func (x *Xray) hydrate(parent *tview.TreeNode, n *xray.TreeNode) {
 // SetEnvFn sets the custom environment function.
 func (x *Xray) SetEnvFn(EnvFunc) {}
 
-// Refresh refresh the view
+// Refresh updates the view
 func (x *Xray) Refresh() {
 }
 
@@ -729,7 +729,7 @@ func makeTreeNode(node *xray.TreeNode, expanded bool, styles *config.Styles) *tv
 	}
 	n.SetSelectable(true)
 	n.SetExpanded(expanded)
-	n.SetColor(config.AsColor(styles.Xray().CursorColor))
+	n.SetColor(styles.Xray().CursorColor.Color())
 	n.SetSelectedFunc(func() {
 		n.SetExpanded(!n.IsExpanded())
 	})

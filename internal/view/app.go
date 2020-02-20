@@ -18,7 +18,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// // ExitStatus indicates UI exit conditions.
+// ExitStatus indicates UI exit conditions.
 var ExitStatus = ""
 
 const (
@@ -98,11 +98,14 @@ func (a *App) Init(version string, rate int) error {
 
 	a.clusterInfo().Init()
 
+	flash := ui.NewFlash(a.App)
+	go flash.Watch(ctx, a.Flash().Channel())
+
 	main := tview.NewFlex().SetDirection(tview.FlexRow)
 	main.AddItem(a.statusIndicator(), 1, 1, false)
 	main.AddItem(a.Content, 0, 10, true)
-	main.AddItem(a.Crumbs(), 2, 1, false)
-	main.AddItem(a.Flash(), 2, 1, false)
+	main.AddItem(a.Crumbs(), 1, 1, false)
+	main.AddItem(flash, 1, 1, false)
 
 	a.Main.AddPage("main", main, true, false)
 	a.Main.AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
@@ -113,7 +116,7 @@ func (a *App) Init(version string, rate int) error {
 
 func (a *App) bindKeys() {
 	a.AddActions(ui.KeyActions{
-		ui.KeyT:        ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
+		tcell.KeyCtrlE: ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
 		ui.KeyHelp:     ui.NewSharedKeyAction("Help", a.helpCmd, false),
 		tcell.KeyCtrlA: ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
@@ -133,7 +136,7 @@ func (a *App) toggleHeader(flag bool) {
 	}
 	if a.showHeader {
 		flex.RemoveItemAtIndex(0)
-		flex.AddItemAtIndex(0, a.buildHeader(), 7, 1, false)
+		flex.AddItemAtIndex(0, a.buildHeader(), 8, 1, false)
 	} else {
 		flex.RemoveItemAtIndex(0)
 		flex.AddItemAtIndex(0, a.statusIndicator(), 1, 1, false)
@@ -198,7 +201,7 @@ func (a *App) refreshCluster() {
 	if ok := a.Conn().CheckConnectivity(); ok {
 		if atomic.LoadInt32(&a.conRetry) > 0 {
 			atomic.StoreInt32(&a.conRetry, 0)
-			a.Status(ui.FlashInfo, "K8s connectivity OK")
+			a.Status(model.FlashInfo, "K8s connectivity OK")
 			if c != nil {
 				c.Start()
 			}
@@ -210,7 +213,7 @@ func (a *App) refreshCluster() {
 		}
 		count := atomic.LoadInt32(&a.conRetry)
 		log.Warn().Msgf("Conn check failed (%d/%d)", count, maxConRetry)
-		a.Status(ui.FlashWarn, fmt.Sprintf("Dial K8s failed (%d)", count))
+		a.Status(model.FlashWarn, fmt.Sprintf("Dial K8s failed (%d)", count))
 	}
 
 	count := atomic.LoadInt32(&a.conRetry)
@@ -258,6 +261,7 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 		}
 		a.initFactory(ns)
 
+		client.ResetMetrics()
 		if err := a.command.Reset(true); err != nil {
 			return err
 		}
@@ -267,7 +271,7 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 		}
 		a.Flash().Infof("Switching context to %s", name)
 		a.ReloadStyles(name)
-		if err := a.gotoResource("pods", true); loadPods && err != nil {
+		if err := a.gotoResource("pods", "", true); loadPods && err != nil {
 			a.Flash().Err(err)
 		}
 		a.clusterModel.Reset(a.factory)
@@ -309,7 +313,7 @@ func (a *App) Run() error {
 }
 
 // Status reports a new app status for display.
-func (a *App) Status(l ui.FlashLevel, msg string) {
+func (a *App) Status(l model.FlashLevel, msg string) {
 	a.QueueUpdateDraw(func() {
 		a.Flash().SetMessage(l, msg)
 		a.setIndicator(l, msg)
@@ -327,13 +331,13 @@ func (a *App) ClearStatus(flash bool) {
 	})
 }
 
-func (a *App) setLogo(l ui.FlashLevel, msg string) {
+func (a *App) setLogo(l model.FlashLevel, msg string) {
 	switch l {
-	case ui.FlashErr:
+	case model.FlashErr:
 		a.Logo().Err(msg)
-	case ui.FlashWarn:
+	case model.FlashWarn:
 		a.Logo().Warn(msg)
-	case ui.FlashInfo:
+	case model.FlashInfo:
 		a.Logo().Info(msg)
 	default:
 		a.Logo().Reset()
@@ -341,13 +345,13 @@ func (a *App) setLogo(l ui.FlashLevel, msg string) {
 	a.Draw()
 }
 
-func (a *App) setIndicator(l ui.FlashLevel, msg string) {
+func (a *App) setIndicator(l model.FlashLevel, msg string) {
 	switch l {
-	case ui.FlashErr:
+	case model.FlashErr:
 		a.statusIndicator().Err(msg)
-	case ui.FlashWarn:
+	case model.FlashWarn:
 		a.statusIndicator().Warn(msg)
-	case ui.FlashInfo:
+	case model.FlashInfo:
 		a.statusIndicator().Info(msg)
 	default:
 		a.statusIndicator().Reset()
@@ -378,7 +382,7 @@ func (a *App) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.CmdBuff().IsActive() && !a.CmdBuff().Empty() {
-		if err := a.gotoResource(a.GetCmd(), true); err != nil {
+		if err := a.gotoResource(a.GetCmd(), "", true); err != nil {
 			log.Error().Err(err).Msgf("Goto resource for %q failed", a.GetCmd())
 			a.Flash().Err(err)
 		}
@@ -427,8 +431,8 @@ func (a *App) viewResource(gvr, path string, clearStack bool) error {
 	return a.command.run(gvr, path, clearStack)
 }
 
-func (a *App) gotoResource(cmd string, clearStack bool) error {
-	return a.command.run(cmd, "", clearStack)
+func (a *App) gotoResource(cmd, path string, clearStack bool) error {
+	return a.command.run(cmd, path, clearStack)
 }
 
 func (a *App) inject(c model.Component) error {

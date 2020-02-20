@@ -32,8 +32,10 @@ func (Service) Header(ns string) HeaderRow {
 		Header{Name: "TYPE"},
 		Header{Name: "CLUSTER-IP"},
 		Header{Name: "EXTERNAL-IP"},
-		Header{Name: "SELECTOR"},
-		Header{Name: "PORTS"},
+		Header{Name: "SELECTOR", Wide: true},
+		Header{Name: "PORTS", Wide: true},
+		Header{Name: "LABELS", Wide: true},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
@@ -58,18 +60,31 @@ func (s Service) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = append(r.Fields,
 		svc.ObjectMeta.Name,
 		string(svc.Spec.Type),
-		svc.Spec.ClusterIP,
+		toIP(svc.Spec.ClusterIP),
 		toIPs(svc.Spec.Type, getSvcExtIPS(&svc)),
 		mapToStr(svc.Spec.Selector),
 		toPorts(svc.Spec.Ports),
+		mapToStr(svc.Labels),
+		asStatus(s.diagnose()),
 		toAge(svc.ObjectMeta.CreationTimestamp),
 	)
 
 	return nil
 }
 
+func (Service) diagnose() error {
+	return nil
+}
+
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func toIP(ip string) string {
+	if ip == "" || ip == "None" {
+		return ""
+	}
+	return ip
+}
 
 func getSvcExtIPS(svc *v1.Service) []string {
 	results := []string{}
@@ -116,7 +131,7 @@ func toIPs(svcType v1.ServiceType, ips []string) string {
 		if svcType == v1.ServiceTypeLoadBalancer {
 			return "<pending>"
 		}
-		return MissingValue
+		return ""
 	}
 	sort.Strings(ips)
 

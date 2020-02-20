@@ -36,6 +36,7 @@ func (HorizontalPodAutoscaler) Header(ns string) HeaderRow {
 		Header{Name: "MINPODS", Align: tview.AlignRight},
 		Header{Name: "MAXPODS", Align: tview.AlignRight},
 		Header{Name: "REPLICAS", Align: tview.AlignRight},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
@@ -80,6 +81,7 @@ func (h HorizontalPodAutoscaler) renderV1(raw *unstructured.Unstructured, ns str
 		strconv.Itoa(int(*hpa.Spec.MinReplicas)),
 		strconv.Itoa(int(hpa.Spec.MaxReplicas)),
 		strconv.Itoa(int(hpa.Status.CurrentReplicas)),
+		"",
 		toAge(hpa.ObjectMeta.CreationTimestamp),
 	)
 
@@ -106,6 +108,7 @@ func (h HorizontalPodAutoscaler) renderV2b1(raw *unstructured.Unstructured, ns s
 		strconv.Itoa(int(*hpa.Spec.MinReplicas)),
 		strconv.Itoa(int(hpa.Spec.MaxReplicas)),
 		strconv.Itoa(int(hpa.Status.CurrentReplicas)),
+		"",
 		toAge(hpa.ObjectMeta.CreationTimestamp),
 	)
 
@@ -132,6 +135,7 @@ func (h HorizontalPodAutoscaler) renderV2b2(raw *unstructured.Unstructured, ns s
 		strconv.Itoa(int(*hpa.Spec.MinReplicas)),
 		strconv.Itoa(int(hpa.Spec.MaxReplicas)),
 		strconv.Itoa(int(hpa.Status.CurrentReplicas)),
+		"",
 		toAge(hpa.ObjectMeta.CreationTimestamp),
 	)
 

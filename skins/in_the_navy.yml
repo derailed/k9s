@@ -53,22 +53,30 @@ k9s:
       highlightColor: *sky
       counterColor: *slate
       filterColor: *slate
-  table:
-    fgColor: *fg
-    bgColor: *bg
-    cursorColor: *aqua
-    markColor: *mslate
-    header:
+  views:
+    table:
       fgColor: *fg
       bgColor: *bg
-      sorterColor: *cadet
-  xray:
-    fgColor: *blue
-    bgColor: *dark
-    cursorColor: *aqua
-    graphicColor: *mslate
-    showIcons: false
-  views:
+      cursorColor: *aqua
+      markColor: *mslate
+      header:
+        fgColor: *fg
+        bgColor: *bg
+        sorterColor: *cadet
+    xray:
+      fgColor: *blue
+      bgColor: *dark
+      cursorColor: *aqua
+      graphicColor: *mslate
+      showIcons: false
+    charts:
+      bgColor: *bg
+      defaultDialColors:
+        - *aqua
+        - *err
+      defaultChartColors:
+        - *aqua
+        - *err
     yaml:
       keyColor: *steel
       colorColor: *blue

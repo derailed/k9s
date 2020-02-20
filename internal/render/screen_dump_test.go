@@ -21,6 +21,8 @@ func TestScreenDumpRender(t *testing.T) {
 	assert.Equal(t, "fred/blee/bob", r.ID)
 	assert.Equal(t, render.Fields{
 		"bob",
+		"fred/blee",
+		"",
 	}, r.Fields[:len(r.Fields)-1])
 }
 

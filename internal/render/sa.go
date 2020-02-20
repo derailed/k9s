@@ -28,6 +28,8 @@ func (ServiceAccount) Header(ns string) HeaderRow {
 	return append(h,
 		Header{Name: "NAME"},
 		Header{Name: "SECRET"},
+		Header{Name: "LABELS", Wide: true},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
@@ -52,6 +54,8 @@ func (s ServiceAccount) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = append(r.Fields,
 		sa.Name,
 		strconv.Itoa(len(sa.Secrets)),
+		mapToStr(sa.Labels),
+		"",
 		toAge(sa.ObjectMeta.CreationTimestamp),
 	)
 

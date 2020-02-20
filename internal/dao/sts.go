@@ -29,6 +29,11 @@ type StatefulSet struct {
 	Resource
 }
 
+// IsHappy check for happy sts.
+func (s *StatefulSet) IsHappy(sts appsv1.StatefulSet) bool {
+	return sts.Status.Replicas == sts.Status.ReadyReplicas
+}
+
 // Scale a StatefulSet.
 func (s *StatefulSet) Scale(path string, replicas int32) error {
 	ns, n := client.Namespaced(path)

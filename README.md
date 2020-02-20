@@ -99,8 +99,9 @@ K9s is available on Linux, macOS and Windows platforms.
 
 ---
 
-## Demo Video
+## Demo Videos/Recordings
 
+* [K9s Pulses](https://asciinema.org/a/UbXKPal6IWpTaVAjBBFmizcGN)
 * [K9s v0.15.1](https://youtu.be/7Fx4XQ2ftpM)
 * [K9s v0.13.0](https://www.youtube.com/watch?v=qaeR2iK7U0o&t=15s)
 * [K9s v0.9.0](https://www.youtube.com/watch?v=bxKfqumjW4I)
@@ -141,7 +142,7 @@ K9s uses aliases to navigate most K8s resources.
 | `:`ns`<ENTER>`              | To view and switch to another Kubernetes namespace | `:`+`ns`+`<ENTER>`         |
 | `:screendump`, `:sd`        | To view all saved resources                        |                            |
 | `Ctrl-d`                    | To delete a resource (TAB and ENTER to confirm)    |                            |
-| `Ctrl-k`                    | To delete a resource (no confirmation dialog)      |                            |
+| `Ctrl-k`                    | To kill a resource (no confirmation dialog!)       |                            |
 | `:q`, `Ctrl-c`              | To bail out of K9s                                 |                            |
 
 ---
@@ -505,17 +506,17 @@ k9s:
       highlightColor: skyblue
       counterColor: slateblue
       filterColor: slategray
-  # TableView attributes.
-  table:
-    fgColor: blue
-    bgColor: darkblue
-    cursorColor: aqua
-    # Header row styles.
-    header:
-      fgColor: white
-      bgColor: darkblue
-      sorterColor: orange
   views:
+    # TableView attributes.
+    table:
+      fgColor: blue
+      bgColor: darkblue
+      cursorColor: aqua
+      # Header row styles.
+      header:
+        fgColor: white
+        bgColor: darkblue
+        sorterColor: orange
     # YAML info styles.
     yaml:
       keyColor: steelblue

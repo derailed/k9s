@@ -54,14 +54,14 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 
 	aa.Add(ui.KeyActions{
 		ui.KeyShiftR:   ui.NewKeyAction("Sort Ready", p.GetTable().SortColCmd(1, true), false),
-		ui.KeyShiftS:   ui.NewKeyAction("Sort Status", p.GetTable().SortColCmd(2, true), false),
-		ui.KeyShiftT:   ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd(3, false), false),
+		ui.KeyShiftT:   ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd(2, false), false),
+		ui.KeyShiftS:   ui.NewKeyAction("Sort Status", p.GetTable().SortColCmd(3, true), false),
 		ui.KeyShiftC:   ui.NewKeyAction("Sort CPU", p.GetTable().SortColCmd(4, false), false),
 		ui.KeyShiftM:   ui.NewKeyAction("Sort MEM", p.GetTable().SortColCmd(5, false), false),
 		ui.KeyShiftX:   ui.NewKeyAction("Sort %CPU (REQ)", p.GetTable().SortColCmd(6, false), false),
 		ui.KeyShiftZ:   ui.NewKeyAction("Sort %MEM (REQ)", p.GetTable().SortColCmd(7, false), false),
 		tcell.KeyCtrlX: ui.NewKeyAction("Sort %CPU (LIM)", p.GetTable().SortColCmd(8, false), false),
-		tcell.KeyCtrlZ: ui.NewKeyAction("Sort %MEM (LIM)", p.GetTable().SortColCmd(9, false), false),
+		tcell.KeyCtrlQ: ui.NewKeyAction("Sort %MEM (LIM)", p.GetTable().SortColCmd(9, false), false),
 		ui.KeyShiftI:   ui.NewKeyAction("Sort IP", p.GetTable().SortColCmd(10, true), false),
 		ui.KeyShiftO:   ui.NewKeyAction("Sort Node", p.GetTable().SortColCmd(11, true), false),
 	})
@@ -118,7 +118,7 @@ func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	row := p.GetTable().GetSelectedRowIndex()
-	status := ui.TrimCell(p.GetTable().SelectTable, row, p.GetTable().NameColIndex()+2)
+	status := ui.TrimCell(p.GetTable().SelectTable, row, p.GetTable().NameColIndex()+3)
 	if status != render.Running {
 		p.App().Flash().Errf("%s is not in a running state", path)
 		return nil

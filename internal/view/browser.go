@@ -94,6 +94,10 @@ func (b *Browser) Start() {
 	b.Stop()
 
 	b.Table.Start()
+	b.GetModel().Watch(b.prepareContext())
+}
+
+func (b *Browser) prepareContext() context.Context {
 	ctx := b.defaultContext()
 	ctx, b.cancelFn = context.WithCancel(ctx)
 	if b.contextFn != nil {
@@ -102,7 +106,8 @@ func (b *Browser) Start() {
 	if path, ok := ctx.Value(internal.KeyPath).(string); ok && path != "" {
 		b.Path = path
 	}
-	b.GetModel().Watch(ctx)
+
+	return ctx
 }
 
 // Stop terminates browser updates.
@@ -275,20 +280,22 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := b.GetSelectedItem()
 	if path == "" {
 		return evt
+
+	}
+	ns, n := client.Namespaced(path)
+
+	if ok, err := b.app.Conn().CanI(ns, b.GVR(), []string{"edit"}); !ok || err != nil {
+		b.App().Flash().Err(fmt.Errorf("Current user can't edit resource %s", b.GVR()))
+		return nil
 	}
 
 	b.Stop()
 	defer b.Start()
 	{
-		ns, n := client.Namespaced(path)
 		args := make([]string, 0, 10)
 		args = append(args, "edit")
 		args = append(args, b.meta.SingularName)
 		args = append(args, "-n", ns)
-		args = append(args, "--context", b.app.Config.K9s.CurrentContext)
-		if cfg := b.app.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
-			args = append(args, "--kubeconfig", *cfg)
-		}
 		if !runK(b.app, shellOpts{clear: true, args: append(args, n)}) {
 			b.app.Flash().Err(errors.New("Edit exec failed"))
 		}

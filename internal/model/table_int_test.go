@@ -29,10 +29,11 @@ func TestTableReconcile(t *testing.T) {
 	f.rows = []runtime.Object{load(t, "p1")}
 	ctx := context.WithValue(context.Background(), internal.KeyFactory, f)
 	ctx = context.WithValue(ctx, internal.KeyFields, "")
+	ctx = context.WithValue(ctx, internal.KeyWithMetrics, false)
 	err := ta.reconcile(ctx)
 	assert.Nil(t, err)
 	data := ta.Peek()
-	assert.Equal(t, 15, len(data.Header))
+	assert.Equal(t, 17, len(data.Header))
 	assert.Equal(t, 1, len(data.RowEvents))
 	assert.Equal(t, client.NamespaceAll, data.Namespace)
 }
@@ -55,6 +56,7 @@ func TestTableGet(t *testing.T) {
 	f := makeFactory()
 	f.rows = []runtime.Object{load(t, "p1")}
 	ctx := context.WithValue(context.Background(), internal.KeyFactory, f)
+	ctx = context.WithValue(ctx, internal.KeyWithMetrics, false)
 	row, err := ta.Get(ctx, "fred")
 	assert.Nil(t, err)
 	assert.NotNil(t, row)
@@ -104,7 +106,7 @@ func TestTableHydrate(t *testing.T) {
 
 	assert.Nil(t, hydrate("blee", oo, rr, render.Pod{}))
 	assert.Equal(t, 1, len(rr))
-	assert.Equal(t, 14, len(rr[0].Fields))
+	assert.Equal(t, 16, len(rr[0].Fields))
 }
 
 func TestTableGenericHydrate(t *testing.T) {

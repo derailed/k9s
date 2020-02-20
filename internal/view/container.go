@@ -3,6 +3,7 @@ package view
 import (
 	"errors"
 	"fmt"
+	"net"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
@@ -58,7 +59,7 @@ func (c *Container) bindKeys(aa ui.KeyActions) {
 		ui.KeyShiftX:   ui.NewKeyAction("Sort %CPU (REQ)", c.GetTable().SortColCmd(8, false), false),
 		ui.KeyShiftZ:   ui.NewKeyAction("Sort %MEM (REQ)", c.GetTable().SortColCmd(9, false), false),
 		tcell.KeyCtrlX: ui.NewKeyAction("Sort %CPU (LIM)", c.GetTable().SortColCmd(8, false), false),
-		tcell.KeyCtrlZ: ui.NewKeyAction("Sort %MEM (LIM)", c.GetTable().SortColCmd(9, false), false),
+		tcell.KeyCtrlQ: ui.NewKeyAction("Sort %MEM (LIM)", c.GetTable().SortColCmd(9, false), false),
 	})
 }
 
@@ -153,4 +154,12 @@ func (c *Container) isForwardable(path string) ([]string, bool) {
 	}
 
 	return pp, true
+}
+
+func tryListenPort(port string) error {
+	server, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
+	if err != nil {
+		return err
+	}
+	return server.Close()
 }

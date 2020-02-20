@@ -16,26 +16,26 @@ import (
 type PersistentVolume struct{}
 
 // ColorerFunc colors a resource row.
-func (PersistentVolume) ColorerFunc() ColorerFunc {
-	return func(ns string, r RowEvent) tcell.Color {
-		c := DefaultColorer(ns, r)
-		if r.Kind == EventAdd || r.Kind == EventUpdate {
+func (p PersistentVolume) ColorerFunc() ColorerFunc {
+	return func(ns string, re RowEvent) tcell.Color {
+		c := DefaultColorer(ns, re)
+		if re.Kind == EventAdd || re.Kind == EventUpdate {
 			return c
 		}
 
-		status := strings.TrimSpace(r.Row.Fields[4])
-		switch status {
+		if !Happy(ns, re.Row) {
+			return ErrColor
+		}
+
+		switch strings.TrimSpace(re.Row.Fields[4]) {
 		case "Bound":
 			c = StdColor
 		case "Available":
 			c = tcell.ColorYellow
-		default:
-			c = ErrColor
 		}
 
 		return c
 	}
-
 }
 
 // Header returns a header rbw.
@@ -49,6 +49,9 @@ func (PersistentVolume) Header(string) HeaderRow {
 		Header{Name: "CLAIM"},
 		Header{Name: "STORAGECLASS"},
 		Header{Name: "REASON"},
+		Header{Name: "VOLUMEMODE", Wide: true},
+		Header{Name: "LABELS", Wide: true},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	}
 }
@@ -90,10 +93,28 @@ func (p PersistentVolume) Render(o interface{}, ns string, r *Row) error {
 		claim,
 		class,
 		pv.Status.Reason,
+		p.volumeMode(pv.Spec.VolumeMode),
+		mapToStr(pv.Labels),
+		asStatus(p.diagnose(string(phase))),
 		toAge(pv.ObjectMeta.CreationTimestamp),
 	}
 
 	return nil
+}
+
+func (PersistentVolume) diagnose(r string) error {
+	if r != "Bound" && r != "Available" {
+		return fmt.Errorf("unexpected status %s", r)
+	}
+	return nil
+}
+
+func (PersistentVolume) volumeMode(m *v1.PersistentVolumeMode) string {
+	if m == nil {
+		return MissingValue
+	}
+
+	return string(*m)
 }
 
 // ----------------------------------------------------------------------------

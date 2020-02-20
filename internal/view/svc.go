@@ -9,6 +9,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -85,7 +86,7 @@ func (s *Service) getExternalPort(row int) (string, error) {
 func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if s.bench != nil {
 		log.Debug().Msg(">>> Benchmark canceled!!")
-		s.App().Status(ui.FlashErr, "Benchmark Canceled!")
+		s.App().Status(model.FlashErr, "Benchmark Canceled!")
 		s.bench.Cancel()
 		s.App().ClearStatus(true)
 		return nil
@@ -140,7 +141,7 @@ func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
 		return err
 	}
 
-	s.App().Status(ui.FlashWarn, "Benchmark in progress...")
+	s.App().Status(model.FlashWarn, "Benchmark in progress...")
 	log.Debug().Msg("Bench starting...")
 	go s.bench.Run(s.App().Config.K9s.CurrentCluster, s.benchDone)
 
@@ -151,9 +152,9 @@ func (s *Service) benchDone() {
 	log.Debug().Msg("Bench Completed!")
 	s.App().QueueUpdate(func() {
 		if s.bench.Canceled() {
-			s.App().Status(ui.FlashInfo, "Benchmark canceled")
+			s.App().Status(model.FlashInfo, "Benchmark canceled")
 		} else {
-			s.App().Status(ui.FlashInfo, "Benchmark Completed!")
+			s.App().Status(model.FlashInfo, "Benchmark Completed!")
 			s.bench.Cancel()
 		}
 		s.bench = nil

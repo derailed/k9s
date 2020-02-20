@@ -1,6 +1,7 @@
 package render
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -15,7 +16,7 @@ import (
 type Namespace struct{}
 
 // ColorerFunc colors a resource row.
-func (Namespace) ColorerFunc() ColorerFunc {
+func (n Namespace) ColorerFunc() ColorerFunc {
 	return func(ns string, r RowEvent) tcell.Color {
 		c := DefaultColorer(ns, r)
 		if r.Kind == EventAdd {
@@ -25,9 +26,8 @@ func (Namespace) ColorerFunc() ColorerFunc {
 		if r.Kind == EventUpdate {
 			c = StdColor
 		}
-		switch strings.TrimSpace(r.Row.Fields[1]) {
-		case "Inactive", Terminating:
-			c = ErrColor
+		if !Happy(ns, r.Row) {
+			return ErrColor
 		}
 		if strings.Contains(strings.TrimSpace(r.Row.Fields[0]), "*") {
 			c = HighlightColor
@@ -42,12 +42,14 @@ func (Namespace) Header(string) HeaderRow {
 	return HeaderRow{
 		Header{Name: "NAME"},
 		Header{Name: "STATUS"},
+		Header{Name: "LABELS", Wide: true},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (Namespace) Render(o interface{}, _ string, r *Row) error {
+func (n Namespace) Render(o interface{}, _ string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected Namespace, but got %T", o)
@@ -62,8 +64,17 @@ func (Namespace) Render(o interface{}, _ string, r *Row) error {
 	r.Fields = Fields{
 		ns.Name,
 		string(ns.Status.Phase),
+		mapToStr(ns.Labels),
+		asStatus(n.diagnose(ns.Status.Phase)),
 		toAge(ns.ObjectMeta.CreationTimestamp),
 	}
 
+	return nil
+}
+
+func (Namespace) diagnose(phase v1.NamespacePhase) error {
+	if phase != v1.NamespaceActive && phase != v1.NamespaceTerminating {
+		return errors.New("namespace not ready")
+	}
 	return nil
 }

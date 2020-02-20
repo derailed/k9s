@@ -22,6 +22,9 @@ const (
 
 	// ClusterScope designates a resource is not namespaced.
 	ClusterScope = "-"
+
+	// NotNamespaced designates a non resource namespace.
+	NotNamespaced = "*"
 )
 
 const (

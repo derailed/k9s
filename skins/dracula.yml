@@ -54,24 +54,33 @@ k9s:
       highlightColor: *orange
       counterColor: *purple
       filterColor: *pink
-  # TableView attributes.
-  table:
-    fgColor: *foreground
-    bgColor: *background
-    cursorColor: *current_line
-    # Header row styles.
-    header:
+  views:
+    # Charts skins...
+    charts:
+      bgColor: default
+      defaultDialColors:
+        - *purple
+        - *red
+      defaultChartColors:
+        - *purple
+        - *red
+    # TableView attributes.
+    table:
       fgColor: *foreground
       bgColor: *background
-      sorterColor: *cyan
-  # Xray view attributes.
-  xray:
-    fgColor: *foreground
-    bgColor: *background
-    cursorColor: *current_line
-    graphicColor: *purple
-    showIcons: false
-  views:
+      cursorColor: *current_line
+      # Header row styles.
+      header:
+        fgColor: *foreground
+        bgColor: *background
+        sorterColor: *cyan
+    # Xray view attributes.
+    xray:
+      fgColor: *foreground
+      bgColor: *background
+      cursorColor: *current_line
+      graphicColor: *purple
+      showIcons: false
     # YAML info styles.
     yaml:
       keyColor: *pink
