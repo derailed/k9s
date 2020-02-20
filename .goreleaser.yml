@@ -16,7 +16,7 @@ builds:
       - 386
       - amd64
       - arm64
-      - armhf
+      - arm
     goarm:
       - 6
       - 7

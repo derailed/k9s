@@ -117,7 +117,7 @@ func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	row := p.GetTable().GetSelectedRowIndex()
-	status := ui.TrimCell(p.GetTable().SelectTable, row, p.GetTable().NameColIndex()+2)
+	status := ui.TrimCell(p.GetTable().SelectTable, row, p.GetTable().NameColIndex()+3)
 	if status != render.Running {
 		p.App().Flash().Errf("%s is not in a running state", path)
 		return nil
