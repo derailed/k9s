@@ -15,7 +15,6 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 // Grapheable represents a graphic component.
@@ -275,9 +274,8 @@ func (p *Pulse) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !ok {
 		return nil
 	}
-	log.Debug().Msgf("Selected %s", s.ID())
 	gvr := client.NewGVR(s.ID())
-	if err := p.App().gotoResource(gvr.R(), "", false); err != nil {
+	if err := p.App().gotoResource(gvr.R()+" all", "", false); err != nil {
 		p.App().Flash().Err(err)
 	}
 
