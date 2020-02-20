@@ -1,11 +1,14 @@
 package render
 
 import (
+	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
+	"github.com/gdamore/tcell"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,8 +25,16 @@ const (
 type Node struct{}
 
 // ColorerFunc colors a resource row.
-func (Node) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+func (n Node) ColorerFunc() ColorerFunc {
+	return func(ns string, r RowEvent) tcell.Color {
+		c := DefaultColorer(ns, r)
+		if !Happy(ns, r.Row) {
+			return ErrColor
+		}
+
+		return c
+	}
+
 }
 
 // Header returns a header row.
@@ -31,17 +42,19 @@ func (Node) Header(_ string) HeaderRow {
 	return HeaderRow{
 		Header{Name: "NAME"},
 		Header{Name: "STATUS"},
-		Header{Name: "ROLE"},
-		Header{Name: "VERSION"},
-		Header{Name: "KERNEL"},
-		Header{Name: "INTERNAL-IP"},
-		Header{Name: "EXTERNAL-IP"},
+		Header{Name: "ROLE", Wide: true},
+		Header{Name: "VERSION", Wide: true},
+		Header{Name: "KERNEL", Wide: true},
+		Header{Name: "INTERNAL-IP", Wide: true},
+		Header{Name: "EXTERNAL-IP", Wide: true},
 		Header{Name: "CPU", Align: tview.AlignRight},
 		Header{Name: "MEM", Align: tview.AlignRight},
 		Header{Name: "%CPU", Align: tview.AlignRight},
 		Header{Name: "%MEM", Align: tview.AlignRight},
 		Header{Name: "ACPU", Align: tview.AlignRight},
 		Header{Name: "AMEM", Align: tview.AlignRight},
+		Header{Name: "LABELS", Wide: true},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	}
 }
@@ -69,17 +82,19 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 
 	c, a, p := gatherNodeMX(&no, oo.MX)
 
-	sta := make([]string, 10)
-	status(no.Status, no.Spec.Unschedulable, sta)
-	ro := make([]string, 10)
-	nodeRoles(&no, ro)
+	statuses := make(sort.StringSlice, 10)
+	status(no.Status, no.Spec.Unschedulable, statuses)
+	sort.Sort(statuses)
+	roles := make(sort.StringSlice, 10)
+	nodeRoles(&no, roles)
+	sort.Sort(roles)
 
 	r.ID = client.FQN("", na)
 	r.Fields = make(Fields, 0, len(n.Header(ns)))
 	r.Fields = append(r.Fields,
 		no.Name,
-		join(sta, ","),
-		join(ro, ","),
+		join(statuses, ","),
+		join(roles, ","),
 		no.Status.NodeInfo.KubeletVersion,
 		no.Status.NodeInfo.KernelVersion,
 		iIP,
@@ -90,10 +105,25 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 		p.mem,
 		a.cpu,
 		a.mem,
+		mapToStr(no.Labels),
+		asStatus(n.diagnose(statuses)),
 		toAge(no.ObjectMeta.CreationTimestamp),
 	)
 
 	return nil
+}
+
+func (Node) diagnose(ss []string) error {
+	if len(ss) == 0 {
+		return nil
+	}
+	for _, s := range ss {
+		if s == "Ready" {
+			return nil
+		}
+	}
+
+	return errors.New("node is not ready")
 }
 
 // ----------------------------------------------------------------------------
@@ -155,6 +185,9 @@ func nodeRoles(node *v1.Node, res []string) {
 		case k == nodeLabelRole && v != "":
 			res[index] = v
 			index++
+		}
+		if index >= len(res) {
+			break
 		}
 	}
 

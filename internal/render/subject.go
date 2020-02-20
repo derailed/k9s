@@ -11,6 +11,11 @@ import (
 // Subject renders a rbac to screen.
 type Subject struct{}
 
+// Happy returns true if resoure is happy, false otherwise
+func (Subject) Happy(_ string, _ Row) bool {
+	return true
+}
+
 // ColorerFunc colors a resource row.
 func (Subject) ColorerFunc() ColorerFunc {
 	return func(ns string, re RowEvent) tcell.Color {
@@ -24,6 +29,7 @@ func (Subject) Header(ns string) HeaderRow {
 		Header{Name: "NAME"},
 		Header{Name: "KIND"},
 		Header{Name: "FIRST LOCATION"},
+		Header{Name: "VALID", Wide: true},
 	}
 }
 
@@ -40,6 +46,7 @@ func (s Subject) Render(o interface{}, ns string, r *Row) error {
 		res.Name,
 		res.Kind,
 		res.FirstLocation,
+		"",
 	)
 
 	return nil

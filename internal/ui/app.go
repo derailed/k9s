@@ -3,6 +3,7 @@ package ui
 import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -14,6 +15,7 @@ type App struct {
 	Configurator
 
 	Main    *Pages
+	flash   *model.Flash
 	actions KeyActions
 	views   map[string]tview.Primitive
 	cmdBuff *CmdBuff
@@ -25,6 +27,7 @@ func NewApp(context string) *App {
 		Application: tview.NewApplication(),
 		actions:     make(KeyActions),
 		Main:        NewPages(),
+		flash:       model.NewFlash(model.DefaultFlashDelay),
 		cmdBuff:     NewCmdBuff(':', CommandBuff),
 	}
 	a.ReloadStyles(context)
@@ -33,7 +36,6 @@ func NewApp(context string) *App {
 		"menu":   NewMenu(a.Styles),
 		"logo":   NewLogo(a.Styles),
 		"cmd":    NewCommand(a.Styles),
-		"flash":  NewFlash(&a, "Initializing..."),
 		"crumbs": NewCrumbs(a.Styles),
 	}
 
@@ -239,11 +241,6 @@ func (a *App) Logo() *Logo {
 	return a.views["logo"].(*Logo)
 }
 
-// Flash returns app flash.
-func (a *App) Flash() *Flash {
-	return a.views["flash"].(*Flash)
-}
-
 // Cmd returns app cmd.
 func (a *App) Cmd() *Command {
 	return a.views["cmd"].(*Command)
@@ -252,6 +249,11 @@ func (a *App) Cmd() *Command {
 // Menu returns app menu.
 func (a *App) Menu() *Menu {
 	return a.views["menu"].(*Menu)
+}
+
+// Flash returns a flash model.
+func (a *App) Flash() *model.Flash {
+	return a.flash
 }
 
 // ----------------------------------------------------------------------------

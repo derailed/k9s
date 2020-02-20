@@ -35,7 +35,7 @@ type (
 func NewCluster(f dao.Factory) *Cluster {
 	return &Cluster{
 		factory: f,
-		mx:      client.NewMetricsServer(f.Client()),
+		mx:      client.DialMetrics(f.Client()),
 	}
 }
 

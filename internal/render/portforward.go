@@ -48,6 +48,7 @@ func (PortForward) Header(ns string) HeaderRow {
 		Header{Name: "URL"},
 		Header{Name: "C"},
 		Header{Name: "N"},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	}
 }
@@ -71,6 +72,7 @@ func (f PortForward) Render(o interface{}, gvr string, r *Row) error {
 		UrlFor(pf.Config.Host, pf.Config.Path, ports[0]),
 		asNum(pf.Config.C),
 		asNum(pf.Config.N),
+		"",
 		pf.Age(),
 	}
 

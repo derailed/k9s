@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAsColor(t *testing.T) {
+func TestColor(t *testing.T) {
 	uu := map[string]tcell.Color{
 		"blah":    tcell.ColorDefault,
 		"blue":    tcell.ColorBlue,
@@ -20,7 +20,7 @@ func TestAsColor(t *testing.T) {
 	for k := range uu {
 		c, u := k, uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u, config.AsColor(c))
+			assert.Equal(t, u, config.NewColor(c).Color())
 		})
 	}
 }
@@ -30,9 +30,9 @@ func TestSkinNone(t *testing.T) {
 	assert.Nil(t, s.Load("testdata/empty_skin.yml"))
 	s.Update()
 
-	assert.Equal(t, "cadetblue", s.Body().FgColor)
-	assert.Equal(t, "black", s.Body().BgColor)
-	assert.Equal(t, "black", s.Table().BgColor)
+	assert.Equal(t, "cadetblue", s.Body().FgColor.String())
+	assert.Equal(t, "black", s.Body().BgColor.String())
+	assert.Equal(t, "black", s.Table().BgColor.String())
 	assert.Equal(t, tcell.ColorCadetBlue, s.FgColor())
 	assert.Equal(t, tcell.ColorBlack, s.BgColor())
 	assert.Equal(t, tcell.ColorBlack, tview.Styles.PrimitiveBackgroundColor)
@@ -43,9 +43,9 @@ func TestSkin(t *testing.T) {
 	assert.Nil(t, s.Load("testdata/black_and_wtf.yml"))
 	s.Update()
 
-	assert.Equal(t, "white", s.Body().FgColor)
-	assert.Equal(t, "black", s.Body().BgColor)
-	assert.Equal(t, "black", s.Table().BgColor)
+	assert.Equal(t, "white", s.Body().FgColor.String())
+	assert.Equal(t, "black", s.Body().BgColor.String())
+	assert.Equal(t, "black", s.Table().BgColor.String())
 	assert.Equal(t, tcell.ColorWhite, s.FgColor())
 	assert.Equal(t, tcell.ColorBlack, s.BgColor())
 	assert.Equal(t, tcell.ColorBlack, tview.Styles.PrimitiveBackgroundColor)

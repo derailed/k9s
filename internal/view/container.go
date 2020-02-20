@@ -57,7 +57,7 @@ func (c *Container) bindKeys(aa ui.KeyActions) {
 		ui.KeyShiftX:   ui.NewKeyAction("Sort %CPU (REQ)", c.GetTable().SortColCmd(8, false), false),
 		ui.KeyShiftZ:   ui.NewKeyAction("Sort %MEM (REQ)", c.GetTable().SortColCmd(9, false), false),
 		tcell.KeyCtrlX: ui.NewKeyAction("Sort %CPU (LIM)", c.GetTable().SortColCmd(8, false), false),
-		tcell.KeyCtrlZ: ui.NewKeyAction("Sort %MEM (LIM)", c.GetTable().SortColCmd(9, false), false),
+		tcell.KeyCtrlQ: ui.NewKeyAction("Sort %MEM (LIM)", c.GetTable().SortColCmd(9, false), false),
 	})
 }
 

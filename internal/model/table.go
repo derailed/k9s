@@ -162,6 +162,7 @@ func (t *Table) SetRefreshRate(d time.Duration) {
 
 // ClusterWide checks if resource is scope for all namespaces.
 func (t *Table) ClusterWide() bool {
+	log.Debug().Msgf("CLUSTER-WIDE %q", t.namespace)
 	return client.IsClusterWide(t.namespace)
 }
 
@@ -219,6 +220,7 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 	if client.IsClusterScoped(t.namespace) {
 		ns = client.AllNamespaces
 	}
+
 	return a.List(ctx, ns)
 }
 

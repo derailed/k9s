@@ -26,6 +26,8 @@ func (Role) Header(ns string) HeaderRow {
 
 	return append(h,
 		Header{Name: "NAME"},
+		Header{Name: "LABELS", Wide: true},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
@@ -49,6 +51,8 @@ func (r Role) Render(o interface{}, ns string, row *Row) error {
 	}
 	row.Fields = append(row.Fields,
 		ro.Name,
+		mapToStr(ro.Labels),
+		"",
 		toAge(ro.ObjectMeta.CreationTimestamp),
 	)
 

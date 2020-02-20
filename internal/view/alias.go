@@ -32,6 +32,14 @@ func NewAlias(gvr client.GVR) ResourceViewer {
 	return &a
 }
 
+func (a *Alias) Init(ctx context.Context) error {
+	if err := a.ResourceViewer.Init(ctx); err != nil {
+		return err
+	}
+	a.GetTable().GetModel().SetNamespace("*")
+	return nil
+}
+
 func (a *Alias) aliasContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeyAliases, a.App().command.alias)
 }

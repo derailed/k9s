@@ -3,7 +3,6 @@ package render
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
@@ -17,19 +16,13 @@ import (
 type Deployment struct{}
 
 // ColorerFunc colors a resource row.
-func (Deployment) ColorerFunc() ColorerFunc {
+func (d Deployment) ColorerFunc() ColorerFunc {
 	return func(ns string, r RowEvent) tcell.Color {
 		c := DefaultColorer(ns, r)
 		if r.Kind == EventAdd || r.Kind == EventUpdate {
 			return c
 		}
-
-		readyCol := 2
-		if !client.IsAllNamespaces(ns) {
-			readyCol--
-		}
-		tokens := strings.Split(r.Row.Fields[readyCol], "/")
-		if tokens[0] != tokens[1] {
+		if !Happy(ns, r.Row) {
 			return ErrColor
 		}
 
@@ -49,6 +42,9 @@ func (Deployment) Header(ns string) HeaderRow {
 		Header{Name: "READY"},
 		Header{Name: "UP-TO-DATE", Align: tview.AlignRight},
 		Header{Name: "AVAILABLE", Align: tview.AlignRight},
+		Header{Name: "READY", Align: tview.AlignRight},
+		Header{Name: "LABELS", Wide: true},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
@@ -73,11 +69,21 @@ func (d Deployment) Render(o interface{}, ns string, r *Row) error {
 	}
 	r.Fields = append(r.Fields,
 		dp.Name,
-		strconv.Itoa(int(dp.Status.AvailableReplicas))+"/"+strconv.Itoa(int(*dp.Spec.Replicas)),
+		strconv.Itoa(int(dp.Status.AvailableReplicas))+"/"+strconv.Itoa(int(dp.Status.Replicas)),
 		strconv.Itoa(int(dp.Status.UpdatedReplicas)),
 		strconv.Itoa(int(dp.Status.AvailableReplicas)),
+		strconv.Itoa(int(dp.Status.ReadyReplicas)),
+		mapToStr(dp.Labels),
+		asStatus(d.diagnose(dp.Status.Replicas, dp.Status.AvailableReplicas)),
 		toAge(dp.ObjectMeta.CreationTimestamp),
 	)
 
+	return nil
+}
+
+func (Deployment) diagnose(d, r int32) error {
+	if d != r {
+		return fmt.Errorf("desiring %d replicas got %d available", d, r)
+	}
 	return nil
 }

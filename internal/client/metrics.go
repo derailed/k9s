@@ -3,20 +3,46 @@ package client
 import (
 	"fmt"
 	"math"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/cache"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
+
+const (
+	mxCacheSize   = 100
+	mxCacheExpiry = 1 * time.Minute
+)
+
+var MetricsDial *MetricsServer
+
+func DialMetrics(c Connection) *MetricsServer {
+	if MetricsDial == nil {
+		MetricsDial = NewMetricsServer(c)
+	}
+
+	return MetricsDial
+}
+
+func ResetMetrics() {
+	MetricsDial = nil
+}
 
 // MetricsServer serves cluster metrics for nodes and pods.
 type MetricsServer struct {
 	Connection
+
+	cache *cache.LRUExpireCache
 }
 
 // NewMetricsServer return a metric server instance.
 func NewMetricsServer(c Connection) *MetricsServer {
-	return &MetricsServer{Connection: c}
+	return &MetricsServer{
+		Connection: c,
+		cache:      cache.NewLRUExpireCache(mxCacheSize),
+	}
 }
 
 // NodesMetrics retrieves metrics for a given set of nodes.
@@ -28,15 +54,15 @@ func (m *MetricsServer) NodesMetrics(nodes *v1.NodeList, metrics *mv1beta1.NodeM
 	for _, no := range nodes.Items {
 		mmx[no.Name] = NodeMetrics{
 			AvailCPU: no.Status.Allocatable.Cpu().MilliValue(),
-			AvailMEM: toMB(no.Status.Allocatable.Memory().Value()),
+			AvailMEM: ToMB(no.Status.Allocatable.Memory().Value()),
 			TotalCPU: no.Status.Capacity.Cpu().MilliValue(),
-			TotalMEM: toMB(no.Status.Capacity.Memory().Value()),
+			TotalMEM: ToMB(no.Status.Capacity.Memory().Value()),
 		}
 	}
 	for _, c := range metrics.Items {
 		if mx, ok := mmx[c.Name]; ok {
 			mx.CurrentCPU = c.Usage.Cpu().MilliValue()
-			mx.CurrentMEM = toMB(c.Usage.Memory().Value())
+			mx.CurrentMEM = ToMB(c.Usage.Memory().Value())
 			mmx[c.Name] = mx
 		}
 	}
@@ -51,13 +77,13 @@ func (m *MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsL
 	for _, no := range nos.Items {
 		nodeMetrics[no.Name] = NodeMetrics{
 			AvailCPU: no.Status.Allocatable.Cpu().MilliValue(),
-			AvailMEM: toMB(no.Status.Allocatable.Memory().Value()),
+			AvailMEM: ToMB(no.Status.Allocatable.Memory().Value()),
 		}
 	}
 	for _, mx := range nmx.Items {
 		if m, ok := nodeMetrics[mx.Name]; ok {
 			m.CurrentCPU = mx.Usage.Cpu().MilliValue()
-			m.CurrentMEM = toMB(mx.Usage.Memory().Value())
+			m.CurrentMEM = ToMB(mx.Usage.Memory().Value())
 			nodeMetrics[mx.Name] = m
 		}
 	}
@@ -74,86 +100,121 @@ func (m *MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsL
 	return nil
 }
 
-// FetchNodesMetrics return all metrics for pods in a given namespace.
-func (m *MetricsServer) FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error) {
-	var mx mv1beta1.NodeMetricsList
+func (m *MetricsServer) checkAccess(ns, gvr, msg string) error {
 	if !m.HasMetrics() {
-		return &mx, fmt.Errorf("No metrics-server detected on cluster")
+		return fmt.Errorf("No metrics-server detected on cluster")
 	}
 
-	auth, err := m.CanI("", "metrics.k8s.io/v1beta1/nodes", ListAccess)
+	auth, err := m.CanI(ns, gvr, ListAccess)
 	if err != nil {
-		return &mx, err
+		return err
 	}
 	if !auth {
-		return &mx, fmt.Errorf("user is not authorized to list node metrics")
+		return fmt.Errorf(msg)
+	}
+	return nil
+}
+
+// FetchNodesMetrics return all metrics for nodes.
+func (m *MetricsServer) FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error) {
+	const msg = "user is not authorized to list node metrics"
+
+	mx := new(mv1beta1.NodeMetricsList)
+	if err := m.checkAccess("", "metrics.k8s.io/v1beta1/nodes", msg); err != nil {
+		return mx, err
+	}
+
+	const key = "nodes"
+	if entry, ok := m.cache.Get(key); ok && entry != nil {
+		mxList, ok := entry.(*mv1beta1.NodeMetricsList)
+		if !ok {
+			return nil, fmt.Errorf("expected nodemetricslist but got %T", entry)
+		}
+		return mxList, nil
 	}
 
 	client, err := m.MXDial()
 	if err != nil {
-		return &mx, err
+		return mx, err
 	}
-	return client.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{})
+	mxList, err := client.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{})
+	if err != nil {
+		return mx, err
+	}
+	m.cache.Add(key, mxList, mxCacheExpiry)
+
+	return mxList, nil
 }
 
 // FetchPodsMetrics return all metrics for pods in a given namespace.
 func (m *MetricsServer) FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, error) {
-	var mx mv1beta1.PodMetricsList
-	if m.Connection == nil {
-		return &mx, fmt.Errorf("no client connection")
-	}
+	mx := new(mv1beta1.PodMetricsList)
+	const msg = "user is not authorized to list pods metrics"
 
-	if !m.HasMetrics() {
-		return &mx, fmt.Errorf("No metrics-server detected on cluster")
-	}
 	if ns == NamespaceAll {
 		ns = AllNamespaces
 	}
-
-	auth, err := m.CanI(ns, "metrics.k8s.io/v1beta1/pods", ListAccess)
-	if err != nil {
-		return &mx, err
+	if err := m.checkAccess(ns, "metrics.k8s.io/v1beta1/pods", msg); err != nil {
+		return mx, err
 	}
-	if !auth {
-		return &mx, fmt.Errorf("user is not authorized to list pods metrics")
+
+	key := FQN(ns, "pods")
+	if entry, ok := m.cache.Get(key); ok {
+		mxList, ok := entry.(*mv1beta1.PodMetricsList)
+		if !ok {
+			return mx, fmt.Errorf("expected podmetricslist but got %T", entry)
+		}
+		return mxList, nil
 	}
 
 	client, err := m.MXDial()
 	if err != nil {
-		return &mx, err
+		return mx, err
 	}
+	mxList, err := client.MetricsV1beta1().PodMetricses(ns).List(metav1.ListOptions{})
+	if err != nil {
+		return mx, err
+	}
+	m.cache.Add(key, mxList, mxCacheExpiry)
 
-	return client.MetricsV1beta1().PodMetricses(ns).List(metav1.ListOptions{})
+	return mxList, err
 }
 
 // FetchPodMetrics return all metrics for pods in a given namespace.
 func (m *MetricsServer) FetchPodMetrics(fqn string) (*mv1beta1.PodMetrics, error) {
-	var mx mv1beta1.PodMetrics
-	if m.Connection == nil {
-		return &mx, fmt.Errorf("no client connection")
-	}
-	if !m.HasMetrics() {
-		return &mx, fmt.Errorf("No metrics-server detected on cluster")
-	}
+	var mx *mv1beta1.PodMetrics
+	const msg = "user is not authorized to list pod metrics"
 
 	ns, n := Namespaced(fqn)
 	if ns == NamespaceAll {
 		ns = AllNamespaces
 	}
-	auth, err := m.CanI(ns, "metrics.k8s.io/v1beta1/pods", GetAccess)
-	if err != nil {
-		return &mx, err
+	if err := m.checkAccess(ns, "metrics.k8s.io/v1beta1/pods", msg); err != nil {
+		return mx, err
 	}
-	if !auth {
-		return &mx, fmt.Errorf("user is not authorized to list pod metrics")
+
+	var key = FQN(ns, "pods")
+	if entry, ok := m.cache.Get(key); ok {
+		if list, ok := entry.(*mv1beta1.PodMetricsList); ok && list != nil {
+			for _, m := range list.Items {
+				if FQN(m.Namespace, m.Name) == fqn {
+					return &m, nil
+				}
+			}
+		}
 	}
 
 	client, err := m.MXDial()
 	if err != nil {
-		return &mx, err
+		return mx, err
 	}
+	mx, err = client.MetricsV1beta1().PodMetricses(ns).Get(n, metav1.GetOptions{})
+	if err != nil {
+		return mx, err
+	}
+	m.cache.Add(key, mx, mxCacheExpiry)
 
-	return client.MetricsV1beta1().PodMetricses(ns).Get(n, metav1.GetOptions{})
+	return mx, nil
 }
 
 // PodsMetrics retrieves metrics for all pods in a given namespace.
@@ -167,7 +228,7 @@ func (m *MetricsServer) PodsMetrics(pods *mv1beta1.PodMetricsList, mmx PodsMetri
 		var mx PodMetrics
 		for _, c := range p.Containers {
 			mx.CurrentCPU += c.Usage.Cpu().MilliValue()
-			mx.CurrentMEM += toMB(c.Usage.Memory().Value())
+			mx.CurrentMEM += ToMB(c.Usage.Memory().Value())
 		}
 		mmx[p.Namespace+"/"+p.Name] = mx
 	}
@@ -178,8 +239,8 @@ func (m *MetricsServer) PodsMetrics(pods *mv1beta1.PodMetricsList, mmx PodsMetri
 
 const megaByte = 1024 * 1024
 
-// toMB converts bytes to megabytes.
-func toMB(v int64) float64 {
+// ToMB converts bytes to megabytes.
+func ToMB(v int64) float64 {
 	return float64(v) / megaByte
 }
 

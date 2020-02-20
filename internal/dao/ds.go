@@ -32,6 +32,11 @@ type DaemonSet struct {
 	Resource
 }
 
+// IsHappy check for happy deployments.
+func (d *DaemonSet) IsHappy(ds appsv1.DaemonSet) bool {
+	return ds.Status.DesiredNumberScheduled == ds.Status.CurrentNumberScheduled
+}
+
 // Restart a DaemonSet rollout.
 func (d *DaemonSet) Restart(path string) error {
 	ds, err := d.GetInstance(path)

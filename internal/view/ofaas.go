@@ -28,7 +28,7 @@ func (o *OpenFaas) bindKeys(aa ui.KeyActions) {
 		ui.KeyShiftS: ui.NewKeyAction("Sort Status", o.GetTable().SortColCmd(2, true), false),
 		ui.KeyShiftI: ui.NewKeyAction("Sort Invocations", o.GetTable().SortColCmd(4, false), false),
 		ui.KeyShiftR: ui.NewKeyAction("Sort Replicas", o.GetTable().SortColCmd(5, false), false),
-		ui.KeyShiftV: ui.NewKeyAction("Sort Available", o.GetTable().SortColCmd(6, false), false),
+		ui.KeyShiftL: ui.NewKeyAction("Sort Available", o.GetTable().SortColCmd(6, false), false),
 	})
 }
 

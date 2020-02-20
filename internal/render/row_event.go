@@ -181,7 +181,7 @@ func (rr RowEvents) Sort(ns string, col int, asc bool) {
 func toAgeDuration(dur string) string {
 	d, err := time.ParseDuration(dur)
 	if err != nil {
-		return "n/a"
+		return dur
 	}
 	return duration.HumanDuration(d)
 }

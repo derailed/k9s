@@ -19,6 +19,11 @@ type Generic struct {
 	ageIndex int
 }
 
+// Happy returns true if resoure is happy, false otherwise
+func (Generic) Happy(ns string, r Row) bool {
+	return true
+}
+
 // SetTable sets the tabular resource.
 func (g *Generic) SetTable(t *metav1beta1.Table) {
 	g.table = t

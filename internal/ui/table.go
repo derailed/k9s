@@ -38,6 +38,8 @@ type Table struct {
 	sortCol    SortColumn
 	colorerFn  render.ColorerFunc
 	decorateFn DecorateFunc
+	wide       bool
+	toast      bool
 }
 
 // NewTable returns a new table view.
@@ -65,6 +67,7 @@ func (t *Table) Init(ctx context.Context) {
 	t.SetSelectable(true, false)
 	t.SetSelectionChangedFunc(t.selectionChanged)
 	t.SetInputCapture(t.keyboard)
+	t.SetBackgroundColor(tcell.ColorDefault)
 
 	t.styles = mustExtractSyles(ctx)
 	t.StylesChanged(t.styles)
@@ -72,14 +75,32 @@ func (t *Table) Init(ctx context.Context) {
 
 // StylesChanged notifies the skin changed.
 func (t *Table) StylesChanged(s *config.Styles) {
-	t.SetBackgroundColor(config.AsColor(s.Table().BgColor))
-	t.SetBorderColor(config.AsColor(s.Table().FgColor))
-	t.SetBorderFocusColor(config.AsColor(s.Frame().Border.FocusColor))
+	t.SetBackgroundColor(s.Table().BgColor.Color())
+	t.SetBorderColor(s.Table().FgColor.Color())
+	t.SetBorderFocusColor(s.Frame().Border.FocusColor.Color())
 	t.SetSelectedStyle(
 		tcell.ColorBlack,
-		config.AsColor(t.styles.Table().CursorColor),
+		t.styles.Table().CursorColor.Color(),
 		tcell.AttrBold,
 	)
+	t.Refresh()
+}
+
+// ResetToast resets toast flag.
+func (t *Table) ResetToast() {
+	t.toast = false
+	t.Refresh()
+}
+
+// ToggleToast toggles to show toast resources.
+func (t *Table) ToggleToast() {
+	t.toast = !t.toast
+	t.Refresh()
+}
+
+// ToggleWide toggles wide col display.
+func (t *Table) ToggleWide() {
+	t.wide = !t.wide
 	t.Refresh()
 }
 
@@ -166,10 +187,7 @@ func (t *Table) Update(data render.TableData) {
 	if t.decorateFn != nil {
 		data = t.decorateFn(data)
 	}
-	if !t.cmdBuff.Empty() {
-		data = t.filtered(data)
-	}
-	t.doUpdate(data)
+	t.doUpdate(t.filtered(data))
 	t.UpdateTitle()
 }
 
@@ -182,13 +200,18 @@ func (t *Table) doUpdate(data render.TableData) {
 
 	t.Clear()
 	t.adjustSorter(data)
-	fg := config.AsColor(t.styles.Table().Header.FgColor)
-	bg := config.AsColor(t.styles.Table().Header.BgColor)
-	for col, h := range data.Header {
+	fg := t.styles.Table().Header.FgColor.Color()
+	bg := t.styles.Table().Header.BgColor.Color()
+	var col int
+	for _, h := range data.Header {
+		if h.Wide && !t.wide {
+			continue
+		}
 		t.AddHeaderCell(col, h)
 		c := t.GetCell(0, col)
 		c.SetBackgroundColor(bg)
 		c.SetTextColor(fg)
+		col++
 	}
 	data.RowEvents.Sort(data.Namespace, t.sortCol.index, t.sortCol.asc)
 
@@ -209,6 +232,8 @@ func (t *Table) SortColCmd(col int, asc bool) func(evt *tcell.EventKey) *tcell.E
 			index = 0
 		case -1:
 			index = t.GetColumnCount() - 1
+		case -3:
+			index = t.GetColumnCount() - 2
 		default:
 			index = t.NameColIndex() + col
 		}
@@ -251,29 +276,33 @@ func (t *Table) buildRow(ns string, r int, re render.RowEvent, header render.Hea
 		color = t.colorerFn
 	}
 	marked := t.IsMarked(re.Row.ID)
-	for col, field := range re.Row.Fields {
-		if !re.Deltas.IsBlank() && !header.AgeCol(col) {
-			field += Deltas(re.Deltas[col], field)
+	var col int
+	for c, field := range re.Row.Fields {
+		if header[c].Wide && !t.wide {
+			continue
+		}
+		if !re.Deltas.IsBlank() && !header.AgeCol(c) {
+			field += Deltas(re.Deltas[c], field)
+		}
+		if header[c].Decorator != nil {
+			field = header[c].Decorator(field)
+		}
+		if header[c].Align == tview.AlignLeft {
+			field = formatCell(field, pads[c])
 		}
 
-		if header[col].Decorator != nil {
-			field = header[col].Decorator(field)
-		}
-
-		if header[col].Align == tview.AlignLeft {
-			field = formatCell(field, pads[col])
-		}
-		c := tview.NewTableCell(field)
-		c.SetExpansion(1)
-		c.SetAlign(header[col].Align)
-		c.SetTextColor(color(ns, re))
+		cell := tview.NewTableCell(field)
+		cell.SetExpansion(1)
+		cell.SetAlign(header[c].Align)
+		cell.SetTextColor(color(ns, re))
 		if marked {
-			c.SetTextColor(config.AsColor(t.styles.Table().MarkColor))
+			cell.SetTextColor(t.styles.Table().MarkColor.Color())
 		}
 		if col == 0 {
-			c.SetReference(re.Row.ID)
+			cell.SetReference(re.Row.ID)
 		}
-		t.SetCell(r, col, c)
+		t.SetCell(r, col, cell)
+		col++
 	}
 }
 
@@ -298,6 +327,9 @@ func (t *Table) GetSelectedRow() render.Row {
 // NameColIndex returns the index of the resource name column.
 func (t *Table) NameColIndex() int {
 	col := 0
+	if client.IsClusterScoped(t.GetModel().GetNamespace()) {
+		return col
+	}
 	if t.GetModel().ClusterWide() {
 		col++
 	}
@@ -313,20 +345,25 @@ func (t *Table) AddHeaderCell(col int, h render.Header) {
 }
 
 func (t *Table) filtered(data render.TableData) render.TableData {
-	if t.cmdBuff.Empty() || IsLabelSelector(t.cmdBuff.String()) {
-		return data
+	filtered := data
+	if t.toast {
+		filtered = filterToast(data)
 	}
-	q := t.cmdBuff.String()
-	if IsFuzzySelector(q) {
-		return fuzzyFilter(q[2:], t.NameColIndex(), data)
+	if t.cmdBuff.Empty() || IsLabelSelector(t.cmdBuff.String()) {
+		return filtered
 	}
 
-	filtered, err := rxFilter(t.cmdBuff.String(), data)
+	q := t.cmdBuff.String()
+	if IsFuzzySelector(q) {
+		return fuzzyFilter(q[2:], t.NameColIndex(), filtered)
+	}
+
+	filtered, err := rxFilter(t.cmdBuff.String(), filtered)
 	if err != nil {
 		log.Error().Err(errors.New("Invalid filter expression")).Msg("Regexp")
 		t.cmdBuff.Clear()
-		return data
 	}
+
 	return filtered
 }
 

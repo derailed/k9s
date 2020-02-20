@@ -3,7 +3,6 @@ package render
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
@@ -18,24 +17,19 @@ import (
 type PodDisruptionBudget struct{}
 
 // ColorerFunc colors a resource row.
-func (PodDisruptionBudget) ColorerFunc() ColorerFunc {
-	return func(ns string, r RowEvent) tcell.Color {
-		c := DefaultColorer(ns, r)
-		if r.Kind == EventAdd || r.Kind == EventUpdate {
+func (p PodDisruptionBudget) ColorerFunc() ColorerFunc {
+	return func(ns string, re RowEvent) tcell.Color {
+		c := DefaultColorer(ns, re)
+		if re.Kind == EventAdd || re.Kind == EventUpdate {
 			return c
 		}
 
-		markCol := 5
-		if !client.IsAllNamespaces(ns) {
-			markCol--
-		}
-		if strings.TrimSpace(r.Row.Fields[markCol]) != strings.TrimSpace(r.Row.Fields[markCol+1]) {
+		if !Happy(ns, re.Row) {
 			return ErrColor
 		}
 
 		return StdColor
 	}
-
 }
 
 // Header returns a header row.
@@ -53,6 +47,8 @@ func (PodDisruptionBudget) Header(ns string) HeaderRow {
 		Header{Name: "CURRENT", Align: tview.AlignRight},
 		Header{Name: "DESIRED", Align: tview.AlignRight},
 		Header{Name: "EXPECTED", Align: tview.AlignRight},
+		Header{Name: "LABELS", Wide: true},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
@@ -82,9 +78,18 @@ func (p PodDisruptionBudget) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(int(pdb.Status.CurrentHealthy)),
 		strconv.Itoa(int(pdb.Status.DesiredHealthy)),
 		strconv.Itoa(int(pdb.Status.ExpectedPods)),
+		mapToStr(pdb.Labels),
+		asStatus(p.diagnose(pdb.Spec.MinAvailable.IntVal, pdb.Status.CurrentHealthy)),
 		toAge(pdb.ObjectMeta.CreationTimestamp),
 	)
 
+	return nil
+}
+
+func (PodDisruptionBudget) diagnose(min, healthy int32) error {
+	if min > healthy {
+		return fmt.Errorf("expected %d but got %d", min, healthy)
+	}
 	return nil
 }
 

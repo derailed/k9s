@@ -25,29 +25,44 @@ type shellOpts struct {
 	args              []string
 }
 
-func runK(app *App, opts shellOpts) bool {
+func runK(a *App, opts shellOpts) bool {
 	bin, err := exec.LookPath("kubectl")
 	if err != nil {
 		log.Error().Msgf("Unable to find kubectl command in path %v", err)
 		return false
 	}
+	var args []string
+	if u, err := a.Conn().Config().CurrentUserName(); err == nil {
+		args = append(args, "--as", u)
+	}
+	if g, err := a.Conn().Config().CurrentGroupNames(); err == nil {
+		args = append(args, "--as-group", strings.Join(g, ","))
+	}
+	args = append(args, "--context", a.Config.K9s.CurrentContext)
+	if cfg := a.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
+		args = append(args, "--kubeconfig", *cfg)
+	}
+	if len(args) > 0 {
+		opts.args = append(opts.args, args...)
+	}
+
 	opts.binary, opts.background = bin, false
 
-	return run(app, opts)
+	return run(a, opts)
 }
 
-func run(app *App, opts shellOpts) bool {
-	app.Halt()
-	defer app.Resume()
+func run(a *App, opts shellOpts) bool {
+	a.Halt()
+	defer a.Resume()
 
-	return app.Suspend(func() {
+	return a.Suspend(func() {
 		if err := execute(opts); err != nil {
-			app.Flash().Errf("Command exited: %v", err)
+			a.Flash().Errf("Command exited: %v", err)
 		}
 	})
 }
 
-func edit(app *App, opts shellOpts) bool {
+func edit(a *App, opts shellOpts) bool {
 	bin, err := exec.LookPath(os.Getenv("EDITOR"))
 	if err != nil {
 		log.Error().Msgf("Unable to find editor command in path %v", err)
@@ -55,7 +70,7 @@ func edit(app *App, opts shellOpts) bool {
 	}
 	opts.binary, opts.background = bin, false
 
-	return run(app, opts)
+	return run(a, opts)
 }
 
 func execute(opts shellOpts) error {
@@ -85,7 +100,6 @@ func execute(opts shellOpts) error {
 		err = cmd.Start()
 	} else {
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-
 		_, _ = cmd.Stdout.Write([]byte(opts.banner))
 		err = cmd.Run()
 	}

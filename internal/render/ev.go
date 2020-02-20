@@ -1,6 +1,7 @@
 package render
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -17,19 +18,20 @@ import (
 type Event struct{}
 
 // ColorerFunc colors a resource row.
-func (Event) ColorerFunc() ColorerFunc {
+func (e Event) ColorerFunc() ColorerFunc {
 	return func(ns string, r RowEvent) tcell.Color {
 		c := DefaultColorer(ns, r)
+
+		if !Happy(ns, r.Row) {
+			return ErrColor
+		}
 
 		markCol := 3
 		if !client.IsAllNamespaces(ns) {
 			markCol = 2
 		}
-		switch strings.TrimSpace(r.Row.Fields[markCol]) {
-		case "Failed":
-			c = ErrColor
-		case "Killing":
-			c = KillColor
+		if strings.TrimSpace(r.Row.Fields[markCol]) == "Killing" {
+			return KillColor
 		}
 
 		return c
@@ -45,10 +47,12 @@ func (Event) Header(ns string) HeaderRow {
 
 	return append(h,
 		Header{Name: "NAME"},
+		Header{Name: "TYPE"},
 		Header{Name: "REASON"},
 		Header{Name: "SOURCE"},
 		Header{Name: "COUNT", Align: tview.AlignRight},
-		Header{Name: "MESSAGE"},
+		Header{Name: "MESSAGE", Wide: true},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
@@ -72,14 +76,26 @@ func (e Event) Render(o interface{}, ns string, r *Row) error {
 	}
 	r.Fields = append(r.Fields,
 		asRef(ev.InvolvedObject),
+		ev.Type,
 		ev.Reason,
 		ev.Source.Component,
 		strconv.Itoa(int(ev.Count)),
 		ev.Message,
+		asStatus(e.diagnose(ev.Type)),
 		toAge(ev.LastTimestamp))
 
 	return nil
 }
+
+// Happy returns true if resoure is happy, false otherwise
+func (Event) diagnose(kind string) error {
+	if kind != "Normal" {
+		return errors.New("failed event")
+	}
+	return nil
+}
+
+// Helpers...
 
 func asRef(r v1.ObjectReference) string {
 	return strings.ToLower(r.Kind) + ":" + r.Name

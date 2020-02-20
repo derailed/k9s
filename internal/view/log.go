@@ -76,7 +76,7 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	l.logs.SetWrap(false)
 	l.logs.SetMaxBuffer(l.app.Config.K9s.LogBufferSize)
 
-	l.ansiWriter = tview.ANSIWriter(l.logs, l.app.Styles.Views().Log.FgColor, l.app.Styles.Views().Log.BgColor)
+	l.ansiWriter = tview.ANSIWriter(l.logs, l.app.Styles.Views().Log.FgColor.String(), l.app.Styles.Views().Log.BgColor.String())
 	l.AddItem(l.logs, 0, 1, true)
 	l.bindKeys()
 	l.logs.SetInputCapture(l.keyboard)
@@ -127,9 +127,9 @@ func (l *Log) BufferActive(state bool, k ui.BufferKind) {
 
 // StylesChanged reports skin changes.
 func (l *Log) StylesChanged(s *config.Styles) {
-	l.SetBackgroundColor(config.AsColor(s.Views().Log.BgColor))
-	l.logs.SetTextColor(config.AsColor(s.Views().Log.FgColor))
-	l.logs.SetBackgroundColor(config.AsColor(s.Views().Log.BgColor))
+	l.SetBackgroundColor(s.Views().Log.BgColor.Color())
+	l.logs.SetTextColor(s.Views().Log.FgColor.Color())
+	l.logs.SetBackgroundColor(s.Views().Log.BgColor.Color())
 }
 
 // GetModel returns the log model.

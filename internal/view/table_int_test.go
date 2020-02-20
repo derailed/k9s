@@ -97,6 +97,7 @@ func (t *testTableModel) Peek() render.TableData          { return makeTableData
 func (t *testTableModel) ClusterWide() bool               { return false }
 func (t *testTableModel) GetNamespace() string            { return "blee" }
 func (t *testTableModel) SetNamespace(string)             {}
+func (t *testTableModel) ToggleToast()                    {}
 func (t *testTableModel) AddListener(model.TableListener) {}
 func (t *testTableModel) Watch(context.Context)           {}
 func (t *testTableModel) Get(context.Context, string) (runtime.Object, error) {

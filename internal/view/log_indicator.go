@@ -26,7 +26,7 @@ func NewLogIndicator(cfg *config.Config, styles *config.Styles) *LogIndicator {
 		scrollStatus: 1,
 		fullScreen:   cfg.K9s.FullScreenLogs,
 	}
-	l.SetBackgroundColor(config.AsColor(styles.Views().Log.BgColor))
+	l.SetBackgroundColor(styles.Views().Log.BgColor.Color())
 	l.SetTextAlign(tview.AlignRight)
 	l.SetDynamicColors(true)
 
