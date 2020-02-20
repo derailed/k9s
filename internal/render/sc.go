@@ -22,6 +22,8 @@ func (StorageClass) Header(ns string) HeaderRow {
 	return HeaderRow{
 		Header{Name: "NAME"},
 		Header{Name: "PROVISIONER"},
+		Header{Name: "LABELS", Wide: true},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	}
 }
@@ -42,6 +44,8 @@ func (StorageClass) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = Fields{
 		sc.Name,
 		string(sc.Provisioner),
+		mapToStr(sc.Labels),
+		"",
 		toAge(sc.ObjectMeta.CreationTimestamp),
 	}
 

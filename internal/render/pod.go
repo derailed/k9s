@@ -25,15 +25,11 @@ func (p Pod) ColorerFunc() ColorerFunc {
 	return func(ns string, re RowEvent) tcell.Color {
 		c := DefaultColorer(ns, re)
 
-		readyCol := 2
+		statusCol := 4
 		if !client.IsAllNamespaces(ns) {
-			readyCol--
+			statusCol--
 		}
-		statusCol := readyCol + 1
-
-		ready, status := strings.TrimSpace(re.Row.Fields[readyCol]), strings.TrimSpace(re.Row.Fields[statusCol])
-		c = p.checkReadyCol(ready, status, c)
-
+		status := strings.TrimSpace(re.Row.Fields[statusCol])
 		switch status {
 		case ContainerCreating, PodInitializing:
 			c = AddColor
@@ -42,26 +38,17 @@ func (p Pod) ColorerFunc() ColorerFunc {
 		case Completed:
 			c = CompletedColor
 		case Running:
+			c = StdColor
 		case Terminating:
 			c = KillColor
 		default:
-			c = ErrColor
+			if !Happy(ns, re.Row) {
+				c = ErrColor
+			}
 		}
 
 		return c
 	}
-}
-
-func (Pod) checkReadyCol(readyCol, statusCol string, c tcell.Color) tcell.Color {
-	if statusCol == "Completed" {
-		return c
-	}
-
-	tokens := strings.Split(readyCol, "/")
-	if len(tokens) == 2 && (tokens[0] == "0" || tokens[0] != tokens[1]) {
-		return ErrColor
-	}
-	return c
 }
 
 // Header returns a header row.
@@ -74,17 +61,19 @@ func (Pod) Header(ns string) HeaderRow {
 	return append(h,
 		Header{Name: "NAME"},
 		Header{Name: "READY"},
-		Header{Name: "STATUS"},
 		Header{Name: "RS", Align: tview.AlignRight},
+		Header{Name: "STATUS"},
 		Header{Name: "CPU", Align: tview.AlignRight},
 		Header{Name: "MEM", Align: tview.AlignRight},
 		Header{Name: "%CPU/R", Align: tview.AlignRight},
 		Header{Name: "%MEM/R", Align: tview.AlignRight},
 		Header{Name: "%CPU/L", Align: tview.AlignRight},
 		Header{Name: "%MEM/L", Align: tview.AlignRight},
-		Header{Name: "IP"},
-		Header{Name: "NODE"},
-		Header{Name: "QOS"},
+		Header{Name: "IP", Wide: true},
+		Header{Name: "NODE", Wide: true},
+		Header{Name: "QOS", Wide: true},
+		Header{Name: "LABELS", Wide: true},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
@@ -105,7 +94,7 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 	ss := po.Status.ContainerStatuses
 	cr, _, rc := p.Statuses(ss)
 	c, perc := p.gatherPodMX(&po, pwm.MX)
-
+	phase := p.Phase(&po)
 	r.ID = client.MetaFQN(po.ObjectMeta)
 	r.Fields = make(Fields, 0, len(p.Header(ns)))
 	if client.IsAllNamespaces(ns) {
@@ -114,8 +103,8 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = append(r.Fields,
 		po.ObjectMeta.Name,
 		strconv.Itoa(cr)+"/"+strconv.Itoa(len(ss)),
-		p.Phase(&po),
 		strconv.Itoa(rc),
+		phase,
 		c.cpu,
 		c.mem,
 		perc.cpu,
@@ -125,8 +114,21 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 		na(po.Status.PodIP),
 		na(po.Spec.NodeName),
 		p.mapQOS(po.Status.QOSClass),
+		mapToStr(po.Labels),
+		asStatus(p.diagnose(phase, cr, len(ss))),
 		toAge(po.ObjectMeta.CreationTimestamp),
 	)
+
+	return nil
+}
+
+func (p Pod) diagnose(phase string, cr, ct int) error {
+	if phase == "Completed" {
+		return nil
+	}
+	if cr != ct {
+		return fmt.Errorf("container ready check failed: %d of %d", cr, ct)
+	}
 
 	return nil
 }

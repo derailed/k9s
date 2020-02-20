@@ -1,6 +1,8 @@
 package view
 
 import (
+	"time"
+
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
@@ -40,7 +42,7 @@ func (n *Namespace) bindKeys(aa ui.KeyActions) {
 
 func (n *Namespace) switchNs(app *App, model ui.Tabular, gvr, path string) {
 	n.useNamespace(path)
-	if err := app.gotoResource("pods", true); err != nil {
+	if err := app.gotoResource("pods", "", true); err != nil {
 		app.Flash().Err(err)
 	}
 }
@@ -76,12 +78,13 @@ func (n *Namespace) decorate(data render.TableData) render.TableData {
 
 	// checks if all ns is in the list if not add it.
 	if _, ok := data.RowEvents.FindIndex(client.NamespaceAll); !ok {
+		log.Debug().Msg("YO!!")
 		data.RowEvents = append(data.RowEvents,
 			render.RowEvent{
 				Kind: render.EventUnchanged,
 				Row: render.Row{
 					ID:     client.NamespaceAll,
-					Fields: render.Fields{client.NamespaceAll, "Active", "0"},
+					Fields: render.Fields{client.NamespaceAll, "Active", "", "", time.Now().String()},
 				},
 			},
 		)

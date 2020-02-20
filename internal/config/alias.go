@@ -147,11 +147,18 @@ func (a *Aliases) Define(gvr string, aliases ...string) {
 	}
 }
 
-// LoadAliases loads alias from a given file.
-func (a *Aliases) LoadAliases(path string) error {
+// Load K9s aliases.
+func (a *Aliases) Load() error {
+	a.loadDefaultAliases()
+	return a.LoadFileAliases(K9sAlias)
+}
+
+// LoadFileAliases loads alias from a given file.
+func (a *Aliases) LoadFileAliases(path string) error {
 	f, err := ioutil.ReadFile(path)
 	if err != nil {
-		return err
+		log.Debug().Err(err).Msgf("No custom aliases found")
+		return nil
 	}
 
 	var aa Aliases
@@ -166,6 +173,63 @@ func (a *Aliases) LoadAliases(path string) error {
 	}
 
 	return nil
+}
+
+func (a *Aliases) loadDefaultAliases() {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
+	a.Alias["dp"] = "apps/v1/deployments"
+	a.Alias["sec"] = "v1/secrets"
+	a.Alias["jo"] = "batch/v1/jobs"
+	a.Alias["cr"] = "rbac.authorization.k8s.io/v1/clusterroles"
+	a.Alias["crb"] = "rbac.authorization.k8s.io/v1/clusterrolebindings"
+	a.Alias["ro"] = "rbac.authorization.k8s.io/v1/roles"
+	a.Alias["rb"] = "rbac.authorization.k8s.io/v1/rolebindings"
+	a.Alias["np"] = "networking.k8s.io/v1/networkpolicies"
+
+	const contexts = "contexts"
+	{
+		a.Alias["ctx"] = contexts
+		a.Alias[contexts] = contexts
+		a.Alias["context"] = contexts
+	}
+	const users = "users"
+	{
+		a.Alias["usr"] = users
+		a.Alias[users] = users
+		a.Alias["user"] = users
+	}
+	const groups = "groups"
+	{
+		a.Alias["grp"] = groups
+		a.Alias["group"] = groups
+		a.Alias[groups] = groups
+	}
+	const portFwds = "portforwards"
+	{
+		a.Alias["pf"] = portFwds
+		a.Alias[portFwds] = portFwds
+		a.Alias["portforward"] = portFwds
+	}
+	const benchmarks = "benchmarks"
+	{
+		a.Alias["be"] = benchmarks
+		a.Alias["benchmark"] = benchmarks
+		a.Alias[benchmarks] = benchmarks
+	}
+	const dumps = "screendumps"
+	{
+		a.Alias["sd"] = dumps
+		a.Alias["screendump"] = dumps
+		a.Alias[dumps] = dumps
+	}
+	const pulses = "pulses"
+	{
+		a.Alias["hz"] = pulses
+		a.Alias["pu"] = pulses
+		a.Alias["pulse"] = pulses
+	}
 }
 
 // Save alias to disk.

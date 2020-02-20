@@ -72,7 +72,7 @@ func TestK9sActiveClusterBlank(t *testing.T) {
 func TestK9sActiveCluster(t *testing.T) {
 	mk := NewMockKubeSettings()
 	cfg := config.NewConfig(mk)
-	assert.Nil(t, cfg.Load("test_assets/k9s.yml"))
+	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 
 	cl := cfg.K9s.ActiveCluster()
 	assert.NotNil(t, cl)

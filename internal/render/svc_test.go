@@ -13,5 +13,5 @@ func TestServiceRender(t *testing.T) {
 	c.Render(load(t, "svc"), "", &r)
 
 	assert.Equal(t, "default/dictionary1", r.ID)
-	assert.Equal(t, render.Fields{"default", "dictionary1", "ClusterIP", "10.47.248.116", "<none>", "app=dictionary1", "http:4001►0"}, r.Fields[:7])
+	assert.Equal(t, render.Fields{"default", "dictionary1", "ClusterIP", "10.47.248.116", "", "app=dictionary1", "http:4001►0"}, r.Fields[:7])
 }

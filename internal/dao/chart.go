@@ -90,7 +90,6 @@ func (c *Chart) ToYAML(path string) (string, error) {
 
 // Delete uninstall a Chart.
 func (c *Chart) Delete(path string, cascade, force bool) error {
-	log.Debug().Msgf("CHART DELETE %q", path)
 	ns, n := client.Namespaced(path)
 	cfg, err := c.EnsureHelmConfig(ns)
 	if err != nil {

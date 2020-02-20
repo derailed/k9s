@@ -2,12 +2,9 @@ package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	appsv1 "k8s.io/api/apps/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // DaemonSet represents a daemon set custom viewer.
@@ -18,8 +15,10 @@ type DaemonSet struct {
 // NewDaemonSet returns a new viewer.
 func NewDaemonSet(gvr client.GVR) ResourceViewer {
 	d := DaemonSet{
-		ResourceViewer: NewRestartExtender(
-			NewLogsExtender(NewBrowser(gvr), nil),
+		ResourceViewer: NewPortForwardExtender(
+			NewRestartExtender(
+				NewLogsExtender(NewBrowser(gvr), nil),
+			),
 		),
 	}
 	d.SetBindKeysFn(d.bindKeys)
@@ -35,19 +34,15 @@ func (d *DaemonSet) bindKeys(aa ui.KeyActions) {
 		ui.KeyShiftC: ui.NewKeyAction("Sort Current", d.GetTable().SortColCmd(2, true), false),
 		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", d.GetTable().SortColCmd(3, true), false),
 		ui.KeyShiftU: ui.NewKeyAction("Sort UpToDate", d.GetTable().SortColCmd(4, true), false),
-		ui.KeyShiftV: ui.NewKeyAction("Sort Available", d.GetTable().SortColCmd(5, true), false),
+		ui.KeyShiftL: ui.NewKeyAction("Sort Available", d.GetTable().SortColCmd(5, true), false),
 	})
 }
 
 func (d *DaemonSet) showPods(app *App, model ui.Tabular, _, path string) {
-	o, err := app.factory.Get(d.GVR(), path, true, labels.Everything())
-	if err != nil {
-		d.App().Flash().Err(err)
-		return
-	}
+	var res dao.DaemonSet
+	res.Init(app.factory, client.NewGVR(d.GVR()))
 
-	var ds appsv1.DaemonSet
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &ds)
+	ds, err := res.GetInstance(path)
 	if err != nil {
 		d.App().Flash().Err(err)
 	}

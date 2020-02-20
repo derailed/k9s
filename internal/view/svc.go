@@ -8,14 +8,12 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
-	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // Service represents a service viewer.
@@ -28,7 +26,9 @@ type Service struct {
 // NewService returns a new viewer.
 func NewService(gvr client.GVR) ResourceViewer {
 	s := Service{
-		ResourceViewer: NewLogsExtender(NewBrowser(gvr), nil),
+		ResourceViewer: NewPortForwardExtender(
+			NewLogsExtender(NewBrowser(gvr), nil),
+		),
 	}
 	s.SetBindKeysFn(s.bindKeys)
 	s.GetTable().SetEnterFn(s.showPods)
@@ -45,20 +45,17 @@ func (s *Service) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (s *Service) showPods(app *App, _ ui.Tabular, gvr, path string) {
-	o, err := app.factory.Get(gvr, path, true, labels.Everything())
+func (s *Service) showPods(a *App, _ ui.Tabular, gvr, path string) {
+	var res dao.Service
+	res.Init(a.factory, client.NewGVR(s.GVR()))
+
+	svc, err := res.GetInstance(path)
 	if err != nil {
-		app.Flash().Err(err)
-		return
-	}
-	var svc v1.Service
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &svc)
-	if err != nil {
-		app.Flash().Err(err)
+		a.Flash().Err(err)
 		return
 	}
 
-	showPodsWithLabels(app, path, svc.Spec.Selector)
+	showPodsWithLabels(a, path, svc.Spec.Selector)
 }
 
 func (s *Service) checkSvc(row int) error {
@@ -86,15 +83,10 @@ func (s *Service) getExternalPort(row int) (string, error) {
 	return tokens[1], nil
 }
 
-func (s *Service) reloadBenchCfg() error {
-	path := ui.BenchConfig(s.App().Config.K9s.CurrentCluster)
-	return s.App().Bench.Reload(path)
-}
-
 func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if s.bench != nil {
 		log.Debug().Msg(">>> Benchmark canceled!!")
-		s.App().Status(ui.FlashErr, "Benchmark Canceled!")
+		s.App().Status(model.FlashErr, "Benchmark Canceled!")
 		s.bench.Cancel()
 		s.App().ClearStatus(true)
 		return nil
@@ -105,12 +97,12 @@ func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	if err := s.reloadBenchCfg(); err != nil {
-		s.App().Flash().Err(err)
-		return nil
+	cust, err := config.NewBench(s.App().BenchFile)
+	if err != nil {
+		log.Debug().Msgf("No custom benchmark config file found")
 	}
 
-	cfg, ok := s.App().Bench.Benchmarks.Services[sel]
+	cfg, ok := cust.Benchmarks.Services[sel]
 	if !ok {
 		s.App().Flash().Errf("No bench config found for service %s", sel)
 		return nil
@@ -119,8 +111,8 @@ func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	log.Debug().Msgf("Benchmark config %#v", cfg)
 
 	row := s.GetTable().GetSelectedRowIndex()
-	if err := s.checkSvc(row); err != nil {
-		s.App().Flash().Err(err)
+	if e := s.checkSvc(row); e != nil {
+		s.App().Flash().Err(e)
 		return nil
 	}
 	port, err := s.getExternalPort(row)
@@ -149,7 +141,7 @@ func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
 		return err
 	}
 
-	s.App().Status(ui.FlashWarn, "Benchmark in progress...")
+	s.App().Status(model.FlashWarn, "Benchmark in progress...")
 	log.Debug().Msg("Bench starting...")
 	go s.bench.Run(s.App().Config.K9s.CurrentCluster, s.benchDone)
 
@@ -160,15 +152,18 @@ func (s *Service) benchDone() {
 	log.Debug().Msg("Bench Completed!")
 	s.App().QueueUpdate(func() {
 		if s.bench.Canceled() {
-			s.App().Status(ui.FlashInfo, "Benchmark canceled")
+			s.App().Status(model.FlashInfo, "Benchmark canceled")
 		} else {
-			s.App().Status(ui.FlashInfo, "Benchmark Completed!")
+			s.App().Status(model.FlashInfo, "Benchmark Completed!")
 			s.bench.Cancel()
 		}
 		s.bench = nil
 		go benchTimedOut(s.App())
 	})
 }
+
+// ----------------------------------------------------------------------------
+// Helpers...
 
 func benchTimedOut(app *App) {
 	<-time.After(2 * time.Second)

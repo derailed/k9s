@@ -3,6 +3,7 @@ package client
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"sync"
 
 	"github.com/rs/zerolog/log"
@@ -46,6 +47,10 @@ func (c *Config) SwitchContext(name string) error {
 	currentCtx, err := c.CurrentContextName()
 	if err != nil {
 		return err
+	}
+
+	if _, err := c.GetContext(name); err != nil {
+		return fmt.Errorf("context %s does not exist", name)
 	}
 
 	if currentCtx != name {
@@ -173,11 +178,29 @@ func (c *Config) ClusterNames() ([]string, error) {
 
 // CurrentGroupNames retrieves the active group names.
 func (c *Config) CurrentGroupNames() ([]string, error) {
-	if c.flags.ImpersonateGroup != nil && len(*c.flags.ImpersonateGroup) != 0 {
+	if areSet(c.flags.ImpersonateGroup) {
 		return *c.flags.ImpersonateGroup, nil
 	}
 
 	return []string{}, errors.New("unable to locate current group")
+}
+
+// ImpersonateGroups retrieves the active groupsif set on the CLI.
+func (c *Config) ImpersonateGroups() (string, error) {
+	if areSet(c.flags.ImpersonateGroup) {
+		return strings.Join(*c.flags.ImpersonateGroup, ","), nil
+	}
+
+	return "", errors.New("no groups set")
+}
+
+// ImpersonateUser retrieves the active user name if set on the CLI.
+func (c *Config) ImpersonateUser() (string, error) {
+	if isSet(c.flags.Impersonate) {
+		return *c.flags.Impersonate, nil
+	}
+
+	return "", errors.New("no user set")
 }
 
 // CurrentUserName retrieves the active user name.
@@ -305,5 +328,9 @@ func (c *Config) ensureConfig() {
 // Helpers...
 
 func isSet(s *string) bool {
+	return s != nil && len(*s) != 0
+}
+
+func areSet(s *[]string) bool {
 	return s != nil && len(*s) != 0
 }

@@ -30,8 +30,10 @@ func NewClusterInfo(app *App) *ClusterInfo {
 
 // Init initializes the view.
 func (c *ClusterInfo) Init() {
+	c.SetBorderPadding(0, 0, 1, 0)
 	c.app.Styles.AddListener(c)
 	c.layout()
+	c.StylesChanged(c.app.Styles)
 }
 
 // StylesChanged notifies skin changed.
@@ -51,9 +53,14 @@ func (c *ClusterInfo) layout() {
 func (c *ClusterInfo) sectionCell(t string) *tview.TableCell {
 	cell := tview.NewTableCell(t + ":")
 	cell.SetAlign(tview.AlignLeft)
-	var s tcell.Style
-	cell.SetStyle(s.Bold(true).Foreground(config.AsColor(c.styles.K9s.Info.SectionColor)))
-	cell.SetBackgroundColor(c.app.Styles.BgColor())
+	// var style tcell.Style
+	// style.Bold(true).
+	// 	Background(tcell.ColorGreen).
+	// 	Foreground(config.AsColor(c.styles.K9s.Info.SectionColor))
+	// cell.SetStyle(style)
+	// cell.SetBackgroundColor(c.app.Styles.BgColor())
+	// cell.SetBackgroundColor(tcell.ColorDefault)
+	cell.SetBackgroundColor(tcell.ColorGreen)
 
 	return cell
 }
@@ -61,7 +68,7 @@ func (c *ClusterInfo) sectionCell(t string) *tview.TableCell {
 func (c *ClusterInfo) infoCell(t string) *tview.TableCell {
 	cell := tview.NewTableCell(t)
 	cell.SetExpansion(2)
-	cell.SetTextColor(config.AsColor(c.styles.K9s.Info.FgColor))
+	cell.SetTextColor(c.styles.K9s.Info.FgColor.Color())
 	cell.SetBackgroundColor(c.app.Styles.BgColor())
 
 	return cell
@@ -113,9 +120,9 @@ func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
 
 func (c *ClusterInfo) updateStyle() {
 	for row := 0; row < c.GetRowCount(); row++ {
-		c.GetCell(row, 0).SetTextColor(config.AsColor(c.styles.K9s.Info.FgColor))
+		c.GetCell(row, 0).SetTextColor(c.styles.K9s.Info.FgColor.Color())
 		c.GetCell(row, 0).SetBackgroundColor(c.styles.BgColor())
 		var s tcell.Style
-		c.GetCell(row, 1).SetStyle(s.Bold(true).Foreground(config.AsColor(c.styles.K9s.Info.SectionColor)))
+		c.GetCell(row, 1).SetStyle(s.Bold(true).Foreground(c.styles.K9s.Info.SectionColor.Color()))
 	}
 }

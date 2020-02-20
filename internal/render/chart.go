@@ -18,6 +18,10 @@ type Chart struct{}
 // ColorerFunc colors a resource row.
 func (Chart) ColorerFunc() ColorerFunc {
 	return func(ns string, re RowEvent) tcell.Color {
+		if !Happy(ns, re.Row) {
+			return ErrColor
+		}
+
 		return tcell.ColorMediumSpringGreen
 	}
 }
@@ -35,6 +39,7 @@ func (Chart) Header(ns string) HeaderRow {
 		Header{Name: "STATUS"},
 		Header{Name: "CHART"},
 		Header{Name: "APP VERSION"},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
@@ -57,8 +62,17 @@ func (c Chart) Render(o interface{}, ns string, r *Row) error {
 		h.Release.Info.Status.String(),
 		h.Release.Chart.Metadata.Name+"-"+h.Release.Chart.Metadata.Version,
 		h.Release.Chart.Metadata.AppVersion,
+		asStatus(c.diagnose(h.Release.Info.Status.String())),
 		toAge(metav1.Time{Time: h.Release.Info.LastDeployed.Time}),
 	)
+
+	return nil
+}
+
+func (c Chart) diagnose(s string) error {
+	if s != "deployed" {
+		return fmt.Errorf("chart is in an invalid state")
+	}
 
 	return nil
 }
@@ -66,7 +80,7 @@ func (c Chart) Render(o interface{}, ns string, r *Row) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-// ChartRes represents an alias resource.
+// ChartRes represents an helm chart resource.
 type ChartRes struct {
 	Release *release.Release
 }

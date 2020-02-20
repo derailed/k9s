@@ -14,6 +14,9 @@ import (
 )
 
 const (
+	// DefaultColorName indicator to keep term colors.
+	DefaultColorName = "default"
+
 	// SearchFmt represents a filter view title.
 	SearchFmt = "<[filter:bg:r]/%s[fg:bg:-]> "
 
@@ -81,12 +84,16 @@ func TrimLabelSelector(s string) string {
 
 // SkinTitle decorates a title.
 func SkinTitle(fmat string, style config.Frame) string {
-	fmat = strings.Replace(fmat, "[fg:bg", "["+style.Title.FgColor+":"+style.Title.BgColor, -1)
-	fmat = strings.Replace(fmat, "[hilite", "["+style.Title.HighlightColor, 1)
-	fmat = strings.Replace(fmat, "[key", "["+style.Menu.NumKeyColor, 1)
-	fmat = strings.Replace(fmat, "[filter", "["+style.Title.FilterColor, 1)
-	fmat = strings.Replace(fmat, "[count", "["+style.Title.CounterColor, 1)
-	fmat = strings.Replace(fmat, ":bg:", ":"+style.Title.BgColor+":", -1)
+	bgColor := style.Title.BgColor
+	if bgColor == config.DefaultColor {
+		bgColor = config.TransparentColor
+	}
+	fmat = strings.Replace(fmat, "[fg:bg", "["+style.Title.FgColor.String()+":"+bgColor.String(), -1)
+	fmat = strings.Replace(fmat, "[hilite", "["+style.Title.HighlightColor.String(), 1)
+	fmat = strings.Replace(fmat, "[key", "["+style.Menu.NumKeyColor.String(), 1)
+	fmat = strings.Replace(fmat, "[filter", "["+style.Title.FilterColor.String(), 1)
+	fmat = strings.Replace(fmat, "[count", "["+style.Title.CounterColor.String(), 1)
+	fmat = strings.Replace(fmat, ":bg:", ":"+bgColor.String()+":", -1)
 
 	return fmat
 }
@@ -109,6 +116,25 @@ func formatCell(field string, padding int) string {
 	}
 
 	return field
+}
+
+func filterToast(data render.TableData) render.TableData {
+	validX := data.Header.IndexOf("VALID")
+	if validX == -1 {
+		return data
+	}
+
+	toast := render.TableData{
+		Header:    data.Header,
+		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
+		Namespace: data.Namespace,
+	}
+	for _, re := range data.RowEvents {
+		if re.Row.Fields[validX] != "" {
+			toast.RowEvents = append(toast.RowEvents, re)
+		}
+	}
+	return toast
 }
 
 func rxFilter(q string, data render.TableData) (render.TableData, error) {

@@ -19,7 +19,7 @@ func TestBenchEmpty(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, u.b.empty())
+			assert.Equal(t, u.e, u.b.Empty())
 		})
 	}
 }
@@ -32,14 +32,14 @@ func TestBenchLoad(t *testing.T) {
 		coCount  int
 	}{
 		"goodConfig": {
-			"test_assets/b_good.yml",
+			"testdata/b_good.yml",
 			2,
 			1000,
 			2,
 			0,
 		},
 		"malformed": {
-			"test_assets/b_toast.yml",
+			"testdata/b_toast.yml",
 			1,
 			200,
 			0,
@@ -100,7 +100,7 @@ func TestBenchServiceLoad(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			b, err := NewBench("test_assets/b_good.yml")
+			b, err := NewBench("testdata/b_good.yml")
 
 			assert.Nil(t, err)
 			assert.Equal(t, 2, len(b.Benchmarks.Services))
@@ -119,16 +119,16 @@ func TestBenchServiceLoad(t *testing.T) {
 }
 
 func TestBenchReLoad(t *testing.T) {
-	b, err := NewBench("test_assets/b_containers.yml")
+	b, err := NewBench("testdata/b_containers.yml")
 	assert.Nil(t, err)
 
 	assert.Equal(t, 2, b.Benchmarks.Defaults.C)
-	assert.Nil(t, b.Reload("test_assets/b_containers_1.yml"))
+	assert.Nil(t, b.Reload("testdata/b_containers_1.yml"))
 	assert.Equal(t, 20, b.Benchmarks.Defaults.C)
 }
 
 func TestBenchLoadToast(t *testing.T) {
-	_, err := NewBench("test_assets/toast.yml")
+	_, err := NewBench("testdata/toast.yml")
 	assert.NotNil(t, err)
 }
 
@@ -171,7 +171,7 @@ func TestBenchContainerLoad(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			b, err := NewBench("test_assets/b_containers.yml")
+			b, err := NewBench("testdata/b_containers.yml")
 
 			assert.Nil(t, err)
 			assert.Equal(t, 2, len(b.Benchmarks.Services))

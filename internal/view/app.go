@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/derailed/k9s/internal"
@@ -24,7 +24,7 @@ var ExitStatus = ""
 const (
 	splashDelay      = 1 * time.Second
 	clusterRefresh   = 5 * time.Second
-	maxConRetry      = 5
+	maxConRetry      = 10
 	clusterInfoWidth = 50
 	clusterInfoPad   = 15
 )
@@ -39,9 +39,8 @@ type App struct {
 	version      string
 	showHeader   bool
 	cancelFn     context.CancelFunc
-	conRetry     int
+	conRetry     int32
 	clusterModel *model.ClusterInfo
-	mx           sync.Mutex
 }
 
 // NewApp returns a K9s app instance.
@@ -51,7 +50,6 @@ func NewApp(cfg *config.Config) *App {
 		Content: NewPageStack(),
 	}
 	a.Config = cfg
-	a.InitBench(cfg.K9s.CurrentCluster)
 
 	a.Views()["statusIndicator"] = ui.NewStatusIndicator(a.App, a.Styles)
 	a.Views()["clusterInfo"] = NewClusterInfo(&a)
@@ -61,9 +59,7 @@ func NewApp(cfg *config.Config) *App {
 
 // ConOK checks the connection is cool, returns false otherwise.
 func (a *App) ConOK() bool {
-	a.mx.Lock()
-	defer a.mx.Unlock()
-	return a.conRetry == 0
+	return atomic.LoadInt32(&a.conRetry) == 0
 }
 
 // Init initializes the application.
@@ -102,11 +98,14 @@ func (a *App) Init(version string, rate int) error {
 
 	a.clusterInfo().Init()
 
+	flash := ui.NewFlash(a.App)
+	go flash.Watch(ctx, a.Flash().Channel())
+
 	main := tview.NewFlex().SetDirection(tview.FlexRow)
 	main.AddItem(a.statusIndicator(), 1, 1, false)
 	main.AddItem(a.Content, 0, 10, true)
-	main.AddItem(a.Crumbs(), 2, 1, false)
-	main.AddItem(a.Flash(), 2, 1, false)
+	main.AddItem(a.Crumbs(), 1, 1, false)
+	main.AddItem(flash, 1, 1, false)
 
 	a.Main.AddPage("main", main, true, false)
 	a.Main.AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
@@ -117,7 +116,7 @@ func (a *App) Init(version string, rate int) error {
 
 func (a *App) bindKeys() {
 	a.AddActions(ui.KeyActions{
-		tcell.KeyCtrlH: ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
+		tcell.KeyCtrlE: ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
 		ui.KeyHelp:     ui.NewSharedKeyAction("Help", a.helpCmd, false),
 		tcell.KeyCtrlA: ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
@@ -137,7 +136,7 @@ func (a *App) toggleHeader(flag bool) {
 	}
 	if a.showHeader {
 		flex.RemoveItemAtIndex(0)
-		flex.AddItemAtIndex(0, a.buildHeader(), 7, 1, false)
+		flex.AddItemAtIndex(0, a.buildHeader(), 8, 1, false)
 	} else {
 		flex.RemoveItemAtIndex(0)
 		flex.AddItemAtIndex(0, a.statusIndicator(), 1, 1, false)
@@ -147,7 +146,6 @@ func (a *App) toggleHeader(flag bool) {
 func (a *App) buildHeader() tview.Primitive {
 	header := tview.NewFlex()
 	header.SetBackgroundColor(a.Styles.BgColor())
-	header.SetBorderPadding(0, 0, 1, 1)
 	header.SetDirection(tview.FlexColumn)
 	if !a.showHeader {
 		return header
@@ -172,6 +170,7 @@ func (a *App) buildHeader() tview.Primitive {
 func (a *App) Halt() {
 	if a.cancelFn != nil {
 		a.cancelFn()
+		a.cancelFn = nil
 	}
 }
 
@@ -198,32 +197,31 @@ func (a *App) clusterUpdater(ctx context.Context) {
 }
 
 func (a *App) refreshCluster() {
-	a.mx.Lock()
-	defer a.mx.Unlock()
-
 	c := a.Content.Top()
 	if ok := a.Conn().CheckConnectivity(); ok {
-		if a.conRetry > 0 {
+		if atomic.LoadInt32(&a.conRetry) > 0 {
+			atomic.StoreInt32(&a.conRetry, 0)
+			a.Status(model.FlashInfo, "K8s connectivity OK")
 			if c != nil {
 				c.Start()
 			}
-			a.Status(ui.FlashInfo, "K8s connectivity OK")
 		}
-		a.conRetry = 0
 	} else {
-		a.conRetry++
-		log.Warn().Msgf("Conn check failed (%d/%d)", a.conRetry, maxConRetry)
+		atomic.AddInt32(&a.conRetry, 1)
 		if c != nil {
 			c.Stop()
 		}
-		a.Status(ui.FlashWarn, fmt.Sprintf("Dial K8s failed (%d)", a.conRetry))
-
+		count := atomic.LoadInt32(&a.conRetry)
+		log.Warn().Msgf("Conn check failed (%d/%d)", count, maxConRetry)
+		a.Status(model.FlashWarn, fmt.Sprintf("Dial K8s failed (%d)", count))
 	}
-	if a.conRetry >= maxConRetry {
-		ExitStatus = fmt.Sprintf("Lost K8s connection (%d). Bailing out!", a.conRetry)
+
+	count := atomic.LoadInt32(&a.conRetry)
+	if count >= maxConRetry {
+		ExitStatus = fmt.Sprintf("Lost K8s connection (%d). Bailing out!", count)
 		a.BailOut()
 	}
-	if a.conRetry > 0 {
+	if count > 0 {
 		return
 	}
 
@@ -263,6 +261,7 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 		}
 		a.initFactory(ns)
 
+		client.ResetMetrics()
 		if err := a.command.Reset(true); err != nil {
 			return err
 		}
@@ -271,11 +270,11 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 			log.Error().Err(err).Msg("Config save failed!")
 		}
 		a.Flash().Infof("Switching context to %s", name)
-		if err := a.gotoResource("pods", true); loadPods && err != nil {
+		a.ReloadStyles(name)
+		if err := a.gotoResource("pods", "", true); loadPods && err != nil {
 			a.Flash().Err(err)
 		}
 		a.clusterModel.Reset(a.factory)
-		a.ReloadStyles(name)
 	}
 
 	return nil
@@ -314,29 +313,31 @@ func (a *App) Run() error {
 }
 
 // Status reports a new app status for display.
-func (a *App) Status(l ui.FlashLevel, msg string) {
-	a.Flash().SetMessage(l, msg)
-	a.setIndicator(l, msg)
-	a.setLogo(l, msg)
-	a.Draw()
+func (a *App) Status(l model.FlashLevel, msg string) {
+	a.QueueUpdateDraw(func() {
+		a.Flash().SetMessage(l, msg)
+		a.setIndicator(l, msg)
+		a.setLogo(l, msg)
+	})
 }
 
 // ClearStatus reset logo back to normal.
 func (a *App) ClearStatus(flash bool) {
-	a.Logo().Reset()
-	if flash {
-		a.Flash().Clear()
-	}
-	a.Draw()
+	a.QueueUpdateDraw(func() {
+		a.Logo().Reset()
+		if flash {
+			a.Flash().Clear()
+		}
+	})
 }
 
-func (a *App) setLogo(l ui.FlashLevel, msg string) {
+func (a *App) setLogo(l model.FlashLevel, msg string) {
 	switch l {
-	case ui.FlashErr:
+	case model.FlashErr:
 		a.Logo().Err(msg)
-	case ui.FlashWarn:
+	case model.FlashWarn:
 		a.Logo().Warn(msg)
-	case ui.FlashInfo:
+	case model.FlashInfo:
 		a.Logo().Info(msg)
 	default:
 		a.Logo().Reset()
@@ -344,13 +345,13 @@ func (a *App) setLogo(l ui.FlashLevel, msg string) {
 	a.Draw()
 }
 
-func (a *App) setIndicator(l ui.FlashLevel, msg string) {
+func (a *App) setIndicator(l model.FlashLevel, msg string) {
 	switch l {
-	case ui.FlashErr:
+	case model.FlashErr:
 		a.statusIndicator().Err(msg)
-	case ui.FlashWarn:
+	case model.FlashWarn:
 		a.statusIndicator().Warn(msg)
-	case ui.FlashInfo:
+	case model.FlashInfo:
 		a.statusIndicator().Info(msg)
 	default:
 		a.statusIndicator().Reset()
@@ -381,7 +382,7 @@ func (a *App) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.CmdBuff().IsActive() && !a.CmdBuff().Empty() {
-		if err := a.gotoResource(a.GetCmd(), true); err != nil {
+		if err := a.gotoResource(a.GetCmd(), "", true); err != nil {
 			log.Error().Err(err).Msgf("Goto resource for %q failed", a.GetCmd())
 			a.Flash().Err(err)
 		}
@@ -430,8 +431,8 @@ func (a *App) viewResource(gvr, path string, clearStack bool) error {
 	return a.command.run(gvr, path, clearStack)
 }
 
-func (a *App) gotoResource(cmd string, clearStack bool) error {
-	return a.command.run(cmd, "", clearStack)
+func (a *App) gotoResource(cmd, path string, clearStack bool) error {
+	return a.command.run(cmd, path, clearStack)
 }
 
 func (a *App) inject(c model.Component) error {

@@ -18,7 +18,7 @@ func init() {
 }
 
 func TestConfigCurrentContext(t *testing.T) {
-	name, kubeConfig := "blee", "./assets/config"
+	name, kubeConfig := "blee", "./testdata/config"
 	uu := []struct {
 		flags   *genericclioptions.ConfigFlags
 		context string
@@ -36,7 +36,7 @@ func TestConfigCurrentContext(t *testing.T) {
 }
 
 func TestConfigCurrentCluster(t *testing.T) {
-	name, kubeConfig := "blee", "./assets/config"
+	name, kubeConfig := "blee", "./testdata/config"
 	uu := []struct {
 		flags   *genericclioptions.ConfigFlags
 		cluster string
@@ -54,7 +54,7 @@ func TestConfigCurrentCluster(t *testing.T) {
 }
 
 func TestConfigCurrentUser(t *testing.T) {
-	name, kubeConfig := "blee", "./assets/config"
+	name, kubeConfig := "blee", "./testdata/config"
 	uu := []struct {
 		flags *genericclioptions.ConfigFlags
 		user  string
@@ -72,7 +72,7 @@ func TestConfigCurrentUser(t *testing.T) {
 }
 
 func TestConfigCurrentNamespace(t *testing.T) {
-	name, kubeConfig := "blee", "./assets/config"
+	name, kubeConfig := "blee", "./testdata/config"
 	uu := []struct {
 		flags     *genericclioptions.ConfigFlags
 		namespace string
@@ -91,7 +91,7 @@ func TestConfigCurrentNamespace(t *testing.T) {
 }
 
 func TestConfigGetContext(t *testing.T) {
-	kubeConfig := "./assets/config"
+	kubeConfig := "./testdata/config"
 	uu := []struct {
 		flags   *genericclioptions.ConfigFlags
 		cluster string
@@ -114,7 +114,7 @@ func TestConfigGetContext(t *testing.T) {
 }
 
 func TestConfigSwitchContext(t *testing.T) {
-	cluster, kubeConfig := "duh", "./assets/config"
+	cluster, kubeConfig := "duh", "./testdata/config"
 	flags := genericclioptions.ConfigFlags{
 		KubeConfig:  &kubeConfig,
 		ClusterName: &cluster,
@@ -129,7 +129,7 @@ func TestConfigSwitchContext(t *testing.T) {
 }
 
 func TestConfigClusterNameFromContext(t *testing.T) {
-	cluster, kubeConfig := "duh", "./assets/config"
+	cluster, kubeConfig := "duh", "./testdata/config"
 	flags := genericclioptions.ConfigFlags{
 		KubeConfig:  &kubeConfig,
 		ClusterName: &cluster,
@@ -142,7 +142,7 @@ func TestConfigClusterNameFromContext(t *testing.T) {
 }
 
 func TestConfigAccess(t *testing.T) {
-	cluster, kubeConfig := "duh", "./assets/config"
+	cluster, kubeConfig := "duh", "./testdata/config"
 	flags := genericclioptions.ConfigFlags{
 		KubeConfig:  &kubeConfig,
 		ClusterName: &cluster,
@@ -155,7 +155,7 @@ func TestConfigAccess(t *testing.T) {
 }
 
 func TestConfigContexts(t *testing.T) {
-	cluster, kubeConfig := "duh", "./assets/config"
+	cluster, kubeConfig := "duh", "./testdata/config"
 	flags := genericclioptions.ConfigFlags{
 		KubeConfig:  &kubeConfig,
 		ClusterName: &cluster,
@@ -168,7 +168,7 @@ func TestConfigContexts(t *testing.T) {
 }
 
 func TestConfigContextNames(t *testing.T) {
-	cluster, kubeConfig := "duh", "./assets/config"
+	cluster, kubeConfig := "duh", "./testdata/config"
 	flags := genericclioptions.ConfigFlags{
 		KubeConfig:  &kubeConfig,
 		ClusterName: &cluster,
@@ -181,7 +181,7 @@ func TestConfigContextNames(t *testing.T) {
 }
 
 func TestConfigClusterNames(t *testing.T) {
-	cluster, kubeConfig := "duh", "./assets/config"
+	cluster, kubeConfig := "duh", "./testdata/config"
 	flags := genericclioptions.ConfigFlags{
 		KubeConfig:  &kubeConfig,
 		ClusterName: &cluster,
@@ -194,7 +194,7 @@ func TestConfigClusterNames(t *testing.T) {
 }
 
 func TestConfigDelContext(t *testing.T) {
-	cluster, kubeConfig := "duh", "./assets/config.1"
+	cluster, kubeConfig := "duh", "./testdata/config.1"
 	flags := genericclioptions.ConfigFlags{
 		KubeConfig:  &kubeConfig,
 		ClusterName: &cluster,
@@ -209,7 +209,7 @@ func TestConfigDelContext(t *testing.T) {
 }
 
 func TestConfigRestConfig(t *testing.T) {
-	kubeConfig := "./assets/config"
+	kubeConfig := "./testdata/config"
 	flags := genericclioptions.ConfigFlags{
 		KubeConfig: &kubeConfig,
 	}
@@ -221,7 +221,7 @@ func TestConfigRestConfig(t *testing.T) {
 }
 
 func TestConfigBadConfig(t *testing.T) {
-	kubeConfig := "./assets/bork_config"
+	kubeConfig := "./testdata/bork_config"
 	flags := genericclioptions.ConfigFlags{
 		KubeConfig: &kubeConfig,
 	}
@@ -232,7 +232,7 @@ func TestConfigBadConfig(t *testing.T) {
 }
 
 func TestNamespaceNames(t *testing.T) {
-	kubeConfig := "./assets/config"
+	kubeConfig := "./testdata/config"
 
 	flags := genericclioptions.ConfigFlags{
 		KubeConfig: &kubeConfig,

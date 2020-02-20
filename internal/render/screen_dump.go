@@ -33,6 +33,8 @@ var AgeDecorator = func(a string) string {
 func (ScreenDump) Header(ns string) HeaderRow {
 	return HeaderRow{
 		Header{Name: "NAME"},
+		Header{Name: "DIR"},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	}
 }
@@ -47,6 +49,8 @@ func (b ScreenDump) Render(o interface{}, ns string, r *Row) error {
 	r.ID = filepath.Join(f.Dir, f.File.Name())
 	r.Fields = Fields{
 		f.File.Name(),
+		f.Dir,
+		"",
 		timeToAge(f.File.ModTime()),
 	}
 

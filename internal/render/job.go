@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/duration"
@@ -34,15 +34,16 @@ func (Job) Header(ns string) HeaderRow {
 		Header{Name: "NAME"},
 		Header{Name: "COMPLETIONS"},
 		Header{Name: "DURATION"},
-		Header{Name: "CONTAINERS"},
-		Header{Name: "IMAGES"},
+		Header{Name: "SELECTOR", Wide: true},
+		Header{Name: "CONTAINERS", Wide: true},
+		Header{Name: "IMAGES", Wide: true},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
 
 // Render renders a K8s resource to screen.
 func (j Job) Render(o interface{}, ns string, r *Row) error {
-	log.Debug().Msgf("JOB RENDER %q", ns)
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected Job, but got %T", o)
@@ -52,6 +53,7 @@ func (j Job) Render(o interface{}, ns string, r *Row) error {
 	if err != nil {
 		return err
 	}
+	ready := toCompletion(job.Spec, job.Status)
 
 	r.ID = client.MetaFQN(job.ObjectMeta)
 	r.Fields = make(Fields, 0, len(j.Header(ns)))
@@ -61,13 +63,26 @@ func (j Job) Render(o interface{}, ns string, r *Row) error {
 	cc, ii := toContainers(job.Spec.Template.Spec)
 	r.Fields = append(r.Fields,
 		job.Name,
-		toCompletion(job.Spec, job.Status),
+		ready,
 		toDuration(job.Status),
+		jobSelector(job.Spec),
 		cc,
 		ii,
+		asStatus(j.diagnose(ready, job.Status.CompletionTime)),
 		toAge(job.ObjectMeta.CreationTimestamp),
 	)
 
+	return nil
+}
+
+func (Job) diagnose(ready string, completed *metav1.Time) error {
+	if completed == nil {
+		return nil
+	}
+	tokens := strings.Split(ready, "/")
+	if tokens[0] != tokens[1] {
+		return fmt.Errorf("expecting %s completion got %s", tokens[1], tokens[0])
+	}
 	return nil
 }
 

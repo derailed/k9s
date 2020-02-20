@@ -29,10 +29,11 @@ func TestTableReconcile(t *testing.T) {
 	f.rows = []runtime.Object{load(t, "p1")}
 	ctx := context.WithValue(context.Background(), internal.KeyFactory, f)
 	ctx = context.WithValue(ctx, internal.KeyFields, "")
+	ctx = context.WithValue(ctx, internal.KeyWithMetrics, false)
 	err := ta.reconcile(ctx)
 	assert.Nil(t, err)
 	data := ta.Peek()
-	assert.Equal(t, 15, len(data.Header))
+	assert.Equal(t, 17, len(data.Header))
 	assert.Equal(t, 1, len(data.RowEvents))
 	assert.Equal(t, client.NamespaceAll, data.Namespace)
 }
@@ -55,6 +56,7 @@ func TestTableGet(t *testing.T) {
 	f := makeFactory()
 	f.rows = []runtime.Object{load(t, "p1")}
 	ctx := context.WithValue(context.Background(), internal.KeyFactory, f)
+	ctx = context.WithValue(ctx, internal.KeyWithMetrics, false)
 	row, err := ta.Get(ctx, "fred")
 	assert.Nil(t, err)
 	assert.NotNil(t, row)
@@ -69,12 +71,6 @@ func TestTableMeta(t *testing.T) {
 		accessor dao.Accessor
 		renderer Renderer
 	}{
-		// BOZO!!
-		// "full": {
-		// 	gvr:      "v1/pods",
-		// 	accessor: &pd,
-		// 	renderer: &render.Pod{},
-		// },
 		"generic": {
 			gvr:      "containers",
 			accessor: &dao.Container{},
@@ -110,7 +106,7 @@ func TestTableHydrate(t *testing.T) {
 
 	assert.Nil(t, hydrate("blee", oo, rr, render.Pod{}))
 	assert.Equal(t, 1, len(rr))
-	assert.Equal(t, 14, len(rr[0].Fields))
+	assert.Equal(t, 16, len(rr[0].Fields))
 }
 
 func TestTableGenericHydrate(t *testing.T) {
@@ -144,7 +140,7 @@ func TestTableGenericHydrate(t *testing.T) {
 // Helpers...
 
 func mustLoad(n string) *unstructured.Unstructured {
-	raw, err := ioutil.ReadFile(fmt.Sprintf("test_assets/%s.json", n))
+	raw, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", n))
 	if err != nil {
 		panic(err)
 	}
@@ -156,7 +152,7 @@ func mustLoad(n string) *unstructured.Unstructured {
 }
 
 func load(t *testing.T, n string) *unstructured.Unstructured {
-	raw, err := ioutil.ReadFile(fmt.Sprintf("test_assets/%s.json", n))
+	raw, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", n))
 	assert.Nil(t, err)
 	var o unstructured.Unstructured
 	err = json.Unmarshal(raw, &o)
@@ -165,7 +161,7 @@ func load(t *testing.T, n string) *unstructured.Unstructured {
 }
 
 func raw(t *testing.T, n string) []byte {
-	raw, err := ioutil.ReadFile(fmt.Sprintf("test_assets/%s.json", n))
+	raw, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", n))
 	assert.Nil(t, err)
 	return raw
 }

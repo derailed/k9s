@@ -55,6 +55,7 @@ func useContext(app *App, name string) error {
 		return errors.New("Expecting a switchable resource")
 	}
 	if err := switcher.Switch(name); err != nil {
+		log.Error().Err(err).Msgf("Context switch failed")
 		return err
 	}
 	if err := app.switchCtx(name, false); err != nil {

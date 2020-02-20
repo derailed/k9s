@@ -13,9 +13,8 @@ type Fields []string
 // Clone returns a copy of the fields.
 func (f Fields) Clone() Fields {
 	cp := make(Fields, len(f))
-	for i, v := range f {
-		cp[i] = v
-	}
+	copy(cp, f)
+
 	return cp
 }
 
@@ -38,6 +37,11 @@ func (r Row) Clone() Row {
 		ID:     r.ID,
 		Fields: r.Fields.Clone(),
 	}
+}
+
+// Len returns the length of the row.
+func (r Row) Len() int {
+	return len(r.Fields)
 }
 
 // ----------------------------------------------------------------------------

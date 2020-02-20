@@ -18,19 +18,19 @@ func TestAugmentRow(t *testing.T) {
 		e    Fields
 	}{
 		"cool": {
-			"assets/b1.txt",
+			"testdata/b1.txt",
 			Fields{"pass", "3.3544", "29.8116", "100", "0"},
 		},
 		"2XX": {
-			"assets/b4.txt",
+			"testdata/b4.txt",
 			Fields{"pass", "3.3544", "29.8116", "160", "0"},
 		},
 		"4XX/5XX": {
-			"assets/b2.txt",
+			"testdata/b2.txt",
 			Fields{"pass", "3.3544", "29.8116", "100", "12"},
 		},
 		"toast": {
-			"assets/b3.txt",
+			"testdata/b3.txt",
 			Fields{"fail", "2.3688", "35.4606", "0", "0"},
 		},
 	}

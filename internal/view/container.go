@@ -6,13 +6,10 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
-	"k8s.io/client-go/tools/portforward"
 )
 
 const (
@@ -60,7 +57,7 @@ func (c *Container) bindKeys(aa ui.KeyActions) {
 		ui.KeyShiftX:   ui.NewKeyAction("Sort %CPU (REQ)", c.GetTable().SortColCmd(8, false), false),
 		ui.KeyShiftZ:   ui.NewKeyAction("Sort %MEM (REQ)", c.GetTable().SortColCmd(9, false), false),
 		tcell.KeyCtrlX: ui.NewKeyAction("Sort %CPU (LIM)", c.GetTable().SortColCmd(8, false), false),
-		tcell.KeyCtrlZ: ui.NewKeyAction("Sort %MEM (LIM)", c.GetTable().SortColCmd(9, false), false),
+		tcell.KeyCtrlQ: ui.NewKeyAction("Sort %MEM (LIM)", c.GetTable().SortColCmd(9, false), false),
 	})
 }
 
@@ -103,6 +100,7 @@ func (c *Container) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
+	log.Debug().Msgf("CONTAINER-SEL %q", path)
 	if _, ok := c.App().factory.ForwarderFor(fwFQN(c.GetTable().Path, path)); ok {
 		c.App().Flash().Err(fmt.Errorf("A PortForward already exist on container %s", c.GetTable().Path))
 		return nil
@@ -112,8 +110,8 @@ func (c *Container) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !ok {
 		return nil
 	}
-
-	dialog.ShowPortForward(c.App().Content.Pages, c.preparePort(ports), c.portForward)
+	log.Debug().Msgf("CONTAINER-PORTS %#v", ports)
+	ShowPortForwards(c, c.GetTable().Path, ports, startFwdCB)
 
 	return nil
 }
@@ -132,58 +130,13 @@ func (c *Container) isForwardable(path string) ([]string, bool) {
 		return nil, false
 	}
 
-	return ports, true
-}
-
-func (c *Container) preparePort(pp []string) string {
-	var port string
-	for _, p := range pp {
+	pp := make([]string, 0, len(ports))
+	for _, p := range ports {
 		if !isTCPPort(p) {
 			continue
 		}
-		port = strings.TrimSpace(p)
-		tokens := strings.Split(port, ":")
-		if len(tokens) == 2 {
-			port = tokens[1]
-		}
-		break
-	}
-	if port == "" {
-		c.App().Flash().Warn("No valid TCP port found on this container. User will specify...")
-		return "MY_TCP_PORT!"
+		pp = append(pp, path+"/"+p)
 	}
 
-	return port
-}
-
-func (c *Container) portForward(address, lport, cport string) {
-	co := c.GetTable().GetSelectedCell(0)
-	pf := dao.NewPortForwarder(c.App().Conn())
-	ports := []string{lport + ":" + cport}
-	fw, err := pf.Start(c.GetTable().Path, co, address, ports)
-	if err != nil {
-		c.App().Flash().Err(err)
-		return
-	}
-
-	log.Debug().Msgf(">>> Starting port forward %q %v", c.GetTable().Path, ports)
-	go c.runForward(pf, fw)
-}
-
-func (c *Container) runForward(pf *dao.PortForwarder, f *portforward.PortForwarder) {
-	c.App().QueueUpdateDraw(func() {
-		c.App().factory.AddForwarder(pf)
-		c.App().Flash().Infof("PortForward activated %s:%s", pf.Path(), pf.Ports()[0])
-		dialog.DismissPortForward(c.App().Content.Pages)
-	})
-
-	pf.SetActive(true)
-	if err := f.ForwardPorts(); err != nil {
-		c.App().Flash().Err(err)
-		return
-	}
-	c.App().QueueUpdateDraw(func() {
-		c.App().factory.DeleteForwarder(pf.FQN())
-		pf.SetActive(false)
-	})
+	return pp, true
 }

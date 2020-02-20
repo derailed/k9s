@@ -3,7 +3,6 @@ package render
 import (
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/gdamore/tcell"
@@ -16,20 +15,13 @@ import (
 type StatefulSet struct{}
 
 // ColorerFunc colors a resource row.
-func (StatefulSet) ColorerFunc() ColorerFunc {
-	return func(ns string, r RowEvent) tcell.Color {
-		c := DefaultColorer(ns, r)
-		if r.Kind == EventAdd || r.Kind == EventUpdate {
+func (s StatefulSet) ColorerFunc() ColorerFunc {
+	return func(ns string, re RowEvent) tcell.Color {
+		c := DefaultColorer(ns, re)
+		if re.Kind == EventAdd || re.Kind == EventUpdate {
 			return c
 		}
-
-		readyCol := 2
-		if !client.IsAllNamespaces(ns) {
-			readyCol--
-		}
-		tokens := strings.Split(strings.TrimSpace(r.Row.Fields[readyCol]), "/")
-		curr, des := tokens[0], tokens[1]
-		if curr != des {
+		if !Happy(ns, re.Row) {
 			return ErrColor
 		}
 
@@ -47,8 +39,12 @@ func (StatefulSet) Header(ns string) HeaderRow {
 	return append(h,
 		Header{Name: "NAME"},
 		Header{Name: "READY"},
-		Header{Name: "SELECTOR"},
+		Header{Name: "SELECTOR", Wide: true},
 		Header{Name: "SERVICE"},
+		Header{Name: "CONTAINERS", Wide: true},
+		Header{Name: "IMAGES", Wide: true},
+		Header{Name: "LABELS", Wide: true},
+		Header{Name: "VALID", Wide: true},
 		Header{Name: "AGE", Decorator: AgeDecorator},
 	)
 }
@@ -72,11 +68,22 @@ func (s StatefulSet) Render(o interface{}, ns string, r *Row) error {
 	}
 	r.Fields = append(r.Fields,
 		sts.Name,
-		strconv.Itoa(int(sts.Status.Replicas))+"/"+strconv.Itoa(int(*sts.Spec.Replicas)),
+		strconv.Itoa(int(sts.Status.ReadyReplicas))+"/"+strconv.Itoa(int(sts.Status.Replicas)),
 		asSelector(sts.Spec.Selector),
 		na(sts.Spec.ServiceName),
+		podContainerNames(sts.Spec.Template.Spec, true),
+		podImageNames(sts.Spec.Template.Spec, true),
+		mapToStr(sts.Labels),
+		asStatus(s.diagnose(sts.Status.Replicas, sts.Status.ReadyReplicas)),
 		toAge(sts.ObjectMeta.CreationTimestamp),
 	)
 
+	return nil
+}
+
+func (StatefulSet) diagnose(d, r int32) error {
+	if d != r {
+		return fmt.Errorf("desiring %d replicas got %d available", d, r)
+	}
 	return nil
 }

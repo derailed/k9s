@@ -13,11 +13,24 @@ import (
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
+// Happy returns true if resoure is happy, false otherwise
+func Happy(ns string, r Row) bool {
+	validCol := r.Len() - 2
+	return strings.TrimSpace(r.Fields[validCol]) == ""
+}
+
 const megaByte = 1024 * 1024
 
 // ToMB converts bytes to megabytes.
 func ToMB(v int64) float64 {
 	return float64(v) / megaByte
+}
+
+func asStatus(err error) string {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
 }
 
 func asSelector(s *metav1.LabelSelector) string {
@@ -84,7 +97,7 @@ func join(a []string, sep string) string {
 
 	var buff strings.Builder
 	buff.Grow(n)
-	buff.WriteString(a[0])
+	buff.WriteString(b[0])
 	for _, s := range b[1:] {
 		buff.WriteString(sep)
 		buff.WriteString(s)
@@ -151,7 +164,7 @@ func Truncate(str string, width int) string {
 
 func mapToStr(m map[string]string) (s string) {
 	if len(m) == 0 {
-		return MissingValue
+		return ""
 	}
 
 	kk := make([]string, 0, len(m))
@@ -163,7 +176,40 @@ func mapToStr(m map[string]string) (s string) {
 	for i, k := range kk {
 		s += k + "=" + m[k]
 		if i < len(kk)-1 {
-			s += ","
+			s += " "
+		}
+	}
+
+	return
+}
+
+func mapToIfc(m interface{}) (s string) {
+	if m == nil {
+		return ""
+	}
+
+	mm, ok := m.(map[string]interface{})
+	if !ok {
+		return ""
+	}
+	if len(mm) == 0 {
+		return ""
+	}
+
+	kk := make([]string, 0, len(mm))
+	for k := range mm {
+		kk = append(kk, k)
+	}
+	sort.Strings(kk)
+
+	for i, k := range kk {
+		str, ok := mm[k].(string)
+		if !ok {
+			continue
+		}
+		s += k + "=" + str
+		if i < len(kk)-1 {
+			s += " "
 		}
 	}
 
