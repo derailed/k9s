@@ -65,7 +65,7 @@ func (l *LogsExtender) showLogs(path string, prev bool) {
 	if l.containerFn != nil {
 		co = l.containerFn()
 	}
-	if err := l.App().inject(NewLog(client.NewGVR(l.GVR()), path, co, prev)); err != nil {
+	if err := l.App().inject(NewLog(l.GVR(), path, co, prev)); err != nil {
 		l.App().Flash().Err(err)
 	}
 }

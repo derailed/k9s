@@ -18,11 +18,11 @@ func (ClusterRole) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header rbw.
-func (ClusterRole) Header(string) HeaderRow {
-	return HeaderRow{
-		Header{Name: "NAME"},
-		Header{Name: "LABELS", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
+func (ClusterRole) Header(string) Header {
+	return Header{
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "LABELS", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
 }
 

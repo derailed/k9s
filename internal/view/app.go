@@ -178,9 +178,15 @@ func (a *App) Halt() {
 func (a *App) Resume() {
 	var ctx context.Context
 	ctx, a.cancelFn = context.WithCancel(context.Background())
+
 	go a.clusterUpdater(ctx)
-	if err := a.StylesUpdater(ctx, a); err != nil {
-		log.Error().Err(err).Msgf("Styles update failed")
+
+	if err := a.StylesWatcher(ctx, a); err != nil {
+		log.Error().Err(err).Msgf("Styles watcher failed")
+	}
+
+	if err := a.CustomViewsWatcher(ctx, a); err != nil {
+		log.Error().Err(err).Msgf("CustomView watcher failed")
 	}
 }
 
@@ -261,7 +267,6 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 		}
 		a.initFactory(ns)
 
-		client.ResetMetrics()
 		if err := a.command.Reset(true); err != nil {
 			return err
 		}

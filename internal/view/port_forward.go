@@ -34,7 +34,7 @@ func NewPortForward(gvr client.GVR) ResourceViewer {
 	p.GetTable().SetBorderFocusColor(tcell.ColorDodgerBlue)
 	p.GetTable().SetSelectedStyle(tcell.ColorWhite, tcell.ColorDodgerBlue, tcell.AttrNone)
 	p.GetTable().SetColorerFn(render.PortForward{}.ColorerFunc())
-	p.GetTable().SetSortCol(p.GetTable().NameColIndex()+6, 0, true)
+	p.GetTable().SetSortCol(ageCol, true)
 	p.SetContextFn(p.portForwardContext)
 	p.SetBindKeysFn(p.bindKeys)
 
@@ -50,8 +50,8 @@ func (p *PortForward) bindKeys(aa ui.KeyActions) {
 		tcell.KeyEnter: ui.NewKeyAction("View Benchmarks", p.showBenchCmd, true),
 		tcell.KeyCtrlB: ui.NewKeyAction("Bench Run/Stop", p.toggleBenchCmd, true),
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", p.deleteCmd, true),
-		ui.KeyShiftP:   ui.NewKeyAction("Sort Ports", p.GetTable().SortColCmd(2, true), false),
-		ui.KeyShiftU:   ui.NewKeyAction("Sort URL", p.GetTable().SortColCmd(4, true), false),
+		ui.KeyShiftP:   ui.NewKeyAction("Sort Ports", p.GetTable().SortColCmd("PORTS", true), false),
+		ui.KeyShiftU:   ui.NewKeyAction("Sort URL", p.GetTable().SortColCmd("URL", true), false),
 	})
 }
 

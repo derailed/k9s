@@ -20,17 +20,13 @@ func (Endpoints) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header row.
-func (Endpoints) Header(ns string) HeaderRow {
-	var h HeaderRow
-	if client.IsAllNamespaces(ns) {
-		h = append(h, Header{Name: "NAMESPACE"})
+func (Endpoints) Header(ns string) Header {
+	return Header{
+		HeaderColumn{Name: "NAMESPACE"},
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "ENDPOINTS"},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
-
-	return append(h,
-		Header{Name: "NAME"},
-		Header{Name: "ENDPOINTS"},
-		Header{Name: "AGE", Decorator: AgeDecorator},
-	)
 }
 
 // Render renders a K8s resource to screen.
@@ -47,14 +43,12 @@ func (e Endpoints) Render(o interface{}, ns string, r *Row) error {
 
 	r.ID = client.MetaFQN(ep.ObjectMeta)
 	r.Fields = make(Fields, 0, len(e.Header(ns)))
-	if client.IsAllNamespaces(ns) {
-		r.Fields = append(r.Fields, ep.Namespace)
-	}
-	r.Fields = append(r.Fields,
+	r.Fields = Fields{
+		ep.Namespace,
 		ep.Name,
 		missing(toEPs(ep.Subsets)),
 		toAge(ep.ObjectMeta.CreationTimestamp),
-	)
+	}
 
 	return nil
 }

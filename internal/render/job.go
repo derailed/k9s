@@ -24,22 +24,18 @@ func (Job) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header row.
-func (Job) Header(ns string) HeaderRow {
-	var h HeaderRow
-	if client.IsAllNamespaces(ns) {
-		h = append(h, Header{Name: "NAMESPACE"})
+func (Job) Header(ns string) Header {
+	return Header{
+		HeaderColumn{Name: "NAMESPACE"},
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "COMPLETIONS"},
+		HeaderColumn{Name: "DURATION"},
+		HeaderColumn{Name: "SELECTOR", Wide: true},
+		HeaderColumn{Name: "CONTAINERS", Wide: true},
+		HeaderColumn{Name: "IMAGES", Wide: true},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
-
-	return append(h,
-		Header{Name: "NAME"},
-		Header{Name: "COMPLETIONS"},
-		Header{Name: "DURATION"},
-		Header{Name: "SELECTOR", Wide: true},
-		Header{Name: "CONTAINERS", Wide: true},
-		Header{Name: "IMAGES", Wide: true},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
-	)
 }
 
 // Render renders a K8s resource to screen.
@@ -55,13 +51,11 @@ func (j Job) Render(o interface{}, ns string, r *Row) error {
 	}
 	ready := toCompletion(job.Spec, job.Status)
 
-	r.ID = client.MetaFQN(job.ObjectMeta)
-	r.Fields = make(Fields, 0, len(j.Header(ns)))
-	if client.IsAllNamespaces(ns) {
-		r.Fields = append(r.Fields, job.Namespace)
-	}
 	cc, ii := toContainers(job.Spec.Template.Spec)
-	r.Fields = append(r.Fields,
+
+	r.ID = client.MetaFQN(job.ObjectMeta)
+	r.Fields = Fields{
+		job.Namespace,
 		job.Name,
 		ready,
 		toDuration(job.Status),
@@ -70,7 +64,7 @@ func (j Job) Render(o interface{}, ns string, r *Row) error {
 		ii,
 		asStatus(j.diagnose(ready, job.Status.CompletionTime)),
 		toAge(job.ObjectMeta.CreationTimestamp),
-	)
+	}
 
 	return nil
 }

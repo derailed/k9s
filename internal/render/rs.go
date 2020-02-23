@@ -6,7 +6,6 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -17,36 +16,21 @@ type ReplicaSet struct{}
 
 // ColorerFunc colors a resource row.
 func (r ReplicaSet) ColorerFunc() ColorerFunc {
-	return func(ns string, re RowEvent) tcell.Color {
-		c := DefaultColorer(ns, re)
-		if re.Kind == EventAdd || re.Kind == EventUpdate {
-			return c
-		}
-
-		if !Happy(ns, re.Row) {
-			return ErrColor
-		}
-
-		return StdColor
-	}
+	return DefaultColorer
 }
 
 // Header returns a header row.
-func (ReplicaSet) Header(ns string) HeaderRow {
-	var h HeaderRow
-	if client.IsAllNamespaces(ns) {
-		h = append(h, Header{Name: "NAMESPACE"})
+func (ReplicaSet) Header(ns string) Header {
+	return Header{
+		HeaderColumn{Name: "NAMESPACE"},
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "DESIRED", Align: tview.AlignRight},
+		HeaderColumn{Name: "CURRENT", Align: tview.AlignRight},
+		HeaderColumn{Name: "READY", Align: tview.AlignRight},
+		HeaderColumn{Name: "LABELS", Wide: true},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
-
-	return append(h,
-		Header{Name: "NAME"},
-		Header{Name: "DESIRED", Align: tview.AlignRight},
-		Header{Name: "CURRENT", Align: tview.AlignRight},
-		Header{Name: "READY", Align: tview.AlignRight},
-		Header{Name: "LABELS", Wide: true},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
-	)
 }
 
 // Render renders a K8s resource to screen.
@@ -62,11 +46,8 @@ func (r ReplicaSet) Render(o interface{}, ns string, row *Row) error {
 	}
 
 	row.ID = client.MetaFQN(rs.ObjectMeta)
-	row.Fields = make(Fields, 0, len(r.Header(ns)))
-	if client.IsAllNamespaces(ns) {
-		row.Fields = append(row.Fields, rs.Namespace)
-	}
-	row.Fields = append(row.Fields,
+	row.Fields = Fields{
+		rs.Namespace,
 		rs.Name,
 		strconv.Itoa(int(*rs.Spec.Replicas)),
 		strconv.Itoa(int(rs.Status.Replicas)),
@@ -74,7 +55,7 @@ func (r ReplicaSet) Render(o interface{}, ns string, row *Row) error {
 		mapToStr(rs.Labels),
 		asStatus(r.diagnose(rs)),
 		toAge(rs.ObjectMeta.CreationTimestamp),
-	)
+	}
 
 	return nil
 }

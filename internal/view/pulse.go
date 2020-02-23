@@ -215,8 +215,8 @@ func (p *Pulse) Refresh() {
 }
 
 // GVR returns a resource descriptor.
-func (p *Pulse) GVR() string {
-	return p.gvr.String()
+func (p *Pulse) GVR() client.GVR {
+	return p.gvr
 }
 
 // Name returns the component name.

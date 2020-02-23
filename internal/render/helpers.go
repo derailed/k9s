@@ -14,8 +14,14 @@ import (
 )
 
 // Happy returns true if resoure is happy, false otherwise
-func Happy(ns string, r Row) bool {
-	validCol := r.Len() - 2
+func Happy(ns string, h Header, r Row) bool {
+	if len(r.Fields) == 0 {
+		return true
+	}
+	validCol := h.IndexOf("VALID", true)
+	if validCol < 0 {
+		return true
+	}
 	return strings.TrimSpace(r.Fields[validCol]) == ""
 }
 

@@ -19,42 +19,35 @@ type Event struct{}
 
 // ColorerFunc colors a resource row.
 func (e Event) ColorerFunc() ColorerFunc {
-	return func(ns string, r RowEvent) tcell.Color {
-		c := DefaultColorer(ns, r)
-
-		if !Happy(ns, r.Row) {
+	return func(ns string, h Header, re RowEvent) tcell.Color {
+		if !Happy(ns, h, re.Row) {
 			return ErrColor
 		}
-
-		markCol := 3
-		if !client.IsAllNamespaces(ns) {
-			markCol = 2
+		reasonCol := h.IndexOf("REASON", true)
+		if reasonCol == -1 {
+			return DefaultColorer(ns, h, re)
 		}
-		if strings.TrimSpace(r.Row.Fields[markCol]) == "Killing" {
+		if strings.TrimSpace(re.Row.Fields[reasonCol]) == "Killing" {
 			return KillColor
 		}
 
-		return c
+		return DefaultColorer(ns, h, re)
 	}
 }
 
 // Header returns a header rbw.
-func (Event) Header(ns string) HeaderRow {
-	var h HeaderRow
-	if client.IsAllNamespaces(ns) {
-		h = append(h, Header{Name: "NAMESPACE"})
+func (Event) Header(ns string) Header {
+	return Header{
+		HeaderColumn{Name: "NAMESPACE"},
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "TYPE"},
+		HeaderColumn{Name: "REASON"},
+		HeaderColumn{Name: "SOURCE"},
+		HeaderColumn{Name: "COUNT", Align: tview.AlignRight},
+		HeaderColumn{Name: "MESSAGE", Wide: true},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
-
-	return append(h,
-		Header{Name: "NAME"},
-		Header{Name: "TYPE"},
-		Header{Name: "REASON"},
-		Header{Name: "SOURCE"},
-		Header{Name: "COUNT", Align: tview.AlignRight},
-		Header{Name: "MESSAGE", Wide: true},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
-	)
 }
 
 // Render renders a K8s resource to screen.
@@ -70,11 +63,8 @@ func (e Event) Render(o interface{}, ns string, r *Row) error {
 	}
 
 	r.ID = client.MetaFQN(ev.ObjectMeta)
-	r.Fields = make(Fields, 0, len(e.Header(ns)))
-	if client.IsAllNamespaces(ns) {
-		r.Fields = append(r.Fields, ev.Namespace)
-	}
-	r.Fields = append(r.Fields,
+	r.Fields = Fields{
+		ev.Namespace,
 		asRef(ev.InvolvedObject),
 		ev.Type,
 		ev.Reason,
@@ -82,7 +72,8 @@ func (e Event) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(int(ev.Count)),
 		ev.Message,
 		asStatus(e.diagnose(ev.Type)),
-		toAge(ev.LastTimestamp))
+		toAge(ev.LastTimestamp),
+	}
 
 	return nil
 }

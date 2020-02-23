@@ -27,10 +27,15 @@ func TestNSColorer(t *testing.T) {
 		{"", render.RowEvent{Kind: render.EventUnchanged, Row: dead}, render.ErrColor},
 	}
 
+	h := render.Header{
+		render.HeaderColumn{Name: "A"},
+		render.HeaderColumn{Name: "B"},
+	}
+
 	var n render.Namespace
 	f := n.ColorerFunc()
 	for _, u := range uu {
-		assert.Equal(t, u.e, f(u.ns, u.r))
+		assert.Equal(t, u.e, f(u.ns, h, u.r))
 	}
 }
 

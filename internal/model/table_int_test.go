@@ -22,7 +22,7 @@ import (
 )
 
 func TestTableReconcile(t *testing.T) {
-	ta := NewTable("v1/pods")
+	ta := NewTable(client.NewGVR("v1/pods"))
 	ta.SetNamespace(client.NamespaceAll)
 
 	f := makeFactory()
@@ -39,7 +39,7 @@ func TestTableReconcile(t *testing.T) {
 }
 
 func TestTableList(t *testing.T) {
-	ta := NewTable("v1/pods")
+	ta := NewTable(client.NewGVR("v1/pods"))
 	ta.SetNamespace("blee")
 
 	acc := accessor{}
@@ -50,7 +50,7 @@ func TestTableList(t *testing.T) {
 }
 
 func TestTableGet(t *testing.T) {
-	ta := NewTable("v1/pods")
+	ta := NewTable(client.NewGVR("v1/pods"))
 	ta.SetNamespace("blee")
 
 	f := makeFactory()
@@ -90,7 +90,7 @@ func TestTableMeta(t *testing.T) {
 
 	for k := range uu {
 		u := uu[k]
-		ta := NewTable(u.gvr)
+		ta := NewTable(client.NewGVR(u.gvr))
 		m := ta.resourceMeta()
 
 		assert.Equal(t, u.accessor, m.DAO)
@@ -106,7 +106,7 @@ func TestTableHydrate(t *testing.T) {
 
 	assert.Nil(t, hydrate("blee", oo, rr, render.Pod{}))
 	assert.Equal(t, 1, len(rr))
-	assert.Equal(t, 16, len(rr[0].Fields))
+	assert.Equal(t, 17, len(rr[0].Fields))
 }
 
 func TestTableGenericHydrate(t *testing.T) {
@@ -179,7 +179,7 @@ type testFactory struct {
 var _ dao.Factory = testFactory{}
 
 func (f testFactory) Client() client.Connection {
-	return nil
+	return client.NewTestClient()
 }
 func (f testFactory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
 	if len(f.rows) > 0 {

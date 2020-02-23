@@ -10,12 +10,10 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
+	v1 "k8s.io/api/core/v1"
 )
 
-const (
-	containerTitle = "Containers"
-	portsCol       = 13
-)
+const containerTitle = "Containers"
 
 // Container represents a container view.
 type Container struct {
@@ -53,12 +51,12 @@ func (c *Container) bindKeys(aa ui.KeyActions) {
 
 	aa.Add(ui.KeyActions{
 		ui.KeyShiftF:   ui.NewKeyAction("PortForward", c.portFwdCmd, true),
-		ui.KeyShiftC:   ui.NewKeyAction("Sort CPU", c.GetTable().SortColCmd(6, false), false),
-		ui.KeyShiftM:   ui.NewKeyAction("Sort MEM", c.GetTable().SortColCmd(7, false), false),
-		ui.KeyShiftX:   ui.NewKeyAction("Sort %CPU (REQ)", c.GetTable().SortColCmd(8, false), false),
-		ui.KeyShiftZ:   ui.NewKeyAction("Sort %MEM (REQ)", c.GetTable().SortColCmd(9, false), false),
-		tcell.KeyCtrlX: ui.NewKeyAction("Sort %CPU (LIM)", c.GetTable().SortColCmd(8, false), false),
-		tcell.KeyCtrlQ: ui.NewKeyAction("Sort %MEM (LIM)", c.GetTable().SortColCmd(9, false), false),
+		ui.KeyShiftC:   ui.NewKeyAction("Sort CPU", c.GetTable().SortColCmd(cpuCol, false), false),
+		ui.KeyShiftM:   ui.NewKeyAction("Sort MEM", c.GetTable().SortColCmd(memCol, false), false),
+		ui.KeyShiftX:   ui.NewKeyAction("Sort %CPU (REQ)", c.GetTable().SortColCmd("%CPU/R", false), false),
+		ui.KeyShiftZ:   ui.NewKeyAction("Sort %MEM (REQ)", c.GetTable().SortColCmd("%MEM/R", false), false),
+		tcell.KeyCtrlX: ui.NewKeyAction("Sort %CPU (LIM)", c.GetTable().SortColCmd("%CPU/L", false), false),
+		tcell.KeyCtrlQ: ui.NewKeyAction("Sort %MEM (LIM)", c.GetTable().SortColCmd("%MEM/L", false), false),
 	})
 }
 
@@ -131,13 +129,41 @@ func (c *Container) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (c *Container) isForwardable(path string) ([]string, bool) {
-	state := c.GetTable().GetSelectedCell(3)
-	if state != "Running" {
+	po, err := fetchPod(c.App().factory, c.GetTable().Path)
+	if err != nil {
+		return nil, false
+	}
+
+	cc := po.Spec.Containers
+	var co *v1.Container
+	for i := range cc {
+		if cc[i].Name == path {
+			co = &cc[i]
+		}
+	}
+	if co == nil {
+		log.Error().Err(fmt.Errorf("unable to locate container named %q", path))
+		return nil, false
+	}
+
+	var cs *v1.ContainerStatus
+	ss := po.Status.ContainerStatuses
+	for i := range ss {
+		if ss[i].Name == path {
+			cs = &ss[i]
+		}
+	}
+	if cs == nil {
+		log.Error().Err(fmt.Errorf("unable to locate container status named %q", path))
+		return nil, false
+	}
+
+	if render.ToContainerState(cs.State) != "Running" {
 		c.App().Flash().Err(fmt.Errorf("Container %s is not running?", path))
 		return nil, false
 	}
 
-	portC := c.GetTable().GetSelectedCell(portsCol)
+	portC := render.ToContainerPorts(co.Ports)
 	ports := strings.Split(portC, ",")
 	if len(ports) == 0 {
 		c.App().Flash().Err(errors.New("Container exposes no ports"))

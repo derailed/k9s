@@ -52,7 +52,7 @@ type Renderer interface {
 	Render(o interface{}, ns string, row *render.Row) error
 
 	// Header returns the resource header.
-	Header(ns string) render.HeaderRow
+	Header(ns string) render.Header
 
 	// ColorerFunc returns a row colorer function.
 	ColorerFunc() render.ColorerFunc

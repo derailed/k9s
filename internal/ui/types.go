@@ -15,9 +15,8 @@ type (
 
 	// SortColumn represents a sortable column.
 	SortColumn struct {
-		index    int
-		colCount int
-		asc      bool
+		name string
+		asc  bool
 	}
 )
 
@@ -60,6 +59,9 @@ type Tabular interface {
 
 	// Peek returns current model data.
 	Peek() render.TableData
+
+	// HasMetrics returns true if metrics are available on cluster.
+	HasMetrics() bool
 
 	// Watch watches a given resource for changes.
 	Watch(context.Context)

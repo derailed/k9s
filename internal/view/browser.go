@@ -32,6 +32,7 @@ type Browser struct {
 
 // NewBrowser returns a new browser.
 func NewBrowser(gvr client.GVR) ResourceViewer {
+	log.Debug().Msgf("BRO %q", gvr)
 	return &Browser{
 		Table: NewTable(gvr),
 	}
@@ -40,18 +41,17 @@ func NewBrowser(gvr client.GVR) ResourceViewer {
 // Init watches all running pods in given namespace
 func (b *Browser) Init(ctx context.Context) error {
 	var err error
-	b.meta, err = dao.MetaAccess.MetaFor(b.gvr)
+	b.meta, err = dao.MetaAccess.MetaFor(b.GVR())
 	if err != nil {
 		return err
 	}
-	b.BaseTitle = b.meta.Kind
 
 	if err = b.Table.Init(ctx); err != nil {
 		return err
 	}
 	ns := client.CleanseNamespace(b.app.Config.ActiveNamespace())
 	if dao.IsK8sMeta(b.meta) && b.app.ConOK() {
-		if _, e := b.app.factory.CanForResource(ns, b.GVR(), client.MonitorAccess); e != nil {
+		if _, e := b.app.factory.CanForResource(ns, b.GVR().String(), client.MonitorAccess); e != nil {
 			return e
 		}
 	}
@@ -61,7 +61,7 @@ func (b *Browser) Init(ctx context.Context) error {
 	if b.bindKeysFn != nil {
 		b.bindKeysFn(b.Actions())
 	}
-	b.accessor, err = dao.AccessorFor(b.app.factory, b.gvr)
+	b.accessor, err = dao.AccessorFor(b.app.factory, b.GVR())
 	if err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	ctx := b.defaultContext()
 	raw, err := b.GetModel().ToYAML(ctx, path)
 	if err != nil {
-		b.App().Flash().Errf("unable to get resource %q -- %s", b.gvr, err)
+		b.App().Flash().Errf("unable to get resource %q -- %s", b.GVR(), err)
 		return nil
 	}
 
@@ -231,7 +231,7 @@ func (b *Browser) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if b.enterFn != nil {
 		f = b.enterFn
 	}
-	f(b.app, b.GetModel(), b.gvr.String(), path)
+	f(b.app, b.GetModel(), b.GVR().String(), path)
 
 	return nil
 }
@@ -252,9 +252,9 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	b.Stop()
 	defer b.Start()
 	{
-		msg := fmt.Sprintf("Delete %s %s?", b.gvr.R(), selections[0])
+		msg := fmt.Sprintf("Delete %s %s?", b.GVR().R(), selections[0])
 		if len(selections) > 1 {
-			msg = fmt.Sprintf("Delete %d marked %s?", len(selections), b.gvr)
+			msg = fmt.Sprintf("Delete %d marked %s?", len(selections), b.GVR())
 		}
 		if !dao.IsK8sMeta(b.meta) {
 			b.simpleDelete(selections, msg)
@@ -271,7 +271,7 @@ func (b *Browser) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path == "" {
 		return evt
 	}
-	describeResource(b.app, b.GetModel(), b.gvr.String(), path)
+	describeResource(b.app, b.GetModel(), b.GVR().String(), path)
 
 	return nil
 }
@@ -284,7 +284,7 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	ns, n := client.Namespaced(path)
 
-	if ok, err := b.app.Conn().CanI(ns, b.GVR(), []string{"edit"}); !ok || err != nil {
+	if ok, err := b.app.Conn().CanI(ns, b.GVR().String(), []string{"edit"}); !ok || err != nil {
 		b.App().Flash().Err(fmt.Errorf("Current user can't edit resource %s", b.GVR()))
 		return nil
 	}
@@ -312,7 +312,7 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	ns := b.namespaces[i]
 
-	auth, err := b.App().factory.Client().CanI(ns, b.GVR(), client.MonitorAccess)
+	auth, err := b.App().factory.Client().CanI(ns, b.GVR().String(), client.MonitorAccess)
 	if !auth {
 		if err == nil {
 			err = fmt.Errorf("current user can't access namespace %s", ns)
@@ -355,7 +355,7 @@ func (b *Browser) setNamespace(ns string) {
 func (b *Browser) defaultContext() context.Context {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, internal.KeyFactory, b.app.factory)
-	ctx = context.WithValue(ctx, internal.KeyGVR, b.gvr.String())
+	ctx = context.WithValue(ctx, internal.KeyGVR, b.GVR().String())
 	ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
 
 	ctx = context.WithValue(ctx, internal.KeyLabels, "")
@@ -424,9 +424,9 @@ func (b *Browser) simpleDelete(selections []string, msg string) {
 	dialog.ShowConfirm(b.app.Content.Pages, "Confirm Delete", msg, func() {
 		b.ShowDeleted()
 		if len(selections) > 1 {
-			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.gvr)
+			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.GVR())
 		} else {
-			b.app.Flash().Infof("Delete resource %s %s", b.gvr, selections[0])
+			b.app.Flash().Infof("Delete resource %s %s", b.GVR(), selections[0])
 		}
 		for _, sel := range selections {
 			nuker, ok := b.accessor.(dao.Nuker)
@@ -448,9 +448,9 @@ func (b *Browser) resourceDelete(selections []string, msg string) {
 	dialog.ShowDelete(b.app.Content.Pages, msg, func(cascade, force bool) {
 		b.ShowDeleted()
 		if len(selections) > 1 {
-			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.gvr)
+			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.GVR())
 		} else {
-			b.app.Flash().Infof("Delete resource %s %s", b.gvr, selections[0])
+			b.app.Flash().Infof("Delete resource %s %s", b.GVR(), selections[0])
 		}
 		for _, sel := range selections {
 			if err := b.GetModel().Delete(b.defaultContext(), sel, cascade, force); err != nil {

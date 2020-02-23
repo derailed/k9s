@@ -22,60 +22,53 @@ type Pod struct{}
 
 // ColorerFunc colors a resource row.
 func (p Pod) ColorerFunc() ColorerFunc {
-	return func(ns string, re RowEvent) tcell.Color {
-		c := DefaultColorer(ns, re)
-
-		statusCol := 4
-		if !client.IsAllNamespaces(ns) {
-			statusCol--
+	return func(ns string, h Header, re RowEvent) tcell.Color {
+		statusCol := h.IndexOf("STATUS", true)
+		if statusCol == -1 {
+			return DefaultColorer(ns, h, re)
 		}
 		status := strings.TrimSpace(re.Row.Fields[statusCol])
 		switch status {
 		case ContainerCreating, PodInitializing:
-			c = AddColor
+			return AddColor
 		case Initialized:
-			c = HighlightColor
+			return HighlightColor
 		case Completed:
-			c = CompletedColor
+			return CompletedColor
 		case Running:
-			c = StdColor
+			return StdColor
 		case Terminating:
-			c = KillColor
+			return KillColor
 		default:
-			if !Happy(ns, re.Row) {
-				c = ErrColor
+			if !Happy(ns, h, re.Row) {
+				return ErrColor
 			}
+			return DefaultColorer(ns, h, re)
 		}
-
-		return c
 	}
 }
 
 // Header returns a header row.
-func (Pod) Header(ns string) HeaderRow {
-	var h HeaderRow
-	if client.IsAllNamespaces(ns) {
-		h = append(h, Header{Name: "NAMESPACE"})
+func (Pod) Header(ns string) Header {
+	return Header{
+		HeaderColumn{Name: "NAMESPACE"},
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "READY"},
+		HeaderColumn{Name: "RS", Align: tview.AlignRight},
+		HeaderColumn{Name: "STATUS"},
+		HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "%CPU/R", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "%MEM/R", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "%CPU/L", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "%MEM/L", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "IP"},
+		HeaderColumn{Name: "NODE"},
+		HeaderColumn{Name: "QOS", Wide: true},
+		HeaderColumn{Name: "LABELS", Wide: true},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
-
-	return append(h,
-		Header{Name: "NAME"},
-		Header{Name: "READY"},
-		Header{Name: "RS", Align: tview.AlignRight},
-		Header{Name: "STATUS"},
-		Header{Name: "CPU", Align: tview.AlignRight},
-		Header{Name: "MEM", Align: tview.AlignRight},
-		Header{Name: "%CPU/R", Align: tview.AlignRight},
-		Header{Name: "%MEM/R", Align: tview.AlignRight},
-		Header{Name: "%CPU/L", Align: tview.AlignRight},
-		Header{Name: "%MEM/L", Align: tview.AlignRight},
-		Header{Name: "IP", Wide: true},
-		Header{Name: "NODE", Wide: true},
-		Header{Name: "QOS", Wide: true},
-		Header{Name: "LABELS", Wide: true},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
-	)
 }
 
 // Render renders a K8s resource to screen.
@@ -96,13 +89,10 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 	c, perc := p.gatherPodMX(&po, pwm.MX)
 	phase := p.Phase(&po)
 	r.ID = client.MetaFQN(po.ObjectMeta)
-	r.Fields = make(Fields, 0, len(p.Header(ns)))
-	if client.IsAllNamespaces(ns) {
-		r.Fields = append(r.Fields, po.Namespace)
-	}
-	r.Fields = append(r.Fields,
+	r.Fields = Fields{
+		po.Namespace,
 		po.ObjectMeta.Name,
-		strconv.Itoa(cr)+"/"+strconv.Itoa(len(ss)),
+		strconv.Itoa(cr) + "/" + strconv.Itoa(len(ss)),
 		strconv.Itoa(rc),
 		phase,
 		c.cpu,
@@ -117,7 +107,7 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 		mapToStr(po.Labels),
 		asStatus(p.diagnose(phase, cr, len(ss))),
 		toAge(po.ObjectMeta.CreationTimestamp),
-	)
+	}
 
 	return nil
 }

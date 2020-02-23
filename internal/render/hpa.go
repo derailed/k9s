@@ -23,22 +23,18 @@ func (HorizontalPodAutoscaler) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header row.
-func (HorizontalPodAutoscaler) Header(ns string) HeaderRow {
-	var h HeaderRow
-	if client.IsAllNamespaces(ns) {
-		h = append(h, Header{Name: "NAMESPACE"})
+func (HorizontalPodAutoscaler) Header(ns string) Header {
+	return Header{
+		HeaderColumn{Name: "NAMESPACE"},
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "REFERENCE"},
+		HeaderColumn{Name: "TARGETS%"},
+		HeaderColumn{Name: "MINPODS", Align: tview.AlignRight},
+		HeaderColumn{Name: "MAXPODS", Align: tview.AlignRight},
+		HeaderColumn{Name: "REPLICAS", Align: tview.AlignRight},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
-
-	return append(h,
-		Header{Name: "NAME"},
-		Header{Name: "REFERENCE"},
-		Header{Name: "TARGETS%"},
-		Header{Name: "MINPODS", Align: tview.AlignRight},
-		Header{Name: "MAXPODS", Align: tview.AlignRight},
-		Header{Name: "REPLICAS", Align: tview.AlignRight},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
-	)
 }
 
 // Render renders a K8s resource to screen.
@@ -62,7 +58,7 @@ func (h HorizontalPodAutoscaler) Render(o interface{}, ns string, r *Row) error 
 	}
 }
 
-func (h HorizontalPodAutoscaler) renderV1(raw *unstructured.Unstructured, ns string, r *Row) error {
+func (h HorizontalPodAutoscaler) renderV1(raw *unstructured.Unstructured, _ string, r *Row) error {
 	var hpa autoscalingv1.HorizontalPodAutoscaler
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &hpa)
 	if err != nil {
@@ -70,11 +66,8 @@ func (h HorizontalPodAutoscaler) renderV1(raw *unstructured.Unstructured, ns str
 	}
 
 	r.ID = client.MetaFQN(hpa.ObjectMeta)
-	r.Fields = make(Fields, 0, len(h.Header(ns)))
-	if client.IsAllNamespaces(ns) {
-		r.Fields = append(r.Fields, hpa.Namespace)
-	}
-	r.Fields = append(r.Fields,
+	r.Fields = Fields{
+		hpa.Namespace,
 		hpa.ObjectMeta.Name,
 		hpa.Spec.ScaleTargetRef.Name,
 		toMetricsV1(hpa.Spec, hpa.Status),
@@ -83,12 +76,12 @@ func (h HorizontalPodAutoscaler) renderV1(raw *unstructured.Unstructured, ns str
 		strconv.Itoa(int(hpa.Status.CurrentReplicas)),
 		"",
 		toAge(hpa.ObjectMeta.CreationTimestamp),
-	)
+	}
 
 	return nil
 }
 
-func (h HorizontalPodAutoscaler) renderV2b1(raw *unstructured.Unstructured, ns string, r *Row) error {
+func (h HorizontalPodAutoscaler) renderV2b1(raw *unstructured.Unstructured, _ string, r *Row) error {
 	var hpa autoscalingv2beta1.HorizontalPodAutoscaler
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &hpa)
 	if err != nil {
@@ -96,12 +89,8 @@ func (h HorizontalPodAutoscaler) renderV2b1(raw *unstructured.Unstructured, ns s
 	}
 
 	r.ID = client.MetaFQN(hpa.ObjectMeta)
-	r.Fields = make(Fields, 0, len(h.Header(ns)))
-	if client.IsAllNamespaces(ns) {
-		r.Fields = append(r.Fields, hpa.Namespace)
-	}
-
-	r.Fields = append(r.Fields,
+	r.Fields = Fields{
+		hpa.Namespace,
 		hpa.ObjectMeta.Name,
 		hpa.Spec.ScaleTargetRef.Name,
 		toMetricsV2b1(hpa.Spec.Metrics, hpa.Status.CurrentMetrics),
@@ -110,12 +99,12 @@ func (h HorizontalPodAutoscaler) renderV2b1(raw *unstructured.Unstructured, ns s
 		strconv.Itoa(int(hpa.Status.CurrentReplicas)),
 		"",
 		toAge(hpa.ObjectMeta.CreationTimestamp),
-	)
+	}
 
 	return nil
 }
 
-func (h HorizontalPodAutoscaler) renderV2b2(raw *unstructured.Unstructured, ns string, r *Row) error {
+func (h HorizontalPodAutoscaler) renderV2b2(raw *unstructured.Unstructured, _ string, r *Row) error {
 	var hpa autoscalingv2beta2.HorizontalPodAutoscaler
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &hpa)
 	if err != nil {
@@ -123,12 +112,8 @@ func (h HorizontalPodAutoscaler) renderV2b2(raw *unstructured.Unstructured, ns s
 	}
 
 	r.ID = client.MetaFQN(hpa.ObjectMeta)
-	r.Fields = make(Fields, 0, len(h.Header(ns)))
-	if client.IsAllNamespaces(ns) {
-		r.Fields = append(r.Fields, hpa.Namespace)
-	}
-
-	r.Fields = append(r.Fields,
+	r.Fields = Fields{
+		hpa.Namespace,
 		hpa.ObjectMeta.Name,
 		hpa.Spec.ScaleTargetRef.Name,
 		toMetricsV2b2(hpa.Spec.Metrics, hpa.Status.CurrentMetrics),
@@ -137,7 +122,7 @@ func (h HorizontalPodAutoscaler) renderV2b2(raw *unstructured.Unstructured, ns s
 		strconv.Itoa(int(hpa.Status.CurrentReplicas)),
 		"",
 		toAge(hpa.ObjectMeta.CreationTimestamp),
-	)
+	}
 
 	return nil
 }

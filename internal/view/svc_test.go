@@ -132,5 +132,5 @@ func TestServiceNew(t *testing.T) {
 
 	assert.Nil(t, s.Init(makeCtx()))
 	assert.Equal(t, "Services", s.Name())
-	assert.Equal(t, 10, len(s.Hints()))
+	assert.Equal(t, 9, len(s.Hints()))
 }

@@ -25,10 +25,10 @@ func NewOpenFaas(gvr client.GVR) ResourceViewer {
 
 func (o *OpenFaas) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		ui.KeyShiftS: ui.NewKeyAction("Sort Status", o.GetTable().SortColCmd(2, true), false),
-		ui.KeyShiftI: ui.NewKeyAction("Sort Invocations", o.GetTable().SortColCmd(4, false), false),
-		ui.KeyShiftR: ui.NewKeyAction("Sort Replicas", o.GetTable().SortColCmd(5, false), false),
-		ui.KeyShiftL: ui.NewKeyAction("Sort Available", o.GetTable().SortColCmd(6, false), false),
+		ui.KeyShiftS: ui.NewKeyAction("Sort Status", o.GetTable().SortColCmd(statusCol, true), false),
+		ui.KeyShiftI: ui.NewKeyAction("Sort Invocations", o.GetTable().SortColCmd("INVOCATIONS", false), false),
+		ui.KeyShiftR: ui.NewKeyAction("Sort Replicas", o.GetTable().SortColCmd("REPLICAS", false), false),
+		ui.KeyShiftL: ui.NewKeyAction("Sort Available", o.GetTable().SortColCmd(availCol, false), false),
 	})
 }
 

@@ -841,8 +841,10 @@ gotest.tools v2.1.0+incompatible/go.mod h1:DsYFclhRJ6vuDpmuTbkuFWG+y2sxOXAzmJt81
 gotest.tools v2.2.0+incompatible h1:VsBPFP1AI068pPrMxtb/S8Zkgf9xEmTLJjfM+P5UIEo=
 gotest.tools v2.2.0+incompatible/go.mod h1:DsYFclhRJ6vuDpmuTbkuFWG+y2sxOXAzmJt81HFBacw=
 gotest.tools/gotestsum v0.3.5/go.mod h1:Mnf3e5FUzXbkCfynWBGOwLssY7gTQgCHObK9tMpAriY=
+helm.sh/helm v2.16.3+incompatible h1:a7P7FSGTBdK6ZsAcWWZZQXPIdzkgybD8CWd/Dy+jwf4=
 helm.sh/helm/v3 v3.0.2 h1:BggvLisIMrAc+Is5oAHVrlVxgwOOrMN8nddfQbm5gKo=
 helm.sh/helm/v3 v3.0.2/go.mod h1:KBxE6XWO57XSNA1PA9CvVLYRY0zWqYQTad84bNXp1lw=
+helm.sh/helm/v3 v3.1.1 h1:aykwPMVyQyncZ8iLNVMXgJ1l3c6W0+LSOPmqp8JdCjs=
 honnef.co/go/tools v0.0.0-20180728063816-88497007e858/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
 honnef.co/go/tools v0.0.0-20190106161140-3f1c8253044a/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=

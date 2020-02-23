@@ -7,7 +7,85 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDelta(t *testing.T) {
+func TestDeltaCustomize(t *testing.T) {
+	uu := map[string]struct {
+		r1, r2 render.Row
+		cols   []int
+		e      render.DeltaRow
+	}{
+		"same": {
+			r1: render.Row{
+				Fields: render.Fields{"a", "b", "c"},
+			},
+			r2: render.Row{
+				Fields: render.Fields{"a", "b", "c"},
+			},
+			cols: []int{0, 1, 2},
+			e:    render.DeltaRow{"", "", ""},
+		},
+		"empty": {
+			r1: render.Row{
+				Fields: render.Fields{"a", "b", "c"},
+			},
+			r2: render.Row{
+				Fields: render.Fields{"a", "b", "c"},
+			},
+			e: render.DeltaRow{},
+		},
+		"diff-full": {
+			r1: render.Row{
+				Fields: render.Fields{"a", "b", "c"},
+			},
+			r2: render.Row{
+				Fields: render.Fields{"a1", "b1", "c1"},
+			},
+			cols: []int{0, 1, 2},
+			e:    render.DeltaRow{"a", "b", "c"},
+		},
+		"diff-reverse": {
+			r1: render.Row{
+				Fields: render.Fields{"a", "b", "c"},
+			},
+			r2: render.Row{
+				Fields: render.Fields{"a1", "b1", "c1"},
+			},
+			cols: []int{2, 1, 0},
+			e:    render.DeltaRow{"c", "b", "a"},
+		},
+		"diff-skip": {
+			r1: render.Row{
+				Fields: render.Fields{"a", "b", "c"},
+			},
+			r2: render.Row{
+				Fields: render.Fields{"a1", "b1", "c1"},
+			},
+			cols: []int{2, 0},
+			e:    render.DeltaRow{"c", "a"},
+		},
+		"diff-missing": {
+			r1: render.Row{
+				Fields: render.Fields{"a", "b", "c"},
+			},
+			r2: render.Row{
+				Fields: render.Fields{"a1", "b1", "c1"},
+			},
+			cols: []int{2, 10, 0},
+			e:    render.DeltaRow{"c", "", "a"},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			d := render.NewDeltaRow(u.r1, u.r2, false)
+			out := make(render.DeltaRow, len(u.cols))
+			d.Customize(u.cols, out)
+			assert.Equal(t, u.e, out)
+		})
+	}
+}
+
+func TestDeltaNew(t *testing.T) {
 	uu := map[string]struct {
 		o     render.Row
 		n     render.Row
@@ -54,11 +132,11 @@ func TestDelta(t *testing.T) {
 	}
 
 	for k := range uu {
-		uc := uu[k]
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			d := render.NewDeltaRow(uc.o, uc.n, false)
-			assert.Equal(t, uc.e, d)
-			assert.Equal(t, uc.blank, d.IsBlank())
+			d := render.NewDeltaRow(u.o, u.n, false)
+			assert.Equal(t, u.e, d)
+			assert.Equal(t, u.blank, d.IsBlank())
 		})
 	}
 }
@@ -82,9 +160,52 @@ func TestDeltaBlank(t *testing.T) {
 	}
 
 	for k := range uu {
-		uc := uu[k]
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, uc.e, uc.r.IsBlank())
+			assert.Equal(t, u.e, u.r.IsBlank())
+		})
+	}
+}
+
+func TestDeltaDiff(t *testing.T) {
+	uu := map[string]struct {
+		d1, d2 render.DeltaRow
+		ageCol int
+		e      bool
+	}{
+		"empty": {
+			d1:     render.DeltaRow{"f1", "f2", "f3"},
+			ageCol: 2,
+			e:      true,
+		},
+		"same": {
+			d1:     render.DeltaRow{"f1", "f2", "f3"},
+			d2:     render.DeltaRow{"f1", "f2", "f3"},
+			ageCol: -1,
+		},
+		"diff": {
+			d1:     render.DeltaRow{"f1", "f2", "f3"},
+			d2:     render.DeltaRow{"f1", "f2", "f13"},
+			ageCol: -1,
+			e:      true,
+		},
+		"diff-age-first": {
+			d1:     render.DeltaRow{"f1", "f2", "f3"},
+			d2:     render.DeltaRow{"f1", "f2", "f13"},
+			ageCol: 0,
+			e:      true,
+		},
+		"diff-age-last": {
+			d1:     render.DeltaRow{"f1", "f2", "f3"},
+			d2:     render.DeltaRow{"f1", "f2", "f13"},
+			ageCol: 2,
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, u.d1.Diff(u.d2, u.ageCol))
 		})
 	}
 }

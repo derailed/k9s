@@ -43,7 +43,7 @@ var (
 	fuzzyRx = regexp.MustCompile(`\A\-f`)
 )
 
-func mustExtractSyles(ctx context.Context) *config.Styles {
+func mustExtractStyles(ctx context.Context) *config.Styles {
 	styles, ok := ctx.Value(internal.KeyStyles).(*config.Styles)
 	if !ok {
 		log.Fatal().Msg("Expecting valid styles")
@@ -98,13 +98,13 @@ func SkinTitle(fmat string, style config.Frame) string {
 	return fmat
 }
 
-func sortIndicator(col SortColumn, style config.Table, index int, name string) string {
-	if col.index != index {
+func sortIndicator(sort, asc bool, style config.Table, name string) string {
+	if !sort {
 		return name
 	}
 
 	order := descIndicator
-	if col.asc {
+	if asc {
 		order = ascIndicator
 	}
 	return fmt.Sprintf("%s[%s::b]%s[::]", name, style.Header.SorterColor, order)
@@ -119,7 +119,7 @@ func formatCell(field string, padding int) string {
 }
 
 func filterToast(data render.TableData) render.TableData {
-	validX := data.Header.IndexOf("VALID")
+	validX := data.Header.IndexOf("VALID", true)
 	if validX == -1 {
 		return data
 	}

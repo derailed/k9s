@@ -73,7 +73,7 @@ func (c *CronJob) trigger(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	res, err := dao.AccessorFor(c.App().factory, client.NewGVR(c.GVR()))
+	res, err := dao.AccessorFor(c.App().factory, c.GVR())
 	if err != nil {
 		return nil
 	}

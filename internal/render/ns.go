@@ -17,34 +17,32 @@ type Namespace struct{}
 
 // ColorerFunc colors a resource row.
 func (n Namespace) ColorerFunc() ColorerFunc {
-	return func(ns string, r RowEvent) tcell.Color {
-		c := DefaultColorer(ns, r)
-		if r.Kind == EventAdd {
-			return c
-		}
-
-		if r.Kind == EventUpdate {
-			c = StdColor
-		}
-		if !Happy(ns, r.Row) {
+	return func(ns string, h Header, re RowEvent) tcell.Color {
+		if !Happy(ns, h, re.Row) {
 			return ErrColor
 		}
-		if strings.Contains(strings.TrimSpace(r.Row.Fields[0]), "*") {
-			c = HighlightColor
+		if re.Kind == EventAdd {
+			return DefaultColorer(ns, h, re)
+		}
+		if re.Kind == EventUpdate {
+			return StdColor
+		}
+		if strings.Contains(strings.TrimSpace(re.Row.Fields[0]), "*") {
+			return HighlightColor
 		}
 
-		return c
+		return DefaultColorer(ns, h, re)
 	}
 }
 
 // Header returns a header rbw.
-func (Namespace) Header(string) HeaderRow {
-	return HeaderRow{
-		Header{Name: "NAME"},
-		Header{Name: "STATUS"},
-		Header{Name: "LABELS", Wide: true},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
+func (Namespace) Header(string) Header {
+	return Header{
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "STATUS"},
+		HeaderColumn{Name: "LABELS", Wide: true},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
 }
 

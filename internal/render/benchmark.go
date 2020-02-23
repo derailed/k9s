@@ -31,28 +31,27 @@ type Benchmark struct{}
 
 // ColorerFunc colors a resource row.
 func (b Benchmark) ColorerFunc() ColorerFunc {
-	return func(ns string, re RowEvent) tcell.Color {
-		c := tcell.ColorPaleGreen
-		if !Happy(ns, re.Row) {
-			c = ErrColor
+	return func(ns string, h Header, re RowEvent) tcell.Color {
+		if !Happy(ns, h, re.Row) {
+			return ErrColor
 		}
-		return c
+		return tcell.ColorPaleGreen
 	}
 }
 
 // Header returns a header row.
-func (Benchmark) Header(ns string) HeaderRow {
-	return HeaderRow{
-		Header{Name: "NAMESPACE"},
-		Header{Name: "NAME"},
-		Header{Name: "STATUS"},
-		Header{Name: "TIME"},
-		Header{Name: "REQ/S", Align: tview.AlignRight},
-		Header{Name: "2XX", Align: tview.AlignRight},
-		Header{Name: "4XX/5XX", Align: tview.AlignRight},
-		Header{Name: "REPORT"},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
+func (Benchmark) Header(ns string) Header {
+	return Header{
+		HeaderColumn{Name: "NAMESPACE"},
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "STATUS"},
+		HeaderColumn{Name: "TIME"},
+		HeaderColumn{Name: "REQ/S", Align: tview.AlignRight},
+		HeaderColumn{Name: "2XX", Align: tview.AlignRight},
+		HeaderColumn{Name: "4XX/5XX", Align: tview.AlignRight},
+		HeaderColumn{Name: "REPORT"},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
 }
 

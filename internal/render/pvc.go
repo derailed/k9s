@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/gdamore/tcell"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -15,38 +14,23 @@ type PersistentVolumeClaim struct{}
 
 // ColorerFunc colors a resource row.
 func (p PersistentVolumeClaim) ColorerFunc() ColorerFunc {
-	return func(ns string, re RowEvent) tcell.Color {
-		c := DefaultColorer(ns, re)
-		if re.Kind == EventAdd || re.Kind == EventUpdate {
-			return c
-		}
-		if !Happy(ns, re.Row) {
-			return ErrColor
-		}
-
-		return c
-	}
-
+	return DefaultColorer
 }
 
 // Header returns a header rbw.
-func (PersistentVolumeClaim) Header(ns string) HeaderRow {
-	var h HeaderRow
-	if client.IsAllNamespaces(ns) {
-		h = append(h, Header{Name: "NAMESPACE"})
+func (PersistentVolumeClaim) Header(ns string) Header {
+	return Header{
+		HeaderColumn{Name: "NAMESPACE"},
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "STATUS"},
+		HeaderColumn{Name: "VOLUME"},
+		HeaderColumn{Name: "CAPACITY"},
+		HeaderColumn{Name: "ACCESS MODES"},
+		HeaderColumn{Name: "STORAGECLASS"},
+		HeaderColumn{Name: "LABELS", Wide: true},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
-
-	return append(h,
-		Header{Name: "NAME"},
-		Header{Name: "STATUS"},
-		Header{Name: "VOLUME"},
-		Header{Name: "CAPACITY"},
-		Header{Name: "ACCESS MODES"},
-		Header{Name: "STORAGECLASS"},
-		Header{Name: "LABELS", Wide: true},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
-	)
 }
 
 // Render renders a K8s resource to screen.
@@ -81,11 +65,8 @@ func (p PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
 	}
 
 	r.ID = client.MetaFQN(pvc.ObjectMeta)
-	r.Fields = make(Fields, 0, len(p.Header(ns)))
-	if client.IsAllNamespaces(ns) {
-		r.Fields = append(r.Fields, pvc.Namespace)
-	}
-	r.Fields = append(r.Fields,
+	r.Fields = Fields{
+		pvc.Namespace,
 		pvc.Name,
 		string(phase),
 		pvc.Spec.VolumeName,
@@ -95,7 +76,7 @@ func (p PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
 		mapToStr(pvc.Labels),
 		asStatus(p.diagnose(string(phase))),
 		toAge(pvc.ObjectMeta.CreationTimestamp),
-	)
+	}
 
 	return nil
 }

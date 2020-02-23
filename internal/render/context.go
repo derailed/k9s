@@ -16,13 +16,13 @@ type Context struct{}
 
 // ColorerFunc colors a resource row.
 func (Context) ColorerFunc() ColorerFunc {
-	return func(ns string, r RowEvent) tcell.Color {
-		c := DefaultColorer(ns, r)
+	return func(ns string, h Header, r RowEvent) tcell.Color {
+		c := DefaultColorer(ns, h, r)
 		if r.Kind == EventAdd || r.Kind == EventUpdate {
 			return c
 		}
 		if strings.Contains(strings.TrimSpace(r.Row.Fields[0]), "*") {
-			c = HighlightColor
+			return HighlightColor
 		}
 
 		return c
@@ -30,12 +30,12 @@ func (Context) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header row.
-func (Context) Header(ns string) HeaderRow {
-	return HeaderRow{
-		Header{Name: "NAME"},
-		Header{Name: "CLUSTER"},
-		Header{Name: "AUTHINFO"},
-		Header{Name: "NAMESPACE"},
+func (Context) Header(ns string) Header {
+	return Header{
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "CLUSTER"},
+		HeaderColumn{Name: "AUTHINFO"},
+		HeaderColumn{Name: "NAMESPACE"},
 	}
 }
 

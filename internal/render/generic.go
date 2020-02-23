@@ -35,24 +35,20 @@ func (Generic) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header row.
-func (g *Generic) Header(ns string) HeaderRow {
+func (g *Generic) Header(ns string) Header {
 	if g.table == nil {
-		return HeaderRow{}
+		return Header{}
 	}
-
-	h := make(HeaderRow, 0, len(g.table.ColumnDefinitions))
-	if client.IsAllNamespaces(ns) {
-		h = append(h, Header{Name: "NAMESPACE"})
-	}
+	h := make(Header, 0, len(g.table.ColumnDefinitions))
 	for i, c := range g.table.ColumnDefinitions {
 		if c.Name == ageTableCol {
 			g.ageIndex = i
 			continue
 		}
-		h = append(h, Header{Name: strings.ToUpper(c.Name)})
+		h = append(h, HeaderColumn{Name: strings.ToUpper(c.Name)})
 	}
 	if g.ageIndex > 0 {
-		h = append(h, Header{Name: "AGE"})
+		h = append(h, HeaderColumn{Name: "AGE", Time: true,})
 	}
 
 	return h

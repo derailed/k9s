@@ -25,6 +25,7 @@ const (
 	cacheSize        = 100
 	cacheExpiry      = 5 * time.Minute
 	cacheMXKey       = "metrics"
+	cacheMXAPIKey    = "metricsAPI"
 	checkConnTimeout = 10 * time.Second
 )
 
@@ -41,6 +42,15 @@ type APIClient struct {
 	config         *Config
 	mx             sync.Mutex
 	cache          *cache.LRUExpireCache
+	metricsAPI     bool
+}
+
+// NewTestAPIClient for testing ONLY!!
+func NewTestClient() *APIClient {
+	return &APIClient{
+		config: NewConfig(nil),
+		cache:  cache.NewLRUExpireCache(cacheSize),
+	}
 }
 
 // InitConnectionOrDie initialize connection from command line args.
@@ -50,8 +60,7 @@ func InitConnectionOrDie(config *Config) *APIClient {
 		config: config,
 		cache:  cache.NewLRUExpireCache(cacheSize),
 	}
-	a.HasMetrics()
-
+	a.metricsAPI = a.supportsMetricsResources()
 	return &a
 }
 
@@ -174,6 +183,9 @@ func (a *APIClient) Config() *Config {
 
 // HasMetrics returns true if the cluster supports metrics.
 func (a *APIClient) HasMetrics() bool {
+	if !a.supportsMetricsResources() {
+		return false
+	}
 	v, ok := a.cache.Get(cacheMXKey)
 	if ok {
 		flag, k := v.(bool)
@@ -186,7 +198,6 @@ func (a *APIClient) HasMetrics() bool {
 		a.cache.Add(cacheMXKey, flag, cacheExpiry)
 		return flag
 	}
-
 	if _, err := dial.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{Limit: 1}); err == nil {
 		flag = true
 	}
@@ -282,7 +293,8 @@ func (a *APIClient) SwitchContext(ctx string) error {
 	}
 	a.clearCache()
 	a.reset()
-	_ = a.supportsMxServer()
+	a.metricsAPI = a.supportsMetricsResources()
+	ResetMetrics()
 
 	return nil
 }
@@ -295,10 +307,19 @@ func (a *APIClient) reset() {
 	a.client, a.dClient, a.nsClient, a.mxsClient = nil, nil, nil, nil
 }
 
-func (a *APIClient) supportsMxServer() (supported bool) {
+func (a *APIClient) supportsMetricsResources() (supported bool) {
 	defer func() {
-		a.cache.Add(cacheMXKey, supported, cacheExpiry)
+		a.cache.Add(cacheMXAPIKey, supported, cacheExpiry)
 	}()
+
+	if v, ok := a.cache.Get(cacheMXAPIKey); ok {
+		flag, k := v.(bool)
+		supported = k && flag
+		return
+	}
+	if a.config == nil || a.config.flags == nil {
+		return
+	}
 
 	apiGroups, err := a.CachedDiscoveryOrDie().ServerGroups()
 	if err != nil {

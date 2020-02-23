@@ -22,25 +22,21 @@ func (CronJob) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header row.
-func (CronJob) Header(ns string) HeaderRow {
-	var h HeaderRow
-	if client.IsAllNamespaces(ns) {
-		h = append(h, Header{Name: "NAMESPACE"})
+func (CronJob) Header(ns string) Header {
+	return Header{
+		HeaderColumn{Name: "NAMESPACE"},
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "SCHEDULE"},
+		HeaderColumn{Name: "SUSPEND"},
+		HeaderColumn{Name: "ACTIVE"},
+		HeaderColumn{Name: "LAST_SCHEDULE"},
+		HeaderColumn{Name: "SELECTOR", Wide: true},
+		HeaderColumn{Name: "CONTAINERS", Wide: true},
+		HeaderColumn{Name: "IMAGES", Wide: true},
+		HeaderColumn{Name: "LABELS", Wide: true},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
-
-	return append(h,
-		Header{Name: "NAME"},
-		Header{Name: "SCHEDULE"},
-		Header{Name: "SUSPEND"},
-		Header{Name: "ACTIVE"},
-		Header{Name: "LAST_SCHEDULE"},
-		Header{Name: "SELECTOR", Wide: true},
-		Header{Name: "CONTAINERS", Wide: true},
-		Header{Name: "IMAGES", Wide: true},
-		Header{Name: "LABELS", Wide: true},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
-	)
 }
 
 // Render renders a K8s resource to screen.
@@ -61,11 +57,8 @@ func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 	}
 
 	r.ID = client.MetaFQN(cj.ObjectMeta)
-	r.Fields = make(Fields, 0, len(c.Header(ns)))
-	if client.IsAllNamespaces(ns) {
-		r.Fields = append(r.Fields, cj.Namespace)
-	}
-	r.Fields = append(r.Fields,
+	r.Fields = Fields{
+		cj.Namespace,
 		cj.Name,
 		cj.Spec.Schedule,
 		boolPtrToStr(cj.Spec.Suspend),
@@ -77,7 +70,7 @@ func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 		mapToStr(cj.Labels),
 		"",
 		toAge(cj.ObjectMeta.CreationTimestamp),
-	)
+	}
 
 	return nil
 }

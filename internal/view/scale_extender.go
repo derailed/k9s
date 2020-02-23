@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
@@ -106,7 +105,7 @@ func (s *ScaleExtender) makeStyledForm() *tview.Form {
 }
 
 func (s *ScaleExtender) scale(path string, replicas int) error {
-	res, err := dao.AccessorFor(s.App().factory, client.NewGVR(s.GVR()))
+	res, err := dao.AccessorFor(s.App().factory, s.GVR())
 	if err != nil {
 		return nil
 	}

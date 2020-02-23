@@ -13,12 +13,12 @@ import (
 type MaxyPad []int
 
 // ComputeMaxColumns figures out column max size and necessary padding.
-func ComputeMaxColumns(pads MaxyPad, sortCol int, header render.HeaderRow, ee render.RowEvents) {
+func ComputeMaxColumns(pads MaxyPad, sortColName string, header render.Header, ee render.RowEvents) {
 	const colPadding = 1
 
 	for index, h := range header {
 		pads[index] = len(h.Name)
-		if index == sortCol {
+		if h.Name == sortColName {
 			pads[index] = len(h.Name) + 2
 		}
 	}
@@ -26,7 +26,7 @@ func ComputeMaxColumns(pads MaxyPad, sortCol int, header render.HeaderRow, ee re
 	var row int
 	for _, e := range ee {
 		for index, field := range e.Row.Fields {
-			if header.AgeCol(index) {
+			if header.IsAgeCol(index) {
 				field = toAgeHuman(field)
 			}
 			width := len(field) + colPadding
@@ -53,11 +53,9 @@ func Pad(s string, width int) string {
 	if len(s) == width {
 		return s
 	}
-
 	if len(s) > width {
 		return render.Truncate(s, width)
 	}
-
 	return s + strings.Repeat(" ", width-len(s))
 }
 

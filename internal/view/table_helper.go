@@ -15,10 +15,6 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func trimCellRelative(t *Table, row, col int) string {
-	return ui.TrimCell(t.SelectTable, row, t.NameColIndex()+col)
-}
-
 func computeFilename(cluster, ns, title, path string) (string, error) {
 	now := time.Now().UnixNano()
 
@@ -66,7 +62,7 @@ func saveTable(cluster, title, path string, data render.TableData) (string, erro
 	}()
 
 	w := csv.NewWriter(out)
-	if err := w.Write(data.Header.Columns()); err != nil {
+	if err := w.Write(data.Header.Columns(true)); err != nil {
 		return "", err
 	}
 

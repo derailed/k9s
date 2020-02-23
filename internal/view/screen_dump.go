@@ -27,7 +27,7 @@ func NewScreenDump(gvr client.GVR) ResourceViewer {
 	s.GetTable().SetBorderFocusColor(tcell.ColorSteelBlue)
 	s.GetTable().SetSelectedStyle(tcell.ColorWhite, tcell.ColorRoyalBlue, tcell.AttrNone)
 	s.GetTable().SetColorerFn(render.ScreenDump{}.ColorerFunc())
-	s.GetTable().SetSortCol(s.GetTable().NameColIndex(), 0, true)
+	s.GetTable().SetSortCol(ageCol, true)
 	s.GetTable().SelectRow(1, true)
 	s.GetTable().SetEnterFn(s.edit)
 	s.SetContextFn(s.dirContext)

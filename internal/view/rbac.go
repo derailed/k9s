@@ -22,7 +22,7 @@ func NewRbac(gvr client.GVR) ResourceViewer {
 	}
 	r.GetTable().SetColorerFn(render.Rbac{}.ColorerFunc())
 	r.SetBindKeysFn(r.bindKeys)
-	r.GetTable().SetSortCol(1, len(render.Rbac{}.Header(client.ClusterScope)), true)
+	r.GetTable().SetSortCol("APIGROUP", true)
 	r.GetTable().SetEnterFn(blankEnterFn)
 
 	return &r
@@ -31,7 +31,7 @@ func NewRbac(gvr client.GVR) ResourceViewer {
 func (r *Rbac) bindKeys(aa ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
 	aa.Add(ui.KeyActions{
-		ui.KeyShiftO: ui.NewKeyAction("Sort APIGroup", r.GetTable().SortColCmd(1, true), false),
+		ui.KeyShiftO: ui.NewKeyAction("Sort APIGroup", r.GetTable().SortColCmd("APIGROUP", true), false),
 	})
 }
 

@@ -44,7 +44,7 @@ func NewXray(gvr client.GVR) ResourceViewer {
 	return &Xray{
 		gvr:   gvr,
 		Tree:  ui.NewTree(),
-		model: model.NewTree(gvr.String()),
+		model: model.NewTree(gvr),
 	}
 }
 
@@ -633,7 +633,7 @@ func (x *Xray) Name() string { return "XRay" }
 func (x *Xray) GetTable() *Table { return nil }
 
 // GVR returns a resource descriptor.
-func (x *Xray) GVR() string { return x.gvr.String() }
+func (x *Xray) GVR() client.GVR { return x.gvr }
 
 // App returns the current app handle.
 func (x *Xray) App() *App {

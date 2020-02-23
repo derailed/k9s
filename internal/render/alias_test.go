@@ -11,7 +11,11 @@ import (
 
 func TestAliasColorer(t *testing.T) {
 	var a render.Alias
-
+	h := render.Header{
+		render.HeaderColumn{Name: "A"},
+		render.HeaderColumn{Name: "B"},
+		render.HeaderColumn{Name: "C"},
+	}
 	r := render.Row{ID: "g/v/r", Fields: render.Fields{"r", "blee", "g"}}
 	uu := map[string]struct {
 		ns string
@@ -36,16 +40,16 @@ func TestAliasColorer(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, a.ColorerFunc()(u.ns, u.re))
+			assert.Equal(t, u.e, a.ColorerFunc()(u.ns, h, u.re))
 		})
 	}
 }
 
 func TestAliasHeader(t *testing.T) {
-	h := render.HeaderRow{
-		render.Header{Name: "RESOURCE"},
-		render.Header{Name: "COMMAND"},
-		render.Header{Name: "APIGROUP"},
+	h := render.Header{
+		render.HeaderColumn{Name: "RESOURCE"},
+		render.HeaderColumn{Name: "COMMAND"},
+		render.HeaderColumn{Name: "APIGROUP"},
 	}
 
 	var a render.Alias

@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	v1 "k8s.io/api/core/v1"
@@ -37,17 +36,17 @@ type ContainerWithMetrics interface {
 // Container renders a K8s Container to screen.
 type Container struct{}
 
-const readyCol = 2
-
 // ColorerFunc colors a resource row.
 func (c Container) ColorerFunc() ColorerFunc {
-	return func(ns string, re RowEvent) tcell.Color {
-		color := DefaultColorer(ns, re)
-
-		if !Happy(ns, re.Row) {
-			color = ErrColor
+	return func(ns string, h Header, re RowEvent) tcell.Color {
+		if !Happy(ns, h, re.Row) {
+			return ErrColor
 		}
-		stateCol := readyCol + 1
+
+		stateCol := h.IndexOf("STATE", true)
+		if stateCol == -1 {
+			return DefaultColorer(ns, h, re)
+		}
 		switch strings.TrimSpace(re.Row.Fields[stateCol]) {
 		case ContainerCreating, PodInitializing:
 			return AddColor
@@ -56,33 +55,32 @@ func (c Container) ColorerFunc() ColorerFunc {
 		case Completed:
 			return CompletedColor
 		case Running:
+			return DefaultColorer(ns, h, re)
 		default:
-			color = ErrColor
+			return ErrColor
 		}
-
-		return color
 	}
 }
 
 // Header returns a header row.
-func (Container) Header(ns string) HeaderRow {
-	return HeaderRow{
-		Header{Name: "NAME"},
-		Header{Name: "IMAGE"},
-		Header{Name: "READY"},
-		Header{Name: "STATE"},
-		Header{Name: "INIT"},
-		Header{Name: "RS", Align: tview.AlignRight},
-		Header{Name: "PROBES(L:R)"},
-		Header{Name: "CPU", Align: tview.AlignRight},
-		Header{Name: "MEM", Align: tview.AlignRight},
-		Header{Name: "%CPU/R", Align: tview.AlignRight},
-		Header{Name: "%MEM/R", Align: tview.AlignRight},
-		Header{Name: "%CPU/L", Align: tview.AlignRight},
-		Header{Name: "%MEM/L", Align: tview.AlignRight},
-		Header{Name: "PORTS"},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
+func (Container) Header(ns string) Header {
+	return Header{
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "IMAGE"},
+		HeaderColumn{Name: "READY"},
+		HeaderColumn{Name: "STATE"},
+		HeaderColumn{Name: "INIT"},
+		HeaderColumn{Name: "RS", Align: tview.AlignRight},
+		HeaderColumn{Name: "PROBES(L:R)"},
+		HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "%CPU/R", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "%MEM/R", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "%CPU/L", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "%MEM/L", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "PORTS"},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
 }
 
@@ -96,29 +94,28 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 	cur, perc, limit := gatherMetrics(co.Container, co.MX)
 	ready, state, restarts := "false", MissingValue, "0"
 	if co.Status != nil {
-		ready, state, restarts = boolToStr(co.Status.Ready), toState(co.Status.State), strconv.Itoa(int(co.Status.RestartCount))
+		ready, state, restarts = boolToStr(co.Status.Ready), ToContainerState(co.Status.State), strconv.Itoa(int(co.Status.RestartCount))
 	}
 
 	r.ID = co.Container.Name
-	r.Fields = make(Fields, 0, len(c.Header(client.AllNamespaces)))
-	r.Fields = append(r.Fields,
+	r.Fields = Fields{
 		co.Container.Name,
 		co.Container.Image,
 		ready,
 		state,
 		boolToStr(co.IsInit),
 		restarts,
-		probe(co.Container.LivenessProbe)+":"+probe(co.Container.ReadinessProbe),
+		probe(co.Container.LivenessProbe) + ":" + probe(co.Container.ReadinessProbe),
 		cur.cpu,
 		cur.mem,
 		perc.cpu,
 		perc.mem,
 		limit.cpu,
 		limit.mem,
-		toStrPorts(co.Container.Ports),
+		ToContainerPorts(co.Container.Ports),
 		asStatus(c.diagnose(state, ready)),
 		toAge(co.Age),
-	)
+	}
 
 	return nil
 }
@@ -170,7 +167,7 @@ func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, p, l met
 	return
 }
 
-func toStrPorts(pp []v1.ContainerPort) string {
+func ToContainerPorts(pp []v1.ContainerPort) string {
 	ports := make([]string, len(pp))
 	for i, p := range pp {
 		if len(p.Name) > 0 {
@@ -185,7 +182,7 @@ func toStrPorts(pp []v1.ContainerPort) string {
 	return strings.Join(ports, ",")
 }
 
-func toState(s v1.ContainerState) string {
+func ToContainerState(s v1.ContainerState) string {
 	switch {
 	case s.Waiting != nil:
 		if s.Waiting.Reason != "" {

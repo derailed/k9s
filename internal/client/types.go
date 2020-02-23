@@ -25,21 +25,25 @@ const (
 
 	// NotNamespaced designates a non resource namespace.
 	NotNamespaced = "*"
-)
 
-const (
 	// CreateVerb represents create access on a resource.
 	CreateVerb = "create"
+
 	// UpdateVerb represents an update access on a resource.
 	UpdateVerb = "update"
+
 	// PatchVerb represents a patch access on a resource.
 	PatchVerb = "patch"
+
 	// DeleteVerb represents a delete access on a resource.
 	DeleteVerb = "delete"
+
 	// GetVerb represents a get access on a resource.
 	GetVerb = "get"
+
 	// ListVerb represents a list access on a resource.
 	ListVerb = "list"
+
 	// WatchVerb represents a watch access on a resource.
 	WatchVerb = "watch"
 )
@@ -65,16 +69,37 @@ type Authorizer interface {
 type Connection interface {
 	Authorizer
 
+	// Config returns current config.
 	Config() *Config
+
+	// DialOrDie connects to api server.
 	DialOrDie() kubernetes.Interface
+
+	// SwitchContext switches cluster based on context.
 	SwitchContext(ctx string) error
+
+	// CachedDiscoveryOrDie connects to discovery client.
 	CachedDiscoveryOrDie() *disk.CachedDiscoveryClient
+
+	// RestConfigOrDie connects to rest client.
 	RestConfigOrDie() *restclient.Config
+
+	// MXDial connects to metrics server.
 	MXDial() (*versioned.Clientset, error)
+
+	// DynDialOrDie connects to dynamic client.
 	DynDialOrDie() dynamic.Interface
+
+	// HasMetrics checks if metrics server is available.
 	HasMetrics() bool
+
+	// ValidNamespaces returns all available namespaces.
 	ValidNamespaces() ([]v1.Namespace, error)
+
+	// ServerVersion returns current server version.
 	ServerVersion() (*version.Info, error)
+
+	// CheckConnectivity checks if api server connection is happy or not.
 	CheckConnectivity() bool
 }
 

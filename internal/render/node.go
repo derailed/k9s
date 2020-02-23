@@ -8,7 +8,6 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,36 +25,28 @@ type Node struct{}
 
 // ColorerFunc colors a resource row.
 func (n Node) ColorerFunc() ColorerFunc {
-	return func(ns string, r RowEvent) tcell.Color {
-		c := DefaultColorer(ns, r)
-		if !Happy(ns, r.Row) {
-			return ErrColor
-		}
-
-		return c
-	}
-
+	return DefaultColorer
 }
 
 // Header returns a header row.
-func (Node) Header(_ string) HeaderRow {
-	return HeaderRow{
-		Header{Name: "NAME"},
-		Header{Name: "STATUS"},
-		Header{Name: "ROLE", Wide: true},
-		Header{Name: "VERSION", Wide: true},
-		Header{Name: "KERNEL", Wide: true},
-		Header{Name: "INTERNAL-IP", Wide: true},
-		Header{Name: "EXTERNAL-IP", Wide: true},
-		Header{Name: "CPU", Align: tview.AlignRight},
-		Header{Name: "MEM", Align: tview.AlignRight},
-		Header{Name: "%CPU", Align: tview.AlignRight},
-		Header{Name: "%MEM", Align: tview.AlignRight},
-		Header{Name: "ACPU", Align: tview.AlignRight},
-		Header{Name: "AMEM", Align: tview.AlignRight},
-		Header{Name: "LABELS", Wide: true},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
+func (Node) Header(_ string) Header {
+	return Header{
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "STATUS"},
+		HeaderColumn{Name: "ROLE"},
+		HeaderColumn{Name: "VERSION"},
+		HeaderColumn{Name: "KERNEL", Wide: true},
+		HeaderColumn{Name: "INTERNAL-IP", Wide: true},
+		HeaderColumn{Name: "EXTERNAL-IP", Wide: true},
+		HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "%CPU", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "%MEM", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "ACPU", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "AMEM", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "LABELS", Wide: true},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
 }
 
@@ -90,8 +81,7 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 	sort.Sort(roles)
 
 	r.ID = client.FQN("", na)
-	r.Fields = make(Fields, 0, len(n.Header(ns)))
-	r.Fields = append(r.Fields,
+	r.Fields = Fields{
 		no.Name,
 		join(statuses, ","),
 		join(roles, ","),
@@ -108,7 +98,7 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 		mapToStr(no.Labels),
 		asStatus(n.diagnose(statuses)),
 		toAge(no.ObjectMeta.CreationTimestamp),
-	)
+	}
 
 	return nil
 }

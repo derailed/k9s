@@ -25,8 +25,8 @@ type OpenFaas struct{}
 
 // ColorerFunc colors a resource row.
 func (o OpenFaas) ColorerFunc() ColorerFunc {
-	return func(ns string, re RowEvent) tcell.Color {
-		if !Happy(ns, re.Row) {
+	return func(ns string, h Header, re RowEvent) tcell.Color {
+		if !Happy(ns, h, re.Row) {
 			return ErrColor
 		}
 
@@ -35,23 +35,19 @@ func (o OpenFaas) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header row.
-func (OpenFaas) Header(ns string) HeaderRow {
-	var h HeaderRow
-	if client.IsAllNamespaces(ns) {
-		h = append(h, Header{Name: "NAMESPACE"})
+func (OpenFaas) Header(ns string) Header {
+	return Header{
+		HeaderColumn{Name: "NAMESPACE"},
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "STATUS"},
+		HeaderColumn{Name: "IMAGE"},
+		HeaderColumn{Name: "LABELS"},
+		HeaderColumn{Name: "INVOCATIONS", Align: tview.AlignRight},
+		HeaderColumn{Name: "REPLICAS", Align: tview.AlignRight},
+		HeaderColumn{Name: "AVAILABLE", Align: tview.AlignRight},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
-
-	return append(h,
-		Header{Name: "NAME"},
-		Header{Name: "STATUS"},
-		Header{Name: "IMAGE"},
-		Header{Name: "LABELS"},
-		Header{Name: "INVOCATIONS", Align: tview.AlignRight},
-		Header{Name: "REPLICAS", Align: tview.AlignRight},
-		Header{Name: "AVAILABLE", Align: tview.AlignRight},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
-	)
 }
 
 // Render renders a chart to screen.
@@ -71,11 +67,8 @@ func (o OpenFaas) Render(i interface{}, ns string, r *Row) error {
 	}
 
 	r.ID = client.FQN(fn.Function.Namespace, fn.Function.Name)
-	r.Fields = make(Fields, 0, len(o.Header(ns)))
-	if client.IsAllNamespaces(ns) {
-		r.Fields = append(r.Fields, fn.Function.Namespace)
-	}
-	r.Fields = append(r.Fields,
+	r.Fields = Fields{
+		fn.Function.Namespace,
 		fn.Function.Name,
 		status,
 		fn.Function.Image,
@@ -85,7 +78,7 @@ func (o OpenFaas) Render(i interface{}, ns string, r *Row) error {
 		strconv.Itoa(int(fn.Function.AvailableReplicas)),
 		asStatus(o.diagnose(status)),
 		toAge(metav1.Time{Time: time.Now()}),
-	)
+	}
 
 	return nil
 }

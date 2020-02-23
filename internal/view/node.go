@@ -28,10 +28,10 @@ func (n *Node) bindKeys(aa ui.KeyActions) {
 	aa.Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlD)
 	aa.Add(ui.KeyActions{
 		ui.KeyY:      ui.NewKeyAction("YAML", n.viewCmd, true),
-		ui.KeyShiftC: ui.NewKeyAction("Sort CPU", n.GetTable().SortColCmd(7, false), false),
-		ui.KeyShiftM: ui.NewKeyAction("Sort MEM", n.GetTable().SortColCmd(8, false), false),
-		ui.KeyShiftX: ui.NewKeyAction("Sort CPU%", n.GetTable().SortColCmd(9, false), false),
-		ui.KeyShiftZ: ui.NewKeyAction("Sort MEM%", n.GetTable().SortColCmd(10, false), false),
+		ui.KeyShiftC: ui.NewKeyAction("Sort CPU", n.GetTable().SortColCmd(cpuCol, false), false),
+		ui.KeyShiftM: ui.NewKeyAction("Sort MEM", n.GetTable().SortColCmd(memCol, false), false),
+		ui.KeyShiftX: ui.NewKeyAction("Sort CPU%", n.GetTable().SortColCmd("%CPU", false), false),
+		ui.KeyShiftZ: ui.NewKeyAction("Sort MEM%", n.GetTable().SortColCmd("%MEM", false), false),
 	})
 }
 
@@ -46,7 +46,7 @@ func (n *Node) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	sel := n.GetTable().GetSelectedItem()
-	gvr := client.NewGVR(n.GVR()).GVR()
+	gvr := n.GVR().GVR()
 	o, err := n.App().factory.Client().DynDialOrDie().Resource(gvr).Get(sel, metav1.GetOptions{})
 	if err != nil {
 		n.App().Flash().Errf("Unable to get resource %q -- %s", n.GVR(), err)

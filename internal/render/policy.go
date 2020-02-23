@@ -9,17 +9,17 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-func rbacVerbHeader() HeaderRow {
-	return HeaderRow{
-		Header{Name: "GET   "},
-		Header{Name: "LIST  "},
-		Header{Name: "WATCH "},
-		Header{Name: "CREATE"},
-		Header{Name: "PATCH "},
-		Header{Name: "UPDATE"},
-		Header{Name: "DELETE"},
-		Header{Name: "DEL-LIST "},
-		Header{Name: "EXTRAS", Wide: true},
+func rbacVerbHeader() Header {
+	return Header{
+		HeaderColumn{Name: "GET   "},
+		HeaderColumn{Name: "LIST  "},
+		HeaderColumn{Name: "WATCH "},
+		HeaderColumn{Name: "CREATE"},
+		HeaderColumn{Name: "PATCH "},
+		HeaderColumn{Name: "UPDATE"},
+		HeaderColumn{Name: "DELETE"},
+		HeaderColumn{Name: "DEL-LIST "},
+		HeaderColumn{Name: "EXTRAS", Wide: true},
 	}
 }
 
@@ -28,21 +28,21 @@ type Policy struct{}
 
 // ColorerFunc colors a resource row.
 func (Policy) ColorerFunc() ColorerFunc {
-	return func(ns string, re RowEvent) tcell.Color {
+	return func(ns string, _ Header, re RowEvent) tcell.Color {
 		return tcell.ColorMediumSpringGreen
 	}
 }
 
 // Header returns a header row.
-func (Policy) Header(ns string) HeaderRow {
-	h := HeaderRow{
-		Header{Name: "NAMESPACE"},
-		Header{Name: "NAME"},
-		Header{Name: "API GROUP"},
-		Header{Name: "BINDING"},
+func (Policy) Header(ns string) Header {
+	h := Header{
+		HeaderColumn{Name: "NAMESPACE"},
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "API GROUP"},
+		HeaderColumn{Name: "BINDING"},
 	}
 	h = append(h, rbacVerbHeader()...)
-	h = append(h, Header{Name: "VALID", Wide: true})
+	h = append(h, HeaderColumn{Name: "VALID", Wide: true})
 
 	return h
 }

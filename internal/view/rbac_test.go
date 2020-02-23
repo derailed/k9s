@@ -13,5 +13,5 @@ func TestRbacNew(t *testing.T) {
 
 	assert.Nil(t, v.Init(makeCtx()))
 	assert.Equal(t, "Rbac", v.Name())
-	assert.Equal(t, 5, len(v.Hints()))
+	assert.Equal(t, 4, len(v.Hints()))
 }

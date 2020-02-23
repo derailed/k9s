@@ -16,7 +16,6 @@ import (
 type Table struct {
 	*ui.Table
 
-	gvr        client.GVR
 	app        *App
 	enterFn    EnterFunc
 	envFn      EnvFunc
@@ -26,8 +25,7 @@ type Table struct {
 // NewTable returns a new viewer.
 func NewTable(gvr client.GVR) *Table {
 	t := Table{
-		Table: ui.NewTable(gvr.String()),
-		gvr:   gvr,
+		Table: ui.NewTable(gvr),
 	}
 	t.envFn = t.defaultK9sEnv
 
@@ -40,6 +38,7 @@ func (t *Table) Init(ctx context.Context) (err error) {
 		return err
 	}
 	ctx = context.WithValue(ctx, internal.KeyStyles, t.app.Styles)
+	ctx = context.WithValue(ctx, internal.KeyViewConfig, t.app.CustomView)
 	t.Table.Init(ctx)
 	t.bindKeys()
 	t.GetModel().SetRefreshRate(time.Duration(t.app.Config.K9s.GetRefreshRate()) * time.Second)
@@ -48,10 +47,7 @@ func (t *Table) Init(ctx context.Context) (err error) {
 }
 
 // Name returns the table name.
-func (t *Table) Name() string { return t.BaseTitle }
-
-// GVR returns a resource descriptor.
-func (t *Table) GVR() string { return t.gvr.String() }
+func (t *Table) Name() string { return t.GVR().R() }
 
 // SetBindKeysFn adds additional key bindings.
 func (t *Table) SetBindKeysFn(f BindKeysFunc) { t.bindKeysFn = f }
@@ -112,7 +108,7 @@ func (t *Table) BufferActive(state bool, k ui.BufferKind) {
 }
 
 func (t *Table) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveTable(t.app.Config.K9s.CurrentCluster, t.BaseTitle, t.Path, t.GetFilteredData()); err != nil {
+	if path, err := saveTable(t.app.Config.K9s.CurrentCluster, t.GVR().R(), t.Path, t.GetFilteredData()); err != nil {
 		t.app.Flash().Err(err)
 	} else {
 		t.app.Flash().Infof("File %s saved successfully!", path)
@@ -131,10 +127,10 @@ func (t *Table) bindKeys() {
 		tcell.KeyBackspace2: ui.NewSharedKeyAction("Erase", t.eraseCmd, false),
 		tcell.KeyBackspace:  ui.NewSharedKeyAction("Erase", t.eraseCmd, false),
 		tcell.KeyDelete:     ui.NewSharedKeyAction("Erase", t.eraseCmd, false),
-		ui.KeyShiftN:        ui.NewKeyAction("Sort Name", t.SortColCmd(0, true), false),
 		tcell.KeyCtrlZ:      ui.NewKeyAction("Toggle Faults", t.toggleFaultCmd, false),
-		ui.KeyShiftA:        ui.NewKeyAction("Sort Age", t.SortColCmd(-1, true), false),
 		tcell.KeyCtrlW:      ui.NewKeyAction("Show Wide", t.toggleWideCmd, false),
+		ui.KeyShiftN:        ui.NewKeyAction("Sort Name", t.SortColCmd(nameCol, true), false),
+		ui.KeyShiftA:        ui.NewKeyAction("Sort Age", t.SortColCmd(ageCol, true), false),
 	})
 }
 

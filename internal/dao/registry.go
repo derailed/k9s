@@ -252,7 +252,7 @@ func loadRBAC(m ResourceMetas) {
 func loadPreferred(f Factory, m ResourceMetas) error {
 	rr, err := f.Client().CachedDiscoveryOrDie().ServerPreferredResources()
 	if err != nil {
-		log.Warn().Err(err).Msgf("Failed to load preferred resources")
+		log.Debug().Err(err).Msgf("Failed to load preferred resources")
 	}
 	for _, r := range rr {
 		for _, res := range r.APIResources {

@@ -44,8 +44,11 @@ func (c *ClusterInfo) StylesChanged(s *config.Styles) {
 }
 
 func (c *ClusterInfo) layout() {
-	for row, v := range []string{"Context", "Cluster", "User", "K9s Rev", "K8s Rev", "CPU", "MEM"} {
-		c.SetCell(row, 0, c.sectionCell(v))
+	for row, section := range []string{"Context", "Cluster", "User", "K9s Rev", "K8s Rev", "CPU", "MEM"} {
+		if (section == "CPU" || section == "MEM") && !c.app.Conn().HasMetrics() {
+			continue
+		}
+		c.SetCell(row, 0, c.sectionCell(section))
 		c.SetCell(row, 1, c.infoCell(render.NAValue))
 	}
 }
@@ -53,13 +56,6 @@ func (c *ClusterInfo) layout() {
 func (c *ClusterInfo) sectionCell(t string) *tview.TableCell {
 	cell := tview.NewTableCell(t + ":")
 	cell.SetAlign(tview.AlignLeft)
-	// var style tcell.Style
-	// style.Bold(true).
-	// 	Background(tcell.ColorGreen).
-	// 	Foreground(config.AsColor(c.styles.K9s.Info.SectionColor))
-	// cell.SetStyle(style)
-	// cell.SetBackgroundColor(c.app.Styles.BgColor())
-	// cell.SetBackgroundColor(tcell.ColorDefault)
 	cell.SetBackgroundColor(tcell.ColorGreen)
 
 	return cell
@@ -76,44 +72,28 @@ func (c *ClusterInfo) infoCell(t string) *tview.TableCell {
 
 // ClusterInfoUpdated notifies the cluster meta was updated.
 func (c *ClusterInfo) ClusterInfoUpdated(data model.ClusterMeta) {
-	c.app.QueueUpdateDraw(func() {
-		var row int
-		c.GetCell(row, 1).SetText(data.Context)
-		row++
-		c.GetCell(row, 1).SetText(data.Cluster)
-		row++
-		c.GetCell(row, 1).SetText(data.User)
-		row++
-		c.GetCell(row, 1).SetText(data.K9sVer)
-		row++
-		c.GetCell(row, 1).SetText(data.K8sVer)
-		row++
-		c.GetCell(row, 1).SetText(render.AsPerc(data.Cpu) + "%")
-		row++
-		c.GetCell(row, 1).SetText(render.AsPerc(data.Mem) + "%")
+	c.ClusterInfoChanged(data, data)
+}
 
-		c.updateStyle()
-	})
+func (c *ClusterInfo) setCell(row int, s string) int {
+	c.GetCell(row, 1).SetText(s)
+	return row + 1
 }
 
 // ClusterInfoChanged notifies the cluster meta was changed.
 func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
 	c.app.QueueUpdateDraw(func() {
-		var row int
-		c.GetCell(row, 1).SetText(curr.Context)
-		row++
-		c.GetCell(row, 1).SetText(curr.Cluster)
-		row++
-		c.GetCell(row, 1).SetText(curr.User)
-		row++
-		c.GetCell(row, 1).SetText(curr.K9sVer)
-		row++
-		c.GetCell(row, 1).SetText(curr.K8sVer)
-		row++
-		c.GetCell(row, 1).SetText(ui.AsPercDelta(prev.Cpu, curr.Cpu))
-		row++
-		c.GetCell(row, 1).SetText(ui.AsPercDelta(prev.Mem, curr.Mem))
-
+		c.Clear()
+		c.layout()
+		row := c.setCell(0, curr.Context)
+		row = c.setCell(row, curr.Cluster)
+		row = c.setCell(row, curr.User)
+		row = c.setCell(row, curr.K9sVer)
+		row = c.setCell(row, curr.K8sVer)
+		if c.app.Conn().HasMetrics() {
+			row = c.setCell(row, ui.AsPercDelta(prev.Cpu, curr.Cpu))
+			_ = c.setCell(row, ui.AsPercDelta(prev.Mem, curr.Mem))
+		}
 		c.updateStyle()
 	})
 }

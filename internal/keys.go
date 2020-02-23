@@ -27,4 +27,5 @@ const (
 	KeyMetrics     ContextKey = "metrics"
 	KeyToast       ContextKey = "toast"
 	KeyWithMetrics ContextKey = "withMetrics"
+	KeyViewConfig  ContextKey = "viewConfig"
 )

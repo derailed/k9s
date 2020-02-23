@@ -8,6 +8,17 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 )
 
+const (
+	ageCol      = "AGE"
+	nameCol     = "NAME"
+	statusCol   = "STATUS"
+	cpuCol      = "CPU"
+	memCol      = "MEM"
+	uptodateCol = "UP-TO-DATE"
+	readyCol    = "READY"
+	availCol    = "AVAILABLE"
+)
+
 type (
 	// EnvFunc represent the current view exposed environment.
 	EnvFunc func() K9sEnv
@@ -70,7 +81,7 @@ type ResourceViewer interface {
 	SetEnvFn(EnvFunc)
 
 	// GVR returns a resource descriptor.
-	GVR() string
+	GVR() client.GVR
 
 	// SetContextFn provision a custom context.
 	SetContextFn(ContextFunc)

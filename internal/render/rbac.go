@@ -34,38 +34,38 @@ type Rbac struct{}
 
 // ColorerFunc colors a resource row.
 func (Rbac) ColorerFunc() ColorerFunc {
-	return func(ns string, re RowEvent) tcell.Color {
+	return func(_ string, _ Header, _re RowEvent) tcell.Color {
 		return tcell.ColorMediumSpringGreen
 	}
 }
 
 // Header returns a header row.
-func (Rbac) Header(ns string) HeaderRow {
-	h := HeaderRow{
-		Header{Name: "NAME"},
-		Header{Name: "API GROUP"},
-	}
-
+func (Rbac) Header(ns string) Header {
+	h := make(Header, 0, 10)
+	h = append(h,
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "APIGROUP"},
+	)
 	h = append(h, rbacVerbHeader()...)
-	h = append(h, Header{Name: "VALID", Wide: true})
 
-	return h
+	return append(h, HeaderColumn{Name: "VALID", Wide: true})
 }
 
 // Render renders a K8s resource to screen.
-func (Rbac) Render(o interface{}, gvr string, r *Row) error {
+func (r Rbac) Render(o interface{}, ns string, ro *Row) error {
 	p, ok := o.(PolicyRes)
 	if !ok {
 		return fmt.Errorf("expecting RuleRes but got %T", o)
 	}
 
-	r.ID = p.Resource
-	r.Fields = append(r.Fields,
+	ro.ID = p.Resource
+	ro.Fields = make(Fields, 0, len(r.Header(ns)))
+	ro.Fields = append(ro.Fields,
 		cleanseResource(p.Resource),
 		p.Group,
 	)
-	r.Fields = append(r.Fields, asVerbs(p.Verbs)...)
-	r.Fields = append(r.Fields, "")
+	ro.Fields = append(ro.Fields, asVerbs(p.Verbs)...)
+	ro.Fields = append(ro.Fields, "")
 
 	return nil
 }

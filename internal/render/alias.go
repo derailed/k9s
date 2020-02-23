@@ -15,17 +15,17 @@ type Alias struct{}
 
 // ColorerFunc colors a resource row.
 func (Alias) ColorerFunc() ColorerFunc {
-	return func(ns string, re RowEvent) tcell.Color {
+	return func(ns string, _ Header, re RowEvent) tcell.Color {
 		return tcell.ColorMediumSpringGreen
 	}
 }
 
 // Header returns a header row.
-func (Alias) Header(ns string) HeaderRow {
-	return HeaderRow{
-		Header{Name: "RESOURCE"},
-		Header{Name: "COMMAND"},
-		Header{Name: "APIGROUP"},
+func (Alias) Header(ns string) Header {
+	return Header{
+		HeaderColumn{Name: "RESOURCE"},
+		HeaderColumn{Name: "COMMAND"},
+		HeaderColumn{Name: "APIGROUP"},
 	}
 }
 

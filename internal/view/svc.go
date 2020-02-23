@@ -11,9 +11,14 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/perf"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // Service represents a service viewer.
@@ -41,13 +46,13 @@ func NewService(gvr client.GVR) ResourceViewer {
 func (s *Service) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
 		tcell.KeyCtrlB: ui.NewKeyAction("Bench Run/Stop", s.toggleBenchCmd, true),
-		ui.KeyShiftT:   ui.NewKeyAction("Sort Type", s.GetTable().SortColCmd(1, true), false),
+		ui.KeyShiftT:   ui.NewKeyAction("Sort Type", s.GetTable().SortColCmd("TYPE", true), false),
 	})
 }
 
 func (s *Service) showPods(a *App, _ ui.Tabular, gvr, path string) {
 	var res dao.Service
-	res.Init(a.factory, client.NewGVR(s.GVR()))
+	res.Init(a.factory, s.GVR())
 
 	svc, err := res.GetInstance(path)
 	if err != nil {
@@ -58,22 +63,16 @@ func (s *Service) showPods(a *App, _ ui.Tabular, gvr, path string) {
 	showPodsWithLabels(a, path, svc.Spec.Selector)
 }
 
-func (s *Service) checkSvc(row int) error {
-	svcType := trimCellRelative(s.GetTable(), row, 1)
-	if svcType != "NodePort" && svcType != "LoadBalancer" {
+func (s *Service) checkSvc(svc *v1.Service) error {
+	if svc.Spec.Type != "NodePort" && svc.Spec.Type != "LoadBalancer" {
 		return errors.New("You must select a reachable service")
 	}
 	return nil
 }
 
-func (s *Service) getExternalPort(row int) (string, error) {
-	ports := trimCellRelative(s.GetTable(), row, 5)
-
+func (s *Service) getExternalPort(svc *v1.Service) (string, error) {
+	ports := render.ToPorts(svc.Spec.Ports)
 	pp := strings.Split(ports, " ")
-	if len(pp) == 0 {
-		return "", errors.New("No ports found")
-	}
-
 	// Grap the first port pair for now...
 	tokens := strings.Split(pp[0], "►")
 	if len(tokens) < 2 {
@@ -92,8 +91,8 @@ func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	sel := s.GetTable().GetSelectedItem()
-	if sel == "" || s.bench != nil {
+	path := s.GetTable().GetSelectedItem()
+	if path == "" || s.bench != nil {
 		return evt
 	}
 
@@ -102,20 +101,24 @@ func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 		log.Debug().Msgf("No custom benchmark config file found")
 	}
 
-	cfg, ok := cust.Benchmarks.Services[sel]
+	cfg, ok := cust.Benchmarks.Services[path]
 	if !ok {
-		s.App().Flash().Errf("No bench config found for service %s", sel)
+		s.App().Flash().Errf("No bench config found for service %s", path)
 		return nil
 	}
-	cfg.Name = sel
+	cfg.Name = path
 	log.Debug().Msgf("Benchmark config %#v", cfg)
 
-	row := s.GetTable().GetSelectedRowIndex()
-	if e := s.checkSvc(row); e != nil {
+	svc, err := fetchService(s.App().factory, path)
+	if err != nil {
+		s.App().Flash().Err(err)
+		return nil
+	}
+	if e := s.checkSvc(svc); e != nil {
 		s.App().Flash().Err(e)
 		return nil
 	}
-	port, err := s.getExternalPort(row)
+	port, err := s.getExternalPort(svc)
 	if err != nil {
 		s.App().Flash().Err(err)
 		return nil
@@ -170,4 +173,19 @@ func benchTimedOut(app *App) {
 	app.QueueUpdate(func() {
 		app.ClearStatus(true)
 	})
+}
+
+func fetchService(f dao.Factory, path string) (*v1.Service, error) {
+	o, err := f.Get("v1/services", path, true, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	var svc v1.Service
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &svc)
+	if err != nil {
+		return nil, err
+	}
+
+	return &svc, nil
 }

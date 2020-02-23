@@ -33,23 +33,23 @@ type PortForward struct{}
 
 // ColorerFunc colors a resource row.
 func (PortForward) ColorerFunc() ColorerFunc {
-	return func(ns string, re RowEvent) tcell.Color {
+	return func(ns string, _ Header, re RowEvent) tcell.Color {
 		return tcell.ColorSkyblue
 	}
 }
 
 // Header returns a header row.
-func (PortForward) Header(ns string) HeaderRow {
-	return HeaderRow{
-		Header{Name: "NAMESPACE"},
-		Header{Name: "POD"},
-		Header{Name: "CONTAINER"},
-		Header{Name: "PORTS"},
-		Header{Name: "URL"},
-		Header{Name: "C"},
-		Header{Name: "N"},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
+func (PortForward) Header(ns string) Header {
+	return Header{
+		HeaderColumn{Name: "NAMESPACE"},
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "CONTAINER"},
+		HeaderColumn{Name: "PORTS"},
+		HeaderColumn{Name: "URL"},
+		HeaderColumn{Name: "C"},
+		HeaderColumn{Name: "N"},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
 }
 

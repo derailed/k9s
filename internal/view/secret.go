@@ -39,7 +39,7 @@ func (s *Secret) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	o, err := s.App().factory.Get(s.GVR(), path, true, labels.Everything())
+	o, err := s.App().factory.Get(s.GVR().String(), path, true, labels.Everything())
 	if err != nil {
 		s.App().Flash().Err(err)
 		return nil

@@ -31,7 +31,7 @@ type TreeListener interface {
 
 // Tree represents a tree model.
 type Tree struct {
-	gvr         string
+	gvr         client.GVR
 	namespace   string
 	root        *xray.TreeNode
 	listeners   []TreeListener
@@ -41,7 +41,7 @@ type Tree struct {
 }
 
 // NewTree returns a new model.
-func NewTree(gvr string) *Tree {
+func NewTree(gvr client.GVR) *Tree {
 	return &Tree{
 		gvr:         gvr,
 		refreshRate: 2 * time.Second,
@@ -193,7 +193,7 @@ func (t *Tree) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, erro
 	if !ok {
 		return nil, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
 	}
-	a.Init(factory, client.NewGVR(t.gvr))
+	a.Init(factory, t.gvr)
 
 	return a.List(ctx, client.CleanseNamespace(t.namespace))
 }
@@ -206,7 +206,7 @@ func (t *Tree) reconcile(ctx context.Context) error {
 	}
 
 	ns := client.CleanseNamespace(t.namespace)
-	res := client.NewGVR(t.gvr).R()
+	res := t.gvr.R()
 	root := xray.NewTreeNode(res, res)
 	ctx = context.WithValue(ctx, xray.KeyParent, root)
 	if _, ok := meta.TreeRenderer.(*xray.Generic); ok {
@@ -236,7 +236,7 @@ func (t *Tree) reconcile(ctx context.Context) error {
 }
 
 func (t *Tree) resourceMeta() ResourceMeta {
-	meta, ok := Registry[t.gvr]
+	meta, ok := Registry[t.gvr.String()]
 	if !ok {
 		log.Debug().Msgf("Resource %s not found in registry. Going generic!", t.gvr)
 		meta = ResourceMeta{

@@ -29,7 +29,7 @@ type TableListener interface {
 
 // Table represents a table model.
 type Table struct {
-	gvr         string
+	gvr         client.GVR
 	namespace   string
 	data        *render.TableData
 	listeners   []TableListener
@@ -37,15 +37,21 @@ type Table struct {
 	refreshRate time.Duration
 	instance    string
 	mx          sync.RWMutex
+	hasMetrics  bool
 }
 
 // NewTable returns a new table model.
-func NewTable(gvr string) *Table {
+func NewTable(gvr client.GVR) *Table {
 	return &Table{
 		gvr:         gvr,
 		data:        render.NewTableData(),
 		refreshRate: 2 * time.Second,
 	}
+}
+
+// HasMetrics determines if metrics are available on cluster.
+func (t *Table) HasMetrics() bool {
+	return t.hasMetrics
 }
 
 // SetInstance sets a single entry table.
@@ -162,7 +168,6 @@ func (t *Table) SetRefreshRate(d time.Duration) {
 
 // ClusterWide checks if resource is scope for all namespaces.
 func (t *Table) ClusterWide() bool {
-	log.Debug().Msgf("CLUSTER-WIDE %q", t.namespace)
 	return client.IsClusterWide(t.namespace)
 }
 
@@ -214,8 +219,9 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 	if !ok {
 		return nil, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
 	}
-	a.Init(factory, client.NewGVR(t.gvr))
+	a.Init(factory, t.gvr)
 
+	t.hasMetrics = factory.Client().HasMetrics()
 	ns := client.CleanseNamespace(t.namespace)
 	if client.IsClusterScoped(t.namespace) {
 		ns = client.AllNamespaces
@@ -278,13 +284,13 @@ func (t *Table) getMeta(ctx context.Context) (ResourceMeta, error) {
 	if !ok {
 		return ResourceMeta{}, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
 	}
-	meta.DAO.Init(factory, client.NewGVR(t.gvr))
+	meta.DAO.Init(factory, t.gvr)
 
 	return meta, nil
 }
 
 func (t *Table) resourceMeta() ResourceMeta {
-	meta, ok := Registry[t.gvr]
+	meta, ok := Registry[t.gvr.String()]
 	if !ok {
 		log.Debug().Msgf("Resource %s not found in registry. Going generic!", t.gvr)
 		meta = ResourceMeta{

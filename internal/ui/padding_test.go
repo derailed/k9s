@@ -10,12 +10,12 @@ import (
 func TestMaxColumn(t *testing.T) {
 	uu := map[string]struct {
 		t render.TableData
-		s int
+		s string
 		e MaxyPad
 	}{
 		"ascii col 0": {
 			render.TableData{
-				Header: render.HeaderRow{render.Header{Name: "A"}, render.Header{Name: "B"}},
+				Header: render.Header{render.HeaderColumn{Name: "A"}, render.HeaderColumn{Name: "B"}},
 				RowEvents: render.RowEvents{
 					render.RowEvent{
 						Row: render.Row{
@@ -29,12 +29,12 @@ func TestMaxColumn(t *testing.T) {
 					},
 				},
 			},
-			0,
+			"A",
 			MaxyPad{6, 6},
 		},
 		"ascii col 1": {
 			render.TableData{
-				Header: render.HeaderRow{render.Header{Name: "A"}, render.Header{Name: "B"}},
+				Header: render.Header{render.HeaderColumn{Name: "A"}, render.HeaderColumn{Name: "B"}},
 				RowEvents: render.RowEvents{
 					render.RowEvent{
 						Row: render.Row{
@@ -48,12 +48,12 @@ func TestMaxColumn(t *testing.T) {
 					},
 				},
 			},
-			1,
+			"B",
 			MaxyPad{6, 6},
 		},
 		"non_ascii": {
 			render.TableData{
-				Header: render.HeaderRow{render.Header{Name: "A"}, render.Header{Name: "B"}},
+				Header: render.Header{render.HeaderColumn{Name: "A"}, render.HeaderColumn{Name: "B"}},
 				RowEvents: render.RowEvents{
 					render.RowEvent{
 						Row: render.Row{
@@ -67,15 +67,18 @@ func TestMaxColumn(t *testing.T) {
 					},
 				},
 			},
-			0,
+			"A",
 			MaxyPad{32, 6},
 		},
 	}
 
-	for _, u := range uu {
-		pads := make(MaxyPad, len(u.t.Header))
-		ComputeMaxColumns(pads, u.s, u.t.Header, u.t.RowEvents)
-		assert.Equal(t, u.e, pads)
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			pads := make(MaxyPad, len(u.t.Header))
+			ComputeMaxColumns(pads, u.s, u.t.Header, u.t.RowEvents)
+			assert.Equal(t, u.e, pads)
+		})
 	}
 }
 
@@ -114,7 +117,7 @@ func TestPad(t *testing.T) {
 
 func BenchmarkMaxColumn(b *testing.B) {
 	table := render.TableData{
-		Header: render.HeaderRow{render.Header{Name: "A"}, render.Header{Name: "B"}},
+		Header: render.Header{render.HeaderColumn{Name: "A"}, render.HeaderColumn{Name: "B"}},
 		RowEvents: render.RowEvents{
 			render.RowEvent{
 				Row: render.Row{
@@ -134,6 +137,6 @@ func BenchmarkMaxColumn(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		ComputeMaxColumns(pads, 0, table.Header, table.RowEvents)
+		ComputeMaxColumns(pads, "A", table.Header, table.RowEvents)
 	}
 }

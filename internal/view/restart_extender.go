@@ -3,7 +3,6 @@ package view
 import (
 	"errors"
 
-	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
@@ -51,7 +50,7 @@ func (r *RestartExtender) restartCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (r *RestartExtender) restartRollout(path string) error {
-	res, err := dao.AccessorFor(r.App().factory, client.NewGVR(r.GVR()))
+	res, err := dao.AccessorFor(r.App().factory, r.GVR())
 	if err != nil {
 		return nil
 	}

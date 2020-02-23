@@ -1,6 +1,7 @@
 package render
 
 import (
+	"reflect"
 	"sort"
 	"time"
 
@@ -9,6 +10,30 @@ import (
 
 // Fields represents a collection of row fields.
 type Fields []string
+
+// Customize returns a subset of fields.
+func (f Fields) Customize(cols []int, out Fields) {
+	for i, c := range cols {
+		if c < 0 {
+			out[i] = "<TOAST!>"
+			continue
+		}
+		if c < len(f) {
+			out[i] = f[c]
+		}
+	}
+}
+
+// Diff returns true if fields differ or false otherwise.
+func (f Fields) Diff(ff Fields, ageCol int) bool {
+	if ageCol < 0 {
+		return !reflect.DeepEqual(f[:len(f)-1], ff[:len(ff)-1])
+	}
+	if !reflect.DeepEqual(f[:ageCol], ff[:ageCol]) {
+		return true
+	}
+	return !reflect.DeepEqual(f[ageCol+1:], ff[ageCol+1:])
+}
 
 // Clone returns a copy of the fields.
 func (f Fields) Clone() Fields {
@@ -27,8 +52,25 @@ type Row struct {
 }
 
 // NewRow returns a new row with initialized fields.
-func NewRow(cols int) Row {
-	return Row{Fields: make([]string, cols)}
+func NewRow(size int) Row {
+	return Row{Fields: make([]string, size)}
+}
+
+// Customize returns a row subset based on given col indices.
+func (r Row) Customize(cols []int) Row {
+	out := NewRow(len(cols))
+	r.Fields.Customize(cols, out.Fields)
+	out.ID = r.ID
+
+	return out
+}
+
+// Diff returns true if row differ or false otherwise.
+func (r Row) Diff(ro Row, ageCol int) bool {
+	if r.ID != ro.ID {
+		return true
+	}
+	return r.Fields.Diff(ro.Fields, ageCol)
 }
 
 // Clone copies a row.

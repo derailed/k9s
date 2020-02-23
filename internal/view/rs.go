@@ -41,15 +41,15 @@ func NewReplicaSet(gvr client.GVR) ResourceViewer {
 
 func (r *ReplicaSet) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		ui.KeyShiftD:   ui.NewKeyAction("Sort Desired", r.GetTable().SortColCmd(1, true), false),
-		ui.KeyShiftC:   ui.NewKeyAction("Sort Current", r.GetTable().SortColCmd(2, true), false),
-		ui.KeyShiftR:   ui.NewKeyAction("Sort Ready", r.GetTable().SortColCmd(3, true), false),
+		ui.KeyShiftD:   ui.NewKeyAction("Sort Desired", r.GetTable().SortColCmd("DESIRED", true), false),
+		ui.KeyShiftC:   ui.NewKeyAction("Sort Current", r.GetTable().SortColCmd("CURRENT", true), false),
+		ui.KeyShiftR:   ui.NewKeyAction("Sort Ready", r.GetTable().SortColCmd(readyCol, true), false),
 		tcell.KeyCtrlL: ui.NewKeyAction("Rollback", r.rollbackCmd, true),
 	})
 }
 
 func (r *ReplicaSet) showPods(app *App, model ui.Tabular, gvr, path string) {
-	o, err := app.factory.Get(r.GVR(), path, true, labels.Everything())
+	o, err := app.factory.Get(r.GVR().String(), path, true, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return

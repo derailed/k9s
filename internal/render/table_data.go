@@ -1,8 +1,10 @@
 package render
 
+import "github.com/rs/zerolog/log"
+
 // TableData tracks a K8s resource for tabular display.
 type TableData struct {
-	Header    HeaderRow
+	Header    Header
 	RowEvents RowEvents
 	Namespace string
 }
@@ -12,9 +14,22 @@ func NewTableData() *TableData {
 	return &TableData{}
 }
 
+func (t *TableData) Customize(cols []string, wide bool) TableData {
+	res := TableData{
+		Namespace: t.Namespace,
+		Header:    t.Header.Customize(cols, wide),
+	}
+	ids := make([]int, len(t.Header))
+	t.Header.MapIndices(cols, wide, ids)
+	log.Debug().Msgf("INDICES %#v", ids)
+	res.RowEvents = t.RowEvents.Customize(ids)
+
+	return res
+}
+
 // Clear clears out the entire table.
 func (t *TableData) Clear() {
-	t.Header, t.RowEvents = t.Header.Clear(), t.RowEvents.Clear()
+	t.Header, t.RowEvents = Header{}, RowEvents{}
 }
 
 // Clone returns a copy of the table
@@ -27,7 +42,7 @@ func (t *TableData) Clone() TableData {
 }
 
 // SetHeader sets table header.
-func (t *TableData) SetHeader(ns string, h HeaderRow) {
+func (t *TableData) SetHeader(ns string, h Header) {
 	t.Namespace, t.Header = ns, h
 }
 
@@ -85,5 +100,5 @@ func (t *TableData) Diff(table TableData) bool {
 		return true
 	}
 
-	return t.RowEvents.Diff(table.RowEvents)
+	return t.RowEvents.Diff(table.RowEvents, t.Header.IndexOf("AGE", true))
 }

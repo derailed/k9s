@@ -2,6 +2,7 @@ package view
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
@@ -37,11 +38,11 @@ func TestTableNew(t *testing.T) {
 	v.Init(makeContext())
 
 	data := render.NewTableData()
-	data.Header = render.HeaderRow{
-		render.Header{Name: "NAMESPACE"},
-		render.Header{Name: "NAME", Align: tview.AlignRight},
-		render.Header{Name: "FRED"},
-		render.Header{Name: "AGE", Decorator: render.AgeDecorator},
+	data.Header = render.Header{
+		render.HeaderColumn{Name: "NAMESPACE"},
+		render.HeaderColumn{Name: "NAME", Align: tview.AlignRight},
+		render.HeaderColumn{Name: "FRED"},
+		render.HeaderColumn{Name: "AGE", Time: true, Decorator: render.AgeDecorator},
 	}
 	data.RowEvents = render.RowEvents{
 		render.RowEvent{
@@ -75,13 +76,18 @@ func TestTableViewSort(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
 	v.Init(makeContext())
 	v.SetModel(&testTableModel{})
-	v.SortColCmd(1, true)(nil)
+	v.SortColCmd("NAME", true)(nil)
 	assert.Equal(t, 3, v.GetRowCount())
-	assert.Equal(t, "blee", v.GetCell(1, 1).Text)
+	for i := 0; i < v.GetRowCount(); i++ {
+		for j := 0; j < v.GetColumnCount(); j++ {
+			fmt.Println(v.GetCell(i, j).Text)
+		}
+	}
+	assert.Equal(t, "blee", v.GetCell(1, 0).Text)
 
 	v.SortInvertCmd(nil)
 	assert.Equal(t, 3, v.GetRowCount())
-	assert.Equal(t, "fred", v.GetCell(1, 1).Text)
+	assert.Equal(t, "fred", v.GetCell(1, 0).Text)
 }
 
 // ----------------------------------------------------------------------------
@@ -89,10 +95,11 @@ func TestTableViewSort(t *testing.T) {
 
 type testTableModel struct{}
 
-var _ ui.Tabular = &testTableModel{}
+var _ ui.Tabular = (*testTableModel)(nil)
 
 func (t *testTableModel) SetInstance(string)              {}
 func (t *testTableModel) Empty() bool                     { return false }
+func (t *testTableModel) HasMetrics() bool                { return true }
 func (t *testTableModel) Peek() render.TableData          { return makeTableData() }
 func (t *testTableModel) ClusterWide() bool               { return false }
 func (t *testTableModel) GetNamespace() string            { return "blee" }
@@ -119,11 +126,11 @@ func (t *testTableModel) SetRefreshRate(time.Duration) {}
 func makeTableData() render.TableData {
 	t := render.NewTableData()
 
-	t.Header = render.HeaderRow{
-		render.Header{Name: "NAMESPACE"},
-		render.Header{Name: "NAME", Align: tview.AlignRight},
-		render.Header{Name: "FRED"},
-		render.Header{Name: "AGE", Decorator: render.AgeDecorator},
+	t.Header = render.Header{
+		render.HeaderColumn{Name: "NAMESPACE"},
+		render.HeaderColumn{Name: "NAME", Align: tview.AlignRight},
+		render.HeaderColumn{Name: "FRED"},
+		render.HeaderColumn{Name: "AGE", Time: true, Decorator: render.AgeDecorator},
 	}
 	t.RowEvents = render.RowEvents{
 		render.RowEvent{

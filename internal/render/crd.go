@@ -19,11 +19,11 @@ func (CustomResourceDefinition) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header rbw.
-func (CustomResourceDefinition) Header(string) HeaderRow {
-	return HeaderRow{
-		Header{Name: "NAME"},
-		Header{Name: "LABELS", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
+func (CustomResourceDefinition) Header(string) Header {
+	return Header{
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "LABELS", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
 }
 

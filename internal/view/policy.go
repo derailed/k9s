@@ -32,7 +32,7 @@ func NewPolicy(app *App, subject, name string) *Policy {
 	}
 	p.GetTable().SetColorerFn(render.Policy{}.ColorerFunc())
 	p.SetBindKeysFn(p.bindKeys)
-	p.GetTable().SetSortCol(1, len(render.Policy{}.Header(client.AllNamespaces)), false)
+	p.GetTable().SetSortCol(nameCol, false)
 	p.SetContextFn(p.subjectCtx)
 	p.GetTable().SetEnterFn(blankEnterFn)
 
@@ -48,9 +48,9 @@ func (p *Policy) subjectCtx(ctx context.Context) context.Context {
 func (p *Policy) bindKeys(aa ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
 	aa.Add(ui.KeyActions{
-		ui.KeyShiftN: ui.NewKeyAction("Sort Name", p.GetTable().SortColCmd(0, true), false),
-		ui.KeyShiftO: ui.NewKeyAction("Sort Group", p.GetTable().SortColCmd(1, true), false),
-		ui.KeyShiftB: ui.NewKeyAction("Sort Binding", p.GetTable().SortColCmd(2, true), false),
+		ui.KeyShiftN: ui.NewKeyAction("Sort Name", p.GetTable().SortColCmd(nameCol, true), false),
+		ui.KeyShiftO: ui.NewKeyAction("Sort Group", p.GetTable().SortColCmd("GROUP", true), false),
+		ui.KeyShiftB: ui.NewKeyAction("Sort Binding", p.GetTable().SortColCmd("BINDING", true), false),
 	})
 }
 

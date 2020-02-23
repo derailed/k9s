@@ -19,20 +19,20 @@ func (RoleBinding) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header rbw.
-func (RoleBinding) Header(ns string) HeaderRow {
-	var h HeaderRow
+func (RoleBinding) Header(ns string) Header {
+	var h Header
 	if client.IsAllNamespaces(ns) {
-		h = append(h, Header{Name: "NAMESPACE"})
+		h = append(h, HeaderColumn{Name: "NAMESPACE"})
 	}
 
 	return append(h,
-		Header{Name: "NAME"},
-		Header{Name: "ROLE"},
-		Header{Name: "KIND"},
-		Header{Name: "SUBJECTS"},
-		Header{Name: "LABELS", Wide: true},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "ROLE"},
+		HeaderColumn{Name: "KIND"},
+		HeaderColumn{Name: "SUBJECTS"},
+		HeaderColumn{Name: "LABELS", Wide: true},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	)
 }
 

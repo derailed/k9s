@@ -20,20 +20,16 @@ func (Ingress) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header row.
-func (Ingress) Header(ns string) HeaderRow {
-	var h HeaderRow
-	if client.IsAllNamespaces(ns) {
-		h = append(h, Header{Name: "NAMESPACE"})
+func (Ingress) Header(ns string) Header {
+	return Header{
+		HeaderColumn{Name: "NAMESPACE"},
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "HOSTS"},
+		HeaderColumn{Name: "ADDRESS"},
+		HeaderColumn{Name: "PORT"},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
-
-	return append(h,
-		Header{Name: "NAME"},
-		Header{Name: "HOSTS"},
-		Header{Name: "ADDRESS"},
-		Header{Name: "PORT"},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
-	)
 }
 
 // Render renders a K8s resource to screen.
@@ -49,18 +45,15 @@ func (i Ingress) Render(o interface{}, ns string, r *Row) error {
 	}
 
 	r.ID = client.MetaFQN(ing.ObjectMeta)
-	r.Fields = make(Fields, 0, len(i.Header(ns)))
-	if client.IsAllNamespaces(ns) {
-		r.Fields = append(r.Fields, ing.Namespace)
-	}
-	r.Fields = append(r.Fields,
+	r.Fields = Fields{
+		ing.Namespace,
 		ing.Name,
 		toHosts(ing.Spec.Rules),
 		toAddress(ing.Status.LoadBalancer),
 		toTLSPorts(ing.Spec.TLS),
 		"",
 		toAge(ing.ObjectMeta.CreationTimestamp),
-	)
+	}
 
 	return nil
 }

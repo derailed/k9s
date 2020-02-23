@@ -111,7 +111,7 @@ func podCtx(app *App, path, labelSel, fieldSel string) ContextFunc {
 		mx := client.NewMetricsServer(app.factory.Client())
 		nmx, err := mx.FetchPodsMetrics(ns)
 		if err != nil {
-			log.Warn().Err(err).Msgf("No pods metrics")
+			log.Debug().Err(err).Msgf("No pods metrics")
 		}
 		ctx = context.WithValue(ctx, internal.KeyMetrics, nmx)
 

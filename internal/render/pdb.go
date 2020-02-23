@@ -6,7 +6,6 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
 	v1beta1 "k8s.io/api/policy/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -18,39 +17,24 @@ type PodDisruptionBudget struct{}
 
 // ColorerFunc colors a resource row.
 func (p PodDisruptionBudget) ColorerFunc() ColorerFunc {
-	return func(ns string, re RowEvent) tcell.Color {
-		c := DefaultColorer(ns, re)
-		if re.Kind == EventAdd || re.Kind == EventUpdate {
-			return c
-		}
-
-		if !Happy(ns, re.Row) {
-			return ErrColor
-		}
-
-		return StdColor
-	}
+	return DefaultColorer
 }
 
 // Header returns a header row.
-func (PodDisruptionBudget) Header(ns string) HeaderRow {
-	var h HeaderRow
-	if client.IsAllNamespaces(ns) {
-		h = append(h, Header{Name: "NAMESPACE"})
+func (PodDisruptionBudget) Header(ns string) Header {
+	return Header{
+		HeaderColumn{Name: "NAMESPACE"},
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "MIN AVAILABLE", Align: tview.AlignRight},
+		HeaderColumn{Name: "MAX_ UNAVAILABLE", Align: tview.AlignRight},
+		HeaderColumn{Name: "ALLOWED DISRUPTIONS", Align: tview.AlignRight},
+		HeaderColumn{Name: "CURRENT", Align: tview.AlignRight},
+		HeaderColumn{Name: "DESIRED", Align: tview.AlignRight},
+		HeaderColumn{Name: "EXPECTED", Align: tview.AlignRight},
+		HeaderColumn{Name: "LABELS", Wide: true},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
-
-	return append(h,
-		Header{Name: "NAME"},
-		Header{Name: "MIN AVAILABLE", Align: tview.AlignRight},
-		Header{Name: "MAX_ UNAVAILABLE", Align: tview.AlignRight},
-		Header{Name: "ALLOWED DISRUPTIONS", Align: tview.AlignRight},
-		Header{Name: "CURRENT", Align: tview.AlignRight},
-		Header{Name: "DESIRED", Align: tview.AlignRight},
-		Header{Name: "EXPECTED", Align: tview.AlignRight},
-		Header{Name: "LABELS", Wide: true},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
-	)
 }
 
 // Render renders a K8s resource to screen.
@@ -66,11 +50,8 @@ func (p PodDisruptionBudget) Render(o interface{}, ns string, r *Row) error {
 	}
 
 	r.ID = client.MetaFQN(pdb.ObjectMeta)
-	r.Fields = make(Fields, 0, len(p.Header(ns)))
-	if client.IsAllNamespaces(ns) {
-		r.Fields = append(r.Fields, pdb.Namespace)
-	}
-	r.Fields = append(r.Fields,
+	r.Fields = Fields{
+		pdb.Namespace,
 		pdb.Name,
 		numbToStr(pdb.Spec.MinAvailable),
 		numbToStr(pdb.Spec.MaxUnavailable),
@@ -81,7 +62,7 @@ func (p PodDisruptionBudget) Render(o interface{}, ns string, r *Row) error {
 		mapToStr(pdb.Labels),
 		asStatus(p.diagnose(pdb.Spec.MinAvailable, pdb.Status.CurrentHealthy)),
 		toAge(pdb.ObjectMeta.CreationTimestamp),
-	)
+	}
 
 	return nil
 }

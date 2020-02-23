@@ -20,10 +20,11 @@ type synchronizer interface {
 
 // Configurator represents an application configurationa.
 type Configurator struct {
-	skinFile  string
-	Config    *config.Config
-	Styles    *config.Styles
-	BenchFile string
+	Config     *config.Config
+	Styles     *config.Styles
+	CustomView *config.CustomView
+	BenchFile  string
+	skinFile   string
 }
 
 // HasSkin returns true if a skin file was located.
@@ -31,8 +32,55 @@ func (c *Configurator) HasSkin() bool {
 	return c.skinFile != ""
 }
 
-// StylesUpdater watches for skin file changes.
-func (c *Configurator) StylesUpdater(ctx context.Context, s synchronizer) error {
+// CustomViewsWatcher watches for view config file changes.
+func (c *Configurator) CustomViewsWatcher(ctx context.Context, s synchronizer) error {
+	w, err := fsnotify.NewWatcher()
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		for {
+			select {
+			case evt := <-w.Events:
+				_ = evt
+				s.QueueUpdateDraw(func() {
+					c.RefreshCustomViews()
+				})
+			case err := <-w.Errors:
+				log.Info().Err(err).Msg("CustomView watcher failed")
+				return
+			case <-ctx.Done():
+				log.Debug().Msgf("CustomViewWatcher Done `%s!!", config.K9sViewConfigFile)
+				if err := w.Close(); err != nil {
+					log.Error().Err(err).Msg("Closing CustomView watcher")
+				}
+				return
+			}
+		}
+	}()
+
+	log.Debug().Msgf("CustomView watching `%s", config.K9sViewConfigFile)
+	c.RefreshCustomViews()
+	return w.Add(config.K9sViewConfigFile)
+}
+
+// RefreshCustomView load view configuration changes.
+func (c *Configurator) RefreshCustomViews() {
+	if c.CustomView == nil {
+		c.CustomView = config.NewCustomView()
+	} else {
+		c.CustomView.Reset()
+	}
+
+	if err := c.CustomView.Load(config.K9sViewConfigFile); err != nil {
+		log.Debug().Msgf("No view custom configuration file found -- %s", config.K9sViewConfigFile)
+		return
+	}
+}
+
+// StylesWatcher watches for skin file changes.
+func (c *Configurator) StylesWatcher(ctx context.Context, s synchronizer) error {
 	if !c.HasSkin() {
 		return nil
 	}
@@ -56,7 +104,7 @@ func (c *Configurator) StylesUpdater(ctx context.Context, s synchronizer) error 
 			case <-ctx.Done():
 				log.Debug().Msgf("SkinWatcher Done `%s!!", c.skinFile)
 				if err := w.Close(); err != nil {
-					log.Error().Err(err).Msg("Closing watcher")
+					log.Error().Err(err).Msg("Closing Skin watcher")
 				}
 				return
 			}

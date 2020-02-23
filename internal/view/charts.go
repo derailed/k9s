@@ -37,9 +37,9 @@ func (c *Chart) bindKeys(aa ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
 	aa.Add(ui.KeyActions{
 		ui.KeyB:      ui.NewKeyAction("Blee", c.bleeCmd, true),
-		ui.KeyShiftN: ui.NewKeyAction("Sort Name", c.GetTable().SortColCmd(0, true), false),
-		ui.KeyShiftS: ui.NewKeyAction("Sort Status", c.GetTable().SortColCmd(2, true), false),
-		ui.KeyShiftA: ui.NewKeyAction("Sort Age", c.GetTable().SortColCmd(-1, true), false),
+		ui.KeyShiftN: ui.NewKeyAction("Sort Name", c.GetTable().SortColCmd(nameCol, true), false),
+		ui.KeyShiftS: ui.NewKeyAction("Sort Status", c.GetTable().SortColCmd(statusCol, true), false),
+		ui.KeyShiftA: ui.NewKeyAction("Sort Age", c.GetTable().SortColCmd(ageCol, true), false),
 	})
 }
 

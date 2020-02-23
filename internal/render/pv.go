@@ -17,42 +17,45 @@ type PersistentVolume struct{}
 
 // ColorerFunc colors a resource row.
 func (p PersistentVolume) ColorerFunc() ColorerFunc {
-	return func(ns string, re RowEvent) tcell.Color {
-		c := DefaultColorer(ns, re)
-		if re.Kind == EventAdd || re.Kind == EventUpdate {
-			return c
-		}
-
-		if !Happy(ns, re.Row) {
+	return func(ns string, h Header, re RowEvent) tcell.Color {
+		if !Happy(ns, h, re.Row) {
 			return ErrColor
 		}
 
-		switch strings.TrimSpace(re.Row.Fields[4]) {
-		case "Bound":
-			c = StdColor
-		case "Available":
-			c = tcell.ColorYellow
+		if re.Kind == EventAdd || re.Kind == EventUpdate {
+			return DefaultColorer(ns, h, re)
 		}
 
-		return c
+		statusCol := h.IndexOf("STATUS", true)
+		if statusCol == -1 {
+			return DefaultColorer(ns, h, re)
+		}
+		switch strings.TrimSpace(re.Row.Fields[statusCol]) {
+		case "Bound":
+			return StdColor
+		case "Available":
+			return tcell.ColorYellow
+		}
+
+		return DefaultColorer(ns, h, re)
 	}
 }
 
 // Header returns a header rbw.
-func (PersistentVolume) Header(string) HeaderRow {
-	return HeaderRow{
-		Header{Name: "NAME"},
-		Header{Name: "CAPACITY"},
-		Header{Name: "ACCESS MODES"},
-		Header{Name: "RECLAIM POLICY"},
-		Header{Name: "STATUS"},
-		Header{Name: "CLAIM"},
-		Header{Name: "STORAGECLASS"},
-		Header{Name: "REASON"},
-		Header{Name: "VOLUMEMODE", Wide: true},
-		Header{Name: "LABELS", Wide: true},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
+func (PersistentVolume) Header(string) Header {
+	return Header{
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "CAPACITY"},
+		HeaderColumn{Name: "ACCESS MODES"},
+		HeaderColumn{Name: "RECLAIM POLICY"},
+		HeaderColumn{Name: "STATUS"},
+		HeaderColumn{Name: "CLAIM"},
+		HeaderColumn{Name: "STORAGECLASS"},
+		HeaderColumn{Name: "REASON"},
+		HeaderColumn{Name: "VOLUMEMODE", Wide: true},
+		HeaderColumn{Name: "LABELS", Wide: true},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
 }
 

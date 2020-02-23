@@ -23,7 +23,7 @@ func TestAliasNew(t *testing.T) {
 
 	assert.Nil(t, v.Init(makeContext()))
 	assert.Equal(t, "Aliases", v.Name())
-	assert.Equal(t, 7, len(v.Hints()))
+	assert.Equal(t, 6, len(v.Hints()))
 }
 
 func TestAliasSearch(t *testing.T) {
@@ -101,6 +101,7 @@ var _ ui.Tabular = &testModel{}
 
 func (t *testModel) SetInstance(string)              {}
 func (t *testModel) Empty() bool                     { return false }
+func (t *testModel) HasMetrics() bool                { return true }
 func (t *testModel) Peek() render.TableData          { return makeTableData() }
 func (t *testModel) ClusterWide() bool               { return false }
 func (t *testModel) GetNamespace() string            { return "blee" }
@@ -127,10 +128,10 @@ func (t *testModel) SetRefreshRate(time.Duration) {}
 func makeTableData() render.TableData {
 	return render.TableData{
 		Namespace: client.ClusterScope,
-		Header: render.HeaderRow{
-			render.Header{Name: "RESOURCE"},
-			render.Header{Name: "COMMAND"},
-			render.Header{Name: "APIGROUP"},
+		Header: render.Header{
+			render.HeaderColumn{Name: "RESOURCE"},
+			render.HeaderColumn{Name: "COMMAND"},
+			render.HeaderColumn{Name: "APIGROUP"},
 		},
 		RowEvents: render.RowEvents{
 			render.RowEvent{

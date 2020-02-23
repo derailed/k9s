@@ -106,7 +106,7 @@ func (h *PulseHealth) check(ctx context.Context, ns, gvr string) (*health.Check,
 		if err := re.Render(o, ns, &rr[i]); err != nil {
 			return nil, err
 		}
-		if !render.Happy(ns, rr[i]) {
+		if !render.Happy(ns, re.Header(ns), rr[i]) {
 			c.Inc(health.Toast)
 		} else {
 			c.Inc(health.OK)

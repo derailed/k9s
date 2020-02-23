@@ -21,7 +21,7 @@ import (
 )
 
 func TestTableRefresh(t *testing.T) {
-	ta := model.NewTable("v1/pods")
+	ta := model.NewTable(client.NewGVR("v1/pods"))
 	ta.SetNamespace(client.NamespaceAll)
 
 	l := tableListener{}
@@ -41,7 +41,7 @@ func TestTableRefresh(t *testing.T) {
 }
 
 func TestTableNS(t *testing.T) {
-	ta := model.NewTable("v1/pods")
+	ta := model.NewTable(client.NewGVR("v1/pods"))
 	ta.SetNamespace("blee")
 
 	assert.Equal(t, "blee", ta.GetNamespace())
@@ -50,7 +50,7 @@ func TestTableNS(t *testing.T) {
 }
 
 func TestTableAddListener(t *testing.T) {
-	ta := model.NewTable("v1/pods")
+	ta := model.NewTable(client.NewGVR("v1/pods"))
 	ta.SetNamespace("blee")
 
 	assert.True(t, ta.Empty())
@@ -59,7 +59,7 @@ func TestTableAddListener(t *testing.T) {
 }
 
 func TestTableRmListener(t *testing.T) {
-	ta := model.NewTable("v1/pods")
+	ta := model.NewTable(client.NewGVR("v1/pods"))
 	ta.SetNamespace("blee")
 
 	l := tableListener{}
@@ -86,7 +86,7 @@ type tableFactory struct {
 var _ dao.Factory = tableFactory{}
 
 func (f tableFactory) Client() client.Connection {
-	return nil
+	return client.NewTestClient()
 }
 func (f tableFactory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
 	if len(f.rows) > 0 {

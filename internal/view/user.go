@@ -29,7 +29,7 @@ func (u *User) bindKeys(aa ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, ui.KeyShiftP, tcell.KeyCtrlSpace, ui.KeySpace)
 	aa.Add(ui.KeyActions{
 		tcell.KeyEnter: ui.NewKeyAction("Rules", u.policyCmd, true),
-		ui.KeyShiftK:   ui.NewKeyAction("Sort Kind", u.GetTable().SortColCmd(1, true), false),
+		ui.KeyShiftK:   ui.NewKeyAction("Sort Kind", u.GetTable().SortColCmd("KIND", true), false),
 	})
 }
 

@@ -28,7 +28,7 @@ func NewBenchmark(gvr client.GVR) ResourceViewer {
 	b.GetTable().SetBorderFocusColor(tcell.ColorSeaGreen)
 	b.GetTable().SetSelectedStyle(tcell.ColorWhite, tcell.ColorSeaGreen, tcell.AttrNone)
 	b.GetTable().SetColorerFn(render.Benchmark{}.ColorerFunc())
-	b.GetTable().SetSortCol(b.GetTable().NameColIndex()+7, 0, true)
+	b.GetTable().SetSortCol(ageCol, true)
 	b.SetContextFn(b.benchContext)
 	b.GetTable().SetEnterFn(b.viewBench)
 

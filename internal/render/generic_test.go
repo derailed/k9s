@@ -16,41 +16,41 @@ func TestGenericRender(t *testing.T) {
 		table   *metav1beta1.Table
 		eID     string
 		eFields render.Fields
-		eHeader render.HeaderRow
+		eHeader render.Header
 	}{
 		"withNS": {
 			ns:      "ns1",
 			table:   makeNSGeneric(),
 			eID:     "ns1/c1",
 			eFields: render.Fields{"c1", "c2", "c3"},
-			eHeader: render.HeaderRow{
-				render.Header{Name: "A"},
-				render.Header{Name: "B"},
-				render.Header{Name: "C"},
+			eHeader: render.Header{
+				render.HeaderColumn{Name: "A"},
+				render.HeaderColumn{Name: "B"},
+				render.HeaderColumn{Name: "C"},
 			},
 		},
-		"nsAll": {
+		"all": {
 			ns:      client.NamespaceAll,
 			table:   makeNSGeneric(),
 			eID:     "ns1/c1",
 			eFields: render.Fields{"ns1", "c1", "c2", "c3"},
-			eHeader: render.HeaderRow{
-				render.Header{Name: "NAMESPACE"},
-				render.Header{Name: "A"},
-				render.Header{Name: "B"},
-				render.Header{Name: "C"},
+			eHeader: render.Header{
+				// render.HeaderColumn{Name: "NAMESPACE"},
+				render.HeaderColumn{Name: "A"},
+				render.HeaderColumn{Name: "B"},
+				render.HeaderColumn{Name: "C"},
 			},
 		},
-		"AllNS": {
+		"allNS": {
 			ns:      client.AllNamespaces,
 			table:   makeNSGeneric(),
 			eID:     "ns1/c1",
 			eFields: render.Fields{"ns1", "c1", "c2", "c3"},
-			eHeader: render.HeaderRow{
-				render.Header{Name: "NAMESPACE"},
-				render.Header{Name: "A"},
-				render.Header{Name: "B"},
-				render.Header{Name: "C"},
+			eHeader: render.Header{
+				// render.HeaderColumn{Name: "NAMESPACE"},
+				render.HeaderColumn{Name: "A"},
+				render.HeaderColumn{Name: "B"},
+				render.HeaderColumn{Name: "C"},
 			},
 		},
 		"clusterWide": {
@@ -58,10 +58,10 @@ func TestGenericRender(t *testing.T) {
 			table:   makeNoNSGeneric(),
 			eID:     "-/c1",
 			eFields: render.Fields{"c1", "c2", "c3"},
-			eHeader: render.HeaderRow{
-				render.Header{Name: "A"},
-				render.Header{Name: "B"},
-				render.Header{Name: "C"},
+			eHeader: render.Header{
+				render.HeaderColumn{Name: "A"},
+				render.HeaderColumn{Name: "B"},
+				render.HeaderColumn{Name: "C"},
 			},
 		},
 		"age": {
@@ -69,10 +69,10 @@ func TestGenericRender(t *testing.T) {
 			table:   makeAgeGeneric(),
 			eID:     "-/c1",
 			eFields: render.Fields{"c1", "c2", "Age"},
-			eHeader: render.HeaderRow{
-				render.Header{Name: "A"},
-				render.Header{Name: "C"},
-				render.Header{Name: "AGE"},
+			eHeader: render.Header{
+				render.HeaderColumn{Name: "A"},
+				render.HeaderColumn{Name: "C"},
+				render.HeaderColumn{Name: "AGE", Time: true,},
 			},
 		},
 	}

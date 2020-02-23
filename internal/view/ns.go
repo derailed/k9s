@@ -78,7 +78,6 @@ func (n *Namespace) decorate(data render.TableData) render.TableData {
 
 	// checks if all ns is in the list if not add it.
 	if _, ok := data.RowEvents.FindIndex(client.NamespaceAll); !ok {
-		log.Debug().Msg("YO!!")
 		data.RowEvents = append(data.RowEvents,
 			render.RowEvent{
 				Kind: render.EventUnchanged,

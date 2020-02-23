@@ -21,23 +21,19 @@ func (Service) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header row.
-func (Service) Header(ns string) HeaderRow {
-	var h HeaderRow
-	if client.IsAllNamespaces(ns) {
-		h = append(h, Header{Name: "NAMESPACE"})
+func (Service) Header(ns string) Header {
+	return Header{
+		HeaderColumn{Name: "NAMESPACE"},
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "TYPE"},
+		HeaderColumn{Name: "CLUSTER-IP"},
+		HeaderColumn{Name: "EXTERNAL-IP"},
+		HeaderColumn{Name: "SELECTOR", Wide: true},
+		HeaderColumn{Name: "PORTS", Wide: true},
+		HeaderColumn{Name: "LABELS", Wide: true},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
-
-	return append(h,
-		Header{Name: "NAME"},
-		Header{Name: "TYPE"},
-		Header{Name: "CLUSTER-IP"},
-		Header{Name: "EXTERNAL-IP"},
-		Header{Name: "SELECTOR", Wide: true},
-		Header{Name: "PORTS", Wide: true},
-		Header{Name: "LABELS", Wide: true},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
-	)
 }
 
 // Render renders a K8s resource to screen.
@@ -53,21 +49,18 @@ func (s Service) Render(o interface{}, ns string, r *Row) error {
 	}
 
 	r.ID = client.MetaFQN(svc.ObjectMeta)
-	r.Fields = make(Fields, 0, len(s.Header(ns)))
-	if client.IsAllNamespaces(ns) {
-		r.Fields = append(r.Fields, svc.Namespace)
-	}
-	r.Fields = append(r.Fields,
+	r.Fields = Fields{
+		svc.Namespace,
 		svc.ObjectMeta.Name,
 		string(svc.Spec.Type),
 		toIP(svc.Spec.ClusterIP),
 		toIPs(svc.Spec.Type, getSvcExtIPS(&svc)),
 		mapToStr(svc.Spec.Selector),
-		toPorts(svc.Spec.Ports),
+		ToPorts(svc.Spec.Ports),
 		mapToStr(svc.Labels),
 		asStatus(s.diagnose()),
 		toAge(svc.ObjectMeta.CreationTimestamp),
-	)
+	}
 
 	return nil
 }
@@ -138,7 +131,7 @@ func toIPs(svcType v1.ServiceType, ips []string) string {
 	return strings.Join(ips, ",")
 }
 
-func toPorts(pp []v1.ServicePort) string {
+func ToPorts(pp []v1.ServicePort) string {
 	ports := make([]string, len(pp))
 	for i, p := range pp {
 		if len(p.Name) > 0 {

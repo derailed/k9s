@@ -35,7 +35,7 @@ func NewStatefulSet(gvr client.GVR) ResourceViewer {
 
 func (s *StatefulSet) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", s.GetTable().SortColCmd(1, true), false),
+		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", s.GetTable().SortColCmd(readyCol, true), false),
 	})
 }
 
@@ -50,7 +50,7 @@ func (s *StatefulSet) showPods(app *App, _ ui.Tabular, _, path string) {
 }
 
 func (s *StatefulSet) sts(path string) (*appsv1.StatefulSet, error) {
-	o, err := s.App().factory.Get(s.GVR(), path, true, labels.Everything())
+	o, err := s.App().factory.Get(s.GVR().String(), path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

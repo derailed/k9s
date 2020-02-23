@@ -2,7 +2,6 @@ package render
 
 import (
 	"fmt"
-	"reflect"
 	"sort"
 	"time"
 
@@ -63,17 +62,30 @@ func (r RowEvent) Clone() RowEvent {
 	}
 }
 
+// Customize returns a new subset based on the given column indices.
+func (r RowEvent) Customize(cols []int) RowEvent {
+	delta := r.Deltas
+	if !r.Deltas.IsBlank() {
+		delta = make(DeltaRow, len(cols))
+		r.Deltas.Customize(cols, delta)
+	}
+
+	return RowEvent{
+		Kind:   r.Kind,
+		Deltas: delta,
+		Row:    r.Row.Customize(cols),
+	}
+}
+
 // Diff returns true if the row changed.
-func (r RowEvent) Diff(re RowEvent) bool {
+func (r RowEvent) Diff(re RowEvent, ageCol int) bool {
 	if r.Kind != re.Kind {
 		return true
 	}
-	if !reflect.DeepEqual(r.Deltas, re.Deltas) {
+	if r.Deltas.Diff(re.Deltas, ageCol) {
 		return true
 	}
-
-	// BOZO!! Canned?? Skip age colum
-	return !reflect.DeepEqual(r.Row.Fields[:len(r.Row.Fields)-1], re.Row.Fields[:len(re.Row.Fields)-1])
+	return r.Row.Diff(re.Row, ageCol)
 }
 
 // ----------------------------------------------------------------------------
@@ -81,14 +93,22 @@ func (r RowEvent) Diff(re RowEvent) bool {
 // RowEvents a collection of row events.
 type RowEvents []RowEvent
 
+func (r RowEvents) Customize(cols []int) RowEvents {
+	ee := make(RowEvents, 0, len(cols))
+	for _, re := range r {
+		ee = append(ee, re.Customize(cols))
+	}
+	return ee
+}
+
 // Diff returns true if the event changed.
-func (rr RowEvents) Diff(r RowEvents) bool {
-	if len(rr) != len(r) {
+func (r RowEvents) Diff(re RowEvents, ageCol int) bool {
+	if len(r) != len(re) {
 		return true
 	}
 
-	for i := range rr {
-		if rr[i].Diff(r[i]) {
+	for i := range r {
+		if r[i].Diff(re[i], ageCol) {
 			return true
 		}
 	}
@@ -97,43 +117,43 @@ func (rr RowEvents) Diff(r RowEvents) bool {
 }
 
 // Clone returns a rowevents deep copy.
-func (rr RowEvents) Clone() RowEvents {
-	res := make(RowEvents, len(rr))
-	for i, r := range rr {
-		res[i] = r.Clone()
+func (r RowEvents) Clone() RowEvents {
+	res := make(RowEvents, len(r))
+	for i, re := range r {
+		res[i] = re.Clone()
 	}
 
 	return res
 }
 
 // Upsert add or update a row if it exists.
-func (rr RowEvents) Upsert(e RowEvent) RowEvents {
-	if idx, ok := rr.FindIndex(e.Row.ID); ok {
-		rr[idx] = e
+func (r RowEvents) Upsert(re RowEvent) RowEvents {
+	if idx, ok := r.FindIndex(re.Row.ID); ok {
+		r[idx] = re
 	} else {
-		rr = append(rr, e)
+		r = append(r, re)
 	}
-	return rr
+	return r
 }
 
 // Delete removes an element by id.
-func (rr RowEvents) Delete(id string) RowEvents {
-	victim, ok := rr.FindIndex(id)
+func (r RowEvents) Delete(id string) RowEvents {
+	victim, ok := r.FindIndex(id)
 	if !ok {
-		return rr
+		return r
 	}
-	return append(rr[0:victim], rr[victim+1:]...)
+	return append(r[0:victim], r[victim+1:]...)
 }
 
 // Clear delete all row events
-func (rr RowEvents) Clear() RowEvents {
+func (r RowEvents) Clear() RowEvents {
 	return RowEvents{}
 }
 
 // FindIndex locates a row index by id. Returns false is not found.
-func (rr RowEvents) FindIndex(id string) (int, bool) {
-	for i, e := range rr {
-		if e.Row.ID == id {
+func (r RowEvents) FindIndex(id string) (int, bool) {
+	for i, re := range r {
+		if re.Row.ID == id {
 			return i, true
 		}
 	}
@@ -141,42 +161,35 @@ func (rr RowEvents) FindIndex(id string) (int, bool) {
 	return 0, false
 }
 
-func (rr RowEvents) isAgeCol(col int) bool {
-	var age bool
-	if len(rr) == 0 {
-		return age
-	}
-	return col == len(rr[0].Row.Fields)-1
-}
-
 // Sort rows based on column index and order.
-func (rr RowEvents) Sort(ns string, col int, asc bool) {
-	t := RowEventSorter{NS: ns, Events: rr, Index: col, Asc: asc}
+func (r RowEvents) Sort(ns string, sortCol int, ageCol bool, asc bool) {
+	t := RowEventSorter{NS: ns, Events: r, Index: sortCol, Asc: asc}
 	sort.Sort(t)
 
-	ageCol := rr.isAgeCol(col)
-	gg, kk := map[string][]string{}, make(StringSet, 0, len(rr))
-	for _, r := range rr {
-		g := r.Row.Fields[col]
+	gg, kk := map[string][]string{}, make(StringSet, 0, len(r))
+	for _, re := range r {
+		g := re.Row.Fields[sortCol]
 		if ageCol {
 			g = toAgeDuration(g)
 		}
 		kk = kk.Add(g)
 		if ss, ok := gg[g]; ok {
-			gg[g] = append(ss, r.Row.ID)
+			gg[g] = append(ss, re.Row.ID)
 		} else {
-			gg[g] = []string{r.Row.ID}
+			gg[g] = []string{re.Row.ID}
 		}
 	}
 
-	ids := make([]string, 0, len(rr))
+	ids := make([]string, 0, len(r))
 	for _, k := range kk {
 		sort.StringSlice(gg[k]).Sort()
 		ids = append(ids, gg[k]...)
 	}
-	s := IdSorter{Ids: ids, Events: rr}
+	s := IdSorter{Ids: ids, Events: r}
 	sort.Sort(s)
 }
+
+// Helpers...
 
 func toAgeDuration(dur string) string {
 	d, err := time.ParseDuration(dur)

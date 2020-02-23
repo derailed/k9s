@@ -51,10 +51,19 @@ func TestPodColorer(t *testing.T) {
 		{"blee", render.RowEvent{Kind: render.EventUpdate, Row: notReady}, render.ErrColor},
 	}
 
+	h := render.Header{
+		render.HeaderColumn{Name: "A"},
+		render.HeaderColumn{Name: "B"},
+		render.HeaderColumn{Name: "C"},
+		render.HeaderColumn{Name: "D"},
+		render.HeaderColumn{Name: "E"},
+		render.HeaderColumn{Name: "F"},
+	}
+
 	var p render.Pod
 	f := p.ColorerFunc()
 	for _, u := range uu {
-		assert.Equal(t, u.e, f(u.ns, u.r))
+		assert.Equal(t, u.e, f(u.ns, h, u.r))
 	}
 }
 

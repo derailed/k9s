@@ -17,8 +17,8 @@ type Chart struct{}
 
 // ColorerFunc colors a resource row.
 func (Chart) ColorerFunc() ColorerFunc {
-	return func(ns string, re RowEvent) tcell.Color {
-		if !Happy(ns, re.Row) {
+	return func(ns string, h Header, re RowEvent) tcell.Color {
+		if !Happy(ns, h, re.Row) {
 			return ErrColor
 		}
 
@@ -27,21 +27,17 @@ func (Chart) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header row.
-func (Chart) Header(ns string) HeaderRow {
-	var h HeaderRow
-	if client.IsAllNamespaces(ns) {
-		h = append(h, Header{Name: "NAMESPACE"})
+func (Chart) Header(_ string) Header {
+	return Header{
+		HeaderColumn{Name: "NAMESPACE"},
+		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "REVISION"},
+		HeaderColumn{Name: "STATUS"},
+		HeaderColumn{Name: "CHART"},
+		HeaderColumn{Name: "APP VERSION"},
+		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
-
-	return append(h,
-		Header{Name: "NAME"},
-		Header{Name: "REVISION"},
-		Header{Name: "STATUS"},
-		Header{Name: "CHART"},
-		Header{Name: "APP VERSION"},
-		Header{Name: "VALID", Wide: true},
-		Header{Name: "AGE", Decorator: AgeDecorator},
-	)
 }
 
 // Render renders a chart to screen.
@@ -52,19 +48,16 @@ func (c Chart) Render(o interface{}, ns string, r *Row) error {
 	}
 
 	r.ID = client.FQN(h.Release.Namespace, h.Release.Name)
-	r.Fields = make(Fields, 0, len(c.Header(ns)))
-	if client.IsAllNamespaces(ns) {
-		r.Fields = append(r.Fields, h.Release.Namespace)
-	}
-	r.Fields = append(r.Fields,
+	r.Fields = Fields{
+		h.Release.Namespace,
 		h.Release.Name,
 		strconv.Itoa(h.Release.Version),
 		h.Release.Info.Status.String(),
-		h.Release.Chart.Metadata.Name+"-"+h.Release.Chart.Metadata.Version,
+		h.Release.Chart.Metadata.Name + "-" + h.Release.Chart.Metadata.Version,
 		h.Release.Chart.Metadata.AppVersion,
 		asStatus(c.diagnose(h.Release.Info.Status.String())),
 		toAge(metav1.Time{Time: h.Release.Info.LastDeployed.Time}),
-	)
+	}
 
 	return nil
 }

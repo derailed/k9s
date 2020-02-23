@@ -9,10 +9,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var (
-	// K9sStylesFile represents K9s skins file location.
-	K9sStylesFile = filepath.Join(K9sHome, "skin.yml")
-)
+// K9sStylesFile represents K9s skins file location.
+var K9sStylesFile = filepath.Join(K9sHome, "skin.yml")
 
 // StyleListener represents a skin's listener.
 type StyleListener interface {

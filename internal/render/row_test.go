@@ -9,12 +9,92 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func BenchmarkRowCustomize(b *testing.B) {
+	row := render.Row{ID: "fred", Fields: render.Fields{"f1", "f2", "f3"}}
+	cols := []int{0, 1, 2}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		_ = row.Customize(cols)
+	}
+}
+
+func TestFieldCustomize(t *testing.T) {
+	uu := map[string]struct {
+		fields render.Fields
+		cols   []int
+		e      render.Fields
+	}{
+		"empty": {
+			fields: render.Fields{},
+			cols:   []int{0, 1, 2},
+			e:      render.Fields{"", "", ""},
+		},
+		"no-cols": {
+			fields: render.Fields{"f1", "f2", "f3"},
+			cols:   []int{},
+			e:      render.Fields{},
+		},
+		"reverse": {
+			fields: render.Fields{"f1", "f2", "f3"},
+			cols:   []int{1, 0},
+			e:      render.Fields{"f2", "f1"},
+		},
+		"missing": {
+			fields: render.Fields{"f1", "f2", "f3"},
+			cols:   []int{10, 0},
+			e:      render.Fields{"", "f1"},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			ff := make(render.Fields, len(u.cols))
+			u.fields.Customize(u.cols, ff)
+			assert.Equal(t, u.e, ff)
+		})
+	}
+}
+
 func TestFieldClone(t *testing.T) {
 	f := render.Fields{"a", "b", "c"}
 	f1 := f.Clone()
 
 	assert.True(t, reflect.DeepEqual(f, f1))
 	assert.NotEqual(t, fmt.Sprintf("%p", f), fmt.Sprintf("%p", f1))
+}
+
+func TestRowCustomize(t *testing.T) {
+	uu := map[string]struct {
+		row  render.Row
+		cols []int
+		e    render.Row
+	}{
+		"empty": {
+			row:  render.Row{},
+			cols: []int{0, 1, 2},
+			e:    render.Row{ID: "", Fields: render.Fields{"", "", ""}},
+		},
+		"no-cols-no-data": {
+			row:  render.Row{},
+			cols: []int{},
+			e:    render.Row{ID: "", Fields: render.Fields{}},
+		},
+		"no-cols-data": {
+			row:  render.Row{ID: "fred", Fields: render.Fields{"f1", "f2", "f3"}},
+			cols: []int{},
+			e:    render.Row{ID: "fred", Fields: render.Fields{}},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			row := u.row.Customize(u.cols)
+			assert.Equal(t, u.e, row)
+		})
+	}
 }
 
 func TestRowsDelete(t *testing.T) {
@@ -69,10 +149,50 @@ func TestRowsDelete(t *testing.T) {
 	}
 
 	for k := range uu {
-		uc := uu[k]
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			rows := uc.rows.Delete(uc.id)
-			assert.Equal(t, uc.e, rows)
+			rows := u.rows.Delete(u.id)
+			assert.Equal(t, u.e, rows)
+		})
+	}
+}
+
+func TestRowsUpsert(t *testing.T) {
+	uu := map[string]struct {
+		rows render.Rows
+		row  render.Row
+		e    render.Rows
+	}{
+		"add": {
+			rows: render.Rows{
+				{ID: "a", Fields: []string{"blee", "duh"}},
+				{ID: "b", Fields: []string{"albert", "blee"}},
+			},
+			row: render.Row{ID: "c", Fields: []string{"f1", "f2"}},
+			e: render.Rows{
+				{ID: "a", Fields: []string{"blee", "duh"}},
+				{ID: "b", Fields: []string{"albert", "blee"}},
+				{ID: "c", Fields: []string{"f1", "f2"}},
+			},
+		},
+		"update": {
+			rows: render.Rows{
+				{ID: "a", Fields: []string{"blee", "duh"}},
+				{ID: "b", Fields: []string{"albert", "blee"}},
+			},
+			row: render.Row{ID: "a", Fields: []string{"f1", "f2"}},
+			e: render.Rows{
+				{ID: "a", Fields: []string{"f1", "f2"}},
+				{ID: "b", Fields: []string{"albert", "blee"}},
+			},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			rows := u.rows.Upsert(u.row)
+			assert.Equal(t, u.e, rows)
 		})
 	}
 }
@@ -147,10 +267,10 @@ func TestRowsSortText(t *testing.T) {
 	}
 
 	for k := range uu {
-		uc := uu[k]
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			uc.rows.Sort(uc.col, uc.asc)
-			assert.Equal(t, uc.e, uc.rows)
+			u.rows.Sort(u.col, u.asc)
+			assert.Equal(t, u.e, u.rows)
 		})
 	}
 }
@@ -188,10 +308,10 @@ func TestRowsSortDuration(t *testing.T) {
 	}
 
 	for k := range uu {
-		uc := uu[k]
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			uc.rows.Sort(uc.col, uc.asc)
-			assert.Equal(t, uc.e, uc.rows)
+			u.rows.Sort(u.col, u.asc)
+			assert.Equal(t, u.e, u.rows)
 		})
 	}
 }
@@ -230,10 +350,10 @@ func TestRowsSortMetrics(t *testing.T) {
 	}
 
 	for k := range uu {
-		uc := uu[k]
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			uc.rows.Sort(uc.col, uc.asc)
-			assert.Equal(t, uc.e, uc.rows)
+			u.rows.Sort(u.col, u.asc)
+			assert.Equal(t, u.e, u.rows)
 		})
 	}
 }
