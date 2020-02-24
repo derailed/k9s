@@ -251,7 +251,7 @@ func TestConfigReset(t *testing.T) {
 func TestSetup(t *testing.T) {
 	m.RegisterMockTestingT(t)
 	m.RegisterMockFailHandler(func(m string, i ...int) {
-		fmt.Println("Boom!", m, i)
+		fmt.Println("💣 Boom!", m, i)
 	})
 }
 

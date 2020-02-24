@@ -141,7 +141,7 @@ func (p *PortForwarder) Start(path, co string, t client.PortTunnel) (*portforwar
 	rcfg.NegotiatedSerializer = codec.WithoutConversion()
 	clt, err := rest.RESTClientFor(rcfg)
 	if err != nil {
-		log.Debug().Msgf("Boom! %#v", err)
+		log.Debug().Msgf("💣 Boom! %#v", err)
 		return nil, err
 	}
 	req := clt.Post().

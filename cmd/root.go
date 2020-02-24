@@ -69,10 +69,10 @@ func Execute() {
 func run(cmd *cobra.Command, args []string) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Error().Msgf("Boom! %v", err)
+			log.Error().Msgf("💣 Boom! %v", err)
 			log.Error().Msg(string(debug.Stack()))
 			printLogo(color.Red)
-			fmt.Printf("%s", color.Colorize("Boom!! ", color.Red))
+			fmt.Printf("%s", color.Colorize("💣 Boom!! ", color.Red))
 			fmt.Println(color.Colorize(fmt.Sprintf("%v.", err), color.White))
 		}
 	}()
