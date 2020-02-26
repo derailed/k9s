@@ -8,7 +8,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -48,7 +47,6 @@ func (p Pod) ColorerFunc() ColorerFunc {
 			}
 		}
 
-		log.Debug().Msgf("STATUS %s -- %#v", status, c)
 		return c
 	}
 }
