@@ -72,20 +72,20 @@ func (v *CustomView) Load(path string) error {
 }
 
 // AddListener registers a new listener.
-func (c *CustomView) AddListener(gvr string, l ViewConfigListener) {
-	c.listeners[gvr] = l
-	c.fireConfigChanged()
+func (v *CustomView) AddListener(gvr string, l ViewConfigListener) {
+	v.listeners[gvr] = l
+	v.fireConfigChanged()
 }
 
 // RemoveListener unregister a listener.
-func (c *CustomView) RemoveListener(gvr string) {
-	delete(c.listeners, gvr)
+func (v *CustomView) RemoveListener(gvr string) {
+	delete(v.listeners, gvr)
 
 }
 
-func (c *CustomView) fireConfigChanged() {
-	for gvr, list := range c.listeners {
-		if v, ok := c.K9s.Views[gvr]; ok {
+func (v *CustomView) fireConfigChanged() {
+	for gvr, list := range v.listeners {
+		if v, ok := v.K9s.Views[gvr]; ok {
 			list.ViewSettingsChanged(v)
 		}
 	}
