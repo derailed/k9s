@@ -8,6 +8,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -23,28 +24,32 @@ type Pod struct{}
 // ColorerFunc colors a resource row.
 func (p Pod) ColorerFunc() ColorerFunc {
 	return func(ns string, h Header, re RowEvent) tcell.Color {
+		c := DefaultColorer(ns, h, re)
+
 		statusCol := h.IndexOf("STATUS", true)
 		if statusCol == -1 {
-			return DefaultColorer(ns, h, re)
+			return c
 		}
 		status := strings.TrimSpace(re.Row.Fields[statusCol])
 		switch status {
 		case ContainerCreating, PodInitializing:
-			return AddColor
+			c = AddColor
 		case Initialized:
-			return HighlightColor
+			c = HighlightColor
 		case Completed:
-			return CompletedColor
+			c = CompletedColor
 		case Running:
-			return StdColor
+			c = StdColor
 		case Terminating:
-			return KillColor
+			c = KillColor
 		default:
 			if !Happy(ns, h, re.Row) {
-				return ErrColor
+				c = ErrColor
 			}
-			return DefaultColorer(ns, h, re)
 		}
+
+		log.Debug().Msgf("STATUS %s -- %#v", status, c)
+		return c
 	}
 }
 

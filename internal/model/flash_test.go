@@ -40,12 +40,10 @@ func TestFlash(t *testing.T) {
 			}
 
 			time.Sleep(5 * delay)
-			s, _, l, m := v.getMetrics()
+			s, l, m := v.getMetrics()
 			assert.Equal(t, 1, s)
 			assert.Equal(t, u.level, l)
 			assert.Equal(t, u.e, m)
-			// BOZO!!
-			// assert.Equal(t, 0, c)
 		})
 	}
 }
@@ -63,12 +61,10 @@ func TestFlashBurst(t *testing.T) {
 	}
 
 	time.Sleep(5 * delay)
-	s, _, l, m := v.getMetrics()
+	s, l, m := v.getMetrics()
 	assert.Equal(t, count, s)
 	assert.Equal(t, model.FlashInfo, l)
 	assert.Equal(t, fmt.Sprintf("test-%d", count), m)
-	// BOZO!!
-	// assert.Equal(t, 0, c)
 }
 
 type flash struct {
@@ -81,8 +77,8 @@ func newFlash() *flash {
 	return &flash{}
 }
 
-func (f *flash) getMetrics() (int, int, model.FlashLevel, string) {
-	return f.set, f.clear, f.level, f.msg
+func (f *flash) getMetrics() (int, model.FlashLevel, string) {
+	return f.set, f.level, f.msg
 }
 
 func (f *flash) listen(c model.FlashChan) {
