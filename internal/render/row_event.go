@@ -93,6 +93,7 @@ func (r RowEvent) Diff(re RowEvent, ageCol int) bool {
 // RowEvents a collection of row events.
 type RowEvents []RowEvent
 
+// Customize returns custom row events based on columns layout.
 func (r RowEvents) Customize(cols []int) RowEvents {
 	ee := make(RowEvents, 0, len(cols))
 	for _, re := range r {

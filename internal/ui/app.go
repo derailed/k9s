@@ -152,6 +152,7 @@ func (a *App) InCmdMode() bool {
 	return a.Cmd().InCmdMode()
 }
 
+// HasAction checks if key matches a registered binding.
 func (a *App) HasAction(key tcell.Key) (KeyAction, bool) {
 	act, ok := a.actions[key]
 	return act, ok

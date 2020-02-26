@@ -128,6 +128,7 @@ func (t *Table) Styles() *config.Styles {
 	return t.styles
 }
 
+// FilterInput filters user commands.
 func (t *Table) FilterInput(r rune) bool {
 	if !t.cmdBuff.IsActive() {
 		return false

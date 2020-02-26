@@ -45,7 +45,7 @@ type APIClient struct {
 	metricsAPI     bool
 }
 
-// NewTestAPIClient for testing ONLY!!
+// NewTestClient for testing ONLY!!
 func NewTestClient() *APIClient {
 	return &APIClient{
 		config: NewConfig(nil),

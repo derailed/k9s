@@ -21,20 +21,7 @@ type ReplicaSet struct {
 	Resource
 }
 
-// BOZO!!
-// // IsHappy check for happy deployments.
-// func (*ReplicaSet) IsHappy(rs appsv1.ReplicaSet) bool {
-// 	if rs.Status.Replicas == 0 && rs.Status.Replicas != rs.Status.ReadyReplicas {
-// 		return false
-// 	}
-
-// 	if rs.Status.Replicas != 0 && rs.Status.Replicas != rs.Status.ReadyReplicas {
-// 		return false
-// 	}
-
-// 	return true
-// }
-
+// Load returns a given instance.
 func (r *ReplicaSet) Load(f Factory, path string) (*v1.ReplicaSet, error) {
 	o, err := f.Get("apps/v1/replicasets", path, true, labels.Everything())
 	if err != nil {

@@ -132,7 +132,7 @@ func (h Header) HasAge() bool {
 	return h.IndexOf(ageCol, true) != -1
 }
 
-// AgeCol checks if given column index is the age column.
+// IsAgeCol checks if given column index is the age column.
 func (h Header) IsAgeCol(col int) bool {
 	if !h.HasAge() || col >= len(h) {
 		return false

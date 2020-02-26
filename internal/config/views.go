@@ -7,6 +7,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+// K9sViewConfigFile represents the location for the views configuration.
 var K9sViewConfigFile = filepath.Join(K9sHome, "views.yml")
 
 // ViewConfigListener represents a view config listener.
@@ -15,15 +16,17 @@ type ViewConfigListener interface {
 	ViewSettingsChanged(ViewSetting)
 }
 
+// ViewSetting represents a view configuration.
 type ViewSetting struct {
 	Columns []string `yaml:"columns"`
 }
 
+// ViewSettings represent a collection of view configurations.
 type ViewSettings struct {
-	Fuck  string                 `yaml:"fuck"`
 	Views map[string]ViewSetting `yaml:"views"`
 }
 
+// NewViewSettings returns a new configuration.
 func NewViewSettings() ViewSettings {
 	return ViewSettings{
 		Views: make(map[string]ViewSetting),
@@ -36,6 +39,7 @@ type CustomView struct {
 	listeners map[string]ViewConfigListener
 }
 
+// NewCustomView returns a views configuration.
 func NewCustomView() *CustomView {
 	return &CustomView{
 		K9s:       NewViewSettings(),

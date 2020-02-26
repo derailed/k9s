@@ -102,7 +102,7 @@ func (d *Deployment) Pod(fqn string) (string, error) {
 	return podFromSelector(d.Factory, dp.Namespace, dp.Spec.Selector.MatchLabels)
 }
 
-// GetInstance returns a deployment instance.
+// Load returns a deployment instance.
 func (*Deployment) Load(f Factory, fqn string) (*appsv1.Deployment, error) {
 	o, err := f.Get("apps/v1/deployments", fqn, false, labels.Everything())
 	if err != nil {

@@ -167,6 +167,7 @@ func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, p, l met
 	return
 }
 
+// ToContainerPorts returns container ports as a string.
 func ToContainerPorts(pp []v1.ContainerPort) string {
 	ports := make([]string, len(pp))
 	for i, p := range pp {
@@ -182,6 +183,7 @@ func ToContainerPorts(pp []v1.ContainerPort) string {
 	return strings.Join(ports, ",")
 }
 
+// ToContainerState returns container state as a string.
 func ToContainerState(s v1.ContainerState) string {
 	switch {
 	case s.Waiting != nil:

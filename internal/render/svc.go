@@ -131,6 +131,7 @@ func toIPs(svcType v1.ServiceType, ips []string) string {
 	return strings.Join(ips, ",")
 }
 
+// ToPorts returns service ports as a string.
 func ToPorts(pp []v1.ServicePort) string {
 	ports := make([]string, len(pp))
 	for i, p := range pp {

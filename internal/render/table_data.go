@@ -12,6 +12,7 @@ func NewTableData() *TableData {
 	return &TableData{}
 }
 
+// Customize returns a new model with customized column layout.
 func (t *TableData) Customize(cols []string, wide bool) TableData {
 	res := TableData{
 		Namespace: t.Namespace,

@@ -65,7 +65,7 @@ func (c *Configurator) CustomViewsWatcher(ctx context.Context, s synchronizer) e
 	return w.Add(config.K9sViewConfigFile)
 }
 
-// RefreshCustomView load view configuration changes.
+// RefreshCustomViews load view configuration changes.
 func (c *Configurator) RefreshCustomViews() {
 	if c.CustomView == nil {
 		c.CustomView = config.NewCustomView()
