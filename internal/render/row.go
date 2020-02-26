@@ -15,7 +15,7 @@ type Fields []string
 func (f Fields) Customize(cols []int, out Fields) {
 	for i, c := range cols {
 		if c < 0 {
-			out[i] = "<TOAST!>"
+			out[i] = NAValue
 			continue
 		}
 		if c < len(f) {

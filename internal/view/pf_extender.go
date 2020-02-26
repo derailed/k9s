@@ -85,7 +85,7 @@ func runForward(v ResourceViewer, pf watch.Forwarder, f *portforward.PortForward
 
 	v.App().QueueUpdateDraw(func() {
 		v.App().Flash().Infof("PortForward activated %s:%s", pf.Path(), pf.Ports()[0])
-		DismissPortForwards(v.App(), v.App().Content.Pages)
+		DismissPortForwards(v, v.App().Content.Pages)
 	})
 
 	pf.SetActive(true)

@@ -22,8 +22,9 @@ func TestGenericRender(t *testing.T) {
 			ns:      "ns1",
 			table:   makeNSGeneric(),
 			eID:     "ns1/c1",
-			eFields: render.Fields{"c1", "c2", "c3"},
+			eFields: render.Fields{"ns1", "c1", "c2", "c3"},
 			eHeader: render.Header{
+				render.HeaderColumn{Name: "NAMESPACE"},
 				render.HeaderColumn{Name: "A"},
 				render.HeaderColumn{Name: "B"},
 				render.HeaderColumn{Name: "C"},
@@ -35,7 +36,7 @@ func TestGenericRender(t *testing.T) {
 			eID:     "ns1/c1",
 			eFields: render.Fields{"ns1", "c1", "c2", "c3"},
 			eHeader: render.Header{
-				// render.HeaderColumn{Name: "NAMESPACE"},
+				render.HeaderColumn{Name: "NAMESPACE"},
 				render.HeaderColumn{Name: "A"},
 				render.HeaderColumn{Name: "B"},
 				render.HeaderColumn{Name: "C"},
@@ -47,7 +48,7 @@ func TestGenericRender(t *testing.T) {
 			eID:     "ns1/c1",
 			eFields: render.Fields{"ns1", "c1", "c2", "c3"},
 			eHeader: render.Header{
-				// render.HeaderColumn{Name: "NAMESPACE"},
+				render.HeaderColumn{Name: "NAMESPACE"},
 				render.HeaderColumn{Name: "A"},
 				render.HeaderColumn{Name: "B"},
 				render.HeaderColumn{Name: "C"},
@@ -57,8 +58,9 @@ func TestGenericRender(t *testing.T) {
 			ns:      client.ClusterScope,
 			table:   makeNoNSGeneric(),
 			eID:     "-/c1",
-			eFields: render.Fields{"c1", "c2", "c3"},
+			eFields: render.Fields{"-", "c1", "c2", "c3"},
 			eHeader: render.Header{
+				render.HeaderColumn{Name: "NAMESPACE"},
 				render.HeaderColumn{Name: "A"},
 				render.HeaderColumn{Name: "B"},
 				render.HeaderColumn{Name: "C"},
@@ -68,11 +70,12 @@ func TestGenericRender(t *testing.T) {
 			ns:      client.ClusterScope,
 			table:   makeAgeGeneric(),
 			eID:     "-/c1",
-			eFields: render.Fields{"c1", "c2", "Age"},
+			eFields: render.Fields{"-", "c1", "c2", "Age"},
 			eHeader: render.Header{
+				render.HeaderColumn{Name: "NAMESPACE"},
 				render.HeaderColumn{Name: "A"},
 				render.HeaderColumn{Name: "C"},
-				render.HeaderColumn{Name: "AGE", Time: true,},
+				render.HeaderColumn{Name: "AGE", Time: true},
 			},
 		},
 	}

@@ -50,7 +50,10 @@ func (d DeltaRow) Customize(cols []int, out DeltaRow) {
 		return
 	}
 	for i, c := range cols {
-		if c < len(d) {
+		if c < 0 {
+			continue
+		}
+		if c < len(d) && i < len(out) {
 			out[i] = d[c]
 		}
 	}

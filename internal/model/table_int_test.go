@@ -133,7 +133,7 @@ func TestTableGenericHydrate(t *testing.T) {
 
 	assert.Nil(t, genericHydrate("blee", &tt, rr, &re))
 	assert.Equal(t, 2, len(rr))
-	assert.Equal(t, 2, len(rr[0].Fields))
+	assert.Equal(t, 3, len(rr[0].Fields))
 }
 
 // ----------------------------------------------------------------------------

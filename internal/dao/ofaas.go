@@ -160,7 +160,6 @@ func deleteFunctionToken(gateway string, functionName string, tlsInsecure bool, 
 
 	req, err := http.NewRequest("DELETE", deleteEndpoint, reader)
 	if err != nil {
-		fmt.Println(err)
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
@@ -172,9 +171,7 @@ func deleteFunctionToken(gateway string, functionName string, tlsInsecure bool, 
 	}
 
 	delRes, delErr := c.Do(req)
-
 	if delErr != nil {
-		fmt.Printf("Error removing existing function: %s, gateway=%s, functionName=%s\n", delErr.Error(), gateway, functionName)
 		return delErr
 	}
 

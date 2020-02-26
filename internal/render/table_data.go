@@ -1,7 +1,5 @@
 package render
 
-import "github.com/rs/zerolog/log"
-
 // TableData tracks a K8s resource for tabular display.
 type TableData struct {
 	Header    Header
@@ -19,9 +17,7 @@ func (t *TableData) Customize(cols []string, wide bool) TableData {
 		Namespace: t.Namespace,
 		Header:    t.Header.Customize(cols, wide),
 	}
-	ids := make([]int, len(t.Header))
-	t.Header.MapIndices(cols, wide, ids)
-	log.Debug().Msgf("INDICES %#v", ids)
+	ids := t.Header.MapIndices(cols, wide)
 	res.RowEvents = t.RowEvents.Customize(ids)
 
 	return res

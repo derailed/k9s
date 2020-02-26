@@ -13,7 +13,7 @@ const (
 	// DefaultDirMod default unix perms for k9s directory.
 	DefaultDirMod os.FileMode = 0755
 	// DefaultFileMod default unix perms for k9s files.
-	DefaultFileMod os.FileMode = 0644
+	DefaultFileMod os.FileMode = 0600
 )
 
 // InList check if string is in a collection of strings.

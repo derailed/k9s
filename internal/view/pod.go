@@ -117,7 +117,7 @@ func (p *Pod) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	if podIsRunning(p.App().factory, path) {
+	if !podIsRunning(p.App().factory, path) {
 		p.App().Flash().Errf("%s is not in a running state", path)
 		return nil
 	}
@@ -135,7 +135,7 @@ func (p *Pod) attachCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	if podIsRunning(p.App().factory, path) {
+	if !podIsRunning(p.App().factory, path) {
 		p.App().Flash().Errf("%s is not in a happy state", path)
 		return nil
 	}

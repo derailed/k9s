@@ -7,7 +7,7 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var K9sViewConfigFile = filepath.Join(K9sHome, "views_config.yml")
+var K9sViewConfigFile = filepath.Join(K9sHome, "views.yml")
 
 // ViewConfigListener represents a view config listener.
 type ViewConfigListener interface {

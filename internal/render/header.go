@@ -40,28 +40,27 @@ func (h Header) Clone() Header {
 }
 
 // MapIndices returns a collection of mapped column indices based of the requested columns.
-func (h Header) MapIndices(cols []string, wide bool, ii []int) {
+func (h Header) MapIndices(cols []string, wide bool) []int {
+	ii := make([]int, 0, len(cols))
 	cc := make(map[int]struct{}, len(cols))
-	var lastIndex int
-	log.Debug().Msgf("MAP %d -- %d ", len(cols), len(ii))
-	for i, col := range cols {
+	for _, col := range cols {
 		idx := h.IndexOf(col, true)
-		ii[i], cc[idx] = idx, struct{}{}
-		lastIndex = i
+		if idx < 0 {
+			log.Warn().Msgf("Column %q not found on resource", col)
+		}
+		ii, cc[idx] = append(ii, idx), struct{}{}
 	}
 	if !wide {
-		return
+		return ii
 	}
 
 	for i := range h {
 		if _, ok := cc[i]; ok {
 			continue
 		}
-		lastIndex++
-		if lastIndex < len(ii) {
-			ii[lastIndex] = i
-		}
+		ii = append(ii, i)
 	}
+	return ii
 }
 
 // Customize builds a header from custom col definitions.
@@ -73,8 +72,13 @@ func (h Header) Customize(cols []string, wide bool) Header {
 	xx := make(map[int]struct{}, len(h))
 	for _, c := range cols {
 		idx := h.IndexOf(c, true)
+		// BOZO!!
 		if idx == -1 {
 			log.Warn().Msgf("Column %s is not available on this resource", c)
+			col := HeaderColumn{
+				Name: c,
+			}
+			cc = append(cc, col)
 			continue
 		}
 		xx[idx] = struct{}{}
@@ -152,4 +156,12 @@ func (h Header) IndexOf(colName string, includeWide bool) int {
 		}
 	}
 	return -1
+}
+
+// Dump for debuging.
+func (h Header) Dump() {
+	log.Debug().Msgf("HEADER")
+	for i, c := range h {
+		log.Debug().Msgf("%d %q -- %t", i, c.Name, c.Wide)
+	}
 }

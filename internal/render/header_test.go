@@ -39,8 +39,7 @@ func TestHeaderMapIndices(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			ii := make([]int, len(u.cols))
-			u.h1.MapIndices(u.cols, u.wide, ii)
+			ii := u.h1.MapIndices(u.cols, u.wide)
 			assert.Equal(t, u.e, ii)
 		})
 	}
@@ -144,6 +143,7 @@ func TestHeaderCustomize(t *testing.T) {
 			cols: []string{"BLEE", "A"},
 			wide: true,
 			e: render.Header{
+				render.HeaderColumn{Name: "BLEE"},
 				render.HeaderColumn{Name: "A"},
 				render.HeaderColumn{Name: "B", Wide: true},
 				render.HeaderColumn{Name: "C", Wide: true},

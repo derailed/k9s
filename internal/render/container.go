@@ -194,7 +194,7 @@ func ToContainerState(s v1.ContainerState) string {
 		if s.Terminated.Reason != "" {
 			return s.Terminated.Reason
 		}
-		return "Terminated"
+		return "Terminating"
 	case s.Running != nil:
 		return "Running"
 	default:

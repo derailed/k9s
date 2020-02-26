@@ -45,7 +45,6 @@ func NewApp(context string) *App {
 // Init initializes the application.
 func (a *App) Init() {
 	a.bindKeys()
-	a.SetInputCapture(a.keyboard)
 	a.cmdBuff.AddListener(a.Cmd())
 	a.Styles.AddListener(a)
 	a.CmdBuff().AddListener(a)
@@ -153,6 +152,11 @@ func (a *App) InCmdMode() bool {
 	return a.Cmd().InCmdMode()
 }
 
+func (a *App) HasAction(key tcell.Key) (KeyAction, bool) {
+	act, ok := a.actions[key]
+	return act, ok
+}
+
 // GetActions returns a collection of actiona.
 func (a *App) GetActions() KeyActions {
 	return a.actions
@@ -168,23 +172,6 @@ func (a *App) AddActions(aa KeyActions) {
 // Views return the application root viewa.
 func (a *App) Views() map[string]tview.Primitive {
 	return a.views
-}
-
-func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	key := evt.Key()
-	if key == tcell.KeyRune {
-		if a.cmdBuff.IsActive() && evt.Modifiers() == tcell.ModNone {
-			a.cmdBuff.Add(evt.Rune())
-			return nil
-		}
-		key = AsKey(evt)
-	}
-
-	if a, ok := a.actions[key]; ok {
-		return a.Action(evt)
-	}
-
-	return evt
 }
 
 func (a *App) clearCmd(evt *tcell.EventKey) *tcell.EventKey {

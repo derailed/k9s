@@ -45,10 +45,8 @@ func (d *Deploy) bindKeys(aa ui.KeyActions) {
 }
 
 func (d *Deploy) showPods(app *App, model ui.Tabular, gvr, path string) {
-	var res dao.Deployment
-	res.Init(app.factory, d.GVR())
-
-	dp, err := res.GetInstance(path)
+	var ddp dao.Deployment
+	dp, err := ddp.Load(app.factory, path)
 	if err != nil {
 		app.Flash().Err(err)
 		return

@@ -57,7 +57,7 @@ func (d *Deployment) Scale(path string, replicas int32) error {
 
 // Restart a Deployment rollout.
 func (d *Deployment) Restart(path string) error {
-	dp, err := d.GetInstance(path)
+	dp, err := d.Load(d.Factory, path)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,7 @@ func (d *Deployment) Restart(path string) error {
 
 // TailLogs tail logs for all pods represented by this Deployment.
 func (d *Deployment) TailLogs(ctx context.Context, c chan<- []byte, opts LogOptions) error {
-	dp, err := d.GetInstance(opts.Path)
+	dp, err := d.Load(d.Factory, opts.Path)
 	if err != nil {
 		return err
 	}
@@ -94,7 +94,7 @@ func (d *Deployment) TailLogs(ctx context.Context, c chan<- []byte, opts LogOpti
 
 // Pod returns a pod victim by name.
 func (d *Deployment) Pod(fqn string) (string, error) {
-	dp, err := d.GetInstance(fqn)
+	dp, err := d.Load(d.Factory, fqn)
 	if err != nil {
 		return "", err
 	}
@@ -103,8 +103,8 @@ func (d *Deployment) Pod(fqn string) (string, error) {
 }
 
 // GetInstance returns a deployment instance.
-func (d *Deployment) GetInstance(fqn string) (*appsv1.Deployment, error) {
-	o, err := d.Factory.Get(d.gvr.String(), fqn, false, labels.Everything())
+func (*Deployment) Load(f Factory, fqn string) (*appsv1.Deployment, error) {
+	o, err := f.Get("apps/v1/deployments", fqn, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

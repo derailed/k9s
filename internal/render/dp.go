@@ -63,9 +63,9 @@ func (d Deployment) Render(o interface{}, ns string, r *Row) error {
 	return nil
 }
 
-func (Deployment) diagnose(d, r int32) error {
-	if d != r {
-		return fmt.Errorf("desiring %d replicas got %d available", d, r)
+func (Deployment) diagnose(desired, avail int32) error {
+	if desired != avail {
+		return fmt.Errorf("desiring %d replicas got %d available", desired, avail)
 	}
 	return nil
 }

@@ -69,7 +69,6 @@ func (t *Table) Init(ctx context.Context) {
 	t.SetBorderPadding(0, 0, 1, 1)
 	t.SetSelectable(true, false)
 	t.SetSelectionChangedFunc(t.selectionChanged)
-	t.SetInputCapture(t.keyboard)
 	t.SetBackgroundColor(tcell.ColorDefault)
 
 	if cfg, ok := ctx.Value(internal.KeyViewConfig).(*config.CustomView); ok && cfg != nil {
@@ -129,12 +128,7 @@ func (t *Table) Styles() *config.Styles {
 	return t.styles
 }
 
-// SendKey sends an keyboard event (testing only!).
-func (t *Table) SendKey(evt *tcell.EventKey) {
-	t.keyboard(evt)
-}
-
-func (t *Table) filterInput(r rune) bool {
+func (t *Table) FilterInput(r rune) bool {
 	if !t.cmdBuff.IsActive() {
 		return false
 	}
@@ -145,26 +139,6 @@ func (t *Table) filterInput(r rune) bool {
 	t.SelectFirstRow()
 
 	return true
-}
-
-func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	key := evt.Key()
-	if key == tcell.KeyUp || key == tcell.KeyDown {
-		return evt
-	}
-
-	if key == tcell.KeyRune {
-		if t.filterInput(evt.Rune()) {
-			return nil
-		}
-		key = AsKey(evt)
-	}
-
-	if a, ok := t.actions[key]; ok {
-		return a.Action(evt)
-	}
-
-	return evt
 }
 
 // Hints returns the view hints.
@@ -214,7 +188,6 @@ func (t *Table) doUpdate(data render.TableData) {
 		t.actions.Delete(KeyShiftP)
 	}
 
-	hasMX := t.model.HasMetrics()
 	var cols []string
 	if t.viewSetting != nil {
 		cols = t.viewSetting.Columns
@@ -222,19 +195,19 @@ func (t *Table) doUpdate(data render.TableData) {
 	if len(cols) == 0 {
 		cols = t.header.Columns(t.wide)
 	}
-	data = data.Customize(cols, t.wide)
+	custData := data.Customize(cols, t.wide)
 
-	if t.sortCol.name == "" || data.Header.IndexOf(t.sortCol.name, false) == -1 {
-		t.sortCol.name = data.Header[0].Name
+	if t.sortCol.name == "" || custData.Header.IndexOf(t.sortCol.name, false) == -1 {
+		t.sortCol.name = custData.Header[0].Name
 	}
 
 	t.Clear()
 	fg := t.styles.Table().Header.FgColor.Color()
 	bg := t.styles.Table().Header.BgColor.Color()
 
+	hasMX := t.model.HasMetrics()
 	var col int
-	fmt.Printf("NS %q\n", t.GetModel().GetNamespace())
-	for _, h := range data.Header {
+	for _, h := range custData.Header {
 		if h.Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
 			continue
 		}
@@ -247,29 +220,32 @@ func (t *Table) doUpdate(data render.TableData) {
 		c.SetTextColor(fg)
 		col++
 	}
-	data.RowEvents.Sort(data.Namespace, data.Header.IndexOf(t.sortCol.name, false), t.sortCol.name == "AGE", t.sortCol.asc)
+	custData.RowEvents.Sort(custData.Namespace, custData.Header.IndexOf(t.sortCol.name, false), t.sortCol.name == "AGE", t.sortCol.asc)
 
-	pads := make(MaxyPad, len(data.Header))
-	ComputeMaxColumns(pads, t.sortCol.name, data.Header, data.RowEvents)
-	for row, re := range data.RowEvents {
-		t.buildRow(row+1, re, data.Header, pads, hasMX)
+	pads := make(MaxyPad, len(custData.Header))
+	ComputeMaxColumns(pads, t.sortCol.name, custData.Header, custData.RowEvents)
+	for row, re := range custData.RowEvents {
+		idx, _ := data.RowEvents.FindIndex(re.Row.ID)
+		t.buildRow(row+1, re, data.RowEvents[idx], custData.Header, pads)
 	}
 	t.updateSelection(true)
 }
 
-func (t *Table) buildRow(r int, re render.RowEvent, h render.Header, pads MaxyPad, hasMX bool) {
+func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads MaxyPad) {
 	color := render.DefaultColorer
 	if t.colorerFn != nil {
 		color = t.colorerFn
 	}
 
 	marked := t.IsMarked(re.Row.ID)
+	hasMX := t.model.HasMetrics()
 	var col int
 	for c, field := range re.Row.Fields {
 		if c >= len(h) {
-			log.Error().Msgf("field/header overflow detected for %d::%d. Check your mappings!", c, len(h))
+			log.Error().Msgf("field/header overflow detected for %q -- %d::%d. Check your mappings!", t.GVR(), c, len(h))
 			continue
 		}
+
 		if h[c].Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
 			continue
 		}
@@ -291,7 +267,7 @@ func (t *Table) buildRow(r int, re render.RowEvent, h render.Header, pads MaxyPa
 		cell := tview.NewTableCell(field)
 		cell.SetExpansion(1)
 		cell.SetAlign(h[c].Align)
-		cell.SetTextColor(color(t.GetModel().GetNamespace(), h, re))
+		cell.SetTextColor(color(t.GetModel().GetNamespace(), t.header, ore))
 		if marked {
 			cell.SetTextColor(t.styles.Table().MarkColor.Color())
 		}

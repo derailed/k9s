@@ -73,7 +73,7 @@ func (p PersistentVolume) Render(o interface{}, ns string, r *Row) error {
 
 	phase := pv.Status.Phase
 	if pv.ObjectMeta.DeletionTimestamp != nil {
-		phase = "Terminating"
+		phase = "Terminated"
 	}
 	var claim string
 	if pv.Spec.ClaimRef != nil {
@@ -92,22 +92,22 @@ func (p PersistentVolume) Render(o interface{}, ns string, r *Row) error {
 		size.String(),
 		accessMode(pv.Spec.AccessModes),
 		string(pv.Spec.PersistentVolumeReclaimPolicy),
-		string(phase),
+		string(pv.Status.Phase),
 		claim,
 		class,
 		pv.Status.Reason,
 		p.volumeMode(pv.Spec.VolumeMode),
 		mapToStr(pv.Labels),
-		asStatus(p.diagnose(string(phase))),
+		asStatus(p.diagnose(phase)),
 		toAge(pv.ObjectMeta.CreationTimestamp),
 	}
 
 	return nil
 }
 
-func (PersistentVolume) diagnose(r string) error {
-	if r != "Bound" && r != "Available" {
-		return fmt.Errorf("unexpected status %s", r)
+func (PersistentVolume) diagnose(phase v1.PersistentVolumePhase) error {
+	if phase == v1.VolumeFailed {
+		return fmt.Errorf("failed to delete or recycle")
 	}
 	return nil
 }

@@ -25,6 +25,17 @@ func NewPages() *Pages {
 	return &p
 }
 
+// IsTopDialog checks if front page is a dialog.
+func (p *Pages) IsTopDialog() bool {
+	_, pa := p.GetFrontPage()
+	switch pa.(type) {
+	case *tview.ModalForm:
+		return true
+	default:
+		return false
+	}
+}
+
 // Show displays a given page.
 func (p *Pages) Show(c model.Component) {
 	p.SwitchToPage(componentID(c))

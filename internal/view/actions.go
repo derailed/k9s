@@ -68,14 +68,16 @@ func hotKeyActions(r Runner, aa ui.KeyActions) {
 		}
 		aa[key] = ui.NewSharedKeyAction(
 			hk.Description,
-			gotoCmd(r, "", hk.Command),
+			gotoCmd(r, hk.Command, ""),
 			false)
 	}
 }
 
 func gotoCmd(r Runner, cmd, path string) ui.ActionHandler {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
+		log.Debug().Msgf("YO! %q -- %q", cmd, path)
 		if err := r.App().gotoResource(cmd, path, true); err != nil {
+			log.Error().Err(err).Msgf("Command fail")
 			r.App().Flash().Err(err)
 		}
 		return nil

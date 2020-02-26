@@ -48,13 +48,13 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 		okFn(v, path, extractContainer(p1), tunnel)
 	})
 	f.AddButton("Cancel", func() {
-		DismissPortForwards(v.App(), pages)
+		DismissPortForwards(v, pages)
 	})
 
 	modal := tview.NewModalForm(fmt.Sprintf("<PortForward on %s>", path), f)
 	modal.SetText("Exposed Ports: " + strings.Join(ports, ","))
 	modal.SetDoneFunc(func(_ int, b string) {
-		DismissPortForwards(v.App(), pages)
+		DismissPortForwards(v, pages)
 	})
 
 	pages.AddPage(portForwardKey, modal, false, true)
@@ -63,9 +63,9 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 }
 
 // DismissPortForwards dismiss the port forward dialog.
-func DismissPortForwards(app *App, p *ui.Pages) {
+func DismissPortForwards(v ResourceViewer, p *ui.Pages) {
 	p.RemovePage(portForwardKey)
-	app.SetFocus(p.CurrentPage().Item)
+	v.App().SetFocus(p.CurrentPage().Item)
 }
 
 // ----------------------------------------------------------------------------

@@ -74,6 +74,7 @@ func (a *App) Init(version string, rate int) error {
 	a.Content.Stack.AddListener(a.Menu())
 
 	a.App.Init()
+	a.SetInputCapture(a.keyboard)
 	a.bindKeys()
 	if a.Conn() == nil {
 		return errors.New("No client connection detected")
@@ -112,6 +113,23 @@ func (a *App) Init(version string, rate int) error {
 	a.toggleHeader(!a.Config.K9s.GetHeadless())
 
 	return nil
+}
+
+func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
+	key := evt.Key()
+	if key == tcell.KeyRune {
+		if a.CmdBuff().IsActive() && evt.Modifiers() == tcell.ModNone {
+			a.CmdBuff().Add(evt.Rune())
+			return nil
+		}
+		key = ui.AsKey(evt)
+	}
+
+	if k, ok := a.HasAction(key); ok && !a.Content.IsTopDialog() {
+		return k.Action(evt)
+	}
+
+	return evt
 }
 
 func (a *App) bindKeys() {

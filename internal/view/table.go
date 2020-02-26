@@ -40,10 +40,36 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	ctx = context.WithValue(ctx, internal.KeyStyles, t.app.Styles)
 	ctx = context.WithValue(ctx, internal.KeyViewConfig, t.app.CustomView)
 	t.Table.Init(ctx)
+	t.SetInputCapture(t.keyboard)
 	t.bindKeys()
 	t.GetModel().SetRefreshRate(time.Duration(t.app.Config.K9s.GetRefreshRate()) * time.Second)
 
 	return nil
+}
+
+// SendKey sends an keyboard event (testing only!).
+func (t *Table) SendKey(evt *tcell.EventKey) {
+	t.keyboard(evt)
+}
+
+func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
+	key := evt.Key()
+	if key == tcell.KeyUp || key == tcell.KeyDown {
+		return evt
+	}
+
+	if key == tcell.KeyRune {
+		if t.FilterInput(evt.Rune()) {
+			return nil
+		}
+		key = ui.AsKey(evt)
+	}
+
+	if a, ok := t.Actions()[key]; ok && !t.app.Content.IsTopDialog() {
+		return a.Action(evt)
+	}
+
+	return evt
 }
 
 // Name returns the table name.

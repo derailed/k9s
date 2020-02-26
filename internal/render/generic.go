@@ -40,6 +40,7 @@ func (g *Generic) Header(ns string) Header {
 		return Header{}
 	}
 	h := make(Header, 0, len(g.table.ColumnDefinitions))
+	h = append(h, HeaderColumn{Name: "NAMESPACE"})
 	for i, c := range g.table.ColumnDefinitions {
 		if c.Name == ageTableCol {
 			g.ageIndex = i
@@ -48,7 +49,7 @@ func (g *Generic) Header(ns string) Header {
 		h = append(h, HeaderColumn{Name: strings.ToUpper(c.Name)})
 	}
 	if g.ageIndex > 0 {
-		h = append(h, HeaderColumn{Name: "AGE", Time: true,})
+		h = append(h, HeaderColumn{Name: "AGE", Time: true})
 	}
 
 	return h
@@ -72,9 +73,7 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 
 	r.ID = client.FQN(nns, n)
 	r.Fields = make(Fields, 0, len(g.Header(ns)))
-	if client.IsAllNamespaces(ns) && nns != "" {
-		r.Fields = append(r.Fields, nns)
-	}
+	r.Fields = append(r.Fields, nns)
 	var ageCell interface{}
 	for i, c := range row.Cells {
 		if g.ageIndex > 0 && i == g.ageIndex {

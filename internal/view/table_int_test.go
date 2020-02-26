@@ -2,7 +2,6 @@ package view
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"path/filepath"
 	"testing"
@@ -78,11 +77,6 @@ func TestTableViewSort(t *testing.T) {
 	v.SetModel(&testTableModel{})
 	v.SortColCmd("NAME", true)(nil)
 	assert.Equal(t, 3, v.GetRowCount())
-	for i := 0; i < v.GetRowCount(); i++ {
-		for j := 0; j < v.GetColumnCount(); j++ {
-			fmt.Println(v.GetCell(i, j).Text)
-		}
-	}
 	assert.Equal(t, "blee", v.GetCell(1, 0).Text)
 
 	v.SortInvertCmd(nil)

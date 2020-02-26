@@ -116,7 +116,7 @@ func (p Pod) diagnose(phase string, cr, ct int) error {
 	if phase == "Completed" {
 		return nil
 	}
-	if cr != ct {
+	if cr != ct || ct == 0 {
 		return fmt.Errorf("container ready check failed: %d of %d", cr, ct)
 	}
 
@@ -276,7 +276,7 @@ func (p *Pod) Phase(po *v1.Pod) string {
 		return status
 	}
 
-	return "Terminated"
+	return "Terminating"
 }
 
 func (*Pod) containerPhase(st v1.PodStatus, status string) (string, bool) {

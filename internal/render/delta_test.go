@@ -72,6 +72,16 @@ func TestDeltaCustomize(t *testing.T) {
 			cols: []int{2, 10, 0},
 			e:    render.DeltaRow{"c", "", "a"},
 		},
+		"diff-negative": {
+			r1: render.Row{
+				Fields: render.Fields{"a", "b", "c"},
+			},
+			r2: render.Row{
+				Fields: render.Fields{"a1", "b1", "c1"},
+			},
+			cols: []int{2, -1, 0},
+			e:    render.DeltaRow{"c", "", "a"},
+		},
 	}
 
 	for k := range uu {
