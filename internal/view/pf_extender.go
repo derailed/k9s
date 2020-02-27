@@ -72,8 +72,8 @@ func (p *PortForwardExtender) fetchPodName(path string) (string, error) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func tryListenPort(port string) error {
-	server, err := net.Listen("tcp", fmt.Sprintf(":%s", port))
+func tryListenPort(address, port string) error {
+	server, err := net.Listen("tcp", fmt.Sprintf("%s:%s", address, port))
 	if err != nil {
 		return err
 	}
@@ -101,7 +101,7 @@ func runForward(v ResourceViewer, pf watch.Forwarder, f *portforward.PortForward
 }
 
 func startFwdCB(v ResourceViewer, path, co string, t client.PortTunnel) {
-	err := tryListenPort(t.LocalPort)
+	err := tryListenPort(t.Address, t.LocalPort)
 	if err != nil {
 		v.App().Flash().Err(err)
 		return
