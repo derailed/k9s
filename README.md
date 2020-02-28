@@ -101,6 +101,7 @@ K9s is available on Linux, macOS and Windows platforms.
 
 ## Demo Videos/Recordings
 
+* [K9s v0.17.0](https://www.youtube.com/watch?v=7S33CNLAofk&feature=youtu.be)
 * [K9s Pulses](https://asciinema.org/a/UbXKPal6IWpTaVAjBBFmizcGN)
 * [K9s v0.15.1](https://youtu.be/7Fx4XQ2ftpM)
 * [K9s v0.13.0](https://www.youtube.com/watch?v=qaeR2iK7U0o&t=15s)
