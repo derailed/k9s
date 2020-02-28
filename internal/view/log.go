@@ -172,7 +172,7 @@ func (l *Log) bindKeys() {
 		ui.KeyC:         ui.NewKeyAction("Clear", l.clearCmd, true),
 		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", l.ToggleAutoScrollCmd, true),
 		// BOZO!! Log timestamps
-		// ui.KeyT:             ui.NewKeyAction("Toggle Timestamp", l.ToggleTimestampCmd, true),
+		// ui.KeyT:             ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
 		ui.KeyF:             ui.NewKeyAction("FullScreen", l.fullScreenCmd, true),
 		ui.KeyW:             ui.NewKeyAction("Toggle Wrap", l.textWrapCmd, true),
 		tcell.KeyCtrlS:      ui.NewKeyAction("Save", l.SaveCmd, true),
@@ -355,16 +355,16 @@ func (l *Log) textWrapCmd(*tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-// ToggleTimeStampCmd toggles timestamp field.
-func (l *Log) ToggleTimestampCmd(evt *tcell.EventKey) *tcell.EventKey {
-	l.model.Clear()
-	l.indicator.ToggleTimestamp()
-	l.model.ShowTimestamp(l.indicator.Timestamp())
-	l.model.Stop()
-	l.model.Start()
+// BOZO! Log timestamps.
+// func (l *Log) toggleTimestampCmd(evt *tcell.EventKey) *tcell.EventKey {
+// 	l.model.Clear()
+// 	l.indicator.ToggleTimestamp()
+// 	l.model.ShowTimestamp(l.indicator.Timestamp())
+// 	l.model.Stop()
+// 	l.model.Start()
 
-	return nil
-}
+// 	return nil
+// }
 
 // ToggleAutoScrollCmd toggles autoscroll status.
 func (l *Log) ToggleAutoScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
