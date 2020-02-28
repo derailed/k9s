@@ -99,6 +99,30 @@ K9s is available on Linux, macOS and Windows platforms.
 
 ---
 
+## Headers description
+
+### Pods view
+
+| Header      | Description                     |
+|-------------|---------------------------------|
+| NAME        | Pod name                        |
+| IMAGE       | Image used                      |
+| READY       | Is pod ready ?                  |
+| STATE       | Pod state                       |
+| INIT        | Is an init pod ?                |
+| RS          | Restart count                   |
+| PROBES(L:R) | ?                               |
+| CPU         | CPU used (millicores)           |
+| MEM         | Memory used (Mb)                |
+| %CPU/R      | % ratio of CPU used/requested   |
+| %MEM/R      | % ratio of MEM used/requested   |
+| %CPU/L      | % ratio of CPU used/limit       |
+| %MEM/L      | % ratio of MEM used/limit       |
+| PORTS       | Ports exposed                   |
+| AGE         | Pod age                         |
+
+---
+
 ## Demo Videos/Recordings
 
 * [K9s Pulses](https://asciinema.org/a/UbXKPal6IWpTaVAjBBFmizcGN)
