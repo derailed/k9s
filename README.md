@@ -111,7 +111,7 @@ K9s is available on Linux, macOS and Windows platforms.
 | STATE       | Pod state                       |
 | INIT        | Is an init pod ?                |
 | RS          | Restart count                   |
-| PROBES(L:R) | ?                               |
+| PROBES(L:R) | Liveness and Readiness probes   |
 | CPU         | CPU used (millicores)           |
 | MEM         | Memory used (Mb)                |
 | %CPU/R      | % ratio of CPU used/requested   |
