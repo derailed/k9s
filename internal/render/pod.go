@@ -39,6 +39,9 @@ func (p Pod) ColorerFunc() ColorerFunc {
 			c = CompletedColor
 		case Running:
 			c = StdColor
+			if !Happy(ns, h, re.Row) {
+				c = ErrColor
+			}
 		case Terminating:
 			c = KillColor
 		default:
@@ -46,7 +49,6 @@ func (p Pod) ColorerFunc() ColorerFunc {
 				c = ErrColor
 			}
 		}
-
 		return c
 	}
 }
@@ -116,7 +118,7 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 }
 
 func (p Pod) diagnose(phase string, cr, ct int) error {
-	if phase == "Completed" {
+	if phase == Completed {
 		return nil
 	}
 	if cr != ct || ct == 0 {
@@ -272,14 +274,14 @@ func (p *Pod) Phase(po *v1.Pod) string {
 	}
 
 	status, ok = p.containerPhase(po.Status, status)
-	if ok && status == "Completed" {
-		status = "Running"
+	if ok && status == Completed {
+		status = Running
 	}
 	if po.DeletionTimestamp == nil {
 		return status
 	}
 
-	return "Terminating"
+	return Terminating
 }
 
 func (*Pod) containerPhase(st v1.PodStatus, status string) (string, bool) {

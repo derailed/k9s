@@ -16,6 +16,7 @@ type LogOptions struct {
 	Previous        bool
 	SingleContainer bool
 	MultiPods       bool
+	ShowTimestamp   bool
 }
 
 // HasContainer checks if a container is present.

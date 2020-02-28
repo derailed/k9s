@@ -16,6 +16,7 @@ type LogIndicator struct {
 	scrollStatus int32
 	fullScreen   bool
 	textWrap     bool
+	showTime     bool
 }
 
 // NewLogIndicator returns a new indicator.
@@ -39,6 +40,11 @@ func (l *LogIndicator) AutoScroll() bool {
 }
 
 // TextWrap reports the current wrap mode.
+func (l *LogIndicator) Timestamp() bool {
+	return l.showTime
+}
+
+// TextWrap reports the current wrap mode.
 func (l *LogIndicator) TextWrap() bool {
 	return l.textWrap
 }
@@ -46,6 +52,11 @@ func (l *LogIndicator) TextWrap() bool {
 // FullScreen reports the current screen mode.
 func (l *LogIndicator) FullScreen() bool {
 	return l.fullScreen
+}
+
+// TextWrap reports the current wrap mode.
+func (l *LogIndicator) ToggleTimestamp() {
+	l.showTime = !l.showTime
 }
 
 // ToggleFullScreen toggles the screen mode.
@@ -75,6 +86,8 @@ func (l *LogIndicator) Refresh() {
 	l.Clear()
 	l.update("Autoscroll: " + l.onOff(l.AutoScroll()))
 	l.update("FullScreen: " + l.onOff(l.fullScreen))
+	// BOZO!! log timestamp
+	// l.update("Timestamp: " + l.onOff(l.showTime))
 	l.update("Wrap: " + l.onOff(l.textWrap))
 }
 

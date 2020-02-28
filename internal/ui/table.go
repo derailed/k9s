@@ -43,6 +43,7 @@ type Table struct {
 	wide        bool
 	toast       bool
 	header      render.Header
+	hasMetrics  bool
 }
 
 // NewTable returns a new table view.
@@ -70,6 +71,11 @@ func (t *Table) Init(ctx context.Context) {
 	t.SetSelectable(true, false)
 	t.SetSelectionChangedFunc(t.selectionChanged)
 	t.SetBackgroundColor(tcell.ColorDefault)
+
+	t.hasMetrics = false
+	if mx, ok := ctx.Value(internal.KeyHasMetrics).(bool); ok {
+		t.hasMetrics = mx
+	}
 
 	if cfg, ok := ctx.Value(internal.KeyViewConfig).(*config.CustomView); ok && cfg != nil {
 		cfg.AddListener(t.GVR().String(), t)
@@ -198,7 +204,7 @@ func (t *Table) doUpdate(data render.TableData) {
 	}
 	custData := data.Customize(cols, t.wide)
 
-	if t.sortCol.name == "" || custData.Header.IndexOf(t.sortCol.name, false) == -1 {
+	if (t.sortCol.name == "" || custData.Header.IndexOf(t.sortCol.name, false) == -1) && len(custData.Header) > 0 {
 		t.sortCol.name = custData.Header[0].Name
 	}
 
@@ -206,13 +212,12 @@ func (t *Table) doUpdate(data render.TableData) {
 	fg := t.styles.Table().Header.FgColor.Color()
 	bg := t.styles.Table().Header.BgColor.Color()
 
-	hasMX := t.model.HasMetrics()
 	var col int
 	for _, h := range custData.Header {
 		if h.Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
 			continue
 		}
-		if h.MX && !hasMX {
+		if h.MX && !t.hasMetrics {
 			continue
 		}
 		t.AddHeaderCell(col, h)
@@ -239,7 +244,6 @@ func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads M
 	}
 
 	marked := t.IsMarked(re.Row.ID)
-	hasMX := t.model.HasMetrics()
 	var col int
 	for c, field := range re.Row.Fields {
 		if c >= len(h) {
@@ -250,7 +254,7 @@ func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads M
 		if h[c].Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
 			continue
 		}
-		if h[c].MX && !hasMX {
+		if h[c].MX && !t.hasMetrics {
 			continue
 		}
 

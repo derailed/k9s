@@ -4,38 +4,64 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/render"
+	"github.com/gdamore/tcell"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNSColorer(t *testing.T) {
-	var (
-		ns   = render.Row{Fields: render.Fields{"blee", "Active"}}
-		term = render.Row{Fields: render.Fields{"blee", render.Terminating}}
-		dead = render.Row{Fields: render.Fields{"blee", "Inactive"}}
-	)
-
-	uu := colorerUCs{
-		// Add AllNS
-		{"", render.RowEvent{Kind: render.EventAdd, Row: ns}, render.AddColor},
-		// Mod AllNS
-		{"", render.RowEvent{Kind: render.EventUpdate, Row: ns}, render.ModColor},
-		// MoChange AllNS
-		{"", render.RowEvent{Kind: render.EventUnchanged, Row: ns}, render.StdColor},
-		// Bust NS
-		{"", render.RowEvent{Kind: render.EventUnchanged, Row: term}, render.ErrColor},
-		// Bust NS
-		{"", render.RowEvent{Kind: render.EventUnchanged, Row: dead}, render.ErrColor},
+	uu := map[string]struct {
+		re render.RowEvent
+		e  tcell.Color
+	}{
+		"add": {
+			re: render.RowEvent{
+				Kind: render.EventAdd,
+				Row: render.Row{
+					Fields: render.Fields{
+						"blee",
+						"Active",
+					},
+				},
+			},
+			e: render.AddColor,
+		},
+		"update": {
+			re: render.RowEvent{
+				Kind: render.EventUpdate,
+				Row: render.Row{
+					Fields: render.Fields{
+						"blee",
+						"Active",
+					},
+				},
+			},
+			e: render.StdColor,
+		},
+		"decorator": {
+			re: render.RowEvent{
+				Kind: render.EventAdd,
+				Row: render.Row{
+					Fields: render.Fields{
+						"blee*",
+						"Active",
+					},
+				},
+			},
+			e: render.HighlightColor,
+		},
 	}
 
 	h := render.Header{
-		render.HeaderColumn{Name: "A"},
-		render.HeaderColumn{Name: "B"},
+		render.HeaderColumn{Name: "NAME"},
+		render.HeaderColumn{Name: "STATUS"},
 	}
 
-	var n render.Namespace
-	f := n.ColorerFunc()
-	for _, u := range uu {
-		assert.Equal(t, u.e, f(u.ns, h, u.r))
+	var r render.Namespace
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, r.ColorerFunc()("", h, u.re))
+		})
 	}
 }
 

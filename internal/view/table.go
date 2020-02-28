@@ -37,6 +37,9 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	if t.app, err = extractApp(ctx); err != nil {
 		return err
 	}
+	if t.app.Conn() != nil {
+		ctx = context.WithValue(ctx, internal.KeyHasMetrics, t.app.Conn().HasMetrics())
+	}
 	ctx = context.WithValue(ctx, internal.KeyStyles, t.app.Styles)
 	ctx = context.WithValue(ctx, internal.KeyViewConfig, t.app.CustomView)
 	t.Table.Init(ctx)

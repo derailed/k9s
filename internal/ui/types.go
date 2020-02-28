@@ -52,6 +52,7 @@ type Tabular interface {
 	Namespaceable
 	Lister
 
+	// SetInstance sets parent resource path.
 	SetInstance(string)
 
 	// Empty returns true if model has no data.
@@ -59,9 +60,6 @@ type Tabular interface {
 
 	// Peek returns current model data.
 	Peek() render.TableData
-
-	// HasMetrics returns true if metrics are available on cluster.
-	HasMetrics() bool
 
 	// Watch watches a given resource for changes.
 	Watch(context.Context)

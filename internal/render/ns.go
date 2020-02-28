@@ -18,20 +18,20 @@ type Namespace struct{}
 // ColorerFunc colors a resource row.
 func (n Namespace) ColorerFunc() ColorerFunc {
 	return func(ns string, h Header, re RowEvent) tcell.Color {
-		if !Happy(ns, h, re.Row) {
-			return ErrColor
-		}
-		if re.Kind == EventAdd {
-			return DefaultColorer(ns, h, re)
-		}
+		c := DefaultColorer(ns, h, re)
+
 		if re.Kind == EventUpdate {
-			return StdColor
+			c = StdColor
 		}
 		if strings.Contains(strings.TrimSpace(re.Row.Fields[0]), "*") {
-			return HighlightColor
+			c = HighlightColor
 		}
 
-		return DefaultColorer(ns, h, re)
+		if !Happy(ns, h, re.Row) {
+			c = ErrColor
+		}
+
+		return c
 	}
 }
 

@@ -72,7 +72,6 @@ func (h Header) Customize(cols []string, wide bool) Header {
 	xx := make(map[int]struct{}, len(h))
 	for _, c := range cols {
 		idx := h.IndexOf(c, true)
-		// BOZO!!
 		if idx == -1 {
 			log.Warn().Msgf("Column %s is not available on this resource", c)
 			col := HeaderColumn{

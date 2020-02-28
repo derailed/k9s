@@ -224,10 +224,11 @@ func (p *Pod) logs(ctx context.Context, c chan<- []byte, opts LogOptions) error 
 func tailLogs(ctx context.Context, logger Logger, c chan<- []byte, opts LogOptions) error {
 	log.Debug().Msgf("Tailing logs for %q -- %q", opts.Path, opts.Container)
 	o := v1.PodLogOptions{
-		Container: opts.Container,
-		Follow:    true,
-		TailLines: &opts.Lines,
-		Previous:  opts.Previous,
+		Container:  opts.Container,
+		Follow:     true,
+		TailLines:  &opts.Lines,
+		Timestamps: opts.ShowTimestamp,
+		Previous:   opts.Previous,
 	}
 	req, err := logger.Logs(opts.Path, &o)
 	if err != nil {

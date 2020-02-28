@@ -26,7 +26,7 @@ const (
 	logFmt     = " Logs([fg:bg:]%s) "
 
 	// BOZO!! Canned! Need config tail line counts!
-	tailLineCount  = 1000
+	tailLineCount  = 50
 	defaultTimeout = 200 * time.Millisecond
 )
 
@@ -49,7 +49,7 @@ func NewLog(gvr client.GVR, path, co string, prev bool) *Log {
 	l := Log{
 		Flex:    tview.NewFlex(),
 		cmdBuff: ui.NewCmdBuff('/', ui.FilterBuff),
-		model:   model.NewLog(gvr, buildLogOpts(path, co, prev, tailLineCount), defaultTimeout),
+		model:   model.NewLog(gvr, buildLogOpts(path, co, prev, true, tailLineCount), defaultTimeout),
 	}
 
 	return &l
@@ -167,10 +167,12 @@ func (l *Log) Name() string { return logTitle }
 
 func (l *Log) bindKeys() {
 	l.logs.Actions().Set(ui.KeyActions{
-		tcell.KeyEnter:      ui.NewSharedKeyAction("Filter", l.filterCmd, false),
-		tcell.KeyEscape:     ui.NewKeyAction("Back", l.resetCmd, true),
-		ui.KeyC:             ui.NewKeyAction("Clear", l.clearCmd, true),
-		ui.KeyS:             ui.NewKeyAction("Toggle AutoScroll", l.ToggleAutoScrollCmd, true),
+		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", l.filterCmd, false),
+		tcell.KeyEscape: ui.NewKeyAction("Back", l.resetCmd, true),
+		ui.KeyC:         ui.NewKeyAction("Clear", l.clearCmd, true),
+		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", l.ToggleAutoScrollCmd, true),
+		// BOZO!! Log timestamps
+		// ui.KeyT:             ui.NewKeyAction("Toggle Timestamp", l.ToggleTimestampCmd, true),
 		ui.KeyF:             ui.NewKeyAction("FullScreen", l.fullScreenCmd, true),
 		ui.KeyW:             ui.NewKeyAction("Toggle Wrap", l.textWrapCmd, true),
 		tcell.KeyCtrlS:      ui.NewKeyAction("Save", l.SaveCmd, true),
@@ -353,6 +355,17 @@ func (l *Log) textWrapCmd(*tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+// ToggleTimeStampCmd toggles timestamp field.
+func (l *Log) ToggleTimestampCmd(evt *tcell.EventKey) *tcell.EventKey {
+	l.model.Clear()
+	l.indicator.ToggleTimestamp()
+	l.model.ShowTimestamp(l.indicator.Timestamp())
+	l.model.Stop()
+	l.model.Start()
+
+	return nil
+}
+
 // ToggleAutoScrollCmd toggles autoscroll status.
 func (l *Log) ToggleAutoScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
 	l.indicator.ToggleAutoScroll()
@@ -392,11 +405,12 @@ func extractKey(evt *tcell.EventKey) tcell.Key {
 	return key
 }
 
-func buildLogOpts(path, co string, prevLogs bool, tailLineCount int) dao.LogOptions {
+func buildLogOpts(path, co string, prevLogs, showTime bool, tailLineCount int) dao.LogOptions {
 	return dao.LogOptions{
-		Path:      path,
-		Container: co,
-		Lines:     int64(tailLineCount),
-		Previous:  prevLogs,
+		Path:          path,
+		Container:     co,
+		Lines:         int64(tailLineCount),
+		Previous:      prevLogs,
+		ShowTimestamp: showTime,
 	}
 }

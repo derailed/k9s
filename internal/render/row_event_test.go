@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/render"
-	"github.com/gdamore/tcell"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -481,31 +480,6 @@ func TestRowEventsClone(t *testing.T) {
 				u.r[0].Row.Fields[0] = "blee"
 				assert.Equal(t, "A", c[0].Row.Fields[0])
 			}
-		})
-	}
-}
-
-func TestDefaultColorer(t *testing.T) {
-	uu := map[string]struct {
-		k render.ResEvent
-		e tcell.Color
-	}{
-		"add":    {render.EventAdd, render.AddColor},
-		"update": {render.EventUpdate, render.ModColor},
-		"delete": {render.EventDelete, render.KillColor},
-		"std":    {100, render.StdColor},
-	}
-
-	h := render.Header{
-		render.HeaderColumn{Name: "A"},
-		render.HeaderColumn{Name: "B"},
-		render.HeaderColumn{Name: "C"},
-	}
-
-	for k := range uu {
-		u := uu[k]
-		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, render.DefaultColorer("", h, render.RowEvent{}))
 		})
 	}
 }

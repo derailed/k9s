@@ -1,6 +1,8 @@
 package render
 
-import "github.com/gdamore/tcell"
+import (
+	"github.com/gdamore/tcell"
+)
 
 var (
 	// ModColor row modified color.

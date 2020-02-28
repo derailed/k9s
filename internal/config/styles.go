@@ -251,7 +251,7 @@ func newStatus() Status {
 		ErrorColor:     "orangered",
 		HighlightColor: "aqua",
 		KillColor:      "mediumpurple",
-		CompletedColor: "darkseagreen",
+		CompletedColor: "lightslategray",
 	}
 }
 

@@ -53,7 +53,6 @@ func isResourcePath(p string) bool {
 }
 
 func (l *LogsExtender) showLogs(path string, prev bool) {
-	// Need to load and wait for pods
 	ns, _ := client.Namespaced(path)
 	_, err := l.App().factory.CanForResource(ns, "v1/pods", client.MonitorAccess)
 	if err != nil {

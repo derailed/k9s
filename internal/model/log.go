@@ -15,7 +15,7 @@ import (
 	"github.com/sahilm/fuzzy"
 )
 
-const logMaxBufferSize = 50
+const logMaxBufferSize = 100
 
 // LogsListener represents a log model listener.
 type LogsListener interface {
@@ -31,15 +31,16 @@ type LogsListener interface {
 
 // Log represents a resource logger.
 type Log struct {
-	factory    dao.Factory
-	lines      []string
-	listeners  []LogsListener
-	gvr        client.GVR
-	logOptions dao.LogOptions
-	cancelFn   context.CancelFunc
-	mx         sync.RWMutex
-	filter     string
-	lastSent   int
+	factory       dao.Factory
+	lines         []string
+	listeners     []LogsListener
+	gvr           client.GVR
+	logOptions    dao.LogOptions
+	cancelFn      context.CancelFunc
+	mx            sync.RWMutex
+	filter        string
+	lastSent      int
+	showTimestamp bool
 }
 
 // NewLog returns a new model.
@@ -72,6 +73,16 @@ func (l *Log) Clear() {
 	l.fireLogCleared()
 }
 
+// ShowTimestamp toggles timestamp on logs.
+func (l *Log) ShowTimestamp(b bool) {
+	l.mx.RLock()
+	defer l.mx.RUnlock()
+
+	l.showTimestamp = b
+	l.fireLogCleared()
+	l.fireLogChanged(l.lines)
+}
+
 // Start initialize log tailer.
 func (l *Log) Start() {
 	if err := l.load(); err != nil {
@@ -100,6 +111,7 @@ func (l *Log) Set(lines []string) {
 
 // ClearFilter resets the log filter if any.
 func (l *Log) ClearFilter() {
+	log.Debug().Msgf("CLEARED!!")
 	l.mx.RLock()
 	defer l.mx.RUnlock()
 
@@ -112,6 +124,7 @@ func (l *Log) Filter(q string) error {
 	l.mx.RLock()
 	defer l.mx.RUnlock()
 
+	log.Debug().Msgf("FILTER!")
 	l.filter = q
 	filtered, err := applyFilter(l.filter, l.lines)
 	if err != nil {
@@ -262,6 +275,7 @@ func applyFilter(q string, lines []string) ([]string, error) {
 }
 
 func (l *Log) fireLogBuffChanged(lines []string) {
+	log.Debug().Msgf("FIRE-BUFF-CHNGED")
 	filtered, err := applyFilter(l.filter, lines)
 	if err != nil {
 		l.fireLogError(err)
@@ -292,6 +306,22 @@ func (l *Log) fireLogCleared() {
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+// BOZO!! Log timestamps.
+// func showTimes(lines []string, show bool) []string {
+// 	filtered := make([]string, 0, len(lines))
+// 	for _, l := range lines {
+// 		tokens := strings.Split(l, " ")
+// 		if show {
+// 			cols := make([]string, 0, len(tokens))
+// 			cols = append(cols, fmt.Sprintf("%-35s", tokens[0]))
+// 			filtered = append(filtered, strings.Join(append(cols, tokens[1:]...), " "))
+// 		} else {
+// 			filtered = append(filtered, strings.Join(tokens[1:], " "))
+// 		}
+// 	}
+// 	return filtered
+// }
 
 var fuzzyRx = regexp.MustCompile(`\A\-f`)
 

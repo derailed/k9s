@@ -37,7 +37,6 @@ type Table struct {
 	refreshRate time.Duration
 	instance    string
 	mx          sync.RWMutex
-	hasMetrics  bool
 }
 
 // NewTable returns a new table model.
@@ -47,11 +46,6 @@ func NewTable(gvr client.GVR) *Table {
 		data:        render.NewTableData(),
 		refreshRate: 2 * time.Second,
 	}
-}
-
-// HasMetrics determines if metrics are available on cluster.
-func (t *Table) HasMetrics() bool {
-	return t.hasMetrics
 }
 
 // SetInstance sets a single entry table.
@@ -221,7 +215,6 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 	}
 	a.Init(factory, t.gvr)
 
-	t.hasMetrics = factory.Client().HasMetrics()
 	ns := client.CleanseNamespace(t.namespace)
 	if client.IsClusterScoped(t.namespace) {
 		ns = client.AllNamespaces
@@ -274,6 +267,10 @@ func (t *Table) reconcile(ctx context.Context) error {
 	}
 	t.data.Update(rows)
 	t.data.SetHeader(t.namespace, meta.Renderer.Header(t.namespace))
+
+	if len(t.data.Header) == 0 {
+		return fmt.Errorf("fail to list resource %s", t.gvr)
+	}
 
 	return nil
 }
