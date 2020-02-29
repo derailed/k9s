@@ -136,6 +136,9 @@ K9s uses aliases to navigate most K8s resources.
 
 | Command                     | Result                                             | Example                    |
 | --------------------------- | -------------------------------------------------- | -------------------------- |
+| `:dp`, `:deploy`            | View deployments                                   |                            |
+| `:no`, `:nodes`             | View nodes                                         |                            |
+| `:svc`, `:service`          | View services                                      |                            |
 | `:`alias`<ENTER>`           | View a Kubernetes resource aliases                 | `:po<ENTER>`               |
 | `?`                         | Show keyboard shortcuts and help                   |                            |
 | `Ctrl-a`                    | Show all available resource alias                  | select+`<ENTER>` to view   |
