@@ -162,6 +162,7 @@ func (a *Aliases) loadDefaultAliases() {
 		a.Alias["hz"] = pulses
 		a.Alias["pu"] = pulses
 		a.Alias["pulse"] = pulses
+		a.Alias["pulses"] = pulses
 	}
 }
 

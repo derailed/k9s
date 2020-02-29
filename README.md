@@ -2,10 +2,10 @@
 
 # K9s - Kubernetes CLI To Manage Your Clusters In Style!
 
-K9s provides a curses based terminal UI to interact with your Kubernetes clusters.
+K9s provides a terminal UI to interact with your Kubernetes clusters.
 The aim of this project is to make it easier to navigate, observe and manage
 your applications in the wild. K9s continually watches Kubernetes
-for changes and offers subsequent commands to interact with observed Kubernetes resources.
+for changes and offers subsequent commands to interact with your observed resources.
 
 ---
 
@@ -19,6 +19,10 @@ for changes and offers subsequent commands to interact with observed Kubernetes 
 [![Releases](https://img.shields.io/github/downloads/derailed/k9s/total.svg)](https://github.com/derailed/k9s/releases)
 
 ---
+
+## Documentation
+
+Please refer to our [K9s documentation](https://k9scli.io) site for installation, usage, customization and tips.
 
 ## Slack Channel
 
@@ -131,7 +135,7 @@ k9s --readonly
 K9s uses aliases to navigate most K8s resources.
 
 | Command                     | Result                                             | Example                    |
-|-----------------------------|----------------------------------------------------|----------------------------|
+| --------------------------- | -------------------------------------------------- | -------------------------- |
 | `:`alias`<ENTER>`           | View a Kubernetes resource aliases                 | `:po<ENTER>`               |
 | `?`                         | Show keyboard shortcuts and help                   |                            |
 | `Ctrl-a`                    | Show all available resource alias                  | select+`<ENTER>` to view   |
@@ -532,7 +536,7 @@ k9s:
 Here is a list of all available color names.
 
 | Color Names          |                |                  |                   |                 |
-|----------------------|----------------|------------------|-------------------|-----------------|
+| -------------------- | -------------- | ---------------- | ----------------- | --------------- |
 | black                | maroon         | green            | olive             | navy            |
 | purple               | teal           | silver           | gray              | red             |
 | lime                 | yellow         | blue             | fuchsia           | aqua            |

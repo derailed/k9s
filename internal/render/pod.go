@@ -59,7 +59,7 @@ func (Pod) Header(ns string) Header {
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
 		HeaderColumn{Name: "READY"},
-		HeaderColumn{Name: "RS", Align: tview.AlignRight},
+		HeaderColumn{Name: "RESTART", Align: tview.AlignRight},
 		HeaderColumn{Name: "STATUS"},
 		HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},

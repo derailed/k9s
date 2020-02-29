@@ -28,11 +28,7 @@ replace (
 )
 
 require (
-	fyne.io/fyne v1.2.2 // indirect
-	github.com/GeertJohan/gomatrix v0.0.0-20190924221747-74328b69a02f // indirect
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
-	github.com/alexellis/go-execute v0.0.0-20200124154445-8697e4e28c5e // indirect
-	github.com/alexellis/hmac v0.0.0-20180624211220-5c52ab81c0de // indirect
 	github.com/atotto/clipboard v0.1.2
 	github.com/derailed/tview v0.3.6
 	github.com/drone/envsubst v1.0.2 // indirect
@@ -49,7 +45,6 @@ require (
 	github.com/openfaas/faas-provider v0.15.0
 	github.com/petergtz/pegomock v2.6.0+incompatible
 	github.com/rakyll/hey v0.1.2
-	github.com/rivo/tview v0.0.0-20191018115645-bacbf5155bc1
 	github.com/rs/zerolog v1.18.0
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sahilm/fuzzy v0.1.0
