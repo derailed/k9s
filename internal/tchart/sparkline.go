@@ -58,7 +58,7 @@ func NewSparkLine(id string) *SparkLine {
 	}
 }
 
-// SetSingleSeries indicates multi series are in effect or not.
+// SetMultiSeries indicates if multi series are in effect or not.
 func (s *SparkLine) SetMultiSeries(b bool) {
 	s.multiSeries = b
 }
