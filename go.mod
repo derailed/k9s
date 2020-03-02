@@ -2,8 +2,6 @@ module github.com/derailed/k9s
 
 go 1.13
 
-replace github.com/derailed/tview => /Users/fernand/go_wk/derailed/src/github.com/derailed/tview
-
 replace (
 	github.com/docker/docker => github.com/docker/docker v1.4.2-0.20181221150755-2cb26cfe9cbf
 	k8s.io/api => k8s.io/api v0.0.0-20190918155943-95b840bb6a1f
@@ -32,7 +30,7 @@ replace (
 require (
 	github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 // indirect
 	github.com/atotto/clipboard v0.1.2
-	github.com/derailed/tview v0.3.6
+	github.com/derailed/tview v0.3.7
 	github.com/drone/envsubst v1.0.2 // indirect
 	github.com/elazarl/goproxy v0.0.0-20190421051319-9d40249d3c2f // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20190421051319-9d40249d3c2f // indirect
