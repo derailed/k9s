@@ -50,10 +50,9 @@ type Table struct {
 func NewTable(gvr client.GVR) *Table {
 	return &Table{
 		SelectTable: &SelectTable{
-			Table:       tview.NewTable(),
-			model:       model.NewTable(gvr),
-			selectedRow: 1,
-			marks:       make(map[string]struct{}),
+			Table: tview.NewTable(),
+			model: model.NewTable(gvr),
+			marks: make(map[string]struct{}),
 		},
 		gvr:     gvr,
 		actions: make(KeyActions),
@@ -71,7 +70,7 @@ func (t *Table) Init(ctx context.Context) {
 	t.SetSelectable(true, false)
 	t.SetSelectionChangedFunc(t.selectionChanged)
 	t.SetBackgroundColor(tcell.ColorDefault)
-
+	t.Select(1, 0)
 	t.hasMetrics = false
 	if mx, ok := ctx.Value(internal.KeyHasMetrics).(bool); ok {
 		t.hasMetrics = mx

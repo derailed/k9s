@@ -112,6 +112,11 @@ func join(a []string, sep string) string {
 	return buff.String()
 }
 
+// ToPerc prints a number as percentage.
+func ToPerc(f float64) string {
+	return AsPerc(f) + "%"
+}
+
 // AsPerc prints a number as a percentage.
 func AsPerc(f float64) string {
 	return strconv.Itoa(int(f))

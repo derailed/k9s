@@ -52,33 +52,6 @@ func (g *Gauge) Add(m Metric) {
 	g.data = m
 }
 
-func (g *Gauge) drawNum(sc tcell.Screen, ok bool, o image.Point, n int, dn delta, ns string, style tcell.Style) {
-	c1, _ := g.colorForSeries()
-	if ok {
-		o.X -= 1
-		style = style.Foreground(c1)
-		printDelta(sc, dn, o, style)
-		o.X += 1
-	}
-
-	dm, sig := NewDotMatrix(5, 3), n == 0
-	if n == 0 {
-		style = g.dimmed
-	}
-	for i := 0; i < len(ns); i++ {
-		if ns[i] == '0' && !sig {
-			g.drawDial(sc, dm.Print(int(ns[i]-48)), o, g.dimmed)
-		} else {
-			sig = true
-			g.drawDial(sc, dm.Print(int(ns[i]-48)), o, style)
-		}
-		o.X += 5
-	}
-	if !ok {
-		printDelta(sc, dn, o, style)
-	}
-}
-
 // Draw draws the primitive.
 func (g *Gauge) Draw(sc tcell.Screen) {
 	g.Component.Draw(sc)
@@ -87,7 +60,7 @@ func (g *Gauge) Draw(sc tcell.Screen) {
 	defer g.mx.RUnlock()
 
 	rect := g.asRect()
-	mid := image.Point{X: rect.Min.X + rect.Dx()/2 - 2, Y: rect.Min.Y + rect.Dy()/2 - 2}
+	mid := image.Point{X: rect.Min.X + rect.Dx()/2 - 1, Y: rect.Min.Y + rect.Dy()/2 - 2}
 
 	style := tcell.StyleDefault.Background(g.bgColor)
 	style = style.Foreground(tcell.ColorYellow)
@@ -126,6 +99,33 @@ func (g *Gauge) drawDial(sc tcell.Screen, m Matrix, o image.Point, style tcell.S
 				sc.SetContent(o.X+c, o.Y+r, dot, nil, style)
 			}
 		}
+	}
+}
+
+func (g *Gauge) drawNum(sc tcell.Screen, ok bool, o image.Point, n int, dn delta, ns string, style tcell.Style) {
+	c1, _ := g.colorForSeries()
+	if ok {
+		o.X -= 1
+		style = style.Foreground(c1)
+		printDelta(sc, dn, o, style)
+		o.X += 1
+	}
+
+	dm, sig := NewDotMatrix(5, 3), n == 0
+	if n == 0 {
+		style = g.dimmed
+	}
+	for i := 0; i < len(ns); i++ {
+		if ns[i] == '0' && !sig {
+			g.drawDial(sc, dm.Print(int(ns[i]-48)), o, g.dimmed)
+		} else {
+			sig = true
+			g.drawDial(sc, dm.Print(int(ns[i]-48)), o, style)
+		}
+		o.X += 5
+	}
+	if !ok {
+		printDelta(sc, dn, o, style)
 	}
 }
 

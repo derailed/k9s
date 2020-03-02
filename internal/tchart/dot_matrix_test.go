@@ -38,12 +38,12 @@ func TestSegmentFor(t *testing.T) {
 	}
 }
 
-func TestDial(t *testing.T) {
+func TestDial5x3(t *testing.T) {
 	d := tchart.NewDotMatrix(5, 3)
 	for n := 0; n <= 9; n++ {
 		i := n
 		t.Run(strconv.Itoa(n), func(t *testing.T) {
-			assert.Equal(t, numbers[i], d.Print(i))
+			assert.Equal(t, numbers3x5[i], d.Print(i))
 		})
 	}
 }
@@ -52,7 +52,7 @@ func TestDial(t *testing.T) {
 
 const hChar, vChar = '▤', '▥'
 
-var numbers = []tchart.Matrix{
+var numbers3x5 = []tchart.Matrix{
 	[][]rune{
 		{hChar, hChar, hChar},
 		{vChar, ' ', vChar},

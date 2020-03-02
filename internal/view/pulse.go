@@ -80,25 +80,26 @@ func (p *Pulse) Init(ctx context.Context) error {
 	}
 
 	p.charts = []Grapheable{
-		p.makeGA(image.Point{X: 0, Y: 0}, image.Point{X: 4, Y: 2}, "apps/v1/deployments"),
-		p.makeGA(image.Point{X: 0, Y: 2}, image.Point{X: 4, Y: 2}, "apps/v1/replicasets"),
-		p.makeGA(image.Point{X: 0, Y: 4}, image.Point{X: 4, Y: 2}, "apps/v1/statefulsets"),
-		p.makeGA(image.Point{X: 0, Y: 6}, image.Point{X: 4, Y: 2}, "apps/v1/daemonsets"),
-		p.makeSP(image.Point{X: 4, Y: 0}, image.Point{X: 3, Y: 4}, "v1/pods"),
-		p.makeSP(image.Point{X: 4, Y: 4}, image.Point{X: 3, Y: 4}, "v1/events"),
-		p.makeSP(image.Point{X: 7, Y: 0}, image.Point{X: 3, Y: 4}, "batch/v1/jobs"),
-		p.makeSP(image.Point{X: 7, Y: 4}, image.Point{X: 3, Y: 4}, "v1/persistentvolumes"),
+		p.makeGA(image.Point{X: 0, Y: 0}, image.Point{X: 3, Y: 2}, "apps/v1/deployments"),
+		p.makeGA(image.Point{X: 0, Y: 2}, image.Point{X: 3, Y: 2}, "apps/v1/replicasets"),
+		p.makeGA(image.Point{X: 0, Y: 4}, image.Point{X: 3, Y: 2}, "apps/v1/statefulsets"),
+		p.makeGA(image.Point{X: 0, Y: 6}, image.Point{X: 3, Y: 2}, "apps/v1/daemonsets"),
+		p.makeSP(true, image.Point{X: 3, Y: 0}, image.Point{X: 3, Y: 4}, "v1/pods"),
+		p.makeSP(true, image.Point{X: 3, Y: 4}, image.Point{X: 3, Y: 4}, "v1/events"),
+		p.makeSP(true, image.Point{X: 6, Y: 0}, image.Point{X: 3, Y: 4}, "batch/v1/jobs"),
+		p.makeSP(true, image.Point{X: 6, Y: 4}, image.Point{X: 3, Y: 4}, "v1/persistentvolumes"),
 	}
 	if p.app.Conn().HasMetrics() {
 		p.charts = append(p.charts,
-			p.makeSP(image.Point{X: 10, Y: 0}, image.Point{X: 2, Y: 4}, "cpu"),
-			p.makeSP(image.Point{X: 10, Y: 4}, image.Point{X: 2, Y: 4}, "mem"),
+			p.makeSP(false, image.Point{X: 9, Y: 0}, image.Point{X: 2, Y: 4}, "cpu"),
+			p.makeSP(false, image.Point{X: 9, Y: 4}, image.Point{X: 2, Y: 4}, "mem"),
 		)
 	}
 	p.bindKeys()
 	p.model.AddListener(p)
 	p.app.SetFocus(p.charts[0])
 	p.app.Styles.AddListener(p)
+	p.StylesChanged(p.app.Styles)
 
 	return nil
 }
@@ -135,9 +136,9 @@ func (p *Pulse) PulseChanged(c *health.Check) {
 	gvr := client.NewGVR(c.GVR)
 	switch c.GVR {
 	case "cpu":
-		v.SetLegend(fmt.Sprintf(" %s - %dm", strings.Title(gvr.R()), c.Tally(health.OK)))
+		v.SetLegend(fmt.Sprintf(" %s(%dm)", strings.Title(gvr.R()), c.Tally(health.OK)))
 	case "mem":
-		v.SetLegend(fmt.Sprintf(" %s - %dMi", strings.Title(gvr.R()), c.Tally(health.OK)))
+		v.SetLegend(fmt.Sprintf(" %s(%dMi)", strings.Title(gvr.R()), c.Tally(health.OK)))
 	default:
 		nn := v.GetSeriesColorNames()
 		if c.Tally(health.OK) == 0 {
@@ -146,7 +147,7 @@ func (p *Pulse) PulseChanged(c *health.Check) {
 		if c.Tally(health.Toast) == 0 {
 			nn[1] = "gray"
 		}
-		v.SetLegend(fmt.Sprintf(" %s - [%s::]%d/[%s::b]%d[-::]",
+		v.SetLegend(fmt.Sprintf(" %s([%s::]%d[white::]:[%s::b]%d[-::])",
 			strings.Title(gvr.R()),
 			nn[0],
 			c.Tally(health.OK),
@@ -296,7 +297,7 @@ func (p *Pulse) nextFocusCmd(direction int) func(evt *tcell.EventKey) *tcell.Eve
 	}
 }
 
-func (p *Pulse) makeSP(loc image.Point, span image.Point, gvr string) *tchart.SparkLine {
+func (p *Pulse) makeSP(multi bool, loc image.Point, span image.Point, gvr string) *tchart.SparkLine {
 	s := tchart.NewSparkLine(gvr)
 	s.SetBackgroundColor(p.app.Styles.Charts().BgColor.Color())
 	s.SetBorderPadding(0, 1, 0, 1)
@@ -307,6 +308,9 @@ func (p *Pulse) makeSP(loc image.Point, span image.Point, gvr string) *tchart.Sp
 	}
 	s.SetLegend(fmt.Sprintf(" %s ", strings.Title(client.NewGVR(gvr).R())))
 	s.SetInputCapture(p.keyboard)
+	if !multi {
+		s.SetMultiSeries(multi)
+	}
 	p.AddItem(s, loc.X, loc.Y, span.X, span.Y, 0, 0, true)
 
 	return s
@@ -323,7 +327,7 @@ func (p *Pulse) makeGA(loc image.Point, span image.Point, gvr string) *tchart.Ga
 	}
 	g.SetLegend(fmt.Sprintf(" %s ", strings.Title(client.NewGVR(gvr).R())))
 	g.SetInputCapture(p.keyboard)
-	p.AddItem(g, loc.X, loc.Y, span.X, span.Y, 0, 0, true)
+	p.AddItem(g, loc.X, loc.Y, span.X, span.Y, span.X, span.Y, true)
 
 	return g
 }

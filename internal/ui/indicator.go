@@ -45,7 +45,7 @@ func (s *StatusIndicator) StylesChanged(styles *config.Styles) {
 	s.SetTextColor(styles.FgColor())
 }
 
-const statusIndicatorFmt = "[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s%%[white::]::[darkturquoise::]%s%%"
+const statusIndicatorFmt = "[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s[white::]::[darkturquoise::]%s"
 
 // ClusterInfoUpdated notifies the cluster meta was updated.
 func (s *StatusIndicator) ClusterInfoUpdated(data model.ClusterMeta) {
@@ -56,8 +56,8 @@ func (s *StatusIndicator) ClusterInfoUpdated(data model.ClusterMeta) {
 			data.Cluster,
 			data.User,
 			data.K8sVer,
-			render.AsPerc(data.Cpu),
-			render.AsPerc(data.Mem),
+			render.ToPerc(data.Cpu),
+			render.ToPerc(data.Mem),
 		))
 	})
 }

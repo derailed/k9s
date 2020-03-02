@@ -2,6 +2,7 @@ package tchart
 
 import (
 	"fmt"
+	"image"
 	"math"
 
 	"github.com/derailed/tview"
@@ -24,11 +25,16 @@ type Metric struct {
 	OK, Fault int
 }
 
-// MaxDigits returns the max of the metric.
+// MaxDigits returns the max series number of digits.
 func (m Metric) MaxDigits() int {
-	max := int(math.Max(float64(m.OK), float64(m.Fault)))
-	s := fmt.Sprintf("%d", max)
+
+	s := fmt.Sprintf("%d", m.Max())
 	return len(s)
+}
+
+// Max returns the max of the series.
+func (m Metric) Max() int {
+	return int(math.Max(float64(m.OK), float64(m.Fault)))
 }
 
 // Sum returns the sum of the metrics.
@@ -40,14 +46,21 @@ func (m Metric) Sum() int {
 type SparkLine struct {
 	*Component
 
-	data []Metric
+	data        []Metric
+	multiSeries bool
 }
 
 // NewSparkLine returns a new graph.
 func NewSparkLine(id string) *SparkLine {
 	return &SparkLine{
-		Component: NewComponent(id),
+		Component:   NewComponent(id),
+		multiSeries: true,
 	}
+}
+
+// SetSingleSeries indicates multi series are in effect or not.
+func (s *SparkLine) SetMultiSeries(b bool) {
+	s.multiSeries = b
 }
 
 // Add adds a metric.
@@ -84,13 +97,17 @@ func (s *SparkLine) Draw(screen tcell.Screen) {
 		idx = len(s.data) - rect.Dx()/2
 	}
 
-	scale := float64(len(sparks)) * float64((rect.Dy() - pad)) / float64(max)
+	factor := 2
+	if !s.multiSeries {
+		factor = 1
+	}
+	scale := float64(len(sparks)*(rect.Dy()-pad)/factor) / float64(max)
 	c1, c2 := s.colorForSeries()
 	for _, d := range s.data[idx:] {
 		b := toBlocks(d, scale)
 		cY := rect.Max.Y - pad
-		s.drawBlock(screen, cX, cY, b.oks, c1)
-		s.drawBlock(screen, cX, cY, b.errs, c2)
+		cY = s.drawBlock(rect, screen, cX, cY, b.oks, c1)
+		_ = s.drawBlock(rect, screen, cX, cY, b.errs, c2)
 		cX += 2
 	}
 
@@ -103,16 +120,25 @@ func (s *SparkLine) Draw(screen tcell.Screen) {
 	}
 }
 
-func (s *SparkLine) drawBlock(screen tcell.Screen, x, y int, b block, c tcell.Color) {
+func (s *SparkLine) drawBlock(r image.Rectangle, screen tcell.Screen, x, y int, b block, c tcell.Color) int {
 	style := tcell.StyleDefault.Foreground(c).Background(s.bgColor)
 
+	zeroY := r.Max.Y - r.Dy()
 	for i := 0; i < b.full; i++ {
 		screen.SetContent(x, y, sparks[len(sparks)-1], nil, style)
 		y--
+		if y <= zeroY {
+			break
+		}
 	}
 	if b.partial != 0 {
 		screen.SetContent(x, y, b.partial, nil, style)
+		if b.full == 0 {
+			y--
+		}
 	}
+
+	return y
 }
 
 func (s *SparkLine) cutSet(width int) {
@@ -128,8 +154,9 @@ func (s *SparkLine) cutSet(width int) {
 func (s *SparkLine) computeMax() int {
 	var max int
 	for _, d := range s.data {
-		if max < d.OK {
-			max = d.OK
+		m := d.Max()
+		if max < m {
+			max = m
 		}
 	}
 
@@ -140,18 +167,17 @@ func toBlocks(m Metric, scale float64) blocks {
 	if m.Sum() <= 0 {
 		return blocks{}
 	}
-	return blocks{oks: makeBlocks(m.OK, false, scale), errs: makeBlocks(m.Fault, true, scale)}
+	return blocks{oks: makeBlocks(m.OK, scale), errs: makeBlocks(m.Fault, scale)}
 }
 
-func makeBlocks(v int, isErr bool, scale float64) block {
+func makeBlocks(v int, scale float64) block {
 	scaled := int(math.Round(float64(v) * scale))
-	part, b := scaled%len(sparks), block{full: scaled / len(sparks)}
-	// Err might get scaled way down if so nudge.
-	if v > 0 && isErr && scaled == 0 {
-		part = 1
+	p, b := scaled%len(sparks), block{full: scaled / len(sparks)}
+	if b.full == 0 && v > 0 && p == 0 {
+		p = 4
 	}
-	if part > 0 {
-		b.partial = sparks[part-1]
+	if v > 0 && p >= 0 && p < len(sparks) {
+		b.partial = sparks[p]
 	}
 
 	return b

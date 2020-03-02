@@ -9,10 +9,9 @@ import (
 type SelectTable struct {
 	*tview.Table
 
-	model       Tabular
-	selectedRow int
-	selectedFn  func(string) string
-	marks       map[string]struct{}
+	model      Tabular
+	selectedFn func(string) string
+	marks      map[string]struct{}
 }
 
 // SetModel sets the table model.
@@ -69,7 +68,8 @@ func (s *SelectTable) GetSelectedItem() string {
 
 // GetSelectedCell returns the content of a cell for the currently selected row.
 func (s *SelectTable) GetSelectedCell(col int) string {
-	return TrimCell(s, s.selectedRow, col)
+	r, _ := s.GetSelection()
+	return TrimCell(s, r, col)
 }
 
 // SetSelectedFn defines a function that cleanse the current selection.
@@ -79,7 +79,8 @@ func (s *SelectTable) SetSelectedFn(f func(string) string) {
 
 // GetSelectedRowIndex fetch the currently selected row index.
 func (s *SelectTable) GetSelectedRowIndex() int {
-	return s.selectedRow
+	r, _ := s.GetSelection()
+	return r
 }
 
 // SelectRow select a given row by index.
@@ -93,14 +94,14 @@ func (s *SelectTable) SelectRow(r int, broadcast bool) {
 
 // UpdateSelection refresh selected row.
 func (s *SelectTable) updateSelection(broadcast bool) {
-	s.SelectRow(s.selectedRow, broadcast)
+	r, _ := s.GetSelection()
+	s.SelectRow(r, broadcast)
 }
 
 func (s *SelectTable) selectionChanged(r, c int) {
 	if r < 0 {
 		return
 	}
-	s.selectedRow = r
 	cell := s.GetCell(r, c)
 	s.SetSelectedStyle(tcell.ColorBlack, cell.Color, tcell.AttrBold)
 }

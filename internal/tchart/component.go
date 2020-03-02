@@ -6,7 +6,6 @@ import (
 
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -61,9 +60,7 @@ func (c *Component) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 	return c.WrapInputHandler(func(event *tcell.EventKey, setFocus func(p tview.Primitive)) {
 		switch key := event.Key(); key {
 		case tcell.KeyEnter:
-			log.Debug().Msgf("YO %s ENTER!!", c.id)
 		case tcell.KeyBacktab, tcell.KeyTab:
-			log.Debug().Msgf("YO %s TAB!!", c.id)
 			if c.blur != nil {
 				c.blur(key)
 			}
@@ -113,7 +110,8 @@ func (c *Component) GetSeriesColorNames() []string {
 func (c *Component) colorForSeries() (tcell.Color, tcell.Color) {
 	c.mx.RLock()
 	defer c.mx.RUnlock()
-	if len(c.seriesColors) > 1 {
+
+	if len(c.seriesColors) == 2 {
 		return c.seriesColors[0], c.seriesColors[1]
 	}
 	return okColor, faultColor

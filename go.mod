@@ -2,6 +2,8 @@ module github.com/derailed/k9s
 
 go 1.13
 
+replace github.com/derailed/tview => /Users/fernand/go_wk/derailed/src/github.com/derailed/tview
+
 replace (
 	github.com/docker/docker => github.com/docker/docker v1.4.2-0.20181221150755-2cb26cfe9cbf
 	k8s.io/api => k8s.io/api v0.0.0-20190918155943-95b840bb6a1f
