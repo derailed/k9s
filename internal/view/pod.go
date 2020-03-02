@@ -54,7 +54,7 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 
 	aa.Add(ui.KeyActions{
 		ui.KeyShiftR:   ui.NewKeyAction("Sort Ready", p.GetTable().SortColCmd(readyCol, true), false),
-		ui.KeyShiftT:   ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd("RESTART", false), false),
+		ui.KeyShiftT:   ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd("RESTARTS", false), false),
 		ui.KeyShiftS:   ui.NewKeyAction("Sort Status", p.GetTable().SortColCmd(statusCol, true), false),
 		ui.KeyShiftC:   ui.NewKeyAction("Sort CPU", p.GetTable().SortColCmd(cpuCol, false), false),
 		ui.KeyShiftM:   ui.NewKeyAction("Sort MEM", p.GetTable().SortColCmd(memCol, false), false),

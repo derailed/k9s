@@ -70,7 +70,7 @@ func (Container) Header(ns string) Header {
 		HeaderColumn{Name: "READY"},
 		HeaderColumn{Name: "STATE"},
 		HeaderColumn{Name: "INIT"},
-		HeaderColumn{Name: "RESTART", Align: tview.AlignRight},
+		HeaderColumn{Name: "RESTARTS", Align: tview.AlignRight},
 		HeaderColumn{Name: "PROBES(L:R)"},
 		HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},

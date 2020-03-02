@@ -26,7 +26,7 @@ func TestPodColorer(t *testing.T) {
 		render.HeaderColumn{Name: "NAMESPACE"},
 		render.HeaderColumn{Name: "NAME"},
 		render.HeaderColumn{Name: "READY"},
-		render.HeaderColumn{Name: "RESTART"},
+		render.HeaderColumn{Name: "RESTARTS"},
 		render.HeaderColumn{Name: "STATUS"},
 		render.HeaderColumn{Name: "VALID"},
 	}
