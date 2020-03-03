@@ -21,12 +21,12 @@ func infoCmd() *cobra.Command {
 }
 
 func printInfo() {
-	const sectionFmt = "%-15s "
+	const fmat = "%-25s %s\n"
 
 	printLogo(color.Cyan)
-	printTuple(sectionFmt, "Configuration", config.K9sConfigFile, color.Cyan)
-	printTuple(sectionFmt, "Logs", config.K9sLogs, color.Cyan)
-	printTuple(sectionFmt, "Screen Dumps", config.K9sDumpDir, color.Cyan)
+	printTuple(fmat, "Configuration", config.K9sConfigFile, color.Cyan)
+	printTuple(fmat, "Logs", config.K9sLogs, color.Cyan)
+	printTuple(fmat, "Screen Dumps", config.K9sDumpDir, color.Cyan)
 }
 
 func printLogo(c color.Paint) {

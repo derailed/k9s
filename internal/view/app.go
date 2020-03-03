@@ -274,8 +274,7 @@ func (a *App) switchNS(ns string) bool {
 }
 
 func (a *App) switchCtx(name string, loadPods bool) error {
-	log.Debug().Msgf("Switching Context %q", name)
-
+	log.Debug().Msgf("--> Switching Context %q--%q", name, a.Config.ActiveView())
 	a.Halt()
 	defer a.Resume()
 	{
@@ -294,7 +293,11 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 		}
 		a.Flash().Infof("Switching context to %s", name)
 		a.ReloadStyles(name)
-		if err := a.gotoResource("pods", "", true); loadPods && err != nil {
+		v := a.Config.ActiveView()
+		if v == "" {
+			v = "pod"
+		}
+		if err := a.gotoResource(v, ns, true); loadPods && err != nil {
 			a.Flash().Err(err)
 		}
 		a.clusterModel.Reset(a.factory)

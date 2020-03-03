@@ -17,12 +17,13 @@ const (
 type Component struct {
 	*tview.Box
 
-	bgColor, noColor tcell.Color
-	seriesColors     []tcell.Color
-	dimmed           tcell.Style
-	id, legend       string
-	blur             func(tcell.Key)
-	mx               sync.RWMutex
+	bgColor, noColor           tcell.Color
+	focusFgColor, focusBgColor string
+	seriesColors               []tcell.Color
+	dimmed                     tcell.Style
+	id, legend                 string
+	blur                       func(tcell.Key)
+	mx                         sync.RWMutex
 }
 
 // NewComponent returns a new component.
@@ -34,6 +35,11 @@ func NewComponent(id string) *Component {
 		seriesColors: []tcell.Color{tview.Styles.PrimaryTextColor, tview.Styles.FocusColor},
 		dimmed:       tcell.StyleDefault.Background(tview.Styles.PrimitiveBackgroundColor).Foreground(tcell.ColorGray).Dim(true),
 	}
+}
+
+// SetFocusColorNames sets the focus color names.
+func (c *Component) SetFocusColorNames(fg, bg string) {
+	c.focusFgColor, c.focusBgColor = fg, bg
 }
 
 // SetBackgroundColor sets the graph bg color.

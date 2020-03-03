@@ -36,6 +36,9 @@ type Grapheable interface {
 	// GetSeriesColorNames returns the series color names.
 	GetSeriesColorNames() []string
 
+	// SetFocusColorNames sets the focus color names.
+	SetFocusColorNames(fg, bg string)
+
 	// SetBackgroundColor sets chart bg color.
 	SetBackgroundColor(tcell.Color)
 
@@ -80,19 +83,19 @@ func (p *Pulse) Init(ctx context.Context) error {
 	}
 
 	p.charts = []Grapheable{
-		p.makeGA(image.Point{X: 0, Y: 0}, image.Point{X: 3, Y: 2}, "apps/v1/deployments"),
-		p.makeGA(image.Point{X: 0, Y: 2}, image.Point{X: 3, Y: 2}, "apps/v1/replicasets"),
-		p.makeGA(image.Point{X: 0, Y: 4}, image.Point{X: 3, Y: 2}, "apps/v1/statefulsets"),
-		p.makeGA(image.Point{X: 0, Y: 6}, image.Point{X: 3, Y: 2}, "apps/v1/daemonsets"),
-		p.makeSP(true, image.Point{X: 3, Y: 0}, image.Point{X: 3, Y: 4}, "v1/pods"),
-		p.makeSP(true, image.Point{X: 3, Y: 4}, image.Point{X: 3, Y: 4}, "v1/events"),
-		p.makeSP(true, image.Point{X: 6, Y: 0}, image.Point{X: 3, Y: 4}, "batch/v1/jobs"),
-		p.makeSP(true, image.Point{X: 6, Y: 4}, image.Point{X: 3, Y: 4}, "v1/persistentvolumes"),
+		p.makeGA(image.Point{X: 0, Y: 0}, image.Point{X: 2, Y: 2}, "apps/v1/deployments"),
+		p.makeGA(image.Point{X: 0, Y: 2}, image.Point{X: 2, Y: 2}, "apps/v1/replicasets"),
+		p.makeGA(image.Point{X: 0, Y: 4}, image.Point{X: 2, Y: 2}, "apps/v1/statefulsets"),
+		p.makeGA(image.Point{X: 0, Y: 6}, image.Point{X: 2, Y: 2}, "apps/v1/daemonsets"),
+		p.makeSP(true, image.Point{X: 2, Y: 0}, image.Point{X: 3, Y: 2}, "v1/pods"),
+		p.makeSP(true, image.Point{X: 2, Y: 2}, image.Point{X: 3, Y: 2}, "v1/events"),
+		p.makeSP(true, image.Point{X: 2, Y: 4}, image.Point{X: 3, Y: 2}, "batch/v1/jobs"),
+		p.makeSP(true, image.Point{X: 2, Y: 6}, image.Point{X: 3, Y: 2}, "v1/persistentvolumes"),
 	}
 	if p.app.Conn().HasMetrics() {
 		p.charts = append(p.charts,
-			p.makeSP(false, image.Point{X: 9, Y: 0}, image.Point{X: 2, Y: 4}, "cpu"),
-			p.makeSP(false, image.Point{X: 9, Y: 4}, image.Point{X: 2, Y: 4}, "mem"),
+			p.makeSP(false, image.Point{X: 5, Y: 0}, image.Point{X: 2, Y: 4}, "cpu"),
+			p.makeSP(false, image.Point{X: 5, Y: 4}, image.Point{X: 2, Y: 4}, "mem"),
 		)
 	}
 	p.bindKeys()
@@ -108,6 +111,7 @@ func (p *Pulse) Init(ctx context.Context) error {
 func (p *Pulse) StylesChanged(s *config.Styles) {
 	p.SetBackgroundColor(s.Charts().BgColor.Color())
 	for _, c := range p.charts {
+		c.SetFocusColorNames(s.Table().BgColor.String(), s.Table().CursorColor.String())
 		if c.IsDial() {
 			c.SetBackgroundColor(s.Charts().DialBgColor.Color())
 			c.SetSeriesColors(s.Charts().DefaultDialColors.Colors()...)
@@ -318,8 +322,9 @@ func (p *Pulse) makeSP(multi bool, loc image.Point, span image.Point, gvr string
 
 func (p *Pulse) makeGA(loc image.Point, span image.Point, gvr string) *tchart.Gauge {
 	g := tchart.NewGauge(gvr)
+	// g.SetResolution(3)
 	g.SetBackgroundColor(p.app.Styles.Charts().BgColor.Color())
-	g.SetBorderPadding(0, 1, 0, 1)
+	// g.SetBorderPadding(0, 1, 0, 1)
 	if cc, ok := p.app.Styles.Charts().ResourceColors[gvr]; ok {
 		g.SetSeriesColors(cc.Colors()...)
 	} else {
@@ -327,7 +332,7 @@ func (p *Pulse) makeGA(loc image.Point, span image.Point, gvr string) *tchart.Ga
 	}
 	g.SetLegend(fmt.Sprintf(" %s ", strings.Title(client.NewGVR(gvr).R())))
 	g.SetInputCapture(p.keyboard)
-	p.AddItem(g, loc.X, loc.Y, span.X, span.Y, span.X, span.Y, true)
+	p.AddItem(g, loc.X, loc.Y, span.X, span.Y, 0, 0, true)
 
 	return g
 }
