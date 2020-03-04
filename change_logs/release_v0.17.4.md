@@ -33,7 +33,7 @@ k9s:
   ...
 ```
 
-<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/story/pulses_tripped.png" align="center" width="300" height="auto"/>
+<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/story/pulses_tripped.png" align="center" width="500" height="auto"/>
 
 ## Resolved Bugs/Features/PRs
 
