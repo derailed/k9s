@@ -12,8 +12,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"golang.org/x/text/language"
-	"golang.org/x/text/message"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -163,13 +161,7 @@ func (Benchmark) countReq(rr [][]string) string {
 			sum += m
 		}
 	}
-	return asNum(sum)
-}
-
-// AsNumb prints a number with thousand separator.
-func asNum(n int) string {
-	p := message.NewPrinter(language.English)
-	return p.Sprintf("%d", n)
+	return AsThousands(int64(sum))
 }
 
 // BenchInfo represents benchmark run info.

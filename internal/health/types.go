@@ -10,14 +10,14 @@ const (
 	// Corpus tracks total health.
 	Corpus
 
-	// OK tracks healhy.
-	OK
+	// S1 tracks series 1.
+	S1
 
-	// Warn tracks health warnings.
-	Warn
+	// S2 tracks series 2.
+	S2
 
-	// Toast tracks unhealties.
-	Toast
+	// S3 tracks series 3.
+	S3
 )
 
 // Message represents a health message.
@@ -32,7 +32,7 @@ type Message struct {
 type Messages []Message
 
 // Counts tracks health counts by category.
-type Counts map[Level]int
+type Counts map[Level]int64
 
 // Vital tracks a resource vitals.
 type Vital struct {

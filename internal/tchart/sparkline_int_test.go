@@ -57,27 +57,27 @@ func TestToBlocks(t *testing.T) {
 			e: blocks{},
 		},
 		"max_ok": {
-			m: Metric{OK: 100, Fault: 10},
+			m: Metric{S1: 100, S2: 10},
 			s: 0.5,
 			e: blocks{
-				oks:  block{full: 6, partial: sparks[2]},
-				errs: block{full: 0, partial: sparks[5]},
+				s1: block{full: 6, partial: sparks[2]},
+				s2: block{full: 0, partial: sparks[5]},
 			},
 		},
 		"max_fault": {
-			m: Metric{OK: 10, Fault: 100},
+			m: Metric{S1: 10, S2: 100},
 			s: 0.5,
 			e: blocks{
-				oks:  block{full: 0, partial: sparks[5]},
-				errs: block{full: 6, partial: sparks[2]},
+				s1: block{full: 0, partial: sparks[5]},
+				s2: block{full: 6, partial: sparks[2]},
 			},
 		},
 		"over": {
-			m: Metric{OK: 22, Fault: 999},
+			m: Metric{S1: 22, S2: 999},
 			s: float64(8*20) / float64(999),
 			e: blocks{
-				oks:  block{full: 0, partial: sparks[4]},
-				errs: block{full: 20, partial: sparks[0]},
+				s1: block{full: 0, partial: sparks[4]},
+				s2: block{full: 20, partial: sparks[0]},
 			},
 		},
 	}
@@ -93,26 +93,26 @@ func TestToBlocks(t *testing.T) {
 func TestComputeMax(t *testing.T) {
 	uu := map[string]struct {
 		mm []Metric
-		e  int
+		e  int64
 	}{
 		"empty": {
 			e: 0,
 		},
 		"max_ok": {
-			mm: []Metric{{OK: 100, Fault: 10}},
+			mm: []Metric{{S1: 100, S2: 10}},
 			e:  100,
 		},
 		"max_fault": {
-			mm: []Metric{{OK: 100, Fault: 1000}},
+			mm: []Metric{{S1: 100, S2: 1000}},
 			e:  1000,
 		},
 		"many": {
 			mm: []Metric{
-				{OK: 100, Fault: 1000},
-				{OK: 110, Fault: 1010},
-				{OK: 120, Fault: 1020},
-				{OK: 130, Fault: 1030},
-				{OK: 140, Fault: 1040},
+				{S1: 100, S2: 1000},
+				{S1: 110, S2: 1010},
+				{S1: 120, S2: 1020},
+				{S1: 130, S2: 1030},
+				{S1: 140, S2: 1040},
 			},
 			e: 1040,
 		},

@@ -13,14 +13,14 @@ func TestCheck(t *testing.T) {
 	c := health.NewCheck("test")
 	n := 0
 	for i := 0; i < 10; i++ {
-		c.Inc(health.OK)
+		c.Inc(health.S1)
 		cc = append(cc, c)
 		n++
 	}
-	c.Total(n)
+	c.Total(int64(n))
 
 	assert.Equal(t, 10, len(cc))
-	assert.Equal(t, 10, c.Tally(health.Corpus))
-	assert.Equal(t, 10, c.Tally(health.OK))
-	assert.Equal(t, 0, c.Tally(health.Toast))
+	assert.Equal(t, int64(10), c.Tally(health.Corpus))
+	assert.Equal(t, int64(10), c.Tally(health.S1))
+	assert.Equal(t, int64(0), c.Tally(health.S2))
 }

@@ -271,8 +271,9 @@ func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads M
 		cell := tview.NewTableCell(field)
 		cell.SetExpansion(1)
 		cell.SetAlign(h[c].Align)
-		cell.SetTextColor(color(t.GetModel().GetNamespace(), t.header, ore))
-		if marked {
+		fgColor := color(t.GetModel().GetNamespace(), t.header, ore)
+		cell.SetTextColor(fgColor)
+		if marked && fgColor != render.ErrColor {
 			cell.SetTextColor(t.styles.Table().MarkColor.Color())
 		}
 		if col == 0 {

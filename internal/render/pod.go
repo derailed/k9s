@@ -156,16 +156,16 @@ func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, p metric) {
 	cpu, mem := currentRes(mx)
 	c = metric{
 		cpu: ToMillicore(cpu.MilliValue()),
-		mem: ToMi(ToMB(mem.Value())),
+		mem: ToMi(client.ToMB(mem.Value())),
 	}
 
 	rc, rm := requestedRes(pod.Spec.Containers)
 	lc, lm := resourceLimits(pod.Spec.Containers)
 	p = metric{
-		cpu:    AsPerc(toPerc(float64(cpu.MilliValue()), float64(rc.MilliValue()))),
-		mem:    AsPerc(toPerc(ToMB(mem.Value()), ToMB(rm.Value()))),
-		cpuLim: AsPerc(toPerc(float64(cpu.MilliValue()), float64(lc.MilliValue()))),
-		memLim: AsPerc(toPerc(ToMB(mem.Value()), ToMB(lm.Value()))),
+		cpu:    IntToStr(client.ToPercentage(cpu.MilliValue(), rc.MilliValue())),
+		mem:    IntToStr(client.ToPercentage(client.ToMB(mem.Value()), client.ToMB(rm.Value()))),
+		cpuLim: IntToStr(client.ToPercentage(cpu.MilliValue(), lc.MilliValue())),
+		memLim: IntToStr(client.ToPercentage(client.ToMB(mem.Value()), client.ToMB(lm.Value()))),
 	}
 
 	return

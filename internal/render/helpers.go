@@ -9,9 +9,17 @@ import (
 	"github.com/derailed/tview"
 	runewidth "github.com/mattn/go-runewidth"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 )
+
+// AsThousands prints a number with thousand separator.
+func AsThousands(n int64) string {
+	p := message.NewPrinter(language.English)
+	return p.Sprintf("%d", n)
+}
 
 // Happy returns true if resoure is happy, false otherwise
 func Happy(ns string, h Header, r Row) bool {
@@ -25,12 +33,12 @@ func Happy(ns string, h Header, r Row) bool {
 	return strings.TrimSpace(r.Fields[validCol]) == ""
 }
 
-const megaByte = 1024 * 1024
+// const megaByte = 1024 * 1024
 
-// ToMB converts bytes to megabytes.
-func ToMB(v int64) float64 {
-	return float64(v) / megaByte
-}
+// // ToMB converts bytes to megabytes.
+// func ToMB(v int64) float64 {
+// 	return float64(v) / megaByte
+// }
 
 func asStatus(err error) string {
 	if err == nil {
@@ -112,22 +120,14 @@ func join(a []string, sep string) string {
 	return buff.String()
 }
 
-// ToPerc prints a number as percentage.
-func ToPerc(f float64) string {
-	return AsPerc(f) + "%"
+// PrintPerc prints a number as percentage.
+func PrintPerc(p int) string {
+	return strconv.Itoa(p) + "%"
 }
 
-// AsPerc prints a number as a percentage.
-func AsPerc(f float64) string {
-	return strconv.Itoa(int(f))
-}
-
-// ToPerc computes the ratio of two numbers as a percentage.
-func toPerc(v1, v2 float64) float64 {
-	if v2 == 0 {
-		return 0
-	}
-	return (v1 / v2) * 100
+// IntToStr converts an int to a string.
+func IntToStr(p int) string {
+	return strconv.Itoa(int(p))
 }
 
 func missing(s string) string {
@@ -233,7 +233,7 @@ func ToMillicore(v int64) string {
 }
 
 // ToMi shows mem reading for human.
-func ToMi(v float64) string {
+func ToMi(v int64) string {
 	return strconv.Itoa(int(v))
 }
 

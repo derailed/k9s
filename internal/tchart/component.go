@@ -98,7 +98,7 @@ func (c *Component) GetSeriesColorNames() []string {
 	c.mx.RLock()
 	defer c.mx.RUnlock()
 
-	var nn []string
+	nn := make([]string, 0, len(c.seriesColors))
 	for _, color := range c.seriesColors {
 		for name, co := range tcell.ColorNames {
 			if co == color {

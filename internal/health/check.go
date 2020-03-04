@@ -24,7 +24,7 @@ func NewCheck(gvr string) *Check {
 }
 
 // Set sets a health metric.
-func (c *Check) Set(l Level, v int) {
+func (c *Check) Set(l Level, v int64) {
 	c.Counts[l] = v
 }
 
@@ -34,12 +34,12 @@ func (c *Check) Inc(l Level) {
 }
 
 // Total stores a metric total.
-func (c *Check) Total(n int) {
+func (c *Check) Total(n int64) {
 	c.Counts[Corpus] = n
 }
 
 // Tally retrieves a given health metric.
-func (c *Check) Tally(l Level) int {
+func (c *Check) Tally(l Level) int64 {
 	return c.Counts[l]
 }
 

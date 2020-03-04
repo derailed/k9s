@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	v1 "k8s.io/api/core/v1"
@@ -142,7 +143,7 @@ func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, p, l met
 	}
 
 	cpu := mx.Usage.Cpu().MilliValue()
-	mem := ToMB(mx.Usage.Memory().Value())
+	mem := client.ToMB(mx.Usage.Memory().Value())
 	c = metric{
 		cpu: ToMillicore(cpu),
 		mem: ToMi(mem),
@@ -150,18 +151,18 @@ func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, p, l met
 
 	rcpu, rmem := containerResources(*co)
 	if rcpu != nil {
-		p.cpu = AsPerc(toPerc(float64(cpu), float64(rcpu.MilliValue())))
+		p.cpu = IntToStr(client.ToPercentage(cpu, rcpu.MilliValue()))
 	}
 	if rmem != nil {
-		p.mem = AsPerc(toPerc(mem, ToMB(rmem.Value())))
+		p.mem = IntToStr(client.ToPercentage(mem, client.ToMB(rmem.Value())))
 	}
 
 	lcpu, lmem := containerLimits(*co)
 	if lcpu != nil {
-		l.cpu = AsPerc(toPerc(float64(cpu), float64(lcpu.MilliValue())))
+		l.cpu = IntToStr(client.ToPercentage(cpu, lcpu.MilliValue()))
 	}
 	if lmem != nil {
-		l.mem = AsPerc(toPerc(mem, ToMB(lmem.Value())))
+		l.mem = IntToStr(client.ToPercentage(mem, client.ToMB(lmem.Value())))
 	}
 
 	return

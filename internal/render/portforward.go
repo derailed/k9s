@@ -70,8 +70,8 @@ func (f PortForward) Render(o interface{}, gvr string, r *Row) error {
 		pf.Container(),
 		strings.Join(pf.Ports(), ","),
 		UrlFor(pf.Config.Host, pf.Config.Path, ports[0]),
-		asNum(pf.Config.C),
-		asNum(pf.Config.N),
+		AsThousands(int64(pf.Config.C)),
+		AsThousands(int64(pf.Config.N)),
 		"",
 		pf.Age(),
 	}

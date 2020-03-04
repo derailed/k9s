@@ -294,7 +294,7 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 		a.Flash().Infof("Switching context to %s", name)
 		a.ReloadStyles(name)
 		v := a.Config.ActiveView()
-		if v == "" {
+		if v == "" || v == "ctx" || v == "context" {
 			v = "pod"
 		}
 		if err := a.gotoResource(v, ns, true); loadPods && err != nil {
@@ -342,8 +342,11 @@ func (a *App) Run() error {
 func (a *App) Status(l model.FlashLevel, msg string) {
 	a.QueueUpdateDraw(func() {
 		a.Flash().SetMessage(l, msg)
-		a.setIndicator(l, msg)
-		a.setLogo(l, msg)
+		if a.showHeader {
+			a.setLogo(l, msg)
+		} else {
+			a.setIndicator(l, msg)
+		}
 	})
 }
 

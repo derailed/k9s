@@ -93,6 +93,18 @@ func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
 		if c.app.Conn().HasMetrics() {
 			row = c.setCell(row, ui.AsPercDelta(prev.Cpu, curr.Cpu))
 			_ = c.setCell(row, ui.AsPercDelta(prev.Mem, curr.Mem))
+			var set bool
+			if c.app.Config.K9s.Thresholds.ExceedsCPUPerc(curr.Cpu) {
+				c.app.Status(model.FlashErr, "CPU on fire!")
+				set = true
+			}
+			if c.app.Config.K9s.Thresholds.ExceedsMemoryPerc(curr.Mem) {
+				c.app.Status(model.FlashErr, "Memory on fire!")
+				set = true
+			}
+			if !set {
+				c.app.ClearStatus(true)
+			}
 		}
 		c.updateStyle()
 	})

@@ -213,6 +213,10 @@ func newCharts() Charts {
 		ChartBgColor:       "default",
 		DefaultDialColors:  Colors{Color("palegreen"), Color("orangered")},
 		DefaultChartColors: Colors{Color("palegreen"), Color("orangered")},
+		ResourceColors: map[string]Colors{
+			"cpu": Colors{Color("dodgerblue"), Color("darkslateblue")},
+			"mem": Colors{Color("yellow"), Color("goldenrod")},
+		},
 	}
 }
 func newViews() Views {

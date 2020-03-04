@@ -20,6 +20,7 @@ type K9s struct {
 	CurrentCluster    string              `yaml:"currentCluster"`
 	FullScreenLogs    bool                `yaml:"fullScreenLogs"`
 	Clusters          map[string]*Cluster `yaml:"clusters,omitempty"`
+	Thresholds        *Threshold          `yaml:"thresholds"`
 	manualRefreshRate int
 	manualHeadless    *bool
 	manualReadOnly    *bool
@@ -34,6 +35,7 @@ func NewK9s() *K9s {
 		LogBufferSize:  defaultLogBufferSize,
 		LogRequestSize: defaultLogRequestSize,
 		Clusters:       make(map[string]*Cluster),
+		Thresholds:     newThreshold(),
 	}
 }
 
@@ -133,11 +135,15 @@ func (k *K9s) checkClusters(ks KubeSettings) {
 // Validate the current configuration.
 func (k *K9s) Validate(c client.Connection, ks KubeSettings) {
 	k.validateDefaults()
-
 	if k.Clusters == nil {
 		k.Clusters = map[string]*Cluster{}
 	}
 	k.checkClusters(ks)
+
+	if k.Thresholds == nil {
+		k.Thresholds = newThreshold()
+	}
+	k.Thresholds.Validate(c, ks)
 
 	if ctx, err := ks.CurrentContextName(); err == nil && len(k.CurrentContext) == 0 {
 		k.CurrentContext = ctx

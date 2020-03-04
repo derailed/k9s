@@ -12,6 +12,38 @@ import (
 	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
+func TestToPercentage(t *testing.T) {
+	uu := []struct {
+		v1, v2 int64
+		e      int
+	}{
+		{0, 0, 0},
+		{100, 200, 50},
+		{200, 100, 200},
+		{224, 4000, 5},
+	}
+
+	for _, u := range uu {
+		assert.Equal(t, u.e, client.ToPercentage(u.v1, u.v2))
+	}
+}
+
+func TestToMB(t *testing.T) {
+	const mb = 1024 * 1024
+	uu := []struct {
+		v int64
+		e int64
+	}{
+		{0, 0},
+		{2 * mb, 2},
+		{10 * mb, 10},
+	}
+
+	for _, u := range uu {
+		assert.Equal(t, u.e, client.ToMB(u.v))
+	}
+}
+
 func TestPodsMetrics(t *testing.T) {
 	uu := map[string]struct {
 		metrics *mv1beta1.PodMetricsList
@@ -32,8 +64,8 @@ func TestPodsMetrics(t *testing.T) {
 			eSize: 2,
 			e: client.PodsMetrics{
 				"default/p1": client.PodMetrics{
-					CurrentCPU: int64(3000),
-					CurrentMEM: float64(12288),
+					CurrentCPU: 3000,
+					CurrentMEM: 12288,
 				},
 			},
 		},
@@ -107,8 +139,8 @@ func TestNodesMetrics(t *testing.T) {
 		"ok": {
 			nodes: &v1.NodeList{
 				Items: []v1.Node{
-					makeNode("n1", "32", "128Gi", "50m", "2Mi"),
-					makeNode("n2", "8", "4Gi", "50m", "10Mi"),
+					makeNode("n1", "32", "128Gi", "32", "128Gi"),
+					makeNode("n2", "8", "4Gi", "8", "4Gi"),
 				},
 			},
 			metrics: &v1beta1.NodeMetricsList{
@@ -120,13 +152,15 @@ func TestNodesMetrics(t *testing.T) {
 			eSize: 2,
 			e: client.NodesMetrics{
 				"n1": client.NodeMetrics{
-					TotalCPU: int64(32000),
-					TotalMEM: float64(131072),
-					AvailCPU: int64(50),
-					AvailMEM: float64(2),
+					TotalCPU:       32000,
+					TotalMEM:       131072,
+					AllocatableCPU: 32000,
+					AllocatableMEM: 131072,
+					AvailableCPU:   22000,
+					AvailableMEM:   122880,
 					CurrentMetrics: client.CurrentMetrics{
-						CurrentCPU: int64(10000),
-						CurrentMEM: float64(8192),
+						CurrentCPU: 10000,
+						CurrentMEM: 8192,
 					},
 				},
 			},

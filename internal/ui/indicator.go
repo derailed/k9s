@@ -56,8 +56,8 @@ func (s *StatusIndicator) ClusterInfoUpdated(data model.ClusterMeta) {
 			data.Cluster,
 			data.User,
 			data.K8sVer,
-			render.ToPerc(data.Cpu),
-			render.ToPerc(data.Mem),
+			render.PrintPerc(data.Cpu),
+			render.PrintPerc(data.Mem),
 		))
 	})
 }
@@ -131,8 +131,8 @@ func (s *StatusIndicator) setText(msg string) {
 // Helpers...
 
 // AsPercDelta represents a percentage with a delta indicator.
-func AsPercDelta(ov, nv float64) string {
-	prev, cur := render.AsPerc(ov), render.AsPerc(nv)
+func AsPercDelta(ov, nv int) string {
+	prev, cur := render.IntToStr(ov), render.IntToStr(nv)
 	if cur == "0" {
 		return render.NAValue
 	}

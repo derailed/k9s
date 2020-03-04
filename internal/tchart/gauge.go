@@ -27,9 +27,9 @@ type delta int
 type Gauge struct {
 	*Component
 
-	data                Metric
-	resolution          int
-	deltaOk, deltaFault delta
+	data             Metric
+	resolution       int
+	deltaOk, deltaS2 delta
 }
 
 // NewGauge returns a new gauge.
@@ -53,7 +53,7 @@ func (g *Gauge) Add(m Metric) {
 	g.mx.Lock()
 	defer g.mx.Unlock()
 
-	g.deltaOk, g.deltaFault = computeDelta(g.data.OK, m.OK), computeDelta(g.data.Fault, m.Fault)
+	g.deltaOk, g.deltaS2 = computeDelta(g.data.S1, m.S1), computeDelta(g.data.S2, m.S2)
 	g.data = m
 }
 
@@ -80,12 +80,12 @@ func (g *Gauge) Draw(sc tcell.Screen) {
 	)
 
 	s1C, s2C := g.colorForSeries()
-	d1, d2 := fmt.Sprintf(fmat, g.data.OK), fmt.Sprintf(fmat, g.data.Fault)
+	d1, d2 := fmt.Sprintf(fmat, g.data.S1), fmt.Sprintf(fmat, g.data.S2)
 	o.X -= len(d1) * 3
-	g.drawNum(sc, true, o, g.data.OK, g.deltaOk, d1, style.Foreground(s1C).Dim(false))
+	g.drawNum(sc, true, o, g.data.S1, g.deltaOk, d1, style.Foreground(s1C).Dim(false))
 
 	o.X = mid.X + 1
-	g.drawNum(sc, false, o, g.data.Fault, g.deltaFault, d2, style.Foreground(s2C).Dim(false))
+	g.drawNum(sc, false, o, g.data.S2, g.deltaS2, d2, style.Foreground(s2C).Dim(false))
 
 	if rect.Dx() > 0 && rect.Dy() > 0 && g.legend != "" {
 		legend := g.legend
@@ -96,14 +96,14 @@ func (g *Gauge) Draw(sc tcell.Screen) {
 	}
 }
 
-func (g *Gauge) drawNum(sc tcell.Screen, ok bool, o image.Point, n int, dn delta, ns string, style tcell.Style) {
+func (g *Gauge) drawNum(sc tcell.Screen, ok bool, o image.Point, n int64, dn delta, ns string, style tcell.Style) {
 	c1, _ := g.colorForSeries()
 	if ok {
 		style = style.Foreground(c1)
 		printDelta(sc, dn, o, style)
 	}
 
-	dm, significant := NewDotMatrix(3, 3), n == 0
+	dm, significant := NewDotMatrix(), n == 0
 	if n == 0 {
 		style = g.dimmed
 	}
@@ -138,7 +138,7 @@ func (g *Gauge) drawDial(sc tcell.Screen, m Matrix, o image.Point, style tcell.S
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func computeDelta(d1, d2 int) delta {
+func computeDelta(d1, d2 int64) delta {
 	if d2 == 0 {
 		return DeltaSame
 	}

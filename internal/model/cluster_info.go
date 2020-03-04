@@ -3,7 +3,6 @@ package model
 import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/render"
 )
 
 // ClusterInfoListener registers a listener for model changes.
@@ -20,31 +19,35 @@ const NA = "n/a"
 
 // ClusterMeta represents cluster meta data.
 type ClusterMeta struct {
-	Context, Cluster string
-	User             string
-	K9sVer, K8sVer   string
-	Cpu, Mem         float64
+	Context, Cluster    string
+	User                string
+	K9sVer, K8sVer      string
+	Cpu, Mem, Ephemeral int
 }
 
 // NewClusterMeta returns a new instance.
 func NewClusterMeta() ClusterMeta {
 	return ClusterMeta{
-		Context: NA,
-		Cluster: NA,
-		User:    NA,
-		K9sVer:  NA,
-		K8sVer:  NA,
-		Cpu:     0,
-		Mem:     0,
+		Context:   NA,
+		Cluster:   NA,
+		User:      NA,
+		K9sVer:    NA,
+		K8sVer:    NA,
+		Cpu:       0,
+		Mem:       0,
+		Ephemeral: 0,
 	}
 }
 
 // Deltas diffs cluster meta return true if different, false otherwise.
 func (c ClusterMeta) Deltas(n ClusterMeta) bool {
-	if render.AsPerc(c.Cpu) != render.AsPerc(n.Cpu) {
+	if c.Cpu != n.Cpu {
 		return true
 	}
-	if render.AsPerc(c.Mem) != render.AsPerc(n.Mem) {
+	if c.Mem != n.Mem {
+		return true
+	}
+	if c.Ephemeral != n.Ephemeral {
 		return true
 	}
 
@@ -89,7 +92,7 @@ func (c *ClusterInfo) Refresh() {
 
 	var mx client.ClusterMetrics
 	if err := c.cluster.Metrics(&mx); err == nil {
-		data.Cpu, data.Mem = mx.PercCPU, mx.PercMEM
+		data.Cpu, data.Mem, data.Ephemeral = mx.PercCPU, mx.PercMEM, mx.PercEphemeral
 	}
 
 	if c.data.Deltas(data) {

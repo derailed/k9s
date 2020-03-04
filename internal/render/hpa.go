@@ -259,12 +259,12 @@ func resourceMetricsV2b2(i int, spec autoscalingv2beta2.MetricSpec, statuses []a
 	}
 
 	if len(statuses) > i && statuses[i].Resource != nil && statuses[i].Resource.Current.AverageUtilization != nil {
-		current = AsPerc(float64(*statuses[i].Resource.Current.AverageUtilization))
+		current = IntToStr(int(*statuses[i].Resource.Current.AverageUtilization))
 	}
 
 	target := "<auto>"
 	if spec.Resource.Target.AverageUtilization != nil {
-		target = AsPerc(float64(*spec.Resource.Target.AverageUtilization))
+		target = IntToStr(int(*spec.Resource.Target.AverageUtilization))
 	}
 
 	return current + "/" + target
@@ -293,12 +293,12 @@ func resourceMetricsV2b1(i int, spec autoscalingv2beta1.MetricSpec, statuses []a
 	}
 
 	if len(statuses) > i && statuses[i].Resource != nil && statuses[i].Resource.CurrentAverageUtilization != nil {
-		current = AsPerc(float64(*statuses[i].Resource.CurrentAverageUtilization))
+		current = IntToStr(int(*statuses[i].Resource.CurrentAverageUtilization))
 	}
 
 	target := "<auto>"
 	if spec.Resource.TargetAverageUtilization != nil {
-		target = AsPerc(float64(*spec.Resource.TargetAverageUtilization))
+		target = IntToStr(int(*spec.Resource.TargetAverageUtilization))
 	}
 
 	return current + "/" + target

@@ -17,29 +17,29 @@ type block struct {
 }
 
 type blocks struct {
-	oks, errs block
+	s1, s2 block
 }
 
-// Metric tracks a good and error rates.
+// Metric tracks two series.
 type Metric struct {
-	OK, Fault int
+	S1, S2 int64
 }
 
 // MaxDigits returns the max series number of digits.
 func (m Metric) MaxDigits() int {
-
 	s := fmt.Sprintf("%d", m.Max())
+
 	return len(s)
 }
 
 // Max returns the max of the series.
-func (m Metric) Max() int {
-	return int(math.Max(float64(m.OK), float64(m.Fault)))
+func (m Metric) Max() int64 {
+	return int64(math.Max(float64(m.S1), float64(m.S2)))
 }
 
-// Sum returns the sum of the metrics.
-func (m Metric) Sum() int {
-	return m.OK + m.Fault
+// Sum returns the sum of series.
+func (m Metric) Sum() int64 {
+	return m.S1 + m.S2
 }
 
 // SparkLine represents a sparkline component.
@@ -81,7 +81,7 @@ func (s *SparkLine) Draw(screen tcell.Screen) {
 		return
 	}
 
-	pad := 1
+	pad := 0
 	if s.legend != "" {
 		pad++
 	}
@@ -97,18 +97,15 @@ func (s *SparkLine) Draw(screen tcell.Screen) {
 		idx = len(s.data) - rect.Dx()/2
 	}
 
-	factor := 2
-	if !s.multiSeries {
-		factor = 1
-	}
-	scale := float64(len(sparks)*(rect.Dy()-pad)/factor) / float64(max)
+	scale := float64(len(sparks)*(rect.Dy()-pad)) / float64(max)
 	c1, c2 := s.colorForSeries()
 	for _, d := range s.data[idx:] {
 		b := toBlocks(d, scale)
 		cY := rect.Max.Y - pad
-		cY = s.drawBlock(rect, screen, cX, cY, b.oks, c1)
-		_ = s.drawBlock(rect, screen, cX, cY, b.errs, c2)
-		cX += 2
+		s.drawBlock(rect, screen, cX, cY, b.s1, c1)
+		cX++
+		s.drawBlock(rect, screen, cX, cY, b.s2, c2)
+		cX++
 	}
 
 	if rect.Dx() > 0 && rect.Dy() > 0 && s.legend != "" {
@@ -120,7 +117,7 @@ func (s *SparkLine) Draw(screen tcell.Screen) {
 	}
 }
 
-func (s *SparkLine) drawBlock(r image.Rectangle, screen tcell.Screen, x, y int, b block, c tcell.Color) int {
+func (s *SparkLine) drawBlock(r image.Rectangle, screen tcell.Screen, x, y int, b block, c tcell.Color) {
 	style := tcell.StyleDefault.Foreground(c).Background(s.bgColor)
 
 	zeroY := r.Max.Y - r.Dy()
@@ -133,12 +130,7 @@ func (s *SparkLine) drawBlock(r image.Rectangle, screen tcell.Screen, x, y int, 
 	}
 	if b.partial != 0 {
 		screen.SetContent(x, y, b.partial, nil, style)
-		if b.full == 0 {
-			y--
-		}
 	}
-
-	return y
 }
 
 func (s *SparkLine) cutSet(width int) {
@@ -151,8 +143,8 @@ func (s *SparkLine) cutSet(width int) {
 	}
 }
 
-func (s *SparkLine) computeMax() int {
-	var max int
+func (s *SparkLine) computeMax() int64 {
+	var max int64
 	for _, d := range s.data {
 		m := d.Max()
 		if max < m {
@@ -167,10 +159,10 @@ func toBlocks(m Metric, scale float64) blocks {
 	if m.Sum() <= 0 {
 		return blocks{}
 	}
-	return blocks{oks: makeBlocks(m.OK, scale), errs: makeBlocks(m.Fault, scale)}
+	return blocks{s1: makeBlocks(m.S1, scale), s2: makeBlocks(m.S2, scale)}
 }
 
-func makeBlocks(v int, scale float64) block {
+func makeBlocks(v int64, scale float64) block {
 	scaled := int(math.Round(float64(v) * scale))
 	p, b := scaled%len(sparks), block{full: scaled / len(sparks)}
 	if b.full == 0 && v > 0 && p == 0 {

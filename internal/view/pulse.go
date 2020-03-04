@@ -11,6 +11,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/health"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/tchart"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
@@ -87,15 +88,15 @@ func (p *Pulse) Init(ctx context.Context) error {
 		p.makeGA(image.Point{X: 0, Y: 2}, image.Point{X: 2, Y: 2}, "apps/v1/replicasets"),
 		p.makeGA(image.Point{X: 0, Y: 4}, image.Point{X: 2, Y: 2}, "apps/v1/statefulsets"),
 		p.makeGA(image.Point{X: 0, Y: 6}, image.Point{X: 2, Y: 2}, "apps/v1/daemonsets"),
-		p.makeSP(true, image.Point{X: 2, Y: 0}, image.Point{X: 3, Y: 2}, "v1/pods"),
-		p.makeSP(true, image.Point{X: 2, Y: 2}, image.Point{X: 3, Y: 2}, "v1/events"),
-		p.makeSP(true, image.Point{X: 2, Y: 4}, image.Point{X: 3, Y: 2}, "batch/v1/jobs"),
-		p.makeSP(true, image.Point{X: 2, Y: 6}, image.Point{X: 3, Y: 2}, "v1/persistentvolumes"),
+		p.makeSP(image.Point{X: 2, Y: 0}, image.Point{X: 3, Y: 2}, "v1/pods"),
+		p.makeSP(image.Point{X: 2, Y: 2}, image.Point{X: 3, Y: 2}, "v1/events"),
+		p.makeSP(image.Point{X: 2, Y: 4}, image.Point{X: 3, Y: 2}, "batch/v1/jobs"),
+		p.makeSP(image.Point{X: 2, Y: 6}, image.Point{X: 3, Y: 2}, "v1/persistentvolumes"),
 	}
 	if p.app.Conn().HasMetrics() {
 		p.charts = append(p.charts,
-			p.makeSP(false, image.Point{X: 5, Y: 0}, image.Point{X: 2, Y: 4}, "cpu"),
-			p.makeSP(false, image.Point{X: 5, Y: 4}, image.Point{X: 2, Y: 4}, "mem"),
+			p.makeSP(image.Point{X: 5, Y: 0}, image.Point{X: 2, Y: 4}, "cpu"),
+			p.makeSP(image.Point{X: 5, Y: 4}, image.Point{X: 2, Y: 4}, "mem"),
 		)
 	}
 	p.bindKeys()
@@ -126,6 +127,14 @@ func (p *Pulse) StylesChanged(s *config.Styles) {
 	p.app.Draw()
 }
 
+const (
+	genFmat  = " %s([%s::]%d[white::]:[%s::b]%d[-::])"
+	cpuFmt   = " %s [%s::b]%s[white::-]::[gray::]%s ([%s::]%sm[white::]/[%s::]%sm[-::])"
+	memFmt   = " %s [%s::b]%s[white::-]::[gray::]%s ([%s::]%sMi[white::]/[%s::]%sMi[-::])"
+	okColor  = "palegreen"
+	errColor = "orangered"
+)
+
 // PulseChanged notifies the model data changed.
 func (p *Pulse) PulseChanged(c *health.Check) {
 	index, ok := findIndexGVR(p.charts, c.GVR)
@@ -137,29 +146,59 @@ func (p *Pulse) PulseChanged(c *health.Check) {
 	if !ok {
 		return
 	}
+
+	nn := v.GetSeriesColorNames()
+	if c.Tally(health.S1) == 0 {
+		nn[0] = "gray"
+	}
+	if c.Tally(health.S2) == 0 {
+		nn[1] = "gray"
+	}
+
 	gvr := client.NewGVR(c.GVR)
 	switch c.GVR {
 	case "cpu":
-		v.SetLegend(fmt.Sprintf(" %s(%dm)", strings.Title(gvr.R()), c.Tally(health.OK)))
+		perc := client.ToPercentage(c.Tally(health.S1), c.Tally(health.S2))
+		color := okColor
+		if p.app.Config.K9s.Thresholds.ExceedsCPUPerc(perc) {
+			color = errColor
+		}
+		v.SetLegend(fmt.Sprintf(cpuFmt,
+			strings.Title(gvr.R()),
+			color,
+			render.PrintPerc(perc),
+			render.PrintPerc(p.app.Config.K9s.Thresholds.CPU),
+			nn[0],
+			render.AsThousands(c.Tally(health.S1)),
+			nn[1],
+			render.AsThousands(c.Tally(health.S2)),
+		))
 	case "mem":
-		v.SetLegend(fmt.Sprintf(" %s(%dMi)", strings.Title(gvr.R()), c.Tally(health.OK)))
+		perc := client.ToPercentage(c.Tally(health.S1), c.Tally(health.S2))
+		color := okColor
+		if p.app.Config.K9s.Thresholds.ExceedsMemoryPerc(perc) {
+			color = errColor
+		}
+		v.SetLegend(fmt.Sprintf(memFmt,
+			strings.Title(gvr.R()),
+			color,
+			render.PrintPerc(perc),
+			render.PrintPerc(p.app.Config.K9s.Thresholds.Memory),
+			nn[0],
+			render.AsThousands(c.Tally(health.S1)),
+			nn[1],
+			render.AsThousands(c.Tally(health.S2)),
+		))
 	default:
-		nn := v.GetSeriesColorNames()
-		if c.Tally(health.OK) == 0 {
-			nn[0] = "gray"
-		}
-		if c.Tally(health.Toast) == 0 {
-			nn[1] = "gray"
-		}
-		v.SetLegend(fmt.Sprintf(" %s([%s::]%d[white::]:[%s::b]%d[-::])",
+		v.SetLegend(fmt.Sprintf(genFmat,
 			strings.Title(gvr.R()),
 			nn[0],
-			c.Tally(health.OK),
+			c.Tally(health.S1),
 			nn[1],
-			c.Tally(health.Toast),
+			c.Tally(health.S2),
 		))
 	}
-	v.Add(tchart.Metric{OK: c.Tally(health.OK), Fault: c.Tally(health.Toast)})
+	v.Add(tchart.Metric{S1: c.Tally(health.S1), S2: c.Tally(health.S2)})
 }
 
 // PulseFailed notifies the load failed.
@@ -301,7 +340,7 @@ func (p *Pulse) nextFocusCmd(direction int) func(evt *tcell.EventKey) *tcell.Eve
 	}
 }
 
-func (p *Pulse) makeSP(multi bool, loc image.Point, span image.Point, gvr string) *tchart.SparkLine {
+func (p *Pulse) makeSP(loc image.Point, span image.Point, gvr string) *tchart.SparkLine {
 	s := tchart.NewSparkLine(gvr)
 	s.SetBackgroundColor(p.app.Styles.Charts().BgColor.Color())
 	s.SetBorderPadding(0, 1, 0, 1)
@@ -312,9 +351,7 @@ func (p *Pulse) makeSP(multi bool, loc image.Point, span image.Point, gvr string
 	}
 	s.SetLegend(fmt.Sprintf(" %s ", strings.Title(client.NewGVR(gvr).R())))
 	s.SetInputCapture(p.keyboard)
-	if !multi {
-		s.SetMultiSeries(multi)
-	}
+	s.SetMultiSeries(true)
 	p.AddItem(s, loc.X, loc.Y, span.X, span.Y, 0, 0, true)
 
 	return s

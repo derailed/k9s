@@ -9,35 +9,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-func TestToMB(t *testing.T) {
-	uu := []struct {
-		v int64
-		e float64
-	}{
-		{0, 0},
-		{2 * megaByte, 2},
-		{10 * megaByte, 10},
-	}
-
-	for _, u := range uu {
-		assert.Equal(t, u.e, ToMB(u.v))
-	}
-}
-
-func TestToPerc(t *testing.T) {
-	uu := []struct {
-		v1, v2, e float64
-	}{
-		{0, 0, 0},
-		{100, 200, 50},
-		{200, 100, 200},
-	}
-
-	for _, u := range uu {
-		assert.Equal(t, u.e, toPerc(u.v1, u.v2))
-	}
-}
-
 func TestToAge(t *testing.T) {
 	uu := map[string]struct {
 		t time.Time
@@ -343,7 +314,7 @@ func TestToMillicore(t *testing.T) {
 
 func TestToMi(t *testing.T) {
 	uu := []struct {
-		v float64
+		v int64
 		e string
 	}{
 		{0, "0"},
@@ -356,27 +327,25 @@ func TestToMi(t *testing.T) {
 	}
 }
 
-func TestAsPerc(t *testing.T) {
+func TestIntToStr(t *testing.T) {
 	uu := []struct {
-		v float64
+		v int
 		e string
 	}{
 		{0, "0"},
-		{10.5, "10"},
 		{10, "10"},
-		{0.05, "0"},
 	}
 
 	for _, u := range uu {
-		assert.Equal(t, u.e, AsPerc(u.v))
+		assert.Equal(t, u.e, IntToStr(u.v))
 	}
 }
 
-func BenchmarkAsPerc(b *testing.B) {
-	v := 10.5
+func BenchmarkIntToStr(b *testing.B) {
+	v := 10
 	b.ResetTimer()
 	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
-		AsPerc(v)
+		IntToStr(v)
 	}
 }

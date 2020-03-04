@@ -105,8 +105,7 @@ type Connection interface {
 
 // CurrentMetrics tracks current cpu/mem.
 type CurrentMetrics struct {
-	CurrentCPU int64
-	CurrentMEM float64
+	CurrentCPU, CurrentMEM, CurrentEphemeral int64
 }
 
 // PodMetrics represent an aggregation of all pod containers metrics.
@@ -115,16 +114,15 @@ type PodMetrics CurrentMetrics
 // NodeMetrics describes raw node metrics.
 type NodeMetrics struct {
 	CurrentMetrics
-	AvailCPU int64
-	AvailMEM float64
-	TotalCPU int64
-	TotalMEM float64
+
+	AllocatableCPU, AllocatableMEM, AllocatableEphemeral int64
+	AvailableCPU, AvailableMEM, AvailableEphemeral       int64
+	TotalCPU, TotalMEM, TotalEphemeral                   int64
 }
 
 // ClusterMetrics summarizes total node metrics as percentages.
 type ClusterMetrics struct {
-	PercCPU float64
-	PercMEM float64
+	PercCPU, PercMEM, PercEphemeral int
 }
 
 // NodesMetrics tracks usage metrics per nodes.

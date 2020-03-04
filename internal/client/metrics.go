@@ -48,29 +48,6 @@ func NewMetricsServer(c Connection) *MetricsServer {
 	}
 }
 
-// NodesMetrics retrieves metrics for a given set of nodes.
-func (m *MetricsServer) NodesMetrics(nodes *v1.NodeList, metrics *mv1beta1.NodeMetricsList, mmx NodesMetrics) {
-	if nodes == nil || metrics == nil {
-		return
-	}
-
-	for _, no := range nodes.Items {
-		mmx[no.Name] = NodeMetrics{
-			AvailCPU: no.Status.Allocatable.Cpu().MilliValue(),
-			AvailMEM: ToMB(no.Status.Allocatable.Memory().Value()),
-			TotalCPU: no.Status.Capacity.Cpu().MilliValue(),
-			TotalMEM: ToMB(no.Status.Capacity.Memory().Value()),
-		}
-	}
-	for _, c := range metrics.Items {
-		if mx, ok := mmx[c.Name]; ok {
-			mx.CurrentCPU = c.Usage.Cpu().MilliValue()
-			mx.CurrentMEM = ToMB(c.Usage.Memory().Value())
-			mmx[c.Name] = mx
-		}
-	}
-}
-
 // ClusterLoad retrieves all cluster nodes metrics.
 func (m *MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsList, mx *ClusterMetrics) error {
 	if nos == nil || nmx == nil {
@@ -79,26 +56,32 @@ func (m *MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsL
 	nodeMetrics := make(NodesMetrics, len(nos.Items))
 	for _, no := range nos.Items {
 		nodeMetrics[no.Name] = NodeMetrics{
-			AvailCPU: no.Status.Allocatable.Cpu().MilliValue(),
-			AvailMEM: ToMB(no.Status.Allocatable.Memory().Value()),
+			AllocatableCPU:       no.Status.Allocatable.Cpu().MilliValue(),
+			AllocatableMEM:       no.Status.Allocatable.Memory().Value(),
+			AllocatableEphemeral: no.Status.Allocatable.StorageEphemeral().Value(),
 		}
 	}
 	for _, mx := range nmx.Items {
-		if m, ok := nodeMetrics[mx.Name]; ok {
-			m.CurrentCPU = mx.Usage.Cpu().MilliValue()
-			m.CurrentMEM = ToMB(mx.Usage.Memory().Value())
-			nodeMetrics[mx.Name] = m
+		if node, ok := nodeMetrics[mx.Name]; ok {
+			node.CurrentCPU = mx.Usage.Cpu().MilliValue()
+			node.CurrentMEM = mx.Usage.Memory().Value()
+			node.CurrentEphemeral = mx.Usage.StorageEphemeral().Value()
+			nodeMetrics[mx.Name] = node
 		}
 	}
 
-	var cpu, tcpu, mem, tmem float64
+	var ccpu, cmem, ceph, tcpu, tmem, teph int64
 	for _, mx := range nodeMetrics {
-		cpu += float64(mx.CurrentCPU)
-		tcpu += float64(mx.AvailCPU)
-		mem += mx.CurrentMEM
-		tmem += mx.AvailMEM
+		ccpu += mx.CurrentCPU
+		cmem += mx.CurrentMEM
+		ceph += mx.CurrentEphemeral
+		tcpu += mx.AllocatableCPU
+		tmem += mx.AllocatableMEM
+		teph += mx.AllocatableEphemeral
 	}
-	mx.PercCPU, mx.PercMEM = toPerc(cpu, tcpu), toPerc(mem, tmem)
+	mx.PercCPU, mx.PercMEM, mx.PercEphemeral = ToPercentage(ccpu, tcpu),
+		ToPercentage(cmem, tmem),
+		ToPercentage(ceph, teph)
 
 	return nil
 }
@@ -116,6 +99,33 @@ func (m *MetricsServer) checkAccess(ns, gvr, msg string) error {
 		return fmt.Errorf(msg)
 	}
 	return nil
+}
+
+// NodesMetrics retrieves metrics for a given set of nodes.
+func (m *MetricsServer) NodesMetrics(nodes *v1.NodeList, metrics *mv1beta1.NodeMetricsList, mmx NodesMetrics) {
+	if nodes == nil || metrics == nil {
+		return
+	}
+
+	for _, no := range nodes.Items {
+		mmx[no.Name] = NodeMetrics{
+			AllocatableCPU:       no.Status.Allocatable.Cpu().MilliValue(),
+			AllocatableMEM:       ToMB(no.Status.Allocatable.Memory().Value()),
+			AllocatableEphemeral: ToMB(no.Status.Allocatable.StorageEphemeral().Value()),
+			TotalCPU:             no.Status.Capacity.Cpu().MilliValue(),
+			TotalMEM:             ToMB(no.Status.Capacity.Memory().Value()),
+			TotalEphemeral:       ToMB(no.Status.Capacity.StorageEphemeral().Value()),
+		}
+	}
+	for _, c := range metrics.Items {
+		if mx, ok := mmx[c.Name]; ok {
+			mx.CurrentCPU = c.Usage.Cpu().MilliValue()
+			mx.CurrentMEM = ToMB(c.Usage.Memory().Value())
+			mx.AvailableCPU = mx.AllocatableCPU - mx.CurrentCPU
+			mx.AvailableMEM = mx.AllocatableMEM - mx.CurrentMEM
+			mmx[c.Name] = mx
+		}
+	}
 }
 
 // FetchNodesMetrics return all metrics for nodes.
@@ -237,19 +247,20 @@ func (m *MetricsServer) PodsMetrics(pods *mv1beta1.PodMetricsList, mmx PodsMetri
 	}
 }
 
-// 0---------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
 // Helpers...
 
 const megaByte = 1024 * 1024
 
 // ToMB converts bytes to megabytes.
-func ToMB(v int64) float64 {
-	return float64(v) / megaByte
+func ToMB(v int64) int64 {
+	return v / megaByte
 }
 
-func toPerc(v1, v2 float64) float64 {
+// ToPercentageentage computes percentage.
+func ToPercentage(v1, v2 int64) int {
 	if v2 == 0 {
 		return 0
 	}
-	return math.Round((v1 / v2) * 100)
+	return int(math.Floor((float64(v1) / float64(v2)) * 100))
 }

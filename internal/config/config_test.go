@@ -297,6 +297,10 @@ var expectedConfig = `k9s:
         - kube-system
       view:
         active: ctx
+  thresholds:
+    cpu: 80
+    memory: 80
+    disk: 80
 `
 
 var resetConfig = `k9s:
@@ -316,4 +320,8 @@ var resetConfig = `k9s:
         - default
       view:
         active: po
+  thresholds:
+    cpu: 80
+    memory: 80
+    disk: 80
 `

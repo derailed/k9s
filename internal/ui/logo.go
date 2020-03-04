@@ -24,8 +24,8 @@ func NewLogo(styles *config.Styles) *Logo {
 		styles: styles,
 	}
 	l.SetDirection(tview.FlexRow)
-	l.AddItem(l.logo, 0, 6, false)
-	l.AddItem(l.status, 1, 0, false)
+	l.AddItem(l.logo, 6, 1, false)
+	l.AddItem(l.status, 1, 1, false)
 	l.refreshLogo(styles.Body().LogoColor)
 	l.SetBackgroundColor(styles.BgColor())
 	styles.AddListener(&l)

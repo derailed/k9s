@@ -2,6 +2,7 @@ package view
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
@@ -30,19 +31,24 @@ func (r *RestartExtender) bindKeys(aa ui.KeyActions) {
 }
 
 func (r *RestartExtender) restartCmd(evt *tcell.EventKey) *tcell.EventKey {
-	path := r.GetTable().GetSelectedItem()
-	if path == "" {
+	paths := r.GetTable().GetSelectedItems()
+	if len(paths) == 0 {
 		return nil
 	}
 
 	r.Stop()
 	defer r.Start()
-	msg := "Please confirm rollout restart for " + path
+	msg := fmt.Sprintf("Restart deployment %s?" + paths[0])
+	if len(paths) > 1 {
+		msg = fmt.Sprintf("Restart %d deployments?", len(paths))
+	}
 	dialog.ShowConfirm(r.App().Content.Pages, "<Confirm Restart>", msg, func() {
-		if err := r.restartRollout(path); err != nil {
-			r.App().Flash().Err(err)
-		} else {
-			r.App().Flash().Infof("Rollout restart in progress for `%s...", path)
+		for _, path := range paths {
+			if err := r.restartRollout(path); err != nil {
+				r.App().Flash().Err(err)
+			} else {
+				r.App().Flash().Infof("Rollout restart in progress for `%s...", path)
+			}
 		}
 	}, func() {})
 
@@ -54,7 +60,6 @@ func (r *RestartExtender) restartRollout(path string) error {
 	if err != nil {
 		return nil
 	}
-
 	s, ok := res.(dao.Restartable)
 	if !ok {
 		return errors.New("resource is not restartable")
