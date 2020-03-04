@@ -12,7 +12,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ---
 
-<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/story/this_is_fine.png" align="center" width="500" height="auto"/>
+<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/story/this_is_fine_300.png" align="center" width="500" height="auto"/>
 
 ## Pulses Part Duh!
 

@@ -39,6 +39,7 @@ func NewGauge(id string) *Gauge {
 	}
 }
 
+// SetResolution overrides the default number of digits to display.
 func (g *Gauge) SetResolution(n int) {
 	g.resolution = n
 }

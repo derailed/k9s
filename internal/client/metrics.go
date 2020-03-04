@@ -257,7 +257,7 @@ func ToMB(v int64) int64 {
 	return v / megaByte
 }
 
-// ToPercentageentage computes percentage.
+// ToPercentage computes percentage.
 func ToPercentage(v1, v2 int64) int {
 	if v2 == 0 {
 		return 0
