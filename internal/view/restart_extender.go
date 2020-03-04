@@ -38,7 +38,7 @@ func (r *RestartExtender) restartCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	r.Stop()
 	defer r.Start()
-	msg := fmt.Sprintf("Restart deployment %s?" + paths[0])
+	msg := fmt.Sprintf("Restart deployment %s?", paths[0])
 	if len(paths) > 1 {
 		msg = fmt.Sprintf("Restart %d deployments?", len(paths))
 	}
