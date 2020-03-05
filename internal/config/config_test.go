@@ -298,9 +298,16 @@ var expectedConfig = `k9s:
       view:
         active: ctx
   thresholds:
-    cpu: 80
-    memory: 80
-    disk: 80
+    cpu:
+    - 90
+    - 80
+    - 75
+    - 70
+    memory:
+    - 90
+    - 80
+    - 75
+    - 70
 `
 
 var resetConfig = `k9s:
@@ -321,7 +328,14 @@ var resetConfig = `k9s:
       view:
         active: po
   thresholds:
-    cpu: 80
-    memory: 80
-    disk: 80
+    cpu:
+    - 90
+    - 80
+    - 75
+    - 70
+    memory:
+    - 90
+    - 80
+    - 75
+    - 70
 `

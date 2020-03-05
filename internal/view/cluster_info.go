@@ -1,6 +1,8 @@
 package view
 
 import (
+	"fmt"
+
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
@@ -93,21 +95,31 @@ func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
 		if c.app.Conn().HasMetrics() {
 			row = c.setCell(row, ui.AsPercDelta(prev.Cpu, curr.Cpu))
 			_ = c.setCell(row, ui.AsPercDelta(prev.Mem, curr.Mem))
-			var set bool
-			if c.app.Config.K9s.Thresholds.ExceedsCPUPerc(curr.Cpu) {
-				c.app.Status(model.FlashErr, "CPU on fire!")
-				set = true
-			}
-			if c.app.Config.K9s.Thresholds.ExceedsMemoryPerc(curr.Mem) {
-				c.app.Status(model.FlashErr, "Memory on fire!")
-				set = true
-			}
-			if !set {
-				c.app.ClearStatus(true)
-			}
+			c.setDefCon(curr.Cpu, curr.Mem)
 		}
 		c.updateStyle()
 	})
+}
+
+const defconFmt = "Cluster <%s> at DEFCON %d"
+
+func (c *ClusterInfo) setDefCon(cpu, mem int) {
+	var set bool
+	dc := c.app.Config.K9s.Thresholds.DefConFor("cpu", cpu)
+	if dc < config.DefCon5 {
+		l := flashFromDefCon(dc)
+		c.app.Status(l, fmt.Sprintf(defconFmt, "cpu", int(dc)))
+		set = true
+	}
+	dc = c.app.Config.K9s.Thresholds.DefConFor("memory", mem)
+	if dc < config.DefCon5 {
+		l := flashFromDefCon(dc)
+		c.app.Status(l, fmt.Sprintf(defconFmt, "mem", int(dc)))
+		set = true
+	}
+	if !set {
+		c.app.ClearStatus(true)
+	}
 }
 
 func (c *ClusterInfo) updateStyle() {
@@ -116,5 +128,16 @@ func (c *ClusterInfo) updateStyle() {
 		c.GetCell(row, 0).SetBackgroundColor(c.styles.BgColor())
 		var s tcell.Style
 		c.GetCell(row, 1).SetStyle(s.Bold(true).Foreground(c.styles.K9s.Info.SectionColor.Color()))
+	}
+}
+
+func flashFromDefCon(l config.DefConLevel) model.FlashLevel {
+	switch l {
+	case config.DefCon1:
+		return model.FlashErr
+	case config.DefCon2, config.DefCon3:
+		return model.FlashWarn
+	default:
+		return model.FlashInfo
 	}
 }

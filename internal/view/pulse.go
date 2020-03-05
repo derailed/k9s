@@ -128,11 +128,9 @@ func (p *Pulse) StylesChanged(s *config.Styles) {
 }
 
 const (
-	genFmat  = " %s([%s::]%d[white::]:[%s::b]%d[-::])"
-	cpuFmt   = " %s [%s::b]%s[white::-]::[gray::]%s ([%s::]%sm[white::]/[%s::]%sm[-::])"
-	memFmt   = " %s [%s::b]%s[white::-]::[gray::]%s ([%s::]%sMi[white::]/[%s::]%sMi[-::])"
-	okColor  = "palegreen"
-	errColor = "orangered"
+	genFmat = " %s([%s::]%d[white::]:[%s::b]%d[-::])"
+	cpuFmt  = " %s [%s::b]%s[white::-]([%s::]%sm[white::]/[%s::]%sm[-::])"
+	memFmt  = " %s [%s::b]%s[white::-]([%s::]%sMi[white::]/[%s::]%sMi[-::])"
 )
 
 // PulseChanged notifies the model data changed.
@@ -159,15 +157,10 @@ func (p *Pulse) PulseChanged(c *health.Check) {
 	switch c.GVR {
 	case "cpu":
 		perc := client.ToPercentage(c.Tally(health.S1), c.Tally(health.S2))
-		color := okColor
-		if p.app.Config.K9s.Thresholds.ExceedsCPUPerc(perc) {
-			color = errColor
-		}
 		v.SetLegend(fmt.Sprintf(cpuFmt,
 			strings.Title(gvr.R()),
-			color,
+			p.app.Config.K9s.Thresholds.DefConColorFor("cpu", perc),
 			render.PrintPerc(perc),
-			render.PrintPerc(p.app.Config.K9s.Thresholds.CPU),
 			nn[0],
 			render.AsThousands(c.Tally(health.S1)),
 			nn[1],
@@ -175,15 +168,10 @@ func (p *Pulse) PulseChanged(c *health.Check) {
 		))
 	case "mem":
 		perc := client.ToPercentage(c.Tally(health.S1), c.Tally(health.S2))
-		color := okColor
-		if p.app.Config.K9s.Thresholds.ExceedsMemoryPerc(perc) {
-			color = errColor
-		}
 		v.SetLegend(fmt.Sprintf(memFmt,
 			strings.Title(gvr.R()),
-			color,
+			p.app.Config.K9s.Thresholds.DefConColorFor("memory", perc),
 			render.PrintPerc(perc),
-			render.PrintPerc(p.app.Config.K9s.Thresholds.Memory),
 			nn[0],
 			render.AsThousands(c.Tally(health.S1)),
 			nn[1],

@@ -58,6 +58,13 @@ func (g *Gauge) Add(m Metric) {
 	g.data = m
 }
 
+type number struct {
+	ok    bool
+	val   int64
+	str   string
+	delta delta
+}
+
 // Draw draws the primitive.
 func (g *Gauge) Draw(sc tcell.Screen) {
 	g.Component.Draw(sc)
@@ -83,10 +90,10 @@ func (g *Gauge) Draw(sc tcell.Screen) {
 	s1C, s2C := g.colorForSeries()
 	d1, d2 := fmt.Sprintf(fmat, g.data.S1), fmt.Sprintf(fmat, g.data.S2)
 	o.X -= len(d1) * 3
-	g.drawNum(sc, true, o, g.data.S1, g.deltaOk, d1, style.Foreground(s1C).Dim(false))
+	g.drawNum(sc, o, number{ok: true, val: g.data.S1, delta: g.deltaOk, str: d1}, style.Foreground(s1C).Dim(false))
 
 	o.X = mid.X + 1
-	g.drawNum(sc, false, o, g.data.S2, g.deltaS2, d2, style.Foreground(s2C).Dim(false))
+	g.drawNum(sc, o, number{ok: false, val: g.data.S2, delta: g.deltaS2, str: d2}, style.Foreground(s2C).Dim(false))
 
 	if rect.Dx() > 0 && rect.Dy() > 0 && g.legend != "" {
 		legend := g.legend
@@ -97,29 +104,29 @@ func (g *Gauge) Draw(sc tcell.Screen) {
 	}
 }
 
-func (g *Gauge) drawNum(sc tcell.Screen, ok bool, o image.Point, n int64, dn delta, ns string, style tcell.Style) {
+func (g *Gauge) drawNum(sc tcell.Screen, o image.Point, n number, style tcell.Style) {
 	c1, _ := g.colorForSeries()
-	if ok {
+	if n.ok {
 		style = style.Foreground(c1)
-		printDelta(sc, dn, o, style)
+		printDelta(sc, n.delta, o, style)
 	}
 
-	dm, significant := NewDotMatrix(), n == 0
-	if n == 0 {
+	dm, significant := NewDotMatrix(), n.val == 0
+	if significant {
 		style = g.dimmed
 	}
-	for i := 0; i < len(ns); i++ {
-		if ns[i] == '0' && !significant {
-			g.drawDial(sc, dm.Print(int(ns[i]-48)), o, g.dimmed)
+	for i := 0; i < len(n.str); i++ {
+		if n.str[i] == '0' && !significant {
+			g.drawDial(sc, dm.Print(int(n.str[i]-48)), o, g.dimmed)
 		} else {
 			significant = true
-			g.drawDial(sc, dm.Print(int(ns[i]-48)), o, style)
+			g.drawDial(sc, dm.Print(int(n.str[i]-48)), o, style)
 		}
 		o.X += 3
 	}
-	if !ok {
+	if !n.ok {
 		o.X++
-		printDelta(sc, dn, o, style)
+		printDelta(sc, n.delta, o, style)
 	}
 }
 
