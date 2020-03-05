@@ -8,41 +8,60 @@ import (
 )
 
 const (
+	// DefCon1 tracks high severity.
 	DefCon1 DefConLevel = iota + 1
+
+	// DefCon2 tracks warn level.
 	DefCon2
+
+	// DefCon3 tracks medium level.
 	DefCon3
+
+	// DefCon4 tracks low level.
 	DefCon4
+
+	// DefCon5 tracks all cool.
 	DefCon5
 )
 
+// DefConLevel tracks defcon severity.
 type DefConLevel int
 
 // DefCon tracks a resource alert level.
-type DefCon [4]int
-
-func newDefCon() DefCon {
-	return DefCon{90, 80, 75, 70}
+type DefCon struct {
+	Levels []int `yaml:"defcon,omitempty"`
 }
 
-func (d DefCon) validate() {
-	dc := newDefCon()
-	for i := range d {
-		if !d.isValidRange(d[i]) {
-			d[i] = dc[i]
+// NewDefCon returns a new instance.
+func NewDefCon() *DefCon {
+	return &DefCon{Levels: []int{90, 80, 75, 70}}
+}
+
+// Validate checks all thresholds and make sure we're cool. If not use defaults.
+func (d *DefCon) Validate() {
+	norm := NewDefCon()
+	if len(d.Levels) < 4 {
+		d.Levels = norm.Levels
+		return
+	}
+	for i, level := range d.Levels {
+		if !d.isValidRange(level) {
+			d.Levels[i] = norm.Levels[i]
 		}
 	}
 }
 
-func (d DefCon) String() string {
-	ss := make([]string, len(d))
-	for i := 0; i < len(d); i++ {
-		ss[i] = render.PrintPerc(d[i])
+// String returns defcon settings a string.
+func (d *DefCon) String() string {
+	ss := make([]string, len(d.Levels))
+	for i := 0; i < len(d.Levels); i++ {
+		ss[i] = render.PrintPerc(d.Levels[i])
 	}
 	return strings.Join(ss, "|")
 }
 
-func (d DefCon) isValidRange(v int) bool {
-	if v == 0 || v > 100 {
+func (d *DefCon) isValidRange(v int) bool {
+	if v < 0 || v > 100 {
 		return false
 	}
 
@@ -50,12 +69,13 @@ func (d DefCon) isValidRange(v int) bool {
 }
 
 // Threshold tracks threshold to alert user when excided.
-type Threshold map[string]DefCon
+type Threshold map[string]*DefCon
 
+// NewThreshold returns a new threshold.
 func NewThreshold() Threshold {
 	return Threshold{
-		"cpu":    newDefCon(),
-		"memory": newDefCon(),
+		"cpu":    NewDefCon(),
+		"memory": NewDefCon(),
 	}
 }
 
@@ -64,9 +84,9 @@ func (t Threshold) Validate(c client.Connection, ks KubeSettings) {
 	for _, k := range []string{"cpu", "memory"} {
 		v, ok := t[k]
 		if !ok {
-			t[k] = newDefCon()
+			t[k] = NewDefCon()
 		} else {
-			v.validate()
+			v.Validate()
 		}
 	}
 }
@@ -77,7 +97,7 @@ func (t Threshold) DefConFor(k string, v int) DefConLevel {
 	if !ok || v < 0 || v > 100 {
 		return DefCon5
 	}
-	for i, l := range dc {
+	for i, l := range dc.Levels {
 		if v >= l {
 			return dcLevelFor(i)
 		}
@@ -86,6 +106,7 @@ func (t Threshold) DefConFor(k string, v int) DefConLevel {
 	return DefCon5
 }
 
+// DefConColorFor returns an defcon level associated level.
 func (t *Threshold) DefConColorFor(k string, v int) string {
 	switch t.DefConFor(k, v) {
 	case DefCon1:

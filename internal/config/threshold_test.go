@@ -7,6 +7,37 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestDefConValidate(t *testing.T) {
+	uu := map[string]struct {
+		d, e *config.DefCon
+	}{
+		"default": {
+			d: config.NewDefCon(),
+			e: config.NewDefCon(),
+		},
+		"toast": {
+			d: &config.DefCon{Levels: []int{10}},
+			e: config.NewDefCon(),
+		},
+		"negative": {
+			d: &config.DefCon{Levels: []int{-1, 10, 10, 10}},
+			e: &config.DefCon{Levels: []int{90, 10, 10, 10}},
+		},
+		"out-of-range": {
+			d: &config.DefCon{Levels: []int{150, 200, 10, 300}},
+			e: &config.DefCon{Levels: []int{90, 80, 10, 70}},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			u.d.Validate()
+			assert.Equal(t, u.e, u.d)
+		})
+	}
+}
+
 func TestDefConFor(t *testing.T) {
 	uu := map[string]struct {
 		k string
@@ -16,7 +47,6 @@ func TestDefConFor(t *testing.T) {
 		"normal": {
 			k: "cpu",
 			v: 0,
-
 			e: config.DefCon5,
 		},
 		"4": {

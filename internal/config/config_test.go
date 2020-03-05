@@ -299,15 +299,17 @@ var expectedConfig = `k9s:
         active: ctx
   thresholds:
     cpu:
-    - 90
-    - 80
-    - 75
-    - 70
+      defcon:
+      - 90
+      - 80
+      - 75
+      - 70
     memory:
-    - 90
-    - 80
-    - 75
-    - 70
+      defcon:
+      - 90
+      - 80
+      - 75
+      - 70
 `
 
 var resetConfig = `k9s:
@@ -329,13 +331,15 @@ var resetConfig = `k9s:
         active: po
   thresholds:
     cpu:
-    - 90
-    - 80
-    - 75
-    - 70
+      defcon:
+      - 90
+      - 80
+      - 75
+      - 70
     memory:
-    - 90
-    - 80
-    - 75
-    - 70
+      defcon:
+      - 90
+      - 80
+      - 75
+      - 70
 `
