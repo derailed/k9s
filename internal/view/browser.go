@@ -284,7 +284,7 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	ns, n := client.Namespaced(path)
 
-	if ok, err := b.app.Conn().CanI(ns, b.GVR().String(), []string{"edit"}); !ok || err != nil {
+	if ok, err := b.app.Conn().CanI(ns, b.GVR().String(), []string{"patch"}); !ok || err != nil {
 		b.App().Flash().Err(fmt.Errorf("Current user can't edit resource %s", b.GVR()))
 		return nil
 	}

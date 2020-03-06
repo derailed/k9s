@@ -1,81 +1,63 @@
 package config
 
 import (
-	"strings"
-
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/render"
 )
 
 const (
-	// DefCon1 tracks high severity.
-	DefCon1 DefConLevel = iota + 1
+	// SeverityLow tracks low severity.
+	SeverityLow SeverityLevel = iota
 
-	// DefCon2 tracks warn level.
-	DefCon2
+	// SeverityMedium tracks medium severity level.
+	SeverityMedium
 
-	// DefCon3 tracks medium level.
-	DefCon3
-
-	// DefCon4 tracks low level.
-	DefCon4
-
-	// DefCon5 tracks all cool.
-	DefCon5
+	// SeverityHigh tracks high severity level.
+	SeverityHigh
 )
 
-// DefConLevel tracks defcon severity.
-type DefConLevel int
+// SeverityLevel tracks severity levels.
+type SeverityLevel int
 
-// DefCon tracks a resource alert level.
-type DefCon struct {
-	Levels []int `yaml:"defcon,omitempty"`
+// Severity tracks a resource severity levels.
+type Severity struct {
+	Critical int `yaml:"critical"`
+	Warn     int `yaml:"warn"`
 }
 
-// NewDefCon returns a new instance.
-func NewDefCon() *DefCon {
-	return &DefCon{Levels: []int{90, 80, 75, 70}}
+// NewSeverity returns a new instance.
+func NewSeverity() *Severity {
+	return &Severity{
+		Critical: 90,
+		Warn:     70,
+	}
 }
 
 // Validate checks all thresholds and make sure we're cool. If not use defaults.
-func (d *DefCon) Validate() {
-	norm := NewDefCon()
-	if len(d.Levels) < 4 {
-		d.Levels = norm.Levels
-		return
+func (s *Severity) Validate() {
+	norm := NewSeverity()
+	if !validateRange(s.Warn) {
+		s.Warn = norm.Warn
 	}
-	for i, level := range d.Levels {
-		if !d.isValidRange(level) {
-			d.Levels[i] = norm.Levels[i]
-		}
+	if !validateRange(s.Critical) {
+		s.Critical = norm.Critical
 	}
 }
 
-// String returns defcon settings a string.
-func (d *DefCon) String() string {
-	ss := make([]string, len(d.Levels))
-	for i := 0; i < len(d.Levels); i++ {
-		ss[i] = render.PrintPerc(d.Levels[i])
-	}
-	return strings.Join(ss, "|")
-}
-
-func (d *DefCon) isValidRange(v int) bool {
-	if v < 0 || v > 100 {
+func validateRange(v int) bool {
+	if v <= 0 || v > 100 {
 		return false
 	}
-
 	return true
 }
 
 // Threshold tracks threshold to alert user when excided.
-type Threshold map[string]*DefCon
+type Threshold map[string]*Severity
 
 // NewThreshold returns a new threshold.
 func NewThreshold() Threshold {
 	return Threshold{
-		"cpu":    NewDefCon(),
-		"memory": NewDefCon(),
+		"cpu":    NewSeverity(),
+		"memory": NewSeverity(),
 	}
 }
 
@@ -84,7 +66,7 @@ func (t Threshold) Validate(c client.Connection, ks KubeSettings) {
 	for _, k := range []string{"cpu", "memory"} {
 		v, ok := t[k]
 		if !ok {
-			t[k] = NewDefCon()
+			t[k] = NewSeverity()
 		} else {
 			v.Validate()
 		}
@@ -92,48 +74,29 @@ func (t Threshold) Validate(c client.Connection, ks KubeSettings) {
 }
 
 // DefConFor returns a defcon level for the current state.
-func (t Threshold) DefConFor(k string, v int) DefConLevel {
-	dc, ok := t[k]
+func (t Threshold) LevelFor(k string, v int) SeverityLevel {
+	s, ok := t[k]
 	if !ok || v < 0 || v > 100 {
-		return DefCon5
+		return SeverityLow
 	}
-	for i, l := range dc.Levels {
-		if v >= l {
-			return dcLevelFor(i)
-		}
+	if v >= s.Critical {
+		return SeverityHigh
+	}
+	if v >= s.Warn {
+		return SeverityMedium
 	}
 
-	return DefCon5
+	return SeverityLow
 }
 
 // DefConColorFor returns an defcon level associated level.
-func (t *Threshold) DefConColorFor(k string, v int) string {
-	switch t.DefConFor(k, v) {
-	case DefCon1:
+func (t *Threshold) SeverityColor(k string, v int) string {
+	switch t.LevelFor(k, v) {
+	case SeverityHigh:
 		return "red"
-	case DefCon2:
+	case SeverityMedium:
 		return "orangered"
-	case DefCon3:
-		return "orange"
 	default:
 		return "green"
-	}
-}
-
-// ----------------------------------------------------------------------------
-// Helpers...
-
-func dcLevelFor(l int) DefConLevel {
-	switch l {
-	case 0:
-		return DefCon1
-	case 1:
-		return DefCon2
-	case 2:
-		return DefCon3
-	case 3:
-		return DefCon4
-	default:
-		return DefCon5
 	}
 }

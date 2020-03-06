@@ -305,6 +305,7 @@ func (a *APIClient) reset() {
 
 	a.cache = cache.NewLRUExpireCache(cacheSize)
 	a.client, a.dClient, a.nsClient, a.mxsClient = nil, nil, nil, nil
+	a.cachedClient = nil
 }
 
 func (a *APIClient) supportsMetricsResources() (supported bool) {

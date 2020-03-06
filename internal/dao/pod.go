@@ -94,7 +94,7 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		}
 	}
 
-	var res []runtime.Object
+	res := make([]runtime.Object, 0, len(oo))
 	for _, o := range oo {
 		u, ok := o.(*unstructured.Unstructured)
 		if !ok {

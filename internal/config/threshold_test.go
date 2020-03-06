@@ -7,25 +7,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDefConValidate(t *testing.T) {
+func TestSeverityValidate(t *testing.T) {
 	uu := map[string]struct {
-		d, e *config.DefCon
+		d, e *config.Severity
 	}{
 		"default": {
-			d: config.NewDefCon(),
-			e: config.NewDefCon(),
+			d: config.NewSeverity(),
+			e: config.NewSeverity(),
 		},
 		"toast": {
-			d: &config.DefCon{Levels: []int{10}},
-			e: config.NewDefCon(),
+			d: &config.Severity{Warn: 10},
+			e: &config.Severity{Warn: 10, Critical: 90},
 		},
 		"negative": {
-			d: &config.DefCon{Levels: []int{-1, 10, 10, 10}},
-			e: &config.DefCon{Levels: []int{90, 10, 10, 10}},
+			d: &config.Severity{Warn: -1},
+			e: config.NewSeverity(),
 		},
 		"out-of-range": {
-			d: &config.DefCon{Levels: []int{150, 200, 10, 300}},
-			e: &config.DefCon{Levels: []int{90, 80, 10, 70}},
+			d: &config.Severity{Warn: 150},
+			e: config.NewSeverity(),
 		},
 	}
 
@@ -38,41 +38,41 @@ func TestDefConValidate(t *testing.T) {
 	}
 }
 
-func TestDefConFor(t *testing.T) {
+func TestLevelFor(t *testing.T) {
 	uu := map[string]struct {
 		k string
 		v int
-		e config.DefConLevel
+		e config.SeverityLevel
 	}{
 		"normal": {
 			k: "cpu",
 			v: 0,
-			e: config.DefCon5,
+			e: config.SeverityLow,
 		},
 		"4": {
 			k: "cpu",
 			v: 71,
-			e: config.DefCon4,
+			e: config.SeverityMedium,
 		},
 		"3": {
 			k: "cpu",
 			v: 75,
-			e: config.DefCon3,
+			e: config.SeverityMedium,
 		},
 		"2": {
 			k: "cpu",
 			v: 80,
-			e: config.DefCon2,
+			e: config.SeverityMedium,
 		},
 		"1": {
 			k: "cpu",
 			v: 100,
-			e: config.DefCon1,
+			e: config.SeverityHigh,
 		},
 		"over": {
 			k: "cpu",
 			v: 150,
-			e: config.DefCon5,
+			e: config.SeverityLow,
 		},
 	}
 
@@ -80,7 +80,7 @@ func TestDefConFor(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, o.DefConFor(u.k, u.v))
+			assert.Equal(t, u.e, o.LevelFor(u.k, u.v))
 		})
 	}
 }

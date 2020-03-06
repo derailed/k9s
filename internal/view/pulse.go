@@ -159,7 +159,7 @@ func (p *Pulse) PulseChanged(c *health.Check) {
 		perc := client.ToPercentage(c.Tally(health.S1), c.Tally(health.S2))
 		v.SetLegend(fmt.Sprintf(cpuFmt,
 			strings.Title(gvr.R()),
-			p.app.Config.K9s.Thresholds.DefConColorFor("cpu", perc),
+			p.app.Config.K9s.Thresholds.SeverityColor("cpu", perc),
 			render.PrintPerc(perc),
 			nn[0],
 			render.AsThousands(c.Tally(health.S1)),
@@ -170,7 +170,7 @@ func (p *Pulse) PulseChanged(c *health.Check) {
 		perc := client.ToPercentage(c.Tally(health.S1), c.Tally(health.S2))
 		v.SetLegend(fmt.Sprintf(memFmt,
 			strings.Title(gvr.R()),
-			p.app.Config.K9s.Thresholds.DefConColorFor("memory", perc),
+			p.app.Config.K9s.Thresholds.SeverityColor("memory", perc),
 			render.PrintPerc(perc),
 			nn[0],
 			render.AsThousands(c.Tally(health.S1)),

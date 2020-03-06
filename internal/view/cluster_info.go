@@ -72,14 +72,14 @@ func (c *ClusterInfo) infoCell(t string) *tview.TableCell {
 	return cell
 }
 
-// ClusterInfoUpdated notifies the cluster meta was updated.
-func (c *ClusterInfo) ClusterInfoUpdated(data model.ClusterMeta) {
-	c.ClusterInfoChanged(data, data)
-}
-
 func (c *ClusterInfo) setCell(row int, s string) int {
 	c.GetCell(row, 1).SetText(s)
 	return row + 1
+}
+
+// ClusterInfoUpdated notifies the cluster meta was updated.
+func (c *ClusterInfo) ClusterInfoUpdated(data model.ClusterMeta) {
+	c.ClusterInfoChanged(data, data)
 }
 
 // ClusterInfoChanged notifies the cluster meta was changed.
@@ -101,20 +101,18 @@ func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
 	})
 }
 
-const defconFmt = "Cluster <%s> at DEFCON %d"
+const defconFmt = "%s %s level!"
 
 func (c *ClusterInfo) setDefCon(cpu, mem int) {
 	var set bool
-	dc := c.app.Config.K9s.Thresholds.DefConFor("cpu", cpu)
-	if dc < config.DefCon5 {
-		l := flashFromDefCon(dc)
-		c.app.Status(l, fmt.Sprintf(defconFmt, "cpu", int(dc)))
+	l := c.app.Config.K9s.Thresholds.LevelFor("cpu", cpu)
+	if l > config.SeverityLow {
+		c.app.Status(flashLevel(l), fmt.Sprintf(defconFmt, flashMessage(l), "CPU"))
 		set = true
 	}
-	dc = c.app.Config.K9s.Thresholds.DefConFor("memory", mem)
-	if dc < config.DefCon5 {
-		l := flashFromDefCon(dc)
-		c.app.Status(l, fmt.Sprintf(defconFmt, "mem", int(dc)))
+	l = c.app.Config.K9s.Thresholds.LevelFor("memory", mem)
+	if l > config.SeverityLow {
+		c.app.Status(flashLevel(l), fmt.Sprintf(defconFmt, flashMessage(l), "Memory"))
 		set = true
 	}
 	if !set {
@@ -131,13 +129,27 @@ func (c *ClusterInfo) updateStyle() {
 	}
 }
 
-func flashFromDefCon(l config.DefConLevel) model.FlashLevel {
+// ----------------------------------------------------------------------------
+// Helpers...
+
+func flashLevel(l config.SeverityLevel) model.FlashLevel {
 	switch l {
-	case config.DefCon1:
+	case config.SeverityHigh:
 		return model.FlashErr
-	case config.DefCon2, config.DefCon3:
+	case config.SeverityMedium:
 		return model.FlashWarn
 	default:
 		return model.FlashInfo
+	}
+}
+
+func flashMessage(l config.SeverityLevel) string {
+	switch l {
+	case config.SeverityHigh:
+		return "Critical"
+	case config.SeverityMedium:
+		return "Warning"
+	default:
+		return "OK"
 	}
 }
