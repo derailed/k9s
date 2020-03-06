@@ -73,7 +73,7 @@ func (t Threshold) Validate(c client.Connection, ks KubeSettings) {
 	}
 }
 
-// DefConFor returns a defcon level for the current state.
+// LevelFor returns a defcon level for the current state.
 func (t Threshold) LevelFor(k string, v int) SeverityLevel {
 	s, ok := t[k]
 	if !ok || v < 0 || v > 100 {
@@ -89,7 +89,7 @@ func (t Threshold) LevelFor(k string, v int) SeverityLevel {
 	return SeverityLow
 }
 
-// DefConColorFor returns an defcon level associated level.
+// SeverityColor returns an defcon level associated level.
 func (t *Threshold) SeverityColor(k string, v int) string {
 	switch t.LevelFor(k, v) {
 	case SeverityHigh:
