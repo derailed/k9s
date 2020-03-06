@@ -297,7 +297,7 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 		if v == "" || v == "ctx" || v == "context" {
 			v = "pod"
 		}
-		if err := a.gotoResource(v, ns, true); loadPods && err != nil {
+		if err := a.gotoResource(v, "", true); loadPods && err != nil {
 			a.Flash().Err(err)
 		}
 		a.clusterModel.Reset(a.factory)

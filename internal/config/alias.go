@@ -90,7 +90,6 @@ func (a *Aliases) Load() error {
 func (a *Aliases) LoadFileAliases(path string) error {
 	f, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Debug().Err(err).Msgf("No custom aliases found")
 		return nil
 	}
 
