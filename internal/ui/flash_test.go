@@ -11,7 +11,7 @@ import (
 )
 
 func TestFlash(t *testing.T) {
-	const delay = 1 * time.Millisecond
+	const delay = 10 * time.Millisecond
 	uu := map[string]struct {
 		l    model.FlashLevel
 		i, e string
@@ -21,12 +21,11 @@ func TestFlash(t *testing.T) {
 		"err":  {l: model.FlashErr, i: "hello", e: "😡 hello\n"},
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
 	a := ui.NewApp("test")
 	f := ui.NewFlash(a)
 	f.SetTestMode(true)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 	go f.Watch(ctx, a.Flash().Channel())
 
 	for k := range uu {
