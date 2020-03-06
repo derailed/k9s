@@ -16,7 +16,7 @@ func init() {
 }
 
 func main() {
-	fmt.Printf("🚀 loading k9s...\n")
+	fmt.Printf("loading k9s...\n")
 	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
 	file, err := os.OpenFile(config.K9sLogs, mod, config.DefaultFileMod)
 	if err != nil {
