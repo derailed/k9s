@@ -599,18 +599,13 @@ Here is a list of all available color names.
 
 ## Known Issues
 
-This initial drop is brittle. K9s will most likely blow up...
+This is still work in progress! If something is broken or there's a feature
+that you want, please open a PR or file a ticket.
+
+K9s will most likely blow up if...
 
 1. You're running older versions of Kubernetes. K9s works best on Kubernetes latest.
 2. You don't have enough RBAC fu to manage your cluster.
-
----
-
-## Disclaimer
-
-This is still work in progress! If there is enough interest in the Kubernetes
-community, we will enhance per your recommendations/contributions. Also if you
-dig this effort, please let us know that too!
 
 ---
 
@@ -627,7 +622,7 @@ to make this project a reality!
 * [Fernand Galiana](https://github.com/derailed)
   * <img src="assets/mail.png" width="16" height="auto"/>  fernand@imhotep.io
   * <img src="assets/twitter.png" width="16" height="auto"/> [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
-
+We always enjoy hearing from folks who benefit from our work.
 ---
 
 <img src="assets/imhotep_logo.png" width="32" height="auto"/> &nbsp;© 2020 Imhotep Software LLC. All materials licensed under [Apache v2.0](http://www.apache.org/licenses/LICENSE-2.0)
