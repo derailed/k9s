@@ -206,15 +206,12 @@ func (m *MetricsServer) FetchPodMetrics(fqn string) (*mv1beta1.PodMetrics, error
 		return mx, err
 	}
 
-	var key = FQN(ns, "pods")
-	if entry, ok := m.cache.Get(key); ok {
-		if list, ok := entry.(*mv1beta1.PodMetricsList); ok && list != nil {
-			for _, m := range list.Items {
-				if FQN(m.Namespace, m.Name) == fqn {
-					return &m, nil
-				}
-			}
+	if entry, ok := m.cache.Get(fqn); ok {
+		pmx, ok := entry.(*mv1beta1.PodMetrics)
+		if !ok {
+			return nil, fmt.Errorf("expecting podmetrics but got %T", entry)
 		}
+		return pmx, nil
 	}
 
 	client, err := m.MXDial()
@@ -225,7 +222,7 @@ func (m *MetricsServer) FetchPodMetrics(fqn string) (*mv1beta1.PodMetrics, error
 	if err != nil {
 		return mx, err
 	}
-	m.cache.Add(key, mx, mxCacheExpiry)
+	m.cache.Add(fqn, mx, mxCacheExpiry)
 
 	return mx, nil
 }

@@ -50,6 +50,7 @@ func generalEnv(a *App) K9sEnv {
 }
 
 func defaultK9sEnv(a *App, sel string, row render.Row) K9sEnv {
+	log.Debug().Msgf("ROW %#v", row)
 	ns, n := client.Namespaced(sel)
 
 	env := generalEnv(a)

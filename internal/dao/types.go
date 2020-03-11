@@ -2,6 +2,8 @@ package dao
 
 import (
 	"context"
+	"io"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/watch"
@@ -68,6 +70,24 @@ type Accessor interface {
 
 	// GVR returns a gvr a string.
 	GVR() string
+}
+
+// DrainOptions tracks drain attributes.
+type DrainOptions struct {
+	GracePeriodSeconds  int
+	Timeout             time.Duration
+	IgnoreAllDaemonSets bool
+	DeleteLocalData     bool
+	Force               bool
+}
+
+// NodeMaintainer performs node maintenance operations.
+type NodeMaintainer interface {
+	// ToggleCordon toggles cordon/uncordon a node.
+	ToggleCordon(path string, cordon bool) error
+
+	// Drain drains the given node.
+	Drain(path string, opts DrainOptions, w io.Writer) error
 }
 
 // Loggable represents resources with logs.

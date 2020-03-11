@@ -79,7 +79,16 @@ func (g GVR) GV() schema.GroupVersion {
 	}
 }
 
-// GVR returns a a full schema representation.
+// GVK returns a full schema representation.
+func (g GVR) GVK() schema.GroupVersionKind {
+	return schema.GroupVersionKind{
+		Group:   g.G(),
+		Version: g.V(),
+		Kind:    g.R(),
+	}
+}
+
+// GVR returns a full schema representation.
 func (g GVR) GVR() schema.GroupVersionResource {
 	return schema.GroupVersionResource{
 		Group:    g.G(),
@@ -88,7 +97,7 @@ func (g GVR) GVR() schema.GroupVersionResource {
 	}
 }
 
-// GR returns a a full schema representation.
+// GR returns a full schema representation.
 func (g GVR) GR() *schema.GroupResource {
 	return &schema.GroupResource{
 		Group:    g.G(),

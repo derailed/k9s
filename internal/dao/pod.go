@@ -227,7 +227,7 @@ func tailLogs(ctx context.Context, logger Logger, c chan<- []byte, opts LogOptio
 		Container:  opts.Container,
 		Follow:     true,
 		TailLines:  &opts.Lines,
-		Timestamps: opts.ShowTimestamp,
+		Timestamps: false,
 		Previous:   opts.Previous,
 	}
 	req, err := logger.Logs(opts.Path, &o)

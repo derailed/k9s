@@ -107,13 +107,25 @@ func (Node) diagnose(ss []string) error {
 	if len(ss) == 0 {
 		return nil
 	}
+
+	var ready bool
 	for _, s := range ss {
+		if s == "" {
+			continue
+		}
+		if s == "SchedulingDisabled" {
+			return errors.New("node is cordoned")
+		}
 		if s == "Ready" {
-			return nil
+			ready = true
 		}
 	}
 
-	return errors.New("node is not ready")
+	if !ready {
+		return errors.New("node is not ready")
+	}
+
+	return nil
 }
 
 // ----------------------------------------------------------------------------

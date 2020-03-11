@@ -192,7 +192,6 @@ func (b *Browser) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	cmd := b.SearchBuff().String()
-	b.App().Flash().Info("Clearing filter...")
 	b.SearchBuff().Reset()
 
 	if ui.IsLabelSelector(cmd) {

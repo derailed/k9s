@@ -128,6 +128,7 @@ func (d *Details) bindKeys() {
 }
 
 func (d *Details) keyboard(evt *tcell.EventKey) *tcell.EventKey {
+	displayKey(d.app, d.cmdBuff.InCmdMode(), evt)
 	key := evt.Key()
 	if key == tcell.KeyUp || key == tcell.KeyDown {
 		return evt
@@ -248,7 +249,6 @@ func (d *Details) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if d.app.InCmdMode() {
 		return evt
 	}
-	d.app.Flash().Info("Filter mode activated.")
 	d.cmdBuff.SetActive(true)
 
 	return nil
@@ -281,7 +281,6 @@ func (d *Details) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if d.cmdBuff.String() != "" {
 		d.model.ClearFilter()
 	}
-	d.app.Flash().Info("Clearing filter...")
 	d.cmdBuff.SetActive(false)
 	d.cmdBuff.Reset()
 	d.updateTitle()

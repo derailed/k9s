@@ -42,7 +42,7 @@ func (r *RestartExtender) restartCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if len(paths) > 1 {
 		msg = fmt.Sprintf("Restart %d deployments?", len(paths))
 	}
-	dialog.ShowConfirm(r.App().Content.Pages, "<Confirm Restart>", msg, func() {
+	dialog.ShowConfirm(r.App().Content.Pages, "Confirm Restart", msg, func() {
 		for _, path := range paths {
 			if err := r.restartRollout(path); err != nil {
 				r.App().Flash().Err(err)

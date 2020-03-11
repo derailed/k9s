@@ -417,7 +417,6 @@ func (x *Xray) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if x.app.InCmdMode() {
 		return evt
 	}
-	x.app.Flash().Info("Filter mode activated.")
 	x.CmdBuff().SetActive(true)
 
 	return nil
@@ -448,8 +447,6 @@ func (x *Xray) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 		x.CmdBuff().Reset()
 		return x.app.PrevCmd(evt)
 	}
-
-	x.app.Flash().Info("Clearing filter...")
 	x.CmdBuff().Reset()
 	x.model.ClearFilter()
 	x.Start()

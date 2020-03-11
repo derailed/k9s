@@ -104,9 +104,9 @@ func (a *App) Init(version string, rate int) error {
 
 	main := tview.NewFlex().SetDirection(tview.FlexRow)
 	main.AddItem(a.statusIndicator(), 1, 1, false)
+	main.AddItem(flash, 1, 1, false)
 	main.AddItem(a.Content, 0, 10, true)
 	main.AddItem(a.Crumbs(), 1, 1, false)
-	main.AddItem(flash, 1, 1, false)
 
 	a.Main.AddPage("main", main, true, false)
 	a.Main.AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
@@ -116,6 +116,7 @@ func (a *App) Init(version string, rate int) error {
 }
 
 func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
+	displayKey(a, a.InCmdMode(), evt)
 	key := evt.Key()
 	if key == tcell.KeyRune {
 		if a.CmdBuff().IsActive() && evt.Modifiers() == tcell.ModNone {
@@ -154,7 +155,7 @@ func (a *App) toggleHeader(flag bool) {
 	}
 	if a.showHeader {
 		flex.RemoveItemAtIndex(0)
-		flex.AddItemAtIndex(0, a.buildHeader(), 8, 1, false)
+		flex.AddItemAtIndex(0, a.buildHeader(), 7, 1, false)
 	} else {
 		flex.RemoveItemAtIndex(0)
 		flex.AddItemAtIndex(0, a.statusIndicator(), 1, 1, false)

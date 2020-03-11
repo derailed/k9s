@@ -40,6 +40,7 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		client.NewGVR("portforwards"):                  &PortForward{},
 		client.NewGVR("v1/services"):                   &Service{},
 		client.NewGVR("v1/pods"):                       &Pod{},
+		client.NewGVR("v1/nodes"):                      &Node{},
 		client.NewGVR("apps/v1/deployments"):           &Deployment{},
 		client.NewGVR("apps/v1/daemonsets"):            &DaemonSet{},
 		client.NewGVR("extensions/v1beta1/daemonsets"): &DaemonSet{},

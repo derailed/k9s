@@ -28,6 +28,7 @@ var (
 	version, commit, date = "dev", "dev", "n/a"
 	k9sFlags              *config.Flags
 	k8sFlags              *genericclioptions.ConfigFlags
+	demoMode              = new(bool)
 
 	rootCmd = &cobra.Command{
 		Use:   appName,
@@ -38,8 +39,8 @@ var (
 )
 
 func init() {
-	const falseFlag = "false"
 	rootCmd.AddCommand(versionCmd(), infoCmd())
+	initTransientFlags()
 	initK9sFlags()
 	initK8sFlags()
 
@@ -51,10 +52,10 @@ func init() {
 	if err := flag.Set("stderrthreshold", "fatal"); err != nil {
 		log.Error().Err(err)
 	}
-	if err := flag.Set("alsologtostderr", falseFlag); err != nil {
+	if err := flag.Set("alsologtostderr", "false"); err != nil {
 		log.Error().Err(err)
 	}
-	if err := flag.Set("logtostderr", falseFlag); err != nil {
+	if err := flag.Set("logtostderr", "false"); err != nil {
 		log.Error().Err(err)
 	}
 }
@@ -105,6 +106,10 @@ func loadConfiguration() *config.Config {
 		log.Warn().Msg("Unable to locate K9s config. Generating new configuration...")
 	}
 
+	log.Debug().Msgf("DEMO MODE %#v", demoMode)
+	if demoMode != nil {
+		k9sCfg.SetDemoMode(*demoMode)
+	}
 	if *k9sFlags.RefreshRate != config.DefaultRefreshRate {
 		k9sCfg.K9s.OverrideRefreshRate(*k9sFlags.RefreshRate)
 	}
@@ -159,6 +164,15 @@ func parseLevel(level string) zerolog.Level {
 	default:
 		return zerolog.InfoLevel
 	}
+}
+
+func initTransientFlags() {
+	rootCmd.Flags().BoolVar(
+		demoMode,
+		"demo",
+		false,
+		"Enable demo mode to show keyboard commands",
+	)
 }
 
 func initK9sFlags() {

@@ -275,7 +275,6 @@ func applyFilter(q string, lines []string) ([]string, error) {
 }
 
 func (l *Log) fireLogBuffChanged(lines []string) {
-	log.Debug().Msgf("FIRE-BUFF-CHNGED")
 	filtered, err := applyFilter(l.filter, lines)
 	if err != nil {
 		l.fireLogError(err)
@@ -307,7 +306,7 @@ func (l *Log) fireLogCleared() {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-// BOZO!! Log timestamps.
+// BOZO!!
 // func showTimes(lines []string, show bool) []string {
 // 	filtered := make([]string, 0, len(lines))
 // 	for _, l := range lines {

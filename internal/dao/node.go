@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"fmt"
+	"io"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -12,11 +13,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/kubectl/pkg/drain"
+	"k8s.io/kubectl/pkg/scheme"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 var (
-	_ Accessor = (*Node)(nil)
+	_ Accessor       = (*Node)(nil)
+	_ NodeMaintainer = (*Node)(nil)
 )
 
 // NodeMetricsFunc retrieves node metrics.
@@ -25,6 +30,75 @@ type NodeMetricsFunc func() (*mv1beta1.NodeMetricsList, error)
 // Node represents a node model.
 type Node struct {
 	Resource
+}
+
+// ToggleCordon toggles cordon/uncordon a node.
+func (n *Node) ToggleCordon(path string, cordon bool) error {
+	o, err := n.Get(context.Background(), path)
+	if err != nil {
+		return err
+	}
+
+	h, err := drain.NewCordonHelperFromRuntimeObject(o, scheme.Scheme, n.gvr.GVK())
+	if err != nil {
+		return err
+	}
+
+	if !h.UpdateIfRequired(cordon) {
+		if cordon {
+			return fmt.Errorf("node is already cordoned")
+		}
+		return fmt.Errorf("node is already uncordoned")
+	}
+	err, patchErr := h.PatchOrReplace(n.Factory.Client().DialOrDie())
+	if patchErr != nil {
+		return patchErr
+	}
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (o DrainOptions) toDrainHelper(k kubernetes.Interface, w io.Writer) drain.Helper {
+	return drain.Helper{
+		Client:              k,
+		GracePeriodSeconds:  o.GracePeriodSeconds,
+		Timeout:             o.Timeout,
+		DeleteLocalData:     o.DeleteLocalData,
+		IgnoreAllDaemonSets: o.IgnoreAllDaemonSets,
+		Out:                 w,
+		ErrOut:              w,
+	}
+}
+
+// Drain drains a node.
+func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
+	_ = n.ToggleCordon(path, true)
+
+	h := opts.toDrainHelper(n.Factory.Client().DialOrDie(), w)
+	dd, errs := h.GetPodsForDeletion(path)
+	if len(errs) != 0 {
+		for _, e := range errs {
+			if _, err := h.ErrOut.Write([]byte(e.Error() + "\n")); err != nil {
+				return err
+			}
+		}
+		return errs[0]
+	}
+
+	if err := h.DeleteOrEvictPods(dd.Pods()); err != nil {
+		return err
+	}
+	fmt.Fprintf(h.Out, "Node %s drained!", path)
+
+	return nil
+}
+
+// Get returns a node resource.
+func (n *Node) Get(_ context.Context, path string) (runtime.Object, error) {
+	return FetchNode(n.Factory, path)
 }
 
 // List returns a collection of node resources.
@@ -66,15 +140,27 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-// FetchNodes retrieves all nodes.
-func FetchNodes(f Factory, labelsSel string) (*v1.NodeList, error) {
-	var list v1.NodeList
-	auth, err := f.Client().CanI("", "v1/nodes", []string{client.ListVerb})
+// FetchNode retrieves a node.
+func FetchNode(f Factory, path string) (*v1.Node, error) {
+	auth, err := f.Client().CanI("", "v1/nodes", []string{"get"})
 	if err != nil {
-		return &list, err
+		return nil, err
 	}
 	if !auth {
-		return &list, fmt.Errorf("user is not authorized to list nodes")
+		return nil, fmt.Errorf("user is not authorized to list nodes")
+	}
+
+	return f.Client().DialOrDie().CoreV1().Nodes().Get(path, metav1.GetOptions{})
+}
+
+// FetchNodes retrieves all nodes.
+func FetchNodes(f Factory, labelsSel string) (*v1.NodeList, error) {
+	auth, err := f.Client().CanI("", "v1/nodes", []string{client.ListVerb})
+	if err != nil {
+		return nil, err
+	}
+	if !auth {
+		return nil, fmt.Errorf("user is not authorized to list nodes")
 	}
 
 	return f.Client().DialOrDie().CoreV1().Nodes().List(metav1.ListOptions{

@@ -16,8 +16,7 @@ type LogIndicator struct {
 	scrollStatus int32
 	fullScreen   bool
 	textWrap     bool
-	// BOZO!! timestamp
-	// showTime     bool
+	showTime     bool
 }
 
 // NewLogIndicator returns a new indicator.
@@ -40,11 +39,10 @@ func (l *LogIndicator) AutoScroll() bool {
 	return atomic.LoadInt32(&l.scrollStatus) == 1
 }
 
-// BOZO!! Timestamp
-// // Timestamp reports the current timestamp mode.
-// func (l *LogIndicator) Timestamp() bool {
-// 	return l.showTime
-// }
+// Timestamp reports the current timestamp mode.
+func (l *LogIndicator) Timestamp() bool {
+	return l.showTime
+}
 
 // TextWrap reports the current wrap mode.
 func (l *LogIndicator) TextWrap() bool {
@@ -56,11 +54,10 @@ func (l *LogIndicator) FullScreen() bool {
 	return l.fullScreen
 }
 
-// BOZO!! Timestamp
-// // TextWrap reports the current wrap mode.
-// func (l *LogIndicator) ToggleTimestamp() {
-// 	l.showTime = !l.showTime
-// }
+// TextWrap reports the current wrap mode.
+func (l *LogIndicator) ToggleTimestamp() {
+	l.showTime = !l.showTime
+}
 
 // ToggleFullScreen toggles the screen mode.
 func (l *LogIndicator) ToggleFullScreen() {

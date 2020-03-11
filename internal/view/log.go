@@ -185,6 +185,7 @@ func (l *Log) bindKeys() {
 }
 
 func (l *Log) keyboard(evt *tcell.EventKey) *tcell.EventKey {
+	displayKey(l.app, l.cmdBuff.InCmdMode(), evt)
 	key := evt.Key()
 	if key == tcell.KeyUp || key == tcell.KeyDown {
 		return evt
@@ -265,7 +266,6 @@ func (l *Log) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if l.app.InCmdMode() {
 		return evt
 	}
-	l.app.Flash().Info("Filter mode activated.")
 	l.cmdBuff.SetActive(true)
 
 	return nil
@@ -293,7 +293,6 @@ func (l *Log) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if l.cmdBuff.String() != "" {
 		l.model.ClearFilter()
 	}
-	l.app.Flash().Info("Clearing filter...")
 	l.cmdBuff.SetActive(false)
 	l.cmdBuff.Reset()
 	l.updateTitle()
@@ -330,6 +329,7 @@ func saveData(cluster, name, data string) (string, error) {
 	if err != nil {
 		log.Error().Err(err).Msgf("LogFile create %s", path)
 		return "", nil
+
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
@@ -344,7 +344,6 @@ func saveData(cluster, name, data string) (string, error) {
 }
 
 func (l *Log) clearCmd(*tcell.EventKey) *tcell.EventKey {
-	l.app.Flash().Info("Clearing logs...")
 	l.model.Clear()
 	return nil
 }
@@ -355,7 +354,7 @@ func (l *Log) textWrapCmd(*tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-// BOZO! Log timestamps.
+// BOZO!! Log timestamps.
 // func (l *Log) toggleTimestampCmd(evt *tcell.EventKey) *tcell.EventKey {
 // 	l.model.Clear()
 // 	l.indicator.ToggleTimestamp()
