@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/derailed/k9s/cmd"
@@ -16,7 +15,6 @@ func init() {
 }
 
 func main() {
-	fmt.Println("loading k9s...")
 	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
 	file, err := os.OpenFile(config.K9sLogs, mod, config.DefaultFileMod)
 	if err != nil {

@@ -33,10 +33,10 @@ func NewNode(gvr client.GVR) ResourceViewer {
 func (n *Node) bindKeys(aa ui.KeyActions) {
 	aa.Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlD)
 	aa.Add(ui.KeyActions{
-		ui.KeyY:      ui.NewKeyAction("YAML", n.viewCmd, true),
+		ui.KeyY:      ui.NewKeyAction("YAML", n.yamlCmd, true),
 		ui.KeyC:      ui.NewKeyAction("Cordon", n.toggleCordonCmd(true), true),
 		ui.KeyU:      ui.NewKeyAction("Uncordon", n.toggleCordonCmd(false), true),
-		ui.KeyD:      ui.NewKeyAction("Drain", n.drainCmd, true),
+		ui.KeyR:      ui.NewKeyAction("Drain", n.drainCmd, true),
 		ui.KeyShiftC: ui.NewKeyAction("Sort CPU", n.GetTable().SortColCmd(cpuCol, false), false),
 		ui.KeyShiftM: ui.NewKeyAction("Sort MEM", n.GetTable().SortColCmd(memCol, false), false),
 		ui.KeyShiftX: ui.NewKeyAction("Sort CPU%", n.GetTable().SortColCmd("%CPU", false), false),
@@ -126,7 +126,7 @@ func (n *Node) toggleCordonCmd(cordon bool) func(evt *tcell.EventKey) *tcell.Eve
 	}
 }
 
-func (n *Node) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (n *Node) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := n.GetTable().GetSelectedItem()
 	if path == "" {
 		return evt
