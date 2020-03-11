@@ -54,7 +54,7 @@ func (l *LogIndicator) FullScreen() bool {
 	return l.fullScreen
 }
 
-// TextWrap reports the current wrap mode.
+// ToggleTimestamp toggles the current timestamp mode.
 func (l *LogIndicator) ToggleTimestamp() {
 	l.showTime = !l.showTime
 }
