@@ -24,7 +24,7 @@ import (
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
-const defaultTimeout = 1 * time.Second
+const defaultTimeout = 8 * time.Second
 
 var (
 	_ Accessor   = (*Pod)(nil)
@@ -240,18 +240,62 @@ func tailLogs(ctx context.Context, logger Logger, c chan<- []byte, opts LogOptio
 	req.Context(ctx)
 
 	var blocked int32 = 1
+	var emptyLogs int32 = 0
+
+	logsCheckerCtx, logsCheckerCancel := context.WithCancel(ctx)
+	go logsEmptyChecker(logsCheckerCtx, cancel, logger, opts, &blocked, &emptyLogs)
 	go logsTimeout(cancel, &blocked)
 
 	// This call will block if nothing is in the stream!!
+	// That's why we doing parallel request above which will
+	// cancel this stream in case logs size is zero
+	// But we anyways using timeout in both contexts in case of connection issues
 	stream, err := req.Stream()
+
 	atomic.StoreInt32(&blocked, 0)
+	logsCheckerCancel()
+
 	if err != nil {
 		log.Error().Err(err).Msgf("Log stream failed for `%s", opts.Path)
-		return fmt.Errorf("Unable to obtain log stream for %s", opts.Path)
+
+		if atomic.LoadInt32(&emptyLogs) != 0 {
+			return fmt.Errorf("Empty log. Please reopen this view to see log changes.")
+		} else {
+			return fmt.Errorf("Unable to obtain log stream for %s", opts.Path)
+		}
 	}
 	go readLogs(stream, c, opts)
 
 	return nil
+}
+
+// Check logs size and in case its zero cancel blocked stream request
+func logsEmptyChecker(ctx context.Context, cancel context.CancelFunc, logger Logger, opts LogOptions, blocked *int32, emptyLogs *int32) {
+	var bytesLimit int64 = 1
+	o := v1.PodLogOptions{
+		Container:  opts.Container,
+		Previous:   opts.Previous,
+		LimitBytes: &bytesLimit,
+	}
+
+	req, err := logger.Logs(opts.Path, &o)
+	if err != nil {
+		log.Error().Err(err).Msgf("Log stream empty checker request build")
+	}
+	req.Context(ctx)
+
+	buf, err := req.DoRaw()
+	if err != nil {
+		log.Error().Err(err).Msgf("Log stream empty checker request fail")
+	}
+
+	if atomic.LoadInt32(blocked) != 0 {
+		if len(buf) == 0 {
+			atomic.StoreInt32(emptyLogs, 1)
+			log.Debug().Msg("Logs empty checker detected empty log")
+			cancel()
+		}
+	}
 }
 
 func logsTimeout(cancel context.CancelFunc, blocked *int32) {
