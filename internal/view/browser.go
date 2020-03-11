@@ -32,7 +32,7 @@ type Browser struct {
 
 // NewBrowser returns a new browser.
 func NewBrowser(gvr client.GVR) ResourceViewer {
-	log.Debug().Msgf("BRO %q", gvr)
+	log.Debug().Msgf("LOAD-VIEW %q", gvr)
 	return &Browser{
 		Table: NewTable(gvr),
 	}

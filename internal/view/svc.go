@@ -45,7 +45,7 @@ func NewService(gvr client.GVR) ResourceViewer {
 
 func (s *Service) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		tcell.KeyCtrlB: ui.NewKeyAction("Bench Run/Stop", s.toggleBenchCmd, true),
+		tcell.KeyCtrlL: ui.NewKeyAction("Bench Run/Stop", s.toggleBenchCmd, true),
 		ui.KeyShiftT:   ui.NewKeyAction("Sort Type", s.GetTable().SortColCmd("TYPE", true), false),
 	})
 }
@@ -71,6 +71,9 @@ func (s *Service) checkSvc(svc *v1.Service) error {
 }
 
 func (s *Service) getExternalPort(svc *v1.Service) (string, error) {
+	if svc.Spec.Type == "LoadBalancer" {
+		return "", nil
+	}
 	ports := render.ToPorts(svc.Spec.Ports)
 	pp := strings.Split(ports, " ")
 	// Grap the first port pair for now...
@@ -98,12 +101,12 @@ func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	cust, err := config.NewBench(s.App().BenchFile)
 	if err != nil {
-		log.Debug().Msgf("No custom benchmark config file found")
+		log.Debug().Msgf("No bench config file found %s", s.App().BenchFile)
 	}
 
 	cfg, ok := cust.Benchmarks.Services[path]
 	if !ok {
-		s.App().Flash().Errf("No bench config found for service %s", path)
+		s.App().Flash().Errf("No bench config found for service %s in %s", path, s.App().BenchFile)
 		return nil
 	}
 	cfg.Name = path
@@ -161,14 +164,14 @@ func (s *Service) benchDone() {
 			s.bench.Cancel()
 		}
 		s.bench = nil
-		go benchTimedOut(s.App())
+		go clearStatus(s.App())
 	})
 }
 
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func benchTimedOut(app *App) {
+func clearStatus(app *App) {
 	<-time.After(2 * time.Second)
 	app.QueueUpdate(func() {
 		app.ClearStatus(true)

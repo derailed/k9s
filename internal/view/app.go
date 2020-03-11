@@ -342,13 +342,17 @@ func (a *App) Run() error {
 // Status reports a new app status for display.
 func (a *App) Status(l model.FlashLevel, msg string) {
 	a.QueueUpdateDraw(func() {
-		a.Flash().SetMessage(l, msg)
 		if a.showHeader {
 			a.setLogo(l, msg)
 		} else {
 			a.setIndicator(l, msg)
 		}
 	})
+}
+
+// IsBenchmarking check if benchmarks are active.
+func (a *App) IsBenchmarking() bool {
+	return a.Logo().IsBenchmarking()
 }
 
 // ClearStatus reset logo back to normal.

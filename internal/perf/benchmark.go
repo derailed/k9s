@@ -2,12 +2,14 @@ package perf
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
@@ -17,8 +19,10 @@ import (
 )
 
 const (
-	benchFmat = "%s_%s_%d.txt"
-	k9sUA     = "k9s/"
+	// BOZO!! Revisit bench and when we should timeout
+	benchTimeout = 2 * time.Minute
+	benchFmat    = "%s_%s_%d.txt"
+	k9sUA        = "k9s/"
 )
 
 // K9sBenchDir directory to store K9s Benchmark files.
@@ -29,6 +33,8 @@ type Benchmark struct {
 	canceled bool
 	config   config.BenchConfig
 	worker   *requester.Work
+	cancelFn context.CancelFunc
+	mx       sync.RWMutex
 }
 
 // NewBenchmark returns a new benchmark.
@@ -41,6 +47,7 @@ func NewBenchmark(base, version string, cfg config.BenchConfig) (*Benchmark, err
 }
 
 func (b *Benchmark) init(base, version string) error {
+	log.Debug().Msgf("BENCH-INIT")
 	req, err := http.NewRequest(b.config.HTTP.Method, base, nil)
 	if err != nil {
 		return err
@@ -51,6 +58,9 @@ func (b *Benchmark) init(base, version string) error {
 		req.SetBasicAuth(b.config.Auth.User, b.config.Auth.Password)
 	}
 
+	var ctx context.Context
+	ctx, b.cancelFn = context.WithTimeout(context.Background(), benchTimeout)
+	req = req.WithContext(ctx)
 	req.Header = b.config.HTTP.Headers
 	ua := req.UserAgent()
 	if ua == "" {
@@ -80,11 +90,17 @@ func (b *Benchmark) init(base, version string) error {
 
 // Cancel kills the benchmark in progress.
 func (b *Benchmark) Cancel() {
+	b.mx.Lock()
+	defer b.mx.Unlock()
+
 	if b == nil {
 		return
 	}
 	b.canceled = true
-	b.worker.Stop()
+	if b.cancelFn != nil {
+		b.cancelFn()
+		b.cancelFn = nil
+	}
 }
 
 // Canceled checks if the benchmark was canceled.
@@ -94,10 +110,15 @@ func (b *Benchmark) Canceled() bool {
 
 // Run starts a benchmark,
 func (b *Benchmark) Run(cluster string, done func()) {
+	log.Debug().Msgf("Running benchmark on cluster %s", cluster)
+	log.Debug().Msgf("BENCH-CFG %#v", b.worker)
 	buff := new(bytes.Buffer)
 	b.worker.Writer = buff
+	// this call will block until the benchmark is complete or timesout.
 	b.worker.Run()
-	if !b.canceled {
+	b.worker.Stop()
+	log.Debug().Msgf("YO!! %t %s", b.canceled, buff)
+	if len(buff.Bytes()) > 0 {
 		if err := b.save(cluster, buff); err != nil {
 			log.Error().Err(err).Msg("Saving Benchmark")
 		}

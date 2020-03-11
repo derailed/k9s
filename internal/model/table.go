@@ -224,10 +224,6 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 }
 
 func (t *Table) reconcile(ctx context.Context) error {
-	defer func(ti time.Time) {
-		log.Debug().Msgf("Elapsed %v %v", t.gvr, time.Since(ti))
-	}(time.Now())
-
 	meta := t.resourceMeta()
 	var (
 		oo  []runtime.Object

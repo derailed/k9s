@@ -115,7 +115,7 @@ func (c *ClusterInfo) setDefCon(cpu, mem int) {
 		c.app.Status(flashLevel(l), fmt.Sprintf(defconFmt, flashMessage(l), "Memory"))
 		set = true
 	}
-	if !set {
+	if !set && !c.app.IsBenchmarking() {
 		c.app.ClearStatus(true)
 	}
 }

@@ -273,7 +273,7 @@ func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads M
 		cell.SetAlign(h[c].Align)
 		fgColor := color(t.GetModel().GetNamespace(), t.header, ore)
 		cell.SetTextColor(fgColor)
-		if marked && fgColor != render.ErrColor {
+		if marked {
 			cell.SetTextColor(t.styles.Table().MarkColor.Color())
 		}
 		if col == 0 {

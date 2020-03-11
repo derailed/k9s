@@ -21,6 +21,7 @@ As of this drop, you can now perform direct cluster nodes maintenance by leverag
 
 ## Resolved Bugs/Features/PRs
 
+- [Issue #612](https://github.com/derailed/k9s/issues/612)
 - [Issue #608](https://github.com/derailed/k9s/issues/608)
 - [Issue #606](https://github.com/derailed/k9s/issues/606)
 - [Issue #237](https://github.com/derailed/k9s/issues/237)

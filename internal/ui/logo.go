@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
@@ -47,6 +48,12 @@ func (l *Logo) Status() *tview.TextView {
 func (l *Logo) StylesChanged(s *config.Styles) {
 	l.styles = s
 	l.Reset()
+}
+
+// IsBenchmarking checks if benchmarking is active or not.
+func (l *Logo) IsBenchmarking() bool {
+	txt := l.Status().GetText(true)
+	return strings.Contains(txt, "Bench")
 }
 
 // Reset clears out the logo view and resets colors.
