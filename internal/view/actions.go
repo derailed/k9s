@@ -3,12 +3,14 @@ package view
 import (
 	"fmt"
 
-	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 )
+
+// AllScopes represents actions available for all views.
+const AllScopes = "all"
 
 // Runner represents a runnable action handler.
 type Runner interface {
@@ -20,7 +22,7 @@ type Runner interface {
 
 func hasAll(scopes []string) bool {
 	for _, s := range scopes {
-		if s == "all" {
+		if s == AllScopes {
 			return true
 		}
 	}
@@ -75,7 +77,6 @@ func hotKeyActions(r Runner, aa ui.KeyActions) {
 
 func gotoCmd(r Runner, cmd, path string) ui.ActionHandler {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		log.Debug().Msgf("YO! %q -- %q", cmd, path)
 		if err := r.App().gotoResource(cmd, path, true); err != nil {
 			log.Error().Err(err).Msgf("Command fail")
 			r.App().Flash().Err(err)
@@ -118,22 +119,18 @@ func execCmd(r Runner, bin string, bg bool, args ...string) ui.ActionHandler {
 			return evt
 		}
 
-		ns, _ := client.Namespaced(path)
-		var (
-			aa  = make([]string, len(args))
-			err error
-		)
-
 		if r.EnvFn() == nil {
 			return nil
 		}
 
+		aa := make([]string, len(args))
 		for i, a := range args {
-			aa[i], err = r.EnvFn()().envFor(ns, a)
+			arg, err := r.EnvFn()().Substitute(a)
 			if err != nil {
 				log.Error().Err(err).Msg("Plugin Args match failed")
 				return nil
 			}
+			aa[i] = arg
 		}
 		if run(r.App(), shellOpts{clear: true, binary: bin, background: bg, args: aa}) {
 			r.App().Flash().Info("Plugin command launched successfully!")

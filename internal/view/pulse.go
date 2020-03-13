@@ -208,7 +208,6 @@ func (p *Pulse) bindKeys() {
 }
 
 func (p *Pulse) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	displayKey(p.app, false, evt)
 	key := evt.Key()
 	if key == tcell.KeyRune {
 		key = tcell.Key(evt.Rune())

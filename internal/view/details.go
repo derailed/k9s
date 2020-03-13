@@ -128,7 +128,6 @@ func (d *Details) bindKeys() {
 }
 
 func (d *Details) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	displayKey(d.app, d.cmdBuff.InCmdMode(), evt)
 	key := evt.Key()
 	if key == tcell.KeyUp || key == tcell.KeyDown {
 		return evt

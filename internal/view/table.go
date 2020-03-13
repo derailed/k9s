@@ -2,7 +2,6 @@ package view
 
 import (
 	"context"
-	"strings"
 	"time"
 
 	"github.com/atotto/clipboard"
@@ -28,7 +27,7 @@ func NewTable(gvr client.GVR) *Table {
 	t := Table{
 		Table: ui.NewTable(gvr),
 	}
-	t.envFn = t.defaultK9sEnv
+	t.envFn = t.defaultEnv
 
 	return &t
 }
@@ -56,25 +55,7 @@ func (t *Table) SendKey(evt *tcell.EventKey) {
 	t.keyboard(evt)
 }
 
-func displayKey(a *App, isCmd bool, evt *tcell.EventKey) {
-	if !a.Config.DemoMode() || a.InCmdMode() || isCmd {
-		a.Flash().Clear()
-		return
-	}
-	a.Flash().Clear()
-
-	key, ok := tcell.KeyNames[evt.Key()]
-	if !ok {
-		key = string(evt.Rune())
-	}
-	if evt.Modifiers() == tcell.ModCtrl {
-		key = "⌃" + strings.Replace(key, "Ctrl-", "", 1)
-	}
-	a.Flash().Infof("Pressed[:springgreen:b]%s", key)
-}
-
 func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	displayKey(t.app, t.SearchBuff().InCmdMode(), evt)
 	key := evt.Key()
 	if key == tcell.KeyUp || key == tcell.KeyDown {
 		return evt
@@ -108,12 +89,12 @@ func (t *Table) EnvFn() EnvFunc {
 	return t.envFn
 }
 
-func (t *Table) defaultK9sEnv() K9sEnv {
-	env := defaultK9sEnv(t.app, t.GetSelectedItem(), t.GetSelectedRow())
+func (t *Table) defaultEnv() Env {
+	path := t.GetSelectedItem()
+	env := defaultEnv(t.app.Conn().Config(), path, t.GetModel().Peek().Header, t.GetSelectedRow())
 	env["FILTER"] = t.SearchBuff().String()
 	if env["FILTER"] == "" {
-		ns, n := client.Namespaced(t.GetSelectedItem())
-		env["NAMESPACE"], env["FILTER"] = ns, n
+		env["NAMESPACE"], env["FILTER"] = client.Namespaced(path)
 	}
 
 	return env

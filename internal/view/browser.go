@@ -32,7 +32,6 @@ type Browser struct {
 
 // NewBrowser returns a new browser.
 func NewBrowser(gvr client.GVR) ResourceViewer {
-	log.Debug().Msgf("LOAD-VIEW %q", gvr)
 	return &Browser{
 		Table: NewTable(gvr),
 	}
@@ -92,7 +91,6 @@ func (b *Browser) SetInstance(path string) {
 // Start initializes browser updates.
 func (b *Browser) Start() {
 	b.Stop()
-
 	b.Table.Start()
 	b.GetModel().Watch(b.prepareContext())
 }
@@ -146,7 +144,6 @@ func (b *Browser) TableDataChanged(data render.TableData) {
 	if !b.app.ConOK() {
 		return
 	}
-
 	b.app.QueueUpdateDraw(func() {
 		b.refreshActions()
 		b.Update(data)

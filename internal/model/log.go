@@ -41,6 +41,7 @@ type Log struct {
 	filter        string
 	lastSent      int
 	showTimestamp bool
+	timeOut       time.Duration
 }
 
 // NewLog returns a new model.
@@ -49,6 +50,7 @@ func NewLog(gvr client.GVR, opts dao.LogOptions, timeOut time.Duration) *Log {
 		gvr:        gvr,
 		logOptions: opts,
 		lines:      nil,
+		timeOut:    timeOut,
 	}
 }
 
@@ -152,7 +154,6 @@ func (l *Log) load() error {
 	if !ok {
 		return fmt.Errorf("Resource %s is not Loggable", l.gvr)
 	}
-
 	if err := logger.TailLogs(ctx, c, l.logOptions); err != nil {
 		if l.cancelFn != nil {
 			l.cancelFn()
@@ -222,7 +223,7 @@ func (l *Log) updateLogs(ctx context.Context, c <-chan []byte) {
 			if overflow {
 				l.Notify(true)
 			}
-		case <-time.After(200 * time.Millisecond):
+		case <-time.After(l.timeOut):
 			l.Notify(true)
 		case <-ctx.Done():
 			return
@@ -305,22 +306,6 @@ func (l *Log) fireLogCleared() {
 
 // ----------------------------------------------------------------------------
 // Helpers...
-
-// BOZO!!
-// func showTimes(lines []string, show bool) []string {
-// 	filtered := make([]string, 0, len(lines))
-// 	for _, l := range lines {
-// 		tokens := strings.Split(l, " ")
-// 		if show {
-// 			cols := make([]string, 0, len(tokens))
-// 			cols = append(cols, fmt.Sprintf("%-35s", tokens[0]))
-// 			filtered = append(filtered, strings.Join(append(cols, tokens[1:]...), " "))
-// 		} else {
-// 			filtered = append(filtered, strings.Join(tokens[1:], " "))
-// 		}
-// 	}
-// 	return filtered
-// }
 
 var fuzzyRx = regexp.MustCompile(`\A\-f`)
 

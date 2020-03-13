@@ -116,7 +116,6 @@ func (a *App) Init(version string, rate int) error {
 }
 
 func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	displayKey(a, a.InCmdMode(), evt)
 	key := evt.Key()
 	if key == tcell.KeyRune {
 		if a.CmdBuff().IsActive() && evt.Modifiers() == tcell.ModNone {
@@ -199,11 +198,9 @@ func (a *App) Resume() {
 	ctx, a.cancelFn = context.WithCancel(context.Background())
 
 	go a.clusterUpdater(ctx)
-
 	if err := a.StylesWatcher(ctx, a); err != nil {
 		log.Error().Err(err).Msgf("Styles watcher failed")
 	}
-
 	if err := a.CustomViewsWatcher(ctx, a); err != nil {
 		log.Error().Err(err).Msgf("CustomView watcher failed")
 	}

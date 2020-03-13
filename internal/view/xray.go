@@ -205,8 +205,8 @@ func (x *Xray) EnvFn() EnvFunc {
 	return x.envFn
 }
 
-func (x *Xray) k9sEnv() K9sEnv {
-	env := generalEnv(x.app)
+func (x *Xray) k9sEnv() Env {
+	env := k8sEnv(x.app.Conn().Config())
 
 	spec := x.selectedSpec()
 	if spec == nil {

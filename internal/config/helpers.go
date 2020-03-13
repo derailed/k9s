@@ -57,9 +57,14 @@ func MustK9sUser() string {
 // EnsurePath ensures a directory exist from the given path.
 func EnsurePath(path string, mod os.FileMode) {
 	dir := filepath.Dir(path)
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if err = os.MkdirAll(dir, mod); err != nil {
-			log.Fatal().Msgf("Unable to create K9s home config dir: %v", err)
+	EnsureFullPath(dir, mod)
+}
+
+// EnsureFullPath ensures a directory exist from the given path.
+func EnsureFullPath(path string, mod os.FileMode) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		if err = os.MkdirAll(path, mod); err != nil {
+			log.Fatal().Msgf("Unable to create dir %q %v", path, err)
 		}
 	}
 }

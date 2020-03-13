@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
@@ -16,31 +15,31 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func generalEnv(a *App) K9sEnv {
-	ctx, err := a.Conn().Config().CurrentContextName()
+func k8sEnv(c *client.Config) Env {
+	ctx, err := c.CurrentContextName()
 	if err != nil {
 		ctx = render.NAValue
 	}
-	cluster, err := a.Conn().Config().CurrentClusterName()
+	cluster, err := c.CurrentClusterName()
 	if err != nil {
 		cluster = render.NAValue
 	}
-	user, err := a.Conn().Config().CurrentUserName()
+	user, err := c.CurrentUserName()
 	if err != nil {
 		user = render.NAValue
 	}
-	groups, err := a.Conn().Config().CurrentGroupNames()
+	groups, err := c.CurrentGroupNames()
 	if err != nil {
 		groups = []string{render.NAValue}
 	}
 
 	var cfg string
-	kcfg := a.Conn().Config().Flags().KubeConfig
+	kcfg := c.Flags().KubeConfig
 	if kcfg != nil && *kcfg != "" {
 		cfg = *kcfg
 	}
 
-	return K9sEnv{
+	return Env{
 		"CONTEXT":    ctx,
 		"CLUSTER":    cluster,
 		"USER":       user,
@@ -49,15 +48,11 @@ func generalEnv(a *App) K9sEnv {
 	}
 }
 
-func defaultK9sEnv(a *App, sel string, row render.Row) K9sEnv {
-	log.Debug().Msgf("ROW %#v", row)
-	ns, n := client.Namespaced(sel)
-
-	env := generalEnv(a)
-	env["NAMESPACE"], env["NAME"] = ns, n
-
-	for i, r := range row.Fields {
-		env["COL"+strconv.Itoa(i)] = r
+func defaultEnv(c *client.Config, path string, header render.Header, row render.Row) Env {
+	env := k8sEnv(c)
+	env["NAMESPACE"], env["NAME"] = client.Namespaced(path)
+	for i := range header {
+		env["COL-"+header[i].Name] = row.Fields[i]
 	}
 
 	return env

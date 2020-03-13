@@ -5,59 +5,38 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
-
-	"github.com/derailed/k9s/internal/client"
 )
 
-// K9sEnv represent K9s available env variables.
-type K9sEnv map[string]string
+// Env represent K9s and K8s available environment variables.
+type Env map[string]string
 
 // EnvRX match $XXX custom arg.
-var envRX = regexp.MustCompile(`\$(\!?[\w]+)(\d*)`)
+var envRX = regexp.MustCompile(`\$(\!?[\w|\d|\-|]+)`)
 
-func (e K9sEnv) envFor(ns, args string) (string, error) {
-	envs := envRX.FindStringSubmatch(args)
-	if len(envs) == 0 {
-		return args, nil
-	}
-
-	q := envs[1]
-	if envs[2] == "" {
-		return e.subOut(args, q)
+// Substitute replaces env variable keys from in a string with their corresponding values.
+func (e Env) Substitute(arg string) (string, error) {
+	kk := envRX.FindAllString(arg, -1)
+	if len(kk) == 0 {
+		return arg, nil
 	}
 
-	var index, err = strconv.Atoi(envs[2])
-	if err != nil {
-		return args, err
-	}
-	if client.IsNamespaced(ns) {
-		index -= 1
-	}
-	if index >= 0 {
-		q += strconv.Itoa(index)
-	}
-
-	return e.subOut(args, q)
-}
-
-func (e K9sEnv) subOut(args, q string) (string, error) {
-	var reverse bool
-	if q[0] == '!' {
-		reverse = true
-		q = q[1:]
-	}
-	env, ok := e[strings.ToUpper(q)]
-	if !ok {
-		return "", fmt.Errorf("no env vars exists for argument %q using key %q", args, q)
-	}
-
-	if b, err := strconv.ParseBool(env); err == nil {
-		if reverse {
-			env = fmt.Sprintf("%t", !b)
-		} else {
-			env = fmt.Sprintf("%t", b)
+	for _, k := range kk {
+		key, inverse := k[1:], false
+		if key[0] == '!' {
+			key, inverse = key[1:], true
 		}
+		v, ok := e[strings.ToUpper(key)]
+		if !ok {
+			return "", fmt.Errorf("no environment matching key %q:%q", k, key)
+		}
+		if b, err := strconv.ParseBool(v); err == nil {
+			if inverse {
+				b = !b
+			}
+			v = fmt.Sprintf("%t", b)
+		}
+		arg = strings.Replace(arg, k, v, -1)
 	}
 
-	return envRX.ReplaceAllString(args, env), nil
+	return arg, nil
 }

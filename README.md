@@ -107,23 +107,23 @@ K9s is available on Linux, macOS and Windows platforms.
 
 ### Pods view
 
-| Header      | Description                     |
-|-------------|---------------------------------|
-| NAME        | Pod name                        |
-| IMAGE       | Image used                      |
-| READY       | Is pod ready ?                  |
-| STATE       | Pod state                       |
-| INIT        | Is an init pod ?                |
-| RS          | Restart count                   |
-| PROBES(L:R) | Liveness and Readiness probes   |
-| CPU         | CPU used (millicores)           |
-| MEM         | Memory used (Mb)                |
-| %CPU/R      | % ratio of CPU used/requested   |
-| %MEM/R      | % ratio of MEM used/requested   |
-| %CPU/L      | % ratio of CPU used/limit       |
-| %MEM/L      | % ratio of MEM used/limit       |
-| PORTS       | Ports exposed                   |
-| AGE         | Pod age                         |
+| Header      | Description                   |
+|-------------|-------------------------------|
+| NAME        | Pod name                      |
+| IMAGE       | Image used                    |
+| READY       | Is pod ready ?                |
+| STATE       | Pod state                     |
+| INIT        | Is an init pod ?              |
+| RS          | Restart count                 |
+| PROBES(L:R) | Liveness and Readiness probes |
+| CPU         | CPU used (millicores)         |
+| MEM         | Memory used (Mb)              |
+| %CPU/R      | % ratio of CPU used/requested |
+| %MEM/R      | % ratio of MEM used/requested |
+| %CPU/L      | % ratio of CPU used/limit     |
+| %MEM/L      | % ratio of MEM used/limit     |
+| PORTS       | Ports exposed                 |
+| AGE         | Pod age                       |
 
 ---
 
@@ -159,7 +159,7 @@ k9s --readonly
 K9s uses aliases to navigate most K8s resources.
 
 | Command                     | Result                                             | Example                    |
-| --------------------------- | -------------------------------------------------- | -------------------------- |
+|-----------------------------|----------------------------------------------------|----------------------------|
 | `:dp`, `:deploy`            | View deployments                                   |                            |
 | `:no`, `:nodes`             | View nodes                                         |                            |
 | `:svc`, `:service`          | View services                                      |                            |
@@ -275,12 +275,12 @@ Entering the command mode and typing a resource name or alias, could be cumberso
 
 ## Plugins
 
-K9s allows you to extend your command line and tooling by defining your very own cluster commands via plugins. K9s will look at `$HOME/.k9s/plugin.yml` to locate all available plugins. A plugin is defined as follows:
+K9s allows you to extend your command line and tooling by defining your very own cluster commands via plugins. K9s looks at `$HOME/.k9s/plugin.yml` to locate all available plugins. A plugin is defined as follows:
 
 ```yaml
 # $HOME/.k9s/plugin.yml
 plugin:
-  # Defines a plugin to provide a `Ctrl-L` shorcut to tail the logs while in pod view.
+  # Defines a plugin to provide a `Ctrl-l` shortcut to tail the logs while in pod view.
   fred:
     shortCut: Ctrl-L
     description: Pod logs
@@ -298,11 +298,16 @@ plugin:
     - $CONTEXT
 ```
 
-This defines a plugin for viewing logs on a selected pod using `CtrlL` mnemonic.
+This defines a plugin for viewing logs on a selected pod using `Ctrl-l` mnemonic while in the pods view.
 
-The shortcut option represents the command a user would type to activate the plugin. The command represents adhoc commands the plugin runs upon activation. The scopes defines a collection of resources names/shortnames for which the plugin shortcut will be made available to the user. You can specify all to provide this shortcut for all views.
+* Shortcut: the key a user must enter to activate the plugin.
+* Command: the shell commands the plugin runs upon activation.
+* Scopes: select the resources that can access the plugin command. Defines a collection of resource names/shortnames for which the plugin shortcut will be made available to the user. You can specify `all` to make a plugin available in all views.
+* Background: boolean to indicate whether to run the command in the background or not.
+* Description: a short description of the command that will be shown in the ui next to the action mnemonic.
+* Args: a collection of arguments for the given command.
 
-K9s does provide additional environment variables for you to customize your plugins. Currently, the available environment variables are as follows:
+K9s does provide additional environment variables for you to further customize your plugins. Currently, the available environment variables are as follows:
 
 * `$NAMESPACE` -- the selected resource namespace
 * `$NAME` -- the selected resource name
@@ -313,7 +318,7 @@ K9s does provide additional environment variables for you to customize your plug
 * `$CONTEXT` the active context name
 * `$USER` the active user
 * `$GROUPS` the active groups
-* `$COLX` the column at index X for the viewed resource
+* `$COL-<RESOURCE_COLUMN_NAME>` use a given column name for a viewed resource. Must be prefixed by `COL-`!
 
 > NOTE: This is an experimental feature! Options and layout may change in future K9s releases as this feature solidifies.
 
@@ -563,7 +568,7 @@ k9s:
 Here is a list of all available color names.
 
 | Color Names          |                |                  |                   |                 |
-| -------------------- | -------------- | ---------------- | ----------------- | --------------- |
+|----------------------|----------------|------------------|-------------------|-----------------|
 | black                | maroon         | green            | olive             | navy            |
 | purple               | teal           | silver           | gray              | red             |
 | lime                 | yellow         | blue             | fuchsia           | aqua            |

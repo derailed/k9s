@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sync/atomic"
-	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -23,8 +21,6 @@ import (
 	restclient "k8s.io/client-go/rest"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
-
-const defaultTimeout = 1 * time.Second
 
 var (
 	_ Accessor   = (*Pod)(nil)
@@ -224,42 +220,28 @@ func (p *Pod) logs(ctx context.Context, c chan<- []byte, opts LogOptions) error 
 func tailLogs(ctx context.Context, logger Logger, c chan<- []byte, opts LogOptions) error {
 	log.Debug().Msgf("Tailing logs for %q -- %q", opts.Path, opts.Container)
 	o := v1.PodLogOptions{
-		Container:  opts.Container,
 		Follow:     true,
-		TailLines:  &opts.Lines,
 		Timestamps: false,
+		Container:  opts.Container,
 		Previous:   opts.Previous,
+		TailLines:  &opts.Lines,
 	}
 	req, err := logger.Logs(opts.Path, &o)
 	if err != nil {
 		return err
 	}
-
-	var cancel context.CancelFunc
-	ctx, cancel = context.WithCancel(ctx)
 	req.Context(ctx)
-
-	var blocked int32 = 1
-	go logsTimeout(cancel, &blocked)
 
 	// This call will block if nothing is in the stream!!
 	stream, err := req.Stream()
-	atomic.StoreInt32(&blocked, 0)
 	if err != nil {
+		c <- opts.DecorateLog([]byte(err.Error() + "\n"))
 		log.Error().Err(err).Msgf("Log stream failed for `%s", opts.Path)
 		return fmt.Errorf("Unable to obtain log stream for %s", opts.Path)
 	}
 	go readLogs(stream, c, opts)
 
 	return nil
-}
-
-func logsTimeout(cancel context.CancelFunc, blocked *int32) {
-	<-time.After(defaultTimeout)
-	if atomic.LoadInt32(blocked) == 1 {
-		log.Debug().Msg("Timed out reading the log stream")
-		cancel()
-	}
 }
 
 func readLogs(stream io.ReadCloser, c chan<- []byte, opts LogOptions) {
@@ -275,9 +257,12 @@ func readLogs(stream io.ReadCloser, c chan<- []byte, opts LogOptions) {
 		bytes, err := r.ReadBytes('\n')
 		if err != nil {
 			log.Warn().Err(err).Msg("Read error")
-			if err != io.EOF {
-				log.Error().Err(err).Msgf("stream reader failed")
+			if err == io.EOF {
+				c <- opts.DecorateLog([]byte("<STREAM> closed\n"))
+				return
 			}
+			log.Error().Err(err).Msgf("stream reader failed")
+			c <- opts.DecorateLog([]byte("<STREAM> failed\n"))
 			return
 		}
 		c <- opts.DecorateLog(bytes)

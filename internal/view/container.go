@@ -61,11 +61,14 @@ func (c *Container) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (c *Container) k9sEnv() K9sEnv {
-	env := defaultK9sEnv(c.App(), c.GetTable().GetSelectedItem(), c.GetTable().GetSelectedRow())
-	ns, n := client.Namespaced(c.GetTable().Path)
-	env["POD"] = n
-	env["NAMESPACE"] = ns
+func (c *Container) k9sEnv() Env {
+	env := defaultEnv(
+		c.App().Conn().Config(),
+		c.GetTable().GetSelectedItem(),
+		c.GetTable().GetModel().Peek().Header,
+		c.GetTable().GetSelectedRow(),
+	)
+	env["NAMESPACE"], env["POD"] = client.Namespaced(c.GetTable().Path)
 
 	return env
 }

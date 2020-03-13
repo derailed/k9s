@@ -39,7 +39,7 @@ require (
 	github.com/gdamore/tcell v1.3.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/gregjones/httpcache v0.0.0-20190212212710-3befbb6ad0cc // indirect
-	github.com/mattn/go-runewidth v0.0.5
+	github.com/mattn/go-runewidth v0.0.8
 	github.com/openfaas/faas v0.0.0-20200207215241-6afae214e3ec
 	github.com/openfaas/faas-cli v0.0.0-20200124160744-30b7cec9634c
 	github.com/openfaas/faas-provider v0.15.0

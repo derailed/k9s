@@ -1,10 +1,10 @@
 plugin:
   # Suspends/Resumes a cronjob
-  suspendCronsToggle:
+  toggleCronjob:
     shortCut: Ctrl-S
     scopes:
       - cj
-    description: Suspend toggle
+    description: Toggle to suspend or resume a running cronjob
     command: kubectl
     background: true
     args:
@@ -16,4 +16,4 @@ plugin:
       - --context
       - $CONTEXT
       - -p
-      - '{"spec" : {"suspend" : $!COL3 }}'
+      - '{"spec" : {"suspend" : $!COL-SUSPEND }}'

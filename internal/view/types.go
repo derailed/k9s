@@ -21,7 +21,7 @@ const (
 
 type (
 	// EnvFunc represent the current view exposed environment.
-	EnvFunc func() K9sEnv
+	EnvFunc func() Env
 
 	// BoostActionsFunc extends viewer keyboard actions.
 	BoostActionsFunc func(ui.KeyActions)

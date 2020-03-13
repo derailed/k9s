@@ -84,7 +84,8 @@ func (c *ClusterInfo) ClusterInfoUpdated(data model.ClusterMeta) {
 
 // ClusterInfoChanged notifies the cluster meta was changed.
 func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
-	c.app.QueueUpdateDraw(func() {
+	// BOZO!!
+	c.app.QueueUpdate(func() {
 		c.Clear()
 		c.layout()
 		row := c.setCell(0, curr.Context)

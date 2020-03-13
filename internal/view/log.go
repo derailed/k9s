@@ -167,12 +167,10 @@ func (l *Log) Name() string { return logTitle }
 
 func (l *Log) bindKeys() {
 	l.logs.Actions().Set(ui.KeyActions{
-		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", l.filterCmd, false),
-		tcell.KeyEscape: ui.NewKeyAction("Back", l.resetCmd, true),
-		ui.KeyC:         ui.NewKeyAction("Clear", l.clearCmd, true),
-		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", l.ToggleAutoScrollCmd, true),
-		// BOZO!! Log timestamps
-		// ui.KeyT:             ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
+		tcell.KeyEnter:      ui.NewSharedKeyAction("Filter", l.filterCmd, false),
+		tcell.KeyEscape:     ui.NewKeyAction("Back", l.resetCmd, true),
+		ui.KeyC:             ui.NewKeyAction("Clear", l.clearCmd, true),
+		ui.KeyS:             ui.NewKeyAction("Toggle AutoScroll", l.ToggleAutoScrollCmd, true),
 		ui.KeyF:             ui.NewKeyAction("FullScreen", l.fullScreenCmd, true),
 		ui.KeyW:             ui.NewKeyAction("Toggle Wrap", l.textWrapCmd, true),
 		tcell.KeyCtrlS:      ui.NewKeyAction("Save", l.SaveCmd, true),
@@ -185,7 +183,6 @@ func (l *Log) bindKeys() {
 }
 
 func (l *Log) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	displayKey(l.app, l.cmdBuff.InCmdMode(), evt)
 	key := evt.Key()
 	if key == tcell.KeyUp || key == tcell.KeyDown {
 		return evt
@@ -353,17 +350,6 @@ func (l *Log) textWrapCmd(*tcell.EventKey) *tcell.EventKey {
 	l.logs.SetWrap(l.indicator.textWrap)
 	return nil
 }
-
-// BOZO!! Log timestamps.
-// func (l *Log) toggleTimestampCmd(evt *tcell.EventKey) *tcell.EventKey {
-// 	l.model.Clear()
-// 	l.indicator.ToggleTimestamp()
-// 	l.model.ShowTimestamp(l.indicator.Timestamp())
-// 	l.model.Stop()
-// 	l.model.Start()
-
-// 	return nil
-// }
 
 // ToggleAutoScrollCmd toggles autoscroll status.
 func (l *Log) ToggleAutoScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
