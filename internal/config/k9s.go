@@ -3,10 +3,8 @@ package config
 import "github.com/derailed/k9s/internal/client"
 
 const (
-	defaultRefreshRate    = 2
-	defaultLogRequestSize = 200
-	defaultLogBufferSize  = 1000
-	defaultReadOnly       = false
+	defaultRefreshRate = 2
+	defaultReadOnly    = false
 )
 
 // K9s tracks K9s configuration options.
@@ -14,8 +12,7 @@ type K9s struct {
 	RefreshRate       int                 `yaml:"refreshRate"`
 	Headless          bool                `yaml:"headless"`
 	ReadOnly          bool                `yaml:"readOnly"`
-	LogBufferSize     int                 `yaml:"logBufferSize"`
-	LogRequestSize    int                 `yaml:"logRequestSize"`
+	Logger            *Logger             `yaml:"logger"`
 	CurrentContext    string              `yaml:"currentContext"`
 	CurrentCluster    string              `yaml:"currentCluster"`
 	FullScreenLogs    bool                `yaml:"fullScreenLogs"`
@@ -30,12 +27,11 @@ type K9s struct {
 // NewK9s create a new K9s configuration.
 func NewK9s() *K9s {
 	return &K9s{
-		RefreshRate:    defaultRefreshRate,
-		ReadOnly:       defaultReadOnly,
-		LogBufferSize:  defaultLogBufferSize,
-		LogRequestSize: defaultLogRequestSize,
-		Clusters:       make(map[string]*Cluster),
-		Thresholds:     NewThreshold(),
+		RefreshRate: defaultRefreshRate,
+		ReadOnly:    defaultReadOnly,
+		Logger:      NewLogger(),
+		Clusters:    make(map[string]*Cluster),
+		Thresholds:  NewThreshold(),
 	}
 }
 
@@ -106,14 +102,6 @@ func (k *K9s) validateDefaults() {
 	if k.RefreshRate <= 0 {
 		k.RefreshRate = defaultRefreshRate
 	}
-
-	if k.LogBufferSize <= 0 {
-		k.LogBufferSize = defaultLogBufferSize
-	}
-
-	if k.LogRequestSize <= 0 {
-		k.LogRequestSize = defaultLogRequestSize
-	}
 }
 
 func (k *K9s) checkClusters(ks KubeSettings) {
@@ -140,6 +128,11 @@ func (k *K9s) Validate(c client.Connection, ks KubeSettings) {
 	}
 	k.checkClusters(ks)
 
+	if k.Logger == nil {
+		k.Logger = NewLogger()
+	} else {
+		k.Logger.Validate(c, ks)
+	}
 	if k.Thresholds == nil {
 		k.Thresholds = NewThreshold()
 	}

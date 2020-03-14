@@ -199,6 +199,9 @@ func (c *Config) Load(path string) error {
 	if cfg.K9s != nil {
 		c.K9s = cfg.K9s
 	}
+	if c.K9s.Logger == nil {
+		c.K9s.Logger = NewLogger()
+	}
 	return nil
 }
 

@@ -96,7 +96,8 @@ func TestConfigLoad(t *testing.T) {
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 
 	assert.Equal(t, 2, cfg.K9s.RefreshRate)
-	assert.Equal(t, 200, cfg.K9s.LogBufferSize)
+	assert.Equal(t, 2000, cfg.K9s.Logger.BufferSize)
+	assert.Equal(t, 200, cfg.K9s.Logger.TailCount)
 	assert.Equal(t, "minikube", cfg.K9s.CurrentContext)
 	assert.Equal(t, "minikube", cfg.K9s.CurrentCluster)
 	assert.NotNil(t, cfg.K9s.Clusters)
@@ -206,8 +207,8 @@ func TestConfigSaveFile(t *testing.T) {
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 	cfg.K9s.RefreshRate = 100
 	cfg.K9s.ReadOnly = true
-	cfg.K9s.LogBufferSize = 500
-	cfg.K9s.LogRequestSize = 100
+	cfg.K9s.Logger.TailCount = 500
+	cfg.K9s.Logger.BufferSize = 800
 	cfg.K9s.CurrentContext = "blee"
 	cfg.K9s.CurrentCluster = "blee"
 	cfg.Validate()
@@ -262,8 +263,9 @@ var expectedConfig = `k9s:
   refreshRate: 100
   headless: false
   readOnly: true
-  logBufferSize: 500
-  logRequestSize: 100
+  logger:
+    tail: 500
+    buffer: 800
   currentContext: blee
   currentCluster: blee
   fullScreenLogs: false
@@ -310,8 +312,9 @@ var resetConfig = `k9s:
   refreshRate: 2
   headless: false
   readOnly: false
-  logBufferSize: 200
-  logRequestSize: 200
+  logger:
+    tail: 200
+    buffer: 2000
   currentContext: blee
   currentCluster: blee
   fullScreenLogs: false

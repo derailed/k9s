@@ -20,14 +20,11 @@ import (
 )
 
 const (
-	logTitle   = "logs"
-	logMessage = "[:orange:b]Waiting for logs...[::]"
-	logCoFmt   = " Logs([fg:bg:]%s:[hilite:bg:b]%s[-:bg:-]) "
-	logFmt     = " Logs([fg:bg:]%s) "
-
-	// BOZO!! Canned! Need config tail line counts!
-	tailLineCount  = 50
-	defaultTimeout = 200 * time.Millisecond
+	logTitle     = "logs"
+	logMessage   = "[:orange:b]Waiting for logs...[::]"
+	logCoFmt     = " Logs([fg:bg:]%s:[hilite:bg:b]%s[-:bg:-]) "
+	logFmt       = " Logs([fg:bg:]%s) "
+	flushTimeout = 200 * time.Millisecond
 )
 
 // Log represents a generic log viewer.
@@ -40,6 +37,7 @@ type Log struct {
 	ansiWriter io.Writer
 	cmdBuff    *ui.CmdBuff
 	model      *model.Log
+	counts     int
 }
 
 var _ model.Component = (*Log)(nil)
@@ -49,7 +47,7 @@ func NewLog(gvr client.GVR, path, co string, prev bool) *Log {
 	l := Log{
 		Flex:    tview.NewFlex(),
 		cmdBuff: ui.NewCmdBuff('/', ui.FilterBuff),
-		model:   model.NewLog(gvr, buildLogOpts(path, co, prev, true, tailLineCount), defaultTimeout),
+		model:   model.NewLog(gvr, buildLogOpts(path, co, prev, true, config.DefaultLoggerTailCount), flushTimeout),
 	}
 
 	return &l
@@ -60,6 +58,8 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	if l.app, err = extractApp(ctx); err != nil {
 		return err
 	}
+	l.model.Configure(l.app.Config.K9s.Logger)
+
 	l.SetBorder(true)
 	l.SetBorderPadding(0, 0, 1, 1)
 	l.SetDirection(tview.FlexRow)
@@ -74,7 +74,7 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	}
 	l.logs.SetText(logMessage)
 	l.logs.SetWrap(false)
-	l.logs.SetMaxBuffer(l.app.Config.K9s.LogBufferSize)
+	l.logs.SetMaxBuffer(l.app.Config.K9s.Logger.BufferSize)
 
 	l.ansiWriter = tview.ANSIWriter(l.logs, l.app.Styles.Views().Log.FgColor.String(), l.app.Styles.Views().Log.BgColor.String())
 	l.AddItem(l.logs, 0, 1, true)
@@ -97,6 +97,7 @@ func (l *Log) Init(ctx context.Context) (err error) {
 
 // LogCleared clears the logs.
 func (l *Log) LogCleared() {
+	l.counts = 0
 	l.app.QueueUpdateDraw(func() {
 		l.logs.Clear()
 		l.logs.ScrollTo(0, 0)

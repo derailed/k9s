@@ -10,12 +10,11 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 )
-
-const logMaxBufferSize = 100
 
 // LogsListener represents a log model listener.
 type LogsListener interface {
@@ -39,19 +38,25 @@ type Log struct {
 	cancelFn      context.CancelFunc
 	mx            sync.RWMutex
 	filter        string
+	bufferSize    int
 	lastSent      int
 	showTimestamp bool
-	timeOut       time.Duration
+	flushTimeout  time.Duration
 }
 
 // NewLog returns a new model.
-func NewLog(gvr client.GVR, opts dao.LogOptions, timeOut time.Duration) *Log {
+func NewLog(gvr client.GVR, opts dao.LogOptions, flushTimeout time.Duration) *Log {
 	return &Log{
-		gvr:        gvr,
-		logOptions: opts,
-		lines:      nil,
-		timeOut:    timeOut,
+		gvr:          gvr,
+		logOptions:   opts,
+		lines:        nil,
+		flushTimeout: flushTimeout,
 	}
+}
+
+// Configure sets logger configuration.
+func (l *Log) Configure(opts *config.Logger) {
+	l.bufferSize, l.logOptions.Lines = opts.BufferSize, int64(opts.TailCount)
 }
 
 // GetPath returns resource path.
@@ -217,13 +222,13 @@ func (l *Log) updateLogs(ctx context.Context, c <-chan []byte) {
 			var overflow bool
 			l.mx.RLock()
 			{
-				overflow = len(l.lines)-l.lastSent > logMaxBufferSize
+				overflow = len(l.lines)-l.lastSent > l.bufferSize
 			}
 			l.mx.RUnlock()
 			if overflow {
 				l.Notify(true)
 			}
-		case <-time.After(l.timeOut):
+		case <-time.After(l.flushTimeout):
 			l.Notify(true)
 		case <-ctx.Done():
 			return
