@@ -1,37 +1,35 @@
-package ui
+package model
 
 const maxBuff = 10
 
 const (
-	// CommandBuff indicates a command buffer.
-	CommandBuff BufferKind = 1 << iota
-	// FilterBuff indicates a search buffer.
-	FilterBuff
+	// Command represents a command buffer.
+	Command BufferKind = 1 << iota
+	// Filter represents a filter buffer.
+	Filter
 )
 
-type (
-	// BufferKind indicates a buffer type
-	BufferKind int8
+// BufferKind indicates a buffer type
+type BufferKind int8
 
-	// BuffWatcher represents a command buffer listener.
-	BuffWatcher interface {
-		// Changed indicates the buffer was changed.
-		BufferChanged(s string)
+// BuffWatcher represents a command buffer listener.
+type BuffWatcher interface {
+	// Changed indicates the buffer was changed.
+	BufferChanged(s string)
 
-		// Active indicates the buff activity changed.
-		BufferActive(state bool, kind BufferKind)
-	}
+	// Active indicates the buff activity changed.
+	BufferActive(state bool, kind BufferKind)
+}
 
-	// CmdBuff represents user command input.
-	CmdBuff struct {
-		buff      []rune
-		listeners []BuffWatcher
-		hotKey    rune
-		kind      BufferKind
-		sticky    bool
-		active    bool
-	}
-)
+// CmdBuff represents user command input.
+type CmdBuff struct {
+	buff      []rune
+	listeners []BuffWatcher
+	hotKey    rune
+	kind      BufferKind
+	sticky    bool
+	active    bool
+}
 
 // NewCmdBuff returns a new command buffer.
 func NewCmdBuff(key rune, kind BufferKind) *CmdBuff {

@@ -6,7 +6,6 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,10 +29,10 @@ func TestActionHints(t *testing.T) {
 	}{
 		"a": {
 			aa: ui.KeyActions{
-				ui.KeyB:            ui.NewKeyAction("bleeB", nil, true),
-				ui.KeyA:            ui.NewKeyAction("bleeA", nil, true),
-				tcell.Key(ui.Key0): ui.NewKeyAction("zero", nil, true),
-				tcell.Key(ui.Key1): ui.NewKeyAction("one", nil, false),
+				ui.KeyB: ui.NewKeyAction("bleeB", nil, true),
+				ui.KeyA: ui.NewKeyAction("bleeA", nil, true),
+				ui.Key0: ui.NewKeyAction("zero", nil, true),
+				ui.Key1: ui.NewKeyAction("one", nil, false),
 			},
 			e: model.MenuHints{
 				{Mnemonic: "0", Description: "zero", Visible: true},

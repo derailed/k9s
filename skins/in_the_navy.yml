@@ -84,3 +84,6 @@ k9s:
     logs:
       fgColor: *dark
       bgColor: *bg
+      indicator:
+        fgColor: *dark
+        bgColor: *bg

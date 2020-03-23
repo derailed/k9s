@@ -34,7 +34,7 @@ type Table struct {
 	actions     KeyActions
 	gvr         client.GVR
 	Path        string
-	cmdBuff     *CmdBuff
+	cmdBuff     *model.CmdBuff
 	styles      *config.Styles
 	viewSetting *config.ViewSetting
 	sortCol     SortColumn
@@ -56,7 +56,7 @@ func NewTable(gvr client.GVR) *Table {
 		},
 		gvr:     gvr,
 		actions: make(KeyActions),
-		cmdBuff: NewCmdBuff('/', FilterBuff),
+		cmdBuff: model.NewCmdBuff('/', model.Filter),
 		sortCol: SortColumn{asc: true},
 	}
 }
@@ -358,7 +358,7 @@ func (t *Table) filtered(data render.TableData) render.TableData {
 
 	q := t.cmdBuff.String()
 	if IsFuzzySelector(q) {
-		return fuzzyFilter(q[2:], t.NameColIndex(), filtered)
+		return fuzzyFilter(q[2:], filtered)
 	}
 
 	filtered, err := rxFilter(t.cmdBuff.String(), filtered)
@@ -371,7 +371,7 @@ func (t *Table) filtered(data render.TableData) render.TableData {
 }
 
 // SearchBuff returns the associated command buffer.
-func (t *Table) SearchBuff() *CmdBuff {
+func (t *Table) SearchBuff() *model.CmdBuff {
 	return t.cmdBuff
 }
 

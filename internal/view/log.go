@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
@@ -21,10 +22,10 @@ import (
 
 const (
 	logTitle     = "logs"
-	logMessage   = "[:orange:b]Waiting for logs...[::]"
-	logCoFmt     = " Logs([fg:bg:]%s:[hilite:bg:b]%s[-:bg:-]) "
-	logFmt       = " Logs([fg:bg:]%s) "
-	flushTimeout = 200 * time.Millisecond
+	logMessage   = "Waiting for logs..."
+	logFmt       = " Logs([hilite:bg:]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
+	logCoFmt     = " Logs([hilite:bg:]%s:[hilite:bg:b]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
+	flushTimeout = 100 * time.Millisecond
 )
 
 // Log represents a generic log viewer.
@@ -35,9 +36,7 @@ type Log struct {
 	logs       *Details
 	indicator  *LogIndicator
 	ansiWriter io.Writer
-	cmdBuff    *ui.CmdBuff
 	model      *model.Log
-	counts     int
 }
 
 var _ model.Component = (*Log)(nil)
@@ -45,15 +44,18 @@ var _ model.Component = (*Log)(nil)
 // NewLog returns a new viewer.
 func NewLog(gvr client.GVR, path, co string, prev bool) *Log {
 	l := Log{
-		Flex:    tview.NewFlex(),
-		cmdBuff: ui.NewCmdBuff('/', ui.FilterBuff),
-		model:   model.NewLog(gvr, buildLogOpts(path, co, prev, true, config.DefaultLoggerTailCount), flushTimeout),
+		Flex: tview.NewFlex(),
+		model: model.NewLog(
+			gvr,
+			buildLogOpts(path, co, prev, true, config.DefaultLoggerTailCount),
+			flushTimeout,
+		),
 	}
 
 	return &l
 }
 
-// Init initialiazes the viewer.
+// Init initializes the viewer.
 func (l *Log) Init(ctx context.Context) (err error) {
 	if l.app, err = extractApp(ctx); err != nil {
 		return err
@@ -61,7 +63,6 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	l.model.Configure(l.app.Config.K9s.Logger)
 
 	l.SetBorder(true)
-	l.SetBorderPadding(0, 0, 1, 1)
 	l.SetDirection(tview.FlexRow)
 
 	l.indicator = NewLogIndicator(l.app.Config, l.app.Styles)
@@ -72,14 +73,15 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	if err = l.logs.Init(ctx); err != nil {
 		return err
 	}
+	l.logs.SetBorderPadding(0, 0, 1, 1)
 	l.logs.SetText(logMessage)
 	l.logs.SetWrap(false)
 	l.logs.SetMaxBuffer(l.app.Config.K9s.Logger.BufferSize)
+	l.logs.cmdBuff.AddListener(l)
 
 	l.ansiWriter = tview.ANSIWriter(l.logs, l.app.Styles.Views().Log.FgColor.String(), l.app.Styles.Views().Log.BgColor.String())
 	l.AddItem(l.logs, 0, 1, true)
 	l.bindKeys()
-	l.logs.SetInputCapture(l.keyboard)
 
 	l.StylesChanged(l.app.Styles)
 	l.app.Styles.AddListener(l)
@@ -89,15 +91,11 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	l.model.AddListener(l)
 	l.updateTitle()
 
-	l.cmdBuff.AddListener(l.app.Cmd())
-	l.cmdBuff.AddListener(l)
-
 	return nil
 }
 
 // LogCleared clears the logs.
 func (l *Log) LogCleared() {
-	l.counts = 0
 	l.app.QueueUpdateDraw(func() {
 		l.logs.Clear()
 		l.logs.ScrollTo(0, 0)
@@ -108,21 +106,30 @@ func (l *Log) LogCleared() {
 func (l *Log) LogFailed(err error) {
 	l.app.QueueUpdateDraw(func() {
 		l.app.Flash().Err(err)
+		if l.logs.GetText(true) == logMessage {
+			l.logs.Clear()
+		}
+		l.write(color.Colorize(err.Error(), color.Red))
 	})
 }
 
 // LogChanged updates the logs.
-func (l *Log) LogChanged(lines []string) {
+func (l *Log) LogChanged(lines dao.LogItems) {
 	l.app.QueueUpdateDraw(func() {
 		l.Flush(lines)
 	})
 }
 
 // BufferChanged indicates the buffer was changed.
-func (l *Log) BufferChanged(s string) {}
+func (l *Log) BufferChanged(s string) {
+	if err := l.model.Filter(l.logs.cmdBuff.String()); err != nil {
+		l.app.Flash().Err(err)
+	}
+	l.updateTitle()
+}
 
 // BufferActive indicates the buff activity changed.
-func (l *Log) BufferActive(state bool, k ui.BufferKind) {
+func (l *Log) BufferActive(state bool, k model.BufferKind) {
 	l.app.BufferActive(state, k)
 }
 
@@ -151,7 +158,6 @@ func (l *Log) ExtraHints() map[string]string {
 // Start runs the component.
 func (l *Log) Start() {
 	l.model.Start()
-	l.app.SetFocus(l)
 }
 
 // Stop terminates the component.
@@ -159,8 +165,8 @@ func (l *Log) Stop() {
 	l.model.Stop()
 	l.model.RemoveListener(l)
 	l.app.Styles.RemoveListener(l)
-	l.cmdBuff.RemoveListener(l)
-	l.cmdBuff.RemoveListener(l.app.Cmd())
+	l.logs.cmdBuff.RemoveListener(l)
+	l.logs.cmdBuff.RemoveListener(l.app.Cmd())
 }
 
 // Name returns the component name.
@@ -168,43 +174,33 @@ func (l *Log) Name() string { return logTitle }
 
 func (l *Log) bindKeys() {
 	l.logs.Actions().Set(ui.KeyActions{
-		tcell.KeyEnter:      ui.NewSharedKeyAction("Filter", l.filterCmd, false),
-		tcell.KeyEscape:     ui.NewKeyAction("Back", l.resetCmd, true),
-		ui.KeyC:             ui.NewKeyAction("Clear", l.clearCmd, true),
-		ui.KeyS:             ui.NewKeyAction("Toggle AutoScroll", l.ToggleAutoScrollCmd, true),
-		ui.KeyF:             ui.NewKeyAction("FullScreen", l.fullScreenCmd, true),
-		ui.KeyW:             ui.NewKeyAction("Toggle Wrap", l.textWrapCmd, true),
-		tcell.KeyCtrlS:      ui.NewKeyAction("Save", l.SaveCmd, true),
-		ui.KeySlash:         ui.NewSharedKeyAction("Filter Mode", l.activateCmd, false),
-		tcell.KeyCtrlU:      ui.NewSharedKeyAction("Clear Filter", l.resetCmd, false),
-		tcell.KeyBackspace2: ui.NewSharedKeyAction("Erase", l.eraseCmd, false),
-		tcell.KeyBackspace:  ui.NewSharedKeyAction("Erase", l.eraseCmd, false),
-		tcell.KeyDelete:     ui.NewSharedKeyAction("Erase", l.eraseCmd, false),
+		ui.Key0:        ui.NewKeyAction("all", l.sinceCmd(-1), true),
+		ui.Key1:        ui.NewKeyAction("1m", l.sinceCmd(60), true),
+		ui.Key2:        ui.NewKeyAction("5m", l.sinceCmd(5*60), true),
+		ui.Key3:        ui.NewKeyAction("15m", l.sinceCmd(15*60), true),
+		ui.Key4:        ui.NewKeyAction("30m", l.sinceCmd(30*60), true),
+		ui.Key5:        ui.NewKeyAction("1h", l.sinceCmd(60*60), true),
+		tcell.KeyEnter: ui.NewSharedKeyAction("Filter", l.filterCmd, false),
+		ui.KeyA:        ui.NewKeyAction("Apply", l.applyCmd, true),
+		ui.KeyC:        ui.NewKeyAction("Clear", l.clearCmd, true),
+		ui.KeyS:        ui.NewKeyAction("Toggle AutoScroll", l.toggleAutoScrollCmd, true),
+		ui.KeyF:        ui.NewKeyAction("FullScreen", l.toggleFullScreenCmd, true),
+		ui.KeyT:        ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
+		ui.KeyW:        ui.NewKeyAction("Toggle Wrap", l.toggleTextWrapCmd, true),
+		tcell.KeyCtrlS: ui.NewKeyAction("Save", l.SaveCmd, true),
 	})
 }
 
-func (l *Log) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	key := evt.Key()
-	if key == tcell.KeyUp || key == tcell.KeyDown {
-		return evt
+func (l *Log) SendStrokes(s string) {
+	for _, r := range s {
+		l.logs.keyboard(tcell.NewEventKey(tcell.KeyRune, r, tcell.ModNone))
 	}
-	if key == tcell.KeyRune {
-		if l.cmdBuff.IsActive() {
-			l.cmdBuff.Add(evt.Rune())
-			if err := l.model.Filter(l.cmdBuff.String()); err != nil {
-				l.app.Flash().Err(err)
-			}
-			l.updateTitle()
-			return nil
-		}
-		key = extractKey(evt)
-	}
+}
 
-	if a, ok := l.logs.Actions()[key]; ok {
-		return a.Action(evt)
+func (l *Log) SendKeys(kk ...tcell.Key) {
+	for _, k := range kk {
+		l.logs.keyboard(tcell.NewEventKey(k, ' ', tcell.ModNone))
 	}
-
-	return evt
 }
 
 // Indicator returns the scroll mode viewer.
@@ -213,19 +209,26 @@ func (l *Log) Indicator() *LogIndicator {
 }
 
 func (l *Log) updateTitle() {
-	var fmat string
+	sinceSeconds, since := l.model.SinceSeconds(), "all"
+	if sinceSeconds > 0 && sinceSeconds < 60*60 {
+		since = fmt.Sprintf("%dm", sinceSeconds/60)
+	}
+	if sinceSeconds >= 60*60 {
+		since = fmt.Sprintf("%dh", sinceSeconds/(60*60))
+	}
+	var title string
 	path, co := l.model.GetPath(), l.model.GetContainer()
 	if co == "" {
-		fmat = ui.SkinTitle(fmt.Sprintf(logFmt, path), l.app.Styles.Frame())
+		title = ui.SkinTitle(fmt.Sprintf(logFmt, path, since), l.app.Styles.Frame())
 	} else {
-		fmat = ui.SkinTitle(fmt.Sprintf(logCoFmt, path, co), l.app.Styles.Frame())
+		title = ui.SkinTitle(fmt.Sprintf(logCoFmt, path, co, since), l.app.Styles.Frame())
 	}
 
-	buff := l.cmdBuff.String()
+	buff := l.logs.cmdBuff.String()
 	if buff != "" {
-		fmat += ui.SkinTitle(fmt.Sprintf(ui.SearchFmt, buff), l.app.Styles.Frame())
+		title += ui.SkinTitle(fmt.Sprintf(ui.SearchFmt, buff), l.app.Styles.Frame())
 	}
-	l.SetTitle(fmat)
+	l.SetTitle(title)
 }
 
 // Logs returns the log viewer.
@@ -238,61 +241,54 @@ func (l *Log) write(lines string) {
 }
 
 // Flush write logs to viewer.
-func (l *Log) Flush(lines []string) {
-	l.write(strings.Join(lines, "\n"))
-	l.indicator.Refresh()
+func (l *Log) Flush(lines dao.LogItems) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("FLUSH %d--%v", len(lines), time.Since(t))
+	}(time.Now())
+
+	showTime := l.Indicator().showTime
+	ll := make([]string, len(lines))
+	for i, line := range lines {
+		ll[i] = string(line.Render(showTime))
+	}
+	l.write(strings.Join(ll, "\n"))
 	l.logs.ScrollToEnd()
+	l.indicator.Refresh()
 }
 
 // ----------------------------------------------------------------------------
 // Actions()...
 
-func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !l.cmdBuff.IsActive() {
-		return evt
+func (l *Log) sinceCmd(a int) func(evt *tcell.EventKey) *tcell.EventKey {
+	return func(evt *tcell.EventKey) *tcell.EventKey {
+		opts := l.model.LogOptions()
+		opts.SinceSeconds = int64(a)
+		l.model.SetLogOptions(opts)
+		l.updateTitle()
+		return nil
 	}
-	l.cmdBuff.SetActive(false)
-	if err := l.model.Filter(l.cmdBuff.String()); err != nil {
-		l.app.Flash().Err(err)
-	}
-	l.updateTitle()
 
-	return nil
 }
 
-func (l *Log) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (l *Log) applyCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if l.app.InCmdMode() {
 		return evt
 	}
-	l.cmdBuff.SetActive(true)
-
+	ShowLogs(l.app, "blee", l.filterLogs)
 	return nil
 }
 
-func (l *Log) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !l.cmdBuff.IsActive() {
-		return nil
+func (l *Log) filterLogs(path string, opts dao.LogOptions) {
+}
+
+func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !l.logs.cmdBuff.IsActive() {
+		return evt
 	}
-	l.cmdBuff.Delete()
-	if err := l.model.Filter(l.cmdBuff.String()); err != nil {
+	l.logs.cmdBuff.SetActive(false)
+	if err := l.model.Filter(l.logs.cmdBuff.String()); err != nil {
 		l.app.Flash().Err(err)
 	}
-	l.updateTitle()
-
-	return nil
-}
-
-func (l *Log) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !l.cmdBuff.InCmdMode() {
-		l.cmdBuff.Reset()
-		return l.app.PrevCmd(evt)
-	}
-
-	if l.cmdBuff.String() != "" {
-		l.model.ClearFilter()
-	}
-	l.cmdBuff.SetActive(false)
-	l.cmdBuff.Reset()
 	l.updateTitle()
 
 	return nil
@@ -346,14 +342,33 @@ func (l *Log) clearCmd(*tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (l *Log) textWrapCmd(*tcell.EventKey) *tcell.EventKey {
+func (l *Log) toggleTimestampCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() {
+		return evt
+	}
+
+	l.indicator.ToggleTimestamp()
+	l.model.Refresh()
+
+	return nil
+}
+
+func (l *Log) toggleTextWrapCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() {
+		return evt
+	}
+
 	l.indicator.ToggleTextWrap()
 	l.logs.SetWrap(l.indicator.textWrap)
 	return nil
 }
 
 // ToggleAutoScrollCmd toggles autoscroll status.
-func (l *Log) ToggleAutoScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (l *Log) toggleAutoScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() {
+		return evt
+	}
+
 	l.indicator.ToggleAutoScroll()
 	if l.indicator.AutoScroll() {
 		l.model.Start()
@@ -363,33 +378,22 @@ func (l *Log) ToggleAutoScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (l *Log) fullScreenCmd(*tcell.EventKey) *tcell.EventKey {
+func (l *Log) toggleFullScreenCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() {
+		return evt
+	}
 	l.indicator.ToggleFullScreen()
 	l.goFullScreen()
 	return nil
 }
 
 func (l *Log) goFullScreen() {
-	sidePadding := 1
-	if l.indicator.FullScreen() {
-		sidePadding = 0
-	}
 	l.SetFullScreen(l.indicator.FullScreen())
 	l.Box.SetBorder(!l.indicator.FullScreen())
-	l.Flex.SetBorderPadding(0, 0, sidePadding, sidePadding)
 }
 
 // ----------------------------------------------------------------------------
 // Helpers...
-
-// AsKey converts rune to keyboard key.,
-func extractKey(evt *tcell.EventKey) tcell.Key {
-	key := tcell.Key(evt.Rune())
-	if evt.Modifiers() == tcell.ModAlt {
-		key = tcell.Key(int16(evt.Rune()) * int16(evt.Modifiers()))
-	}
-	return key
-}
 
 func buildLogOpts(path, co string, prevLogs, showTime bool, tailLineCount int) dao.LogOptions {
 	return dao.LogOptions{

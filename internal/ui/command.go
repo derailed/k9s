@@ -4,25 +4,29 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 )
 
-const defaultPrompt = "%c> %s"
+const defaultPrompt = "%c> [::b]%s"
 
 // Command captures users free from command input.
 type Command struct {
 	*tview.TextView
 
-	activated bool
-	icon      rune
-	text      string
-	styles    *config.Styles
+	activated       bool
+	icon            rune
+	text            string
+	styles          *config.Styles
+	model           *model.FishBuff
+	suggestions     []string
+	suggestionIndex int
 }
 
 // NewCommand returns a new command view.
-func NewCommand(styles *config.Styles) *Command {
-	c := Command{styles: styles, TextView: tview.NewTextView()}
+func NewCommand(styles *config.Styles, m *model.FishBuff) *Command {
+	c := Command{styles: styles, TextView: tview.NewTextView(), model: m}
 	c.SetWordWrap(true)
 	c.SetWrap(true)
 	c.SetDynamicColors(true)
@@ -31,8 +35,44 @@ func NewCommand(styles *config.Styles) *Command {
 	c.SetBackgroundColor(styles.BgColor())
 	c.SetTextColor(styles.FgColor())
 	styles.AddListener(&c)
+	c.SetInputCapture(c.keyboard)
 
 	return &c
+}
+
+func (c *Command) keyboard(evt *tcell.EventKey) *tcell.EventKey {
+	switch evt.Key() {
+	case tcell.KeyEnter, tcell.KeyCtrlE:
+		if c.suggestionIndex >= 0 {
+			c.model.Set(c.text + c.suggestions[c.suggestionIndex])
+		}
+	case tcell.KeyCtrlW:
+		c.model.Clear()
+	case tcell.KeyTab, tcell.KeyDown:
+		if c.text == "" || c.suggestionIndex < 0 {
+			return evt
+		}
+		c.suggestionIndex++
+		if c.suggestionIndex >= len(c.suggestions) {
+			c.suggestionIndex = 0
+		}
+		c.suggest(c.model.String(), c.suggestions[c.suggestionIndex])
+	case tcell.KeyBacktab, tcell.KeyUp:
+		if c.text == "" || c.suggestionIndex < 0 {
+			return evt
+		}
+		c.suggestionIndex--
+		if c.suggestionIndex < 0 {
+			c.suggestionIndex = len(c.suggestions) - 1
+		}
+		c.suggest(c.model.String(), c.suggestions[c.suggestionIndex])
+	case tcell.KeyRight, tcell.KeyCtrlF:
+		if c.suggestionIndex >= 0 {
+			c.model.Set(c.model.String() + c.suggestions[c.suggestionIndex])
+			c.suggestionIndex = -1
+		}
+	}
+	return evt
 }
 
 // StylesChanged notifies skin changed.
@@ -60,6 +100,11 @@ func (c *Command) update(s string) {
 	c.write(c.text)
 }
 
+func (c *Command) suggest(text, suggestion string) {
+	c.Clear()
+	c.write(text + "[gray::-]" + suggestion)
+}
+
 func (c *Command) write(s string) {
 	fmt.Fprintf(c, defaultPrompt, c.icon, s)
 }
@@ -67,19 +112,28 @@ func (c *Command) write(s string) {
 // ----------------------------------------------------------------------------
 // Event Listener protocol...
 
+// SuggestionChanged indicates the suggestions changed.
+func (c *Command) SuggestionChanged(ss []string) {
+	c.suggestions, c.suggestionIndex = ss, 0
+	if ss == nil {
+		c.suggestionIndex = -1
+		return
+	}
+	fmt.Fprintf(c, "[gray::-]%s", ss[c.suggestionIndex])
+}
+
 // BufferChanged indicates the buffer was changed.
 func (c *Command) BufferChanged(s string) {
 	c.update(s)
 }
 
 // BufferActive indicates the buff activity changed.
-func (c *Command) BufferActive(f bool, k BufferKind) {
+func (c *Command) BufferActive(f bool, k model.BufferKind) {
 	if c.activated = f; f {
 		c.SetBorder(true)
 		c.SetTextColor(c.styles.FgColor())
 		c.SetBorderColor(colorFor(k))
 		c.icon = iconFor(k)
-		// c.reset()
 		c.activate()
 	} else {
 		c.SetBorder(false)
@@ -88,18 +142,18 @@ func (c *Command) BufferActive(f bool, k BufferKind) {
 	}
 }
 
-func colorFor(k BufferKind) tcell.Color {
+func colorFor(k model.BufferKind) tcell.Color {
 	switch k {
-	case CommandBuff:
+	case model.Command:
 		return tcell.ColorAqua
 	default:
 		return tcell.ColorSeaGreen
 	}
 }
 
-func iconFor(k BufferKind) rune {
+func iconFor(k model.BufferKind) rune {
 	switch k {
-	case CommandBuff:
+	case model.Command:
 		return '🐶'
 	default:
 		return '🐩'

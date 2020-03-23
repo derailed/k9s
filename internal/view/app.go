@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -96,6 +98,7 @@ func (a *App) Init(version string, rate int) error {
 	if err := a.command.Init(); err != nil {
 		return err
 	}
+	a.CmdBuff().SetSuggestionFn(a.suggestCommand())
 
 	a.clusterInfo().Init()
 
@@ -104,15 +107,38 @@ func (a *App) Init(version string, rate int) error {
 
 	main := tview.NewFlex().SetDirection(tview.FlexRow)
 	main.AddItem(a.statusIndicator(), 1, 1, false)
-	main.AddItem(flash, 1, 1, false)
 	main.AddItem(a.Content, 0, 10, true)
 	main.AddItem(a.Crumbs(), 1, 1, false)
+	main.AddItem(flash, 1, 1, false)
 
 	a.Main.AddPage("main", main, true, false)
 	a.Main.AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
 	a.toggleHeader(!a.Config.K9s.GetHeadless())
 
 	return nil
+}
+
+func (a *App) suggestCommand() func(s string) (entries sort.StringSlice) {
+	return func(s string) (entries sort.StringSlice) {
+		if s == "" {
+			return
+		}
+		for _, k := range a.command.alias.Aliases.Keys() {
+			lok, los := strings.ToLower(k), strings.ToLower(s)
+			if lok == los {
+				continue
+			}
+			if strings.HasPrefix(lok, los) {
+				entries = append(entries, strings.Replace(k, los, "", 1))
+			}
+		}
+		if len(entries) == 0 {
+			entries = nil
+		}
+		entries.Sort()
+
+		return
+	}
 }
 
 func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
@@ -442,6 +468,9 @@ func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.CmdBuff().InCmdMode() {
+		return evt
+	}
 	if _, ok := a.Content.GetPrimitive("main").(*Alias); ok {
 		return evt
 	}

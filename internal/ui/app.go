@@ -18,7 +18,7 @@ type App struct {
 	flash   *model.Flash
 	actions KeyActions
 	views   map[string]tview.Primitive
-	cmdBuff *CmdBuff
+	cmdBuff *model.FishBuff
 }
 
 // NewApp returns a new app.
@@ -28,14 +28,14 @@ func NewApp(context string) *App {
 		actions:     make(KeyActions),
 		Main:        NewPages(),
 		flash:       model.NewFlash(model.DefaultFlashDelay),
-		cmdBuff:     NewCmdBuff(':', CommandBuff),
+		cmdBuff:     model.NewFishBuff(':', model.Command),
 	}
 	a.ReloadStyles(context)
 
 	a.views = map[string]tview.Primitive{
 		"menu":   NewMenu(a.Styles),
 		"logo":   NewLogo(a.Styles),
-		"cmd":    NewCommand(a.Styles),
+		"cmd":    NewCommand(a.Styles, a.cmdBuff),
 		"crumbs": NewCrumbs(a.Styles),
 	}
 
@@ -56,7 +56,7 @@ func (a *App) Init() {
 func (a *App) BufferChanged(s string) {}
 
 // BufferActive indicates the buff activity changed.
-func (a *App) BufferActive(state bool, _ BufferKind) {
+func (a *App) BufferActive(state bool, _ model.BufferKind) {
 	flex, ok := a.Main.GetPrimitive("main").(*tview.Flex)
 	if !ok {
 		return
@@ -69,6 +69,8 @@ func (a *App) BufferActive(state bool, _ BufferKind) {
 	}
 	a.Draw()
 }
+
+func (a *App) SuggestionChanged(ss []string) {}
 
 // StylesChanged notifies the skin changed.
 func (a *App) StylesChanged(s *config.Styles) {
@@ -129,7 +131,7 @@ func (a *App) GetCmd() string {
 }
 
 // CmdBuff returns a cmd buffer.
-func (a *App) CmdBuff() *CmdBuff {
+func (a *App) CmdBuff() *model.FishBuff {
 	return a.cmdBuff
 }
 
@@ -190,6 +192,7 @@ func (a *App) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	a.cmdBuff.SetActive(true)
 	a.cmdBuff.Clear()
+	a.SetFocus(a.Cmd())
 
 	return nil
 }
@@ -207,6 +210,7 @@ func (a *App) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (a *App) escapeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.cmdBuff.IsActive() {
 		a.cmdBuff.Reset()
+		a.SetFocus(a.Main.GetPrimitive("main"))
 	}
 	return evt
 }

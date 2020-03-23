@@ -27,11 +27,18 @@ func NewLogIndicator(cfg *config.Config, styles *config.Styles) *LogIndicator {
 		scrollStatus: 1,
 		fullScreen:   cfg.K9s.FullScreenLogs,
 	}
-	l.SetBackgroundColor(styles.Views().Log.BgColor.Color())
-	l.SetTextAlign(tview.AlignRight)
+	l.StylesChanged(styles)
+	styles.AddListener(&l)
+	l.SetTextAlign(tview.AlignCenter)
 	l.SetDynamicColors(true)
 
 	return &l
+}
+
+// StylesChanged notifies listener the skin changed.
+func (l *LogIndicator) StylesChanged(styles *config.Styles) {
+	l.SetBackgroundColor(styles.K9s.Views.Log.Indicator.BgColor.Color())
+	l.SetTextColor(styles.K9s.Views.Log.Indicator.FgColor.Color())
 }
 
 // AutoScroll reports the current scrolling status.
@@ -86,8 +93,7 @@ func (l *LogIndicator) Refresh() {
 	l.Clear()
 	l.update("Autoscroll: " + l.onOff(l.AutoScroll()))
 	l.update("FullScreen: " + l.onOff(l.fullScreen))
-	// BOZO!! log timestamp
-	// l.update("Timestamp: " + l.onOff(l.showTime))
+	l.update("Timestamps: " + l.onOff(l.showTime))
 	l.update("Wrap: " + l.onOff(l.textWrap))
 }
 
@@ -99,6 +105,5 @@ func (l *LogIndicator) onOff(b bool) string {
 }
 
 func (l *LogIndicator) update(status string) {
-	fg, bg := l.styles.Frame().Crumb.FgColor, l.styles.Frame().Crumb.ActiveColor
-	fmt.Fprintf(l, "[%s:%s:b] %-15s ", fg, bg, status)
+	fmt.Fprintf(l, "[::b]%-20s", status)
 }

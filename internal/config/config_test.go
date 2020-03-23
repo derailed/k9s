@@ -97,7 +97,7 @@ func TestConfigLoad(t *testing.T) {
 
 	assert.Equal(t, 2, cfg.K9s.RefreshRate)
 	assert.Equal(t, 2000, cfg.K9s.Logger.BufferSize)
-	assert.Equal(t, 200, cfg.K9s.Logger.TailCount)
+	assert.Equal(t, int64(200), cfg.K9s.Logger.TailCount)
 	assert.Equal(t, "minikube", cfg.K9s.CurrentContext)
 	assert.Equal(t, "minikube", cfg.K9s.CurrentCluster)
 	assert.NotNil(t, cfg.K9s.Clusters)
@@ -266,6 +266,7 @@ var expectedConfig = `k9s:
   logger:
     tail: 500
     buffer: 800
+    sinceSeconds: 300
   currentContext: blee
   currentCluster: blee
   fullScreenLogs: false
@@ -314,7 +315,8 @@ var resetConfig = `k9s:
   readOnly: false
   logger:
     tail: 200
-    buffer: 2000
+    buffer: 1000
+    sinceSeconds: 300
   currentContext: blee
   currentCluster: blee
   fullScreenLogs: false

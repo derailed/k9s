@@ -63,7 +63,7 @@ type buffL struct {
 func (b *buffL) BufferChanged(s string) {
 	b.changed++
 }
-func (b *buffL) BufferActive(state bool, kind ui.BufferKind) {
+func (b *buffL) BufferActive(state bool, kind model.BufferKind) {
 	b.active++
 }
 

@@ -149,8 +149,7 @@ func rxFilter(q string, data render.TableData) (render.TableData, error) {
 		Namespace: data.Namespace,
 	}
 	for _, re := range data.RowEvents {
-		f := strings.Join(re.Row.Fields, " ")
-		if rx.MatchString(f) {
+		if rx.MatchString(re.Row.ID) {
 			filtered.RowEvents = append(filtered.RowEvents, re)
 		}
 	}
@@ -158,10 +157,11 @@ func rxFilter(q string, data render.TableData) (render.TableData, error) {
 	return filtered, nil
 }
 
-func fuzzyFilter(q string, index int, data render.TableData) render.TableData {
+func fuzzyFilter(q string, data render.TableData) render.TableData {
+	q = strings.TrimSpace(q)
 	var ss []string
 	for _, re := range data.RowEvents {
-		ss = append(ss, re.Row.Fields[index])
+		ss = append(ss, re.Row.ID)
 	}
 
 	filtered := render.TableData{

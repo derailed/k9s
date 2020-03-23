@@ -23,7 +23,7 @@ type Details struct {
 	actions                   ui.KeyActions
 	app                       *App
 	title, subject            string
-	cmdBuff                   *ui.CmdBuff
+	cmdBuff                   *model.CmdBuff
 	model                     *model.Text
 	currentRegion, maxRegions int
 	searchable                bool
@@ -37,7 +37,7 @@ func NewDetails(app *App, title, subject string, searchable bool) *Details {
 		title:      title,
 		subject:    subject,
 		actions:    make(ui.KeyActions),
-		cmdBuff:    ui.NewCmdBuff('/', ui.FilterBuff),
+		cmdBuff:    model.NewCmdBuff('/', model.Filter),
 		model:      model.NewText(),
 		searchable: searchable,
 	}
@@ -103,7 +103,7 @@ func (d *Details) TextFiltered(lines []string, matches fuzzy.Matches) {
 func (d *Details) BufferChanged(s string) {}
 
 // BufferActive indicates the buff activity changed.
-func (d *Details) BufferActive(state bool, k ui.BufferKind) {
+func (d *Details) BufferActive(state bool, k model.BufferKind) {
 	d.app.BufferActive(state, k)
 }
 
@@ -162,14 +162,12 @@ func (d *Details) StylesChanged(s *config.Styles) {
 	d.SetBackgroundColor(d.app.Styles.BgColor())
 	d.SetTextColor(d.app.Styles.FgColor())
 	d.SetBorderFocusColor(d.app.Styles.Frame().Border.FocusColor.Color())
-
 	d.TextChanged(d.model.Peek())
 }
 
 // Update updates the view content.
 func (d *Details) Update(buff string) *Details {
 	d.model.SetText(buff)
-
 	return d
 }
 
@@ -293,6 +291,7 @@ func (d *Details) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	} else {
 		d.app.Flash().Infof("Log %s saved successfully!", path)
 	}
+
 	return nil
 }
 
@@ -301,6 +300,7 @@ func (d *Details) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if err := clipboard.WriteAll(d.GetText(true)); err != nil {
 		d.app.Flash().Err(err)
 	}
+
 	return nil
 }
 
@@ -321,6 +321,5 @@ func (d *Details) updateTitle() {
 		search += fmt.Sprintf("[%d:%d]", d.currentRegion+1, d.maxRegions)
 	}
 	fmat += fmt.Sprintf(ui.SearchFmt, search)
-
 	d.SetTitle(ui.SkinTitle(fmat, d.app.Styles.Frame()))
 }

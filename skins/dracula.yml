@@ -90,3 +90,6 @@ k9s:
     logs:
       fgColor: *foreground
       bgColor: *background
+      indicator:
+        fgColor: *foreground
+        bgColor: *purple

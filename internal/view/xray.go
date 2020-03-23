@@ -576,7 +576,7 @@ func (x *Xray) Refresh() {
 func (x *Xray) BufferChanged(s string) {}
 
 // BufferActive indicates the buff activity changed.
-func (x *Xray) BufferActive(state bool, k ui.BufferKind) {
+func (x *Xray) BufferActive(state bool, k model.BufferKind) {
 	x.app.BufferActive(state, k)
 }
 

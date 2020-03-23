@@ -81,7 +81,7 @@ func (s *StatefulSet) Restart(path string) error {
 }
 
 // TailLogs tail logs for all pods represented by this StatefulSet.
-func (s *StatefulSet) TailLogs(ctx context.Context, c chan<- []byte, opts LogOptions) error {
+func (s *StatefulSet) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
 	sts, err := s.getStatefulSet(opts.Path)
 	if err != nil {
 		return errors.New("expecting StatefulSet resource")

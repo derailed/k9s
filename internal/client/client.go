@@ -143,7 +143,6 @@ func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
 }
 
 // CheckConnectivity return true if api server is cool or false otherwise.
-// BOZO!! No super sure about this approach either??
 func (a *APIClient) CheckConnectivity() (status bool) {
 	defer func() {
 		if !status {

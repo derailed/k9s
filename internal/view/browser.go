@@ -403,14 +403,14 @@ func (b *Browser) namespaceActions(aa ui.KeyActions) {
 		return
 	}
 	b.namespaces = make(map[int]string, config.MaxFavoritesNS)
-	aa[tcell.Key(ui.NumKeys[0])] = ui.NewKeyAction(client.NamespaceAll, b.switchNamespaceCmd, true)
+	aa[ui.Key0] = ui.NewKeyAction(client.NamespaceAll, b.switchNamespaceCmd, true)
 	b.namespaces[0] = client.NamespaceAll
 	index := 1
 	for _, ns := range b.app.Config.FavNamespaces() {
 		if ns == client.NamespaceAll {
 			continue
 		}
-		aa[tcell.Key(ui.NumKeys[index])] = ui.NewKeyAction(ns, b.switchNamespaceCmd, true)
+		aa[ui.NumKeys[index]] = ui.NewKeyAction(ns, b.switchNamespaceCmd, true)
 		b.namespaces[index] = ns
 		index++
 	}

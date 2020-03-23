@@ -7,7 +7,6 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 // Chart represents a helm chart view.
@@ -36,18 +35,8 @@ func (c *Chart) chartContext(ctx context.Context) context.Context {
 func (c *Chart) bindKeys(aa ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
 	aa.Add(ui.KeyActions{
-		ui.KeyB:      ui.NewKeyAction("Blee", c.bleeCmd, true),
 		ui.KeyShiftN: ui.NewKeyAction("Sort Name", c.GetTable().SortColCmd(nameCol, true), false),
 		ui.KeyShiftS: ui.NewKeyAction("Sort Status", c.GetTable().SortColCmd(statusCol, true), false),
 		ui.KeyShiftA: ui.NewKeyAction("Sort Age", c.GetTable().SortColCmd(ageCol, true), false),
 	})
-}
-
-func (c *Chart) bleeCmd(evt *tcell.EventKey) *tcell.EventKey {
-	path := c.GetTable().GetSelectedItem()
-	if path == "" {
-		return nil
-	}
-	log.Debug().Msgf("BLEE CMD %q", path)
-	return nil
 }

@@ -63,3 +63,6 @@ k9s:
     logs:
       fgColor: white
       bgColor: black
+      indicator:
+        fgColor: dodgerblue
+        bgColor: black

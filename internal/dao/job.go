@@ -23,7 +23,7 @@ type Job struct {
 }
 
 // TailLogs tail logs for all pods represented by this Job.
-func (j *Job) TailLogs(ctx context.Context, c chan<- []byte, opts LogOptions) error {
+func (j *Job) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
 	o, err := j.Factory.Get(j.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return err

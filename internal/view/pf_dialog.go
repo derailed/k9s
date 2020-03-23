@@ -11,11 +11,11 @@ import (
 
 const portForwardKey = "portforward"
 
-// PortForwardFunc represents a port-forward callback function.
-type PortForwardFunc func(v ResourceViewer, path, co string, mapper client.PortTunnel)
+// PortForwardCB represents a port-forward callback function.
+type PortForwardCB func(v ResourceViewer, path, co string, mapper client.PortTunnel)
 
 // ShowPortForwards pops a port forwarding configuration dialog.
-func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortForwardFunc) {
+func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortForwardCB) {
 	styles := v.App().Styles
 
 	f := tview.NewForm()

@@ -17,7 +17,7 @@ type Tree struct {
 
 	actions      KeyActions
 	selectedItem string
-	cmdBuff      *CmdBuff
+	cmdBuff      *model.CmdBuff
 	expandNodes  bool
 	Count        int
 	keyListener  KeyListenerFunc
@@ -29,7 +29,7 @@ func NewTree() *Tree {
 		TreeView:    tview.NewTreeView(),
 		expandNodes: true,
 		actions:     make(KeyActions),
-		cmdBuff:     NewCmdBuff('/', FilterBuff),
+		cmdBuff:     model.NewCmdBuff('/', model.Filter),
 	}
 }
 
@@ -62,7 +62,7 @@ func (t *Tree) ExpandNodes() bool {
 }
 
 // CmdBuff returns the filter command.
-func (t *Tree) CmdBuff() *CmdBuff {
+func (t *Tree) CmdBuff() *model.CmdBuff {
 	return t.cmdBuff
 }
 

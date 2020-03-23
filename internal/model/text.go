@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/sahilm/fuzzy"
 )
 
@@ -94,7 +95,7 @@ func (t *Text) filter(q string, lines []string) fuzzy.Matches {
 	if q == "" {
 		return nil
 	}
-	if isFuzzySelector(q) {
+	if dao.IsFuzzySelector(q) {
 		return t.fuzzyFilter(strings.TrimSpace(q[2:]), lines)
 	}
 	return t.rxFilter(q, lines)

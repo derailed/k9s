@@ -238,7 +238,6 @@ func (t *Tree) reconcile(ctx context.Context) error {
 func (t *Tree) resourceMeta() ResourceMeta {
 	meta, ok := Registry[t.gvr.String()]
 	if !ok {
-		log.Debug().Msgf("Resource %s not found in registry. Going generic!", t.gvr)
 		meta = ResourceMeta{
 			DAO:      &dao.Table{},
 			Renderer: &render.Generic{},

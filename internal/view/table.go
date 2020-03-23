@@ -7,6 +7,7 @@ import (
 	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
@@ -132,7 +133,7 @@ func (t *Table) SetExtraActionsFn(BoostActionsFunc) {}
 func (t *Table) BufferChanged(s string) {}
 
 // BufferActive indicates the buff activity changed.
-func (t *Table) BufferActive(state bool, k ui.BufferKind) {
+func (t *Table) BufferActive(state bool, k model.BufferKind) {
 	t.app.BufferActive(state, k)
 }
 

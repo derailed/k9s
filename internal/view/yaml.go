@@ -25,7 +25,6 @@ const (
 )
 
 func colorizeYAML(style config.Yaml, raw string) string {
-	// lines := strings.Split(raw, "\n")
 	lines := strings.Split(tview.Escape(raw), "\n")
 
 	fullFmt := strings.Replace(yamlFullFmt, "[key", "["+style.KeyColor.String(), 1)

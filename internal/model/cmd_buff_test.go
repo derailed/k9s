@@ -1,9 +1,9 @@
-package ui_test
+package model_test
 
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,7 +17,7 @@ func (l *testListener) BufferChanged(s string) {
 	l.text = s
 }
 
-func (l *testListener) BufferActive(s bool, _ ui.BufferKind) {
+func (l *testListener) BufferActive(s bool, _ model.BufferKind) {
 	if s {
 		l.act++
 		return
@@ -26,7 +26,7 @@ func (l *testListener) BufferActive(s bool, _ ui.BufferKind) {
 }
 
 func TestCmdBuffActivate(t *testing.T) {
-	b, l := ui.NewCmdBuff('>', ui.CommandBuff), testListener{}
+	b, l := model.NewCmdBuff('>', model.Command), testListener{}
 	b.AddListener(&l)
 
 	b.SetActive(true)
@@ -36,7 +36,7 @@ func TestCmdBuffActivate(t *testing.T) {
 }
 
 func TestCmdBuffDeactivate(t *testing.T) {
-	b, l := ui.NewCmdBuff('>', ui.CommandBuff), testListener{}
+	b, l := model.NewCmdBuff('>', model.Command), testListener{}
 	b.AddListener(&l)
 
 	b.SetActive(false)
@@ -46,7 +46,7 @@ func TestCmdBuffDeactivate(t *testing.T) {
 }
 
 func TestCmdBuffChanged(t *testing.T) {
-	b, l := ui.NewCmdBuff('>', ui.CommandBuff), testListener{}
+	b, l := model.NewCmdBuff('>', model.Command), testListener{}
 	b.AddListener(&l)
 
 	b.Add('b')
@@ -78,7 +78,7 @@ func TestCmdBuffChanged(t *testing.T) {
 }
 
 func TestCmdBuffAdd(t *testing.T) {
-	b := ui.NewCmdBuff('>', ui.CommandBuff)
+	b := model.NewCmdBuff('>', model.Command)
 
 	uu := []struct {
 		runes []rune
@@ -99,7 +99,7 @@ func TestCmdBuffAdd(t *testing.T) {
 }
 
 func TestCmdBuffDel(t *testing.T) {
-	b := ui.NewCmdBuff('>', ui.CommandBuff)
+	b := model.NewCmdBuff('>', model.Command)
 
 	uu := []struct {
 		runes []rune
@@ -121,7 +121,7 @@ func TestCmdBuffDel(t *testing.T) {
 }
 
 func TestCmdBuffEmpty(t *testing.T) {
-	b := ui.NewCmdBuff('>', ui.CommandBuff)
+	b := model.NewCmdBuff('>', model.Command)
 
 	uu := []struct {
 		runes []rune

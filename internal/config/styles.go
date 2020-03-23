@@ -77,6 +77,13 @@ type (
 
 	// Log tracks Log styles.
 	Log struct {
+		FgColor   Color        `yaml:"fgColor"`
+		BgColor   Color        `yaml:"bgColor"`
+		Indicator LogIndicator `yaml:"indicator"`
+	}
+
+	// LogIndicator tracks log view indicator.
+	LogIndicator struct {
 		FgColor Color `yaml:"fgColor"`
 		BgColor Color `yaml:"bgColor"`
 	}
@@ -259,15 +266,21 @@ func newStatus() Status {
 	}
 }
 
-// NewLog returns a new log style.
 func newLog() Log {
 	return Log{
-		FgColor: "lightskyblue",
+		FgColor:   "lightskyblue",
+		BgColor:   "black",
+		Indicator: newLogIndicator(),
+	}
+}
+
+func newLogIndicator() LogIndicator {
+	return LogIndicator{
+		FgColor: "dodgerblue",
 		BgColor: "black",
 	}
 }
 
-// NewYaml returns a new yaml style.
 func newYaml() Yaml {
 	return Yaml{
 		KeyColor:   "steelblue",
@@ -276,7 +289,6 @@ func newYaml() Yaml {
 	}
 }
 
-// NewTitle returns a new title style.
 func newTitle() Title {
 	return Title{
 		FgColor:        "aqua",
@@ -287,7 +299,6 @@ func newTitle() Title {
 	}
 }
 
-// NewInfo returns a new info style.
 func newInfo() Info {
 	return Info{
 		SectionColor: "white",
@@ -295,7 +306,6 @@ func newInfo() Info {
 	}
 }
 
-// NewXray returns a new xray style.
 func newXray() Xray {
 	return Xray{
 		FgColor:      "aqua",
@@ -306,7 +316,6 @@ func newXray() Xray {
 	}
 }
 
-// NewTable returns a new table style.
 func newTable() Table {
 	return Table{
 		FgColor:     "aqua",
@@ -317,7 +326,6 @@ func newTable() Table {
 	}
 }
 
-// NewTableHeader returns a new table header style.
 func newTableHeader() TableHeader {
 	return TableHeader{
 		FgColor:     "white",
@@ -326,7 +334,6 @@ func newTableHeader() TableHeader {
 	}
 }
 
-// NewCrumb returns a new crumbs style.
 func newCrumb() Crumb {
 	return Crumb{
 		FgColor:     "black",
@@ -335,7 +342,6 @@ func newCrumb() Crumb {
 	}
 }
 
-// NewBorder returns a new border style.
 func newBorder() Border {
 	return Border{
 		FgColor:    "dodgerblue",
@@ -343,7 +349,6 @@ func newBorder() Border {
 	}
 }
 
-// NewMenu returns a new menu style.
 func newMenu() Menu {
 	return Menu{
 		FgColor:     "white",
@@ -464,6 +469,7 @@ func (s *Styles) Load(path string) error {
 func (s *Styles) Update() {
 	tview.Styles.PrimitiveBackgroundColor = s.BgColor()
 	tview.Styles.ContrastBackgroundColor = s.BgColor()
+	tview.Styles.MoreContrastBackgroundColor = s.BgColor()
 	tview.Styles.PrimaryTextColor = s.FgColor()
 	tview.Styles.BorderColor = s.K9s.Frame.Border.FgColor.Color()
 	tview.Styles.FocusColor = s.K9s.Frame.Border.FocusColor.Color()
