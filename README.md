@@ -168,6 +168,7 @@ K9s uses aliases to navigate most K8s resources.
 | `Ctrl-a`                    | Show all available resource alias                  | select+`<ENTER>` to view   |
 | `/`filter`ENTER`            | Filter out a resource view given a filter          | `/bumblebeetuna`           |
 | `/`-l label-selector`ENTER` | Filter resource view by labels                     | `/-l app=fred`             |
+| `/`-f filter `ENTER`        | Fuzzy find a resource given a filter               | `/-f ngx`                  |
 | `<Esc>`                     | Bails out of view/command/filter mode              |                            |
 | `d`,`v`, `e`, `l`,...       | Key mapping to describe, view, edit, view logs,... | `d` (describes a resource) |
 | `:`ctx`<ENTER>`             | To view and switch to another Kubernetes context   | `:`+`ctx`+`<ENTER>`        |
@@ -192,10 +193,14 @@ K9s uses aliases to navigate most K8s resources.
     refreshRate: 2
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
     readOnly: false
-    # Indicates log view maximum buffer size. Default 1k lines.
-    logBufferSize: 200
-    # Indicates how many lines of logs to retrieve from the api-server. Default 200 lines.
-    logRequestSize: 200
+    # Logs configuration
+    logger:
+      # Defines the number of lines to return. Default 100
+      tail: 200
+      # Defines the total number of log lines to allow in the view. Default 1000
+      buffer: 500
+      # Represents how far to go back in the log timeline in seconds. Default is 5min
+      sinceSeconds: 300
     # Indicates the current kube context. Defaults to current context
     currentContext: minikube
     # Indicates the current kube cluster. Defaults to current context cluster

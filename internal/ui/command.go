@@ -46,9 +46,9 @@ func (c *Command) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		if c.suggestionIndex >= 0 {
 			c.model.Set(c.text + c.suggestions[c.suggestionIndex])
 		}
-	case tcell.KeyCtrlW:
+	case tcell.KeyCtrlW, tcell.KeyCtrlU:
 		c.model.Clear()
-	case tcell.KeyTab, tcell.KeyDown:
+	case tcell.KeyDown:
 		if c.text == "" || c.suggestionIndex < 0 {
 			return evt
 		}
@@ -57,7 +57,7 @@ func (c *Command) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 			c.suggestionIndex = 0
 		}
 		c.suggest(c.model.String(), c.suggestions[c.suggestionIndex])
-	case tcell.KeyBacktab, tcell.KeyUp:
+	case tcell.KeyUp:
 		if c.text == "" || c.suggestionIndex < 0 {
 			return evt
 		}
@@ -66,7 +66,7 @@ func (c *Command) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 			c.suggestionIndex = len(c.suggestions) - 1
 		}
 		c.suggest(c.model.String(), c.suggestions[c.suggestionIndex])
-	case tcell.KeyRight, tcell.KeyCtrlF:
+	case tcell.KeyTab, tcell.KeyRight, tcell.KeyCtrlF:
 		if c.suggestionIndex >= 0 {
 			c.model.Set(c.model.String() + c.suggestions[c.suggestionIndex])
 			c.suggestionIndex = -1

@@ -7,10 +7,8 @@ import (
 const (
 	// DefaultLoggerTailCount tracks default log tail size.
 	DefaultLoggerTailCount = 100
-	// DefaultLoggerBufferSize tracks default view buffer size.
-	DefaultLoggerBufferSize = 1_000
 	// MaxLogThreshold sets the max value for log size.
-	MaxLogThreshold = 1_000
+	MaxLogThreshold = 5_000
 	// DefaultSinceSeconds tracks default log age.
 	DefaultSinceSeconds = 5 * 60 // 5mins
 )
@@ -26,7 +24,7 @@ type Logger struct {
 func NewLogger() *Logger {
 	return &Logger{
 		TailCount:    DefaultLoggerTailCount,
-		BufferSize:   DefaultLoggerBufferSize,
+		BufferSize:   MaxLogThreshold,
 		SinceSeconds: DefaultSinceSeconds,
 	}
 }
@@ -39,10 +37,7 @@ func (l *Logger) Validate(_ client.Connection, _ KubeSettings) {
 	if l.TailCount > MaxLogThreshold {
 		l.TailCount = MaxLogThreshold
 	}
-	if l.BufferSize <= 0 {
-		l.BufferSize = DefaultLoggerBufferSize
-	}
-	if l.BufferSize > MaxLogThreshold {
+	if l.BufferSize <= 0 || l.BufferSize > MaxLogThreshold {
 		l.BufferSize = MaxLogThreshold
 	}
 	if l.SinceSeconds == 0 {
