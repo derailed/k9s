@@ -15,9 +15,10 @@ const (
 
 // Logger tracks logger options
 type Logger struct {
-	TailCount    int64 `yaml:"tail"`
-	BufferSize   int   `yaml:"buffer"`
-	SinceSeconds int64 `yaml:"sinceSeconds"`
+	TailCount      int64 `yaml:"tail"`
+	BufferSize     int   `yaml:"buffer"`
+	SinceSeconds   int64 `yaml:"sinceSeconds"`
+	FullScreenLogs bool  `yaml:"fullScreenLogs"`
 }
 
 // NewLogger returns a new instance.

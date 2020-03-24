@@ -181,7 +181,6 @@ func (l *Log) bindKeys() {
 		ui.Key4:        ui.NewKeyAction("30m", l.sinceCmd(30*60), true),
 		ui.Key5:        ui.NewKeyAction("1h", l.sinceCmd(60*60), true),
 		tcell.KeyEnter: ui.NewSharedKeyAction("Filter", l.filterCmd, false),
-		ui.KeyA:        ui.NewKeyAction("Apply", l.applyCmd, true),
 		ui.KeyC:        ui.NewKeyAction("Clear", l.clearCmd, true),
 		ui.KeyS:        ui.NewKeyAction("Toggle AutoScroll", l.toggleAutoScrollCmd, true),
 		ui.KeyF:        ui.NewKeyAction("FullScreen", l.toggleFullScreenCmd, true),
@@ -267,18 +266,6 @@ func (l *Log) sinceCmd(a int) func(evt *tcell.EventKey) *tcell.EventKey {
 		l.updateTitle()
 		return nil
 	}
-
-}
-
-func (l *Log) applyCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if l.app.InCmdMode() {
-		return evt
-	}
-	ShowLogs(l.app, "blee", l.filterLogs)
-	return nil
-}
-
-func (l *Log) filterLogs(path string, opts dao.LogOptions) {
 }
 
 func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {

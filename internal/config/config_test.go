@@ -267,9 +267,9 @@ var expectedConfig = `k9s:
     tail: 500
     buffer: 800
     sinceSeconds: 300
+    fullScreenLogs: false
   currentContext: blee
   currentCluster: blee
-  fullScreenLogs: false
   clusters:
     blee:
       namespace:
@@ -315,11 +315,11 @@ var resetConfig = `k9s:
   readOnly: false
   logger:
     tail: 200
-    buffer: 1000
+    buffer: 2000
     sinceSeconds: 300
+    fullScreenLogs: false
   currentContext: blee
   currentCluster: blee
-  fullScreenLogs: false
   clusters:
     blee:
       namespace:

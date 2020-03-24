@@ -23,14 +23,16 @@ Thank you for your gesture of kindness and for supporting K9s!!
 
 If you've contributed $25 or more please reach out to me on slack with your earth coordinates so I can send you your K9s swags!
 
-<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/shirts/k9s_front.png" align="right" width="200" height="auto"/>
-<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/shirts/k9s_back.png" align="right" width="200" height="auto"/>
+<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/shirts/k9s_front.png" align="center" width="auto" height="100"/>
+<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/shirts/k9s_back.png" align="center" width="auto" height="100"/>
+
+NOTE: I am one not to pressure folks into giving. However, it does make me sad to see postings out there with clear indications that K9s is being used and yet zero mentions of the web site nor this repo. K9s marketing budget relies entirely on word of mouth and is not pimped out by big corps. So if you publish your work and leverage K9s, please give us a shoutout or at the very least reference this repo or website!
 
 ---
 
 ## AutoSuggestions
 
-K9s command mode now provides for autocomplete. Suggestions are pulled from available kubernetes resources and custom aliases. The command mode supports the following commands:
+K9s command mode now provides for auto complete. Suggestions are pulled from available kubernetes resources and custom aliases. The command mode supports the following keyboard triggers:
 
 | Key                 | Description                              |
 |---------------------|------------------------------------------|

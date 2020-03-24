@@ -15,7 +15,6 @@ type K9s struct {
 	Logger            *Logger             `yaml:"logger"`
 	CurrentContext    string              `yaml:"currentContext"`
 	CurrentCluster    string              `yaml:"currentCluster"`
-	FullScreenLogs    bool                `yaml:"fullScreenLogs"`
 	Clusters          map[string]*Cluster `yaml:"clusters,omitempty"`
 	Thresholds        Threshold           `yaml:"thresholds"`
 	manualRefreshRate int

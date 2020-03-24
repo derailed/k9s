@@ -16,7 +16,7 @@ func TestLogAutoScroll(t *testing.T) {
 	v.GetModel().Set(dao.LogItems{dao.NewLogItemFromString("blee"), dao.NewLogItemFromString("bozo")})
 	v.GetModel().Notify(true)
 
-	assert.Equal(t, 14, len(v.Hints()))
+	assert.Equal(t, 13, len(v.Hints()))
 
 	v.toggleAutoScrollCmd(nil)
 	assert.Equal(t, "Autoscroll: Off     FullScreen: Off     Timestamps: Off     Wrap: Off           ", v.Indicator().GetText(true))
