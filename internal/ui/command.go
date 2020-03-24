@@ -26,8 +26,9 @@ type Command struct {
 
 // NewCommand returns a new command view.
 func NewCommand(styles *config.Styles, m *model.FishBuff) *Command {
-	c := Command{styles: styles, TextView: tview.NewTextView(), model: m}
+	c := Command{styles: styles, TextView: tview.NewTextView(), model: m, suggestionIndex: -1}
 	c.SetWordWrap(true)
+	c.ShowCursor(true)
 	c.SetWrap(true)
 	c.SetDynamicColors(true)
 	c.SetBorder(true)
@@ -88,7 +89,8 @@ func (c *Command) InCmdMode() bool {
 }
 
 func (c *Command) activate() {
-	c.write(c.text)
+	c.SetCursorIndex(len(c.text))
+	c.write(c.text, "")
 }
 
 func (c *Command) update(s string) {
@@ -97,16 +99,21 @@ func (c *Command) update(s string) {
 	}
 	c.text = s
 	c.Clear()
-	c.write(c.text)
+	c.write(s, "")
 }
 
 func (c *Command) suggest(text, suggestion string) {
 	c.Clear()
-	c.write(text + "[gray::-]" + suggestion)
+	c.write(text, suggestion)
 }
 
-func (c *Command) write(s string) {
-	fmt.Fprintf(c, defaultPrompt, c.icon, s)
+func (c *Command) write(text, suggest string) {
+	c.SetCursorIndex(4 + len(text))
+	txt := text
+	if suggest != "" {
+		txt += "[gray::-]" + suggest
+	}
+	fmt.Fprintf(c, defaultPrompt, c.icon, txt)
 }
 
 // ----------------------------------------------------------------------------

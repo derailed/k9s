@@ -108,6 +108,7 @@ func (a *App) bindKeys() {
 		tcell.KeyBackspace:  NewKeyAction("Erase", a.eraseCmd, false),
 		tcell.KeyDelete:     NewKeyAction("Erase", a.eraseCmd, false),
 		tcell.KeyCtrlU:      NewSharedKeyAction("Clear Filter", a.clearCmd, false),
+		tcell.KeyCtrlQ:      NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 	}
 }
 

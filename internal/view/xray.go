@@ -111,6 +111,7 @@ func (x *Xray) bindKeys() {
 		tcell.KeyBackspace:  ui.NewSharedKeyAction("Erase", x.eraseCmd, false),
 		tcell.KeyDelete:     ui.NewSharedKeyAction("Erase", x.eraseCmd, false),
 		tcell.KeyCtrlU:      ui.NewSharedKeyAction("Clear Filter", x.clearCmd, false),
+		tcell.KeyCtrlW:      ui.NewSharedKeyAction("Clear Filter", x.clearCmd, false),
 		tcell.KeyEscape:     ui.NewSharedKeyAction("Filter Reset", x.resetCmd, false),
 	})
 }

@@ -117,6 +117,7 @@ func (d *Details) bindKeys() {
 		ui.KeyShiftN:        ui.NewKeyAction("Prev Match", d.prevCmd, true),
 		ui.KeySlash:         ui.NewSharedKeyAction("Filter Mode", d.activateCmd, false),
 		tcell.KeyCtrlU:      ui.NewSharedKeyAction("Clear Filter", d.clearCmd, false),
+		tcell.KeyCtrlW:      ui.NewSharedKeyAction("Clear Filter", d.clearCmd, false),
 		tcell.KeyBackspace2: ui.NewSharedKeyAction("Erase", d.eraseCmd, false),
 		tcell.KeyBackspace:  ui.NewSharedKeyAction("Erase", d.eraseCmd, false),
 		tcell.KeyDelete:     ui.NewSharedKeyAction("Erase", d.eraseCmd, false),

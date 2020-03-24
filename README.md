@@ -90,6 +90,12 @@ K9s is available on Linux, macOS and Windows platforms.
     export TERM=xterm-256color
     ```
 
+* In order to issue manifest edit commands make sure your EDITOR env is set.
+
+    ```shell
+       export EDITOR=my_fav_editor_here!
+    ```
+
 ---
 
 ## Screenshots
@@ -129,6 +135,7 @@ K9s is available on Linux, macOS and Windows platforms.
 
 ## Demo Videos/Recordings
 
+* [K9s v0.18.0](https://www.youtube.com/watch?v=zMnD5e53yRw)
 * [K9s v0.17.0](https://www.youtube.com/watch?v=7S33CNLAofk&feature=youtu.be)
 * [K9s Pulses](https://asciinema.org/a/UbXKPal6IWpTaVAjBBFmizcGN)
 * [K9s v0.15.1](https://youtu.be/7Fx4XQ2ftpM)
