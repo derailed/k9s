@@ -52,7 +52,7 @@ func TestAppGetActions(t *testing.T) {
 
 	a.AddActions(ui.KeyActions{ui.KeyZ: ui.KeyAction{Description: "zorg"}})
 
-	assert.Equal(t, 9, len(a.GetActions()))
+	assert.Equal(t, 10, len(a.GetActions()))
 }
 
 func TestAppViews(t *testing.T) {
