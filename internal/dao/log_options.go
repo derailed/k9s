@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -21,6 +22,11 @@ type LogOptions struct {
 	SinceTime       string
 	SinceSeconds    int64
 	In, Out         string
+}
+
+// Info returns the option pod and container info.
+func (o LogOptions) Info() string {
+	return fmt.Sprintf("%q::%q", o.Path, o.Container)
 }
 
 // HasContainer checks if a container is present.
@@ -80,9 +86,7 @@ func (o LogOptions) DecorateLog(bytes []byte) *LogItem {
 	if o.MultiPods {
 		_, pod := client.Namespaced(o.Path)
 		item.Pod, item.Container = pod, o.Container
-	}
-
-	if !o.SingleContainer {
+	} else {
 		item.Container = o.Container
 	}
 

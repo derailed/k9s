@@ -92,14 +92,14 @@ func TestLogItemsRender(t *testing.T) {
 			opts: dao.LogOptions{
 				Container: "fred",
 			},
-			e: "fred Testing 1,2,3...",
+			e: "\x1b[38;5;161mfred\x1b[0m Testing 1,2,3...",
 		},
 		"pod": {
 			opts: dao.LogOptions{
 				Path:      "blee/fred",
 				Container: "blee",
 			},
-			e: "fred:blee Testing 1,2,3...",
+			e: "\x1b[38;5;161mfred\x1b[0m:\x1b[38;5;161mblee\x1b[0m Testing 1,2,3...",
 		},
 		"full": {
 			opts: dao.LogOptions{
@@ -107,7 +107,7 @@ func TestLogItemsRender(t *testing.T) {
 				Container:     "blee",
 				ShowTimestamp: true,
 			},
-			e: "2018-12-14T10:36:43.326972-07:00 fred:blee Testing 1,2,3...",
+			e: "\x1b[38;5;106m2018-12-14T10:36:43.326972-07:00 \x1b[0m\x1b[38;5;161mfred\x1b[0m:\x1b[38;5;161mblee\x1b[0m Testing 1,2,3...",
 		},
 	}
 
@@ -156,14 +156,14 @@ func TestLogItemRender(t *testing.T) {
 			opts: dao.LogOptions{
 				Container: "fred",
 			},
-			e: "fred Testing 1,2,3...",
+			e: "\x1b[38;5;0mfred\x1b[0m Testing 1,2,3...",
 		},
 		"pod": {
 			opts: dao.LogOptions{
 				Path:      "blee/fred",
 				Container: "blee",
 			},
-			e: "fred:blee Testing 1,2,3...",
+			e: "\x1b[38;5;0mfred\x1b[0m:\x1b[38;5;0mblee\x1b[0m Testing 1,2,3...",
 		},
 		"full": {
 			opts: dao.LogOptions{
@@ -171,7 +171,7 @@ func TestLogItemRender(t *testing.T) {
 				Container:     "blee",
 				ShowTimestamp: true,
 			},
-			e: "2018-12-14T10:36:43.326972-07:00 fred:blee Testing 1,2,3...",
+			e: "\x1b[38;5;106m2018-12-14T10:36:43.326972-07:00 \x1b[0m\x1b[38;5;0mfred\x1b[0m:\x1b[38;5;0mblee\x1b[0m Testing 1,2,3...",
 		},
 	}
 
@@ -183,7 +183,7 @@ func TestLogItemRender(t *testing.T) {
 			_, n := client.Namespaced(u.opts.Path)
 			i.Pod, i.Container = n, u.opts.Container
 
-			assert.Equal(t, u.e, string(i.Render(u.opts.ShowTimestamp)))
+			assert.Equal(t, u.e, string(i.Render(0, u.opts.ShowTimestamp)))
 		})
 	}
 }
@@ -195,6 +195,6 @@ func BenchmarkLogItemRender(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
-		i.Render(true)
+		i.Render(0, true)
 	}
 }

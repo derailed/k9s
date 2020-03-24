@@ -180,30 +180,25 @@ func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
 	if err != nil {
 		return err
 	}
-
 	var po v1.Pod
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &po); err != nil {
 		return err
 	}
 
-	rcos := loggableContainers(po.Status)
 	if opts.HasContainer() {
 		opts.SingleContainer = true
-		if !in(rcos, opts.Container) {
-			return fmt.Errorf("no logs found for container %s on %s", opts.Container, opts.Path)
-		}
 		if err := tailLogs(ctx, p, c, opts); err != nil {
-			log.Error().Err(err).Msgf("Getting logs for %s failed", opts.Container)
 			return err
 		}
 		return nil
 	}
-
 	if len(po.Spec.InitContainers)+len(po.Spec.Containers) == 1 {
 		opts.SingleContainer = true
 	}
+
 	var tailed bool
 	for _, co := range po.Spec.InitContainers {
+		log.Debug().Msgf("Tailing INIT-CO %q", co.Name)
 		opts.Container = co.Name
 		if err := p.TailLogs(ctx, c, opts); err != nil {
 			return err
@@ -211,19 +206,26 @@ func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
 		tailed = true
 	}
 	for _, co := range po.Spec.Containers {
-		if in(rcos, co.Name) {
-			opts.Container = co.Name
-			if err := tailLogs(ctx, p, c, opts); err != nil {
-				log.Error().Err(err).Msgf("Getting logs for %s failed", co.Name)
-				return err
-			}
-			tailed = true
+		log.Debug().Msgf("Tailing CO %q", co.Name)
+		opts.Container = co.Name
+		if err := tailLogs(ctx, p, c, opts); err != nil {
+			return err
 		}
+		tailed = true
+	}
+	for _, co := range po.Spec.EphemeralContainers {
+		log.Debug().Msgf("Tailing EPH-CO %q", co.Name)
+		opts.Container = co.Name
+		if err := tailLogs(ctx, p, c, opts); err != nil {
+			return err
+		}
+		tailed = true
 	}
 
 	if !tailed {
 		return fmt.Errorf("no loggable containers found for pod %s", opts.Path)
 	}
+
 	return nil
 }
 
@@ -249,9 +251,9 @@ func tailLogs(ctx context.Context, logger Logger, c LogChan, opts LogOptions) er
 
 func readLogs(stream io.ReadCloser, c LogChan, opts LogOptions) {
 	defer func() {
-		log.Debug().Msgf(">>> Closing stream `%s", opts.Path)
+		log.Debug().Msgf(">>> Closing stream %s", opts.Info())
 		if err := stream.Close(); err != nil {
-			log.Error().Err(err).Msg("Cloing stream")
+			log.Error().Err(err).Msgf("Fail to close stream %s", opts.Info())
 		}
 	}()
 
@@ -259,13 +261,12 @@ func readLogs(stream io.ReadCloser, c LogChan, opts LogOptions) {
 	for {
 		bytes, err := r.ReadBytes('\n')
 		if err != nil {
-			log.Warn().Err(err).Msg("Read error")
 			if err == io.EOF {
-				log.Warn().Err(err).Msgf("stream closed")
+				log.Warn().Err(err).Msgf("Stream closed for %s", opts.Info())
 				c <- NewLogItemFromString("<STREAM> closed")
 				return
 			}
-			log.Error().Err(err).Msgf("stream reader failed")
+			log.Warn().Err(err).Msgf("Stream READ error %s", opts.Info())
 			c <- NewLogItemFromString("<STREAM> failed")
 			return
 		}
@@ -330,16 +331,6 @@ func extractFQN(o runtime.Object) string {
 	}
 
 	return FQN(ns, n)
-}
-
-func loggableContainers(s v1.PodStatus) []string {
-	var rcos []string
-	for _, c := range s.ContainerStatuses {
-		if c.State.Waiting == nil {
-			rcos = append(rcos, c.Name)
-		}
-	}
-	return rcos
 }
 
 // Check if string is in a string list.

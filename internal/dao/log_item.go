@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 )
@@ -40,30 +41,57 @@ func NewLogItemFromString(s string) *LogItem {
 	return &l
 }
 
+// ID returns pod and or container based id.
+func (l *LogItem) ID() string {
+	if l.Pod != "" {
+		return l.Pod
+	}
+	return l.Container
+}
+
+// Info returns pod and container information.
+func (l *LogItem) Info() string {
+	return fmt.Sprintf("%q::%q", l.Pod, l.Container)
+}
+
 // IsEmpty checks if the entry is empty.
 func (l *LogItem) IsEmpty() bool {
 	return len(l.Bytes) == 0
 }
 
+const colorFmt = "\033[38;5;%dm%s\033[0m"
+
+// colorize me
+func colorize(s string, c int) string {
+	return fmt.Sprintf(colorFmt, c, s)
+}
+
 // Render returns a log line as string.
-func (l *LogItem) Render(showTime bool) []byte {
-	bb := make([]byte, 0, 100+len(l.Bytes))
+func (l *LogItem) Render(c int, showTime bool) []byte {
+	bb := make([]byte, 0, 30+len(l.Bytes)+len(l.Info()))
 	if showTime {
-		bb = append(bb, fmt.Sprintf("%-30s ", l.Timestamp)...)
+		bb = append(bb, colorize(fmt.Sprintf("%-30s ", l.Timestamp), 106)...)
 	}
 
 	if l.Pod != "" {
-		bb = append(bb, l.Pod...)
+		bb = append(bb, []byte(colorize(l.Pod, c))...)
 		bb = append(bb, ':')
-		bb = append(bb, l.Container...)
-		bb = append(bb, ' ')
-	} else if l.Container != "" {
-		bb = append(bb, l.Container...)
+	}
+	if l.Container != "" {
+		bb = append(bb, []byte(colorize(l.Container, c))...)
 		bb = append(bb, ' ')
 	}
-	bb = append(bb, l.Bytes...)
+	bb = append(bb, []byte(tview.Escape(string(l.Bytes)))...)
 
 	return bb
+}
+
+func colorFor(n string) int {
+	var sum int
+	for _, r := range n {
+		sum += int(r)
+	}
+	return sum % 256
 }
 
 // ----------------------------------------------------------------------------
@@ -75,7 +103,7 @@ type LogItems []*LogItem
 func (l LogItems) Lines() []string {
 	ll := make([]string, len(l))
 	for i, item := range l {
-		ll[i] = string(item.Render(false))
+		ll[i] = string(item.Render(0, false))
 	}
 
 	return ll
@@ -83,8 +111,15 @@ func (l LogItems) Lines() []string {
 
 // Render returns logs as a collection of strings.
 func (l LogItems) Render(showTime bool, ll [][]byte) {
+	colors := map[string]int{}
 	for i, item := range l {
-		ll[i] = item.Render(showTime)
+		info := item.ID()
+		c, ok := colors[item.ID()]
+		if !ok {
+			c = colorFor(info)
+			colors[info] = c
+		}
+		ll[i] = item.Render(c, showTime)
 	}
 }
 

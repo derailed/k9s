@@ -103,7 +103,7 @@ func (l *logList) LogChanged(ii dao.LogItems) {
 	l.change++
 	l.lines = ""
 	for _, i := range ii {
-		l.lines += string(i.Render(false))
+		l.lines += string(i.Render(0, false))
 	}
 }
 func (l *logList) LogCleared()     { l.clear++ }

@@ -35,7 +35,6 @@ type Log struct {
 	cancelFn     context.CancelFunc
 	mx           sync.RWMutex
 	filter       string
-	bufferSize   int
 	lastSent     int
 	flushTimeout time.Duration
 }
@@ -70,8 +69,7 @@ func (l *Log) SetLogOptions(opts dao.LogOptions) {
 
 // Configure sets logger configuration.
 func (l *Log) Configure(opts *config.Logger) {
-	l.bufferSize = opts.BufferSize
-	l.logOptions.Lines = int64(opts.TailCount)
+	l.logOptions.Lines = int64(opts.BufferSize)
 	l.logOptions.SinceSeconds = opts.SinceSeconds
 }
 
@@ -231,14 +229,14 @@ func (l *Log) updateLogs(ctx context.Context, c dao.LogChan) {
 			if !ok {
 				log.Debug().Msgf("Closed channel detected. Bailing out...")
 				l.Append(item)
-				l.Notify(false)
+				l.Notify(true)
 				return
 			}
 			l.Append(item)
 			var overflow bool
 			l.mx.RLock()
 			{
-				overflow = len(l.lines)-l.lastSent > l.bufferSize
+				overflow = int64(len(l.lines)-l.lastSent) > l.logOptions.Lines
 			}
 			l.mx.RUnlock()
 			if overflow {

@@ -1,6 +1,7 @@
 package view
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io"
@@ -109,7 +110,7 @@ func (l *Log) LogFailed(err error) {
 		if l.logs.GetText(true) == logMessage {
 			l.logs.Clear()
 		}
-		l.write(color.Colorize(err.Error(), color.Red))
+		fmt.Fprintln(l.ansiWriter, tview.Escape(color.Colorize(err.Error(), color.Red)))
 	})
 }
 
@@ -237,10 +238,6 @@ func (l *Log) Logs() *Details {
 	return l.logs
 }
 
-func (l *Log) write(lines string) {
-	fmt.Fprintln(l.ansiWriter, tview.Escape(lines))
-}
-
 // Flush write logs to viewer.
 func (l *Log) Flush(lines dao.LogItems) {
 	defer func(t time.Time) {
@@ -248,11 +245,9 @@ func (l *Log) Flush(lines dao.LogItems) {
 	}(time.Now())
 
 	showTime := l.Indicator().showTime
-	ll := make([]string, len(lines))
-	for i, line := range lines {
-		ll[i] = string(line.Render(showTime))
-	}
-	l.write(strings.Join(ll, "\n"))
+	ll := make([][]byte, len(lines))
+	lines.Render(showTime, ll)
+	fmt.Fprintln(l.ansiWriter, string(bytes.Join(ll, []byte("\n"))))
 	l.logs.ScrollToEnd()
 	l.indicator.Refresh()
 }
