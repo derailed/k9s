@@ -280,17 +280,42 @@ Entering the command mode and typing a resource name or alias, could be cumberso
 
 ## Plugins
 
-K9s allows you to extend your command line and tooling by defining your very own cluster commands via plugins. K9s looks at `$HOME/.k9s/plugin.yml` to locate all available plugins. A plugin is defined as follows:
+K9s allows you to extend your command line and tooling by defining your very own cluster commands via plugins. K9s will look at `$HOME/.k9s/plugin.yml` to locate all available plugins. A plugin is defined as follows:
+
+* Shortcut option represents the key combination a user would type to activate the plugin
+* Description will be printed next to the shortcut in the k9s menu
+* Scopes defines a collection of resources names/shortnames for the views associated with the plugin. You can specify `all` to provide this shortcut for all views.
+* Command represents adhoc commands the plugin runs upon activation
+* Background specifies whether or not the command runs in the background
+* Args specifies the various arguments that should apply to the command above
+
+K9s does provide additional environment variables for you to customize your plugins arguments. Currently, the available environment variables are as follows:
+
+* `$NAMESPACE` -- the selected resource namespace
+* `$NAME` -- the selected resource name
+* `$CONTAINER` -- the current container if applicable
+* `$FILTER` -- the current filter if any
+* `$KUBECONFIG` -- the KubeConfig location.
+* `$CLUSTER` the active cluster name
+* `$CONTEXT` the active context name
+* `$USER` the active user
+* `$GROUPS` the active groups
+* `$POD` while in a container view
+* `$COL-<RESOURCE_COLUMN_NAME>` use a given column name for a viewed resource. Must be prefixed by `COL-`!
+
+### Example
+
+This defines a plugin for viewing logs on a selected pod using `ctrl-l` for shorcut.
 
 ```yaml
 # $HOME/.k9s/plugin.yml
 plugin:
-  # Defines a plugin to provide a `Ctrl-l` shortcut to tail the logs while in pod view.
+  # Defines a plugin to provide a `ctrl-l` shorcut to tail the logs while in pod view.
   fred:
     shortCut: Ctrl-L
     description: Pod logs
     scopes:
-    - po
+    - pods
     command: kubectl
     background: false
     args:
@@ -302,28 +327,6 @@ plugin:
     - --context
     - $CONTEXT
 ```
-
-This defines a plugin for viewing logs on a selected pod using `Ctrl-l` mnemonic while in the pods view.
-
-* Shortcut: the key a user must enter to activate the plugin.
-* Command: the shell commands the plugin runs upon activation.
-* Scopes: select the resources that can access the plugin command. Defines a collection of resource names/shortnames for which the plugin shortcut will be made available to the user. You can specify `all` to make a plugin available in all views.
-* Background: boolean to indicate whether to run the command in the background or not.
-* Description: a short description of the command that will be shown in the ui next to the action mnemonic.
-* Args: a collection of arguments for the given command.
-
-K9s does provide additional environment variables for you to further customize your plugins. Currently, the available environment variables are as follows:
-
-* `$NAMESPACE` -- the selected resource namespace
-* `$NAME` -- the selected resource name
-* `$CONTAINER` -- the current container if applicable
-* `$FILTER` -- the current filter if any
-* `$KUBECONFIG` -- the KubeConfig location.
-* `$CLUSTER` the active cluster name
-* `$CONTEXT` the active context name
-* `$USER` the active user
-* `$GROUPS` the active groups
-* `$COL-<RESOURCE_COLUMN_NAME>` use a given column name for a viewed resource. Must be prefixed by `COL-`!
 
 > NOTE: This is an experimental feature! Options and layout may change in future K9s releases as this feature solidifies.
 
