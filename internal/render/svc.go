@@ -29,7 +29,7 @@ func (Service) Header(ns string) Header {
 		HeaderColumn{Name: "CLUSTER-IP"},
 		HeaderColumn{Name: "EXTERNAL-IP"},
 		HeaderColumn{Name: "SELECTOR", Wide: true},
-		HeaderColumn{Name: "PORTS", Wide: true},
+		HeaderColumn{Name: "PORTS", Wide: false},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
