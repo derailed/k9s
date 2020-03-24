@@ -23,7 +23,7 @@ func TestK9sValidate(t *testing.T) {
 
 	assert.Equal(t, 2, c.RefreshRate)
 	assert.Equal(t, int64(100), c.Logger.TailCount)
-	assert.Equal(t, 5_000, c.Logger.BufferSize)
+	assert.Equal(t, 5000, c.Logger.BufferSize)
 	assert.Equal(t, "ctx1", c.CurrentContext)
 	assert.Equal(t, "c1", c.CurrentCluster)
 	assert.Equal(t, 1, len(c.Clusters))
@@ -46,7 +46,7 @@ func TestK9sValidateBlank(t *testing.T) {
 
 	assert.Equal(t, 2, c.RefreshRate)
 	assert.Equal(t, int64(100), c.Logger.TailCount)
-	assert.Equal(t, 5_000, c.Logger.BufferSize)
+	assert.Equal(t, 5000, c.Logger.BufferSize)
 	assert.Equal(t, "ctx1", c.CurrentContext)
 	assert.Equal(t, "c1", c.CurrentCluster)
 	assert.Equal(t, 1, len(c.Clusters))
