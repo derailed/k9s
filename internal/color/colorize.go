@@ -4,6 +4,7 @@ import (
 	"fmt"
 )
 
+// ColorFmt colorize a string with ansi colors.
 const ColorFmt = "\x1b[%dm%s\x1b[0m"
 
 // Paint describes a terminal color.

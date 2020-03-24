@@ -22,7 +22,7 @@ type FishBuff struct {
 	suggestionFn SuggestionFunc
 }
 
-// NewFishBuffer returns a new command buffer.
+// NewFishBuff returns a new command buffer.
 func NewFishBuff(key rune, kind BufferKind) *FishBuff {
 	return &FishBuff{CmdBuff: NewCmdBuff(key, kind)}
 }

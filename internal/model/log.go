@@ -62,6 +62,7 @@ func (l *Log) SinceSeconds() int64 {
 	return l.logOptions.SinceSeconds
 }
 
+// SetLogOptions updates logger options.
 func (l *Log) SetLogOptions(opts dao.LogOptions) {
 	l.logOptions = opts
 	l.Restart()

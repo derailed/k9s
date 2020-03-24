@@ -70,6 +70,7 @@ func (a *App) BufferActive(state bool, _ model.BufferKind) {
 	a.Draw()
 }
 
+// SuggestionChanged notifies of update to command suggestions.
 func (a *App) SuggestionChanged(ss []string) {}
 
 // StylesChanged notifies the skin changed.

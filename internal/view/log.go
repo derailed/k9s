@@ -190,12 +190,14 @@ func (l *Log) bindKeys() {
 	})
 }
 
+// SendStrokes (testing only!)
 func (l *Log) SendStrokes(s string) {
 	for _, r := range s {
 		l.logs.keyboard(tcell.NewEventKey(tcell.KeyRune, r, tcell.ModNone))
 	}
 }
 
+// SendKeys (testing only!)
 func (l *Log) SendKeys(kk ...tcell.Key) {
 	for _, k := range kk {
 		l.logs.keyboard(tcell.NewEventKey(k, ' ', tcell.ModNone))
