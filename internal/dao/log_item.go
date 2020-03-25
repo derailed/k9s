@@ -3,6 +3,7 @@ package dao
 import (
 	"bytes"
 	"fmt"
+	"math/rand"
 	"regexp"
 	"strings"
 	"time"
@@ -91,7 +92,12 @@ func colorFor(n string) int {
 	for _, r := range n {
 		sum += int(r)
 	}
-	return sum % 256
+
+	c := sum % 256
+	if c == 0 {
+		c = 207 + rand.Intn(10)
+	}
+	return c
 }
 
 // ----------------------------------------------------------------------------
