@@ -487,10 +487,6 @@ func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (a *App) viewResource(gvr, path string, clearStack bool) error {
-	return a.command.run(gvr, path, clearStack)
-}
-
 func (a *App) gotoResource(cmd, path string, clearStack bool) error {
 	return a.command.run(cmd, path, clearStack)
 }

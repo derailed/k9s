@@ -72,6 +72,13 @@ func miscViewers(vv MetaViewers) {
 	vv[client.NewGVR("pulses")] = MetaViewer{
 		viewerFn: NewPulse,
 	}
+	vv[client.NewGVR("popeye")] = MetaViewer{
+		viewerFn: NewPopeye,
+	}
+	vv[client.NewGVR("report")] = MetaViewer{
+		viewerFn: NewSanitizer,
+	}
+
 }
 
 func appsViewers(vv MetaViewers) {

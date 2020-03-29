@@ -35,7 +35,7 @@ func (s *StatefulSet) IsHappy(sts appsv1.StatefulSet) bool {
 }
 
 // Scale a StatefulSet.
-func (s *StatefulSet) Scale(path string, replicas int32) error {
+func (s *StatefulSet) Scale(ctx context.Context, path string, replicas int32) error {
 	ns, n := client.Namespaced(path)
 	auth, err := s.Client().CanI(ns, "apps/v1/statefulsets:scale", []string{client.GetVerb, client.UpdateVerb})
 	if err != nil {
@@ -45,18 +45,18 @@ func (s *StatefulSet) Scale(path string, replicas int32) error {
 		return fmt.Errorf("user is not authorized to scale statefulsets")
 	}
 
-	scale, err := s.Client().DialOrDie().AppsV1().StatefulSets(ns).GetScale(n, metav1.GetOptions{})
+	scale, err := s.Client().DialOrDie().AppsV1().StatefulSets(ns).GetScale(ctx, n, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	scale.Spec.Replicas = replicas
-	_, err = s.Client().DialOrDie().AppsV1().StatefulSets(ns).UpdateScale(n, scale)
+	_, err = s.Client().DialOrDie().AppsV1().StatefulSets(ns).UpdateScale(ctx, n, scale, metav1.UpdateOptions{})
 
 	return err
 }
 
 // Restart a StatefulSet rollout.
-func (s *StatefulSet) Restart(path string) error {
+func (s *StatefulSet) Restart(ctx context.Context, path string) error {
 	sts, err := s.getStatefulSet(path)
 	if err != nil {
 		return err
@@ -76,7 +76,13 @@ func (s *StatefulSet) Restart(path string) error {
 		return err
 	}
 
-	_, err = s.Client().DialOrDie().AppsV1().StatefulSets(sts.Namespace).Patch(sts.Name, types.StrategicMergePatchType, update)
+	_, err = s.Client().DialOrDie().AppsV1().StatefulSets(sts.Namespace).Patch(
+		ctx,
+		sts.Name,
+		types.StrategicMergePatchType,
+		update,
+		metav1.PatchOptions{},
+	)
 	return err
 }
 

@@ -37,7 +37,7 @@ func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error
 		err error
 	)
 	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
-		if pmx, err = client.DialMetrics(c.Client()).FetchPodMetrics(fqn); err != nil {
+		if pmx, err = client.DialMetrics(c.Client()).FetchPodMetrics(ctx, fqn); err != nil {
 			log.Warn().Err(err).Msgf("No metrics found for pod %q", fqn)
 		}
 	}

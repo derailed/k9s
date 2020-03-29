@@ -38,7 +38,7 @@ func (d *DaemonSet) IsHappy(ds appsv1.DaemonSet) bool {
 }
 
 // Restart a DaemonSet rollout.
-func (d *DaemonSet) Restart(path string) error {
+func (d *DaemonSet) Restart(ctx context.Context, path string) error {
 	ds, err := d.GetInstance(path)
 	if err != nil {
 		return err
@@ -56,7 +56,13 @@ func (d *DaemonSet) Restart(path string) error {
 		return err
 	}
 
-	_, err = d.Client().DialOrDie().AppsV1().DaemonSets(ds.Namespace).Patch(ds.Name, types.StrategicMergePatchType, update)
+	_, err = d.Client().DialOrDie().AppsV1().DaemonSets(ds.Namespace).Patch(
+		ctx,
+		ds.Name,
+		types.StrategicMergePatchType,
+		update,
+		metav1.PatchOptions{},
+	)
 	return err
 }
 

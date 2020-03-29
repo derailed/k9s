@@ -1,6 +1,8 @@
 package model
 
 import (
+	"context"
+
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 )
@@ -90,8 +92,10 @@ func (c *ClusterInfo) Refresh() {
 	data.K9sVer = c.version
 	data.K8sVer = c.cluster.Version()
 
+	ctx, cancel := context.WithTimeout(context.Background(), client.CallTimeout)
+	defer cancel()
 	var mx client.ClusterMetrics
-	if err := c.cluster.Metrics(&mx); err == nil {
+	if err := c.cluster.Metrics(ctx, &mx); err == nil {
 		data.Cpu, data.Mem, data.Ephemeral = mx.PercCPU, mx.PercMEM, mx.PercEphemeral
 	}
 

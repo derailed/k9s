@@ -60,6 +60,9 @@ func (c *conn) SupportsRes(grp string, versions []string) (string, bool, error) 
 func (c *conn) ServerVersion() (*version.Info, error)             { return nil, nil }
 func (c *conn) CurrentNamespaceName() (string, error)             { return "", nil }
 func (c *conn) CanI(ns, gvr string, verbs []string) (bool, error) { return true, nil }
+func (c *conn) ActiveCluster() string                             { return "" }
+func (c *conn) ActiveNamespace() string                           { return "" }
+func (c *conn) IsActiveNamespace(string) bool                     { return false }
 
 type podFactory struct{}
 

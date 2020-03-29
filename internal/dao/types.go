@@ -108,7 +108,7 @@ type Describer interface {
 // Scalable represents resources that can scale.
 type Scalable interface {
 	// Scale scales a resource up or down.
-	Scale(path string, replicas int32) error
+	Scale(ctx context.Context, path string, replicas int32) error
 }
 
 // Controller represents a pod controller.
@@ -132,7 +132,7 @@ type Switchable interface {
 // Restartable represents a restartable resource.
 type Restartable interface {
 	// Restart performs a rollout restart.
-	Restart(path string) error
+	Restart(ctx context.Context, path string) error
 }
 
 // Runnable represents a runnable resource.

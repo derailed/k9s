@@ -203,7 +203,7 @@ func (t *Table) doUpdate(data render.TableData) {
 	}
 	custData := data.Customize(cols, t.wide)
 
-	if (t.sortCol.name == "" || custData.Header.IndexOf(t.sortCol.name, false) == -1) && len(custData.Header) > 0 {
+	if (t.sortCol.name == "" || custData.Header.IndexOf(t.sortCol.name, false) == -1) && len(custData.Header) > 0 && t.sortCol.name != "NONE" {
 		t.sortCol.name = custData.Header[0].Name
 	}
 

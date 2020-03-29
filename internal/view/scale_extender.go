@@ -1,10 +1,12 @@
 package view
 
 import (
+	"context"
 	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
@@ -73,7 +75,9 @@ func (s *ScaleExtender) makeScaleForm(sel string) *tview.Form {
 			s.App().Flash().Err(err)
 			return
 		}
-		if err := s.scale(sel, count); err != nil {
+		ctx, cancel := context.WithTimeout(context.Background(), client.CallTimeout)
+		defer cancel()
+		if err := s.scale(ctx, sel, count); err != nil {
 			log.Error().Err(err).Msgf("DP %s scaling failed", sel)
 			s.App().Flash().Err(err)
 		} else {
@@ -104,7 +108,7 @@ func (s *ScaleExtender) makeStyledForm() *tview.Form {
 	return f
 }
 
-func (s *ScaleExtender) scale(path string, replicas int) error {
+func (s *ScaleExtender) scale(ctx context.Context, path string, replicas int) error {
 	res, err := dao.AccessorFor(s.App().factory, s.GVR())
 	if err != nil {
 		return nil
@@ -114,5 +118,5 @@ func (s *ScaleExtender) scale(path string, replicas int) error {
 		return fmt.Errorf("expecting a scalable resource for %q", s.GVR())
 	}
 
-	return scaler.Scale(path, int32(replicas))
+	return scaler.Scale(ctx, path, int32(replicas))
 }

@@ -57,7 +57,7 @@ func (p *Pod) Get(ctx context.Context, path string) (runtime.Object, error) {
 
 	var pmx *mv1beta1.PodMetrics
 	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
-		if pmx, err = client.DialMetrics(p.Client()).FetchPodMetrics(path); err != nil {
+		if pmx, err = client.DialMetrics(p.Client()).FetchPodMetrics(ctx, path); err != nil {
 			log.Debug().Err(err).Msgf("No pod metrics")
 		}
 	}
@@ -84,7 +84,7 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 	var pmx *mv1beta1.PodMetricsList
 	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
-		if pmx, err = client.DialMetrics(p.Client()).FetchPodsMetrics(ns); err != nil {
+		if pmx, err = client.DialMetrics(p.Client()).FetchPodsMetrics(ctx, ns); err != nil {
 			log.Debug().Err(err).Msgf("No pods metrics")
 		}
 	}
@@ -235,10 +235,9 @@ func tailLogs(ctx context.Context, logger Logger, c LogChan, opts LogOptions) er
 	if err != nil {
 		return err
 	}
-	req.Context(ctx)
 
 	// This call will block if nothing is in the stream!!
-	stream, err := req.Stream()
+	stream, err := req.Stream(ctx)
 	if err != nil {
 		c <- opts.DecorateLog([]byte(err.Error() + "\n"))
 		log.Error().Err(err).Msgf("Unable to obtain log stream failed for `%s", opts.Path)
@@ -263,11 +262,11 @@ func readLogs(stream io.ReadCloser, c LogChan, opts LogOptions) {
 		if err != nil {
 			if err == io.EOF {
 				log.Warn().Err(err).Msgf("Stream closed for %s", opts.Info())
-				c <- NewLogItemFromString("<STREAM> closed")
+				c <- opts.DecorateLog([]byte("log stream closed\n"))
 				return
 			}
 			log.Warn().Err(err).Msgf("Stream READ error %s", opts.Info())
-			c <- NewLogItemFromString("<STREAM> failed")
+			c <- opts.DecorateLog([]byte("log stream failed\n"))
 			return
 		}
 		c <- opts.DecorateLog(bytes)

@@ -142,6 +142,8 @@ func (a *Aliases) loadDefaultAliases() {
 	a.declare("help", "h", "?")
 	a.declare("quit", "q", "Q")
 	a.declare("aliases", "alias", "a")
+	a.declare("popeye", "pop")
+	a.declare("sanitize", "san", "sanitize")
 	a.declare("contexts", "context", "ctx")
 	a.declare("users", "user", "usr")
 	a.declare("groups", "group", "grp")

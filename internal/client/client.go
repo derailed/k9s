@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -27,6 +28,7 @@ const (
 	cacheMXKey       = "metrics"
 	cacheMXAPIKey    = "metricsAPI"
 	checkConnTimeout = 10 * time.Second
+	CallTimeout      = 5 * time.Second
 )
 
 var supportedMetricsAPIVersions = []string{"v1beta1"}
@@ -86,6 +88,33 @@ func makeCacheKey(ns, gvr string, vv []string) string {
 	return ns + ":" + gvr + "::" + strings.Join(vv, ",")
 }
 
+// ActiveCluster returns the current cluster name.
+func (a *APIClient) ActiveCluster() string {
+	c, err := a.config.CurrentClusterName()
+	if err != nil {
+		log.Error().Msgf("Unable to located active cluster")
+		return ""
+	}
+	return c
+}
+
+// IsActiveNamespace returns true if namespaces matches.
+func (a *APIClient) IsActiveNamespace(ns string) bool {
+	if a.ActiveNamespace() == AllNamespaces {
+		return true
+	}
+	return a.ActiveNamespace() == ns
+}
+
+// ActiveNamespace returns the current namespace.
+func (a *APIClient) ActiveNamespace() string {
+	ns, err := a.CurrentNamespaceName()
+	if err != nil {
+		return AllNamespaces
+	}
+	return ns
+}
+
 func (a *APIClient) clearCache() {
 	for _, k := range a.cache.Keys() {
 		a.cache.Remove(k)
@@ -104,9 +133,12 @@ func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) 
 		}
 	}
 	dial, sar := a.DialOrDie().AuthorizationV1().SelfSubjectAccessReviews(), makeSAR(ns, gvr)
+
+	ctx, cancel := context.WithTimeout(context.Background(), CallTimeout)
+	defer cancel()
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
-		resp, err := dial.Create(sar)
+		resp, err := dial.Create(ctx, sar, metav1.CreateOptions{})
 		if err != nil {
 			log.Warn().Err(err).Msgf("  Dial Failed!")
 			a.cache.Add(key, false, cacheExpiry)
@@ -135,7 +167,9 @@ func (a *APIClient) ServerVersion() (*version.Info, error) {
 
 // ValidNamespaces returns all available namespaces.
 func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
-	nn, err := a.DialOrDie().CoreV1().Namespaces().List(metav1.ListOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), CallTimeout)
+	defer cancel()
+	nn, err := a.DialOrDie().CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +231,9 @@ func (a *APIClient) HasMetrics() bool {
 		a.cache.Add(cacheMXKey, flag, cacheExpiry)
 		return flag
 	}
-	if _, err := dial.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{Limit: 1}); err == nil {
+	ctx, cancel := context.WithTimeout(context.Background(), CallTimeout)
+	defer cancel()
+	if _, err := dial.MetricsV1beta1().NodeMetricses().List(ctx, metav1.ListOptions{Limit: 1}); err == nil {
 		flag = true
 	}
 	a.cache.Add(cacheMXKey, flag, cacheExpiry)

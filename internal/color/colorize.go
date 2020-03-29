@@ -2,8 +2,6 @@ package color
 
 import (
 	"fmt"
-
-	"github.com/rs/zerolog/log"
 )
 
 // ColorFmt colorize a string with ansi colors.
@@ -29,7 +27,6 @@ const (
 
 // Colorize returns an ASCII colored string based on given color.
 func Colorize(s string, c Paint) string {
-	log.Debug().Msgf("Painting %#v", c)
 	if c == 0 {
 		return s
 	}

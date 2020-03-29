@@ -111,7 +111,6 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 	if c.specialCmd(cmd) {
 		return nil
 	}
-
 	cmds := strings.Split(cmd, " ")
 	gvr, v, err := c.viewMetaFor(cmds[0])
 	if err != nil {

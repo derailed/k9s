@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"math"
 	"time"
@@ -129,7 +130,7 @@ func (m *MetricsServer) NodesMetrics(nodes *v1.NodeList, metrics *mv1beta1.NodeM
 }
 
 // FetchNodesMetrics return all metrics for nodes.
-func (m *MetricsServer) FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error) {
+func (m *MetricsServer) FetchNodesMetrics(ctx context.Context) (*mv1beta1.NodeMetricsList, error) {
 	const msg = "user is not authorized to list node metrics"
 
 	mx := new(mv1beta1.NodeMetricsList)
@@ -150,7 +151,7 @@ func (m *MetricsServer) FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error) {
 	if err != nil {
 		return mx, err
 	}
-	mxList, err := client.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{})
+	mxList, err := client.MetricsV1beta1().NodeMetricses().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return mx, err
 	}
@@ -160,7 +161,7 @@ func (m *MetricsServer) FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error) {
 }
 
 // FetchPodsMetrics return all metrics for pods in a given namespace.
-func (m *MetricsServer) FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, error) {
+func (m *MetricsServer) FetchPodsMetrics(ctx context.Context, ns string) (*mv1beta1.PodMetricsList, error) {
 	mx := new(mv1beta1.PodMetricsList)
 	const msg = "user is not authorized to list pods metrics"
 
@@ -184,7 +185,7 @@ func (m *MetricsServer) FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, e
 	if err != nil {
 		return mx, err
 	}
-	mxList, err := client.MetricsV1beta1().PodMetricses(ns).List(metav1.ListOptions{})
+	mxList, err := client.MetricsV1beta1().PodMetricses(ns).List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return mx, err
 	}
@@ -194,7 +195,7 @@ func (m *MetricsServer) FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, e
 }
 
 // FetchPodMetrics return all metrics for pods in a given namespace.
-func (m *MetricsServer) FetchPodMetrics(fqn string) (*mv1beta1.PodMetrics, error) {
+func (m *MetricsServer) FetchPodMetrics(ctx context.Context, fqn string) (*mv1beta1.PodMetrics, error) {
 	var mx *mv1beta1.PodMetrics
 	const msg = "user is not authorized to list pod metrics"
 
@@ -218,7 +219,7 @@ func (m *MetricsServer) FetchPodMetrics(fqn string) (*mv1beta1.PodMetrics, error
 	if err != nil {
 		return mx, err
 	}
-	mx, err = client.MetricsV1beta1().PodMetricses(ns).Get(n, metav1.GetOptions{})
+	mx, err = client.MetricsV1beta1().PodMetricses(ns).Get(ctx, n, metav1.GetOptions{})
 	if err != nil {
 		return mx, err
 	}

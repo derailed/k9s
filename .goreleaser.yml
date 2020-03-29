@@ -19,6 +19,8 @@ builds:
       - arm
     goarm:
       - 7
+    flags:
+      - -trimpath
     ldflags:
       - -s -w -X github.com/derailed/k9s/cmd.version={{.Version}} -X github.com/derailed/k9s/cmd.commit={{.Commit}} -X github.com/derailed/k9s/cmd.date={{.Date}}
 archives:

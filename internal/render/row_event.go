@@ -164,6 +164,9 @@ func (r RowEvents) FindIndex(id string) (int, bool) {
 
 // Sort rows based on column index and order.
 func (r RowEvents) Sort(ns string, sortCol int, ageCol bool, asc bool) {
+	if sortCol == -1 {
+		return
+	}
 	t := RowEventSorter{NS: ns, Events: r, Index: sortCol, Asc: asc}
 	sort.Sort(t)
 

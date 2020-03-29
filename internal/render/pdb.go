@@ -55,7 +55,7 @@ func (p PodDisruptionBudget) Render(o interface{}, ns string, r *Row) error {
 		pdb.Name,
 		numbToStr(pdb.Spec.MinAvailable),
 		numbToStr(pdb.Spec.MaxUnavailable),
-		strconv.Itoa(int(pdb.Status.PodDisruptionsAllowed)),
+		strconv.Itoa(int(pdb.Status.DisruptionsAllowed)),
 		strconv.Itoa(int(pdb.Status.CurrentHealthy)),
 		strconv.Itoa(int(pdb.Status.DesiredHealthy)),
 		strconv.Itoa(int(pdb.Status.ExpectedPods)),

@@ -1,6 +1,8 @@
 package model
 
 import (
+	"context"
+
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	v1 "k8s.io/api/core/v1"
@@ -20,8 +22,8 @@ type (
 	// MetricsService calls the metrics server for metrics info.
 	MetricsService interface {
 		HasMetrics() bool
-		FetchNodesMetrics() (*mv1beta1.NodeMetricsList, error)
-		FetchPodsMetrics(ns string) (*mv1beta1.PodMetricsList, error)
+		FetchNodesMetrics(ctx context.Context) (*mv1beta1.NodeMetricsList, error)
+		FetchPodsMetrics(ctx context.Context, ns string) (*mv1beta1.PodMetricsList, error)
 	}
 
 	// Cluster represents a kubernetes resource.
@@ -77,13 +79,13 @@ func (c *Cluster) UserName() string {
 }
 
 // Metrics gathers node level metrics and compute utilization percentages.
-func (c *Cluster) Metrics(mx *client.ClusterMetrics) error {
-	nn, err := dao.FetchNodes(c.factory, "")
+func (c *Cluster) Metrics(ctx context.Context, mx *client.ClusterMetrics) error {
+	nn, err := dao.FetchNodes(ctx, c.factory, "")
 	if err != nil {
 		return err
 	}
 
-	nmx, err := c.mx.FetchNodesMetrics()
+	nmx, err := c.mx.FetchNodesMetrics(ctx)
 	if err != nil {
 		return err
 	}

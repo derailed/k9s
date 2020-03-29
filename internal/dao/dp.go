@@ -35,7 +35,7 @@ func (d *Deployment) IsHappy(dp appsv1.Deployment) bool {
 }
 
 // Scale a Deployment.
-func (d *Deployment) Scale(path string, replicas int32) error {
+func (d *Deployment) Scale(ctx context.Context, path string, replicas int32) error {
 	ns, n := client.Namespaced(path)
 	auth, err := d.Client().CanI(ns, "apps/v1/deployments:scale", []string{client.GetVerb, client.UpdateVerb})
 	if err != nil {
@@ -45,18 +45,18 @@ func (d *Deployment) Scale(path string, replicas int32) error {
 		return fmt.Errorf("user is not authorized to scale a deployment")
 	}
 
-	scale, err := d.Client().DialOrDie().AppsV1().Deployments(ns).GetScale(n, metav1.GetOptions{})
+	scale, err := d.Client().DialOrDie().AppsV1().Deployments(ns).GetScale(ctx, n, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	scale.Spec.Replicas = replicas
-	_, err = d.Client().DialOrDie().AppsV1().Deployments(ns).UpdateScale(n, scale)
+	_, err = d.Client().DialOrDie().AppsV1().Deployments(ns).UpdateScale(ctx, n, scale, metav1.UpdateOptions{})
 
 	return err
 }
 
 // Restart a Deployment rollout.
-func (d *Deployment) Restart(path string) error {
+func (d *Deployment) Restart(ctx context.Context, path string) error {
 	dp, err := d.Load(d.Factory, path)
 	if err != nil {
 		return err
@@ -75,7 +75,13 @@ func (d *Deployment) Restart(path string) error {
 		return err
 	}
 
-	_, err = d.Client().DialOrDie().AppsV1().Deployments(dp.Namespace).Patch(dp.Name, types.StrategicMergePatchType, update)
+	_, err = d.Client().DialOrDie().AppsV1().Deployments(dp.Namespace).Patch(
+		ctx,
+		dp.Name,
+		types.StrategicMergePatchType,
+		update,
+		metav1.PatchOptions{},
+	)
 	return err
 }
 

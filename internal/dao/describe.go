@@ -4,7 +4,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	"k8s.io/kubectl/pkg/describe"
-	"k8s.io/kubectl/pkg/describe/versioned"
 )
 
 // Describe describes a resource.
@@ -31,7 +30,7 @@ func Describe(c client.Connection, gvr client.GVR, path string) (string, error) 
 		log.Error().Err(err).Msgf("Unable to find mapper for %s %s", gvr, n)
 		return "", err
 	}
-	d, err := versioned.Describer(c.Config().Flags(), mapping)
+	d, err := describe.Describer(c.Config().Flags(), mapping)
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to find describer for %#v", mapping)
 		return "", err

@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/kubernetes/pkg/util/node"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -262,7 +261,7 @@ func (*Pod) Statuses(ss []v1.ContainerStatus) (cr, ct, rc int) {
 func (p *Pod) Phase(po *v1.Pod) string {
 	status := string(po.Status.Phase)
 	if po.Status.Reason != "" {
-		if po.DeletionTimestamp != nil && po.Status.Reason == node.NodeUnreachablePodReason {
+		if po.DeletionTimestamp != nil && po.Status.Reason == "NodeLost" {
 			return "Unknown"
 		}
 		status = po.Status.Reason

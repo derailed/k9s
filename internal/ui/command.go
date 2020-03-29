@@ -26,7 +26,12 @@ type Command struct {
 
 // NewCommand returns a new command view.
 func NewCommand(styles *config.Styles, m *model.FishBuff) *Command {
-	c := Command{styles: styles, TextView: tview.NewTextView(), model: m, suggestionIndex: -1}
+	c := Command{
+		styles:          styles,
+		TextView:        tview.NewTextView(),
+		model:           m,
+		suggestionIndex: -1,
+	}
 	c.SetWordWrap(true)
 	c.ShowCursor(true)
 	c.SetWrap(true)

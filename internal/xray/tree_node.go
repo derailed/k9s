@@ -469,33 +469,67 @@ func (t TreeNode) toEmojiTitle() (title string) {
 }
 
 func toEmoji(gvr string) string {
+	if ic := toEmojiXRay(gvr); ic != "" {
+		return ic
+	}
 	switch gvr {
-	case "containers":
-		return "🐳"
-	case "v1/namespaces", "namespaces":
-		return "🗂"
-	case "v1/pods", "pods":
-		return "🚛"
-	case "v1/services", "services":
-		return "💁‍♀️"
-	case "v1/serviceaccounts", "serviceaccounts":
-		return "💳"
-	case "v1/persistentvolumes", "persistentvolumes":
-		return "📚"
-	case "v1/persistentvolumeclaims", "persistentvolumeclaims":
-		return "🎟"
-	case "v1/secrets", "secrets":
-		return "🔒"
-	case "v1/configmaps", "configmaps":
-		return "🗺"
-	case "apps/v1/deployments", "deployments":
-		return "🪂"
-	case "apps/v1/statefulsets", "statefulsets":
-		return "🎎"
-	case "apps/v1/daemonsets", "daemonsets":
-		return "😈"
+	case "replicasets", "replicaset":
+		return "👯‍♂️"
+	case "nodes", "node":
+		return "🖥 "
+	case "horizontalpodautoscalers", "horizontalpodautoscaler":
+		return "♎️"
+	case "clusterrolebindings", "clusterrolebinding", "clusterroles", "clusterrole":
+		return "👩‍"
+	case "rolebindings", "rolebinding", "roles", "role":
+		return "👨🏻‍"
+	case "networkpolicies", "networkpolicy":
+		return "📕"
+	case "poddisruptionbudgets", "poddisruptionbudget":
+		return "🏷 "
+	case "issue_0":
+		return "👍"
+	case "issue_1":
+		return "🔊"
+	case "issue_2":
+		return "☣️ "
+	case "issue_3":
+		return "🧨"
+	case "report":
+		return "🧼"
 	default:
 		return "📎"
+	}
+}
+
+func toEmojiXRay(gvr string) string {
+	switch gvr {
+	case "containers", "container":
+		return "🐳"
+	case "v1/namespaces", "namespaces", "namespace":
+		return "🗂 "
+	case "v1/pods", "pods", "pod":
+		return "🚛"
+	case "v1/services", "services", "service":
+		return "💁‍♀️"
+	case "v1/serviceaccounts", "serviceaccounts", "serviceaccount":
+		return "💳"
+	case "v1/persistentvolumes", "persistentvolumes", "persistentvolume":
+		return "📚"
+	case "v1/persistentvolumeclaims", "persistentvolumeclaims", "persistentvolumeclaim":
+		return "🎟 "
+	case "v1/secrets", "secrets", "secret":
+		return "🔒"
+	case "v1/configmaps", "configmaps", "configmap":
+		return "🗺 "
+	case "apps/v1/deployments", "deployments", "deployment":
+		return "🪂"
+	case "apps/v1/statefulsets", "statefulsets", "statefulset":
+		return "🎎"
+	case "apps/v1/daemonsets", "daemonsets", "daemonset":
+		return "😈"
+	default:
+		return ""
 	}
 }
 

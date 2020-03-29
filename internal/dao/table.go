@@ -21,8 +21,6 @@ type Table struct {
 
 // Get returns a given resource.
 func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
-	ns, n := client.Namespaced(path)
-
 	a := fmt.Sprintf(gvFmt, metav1beta1.SchemeGroupVersion.Version, metav1beta1.GroupName)
 	_, codec := t.codec()
 
@@ -30,18 +28,17 @@ func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	o, err := c.Get().
+	ns, n := client.Namespaced(path)
+	req := c.Get().
 		SetHeader("Accept", a).
-		Namespace(ns).
 		Name(n).
 		Resource(t.gvr.R()).
-		VersionedParams(&metav1beta1.TableOptions{}, codec).
-		Do().Get()
-	if err != nil {
-		return nil, err
+		VersionedParams(&metav1beta1.TableOptions{}, codec)
+	if ns != client.ClusterScope {
+		req = req.Namespace(ns)
 	}
 
-	return o, nil
+	return req.Do(ctx).Get()
 }
 
 // List all Resources in a given namespace.
@@ -63,7 +60,7 @@ func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		Namespace(ns).
 		Resource(t.gvr.R()).
 		VersionedParams(&metav1.ListOptions{LabelSelector: labelSel}, codec).
-		Do().Get()
+		Do(ctx).Get()
 	if err != nil {
 		return nil, err
 	}

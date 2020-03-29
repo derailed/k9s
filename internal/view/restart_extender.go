@@ -1,9 +1,11 @@
 package view
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
@@ -43,8 +45,10 @@ func (r *RestartExtender) restartCmd(evt *tcell.EventKey) *tcell.EventKey {
 		msg = fmt.Sprintf("Restart %d deployments?", len(paths))
 	}
 	dialog.ShowConfirm(r.App().Content.Pages, "Confirm Restart", msg, func() {
+		ctx, cancel := context.WithTimeout(context.Background(), client.CallTimeout)
+		defer cancel()
 		for _, path := range paths {
-			if err := r.restartRollout(path); err != nil {
+			if err := r.restartRollout(ctx, path); err != nil {
 				r.App().Flash().Err(err)
 			} else {
 				r.App().Flash().Infof("Rollout restart in progress for `%s...", path)
@@ -55,7 +59,7 @@ func (r *RestartExtender) restartCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (r *RestartExtender) restartRollout(path string) error {
+func (r *RestartExtender) restartRollout(ctx context.Context, path string) error {
 	res, err := dao.AccessorFor(r.App().factory, r.GVR())
 	if err != nil {
 		return nil
@@ -65,5 +69,5 @@ func (r *RestartExtender) restartRollout(path string) error {
 		return errors.New("resource is not restartable")
 	}
 
-	return s.Restart(path)
+	return s.Restart(ctx, path)
 }

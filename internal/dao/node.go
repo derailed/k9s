@@ -50,7 +50,7 @@ func (n *Node) ToggleCordon(path string, cordon bool) error {
 		}
 		return fmt.Errorf("node is already uncordoned")
 	}
-	err, patchErr := h.PatchOrReplace(n.Factory.Client().DialOrDie())
+	err, patchErr := h.PatchOrReplace(n.Factory.Client().DialOrDie(), false)
 	if patchErr != nil {
 		return patchErr
 	}
@@ -97,8 +97,30 @@ func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
 }
 
 // Get returns a node resource.
-func (n *Node) Get(_ context.Context, path string) (runtime.Object, error) {
-	return FetchNode(n.Factory, path)
+func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
+	var (
+		nmx *mv1beta1.NodeMetricsList
+		err error
+	)
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
+		if nmx, err = client.DialMetrics(n.Client()).FetchNodesMetrics(ctx); err != nil {
+			log.Warn().Err(err).Msgf("No node metrics")
+		}
+	}
+
+	no, err := FetchNode(ctx, n.Factory, path)
+	if err != nil {
+		return nil, err
+	}
+	o, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&no)
+	if err != nil {
+		return nil, err
+	}
+
+	return &render.NodeWithMetrics{
+		Raw: &unstructured.Unstructured{Object: o},
+		MX:  nodeMetricsFor(MetaFQN(no.ObjectMeta), nmx),
+	}, nil
 }
 
 // List returns a collection of node resources.
@@ -113,12 +135,12 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		err error
 	)
 	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
-		if nmx, err = client.DialMetrics(n.Client()).FetchNodesMetrics(); err != nil {
+		if nmx, err = client.DialMetrics(n.Client()).FetchNodesMetrics(ctx); err != nil {
 			log.Warn().Err(err).Msgf("No node metrics")
 		}
 	}
 
-	nn, err := FetchNodes(n.Factory, labels)
+	nn, err := FetchNodes(ctx, n.Factory, labels)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +163,7 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 // Helpers...
 
 // FetchNode retrieves a node.
-func FetchNode(f Factory, path string) (*v1.Node, error) {
+func FetchNode(ctx context.Context, f Factory, path string) (*v1.Node, error) {
 	auth, err := f.Client().CanI("", "v1/nodes", []string{"get"})
 	if err != nil {
 		return nil, err
@@ -150,11 +172,11 @@ func FetchNode(f Factory, path string) (*v1.Node, error) {
 		return nil, fmt.Errorf("user is not authorized to list nodes")
 	}
 
-	return f.Client().DialOrDie().CoreV1().Nodes().Get(path, metav1.GetOptions{})
+	return f.Client().DialOrDie().CoreV1().Nodes().Get(ctx, path, metav1.GetOptions{})
 }
 
 // FetchNodes retrieves all nodes.
-func FetchNodes(f Factory, labelsSel string) (*v1.NodeList, error) {
+func FetchNodes(ctx context.Context, f Factory, labelsSel string) (*v1.NodeList, error) {
 	auth, err := f.Client().CanI("", "v1/nodes", []string{client.ListVerb})
 	if err != nil {
 		return nil, err
@@ -163,7 +185,7 @@ func FetchNodes(f Factory, labelsSel string) (*v1.NodeList, error) {
 		return nil, fmt.Errorf("user is not authorized to list nodes")
 	}
 
-	return f.Client().DialOrDie().CoreV1().Nodes().List(metav1.ListOptions{
+	return f.Client().DialOrDie().CoreV1().Nodes().List(ctx, metav1.ListOptions{
 		LabelSelector: labelsSel,
 	})
 }

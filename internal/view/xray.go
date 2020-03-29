@@ -470,11 +470,10 @@ func (x *Xray) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if spec == nil {
 		return nil
 	}
-	log.Debug().Msgf("SELECTED REF %#v", spec)
 	if len(strings.Split(spec.Path(), "/")) == 1 {
 		return nil
 	}
-	if err := x.app.viewResource(client.NewGVR(spec.GVR()).R(), spec.Path(), false); err != nil {
+	if err := x.app.gotoResource(client.NewGVR(spec.GVR()).R(), spec.Path(), false); err != nil {
 		x.app.Flash().Err(err)
 	}
 
@@ -542,7 +541,6 @@ func (x *Xray) update(node *xray.TreeNode) {
 			}
 
 			if spec.AsPath() == x.GetSelectedItem() {
-				log.Debug().Msgf("SEL %q--%q", spec.Path(), x.GetSelectedItem())
 				node.SetExpanded(true).SetSelectable(true)
 				x.SetCurrentNode(node)
 			}

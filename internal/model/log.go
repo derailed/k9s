@@ -176,7 +176,6 @@ func (l *Log) load() error {
 		if l.cancelFn != nil {
 			l.cancelFn()
 		}
-		close(c)
 		return err
 	}
 

@@ -2,6 +2,7 @@ package view
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"strings"
 	"time"
@@ -132,9 +133,12 @@ func (n *Node) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), client.CallTimeout)
+	defer cancel()
+
 	sel := n.GetTable().GetSelectedItem()
 	gvr := n.GVR().GVR()
-	o, err := n.App().factory.Client().DynDialOrDie().Resource(gvr).Get(sel, metav1.GetOptions{})
+	o, err := n.App().factory.Client().DynDialOrDie().Resource(gvr).Get(ctx, sel, metav1.GetOptions{})
 	if err != nil {
 		n.App().Flash().Errf("Unable to get resource %q -- %s", n.GVR(), err)
 		return nil
