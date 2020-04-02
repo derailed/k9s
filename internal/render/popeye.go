@@ -91,6 +91,7 @@ type (
 	// Section represents a sanitizer pass
 	Section struct {
 		Title   string  `json:"sanitizer" yaml:"sanitizer"`
+		GVR     string  `yaml:"gvr" json:"gvr"`
 		Tally   *Tally  `json:"tally" yaml:"tally"`
 		Outcome Outcome `json:"issues,omitempty" yaml:"issues,omitempty"`
 	}
@@ -100,6 +101,7 @@ type (
 
 	Issue struct {
 		Group   string       `yaml:"group" json:"group"`
+		GVR     string       `yaml:"gvr" json:"gvr"`
 		Level   config.Level `yaml:"level" json:"level"`
 		Message string       `yaml:"message" json:"message"`
 	}

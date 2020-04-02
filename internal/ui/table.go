@@ -34,6 +34,7 @@ type Table struct {
 	actions     KeyActions
 	gvr         client.GVR
 	Path        string
+	Extras      string
 	cmdBuff     *model.CmdBuff
 	styles      *config.Styles
 	viewSetting *config.ViewSetting
@@ -225,7 +226,12 @@ func (t *Table) doUpdate(data render.TableData) {
 		c.SetTextColor(fg)
 		col++
 	}
-	custData.RowEvents.Sort(custData.Namespace, custData.Header.IndexOf(t.sortCol.name, false), t.sortCol.name == "AGE", t.sortCol.asc)
+	custData.RowEvents.Sort(
+		custData.Namespace,
+		custData.Header.IndexOf(t.sortCol.name, false),
+		t.sortCol.name == "AGE",
+		t.sortCol.asc,
+	)
 
 	pads := make(MaxyPad, len(custData.Header))
 	ComputeMaxColumns(pads, t.sortCol.name, custData.Header, custData.RowEvents)
@@ -322,8 +328,13 @@ func (t *Table) Refresh() {
 }
 
 // GetSelectedRow returns the entire selected row.
-func (t *Table) GetSelectedRow() render.Row {
-	return t.model.Peek().RowEvents[t.GetSelectedRowIndex()-1].Row
+func (t *Table) GetSelectedRow(path string) (render.Row, bool) {
+	data := t.model.Peek()
+	i, ok := data.RowEvents.FindIndex(path)
+	if !ok {
+		return render.Row{}, ok
+	}
+	return data.RowEvents[i].Row, true
 }
 
 // NameColIndex returns the index of the resource name column.
@@ -409,7 +420,9 @@ func (t *Table) styleTitle() string {
 			ns = path
 		}
 	}
-
+	if t.Extras != "" {
+		ns = t.Extras
+	}
 	var title string
 	if ns == client.ClusterScope {
 		title = SkinTitle(fmt.Sprintf(TitleFmt, base, rc), t.styles.Frame())

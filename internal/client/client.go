@@ -235,6 +235,8 @@ func (a *APIClient) HasMetrics() bool {
 	defer cancel()
 	if _, err := dial.MetricsV1beta1().NodeMetricses().List(ctx, metav1.ListOptions{Limit: 1}); err == nil {
 		flag = true
+	} else {
+		log.Error().Err(err).Msgf("List metrics failed")
 	}
 	a.cache.Add(cacheMXKey, flag, cacheExpiry)
 
@@ -359,6 +361,7 @@ func (a *APIClient) supportsMetricsResources() (supported bool) {
 
 	apiGroups, err := a.CachedDiscoveryOrDie().ServerGroups()
 	if err != nil {
+		log.Debug().Msgf("Unable to access servergroups %#v", err)
 		return
 	}
 	for _, grp := range apiGroups.Groups {

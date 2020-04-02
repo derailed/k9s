@@ -179,7 +179,7 @@ func (t *Table) Peek() render.TableData {
 }
 
 func (t *Table) updater(ctx context.Context) {
-	defer log.Debug().Msgf("Model canceled -- %q", t.gvr)
+	defer log.Debug().Msgf("TABLE-MODEL canceled -- %q", t.gvr)
 
 	rate := initRefreshRate
 	for {

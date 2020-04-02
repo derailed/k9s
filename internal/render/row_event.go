@@ -3,10 +3,8 @@ package render
 import (
 	"fmt"
 	"sort"
-	"time"
 
 	"github.com/rs/zerolog/log"
-	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 const (
@@ -170,37 +168,23 @@ func (r RowEvents) Sort(ns string, sortCol int, ageCol bool, asc bool) {
 	t := RowEventSorter{NS: ns, Events: r, Index: sortCol, Asc: asc}
 	sort.Sort(t)
 
-	gg, kk := map[string][]string{}, make(StringSet, 0, len(r))
+	iids, fields := map[string][]string{}, make(StringSet, 0, len(r))
 	for _, re := range r {
-		g := re.Row.Fields[sortCol]
+		field := re.Row.Fields[sortCol]
 		if ageCol {
-			g = toAgeDuration(g)
+			field = toAgeDuration(field)
 		}
-		kk = kk.Add(g)
-		if ss, ok := gg[g]; ok {
-			gg[g] = append(ss, re.Row.ID)
-		} else {
-			gg[g] = []string{re.Row.ID}
-		}
+		fields = fields.Add(field)
+		iids[field] = append(iids[field], re.Row.ID)
 	}
 
 	ids := make([]string, 0, len(r))
-	for _, k := range kk {
-		sort.StringSlice(gg[k]).Sort()
-		ids = append(ids, gg[k]...)
+	for _, field := range fields {
+		sort.StringSlice(iids[field]).Sort()
+		ids = append(ids, iids[field]...)
 	}
 	s := IdSorter{Ids: ids, Events: r}
 	sort.Sort(s)
-}
-
-// Helpers...
-
-func toAgeDuration(dur string) string {
-	d, err := time.ParseDuration(dur)
-	if err != nil {
-		return dur
-	}
-	return duration.HumanDuration(d)
 }
 
 // ----------------------------------------------------------------------------

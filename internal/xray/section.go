@@ -18,7 +18,7 @@ func (s *Section) Render(ctx context.Context, ns string, o interface{}) error {
 	if !ok {
 		return fmt.Errorf("Expected Section, but got %T", o)
 	}
-	root := NewTreeNode(section.Title, section.Title)
+	root := NewTreeNode(section.GVR, section.Title)
 	parent, ok := ctx.Value(KeyParent).(*TreeNode)
 	if !ok {
 		return fmt.Errorf("Expecting a TreeNode but got %T", ctx.Value(KeyParent))
@@ -38,34 +38,23 @@ func cleanse(s string) string {
 
 func (c *Section) outcomeRefs(parent *TreeNode, section render.Section) {
 	for k, issues := range section.Outcome {
-		p := NewTreeNode(section.Title, cleanse(k))
+		p := NewTreeNode(section.GVR, cleanse(k))
 		parent.Add(p)
-		for _, i := range issues {
-			msg := colorize(cleanse(i.Message), i.Level)
-			c := NewTreeNode(fmt.Sprintf("issue_%d", i.Level), msg)
-			if i.Group == "__root__" {
+		for _, issue := range issues {
+			msg := colorize(cleanse(issue.Message), issue.Level)
+			c := NewTreeNode(fmt.Sprintf("issue_%d", issue.Level), msg)
+			if issue.Group == "__root__" {
 				p.Add(c)
 				continue
 			}
-			if pa := p.Find(childOf(section.Title), i.Group); pa != nil {
+			if pa := p.Find(issue.GVR, issue.Group); pa != nil {
 				pa.Add(c)
 				continue
 			}
-			pa := NewTreeNode(childOf(section.Title), i.Group)
+			pa := NewTreeNode(issue.GVR, issue.Group)
 			pa.Add(c)
 			p.Add(pa)
 		}
-	}
-}
-
-func childOf(s string) string {
-	switch s {
-	case "deployment", "statefulset", "daemonset":
-		return "v1/pods"
-	case "pod":
-		return "containers"
-	default:
-		return ""
 	}
 }
 

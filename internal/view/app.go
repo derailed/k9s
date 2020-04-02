@@ -43,15 +43,16 @@ type App struct {
 	cancelFn     context.CancelFunc
 	conRetry     int32
 	clusterModel *model.ClusterInfo
+	history      *model.History
 }
 
 // NewApp returns a K9s app instance.
 func NewApp(cfg *config.Config) *App {
 	a := App{
-		App:     ui.NewApp(cfg.K9s.CurrentContext),
+		App:     ui.NewApp(cfg, cfg.K9s.CurrentContext),
 		Content: NewPageStack(),
+		history: model.NewHistory(model.MaxHistory),
 	}
-	a.Config = cfg
 
 	a.Views()["statusIndicator"] = ui.NewStatusIndicator(a.App, a.Styles)
 	a.Views()["clusterInfo"] = NewClusterInfo(&a)
@@ -121,22 +122,26 @@ func (a *App) Init(version string, rate int) error {
 func (a *App) suggestCommand() func(s string) (entries sort.StringSlice) {
 	return func(s string) (entries sort.StringSlice) {
 		if s == "" {
-			return
+			if a.history.Empty() {
+				return
+			}
+			return a.history.List()
 		}
+
+		lowS := strings.ToLower(s)
 		for _, k := range a.command.alias.Aliases.Keys() {
-			lok, los := strings.ToLower(k), strings.ToLower(s)
-			if lok == los {
+			lowK := strings.ToLower(k)
+			if lowK == lowS {
 				continue
 			}
-			if strings.HasPrefix(lok, los) {
-				entries = append(entries, strings.Replace(k, los, "", 1))
+			if strings.HasPrefix(lowK, lowS) {
+				entries = append(entries, strings.Replace(k, lowS, "", 1))
 			}
 		}
 		if len(entries) == 0 {
-			entries = nil
+			return nil
 		}
 		entries.Sort()
-
 		return
 	}
 }

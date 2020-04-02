@@ -75,7 +75,7 @@ func miscViewers(vv MetaViewers) {
 	vv[client.NewGVR("popeye")] = MetaViewer{
 		viewerFn: NewPopeye,
 	}
-	vv[client.NewGVR("report")] = MetaViewer{
+	vv[client.NewGVR("sanitizer")] = MetaViewer{
 		viewerFn: NewSanitizer,
 	}
 

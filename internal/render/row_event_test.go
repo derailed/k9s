@@ -409,11 +409,41 @@ func TestRowEventsDelete(t *testing.T) {
 
 func TestRowEventsSort(t *testing.T) {
 	uu := map[string]struct {
-		re  render.RowEvents
-		col int
-		asc bool
-		e   render.RowEvents
+		re       render.RowEvents
+		col      int
+		age, asc bool
+		e        render.RowEvents
 	}{
+		"age_time": {
+			re: render.RowEvents{
+				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "1h10m10.5s"}}},
+				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "10.5s"}}},
+				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3h20m5.2s"}}},
+			},
+			col: 2,
+			asc: true,
+			age: true,
+			e: render.RowEvents{
+				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "10.5s"}}},
+				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "1h10m10.5s"}}},
+				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3h20m5.2s"}}},
+			},
+		},
+		"age_duration": {
+			re: render.RowEvents{
+				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "32d"}}},
+				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "1m10s"}}},
+				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3h20m5s"}}},
+			},
+			col: 2,
+			asc: true,
+			age: true,
+			e: render.RowEvents{
+				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "1m10s"}}},
+				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3h20m5s"}}},
+				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "32d"}}},
+			},
+		},
 		"col0": {
 			re: render.RowEvents{
 				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
@@ -453,7 +483,7 @@ func TestRowEventsSort(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.re.Sort("", u.col, false, u.asc)
+			u.re.Sort("", u.col, u.age, u.asc)
 			assert.Equal(t, u.e, u.re)
 		})
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -38,6 +39,7 @@ func (p *Popeye) Init(ctx context.Context) error {
 		return err
 	}
 	p.GetTable().GetModel().SetNamespace("*")
+	p.GetTable().GetModel().SetRefreshRate(5 * time.Second)
 
 	return nil
 }
@@ -52,7 +54,7 @@ func (p *Popeye) decorateRows(data render.TableData) render.TableData {
 		sum += n
 	}
 	score := sum / len(data.RowEvents)
-	p.GetTable().Path = fmt.Sprintf("Score %d -- %s", score, grade(score))
+	p.GetTable().Extras = fmt.Sprintf("Score %d -- %s", score, grade(score))
 	return data
 }
 
@@ -75,7 +77,7 @@ func (p *Popeye) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	v := NewSanitizer(client.NewGVR("report"))
+	v := NewSanitizer(client.NewGVR("sanitizer"))
 	v.SetContextFn(sanitizerCtx(path))
 
 	if err := p.App().inject(v); err != nil {

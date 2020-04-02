@@ -9,28 +9,39 @@ import (
 	"github.com/gdamore/tcell"
 )
 
-const defaultPrompt = "%c> [::b]%s"
+const (
+	defaultPrompt = "%c> [::b]%s"
+	defaultSpacer = 4
+)
 
 // Command captures users free from command input.
 type Command struct {
 	*tview.TextView
 
 	activated       bool
+	noIcons         bool
 	icon            rune
 	text            string
+	suggestion      string
 	styles          *config.Styles
 	model           *model.FishBuff
 	suggestions     []string
 	suggestionIndex int
+	spacer          int
 }
 
 // NewCommand returns a new command view.
-func NewCommand(styles *config.Styles, m *model.FishBuff) *Command {
+func NewCommand(noIcons bool, styles *config.Styles, m *model.FishBuff) *Command {
 	c := Command{
 		styles:          styles,
+		noIcons:         noIcons,
 		TextView:        tview.NewTextView(),
+		spacer:          defaultSpacer,
 		model:           m,
 		suggestionIndex: -1,
+	}
+	if noIcons {
+		c.spacer--
 	}
 	c.SetWordWrap(true)
 	c.ShowCursor(true)
@@ -55,7 +66,7 @@ func (c *Command) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyCtrlW, tcell.KeyCtrlU:
 		c.model.Clear()
 	case tcell.KeyDown:
-		if c.text == "" || c.suggestionIndex < 0 {
+		if c.suggestionIndex < 0 {
 			return evt
 		}
 		c.suggestionIndex++
@@ -64,7 +75,7 @@ func (c *Command) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		}
 		c.suggest(c.model.String(), c.suggestions[c.suggestionIndex])
 	case tcell.KeyUp:
-		if c.text == "" || c.suggestionIndex < 0 {
+		if c.suggestionIndex < 0 {
 			return evt
 		}
 		c.suggestionIndex--
@@ -95,7 +106,8 @@ func (c *Command) InCmdMode() bool {
 
 func (c *Command) activate() {
 	c.SetCursorIndex(len(c.text))
-	c.write(c.text, "")
+	c.write(false, c.text, "")
+	c.model.Activate()
 }
 
 func (c *Command) update(s string) {
@@ -104,19 +116,24 @@ func (c *Command) update(s string) {
 	}
 	c.text = s
 	c.Clear()
-	c.write(s, "")
+	c.write(false, s, "")
 }
 
 func (c *Command) suggest(text, suggestion string) {
 	c.Clear()
-	c.write(text, suggestion)
+	c.write(false, text, suggestion)
 }
 
-func (c *Command) write(text, suggest string) {
-	c.SetCursorIndex(4 + len(text))
+func (c *Command) write(append bool, text, suggest string) {
+	c.suggestion = suggest
+	c.SetCursorIndex(c.spacer + len(text))
 	txt := text
 	if suggest != "" {
 		txt += "[gray::-]" + suggest
+	}
+	if append {
+		fmt.Fprintf(c, "[gray::-]%s", suggest)
+		return
 	}
 	fmt.Fprintf(c, defaultPrompt, c.icon, txt)
 }
@@ -131,7 +148,10 @@ func (c *Command) SuggestionChanged(ss []string) {
 		c.suggestionIndex = -1
 		return
 	}
-	fmt.Fprintf(c, "[gray::-]%s", ss[c.suggestionIndex])
+	if c.suggestion == ss[c.suggestionIndex] {
+		return
+	}
+	c.write(true, c.text, ss[c.suggestionIndex])
 }
 
 // BufferChanged indicates the buffer was changed.
@@ -145,7 +165,7 @@ func (c *Command) BufferActive(f bool, k model.BufferKind) {
 		c.SetBorder(true)
 		c.SetTextColor(c.styles.FgColor())
 		c.SetBorderColor(colorFor(k))
-		c.icon = iconFor(k)
+		c.icon = c.iconFor(k)
 		c.activate()
 	} else {
 		c.SetBorder(false)
@@ -154,20 +174,27 @@ func (c *Command) BufferActive(f bool, k model.BufferKind) {
 	}
 }
 
+func (c *Command) iconFor(k model.BufferKind) rune {
+	if c.noIcons {
+		return ' '
+	}
+
+	switch k {
+	case model.Command:
+		return '🐶'
+	default:
+		return '🐩'
+	}
+}
+
+// ----------------------------------------------------------------------------
+// Helpers...
+
 func colorFor(k model.BufferKind) tcell.Color {
 	switch k {
 	case model.Command:
 		return tcell.ColorAqua
 	default:
 		return tcell.ColorSeaGreen
-	}
-}
-
-func iconFor(k model.BufferKind) rune {
-	switch k {
-	case model.Command:
-		return '🐶'
-	default:
-		return '🐩'
 	}
 }

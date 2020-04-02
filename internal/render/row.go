@@ -3,6 +3,7 @@ package render
 import (
 	"reflect"
 	"sort"
+	"strconv"
 	"time"
 
 	"vbom.ml/util/sortorder"
@@ -160,36 +161,21 @@ func (s RowSorter) Less(i, j int) bool {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-// Less return true if c1 < c2.
-func Less(asc bool, c1, c2 string) bool {
-	if o, ok := isDurationSort(asc, c1, c2); ok {
-		return o
+func toAgeDuration(dur string) string {
+	d, err := time.ParseDuration(dur)
+	if err != nil {
+		return durationToSeconds(dur)
 	}
 
+	return strconv.Itoa(int(d.Seconds()))
+}
+
+// Less return true if c1 < c2.
+func Less(asc bool, c1, c2 string) bool {
+	c1, c2 = toAgeDuration(c1), toAgeDuration(c2)
 	b := sortorder.NaturalLess(c1, c2)
 	if asc {
 		return b
 	}
 	return !b
-}
-
-func isDurationSort(asc bool, s1, s2 string) (bool, bool) {
-	d1, ok1 := isDuration(s1)
-	d2, ok2 := isDuration(s2)
-	if !ok1 || !ok2 {
-		return false, false
-	}
-
-	if asc {
-		return d1 <= d2, true
-	}
-	return d1 >= d2, true
-}
-
-func isDuration(s string) (time.Duration, bool) {
-	d, err := time.ParseDuration(s)
-	if err != nil {
-		return d, false
-	}
-	return d, true
 }

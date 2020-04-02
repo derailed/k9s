@@ -5,10 +5,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"os"
 	"path/filepath"
 	"sort"
 	"time"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	cfg "github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
@@ -17,8 +20,6 @@ import (
 	"github.com/derailed/popeye/types"
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
-	restclient "k8s.io/client-go/rest"
 )
 
 var _ Accessor = (*Popeye)(nil)
@@ -51,11 +52,22 @@ func (p *Popeye) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 		log.Debug().Msgf("Popeye -- Elapsed %v", time.Since(t))
 	}(time.Now())
 
-	js := "json"
 	flags := config.NewFlags()
-	spinach := filepath.Join(cfg.K9sHome, "spinach.yml")
-	flags.Spinach = &spinach
+	js := "json"
 	flags.Output = &js
+
+	if report, ok := ctx.Value(internal.KeyPath).(string); ok && report != "" {
+		sections := []string{report}
+		flags.Sections = &sections
+	}
+	spinach := filepath.Join(cfg.K9sHome, "spinach.yml")
+	if c, err := p.Factory.Client().Config().CurrentContextName(); err == nil {
+		spinach = filepath.Join(cfg.K9sHome, fmt.Sprintf("%s_spinach.yml", c))
+	}
+	if _, err := os.Stat(spinach); err == nil {
+		flags.Spinach = &spinach
+	}
+
 	popeye, err := pkg.NewPopeye(flags, &log.Logger)
 	if err != nil {
 		return nil, err
@@ -68,6 +80,7 @@ func (p *Popeye) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	buff := readWriteCloser{Buffer: bytes.NewBufferString("")}
 	popeye.SetOutputTarget(buff)
 	if err = popeye.Sanitize(); err != nil {
+		log.Debug().Msgf("BOOM %#v", *flags.Sections)
 		return nil, err
 	}
 
@@ -93,6 +106,8 @@ func (a *Popeye) Get(_ context.Context, _ string) (runtime.Object, error) {
 	return nil, errors.New("NYI!!")
 }
 
+// Helpers...
+
 type popFactory struct {
 	Factory
 }
@@ -102,7 +117,6 @@ var _ types.Factory = (*popFactory)(nil)
 func newPopFactory(f Factory) *popFactory {
 	return &popFactory{Factory: f}
 }
-
 func (p *popFactory) Client() types.Connection {
 	return &popConnection{Connection: p.Factory.Client()}
 }
@@ -115,17 +129,4 @@ var _ types.Connection = (*popConnection)(nil)
 
 func (c *popConnection) Config() types.Config {
 	return c.Connection.Config()
-}
-
-func (c *popConnection) CurrentNamespaceName() (string, error) {
-	return c.ActiveNamespace(), nil
-}
-func (c *popConnection) CurrentClusterName() (string, error) {
-	return c.Connection.ActiveCluster(), nil
-}
-func (c *popConnection) Flags() *genericclioptions.ConfigFlags {
-	return c.Connection.Config().Flags()
-}
-func (c *popConnection) RESTConfig() (*restclient.Config, error) {
-	return c.Connection.Config().RESTConfig()
 }

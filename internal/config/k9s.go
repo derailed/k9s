@@ -2,16 +2,14 @@ package config
 
 import "github.com/derailed/k9s/internal/client"
 
-const (
-	defaultRefreshRate = 2
-	defaultReadOnly    = false
-)
+const defaultRefreshRate = 2
 
 // K9s tracks K9s configuration options.
 type K9s struct {
 	RefreshRate       int                 `yaml:"refreshRate"`
 	Headless          bool                `yaml:"headless"`
 	ReadOnly          bool                `yaml:"readOnly"`
+	NoIcons           bool                `yaml:"noIcons"`
 	Logger            *Logger             `yaml:"logger"`
 	CurrentContext    string              `yaml:"currentContext"`
 	CurrentCluster    string              `yaml:"currentCluster"`
@@ -27,7 +25,6 @@ type K9s struct {
 func NewK9s() *K9s {
 	return &K9s{
 		RefreshRate: defaultRefreshRate,
-		ReadOnly:    defaultReadOnly,
 		Logger:      NewLogger(),
 		Clusters:    make(map[string]*Cluster),
 		Thresholds:  NewThreshold(),

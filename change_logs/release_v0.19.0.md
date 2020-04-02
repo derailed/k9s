@@ -15,7 +15,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 ## A Word From Our Sponsors...
 
 It makes me always very happy to hear folks are digging this effort and using K9s daily! If you feel this way please tell us and consider joining our [sponsorship](https://github.com/sponsors/derailed) program.
-Big Thanks! to [hornbech](https://github.com/hornbech) for joining our sponsors!
+Big THANKS!! to [hornbech](https://github.com/hornbech) for joining our sponsors!
 
 ## K8s v1.18.0 Released!
 

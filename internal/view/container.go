@@ -62,12 +62,12 @@ func (c *Container) bindKeys(aa ui.KeyActions) {
 }
 
 func (c *Container) k9sEnv() Env {
-	env := defaultEnv(
-		c.App().Conn().Config(),
-		c.GetTable().GetSelectedItem(),
-		c.GetTable().GetModel().Peek().Header,
-		c.GetTable().GetSelectedRow(),
-	)
+	path := c.GetTable().GetSelectedItem()
+	row, ok := c.GetTable().GetSelectedRow(path)
+	if !ok {
+		log.Error().Msgf("unable to locate seleted row for %q", path)
+	}
+	env := defaultEnv(c.App().Conn().Config(), path, c.GetTable().GetModel().Peek().Header, row)
 	env["NAMESPACE"], env["POD"] = client.Namespaced(c.GetTable().Path)
 
 	return env

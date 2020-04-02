@@ -123,6 +123,8 @@ github.com/daviddengcn/go-colortext v0.0.0-20160507010035-511bcaf42ccd/go.mod h1
 github.com/deislabs/oras v0.8.1 h1:If674KraJVpujYR00rzdi0QAmW4BxzMJPVAZJKuhQ0c=
 github.com/deislabs/oras v0.8.1/go.mod h1:Mx0rMSbBNaNfY9hjpccEnxkOqJL6KGjtxNHPLC4G4As=
 github.com/denverdino/aliyungo v0.0.0-20190125010748-a747050bb1ba/go.mod h1:dV8lFg6daOBZbT6/BDGIz6Y3WFGn8juu6G+CQ6LHtl0=
+github.com/derailed/popeye v0.8.0 h1:D+5fHiMmuXqaF5J2bJTI+YLrD77ag5Wb1dkAuR4bPGI=
+github.com/derailed/popeye v0.8.0/go.mod h1:OBHcJDa50VpE9QNyOU243bNOtHb29MyLlVHJolwlwas=
 github.com/derailed/tview v0.3.9 h1:6iUtOmzN6gdk6yx1KNSwhMgrsLYjgldduulKPqHnqwk=
 github.com/derailed/tview v0.3.9/go.mod h1:GJ3k/TIzEE+sj1L09/usk6HrkjsdadSsb03eHgPbcII=
 github.com/dgrijalva/jwt-go v0.0.0-20170104182250-a601269ab70c/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=

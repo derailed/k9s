@@ -22,20 +22,23 @@ type App struct {
 }
 
 // NewApp returns a new app.
-func NewApp(context string) *App {
+func NewApp(cfg *config.Config, context string) *App {
 	a := App{
 		Application: tview.NewApplication(),
 		actions:     make(KeyActions),
-		Main:        NewPages(),
-		flash:       model.NewFlash(model.DefaultFlashDelay),
-		cmdBuff:     model.NewFishBuff(':', model.Command),
+		Configurator: Configurator{
+			Config: cfg,
+		},
+		Main:    NewPages(),
+		flash:   model.NewFlash(model.DefaultFlashDelay),
+		cmdBuff: model.NewFishBuff(':', model.Command),
 	}
 	a.ReloadStyles(context)
 
 	a.views = map[string]tview.Primitive{
 		"menu":   NewMenu(a.Styles),
 		"logo":   NewLogo(a.Styles),
-		"cmd":    NewCommand(a.Styles, a.cmdBuff),
+		"cmd":    NewCommand(a.Config.K9s.NoIcons, a.Styles, a.cmdBuff),
 		"crumbs": NewCrumbs(a.Styles),
 	}
 

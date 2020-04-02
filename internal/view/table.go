@@ -92,7 +92,11 @@ func (t *Table) EnvFn() EnvFunc {
 
 func (t *Table) defaultEnv() Env {
 	path := t.GetSelectedItem()
-	env := defaultEnv(t.app.Conn().Config(), path, t.GetModel().Peek().Header, t.GetSelectedRow())
+	row, ok := t.GetSelectedRow(path)
+	if !ok {
+		log.Error().Msgf("unable to locate selected row for %q", path)
+	}
+	env := defaultEnv(t.app.Conn().Config(), path, t.GetModel().Peek().Header, row)
 	env["FILTER"] = t.SearchBuff().String()
 	if env["FILTER"] == "" {
 		env["NAMESPACE"], env["FILTER"] = client.Namespaced(path)

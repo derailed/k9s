@@ -32,6 +32,14 @@ func (f *FishBuff) SetSuggestionFn(fn SuggestionFunc) {
 	f.suggestionFn = fn
 }
 
+func (f *FishBuff) Activate() {
+	if f.suggestionFn == nil {
+		return
+	}
+	cc := f.suggestionFn(string(f.buff))
+	f.fireSuggest(cc)
+}
+
 // Delete removes the last character from the buffer.
 func (f *FishBuff) Delete() {
 	f.CmdBuff.Delete()

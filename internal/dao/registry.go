@@ -47,11 +47,12 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		client.NewGVR("apps/v1/statefulsets"):          &StatefulSet{},
 		client.NewGVR("batch/v1beta1/cronjobs"):        &CronJob{},
 		client.NewGVR("batch/v1/jobs"):                 &Job{},
+		client.NewGVR("openfaas"):                      &OpenFaas{},
+		client.NewGVR("popeye"):                        &Popeye{},
+		client.NewGVR("sanitizer"):                     &Popeye{},
+
 		// BOZO!! v1.18.0
 		// client.NewGVR("charts"):                        &Chart{},
-		client.NewGVR("openfaas"): &OpenFaas{},
-		client.NewGVR("popeye"):   &Popeye{},
-		client.NewGVR("report"):   &Sanitizer{},
 	}
 
 	r, ok := m[gvr]
@@ -173,10 +174,10 @@ func loadK9s(m ResourceMetas) {
 		Verbs:        []string{},
 		Categories:   []string{"k9s"},
 	}
-	m[client.NewGVR("report")] = metav1.APIResource{
-		Name:         "report",
-		Kind:         "Report",
-		SingularName: "report",
+	m[client.NewGVR("sanitizer")] = metav1.APIResource{
+		Name:         "sanitizer",
+		Kind:         "Sanitizer",
+		SingularName: "sanitizer",
 		Verbs:        []string{},
 		Categories:   []string{"k9s"},
 	}

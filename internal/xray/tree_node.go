@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/rs/zerolog/log"
 	"vbom.ml/util/sortorder"
@@ -336,8 +335,8 @@ func (t *TreeNode) Find(gvr, id string) *TreeNode {
 }
 
 // Title computes the node title.
-func (t *TreeNode) Title(styles config.Xray) string {
-	return t.computeTitle(styles)
+func (t *TreeNode) Title(noIcons bool) string {
+	return t.computeTitle(noIcons)
 }
 
 // ----------------------------------------------------------------------------
@@ -384,8 +383,8 @@ func category(gvr string) string {
 	return meta.SingularName
 }
 
-func (t TreeNode) computeTitle(styles config.Xray) string {
-	if styles.ShowIcons {
+func (t TreeNode) computeTitle(noIcons bool) string {
+	if !noIcons {
 		return t.toEmojiTitle()
 	}
 
@@ -473,20 +472,22 @@ func toEmoji(gvr string) string {
 		return ic
 	}
 	switch gvr {
-	case "replicasets", "replicaset":
+	case "apps/v1/replicasets":
 		return "👯‍♂️"
-	case "nodes", "node":
+	case "v1/nodes":
 		return "🖥 "
-	case "horizontalpodautoscalers", "horizontalpodautoscaler":
+	case "autoscaling/v1/horizontalpodautoscalers":
 		return "♎️"
-	case "clusterrolebindings", "clusterrolebinding", "clusterroles", "clusterrole":
+	case "rbac.authorization.k8s.io/v1/clusterrolebindings", "rbac.authorization.k8s.io/v1/clusterroles":
 		return "👩‍"
-	case "rolebindings", "rolebinding", "roles", "role":
+	case "rbac.authorization.k8s.io/v1/rolebindings", "rbac.authorization.k8s.io/v1/roles":
 		return "👨🏻‍"
-	case "networkpolicies", "networkpolicy":
+	case "networking.k8s.io/v1/networkpolicies":
 		return "📕"
-	case "poddisruptionbudgets", "poddisruptionbudget":
+	case "policy/v1beta1/poddisruptionbudgets":
 		return "🏷 "
+	case "policy/v1beta1/podsecuritypolicies":
+		return "👮‍♂️"
 	case "issue_0":
 		return "👍"
 	case "issue_1":
@@ -504,29 +505,29 @@ func toEmoji(gvr string) string {
 
 func toEmojiXRay(gvr string) string {
 	switch gvr {
-	case "containers", "container":
+	case "containers":
 		return "🐳"
-	case "v1/namespaces", "namespaces", "namespace":
+	case "v1/namespaces":
 		return "🗂 "
-	case "v1/pods", "pods", "pod":
+	case "v1/pods":
 		return "🚛"
-	case "v1/services", "services", "service":
+	case "v1/services":
 		return "💁‍♀️"
-	case "v1/serviceaccounts", "serviceaccounts", "serviceaccount":
+	case "v1/serviceaccounts":
 		return "💳"
-	case "v1/persistentvolumes", "persistentvolumes", "persistentvolume":
+	case "v1/persistentvolumes":
 		return "📚"
-	case "v1/persistentvolumeclaims", "persistentvolumeclaims", "persistentvolumeclaim":
+	case "v1/persistentvolumeclaims":
 		return "🎟 "
-	case "v1/secrets", "secrets", "secret":
+	case "v1/secrets":
 		return "🔒"
-	case "v1/configmaps", "configmaps", "configmap":
+	case "v1/configmaps":
 		return "🗺 "
-	case "apps/v1/deployments", "deployments", "deployment":
+	case "apps/v1/deployments":
 		return "🪂"
-	case "apps/v1/statefulsets", "statefulsets", "statefulset":
+	case "apps/v1/statefulsets":
 		return "🎎"
-	case "apps/v1/daemonsets", "daemonsets", "daemonset":
+	case "apps/v1/daemonsets":
 		return "😈"
 	default:
 		return ""

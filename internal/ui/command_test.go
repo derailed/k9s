@@ -11,7 +11,7 @@ import (
 
 func TestCmdNew(t *testing.T) {
 	model := model.NewFishBuff(':', model.Command)
-	v := ui.NewCommand(config.NewStyles(), model)
+	v := ui.NewCommand(true, config.NewStyles(), model)
 
 	model.AddListener(v)
 	model.Set("blee")
@@ -21,7 +21,7 @@ func TestCmdNew(t *testing.T) {
 
 func TestCmdUpdate(t *testing.T) {
 	model := model.NewFishBuff(':', model.Command)
-	v := ui.NewCommand(config.NewStyles(), model)
+	v := ui.NewCommand(true, config.NewStyles(), model)
 
 	model.AddListener(v)
 	model.Set("blee")
@@ -33,7 +33,7 @@ func TestCmdUpdate(t *testing.T) {
 
 func TestCmdMode(t *testing.T) {
 	model := model.NewFishBuff(':', model.Command)
-	v := ui.NewCommand(config.NewStyles(), model)
+	v := ui.NewCommand(true, config.NewStyles(), model)
 	model.AddListener(v)
 
 	for _, f := range []bool{false, true} {

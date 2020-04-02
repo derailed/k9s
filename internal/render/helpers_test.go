@@ -9,6 +9,27 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func TestDurationToNumber(t *testing.T) {
+	uu := map[string]struct {
+		s, e string
+	}{
+		"seconds":                 {s: "22s", e: "22"},
+		"minutes":                 {s: "22m", e: "1320"},
+		"hours":                   {s: "12h", e: "43200"},
+		"days":                    {s: "3d", e: "259200"},
+		"day_hour":                {s: "3d9h", e: "291600"},
+		"day_hour_minute":         {s: "2d22h3m", e: "252180"},
+		"day_hour_minute_seconds": {s: "2d22h3m50s", e: "252230"},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, durationToSeconds(u.s))
+		})
+	}
+}
+
 func TestToAge(t *testing.T) {
 	uu := map[string]struct {
 		t time.Time

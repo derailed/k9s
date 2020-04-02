@@ -50,9 +50,10 @@ func k8sEnv(c *client.Config) Env {
 
 func defaultEnv(c *client.Config, path string, header render.Header, row render.Row) Env {
 	env := k8sEnv(c)
+	log.Debug().Msgf("PATH %q::%q", path, row.Fields[1])
 	env["NAMESPACE"], env["NAME"] = client.Namespaced(path)
-	for i := range header {
-		env["COL-"+header[i].Name] = row.Fields[i]
+	for _, col := range header.Columns(true) {
+		env["COL-"+col] = row.Fields[header.IndexOf(col, true)]
 	}
 
 	return env

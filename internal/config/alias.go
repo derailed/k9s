@@ -143,7 +143,7 @@ func (a *Aliases) loadDefaultAliases() {
 	a.declare("quit", "q", "Q")
 	a.declare("aliases", "alias", "a")
 	a.declare("popeye", "pop")
-	a.declare("sanitize", "san", "sanitize")
+	// a.declare("sanitize", "san", "sanitize")
 	a.declare("contexts", "context", "ctx")
 	a.declare("users", "user", "usr")
 	a.declare("groups", "group", "grp")
@@ -151,6 +151,7 @@ func (a *Aliases) loadDefaultAliases() {
 	a.declare("benchmarks", "benchmark", "be")
 	a.declare("screendumps", "screendump", "sd")
 	a.declare("pulses", "pulse", "pu", "hz")
+	a.declare("xrays", "xray", "x")
 }
 
 // Save alias to disk.

@@ -145,7 +145,6 @@ type (
 		BgColor      Color `yaml:"bgColor"`
 		CursorColor  Color `yaml:"cursorColor"`
 		GraphicColor Color `yaml:"graphicColor"`
-		ShowIcons    bool  `yaml:"showIcons"`
 	}
 
 	// Menu tracks menu styles.
@@ -312,7 +311,6 @@ func newXray() Xray {
 		BgColor:      "black",
 		CursorColor:  "whitesmoke",
 		GraphicColor: "floralwhite",
-		ShowIcons:    true,
 	}
 }
 

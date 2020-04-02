@@ -219,6 +219,7 @@ func (t *Tree) reconcile(ctx context.Context) error {
 		}
 	} else {
 		if err := treeHydrate(ctx, ns, oo, meta.TreeRenderer); err != nil {
+
 			return err
 		}
 	}

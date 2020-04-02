@@ -27,7 +27,6 @@ type CmdBuff struct {
 	listeners []BuffWatcher
 	hotKey    rune
 	kind      BufferKind
-	sticky    bool
 	active    bool
 }
 
@@ -39,16 +38,6 @@ func NewCmdBuff(key rune, kind BufferKind) *CmdBuff {
 		buff:      make([]rune, 0, maxBuff),
 		listeners: []BuffWatcher{},
 	}
-}
-
-// IsSticky checks if the cmd is going to perist or not.
-func (c *CmdBuff) IsSticky() bool {
-	return c.sticky
-}
-
-// SetSticky returns cmd stickness.
-func (c *CmdBuff) SetSticky(b bool) {
-	c.sticky = b
 }
 
 // InCmdMode checks if a command exists and the buffer is active.

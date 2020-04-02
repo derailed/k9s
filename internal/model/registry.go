@@ -67,8 +67,8 @@ var Registry = map[string]ResourceMeta{
 		DAO:      &dao.Popeye{},
 		Renderer: &render.Popeye{},
 	},
-	"report": {
-		DAO:          &dao.Sanitizer{},
+	"sanitizer": {
+		DAO:          &dao.Popeye{},
 		TreeRenderer: &xray.Section{},
 	},
 

@@ -34,13 +34,15 @@ type Node struct {
 
 // ToggleCordon toggles cordon/uncordon a node.
 func (n *Node) ToggleCordon(path string, cordon bool) error {
-	o, err := n.Get(context.Background(), path)
+	log.Debug().Msgf("CORDON %q::%t -- %q", path, cordon, n.gvr.GVK())
+	o, err := FetchNode(context.Background(), n.Factory, path)
 	if err != nil {
 		return err
 	}
 
 	h, err := drain.NewCordonHelperFromRuntimeObject(o, scheme.Scheme, n.gvr.GVK())
 	if err != nil {
+		log.Debug().Msgf("BOOM %v", err)
 		return err
 	}
 

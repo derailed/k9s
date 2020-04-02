@@ -98,6 +98,48 @@ K9s is available on Linux, macOS and Windows platforms.
 
 ---
 
+## The Command Line
+
+```shell
+# List all available CLI options
+k9s help
+# To get info about K9s runtime (logs, configs, etc..)
+k9s info
+# To run K9s in a given namespace
+k9s -n mycoolns
+# Start K9s in an existing KubeConfig context
+k9s --context coolCtx
+# Start K9s in readonly mode - with all modification commands disabled
+k9s --readonly
+```
+
+## Key Bindings
+
+K9s uses aliases to navigate most K8s resources.
+
+| Action                                                        | Command               | Comment                                                     |
+|---------------------------------------------------------------|-----------------------|-------------------------------------------------------------|
+| Show active keyboard mnemonics and help                       | `?`                   |                                                             |
+| Show all available resource alias                             | `ctrl-a`              |                                                             |
+| To bail out of K9s                                            | `:q`, `ctrl-c`        |                                                             |
+| View a Kubernetes resource using singular/plural or shortname | `:`po⏎                | accepts singular, plural, shortname or alias ie pod or pods |
+| View a Kubernetes resource in a given namespace               | `:`alias namespace⏎   |                                                             |
+| Filter out a resource view given a filter                     | `/`filter⏎            |                                                             |
+| Filter resource view by labels                                | `/`-l label-selector⏎ |                                                             |
+| Fuzzy find a resource given a filter                          | `/`-f filter⏎         |                                                             |
+| Bails out of view/command/filter mode                         | `<esc>`               |                                                             |
+| Key mapping to describe, view, edit, view logs,...            | `d`,`v`, `e`, `l`,... |                                                             |
+| To view and switch to another Kubernetes context              | `:`ctx⏎               |                                                             |
+| To view and switch to another Kubernetes context              | `:`ctx context-name⏎  |                                                             |
+| To view and switch to another Kubernetes namespace            | `:`ns⏎                |                                                             |
+| To view all saved resources                                   | `:`screendump or sd⏎  |                                                             |
+| To delete a resource (TAB and ENTER to confirm)               | `ctrl-d`              |                                                             |
+| To kill a resource (no confirmation dialog!)                  | `ctrl-k`              |                                                             |
+| Launch pulses view                                            | `:`pulses or pu⏎      |                                                             |
+| Launch XRay view                                              | `:`xray pod⏎          | accepts po, svc, dp, rs, sts or ds                          |
+
+---
+
 ## Screenshots
 
 1. Pods
@@ -143,47 +185,6 @@ K9s is available on Linux, macOS and Windows platforms.
 * [K9s v0.9.0](https://www.youtube.com/watch?v=bxKfqumjW4I)
 * [K9s v0.7.0 Features](https://youtu.be/83jYehwlql8)
 * [K9s v0 Demo](https://youtu.be/k7zseUhaXeU)
-
----
-
-## The Command Line
-
-```shell
-# List all available CLI options
-k9s help
-# To get info about K9s runtime (logs, configs, etc..)
-k9s info
-# To run K9s in a given namespace
-k9s -n mycoolns
-# Start K9s in an existing KubeConfig context
-k9s --context coolCtx
-# Start K9s in readonly mode - with all modification commands disabled
-k9s --readonly
-```
-
-## Key Bindings
-
-K9s uses aliases to navigate most K8s resources.
-
-| Command                     | Result                                             | Example                    |
-|-----------------------------|----------------------------------------------------|----------------------------|
-| `:dp`, `:deploy`            | View deployments                                   |                            |
-| `:no`, `:nodes`             | View nodes                                         |                            |
-| `:svc`, `:service`          | View services                                      |                            |
-| `:`alias`<ENTER>`           | View a Kubernetes resource aliases                 | `:po<ENTER>`               |
-| `?`                         | Show keyboard shortcuts and help                   |                            |
-| `Ctrl-a`                    | Show all available resource alias                  | select+`<ENTER>` to view   |
-| `/`filter`ENTER`            | Filter out a resource view given a filter          | `/bumblebeetuna`           |
-| `/`-l label-selector`ENTER` | Filter resource view by labels                     | `/-l app=fred`             |
-| `/`-f filter `ENTER`        | Fuzzy find a resource given a filter               | `/-f ngx`                  |
-| `<Esc>`                     | Bails out of view/command/filter mode              |                            |
-| `d`,`v`, `e`, `l`,...       | Key mapping to describe, view, edit, view logs,... | `d` (describes a resource) |
-| `:`ctx`<ENTER>`             | To view and switch to another Kubernetes context   | `:`+`ctx`+`<ENTER>`        |
-| `:`ns`<ENTER>`              | To view and switch to another Kubernetes namespace | `:`+`ns`+`<ENTER>`         |
-| `:screendump`, `:sd`        | To view all saved resources                        |                            |
-| `Ctrl-d`                    | To delete a resource (TAB and ENTER to confirm)    |                            |
-| `Ctrl-k`                    | To kill a resource (no confirmation dialog!)       |                            |
-| `:q`, `Ctrl-c`              | To bail out of K9s                                 |                            |
 
 ---
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -68,7 +67,6 @@ func (s *Sanitizer) Init(ctx context.Context) error {
 	s.SetGraphicsColor(s.app.Styles.Xray().GraphicColor.Color())
 	s.SetTitle(strings.Title(s.gvr.R()))
 
-	s.model.SetRefreshRate(time.Duration(s.app.Config.K9s.GetRefreshRate()) * time.Second)
 	s.model.SetNamespace(client.CleanseNamespace(s.app.Config.ActiveNamespace()))
 	s.model.AddListener(s)
 
@@ -88,7 +86,7 @@ func (s *Sanitizer) Init(ctx context.Context) error {
 
 // ExtraHints returns additional hints.
 func (s *Sanitizer) ExtraHints() map[string]string {
-	if !s.app.Styles.Xray().ShowIcons {
+	if s.app.Config.K9s.NoIcons {
 		return nil
 	}
 	return xray.EmojiInfo()
@@ -282,7 +280,7 @@ func (s *Sanitizer) TreeLoadFailed(err error) {
 }
 
 func (s *Sanitizer) update(node *xray.TreeNode) {
-	root := makeTreeNode(node, s.ExpandNodes(), s.app.Styles)
+	root := makeTreeNode(node, s.ExpandNodes(), s.app.Config.K9s.NoIcons, s.app.Styles)
 	if node == nil {
 		s.app.QueueUpdateDraw(func() {
 			s.SetRoot(root)
@@ -329,7 +327,7 @@ func (s *Sanitizer) TreeChanged(node *xray.TreeNode) {
 }
 
 func (s *Sanitizer) hydrate(parent *tview.TreeNode, n *xray.TreeNode) {
-	node := makeTreeNode(n, s.ExpandNodes(), s.app.Styles)
+	node := makeTreeNode(n, s.ExpandNodes(), s.app.Config.K9s.NoIcons, s.app.Styles)
 	for _, c := range n.Children {
 		s.hydrate(node, c)
 	}

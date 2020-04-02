@@ -2,11 +2,9 @@ module github.com/derailed/k9s
 
 go 1.13
 
-replace github.com/derailed/popeye => /Users/fernand/go_wk/derailed/src/github.com/derailed/popeye
-
 require (
 	github.com/atotto/clipboard v0.1.2
-	github.com/derailed/popeye v0.0.0-00010101000000-000000000000
+	github.com/derailed/popeye v0.8.0
 	github.com/derailed/tview v0.3.9
 	github.com/drone/envsubst v1.0.2 // indirect
 	github.com/fatih/color v1.9.0

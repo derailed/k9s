@@ -263,6 +263,7 @@ var expectedConfig = `k9s:
   refreshRate: 100
   headless: false
   readOnly: true
+  noIcons: false
   logger:
     tail: 500
     buffer: 800
@@ -313,6 +314,7 @@ var resetConfig = `k9s:
   refreshRate: 2
   headless: false
   readOnly: false
+  noIcons: false
   logger:
     tail: 200
     buffer: 2000
