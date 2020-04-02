@@ -18,7 +18,6 @@ It makes me always very happy to hear folks are digging this effort and using K9
 
 Big Thank You! to [hornbech](https://github.com/hornbech) for joining our sponsors!
 
-
 ## K8s v1.18.0 Support
 
 As you might have heard, the good Kubernetes folks just dropped some big features in this new release. ATTA Girls/Boys!! We've (painfully) updated K9s to now link with the latest and greatest apis. Likely more work will need to take place here as I am still trying to catch up with the latest enhancements. This is great to see and excellent for all our Kubernetes friends!
@@ -43,8 +42,7 @@ K9s now supports for command history. Entering command mode via `:` you can now 
 
 ## K9s Icons
 
-Some terminals often don't offer icon support. In this release there is a new option `noIcons` available to enable/disable K9s icons. By default this option is set `false`.
-You can now set your icon preference in the K9s config file as follows:
+Some terminals often don't offer icon support. In this release there is a new option `noIcons` available to enable/disable K9s icons. By default this option is set `false`. You can now set your icon preference in the K9s config file as follows:
 
 ```yaml
 # $HOME/.k9s/config.yml
