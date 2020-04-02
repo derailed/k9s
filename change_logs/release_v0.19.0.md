@@ -33,8 +33,8 @@ In order to run your sanitization and produce reports, you can enter a new comma
 
 NOTE! This is very much still experimental, so you may experience some disturbances in the force! And remember PRs are always open ;)
 
-<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/popeye/sanitizations.png" align="center" width="400" height="auto"/>
-<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/popeye/reports.png" align="center" width="400" height="auto"/>
+<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/popeye/sanitizers.png" align="center" width="400" height="auto"/>
+<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/popeye/report.png" align="center" width="400" height="auto"/>
 
 ## Command History Support
 
