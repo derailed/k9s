@@ -71,9 +71,8 @@ func (Popeye) Render(o interface{}, ns string, r *Row) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-// BOZO!! export!
 type (
-	// Builder represents sanitizer
+	// Builder represents a popeye report.
 	Builder struct {
 		Report Report `json:"popeye" yaml:"popeye"`
 	}
@@ -96,9 +95,13 @@ type (
 		Outcome Outcome `json:"issues,omitempty" yaml:"issues,omitempty"`
 	}
 
+	// Outcomes represents a classification of report outcomes
 	Outcome map[string]Issues
-	Issues  []Issue
 
+	// Issues represents a collection of issues.
+	Issues []Issue
+
+	// Issue represents a sanitization issue.
 	Issue struct {
 		Group   string       `yaml:"group" json:"group"`
 		GVR     string       `yaml:"gvr" json:"gvr"`
@@ -106,16 +109,19 @@ type (
 		Message string       `yaml:"message" json:"message"`
 	}
 
+	// Tally tracks a section scores.
 	Tally struct {
 		OK, Info, Warning, Error int
 		Count                    int
 	}
 )
 
+// Sum sums up tally counts.
 func (t *Tally) Sum() int {
 	return t.OK + t.Info + t.Warning + t.Error
 }
 
+// Score returns the overall sections score in percent.
 func (t *Tally) Score() int {
 	oks := t.OK + t.Info
 	return toPerc(float64(oks), float64(oks+t.Warning+t.Error))
@@ -128,14 +134,17 @@ func toPerc(v1, v2 float64) int {
 	return int(math.Floor((v1 / v2) * 100))
 }
 
+// Len returns a section length.
 func (s Sections) Len() int {
 	return len(s)
 }
 
+// Swap swaps values.
 func (s Sections) Swap(i, j int) {
 	s[i], s[j] = s[j], s[i]
 }
 
+// Less compares section scores.
 func (s Sections) Less(i, j int) bool {
 	t1, t2 := s[i].Tally, s[j].Tally
 	return t1.Score() < t2.Score()

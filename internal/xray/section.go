@@ -29,14 +29,7 @@ func (s *Section) Render(ctx context.Context, ns string, o interface{}) error {
 	return nil
 }
 
-func cleanse(s string) string {
-	s = strings.Replace(s, "[", "(", -1)
-	s = strings.Replace(s, "]", ")", -1)
-	s = strings.Replace(s, "/", "::", -1)
-	return s
-}
-
-func (c *Section) outcomeRefs(parent *TreeNode, section render.Section) {
+func (*Section) outcomeRefs(parent *TreeNode, section render.Section) {
 	for k, issues := range section.Outcome {
 		p := NewTreeNode(section.GVR, cleanse(k))
 		parent.Add(p)
@@ -58,6 +51,9 @@ func (c *Section) outcomeRefs(parent *TreeNode, section render.Section) {
 	}
 }
 
+// ----------------------------------------------------------------------------
+// Helpers...
+
 func colorize(s string, l config.Level) string {
 	c := "green"
 	switch l {
@@ -69,4 +65,11 @@ func colorize(s string, l config.Level) string {
 		c = "blue"
 	}
 	return fmt.Sprintf("[%s::]%s", c, s)
+}
+
+func cleanse(s string) string {
+	s = strings.Replace(s, "[", "(", -1)
+	s = strings.Replace(s, "]", ")", -1)
+	s = strings.Replace(s, "/", "::", -1)
+	return s
 }

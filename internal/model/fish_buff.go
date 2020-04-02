@@ -32,6 +32,7 @@ func (f *FishBuff) SetSuggestionFn(fn SuggestionFunc) {
 	f.suggestionFn = fn
 }
 
+// Activate activates the command.
 func (f *FishBuff) Activate() {
 	if f.suggestionFn == nil {
 		return

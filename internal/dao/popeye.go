@@ -101,11 +101,12 @@ func (p *Popeye) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	return oo, nil
 }
 
-// Get fetch a resource.
-func (a *Popeye) Get(_ context.Context, _ string) (runtime.Object, error) {
+// Get retrieves a resource.
+func (p *Popeye) Get(_ context.Context, _ string) (runtime.Object, error) {
 	return nil, errors.New("NYI!!")
 }
 
+// ----------------------------------------------------------------------------
 // Helpers...
 
 type popFactory struct {

@@ -14,6 +14,7 @@ func NewHistory(limit int) *History {
 	return &History{limit: limit}
 }
 
+// List returns the current command history.
 func (h *History) List() []string {
 	return h.commands
 }
