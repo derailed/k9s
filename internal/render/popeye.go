@@ -95,7 +95,7 @@ type (
 		Outcome Outcome `json:"issues,omitempty" yaml:"issues,omitempty"`
 	}
 
-	// Outcomes represents a classification of report outcomes
+	// Outcome represents a classification of reports outcome.
 	Outcome map[string]Issues
 
 	// Issues represents a collection of issues.
