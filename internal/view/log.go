@@ -76,7 +76,7 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	}
 	l.logs.SetBorderPadding(0, 0, 1, 1)
 	l.logs.SetText(logMessage)
-	l.logs.SetWrap(false)
+	l.logs.SetWrap(l.app.Config.K9s.Logger.TextWrap)
 	l.logs.SetMaxBuffer(l.app.Config.K9s.Logger.BufferSize)
 	l.logs.cmdBuff.AddListener(l)
 

@@ -19,6 +19,8 @@ type Logger struct {
 	BufferSize     int   `yaml:"buffer"`
 	SinceSeconds   int64 `yaml:"sinceSeconds"`
 	FullScreenLogs bool  `yaml:"fullScreenLogs"`
+	TextWrap       bool  `yaml:"textWrap"`
+	ShowTime       bool  `yaml:"showTime"`
 }
 
 // NewLogger returns a new instance.
