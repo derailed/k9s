@@ -2,8 +2,6 @@ module github.com/derailed/k9s
 
 go 1.13
 
-replace helm.sh/helm/v3 => /Users/fernand/go_wk/derailed/src/github.com/derailed/tmp/helm
-
 require (
 	github.com/atotto/clipboard v0.1.2
 	github.com/derailed/popeye v0.8.1
