@@ -50,6 +50,9 @@ func (readWriteCloser) Close() error {
 func (p *Popeye) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	defer func(t time.Time) {
 		log.Debug().Msgf("Popeye -- Elapsed %v", time.Since(t))
+		if err := recover(); err != nil {
+			log.Debug().Msgf("POPEYE DIED!")
+		}
 	}(time.Now())
 
 	flags := config.NewFlags()

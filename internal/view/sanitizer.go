@@ -97,14 +97,9 @@ func (s *Sanitizer) SetInstance(string) {}
 
 func (s *Sanitizer) bindKeys() {
 	s.Actions().Add(ui.KeyActions{
-		tcell.KeyEnter:      ui.NewKeyAction("Goto", s.gotoCmd, true),
-		ui.KeySlash:         ui.NewSharedKeyAction("Filter Mode", s.activateCmd, false),
-		tcell.KeyBackspace2: ui.NewSharedKeyAction("Erase", s.eraseCmd, false),
-		tcell.KeyBackspace:  ui.NewSharedKeyAction("Erase", s.eraseCmd, false),
-		tcell.KeyDelete:     ui.NewSharedKeyAction("Erase", s.eraseCmd, false),
-		tcell.KeyCtrlU:      ui.NewSharedKeyAction("Clear Filter", s.clearCmd, false),
-		tcell.KeyCtrlW:      ui.NewSharedKeyAction("Clear Filter", s.clearCmd, false),
-		tcell.KeyEscape:     ui.NewSharedKeyAction("Filter Reset", s.resetCmd, false),
+		ui.KeySlash:     ui.NewSharedKeyAction("Filter Mode", s.activateCmd, false),
+		tcell.KeyEscape: ui.NewSharedKeyAction("Filter Reset", s.resetCmd, false),
+		tcell.KeyEnter:  ui.NewKeyAction("Goto", s.gotoCmd, true),
 	})
 }
 
@@ -113,8 +108,7 @@ func (s *Sanitizer) keyEntered() {
 	s.update(s.filter(s.model.Peek()))
 }
 
-func (s *Sanitizer) refreshActions() {
-}
+func (s *Sanitizer) refreshActions() {}
 
 // GetSelectedPath returns the current selection as string.
 func (s *Sanitizer) GetSelectedPath() string {
@@ -153,7 +147,7 @@ func (s *Sanitizer) k9sEnv() Env {
 		return env
 	}
 
-	env["FILTER"] = s.CmdBuff().String()
+	env["FILTER"] = s.CmdBuff().GetText()
 	if env["FILTER"] == "" {
 		ns, n := client.Namespaced(spec.Path())
 		env["NAMESPACE"], env["FILTER"] = ns, n
@@ -182,27 +176,7 @@ func (s *Sanitizer) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if s.app.InCmdMode() {
 		return evt
 	}
-	s.CmdBuff().SetActive(true)
-
-	return nil
-}
-
-func (s *Sanitizer) clearCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !s.CmdBuff().IsActive() {
-		return evt
-	}
-	s.CmdBuff().Clear()
-	s.model.ClearFilter()
-	s.Start()
-
-	return nil
-}
-
-func (s *Sanitizer) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if s.CmdBuff().IsActive() {
-		s.CmdBuff().Delete()
-	}
-	s.UpdateTitle()
+	s.app.ResetPrompt(s.CmdBuff())
 
 	return nil
 }
@@ -221,7 +195,7 @@ func (s *Sanitizer) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (s *Sanitizer) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if s.CmdBuff().IsActive() {
-		if ui.IsLabelSelector(s.CmdBuff().String()) {
+		if ui.IsLabelSelector(s.CmdBuff().GetText()) {
 			s.Start()
 		}
 		s.CmdBuff().SetActive(false)
@@ -251,7 +225,7 @@ func (s *Sanitizer) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (s *Sanitizer) filter(root *xray.TreeNode) *xray.TreeNode {
-	q := s.CmdBuff().String()
+	q := s.CmdBuff().GetText()
 	if s.CmdBuff().Empty() || ui.IsLabelSelector(q) {
 		return root
 	}
@@ -338,11 +312,12 @@ func (s *Sanitizer) hydrate(parent *tview.TreeNode, n *xray.TreeNode) {
 func (s *Sanitizer) SetEnvFn(EnvFunc) {}
 
 // Refresh updates the view
-func (s *Sanitizer) Refresh() {
-}
+func (s *Sanitizer) Refresh() {}
 
 // BufferChanged indicates the buffer was changed.
-func (s *Sanitizer) BufferChanged(t string) {}
+func (s *Sanitizer) BufferChanged(q string) {
+	s.update(s.filter(s.model.Peek()))
+}
 
 // BufferActive indicates the buff activity changed.
 func (s *Sanitizer) BufferActive(state bool, k model.BufferKind) {
@@ -355,7 +330,7 @@ func (s *Sanitizer) defaultContext() context.Context {
 	if s.CmdBuff().Empty() {
 		ctx = context.WithValue(ctx, internal.KeyLabels, "")
 	} else {
-		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(s.CmdBuff().String()))
+		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(s.CmdBuff().GetText()))
 	}
 
 	return ctx
@@ -364,8 +339,6 @@ func (s *Sanitizer) defaultContext() context.Context {
 // Start initializes resource watch loop.
 func (s *Sanitizer) Start() {
 	s.Stop()
-
-	s.CmdBuff().AddListener(s.app.Cmd())
 	s.CmdBuff().AddListener(s)
 
 	ctx := s.defaultContext()
@@ -384,8 +357,6 @@ func (s *Sanitizer) Stop() {
 	}
 	s.cancelFn()
 	s.cancelFn = nil
-
-	s.CmdBuff().RemoveListener(s.app.Cmd())
 	s.CmdBuff().RemoveListener(s)
 }
 
@@ -426,17 +397,17 @@ func (s *Sanitizer) styleTitle() string {
 		ns = client.NamespaceAll
 	}
 
-	buff := s.CmdBuff().String()
 	var title string
 	if ns == client.ClusterScope {
 		title = ui.SkinTitle(fmt.Sprintf(ui.TitleFmt, base, s.Count), s.app.Styles.Frame())
 	} else {
 		title = ui.SkinTitle(fmt.Sprintf(ui.NSTitleFmt, base, ns, s.Count), s.app.Styles.Frame())
 	}
+
+	buff := s.CmdBuff().GetText()
 	if buff == "" {
 		return title
 	}
-
 	if ui.IsLabelSelector(buff) {
 		buff = ui.TrimLabelSelector(buff)
 	}

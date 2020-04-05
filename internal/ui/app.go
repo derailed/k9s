@@ -14,31 +14,29 @@ type App struct {
 	*tview.Application
 	Configurator
 
-	Main    *Pages
-	flash   *model.Flash
-	actions KeyActions
-	views   map[string]tview.Primitive
-	cmdBuff *model.FishBuff
+	Main     *Pages
+	flash    *model.Flash
+	actions  KeyActions
+	views    map[string]tview.Primitive
+	cmdModel *model.FishBuff
 }
 
 // NewApp returns a new app.
 func NewApp(cfg *config.Config, context string) *App {
 	a := App{
-		Application: tview.NewApplication(),
-		actions:     make(KeyActions),
-		Configurator: Configurator{
-			Config: cfg,
-		},
-		Main:    NewPages(),
-		flash:   model.NewFlash(model.DefaultFlashDelay),
-		cmdBuff: model.NewFishBuff(':', model.Command),
+		Application:  tview.NewApplication(),
+		actions:      make(KeyActions),
+		Configurator: Configurator{Config: cfg},
+		Main:         NewPages(),
+		flash:        model.NewFlash(model.DefaultFlashDelay),
+		cmdModel:     model.NewFishBuff(':', model.CommandBuffer),
 	}
 	a.ReloadStyles(context)
 
 	a.views = map[string]tview.Primitive{
 		"menu":   NewMenu(a.Styles),
 		"logo":   NewLogo(a.Styles),
-		"cmd":    NewCommand(a.Config.K9s.NoIcons, a.Styles, a.cmdBuff),
+		"prompt": NewPrompt(a.Config.K9s.NoIcons, a.Styles),
 		"crumbs": NewCrumbs(a.Styles),
 	}
 
@@ -48,9 +46,9 @@ func NewApp(cfg *config.Config, context string) *App {
 // Init initializes the application.
 func (a *App) Init() {
 	a.bindKeys()
-	a.cmdBuff.AddListener(a.Cmd())
+	a.Prompt().SetModel(a.cmdModel)
+	a.cmdModel.AddListener(a)
 	a.Styles.AddListener(a)
-	a.CmdBuff().AddListener(a)
 
 	a.SetRoot(a.Main, true)
 }
@@ -59,16 +57,17 @@ func (a *App) Init() {
 func (a *App) BufferChanged(s string) {}
 
 // BufferActive indicates the buff activity changed.
-func (a *App) BufferActive(state bool, _ model.BufferKind) {
+func (a *App) BufferActive(state bool, kind model.BufferKind) {
 	flex, ok := a.Main.GetPrimitive("main").(*tview.Flex)
 	if !ok {
 		return
 	}
 
-	if state && flex.ItemAt(1) != a.Cmd() {
-		flex.AddItemAtIndex(1, a.Cmd(), 3, 1, false)
-	} else if !state && flex.ItemAt(1) == a.Cmd() {
+	if state && flex.ItemAt(1) != a.Prompt() {
+		flex.AddItemAtIndex(1, a.Prompt(), 3, 1, false)
+	} else if !state && flex.ItemAt(1) == a.Prompt() {
 		flex.RemoveItemAtIndex(1)
+		a.SetFocus(flex)
 	}
 	a.Draw()
 }
@@ -103,15 +102,11 @@ func (a *App) Conn() client.Connection {
 
 func (a *App) bindKeys() {
 	a.actions = KeyActions{
-		KeyColon:            NewKeyAction("Cmd", a.activateCmd, false),
-		tcell.KeyCtrlR:      NewKeyAction("Redraw", a.redrawCmd, false),
-		tcell.KeyCtrlC:      NewKeyAction("Quit", a.quitCmd, false),
-		tcell.KeyEscape:     NewKeyAction("Escape", a.escapeCmd, false),
-		tcell.KeyBackspace2: NewKeyAction("Erase", a.eraseCmd, false),
-		tcell.KeyBackspace:  NewKeyAction("Erase", a.eraseCmd, false),
-		tcell.KeyDelete:     NewKeyAction("Erase", a.eraseCmd, false),
-		tcell.KeyCtrlU:      NewSharedKeyAction("Clear Filter", a.clearCmd, false),
-		tcell.KeyCtrlQ:      NewSharedKeyAction("Clear Filter", a.clearCmd, false),
+		KeyColon:       NewKeyAction("Cmd", a.activateCmd, false),
+		tcell.KeyCtrlR: NewKeyAction("Redraw", a.redrawCmd, false),
+		tcell.KeyCtrlC: NewKeyAction("Quit", a.quitCmd, false),
+		tcell.KeyCtrlU: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
+		tcell.KeyCtrlQ: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 	}
 }
 
@@ -120,29 +115,35 @@ func (a *App) BailOut() {
 	a.Stop()
 }
 
+func (a *App) ResetPrompt(m PromptModel) {
+	a.Prompt().SetModel(m)
+	a.SetFocus(a.Prompt())
+	m.SetActive(true)
+}
+
 // ResetCmd clear out user command.
 func (a *App) ResetCmd() {
-	a.cmdBuff.Reset()
+	a.cmdModel.Reset()
 }
 
 // ActivateCmd toggle command mode.
 func (a *App) ActivateCmd(b bool) {
-	a.cmdBuff.SetActive(b)
+	a.cmdModel.SetActive(b)
 }
 
 // GetCmd retrieves user command.
 func (a *App) GetCmd() string {
-	return a.cmdBuff.String()
+	return a.cmdModel.GetText()
 }
 
 // CmdBuff returns a cmd buffer.
 func (a *App) CmdBuff() *model.FishBuff {
-	return a.cmdBuff
+	return a.cmdModel
 }
 
 // HasCmd check if cmd buffer is active and has a command.
 func (a *App) HasCmd() bool {
-	return a.cmdBuff.IsActive() && !a.cmdBuff.Empty()
+	return a.cmdModel.IsActive() && !a.cmdModel.Empty()
 }
 
 func (a *App) quitCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -156,7 +157,7 @@ func (a *App) quitCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 // InCmdMode check if command mode is active.
 func (a *App) InCmdMode() bool {
-	return a.Cmd().InCmdMode()
+	return a.Prompt().InCmdMode()
 }
 
 // HasAction checks if key matches a registered binding.
@@ -186,7 +187,7 @@ func (a *App) clearCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !a.CmdBuff().IsActive() {
 		return evt
 	}
-	a.CmdBuff().Clear()
+	a.CmdBuff().ClearText()
 
 	return nil
 }
@@ -195,29 +196,10 @@ func (a *App) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.InCmdMode() {
 		return evt
 	}
-	a.cmdBuff.SetActive(true)
-	a.cmdBuff.Clear()
-	a.SetFocus(a.Cmd())
+	a.ResetPrompt(a.cmdModel)
+	a.cmdModel.ClearText()
 
 	return nil
-}
-
-// EraseCmd removes the last char from a command.
-func (a *App) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.cmdBuff.IsActive() {
-		a.cmdBuff.Delete()
-		return nil
-	}
-	return evt
-}
-
-// EscapeCmd dismiss cmd mode.
-func (a *App) escapeCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.cmdBuff.IsActive() {
-		a.cmdBuff.Reset()
-		a.SetFocus(a.Main.GetPrimitive("main"))
-	}
-	return evt
 }
 
 // RedrawCmd forces a redraw.
@@ -226,7 +208,7 @@ func (a *App) redrawCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
-// View Accessora...
+// View Accessors...
 
 // Crumbs return app crumba.
 func (a *App) Crumbs() *Crumbs {
@@ -239,8 +221,8 @@ func (a *App) Logo() *Logo {
 }
 
 // Cmd returns app cmd.
-func (a *App) Cmd() *Command {
-	return a.views["cmd"].(*Command)
+func (a *App) Prompt() *Prompt {
+	return a.views["prompt"].(*Prompt)
 }
 
 // Menu returns app menu.
@@ -258,6 +240,9 @@ func (a *App) Flash() *model.Flash {
 
 // AsKey converts rune to keyboard key.,
 func AsKey(evt *tcell.EventKey) tcell.Key {
+	if evt.Key() != tcell.KeyRune {
+		return evt.Key()
+	}
 	key := tcell.Key(evt.Rune())
 	if evt.Modifiers() == tcell.ModAlt {
 		key = tcell.Key(int16(evt.Rune()) * int16(evt.Modifiers()))

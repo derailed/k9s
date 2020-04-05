@@ -57,7 +57,7 @@ func NewTable(gvr client.GVR) *Table {
 		},
 		gvr:     gvr,
 		actions: make(KeyActions),
-		cmdBuff: model.NewCmdBuff('/', model.Filter),
+		cmdBuff: model.NewCmdBuff('/', model.FilterBuffer),
 		sortCol: SortColumn{asc: true},
 	}
 }
@@ -146,6 +146,13 @@ func (t *Table) FilterInput(r rune) bool {
 	t.SelectFirstRow()
 
 	return true
+}
+
+func (t *Table) Filter(s string) {
+	t.ClearSelection()
+	t.doUpdate(t.filtered(t.GetModel().Peek()))
+	t.UpdateTitle()
+	t.SelectFirstRow()
 }
 
 // Hints returns the view hints.
@@ -363,26 +370,26 @@ func (t *Table) filtered(data render.TableData) render.TableData {
 	if t.toast {
 		filtered = filterToast(data)
 	}
-	if t.cmdBuff.Empty() || IsLabelSelector(t.cmdBuff.String()) {
+	if t.cmdBuff.Empty() || IsLabelSelector(t.cmdBuff.GetText()) {
 		return filtered
 	}
 
-	q := t.cmdBuff.String()
+	q := t.cmdBuff.GetText()
 	if IsFuzzySelector(q) {
 		return fuzzyFilter(q[2:], filtered)
 	}
 
-	filtered, err := rxFilter(t.cmdBuff.String(), filtered)
+	filtered, err := rxFilter(t.cmdBuff.GetText(), filtered)
 	if err != nil {
 		log.Error().Err(errors.New("Invalid filter expression")).Msg("Regexp")
-		t.cmdBuff.Clear()
+		t.cmdBuff.ClearText()
 	}
 
 	return filtered
 }
 
-// SearchBuff returns the associated command buffer.
-func (t *Table) SearchBuff() *model.CmdBuff {
+// CmdBuff returns the associated command buffer.
+func (t *Table) CmdBuff() *model.CmdBuff {
 	return t.cmdBuff
 }
 
@@ -430,7 +437,7 @@ func (t *Table) styleTitle() string {
 		title = SkinTitle(fmt.Sprintf(NSTitleFmt, base, ns, rc), t.styles.Frame())
 	}
 
-	buff := t.cmdBuff.String()
+	buff := t.cmdBuff.GetText()
 	if buff == "" {
 		return title
 	}

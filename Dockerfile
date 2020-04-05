@@ -1,5 +1,5 @@
 # Build...
-FROM golang:1.13.6-alpine3.11 AS build
+FROM golang:1.14.1 AS build
 
 WORKDIR /k9s
 COPY go.mod go.sum main.go Makefile ./

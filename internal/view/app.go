@@ -50,8 +50,8 @@ type App struct {
 func NewApp(cfg *config.Config) *App {
 	a := App{
 		App:     ui.NewApp(cfg, cfg.K9s.CurrentContext),
-		Content: NewPageStack(),
 		history: model.NewHistory(model.MaxHistory),
+		Content: NewPageStack(),
 	}
 
 	a.Views()["statusIndicator"] = ui.NewStatusIndicator(a.App, a.Styles)
@@ -94,14 +94,14 @@ func (a *App) Init(version string, rate int) error {
 	a.clusterModel.AddListener(a.clusterInfo())
 	a.clusterModel.AddListener(a.statusIndicator())
 	a.clusterModel.Refresh()
+	a.clusterInfo().Init()
 
 	a.command = NewCommand(a)
 	if err := a.command.Init(); err != nil {
 		return err
 	}
 	a.CmdBuff().SetSuggestionFn(a.suggestCommand())
-
-	a.clusterInfo().Init()
+	a.CmdBuff().AddListener(a)
 
 	flash := ui.NewFlash(a.App)
 	go flash.Watch(ctx, a.Flash().Channel())
@@ -119,7 +119,7 @@ func (a *App) Init(version string, rate int) error {
 	return nil
 }
 
-func (a *App) suggestCommand() func(s string) (entries sort.StringSlice) {
+func (a *App) suggestCommand() model.SuggestionFunc {
 	return func(s string) (entries sort.StringSlice) {
 		if s == "" {
 			if a.history.Empty() {
@@ -147,16 +147,7 @@ func (a *App) suggestCommand() func(s string) (entries sort.StringSlice) {
 }
 
 func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	key := evt.Key()
-	if key == tcell.KeyRune {
-		if a.CmdBuff().IsActive() && evt.Modifiers() == tcell.ModNone {
-			a.CmdBuff().Add(evt.Rune())
-			return nil
-		}
-		key = ui.AsKey(evt)
-	}
-
-	if k, ok := a.HasAction(key); ok && !a.Content.IsTopDialog() {
+	if k, ok := a.HasAction(ui.AsKey(evt)); ok && !a.Content.IsTopDialog() {
 		return k.Action(evt)
 	}
 
@@ -431,7 +422,7 @@ func (a *App) PrevCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *App) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.Cmd().InCmdMode() {
+	if a.Prompt().InCmdMode() {
 		return evt
 	}
 

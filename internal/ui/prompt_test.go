@@ -10,21 +10,22 @@ import (
 )
 
 func TestCmdNew(t *testing.T) {
-	model := model.NewFishBuff(':', model.Command)
-	v := ui.NewCommand(true, config.NewStyles(), model)
-
+	v := ui.NewPrompt(true, config.NewStyles())
+	model := model.NewFishBuff(':', model.CommandBuffer)
+	v.SetModel(model)
 	model.AddListener(v)
-	model.Set("blee")
+	model.SetText("blee")
 
 	assert.Equal(t, "\x00> [::b]blee\n", v.GetText(false))
 }
 
 func TestCmdUpdate(t *testing.T) {
-	model := model.NewFishBuff(':', model.Command)
-	v := ui.NewCommand(true, config.NewStyles(), model)
+	model := model.NewFishBuff(':', model.CommandBuffer)
+	v := ui.NewPrompt(true, config.NewStyles())
+	v.SetModel(model)
 
 	model.AddListener(v)
-	model.Set("blee")
+	model.SetText("blee")
 	model.Add('!')
 
 	assert.Equal(t, "\x00> [::b]blee!\n", v.GetText(false))
@@ -32,8 +33,9 @@ func TestCmdUpdate(t *testing.T) {
 }
 
 func TestCmdMode(t *testing.T) {
-	model := model.NewFishBuff(':', model.Command)
-	v := ui.NewCommand(true, config.NewStyles(), model)
+	model := model.NewFishBuff(':', model.CommandBuffer)
+	v := ui.NewPrompt(true, config.NewStyles())
+	v.SetModel(model)
 	model.AddListener(v)
 
 	for _, f := range []bool{false, true} {

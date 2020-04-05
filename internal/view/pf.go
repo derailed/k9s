@@ -116,8 +116,8 @@ func (p *PortForward) runBenchmark() {
 }
 
 func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !p.GetTable().SearchBuff().Empty() {
-		p.GetTable().SearchBuff().Reset()
+	if !p.GetTable().CmdBuff().Empty() {
+		p.GetTable().CmdBuff().Reset()
 		return nil
 	}
 

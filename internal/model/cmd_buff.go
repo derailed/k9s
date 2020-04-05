@@ -4,9 +4,9 @@ const maxBuff = 10
 
 const (
 	// Command represents a command buffer.
-	Command BufferKind = 1 << iota
+	CommandBuffer BufferKind = 1 << iota
 	// Filter represents a filter buffer.
-	Filter
+	FilterBuffer
 )
 
 // BufferKind indicates a buffer type
@@ -40,6 +40,29 @@ func NewCmdBuff(key rune, kind BufferKind) *CmdBuff {
 	}
 }
 
+func (c *CmdBuff) CurrentSuggestion() (string, bool) {
+	return "", false
+}
+func (c *CmdBuff) NextSuggestion() (string, bool) {
+	return "", false
+}
+func (c *CmdBuff) PrevSuggestion() (string, bool) {
+	return "", false
+}
+func (c *CmdBuff) ClearSuggestions() {}
+
+func (c *CmdBuff) AutoSuggests() bool {
+	return false
+}
+
+// Suggestions returns suggestions.
+func (c *CmdBuff) Suggestions() []string {
+	return nil
+}
+
+// Notify notifies all listener of current suggestions.
+func (c *CmdBuff) Notify() {}
+
 // InCmdMode checks if a command exists and the buffer is active.
 func (c *CmdBuff) InCmdMode() bool {
 	return c.active || len(c.buff) > 0
@@ -56,21 +79,21 @@ func (c *CmdBuff) SetActive(b bool) {
 	c.fireActive(c.active)
 }
 
-// String turns rune to string (Stringer protocol)
-func (c *CmdBuff) String() string {
+// GetText returns the current text.
+func (c *CmdBuff) GetText() string {
 	return string(c.buff)
 }
 
 // Set initializes the buffer with a command.
-func (c *CmdBuff) Set(cmd string) {
+func (c *CmdBuff) SetText(cmd string) {
 	c.buff = []rune(cmd)
-	c.fireChanged()
+	c.fireBufferChanged()
 }
 
 // Add adds a new charater to the buffer.
 func (c *CmdBuff) Add(r rune) {
 	c.buff = append(c.buff, r)
-	c.fireChanged()
+	c.fireBufferChanged()
 }
 
 // Delete removes the last character from the buffer.
@@ -79,19 +102,19 @@ func (c *CmdBuff) Delete() {
 		return
 	}
 	c.buff = c.buff[:len(c.buff)-1]
-	c.fireChanged()
+	c.fireBufferChanged()
 }
 
-// Clear clears out command buffer.
-func (c *CmdBuff) Clear() {
+// ClearText clears out command buffer.
+func (c *CmdBuff) ClearText() {
 	c.buff = make([]rune, 0, maxBuff)
-	c.fireChanged()
+	c.fireBufferChanged()
 }
 
-// Reset clears out the command buffer and deactives it.
+// Reset clears out the command buffer and deactivates it.
 func (c *CmdBuff) Reset() {
-	c.Clear()
-	c.fireChanged()
+	c.ClearText()
+	c.fireBufferChanged()
 	c.SetActive(false)
 }
 
@@ -104,8 +127,8 @@ func (c *CmdBuff) Empty() bool {
 // Event Listeners...
 
 // AddListener registers a cmd buffer listener.
-func (c *CmdBuff) AddListener(w ...BuffWatcher) {
-	c.listeners = append(c.listeners, w...)
+func (c *CmdBuff) AddListener(w BuffWatcher) {
+	c.listeners = append(c.listeners, w)
 }
 
 // RemoveListener unregisters a listener.
@@ -124,9 +147,9 @@ func (c *CmdBuff) RemoveListener(l BuffWatcher) {
 	c.listeners = append(c.listeners[:victim], c.listeners[victim+1:]...)
 }
 
-func (c *CmdBuff) fireChanged() {
+func (c *CmdBuff) fireBufferChanged() {
 	for _, l := range c.listeners {
-		l.BufferChanged(c.String())
+		l.BufferChanged(c.GetText())
 	}
 }
 

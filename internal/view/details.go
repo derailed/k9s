@@ -37,7 +37,7 @@ func NewDetails(app *App, title, subject string, searchable bool) *Details {
 		title:      title,
 		subject:    subject,
 		actions:    make(ui.KeyActions),
-		cmdBuff:    model.NewCmdBuff('/', model.Filter),
+		cmdBuff:    model.NewCmdBuff('/', model.FilterBuffer),
 		model:      model.NewText(),
 		searchable: searchable,
 	}
@@ -63,7 +63,7 @@ func (d *Details) Init(_ context.Context) error {
 	d.app.Styles.AddListener(d)
 	d.StylesChanged(d.app.Styles)
 
-	d.cmdBuff.AddListener(d.app.Cmd())
+	d.app.Prompt().SetModel(d.cmdBuff)
 	d.cmdBuff.AddListener(d)
 
 	d.bindKeys()
@@ -100,7 +100,10 @@ func (d *Details) TextFiltered(lines []string, matches fuzzy.Matches) {
 }
 
 // BufferChanged indicates the buffer was changed.
-func (d *Details) BufferChanged(s string) {}
+func (d *Details) BufferChanged(s string) {
+	d.model.Filter(s)
+	d.updateTitle()
+}
 
 // BufferActive indicates the buff activity changed.
 func (d *Details) BufferActive(state bool, k model.BufferKind) {
@@ -109,18 +112,14 @@ func (d *Details) BufferActive(state bool, k model.BufferKind) {
 
 func (d *Details) bindKeys() {
 	d.actions.Set(ui.KeyActions{
-		tcell.KeyEnter:      ui.NewSharedKeyAction("Filter", d.filterCmd, false),
-		tcell.KeyEscape:     ui.NewKeyAction("Back", d.resetCmd, false),
-		tcell.KeyCtrlS:      ui.NewKeyAction("Save", d.saveCmd, false),
-		ui.KeyC:             ui.NewKeyAction("Copy", d.cpCmd, true),
-		ui.KeyN:             ui.NewKeyAction("Next Match", d.nextCmd, true),
-		ui.KeyShiftN:        ui.NewKeyAction("Prev Match", d.prevCmd, true),
-		ui.KeySlash:         ui.NewSharedKeyAction("Filter Mode", d.activateCmd, false),
-		tcell.KeyCtrlU:      ui.NewSharedKeyAction("Clear Filter", d.clearCmd, false),
-		tcell.KeyCtrlW:      ui.NewSharedKeyAction("Clear Filter", d.clearCmd, false),
-		tcell.KeyBackspace2: ui.NewSharedKeyAction("Erase", d.eraseCmd, false),
-		tcell.KeyBackspace:  ui.NewSharedKeyAction("Erase", d.eraseCmd, false),
-		tcell.KeyDelete:     ui.NewSharedKeyAction("Erase", d.eraseCmd, false),
+		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", d.filterCmd, false),
+		tcell.KeyEscape: ui.NewKeyAction("Back", d.resetCmd, false),
+		tcell.KeyCtrlS:  ui.NewKeyAction("Save", d.saveCmd, false),
+		ui.KeyC:         ui.NewKeyAction("Copy", d.cpCmd, true),
+		ui.KeyN:         ui.NewKeyAction("Next Match", d.nextCmd, true),
+		ui.KeyShiftN:    ui.NewKeyAction("Prev Match", d.prevCmd, true),
+		ui.KeySlash:     ui.NewSharedKeyAction("Filter Mode", d.activateCmd, false),
+		tcell.KeyDelete: ui.NewSharedKeyAction("Erase", d.eraseCmd, false),
 	})
 
 	if !d.searchable {
@@ -129,33 +128,11 @@ func (d *Details) bindKeys() {
 }
 
 func (d *Details) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	key := evt.Key()
-	if key == tcell.KeyUp || key == tcell.KeyDown {
-		return evt
-	}
-
-	if key == tcell.KeyRune {
-		if d.filterInput(evt.Rune()) {
-			return nil
-		}
-		key = ui.AsKey(evt)
-	}
-
-	if a, ok := d.actions[key]; ok {
+	if a, ok := d.actions[ui.AsKey(evt)]; ok {
 		return a.Action(evt)
 	}
 
 	return evt
-}
-
-func (d *Details) filterInput(r rune) bool {
-	if !d.cmdBuff.IsActive() {
-		return false
-	}
-	d.cmdBuff.Add(r)
-	d.updateTitle()
-
-	return true
 }
 
 // StylesChanged notifies the skin changed.
@@ -236,7 +213,7 @@ func (d *Details) prevCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (d *Details) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
-	d.model.Filter(d.cmdBuff.String())
+	d.model.Filter(d.cmdBuff.GetText())
 	d.cmdBuff.SetActive(false)
 	d.updateTitle()
 
@@ -247,16 +224,7 @@ func (d *Details) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if d.app.InCmdMode() {
 		return evt
 	}
-	d.cmdBuff.SetActive(true)
-
-	return nil
-}
-
-func (d *Details) clearCmd(*tcell.EventKey) *tcell.EventKey {
-	if !d.app.InCmdMode() {
-		return nil
-	}
-	d.cmdBuff.Clear()
+	d.app.ResetPrompt(d.cmdBuff)
 
 	return nil
 }
@@ -276,7 +244,7 @@ func (d *Details) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return d.app.PrevCmd(evt)
 	}
 
-	if d.cmdBuff.String() != "" {
+	if d.cmdBuff.GetText() != "" {
 		d.model.ClearFilter()
 	}
 	d.cmdBuff.SetActive(false)
@@ -311,16 +279,15 @@ func (d *Details) updateTitle() {
 	}
 	fmat := fmt.Sprintf(detailsTitleFmt, d.title, d.subject)
 
-	buff := d.cmdBuff.String()
+	buff := d.cmdBuff.GetText()
 	if buff == "" {
 		d.SetTitle(ui.SkinTitle(fmat, d.app.Styles.Frame()))
 		return
 	}
 
-	search := d.cmdBuff.String()
 	if d.maxRegions != 0 {
-		search += fmt.Sprintf("[%d:%d]", d.currentRegion+1, d.maxRegions)
+		buff += fmt.Sprintf("[%d:%d]", d.currentRegion+1, d.maxRegions)
 	}
-	fmat += fmt.Sprintf(ui.SearchFmt, search)
+	fmat += fmt.Sprintf(ui.SearchFmt, buff)
 	d.SetTitle(ui.SkinTitle(fmat, d.app.Styles.Frame()))
 }

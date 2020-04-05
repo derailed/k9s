@@ -66,7 +66,7 @@ func (a *Alias) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	if a.GetTable().SearchBuff().IsActive() {
+	if a.GetTable().CmdBuff().IsActive() {
 		return a.GetTable().activateCmd(evt)
 	}
 	return evt

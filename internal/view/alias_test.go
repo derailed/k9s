@@ -30,10 +30,9 @@ func TestAliasSearch(t *testing.T) {
 	v := view.NewAlias(client.NewGVR("aliases"))
 	assert.Nil(t, v.Init(makeContext()))
 	v.GetTable().SetModel(&testModel{})
-	v.GetTable().SearchBuff().SetActive(true)
-	v.GetTable().SearchBuff().Set("dump")
-
-	v.GetTable().SendKey(tcell.NewEventKey(tcell.KeyRune, 'd', tcell.ModNone))
+	v.GetTable().Refresh()
+	v.App().Prompt().SetModel(v.GetTable().CmdBuff())
+	v.App().Prompt().SendStrokes("blee")
 
 	assert.Equal(t, 3, v.GetTable().GetColumnCount())
 	assert.Equal(t, 1, v.GetTable().GetRowCount())
@@ -45,11 +44,11 @@ func TestAliasGoto(t *testing.T) {
 	v.GetTable().Select(0, 0)
 
 	b := buffL{}
-	v.GetTable().SearchBuff().SetActive(true)
-	v.GetTable().SearchBuff().AddListener(&b)
+	v.GetTable().CmdBuff().SetActive(true)
+	v.GetTable().CmdBuff().AddListener(&b)
 	v.GetTable().SendKey(tcell.NewEventKey(tcell.KeyEnter, 256, tcell.ModNone))
 
-	assert.True(t, v.GetTable().SearchBuff().IsActive())
+	assert.True(t, v.GetTable().CmdBuff().IsActive())
 }
 
 // ----------------------------------------------------------------------------
@@ -97,7 +96,13 @@ func (k ks) NamespaceNames(nn []v1.Namespace) []string {
 
 type testModel struct{}
 
-var _ ui.Tabular = &testModel{}
+var _ ui.Tabular = (*testModel)(nil)
+var _ ui.Suggester = (*testModel)(nil)
+
+func (t *testModel) CurrentSuggestion() (string, bool) { return "", false }
+func (t *testModel) NextSuggestion() (string, bool)    { return "", false }
+func (t *testModel) PrevSuggestion() (string, bool)    { return "", false }
+func (t *testModel) ClearSuggestions()                 {}
 
 func (t *testModel) SetInstance(string)              {}
 func (t *testModel) Empty() bool                     { return false }

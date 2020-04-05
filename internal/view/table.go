@@ -47,13 +47,14 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	t.SetInputCapture(t.keyboard)
 	t.bindKeys()
 	t.GetModel().SetRefreshRate(time.Duration(t.app.Config.K9s.GetRefreshRate()) * time.Second)
+	t.CmdBuff().AddListener(t)
 
 	return nil
 }
 
 // SendKey sends an keyboard event (testing only!).
 func (t *Table) SendKey(evt *tcell.EventKey) {
-	t.keyboard(evt)
+	t.app.Prompt().SendKey(evt)
 }
 
 func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
@@ -62,14 +63,7 @@ func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	if key == tcell.KeyRune {
-		if t.FilterInput(evt.Rune()) {
-			return nil
-		}
-		key = ui.AsKey(evt)
-	}
-
-	if a, ok := t.Actions()[key]; ok && !t.app.Content.IsTopDialog() {
+	if a, ok := t.Actions()[ui.AsKey(evt)]; ok && !t.app.Content.IsTopDialog() {
 		return a.Action(evt)
 	}
 
@@ -97,7 +91,7 @@ func (t *Table) defaultEnv() Env {
 		log.Error().Msgf("unable to locate selected row for %q", path)
 	}
 	env := defaultEnv(t.app.Conn().Config(), path, t.GetModel().Peek().Header, row)
-	env["FILTER"] = t.SearchBuff().String()
+	env["FILTER"] = t.CmdBuff().GetText()
 	if env["FILTER"] == "" {
 		env["NAMESPACE"], env["FILTER"] = client.Namespaced(path)
 	}
@@ -113,15 +107,13 @@ func (t *Table) App() *App {
 // Start runs the component.
 func (t *Table) Start() {
 	t.Stop()
-	t.SearchBuff().AddListener(t.app.Cmd())
-	t.SearchBuff().AddListener(t)
+	t.CmdBuff().AddListener(t)
 	t.Styles().AddListener(t.Table)
 }
 
 // Stop terminates the component.
 func (t *Table) Stop() {
-	t.SearchBuff().RemoveListener(t.app.Cmd())
-	t.SearchBuff().RemoveListener(t)
+	t.CmdBuff().RemoveListener(t)
 	t.Styles().RemoveListener(t.Table)
 }
 
@@ -134,11 +126,16 @@ func (t *Table) SetEnterFn(f EnterFunc) {
 func (t *Table) SetExtraActionsFn(BoostActionsFunc) {}
 
 // BufferChanged indicates the buffer was changed.
-func (t *Table) BufferChanged(s string) {}
+func (t *Table) BufferChanged(s string) {
+	t.Filter(s)
+}
 
 // BufferActive indicates the buff activity changed.
 func (t *Table) BufferActive(state bool, k model.BufferKind) {
 	t.app.BufferActive(state, k)
+	if !state {
+		t.app.SetFocus(t)
+	}
 }
 
 func (t *Table) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -153,18 +150,14 @@ func (t *Table) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (t *Table) bindKeys() {
 	t.Actions().Add(ui.KeyActions{
-		ui.KeySpace:         ui.NewSharedKeyAction("Mark", t.markCmd, false),
-		tcell.KeyCtrlSpace:  ui.NewSharedKeyAction("Marks Clear", t.clearMarksCmd, false),
-		tcell.KeyCtrlS:      ui.NewSharedKeyAction("Save", t.saveCmd, false),
-		ui.KeySlash:         ui.NewSharedKeyAction("Filter Mode", t.activateCmd, false),
-		tcell.KeyCtrlU:      ui.NewSharedKeyAction("Clear Filter", t.clearCmd, false),
-		tcell.KeyBackspace2: ui.NewSharedKeyAction("Erase", t.eraseCmd, false),
-		tcell.KeyBackspace:  ui.NewSharedKeyAction("Erase", t.eraseCmd, false),
-		tcell.KeyDelete:     ui.NewSharedKeyAction("Erase", t.eraseCmd, false),
-		tcell.KeyCtrlZ:      ui.NewKeyAction("Toggle Faults", t.toggleFaultCmd, false),
-		tcell.KeyCtrlW:      ui.NewKeyAction("Show Wide", t.toggleWideCmd, false),
-		ui.KeyShiftN:        ui.NewKeyAction("Sort Name", t.SortColCmd(nameCol, true), false),
-		ui.KeyShiftA:        ui.NewKeyAction("Sort Age", t.SortColCmd(ageCol, true), false),
+		ui.KeySpace:        ui.NewSharedKeyAction("Mark", t.markCmd, false),
+		tcell.KeyCtrlSpace: ui.NewSharedKeyAction("Marks Clear", t.clearMarksCmd, false),
+		tcell.KeyCtrlS:     ui.NewSharedKeyAction("Save", t.saveCmd, false),
+		ui.KeySlash:        ui.NewSharedKeyAction("Filter Mode", t.activateCmd, false),
+		tcell.KeyCtrlZ:     ui.NewKeyAction("Toggle Faults", t.toggleFaultCmd, false),
+		tcell.KeyCtrlW:     ui.NewKeyAction("Show Wide", t.toggleWideCmd, false),
+		ui.KeyShiftN:       ui.NewKeyAction("Sort Name", t.SortColCmd(nameCol, true), false),
+		ui.KeyShiftA:       ui.NewKeyAction("Sort Age", t.SortColCmd(ageCol, true), false),
 	})
 }
 
@@ -217,28 +210,11 @@ func (t *Table) clearMarksCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (t *Table) clearCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !t.SearchBuff().IsActive() {
-		return evt
-	}
-	t.SearchBuff().Clear()
-
-	return nil
-}
-
-func (t *Table) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if t.SearchBuff().IsActive() {
-		t.SearchBuff().Delete()
-	}
-
-	return nil
-}
-
 func (t *Table) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if t.app.InCmdMode() {
 		return evt
 	}
-	t.SearchBuff().SetActive(true)
+	t.App().ResetPrompt(t.CmdBuff())
 
 	return nil
 }

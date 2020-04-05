@@ -26,7 +26,7 @@ func (l *testListener) BufferActive(s bool, _ model.BufferKind) {
 }
 
 func TestCmdBuffActivate(t *testing.T) {
-	b, l := model.NewCmdBuff('>', model.Command), testListener{}
+	b, l := model.NewCmdBuff('>', model.CommandBuffer), testListener{}
 	b.AddListener(&l)
 
 	b.SetActive(true)
@@ -36,7 +36,7 @@ func TestCmdBuffActivate(t *testing.T) {
 }
 
 func TestCmdBuffDeactivate(t *testing.T) {
-	b, l := model.NewCmdBuff('>', model.Command), testListener{}
+	b, l := model.NewCmdBuff('>', model.CommandBuffer), testListener{}
 	b.AddListener(&l)
 
 	b.SetActive(false)
@@ -46,39 +46,39 @@ func TestCmdBuffDeactivate(t *testing.T) {
 }
 
 func TestCmdBuffChanged(t *testing.T) {
-	b, l := model.NewCmdBuff('>', model.Command), testListener{}
+	b, l := model.NewCmdBuff('>', model.CommandBuffer), testListener{}
 	b.AddListener(&l)
 
 	b.Add('b')
 	assert.Equal(t, 0, l.act)
 	assert.Equal(t, 0, l.inact)
 	assert.Equal(t, "b", l.text)
-	assert.Equal(t, "b", b.String())
+	assert.Equal(t, "b", b.GetText())
 
 	b.Delete()
 	assert.Equal(t, 0, l.act)
 	assert.Equal(t, 0, l.inact)
 	assert.Equal(t, "", l.text)
-	assert.Equal(t, "", b.String())
+	assert.Equal(t, "", b.GetText())
 
 	b.Add('c')
-	b.Clear()
+	b.ClearText()
 	assert.Equal(t, 0, l.act)
 	assert.Equal(t, 0, l.inact)
 	assert.Equal(t, "", l.text)
-	assert.Equal(t, "", b.String())
+	assert.Equal(t, "", b.GetText())
 
 	b.Add('c')
 	b.Reset()
 	assert.Equal(t, 0, l.act)
 	assert.Equal(t, 1, l.inact)
 	assert.Equal(t, "", l.text)
-	assert.Equal(t, "", b.String())
+	assert.Equal(t, "", b.GetText())
 	assert.True(t, b.Empty())
 }
 
 func TestCmdBuffAdd(t *testing.T) {
-	b := model.NewCmdBuff('>', model.Command)
+	b := model.NewCmdBuff('>', model.CommandBuffer)
 
 	uu := []struct {
 		runes []rune
@@ -93,13 +93,13 @@ func TestCmdBuffAdd(t *testing.T) {
 		for _, r := range u.runes {
 			b.Add(r)
 		}
-		assert.Equal(t, u.cmd, b.String())
+		assert.Equal(t, u.cmd, b.GetText())
 		b.Reset()
 	}
 }
 
 func TestCmdBuffDel(t *testing.T) {
-	b := model.NewCmdBuff('>', model.Command)
+	b := model.NewCmdBuff('>', model.CommandBuffer)
 
 	uu := []struct {
 		runes []rune
@@ -115,13 +115,13 @@ func TestCmdBuffDel(t *testing.T) {
 			b.Add(r)
 		}
 		b.Delete()
-		assert.Equal(t, u.cmd, b.String())
+		assert.Equal(t, u.cmd, b.GetText())
 		b.Reset()
 	}
 }
 
 func TestCmdBuffEmpty(t *testing.T) {
-	b := model.NewCmdBuff('>', model.Command)
+	b := model.NewCmdBuff('>', model.CommandBuffer)
 
 	uu := []struct {
 		runes []rune

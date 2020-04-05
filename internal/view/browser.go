@@ -183,32 +183,28 @@ func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (b *Browser) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !b.SearchBuff().InCmdMode() {
-		b.SearchBuff().Reset()
+	if !b.CmdBuff().InCmdMode() {
+		b.CmdBuff().Reset()
 		return b.App().PrevCmd(evt)
 	}
 
-	cmd := b.SearchBuff().String()
-	b.SearchBuff().Reset()
-
-	if ui.IsLabelSelector(cmd) {
+	b.CmdBuff().Reset()
+	if ui.IsLabelSelector(b.CmdBuff().GetText()) {
 		b.Start()
-	} else {
-		b.Refresh()
+		return nil
 	}
+	b.Refresh()
 
 	return nil
 }
 
 func (b *Browser) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !b.SearchBuff().IsActive() {
+	if !b.CmdBuff().IsActive() {
 		return evt
 	}
 
-	b.SearchBuff().SetActive(false)
-
-	cmd := b.SearchBuff().String()
-	if ui.IsLabelSelector(cmd) {
+	b.CmdBuff().SetActive(false)
+	if ui.IsLabelSelector(b.CmdBuff().GetText()) {
 		b.Start()
 		return nil
 	}
@@ -355,8 +351,8 @@ func (b *Browser) defaultContext() context.Context {
 	ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
 
 	ctx = context.WithValue(ctx, internal.KeyLabels, "")
-	if ui.IsLabelSelector(b.SearchBuff().String()) {
-		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(b.SearchBuff().String()))
+	if ui.IsLabelSelector(b.CmdBuff().GetText()) {
+		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(b.CmdBuff().GetText()))
 	}
 	ctx = context.WithValue(ctx, internal.KeyFields, "")
 	ctx = context.WithValue(ctx, internal.KeyNamespace, client.CleanseNamespace(b.App().Config.ActiveNamespace()))

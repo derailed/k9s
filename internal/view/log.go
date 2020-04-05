@@ -123,7 +123,7 @@ func (l *Log) LogChanged(lines dao.LogItems) {
 
 // BufferChanged indicates the buffer was changed.
 func (l *Log) BufferChanged(s string) {
-	if err := l.model.Filter(l.logs.cmdBuff.String()); err != nil {
+	if err := l.model.Filter(l.logs.cmdBuff.GetText()); err != nil {
 		l.app.Flash().Err(err)
 	}
 	l.updateTitle()
@@ -167,7 +167,7 @@ func (l *Log) Stop() {
 	l.model.RemoveListener(l)
 	l.app.Styles.RemoveListener(l)
 	l.logs.cmdBuff.RemoveListener(l)
-	l.logs.cmdBuff.RemoveListener(l.app.Cmd())
+	l.logs.cmdBuff.RemoveListener(l.app.Prompt())
 }
 
 // Name returns the component name.
@@ -193,9 +193,7 @@ func (l *Log) bindKeys() {
 
 // SendStrokes (testing only!)
 func (l *Log) SendStrokes(s string) {
-	for _, r := range s {
-		l.logs.keyboard(tcell.NewEventKey(tcell.KeyRune, r, tcell.ModNone))
-	}
+	l.app.Prompt().SendStrokes(s)
 }
 
 // SendKeys (testing only!)
@@ -226,7 +224,7 @@ func (l *Log) updateTitle() {
 		title = ui.SkinTitle(fmt.Sprintf(logCoFmt, path, co, since), l.app.Styles.Frame())
 	}
 
-	buff := l.logs.cmdBuff.String()
+	buff := l.logs.cmdBuff.GetText()
 	if buff != "" {
 		title += ui.SkinTitle(fmt.Sprintf(ui.SearchFmt, buff), l.app.Styles.Frame())
 	}
@@ -270,7 +268,7 @@ func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	l.logs.cmdBuff.SetActive(false)
-	if err := l.model.Filter(l.logs.cmdBuff.String()); err != nil {
+	if err := l.model.Filter(l.logs.cmdBuff.GetText()); err != nil {
 		l.app.Flash().Err(err)
 	}
 	l.updateTitle()
