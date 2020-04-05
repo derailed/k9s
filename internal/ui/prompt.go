@@ -85,26 +85,26 @@ type Prompt struct {
 
 // NewPrompt returns a new command view.
 func NewPrompt(noIcons bool, styles *config.Styles) *Prompt {
-	c := Prompt{
+	p := Prompt{
 		styles:   styles,
 		noIcons:  noIcons,
 		TextView: tview.NewTextView(),
 		spacer:   defaultSpacer,
 	}
 	if noIcons {
-		c.spacer--
+		p.spacer--
 	}
-	c.SetWordWrap(true)
-	c.SetWrap(true)
-	c.SetDynamicColors(true)
-	c.SetBorder(true)
-	c.SetBorderPadding(0, 0, 1, 1)
-	c.SetBackgroundColor(styles.BgColor())
-	c.SetTextColor(styles.FgColor())
-	styles.AddListener(&c)
-	c.SetInputCapture(c.keyboard)
+	p.SetWordWrap(true)
+	p.SetWrap(true)
+	p.SetDynamicColors(true)
+	p.SetBorder(true)
+	p.SetBorderPadding(0, 0, 1, 1)
+	p.SetBackgroundColor(styles.BgColor())
+	p.SetTextColor(styles.FgColor())
+	styles.AddListener(&p)
+	p.SetInputCapture(p.keyboard)
 
-	return &c
+	return &p
 }
 
 // SendKey sends an keyboard event (testing only!).
@@ -120,46 +120,46 @@ func (p *Prompt) SendStrokes(s string) {
 }
 
 // SetModel sets the prompt buffer model.
-func (c *Prompt) SetModel(m PromptModel) {
-	if c.model != nil {
-		c.model.RemoveListener(c)
+func (p *Prompt) SetModel(m PromptModel) {
+	if p.model != nil {
+		p.model.RemoveListener(p)
 	}
-	c.model = m
-	c.model.AddListener(c)
+	p.model = m
+	p.model.AddListener(p)
 }
 
-func (c *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	m, ok := c.model.(Suggester)
+func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
+	m, ok := p.model.(Suggester)
 	if !ok {
 		return nil
 	}
 
 	switch evt.Key() {
 	case tcell.KeyBackspace2, tcell.KeyBackspace, tcell.KeyDelete:
-		c.model.Delete()
+		p.model.Delete()
 	case tcell.KeyRune:
-		c.model.Add(evt.Rune())
+		p.model.Add(evt.Rune())
 	case tcell.KeyEscape:
-		c.model.ClearText()
-		c.model.SetActive(false)
+		p.model.ClearText()
+		p.model.SetActive(false)
 	case tcell.KeyEnter, tcell.KeyCtrlE:
 		if curr, ok := m.CurrentSuggestion(); ok {
-			c.model.SetText(c.model.GetText() + curr)
+			p.model.SetText(p.model.GetText() + curr)
 		}
-		c.model.SetActive(false)
+		p.model.SetActive(false)
 	case tcell.KeyCtrlW, tcell.KeyCtrlU:
-		c.model.ClearText()
+		p.model.ClearText()
 	case tcell.KeyDown:
 		if next, ok := m.NextSuggestion(); ok {
-			c.suggest(c.model.GetText(), next)
+			p.suggest(p.model.GetText(), next)
 		}
 	case tcell.KeyUp:
 		if prev, ok := m.PrevSuggestion(); ok {
-			c.suggest(c.model.GetText(), prev)
+			p.suggest(p.model.GetText(), prev)
 		}
 	case tcell.KeyTab, tcell.KeyRight, tcell.KeyCtrlF:
 		if curr, ok := m.CurrentSuggestion(); ok {
-			c.model.SetText(c.model.GetText() + curr)
+			p.model.SetText(p.model.GetText() + curr)
 			m.ClearSuggestions()
 		}
 	}
@@ -167,78 +167,78 @@ func (c *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 // StylesChanged notifies skin changed.
-func (c *Prompt) StylesChanged(s *config.Styles) {
-	c.styles = s
-	c.SetBackgroundColor(s.BgColor())
-	c.SetTextColor(s.FgColor())
+func (p *Prompt) StylesChanged(s *config.Styles) {
+	p.styles = s
+	p.SetBackgroundColor(s.BgColor())
+	p.SetTextColor(s.FgColor())
 }
 
 // InCmdMode returns true if command is active, false otherwise.
-func (c *Prompt) InCmdMode() bool {
-	if c.model == nil {
+func (p *Prompt) InCmdMode() bool {
+	if p.model == nil {
 		return false
 	}
-	return c.model.IsActive()
+	return p.model.IsActive()
 }
 
-func (c *Prompt) activate() {
-	c.SetCursorIndex(len(c.model.GetText()))
-	c.write(c.model.GetText(), "")
-	c.model.Notify()
+func (p *Prompt) activate() {
+	p.SetCursorIndex(len(p.model.GetText()))
+	p.write(p.model.GetText(), "")
+	p.model.Notify()
 }
 
-func (c *Prompt) update(s string) {
-	c.Clear()
-	c.write(s, "")
+func (p *Prompt) update(s string) {
+	p.Clear()
+	p.write(s, "")
 }
 
-func (c *Prompt) suggest(text, suggestion string) {
-	c.Clear()
-	c.write(text, suggestion)
+func (p *Prompt) suggest(text, suggestion string) {
+	p.Clear()
+	p.write(text, suggestion)
 }
 
-func (c *Prompt) write(text, suggest string) {
-	c.SetCursorIndex(c.spacer + len(text))
+func (p *Prompt) write(text, suggest string) {
+	p.SetCursorIndex(p.spacer + len(text))
 	txt := text
 	if suggest != "" {
 		txt += "[gray::-]" + suggest
 	}
-	fmt.Fprintf(c, defaultPrompt, c.icon, txt)
+	fmt.Fprintf(p, defaultPrompt, p.icon, txt)
 }
 
 // ----------------------------------------------------------------------------
 // Event Listener protocol...
 
 // BufferChanged indicates the buffer was changed.
-func (c *Prompt) BufferChanged(s string) {
-	c.update(s)
+func (p *Prompt) BufferChanged(s string) {
+	p.update(s)
 }
 
-func (c *Prompt) SuggestionChanged(text, sugg string) {
-	c.Clear()
-	c.write(text, sugg)
+func (p *Prompt) SuggestionChanged(text, sugg string) {
+	p.Clear()
+	p.write(text, sugg)
 }
 
 // BufferActive indicates the buff activity changed.
-func (c *Prompt) BufferActive(activate bool, kind model.BufferKind) {
+func (p *Prompt) BufferActive(activate bool, kind model.BufferKind) {
 	if activate {
-		c.ShowCursor(true)
-		c.SetBorder(true)
-		c.SetTextColor(c.styles.FgColor())
-		c.SetBorderColor(colorFor(kind))
-		c.icon = c.iconFor(kind)
-		c.activate()
+		p.ShowCursor(true)
+		p.SetBorder(true)
+		p.SetTextColor(p.styles.FgColor())
+		p.SetBorderColor(colorFor(kind))
+		p.icon = p.iconFor(kind)
+		p.activate()
 		return
 	}
 
-	c.ShowCursor(false)
-	c.SetBorder(false)
-	c.SetBackgroundColor(c.styles.BgColor())
-	c.Clear()
+	p.ShowCursor(false)
+	p.SetBorder(false)
+	p.SetBackgroundColor(p.styles.BgColor())
+	p.Clear()
 }
 
-func (c *Prompt) iconFor(k model.BufferKind) rune {
-	if c.noIcons {
+func (p *Prompt) iconFor(k model.BufferKind) rune {
+	if p.noIcons {
 		return ' '
 	}
 

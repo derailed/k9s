@@ -34,44 +34,44 @@ func NewFishBuff(key rune, kind BufferKind) *FishBuff {
 }
 
 // PrevSuggestion returns the prev suggestion.
-func (c *FishBuff) PrevSuggestion() (string, bool) {
-	if c.suggestionIndex < 0 {
+func (f *FishBuff) PrevSuggestion() (string, bool) {
+	if f.suggestionIndex < 0 {
 		return "", false
 	}
-	c.suggestionIndex--
-	if c.suggestionIndex < 0 {
-		c.suggestionIndex = len(c.suggestions) - 1
+	f.suggestionIndex--
+	if f.suggestionIndex < 0 {
+		f.suggestionIndex = len(f.suggestions) - 1
 	}
-	return c.suggestions[c.suggestionIndex], true
+	return f.suggestions[f.suggestionIndex], true
 }
 
 // NextSuggestion returns the next suggestion.
-func (c *FishBuff) NextSuggestion() (string, bool) {
-	if c.suggestionIndex < 0 {
+func (f *FishBuff) NextSuggestion() (string, bool) {
+	if f.suggestionIndex < 0 {
 		return "", false
 	}
-	c.suggestionIndex++
-	if c.suggestionIndex >= len(c.suggestions) {
-		c.suggestionIndex = 0
+	f.suggestionIndex++
+	if f.suggestionIndex >= len(f.suggestions) {
+		f.suggestionIndex = 0
 	}
-	return c.suggestions[c.suggestionIndex], true
+	return f.suggestions[f.suggestionIndex], true
 }
 
 // ClearSuggestions clear out all suggestions.
-func (c *FishBuff) ClearSuggestions() {
-	c.suggestion, c.suggestionIndex = "", -1
+func (f *FishBuff) ClearSuggestions() {
+	f.suggestion, f.suggestionIndex = "", -1
 }
 
 // CurrentSuggestion returns the current suggestion.
-func (c *FishBuff) CurrentSuggestion() (string, bool) {
-	if c.suggestionIndex < 0 {
+func (f *FishBuff) CurrentSuggestion() (string, bool) {
+	if f.suggestionIndex < 0 {
 		return "", false
 	}
-	return c.suggestions[c.suggestionIndex], true
+	return f.suggestions[f.suggestionIndex], true
 }
 
 // AutoSuggests returns true if model implements auto suggestions.
-func (c *FishBuff) AutoSuggests() bool {
+func (f *FishBuff) AutoSuggests() bool {
 	return true
 }
 

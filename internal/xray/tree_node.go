@@ -468,14 +468,16 @@ func (t TreeNode) toEmojiTitle() (title string) {
 }
 
 func toEmoji(gvr string) string {
-	if ic := toEmojiXRay(gvr); ic != "" {
-		return ic
+	if e := v1Emoji(gvr); e != "" {
+		return e
+	}
+	if e := appsEmoji(gvr); e != "" {
+		return e
+	}
+	if e := issueEmoji(gvr); e != "" {
+		return e
 	}
 	switch gvr {
-	case "apps/v1/replicasets":
-		return "👯‍♂️"
-	case "v1/nodes":
-		return "🖥 "
 	case "autoscaling/v1/horizontalpodautoscalers":
 		return "♎️"
 	case "rbac.authorization.k8s.io/v1/clusterrolebindings", "rbac.authorization.k8s.io/v1/clusterroles":
@@ -488,6 +490,17 @@ func toEmoji(gvr string) string {
 		return "🏷 "
 	case "policy/v1beta1/podsecuritypolicies":
 		return "👮‍♂️"
+	case "containers":
+		return "🐳"
+	case "report":
+		return "🧼"
+	default:
+		return "📎"
+	}
+}
+
+func issueEmoji(gvr string) string {
+	switch gvr {
 	case "issue_0":
 		return "👍"
 	case "issue_1":
@@ -496,19 +509,17 @@ func toEmoji(gvr string) string {
 		return "☣️ "
 	case "issue_3":
 		return "🧨"
-	case "report":
-		return "🧼"
 	default:
-		return "📎"
+		return ""
 	}
 }
 
-func toEmojiXRay(gvr string) string {
+func v1Emoji(gvr string) string {
 	switch gvr {
-	case "containers":
-		return "🐳"
 	case "v1/namespaces":
 		return "🗂 "
+	case "v1/nodes":
+		return "🖥 "
 	case "v1/pods":
 		return "🚛"
 	case "v1/services":
@@ -523,12 +534,21 @@ func toEmojiXRay(gvr string) string {
 		return "🔒"
 	case "v1/configmaps":
 		return "🗺 "
+	default:
+		return ""
+	}
+}
+
+func appsEmoji(gvr string) string {
+	switch gvr {
 	case "apps/v1/deployments":
 		return "🪂"
 	case "apps/v1/statefulsets":
 		return "🎎"
 	case "apps/v1/daemonsets":
 		return "😈"
+	case "apps/v1/replicasets":
+		return "👯‍♂️"
 	default:
 		return ""
 	}
