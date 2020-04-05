@@ -34,13 +34,8 @@ type Suggester interface {
 	ClearSuggestions()
 }
 
+// PromptModel represents a prompt buffer
 type PromptModel interface {
-	// AutoSuggests returns true if model implements auto suggestions.
-	AutoSuggests() bool
-
-	// Suggestions returns suggestions.
-	Suggestions() []string
-
 	// SetText sets the model text.
 	SetText(string)
 
@@ -214,6 +209,7 @@ func (p *Prompt) BufferChanged(s string) {
 	p.update(s)
 }
 
+// SuggestionChanged notifies the suggestion changed.
 func (p *Prompt) SuggestionChanged(text, sugg string) {
 	p.Clear()
 	p.write(text, sugg)
