@@ -3,9 +3,9 @@ package model
 const maxBuff = 10
 
 const (
-	// Command represents a command buffer.
+	// CommandBuffer represents a command buffer.
 	CommandBuffer BufferKind = 1 << iota
-	// Filter represents a filter buffer.
+	// FilterBuffer represents a filter buffer.
 	FilterBuffer
 )
 
@@ -40,17 +40,25 @@ func NewCmdBuff(key rune, kind BufferKind) *CmdBuff {
 	}
 }
 
+// CurrentSuggestion returns the current suggestion.
 func (c *CmdBuff) CurrentSuggestion() (string, bool) {
 	return "", false
 }
+
+// NextSuggestion returns the next suggestion.
 func (c *CmdBuff) NextSuggestion() (string, bool) {
 	return "", false
 }
+
+// PrevSuggestion returns the prev suggestion.
 func (c *CmdBuff) PrevSuggestion() (string, bool) {
 	return "", false
 }
+
+// ClearSuggestions clear out all suggestions.
 func (c *CmdBuff) ClearSuggestions() {}
 
+// AutoSuggests returns true if model implements auto suggestions.
 func (c *CmdBuff) AutoSuggests() bool {
 	return false
 }
@@ -84,7 +92,7 @@ func (c *CmdBuff) GetText() string {
 	return string(c.buff)
 }
 
-// Set initializes the buffer with a command.
+// SetText initializes the buffer with a command.
 func (c *CmdBuff) SetText(cmd string) {
 	c.buff = []rune(cmd)
 	c.fireBufferChanged()

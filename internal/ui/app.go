@@ -115,6 +115,7 @@ func (a *App) BailOut() {
 	a.Stop()
 }
 
+// ResetPrompt reset the prompt model and marks buffer as active.
 func (a *App) ResetPrompt(m PromptModel) {
 	a.Prompt().SetModel(m)
 	a.SetFocus(a.Prompt())
@@ -220,7 +221,7 @@ func (a *App) Logo() *Logo {
 	return a.views["logo"].(*Logo)
 }
 
-// Cmd returns app cmd.
+// Prompt returns command prompt.
 func (a *App) Prompt() *Prompt {
 	return a.views["prompt"].(*Prompt)
 }

@@ -33,6 +33,7 @@ func NewFishBuff(key rune, kind BufferKind) *FishBuff {
 	}
 }
 
+// PrevSuggestion returns the prev suggestion.
 func (c *FishBuff) PrevSuggestion() (string, bool) {
 	if c.suggestionIndex < 0 {
 		return "", false
@@ -44,6 +45,7 @@ func (c *FishBuff) PrevSuggestion() (string, bool) {
 	return c.suggestions[c.suggestionIndex], true
 }
 
+// NextSuggestion returns the next suggestion.
 func (c *FishBuff) NextSuggestion() (string, bool) {
 	if c.suggestionIndex < 0 {
 		return "", false
@@ -55,10 +57,12 @@ func (c *FishBuff) NextSuggestion() (string, bool) {
 	return c.suggestions[c.suggestionIndex], true
 }
 
+// ClearSuggestions clear out all suggestions.
 func (c *FishBuff) ClearSuggestions() {
 	c.suggestion, c.suggestionIndex = "", -1
 }
 
+// CurrentSuggestion returns the current suggestion.
 func (c *FishBuff) CurrentSuggestion() (string, bool) {
 	if c.suggestionIndex < 0 {
 		return "", false
@@ -66,10 +70,12 @@ func (c *FishBuff) CurrentSuggestion() (string, bool) {
 	return c.suggestions[c.suggestionIndex], true
 }
 
+// AutoSuggests returns true if model implements auto suggestions.
 func (c *FishBuff) AutoSuggests() bool {
 	return true
 }
 
+// Suggestions returns suggestions.
 func (f *FishBuff) Suggestions() []string {
 	if f.suggestionFn != nil {
 		return f.suggestionFn(string(f.buff))

@@ -19,10 +19,18 @@ var _ Suggester = (*model.CmdBuff)(nil)
 var _ PromptModel = (*model.FishBuff)(nil)
 var _ Suggester = (*model.FishBuff)(nil)
 
+// Suggester provides suggestions.
 type Suggester interface {
+	// CurrentSuggestion returns the current suggestion.
 	CurrentSuggestion() (string, bool)
+
+	// NextSuggestion returns the next suggestion.
 	NextSuggestion() (string, bool)
+
+	// PrevSuggestion returns the prev suggestion.
 	PrevSuggestion() (string, bool)
+
+	// ClearSuggestions clear out all suggestions.
 	ClearSuggestions()
 }
 
@@ -51,9 +59,16 @@ type PromptModel interface {
 	// RemoveListener removes a listener.
 	RemoveListener(model.BuffWatcher)
 
+	// IsActive returns true if prompt is active.
 	IsActive() bool
+
+	// SetActive sets whether the prompt is active or not.
 	SetActive(bool)
+
+	// Add adds a new char to the prompt.
 	Add(rune)
+
+	// Delete deletes the last prompt character.
 	Delete()
 }
 
@@ -104,6 +119,7 @@ func (p *Prompt) SendStrokes(s string) {
 	}
 }
 
+// SetModel sets the prompt buffer model.
 func (c *Prompt) SetModel(m PromptModel) {
 	if c.model != nil {
 		c.model.RemoveListener(c)
