@@ -113,6 +113,31 @@ k9s --context coolCtx
 k9s --readonly
 ```
 
+## Logs
+
+Given the nature of the ui k9s does produce logs to a specific location. To view the logs or turn on debug mode, use the following commands:
+
+```shell
+k9s info
+# Will produces something like this
+#  ____  __.________
+# |    |/ _/   __   \______
+# |      < \____    /  ___/
+# |    |  \   /    /\___ \
+# |____|__ \ /____//____  >
+#         \/            \/
+#
+# Configuration:   /Users/fernand/.k9s/config.yml
+# Logs:            /var/folders/8c/hh6rqbgs5nx_c_8k9_17ghfh0000gn/T/k9s-fernand.log
+# Screen Dumps:    /var/folders/8c/hh6rqbgs5nx_c_8k9_17ghfh0000gn/T/k9s-screens-fernand
+
+# To view k9s logs
+tail -f /var/folders/8c/hh6rqbgs5nx_c_8k9_17ghfh0000gn/T/k9s-fernand.log
+
+# Start K9s in debug mode
+k9s -l debug
+```
+
 ## Key Bindings
 
 K9s uses aliases to navigate most K8s resources.

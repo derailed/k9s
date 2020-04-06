@@ -158,8 +158,7 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 }
 
 func (c *Command) defaultCmd() error {
-	err := c.run(c.app.Config.ActiveView(), "", true)
-	if err != nil {
+	if err := c.run(c.app.Config.ActiveView(), "", true); err != nil {
 		log.Error().Err(err).Msgf("Saved command failed. Loading default view")
 		return c.run("pod", "", true)
 	}
