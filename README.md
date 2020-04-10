@@ -161,7 +161,7 @@ K9s uses aliases to navigate most K8s resources.
 | To delete a resource (TAB and ENTER to confirm)               | `ctrl-d`              |                                                             |
 | To kill a resource (no confirmation dialog!)                  | `ctrl-k`              |                                                             |
 | Launch pulses view                                            | `:`pulses or pu⏎      |                                                             |
-| Launch XRay view                                              | `:`xray pod⏎          | accepts po, svc, dp, rs, sts or ds                          |
+| Launch XRay view                                              | `:`xray RESOURCE [NAMESPACE]⏎ | RESOURCE can be one of po, svc, dp, rs, sts, ds, NAMESPACE is optional |
 
 ---
 

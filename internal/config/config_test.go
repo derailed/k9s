@@ -269,6 +269,8 @@ var expectedConfig = `k9s:
     buffer: 800
     sinceSeconds: -1
     fullScreenLogs: false
+    textWrap: false
+    showTime: false
   currentContext: blee
   currentCluster: blee
   clusters:
@@ -320,6 +322,8 @@ var resetConfig = `k9s:
     buffer: 2000
     sinceSeconds: -1
     fullScreenLogs: false
+    textWrap: false
+    showTime: false
   currentContext: blee
   currentCluster: blee
   clusters:
