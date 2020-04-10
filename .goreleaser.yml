@@ -50,12 +50,12 @@ brews:
   - name: k9s
     github:
       owner: derailed
-      name: k9s-homebrew-tap
+      name: homebrew-tap
     commit_author:
       name: derailed
       email: fernand@imhotep.io
     folder: Formula
-    homepage: https://k8sk9s.dev/
+    homepage: https://k9scli.dev/
     description: Kubernetes CLI To Manage Your Clusters In Style!
     test: |
       system "k9s version"

@@ -9,20 +9,20 @@ IMAGE    := ${IMG_NAME}:${VERSION}
 
 default: help
 
-test:      ## Run all tests
+test:   ## Run all tests
 	@go clean --testcache && go test ./...
 
 
-cover:     ## Run test coverage suite
+cover:  ## Run test coverage suite
 	@go test ./... --coverprofile=cov.out
 	@go tool cover --html=cov.out
 
-build:     ## Builds the CLI
+build:  ## Builds the CLI
 	@go build \
 	-ldflags "-w -s -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
 	-a -tags netgo -o execs/${NAME} main.go
 
-img:  ## Build Docker Image
+img:    ## Build Docker Image
 	@docker build --rm -t ${IMAGE} .
 
 help:

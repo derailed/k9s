@@ -115,7 +115,7 @@ k9s --readonly
 
 ## Logs
 
-Given the nature of the ui k9s does produce logs to a specific location. To view the logs or turn on debug mode, use the following commands:
+Given the nature of the ui k9s does produce logs to a specific location. To view the logs and turn on debug mode, use the following commands:
 
 ```shell
 k9s info
