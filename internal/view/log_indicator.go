@@ -26,6 +26,8 @@ func NewLogIndicator(cfg *config.Config, styles *config.Styles) *LogIndicator {
 		TextView:     tview.NewTextView(),
 		scrollStatus: 1,
 		fullScreen:   cfg.K9s.Logger.FullScreenLogs,
+		textWrap:     cfg.K9s.Logger.TextWrap,
+		showTime:     cfg.K9s.Logger.ShowTime,
 	}
 	l.StylesChanged(styles)
 	styles.AddListener(&l)
