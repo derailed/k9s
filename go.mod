@@ -33,7 +33,6 @@ require (
 	k8s.io/klog v1.0.0
 	k8s.io/kubectl v0.18.0
 	k8s.io/metrics v0.18.0
-	rsc.io/letsencrypt v0.0.3 // indirect
 	sigs.k8s.io/yaml v1.2.0
 	vbom.ml/util v0.0.0-20180919145318-efcd4e0f9787
 )

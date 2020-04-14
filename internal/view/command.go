@@ -135,6 +135,8 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 	}
 
 	switch cmds[0] {
+	case "chart", "charts":
+		return fmt.Errorf("Command no longer supported. Awaiting helm release for k8s v1.18!")
 	case "ctx", "context", "contexts":
 		if len(cmds) == 2 {
 			return useContext(c.app, cmds[1])

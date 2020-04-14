@@ -65,10 +65,11 @@ func TestTableViewFilter(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
 	v.Init(makeContext())
 	v.SetModel(&testTableModel{})
+	v.Refresh()
 	v.CmdBuff().SetActive(true)
 	v.CmdBuff().SetText("blee")
-	v.Refresh()
-	assert.Equal(t, 1, v.GetRowCount())
+
+	assert.Equal(t, 2, v.GetRowCount())
 }
 
 func TestTableViewSort(t *testing.T) {

@@ -149,7 +149,8 @@ func rxFilter(q string, data render.TableData) (render.TableData, error) {
 		Namespace: data.Namespace,
 	}
 	for _, re := range data.RowEvents {
-		if rx.MatchString(re.Row.ID) {
+		fields := strings.Join(re.Row.Fields, " ")
+		if rx.MatchString(fields) {
 			filtered.RowEvents = append(filtered.RowEvents, re)
 		}
 	}
