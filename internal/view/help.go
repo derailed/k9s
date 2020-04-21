@@ -35,7 +35,7 @@ type Help struct {
 // NewHelp returns a new help viewer.
 func NewHelp() *Help {
 	return &Help{
-		Table: NewTable(client.NewGVR("help")),
+		Table: NewTable(client.NewGVR(helpTitle)),
 	}
 }
 
