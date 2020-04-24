@@ -1,0 +1,51 @@
+# K9s Kiss Skin Contributed by [@beejeebus](justin.p.randell@gmail.com)
+k9s:
+  body:
+    fgColor: default
+    bgColor: default
+    logoColor: default
+  info:
+    fgColor: default
+    sectionColor: default
+  frame:
+    border:
+      fgColor: default
+      focusColor: default
+    menu:
+      fgColor: default
+      keyColor: default
+      numKeyColor: default
+    crumbs:
+      fgColor: default
+      bgColor: default
+      activeColor: default
+    status:
+      newColor: default
+      modifyColor: default
+      addColor: default
+      errorColor: default
+      highlightcolor: default
+      killColor: default
+      completedColor: default
+    title:
+      fgColor: default
+      bgColor: default
+      highlightColor: default
+      counterColor: default
+      filterColor: default
+  views:
+    table:
+      fgColor: default
+      bgColor: default
+      cursorColor: default
+      header:
+        fgColor: default
+        bgColor: default
+        sorterColor: default
+    yaml:
+      keyColor: default
+      colonColor: default
+      valueColor: default
+    logs:
+      fgColor: default
+      bgColor: default

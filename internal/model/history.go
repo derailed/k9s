@@ -1,5 +1,9 @@
 package model
 
+import (
+	"strings"
+)
+
 // MaxHistory tracks max command history
 const MaxHistory = 20
 
@@ -11,7 +15,9 @@ type History struct {
 
 // NewHistory returns a new instance.
 func NewHistory(limit int) *History {
-	return &History{limit: limit}
+	return &History{
+		limit: limit,
+	}
 }
 
 // List returns the current command history.
@@ -21,14 +27,19 @@ func (h *History) List() []string {
 
 // Push adds a new item.
 func (h *History) Push(c string) {
-	if i := h.indexOf(c); i != -1 {
-		h.commands = append(h.commands[:i], h.commands[i+1:]...)
-	}
-	if len(h.commands) < h.limit {
-		h.commands = append(h.commands, c)
+	if c == "" {
 		return
 	}
-	h.commands = append(h.commands[1:], c)
+
+	c = strings.ToLower(c)
+	if i := h.indexOf(c); i != -1 {
+		return
+	}
+	if len(h.commands) < h.limit {
+		h.commands = append([]string{c}, h.commands...)
+		return
+	}
+	h.commands = append([]string{c}, h.commands[:len(h.commands)-1]...)
 }
 
 // Clear clear out the stack using pops.

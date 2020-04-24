@@ -126,7 +126,7 @@ func (p *Prompt) SetModel(m PromptModel) {
 func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	m, ok := p.model.(Suggester)
 	if !ok {
-		return nil
+		return evt
 	}
 
 	switch evt.Key() {
@@ -138,9 +138,7 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		p.model.ClearText()
 		p.model.SetActive(false)
 	case tcell.KeyEnter, tcell.KeyCtrlE:
-		if curr, ok := m.CurrentSuggestion(); ok {
-			p.model.SetText(p.model.GetText() + curr)
-		}
+		p.model.SetText(p.model.GetText())
 		p.model.SetActive(false)
 	case tcell.KeyCtrlW, tcell.KeyCtrlU:
 		p.model.ClearText()

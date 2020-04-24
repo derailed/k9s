@@ -42,8 +42,8 @@ func NewRowEvent(kind ResEvent, row Row) RowEvent {
 	}
 }
 
-// NewDeltaRowEvent returns a new row event with deltas.
-func NewDeltaRowEvent(row Row, delta DeltaRow) RowEvent {
+// NewRowEventWithDeltas returns a new row event with deltas.
+func NewRowEventWithDeltas(row Row, delta DeltaRow) RowEvent {
 	return RowEvent{
 		Kind:   EventUpdate,
 		Row:    row,
@@ -75,6 +75,20 @@ func (r RowEvent) Customize(cols []int) RowEvent {
 	}
 }
 
+func (r RowEvent) ExtractHeaderLabels(labelCol int) []string {
+	hh, _ := sortLabels(labelize(r.Row.Fields[labelCol]))
+	return hh
+}
+
+// Labelize returns a new row event based on labels.
+func (r RowEvent) Labelize(cols []int, labelCol int, labels []string) RowEvent {
+	return RowEvent{
+		Kind:   r.Kind,
+		Deltas: r.Deltas.Labelize(cols, labelCol),
+		Row:    r.Row.Labelize(cols, labelCol, labels),
+	}
+}
+
 // Diff returns true if the row changed.
 func (r RowEvent) Diff(re RowEvent, ageCol int) bool {
 	if r.Kind != re.Kind {
@@ -90,6 +104,24 @@ func (r RowEvent) Diff(re RowEvent, ageCol int) bool {
 
 // RowEvents a collection of row events.
 type RowEvents []RowEvent
+
+func (r RowEvents) ExtractHeaderLabels(labelCol int) []string {
+	ll := make([]string, 0, 10)
+	for _, re := range r {
+		ll = append(ll, re.ExtractHeaderLabels(labelCol)...)
+	}
+
+	return ll
+}
+
+func (r RowEvents) Labelize(cols []int, labelCol int, labels []string) RowEvents {
+	out := make(RowEvents, 0, len(r))
+	for _, re := range r {
+		out = append(out, re.Labelize(cols, labelCol, labels))
+	}
+
+	return out
+}
 
 // Customize returns custom row events based on columns layout.
 func (r RowEvents) Customize(cols []int) RowEvents {

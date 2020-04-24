@@ -9,8 +9,17 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
+	v1 "k8s.io/api/core/v1"
+	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const (
@@ -28,7 +37,7 @@ type shellOpts struct {
 func runK(a *App, opts shellOpts) bool {
 	bin, err := exec.LookPath("kubectl")
 	if err != nil {
-		log.Error().Msgf("Unable to find kubectl command in path %v", err)
+		log.Error().Err(err).Msgf("kubectl command is not in your path")
 		return false
 	}
 	var args []string
@@ -43,9 +52,8 @@ func runK(a *App, opts shellOpts) bool {
 		args = append(args, "--kubeconfig", *cfg)
 	}
 	if len(args) > 0 {
-		opts.args = append(opts.args, args...)
+		opts.args = append(args, opts.args...)
 	}
-
 	opts.binary, opts.background = bin, false
 
 	return run(a, opts)
@@ -63,10 +71,13 @@ func run(a *App, opts shellOpts) bool {
 }
 
 func edit(a *App, opts shellOpts) bool {
-	bin, err := exec.LookPath(os.Getenv("EDITOR"))
+	bin, err := exec.LookPath(os.Getenv("K9S_EDITOR"))
 	if err != nil {
-		log.Error().Msgf("Unable to find editor command in path %v", err)
-		return false
+		bin, err = exec.LookPath(os.Getenv("EDITOR"))
+		if err != nil {
+			log.Error().Err(err).Msgf("K9S_EDITOR|EDITOR not set")
+			return false
+		}
 	}
 	opts.binary, opts.background = bin, false
 
@@ -92,7 +103,6 @@ func execute(opts shellOpts) error {
 	}()
 
 	log.Debug().Msgf("Running command> %s %s", opts.binary, strings.Join(opts.args, " "))
-
 	cmd := exec.Command(opts.binary, opts.args...)
 
 	var err error
@@ -114,4 +124,115 @@ func execute(opts shellOpts) error {
 
 func clearScreen() {
 	fmt.Print("\033[H\033[2J")
+}
+
+const (
+	k9sShell           = "k9s-shell"
+	k9sShellNS         = "default"
+	k9sShellRetryCount = 10
+	k9sShellRetryDelay = 500 * time.Millisecond
+)
+
+func ssh(a *App, node string) error {
+	nukeK9sShell(a.Conn())
+	defer nukeK9sShell(a.Conn())
+	if err := launchShellPod(a, node); err != nil {
+		return err
+	}
+	shellIn(a, client.FQN(k9sShellNS, k9sShell), k9sShell)
+
+	return nil
+}
+
+func nukeK9sShell(c client.Connection) {
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+
+	err := c.DialOrDie().CoreV1().Pods(k9sShellNS).Delete(ctx, k9sShell, metav1.DeleteOptions{})
+	if kerrors.IsNotFound(err) {
+		return
+	}
+	if err != nil {
+		log.Error().Err(err).Msgf("Fail to delete pod %s", k9sShell)
+	}
+}
+
+func launchShellPod(a *App, node string) error {
+	spec := k9sShellPod(node)
+	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	defer cancel()
+	dial := a.Conn().DialOrDie().CoreV1().Pods(k9sShellNS)
+	if _, err := dial.Create(ctx, &spec, metav1.CreateOptions{}); err != nil {
+		return err
+	}
+
+	for i := 0; i < k9sShellRetryCount; i++ {
+		o, err := a.factory.Get("v1/pods", client.FQN(k9sShellNS, k9sShell), true, labels.Everything())
+		if err != nil {
+			time.Sleep(k9sShellRetryDelay)
+			continue
+		}
+		var pod v1.Pod
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod); err != nil {
+			return err
+		}
+		if pod.Status.Phase == v1.PodRunning {
+			return nil
+		}
+		time.Sleep(k9sShellRetryDelay)
+	}
+
+	return fmt.Errorf("Unable to launch shell pod on node %s", node)
+}
+
+func k9sShellPod(node string) v1.Pod {
+	var grace int64
+	var priv bool = true
+
+	return v1.Pod{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      k9sShell,
+			Namespace: k9sShellNS,
+		},
+		Spec: v1.PodSpec{
+			NodeName:                      node,
+			RestartPolicy:                 v1.RestartPolicyNever,
+			HostPID:                       true,
+			HostNetwork:                   true,
+			TerminationGracePeriodSeconds: &grace,
+			Volumes: []v1.Volume{
+				{
+					Name: "root-vol",
+					VolumeSource: v1.VolumeSource{
+						HostPath: &v1.HostPathVolumeSource{
+							Path: "/",
+						},
+					},
+				},
+			},
+			Containers: []v1.Container{
+				{
+					Name:  k9sShell,
+					Image: "busybox:1.31",
+					VolumeMounts: []v1.VolumeMount{
+						{
+							Name:      "root-vol",
+							MountPath: "/host",
+							ReadOnly:  true,
+						},
+					},
+					Resources: v1.ResourceRequirements{
+						Limits: v1.ResourceList{
+							v1.ResourceCPU:    resource.MustParse("200m"),
+							v1.ResourceMemory: resource.MustParse("100Mi"),
+						},
+					},
+					Stdin: true,
+					SecurityContext: &v1.SecurityContext{
+						Privileged: &priv,
+					},
+				},
+			},
+		},
+	}
 }

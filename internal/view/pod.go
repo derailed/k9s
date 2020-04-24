@@ -184,7 +184,7 @@ func resumeShellIn(a *App, c model.Component, path, co string) {
 }
 
 func shellIn(a *App, path, co string) {
-	args := computeShellArgs(path, co, a.Config.K9s.CurrentContext, a.Conn().Config().Flags().KubeConfig)
+	args := computeShellArgs(path, co, a.Conn().Config().Flags().KubeConfig)
 
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
 	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, path, co), args: args}) {
@@ -226,24 +226,25 @@ func resumeAttachIn(a *App, c model.Component, path, co string) {
 }
 
 func attachIn(a *App, path, co string) {
-	args := buildShellArgs("attach", path, co, a.Config.K9s.CurrentContext, a.Conn().Config().Flags().KubeConfig)
+	args := buildShellArgs("attach", path, co, a.Conn().Config().Flags().KubeConfig)
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
 	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, path, co), args: args}) {
 		a.Flash().Err(errors.New("Attach exec failed"))
 	}
 }
 
-func computeShellArgs(path, co, context string, kcfg *string) []string {
-	args := buildShellArgs("exec", path, co, context, kcfg)
+func computeShellArgs(path, co string, kcfg *string) []string {
+	args := buildShellArgs("exec", path, co, kcfg)
 	return append(args, "--", "sh", "-c", shellCheck)
 }
 
-func buildShellArgs(cmd, path, co, context string, kcfg *string) []string {
+func buildShellArgs(cmd, path, co string, kcfg *string) []string {
 	args := make([]string, 0, 15)
 	args = append(args, cmd, "-it")
-	args = append(args, "--context", context)
 	ns, po := client.Namespaced(path)
-	args = append(args, "-n", ns)
+	if ns != client.AllNamespaces {
+		args = append(args, "-n", ns)
+	}
 	args = append(args, po)
 	if kcfg != nil && *kcfg != "" {
 		args = append(args, "--kubeconfig", *kcfg)

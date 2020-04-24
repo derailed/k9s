@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -43,6 +44,13 @@ func (n *Node) bindKeys(aa ui.KeyActions) {
 		ui.KeyShiftX: ui.NewKeyAction("Sort CPU%", n.GetTable().SortColCmd("%CPU", false), false),
 		ui.KeyShiftZ: ui.NewKeyAction("Sort MEM%", n.GetTable().SortColCmd("%MEM", false), false),
 	})
+
+	cl := n.App().Config.K9s.CurrentCluster
+	if n.App().Config.K9s.Clusters[cl].FeatureGates.NodeShell {
+		aa.Add(ui.KeyActions{
+			ui.KeyS: ui.NewKeyAction("Shell", n.sshCmd, true),
+		})
+	}
 }
 
 func (n *Node) showPods(app *App, _ ui.Tabular, _, path string) {
@@ -125,6 +133,20 @@ func (n *Node) toggleCordonCmd(cordon bool) func(evt *tcell.EventKey) *tcell.Eve
 
 		return nil
 	}
+}
+
+func (n *Node) sshCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := n.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	_, node := client.Namespaced(path)
+	if err := ssh(n.App(), node); err != nil {
+		log.Error().Err(err).Msgf("SSH Failed")
+	}
+
+	return nil
 }
 
 func (n *Node) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {

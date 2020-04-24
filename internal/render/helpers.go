@@ -297,3 +297,30 @@ func Pad(s string, width int) string {
 
 	return s + strings.Repeat(" ", width-len(s))
 }
+
+// Converts labels string to map
+func labelize(labels string) map[string]string {
+	ll := strings.Split(labels, ",")
+	data := make(map[string]string, len(ll))
+
+	for _, l := range ll {
+		tokens := strings.Split(l, "=")
+		if len(tokens) == 2 {
+			data[tokens[0]] = tokens[1]
+		}
+	}
+
+	return data
+}
+
+func sortLabels(m map[string]string) (keys, vals []string) {
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		vals = append(vals, m[k])
+	}
+
+	return
+}

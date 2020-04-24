@@ -24,6 +24,23 @@ func NewDeltaRow(o, n Row, excludeLast bool) DeltaRow {
 	return deltas
 }
 
+// Labelize returns a new deltaRow based on labels.
+func (d DeltaRow) Labelize(cols []int, labelCol int) DeltaRow {
+	if len(d) == 0 {
+		return d
+	}
+	_, vals := sortLabels(labelize(d[labelCol]))
+	out := make(DeltaRow, 0, len(cols)+len(vals))
+	for _, i := range cols {
+		out = append(out, d[i])
+	}
+	for _, v := range vals {
+		out = append(out, v)
+	}
+
+	return out
+}
+
 // Diff returns true if deltas differ or false otherwise.
 func (d DeltaRow) Diff(r DeltaRow, ageCol int) bool {
 	if len(d) != len(r) {
@@ -77,9 +94,7 @@ func (d DeltaRow) IsBlank() bool {
 // Clone returns a delta copy.
 func (d DeltaRow) Clone() DeltaRow {
 	res := make(DeltaRow, len(d))
-	for i, f := range d {
-		res[i] = f
-	}
+	copy(res, d)
 
 	return res
 }

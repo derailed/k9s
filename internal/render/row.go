@@ -57,6 +57,20 @@ func NewRow(size int) Row {
 	return Row{Fields: make([]string, size)}
 }
 
+// Labelize returns a new row based on labels.
+func (r Row) Labelize(cols []int, labelCol int, labels []string) Row {
+	out := NewRow(len(cols) + len(labels))
+	for _, col := range cols {
+		out.Fields = append(out.Fields, r.Fields[col])
+	}
+	m := labelize(r.Fields[labelCol])
+	for _, label := range labels {
+		out.Fields = append(out.Fields, m[label])
+	}
+
+	return out
+}
+
 // Customize returns a row subset based on given col indices.
 func (r Row) Customize(cols []int) Row {
 	out := NewRow(len(cols))

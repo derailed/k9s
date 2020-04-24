@@ -281,28 +281,30 @@ var expectedConfig = `k9s:
         - default
       view:
         active: po
+      featureGates:
+        nodeShell: false
     fred:
       namespace:
         active: default
         favorites:
         - default
-        - kube-public
         - istio-system
         - all
-        - kube-system
       view:
         active: po
+      featureGates:
+        nodeShell: false
     minikube:
       namespace:
         active: kube-system
         favorites:
         - default
-        - kube-public
         - istio-system
         - all
-        - kube-system
       view:
         active: ctx
+      featureGates:
+        nodeShell: false
   thresholds:
     cpu:
       critical: 90
@@ -334,6 +336,8 @@ var resetConfig = `k9s:
         - default
       view:
         active: po
+      featureGates:
+        nodeShell: false
   thresholds:
     cpu:
       critical: 90

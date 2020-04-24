@@ -9,6 +9,49 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+func TestSortLabels(t *testing.T) {
+	uu := map[string]struct {
+		labels string
+		e      [][]string
+	}{
+		"simple": {
+			labels: "a=b,c=d",
+			e: [][]string{
+				{"a", "c"},
+				{"b", "d"},
+			},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			hh, vv := sortLabels(labelize(u.labels))
+			assert.Equal(t, u.e[0], hh)
+			assert.Equal(t, u.e[1], vv)
+		})
+	}
+}
+
+func TestLabelize(t *testing.T) {
+	uu := map[string]struct {
+		labels string
+		e      map[string]string
+	}{
+		"simple": {
+			labels: "a=b,c=d",
+			e:      map[string]string{"a": "b", "c": "d"},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, labelize(u.labels))
+		})
+	}
+}
+
 func TestDurationToNumber(t *testing.T) {
 	uu := map[string]struct {
 		s, e string

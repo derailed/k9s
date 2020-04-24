@@ -21,8 +21,8 @@ func loadCustomViewers() MetaViewers {
 }
 
 func helmViewers(vv MetaViewers) {
-	vv[client.NewGVR("charts")] = MetaViewer{
-		viewerFn: NewChart,
+	vv[client.NewGVR("helm")] = MetaViewer{
+		viewerFn: NewHelm,
 	}
 }
 

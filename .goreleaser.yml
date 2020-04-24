@@ -13,7 +13,7 @@ builds:
       - darwin
       - windows
     goarch:
-      - 386
+      # - 386
       - amd64
       - arm64
       - arm
@@ -32,7 +32,7 @@ archives:
       bit: Arm
       bitv6: Arm6
       bitv7: Arm7
-      386: i386
+      # 386: i386
       amd64: x86_64
 checksum:
   name_template: "checksums.txt"

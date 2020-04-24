@@ -4,9 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"os/signal"
 	"sort"
 	"strings"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/derailed/k9s/internal"
@@ -26,7 +29,7 @@ var ExitStatus = ""
 const (
 	splashDelay      = 1 * time.Second
 	clusterRefresh   = 5 * time.Second
-	maxConRetry      = 10
+	maxConRetry      = 15
 	clusterInfoWidth = 50
 	clusterInfoPad   = 15
 )
@@ -35,23 +38,25 @@ const (
 type App struct {
 	*ui.App
 
-	Content      *PageStack
-	command      *Command
-	factory      *watch.Factory
-	version      string
-	showHeader   bool
-	cancelFn     context.CancelFunc
-	conRetry     int32
-	clusterModel *model.ClusterInfo
-	history      *model.History
+	Content       *PageStack
+	command       *Command
+	factory       *watch.Factory
+	version       string
+	showHeader    bool
+	cancelFn      context.CancelFunc
+	conRetry      int32
+	clusterModel  *model.ClusterInfo
+	cmdHistory    *model.History
+	filterHistory *model.History
 }
 
 // NewApp returns a K9s app instance.
 func NewApp(cfg *config.Config) *App {
 	a := App{
-		App:     ui.NewApp(cfg, cfg.K9s.CurrentContext),
-		history: model.NewHistory(model.MaxHistory),
-		Content: NewPageStack(),
+		App:           ui.NewApp(cfg, cfg.K9s.CurrentContext),
+		cmdHistory:    model.NewHistory(model.MaxHistory),
+		filterHistory: model.NewHistory(model.MaxHistory),
+		Content:       NewPageStack(),
 	}
 
 	a.Views()["statusIndicator"] = ui.NewStatusIndicator(a.App, a.Styles)
@@ -116,26 +121,37 @@ func (a *App) Init(version string, rate int) error {
 	a.Main.AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
 	a.toggleHeader(!a.Config.K9s.GetHeadless())
 
+	a.initSignals()
+
 	return nil
+}
+
+func (a *App) initSignals() {
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGABRT, syscall.SIGINT, syscall.SIGHUP, syscall.SIGQUIT)
+
+	go func(sig chan os.Signal) {
+		<-sig
+		a.BailOut()
+	}(sig)
 }
 
 func (a *App) suggestCommand() model.SuggestionFunc {
 	return func(s string) (entries sort.StringSlice) {
 		if s == "" {
-			if a.history.Empty() {
+			if a.cmdHistory.Empty() {
 				return
 			}
-			return a.history.List()
+			return a.cmdHistory.List()
 		}
 
-		lowS := strings.ToLower(s)
+		s = strings.ToLower(s)
 		for _, k := range a.command.alias.Aliases.Keys() {
-			lowK := strings.ToLower(k)
-			if lowK == lowS {
+			if k == s {
 				continue
 			}
-			if strings.HasPrefix(lowK, lowS) {
-				entries = append(entries, strings.Replace(k, lowS, "", 1))
+			if strings.HasPrefix(k, s) {
+				entries = append(entries, strings.Replace(k, s, "", 1))
 			}
 		}
 		if len(entries) == 0 {
@@ -333,6 +349,13 @@ func (a *App) initFactory(ns string) {
 
 // BailOut exists the application.
 func (a *App) BailOut() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Error().Msgf("Bailing out %v", err)
+		}
+	}()
+
+	nukeK9sShell(a.Conn())
 	a.factory.Terminate()
 	a.App.BailOut()
 }
@@ -448,10 +471,11 @@ func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if _, ok := a.Content.GetPrimitive("main").(*Help); ok {
+	if a.CmdBuff().InCmdMode() {
 		return evt
 	}
-	if a.Content.Top() != nil && a.Content.Top().Name() == helpTitle {
+
+	if a.Content.Top() != nil && a.Content.Top().Name() == "help" {
 		a.Content.Pop()
 		return nil
 	}
@@ -465,9 +489,6 @@ func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.CmdBuff().InCmdMode() {
-		return evt
-	}
-	if _, ok := a.Content.GetPrimitive("main").(*Alias); ok {
 		return evt
 	}
 

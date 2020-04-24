@@ -80,9 +80,9 @@ func (m *MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsL
 		tmem += mx.AllocatableMEM
 		teph += mx.AllocatableEphemeral
 	}
-	mx.PercCPU, mx.PercMEM, mx.PercEphemeral = ToPercentage(ccpu, tcpu),
-		ToPercentage(cmem, tmem),
-		ToPercentage(ceph, teph)
+	mx.PercCPU = ToPercentage(ccpu, tcpu)
+	mx.PercMEM = ToPercentage(cmem, tmem)
+	mx.PercEphemeral = ToPercentage(ceph, teph)
 
 	return nil
 }

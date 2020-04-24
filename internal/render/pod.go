@@ -83,8 +83,7 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 	}
 
 	var po v1.Pod
-	err := runtime.DefaultUnstructuredConverter.FromUnstructured(pwm.Raw.Object, &po)
-	if err != nil {
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(pwm.Raw.Object, &po); err != nil {
 		return err
 	}
 

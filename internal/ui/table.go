@@ -35,7 +35,7 @@ type Table struct {
 	gvr         client.GVR
 	Path        string
 	Extras      string
-	cmdBuff     *model.CmdBuff
+	cmdBuff     *model.FishBuff
 	styles      *config.Styles
 	viewSetting *config.ViewSetting
 	sortCol     SortColumn
@@ -57,7 +57,7 @@ func NewTable(gvr client.GVR) *Table {
 		},
 		gvr:     gvr,
 		actions: make(KeyActions),
-		cmdBuff: model.NewCmdBuff('/', model.FilterBuffer),
+		cmdBuff: model.NewFishBuff('/', model.FilterBuffer),
 		sortCol: SortColumn{asc: true},
 	}
 }
@@ -149,7 +149,7 @@ func (t *Table) FilterInput(r rune) bool {
 }
 
 // Filter filters out table data.
-func (t *Table) Filter(s string) {
+func (t *Table) Filter(q string) {
 	t.ClearSelection()
 	t.doUpdate(t.filtered(t.GetModel().Peek()))
 	t.UpdateTitle()
@@ -390,7 +390,7 @@ func (t *Table) filtered(data render.TableData) render.TableData {
 }
 
 // CmdBuff returns the associated command buffer.
-func (t *Table) CmdBuff() *model.CmdBuff {
+func (t *Table) CmdBuff() *model.FishBuff {
 	return t.cmdBuff
 }
 

@@ -21,18 +21,18 @@ require (
 	github.com/rs/zerolog v1.18.0
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sahilm/fuzzy v0.1.0
-	github.com/spf13/cobra v0.0.6
+	github.com/spf13/cobra v1.0.0
 	github.com/stretchr/testify v1.5.1
 	golang.org/x/text v0.3.2
 	gopkg.in/yaml.v2 v2.2.8
-	helm.sh/helm/v3 v3.1.2
-	k8s.io/api v0.18.0
-	k8s.io/apimachinery v0.18.0
-	k8s.io/cli-runtime v0.18.0
-	k8s.io/client-go v0.18.0
+	helm.sh/helm/v3 v3.2.0
+	k8s.io/api v0.18.2
+	k8s.io/apimachinery v0.18.2
+	k8s.io/cli-runtime v0.18.2
+	k8s.io/client-go v0.18.2
 	k8s.io/klog v1.0.0
-	k8s.io/kubectl v0.18.0
-	k8s.io/metrics v0.18.0
+	k8s.io/kubectl v0.18.2
+	k8s.io/metrics v0.18.2
 	sigs.k8s.io/yaml v1.2.0
 	vbom.ml/util v0.0.0-20180919145318-efcd4e0f9787
 )

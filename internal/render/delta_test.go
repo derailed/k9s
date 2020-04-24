@@ -7,6 +7,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestDeltaLabelize(t *testing.T) {
+	uu := map[string]struct {
+		o render.Row
+		n render.Row
+		e render.DeltaRow
+	}{
+		"same": {
+			o: render.Row{
+				Fields: render.Fields{"a", "b", "blee=fred,doh=zorg"},
+			},
+			n: render.Row{
+				Fields: render.Fields{"a", "b", "blee=fred1,doh=zorg"},
+			},
+			e: render.DeltaRow{"", "", "fred", "zorg"},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			d := render.NewDeltaRow(u.o, u.n, false)
+			d = d.Labelize([]int{0, 1}, 2)
+			assert.Equal(t, u.e, d)
+		})
+	}
+}
+
 func TestDeltaCustomize(t *testing.T) {
 	uu := map[string]struct {
 		r1, r2 render.Row

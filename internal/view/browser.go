@@ -4,13 +4,16 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
@@ -73,7 +76,34 @@ func (b *Browser) Init(ctx context.Context) error {
 	b.GetModel().AddListener(b)
 	b.GetModel().SetRefreshRate(time.Duration(b.App().Config.K9s.GetRefreshRate()) * time.Second)
 
+	b.CmdBuff().SetSuggestionFn(b.suggestFilter())
+
 	return nil
+}
+
+func (b *Browser) suggestFilter() model.SuggestionFunc {
+	return func(s string) (entries sort.StringSlice) {
+		if s == "" {
+			if b.App().filterHistory.Empty() {
+				return
+			}
+			return b.App().filterHistory.List()
+		}
+
+		s = strings.ToLower(s)
+		for _, h := range b.App().filterHistory.List() {
+			if h == s {
+				continue
+			}
+			if strings.HasPrefix(h, s) {
+				entries = append(entries, strings.Replace(h, s, "", 1))
+			}
+		}
+		if len(entries) == 0 {
+			return nil
+		}
+		return
+	}
 }
 
 func (b *Browser) bindKeys() {
@@ -92,7 +122,33 @@ func (b *Browser) SetInstance(path string) {
 func (b *Browser) Start() {
 	b.Stop()
 	b.Table.Start()
+	b.CmdBuff().AddListener(b)
 	b.GetModel().Watch(b.prepareContext())
+}
+
+// Stop terminates browser updates.
+func (b *Browser) Stop() {
+	b.CmdBuff().RemoveListener(b)
+	b.Table.Stop()
+	if b.cancelFn != nil {
+		b.cancelFn()
+		b.cancelFn = nil
+	}
+}
+
+// BufferChanged indicates the buffer was changed.
+func (b *Browser) BufferChanged(s string) {}
+
+// BufferActive indicates the buff activity changed.
+func (b *Browser) BufferActive(state bool, k model.BufferKind) {
+	if b.cancelFn != nil {
+		b.cancelFn()
+	}
+	b.GetModel().Watch(b.prepareContext())
+
+	if !state && b.GetRowCount() > 1 {
+		b.App().filterHistory.Push(b.CmdBuff().GetText())
+	}
 }
 
 func (b *Browser) prepareContext() context.Context {
@@ -106,16 +162,6 @@ func (b *Browser) prepareContext() context.Context {
 	}
 
 	return ctx
-}
-
-// Stop terminates browser updates.
-func (b *Browser) Stop() {
-	if b.cancelFn == nil {
-		return
-	}
-	b.Table.Stop()
-	b.cancelFn()
-	b.cancelFn = nil
 }
 
 func (b *Browser) refresh() {
@@ -188,11 +234,11 @@ func (b *Browser) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return b.App().PrevCmd(evt)
 	}
 
-	b.CmdBuff().Reset()
 	if ui.IsLabelSelector(b.CmdBuff().GetText()) {
+		b.CmdBuff().Reset()
 		b.Start()
-		return nil
 	}
+	b.CmdBuff().Reset()
 	b.Refresh()
 
 	return nil

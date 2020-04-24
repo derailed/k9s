@@ -50,9 +50,7 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		client.NewGVR("openfaas"):                      &OpenFaas{},
 		client.NewGVR("popeye"):                        &Popeye{},
 		client.NewGVR("sanitizer"):                     &Popeye{},
-
-		// BOZO!! v1.18.0
-		// client.NewGVR("charts"):                        &Chart{},
+		client.NewGVR("helm"):                          &Helm{},
 	}
 
 	r, ok := m[gvr]
@@ -224,9 +222,9 @@ func loadK9s(m ResourceMetas) {
 }
 
 func loadHelm(m ResourceMetas) {
-	m[client.NewGVR("charts")] = metav1.APIResource{
-		Name:       "charts",
-		Kind:       "Charts",
+	m[client.NewGVR("helm")] = metav1.APIResource{
+		Name:       "helm",
+		Kind:       "Helm",
 		Namespaced: true,
 		Verbs:      []string{"delete"},
 		Categories: []string{"helm"},

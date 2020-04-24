@@ -155,7 +155,7 @@ func (t *Table) bindKeys() {
 		tcell.KeyCtrlS:     ui.NewSharedKeyAction("Save", t.saveCmd, false),
 		ui.KeySlash:        ui.NewSharedKeyAction("Filter Mode", t.activateCmd, false),
 		tcell.KeyCtrlZ:     ui.NewKeyAction("Toggle Faults", t.toggleFaultCmd, false),
-		tcell.KeyCtrlW:     ui.NewKeyAction("Show Wide", t.toggleWideCmd, false),
+		tcell.KeyCtrlW:     ui.NewKeyAction("Toggle Wide", t.toggleWideCmd, false),
 		ui.KeyShiftN:       ui.NewKeyAction("Sort Name", t.SortColCmd(nameCol, true), false),
 		ui.KeyShiftA:       ui.NewKeyAction("Sort Age", t.SortColCmd(ageCol, true), false),
 	})
@@ -163,13 +163,11 @@ func (t *Table) bindKeys() {
 
 func (t *Table) toggleFaultCmd(evt *tcell.EventKey) *tcell.EventKey {
 	t.ToggleToast()
-
 	return nil
 }
 
 func (t *Table) toggleWideCmd(evt *tcell.EventKey) *tcell.EventKey {
 	t.ToggleWide()
-
 	return nil
 }
 

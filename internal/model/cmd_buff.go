@@ -126,7 +126,7 @@ func (c *CmdBuff) Reset() {
 	c.SetActive(false)
 }
 
-// Empty returns true is no cmd, false otherwise.
+// Empty returns true if no cmd, false otherwise.
 func (c *CmdBuff) Empty() bool {
 	return len(c.buff) == 0
 }

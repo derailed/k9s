@@ -50,11 +50,14 @@ func (f *FishBuff) NextSuggestion() (string, bool) {
 	if f.suggestionIndex < 0 {
 		return "", false
 	}
-	f.suggestionIndex++
+
 	if f.suggestionIndex >= len(f.suggestions) {
 		f.suggestionIndex = 0
 	}
-	return f.suggestions[f.suggestionIndex], true
+	s := f.suggestions[f.suggestionIndex]
+	f.suggestionIndex++
+
+	return s, true
 }
 
 // ClearSuggestions clear out all suggestions.
@@ -67,6 +70,11 @@ func (f *FishBuff) CurrentSuggestion() (string, bool) {
 	if f.suggestionIndex < 0 {
 		return "", false
 	}
+
+	if f.suggestionIndex >= len(f.suggestions) {
+		return "", false
+	}
+
 	return f.suggestions[f.suggestionIndex], true
 }
 
@@ -119,7 +127,7 @@ func (f *FishBuff) Delete() {
 
 func (f *FishBuff) fireSuggestionChanged(ss []string) {
 	f.suggestions, f.suggestionIndex = ss, 0
-	if ss == nil {
+	if len(ss) == 0 {
 		f.suggestionIndex, f.suggestion = -1, ""
 		return
 	}

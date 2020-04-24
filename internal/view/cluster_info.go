@@ -2,6 +2,7 @@ package view
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
@@ -90,7 +91,7 @@ func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
 		row := c.setCell(0, curr.Context)
 		row = c.setCell(row, curr.Cluster)
 		row = c.setCell(row, curr.User)
-		row = c.setCell(row, curr.K9sVer)
+		row = c.setCell(row, fmt.Sprintf("%s [%d]", curr.K9sVer, os.Getpid()))
 		row = c.setCell(row, curr.K8sVer)
 		if c.app.Conn().HasMetrics() {
 			row = c.setCell(row, ui.AsPercDelta(prev.Cpu, curr.Cpu))

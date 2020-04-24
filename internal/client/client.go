@@ -37,16 +37,15 @@ var supportedMetricsAPIVersions = []string{"v1beta1"}
 
 // APIClient represents a Kubernetes api client.
 type APIClient struct {
-	checkClientSet *kubernetes.Clientset
-	client         kubernetes.Interface
-	dClient        dynamic.Interface
-	nsClient       dynamic.NamespaceableResourceInterface
-	mxsClient      *versioned.Clientset
-	cachedClient   *disk.CachedDiscoveryClient
-	config         *Config
-	mx             sync.Mutex
-	cache          *cache.LRUExpireCache
-	metricsAPI     bool
+	client       kubernetes.Interface
+	dClient      dynamic.Interface
+	nsClient     dynamic.NamespaceableResourceInterface
+	mxsClient    *versioned.Clientset
+	cachedClient *disk.CachedDiscoveryClient
+	config       *Config
+	mx           sync.Mutex
+	cache        *cache.LRUExpireCache
+	metricsAPI   bool
 }
 
 // NewTestClient for testing ONLY!!
@@ -181,28 +180,28 @@ func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
 // CheckConnectivity return true if api server is cool or false otherwise.
 func (a *APIClient) CheckConnectivity() (status bool) {
 	defer func() {
-		if !status {
-			a.clearCache()
-		}
 		if err := recover(); err != nil {
 			status = false
 		}
+		if !status {
+			a.clearCache()
+		}
 	}()
 
-	if a.checkClientSet == nil {
-		cfg, err := a.config.flags.ToRESTConfig()
-		if err != nil {
-			return
-		}
-		cfg.Timeout = checkConnTimeout
+	cfg, err := a.config.flags.ToRESTConfig()
+	if err != nil {
+		return
+	}
+	cfg.Timeout = checkConnTimeout
 
-		if a.checkClientSet, err = kubernetes.NewForConfig(cfg); err != nil {
-			log.Error().Err(err).Msgf("Unable to connect to api server")
-			return
-		}
+	client, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		log.Error().Err(err).Msgf("Unable to connect to api server")
+		return
 	}
 
-	if _, err := a.checkClientSet.ServerVersion(); err == nil {
+	if _, err := client.ServerVersion(); err == nil {
+		a.reset()
 		status = true
 	} else {
 		log.Error().Err(err).Msgf("K9s can't connect to cluster")
@@ -253,8 +252,9 @@ func (a *APIClient) DialOrDie() kubernetes.Interface {
 
 	var err error
 	if a.client, err = kubernetes.NewForConfig(a.RestConfigOrDie()); err != nil {
-		log.Fatal().Err(err).Msgf("Unable to connect to api server")
+		log.Panic().Err(err).Msgf("Unable to connect to api server")
 	}
+
 	return a.client
 }
 
@@ -262,7 +262,7 @@ func (a *APIClient) DialOrDie() kubernetes.Interface {
 func (a *APIClient) RestConfigOrDie() *restclient.Config {
 	cfg, err := a.config.RESTConfig()
 	if err != nil {
-		log.Fatal().Err(err).Msgf("Unable to connect to api server")
+		log.Panic().Err(err).Msgf("Unable to connect to api server")
 	}
 	return cfg
 }
@@ -342,6 +342,7 @@ func (a *APIClient) reset() {
 	a.mx.Lock()
 	defer a.mx.Unlock()
 
+	a.config.reset()
 	a.cache = cache.NewLRUExpireCache(cacheSize)
 	a.client, a.dClient, a.nsClient, a.mxsClient = nil, nil, nil, nil
 	a.cachedClient = nil
