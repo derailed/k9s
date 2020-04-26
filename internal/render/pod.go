@@ -159,11 +159,29 @@ func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, p metric) {
 
 	rc, rm := requestedRes(pod.Spec.Containers)
 	lc, lm := resourceLimits(pod.Spec.Containers)
+
+	cpuPerc := client.ToPercentage(cpu.MilliValue(), rc.MilliValue())
+	memPerc := client.ToPercentage(client.ToMB(mem.Value()), client.ToMB(rm.Value()))
+	cpuLimPerc := client.ToPercentage(cpu.MilliValue(), lc.MilliValue())
+	memLimPerc := client.ToPercentage(client.ToMB(mem.Value()), client.ToMB(lm.Value()))
 	p = metric{
-		cpu:    IntToStr(client.ToPercentage(cpu.MilliValue(), rc.MilliValue())),
-		mem:    IntToStr(client.ToPercentage(client.ToMB(mem.Value()), client.ToMB(rm.Value()))),
-		cpuLim: IntToStr(client.ToPercentage(cpu.MilliValue(), lc.MilliValue())),
-		memLim: IntToStr(client.ToPercentage(client.ToMB(mem.Value()), client.ToMB(lm.Value()))),
+		cpu:    IntToStr(cpuPerc),
+		mem:    IntToStr(memPerc),
+		cpuLim: IntToStr(cpuLimPerc),
+		memLim: IntToStr(memLimPerc),
+	}
+
+	if cpuPerc > 100 {
+		p.cpu = "[orangered]" + p.cpu
+	}
+	if memPerc > 100 {
+		p.mem = "[orangered]" + p.mem
+	}
+	if cpuLimPerc > 90 {
+		p.cpuLim = "[red]" + p.cpuLim
+	}
+	if memLimPerc > 90 {
+		p.memLim = "[red]" + p.memLim
 	}
 
 	return

@@ -151,18 +151,34 @@ func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, p, l met
 
 	rcpu, rmem := containerResources(*co)
 	if rcpu != nil {
-		p.cpu = IntToStr(client.ToPercentage(cpu, rcpu.MilliValue()))
+		cpuPerc := client.ToPercentage(cpu, rcpu.MilliValue())
+		p.cpu = IntToStr(cpuPerc)
+		if cpuPerc > 100 {
+			p.cpu = "[orangered]" + p.cpu
+		}
 	}
 	if rmem != nil {
-		p.mem = IntToStr(client.ToPercentage(mem, client.ToMB(rmem.Value())))
+		memPerc := client.ToPercentage(mem, client.ToMB(rmem.Value()))
+		p.mem = IntToStr(memPerc)
+		if memPerc > 100 {
+			p.mem = "[orangered]" + p.mem
+		}
 	}
 
 	lcpu, lmem := containerLimits(*co)
 	if lcpu != nil {
-		l.cpu = IntToStr(client.ToPercentage(cpu, lcpu.MilliValue()))
+		cpuPerc := client.ToPercentage(cpu, lcpu.MilliValue())
+		l.cpu = IntToStr(cpuPerc)
+		if cpuPerc > 90 {
+			l.cpu = "[red]" + l.cpu
+		}
 	}
 	if lmem != nil {
-		l.mem = IntToStr(client.ToPercentage(mem, client.ToMB(lmem.Value())))
+		memPerc := client.ToPercentage(mem, client.ToMB(lmem.Value()))
+		l.mem = IntToStr(memPerc)
+		if memPerc > 90 {
+			l.mem = "[red]" + l.mem
+		}
 	}
 
 	return
