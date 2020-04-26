@@ -13,12 +13,14 @@ builds:
       - darwin
       - windows
     goarch:
-      - 386
+      # - 386
       - amd64
       - arm64
       - arm
     goarm:
       - 7
+    flags:
+      - -trimpath
     ldflags:
       - -s -w -X github.com/derailed/k9s/cmd.version={{.Version}} -X github.com/derailed/k9s/cmd.commit={{.Commit}} -X github.com/derailed/k9s/cmd.date={{.Date}}
 archives:
@@ -30,7 +32,7 @@ archives:
       bit: Arm
       bitv6: Arm6
       bitv7: Arm7
-      386: i386
+      # 386: i386
       amd64: x86_64
 checksum:
   name_template: "checksums.txt"
@@ -48,12 +50,12 @@ brews:
   - name: k9s
     github:
       owner: derailed
-      name: k9s-homebrew-tap
+      name: homebrew-k9s
     commit_author:
       name: derailed
       email: fernand@imhotep.io
     folder: Formula
-    homepage: https://k8sk9s.dev/
+    homepage: https://k9scli.io/
     description: Kubernetes CLI To Manage Your Clusters In Style!
     test: |
       system "k9s version"

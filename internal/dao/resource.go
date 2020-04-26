@@ -22,10 +22,12 @@ type Resource struct {
 
 // List returns a collection of resources.
 func (r *Resource) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	strLabel, ok := ctx.Value(internal.KeyLabels).(string)
+	strLabel, _ := ctx.Value(internal.KeyLabels).(string)
 	lsel := labels.Everything()
-	if sel, err := labels.ConvertSelectorToLabelsMap(strLabel); ok && err == nil {
-		lsel = sel.AsSelector()
+	if strLabel != "" {
+		if sel, err := labels.Parse(strLabel); err == nil {
+			lsel = sel
+		}
 	}
 
 	return r.Factory.List(r.gvr.String(), ns, false, lsel)

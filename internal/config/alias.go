@@ -31,6 +31,18 @@ func NewAliases() *Aliases {
 	}
 }
 
+// Keys returns all aliases keys.
+func (a *Aliases) Keys() []string {
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+
+	ss := make([]string, 0, len(a.Alias))
+	for k := range a.Alias {
+		ss = append(ss, k)
+	}
+	return ss
+}
+
 // ShortNames return all shortnames.
 func (a *Aliases) ShortNames() ShortNames {
 	a.mx.RLock()
@@ -107,6 +119,13 @@ func (a *Aliases) LoadFileAliases(path string) error {
 	return nil
 }
 
+func (a *Aliases) declare(key string, aliases ...string) {
+	a.Alias[key] = key
+	for _, alias := range aliases {
+		a.Alias[alias] = key
+	}
+}
+
 func (a *Aliases) loadDefaultAliases() {
 	a.mx.Lock()
 	defer a.mx.Unlock()
@@ -120,49 +139,19 @@ func (a *Aliases) loadDefaultAliases() {
 	a.Alias["rb"] = "rbac.authorization.k8s.io/v1/rolebindings"
 	a.Alias["np"] = "networking.k8s.io/v1/networkpolicies"
 
-	const contexts = "contexts"
-	{
-		a.Alias["ctx"] = contexts
-		a.Alias[contexts] = contexts
-		a.Alias["context"] = contexts
-	}
-	const users = "users"
-	{
-		a.Alias["usr"] = users
-		a.Alias[users] = users
-		a.Alias["user"] = users
-	}
-	const groups = "groups"
-	{
-		a.Alias["grp"] = groups
-		a.Alias["group"] = groups
-		a.Alias[groups] = groups
-	}
-	const portFwds = "portforwards"
-	{
-		a.Alias["pf"] = portFwds
-		a.Alias[portFwds] = portFwds
-		a.Alias["portforward"] = portFwds
-	}
-	const benchmarks = "benchmarks"
-	{
-		a.Alias["be"] = benchmarks
-		a.Alias["benchmark"] = benchmarks
-		a.Alias[benchmarks] = benchmarks
-	}
-	const dumps = "screendumps"
-	{
-		a.Alias["sd"] = dumps
-		a.Alias["screendump"] = dumps
-		a.Alias[dumps] = dumps
-	}
-	const pulses = "pulses"
-	{
-		a.Alias["hz"] = pulses
-		a.Alias["pu"] = pulses
-		a.Alias["pulse"] = pulses
-		a.Alias["pulses"] = pulses
-	}
+	a.declare("help", "h", "?")
+	a.declare("quit", "q", "Q")
+	a.declare("aliases", "alias", "a")
+	a.declare("popeye", "pop")
+	a.declare("helm", "charts", "chart", "hm")
+	a.declare("contexts", "context", "ctx")
+	a.declare("users", "user", "usr")
+	a.declare("groups", "group", "grp")
+	a.declare("portforwards", "portforward", "pf")
+	a.declare("benchmarks", "benchmark", "be")
+	a.declare("screendumps", "screendump", "sd")
+	a.declare("pulses", "pulse", "pu", "hz")
+	a.declare("xrays", "xray", "x")
 }
 
 // Save alias to disk.

@@ -19,7 +19,7 @@ func initKeys() {
 
 // Defines numeric keys for container actions
 const (
-	Key0 int32 = iota + 48
+	Key0 tcell.Key = iota + 48
 	Key1
 	Key2
 	Key3
@@ -33,16 +33,16 @@ const (
 
 // Defines numeric keys for container actions
 const (
-	KeyShift0 int32 = 41
-	KeyShift1 int32 = 33
-	KeyShift2 int32 = 64
-	KeyShift3 int32 = 35
-	KeyShift4 int32 = 36
-	KeyShift5 int32 = 37
-	KeyShift6 int32 = 94
-	KeyShift7 int32 = 38
-	KeyShift8 int32 = 42
-	KeyShift9 int32 = 40
+	KeyShift0 tcell.Key = 41
+	KeyShift1 tcell.Key = 33
+	KeyShift2 tcell.Key = 64
+	KeyShift3 tcell.Key = 35
+	KeyShift4 tcell.Key = 36
+	KeyShift5 tcell.Key = 37
+	KeyShift6 tcell.Key = 94
+	KeyShift7 tcell.Key = 38
+	KeyShift8 tcell.Key = 42
+	KeyShift9 tcell.Key = 40
 )
 
 // Defines char keystrokes
@@ -110,7 +110,7 @@ const (
 )
 
 // NumKeys tracks number keys.
-var NumKeys = map[int]int32{
+var NumKeys = map[int]tcell.Key{
 	0: Key0,
 	1: Key1,
 	2: Key2,
@@ -124,16 +124,16 @@ var NumKeys = map[int]int32{
 }
 
 func initNumbKeys() {
-	tcell.KeyNames[tcell.Key(Key0)] = "0"
-	tcell.KeyNames[tcell.Key(Key1)] = "1"
-	tcell.KeyNames[tcell.Key(Key2)] = "2"
-	tcell.KeyNames[tcell.Key(Key3)] = "3"
-	tcell.KeyNames[tcell.Key(Key4)] = "4"
-	tcell.KeyNames[tcell.Key(Key5)] = "5"
-	tcell.KeyNames[tcell.Key(Key6)] = "6"
-	tcell.KeyNames[tcell.Key(Key7)] = "7"
-	tcell.KeyNames[tcell.Key(Key8)] = "8"
-	tcell.KeyNames[tcell.Key(Key9)] = "9"
+	tcell.KeyNames[Key0] = "0"
+	tcell.KeyNames[Key1] = "1"
+	tcell.KeyNames[Key2] = "2"
+	tcell.KeyNames[Key3] = "3"
+	tcell.KeyNames[Key4] = "4"
+	tcell.KeyNames[Key5] = "5"
+	tcell.KeyNames[Key6] = "6"
+	tcell.KeyNames[Key7] = "7"
+	tcell.KeyNames[Key8] = "8"
+	tcell.KeyNames[Key9] = "9"
 }
 
 func initStdKeys() {

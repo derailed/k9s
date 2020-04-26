@@ -68,6 +68,9 @@ k9s:
     logs:
       fgColor: *ghost
       bgColor: *bg
+      indicator:
+        fgColor: *ghost
+        bgColor: *bg
     charts:
       bgColor: default
       defaultDialColors:

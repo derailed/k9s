@@ -13,6 +13,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 	"k8s.io/kubectl/pkg/polymorphichelpers"
 )
 
@@ -94,7 +95,7 @@ func (r *ReplicaSet) Rollback(fqn string) error {
 		return err
 	}
 
-	_, err = rb.Rollback(dp, map[string]string{}, version, false)
+	_, err = rb.Rollback(dp, map[string]string{}, version, cmdutil.DryRunNone)
 	if err != nil {
 		return err
 	}

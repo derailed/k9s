@@ -101,6 +101,15 @@ type Connection interface {
 
 	// CheckConnectivity checks if api server connection is happy or not.
 	CheckConnectivity() bool
+
+	// ActiveCluster returns the current cluster name.
+	ActiveCluster() string
+
+	// ActiveNamespace returns the current namespace.
+	ActiveNamespace() string
+
+	// IsActiveNamespace checks if given ns is active.
+	IsActiveNamespace(string) bool
 }
 
 // CurrentMetrics tracks current cpu/mem.

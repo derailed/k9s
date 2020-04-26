@@ -179,7 +179,7 @@ func (t *Table) Peek() render.TableData {
 }
 
 func (t *Table) updater(ctx context.Context) {
-	defer log.Debug().Msgf("Model canceled -- %q", t.gvr)
+	defer log.Debug().Msgf("TABLE-MODEL canceled -- %q", t.gvr)
 
 	rate := initRefreshRate
 	for {
@@ -290,7 +290,6 @@ func (t *Table) getMeta(ctx context.Context) (ResourceMeta, error) {
 func (t *Table) resourceMeta() ResourceMeta {
 	meta, ok := Registry[t.gvr.String()]
 	if !ok {
-		log.Debug().Msgf("Resource %s not found in registry. Going generic!", t.gvr)
 		meta = ResourceMeta{
 			DAO:      &dao.Table{},
 			Renderer: &render.Generic{},

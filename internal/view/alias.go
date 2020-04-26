@@ -47,6 +47,7 @@ func (a *Alias) aliasContext(ctx context.Context) context.Context {
 
 func (a *Alias) bindKeys(aa ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
+	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL)
 	aa.Add(ui.KeyActions{
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, true),
 		ui.KeyShiftR:   ui.NewKeyAction("Sort Resource", a.GetTable().SortColCmd("RESOURCE", true), false),
@@ -66,7 +67,7 @@ func (a *Alias) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	if a.GetTable().SearchBuff().IsActive() {
+	if a.GetTable().CmdBuff().IsActive() {
 		return a.GetTable().activateCmd(evt)
 	}
 	return evt

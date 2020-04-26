@@ -2,7 +2,6 @@ package dao
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/derailed/k9s/internal"
@@ -13,7 +12,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
-	restclient "k8s.io/client-go/rest"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -39,7 +37,7 @@ func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error
 		err error
 	)
 	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
-		if pmx, err = client.DialMetrics(c.Client()).FetchPodMetrics(fqn); err != nil {
+		if pmx, err = client.DialMetrics(c.Client()).FetchPodMetrics(ctx, fqn); err != nil {
 			log.Warn().Err(err).Msgf("No metrics found for pod %q", fqn)
 		}
 	}
@@ -60,37 +58,12 @@ func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error
 }
 
 // TailLogs tails a given container logs
-func (c *Container) TailLogs(ctx context.Context, logChan chan<- []byte, opts LogOptions) error {
-	fac, ok := ctx.Value(internal.KeyFactory).(Factory)
-	if !ok {
-		return errors.New("Expecting an informer")
-	}
-	o, err := fac.Get("v1/pods", opts.Path, true, labels.Everything())
-	if err != nil {
-		return err
-	}
+func (c *Container) TailLogs(ctx context.Context, logChan LogChan, opts LogOptions) error {
+	log.Debug().Msgf("CONTAINER-LOGS")
+	po := Pod{}
+	po.Init(c.Factory, client.NewGVR("v1/pods"))
 
-	var po v1.Pod
-	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &po); err != nil {
-		return err
-	}
-
-	return tailLogs(ctx, c, logChan, opts)
-}
-
-// Logs fetch container logs for a given pod and container.
-func (c *Container) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, error) {
-	ns, _ := client.Namespaced(path)
-	auth, err := c.Client().CanI(ns, "v1/pods:log", client.GetAccess)
-	if err != nil {
-		return nil, err
-	}
-	if !auth {
-		return nil, fmt.Errorf("user is not authorized to view pod logs")
-	}
-
-	ns, n := client.Namespaced(path)
-	return c.Client().DialOrDie().CoreV1().Pods(ns).GetLogs(n, opts), nil
+	return po.TailLogs(ctx, logChan, opts)
 }
 
 // ----------------------------------------------------------------------------

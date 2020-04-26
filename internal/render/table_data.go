@@ -1,5 +1,7 @@
 package render
 
+import "github.com/derailed/k9s/internal/client"
+
 // TableData tracks a K8s resource for tabular display.
 type TableData struct {
 	Header    Header
@@ -10,6 +12,22 @@ type TableData struct {
 // NewTableData returns a new table.
 func NewTableData() *TableData {
 	return &TableData{}
+}
+
+// Labelize prints out specific label columns
+func (t *TableData) Labelize(labels []string) TableData {
+	labelCol := t.Header.IndexOf("LABELS", true)
+	cols := []int{0, 1}
+	if client.IsNamespaced(t.Namespace) {
+		cols = cols[1:]
+	}
+	data := TableData{
+		Namespace: t.Namespace,
+		Header:    t.Header.Labelize(cols, labelCol, t.RowEvents),
+	}
+	data.RowEvents = t.RowEvents.Labelize(cols, labelCol, labels)
+
+	return data
 }
 
 // Customize returns a new model with customized column layout.
@@ -61,7 +79,7 @@ func (t *TableData) Update(rows Rows) {
 				t.RowEvents[index].Kind, t.RowEvents[index].Deltas = EventUnchanged, blankDelta
 				t.RowEvents[index].Row = row
 			} else {
-				t.RowEvents[index] = NewDeltaRowEvent(row, delta)
+				t.RowEvents[index] = NewRowEventWithDeltas(row, delta)
 			}
 			continue
 		}

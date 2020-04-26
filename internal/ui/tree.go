@@ -17,7 +17,7 @@ type Tree struct {
 
 	actions      KeyActions
 	selectedItem string
-	cmdBuff      *CmdBuff
+	cmdBuff      *model.CmdBuff
 	expandNodes  bool
 	Count        int
 	keyListener  KeyListenerFunc
@@ -29,7 +29,7 @@ func NewTree() *Tree {
 		TreeView:    tview.NewTreeView(),
 		expandNodes: true,
 		actions:     make(KeyActions),
-		cmdBuff:     NewCmdBuff('/', FilterBuff),
+		cmdBuff:     model.NewCmdBuff('/', model.FilterBuffer),
 	}
 }
 
@@ -62,7 +62,7 @@ func (t *Tree) ExpandNodes() bool {
 }
 
 // CmdBuff returns the filter command.
-func (t *Tree) CmdBuff() *CmdBuff {
+func (t *Tree) CmdBuff() *model.CmdBuff {
 	return t.cmdBuff
 }
 
@@ -95,20 +95,7 @@ func (t *Tree) BindKeys() {
 }
 
 func (t *Tree) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	key := evt.Key()
-	if key == tcell.KeyRune {
-		if t.cmdBuff.IsActive() {
-			t.cmdBuff.Add(evt.Rune())
-			t.ClearSelection()
-			if t.keyListener != nil {
-				t.keyListener()
-			}
-			return nil
-		}
-		key = mapKey(evt)
-	}
-
-	if a, ok := t.actions[key]; ok {
+	if a, ok := t.actions[AsKey(evt)]; ok {
 		return a.Action(evt)
 	}
 
@@ -134,15 +121,4 @@ func (t *Tree) toggleCollapseCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (t *Tree) ClearSelection() {
 	t.selectedItem = ""
 	t.SetCurrentNode(nil)
-}
-
-// ----------------------------------------------------------------------------
-// Helpers...
-
-func mapKey(evt *tcell.EventKey) tcell.Key {
-	key := tcell.Key(evt.Rune())
-	if evt.Modifiers() == tcell.ModAlt {
-		key = tcell.Key(int16(evt.Rune()) * int16(evt.Modifiers()))
-	}
-	return key
 }

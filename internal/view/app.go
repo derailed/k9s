@@ -4,7 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"os/signal"
+	"sort"
+	"strings"
 	"sync/atomic"
+	"syscall"
 	"time"
 
 	"github.com/derailed/k9s/internal"
@@ -24,7 +29,7 @@ var ExitStatus = ""
 const (
 	splashDelay      = 1 * time.Second
 	clusterRefresh   = 5 * time.Second
-	maxConRetry      = 10
+	maxConRetry      = 15
 	clusterInfoWidth = 50
 	clusterInfoPad   = 15
 )
@@ -33,23 +38,26 @@ const (
 type App struct {
 	*ui.App
 
-	Content      *PageStack
-	command      *Command
-	factory      *watch.Factory
-	version      string
-	showHeader   bool
-	cancelFn     context.CancelFunc
-	conRetry     int32
-	clusterModel *model.ClusterInfo
+	Content       *PageStack
+	command       *Command
+	factory       *watch.Factory
+	version       string
+	showHeader    bool
+	cancelFn      context.CancelFunc
+	conRetry      int32
+	clusterModel  *model.ClusterInfo
+	cmdHistory    *model.History
+	filterHistory *model.History
 }
 
 // NewApp returns a K9s app instance.
 func NewApp(cfg *config.Config) *App {
 	a := App{
-		App:     ui.NewApp(cfg.K9s.CurrentContext),
-		Content: NewPageStack(),
+		App:           ui.NewApp(cfg, cfg.K9s.CurrentContext),
+		cmdHistory:    model.NewHistory(model.MaxHistory),
+		filterHistory: model.NewHistory(model.MaxHistory),
+		Content:       NewPageStack(),
 	}
-	a.Config = cfg
 
 	a.Views()["statusIndicator"] = ui.NewStatusIndicator(a.App, a.Styles)
 	a.Views()["clusterInfo"] = NewClusterInfo(&a)
@@ -91,41 +99,71 @@ func (a *App) Init(version string, rate int) error {
 	a.clusterModel.AddListener(a.clusterInfo())
 	a.clusterModel.AddListener(a.statusIndicator())
 	a.clusterModel.Refresh()
+	a.clusterInfo().Init()
 
 	a.command = NewCommand(a)
 	if err := a.command.Init(); err != nil {
 		return err
 	}
-
-	a.clusterInfo().Init()
+	a.CmdBuff().SetSuggestionFn(a.suggestCommand())
+	a.CmdBuff().AddListener(a)
 
 	flash := ui.NewFlash(a.App)
 	go flash.Watch(ctx, a.Flash().Channel())
 
 	main := tview.NewFlex().SetDirection(tview.FlexRow)
 	main.AddItem(a.statusIndicator(), 1, 1, false)
-	main.AddItem(flash, 1, 1, false)
 	main.AddItem(a.Content, 0, 10, true)
 	main.AddItem(a.Crumbs(), 1, 1, false)
+	main.AddItem(flash, 1, 1, false)
 
 	a.Main.AddPage("main", main, true, false)
 	a.Main.AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
 	a.toggleHeader(!a.Config.K9s.GetHeadless())
 
+	a.initSignals()
+
 	return nil
 }
 
-func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
-	key := evt.Key()
-	if key == tcell.KeyRune {
-		if a.CmdBuff().IsActive() && evt.Modifiers() == tcell.ModNone {
-			a.CmdBuff().Add(evt.Rune())
+func (a *App) initSignals() {
+	sig := make(chan os.Signal, 1)
+	signal.Notify(sig, syscall.SIGABRT, syscall.SIGINT, syscall.SIGHUP, syscall.SIGQUIT)
+
+	go func(sig chan os.Signal) {
+		<-sig
+		a.BailOut()
+	}(sig)
+}
+
+func (a *App) suggestCommand() model.SuggestionFunc {
+	return func(s string) (entries sort.StringSlice) {
+		if s == "" {
+			if a.cmdHistory.Empty() {
+				return
+			}
+			return a.cmdHistory.List()
+		}
+
+		s = strings.ToLower(s)
+		for _, k := range a.command.alias.Aliases.Keys() {
+			if k == s {
+				continue
+			}
+			if strings.HasPrefix(k, s) {
+				entries = append(entries, strings.Replace(k, s, "", 1))
+			}
+		}
+		if len(entries) == 0 {
 			return nil
 		}
-		key = ui.AsKey(evt)
+		entries.Sort()
+		return
 	}
+}
 
-	if k, ok := a.HasAction(key); ok && !a.Content.IsTopDialog() {
+func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
+	if k, ok := a.HasAction(ui.AsKey(evt)); ok && !a.Content.IsTopDialog() {
 		return k.Action(evt)
 	}
 
@@ -311,6 +349,13 @@ func (a *App) initFactory(ns string) {
 
 // BailOut exists the application.
 func (a *App) BailOut() {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Error().Msgf("Bailing out %v", err)
+		}
+	}()
+
+	nukeK9sShell(a.Conn())
 	a.factory.Terminate()
 	a.App.BailOut()
 }
@@ -400,7 +445,7 @@ func (a *App) PrevCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *App) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.Cmd().InCmdMode() {
+	if a.Prompt().InCmdMode() {
 		return evt
 	}
 
@@ -426,10 +471,11 @@ func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if _, ok := a.Content.GetPrimitive("main").(*Help); ok {
+	if a.CmdBuff().InCmdMode() {
 		return evt
 	}
-	if a.Content.Top() != nil && a.Content.Top().Name() == helpTitle {
+
+	if a.Content.Top() != nil && a.Content.Top().Name() == "help" {
 		a.Content.Pop()
 		return nil
 	}
@@ -442,7 +488,7 @@ func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if _, ok := a.Content.GetPrimitive("main").(*Alias); ok {
+	if a.CmdBuff().InCmdMode() {
 		return evt
 	}
 
@@ -456,10 +502,6 @@ func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return nil
-}
-
-func (a *App) viewResource(gvr, path string, clearStack bool) error {
-	return a.command.run(gvr, path, clearStack)
 }
 
 func (a *App) gotoResource(cmd, path string, clearStack bool) error {

@@ -74,7 +74,7 @@ func (c *Configurator) RefreshCustomViews() {
 	}
 
 	if err := c.CustomView.Load(config.K9sViewConfigFile); err != nil {
-		log.Debug().Msgf("No view custom configuration file found -- %s", config.K9sViewConfigFile)
+		log.Error().Err(err).Msgf("Custom view load failed %s", config.K9sViewConfigFile)
 		return
 	}
 }

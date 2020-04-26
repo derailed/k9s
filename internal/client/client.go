@@ -1,6 +1,7 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -27,22 +28,24 @@ const (
 	cacheMXKey       = "metrics"
 	cacheMXAPIKey    = "metricsAPI"
 	checkConnTimeout = 10 * time.Second
+
+	// CallTimeout represents default api call timeout.
+	CallTimeout = 5 * time.Second
 )
 
 var supportedMetricsAPIVersions = []string{"v1beta1"}
 
 // APIClient represents a Kubernetes api client.
 type APIClient struct {
-	checkClientSet *kubernetes.Clientset
-	client         kubernetes.Interface
-	dClient        dynamic.Interface
-	nsClient       dynamic.NamespaceableResourceInterface
-	mxsClient      *versioned.Clientset
-	cachedClient   *disk.CachedDiscoveryClient
-	config         *Config
-	mx             sync.Mutex
-	cache          *cache.LRUExpireCache
-	metricsAPI     bool
+	client       kubernetes.Interface
+	dClient      dynamic.Interface
+	nsClient     dynamic.NamespaceableResourceInterface
+	mxsClient    *versioned.Clientset
+	cachedClient *disk.CachedDiscoveryClient
+	config       *Config
+	mx           sync.Mutex
+	cache        *cache.LRUExpireCache
+	metricsAPI   bool
 }
 
 // NewTestClient for testing ONLY!!
@@ -86,6 +89,33 @@ func makeCacheKey(ns, gvr string, vv []string) string {
 	return ns + ":" + gvr + "::" + strings.Join(vv, ",")
 }
 
+// ActiveCluster returns the current cluster name.
+func (a *APIClient) ActiveCluster() string {
+	c, err := a.config.CurrentClusterName()
+	if err != nil {
+		log.Error().Msgf("Unable to located active cluster")
+		return ""
+	}
+	return c
+}
+
+// IsActiveNamespace returns true if namespaces matches.
+func (a *APIClient) IsActiveNamespace(ns string) bool {
+	if a.ActiveNamespace() == AllNamespaces {
+		return true
+	}
+	return a.ActiveNamespace() == ns
+}
+
+// ActiveNamespace returns the current namespace.
+func (a *APIClient) ActiveNamespace() string {
+	ns, err := a.CurrentNamespaceName()
+	if err != nil {
+		return AllNamespaces
+	}
+	return ns
+}
+
 func (a *APIClient) clearCache() {
 	for _, k := range a.cache.Keys() {
 		a.cache.Remove(k)
@@ -104,9 +134,12 @@ func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) 
 		}
 	}
 	dial, sar := a.DialOrDie().AuthorizationV1().SelfSubjectAccessReviews(), makeSAR(ns, gvr)
+
+	ctx, cancel := context.WithTimeout(context.Background(), CallTimeout)
+	defer cancel()
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
-		resp, err := dial.Create(sar)
+		resp, err := dial.Create(ctx, sar, metav1.CreateOptions{})
 		if err != nil {
 			log.Warn().Err(err).Msgf("  Dial Failed!")
 			a.cache.Add(key, false, cacheExpiry)
@@ -135,7 +168,9 @@ func (a *APIClient) ServerVersion() (*version.Info, error) {
 
 // ValidNamespaces returns all available namespaces.
 func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
-	nn, err := a.DialOrDie().CoreV1().Namespaces().List(metav1.ListOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), CallTimeout)
+	defer cancel()
+	nn, err := a.DialOrDie().CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
@@ -143,31 +178,30 @@ func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
 }
 
 // CheckConnectivity return true if api server is cool or false otherwise.
-// BOZO!! No super sure about this approach either??
 func (a *APIClient) CheckConnectivity() (status bool) {
 	defer func() {
-		if !status {
-			a.clearCache()
-		}
 		if err := recover(); err != nil {
 			status = false
 		}
+		if !status {
+			a.clearCache()
+		}
 	}()
 
-	if a.checkClientSet == nil {
-		cfg, err := a.config.flags.ToRESTConfig()
-		if err != nil {
-			return
-		}
-		cfg.Timeout = checkConnTimeout
+	cfg, err := a.config.flags.ToRESTConfig()
+	if err != nil {
+		return
+	}
+	cfg.Timeout = checkConnTimeout
 
-		if a.checkClientSet, err = kubernetes.NewForConfig(cfg); err != nil {
-			log.Error().Err(err).Msgf("Unable to connect to api server")
-			return
-		}
+	client, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		log.Error().Err(err).Msgf("Unable to connect to api server")
+		return
 	}
 
-	if _, err := a.checkClientSet.ServerVersion(); err == nil {
+	if _, err := client.ServerVersion(); err == nil {
+		a.reset()
 		status = true
 	} else {
 		log.Error().Err(err).Msgf("K9s can't connect to cluster")
@@ -198,8 +232,12 @@ func (a *APIClient) HasMetrics() bool {
 		a.cache.Add(cacheMXKey, flag, cacheExpiry)
 		return flag
 	}
-	if _, err := dial.MetricsV1beta1().NodeMetricses().List(metav1.ListOptions{Limit: 1}); err == nil {
+	ctx, cancel := context.WithTimeout(context.Background(), CallTimeout)
+	defer cancel()
+	if _, err := dial.MetricsV1beta1().NodeMetricses().List(ctx, metav1.ListOptions{Limit: 1}); err == nil {
 		flag = true
+	} else {
+		log.Error().Err(err).Msgf("List metrics failed")
 	}
 	a.cache.Add(cacheMXKey, flag, cacheExpiry)
 
@@ -214,8 +252,9 @@ func (a *APIClient) DialOrDie() kubernetes.Interface {
 
 	var err error
 	if a.client, err = kubernetes.NewForConfig(a.RestConfigOrDie()); err != nil {
-		log.Fatal().Err(err).Msgf("Unable to connect to api server")
+		log.Panic().Err(err).Msgf("Unable to connect to api server")
 	}
+
 	return a.client
 }
 
@@ -223,7 +262,7 @@ func (a *APIClient) DialOrDie() kubernetes.Interface {
 func (a *APIClient) RestConfigOrDie() *restclient.Config {
 	cfg, err := a.config.RESTConfig()
 	if err != nil {
-		log.Fatal().Err(err).Msgf("Unable to connect to api server")
+		log.Panic().Err(err).Msgf("Unable to connect to api server")
 	}
 	return cfg
 }
@@ -303,6 +342,7 @@ func (a *APIClient) reset() {
 	a.mx.Lock()
 	defer a.mx.Unlock()
 
+	a.config.reset()
 	a.cache = cache.NewLRUExpireCache(cacheSize)
 	a.client, a.dClient, a.nsClient, a.mxsClient = nil, nil, nil, nil
 	a.cachedClient = nil
@@ -324,6 +364,7 @@ func (a *APIClient) supportsMetricsResources() (supported bool) {
 
 	apiGroups, err := a.CachedDiscoveryOrDie().ServerGroups()
 	if err != nil {
+		log.Debug().Msgf("Unable to access servergroups %#v", err)
 		return
 	}
 	for _, grp := range apiGroups.Groups {

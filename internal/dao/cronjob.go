@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
@@ -33,7 +34,9 @@ func (c *CronJob) Run(path string) error {
 	}
 
 	// BOZO!! Factory resource??
-	cj, err := c.Client().DialOrDie().BatchV1beta1().CronJobs(ns).Get(n, metav1.GetOptions{})
+	ctx, cancel := context.WithTimeout(context.Background(), client.CallTimeout)
+	defer cancel()
+	cj, err := c.Client().DialOrDie().BatchV1beta1().CronJobs(ns).Get(ctx, n, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
@@ -51,7 +54,7 @@ func (c *CronJob) Run(path string) error {
 		},
 		Spec: cj.Spec.JobTemplate.Spec,
 	}
-	_, err = c.Client().DialOrDie().BatchV1().Jobs(ns).Create(job)
+	_, err = c.Client().DialOrDie().BatchV1().Jobs(ns).Create(ctx, job, metav1.CreateOptions{})
 
 	return err
 }

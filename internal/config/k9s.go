@@ -2,23 +2,17 @@ package config
 
 import "github.com/derailed/k9s/internal/client"
 
-const (
-	defaultRefreshRate    = 2
-	defaultLogRequestSize = 200
-	defaultLogBufferSize  = 1000
-	defaultReadOnly       = false
-)
+const defaultRefreshRate = 2
 
 // K9s tracks K9s configuration options.
 type K9s struct {
 	RefreshRate       int                 `yaml:"refreshRate"`
 	Headless          bool                `yaml:"headless"`
 	ReadOnly          bool                `yaml:"readOnly"`
-	LogBufferSize     int                 `yaml:"logBufferSize"`
-	LogRequestSize    int                 `yaml:"logRequestSize"`
+	NoIcons           bool                `yaml:"noIcons"`
+	Logger            *Logger             `yaml:"logger"`
 	CurrentContext    string              `yaml:"currentContext"`
 	CurrentCluster    string              `yaml:"currentCluster"`
-	FullScreenLogs    bool                `yaml:"fullScreenLogs"`
 	Clusters          map[string]*Cluster `yaml:"clusters,omitempty"`
 	Thresholds        Threshold           `yaml:"thresholds"`
 	manualRefreshRate int
@@ -30,12 +24,10 @@ type K9s struct {
 // NewK9s create a new K9s configuration.
 func NewK9s() *K9s {
 	return &K9s{
-		RefreshRate:    defaultRefreshRate,
-		ReadOnly:       defaultReadOnly,
-		LogBufferSize:  defaultLogBufferSize,
-		LogRequestSize: defaultLogRequestSize,
-		Clusters:       make(map[string]*Cluster),
-		Thresholds:     NewThreshold(),
+		RefreshRate: defaultRefreshRate,
+		Logger:      NewLogger(),
+		Clusters:    make(map[string]*Cluster),
+		Thresholds:  NewThreshold(),
 	}
 }
 
@@ -106,22 +98,15 @@ func (k *K9s) validateDefaults() {
 	if k.RefreshRate <= 0 {
 		k.RefreshRate = defaultRefreshRate
 	}
-
-	if k.LogBufferSize <= 0 {
-		k.LogBufferSize = defaultLogBufferSize
-	}
-
-	if k.LogRequestSize <= 0 {
-		k.LogRequestSize = defaultLogRequestSize
-	}
 }
 
-func (k *K9s) checkClusters(ks KubeSettings) {
+func (k *K9s) checkClusters(c client.Connection, ks KubeSettings) {
 	cc, err := ks.ClusterNames()
 	if err != nil {
 		return
 	}
 	for key := range k.Clusters {
+		k.Clusters[key].Validate(c, ks)
 		if InList(cc, key) {
 			continue
 		}
@@ -138,8 +123,13 @@ func (k *K9s) Validate(c client.Connection, ks KubeSettings) {
 	if k.Clusters == nil {
 		k.Clusters = map[string]*Cluster{}
 	}
-	k.checkClusters(ks)
+	k.checkClusters(c, ks)
 
+	if k.Logger == nil {
+		k.Logger = NewLogger()
+	} else {
+		k.Logger.Validate(c, ks)
+	}
 	if k.Thresholds == nil {
 		k.Thresholds = NewThreshold()
 	}

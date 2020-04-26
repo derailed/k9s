@@ -71,7 +71,7 @@ func (f *Flash) SetMessage(m model.LevelMessage) {
 			return
 		}
 		f.SetTextColor(flashColor(m.Level))
-		f.SetText(flashEmoji(m.Level) + " " + m.Text)
+		f.SetText(f.flashEmoji(m.Level) + " " + m.Text)
 	}
 
 	if f.testMode {
@@ -81,7 +81,10 @@ func (f *Flash) SetMessage(m model.LevelMessage) {
 	}
 }
 
-func flashEmoji(l model.FlashLevel) string {
+func (f *Flash) flashEmoji(l model.FlashLevel) string {
+	if f.app.Config.K9s.NoIcons {
+		return ""
+	}
 	switch l {
 	case model.FlashWarn:
 		return emoDoh
@@ -91,6 +94,8 @@ func flashEmoji(l model.FlashLevel) string {
 		return emoHappy
 	}
 }
+
+// Helpers...
 
 func flashColor(l model.FlashLevel) tcell.Color {
 	switch l {

@@ -38,7 +38,7 @@ func (d *DaemonSet) IsHappy(ds appsv1.DaemonSet) bool {
 }
 
 // Restart a DaemonSet rollout.
-func (d *DaemonSet) Restart(path string) error {
+func (d *DaemonSet) Restart(ctx context.Context, path string) error {
 	ds, err := d.GetInstance(path)
 	if err != nil {
 		return err
@@ -56,12 +56,18 @@ func (d *DaemonSet) Restart(path string) error {
 		return err
 	}
 
-	_, err = d.Client().DialOrDie().AppsV1().DaemonSets(ds.Namespace).Patch(ds.Name, types.StrategicMergePatchType, update)
+	_, err = d.Client().DialOrDie().AppsV1().DaemonSets(ds.Namespace).Patch(
+		ctx,
+		ds.Name,
+		types.StrategicMergePatchType,
+		update,
+		metav1.PatchOptions{},
+	)
 	return err
 }
 
 // TailLogs tail logs for all pods represented by this DaemonSet.
-func (d *DaemonSet) TailLogs(ctx context.Context, c chan<- []byte, opts LogOptions) error {
+func (d *DaemonSet) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
 	ds, err := d.GetInstance(opts.Path)
 	if err != nil {
 		return err
@@ -74,7 +80,7 @@ func (d *DaemonSet) TailLogs(ctx context.Context, c chan<- []byte, opts LogOptio
 	return podLogs(ctx, c, ds.Spec.Selector.MatchLabels, opts)
 }
 
-func podLogs(ctx context.Context, c chan<- []byte, sel map[string]string, opts LogOptions) error {
+func podLogs(ctx context.Context, c LogChan, sel map[string]string, opts LogOptions) error {
 	f, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
 	if !ok {
 		return errors.New("expecting a context factory")
@@ -89,14 +95,11 @@ func podLogs(ctx context.Context, c chan<- []byte, sel map[string]string, opts L
 	}
 
 	ns, _ := client.Namespaced(opts.Path)
-	oo, err := f.List("v1/pods", ns, false, lsel)
+	oo, err := f.List("v1/pods", ns, true, lsel)
 	if err != nil {
 		return err
 	}
-
-	if len(oo) > 1 {
-		opts.MultiPods = true
-	}
+	opts.MultiPods = true
 
 	po := Pod{}
 	po.Init(f, client.NewGVR("v1/pods"))

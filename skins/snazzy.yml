@@ -64,3 +64,6 @@ k9s:
     logs:
       fgColor: white
       bgColor: "#282a36"
+      indicator:
+        fgColor: white
+        bgColor: "#282a36"

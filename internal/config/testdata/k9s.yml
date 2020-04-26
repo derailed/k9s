@@ -1,7 +1,8 @@
 k9s:
   refreshRate: 2
-  logBufferSize: 200
-  logRequestSize: 200
+  logger:
+    tail: 200
+    buffer: 2000
   currentContext: minikube
   currentCluster: minikube
   clusters:

@@ -39,9 +39,9 @@ func (g *Generic) List(ctx context.Context, ns string) ([]runtime.Object, error)
 		err error
 	)
 	if client.IsClusterScoped(ns) {
-		ll, err = g.dynClient().List(metav1.ListOptions{LabelSelector: labelSel})
+		ll, err = g.dynClient().List(ctx, metav1.ListOptions{LabelSelector: labelSel})
 	} else {
-		ll, err = g.dynClient().Namespace(ns).List(metav1.ListOptions{LabelSelector: labelSel})
+		ll, err = g.dynClient().Namespace(ns).List(ctx, metav1.ListOptions{LabelSelector: labelSel})
 	}
 	if err != nil {
 		return nil, err
@@ -57,15 +57,15 @@ func (g *Generic) List(ctx context.Context, ns string) ([]runtime.Object, error)
 
 // Get returns a given resource.
 func (g *Generic) Get(ctx context.Context, path string) (runtime.Object, error) {
+	log.Debug().Msgf("GENERIC-GET %q", path)
 	var opts metav1.GetOptions
-
 	ns, n := client.Namespaced(path)
 	dial := g.dynClient()
 	if client.IsClusterScoped(ns) {
-		return dial.Get(n, opts)
+		return dial.Get(ctx, n, opts)
 	}
 
-	return dial.Namespace(ns).Get(n, opts)
+	return dial.Namespace(ns).Get(ctx, n, opts)
 }
 
 // Describe describes a resource.
@@ -111,11 +111,14 @@ func (g *Generic) Delete(path string, cascade, force bool) error {
 		PropagationPolicy:  &p,
 		GracePeriodSeconds: grace,
 	}
+	// BOZO!! Move to caller!
+	ctx, cancel := context.WithTimeout(context.Background(), client.CallTimeout)
+	defer cancel()
 	if client.IsClusterScoped(ns) {
-		return g.dynClient().Delete(n, &opts)
+		return g.dynClient().Delete(ctx, n, opts)
 	}
 
-	return g.dynClient().Namespace(ns).Delete(n, &opts)
+	return g.dynClient().Namespace(ns).Delete(ctx, n, opts)
 }
 
 func (g *Generic) dynClient() dynamic.NamespaceableResourceInterface {

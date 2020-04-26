@@ -34,7 +34,8 @@ type Table struct {
 	actions     KeyActions
 	gvr         client.GVR
 	Path        string
-	cmdBuff     *CmdBuff
+	Extras      string
+	cmdBuff     *model.FishBuff
 	styles      *config.Styles
 	viewSetting *config.ViewSetting
 	sortCol     SortColumn
@@ -56,7 +57,7 @@ func NewTable(gvr client.GVR) *Table {
 		},
 		gvr:     gvr,
 		actions: make(KeyActions),
-		cmdBuff: NewCmdBuff('/', FilterBuff),
+		cmdBuff: model.NewFishBuff('/', model.FilterBuffer),
 		sortCol: SortColumn{asc: true},
 	}
 }
@@ -147,6 +148,14 @@ func (t *Table) FilterInput(r rune) bool {
 	return true
 }
 
+// Filter filters out table data.
+func (t *Table) Filter(q string) {
+	t.ClearSelection()
+	t.doUpdate(t.filtered(t.GetModel().Peek()))
+	t.UpdateTitle()
+	t.SelectFirstRow()
+}
+
 // Hints returns the view hints.
 func (t *Table) Hints() model.MenuHints {
 	return t.actions.Hints()
@@ -203,7 +212,7 @@ func (t *Table) doUpdate(data render.TableData) {
 	}
 	custData := data.Customize(cols, t.wide)
 
-	if (t.sortCol.name == "" || custData.Header.IndexOf(t.sortCol.name, false) == -1) && len(custData.Header) > 0 {
+	if (t.sortCol.name == "" || custData.Header.IndexOf(t.sortCol.name, false) == -1) && len(custData.Header) > 0 && t.sortCol.name != "NONE" {
 		t.sortCol.name = custData.Header[0].Name
 	}
 
@@ -225,7 +234,12 @@ func (t *Table) doUpdate(data render.TableData) {
 		c.SetTextColor(fg)
 		col++
 	}
-	custData.RowEvents.Sort(custData.Namespace, custData.Header.IndexOf(t.sortCol.name, false), t.sortCol.name == "AGE", t.sortCol.asc)
+	custData.RowEvents.Sort(
+		custData.Namespace,
+		custData.Header.IndexOf(t.sortCol.name, false),
+		t.sortCol.name == "AGE",
+		t.sortCol.asc,
+	)
 
 	pads := make(MaxyPad, len(custData.Header))
 	ComputeMaxColumns(pads, t.sortCol.name, custData.Header, custData.RowEvents)
@@ -322,8 +336,13 @@ func (t *Table) Refresh() {
 }
 
 // GetSelectedRow returns the entire selected row.
-func (t *Table) GetSelectedRow() render.Row {
-	return t.model.Peek().RowEvents[t.GetSelectedRowIndex()-1].Row
+func (t *Table) GetSelectedRow(path string) (render.Row, bool) {
+	data := t.model.Peek()
+	i, ok := data.RowEvents.FindIndex(path)
+	if !ok {
+		return render.Row{}, ok
+	}
+	return data.RowEvents[i].Row, true
 }
 
 // NameColIndex returns the index of the resource name column.
@@ -352,26 +371,26 @@ func (t *Table) filtered(data render.TableData) render.TableData {
 	if t.toast {
 		filtered = filterToast(data)
 	}
-	if t.cmdBuff.Empty() || IsLabelSelector(t.cmdBuff.String()) {
+	if t.cmdBuff.Empty() || IsLabelSelector(t.cmdBuff.GetText()) {
 		return filtered
 	}
 
-	q := t.cmdBuff.String()
+	q := t.cmdBuff.GetText()
 	if IsFuzzySelector(q) {
-		return fuzzyFilter(q[2:], t.NameColIndex(), filtered)
+		return fuzzyFilter(q[2:], filtered)
 	}
 
-	filtered, err := rxFilter(t.cmdBuff.String(), filtered)
+	filtered, err := rxFilter(t.cmdBuff.GetText(), filtered)
 	if err != nil {
 		log.Error().Err(errors.New("Invalid filter expression")).Msg("Regexp")
-		t.cmdBuff.Clear()
+		t.cmdBuff.ClearText()
 	}
 
 	return filtered
 }
 
-// SearchBuff returns the associated command buffer.
-func (t *Table) SearchBuff() *CmdBuff {
+// CmdBuff returns the associated command buffer.
+func (t *Table) CmdBuff() *model.FishBuff {
 	return t.cmdBuff
 }
 
@@ -409,7 +428,9 @@ func (t *Table) styleTitle() string {
 			ns = path
 		}
 	}
-
+	if t.Extras != "" {
+		ns = t.Extras
+	}
 	var title string
 	if ns == client.ClusterScope {
 		title = SkinTitle(fmt.Sprintf(TitleFmt, base, rc), t.styles.Frame())
@@ -417,7 +438,7 @@ func (t *Table) styleTitle() string {
 		title = SkinTitle(fmt.Sprintf(NSTitleFmt, base, ns, rc), t.styles.Frame())
 	}
 
-	buff := t.cmdBuff.String()
+	buff := t.cmdBuff.GetText()
 	if buff == "" {
 		return title
 	}

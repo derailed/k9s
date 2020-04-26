@@ -39,6 +39,20 @@ func (h Header) Clone() Header {
 	return header
 }
 
+// Labelize returns a new Header based on labels.
+func (h Header) Labelize(cols []int, labelCol int, rr RowEvents) Header {
+	header := make(Header, 0, len(cols)+1)
+	for _, c := range cols {
+		header = append(header, h[c])
+	}
+	cc := rr.ExtractHeaderLabels(labelCol)
+	for _, c := range cc {
+		header = append(header, HeaderColumn{Name: c})
+	}
+
+	return header
+}
+
 // MapIndices returns a collection of mapped column indices based of the requested columns.
 func (h Header) MapIndices(cols []string, wide bool) []int {
 	ii := make([]int, 0, len(cols))

@@ -94,7 +94,7 @@ func (x *Xray) Init(ctx context.Context) error {
 
 // ExtraHints returns additional hints.
 func (x *Xray) ExtraHints() map[string]string {
-	if !x.app.Styles.Xray().ShowIcons {
+	if x.app.Config.K9s.NoIcons {
 		return nil
 	}
 	return xray.EmojiInfo()
@@ -105,13 +105,9 @@ func (x *Xray) SetInstance(string) {}
 
 func (x *Xray) bindKeys() {
 	x.Actions().Add(ui.KeyActions{
-		tcell.KeyEnter:      ui.NewKeyAction("Goto", x.gotoCmd, true),
-		ui.KeySlash:         ui.NewSharedKeyAction("Filter Mode", x.activateCmd, false),
-		tcell.KeyBackspace2: ui.NewSharedKeyAction("Erase", x.eraseCmd, false),
-		tcell.KeyBackspace:  ui.NewSharedKeyAction("Erase", x.eraseCmd, false),
-		tcell.KeyDelete:     ui.NewSharedKeyAction("Erase", x.eraseCmd, false),
-		tcell.KeyCtrlU:      ui.NewSharedKeyAction("Clear Filter", x.clearCmd, false),
-		tcell.KeyEscape:     ui.NewSharedKeyAction("Filter Reset", x.resetCmd, false),
+		ui.KeySlash:     ui.NewSharedKeyAction("Filter Mode", x.activateCmd, false),
+		tcell.KeyEscape: ui.NewSharedKeyAction("Filter Reset", x.resetCmd, false),
+		tcell.KeyEnter:  ui.NewKeyAction("Goto", x.gotoCmd, true),
 	})
 }
 
@@ -213,7 +209,7 @@ func (x *Xray) k9sEnv() Env {
 		return env
 	}
 
-	env["FILTER"] = x.CmdBuff().String()
+	env["FILTER"] = x.CmdBuff().GetText()
 	if env["FILTER"] == "" {
 		ns, n := client.Namespaced(spec.Path())
 		env["NAMESPACE"], env["FILTER"] = ns, n
@@ -417,27 +413,7 @@ func (x *Xray) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if x.app.InCmdMode() {
 		return evt
 	}
-	x.CmdBuff().SetActive(true)
-
-	return nil
-}
-
-func (x *Xray) clearCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !x.CmdBuff().IsActive() {
-		return evt
-	}
-	x.CmdBuff().Clear()
-	x.model.ClearFilter()
-	x.Start()
-
-	return nil
-}
-
-func (x *Xray) eraseCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if x.CmdBuff().IsActive() {
-		x.CmdBuff().Delete()
-	}
-	x.UpdateTitle()
+	x.app.ResetPrompt(x.CmdBuff())
 
 	return nil
 }
@@ -456,7 +432,7 @@ func (x *Xray) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (x *Xray) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if x.CmdBuff().IsActive() {
-		if ui.IsLabelSelector(x.CmdBuff().String()) {
+		if ui.IsLabelSelector(x.CmdBuff().GetText()) {
 			x.Start()
 		}
 		x.CmdBuff().SetActive(false)
@@ -469,11 +445,10 @@ func (x *Xray) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if spec == nil {
 		return nil
 	}
-	log.Debug().Msgf("SELECTED REF %#v", spec)
 	if len(strings.Split(spec.Path(), "/")) == 1 {
 		return nil
 	}
-	if err := x.app.viewResource(client.NewGVR(spec.GVR()).R(), spec.Path(), false); err != nil {
+	if err := x.app.gotoResource(client.NewGVR(spec.GVR()).R(), spec.Path(), false); err != nil {
 		x.app.Flash().Err(err)
 	}
 
@@ -481,7 +456,7 @@ func (x *Xray) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (x *Xray) filter(root *xray.TreeNode) *xray.TreeNode {
-	q := x.CmdBuff().String()
+	q := x.CmdBuff().GetText()
 	if x.CmdBuff().Empty() || ui.IsLabelSelector(q) {
 		return root
 	}
@@ -510,7 +485,7 @@ func (x *Xray) TreeLoadFailed(err error) {
 }
 
 func (x *Xray) update(node *xray.TreeNode) {
-	root := makeTreeNode(node, x.ExpandNodes(), x.app.Styles)
+	root := makeTreeNode(node, x.ExpandNodes(), x.app.Config.K9s.NoIcons, x.app.Styles)
 	if node == nil {
 		x.app.QueueUpdateDraw(func() {
 			x.SetRoot(root)
@@ -541,7 +516,6 @@ func (x *Xray) update(node *xray.TreeNode) {
 			}
 
 			if spec.AsPath() == x.GetSelectedItem() {
-				log.Debug().Msgf("SEL %q--%q", spec.Path(), x.GetSelectedItem())
 				node.SetExpanded(true).SetSelectable(true)
 				x.SetCurrentNode(node)
 			}
@@ -558,7 +532,7 @@ func (x *Xray) TreeChanged(node *xray.TreeNode) {
 }
 
 func (x *Xray) hydrate(parent *tview.TreeNode, n *xray.TreeNode) {
-	node := makeTreeNode(n, x.ExpandNodes(), x.app.Styles)
+	node := makeTreeNode(n, x.ExpandNodes(), x.app.Config.K9s.NoIcons, x.app.Styles)
 	for _, c := range n.Children {
 		x.hydrate(node, c)
 	}
@@ -569,14 +543,15 @@ func (x *Xray) hydrate(parent *tview.TreeNode, n *xray.TreeNode) {
 func (x *Xray) SetEnvFn(EnvFunc) {}
 
 // Refresh updates the view
-func (x *Xray) Refresh() {
-}
+func (x *Xray) Refresh() {}
 
 // BufferChanged indicates the buffer was changed.
-func (x *Xray) BufferChanged(s string) {}
+func (x *Xray) BufferChanged(s string) {
+	x.update(x.filter(x.model.Peek()))
+}
 
 // BufferActive indicates the buff activity changed.
-func (x *Xray) BufferActive(state bool, k ui.BufferKind) {
+func (x *Xray) BufferActive(state bool, k model.BufferKind) {
 	x.app.BufferActive(state, k)
 }
 
@@ -586,7 +561,7 @@ func (x *Xray) defaultContext() context.Context {
 	if x.CmdBuff().Empty() {
 		ctx = context.WithValue(ctx, internal.KeyLabels, "")
 	} else {
-		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(x.CmdBuff().String()))
+		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(x.CmdBuff().GetText()))
 	}
 
 	return ctx
@@ -595,8 +570,6 @@ func (x *Xray) defaultContext() context.Context {
 // Start initializes resource watch loop.
 func (x *Xray) Start() {
 	x.Stop()
-
-	x.CmdBuff().AddListener(x.app.Cmd())
 	x.CmdBuff().AddListener(x)
 
 	ctx := x.defaultContext()
@@ -612,8 +585,6 @@ func (x *Xray) Stop() {
 	}
 	x.cancelFn()
 	x.cancelFn = nil
-
-	x.CmdBuff().RemoveListener(x.app.Cmd())
 	x.CmdBuff().RemoveListener(x)
 }
 
@@ -652,17 +623,17 @@ func (x *Xray) styleTitle() string {
 		ns = client.NamespaceAll
 	}
 
-	buff := x.CmdBuff().String()
 	var title string
 	if ns == client.ClusterScope {
 		title = ui.SkinTitle(fmt.Sprintf(ui.TitleFmt, base, x.Count), x.app.Styles.Frame())
 	} else {
 		title = ui.SkinTitle(fmt.Sprintf(ui.NSTitleFmt, base, ns, x.Count), x.app.Styles.Frame())
 	}
+
+	buff := x.CmdBuff().GetText()
 	if buff == "" {
 		return title
 	}
-
 	if ui.IsLabelSelector(buff) {
 		buff = ui.TrimLabelSelector(buff)
 	}
@@ -716,10 +687,10 @@ func rxFilter(q, path string) bool {
 	return false
 }
 
-func makeTreeNode(node *xray.TreeNode, expanded bool, styles *config.Styles) *tview.TreeNode {
+func makeTreeNode(node *xray.TreeNode, expanded bool, showIcons bool, styles *config.Styles) *tview.TreeNode {
 	n := tview.NewTreeNode("No data...")
 	if node != nil {
-		n.SetText(node.Title(styles.Xray()))
+		n.SetText(node.Title(showIcons))
 		n.SetReference(node.Spec())
 	}
 	n.SetSelectable(true)

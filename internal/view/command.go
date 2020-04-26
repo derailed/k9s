@@ -85,10 +85,10 @@ func (c *Command) xrayCmd(cmd string) error {
 	}
 	gvr, ok := c.alias.AsGVR(tokens[1])
 	if !ok {
-		return fmt.Errorf("Huh? `%s` Command not found", cmd)
+		return fmt.Errorf("Huh? `%s` command not found", cmd)
 	}
 	if !allowedXRay(gvr) {
-		return fmt.Errorf("Huh? `%s` Command not found", cmd)
+		return fmt.Errorf("Huh? `%s` command not found", cmd)
 	}
 
 	x := NewXray(gvr)
@@ -106,17 +106,34 @@ func (c *Command) xrayCmd(cmd string) error {
 	return c.exec(cmd, "xrays", x, true)
 }
 
+func (c *Command) checkAccess(gvr string) error {
+	m, err := dao.MetaAccess.MetaFor(client.NewGVR(gvr))
+	if err != nil {
+		return err
+	}
+	ns := client.CleanseNamespace(c.app.Config.ActiveNamespace())
+	if dao.IsK8sMeta(m) && c.app.ConOK() {
+		if _, e := c.app.factory.CanForResource(ns, gvr, client.MonitorAccess); e != nil {
+			return e
+		}
+	}
+	return nil
+}
+
 // Exec the Command by showing associated display.
 func (c *Command) run(cmd, path string, clearStack bool) error {
 	if c.specialCmd(cmd) {
 		return nil
 	}
-
 	cmds := strings.Split(cmd, " ")
 	gvr, v, err := c.viewMetaFor(cmds[0])
 	if err != nil {
 		return err
 	}
+	if err := c.checkAccess(gvr); err != nil {
+		return err
+	}
+
 	switch cmds[0] {
 	case "ctx", "context", "contexts":
 		if len(cmds) == 2 {
@@ -141,8 +158,7 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 }
 
 func (c *Command) defaultCmd() error {
-	err := c.run(c.app.Config.ActiveView(), "", true)
-	if err != nil {
+	if err := c.run(c.app.Config.ActiveView(), "", true); err != nil {
 		log.Error().Err(err).Msgf("Saved command failed. Loading default view")
 		return c.run("pod", "", true)
 	}
@@ -185,7 +201,7 @@ func (c *Command) specialCmd(cmd string) bool {
 func (c *Command) viewMetaFor(cmd string) (string, *MetaViewer, error) {
 	gvr, ok := c.alias.AsGVR(cmd)
 	if !ok {
-		return "", nil, fmt.Errorf("Huh? `%s` Command not found", cmd)
+		return "", nil, fmt.Errorf("Huh? `%s` command not found", cmd)
 	}
 
 	v, ok := customViewers[gvr]
@@ -225,5 +241,10 @@ func (c *Command) exec(cmd, gvr string, comp model.Component, clearStack bool) e
 		c.app.Content.Stack.Clear()
 	}
 
-	return c.app.inject(comp)
+	if err := c.app.inject(comp); err != nil {
+		return err
+	}
+	c.app.cmdHistory.Push(cmd)
+
+	return nil
 }

@@ -35,9 +35,7 @@ func (c *Container) Render(ctx context.Context, ns string, o interface{}) error 
 	}
 	pns, _ := client.Namespaced(parent.ID)
 	c.envRefs(f, root, pns, co.Container)
-	// if !root.IsLeaf() {
 	parent.Add(root)
-	// }
 
 	return nil
 }

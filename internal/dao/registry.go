@@ -47,8 +47,10 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		client.NewGVR("apps/v1/statefulsets"):          &StatefulSet{},
 		client.NewGVR("batch/v1beta1/cronjobs"):        &CronJob{},
 		client.NewGVR("batch/v1/jobs"):                 &Job{},
-		client.NewGVR("charts"):                        &Chart{},
 		client.NewGVR("openfaas"):                      &OpenFaas{},
+		client.NewGVR("popeye"):                        &Popeye{},
+		client.NewGVR("sanitizer"):                     &Popeye{},
+		client.NewGVR("helm"):                          &Helm{},
 	}
 
 	r, ok := m[gvr]
@@ -163,6 +165,20 @@ func loadK9s(m ResourceMetas) {
 		Verbs:        []string{},
 		Categories:   []string{"k9s"},
 	}
+	m[client.NewGVR("popeye")] = metav1.APIResource{
+		Name:         "popeye",
+		Kind:         "Popeye",
+		SingularName: "popeye",
+		Verbs:        []string{},
+		Categories:   []string{"k9s"},
+	}
+	m[client.NewGVR("sanitizer")] = metav1.APIResource{
+		Name:         "sanitizer",
+		Kind:         "Sanitizer",
+		SingularName: "sanitizer",
+		Verbs:        []string{},
+		Categories:   []string{"k9s"},
+	}
 	m[client.NewGVR("contexts")] = metav1.APIResource{
 		Name:         "contexts",
 		Kind:         "Contexts",
@@ -206,9 +222,9 @@ func loadK9s(m ResourceMetas) {
 }
 
 func loadHelm(m ResourceMetas) {
-	m[client.NewGVR("charts")] = metav1.APIResource{
-		Name:       "charts",
-		Kind:       "Charts",
+	m[client.NewGVR("helm")] = metav1.APIResource{
+		Name:       "helm",
+		Kind:       "Helm",
 		Namespaced: true,
 		Verbs:      []string{"delete"},
 		Categories: []string{"helm"},

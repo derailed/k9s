@@ -3,10 +3,8 @@ package render
 import (
 	"fmt"
 	"sort"
-	"time"
 
 	"github.com/rs/zerolog/log"
-	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 const (
@@ -44,8 +42,8 @@ func NewRowEvent(kind ResEvent, row Row) RowEvent {
 	}
 }
 
-// NewDeltaRowEvent returns a new row event with deltas.
-func NewDeltaRowEvent(row Row, delta DeltaRow) RowEvent {
+// NewRowEventWithDeltas returns a new row event with deltas.
+func NewRowEventWithDeltas(row Row, delta DeltaRow) RowEvent {
 	return RowEvent{
 		Kind:   EventUpdate,
 		Row:    row,
@@ -77,6 +75,20 @@ func (r RowEvent) Customize(cols []int) RowEvent {
 	}
 }
 
+func (r RowEvent) ExtractHeaderLabels(labelCol int) []string {
+	hh, _ := sortLabels(labelize(r.Row.Fields[labelCol]))
+	return hh
+}
+
+// Labelize returns a new row event based on labels.
+func (r RowEvent) Labelize(cols []int, labelCol int, labels []string) RowEvent {
+	return RowEvent{
+		Kind:   r.Kind,
+		Deltas: r.Deltas.Labelize(cols, labelCol),
+		Row:    r.Row.Labelize(cols, labelCol, labels),
+	}
+}
+
 // Diff returns true if the row changed.
 func (r RowEvent) Diff(re RowEvent, ageCol int) bool {
 	if r.Kind != re.Kind {
@@ -92,6 +104,24 @@ func (r RowEvent) Diff(re RowEvent, ageCol int) bool {
 
 // RowEvents a collection of row events.
 type RowEvents []RowEvent
+
+func (r RowEvents) ExtractHeaderLabels(labelCol int) []string {
+	ll := make([]string, 0, 10)
+	for _, re := range r {
+		ll = append(ll, re.ExtractHeaderLabels(labelCol)...)
+	}
+
+	return ll
+}
+
+func (r RowEvents) Labelize(cols []int, labelCol int, labels []string) RowEvents {
+	out := make(RowEvents, 0, len(r))
+	for _, re := range r {
+		out = append(out, re.Labelize(cols, labelCol, labels))
+	}
+
+	return out
+}
 
 // Customize returns custom row events based on columns layout.
 func (r RowEvents) Customize(cols []int) RowEvents {
@@ -164,40 +194,30 @@ func (r RowEvents) FindIndex(id string) (int, bool) {
 
 // Sort rows based on column index and order.
 func (r RowEvents) Sort(ns string, sortCol int, ageCol bool, asc bool) {
+	if sortCol == -1 {
+		return
+	}
+
 	t := RowEventSorter{NS: ns, Events: r, Index: sortCol, Asc: asc}
 	sort.Sort(t)
 
-	gg, kk := map[string][]string{}, make(StringSet, 0, len(r))
+	iids, fields := map[string][]string{}, make(StringSet, 0, len(r))
 	for _, re := range r {
-		g := re.Row.Fields[sortCol]
+		field := re.Row.Fields[sortCol]
 		if ageCol {
-			g = toAgeDuration(g)
+			field = toAgeDuration(field)
 		}
-		kk = kk.Add(g)
-		if ss, ok := gg[g]; ok {
-			gg[g] = append(ss, re.Row.ID)
-		} else {
-			gg[g] = []string{re.Row.ID}
-		}
+		fields = fields.Add(field)
+		iids[field] = append(iids[field], re.Row.ID)
 	}
 
 	ids := make([]string, 0, len(r))
-	for _, k := range kk {
-		sort.StringSlice(gg[k]).Sort()
-		ids = append(ids, gg[k]...)
+	for _, field := range fields {
+		sort.StringSlice(iids[field]).Sort()
+		ids = append(ids, iids[field]...)
 	}
 	s := IdSorter{Ids: ids, Events: r}
 	sort.Sort(s)
-}
-
-// Helpers...
-
-func toAgeDuration(dur string) string {
-	d, err := time.ParseDuration(dur)
-	if err != nil {
-		return dur
-	}
-	return duration.HumanDuration(d)
 }
 
 // ----------------------------------------------------------------------------

@@ -65,6 +65,38 @@ func TestFieldClone(t *testing.T) {
 	assert.NotEqual(t, fmt.Sprintf("%p", f), fmt.Sprintf("%p", f1))
 }
 
+func TestRowlabelize(t *testing.T) {
+	uu := map[string]struct {
+		row  render.Row
+		cols []int
+		e    render.Row
+	}{
+		"empty": {
+			row:  render.Row{},
+			cols: []int{0, 1, 2},
+			e:    render.Row{ID: "", Fields: render.Fields{"", "", ""}},
+		},
+		"no-cols-no-data": {
+			row:  render.Row{},
+			cols: []int{},
+			e:    render.Row{ID: "", Fields: render.Fields{}},
+		},
+		"no-cols-data": {
+			row:  render.Row{ID: "fred", Fields: render.Fields{"f1", "f2", "f3"}},
+			cols: []int{},
+			e:    render.Row{ID: "fred", Fields: render.Fields{}},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			row := u.row.Customize(u.cols)
+			assert.Equal(t, u.e, row)
+		})
+	}
+}
+
 func TestRowCustomize(t *testing.T) {
 	uu := map[string]struct {
 		row  render.Row

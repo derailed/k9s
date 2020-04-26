@@ -1,0 +1,10 @@
+plugin:
+  dive:
+    shortCut: d
+    description: "Dive image"
+    scopes:
+      - containers
+    command: dive
+    background: false
+    args:
+      - $COL-IMAGE

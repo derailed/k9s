@@ -7,6 +7,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/rs/zerolog/log"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -119,6 +120,7 @@ func (r *Rbac) loadRoleBinding(path string) ([]runtime.Object, error) {
 }
 
 func (r *Rbac) loadClusterRole(path string) ([]runtime.Object, error) {
+	log.Debug().Msgf("LOAD-CR %q", path)
 	o, err := r.Factory.Get(crGVR, path, true, labels.Everything())
 	if err != nil {
 		return nil, err

@@ -117,7 +117,6 @@ func (b *Benchmark) Run(cluster string, done func()) {
 	// this call will block until the benchmark is complete or timesout.
 	b.worker.Run()
 	b.worker.Stop()
-	log.Debug().Msgf("YO!! %t %s", b.canceled, buff)
 	if len(buff.Bytes()) > 0 {
 		if err := b.save(cluster, buff); err != nil {
 			log.Error().Err(err).Msg("Saving Benchmark")

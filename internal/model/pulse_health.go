@@ -51,7 +51,7 @@ func (h *PulseHealth) List(ctx context.Context, ns string) ([]runtime.Object, er
 		hh = append(hh, c)
 	}
 
-	mm, err := h.checkMetrics()
+	mm, err := h.checkMetrics(ctx)
 	if err != nil {
 		return hh, nil
 	}
@@ -62,15 +62,15 @@ func (h *PulseHealth) List(ctx context.Context, ns string) ([]runtime.Object, er
 	return hh, nil
 }
 
-func (h *PulseHealth) checkMetrics() (health.Checks, error) {
+func (h *PulseHealth) checkMetrics(ctx context.Context) (health.Checks, error) {
 	dial := client.DialMetrics(h.factory.Client())
 
-	nn, err := dao.FetchNodes(h.factory, "")
+	nn, err := dao.FetchNodes(ctx, h.factory, "")
 	if err != nil {
 		return nil, err
 	}
 
-	nmx, err := dial.FetchNodesMetrics()
+	nmx, err := dial.FetchNodesMetrics(ctx)
 	if err != nil {
 		log.Error().Err(err).Msgf("Fetching metrics")
 		return nil, err

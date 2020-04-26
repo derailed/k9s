@@ -319,8 +319,6 @@ func (c *Config) ensureConfig() {
 	if c.clientConfig != nil {
 		return
 	}
-
-	log.Debug().Msg("Loading raw config from flags...")
 	c.clientConfig = c.flags.ToRawKubeConfigLoader()
 }
 

@@ -79,7 +79,7 @@ linters-settings:
     # exclude: /path/to/file.txt
 
   funlen:
-    lines: 65
+    lines: 75
     statements: 40
 
   govet:
@@ -114,7 +114,7 @@ linters-settings:
     local-prefixes: github.com/org/project
   gocyclo:
     # minimal code complexity to report, 30 by default (but we recommend 10-20)
-    min-complexity: 15
+    min-complexity: 20
   gocognit:
     # minimal code complexity to report, 30 by default (but we recommend 10-20)
     min-complexity: 20

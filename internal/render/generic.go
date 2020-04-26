@@ -70,7 +70,6 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 	if !ok {
 		return fmt.Errorf("expecting row 0 to be a string but got %T", row.Cells[0])
 	}
-
 	r.ID = client.FQN(nns, n)
 	r.Fields = make(Fields, 0, len(g.Header(ns)))
 	r.Fields = append(r.Fields, nns)

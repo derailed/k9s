@@ -10,9 +10,9 @@ import (
 // BOZO!! Break up deps and merge into single registrar
 var Registry = map[string]ResourceMeta{
 	// Custom...
-	"charts": {
-		DAO:      &dao.Chart{},
-		Renderer: &render.Chart{},
+	"helm": {
+		DAO:      &dao.Helm{},
+		Renderer: &render.Helm{},
 	},
 	"pulses": {
 		DAO: &dao.Pulse{},
@@ -61,6 +61,14 @@ var Registry = map[string]ResourceMeta{
 	"aliases": {
 		DAO:      &dao.Alias{},
 		Renderer: &render.Alias{},
+	},
+	"popeye": {
+		DAO:      &dao.Popeye{},
+		Renderer: &render.Popeye{},
+	},
+	"sanitizer": {
+		DAO:          &dao.Popeye{},
+		TreeRenderer: &xray.Section{},
 	},
 
 	// Core...

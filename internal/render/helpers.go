@@ -1,6 +1,7 @@
 package render
 
 import (
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -14,6 +15,35 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 )
+
+var durationRx = regexp.MustCompile(`\A(\d*d)*?(\d*h)*?(\d*m)*?(\d*s)*?\z`)
+
+func durationToSeconds(duration string) string {
+	tokens := durationRx.FindAllStringSubmatch(duration, -1)
+	if len(tokens) == 0 {
+		return duration
+	}
+	if len(tokens[0]) < 5 {
+		return duration
+	}
+
+	d, h, m, s := tokens[0][1], tokens[0][2], tokens[0][3], tokens[0][4]
+	var n int
+	if v, err := strconv.Atoi(strings.Replace(d, "d", "", 1)); err == nil {
+		n += v * 24 * 60 * 60
+	}
+	if v, err := strconv.Atoi(strings.Replace(h, "h", "", 1)); err == nil {
+		n += v * 60 * 60
+	}
+	if v, err := strconv.Atoi(strings.Replace(m, "m", "", 1)); err == nil {
+		n += v * 60
+	}
+	if v, err := strconv.Atoi(strings.Replace(s, "s", "", 1)); err == nil {
+		n += v
+	}
+
+	return strconv.Itoa(n)
+}
 
 // AsThousands prints a number with thousand separator.
 func AsThousands(n int64) string {
@@ -266,4 +296,31 @@ func Pad(s string, width int) string {
 	}
 
 	return s + strings.Repeat(" ", width-len(s))
+}
+
+// Converts labels string to map
+func labelize(labels string) map[string]string {
+	ll := strings.Split(labels, ",")
+	data := make(map[string]string, len(ll))
+
+	for _, l := range ll {
+		tokens := strings.Split(l, "=")
+		if len(tokens) == 2 {
+			data[tokens[0]] = tokens[1]
+		}
+	}
+
+	return data
+}
+
+func sortLabels(m map[string]string) (keys, vals []string) {
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		vals = append(vals, m[k])
+	}
+
+	return
 }

@@ -96,7 +96,8 @@ func TestConfigLoad(t *testing.T) {
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 
 	assert.Equal(t, 2, cfg.K9s.RefreshRate)
-	assert.Equal(t, 200, cfg.K9s.LogBufferSize)
+	assert.Equal(t, 2000, cfg.K9s.Logger.BufferSize)
+	assert.Equal(t, int64(200), cfg.K9s.Logger.TailCount)
 	assert.Equal(t, "minikube", cfg.K9s.CurrentContext)
 	assert.Equal(t, "minikube", cfg.K9s.CurrentCluster)
 	assert.NotNil(t, cfg.K9s.Clusters)
@@ -206,8 +207,8 @@ func TestConfigSaveFile(t *testing.T) {
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 	cfg.K9s.RefreshRate = 100
 	cfg.K9s.ReadOnly = true
-	cfg.K9s.LogBufferSize = 500
-	cfg.K9s.LogRequestSize = 100
+	cfg.K9s.Logger.TailCount = 500
+	cfg.K9s.Logger.BufferSize = 800
 	cfg.K9s.CurrentContext = "blee"
 	cfg.K9s.CurrentCluster = "blee"
 	cfg.Validate()
@@ -262,11 +263,16 @@ var expectedConfig = `k9s:
   refreshRate: 100
   headless: false
   readOnly: true
-  logBufferSize: 500
-  logRequestSize: 100
+  noIcons: false
+  logger:
+    tail: 500
+    buffer: 800
+    sinceSeconds: -1
+    fullScreenLogs: false
+    textWrap: false
+    showTime: false
   currentContext: blee
   currentCluster: blee
-  fullScreenLogs: false
   clusters:
     blee:
       namespace:
@@ -275,28 +281,30 @@ var expectedConfig = `k9s:
         - default
       view:
         active: po
+      featureGates:
+        nodeShell: false
     fred:
       namespace:
         active: default
         favorites:
         - default
-        - kube-public
         - istio-system
         - all
-        - kube-system
       view:
         active: po
+      featureGates:
+        nodeShell: false
     minikube:
       namespace:
         active: kube-system
         favorites:
         - default
-        - kube-public
         - istio-system
         - all
-        - kube-system
       view:
         active: ctx
+      featureGates:
+        nodeShell: false
   thresholds:
     cpu:
       critical: 90
@@ -310,11 +318,16 @@ var resetConfig = `k9s:
   refreshRate: 2
   headless: false
   readOnly: false
-  logBufferSize: 200
-  logRequestSize: 200
+  noIcons: false
+  logger:
+    tail: 200
+    buffer: 2000
+    sinceSeconds: -1
+    fullScreenLogs: false
+    textWrap: false
+    showTime: false
   currentContext: blee
   currentCluster: blee
-  fullScreenLogs: false
   clusters:
     blee:
       namespace:
@@ -323,6 +336,8 @@ var resetConfig = `k9s:
         - default
       view:
         active: po
+      featureGates:
+        nodeShell: false
   thresholds:
     cpu:
       critical: 90

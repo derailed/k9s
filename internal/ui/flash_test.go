@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +22,7 @@ func TestFlash(t *testing.T) {
 		"err":  {l: model.FlashErr, i: "hello", e: "😡 hello\n"},
 	}
 
-	a := ui.NewApp("test")
+	a := ui.NewApp(config.NewConfig(nil), "test")
 	f := ui.NewFlash(a)
 	f.SetTestMode(true)
 	ctx, cancel := context.WithCancel(context.Background())

@@ -12,6 +12,14 @@ import (
 	"k8s.io/cli-runtime/pkg/printers"
 )
 
+// IsFuzzySelector checks if filter is fuzzy or not.
+func IsFuzzySelector(s string) bool {
+	if s == "" {
+		return false
+	}
+	return fuzzyRx.MatchString(s)
+}
+
 func toPerc(v1, v2 float64) float64 {
 	if v2 == 0 {
 		return 0

@@ -142,6 +142,51 @@ func (mock *MockConnection) HasMetrics() bool {
 	return ret0
 }
 
+func (mock *MockConnection) ActiveCluster() string {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockConnection().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("ActiveCluster", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem()})
+	var ret0 string
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(string)
+		}
+	}
+	return ret0
+}
+
+func (mock *MockConnection) ActiveNamespace() string {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockConnection().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("ActiveNamespace", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem()})
+	var ret0 string
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(string)
+		}
+	}
+	return ret0
+}
+
+func (mock *MockConnection) IsActiveNamespace(s string) bool {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockConnection().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("IsActiveNamespace", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
+	var ret0 bool
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(bool)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockConnection) IsNamespaced(_param0 string) bool {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")

@@ -65,9 +65,10 @@ func TestTableViewFilter(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
 	v.Init(makeContext())
 	v.SetModel(&testTableModel{})
-	v.SearchBuff().SetActive(true)
-	v.SearchBuff().Set("blee")
 	v.Refresh()
+	v.CmdBuff().SetActive(true)
+	v.CmdBuff().SetText("blee")
+
 	assert.Equal(t, 2, v.GetRowCount())
 }
 
