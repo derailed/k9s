@@ -2,9 +2,11 @@ package view
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 )
@@ -107,12 +109,12 @@ func pluginActions(r Runner, aa ui.KeyActions) {
 		}
 		aa[key] = ui.NewKeyAction(
 			plugin.Description,
-			execCmd(r, plugin.Command, plugin.Background, plugin.Args...),
+			pluginAction(r, plugin),
 			true)
 	}
 }
 
-func execCmd(r Runner, bin string, bg bool, args ...string) ui.ActionHandler {
+func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		path := r.GetSelectedItem()
 		if path == "" {
@@ -123,19 +125,28 @@ func execCmd(r Runner, bin string, bg bool, args ...string) ui.ActionHandler {
 			return nil
 		}
 
-		aa := make([]string, len(args))
-		for i, a := range args {
+		args := make([]string, len(p.Args))
+		for i, a := range p.Args {
 			arg, err := r.EnvFn()().Substitute(a)
 			if err != nil {
 				log.Error().Err(err).Msg("Plugin Args match failed")
 				return nil
 			}
-			aa[i] = arg
+			args[i] = arg
 		}
-		if run(r.App(), shellOpts{clear: true, binary: bin, background: bg, args: aa}) {
-			r.App().Flash().Info("Plugin command launched successfully!")
+		fn := func() {
+			if run(r.App(), shellOpts{clear: true, binary: p.Command, background: p.Background, args: args}) {
+				r.App().Flash().Info("Plugin command launched successfully!")
+			} else {
+				r.App().Flash().Info("Plugin command failed!")
+			}
+		}
+		if p.Confirm {
+			dialog.ShowConfirm(r.App().Content.Pages, "Confirm plugin action", fmt.Sprintf("Will execute:\n%s %s", p.Command, strings.Join(args, " ")), func() {
+				fn()
+			}, func() {})
 		} else {
-			r.App().Flash().Info("Plugin command failed!")
+			fn()
 		}
 
 		return nil

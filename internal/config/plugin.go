@@ -18,6 +18,7 @@ type Plugins struct {
 // Plugin describes a K9s plugin
 type Plugin struct {
 	ShortCut    string   `yaml:"shortCut"`
+	Confirm     bool     `yaml:"confirm"`
 	Scopes      []string `yaml:"scopes"`
 	Description string   `yaml:"description"`
 	Command     string   `yaml:"command"`
