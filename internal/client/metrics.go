@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"strconv"
 	"time"
 
 	v1 "k8s.io/api/core/v1"
@@ -261,4 +262,12 @@ func ToPercentage(v1, v2 int64) int {
 		return 0
 	}
 	return int(math.Floor((float64(v1) / float64(v2)) * 100))
+}
+
+// ToPercentageStr computes percentage, but if v2 is 0, it will return NAValue instead of 0
+func ToPercentageStr(v1, v2 int64) string {
+	if v2 == 0 {
+		return NA
+	}
+	return strconv.Itoa(ToPercentage(v1, v2))
 }
