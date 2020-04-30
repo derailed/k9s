@@ -165,6 +165,18 @@ func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, p metric) {
 		cpuLim: IntToStr(client.ToPercentage(cpu.MilliValue(), lc.MilliValue())),
 		memLim: IntToStr(client.ToPercentage(client.ToMB(mem.Value()), client.ToMB(lm.Value()))),
 	}
+	if rc.IsZero() {
+		p.cpu = "n/a"
+	}
+	if rm.IsZero() {
+		p.mem = "n/a"
+	}
+	if lc.IsZero() {
+		p.cpuLim = "n/a"
+	}
+	if lm.IsZero() {
+		p.memLim = "n/a"
+	}
 
 	return
 }
