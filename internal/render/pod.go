@@ -183,6 +183,18 @@ func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, p metric) {
 	if memLimPerc > 90 {
 		p.memLim = "[red]" + p.memLim
 	}
+	if rc.IsZero() {
+		p.cpu = "n/a"
+	}
+	if rm.IsZero() {
+		p.mem = "n/a"
+	}
+	if lc.IsZero() {
+		p.cpuLim = "n/a"
+	}
+	if lm.IsZero() {
+		p.memLim = "n/a"
+	}
 
 	return
 }
