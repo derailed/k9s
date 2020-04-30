@@ -223,10 +223,9 @@ func resourceLimits(cc []v1.Container) (cpu, mem resource.Quantity, cpuInvalid, 
 	for _, co := range cc {
 		limit := co.Resources.Limits
 		if len(limit) == 0 {
-			continue
-		} else {
 			cpuInvalid = true
 			memInvalid = true
+			continue
 		}
 		if limit.Cpu() != nil {
 			cpu.Add(*limit.Cpu())
