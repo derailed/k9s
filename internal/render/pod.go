@@ -157,8 +157,8 @@ func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, p metric) {
 		mem: ToMi(client.ToMB(mem.Value())),
 	}
 
-	rc, rm := requestedRes(pod.Spec.Containers)
-	lc, lm := resourceLimits(pod.Spec.Containers)
+	rc, rm, rcInvalid, rmInvalid := requestedRes(pod.Spec.Containers)
+	lc, lm, lcInvalid, lmInvalid := resourceLimits(pod.Spec.Containers)
 
 	cpuPerc := client.ToPercentage(cpu.MilliValue(), rc.MilliValue())
 	memPerc := client.ToPercentage(client.ToMB(mem.Value()), client.ToMB(rm.Value()))
@@ -183,16 +183,16 @@ func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, p metric) {
 	if memLimPerc > 90 {
 		p.memLim = "[red]" + p.memLim
 	}
-	if rc.IsZero() {
+	if rcInvalid {
 		p.cpu = "n/a"
 	}
-	if rm.IsZero() {
+	if rmInvalid {
 		p.mem = "n/a"
 	}
-	if lc.IsZero() {
+	if lcInvalid {
 		p.cpuLim = "n/a"
 	}
-	if lm.IsZero() {
+	if lmInvalid {
 		p.memLim = "n/a"
 	}
 
@@ -219,31 +219,54 @@ func containerLimits(co v1.Container) (cpu, mem *resource.Quantity) {
 	return limit.Cpu(), limit.Memory()
 }
 
-func resourceLimits(cc []v1.Container) (cpu, mem resource.Quantity) {
+func resourceLimits(cc []v1.Container) (cpu, mem resource.Quantity, cpuInvalid, memInvalid bool) {
 	for _, co := range cc {
 		limit := co.Resources.Limits
 		if len(limit) == 0 {
 			continue
+		} else {
+			cpuInvalid = true
+			memInvalid = true
 		}
 		if limit.Cpu() != nil {
 			cpu.Add(*limit.Cpu())
+		} else {
+			cpuInvalid = true
 		}
 		if limit.Memory() != nil {
 			mem.Add(*limit.Memory())
+		} else {
+			memInvalid = true
 		}
+	}
+	if cpu.IsZero() {
+		cpuInvalid = true
+	}
+	if mem.IsZero() {
+		memInvalid = true
 	}
 	return
 }
 
-func requestedRes(cc []v1.Container) (cpu, mem resource.Quantity) {
+func requestedRes(cc []v1.Container) (cpu, mem resource.Quantity, cpuInvalid, memInvalid bool) {
 	for _, co := range cc {
 		c, m := containerResources(co)
 		if c != nil {
 			cpu.Add(*c)
+		} else {
+			cpuInvalid = true
 		}
 		if m != nil {
 			mem.Add(*m)
+		} else {
+			memInvalid = true
 		}
+	}
+	if cpu.IsZero() {
+		cpuInvalid = true
+	}
+	if mem.IsZero() {
+		memInvalid = true
 	}
 	return
 }
