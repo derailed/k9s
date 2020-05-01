@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -139,7 +140,7 @@ func ssh(a *App, node string) error {
 	if err := launchShellPod(a, node); err != nil {
 		return err
 	}
-	shellIn(a, client.FQN(k9sShellNS, k9sShell), k9sShell)
+	shellIn(a, client.FQN(k9sShellNS, k9sShellPodName()), k9sShell)
 
 	return nil
 }
@@ -148,7 +149,7 @@ func nukeK9sShell(c client.Connection) {
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
-	err := c.DialOrDie().CoreV1().Pods(k9sShellNS).Delete(ctx, k9sShell, metav1.DeleteOptions{})
+	err := c.DialOrDie().CoreV1().Pods(k9sShellNS).Delete(ctx, k9sShellPodName(), metav1.DeleteOptions{})
 	if kerrors.IsNotFound(err) {
 		return
 	}
@@ -158,7 +159,11 @@ func nukeK9sShell(c client.Connection) {
 }
 
 func launchShellPod(a *App, node string) error {
-	spec := k9sShellPod(node)
+	img := a.Config.K9s.DockerShellImage
+	if img == "" {
+		img = config.DefaultDockerShellImage
+	}
+	spec := k9sShellPod(node, img)
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 	dial := a.Conn().DialOrDie().CoreV1().Pods(k9sShellNS)
@@ -167,7 +172,7 @@ func launchShellPod(a *App, node string) error {
 	}
 
 	for i := 0; i < k9sShellRetryCount; i++ {
-		o, err := a.factory.Get("v1/pods", client.FQN(k9sShellNS, k9sShell), true, labels.Everything())
+		o, err := a.factory.Get("v1/pods", client.FQN(k9sShellNS, k9sShellPodName()), true, labels.Everything())
 		if err != nil {
 			time.Sleep(k9sShellRetryDelay)
 			continue
@@ -185,13 +190,17 @@ func launchShellPod(a *App, node string) error {
 	return fmt.Errorf("Unable to launch shell pod on node %s", node)
 }
 
-func k9sShellPod(node string) v1.Pod {
+func k9sShellPodName() string {
+	return fmt.Sprintf("%s-%d", k9sShell, os.Getpid())
+}
+
+func k9sShellPod(node, image string) v1.Pod {
 	var grace int64
 	var priv bool = true
 
 	return v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      k9sShell,
+			Name:      k9sShellPodName(),
 			Namespace: k9sShellNS,
 		},
 		Spec: v1.PodSpec{
@@ -213,7 +222,7 @@ func k9sShellPod(node string) v1.Pod {
 			Containers: []v1.Container{
 				{
 					Name:  k9sShell,
-					Image: "busybox:1.31",
+					Image: image,
 					VolumeMounts: []v1.VolumeMount{
 						{
 							Name:      "root-vol",
