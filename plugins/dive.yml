@@ -1,6 +1,7 @@
 plugin:
   dive:
     shortCut: d
+    confirm: false
     description: "Dive image"
     scopes:
       - containers
