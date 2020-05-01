@@ -45,7 +45,7 @@ type APIClient struct {
 	config       *Config
 	mx           sync.Mutex
 	cache        *cache.LRUExpireCache
-	metricsAPI   bool
+	connOK       bool
 }
 
 // NewTestClient for testing ONLY!!
@@ -63,7 +63,7 @@ func InitConnectionOrDie(config *Config) *APIClient {
 		config: config,
 		cache:  cache.NewLRUExpireCache(cacheSize),
 	}
-	a.metricsAPI = a.supportsMetricsResources()
+	_ = a.supportsMetricsResources()
 	return &a
 }
 
@@ -168,12 +168,21 @@ func (a *APIClient) ServerVersion() (*version.Info, error) {
 
 // ValidNamespaces returns all available namespaces.
 func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
+	if nn, ok := a.cache.Get("validNamespaces"); ok {
+		if nss, ok := nn.([]v1.Namespace); ok {
+			return nss, nil
+		}
+	}
+	log.Debug().Msgf(">>>>> Loading all namespaces")
 	ctx, cancel := context.WithTimeout(context.Background(), CallTimeout)
 	defer cancel()
 	nn, err := a.DialOrDie().CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
+
+	a.cache.Add("validNamespaces", nn.Items, cacheExpiry)
+
 	return nn.Items, nil
 }
 
@@ -186,6 +195,7 @@ func (a *APIClient) CheckConnectivity() (status bool) {
 		if !status {
 			a.clearCache()
 		}
+		a.connOK = status
 	}()
 
 	cfg, err := a.config.flags.ToRESTConfig()
@@ -201,7 +211,10 @@ func (a *APIClient) CheckConnectivity() (status bool) {
 	}
 
 	if _, err := client.ServerVersion(); err == nil {
-		a.reset()
+		if !a.connOK {
+			log.Debug().Msgf("RESETING CON!!")
+			a.reset()
+		}
 		status = true
 	} else {
 		log.Error().Err(err).Msgf("K9s can't connect to cluster")
@@ -332,7 +345,7 @@ func (a *APIClient) SwitchContext(ctx string) error {
 	}
 	a.clearCache()
 	a.reset()
-	a.metricsAPI = a.supportsMetricsResources()
+	_ = a.supportsMetricsResources()
 	ResetMetrics()
 
 	return nil

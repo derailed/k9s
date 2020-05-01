@@ -2,6 +2,7 @@ package view
 
 import (
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
@@ -72,15 +73,17 @@ func DismissPortForwards(v ResourceViewer, p *ui.Pages) {
 // Helpers...
 
 func extractPort(p string) string {
-	tokens := strings.Split(p, ":")
-	switch {
-	case len(tokens) < 2:
-		return tokens[0]
-	case len(tokens) == 2:
-		return strings.Replace(tokens[1], "╱UDP", "", 1)
-	default:
-		return tokens[1]
+	rx := regexp.MustCompile(`\A(\w+)/?(\w+)?:?(\d+)?(╱UDP)?\z`)
+	mm := rx.FindStringSubmatch(p)
+	if len(mm) != 5 {
+		return p
 	}
+	for i := 3; i > 0; i-- {
+		if mm[i] != "" {
+			return mm[i]
+		}
+	}
+	return p
 }
 
 func extractContainer(p string) string {

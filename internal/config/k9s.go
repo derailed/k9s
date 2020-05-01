@@ -100,7 +100,7 @@ func (k *K9s) validateDefaults() {
 	}
 }
 
-func (k *K9s) checkClusters(c client.Connection, ks KubeSettings) {
+func (k *K9s) validateClusters(c client.Connection, ks KubeSettings) {
 	cc, err := ks.ClusterNames()
 	if err != nil {
 		return
@@ -123,7 +123,7 @@ func (k *K9s) Validate(c client.Connection, ks KubeSettings) {
 	if k.Clusters == nil {
 		k.Clusters = map[string]*Cluster{}
 	}
-	k.checkClusters(c, ks)
+	k.validateClusters(c, ks)
 
 	if k.Logger == nil {
 		k.Logger = NewLogger()

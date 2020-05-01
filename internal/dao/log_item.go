@@ -19,6 +19,7 @@ type LogChan chan *LogItem
 // LogItem represents a container log line.
 type LogItem struct {
 	Pod, Container, Timestamp string
+	SingleContainer           bool
 	Bytes                     []byte
 }
 
@@ -78,7 +79,7 @@ func (l *LogItem) Render(c int, showTime bool) []byte {
 		bb = append(bb, []byte(colorize(l.Pod, c))...)
 		bb = append(bb, ':')
 	}
-	if l.Container != "" {
+	if !l.SingleContainer && l.Container != "" {
 		bb = append(bb, []byte(colorize(l.Container, c))...)
 		bb = append(bb, ' ')
 	}

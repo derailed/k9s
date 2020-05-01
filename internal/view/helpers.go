@@ -84,7 +84,10 @@ func showPodsWithLabels(app *App, path string, sel map[string]string) {
 }
 
 func showPods(app *App, path, labelSel, fieldSel string) {
-	app.switchNS(client.AllNamespaces)
+	if err := app.switchNS(client.AllNamespaces); err != nil {
+		app.Flash().Err(err)
+		return
+	}
 
 	v := NewPod(client.NewGVR("v1/pods"))
 	v.SetContextFn(podCtx(app, path, labelSel, fieldSel))

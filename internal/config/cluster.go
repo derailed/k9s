@@ -1,6 +1,8 @@
 package config
 
-import "github.com/derailed/k9s/internal/client"
+import (
+	"github.com/derailed/k9s/internal/client"
+)
 
 // Cluster tracks K9s cluster configuration.
 type Cluster struct {
@@ -23,7 +25,6 @@ func (c *Cluster) Validate(conn client.Connection, ks KubeSettings) {
 	if c.Namespace == nil {
 		c.Namespace = NewNamespace()
 	}
-	c.Namespace.Validate(conn, ks)
 
 	if c.FeatureGates == nil {
 		c.FeatureGates = NewFeatureGates()

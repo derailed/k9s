@@ -59,13 +59,16 @@ func (n *Namespace) useNsCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (n *Namespace) useNamespace(fqn string) {
 	_, ns := client.Namespaced(fqn)
-	log.Debug().Msgf("SWITCHING NS %q", ns)
-	n.App().switchNS(ns)
+	if err := n.App().switchNS(ns); err != nil {
+		n.App().Flash().Err(err)
+		return
+	}
 	if err := n.App().Config.SetActiveNamespace(ns); err != nil {
 		n.App().Flash().Err(err)
-	} else {
-		n.App().Flash().Infof("Namespace %s is now active!", ns)
+		return
 	}
+
+	n.App().Flash().Infof("Namespace %s is now active!", ns)
 	if err := n.App().Config.Save(); err != nil {
 		log.Error().Err(err).Msg("Config file save failed!")
 	}

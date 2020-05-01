@@ -147,8 +147,8 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 		if len(cmds) == 2 {
 			ns = cmds[1]
 		}
-		if !c.app.switchNS(ns) {
-			return fmt.Errorf("namespace switch failed for ns %q", ns)
+		if err := c.app.switchNS(ns); err != nil {
+			return err
 		}
 		if !c.alias.Check(cmds[0]) {
 			return fmt.Errorf("Huh? `%s` Command not found", cmd)
@@ -159,7 +159,7 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 
 func (c *Command) defaultCmd() error {
 	if err := c.run(c.app.Config.ActiveView(), "", true); err != nil {
-		log.Error().Err(err).Msgf("Saved command failed. Loading default view")
+		log.Error().Err(err).Msgf("Saved command load failed. Loading default view")
 		return c.run("pod", "", true)
 	}
 	return nil
@@ -228,7 +228,22 @@ func (c *Command) componentFor(gvr, path string, v *MetaViewer) ResourceViewer {
 	return view
 }
 
-func (c *Command) exec(cmd, gvr string, comp model.Component, clearStack bool) error {
+func (c *Command) exec(cmd, gvr string, comp model.Component, clearStack bool) (err error) {
+	defer func() {
+		if e := recover(); e != nil {
+			c.app.Content.Dump()
+			log.Debug().Msgf("History %v", c.app.cmdHistory.List())
+
+			hh := c.app.cmdHistory.List()
+			if len(hh) == 0 {
+				_ = c.run("pod", "", true)
+			} else {
+				_ = c.run(hh[0], "", true)
+			}
+			err = fmt.Errorf("Invalid command %q", cmd)
+		}
+	}()
+
 	if comp == nil {
 		return fmt.Errorf("No component found for %s", gvr)
 	}
@@ -246,5 +261,5 @@ func (c *Command) exec(cmd, gvr string, comp model.Component, clearStack bool) e
 	}
 	c.app.cmdHistory.Push(cmd)
 
-	return nil
+	return
 }

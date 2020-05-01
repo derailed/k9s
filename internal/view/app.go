@@ -132,7 +132,7 @@ func (a *App) initSignals() {
 
 	go func(sig chan os.Signal) {
 		<-sig
-		a.BailOut()
+		nukeK9sShell(a.Conn())
 	}(sig)
 }
 
@@ -296,17 +296,35 @@ func (a *App) refreshCluster() {
 	a.clusterModel.Refresh()
 }
 
-func (a *App) switchNS(ns string) bool {
+func (a *App) switchNS(ns string) error {
 	if ns == client.ClusterScope {
 		ns = client.AllNamespaces
 	}
+	if !a.isValidNS(ns) {
+		return fmt.Errorf("Invalid namespace %q", ns)
+	}
 	if err := a.Config.SetActiveNamespace(ns); err != nil {
-		log.Error().Err(err).Msg("Config Set NS failed!")
-		return false
+		return fmt.Errorf("Unable to save active namespace in config")
 	}
 	a.factory.SetActiveNS(ns)
 
-	return true
+	return nil
+}
+
+func (a *App) isValidNS(ns string) bool {
+	if ns == client.AllNamespaces || ns == client.NamespaceAll {
+		return true
+	}
+	nn, err := a.Conn().ValidNamespaces()
+	if err != nil {
+		return false
+	}
+	for _, n := range nn {
+		if n.Name == ns {
+			return true
+		}
+	}
+	return false
 }
 
 func (a *App) switchCtx(name string, loadPods bool) error {
@@ -323,10 +341,11 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 		if err := a.command.Reset(true); err != nil {
 			return err
 		}
-		a.Config.Reset()
 		if err := a.Config.Save(); err != nil {
 			log.Error().Err(err).Msg("Config save failed!")
 		}
+		a.Config.Reset()
+
 		a.Flash().Infof("Switching context to %s", name)
 		a.ReloadStyles(name)
 		v := a.Config.ActiveView()

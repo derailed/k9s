@@ -288,8 +288,10 @@ var expectedConfig = `k9s:
         active: default
         favorites:
         - default
+        - kube-public
         - istio-system
         - all
+        - kube-system
       view:
         active: po
       featureGates:
@@ -299,8 +301,10 @@ var expectedConfig = `k9s:
         active: kube-system
         favorites:
         - default
+        - kube-public
         - istio-system
         - all
+        - kube-system
       view:
         active: ctx
       featureGates:
