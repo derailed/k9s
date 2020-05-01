@@ -2,6 +2,7 @@ plugin:
   # Suspends/Resumes a cronjob
   toggleCronjob:
     shortCut: Ctrl-S
+    confirm: true
     scopes:
       - cj
     description: Toggle to suspend or resume a running cronjob
