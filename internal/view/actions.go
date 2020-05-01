@@ -120,7 +120,6 @@ func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
 		if path == "" {
 			return evt
 		}
-
 		if r.EnvFn() == nil {
 			return nil
 		}
@@ -134,20 +133,26 @@ func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
 			}
 			args[i] = arg
 		}
-		fn := func() {
-			if run(r.App(), shellOpts{clear: true, binary: p.Command, background: p.Background, args: args}) {
-				r.App().Flash().Info("Plugin command launched successfully!")
-			} else {
-				r.App().Flash().Info("Plugin command failed!")
+
+		cb := func() {
+			opts := shellOpts{
+				clear:      true,
+				binary:     p.Command,
+				background: p.Background,
+				args:       args,
 			}
+			if run(r.App(), opts) {
+				r.App().Flash().Info("Plugin command launched successfully!")
+				return
+			}
+			r.App().Flash().Info("Plugin command failed!")
 		}
 		if p.Confirm {
-			dialog.ShowConfirm(r.App().Content.Pages, "Confirm plugin action", fmt.Sprintf("Will execute:\n%s %s", p.Command, strings.Join(args, " ")), func() {
-				fn()
-			}, func() {})
-		} else {
-			fn()
+			msg := fmt.Sprintf("Run?\n%s %s", p.Command, strings.Join(args, " "))
+			dialog.ShowConfirm(r.App().Content.Pages, "Confirm "+p.Description, msg, cb, func() {})
+			return nil
 		}
+		cb()
 
 		return nil
 	}
