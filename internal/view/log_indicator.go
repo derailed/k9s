@@ -93,10 +93,10 @@ func (l *LogIndicator) ToggleAutoScroll() {
 // Refresh updates the view.
 func (l *LogIndicator) Refresh() {
 	l.Clear()
-	l.update("Autoscroll: " + l.onOff(l.AutoScroll()))
-	l.update("FullScreen: " + l.onOff(l.fullScreen))
-	l.update("Timestamps: " + l.onOff(l.showTime))
-	l.update("Wrap: " + l.onOff(l.textWrap))
+	l.update("Autoscroll", l.AutoScroll(), true)
+	l.update("FullScreen", l.fullScreen, true)
+	l.update("Timestamps", l.showTime, true)
+	l.update("Wrap", l.textWrap, false)
 }
 
 func (l *LogIndicator) onOff(b bool) string {
@@ -106,6 +106,11 @@ func (l *LogIndicator) onOff(b bool) string {
 	return "Off"
 }
 
-func (l *LogIndicator) update(status string) {
-	fmt.Fprintf(l, "[::b]%-20s", status)
+func (l *LogIndicator) update(title string, state bool, pad bool) {
+	const spacer = "     "
+	var padding string
+	if pad {
+		padding = spacer
+	}
+	fmt.Fprintf(l, "[::b]%s: %s%s", title, l.onOff(state), padding)
 }
