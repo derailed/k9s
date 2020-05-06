@@ -21,7 +21,7 @@ import (
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
-	"k8s.io/apimachinery/pkg/labels"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ExitStatus indicates UI exit conditions.
@@ -318,7 +318,12 @@ func (a *App) isValidNS(ns string) bool {
 	if ns == client.AllNamespaces || ns == client.NamespaceAll {
 		return true
 	}
-	_, err := a.factory.Get("v1/namespaces", client.FQN(client.ClusterScope, ns), true, labels.Everything())
+	ctx, cancel := context.WithTimeout(context.Background(), client.CallTimeout)
+	defer cancel()
+	_, err := a.Conn().DialOrDie().CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
+	if err != nil {
+		log.Warn().Err(err).Msgf("Unable to find namespace %q", ns)
+	}
 
 	return err == nil
 }
