@@ -73,7 +73,7 @@ func DismissPortForwards(v ResourceViewer, p *ui.Pages) {
 // Helpers...
 
 func extractPort(p string) string {
-	rx := regexp.MustCompile(`\A(\w+)/?(\w+)?:?(\d+)?(╱UDP)?\z`)
+	rx := regexp.MustCompile(`\A([\w|-]+)/?([\w|-]+)?:?(\d+)?(╱UDP)?\z`)
 	mm := rx.FindStringSubmatch(p)
 	if len(mm) != 5 {
 		return p

@@ -129,7 +129,7 @@ func (h Header) Columns(wide bool) []string {
 	if len(h) == 0 {
 		return nil
 	}
-	var cc []string
+	cc := make([]string, 0, len(h))
 	for _, c := range h {
 		if !wide && c.Wide {
 			continue

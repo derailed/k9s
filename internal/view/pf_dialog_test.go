@@ -28,6 +28,12 @@ func TestExtractPort(t *testing.T) {
 		"unamed": {
 			"dns/53", "53",
 		},
+		"pod-dashed": {
+			"blee-fred/:5000", "5000",
+		},
+		"co-dashed": {
+			"blee/fred-doh:5000", "5000",
+		},
 	}
 
 	for k := range uu {

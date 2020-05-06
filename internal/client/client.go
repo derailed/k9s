@@ -173,14 +173,12 @@ func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
 			return nss, nil
 		}
 	}
-	log.Debug().Msgf(">>>>> Loading all namespaces")
 	ctx, cancel := context.WithTimeout(context.Background(), CallTimeout)
 	defer cancel()
 	nn, err := a.DialOrDie().CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
-
 	a.cache.Add("validNamespaces", nn.Items, cacheExpiry)
 
 	return nn.Items, nil

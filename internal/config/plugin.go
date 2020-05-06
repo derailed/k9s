@@ -17,13 +17,13 @@ type Plugins struct {
 
 // Plugin describes a K9s plugin
 type Plugin struct {
-	ShortCut    string   `yaml:"shortCut"`
-	Confirm     bool     `yaml:"confirm"`
 	Scopes      []string `yaml:"scopes"`
+	Args        []string `yaml:"args"`
+	ShortCut    string   `yaml:"shortCut"`
 	Description string   `yaml:"description"`
 	Command     string   `yaml:"command"`
+	Confirm     bool     `yaml:"confirm"`
 	Background  bool     `yaml:"background"`
-	Args        []string `yaml:"args"`
 }
 
 // NewPlugins returns a new plugin.

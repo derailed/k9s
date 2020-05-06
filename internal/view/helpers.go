@@ -76,7 +76,7 @@ func describeResource(app *App, model ui.Tabular, gvr, path string) {
 }
 
 func showPodsWithLabels(app *App, path string, sel map[string]string) {
-	var labels []string
+	labels := make([]string, 0, len(sel))
 	for k, v := range sel {
 		labels = append(labels, fmt.Sprintf("%s=%s", k, v))
 	}

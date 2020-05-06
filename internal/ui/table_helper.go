@@ -160,7 +160,7 @@ func rxFilter(q string, data render.TableData) (render.TableData, error) {
 
 func fuzzyFilter(q string, data render.TableData) render.TableData {
 	q = strings.TrimSpace(q)
-	var ss []string
+	ss := make([]string, 0, len(data.RowEvents))
 	for _, re := range data.RowEvents {
 		ss = append(ss, re.Row.ID)
 	}

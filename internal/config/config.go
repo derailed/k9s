@@ -124,6 +124,13 @@ func (c *Config) CurrentCluster() *Cluster {
 
 // ActiveNamespace returns the active namespace in the current cluster.
 func (c *Config) ActiveNamespace() string {
+	if c.client != nil {
+		ns := c.client.ActiveNamespace()
+		if client.IsNamespaced(ns) {
+			return ns
+		}
+	}
+
 	if cl := c.CurrentCluster(); cl != nil {
 		if cl.Namespace != nil {
 			return cl.Namespace.Active

@@ -21,6 +21,7 @@ import (
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
+	"k8s.io/apimachinery/pkg/labels"
 )
 
 // ExitStatus indicates UI exit conditions.
@@ -36,18 +37,17 @@ const (
 
 // App represents an application view.
 type App struct {
+	version string
 	*ui.App
-
 	Content       *PageStack
 	command       *Command
 	factory       *watch.Factory
-	version       string
-	showHeader    bool
 	cancelFn      context.CancelFunc
-	conRetry      int32
 	clusterModel  *model.ClusterInfo
 	cmdHistory    *model.History
 	filterHistory *model.History
+	conRetry      int32
+	showHeader    bool
 }
 
 // NewApp returns a K9s app instance.
@@ -93,6 +93,9 @@ func (a *App) Init(version string, rate int) error {
 	}
 
 	a.factory = watch.NewFactory(a.Conn())
+	if !a.isValidNS(ns) {
+		return fmt.Errorf("Invalid namespace %s", ns)
+	}
 	a.initFactory(ns)
 
 	a.clusterModel = model.NewClusterInfo(a.factory, version)
@@ -315,16 +318,9 @@ func (a *App) isValidNS(ns string) bool {
 	if ns == client.AllNamespaces || ns == client.NamespaceAll {
 		return true
 	}
-	nn, err := a.Conn().ValidNamespaces()
-	if err != nil {
-		return false
-	}
-	for _, n := range nn {
-		if n.Name == ns {
-			return true
-		}
-	}
-	return false
+	_, err := a.factory.Get("v1/namespaces", client.FQN(client.ClusterScope, ns), true, labels.Everything())
+
+	return err == nil
 }
 
 func (a *App) switchCtx(name string, loadPods bool) error {
