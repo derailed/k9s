@@ -3,6 +3,7 @@ package cmd
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"runtime/debug"
 
 	"github.com/derailed/k9s/internal/client"
@@ -46,9 +47,7 @@ func init() {
 
 	// Klogs (of course) want to print stuff to the screen ;(
 	klog.InitFlags(nil)
-	if err := flag.Set("log_file", "/dev/null"); err != nil {
-		log.Error().Err(err)
-	}
+	klog.SetOutput(ioutil.Discard)
 	if err := flag.Set("stderrthreshold", "fatal"); err != nil {
 		log.Error().Err(err)
 	}
