@@ -74,10 +74,14 @@ func (l *Log) Configure(opts *config.Logger) {
 }
 
 // GetPath returns resource path.
-func (l *Log) GetPath() string { return l.logOptions.Path }
+func (l *Log) GetPath() string {
+	return l.logOptions.Path
+}
 
 // GetContainer returns the resource container if any or "" otherwise.
-func (l *Log) GetContainer() string { return l.logOptions.Container }
+func (l *Log) GetContainer() string {
+	return l.logOptions.Container
+}
 
 // Init initializes the model.
 func (l *Log) Init(f dao.Factory) {

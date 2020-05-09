@@ -19,7 +19,7 @@ func TestLogAutoScroll(t *testing.T) {
 	assert.Equal(t, 13, len(v.Hints()))
 
 	v.toggleAutoScrollCmd(nil)
-	assert.Equal(t, "Autoscroll: Off     FullScreen: Off     Timestamps: Off     Wrap: Off           ", v.Indicator().GetText(true))
+	assert.Equal(t, "Autoscroll: Off     FullScreen: Off     Timestamps: Off     Wrap: Off", v.Indicator().GetText(true))
 }
 
 func TestLogViewNav(t *testing.T) {

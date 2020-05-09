@@ -2,11 +2,16 @@ package config
 
 import "github.com/derailed/k9s/internal/client"
 
-const defaultRefreshRate = 2
+const (
+	defaultRefreshRate = 2
+	// DefaultDockerShellImage specifies the docker image and tag for shelling into nodes.
+	DefaultDockerShellImage = "busybox:1.31"
+)
 
 // K9s tracks K9s configuration options.
 type K9s struct {
 	RefreshRate       int                 `yaml:"refreshRate"`
+	DockerShellImage  string              `yaml:"dockerShellImage"`
 	Headless          bool                `yaml:"headless"`
 	ReadOnly          bool                `yaml:"readOnly"`
 	NoIcons           bool                `yaml:"noIcons"`
@@ -24,10 +29,11 @@ type K9s struct {
 // NewK9s create a new K9s configuration.
 func NewK9s() *K9s {
 	return &K9s{
-		RefreshRate: defaultRefreshRate,
-		Logger:      NewLogger(),
-		Clusters:    make(map[string]*Cluster),
-		Thresholds:  NewThreshold(),
+		RefreshRate:      defaultRefreshRate,
+		DockerShellImage: DefaultDockerShellImage,
+		Logger:           NewLogger(),
+		Clusters:         make(map[string]*Cluster),
+		Thresholds:       NewThreshold(),
 	}
 }
 
@@ -98,9 +104,12 @@ func (k *K9s) validateDefaults() {
 	if k.RefreshRate <= 0 {
 		k.RefreshRate = defaultRefreshRate
 	}
+	if k.DockerShellImage == "" {
+		k.DockerShellImage = DefaultDockerShellImage
+	}
 }
 
-func (k *K9s) checkClusters(c client.Connection, ks KubeSettings) {
+func (k *K9s) validateClusters(c client.Connection, ks KubeSettings) {
 	cc, err := ks.ClusterNames()
 	if err != nil {
 		return
@@ -123,7 +132,7 @@ func (k *K9s) Validate(c client.Connection, ks KubeSettings) {
 	if k.Clusters == nil {
 		k.Clusters = map[string]*Cluster{}
 	}
-	k.checkClusters(c, ks)
+	k.validateClusters(c, ks)
 
 	if k.Logger == nil {
 		k.Logger = NewLogger()

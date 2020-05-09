@@ -82,7 +82,10 @@ func (o LogOptions) DecorateLog(bytes []byte) *LogItem {
 	if len(bytes) == 0 {
 		return item
 	}
-
+	item.SingleContainer = o.SingleContainer
+	if item.SingleContainer {
+		item.Container = o.Container
+	}
 	if o.MultiPods {
 		_, pod := client.Namespaced(o.Path)
 		item.Pod, item.Container = pod, o.Container

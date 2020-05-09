@@ -120,6 +120,11 @@ func (b *Browser) SetInstance(path string) {
 
 // Start initializes browser updates.
 func (b *Browser) Start() {
+	b.app.Config.ValidateFavorites()
+	if err := b.app.Config.Save(); err != nil {
+		log.Error().Err(err).Msgf("Config Save")
+	}
+
 	b.Stop()
 	b.Table.Start()
 	b.CmdBuff().AddListener(b)
@@ -359,7 +364,10 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	b.app.switchNS(ns)
+	if err := b.app.switchNS(ns); err != nil {
+		b.App().Flash().Err(err)
+		return nil
+	}
 	b.setNamespace(ns)
 	b.app.Flash().Infof("Viewing namespace `%s`...", ns)
 	b.refresh()

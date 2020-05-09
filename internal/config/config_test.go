@@ -261,6 +261,7 @@ func TestSetup(t *testing.T) {
 
 var expectedConfig = `k9s:
   refreshRate: 100
+  dockerShellImage: busybox:1.31
   headless: false
   readOnly: true
   noIcons: false
@@ -288,8 +289,10 @@ var expectedConfig = `k9s:
         active: default
         favorites:
         - default
+        - kube-public
         - istio-system
         - all
+        - kube-system
       view:
         active: po
       featureGates:
@@ -299,8 +302,10 @@ var expectedConfig = `k9s:
         active: kube-system
         favorites:
         - default
+        - kube-public
         - istio-system
         - all
+        - kube-system
       view:
         active: ctx
       featureGates:
@@ -316,6 +321,7 @@ var expectedConfig = `k9s:
 
 var resetConfig = `k9s:
   refreshRate: 2
+  dockerShellImage: busybox:1.31
   headless: false
   readOnly: false
   noIcons: false

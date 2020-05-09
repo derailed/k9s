@@ -316,6 +316,7 @@ Entering the command mode and typing a resource name or alias, could be cumberso
 K9s allows you to extend your command line and tooling by defining your very own cluster commands via plugins. K9s will look at `$HOME/.k9s/plugin.yml` to locate all available plugins. A plugin is defined as follows:
 
 * Shortcut option represents the key combination a user would type to activate the plugin
+* Confirm option (when enabled) lets you see the command that is going to be executed and gives you an option to confirm or prevent execution
 * Description will be printed next to the shortcut in the k9s menu
 * Scopes defines a collection of resources names/shortnames for the views associated with the plugin. You can specify `all` to provide this shortcut for all views.
 * Command represents adhoc commands the plugin runs upon activation
@@ -346,6 +347,7 @@ plugin:
   # Defines a plugin to provide a `ctrl-l` shorcut to tail the logs while in pod view.
   fred:
     shortCut: Ctrl-L
+    confirm: false
     description: Pod logs
     scopes:
     - pods

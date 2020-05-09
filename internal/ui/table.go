@@ -29,21 +29,20 @@ type (
 
 // Table represents tabular data.
 type Table struct {
+	gvr     client.GVR
+	sortCol SortColumn
+	header  render.Header
+	Path    string
+	Extras  string
 	*SelectTable
-
 	actions     KeyActions
-	gvr         client.GVR
-	Path        string
-	Extras      string
 	cmdBuff     *model.FishBuff
 	styles      *config.Styles
 	viewSetting *config.ViewSetting
-	sortCol     SortColumn
 	colorerFn   render.ColorerFunc
 	decorateFn  DecorateFunc
 	wide        bool
 	toast       bool
-	header      render.Header
 	hasMetrics  bool
 }
 

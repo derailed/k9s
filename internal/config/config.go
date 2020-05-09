@@ -124,6 +124,13 @@ func (c *Config) CurrentCluster() *Cluster {
 
 // ActiveNamespace returns the active namespace in the current cluster.
 func (c *Config) ActiveNamespace() string {
+	if c.client != nil {
+		ns := c.client.ActiveNamespace()
+		if client.IsNamespaced(ns) {
+			return ns
+		}
+	}
+
 	if cl := c.CurrentCluster(); cl != nil {
 		if cl.Namespace != nil {
 			return cl.Namespace.Active
@@ -132,13 +139,22 @@ func (c *Config) ActiveNamespace() string {
 	return "default"
 }
 
+func (c *Config) ValidateFavorites() {
+	cl := c.K9s.ActiveCluster()
+	if cl == nil {
+		cl = NewCluster()
+	}
+	cl.Validate(c.client, c.settings)
+	cl.Namespace.Validate(c.client, c.settings)
+}
+
 // FavNamespaces returns fav namespaces in the current cluster.
 func (c *Config) FavNamespaces() []string {
 	cl := c.K9s.ActiveCluster()
-	if cl != nil {
-		return c.K9s.ActiveCluster().Namespace.Favorites
+	if cl == nil {
+		return nil
 	}
-	return []string{}
+	return c.K9s.ActiveCluster().Namespace.Favorites
 }
 
 // SetActiveNamespace set the active namespace in the current cluster.

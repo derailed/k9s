@@ -76,7 +76,7 @@ func renderSubjects(ss []rbacv1.Subject) (kind string, subjects string) {
 		return NAValue, ""
 	}
 
-	var tt []string
+	tt := make([]string, 0, len(ss))
 	for _, s := range ss {
 		kind = toSubjectAlias(s.Kind)
 		tt = append(tt, s.Name)

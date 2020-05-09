@@ -21,6 +21,7 @@ import (
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ExitStatus indicates UI exit conditions.
@@ -36,18 +37,17 @@ const (
 
 // App represents an application view.
 type App struct {
+	version string
 	*ui.App
-
 	Content       *PageStack
 	command       *Command
 	factory       *watch.Factory
-	version       string
-	showHeader    bool
 	cancelFn      context.CancelFunc
-	conRetry      int32
 	clusterModel  *model.ClusterInfo
 	cmdHistory    *model.History
 	filterHistory *model.History
+	conRetry      int32
+	showHeader    bool
 }
 
 // NewApp returns a K9s app instance.
@@ -93,6 +93,9 @@ func (a *App) Init(version string, rate int) error {
 	}
 
 	a.factory = watch.NewFactory(a.Conn())
+	if !a.isValidNS(ns) {
+		return fmt.Errorf("Invalid namespace %s", ns)
+	}
 	a.initFactory(ns)
 
 	a.clusterModel = model.NewClusterInfo(a.factory, version)
@@ -132,7 +135,7 @@ func (a *App) initSignals() {
 
 	go func(sig chan os.Signal) {
 		<-sig
-		a.BailOut()
+		nukeK9sShell(a.Conn())
 	}(sig)
 }
 
@@ -296,17 +299,33 @@ func (a *App) refreshCluster() {
 	a.clusterModel.Refresh()
 }
 
-func (a *App) switchNS(ns string) bool {
+func (a *App) switchNS(ns string) error {
 	if ns == client.ClusterScope {
 		ns = client.AllNamespaces
 	}
+	if !a.isValidNS(ns) {
+		return fmt.Errorf("Invalid namespace %q", ns)
+	}
 	if err := a.Config.SetActiveNamespace(ns); err != nil {
-		log.Error().Err(err).Msg("Config Set NS failed!")
-		return false
+		return fmt.Errorf("Unable to save active namespace in config")
 	}
 	a.factory.SetActiveNS(ns)
 
-	return true
+	return nil
+}
+
+func (a *App) isValidNS(ns string) bool {
+	if ns == client.AllNamespaces || ns == client.NamespaceAll {
+		return true
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), client.CallTimeout)
+	defer cancel()
+	_, err := a.Conn().DialOrDie().CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
+	if err != nil {
+		log.Warn().Err(err).Msgf("Unable to find namespace %q", ns)
+	}
+
+	return err == nil
 }
 
 func (a *App) switchCtx(name string, loadPods bool) error {
@@ -323,10 +342,11 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 		if err := a.command.Reset(true); err != nil {
 			return err
 		}
-		a.Config.Reset()
 		if err := a.Config.Save(); err != nil {
 			log.Error().Err(err).Msg("Config save failed!")
 		}
+		a.Config.Reset()
+
 		a.Flash().Infof("Switching context to %s", name)
 		a.ReloadStyles(name)
 		v := a.Config.ActiveView()

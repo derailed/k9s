@@ -187,10 +187,7 @@ func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
 
 	if opts.HasContainer() {
 		opts.SingleContainer = true
-		if err := tailLogs(ctx, p, c, opts); err != nil {
-			return err
-		}
-		return nil
+		return tailLogs(ctx, p, c, opts)
 	}
 	if len(po.Spec.InitContainers)+len(po.Spec.Containers) == 1 {
 		opts.SingleContainer = true

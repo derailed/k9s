@@ -43,7 +43,7 @@ func (s *SelectTable) GetSelectedItems() []string {
 		return []string{s.GetSelectedItem()}
 	}
 
-	var items []string
+	items := make([]string, 0, len(s.marks))
 	for item := range s.marks {
 		items = append(items, item)
 	}

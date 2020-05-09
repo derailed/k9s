@@ -15,8 +15,10 @@ func TestPluginLoad(t *testing.T) {
 	k, ok := p.Plugin["blah"]
 	assert.True(t, ok)
 	assert.Equal(t, "shift-s", k.ShortCut)
+	assert.True(t, k.Confirm)
 	assert.Equal(t, "blee", k.Description)
 	assert.Equal(t, []string{"po", "dp"}, k.Scopes)
 	assert.Equal(t, "duh", k.Command)
+	assert.False(t, k.Background)
 	assert.Equal(t, []string{"-n", "$NAMESPACE", "-boolean"}, k.Args)
 }

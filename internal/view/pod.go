@@ -27,11 +27,10 @@ type Pod struct {
 
 // NewPod returns a new viewer.
 func NewPod(gvr client.GVR) ResourceViewer {
-	p := Pod{
-		ResourceViewer: NewPortForwardExtender(
-			NewLogsExtender(NewBrowser(gvr), nil),
-		),
-	}
+	p := Pod{}
+	p.ResourceViewer = NewPortForwardExtender(
+		NewLogsExtender(NewBrowser(gvr), p.selectedContainer),
+	)
 	p.SetBindKeysFn(p.bindKeys)
 	p.GetTable().SetEnterFn(p.showContainers)
 	p.GetTable().SetColorerFn(render.Pod{}.ColorerFunc())
@@ -65,6 +64,23 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 		ui.KeyShiftI:   ui.NewKeyAction("Sort IP", p.GetTable().SortColCmd("IP", true), false),
 		ui.KeyShiftO:   ui.NewKeyAction("Sort Node", p.GetTable().SortColCmd("NODE", true), false),
 	})
+}
+
+func (p *Pod) selectedContainer() string {
+	path := p.GetTable().GetSelectedItem()
+	if path == "" {
+		return ""
+	}
+
+	cc, err := fetchContainers(p.App().factory, path, true)
+	if err != nil {
+		log.Error().Err(err).Msgf("Fetch containers")
+		return ""
+	}
+	if len(cc) == 1 {
+		return cc[0]
+	}
+	return ""
 }
 
 func (p *Pod) showContainers(app *App, model ui.Tabular, gvr, path string) {

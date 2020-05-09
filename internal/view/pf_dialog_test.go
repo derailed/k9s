@@ -10,6 +10,9 @@ func TestExtractPort(t *testing.T) {
 	uu := map[string]struct {
 		port, e string
 	}{
+		"empty": {
+			"", "",
+		},
 		"full": {
 			"co/fred:8000", "8000",
 		},
@@ -21,6 +24,15 @@ func TestExtractPort(t *testing.T) {
 		},
 		"protocol": {
 			"dns:53╱UDP", "53",
+		},
+		"unamed": {
+			"dns/53", "53",
+		},
+		"pod-dashed": {
+			"blee-fred/:5000", "5000",
+		},
+		"co-dashed": {
+			"blee/fred-doh:5000", "5000",
 		},
 	}
 
