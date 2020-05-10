@@ -45,15 +45,21 @@ func (p *Popeye) Init(ctx context.Context) error {
 }
 
 func (p *Popeye) decorateRows(data render.TableData) render.TableData {
-	var sum int
-	for _, re := range data.RowEvents {
-		n, err := strconv.Atoi(re.Row.Fields[1])
-		if err != nil {
-			continue
+	var (
+		sum, score int
+	)
+	if len(data.RowEvents) == 0 {
+		score = -1
+	} else {
+		for _, re := range data.RowEvents {
+			n, err := strconv.Atoi(re.Row.Fields[1])
+			if err != nil {
+				continue
+			}
+			sum += n
 		}
-		sum += n
+		score = sum / len(data.RowEvents)
 	}
-	score := sum / len(data.RowEvents)
 	p.GetTable().Extras = fmt.Sprintf("Score %d -- %s", score, grade(score))
 	return data
 }
@@ -108,6 +114,8 @@ func grade(score int) string {
 		return "D"
 	case score >= 50:
 		return "E"
+	case score == -1:
+		return render.NAValue
 	default:
 		return "F"
 	}
