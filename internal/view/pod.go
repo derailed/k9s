@@ -34,8 +34,13 @@ func NewPod(gvr client.GVR) ResourceViewer {
 	p.SetBindKeysFn(p.bindKeys)
 	p.GetTable().SetEnterFn(p.showContainers)
 	p.GetTable().SetColorerFn(render.Pod{}.ColorerFunc())
+	p.GetTable().SetDecorateFn(p.decorateRows)
 
 	return &p
+}
+
+func (p *Pod) decorateRows(data render.TableData) render.TableData {
+	return decorateCpuMemHeaderRows(p.App(), data)
 }
 
 func (p *Pod) bindDangerousKeys(aa ui.KeyActions) {
