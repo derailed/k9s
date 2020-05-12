@@ -80,6 +80,22 @@ K9s is available on Linux, macOS and Windows platforms.
         go run main.go
         ```
 
+--- 
+
+## Running with Docker
+ 
+  You can run k9s as a Docker container by mounting your `KUBECONFIG`:
+ 
+  ```shell
+  docker run --rm -it -v $KUBECONFIG:/root/.kube/config derailed/k9s
+  ```
+ 
+  For default path it would be:
+ 
+  ```shell
+  docker run --rm -it -v ~/.kube/config:/root/.kube/config derailed/k9s
+  ```
+
 ---
 
 ## PreFlight Checks
