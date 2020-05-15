@@ -135,8 +135,8 @@ const (
 )
 
 func ssh(a *App, node string) error {
-	nukeK9sShell(a.Conn())
-	defer nukeK9sShell(a.Conn())
+	nukeK9sShell(a)
+	defer nukeK9sShell(a)
 	if err := launchShellPod(a, node); err != nil {
 		return err
 	}
@@ -145,11 +145,15 @@ func ssh(a *App, node string) error {
 	return nil
 }
 
-func nukeK9sShell(c client.Connection) {
+func nukeK9sShell(a *App) {
+	cl := a.Config.K9s.CurrentCluster
+	if !a.Config.K9s.Clusters[cl].FeatureGates.NodeShell {
+		return
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
-	err := c.DialOrDie().CoreV1().Pods(k9sShellNS).Delete(ctx, k9sShellPodName(), metav1.DeleteOptions{})
+	err := a.Conn().DialOrDie().CoreV1().Pods(k9sShellNS).Delete(ctx, k9sShellPodName(), metav1.DeleteOptions{})
 	if kerrors.IsNotFound(err) {
 		return
 	}

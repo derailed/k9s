@@ -105,7 +105,6 @@ func loadConfiguration() *config.Config {
 		log.Warn().Msg("Unable to locate K9s config. Generating new configuration...")
 	}
 
-	log.Debug().Msgf("DEMO MODE %#v", demoMode)
 	if demoMode != nil {
 		k9sCfg.SetDemoMode(*demoMode)
 	}

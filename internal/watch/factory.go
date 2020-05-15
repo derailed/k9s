@@ -163,13 +163,6 @@ func (f *Factory) isClusterWide() bool {
 
 // CanForResource return an informer is user has access.
 func (f *Factory) CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error) {
-	// If user can access resource cluster wide, prefer cluster wide factory.
-	if !client.IsClusterWide(ns) {
-		auth, err := f.Client().CanI(client.AllNamespaces, gvr, verbs)
-		if auth && err == nil {
-			return f.ForResource(client.AllNamespaces, gvr), nil
-		}
-	}
 	auth, err := f.Client().CanI(ns, gvr, verbs)
 	if err != nil {
 		return nil, err

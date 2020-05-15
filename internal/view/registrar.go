@@ -45,6 +45,9 @@ func coreViewers(vv MetaViewers) {
 	vv[client.NewGVR("v1/secrets")] = MetaViewer{
 		viewerFn: NewSecret,
 	}
+	vv[client.NewGVR("v1/persistentvolumeclaims")] = MetaViewer{
+		viewerFn: NewPersistentVolumeClaim,
+	}
 }
 
 func miscViewers(vv MetaViewers) {

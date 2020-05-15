@@ -88,8 +88,13 @@ func (a *App) Init(version string, rate int) error {
 		return errors.New("No client connection detected")
 	}
 	ns, err := a.Conn().Config().CurrentNamespaceName()
+	log.Debug().Msgf("CURRENT-NS %q -- %v", ns, err)
 	if err != nil {
-		log.Info().Msg("No namespace specified using all namespaces")
+		log.Info().Msg("No namespace specified using cluster default namespace")
+	} else {
+		if err := a.Config.SetActiveNamespace(ns); err != nil {
+			log.Error().Err(err).Msgf("Fail to set active namespace to %q", ns)
+		}
 	}
 
 	a.factory = watch.NewFactory(a.Conn())
@@ -111,6 +116,13 @@ func (a *App) Init(version string, rate int) error {
 	a.CmdBuff().SetSuggestionFn(a.suggestCommand())
 	a.CmdBuff().AddListener(a)
 
+	a.layout(ctx, version)
+	a.initSignals()
+
+	return nil
+}
+
+func (a *App) layout(ctx context.Context, version string) {
 	flash := ui.NewFlash(a.App)
 	go flash.Watch(ctx, a.Flash().Channel())
 
@@ -123,10 +135,6 @@ func (a *App) Init(version string, rate int) error {
 	a.Main.AddPage("main", main, true, false)
 	a.Main.AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
 	a.toggleHeader(!a.Config.K9s.GetHeadless())
-
-	a.initSignals()
-
-	return nil
 }
 
 func (a *App) initSignals() {
@@ -134,8 +142,12 @@ func (a *App) initSignals() {
 	signal.Notify(sig, syscall.SIGABRT, syscall.SIGINT, syscall.SIGHUP, syscall.SIGQUIT)
 
 	go func(sig chan os.Signal) {
-		<-sig
-		nukeK9sShell(a.Conn())
+		signal := <-sig
+		if signal == syscall.SIGHUP {
+			a.BailOut()
+			return
+		}
+		nukeK9sShell(a)
 	}(sig)
 }
 
@@ -375,7 +387,7 @@ func (a *App) BailOut() {
 		}
 	}()
 
-	nukeK9sShell(a.Conn())
+	nukeK9sShell(a)
 	a.factory.Terminate()
 	a.App.BailOut()
 }
