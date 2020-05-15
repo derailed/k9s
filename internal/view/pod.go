@@ -52,18 +52,13 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 	}
 
 	aa.Add(ui.KeyActions{
-		ui.KeyShiftR:   ui.NewKeyAction("Sort Ready", p.GetTable().SortColCmd(readyCol, true), false),
-		ui.KeyShiftT:   ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd("RESTARTS", false), false),
-		ui.KeyShiftS:   ui.NewKeyAction("Sort Status", p.GetTable().SortColCmd(statusCol, true), false),
-		ui.KeyShiftC:   ui.NewKeyAction("Sort CPU", p.GetTable().SortColCmd(cpuCol, false), false),
-		ui.KeyShiftM:   ui.NewKeyAction("Sort MEM", p.GetTable().SortColCmd(memCol, false), false),
-		ui.KeyShiftX:   ui.NewKeyAction("Sort %CPU (REQ)", p.GetTable().SortColCmd("%CPU", false), false),
-		ui.KeyShiftZ:   ui.NewKeyAction("Sort %MEM (REQ)", p.GetTable().SortColCmd("%MEM", false), false),
-		tcell.KeyCtrlX: ui.NewKeyAction("Sort %CPU (LIM)", p.GetTable().SortColCmd("%CPU/L", false), false),
-		tcell.KeyCtrlQ: ui.NewKeyAction("Sort %MEM (LIM)", p.GetTable().SortColCmd("%MEM/L", false), false),
-		ui.KeyShiftI:   ui.NewKeyAction("Sort IP", p.GetTable().SortColCmd("IP", true), false),
-		ui.KeyShiftO:   ui.NewKeyAction("Sort Node", p.GetTable().SortColCmd("NODE", true), false),
+		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", p.GetTable().SortColCmd(readyCol, true), false),
+		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd("RESTARTS", false), false),
+		ui.KeyShiftS: ui.NewKeyAction("Sort Status", p.GetTable().SortColCmd(statusCol, true), false),
+		ui.KeyShiftI: ui.NewKeyAction("Sort IP", p.GetTable().SortColCmd("IP", true), false),
+		ui.KeyShiftO: ui.NewKeyAction("Sort Node", p.GetTable().SortColCmd("NODE", true), false),
 	})
+	aa.Add(resourceSorters(p.GetTable()))
 }
 
 func (p *Pod) selectedContainer() string {
@@ -317,4 +312,15 @@ func podIsRunning(f dao.Factory, path string) bool {
 	var re render.Pod
 	log.Debug().Msgf("Phase %#v", re.Phase(po))
 	return re.Phase(po) == render.Running
+}
+
+func resourceSorters(t *Table) ui.KeyActions {
+	return ui.KeyActions{
+		ui.KeyShiftC:   ui.NewKeyAction("Sort CPU", t.SortColCmd(cpuCol, false), false),
+		ui.KeyShiftM:   ui.NewKeyAction("Sort MEM", t.SortColCmd(memCol, false), false),
+		ui.KeyShiftX:   ui.NewKeyAction("Sort %CPU (REQ)", t.SortColCmd("%CPU/R", false), false),
+		ui.KeyShiftZ:   ui.NewKeyAction("Sort %MEM (REQ)", t.SortColCmd("%MEM/R", false), false),
+		tcell.KeyCtrlX: ui.NewKeyAction("Sort %CPU (LIM)", t.SortColCmd("%CPU/L", false), false),
+		tcell.KeyCtrlQ: ui.NewKeyAction("Sort %MEM (LIM)", t.SortColCmd("%MEM/L", false), false),
+	}
 }

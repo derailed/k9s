@@ -50,15 +50,10 @@ func (c *Container) bindKeys(aa ui.KeyActions) {
 	}
 
 	aa.Add(ui.KeyActions{
-		ui.KeyShiftF:   ui.NewKeyAction("PortForward", c.portFwdCmd, true),
-		ui.KeyShiftT:   ui.NewKeyAction("Sort Restart", c.GetTable().SortColCmd("RESTARTS", false), false),
-		ui.KeyShiftC:   ui.NewKeyAction("Sort CPU", c.GetTable().SortColCmd(cpuCol, false), false),
-		ui.KeyShiftM:   ui.NewKeyAction("Sort MEM", c.GetTable().SortColCmd(memCol, false), false),
-		ui.KeyShiftX:   ui.NewKeyAction("Sort %CPU (REQ)", c.GetTable().SortColCmd("%CPU/R", false), false),
-		ui.KeyShiftZ:   ui.NewKeyAction("Sort %MEM (REQ)", c.GetTable().SortColCmd("%MEM/R", false), false),
-		tcell.KeyCtrlX: ui.NewKeyAction("Sort %CPU (LIM)", c.GetTable().SortColCmd("%CPU/L", false), false),
-		tcell.KeyCtrlQ: ui.NewKeyAction("Sort %MEM (LIM)", c.GetTable().SortColCmd("%MEM/L", false), false),
+		ui.KeyShiftF: ui.NewKeyAction("PortForward", c.portFwdCmd, true),
+		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", c.GetTable().SortColCmd("RESTARTS", false), false),
 	})
+	aa.Add(resourceSorters(c.GetTable()))
 }
 
 func (c *Container) k9sEnv() Env {

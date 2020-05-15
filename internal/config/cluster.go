@@ -9,6 +9,7 @@ type Cluster struct {
 	Namespace    *Namespace    `yaml:"namespace"`
 	View         *View         `yaml:"view"`
 	FeatureGates *FeatureGates `yaml:"featureGates"`
+	ShellPod     *ShellPod     `yaml:"shellPod"`
 }
 
 // NewCluster creates a new cluster configuration.
@@ -17,6 +18,7 @@ func NewCluster() *Cluster {
 		Namespace:    NewNamespace(),
 		View:         NewView(),
 		FeatureGates: NewFeatureGates(),
+		ShellPod:     NewShellPod(),
 	}
 }
 
@@ -34,4 +36,9 @@ func (c *Cluster) Validate(conn client.Connection, ks KubeSettings) {
 		c.View = NewView()
 	}
 	c.View.Validate()
+
+	if c.ShellPod == nil {
+		c.ShellPod = NewShellPod()
+	}
+	c.ShellPod.Validate(conn, ks)
 }

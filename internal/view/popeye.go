@@ -53,8 +53,13 @@ func (p *Popeye) decorateRows(data render.TableData) render.TableData {
 		}
 		sum += n
 	}
-	score := sum / len(data.RowEvents)
-	p.GetTable().Extras = fmt.Sprintf("Score %d -- %s", score, grade(score))
+	score, letter := 0, render.NAValue
+	if len(data.RowEvents) > 0 {
+		score = sum / len(data.RowEvents)
+		letter = grade(score)
+	}
+	p.GetTable().Extras = fmt.Sprintf("Score %d -- %s", score, letter)
+
 	return data
 }
 

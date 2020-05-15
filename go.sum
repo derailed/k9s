@@ -137,6 +137,8 @@ github.com/denisenkom/go-mssqldb v0.0.0-20191001013358-cfbb681360f0/go.mod h1:xb
 github.com/denverdino/aliyungo v0.0.0-20190125010748-a747050bb1ba/go.mod h1:dV8lFg6daOBZbT6/BDGIz6Y3WFGn8juu6G+CQ6LHtl0=
 github.com/derailed/popeye v0.8.1 h1:N69XH0NZTBkrNj8qvUzy6Z6bP7+jx0AwollETqvc3dc=
 github.com/derailed/popeye v0.8.1/go.mod h1:OBHcJDa50VpE9QNyOU243bNOtHb29MyLlVHJolwlwas=
+github.com/derailed/popeye v0.8.2 h1:O4JcIC3MwJS9pNKb8ZHLUJKoLPZW0gfcMqFoSYYdbAs=
+github.com/derailed/popeye v0.8.2/go.mod h1:i4ge2tKHDKXgUq3NzFlIhVIBNHS0zFDMJWXsC2bVe2A=
 github.com/derailed/tview v0.3.10 h1:n+iQwYh9Ff9STdR5hBhp+rTJRlu59q2xP2pHvwQbYPw=
 github.com/derailed/tview v0.3.10/go.mod h1:GJ3k/TIzEE+sj1L09/usk6HrkjsdadSsb03eHgPbcII=
 github.com/dgrijalva/jwt-go v0.0.0-20170104182250-a601269ab70c/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=

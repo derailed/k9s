@@ -84,13 +84,13 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags) error {
 	if c.K9s.CurrentContext == "" {
 		return errors.New("Invalid kubeconfig context detected")
 	}
-	ctx, ok := cfg.Contexts[c.K9s.CurrentContext]
+	context, ok := cfg.Contexts[c.K9s.CurrentContext]
 	if !ok {
 		return fmt.Errorf("The specified context %q does not exists in kubeconfig", c.K9s.CurrentContext)
 	}
-	c.K9s.CurrentCluster = ctx.Cluster
-	if len(ctx.Namespace) != 0 {
-		if err := c.SetActiveNamespace(ctx.Namespace); err != nil {
+	c.K9s.CurrentCluster = context.Cluster
+	if len(context.Namespace) != 0 {
+		if err := c.SetActiveNamespace(context.Namespace); err != nil {
 			return err
 		}
 	}
@@ -124,13 +124,6 @@ func (c *Config) CurrentCluster() *Cluster {
 
 // ActiveNamespace returns the active namespace in the current cluster.
 func (c *Config) ActiveNamespace() string {
-	if c.client != nil {
-		ns := c.client.ActiveNamespace()
-		if client.IsNamespaced(ns) {
-			return ns
-		}
-	}
-
 	if cl := c.CurrentCluster(); cl != nil {
 		if cl.Namespace != nil {
 			return cl.Namespace.Active
@@ -162,9 +155,9 @@ func (c *Config) SetActiveNamespace(ns string) error {
 	if c.K9s.ActiveCluster() != nil {
 		return c.K9s.ActiveCluster().Namespace.SetActive(ns, c.settings)
 	}
-
 	err := errors.New("no active cluster. unable to set active namespace")
 	log.Error().Err(err).Msg("SetActiveNamespace")
+
 	return err
 }
 
