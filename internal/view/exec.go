@@ -129,7 +129,6 @@ func clearScreen() {
 
 const (
 	k9sShell           = "k9s-shell"
-	k9sShellNS         = "default"
 	k9sShellRetryCount = 10
 	k9sShellRetryDelay = 500 * time.Millisecond
 )
@@ -140,7 +139,8 @@ func ssh(a *App, node string) error {
 	if err := launchShellPod(a, node); err != nil {
 		return err
 	}
-	shellIn(a, client.FQN(k9sShellNS, k9sShellPodName()), k9sShell)
+	ns := a.Config.K9s.ActiveCluster().ShellPod.Namespace
+	shellIn(a, client.FQN(ns, k9sShellPodName()), k9sShell)
 
 	return nil
 }
@@ -150,10 +150,12 @@ func nukeK9sShell(a *App) {
 	if !a.Config.K9s.Clusters[cl].FeatureGates.NodeShell {
 		return
 	}
+
+	ns := a.Config.K9s.ActiveCluster().ShellPod.Namespace
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
-	err := a.Conn().DialOrDie().CoreV1().Pods(k9sShellNS).Delete(ctx, k9sShellPodName(), metav1.DeleteOptions{})
+	err := a.Conn().DialOrDie().CoreV1().Pods(ns).Delete(ctx, k9sShellPodName(), metav1.DeleteOptions{})
 	if kerrors.IsNotFound(err) {
 		return
 	}
@@ -163,16 +165,17 @@ func nukeK9sShell(a *App) {
 }
 
 func launchShellPod(a *App, node string) error {
+	ns := a.Config.K9s.ActiveCluster().ShellPod.Namespace
 	spec := k9sShellPod(node, a.Config.K9s.ActiveCluster().ShellPod)
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
-	dial := a.Conn().DialOrDie().CoreV1().Pods(k9sShellNS)
+	dial := a.Conn().DialOrDie().CoreV1().Pods(ns)
 	if _, err := dial.Create(ctx, &spec, metav1.CreateOptions{}); err != nil {
 		return err
 	}
 
 	for i := 0; i < k9sShellRetryCount; i++ {
-		o, err := a.factory.Get("v1/pods", client.FQN(k9sShellNS, k9sShellPodName()), true, labels.Everything())
+		o, err := a.factory.Get("v1/pods", client.FQN(ns, k9sShellPodName()), true, labels.Everything())
 		if err != nil {
 			time.Sleep(k9sShellRetryDelay)
 			continue
