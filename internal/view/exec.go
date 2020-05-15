@@ -16,6 +16,7 @@ import (
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -236,6 +237,15 @@ func k9sShellPod(node string, cfg *config.ShellPod) v1.Pod {
 					},
 				},
 			},
+		},
+	}
+}
+
+func asResource(r config.Limits) v1.ResourceRequirements {
+	return v1.ResourceRequirements{
+		Limits: v1.ResourceList{
+			v1.ResourceCPU:    resource.MustParse(r[v1.ResourceCPU]),
+			v1.ResourceMemory: resource.MustParse(r[v1.ResourceMemory]),
 		},
 	}
 }
