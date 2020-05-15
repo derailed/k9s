@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -163,11 +162,7 @@ func nukeK9sShell(a *App) {
 }
 
 func launchShellPod(a *App, node string) error {
-	img := a.Config.K9s.DockerShellImage
-	if img == "" {
-		img = config.DefaultDockerShellImage
-	}
-	spec := k9sShellPod(node, img)
+	spec := k9sShellPod(node, a.Config.K9s.ActiveCluster().ShellPod)
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 	dial := a.Conn().DialOrDie().CoreV1().Pods(k9sShellNS)
