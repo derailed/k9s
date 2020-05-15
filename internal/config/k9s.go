@@ -2,16 +2,11 @@ package config
 
 import "github.com/derailed/k9s/internal/client"
 
-const (
-	defaultRefreshRate = 2
-	// DefaultDockerShellImage specifies the docker image and tag for shelling into nodes.
-	DefaultDockerShellImage = "busybox:1.31"
-)
+const defaultRefreshRate = 2
 
 // K9s tracks K9s configuration options.
 type K9s struct {
 	RefreshRate       int                 `yaml:"refreshRate"`
-	DockerShellImage  string              `yaml:"dockerShellImage"`
 	Headless          bool                `yaml:"headless"`
 	ReadOnly          bool                `yaml:"readOnly"`
 	NoIcons           bool                `yaml:"noIcons"`
@@ -29,11 +24,10 @@ type K9s struct {
 // NewK9s create a new K9s configuration.
 func NewK9s() *K9s {
 	return &K9s{
-		RefreshRate:      defaultRefreshRate,
-		DockerShellImage: DefaultDockerShellImage,
-		Logger:           NewLogger(),
-		Clusters:         make(map[string]*Cluster),
-		Thresholds:       NewThreshold(),
+		RefreshRate: defaultRefreshRate,
+		Logger:      NewLogger(),
+		Clusters:    make(map[string]*Cluster),
+		Thresholds:  NewThreshold(),
 	}
 }
 
@@ -103,9 +97,6 @@ func (k *K9s) ActiveCluster() *Cluster {
 func (k *K9s) validateDefaults() {
 	if k.RefreshRate <= 0 {
 		k.RefreshRate = defaultRefreshRate
-	}
-	if k.DockerShellImage == "" {
-		k.DockerShellImage = DefaultDockerShellImage
 	}
 }
 
