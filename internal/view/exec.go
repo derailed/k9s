@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -193,14 +193,14 @@ func k9sShellPodName() string {
 	return fmt.Sprintf("%s-%d", k9sShell, os.Getpid())
 }
 
-func k9sShellPod(node, image string) v1.Pod {
+func k9sShellPod(node string, cfg *config.ShellPod) v1.Pod {
 	var grace int64
 	var priv bool = true
 
 	return v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k9sShellPodName(),
-			Namespace: k9sShellNS,
+			Namespace: cfg.Namespace,
 		},
 		Spec: v1.PodSpec{
 			NodeName:                      node,
@@ -221,7 +221,7 @@ func k9sShellPod(node, image string) v1.Pod {
 			Containers: []v1.Container{
 				{
 					Name:  k9sShell,
-					Image: image,
+					Image: cfg.Image,
 					VolumeMounts: []v1.VolumeMount{
 						{
 							Name:      "root-vol",
@@ -229,13 +229,8 @@ func k9sShellPod(node, image string) v1.Pod {
 							ReadOnly:  true,
 						},
 					},
-					Resources: v1.ResourceRequirements{
-						Limits: v1.ResourceList{
-							v1.ResourceCPU:    resource.MustParse("200m"),
-							v1.ResourceMemory: resource.MustParse("100Mi"),
-						},
-					},
-					Stdin: true,
+					Resources: asResource(cfg.Limits),
+					Stdin:     true,
 					SecurityContext: &v1.SecurityContext{
 						Privileged: &priv,
 					},
