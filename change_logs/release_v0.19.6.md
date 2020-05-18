@@ -19,6 +19,8 @@ First off, I would like to send a `Big Thank You` to the following generous K9s 
 * [danysirota](https://github.com/danysirota)
 * [lampapetrol](https://github.com/lampapetrol)
 
+Maintenance Release!
+
 ## Resolved Bugs/Features/PRs
 
 * [Issue #719](https://github.com/derailed/k9s/issues/719)
