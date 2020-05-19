@@ -30,6 +30,8 @@ func (p Pod) ColorerFunc() ColorerFunc {
 		}
 		status := strings.TrimSpace(re.Row.Fields[statusCol])
 		switch status {
+		case Pending:
+			c = PendingColor
 		case ContainerCreating, PodInitializing:
 			c = AddColor
 		case Initialized:
