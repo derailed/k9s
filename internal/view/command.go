@@ -106,23 +106,24 @@ func (c *Command) xrayCmd(cmd string) error {
 	return c.exec(cmd, "xrays", x, true)
 }
 
-func (c *Command) checkAccess(gvr string) error {
-	m, err := dao.MetaAccess.MetaFor(client.NewGVR(gvr))
-	if err != nil {
-		return err
-	}
-	ns := client.CleanseNamespace(c.app.Config.ActiveNamespace())
-	if dao.IsK8sMeta(m) && c.app.ConOK() {
-		if _, e := c.app.factory.CanForResource(ns, gvr, client.MonitorAccess); e != nil {
-			return e
-		}
-	}
-	return nil
-}
+// BOZO!!
+// func (c *Command) checkAccess(gvr string) error {
+// 	m, err := dao.MetaAccess.MetaFor(client.NewGVR(gvr))
+// 	if err != nil {
+// 		return err
+// 	}
+// 	ns := client.CleanseNamespace(c.app.Config.ActiveNamespace())
+// 	if dao.IsK8sMeta(m) && c.app.ConOK() {
+// 		if _, e := c.app.factory.CanForResource(ns, gvr, client.MonitorAccess); e != nil {
+// 			return e
+// 		}
+// 	}
+// 	return nil
+// }
 
 // Exec the Command by showing associated display.
 func (c *Command) run(cmd, path string, clearStack bool) error {
-	if c.specialCmd(cmd) {
+	if c.specialCmd(cmd, path) {
 		return nil
 	}
 	cmds := strings.Split(cmd, " ")
@@ -130,17 +131,16 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 	if err != nil {
 		return err
 	}
-	if err := c.checkAccess(gvr); err != nil {
-		return err
-	}
+	//if err := c.checkAccess(gvr); err != nil {
+	//	return err
+	//}
 
 	switch cmds[0] {
 	case "ctx", "context", "contexts":
 		if len(cmds) == 2 {
 			return useContext(c.app, cmds[1])
 		}
-		view := c.componentFor(gvr, path, v)
-		return c.exec(cmd, gvr, view, clearStack)
+		return c.exec(cmd, gvr, c.componentFor(gvr, path, v), clearStack)
 	default:
 		// checks if Command includes a namespace
 		ns := c.app.Config.ActiveNamespace()
@@ -171,14 +171,17 @@ func (c *Command) defaultCmd() error {
 
 	if err := c.run(cmd, "", true); err != nil {
 		log.Error().Err(err).Msgf("Saved command load failed. Loading default view")
-		return c.run("pod", "", true)
+		return c.run("meow", err.Error(), true)
 	}
 	return nil
 }
 
-func (c *Command) specialCmd(cmd string) bool {
+func (c *Command) specialCmd(cmd, path string) bool {
 	cmds := strings.Split(cmd, " ")
 	switch cmds[0] {
+	case "meow":
+		c.app.meowCmd(path)
+		return true
 	case "q", "Q", "quit":
 		c.app.BailOut()
 		return true

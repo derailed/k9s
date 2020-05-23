@@ -64,7 +64,7 @@ func TestTableNew(t *testing.T) {
 func TestTableViewFilter(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
 	v.Init(makeContext())
-	v.SetModel(&testTableModel{})
+	v.SetModel(&mockTableModel{})
 	v.Refresh()
 	v.CmdBuff().SetActive(true)
 	v.CmdBuff().SetText("blee")
@@ -75,7 +75,7 @@ func TestTableViewFilter(t *testing.T) {
 func TestTableViewSort(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
 	v.Init(makeContext())
-	v.SetModel(&testTableModel{})
+	v.SetModel(&mockTableModel{})
 	v.SortColCmd("NAME", true)(nil)
 	assert.Equal(t, 3, v.GetRowCount())
 	assert.Equal(t, "blee", v.GetCell(1, 0).Text)
@@ -88,35 +88,37 @@ func TestTableViewSort(t *testing.T) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-type testTableModel struct{}
+type mockTableModel struct{}
 
-var _ ui.Tabular = (*testTableModel)(nil)
+var _ ui.Tabular = (*mockTableModel)(nil)
 
-func (t *testTableModel) SetInstance(string)              {}
-func (t *testTableModel) Empty() bool                     { return false }
-func (t *testTableModel) HasMetrics() bool                { return true }
-func (t *testTableModel) Peek() render.TableData          { return makeTableData() }
-func (t *testTableModel) ClusterWide() bool               { return false }
-func (t *testTableModel) GetNamespace() string            { return "blee" }
-func (t *testTableModel) SetNamespace(string)             {}
-func (t *testTableModel) ToggleToast()                    {}
-func (t *testTableModel) AddListener(model.TableListener) {}
-func (t *testTableModel) Watch(context.Context)           {}
-func (t *testTableModel) Get(context.Context, string) (runtime.Object, error) {
+func (t *mockTableModel) SetInstance(string)                 {}
+func (t *mockTableModel) Empty() bool                        { return false }
+func (t *mockTableModel) HasMetrics() bool                   { return true }
+func (t *mockTableModel) Peek() render.TableData             { return makeTableData() }
+func (t *mockTableModel) Refresh(context.Context)            {}
+func (t *mockTableModel) ClusterWide() bool                  { return false }
+func (t *mockTableModel) GetNamespace() string               { return "blee" }
+func (t *mockTableModel) SetNamespace(string)                {}
+func (t *mockTableModel) ToggleToast()                       {}
+func (t *mockTableModel) AddListener(model.TableListener)    {}
+func (t *mockTableModel) RemoveListener(model.TableListener) {}
+func (t *mockTableModel) Watch(context.Context)              {}
+func (t *mockTableModel) Get(context.Context, string) (runtime.Object, error) {
 	return nil, nil
 }
-func (t *testTableModel) Delete(context.Context, string, bool, bool) error {
+func (t *mockTableModel) Delete(context.Context, string, bool, bool) error {
 	return nil
 }
-func (t *testTableModel) Describe(context.Context, string) (string, error) {
+func (t *mockTableModel) Describe(context.Context, string) (string, error) {
 	return "", nil
 }
-func (t *testTableModel) ToYAML(ctx context.Context, path string) (string, error) {
+func (t *mockTableModel) ToYAML(ctx context.Context, path string) (string, error) {
 	return "", nil
 }
 
-func (t *testTableModel) InNamespace(string) bool      { return true }
-func (t *testTableModel) SetRefreshRate(time.Duration) {}
+func (t *mockTableModel) InNamespace(string) bool      { return true }
+func (t *mockTableModel) SetRefreshRate(time.Duration) {}
 
 func makeTableData() render.TableData {
 	t := render.NewTableData()

@@ -16,6 +16,7 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 )
 
 // Grapheable represents a graphic component.
@@ -285,6 +286,10 @@ func (p *Pulse) Actions() ui.KeyActions {
 
 // Hints returns the view hints.
 func (p *Pulse) Hints() model.MenuHints {
+	log.Debug().Msgf("PULSES -- HINTS!!")
+	for k := range p.actions {
+		log.Debug().Msgf("KEY %v", p.actions[k].Description)
+	}
 	return p.actions.Hints()
 }
 

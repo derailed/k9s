@@ -23,7 +23,7 @@ type Details struct {
 	actions                   ui.KeyActions
 	app                       *App
 	title, subject            string
-	cmdBuff                   *model.CmdBuff
+	cmdBuff                   *model.FishBuff
 	model                     *model.Text
 	currentRegion, maxRegions int
 	searchable                bool
@@ -37,7 +37,7 @@ func NewDetails(app *App, title, subject string, searchable bool) *Details {
 		title:      title,
 		subject:    subject,
 		actions:    make(ui.KeyActions),
-		cmdBuff:    model.NewCmdBuff('/', model.FilterBuffer),
+		cmdBuff:    model.NewFishBuff('/', model.FilterBuffer),
 		model:      model.NewText(),
 		searchable: searchable,
 	}

@@ -129,7 +129,7 @@ func (d *DaemonSet) Pod(fqn string) (string, error) {
 
 // GetInstance returns a daemonset instance.
 func (d *DaemonSet) GetInstance(fqn string) (*appsv1.DaemonSet, error) {
-	o, err := d.Factory.Get(d.gvr.String(), fqn, false, labels.Everything())
+	o, err := d.Factory.Get(d.gvr.String(), fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

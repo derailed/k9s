@@ -2,6 +2,8 @@ package model
 
 import (
 	"strings"
+
+	"github.com/rs/zerolog/log"
 )
 
 // MaxHistory tracks max command history
@@ -42,8 +44,9 @@ func (h *History) Push(c string) {
 	h.commands = append([]string{c}, h.commands[:len(h.commands)-1]...)
 }
 
-// Clear clear out the stack using pops.
+// Clear clears out the stack.
 func (h *History) Clear() {
+	log.Debug().Msgf("History CLEARED!!!")
 	h.commands = nil
 }
 

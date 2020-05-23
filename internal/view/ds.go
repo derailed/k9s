@@ -45,6 +45,7 @@ func (d *DaemonSet) showPods(app *App, model ui.Tabular, _, path string) {
 	ds, err := res.GetInstance(path)
 	if err != nil {
 		d.App().Flash().Err(err)
+		return
 	}
 
 	showPodsFromSelector(app, path, ds.Spec.Selector)

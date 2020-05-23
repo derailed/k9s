@@ -68,8 +68,8 @@ func InitConnectionOrDie(config *Config) *APIClient {
 }
 
 func makeSAR(ns, gvr string) *authorizationv1.SelfSubjectAccessReview {
-	if ns == "-" {
-		ns = ""
+	if ns == ClusterScope {
+		ns = AllNamespaces
 	}
 	spec := NewGVR(gvr)
 	res := spec.GVR()
@@ -124,6 +124,7 @@ func (a *APIClient) clearCache() {
 
 // CanI checks if user has access to a certain resource.
 func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) {
+	// log.Debug().Msgf("Check Access %q::%q", ns, gvr)
 	if IsClusterWide(ns) {
 		ns = AllNamespaces
 	}

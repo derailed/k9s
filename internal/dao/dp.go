@@ -110,7 +110,7 @@ func (d *Deployment) Pod(fqn string) (string, error) {
 
 // Load returns a deployment instance.
 func (*Deployment) Load(f Factory, fqn string) (*appsv1.Deployment, error) {
-	o, err := f.Get("apps/v1/deployments", fqn, false, labels.Everything())
+	o, err := f.Get("apps/v1/deployments", fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

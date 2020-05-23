@@ -64,11 +64,17 @@ type Tabular interface {
 	// Watch watches a given resource for changes.
 	Watch(context.Context)
 
+	// Refresh forces a new refresh.
+	Refresh(context.Context)
+
 	// SetRefreshRate sets the model watch loop rate.
 	SetRefreshRate(time.Duration)
 
 	// AddListener registers a model listener.
 	AddListener(model.TableListener)
+
+	// RemoveListener unregister a model listener.
+	RemoveListener(model.TableListener)
 
 	// Delete a resource.
 	Delete(ctx context.Context, path string, cascade, force bool) error

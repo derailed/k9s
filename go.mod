@@ -11,6 +11,7 @@ require (
 	github.com/fsnotify/fsnotify v1.4.7
 	github.com/gdamore/tcell v1.3.0
 	github.com/ghodss/yaml v1.0.0
+	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mattn/go-runewidth v0.0.9
 	github.com/openfaas/faas v0.0.0-20200207215241-6afae214e3ec
@@ -23,7 +24,11 @@ require (
 	github.com/sahilm/fuzzy v0.1.0
 	github.com/spf13/cobra v1.0.0
 	github.com/stretchr/testify v1.5.1
+	golang.org/x/net v0.0.0-20200519113804-d87ec0cfa476 // indirect
+	golang.org/x/sys v0.0.0-20200519105757-fe76b779f299 // indirect
 	golang.org/x/text v0.3.2
+	google.golang.org/genproto v0.0.0-20200515170657-fc4c6c6a6587 // indirect
+	google.golang.org/grpc v1.29.1 // indirect
 	gopkg.in/yaml.v2 v2.2.8
 	helm.sh/helm/v3 v3.2.0
 	k8s.io/api v0.18.2

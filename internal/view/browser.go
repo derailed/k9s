@@ -73,7 +73,6 @@ func (b *Browser) Init(ctx context.Context) error {
 	if row == 0 && b.GetRowCount() > 0 {
 		b.Select(1, 0)
 	}
-	b.GetModel().AddListener(b)
 	b.GetModel().SetRefreshRate(time.Duration(b.App().Config.K9s.GetRefreshRate()) * time.Second)
 
 	b.CmdBuff().SetSuggestionFn(b.suggestFilter())
@@ -92,15 +91,12 @@ func (b *Browser) suggestFilter() model.SuggestionFunc {
 
 		s = strings.ToLower(s)
 		for _, h := range b.App().filterHistory.List() {
-			if h == s {
+			if s == h {
 				continue
 			}
 			if strings.HasPrefix(h, s) {
 				entries = append(entries, strings.Replace(h, s, "", 1))
 			}
-		}
-		if len(entries) == 0 {
-			return nil
 		}
 		return
 	}
@@ -126,6 +122,7 @@ func (b *Browser) Start() {
 	}
 
 	b.Stop()
+	b.GetModel().AddListener(b)
 	b.Table.Start()
 	b.CmdBuff().AddListener(b)
 	b.GetModel().Watch(b.prepareContext())
@@ -133,6 +130,7 @@ func (b *Browser) Start() {
 
 // Stop terminates browser updates.
 func (b *Browser) Stop() {
+	b.GetModel().RemoveListener(b)
 	b.CmdBuff().RemoveListener(b)
 	b.Table.Stop()
 	if b.cancelFn != nil {
@@ -146,14 +144,12 @@ func (b *Browser) BufferChanged(s string) {}
 
 // BufferActive indicates the buff activity changed.
 func (b *Browser) BufferActive(state bool, k model.BufferKind) {
-	if b.cancelFn != nil {
-		b.cancelFn()
-	}
-	b.GetModel().Watch(b.prepareContext())
-
-	if !state && b.GetRowCount() > 1 {
-		b.App().filterHistory.Push(b.CmdBuff().GetText())
-	}
+	b.app.QueueUpdateDraw(func() {
+		b.Update(b.GetModel().Peek())
+		if b.GetRowCount() > 1 {
+			b.App().filterHistory.Push(b.CmdBuff().GetText())
+		}
+	})
 }
 
 func (b *Browser) prepareContext() context.Context {
@@ -239,11 +235,10 @@ func (b *Browser) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return b.App().PrevCmd(evt)
 	}
 
+	b.CmdBuff().Reset()
 	if ui.IsLabelSelector(b.CmdBuff().GetText()) {
-		b.CmdBuff().Reset()
 		b.Start()
 	}
-	b.CmdBuff().Reset()
 	b.Refresh()
 
 	return nil

@@ -166,7 +166,7 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 // FetchNode retrieves a node.
 func FetchNode(ctx context.Context, f Factory, path string) (*v1.Node, error) {
-	auth, err := f.Client().CanI("", "v1/nodes", []string{"get"})
+	auth, err := f.Client().CanI(client.ClusterScope, "v1/nodes", []string{"get"})
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +179,7 @@ func FetchNode(ctx context.Context, f Factory, path string) (*v1.Node, error) {
 
 // FetchNodes retrieves all nodes.
 func FetchNodes(ctx context.Context, f Factory, labelsSel string) (*v1.NodeList, error) {
-	auth, err := f.Client().CanI("", "v1/nodes", []string{client.ListVerb})
+	auth, err := f.Client().CanI(client.ClusterScope, "v1/nodes", []string{client.ListVerb})
 	if err != nil {
 		return nil, err
 	}

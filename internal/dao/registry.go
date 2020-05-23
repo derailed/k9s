@@ -287,7 +287,7 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 
 func loadCRDs(f Factory, m ResourceMetas) {
 	const crdGVR = "apiextensions.k8s.io/v1beta1/customresourcedefinitions"
-	oo, err := f.List(crdGVR, "", true, labels.Everything())
+	oo, err := f.List(crdGVR, client.ClusterScope, true, labels.Everything())
 	if err != nil {
 		log.Warn().Err(err).Msgf("Fail CRDs load")
 		return

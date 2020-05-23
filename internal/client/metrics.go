@@ -135,7 +135,7 @@ func (m *MetricsServer) FetchNodesMetrics(ctx context.Context) (*mv1beta1.NodeMe
 	const msg = "user is not authorized to list node metrics"
 
 	mx := new(mv1beta1.NodeMetricsList)
-	if err := m.checkAccess("", "metrics.k8s.io/v1beta1/nodes", msg); err != nil {
+	if err := m.checkAccess(ClusterScope, "metrics.k8s.io/v1beta1/nodes", msg); err != nil {
 		return mx, err
 	}
 

@@ -330,14 +330,15 @@ func (a *App) isValidNS(ns string) bool {
 	if ns == client.AllNamespaces || ns == client.NamespaceAll {
 		return true
 	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), client.CallTimeout)
 	defer cancel()
 	_, err := a.Conn().DialOrDie().CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
 	if err != nil {
-		log.Warn().Err(err).Msgf("Unable to find namespace %q", ns)
+		log.Warn().Err(err).Msgf("Validation failed for namespace: %q", ns)
 	}
 
-	return err == nil
+	return true
 }
 
 func (a *App) switchCtx(name string, loadPods bool) error {
@@ -502,6 +503,12 @@ func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
+func (a *App) meowCmd(msg string) {
+	if err := a.inject(NewMeow(a, msg)); err != nil {
+		a.Flash().Err(err)
+	}
+}
+
 func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.CmdBuff().InCmdMode() {
 		return evt
@@ -537,13 +544,25 @@ func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *App) gotoResource(cmd, path string, clearStack bool) error {
-	return a.command.run(cmd, path, clearStack)
+	err := a.command.run(cmd, path, clearStack)
+	if err == nil {
+		return err
+	}
+
+	c := NewMeow(a, err.Error())
+	_ = c.Init(context.Background())
+	a.Content.Stack.Clear()
+	a.Content.Push(c)
+
+	return nil
 }
 
 func (a *App) inject(c model.Component) error {
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	if err := c.Init(ctx); err != nil {
-		return fmt.Errorf("component init failed for %q %v", c.Name(), err)
+		log.Error().Err(err).Msgf("component init failed for %q %v", c.Name(), err)
+		c = NewMeow(a, err.Error())
+		_ = c.Init(ctx)
 	}
 	a.Content.Push(c)
 

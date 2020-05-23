@@ -20,7 +20,6 @@ type FishBuff struct {
 	*CmdBuff
 
 	suggestionFn    SuggestionFunc
-	suggestion      string
 	suggestions     []string
 	suggestionIndex int
 }
@@ -35,43 +34,48 @@ func NewFishBuff(key rune, kind BufferKind) *FishBuff {
 
 // PrevSuggestion returns the prev suggestion.
 func (f *FishBuff) PrevSuggestion() (string, bool) {
-	if f.suggestionIndex < 0 {
+	if len(f.suggestions) == 0 {
 		return "", false
 	}
-	f.suggestionIndex--
+
+	if f.suggestionIndex < 0 {
+		f.suggestionIndex = 0
+	} else {
+		f.suggestionIndex--
+	}
 	if f.suggestionIndex < 0 {
 		f.suggestionIndex = len(f.suggestions) - 1
 	}
+
 	return f.suggestions[f.suggestionIndex], true
 }
 
 // NextSuggestion returns the next suggestion.
 func (f *FishBuff) NextSuggestion() (string, bool) {
-	if f.suggestionIndex < 0 {
+	if len(f.suggestions) == 0 {
 		return "", false
 	}
 
+	if f.suggestionIndex < 0 {
+		f.suggestionIndex = 0
+	} else {
+		f.suggestionIndex++
+	}
 	if f.suggestionIndex >= len(f.suggestions) {
 		f.suggestionIndex = 0
 	}
-	s := f.suggestions[f.suggestionIndex]
-	f.suggestionIndex++
 
-	return s, true
+	return f.suggestions[f.suggestionIndex], true
 }
 
 // ClearSuggestions clear out all suggestions.
 func (f *FishBuff) ClearSuggestions() {
-	f.suggestion, f.suggestionIndex = "", -1
+	f.suggestionIndex = -1
 }
 
 // CurrentSuggestion returns the current suggestion.
 func (f *FishBuff) CurrentSuggestion() (string, bool) {
-	if f.suggestionIndex < 0 {
-		return "", false
-	}
-
-	if f.suggestionIndex >= len(f.suggestions) {
+	if len(f.suggestions) == 0 || f.suggestionIndex < 0 || f.suggestionIndex >= len(f.suggestions) {
 		return "", false
 	}
 
@@ -101,41 +105,31 @@ func (f *FishBuff) Notify() {
 	if f.suggestionFn == nil {
 		return
 	}
-	cc := f.suggestionFn(string(f.buff))
-	f.fireSuggestionChanged(cc)
+	f.fireSuggestionChanged(f.suggestionFn(string(f.buff)))
 }
 
 // Add adds a new charater to the buffer.
 func (f *FishBuff) Add(r rune) {
 	f.CmdBuff.Add(r)
-	if f.suggestionFn == nil {
-		return
-	}
-	cc := f.suggestionFn(string(f.buff))
-	f.fireSuggestionChanged(cc)
+	f.Notify()
 }
 
 // Delete removes the last character from the buffer.
 func (f *FishBuff) Delete() {
 	f.CmdBuff.Delete()
-	if f.suggestionFn == nil {
-		return
-	}
-	cc := f.suggestionFn(string(f.buff))
-	f.fireSuggestionChanged(cc)
+	f.Notify()
 }
 
 func (f *FishBuff) fireSuggestionChanged(ss []string) {
 	f.suggestions, f.suggestionIndex = ss, 0
 	if len(ss) == 0 {
-		f.suggestionIndex, f.suggestion = -1, ""
+		f.suggestionIndex = -1
 		return
 	}
-	f.suggestion = ss[f.suggestionIndex]
 
 	for _, l := range f.listeners {
 		if listener, ok := l.(SuggestionListener); ok {
-			listener.SuggestionChanged(f.GetText(), f.suggestion)
+			listener.SuggestionChanged(f.GetText(), ss[f.suggestionIndex])
 		}
 	}
 }

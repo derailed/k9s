@@ -106,10 +106,6 @@ func (f *Factory) waitForCacheSync(ns string) {
 		ns = client.AllNamespaces
 	}
 
-	if f.isClusterWide() {
-		ns = client.AllNamespaces
-	}
-
 	f.mx.RLock()
 	defer f.mx.RUnlock()
 	fac, ok := f.factories[ns]
@@ -156,8 +152,8 @@ func (f *Factory) SetActiveNS(ns string) {
 func (f *Factory) isClusterWide() bool {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
-
 	_, ok := f.factories[client.AllNamespaces]
+
 	return ok
 }
 
