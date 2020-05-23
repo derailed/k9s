@@ -63,35 +63,38 @@ K9s is available on Linux, macOS and Windows platforms.
   scoop install k9s
   ```
 
-* Building from source
-   K9s was built using go 1.13 or above. In order to build K9 from source you must:
-   1. Clone the repo
-   2. Add the following command in your go.mod file
+* Via a GO install
 
-      ```text
-      replace (
-        github.com/derailed/k9s => MY_K9S_CLONED_GIT_REPO
-      )
+  ```shell
+  # NOTE: The dev version will be in effect!
+  go get -u github.com/derailed/k9s
+  ```
+
+---
+
+## Building From Source
+
+ K9s is currently using go v1.14 or above. In order to build K9 from source you must:
+
+ 1. Clone the repo
+ 2. Build and run the executable
+
+      ```shell
+      make build && ./k9s
       ```
 
-   3. Build and run the executable
-
-        ```shell
-        go run main.go
-        ```
-
---- 
+---
 
 ## Running with Docker
- 
+
   You can run k9s as a Docker container by mounting your `KUBECONFIG`:
- 
+
   ```shell
   docker run --rm -it -v $KUBECONFIG:/root/.kube/config derailed/k9s
   ```
- 
+
   For default path it would be:
- 
+
   ```shell
   docker run --rm -it -v ~/.kube/config:/root/.kube/config derailed/k9s
   ```
@@ -158,25 +161,25 @@ k9s -l debug
 
 K9s uses aliases to navigate most K8s resources.
 
-| Action                                                        | Command               | Comment                                                     |
-|---------------------------------------------------------------|-----------------------|-------------------------------------------------------------|
-| Show active keyboard mnemonics and help                       | `?`                   |                                                             |
-| Show all available resource alias                             | `ctrl-a`              |                                                             |
-| To bail out of K9s                                            | `:q`, `ctrl-c`        |                                                             |
-| View a Kubernetes resource using singular/plural or shortname | `:`po⏎                | accepts singular, plural, shortname or alias ie pod or pods |
-| View a Kubernetes resource in a given namespace               | `:`alias namespace⏎   |                                                             |
-| Filter out a resource view given a filter                     | `/`filter⏎            |                                                             |
-| Filter resource view by labels                                | `/`-l label-selector⏎ |                                                             |
-| Fuzzy find a resource given a filter                          | `/`-f filter⏎         |                                                             |
-| Bails out of view/command/filter mode                         | `<esc>`               |                                                             |
-| Key mapping to describe, view, edit, view logs,...            | `d`,`v`, `e`, `l`,... |                                                             |
-| To view and switch to another Kubernetes context              | `:`ctx⏎               |                                                             |
-| To view and switch to another Kubernetes context              | `:`ctx context-name⏎  |                                                             |
-| To view and switch to another Kubernetes namespace            | `:`ns⏎                |                                                             |
-| To view all saved resources                                   | `:`screendump or sd⏎  |                                                             |
-| To delete a resource (TAB and ENTER to confirm)               | `ctrl-d`              |                                                             |
-| To kill a resource (no confirmation dialog!)                  | `ctrl-k`              |                                                             |
-| Launch pulses view                                            | `:`pulses or pu⏎      |                                                             |
+| Action                                                        | Command                       | Comment                                                                |
+|---------------------------------------------------------------|-------------------------------|------------------------------------------------------------------------|
+| Show active keyboard mnemonics and help                       | `?`                           |                                                                        |
+| Show all available resource alias                             | `ctrl-a`                      |                                                                        |
+| To bail out of K9s                                            | `:q`, `ctrl-c`                |                                                                        |
+| View a Kubernetes resource using singular/plural or shortname | `:`po⏎                        | accepts singular, plural, shortname or alias ie pod or pods            |
+| View a Kubernetes resource in a given namespace               | `:`alias namespace⏎           |                                                                        |
+| Filter out a resource view given a filter                     | `/`filter⏎                    |                                                                        |
+| Filter resource view by labels                                | `/`-l label-selector⏎         |                                                                        |
+| Fuzzy find a resource given a filter                          | `/`-f filter⏎                 |                                                                        |
+| Bails out of view/command/filter mode                         | `<esc>`                       |                                                                        |
+| Key mapping to describe, view, edit, view logs,...            | `d`,`v`, `e`, `l`,...         |                                                                        |
+| To view and switch to another Kubernetes context              | `:`ctx⏎                       |                                                                        |
+| To view and switch to another Kubernetes context              | `:`ctx context-name⏎          |                                                                        |
+| To view and switch to another Kubernetes namespace            | `:`ns⏎                        |                                                                        |
+| To view all saved resources                                   | `:`screendump or sd⏎          |                                                                        |
+| To delete a resource (TAB and ENTER to confirm)               | `ctrl-d`                      |                                                                        |
+| To kill a resource (no confirmation dialog!)                  | `ctrl-k`                      |                                                                        |
+| Launch pulses view                                            | `:`pulses or pu⏎              |                                                                        |
 | Launch XRay view                                              | `:`xray RESOURCE [NAMESPACE]⏎ | RESOURCE can be one of po, svc, dp, rs, sts, ds, NAMESPACE is optional |
 
 ---
