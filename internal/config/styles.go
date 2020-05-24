@@ -259,7 +259,7 @@ func newStatus() Status {
 		NewColor:       "lightskyblue",
 		ModifyColor:    "greenyellow",
 		AddColor:       "dodgerblue",
-		PendingColor:      "orangered",
+		PendingColor:   "darkorange",
 		ErrorColor:     "orangered",
 		HighlightColor: "aqua",
 		KillColor:      "mediumpurple",

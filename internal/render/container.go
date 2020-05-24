@@ -37,25 +37,6 @@ type ContainerWithMetrics interface {
 // Container renders a K8s Container to screen.
 type Container struct{}
 
-// ColorGet returns a color for a state
-func ColorGet(s string,ns string, h Header, re RowEvent) tcell.Color {
-    switch s {
-    case Pending:
-            return PendingColor
-    case ContainerCreating, PodInitializing:
-            return AddColor
-    case Terminating, Initialized:
-            return HighlightColor
-    case Completed:
-            return CompletedColor
-    case Running:
-            return DefaultColorer(ns, h, re)
-    default:
-            return ErrColor
-    }
-
-}
-
 // ColorerFunc colors a resource row.
 func (c Container) ColorerFunc() ColorerFunc {
 	return func(ns string, h Header, re RowEvent) tcell.Color {
@@ -67,7 +48,20 @@ func (c Container) ColorerFunc() ColorerFunc {
 		if stateCol == -1 {
 			return DefaultColorer(ns, h, re)
 		}
-		return ColorGet(strings.TrimSpace(re.Row.Fields[stateCol]), ns, h, re)
+		switch strings.TrimSpace(re.Row.Fields[stateCol]) {
+		case Pending:
+			return PendingColor
+		case ContainerCreating, PodInitializing:
+			return AddColor
+		case Terminating, Initialized:
+			return HighlightColor
+		case Completed:
+			return CompletedColor
+		case Running:
+			return DefaultColorer(ns, h, re)
+		default:
+			return ErrColor
+		}
 	}
 }
 
