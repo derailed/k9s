@@ -32,7 +32,7 @@ func (r *Reference) List(ctx context.Context, ns string) ([]runtime.Object, erro
 }
 
 // Get fetch a given reference.
-func (c *Reference) Get(ctx context.Context, path string) (runtime.Object, error) {
+func (r *Reference) Get(ctx context.Context, path string) (runtime.Object, error) {
 	panic("NYI")
 }
 
