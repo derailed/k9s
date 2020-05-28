@@ -208,7 +208,7 @@ func decorateCpuMemHeaderRows(app *App, data render.TableData) render.TableData 
 			}
 			color := app.Config.K9s.Thresholds.SeverityColor(check, n)
 			if len(color) > 0 {
-				re.Row.Fields[colIndex] = "[" + color + "]" + re.Row.Fields[colIndex]
+				re.Row.Fields[colIndex] = "[" + color + "::b]" + re.Row.Fields[colIndex]
 			}
 		}
 	}
