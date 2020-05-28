@@ -69,6 +69,7 @@ type (
 		NewColor       Color `yaml:"newColor"`
 		ModifyColor    Color `yaml:"modifyColor"`
 		AddColor       Color `yaml:"addColor"`
+		PendingColor   Color `yaml:"pendingColor"`
 		ErrorColor     Color `yaml:"errorColor"`
 		HighlightColor Color `yaml:"highlightColor"`
 		KillColor      Color `yaml:"killColor"`
@@ -258,6 +259,7 @@ func newStatus() Status {
 		NewColor:       "lightskyblue",
 		ModifyColor:    "greenyellow",
 		AddColor:       "dodgerblue",
+		PendingColor:   "darkorange",
 		ErrorColor:     "orangered",
 		HighlightColor: "aqua",
 		KillColor:      "mediumpurple",

@@ -23,6 +23,9 @@ const (
 
 	// PodInitializing represents a pod initializing status.
 	PodInitializing = "PodInitializing"
+
+	// Pending represents a pod pending status.
+	Pending = "Pending"
 )
 
 const (

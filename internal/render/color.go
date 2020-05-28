@@ -11,6 +11,9 @@ var (
 	// AddColor row added color.
 	AddColor tcell.Color
 
+	// PendingColor row added color.
+	PendingColor tcell.Color
+
 	// ErrColor row err color.
 	ErrColor tcell.Color
 
