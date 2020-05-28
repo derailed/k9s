@@ -66,7 +66,7 @@ K9s is available on Linux, macOS and Windows platforms.
 
   ```shell
   # NOTE: Version info will be missing
-  docker run -v /usr/local/bin:/go/bin -e GO111MODULE=on golang go get github.com/derailed/k9s
+  docker run --rm -v /usr/local/bin:/go/bin -e GO111MODULE=on golang go get github.com/derailed/k9s
   ```
 
 * Via a GO install
