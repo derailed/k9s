@@ -111,7 +111,7 @@ func getContainerStatus(co string, status v1.PodStatus) *v1.ContainerStatus {
 }
 
 func (c *Container) fetchPod(fqn string) (*v1.Pod, error) {
-	o, err := c.Factory.Get("v1/pods", fqn, false, labels.Everything())
+	o, err := c.Factory.Get("v1/pods", fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

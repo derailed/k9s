@@ -27,7 +27,8 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 		SetLabelColor(styles.K9s.Info.FgColor.Color()).
 		SetFieldTextColor(styles.K9s.Info.SectionColor.Color())
 
-	p1, p2, address := ports[0], extractPort(ports[0]), "localhost"
+	address := v.App().Config.CurrentCluster().PortForwardAddress
+	p1, p2 := ports[0], extractPort(ports[0])
 	f.AddInputField("Container Port:", p1, 30, nil, func(p string) {
 		p1 = p
 	})

@@ -289,6 +289,7 @@ var expectedConfig = `k9s:
         limits:
           cpu: 100m
           memory: 100Mi
+      portForwardAddress: localhost
     fred:
       namespace:
         active: default
@@ -308,6 +309,7 @@ var expectedConfig = `k9s:
         limits:
           cpu: 100m
           memory: 100Mi
+      portForwardAddress: localhost
     minikube:
       namespace:
         active: kube-system
@@ -327,6 +329,7 @@ var expectedConfig = `k9s:
         limits:
           cpu: 100m
           memory: 100Mi
+      portForwardAddress: localhost
   thresholds:
     cpu:
       critical: 90
@@ -366,6 +369,7 @@ var resetConfig = `k9s:
         limits:
           cpu: 100m
           memory: 100Mi
+      portForwardAddress: localhost
   thresholds:
     cpu:
       critical: 90

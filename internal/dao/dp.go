@@ -6,7 +6,9 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -122,4 +124,172 @@ func (*Deployment) Load(f Factory, fqn string) (*appsv1.Deployment, error) {
 	}
 
 	return &dp, nil
+}
+
+func (d *Deployment) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
+	ns, n := client.Namespaced(fqn)
+	oo, err := d.Factory.List(d.GVR(), ns, wait, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	refs := make(Refs, 0, len(oo))
+	for _, o := range oo {
+		var dp appsv1.Deployment
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &dp)
+		if err != nil {
+			return nil, errors.New("expecting Deployment resource")
+		}
+		if dp.Spec.Template.Spec.ServiceAccountName == n {
+			refs = append(refs, Ref{
+				GVR: d.GVR(),
+				FQN: client.FQN(dp.Namespace, dp.Name),
+			})
+		}
+	}
+
+	return refs, nil
+}
+
+func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
+	ns, n := client.Namespaced(fqn)
+	oo, err := d.Factory.List(d.GVR(), ns, wait, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	refs := make(Refs, 0, len(oo))
+	for _, o := range oo {
+		var dp appsv1.Deployment
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &dp)
+		if err != nil {
+			return nil, errors.New("expecting Deployment resource")
+		}
+		switch gvr {
+		case "v1/configmaps":
+			if !hasConfigMap(&dp.Spec.Template.Spec, n) {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: d.GVR(),
+				FQN: client.FQN(dp.Namespace, dp.Name),
+			})
+		case "v1/secrets":
+			found, err := hasSecret(d.Factory, &dp.Spec.Template.Spec, dp.Namespace, n, wait)
+			if err != nil {
+				log.Warn().Err(err).Msgf("scanning secret %q", fqn)
+				continue
+			}
+			if !found {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: d.GVR(),
+				FQN: client.FQN(dp.Namespace, dp.Name),
+			})
+		}
+	}
+
+	return refs, nil
+}
+
+func hasConfigMap(spec *v1.PodSpec, name string) bool {
+	for _, c := range spec.InitContainers {
+		if containerHasConfigMap(c, name) {
+			return true
+		}
+	}
+	for _, c := range spec.Containers {
+		if containerHasConfigMap(c, name) {
+			return true
+		}
+	}
+
+	for _, v := range spec.Volumes {
+		if cm := v.VolumeSource.ConfigMap; cm != nil {
+			if cm.LocalObjectReference.Name == name {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// BOZO !! Need to deal with ephemeral containers.
+func hasSecret(f Factory, spec *v1.PodSpec, ns, name string, wait bool) (bool, error) {
+	for _, c := range spec.InitContainers {
+		if containerHasSecret(c, name) {
+			return true, nil
+		}
+	}
+	for _, c := range spec.Containers {
+		if containerHasSecret(c, name) {
+			return true, nil
+		}
+	}
+
+	saName := spec.ServiceAccountName
+	if saName != "" {
+		o, err := f.Get("v1/serviceaccounts", client.FQN(ns, saName), wait, labels.Everything())
+		if err != nil {
+			return false, err
+		}
+
+		var sa v1.ServiceAccount
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &sa)
+		if err != nil {
+			return false, errors.New("expecting ServiceAccount resource")
+		}
+
+		for _, ref := range sa.Secrets {
+			if ref.Namespace == ns && ref.Name == name {
+				return true, nil
+			}
+		}
+	}
+
+	for _, v := range spec.Volumes {
+		if sec := v.VolumeSource.Secret; sec != nil {
+			if sec.SecretName == name {
+				return true, nil
+			}
+		}
+	}
+	return false, nil
+}
+
+func containerHasSecret(c v1.Container, name string) bool {
+	for _, e := range c.EnvFrom {
+		if e.SecretRef != nil && e.SecretRef.Name == name {
+			return true
+		}
+	}
+	for _, e := range c.Env {
+		if e.ValueFrom == nil || e.ValueFrom.SecretKeyRef == nil {
+			continue
+		}
+		if e.ValueFrom.SecretKeyRef.Name == name {
+			return true
+		}
+	}
+
+	return false
+}
+
+func containerHasConfigMap(c v1.Container, name string) bool {
+	for _, e := range c.EnvFrom {
+		if e.ConfigMapRef != nil && e.ConfigMapRef.Name == name {
+			return true
+		}
+	}
+	for _, e := range c.Env {
+		if e.ValueFrom == nil || e.ValueFrom.ConfigMapKeyRef == nil {
+			continue
+		}
+		if e.ValueFrom.ConfigMapKeyRef.Name == name {
+			return true
+		}
+	}
+
+	return false
 }

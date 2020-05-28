@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSecretNew(t *testing.T) {
-	s := view.NewSecret(client.NewGVR("v1/secrets"))
+func TestReferenceNew(t *testing.T) {
+	s := view.NewReference(client.NewGVR("references"))
 
 	assert.Nil(t, s.Init(makeCtx()))
-	assert.Equal(t, "Secrets", s.Name())
-	assert.Equal(t, 6, len(s.Hints()))
+	assert.Equal(t, "References", s.Name())
+	assert.Equal(t, 3, len(s.Hints()))
 }

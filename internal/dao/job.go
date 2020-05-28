@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/derailed/k9s/internal/client"
+	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -40,4 +42,71 @@ func (j *Job) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
 	}
 
 	return podLogs(ctx, c, job.Spec.Selector.MatchLabels, opts)
+}
+
+func (j *Job) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
+	ns, n := client.Namespaced(fqn)
+	oo, err := j.Factory.List(j.GVR(), ns, wait, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	refs := make(Refs, 0, len(oo))
+	for _, o := range oo {
+		var job batchv1.Job
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &job)
+		if err != nil {
+			return nil, errors.New("expecting Job resource")
+		}
+		if job.Spec.Template.Spec.ServiceAccountName == n {
+			refs = append(refs, Ref{
+				GVR: j.GVR(),
+				FQN: client.FQN(job.Namespace, job.Name),
+			})
+		}
+	}
+
+	return refs, nil
+}
+
+func (j *Job) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
+	ns, n := client.Namespaced(fqn)
+	oo, err := j.Factory.List(j.GVR(), ns, wait, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	refs := make(Refs, 0, len(oo))
+	for _, o := range oo {
+		var job batchv1.Job
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &job)
+		if err != nil {
+			return nil, errors.New("expecting Job resource")
+		}
+		switch gvr {
+		case "v1/configmaps":
+			if !hasConfigMap(&job.Spec.Template.Spec, n) {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: j.GVR(),
+				FQN: client.FQN(job.Namespace, job.Name),
+			})
+		case "v1/secrets":
+			found, err := hasSecret(j.Factory, &job.Spec.Template.Spec, job.Namespace, n, wait)
+			if err != nil {
+				log.Warn().Err(err).Msgf("locate secret %q", fqn)
+				continue
+			}
+			if !found {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: j.GVR(),
+				FQN: client.FQN(job.Namespace, job.Name),
+			})
+		}
+	}
+
+	return refs, nil
 }

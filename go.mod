@@ -3,6 +3,7 @@ module github.com/derailed/k9s
 go 1.13
 
 require (
+	9fans.net/go v0.0.2
 	github.com/atotto/clipboard v0.1.2
 	github.com/derailed/popeye v0.8.3
 	github.com/derailed/tview v0.3.10

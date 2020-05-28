@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -110,7 +111,7 @@ func (s *StatefulSet) Pod(fqn string) (string, error) {
 }
 
 func (s *StatefulSet) getStatefulSet(fqn string) (*appsv1.StatefulSet, error) {
-	o, err := s.Factory.Get(s.gvr.String(), fqn, false, labels.Everything())
+	o, err := s.Factory.Get(s.gvr.String(), fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -122,4 +123,71 @@ func (s *StatefulSet) getStatefulSet(fqn string) (*appsv1.StatefulSet, error) {
 	}
 
 	return &sts, nil
+}
+
+func (s *StatefulSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
+	ns, n := client.Namespaced(fqn)
+	oo, err := s.Factory.List(s.GVR(), ns, wait, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	refs := make(Refs, 0, len(oo))
+	for _, o := range oo {
+		var sts appsv1.StatefulSet
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &sts)
+		if err != nil {
+			return nil, errors.New("expecting StatefulSet resource")
+		}
+		if sts.Spec.Template.Spec.ServiceAccountName == n {
+			refs = append(refs, Ref{
+				GVR: s.GVR(),
+				FQN: client.FQN(sts.Namespace, sts.Name),
+			})
+		}
+	}
+
+	return refs, nil
+}
+
+func (s *StatefulSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
+	ns, n := client.Namespaced(fqn)
+	oo, err := s.Factory.List(s.GVR(), ns, wait, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	refs := make(Refs, 0, len(oo))
+	for _, o := range oo {
+		var sts appsv1.StatefulSet
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &sts)
+		if err != nil {
+			return nil, errors.New("expecting StatefulSet resource")
+		}
+		switch gvr {
+		case "v1/configmaps":
+			if !hasConfigMap(&sts.Spec.Template.Spec, n) {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: s.GVR(),
+				FQN: client.FQN(sts.Namespace, sts.Name),
+			})
+		case "v1/secrets":
+			found, err := hasSecret(s.Factory, &sts.Spec.Template.Spec, sts.Namespace, n, wait)
+			if err != nil {
+				log.Warn().Err(err).Msgf("locate secret %q", fqn)
+				continue
+			}
+			if !found {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: s.GVR(),
+				FQN: client.FQN(sts.Namespace, sts.Name),
+			})
+		}
+	}
+
+	return refs, nil
 }

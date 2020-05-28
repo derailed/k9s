@@ -103,7 +103,7 @@ func (*Pod) serviceAccountRef(ctx context.Context, f dao.Factory, parent *TreeNo
 	}
 
 	id := client.FQN(ns, spec.ServiceAccountName)
-	o, err := f.Get("v1/serviceaccounts", id, false, labels.Everything())
+	o, err := f.Get("v1/serviceaccounts", id, true, labels.Everything())
 	if err != nil {
 		return err
 	}

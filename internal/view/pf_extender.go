@@ -147,7 +147,7 @@ func showFwdDialog(v ResourceViewer, path string, cb PortForwardCB) error {
 
 func fetchPodPorts(f *watch.Factory, path string) (map[string][]v1.ContainerPort, error) {
 	log.Debug().Msgf("Fetching ports on pod %q", path)
-	o, err := f.Get("v1/pods", path, false, labels.Everything())
+	o, err := f.Get("v1/pods", path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

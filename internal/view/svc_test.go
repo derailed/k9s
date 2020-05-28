@@ -43,7 +43,23 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
+	dao.MetaAccess.RegisterMeta("v1/configmaps", metav1.APIResource{
+		Name:         "configmaps",
+		SingularName: "configmap",
+		Namespaced:   true,
+		Kind:         "ConfigMaps",
+		Verbs:        []string{"get", "list", "watch", "delete"},
+		Categories:   []string{"k9s"},
+	})
 
+	dao.MetaAccess.RegisterMeta("references", metav1.APIResource{
+		Name:         "references",
+		SingularName: "reference",
+		Namespaced:   true,
+		Kind:         "References",
+		Verbs:        []string{"get", "list", "watch", "delete"},
+		Categories:   []string{"k9s"},
+	})
 	dao.MetaAccess.RegisterMeta("aliases", metav1.APIResource{
 		Name:         "aliases",
 		SingularName: "alias",

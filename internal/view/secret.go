@@ -29,8 +29,13 @@ func NewSecret(gvr client.GVR) ResourceViewer {
 
 func (s *Secret) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		tcell.KeyCtrlX: ui.NewKeyAction("Decode", s.decodeCmd, true),
+		ui.KeyX: ui.NewKeyAction("Decode", s.decodeCmd, true),
+		ui.KeyR: ui.NewKeyAction("Referenced by", s.refCmd, true),
 	})
+}
+
+func (s *Secret) refCmd(evt *tcell.EventKey) *tcell.EventKey {
+	return scanRefs(evt, s.App(), s.GetTable(), "v1/secrets")
 }
 
 func (s *Secret) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {

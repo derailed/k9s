@@ -70,17 +70,36 @@ func (f *Factory) List(gvr, ns string, wait bool, labels labels.Selector) ([]run
 	if err != nil {
 		return nil, err
 	}
-	if wait {
-		f.waitForCacheSync(ns)
-	}
-	if client.IsClusterScoped(ns) {
-		return inf.Lister().List(labels)
-	}
-
+	log.Debug().Msgf("LIST %q::%q -- %t::%t", gvr, ns, wait, inf.Informer().HasSynced())
 	if client.IsAllNamespace(ns) {
 		ns = client.AllNamespaces
 	}
+
+	var oo []runtime.Object
+	if client.IsClusterScoped(ns) {
+		oo, err = inf.Lister().List(labels)
+	} else {
+		oo, err = inf.Lister().ByNamespace(ns).List(labels)
+	}
+	if !wait || (wait && inf.Informer().HasSynced()) {
+		return oo, err
+	}
+
+	f.waitForCacheSync(ns)
+	if client.IsClusterScoped(ns) {
+		return inf.Lister().List(labels)
+	}
 	return inf.Lister().ByNamespace(ns).List(labels)
+}
+
+// HasSynced checks if given informer is up to date.
+func (f *Factory) HasSynced(gvr, ns string) (bool, error) {
+	inf, err := f.CanForResource(ns, gvr, client.MonitorAccess)
+	if err != nil {
+		return false, err
+	}
+
+	return inf.Informer().HasSynced(), nil
 }
 
 // Get retrieves a given resource.
@@ -90,14 +109,21 @@ func (f *Factory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime
 	if err != nil {
 		return nil, err
 	}
-
-	if wait {
-		f.waitForCacheSync(ns)
+	log.Debug().Msgf("GET %q::%q -- %t::%t", gvr, path, wait, inf.Informer().HasSynced())
+	var o runtime.Object
+	if client.IsClusterScoped(ns) {
+		o, err = inf.Lister().Get(n)
+	} else {
+		o, err = inf.Lister().ByNamespace(ns).Get(n)
 	}
+	if !wait || (wait && inf.Informer().HasSynced()) {
+		return o, err
+	}
+
+	f.waitForCacheSync(ns)
 	if client.IsClusterScoped(ns) {
 		return inf.Lister().Get(n)
 	}
-
 	return inf.Lister().ByNamespace(ns).Get(n)
 }
 

@@ -394,16 +394,18 @@ func (b *Browser) setNamespace(ns string) {
 }
 
 func (b *Browser) defaultContext() context.Context {
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, internal.KeyFactory, b.app.factory)
+	ctx := context.WithValue(context.Background(), internal.KeyFactory, b.app.factory)
 	ctx = context.WithValue(ctx, internal.KeyGVR, b.GVR().String())
-	ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
-
-	ctx = context.WithValue(ctx, internal.KeyLabels, "")
+	if b.Path != "" {
+		ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
+	}
+	// BOZO!!
+	// ctx = context.WithValue(ctx, internal.KeyLabels, "")
 	if ui.IsLabelSelector(b.CmdBuff().GetText()) {
 		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(b.CmdBuff().GetText()))
 	}
-	ctx = context.WithValue(ctx, internal.KeyFields, "")
+	// BOZO!!
+	// ctx = context.WithValue(ctx, internal.KeyFields, "")
 	ctx = context.WithValue(ctx, internal.KeyNamespace, client.CleanseNamespace(b.App().Config.ActiveNamespace()))
 
 	return ctx

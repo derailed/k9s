@@ -2,11 +2,17 @@ package dao
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
+	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
@@ -24,7 +30,7 @@ type CronJob struct {
 
 // Run a CronJob.
 func (c *CronJob) Run(path string) error {
-	ns, n := client.Namespaced(path)
+	ns, _ := client.Namespaced(path)
 	auth, err := c.Client().CanI(ns, "batch/v1beta1/cronjobs", []string{client.GetVerb, client.CreateVerb})
 	if err != nil {
 		return err
@@ -36,9 +42,15 @@ func (c *CronJob) Run(path string) error {
 	// BOZO!! Factory resource??
 	ctx, cancel := context.WithTimeout(context.Background(), client.CallTimeout)
 	defer cancel()
-	cj, err := c.Client().DialOrDie().BatchV1beta1().CronJobs(ns).Get(ctx, n, metav1.GetOptions{})
+	o, err := c.Factory.Get("batch/v1/cronjobs", path, true, labels.Everything())
 	if err != nil {
 		return err
+	}
+
+	var cj batchv1beta1.CronJob
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cj)
+	if err != nil {
+		return errors.New("expecting CronJob resource")
 	}
 
 	var jobName = cj.Name
@@ -57,4 +69,71 @@ func (c *CronJob) Run(path string) error {
 	_, err = c.Client().DialOrDie().BatchV1().Jobs(ns).Create(ctx, job, metav1.CreateOptions{})
 
 	return err
+}
+
+func (c *CronJob) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
+	ns, n := client.Namespaced(fqn)
+	oo, err := c.Factory.List(c.GVR(), ns, wait, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	refs := make(Refs, 0, len(oo))
+	for _, o := range oo {
+		var cj batchv1beta1.CronJob
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cj)
+		if err != nil {
+			return nil, errors.New("expecting CronJob resource")
+		}
+		if cj.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName == n {
+			refs = append(refs, Ref{
+				GVR: c.GVR(),
+				FQN: client.FQN(cj.Namespace, cj.Name),
+			})
+		}
+	}
+
+	return refs, nil
+}
+
+func (c *CronJob) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
+	ns, n := client.Namespaced(fqn)
+	oo, err := c.Factory.List(c.GVR(), ns, wait, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	refs := make(Refs, 0, len(oo))
+	for _, o := range oo {
+		var cj batchv1beta1.CronJob
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cj)
+		if err != nil {
+			return nil, errors.New("expecting CronJob resource")
+		}
+		switch gvr {
+		case "v1/configmaps":
+			if !hasConfigMap(&cj.Spec.JobTemplate.Spec.Template.Spec, n) {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: c.GVR(),
+				FQN: client.FQN(cj.Namespace, cj.Name),
+			})
+		case "v1/secrets":
+			found, err := hasSecret(c.Factory, &cj.Spec.JobTemplate.Spec.Template.Spec, cj.Namespace, n, wait)
+			if err != nil {
+				log.Warn().Err(err).Msgf("locate secret %q", fqn)
+				continue
+			}
+			if !found {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: c.GVR(),
+				FQN: client.FQN(cj.Namespace, cj.Name),
+			})
+		}
+	}
+
+	return refs, nil
 }

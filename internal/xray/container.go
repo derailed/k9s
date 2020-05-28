@@ -89,7 +89,7 @@ func addRef(f dao.Factory, parent *TreeNode, gvr, id string, optional *bool) {
 }
 
 func validate(f dao.Factory, n *TreeNode, optional *bool) {
-	res, err := f.Get(n.GVR, n.ID, false, labels.Everything())
+	res, err := f.Get(n.GVR, n.ID, true, labels.Everything())
 	if err != nil || res == nil {
 		if optional == nil || !*optional {
 			log.Warn().Err(err).Msgf("Missing ref %q::%q", n.GVR, n.ID)

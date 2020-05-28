@@ -6,7 +6,6 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -45,7 +44,7 @@ func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
 func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	labelSel, ok := ctx.Value(internal.KeyLabels).(string)
 	if !ok {
-		log.Debug().Msgf("No label selector found in context. Listing all resources")
+		labelSel = ""
 	}
 
 	a := fmt.Sprintf(gvFmt, metav1beta1.SchemeGroupVersion.Version, metav1beta1.GroupName)

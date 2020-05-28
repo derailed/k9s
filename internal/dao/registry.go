@@ -158,6 +158,13 @@ func loadK9s(m ResourceMetas) {
 		SingularName: "xray",
 		Categories:   []string{"k9s"},
 	}
+	m[client.NewGVR("references")] = metav1.APIResource{
+		Name:         "references",
+		Kind:         "References",
+		SingularName: "reference",
+		Verbs:        []string{},
+		Categories:   []string{"k9s"},
+	}
 	m[client.NewGVR("aliases")] = metav1.APIResource{
 		Name:         "aliases",
 		Kind:         "Aliases",

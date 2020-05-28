@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSecretNew(t *testing.T) {
-	s := view.NewSecret(client.NewGVR("v1/secrets"))
+func TestConfigMapNew(t *testing.T) {
+	s := view.NewConfigMap(client.NewGVR("v1/configmaps"))
 
 	assert.Nil(t, s.Init(makeCtx()))
-	assert.Equal(t, "Secrets", s.Name())
-	assert.Equal(t, 6, len(s.Hints()))
+	assert.Equal(t, "ConfigMaps", s.Name())
+	assert.Equal(t, 5, len(s.Hints()))
 }

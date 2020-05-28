@@ -57,7 +57,6 @@ func (g *Generic) List(ctx context.Context, ns string) ([]runtime.Object, error)
 
 // Get returns a given resource.
 func (g *Generic) Get(ctx context.Context, path string) (runtime.Object, error) {
-	log.Debug().Msgf("GENERIC-GET %q", path)
 	var opts metav1.GetOptions
 	ns, n := client.Namespaced(path)
 	dial := g.dynClient()

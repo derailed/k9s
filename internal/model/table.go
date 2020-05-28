@@ -202,7 +202,7 @@ func (t *Table) refresh(ctx context.Context) {
 	defer atomic.StoreInt32(&t.inUpdate, 0)
 
 	if err := t.reconcile(ctx); err != nil {
-		log.Error().Err(err).Msg("Reconcile failed")
+		log.Error().Err(err).Msgf("reconcile failed %q::%q", t.gvr, t.instance)
 		t.fireTableLoadFailed(err)
 		return
 	}
@@ -237,7 +237,6 @@ func (t *Table) reconcile(ctx context.Context) error {
 		oo, err = []runtime.Object{o}, e
 	}
 	if err != nil {
-		log.Error().Err(err).Msg("Reconcile failed to list resource")
 		return err
 	}
 
