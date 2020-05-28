@@ -44,6 +44,7 @@ func (j *Job) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
 	return podLogs(ctx, c, job.Spec.Selector.MatchLabels, opts)
 }
 
+// ScanSA scans for serviceaccount refs.
 func (j *Job) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
 	oo, err := j.Factory.List(j.GVR(), ns, wait, labels.Everything())
@@ -69,6 +70,7 @@ func (j *Job) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	return refs, nil
 }
 
+// Scan scans for resource references.
 func (j *Job) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
 	oo, err := j.Factory.List(j.GVR(), ns, wait, labels.Everything())

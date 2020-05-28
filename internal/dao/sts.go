@@ -133,6 +133,7 @@ func (s *StatefulSet) getStatefulSet(fqn string) (*appsv1.StatefulSet, error) {
 	return &sts, nil
 }
 
+// ScanSA scans for serviceaccount refs.
 func (s *StatefulSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
 	oo, err := s.Factory.List(s.GVR(), ns, wait, labels.Everything())
@@ -158,6 +159,7 @@ func (s *StatefulSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, 
 	return refs, nil
 }
 
+// Scan scans for cluster resource refs.
 func (s *StatefulSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
 	oo, err := s.Factory.List(s.GVR(), ns, wait, labels.Everything())

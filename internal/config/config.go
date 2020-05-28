@@ -132,6 +132,7 @@ func (c *Config) ActiveNamespace() string {
 	return "default"
 }
 
+// ValidateFavorites ensure favorite ns are legit.
 func (c *Config) ValidateFavorites() {
 	cl := c.K9s.ActiveCluster()
 	if cl == nil {

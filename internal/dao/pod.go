@@ -230,6 +230,7 @@ func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
 	return nil
 }
 
+// ScanSA scans for serviceaccount refs.
 func (p *Pod) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
 	oo, err := p.Factory.List(p.GVR(), ns, wait, labels.Everything())
@@ -259,6 +260,7 @@ func (p *Pod) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	return refs, nil
 }
 
+// Scan scans for cluster resource refs.
 func (p *Pod) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
 	oo, err := p.Factory.List(p.GVR(), ns, wait, labels.Everything())

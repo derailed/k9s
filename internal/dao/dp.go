@@ -134,6 +134,7 @@ func (*Deployment) Load(f Factory, fqn string) (*appsv1.Deployment, error) {
 	return &dp, nil
 }
 
+// ScanSA scans for serviceaccount refs.
 func (d *Deployment) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
 	oo, err := d.Factory.List(d.GVR(), ns, wait, labels.Everything())
@@ -159,6 +160,7 @@ func (d *Deployment) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, e
 	return refs, nil
 }
 
+// Scan scans for resource references.
 func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
 	oo, err := d.Factory.List(d.GVR(), ns, wait, labels.Everything())

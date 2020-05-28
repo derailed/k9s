@@ -72,6 +72,7 @@ func InitConnection(config *Config) (*APIClient, error) {
 	return &a, err
 }
 
+// ConnectionOK returns connection status.
 func (a *APIClient) ConnectionOK() bool {
 	return a.connOK
 }
@@ -304,7 +305,7 @@ func (a *APIClient) Dial() (kubernetes.Interface, error) {
 	return a.client, nil
 }
 
-// RestConfigOrDie returns a rest api client.
+// RestConfig returns a rest api client.
 func (a *APIClient) RestConfig() (*restclient.Config, error) {
 	cfg, err := a.config.RESTConfig()
 	if err != nil {

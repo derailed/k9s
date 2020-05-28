@@ -3,12 +3,13 @@ package view
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"strings"
 )
 
 // Meow represents a bomb viewer
@@ -50,7 +51,7 @@ func (m *Meow) Init(_ context.Context) error {
 
 	m.bindKeys()
 	m.SetInputCapture(m.keyboard)
-    m.talk()
+	m.talk()
 
 	return nil
 }

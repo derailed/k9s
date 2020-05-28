@@ -148,6 +148,7 @@ func (d *DaemonSet) GetInstance(fqn string) (*appsv1.DaemonSet, error) {
 	return &ds, nil
 }
 
+// ScanSA scans for serviceaccount refs.
 func (d *DaemonSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
 	oo, err := d.Factory.List(d.GVR(), ns, wait, labels.Everything())
@@ -173,6 +174,7 @@ func (d *DaemonSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, er
 	return refs, nil
 }
 
+// Scan scans for cluster refs.
 func (d *DaemonSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
 	oo, err := d.Factory.List(d.GVR(), ns, wait, labels.Everything())

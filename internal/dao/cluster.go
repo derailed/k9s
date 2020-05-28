@@ -49,6 +49,7 @@ func scanners() map[string]RefScanner {
 	}
 }
 
+// ScanForRefs scans cluster resources for resource references.
 func ScanForRefs(ctx context.Context, f Factory) (Refs, error) {
 	defer func(t time.Time) {
 		log.Debug().Msgf("Cluster Scan %v", time.Since(t))
@@ -101,6 +102,7 @@ func ScanForRefs(ctx context.Context, f Factory) (Refs, error) {
 	return res, nil
 }
 
+// ScanForSARefs scans cluster resources for serviceaccount refs.
 func ScanForSARefs(ctx context.Context, f Factory) (Refs, error) {
 	defer func(t time.Time) {
 		log.Debug().Msgf("Cluster Scan %v", time.Since(t))

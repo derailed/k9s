@@ -75,6 +75,7 @@ func (r RowEvent) Customize(cols []int) RowEvent {
 	}
 }
 
+// ExtractHeaderLabels extract collection of fields into header.
 func (r RowEvent) ExtractHeaderLabels(labelCol int) []string {
 	hh, _ := sortLabels(labelize(r.Row.Fields[labelCol]))
 	return hh
@@ -105,6 +106,7 @@ func (r RowEvent) Diff(re RowEvent, ageCol int) bool {
 // RowEvents a collection of row events.
 type RowEvents []RowEvent
 
+// ExtractHeaderLabels extract header labels.
 func (r RowEvents) ExtractHeaderLabels(labelCol int) []string {
 	ll := make([]string, 0, 10)
 	for _, re := range r {
@@ -114,6 +116,7 @@ func (r RowEvents) ExtractHeaderLabels(labelCol int) []string {
 	return ll
 }
 
+// Labelize converts labels into a row event.
 func (r RowEvents) Labelize(cols []int, labelCol int, labels []string) RowEvents {
 	out := make(RowEvents, 0, len(r))
 	for _, re := range r {

@@ -50,9 +50,8 @@ func scanRefs(evt *tcell.EventKey, a *App, t *Table, gvr string) *tcell.EventKey
 	if len(refs) == 0 {
 		a.Flash().Warnf("No references found at this time for %s::%s. Check again later!", gvr, path)
 		return nil
-	} else {
-		a.Flash().Infof("Viewing references for %s::%s", gvr, path)
 	}
+	a.Flash().Infof("Viewing references for %s::%s", gvr, path)
 	view := NewReference(client.NewGVR("references"))
 	view.SetContextFn(refContext(gvr, path, false))
 	if err := a.inject(view); err != nil {

@@ -75,6 +75,7 @@ func (c *CronJob) Run(path string) error {
 	return err
 }
 
+// ScanSA scans for serviceaccount refs.
 func (c *CronJob) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
 	oo, err := c.Factory.List(c.GVR(), ns, wait, labels.Everything())
@@ -100,6 +101,7 @@ func (c *CronJob) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, erro
 	return refs, nil
 }
 
+// Scan scans for cluster resource refs.
 func (c *CronJob) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
 	oo, err := c.Factory.List(c.GVR(), ns, wait, labels.Everything())
