@@ -123,8 +123,12 @@ func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, er
 		return nil, fmt.Errorf("user is not authorized to view pod logs")
 	}
 
+	dial, err := p.Client().Dial()
+	if err != nil {
+		return nil, err
+	}
 	ns, n := client.Namespaced(path)
-	return p.Client().DialOrDie().CoreV1().Pods(ns).GetLogs(n, opts), nil
+	return dial.CoreV1().Pods(ns).GetLogs(n, opts), nil
 }
 
 // Containers returns all container names on pod

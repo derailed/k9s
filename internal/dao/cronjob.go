@@ -66,7 +66,11 @@ func (c *CronJob) Run(path string) error {
 		},
 		Spec: cj.Spec.JobTemplate.Spec,
 	}
-	_, err = c.Client().DialOrDie().BatchV1().Jobs(ns).Create(ctx, job, metav1.CreateOptions{})
+	dial, err := c.Client().Dial()
+	if err != nil {
+		return err
+	}
+	_, err = dial.BatchV1().Jobs(ns).Create(ctx, job, metav1.CreateOptions{})
 
 	return err
 }

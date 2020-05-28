@@ -69,6 +69,8 @@ func (t *Table) RemoveListener(l TableListener) {
 	}
 
 	if victim >= 0 {
+		t.mx.Lock()
+		defer t.mx.Unlock()
 		t.listeners = append(t.listeners[:victim], t.listeners[victim+1:]...)
 	}
 }
@@ -303,6 +305,9 @@ func (t *Table) resourceMeta() ResourceMeta {
 }
 
 func (t *Table) fireTableChanged(data render.TableData) {
+	t.mx.RLock()
+	defer t.mx.RUnlock()
+
 	for _, l := range t.listeners {
 		l.TableDataChanged(data)
 	}

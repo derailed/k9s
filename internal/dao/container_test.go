@@ -42,18 +42,19 @@ func makeConn() *conn {
 	return &conn{}
 }
 
-func (c *conn) Config() *client.Config                            { return nil }
-func (c *conn) DialOrDie() kubernetes.Interface                   { return nil }
-func (c *conn) SwitchContext(ctx string) error                    { return nil }
-func (c *conn) CachedDiscoveryOrDie() *disk.CachedDiscoveryClient { return nil }
-func (c *conn) RestConfigOrDie() *restclient.Config               { return nil }
-func (c *conn) MXDial() (*versioned.Clientset, error)             { return nil, nil }
-func (c *conn) DynDialOrDie() dynamic.Interface                   { return nil }
-func (c *conn) HasMetrics() bool                                  { return false }
-func (c *conn) CheckConnectivity() bool                           { return false }
-func (c *conn) IsNamespaced(n string) bool                        { return false }
-func (c *conn) SupportsResource(group string) bool                { return false }
-func (c *conn) ValidNamespaces() ([]v1.Namespace, error)          { return nil, nil }
+func (c *conn) Config() *client.Config                                { return nil }
+func (c *conn) Dial() (kubernetes.Interface, error)                   { return nil, nil }
+func (c *conn) ConnectionOK() bool                                    { return true }
+func (c *conn) SwitchContext(ctx string) error                        { return nil }
+func (c *conn) CachedDiscovery() (*disk.CachedDiscoveryClient, error) { return nil, nil }
+func (c *conn) RestConfig() (*restclient.Config, error)               { return nil, nil }
+func (c *conn) MXDial() (*versioned.Clientset, error)                 { return nil, nil }
+func (c *conn) DynDial() (dynamic.Interface, error)                   { return nil, nil }
+func (c *conn) HasMetrics() bool                                      { return false }
+func (c *conn) CheckConnectivity() bool                               { return false }
+func (c *conn) IsNamespaced(n string) bool                            { return false }
+func (c *conn) SupportsResource(group string) bool                    { return false }
+func (c *conn) ValidNamespaces() ([]v1.Namespace, error)              { return nil, nil }
 func (c *conn) SupportsRes(grp string, versions []string) (string, bool, error) {
 	return "", false, nil
 }
@@ -81,7 +82,7 @@ func (f podFactory) Get(gvr, path string, wait bool, sel labels.Selector) (runti
 func (f podFactory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error) {
 	return nil, nil
 }
-func (f podFactory) ForResource(ns, gvr string) informers.GenericInformer { return nil }
+func (f podFactory) ForResource(ns, gvr string) (informers.GenericInformer, error) { return nil, nil }
 func (f podFactory) CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error) {
 	return nil, nil
 }

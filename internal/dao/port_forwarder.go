@@ -134,14 +134,16 @@ func (p *PortForwarder) Start(path, co string, t client.PortTunnel) (*portforwar
 		return nil, fmt.Errorf("user is not authorized to update portforward")
 	}
 
-	rcfg := p.Client().RestConfigOrDie()
-	rcfg.GroupVersion = &schema.GroupVersion{Group: "", Version: "v1"}
-	rcfg.APIPath = "/api"
-	codec, _ := codec()
-	rcfg.NegotiatedSerializer = codec.WithoutConversion()
-	clt, err := rest.RESTClientFor(rcfg)
+	cfg, err := p.Client().RestConfig()
 	if err != nil {
-		log.Debug().Msgf("Boom! %#v", err)
+		return nil, err
+	}
+	cfg.GroupVersion = &schema.GroupVersion{Group: "", Version: "v1"}
+	cfg.APIPath = "/api"
+	codec, _ := codec()
+	cfg.NegotiatedSerializer = codec.WithoutConversion()
+	clt, err := rest.RESTClientFor(cfg)
+	if err != nil {
 		return nil, err
 	}
 	req := clt.Post().

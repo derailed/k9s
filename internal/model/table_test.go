@@ -100,8 +100,8 @@ func (f tableFactory) List(gvr, ns string, wait bool, sel labels.Selector) ([]ru
 	}
 	return nil, nil
 }
-func (f tableFactory) ForResource(ns, gvr string) informers.GenericInformer {
-	return nil
+func (f tableFactory) ForResource(ns, gvr string) (informers.GenericInformer, error) {
+	return nil, nil
 }
 func (f tableFactory) CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error) {
 	return nil, nil

@@ -80,10 +80,15 @@ func (r *ReplicaSet) Rollback(fqn string) error {
 	if err != nil {
 		return err
 	}
+	dial, err := r.Client().Dial()
+	if err != nil {
+		return err
+	}
+
 	rb, err := polymorphichelpers.RollbackerFor(schema.GroupKind{
 		Group: apiGroup,
 		Kind:  kind},
-		r.Client().DialOrDie(),
+		dial,
 	)
 	if err != nil {
 		return err

@@ -91,14 +91,13 @@ func (a *App) Init(version string, rate int) error {
 	log.Debug().Msgf("CURRENT-NS %q -- %v", ns, err)
 	if err != nil {
 		log.Info().Msg("No namespace specified using cluster default namespace")
-	} else {
-		if err := a.Config.SetActiveNamespace(ns); err != nil {
-			log.Error().Err(err).Msgf("Fail to set active namespace to %q", ns)
-		}
+	} else if err = a.Config.SetActiveNamespace(ns); err != nil {
+		log.Error().Err(err).Msgf("Fail to set active namespace to %q", ns)
 	}
 
 	a.factory = watch.NewFactory(a.Conn())
-	if !a.isValidNS(ns) {
+	ok, err := a.isValidNS(ns)
+	if !ok && err == nil {
 		return fmt.Errorf("Invalid namespace %s", ns)
 	}
 	a.initFactory(ns)
@@ -147,7 +146,9 @@ func (a *App) initSignals() {
 			a.BailOut()
 			return
 		}
-		nukeK9sShell(a)
+		if err := nukeK9sShell(a); err != nil {
+			log.Error().Err(err).Msg("nuking k9s shell pod")
+		}
 	}(sig)
 }
 
@@ -315,30 +316,37 @@ func (a *App) switchNS(ns string) error {
 	if ns == client.ClusterScope {
 		ns = client.AllNamespaces
 	}
-	if !a.isValidNS(ns) {
+	ok, err := a.isValidNS(ns)
+	if err != nil {
+		return err
+	}
+	if !ok {
 		return fmt.Errorf("Invalid namespace %q", ns)
 	}
 	if err := a.Config.SetActiveNamespace(ns); err != nil {
 		return fmt.Errorf("Unable to save active namespace in config")
 	}
-	a.factory.SetActiveNS(ns)
 
-	return nil
+	return a.factory.SetActiveNS(ns)
 }
 
-func (a *App) isValidNS(ns string) bool {
+func (a *App) isValidNS(ns string) (bool, error) {
 	if ns == client.AllNamespaces || ns == client.NamespaceAll {
-		return true
+		return true, nil
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), client.CallTimeout)
 	defer cancel()
-	_, err := a.Conn().DialOrDie().CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
+	dial, err := a.Conn().Dial()
+	if err != nil {
+		return false, err
+	}
+	_, err = dial.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
 	if err != nil {
 		log.Warn().Err(err).Msgf("Validation failed for namespace: %q", ns)
 	}
 
-	return true
+	return true, nil
 }
 
 func (a *App) switchCtx(name string, loadPods bool) error {
@@ -388,7 +396,9 @@ func (a *App) BailOut() {
 		}
 	}()
 
-	nukeK9sShell(a)
+	if err := nukeK9sShell(a); err != nil {
+		log.Error().Err(err).Msgf("nuking k9s shell pod")
+	}
 	a.factory.Terminate()
 	a.App.BailOut()
 }

@@ -21,12 +21,11 @@ const (
 
 // Config tracks a kubernetes configuration.
 type Config struct {
-	flags          *genericclioptions.ConfigFlags
-	clientConfig   clientcmd.ClientConfig
-	currentContext string
-	rawConfig      *clientcmdapi.Config
-	restConfig     *restclient.Config
-	mutex          *sync.RWMutex
+	flags        *genericclioptions.ConfigFlags
+	clientConfig clientcmd.ClientConfig
+	rawConfig    *clientcmdapi.Config
+	restConfig   *restclient.Config
+	mutex        *sync.RWMutex
 }
 
 // NewConfig returns a new k8s config or an error if the flags are invalid.
@@ -44,19 +43,16 @@ func (c *Config) Flags() *genericclioptions.ConfigFlags {
 
 // SwitchContext changes the kubeconfig context to a new cluster.
 func (c *Config) SwitchContext(name string) error {
-	currentCtx, err := c.CurrentContextName()
-	if err != nil {
-		return err
+	if c.flags.Context != nil && *c.flags.Context == name {
+		return nil
 	}
 
 	if _, err := c.GetContext(name); err != nil {
 		return fmt.Errorf("context %s does not exist", name)
 	}
+	c.reset()
+	c.flags.Context = &name
 
-	if currentCtx != name {
-		c.reset()
-		c.flags.Context, c.currentContext = &name, name
-	}
 	return nil
 }
 
@@ -276,15 +272,6 @@ func (c *Config) RawConfig() (clientcmdapi.Config, error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	if c.rawConfig != nil {
-		if c.rawConfig.CurrentContext == c.currentContext {
-			return *c.rawConfig, nil
-		}
-		log.Debug().Msgf("Context switch detected... %s vs %s", c.rawConfig.CurrentContext, c.currentContext)
-		c.currentContext = c.rawConfig.CurrentContext
-		c.reset()
-	}
-
 	if c.rawConfig == nil {
 		c.ensureConfig()
 		cfg, err := c.clientConfig.RawConfig()
@@ -292,7 +279,9 @@ func (c *Config) RawConfig() (clientcmdapi.Config, error) {
 			return cfg, err
 		}
 		c.rawConfig = &cfg
-		c.currentContext = cfg.CurrentContext
+		if c.flags.Context == nil {
+			c.flags.Context = &c.rawConfig.CurrentContext
+		}
 	}
 
 	return *c.rawConfig, nil
@@ -310,6 +299,7 @@ func (c *Config) RESTConfig() (*restclient.Config, error) {
 	}
 	c.restConfig.QPS = defaultQPS
 	c.restConfig.Burst = defaultBurst
+	c.restConfig.Timeout = checkConnTimeout
 	log.Debug().Msgf("Connecting to API Server %s", c.restConfig.Host)
 
 	return c.restConfig, nil

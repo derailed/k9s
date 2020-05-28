@@ -26,7 +26,7 @@ func NewServiceAccount(gvr client.GVR) ResourceViewer {
 
 func (s *ServiceAccount) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		ui.KeyR: ui.NewKeyAction("Referenced by", s.refCmd, true),
+		ui.KeyU: ui.NewKeyAction("UsedBy", s.refCmd, true),
 	})
 }
 

@@ -20,7 +20,10 @@ type RestMapper struct {
 
 // ToRESTMapper map resources to kind, and map kind and version to interfaces for manipulating K8s objects.
 func (r *RestMapper) ToRESTMapper() (meta.RESTMapper, error) {
-	dial := r.CachedDiscoveryOrDie()
+	dial, err := r.CachedDiscovery()
+	if err != nil {
+		return nil, err
+	}
 	mapper := restmapper.NewDeferredDiscoveryRESTMapper(dial)
 	expander := restmapper.NewShortcutExpander(mapper, dial)
 

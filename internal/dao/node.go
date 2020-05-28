@@ -52,7 +52,12 @@ func (n *Node) ToggleCordon(path string, cordon bool) error {
 		}
 		return fmt.Errorf("node is already uncordoned")
 	}
-	err, patchErr := h.PatchOrReplace(n.Factory.Client().DialOrDie(), false)
+	dial, err := n.Factory.Client().Dial()
+	if err != nil {
+		return err
+	}
+
+	err, patchErr := h.PatchOrReplace(dial, false)
 	if patchErr != nil {
 		return patchErr
 	}
@@ -79,7 +84,11 @@ func (o DrainOptions) toDrainHelper(k kubernetes.Interface, w io.Writer) drain.H
 func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
 	_ = n.ToggleCordon(path, true)
 
-	h := opts.toDrainHelper(n.Factory.Client().DialOrDie(), w)
+	dial, err := n.Factory.Client().Dial()
+	if err != nil {
+		return err
+	}
+	h := opts.toDrainHelper(dial, w)
 	dd, errs := h.GetPodsForDeletion(path)
 	if len(errs) != 0 {
 		for _, e := range errs {
@@ -174,7 +183,11 @@ func FetchNode(ctx context.Context, f Factory, path string) (*v1.Node, error) {
 		return nil, fmt.Errorf("user is not authorized to list nodes")
 	}
 
-	return f.Client().DialOrDie().CoreV1().Nodes().Get(ctx, path, metav1.GetOptions{})
+	dial, err := f.Client().Dial()
+	if err != nil {
+		return nil, err
+	}
+	return dial.CoreV1().Nodes().Get(ctx, path, metav1.GetOptions{})
 }
 
 // FetchNodes retrieves all nodes.
@@ -187,7 +200,11 @@ func FetchNodes(ctx context.Context, f Factory, labelsSel string) (*v1.NodeList,
 		return nil, fmt.Errorf("user is not authorized to list nodes")
 	}
 
-	return f.Client().DialOrDie().CoreV1().Nodes().List(ctx, metav1.ListOptions{
+	dial, err := f.Client().Dial()
+	if err != nil {
+		return nil, err
+	}
+	return dial.CoreV1().Nodes().List(ctx, metav1.ListOptions{
 		LabelSelector: labelsSel,
 	})
 }

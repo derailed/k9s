@@ -4,9 +4,6 @@
 package model_test
 
 import (
-	"reflect"
-	"time"
-
 	client "github.com/derailed/k9s/internal/client"
 	pegomock "github.com/petergtz/pegomock"
 	v1 "k8s.io/api/core/v1"
@@ -16,6 +13,8 @@ import (
 	kubernetes "k8s.io/client-go/kubernetes"
 	rest "k8s.io/client-go/rest"
 	versioned "k8s.io/metrics/pkg/client/clientset/versioned"
+	"reflect"
+	"time"
 )
 
 type MockConnection struct {
@@ -32,6 +31,36 @@ func NewMockConnection(options ...pegomock.Option) *MockConnection {
 
 func (mock *MockConnection) SetFailHandler(fh pegomock.FailHandler) { mock.fail = fh }
 func (mock *MockConnection) FailHandler() pegomock.FailHandler      { return mock.fail }
+
+func (mock *MockConnection) ActiveCluster() string {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockConnection().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("ActiveCluster", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem()})
+	var ret0 string
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(string)
+		}
+	}
+	return ret0
+}
+
+func (mock *MockConnection) ActiveNamespace() string {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockConnection().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("ActiveNamespace", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem()})
+	var ret0 string
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(string)
+		}
+	}
+	return ret0
+}
 
 func (mock *MockConnection) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
 	if mock == nil {
@@ -71,6 +100,21 @@ func (mock *MockConnection) CanI(_param0 string, _param1 string, _param2 []strin
 	return ret0, ret1
 }
 
+func (mock *MockConnection) CheckConnectivity() bool {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockConnection().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("CheckConnectivity", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
+	var ret0 bool
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(bool)
+		}
+	}
+	return ret0
+}
+
 func (mock *MockConnection) Config() *client.Config {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")
@@ -86,17 +130,32 @@ func (mock *MockConnection) Config() *client.Config {
 	return ret0
 }
 
-func (mock *MockConnection) CurrentNamespaceName() (string, error) {
+func (mock *MockConnection) ConnectionOK() bool {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("CurrentNamespaceName", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 string
+	result := pegomock.GetGenericMockFrom(mock).Invoke("ConnectionOK", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
+	var ret0 bool
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(bool)
+		}
+	}
+	return ret0
+}
+
+func (mock *MockConnection) Dial() (kubernetes.Interface, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockConnection().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("Dial", params, []reflect.Type{reflect.TypeOf((*kubernetes.Interface)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 kubernetes.Interface
 	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].(string)
+			ret0 = result[0].(kubernetes.Interface)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(error)
@@ -105,34 +164,23 @@ func (mock *MockConnection) CurrentNamespaceName() (string, error) {
 	return ret0, ret1
 }
 
-func (mock *MockConnection) DialOrDie() kubernetes.Interface {
+func (mock *MockConnection) DynDial() (dynamic.Interface, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("DialOrDie", params, []reflect.Type{reflect.TypeOf((*kubernetes.Interface)(nil)).Elem()})
-	var ret0 kubernetes.Interface
-	if len(result) != 0 {
-		if result[0] != nil {
-			ret0 = result[0].(kubernetes.Interface)
-		}
-	}
-	return ret0
-}
-
-func (mock *MockConnection) DynDialOrDie() dynamic.Interface {
-	if mock == nil {
-		panic("mock must not be nil. Use myMock := NewMockConnection().")
-	}
-	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("DynDialOrDie", params, []reflect.Type{reflect.TypeOf((*dynamic.Interface)(nil)).Elem()})
+	result := pegomock.GetGenericMockFrom(mock).Invoke("DynDial", params, []reflect.Type{reflect.TypeOf((*dynamic.Interface)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
 	var ret0 dynamic.Interface
+	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
 			ret0 = result[0].(dynamic.Interface)
 		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
 	}
-	return ret0
+	return ret0, ret1
 }
 
 func (mock *MockConnection) HasMetrics() bool {
@@ -150,12 +198,12 @@ func (mock *MockConnection) HasMetrics() bool {
 	return ret0
 }
 
-func (mock *MockConnection) IsNamespaced(_param0 string) bool {
+func (mock *MockConnection) IsActiveNamespace(_param0 string) bool {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")
 	}
 	params := []pegomock.Param{_param0}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("IsNamespaced", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
+	result := pegomock.GetGenericMockFrom(mock).Invoke("IsActiveNamespace", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
 	var ret0 bool
 	if len(result) != 0 {
 		if result[0] != nil {
@@ -184,38 +232,23 @@ func (mock *MockConnection) MXDial() (*versioned.Clientset, error) {
 	return ret0, ret1
 }
 
-func (mock *MockConnection) NodePods(_param0 string) (*v1.PodList, error) {
+func (mock *MockConnection) RestConfig() (*rest.Config, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")
 	}
-	params := []pegomock.Param{_param0}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("NodePods", params, []reflect.Type{reflect.TypeOf((**v1.PodList)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 *v1.PodList
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("RestConfig", params, []reflect.Type{reflect.TypeOf((**rest.Config)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 *rest.Config
 	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].(*v1.PodList)
+			ret0 = result[0].(*rest.Config)
 		}
 		if result[1] != nil {
 			ret1 = result[1].(error)
 		}
 	}
 	return ret0, ret1
-}
-
-func (mock *MockConnection) RestConfigOrDie() *rest.Config {
-	if mock == nil {
-		panic("mock must not be nil. Use myMock := NewMockConnection().")
-	}
-	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("RestConfigOrDie", params, []reflect.Type{reflect.TypeOf((**rest.Config)(nil)).Elem()})
-	var ret0 *rest.Config
-	if len(result) != 0 {
-		if result[0] != nil {
-			ret0 = result[0].(*rest.Config)
-		}
-	}
-	return ret0
 }
 
 func (mock *MockConnection) ServerVersion() (*version.Info, error) {
@@ -237,50 +270,19 @@ func (mock *MockConnection) ServerVersion() (*version.Info, error) {
 	return ret0, ret1
 }
 
-func (mock *MockConnection) SupportsRes(_param0 string, _param1 []string) (string, bool, error) {
-	if mock == nil {
-		panic("mock must not be nil. Use myMock := NewMockConnection().")
-	}
-	params := []pegomock.Param{_param0, _param1}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("SupportsRes", params, []reflect.Type{reflect.TypeOf((*string)(nil)).Elem(), reflect.TypeOf((*bool)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 string
-	var ret1 bool
-	var ret2 error
-	if len(result) != 0 {
-		if result[0] != nil {
-			ret0 = result[0].(string)
-		}
-		if result[1] != nil {
-			ret1 = result[1].(bool)
-		}
-		if result[2] != nil {
-			ret2 = result[2].(error)
-		}
-	}
-	return ret0, ret1, ret2
-}
-
-func (mock *MockConnection) SupportsResource(_param0 string) bool {
+func (mock *MockConnection) SwitchContext(_param0 string) error {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")
 	}
 	params := []pegomock.Param{_param0}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("SupportsResource", params, []reflect.Type{reflect.TypeOf((*bool)(nil)).Elem()})
-	var ret0 bool
+	result := pegomock.GetGenericMockFrom(mock).Invoke("SwitchContext", params, []reflect.Type{reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].(bool)
+			ret0 = result[0].(error)
 		}
 	}
 	return ret0
-}
-
-func (mock *MockConnection) SwitchContextOrDie(_param0 string) {
-	if mock == nil {
-		panic("mock must not be nil. Use myMock := NewMockConnection().")
-	}
-	params := []pegomock.Param{_param0}
-	pegomock.GetGenericMockFrom(mock).Invoke("SwitchContextOrDie", params, []reflect.Type{})
 }
 
 func (mock *MockConnection) ValidNamespaces() ([]v1.Namespace, error) {
@@ -339,6 +341,40 @@ type VerifierMockConnection struct {
 	timeout                time.Duration
 }
 
+func (verifier *VerifierMockConnection) ActiveCluster() *MockConnection_ActiveCluster_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ActiveCluster", params, verifier.timeout)
+	return &MockConnection_ActiveCluster_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockConnection_ActiveCluster_OngoingVerification struct {
+	mock              *MockConnection
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockConnection_ActiveCluster_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *MockConnection_ActiveCluster_OngoingVerification) GetAllCapturedArguments() {
+}
+
+func (verifier *VerifierMockConnection) ActiveNamespace() *MockConnection_ActiveNamespace_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ActiveNamespace", params, verifier.timeout)
+	return &MockConnection_ActiveNamespace_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockConnection_ActiveNamespace_OngoingVerification struct {
+	mock              *MockConnection
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockConnection_ActiveNamespace_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *MockConnection_ActiveNamespace_OngoingVerification) GetAllCapturedArguments() {
+}
+
 func (verifier *VerifierMockConnection) CachedDiscovery() *MockConnection_CachedDiscovery_OngoingVerification {
 	params := []pegomock.Param{}
 	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CachedDiscovery", params, verifier.timeout)
@@ -375,20 +411,37 @@ func (c *MockConnection_CanI_OngoingVerification) GetCapturedArguments() (string
 func (c *MockConnection_CanI_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 []string, _param2 [][]string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
-		_param1 = make([]string, len(params[1]))
+		_param1 = make([]string, len(c.methodInvocations))
 		for u, param := range params[1] {
 			_param1[u] = param.(string)
 		}
-		_param2 = make([][]string, len(params[2]))
+		_param2 = make([][]string, len(c.methodInvocations))
 		for u, param := range params[2] {
 			_param2[u] = param.([]string)
 		}
 	}
 	return
+}
+
+func (verifier *VerifierMockConnection) CheckConnectivity() *MockConnection_CheckConnectivity_OngoingVerification {
+	params := []pegomock.Param{}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CheckConnectivity", params, verifier.timeout)
+	return &MockConnection_CheckConnectivity_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+}
+
+type MockConnection_CheckConnectivity_OngoingVerification struct {
+	mock              *MockConnection
+	methodInvocations []pegomock.MethodInvocation
+}
+
+func (c *MockConnection_CheckConnectivity_OngoingVerification) GetCapturedArguments() {
+}
+
+func (c *MockConnection_CheckConnectivity_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierMockConnection) Config() *MockConnection_Config_OngoingVerification {
@@ -408,55 +461,55 @@ func (c *MockConnection_Config_OngoingVerification) GetCapturedArguments() {
 func (c *MockConnection_Config_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierMockConnection) CurrentNamespaceName() *MockConnection_CurrentNamespaceName_OngoingVerification {
+func (verifier *VerifierMockConnection) ConnectionOK() *MockConnection_ConnectionOK_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "CurrentNamespaceName", params, verifier.timeout)
-	return &MockConnection_CurrentNamespaceName_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "ConnectionOK", params, verifier.timeout)
+	return &MockConnection_ConnectionOK_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type MockConnection_CurrentNamespaceName_OngoingVerification struct {
+type MockConnection_ConnectionOK_OngoingVerification struct {
 	mock              *MockConnection
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockConnection_CurrentNamespaceName_OngoingVerification) GetCapturedArguments() {
+func (c *MockConnection_ConnectionOK_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *MockConnection_CurrentNamespaceName_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockConnection_ConnectionOK_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierMockConnection) DialOrDie() *MockConnection_DialOrDie_OngoingVerification {
+func (verifier *VerifierMockConnection) Dial() *MockConnection_Dial_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "DialOrDie", params, verifier.timeout)
-	return &MockConnection_DialOrDie_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "Dial", params, verifier.timeout)
+	return &MockConnection_Dial_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type MockConnection_DialOrDie_OngoingVerification struct {
+type MockConnection_Dial_OngoingVerification struct {
 	mock              *MockConnection
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockConnection_DialOrDie_OngoingVerification) GetCapturedArguments() {
+func (c *MockConnection_Dial_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *MockConnection_DialOrDie_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockConnection_Dial_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierMockConnection) DynDialOrDie() *MockConnection_DynDialOrDie_OngoingVerification {
+func (verifier *VerifierMockConnection) DynDial() *MockConnection_DynDial_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "DynDialOrDie", params, verifier.timeout)
-	return &MockConnection_DynDialOrDie_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "DynDial", params, verifier.timeout)
+	return &MockConnection_DynDial_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type MockConnection_DynDialOrDie_OngoingVerification struct {
+type MockConnection_DynDial_OngoingVerification struct {
 	mock              *MockConnection
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockConnection_DynDialOrDie_OngoingVerification) GetCapturedArguments() {
+func (c *MockConnection_DynDial_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *MockConnection_DynDialOrDie_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockConnection_DynDial_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierMockConnection) HasMetrics() *MockConnection_HasMetrics_OngoingVerification {
@@ -476,26 +529,26 @@ func (c *MockConnection_HasMetrics_OngoingVerification) GetCapturedArguments() {
 func (c *MockConnection_HasMetrics_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierMockConnection) IsNamespaced(_param0 string) *MockConnection_IsNamespaced_OngoingVerification {
+func (verifier *VerifierMockConnection) IsActiveNamespace(_param0 string) *MockConnection_IsActiveNamespace_OngoingVerification {
 	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IsNamespaced", params, verifier.timeout)
-	return &MockConnection_IsNamespaced_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "IsActiveNamespace", params, verifier.timeout)
+	return &MockConnection_IsActiveNamespace_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type MockConnection_IsNamespaced_OngoingVerification struct {
+type MockConnection_IsActiveNamespace_OngoingVerification struct {
 	mock              *MockConnection
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockConnection_IsNamespaced_OngoingVerification) GetCapturedArguments() string {
+func (c *MockConnection_IsActiveNamespace_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *MockConnection_IsNamespaced_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockConnection_IsActiveNamespace_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}
@@ -520,48 +573,21 @@ func (c *MockConnection_MXDial_OngoingVerification) GetCapturedArguments() {
 func (c *MockConnection_MXDial_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierMockConnection) NodePods(_param0 string) *MockConnection_NodePods_OngoingVerification {
-	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "NodePods", params, verifier.timeout)
-	return &MockConnection_NodePods_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
-}
-
-type MockConnection_NodePods_OngoingVerification struct {
-	mock              *MockConnection
-	methodInvocations []pegomock.MethodInvocation
-}
-
-func (c *MockConnection_NodePods_OngoingVerification) GetCapturedArguments() string {
-	_param0 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1]
-}
-
-func (c *MockConnection_NodePods_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
-	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
-	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
-		for u, param := range params[0] {
-			_param0[u] = param.(string)
-		}
-	}
-	return
-}
-
-func (verifier *VerifierMockConnection) RestConfigOrDie() *MockConnection_RestConfigOrDie_OngoingVerification {
+func (verifier *VerifierMockConnection) RestConfig() *MockConnection_RestConfig_OngoingVerification {
 	params := []pegomock.Param{}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "RestConfigOrDie", params, verifier.timeout)
-	return &MockConnection_RestConfigOrDie_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "RestConfig", params, verifier.timeout)
+	return &MockConnection_RestConfig_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type MockConnection_RestConfigOrDie_OngoingVerification struct {
+type MockConnection_RestConfig_OngoingVerification struct {
 	mock              *MockConnection
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockConnection_RestConfigOrDie_OngoingVerification) GetCapturedArguments() {
+func (c *MockConnection_RestConfig_OngoingVerification) GetCapturedArguments() {
 }
 
-func (c *MockConnection_RestConfigOrDie_OngoingVerification) GetAllCapturedArguments() {
+func (c *MockConnection_RestConfig_OngoingVerification) GetAllCapturedArguments() {
 }
 
 func (verifier *VerifierMockConnection) ServerVersion() *MockConnection_ServerVersion_OngoingVerification {
@@ -581,84 +607,26 @@ func (c *MockConnection_ServerVersion_OngoingVerification) GetCapturedArguments(
 func (c *MockConnection_ServerVersion_OngoingVerification) GetAllCapturedArguments() {
 }
 
-func (verifier *VerifierMockConnection) SupportsRes(_param0 string, _param1 []string) *MockConnection_SupportsRes_OngoingVerification {
-	params := []pegomock.Param{_param0, _param1}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SupportsRes", params, verifier.timeout)
-	return &MockConnection_SupportsRes_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
-}
-
-type MockConnection_SupportsRes_OngoingVerification struct {
-	mock              *MockConnection
-	methodInvocations []pegomock.MethodInvocation
-}
-
-func (c *MockConnection_SupportsRes_OngoingVerification) GetCapturedArguments() (string, []string) {
-	_param0, _param1 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1], _param1[len(_param1)-1]
-}
-
-func (c *MockConnection_SupportsRes_OngoingVerification) GetAllCapturedArguments() (_param0 []string, _param1 [][]string) {
-	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
-	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
-		for u, param := range params[0] {
-			_param0[u] = param.(string)
-		}
-		_param1 = make([][]string, len(params[1]))
-		for u, param := range params[1] {
-			_param1[u] = param.([]string)
-		}
-	}
-	return
-}
-
-func (verifier *VerifierMockConnection) SupportsResource(_param0 string) *MockConnection_SupportsResource_OngoingVerification {
+func (verifier *VerifierMockConnection) SwitchContext(_param0 string) *MockConnection_SwitchContext_OngoingVerification {
 	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SupportsResource", params, verifier.timeout)
-	return &MockConnection_SupportsResource_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
+	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SwitchContext", params, verifier.timeout)
+	return &MockConnection_SwitchContext_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
 }
 
-type MockConnection_SupportsResource_OngoingVerification struct {
+type MockConnection_SwitchContext_OngoingVerification struct {
 	mock              *MockConnection
 	methodInvocations []pegomock.MethodInvocation
 }
 
-func (c *MockConnection_SupportsResource_OngoingVerification) GetCapturedArguments() string {
+func (c *MockConnection_SwitchContext_OngoingVerification) GetCapturedArguments() string {
 	_param0 := c.GetAllCapturedArguments()
 	return _param0[len(_param0)-1]
 }
 
-func (c *MockConnection_SupportsResource_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
+func (c *MockConnection_SwitchContext_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
 	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
 	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
-		for u, param := range params[0] {
-			_param0[u] = param.(string)
-		}
-	}
-	return
-}
-
-func (verifier *VerifierMockConnection) SwitchContextOrDie(_param0 string) *MockConnection_SwitchContextOrDie_OngoingVerification {
-	params := []pegomock.Param{_param0}
-	methodInvocations := pegomock.GetGenericMockFrom(verifier.mock).Verify(verifier.inOrderContext, verifier.invocationCountMatcher, "SwitchContextOrDie", params, verifier.timeout)
-	return &MockConnection_SwitchContextOrDie_OngoingVerification{mock: verifier.mock, methodInvocations: methodInvocations}
-}
-
-type MockConnection_SwitchContextOrDie_OngoingVerification struct {
-	mock              *MockConnection
-	methodInvocations []pegomock.MethodInvocation
-}
-
-func (c *MockConnection_SwitchContextOrDie_OngoingVerification) GetCapturedArguments() string {
-	_param0 := c.GetAllCapturedArguments()
-	return _param0[len(_param0)-1]
-}
-
-func (c *MockConnection_SwitchContextOrDie_OngoingVerification) GetAllCapturedArguments() (_param0 []string) {
-	params := pegomock.GetGenericMockFrom(c.mock).GetInvocationParams(c.methodInvocations)
-	if len(params) > 0 {
-		_param0 = make([]string, len(params[0]))
+		_param0 = make([]string, len(c.methodInvocations))
 		for u, param := range params[0] {
 			_param0[u] = param.(string)
 		}

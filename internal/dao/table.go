@@ -73,20 +73,24 @@ func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 const gvFmt = "application/json;as=Table;v=%s;g=%s, application/json"
 
 func (t *Table) getClient() (*rest.RESTClient, error) {
-	crConfig := t.Client().RestConfigOrDie()
-	gv := t.gvr.GV()
-	crConfig.GroupVersion = &gv
-	crConfig.APIPath = "/apis"
-	if t.gvr.G() == "" {
-		crConfig.APIPath = "/api"
-	}
-	codec, _ := t.codec()
-	crConfig.NegotiatedSerializer = codec.WithoutConversion()
-
-	crRestClient, err := rest.RESTClientFor(crConfig)
+	cfg, err := t.Client().RestConfig()
 	if err != nil {
 		return nil, err
 	}
+	gv := t.gvr.GV()
+	cfg.GroupVersion = &gv
+	cfg.APIPath = "/apis"
+	if t.gvr.G() == "" {
+		cfg.APIPath = "/api"
+	}
+	codec, _ := t.codec()
+	cfg.NegotiatedSerializer = codec.WithoutConversion()
+
+	crRestClient, err := rest.RESTClientFor(cfg)
+	if err != nil {
+		return nil, err
+	}
+
 	return crRestClient, nil
 }
 

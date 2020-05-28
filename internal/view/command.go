@@ -38,7 +38,7 @@ func NewCommand(app *App) *Command {
 func (c *Command) Init() error {
 	c.alias = dao.NewAlias(c.app.factory)
 	if _, err := c.alias.Ensure(); err != nil {
-		return err
+		log.Error().Err(err).Msgf("command init failed!")
 	}
 	customViewers = loadCustomViewers()
 
@@ -158,6 +158,9 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 }
 
 func (c *Command) defaultCmd() error {
+	if !c.app.Conn().ConnectionOK() {
+		return c.run("ctx", "", true)
+	}
 	view := c.app.Config.ActiveView()
 	if view == "" {
 		return c.run("pod", "", true)

@@ -57,7 +57,11 @@ func (d *DaemonSet) Restart(ctx context.Context, path string) error {
 		return err
 	}
 
-	_, err = d.Client().DialOrDie().AppsV1().DaemonSets(ds.Namespace).Patch(
+	dial, err := d.Client().Dial()
+	if err != nil {
+		return err
+	}
+	_, err = dial.AppsV1().DaemonSets(ds.Namespace).Patch(
 		ctx,
 		ds.Name,
 		types.StrategicMergePatchType,

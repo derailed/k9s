@@ -72,23 +72,26 @@ type Connection interface {
 	// Config returns current config.
 	Config() *Config
 
+	// ConnectionOK checks api server connection status.
+	ConnectionOK() bool
+
 	// DialOrDie connects to api server.
-	DialOrDie() kubernetes.Interface
+	Dial() (kubernetes.Interface, error)
 
 	// SwitchContext switches cluster based on context.
 	SwitchContext(ctx string) error
 
-	// CachedDiscoveryOrDie connects to discovery client.
-	CachedDiscoveryOrDie() *disk.CachedDiscoveryClient
+	// CachedDiscovery connects to discovery client.
+	CachedDiscovery() (*disk.CachedDiscoveryClient, error)
 
-	// RestConfigOrDie connects to rest client.
-	RestConfigOrDie() *restclient.Config
+	// RestConfig connects to rest client.
+	RestConfig() (*restclient.Config, error)
 
 	// MXDial connects to metrics server.
 	MXDial() (*versioned.Clientset, error)
 
-	// DynDialOrDie connects to dynamic client.
-	DynDialOrDie() dynamic.Interface
+	// DynDial connects to dynamic client.
+	DynDial() (dynamic.Interface, error)
 
 	// HasMetrics checks if metrics server is available.
 	HasMetrics() bool

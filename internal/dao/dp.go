@@ -47,12 +47,16 @@ func (d *Deployment) Scale(ctx context.Context, path string, replicas int32) err
 		return fmt.Errorf("user is not authorized to scale a deployment")
 	}
 
-	scale, err := d.Client().DialOrDie().AppsV1().Deployments(ns).GetScale(ctx, n, metav1.GetOptions{})
+	dial, err := d.Client().Dial()
+	if err != nil {
+		return err
+	}
+	scale, err := dial.AppsV1().Deployments(ns).GetScale(ctx, n, metav1.GetOptions{})
 	if err != nil {
 		return err
 	}
 	scale.Spec.Replicas = replicas
-	_, err = d.Client().DialOrDie().AppsV1().Deployments(ns).UpdateScale(ctx, n, scale, metav1.UpdateOptions{})
+	_, err = dial.AppsV1().Deployments(ns).UpdateScale(ctx, n, scale, metav1.UpdateOptions{})
 
 	return err
 }
@@ -77,7 +81,11 @@ func (d *Deployment) Restart(ctx context.Context, path string) error {
 		return err
 	}
 
-	_, err = d.Client().DialOrDie().AppsV1().Deployments(dp.Namespace).Patch(
+	dial, err := d.Client().Dial()
+	if err != nil {
+		return err
+	}
+	_, err = dial.AppsV1().Deployments(dp.Namespace).Patch(
 		ctx,
 		dp.Name,
 		types.StrategicMergePatchType,

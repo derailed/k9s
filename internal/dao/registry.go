@@ -274,7 +274,16 @@ func loadRBAC(m ResourceMetas) {
 }
 
 func loadPreferred(f Factory, m ResourceMetas) error {
-	rr, err := f.Client().CachedDiscoveryOrDie().ServerPreferredResources()
+	if !f.Client().ConnectionOK() {
+		log.Error().Msgf("no API server connection")
+		return nil
+	}
+
+	dial, err := f.Client().CachedDiscovery()
+	if err != nil {
+		return err
+	}
+	rr, err := dial.ServerPreferredResources()
 	if err != nil {
 		log.Debug().Err(err).Msgf("Failed to load preferred resources")
 	}
@@ -294,7 +303,7 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 
 func loadCRDs(f Factory, m ResourceMetas) {
 	const crdGVR = "apiextensions.k8s.io/v1beta1/customresourcedefinitions"
-	oo, err := f.List(crdGVR, client.ClusterScope, true, labels.Everything())
+	oo, err := f.List(crdGVR, client.ClusterScope, false, labels.Everything())
 	if err != nil {
 		log.Warn().Err(err).Msgf("Fail CRDs load")
 		return

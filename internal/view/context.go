@@ -58,9 +58,6 @@ func useContext(app *App, name string) error {
 		log.Error().Err(err).Msgf("Context switch failed")
 		return err
 	}
-	if err := app.switchCtx(name, true); err != nil {
-		return err
-	}
 
-	return nil
+	return app.switchCtx(name, true)
 }

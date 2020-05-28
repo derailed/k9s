@@ -193,8 +193,8 @@ func (f testFactory) List(gvr, ns string, wait bool, sel labels.Selector) ([]run
 	}
 	return nil, nil
 }
-func (f testFactory) ForResource(ns, gvr string) informers.GenericInformer {
-	return nil
+func (f testFactory) ForResource(ns, gvr string) (informers.GenericInformer, error) {
+	return nil, nil
 }
 func (f testFactory) CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error) {
 	return nil, nil

@@ -30,7 +30,7 @@ func NewSecret(gvr client.GVR) ResourceViewer {
 func (s *Secret) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
 		ui.KeyX: ui.NewKeyAction("Decode", s.decodeCmd, true),
-		ui.KeyR: ui.NewKeyAction("Referenced by", s.refCmd, true),
+		ui.KeyU: ui.NewKeyAction("UsedBy", s.refCmd, true),
 	})
 }
 
