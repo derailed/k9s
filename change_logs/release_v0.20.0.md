@@ -55,7 +55,9 @@ While navigating to your ConfigMap View a new option will appear `UsedBy` pressi
 
 NOTE: This feature is expensive to produce and might take a while to fully resolve on larger clusters! Also K9s referential scans might not be full proof and the paint is still fresh on this one so trade carefully! More resources refs checks will be enabled once we've rinse and repeat on this deal. We hope you'll find this feature useful, if so, please make some noise!
 
-NOTE: There has been quick a bit of surgery on this drop, so this drop could be a bit unstable. Please watch out for that carp overbite! As always, Thank You All for your understanding, support and patience!!
+## Lastly...
+
+There has been quick a bit of surgery going on with this drop, so this release could be a bit unstable. Please watch out for that carp overbite! As always, Thank You All for your understanding, support and patience!!
 
 ## Resolved Bugs/Features/PRs
 
