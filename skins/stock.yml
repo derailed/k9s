@@ -23,6 +23,7 @@ k9s:
       modifyColor: greenyellow
       addColor: white
       errorColor: orangered
+      pendingColor: orangered
       highlightcolor: aqua
       killColor: mediumpurple
       completedColor: gray

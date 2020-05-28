@@ -49,6 +49,8 @@ func (c Container) ColorerFunc() ColorerFunc {
 			return DefaultColorer(ns, h, re)
 		}
 		switch strings.TrimSpace(re.Row.Fields[stateCol]) {
+		case Pending:
+			return PendingColor
 		case ContainerCreating, PodInitializing:
 			return AddColor
 		case Terminating, Initialized:

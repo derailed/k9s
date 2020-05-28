@@ -80,7 +80,7 @@ K9s is available on Linux, macOS and Windows platforms.
  2. Build and run the executable
 
       ```shell
-      make build && ./k9s
+      make build && ./execs/k9s
       ```
 
 ---

@@ -156,6 +156,7 @@ func (c *Configurator) updateStyles(f string) {
 	render.AddColor = c.Styles.Frame().Status.AddColor.Color()
 	render.ErrColor = c.Styles.Frame().Status.ErrorColor.Color()
 	render.StdColor = c.Styles.Frame().Status.NewColor.Color()
+	render.PendingColor = c.Styles.Frame().Status.PendingColor.Color()
 	render.HighlightColor = c.Styles.Frame().Status.HighlightColor.Color()
 	render.KillColor = c.Styles.Frame().Status.KillColor.Color()
 	render.CompletedColor = c.Styles.Frame().Status.CompletedColor.Color()
