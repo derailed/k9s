@@ -12,15 +12,18 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ---
 
-Maintenance Release! Fixing a few issue in the v0.20 aftermath ;(
+## Maintenance Release!
+
+Fixing a few issues in the v0.20 aftermath ;(
+Thank you all for reporting these issues and for your patience!
 
 ## Selection Marker
 
-In this drop, we're adding the ability to set row marks ranges. There are situations where you've filtered a resource and need to delete part or all of the rows. In previous releases, you had to mark each rows one by one. Now you have the ability to select a beginning and an end range and all rows in between will now be marked! To mark a single row, you can use `space`. To select rows between your initial mark to the current selection use `Ctrl-space`. To nuke all marked rows use `Ctrl-\`. All credits and ATTA BOY goes to [Ryan Richard](https://github.com/cfryanr) for suggesting this feature!!
+In this drop, we're adding the ability to set row mark ranges. There are situations where you've filtered a resource and need to delete part or all of the rows. In previous releases, you had to mark each rows one by one. Now you have the ability to select the beginning and end range and all rows in between will now be marked! To mark a single row, you can use `space`. To select rows between your initial mark to the current selection use `Ctrl-space`. To nuke all marked rows use `Ctrl-\`. All credits and ATTA BOY! goes to [Ryan Richard](https://github.com/cfryanr) for suggesting this feature! Thank you Ryan!!
 
 ## Logs Got Some TLC!
 
-Per [Raman Gupta](https://github.com/rocketraman) excellent suggestion, we've added a way to add a separator to your chatty logs to easily see the latest incoming logs. While in log view you can now press `m` to add the separator to the log stream. If you don't care about the log history and just want to see the latest incoming logs, pressing `c` will clear out the log viewer.
+Per [Raman Gupta](https://github.com/rocketraman) excellent suggestion, we've added a way to add a separator to your chatty logs to easily see the latest incoming logs. While in log view, you can now press `m` for mark to add the separator to the log stream. If you don't care about the log history and just want to see the latest incoming logs, pressing `c` will clear out the log viewer.
 
 ## Resolved Bugs/Features/PRs
 
