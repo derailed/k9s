@@ -112,7 +112,10 @@ K9s is available on Linux, macOS and Windows platforms.
 * In order to issue manifest edit commands make sure your EDITOR env is set.
 
     ```shell
-       export EDITOR=my_fav_editor_here!
+    # Kubectl edit command will use this env var.
+    export EDITOR=my_fav_editor
+    # Should your editor deals with streamed vs on disk files differently, also set...
+    export K9S_EDITOR=my_fav_editor
     ```
 
 ---
@@ -241,10 +244,14 @@ K9s uses aliases to navigate most K8s resources.
   ```yaml
   # config.yml
   k9s:
-    # Represents ui poll intervals.
+    # Represents ui poll intervals. Default 2secs
     refreshRate: 2
+    # Set to true to hide K9s header. Default false
+    headless: false
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
     readOnly: false
+    # Toggles icons display as not all terminal support these chars.
+    noIcons: false
     # Logs configuration
     logger:
       # Defines the number of lines to return. Default 100
@@ -253,6 +260,12 @@ K9s uses aliases to navigate most K8s resources.
       buffer: 500
       # Represents how far to go back in the log timeline in seconds. Default is 5min
       sinceSeconds: 300
+      # Go full screen while displaying logs. Default false
+      fullScreenLogs: false
+      # Toggles log line wrap. Default false
+      textWrap: false
+      # Toggles log line timestamp info. Default false
+      showTime: false
     # Indicates the current kube context. Defaults to current context
     currentContext: minikube
     # Indicates the current kube cluster. Defaults to current context cluster
@@ -267,6 +280,21 @@ K9s uses aliases to navigate most K8s resources.
           - default
         view:
           active: po
+        featureGates:
+          # Toggles nodeshell support. Allow K9s to shell into nodes if needed. Default false.
+          nodeShell: false
+        # Provide shell pod customization of feature gate is enabled
+        shellPod:
+          # The shell pod image to use.
+          image: killerAdmin
+          # The namespace to launch to shell pod into.
+          namespace: fred
+          # The resource limit to set on the shell pod.
+          limits:
+            cpu: 100m
+            memory: 100Mi
+        # The IP Address to use when launching a port-forward.
+        portForwardAddress: 1.2.3.4
       minikube:
         namespace:
           active: all
