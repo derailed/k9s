@@ -150,14 +150,15 @@ func (t *Table) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (t *Table) bindKeys() {
 	t.Actions().Add(ui.KeyActions{
-		ui.KeySpace:        ui.NewSharedKeyAction("Mark", t.markCmd, false),
-		tcell.KeyCtrlSpace: ui.NewSharedKeyAction("Marks Clear", t.clearMarksCmd, false),
-		tcell.KeyCtrlS:     ui.NewSharedKeyAction("Save", t.saveCmd, false),
-		ui.KeySlash:        ui.NewSharedKeyAction("Filter Mode", t.activateCmd, false),
-		tcell.KeyCtrlZ:     ui.NewKeyAction("Toggle Faults", t.toggleFaultCmd, false),
-		tcell.KeyCtrlW:     ui.NewKeyAction("Toggle Wide", t.toggleWideCmd, false),
-		ui.KeyShiftN:       ui.NewKeyAction("Sort Name", t.SortColCmd(nameCol, true), false),
-		ui.KeyShiftA:       ui.NewKeyAction("Sort Age", t.SortColCmd(ageCol, true), false),
+		ui.KeySpace:            ui.NewSharedKeyAction("Mark", t.markCmd, false),
+		tcell.KeyCtrlSpace:     ui.NewSharedKeyAction("Mark Range", t.markSpanCmd, false),
+		tcell.KeyCtrlBackslash: ui.NewSharedKeyAction("Marks Clear", t.clearMarksCmd, false),
+		tcell.KeyCtrlS:         ui.NewSharedKeyAction("Save", t.saveCmd, false),
+		ui.KeySlash:            ui.NewSharedKeyAction("Filter Mode", t.activateCmd, false),
+		tcell.KeyCtrlZ:         ui.NewKeyAction("Toggle Faults", t.toggleFaultCmd, false),
+		tcell.KeyCtrlW:         ui.NewKeyAction("Toggle Wide", t.toggleWideCmd, false),
+		ui.KeyShiftN:           ui.NewKeyAction("Sort Name", t.SortColCmd(nameCol, true), false),
+		ui.KeyShiftA:           ui.NewKeyAction("Sort Age", t.SortColCmd(ageCol, true), false),
 	})
 }
 
@@ -188,22 +189,22 @@ func (t *Table) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (t *Table) markCmd(evt *tcell.EventKey) *tcell.EventKey {
-	path := t.GetSelectedItem()
-	if path == "" {
-		return evt
-	}
 	t.ToggleMark()
 	t.Refresh()
 
 	return nil
 }
 
+func (t *Table) markSpanCmd(evt *tcell.EventKey) *tcell.EventKey {
+	t.SpanMark()
+	t.Refresh()
+
+	return nil
+}
+
 func (t *Table) clearMarksCmd(evt *tcell.EventKey) *tcell.EventKey {
-	path := t.GetSelectedItem()
-	if path == "" {
-		return evt
-	}
 	t.ClearMarks()
+	t.Refresh()
 
 	return nil
 }

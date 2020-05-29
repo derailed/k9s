@@ -275,7 +275,7 @@ func loadRBAC(m ResourceMetas) {
 
 func loadPreferred(f Factory, m ResourceMetas) error {
 	if !f.Client().ConnectionOK() {
-		log.Error().Msgf("no API server connection")
+		log.Error().Msgf("PreferredRES - No API server connection")
 		return nil
 	}
 

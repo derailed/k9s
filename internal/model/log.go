@@ -8,6 +8,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/rs/zerolog/log"
@@ -277,21 +278,24 @@ func applyFilter(q string, lines dao.LogItems) (dao.LogItems, error) {
 	if q == "" {
 		return lines, nil
 	}
-	indexes, err := lines.Filter(q)
+	matches, indices, err := lines.Filter(q)
 	if err != nil {
 		return nil, err
 	}
+
 	// No filter!
-	if indexes == nil {
+	if matches == nil {
 		return lines, nil
 	}
 	// Blank filter
-	if len(indexes) == 0 {
+	if len(matches) == 0 {
 		return nil, nil
 	}
-	filtered := make(dao.LogItems, 0, len(indexes))
-	for _, idx := range indexes {
-		filtered = append(filtered, lines[idx])
+	filtered := make(dao.LogItems, 0, len(matches))
+	for i, idx := range matches {
+		item := lines[idx].Clone()
+		item.Bytes = color.Highlight(item.Bytes, indices[i], 209)
+		filtered = append(filtered, item)
 	}
 
 	return filtered, nil

@@ -195,7 +195,8 @@ func TestLogTimedout(t *testing.T) {
 	assert.Equal(t, 1, v.dataCalled)
 	assert.Equal(t, 2, v.clearCalled)
 	assert.Equal(t, 0, v.errCalled)
-	assert.Equal(t, dao.LogItems{data[0]}, v.data)
+	const e = "\x1b[38;5;209ml\x1b[0m\x1b[38;5;209mi\x1b[0m\x1b[38;5;209mn\x1b[0m\x1b[38;5;209me\x1b[0m\x1b[38;5;209m1\x1b[0m"
+	assert.Equal(t, e, string(v.data[0].Bytes))
 }
 
 // ----------------------------------------------------------------------------

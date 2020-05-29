@@ -220,11 +220,11 @@ func (h *Help) showGeneral() model.MenuHints {
 		},
 		{
 			Mnemonic:    "tab",
-			Description: "Next Field",
+			Description: "Field Next",
 		},
 		{
 			Mnemonic:    "backtab",
-			Description: "Previous Field",
+			Description: "Field Previous",
 		},
 		{
 			Mnemonic:    "Ctrl-r",
@@ -232,7 +232,7 @@ func (h *Help) showGeneral() model.MenuHints {
 		},
 		{
 			Mnemonic:    "Ctrl-u",
-			Description: "Clear command",
+			Description: "Command Clear",
 		},
 		{
 			Mnemonic:    "Ctrl-e",
@@ -248,7 +248,11 @@ func (h *Help) showGeneral() model.MenuHints {
 		},
 		{
 			Mnemonic:    "Ctrl-space",
-			Description: "Clear Marks",
+			Description: "Mark Range",
+		},
+		{
+			Mnemonic:    "Ctrl-\\",
+			Description: "Mark Clear",
 		},
 		{
 			Mnemonic:    "Ctrl-s",

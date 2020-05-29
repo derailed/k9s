@@ -136,6 +136,7 @@ func loadConfiguration() (*config.Config, error) {
 		return nil, err
 	}
 	conn, err := client.InitConnection(k8sCfg)
+	k9sCfg.SetConnection(conn)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to connect to cluster")
 	} else {
@@ -143,12 +144,14 @@ func loadConfiguration() (*config.Config, error) {
 		if !k9sCfg.GetConnection().CheckConnectivity() {
 			log.Panic().Msgf("K9s can't connect to cluster")
 		}
+		if !k9sCfg.GetConnection().ConnectionOK() {
+			panic("No connectivity")
+		}
 		log.Info().Msg("✅ Kubernetes connectivity")
 		if err := k9sCfg.Save(); err != nil {
 			log.Error().Err(err).Msg("Config save")
 		}
 	}
-	k9sCfg.SetConnection(conn)
 
 	return k9sCfg, nil
 }

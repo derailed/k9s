@@ -183,6 +183,7 @@ func (l *Log) bindKeys() {
 		ui.Key5:        ui.NewKeyAction("1h", l.sinceCmd(60*60), true),
 		tcell.KeyEnter: ui.NewSharedKeyAction("Filter", l.filterCmd, false),
 		ui.KeyC:        ui.NewKeyAction("Clear", l.clearCmd, true),
+		ui.KeyM:        ui.NewKeyAction("Mark", l.markCmd, true),
 		ui.KeyS:        ui.NewKeyAction("Toggle AutoScroll", l.toggleAutoScrollCmd, true),
 		ui.KeyF:        ui.NewKeyAction("Toggle FullScreen", l.toggleFullScreenCmd, true),
 		ui.KeyT:        ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
@@ -321,6 +322,11 @@ func saveData(cluster, name, data string) (string, error) {
 
 func (l *Log) clearCmd(*tcell.EventKey) *tcell.EventKey {
 	l.model.Clear()
+	return nil
+}
+
+func (l *Log) markCmd(*tcell.EventKey) *tcell.EventKey {
+	fmt.Fprintln(l.ansiWriter, fmt.Sprintf("[white::b]%s[::]", strings.Repeat("-", 80)))
 	return nil
 }
 

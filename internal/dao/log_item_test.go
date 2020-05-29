@@ -70,7 +70,7 @@ func TestLogItemsFilter(t *testing.T) {
 			for _, i := range ii {
 				i.Pod, i.Container = n, u.opts.Container
 			}
-			res, err := ii.Filter(u.q)
+			res, _, err := ii.Filter(u.q)
 			assert.Equal(t, u.err, err)
 			if err == nil {
 				assert.Equal(t, u.e, res)

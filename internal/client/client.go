@@ -28,7 +28,7 @@ const (
 	cacheExpiry      = 5 * time.Minute
 	cacheMXKey       = "metrics"
 	cacheMXAPIKey    = "metricsAPI"
-	checkConnTimeout = 5 * time.Second
+	checkConnTimeout = 3 * time.Second
 
 	// CallTimeout represents default api call timeout.
 	CallTimeout = 5 * time.Second
@@ -64,9 +64,10 @@ func InitConnection(config *Config) (*APIClient, error) {
 		config: config,
 		cache:  cache.NewLRUExpireCache(cacheSize),
 	}
+	a.connOK = true
 	_, err := a.supportsMetricsResources()
-	if err == nil {
-		a.connOK = true
+	if err != nil {
+		a.connOK = false
 	}
 
 	return &a, err
@@ -136,7 +137,7 @@ func (a *APIClient) clearCache() {
 func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) {
 	log.Debug().Msgf("Check Access %q::%q", ns, gvr)
 	if !a.connOK {
-		return false, errors.New("no API server connection")
+		return false, errors.New("ACCESS -- No API server connection")
 	}
 	if IsClusterWide(ns) {
 		ns = AllNamespaces
@@ -148,6 +149,7 @@ func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) 
 		}
 	}
 
+	log.Debug().Msgf("----> Calling API")
 	dial, err := a.Dial()
 	if err != nil {
 		return false, err
@@ -229,12 +231,13 @@ func (a *APIClient) CheckConnectivity() (status bool) {
 	if err != nil {
 		return false
 	}
+	cfg.Timeout = checkConnTimeout
 	client, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to connect to api server")
 		return
 	}
-	log.Debug().Msgf("Checking APIServer on %#v", cfg.Host)
+	log.Debug().Msgf("CONN-CHECK on %#v", cfg.Host)
 
 	// Check connection
 	if _, err := client.ServerVersion(); err == nil {

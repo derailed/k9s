@@ -16,7 +16,7 @@ func TestLogAutoScroll(t *testing.T) {
 	v.GetModel().Set(dao.LogItems{dao.NewLogItemFromString("blee"), dao.NewLogItemFromString("bozo")})
 	v.GetModel().Notify(true)
 
-	assert.Equal(t, 13, len(v.Hints()))
+	assert.Equal(t, 14, len(v.Hints()))
 
 	v.toggleAutoScrollCmd(nil)
 	assert.Equal(t, "Autoscroll: Off     FullScreen: Off     Timestamps: Off     Wrap: Off", v.Indicator().GetText(true))
@@ -85,7 +85,7 @@ func TestLogFilter(t *testing.T) {
 	l.SendKeys(ui.KeySlash)
 	l.SendStrokes("zorg")
 
-	assert.Equal(t, "zorg", list.lines)
+	assert.Equal(t, "\x1b[38;5;209mz\x1b[0m\x1b[38;5;209mo\x1b[0m\x1b[38;5;209mr\x1b[0m\x1b[38;5;209mg\x1b[0m", list.lines)
 	assert.Equal(t, 5, list.change)
 	assert.Equal(t, 5, list.clear)
 	assert.Equal(t, 0, list.fail)

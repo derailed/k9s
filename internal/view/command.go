@@ -39,6 +39,7 @@ func (c *Command) Init() error {
 	c.alias = dao.NewAlias(c.app.factory)
 	if _, err := c.alias.Ensure(); err != nil {
 		log.Error().Err(err).Msgf("command init failed!")
+		return err
 	}
 	customViewers = loadCustomViewers()
 
@@ -106,21 +107,6 @@ func (c *Command) xrayCmd(cmd string) error {
 	return c.exec(cmd, "xrays", x, true)
 }
 
-// BOZO!!
-// func (c *Command) checkAccess(gvr string) error {
-// 	m, err := dao.MetaAccess.MetaFor(client.NewGVR(gvr))
-// 	if err != nil {
-// 		return err
-// 	}
-// 	ns := client.CleanseNamespace(c.app.Config.ActiveNamespace())
-// 	if dao.IsK8sMeta(m) && c.app.ConOK() {
-// 		if _, e := c.app.factory.CanForResource(ns, gvr, client.MonitorAccess); e != nil {
-// 			return e
-// 		}
-// 	}
-// 	return nil
-// }
-
 // Exec the Command by showing associated display.
 func (c *Command) run(cmd, path string, clearStack bool) error {
 	if c.specialCmd(cmd, path) {
@@ -131,9 +117,6 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 	if err != nil {
 		return err
 	}
-	//if err := c.checkAccess(gvr); err != nil {
-	//	return err
-	//}
 
 	switch cmds[0] {
 	case "ctx", "context", "contexts":
@@ -159,6 +142,7 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 
 func (c *Command) defaultCmd() error {
 	if !c.app.Conn().ConnectionOK() {
+		log.Debug().Msgf("YO!!")
 		return c.run("ctx", "", true)
 	}
 	view := c.app.Config.ActiveView()

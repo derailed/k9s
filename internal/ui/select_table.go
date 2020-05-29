@@ -3,6 +3,7 @@ package ui
 import (
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 )
 
 // SelectTable represents a table with selections.
@@ -49,6 +50,17 @@ func (s *SelectTable) GetSelectedItems() []string {
 	}
 
 	return items
+}
+
+// GetRowID returns the row id at at given location.
+func (s *SelectTable) GetRowID(index int) (string, bool) {
+	cell := s.GetCell(index, 0)
+	if cell == nil {
+		return "", false
+	}
+	id, ok := cell.GetReference().(string)
+
+	return id, ok
 }
 
 // GetSelectedItem returns the currently selected item name.
@@ -136,6 +148,68 @@ func (s *SelectTable) ToggleMark() {
 		cell.Color,
 		tcell.AttrBold,
 	)
+}
+
+// ToggleSpanMark toggles marked row
+func (s *SelectTable) SpanMark() {
+	selIndex, prev := s.GetSelectedRowIndex(), -1
+	if selIndex <= 0 {
+		return
+	}
+	// Look back to find previous mark
+	for i := selIndex - 1; i > 0; i-- {
+		id, ok := s.GetRowID(i)
+		if !ok {
+			break
+		}
+		if _, ok := s.marks[id]; ok {
+			prev = i
+			break
+		}
+	}
+	if prev != -1 {
+		s.markRange(prev, selIndex)
+		return
+	}
+
+	// Look forward to see if we have a mark
+	for i := selIndex; i < s.GetRowCount(); i++ {
+		id, ok := s.GetRowID(i)
+		if !ok {
+			break
+		}
+		if _, ok := s.marks[id]; ok {
+			prev = i
+			break
+		}
+	}
+	s.markRange(prev, selIndex)
+}
+
+func (s *SelectTable) markRange(prev, curr int) {
+	if prev < 0 {
+		return
+	}
+	if prev > curr {
+		prev, curr = curr, prev
+	}
+	log.Debug().Msgf("Span Range %d::%d", prev, curr)
+	for i := prev + 1; i <= curr; i++ {
+		id, ok := s.GetRowID(i)
+		if !ok {
+			break
+		}
+		s.marks[id] = struct{}{}
+		cell := s.GetCell(s.GetSelectedRowIndex(), 0)
+		if cell == nil {
+			break
+		}
+		s.SetSelectedStyle(
+			tcell.ColorBlack,
+			cell.Color,
+			tcell.AttrBold,
+		)
+	}
 }
 
 // IsMarked returns true if this item was marked.

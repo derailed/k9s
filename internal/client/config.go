@@ -6,7 +6,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	restclient "k8s.io/client-go/rest"
@@ -299,8 +298,6 @@ func (c *Config) RESTConfig() (*restclient.Config, error) {
 	}
 	c.restConfig.QPS = defaultQPS
 	c.restConfig.Burst = defaultBurst
-	c.restConfig.Timeout = checkConnTimeout
-	log.Debug().Msgf("Connecting to API Server %s", c.restConfig.Host)
 
 	return c.restConfig, nil
 }
