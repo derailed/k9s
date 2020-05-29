@@ -75,13 +75,13 @@ func TestLogFilter(t *testing.T) {
 
 			m.Notify(true)
 			assert.Equal(t, 1, v.dataCalled)
-			assert.Equal(t, 2, v.clearCalled)
+			assert.Equal(t, 1, v.clearCalled)
 			assert.Equal(t, 0, v.errCalled)
 			assert.Equal(t, u.e, len(v.data))
 
 			m.ClearFilter()
 			assert.Equal(t, 2, v.dataCalled)
-			assert.Equal(t, 3, v.clearCalled)
+			assert.Equal(t, 2, v.clearCalled)
 			assert.Equal(t, 0, v.errCalled)
 			assert.Equal(t, size, len(v.data))
 		})
@@ -193,7 +193,7 @@ func TestLogTimedout(t *testing.T) {
 	}
 	m.Notify(true)
 	assert.Equal(t, 1, v.dataCalled)
-	assert.Equal(t, 2, v.clearCalled)
+	assert.Equal(t, 1, v.clearCalled)
 	assert.Equal(t, 0, v.errCalled)
 	const e = "\x1b[38;5;209ml\x1b[0m\x1b[38;5;209mi\x1b[0m\x1b[38;5;209mn\x1b[0m\x1b[38;5;209me\x1b[0m\x1b[38;5;209m1\x1b[0m"
 	assert.Equal(t, e, string(v.data[0].Bytes))

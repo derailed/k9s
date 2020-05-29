@@ -142,7 +142,6 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 
 func (c *Command) defaultCmd() error {
 	if !c.app.Conn().ConnectionOK() {
-		log.Debug().Msgf("YO!!")
 		return c.run("ctx", "", true)
 	}
 	view := c.app.Config.ActiveView()

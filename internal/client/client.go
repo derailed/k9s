@@ -135,7 +135,9 @@ func (a *APIClient) clearCache() {
 
 // CanI checks if user has access to a certain resource.
 func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) {
-	log.Debug().Msgf("Check Access %q::%q", ns, gvr)
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
 	if !a.connOK {
 		return false, errors.New("ACCESS -- No API server connection")
 	}
@@ -149,7 +151,6 @@ func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) 
 		}
 	}
 
-	log.Debug().Msgf("----> Calling API")
 	dial, err := a.Dial()
 	if err != nil {
 		return false, err
@@ -171,9 +172,9 @@ func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) 
 			return auth, fmt.Errorf("`%s access denied for user on %q:%s", v, ns, gvr)
 		}
 	}
-
 	auth = true
 	a.cache.Add(key, true, cacheExpiry)
+
 	return
 }
 
@@ -214,20 +215,22 @@ func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
 }
 
 // CheckConnectivity return true if api server is cool or false otherwise.
-func (a *APIClient) CheckConnectivity() (status bool) {
+func (a *APIClient) CheckConnectivity() (ok bool) {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
 	defer func() {
 		if err := recover(); err != nil {
-			status = false
+			ok = false
 		}
-		if !status {
+		if !ok {
 			a.clearCache()
 		}
-		a.connOK = status
+		a.connOK = ok
 	}()
 
 	// Need to reload to pickup any kubeconfig changes.
-	config := NewConfig(a.config.flags)
-	cfg, err := config.RESTConfig()
+	cfg, err := NewConfig(a.config.flags).RESTConfig()
 	if err != nil {
 		return false
 	}
@@ -237,7 +240,6 @@ func (a *APIClient) CheckConnectivity() (status bool) {
 		log.Error().Err(err).Msgf("Unable to connect to api server")
 		return
 	}
-	log.Debug().Msgf("CONN-CHECK on %#v", cfg.Host)
 
 	// Check connection
 	if _, err := client.ServerVersion(); err == nil {
@@ -245,7 +247,7 @@ func (a *APIClient) CheckConnectivity() (status bool) {
 			log.Debug().Msgf("RESETING CON!!")
 			a.reset()
 		}
-		status = true
+		ok = true
 	} else {
 		log.Error().Err(err).Msgf("K9s can't connect to cluster")
 	}

@@ -26,7 +26,7 @@ const (
 	logMessage   = "Waiting for logs..."
 	logFmt       = " Logs([hilite:bg:]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
 	logCoFmt     = " Logs([hilite:bg:]%s:[hilite:bg:b]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
-	flushTimeout = 100 * time.Millisecond
+	flushTimeout = 50 * time.Millisecond
 )
 
 // Log represents a generic log viewer.
@@ -123,9 +123,7 @@ func (l *Log) LogChanged(lines dao.LogItems) {
 
 // BufferChanged indicates the buffer was changed.
 func (l *Log) BufferChanged(s string) {
-	if err := l.model.Filter(l.logs.cmdBuff.GetText()); err != nil {
-		l.app.Flash().Err(err)
-	}
+	l.model.Filter(l.logs.cmdBuff.GetText())
 	l.updateTitle()
 }
 
@@ -268,10 +266,9 @@ func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !l.logs.cmdBuff.IsActive() {
 		return evt
 	}
+
 	l.logs.cmdBuff.SetActive(false)
-	if err := l.model.Filter(l.logs.cmdBuff.GetText()); err != nil {
-		l.app.Flash().Err(err)
-	}
+	l.model.Filter(l.logs.cmdBuff.GetText())
 	l.updateTitle()
 
 	return nil
@@ -326,7 +323,7 @@ func (l *Log) clearCmd(*tcell.EventKey) *tcell.EventKey {
 }
 
 func (l *Log) markCmd(*tcell.EventKey) *tcell.EventKey {
-	fmt.Fprintln(l.ansiWriter, fmt.Sprintf("[white::b]%s[::]", strings.Repeat("-", 80)))
+	fmt.Fprintln(l.ansiWriter, fmt.Sprintf("[white::b]%s[::]", strings.Repeat("─", 80)))
 	return nil
 }
 

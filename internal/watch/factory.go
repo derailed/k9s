@@ -70,7 +70,6 @@ func (f *Factory) List(gvr, ns string, wait bool, labels labels.Selector) ([]run
 	if err != nil {
 		return nil, err
 	}
-	log.Debug().Msgf("LIST %q::%q -- %t::%t", gvr, ns, wait, inf.Informer().HasSynced())
 	if client.IsAllNamespace(ns) {
 		ns = client.AllNamespaces
 	}
@@ -109,7 +108,6 @@ func (f *Factory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime
 	if err != nil {
 		return nil, err
 	}
-	log.Debug().Msgf("GET %q::%q -- %t::%t", gvr, path, wait, inf.Informer().HasSynced())
 	var o runtime.Object
 	if client.IsClusterScoped(ns) {
 		o, err = inf.Lister().Get(n)

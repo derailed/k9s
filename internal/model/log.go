@@ -38,6 +38,7 @@ type Log struct {
 	filter       string
 	lastSent     int
 	flushTimeout time.Duration
+	filtering    bool
 }
 
 // NewLog returns a new model.
@@ -52,6 +53,9 @@ func NewLog(gvr client.GVR, opts dao.LogOptions, flushTimeout time.Duration) *Lo
 
 // LogOptions returns the current log options.
 func (l *Log) LogOptions() dao.LogOptions {
+	l.mx.RLock()
+	defer l.mx.RUnlock()
+
 	return l.logOptions
 }
 
@@ -59,12 +63,18 @@ func (l *Log) LogOptions() dao.LogOptions {
 func (l *Log) SinceSeconds() int64 {
 	l.mx.RLock()
 	defer l.mx.RUnlock()
+
 	return l.logOptions.SinceSeconds
 }
 
 // SetLogOptions updates logger options.
 func (l *Log) SetLogOptions(opts dao.LogOptions) {
-	l.logOptions = opts
+	l.mx.Lock()
+	{
+		l.logOptions = opts
+	}
+	l.mx.Unlock()
+
 	l.Restart()
 }
 
@@ -96,6 +106,7 @@ func (l *Log) Clear() {
 		l.lines, l.lastSent = dao.LogItems{}, 0
 	}
 	l.mx.Unlock()
+
 	l.fireLogCleared()
 }
 
@@ -148,16 +159,25 @@ func (l *Log) ClearFilter() {
 	l.fireLogChanged(l.lines)
 }
 
-// Filter filters the model using either fuzzy or regexp.
-func (l *Log) Filter(q string) error {
-	l.mx.RLock()
-	defer l.mx.RUnlock()
+// Filter filters th:e model using either fuzzy or regexp.
+func (l *Log) Filter(q string) {
+	log.Debug().Msgf("Filter %q", q)
+	l.mx.Lock()
+	defer l.mx.Unlock()
 
 	l.filter = q
-	l.fireLogCleared()
-	l.fireLogBuffChanged(l.lines)
-
-	return nil
+	if l.filtering {
+		return
+	}
+	l.filtering = true
+	go func(l *Log) {
+		<-time.After(500 * time.Millisecond)
+		l.mx.Lock()
+		defer l.mx.Unlock()
+		l.fireLogCleared()
+		l.fireLogBuffChanged(l.lines)
+		l.filtering = false
+	}(l)
 }
 
 func (l *Log) load() error {
