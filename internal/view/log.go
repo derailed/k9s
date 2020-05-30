@@ -288,8 +288,7 @@ func (l *Log) SaveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-// SanitizeFilename removes characters not allowed by OS
-func SanitizeFilename(name string) string {
+func sanitizeFilename(name string) string {
 	processedString := invalidPathCharsRX.ReplaceAllString(name, "-")
 
 	return processedString
@@ -300,13 +299,13 @@ func ensureDir(dir string) error {
 }
 
 func saveData(cluster, name, data string) (string, error) {
-	dir := filepath.Join(config.K9sDumpDir, SanitizeFilename(cluster))
+	dir := filepath.Join(config.K9sDumpDir, sanitizeFilename(cluster))
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}
 
 	now := time.Now().UnixNano()
-	fName := fmt.Sprintf("%s-%d.log", SanitizeFilename(name), now)
+	fName := fmt.Sprintf("%s-%d.log", sanitizeFilename(name), now)
 
 	path := filepath.Join(dir, fName)
 	mod := os.O_CREATE | os.O_WRONLY

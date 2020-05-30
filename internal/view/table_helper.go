@@ -18,12 +18,12 @@ import (
 func computeFilename(cluster, ns, title, path string) (string, error) {
 	now := time.Now().UnixNano()
 
-	dir := filepath.Join(config.K9sDumpDir, SanitizeFilename(cluster))
+	dir := filepath.Join(config.K9sDumpDir, sanitizeFilename(cluster))
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}
 
-	name := title + "-" + SanitizeFilename(path)
+	name := title + "-" + sanitizeFilename(path)
 	if path == "" {
 		name = title
 	}
