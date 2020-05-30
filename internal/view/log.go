@@ -306,7 +306,7 @@ func saveData(cluster, name, data string) (string, error) {
 	}
 
 	now := time.Now().UnixNano()
-	fName := fmt.Sprintf("%s-%d.log", strings.Replace(name, "/", "-", -1), now)
+	fName := fmt.Sprintf("%s-%d.log", SanitizeFilename(name), now)
 
 	path := filepath.Join(dir, fName)
 	mod := os.O_CREATE | os.O_WRONLY
