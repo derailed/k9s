@@ -43,6 +43,23 @@ func TestLogViewSave(t *testing.T) {
 	assert.Equal(t, len(c2), len(c1)+1)
 }
 
+func TestSanitizedFilename(t *testing.T) {
+	uu := []struct {
+		name     string
+		expected string
+	}{
+		{"alpha", "alpha"},
+		{"123", "123"},
+		{"with/slash", "with-slash"},
+		{"with:colon", "with-colon"},
+		{":many:invalid\\characters\\", "-many-invalid-characters-"},
+	}
+
+	for _, u := range uu {
+		assert.Equal(t, u.expected, view.SanitizeFilename(u.name))
+	}
+}
+
 // ----------------------------------------------------------------------------
 // Helpers...
 
