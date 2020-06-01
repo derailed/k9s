@@ -386,12 +386,12 @@ K9s does provide additional environment variables for you to customize your plug
 
 ### Example
 
-This defines a plugin for viewing logs on a selected pod using `ctrl-l` for shorcut.
+This defines a plugin for viewing logs on a selected pod using `ctrl-l` for shortcut.
 
 ```yaml
 # $HOME/.k9s/plugin.yml
 plugin:
-  # Defines a plugin to provide a `ctrl-l` shorcut to tail the logs while in pod view.
+  # Defines a plugin to provide a `ctrl-l` shortcut to tail the logs while in pod view.
   fred:
     shortCut: Ctrl-L
     confirm: false
