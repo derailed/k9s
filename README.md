@@ -57,6 +57,12 @@ K9s is available on Linux, macOS and Windows platforms.
   pacman -S k9s
   ```
 
+* On OpenSUSE Linux distribution
+
+  ```shell
+  zypper install k9s
+  ```
+
 * Via [Scoop](https://scoop.sh) for Windows
 
   ```shell
