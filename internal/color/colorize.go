@@ -35,8 +35,8 @@ func Colorize(s string, c Paint) string {
 	return fmt.Sprintf(colorFmt, c, s)
 }
 
-// AnsiColorize colors a string.
-func AnsiColorize(s string, c int) string {
+// ANSIColorize colors a string.
+func ANSIColorize(s string, c int) string {
 	return fmt.Sprintf(ansiColorFmt, c, s)
 }
 
@@ -56,5 +56,5 @@ func Highlight(bb []byte, ii []int, c int) []byte {
 }
 
 func colorizeByte(b byte, color int) []byte {
-	return []byte(AnsiColorize(string(b), color))
+	return []byte(ANSIColorize(string(b), color))
 }

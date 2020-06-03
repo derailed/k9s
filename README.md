@@ -90,13 +90,13 @@ K9s is available on Linux, macOS and Windows platforms.
   You can run k9s as a Docker container by mounting your `KUBECONFIG`:
 
   ```shell
-  docker run --rm -it -v $KUBECONFIG:/root/.kube/config derailed/k9s
+  docker run --rm -it -v $KUBECONFIG:/root/.kube/config quay.io/derailed/k9s
   ```
 
   For default path it would be:
 
   ```shell
-  docker run --rm -it -v ~/.kube/config:/root/.kube/config derailed/k9s
+  docker run --rm -it -v ~/.kube/config:/root/.kube/config quay.io/derailed/k9s
   ```
 
 ---
@@ -242,7 +242,7 @@ K9s uses aliases to navigate most K8s resources.
   > NOTE: This is still in flux and will change while in pre-release stage!
 
   ```yaml
-  # config.yml
+  # $HOME/.k9s/config.yml
   k9s:
     # Represents ui poll intervals. Default 2secs
     refreshRate: 2
@@ -272,7 +272,7 @@ K9s uses aliases to navigate most K8s resources.
     currentCluster: minikube
     # Persists per cluster preferences for favorite namespaces and view.
     clusters:
-      cooln:
+      coolio:
         namespace:
           active: coolio
           favorites:
@@ -295,7 +295,7 @@ K9s uses aliases to navigate most K8s resources.
             memory: 100Mi
         # The IP Address to use when launching a port-forward.
         portForwardAddress: 1.2.3.4
-      minikube:
+      kind:
         namespace:
           active: all
           favorites:

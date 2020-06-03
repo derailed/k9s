@@ -42,8 +42,9 @@ func (c *CronJob) Run(path string) error {
 	// BOZO!! Factory resource??
 	ctx, cancel := context.WithTimeout(context.Background(), client.CallTimeout)
 	defer cancel()
-	o, err := c.Factory.Get("batch/v1/cronjobs", path, true, labels.Everything())
+	o, err := c.Factory.Get("batch/v1beta1/cronjobs", path, true, labels.Everything())
 	if err != nil {
+
 		return err
 	}
 

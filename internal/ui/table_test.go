@@ -62,6 +62,7 @@ type mockModel struct{}
 var _ ui.Tabular = &mockModel{}
 
 func (t *mockModel) SetInstance(string)                 {}
+func (t *mockModel) SetLabelFilter(string)              {}
 func (t *mockModel) Empty() bool                        { return false }
 func (t *mockModel) HasMetrics() bool                   { return true }
 func (t *mockModel) Peek() render.TableData             { return makeTableData() }

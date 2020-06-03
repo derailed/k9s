@@ -140,10 +140,20 @@ func (b *Browser) Stop() {
 }
 
 // BufferChanged indicates the buffer was changed.
-func (b *Browser) BufferChanged(s string) {}
+func (b *Browser) BufferChanged(s string) {
+	if ui.IsLabelSelector(s) {
+		b.GetModel().SetLabelFilter(ui.TrimLabelSelector(s))
+	} else {
+		b.GetModel().SetLabelFilter("")
+	}
+}
 
 // BufferActive indicates the buff activity changed.
 func (b *Browser) BufferActive(state bool, k model.BufferKind) {
+	if state {
+		return
+	}
+	b.GetModel().Refresh(b.defaultContext())
 	b.app.QueueUpdateDraw(func() {
 		b.Update(b.GetModel().Peek())
 		if b.GetRowCount() > 1 {

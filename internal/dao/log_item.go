@@ -78,15 +78,15 @@ func (l *LogItem) IsEmpty() bool {
 func (l *LogItem) Render(c int, showTime bool) []byte {
 	bb := make([]byte, 0, 30+len(l.Bytes)+len(l.Info()))
 	if showTime {
-		bb = append(bb, color.AnsiColorize(fmt.Sprintf("%-30s ", l.Timestamp), 106)...)
+		bb = append(bb, color.ANSIColorize(fmt.Sprintf("%-30s ", l.Timestamp), 106)...)
 	}
 
 	if l.Pod != "" {
-		bb = append(bb, []byte(color.AnsiColorize(l.Pod, c))...)
+		bb = append(bb, []byte(color.ANSIColorize(l.Pod, c))...)
 		bb = append(bb, ':')
 	}
 	if !l.SingleContainer && l.Container != "" {
-		bb = append(bb, []byte(color.AnsiColorize(l.Container, c))...)
+		bb = append(bb, []byte(color.ANSIColorize(l.Container, c))...)
 		bb = append(bb, ' ')
 	}
 	bb = append(bb, []byte(tview.Escape(string(l.Bytes)))...)

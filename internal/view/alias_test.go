@@ -99,12 +99,12 @@ type mockModel struct{}
 var _ ui.Tabular = (*mockModel)(nil)
 var _ ui.Suggester = (*mockModel)(nil)
 
-func (t *mockModel) CurrentSuggestion() (string, bool) { return "", false }
-func (t *mockModel) NextSuggestion() (string, bool)    { return "", false }
-func (t *mockModel) PrevSuggestion() (string, bool)    { return "", false }
-func (t *mockModel) ClearSuggestions()                 {}
-
+func (t *mockModel) CurrentSuggestion() (string, bool)  { return "", false }
+func (t *mockModel) NextSuggestion() (string, bool)     { return "", false }
+func (t *mockModel) PrevSuggestion() (string, bool)     { return "", false }
+func (t *mockModel) ClearSuggestions()                  {}
 func (t *mockModel) SetInstance(string)                 {}
+func (t *mockModel) SetLabelFilter(string)              {}
 func (t *mockModel) Empty() bool                        { return false }
 func (t *mockModel) HasMetrics() bool                   { return true }
 func (t *mockModel) Peek() render.TableData             { return makeTableData() }

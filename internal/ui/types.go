@@ -55,6 +55,9 @@ type Tabular interface {
 	// SetInstance sets parent resource path.
 	SetInstance(string)
 
+	// SetLabelFilter sets the label filter.
+	SetLabelFilter(string)
+
 	// Empty returns true if model has no data.
 	Empty() bool
 

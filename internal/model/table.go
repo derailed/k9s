@@ -37,6 +37,7 @@ type Table struct {
 	refreshRate time.Duration
 	instance    string
 	mx          sync.RWMutex
+	labelFilter string
 }
 
 // NewTable returns a new table model.
@@ -46,6 +47,11 @@ func NewTable(gvr client.GVR) *Table {
 		data:        render.NewTableData(),
 		refreshRate: 2 * time.Second,
 	}
+}
+
+// SetLabelFilter sets the labels filter.
+func (t *Table) SetLabelFilter(f string) {
+	t.labelFilter = f
 }
 
 // SetInstance sets a single entry table.
@@ -228,6 +234,9 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 
 func (t *Table) reconcile(ctx context.Context) error {
 	meta := t.resourceMeta()
+	if t.labelFilter != "" {
+		ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
+	}
 	var (
 		oo  []runtime.Object
 		err error
