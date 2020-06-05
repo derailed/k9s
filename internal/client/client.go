@@ -249,7 +249,6 @@ func (a *APIClient) CheckConnectivity() bool {
 			log.Debug().Msgf("RESETING CON!!")
 			a.reset()
 		}
-		a.connOK = true
 	} else {
 		log.Error().Err(err).Msgf("K9s can't connect to cluster")
 		a.connOK = false
@@ -324,11 +323,12 @@ func (a *APIClient) RestConfig() (*restclient.Config, error) {
 
 // CachedDiscovery returns a cached discovery client.
 func (a *APIClient) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
 	if !a.connOK {
 		return nil, errors.New("No connection to cached dial")
 	}
-	a.mx.Lock()
-	defer a.mx.Unlock()
 
 	if a.cachedClient != nil {
 		return a.cachedClient, nil
@@ -392,25 +392,10 @@ func (a *APIClient) SwitchContext(name string) error {
 	defer a.mx.Unlock()
 
 	log.Debug().Msgf("Switching context %q", name)
-	currentCtx, err := a.config.CurrentContextName()
-	if err != nil {
-		return err
-	}
-	if currentCtx == name {
-		return nil
-	}
-
 	if e := a.config.SwitchContext(name); e != nil {
 		return e
 	}
-	a.clearCache()
 	a.reset()
-	a.connOK = true
-	_, err = a.supportsMetricsResources()
-	if err != nil {
-		a.connOK = false
-		return err
-	}
 	ResetMetrics()
 
 	return nil
@@ -421,6 +406,7 @@ func (a *APIClient) reset() {
 	a.cache = cache.NewLRUExpireCache(cacheSize)
 	a.client, a.dClient, a.nsClient, a.mxsClient = nil, nil, nil, nil
 	a.cachedClient = nil
+	a.connOK = true
 }
 
 func (a *APIClient) supportsMetricsResources() (supported bool, err error) {
