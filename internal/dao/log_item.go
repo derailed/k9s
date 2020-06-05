@@ -52,6 +52,7 @@ func (l *LogItem) ID() string {
 	return l.Container
 }
 
+// Clone copies an item.
 func (l *LogItem) Clone() *LogItem {
 	bytes := make([]byte, len(l.Bytes))
 	copy(bytes, l.Bytes)

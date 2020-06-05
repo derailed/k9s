@@ -150,7 +150,7 @@ func (s *SelectTable) ToggleMark() {
 	)
 }
 
-// ToggleSpanMark toggles marked row
+// SpanMark toggles marked row
 func (s *SelectTable) SpanMark() {
 	selIndex, prev := s.GetSelectedRowIndex(), -1
 	if selIndex <= 0 {
