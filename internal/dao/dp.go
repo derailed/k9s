@@ -197,10 +197,27 @@ func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs
 				GVR: d.GVR(),
 				FQN: client.FQN(dp.Namespace, dp.Name),
 			})
+		case "v1/persistentvolumeclaims":
+			if !hasPVC(&dp.Spec.Template.Spec, n) {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: d.GVR(),
+				FQN: client.FQN(dp.Namespace, dp.Name),
+			})
 		}
 	}
 
 	return refs, nil
+}
+
+func hasPVC(spec *v1.PodSpec, name string) bool {
+	for _, v := range spec.Volumes {
+		if v.PersistentVolumeClaim != nil && v.PersistentVolumeClaim.ClaimName == name {
+			return true
+		}
+	}
+	return false
 }
 
 func hasConfigMap(spec *v1.PodSpec, name string) bool {

@@ -1,6 +1,7 @@
 package ui_test
 
 import (
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -12,7 +13,7 @@ import (
 )
 
 func TestBenchConfig(t *testing.T) {
-	config.K9sHome = "/tmp/blee"
+	os.Setenv(config.K9sConfig, "/tmp/blee")
 	assert.Equal(t, "/tmp/blee/bench-fred.yml", ui.BenchConfig("fred"))
 }
 

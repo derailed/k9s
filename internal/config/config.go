@@ -14,11 +14,14 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
+// K9sConfig represents K9s configuration dir env var.
+const K9sConfig = "K9SCONFIG"
+
 var (
-	// K9sHome represent K9s home directory.
-	K9sHome = filepath.Join(mustK9sHome(), ".k9s")
+	// DefaultK9sHome represent K9s home directory.
+	DefaultK9sHome = filepath.Join(mustK9sHome(), ".k9s")
 	// K9sConfigFile represents K9s config file location.
-	K9sConfigFile = filepath.Join(K9sHome, "config.yml")
+	K9sConfigFile = filepath.Join(K9sHome(), "config.yml")
 	// K9sLogs represents K9s log.
 	K9sLogs = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-%s.log", MustK9sUser()))
 	// K9sDumpDir represents a directory where K9s screen dumps will be persisted.
@@ -52,6 +55,15 @@ type (
 		demoMode bool
 	}
 )
+
+// K9sHome returns k9s configs home directory.
+func K9sHome() string {
+	if env := os.Getenv(K9sConfig); env != "" {
+		return env
+	}
+
+	return DefaultK9sHome
+}
 
 // NewConfig creates a new default config.
 func NewConfig(ks KubeSettings) *Config {

@@ -13,5 +13,5 @@ func TestContainerNew(t *testing.T) {
 
 	assert.Nil(t, c.Init(makeCtx()))
 	assert.Equal(t, "Containers", c.Name())
-	assert.Equal(t, 16, len(c.Hints()))
+	assert.Equal(t, 17, len(c.Hints()))
 }

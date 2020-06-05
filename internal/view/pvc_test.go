@@ -8,10 +8,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRbacNew(t *testing.T) {
-	v := view.NewRbac(client.NewGVR("rbac"))
+func TestPVCNew(t *testing.T) {
+	v := view.NewPersistentVolumeClaim(client.NewGVR("v1/persistentvolumeclaims"))
 
 	assert.Nil(t, v.Init(makeCtx()))
-	assert.Equal(t, "Rbac", v.Name())
-	assert.Equal(t, 5, len(v.Hints()))
+	assert.Equal(t, "PersistentVolumeClaims", v.Name())
+	assert.Equal(t, 10, len(v.Hints()))
 }

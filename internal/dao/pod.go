@@ -301,6 +301,14 @@ func (p *Pod) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 				GVR: p.GVR(),
 				FQN: client.FQN(pod.Namespace, pod.Name),
 			})
+		case "v1/persistentvolumeclaims":
+			if !hasPVC(&pod.Spec, n) {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: p.GVR(),
+				FQN: client.FQN(pod.Namespace, pod.Name),
+			})
 		}
 	}
 

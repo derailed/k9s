@@ -141,6 +141,14 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
+	dao.MetaAccess.RegisterMeta("v1/persistentvolumeclaims", metav1.APIResource{
+		Name:         "persistentvolumeclaims",
+		SingularName: "persistentvolumeclaim",
+		Namespaced:   true,
+		Kind:         "PersistentVolumeClaims",
+		Verbs:        []string{"get", "list", "watch", "delete"},
+		Categories:   []string{"k9s"},
+	})
 }
 
 func TestServiceNew(t *testing.T) {
@@ -148,5 +156,5 @@ func TestServiceNew(t *testing.T) {
 
 	assert.Nil(t, s.Init(makeCtx()))
 	assert.Equal(t, "Services", s.Name())
-	assert.Equal(t, 9, len(s.Hints()))
+	assert.Equal(t, 10, len(s.Hints()))
 }

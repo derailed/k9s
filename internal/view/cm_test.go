@@ -13,5 +13,5 @@ func TestConfigMapNew(t *testing.T) {
 
 	assert.Nil(t, s.Init(makeCtx()))
 	assert.Equal(t, "ConfigMaps", s.Name())
-	assert.Equal(t, 5, len(s.Hints()))
+	assert.Equal(t, 6, len(s.Hints()))
 }

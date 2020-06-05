@@ -58,7 +58,7 @@ func (h *Help) Init(ctx context.Context) error {
 func (h *Help) bindKeys() {
 	h.Actions().Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlS)
 	h.Actions().Set(ui.KeyActions{
-		tcell.KeyEscape: ui.NewKeyAction("Back", h.app.PrevCmd, false),
+		tcell.KeyEscape: ui.NewKeyAction("Back", h.app.PrevCmd, true),
 		ui.KeyHelp:      ui.NewKeyAction("Back", h.app.PrevCmd, false),
 		tcell.KeyEnter:  ui.NewKeyAction("Back", h.app.PrevCmd, false),
 	})

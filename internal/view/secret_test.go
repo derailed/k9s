@@ -13,5 +13,5 @@ func TestSecretNew(t *testing.T) {
 
 	assert.Nil(t, s.Init(makeCtx()))
 	assert.Equal(t, "Secrets", s.Name())
-	assert.Equal(t, 6, len(s.Hints()))
+	assert.Equal(t, 7, len(s.Hints()))
 }

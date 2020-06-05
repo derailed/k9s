@@ -150,6 +150,7 @@ func (t *Table) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (t *Table) bindKeys() {
 	t.Actions().Add(ui.KeyActions{
+		ui.KeyHelp:             ui.NewKeyAction("Help", t.App().helpCmd, true),
 		ui.KeySpace:            ui.NewSharedKeyAction("Mark", t.markCmd, false),
 		tcell.KeyCtrlSpace:     ui.NewSharedKeyAction("Mark Range", t.markSpanCmd, false),
 		tcell.KeyCtrlBackslash: ui.NewSharedKeyAction("Marks Clear", t.clearMarksCmd, false),

@@ -65,7 +65,7 @@ func ScanForRefs(ctx context.Context, f Factory) (Refs, error) {
 	}
 	wait, ok := ctx.Value(internal.KeyWait).(bool)
 	if !ok {
-		return nil, errors.New("expecting context Wait")
+		log.Error().Msgf("expecting Context Wait Key")
 	}
 
 	ss := scanners()
@@ -105,7 +105,7 @@ func ScanForRefs(ctx context.Context, f Factory) (Refs, error) {
 // ScanForSARefs scans cluster resources for serviceaccount refs.
 func ScanForSARefs(ctx context.Context, f Factory) (Refs, error) {
 	defer func(t time.Time) {
-		log.Debug().Msgf("Cluster Scan %v", time.Since(t))
+		log.Debug().Msgf("SA Cluster Scan %v", time.Since(t))
 	}(time.Now())
 
 	fqn, ok := ctx.Value(internal.KeyPath).(string)

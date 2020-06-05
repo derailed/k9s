@@ -40,7 +40,7 @@ func InNSList(nn []interface{}, ns string) bool {
 func mustK9sHome() string {
 	usr, err := user.Current()
 	if err != nil {
-		log.Fatal().Err(err).Msg("Die on retriving user home")
+		log.Fatal().Err(err).Msg("Die on retrieving user home")
 	}
 	return usr.HomeDir
 }
@@ -49,7 +49,7 @@ func mustK9sHome() string {
 func MustK9sUser() string {
 	usr, err := user.Current()
 	if err != nil {
-		log.Fatal().Err(err).Msg("Die on retriving user info")
+		log.Fatal().Err(err).Msg("Die on retrieving user info")
 	}
 	return usr.Username
 }

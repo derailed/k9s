@@ -211,6 +211,14 @@ func (d *DaemonSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs,
 				GVR: d.GVR(),
 				FQN: client.FQN(ds.Namespace, ds.Name),
 			})
+		case "v1/persistentvolumeclaims":
+			if !hasPVC(&ds.Spec.Template.Spec, n) {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: d.GVR(),
+				FQN: client.FQN(ds.Namespace, ds.Name),
+			})
 		}
 	}
 

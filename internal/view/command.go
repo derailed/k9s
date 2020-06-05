@@ -151,15 +151,19 @@ func (c *Command) defaultCmd() error {
 	tokens := strings.Split(view, " ")
 	cmd := view
 	ns, err := c.app.Conn().Config().CurrentNamespaceName()
-	if err == nil {
+	if err == nil && !isContextCmd(tokens[0]) {
 		cmd = tokens[0] + " " + ns
 	}
 
 	if err := c.run(cmd, "", true); err != nil {
-		log.Error().Err(err).Msgf("Saved command load failed. Loading default view")
+		log.Error().Err(err).Msgf("Default run command failed")
 		return c.run("meow", err.Error(), true)
 	}
 	return nil
+}
+
+func isContextCmd(c string) bool {
+	return c == "ctx" || c == "context"
 }
 
 func (c *Command) specialCmd(cmd, path string) bool {

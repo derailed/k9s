@@ -8,7 +8,7 @@ import (
 )
 
 // K9sPlugins manages K9s plugins.
-var K9sPlugins = filepath.Join(K9sHome, "plugin.yml")
+var K9sPlugins = filepath.Join(K9sHome(), "plugin.yml")
 
 // Plugins represents a collection of plugins.
 type Plugins struct {

@@ -10,7 +10,7 @@ import (
 )
 
 // K9sStylesFile represents K9s skins file location.
-var K9sStylesFile = filepath.Join(K9sHome, "skin.yml")
+var K9sStylesFile = filepath.Join(K9sHome(), "skin.yml")
 
 // StyleListener represents a skin's listener.
 type StyleListener interface {

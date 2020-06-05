@@ -281,6 +281,8 @@ func (a *App) refreshCluster() {
 			if c != nil {
 				c.Start()
 			}
+		} else {
+			a.ClearStatus(true)
 		}
 	} else {
 		atomic.AddInt32(&a.conRetry, 1)
@@ -363,6 +365,11 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 		if err := a.command.Reset(true); err != nil {
 			return err
 		}
+		v := a.Config.ActiveView()
+		if v == "" || isContextCmd(v) || loadPods {
+			v = "pod"
+			a.Config.SetActiveView(v)
+		}
 		if err := a.Config.Save(); err != nil {
 			log.Error().Err(err).Msg("Config save failed!")
 		}
@@ -370,10 +377,6 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 
 		a.Flash().Infof("Switching context to %s", name)
 		a.ReloadStyles(name)
-		v := a.Config.ActiveView()
-		if v == "" || v == "ctx" || v == "context" {
-			v = "pod"
-		}
 		if err := a.gotoResource(v, "", true); loadPods && err != nil {
 			a.Flash().Err(err)
 		}

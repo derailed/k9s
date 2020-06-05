@@ -55,17 +55,16 @@ func (p *Popeye) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 		}
 	}(time.Now())
 
-	flags := config.NewFlags()
-	js := "json"
+	flags, js := config.NewFlags(), "json"
 	flags.Output = &js
 
 	if report, ok := ctx.Value(internal.KeyPath).(string); ok && report != "" {
 		sections := []string{report}
 		flags.Sections = &sections
 	}
-	spinach := filepath.Join(cfg.K9sHome, "spinach.yml")
+	spinach := filepath.Join(cfg.K9sHome(), "spinach.yml")
 	if c, err := p.Factory.Client().Config().CurrentContextName(); err == nil {
-		spinach = filepath.Join(cfg.K9sHome, fmt.Sprintf("%s_spinach.yml", c))
+		spinach = filepath.Join(cfg.K9sHome(), fmt.Sprintf("%s_spinach.yml", c))
 	}
 	if _, err := os.Stat(spinach); err == nil {
 		flags.Spinach = &spinach

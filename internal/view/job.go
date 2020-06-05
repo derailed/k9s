@@ -20,6 +20,7 @@ func NewJob(gvr client.GVR) ResourceViewer {
 	j := Job{ResourceViewer: NewLogsExtender(NewBrowser(gvr), nil)}
 	j.GetTable().SetEnterFn(j.showPods)
 	j.GetTable().SetColorerFn(render.Job{}.ColorerFunc())
+	j.GetTable().SetSortCol("AGE", true)
 
 	return &j
 }

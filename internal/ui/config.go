@@ -117,14 +117,14 @@ func (c *Configurator) StylesWatcher(ctx context.Context, s synchronizer) error 
 
 // BenchConfig location of the benchmarks configuration file.
 func BenchConfig(context string) string {
-	return filepath.Join(config.K9sHome, config.K9sBench+"-"+context+".yml")
+	return filepath.Join(config.K9sHome(), config.K9sBench+"-"+context+".yml")
 }
 
 // RefreshStyles load for skin configuration changes.
 func (c *Configurator) RefreshStyles(context string) {
 	c.BenchFile = BenchConfig(context)
 
-	clusterSkins := filepath.Join(config.K9sHome, fmt.Sprintf("%s_skin.yml", context))
+	clusterSkins := filepath.Join(config.K9sHome(), fmt.Sprintf("%s_skin.yml", context))
 	if c.Styles == nil {
 		c.Styles = config.NewStyles()
 	} else {

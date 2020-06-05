@@ -215,30 +215,32 @@ func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
 }
 
 // CheckConnectivity return true if api server is cool or false otherwise.
-func (a *APIClient) CheckConnectivity() (ok bool) {
+func (a *APIClient) CheckConnectivity() bool {
 	a.mx.Lock()
 	defer a.mx.Unlock()
 
 	defer func() {
 		if err := recover(); err != nil {
-			ok = false
+			a.connOK = false
 		}
-		if !ok {
+		if !a.connOK {
 			a.clearCache()
 		}
-		a.connOK = ok
 	}()
 
 	// Need to reload to pickup any kubeconfig changes.
 	cfg, err := NewConfig(a.config.flags).RESTConfig()
 	if err != nil {
-		return false
+		log.Error().Err(err).Msgf("restConfig load failed")
+		a.connOK = false
+		return a.connOK
 	}
 	cfg.Timeout = checkConnTimeout
 	client, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to connect to api server")
-		return
+		a.connOK = false
+		return a.connOK
 	}
 
 	// Check connection
@@ -247,12 +249,13 @@ func (a *APIClient) CheckConnectivity() (ok bool) {
 			log.Debug().Msgf("RESETING CON!!")
 			a.reset()
 		}
-		ok = true
+		a.connOK = true
 	} else {
 		log.Error().Err(err).Msgf("K9s can't connect to cluster")
+		a.connOK = false
 	}
 
-	return
+	return a.connOK
 }
 
 // Config return a kubernetes configuration.
@@ -385,6 +388,9 @@ func (a *APIClient) MXDial() (*versioned.Clientset, error) {
 
 // SwitchContext handles kubeconfig context switches.
 func (a *APIClient) SwitchContext(name string) error {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
 	log.Debug().Msgf("Switching context %q", name)
 	currentCtx, err := a.config.CurrentContextName()
 	if err != nil {
@@ -411,9 +417,6 @@ func (a *APIClient) SwitchContext(name string) error {
 }
 
 func (a *APIClient) reset() {
-	a.mx.Lock()
-	defer a.mx.Unlock()
-
 	a.config.reset()
 	a.cache = cache.NewLRUExpireCache(cacheSize)
 	a.client, a.dClient, a.nsClient, a.mxsClient = nil, nil, nil, nil

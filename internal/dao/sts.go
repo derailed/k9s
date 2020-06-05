@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
@@ -190,6 +191,23 @@ func (s *StatefulSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Ref
 				continue
 			}
 			if !found {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: s.GVR(),
+				FQN: client.FQN(sts.Namespace, sts.Name),
+			})
+		case "v1/persistentvolumeclaims":
+			for _, v := range sts.Spec.VolumeClaimTemplates {
+				if !strings.HasPrefix(n, v.Name) {
+					continue
+				}
+				refs = append(refs, Ref{
+					GVR: s.GVR(),
+					FQN: client.FQN(sts.Namespace, sts.Name),
+				})
+			}
+			if !hasPVC(&sts.Spec.Template.Spec, n) {
 				continue
 			}
 			refs = append(refs, Ref{

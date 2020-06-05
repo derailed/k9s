@@ -23,7 +23,7 @@ func TestAliasNew(t *testing.T) {
 
 	assert.Nil(t, v.Init(makeContext()))
 	assert.Equal(t, "Aliases", v.Name())
-	assert.Equal(t, 5, len(v.Hints()))
+	assert.Equal(t, 6, len(v.Hints()))
 }
 
 func TestAliasSearch(t *testing.T) {
