@@ -235,16 +235,16 @@ func (l *Log) Logs() *Details {
 	return l.logs
 }
 
+var EOL = []byte("\n")
+
 // Flush write logs to viewer.
 func (l *Log) Flush(lines dao.LogItems) {
-	defer func(t time.Time) {
-		log.Debug().Msgf("FLUSH %d--%v", len(lines), time.Since(t))
-	}(time.Now())
-
 	showTime := l.Indicator().showTime
 	ll := make([][]byte, len(lines))
 	lines.Render(showTime, ll)
-	fmt.Fprintln(l.ansiWriter, string(bytes.Join(ll, []byte("\n"))))
+	if _, err := l.ansiWriter.Write(bytes.Join(ll, EOL)); err != nil {
+		log.Error().Err(err).Msgf("write log failed")
+	}
 	l.logs.ScrollToEnd()
 	l.indicator.Refresh()
 }

@@ -1,4 +1,5 @@
 .vscode
+*.out
 .idea
 .envrc
 cov.out

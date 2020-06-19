@@ -38,10 +38,10 @@ func NewLogItem(b []byte) *LogItem {
 
 // NewLogItemFromString returns a new item.
 func NewLogItemFromString(s string) *LogItem {
-	l := LogItem{Bytes: []byte(s)}
-	l.Timestamp = time.Now().String()
-
-	return &l
+	return &LogItem{
+		Bytes:     []byte(s),
+		Timestamp: time.Now().String(),
+	}
 }
 
 // ID returns pod and or container based id.
@@ -125,15 +125,15 @@ func (l LogItems) Lines() []string {
 
 // Render returns logs as a collection of strings.
 func (l LogItems) Render(showTime bool, ll [][]byte) {
-	colors := map[string]int{}
+	colors := make(map[string]int, len(l))
 	for i, item := range l {
 		info := item.ID()
-		c, ok := colors[item.ID()]
+		color, ok := colors[info]
 		if !ok {
-			c = colorFor(info)
-			colors[info] = c
+			color = colorFor(info)
+			colors[info] = color
 		}
-		ll[i] = item.Render(c, showTime)
+		ll[i] = item.Render(color, showTime)
 	}
 }
 

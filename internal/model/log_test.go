@@ -29,7 +29,7 @@ func TestLogFullBuffer(t *testing.T) {
 		data = append(data, dao.NewLogItemFromString("line"+strconv.Itoa(i)))
 		m.Append(data[i])
 	}
-	m.Notify(true)
+	m.Notify()
 
 	assert.Equal(t, 1, v.dataCalled)
 	assert.Equal(t, 1, v.clearCalled)
@@ -73,7 +73,7 @@ func TestLogFilter(t *testing.T) {
 				m.Append(data[i])
 			}
 
-			m.Notify(true)
+			m.Notify()
 			assert.Equal(t, 1, v.dataCalled)
 			assert.Equal(t, 1, v.clearCalled)
 			assert.Equal(t, 0, v.errCalled)
@@ -100,7 +100,7 @@ func TestLogStartStop(t *testing.T) {
 	for _, d := range data {
 		m.Append(d)
 	}
-	m.Notify(true)
+	m.Notify()
 	m.Stop()
 
 	assert.Equal(t, 1, v.dataCalled)
@@ -122,7 +122,7 @@ func TestLogClear(t *testing.T) {
 	for _, d := range data {
 		m.Append(d)
 	}
-	m.Notify(true)
+	m.Notify()
 	m.Clear()
 
 	assert.Equal(t, 1, v.dataCalled)
@@ -167,7 +167,7 @@ func TestLogAppend(t *testing.T) {
 	assert.Equal(t, 1, v.dataCalled)
 	assert.Equal(t, items, v.data)
 
-	m.Notify(true)
+	m.Notify()
 	assert.Equal(t, 2, v.dataCalled)
 	assert.Equal(t, 1, v.clearCalled)
 	assert.Equal(t, 0, v.errCalled)
@@ -191,7 +191,7 @@ func TestLogTimedout(t *testing.T) {
 	for _, d := range data {
 		m.Append(d)
 	}
-	m.Notify(true)
+	m.Notify()
 	assert.Equal(t, 1, v.dataCalled)
 	assert.Equal(t, 1, v.clearCalled)
 	assert.Equal(t, 0, v.errCalled)

@@ -233,11 +233,11 @@ func (l *Log) Append(line *dao.LogItem) {
 }
 
 // Notify fires of notifications to the listeners.
-func (l *Log) Notify(timedOut bool) {
+func (l *Log) Notify() {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
-	if timedOut && l.lastSent < len(l.lines) {
+	if l.lastSent < len(l.lines) {
 		l.fireLogBuffChanged(l.lines[l.lastSent:])
 		l.lastSent = len(l.lines)
 	}
@@ -253,7 +253,7 @@ func (l *Log) updateLogs(ctx context.Context, c dao.LogChan) {
 			if !ok {
 				log.Debug().Msgf("Closed channel detected. Bailing out...")
 				l.Append(item)
-				l.Notify(true)
+				l.Notify()
 				return
 			}
 			l.Append(item)
@@ -264,10 +264,10 @@ func (l *Log) updateLogs(ctx context.Context, c dao.LogChan) {
 			}
 			l.mx.RUnlock()
 			if overflow {
-				l.Notify(true)
+				l.Notify()
 			}
 		case <-time.After(l.flushTimeout):
-			l.Notify(true)
+			l.Notify()
 		case <-ctx.Done():
 			return
 		}
@@ -322,10 +322,14 @@ func applyFilter(q string, lines dao.LogItems) (dao.LogItems, error) {
 }
 
 func (l *Log) fireLogBuffChanged(lines dao.LogItems) {
-	filtered, err := applyFilter(l.filter, lines)
-	if err != nil {
-		l.fireLogError(err)
-		return
+	filtered := lines
+	if l.filter != "" {
+		var err error
+		filtered, err = applyFilter(l.filter, lines)
+		if err != nil {
+			l.fireLogError(err)
+			return
+		}
 	}
 	if len(filtered) > 0 {
 		l.fireLogChanged(filtered)

@@ -4,8 +4,13 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/model"
+	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+}
 
 func TestClusterMetaDelta(t *testing.T) {
 	uu := map[string]struct {
