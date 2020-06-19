@@ -2,6 +2,7 @@ package render
 
 import (
 	"fmt"
+	"github.com/derailed/k9s/internal/client"
 	"math"
 	"strconv"
 	"strings"
@@ -55,7 +56,7 @@ func (Popeye) Render(o interface{}, ns string, r *Row) error {
 		return fmt.Errorf("expected Section, but got %T", o)
 	}
 
-	r.ID = s.Title
+	r.ID = client.FQN(ns, s.Title)
 	r.Fields = append(r.Fields,
 		s.Title,
 		strconv.Itoa(s.Tally.Score()),

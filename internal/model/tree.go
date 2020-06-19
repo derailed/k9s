@@ -217,11 +217,8 @@ func (t *Tree) reconcile(ctx context.Context) error {
 		if err := genericTreeHydrate(ctx, ns, table, meta.TreeRenderer); err != nil {
 			return err
 		}
-	} else {
-		if err := treeHydrate(ctx, ns, oo, meta.TreeRenderer); err != nil {
-
-			return err
-		}
+	} else if err := treeHydrate(ctx, ns, oo, meta.TreeRenderer); err != nil {
+		return err
 	}
 
 	root.Sort()

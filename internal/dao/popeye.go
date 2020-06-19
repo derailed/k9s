@@ -47,7 +47,7 @@ func (readWriteCloser) Close() error {
 }
 
 // List returns a collection of aliases.
-func (p *Popeye) List(ctx context.Context, _ string) ([]runtime.Object, error) {
+func (p *Popeye) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	defer func(t time.Time) {
 		log.Debug().Msgf("Popeye -- Elapsed %v", time.Since(t))
 		if err := recover(); err != nil {
@@ -57,10 +57,13 @@ func (p *Popeye) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 
 	flags, js := config.NewFlags(), "json"
 	flags.Output = &js
+	flags.ActiveNamespace = &ns
 
 	if report, ok := ctx.Value(internal.KeyPath).(string); ok && report != "" {
-		sections := []string{report}
+		ns, n := client.Namespaced(report)
+		sections := []string{n}
 		flags.Sections = &sections
+		flags.ActiveNamespace = &ns
 	}
 	spinach := filepath.Join(cfg.K9sHome(), "spinach.yml")
 	if c, err := p.Factory.Client().Config().CurrentContextName(); err == nil {
