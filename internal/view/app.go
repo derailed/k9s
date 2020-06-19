@@ -564,7 +564,9 @@ func (a *App) gotoResource(cmd, path string, clearStack bool) error {
 
 	c := NewMeow(a, err.Error())
 	_ = c.Init(context.Background())
-	a.Content.Stack.Clear()
+	if clearStack {
+		a.Content.Stack.Clear()
+	}
 	a.Content.Push(c)
 
 	return nil

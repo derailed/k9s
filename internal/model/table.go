@@ -83,7 +83,6 @@ func (t *Table) RemoveListener(l TableListener) {
 
 // Watch initiates model updates.
 func (t *Table) Watch(ctx context.Context) {
-	log.Debug().Msgf("TABLE-WATCH %q", t.gvr)
 	t.refresh(ctx)
 	go t.updater(ctx)
 }

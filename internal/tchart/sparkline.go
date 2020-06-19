@@ -111,7 +111,7 @@ func (s *SparkLine) Draw(screen tcell.Screen) {
 	if rect.Dx() > 0 && rect.Dy() > 0 && s.legend != "" {
 		legend := s.legend
 		if s.HasFocus() {
-			legend = "[:aqua:]" + s.legend + "[::]"
+			legend = fmt.Sprintf("[%s:%s:]", s.focusFgColor, s.focusBgColor) + s.legend + "[::]"
 		}
 		tview.Print(screen, legend, rect.Min.X, rect.Max.Y, rect.Dx(), tview.AlignCenter, tcell.ColorWhite)
 	}

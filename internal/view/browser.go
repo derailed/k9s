@@ -130,13 +130,13 @@ func (b *Browser) Start() {
 
 // Stop terminates browser updates.
 func (b *Browser) Stop() {
-	b.GetModel().RemoveListener(b)
-	b.CmdBuff().RemoveListener(b)
-	b.Table.Stop()
 	if b.cancelFn != nil {
 		b.cancelFn()
 		b.cancelFn = nil
 	}
+	b.GetModel().RemoveListener(b)
+	b.CmdBuff().RemoveListener(b)
+	b.Table.Stop()
 }
 
 // BufferChanged indicates the buffer was changed.
@@ -198,9 +198,10 @@ func (b *Browser) Aliases() []string {
 
 // TableDataChanged notifies view new data is available.
 func (b *Browser) TableDataChanged(data render.TableData) {
-	if !b.app.ConOK() {
+	if !b.app.ConOK() || b.cancelFn == nil {
 		return
 	}
+
 	b.app.QueueUpdateDraw(func() {
 		b.refreshActions()
 		b.Update(data)
@@ -418,6 +419,9 @@ func (b *Browser) defaultContext() context.Context {
 }
 
 func (b *Browser) refreshActions() {
+	if b.App().Content.Top().Name() != b.Name() {
+		return
+	}
 	aa := ui.KeyActions{
 		ui.KeyC:        ui.NewKeyAction("Copy", b.cpCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("View", b.enterCmd, false),
