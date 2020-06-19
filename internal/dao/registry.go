@@ -176,6 +176,7 @@ func loadK9s(m ResourceMetas) {
 		Name:         "popeye",
 		Kind:         "Popeye",
 		SingularName: "popeye",
+		Namespaced: true,
 		Verbs:        []string{},
 		Categories:   []string{"k9s"},
 	}

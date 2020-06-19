@@ -38,7 +38,6 @@ func (p *Popeye) Init(ctx context.Context) error {
 	if err := p.ResourceViewer.Init(ctx); err != nil {
 		return err
 	}
-	p.GetTable().GetModel().SetNamespace("*")
 	p.GetTable().GetModel().SetRefreshRate(5 * time.Second)
 
 	return nil
@@ -66,7 +65,7 @@ func (p *Popeye) decorateRows(data render.TableData) render.TableData {
 func (p *Popeye) bindKeys(aa ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
 	aa.Add(ui.KeyActions{
-		tcell.KeyEnter: ui.NewKeyAction("Goto", p.describeCmd, true),
+		tcell.KeyEnter: ui.NewKeyAction("Goto", p.gotoCmd, true),
 		ui.KeyShiftR:   ui.NewKeyAction("Sort Resource", p.GetTable().SortColCmd("RESOURCE", true), false),
 		ui.KeyShiftS:   ui.NewKeyAction("Sort Score", p.GetTable().SortColCmd("SCORE%", true), false),
 		ui.KeyShiftO:   ui.NewKeyAction("Sort OK", p.GetTable().SortColCmd("OK", true), false),
@@ -76,15 +75,13 @@ func (p *Popeye) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (p *Popeye) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (p *Popeye) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := p.GetTable().GetSelectedItem()
 	if path == "" {
 		return evt
 	}
-
 	v := NewSanitizer(client.NewGVR("sanitizer"))
 	v.SetContextFn(sanitizerCtx(path))
-
 	if err := p.App().inject(v); err != nil {
 		p.App().Flash().Err(err)
 	}

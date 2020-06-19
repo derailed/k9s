@@ -1,11 +1,11 @@
 module github.com/derailed/k9s
 
-go 1.13
+go 1.14
 
 require (
 	9fans.net/go v0.0.2
 	github.com/atotto/clipboard v0.1.2
-	github.com/derailed/popeye v0.8.4
+	github.com/derailed/popeye v0.8.6
 	github.com/derailed/tview v0.3.10
 	github.com/drone/envsubst v1.0.2 // indirect
 	github.com/fatih/color v1.9.0
