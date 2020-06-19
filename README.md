@@ -364,6 +364,40 @@ Entering the command mode and typing a resource name or alias, could be cumberso
 
 ---
 
+## Resource Custom Columns
+
+[SneakCast v0.17.0 on The Beach! - Yup! sound is sucking but what a setting!](https://youtu.be/7S33CNLAofk)
+
+You can change which columns shows up for a given resource via custom views. To surface this feature, you will need to create a new configuration file, namely `$HOME/.k9s/views.yml`. This file leverages GVR (Group/Version/Resource) to configure the associated table view columns. If no GVR is found for a view the default rendering will take over (ie what we have now). Going wide will add all the remaining columns that are available on the given resource after your custom columns. To boot, you can edit your views config file and tune your resources views live!
+
+> NOTE: This is experimental and will most likely change as we iron this out!
+
+Here is a sample views configuration that customize a pods and services views.
+
+```yaml
+# $HOME/.k9s/views.yml
+k9s:
+  views:
+    v1/pods:
+      columns:
+        - AGE
+        - NAMESPACE
+        - NAME
+        - IP
+        - NODE
+        - STATUS
+        - READY
+    v1/services:
+      columns:
+        - AGE
+        - NAMESPACE
+        - NAME
+        - TYPE
+        - CLUSTER-IP
+```
+
+---
+
 ## Plugins
 
 K9s allows you to extend your command line and tooling by defining your very own cluster commands via plugins. K9s will look at `$HOME/.k9s/plugin.yml` to locate all available plugins. A plugin is defined as follows:
