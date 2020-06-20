@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -28,6 +29,9 @@ const (
 	logCoFmt     = " Logs([hilite:bg:]%s:[hilite:bg:b]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
 	flushTimeout = 50 * time.Millisecond
 )
+
+// InvalidCharsRX contains invalid filename characters.
+var invalidPathCharsRX = regexp.MustCompile(`[:/\\]+`)
 
 // Log represents a generic log viewer.
 type Log struct {
@@ -284,18 +288,24 @@ func (l *Log) SaveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+func sanitizeFilename(name string) string {
+	processedString := invalidPathCharsRX.ReplaceAllString(name, "-")
+
+	return processedString
+}
+
 func ensureDir(dir string) error {
 	return os.MkdirAll(dir, 0744)
 }
 
 func saveData(cluster, name, data string) (string, error) {
-	dir := filepath.Join(config.K9sDumpDir, cluster)
+	dir := filepath.Join(config.K9sDumpDir, sanitizeFilename(cluster))
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}
 
 	now := time.Now().UnixNano()
-	fName := fmt.Sprintf("%s-%d.log", strings.Replace(name, "/", "-", -1), now)
+	fName := fmt.Sprintf("%s-%d.log", sanitizeFilename(name), now)
 
 	path := filepath.Join(dir, fName)
 	mod := os.O_CREATE | os.O_WRONLY
