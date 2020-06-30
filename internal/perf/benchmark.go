@@ -47,7 +47,6 @@ func NewBenchmark(base, version string, cfg config.BenchConfig) (*Benchmark, err
 }
 
 func (b *Benchmark) init(base, version string) error {
-	log.Debug().Msgf("BENCH-INIT")
 	req, err := http.NewRequest(b.config.HTTP.Method, base, nil)
 	if err != nil {
 		return err
@@ -111,7 +110,6 @@ func (b *Benchmark) Canceled() bool {
 // Run starts a benchmark,
 func (b *Benchmark) Run(cluster string, done func()) {
 	log.Debug().Msgf("Running benchmark on cluster %s", cluster)
-	log.Debug().Msgf("BENCH-CFG %#v", b.worker)
 	buff := new(bytes.Buffer)
 	b.worker.Writer = buff
 	// this call will block until the benchmark is complete or timesout.

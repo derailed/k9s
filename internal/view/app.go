@@ -29,7 +29,7 @@ var ExitStatus = ""
 
 const (
 	splashDelay      = 1 * time.Second
-	clusterRefresh   = 5 * time.Second
+	clusterRefresh   = 15 * time.Second
 	maxConRetry      = 15
 	clusterInfoWidth = 50
 	clusterInfoPad   = 15
@@ -284,6 +284,7 @@ func (a *App) refreshCluster() {
 		} else {
 			a.ClearStatus(true)
 		}
+		a.factory.ValidatePortForwards()
 	} else {
 		atomic.AddInt32(&a.conRetry, 1)
 		if c != nil {
@@ -337,7 +338,7 @@ func (a *App) isValidNS(ns string) (bool, error) {
 		return true, nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), client.CallTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), a.Conn().Config().CallTimeout())
 	defer cancel()
 	dial, err := a.Conn().Dial()
 	if err != nil {

@@ -24,14 +24,10 @@ import (
 )
 
 const (
-	cacheSize        = 100
-	cacheExpiry      = 5 * time.Minute
-	cacheMXKey       = "metrics"
-	cacheMXAPIKey    = "metricsAPI"
-	checkConnTimeout = 3 * time.Second
-
-	// CallTimeout represents default api call timeout.
-	CallTimeout = 5 * time.Second
+	cacheSize     = 100
+	cacheExpiry   = 5 * time.Minute
+	cacheMXKey    = "metrics"
+	cacheMXAPIKey = "metricsAPI"
 )
 
 var supportedMetricsAPIVersions = []string{"v1beta1"}
@@ -157,7 +153,7 @@ func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) 
 	}
 	client, sar := dial.AuthorizationV1().SelfSubjectAccessReviews(), makeSAR(ns, gvr)
 
-	ctx, cancel := context.WithTimeout(context.Background(), CallTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), a.config.CallTimeout())
 	defer cancel()
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
@@ -203,7 +199,7 @@ func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
 	if err != nil {
 		return nil, err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), CallTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), a.config.CallTimeout())
 	defer cancel()
 	nn, err := dial.CoreV1().Namespaces().List(ctx, metav1.ListOptions{})
 	if err != nil {
@@ -235,7 +231,6 @@ func (a *APIClient) CheckConnectivity() bool {
 		a.connOK = false
 		return a.connOK
 	}
-	cfg.Timeout = checkConnTimeout
 	client, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to connect to api server")
@@ -280,7 +275,13 @@ func (a *APIClient) HasMetrics() bool {
 		a.cache.Add(cacheMXKey, flag, cacheExpiry)
 		return flag
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), CallTimeout)
+
+	timeout, err := time.ParseDuration(*a.config.flags.Timeout)
+	if err != nil {
+		log.Error().Err(err).Msgf("parsing duration")
+		return false
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 	if _, err := dial.MetricsV1beta1().NodeMetricses().List(ctx, metav1.ListOptions{Limit: 1}); err == nil {
 		flag = true

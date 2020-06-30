@@ -28,6 +28,7 @@ func TestContainer(t *testing.T) {
 	assert.Equal(t, "fred", r.ID)
 	assert.Equal(t, render.Fields{
 		"fred",
+		"●",
 		"img",
 		"false",
 		"Running",

@@ -148,7 +148,7 @@ func (a *Aliases) loadDefaultAliases() {
 	a.declare("users", "user", "usr")
 	a.declare("groups", "group", "grp")
 	a.declare("portforwards", "portforward", "pf")
-	a.declare("benchmarks", "benchmark", "be")
+	a.declare("benchmarks", "bench", "benchmark", "be")
 	a.declare("screendumps", "screendump", "sd")
 	a.declare("pulses", "pulse", "pu", "hz")
 	a.declare("xrays", "xray", "x")

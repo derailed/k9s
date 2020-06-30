@@ -6,9 +6,11 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -38,16 +40,23 @@ func (b *Benchmark) List(ctx context.Context, _ string) ([]runtime.Object, error
 	if !ok {
 		return nil, errors.New("no benchmark dir found in context")
 	}
+	path, _ := ctx.Value(internal.KeyPath).(string)
 
 	ff, err := ioutil.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
 
-	oo := make([]runtime.Object, len(ff))
-	for i, f := range ff {
-		oo[i] = render.BenchInfo{File: f, Path: filepath.Join(dir, f.Name())}
+	oo := make([]runtime.Object, 0, len(ff))
+	for _, f := range ff {
+		log.Debug().Msgf("BENCH-LIST %q::%q", strings.Replace(path, "/", "_", 1), f.Name())
+		if path != "" && !strings.HasPrefix(f.Name(), strings.Replace(path, "/", "_", 1)) {
+			log.Debug().Msgf("  SKIP...")
+			continue
+		}
+		oo = append(oo, render.BenchInfo{File: f, Path: filepath.Join(dir, f.Name())})
 	}
+	log.Debug().Msgf("BENCH-FILES %#v", oo)
 
 	return oo, nil
 }

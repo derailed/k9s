@@ -56,11 +56,23 @@ func (p *PortForward) bindKeys(aa ui.KeyActions) {
 }
 
 func (p *PortForward) showBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if err := p.App().inject(NewBenchmark(client.NewGVR("benchmarks"))); err != nil {
+	b := NewBenchmark(client.NewGVR("benchmarks"))
+	b.SetContextFn(p.getContext)
+	if err := p.App().inject(b); err != nil {
 		p.App().Flash().Err(err)
 	}
 
 	return nil
+}
+
+func (p *PortForward) getContext(ctx context.Context) context.Context {
+	ctx = context.WithValue(ctx, internal.KeyDir, benchDir(p.App().Config))
+	path := p.GetTable().GetSelectedItem()
+	if path == "" {
+		return ctx
+	}
+
+	return context.WithValue(ctx, internal.KeyPath, path)
 }
 
 func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {

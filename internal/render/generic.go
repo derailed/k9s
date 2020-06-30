@@ -19,7 +19,7 @@ type Generic struct {
 	ageIndex int
 }
 
-// Happy returns true if resoure is happy, false otherwise
+// Happy returns true if resource is happy, false otherwise
 func (Generic) Happy(ns string, r Row) bool {
 	return true
 }
@@ -77,6 +77,10 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 	for i, c := range row.Cells {
 		if g.ageIndex > 0 && i == g.ageIndex {
 			ageCell = c
+			continue
+		}
+		if c == nil {
+			r.Fields = append(r.Fields, Blank)
 			continue
 		}
 		r.Fields = append(r.Fields, fmt.Sprintf("%v", c))

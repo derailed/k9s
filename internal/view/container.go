@@ -1,10 +1,12 @@
 package view
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
@@ -28,8 +30,22 @@ func NewContainer(gvr client.GVR) ResourceViewer {
 	c.GetTable().SetEnterFn(c.viewLogs)
 	c.GetTable().SetColorerFn(render.Container{}.ColorerFunc())
 	c.SetBindKeysFn(c.bindKeys)
+	c.GetTable().SetDecorateFn(c.portForwardIndicator)
 
 	return &c
+}
+
+func (c *Container) portForwardIndicator(data render.TableData) render.TableData {
+	ff := c.App().factory.Forwarders()
+
+	col := data.IndexOfHeader("PF")
+	for _, re := range data.RowEvents {
+		if ff.IsContainerForwarded(c.GetTable().Path, re.Row.ID) {
+			re.Row.Fields[col] = "[orange::b]Ⓕ"
+		}
+	}
+
+	return data
 }
 
 // Name returns the component name.
@@ -50,6 +66,7 @@ func (c *Container) bindKeys(aa ui.KeyActions) {
 	}
 
 	aa.Add(ui.KeyActions{
+		ui.KeyF:      ui.NewKeyAction("Show PortForward", c.showPFCmd, true),
 		ui.KeyShiftF: ui.NewKeyAction("PortForward", c.portFwdCmd, true),
 		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", c.GetTable().SortColCmd("RESTARTS", false), false),
 	})
@@ -60,7 +77,7 @@ func (c *Container) k9sEnv() Env {
 	path := c.GetTable().GetSelectedItem()
 	row, ok := c.GetTable().GetSelectedRow(path)
 	if !ok {
-		log.Error().Msgf("unable to locate seleted row for %q", path)
+		log.Error().Msgf("unable to locate selected row for %q", path)
 	}
 	env := defaultEnv(c.App().Conn().Config(), path, c.GetTable().GetModel().Peek().Header, row)
 	env["NAMESPACE"], env["POD"] = client.Namespaced(c.GetTable().Path)
@@ -78,6 +95,30 @@ func (c *Container) viewLogs(app *App, model ui.Tabular, gvr, path string) {
 }
 
 // Handlers...
+
+func (c *Container) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := c.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	if !c.App().factory.Forwarders().IsContainerForwarded(c.GetTable().Path, path) {
+		c.App().Flash().Errf("no portforwards defined")
+		return nil
+	}
+	pf := NewPortForward(client.NewGVR("portforwards"))
+	pf.SetContextFn(c.portForwardContext)
+	if err := c.App().inject(pf); err != nil {
+		c.App().Flash().Err(err)
+	}
+
+	return nil
+}
+
+func (c *Container) portForwardContext(ctx context.Context) context.Context {
+	ctx = context.WithValue(ctx, internal.KeyBenchCfg, c.App().BenchFile)
+	return context.WithValue(ctx, internal.KeyPath, c.GetTable().Path)
+}
 
 func (c *Container) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	sel := c.GetTable().GetSelectedItem()
@@ -151,7 +192,7 @@ func (c *Container) isForwardable(path string) ([]string, bool) {
 		}
 	}
 	if cs == nil {
-		log.Error().Err(fmt.Errorf("unable to locate container status named %q", path))
+		log.Error().Err(fmt.Errorf("unable to locate container status for %q", path))
 		return nil, false
 	}
 

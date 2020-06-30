@@ -49,6 +49,10 @@ func (p *PortForwardExtender) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		p.App().Flash().Err(err)
 		return nil
 	}
+	if p.App().factory.Forwarders().IsPodForwarded(pod) {
+		p.App().Flash().Errf("A PortForward already exist for pod %s", pod)
+		return nil
+	}
 	if err := showFwdDialog(p, pod, startFwdCB); err != nil {
 		p.App().Flash().Err(err)
 	}
@@ -100,11 +104,13 @@ func runForward(v ResourceViewer, pf watch.Forwarder, f *portforward.PortForward
 	})
 }
 
-func startFwdCB(v ResourceViewer, path, co string, t client.PortTunnel) {
-	err := tryListenPort(t.Address, t.LocalPort)
-	if err != nil {
-		v.App().Flash().Err(err)
-		return
+func startFwdCB(v ResourceViewer, path, co string, tt []client.PortTunnel) {
+	for _, t := range tt {
+		err := tryListenPort(t.Address, t.LocalPort)
+		if err != nil {
+			v.App().Flash().Err(err)
+			return
+		}
 	}
 
 	if _, ok := v.App().factory.ForwarderFor(dao.PortForwardID(path, co)); ok {
@@ -113,13 +119,13 @@ func startFwdCB(v ResourceViewer, path, co string, t client.PortTunnel) {
 	}
 
 	pf := dao.NewPortForwarder(v.App().factory)
-	fwd, err := pf.Start(path, co, t)
+	fwd, err := pf.Start(path, co, tt)
 	if err != nil {
 		v.App().Flash().Err(err)
 		return
 	}
 
-	log.Debug().Msgf(">>> Starting port forward %q %#v", path, t)
+	log.Debug().Msgf(">>> Starting port forward %q %#v", path, tt)
 	go runForward(v, pf, fwd)
 }
 

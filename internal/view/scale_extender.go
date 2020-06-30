@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
@@ -75,7 +74,7 @@ func (s *ScaleExtender) makeScaleForm(sel string) *tview.Form {
 			s.App().Flash().Err(err)
 			return
 		}
-		ctx, cancel := context.WithTimeout(context.Background(), client.CallTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), s.App().Conn().Config().CallTimeout())
 		defer cancel()
 		if err := s.scale(ctx, sel, count); err != nil {
 			log.Error().Err(err).Msgf("DP %s scaling failed", sel)

@@ -155,7 +155,7 @@ func (n *Node) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), client.CallTimeout)
+	ctx, cancel := context.WithTimeout(context.Background(), n.App().Conn().Config().CallTimeout())
 	defer cancel()
 
 	sel := n.GetTable().GetSelectedItem()

@@ -2,6 +2,7 @@ package watch
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 	"time"
 
@@ -243,8 +244,11 @@ func (f *Factory) ensureFactory(ns string) (di.DynamicSharedInformerFactory, err
 func (f *Factory) AddForwarder(pf Forwarder) {
 	f.mx.Lock()
 	defer f.mx.Unlock()
-
 	f.forwarders[pf.Path()] = pf
+
+	for k, v := range f.forwarders {
+		log.Debug().Msgf("%q -- %#v", k, v)
+	}
 }
 
 // DeleteForwarder deletes portforward for a given container.
@@ -266,6 +270,21 @@ func (f *Factory) ForwarderFor(path string) (Forwarder, bool) {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
 
+	for k := range f.forwarders {
+		log.Debug().Msgf("KEY %q::%q", k, path)
+	}
 	fwd, ok := f.forwarders[path]
 	return fwd, ok
+}
+
+// Validate check if pods are still around for portforwards.
+func (f *Factory) ValidatePortForwards() {
+	for k, fwd := range f.forwarders {
+		tokens := strings.Split(k, ":")
+		_, err := f.Get("v1/pods", tokens[0], false, labels.Everything())
+		if err != nil {
+			fwd.Stop()
+			delete(f.forwarders, k)
+		}
+	}
 }

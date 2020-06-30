@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
@@ -45,7 +44,7 @@ func (r *RestartExtender) restartCmd(evt *tcell.EventKey) *tcell.EventKey {
 		msg = fmt.Sprintf("Restart %d deployments?", len(paths))
 	}
 	dialog.ShowConfirm(r.App().Content.Pages, "Confirm Restart", msg, func() {
-		ctx, cancel := context.WithTimeout(context.Background(), client.CallTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), r.App().Conn().Config().CallTimeout())
 		defer cancel()
 		for _, path := range paths {
 			if err := r.restartRollout(ctx, path); err != nil {

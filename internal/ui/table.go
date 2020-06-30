@@ -382,7 +382,7 @@ func (t *Table) filtered(data render.TableData) render.TableData {
 	filtered, err := rxFilter(t.cmdBuff.GetText(), filtered)
 	if err != nil {
 		log.Error().Err(errors.New("Invalid filter expression")).Msg("Regexp")
-		t.cmdBuff.ClearText()
+		t.cmdBuff.ClearText(true)
 	}
 
 	return filtered

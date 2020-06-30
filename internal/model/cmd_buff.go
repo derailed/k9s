@@ -83,15 +83,16 @@ func (c *CmdBuff) Delete() {
 }
 
 // ClearText clears out command buffer.
-func (c *CmdBuff) ClearText() {
+func (c *CmdBuff) ClearText(fire bool) {
 	c.buff = make([]rune, 0, maxBuff)
-	c.fireBufferChanged()
+	if fire {
+		c.fireBufferChanged()
+	}
 }
 
 // Reset clears out the command buffer and deactivates it.
 func (c *CmdBuff) Reset() {
-	c.ClearText()
-	c.fireBufferChanged()
+	c.ClearText(true)
 	c.SetActive(false)
 }
 

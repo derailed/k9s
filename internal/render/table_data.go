@@ -14,6 +14,11 @@ func NewTableData() *TableData {
 	return &TableData{}
 }
 
+// IndexOfHeader return the index of the header.
+func (t *TableData) IndexOfHeader(h string) int {
+	return t.Header.IndexOf(h, false)
+}
+
 // Labelize prints out specific label columns
 func (t *TableData) Labelize(labels []string) TableData {
 	labelCol := t.Header.IndexOf("LABELS", true)

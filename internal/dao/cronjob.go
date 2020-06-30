@@ -39,26 +39,19 @@ func (c *CronJob) Run(path string) error {
 		return fmt.Errorf("user is not authorize to run cronjobs")
 	}
 
-	// BOZO!! Factory resource??
-	ctx, cancel := context.WithTimeout(context.Background(), client.CallTimeout)
-	defer cancel()
 	o, err := c.Factory.Get("batch/v1beta1/cronjobs", path, true, labels.Everything())
 	if err != nil {
-
 		return err
 	}
-
 	var cj batchv1beta1.CronJob
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cj)
 	if err != nil {
 		return errors.New("expecting CronJob resource")
 	}
-
 	var jobName = cj.Name
 	if len(cj.Name) >= maxJobNameSize {
 		jobName = cj.Name[0:maxJobNameSize]
 	}
-
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName + "-manual-" + rand.String(3),
@@ -71,6 +64,8 @@ func (c *CronJob) Run(path string) error {
 	if err != nil {
 		return err
 	}
+	ctx, cancel := context.WithTimeout(context.Background(), c.Client().Config().CallTimeout())
+	defer cancel()
 	_, err = dial.BatchV1().Jobs(ns).Create(ctx, job, metav1.CreateOptions{})
 
 	return err

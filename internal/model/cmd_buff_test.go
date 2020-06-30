@@ -62,7 +62,7 @@ func TestCmdBuffChanged(t *testing.T) {
 	assert.Equal(t, "", b.GetText())
 
 	b.Add('c')
-	b.ClearText()
+	b.ClearText(true)
 	assert.Equal(t, 0, l.act)
 	assert.Equal(t, 0, l.inact)
 	assert.Equal(t, "", l.text)

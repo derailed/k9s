@@ -26,6 +26,9 @@ const (
 
 	// Pending represents a pod pending status.
 	Pending = "Pending"
+
+	// Blank represents no value.
+	Blank = ""
 )
 
 const (

@@ -215,9 +215,9 @@ func newStyle() Style {
 
 func newCharts() Charts {
 	return Charts{
-		BgColor:            "default",
-		DialBgColor:        "default",
-		ChartBgColor:       "default",
+		BgColor:            "black",
+		DialBgColor:        "black",
+		ChartBgColor:       "black",
 		DefaultDialColors:  Colors{Color("palegreen"), Color("orangered")},
 		DefaultChartColors: Colors{Color("palegreen"), Color("orangered")},
 		ResourceColors: map[string]Colors{

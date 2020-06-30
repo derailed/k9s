@@ -201,7 +201,7 @@ func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
 	for _, co := range po.Spec.InitContainers {
 		log.Debug().Msgf("Tailing INIT-CO %q", co.Name)
 		opts.Container = co.Name
-		if err := p.TailLogs(ctx, c, opts); err != nil {
+		if err := tailLogs(ctx, p, c, opts); err != nil {
 			return err
 		}
 		tailed = true

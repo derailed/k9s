@@ -188,7 +188,7 @@ func (a *App) clearCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !a.CmdBuff().IsActive() {
 		return evt
 	}
-	a.CmdBuff().ClearText()
+	a.CmdBuff().ClearText(true)
 
 	return nil
 }
@@ -198,7 +198,7 @@ func (a *App) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	a.ResetPrompt(a.cmdModel)
-	a.cmdModel.ClearText()
+	a.cmdModel.ClearText(true)
 
 	return nil
 }

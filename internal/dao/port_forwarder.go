@@ -103,8 +103,14 @@ func (p *PortForwarder) HasPortMapping(m string) bool {
 }
 
 // Start initiates a port forward session for a given pod and ports.
-func (p *PortForwarder) Start(path, co string, t client.PortTunnel) (*portforward.PortForwarder, error) {
-	fwds := []string{t.PortMap()}
+func (p *PortForwarder) Start(path, co string, tt []client.PortTunnel) (*portforward.PortForwarder, error) {
+	if len(tt) == 0 {
+		return nil, fmt.Errorf("no ports assigned")
+	}
+	fwds := make([]string, 0, len(tt))
+	for _, t := range tt {
+		fwds = append(fwds, t.PortMap())
+	}
 	p.path, p.container, p.ports, p.age = path, co, fwds, time.Now()
 
 	ns, n := client.Namespaced(path)
@@ -152,7 +158,7 @@ func (p *PortForwarder) Start(path, co string, t client.PortTunnel) (*portforwar
 		Name(n).
 		SubResource("portforward")
 
-	return p.forwardPorts("POST", req.URL(), t.Address, fwds)
+	return p.forwardPorts("POST", req.URL(), tt[0].Address, fwds)
 }
 
 func (p *PortForwarder) forwardPorts(method string, url *url.URL, address string, ports []string) (*portforward.PortForwarder, error) {

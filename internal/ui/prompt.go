@@ -43,7 +43,7 @@ type PromptModel interface {
 	GetText() string
 
 	// ClearText clears out model text.
-	ClearText()
+	ClearText(fire bool)
 
 	// Notify notifies all listener of current suggestions.
 	Notify()
@@ -135,13 +135,13 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	case tcell.KeyRune:
 		p.model.Add(evt.Rune())
 	case tcell.KeyEscape:
-		p.model.ClearText()
+		p.model.ClearText(true)
 		p.model.SetActive(false)
 	case tcell.KeyEnter, tcell.KeyCtrlE:
 		p.model.SetText(p.model.GetText())
 		p.model.SetActive(false)
 	case tcell.KeyCtrlW, tcell.KeyCtrlU:
-		p.model.ClearText()
+		p.model.ClearText(true)
 	case tcell.KeyUp:
 		if s, ok := m.NextSuggestion(); ok {
 			p.suggest(p.model.GetText(), s)

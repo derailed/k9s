@@ -11,7 +11,7 @@ import (
 // Forwarder represents a port forwarder.
 type Forwarder interface {
 	// Start starts a port-forward.
-	Start(path, co string, t client.PortTunnel) (*portforward.PortForwarder, error)
+	Start(path, co string, tt []client.PortTunnel) (*portforward.PortForwarder, error)
 
 	// Stop terminates a port forward.
 	Stop()
@@ -47,6 +47,24 @@ type Forwarders map[string]Forwarder
 // NewForwarders returns new forwarders.
 func NewForwarders() Forwarders {
 	return make(map[string]Forwarder)
+}
+
+// IsForwarded checks if pod has a forward
+func (ff Forwarders) IsPodForwarded(path string) bool {
+	for k := range ff {
+		fqn := strings.Split(k, ":")
+		if fqn[0] == path {
+			return true
+		}
+	}
+	return false
+}
+
+// IsForwarded checks if pod has a forward
+func (ff Forwarders) IsContainerForwarded(path, co string) bool {
+	_, ok := ff[path+":"+co]
+
+	return ok
 }
 
 // DeleteAll stops and delete all port-forwards.

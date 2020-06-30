@@ -40,21 +40,25 @@ func (p *PortForward) Delete(path string, cascade, force bool) error {
 	return nil
 }
 
-// List returns a collection of screen dumps.
+// List returns a collection of port forwards.
 func (p *PortForward) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	benchFile, ok := ctx.Value(internal.KeyBenchCfg).(string)
 	if !ok {
 		return nil, fmt.Errorf("no bench file found in context")
 	}
+	path, _ := ctx.Value(internal.KeyPath).(string)
 
 	config, err := config.NewBench(benchFile)
 	if err != nil {
 		log.Debug().Msgf("No custom benchmark config file found")
 	}
 
-	cc := config.Benchmarks.Containers
-	oo := make([]runtime.Object, 0, len(p.Factory.Forwarders()))
-	for k, f := range p.Factory.Forwarders() {
+	ff, cc := p.Factory.Forwarders(), config.Benchmarks.Containers
+	oo := make([]runtime.Object, 0, len(ff))
+	for k, f := range ff {
+		if !strings.HasPrefix(k, path) {
+			continue
+		}
 		cfg := render.BenchCfg{
 			C: config.Benchmarks.Defaults.C,
 			N: config.Benchmarks.Defaults.N,

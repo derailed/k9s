@@ -118,14 +118,15 @@ func (g *Generic) Delete(path string, cascade, force bool) error {
 		PropagationPolicy:  &p,
 		GracePeriodSeconds: grace,
 	}
-	// BOZO!! Move to caller!
-	ctx, cancel := context.WithTimeout(context.Background(), client.CallTimeout)
-	defer cancel()
 
 	dial, err := g.dynClient()
 	if err != nil {
 		return err
 	}
+	// BOZO!! Move to caller!
+	ctx, cancel := context.WithTimeout(context.Background(), g.Client().Config().CallTimeout())
+	defer cancel()
+
 	if client.IsClusterScoped(ns) {
 		return dial.Delete(ctx, n, opts)
 	}

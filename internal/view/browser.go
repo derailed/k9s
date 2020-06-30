@@ -130,7 +130,9 @@ func (b *Browser) Start() {
 
 // Stop terminates browser updates.
 func (b *Browser) Stop() {
+	log.Debug().Msgf("BRO-STOP %v", b.GVR())
 	if b.cancelFn != nil {
+		log.Debug().Msgf("Canceling!!")
 		b.cancelFn()
 		b.cancelFn = nil
 	}
@@ -153,7 +155,7 @@ func (b *Browser) BufferActive(state bool, k model.BufferKind) {
 	if state {
 		return
 	}
-	b.GetModel().Refresh(b.defaultContext())
+	b.GetModel().Refresh(b.prepareContext())
 	b.app.QueueUpdateDraw(func() {
 		b.Update(b.GetModel().Peek())
 		if b.GetRowCount() > 1 {
@@ -242,7 +244,7 @@ func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (b *Browser) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !b.CmdBuff().InCmdMode() {
-		b.CmdBuff().Reset()
+		b.CmdBuff().ClearText(false)
 		return b.App().PrevCmd(evt)
 	}
 

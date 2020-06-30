@@ -16,7 +16,7 @@ type Alias struct{}
 // ColorerFunc colors a resource row.
 func (Alias) ColorerFunc() ColorerFunc {
 	return func(ns string, _ Header, re RowEvent) tcell.Color {
-		return tcell.ColorMediumSpringGreen
+		return tcell.ColorAliceBlue
 	}
 }
 

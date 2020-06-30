@@ -34,8 +34,22 @@ func NewPod(gvr client.GVR) ResourceViewer {
 	p.SetBindKeysFn(p.bindKeys)
 	p.GetTable().SetEnterFn(p.showContainers)
 	p.GetTable().SetColorerFn(render.Pod{}.ColorerFunc())
+	p.GetTable().SetDecorateFn(p.portForwardIndicator)
 
 	return &p
+}
+
+func (p *Pod) portForwardIndicator(data render.TableData) render.TableData {
+	ff := p.App().factory.Forwarders()
+
+	col := data.IndexOfHeader("PF")
+	for _, re := range data.RowEvents {
+		if ff.IsPodForwarded(re.Row.ID) {
+			re.Row.Fields[col] = "[orange::b]Ⓕ"
+		}
+	}
+
+	return data
 }
 
 func (p *Pod) bindDangerousKeys(aa ui.KeyActions) {
@@ -52,6 +66,7 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 	}
 
 	aa.Add(ui.KeyActions{
+		ui.KeyF:      ui.NewKeyAction("Show PortForward", p.showPFCmd, true),
 		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", p.GetTable().SortColCmd(readyCol, true), false),
 		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd("RESTARTS", false), false),
 		ui.KeyShiftS: ui.NewKeyAction("Sort Status", p.GetTable().SortColCmd(statusCol, true), false),
@@ -90,7 +105,31 @@ func (p *Pod) coContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeyPath, p.GetTable().GetSelectedItem())
 }
 
-// Commands...
+// Handlers...
+
+func (p *Pod) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := p.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	if !p.App().factory.Forwarders().IsPodForwarded(path) {
+		p.App().Flash().Errf("no portforwards defined")
+		return nil
+	}
+	pf := NewPortForward(client.NewGVR("portforwards"))
+	pf.SetContextFn(p.portForwardContext)
+	if err := p.App().inject(pf); err != nil {
+		p.App().Flash().Err(err)
+	}
+
+	return nil
+}
+
+func (p *Pod) portForwardContext(ctx context.Context) context.Context {
+	ctx = context.WithValue(ctx, internal.KeyBenchCfg, p.App().BenchFile)
+	return context.WithValue(ctx, internal.KeyPath, p.GetTable().GetSelectedItem())
+}
 
 func (p *Pod) killCmd(evt *tcell.EventKey) *tcell.EventKey {
 	sels := p.GetTable().GetSelectedItems()

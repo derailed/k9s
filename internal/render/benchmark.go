@@ -57,7 +57,7 @@ func (Benchmark) Header(ns string) Header {
 func (b Benchmark) Render(o interface{}, ns string, r *Row) error {
 	bench, ok := o.(BenchInfo)
 	if !ok {
-		return fmt.Errorf("expecting benchinfo but got `%T", o)
+		return fmt.Errorf("No benchmarks available %T", o)
 	}
 
 	data, err := b.readFile(bench.Path)

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -14,8 +15,10 @@ import (
 )
 
 const (
-	defaultQPS   = 50
-	defaultBurst = 50
+	defaultQPS                               = 50
+	defaultBurst                             = 50
+	defaultCallTimeoutDuration time.Duration = 5 * time.Second
+	defaultCallTimeout                       = "5s"
 )
 
 // Config tracks a kubernetes configuration.
@@ -29,10 +32,32 @@ type Config struct {
 
 // NewConfig returns a new k8s config or an error if the flags are invalid.
 func NewConfig(f *genericclioptions.ConfigFlags) *Config {
+	timeout := defaultCallTimeout
+	if f.Timeout == nil {
+		f.Timeout = &timeout
+	} else {
+		_, err := time.ParseDuration(*f.Timeout)
+		if err != nil {
+			f.Timeout = &timeout
+		}
+	}
 	return &Config{
 		flags: f,
 		mutex: &sync.RWMutex{},
 	}
+}
+
+// CallTimeout returns the call timeout if set or the default if not set.
+func (c *Config) CallTimeout() time.Duration {
+	if c.flags.Timeout == nil {
+		return defaultCallTimeoutDuration
+	}
+	dur, err := time.ParseDuration(*c.flags.Timeout)
+	if err != nil {
+		return defaultCallTimeoutDuration
+	}
+
+	return dur
 }
 
 // Flags returns configuration flags.
