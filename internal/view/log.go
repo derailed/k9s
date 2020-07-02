@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/atotto/clipboard"
 	"io"
 	"os"
 	"path/filepath"
@@ -184,13 +185,14 @@ func (l *Log) bindKeys() {
 		ui.Key4:        ui.NewKeyAction("30m", l.sinceCmd(30*60), true),
 		ui.Key5:        ui.NewKeyAction("1h", l.sinceCmd(60*60), true),
 		tcell.KeyEnter: ui.NewSharedKeyAction("Filter", l.filterCmd, false),
-		ui.KeyC:        ui.NewKeyAction("Clear", l.clearCmd, true),
+		tcell.KeyCtrlK: ui.NewKeyAction("Clear", l.clearCmd, true),
 		ui.KeyM:        ui.NewKeyAction("Mark", l.markCmd, true),
 		ui.KeyS:        ui.NewKeyAction("Toggle AutoScroll", l.toggleAutoScrollCmd, true),
 		ui.KeyF:        ui.NewKeyAction("Toggle FullScreen", l.toggleFullScreenCmd, true),
 		ui.KeyT:        ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
 		ui.KeyW:        ui.NewKeyAction("Toggle Wrap", l.toggleTextWrapCmd, true),
 		tcell.KeyCtrlS: ui.NewKeyAction("Save", l.SaveCmd, true),
+		ui.KeyC:        ui.NewKeyAction("Copy", l.cpCmd, true),
 	})
 }
 
@@ -284,6 +286,14 @@ func (l *Log) SaveCmd(evt *tcell.EventKey) *tcell.EventKey {
 		l.app.Flash().Err(err)
 	} else {
 		l.app.Flash().Infof("Log %s saved successfully!", path)
+	}
+	return nil
+}
+
+func (l *Log) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
+	l.app.Flash().Info("Content copied to clipboard...")
+	if err := clipboard.WriteAll(l.logs.GetText(true)); err != nil {
+		l.app.Flash().Err(err)
 	}
 	return nil
 }
