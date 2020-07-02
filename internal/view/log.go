@@ -185,7 +185,7 @@ func (l *Log) bindKeys() {
 		ui.Key4:        ui.NewKeyAction("30m", l.sinceCmd(30*60), true),
 		ui.Key5:        ui.NewKeyAction("1h", l.sinceCmd(60*60), true),
 		tcell.KeyEnter: ui.NewSharedKeyAction("Filter", l.filterCmd, false),
-		ui.KeyL:        ui.NewKeyAction("Clear", l.clearCmd, true),
+		tcell.KeyCtrlK: ui.NewKeyAction("Clear", l.clearCmd, true),
 		ui.KeyM:        ui.NewKeyAction("Mark", l.markCmd, true),
 		ui.KeyS:        ui.NewKeyAction("Toggle AutoScroll", l.toggleAutoScrollCmd, true),
 		ui.KeyF:        ui.NewKeyAction("Toggle FullScreen", l.toggleFullScreenCmd, true),
