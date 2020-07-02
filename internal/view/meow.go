@@ -124,7 +124,7 @@ func (m *Meow) ExtraHints() map[string]string {
 }
 
 func (m *Meow) updateTitle() {
-	m.SetTitle(" Meow! ")
+	m.SetTitle(" Error ")
 }
 
 var cow = []string{

@@ -19,3 +19,4 @@ pod1.go
 faas
 .settings/*
 demos
+/code

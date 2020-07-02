@@ -523,6 +523,24 @@ func (a *App) meowCmd(msg string) {
 	}
 }
 
+func (a *App) dirCmd(path string) error {
+	log.Debug().Msgf("DIR PATH %q", path)
+	_, err := os.Stat(path)
+	if err != nil {
+		return err
+	}
+	if path == "." {
+		dir, err := os.Getwd()
+		if err == nil {
+			path = dir
+		}
+	}
+	a.Content.Stack.Clear()
+	a.cmdHistory.Push("dir " + path)
+
+	return a.inject(NewDir(path))
+}
+
 func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.CmdBuff().InCmdMode() {
 		return evt

@@ -239,7 +239,7 @@ func (h *Help) showGeneral() model.MenuHints {
 			Description: "Toggle Header",
 		},
 		{
-			Mnemonic:    "q",
+			Mnemonic:    ":q",
 			Description: "Quit",
 		},
 		{

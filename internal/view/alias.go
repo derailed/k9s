@@ -58,6 +58,10 @@ func (a *Alias) bindKeys(aa ui.KeyActions) {
 }
 
 func (a *Alias) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.GetTable().CmdBuff().IsActive() {
+		return a.GetTable().activateCmd(evt)
+	}
+
 	r, _ := a.GetTable().GetSelection()
 	if r != 0 {
 		s := ui.TrimCell(a.GetTable().SelectTable, r, 1)
@@ -68,8 +72,5 @@ func (a *Alias) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	if a.GetTable().CmdBuff().IsActive() {
-		return a.GetTable().activateCmd(evt)
-	}
 	return evt
 }

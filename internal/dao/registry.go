@@ -51,6 +51,7 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		client.NewGVR("popeye"):                        &Popeye{},
 		client.NewGVR("sanitizer"):                     &Popeye{},
 		client.NewGVR("helm"):                          &Helm{},
+		client.NewGVR("dir"):                           &Dir{},
 	}
 
 	r, ok := m[gvr]
@@ -152,6 +153,12 @@ func loadK9s(m ResourceMetas) {
 		ShortNames:   []string{"hz", "pu"},
 		Categories:   []string{"k9s"},
 	}
+	m[client.NewGVR("dir")] = metav1.APIResource{
+		Name:         "dir",
+		Kind:         "Dir",
+		SingularName: "dir",
+		Categories:   []string{"k9s"},
+	}
 	m[client.NewGVR("xrays")] = metav1.APIResource{
 		Name:         "xray",
 		Kind:         "XRays",
@@ -176,7 +183,7 @@ func loadK9s(m ResourceMetas) {
 		Name:         "popeye",
 		Kind:         "Popeye",
 		SingularName: "popeye",
-		Namespaced: true,
+		Namespaced:   true,
 		Verbs:        []string{},
 		Categories:   []string{"k9s"},
 	}

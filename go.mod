@@ -5,6 +5,7 @@ go 1.14
 require (
 	9fans.net/go v0.0.2
 	github.com/atotto/clipboard v0.1.2
+	github.com/coreos/etcd v3.3.10+incompatible
 	github.com/derailed/popeye v0.8.6
 	github.com/derailed/tview v0.3.10
 	github.com/drone/envsubst v1.0.2 // indirect
@@ -13,7 +14,9 @@ require (
 	github.com/gdamore/tcell v1.3.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/golang/protobuf v1.4.2 // indirect
-	github.com/kylelemons/godebug v1.1.0 // indirect
+	github.com/kylelemons/godebug v1.1.0
+	github.com/logrusorgru/aurora v0.0.0-20200102142835-e9ef32dff381
+	github.com/mattn/go-isatty v0.0.11
 	github.com/mattn/go-runewidth v0.0.9
 	github.com/openfaas/faas v0.0.0-20200207215241-6afae214e3ec
 	github.com/openfaas/faas-cli v0.0.0-20200124160744-30b7cec9634c
@@ -30,6 +33,7 @@ require (
 	golang.org/x/text v0.3.2
 	google.golang.org/genproto v0.0.0-20200515170657-fc4c6c6a6587 // indirect
 	google.golang.org/grpc v1.29.1 // indirect
+	gopkg.in/fsnotify.v1 v1.4.7
 	gopkg.in/yaml.v2 v2.2.8
 	helm.sh/helm/v3 v3.2.0
 	k8s.io/api v0.18.2

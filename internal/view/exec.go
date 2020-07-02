@@ -1,6 +1,7 @@
 package view
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -121,6 +122,49 @@ func execute(opts shellOpts) error {
 	default:
 		return err
 	}
+}
+
+func runKu(a *App, opts shellOpts) (string, error) {
+	bin, err := exec.LookPath("kubectl")
+	if err != nil {
+		log.Error().Err(err).Msgf("kubectl command is not in your path")
+		return "", err
+	}
+	var args []string
+	if u, err := a.Conn().Config().ImpersonateUser(); err == nil {
+		args = append(args, "--as", u)
+	}
+	if g, err := a.Conn().Config().ImpersonateGroups(); err == nil {
+		args = append(args, "--as-group", g)
+	}
+	args = append(args, "--context", a.Config.K9s.CurrentContext)
+	if cfg := a.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
+		args = append(args, "--kubeconfig", *cfg)
+	}
+	if len(args) > 0 {
+		opts.args = append(args, opts.args...)
+	}
+	opts.binary, opts.background = bin, false
+
+	return oneShoot(opts)
+}
+
+func oneShoot(opts shellOpts) (string, error) {
+	if opts.clear {
+		clearScreen()
+	}
+
+	log.Debug().Msgf("Running command> %s %s", opts.binary, strings.Join(opts.args, " "))
+	cmd := exec.Command(opts.binary, opts.args...)
+
+	var err error
+	buff := bytes.NewBufferString("")
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, buff, buff
+	_, _ = cmd.Stdout.Write([]byte(opts.banner))
+	err = cmd.Run()
+	log.Debug().Msgf("RES %q", buff)
+
+	return strings.Trim(buff.String(), "\n"), err
 }
 
 func clearScreen() {

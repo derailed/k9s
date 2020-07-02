@@ -1,0 +1,64 @@
+package render
+
+import (
+	"fmt"
+	"os"
+
+	"github.com/gdamore/tcell"
+	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/runtime/schema"
+)
+
+// Dir renders a directory entry to screen.
+type Dir struct{}
+
+// ColorerFunc colors a resource row.
+func (Dir) ColorerFunc() ColorerFunc {
+	return func(ns string, _ Header, re RowEvent) tcell.Color {
+		return tcell.ColorCadetBlue
+	}
+}
+
+// Header returns a header row.
+func (Dir) Header(ns string) Header {
+	return Header{
+		HeaderColumn{Name: "NAME"},
+	}
+}
+
+// Render renders a K8s resource to screen.
+// BOZO!! Pass in a row with pre-alloc fields??
+func (Dir) Render(o interface{}, ns string, r *Row) error {
+	d, ok := o.(DirRes)
+	if !ok {
+		return fmt.Errorf("expected DirRes, but got %T", o)
+	}
+
+	name := "🦄 "
+	if d.Info.IsDir() {
+		name = "📁 "
+	}
+	name += d.Info.Name()
+	r.ID, r.Fields = d.Path, append(r.Fields, name)
+
+	return nil
+}
+
+// ----------------------------------------------------------------------------
+// Helpers...
+
+// DirRes represents an alias resource.
+type DirRes struct {
+	Info os.FileInfo
+	Path string
+}
+
+// GetObjectKind returns a schema object.
+func (DirRes) GetObjectKind() schema.ObjectKind {
+	return nil
+}
+
+// DeepCopyObject returns a container copy.
+func (d DirRes) DeepCopyObject() runtime.Object {
+	return d
+}

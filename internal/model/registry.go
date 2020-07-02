@@ -14,6 +14,10 @@ var Registry = map[string]ResourceMeta{
 		DAO:      &dao.Reference{},
 		Renderer: &render.Reference{},
 	},
+	"dir": {
+		DAO:      &dao.Dir{},
+		Renderer: &render.Dir{},
+	},
 	"helm": {
 		DAO:      &dao.Helm{},
 		Renderer: &render.Helm{},

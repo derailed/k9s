@@ -124,6 +124,11 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 			return useContext(c.app, cmds[1])
 		}
 		return c.exec(cmd, gvr, c.componentFor(gvr, path, v), clearStack)
+	case "dir":
+		if len(cmds) != 2 {
+			return errors.New("You must specify a directory")
+		}
+		return c.app.dirCmd(cmds[1])
 	default:
 		// checks if Command includes a namespace
 		ns := c.app.Config.ActiveNamespace()

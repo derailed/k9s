@@ -103,8 +103,8 @@ func (f *Factory) HasSynced(gvr, ns string) (bool, error) {
 }
 
 // Get retrieves a given resource.
-func (f *Factory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
-	ns, n := namespaced(path)
+func (f *Factory) Get(gvr, fqn string, wait bool, sel labels.Selector) (runtime.Object, error) {
+	ns, n := namespaced(fqn)
 	inf, err := f.CanForResource(ns, gvr, []string{client.GetVerb})
 	if err != nil {
 		return nil, err
