@@ -49,7 +49,7 @@ func (p *Pod) portForwardIndicator(data render.TableData) render.TableData {
 		}
 	}
 
-	return data
+	return decorateCpuMemHeaderRows(p.App(), data)
 }
 
 func (p *Pod) bindDangerousKeys(aa ui.KeyActions) {

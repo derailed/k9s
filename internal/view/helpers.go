@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
@@ -176,4 +177,41 @@ func fqn(ns, n string) string {
 		return n
 	}
 	return ns + "/" + n
+}
+
+func decorateCpuMemHeaderRows(app *App, data render.TableData) render.TableData {
+	for colIndex, header := range data.Header {
+		check := ""
+		if header.Name == "%CPU/L" {
+			check = "cpu"
+		}
+		if header.Name == "%MEM/L" {
+			check = "memory"
+		}
+		if len(check) == 0 {
+			continue
+		}
+		for _, re := range data.RowEvents {
+			if re.Row.Fields[colIndex] == render.NAValue {
+				continue
+			}
+			n, err := strconv.Atoi(re.Row.Fields[colIndex])
+			if err != nil {
+				continue
+			}
+			if n > 100 {
+				n = 100
+			}
+			severity := app.Config.K9s.Thresholds.LevelFor(check, n)
+			if severity == config.SeverityLow {
+				continue
+			}
+			color := app.Config.K9s.Thresholds.SeverityColor(check, n)
+			if len(color) > 0 {
+				re.Row.Fields[colIndex] = "[" + color + "::b]" + re.Row.Fields[colIndex]
+			}
+		}
+	}
+
+	return data
 }

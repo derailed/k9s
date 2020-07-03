@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/atotto/clipboard"
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
@@ -28,6 +30,9 @@ const (
 	logCoFmt     = " Logs([hilite:bg:]%s:[hilite:bg:b]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
 	flushTimeout = 50 * time.Millisecond
 )
+
+// InvalidCharsRX contains invalid filename characters.
+var invalidPathCharsRX = regexp.MustCompile(`[:/\\]+`)
 
 // Log represents a generic log viewer.
 type Log struct {
@@ -180,13 +185,14 @@ func (l *Log) bindKeys() {
 		ui.Key4:        ui.NewKeyAction("30m", l.sinceCmd(30*60), true),
 		ui.Key5:        ui.NewKeyAction("1h", l.sinceCmd(60*60), true),
 		tcell.KeyEnter: ui.NewSharedKeyAction("Filter", l.filterCmd, false),
-		ui.KeyC:        ui.NewKeyAction("Clear", l.clearCmd, true),
+		tcell.KeyCtrlK: ui.NewKeyAction("Clear", l.clearCmd, true),
 		ui.KeyM:        ui.NewKeyAction("Mark", l.markCmd, true),
 		ui.KeyS:        ui.NewKeyAction("Toggle AutoScroll", l.toggleAutoScrollCmd, true),
 		ui.KeyF:        ui.NewKeyAction("Toggle FullScreen", l.toggleFullScreenCmd, true),
 		ui.KeyT:        ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
 		ui.KeyW:        ui.NewKeyAction("Toggle Wrap", l.toggleTextWrapCmd, true),
 		tcell.KeyCtrlS: ui.NewKeyAction("Save", l.SaveCmd, true),
+		ui.KeyC:        ui.NewKeyAction("Copy", l.cpCmd, true),
 	})
 }
 
@@ -284,18 +290,32 @@ func (l *Log) SaveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+func (l *Log) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
+	l.app.Flash().Info("Content copied to clipboard...")
+	if err := clipboard.WriteAll(l.logs.GetText(true)); err != nil {
+		l.app.Flash().Err(err)
+	}
+	return nil
+}
+
+func sanitizeFilename(name string) string {
+	processedString := invalidPathCharsRX.ReplaceAllString(name, "-")
+
+	return processedString
+}
+
 func ensureDir(dir string) error {
 	return os.MkdirAll(dir, 0744)
 }
 
 func saveData(cluster, name, data string) (string, error) {
-	dir := filepath.Join(config.K9sDumpDir, cluster)
+	dir := filepath.Join(config.K9sDumpDir, sanitizeFilename(cluster))
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}
 
 	now := time.Now().UnixNano()
-	fName := fmt.Sprintf("%s-%d.log", strings.Replace(name, "/", "-", -1), now)
+	fName := fmt.Sprintf("%s-%d.log", sanitizeFilename(name), now)
 
 	path := filepath.Join(dir, fName)
 	mod := os.O_CREATE | os.O_WRONLY
