@@ -51,7 +51,7 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 
 		for _, p := range pp1 {
 			if !hasPort(p, ports) {
-				v.App().Flash().Err(fmt.Errorf("container port must match exposed ports"))
+				v.App().Flash().Err(fmt.Errorf("container port %q must match exposed ports %v", p, pp1))
 				return
 			}
 		}
@@ -92,12 +92,12 @@ func DismissPortForwards(v ResourceViewer, p *ui.Pages) {
 
 func hasPort(port string, pp []string) bool {
 	for _, p := range pp {
-		if p != port {
-			return false
+		if p == port {
+			return true
 		}
 	}
 
-	return true
+	return false
 }
 
 func extractPort(p string) string {
