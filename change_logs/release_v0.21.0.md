@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s_small.png" align="right" width="200" height="auto"/>
 
-# Release v0.20.6
+# Release v0.21.0
 
 ## Notes
 
