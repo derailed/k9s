@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s_small.png" align="right" width="200" height="auto"/>
 
-# Release v0.21.1
+# Release v0.21.2
 
 ## Notes
 
@@ -11,6 +11,13 @@ If you feel K9s is helping your Kubernetes journey, please consider joining our 
 On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_invite/enQtOTA5MDEyNzI5MTU0LWQ1ZGI3MzliYzZhZWEyNzYxYzA3NjE0YTk1YmFmNzViZjIyNzhkZGI0MmJjYzhlNjdlMGJhYzE2ZGU1NjkyNTM)
 
 ---
+
+## First A Word From Our Sponsors...
+
+First off, I would like to send a `Big Thank You` to the following generous K9s friends for joining our sponsorship program and supporting this project!
+
+* [Remo Eichenberger](https://github.com/remoe)
+* [Ken Ahrens](https://github.com/kenahrens)
 
 Maintenance Release!
 
