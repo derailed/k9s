@@ -12,17 +12,11 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ---
 
-## A Word From Our Sponsors...
-
-I would like to send a `Big Thank You` to the following generous K9s friend for joining our sponsorship program and supporting this project!
-
-* [Joao Azevedo](https://github.com/jcazevedo)
-
 Maintenance Release!
 
 ## Resolved Bugs/Features/PRs
 
-* [Issue #791](https://github.com/derailed/k9s/issues/791)
+* [Issue #790](https://github.com/derailed/k9s/issues/790) My bad! Must get mo' sleep ;(
 
 ---
 
