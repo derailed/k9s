@@ -60,7 +60,7 @@ func (ff Forwarders) IsPodForwarded(path string) bool {
 	return false
 }
 
-// IsForwarded checks if pod has a forward
+// IsContainerForwarded checks if pod has a forward
 func (ff Forwarders) IsContainerForwarded(path, co string) bool {
 	_, ok := ff[path+":"+co]
 
