@@ -22,6 +22,7 @@ type Dir struct {
 	path string
 }
 
+// NewDir returns a new instance.
 func NewDir(path string) ResourceViewer {
 	d := Dir{
 		ResourceViewer: NewBrowser(client.NewGVR("dir")),

@@ -4,13 +4,14 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/atotto/clipboard"
 	"io"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/atotto/clipboard"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
@@ -241,6 +242,7 @@ func (l *Log) Logs() *Details {
 	return l.logs
 }
 
+// EOL tracks end of lines.
 var EOL = []byte("\n")
 
 // Flush write logs to viewer.

@@ -277,7 +277,7 @@ func (f *Factory) ForwarderFor(path string) (Forwarder, bool) {
 	return fwd, ok
 }
 
-// Validate check if pods are still around for portforwards.
+// ValidatePortForwards check if pods are still around for portforwards.
 func (f *Factory) ValidatePortForwards() {
 	for k, fwd := range f.forwarders {
 		tokens := strings.Split(k, ":")
