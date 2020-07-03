@@ -127,6 +127,7 @@ func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, er
 	if err != nil {
 		return nil, err
 	}
+
 	ns, n := client.Namespaced(path)
 	return dial.CoreV1().Pods(ns).GetLogs(n, opts), nil
 }

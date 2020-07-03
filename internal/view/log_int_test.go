@@ -66,7 +66,7 @@ func TestLogTimestamp(t *testing.T) {
 	l.Logs().Clear()
 	l.Flush(buff)
 
-	assert.Equal(t, fmt.Sprintf("%-30s %s", "ttt", "fred/blee:c1 Testing 1, 2, 3"), l.Logs().GetText(true))
+	assert.Equal(t, fmt.Sprintf("\n%-30s %s", "ttt", "fred/blee:c1 Testing 1, 2, 3"), l.Logs().GetText(true))
 	assert.Equal(t, 2, list.change)
 	assert.Equal(t, 2, list.clear)
 	assert.Equal(t, 0, list.fail)

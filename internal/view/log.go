@@ -243,13 +243,14 @@ func (l *Log) Logs() *Details {
 }
 
 // EOL tracks end of lines.
-var EOL = []byte("\n")
+var EOL = []byte{'\n'}
 
 // Flush write logs to viewer.
 func (l *Log) Flush(lines dao.LogItems) {
-	showTime := l.Indicator().showTime
+	log.Debug().Msgf("Flushing %d", len(lines))
 	ll := make([][]byte, len(lines))
-	lines.Render(showTime, ll)
+	lines.Render(l.Indicator().showTime, ll)
+	_, _ = l.ansiWriter.Write(EOL)
 	if _, err := l.ansiWriter.Write(bytes.Join(ll, EOL)); err != nil {
 		log.Error().Err(err).Msgf("write log failed")
 	}

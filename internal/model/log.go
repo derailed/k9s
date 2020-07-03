@@ -161,7 +161,6 @@ func (l *Log) ClearFilter() {
 
 // Filter filters th:e model using either fuzzy or regexp.
 func (l *Log) Filter(q string) {
-	log.Debug().Msgf("Filter %q", q)
 	l.mx.Lock()
 	defer l.mx.Unlock()
 

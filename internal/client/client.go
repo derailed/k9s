@@ -231,6 +231,7 @@ func (a *APIClient) CheckConnectivity() bool {
 		a.connOK = false
 		return a.connOK
 	}
+	cfg.Timeout = defaultCallTimeoutDuration
 	client, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to connect to api server")
@@ -278,8 +279,7 @@ func (a *APIClient) HasMetrics() bool {
 
 	timeout, err := time.ParseDuration(*a.config.flags.Timeout)
 	if err != nil {
-		log.Error().Err(err).Msgf("parsing duration")
-		return false
+		timeout = defaultCallTimeoutDuration
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()

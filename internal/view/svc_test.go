@@ -11,6 +11,12 @@ import (
 )
 
 func init() {
+	dao.MetaAccess.RegisterMeta("dir", metav1.APIResource{
+		Name:         "dir",
+		SingularName: "dir",
+		Kind:         "Directory",
+		Categories:   []string{"k9s"},
+	})
 	dao.MetaAccess.RegisterMeta("v1/pods", metav1.APIResource{
 		Name:         "pods",
 		SingularName: "pod",
