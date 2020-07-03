@@ -247,12 +247,11 @@ var EOL = []byte{'\n'}
 
 // Flush write logs to viewer.
 func (l *Log) Flush(lines dao.LogItems) {
-	log.Debug().Msgf("Flushing %d", len(lines))
 	ll := make([][]byte, len(lines))
 	lines.Render(l.Indicator().showTime, ll)
 	_, _ = l.ansiWriter.Write(EOL)
 	if _, err := l.ansiWriter.Write(bytes.Join(ll, EOL)); err != nil {
-		log.Error().Err(err).Msgf("write log failed")
+		log.Error().Err(err).Msgf("write logs failed")
 	}
 	l.logs.ScrollToEnd()
 	l.indicator.Refresh()
