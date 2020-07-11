@@ -437,7 +437,7 @@ func (b *Browser) refreshActions() {
 				aa[ui.KeyE] = ui.NewKeyAction("Edit", b.editCmd, true)
 			}
 			if client.Can(b.meta.Verbs, "delete") {
-				aa[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", b.deleteCmd, true)
+				aa[tcell.KeyCtrlX] = ui.NewKeyAction("Delete", b.deleteCmd, true)
 			}
 		}
 	}

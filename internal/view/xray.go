@@ -148,7 +148,7 @@ func (x *Xray) refreshActions() {
 		aa[ui.KeyE] = ui.NewKeyAction("Edit", x.editCmd, true)
 	}
 	if client.Can(x.meta.Verbs, "delete") {
-		aa[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", x.deleteCmd, true)
+		aa[tcell.KeyCtrlX] = ui.NewKeyAction("Delete", x.deleteCmd, true)
 	}
 	if !dao.IsK9sMeta(x.meta) {
 		aa[ui.KeyY] = ui.NewKeyAction("YAML", x.viewCmd, true)

@@ -52,7 +52,7 @@ func (d *Dir) dirContext(ctx context.Context) context.Context {
 
 func (d *Dir) bindKeys(aa ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
-	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL, tcell.KeyCtrlD, tcell.KeyCtrlZ)
+	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL, tcell.KeyCtrlX, tcell.KeyCtrlZ)
 	aa.Add(ui.KeyActions{
 		ui.KeyA:        ui.NewKeyAction("Apply", d.applyCmd, true),
 		ui.KeyD:        ui.NewKeyAction("Delete", d.delCmd, true),

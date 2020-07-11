@@ -33,7 +33,7 @@ func NewNode(gvr client.GVR) ResourceViewer {
 }
 
 func (n *Node) bindKeys(aa ui.KeyActions) {
-	aa.Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlD)
+	aa.Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlX)
 	aa.Add(ui.KeyActions{
 		ui.KeyY:      ui.NewKeyAction("YAML", n.yamlCmd, true),
 		ui.KeyC:      ui.NewKeyAction("Cordon", n.toggleCordonCmd(true), true),
