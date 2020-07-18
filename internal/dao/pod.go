@@ -356,7 +356,7 @@ func readLogs(stream io.ReadCloser, c LogChan, opts LogOptions) {
 				return
 			}
 			log.Warn().Err(err).Msgf("Stream READ error %s", opts.Info())
-			c <- opts.DecorateLog([]byte("log stream failed\n"))
+			c <- opts.DecorateLog([]byte(fmt.Sprintf("log stream failed: %#v\n", err)))
 			return
 		}
 		c <- opts.DecorateLog(bytes)

@@ -116,13 +116,15 @@ func (l *Log) LogFailed(err error) {
 		if l.logs.GetText(true) == logMessage {
 			l.logs.Clear()
 		}
-		fmt.Fprintln(l.ansiWriter, tview.Escape(color.Colorize(err.Error(), color.Red)))
+		if _, err = l.ansiWriter.Write([]byte(tview.Escape(color.Colorize(err.Error(), color.Red)))); err != nil {
+			log.Error().Err(err).Msgf("Writing log error")
+		}
 	})
 }
 
 // LogChanged updates the logs.
 func (l *Log) LogChanged(lines dao.LogItems) {
-	l.app.QueueUpdateDraw(func() {
+	l.app.QueueUpdate(func() {
 		l.Flush(lines)
 	})
 }
@@ -247,13 +249,19 @@ var EOL = []byte{'\n'}
 
 // Flush write logs to viewer.
 func (l *Log) Flush(lines dao.LogItems) {
+	log.Debug().Msgf("Flush %d", len(lines))
 	ll := make([][]byte, len(lines))
+	log.Debug().Msgf("A")
 	lines.Render(l.Indicator().showTime, ll)
+	log.Debug().Msgf("A")
 	_, _ = l.ansiWriter.Write(EOL)
+	log.Debug().Msgf("A")
 	if _, err := l.ansiWriter.Write(bytes.Join(ll, EOL)); err != nil {
 		log.Error().Err(err).Msgf("write logs failed")
 	}
+	log.Debug().Msgf("A")
 	l.logs.ScrollToEnd()
+	log.Debug().Msgf("A")
 	l.indicator.Refresh()
 }
 

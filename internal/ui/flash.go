@@ -65,6 +65,9 @@ func (f *Flash) Watch(ctx context.Context, c model.FlashChan) {
 
 // SetMessage sets flash message and level.
 func (f *Flash) SetMessage(m model.LevelMessage) {
+	if !f.app.IsRunning() {
+		return
+	}
 	fn := func() {
 		if m.Text == "" {
 			f.Clear()
@@ -76,9 +79,11 @@ func (f *Flash) SetMessage(m model.LevelMessage) {
 
 	if f.testMode {
 		fn()
-	} else {
-		f.app.QueueUpdateDraw(fn)
 	}
+	// BOZO!!
+	//} else {
+	//	f.app.QueueUpdate(fn)
+	//}
 }
 
 func (f *Flash) flashEmoji(l model.FlashLevel) string {

@@ -57,7 +57,9 @@ func (b *Browser) Init(ctx context.Context) error {
 			return e
 		}
 	}
-	b.app.CmdBuff().Reset()
+	if b.App().IsRunning() {
+		b.app.CmdBuff().Reset()
+	}
 
 	b.bindKeys()
 	if b.bindKeysFn != nil {
@@ -200,14 +202,16 @@ func (b *Browser) Aliases() []string {
 
 // TableDataChanged notifies view new data is available.
 func (b *Browser) TableDataChanged(data render.TableData) {
-	if !b.app.ConOK() || b.cancelFn == nil {
+	if !b.app.ConOK() || b.cancelFn == nil || !b.app.IsRunning() {
 		return
 	}
 
-	b.app.QueueUpdateDraw(func() {
+	//BOZO!!
+	b.app.QueueUpdate(func() {
 		b.refreshActions()
 		b.Update(data)
 	})
+	//b.app.Draw()
 }
 
 // TableLoadFailed notifies view something went south.

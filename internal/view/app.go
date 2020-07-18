@@ -421,6 +421,7 @@ func (a *App) Run() error {
 	if err := a.command.defaultCmd(); err != nil {
 		return err
 	}
+	a.SetRunning(true)
 	if err := a.Application.Run(); err != nil {
 		return err
 	}
@@ -446,12 +447,13 @@ func (a *App) IsBenchmarking() bool {
 
 // ClearStatus reset logo back to normal.
 func (a *App) ClearStatus(flash bool) {
-	a.QueueUpdateDraw(func() {
-		a.Logo().Reset()
-		if flash {
-			a.Flash().Clear()
-		}
-	})
+	// BOZO!!
+	//a.QueueUpdate(func() {
+	a.Logo().Reset()
+	if flash {
+		a.Flash().Clear()
+	}
+	//})
 }
 
 func (a *App) setLogo(l model.FlashLevel, msg string) {

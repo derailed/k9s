@@ -64,6 +64,9 @@ func (s *StatusIndicator) ClusterInfoUpdated(data model.ClusterMeta) {
 
 // ClusterInfoChanged notifies the cluster meta was changed.
 func (s *StatusIndicator) ClusterInfoChanged(prev, cur model.ClusterMeta) {
+	if !s.app.IsRunning() {
+		return
+	}
 	s.app.QueueUpdateDraw(func() {
 		s.SetPermanent(fmt.Sprintf(
 			statusIndicatorFmt,

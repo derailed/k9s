@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"sync"
+
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
@@ -19,6 +21,8 @@ type App struct {
 	actions  KeyActions
 	views    map[string]tview.Primitive
 	cmdModel *model.FishBuff
+	running  bool
+	mx       sync.RWMutex
 }
 
 // NewApp returns a new app.
@@ -53,6 +57,18 @@ func (a *App) Init() {
 	a.SetRoot(a.Main, true)
 }
 
+func (a *App) IsRunning() bool {
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+	return a.running
+}
+
+func (a *App) SetRunning(f bool) {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+	a.running = f
+}
+
 // BufferChanged indicates the buffer was changed.
 func (a *App) BufferChanged(s string) {}
 
@@ -69,7 +85,8 @@ func (a *App) BufferActive(state bool, kind model.BufferKind) {
 		flex.RemoveItemAtIndex(1)
 		a.SetFocus(flex)
 	}
-	a.Draw()
+	// BOZO!!
+	//a.Draw()
 }
 
 // SuggestionChanged notifies of update to command suggestions.
