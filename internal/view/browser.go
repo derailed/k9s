@@ -334,7 +334,9 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	}
 	ns, n := client.Namespaced(path)
-
+	if client.IsClusterScoped(ns) {
+		ns = client.AllNamespaces
+	}
 	if ok, err := b.app.Conn().CanI(ns, b.GVR().String(), []string{"patch"}); !ok || err != nil {
 		b.App().Flash().Err(fmt.Errorf("Current user can't edit resource %s", b.GVR()))
 		return nil
@@ -346,7 +348,9 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		args := make([]string, 0, 10)
 		args = append(args, "edit")
 		args = append(args, b.meta.SingularName)
-		args = append(args, "-n", ns)
+		if ns != client.AllNamespaces {
+			args = append(args, "-n", ns)
+		}
 		if !runK(b.app, shellOpts{clear: true, args: append(args, n)}) {
 			b.app.Flash().Err(errors.New("Edit exec failed"))
 		}

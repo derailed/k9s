@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
@@ -22,6 +23,32 @@ var (
 // Job represents a K8s job resource.
 type Job struct {
 	Resource
+}
+
+// List returns a collection of resources.
+func (j *Job) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+	oo, err := j.Resource.List(ctx, ns)
+	if err != nil {
+		return nil, err
+	}
+	ctrl, _ := ctx.Value(internal.KeyPath).(string)
+	_, n := client.Namespaced(ctrl)
+
+	ll := make([]runtime.Object, 0, 10)
+	for _, o := range oo {
+		var j batchv1.Job
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &j)
+		if err != nil {
+			return nil, errors.New("expecting Job resource")
+		}
+		for _, r := range j.ObjectMeta.OwnerReferences {
+			if r.Name == n {
+				ll = append(ll, o)
+			}
+		}
+	}
+
+	return ll, nil
 }
 
 // TailLogs tail logs for all pods represented by this Job.
