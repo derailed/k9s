@@ -220,6 +220,10 @@ func (c *Container) isForwardable(path string) ([]string, bool) {
 		}
 		pp = append(pp, path+"/"+p)
 	}
+	if len(pp) == 0 {
+		c.App().Flash().Err(errors.New("No TCP port available on container"))
+		return nil, false
+	}
 
 	return pp, true
 }
