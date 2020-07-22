@@ -107,7 +107,7 @@ func TestLogItemsRender(t *testing.T) {
 				Container:     "blee",
 				ShowTimestamp: true,
 			},
-			e: "\x1b[38;5;106m2018-12-14T10:36:43.326972-07:00 \x1b[0m\x1b[38;5;161mfred\x1b[0m:\x1b[38;5;161mblee\x1b[0m Testing 1,2,3...",
+			e: "\x1b[38;5;106m2018-12-14T10:36:43.326972-07:00\x1b[0m \x1b[38;5;161mfred\x1b[0m:\x1b[38;5;161mblee\x1b[0m Testing 1,2,3...",
 		},
 	}
 
@@ -171,7 +171,7 @@ func TestLogItemRender(t *testing.T) {
 				Container:     "blee",
 				ShowTimestamp: true,
 			},
-			e: "\x1b[38;5;106m2018-12-14T10:36:43.326972-07:00 \x1b[0m\x1b[38;5;0mfred\x1b[0m:\x1b[38;5;0mblee\x1b[0m Testing 1,2,3...",
+			e: "\x1b[38;5;106m2018-12-14T10:36:43.326972-07:00\x1b[0m \x1b[38;5;0mfred\x1b[0m:\x1b[38;5;0mblee\x1b[0m Testing 1,2,3...",
 		},
 	}
 

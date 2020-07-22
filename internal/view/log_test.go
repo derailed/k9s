@@ -15,6 +15,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestLog(t *testing.T) {
+	v := view.NewLog(client.NewGVR("v1/pods"), "fred/p1", "blee", false)
+	v.Init(makeContext())
+
+	v.Flush(dao.LogItems{
+		dao.NewLogItemFromString("blee"),
+		dao.NewLogItemFromString("bozo"),
+	})
+
+	assert.Equal(t, 29, len(v.Logs().GetText(true)))
+}
+
+func BenchmarkLogFlush(b *testing.B) {
+	v := view.NewLog(client.NewGVR("v1/pods"), "fred/p1", "blee", false)
+	v.Init(makeContext())
+
+	items := dao.LogItems{
+		dao.NewLogItemFromString("blee"),
+		dao.NewLogItemFromString("bozo"),
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		v.Flush(items)
+	}
+}
+
 func TestLogAnsi(t *testing.T) {
 	buff := bytes.NewBufferString("")
 	w := tview.ANSIWriter(buff, "white", "black")

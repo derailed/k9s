@@ -261,6 +261,7 @@ func (a *App) Resume() {
 }
 
 func (a *App) clusterUpdater(ctx context.Context) {
+	a.refreshCluster()
 	for {
 		select {
 		case <-ctx.Done():
@@ -274,6 +275,9 @@ func (a *App) clusterUpdater(ctx context.Context) {
 
 func (a *App) refreshCluster() {
 	c := a.Content.Top()
+	//if c != nil && c.Name() == "Contexts" {
+	//	return
+	//}
 	if ok := a.Conn().CheckConnectivity(); ok {
 		if atomic.LoadInt32(&a.conRetry) > 0 {
 			atomic.StoreInt32(&a.conRetry, 0)
@@ -285,14 +289,9 @@ func (a *App) refreshCluster() {
 			a.ClearStatus(true)
 		}
 		a.factory.ValidatePortForwards()
-	} else {
+	} else if c != nil {
 		atomic.AddInt32(&a.conRetry, 1)
-		if c != nil {
-			c.Stop()
-		}
-		count := atomic.LoadInt32(&a.conRetry)
-		log.Warn().Msgf("Conn check failed (%d/%d)", count, maxConRetry)
-		a.Status(model.FlashWarn, fmt.Sprintf("Dial K8s failed (%d)", count))
+		c.Stop()
 	}
 
 	count := atomic.LoadInt32(&a.conRetry)
@@ -301,6 +300,8 @@ func (a *App) refreshCluster() {
 		a.BailOut()
 	}
 	if count > 0 {
+		log.Warn().Msgf("Conn check failed (%d/%d)", count, maxConRetry)
+		a.Status(model.FlashWarn, fmt.Sprintf("Dial K8s failed (%d)", count))
 		return
 	}
 
@@ -447,13 +448,12 @@ func (a *App) IsBenchmarking() bool {
 
 // ClearStatus reset logo back to normal.
 func (a *App) ClearStatus(flash bool) {
-	// BOZO!!
-	//a.QueueUpdate(func() {
-	a.Logo().Reset()
-	if flash {
-		a.Flash().Clear()
-	}
-	//})
+	a.QueueUpdate(func() {
+		a.Logo().Reset()
+		if flash {
+			a.Flash().Clear()
+		}
+	})
 }
 
 func (a *App) setLogo(l model.FlashLevel, msg string) {
@@ -467,7 +467,6 @@ func (a *App) setLogo(l model.FlashLevel, msg string) {
 	default:
 		a.Logo().Reset()
 	}
-	a.Draw()
 }
 
 func (a *App) setIndicator(l model.FlashLevel, msg string) {
@@ -481,7 +480,6 @@ func (a *App) setIndicator(l model.FlashLevel, msg string) {
 	default:
 		a.statusIndicator().Reset()
 	}
-	a.Draw()
 }
 
 // PrevCmd pops the command stack.
@@ -498,9 +496,10 @@ func (a *App) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	a.showHeader = !a.showHeader
-	a.toggleHeader(a.showHeader)
-	a.Draw()
+	a.QueueUpdateDraw(func() {
+		a.showHeader = !a.showHeader
+		a.toggleHeader(a.showHeader)
+	})
 
 	return nil
 }

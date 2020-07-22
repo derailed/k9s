@@ -143,23 +143,28 @@ func (l *Log) Stop() {
 // Set sets the log lines (for testing only!)
 func (l *Log) Set(items dao.LogItems) {
 	l.mx.Lock()
-	defer l.mx.Unlock()
-	l.lines = items
+	{
+		l.lines = items
+	}
+	l.mx.Unlock()
+
 	l.fireLogCleared()
 	l.fireLogChanged(items)
 }
 
 // ClearFilter resets the log filter if any.
 func (l *Log) ClearFilter() {
-	l.mx.RLock()
-	defer l.mx.RUnlock()
+	l.mx.Lock()
+	{
+		l.filter = ""
+	}
+	l.mx.Unlock()
 
-	l.filter = ""
 	l.fireLogCleared()
 	l.fireLogChanged(l.lines)
 }
 
-// Filter filters th:e model using either fuzzy or regexp.
+// Filter filters the model using either fuzzy or regexp.
 func (l *Log) Filter(q string) {
 	l.mx.Lock()
 	defer l.mx.Unlock()
@@ -171,11 +176,13 @@ func (l *Log) Filter(q string) {
 	l.filtering = true
 	go func(l *Log) {
 		<-time.After(500 * time.Millisecond)
-		l.mx.Lock()
-		defer l.mx.Unlock()
 		l.fireLogCleared()
 		l.fireLogBuffChanged(l.lines)
-		l.filtering = false
+		l.mx.Lock()
+		{
+			l.filtering = false
+		}
+		l.mx.Unlock()
 	}(l)
 }
 
@@ -212,14 +219,20 @@ func (l *Log) Append(line *dao.LogItem) {
 		return
 	}
 
+	var lines dao.LogItems
 	l.mx.Lock()
-	defer l.mx.Unlock()
+	{
+		l.logOptions.SinceTime = line.Timestamp
+		lines = l.lines
+	}
+	l.mx.Unlock()
 
-	l.logOptions.SinceTime = line.Timestamp
-	if l.lines == nil {
+	if lines == nil {
 		l.fireLogCleared()
 	}
 
+	l.mx.Lock()
+	defer l.mx.Unlock()
 	if len(l.lines) < int(l.logOptions.Lines) {
 		l.lines = append(l.lines, line)
 		return

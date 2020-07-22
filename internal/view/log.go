@@ -29,7 +29,7 @@ const (
 	logMessage   = "Waiting for logs..."
 	logFmt       = " Logs([hilite:bg:]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
 	logCoFmt     = " Logs([hilite:bg:]%s:[hilite:bg:b]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
-	flushTimeout = 50 * time.Millisecond
+	flushTimeout = 1 * time.Millisecond
 )
 
 // InvalidCharsRX contains invalid filename characters.
@@ -124,7 +124,7 @@ func (l *Log) LogFailed(err error) {
 
 // LogChanged updates the logs.
 func (l *Log) LogChanged(lines dao.LogItems) {
-	l.app.QueueUpdate(func() {
+	l.app.QueueUpdateDraw(func() {
 		l.Flush(lines)
 	})
 }
@@ -249,19 +249,16 @@ var EOL = []byte{'\n'}
 
 // Flush write logs to viewer.
 func (l *Log) Flush(lines dao.LogItems) {
-	log.Debug().Msgf("Flush %d", len(lines))
+	if !l.indicator.AutoScroll() {
+		return
+	}
 	ll := make([][]byte, len(lines))
-	log.Debug().Msgf("A")
 	lines.Render(l.Indicator().showTime, ll)
-	log.Debug().Msgf("A")
 	_, _ = l.ansiWriter.Write(EOL)
-	log.Debug().Msgf("A")
 	if _, err := l.ansiWriter.Write(bytes.Join(ll, EOL)); err != nil {
 		log.Error().Err(err).Msgf("write logs failed")
 	}
-	log.Debug().Msgf("A")
 	l.logs.ScrollToEnd()
-	log.Debug().Msgf("A")
 	l.indicator.Refresh()
 }
 
@@ -353,7 +350,8 @@ func (l *Log) clearCmd(*tcell.EventKey) *tcell.EventKey {
 }
 
 func (l *Log) markCmd(*tcell.EventKey) *tcell.EventKey {
-	fmt.Fprintln(l.ansiWriter, fmt.Sprintf("[white::b]%s[::]", strings.Repeat("─", 80)))
+	_, _, w, _ := l.GetRect()
+	fmt.Fprintf(l.ansiWriter, "\n[white::b]%s[::]", strings.Repeat("─", w-4))
 	return nil
 }
 

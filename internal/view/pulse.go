@@ -124,7 +124,6 @@ func (p *Pulse) StylesChanged(s *config.Styles) {
 			c.SetSeriesColors(ss.Colors()...)
 		}
 	}
-	p.app.Draw()
 }
 
 const (
@@ -243,6 +242,7 @@ func (p *Pulse) Stop() {
 
 // Refresh updates the view
 func (p *Pulse) Refresh() {
+	// BOZO!!
 	// p.update(p.model.Peek())
 }
 

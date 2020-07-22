@@ -13,5 +13,5 @@ func TestLogIndicatorRefresh(t *testing.T) {
 	v := view.NewLogIndicator(config.NewConfig(nil), defaults)
 	v.Refresh()
 
-	assert.Equal(t, "[::b]Autoscroll: On     [::b]FullScreen: Off     [::b]Timestamps: Off     [::b]Wrap: Off\n", v.GetText(false))
+	assert.Equal(t, "[::b]Autoscroll:On     [::b]FullScreen:Off     [::b]Timestamps:Off     [::b]Wrap:Off\n", v.GetText(false))
 }

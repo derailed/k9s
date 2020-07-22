@@ -78,11 +78,7 @@ func run(cmd *cobra.Command, args []string) {
 	}()
 
 	zerolog.SetGlobalLevel(parseLevel(*k9sFlags.LogLevel))
-	cfg, err := loadConfiguration()
-	if err != nil {
-		panic(err)
-	}
-	app := view.NewApp(cfg)
+	app := view.NewApp(loadConfiguration())
 	{
 		defer app.BailOut()
 		if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
@@ -97,7 +93,7 @@ func run(cmd *cobra.Command, args []string) {
 	}
 }
 
-func loadConfiguration() (*config.Config, error) {
+func loadConfiguration() *config.Config {
 	log.Info().Msg("🐶 K9s starting up...")
 
 	// Load K9s config file...
@@ -133,7 +129,6 @@ func loadConfiguration() (*config.Config, error) {
 
 	if err := k9sCfg.Refine(k8sFlags); err != nil {
 		log.Error().Err(err).Msgf("refine failed")
-		return nil, err
 	}
 	conn, err := client.InitConnection(k8sCfg)
 	k9sCfg.SetConnection(conn)
@@ -153,7 +148,7 @@ func loadConfiguration() (*config.Config, error) {
 		}
 	}
 
-	return k9sCfg, nil
+	return k9sCfg
 }
 
 func isBoolSet(b *bool) bool {

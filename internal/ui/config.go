@@ -7,15 +7,14 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/tview"
 	"github.com/fsnotify/fsnotify"
 	"github.com/rs/zerolog/log"
 )
 
 // Synchronizer manages ui event queue.
 type synchronizer interface {
-	QueueUpdateDraw(func()) *tview.Application
-	QueueUpdate(func()) *tview.Application
+	QueueUpdateDraw(func())
+	QueueUpdate(func())
 }
 
 // Configurator represents an application configurationa.

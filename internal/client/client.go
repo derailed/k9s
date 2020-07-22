@@ -389,15 +389,20 @@ func (a *APIClient) MXDial() (*versioned.Clientset, error) {
 
 // SwitchContext handles kubeconfig context switches.
 func (a *APIClient) SwitchContext(name string) error {
-	a.mx.Lock()
-	defer a.mx.Unlock()
-
 	log.Debug().Msgf("Switching context %q", name)
-	if e := a.config.SwitchContext(name); e != nil {
-		return e
+	if err := a.config.SwitchContext(name); err != nil {
+		return err
 	}
-	a.reset()
-	ResetMetrics()
+	a.mx.Lock()
+	{
+		a.reset()
+		ResetMetrics()
+	}
+	a.mx.Unlock()
+
+	if !a.CheckConnectivity() {
+		return fmt.Errorf("Unable to connect to context %q", name)
+	}
 
 	return nil
 }

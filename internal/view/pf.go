@@ -91,7 +91,11 @@ func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	cfg.Name = path
 
 	r, _ := p.GetTable().GetSelection()
-	base := ui.TrimCell(p.GetTable().SelectTable, r, 4)
+	col := 4
+	if client.IsAllNamespace(p.GetTable().GetModel().GetNamespace()) {
+		col = 3
+	}
+	base := ui.TrimCell(p.GetTable().SelectTable, r, col)
 	var err error
 	p.bench, err = perf.NewBenchmark(base, p.App().version, cfg)
 	if err != nil {

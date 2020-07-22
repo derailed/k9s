@@ -57,6 +57,20 @@ func (a *App) Init() {
 	a.SetRoot(a.Main, true)
 }
 
+// QueueUpdate queues up a ui action.
+func (a *App) QueueUpdate(f func()) {
+	go func() {
+		a.Application.QueueUpdate(f)
+	}()
+}
+
+// QueueUpdateDraw queues up a ui action and redraw the ui.
+func (a *App) QueueUpdateDraw(f func()) {
+	go func() {
+		a.Application.QueueUpdateDraw(f)
+	}()
+}
+
 func (a *App) IsRunning() bool {
 	a.mx.RLock()
 	defer a.mx.RUnlock()
@@ -85,8 +99,6 @@ func (a *App) BufferActive(state bool, kind model.BufferKind) {
 		flex.RemoveItemAtIndex(1)
 		a.SetFocus(flex)
 	}
-	// BOZO!!
-	//a.Draw()
 }
 
 // SuggestionChanged notifies of update to command suggestions.
@@ -222,7 +234,7 @@ func (a *App) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 // RedrawCmd forces a redraw.
 func (a *App) redrawCmd(evt *tcell.EventKey) *tcell.EventKey {
-	a.Draw()
+	a.QueueUpdateDraw(func() {})
 	return evt
 }
 

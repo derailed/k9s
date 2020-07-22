@@ -292,11 +292,14 @@ func (c c) Hints() model.MenuHints                                     { return 
 func (c c) ExtraHints() map[string]string                              { return nil }
 func (c c) Draw(tcell.Screen)                                          {}
 func (c c) InputHandler() func(*tcell.EventKey, func(tview.Primitive)) { return nil }
-func (c c) SetRect(int, int, int, int)                                 {}
-func (c c) GetRect() (int, int, int, int)                              { return 0, 0, 0, 0 }
-func (c c) GetFocusable() tview.Focusable                              { return nil }
-func (c c) Focus(func(tview.Primitive))                                {}
-func (c c) Blur()                                                      {}
-func (c c) Start()                                                     {}
-func (c c) Stop()                                                      {}
-func (c c) Init(context.Context) error                                 { return nil }
+func (c c) MouseHandler() func(action tview.MouseAction, event *tcell.EventMouse, setFocus func(p tview.Primitive)) (consumed bool, capture tview.Primitive) {
+	return nil
+}
+func (c c) SetRect(int, int, int, int)    {}
+func (c c) GetRect() (int, int, int, int) { return 0, 0, 0, 0 }
+func (c c) GetFocusable() tview.Focusable { return nil }
+func (c c) Focus(func(tview.Primitive))   {}
+func (c c) Blur()                         {}
+func (c c) Start()                        {}
+func (c c) Stop()                         {}
+func (c c) Init(context.Context) error    { return nil }

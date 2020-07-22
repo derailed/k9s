@@ -171,8 +171,8 @@ func BenchmarkPodRender(b *testing.B) {
 	var po render.Pod
 	r := render.NewRow(12)
 
-	b.ResetTimer()
 	b.ReportAllocs()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_ = po.Render(&pom, "", &r)
 	}

@@ -56,9 +56,6 @@ func (d *Details) Init(_ context.Context) error {
 	d.SetTitleColor(tcell.ColorAqua)
 	d.SetInputCapture(d.keyboard)
 	d.SetBorderPadding(0, 0, 1, 1)
-	d.SetChangedFunc(func() {
-		d.app.Draw()
-	})
 	d.updateTitle()
 
 	d.app.Styles.AddListener(d)

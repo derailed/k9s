@@ -40,9 +40,6 @@ func (m *Meow) Init(_ context.Context) error {
 	m.SetTitleColor(tcell.ColorAqua)
 	m.SetInputCapture(m.keyboard)
 	m.SetBorderPadding(0, 0, 1, 1)
-	m.SetChangedFunc(func() {
-		m.app.Draw()
-	})
 	m.updateTitle()
 	m.SetTextAlign(tview.AlignCenter)
 

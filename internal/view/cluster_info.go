@@ -74,6 +74,9 @@ func (c *ClusterInfo) infoCell(t string) *tview.TableCell {
 }
 
 func (c *ClusterInfo) setCell(row int, s string) int {
+	if s == "" {
+		s = render.NAValue
+	}
 	c.GetCell(row, 1).SetText(s)
 	return row + 1
 }
@@ -88,22 +91,22 @@ func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
 	if !c.app.IsRunning() {
 		return
 	}
-	// BOZO!!
-	//c.app.QueueUpdate(func() {
-	c.Clear()
-	c.layout()
-	row := c.setCell(0, curr.Context)
-	row = c.setCell(row, curr.Cluster)
-	row = c.setCell(row, curr.User)
-	row = c.setCell(row, fmt.Sprintf("%s [%d]", curr.K9sVer, os.Getpid()))
-	row = c.setCell(row, curr.K8sVer)
-	if c.app.Conn().HasMetrics() {
-		row = c.setCell(row, ui.AsPercDelta(prev.Cpu, curr.Cpu))
-		_ = c.setCell(row, ui.AsPercDelta(prev.Mem, curr.Mem))
-		c.setDefCon(curr.Cpu, curr.Mem)
-	}
-	c.updateStyle()
-	//})
+
+	c.app.QueueUpdateDraw(func() {
+		c.Clear()
+		c.layout()
+		row := c.setCell(0, curr.Context)
+		row = c.setCell(row, curr.Cluster)
+		row = c.setCell(row, curr.User)
+		row = c.setCell(row, fmt.Sprintf("%s [%d]", curr.K9sVer, os.Getpid()))
+		row = c.setCell(row, curr.K8sVer)
+		if c.app.Conn().HasMetrics() {
+			row = c.setCell(row, ui.AsPercDelta(prev.Cpu, curr.Cpu))
+			_ = c.setCell(row, ui.AsPercDelta(prev.Mem, curr.Mem))
+			c.setDefCon(curr.Cpu, curr.Mem)
+		}
+		c.updateStyle()
+	})
 }
 
 const defconFmt = "%s %s level!"

@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/color"
-	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 )
@@ -75,24 +74,33 @@ func (l *LogItem) IsEmpty() bool {
 	return len(l.Bytes) == 0
 }
 
+var (
+	escPattern = regexp.MustCompile(`(\[[a-zA-Z0-9_,;: \-\."#]+\[*)\]`)
+	matcher    = []byte("$1[]")
+)
+
 // Render returns a log line as string.
 func (l *LogItem) Render(c int, showTime bool) []byte {
-	bb := make([]byte, 0, 30+len(l.Bytes)+len(l.Info()))
+	bb := make([]byte, 0, 200)
 	if showTime {
-		bb = append(bb, color.ANSIColorize(fmt.Sprintf("%-30s ", l.Timestamp), 106)...)
+		t := l.Timestamp
+		for i := len(t); i < 30; i++ {
+			t += " "
+		}
+		bb = append(bb, color.ANSIColorize(t, 106)...)
+		bb = append(bb, ' ')
 	}
 
 	if l.Pod != "" {
-		bb = append(bb, []byte(color.ANSIColorize(l.Pod, c))...)
+		bb = append(bb, color.ANSIColorize(l.Pod, c)...)
 		bb = append(bb, ':')
 	}
 	if !l.SingleContainer && l.Container != "" {
-		bb = append(bb, []byte(color.ANSIColorize(l.Container, c))...)
+		bb = append(bb, color.ANSIColorize(l.Container, c)...)
 		bb = append(bb, ' ')
 	}
-	bb = append(bb, []byte(tview.Escape(string(l.Bytes)))...)
 
-	return bb
+	return append(bb, escPattern.ReplaceAll(l.Bytes, matcher)...)
 }
 
 func colorFor(n string) int {

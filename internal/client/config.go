@@ -93,10 +93,10 @@ func (c *Config) GetContext(n string) (*clientcmdapi.Context, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	if c, ok := cfg.Contexts[n]; ok {
 		return c, nil
 	}
+
 	return nil, fmt.Errorf("invalid context `%s specified", n)
 }
 

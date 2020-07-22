@@ -206,12 +206,10 @@ func (b *Browser) TableDataChanged(data render.TableData) {
 		return
 	}
 
-	//BOZO!!
-	b.app.QueueUpdate(func() {
+	b.app.QueueUpdateDraw(func() {
 		b.refreshActions()
 		b.Update(data)
 	})
-	//b.app.Draw()
 }
 
 // TableLoadFailed notifies view something went south.
