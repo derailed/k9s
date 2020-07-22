@@ -39,10 +39,10 @@ K9s is available on Linux, macOS and Windows platforms.
 
 * Binaries for Linux, Windows and Mac are available as tarballs in the [release](https://github.com/derailed/k9s/releases) page.
 
-* Via Homebrew or LinuxBrew for macOS and Linux
+* Via Homebrew for macOS or LinuxBrew for Linux
 
    ```shell
-   brew install derailed/k9s/k9s
+   brew install k9s
    ```
 
 * Via [MacPorts](https://www.macports.org)
@@ -467,12 +467,12 @@ Initially, the benchmarks will run with the following defaults:
 * HTTP Verb: GET
 * Path: /
 
-The PortForward view is backed by a new K9s config file namely: `$HOME/.k9s/bench-mycluster.yml`. Each cluster you connect to will have its own bench config file. Changes to this file should automatically update the PortForward view to indicate how you want to run your benchmarks.
+The PortForward view is backed by a new K9s config file namely: `$HOME/.k9s/bench-<k8scontext>.yml` (note: extension is `yml` and not `yaml`). Each cluster you connect to will have its own bench config file, containing the name of the K8s context for the cluster. Changes to this file should automatically update the PortForward view to indicate how you want to run your benchmarks.
 
 Here is a sample benchmarks.yml configuration. Please keep in mind this file will likely change in subsequent releases!
 
 ```yaml
-# This file resides in $HOME/.k9s/bench-mycluster.yml
+# This file resides in $HOME/.k9s/bench-mycontext.yml
 benchmarks:
   # Indicates the default concurrency and number of requests setting if a container or service rule does not match.
   defaults:
