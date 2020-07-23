@@ -71,12 +71,14 @@ func (a *App) QueueUpdateDraw(f func()) {
 	}()
 }
 
+// IsRunning checks if app is actually running.
 func (a *App) IsRunning() bool {
 	a.mx.RLock()
 	defer a.mx.RUnlock()
 	return a.running
 }
 
+// SetRunning sets the app run state.
 func (a *App) SetRunning(f bool) {
 	a.mx.Lock()
 	defer a.mx.Unlock()
