@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -26,6 +27,11 @@ var (
 	_ Nuker      = (*Pod)(nil)
 	_ Loggable   = (*Pod)(nil)
 	_ Controller = (*Pod)(nil)
+)
+
+const (
+	logRetryCount = 20
+	logRetryWait  = 1 * time.Second
 )
 
 // Pod represents a pod resource.
@@ -321,19 +327,43 @@ func (p *Pod) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 
 func tailLogs(ctx context.Context, logger Logger, c LogChan, opts LogOptions) error {
 	log.Debug().Msgf("Tailing logs for %q:%q", opts.Path, opts.Container)
-	req, err := logger.Logs(opts.Path, opts.ToPodLogOptions())
-	if err != nil {
-		return err
+
+	var (
+		err    error
+		req    *restclient.Request
+		stream io.ReadCloser
+	)
+done:
+	for r := 0; r < logRetryCount; r++ {
+		log.Debug().Msgf("Retry logs %d", r)
+		req, err = logger.Logs(opts.Path, opts.ToPodLogOptions())
+		if err == nil {
+			// This call will block if nothing is in the stream!!
+			if stream, err = req.Stream(ctx); err == nil {
+				log.Debug().Msgf("Reading logs")
+				go readLogs(stream, c, opts)
+				break
+			} else {
+				log.Error().Err(err).Msg("Streaming logs")
+			}
+		} else {
+			log.Error().Err(err).Msg("Requesting logs")
+		}
+
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
+			break done
+		default:
+			time.Sleep(logRetryWait)
+		}
 	}
 
-	// This call will block if nothing is in the stream!!
-	stream, err := req.Stream(ctx)
 	if err != nil {
-		c <- opts.DecorateLog([]byte(err.Error() + "\n"))
 		log.Error().Err(err).Msgf("Unable to obtain log stream failed for `%s", opts.Path)
+		c <- opts.DecorateLog([]byte("\n" + err.Error() + "\n"))
 		return err
 	}
-	go readLogs(stream, c, opts)
 
 	return nil
 }
@@ -352,11 +382,11 @@ func readLogs(stream io.ReadCloser, c LogChan, opts LogOptions) {
 		if err != nil {
 			if err == io.EOF {
 				log.Warn().Err(err).Msgf("Stream closed for %s", opts.Info())
-				c <- opts.DecorateLog([]byte("log stream closed\n"))
+				c <- opts.DecorateLog([]byte("\nlog stream closed\n"))
 				return
 			}
 			log.Warn().Err(err).Msgf("Stream READ error %s", opts.Info())
-			c <- opts.DecorateLog([]byte(fmt.Sprintf("log stream failed: %#v\n", err)))
+			c <- opts.DecorateLog([]byte(fmt.Sprintf("\nlog stream failed: %#v\n", err)))
 			return
 		}
 		c <- opts.DecorateLog(bytes)

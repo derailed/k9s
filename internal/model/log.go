@@ -202,13 +202,15 @@ func (l *Log) load() error {
 	if !ok {
 		return fmt.Errorf("Resource %s is not Loggable", l.gvr)
 	}
-	if err := logger.TailLogs(ctx, c, l.logOptions); err != nil {
-		log.Error().Err(err).Msgf("Tail logs failed")
-		if l.cancelFn != nil {
-			l.cancelFn()
+
+	go func() {
+		if err = logger.TailLogs(ctx, c, l.logOptions); err != nil {
+			log.Error().Err(err).Msgf("Tail logs failed")
+			if l.cancelFn != nil {
+				l.cancelFn()
+			}
 		}
-		return err
-	}
+	}()
 
 	return nil
 }

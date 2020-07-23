@@ -47,20 +47,18 @@ func NewBenchmark(base, version string, cfg config.BenchConfig) (*Benchmark, err
 }
 
 func (b *Benchmark) init(base, version string) error {
-	req, err := http.NewRequest(b.config.HTTP.Method, base, nil)
+	var ctx context.Context
+	ctx, b.cancelFn = context.WithTimeout(context.Background(), benchTimeout)
+	req, err := http.NewRequestWithContext(ctx, b.config.HTTP.Method, base, nil)
 	if err != nil {
 		return err
 	}
-	log.Debug().Msgf("Benchmarking Request %s", req.URL.String())
-
 	if b.config.Auth.User != "" || b.config.Auth.Password != "" {
 		req.SetBasicAuth(b.config.Auth.User, b.config.Auth.Password)
 	}
-
-	var ctx context.Context
-	ctx, b.cancelFn = context.WithTimeout(context.Background(), benchTimeout)
-	req = req.WithContext(ctx)
 	req.Header = b.config.HTTP.Headers
+	log.Debug().Msgf("Benchmarking Request %s", req.URL.String())
+
 	ua := req.UserAgent()
 	if ua == "" {
 		ua = k9sUA
@@ -73,7 +71,7 @@ func (b *Benchmark) init(base, version string) error {
 	}
 	req.Header.Set("User-Agent", ua)
 
-	log.Debug().Msgf("Benching %d:%d", b.config.N, b.config.C)
+	log.Debug().Msgf("Using bench config N:%d--C:%d", b.config.N, b.config.C)
 
 	b.worker = &requester.Work{
 		Request:     req,
@@ -81,7 +79,6 @@ func (b *Benchmark) init(base, version string) error {
 		N:           b.config.N,
 		C:           b.config.C,
 		H2:          b.config.HTTP.HTTP2,
-		Output:      "",
 	}
 
 	return nil
@@ -89,12 +86,12 @@ func (b *Benchmark) init(base, version string) error {
 
 // Cancel kills the benchmark in progress.
 func (b *Benchmark) Cancel() {
-	b.mx.Lock()
-	defer b.mx.Unlock()
-
 	if b == nil {
 		return
 	}
+
+	b.mx.Lock()
+	defer b.mx.Unlock()
 	b.canceled = true
 	if b.cancelFn != nil {
 		b.cancelFn()

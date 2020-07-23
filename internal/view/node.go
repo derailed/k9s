@@ -141,6 +141,8 @@ func (n *Node) sshCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
+	n.Stop()
+	defer n.Start()
 	_, node := client.Namespaced(path)
 	if err := ssh(n.App(), node); err != nil {
 		log.Error().Err(err).Msgf("SSH Failed")
@@ -155,6 +157,8 @@ func (n *Node) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
+	n.Stop()
+	defer n.Start()
 	ctx, cancel := context.WithTimeout(context.Background(), n.App().Conn().Config().CallTimeout())
 	defer cancel()
 

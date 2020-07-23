@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
+	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -141,11 +142,6 @@ func (d *Dir) applyCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	if !isManifest(sel) {
-		d.App().Flash().Errf("you must select a manifest")
-		return nil
-	}
-
 	d.Stop()
 	defer d.Start()
 	{
@@ -155,9 +151,9 @@ func (d *Dir) applyCmd(evt *tcell.EventKey) *tcell.EventKey {
 		args = append(args, sel)
 		res, err := runKu(d.App(), shellOpts{clear: false, args: args})
 		if err != nil {
-			res = "error:\n  " + err.Error()
+			res = "status:\n  " + err.Error() + "\nmessage:\n" + fmtResults(res)
 		} else {
-			res = "message:\n  " + res
+			res = "message:\n" + fmtResults(res)
 		}
 
 		details := NewDetails(d.App(), "Applied Manifest", sel, true).Update(res)
@@ -175,11 +171,6 @@ func (d *Dir) delCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	if !isManifest(sel) {
-		d.App().Flash().Errf("you must select a manifest")
-		return nil
-	}
-
 	d.Stop()
 	defer d.Start()
 	msg := fmt.Sprintf("Delete resource(s) in manifest %s", sel)
@@ -190,9 +181,9 @@ func (d *Dir) delCmd(evt *tcell.EventKey) *tcell.EventKey {
 		args = append(args, sel)
 		res, err := runKu(d.App(), shellOpts{clear: false, args: args})
 		if err != nil {
-			res = "error:\n  " + err.Error() + "\nmessage:\n  " + res
+			res = "status:\n  " + err.Error() + "\nmessage:\n" + fmtResults(res)
 		} else {
-			res = "message:\n  " + res
+			res = "message:\n" + fmtResults(res)
 		}
 		details := NewDetails(d.App(), "Deleted Manifest", sel, true).Update(res)
 		if err := d.App().inject(details); err != nil {
@@ -201,4 +192,14 @@ func (d *Dir) delCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}, func() {})
 
 	return nil
+}
+
+func fmtResults(res string) string {
+	res = strings.TrimSpace(res)
+	lines := strings.Split(res, "\n")
+	ll := make([]string, 0, len(lines))
+	for _, l := range lines {
+		ll = append(ll, "  "+l)
+	}
+	return strings.Join(ll, "\n")
 }
