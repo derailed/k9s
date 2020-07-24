@@ -275,9 +275,6 @@ func (a *App) clusterUpdater(ctx context.Context) {
 
 func (a *App) refreshCluster() {
 	c := a.Content.Top()
-	//if c != nil && c.Name() == "Contexts" {
-	//	return
-	//}
 	if ok := a.Conn().CheckConnectivity(); ok {
 		if atomic.LoadInt32(&a.conRetry) > 0 {
 			atomic.StoreInt32(&a.conRetry, 0)

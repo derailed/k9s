@@ -12,6 +12,7 @@ import (
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/kubectl/pkg/drain"
@@ -161,13 +162,44 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		if err != nil {
 			return nil, err
 		}
+		meta, ok := o["metadata"].(map[string]interface{})
+		if !ok {
+			return nil, fmt.Errorf("expecting interface map but got `%T", o)
+		}
+		pCount, _ := n.CountPods(meta["name"].(string))
 		oo[i] = &render.NodeWithMetrics{
-			Raw: &unstructured.Unstructured{Object: o},
-			MX:  nodeMetricsFor(MetaFQN(no.ObjectMeta), nmx),
+			Raw:      &unstructured.Unstructured{Object: o},
+			MX:       nodeMetricsFor(MetaFQN(no.ObjectMeta), nmx),
+			PodCount: pCount,
 		}
 	}
 
 	return oo, nil
+}
+
+// CountPods counts the pods scheduled on a given node.
+func (n *Node) CountPods(nodeName string) (int, error) {
+	var count int
+	oo, err := n.Factory.List("v1/pods", client.AllNamespaces, false, labels.Everything())
+	if err != nil {
+		return 0, err
+	}
+
+	for _, o := range oo {
+		u, ok := o.(*unstructured.Unstructured)
+		if !ok {
+			return count, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
+		}
+		spec, ok := u.Object["spec"].(map[string]interface{})
+		if !ok {
+			return count, fmt.Errorf("expecting interface map but got `%T", o)
+		}
+		if spec["nodeName"] == nodeName {
+			count++
+		}
+	}
+
+	return count, nil
 }
 
 // ----------------------------------------------------------------------------

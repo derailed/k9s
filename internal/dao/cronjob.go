@@ -52,11 +52,21 @@ func (c *CronJob) Run(path string) error {
 	if len(cj.Name) >= maxJobNameSize {
 		jobName = cj.Name[0:maxJobNameSize]
 	}
+	true := true
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      jobName + "-manual-" + rand.String(3),
 			Namespace: ns,
 			Labels:    cj.Spec.JobTemplate.Labels,
+			OwnerReferences: []metav1.OwnerReference{
+				{
+					APIVersion:         "batch/v1beta",
+					Kind:               "CronJob",
+					BlockOwnerDeletion: &true,
+					Name:               cj.Name,
+					UID:                cj.UID,
+				},
+			},
 		},
 		Spec: cj.Spec.JobTemplate.Spec,
 	}

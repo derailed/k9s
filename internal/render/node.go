@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
@@ -38,6 +39,7 @@ func (Node) Header(_ string) Header {
 		HeaderColumn{Name: "KERNEL", Wide: true},
 		HeaderColumn{Name: "INTERNAL-IP", Wide: true},
 		HeaderColumn{Name: "EXTERNAL-IP", Wide: true},
+		HeaderColumn{Name: "PODS", Align: tview.AlignRight},
 		HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "%CPU", Align: tview.AlignRight, MX: true},
@@ -89,6 +91,7 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 		no.Status.NodeInfo.KernelVersion,
 		iIP,
 		eIP,
+		strconv.Itoa(oo.PodCount),
 		c.cpu,
 		c.mem,
 		p.cpu,
@@ -133,8 +136,9 @@ func (Node) diagnose(ss []string) error {
 
 // NodeWithMetrics represents a node with its associated metrics.
 type NodeWithMetrics struct {
-	Raw *unstructured.Unstructured
-	MX  *mv1beta1.NodeMetrics
+	Raw      *unstructured.Unstructured
+	MX       *mv1beta1.NodeMetrics
+	PodCount int
 }
 
 // GetObjectKind returns a schema object.

@@ -241,10 +241,7 @@ func (p *Pulse) Stop() {
 }
 
 // Refresh updates the view
-func (p *Pulse) Refresh() {
-	// BOZO!!
-	// p.update(p.model.Peek())
-}
+func (p *Pulse) Refresh() {}
 
 // GVR returns a resource descriptor.
 func (p *Pulse) GVR() client.GVR {

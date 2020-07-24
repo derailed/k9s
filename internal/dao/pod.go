@@ -73,10 +73,7 @@ func (p *Pod) Get(ctx context.Context, path string) (runtime.Object, error) {
 
 // List returns a collection of nodes.
 func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	sel, ok := ctx.Value(internal.KeyFields).(string)
-	if !ok {
-		sel = ""
-	}
+	sel, _ := ctx.Value(internal.KeyFields).(string)
 	fsel, err := labels.ConvertSelectorToLabelsMap(sel)
 	if err != nil {
 		return nil, err

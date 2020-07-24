@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
@@ -41,11 +40,16 @@ func (j *Job) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		if err != nil {
 			return nil, errors.New("expecting Job resource")
 		}
-		for _, r := range j.ObjectMeta.OwnerReferences {
-			if r.Name == n {
-				ll = append(ll, o)
-			}
+		if n == "" {
+			ll = append(ll, o)
+			continue
 		}
+
+			for _, r := range j.ObjectMeta.OwnerReferences {
+				if r.Name == n {
+					ll = append(ll, o)
+				}
+			}
 	}
 
 	return ll, nil
