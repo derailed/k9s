@@ -12,7 +12,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ---
 
-Maintenance Release! Gotta luv the aftermath...
+Maintenance Release! The aftermath...
 
 ## Resolved Bugs/Features/PRs
 
