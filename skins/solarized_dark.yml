@@ -57,7 +57,8 @@ k9s:
     table:
       fgColor: *foreground
       bgColor: *background
-      cursorColor: *current_line
+      cursorFgColor: *foreground
+      cursorBgColor: *current_line
       header:
         fgColor: *foreground
         bgColor: *background
