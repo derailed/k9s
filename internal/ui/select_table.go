@@ -3,7 +3,6 @@ package ui
 import (
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
-	"github.com/rs/zerolog/log"
 )
 
 // SelectTable represents a table with selections.
@@ -116,7 +115,6 @@ func (s *SelectTable) selectionChanged(r, c int) {
 		return
 	}
 	cell := s.GetCell(r, c)
-	log.Debug().Msgf("COLOR %v:%v", s.fgColor, cell.Color)
 	s.SetSelectedStyle(s.fgColor, cell.Color, tcell.AttrBold)
 }
 
