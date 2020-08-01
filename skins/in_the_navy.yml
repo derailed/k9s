@@ -57,7 +57,8 @@ k9s:
     table:
       fgColor: *fg
       bgColor: *bg
-      cursorColor: *aqua
+      cursorFgColor: *fg
+      cursorBgColor: *aqua
       markColor: *mslate
       header:
         fgColor: *fg

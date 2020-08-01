@@ -13,6 +13,7 @@ type SelectTable struct {
 	model      Tabular
 	selectedFn func(string) string
 	marks      map[string]struct{}
+	fgColor    tcell.Color
 }
 
 // SetModel sets the table model.
@@ -115,7 +116,8 @@ func (s *SelectTable) selectionChanged(r, c int) {
 		return
 	}
 	cell := s.GetCell(r, c)
-	s.SetSelectedStyle(tcell.ColorBlack, cell.Color, tcell.AttrBold)
+	log.Debug().Msgf("COLOR %v:%v", s.fgColor, cell.Color)
+	s.SetSelectedStyle(s.fgColor, cell.Color, tcell.AttrBold)
 }
 
 // ClearMarks delete all marked items.
@@ -143,8 +145,11 @@ func (s *SelectTable) ToggleMark() {
 	}
 
 	cell := s.GetCell(s.GetSelectedRowIndex(), 0)
+	if cell == nil {
+		return
+	}
 	s.SetSelectedStyle(
-		tcell.ColorBlack,
+		cell.BackgroundColor,
 		cell.Color,
 		tcell.AttrBold,
 	)
@@ -193,7 +198,6 @@ func (s *SelectTable) markRange(prev, curr int) {
 	if prev > curr {
 		prev, curr = curr, prev
 	}
-	log.Debug().Msgf("Span Range %d::%d", prev, curr)
 	for i := prev + 1; i <= curr; i++ {
 		id, ok := s.GetRowID(i)
 		if !ok {
@@ -205,7 +209,7 @@ func (s *SelectTable) markRange(prev, curr int) {
 			break
 		}
 		s.SetSelectedStyle(
-			tcell.ColorBlack,
+			cell.BackgroundColor,
 			cell.Color,
 			tcell.AttrBold,
 		)

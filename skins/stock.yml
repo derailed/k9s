@@ -45,7 +45,8 @@ k9s:
     table:
       fgColor: blue
       bgColor: black
-      cursorColor: aqua
+      cursorFgColor: black
+      cursorBgColor: aqua
       markColor: darkgoldenrod
       header:
         fgColor: white

@@ -37,7 +37,8 @@ k9s:
     table:
       fgColor: default
       bgColor: default
-      cursorColor: default
+      cursorFgColor: default
+      cursorBfColor: default
       header:
         fgColor: default
         bgColor: default

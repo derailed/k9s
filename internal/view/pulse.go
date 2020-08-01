@@ -112,7 +112,7 @@ func (p *Pulse) Init(ctx context.Context) error {
 func (p *Pulse) StylesChanged(s *config.Styles) {
 	p.SetBackgroundColor(s.Charts().BgColor.Color())
 	for _, c := range p.charts {
-		c.SetFocusColorNames(s.Table().BgColor.String(), s.Table().CursorColor.String())
+		c.SetFocusColorNames(s.Table().BgColor.String(), s.Table().CursorBgColor.String())
 		if c.IsDial() {
 			c.SetBackgroundColor(s.Charts().DialBgColor.Color())
 			c.SetSeriesColors(s.Charts().DefaultDialColors.Colors()...)

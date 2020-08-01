@@ -126,11 +126,12 @@ type (
 
 	// Table tracks table styles.
 	Table struct {
-		FgColor     Color       `yaml:"fgColor"`
-		BgColor     Color       `yaml:"bgColor"`
-		CursorColor Color       `yaml:"cursorColor"`
-		MarkColor   Color       `yaml:"markColor"`
-		Header      TableHeader `yaml:"header"`
+		FgColor       Color       `yaml:"fgColor"`
+		BgColor       Color       `yaml:"bgColor"`
+		CursorFgColor Color       `yaml:"cursorFgColor"`
+		CursorBgColor Color       `yaml:"cursorBgColor"`
+		MarkColor     Color       `yaml:"markColor"`
+		Header        TableHeader `yaml:"header"`
 	}
 
 	// TableHeader tracks table header styles.
@@ -142,10 +143,11 @@ type (
 
 	// Xray tracks xray styles.
 	Xray struct {
-		FgColor      Color `yaml:"fgColor"`
-		BgColor      Color `yaml:"bgColor"`
-		CursorColor  Color `yaml:"cursorColor"`
-		GraphicColor Color `yaml:"graphicColor"`
+		FgColor         Color `yaml:"fgColor"`
+		BgColor         Color `yaml:"bgColor"`
+		CursorColor     Color `yaml:"cursorColor"`
+		CursorTextColor Color `yaml:"cursorTextColor"`
+		GraphicColor    Color `yaml:"graphicColor"`
 	}
 
 	// Menu tracks menu styles.
@@ -226,6 +228,7 @@ func newCharts() Charts {
 		},
 	}
 }
+
 func newViews() Views {
 	return Views{
 		Table:  newTable(),
@@ -309,20 +312,22 @@ func newInfo() Info {
 
 func newXray() Xray {
 	return Xray{
-		FgColor:      "aqua",
-		BgColor:      "black",
-		CursorColor:  "whitesmoke",
-		GraphicColor: "floralwhite",
+		FgColor:         "aqua",
+		BgColor:         "black",
+		CursorColor:     "whitesmoke",
+		CursorTextColor: "black",
+		GraphicColor:    "floralwhite",
 	}
 }
 
 func newTable() Table {
 	return Table{
-		FgColor:     "aqua",
-		BgColor:     "black",
-		CursorColor: "aqua",
-		MarkColor:   "palegreen",
-		Header:      newTableHeader(),
+		FgColor:       "aqua",
+		BgColor:       "black",
+		CursorFgColor: "black",
+		CursorBgColor: "aqua",
+		MarkColor:     "palegreen",
+		Header:        newTableHeader(),
 	}
 }
 
