@@ -6,6 +6,15 @@ k9s:
   info:
     fgColor: white
     sectionColor: dodgerblue
+  dialog:
+    fgColor: dodgerblue
+    bgColor: black
+    buttonFgColor: black
+    buttonBgColor: dodgerblue
+    buttonFocusFgColor: white
+    buttonFocusBgColor: fuchsia
+    labelFgColor: fuchsia
+    fieldFgColor: dodgerblue
   frame:
     border:
       fgColor: dodgerblue

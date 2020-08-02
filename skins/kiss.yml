@@ -7,6 +7,15 @@ k9s:
   info:
     fgColor: default
     sectionColor: default
+  dialog:
+    fgColor: default
+    bgColor: default
+    buttonFgColor: default
+    buttonBgColor: default
+    buttonFocusFgColor: default
+    buttonFocusBgColor: default
+    labelFgColor: default
+    fieldFgColor: default
   frame:
     border:
       fgColor: default

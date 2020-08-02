@@ -6,6 +6,15 @@ k9s:
   info:
     fgColor: white
     sectionColor: "#5af78e"
+  dialog:
+    fgColor: "#97979b"
+    bgColor: "#282a36"
+    buttonFgColor: "#97979b"
+    buttonBgColor: "#282a36"
+    buttonFocusFgColor: "#97979b"
+    buttonFocusBgColor: "#5af78e"
+    labelFgColor: "#97979b"
+    fieldFgColor: "#5af78e"
   frame:
     border:
       fgColor: "#5af78e"

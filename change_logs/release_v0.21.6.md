@@ -12,29 +12,30 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ---
 
-## First A Word From Our Sponsors...
+## New Skins On The Block. Part Duh!
 
-First off, I would like to send a `Big Thank You` to the following generous K9s friends for joining our sponsorship program and supporting this project!
-
-* [Drew](https://github.com/ScubaDrew)
-* [Vladimir Rybas](https://github.com/vrybas)
-
-Contrarily to popular belief, OSS is not free! We've now reached 8k stars and 270k downloads! As you all know, this project is not pimped out by a big company with deep pockets or a large team. This project is complex and does demand a lot of my time. So if k9s is useful to you and part of your daily lifecycle. Please contribute! Your contribution whether financial, PRs, issues or shout-outs on social/blogs are crucial to keep K9s growing and powerful for all of us!
-Don't let OSS by individual contributors become an oxymoron...
-
-## New Skins On The Block!
-
-In this drop, big thanks are in effect for [Dan Mikita](https://github.com/danmikita) for contributing a new K9s [solarized theme](https://github.com/derailed/k9s/tree/master/skins)!
-
-Also we've added a new skin configuration for table's cursor namely `cursorFgColor` and `cursorBgColor`:
+In this drop, we've added a new skin configuration for table's cursor namely `cursorFgColor` and `cursorBgColor` as well as the ability to skin your dialogs:
 
 ```yaml
   # skin.yml
+k9s:
+  ...
+  # Note: You can now skin your dialogs.
+  dialog:
+    fgColor: *foreground
+    bgColor: *background
+    buttonFgColor: *foreground
+    buttonBgColor: *magenta
+    buttonFocusFgColor: white
+    buttonFocusBgColor: *cyan
+    labelFgColor: *orange
+    fieldFgColor: *foreground
   ...
   views:
     table:
       fgColor: *foreground
       bgColor: *background
+      # Note! new tags
       cursorFgColor: *foreground
       cursorBgColor: *current_line
       header:
@@ -46,7 +47,7 @@ Also we've added a new skin configuration for table's cursor namely `cursorFgCol
 
 ## Resolved Bugs/Features/PRs
 
-Maintenance Release
+* [Issue #795](https://github.com/derailed/k9s/issues/795)
 
 ---
 

@@ -114,7 +114,7 @@ func (n *Node) toggleCordonCmd(cordon bool) func(evt *tcell.EventKey) *tcell.Eve
 			title, msg = title+"Uncordon", "Uncordon "
 		}
 		msg += path + "?"
-		dialog.ShowConfirm(n.App().Content.Pages, title, msg, func() {
+		dialog.ShowConfirm(n.App().Styles.Dialog(), n.App().Content.Pages, title, msg, func() {
 			res, err := dao.AccessorFor(n.App().factory, n.GVR())
 			if err != nil {
 				n.App().Flash().Err(err)

@@ -33,10 +33,11 @@ type (
 
 	// Style tracks K9s styles.
 	Style struct {
-		Body  Body  `yaml:"body"`
-		Frame Frame `yaml:"frame"`
-		Info  Info  `yaml:"info"`
-		Views Views `yaml:"views"`
+		Body   Body   `yaml:"body"`
+		Frame  Frame  `yaml:"frame"`
+		Info   Info   `yaml:"info"`
+		Views  Views  `yaml:"views"`
+		Dialog Dialog `yaml:"dialog"`
 	}
 
 	// Body tracks body styles.
@@ -44,6 +45,18 @@ type (
 		FgColor   Color `yaml:"fgColor"`
 		BgColor   Color `yaml:"bgColor"`
 		LogoColor Color `yaml:"logoColor"`
+	}
+
+	// Dialog tracks dialog styles.
+	Dialog struct {
+		FgColor            Color `yaml:"fgColor"`
+		BgColor            Color `yaml:"bgColor"`
+		ButtonFgColor      Color `yaml:"buttonFgColor"`
+		ButtonBgColor      Color `yaml:"buttonBgColor"`
+		ButtonFocusFgColor Color `yaml:"buttonFocusFgColor"`
+		ButtonFocusBgColor Color `yaml:"buttonFocusBgColor"`
+		LabelFgColor       Color `yaml:"labelFgColor"`
+		FieldFgColor       Color `yaml:"fieldFgColor"`
 	}
 
 	// Frame tracks frame styles.
@@ -208,10 +221,24 @@ func (c Colors) Colors() []tcell.Color {
 
 func newStyle() Style {
 	return Style{
-		Body:  newBody(),
-		Frame: newFrame(),
-		Info:  newInfo(),
-		Views: newViews(),
+		Body:   newBody(),
+		Frame:  newFrame(),
+		Info:   newInfo(),
+		Views:  newViews(),
+		Dialog: newDialog(),
+	}
+}
+
+func newDialog() Dialog {
+	return Dialog{
+		FgColor:            "cadetBlue",
+		BgColor:            "black",
+		ButtonBgColor:      "darkslateblue",
+		ButtonFgColor:      "black",
+		ButtonFocusBgColor: "dodgerblue",
+		ButtonFocusFgColor: "black",
+		LabelFgColor:       "white",
+		FieldFgColor:       "white",
 	}
 }
 
@@ -438,6 +465,11 @@ func (s *Styles) Title() Title {
 // Charts returns charts styles.
 func (s *Styles) Charts() Charts {
 	return s.K9s.Views.Charts
+}
+
+// Dialog returns dialog styles.
+func (s *Styles) Dialog() Dialog {
+	return s.K9s.Dialog
 }
 
 // Table returns table styles.

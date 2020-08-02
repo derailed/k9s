@@ -1,9 +1,9 @@
 package dialog
 
 import (
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
 )
 
 const confirmKey = "confirm"
@@ -13,14 +13,14 @@ type (
 )
 
 // ShowConfirm pops a confirmation dialog.
-func ShowConfirm(pages *ui.Pages, title, msg string, ack confirmFunc, cancel cancelFunc) {
+func ShowConfirm(styles config.Dialog, pages *ui.Pages, title, msg string, ack confirmFunc, cancel cancelFunc) {
 	f := tview.NewForm()
 	f.SetItemPadding(0)
 	f.SetButtonsAlign(tview.AlignCenter).
-		SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
-		SetButtonTextColor(tview.Styles.PrimaryTextColor).
-		SetLabelColor(tcell.ColorAqua).
-		SetFieldTextColor(tcell.ColorOrange)
+		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
+		SetButtonTextColor(styles.ButtonFgColor.Color()).
+		SetLabelColor(styles.LabelFgColor.Color()).
+		SetFieldTextColor(styles.FieldFgColor.Color())
 	f.AddButton("Cancel", func() {
 		dismissConfirm(pages)
 		cancel()
@@ -30,9 +30,19 @@ func ShowConfirm(pages *ui.Pages, title, msg string, ack confirmFunc, cancel can
 		dismissConfirm(pages)
 		cancel()
 	})
+	for i := 0; i < 2; i++ {
+		b := f.GetButton(i)
+		if b == nil {
+			continue
+		}
+		b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
+		b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
+	}
 
 	modal := tview.NewModalForm("<"+title+">", f)
 	modal.SetText(msg)
+	modal.SetTextColor(styles.FgColor.Color())
+	modal.SetBackgroundColor(styles.BgColor.Color())
 	modal.SetDoneFunc(func(int, string) {
 		dismissConfirm(pages)
 		cancel()

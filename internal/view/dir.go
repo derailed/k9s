@@ -174,7 +174,7 @@ func (d *Dir) delCmd(evt *tcell.EventKey) *tcell.EventKey {
 	d.Stop()
 	defer d.Start()
 	msg := fmt.Sprintf("Delete resource(s) in manifest %s", sel)
-	dialog.ShowConfirm(d.App().Content.Pages, "Confirm Delete", msg, func() {
+	dialog.ShowConfirm(d.App().Styles.Dialog(), d.App().Content.Pages, "Confirm Delete", msg, func() {
 		args := make([]string, 0, 10)
 		args = append(args, "delete")
 		args = append(args, "-f")

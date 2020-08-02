@@ -20,6 +20,15 @@ k9s:
   info:
     fgColor: *text
     sectionColor: *fg
+  dialog:
+    fgColor: *fg
+    bgColor: *bg
+    buttonFgColor: *fg
+    buttonBgColor: *bg
+    buttonFocusFgColor: *slate
+    buttonFocusBgColor: *white
+    labelFgColor: *ghost
+    fieldFgColor: *white
   frame:
     border:
       fgColor: *fg

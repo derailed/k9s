@@ -642,7 +642,7 @@ func (x *Xray) styleTitle() string {
 }
 
 func (x *Xray) resourceDelete(gvr client.GVR, spec *xray.NodeSpec, msg string) {
-	dialog.ShowDelete(x.app.Content.Pages, msg, func(cascade, force bool) {
+	dialog.ShowDelete(x.app.Styles.Dialog(), x.app.Content.Pages, msg, func(cascade, force bool) {
 		x.app.Flash().Infof("Delete resource %s %s", spec.GVR(), spec.Path())
 		accessor, err := dao.AccessorFor(x.app.factory, gvr)
 		if err != nil {

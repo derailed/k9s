@@ -482,7 +482,7 @@ func (b *Browser) namespaceActions(aa ui.KeyActions) {
 }
 
 func (b *Browser) simpleDelete(selections []string, msg string) {
-	dialog.ShowConfirm(b.app.Content.Pages, "Confirm Delete", msg, func() {
+	dialog.ShowConfirm(b.app.Styles.Dialog(), b.app.Content.Pages, "Confirm Delete", msg, func() {
 		b.ShowDeleted()
 		if len(selections) > 1 {
 			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.GVR())
@@ -506,7 +506,7 @@ func (b *Browser) simpleDelete(selections []string, msg string) {
 }
 
 func (b *Browser) resourceDelete(selections []string, msg string) {
-	dialog.ShowDelete(b.app.Content.Pages, msg, func(cascade, force bool) {
+	dialog.ShowDelete(b.app.Styles.Dialog(), b.app.Content.Pages, msg, func(cascade, force bool) {
 		b.ShowDeleted()
 		if len(selections) > 1 {
 			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.GVR())

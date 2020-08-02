@@ -26,6 +26,15 @@ k9s:
   info:
     fgColor: *sky
     sectionColor: *steel
+  dialog:
+    fgColor: *fg
+    bgColor: *bg
+    buttonFgColor: *fg
+    buttonBgColor: *powder
+    buttonFocusFgColor: white
+    buttonFocusBgColor: *aqua
+    labelFgColor: *mslate
+    fieldFgColor: *fg
   frame:
     border:
       fgColor: *fg

@@ -43,7 +43,7 @@ func (r *RestartExtender) restartCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if len(paths) > 1 {
 		msg = fmt.Sprintf("Restart %d deployments?", len(paths))
 	}
-	dialog.ShowConfirm(r.App().Content.Pages, "Confirm Restart", msg, func() {
+	dialog.ShowConfirm(r.App().Styles.Dialog(), r.App().Content.Pages, "Confirm Restart", msg, func() {
 		ctx, cancel := context.WithTimeout(context.Background(), r.App().Conn().Config().CallTimeout())
 		defer cancel()
 		for _, path := range paths {

@@ -17,15 +17,16 @@ type PortForwardCB func(v ResourceViewer, path, co string, mapper []client.PortT
 
 // ShowPortForwards pops a port forwarding configuration dialog.
 func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortForwardCB) {
-	styles := v.App().Styles
+	styles := v.App().Styles.Dialog()
 
 	f := tview.NewForm()
 	f.SetItemPadding(0)
 	f.SetButtonsAlign(tview.AlignCenter).
-		SetButtonBackgroundColor(styles.BgColor()).
-		SetButtonTextColor(styles.FgColor()).
-		SetLabelColor(styles.K9s.Info.FgColor.Color()).
-		SetFieldTextColor(styles.K9s.Info.SectionColor.Color())
+		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
+		SetButtonTextColor(styles.ButtonFgColor.Color()).
+		SetLabelColor(styles.LabelFgColor.Color()).
+		SetFieldTextColor(styles.FieldFgColor.Color()).
+		SetFieldBackgroundColor(styles.BgColor.Color())
 
 	address := v.App().Config.CurrentCluster().PortForwardAddress
 	p1, p2 := ports[0], extractPort(ports[0])
@@ -38,8 +39,14 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 	f.AddInputField("Address:", address, 30, nil, func(h string) {
 		address = h
 	})
-
-	pages := v.App().Content.Pages
+	for i := 0; i < 3; i++ {
+		field, ok := f.GetFormItem(i).(*tview.InputField)
+		if !ok {
+			continue
+		}
+		field.SetLabelColor(styles.LabelFgColor.Color())
+		field.SetFieldTextColor(styles.FieldFgColor.Color())
+	}
 
 	f.AddButton("OK", func() {
 		pp1 := strings.Split(p1, ",")
@@ -48,7 +55,6 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 			v.App().Flash().Err(fmt.Errorf("container to local port mismatch"))
 			return
 		}
-
 		var tt []client.PortTunnel
 		for i := range pp1 {
 			tt = append(tt, client.PortTunnel{
@@ -59,12 +65,23 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 		}
 		okFn(v, path, extractContainer(pp1[0]), tt)
 	})
+	pages := v.App().Content.Pages
 	f.AddButton("Cancel", func() {
 		DismissPortForwards(v, pages)
 	})
+	for i := 0; i < 2; i++ {
+		b := f.GetButton(i)
+		if b == nil {
+			continue
+		}
+		b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
+		b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
+	}
 
 	modal := tview.NewModalForm(fmt.Sprintf("<PortForward on %s>", path), f)
 	modal.SetText("Exposed Ports: " + strings.Join(ports, ","))
+	modal.SetTextColor(styles.FgColor.Color())
+	modal.SetBackgroundColor(styles.BgColor.Color())
 	modal.SetDoneFunc(func(_ int, b string) {
 		DismissPortForwards(v, pages)
 	})

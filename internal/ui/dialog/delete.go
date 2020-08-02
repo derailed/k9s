@@ -1,9 +1,9 @@
 package dialog
 
 import (
+	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
 )
 
 const deleteKey = "delete"
@@ -14,15 +14,15 @@ type (
 )
 
 // ShowDelete pops a resource deletion dialog.
-func ShowDelete(pages *ui.Pages, msg string, ok okFunc, cancel cancelFunc) {
+func ShowDelete(styles config.Dialog, pages *ui.Pages, msg string, ok okFunc, cancel cancelFunc) {
 	cascade, force := true, false
 	f := tview.NewForm()
 	f.SetItemPadding(0)
 	f.SetButtonsAlign(tview.AlignCenter).
-		SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
-		SetButtonTextColor(tview.Styles.PrimaryTextColor).
-		SetLabelColor(tcell.ColorAqua).
-		SetFieldTextColor(tcell.ColorOrange)
+		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
+		SetButtonTextColor(styles.ButtonFgColor.Color()).
+		SetLabelColor(styles.LabelFgColor.Color()).
+		SetFieldTextColor(styles.FieldFgColor.Color())
 	f.AddCheckbox("Cascade:", cascade, func(checked bool) {
 		cascade = checked
 	})
@@ -39,8 +39,12 @@ func ShowDelete(pages *ui.Pages, msg string, ok okFunc, cancel cancelFunc) {
 		cancel()
 	})
 	for i := 0; i < 2; i++ {
-		f.GetButton(i).SetBackgroundColorActivated(tcell.ColorWhite)
-		f.GetButton(i).SetLabelColorActivated(tcell.ColorRed)
+		b := f.GetButton(i)
+		if b == nil {
+			continue
+		}
+		b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
+		b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
 	}
 	f.SetFocus(2)
 

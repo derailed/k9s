@@ -19,6 +19,15 @@ k9s:
   info:
     fgColor: *magenta
     sectionColor: *foreground
+  dialog:
+    fgColor: *foreground
+    bgColor: *background
+    buttonFgColor: *foreground
+    buttonBgColor: *magenta
+    buttonFocusFgColor: white
+    buttonFocusBgColor: *cyan
+    labelFgColor: *orange
+    fieldFgColor: *foreground
   frame:
     border:
       fgColor: *selection
