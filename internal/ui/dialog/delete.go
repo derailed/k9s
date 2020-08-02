@@ -38,6 +38,10 @@ func ShowDelete(pages *ui.Pages, msg string, ok okFunc, cancel cancelFunc) {
 		dismissDelete(pages)
 		cancel()
 	})
+	for i := 0; i < 2; i++ {
+		f.GetButton(i).SetBackgroundColorActivated(tcell.ColorWhite)
+		f.GetButton(i).SetLabelColorActivated(tcell.ColorRed)
+	}
 	f.SetFocus(2)
 
 	confirm := tview.NewModalForm("<Delete>", f)

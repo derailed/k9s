@@ -2,6 +2,8 @@ module github.com/derailed/k9s
 
 go 1.14
 
+replace github.com/derailed/tview => /Users/fernand/go_wk/derailed/src/github.com/derailed/tview
+
 require (
 	github.com/atotto/clipboard v0.1.2
 	github.com/derailed/popeye v0.8.8
