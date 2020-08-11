@@ -146,3 +146,11 @@ type Logger interface {
 	// Logs tails a resource logs.
 	Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, error)
 }
+
+type ContainsPodSpec interface {
+	// Get PodSpec of a resource
+	GetPodSpec(path string) (*v1.PodSpec, error)
+
+	// Set Images for a resource
+	SetImages(ctx context.Context, path string, images map[string]string) error
+}
