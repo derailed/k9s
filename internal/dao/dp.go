@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
-
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
@@ -231,16 +229,11 @@ func (d *Deployment) SetImages(ctx context.Context, path string, images map[stri
 	if !auth {
 		return fmt.Errorf("user is not authorized to patch a deployment")
 	}
-	var nameStrB strings.Builder
-	var imageStrB strings.Builder
 
-	for name, image := range images {
-		nameStrB.WriteString(fmt.Sprintf(`{"name":"%s"},`, name))
-		imageStrB.WriteString(fmt.Sprintf(`{"image":"%s","name":"%s"},`, image, name))
+	jsonPatch, err := SetImageJsonPatch(images)
+	if err != nil {
+		return err
 	}
-	namesJson := strings.TrimSuffix(nameStrB.String(), ",")
-	imagesJson := strings.TrimSuffix(imageStrB.String(), ",")
-	patchJson := `{"spec":{"template":{"spec":{"$setElementOrder/containers":[` + namesJson + `],"containers":[` + imagesJson + `]}}}}`
 	dial, err := d.Client().Dial()
 	if err != nil {
 		return err
@@ -249,7 +242,7 @@ func (d *Deployment) SetImages(ctx context.Context, path string, images map[stri
 		ctx,
 		n,
 		types.StrategicMergePatchType,
-		[]byte(patchJson),
+		[]byte(jsonPatch),
 		metav1.PatchOptions{},
 	)
 	return err
