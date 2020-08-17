@@ -33,8 +33,8 @@ If applicable, add screenshots to help explain your problem.
 
 **Versions (please complete the following information):**
  - OS: [e.g. OSX]
- - K9s [e.g. 0.1.0]
- - K8s [e.g. 1.11.0]
+ - K9s: [e.g. 0.1.0]
+ - K8s: [e.g. 1.11.0]
 
 **Additional context**
 Add any other context about the problem here.
