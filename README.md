@@ -69,8 +69,14 @@ K9s is available on Linux, macOS and Windows platforms.
   scoop install k9s
   ```
 
-* Via a GO install
+* Via [Chocolatey](https://chocolatey.org/packages/k9s) for Windows
+  
+  ```shell
+  choco install k9s
+  ```
 
+* Via a GO install
+  
   ```shell
   # NOTE: The dev version will be in effect!
   go get -u github.com/derailed/k9s
