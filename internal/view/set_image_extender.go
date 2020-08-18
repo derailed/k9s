@@ -54,17 +54,29 @@ func (s *SetImageExtender) showSetImageDialog(path string) {
 	s.App().Content.ShowPage(setImageKey)
 }
 
+type ContainerType string
+
+var runningContainer = ContainerType("Container")
+var initContainer = ContainerType("InitContainer")
+
+type ContainerImage struct {
+	ContainerType ContainerType
+	Image         string
+}
+
 func (s *SetImageExtender) makeSetImageForm(sel string) *tview.Form {
 	f := s.makeStyledForm()
-	containers, err := s.getImages(sel)
+	podSpec, err := s.getPodSpec(sel)
+	originalImages := getImages(podSpec)
+	formSubmitResult := make(map[string]ContainerImage, 0)
 	if err != nil {
 		s.App().Flash().Err(err)
 		return nil
 	}
-	images := make(map[string]string)
-	for _, container := range *containers {
-		f.AddInputField(container.Name, container.Image, 0, nil, func(changed string) {
-			images[container.Name] = changed
+	for name, containerImage := range originalImages {
+		f.AddInputField(name, containerImage.Image, 0, nil, func(changed string) {
+			log.Info().Msgf("changed : %v", changed)
+			formSubmitResult[name] = ContainerImage{ContainerType: containerImage.ContainerType, Image: changed}
 		})
 	}
 
@@ -77,19 +89,62 @@ func (s *SetImageExtender) makeSetImageForm(sel string) *tview.Form {
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), s.App().Conn().Config().CallTimeout())
 		defer cancel()
-		if err := s.setImages(ctx, sel, images); err != nil {
+		podSpecPatch := buildPodSpecPatch(formSubmitResult, originalImages)
+		if err := s.setImages(ctx, sel, podSpecPatch); err != nil {
+
 			log.Error().Err(err).Msgf("DP %s image update failed", sel)
 			s.App().Flash().Err(err)
 		} else {
 			s.App().Flash().Infof("Resource %s:%s image updated successfully", s.GVR(), sel)
 		}
 	})
-
 	f.AddButton("Cancel", func() {
 		s.dismissDialog()
 	})
 
 	return f
+}
+
+func getImages(podSpec *corev1.PodSpec) map[string]ContainerImage {
+	results := make(map[string]ContainerImage, 0)
+	for _, c := range podSpec.Containers {
+		results[c.Name] = ContainerImage{
+			ContainerType: runningContainer,
+			Image:         c.Image,
+		}
+	}
+	for _, c := range podSpec.InitContainers {
+		results[c.Name] = ContainerImage{
+			ContainerType: initContainer,
+			Image:         c.Image,
+		}
+	}
+	return results
+}
+
+func buildPodSpecPatch(formImages map[string]ContainerImage, originalImages map[string]ContainerImage) corev1.PodSpec {
+	initContainers := make([]corev1.Container, 0)
+	containers := make([]corev1.Container, 0)
+	for name, containerImage := range formImages {
+		if originalImages[name].Image == containerImage.Image {
+			continue
+		}
+		container := corev1.Container{
+			Image: containerImage.Image,
+			Name:  name,
+		}
+		switch containerImage.ContainerType {
+		case runningContainer:
+			containers = append(containers, container)
+		case initContainer:
+			initContainers = append(initContainers, container)
+		}
+	}
+	result := corev1.PodSpec{
+		Containers:     containers,
+		InitContainers: initContainers,
+	}
+	return result
 }
 
 func (s *SetImageExtender) dismissDialog() {
@@ -107,7 +162,7 @@ func (s *SetImageExtender) makeStyledForm() *tview.Form {
 	return f
 }
 
-func (s *SetImageExtender) getImages(path string) (*[]corev1.Container, error) {
+func (s *SetImageExtender) getPodSpec(path string) (*corev1.PodSpec, error) {
 	res, err := dao.AccessorFor(s.App().factory, s.GVR())
 	if err != nil {
 		return nil, err
@@ -117,11 +172,10 @@ func (s *SetImageExtender) getImages(path string) (*[]corev1.Container, error) {
 		return nil, fmt.Errorf("expecting a podSpecable resource for %q", s.GVR())
 	}
 	podSpec, err := podSpecable.GetPodSpec(path)
-	containers := podSpec.Containers
-	return &containers, nil
+	return podSpec, nil
 }
 
-func (s *SetImageExtender) setImages(ctx context.Context, path string, images map[string]string) error {
+func (s *SetImageExtender) setImages(ctx context.Context, path string, spec corev1.PodSpec) error {
 	res, err := dao.AccessorFor(s.App().factory, s.GVR())
 	if err != nil {
 		return err
@@ -132,5 +186,5 @@ func (s *SetImageExtender) setImages(ctx context.Context, path string, images ma
 		return fmt.Errorf("expecting a scalable resource for %q", s.GVR())
 	}
 
-	return deployment.SetImages(ctx, path, images)
+	return deployment.SetImages(ctx, path, spec)
 }

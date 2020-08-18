@@ -1,6 +1,9 @@
 package dao
 
-import "encoding/json"
+import (
+	"encoding/json"
+	v1 "k8s.io/api/core/v1"
+)
 
 type JsonPatch struct {
 	Spec Spec `json:"spec"`
@@ -15,8 +18,10 @@ type Template struct {
 }
 
 type ImagesSpec struct {
-	SetElementOrders []Element `json:"$setElementOrder/containers"`
-	Containers       []Element `json:"containers"`
+	SetElementOrderContainers     []Element `json:"$setElementOrder/containers,omitempty"`
+	SetElementOrderInitContainers []Element `json:"$setElementOrder/initContainers,omitempty"`
+	Containers                    []Element `json:"containers,omitempty"`
+	InitContainers                []Element `json:"initContainers,omitempty"`
 }
 
 type Element struct {
@@ -25,23 +30,31 @@ type Element struct {
 }
 
 // Build a json patch string to update PodSpec images
-func SetImageJsonPatch(images map[string]string) (string, error) {
-	elementOrders := make([]Element, 0)
-	containers := make([]Element, 0)
-	for key, value := range images {
-		elementOrders = append(elementOrders, Element{Name: key})
-		containers = append(containers, Element{Name: key, Image: value})
-	}
+func SetImageJsonPatch(spec v1.PodSpec) (string, error) {
 	jsonPatch := JsonPatch{
 		Spec: Spec{
 			Template: Template{
 				Spec: ImagesSpec{
-					SetElementOrders: elementOrders,
-					Containers:       containers,
+					SetElementOrderContainers:     extractElements(spec.Containers, false),
+					Containers:                    extractElements(spec.Containers, true),
+					SetElementOrderInitContainers: extractElements(spec.InitContainers, false),
+					InitContainers:                extractElements(spec.InitContainers, true),
 				},
 			},
 		},
 	}
 	bytes, err := json.Marshal(jsonPatch)
 	return string(bytes), err
+}
+
+func extractElements(containers []v1.Container, withImage bool) []Element {
+	elements := make([]Element, 0)
+	for _, c := range containers {
+		if withImage {
+			elements = append(elements, Element{Name: c.Name, Image: c.Image})
+		} else {
+			elements = append(elements, Element{Name: c.Name})
+		}
+	}
+	return elements
 }

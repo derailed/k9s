@@ -220,7 +220,7 @@ func (d *Deployment) GetPodSpec(path string) (*v1.PodSpec, error) {
 	return &podSpec, nil
 }
 
-func (d *Deployment) SetImages(ctx context.Context, path string, images map[string]string) error {
+func (d *Deployment) SetImages(ctx context.Context, path string, spec v1.PodSpec) error {
 	ns, n := client.Namespaced(path)
 	auth, err := d.Client().CanI(ns, "apps/v1/deployments", []string{client.PatchVerb})
 	if err != nil {
@@ -229,8 +229,7 @@ func (d *Deployment) SetImages(ctx context.Context, path string, images map[stri
 	if !auth {
 		return fmt.Errorf("user is not authorized to patch a deployment")
 	}
-
-	jsonPatch, err := SetImageJsonPatch(images)
+	jsonPatch, err := SetImageJsonPatch(spec)
 	if err != nil {
 		return err
 	}
