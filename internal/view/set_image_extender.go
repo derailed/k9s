@@ -167,11 +167,11 @@ func (s *SetImageExtender) getPodSpec(path string) (*corev1.PodSpec, error) {
 	if err != nil {
 		return nil, err
 	}
-	podSpecable, ok := res.(dao.ContainsPodSpec)
+	resourceWPodSpec, ok := res.(dao.ContainsPodSpec)
 	if !ok {
-		return nil, fmt.Errorf("expecting a podSpecable resource for %q", s.GVR())
+		return nil, fmt.Errorf("expecting a resourceWPodSpec resource for %q", s.GVR())
 	}
-	podSpec, err := podSpecable.GetPodSpec(path)
+	podSpec, err := resourceWPodSpec.GetPodSpec(path)
 	return podSpec, nil
 }
 
@@ -181,10 +181,10 @@ func (s *SetImageExtender) setImages(ctx context.Context, path string, spec core
 		return err
 	}
 
-	deployment, ok := res.(dao.ContainsPodSpec)
+	resourceWPodSpec, ok := res.(dao.ContainsPodSpec)
 	if !ok {
 		return fmt.Errorf("expecting a scalable resource for %q", s.GVR())
 	}
 
-	return deployment.SetImages(ctx, path, spec)
+	return resourceWPodSpec.SetImages(ctx, path, spec)
 }

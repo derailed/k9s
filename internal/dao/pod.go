@@ -484,7 +484,6 @@ func (p *Pod) SetImages(ctx context.Context, path string, spec v1.PodSpec) error
 	if err != nil {
 		return err
 	}
-	log.Info().Msgf("jsonPatch : %v", jsonPatch)
 	_, err = dial.CoreV1().Pods(ns).Patch(
 		ctx,
 		n,
