@@ -21,11 +21,12 @@ import (
 )
 
 var (
-	_ Accessor    = (*DaemonSet)(nil)
-	_ Nuker       = (*DaemonSet)(nil)
-	_ Loggable    = (*DaemonSet)(nil)
-	_ Restartable = (*DaemonSet)(nil)
-	_ Controller  = (*DaemonSet)(nil)
+	_ Accessor        = (*DaemonSet)(nil)
+	_ Nuker           = (*DaemonSet)(nil)
+	_ Loggable        = (*DaemonSet)(nil)
+	_ Restartable     = (*DaemonSet)(nil)
+	_ Controller      = (*DaemonSet)(nil)
+	_ ContainsPodSpec = (*DaemonSet)(nil)
 )
 
 // DaemonSet represents a K8s daemonset.
@@ -223,6 +224,42 @@ func (d *DaemonSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs,
 	}
 
 	return refs, nil
+}
+
+func (d *DaemonSet) GetPodSpec(path string) (*v1.PodSpec, error) {
+	ds, err := d.GetInstance(path)
+	if err != nil {
+		return nil, err
+	}
+	podSpec := ds.Spec.Template.Spec
+	return &podSpec, nil
+}
+
+func (d *DaemonSet) SetImages(ctx context.Context, path string, spec v1.PodSpec) error {
+	ns, n := client.Namespaced(path)
+	auth, err := d.Client().CanI(ns, "apps/v1/daemonset", []string{client.PatchVerb})
+	if err != nil {
+		return err
+	}
+	if !auth {
+		return fmt.Errorf("user is not authorized to patch a daemonset")
+	}
+	jsonPatch, err := SetImageJsonPatch(spec)
+	if err != nil {
+		return err
+	}
+	dial, err := d.Client().Dial()
+	if err != nil {
+		return err
+	}
+	_, err = dial.AppsV1().DaemonSets(ns).Patch(
+		ctx,
+		n,
+		types.StrategicMergePatchType,
+		[]byte(jsonPatch),
+		metav1.PatchOptions{},
+	)
+	return err
 }
 
 // ----------------------------------------------------------------------------
