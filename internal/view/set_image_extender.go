@@ -16,7 +16,18 @@ type SetImageExtender struct {
 	ResourceViewer
 }
 
-const setImageKey = "setImage"
+type ContainerType string
+
+type ContainerImage struct {
+	ContainerType ContainerType
+	Image         string
+}
+
+const (
+	setImageKey      = "setImage"
+	runningContainer = ContainerType("Container")
+	initContainer    = ContainerType("InitContainer")
+)
 
 func NewSetImageExtender(r ResourceViewer) ResourceViewer {
 	s := SetImageExtender{ResourceViewer: r}
@@ -52,16 +63,6 @@ func (s *SetImageExtender) showSetImageDialog(path string) {
 	})
 	s.App().Content.AddPage(setImageKey, confirm, false, false)
 	s.App().Content.ShowPage(setImageKey)
-}
-
-type ContainerType string
-
-var runningContainer = ContainerType("Container")
-var initContainer = ContainerType("InitContainer")
-
-type ContainerImage struct {
-	ContainerType ContainerType
-	Image         string
 }
 
 func (s *SetImageExtender) makeSetImageForm(sel string) *tview.Form {
