@@ -76,7 +76,6 @@ func (s *SetImageExtender) makeSetImageForm(sel string) *tview.Form {
 	}
 	for name, containerImage := range originalImages {
 		f.AddInputField(name, containerImage.Image, 0, nil, func(changed string) {
-			log.Info().Msgf("changed : %v", changed)
 			formSubmitResult[name] = ContainerImage{ContainerType: containerImage.ContainerType, Image: changed}
 		})
 	}
@@ -93,7 +92,7 @@ func (s *SetImageExtender) makeSetImageForm(sel string) *tview.Form {
 		podSpecPatch := buildPodSpecPatch(formSubmitResult, originalImages)
 		if err := s.setImages(ctx, sel, podSpecPatch); err != nil {
 
-			log.Error().Err(err).Msgf("DP %s image update failed", sel)
+			log.Error().Err(err).Msgf("PodSpec %s image update failed", sel)
 			s.App().Flash().Err(err)
 		} else {
 			s.App().Flash().Infof("Resource %s:%s image updated successfully", s.GVR(), sel)
