@@ -229,7 +229,7 @@ func (d *Deployment) SetImages(ctx context.Context, path string, spec v1.PodSpec
 	if !auth {
 		return fmt.Errorf("user is not authorized to patch a deployment")
 	}
-	jsonPatch, err := SetImageJsonPatch(spec)
+	jsonPatch, err := GetTemplateJsonPatch(spec)
 	if err != nil {
 		return err
 	}

@@ -244,7 +244,7 @@ func (d *DaemonSet) SetImages(ctx context.Context, path string, spec v1.PodSpec)
 	if !auth {
 		return fmt.Errorf("user is not authorized to patch a daemonset")
 	}
-	jsonPatch, err := SetImageJsonPatch(spec)
+	jsonPatch, err := GetTemplateJsonPatch(spec)
 	if err != nil {
 		return err
 	}

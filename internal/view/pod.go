@@ -29,7 +29,9 @@ type Pod struct {
 func NewPod(gvr client.GVR) ResourceViewer {
 	p := Pod{}
 	p.ResourceViewer = NewPortForwardExtender(
-		NewLogsExtender(NewBrowser(gvr), p.selectedContainer),
+		NewSetImageExtender(
+			NewLogsExtender(NewBrowser(gvr), p.selectedContainer),
+		),
 	)
 	p.SetBindKeysFn(p.bindKeys)
 	p.GetTable().SetEnterFn(p.showContainers)

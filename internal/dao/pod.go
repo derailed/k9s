@@ -18,15 +18,17 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	restclient "k8s.io/client-go/rest"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 var (
-	_ Accessor   = (*Pod)(nil)
-	_ Nuker      = (*Pod)(nil)
-	_ Loggable   = (*Pod)(nil)
-	_ Controller = (*Pod)(nil)
+	_ Accessor        = (*Pod)(nil)
+	_ Nuker           = (*Pod)(nil)
+	_ Loggable        = (*Pod)(nil)
+	_ Controller      = (*Pod)(nil)
+	_ ContainsPodSpec = (*Pod)(nil)
 )
 
 const (
@@ -454,4 +456,41 @@ func in(ll []string, s string) bool {
 		}
 	}
 	return false
+}
+
+func (p *Pod) GetPodSpec(path string) (*v1.PodSpec, error) {
+	pod, err := p.GetInstance(path)
+	if err != nil {
+		return nil, err
+	}
+	podSpec := pod.Spec
+	return &podSpec, nil
+}
+
+func (p *Pod) SetImages(ctx context.Context, path string, spec v1.PodSpec) error {
+	ns, n := client.Namespaced(path)
+	auth, err := p.Client().CanI(ns, "v1/pod", []string{client.PatchVerb})
+	if err != nil {
+		return err
+	}
+	if !auth {
+		return fmt.Errorf("user is not authorized to patch a deployment")
+	}
+	jsonPatch, err := GetJsonPatch(spec)
+	if err != nil {
+		return err
+	}
+	dial, err := p.Client().Dial()
+	if err != nil {
+		return err
+	}
+	log.Info().Msgf("jsonPatch : %v", jsonPatch)
+	_, err = dial.CoreV1().Pods(ns).Patch(
+		ctx,
+		n,
+		types.StrategicMergePatchType,
+		[]byte(jsonPatch),
+		metav1.PatchOptions{},
+	)
+	return err
 }

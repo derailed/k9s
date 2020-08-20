@@ -10,10 +10,10 @@ type JsonPatch struct {
 }
 
 type Spec struct {
-	Template Template `json:"template"`
+	Template PodSpec `json:"template"`
 }
 
-type Template struct {
+type PodSpec struct {
 	Spec ImagesSpec `json:"spec"`
 }
 
@@ -30,21 +30,33 @@ type Element struct {
 }
 
 // Build a json patch string to update PodSpec images
-func SetImageJsonPatch(spec v1.PodSpec) (string, error) {
+func GetTemplateJsonPatch(spec v1.PodSpec) (string, error) {
 	jsonPatch := JsonPatch{
 		Spec: Spec{
-			Template: Template{
-				Spec: ImagesSpec{
-					SetElementOrderContainers:     extractElements(spec.Containers, false),
-					Containers:                    extractElements(spec.Containers, true),
-					SetElementOrderInitContainers: extractElements(spec.InitContainers, false),
-					InitContainers:                extractElements(spec.InitContainers, true),
-				},
-			},
+			Template: getPatchPodSpec(spec),
 		},
 	}
 	bytes, err := json.Marshal(jsonPatch)
 	return string(bytes), err
+}
+
+func GetJsonPatch(spec v1.PodSpec) (string, error) {
+	podSpec := getPatchPodSpec(spec)
+	bytes, err := json.Marshal(podSpec)
+	return string(bytes), err
+}
+
+func getPatchPodSpec(spec v1.PodSpec) PodSpec {
+	podSpec := PodSpec{
+		Spec: ImagesSpec{
+			SetElementOrderContainers:     extractElements(spec.Containers, false),
+			Containers:                    extractElements(spec.Containers, true),
+			SetElementOrderInitContainers: extractElements(spec.InitContainers, false),
+			InitContainers:                extractElements(spec.InitContainers, true),
+		},
+	}
+
+	return podSpec
 }
 
 func extractElements(containers []v1.Container, withImage bool) []Element {
