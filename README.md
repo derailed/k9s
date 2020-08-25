@@ -62,6 +62,12 @@ K9s is available on Linux, macOS and Windows platforms.
   ```shell
   zypper install k9s
   ```
+  
+* On [Snap](https://snapcraft.io/) for Linux
+
+```shell
+snap install k9s
+```
 
 * Via [Scoop](https://scoop.sh) for Windows
 
