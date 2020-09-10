@@ -13,7 +13,7 @@ RUN apk --no-cache add make git gcc libc-dev curl && make build
 FROM alpine:3.12.0
 
 COPY --from=build /k9s/execs/k9s /bin/k9s
-ENV KUBE_LATEST_VERSION="v1.18.1"
+ENV KUBE_LATEST_VERSION="v1.18.2"
 RUN apk add --update ca-certificates \
   && apk add --update -t deps curl vim \
   && curl -L https://storage.googleapis.com/kubernetes-release/release/${KUBE_LATEST_VERSION}/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl \

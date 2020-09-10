@@ -157,7 +157,7 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		}
 	}
 
-	return evt
+	return nil
 }
 
 // StylesChanged notifies skin changed.

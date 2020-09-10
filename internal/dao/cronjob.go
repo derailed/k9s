@@ -31,12 +31,12 @@ type CronJob struct {
 // Run a CronJob.
 func (c *CronJob) Run(path string) error {
 	ns, _ := client.Namespaced(path)
-	auth, err := c.Client().CanI(ns, "batch/v1beta1/cronjobs", []string{client.GetVerb, client.CreateVerb})
+	auth, err := c.Client().CanI(ns, "batch/v1/jobs", []string{client.GetVerb, client.CreateVerb})
 	if err != nil {
 		return err
 	}
 	if !auth {
-		return fmt.Errorf("user is not authorize to run cronjobs")
+		return fmt.Errorf("user is not authorized to run jobs")
 	}
 
 	o, err := c.Factory.Get("batch/v1beta1/cronjobs", path, true, labels.Everything())

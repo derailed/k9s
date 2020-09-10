@@ -17,17 +17,25 @@ func (m MenuHint) IsBlank() bool {
 	return m.Mnemonic == "" && m.Description == "" && !m.Visible
 }
 
+// String returns a string representation.
+func (h MenuHint) String() string {
+	return h.Mnemonic
+}
+
 // MenuHints represents a collection of hints.
 type MenuHints []MenuHint
 
+// Len returns the hints length
 func (h MenuHints) Len() int {
 	return len(h)
 }
 
+// Swap swaps to elements.
 func (h MenuHints) Swap(i, j int) {
 	h[i], h[j] = h[j], h[i]
 }
 
+// Less returns true if first hint is less than second.
 func (h MenuHints) Less(i, j int) bool {
 	n, err1 := strconv.Atoi(h[i].Mnemonic)
 	m, err2 := strconv.Atoi(h[j].Mnemonic)

@@ -67,7 +67,7 @@ func (c *CmdBuff) SetText(cmd string) {
 	c.fireBufferChanged()
 }
 
-// Add adds a new charater to the buffer.
+// Add adds a new character to the buffer.
 func (c *CmdBuff) Add(r rune) {
 	c.buff = append(c.buff, r)
 	c.fireBufferChanged()

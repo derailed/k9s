@@ -134,7 +134,6 @@ func (b *Browser) Start() {
 func (b *Browser) Stop() {
 	log.Debug().Msgf("BRO-STOP %v", b.GVR())
 	if b.cancelFn != nil {
-		log.Debug().Msgf("Canceling!!")
 		b.cancelFn()
 		b.cancelFn = nil
 	}

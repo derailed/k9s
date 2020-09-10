@@ -38,7 +38,7 @@ func ShowConfirm(styles config.Dialog, pages *ui.Pages, title, msg string, ack c
 		b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
 		b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
 	}
-
+	f.SetFocus(0)
 	modal := tview.NewModalForm("<"+title+">", f)
 	modal.SetText(msg)
 	modal.SetTextColor(styles.FgColor.Color())

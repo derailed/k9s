@@ -32,25 +32,34 @@ func NewNode(gvr client.GVR) ResourceViewer {
 	return &n
 }
 
-func (n *Node) bindKeys(aa ui.KeyActions) {
-	aa.Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlD)
+func (n *Node) bindDangerousKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		ui.KeyY:      ui.NewKeyAction("YAML", n.yamlCmd, true),
-		ui.KeyC:      ui.NewKeyAction("Cordon", n.toggleCordonCmd(true), true),
-		ui.KeyU:      ui.NewKeyAction("Uncordon", n.toggleCordonCmd(false), true),
-		ui.KeyR:      ui.NewKeyAction("Drain", n.drainCmd, true),
-		ui.KeyShiftC: ui.NewKeyAction("Sort CPU", n.GetTable().SortColCmd(cpuCol, false), false),
-		ui.KeyShiftM: ui.NewKeyAction("Sort MEM", n.GetTable().SortColCmd(memCol, false), false),
-		ui.KeyShiftX: ui.NewKeyAction("Sort CPU%", n.GetTable().SortColCmd("%CPU", false), false),
-		ui.KeyShiftZ: ui.NewKeyAction("Sort MEM%", n.GetTable().SortColCmd("%MEM", false), false),
+		ui.KeyC: ui.NewKeyAction("Cordon", n.toggleCordonCmd(true), true),
+		ui.KeyU: ui.NewKeyAction("Uncordon", n.toggleCordonCmd(false), true),
+		ui.KeyR: ui.NewKeyAction("Drain", n.drainCmd, true),
 	})
-
 	cl := n.App().Config.K9s.CurrentCluster
 	if n.App().Config.K9s.Clusters[cl].FeatureGates.NodeShell {
 		aa.Add(ui.KeyActions{
 			ui.KeyS: ui.NewKeyAction("Shell", n.sshCmd, true),
 		})
 	}
+}
+
+func (n *Node) bindKeys(aa ui.KeyActions) {
+	aa.Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlD)
+
+	if !n.App().Config.K9s.GetReadOnly() {
+		n.bindDangerousKeys(aa)
+	}
+
+	aa.Add(ui.KeyActions{
+		ui.KeyY:      ui.NewKeyAction("YAML", n.yamlCmd, true),
+		ui.KeyShiftC: ui.NewKeyAction("Sort CPU", n.GetTable().SortColCmd(cpuCol, false), false),
+		ui.KeyShiftM: ui.NewKeyAction("Sort MEM", n.GetTable().SortColCmd(memCol, false), false),
+		ui.KeyShiftX: ui.NewKeyAction("Sort CPU%", n.GetTable().SortColCmd("%CPU", false), false),
+		ui.KeyShiftZ: ui.NewKeyAction("Sort MEM%", n.GetTable().SortColCmd("%MEM", false), false),
+	})
 }
 
 func (n *Node) showPods(a *App, _ ui.Tabular, _, path string) {

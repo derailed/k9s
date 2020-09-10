@@ -138,7 +138,7 @@ func filterToast(data render.TableData) render.TableData {
 }
 
 func rxFilter(q string, data render.TableData) (render.TableData, error) {
-	rx, err := regexp.Compile(`(?i)` + q)
+	rx, err := regexp.Compile(`(?i)(` + q + `)`)
 	if err != nil {
 		return data, err
 	}
@@ -149,7 +149,7 @@ func rxFilter(q string, data render.TableData) (render.TableData, error) {
 		Namespace: data.Namespace,
 	}
 	for _, re := range data.RowEvents {
-		fields := strings.Join(re.Row.Fields, " ")
+		fields := strings.Join(re.Row.Fields[:2], " ")
 		if rx.MatchString(fields) {
 			filtered.RowEvents = append(filtered.RowEvents, re)
 		}

@@ -83,7 +83,7 @@ func (a KeyActions) Hints() model.MenuHints {
 				},
 			)
 		} else {
-			log.Error().Msgf("Unable to locate KeyName for %#v", string(rune(k)))
+			log.Error().Msgf("Unable to locate KeyName for %#v", k)
 		}
 	}
 	return hh
