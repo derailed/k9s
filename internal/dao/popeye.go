@@ -84,7 +84,7 @@ func (p *Popeye) List(ctx context.Context, ns string) ([]runtime.Object, error) 
 
 	buff := readWriteCloser{Buffer: bytes.NewBufferString("")}
 	popeye.SetOutputTarget(buff)
-	if err = popeye.Sanitize(); err != nil {
+	if _, err = popeye.Sanitize(); err != nil {
 		log.Debug().Msgf("BOOM %#v", *flags.Sections)
 		return nil, err
 	}

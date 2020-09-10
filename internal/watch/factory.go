@@ -141,6 +141,7 @@ func (f *Factory) waitForCacheSync(ns string) {
 	// Hang for a sec for the cache to refresh if still not done bail out!
 	c := make(chan struct{})
 	go func(c chan struct{}) {
+		defer log.Debug().Msgf("CacheSync done!")
 		<-time.After(defaultWaitTime)
 		close(c)
 	}(c)

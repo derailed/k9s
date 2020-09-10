@@ -3,8 +3,6 @@ package main
 import (
 	"os"
 
-	_ "net/http/pprof"
-
 	"github.com/derailed/k9s/cmd"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/rs/zerolog"

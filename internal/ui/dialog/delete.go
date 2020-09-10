@@ -38,14 +38,14 @@ func ShowDelete(styles config.Dialog, pages *ui.Pages, msg string, ok okFunc, ca
 		dismissDelete(pages)
 		cancel()
 	})
-	for i := 0; i < 2; i++ {
-		b := f.GetButton(i)
-		if b == nil {
-			continue
-		}
-		b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
-		b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
-	}
+	// for i := 0; i < 2; i++ {
+	// 	b := f.GetButton(i)
+	// 	if b == nil {
+	// 		continue
+	// 	}
+	// 	b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
+	// 	b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
+	// }
 	f.SetFocus(2)
 
 	confirm := tview.NewModalForm("<Delete>", f)

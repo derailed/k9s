@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"os"
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
@@ -54,7 +55,7 @@ func (a *App) Init() {
 	a.cmdModel.AddListener(a)
 	a.Styles.AddListener(a)
 
-	a.SetRoot(a.Main, true)
+	a.SetRoot(a.Main, true).EnableMouse(true)
 }
 
 // QueueUpdate queues up a ui action.
@@ -144,6 +145,7 @@ func (a *App) bindKeys() {
 // BailOut exists the application.
 func (a *App) BailOut() {
 	a.Stop()
+	os.Exit(0)
 }
 
 // ResetPrompt reset the prompt model and marks buffer as active.

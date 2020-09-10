@@ -138,16 +138,11 @@ func (a *App) layout(ctx context.Context, version string) {
 
 func (a *App) initSignals() {
 	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGABRT, syscall.SIGINT, syscall.SIGHUP, syscall.SIGQUIT)
+	signal.Notify(sig, syscall.SIGTERM, syscall.SIGABRT, syscall.SIGINT, syscall.SIGHUP, syscall.SIGQUIT)
 
 	go func(sig chan os.Signal) {
-		signal := <-sig
-		if signal == syscall.SIGHUP {
+		if syscall.SIGHUP == <-sig {
 			a.BailOut()
-			return
-		}
-		if err := nukeK9sShell(a); err != nil {
-			log.Error().Err(err).Msg("nuking k9s shell pod")
 		}
 	}(sig)
 }
