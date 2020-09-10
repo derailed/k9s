@@ -17,6 +17,7 @@ builds:
       - amd64
       - arm64
       - arm
+      - ppc64le
     goarm:
       - 7
     flags:

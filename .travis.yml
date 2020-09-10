@@ -3,9 +3,14 @@ go_import_path: github.com/derailed/k9s
 go:
   - "1.15"
 
-os:
-  - linux
-  - osx
+jobs:
+  include:
+  - os: linux
+    arch: amd64
+  - os: linux
+    arch: ppc64le
+  - os: osx
+    arch: amd64
 
 dist: trusty
 sudo: false
