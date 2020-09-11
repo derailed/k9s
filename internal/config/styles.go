@@ -341,7 +341,7 @@ func newXray() Xray {
 	return Xray{
 		FgColor:         "aqua",
 		BgColor:         "black",
-		CursorColor:     "aqua",
+		CursorColor:     "dodgerblue",
 		CursorTextColor: "black",
 		GraphicColor:    "cadetblue",
 	}

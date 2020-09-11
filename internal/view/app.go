@@ -141,8 +141,9 @@ func (a *App) initSignals() {
 	signal.Notify(sig, syscall.SIGTERM, syscall.SIGABRT, syscall.SIGINT, syscall.SIGHUP, syscall.SIGQUIT)
 
 	go func(sig chan os.Signal) {
-		if syscall.SIGHUP == <-sig {
-			a.BailOut()
+		s := <-sig
+		if s == syscall.SIGHUP {
+			os.Exit(0)
 		}
 	}(sig)
 }
