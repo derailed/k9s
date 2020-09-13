@@ -8,8 +8,8 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/fvbommel/sortorder"
 	"github.com/rs/zerolog/log"
-	"vbom.ml/util/sortorder"
 )
 
 const (
