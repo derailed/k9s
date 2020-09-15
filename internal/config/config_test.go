@@ -261,13 +261,14 @@ func TestSetup(t *testing.T) {
 
 var expectedConfig = `k9s:
   refreshRate: 100
+  enableMouse: false
   headless: false
   readOnly: true
   noIcons: false
   logger:
     tail: 500
     buffer: 800
-    sinceSeconds: 300
+    sinceSeconds: 60
     fullScreenLogs: false
     textWrap: false
     showTime: false
@@ -341,13 +342,14 @@ var expectedConfig = `k9s:
 
 var resetConfig = `k9s:
   refreshRate: 2
+  enableMouse: false
   headless: false
   readOnly: false
   noIcons: false
   logger:
     tail: 200
     buffer: 2000
-    sinceSeconds: 300
+    sinceSeconds: 60
     fullScreenLogs: false
     textWrap: false
     showTime: false
