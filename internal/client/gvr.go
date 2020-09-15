@@ -5,10 +5,10 @@ import (
 	"path"
 	"strings"
 
+	"github.com/fvbommel/sortorder"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"vbom.ml/util/sortorder"
 )
 
 // GVR represents a kubernetes resource schema as a string.

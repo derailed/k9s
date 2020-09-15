@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"vbom.ml/util/sortorder"
+	"github.com/fvbommel/sortorder"
 )
 
 // Fields represents a collection of row fields.
