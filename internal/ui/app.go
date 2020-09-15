@@ -55,7 +55,7 @@ func (a *App) Init() {
 	a.cmdModel.AddListener(a)
 	a.Styles.AddListener(a)
 
-	a.SetRoot(a.Main, true).EnableMouse(true)
+	a.SetRoot(a.Main, true).EnableMouse(a.Config.K9s.EnableMouse)
 }
 
 // QueueUpdate queues up a ui action.

@@ -7,6 +7,7 @@ const defaultRefreshRate = 2
 // K9s tracks K9s configuration options.
 type K9s struct {
 	RefreshRate       int                 `yaml:"refreshRate"`
+	EnableMouse       bool                `yaml:"enableMouse"`
 	Headless          bool                `yaml:"headless"`
 	ReadOnly          bool                `yaml:"readOnly"`
 	NoIcons           bool                `yaml:"noIcons"`
