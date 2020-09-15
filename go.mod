@@ -9,6 +9,7 @@ require (
 	github.com/drone/envsubst v1.0.2 // indirect
 	github.com/fatih/color v1.9.0
 	github.com/fsnotify/fsnotify v1.4.7
+	github.com/fvbommel/sortorder v1.0.1
 	github.com/gdamore/tcell v1.3.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/golang/protobuf v1.4.2 // indirect
@@ -40,5 +41,4 @@ require (
 	k8s.io/metrics v0.18.8
 	rsc.io/letsencrypt v0.0.3 // indirect
 	sigs.k8s.io/yaml v1.2.0
-	vbom.ml/util v0.0.0-20180919145318-efcd4e0f9787
 )

@@ -70,13 +70,13 @@ K9s is available on Linux, macOS and Windows platforms.
   ```
 
 * Via [Chocolatey](https://chocolatey.org/packages/k9s) for Windows
-  
+
   ```shell
   choco install k9s
   ```
 
 * Via a GO install
-  
+
   ```shell
   # NOTE: The dev version will be in effect!
   go get -u github.com/derailed/k9s
@@ -238,6 +238,8 @@ K9s uses aliases to navigate most K8s resources.
   k9s:
     # Represents ui poll intervals. Default 2secs
     refreshRate: 2
+    # Enable mouse support. Default false
+    enableMouse: false
     # Set to true to hide K9s header. Default false
     headless: false
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
@@ -250,8 +252,8 @@ K9s uses aliases to navigate most K8s resources.
       tail: 200
       # Defines the total number of log lines to allow in the view. Default 1000
       buffer: 500
-      # Represents how far to go back in the log timeline in seconds. Default is 5min
-      sinceSeconds: 300
+      # Represents how far to go back in the log timeline in seconds. Default is 1min
+      sinceSeconds: 60
       # Go full screen while displaying logs. Default false
       fullScreenLogs: false
       # Toggles log line wrap. Default false

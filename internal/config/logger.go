@@ -10,7 +10,11 @@ const (
 	// MaxLogThreshold sets the max value for log size.
 	MaxLogThreshold = 5000
 	// DefaultSinceSeconds tracks default log age.
+<<<<<<< HEAD
 	DefaultSinceSeconds = 60 // all logs
+=======
+	DefaultSinceSeconds = 300
+>>>>>>> 8f7640a75993a24409d6b3d9dd2204c24b7ac1a1
 )
 
 // Logger tracks logger options

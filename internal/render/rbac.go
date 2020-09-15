@@ -101,7 +101,7 @@ func toVerbIcon(ok bool) string {
 	if ok {
 		return "[green::b] ✓ [::]"
 	}
-	return "[orangered::b] 𐄂 [::]"
+	return "[orangered::b] × [::]"
 }
 
 func hasVerb(verbs []string, verb string) bool {
