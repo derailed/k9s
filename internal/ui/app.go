@@ -17,13 +17,13 @@ type App struct {
 	*tview.Application
 	Configurator
 
-	Main     *Pages
-	flash    *model.Flash
-	actions  KeyActions
-	views    map[string]tview.Primitive
-	cmdModel *model.FishBuff
-	running  bool
-	mx       sync.RWMutex
+	Main    *Pages
+	flash   *model.Flash
+	actions KeyActions
+	views   map[string]tview.Primitive
+	cmdBuff *model.FishBuff
+	running bool
+	mx      sync.RWMutex
 }
 
 // NewApp returns a new app.
@@ -34,7 +34,7 @@ func NewApp(cfg *config.Config, context string) *App {
 		Configurator: Configurator{Config: cfg},
 		Main:         NewPages(),
 		flash:        model.NewFlash(model.DefaultFlashDelay),
-		cmdModel:     model.NewFishBuff(':', model.CommandBuffer),
+		cmdBuff:      model.NewFishBuff(':', model.CommandBuffer),
 	}
 	a.ReloadStyles(context)
 
@@ -51,8 +51,8 @@ func NewApp(cfg *config.Config, context string) *App {
 // Init initializes the application.
 func (a *App) Init() {
 	a.bindKeys()
-	a.Prompt().SetModel(a.cmdModel)
-	a.cmdModel.AddListener(a)
+	a.Prompt().SetModel(a.cmdBuff)
+	a.cmdBuff.AddListener(a)
 	a.Styles.AddListener(a)
 
 	a.SetRoot(a.Main, true).EnableMouse(a.Config.K9s.EnableMouse)
@@ -157,27 +157,27 @@ func (a *App) ResetPrompt(m PromptModel) {
 
 // ResetCmd clear out user command.
 func (a *App) ResetCmd() {
-	a.cmdModel.Reset()
+	a.cmdBuff.Reset()
 }
 
 // ActivateCmd toggle command mode.
 func (a *App) ActivateCmd(b bool) {
-	a.cmdModel.SetActive(b)
+	a.cmdBuff.SetActive(b)
 }
 
 // GetCmd retrieves user command.
 func (a *App) GetCmd() string {
-	return a.cmdModel.GetText()
+	return a.cmdBuff.GetText()
 }
 
-// CmdBuff returns a cmd buffer.
+// CmdBuff returns the app cmd model.
 func (a *App) CmdBuff() *model.FishBuff {
-	return a.cmdModel
+	return a.cmdBuff
 }
 
 // HasCmd check if cmd buffer is active and has a command.
 func (a *App) HasCmd() bool {
-	return a.cmdModel.IsActive() && !a.cmdModel.Empty()
+	return a.cmdBuff.IsActive() && !a.cmdBuff.Empty()
 }
 
 func (a *App) quitCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -218,10 +218,10 @@ func (a *App) Views() map[string]tview.Primitive {
 }
 
 func (a *App) clearCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if !a.CmdBuff().IsActive() {
+	if !a.cmdBuff.IsActive() {
 		return evt
 	}
-	a.CmdBuff().ClearText(true)
+	a.cmdBuff.ClearText(true)
 
 	return nil
 }
@@ -230,8 +230,8 @@ func (a *App) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.InCmdMode() {
 		return evt
 	}
-	a.ResetPrompt(a.cmdModel)
-	a.cmdModel.ClearText(true)
+	a.ResetPrompt(a.cmdBuff)
+	a.cmdBuff.ClearText(true)
 
 	return nil
 }

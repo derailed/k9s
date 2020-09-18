@@ -216,5 +216,5 @@ func (t *Table) activateCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	t.App().ResetPrompt(t.CmdBuff())
 
-	return nil
+	return evt
 }

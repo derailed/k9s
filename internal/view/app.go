@@ -113,7 +113,8 @@ func (a *App) Init(version string, rate int) error {
 		return err
 	}
 	a.CmdBuff().SetSuggestionFn(a.suggestCommand())
-	a.CmdBuff().AddListener(a)
+	// BOZO!!
+	// a.CmdBuff().AddListener(a)
 
 	a.layout(ctx, version)
 	a.initSignals()
@@ -506,7 +507,6 @@ func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 		a.ResetCmd()
 		return nil
 	}
-	a.ActivateCmd(false)
 
 	return evt
 }
