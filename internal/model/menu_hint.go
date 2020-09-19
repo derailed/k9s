@@ -18,8 +18,8 @@ func (m MenuHint) IsBlank() bool {
 }
 
 // String returns a string representation.
-func (h MenuHint) String() string {
-	return h.Mnemonic
+func (m MenuHint) String() string {
+	return m.Mnemonic
 }
 
 // MenuHints represents a collection of hints.
