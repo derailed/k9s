@@ -235,7 +235,7 @@ func (d *DaemonSet) GetPodSpec(path string) (*v1.PodSpec, error) {
 	return &podSpec, nil
 }
 
-func (d *DaemonSet) SetImages(ctx context.Context, path string, spec v1.PodSpec) error {
+func (d *DaemonSet) SetImages(ctx context.Context, path string, containersPatch map[string]string, initContainersPatch map[string]string) error {
 	ns, n := client.Namespaced(path)
 	auth, err := d.Client().CanI(ns, "apps/v1/daemonset", []string{client.PatchVerb})
 	if err != nil {
@@ -244,7 +244,7 @@ func (d *DaemonSet) SetImages(ctx context.Context, path string, spec v1.PodSpec)
 	if !auth {
 		return fmt.Errorf("user is not authorized to patch a daemonset")
 	}
-	jsonPatch, err := GetTemplateJsonPatch(spec)
+	jsonPatch, err := GetTemplateJsonPatch(containersPatch, initContainersPatch)
 	if err != nil {
 		return err
 	}

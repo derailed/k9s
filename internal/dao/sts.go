@@ -231,7 +231,7 @@ func (s *StatefulSet) GetPodSpec(path string) (*v1.PodSpec, error) {
 	return &podSpec, nil
 }
 
-func (s *StatefulSet) SetImages(ctx context.Context, path string, spec v1.PodSpec) error {
+func (s *StatefulSet) SetImages(ctx context.Context, path string, containersPatch map[string]string, initContainersPatch map[string]string) error {
 	ns, n := client.Namespaced(path)
 	auth, err := s.Client().CanI(ns, "apps/v1/statefulset", []string{client.PatchVerb})
 	if err != nil {
@@ -240,7 +240,7 @@ func (s *StatefulSet) SetImages(ctx context.Context, path string, spec v1.PodSpe
 	if !auth {
 		return fmt.Errorf("user is not authorized to patch a statefulset")
 	}
-	jsonPatch, err := GetTemplateJsonPatch(spec)
+	jsonPatch, err := GetTemplateJsonPatch(containersPatch, initContainersPatch)
 	if err != nil {
 		return err
 	}

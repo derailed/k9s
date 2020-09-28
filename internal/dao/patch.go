@@ -2,7 +2,6 @@ package dao
 
 import (
 	"encoding/json"
-	v1 "k8s.io/api/core/v1"
 )
 
 type JsonPatch struct {
@@ -30,43 +29,40 @@ type Element struct {
 }
 
 // Build a json patch string to update PodSpec images
-func GetTemplateJsonPatch(spec v1.PodSpec) (string, error) {
+func GetTemplateJsonPatch(containersPatch map[string]string, initContainersPatch map[string]string) (string, error) {
 	jsonPatch := JsonPatch{
 		Spec: Spec{
-			Template: getPatchPodSpec(spec),
+			Template: getPatchPodSpec(containersPatch, initContainersPatch),
 		},
 	}
 	bytes, err := json.Marshal(jsonPatch)
 	return string(bytes), err
 }
 
-func GetJsonPatch(spec v1.PodSpec) (string, error) {
-	podSpec := getPatchPodSpec(spec)
+func GetJsonPatch(containersPatch map[string]string, initContainersPatch map[string]string) (string, error) {
+	podSpec := getPatchPodSpec(containersPatch, initContainersPatch)
 	bytes, err := json.Marshal(podSpec)
 	return string(bytes), err
 }
 
-func getPatchPodSpec(spec v1.PodSpec) PodSpec {
+func getPatchPodSpec(containersPatch map[string]string, initContainersPatch map[string]string) PodSpec {
+	elementsOrders, elements := extractElements(containersPatch)
+	initElementsOrders, initElements := extractElements(initContainersPatch)
 	podSpec := PodSpec{
 		Spec: ImagesSpec{
-			SetElementOrderContainers:     extractElements(spec.Containers, false),
-			Containers:                    extractElements(spec.Containers, true),
-			SetElementOrderInitContainers: extractElements(spec.InitContainers, false),
-			InitContainers:                extractElements(spec.InitContainers, true),
+			SetElementOrderContainers:     elementsOrders,
+			Containers:                    elements,
+			SetElementOrderInitContainers: initElementsOrders,
+			InitContainers:                initElements,
 		},
 	}
-
 	return podSpec
 }
 
-func extractElements(containers []v1.Container, withImage bool) []Element {
-	elements := make([]Element, 0)
-	for _, c := range containers {
-		if withImage {
-			elements = append(elements, Element{Name: c.Name, Image: c.Image})
-		} else {
-			elements = append(elements, Element{Name: c.Name})
-		}
+func extractElements(containers map[string]string) (elementsOrders []Element, elements []Element) {
+	for name, image := range containers {
+		elementsOrders = append(elementsOrders, Element{Name: name})
+		elements = append(elements, Element{Name: name, Image: image})
 	}
-	return elements
+	return elementsOrders, elements
 }

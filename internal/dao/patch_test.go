@@ -2,35 +2,31 @@ package dao
 
 import (
 	"github.com/stretchr/testify/require"
-	v1 "k8s.io/api/core/v1"
 	"testing"
 )
 
 func TestGetTemplateJsonPatch(t *testing.T) {
 	type args struct {
-		podSpec v1.PodSpec
+		containers     map[string]string
+		initContainers map[string]string
 	}
-	tests := []struct {
-		name    string
+	tests := map[string]struct {
 		args    args
 		want    string
 		wantErr bool
 	}{
-		{
-			name: "simple",
+		"simple": {
 			args: args{
-				podSpec: v1.PodSpec{
-					InitContainers: []v1.Container{v1.Container{Image: "busybox:latest", Name: "init"}},
-					Containers:     []v1.Container{v1.Container{Image: "nginx:latest", Name: "nginx"}},
-				},
+				initContainers: map[string]string{"init": "busybox:latest"},
+				containers:     map[string]string{"nginx": "nginx:latest"},
 			},
 			want:    `{"spec":{"template":{"spec":{"$setElementOrder/containers":[{"name":"nginx"}],"$setElementOrder/initContainers":[{"name":"init"}],"containers":[{"image":"nginx:latest","name":"nginx"}],"initContainers":[{"image":"busybox:latest","name":"init"}]}}}}`,
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetTemplateJsonPatch(tt.args.podSpec)
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := GetTemplateJsonPatch(tt.args.containers, tt.args.initContainers)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetTemplateJsonPatch() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -42,29 +38,26 @@ func TestGetTemplateJsonPatch(t *testing.T) {
 
 func TestGetJsonPatch(t *testing.T) {
 	type args struct {
-		podSpec v1.PodSpec
+		containers     map[string]string
+		initContainers map[string]string
 	}
-	tests := []struct {
-		name    string
+	tests := map[string]struct {
 		args    args
 		want    string
 		wantErr bool
 	}{
-		{
-			name: "simple",
+		"simple": {
 			args: args{
-				podSpec: v1.PodSpec{
-					InitContainers: []v1.Container{v1.Container{Image: "busybox:latest", Name: "init"}},
-					Containers:     []v1.Container{v1.Container{Image: "nginx:latest", Name: "nginx"}},
-				},
+				initContainers: map[string]string{"init": "busybox:latest"},
+				containers:     map[string]string{"nginx": "nginx:latest"},
 			},
 			want:    `{"spec":{"$setElementOrder/containers":[{"name":"nginx"}],"$setElementOrder/initContainers":[{"name":"init"}],"containers":[{"image":"nginx:latest","name":"nginx"}],"initContainers":[{"image":"busybox:latest","name":"init"}]}}`,
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetJsonPatch(tt.args.podSpec)
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := GetJsonPatch(tt.args.containers, tt.args.initContainers)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetTemplateJsonPatch() error = %v, wantErr %v", err, tt.wantErr)
 				return
