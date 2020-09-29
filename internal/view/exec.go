@@ -105,7 +105,7 @@ func execute(opts shellOpts) error {
 	}()
 
 	log.Debug().Msgf("Running command> %s %s", opts.binary, strings.Join(opts.args, " "))
-	cmd := exec.Command(opts.binary, opts.args...)
+	cmd := exec.CommandContext(ctx, opts.binary, opts.args...)
 
 	var err error
 	if opts.background {
