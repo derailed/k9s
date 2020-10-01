@@ -48,6 +48,7 @@ type App struct {
 	filterHistory *model.History
 	conRetry      int32
 	showHeader    bool
+	showCrumbs    bool
 }
 
 // NewApp returns a K9s app instance.
@@ -129,12 +130,12 @@ func (a *App) layout(ctx context.Context, version string) {
 	main := tview.NewFlex().SetDirection(tview.FlexRow)
 	main.AddItem(a.statusIndicator(), 1, 1, false)
 	main.AddItem(a.Content, 0, 10, true)
-	main.AddItem(a.Crumbs(), 1, 1, false)
 	main.AddItem(flash, 1, 1, false)
 
 	a.Main.AddPage("main", main, true, false)
 	a.Main.AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
 	a.toggleHeader(!a.Config.K9s.GetHeadless())
+	a.toggleCrumbs(!a.Config.K9s.GetCrumbsless())
 }
 
 func (a *App) initSignals() {
@@ -186,6 +187,7 @@ func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 func (a *App) bindKeys() {
 	a.AddActions(ui.KeyActions{
 		tcell.KeyCtrlE: ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
+		tcell.KeyCtrlT: ui.NewSharedKeyAction("toggleCrumbs", a.toggleCrumbsCmd, false),
 		ui.KeyHelp:     ui.NewSharedKeyAction("Help", a.helpCmd, false),
 		tcell.KeyCtrlA: ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
@@ -209,6 +211,19 @@ func (a *App) toggleHeader(flag bool) {
 	} else {
 		flex.RemoveItemAtIndex(0)
 		flex.AddItemAtIndex(0, a.statusIndicator(), 1, 1, false)
+	}
+}
+
+func (a *App) toggleCrumbs(flag bool) {
+	a.showCrumbs = flag
+	flex, ok := a.Main.GetPrimitive("main").(*tview.Flex)
+	if !ok {
+		log.Fatal().Msg("Expecting valid flex view")
+	}
+	if a.showCrumbs {
+		flex.AddItemAtIndex(2, a.Crumbs(), 1, 1, false)
+	} else {
+		flex.RemoveItemAtIndex(2)
 	}
 }
 
@@ -493,6 +508,19 @@ func (a *App) toggleHeaderCmd(evt *tcell.EventKey) *tcell.EventKey {
 	a.QueueUpdateDraw(func() {
 		a.showHeader = !a.showHeader
 		a.toggleHeader(a.showHeader)
+	})
+
+	return nil
+}
+
+func (a *App) toggleCrumbsCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.Prompt().InCmdMode() {
+		return evt
+	}
+
+	a.QueueUpdateDraw(func() {
+		a.showCrumbs = !a.showCrumbs
+		a.toggleCrumbs(a.showCrumbs)
 	})
 
 	return nil

@@ -19,6 +19,7 @@ type Flags struct {
 	Command       *string
 	AllNamespaces *bool
 	ReadOnly      *bool
+	Crumbsless    *bool
 }
 
 // NewFlags returns new configuration flags.
@@ -30,6 +31,7 @@ func NewFlags() *Flags {
 		Command:       strPtr(DefaultCommand),
 		AllNamespaces: boolPtr(false),
 		ReadOnly:      boolPtr(false),
+		Crumbsless:    boolPtr(false),
 	}
 }
 

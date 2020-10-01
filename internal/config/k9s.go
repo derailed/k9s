@@ -9,6 +9,7 @@ type K9s struct {
 	RefreshRate       int                 `yaml:"refreshRate"`
 	EnableMouse       bool                `yaml:"enableMouse"`
 	Headless          bool                `yaml:"headless"`
+	Crumbsless        bool                `yaml:"crumbsless"`
 	ReadOnly          bool                `yaml:"readOnly"`
 	NoIcons           bool                `yaml:"noIcons"`
 	Logger            *Logger             `yaml:"logger"`
@@ -18,6 +19,7 @@ type K9s struct {
 	Thresholds        Threshold           `yaml:"thresholds"`
 	manualRefreshRate int
 	manualHeadless    *bool
+	manualCrumbsless  *bool
 	manualReadOnly    *bool
 	manualCommand     *string
 }
@@ -42,6 +44,11 @@ func (k *K9s) OverrideHeadless(b bool) {
 	k.manualHeadless = &b
 }
 
+// OverrideCrumbsless set the headlessness manually.
+func (k *K9s) OverrideCrumbsless(b bool) {
+	k.manualCrumbsless = &b
+}
+
 // OverrideReadOnly set the readonly mode manually.
 func (k *K9s) OverrideReadOnly(b bool) {
 	k.manualReadOnly = &b
@@ -57,6 +64,16 @@ func (k *K9s) GetHeadless() bool {
 	h := k.Headless
 	if k.manualHeadless != nil && *k.manualHeadless {
 		h = *k.manualHeadless
+	}
+
+	return h
+}
+
+// GetCrumbsless returns crumbsless setting.
+func (k *K9s) GetCrumbsless() bool {
+	h := k.Crumbsless
+	if k.manualCrumbsless != nil && *k.manualCrumbsless {
+		h = *k.manualCrumbsless
 	}
 
 	return h
