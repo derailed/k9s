@@ -25,15 +25,15 @@ func TestAliasColorer(t *testing.T) {
 		"addAll": {
 			ns: client.AllNamespaces,
 			re: render.RowEvent{Kind: render.EventAdd, Row: r},
-			e:  tcell.ColorAliceBlue},
+			e:  tcell.ColorBlack},
 		"deleteAll": {
 			ns: client.AllNamespaces,
 			re: render.RowEvent{Kind: render.EventDelete, Row: r},
-			e:  tcell.ColorAliceBlue},
+			e:  tcell.ColorBlack},
 		"updateAll": {
 			ns: client.AllNamespaces,
 			re: render.RowEvent{Kind: render.EventUpdate, Row: r},
-			e:  tcell.ColorAliceBlue,
+			e:  tcell.ColorBlack,
 		},
 	}
 
