@@ -22,6 +22,9 @@ build:  ## Builds the CLI
 	-ldflags "-w -s -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
 	-a -tags netgo -o execs/${NAME} main.go
 
+kubectl-stable-version:  ## Get kubectl latest stable version
+	@curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt
+
 img:    ## Build Docker Image
 	@docker build --rm -t ${IMAGE} .
 

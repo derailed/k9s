@@ -1,4 +1,4 @@
-<img src="assets/k9s.png">
+<img src="assets/k9s.png" alt="k9s">
 
 # K9s - Kubernetes CLI To Manage Your Clusters In Style!
 
@@ -99,6 +99,8 @@ K9s is available on Linux, macOS and Windows platforms.
 
 ## Running with Docker
 
+### Running the official Docker image
+
   You can run k9s as a Docker container by mounting your `KUBECONFIG`:
 
   ```shell
@@ -109,6 +111,28 @@ K9s is available on Linux, macOS and Windows platforms.
 
   ```shell
   docker run --rm -it -v ~/.kube/config:/root/.kube/config quay.io/derailed/k9s
+  ```
+
+### Building your own Docker image
+
+  You can build your own Docker image of k9s from the [Dockerfile](Dockerfile) with the following:
+
+  ```shell
+  docker build -t k9s-docker:0.1 .
+  ```
+
+  You can get the latest stable `kubectl` version and pass it to the `docker build` command with the `--build-arg` option.
+  You can use the `--build-arg` option to pass any valid `kubectl` version (like `v1.18.0` or `v1.19.1`).
+
+  ```shell
+  KUBECTL_VERSION=$(make kubectl-stable-version 2>/dev/null)
+  docker build --build-arg KUBECTL_VERSION=${KUBECTL_VERSION} -t k9s-docker:0.1 .
+  ```
+
+  Run your container:
+
+  ```shell
+  docker run --rm -it -v ~/.kube/config:/root/.kube/config k9s-docker:0.1
   ```
 
 ---
@@ -630,7 +654,7 @@ roleRef:
 
 Example: Dracula Skin ;)
 
-<img src="assets/skins/dracula.png">
+<img src="assets/skins/dracula.png" alt="Dracula Skin">
 
 You can style K9s based on your own sense of look and style. Skins are YAML files, that enable a user to change the K9s presentation layer. K9s skins are loaded from `$HOME/.k9s/skin.yml`. If a skin file is detected then the skin would be loaded if not the current stock skin remains in effect.
 
@@ -736,9 +760,9 @@ to make this project a reality!
 ## Meet The Core Team!
 
 * [Fernand Galiana](https://github.com/derailed)
-  * <img src="assets/mail.png" width="16" height="auto"/>  fernand@imhotep.io
-  * <img src="assets/twitter.png" width="16" height="auto"/> [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
+  * <img src="assets/mail.png" width="16" height="auto" alt="email"/>  fernand@imhotep.io
+  * <img src="assets/twitter.png" width="16" height="auto" alt="twitter"/> [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
 We always enjoy hearing from folks who benefit from our work.
 ---
 
-<img src="assets/imhotep_logo.png" width="32" height="auto"/> &nbsp;© 2020 Imhotep Software LLC. All materials licensed under [Apache v2.0](http://www.apache.org/licenses/LICENSE-2.0)
+<img src="assets/imhotep_logo.png" width="32" height="auto" alt="Imhotep"/> &nbsp;© 2020 Imhotep Software LLC. All materials licensed under [Apache v2.0](http://www.apache.org/licenses/LICENSE-2.0)
