@@ -1,0 +1,36 @@
+#!/bin/bash
+
+
+while [[ $# -gt 0 ]]
+do
+key="$1"
+
+case $key in
+    -c|--cluster)
+    CLUSTER="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -p|--profile)
+    PROFILE="$2"
+    shift # past argument
+    shift # past value
+    ;;
+    -r|--region)
+    REGION="$2"
+    shift # past argument
+    shift # past value
+    ;;
+esac
+done
+
+if [ -z "$PROFILE" ]; then
+	PROFILE="2auth"
+fi
+
+if [ -z "$REGION" ]; then
+	REGION="us-east-1"
+fi
+
+
+ docker run --rm -it -v $HOME/.aws:/root/.aws k9s:latest /bin/sh -c "aws eks --region $REGION update-kubeconfig --profile $PROFILE --name $CLUSTER --no-verify-ssl && /bin/k9s" 
