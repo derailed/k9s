@@ -10,7 +10,7 @@ RUN apk --no-cache add make git gcc libc-dev curl && make build
 # -----------------------------------------------------------------------------
 # Build Image...
 
-FROM alpine:3.12.0
+FROM python:3-alpine3.12
 
 COPY --from=build /k9s/execs/k9s /bin/k9s
 ENV KUBE_LATEST_VERSION="v1.18.2"
@@ -19,6 +19,7 @@ RUN apk add --update ca-certificates \
   && curl -L https://storage.googleapis.com/kubernetes-release/release/${KUBE_LATEST_VERSION}/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl \
   && chmod +x /usr/local/bin/kubectl \
   && apk del --purge deps \
-  && rm /var/cache/apk/*
+  && rm /var/cache/apk/* \
+  && pip install awscli
 
-ENTRYPOINT [ "/bin/k9s" ]
+# ENTRYPOINT [ "/bin/k9s" ]
