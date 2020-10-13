@@ -199,7 +199,7 @@ func (s *StatefulSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Ref
 			})
 		case "v1/persistentvolumeclaims":
 			for _, v := range sts.Spec.VolumeClaimTemplates {
-				if !strings.HasPrefix(n, v.Name) {
+				if !strings.HasPrefix(n, v.Name+"-"+sts.Name) {
 					continue
 				}
 				refs = append(refs, Ref{
