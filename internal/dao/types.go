@@ -152,5 +152,5 @@ type ContainsPodSpec interface {
 	GetPodSpec(path string) (*v1.PodSpec, error)
 
 	// Set Images for a resource
-	SetImages(ctx context.Context, path string, containersPatch map[string]string, initContainersPatch map[string]string) error
+	SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error
 }

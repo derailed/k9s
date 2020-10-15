@@ -7,8 +7,7 @@ import (
 
 func TestGetTemplateJsonPatch(t *testing.T) {
 	type args struct {
-		containers     map[string]string
-		initContainers map[string]string
+		imageSpecs ImageSpecs
 	}
 	tests := map[string]struct {
 		args    args
@@ -17,29 +16,40 @@ func TestGetTemplateJsonPatch(t *testing.T) {
 	}{
 		"simple": {
 			args: args{
-				initContainers: map[string]string{"init": "busybox:latest"},
-				containers:     map[string]string{"nginx": "nginx:latest"},
+				imageSpecs: ImageSpecs{
+					ImageSpec{
+						Index:       0,
+						Name:        "init",
+						DockerImage: "busybox:latest",
+						Init:        true,
+					},
+					ImageSpec{
+						Index:       0,
+						Name:        "nginx",
+						DockerImage: "nginx:latest",
+						Init:        false,
+					},
+				},
 			},
-			want:    `{"spec":{"template":{"spec":{"$setElementOrder/containers":[{"name":"nginx"}],"$setElementOrder/initContainers":[{"name":"init"}],"containers":[{"image":"nginx:latest","name":"nginx"}],"initContainers":[{"image":"busybox:latest","name":"init"}]}}}}`,
+			want:    `{"spec":{"template":{"spec":{"$setElementOrder/initContainers":[{"name":"init"}],"$setElementOrder/containers":[{"name":"nginx"}],"initContainers":[{"image":"busybox:latest","name":"init"}],"containers":[{"image":"nginx:latest","name":"nginx"}]}}}}`,
 			wantErr: false,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := GetTemplateJsonPatch(tt.args.containers, tt.args.initContainers)
+			got, err := GetTemplateJsonPatch(tt.args.imageSpecs)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetTemplateJsonPatch() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			require.JSONEq(t, tt.want, got, "Json strings should be equal")
+			require.JSONEq(t, tt.want, string(got), "Json strings should be equal")
 		})
 	}
 }
 
 func TestGetJsonPatch(t *testing.T) {
 	type args struct {
-		containers     map[string]string
-		initContainers map[string]string
+		imageSpecs ImageSpecs
 	}
 	tests := map[string]struct {
 		args    args
@@ -48,21 +58,33 @@ func TestGetJsonPatch(t *testing.T) {
 	}{
 		"simple": {
 			args: args{
-				initContainers: map[string]string{"init": "busybox:latest"},
-				containers:     map[string]string{"nginx": "nginx:latest"},
+				imageSpecs: ImageSpecs{
+					ImageSpec{
+						Index:       0,
+						Name:        "init",
+						DockerImage: "busybox:latest",
+						Init:        true,
+					},
+					ImageSpec{
+						Index:       0,
+						Name:        "nginx",
+						DockerImage: "nginx:latest",
+						Init:        false,
+					},
+				},
 			},
-			want:    `{"spec":{"$setElementOrder/containers":[{"name":"nginx"}],"$setElementOrder/initContainers":[{"name":"init"}],"containers":[{"image":"nginx:latest","name":"nginx"}],"initContainers":[{"image":"busybox:latest","name":"init"}]}}`,
+			want:    `{"spec":{"$setElementOrder/initContainers":[{"name":"init"}],"initContainers":[{"image":"busybox:latest","name":"init"}],"$setElementOrder/containers":[{"name":"nginx"}],"containers":[{"image":"nginx:latest","name":"nginx"}]}}`,
 			wantErr: false,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := GetJsonPatch(tt.args.containers, tt.args.initContainers)
+			got, err := GetJsonPatch(tt.args.imageSpecs)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetTemplateJsonPatch() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			require.JSONEq(t, tt.want, got, "Json strings should be equal")
+			require.JSONEq(t, tt.want, string(got), "Json strings should be equal")
 		})
 	}
 }

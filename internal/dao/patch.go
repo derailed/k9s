@@ -4,6 +4,14 @@ import (
 	"encoding/json"
 )
 
+type ImageSpec struct {
+	Index             int
+	Name, DockerImage string
+	Init              bool
+}
+
+type ImageSpecs []ImageSpec
+
 type JsonPatch struct {
 	Spec Spec `json:"spec"`
 }
@@ -29,40 +37,42 @@ type Element struct {
 }
 
 // Build a json patch string to update PodSpec images
-func GetTemplateJsonPatch(containersPatch map[string]string, initContainersPatch map[string]string) (string, error) {
+func GetTemplateJsonPatch(imageSpecs ImageSpecs) ([]byte, error) {
 	jsonPatch := JsonPatch{
 		Spec: Spec{
-			Template: getPatchPodSpec(containersPatch, initContainersPatch),
+			Template: getPatchPodSpec(imageSpecs),
 		},
 	}
-	bytes, err := json.Marshal(jsonPatch)
-	return string(bytes), err
+	return json.Marshal(jsonPatch)
 }
 
-func GetJsonPatch(containersPatch map[string]string, initContainersPatch map[string]string) (string, error) {
-	podSpec := getPatchPodSpec(containersPatch, initContainersPatch)
-	bytes, err := json.Marshal(podSpec)
-	return string(bytes), err
+func GetJsonPatch(imageSpecs ImageSpecs) ([]byte, error) {
+	podSpec := getPatchPodSpec(imageSpecs)
+	return json.Marshal(podSpec)
 }
 
-func getPatchPodSpec(containersPatch map[string]string, initContainersPatch map[string]string) PodSpec {
-	elementsOrders, elements := extractElements(containersPatch)
-	initElementsOrders, initElements := extractElements(initContainersPatch)
+func getPatchPodSpec(imageSpecs ImageSpecs) PodSpec {
+	initElementsOrders, initElements, elementsOrders, elements := extractElements(imageSpecs)
 	podSpec := PodSpec{
 		Spec: ImagesSpec{
-			SetElementOrderContainers:     elementsOrders,
-			Containers:                    elements,
 			SetElementOrderInitContainers: initElementsOrders,
 			InitContainers:                initElements,
+			SetElementOrderContainers:     elementsOrders,
+			Containers:                    elements,
 		},
 	}
 	return podSpec
 }
 
-func extractElements(containers map[string]string) (elementsOrders []Element, elements []Element) {
-	for name, image := range containers {
-		elementsOrders = append(elementsOrders, Element{Name: name})
-		elements = append(elements, Element{Name: name, Image: image})
+func extractElements(imageSpecs ImageSpecs) (initElementsOrders []Element, initElements []Element, elementsOrders []Element, elements []Element) {
+	for _, spec := range imageSpecs {
+		if spec.Init {
+			initElementsOrders = append(initElementsOrders, Element{Name: spec.Name})
+			initElements = append(initElements, Element{Name: spec.Name, Image: spec.DockerImage})
+		} else {
+			elementsOrders = append(elementsOrders, Element{Name: spec.Name})
+			elements = append(elements, Element{Name: spec.Name, Image: spec.DockerImage})
+		}
 	}
-	return elementsOrders, elements
+	return initElementsOrders, initElements, elementsOrders, elements
 }

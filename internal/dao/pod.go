@@ -467,7 +467,7 @@ func (p *Pod) GetPodSpec(path string) (*v1.PodSpec, error) {
 	return &podSpec, nil
 }
 
-func (p *Pod) SetImages(ctx context.Context, path string, containersPatch map[string]string, initContainersPatch map[string]string) error {
+func (p *Pod) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error {
 	ns, n := client.Namespaced(path)
 	auth, err := p.Client().CanI(ns, "v1/pod", []string{client.PatchVerb})
 	if err != nil {
@@ -480,9 +480,9 @@ func (p *Pod) SetImages(ctx context.Context, path string, containersPatch map[st
 		if err != nil {
 			return err
 		}
-		return fmt.Errorf("Unable to set image. This pod is managed by %s. Please set the image on the controller", *manager)
+		return fmt.Errorf("Unable to set image. This pod is managed by %s. Please set the image on the controller", manager)
 	}
-	jsonPatch, err := GetJsonPatch(containersPatch, initContainersPatch)
+	jsonPatch, err := GetJsonPatch(imageSpecs)
 	if err != nil {
 		return err
 	}
@@ -494,26 +494,20 @@ func (p *Pod) SetImages(ctx context.Context, path string, containersPatch map[st
 		ctx,
 		n,
 		types.StrategicMergePatchType,
-		[]byte(jsonPatch),
+		jsonPatch,
 		metav1.PatchOptions{},
 	)
 	return err
 }
 
-func (p *Pod) isControlled(path string) (*string, bool, error) {
+func (p *Pod) isControlled(path string) (string, bool, error) {
 	pod, err := p.GetInstance(path)
 	if err != nil {
-		return nil, false, err
+		return "", false, err
 	}
 	references := pod.GetObjectMeta().GetOwnerReferences()
 	if len(references) != 0 && *references[0].Controller == true {
-		return getController(references[0]), true, nil
+		return fmt.Sprintf("%s/%s", references[0].Kind, references[0].Name), true, nil
 	}
-	return nil, false, nil
-}
-
-func getController(reference metav1.OwnerReference) *string {
-	var result string
-	result = fmt.Sprintf("%s/%s", reference.Kind, reference.Name)
-	return &result
+	return "", false, nil
 }
