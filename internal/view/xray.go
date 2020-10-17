@@ -466,6 +466,10 @@ func (x *Xray) filter(root *xray.TreeNode) *xray.TreeNode {
 		return root.Filter(q, fuzzyFilter)
 	}
 
+	if ui.IsInverseSelector(q) {
+		return root.Filter(q, rxInverseFilter)
+	}
+
 	return root.Filter(q, rxFilter)
 }
 
@@ -685,6 +689,19 @@ func rxFilter(q, path string) bool {
 	}
 
 	return false
+}
+
+func rxInverseFilter(q, path string) bool {
+	q = strings.TrimSpace(q[1:])
+	rx := regexp.MustCompile(`(?i)` + q)
+	tokens := strings.Split(path, xray.PathSeparator)
+	for _, t := range tokens {
+		if rx.MatchString(t) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func makeTreeNode(node *xray.TreeNode, expanded bool, showIcons bool, styles *config.Styles) *tview.TreeNode {

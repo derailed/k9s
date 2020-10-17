@@ -380,7 +380,7 @@ func (t *Table) filtered(data render.TableData) render.TableData {
 		return fuzzyFilter(q[2:], filtered)
 	}
 
-	filtered, err := rxFilter(t.cmdBuff.GetText(), filtered)
+	filtered, err := rxFilter(q, IsInverseSelector(q), filtered)
 	if err != nil {
 		log.Error().Err(errors.New("Invalid filter expression")).Msg("Regexp")
 		t.cmdBuff.ClearText(true)
