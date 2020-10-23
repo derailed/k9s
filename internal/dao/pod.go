@@ -18,15 +18,17 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	restclient "k8s.io/client-go/rest"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
 var (
-	_ Accessor   = (*Pod)(nil)
-	_ Nuker      = (*Pod)(nil)
-	_ Loggable   = (*Pod)(nil)
-	_ Controller = (*Pod)(nil)
+	_ Accessor        = (*Pod)(nil)
+	_ Nuker           = (*Pod)(nil)
+	_ Loggable        = (*Pod)(nil)
+	_ Controller      = (*Pod)(nil)
+	_ ContainsPodSpec = (*Pod)(nil)
 )
 
 const (
@@ -454,4 +456,58 @@ func in(ll []string, s string) bool {
 		}
 	}
 	return false
+}
+
+func (p *Pod) GetPodSpec(path string) (*v1.PodSpec, error) {
+	pod, err := p.GetInstance(path)
+	if err != nil {
+		return nil, err
+	}
+	podSpec := pod.Spec
+	return &podSpec, nil
+}
+
+func (p *Pod) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error {
+	ns, n := client.Namespaced(path)
+	auth, err := p.Client().CanI(ns, "v1/pod", []string{client.PatchVerb})
+	if err != nil {
+		return err
+	}
+	if !auth {
+		return fmt.Errorf("user is not authorized to patch a deployment")
+	}
+	if manager, isManaged, err := p.isControlled(path); isManaged {
+		if err != nil {
+			return err
+		}
+		return fmt.Errorf("Unable to set image. This pod is managed by %s. Please set the image on the controller", manager)
+	}
+	jsonPatch, err := GetJsonPatch(imageSpecs)
+	if err != nil {
+		return err
+	}
+	dial, err := p.Client().Dial()
+	if err != nil {
+		return err
+	}
+	_, err = dial.CoreV1().Pods(ns).Patch(
+		ctx,
+		n,
+		types.StrategicMergePatchType,
+		jsonPatch,
+		metav1.PatchOptions{},
+	)
+	return err
+}
+
+func (p *Pod) isControlled(path string) (string, bool, error) {
+	pod, err := p.GetInstance(path)
+	if err != nil {
+		return "", false, err
+	}
+	references := pod.GetObjectMeta().GetOwnerReferences()
+	if len(references) != 0 && *references[0].Controller == true {
+		return fmt.Sprintf("%s/%s", references[0].Kind, references[0].Name), true, nil
+	}
+	return "", false, nil
 }

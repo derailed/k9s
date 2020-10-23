@@ -9,6 +9,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -18,12 +19,13 @@ import (
 )
 
 var (
-	_ Accessor    = (*StatefulSet)(nil)
-	_ Nuker       = (*StatefulSet)(nil)
-	_ Loggable    = (*StatefulSet)(nil)
-	_ Restartable = (*StatefulSet)(nil)
-	_ Scalable    = (*StatefulSet)(nil)
-	_ Controller  = (*StatefulSet)(nil)
+	_ Accessor        = (*StatefulSet)(nil)
+	_ Nuker           = (*StatefulSet)(nil)
+	_ Loggable        = (*StatefulSet)(nil)
+	_ Restartable     = (*StatefulSet)(nil)
+	_ Scalable        = (*StatefulSet)(nil)
+	_ Controller      = (*StatefulSet)(nil)
+	_ ContainsPodSpec = (*StatefulSet)(nil)
 )
 
 // StatefulSet represents a K8s sts.
@@ -218,4 +220,40 @@ func (s *StatefulSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Ref
 	}
 
 	return refs, nil
+}
+
+func (s *StatefulSet) GetPodSpec(path string) (*v1.PodSpec, error) {
+	sts, err := s.getStatefulSet(path)
+	if err != nil {
+		return nil, err
+	}
+	podSpec := sts.Spec.Template.Spec
+	return &podSpec, nil
+}
+
+func (s *StatefulSet) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error {
+	ns, n := client.Namespaced(path)
+	auth, err := s.Client().CanI(ns, "apps/v1/statefulset", []string{client.PatchVerb})
+	if err != nil {
+		return err
+	}
+	if !auth {
+		return fmt.Errorf("user is not authorized to patch a statefulset")
+	}
+	jsonPatch, err := GetTemplateJsonPatch(imageSpecs)
+	if err != nil {
+		return err
+	}
+	dial, err := s.Client().Dial()
+	if err != nil {
+		return err
+	}
+	_, err = dial.AppsV1().StatefulSets(ns).Patch(
+		ctx,
+		n,
+		types.StrategicMergePatchType,
+		jsonPatch,
+		metav1.PatchOptions{},
+	)
+	return err
 }

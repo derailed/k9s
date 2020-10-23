@@ -17,7 +17,9 @@ func NewDaemonSet(gvr client.GVR) ResourceViewer {
 	d := DaemonSet{
 		ResourceViewer: NewPortForwardExtender(
 			NewRestartExtender(
-				NewLogsExtender(NewBrowser(gvr), nil),
+				NewSetImageExtender(
+					NewLogsExtender(NewBrowser(gvr), nil),
+				),
 			),
 		),
 	}

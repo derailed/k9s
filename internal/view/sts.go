@@ -21,7 +21,9 @@ func NewStatefulSet(gvr client.GVR) ResourceViewer {
 		ResourceViewer: NewPortForwardExtender(
 			NewRestartExtender(
 				NewScaleExtender(
-					NewLogsExtender(NewBrowser(gvr), nil),
+					NewSetImageExtender(
+						NewLogsExtender(NewBrowser(gvr), nil),
+					),
 				),
 			),
 		),
