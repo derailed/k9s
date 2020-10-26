@@ -25,7 +25,7 @@ type CronJob struct {
 // NewCronJob returns a new viewer.
 func NewCronJob(gvr client.GVR) ResourceViewer {
 	c := CronJob{ResourceViewer: NewBrowser(gvr)}
-	c.SetBindKeysFn(c.bindKeys)
+	c.AddBindKeysFn(c.bindKeys)
 	c.GetTable().SetEnterFn(c.showJobs)
 	c.GetTable().SetColorerFn(render.CronJob{}.ColorerFunc())
 

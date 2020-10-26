@@ -86,8 +86,8 @@ type ResourceViewer interface {
 	// SetContextFn provision a custom context.
 	SetContextFn(ContextFunc)
 
-	// SetBindKeys provision additional key bindings.
-	SetBindKeysFn(BindKeysFunc)
+	// AddBindKeys provision additional key bindings.
+	AddBindKeysFn(BindKeysFunc)
 
 	// SetInstance sets a parent FQN
 	SetInstance(string)

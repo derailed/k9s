@@ -98,7 +98,10 @@ func (d *Details) TextFiltered(lines []string, matches fuzzy.Matches) {
 }
 
 // BufferChanged indicates the buffer was changed.
-func (d *Details) BufferChanged(s string) {
+func (d *Details) BufferChanged(s string) {}
+
+// BufferCompleted indicates input was accepted.
+func (d *Details) BufferCompleted(s string) {
 	d.model.Filter(s)
 	d.updateTitle()
 }

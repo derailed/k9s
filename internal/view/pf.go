@@ -36,7 +36,7 @@ func NewPortForward(gvr client.GVR) ResourceViewer {
 	p.GetTable().SetColorerFn(render.PortForward{}.ColorerFunc())
 	p.GetTable().SetSortCol(ageCol, true)
 	p.SetContextFn(p.portForwardContext)
-	p.SetBindKeysFn(p.bindKeys)
+	p.AddBindKeysFn(p.bindKeys)
 
 	return &p
 }

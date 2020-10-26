@@ -264,8 +264,8 @@ func (p *Pulse) SetInstance(string) {}
 // SetEnvFn sets the custom environment function.
 func (p *Pulse) SetEnvFn(EnvFunc) {}
 
-// SetBindKeysFn sets up extra key bindings.
-func (p *Pulse) SetBindKeysFn(BindKeysFunc) {}
+// AddBindKeysFn sets up extra key bindings.
+func (p *Pulse) AddBindKeysFn(BindKeysFunc) {}
 
 // SetContextFn sets custom context.
 func (p *Pulse) SetContextFn(ContextFunc) {}

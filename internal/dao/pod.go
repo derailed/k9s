@@ -205,7 +205,6 @@ func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
 
 	var tailed bool
 	for _, co := range po.Spec.InitContainers {
-		log.Debug().Msgf("Tailing INIT-CO %q", co.Name)
 		opts.Container = co.Name
 		if err := tailLogs(ctx, p, c, opts); err != nil {
 			return err
@@ -213,7 +212,6 @@ func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
 		tailed = true
 	}
 	for _, co := range po.Spec.Containers {
-		log.Debug().Msgf("Tailing CO %q", co.Name)
 		opts.Container = co.Name
 		if err := tailLogs(ctx, p, c, opts); err != nil {
 			return err
@@ -221,7 +219,6 @@ func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
 		tailed = true
 	}
 	for _, co := range po.Spec.EphemeralContainers {
-		log.Debug().Msgf("Tailing EPH-CO %q", co.Name)
 		opts.Container = co.Name
 		if err := tailLogs(ctx, p, c, opts); err != nil {
 			return err
@@ -236,7 +233,7 @@ func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
 	return nil
 }
 
-// ScanSA scans for serviceaccount refs.
+// ScanSA scans for ServiceAccount refs.
 func (p *Pod) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
 	oo, err := p.Factory.List(p.GVR(), ns, wait, labels.Everything())
@@ -334,12 +331,10 @@ func tailLogs(ctx context.Context, logger Logger, c LogChan, opts LogOptions) er
 	)
 done:
 	for r := 0; r < logRetryCount; r++ {
-		log.Debug().Msgf("Retry logs %d", r)
 		req, err = logger.Logs(opts.Path, opts.ToPodLogOptions())
 		if err == nil {
 			// This call will block if nothing is in the stream!!
 			if stream, err = req.Stream(ctx); err == nil {
-				log.Debug().Msgf("Reading logs")
 				go readLogs(stream, c, opts)
 				break
 			} else {
@@ -426,18 +421,18 @@ func extractFQN(o runtime.Object) string {
 	u, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		log.Error().Err(fmt.Errorf("expecting unstructured but got %T", o))
-		return "na"
+		return client.NA
 	}
 	m, ok := u.Object["metadata"].(map[string]interface{})
 	if !ok {
 		log.Error().Err(fmt.Errorf("expecting interface map for metadata but got %T", u.Object["metadata"]))
-		return "na"
+		return client.NA
 	}
 
 	n, ok := m["name"].(string)
 	if !ok {
 		log.Error().Err(fmt.Errorf("expecting interface map for name but got %T", m["name"]))
-		return "na"
+		return client.NA
 	}
 
 	ns, ok := m["namespace"].(string)

@@ -26,7 +26,7 @@ const (
 var _ config.KubeSettings = (*client.Config)(nil)
 
 var (
-	version, commit, date = "dev", "dev", "n/a"
+	version, commit, date = "dev", "dev", client.NA
 	k9sFlags              *config.Flags
 	k8sFlags              *genericclioptions.ConfigFlags
 	demoMode              = new(bool)
@@ -215,7 +215,7 @@ func initK9sFlags() {
 		k9sFlags.ReadOnly,
 		"readonly",
 		false,
-		"Disable all commands that modify the cluster",
+		"Toggles readOnly mode by overriding configuration setting",
 	)
 }
 

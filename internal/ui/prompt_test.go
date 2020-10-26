@@ -14,7 +14,9 @@ func TestCmdNew(t *testing.T) {
 	model := model.NewFishBuff(':', model.CommandBuffer)
 	v.SetModel(model)
 	model.AddListener(v)
-	model.SetText("blee")
+	for _, r := range "blee" {
+		model.Add(r)
+	}
 
 	assert.Equal(t, "\x00> [::b]blee\n", v.GetText(false))
 }

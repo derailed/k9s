@@ -1,6 +1,7 @@
 package view_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/derailed/k9s/internal/client"
@@ -13,5 +14,6 @@ func TestDeploy(t *testing.T) {
 
 	assert.Nil(t, v.Init(makeCtx()))
 	assert.Equal(t, "Deployments", v.Name())
-	assert.Equal(t, 13, len(v.Hints()))
+	fmt.Println(v.Hints())
+	assert.Equal(t, 14, len(v.Hints()))
 }

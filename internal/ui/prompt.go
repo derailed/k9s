@@ -203,6 +203,9 @@ func (p *Prompt) write(text, suggest string) {
 // ----------------------------------------------------------------------------
 // Event Listener protocol...
 
+// BufferCompleted indicates input was accepted.
+func (p *Prompt) BufferCompleted(s string) {}
+
 // BufferChanged indicates the buffer was changed.
 func (p *Prompt) BufferChanged(s string) {
 	p.update(s)

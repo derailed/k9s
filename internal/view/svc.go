@@ -35,7 +35,7 @@ func NewService(gvr client.GVR) ResourceViewer {
 			NewLogsExtender(NewBrowser(gvr), nil),
 		),
 	}
-	s.SetBindKeysFn(s.bindKeys)
+	s.AddBindKeysFn(s.bindKeys)
 	s.GetTable().SetEnterFn(s.showPods)
 
 	return &s

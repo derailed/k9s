@@ -17,7 +17,7 @@ func NewPersistentVolumeClaim(gvr client.GVR) ResourceViewer {
 	v := PersistentVolumeClaim{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	v.SetBindKeysFn(v.bindKeys)
+	v.AddBindKeysFn(v.bindKeys)
 	v.GetTable().SetColorerFn(render.PersistentVolumeClaim{}.ColorerFunc())
 
 	return &v

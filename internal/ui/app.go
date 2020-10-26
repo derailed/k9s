@@ -86,6 +86,9 @@ func (a *App) SetRunning(f bool) {
 	a.running = f
 }
 
+// BufferCompleted indicates input was accepted.
+func (a *App) BufferCompleted(s string) {}
+
 // BufferChanged indicates the buffer was changed.
 func (a *App) BufferChanged(s string) {}
 

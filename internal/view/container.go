@@ -30,7 +30,7 @@ func NewContainer(gvr client.GVR) ResourceViewer {
 	c.GetTable().SetEnterFn(c.viewLogs)
 	c.GetTable().SetColorerFn(render.Container{}.ColorerFunc())
 	c.GetTable().SetDecorateFn(c.decorateRows)
-	c.SetBindKeysFn(c.bindKeys)
+	c.AddBindKeysFn(c.bindKeys)
 	c.GetTable().SetDecorateFn(c.portForwardIndicator)
 
 	return &c
@@ -66,7 +66,7 @@ func (c *Container) bindDangerousKeys(aa ui.KeyActions) {
 func (c *Container) bindKeys(aa ui.KeyActions) {
 	aa.Delete(tcell.KeyCtrlSpace, ui.KeySpace)
 
-	if !c.App().Config.K9s.GetReadOnly() {
+	if !c.App().Config.K9s.IsReadOnly() {
 		c.bindDangerousKeys(aa)
 	}
 

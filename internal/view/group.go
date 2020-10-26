@@ -19,7 +19,7 @@ type Group struct {
 func NewGroup(gvr client.GVR) ResourceViewer {
 	g := Group{ResourceViewer: NewBrowser(gvr)}
 	g.GetTable().SetColorerFn(render.Subject{}.ColorerFunc())
-	g.SetBindKeysFn(g.bindKeys)
+	g.AddBindKeysFn(g.bindKeys)
 	g.SetContextFn(g.subjectCtx)
 
 	return &g

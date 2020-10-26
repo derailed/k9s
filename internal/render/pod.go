@@ -63,6 +63,8 @@ func (Pod) Header(ns string) Header {
 		HeaderColumn{Name: "READY"},
 		HeaderColumn{Name: "RESTARTS", Align: tview.AlignRight},
 		HeaderColumn{Name: "STATUS"},
+		HeaderColumn{Name: "CPU(R:L)", Align: tview.AlignRight, MX: true, Wide: true},
+		HeaderColumn{Name: "MEM(R:L)", Align: tview.AlignRight, MX: true, Wide: true},
 		HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "%CPU/R", Align: tview.AlignRight, MX: true},
@@ -92,7 +94,7 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 
 	ss := po.Status.ContainerStatuses
 	cr, _, rc := p.Statuses(ss)
-	c, perc := p.gatherPodMX(&po, pwm.MX)
+	c, perc, res := p.gatherPodMX(&po, pwm.MX)
 	phase := p.Phase(&po)
 	r.ID = client.MetaFQN(po.ObjectMeta)
 	r.Fields = Fields{
@@ -102,6 +104,8 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(cr) + "/" + strconv.Itoa(len(ss)),
 		strconv.Itoa(rc),
 		phase,
+		ToResourcesMc(res),
+		ToResourcesMi(res),
 		c.cpu,
 		c.mem,
 		perc.cpu,
@@ -149,7 +153,19 @@ func (p *PodWithMetrics) DeepCopyObject() runtime.Object {
 	return p
 }
 
-func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, p metric) {
+const (
+	requestCPU qualifiedResource = "rcpu"
+	requestMEM                   = "rmem"
+	limitCPU                     = "lcpu"
+	limitMEM                     = "lmem"
+)
+
+type (
+	qualifiedResource string
+	resources         map[qualifiedResource]*resource.Quantity
+)
+
+func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, p metric, r resources) {
 	c, p = noMetric(), noMetric()
 	if mx == nil {
 		return
@@ -161,12 +177,15 @@ func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, p metric) {
 	}
 	cpu, mem := currentRes(mx)
 	c = metric{
-		cpu: ToMillicore(cpu.MilliValue()),
+		cpu: ToMc(cpu.MilliValue()),
 		mem: ToMi(client.ToMB(mem.Value())),
 	}
 
-	rc, rm := resourceRequests(pod.Spec.Containers)
-	lc, lm := resourceLimits(pod.Spec.Containers)
+	rc, rm := podRequests(pod.Spec)
+	lc, lm := podLimits(pod.Spec)
+	r = make(resources, 4)
+	r[requestCPU], r[requestMEM] = rc, rm
+	r[limitCPU], r[limitMEM] = lc, lm
 	p = metric{
 		cpu:    client.ToPercentageStr(cpu.MilliValue(), rc.MilliValue()),
 		mem:    client.ToPercentageStr(client.ToMB(mem.Value()), client.ToMB(rm.Value())),
@@ -197,7 +216,8 @@ func containerLimits(co v1.Container) (cpu, mem *resource.Quantity) {
 	return limit.Cpu(), limit.Memory()
 }
 
-func resourceLimits(cc []v1.Container) (cpu, mem resource.Quantity) {
+func resourceLimits(cc []v1.Container) (cpu, mem *resource.Quantity) {
+	cpu, mem = new(resource.Quantity), new(resource.Quantity)
 	for _, co := range cc {
 		limit := co.Resources.Limits
 		if len(limit) == 0 {
@@ -215,7 +235,28 @@ func resourceLimits(cc []v1.Container) (cpu, mem resource.Quantity) {
 	return
 }
 
-func resourceRequests(cc []v1.Container) (cpu, mem resource.Quantity) {
+func podLimits(spec v1.PodSpec) (*resource.Quantity, *resource.Quantity) {
+	cc, cm := resourceLimits(spec.Containers)
+	ic, im := resourceLimits(spec.InitContainers)
+
+	cc.Add(*ic)
+	cm.Add(*im)
+
+	return cc, cm
+}
+
+func podRequests(spec v1.PodSpec) (*resource.Quantity, *resource.Quantity) {
+	cc, cm := resourceRequests(spec.Containers)
+	ic, im := resourceRequests(spec.InitContainers)
+
+	cc.Add(*ic)
+	cm.Add(*im)
+
+	return cc, cm
+}
+
+func resourceRequests(cc []v1.Container) (cpu, mem *resource.Quantity) {
+	cpu, mem = new(resource.Quantity), new(resource.Quantity)
 	for _, co := range cc {
 		c, m := containerResources(co)
 		if c == nil || m == nil {
@@ -230,6 +271,7 @@ func resourceRequests(cc []v1.Container) (cpu, mem resource.Quantity) {
 			mem.Add(*m)
 		}
 	}
+
 	return
 }
 

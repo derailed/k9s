@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"

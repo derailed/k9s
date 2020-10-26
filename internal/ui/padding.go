@@ -62,7 +62,7 @@ func Pad(s string, width int) string {
 func toAgeHuman(s string) string {
 	d, err := time.ParseDuration(s)
 	if err != nil {
-		return "n/a"
+		return render.NAValue
 	}
 
 	return duration.HumanDuration(d)

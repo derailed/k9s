@@ -20,7 +20,7 @@ func NewConfigMap(gvr client.GVR) ResourceViewer {
 	s := ConfigMap{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	s.SetBindKeysFn(s.bindKeys)
+	s.AddBindKeysFn(s.bindKeys)
 
 	return &s
 }

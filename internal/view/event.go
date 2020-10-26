@@ -18,7 +18,7 @@ func NewEvent(gvr client.GVR) ResourceViewer {
 		ResourceViewer: NewBrowser(gvr),
 	}
 	e.GetTable().SetColorerFn(render.Event{}.ColorerFunc())
-	e.SetBindKeysFn(e.bindKeys)
+	e.AddBindKeysFn(e.bindKeys)
 	e.GetTable().SetSortCol(ageCol, true)
 
 	return &e

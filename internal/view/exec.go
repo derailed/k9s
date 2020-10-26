@@ -105,7 +105,7 @@ func execute(opts shellOpts) error {
 	}()
 
 	log.Debug().Msgf("Running command> %s %s", opts.binary, strings.Join(opts.args, " "))
-	cmd := exec.Command(opts.binary, opts.args...)
+	cmd := exec.CommandContext(ctx, opts.binary, opts.args...)
 
 	var err error
 	if opts.background {
@@ -162,7 +162,6 @@ func oneShoot(opts shellOpts) (string, error) {
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, buff, buff
 	_, _ = cmd.Stdout.Write([]byte(opts.banner))
 	err = cmd.Run()
-	log.Debug().Msgf("RES %q", buff)
 
 	return strings.Trim(buff.String(), "\n"), err
 }

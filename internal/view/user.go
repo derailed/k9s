@@ -19,7 +19,7 @@ type User struct {
 func NewUser(gvr client.GVR) ResourceViewer {
 	u := User{ResourceViewer: NewBrowser(gvr)}
 	u.GetTable().SetColorerFn(render.Subject{}.ColorerFunc())
-	u.SetBindKeysFn(u.bindKeys)
+	u.AddBindKeysFn(u.bindKeys)
 	u.SetContextFn(u.subjectCtx)
 
 	return &u

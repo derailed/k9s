@@ -57,13 +57,13 @@ func extractMetaField(m map[string]interface{}, field string) string {
 	f, ok := m[field]
 	if !ok {
 		log.Error().Err(fmt.Errorf("failed to extract field from meta %s", field))
-		return "n/a"
+		return NAValue
 	}
 
 	fs, ok := f.(string)
 	if !ok {
 		log.Error().Err(fmt.Errorf("failed to extract string from field %s", field))
-		return "n/a"
+		return NAValue
 	}
 
 	return fs

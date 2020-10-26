@@ -19,7 +19,7 @@ func NewServiceAccount(gvr client.GVR) ResourceViewer {
 	s := ServiceAccount{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	s.SetBindKeysFn(s.bindKeys)
+	s.AddBindKeysFn(s.bindKeys)
 
 	return &s
 }

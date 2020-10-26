@@ -29,14 +29,13 @@ func TestToPercentage(t *testing.T) {
 }
 
 func TestToMB(t *testing.T) {
-	const mb = 1024 * 1024
 	uu := []struct {
 		v int64
 		e int64
 	}{
 		{0, 0},
-		{2 * mb, 2},
-		{10 * mb, 10},
+		{2 * client.MegaByte, 2},
+		{10 * client.MegaByte, 10},
 	}
 
 	for _, u := range uu {

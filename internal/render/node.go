@@ -159,13 +159,13 @@ func gatherNodeMX(no *v1.Node, mx *mv1beta1.NodeMetrics) (c metric, a metric, p 
 
 	cpu, mem := mx.Usage.Cpu().MilliValue(), client.ToMB(mx.Usage.Memory().Value())
 	c = metric{
-		cpu: ToMillicore(cpu),
+		cpu: ToMc(cpu),
 		mem: ToMi(mem),
 	}
 
 	acpu, amem := no.Status.Allocatable.Cpu().MilliValue(), client.ToMB(no.Status.Allocatable.Memory().Value())
 	a = metric{
-		cpu: ToMillicore(acpu),
+		cpu: ToMc(acpu),
 		mem: ToMi(amem),
 	}
 

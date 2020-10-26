@@ -51,7 +51,7 @@ func TestLogViewClear(t *testing.T) {
 func TestLogTimestamp(t *testing.T) {
 	l := NewLog(client.NewGVR("test"), "fred/blee", "c1", false)
 	l.Init(makeContext())
-	buff := dao.LogItems{
+	ii := dao.LogItems{
 		&dao.LogItem{
 			Pod:       "fred/blee",
 			Container: "c1",
@@ -61,10 +61,10 @@ func TestLogTimestamp(t *testing.T) {
 	}
 	var list logList
 	l.GetModel().AddListener(&list)
-	l.GetModel().Set(buff)
+	l.GetModel().Set(ii)
 	l.SendKeys(ui.KeyT)
 	l.Logs().Clear()
-	l.Flush(buff)
+	l.Flush(ii.Lines(true))
 
 	assert.Equal(t, fmt.Sprintf("\n%-30s %s", "ttt", "fred/blee:c1 Testing 1, 2, 3"), l.Logs().GetText(true))
 	assert.Equal(t, 2, list.change)
@@ -99,11 +99,11 @@ type logList struct {
 	lines               string
 }
 
-func (l *logList) LogChanged(ii dao.LogItems) {
+func (l *logList) LogChanged(ll [][]byte) {
 	l.change++
 	l.lines = ""
-	for _, i := range ii {
-		l.lines += string(i.Render(0, false))
+	for _, line := range ll {
+		l.lines += string(line)
 	}
 }
 func (l *logList) LogCleared()     { l.clear++ }

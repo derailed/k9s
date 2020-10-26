@@ -54,7 +54,7 @@ func NewLog(gvr client.GVR, path, co string, prev bool) *Log {
 		Flex: tview.NewFlex(),
 		model: model.NewLog(
 			gvr,
-			buildLogOpts(path, co, prev, true, config.DefaultLoggerTailCount),
+			buildLogOpts(path, co, prev, false, config.DefaultLoggerTailCount),
 			flushTimeout,
 		),
 	}
@@ -105,7 +105,7 @@ func (l *Log) Init(ctx context.Context) (err error) {
 func (l *Log) LogCleared() {
 	l.app.QueueUpdateDraw(func() {
 		l.logs.Clear()
-		l.logs.ScrollTo(0, 0)
+		// l.logs.ScrollTo(0, 0)
 	})
 }
 
@@ -123,17 +123,20 @@ func (l *Log) LogFailed(err error) {
 }
 
 // LogChanged updates the logs.
-func (l *Log) LogChanged(lines dao.LogItems) {
+func (l *Log) LogChanged(lines [][]byte) {
 	l.app.QueueUpdateDraw(func() {
 		l.Flush(lines)
 	})
 }
 
-// BufferChanged indicates the buffer was changed.
-func (l *Log) BufferChanged(s string) {
+// BufferCompleted indicates input was accepted.
+func (l *Log) BufferCompleted(s string) {
 	l.model.Filter(l.logs.cmdBuff.GetText())
 	l.updateTitle()
 }
+
+// BufferChanged indicates the buffer was changed.
+func (l *Log) BufferChanged(s string) {}
 
 // BufferActive indicates the buff activity changed.
 func (l *Log) BufferActive(state bool, k model.BufferKind) {
@@ -181,22 +184,38 @@ func (l *Log) Name() string { return logTitle }
 
 func (l *Log) bindKeys() {
 	l.logs.Actions().Set(ui.KeyActions{
-		ui.Key0:        ui.NewKeyAction("all", l.sinceCmd(-1), true),
-		ui.Key1:        ui.NewKeyAction("1m", l.sinceCmd(60), true),
-		ui.Key2:        ui.NewKeyAction("5m", l.sinceCmd(5*60), true),
-		ui.Key3:        ui.NewKeyAction("15m", l.sinceCmd(15*60), true),
-		ui.Key4:        ui.NewKeyAction("30m", l.sinceCmd(30*60), true),
-		ui.Key5:        ui.NewKeyAction("1h", l.sinceCmd(60*60), true),
-		tcell.KeyEnter: ui.NewSharedKeyAction("Filter", l.filterCmd, false),
-		tcell.KeyCtrlK: ui.NewKeyAction("Clear", l.clearCmd, true),
-		ui.KeyM:        ui.NewKeyAction("Mark", l.markCmd, true),
-		ui.KeyS:        ui.NewKeyAction("Toggle AutoScroll", l.toggleAutoScrollCmd, true),
-		ui.KeyF:        ui.NewKeyAction("Toggle FullScreen", l.toggleFullScreenCmd, true),
-		ui.KeyT:        ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
-		ui.KeyW:        ui.NewKeyAction("Toggle Wrap", l.toggleTextWrapCmd, true),
-		tcell.KeyCtrlS: ui.NewKeyAction("Save", l.SaveCmd, true),
-		ui.KeyC:        ui.NewKeyAction("Copy", l.cpCmd, true),
+		ui.Key0:         ui.NewKeyAction("all", l.sinceCmd(-1), true),
+		ui.Key1:         ui.NewKeyAction("1m", l.sinceCmd(60), true),
+		ui.Key2:         ui.NewKeyAction("5m", l.sinceCmd(5*60), true),
+		ui.Key3:         ui.NewKeyAction("15m", l.sinceCmd(15*60), true),
+		ui.Key4:         ui.NewKeyAction("30m", l.sinceCmd(30*60), true),
+		ui.Key5:         ui.NewKeyAction("1h", l.sinceCmd(60*60), true),
+		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", l.filterCmd, false),
+		tcell.KeyEscape: ui.NewKeyAction("Back", l.resetCmd, false),
+		tcell.KeyCtrlK:  ui.NewKeyAction("Clear", l.clearCmd, true),
+		ui.KeyM:         ui.NewKeyAction("Mark", l.markCmd, true),
+		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", l.toggleAutoScrollCmd, true),
+		ui.KeyF:         ui.NewKeyAction("Toggle FullScreen", l.toggleFullScreenCmd, true),
+		ui.KeyT:         ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
+		ui.KeyW:         ui.NewKeyAction("Toggle Wrap", l.toggleTextWrapCmd, true),
+		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.SaveCmd, true),
+		ui.KeyC:         ui.NewKeyAction("Copy", l.cpCmd, true),
 	})
+}
+
+func (l *Log) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if !l.logs.cmdBuff.IsActive() {
+		if l.logs.cmdBuff.GetText() == "" {
+			return l.app.PrevCmd(evt)
+		}
+	}
+
+	l.logs.cmdBuff.Reset()
+	l.logs.cmdBuff.SetActive(false)
+	l.model.Filter(l.logs.cmdBuff.GetText())
+	l.updateTitle()
+
+	return nil
 }
 
 // SendStrokes (testing only!)
@@ -248,14 +267,13 @@ func (l *Log) Logs() *Details {
 var EOL = []byte{'\n'}
 
 // Flush write logs to viewer.
-func (l *Log) Flush(lines dao.LogItems) {
+func (l *Log) Flush(lines [][]byte) {
+	log.Debug().Msgf("LOG-FLUSH %d", len(lines))
 	if !l.indicator.AutoScroll() {
 		return
 	}
-	ll := make([][]byte, len(lines))
-	lines.Render(l.Indicator().showTime, ll)
 	_, _ = l.ansiWriter.Write(EOL)
-	if _, err := l.ansiWriter.Write(bytes.Join(ll, EOL)); err != nil {
+	if _, err := l.ansiWriter.Write(bytes.Join(lines, EOL)); err != nil {
 		log.Error().Err(err).Msgf("write logs failed")
 	}
 	l.logs.ScrollToEnd()

@@ -26,7 +26,7 @@ func NewNode(gvr client.GVR) ResourceViewer {
 	n := Node{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	n.SetBindKeysFn(n.bindKeys)
+	n.AddBindKeysFn(n.bindKeys)
 	n.GetTable().SetEnterFn(n.showPods)
 
 	return &n
@@ -49,7 +49,7 @@ func (n *Node) bindDangerousKeys(aa ui.KeyActions) {
 func (n *Node) bindKeys(aa ui.KeyActions) {
 	aa.Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlD)
 
-	if !n.App().Config.K9s.GetReadOnly() {
+	if !n.App().Config.K9s.IsReadOnly() {
 		n.bindDangerousKeys(aa)
 	}
 

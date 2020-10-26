@@ -72,8 +72,8 @@ func newMockLogView() *mockLogView {
 	return &mockLogView{}
 }
 
-func (t *mockLogView) LogChanged(d dao.LogItems) {
-	t.count += len(d.Lines())
+func (t *mockLogView) LogChanged(ll [][]byte) {
+	t.count += len(ll)
 }
 func (t *mockLogView) LogCleared()         {}
 func (t *mockLogView) LogFailed(err error) {}

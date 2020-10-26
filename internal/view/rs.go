@@ -21,7 +21,7 @@ func NewReplicaSet(gvr client.GVR) ResourceViewer {
 	r := ReplicaSet{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	r.SetBindKeysFn(r.bindKeys)
+	r.AddBindKeysFn(r.bindKeys)
 	r.GetTable().SetEnterFn(r.showPods)
 	r.GetTable().SetColorerFn(render.ReplicaSet{}.ColorerFunc())
 

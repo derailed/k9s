@@ -26,10 +26,10 @@ type PortForwardExtender struct {
 
 // NewPortForwardExtender returns a new extender.
 func NewPortForwardExtender(r ResourceViewer) ResourceViewer {
-	s := PortForwardExtender{ResourceViewer: r}
-	s.bindKeys(s.Actions())
+	p := PortForwardExtender{ResourceViewer: r}
+	p.AddBindKeysFn(p.bindKeys)
 
-	return &s
+	return &p
 }
 
 func (p *PortForwardExtender) bindKeys(aa ui.KeyActions) {

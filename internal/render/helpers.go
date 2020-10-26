@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	runewidth "github.com/mattn/go-runewidth"
 	"github.com/rs/zerolog/log"
@@ -62,13 +63,6 @@ func Happy(ns string, h Header, r Row) bool {
 	}
 	return strings.TrimSpace(r.Fields[validCol]) == ""
 }
-
-// const megaByte = 1024 * 1024
-
-// // ToMB converts bytes to megabytes.
-// func ToMB(v int64) float64 {
-// 	return float64(v) / megaByte
-// }
 
 func asStatus(err error) string {
 	if err == nil {
@@ -257,14 +251,64 @@ func mapToIfc(m interface{}) (s string) {
 	return
 }
 
-// ToMillicore shows cpu reading for human.
-func ToMillicore(v int64) string {
-	return strconv.Itoa(int(v))
+// ToResourcesMi prints out request:limit mem resources.
+func ToResourcesMi(res resources) string {
+	var v1, v2 int64
+	if v, ok := res[requestMEM]; ok && v != nil {
+		v1 = v.MilliValue()
+	}
+	if v, ok := res[limitMEM]; ok && v != nil {
+		v2 = v.MilliValue()
+	}
+	if v1 == 0 && v2 == 0 {
+		return NAValue
+	}
+	return bytesToMb(v1) + ":" + bytesToMb(v2)
 }
 
-// ToMi shows mem reading for human.
+func toMc(v int64) string {
+	if v == 0 {
+		return NAValue
+	}
+	p := message.NewPrinter(language.English)
+	return p.Sprintf("%dm", v)
+}
+
+func bytesToMb(v int64) string {
+	if v == 0 {
+		return NAValue
+	}
+	p := message.NewPrinter(language.English)
+	return p.Sprintf("%dMi", v/(client.MegaByte*1_000))
+
+}
+
+// ToResourcesMc prints out request:limit cpu resources.
+func ToResourcesMc(res resources) string {
+	var v1, v2 int64
+	if v, ok := res[requestCPU]; ok && v != nil {
+		v1 = v.MilliValue()
+	}
+	if v, ok := res[limitCPU]; ok && v != nil {
+		v2 = v.MilliValue()
+	}
+	if v1 == 0 && v2 == 0 {
+		return NAValue
+	}
+
+	return toMc(v1) + ":" + toMc(v2)
+}
+
+// ToMc returns a the millicore unit.
+func ToMc(v int64) string {
+	p := message.NewPrinter(language.English)
+	return p.Sprintf("%dm", v)
+}
+
+// ToMi returns the megabytes unit.
 func ToMi(v int64) string {
-	return strconv.Itoa(int(v))
+	p := message.NewPrinter(language.English)
+	return p.Sprintf("%dMi", v)
 }
 
 func boolPtrToStr(b *bool) string {
