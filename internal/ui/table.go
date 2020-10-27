@@ -44,20 +44,23 @@ type Table struct {
 	wide        bool
 	toast       bool
 	hasMetrics  bool
+	modelTable  *model.Table
 }
 
 // NewTable returns a new table view.
 func NewTable(gvr client.GVR) *Table {
+	modelTable := model.NewTable(gvr)
 	return &Table{
 		SelectTable: &SelectTable{
 			Table: tview.NewTable(),
-			model: model.NewTable(gvr),
+			model: modelTable,
 			marks: make(map[string]struct{}),
 		},
-		gvr:     gvr,
-		actions: make(KeyActions),
-		cmdBuff: model.NewFishBuff('/', model.FilterBuffer),
-		sortCol: SortColumn{asc: true},
+		gvr:        gvr,
+		actions:    make(KeyActions),
+		cmdBuff:    model.NewFishBuff('/', model.FilterBuffer),
+		sortCol:    SortColumn{asc: true},
+		modelTable: modelTable,
 	}
 }
 
@@ -81,6 +84,8 @@ func (t *Table) Init(ctx context.Context) {
 	}
 	t.styles = mustExtractStyles(ctx)
 	t.StylesChanged(t.styles)
+
+	t.modelTable.Init(ctx)
 }
 
 // GVR returns a resource descriptor.

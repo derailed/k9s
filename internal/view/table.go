@@ -43,6 +43,7 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	}
 	ctx = context.WithValue(ctx, internal.KeyStyles, t.app.Styles)
 	ctx = context.WithValue(ctx, internal.KeyViewConfig, t.app.CustomView)
+	ctx = context.WithValue(ctx, internal.KeyModelConfig, t.app.CustomModel)
 	t.Table.Init(ctx)
 	t.SetInputCapture(t.keyboard)
 	t.bindKeys()

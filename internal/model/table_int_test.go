@@ -104,7 +104,7 @@ func TestTableHydrate(t *testing.T) {
 	}
 	rr := make([]render.Row, 1)
 
-	assert.Nil(t, hydrate("blee", oo, rr, render.Pod{}))
+	assert.Nil(t, hydrate("blee", oo, rr, render.Pod{}, nil))
 	assert.Equal(t, 1, len(rr))
 	assert.Equal(t, 18, len(rr[0].Fields))
 }
@@ -131,7 +131,7 @@ func TestTableGenericHydrate(t *testing.T) {
 	re := render.Generic{}
 	re.SetTable(&tt)
 
-	assert.Nil(t, genericHydrate("blee", &tt, rr, &re))
+	assert.Nil(t, genericHydrate("blee", &tt, rr, &re, nil))
 	assert.Equal(t, 2, len(rr))
 	assert.Equal(t, 3, len(rr[0].Fields))
 }

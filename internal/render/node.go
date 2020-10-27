@@ -3,6 +3,7 @@ package render
 import (
 	"errors"
 	"fmt"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sort"
 	"strconv"
 	"strings"
@@ -139,6 +140,11 @@ type NodeWithMetrics struct {
 	Raw      *unstructured.Unstructured
 	MX       *mv1beta1.NodeMetrics
 	PodCount int
+}
+
+// Object returns a k8s Object
+func (n *NodeWithMetrics) Object() metav1.Object {
+	return n.Raw
 }
 
 // GetObjectKind returns a schema object.

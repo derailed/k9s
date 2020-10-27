@@ -19,11 +19,12 @@ type synchronizer interface {
 
 // Configurator represents an application configurationa.
 type Configurator struct {
-	Config     *config.Config
-	Styles     *config.Styles
-	CustomView *config.CustomView
-	BenchFile  string
-	skinFile   string
+	Config      *config.Config
+	Styles      *config.Styles
+	CustomView  *config.CustomView
+	CustomModel *config.CustomModel
+	BenchFile   string
+	skinFile    string
 }
 
 // HasSkin returns true if a skin file was located.
@@ -74,6 +75,53 @@ func (c *Configurator) RefreshCustomViews() {
 
 	if err := c.CustomView.Load(config.K9sViewConfigFile); err != nil {
 		log.Error().Err(err).Msgf("Custom view load failed %s", config.K9sViewConfigFile)
+		return
+	}
+}
+
+// CustomModelsWatcher watches for model config file changes.
+func (c *Configurator) CustomModelsWatcher(ctx context.Context, s synchronizer) error {
+	w, err := fsnotify.NewWatcher()
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		for {
+			select {
+			case evt := <-w.Events:
+				_ = evt
+				s.QueueUpdateDraw(func() {
+					c.RefreshCustomModels()
+				})
+			case err := <-w.Errors:
+				log.Info().Err(err).Msg("CustomModel watcher failed")
+				return
+			case <-ctx.Done():
+				log.Debug().Msgf("CustomModelWatcher Done `%s!!", config.K9sViewConfigFile)
+				if err := w.Close(); err != nil {
+					log.Error().Err(err).Msg("Closing CustomModel watcher")
+				}
+				return
+			}
+		}
+	}()
+
+	log.Debug().Msgf("CustomModel watching `%s", config.K9sModelConfigFile)
+	c.RefreshCustomModels()
+	return w.Add(config.K9sModelConfigFile)
+}
+
+// RefreshCustomModels load model configuration changes.
+func (c *Configurator) RefreshCustomModels() {
+	if c.CustomModel == nil {
+		c.CustomModel = config.NewCustomModel()
+	} else {
+		c.CustomModel.Reset()
+	}
+
+	if err := c.CustomModel.Load(config.K9sModelConfigFile); err != nil {
+		log.Error().Err(err).Msgf("Custom model load failed %s", config.K9sModelConfigFile)
 		return
 	}
 }

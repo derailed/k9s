@@ -29,5 +29,6 @@ const (
 	KeyToast       ContextKey = "toast"
 	KeyWithMetrics ContextKey = "withMetrics"
 	KeyViewConfig  ContextKey = "viewConfig"
+	KeyModelConfig ContextKey = "modelConfig"
 	KeyWait        ContextKey = "wait"
 )
