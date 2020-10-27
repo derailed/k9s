@@ -79,17 +79,14 @@ func run(cmd *cobra.Command, args []string) {
 
 	zerolog.SetGlobalLevel(parseLevel(*k9sFlags.LogLevel))
 	app := view.NewApp(loadConfiguration())
-	{
-		defer app.BailOut()
-		if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
-			panic(fmt.Sprintf("app init failed -- %v", err))
-		}
-		if err := app.Run(); err != nil {
-			panic(fmt.Sprintf("app run failed %v", err))
-		}
-		if view.ExitStatus != "" {
-			panic(fmt.Sprintf("view exit status %s", view.ExitStatus))
-		}
+	if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
+		panic(fmt.Sprintf("app init failed -- %v", err))
+	}
+	if err := app.Run(); err != nil {
+		panic(fmt.Sprintf("app run failed %v", err))
+	}
+	if view.ExitStatus != "" {
+		panic(fmt.Sprintf("view exit status %s", view.ExitStatus))
 	}
 }
 

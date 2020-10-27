@@ -136,6 +136,8 @@ func (a *App) layout(ctx context.Context, version string) {
 }
 
 func (a *App) initSignals() {
+	var s *string
+	fmt.Println(strings.Compare("blee", *s))
 	sig := make(chan os.Signal, 1)
 	signal.Notify(sig, syscall.SIGHUP)
 
