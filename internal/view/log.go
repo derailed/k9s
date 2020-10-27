@@ -40,7 +40,7 @@ type Log struct {
 	*tview.Flex
 
 	app        *App
-	logs       *Details
+	logs       *Logger
 	indicator  *LogIndicator
 	ansiWriter io.Writer
 	model      *model.Log
@@ -76,7 +76,7 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	l.AddItem(l.indicator, 1, 1, false)
 	l.indicator.Refresh()
 
-	l.logs = NewDetails(l.app, "", "", false)
+	l.logs = NewLogger(l.app)
 	if err = l.logs.Init(ctx); err != nil {
 		return err
 	}
@@ -105,7 +105,6 @@ func (l *Log) Init(ctx context.Context) (err error) {
 func (l *Log) LogCleared() {
 	l.app.QueueUpdateDraw(func() {
 		l.logs.Clear()
-		// l.logs.ScrollTo(0, 0)
 	})
 }
 
@@ -259,7 +258,7 @@ func (l *Log) updateTitle() {
 }
 
 // Logs returns the log viewer.
-func (l *Log) Logs() *Details {
+func (l *Log) Logs() *Logger {
 	return l.logs
 }
 

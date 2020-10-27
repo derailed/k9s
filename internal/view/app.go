@@ -113,8 +113,6 @@ func (a *App) Init(version string, rate int) error {
 		return err
 	}
 	a.CmdBuff().SetSuggestionFn(a.suggestCommand())
-	// BOZO!!
-	// a.CmdBuff().AddListener(a)
 
 	a.layout(ctx, version)
 	a.initSignals()
