@@ -26,7 +26,7 @@ func NewAlias(gvr client.GVR) ResourceViewer {
 	a.GetTable().SetColorerFn(render.Alias{}.ColorerFunc())
 	a.GetTable().SetBorderFocusColor(tcell.ColorAliceBlue)
 	a.GetTable().SetSelectedStyle(tcell.ColorWhite, tcell.ColorAliceBlue, tcell.AttrNone)
-	a.SetBindKeysFn(a.bindKeys)
+	a.AddBindKeysFn(a.bindKeys)
 	a.SetContextFn(a.aliasContext)
 
 	return &a

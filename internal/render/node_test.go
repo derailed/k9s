@@ -21,7 +21,7 @@ func TestNodeRender(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "minikube", r.ID)
-	e := render.Fields{"minikube", "Ready", "master", "v1.15.2", "4.15.0", "192.168.64.107", "<none>", "0", "10", "10", "0", "0", "4000", "7874"}
+	e := render.Fields{"minikube", "Ready", "master", "v1.15.2", "4.15.0", "192.168.64.107", "<none>", "0", "10m", "10Mi", "0", "0", "4,000m", "7,874Mi"}
 	assert.Equal(t, e, r.Fields[:14])
 }
 

@@ -76,6 +76,8 @@ func (Container) Header(ns string) Header {
 		HeaderColumn{Name: "INIT"},
 		HeaderColumn{Name: "RESTARTS", Align: tview.AlignRight},
 		HeaderColumn{Name: "PROBES(L:R)"},
+		HeaderColumn{Name: "CPU(R:L)", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "MEM(R:L)", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "%CPU/R", Align: tview.AlignRight, MX: true},
@@ -95,7 +97,7 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 		return fmt.Errorf("Expected ContainerRes, but got %T", o)
 	}
 
-	cur, perc, limit := gatherMetrics(co.Container, co.MX)
+	cur, perc, limit, res := gatherMetrics(co.Container, co.MX)
 	ready, state, restarts := "false", MissingValue, "0"
 	if co.Status != nil {
 		ready, state, restarts = boolToStr(co.Status.Ready), ToContainerState(co.Status.State), strconv.Itoa(int(co.Status.RestartCount))
@@ -111,6 +113,8 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 		boolToStr(co.IsInit),
 		restarts,
 		probe(co.Container.LivenessProbe) + ":" + probe(co.Container.ReadinessProbe),
+		ToResourcesMc(res),
+		ToResourcesMi(res),
 		cur.cpu,
 		cur.mem,
 		perc.cpu,
@@ -140,8 +144,24 @@ func (Container) diagnose(state, ready string) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, p, l metric) {
+func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, p, l metric, r resources) {
 	c, p, l = noMetric(), noMetric(), noMetric()
+
+	r = make(resources, 4)
+	rcpu, rmem := containerResources(*co)
+	lcpu, lmem := containerLimits(*co)
+	if rcpu != nil {
+		r[requestCPU] = rcpu
+	}
+	if rmem != nil {
+		r[requestMEM] = rmem
+	}
+	if lcpu != nil {
+		r[limitCPU] = lcpu
+	}
+	if lmem != nil {
+		r[limitMEM] = lmem
+	}
 	if mx == nil {
 		return
 	}
@@ -149,11 +169,10 @@ func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, p, l met
 	cpu := mx.Usage.Cpu().MilliValue()
 	mem := client.ToMB(mx.Usage.Memory().Value())
 	c = metric{
-		cpu: ToMillicore(cpu),
+		cpu: ToMc(cpu),
 		mem: ToMi(mem),
 	}
 
-	rcpu, rmem := containerResources(*co)
 	if rcpu != nil {
 		p.cpu = client.ToPercentageStr(cpu, rcpu.MilliValue())
 	}
@@ -161,7 +180,6 @@ func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, p, l met
 		p.mem = client.ToPercentageStr(mem, client.ToMB(rmem.Value()))
 	}
 
-	lcpu, lmem := containerLimits(*co)
 	if lcpu != nil {
 		l.cpu = client.ToPercentageStr(cpu, lcpu.MilliValue())
 	}

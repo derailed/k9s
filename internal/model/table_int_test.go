@@ -33,7 +33,7 @@ func TestTableReconcile(t *testing.T) {
 	err := ta.reconcile(ctx)
 	assert.Nil(t, err)
 	data := ta.Peek()
-	assert.Equal(t, 18, len(data.Header))
+	assert.Equal(t, 20, len(data.Header))
 	assert.Equal(t, 1, len(data.RowEvents))
 	assert.Equal(t, client.NamespaceAll, data.Namespace)
 }
@@ -106,7 +106,7 @@ func TestTableHydrate(t *testing.T) {
 
 	assert.Nil(t, hydrate("blee", oo, rr, render.Pod{}))
 	assert.Equal(t, 1, len(rr))
-	assert.Equal(t, 18, len(rr[0].Fields))
+	assert.Equal(t, 20, len(rr[0].Fields))
 }
 
 func TestTableGenericHydrate(t *testing.T) {

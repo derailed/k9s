@@ -13,5 +13,5 @@ func TestPodDisruptionBudgetRender(t *testing.T) {
 	c.Render(load(t, "pdb"), "", &r)
 
 	assert.Equal(t, "default/fred", r.ID)
-	assert.Equal(t, render.Fields{"default", "fred", "2", "n/a", "0", "0", "2", "0"}, r.Fields[:8])
+	assert.Equal(t, render.Fields{"default", "fred", "2", render.NAValue, "0", "0", "2", "0"}, r.Fields[:8])
 }

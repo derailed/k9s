@@ -3,21 +3,17 @@ package view
 import (
 	"context"
 	"fmt"
+	"strings"
+
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	"github.com/rs/zerolog/log"
 	corev1 "k8s.io/api/core/v1"
-	"strings"
 )
 
-const setImageKey = "setImage"
-
-// SetImageExtender adds set image extensions
-type SetImageExtender struct {
-	ResourceViewer
-}
+const imageKey = "setImage"
 
 type imageFormSpec struct {
 	name, dockerImage, newDockerImage string
@@ -44,20 +40,28 @@ func (m *imageFormSpec) imageSpec() dao.ImageSpec {
 	return ret
 }
 
-func NewSetImageExtender(r ResourceViewer) ResourceViewer {
-	s := SetImageExtender{ResourceViewer: r}
-	s.bindKeys(s.Actions())
+// ImageExtender provides for overriding container images.
+type ImageExtender struct {
+	ResourceViewer
+}
+
+func NewImageExtender(r ResourceViewer) ResourceViewer {
+	s := ImageExtender{ResourceViewer: r}
+	s.AddBindKeysFn(s.bindKeys)
 
 	return &s
 }
 
-func (s *SetImageExtender) bindKeys(aa ui.KeyActions) {
+func (s *ImageExtender) bindKeys(aa ui.KeyActions) {
+	if s.App().Config.K9s.IsReadOnly() {
+		return
+	}
 	aa.Add(ui.KeyActions{
-		ui.KeyI: ui.NewKeyAction("SetImage", s.setImageCmd, true),
+		ui.KeyI: ui.NewKeyAction("Set Image", s.setImageCmd, false),
 	})
 }
 
-func (s *SetImageExtender) setImageCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (s *ImageExtender) setImageCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := s.GetTable().GetSelectedItem()
 	if path == "" {
 		return nil
@@ -65,63 +69,58 @@ func (s *SetImageExtender) setImageCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	s.Stop()
 	defer s.Start()
-	s.showSetImageDialog(path)
+	s.showImageDialog(path)
 
 	return nil
 }
 
-func (s *SetImageExtender) showSetImageDialog(path string) {
+func (s *ImageExtender) showImageDialog(path string) {
 	confirm := tview.NewModalForm("<Set image>", s.makeSetImageForm(path))
 	confirm.SetText(fmt.Sprintf("Set image %s %s", s.GVR(), path))
 	confirm.SetDoneFunc(func(int, string) {
 		s.dismissDialog()
 	})
-	s.App().Content.AddPage(setImageKey, confirm, false, false)
-	s.App().Content.ShowPage(setImageKey)
+	s.App().Content.AddPage(imageKey, confirm, false, false)
+	s.App().Content.ShowPage(imageKey)
 }
 
-func (s *SetImageExtender) makeSetImageForm(sel string) *tview.Form {
+func (s *ImageExtender) makeSetImageForm(sel string) *tview.Form {
 	f := s.makeStyledForm()
 	podSpec, err := s.getPodSpec(sel)
 	if err != nil {
 		s.App().Flash().Err(err)
 		return nil
 	}
-	var formContainerLines []imageFormSpec
+	formContainerLines := make([]*imageFormSpec, len(podSpec.InitContainers)+len(podSpec.Containers))
 	for _, spec := range podSpec.InitContainers {
-		formContainerLines = append(formContainerLines, imageFormSpec{init: true, name: spec.Name, dockerImage: spec.Image})
+		formContainerLines = append(formContainerLines, &imageFormSpec{init: true, name: spec.Name, dockerImage: spec.Image})
 	}
 	for _, spec := range podSpec.Containers {
-		formContainerLines = append(formContainerLines, imageFormSpec{init: false, name: spec.Name, dockerImage: spec.Image})
+		formContainerLines = append(formContainerLines, &imageFormSpec{name: spec.Name, dockerImage: spec.Image})
 	}
-	for _, ctn := range formContainerLines {
-		ctnCopy := ctn
+	for i := range formContainerLines {
+		ctn := formContainerLines[i]
 		f.AddInputField(ctn.name, ctn.dockerImage, 0, nil, func(changed string) {
-			ctnCopy.newDockerImage = changed
+			ctn.newDockerImage = changed
 		})
 	}
 
 	f.AddButton("OK", func() {
 		defer s.dismissDialog()
-		if err != nil {
-			s.App().Flash().Err(err)
-			return
-		}
-		ctx, cancel := context.WithTimeout(context.Background(), s.App().Conn().Config().CallTimeout())
-		defer cancel()
 		var imageSpecsModified dao.ImageSpecs
 		for _, v := range formContainerLines {
 			if v.modified() {
 				imageSpecsModified = append(imageSpecsModified, v.imageSpec())
 			}
 		}
-
+		ctx, cancel := context.WithTimeout(context.Background(), s.App().Conn().Config().CallTimeout())
+		defer cancel()
 		if err := s.setImages(ctx, sel, imageSpecsModified); err != nil {
 			log.Error().Err(err).Msgf("PodSpec %s image update failed", sel)
 			s.App().Flash().Err(err)
-		} else {
-			s.App().Flash().Infof("Resource %s:%s image updated successfully", s.GVR(), sel)
+			return
 		}
+		s.App().Flash().Infof("Resource %s:%s image updated successfully", s.GVR(), sel)
 	})
 	f.AddButton("Cancel", func() {
 		s.dismissDialog()
@@ -129,11 +128,11 @@ func (s *SetImageExtender) makeSetImageForm(sel string) *tview.Form {
 	return f
 }
 
-func (s *SetImageExtender) dismissDialog() {
-	s.App().Content.RemovePage(setImageKey)
+func (s *ImageExtender) dismissDialog() {
+	s.App().Content.RemovePage(imageKey)
 }
 
-func (s *SetImageExtender) makeStyledForm() *tview.Form {
+func (s *ImageExtender) makeStyledForm() *tview.Form {
 	f := tview.NewForm()
 	f.SetItemPadding(0)
 	f.SetButtonsAlign(tview.AlignCenter).
@@ -144,19 +143,20 @@ func (s *SetImageExtender) makeStyledForm() *tview.Form {
 	return f
 }
 
-func (s *SetImageExtender) getPodSpec(path string) (*corev1.PodSpec, error) {
+func (s *ImageExtender) getPodSpec(path string) (*corev1.PodSpec, error) {
 	res, err := dao.AccessorFor(s.App().factory, s.GVR())
 	if err != nil {
 		return nil, err
 	}
 	resourceWPodSpec, ok := res.(dao.ContainsPodSpec)
 	if !ok {
-		return nil, fmt.Errorf("expecting a resourceWPodSpec resource for %q", s.GVR())
+		return nil, fmt.Errorf("expecting a ContainsPodSpec for %q but got %T", s.GVR(), res)
 	}
+
 	return resourceWPodSpec.GetPodSpec(path)
 }
 
-func (s *SetImageExtender) setImages(ctx context.Context, path string, imageSpecs dao.ImageSpecs) error {
+func (s *ImageExtender) setImages(ctx context.Context, path string, imageSpecs dao.ImageSpecs) error {
 	res, err := dao.AccessorFor(s.App().factory, s.GVR())
 	if err != nil {
 		return err

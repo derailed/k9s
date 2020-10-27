@@ -21,12 +21,15 @@ type ScaleExtender struct {
 // NewScaleExtender returns a new extender.
 func NewScaleExtender(r ResourceViewer) ResourceViewer {
 	s := ScaleExtender{ResourceViewer: r}
-	s.bindKeys(s.Actions())
+	s.AddBindKeysFn(s.bindKeys)
 
 	return &s
 }
 
 func (s *ScaleExtender) bindKeys(aa ui.KeyActions) {
+	if s.App().Config.K9s.IsReadOnly() {
+		return
+	}
 	aa.Add(ui.KeyActions{
 		ui.KeyS: ui.NewKeyAction("Scale", s.scaleCmd, true),
 	})

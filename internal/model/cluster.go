@@ -45,7 +45,7 @@ func NewCluster(f dao.Factory) *Cluster {
 func (c *Cluster) Version() string {
 	info, err := c.factory.Client().ServerVersion()
 	if err != nil {
-		return NA
+		return client.NA
 	}
 
 	return info.GitVersion
@@ -55,7 +55,7 @@ func (c *Cluster) Version() string {
 func (c *Cluster) ContextName() string {
 	n, err := c.factory.Client().Config().CurrentContextName()
 	if err != nil {
-		return NA
+		return client.NA
 	}
 	return n
 }
@@ -64,7 +64,7 @@ func (c *Cluster) ContextName() string {
 func (c *Cluster) ClusterName() string {
 	n, err := c.factory.Client().Config().CurrentClusterName()
 	if err != nil {
-		return NA
+		return client.NA
 	}
 	return n
 }
@@ -73,7 +73,7 @@ func (c *Cluster) ClusterName() string {
 func (c *Cluster) UserName() string {
 	n, err := c.factory.Client().Config().CurrentUserName()
 	if err != nil {
-		return NA
+		return client.NA
 	}
 	return n
 }

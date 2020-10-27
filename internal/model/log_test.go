@@ -34,7 +34,7 @@ func TestLogFullBuffer(t *testing.T) {
 	assert.Equal(t, 1, v.dataCalled)
 	assert.Equal(t, 1, v.clearCalled)
 	assert.Equal(t, 0, v.errCalled)
-	assert.Equal(t, data[4:], v.data)
+	assert.Equal(t, data[4:].Lines(false), v.data)
 }
 
 func TestLogFilter(t *testing.T) {
@@ -144,7 +144,7 @@ func TestLogBasic(t *testing.T) {
 	assert.Equal(t, 1, v.dataCalled)
 	assert.Equal(t, 1, v.clearCalled)
 	assert.Equal(t, 0, v.errCalled)
-	assert.Equal(t, data, v.data)
+	assert.Equal(t, data.Lines(false), v.data)
 }
 
 func TestLogAppend(t *testing.T) {
@@ -153,9 +153,11 @@ func TestLogAppend(t *testing.T) {
 
 	v := newTestView()
 	m.AddListener(v)
-	items := dao.LogItems{dao.NewLogItemFromString("blah blah")}
+	items := dao.LogItems{
+		dao.NewLogItemFromString("blah blah"),
+	}
 	m.Set(items)
-	assert.Equal(t, items, v.data)
+	assert.Equal(t, items.Lines(false), v.data)
 
 	data := dao.LogItems{
 		dao.NewLogItemFromString("line1"),
@@ -165,13 +167,13 @@ func TestLogAppend(t *testing.T) {
 		m.Append(d)
 	}
 	assert.Equal(t, 1, v.dataCalled)
-	assert.Equal(t, items, v.data)
+	assert.Equal(t, items.Lines(false), v.data)
 
 	m.Notify()
 	assert.Equal(t, 2, v.dataCalled)
 	assert.Equal(t, 1, v.clearCalled)
 	assert.Equal(t, 0, v.errCalled)
-	assert.Equal(t, append(items, data...), v.data)
+	assert.Equal(t, append(items, data...).Lines(false), v.data)
 }
 
 func TestLogTimedout(t *testing.T) {
@@ -196,7 +198,7 @@ func TestLogTimedout(t *testing.T) {
 	assert.Equal(t, 1, v.clearCalled)
 	assert.Equal(t, 0, v.errCalled)
 	const e = "\x1b[38;5;209ml\x1b[0m\x1b[38;5;209mi\x1b[0m\x1b[38;5;209mn\x1b[0m\x1b[38;5;209me\x1b[0m\x1b[38;5;209m1\x1b[0m"
-	assert.Equal(t, e, string(v.data[0].Bytes))
+	assert.Equal(t, e, string(v.data[0]))
 }
 
 // ----------------------------------------------------------------------------
@@ -213,7 +215,7 @@ func makeLogOpts(count int) dao.LogOptions {
 // ----------------------------------------------------------------------------
 
 type testView struct {
-	data        dao.LogItems
+	data        [][]byte
 	dataCalled  int
 	clearCalled int
 	errCalled   int
@@ -223,13 +225,13 @@ func newTestView() *testView {
 	return &testView{}
 }
 
-func (t *testView) LogChanged(d dao.LogItems) {
-	t.data = d
+func (t *testView) LogChanged(ll [][]byte) {
+	t.data = ll
 	t.dataCalled++
 }
 func (t *testView) LogCleared() {
 	t.clearCalled++
-	t.data = dao.LogItems{}
+	t.data = nil
 }
 func (t *testView) LogFailed(err error) {
 	fmt.Println("LogErr", err)

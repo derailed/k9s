@@ -280,9 +280,8 @@ K9s uses aliases to navigate most K8s resources.
       tail: 200
       # Defines the total number of log lines to allow in the view. Default 1000
       buffer: 500
-      # Represents how far to go back in the log timeline in seconds. Default is 1min
-      # Set to -1 to disable filter
-      sinceSeconds: 60
+      # Represents how far to go back in the log timeline in seconds. Setting to -1 will show all available logs. Default is 5min.
+      sinceSeconds: 300
       # Go full screen while displaying logs. Default false
       fullScreenLogs: false
       # Toggles log line wrap. Default false

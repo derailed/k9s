@@ -61,9 +61,9 @@ func (b *Browser) Init(ctx context.Context) error {
 		b.app.CmdBuff().Reset()
 	}
 
-	b.bindKeys()
-	if b.bindKeysFn != nil {
-		b.bindKeysFn(b.Actions())
+	b.bindKeys(b.Actions())
+	for _, f := range b.bindKeysFn {
+		f(b.Actions())
 	}
 	b.accessor, err = dao.AccessorFor(b.app.factory, b.GVR())
 	if err != nil {
@@ -104,8 +104,8 @@ func (b *Browser) suggestFilter() model.SuggestionFunc {
 	}
 }
 
-func (b *Browser) bindKeys() {
-	b.Actions().Add(ui.KeyActions{
+func (b *Browser) bindKeys(aa ui.KeyActions) {
+	aa.Add(ui.KeyActions{
 		tcell.KeyEscape: ui.NewSharedKeyAction("Filter Reset", b.resetCmd, false),
 		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", b.filterCmd, false),
 	})
@@ -132,7 +132,6 @@ func (b *Browser) Start() {
 
 // Stop terminates browser updates.
 func (b *Browser) Stop() {
-	log.Debug().Msgf("BRO-STOP %v", b.GVR())
 	if b.cancelFn != nil {
 		b.cancelFn()
 		b.cancelFn = nil
@@ -143,7 +142,10 @@ func (b *Browser) Stop() {
 }
 
 // BufferChanged indicates the buffer was changed.
-func (b *Browser) BufferChanged(s string) {
+func (b *Browser) BufferChanged(s string) {}
+
+// BufferCompleted indicates input was accepted.
+func (b *Browser) BufferCompleted(s string) {
 	if ui.IsLabelSelector(s) {
 		b.GetModel().SetLabelFilter(ui.TrimLabelSelector(s))
 	} else {
@@ -437,7 +439,7 @@ func (b *Browser) refreshActions() {
 
 	if b.app.ConOK() {
 		b.namespaceActions(aa)
-		if !b.app.Config.K9s.GetReadOnly() {
+		if !b.app.Config.K9s.IsReadOnly() {
 			if client.Can(b.meta.Verbs, "edit") {
 				aa[ui.KeyE] = ui.NewKeyAction("Edit", b.editCmd, true)
 			}
@@ -454,11 +456,10 @@ func (b *Browser) refreshActions() {
 
 	pluginActions(b, aa)
 	hotKeyActions(b, aa)
-	b.Actions().Add(aa)
-
-	if b.bindKeysFn != nil {
-		b.bindKeysFn(b.Actions())
+	for _, f := range b.bindKeysFn {
+		f(aa)
 	}
+	b.Actions().Add(aa)
 	b.app.Menu().HydrateMenu(b.Hints())
 }
 

@@ -16,7 +16,7 @@ type OpenFaas struct {
 // NewOpenFaas returns a new viewer.
 func NewOpenFaas(gvr client.GVR) ResourceViewer {
 	o := OpenFaas{ResourceViewer: NewBrowser(gvr)}
-	o.SetBindKeysFn(o.bindKeys)
+	o.AddBindKeysFn(o.bindKeys)
 	o.GetTable().SetEnterFn(o.showPods)
 	o.GetTable().SetColorerFn(render.OpenFaas{}.ColorerFunc())
 

@@ -28,7 +28,7 @@ func NewPopeye(gvr client.GVR) ResourceViewer {
 	p.GetTable().SetSelectedStyle(tcell.ColorWhite, tcell.ColorMediumSpringGreen, tcell.AttrNone)
 	p.GetTable().SetSortCol("SCORE%", true)
 	p.GetTable().SetDecorateFn(p.decorateRows)
-	p.SetBindKeysFn(p.bindKeys)
+	p.AddBindKeysFn(p.bindKeys)
 
 	return &p
 }

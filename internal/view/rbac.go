@@ -21,7 +21,7 @@ func NewRbac(gvr client.GVR) ResourceViewer {
 		ResourceViewer: NewBrowser(gvr),
 	}
 	r.GetTable().SetColorerFn(render.Rbac{}.ColorerFunc())
-	r.SetBindKeysFn(r.bindKeys)
+	r.AddBindKeysFn(r.bindKeys)
 	r.GetTable().SetSortCol("APIGROUP", true)
 	r.GetTable().SetEnterFn(blankEnterFn)
 

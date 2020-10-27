@@ -22,7 +22,7 @@ func NewHelm(gvr client.GVR) ResourceViewer {
 	c.GetTable().SetColorerFn(render.Helm{}.ColorerFunc())
 	c.GetTable().SetBorderFocusColor(tcell.ColorMediumSpringGreen)
 	c.GetTable().SetSelectedStyle(tcell.ColorWhite, tcell.ColorMediumSpringGreen, tcell.AttrNone)
-	c.SetBindKeysFn(c.bindKeys)
+	c.AddBindKeysFn(c.bindKeys)
 	c.SetContextFn(c.chartContext)
 
 	return &c

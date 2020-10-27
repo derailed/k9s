@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 )
@@ -117,7 +118,7 @@ func extractPort(p string) string {
 func extractContainer(p string) string {
 	tokens := strings.Split(p, ":")
 	if len(tokens) != 2 {
-		return "n/a"
+		return render.NAValue
 	}
 
 	co, _ := client.Namespaced(tokens[0])

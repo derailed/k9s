@@ -29,7 +29,7 @@ func NewNamespace(gvr client.GVR) ResourceViewer {
 	n.GetTable().SetDecorateFn(n.decorate)
 	n.GetTable().SetColorerFn(render.Namespace{}.ColorerFunc())
 	n.GetTable().SetEnterFn(n.switchNs)
-	n.SetBindKeysFn(n.bindKeys)
+	n.AddBindKeysFn(n.bindKeys)
 
 	return &n
 }

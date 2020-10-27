@@ -16,9 +16,6 @@ type ClusterInfoListener interface {
 	ClusterInfoUpdated(ClusterMeta)
 }
 
-// NA indicates data is missing at this time.
-const NA = "n/a"
-
 // ClusterMeta represents cluster meta data.
 type ClusterMeta struct {
 	Context, Cluster    string
@@ -30,11 +27,11 @@ type ClusterMeta struct {
 // NewClusterMeta returns a new instance.
 func NewClusterMeta() ClusterMeta {
 	return ClusterMeta{
-		Context:   NA,
-		Cluster:   NA,
-		User:      NA,
-		K9sVer:    NA,
-		K8sVer:    NA,
+		Context:   client.NA,
+		Cluster:   client.NA,
+		User:      client.NA,
+		K9sVer:    client.NA,
+		K8sVer:    client.NA,
 		Cpu:       0,
 		Mem:       0,
 		Ephemeral: 0,

@@ -21,14 +21,14 @@ func NewStatefulSet(gvr client.GVR) ResourceViewer {
 		ResourceViewer: NewPortForwardExtender(
 			NewRestartExtender(
 				NewScaleExtender(
-					NewSetImageExtender(
+					NewImageExtender(
 						NewLogsExtender(NewBrowser(gvr), nil),
 					),
 				),
 			),
 		),
 	}
-	s.SetBindKeysFn(s.bindKeys)
+	s.AddBindKeysFn(s.bindKeys)
 	s.GetTable().SetEnterFn(s.showPods)
 	s.GetTable().SetColorerFn(render.StatefulSet{}.ColorerFunc())
 

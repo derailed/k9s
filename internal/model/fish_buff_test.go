@@ -79,6 +79,9 @@ func (m *mockSuggestionListener) BufferChanged(s string) {
 	m.buff++
 }
 
+func (m *mockSuggestionListener) BufferCompleted(s string) {
+}
+
 func (m *mockSuggestionListener) BufferActive(state bool, kind model.BufferKind) {
 	m.active = state
 }

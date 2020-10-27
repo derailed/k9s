@@ -26,7 +26,7 @@ const (
 var _ config.KubeSettings = (*client.Config)(nil)
 
 var (
-	version, commit, date = "dev", "dev", "n/a"
+	version, commit, date = "dev", "dev", client.NA
 	k9sFlags              *config.Flags
 	k8sFlags              *genericclioptions.ConfigFlags
 	demoMode              = new(bool)
@@ -79,17 +79,14 @@ func run(cmd *cobra.Command, args []string) {
 
 	zerolog.SetGlobalLevel(parseLevel(*k9sFlags.LogLevel))
 	app := view.NewApp(loadConfiguration())
-	{
-		defer app.BailOut()
-		if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
-			panic(fmt.Sprintf("app init failed -- %v", err))
-		}
-		if err := app.Run(); err != nil {
-			panic(fmt.Sprintf("app run failed %v", err))
-		}
-		if view.ExitStatus != "" {
-			panic(fmt.Sprintf("view exit status %s", view.ExitStatus))
-		}
+	if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
+		panic(fmt.Sprintf("app init failed -- %v", err))
+	}
+	if err := app.Run(); err != nil {
+		panic(fmt.Sprintf("app run failed %v", err))
+	}
+	if view.ExitStatus != "" {
+		panic(fmt.Sprintf("view exit status %s", view.ExitStatus))
 	}
 }
 
@@ -219,7 +216,7 @@ func initK9sFlags() {
 		k9sFlags.ReadOnly,
 		"readonly",
 		false,
-		"Disable all commands that modify the cluster",
+		"Toggles readOnly mode by overriding configuration setting",
 	)
 	rootCmd.Flags().BoolVar(
 		k9sFlags.Crumbsless,

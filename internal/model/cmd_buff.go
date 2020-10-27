@@ -1,25 +1,37 @@
 package model
 
-const maxBuff = 10
+import (
+	"context"
+	"time"
+)
 
 const (
+	maxBuff = 10
+
+	keyEntryDelay = 300 * time.Millisecond
+
 	// CommandBuffer represents a command buffer.
 	CommandBuffer BufferKind = 1 << iota
 	// FilterBuffer represents a filter buffer.
 	FilterBuffer
 )
 
-// BufferKind indicates a buffer type
-type BufferKind int8
+type (
+	// BufferKind indicates a buffer type
+	BufferKind int8
 
-// BuffWatcher represents a command buffer listener.
-type BuffWatcher interface {
-	// Changed indicates the buffer was changed.
-	BufferChanged(s string)
+	// BuffWatcher represents a command buffer listener.
+	BuffWatcher interface {
+		// BufferCompleted indicates input was accepted.
+		BufferCompleted(s string)
 
-	// Active indicates the buff activity changed.
-	BufferActive(state bool, kind BufferKind)
-}
+		// BufferChanged indicates the buffer was changed.
+		BufferChanged(s string)
+
+		// BufferActive indicates the buff activity changed.
+		BufferActive(state bool, kind BufferKind)
+	}
+)
 
 // CmdBuff represents user command input.
 type CmdBuff struct {
@@ -28,6 +40,7 @@ type CmdBuff struct {
 	hotKey    rune
 	kind      BufferKind
 	active    bool
+	cancel    context.CancelFunc
 }
 
 // NewCmdBuff returns a new command buffer.
@@ -64,13 +77,24 @@ func (c *CmdBuff) GetText() string {
 // SetText initializes the buffer with a command.
 func (c *CmdBuff) SetText(cmd string) {
 	c.buff = []rune(cmd)
-	c.fireBufferChanged()
+	c.fireBufferCompleted()
 }
 
 // Add adds a new character to the buffer.
 func (c *CmdBuff) Add(r rune) {
 	c.buff = append(c.buff, r)
 	c.fireBufferChanged()
+	if c.cancel != nil {
+		return
+	}
+	var ctx context.Context
+	ctx, c.cancel = context.WithTimeout(context.Background(), keyEntryDelay)
+
+	go func() {
+		<-ctx.Done()
+		c.fireBufferCompleted()
+		c.cancel = nil
+	}()
 }
 
 // Delete removes the last character from the buffer.
@@ -80,13 +104,25 @@ func (c *CmdBuff) Delete() {
 	}
 	c.buff = c.buff[:len(c.buff)-1]
 	c.fireBufferChanged()
+	if c.cancel != nil {
+		return
+	}
+
+	var ctx context.Context
+	ctx, c.cancel = context.WithTimeout(context.Background(), 800*time.Millisecond)
+
+	go func() {
+		<-ctx.Done()
+		c.fireBufferCompleted()
+		c.cancel = nil
+	}()
 }
 
 // ClearText clears out command buffer.
 func (c *CmdBuff) ClearText(fire bool) {
 	c.buff = make([]rune, 0, maxBuff)
 	if fire {
-		c.fireBufferChanged()
+		c.fireBufferCompleted()
 	}
 }
 
@@ -94,6 +130,7 @@ func (c *CmdBuff) ClearText(fire bool) {
 func (c *CmdBuff) Reset() {
 	c.ClearText(true)
 	c.SetActive(false)
+	c.fireBufferCompleted()
 }
 
 // Empty returns true if no cmd, false otherwise.
@@ -123,6 +160,12 @@ func (c *CmdBuff) RemoveListener(l BuffWatcher) {
 		return
 	}
 	c.listeners = append(c.listeners[:victim], c.listeners[victim+1:]...)
+}
+
+func (c *CmdBuff) fireBufferCompleted() {
+	for _, l := range c.listeners {
+		l.BufferCompleted(c.GetText())
+	}
 }
 
 func (c *CmdBuff) fireBufferChanged() {

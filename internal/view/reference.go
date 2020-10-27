@@ -22,7 +22,7 @@ func NewReference(gvr client.GVR) ResourceViewer {
 	r.GetTable().SetColorerFn(render.Reference{}.ColorerFunc())
 	r.GetTable().SetBorderFocusColor(tcell.ColorMediumSpringGreen)
 	r.GetTable().SetSelectedStyle(tcell.ColorWhite, tcell.ColorMediumSpringGreen, tcell.AttrNone)
-	r.SetBindKeysFn(r.bindKeys)
+	r.AddBindKeysFn(r.bindKeys)
 
 	return &r
 }

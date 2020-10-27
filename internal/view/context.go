@@ -23,7 +23,7 @@ func NewContext(gvr client.GVR) ResourceViewer {
 	}
 	c.GetTable().SetEnterFn(c.useCtx)
 	c.GetTable().SetColorerFn(render.Context{}.ColorerFunc())
-	c.SetBindKeysFn(c.bindKeys)
+	c.AddBindKeysFn(c.bindKeys)
 
 	return &c
 }

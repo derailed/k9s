@@ -114,8 +114,6 @@ func (a *App) Init(version string, rate int) error {
 		return err
 	}
 	a.CmdBuff().SetSuggestionFn(a.suggestCommand())
-	// BOZO!!
-	// a.CmdBuff().AddListener(a)
 
 	a.layout(ctx, version)
 	a.initSignals()
@@ -140,13 +138,11 @@ func (a *App) layout(ctx context.Context, version string) {
 
 func (a *App) initSignals() {
 	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGTERM, syscall.SIGABRT, syscall.SIGINT, syscall.SIGHUP, syscall.SIGQUIT)
+	signal.Notify(sig, syscall.SIGHUP)
 
 	go func(sig chan os.Signal) {
-		s := <-sig
-		if s == syscall.SIGHUP {
-			os.Exit(0)
-		}
+		<-sig
+		os.Exit(0)
 	}(sig)
 }
 

@@ -96,7 +96,7 @@ func TestK8sEnv(t *testing.T) {
 	assert.Equal(t, cl, env["CLUSTER"])
 	assert.Equal(t, ctx, env["CONTEXT"])
 	assert.Equal(t, u, env["USER"])
-	assert.Equal(t, "n/a", env["GROUPS"])
+	assert.Equal(t, render.NAValue, env["GROUPS"])
 	assert.Equal(t, cfg, env["KUBECONFIG"])
 }
 
@@ -123,7 +123,7 @@ func TestK9sEnv(t *testing.T) {
 	assert.Equal(t, cl, env["CLUSTER"])
 	assert.Equal(t, ctx, env["CONTEXT"])
 	assert.Equal(t, u, env["USER"])
-	assert.Equal(t, "n/a", env["GROUPS"])
+	assert.Equal(t, render.NAValue, env["GROUPS"])
 	assert.Equal(t, cfg, env["KUBECONFIG"])
 	assert.Equal(t, "fred", env["NAMESPACE"])
 	assert.Equal(t, "blee", env["NAME"])

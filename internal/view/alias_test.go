@@ -35,6 +35,7 @@ func TestAliasSearch(t *testing.T) {
 	v.App().Prompt().SendStrokes("blee")
 
 	assert.Equal(t, 3, v.GetTable().GetColumnCount())
+	time.Sleep(1_000 * time.Millisecond)
 	assert.Equal(t, 2, v.GetTable().GetRowCount())
 }
 
@@ -62,6 +63,8 @@ type buffL struct {
 func (b *buffL) BufferChanged(s string) {
 	b.changed++
 }
+func (b *buffL) BufferCompleted(s string) {}
+
 func (b *buffL) BufferActive(state bool, kind model.BufferKind) {
 	b.active++
 }

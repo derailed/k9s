@@ -17,13 +17,13 @@ func NewDaemonSet(gvr client.GVR) ResourceViewer {
 	d := DaemonSet{
 		ResourceViewer: NewPortForwardExtender(
 			NewRestartExtender(
-				NewSetImageExtender(
+				NewImageExtender(
 					NewLogsExtender(NewBrowser(gvr), nil),
 				),
 			),
 		),
 	}
-	d.SetBindKeysFn(d.bindKeys)
+	d.AddBindKeysFn(d.bindKeys)
 	d.GetTable().SetEnterFn(d.showPods)
 	d.GetTable().SetColorerFn(render.DaemonSet{}.ColorerFunc())
 

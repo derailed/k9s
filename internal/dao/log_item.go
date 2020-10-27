@@ -80,7 +80,7 @@ var (
 )
 
 // Render returns a log line as string.
-func (l *LogItem) Render(c int, showTime bool) []byte {
+func (l *LogItem) Render(paint int, showTime bool) []byte {
 	bb := make([]byte, 0, 200)
 	if showTime {
 		t := l.Timestamp
@@ -92,11 +92,11 @@ func (l *LogItem) Render(c int, showTime bool) []byte {
 	}
 
 	if l.Pod != "" {
-		bb = append(bb, color.ANSIColorize(l.Pod, c)...)
+		bb = append(bb, color.ANSIColorize(l.Pod, paint)...)
 		bb = append(bb, ':')
 	}
 	if !l.SingleContainer && l.Container != "" {
-		bb = append(bb, color.ANSIColorize(l.Container, c)...)
+		bb = append(bb, color.ANSIColorize(l.Container, paint)...)
 		bb = append(bb, ' ')
 	}
 
@@ -122,10 +122,20 @@ func colorFor(n string) int {
 type LogItems []*LogItem
 
 // Lines returns a collection of log lines.
-func (l LogItems) Lines() []string {
+func (l LogItems) Lines(showTime bool) [][]byte {
+	ll := make([][]byte, len(l))
+	for i, item := range l {
+		ll[i] = item.Render(0, showTime)
+	}
+
+	return ll
+}
+
+// StrLines returns a collection of log lines.
+func (l LogItems) StrLines(showTime bool) []string {
 	ll := make([]string, len(l))
 	for i, item := range l {
-		ll[i] = string(item.Render(0, false))
+		ll[i] = string(item.Render(0, showTime))
 	}
 
 	return ll
@@ -154,15 +164,15 @@ func (l LogItems) DumpDebug(m string) {
 }
 
 // Filter filters out log items based on given filter.
-func (l LogItems) Filter(q string) ([]int, [][]int, error) {
+func (l LogItems) Filter(q string, showTime bool) ([]int, [][]int, error) {
 	if q == "" {
 		return nil, nil, nil
 	}
 	if IsFuzzySelector(q) {
-		mm, ii := l.fuzzyFilter(strings.TrimSpace(q[2:]))
+		mm, ii := l.fuzzyFilter(strings.TrimSpace(q[2:]), showTime)
 		return mm, ii, nil
 	}
-	matches, indices, err := l.filterLogs(q)
+	matches, indices, err := l.filterLogs(q, showTime)
 	if err != nil {
 		log.Error().Err(err).Msgf("Logs filter failed")
 		return nil, nil, err
@@ -172,10 +182,10 @@ func (l LogItems) Filter(q string) ([]int, [][]int, error) {
 
 var fuzzyRx = regexp.MustCompile(`\A\-f`)
 
-func (l LogItems) fuzzyFilter(q string) ([]int, [][]int) {
+func (l LogItems) fuzzyFilter(q string, showTime bool) ([]int, [][]int) {
 	q = strings.TrimSpace(q)
 	matches, indices := make([]int, 0, len(l)), make([][]int, 0, 10)
-	mm := fuzzy.Find(q, l.Lines())
+	mm := fuzzy.Find(q, l.StrLines(showTime))
 	for _, m := range mm {
 		matches = append(matches, m.Index)
 		indices = append(indices, m.MatchedIndexes)
@@ -184,14 +194,14 @@ func (l LogItems) fuzzyFilter(q string) ([]int, [][]int) {
 	return matches, indices
 }
 
-func (l LogItems) filterLogs(q string) ([]int, [][]int, error) {
+func (l LogItems) filterLogs(q string, showTime bool) ([]int, [][]int, error) {
 	rx, err := regexp.Compile(`(?i)` + q)
 	if err != nil {
 		return nil, nil, err
 	}
 	matches, indices := make([]int, 0, len(l)), make([][]int, 0, 10)
-	for i, line := range l.Lines() {
-		if locs := rx.FindStringIndex(line); locs != nil {
+	for i, line := range l.Lines(showTime) {
+		if locs := rx.FindIndex(line); locs != nil {
 			matches = append(matches, i)
 			ii := make([]int, 0, 10)
 			for i := 0; i < len(locs); i += 2 {

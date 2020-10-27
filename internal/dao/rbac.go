@@ -174,7 +174,7 @@ func parseRules(ns, binding string, rules []rbacv1.PolicyRule) render.Policies {
 			if nres[0] != '/' {
 				nres = "/" + nres
 			}
-			pp = pp.Upsert(render.NewPolicyRes(ns, binding, nres, "n/a", rule.Verbs))
+			pp = pp.Upsert(render.NewPolicyRes(ns, binding, nres, client.NA, rule.Verbs))
 		}
 	}
 

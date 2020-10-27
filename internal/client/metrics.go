@@ -249,11 +249,12 @@ func (m *MetricsServer) PodsMetrics(pods *mv1beta1.PodMetricsList, mmx PodsMetri
 // ----------------------------------------------------------------------------
 // Helpers...
 
-const megaByte = 1024 * 1024
+// MegaByte represents a megabyte.
+const MegaByte = 1024 * 1024
 
 // ToMB converts bytes to megabytes.
 func ToMB(v int64) int64 {
-	return v / megaByte
+	return v / MegaByte
 }
 
 // ToPercentage computes percentage.

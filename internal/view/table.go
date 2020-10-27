@@ -20,7 +20,7 @@ type Table struct {
 	app        *App
 	enterFn    EnterFunc
 	envFn      EnvFunc
-	bindKeysFn BindKeysFunc
+	bindKeysFn []BindKeysFunc
 }
 
 // NewTable returns a new viewer.
@@ -73,8 +73,10 @@ func (t *Table) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 // Name returns the table name.
 func (t *Table) Name() string { return t.GVR().R() }
 
-// SetBindKeysFn adds additional key bindings.
-func (t *Table) SetBindKeysFn(f BindKeysFunc) { t.bindKeysFn = f }
+// AddBindKeysFn adds additional key bindings.
+func (t *Table) AddBindKeysFn(f BindKeysFunc) {
+	t.bindKeysFn = append(t.bindKeysFn, f)
+}
 
 // SetEnvFn sets a function to pull viewer env vars for plugins.
 func (t *Table) SetEnvFn(f EnvFunc) { t.envFn = f }
@@ -125,10 +127,13 @@ func (t *Table) SetEnterFn(f EnterFunc) {
 // SetExtraActionsFn specifies custom keyboard behavior.
 func (t *Table) SetExtraActionsFn(BoostActionsFunc) {}
 
-// BufferChanged indicates the buffer was changed.
-func (t *Table) BufferChanged(s string) {
+// BufferCompleted indicates input was accepted.
+func (t *Table) BufferCompleted(s string) {
 	t.Filter(s)
 }
+
+// BufferChanged indicates the buffer was changed.
+func (t *Table) BufferChanged(s string) {}
 
 // BufferActive indicates the buff activity changed.
 func (t *Table) BufferActive(state bool, k model.BufferKind) {
