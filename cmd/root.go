@@ -115,6 +115,10 @@ func loadConfiguration() *config.Config {
 		k9sCfg.K9s.OverrideHeadless(*k9sFlags.Headless)
 	}
 
+	if k9sFlags.Crumbsless != nil {
+		k9sCfg.K9s.OverrideCrumbsless(*k9sFlags.Crumbsless)
+	}
+
 	if k9sFlags.ReadOnly != nil {
 		k9sCfg.K9s.OverrideReadOnly(*k9sFlags.ReadOnly)
 	}
