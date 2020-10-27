@@ -1,0 +1,6 @@
+k9s:
+  models:
+    v1/nodes:
+      columns:
+        - name: ZONE
+          path: metadata.labels['failure-domain.beta.kubernetes.io/zone']

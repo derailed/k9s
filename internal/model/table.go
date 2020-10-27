@@ -3,6 +3,9 @@ package model
 import (
 	"context"
 	"fmt"
+	"github.com/derailed/k9s/internal/config"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/kubectl/pkg/util/fieldpath"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -29,15 +32,16 @@ type TableListener interface {
 
 // Table represents a table model.
 type Table struct {
-	gvr         client.GVR
-	namespace   string
-	data        *render.TableData
-	listeners   []TableListener
-	inUpdate    int32
-	refreshRate time.Duration
-	instance    string
-	mx          sync.RWMutex
-	labelFilter string
+	gvr          client.GVR
+	namespace    string
+	data         *render.TableData
+	listeners    []TableListener
+	inUpdate     int32
+	refreshRate  time.Duration
+	instance     string
+	mx           sync.RWMutex
+	labelFilter  string
+	modelSetting *config.ModelSetting
 }
 
 // NewTable returns a new table model.
@@ -250,6 +254,9 @@ func (t *Table) reconcile(ctx context.Context) error {
 		return err
 	}
 
+	currentModelSetting := t.modelSetting
+	header := customizeHeader(meta.Renderer.Header(t.namespace), currentModelSetting)
+
 	var rows render.Rows
 	if len(oo) > 0 {
 		if _, ok := meta.Renderer.(*render.Generic); ok {
@@ -258,12 +265,12 @@ func (t *Table) reconcile(ctx context.Context) error {
 				return fmt.Errorf("expecting a meta table but got %T", oo[0])
 			}
 			rows = make(render.Rows, len(table.Rows))
-			if err := genericHydrate(t.namespace, table, rows, meta.Renderer); err != nil {
+			if err := genericHydrate(t.namespace, table, rows, meta.Renderer, currentModelSetting); err != nil {
 				return err
 			}
 		} else {
 			rows = make(render.Rows, len(oo))
-			if err := hydrate(t.namespace, oo, rows, meta.Renderer); err != nil {
+			if err := hydrate(t.namespace, oo, rows, meta.Renderer, currentModelSetting); err != nil {
 				return err
 			}
 		}
@@ -277,13 +284,27 @@ func (t *Table) reconcile(ctx context.Context) error {
 		t.data.Clear()
 	}
 	t.data.Update(rows)
-	t.data.SetHeader(t.namespace, meta.Renderer.Header(t.namespace))
+	t.data.SetHeader(t.namespace, header)
 
 	if len(t.data.Header) == 0 {
 		return fmt.Errorf("fail to list resource %s", t.gvr)
 	}
 
 	return nil
+}
+
+func customizeHeader(header render.Header, setting *config.ModelSetting) render.Header {
+	if setting == nil {
+		return header
+	}
+
+	for _, col := range setting.Columns {
+		header = append(header, render.HeaderColumn{
+			Name: col.Name,
+			// BOZO fill the rest of the settings
+		})
+	}
+	return header
 }
 
 func (t *Table) getMeta(ctx context.Context) (ResourceMeta, error) {
@@ -327,20 +348,74 @@ func (t *Table) fireTableLoadFailed(err error) {
 	}
 }
 
+func (t *Table) Init(ctx context.Context) {
+	if cfg, ok := ctx.Value(internal.KeyModelConfig).(*config.CustomModel); ok && cfg != nil {
+		cfg.AddListener(t.gvr.String(), t)
+	}
+}
+
+func (t *Table) ModelSettingsChanged(newSetting config.ModelSetting) {
+	t.modelSetting = &newSetting
+	// BOZO should tell model to reload, but missing proper context for that
+}
+
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func hydrate(ns string, oo []runtime.Object, rr render.Rows, re Renderer) error {
+func hydrate(ns string, oo []runtime.Object, rr render.Rows, re Renderer, setting *config.ModelSetting) error {
 	for i, o := range oo {
 		if err := re.Render(o, ns, &rr[i]); err != nil {
 			return err
 		}
+		customizeRow(setting, o, &rr[i])
 	}
 
 	return nil
 }
 
-func genericHydrate(ns string, table *metav1beta1.Table, rr render.Rows, re Renderer) error {
+func customizeRow(setting *config.ModelSetting, o interface{}, row *render.Row) {
+	if setting == nil {
+		return
+	}
+
+	if u, ok := tryExtractObject(o); ok {
+		for _, customColumn := range setting.Columns {
+			row.Fields = append(row.Fields, extractFieldOrErrorMsg(u, customColumn.FieldPath))
+		}
+	} else {
+		for range setting.Columns {
+			row.Fields = append(row.Fields, "<unsupported type>")
+		}
+	}
+}
+
+func tryExtractObject(o interface{}) (v1.Object, bool) {
+	switch oo := o.(type) {
+	case v1.Object:
+		return oo, true
+	case render.RenderableRaw:
+		return oo.Object(), true
+	case v1.TableRow:
+		// TODO find a way to test this
+		if ooo, ok := oo.Object.Object.(v1.Object); ok {
+			return ooo, true
+		} else {
+			return nil, false
+		}
+	default:
+		return nil, false
+	}
+}
+
+func extractFieldOrErrorMsg(obj v1.Object, fieldPath string) string {
+	fieldValue, err := fieldpath.ExtractFieldPathAsString(obj, fieldPath)
+	if err != nil {
+		return fmt.Sprintf("err: %s", err.Error())
+	}
+	return fieldValue
+}
+
+func genericHydrate(ns string, table *metav1beta1.Table, rr render.Rows, re Renderer, setting *config.ModelSetting) error {
 	gr, ok := re.(*render.Generic)
 	if !ok {
 		return fmt.Errorf("expecting generic renderer but got %T", re)
@@ -350,6 +425,7 @@ func genericHydrate(ns string, table *metav1beta1.Table, rr render.Rows, re Rend
 		if err := gr.Render(row, ns, &rr[i]); err != nil {
 			return err
 		}
+		customizeRow(setting, row, &rr[i])
 	}
 
 	return nil

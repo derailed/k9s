@@ -255,6 +255,9 @@ func (a *App) Resume() {
 	if err := a.CustomViewsWatcher(ctx, a); err != nil {
 		log.Error().Err(err).Msgf("CustomView watcher failed")
 	}
+	if err := a.CustomModelsWatcher(ctx, a); err != nil {
+		log.Error().Err(err).Msgf("CustomModel watcher failed")
+	}
 }
 
 func (a *App) clusterUpdater(ctx context.Context) {

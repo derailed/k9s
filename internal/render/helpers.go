@@ -16,6 +16,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
+// RenderableRaw is used for rendering custom columns from CustomModels
+type RenderableRaw interface {
+	Object() metav1.Object
+}
+
 var durationRx = regexp.MustCompile(`\A(\d*d)*?(\d*h)*?(\d*m)*?(\d*s)*?\z`)
 
 func durationToSeconds(duration string) string {
