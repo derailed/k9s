@@ -235,6 +235,10 @@ func (s *Sanitizer) filter(root *xray.TreeNode) *xray.TreeNode {
 		return root.Filter(q, fuzzyFilter)
 	}
 
+	if ui.IsInverseSelector(q) {
+		return root.Filter(q, rxInverseFilter)
+	}
+
 	return root.Filter(q, rxFilter)
 }
 
