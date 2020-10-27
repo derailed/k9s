@@ -266,6 +266,8 @@ K9s uses aliases to navigate most K8s resources.
     enableMouse: false
     # Set to true to hide K9s header. Default false
     headless: false
+    # Set to true to hide K9s footer. Default false
+    crumbsless: false
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
     readOnly: false
     # Toggles icons display as not all terminal support these chars.

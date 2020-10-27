@@ -217,6 +217,12 @@ func initK9sFlags() {
 		false,
 		"Disable all commands that modify the cluster",
 	)
+	rootCmd.Flags().BoolVar(
+		k9sFlags.Crumbsless,
+		"crumbsless",
+		false,
+		"Turn K9s crumbs off",
+	)
 }
 
 func initK8sFlags() {
