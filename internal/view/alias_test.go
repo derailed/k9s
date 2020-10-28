@@ -116,8 +116,8 @@ func (t *mockModel) SetNamespace(string)                {}
 func (t *mockModel) ToggleToast()                       {}
 func (t *mockModel) AddListener(model.TableListener)    {}
 func (t *mockModel) RemoveListener(model.TableListener) {}
-func (t *mockModel) Watch(context.Context)              {}
-func (t *mockModel) Refresh(context.Context)            {}
+func (t *mockModel) Watch(context.Context) error        { return nil }
+func (t *mockModel) Refresh(context.Context) error      { return nil }
 func (t *mockModel) Get(context.Context, string) (runtime.Object, error) {
 
 	return nil, nil

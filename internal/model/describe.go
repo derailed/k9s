@@ -26,7 +26,7 @@ type ResourceViewer interface {
 	Filter(string)
 	ClearFilter()
 	Peek() []string
-	Watch(context.Context)
+	Watch(context.Context) error
 	AddListener(ResourceViewerListener)
 	RemoveListener(ResourceViewerListener)
 }
@@ -117,9 +117,12 @@ func (d *Describe) Peek() []string {
 }
 
 // Watch watches for describe data changes.
-func (d *Describe) Watch(ctx context.Context) {
-	d.refresh(ctx)
+func (d *Describe) Watch(ctx context.Context) error {
+	if err := d.refresh(ctx); err != nil {
+		return err
+	}
 	go d.updater(ctx)
+	return nil
 }
 
 func (d *Describe) updater(ctx context.Context) {

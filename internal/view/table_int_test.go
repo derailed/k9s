@@ -97,14 +97,14 @@ func (t *mockTableModel) SetLabelFilter(string)              {}
 func (t *mockTableModel) Empty() bool                        { return false }
 func (t *mockTableModel) HasMetrics() bool                   { return true }
 func (t *mockTableModel) Peek() render.TableData             { return makeTableData() }
-func (t *mockTableModel) Refresh(context.Context)            {}
+func (t *mockTableModel) Refresh(context.Context) error      { return nil }
 func (t *mockTableModel) ClusterWide() bool                  { return false }
 func (t *mockTableModel) GetNamespace() string               { return "blee" }
 func (t *mockTableModel) SetNamespace(string)                {}
 func (t *mockTableModel) ToggleToast()                       {}
 func (t *mockTableModel) AddListener(model.TableListener)    {}
 func (t *mockTableModel) RemoveListener(model.TableListener) {}
-func (t *mockTableModel) Watch(context.Context)              {}
+func (t *mockTableModel) Watch(context.Context) error        { return nil }
 func (t *mockTableModel) Get(context.Context, string) (runtime.Object, error) {
 	return nil, nil
 }

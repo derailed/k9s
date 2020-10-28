@@ -66,14 +66,14 @@ func (t *mockModel) SetLabelFilter(string)              {}
 func (t *mockModel) Empty() bool                        { return false }
 func (t *mockModel) HasMetrics() bool                   { return true }
 func (t *mockModel) Peek() render.TableData             { return makeTableData() }
-func (t *mockModel) Refresh(context.Context)            {}
+func (t *mockModel) Refresh(context.Context) error      { return nil }
 func (t *mockModel) ClusterWide() bool                  { return false }
 func (t *mockModel) GetNamespace() string               { return "blee" }
 func (t *mockModel) SetNamespace(string)                {}
 func (t *mockModel) ToggleToast()                       {}
 func (t *mockModel) AddListener(model.TableListener)    {}
 func (t *mockModel) RemoveListener(model.TableListener) {}
-func (t *mockModel) Watch(context.Context)              {}
+func (t *mockModel) Watch(context.Context) error        { return nil }
 func (t *mockModel) Get(ctx context.Context, path string) (runtime.Object, error) {
 	return nil, nil
 }

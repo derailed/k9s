@@ -135,7 +135,7 @@ func (m *Meta) LoadResources(f Factory) error {
 	return nil
 }
 
-// BOZO!! Need contermeasure for direct commands!
+// BOZO!! Need countermeasures for direct commands!
 func loadNonResource(m ResourceMetas) {
 	loadK9s(m)
 	loadRBAC(m)

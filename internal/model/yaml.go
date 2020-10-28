@@ -108,12 +108,13 @@ func (y *YAML) Peek() []string {
 }
 
 // Watch watches for YAML changes.
-func (y *YAML) Watch(ctx context.Context) {
+func (y *YAML) Watch(ctx context.Context) error {
 	if err := y.refresh(ctx); err != nil {
-		log.Error().Err(err).Msgf("YAML Refresh failed")
-		return
+		return err
 	}
 	go y.updater(ctx)
+
+	return nil
 }
 
 func (y *YAML) updater(ctx context.Context) {
@@ -148,8 +149,6 @@ func (y *YAML) refresh(ctx context.Context) error {
 	defer atomic.StoreInt32(&y.inUpdate, 0)
 
 	if err := y.reconcile(ctx); err != nil {
-		log.Error().Err(err).Msgf("reconcile failed %q", y.gvr)
-		y.fireResourceFailed(err)
 		return err
 	}
 
