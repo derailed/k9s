@@ -30,7 +30,6 @@ var ExitStatus = ""
 const (
 	splashDelay      = 1 * time.Second
 	clusterRefresh   = 15 * time.Second
-	maxConRetry      = 15
 	clusterInfoWidth = 50
 	clusterInfoPad   = 15
 )
@@ -304,13 +303,13 @@ func (a *App) refreshCluster() {
 		c.Stop()
 	}
 
-	count := atomic.LoadInt32(&a.conRetry)
-	if count >= maxConRetry {
+	count, maxConnRetry := atomic.LoadInt32(&a.conRetry), int32(a.Config.K9s.MaxConnRetry)
+	if count >= maxConnRetry {
 		ExitStatus = fmt.Sprintf("Lost K8s connection (%d). Bailing out!", count)
 		a.BailOut()
 	}
 	if count > 0 {
-		log.Warn().Msgf("Conn check failed (%d/%d)", count, maxConRetry)
+		log.Warn().Msgf("Conn check failed (%d/%d)", count, maxConnRetry)
 		a.Status(model.FlashWarn, fmt.Sprintf("Dial K8s failed (%d)", count))
 		return
 	}
