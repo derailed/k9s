@@ -69,7 +69,7 @@ func TestTableViewFilter(t *testing.T) {
 	v.CmdBuff().SetActive(true)
 	v.CmdBuff().SetText("blee")
 
-	assert.Equal(t, 2, v.GetRowCount())
+	assert.Equal(t, 3, v.GetRowCount())
 }
 
 func TestTableViewSort(t *testing.T) {

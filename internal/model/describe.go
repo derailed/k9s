@@ -1,0 +1,211 @@
+package model
+
+import (
+	"context"
+	"fmt"
+	"reflect"
+	"regexp"
+	"strings"
+	"sync/atomic"
+	"time"
+
+	backoff "github.com/cenkalti/backoff/v4"
+	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
+	"github.com/rs/zerolog/log"
+	"github.com/sahilm/fuzzy"
+)
+
+type ResourceViewerListener interface {
+	ResourceChanged(lines []string, matches fuzzy.Matches)
+	ResourceFailed(error)
+}
+
+type ResourceViewer interface {
+	GetPath() string
+	Filter(string)
+	ClearFilter()
+	Peek() []string
+	Watch(context.Context)
+	AddListener(ResourceViewerListener)
+	RemoveListener(ResourceViewerListener)
+}
+
+// Describe tracks describeable resources.
+type Describe struct {
+	gvr         client.GVR
+	inUpdate    int32
+	path        string
+	query       string
+	lines       []string
+	refreshRate time.Duration
+	listeners   []ResourceViewerListener
+}
+
+// NewDescribe returns a new describe resource model.
+func NewDescribe(gvr client.GVR, path string) *Describe {
+	return &Describe{
+		gvr:         gvr,
+		path:        path,
+		refreshRate: 2 * time.Second,
+	}
+}
+
+// GetPath returns the active resource path.
+func (d *Describe) GetPath() string {
+	return d.path
+}
+
+// Filter filters the model.
+func (d *Describe) Filter(q string) {
+	d.query = q
+	d.filterChanged(d.lines)
+}
+
+func (d *Describe) filterChanged(lines []string) {
+	d.fireResourceChanged(lines, d.filter(d.query, lines))
+}
+
+func (d *Describe) filter(q string, lines []string) fuzzy.Matches {
+	if q == "" {
+		return nil
+	}
+	if dao.IsFuzzySelector(q) {
+		return d.fuzzyFilter(strings.TrimSpace(q[2:]), lines)
+	}
+	return d.rxFilter(q, lines)
+}
+
+func (*Describe) fuzzyFilter(q string, lines []string) fuzzy.Matches {
+	return fuzzy.Find(q, lines)
+}
+
+func (*Describe) rxFilter(q string, lines []string) fuzzy.Matches {
+	rx, err := regexp.Compile(`(?i)` + q)
+	if err != nil {
+		return nil
+	}
+	matches := make(fuzzy.Matches, 0, len(lines))
+	for i, l := range lines {
+		if loc := rx.FindStringIndex(l); len(loc) == 2 {
+			matches = append(matches, fuzzy.Match{Str: q, Index: i, MatchedIndexes: loc})
+		}
+	}
+
+	return matches
+}
+
+func (d *Describe) fireResourceChanged(lines []string, matches fuzzy.Matches) {
+	for _, l := range d.listeners {
+		l.ResourceChanged(lines, matches)
+	}
+}
+
+func (d *Describe) fireResourceFailed(err error) {
+	for _, l := range d.listeners {
+		l.ResourceFailed(err)
+	}
+}
+
+// ClearFilter clear out the filter
+func (d *Describe) ClearFilter() {
+}
+
+// Peek returns current model state.
+func (d *Describe) Peek() []string {
+	return d.lines
+}
+
+// Watch watches for describe data changes.
+func (d *Describe) Watch(ctx context.Context) {
+	d.refresh(ctx)
+	go d.updater(ctx)
+}
+
+func (d *Describe) updater(ctx context.Context) {
+	defer log.Debug().Msgf("Describe canceled -- %q", d.gvr)
+
+	bf := backoff.NewExponentialBackOff()
+	bf.InitialInterval, bf.MaxElapsedTime = initRefreshRate, maxRetryInterval
+	rate := initRefreshRate
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case <-time.After(rate):
+			rate = d.refreshRate
+			err := backoff.Retry(func() error {
+				return d.refresh(ctx)
+			}, backoff.WithContext(bf, ctx))
+			if err != nil {
+				log.Error().Err(err).Msgf("Retry failed")
+				d.fireResourceFailed(err)
+				return
+			}
+		}
+	}
+}
+func (d *Describe) refresh(ctx context.Context) error {
+	if !atomic.CompareAndSwapInt32(&d.inUpdate, 0, 1) {
+		log.Debug().Msgf("Dropping update...")
+		return nil
+	}
+	defer atomic.StoreInt32(&d.inUpdate, 0)
+
+	if err := d.reconcile(ctx); err != nil {
+		log.Error().Err(err).Msgf("reconcile failed %q", d.gvr)
+		d.fireResourceFailed(err)
+		return err
+	}
+
+	return nil
+}
+
+func (d *Describe) reconcile(ctx context.Context) error {
+	s, err := d.describe(ctx, d.gvr, d.path)
+	if err != nil {
+		return err
+	}
+	lines := strings.Split(s, "\n")
+	if reflect.DeepEqual(lines, d.lines) {
+		return nil
+	}
+	d.lines = lines
+	d.fireResourceChanged(d.lines, d.filter(d.query, d.lines))
+
+	return nil
+}
+
+// Describe describes a given resource.
+func (d *Describe) describe(ctx context.Context, gvr client.GVR, path string) (string, error) {
+	meta, err := getMeta(ctx, gvr)
+	if err != nil {
+		return "", err
+	}
+	desc, ok := meta.DAO.(dao.Describer)
+	if !ok {
+		return "", fmt.Errorf("no describer for %q", meta.DAO.GVR())
+	}
+
+	return desc.Describe(path)
+}
+
+// AddListener adds a new model listener.
+func (d *Describe) AddListener(l ResourceViewerListener) {
+	d.listeners = append(d.listeners, l)
+}
+
+// RemoveListener delete a listener from the list.
+func (d *Describe) RemoveListener(l ResourceViewerListener) {
+	victim := -1
+	for i, lis := range d.listeners {
+		if lis == l {
+			victim = i
+			break
+		}
+	}
+
+	if victim >= 0 {
+		d.listeners = append(d.listeners[:victim], d.listeners[victim+1:]...)
+	}
+}

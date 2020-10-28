@@ -230,18 +230,10 @@ func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	ctx := b.defaultContext()
-	raw, err := b.GetModel().ToYAML(ctx, path)
-	if err != nil {
-		b.App().Flash().Errf("unable to get resource %q -- %s", b.GVR(), err)
-		return nil
+	v := NewLiveView(b.app, "YAML", model.NewYAML(b.GVR(), path))
+	if err := v.app.inject(v); err != nil {
+		v.app.Flash().Err(err)
 	}
-
-	details := NewDetails(b.app, "YAML", path, true).Update(raw)
-	if err := b.App().inject(details); err != nil {
-		b.App().Flash().Err(err)
-	}
-
 	return nil
 }
 

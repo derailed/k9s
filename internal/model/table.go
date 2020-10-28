@@ -51,7 +51,9 @@ func NewTable(gvr client.GVR) *Table {
 
 // SetLabelFilter sets the labels filter.
 func (t *Table) SetLabelFilter(f string) {
+	t.mx.Lock()
 	t.labelFilter = f
+	t.mx.Unlock()
 }
 
 // SetInstance sets a single entry table.
@@ -94,7 +96,7 @@ func (t *Table) Refresh(ctx context.Context) {
 
 // Get returns a resource instance if found, else an error.
 func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
-	meta, err := t.getMeta(ctx)
+	meta, err := getMeta(ctx, t.gvr)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +106,7 @@ func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
 
 // Delete deletes a resource.
 func (t *Table) Delete(ctx context.Context, path string, cascade, force bool) error {
-	meta, err := t.getMeta(ctx)
+	meta, err := getMeta(ctx, t.gvr)
 	if err != nil {
 		return err
 	}
@@ -119,7 +121,7 @@ func (t *Table) Delete(ctx context.Context, path string, cascade, force bool) er
 
 // Describe describes a given resource.
 func (t *Table) Describe(ctx context.Context, path string) (string, error) {
-	meta, err := t.getMeta(ctx)
+	meta, err := getMeta(ctx, t.gvr)
 	if err != nil {
 		return "", err
 	}
@@ -134,7 +136,7 @@ func (t *Table) Describe(ctx context.Context, path string) (string, error) {
 
 // ToYAML returns a resource yaml.
 func (t *Table) ToYAML(ctx context.Context, path string) (string, error) {
-	meta, err := t.getMeta(ctx)
+	meta, err := getMeta(ctx, t.gvr)
 	if err != nil {
 		return "", err
 	}
@@ -144,7 +146,7 @@ func (t *Table) ToYAML(ctx context.Context, path string) (string, error) {
 		return "", fmt.Errorf("no describer for %q", meta.DAO.GVR())
 	}
 
-	return desc.ToYAML(path)
+	return desc.ToYAML(path, false)
 }
 
 // GetNamespace returns the model namespace.
@@ -232,7 +234,9 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 }
 
 func (t *Table) reconcile(ctx context.Context) error {
-	meta := t.resourceMeta()
+	t.mx.Lock()
+	defer t.mx.Unlock()
+	meta := resourceMeta(t.gvr)
 	if t.labelFilter != "" {
 		ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
 	}
@@ -269,8 +273,6 @@ func (t *Table) reconcile(ctx context.Context) error {
 		}
 	}
 
-	t.mx.Lock()
-	defer t.mx.Unlock()
 	// if labelSelector in place might as well clear the model data.
 	sel, ok := ctx.Value(internal.KeyLabels).(string)
 	if ok && sel != "" {
@@ -284,32 +286,6 @@ func (t *Table) reconcile(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func (t *Table) getMeta(ctx context.Context) (ResourceMeta, error) {
-	meta := t.resourceMeta()
-	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
-	if !ok {
-		return ResourceMeta{}, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
-	}
-	meta.DAO.Init(factory, t.gvr)
-
-	return meta, nil
-}
-
-func (t *Table) resourceMeta() ResourceMeta {
-	meta, ok := Registry[t.gvr.String()]
-	if !ok {
-		meta = ResourceMeta{
-			DAO:      &dao.Table{},
-			Renderer: &render.Generic{},
-		}
-	}
-	if meta.DAO == nil {
-		meta.DAO = &dao.Resource{}
-	}
-
-	return meta
 }
 
 func (t *Table) fireTableChanged(data render.TableData) {

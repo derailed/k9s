@@ -184,7 +184,7 @@ func (n *Node) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	raw, err := dao.ToYAML(o)
+	raw, err := dao.ToYAML(o, false)
 	if err != nil {
 		n.App().Flash().Errf("Unable to marshal resource %s", err)
 		return nil

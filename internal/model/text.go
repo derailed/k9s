@@ -8,6 +8,18 @@ import (
 	"github.com/sahilm/fuzzy"
 )
 
+type Filterable interface {
+	Filter(string)
+	ClearFilter()
+}
+
+type Textable interface {
+	Peek() []string
+	SetText(string)
+	AddListener(TextListener)
+	RemoveListener(TextListener)
+}
+
 // TextListener represents a text model listener.
 type TextListener interface {
 	// TextChanged notifies the model changed.

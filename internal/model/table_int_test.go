@@ -91,7 +91,7 @@ func TestTableMeta(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		ta := NewTable(client.NewGVR(u.gvr))
-		m := ta.resourceMeta()
+		m := resourceMeta(ta.gvr)
 
 		assert.Equal(t, u.accessor, m.DAO)
 		assert.Equal(t, u.renderer, m.Renderer)

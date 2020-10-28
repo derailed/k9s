@@ -2,13 +2,14 @@ package model
 
 import (
 	"context"
+	"sync"
 	"time"
 )
 
 const (
 	maxBuff = 10
 
-	keyEntryDelay = 300 * time.Millisecond
+	keyEntryDelay = 200 * time.Millisecond
 
 	// CommandBuffer represents a command buffer.
 	CommandBuffer BufferKind = 1 << iota
@@ -41,6 +42,7 @@ type CmdBuff struct {
 	kind      BufferKind
 	active    bool
 	cancel    context.CancelFunc
+	mx        sync.RWMutex
 }
 
 // NewCmdBuff returns a new command buffer.
@@ -82,6 +84,8 @@ func (c *CmdBuff) SetText(cmd string) {
 
 // Add adds a new character to the buffer.
 func (c *CmdBuff) Add(r rune) {
+	c.mx.Lock()
+	defer c.mx.Unlock()
 	c.buff = append(c.buff, r)
 	c.fireBufferChanged()
 	if c.cancel != nil {
@@ -92,13 +96,19 @@ func (c *CmdBuff) Add(r rune) {
 
 	go func() {
 		<-ctx.Done()
-		c.fireBufferCompleted()
-		c.cancel = nil
+		c.mx.Lock()
+		{
+			c.fireBufferCompleted()
+			c.cancel = nil
+		}
+		c.mx.Unlock()
 	}()
 }
 
 // Delete removes the last character from the buffer.
 func (c *CmdBuff) Delete() {
+	c.mx.Lock()
+	defer c.mx.Unlock()
 	if c.Empty() {
 		return
 	}
@@ -113,13 +123,19 @@ func (c *CmdBuff) Delete() {
 
 	go func() {
 		<-ctx.Done()
-		c.fireBufferCompleted()
-		c.cancel = nil
+		c.mx.Lock()
+		{
+			c.fireBufferCompleted()
+			c.cancel = nil
+		}
+		c.mx.Unlock()
 	}()
 }
 
 // ClearText clears out command buffer.
 func (c *CmdBuff) ClearText(fire bool) {
+	c.mx.Lock()
+	defer c.mx.Unlock()
 	c.buff = make([]rune, 0, maxBuff)
 	if fire {
 		c.fireBufferCompleted()
@@ -143,11 +159,16 @@ func (c *CmdBuff) Empty() bool {
 
 // AddListener registers a cmd buffer listener.
 func (c *CmdBuff) AddListener(w BuffWatcher) {
+	c.mx.Lock()
+	defer c.mx.Unlock()
 	c.listeners = append(c.listeners, w)
 }
 
 // RemoveListener removes a listener.
 func (c *CmdBuff) RemoveListener(l BuffWatcher) {
+	c.mx.Lock()
+	defer c.mx.Unlock()
+
 	victim := -1
 	for i, lis := range c.listeners {
 		if l == lis {
@@ -163,14 +184,16 @@ func (c *CmdBuff) RemoveListener(l BuffWatcher) {
 }
 
 func (c *CmdBuff) fireBufferCompleted() {
+	text := c.GetText()
 	for _, l := range c.listeners {
-		l.BufferCompleted(c.GetText())
+		l.BufferCompleted(text)
 	}
 }
 
 func (c *CmdBuff) fireBufferChanged() {
+	text := c.GetText()
 	for _, l := range c.listeners {
-		l.BufferChanged(c.GetText())
+		l.BufferChanged(text)
 	}
 }
 

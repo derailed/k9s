@@ -14,28 +14,75 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ## ♫ Sound Behind The Release ♭
 
-I figured, why not share one of the tunes I was spinning when powering thru teh bugs? Might as well share the pain/pleasure while viewing this release notes!
+I figured why not share one of the tunes I was spinning when powering thru teh bugs? Might as well share the pain/pleasure while viewing this release notes!
 
 [On An Island - David Gilmour With Crosby&Nash](https://www.youtube.com/watch?v=kEa__0wtIRo)
 
+## Our K9s Heroes
+
+Please join me in recognizing and applauding this drop contributors that went the extra mile to make sure K9s is better and more useful for all of us!!
+
+Big ATTA BOY/GIRL! in full effect this week to the good folks below for their efforts and contributions to K9s!!
+
+* [Antoine Méausoone](https://github.com/Ameausoone)
+* [Michael Albers](https://github.com/michaeljohnalbers)
+* [Wi1dcard](https://github.com/wi1dcard)
+* [Saskia Keil](https://github.com/SaskiaKeil)
+* [Tomasz Lipinski](https://github.com/tlipinski)
+* [Emeric Martineau](https://github.com/emeric-martineau)
+* [Eldad Assis](https://github.com/eldada)
+* [David Arnold](https://github.com/blaggacao)
+* [Peter Parente](https://github.com/parente)
+
 ## A Word From Our Sponsors...
 
-First off, I would like to send a `Big Thank You` to the following generous K9s friends for joining our sponsorship program and supporting this project!
+First off I would like to send a `Big Thank You` to the following generous K9s friends for joining our sponsorship program and supporting this project!
 
-* [Martin Kemp](https://github.com/MartiUK)
+* [William Alexander](https://github.com/carpetfuz)
+* [Jiri Valnoha](https://github.com/waldauf)
+* [Pavel Tumik](https://github.com/sagor999)
+* [Bart Plasmeijer](https://github.com/bplasmeijer)
+* [Matt Welke](https://github.com/mattwelke)
+* [Stefan Mikolajczyk](https://github.com/stefanmiko)
 
-Contrarily to popular belief, OSS is not free! We've now reached ~9k stars and 300k downloads! As you all know, this project is not pimped out by a big company with deep pockets and a large team. K9s is complex and does demand a lot of my time. So if this tool is useful to you and part of your daily lifecycle, please contribute! Your contribution whether financial, PRs, issues or shout-outs on social/blogs are crucial to keep K9s growing and powerful for all of us. Don't let OSS by individual contributors become an oxymoron!
+Contrarily to popular belief, OSS is not free! We've now reached ~9k stars and 300k downloads! As you all know, this project is not pimped out by a big company with deep pockets or a large team. K9s is complex and does demand a lot of my time. So if this tool is useful to you or your organization and part of your daily Kubernetes lifecycle, please contribute! Your contribution whether financial, PRs, issues or shout-outs on social/blogs are crucial to keep K9s growing and powerful for all of us. Don't let OSS by individual contributors become an oxymoron!
+
+## Full Screen
+
+We've added a new option to enable full screen while describing or viewing a resource YAML namely `f`. This works similarly to the full screen toggle option while viewing logs ie pressing `f` will toggle fullscreen on/off.
+
 ## Best Effort... Not!
 
-In this drop, we've added 2 new columns to the Pod/Container views namely `CPU(R:L)` and `MEM(R:L)`. These represents the current request/limit resources specified at either the pod or container level. While in Pod view, you will need to use the wide command `Ctrl-W` to see the resources set at the pod level or you can use K9s column customization feature to volunteer them by default.
+In this drop, we've added 2 new columns to the Pod/Container views namely `CPU(R:L)` and `MEM(R:L)`. These represents the current request/limit resources specified at either the pod or container level. While in Pod view, you will need to use the wide command `Ctrl-W` to see the resources set at the pod level or you can leverage K9s column customization feature to volunteer them while in Pod view. In the Container view these columns will be available by default.
 
 ## Container Images
 
-You have now the ability to tweak your container images for experimentation, using the new SetImage binding aka `i`. This feature is available for standalone pods, deployments, sts and ds. With a resource selected, pressing `i` will provision an edit dialog listing all init/container images.
+You have now the ability to tweak your container images for experimentation, using the new SetImage binding aka `i`. This feature is available for unmanaged pods, deployments, sts and ds. With a resource selected, pressing `i` will provision an edit dialog listing all init/container images.
 
 NOTE! This is a one shot commands applied directly against your cluster and won't survive a new resource deployment.
 
-Big `ATTA Boy!` in effect to [Antoine Méausoone](https://github.com/Ameausoone) for putting forth the effort to make this feature available to all of us!!
+## Crumbs On, Crumbs Off, Caterpillar
+
+We've added a new configuration to turn off the crumbs via `crumbsLess` configuration option. You can also toggle the crumbs via the new key option `C`. You can enable/disable this option in your ~/.k9s/config.yml or via command line using `--crumbsless` flag.
+
+```yaml
+k9s:
+  refreshRate: 2
+  headless: false
+  crumbsless: false
+  readOnly: true
+  ...
+```
+
+## FILTER...NOT!
+
+Some folks have voiced the desire to use inverse filters while filtering to content in the resource table views. There is now a new filter option available when performing these filtering operations. For example, in order to see all pods that are not named `fred` you can now use `/!fred` as your filtering command.
+
+## Disturbance In the Keyboard Force...
+
+In this drop we've changed the key binding to toggle the header from `Ctrl-E` to `H`
+
+---
 
 ## Resolved Issues/Features
 
@@ -53,6 +100,17 @@ Big `ATTA Boy!` in effect to [Antoine Méausoone](https://github.com/Ameausoone)
 * [Issue #848](https://github.com/derailed/k9s/issues/848) Support an inverse operator on filtered search
 
 ## Resolved PRs
+
+* [PR #909](https://github.com/derailed/k9s/pull/909) Add support for inverse filtering
+* [PR #908](https://github.com/derailed/k9s/pull/908) Remove trailing delta from the scale dialog when replicas are in flux
+* [PR #907](https://github.com/derailed/k9s/pull/907) Improve docs on sinceSeconds logger option
+* [PR #904](https://github.com/derailed/k9s/pull/904) PVC `UsedBy` list irrelevant statefulsets
+* [PR #898](https://github.com/derailed/k9s/pull/898) Use config.CallTimeout in APIClient
+* [PR #897](https://github.com/derailed/k9s/pull/897) Use DefaultColorer for aliases rendering
+* [PR #896](https://github.com/derailed/k9s/pull/896) Allow remove crumbs
+* [PR #894](https://github.com/derailed/k9s/pull/894) Execute plugins and pass context
+* [PR #891](https://github.com/derailed/k9s/pull/891) Add command to get the latest stable kubectl version and support for KUBECTL_VERSION as Dockerfile ARG
+* [PR #847](https://github.com/derailed/k9s/pull/847) Add ability to set container images
 
 ---
 

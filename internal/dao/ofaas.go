@@ -113,7 +113,7 @@ func (f *OpenFaas) Delete(path string, _, _ bool) error {
 }
 
 // ToYAML dumps a function to yaml.
-func (f *OpenFaas) ToYAML(path string) (string, error) {
+func (f *OpenFaas) ToYAML(path string, _ bool) (string, error) {
 	return f.Describe(path)
 }
 

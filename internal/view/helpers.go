@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell"
@@ -59,18 +60,12 @@ func defaultEnv(c *client.Config, path string, header render.Header, row render.
 	return env
 }
 
-func describeResource(app *App, model ui.Tabular, gvr, path string) {
+func describeResource(app *App, m ui.Tabular, gvr, path string) {
 	ctx := context.Background()
 	ctx = context.WithValue(ctx, internal.KeyFactory, app.factory)
 
-	yaml, err := model.Describe(ctx, path)
-	if err != nil {
-		app.Flash().Errf("Describe command failed: %s", err)
-		return
-	}
-
-	details := NewDetails(app, "Describe", path, true).Update(yaml)
-	if err := app.inject(details); err != nil {
+	v := NewLiveView(app, "Describe", model.NewDescribe(client.NewGVR(gvr), path))
+	if err := app.inject(v); err != nil {
 		app.Flash().Err(err)
 	}
 }

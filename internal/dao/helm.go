@@ -74,7 +74,7 @@ func (c *Helm) Describe(path string) (string, error) {
 }
 
 // ToYAML returns the chart manifest.
-func (c *Helm) ToYAML(path string) (string, error) {
+func (c *Helm) ToYAML(path string, showManaged bool) (string, error) {
 	ns, n := client.Namespaced(path)
 	cfg, err := c.EnsureHelmConfig(ns)
 	if err != nil {

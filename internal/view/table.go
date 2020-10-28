@@ -129,7 +129,9 @@ func (t *Table) SetExtraActionsFn(BoostActionsFunc) {}
 
 // BufferCompleted indicates input was accepted.
 func (t *Table) BufferCompleted(s string) {
-	t.Filter(s)
+	t.app.QueueUpdateDraw(func() {
+		t.Filter(s)
+	})
 }
 
 // BufferChanged indicates the buffer was changed.

@@ -35,8 +35,7 @@ func TestAliasSearch(t *testing.T) {
 	v.App().Prompt().SendStrokes("blee")
 
 	assert.Equal(t, 3, v.GetTable().GetColumnCount())
-	time.Sleep(1_000 * time.Millisecond)
-	assert.Equal(t, 2, v.GetTable().GetRowCount())
+	assert.Equal(t, 3, v.GetTable().GetRowCount())
 }
 
 func TestAliasGoto(t *testing.T) {

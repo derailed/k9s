@@ -155,7 +155,7 @@ func (t *Tree) ToYAML(ctx context.Context, gvr, path string) (string, error) {
 		return "", fmt.Errorf("no describer for %q", meta.DAO.GVR())
 	}
 
-	return desc.ToYAML(path)
+	return desc.ToYAML(path, false)
 }
 
 func (t *Tree) updater(ctx context.Context) {

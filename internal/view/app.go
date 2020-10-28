@@ -128,12 +128,15 @@ func (a *App) layout(ctx context.Context, version string) {
 	main := tview.NewFlex().SetDirection(tview.FlexRow)
 	main.AddItem(a.statusIndicator(), 1, 1, false)
 	main.AddItem(a.Content, 0, 10, true)
+	if !a.Config.K9s.IsCrumbsless() {
+		main.AddItem(a.Crumbs(), 1, 1, false)
+	}
 	main.AddItem(flash, 1, 1, false)
 
 	a.Main.AddPage("main", main, true, false)
 	a.Main.AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
-	a.toggleHeader(!a.Config.K9s.GetHeadless())
-	a.toggleCrumbs(!a.Config.K9s.GetCrumbsless())
+	a.toggleHeader(!a.Config.K9s.IsHeadless())
+	// a.toggleCrumbs(!a.Config.K9s.GetCrumbsless())
 }
 
 func (a *App) initSignals() {
@@ -182,8 +185,8 @@ func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) bindKeys() {
 	a.AddActions(ui.KeyActions{
-		tcell.KeyCtrlE: ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
-		tcell.KeyCtrlT: ui.NewSharedKeyAction("toggleCrumbs", a.toggleCrumbsCmd, false),
+		ui.KeyShiftH:   ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
+		ui.KeyShiftC:   ui.NewSharedKeyAction("toggleCrumbs", a.toggleCrumbsCmd, false),
 		ui.KeyHelp:     ui.NewSharedKeyAction("Help", a.helpCmd, false),
 		tcell.KeyCtrlA: ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
@@ -217,7 +220,9 @@ func (a *App) toggleCrumbs(flag bool) {
 		log.Fatal().Msg("Expecting valid flex view")
 	}
 	if a.showCrumbs {
-		flex.AddItemAtIndex(2, a.Crumbs(), 1, 1, false)
+		if _, ok := flex.ItemAt(2).(*ui.Crumbs); !ok {
+			flex.AddItemAtIndex(2, a.Crumbs(), 1, 1, false)
+		}
 	} else {
 		flex.RemoveItemAtIndex(2)
 	}
@@ -536,7 +541,7 @@ func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *App) meowCmd(msg string) {
-	if err := a.inject(NewMeow(a, msg)); err != nil {
+	if err := a.inject(NewCow(a, msg)); err != nil {
 		a.Flash().Err(err)
 	}
 }
@@ -599,7 +604,7 @@ func (a *App) gotoResource(cmd, path string, clearStack bool) error {
 		return err
 	}
 
-	c := NewMeow(a, err.Error())
+	c := NewCow(a, err.Error())
 	_ = c.Init(context.Background())
 	if clearStack {
 		a.Content.Stack.Clear()
@@ -613,7 +618,7 @@ func (a *App) inject(c model.Component) error {
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	if err := c.Init(ctx); err != nil {
 		log.Error().Err(err).Msgf("component init failed for %q %v", c.Name(), err)
-		c = NewMeow(a, err.Error())
+		c = NewCow(a, err.Error())
 		_ = c.Init(ctx)
 	}
 	a.Content.Push(c)

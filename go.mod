@@ -4,6 +4,7 @@ go 1.15
 
 require (
 	github.com/atotto/clipboard v0.1.2
+	github.com/cenkalti/backoff/v4 v4.1.0
 	github.com/derailed/popeye v0.8.10
 	github.com/derailed/tview v0.4.6
 	github.com/drone/envsubst v1.0.2 // indirect

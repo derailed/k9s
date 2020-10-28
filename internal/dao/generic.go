@@ -78,13 +78,13 @@ func (g *Generic) Describe(path string) (string, error) {
 }
 
 // ToYAML returns a resource yaml.
-func (g *Generic) ToYAML(path string) (string, error) {
+func (g *Generic) ToYAML(path string, showManaged bool) (string, error) {
 	o, err := g.Get(context.Background(), path)
 	if err != nil {
 		return "", err
 	}
 
-	raw, err := ToYAML(o)
+	raw, err := ToYAML(o, showManaged)
 	if err != nil {
 		return "", fmt.Errorf("unable to marshal resource %s", err)
 	}

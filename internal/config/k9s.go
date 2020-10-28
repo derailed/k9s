@@ -59,8 +59,8 @@ func (k *K9s) OverrideCommand(cmd string) {
 	k.manualCommand = &cmd
 }
 
-// GetHeadless returns headless setting.
-func (k *K9s) GetHeadless() bool {
+// IsHeadless returns headless setting.
+func (k *K9s) IsHeadless() bool {
 	h := k.Headless
 	if k.manualHeadless != nil && *k.manualHeadless {
 		h = *k.manualHeadless
@@ -69,8 +69,8 @@ func (k *K9s) GetHeadless() bool {
 	return h
 }
 
-// GetCrumbsless returns crumbsless setting.
-func (k *K9s) GetCrumbsless() bool {
+// IsCrumbsless returns crumbsless setting.
+func (k *K9s) IsCrumbsless() bool {
 	h := k.Crumbsless
 	if k.manualCrumbsless != nil && *k.manualCrumbsless {
 		h = *k.manualCrumbsless

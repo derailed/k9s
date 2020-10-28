@@ -35,7 +35,6 @@ func Describe(c client.Connection, gvr client.GVR, path string) (string, error) 
 		log.Error().Err(err).Msgf("Unable to find describer for %#v", mapping)
 		return "", err
 	}
-	log.Debug().Msgf("Describing %q -- %q", ns, n)
 
 	return d.Describe(ns, n, describe.DescriberSettings{ShowEvents: true})
 }
