@@ -28,27 +28,30 @@ import (
 var ExitStatus = ""
 
 const (
-	splashDelay      = 1 * time.Second
-	clusterRefresh   = 15 * time.Second
-	maxConRetry      = 15
-	clusterInfoWidth = 50
-	clusterInfoPad   = 15
+	splashDelay       = 1 * time.Second
+	clusterRefresh    = 15
+	maxConRetry       = 10
+	clusterInfoWidth  = 50
+	clusterInfoPad    = 15
+	expBackOffMult    = 1.5
+	maxClusterRefresh = 2 * time.Minute
 )
 
 // App represents an application view.
 type App struct {
 	version string
 	*ui.App
-	Content       *PageStack
-	command       *Command
-	factory       *watch.Factory
-	cancelFn      context.CancelFunc
-	clusterModel  *model.ClusterInfo
-	cmdHistory    *model.History
-	filterHistory *model.History
-	conRetry      int32
-	showHeader    bool
-	showCrumbs    bool
+	Content         *PageStack
+	command         *Command
+	factory         *watch.Factory
+	cancelFn        context.CancelFunc
+	clusterModel    *model.ClusterInfo
+	cmdHistory      *model.History
+	filterHistory   *model.History
+	conRetry        int32
+	currentInterval int32
+	showHeader      bool
+	showCrumbs      bool
 }
 
 // NewApp returns a K9s app instance.
@@ -273,15 +276,30 @@ func (a *App) Resume() {
 }
 
 func (a *App) clusterUpdater(ctx context.Context) {
+	a.currentInterval = clusterRefresh
 	a.refreshCluster()
 	for {
 		select {
 		case <-ctx.Done():
 			log.Debug().Msg("ClusterInfo updater canceled!")
 			return
-		case <-time.After(clusterRefresh):
+		case <-a.nextRefreshTime():
 			a.refreshCluster()
 		}
+	}
+}
+
+func (a *App) nextRefreshTime() <-chan time.Time {
+	if a.ConOK() {
+		return time.After(clusterRefresh * time.Second)
+	} else {
+		nextInterval := int32(float64(a.currentInterval) * expBackOffMult)
+		nextDuration := time.Duration(nextInterval) * time.Second
+		if nextDuration > maxClusterRefresh {
+			nextDuration = maxClusterRefresh
+		}
+		a.currentInterval = nextInterval
+		return time.After(nextDuration)
 	}
 }
 
@@ -289,6 +307,7 @@ func (a *App) refreshCluster() {
 	c := a.Content.Top()
 	if ok := a.Conn().CheckConnectivity(); ok {
 		if atomic.LoadInt32(&a.conRetry) > 0 {
+			a.currentInterval = clusterRefresh
 			atomic.StoreInt32(&a.conRetry, 0)
 			a.Status(model.FlashInfo, "K8s connectivity OK")
 			if c != nil {
