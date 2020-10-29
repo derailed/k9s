@@ -12,11 +12,14 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ---
 
-## ♫ Sound Behind The Release ♭
+## ♫ Sounds Behind The Release ♭
 
-I figured why not share one of the tunes I was spinning when powering thru teh bugs? Might as well share the pain/pleasure while viewing this release notes!
+I figured why not share one of the tunes I was spinning when powering thru teh bugs? Might as well share the pain/pleasure while viewing these release notes!
 
-[On An Island - David Gilmour With Crosby&Nash](https://www.youtube.com/watch?v=kEa__0wtIRo)
+* [On An Island - David Gilmour With Crosby&Nash](https://www.youtube.com/watch?v=kEa__0wtIRo)
+* [Cause We've Ended As Lovers - Jeff Beck](https://www.youtube.com/watch?v=VC02wGj5gPw)
+* [La Maitresse D'Ecole - Maxime Le Forestier](https://www.youtube.com/watch?v=eE2-cv7taPo)
+* [Three Wishes - Roger Waters](https://www.youtube.com/watch?v=fVw1N6wyo4c)
 
 ## Our Release Heroes...
 
@@ -24,11 +27,11 @@ Please join me in recognizing and applauding this drop contributors that went th
 
 Big ATTA BOY/GIRL! in full effect this week to the good folks below for their efforts and contributions to K9s!!
 
-* [Antoine Méausoone](https://github.com/Ameausoone)
 * [Michael Albers](https://github.com/michaeljohnalbers)
 * [Wi1dcard](https://github.com/wi1dcard)
 * [Saskia Keil](https://github.com/SaskiaKeil)
 * [Tomasz Lipinski](https://github.com/tlipinski)
+* [Antoine Méausoone](https://github.com/Ameausoone)
 * [Emeric Martineau](https://github.com/emeric-martineau)
 * [Eldad Assis](https://github.com/eldada)
 * [David Arnold](https://github.com/blaggacao)
@@ -45,29 +48,29 @@ First off I would like to send a `Big Thank You` to the following generous K9s f
 * [Matt Welke](https://github.com/mattwelke)
 * [Stefan Mikolajczyk](https://github.com/stefanmiko)
 
-Contrarily to popular belief, OSS is not free! We've now reached ~9k stars and 300k downloads! As you all know, this project is not pimped out by a big company with deep pockets. K9s is complex and does demand lots of my time. So if this tool is useful to you and benefits you and your organization in your Kubernetes journey, please contribute! Your contribution whether financial, PRs, issues or shout-outs on social/blogs are crucial to keep K9s growing and powerful for all of us. Don't let OSS by individual contributors become an oxymoron!
+Contrarily to popular belief, OSS is not free! We've now reached ~9k stars and 300k downloads! As you all know, this project is not pimped out by a big company with deep pockets and a big dev team. K9s is complex and does demand lots of my time. So if this tool is useful to you and your organization and part of your daily Kubernetes flow, please contribute! Your contribution whether financial, PRs, issues or shout-outs on social/blogs are crucial to keep K9s growing and powerful for all of us. Don't let OSS by individual contributors become an oxymoron!
 
-## Describe/YAML views goes FullMonty
+## Describe/YAML goes FullMonty!!
 
-We've added a new option to enable full screen while describing or viewing a resource YAML. Similarly to the full screen toggle option in the log view, pressing `f` will now toggle fullscreen for both YAML and Describe views.
+We've added a new option to enable full screen while describing or viewing a resource YAML. Similarly to the full screen toggle option in the log view, pressing `f` will now toggle full-screen for both YAML and Describe views.
 
-Additionally, the YAML and Describe view are now reactive! YAML/Describe views will now watch for changes to the underlying resource manifests. How cool is that?
+Additionally, the YAML and Describe view are now reactive! YAML/Describe views will now watch for changes to the underlying resource manifests. I'll admit this was a feature I was missing, but decided to punt as it required a bit of re-org to make it happen correctly. So BIG thanks to [Fabian-K](https://github.com/Fabian-K) for entering this issue and for the boost!!
 
-Not cool enough for Ya? the YAML view also affords for getting ride of those pesky `managedFields` while viewing a resource. Pressing `m` will toggle visibility on these fields.
+Not cool enough for Ya? the YAML view now also affords for getting ride of those pesky `managedFields` while viewing a resource. Use the `m` key to toggle visibility on the managedFields.
 
 ## Best Effort... Not!
 
-In this drop, we've added 2 new columns to the Pod/Container views namely `CPU(R:L)` and `MEM(R:L)`. These represents the current request:limit resources specified at either the pod or container level. While in Pod view, you will need to use the `Go Wide` option `Ctrl-W` to see the resources set at the pod level. You can also leverage K9s [Custom Column](https://github.com/derailed/k9s#resource-custom-columns) feature to volunteer them while in Pod view. In the Container view these columns will be available by default.
+In this drop, we've added 2 new columns namely `CPU/R:L` and `MEM/R:L`. These represents the current request:limit specified on containers. They are available in node, pod and container views. While in Pod view, you will need to volunteer them and use the `Go Wide` option `Ctrl-W` to see the columns. These columns will be display by default for Node/Container views. In the node view, they tally the total amount of resources for all pods hosted a given node. If that's inadequate, you can also leverage K9s [Custom Column](https://github.com/derailed/k9s#resource-custom-columns) feature to volunteer them or not.
 
 ## Set Container Images
 
-You have now the ability to tweak your container images for experimentation, using the new SetImage binding aka `i`. This feature is available for unmanaged pods, deployments, sts and ds. With a resource selected, pressing `i` will provision an edit dialog listing all init/container images.
+You will have the ability to tweak your container images for experimentation, using the new SetImage binding aka `i`. This feature is available for un-managed pods, deployments, statefulsets and daemonsets. With a resource selected, pressing `i` will provision an edit dialog listing all init/container images. So you will have to ability to tweak the images and update your containers. Big Thanks to [Antoine Méausoone](https://github.com/Ameausoone) for making this feature available to all of us!!
 
 NOTE! This is a one shot commands applied directly against your cluster and won't survive a new resource deployment.
 
-## Crumbs On, Crumbs Off, Caterpillar
+## Crumbs On...Crumbs Off, Caterpillar
 
-We've added a new configuration to turn off the crumbs via `crumbsLess` configuration option. You can also toggle the crumbs via the new key option `C`. You can enable/disable this option in your ~/.k9s/config.yml or via command line using `--crumbsless` CLI option.
+We've added a new configuCCration to turn off the crumbs via `crumbsLess` configuration option. You can also toggle the crumbs via the new key option `Ctrl-g`. You can enable/disable this option in your ~/.k9s/config.yml or via command line using `--crumbsless` CLI option.
 
 ```yaml
 k9s:
@@ -80,7 +83,30 @@ k9s:
 
 ## BANG FILTERS!
 
-Some folks have voiced the desire to use inverse filters to refine content while in resource table views. Prepending a `!` to your filter will now enable an inverse filtering operation For example, in order to see all pods that do not contain `fred` in their name, you can now use `/!fred` as your filtering command.
+Some folks have voiced the desire to use inverse filters to refine content while in resource table views. Appending a `!` to your filter will now enable an inverse filtering operation For example, in order to see all pods that do not contain `fred` in their name, you can now use `/!fred` as your filtering command. If you dig this implementation, please make sure to give a big thank you to [Michael Albers](https://github.com/michaeljohnalbers) for the swift implementation!
+
+## New Conf On the Block...
+
+In this release, we've made some changes to the retry policies when things fail on your cluster and the api-server is suffering from an hearing impediment. The current policy was to check for connection issues every 15secs and retry 15 times before exiting K9s. This rules were not configurable and could yield for overtaxing the api-server. So we've implemented exponential back-off so that K9s can attempt to remediate or bail out of the session if not.
+To this end, there is a new config option namely `maxConnRetry` to will be added to your K9s config to set the retry policy. The default is currently set to 5 retries.
+
+NOTE: This is likely an ongoing story and more will come based on your feedback!
+
+Sample K9s configuration
+
+```yaml
+k9s:
+  refreshRate: 2
+  # Set the maximum attempt to reconnect with the api-server in case of failures.
+  maxConnRetry: 5
+  ...
+```
+
+## And That's A Wrap!
+
+As you can see, this is a pretty big drop and likely we've created some new issues in the process. Please make sure to file issues/PRs if things are not working as expected so we can improve on these features.
+
+Thank you all for your continued excitement and support for K9s!
 
 ---
 

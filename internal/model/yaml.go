@@ -135,11 +135,9 @@ func (y *YAML) updater(ctx context.Context) {
 			return
 		case <-time.After(delay):
 			if err := y.refresh(ctx); err != nil {
-				log.Error().Err(err).Msgf("YAML Failed")
 				y.fireResourceFailed(err)
-				delay = backOff.NextBackOff()
-				if delay == backoff.Stop {
-					log.Error().Err(err).Msgf("YAML done Retrying bailing out!")
+				if delay = backOff.NextBackOff(); delay == backoff.Stop {
+					log.Error().Err(err).Msgf("YAML gave up!")
 					return
 				}
 			} else {
@@ -151,7 +149,6 @@ func (y *YAML) updater(ctx context.Context) {
 }
 
 func (y *YAML) refresh(ctx context.Context) error {
-	log.Debug().Msgf("YAMLRefresh %v", time.Now())
 	if !atomic.CompareAndSwapInt32(&y.inUpdate, 0, 1) {
 		log.Debug().Msgf("Dropping update...")
 		return nil

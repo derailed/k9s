@@ -17,6 +17,9 @@ func init() {
 func main() {
 	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
 	file, err := os.OpenFile(config.K9sLogs, mod, config.DefaultFileMod)
+	defer func() {
+		_ = file.Close()
+	}()
 	if err != nil {
 		panic(err)
 	}

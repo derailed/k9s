@@ -239,6 +239,10 @@ func (h *Help) showGeneral() model.MenuHints {
 			Description: "Toggle Header",
 		},
 		{
+			Mnemonic:    "Ctrl-g",
+			Description: "Toggle Crumbs",
+		},
+		{
 			Mnemonic:    ":q",
 			Description: "Quit",
 		},

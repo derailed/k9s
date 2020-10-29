@@ -3,7 +3,6 @@ package cmd
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"runtime/debug"
 
 	"github.com/derailed/k9s/internal/client"
@@ -45,17 +44,22 @@ func init() {
 	initK9sFlags()
 	initK8sFlags()
 
-	// Klogs (of course) want to print stuff to the screen ;(
-	klog.InitFlags(nil)
-	klog.SetOutput(ioutil.Discard)
-	if err := flag.Set("stderrthreshold", "fatal"); err != nil {
-		log.Error().Err(err)
+	var flags flag.FlagSet
+	klog.InitFlags(&flags)
+	if err := flags.Set("logtostderr", "false"); err != nil {
+		panic(err)
 	}
-	if err := flag.Set("alsologtostderr", "false"); err != nil {
-		log.Error().Err(err)
+	if err := flags.Set("alsologtostderr", "false"); err != nil {
+		panic(err)
 	}
-	if err := flag.Set("logtostderr", "false"); err != nil {
-		log.Error().Err(err)
+	if err := flags.Set("stderrthreshold", "fatal"); err != nil {
+		panic(err)
+	}
+	if err := flags.Set("v", "0"); err != nil {
+		panic(err)
+	}
+	if err := flags.Set("log_file", config.K9sLogs); err != nil {
+		panic(err)
 	}
 }
 

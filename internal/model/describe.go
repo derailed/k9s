@@ -124,11 +124,9 @@ func (d *Describe) updater(ctx context.Context) {
 			return
 		case <-time.After(delay):
 			if err := d.refresh(ctx); err != nil {
-				log.Error().Err(err).Msgf("Describe Failed")
 				d.fireResourceFailed(err)
-				delay = backOff.NextBackOff()
-				if delay == backoff.Stop {
-					log.Error().Err(err).Msgf("Describe done Retrying bailing out!")
+				if delay = backOff.NextBackOff(); delay == backoff.Stop {
+					log.Error().Err(err).Msgf("Describe gave up!")
 					return
 				}
 			} else {
@@ -139,7 +137,6 @@ func (d *Describe) updater(ctx context.Context) {
 	}
 }
 func (d *Describe) refresh(ctx context.Context) error {
-	log.Debug().Msgf("DESCRefresh %v", time.Now())
 	if !atomic.CompareAndSwapInt32(&d.inUpdate, 0, 1) {
 		log.Debug().Msgf("Dropping update...")
 		return nil

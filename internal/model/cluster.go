@@ -2,11 +2,19 @@ package model
 
 import (
 	"context"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/cache"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+)
+
+const (
+	clusterCacheSize   = 100
+	clusterCacheExpiry = 1 * time.Minute
+	clusterNodesKey    = "nodes"
 )
 
 type (
@@ -30,6 +38,7 @@ type (
 	Cluster struct {
 		factory dao.Factory
 		mx      MetricsServer
+		cache   *cache.LRUExpireCache
 	}
 )
 
@@ -38,6 +47,7 @@ func NewCluster(f dao.Factory) *Cluster {
 	return &Cluster{
 		factory: f,
 		mx:      client.DialMetrics(f.Client()),
+		cache:   cache.NewLRUExpireCache(clusterCacheSize),
 	}
 }
 
@@ -80,11 +90,21 @@ func (c *Cluster) UserName() string {
 
 // Metrics gathers node level metrics and compute utilization percentages.
 func (c *Cluster) Metrics(ctx context.Context, mx *client.ClusterMetrics) error {
-	nn, err := dao.FetchNodes(ctx, c.factory, "")
-	if err != nil {
-		return err
+	var nn *v1.NodeList
+	if n, ok := c.cache.Get(clusterNodesKey); ok {
+		if nodes, ok := n.(*v1.NodeList); ok {
+			nn = nodes
+		}
 	}
 
+	var err error
+	if nn == nil {
+		nn, err = dao.FetchNodes(ctx, c.factory, "")
+		if err != nil {
+			return err
+		}
+	}
+	c.cache.Add(clusterNodesKey, nn, clusterCacheExpiry)
 	nmx, err := c.mx.FetchNodesMetrics(ctx)
 	if err != nil {
 		return err

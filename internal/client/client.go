@@ -179,13 +179,27 @@ func (a *APIClient) CurrentNamespaceName() (string, error) {
 	return a.config.CurrentNamespaceName()
 }
 
+const serverVersion = "serverVersion"
+
 // ServerVersion returns the current server version info.
 func (a *APIClient) ServerVersion() (*version.Info, error) {
+	if v, ok := a.cache.Get(serverVersion); ok {
+		if version, ok := v.(*version.Info); ok {
+			return version, nil
+		}
+	}
 	dial, err := a.CachedDiscovery()
 	if err != nil {
 		return nil, err
 	}
-	return dial.ServerVersion()
+
+	info, err := dial.ServerVersion()
+	if err != nil {
+		return nil, err
+	}
+	a.cache.Add(serverVersion, info, cacheExpiry)
+
+	return info, nil
 }
 
 // ValidNamespaces returns all available namespaces.

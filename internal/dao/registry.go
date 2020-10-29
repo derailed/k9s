@@ -57,7 +57,7 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 	r, ok := m[gvr]
 	if !ok {
 		r = &Generic{}
-		log.Debug().Msgf("No DAO registry entry for %q. Using factory!", gvr)
+		log.Debug().Msgf("No DAO registry entry for %q. Using generics!", gvr)
 	}
 	r.Init(f, gvr)
 

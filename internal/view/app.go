@@ -302,7 +302,6 @@ func (a *App) clusterUpdater(ctx context.Context) {
 }
 
 func (a *App) refreshCluster() error {
-	log.Debug().Msgf("Cluster Refresh %v", time.Now())
 	c := a.Content.Top()
 	if ok := a.Conn().CheckConnectivity(); ok {
 		if atomic.LoadInt32(&a.conRetry) > 0 {

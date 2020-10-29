@@ -150,7 +150,7 @@ func TestPodColorer(t *testing.T) {
 func TestPodRender(t *testing.T) {
 	pom := render.PodWithMetrics{
 		Raw: load(t, "po"),
-		MX:  makePodMX("nginx", "10m", "10Mi"),
+		MX:  makePodMX("nginx", "100m", "50Mi"),
 	}
 
 	var po render.Pod
@@ -159,7 +159,7 @@ func TestPodRender(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := render.Fields{"default", "nginx", "●", "1/1", "0", "Running", "10", "10", "100:0", "70:170", "10", "0", "14", "5", "172.17.0.6", "minikube", "BE"}
+	e := render.Fields{"default", "nginx", "●", "1/1", "0", "Running", "100", "50", "100:0", "70:170", "100", "0", "71", "29", "172.17.0.6", "minikube", "BE"}
 	assert.Equal(t, e, r.Fields[:17])
 }
 
