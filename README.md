@@ -154,6 +154,8 @@ K9s is available on Linux, macOS and Windows platforms.
     export K9S_EDITOR=my_fav_editor
     ```
 
+* K9s prefers recent kubernetes versions ie 1.16+
+
 ---
 
 ## The Command Line
@@ -264,11 +266,13 @@ K9s uses aliases to navigate most K8s resources.
   k9s:
     # Represents ui poll intervals. Default 2secs
     refreshRate: 2
+    # Number of retries once the connection to the api-server is lost. Default 15.
+    maxConnRetry: 5
     # Enable mouse support. Default false
-    enableMouse: false
+    enableMouse: true
     # Set to true to hide K9s header. Default false
     headless: false
-    # Set to true to hide K9s footer. Default false
+    # Set to true to hide K9s crumbs. Default false
     crumbsless: false
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
     readOnly: false
@@ -744,7 +748,7 @@ k9s:
 ## Known Issues
 
 This is still work in progress! If something is broken or there's a feature
-that you want, please open a PR or file a ticket.
+that you want, please file an issue and if so inclined submit a PR!
 
 K9s will most likely blow up if...
 
@@ -766,7 +770,9 @@ to make this project a reality!
 * [Fernand Galiana](https://github.com/derailed)
   * <img src="assets/mail.png" width="16" height="auto" alt="email"/>  fernand@imhotep.io
   * <img src="assets/twitter.png" width="16" height="auto" alt="twitter"/> [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
-We always enjoy hearing from folks who benefit from our work.
+
+We always enjoy hearing from folks who benefit from our work!
+
 ---
 
 <img src="assets/imhotep_logo.png" width="32" height="auto" alt="Imhotep"/> &nbsp;© 2020 Imhotep Software LLC. All materials licensed under [Apache v2.0](http://www.apache.org/licenses/LICENSE-2.0)

@@ -366,13 +366,13 @@ func TestToMc(t *testing.T) {
 		v int64
 		e string
 	}{
-		{0, "0m"},
-		{2, "2m"},
-		{1000, "1,000m"},
+		{0, "0"},
+		{2, "2"},
+		{1_000, "1,000"},
 	}
 
 	for _, u := range uu {
-		assert.Equal(t, u.e, ToMc(u.v))
+		assert.Equal(t, u.e, toMc(u.v))
 	}
 }
 
@@ -381,13 +381,13 @@ func TestToMi(t *testing.T) {
 		v int64
 		e string
 	}{
-		{0, "0Mi"},
-		{2, "2Mi"},
-		{1000, "1,000Mi"},
+		{0, "0"},
+		{2 * client.MegaByte, "2"},
+		{1_000 * client.MegaByte, "1,000"},
 	}
 
 	for _, u := range uu {
-		assert.Equal(t, u.e, ToMi(u.v))
+		assert.Equal(t, u.e, toMi(u.v))
 	}
 }
 

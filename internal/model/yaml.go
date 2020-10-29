@@ -18,18 +18,23 @@ import (
 	"github.com/sahilm/fuzzy"
 )
 
-const maxRetryInterval = 1 * time.Minute
+const (
+	maxRetryInterval = 1 * time.Minute
+
+	// ManageFieldOpts tracks managed fields.
+	ManagedFieldsOpts = "ManagedFields"
+)
 
 // YAML tracks yaml resource representations.
 type YAML struct {
-	gvr               client.GVR
-	inUpdate          int32
-	showManagedFields bool
-	path              string
-	query             string
-	lines             []string
-	refreshRate       time.Duration
-	listeners         []ResourceViewerListener
+	gvr         client.GVR
+	inUpdate    int32
+	path        string
+	query       string
+	lines       []string
+	refreshRate time.Duration
+	listeners   []ResourceViewerListener
+	options     ToggleOpts
 }
 
 // NewYAML return a new yaml resource model.
@@ -44,6 +49,14 @@ func NewYAML(gvr client.GVR, path string) *YAML {
 // GetPath returns the active resource path.
 func (y *YAML) GetPath() string {
 	return y.path
+}
+
+// SetOptions toggle model options.
+func (y *YAML) SetOptions(ctx context.Context, opts ToggleOpts) {
+	y.options = opts
+	if err := y.refresh(ctx); err != nil {
+		y.fireResourceFailed(err)
+	}
 }
 
 // Filter filters the model.
@@ -156,7 +169,7 @@ func (y *YAML) refresh(ctx context.Context) error {
 }
 
 func (y *YAML) reconcile(ctx context.Context) error {
-	s, err := y.ToYAML(ctx, y.gvr, y.path, y.showManagedFields)
+	s, err := y.ToYAML(ctx, y.gvr, y.path, y.options[ManagedFieldsOpts])
 	if err != nil {
 		return err
 	}

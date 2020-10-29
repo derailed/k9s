@@ -13,6 +13,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 )
@@ -52,7 +54,7 @@ func AsThousands(n int64) string {
 	return p.Sprintf("%d", n)
 }
 
-// Happy returns true if resoure is happy, false otherwise
+// Happy returns true if resource is happy, false otherwise
 func Happy(ns string, h Header, r Row) bool {
 	if len(r.Fields) == 0 {
 		return true
@@ -81,12 +83,12 @@ func asSelector(s *metav1.LabelSelector) string {
 	return sel.String()
 }
 
-type metric struct {
-	cpu, mem, cpuLim, memLim string
+func percentMc(v1, v2 *resource.Quantity) int {
+	return client.ToPercentage(v1.MilliValue(), v2.MilliValue())
 }
 
-func noMetric() metric {
-	return metric{cpu: NAValue, mem: NAValue, cpuLim: NAValue, memLim: NAValue}
+func percentMi(v1, v2 *resource.Quantity) int {
+	return client.ToPercentage(client.ToMB(v1.Value()), client.ToMB(v2.Value()))
 }
 
 // ToSelector flattens a map selector to a string selector.
@@ -142,6 +144,15 @@ func join(a []string, sep string) string {
 	}
 
 	return buff.String()
+}
+
+// AsPerc prints a number as percentage with parans.
+func AsPerc(p string) string {
+	return "(" + p + ")"
+}
+
+func printValAndPerc(v string, p int) string {
+	return strconv.Itoa(p) + "% (" + v + ")"
 }
 
 // PrintPerc prints a number as percentage.
@@ -251,40 +262,54 @@ func mapToIfc(m interface{}) (s string) {
 	return
 }
 
-// ToResourcesMi prints out request:limit mem resources.
-func ToResourcesMi(res resources) string {
-	var v1, v2 int64
-	if v, ok := res[requestMEM]; ok && v != nil {
-		v1 = v.MilliValue()
-	}
-	if v, ok := res[limitMEM]; ok && v != nil {
-		v2 = v.MilliValue()
-	}
-	if v1 == 0 && v2 == 0 {
-		return NAValue
-	}
-	return bytesToMb(v1) + ":" + bytesToMb(v2)
+func toCPUPerc(cpu, acpu *resource.Quantity) string {
+	c, ac := cpu.MilliValue(), acpu.MilliValue()
+	return toMc(c) + " " + AsPerc(strconv.Itoa(client.ToPercentage(c, ac)))
+}
+
+func toMEMPerc(mem, amem *resource.Quantity) string {
+	m, am := mem.MilliValue(), amem.MilliValue()
+	return toMi(m) + " " + AsPerc(strconv.Itoa(client.ToPercentage(m, am)))
+}
+
+func toResourcesMcPerc(res resources, a v1.ResourceList) string {
+	cpu := a.Cpu().MilliValue()
+	rcpu, lcpu := toResourcesMc(res)
+	return rcpu +
+		AsPerc(strconv.Itoa(client.ToPercentage(res[requestCPU].MilliValue(), cpu))) + ":" +
+		lcpu +
+		AsPerc(strconv.Itoa(client.ToPercentage(res[limitCPU].MilliValue(), cpu)))
+}
+
+func toMcPerc(v1, v2 *resource.Quantity) string {
+	m := v1.MilliValue()
+	return toMc(m) + " (" +
+		strconv.Itoa(client.ToPercentage(m, v2.MilliValue())) + "%)"
+}
+
+func toMiPerc(v1, v2 *resource.Quantity) string {
+	m := v1.Value()
+	return toMi(m) + " (" +
+		strconv.Itoa(client.ToPercentage(m, v2.Value())) + "%)"
 }
 
 func toMc(v int64) string {
 	if v == 0 {
-		return NAValue
+		return ZeroValue
 	}
 	p := message.NewPrinter(language.English)
-	return p.Sprintf("%dm", v)
+	return p.Sprintf("%d", v)
 }
 
-func bytesToMb(v int64) string {
+func toMi(v int64) string {
 	if v == 0 {
-		return NAValue
+		return ZeroValue
 	}
 	p := message.NewPrinter(language.English)
-	return p.Sprintf("%dMi", v/(client.MegaByte*1_000))
-
+	return p.Sprintf("%d", client.ToMB(v))
 }
 
-// ToResourcesMc prints out request:limit cpu resources.
-func ToResourcesMc(res resources) string {
+func toResourcesMc(res resources) (string, string) {
 	var v1, v2 int64
 	if v, ok := res[requestCPU]; ok && v != nil {
 		v1 = v.MilliValue()
@@ -293,23 +318,30 @@ func ToResourcesMc(res resources) string {
 		v2 = v.MilliValue()
 	}
 	if v1 == 0 && v2 == 0 {
-		return NAValue
+		return NAValue, NAValue
 	}
-
-	return toMc(v1) + ":" + toMc(v2)
+	return toMc(v1), toMc(v2)
 }
 
-// ToMc returns a the millicore unit.
-func ToMc(v int64) string {
-	p := message.NewPrinter(language.English)
-	return p.Sprintf("%dm", v)
+func asMcStr(q *resource.Quantity) string {
+	if q == nil {
+		return ZeroValue
+	}
+	return toMc(q.MilliValue())
 }
 
-// ToMi returns the megabytes unit.
-func ToMi(v int64) string {
-	p := message.NewPrinter(language.English)
-	return p.Sprintf("%dMi", v)
+func asMiStr(q *resource.Quantity) string {
+	if q == nil {
+		return ZeroValue
+	}
+	return toMi(q.MilliValue())
 }
+
+// // ToMi returns the megabytes unit.
+// func ToMi(v int64) string {
+// 	p := message.NewPrinter(language.English)
+// 	return p.Sprintf("%dMi", bytesToMb(v))
+// }
 
 func boolPtrToStr(b *bool) string {
 	if b == nil {

@@ -240,6 +240,7 @@ func (c *Command) componentFor(gvr, path string, v *MetaViewer) ResourceViewer {
 func (c *Command) exec(cmd, gvr string, comp model.Component, clearStack bool) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
+			log.Error().Msgf("Something bad happened! %#v", e)
 			c.app.Content.Dump()
 			log.Debug().Msgf("History %v", c.app.cmdHistory.List())
 

@@ -137,11 +137,6 @@ func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
 
 // List returns a collection of node resources.
 func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	labels, ok := ctx.Value(internal.KeyLabels).(string)
-	if !ok {
-		log.Warn().Msgf("No label selector found in context")
-	}
-
 	var (
 		nmx *mv1beta1.NodeMetricsList
 		err error
@@ -152,6 +147,7 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		}
 	}
 
+	labels, _ := ctx.Value(internal.KeyLabels).(string)
 	nn, err := FetchNodes(ctx, n.Factory, labels)
 	if err != nil {
 		return nil, err
@@ -166,11 +162,14 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		if !ok {
 			return nil, fmt.Errorf("expecting interface map but got `%T", o)
 		}
-		pCount, _ := n.CountPods(meta["name"].(string))
+		pods, err := n.GetPods(meta["name"].(string))
+		if err != nil {
+			return nil, err
+		}
 		oo[i] = &render.NodeWithMetrics{
-			Raw:      &unstructured.Unstructured{Object: o},
-			MX:       nodeMetricsFor(MetaFQN(no.ObjectMeta), nmx),
-			PodCount: pCount,
+			Raw:  &unstructured.Unstructured{Object: o},
+			MX:   nodeMetricsFor(MetaFQN(no.ObjectMeta), nmx),
+			Pods: pods,
 		}
 	}
 
@@ -200,6 +199,27 @@ func (n *Node) CountPods(nodeName string) (int, error) {
 	}
 
 	return count, nil
+}
+
+// GetPods returns all pods running on given node.
+func (n *Node) GetPods(nodeName string) ([]*v1.Pod, error) {
+	oo, err := n.Factory.List("v1/pods", client.AllNamespaces, false, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	pp := make([]*v1.Pod, 0, len(oo))
+	for _, o := range oo {
+		po := new(v1.Pod)
+		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, po); err != nil {
+			return nil, err
+		}
+		if po.Spec.NodeName == nodeName {
+			pp = append(pp, po)
+		}
+	}
+
+	return pp, nil
 }
 
 // ----------------------------------------------------------------------------

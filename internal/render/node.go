@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -40,12 +41,16 @@ func (Node) Header(_ string) Header {
 		HeaderColumn{Name: "INTERNAL-IP", Wide: true},
 		HeaderColumn{Name: "EXTERNAL-IP", Wide: true},
 		HeaderColumn{Name: "PODS", Align: tview.AlignRight},
-		HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "%CPU", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "%MEM", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "ACPU", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "AMEM", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "CPU/R", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "CPU/L", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "MEM/R", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "MEM/L", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "CPU/A", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "MEM/A", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
@@ -73,8 +78,25 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 	iIP, eIP := getIPs(no.Status.Addresses)
 	iIP, eIP = missing(iIP), missing(eIP)
 
-	c, a, p := gatherNodeMX(&no, oo.MX)
-
+	c, p, a := gatherNodeMX(&no, oo.MX)
+	trc, trm, tlc, tlm := new(resource.Quantity), new(resource.Quantity), new(resource.Quantity), new(resource.Quantity)
+	for _, p := range oo.Pods {
+		rList := podRequests(p.Spec)
+		if rList.Cpu() != nil {
+			trc.Add(*rList.Cpu())
+		}
+		if rList.Memory() != nil {
+			trm.Add(*rList.Memory())
+		}
+		lList := podLimits(p.Spec)
+		if lList.Cpu() != nil {
+			tlc.Add(*lList.Cpu())
+		}
+		if lList.Memory() != nil {
+			tlm.Add(*lList.Memory())
+		}
+	}
+	res := newResources(newResourceList(trc, trm), newResourceList(tlc, tlm))
 	statuses := make(sort.StringSlice, 10)
 	status(no.Status, no.Spec.Unschedulable, statuses)
 	sort.Sort(statuses)
@@ -91,13 +113,17 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 		no.Status.NodeInfo.KernelVersion,
 		iIP,
 		eIP,
-		strconv.Itoa(oo.PodCount),
-		c.cpu,
-		c.mem,
-		p.cpu,
-		p.mem,
-		a.cpu,
-		a.mem,
+		strconv.Itoa(len(oo.Pods)),
+		strconv.Itoa(p.rCPU()),
+		strconv.Itoa(p.rMEM()),
+		toMc(c.rCPU().MilliValue()),
+		toMi(c.rMEM().Value()),
+		toMcPerc(res.rCPU(), a.rCPU()),
+		toMcPerc(res.lCPU(), a.rCPU()),
+		toMiPerc(res.rMEM(), a.rMEM()),
+		toMiPerc(res.lMEM(), a.rMEM()),
+		toMc(a.rCPU().MilliValue()),
+		toMi(a.rMEM().Value()),
 		mapToStr(no.Labels),
 		asStatus(n.diagnose(statuses)),
 		toAge(no.ObjectMeta.CreationTimestamp),
@@ -136,9 +162,9 @@ func (Node) diagnose(ss []string) error {
 
 // NodeWithMetrics represents a node with its associated metrics.
 type NodeWithMetrics struct {
-	Raw      *unstructured.Unstructured
-	MX       *mv1beta1.NodeMetrics
-	PodCount int
+	Raw  *unstructured.Unstructured
+	MX   *mv1beta1.NodeMetrics
+	Pods []*v1.Pod
 }
 
 // GetObjectKind returns a schema object.
@@ -151,30 +177,21 @@ func (n *NodeWithMetrics) DeepCopyObject() runtime.Object {
 	return n
 }
 
-func gatherNodeMX(no *v1.Node, mx *mv1beta1.NodeMetrics) (c metric, a metric, p metric) {
-	c, a, p = noMetric(), noMetric(), noMetric()
+func gatherNodeMX(no *v1.Node, mx *mv1beta1.NodeMetrics) (resources, percentages, resources) {
+	c, p, a := newResources(nil, nil), newPercentages(), newResources(no.Status.Allocatable, nil)
 	if mx == nil {
-		return
+		return c, p, a
 	}
 
-	cpu, mem := mx.Usage.Cpu().MilliValue(), client.ToMB(mx.Usage.Memory().Value())
-	c = metric{
-		cpu: ToMc(cpu),
-		mem: ToMi(mem),
+	c[requestCPU], c[requestMEM] = mx.Usage.Cpu(), mx.Usage.Memory()
+	if a.rCPU() != nil {
+		p[requestCPU] = percentMc(c.rCPU(), a.rCPU())
+	}
+	if a.rMEM() != nil {
+		p[requestMEM] = percentMi(c.rMEM(), a.rMEM())
 	}
 
-	acpu, amem := no.Status.Allocatable.Cpu().MilliValue(), client.ToMB(no.Status.Allocatable.Memory().Value())
-	a = metric{
-		cpu: ToMc(acpu),
-		mem: ToMi(amem),
-	}
-
-	p = metric{
-		cpu: IntToStr(client.ToPercentage(cpu, acpu)),
-		mem: IntToStr(client.ToPercentage(mem, amem)),
-	}
-
-	return
+	return c, p, a
 }
 
 func nodeRoles(node *v1.Node, res []string) {

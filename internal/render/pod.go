@@ -16,6 +16,60 @@ import (
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
+const (
+	requestCPU qualifiedResource = "rcpu"
+	requestMEM                   = "rmem"
+	limitCPU                     = "lcpu"
+	limitMEM                     = "lmem"
+)
+
+type (
+	qualifiedResource string
+	resources         map[qualifiedResource]*resource.Quantity
+	percentages       map[qualifiedResource]int
+)
+
+func newPercentages() percentages {
+	return make(percentages, 4)
+}
+func (p percentages) rCPU() int {
+	return p[requestCPU]
+}
+func (p percentages) rMEM() int {
+	return p[requestMEM]
+}
+func (p percentages) lCPU() int {
+	return p[limitCPU]
+}
+func (p percentages) lMEM() int {
+	return p[limitMEM]
+}
+
+func newResources(req, lim v1.ResourceList) resources {
+	if lim == nil {
+		lim = v1.ResourceList{}
+	}
+	return resources{
+		requestCPU: req.Cpu(),
+		requestMEM: req.Memory(),
+		limitCPU:   lim.Cpu(),
+		limitMEM:   lim.Memory(),
+	}
+}
+
+func (r resources) rCPU() *resource.Quantity {
+	return r[requestCPU]
+}
+func (r resources) rMEM() *resource.Quantity {
+	return r[requestMEM]
+}
+func (r resources) lCPU() *resource.Quantity {
+	return r[limitCPU]
+}
+func (r resources) lMEM() *resource.Quantity {
+	return r[limitMEM]
+}
+
 // Pod renders a K8s Pod to screen.
 type Pod struct{}
 
@@ -63,13 +117,13 @@ func (Pod) Header(ns string) Header {
 		HeaderColumn{Name: "READY"},
 		HeaderColumn{Name: "RESTARTS", Align: tview.AlignRight},
 		HeaderColumn{Name: "STATUS"},
-		HeaderColumn{Name: "CPU(R:L)", Align: tview.AlignRight, MX: true, Wide: true},
-		HeaderColumn{Name: "MEM(R:L)", Align: tview.AlignRight, MX: true, Wide: true},
 		HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "CPU/R:L", Align: tview.AlignRight, Wide: true},
+		HeaderColumn{Name: "MEM/R:L", Align: tview.AlignRight, Wide: true},
 		HeaderColumn{Name: "%CPU/R", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "%MEM/R", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "%CPU/L", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "%MEM/R", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "%MEM/L", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "IP"},
 		HeaderColumn{Name: "NODE"},
@@ -104,14 +158,14 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(cr) + "/" + strconv.Itoa(len(ss)),
 		strconv.Itoa(rc),
 		phase,
-		ToResourcesMc(res),
-		ToResourcesMi(res),
-		c.cpu,
-		c.mem,
-		perc.cpu,
-		perc.mem,
-		perc.cpuLim,
-		perc.memLim,
+		toMc(c.rCPU().MilliValue()),
+		toMi(c.rMEM().Value()),
+		toMc(res[requestCPU].MilliValue()) + ":" + toMc(res[limitCPU].MilliValue()),
+		toMi(res[requestMEM].Value()) + ":" + toMi(res[limitMEM].Value()),
+		strconv.Itoa(perc.rCPU()),
+		strconv.Itoa(perc.lCPU()),
+		strconv.Itoa(perc.rMEM()),
+		strconv.Itoa(perc.lMEM()),
 		na(po.Status.PodIP),
 		na(po.Spec.NodeName),
 		p.mapQOS(po.Status.QOSClass),
@@ -153,78 +207,48 @@ func (p *PodWithMetrics) DeepCopyObject() runtime.Object {
 	return p
 }
 
-const (
-	requestCPU qualifiedResource = "rcpu"
-	requestMEM                   = "rmem"
-	limitCPU                     = "lcpu"
-	limitMEM                     = "lmem"
-)
-
-type (
-	qualifiedResource string
-	resources         map[qualifiedResource]*resource.Quantity
-)
-
-func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, p metric, r resources) {
-	c, p = noMetric(), noMetric()
+func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (resources, percentages, resources) {
+	rList, lList := podRequests(pod.Spec), podLimits(pod.Spec)
+	r, p := newResources(rList, lList), newPercentages()
 	if mx == nil {
-		return
+		return newResources(nil, nil), p, r
 	}
 
-	coMetrix := make(map[string]v1.ResourceList)
-	for _, cm := range mx.Containers {
-		coMetrix[cm.Name] = cm.Usage
+	c := newResources(currentRes(mx), nil)
+	if rList.Cpu() != nil {
+		p[requestCPU] = percentMc(c.rCPU(), rList.Cpu())
 	}
-	cpu, mem := currentRes(mx)
-	c = metric{
-		cpu: ToMc(cpu.MilliValue()),
-		mem: ToMi(client.ToMB(mem.Value())),
+	if rList.Memory() != nil {
+		p[requestMEM] = percentMi(c.rMEM(), rList.Memory())
 	}
 
-	rc, rm := podRequests(pod.Spec)
-	lc, lm := podLimits(pod.Spec)
-	r = make(resources, 4)
-	r[requestCPU], r[requestMEM] = rc, rm
-	r[limitCPU], r[limitMEM] = lc, lm
-	p = metric{
-		cpu:    client.ToPercentageStr(cpu.MilliValue(), rc.MilliValue()),
-		mem:    client.ToPercentageStr(client.ToMB(mem.Value()), client.ToMB(rm.Value())),
-		cpuLim: client.ToPercentageStr(cpu.MilliValue(), lc.MilliValue()),
-		memLim: client.ToPercentageStr(client.ToMB(mem.Value()), client.ToMB(lm.Value())),
+	if lList.Cpu() != nil {
+		p[limitCPU] = percentMc(c.rCPU(), lList.Cpu())
+	}
+	if lList.Memory() != nil {
+		p[limitMEM] = percentMi(c.rMEM(), lList.Memory())
 	}
 
-	return
+	return c, p, r
 }
 
-func containerResources(co v1.Container) (cpu, mem *resource.Quantity) {
-	req, limit := co.Resources.Requests, co.Resources.Limits
-	switch {
-	case len(req) != 0:
-		cpu, mem = req.Cpu(), req.Memory()
-	case len(limit) != 0:
-		cpu, mem = limit.Cpu(), limit.Memory()
+func containerRequests(co *v1.Container) v1.ResourceList {
+	req := co.Resources.Requests
+	if len(req) != 0 {
+		return req
+	}
+	lim := co.Resources.Limits
+	if len(lim) != 0 {
+		return lim
 	}
 
-	return
+	return newResourceList(nil, nil)
 }
 
-func containerLimits(co v1.Container) (cpu, mem *resource.Quantity) {
-	limit := co.Resources.Limits
-	if len(limit) == 0 {
-		return nil, nil
-	}
-	return limit.Cpu(), limit.Memory()
-}
-
-func resourceLimits(cc []v1.Container) (cpu, mem *resource.Quantity) {
-	cpu, mem = new(resource.Quantity), new(resource.Quantity)
-	for _, co := range cc {
+func podLimits(spec v1.PodSpec) v1.ResourceList {
+	cpu, mem := new(resource.Quantity), new(resource.Quantity)
+	for _, co := range spec.Containers {
 		limit := co.Resources.Limits
-		if len(limit) == 0 {
-			cpu.Reset()
-			mem.Reset()
-			break
-		}
 		if limit.Cpu() != nil {
 			cpu.Add(*limit.Cpu())
 		}
@@ -232,59 +256,48 @@ func resourceLimits(cc []v1.Container) (cpu, mem *resource.Quantity) {
 			mem.Add(*limit.Memory())
 		}
 	}
-	return
+	return newResourceList(cpu, mem)
 }
 
-func podLimits(spec v1.PodSpec) (*resource.Quantity, *resource.Quantity) {
-	cc, cm := resourceLimits(spec.Containers)
-	ic, im := resourceLimits(spec.InitContainers)
-
-	cc.Add(*ic)
-	cm.Add(*im)
-
-	return cc, cm
+func newResourceList(cpu, mem *resource.Quantity) v1.ResourceList {
+	if cpu == nil {
+		cpu = new(resource.Quantity)
+	}
+	if mem == nil {
+		mem = new(resource.Quantity)
+	}
+	return v1.ResourceList{
+		v1.ResourceCPU:    *cpu,
+		v1.ResourceMemory: *mem,
+	}
 }
 
-func podRequests(spec v1.PodSpec) (*resource.Quantity, *resource.Quantity) {
-	cc, cm := resourceRequests(spec.Containers)
-	ic, im := resourceRequests(spec.InitContainers)
-
-	cc.Add(*ic)
-	cm.Add(*im)
-
-	return cc, cm
-}
-
-func resourceRequests(cc []v1.Container) (cpu, mem *resource.Quantity) {
-	cpu, mem = new(resource.Quantity), new(resource.Quantity)
-	for _, co := range cc {
-		c, m := containerResources(co)
-		if c == nil || m == nil {
-			cpu.Reset()
-			mem.Reset()
-			break
+func podRequests(spec v1.PodSpec) v1.ResourceList {
+	cpu, mem := new(resource.Quantity), new(resource.Quantity)
+	for _, co := range spec.Containers {
+		rl := containerRequests(&co)
+		if rl.Cpu() != nil {
+			cpu.Add(*rl.Cpu())
 		}
-		if c != nil {
-			cpu.Add(*c)
-		}
-		if m != nil {
-			mem.Add(*m)
+		if rl.Memory() != nil {
+			mem.Add(*rl.Memory())
 		}
 	}
-
-	return
+	return newResourceList(cpu, mem)
 }
 
-func currentRes(mx *mv1beta1.PodMetrics) (cpu, mem resource.Quantity) {
+func currentRes(mx *mv1beta1.PodMetrics) v1.ResourceList {
+	cpu, mem := new(resource.Quantity), new(resource.Quantity)
 	if mx == nil {
-		return
+		return newResourceList(nil, nil)
 	}
 	for _, co := range mx.Containers {
 		c, m := co.Usage.Cpu(), co.Usage.Memory()
 		cpu.Add(*c)
 		mem.Add(*m)
 	}
-	return
+
+	return newResourceList(cpu, mem)
 }
 
 func (*Pod) mapQOS(class v1.PodQOSClass) string {

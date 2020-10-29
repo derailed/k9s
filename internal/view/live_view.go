@@ -30,6 +30,7 @@ type LiveView struct {
 	model                     model.ResourceViewer
 	currentRegion, maxRegions int
 	fullScreen                bool
+	managedField              bool
 	cancel                    context.CancelFunc
 }
 
@@ -132,6 +133,12 @@ func (v *LiveView) bindKeys() {
 		ui.KeySlash:     ui.NewSharedKeyAction("Filter Mode", v.activateCmd, false),
 		tcell.KeyDelete: ui.NewSharedKeyAction("Erase", v.eraseCmd, false),
 	})
+
+	if v.title == "YAML" {
+		v.actions.Add(ui.KeyActions{
+			ui.KeyM: ui.NewKeyAction("Toggle ManagedFields", v.toggleManagedCmd, true),
+		})
+	}
 }
 
 func (v *LiveView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
@@ -161,10 +168,13 @@ func (v *LiveView) Name() string { return v.title }
 // Start starts the view updater.
 func (v *LiveView) Start() {
 	var ctx context.Context
-	ctx, v.cancel = context.WithCancel(context.Background())
-	ctx = context.WithValue(ctx, internal.KeyFactory, v.app.factory)
+	ctx, v.cancel = context.WithCancel(v.defaultCtx())
 
 	v.model.Watch(ctx)
+}
+
+func (v *LiveView) defaultCtx() context.Context {
+	return context.WithValue(context.Background(), internal.KeyFactory, v.app.factory)
 }
 
 // Stop terminates the updater.
@@ -183,6 +193,17 @@ func (v *LiveView) Hints() model.MenuHints {
 
 // ExtraHints returns additional hints.
 func (v *LiveView) ExtraHints() map[string]string {
+	return nil
+}
+
+func (v *LiveView) toggleManagedCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if v.app.InCmdMode() {
+		return evt
+	}
+
+	v.managedField = !v.managedField
+	v.model.SetOptions(v.defaultCtx(), map[string]bool{model.ManagedFieldsOpts: v.managedField})
+
 	return nil
 }
 

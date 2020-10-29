@@ -21,11 +21,14 @@ type ResourceViewerListener interface {
 	ResourceFailed(error)
 }
 
+type ToggleOpts map[string]bool
+
 type ResourceViewer interface {
 	GetPath() string
 	Filter(string)
 	ClearFilter()
 	Peek() []string
+	SetOptions(context.Context, ToggleOpts)
 	Watch(context.Context) error
 	AddListener(ResourceViewerListener)
 	RemoveListener(ResourceViewerListener)
@@ -55,6 +58,9 @@ func NewDescribe(gvr client.GVR, path string) *Describe {
 func (d *Describe) GetPath() string {
 	return d.path
 }
+
+// SetOptions toggle model options.
+func (d *Describe) SetOptions(context.Context, ToggleOpts) {}
 
 // Filter filters the model.
 func (d *Describe) Filter(q string) {

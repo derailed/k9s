@@ -43,4 +43,7 @@ const (
 
 	// UnsetValue represent an unset value
 	UnsetValue = ""
+
+	// ZeroValue represents a zero value.
+	ZeroValue = "0"
 )
