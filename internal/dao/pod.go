@@ -471,10 +471,11 @@ func (p *Pod) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs)
 	if !auth {
 		return fmt.Errorf("user is not authorized to patch a deployment")
 	}
-	if manager, isManaged, err := p.isControlled(path); isManaged {
-		if err != nil {
-			return err
-		}
+	manager, isManaged, err := p.isControlled(path)
+	if err != nil {
+		return err
+	}
+	if isManaged {
 		return fmt.Errorf("Unable to set image. This pod is managed by %s. Please set the image on the controller", manager)
 	}
 	jsonPatch, err := GetJsonPatch(imageSpecs)
@@ -501,7 +502,7 @@ func (p *Pod) isControlled(path string) (string, bool, error) {
 		return "", false, err
 	}
 	references := pod.GetObjectMeta().GetOwnerReferences()
-	if len(references) != 0 && *references[0].Controller == true {
+	if len(references) > 0 {
 		return fmt.Sprintf("%s/%s", references[0].Kind, references[0].Name), true, nil
 	}
 	return "", false, nil

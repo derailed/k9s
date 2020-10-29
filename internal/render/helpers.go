@@ -13,7 +13,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
@@ -151,10 +150,6 @@ func AsPerc(p string) string {
 	return "(" + p + ")"
 }
 
-func printValAndPerc(v string, p int) string {
-	return strconv.Itoa(p) + "% (" + v + ")"
-}
-
 // PrintPerc prints a number as percentage.
 func PrintPerc(p int) string {
 	return strconv.Itoa(p) + "%"
@@ -262,25 +257,6 @@ func mapToIfc(m interface{}) (s string) {
 	return
 }
 
-func toCPUPerc(cpu, acpu *resource.Quantity) string {
-	c, ac := cpu.MilliValue(), acpu.MilliValue()
-	return toMc(c) + " " + AsPerc(strconv.Itoa(client.ToPercentage(c, ac)))
-}
-
-func toMEMPerc(mem, amem *resource.Quantity) string {
-	m, am := mem.MilliValue(), amem.MilliValue()
-	return toMi(m) + " " + AsPerc(strconv.Itoa(client.ToPercentage(m, am)))
-}
-
-func toResourcesMcPerc(res resources, a v1.ResourceList) string {
-	cpu := a.Cpu().MilliValue()
-	rcpu, lcpu := toResourcesMc(res)
-	return rcpu +
-		AsPerc(strconv.Itoa(client.ToPercentage(res[requestCPU].MilliValue(), cpu))) + ":" +
-		lcpu +
-		AsPerc(strconv.Itoa(client.ToPercentage(res[limitCPU].MilliValue(), cpu)))
-}
-
 func toMcPerc(v1, v2 *resource.Quantity) string {
 	m := v1.MilliValue()
 	return toMc(m) + " (" +
@@ -308,40 +284,6 @@ func toMi(v int64) string {
 	p := message.NewPrinter(language.English)
 	return p.Sprintf("%d", client.ToMB(v))
 }
-
-func toResourcesMc(res resources) (string, string) {
-	var v1, v2 int64
-	if v, ok := res[requestCPU]; ok && v != nil {
-		v1 = v.MilliValue()
-	}
-	if v, ok := res[limitCPU]; ok && v != nil {
-		v2 = v.MilliValue()
-	}
-	if v1 == 0 && v2 == 0 {
-		return NAValue, NAValue
-	}
-	return toMc(v1), toMc(v2)
-}
-
-func asMcStr(q *resource.Quantity) string {
-	if q == nil {
-		return ZeroValue
-	}
-	return toMc(q.MilliValue())
-}
-
-func asMiStr(q *resource.Quantity) string {
-	if q == nil {
-		return ZeroValue
-	}
-	return toMi(q.MilliValue())
-}
-
-// // ToMi returns the megabytes unit.
-// func ToMi(v int64) string {
-// 	p := message.NewPrinter(language.English)
-// 	return p.Sprintf("%dMi", bytesToMb(v))
-// }
 
 func boolPtrToStr(b *bool) string {
 	if b == nil {

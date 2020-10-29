@@ -127,7 +127,9 @@ func (b *Browser) Start() {
 	b.GetModel().AddListener(b)
 	b.Table.Start()
 	b.CmdBuff().AddListener(b)
-	b.GetModel().Watch(b.prepareContext())
+	if err := b.GetModel().Watch(b.prepareContext()); err != nil {
+		log.Error().Err(err).Msgf("Watcher failed for %s", b.GVR())
+	}
 }
 
 // Stop terminates browser updates.
@@ -158,7 +160,9 @@ func (b *Browser) BufferActive(state bool, k model.BufferKind) {
 	if state {
 		return
 	}
-	b.GetModel().Refresh(b.prepareContext())
+	if err := b.GetModel().Refresh(b.prepareContext()); err != nil {
+		log.Error().Err(err).Msgf("Refresh failed for %s", b.GVR())
+	}
 	b.app.QueueUpdateDraw(func() {
 		b.Update(b.GetModel().Peek())
 		if b.GetRowCount() > 1 {

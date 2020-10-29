@@ -13,6 +13,7 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 )
 
@@ -170,7 +171,9 @@ func (v *LiveView) Start() {
 	var ctx context.Context
 	ctx, v.cancel = context.WithCancel(v.defaultCtx())
 
-	v.model.Watch(ctx)
+	if err := v.model.Watch(ctx); err != nil {
+		log.Error().Err(err).Msgf("LiveView watcher failed")
+	}
 }
 
 func (v *LiveView) defaultCtx() context.Context {
@@ -316,7 +319,7 @@ func (v *LiveView) updateTitle() {
 	if v.title == "" {
 		return
 	}
-	fmat := fmt.Sprintf(detailsTitleFmt, v.title, v.model.GetPath())
+	fmat := fmt.Sprintf(liveViewTitleFmt, v.title, v.model.GetPath())
 
 	buff := v.cmdBuff.GetText()
 	if buff == "" {

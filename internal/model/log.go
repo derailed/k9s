@@ -350,7 +350,7 @@ func (l *Log) applyFilter(q string) ([][]byte, error) {
 }
 
 func (l *Log) fireLogBuffChanged(lines dao.LogItems) {
-	ll := make([][]byte, len(l.lines))
+	ll := make([][]byte, len(lines))
 	if l.filter == "" {
 		l.lines.Render(l.logOptions.ShowTimestamp, ll)
 	} else {

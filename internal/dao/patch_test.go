@@ -1,15 +1,16 @@
 package dao
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestGetTemplateJsonPatch(t *testing.T) {
 	type args struct {
 		imageSpecs ImageSpecs
 	}
-	tests := map[string]struct {
+	uu := map[string]struct {
 		args    args
 		want    string
 		wantErr bool
@@ -35,14 +36,15 @@ func TestGetTemplateJsonPatch(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			got, err := GetTemplateJsonPatch(tt.args.imageSpecs)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetTemplateJsonPatch() error = %v, wantErr %v", err, tt.wantErr)
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			got, err := GetTemplateJsonPatch(u.args.imageSpecs)
+			if (err != nil) != u.wantErr {
+				t.Errorf("GetTemplateJsonPatch() error = %v, wantErr %v", err, u.wantErr)
 				return
 			}
-			require.JSONEq(t, tt.want, string(got), "Json strings should be equal")
+			require.JSONEq(t, u.want, string(got), "Json strings should be equal")
 		})
 	}
 }
@@ -51,7 +53,7 @@ func TestGetJsonPatch(t *testing.T) {
 	type args struct {
 		imageSpecs ImageSpecs
 	}
-	tests := map[string]struct {
+	uu := map[string]struct {
 		args    args
 		want    string
 		wantErr bool
@@ -77,14 +79,15 @@ func TestGetJsonPatch(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			got, err := GetJsonPatch(tt.args.imageSpecs)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetTemplateJsonPatch() error = %v, wantErr %v", err, tt.wantErr)
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			got, err := GetJsonPatch(u.args.imageSpecs)
+			if (err != nil) != u.wantErr {
+				t.Errorf("GetTemplateJsonPatch() error = %v, wantErr %v", err, u.wantErr)
 				return
 			}
-			require.JSONEq(t, tt.want, string(got), "Json strings should be equal")
+			require.JSONEq(t, u.want, string(got), "Json strings should be equal")
 		})
 	}
 }

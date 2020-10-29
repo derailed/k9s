@@ -2,6 +2,7 @@ package view
 
 import (
 	"context"
+
 	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
@@ -9,8 +10,6 @@ import (
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 )
-
-const loggerTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
 
 // Logger represents a generic log viewer.
 type Logger struct {

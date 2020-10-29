@@ -18,9 +18,9 @@ import (
 
 const (
 	requestCPU qualifiedResource = "rcpu"
-	requestMEM                   = "rmem"
-	limitCPU                     = "lcpu"
-	limitMEM                     = "lmem"
+	requestMEM qualifiedResource = "rmem"
+	limitCPU   qualifiedResource = "lcpu"
+	limitMEM   qualifiedResource = "lmem"
 )
 
 type (
@@ -274,8 +274,8 @@ func newResourceList(cpu, mem *resource.Quantity) v1.ResourceList {
 
 func podRequests(spec v1.PodSpec) v1.ResourceList {
 	cpu, mem := new(resource.Quantity), new(resource.Quantity)
-	for _, co := range spec.Containers {
-		rl := containerRequests(&co)
+	for i := range spec.Containers {
+		rl := containerRequests(&spec.Containers[i])
 		if rl.Cpu() != nil {
 			cpu.Add(*rl.Cpu())
 		}
