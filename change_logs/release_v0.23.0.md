@@ -18,10 +18,8 @@ I figured why not share one of the tunes I was spinning when powering thru teh b
 
 * [On An Island - David Gilmour With Crosby&Nash](https://www.youtube.com/watch?v=kEa__0wtIRo)
 * [Cause We've Ended As Lovers - Jeff Beck](https://www.youtube.com/watch?v=VC02wGj5gPw)
-* [La Maitresse D'Ecole - Maxime Le Forestier](https://www.youtube.com/watch?v=eE2-cv7taPo)
-* [Three Wishes - Roger Waters](https://www.youtube.com/watch?v=fVw1N6wyo4c)
 
-## Our Release Heroes...
+## Our Release Heroes
 
 Please join me in recognizing and applauding this drop contributors that went the extra mile to make sure K9s is better and more useful for all of us!!
 
@@ -102,17 +100,22 @@ k9s:
   ...
 ```
 
-## And That's A Wrap!
+## 🏁 Start Your Engines...
 
-As you can see, this is a pretty big drop and likely we've created some new issues in the process. Please make sure to file issues/PRs if things are not working as expected so we can improve on these features.
+As you can see, this is a pretty big drop and likely we've created some new issues in the process 🙀
 
-Thank you all for your continued excitement and support for K9s!
+Please make sure to file issues/PRs if things are not working as expected so we can improve on these features.
+
+👻 Happy Halloween To All!! (as if 2020 is not scary enough 🙈)
+
+Thank you all for your being fans and supporting K9s!!
 
 ---
 
 ## Resolved Issues/Features
 
 * [Issue #906](https://github.com/derailed/k9s/issues/906) Print resources in pod view
+* [Issue #903](https://github.com/derailed/k9s/issues/903) Slow down reconnection rate on auth failures
 * [Issue #901](https://github.com/derailed/k9s/issues/901) Logs page for any pod/container shows Waiting for logs...
 * [Issue #900](https://github.com/derailed/k9s/issues/900) Support sort by pending status
 * [Issue #895](https://github.com/derailed/k9s/issues/895) Wrong highlight position when filtering logs
