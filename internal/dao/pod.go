@@ -453,6 +453,7 @@ func in(ll []string, s string) bool {
 	return false
 }
 
+// GetPodSpec returns a pod spec given a resource.
 func (p *Pod) GetPodSpec(path string) (*v1.PodSpec, error) {
 	pod, err := p.GetInstance(path)
 	if err != nil {
@@ -462,6 +463,7 @@ func (p *Pod) GetPodSpec(path string) (*v1.PodSpec, error) {
 	return &podSpec, nil
 }
 
+// SetImages sets container images.
 func (p *Pod) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error {
 	ns, n := client.Namespaced(path)
 	auth, err := p.Client().CanI(ns, "v1/pod", []string{client.PatchVerb})

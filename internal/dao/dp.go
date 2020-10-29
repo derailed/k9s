@@ -212,6 +212,7 @@ func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs
 	return refs, nil
 }
 
+// GetPodSpec returns a pod spec given a resource.
 func (d *Deployment) GetPodSpec(path string) (*v1.PodSpec, error) {
 	dp, err := d.Load(d.Factory, path)
 	if err != nil {
@@ -221,6 +222,7 @@ func (d *Deployment) GetPodSpec(path string) (*v1.PodSpec, error) {
 	return &podSpec, nil
 }
 
+// SetImages sets container images.
 func (d *Deployment) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error {
 	ns, n := client.Namespaced(path)
 	auth, err := d.Client().CanI(ns, "apps/v1/deployments", []string{client.PatchVerb})

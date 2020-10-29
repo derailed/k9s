@@ -8,11 +8,13 @@ import (
 	"github.com/sahilm/fuzzy"
 )
 
+// Filterable represents an entity that can be filtered.
 type Filterable interface {
 	Filter(string)
 	ClearFilter()
 }
 
+// Textable represents a text resource.
 type Textable interface {
 	Peek() []string
 	SetText(string)

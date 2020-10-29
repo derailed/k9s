@@ -147,6 +147,7 @@ type Logger interface {
 	Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, error)
 }
 
+// ContainsPodSpec represents a resource with a pod template.
 type ContainsPodSpec interface {
 	// Get PodSpec of a resource
 	GetPodSpec(path string) (*v1.PodSpec, error)

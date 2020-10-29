@@ -18,7 +18,7 @@ import (
 	"github.com/sahilm/fuzzy"
 )
 
-// ManageFieldOpts tracks managed fields.
+// ManagedFieldsOpts tracks managed fields.
 const ManagedFieldsOpts = "ManagedFields"
 
 // YAML tracks yaml resource representations.
@@ -109,7 +109,7 @@ func (y *YAML) ClearFilter() {
 	y.query = ""
 }
 
-// Peel returns the current model data.
+// Peek returns the current model data.
 func (y *YAML) Peek() []string {
 	return y.lines
 }

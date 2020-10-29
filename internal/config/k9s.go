@@ -94,7 +94,7 @@ func (k *K9s) GetRefreshRate() int {
 	return rate
 }
 
-// GetReadOnly returns the readonly setting.
+// IsReadOnly returns the readonly setting.
 func (k *K9s) IsReadOnly() bool {
 	readOnly := k.ReadOnly
 	if k.manualReadOnly != nil {

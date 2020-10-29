@@ -595,7 +595,7 @@ func (x *Xray) Stop() {
 	x.CmdBuff().RemoveListener(x)
 }
 
-// SetBindKeysFn sets up extra key bindings.
+// AddBindKeysFn sets up extra key bindings.
 func (x *Xray) AddBindKeysFn(BindKeysFunc) {}
 
 // SetContextFn sets custom context.

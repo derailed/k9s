@@ -45,6 +45,7 @@ type ImageExtender struct {
 	ResourceViewer
 }
 
+// NewImageExtender returns a new extender.
 func NewImageExtender(r ResourceViewer) ResourceViewer {
 	s := ImageExtender{ResourceViewer: r}
 	s.AddBindKeysFn(s.bindKeys)

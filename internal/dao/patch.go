@@ -4,26 +4,32 @@ import (
 	"encoding/json"
 )
 
+// ImageSpec represents a container image.
 type ImageSpec struct {
 	Index             int
 	Name, DockerImage string
 	Init              bool
 }
 
+// ImageSpecs represents a collection of container images.
 type ImageSpecs []ImageSpec
 
+// JsonPatch track pod spec updates.
 type JsonPatch struct {
 	Spec Spec `json:"spec"`
 }
 
+// Spec represents a pod template.
 type Spec struct {
 	Template PodSpec `json:"template"`
 }
 
+// PodSpec represents a collection of container images.
 type PodSpec struct {
 	Spec ImagesSpec `json:"spec"`
 }
 
+// ImagesSpec tracks container image updates.
 type ImagesSpec struct {
 	SetElementOrderContainers     []Element `json:"$setElementOrder/containers,omitempty"`
 	SetElementOrderInitContainers []Element `json:"$setElementOrder/initContainers,omitempty"`
@@ -31,12 +37,13 @@ type ImagesSpec struct {
 	InitContainers                []Element `json:"initContainers,omitempty"`
 }
 
+// Element tracks a given container image.
 type Element struct {
 	Image string `json:"image,omitempty"`
 	Name  string `json:"name"`
 }
 
-// Build a json patch string to update PodSpec images
+// GetTemplateJsonPatch builds a json patch string to update PodSpec images
 func GetTemplateJsonPatch(imageSpecs ImageSpecs) ([]byte, error) {
 	jsonPatch := JsonPatch{
 		Spec: Spec{
@@ -46,6 +53,7 @@ func GetTemplateJsonPatch(imageSpecs ImageSpecs) ([]byte, error) {
 	return json.Marshal(jsonPatch)
 }
 
+// GetJsonPatch returns container image patch.
 func GetJsonPatch(imageSpecs ImageSpecs) ([]byte, error) {
 	podSpec := getPatchPodSpec(imageSpecs)
 	return json.Marshal(podSpec)

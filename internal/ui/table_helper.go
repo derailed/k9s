@@ -79,6 +79,7 @@ func IsFuzzySelector(s string) bool {
 	return fuzzyRx.MatchString(s)
 }
 
+// IsInverseSelector checks if inverse char has been provided.
 func IsInverseSelector(s string) bool {
 	if s == "" {
 		return false
@@ -162,8 +163,8 @@ func rxFilter(q string, inverse bool, data render.TableData) (render.TableData, 
 	}
 	for _, re := range data.RowEvents {
 		fields := strings.Join(re.Row.Fields, " ")
-		if (inverse && ! rx.MatchString(fields)) ||
-			((! inverse) && rx.MatchString(fields)) {
+		if (inverse && !rx.MatchString(fields)) ||
+			((!inverse) && rx.MatchString(fields)) {
 			filtered.RowEvents = append(filtered.RowEvents, re)
 		}
 	}

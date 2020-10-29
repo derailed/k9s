@@ -23,7 +23,7 @@ type ResourceViewerListener interface {
 	ResourceFailed(error)
 }
 
-// ToggleOpts represents a collection of viewing options.
+// ViewerToggleOpts represents a collection of viewing options.
 type ViewerToggleOpts map[string]bool
 
 // ResourceViewer represents a viewed resource.
