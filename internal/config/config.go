@@ -229,7 +229,6 @@ func (c *Config) Load(path string) error {
 
 // Save configuration to disk.
 func (c *Config) Save() error {
-	log.Debug().Msg("[Config] Saving configuration...")
 	c.Validate()
 
 	return c.SaveFile(K9sConfigFile)

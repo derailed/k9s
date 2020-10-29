@@ -16,24 +16,6 @@ import (
 	"github.com/sahilm/fuzzy"
 )
 
-type ResourceViewerListener interface {
-	ResourceChanged(lines []string, matches fuzzy.Matches)
-	ResourceFailed(error)
-}
-
-type ToggleOpts map[string]bool
-
-type ResourceViewer interface {
-	GetPath() string
-	Filter(string)
-	ClearFilter()
-	Peek() []string
-	SetOptions(context.Context, ToggleOpts)
-	Watch(context.Context) error
-	AddListener(ResourceViewerListener)
-	RemoveListener(ResourceViewerListener)
-}
-
 // Describe tracks describeable resources.
 type Describe struct {
 	gvr         client.GVR
@@ -50,7 +32,7 @@ func NewDescribe(gvr client.GVR, path string) *Describe {
 	return &Describe{
 		gvr:         gvr,
 		path:        path,
-		refreshRate: 2 * time.Second,
+		refreshRate: defaultReaderRefreshRate,
 	}
 }
 
@@ -60,7 +42,7 @@ func (d *Describe) GetPath() string {
 }
 
 // SetOptions toggle model options.
-func (d *Describe) SetOptions(context.Context, ToggleOpts) {}
+func (d *Describe) SetOptions(context.Context, ViewerToggleOpts) {}
 
 // Filter filters the model.
 func (d *Describe) Filter(q string) {
@@ -134,27 +116,30 @@ func (d *Describe) Watch(ctx context.Context) error {
 func (d *Describe) updater(ctx context.Context) {
 	defer log.Debug().Msgf("Describe canceled -- %q", d.gvr)
 
-	bf := backoff.NewExponentialBackOff()
-	bf.InitialInterval, bf.MaxElapsedTime = initRefreshRate, maxRetryInterval
-	rate := initRefreshRate
+	backOff := NewExpBackOff(ctx, defaultReaderRefreshRate, maxReaderRetryInterval)
+	delay := defaultReaderRefreshRate
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(rate):
-			rate = d.refreshRate
-			err := backoff.Retry(func() error {
-				return d.refresh(ctx)
-			}, backoff.WithContext(bf, ctx))
-			if err != nil {
-				log.Error().Err(err).Msgf("Retry failed")
+		case <-time.After(delay):
+			if err := d.refresh(ctx); err != nil {
+				log.Error().Err(err).Msgf("Describe Failed")
 				d.fireResourceFailed(err)
-				return
+				delay = backOff.NextBackOff()
+				if delay == backoff.Stop {
+					log.Error().Err(err).Msgf("Describe done Retrying bailing out!")
+					return
+				}
+			} else {
+				backOff.Reset()
+				delay = defaultReaderRefreshRate
 			}
 		}
 	}
 }
 func (d *Describe) refresh(ctx context.Context) error {
+	log.Debug().Msgf("DESCRefresh %v", time.Now())
 	if !atomic.CompareAndSwapInt32(&d.inUpdate, 0, 1) {
 		log.Debug().Msgf("Dropping update...")
 		return nil

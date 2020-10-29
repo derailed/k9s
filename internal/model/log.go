@@ -183,6 +183,7 @@ func (l *Log) Filter(q string) {
 	}
 
 	l.filter = q
+	// BOZO!! No needed since cmdbuff is now throttled!!
 	if l.filtering {
 		return
 	}
@@ -352,7 +353,7 @@ func (l *Log) applyFilter(q string) ([][]byte, error) {
 func (l *Log) fireLogBuffChanged(lines dao.LogItems) {
 	ll := make([][]byte, len(lines))
 	if l.filter == "" {
-		l.lines.Render(l.logOptions.ShowTimestamp, ll)
+		lines.Render(l.logOptions.ShowTimestamp, ll)
 	} else {
 		ff, err := l.applyFilter(l.filter)
 		if err != nil {

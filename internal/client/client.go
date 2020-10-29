@@ -264,29 +264,29 @@ func (a *APIClient) HasMetrics() bool {
 	if !ok || err != nil {
 		return false
 	}
-	v, ok := a.cache.Get(cacheMXKey)
-	if ok {
+	if v, ok := a.cache.Get(cacheMXKey); ok {
 		flag, k := v.(bool)
 		return k && flag
 	}
 
-	var flag bool
+	var metricsOK bool
+	defer func() {
+		a.cache.Add(cacheMXKey, metricsOK, cacheExpiry)
+	}()
 	dial, err := a.MXDial()
 	if err != nil {
-		a.cache.Add(cacheMXKey, flag, cacheExpiry)
-		return flag
+		return metricsOK
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), a.config.CallTimeout())
 	defer cancel()
 	if _, err := dial.MetricsV1beta1().NodeMetricses().List(ctx, metav1.ListOptions{Limit: 1}); err == nil {
-		flag = true
+		metricsOK = true
 	} else {
 		log.Error().Err(err).Msgf("List metrics failed")
 	}
-	a.cache.Add(cacheMXKey, flag, cacheExpiry)
 
-	return flag
+	return metricsOK
 }
 
 // Dial returns a handle to api server or die.
@@ -412,10 +412,6 @@ func (a *APIClient) reset() {
 }
 
 func (a *APIClient) supportsMetricsResources() (supported bool, err error) {
-	defer func() {
-		a.cache.Add(cacheMXAPIKey, supported, cacheExpiry)
-	}()
-
 	if v, ok := a.cache.Get(cacheMXAPIKey); ok {
 		flag, k := v.(bool)
 		supported = k && flag
@@ -424,6 +420,9 @@ func (a *APIClient) supportsMetricsResources() (supported bool, err error) {
 	if a.config == nil || a.config.flags == nil {
 		return
 	}
+	defer func() {
+		a.cache.Add(cacheMXAPIKey, supported, cacheExpiry)
+	}()
 
 	dial, err := a.CachedDiscovery()
 	if err != nil {

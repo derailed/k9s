@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/cenkalti/backoff"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -273,19 +274,35 @@ func (a *App) Resume() {
 }
 
 func (a *App) clusterUpdater(ctx context.Context) {
-	a.refreshCluster()
+	if err := a.refreshCluster(); err != nil {
+		log.Error().Err(err).Msgf("Cluster updater failed!")
+		return
+	}
+
+	bf := model.NewExpBackOff(ctx, clusterRefresh, 2*time.Minute)
+	delay := clusterRefresh
 	for {
 		select {
 		case <-ctx.Done():
 			log.Debug().Msg("ClusterInfo updater canceled!")
 			return
-		case <-time.After(clusterRefresh):
-			a.refreshCluster()
+		case <-time.After(delay):
+			if err := a.refreshCluster(); err != nil {
+				log.Error().Err(err).Msgf("ClusterUpdater failed")
+				if delay = bf.NextBackOff(); delay == backoff.Stop {
+					a.BailOut()
+					return
+				}
+			} else {
+				bf.Reset()
+				delay = clusterRefresh
+			}
 		}
 	}
 }
 
-func (a *App) refreshCluster() {
+func (a *App) refreshCluster() error {
+	log.Debug().Msgf("Cluster Refresh %v", time.Now())
 	c := a.Content.Top()
 	if ok := a.Conn().CheckConnectivity(); ok {
 		if atomic.LoadInt32(&a.conRetry) > 0 {
@@ -305,13 +322,13 @@ func (a *App) refreshCluster() {
 
 	count, maxConnRetry := atomic.LoadInt32(&a.conRetry), int32(a.Config.K9s.MaxConnRetry)
 	if count >= maxConnRetry {
+		log.Error().Msgf("Conn check failed (%d/%d). Bailing out!", count, maxConnRetry)
 		ExitStatus = fmt.Sprintf("Lost K8s connection (%d). Bailing out!", count)
 		a.BailOut()
 	}
 	if count > 0 {
-		log.Warn().Msgf("Conn check failed (%d/%d)", count, maxConnRetry)
-		a.Status(model.FlashWarn, fmt.Sprintf("Dial K8s failed (%d)", count))
-		return
+		a.Status(model.FlashWarn, fmt.Sprintf("Dial K8s Toast [%d/%d]", count, maxConnRetry))
+		return fmt.Errorf("Conn check failed (%d/%d)", count, maxConnRetry)
 	}
 
 	// Reload alias
@@ -323,6 +340,8 @@ func (a *App) refreshCluster() {
 
 	// Update cluster info
 	a.clusterModel.Refresh()
+
+	return nil
 }
 
 func (a *App) switchNS(ns string) error {

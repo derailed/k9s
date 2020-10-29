@@ -116,7 +116,7 @@ func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
 	)
 	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
 		if nmx, err = client.DialMetrics(n.Client()).FetchNodesMetrics(ctx); err != nil {
-			log.Warn().Err(err).Msgf("No node metrics")
+			log.Debug().Err(err).Msgf("No node metrics")
 		}
 	}
 

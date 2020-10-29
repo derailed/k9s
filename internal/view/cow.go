@@ -64,7 +64,7 @@ func (c *Cow) talk() {
 func cowTalk(says string) string {
 	buff := make([]string, 0, len(cow)+3)
 	buff = append(buff, " "+strings.Repeat("─", len(says)+8))
-	buff = append(buff, fmt.Sprintf("< [red::b]Ruroh? %s [-::-] >", says))
+	buff = append(buff, fmt.Sprintf("< [red::b]Ruroh? %s[-::-] >", says))
 	buff = append(buff, " "+strings.Repeat("─", len(says)+8))
 	spacer := strings.Repeat(" ", len(says)/2-8)
 	for _, s := range cow {

@@ -18,31 +18,25 @@ import (
 	"github.com/sahilm/fuzzy"
 )
 
-const (
-	maxRetryInterval = 1 * time.Minute
-
-	// ManageFieldOpts tracks managed fields.
-	ManagedFieldsOpts = "ManagedFields"
-)
+// ManageFieldOpts tracks managed fields.
+const ManagedFieldsOpts = "ManagedFields"
 
 // YAML tracks yaml resource representations.
 type YAML struct {
-	gvr         client.GVR
-	inUpdate    int32
-	path        string
-	query       string
-	lines       []string
-	refreshRate time.Duration
-	listeners   []ResourceViewerListener
-	options     ToggleOpts
+	gvr       client.GVR
+	inUpdate  int32
+	path      string
+	query     string
+	lines     []string
+	listeners []ResourceViewerListener
+	options   ViewerToggleOpts
 }
 
 // NewYAML return a new yaml resource model.
 func NewYAML(gvr client.GVR, path string) *YAML {
 	return &YAML{
-		gvr:         gvr,
-		path:        path,
-		refreshRate: 2 * time.Second,
+		gvr:  gvr,
+		path: path,
 	}
 }
 
@@ -52,7 +46,7 @@ func (y *YAML) GetPath() string {
 }
 
 // SetOptions toggle model options.
-func (y *YAML) SetOptions(ctx context.Context, opts ToggleOpts) {
+func (y *YAML) SetOptions(ctx context.Context, opts ViewerToggleOpts) {
 	y.options = opts
 	if err := y.refresh(ctx); err != nil {
 		y.fireResourceFailed(err)
@@ -133,28 +127,31 @@ func (y *YAML) Watch(ctx context.Context) error {
 func (y *YAML) updater(ctx context.Context) {
 	defer log.Debug().Msgf("YAML canceled -- %q", y.gvr)
 
-	bf := backoff.NewExponentialBackOff()
-	bf.InitialInterval, bf.MaxElapsedTime = initRefreshRate, maxRetryInterval
-	rate := initRefreshRate
+	backOff := NewExpBackOff(ctx, defaultReaderRefreshRate, maxReaderRetryInterval)
+	delay := defaultReaderRefreshRate
 	for {
 		select {
 		case <-ctx.Done():
 			return
-		case <-time.After(rate):
-			rate = y.refreshRate
-			err := backoff.Retry(func() error {
-				return y.refresh(ctx)
-			}, backoff.WithContext(bf, ctx))
-			if err != nil {
-				log.Error().Err(err).Msgf("Retry failed")
+		case <-time.After(delay):
+			if err := y.refresh(ctx); err != nil {
+				log.Error().Err(err).Msgf("YAML Failed")
 				y.fireResourceFailed(err)
-				return
+				delay = backOff.NextBackOff()
+				if delay == backoff.Stop {
+					log.Error().Err(err).Msgf("YAML done Retrying bailing out!")
+					return
+				}
+			} else {
+				backOff.Reset()
+				delay = defaultReaderRefreshRate
 			}
 		}
 	}
 }
 
 func (y *YAML) refresh(ctx context.Context) error {
+	log.Debug().Msgf("YAMLRefresh %v", time.Now())
 	if !atomic.CompareAndSwapInt32(&y.inUpdate, 0, 1) {
 		log.Debug().Msgf("Dropping update...")
 		return nil

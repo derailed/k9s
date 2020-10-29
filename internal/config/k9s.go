@@ -4,7 +4,7 @@ import "github.com/derailed/k9s/internal/client"
 
 const (
 	defaultRefreshRate  = 2
-	defaultMaxConnRetry = 15
+	defaultMaxConnRetry = 5
 )
 
 // K9s tracks K9s configuration options.

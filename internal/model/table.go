@@ -167,7 +167,7 @@ func (t *Table) updater(ctx context.Context) {
 	defer log.Debug().Msgf("TABLE-MODEL canceled -- %q", t.gvr)
 
 	bf := backoff.NewExponentialBackOff()
-	bf.InitialInterval, bf.MaxElapsedTime = initRefreshRate, maxRetryInterval
+	bf.InitialInterval, bf.MaxElapsedTime = initRefreshRate, maxReaderRetryInterval
 	rate := initRefreshRate
 	for {
 		select {

@@ -2,13 +2,41 @@ package model
 
 import (
 	"context"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tview"
+	"github.com/sahilm/fuzzy"
 	"k8s.io/apimachinery/pkg/runtime"
 )
+
+const (
+	maxReaderRetryInterval   = 2 * time.Minute
+	defaultReaderRefreshRate = 5 * time.Second
+)
+
+// ResourceViewerListener listens to viewing resource events.
+type ResourceViewerListener interface {
+	ResourceChanged(lines []string, matches fuzzy.Matches)
+	ResourceFailed(error)
+}
+
+// ToggleOpts represents a collection of viewing options.
+type ViewerToggleOpts map[string]bool
+
+// ResourceViewer represents a viewed resource.
+type ResourceViewer interface {
+	GetPath() string
+	Filter(string)
+	ClearFilter()
+	Peek() []string
+	SetOptions(context.Context, ViewerToggleOpts)
+	Watch(context.Context) error
+	AddListener(ResourceViewerListener)
+	RemoveListener(ResourceViewerListener)
+}
 
 // Igniter represents a runnable view.
 type Igniter interface {

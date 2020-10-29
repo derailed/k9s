@@ -88,6 +88,7 @@ func (v *LiveView) ResourceFailed(err error) {
 // ResourceChanged notifies when the filter changes.
 func (v *LiveView) ResourceChanged(lines []string, matches fuzzy.Matches) {
 	v.app.QueueUpdateDraw(func() {
+		v.text.SetTextAlign(tview.AlignLeft)
 		v.maxRegions = len(matches)
 		ll := make([]string, len(lines))
 		copy(ll, lines)
@@ -96,9 +97,10 @@ func (v *LiveView) ResourceChanged(lines []string, matches fuzzy.Matches) {
 			ll[m.Index] = line[:loc[0]] + `<<<"search_` + strconv.Itoa(i) + `">>>` + line[loc[0]:loc[1]] + `<<<"">>>` + line[loc[1]:]
 		}
 
-		if v.maxRegions == 0 {
+		if v.text.GetText(true) == "" {
 			v.text.ScrollToBeginning()
 		}
+
 		v.text.SetText(colorizeYAML(v.app.Styles.Views().Yaml, strings.Join(ll, "\n")))
 		v.text.Highlight()
 		if v.currentRegion < v.maxRegions {
