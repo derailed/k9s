@@ -1,6 +1,7 @@
 package render
 
 import (
+	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
@@ -259,30 +260,26 @@ func mapToIfc(m interface{}) (s string) {
 
 func toMcPerc(v1, v2 *resource.Quantity) string {
 	m := v1.MilliValue()
-	return toMc(m) + " (" +
-		strconv.Itoa(client.ToPercentage(m, v2.MilliValue())) + "%)"
+	return fmt.Sprintf("%s (%d%%)", toMc(m), client.ToPercentage(m, v2.MilliValue()))
 }
 
 func toMiPerc(v1, v2 *resource.Quantity) string {
 	m := v1.Value()
-	return toMi(m) + " (" +
-		strconv.Itoa(client.ToPercentage(m, v2.Value())) + "%)"
+	return fmt.Sprintf("%s (%d%%)", toMi(m), client.ToPercentage(m, v2.Value()))
 }
 
 func toMc(v int64) string {
 	if v == 0 {
 		return ZeroValue
 	}
-	p := message.NewPrinter(language.English)
-	return p.Sprintf("%d", v)
+	return AsThousands(v)
 }
 
 func toMi(v int64) string {
 	if v == 0 {
 		return ZeroValue
 	}
-	p := message.NewPrinter(language.English)
-	return p.Sprintf("%d", client.ToMB(v))
+	return AsThousands(client.ToMB(v))
 }
 
 func boolPtrToStr(b *bool) string {

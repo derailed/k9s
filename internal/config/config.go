@@ -52,7 +52,6 @@ type (
 		K9s      *K9s `yaml:"k9s"`
 		client   client.Connection
 		settings KubeSettings
-		demoMode bool
 	}
 )
 
@@ -68,16 +67,6 @@ func K9sHome() string {
 // NewConfig creates a new default config.
 func NewConfig(ks KubeSettings) *Config {
 	return &Config{K9s: NewK9s(), settings: ks}
-}
-
-// DemoMode returns true if demo mode is active, false otherwise.
-func (c *Config) DemoMode() bool {
-	return c.demoMode
-}
-
-// SetDemoMode sets the demo mode.
-func (c *Config) SetDemoMode(b bool) {
-	c.demoMode = b
 }
 
 // Refine the configuration based on cli args.

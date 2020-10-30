@@ -38,7 +38,6 @@ type Log struct {
 	filter       string
 	lastSent     int
 	flushTimeout time.Duration
-	filtering    bool
 }
 
 // NewLog returns a new model.
@@ -176,28 +175,15 @@ func (l *Log) Filter(q string) {
 	defer l.mx.Unlock()
 
 	if len(q) == 0 {
-		l.filter, l.filtering = "", false
+		l.filter = ""
 		l.fireLogCleared()
 		l.fireLogBuffChanged(l.lines)
 		return
 	}
 
 	l.filter = q
-	// BOZO!! No needed since cmdbuff is now throttled!!
-	if l.filtering {
-		return
-	}
-	l.filtering = true
-	go func(l *Log) {
-		<-time.After(500 * time.Millisecond)
-		l.fireLogCleared()
-		l.fireLogBuffChanged(l.lines)
-		l.mx.Lock()
-		{
-			l.filtering = false
-		}
-		l.mx.Unlock()
-	}(l)
+	l.fireLogCleared()
+	l.fireLogBuffChanged(l.lines)
 }
 
 func (l *Log) load() error {

@@ -196,12 +196,19 @@ func (r RowEvents) FindIndex(id string) (int, bool) {
 }
 
 // Sort rows based on column index and order.
-func (r RowEvents) Sort(ns string, sortCol int, ageCol bool, asc bool) {
+func (r RowEvents) Sort(ns string, sortCol int, ageCol, numCol, asc bool) {
 	if sortCol == -1 {
 		return
 	}
 
-	t := RowEventSorter{NS: ns, Events: r, Index: sortCol, Asc: asc}
+	t := RowEventSorter{
+		NS:         ns,
+		Events:     r,
+		Index:      sortCol,
+		Asc:        asc,
+		IsNumber:   numCol,
+		IsDuration: ageCol,
+	}
 	sort.Sort(t)
 
 	iids, fields := map[string][]string{}, make(StringSet, 0, len(r))
@@ -227,10 +234,12 @@ func (r RowEvents) Sort(ns string, sortCol int, ageCol bool, asc bool) {
 
 // RowEventSorter sorts row events by a given colon.
 type RowEventSorter struct {
-	Events RowEvents
-	Index  int
-	NS     string
-	Asc    bool
+	Events     RowEvents
+	Index      int
+	NS         string
+	IsNumber   bool
+	IsDuration bool
+	Asc        bool
 }
 
 func (r RowEventSorter) Len() int {
@@ -243,7 +252,7 @@ func (r RowEventSorter) Swap(i, j int) {
 
 func (r RowEventSorter) Less(i, j int) bool {
 	f1, f2 := r.Events[i].Row.Fields, r.Events[j].Row.Fields
-	return Less(r.Asc, f1[r.Index], f2[r.Index])
+	return Less(r.Asc, r.IsNumber, r.IsDuration, f1[r.Index], f2[r.Index])
 }
 
 // ----------------------------------------------------------------------------

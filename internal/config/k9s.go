@@ -1,6 +1,8 @@
 package config
 
-import "github.com/derailed/k9s/internal/client"
+import (
+	"github.com/derailed/k9s/internal/client"
+)
 
 const (
 	defaultRefreshRate  = 2
@@ -56,7 +58,17 @@ func (k *K9s) OverrideCrumbsless(b bool) {
 
 // OverrideReadOnly set the readonly mode manually.
 func (k *K9s) OverrideReadOnly(b bool) {
-	k.manualReadOnly = &b
+	if b {
+		k.manualReadOnly = &b
+	}
+}
+
+// OverrideWrite set the write mode manually.
+func (k *K9s) OverrideWrite(b bool) {
+	if b {
+		flag := !b
+		k.manualReadOnly = &flag
+	}
 }
 
 // OverrideCommand set the command manually.
@@ -100,6 +112,7 @@ func (k *K9s) IsReadOnly() bool {
 	if k.manualReadOnly != nil {
 		readOnly = *k.manualReadOnly
 	}
+
 	return readOnly
 }
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"math"
+	"regexp"
 
 	"github.com/derailed/tview"
 	runewidth "github.com/mattn/go-runewidth"
@@ -12,6 +13,19 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/printers"
 )
+
+var (
+	inverseRx = regexp.MustCompile(`\A\!`)
+	fuzzyRx   = regexp.MustCompile(`\A\-f`)
+)
+
+// IsInverseSelector checks if inverse char has been provided.
+func IsInverseSelector(s string) bool {
+	if s == "" {
+		return false
+	}
+	return inverseRx.MatchString(s)
+}
 
 // IsFuzzySelector checks if filter is fuzzy or not.
 func IsFuzzySelector(s string) bool {

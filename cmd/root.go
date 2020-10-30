@@ -28,7 +28,6 @@ var (
 	version, commit, date = "dev", "dev", client.NA
 	k9sFlags              *config.Flags
 	k8sFlags              *genericclioptions.ConfigFlags
-	demoMode              = new(bool)
 
 	rootCmd = &cobra.Command{
 		Use:   appName,
@@ -40,7 +39,6 @@ var (
 
 func init() {
 	rootCmd.AddCommand(versionCmd(), infoCmd())
-	initTransientFlags()
 	initK9sFlags()
 	initK8sFlags()
 
@@ -105,28 +103,15 @@ func loadConfiguration() *config.Config {
 		log.Warn().Msg("Unable to locate K9s config. Generating new configuration...")
 	}
 
-	if demoMode != nil {
-		k9sCfg.SetDemoMode(*demoMode)
-	}
 	if *k9sFlags.RefreshRate != config.DefaultRefreshRate {
 		k9sCfg.K9s.OverrideRefreshRate(*k9sFlags.RefreshRate)
 	}
 
-	if k9sFlags.Headless != nil {
-		k9sCfg.K9s.OverrideHeadless(*k9sFlags.Headless)
-	}
-
-	if k9sFlags.Crumbsless != nil {
-		k9sCfg.K9s.OverrideCrumbsless(*k9sFlags.Crumbsless)
-	}
-
-	if k9sFlags.ReadOnly != nil {
-		k9sCfg.K9s.OverrideReadOnly(*k9sFlags.ReadOnly)
-	}
-
-	if k9sFlags.Command != nil {
-		k9sCfg.K9s.OverrideCommand(*k9sFlags.Command)
-	}
+	k9sCfg.K9s.OverrideHeadless(*k9sFlags.Headless)
+	k9sCfg.K9s.OverrideCrumbsless(*k9sFlags.Crumbsless)
+	k9sCfg.K9s.OverrideReadOnly(*k9sFlags.ReadOnly)
+	k9sCfg.K9s.OverrideWrite(*k9sFlags.Write)
+	k9sCfg.K9s.OverrideCommand(*k9sFlags.Command)
 
 	if isBoolSet(k9sFlags.AllNamespaces) && k9sCfg.SetActiveNamespace(client.AllNamespaces) != nil {
 		log.Error().Msg("Setting active namespace")
@@ -175,15 +160,6 @@ func parseLevel(level string) zerolog.Level {
 	}
 }
 
-func initTransientFlags() {
-	rootCmd.Flags().BoolVar(
-		demoMode,
-		"demo",
-		false,
-		"Enable demo mode to show keyboard commands",
-	)
-}
-
 func initK9sFlags() {
 	k9sFlags = config.NewFlags()
 	rootCmd.Flags().IntVarP(
@@ -204,6 +180,12 @@ func initK9sFlags() {
 		false,
 		"Turn K9s header off",
 	)
+	rootCmd.Flags().BoolVar(
+		k9sFlags.Crumbsless,
+		"crumbsless",
+		false,
+		"Turn K9s crumbs off",
+	)
 	rootCmd.Flags().BoolVarP(
 		k9sFlags.AllNamespaces,
 		"all-namespaces", "A",
@@ -220,13 +202,13 @@ func initK9sFlags() {
 		k9sFlags.ReadOnly,
 		"readonly",
 		false,
-		"Toggles readOnly mode by overriding configuration setting",
+		"Sets readOnly mode by overriding readOnly configuration setting",
 	)
 	rootCmd.Flags().BoolVar(
-		k9sFlags.Crumbsless,
-		"crumbsless",
+		k9sFlags.Write,
+		"write",
 		false,
-		"Turn K9s crumbs off",
+		"Sets write mode by overriding the readOnly configuration setting",
 	)
 }
 

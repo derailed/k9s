@@ -234,10 +234,12 @@ func (t *Table) doUpdate(data render.TableData) {
 		c.SetTextColor(fg)
 		col++
 	}
+	colIndex := custData.Header.IndexOf(t.sortCol.name, false)
 	custData.RowEvents.Sort(
 		custData.Namespace,
-		custData.Header.IndexOf(t.sortCol.name, false),
+		colIndex,
 		t.sortCol.name == "AGE",
+		data.Header.IsMetricsCol(colIndex),
 		t.sortCol.asc,
 	)
 

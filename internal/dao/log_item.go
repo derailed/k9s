@@ -180,8 +180,6 @@ func (l LogItems) Filter(q string, showTime bool) ([]int, [][]int, error) {
 	return matches, indices, nil
 }
 
-var fuzzyRx = regexp.MustCompile(`\A\-f`)
-
 func (l LogItems) fuzzyFilter(q string, showTime bool) ([]int, [][]int) {
 	q = strings.TrimSpace(q)
 	matches, indices := make([]int, 0, len(l)), make([][]int, 0, 10)
@@ -195,22 +193,32 @@ func (l LogItems) fuzzyFilter(q string, showTime bool) ([]int, [][]int) {
 }
 
 func (l LogItems) filterLogs(q string, showTime bool) ([]int, [][]int, error) {
+	var invert bool
+	if IsInverseSelector(q) {
+		invert = true
+		q = q[1:]
+	}
 	rx, err := regexp.Compile(`(?i)` + q)
 	if err != nil {
 		return nil, nil, err
 	}
 	matches, indices := make([]int, 0, len(l)), make([][]int, 0, 10)
 	for i, line := range l.Lines(showTime) {
-		if locs := rx.FindIndex(line); locs != nil {
-			matches = append(matches, i)
-			ii := make([]int, 0, 10)
-			for i := 0; i < len(locs); i += 2 {
-				for j := locs[i]; j < locs[i+1]; j++ {
-					ii = append(ii, j)
-				}
-			}
-			indices = append(indices, ii)
+		locs := rx.FindIndex(line)
+		if locs != nil && invert {
+			continue
 		}
+		if locs == nil && !invert {
+			continue
+		}
+		matches = append(matches, i)
+		ii := make([]int, 0, 10)
+		for i := 0; i < len(locs); i += 2 {
+			for j := locs[i]; j < locs[i+1]; j++ {
+				ii = append(ii, j)
+			}
+		}
+		indices = append(indices, ii)
 	}
 
 	return matches, indices, nil
