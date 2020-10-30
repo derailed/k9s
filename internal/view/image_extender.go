@@ -92,7 +92,7 @@ func (s *ImageExtender) makeSetImageForm(sel string) *tview.Form {
 		s.App().Flash().Err(err)
 		return nil
 	}
-	formContainerLines := make([]*imageFormSpec, len(podSpec.InitContainers)+len(podSpec.Containers))
+	formContainerLines := make([]*imageFormSpec, 0, len(podSpec.InitContainers)+len(podSpec.Containers))
 	for _, spec := range podSpec.InitContainers {
 		formContainerLines = append(formContainerLines, &imageFormSpec{init: true, name: spec.Name, dockerImage: spec.Image})
 	}
