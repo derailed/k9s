@@ -169,7 +169,7 @@ k9s info
 k9s -n mycoolns
 # Start K9s in an existing KubeConfig context
 k9s --context coolCtx
-# Start K9s in readonly mode - with all modification commands disabled
+# Start K9s in readonly mode - with all cluster modification commands disabled
 k9s --readonly
 ```
 
@@ -210,7 +210,7 @@ K9s uses aliases to navigate most K8s resources.
 | View a Kubernetes resource using singular/plural or short-name | `:`po⏎                        | accepts singular, plural, short-name or alias ie pod or pods           |
 | View a Kubernetes resource in a given namespace                | `:`alias namespace⏎           |                                                                        |
 | Filter out a resource view given a filter                      | `/`filter⏎                    | Regex2 supported ie `fred|blee` to filter resources named fred or blee |
-| Inverse regex filer                                            | `/`! filter⏎                  | Keep everything that *doesn't* match. Not implemented for logs.        |
+| Inverse regex filer                                            | `/`! filter⏎                  | Keep everything that *doesn't* match.                                  |
 | Filter resource view by labels                                 | `/`-l label-selector⏎         |                                                                        |
 | Fuzzy find a resource given a filter                           | `/`-f filter⏎                 |                                                                        |
 | Bails out of view/command/filter mode                          | `<esc>`                       |                                                                        |
@@ -772,6 +772,12 @@ to make this project a reality!
   * <img src="assets/twitter.png" width="16" height="auto" alt="twitter"/> [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
 
 We always enjoy hearing from folks who benefit from our work!
+
+## Contributions Guideline
+
+* File an issue first prior to submitting a PR!
+* Ensure all exported items are properly commented
+* If applicable, submit a test suite against your PR
 
 ---
 
