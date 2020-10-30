@@ -66,7 +66,7 @@ func (k *K9s) OverrideReadOnly(b bool) {
 // OverrideWrite set the write mode manually.
 func (k *K9s) OverrideWrite(b bool) {
 	if b {
-		flag := !b
+		var flag bool
 		k.manualReadOnly = &flag
 	}
 }
