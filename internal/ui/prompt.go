@@ -46,7 +46,7 @@ type PromptModel interface {
 	ClearText(fire bool)
 
 	// Notify notifies all listener of current suggestions.
-	Notify()
+	Notify(bool)
 
 	// AddListener registers a command listener.
 	AddListener(model.BuffWatcher)
@@ -178,7 +178,7 @@ func (p *Prompt) InCmdMode() bool {
 func (p *Prompt) activate() {
 	p.SetCursorIndex(len(p.model.GetText()))
 	p.write(p.model.GetText(), "")
-	p.model.Notify()
+	p.model.Notify(false)
 }
 
 func (p *Prompt) update(s string) {

@@ -368,7 +368,7 @@ func TestToMc(t *testing.T) {
 	}{
 		{0, "0"},
 		{2, "2"},
-		{1_000, "1,000"},
+		{1_000, "1000"},
 	}
 
 	for _, u := range uu {
@@ -383,7 +383,7 @@ func TestToMi(t *testing.T) {
 	}{
 		{0, "0"},
 		{2 * client.MegaByte, "2"},
-		{1_000 * client.MegaByte, "1,000"},
+		{1_000 * client.MegaByte, "1000"},
 	}
 
 	for _, u := range uu {

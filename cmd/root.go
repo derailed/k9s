@@ -53,7 +53,7 @@ func init() {
 	if err := flags.Set("stderrthreshold", "fatal"); err != nil {
 		panic(err)
 	}
-	if err := flags.Set("v", "0"); err != nil {
+	if err := flags.Set("v", "-1"); err != nil {
 		panic(err)
 	}
 	if err := flags.Set("log_file", config.K9sLogs); err != nil {

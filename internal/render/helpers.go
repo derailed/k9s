@@ -1,7 +1,6 @@
 package render
 
 import (
-	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
@@ -120,7 +119,7 @@ func join(a []string, sep string) string {
 		return a[0]
 	}
 
-	var b []string
+	b := make([]string, 0, len(a))
 	for _, s := range a {
 		if s != "" {
 			b = append(b, s)
@@ -258,28 +257,26 @@ func mapToIfc(m interface{}) (s string) {
 	return
 }
 
-func toMcPerc(v1, v2 *resource.Quantity) string {
-	m := v1.MilliValue()
-	return fmt.Sprintf("%s (%d%%)", toMc(m), client.ToPercentage(m, v2.MilliValue()))
+func toMcPerc(v1, v2 int64) string {
+	return toMc(v1) + " (" + strconv.Itoa(client.ToPercentage(v1, v2)) + "%)"
 }
 
-func toMiPerc(v1, v2 *resource.Quantity) string {
-	m := v1.Value()
-	return fmt.Sprintf("%s (%d%%)", toMi(m), client.ToPercentage(m, v2.Value()))
+func toMiPerc(v1, v2 int64) string {
+	return toMi(v1) + " (" + strconv.Itoa(client.ToPercentage(v1, v2)) + "%)"
 }
 
 func toMc(v int64) string {
 	if v == 0 {
 		return ZeroValue
 	}
-	return AsThousands(v)
+	return strconv.Itoa(int(v))
 }
 
 func toMi(v int64) string {
 	if v == 0 {
 		return ZeroValue
 	}
-	return AsThousands(client.ToMB(v))
+	return strconv.Itoa(int(client.ToMB(v)))
 }
 
 func boolPtrToStr(b *bool) string {

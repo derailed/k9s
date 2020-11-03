@@ -8,20 +8,37 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestFishExact(t *testing.T) {
+	m := mockSuggestionListener{}
+
+	f := model.NewFishBuff(' ', model.FilterBuffer)
+	f.AddListener(&m)
+	f.SetSuggestionFn(func(text string) sort.StringSlice {
+		return sort.StringSlice{"lee"}
+	})
+	f.Add('b')
+	f.SetActive(true)
+
+	assert.True(t, m.active)
+	assert.Equal(t, 1, m.buff)
+	assert.Equal(t, 0, m.sugg)
+	assert.Equal(t, "blee", m.text)
+}
+
 func TestFishAdd(t *testing.T) {
 	m := mockSuggestionListener{}
 
 	f := model.NewFishBuff(' ', model.FilterBuffer)
 	f.AddListener(&m)
 	f.SetSuggestionFn(func(text string) sort.StringSlice {
-		return sort.StringSlice{"blee", "duh"}
+		return sort.StringSlice{"blee", "brew"}
 	})
-	f.Add('a')
+	f.Add('b')
 	f.SetActive(true)
 
+	assert.True(t, m.active)
 	assert.Equal(t, 1, m.buff)
 	assert.Equal(t, 1, m.sugg)
-	assert.True(t, m.active)
 	assert.Equal(t, "blee", m.suggestion)
 
 	c, ok := f.CurrentSuggestion()
@@ -30,7 +47,7 @@ func TestFishAdd(t *testing.T) {
 
 	c, ok = f.NextSuggestion()
 	assert.True(t, ok)
-	assert.Equal(t, "duh", c)
+	assert.Equal(t, "brew", c)
 
 	c, ok = f.PrevSuggestion()
 	assert.True(t, ok)
@@ -70,9 +87,9 @@ func TestFishDelete(t *testing.T) {
 // Helpers...
 
 type mockSuggestionListener struct {
-	buff, sugg int
-	suggestion string
-	active     bool
+	buff, sugg       int
+	suggestion, text string
+	active           bool
 }
 
 func (m *mockSuggestionListener) BufferChanged(s string) {
@@ -80,6 +97,7 @@ func (m *mockSuggestionListener) BufferChanged(s string) {
 }
 
 func (m *mockSuggestionListener) BufferCompleted(s string) {
+	m.text = s
 }
 
 func (m *mockSuggestionListener) BufferActive(state bool, kind model.BufferKind) {

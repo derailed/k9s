@@ -50,14 +50,6 @@ func NewLog(gvr client.GVR, opts dao.LogOptions, flushTimeout time.Duration) *Lo
 	}
 }
 
-// LogOptions returns the current log options.
-func (l *Log) LogOptions() dao.LogOptions {
-	l.mx.RLock()
-	defer l.mx.RUnlock()
-
-	return l.logOptions
-}
-
 // SinceSeconds returns since seconds option.
 func (l *Log) SinceSeconds() int64 {
 	l.mx.RLock()
@@ -66,14 +58,15 @@ func (l *Log) SinceSeconds() int64 {
 	return l.logOptions.SinceSeconds
 }
 
-// SetLogOptions updates logger options.
-func (l *Log) SetLogOptions(opts dao.LogOptions) {
-	l.mx.Lock()
-	{
-		l.logOptions = opts
-	}
-	l.mx.Unlock()
+// ToggleShowTimestamp toggles to logs timestamps.
+func (l *Log) ToggleShowTimestamp(b bool) {
+	l.logOptions.ShowTimestamp = b
+	l.Refresh()
+}
 
+// SetSinceSeconds sets the logs retrieval time.
+func (l *Log) SetSinceSeconds(i int64) {
+	l.logOptions.SinceSeconds = i
 	l.Restart()
 }
 

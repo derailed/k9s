@@ -218,12 +218,11 @@ func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (resources, percen
 	if rList.Cpu() != nil {
 		p[requestCPU] = percentMc(c.rCPU(), rList.Cpu())
 	}
-	if rList.Memory() != nil {
-		p[requestMEM] = percentMi(c.rMEM(), rList.Memory())
-	}
-
 	if lList.Cpu() != nil {
 		p[limitCPU] = percentMc(c.rCPU(), lList.Cpu())
+	}
+	if rList.Memory() != nil {
+		p[requestMEM] = percentMi(c.rMEM(), rList.Memory())
 	}
 	if lList.Memory() != nil {
 		p[limitMEM] = percentMi(c.rMEM(), lList.Memory())

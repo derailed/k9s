@@ -12,7 +12,7 @@ import (
 func TestNodeRender(t *testing.T) {
 	pom := render.NodeWithMetrics{
 		Raw: load(t, "no"),
-		MX:  makeNodeMX("n1", "10m", "10Mi"),
+		MX:  makeNodeMX("n1", "10m", "20Mi"),
 	}
 
 	var no render.Node
@@ -21,7 +21,7 @@ func TestNodeRender(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "minikube", r.ID)
-	e := render.Fields{"minikube", "Ready", "master", "v1.15.2", "4.15.0", "192.168.64.107", "<none>", "0", "0", "0", "10", "10", "0 (0%)", "0 (0%)", "0 (0%)", "0 (0%)", "4,000", "7,874"}
+	e := render.Fields{"minikube", "Ready", "master", "v1.15.2", "4.15.0", "192.168.64.107", "<none>", "0", "10", "20", "0", "0", "0 (0%)", "0 (0%)", "0 (0%)", "0 (0%)", "4000", "7874"}
 	assert.Equal(t, e, r.Fields[:18])
 }
 

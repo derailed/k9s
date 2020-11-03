@@ -101,23 +101,28 @@ func (f *FishBuff) SetSuggestionFn(fn SuggestionFunc) {
 }
 
 // Notify publish suggestions to all listeners.
-func (f *FishBuff) Notify() {
+func (f *FishBuff) Notify(delete bool) {
 	if f.suggestionFn == nil {
+		return
+	}
+	ss := f.suggestionFn(string(f.buff))
+	if len(ss) == 1 && !delete {
+		f.SetText(string(string(f.buff) + ss[0]))
 		return
 	}
 	f.fireSuggestionChanged(f.suggestionFn(string(f.buff)))
 }
 
-// Add adds a new charater to the buffer.
+// Add adds a new character to the buffer.
 func (f *FishBuff) Add(r rune) {
 	f.CmdBuff.Add(r)
-	f.Notify()
+	f.Notify(false)
 }
 
 // Delete removes the last character from the buffer.
 func (f *FishBuff) Delete() {
 	f.CmdBuff.Delete()
-	f.Notify()
+	f.Notify(true)
 }
 
 func (f *FishBuff) fireSuggestionChanged(ss []string) {
@@ -127,9 +132,10 @@ func (f *FishBuff) fireSuggestionChanged(ss []string) {
 		return
 	}
 
+	text, sug := f.GetText(), ss[f.suggestionIndex]
 	for _, l := range f.listeners {
 		if listener, ok := l.(SuggestionListener); ok {
-			listener.SuggestionChanged(f.GetText(), ss[f.suggestionIndex])
+			listener.SuggestionChanged(text, sug)
 		}
 	}
 }

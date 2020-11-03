@@ -154,15 +154,14 @@ func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (resources, 
 	if rList.Cpu() != nil {
 		p[requestCPU] = percentMc(c.rCPU(), rList.Cpu())
 	}
+	if lList.Cpu() != nil {
+		p[limitCPU] = percentMc(c.rCPU(), lList.Cpu())
+	}
 	if rList.Memory() != nil {
 		p[requestMEM] = percentMi(c.rMEM(), rList.Memory())
 	}
-
-	if lList.Cpu() != nil {
-		p[limitCPU] = percentMc(c.lCPU(), lList.Cpu())
-	}
-	if rList.Memory() != nil {
-		p[limitMEM] = percentMi(c.lMEM(), lList.Memory())
+	if lList.Memory() != nil {
+		p[limitMEM] = percentMi(c.rMEM(), lList.Memory())
 	}
 
 	return c, p, r
