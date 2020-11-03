@@ -13,7 +13,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
-	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 )
@@ -80,14 +79,6 @@ func asSelector(s *metav1.LabelSelector) string {
 	}
 
 	return sel.String()
-}
-
-func percentMc(v1, v2 *resource.Quantity) int {
-	return client.ToPercentage(v1.MilliValue(), v2.MilliValue())
-}
-
-func percentMi(v1, v2 *resource.Quantity) int {
-	return client.ToPercentage(client.ToMB(v1.Value()), client.ToMB(v2.Value()))
 }
 
 // ToSelector flattens a map selector to a string selector.

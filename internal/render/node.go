@@ -80,20 +80,13 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 	c, p, a := gatherNodeMX(&no, oo.MX)
 	trc, trm, tlc, tlm := new(resource.Quantity), new(resource.Quantity), new(resource.Quantity), new(resource.Quantity)
 	for _, p := range oo.Pods {
-		rList := podRequests(p.Spec)
-		if rList.Cpu() != nil {
-			trc.Add(*rList.Cpu())
-		}
-		if rList.Memory() != nil {
-			trm.Add(*rList.Memory())
-		}
-		lList := podLimits(p.Spec)
-		if lList.Cpu() != nil {
-			tlc.Add(*lList.Cpu())
-		}
-		if lList.Memory() != nil {
-			tlm.Add(*lList.Memory())
-		}
+		rcpu, rmem := podRequests(p.Spec)
+		trc.Add(rcpu)
+		trm.Add(rmem)
+
+		lcpu, lmem := podLimits(p.Spec)
+		tlc.Add(lcpu)
+		tlm.Add(lmem)
 	}
 	statuses := make(sort.StringSlice, 10)
 	status(no.Status.Conditions, no.Spec.Unschedulable, statuses)
@@ -176,11 +169,12 @@ func (n *NodeWithMetrics) DeepCopyObject() runtime.Object {
 }
 
 type metric struct {
-	cpu, mem int64
+	cpu, mem   int64
+	lcpu, lmem int64
 }
 
 func gatherNodeMX(no *v1.Node, mx *mv1beta1.NodeMetrics) (metric, percentages, metric) {
-	c := metric{cpu: 0, mem: 0}
+	var c metric
 	p := newPercentages()
 	a := metric{
 		cpu: no.Status.Allocatable.Cpu().MilliValue(),

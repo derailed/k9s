@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
 	v1 "k8s.io/api/core/v1"
@@ -112,10 +113,10 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 		boolToStr(co.IsInit),
 		restarts,
 		probe(co.Container.LivenessProbe) + ":" + probe(co.Container.ReadinessProbe),
-		toMc(cur.rCPU().MilliValue()),
-		toMi(cur.rMEM().Value()),
-		toMc(res[requestCPU].MilliValue()) + ":" + toMc(res[limitCPU].MilliValue()),
-		toMi(res[requestMEM].Value()) + ":" + toMi(res[limitMEM].Value()),
+		toMc(cur.cpu),
+		toMi(cur.mem),
+		toMc(res.cpu) + ":" + toMc(res.lcpu),
+		toMi(res.mem) + ":" + toMi(res.lmem),
 		strconv.Itoa(perc.rCPU()),
 		strconv.Itoa(perc.lCPU()),
 		strconv.Itoa(perc.rMEM()),
@@ -143,26 +144,39 @@ func (Container) diagnose(state, ready string) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (resources, percentages, resources) {
+func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (metric, percentages, metric) {
 	rList, lList := containerRequests(co), co.Resources.Limits
-	c, p, r := newResources(nil, nil), newPercentages(), newResources(rList, lList)
+	var c metric
+	p := newPercentages()
+
+	var r metric
+	if rList.Cpu() != nil {
+		r.cpu = rList.Cpu().MilliValue()
+	}
+	if lList.Cpu() != nil {
+		r.lcpu = lList.Cpu().MilliValue()
+	}
+	if rList.Memory() != nil {
+		r.mem = rList.Memory().Value()
+	}
+	if lList.Memory() != nil {
+		r.lmem = lList.Memory().Value()
+	}
+
 	if mx == nil {
 		return c, p, r
 	}
 
-	c[requestCPU], c[requestMEM] = mx.Usage.Cpu(), mx.Usage.Memory()
-	if rList.Cpu() != nil {
-		p[requestCPU] = percentMc(c.rCPU(), rList.Cpu())
+	if mx.Usage.Cpu() != nil {
+		c.cpu = mx.Usage.Cpu().MilliValue()
 	}
-	if lList.Cpu() != nil {
-		p[limitCPU] = percentMc(c.rCPU(), lList.Cpu())
+	if mx.Usage.Memory() != nil {
+		c.mem = mx.Usage.Memory().Value()
 	}
-	if rList.Memory() != nil {
-		p[requestMEM] = percentMi(c.rMEM(), rList.Memory())
-	}
-	if lList.Memory() != nil {
-		p[limitMEM] = percentMi(c.rMEM(), lList.Memory())
-	}
+	p[requestCPU] = client.ToPercentage(c.cpu, r.cpu)
+	p[limitCPU] = client.ToPercentage(c.cpu, r.lcpu)
+	p[requestMEM] = client.ToPercentage(c.mem, r.mem)
+	p[limitMEM] = client.ToPercentage(c.mem, r.lmem)
 
 	return c, p, r
 }
@@ -204,11 +218,16 @@ func ToContainerState(s v1.ContainerState) string {
 	}
 }
 
+const (
+	on  string = "on"
+	off        = "off"
+)
+
 func probe(p *v1.Probe) string {
 	if p == nil {
-		return "off"
+		return off
 	}
-	return "on"
+	return on
 }
 
 // ContainerRes represents a container and its metrics.

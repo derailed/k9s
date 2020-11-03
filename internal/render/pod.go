@@ -25,7 +25,6 @@ const (
 
 type (
 	qualifiedResource string
-	resources         map[qualifiedResource]*resource.Quantity
 	percentages       map[qualifiedResource]int
 )
 
@@ -43,31 +42,6 @@ func (p percentages) lCPU() int {
 }
 func (p percentages) lMEM() int {
 	return p[limitMEM]
-}
-
-func newResources(req, lim v1.ResourceList) resources {
-	if lim == nil {
-		lim = v1.ResourceList{}
-	}
-	return resources{
-		requestCPU: req.Cpu(),
-		requestMEM: req.Memory(),
-		limitCPU:   lim.Cpu(),
-		limitMEM:   lim.Memory(),
-	}
-}
-
-func (r resources) rCPU() *resource.Quantity {
-	return r[requestCPU]
-}
-func (r resources) rMEM() *resource.Quantity {
-	return r[requestMEM]
-}
-func (r resources) lCPU() *resource.Quantity {
-	return r[limitCPU]
-}
-func (r resources) lMEM() *resource.Quantity {
-	return r[limitMEM]
 }
 
 // Pod renders a K8s Pod to screen.
@@ -158,10 +132,10 @@ func (p Pod) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(cr) + "/" + strconv.Itoa(len(ss)),
 		strconv.Itoa(rc),
 		phase,
-		toMc(c.rCPU().MilliValue()),
-		toMi(c.rMEM().Value()),
-		toMc(res[requestCPU].MilliValue()) + ":" + toMc(res[limitCPU].MilliValue()),
-		toMi(res[requestMEM].Value()) + ":" + toMi(res[limitMEM].Value()),
+		toMc(c.cpu),
+		toMi(c.mem),
+		toMc(res.cpu) + ":" + toMc(res.lcpu),
+		toMi(res.mem) + ":" + toMi(res.lmem),
 		strconv.Itoa(perc.rCPU()),
 		strconv.Itoa(perc.lCPU()),
 		strconv.Itoa(perc.rMEM()),
@@ -207,26 +181,25 @@ func (p *PodWithMetrics) DeepCopyObject() runtime.Object {
 	return p
 }
 
-func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (resources, percentages, resources) {
-	rList, lList := podRequests(pod.Spec), podLimits(pod.Spec)
-	r, p := newResources(rList, lList), newPercentages()
+func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (metric, percentages, metric) {
+	var c, r metric
+	p := newPercentages()
+
+	rcpu, rmem := podRequests(pod.Spec)
+	lcpu, lmem := podLimits(pod.Spec)
+	r.cpu, r.lcpu = rcpu.MilliValue(), lcpu.MilliValue()
+	r.mem, r.lmem = rmem.Value(), lmem.Value()
+
 	if mx == nil {
-		return newResources(nil, nil), p, r
+		return c, p, r
 	}
 
-	c := newResources(currentRes(mx), nil)
-	if rList.Cpu() != nil {
-		p[requestCPU] = percentMc(c.rCPU(), rList.Cpu())
-	}
-	if lList.Cpu() != nil {
-		p[limitCPU] = percentMc(c.rCPU(), lList.Cpu())
-	}
-	if rList.Memory() != nil {
-		p[requestMEM] = percentMi(c.rMEM(), rList.Memory())
-	}
-	if lList.Memory() != nil {
-		p[limitMEM] = percentMi(c.rMEM(), lList.Memory())
-	}
+	ccpu, cmem := currentRes(mx)
+	c.cpu = ccpu.MilliValue()
+	c.mem = cmem.Value()
+
+	p[requestCPU], p[limitCPU] = client.ToPercentage(c.cpu, r.cpu), client.ToPercentage(c.cpu, r.lcpu)
+	p[requestMEM], p[limitMEM] = client.ToPercentage(c.mem, r.mem), client.ToPercentage(c.mem, r.lmem)
 
 	return c, p, r
 }
@@ -241,10 +214,10 @@ func containerRequests(co *v1.Container) v1.ResourceList {
 		return lim
 	}
 
-	return newResourceList(nil, nil)
+	return nil
 }
 
-func podLimits(spec v1.PodSpec) v1.ResourceList {
+func podLimits(spec v1.PodSpec) (resource.Quantity, resource.Quantity) {
 	cpu, mem := new(resource.Quantity), new(resource.Quantity)
 	for _, co := range spec.Containers {
 		limit := co.Resources.Limits
@@ -255,23 +228,10 @@ func podLimits(spec v1.PodSpec) v1.ResourceList {
 			mem.Add(*limit.Memory())
 		}
 	}
-	return newResourceList(cpu, mem)
+	return *cpu, *mem
 }
 
-func newResourceList(cpu, mem *resource.Quantity) v1.ResourceList {
-	if cpu == nil {
-		cpu = new(resource.Quantity)
-	}
-	if mem == nil {
-		mem = new(resource.Quantity)
-	}
-	return v1.ResourceList{
-		v1.ResourceCPU:    *cpu,
-		v1.ResourceMemory: *mem,
-	}
-}
-
-func podRequests(spec v1.PodSpec) v1.ResourceList {
+func podRequests(spec v1.PodSpec) (resource.Quantity, resource.Quantity) {
 	cpu, mem := new(resource.Quantity), new(resource.Quantity)
 	for i := range spec.Containers {
 		rl := containerRequests(&spec.Containers[i])
@@ -282,13 +242,13 @@ func podRequests(spec v1.PodSpec) v1.ResourceList {
 			mem.Add(*rl.Memory())
 		}
 	}
-	return newResourceList(cpu, mem)
+	return *cpu, *mem
 }
 
-func currentRes(mx *mv1beta1.PodMetrics) v1.ResourceList {
+func currentRes(mx *mv1beta1.PodMetrics) (resource.Quantity, resource.Quantity) {
 	cpu, mem := new(resource.Quantity), new(resource.Quantity)
 	if mx == nil {
-		return newResourceList(nil, nil)
+		return *cpu, *mem
 	}
 	for _, co := range mx.Containers {
 		c, m := co.Usage.Cpu(), co.Usage.Memory()
@@ -296,7 +256,7 @@ func currentRes(mx *mv1beta1.PodMetrics) v1.ResourceList {
 		mem.Add(*m)
 	}
 
-	return newResourceList(cpu, mem)
+	return *cpu, *mem
 }
 
 func (*Pod) mapQOS(class v1.PodQOSClass) string {
