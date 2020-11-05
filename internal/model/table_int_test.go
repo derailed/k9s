@@ -179,7 +179,7 @@ type testFactory struct {
 var _ dao.Factory = testFactory{}
 
 func (f testFactory) Client() client.Connection {
-	return client.NewTestClient()
+	return client.NewTestAPIClient()
 }
 func (f testFactory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
 	if len(f.rows) > 0 {

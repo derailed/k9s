@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell"
+	"github.com/rs/zerolog/log"
 )
 
 var _ model.ClusterInfoListener = (*ClusterInfo)(nil)
@@ -46,9 +48,22 @@ func (c *ClusterInfo) StylesChanged(s *config.Styles) {
 	c.updateStyle()
 }
 
+func (c *ClusterInfo) hasMetrics() bool {
+	mx := c.app.Conn().HasMetrics()
+	if mx {
+		auth, err := c.app.Conn().CanI("", "metrics.k8s.io/v1beta1/nodes", client.ListAccess)
+		if err != nil {
+			log.Warn().Err(err).Msgf("No nodes metrics access")
+		}
+		mx = auth
+	}
+
+	return mx
+}
+
 func (c *ClusterInfo) layout() {
 	for row, section := range []string{"Context", "Cluster", "User", "K9s Rev", "K8s Rev", "CPU", "MEM"} {
-		if (section == "CPU" || section == "MEM") && !c.app.Conn().HasMetrics() {
+		if (section == "CPU" || section == "MEM") && !c.hasMetrics() {
 			continue
 		}
 		c.SetCell(row, 0, c.sectionCell(section))
@@ -96,7 +111,7 @@ func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
 		row = c.setCell(row, curr.User)
 		row = c.setCell(row, fmt.Sprintf("%s [%d]", curr.K9sVer, os.Getpid()))
 		row = c.setCell(row, curr.K8sVer)
-		if c.app.Conn().HasMetrics() {
+		if c.hasMetrics() {
 			row = c.setCell(row, ui.AsPercDelta(prev.Cpu, curr.Cpu))
 			_ = c.setCell(row, ui.AsPercDelta(prev.Mem, curr.Mem))
 			c.setDefCon(curr.Cpu, curr.Mem)

@@ -65,9 +65,7 @@ func (p *Pod) Get(ctx context.Context, path string) (runtime.Object, error) {
 
 	var pmx *mv1beta1.PodMetrics
 	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
-		if pmx, err = client.DialMetrics(p.Client()).FetchPodMetrics(ctx, path); err != nil {
-			log.Debug().Err(err).Msgf("No pod metrics")
-		}
+		pmx, _ = client.DialMetrics(p.Client()).FetchPodMetrics(ctx, path)
 	}
 
 	return &render.PodWithMetrics{Raw: u, MX: pmx}, nil

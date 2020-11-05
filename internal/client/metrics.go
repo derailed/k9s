@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math"
 	"strconv"
@@ -90,7 +91,7 @@ func (m *MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsL
 
 func (m *MetricsServer) checkAccess(ns, gvr, msg string) error {
 	if !m.HasMetrics() {
-		return fmt.Errorf("No metrics-server detected on cluster")
+		return errors.New("No metrics-server detected on cluster")
 	}
 
 	auth, err := m.CanI(ns, gvr, ListAccess)

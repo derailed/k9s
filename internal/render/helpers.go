@@ -248,14 +248,6 @@ func mapToIfc(m interface{}) (s string) {
 	return
 }
 
-func toMcPerc(v1, v2 int64) string {
-	return toMc(v1) + " (" + strconv.Itoa(client.ToPercentage(v1, v2)) + "%)"
-}
-
-func toMiPerc(v1, v2 int64) string {
-	return toMi(v1) + " (" + strconv.Itoa(client.ToPercentage(v1, v2)) + "%)"
-}
-
 func toMc(v int64) string {
 	if v == 0 {
 		return ZeroValue

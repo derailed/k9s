@@ -115,9 +115,7 @@ func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
 		err error
 	)
 	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
-		if nmx, err = client.DialMetrics(n.Client()).FetchNodesMetrics(ctx); err != nil {
-			log.Debug().Err(err).Msgf("No node metrics")
-		}
+		nmx, _ = client.DialMetrics(n.Client()).FetchNodesMetrics(ctx)
 	}
 
 	no, err := FetchNode(ctx, n.Factory, path)
@@ -142,9 +140,7 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		err error
 	)
 	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
-		if nmx, err = client.DialMetrics(n.Client()).FetchNodesMetrics(ctx); err != nil {
-			log.Warn().Err(err).Msgf("No node metrics")
-		}
+		nmx, _ = client.DialMetrics(n.Client()).FetchNodesMetrics(ctx)
 	}
 
 	labels, _ := ctx.Value(internal.KeyLabels).(string)

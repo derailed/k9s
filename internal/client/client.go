@@ -26,7 +26,6 @@ import (
 const (
 	cacheSize     = 100
 	cacheExpiry   = 5 * time.Minute
-	cacheMXKey    = "metrics"
 	cacheMXAPIKey = "metricsAPI"
 )
 
@@ -46,7 +45,7 @@ type APIClient struct {
 }
 
 // NewTestClient for testing ONLY!!
-func NewTestClient() *APIClient {
+func NewTestAPIClient() *APIClient {
 	return &APIClient{
 		config: NewConfig(nil),
 		cache:  cache.NewLRUExpireCache(cacheSize),
@@ -61,12 +60,12 @@ func InitConnection(config *Config) (*APIClient, error) {
 		cache:  cache.NewLRUExpireCache(cacheSize),
 	}
 	a.connOK = true
-	_, err := a.supportsMetricsResources()
-	if err != nil {
+	if err := a.supportsMetricsResources(); err != nil {
 		a.connOK = false
+		return nil, err
 	}
 
-	return &a, err
+	return &a, nil
 }
 
 // ConnectionOK returns connection status.
@@ -272,35 +271,12 @@ func (a *APIClient) Config() *Config {
 	return a.config
 }
 
-// HasMetrics returns true if the cluster supports metrics.
+// HasMetrics checks if the cluster supports metrics.
 func (a *APIClient) HasMetrics() bool {
-	ok, err := a.supportsMetricsResources()
-	if !ok || err != nil {
+	if err := a.supportsMetricsResources(); err != nil {
 		return false
 	}
-	if v, ok := a.cache.Get(cacheMXKey); ok {
-		flag, k := v.(bool)
-		return k && flag
-	}
-
-	var metricsOK bool
-	defer func() {
-		a.cache.Add(cacheMXKey, metricsOK, cacheExpiry)
-	}()
-	dial, err := a.MXDial()
-	if err != nil {
-		return metricsOK
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), a.config.CallTimeout())
-	defer cancel()
-	if _, err := dial.MetricsV1beta1().NodeMetricses().List(ctx, metav1.ListOptions{Limit: 1}); err == nil {
-		metricsOK = true
-	} else {
-		log.Error().Err(err).Msgf("List metrics failed")
-	}
-
-	return metricsOK
+	return true
 }
 
 // Dial returns a handle to api server or die.
@@ -425,27 +401,37 @@ func (a *APIClient) reset() {
 	a.connOK = true
 }
 
-func (a *APIClient) supportsMetricsResources() (supported bool, err error) {
-	if v, ok := a.cache.Get(cacheMXAPIKey); ok {
-		flag, k := v.(bool)
-		supported = k && flag
+func (a *APIClient) checkCacheBool(key string) (state bool, ok bool) {
+	v, found := a.cache.Get(key)
+	if !found {
 		return
 	}
-	if a.config == nil || a.config.flags == nil {
-		return
+	state, ok = v.(bool)
+	return
+}
+
+func (a *APIClient) supportsMetricsResources() error {
+	supported, ok := a.checkCacheBool(cacheMXAPIKey)
+	if ok {
+		if supported {
+			return nil
+		}
+		return errors.New("No metrics-server detected")
 	}
+
 	defer func() {
 		a.cache.Add(cacheMXAPIKey, supported, cacheExpiry)
 	}()
 
 	dial, err := a.CachedDiscovery()
 	if err != nil {
-		return false, err
+		log.Warn().Err(err).Msgf("Unable to dial discovery API")
+		return err
 	}
 	apiGroups, err := dial.ServerGroups()
 	if err != nil {
-		log.Debug().Msgf("Unable to access servergroups %#v", err)
-		return
+		log.Warn().Err(err).Msgf("Unable to retrieve server groups")
+		return err
 	}
 	for _, grp := range apiGroups.Groups {
 		if grp.Name != metricsapi.GroupName {
@@ -453,11 +439,11 @@ func (a *APIClient) supportsMetricsResources() (supported bool, err error) {
 		}
 		if checkMetricsVersion(grp) {
 			supported = true
-			return
+			return nil
 		}
 	}
 
-	return
+	return errors.New("No metrics-server detected")
 }
 
 func checkMetricsVersion(grp metav1.APIGroup) bool {

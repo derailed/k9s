@@ -105,11 +105,6 @@ func (f *FishBuff) Notify(delete bool) {
 	if f.suggestionFn == nil {
 		return
 	}
-	ss := f.suggestionFn(string(f.buff))
-	if len(ss) == 1 && !delete {
-		f.SetText(string(string(f.buff) + ss[0]))
-		return
-	}
 	f.fireSuggestionChanged(f.suggestionFn(string(f.buff)))
 }
 

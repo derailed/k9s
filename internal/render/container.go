@@ -219,8 +219,8 @@ func ToContainerState(s v1.ContainerState) string {
 }
 
 const (
-	on  string = "on"
-	off        = "off"
+	on  = "on"
+	off = "off"
 )
 
 func probe(p *v1.Probe) string {

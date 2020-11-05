@@ -10,7 +10,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -45,10 +44,6 @@ func (Node) Header(_ string) Header {
 		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "%CPU", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "%MEM", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "CPU/R", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "CPU/L", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "MEM/R", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "MEM/L", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "CPU/A", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "MEM/A", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "LABELS", Wide: true},
@@ -78,16 +73,6 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 	iIP, eIP = missing(iIP), missing(eIP)
 
 	c, p, a := gatherNodeMX(&no, oo.MX)
-	trc, trm, tlc, tlm := new(resource.Quantity), new(resource.Quantity), new(resource.Quantity), new(resource.Quantity)
-	for _, p := range oo.Pods {
-		rcpu, rmem := podRequests(p.Spec)
-		trc.Add(rcpu)
-		trm.Add(rmem)
-
-		lcpu, lmem := podLimits(p.Spec)
-		tlc.Add(lcpu)
-		tlm.Add(lmem)
-	}
 	statuses := make(sort.StringSlice, 10)
 	status(no.Status.Conditions, no.Spec.Unschedulable, statuses)
 	sort.Sort(statuses)
@@ -109,10 +94,6 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 		toMi(c.mem),
 		strconv.Itoa(p.rCPU()),
 		strconv.Itoa(p.rMEM()),
-		toMcPerc(trc.MilliValue(), a.cpu),
-		toMcPerc(tlc.MilliValue(), a.cpu),
-		toMiPerc(trm.Value(), a.mem),
-		toMiPerc(tlm.Value(), a.mem),
 		toMc(a.cpu),
 		toMi(a.mem),
 		mapToStr(no.Labels),

@@ -86,7 +86,7 @@ type tableFactory struct {
 var _ dao.Factory = tableFactory{}
 
 func (f tableFactory) Client() client.Connection {
-	return client.NewTestClient()
+	return client.NewTestAPIClient()
 }
 func (f tableFactory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
 	if len(f.rows) > 0 {
