@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
@@ -91,15 +92,20 @@ func (c *Cluster) UserName() string {
 // Metrics gathers node level metrics and compute utilization percentages.
 func (c *Cluster) Metrics(ctx context.Context, mx *client.ClusterMetrics) error {
 	var (
-		nn *v1.NodeList
+		nn  *v1.NodeList
 		err error
 	)
 	if v, ok := c.cache.Get(clusterNodesKey); ok {
-		nn = v.(*v1.NodeList)
+		if nl, ok := v.(*v1.NodeList); ok {
+			nn = nl
+		}
 	} else {
 		if nn, err = dao.FetchNodes(ctx, c.factory, ""); err != nil {
 			return err
 		}
+	}
+	if nn == nil {
+		return errors.New("Unable to fetch nodes list")
 	}
 	if len(nn.Items) > 0 {
 		c.cache.Add(clusterNodesKey, nn, clusterCacheExpiry)
