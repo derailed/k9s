@@ -2,9 +2,24 @@ package model
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
+	"io/ioutil"
+	"net/http"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/rs/zerolog/log"
+	"k8s.io/apimachinery/pkg/util/cache"
+	"vbom.ml/util/sortorder"
+)
+
+const (
+	k9sGitURL       = "https://api.github.com/repos/derailed/k9s/releases/latest"
+	cacheSize       = 10
+	cacheExpiry     = 1 * time.Hour
+	k9sLatestRevKey = "k9sRev"
 )
 
 // ClusterInfoListener registers a listener for model changes.
@@ -20,7 +35,8 @@ type ClusterInfoListener interface {
 type ClusterMeta struct {
 	Context, Cluster    string
 	User                string
-	K9sVer, K8sVer      string
+	K9sVer, K9sLatest   string
+	K8sVer              string
 	Cpu, Mem, Ephemeral int
 }
 
@@ -54,7 +70,8 @@ func (c ClusterMeta) Deltas(n ClusterMeta) bool {
 		c.Cluster != n.Cluster ||
 		c.User != n.User ||
 		c.K8sVer != n.K8sVer ||
-		c.K9sVer != n.K9sVer
+		c.K9sVer != n.K9sVer ||
+		c.K9sLatest != n.K9sLatest
 }
 
 // ClusterInfo models cluster metadata.
@@ -63,15 +80,35 @@ type ClusterInfo struct {
 	data      ClusterMeta
 	version   string
 	listeners []ClusterInfoListener
+	cache     *cache.LRUExpireCache
 }
 
 // NewClusterInfo returns a new instance.
 func NewClusterInfo(f dao.Factory, version string) *ClusterInfo {
-	return &ClusterInfo{
+	c := ClusterInfo{
 		cluster: NewCluster(f),
 		data:    NewClusterMeta(),
 		version: version,
+		cache:   cache.NewLRUExpireCache(cacheSize),
 	}
+
+	return &c
+}
+
+func (c *ClusterInfo) fetchK9sLatestRev() string {
+	rev, ok := c.cache.Get(k9sLatestRevKey)
+	if ok {
+		return rev.(string)
+	}
+
+	latestRev, err := checkLastestRev()
+	if err != nil {
+		log.Error().Msgf("k9s latest rev fetch failed")
+	} else {
+		c.cache.Add(k9sLatestRevKey, latestRev, cacheExpiry)
+	}
+
+	return latestRev
 }
 
 // Reset resets context and reload.
@@ -86,7 +123,10 @@ func (c *ClusterInfo) Refresh() {
 	data.Context = c.cluster.ContextName()
 	data.Cluster = c.cluster.ClusterName()
 	data.User = c.cluster.UserName()
-	data.K9sVer = c.version
+	data.K9sVer, data.K9sLatest = c.version, c.fetchK9sLatestRev()
+	if !sortorder.NaturalLess(data.K9sVer, data.K9sLatest) {
+		data.K9sLatest = ""
+	}
 	data.K8sVer = c.cluster.Version()
 
 	ctx, cancel := context.WithTimeout(context.Background(), c.cluster.factory.Client().Config().CallTimeout())
@@ -134,4 +174,41 @@ func (c *ClusterInfo) fireNoMetaChanged(data ClusterMeta) {
 	for _, l := range c.listeners {
 		l.ClusterInfoUpdated(data)
 	}
+}
+
+// Helpers...
+
+func checkLastestRev() (string, error) {
+	log.Debug().Msgf("Fetching latest k9s rev...")
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, k9sGitURL, nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer func() {
+		if resp.Body != nil {
+			_ = resp.Body.Close()
+		}
+	}()
+
+	b, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	m := make(map[string]interface{}, 20)
+	if err := json.Unmarshal(b, &m); err != nil {
+		return "", err
+	}
+
+	if v, ok := m["name"]; ok {
+		return v.(string), nil
+	}
+
+	return "", errors.New("No version found")
 }

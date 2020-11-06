@@ -2,7 +2,6 @@ package view
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -109,7 +108,11 @@ func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
 		row := c.setCell(0, curr.Context)
 		row = c.setCell(row, curr.Cluster)
 		row = c.setCell(row, curr.User)
-		row = c.setCell(row, fmt.Sprintf("%s [%d]", curr.K9sVer, os.Getpid()))
+		if curr.K9sLatest != "" {
+			row = c.setCell(row, fmt.Sprintf("%s ⚡️[cadetblue::b]%s", curr.K9sVer, curr.K9sLatest))
+		} else {
+			row = c.setCell(row, curr.K9sVer)
+		}
 		row = c.setCell(row, curr.K8sVer)
 		if c.hasMetrics() {
 			row = c.setCell(row, ui.AsPercDelta(prev.Cpu, curr.Cpu))
