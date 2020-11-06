@@ -71,11 +71,6 @@ func (t *Table) Init(ctx context.Context) {
 	t.SetSelectionChangedFunc(t.selectionChanged)
 	t.SetBackgroundColor(tcell.ColorDefault)
 	t.Select(1, 0)
-	t.hasMetrics = false
-	if mx, ok := ctx.Value(internal.KeyHasMetrics).(bool); ok {
-		t.hasMetrics = mx
-	}
-
 	if cfg, ok := ctx.Value(internal.KeyViewConfig).(*config.CustomView); ok && cfg != nil {
 		cfg.AddListener(t.GVR().String(), t)
 	}
@@ -187,11 +182,12 @@ func (t *Table) SetSortCol(name string, asc bool) {
 }
 
 // Update table content.
-func (t *Table) Update(data render.TableData) {
+func (t *Table) Update(data render.TableData, hasMetrics bool) {
 	t.header = data.Header
 	if t.decorateFn != nil {
 		data = t.decorateFn(data)
 	}
+	t.hasMetrics = hasMetrics
 	t.doUpdate(t.filtered(data))
 	t.UpdateTitle()
 }
@@ -334,7 +330,7 @@ func (t *Table) Refresh() {
 		return
 	}
 	// BOZO!! Really want to tell model reload now. Refactor!
-	t.Update(data)
+	t.Update(data, t.hasMetrics)
 }
 
 // GetSelectedRow returns the entire selected row.

@@ -27,7 +27,7 @@ func TestTableUpdate(t *testing.T) {
 	v.Init(makeContext())
 
 	data := makeTableData()
-	v.Update(data)
+	v.Update(data, false)
 
 	assert.Equal(t, len(data.RowEvents)+1, v.GetRowCount())
 	assert.Equal(t, len(data.Header), v.GetColumnCount())
@@ -38,7 +38,7 @@ func TestTableSelection(t *testing.T) {
 	v.Init(makeContext())
 	m := &mockModel{}
 	v.SetModel(m)
-	v.Update(m.Peek())
+	v.Update(m.Peek(), false)
 	v.SelectRow(1, true)
 
 	r, ok := v.GetSelectedRow("r1")

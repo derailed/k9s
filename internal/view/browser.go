@@ -164,7 +164,7 @@ func (b *Browser) BufferActive(state bool, k model.BufferKind) {
 		log.Error().Err(err).Msgf("Refresh failed for %s", b.GVR())
 	}
 	b.app.QueueUpdateDraw(func() {
-		b.Update(b.GetModel().Peek())
+		b.Update(b.GetModel().Peek(), b.App().Conn().HasMetrics())
 		if b.GetRowCount() > 1 {
 			b.App().filterHistory.Push(b.CmdBuff().GetText())
 		}
@@ -213,7 +213,7 @@ func (b *Browser) TableDataChanged(data render.TableData) {
 
 	b.app.QueueUpdateDraw(func() {
 		b.refreshActions()
-		b.Update(data)
+		b.Update(data, b.app.Conn().HasMetrics())
 	})
 }
 
@@ -335,6 +335,9 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	ns, n := client.Namespaced(path)
 	if client.IsClusterScoped(ns) {
 		ns = client.AllNamespaces
+	}
+	if b.GVR().String() == "v1/namespaces" {
+		ns = n
 	}
 	if ok, err := b.app.Conn().CanI(ns, b.GVR().String(), []string{"patch"}); !ok || err != nil {
 		b.App().Flash().Err(fmt.Errorf("Current user can't edit resource %s", b.GVR()))

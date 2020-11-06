@@ -27,6 +27,7 @@ const (
 	cacheSize     = 100
 	cacheExpiry   = 5 * time.Minute
 	cacheMXAPIKey = "metricsAPI"
+	serverVersion = "serverVersion"
 )
 
 var supportedMetricsAPIVersions = []string{"v1beta1"}
@@ -58,14 +59,18 @@ func InitConnection(config *Config) (*APIClient, error) {
 	a := APIClient{
 		config: config,
 		cache:  cache.NewLRUExpireCache(cacheSize),
+		connOK: true,
 	}
-	a.connOK = true
-	if err := a.supportsMetricsResources(); err != nil {
-		a.connOK = false
-		return nil, err
+	err := a.supportsMetricsResources()
+	if err != nil {
+		log.Error().Err(err).Msgf("Checking metrics-server")
 	}
+	if errors.Is(err, noMetricServerErr) || errors.Is(err, metricsUnsupportedErr) {
+		return &a, nil
+	}
+	a.connOK = false
 
-	return &a, nil
+	return &a, err
 }
 
 // ConnectionOK returns connection status.
@@ -178,8 +183,6 @@ func (a *APIClient) CurrentNamespaceName() (string, error) {
 	return a.config.CurrentNamespaceName()
 }
 
-const serverVersion = "serverVersion"
-
 // ServerVersion returns the current server version info.
 func (a *APIClient) ServerVersion() (*version.Info, error) {
 	if v, ok := a.cache.Get(serverVersion); ok {
@@ -273,10 +276,8 @@ func (a *APIClient) Config() *Config {
 
 // HasMetrics checks if the cluster supports metrics.
 func (a *APIClient) HasMetrics() bool {
-	if err := a.supportsMetricsResources(); err != nil {
-		return false
-	}
-	return true
+	err := a.supportsMetricsResources()
+	return err == nil
 }
 
 // Dial returns a handle to api server or die.
@@ -416,7 +417,7 @@ func (a *APIClient) supportsMetricsResources() error {
 		if supported {
 			return nil
 		}
-		return errors.New("No metrics-server detected")
+		return noMetricServerErr
 	}
 
 	defer func() {
@@ -430,7 +431,7 @@ func (a *APIClient) supportsMetricsResources() error {
 	}
 	apiGroups, err := dial.ServerGroups()
 	if err != nil {
-		log.Warn().Err(err).Msgf("Unable to retrieve server groups")
+		log.Warn().Err(err).Msgf("Unable to fetch APIGroups")
 		return err
 	}
 	for _, grp := range apiGroups.Groups {
@@ -443,7 +444,7 @@ func (a *APIClient) supportsMetricsResources() error {
 		}
 	}
 
-	return errors.New("No metrics-server detected")
+	return metricsUnsupportedErr
 }
 
 func checkMetricsVersion(grp metav1.APIGroup) bool {

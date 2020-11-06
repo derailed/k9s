@@ -57,7 +57,7 @@ func TestTableNew(t *testing.T) {
 	}
 	data.Namespace = ""
 
-	v.Update(*data)
+	v.Update(*data, false)
 	assert.Equal(t, 3, v.GetRowCount())
 }
 

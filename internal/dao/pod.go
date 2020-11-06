@@ -87,9 +87,7 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 	var pmx *mv1beta1.PodMetricsList
 	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
-		if pmx, err = client.DialMetrics(p.Client()).FetchPodsMetrics(ctx, ns); err != nil {
-			log.Debug().Err(err).Msgf("No pods metrics")
-		}
+		pmx, _ = client.DialMetrics(p.Client()).FetchPodsMetrics(ctx, ns)
 	}
 
 	res := make([]runtime.Object, 0, len(oo))
