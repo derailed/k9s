@@ -207,6 +207,7 @@ func checkLastestRev() (string, error) {
 	}
 
 	if v, ok := m["name"]; ok {
+		log.Debug().Msgf("K9s latest rev: %q", v.(string))
 		return v.(string), nil
 	}
 
