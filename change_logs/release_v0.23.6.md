@@ -18,7 +18,7 @@ Boyee! Having an awesome week here at the ranch!
 It feels like k9s v0.23.X is plagued with as many election wining scenarios as the CNN's magic screen ;)
 Time to lay off the pipe... but before I do, here is another drop!
 
-### Staying up to date
+### Use The Farce Luke!
 
 I've figured it might be a good time to come up with some notification when a new release is available. To this end, when a new k9w version has been released, you should see an indicator next to the k9s top screen `K9s Rev` section indicating an updated version is ready for mass consumption.
 
@@ -26,7 +26,7 @@ I've figured it might be a good time to come up with some notification when a ne
 
 I'd like to extend a big thank you to all that have reported issues with the drops and for being patient! I get the rapid k9s rev might be an issue for some, but I do try my best to make sure pri-1 issues are resolved quickly in order to make k9s better for all of us.
 
-Thank you all for your understanding and support!!
+Thank you all for your understanding, kindness and support!!
 
 ---
 
