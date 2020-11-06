@@ -59,32 +59,26 @@ func (m *MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsL
 	nodeMetrics := make(NodesMetrics, len(nos.Items))
 	for _, no := range nos.Items {
 		nodeMetrics[no.Name] = NodeMetrics{
-			AllocatableCPU:       no.Status.Allocatable.Cpu().MilliValue(),
-			AllocatableMEM:       no.Status.Allocatable.Memory().Value(),
-			AllocatableEphemeral: no.Status.Allocatable.StorageEphemeral().Value(),
+			AllocatableCPU: no.Status.Allocatable.Cpu().MilliValue(),
+			AllocatableMEM: no.Status.Allocatable.Memory().Value(),
 		}
 	}
 	for _, mx := range nmx.Items {
 		if node, ok := nodeMetrics[mx.Name]; ok {
 			node.CurrentCPU = mx.Usage.Cpu().MilliValue()
 			node.CurrentMEM = mx.Usage.Memory().Value()
-			node.CurrentEphemeral = mx.Usage.StorageEphemeral().Value()
 			nodeMetrics[mx.Name] = node
 		}
 	}
 
-	var ccpu, cmem, ceph, tcpu, tmem, teph int64
+	var ccpu, cmem, tcpu, tmem int64
 	for _, mx := range nodeMetrics {
 		ccpu += mx.CurrentCPU
 		cmem += mx.CurrentMEM
-		ceph += mx.CurrentEphemeral
 		tcpu += mx.AllocatableCPU
 		tmem += mx.AllocatableMEM
-		teph += mx.AllocatableEphemeral
 	}
-	mx.PercCPU = ToPercentage(ccpu, tcpu)
-	mx.PercMEM = ToPercentage(cmem, tmem)
-	mx.PercEphemeral = ToPercentage(ceph, teph)
+	mx.PercCPU, mx.PercMEM = ToPercentage(ccpu, tcpu), ToPercentage(cmem, tmem)
 
 	return nil
 }
@@ -131,6 +125,22 @@ func (m *MetricsServer) NodesMetrics(nodes *v1.NodeList, metrics *mv1beta1.NodeM
 	}
 }
 
+// FetchNodesMetricsMap fetch node metrics as a map.
+func (m *MetricsServer) FetchNodesMetricsMap(ctx context.Context) (NodesMetricsMap, error) {
+	mm, err := m.FetchNodesMetrics(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	hh := make(NodesMetricsMap, len(mm.Items))
+	for i := range mm.Items {
+		mx := mm.Items[i]
+		hh[mx.Name] = &mx
+	}
+
+	return hh, nil
+}
+
 // FetchNodesMetrics return all metrics for nodes.
 func (m *MetricsServer) FetchNodesMetrics(ctx context.Context) (*mv1beta1.NodeMetricsList, error) {
 	const msg = "user is not authorized to list node metrics"
@@ -160,6 +170,43 @@ func (m *MetricsServer) FetchNodesMetrics(ctx context.Context) (*mv1beta1.NodeMe
 	m.cache.Add(key, mxList, mxCacheExpiry)
 
 	return mxList, nil
+}
+
+// FetchNodesMetrics return all metrics for nodes.
+func (m *MetricsServer) FetchNodeMetrics(ctx context.Context, n string) (*mv1beta1.NodeMetrics, error) {
+	const msg = "user is not authorized to list node metrics"
+
+	mx := new(mv1beta1.NodeMetrics)
+	if err := m.checkAccess(ClusterScope, "metrics.k8s.io/v1beta1/nodes", msg); err != nil {
+		return mx, err
+	}
+
+	mmx, err := m.FetchNodesMetricsMap(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	mx, ok := mmx[n]
+	if !ok {
+		return nil, fmt.Errorf("Unable to retrieve node metrics for %q", n)
+	}
+	return mx, nil
+}
+
+// FetchPodsMetricsMap fetch pods metrics as a map.
+func (m *MetricsServer) FetchPodsMetricsMap(ctx context.Context, ns string) (PodsMetricsMap, error) {
+	mm, err := m.FetchPodsMetrics(ctx, ns)
+	if err != nil {
+		return nil, err
+	}
+
+	hh := make(PodsMetricsMap, len(mm.Items))
+	for i := range mm.Items {
+		mx := mm.Items[i]
+		hh[FQN(mx.Namespace, mx.Name)] = &mx
+	}
+
+	return hh, nil
 }
 
 // FetchPodsMetrics return all metrics for pods in a given namespace.
@@ -196,12 +243,27 @@ func (m *MetricsServer) FetchPodsMetrics(ctx context.Context, ns string) (*mv1be
 	return mxList, err
 }
 
+func (m *MetricsServer) FetchContainersMetrics(ctx context.Context, fqn string) (ContainersMetrics, error) {
+	mm, err := m.FetchPodMetrics(ctx, fqn)
+	if err != nil {
+		return nil, err
+	}
+
+	cmx := make(ContainersMetrics, len(mm.Containers))
+	for i := range mm.Containers {
+		c := mm.Containers[i]
+		cmx[c.Name] = &c
+	}
+
+	return cmx, nil
+}
+
 // FetchPodMetrics return all metrics for pods in a given namespace.
 func (m *MetricsServer) FetchPodMetrics(ctx context.Context, fqn string) (*mv1beta1.PodMetrics, error) {
 	var mx *mv1beta1.PodMetrics
 	const msg = "user is not authorized to list pod metrics"
 
-	ns, n := Namespaced(fqn)
+	ns, _ := Namespaced(fqn)
 	if ns == NamespaceAll {
 		ns = AllNamespaces
 	}
@@ -209,25 +271,16 @@ func (m *MetricsServer) FetchPodMetrics(ctx context.Context, fqn string) (*mv1be
 		return mx, err
 	}
 
-	if entry, ok := m.cache.Get(fqn); ok {
-		pmx, ok := entry.(*mv1beta1.PodMetrics)
-		if !ok {
-			return nil, fmt.Errorf("expecting podmetrics but got %T", entry)
-		}
-		return pmx, nil
+	mmx, err := m.FetchPodsMetricsMap(ctx, ns)
+	if err != nil {
+		return nil, err
+	}
+	pmx, ok := mmx[fqn]
+	if !ok {
+		return nil, fmt.Errorf("Unable to locate pod metrics for pod %q", fqn)
 	}
 
-	client, err := m.MXDial()
-	if err != nil {
-		return mx, err
-	}
-	mx, err = client.MetricsV1beta1().PodMetricses(ns).Get(ctx, n, metav1.GetOptions{})
-	if err != nil {
-		return mx, err
-	}
-	m.cache.Add(fqn, mx, mxCacheExpiry)
-
-	return mx, nil
+	return pmx, nil
 }
 
 // PodsMetrics retrieves metrics for all pods in a given namespace.

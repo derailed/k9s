@@ -89,7 +89,7 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 		no.Status.NodeInfo.KernelVersion,
 		iIP,
 		eIP,
-		strconv.Itoa(len(oo.Pods)),
+		strconv.Itoa(oo.PodCount),
 		toMc(c.cpu),
 		toMi(c.mem),
 		strconv.Itoa(p.rCPU()),
@@ -134,9 +134,9 @@ func (Node) diagnose(ss []string) error {
 
 // NodeWithMetrics represents a node with its associated metrics.
 type NodeWithMetrics struct {
-	Raw  *unstructured.Unstructured
-	MX   *mv1beta1.NodeMetrics
-	Pods []*v1.Pod
+	Raw      *unstructured.Unstructured
+	MX       *mv1beta1.NodeMetrics
+	PodCount int
 }
 
 // GetObjectKind returns a schema object.

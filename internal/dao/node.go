@@ -10,7 +10,6 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -110,66 +109,58 @@ func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
 
 // Get returns a node resource.
 func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
-	var (
-		nmx *mv1beta1.NodeMetricsList
-		err error
-	)
+	o, err := n.Resource.Get(ctx, path)
+	if err != nil {
+		return o, err
+	}
+
+	u, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		return nil, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
+	}
+
+	var nmx *mv1beta1.NodeMetrics
 	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
-		nmx, _ = client.DialMetrics(n.Client()).FetchNodesMetrics(ctx)
+		nmx, _ = client.DialMetrics(n.Client()).FetchNodeMetrics(ctx, path)
 	}
 
-	no, err := FetchNode(ctx, n.Factory, path)
-	if err != nil {
-		return nil, err
-	}
-	o, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&no)
-	if err != nil {
-		return nil, err
-	}
-
-	return &render.NodeWithMetrics{
-		Raw: &unstructured.Unstructured{Object: o},
-		MX:  nodeMetricsFor(MetaFQN(no.ObjectMeta), nmx),
-	}, nil
+	return &render.NodeWithMetrics{Raw: u, MX: nmx}, nil
 }
 
 // List returns a collection of node resources.
 func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	var (
-		nmx *mv1beta1.NodeMetricsList
-		err error
-	)
-	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
-		nmx, _ = client.DialMetrics(n.Client()).FetchNodesMetrics(ctx)
-	}
 
-	labels, _ := ctx.Value(internal.KeyLabels).(string)
-	nn, err := FetchNodes(ctx, n.Factory, labels)
+	oo, err := n.Resource.List(ctx, ns)
 	if err != nil {
-		return nil, err
-	}
-	oo := make([]runtime.Object, len(nn.Items))
-	for i, no := range nn.Items {
-		o, err := runtime.DefaultUnstructuredConverter.ToUnstructured(&nn.Items[i])
-		if err != nil {
-			return nil, err
-		}
-		meta, ok := o["metadata"].(map[string]interface{})
-		if !ok {
-			return nil, fmt.Errorf("expecting interface map but got `%T", o)
-		}
-		pods, err := n.GetPods(meta["name"].(string))
-		if err != nil {
-			return nil, err
-		}
-		oo[i] = &render.NodeWithMetrics{
-			Raw:  &unstructured.Unstructured{Object: o},
-			MX:   nodeMetricsFor(MetaFQN(no.ObjectMeta), nmx),
-			Pods: pods,
-		}
+		return oo, err
 	}
 
-	return oo, nil
+	var nmx client.NodesMetricsMap
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
+		nmx, _ = client.DialMetrics(n.Client()).FetchNodesMetricsMap(ctx)
+	}
+
+	res := make([]runtime.Object, 0, len(oo))
+	for _, o := range oo {
+		u, ok := o.(*unstructured.Unstructured)
+		if !ok {
+			return res, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
+		}
+
+		fqn := extractFQN(o)
+		_, name := client.Namespaced(fqn)
+		podCount, err := n.CountPods(name)
+		if err != nil {
+			return nil, err
+		}
+		res = append(res, &render.NodeWithMetrics{
+			Raw:      u,
+			MX:       nmx[name],
+			PodCount: podCount,
+		})
+	}
+
+	return res, nil
 }
 
 // CountPods counts the pods scheduled on a given node.
@@ -189,7 +180,7 @@ func (n *Node) CountPods(nodeName string) (int, error) {
 		if !ok {
 			return count, fmt.Errorf("expecting interface map but got `%T", o)
 		}
-		if spec["nodeName"] == nodeName {
+		if node, ok := spec["nodeName"]; ok && node == nodeName {
 			count++
 		}
 	}
@@ -231,11 +222,18 @@ func FetchNode(ctx context.Context, f Factory, path string) (*v1.Node, error) {
 		return nil, fmt.Errorf("user is not authorized to list nodes")
 	}
 
-	dial, err := f.Client().Dial()
+	o, err := f.Get("v1/nodes", path, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
-	return dial.CoreV1().Nodes().Get(ctx, path, metav1.GetOptions{})
+
+	var node v1.Node
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &node)
+	if err != nil {
+		return nil, err
+	}
+
+	return &node, nil
 }
 
 // FetchNodes retrieves all nodes.
@@ -248,23 +246,19 @@ func FetchNodes(ctx context.Context, f Factory, labelsSel string) (*v1.NodeList,
 		return nil, fmt.Errorf("user is not authorized to list nodes")
 	}
 
-	dial, err := f.Client().Dial()
+	oo, err := f.List("v1/nodes", "", false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
-	return dial.CoreV1().Nodes().List(ctx, metav1.ListOptions{
-		LabelSelector: labelsSel,
-	})
-}
-
-func nodeMetricsFor(fqn string, mmx *mv1beta1.NodeMetricsList) *mv1beta1.NodeMetrics {
-	if mmx == nil {
-		return nil
-	}
-	for _, mx := range mmx.Items {
-		if MetaFQN(mx.ObjectMeta) == fqn {
-			return &mx
+	nn := make([]v1.Node, 0, len(oo))
+	for _, o := range oo {
+		var node v1.Node
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &node)
+		if err != nil {
+			return nil, err
 		}
+		nn = append(nn, node)
 	}
-	return nil
+
+	return &v1.NodeList{Items: nn}, nil
 }

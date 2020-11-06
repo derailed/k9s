@@ -73,6 +73,15 @@ func (p *Pod) Get(ctx context.Context, path string) (runtime.Object, error) {
 
 // List returns a collection of nodes.
 func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+	oo, err := p.Resource.List(ctx, ns)
+	if err != nil {
+		return oo, err
+	}
+
+	var pmx client.PodsMetricsMap
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
+		pmx, _ = client.DialMetrics(p.Client()).FetchPodsMetricsMap(ctx, ns)
+	}
 	sel, _ := ctx.Value(internal.KeyFields).(string)
 	fsel, err := labels.ConvertSelectorToLabelsMap(sel)
 	if err != nil {
@@ -80,24 +89,15 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	}
 	nodeName := fsel["spec.nodeName"]
 
-	oo, err := p.Resource.List(ctx, ns)
-	if err != nil {
-		return oo, err
-	}
-
-	var pmx *mv1beta1.PodMetricsList
-	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
-		pmx, _ = client.DialMetrics(p.Client()).FetchPodsMetrics(ctx, ns)
-	}
-
 	res := make([]runtime.Object, 0, len(oo))
 	for _, o := range oo {
 		u, ok := o.(*unstructured.Unstructured)
 		if !ok {
 			return res, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
 		}
+		fqn := extractFQN(o)
 		if nodeName == "" {
-			res = append(res, &render.PodWithMetrics{Raw: u, MX: podMetricsFor(o, pmx)})
+			res = append(res, &render.PodWithMetrics{Raw: u, MX: pmx[fqn]})
 			continue
 		}
 
@@ -106,7 +106,7 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 			return res, fmt.Errorf("expecting interface map but got `%T", o)
 		}
 		if spec["nodeName"] == nodeName {
-			res = append(res, &render.PodWithMetrics{Raw: u, MX: podMetricsFor(o, pmx)})
+			res = append(res, &render.PodWithMetrics{Raw: u, MX: pmx[fqn]})
 		}
 	}
 
@@ -370,7 +370,7 @@ func readLogs(stream io.ReadCloser, c LogChan, opts LogOptions) {
 	for {
 		bytes, err := r.ReadBytes('\n')
 		if err != nil {
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				log.Warn().Err(err).Msgf("Stream closed for %s", opts.Info())
 				c <- opts.DecorateLog([]byte("\nlog stream closed\n"))
 				return
@@ -381,19 +381,6 @@ func readLogs(stream io.ReadCloser, c LogChan, opts LogOptions) {
 		}
 		c <- opts.DecorateLog(bytes)
 	}
-}
-
-func podMetricsFor(o runtime.Object, mmx *mv1beta1.PodMetricsList) *mv1beta1.PodMetrics {
-	if mmx == nil {
-		return nil
-	}
-	fqn := extractFQN(o)
-	for _, mx := range mmx.Items {
-		if MetaFQN(mx.ObjectMeta) == fqn {
-			return &mx
-		}
-	}
-	return nil
 }
 
 // MetaFQN returns a fully qualified resource name.

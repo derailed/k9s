@@ -7,6 +7,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
+	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	versioned "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
@@ -58,6 +59,15 @@ var (
 	// ReadAllAccess represents an all read access to a resource.
 	ReadAllAccess = []string{GetVerb, ListVerb, WatchVerb}
 )
+
+// ContainersMetrics tracks containers metrics.
+type ContainersMetrics map[string]*mv1beta1.ContainerMetrics
+
+// NodesMetrics tracks node metrics.
+type NodesMetricsMap map[string]*mv1beta1.NodeMetrics
+
+// PodsMetrics tracks pod metrics.
+type PodsMetricsMap map[string]*mv1beta1.PodMetrics
 
 // Authorizer checks what a user can or cannot do to a resource.
 type Authorizer interface {

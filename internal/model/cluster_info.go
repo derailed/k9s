@@ -12,7 +12,6 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/util/cache"
-	"vbom.ml/util/sortorder"
 )
 
 const (
@@ -101,7 +100,7 @@ func (c *ClusterInfo) fetchK9sLatestRev() string {
 		return rev.(string)
 	}
 
-	latestRev, err := checkLastestRev()
+	latestRev, err := fetchLastestRev()
 	if err != nil {
 		log.Error().Msgf("k9s latest rev fetch failed")
 	} else {
@@ -123,8 +122,9 @@ func (c *ClusterInfo) Refresh() {
 	data.Context = c.cluster.ContextName()
 	data.Cluster = c.cluster.ClusterName()
 	data.User = c.cluster.UserName()
-	data.K9sVer, data.K9sLatest = c.version, c.fetchK9sLatestRev()
-	if !sortorder.NaturalLess(data.K9sVer, data.K9sLatest) {
+	v1, v2 := NewSemVer(data.K9sVer), NewSemVer(c.fetchK9sLatestRev())
+	data.K9sVer, data.K9sLatest = v1.String(), v2.String()
+	if v1.IsCurrent(v2) {
 		data.K9sLatest = ""
 	}
 	data.K8sVer = c.cluster.Version()
@@ -134,6 +134,8 @@ func (c *ClusterInfo) Refresh() {
 	var mx client.ClusterMetrics
 	if err := c.cluster.Metrics(ctx, &mx); err == nil {
 		data.Cpu, data.Mem, data.Ephemeral = mx.PercCPU, mx.PercMEM, mx.PercEphemeral
+	} else {
+		log.Error().Err(err).Msgf("Cluster metrics failed")
 	}
 
 	if c.data.Deltas(data) {
@@ -178,7 +180,7 @@ func (c *ClusterInfo) fireNoMetaChanged(data ClusterMeta) {
 
 // Helpers...
 
-func checkLastestRev() (string, error) {
+func fetchLastestRev() (string, error) {
 	log.Debug().Msgf("Fetching latest k9s rev...")
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()

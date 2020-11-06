@@ -73,7 +73,7 @@ func (a *App) ConOK() bool {
 
 // Init initializes the application.
 func (a *App) Init(version string, rate int) error {
-	a.version = version
+	a.version = model.NormalizeVersion(version)
 
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	if err := a.Content.Init(ctx); err != nil {
@@ -103,7 +103,7 @@ func (a *App) Init(version string, rate int) error {
 	}
 	a.initFactory(ns)
 
-	a.clusterModel = model.NewClusterInfo(a.factory, version)
+	a.clusterModel = model.NewClusterInfo(a.factory, a.version)
 	a.clusterModel.AddListener(a.clusterInfo())
 	a.clusterModel.AddListener(a.statusIndicator())
 	a.clusterModel.Refresh()
@@ -115,13 +115,13 @@ func (a *App) Init(version string, rate int) error {
 	}
 	a.CmdBuff().SetSuggestionFn(a.suggestCommand())
 
-	a.layout(ctx, version)
+	a.layout(ctx)
 	a.initSignals()
 
 	return nil
 }
 
-func (a *App) layout(ctx context.Context, version string) {
+func (a *App) layout(ctx context.Context) {
 	flash := ui.NewFlash(a.App)
 	go flash.Watch(ctx, a.Flash().Channel())
 
@@ -134,9 +134,8 @@ func (a *App) layout(ctx context.Context, version string) {
 	main.AddItem(flash, 1, 1, false)
 
 	a.Main.AddPage("main", main, true, false)
-	a.Main.AddPage("splash", ui.NewSplash(a.Styles, version), true, true)
+	a.Main.AddPage("splash", ui.NewSplash(a.Styles, a.version), true, true)
 	a.toggleHeader(!a.Config.K9s.IsHeadless())
-	// a.toggleCrumbs(!a.Config.K9s.GetCrumbsless())
 }
 
 func (a *App) initSignals() {
