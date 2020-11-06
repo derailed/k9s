@@ -3,7 +3,7 @@ PACKAGE := github.com/derailed/$(NAME)
 GIT     := $(shell git rev-parse --short HEAD)
 SOURCE_DATE_EPOCH ?= $(shell date +%s)
 DATE    := $(shell date -u -d @${SOURCE_DATE_EPOCH} +%FT%T%Z)
-VERSION  ?= v0.23.6
+VERSION  ?= v0.23.7
 IMG_NAME := derailed/k9s
 IMAGE    := ${IMG_NAME}:${VERSION}
 
@@ -11,7 +11,6 @@ default: help
 
 test:   ## Run all tests
 	@go clean --testcache && go test ./...
-
 
 cover:  ## Run test coverage suite
 	@go test ./... --coverprofile=cov.out

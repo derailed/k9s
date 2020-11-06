@@ -23,7 +23,7 @@ builds:
     flags:
       - -trimpath
     ldflags:
-      - -s -w -X github.com/derailed/k9s/cmd.version={{.Version}} -X github.com/derailed/k9s/cmd.commit={{.Commit}} -X github.com/derailed/k9s/cmd.date={{.Date}}
+      - -s -w -X github.com/derailed/k9s/cmd.version=v{{.Version}} -X github.com/derailed/k9s/cmd.commit={{.Commit}} -X github.com/derailed/k9s/cmd.date={{.Date}}
 archives:
   - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
     replacements:

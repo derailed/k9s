@@ -258,7 +258,6 @@ func (a *APIClient) CheckConnectivity() bool {
 	// Check connection
 	if _, err := client.ServerVersion(); err == nil {
 		if !a.connOK {
-			log.Debug().Msgf("RESETING CON!!")
 			a.reset()
 		}
 	} else {
