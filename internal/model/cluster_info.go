@@ -122,6 +122,7 @@ func (c *ClusterInfo) Refresh() {
 	data.Context = c.cluster.ContextName()
 	data.Cluster = c.cluster.ClusterName()
 	data.User = c.cluster.UserName()
+	data.K9sVer = c.version
 	v1, v2 := NewSemVer(data.K9sVer), NewSemVer(c.fetchK9sLatestRev())
 	data.K9sVer, data.K9sLatest = v1.String(), v2.String()
 	if v1.IsCurrent(v2) {
