@@ -269,7 +269,6 @@ var EOL = []byte{'\n'}
 
 // Flush write logs to viewer.
 func (l *Log) Flush(lines [][]byte) {
-	log.Debug().Msgf("LOG-FLUSH %d", len(lines))
 	if !l.indicator.AutoScroll() {
 		return
 	}

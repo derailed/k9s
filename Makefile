@@ -18,7 +18,7 @@ cover:  ## Run test coverage suite
 
 build:  ## Builds the CLI
 	@go build \
-	-ldflags "-w -s -X ${PACKAGE}/cmd.version=v${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
+	-ldflags "-w -s -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
 	-a -tags netgo -o execs/${NAME} main.go
 
 kubectl-stable-version:  ## Get kubectl latest stable version

@@ -47,7 +47,7 @@ func (n *Node) bindDangerousKeys(aa ui.KeyActions) {
 }
 
 func (n *Node) bindKeys(aa ui.KeyActions) {
-	aa.Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlD)
+	aa.Delete(ui.KeySpace, tcell.KeyCtrlSpace)
 
 	if !n.App().Config.K9s.IsReadOnly() {
 		n.bindDangerousKeys(aa)

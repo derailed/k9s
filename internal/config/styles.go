@@ -421,7 +421,7 @@ func (s *Styles) AddListener(l StyleListener) {
 	s.listeners = append(s.listeners, l)
 }
 
-// RemoveListener unregister a listener.
+// RemoveListener removes a listener.
 func (s *Styles) RemoveListener(l StyleListener) {
 	victim := -1
 	for i, lis := range s.listeners {

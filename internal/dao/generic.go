@@ -8,7 +8,6 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
@@ -93,7 +92,6 @@ func (g *Generic) ToYAML(path string, showManaged bool) (string, error) {
 
 // Delete deletes a resource.
 func (g *Generic) Delete(path string, cascade, force bool) error {
-	log.Debug().Msgf("DELETE %q -- %t:%t", path, cascade, force)
 	ns, n := client.Namespaced(path)
 	auth, err := g.Client().CanI(ns, g.gvr.String(), []string{client.DeleteVerb})
 	if err != nil {

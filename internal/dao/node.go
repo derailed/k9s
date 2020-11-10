@@ -222,7 +222,7 @@ func FetchNode(ctx context.Context, f Factory, path string) (*v1.Node, error) {
 		return nil, fmt.Errorf("user is not authorized to list nodes")
 	}
 
-	o, err := f.Get("v1/nodes", path, false, labels.Everything())
+	o, err := f.Get("v1/nodes", client.FQN(client.ClusterScope, path), false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

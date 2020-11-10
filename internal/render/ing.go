@@ -24,10 +24,11 @@ func (Ingress) Header(ns string) Header {
 	return Header{
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "CLASS"},
 		HeaderColumn{Name: "HOSTS"},
 		HeaderColumn{Name: "ADDRESS"},
-		HeaderColumn{Name: "PORT"},
-		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "PORTS"},
+		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
 }
@@ -48,10 +49,11 @@ func (i Ingress) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = Fields{
 		ing.Namespace,
 		ing.Name,
+		strpToStr(ing.Spec.IngressClassName),
 		toHosts(ing.Spec.Rules),
 		toAddress(ing.Status.LoadBalancer),
 		toTLSPorts(ing.Spec.TLS),
-		"",
+		mapToStr(ing.Labels),
 		toAge(ing.ObjectMeta.CreationTimestamp),
 	}
 
