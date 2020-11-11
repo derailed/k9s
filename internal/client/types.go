@@ -63,10 +63,10 @@ var (
 // ContainersMetrics tracks containers metrics.
 type ContainersMetrics map[string]*mv1beta1.ContainerMetrics
 
-// NodesMetrics tracks node metrics.
+// NodesMetricsMap tracks node metrics.
 type NodesMetricsMap map[string]*mv1beta1.NodeMetrics
 
-// PodsMetrics tracks pod metrics.
+// PodsMetricsMap tracks pod metrics.
 type PodsMetricsMap map[string]*mv1beta1.PodMetrics
 
 // Authorizer checks what a user can or cannot do to a resource.

@@ -172,7 +172,7 @@ func (m *MetricsServer) FetchNodesMetrics(ctx context.Context) (*mv1beta1.NodeMe
 	return mxList, nil
 }
 
-// FetchNodesMetrics return all metrics for nodes.
+// FetchNodeMetrics return all metrics for nodes.
 func (m *MetricsServer) FetchNodeMetrics(ctx context.Context, n string) (*mv1beta1.NodeMetrics, error) {
 	const msg = "user is not authorized to list node metrics"
 
@@ -243,6 +243,7 @@ func (m *MetricsServer) FetchPodsMetrics(ctx context.Context, ns string) (*mv1be
 	return mxList, err
 }
 
+// FetchContainersMetrics returns a pod's containers metrics.
 func (m *MetricsServer) FetchContainersMetrics(ctx context.Context, fqn string) (ContainersMetrics, error) {
 	mm, err := m.FetchPodMetrics(ctx, fqn)
 	if err != nil {

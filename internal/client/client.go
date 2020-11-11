@@ -45,7 +45,7 @@ type APIClient struct {
 	connOK       bool
 }
 
-// NewTestClient for testing ONLY!!
+// NewTestAPIClient for testing ONLY!!
 func NewTestAPIClient() *APIClient {
 	return &APIClient{
 		config: NewConfig(nil),

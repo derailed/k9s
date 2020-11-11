@@ -38,7 +38,7 @@ func (*SemVer) parse(version string) (major, minor, patch int) {
 	return
 }
 
-// Normalize ensures the version starts with a v.
+// NormalizeVersion ensures the version starts with a v.
 func NormalizeVersion(version string) string {
 	if version == "" {
 		return version
