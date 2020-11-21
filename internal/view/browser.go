@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -228,6 +229,52 @@ func (b *Browser) TableLoadFailed(err error) {
 // ----------------------------------------------------------------------------
 // Actions...
 
+func (b *Browser) newCmd(_ *tcell.EventKey) *tcell.EventKey {
+	tempFilePath := config.DefaultK9sHome + "/tmp.yml"
+
+	b.Stop()
+	defer b.Start()
+	if _, err := os.Create(tempFilePath); err != nil {
+		b.App().Flash().Err(errors.New("Failed to create temporary resource file: " + err.Error()))
+		return nil
+	}
+	defer func() {
+		if err := os.Remove(tempFilePath); err != nil {
+			b.App().Flash().Err(errors.New("Failed to delete temporary resource file" + err.Error()))
+		}
+	}()
+
+	if !edit(b.App(), shellOpts{clear: true, args: []string{tempFilePath}}) {
+		b.App().Flash().Err(errors.New("Failed to launch editor"))
+		return nil
+	}
+
+	fileStat, err := os.Stat(tempFilePath)
+	if err != nil {
+		b.App().Flash().Err(errors.New("Failed to get temporary resource file information: " + err.Error()))
+		return nil
+	}
+
+	if fileStat.Size() == 0 { // file is empty, no need to apply it as kubernetes resource file
+		return nil
+	}
+
+	args := []string{"apply", "-f", tempFilePath}
+	res, err := runKu(b.App(), shellOpts{clear: false, args: args})
+	if err != nil {
+		res = "status:\n  " + err.Error() + "\nmessage:\n" + fmtResults(res)
+	} else {
+		res = "message:\n" + fmtResults(res)
+	}
+	details := NewDetails(b.App(), "Applied Manifest", tempFilePath, true).Update(res)
+	if err := b.App().inject(details); err != nil {
+		b.App().Flash().Err(err)
+		return nil
+	}
+
+	return nil
+}
+
 func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := b.GetSelectedItem()
 	if path == "" {
@@ -330,7 +377,6 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := b.GetSelectedItem()
 	if path == "" {
 		return evt
-
 	}
 	ns, n := client.Namespaced(path)
 	if client.IsClusterScoped(ns) {
@@ -449,6 +495,7 @@ func (b *Browser) refreshActions() {
 	}
 
 	if !dao.IsK9sMeta(b.meta) {
+		aa[ui.KeyN] = ui.NewKeyAction("New", b.newCmd, true)
 		aa[ui.KeyY] = ui.NewKeyAction("YAML", b.viewCmd, true)
 		aa[ui.KeyD] = ui.NewKeyAction("Describe", b.describeCmd, true)
 	}
