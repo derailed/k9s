@@ -2,7 +2,9 @@ package view
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -140,6 +142,7 @@ func (v *LiveView) bindKeys() {
 	if v.title == "YAML" {
 		v.actions.Add(ui.KeyActions{
 			ui.KeyM: ui.NewKeyAction("Toggle ManagedFields", v.toggleManagedCmd, true),
+			ui.KeyD: ui.NewKeyAction("Duplicate", v.duplicateCmd, true),
 		})
 	}
 }
@@ -315,6 +318,26 @@ func (v *LiveView) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return nil
+}
+
+func (v *LiveView) duplicateCmd(_ *tcell.EventKey) *tcell.EventKey {
+	v.Stop()
+	defer v.Start()
+	file, err := os.Create(config.K9sTempFile)
+	if err != nil {
+		v.app.Flash().Err(errors.New("Failed to create temporary resource file: " + err.Error()))
+		return nil
+	}
+	defer func() {
+		file.Close()
+		if err := os.Remove(config.K9sTempFile); err != nil {
+			v.app.Flash().Err(errors.New("Failed to delete temporary resource file" + err.Error()))
+		}
+	}()
+
+	file.WriteString(v.text.GetText(true))
+
+	return editAndApplyFile(v.app, config.K9sTempFile)
 }
 
 func (v *LiveView) updateTitle() {

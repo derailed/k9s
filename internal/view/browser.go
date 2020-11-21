@@ -230,49 +230,21 @@ func (b *Browser) TableLoadFailed(err error) {
 // Actions...
 
 func (b *Browser) newCmd(_ *tcell.EventKey) *tcell.EventKey {
-	tempFilePath := config.DefaultK9sHome + "/tmp.yml"
-
 	b.Stop()
 	defer b.Start()
-	if _, err := os.Create(tempFilePath); err != nil {
+	file, err := os.Create(config.K9sTempFile)
+	if err != nil {
 		b.App().Flash().Err(errors.New("Failed to create temporary resource file: " + err.Error()))
 		return nil
 	}
 	defer func() {
-		if err := os.Remove(tempFilePath); err != nil {
+		file.Close()
+		if err := os.Remove(config.K9sTempFile); err != nil {
 			b.App().Flash().Err(errors.New("Failed to delete temporary resource file" + err.Error()))
 		}
 	}()
 
-	if !edit(b.App(), shellOpts{clear: true, args: []string{tempFilePath}}) {
-		b.App().Flash().Err(errors.New("Failed to launch editor"))
-		return nil
-	}
-
-	fileStat, err := os.Stat(tempFilePath)
-	if err != nil {
-		b.App().Flash().Err(errors.New("Failed to get temporary resource file information: " + err.Error()))
-		return nil
-	}
-
-	if fileStat.Size() == 0 { // file is empty, no need to apply it as kubernetes resource file
-		return nil
-	}
-
-	args := []string{"apply", "-f", tempFilePath}
-	res, err := runKu(b.App(), shellOpts{clear: false, args: args})
-	if err != nil {
-		res = "status:\n  " + err.Error() + "\nmessage:\n" + fmtResults(res)
-	} else {
-		res = "message:\n" + fmtResults(res)
-	}
-	details := NewDetails(b.App(), "Applied Manifest", tempFilePath, true).Update(res)
-	if err := b.App().inject(details); err != nil {
-		b.App().Flash().Err(err)
-		return nil
-	}
-
-	return nil
+	return editAndApplyFile(b.App(), config.K9sTempFile)
 }
 
 func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -570,4 +542,36 @@ func (b *Browser) resourceDelete(selections []string, msg string) {
 		}
 		b.refresh()
 	}, func() {})
+}
+
+func editAndApplyFile(app *App, filePath string) *tcell.EventKey {
+	if !edit(app, shellOpts{clear: true, args: []string{filePath}}) {
+		app.Flash().Err(errors.New("Failed to launch editor"))
+		return nil
+	}
+
+	fileStat, err := os.Stat(filePath)
+	if err != nil {
+		app.Flash().Err(errors.New("Failed to get temporary resource file information: " + err.Error()))
+		return nil
+	}
+
+	if fileStat.Size() == 0 { // file is empty, no need to apply it as kubernetes resource file
+		return nil
+	}
+
+	args := []string{"apply", "-f", filePath}
+	res, err := runKu(app, shellOpts{clear: false, args: args})
+	if err != nil {
+		res = "status:\n  " + err.Error() + "\nmessage:\n" + fmtResults(res)
+	} else {
+		res = "message:\n" + fmtResults(res)
+	}
+	details := NewDetails(app, "Applied Manifest", filePath, true).Update(res)
+	if err := app.inject(details); err != nil {
+		app.Flash().Err(err)
+		return nil
+	}
+
+	return nil
 }

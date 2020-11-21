@@ -22,6 +22,8 @@ var (
 	DefaultK9sHome = filepath.Join(mustK9sHome(), ".k9s")
 	// K9sConfigFile represents K9s config file location.
 	K9sConfigFile = filepath.Join(K9sHome(), "config.yml")
+	// K9sTempFile represents K9s temp file location used for creation of new kubernetes resources.
+	K9sTempFile = filepath.Join(K9sHome(), "tmp.yml")
 	// K9sLogs represents K9s log.
 	K9sLogs = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-%s.log", MustK9sUser()))
 	// K9sDumpDir represents a directory where K9s screen dumps will be persisted.
