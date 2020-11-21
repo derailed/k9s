@@ -141,8 +141,8 @@ func (v *LiveView) bindKeys() {
 
 	if v.title == "YAML" {
 		v.actions.Add(ui.KeyActions{
-			ui.KeyM: ui.NewKeyAction("Toggle ManagedFields", v.toggleManagedCmd, true),
 			ui.KeyD: ui.NewKeyAction("Duplicate", v.duplicateCmd, true),
+			ui.KeyM: ui.NewKeyAction("Toggle ManagedFields", v.toggleManagedCmd, true),
 		})
 	}
 }
