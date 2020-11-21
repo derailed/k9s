@@ -161,8 +161,17 @@ func rxFilter(q string, inverse bool, data render.TableData) (render.TableData, 
 		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
 		Namespace: data.Namespace,
 	}
+	ageIndex := -1
+	if data.Header.HasAge() {
+		ageIndex = data.Header.IndexOf("AGE", true)
+	}
+	const spacer = " "
 	for _, re := range data.RowEvents {
-		fields := strings.Join(re.Row.Fields, " ")
+		ff := re.Row.Fields
+		if ageIndex > 0 {
+			ff = append(ff[0:ageIndex], ff[ageIndex+1:]...)
+		}
+		fields := strings.Join(ff, spacer)
 		if (inverse && !rx.MatchString(fields)) ||
 			((!inverse) && rx.MatchString(fields)) {
 			filtered.RowEvents = append(filtered.RowEvents, re)

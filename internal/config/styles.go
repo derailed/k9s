@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"gopkg.in/yaml.v2"
 )
 

@@ -3,16 +3,17 @@ module github.com/derailed/k9s
 go 1.15
 
 require (
+	github.com/Azure/go-autorest v14.0.0+incompatible // indirect
 	github.com/atotto/clipboard v0.1.2
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cenkalti/backoff/v4 v4.1.0
-	github.com/derailed/popeye v0.8.10
-	github.com/derailed/tview v0.4.6
+	github.com/derailed/popeye v0.9.0
+	github.com/derailed/tview v0.4.7
 	github.com/drone/envsubst v1.0.2 // indirect
-	github.com/fatih/color v1.9.0
+	github.com/fatih/color v1.10.0
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/fvbommel/sortorder v1.0.2
-	github.com/gdamore/tcell v1.4.0
+	github.com/gdamore/tcell/v2 v2.0.1-0.20201017141208-acf90d56d591
 	github.com/ghodss/yaml v1.0.0
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
@@ -21,11 +22,11 @@ require (
 	github.com/openfaas/faas-cli v0.0.0-20200124160744-30b7cec9634c
 	github.com/openfaas/faas-provider v0.15.0
 	github.com/petergtz/pegomock v2.7.0+incompatible
-	github.com/rakyll/hey v0.1.3
-	github.com/rs/zerolog v1.18.0
+	github.com/rakyll/hey v0.1.4
+	github.com/rs/zerolog v1.20.0
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sahilm/fuzzy v0.1.0
-	github.com/spf13/cobra v1.0.0
+	github.com/spf13/cobra v1.1.1
 	github.com/stretchr/testify v1.6.1
 	golang.org/x/net v0.0.0-20200519113804-d87ec0cfa476 // indirect
 	golang.org/x/sys v0.0.0-20200519105757-fe76b779f299 // indirect
@@ -43,5 +44,5 @@ require (
 	k8s.io/metrics v0.18.8
 	rsc.io/letsencrypt v0.0.3 // indirect
 	sigs.k8s.io/yaml v1.2.0
-	vbom.ml/util v0.0.0-20180919145318-efcd4e0f9787
+	vbom.ml/util v0.0.0-20180919145318-efcd4e0f9787 // indirect
 )

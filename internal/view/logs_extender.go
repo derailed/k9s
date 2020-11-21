@@ -3,7 +3,7 @@ package view
 import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 )
 
 // LogsExtender adds log actions to a given viewer.

@@ -196,7 +196,7 @@ func initK9sFlags() {
 		k9sFlags.Command,
 		"command", "c",
 		config.DefaultCommand,
-		"Specify the default command to view when the application launches",
+		"Overrides the default resource to load when the application launches",
 	)
 	rootCmd.Flags().BoolVar(
 		k9sFlags.ReadOnly,

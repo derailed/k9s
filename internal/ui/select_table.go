@@ -2,7 +2,7 @@ package ui
 
 import (
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 )
 
 // SelectTable represents a table with selections.
@@ -115,7 +115,7 @@ func (s *SelectTable) selectionChanged(r, c int) {
 		return
 	}
 	cell := s.GetCell(r, c)
-	s.SetSelectedStyle(s.fgColor, cell.Color, tcell.AttrBold)
+	s.SetSelectedStyle(tcell.StyleDefault.Foreground(s.fgColor).Background(cell.Color).Attributes(tcell.AttrBold))
 }
 
 // ClearMarks delete all marked items.
@@ -146,11 +146,7 @@ func (s *SelectTable) ToggleMark() {
 	if cell == nil {
 		return
 	}
-	s.SetSelectedStyle(
-		cell.BackgroundColor,
-		cell.Color,
-		tcell.AttrBold,
-	)
+	s.SetSelectedStyle(tcell.StyleDefault.Foreground(cell.BackgroundColor).Background(cell.Color).Attributes(tcell.AttrBold))
 }
 
 // SpanMark toggles marked row
@@ -206,11 +202,7 @@ func (s *SelectTable) markRange(prev, curr int) {
 		if cell == nil {
 			break
 		}
-		s.SetSelectedStyle(
-			cell.BackgroundColor,
-			cell.Color,
-			tcell.AttrBold,
-		)
+		s.SetSelectedStyle(tcell.StyleDefault.Foreground(cell.BackgroundColor).Background(cell.Color).Attributes(tcell.AttrBold))
 	}
 }
 

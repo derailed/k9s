@@ -7,10 +7,8 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-var (
-	// K9sBench the name of the benchmarks config file.
-	K9sBench = "bench"
-)
+// K9sBench the name of the benchmarks config file.
+var K9sBench = "bench"
 
 type (
 	// Bench tracks K9s styling options.

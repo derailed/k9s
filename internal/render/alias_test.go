@@ -5,7 +5,7 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,7 +33,7 @@ func TestAliasColorer(t *testing.T) {
 		"updateAll": {
 			ns: client.AllNamespaces,
 			re: render.RowEvent{Kind: render.EventUpdate, Row: r},
-			e:  tcell.ColorBlack,
+			e:  tcell.ColorDefault,
 		},
 	}
 

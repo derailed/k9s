@@ -6,7 +6,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 )
 
 // Reference represents resource references.
@@ -21,7 +21,7 @@ func NewReference(gvr client.GVR) ResourceViewer {
 	}
 	r.GetTable().SetColorerFn(render.Reference{}.ColorerFunc())
 	r.GetTable().SetBorderFocusColor(tcell.ColorMediumSpringGreen)
-	r.GetTable().SetSelectedStyle(tcell.ColorWhite, tcell.ColorMediumSpringGreen, tcell.AttrNone)
+	r.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorMediumSpringGreen).Attributes(tcell.AttrNone))
 	r.AddBindKeysFn(r.bindKeys)
 
 	return &r

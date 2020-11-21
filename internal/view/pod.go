@@ -12,7 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/fatih/color"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -134,8 +134,8 @@ func (p *Pod) portForwardContext(ctx context.Context) context.Context {
 }
 
 func (p *Pod) killCmd(evt *tcell.EventKey) *tcell.EventKey {
-	sels := p.GetTable().GetSelectedItems()
-	if len(sels) == 0 {
+	selections := p.GetTable().GetSelectedItems()
+	if len(selections) == 0 {
 		return evt
 	}
 
@@ -149,14 +149,20 @@ func (p *Pod) killCmd(evt *tcell.EventKey) *tcell.EventKey {
 		p.App().Flash().Err(fmt.Errorf("expecting a nuker for %q", p.GVR()))
 		return nil
 	}
+	if len(selections) > 1 {
+		p.App().Flash().Infof("Delete %d marked %s", len(selections), p.GVR())
+	} else {
+		p.App().Flash().Infof("Delete resource %s %s", p.GVR(), selections[0])
+	}
 	p.GetTable().ShowDeleted()
-	for _, res := range sels {
-		p.App().Flash().Infof("Delete resource %s -- %s", p.GVR(), res)
-		if err := nuker.Delete(res, true, true); err != nil {
+	log.Debug().Msgf("SELS %v", selections)
+	for _, path := range selections {
+		if err := nuker.Delete(path, true, true); err != nil {
 			p.App().Flash().Errf("Delete failed with %s", err)
 		} else {
-			p.App().factory.DeleteForwarder(res)
+			p.App().factory.DeleteForwarder(path)
 		}
+		p.GetTable().DeleteMark(path)
 	}
 	p.Refresh()
 

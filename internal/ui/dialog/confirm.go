@@ -42,7 +42,6 @@ func ShowConfirm(styles config.Dialog, pages *ui.Pages, title, msg string, ack c
 	modal := tview.NewModalForm("<"+title+">", f)
 	modal.SetText(msg)
 	modal.SetTextColor(styles.FgColor.Color())
-	modal.SetBackgroundColor(styles.BgColor.Color())
 	modal.SetDoneFunc(func(int, string) {
 		dismissConfirm(pages)
 		cancel()

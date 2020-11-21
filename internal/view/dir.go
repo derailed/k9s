@@ -14,7 +14,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 )
 
 const (
@@ -39,7 +39,7 @@ func NewDir(path string) ResourceViewer {
 		path:           path,
 	}
 	d.GetTable().SetBorderFocusColor(tcell.ColorAliceBlue)
-	d.GetTable().SetSelectedStyle(tcell.ColorWhite, tcell.ColorAliceBlue, tcell.AttrNone)
+	d.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorAliceBlue).Attributes(tcell.AttrNone))
 	d.AddBindKeysFn(d.bindKeys)
 	d.SetContextFn(d.dirContext)
 	d.GetTable().SetColorerFn(render.Dir{}.ColorerFunc())

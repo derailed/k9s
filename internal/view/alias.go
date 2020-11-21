@@ -8,7 +8,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 )
 
 const aliasTitle = "Aliases"
@@ -25,7 +25,7 @@ func NewAlias(gvr client.GVR) ResourceViewer {
 	}
 	a.GetTable().SetColorerFn(render.Alias{}.ColorerFunc())
 	a.GetTable().SetBorderFocusColor(tcell.ColorAliceBlue)
-	a.GetTable().SetSelectedStyle(tcell.ColorWhite, tcell.ColorAliceBlue, tcell.AttrNone)
+	a.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorAliceBlue).Attributes(tcell.AttrNone))
 	a.AddBindKeysFn(a.bindKeys)
 	a.SetContextFn(a.aliasContext)
 
