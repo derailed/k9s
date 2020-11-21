@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"sort"
 	"strconv"
@@ -230,21 +231,15 @@ func (b *Browser) TableLoadFailed(err error) {
 // Actions...
 
 func (b *Browser) newCmd(_ *tcell.EventKey) *tcell.EventKey {
-	b.Stop()
-	defer b.Start()
-	file, err := os.Create(config.K9sTempFile)
+	tmpFile, err := ioutil.TempFile(config.DefaultK9sHome, "tmp_*.yml")
 	if err != nil {
 		b.App().Flash().Err(errors.New("Failed to create temporary resource file: " + err.Error()))
 		return nil
 	}
-	defer func() {
-		file.Close()
-		if err := os.Remove(config.K9sTempFile); err != nil {
-			b.App().Flash().Err(errors.New("Failed to delete temporary resource file" + err.Error()))
-		}
-	}()
+	defer os.Remove(tmpFile.Name())
+	defer tmpFile.Close()
 
-	return editAndApplyFile(b.App(), config.K9sTempFile)
+	return editAndApplyFile(b.App(), tmpFile.Name())
 }
 
 func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -550,16 +545,26 @@ func editAndApplyFile(app *App, filePath string) *tcell.EventKey {
 		return nil
 	}
 
+	if isEmpty, err := isFileEmpty(filePath); err != nil || isEmpty {
+		if err != nil {
+			app.Flash().Err(err)
+		}
+		return nil
+	}
+
+	return applyFile(app, filePath)
+}
+
+func isFileEmpty(filePath string) (bool, error) {
 	fileStat, err := os.Stat(filePath)
 	if err != nil {
-		app.Flash().Err(errors.New("Failed to get temporary resource file information: " + err.Error()))
-		return nil
+		return false, errors.New("Failed to get temporary resource file information: " + err.Error())
 	}
 
-	if fileStat.Size() == 0 { // file is empty, no need to apply it as kubernetes resource file
-		return nil
-	}
+	return fileStat.Size() == 0, nil
+}
 
+func applyFile(app *App, filePath string) *tcell.EventKey {
 	args := []string{"apply", "-f", filePath}
 	res, err := runKu(app, shellOpts{clear: false, args: args})
 	if err != nil {
@@ -567,6 +572,7 @@ func editAndApplyFile(app *App, filePath string) *tcell.EventKey {
 	} else {
 		res = "message:\n" + fmtResults(res)
 	}
+
 	details := NewDetails(app, "Applied Manifest", filePath, true).Update(res)
 	if err := app.inject(details); err != nil {
 		app.Flash().Err(err)

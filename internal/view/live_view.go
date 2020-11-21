@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strconv"
 	"strings"
@@ -321,23 +322,16 @@ func (v *LiveView) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *LiveView) duplicateCmd(_ *tcell.EventKey) *tcell.EventKey {
-	v.Stop()
-	defer v.Start()
-	file, err := os.Create(config.K9sTempFile)
+	tmpFile, err := ioutil.TempFile(config.DefaultK9sHome, "tmp_*.yml")
 	if err != nil {
 		v.app.Flash().Err(errors.New("Failed to create temporary resource file: " + err.Error()))
 		return nil
 	}
-	defer func() {
-		file.Close()
-		if err := os.Remove(config.K9sTempFile); err != nil {
-			v.app.Flash().Err(errors.New("Failed to delete temporary resource file" + err.Error()))
-		}
-	}()
+	defer os.Remove(tmpFile.Name())
+	defer tmpFile.Close()
 
-	file.WriteString(v.text.GetText(true))
-
-	return editAndApplyFile(v.app, config.K9sTempFile)
+	tmpFile.WriteString(v.text.GetText(true))
+	return editAndApplyFile(v.app, tmpFile.Name())
 }
 
 func (v *LiveView) updateTitle() {
