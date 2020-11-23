@@ -171,6 +171,9 @@ github.com/derailed/popeye v0.9.0 h1:0zP4BAzo94RUjrUkzgF962v0zL9B3xyopd7kU7tMxuc
 github.com/derailed/popeye v0.9.0/go.mod h1:g3hudQlbEEChCA7U44fA+utTM9xQpD4pINUMQaiq5Gs=
 github.com/derailed/tview v0.4.7 h1:XBu2gW/PInLXOrWtm/B7V78T2+LMdt8DWquRT8L08F8=
 github.com/derailed/tview v0.4.7/go.mod h1:FrWq4XTQjisx2NIl9n3j6OD6NL03HxUYeVvZwSy1JYE=
+github.com/derailed/tview v0.4.8 h1:TDiKARhooi4uQ37p/8XuxvLYRS2IDg8dHhJrlDRSBy8=
+github.com/derailed/tview v0.4.8/go.mod h1:FrWq4XTQjisx2NIl9n3j6OD6NL03HxUYeVvZwSy1JYE=
+github.com/derailed/tview v0.4.9/go.mod h1:FrWq4XTQjisx2NIl9n3j6OD6NL03HxUYeVvZwSy1JYE=
 github.com/dgrijalva/jwt-go v0.0.0-20170104182250-a601269ab70c/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible h1:7qlOGliEKZXTDg6OTjfoBKDXWrumCAMpl/TFQ4/5kLM=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
@@ -955,6 +958,8 @@ gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c h1:dUUwHk2QECo/6vqA44rthZ8ie
 gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c/go.mod h1:K4uyk7z7BCEPqu6E+C64Yfv1cQ7kz7rIZviUmN+EgEM=
 gotest.tools v2.2.0+incompatible h1:VsBPFP1AI068pPrMxtb/S8Zkgf9xEmTLJjfM+P5UIEo=
 gotest.tools v2.2.0+incompatible/go.mod h1:DsYFclhRJ6vuDpmuTbkuFWG+y2sxOXAzmJt81HFBacw=
+helm.sh/helm v1.2.1 h1:Jrn7kKQqQ/hnFWZEX+9pMFvYqFexkzrBnGqYBmIph7c=
+helm.sh/helm v2.17.0+incompatible h1:cSe3FaQOpRWLDXvTObQNj0P7WI98IG5yloU6tQVls2k=
 helm.sh/helm/v3 v3.2.0 h1:V12EGAmr2DJ/fWrPo2fPdXWSIXvlXm51vGkQIXMeymE=
 helm.sh/helm/v3 v3.2.0/go.mod h1:ZaXz/vzktgwjyGGFbUWtIQkscfE7WYoRGP2szqAFHR0=
 honnef.co/go/tools v0.0.0-20190102054323-c2f93a96b099/go.mod h1:rf3lG4BRIbNafJWhAfAdb/ePZxsR/4RtNHQocxwk9r4=
