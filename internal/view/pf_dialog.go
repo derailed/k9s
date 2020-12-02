@@ -30,7 +30,12 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 		SetFieldBackgroundColor(styles.BgColor.Color())
 
 	address := v.App().Config.CurrentCluster().PortForwardAddress
-	p1, p2 := ports[0], extractPort(ports[0])
+
+	p1, p2 := "", ""
+	if len(ports) != 0 {
+		p1, p2 = ports[0], extractPort(ports[0])
+	}
+
 	f.AddInputField("Container Port:", p1, 30, nil, func(p string) {
 		p1 = p
 	})
@@ -80,7 +85,13 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 	}
 
 	modal := tview.NewModalForm(fmt.Sprintf("<PortForward on %s>", path), f)
-	modal.SetText("Exposed Ports: " + strings.Join(ports, ","))
+
+	if len(ports) != 0 {
+		modal.SetText("Exposed Ports: " + strings.Join(ports, ","))
+	} else {
+		modal.SetText("Exposed Ports: (none)")
+	}
+
 	modal.SetTextColor(styles.FgColor.Color())
 	modal.SetBackgroundColor(styles.BgColor.Color())
 	modal.SetDoneFunc(func(_ int, b string) {

@@ -143,9 +143,6 @@ func showFwdDialog(v ResourceViewer, path string, cb PortForwardCB) error {
 			ports = append(ports, client.FQN(co, p.Name)+":"+strconv.Itoa(int(p.ContainerPort)))
 		}
 	}
-	if len(ports) == 0 {
-		return fmt.Errorf("no tcp ports found on %s", path)
-	}
 	ShowPortForwards(v, path, ports, cb)
 
 	return nil
