@@ -31,8 +31,8 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 
 	address := v.App().Config.CurrentCluster().PortForwardAddress
 
-	p1, p2 := "", ""
-	if len(ports) != 0 {
+	var p1, p2 string
+	if len(ports) > 0 {
 		p1, p2 = ports[0], extractPort(ports[0])
 	}
 
@@ -88,8 +88,6 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 
 	if len(ports) != 0 {
 		modal.SetText("Exposed Ports: " + strings.Join(ports, ","))
-	} else {
-		modal.SetText("Exposed Ports: (none)")
 	}
 
 	modal.SetTextColor(styles.FgColor.Color())
