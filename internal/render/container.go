@@ -97,7 +97,7 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 		return fmt.Errorf("Expected ContainerRes, but got %T", o)
 	}
 
-	cur, perc, res := gatherMetrics(co.Container, co.MX)
+	cur, res := gatherMetrics(co.Container, co.MX)
 	ready, state, restarts := "false", MissingValue, "0"
 	if co.Status != nil {
 		ready, state, restarts = boolToStr(co.Status.Ready), ToContainerState(co.Status.State), strconv.Itoa(int(co.Status.RestartCount))
@@ -117,10 +117,10 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 		toMi(cur.mem),
 		toMc(res.cpu) + ":" + toMc(res.lcpu),
 		toMi(res.mem) + ":" + toMi(res.lmem),
-		strconv.Itoa(perc.rCPU()),
-		strconv.Itoa(perc.lCPU()),
-		strconv.Itoa(perc.rMEM()),
-		strconv.Itoa(perc.lMEM()),
+		client.ToPercentageStr(cur.cpu, res.cpu),
+		client.ToPercentageStr(cur.cpu, res.lcpu),
+		client.ToPercentageStr(cur.mem, res.mem),
+		client.ToPercentageStr(cur.mem, res.lmem),
 		ToContainerPorts(co.Container.Ports),
 		asStatus(c.diagnose(state, ready)),
 		toAge(co.Age),
@@ -144,12 +144,8 @@ func (Container) diagnose(state, ready string) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (metric, percentages, metric) {
+func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, r metric) {
 	rList, lList := containerRequests(co), co.Resources.Limits
-	var c metric
-	p := newPercentages()
-
-	var r metric
 	if rList.Cpu() != nil {
 		r.cpu = rList.Cpu().MilliValue()
 	}
@@ -162,23 +158,16 @@ func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (metric, per
 	if lList.Memory() != nil {
 		r.lmem = lList.Memory().Value()
 	}
-
-	if mx == nil {
-		return c, p, r
+	if mx != nil {
+		if mx.Usage.Cpu() != nil {
+			c.cpu = mx.Usage.Cpu().MilliValue()
+		}
+		if mx.Usage.Memory() != nil {
+			c.mem = mx.Usage.Memory().Value()
+		}
 	}
 
-	if mx.Usage.Cpu() != nil {
-		c.cpu = mx.Usage.Cpu().MilliValue()
-	}
-	if mx.Usage.Memory() != nil {
-		c.mem = mx.Usage.Memory().Value()
-	}
-	p[requestCPU] = client.ToPercentage(c.cpu, r.cpu)
-	p[limitCPU] = client.ToPercentage(c.cpu, r.lcpu)
-	p[requestMEM] = client.ToPercentage(c.mem, r.mem)
-	p[limitMEM] = client.ToPercentage(c.mem, r.lmem)
-
-	return c, p, r
+	return
 }
 
 // ToContainerPorts returns container ports as a string.

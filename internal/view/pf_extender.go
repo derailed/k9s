@@ -132,7 +132,7 @@ func startFwdCB(v ResourceViewer, path, co string, tt []client.PortTunnel) {
 func showFwdDialog(v ResourceViewer, path string, cb PortForwardCB) error {
 	mm, err := fetchPodPorts(v.App().factory, path)
 	if err != nil {
-		return nil
+		return err
 	}
 	ports := make([]string, 0, len(mm))
 	for co, pp := range mm {
