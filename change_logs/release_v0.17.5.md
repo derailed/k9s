@@ -22,7 +22,7 @@ In the previous k9s release, we've introduced the notion of thresholds to provid
 # $HOME/.k9s/config.yml
 k9s:
   refreshRate: 2
-  headless: false
+  headerless: false
   ...
   # Specify resources thresholds in percent - defaults: critical=90, warn=70
   thresholds:

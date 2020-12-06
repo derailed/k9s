@@ -29,7 +29,7 @@ Here is a snippet:
 # .k9s/config.yml
 k9s:
   refreshRate: 2
-  headless: false
+  headerless: false
   currentContext: crashandburn666
   currentCluster: slowassnot
   fullScreenLogs: true

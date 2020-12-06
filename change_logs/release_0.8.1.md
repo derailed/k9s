@@ -18,22 +18,22 @@ So it looks like going all fuzzy was a mistake as we've lost some nice searchabi
 
 ### Location, Location, Location!
 
-There was a few issues related to screen `real estate` with K9s or more specifically the lack of it! Some folks flat out decided not to use K9s just because of the ASCII Logo ;( WTF! In this drop, I'd like to introduce a new presentation mode aka `Headless`.
+There was a few issues related to screen `real estate` with K9s or more specifically the lack of it! Some folks flat out decided not to use K9s just because of the ASCII Logo ;( WTF! In this drop, I'd like to introduce a new presentation mode aka `Headerless`.
 
-Using the following command you can now run K9s headless:
+Using the following command you can now run K9s headerless:
 
 ```shell
-k9s --headless # => Launch K9s without the header rows
+k9s --headerless # => Launch K9s without the header rows
 ```
 
 NOTE! If you forgot your K9s shortcuts already, fear not! I've also updated the help menu so `?` will remind you of all the available options.
 
-Lastly if you really dig the headless mode, you can sneak an extra `headless: true` in your ./k9s/config.yml like so:
+Lastly if you really dig the headerless mode, you can sneak an extra `headerless: true` in your ./k9s/config.yml like so:
 
 ```yaml
 k9s:
   refreshRate: 2
-  headless: false
+  headerless: false
   ...
 ```
 

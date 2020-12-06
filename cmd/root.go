@@ -107,7 +107,7 @@ func loadConfiguration() *config.Config {
 		k9sCfg.K9s.OverrideRefreshRate(*k9sFlags.RefreshRate)
 	}
 
-	k9sCfg.K9s.OverrideHeadless(*k9sFlags.Headless)
+	k9sCfg.K9s.OverrideHeaderless(*k9sFlags.Headerless)
 	k9sCfg.K9s.OverrideCrumbsless(*k9sFlags.Crumbsless)
 	k9sCfg.K9s.OverrideReadOnly(*k9sFlags.ReadOnly)
 	k9sCfg.K9s.OverrideWrite(*k9sFlags.Write)
@@ -175,8 +175,8 @@ func initK9sFlags() {
 		"Specify a log level (info, warn, debug, error, fatal, panic, trace)",
 	)
 	rootCmd.Flags().BoolVar(
-		k9sFlags.Headless,
-		"headless",
+		k9sFlags.Headerless,
+		"headerless",
 		false,
 		"Turn K9s header off",
 	)

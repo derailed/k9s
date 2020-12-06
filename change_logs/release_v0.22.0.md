@@ -31,7 +31,7 @@ Seems like I've broken the golden rule ie never add a feature without providing 
 k9s:
   refreshRate: 2
   enableMouse: true # Defaults to false if not set
-  headless: false
+  headerless: false
   ...
 ```
 

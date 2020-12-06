@@ -48,7 +48,7 @@ Some terminals often don't offer icon support. In this release there is a new op
 # $HOME/.k9s/config.yml
 k9s:
   refreshRate: 2
-  headless: false
+  headerless: false
   readOnly: false
   noIcons: true  # Enable/Disable K9s icons display.
 ```

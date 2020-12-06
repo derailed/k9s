@@ -271,7 +271,7 @@ K9s uses aliases to navigate most K8s resources.
     # Enable mouse support. Default false
     enableMouse: true
     # Set to true to hide K9s header. Default false
-    headless: false
+    headerless: false
     # Set to true to hide K9s crumbs. Default false
     crumbsless: false
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
