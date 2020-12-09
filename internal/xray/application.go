@@ -41,20 +41,31 @@ func (a *Application) Render(ctx context.Context, ns string, o interface{}) erro
 
 	var ar ApplicationResource
 	var dp Deployment
+	var svc Service
+	f, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
+	if !ok {
+		return fmt.Errorf("Expecting a factory but got %T", ctx.Value(internal.KeyFactory))
+	}
 	for _, res := range app.Status.Resources {
 		gvr := gvkToGvr(res.GroupVersionKind())
 		switch gvr.String() {
 		case "apps/v1/deployments":
-			f, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
-			if !ok {
-				return fmt.Errorf("Expecting a factory but got %T", ctx.Value(internal.KeyFactory))
-			}
 			d, err := f.Get("apps/v1/deployments", fmt.Sprintf("%s/%s", res.Namespace, res.Name), false, labels.Everything())
 			if err != nil {
 				return err
 			}
 
 			if err := dp.Render(ctx, app.Namespace, d); err != nil {
+				return err
+			}
+
+		case "v1/services":
+			d, err := f.Get("v1/services", fmt.Sprintf("%s/%s", res.Namespace, res.Name), false, labels.Everything())
+			if err != nil {
+				return err
+			}
+
+			if err := svc.Render(ctx, app.Namespace, d); err != nil {
 				return err
 			}
 
