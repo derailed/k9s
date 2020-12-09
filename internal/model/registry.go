@@ -207,7 +207,7 @@ var Registry = map[string]ResourceMeta{
 
 	// ArgoCD...
 	"argoproj.io/v1alpha1/applications": {
-		//Renderer:     &render.Application{},
+		Renderer:     &render.Application{},
 		TreeRenderer: &xray.Application{},
 	},
 }
