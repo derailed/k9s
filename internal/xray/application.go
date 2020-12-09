@@ -6,9 +6,11 @@ import (
 	"strings"
 
 	v1alpha1 "github.com/argoproj/argo-cd/pkg/apis/application/v1alpha1"
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/fatih/structs"
+	"github.com/derailed/k9s/internal/dao"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -43,7 +45,16 @@ func (a *Application) Render(ctx context.Context, ns string, o interface{}) erro
 		gvr := gvkToGvr(res.GroupVersionKind())
 		switch gvr.String() {
 		case "apps/v1/deployments":
-			if err := dp.Render(ctx, app.Namespace, toUnstructured(res)); err != nil {
+			f, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
+			if !ok {
+				return fmt.Errorf("Expecting a factory but got %T", ctx.Value(internal.KeyFactory))
+			}
+			d, err := f.Get("apps/v1/deployments", fmt.Sprintf("%s/%s", res.Namespace, res.Name), false, labels.Everything())
+			if err != nil {
+				return err
+			}
+
+			if err := dp.Render(ctx, app.Namespace, d); err != nil {
 				return err
 			}
 
@@ -80,24 +91,4 @@ func gvkToGvr(gvk schema.GroupVersionKind) client.GVR {
 		gvr = fmt.Sprintf("%s/%s", gvk.Group, gvr)
 	}
 	return client.NewGVR(gvr)
-}
-
-func toUnstructured(in interface{}) *unstructured.Unstructured {
-	return &unstructured.Unstructured{
-		Object: structs.Map(in),
-	}
-	/*
-		var inInterface map[string]interface{}
-		inrec, _ := json.Marshal(in)
-		json.Unmarshal(inrec, &inInterface)
-
-		// iterate through inrecs
-		for field, val := range inInterface {
-			fmt.Println("KV Pair: ", field, val)
-		}
-
-		return &unstructured.Unstructured{
-			Object: inInterface,
-		}
-	*/
 }
