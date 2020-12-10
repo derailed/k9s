@@ -39,9 +39,6 @@ func (a *Application) Render(ctx context.Context, ns string, o interface{}) erro
 	root := NewTreeNode("argoproj.io/v1alpha1/applications", client.FQN(app.Namespace, app.Name))
 	ctx = context.WithValue(ctx, KeyParent, root)
 
-	var ar ApplicationResource
-	var dp Deployment
-	var svc Service
 	f, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
 	if !ok {
 		return fmt.Errorf("Expecting a factory but got %T", ctx.Value(internal.KeyFactory))
@@ -50,6 +47,7 @@ func (a *Application) Render(ctx context.Context, ns string, o interface{}) erro
 		gvr := gvkToGvr(res.GroupVersionKind())
 		switch gvr.String() {
 		case "apps/v1/deployments":
+			var dp Deployment
 			d, err := f.Get("apps/v1/deployments", fmt.Sprintf("%s/%s", res.Namespace, res.Name), true, labels.Everything())
 			if err != nil {
 				return err
@@ -60,6 +58,7 @@ func (a *Application) Render(ctx context.Context, ns string, o interface{}) erro
 			}
 
 		case "v1/services":
+			var svc Service
 			d, err := f.Get("v1/services", fmt.Sprintf("%s/%s", res.Namespace, res.Name), true, labels.Everything())
 			if err != nil {
 				return err
@@ -70,6 +69,7 @@ func (a *Application) Render(ctx context.Context, ns string, o interface{}) erro
 			}
 
 		default:
+			var ar ApplicationResource
 			if err := ar.Render(ctx, app.Namespace, res); err != nil {
 				return err
 			}
