@@ -45,11 +45,13 @@ func (Application) Render(o interface{}, ns string, r *Row) error {
 	r.ID = client.MetaFQN(app.ObjectMeta)
 	var syncPolicies []string
 	syncPolicy := app.Spec.SyncPolicy
-	if syncPolicy.Automated.SelfHeal {
-		syncPolicies = append(syncPolicies, "selfHeal")
-	}
-	if syncPolicy.Automated.Prune {
-		syncPolicies = append(syncPolicies, "prune")
+	if syncPolicy != nil {
+		if syncPolicy.Automated.SelfHeal {
+			syncPolicies = append(syncPolicies, "selfHeal")
+		}
+		if syncPolicy.Automated.Prune {
+			syncPolicies = append(syncPolicies, "prune")
+		}
 	}
 	r.Fields = Fields{
 		app.Name,
