@@ -48,7 +48,7 @@ func (a *Application) Render(ctx context.Context, ns string, o interface{}) erro
 		switch gvr.String() {
 		case "apps/v1/deployments":
 			var dp Deployment
-			d, err := f.Get("apps/v1/deployments", fmt.Sprintf("%s/%s", res.Namespace, res.Name), true, labels.Everything())
+			d, err := f.Get("apps/v1/deployments", fmt.Sprintf("%s/%s", res.Namespace, res.Name), false, labels.Everything())
 			if err != nil {
 				return err
 			}
@@ -59,7 +59,7 @@ func (a *Application) Render(ctx context.Context, ns string, o interface{}) erro
 
 		case "v1/services":
 			var svc Service
-			d, err := f.Get("v1/services", fmt.Sprintf("%s/%s", res.Namespace, res.Name), true, labels.Everything())
+			d, err := f.Get("v1/services", fmt.Sprintf("%s/%s", res.Namespace, res.Name), false, labels.Everything())
 			if err != nil {
 				return err
 			}
