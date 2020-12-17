@@ -242,8 +242,8 @@ func resumeShellIn(a *App, c model.Component, path, co string) {
 }
 
 func shellIn(a *App, path, co string) {
-	args := computeShellArgs(path, co, a.Conn().Config().Flags().KubeConfig)
-
+	os := getPodOS(a.factory, path)
+	args := computeShellArgs(path, co, a.Conn().Config().Flags().KubeConfig, os)
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
 	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, path, co), args: args}) {
 		a.Flash().Err(errors.New("Shell exec failed"))
@@ -291,9 +291,13 @@ func attachIn(a *App, path, co string) {
 	}
 }
 
-func computeShellArgs(path, co string, kcfg *string) []string {
+func computeShellArgs(path, co string, kcfg *string, os string) []string {
 	args := buildShellArgs("exec", path, co, kcfg)
-	return append(args, "--", "sh", "-c", shellCheck)
+	if os == "windows" {
+		return append(args, "--", "powershell")
+	} else {
+		return append(args, "--", "sh", "-c", shellCheck)
+	}
 }
 
 func buildShellArgs(cmd, path, co string, kcfg *string) []string {
@@ -358,6 +362,24 @@ func podIsRunning(f dao.Factory, path string) bool {
 
 	var re render.Pod
 	return re.Phase(po) == render.Running
+}
+
+func getPodOS(f dao.Factory, path string) string {
+	po, err := fetchPod(f, path)
+	if err != nil {
+		log.Error().Err(err).Msg("unable to fetch pod")
+		return ""
+	}
+
+	if os, success := po.Spec.NodeSelector["beta.kubernetes.io/os"]; success {
+		return os
+	}
+
+	if os, success := po.Spec.NodeSelector["kubernetes.io/os"]; success {
+		return os
+	}
+
+	return ""
 }
 
 func resourceSorters(t *Table) ui.KeyActions {
