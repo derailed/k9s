@@ -210,4 +210,8 @@ var Registry = map[string]ResourceMeta{
 		Renderer:     &render.Application{},
 		TreeRenderer: &xray.Application{},
 	},
+	"argoproj.io/v1alpha1/appprojects": {
+		Renderer:     &render.AppProject{},
+		TreeRenderer: &xray.AppProject{},
+	},
 }
