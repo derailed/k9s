@@ -2,11 +2,20 @@ package model
 
 import (
 	"context"
+	"errors"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/cache"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+)
+
+const (
+	clusterCacheSize   = 100
+	clusterCacheExpiry = 1 * time.Minute
+	clusterNodesKey    = "nodes"
 )
 
 type (
@@ -30,6 +39,7 @@ type (
 	Cluster struct {
 		factory dao.Factory
 		mx      MetricsServer
+		cache   *cache.LRUExpireCache
 	}
 )
 
@@ -38,6 +48,7 @@ func NewCluster(f dao.Factory) *Cluster {
 	return &Cluster{
 		factory: f,
 		mx:      client.DialMetrics(f.Client()),
+		cache:   cache.NewLRUExpireCache(clusterCacheSize),
 	}
 }
 
@@ -45,7 +56,7 @@ func NewCluster(f dao.Factory) *Cluster {
 func (c *Cluster) Version() string {
 	info, err := c.factory.Client().ServerVersion()
 	if err != nil {
-		return NA
+		return client.NA
 	}
 
 	return info.GitVersion
@@ -55,7 +66,7 @@ func (c *Cluster) Version() string {
 func (c *Cluster) ContextName() string {
 	n, err := c.factory.Client().Config().CurrentContextName()
 	if err != nil {
-		return NA
+		return client.NA
 	}
 	return n
 }
@@ -64,7 +75,7 @@ func (c *Cluster) ContextName() string {
 func (c *Cluster) ClusterName() string {
 	n, err := c.factory.Client().Config().CurrentClusterName()
 	if err != nil {
-		return NA
+		return client.NA
 	}
 	return n
 }
@@ -73,20 +84,34 @@ func (c *Cluster) ClusterName() string {
 func (c *Cluster) UserName() string {
 	n, err := c.factory.Client().Config().CurrentUserName()
 	if err != nil {
-		return NA
+		return client.NA
 	}
 	return n
 }
 
 // Metrics gathers node level metrics and compute utilization percentages.
 func (c *Cluster) Metrics(ctx context.Context, mx *client.ClusterMetrics) error {
-	nn, err := dao.FetchNodes(ctx, c.factory, "")
-	if err != nil {
-		return err
+	var (
+		nn  *v1.NodeList
+		err error
+	)
+	if v, ok := c.cache.Get(clusterNodesKey); ok {
+		if nl, ok := v.(*v1.NodeList); ok {
+			nn = nl
+		}
+	} else {
+		if nn, err = dao.FetchNodes(ctx, c.factory, ""); err != nil {
+			return err
+		}
 	}
-
-	nmx, err := c.mx.FetchNodesMetrics(ctx)
-	if err != nil {
+	if nn == nil {
+		return errors.New("Unable to fetch nodes list")
+	}
+	if len(nn.Items) > 0 {
+		c.cache.Add(clusterNodesKey, nn, clusterCacheExpiry)
+	}
+	var nmx *mv1beta1.NodeMetricsList
+	if nmx, err = c.mx.FetchNodesMetrics(ctx); err != nil {
 		return err
 	}
 

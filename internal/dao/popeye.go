@@ -77,7 +77,7 @@ func (p *Popeye) List(ctx context.Context, ns string) ([]runtime.Object, error) 
 	if err != nil {
 		return nil, err
 	}
-	popeye.SetFactory(newPopFactory(p.Factory))
+	popeye.SetFactory(newPopeyeFactory(p.Factory))
 	if err = popeye.Init(); err != nil {
 		return nil, err
 	}
@@ -120,19 +120,19 @@ type popFactory struct {
 
 var _ types.Factory = (*popFactory)(nil)
 
-func newPopFactory(f Factory) *popFactory {
+func newPopeyeFactory(f Factory) *popFactory {
 	return &popFactory{Factory: f}
 }
 func (p *popFactory) Client() types.Connection {
-	return &popConnection{Connection: p.Factory.Client()}
+	return &popeyeConnection{Connection: p.Factory.Client()}
 }
 
-type popConnection struct {
+type popeyeConnection struct {
 	client.Connection
 }
 
-var _ types.Connection = (*popConnection)(nil)
+var _ types.Connection = (*popeyeConnection)(nil)
 
-func (c *popConnection) Config() types.Config {
+func (c *popeyeConnection) Config() types.Config {
 	return c.Connection.Config()
 }

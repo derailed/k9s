@@ -8,7 +8,6 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/dynamic"
@@ -78,13 +77,13 @@ func (g *Generic) Describe(path string) (string, error) {
 }
 
 // ToYAML returns a resource yaml.
-func (g *Generic) ToYAML(path string) (string, error) {
+func (g *Generic) ToYAML(path string, showManaged bool) (string, error) {
 	o, err := g.Get(context.Background(), path)
 	if err != nil {
 		return "", err
 	}
 
-	raw, err := ToYAML(o)
+	raw, err := ToYAML(o, showManaged)
 	if err != nil {
 		return "", fmt.Errorf("unable to marshal resource %s", err)
 	}
@@ -93,7 +92,6 @@ func (g *Generic) ToYAML(path string) (string, error) {
 
 // Delete deletes a resource.
 func (g *Generic) Delete(path string, cascade, force bool) error {
-	log.Debug().Msgf("DELETE %q -- %t:%t", path, cascade, force)
 	ns, n := client.Namespaced(path)
 	auth, err := g.Client().CanI(ns, g.gvr.String(), []string{client.DeleteVerb})
 	if err != nil {

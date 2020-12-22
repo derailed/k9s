@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
@@ -20,8 +19,6 @@ import (
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
 )
-
-const localhost = "localhost"
 
 // PortForwarder tracks a port forward stream.
 type PortForwarder struct {
@@ -107,9 +104,9 @@ func (p *PortForwarder) Start(path, co string, tt []client.PortTunnel) (*portfor
 	if len(tt) == 0 {
 		return nil, fmt.Errorf("no ports assigned")
 	}
-	fwds := make([]string, 0, len(tt))
+	fwds, addrs := make([]string, 0, len(tt)), make([]string, 0, len(tt))
 	for _, t := range tt {
-		fwds = append(fwds, t.PortMap())
+		fwds, addrs = append(fwds, t.PortMap()), append(addrs, t.Address)
 	}
 	p.path, p.container, p.ports, p.age = path, co, fwds, time.Now()
 
@@ -158,10 +155,10 @@ func (p *PortForwarder) Start(path, co string, tt []client.PortTunnel) (*portfor
 		Name(n).
 		SubResource("portforward")
 
-	return p.forwardPorts("POST", req.URL(), tt[0].Address, fwds)
+	return p.forwardPorts("POST", req.URL(), addrs, fwds)
 }
 
-func (p *PortForwarder) forwardPorts(method string, url *url.URL, address string, ports []string) (*portforward.PortForwarder, error) {
+func (p *PortForwarder) forwardPorts(method string, url *url.URL, addrs, ports []string) (*portforward.PortForwarder, error) {
 	cfg, err := p.Client().Config().RESTConfig()
 	if err != nil {
 		return nil, err
@@ -170,12 +167,8 @@ func (p *PortForwarder) forwardPorts(method string, url *url.URL, address string
 	if err != nil {
 		return nil, err
 	}
-
 	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, method, url)
-	if address == "" {
-		address = localhost
-	}
-	addrs := strings.Split(address, ",")
+
 	return portforward.NewOnAddresses(dialer, addrs, ports, p.stopChan, p.readyChan, p.Out, p.ErrOut)
 }
 

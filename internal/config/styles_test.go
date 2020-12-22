@@ -1,11 +1,12 @@
 package config_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,13 +14,14 @@ func TestColor(t *testing.T) {
 	uu := map[string]tcell.Color{
 		"blah":    tcell.ColorDefault,
 		"blue":    tcell.ColorBlue,
-		"#ffffff": tcell.NewHexColor(33554431),
-		"#ff0000": tcell.NewHexColor(33488896),
+		"#ffffff": tcell.NewHexColor(16777215),
+		"#ff0000": tcell.NewHexColor(16711680),
 	}
 
 	for k := range uu {
 		c, u := k, uu[k]
 		t.Run(k, func(t *testing.T) {
+			fmt.Printf("%#v\n", config.NewColor(c).Color().Hex())
 			assert.Equal(t, u, config.NewColor(c).Color())
 		})
 	}

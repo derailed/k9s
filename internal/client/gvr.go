@@ -56,6 +56,11 @@ func FromGVAndR(gv, r string) GVR {
 	return NewGVR(path.Join(gv, r))
 }
 
+// FQN returns a fully qualified resource name.
+func (g GVR) FQN(n string) string {
+	return path.Join(g.AsResourceName(), n)
+}
+
 // AsResourceName returns a resource . separated descriptor in the shape of kind.version.group.
 func (g GVR) AsResourceName() string {
 	return g.r + "." + g.v + "." + g.g

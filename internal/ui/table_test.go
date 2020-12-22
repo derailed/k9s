@@ -27,7 +27,7 @@ func TestTableUpdate(t *testing.T) {
 	v.Init(makeContext())
 
 	data := makeTableData()
-	v.Update(data)
+	v.Update(data, false)
 
 	assert.Equal(t, len(data.RowEvents)+1, v.GetRowCount())
 	assert.Equal(t, len(data.Header), v.GetColumnCount())
@@ -38,7 +38,7 @@ func TestTableSelection(t *testing.T) {
 	v.Init(makeContext())
 	m := &mockModel{}
 	v.SetModel(m)
-	v.Update(m.Peek())
+	v.Update(m.Peek(), false)
 	v.SelectRow(1, true)
 
 	r, ok := v.GetSelectedRow("r1")
@@ -66,14 +66,14 @@ func (t *mockModel) SetLabelFilter(string)              {}
 func (t *mockModel) Empty() bool                        { return false }
 func (t *mockModel) HasMetrics() bool                   { return true }
 func (t *mockModel) Peek() render.TableData             { return makeTableData() }
-func (t *mockModel) Refresh(context.Context)            {}
+func (t *mockModel) Refresh(context.Context) error      { return nil }
 func (t *mockModel) ClusterWide() bool                  { return false }
 func (t *mockModel) GetNamespace() string               { return "blee" }
 func (t *mockModel) SetNamespace(string)                {}
 func (t *mockModel) ToggleToast()                       {}
 func (t *mockModel) AddListener(model.TableListener)    {}
 func (t *mockModel) RemoveListener(model.TableListener) {}
-func (t *mockModel) Watch(context.Context)              {}
+func (t *mockModel) Watch(context.Context) error        { return nil }
 func (t *mockModel) Get(ctx context.Context, path string) (runtime.Object, error) {
 	return nil, nil
 }

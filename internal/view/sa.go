@@ -6,7 +6,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 )
 
 // ServiceAccount represents a serviceaccount viewer.
@@ -19,7 +19,7 @@ func NewServiceAccount(gvr client.GVR) ResourceViewer {
 	s := ServiceAccount{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	s.SetBindKeysFn(s.bindKeys)
+	s.AddBindKeysFn(s.bindKeys)
 
 	return &s
 }

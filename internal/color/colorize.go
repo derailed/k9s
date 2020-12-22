@@ -34,8 +34,8 @@ func Colorize(s string, c Paint) string {
 }
 
 // ANSIColorize colors a string.
-func ANSIColorize(s string, c int) string {
-	return "\033[38;5;" + strconv.Itoa(c) + "m" + s + "\033[0m"
+func ANSIColorize(text string, color int) string {
+	return "\033[38;5;" + strconv.Itoa(color) + "m" + text + "\033[0m"
 }
 
 // Highlight colorize bytes at given indices.

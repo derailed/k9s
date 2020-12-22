@@ -18,12 +18,13 @@ import (
 )
 
 var (
-	_ Accessor    = (*Deployment)(nil)
-	_ Nuker       = (*Deployment)(nil)
-	_ Loggable    = (*Deployment)(nil)
-	_ Restartable = (*Deployment)(nil)
-	_ Scalable    = (*Deployment)(nil)
-	_ Controller  = (*Deployment)(nil)
+	_ Accessor        = (*Deployment)(nil)
+	_ Nuker           = (*Deployment)(nil)
+	_ Loggable        = (*Deployment)(nil)
+	_ Restartable     = (*Deployment)(nil)
+	_ Scalable        = (*Deployment)(nil)
+	_ Controller      = (*Deployment)(nil)
+	_ ContainsPodSpec = (*Deployment)(nil)
 )
 
 // Deployment represents a deployment K8s resource.
@@ -209,6 +210,44 @@ func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs
 	}
 
 	return refs, nil
+}
+
+// GetPodSpec returns a pod spec given a resource.
+func (d *Deployment) GetPodSpec(path string) (*v1.PodSpec, error) {
+	dp, err := d.Load(d.Factory, path)
+	if err != nil {
+		return nil, err
+	}
+	podSpec := dp.Spec.Template.Spec
+	return &podSpec, nil
+}
+
+// SetImages sets container images.
+func (d *Deployment) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error {
+	ns, n := client.Namespaced(path)
+	auth, err := d.Client().CanI(ns, "apps/v1/deployments", []string{client.PatchVerb})
+	if err != nil {
+		return err
+	}
+	if !auth {
+		return fmt.Errorf("user is not authorized to patch a deployment")
+	}
+	jsonPatch, err := GetTemplateJsonPatch(imageSpecs)
+	if err != nil {
+		return err
+	}
+	dial, err := d.Client().Dial()
+	if err != nil {
+		return err
+	}
+	_, err = dial.AppsV1().Deployments(ns).Patch(
+		ctx,
+		n,
+		types.StrategicMergePatchType,
+		jsonPatch,
+		metav1.PatchOptions{},
+	)
+	return err
 }
 
 func hasPVC(spec *v1.PodSpec, name string) bool {

@@ -162,7 +162,6 @@ func oneShoot(opts shellOpts) (string, error) {
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, buff, buff
 	_, _ = cmd.Stdout.Write([]byte(opts.banner))
 	err = cmd.Run()
-	log.Debug().Msgf("RES %q", buff)
 
 	return strings.Trim(buff.String(), "\n"), err
 }

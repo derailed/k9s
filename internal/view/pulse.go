@@ -15,7 +15,7 @@ import (
 	"github.com/derailed/k9s/internal/tchart"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 )
 
 // Grapheable represents a graphic component.
@@ -264,8 +264,8 @@ func (p *Pulse) SetInstance(string) {}
 // SetEnvFn sets the custom environment function.
 func (p *Pulse) SetEnvFn(EnvFunc) {}
 
-// SetBindKeysFn sets up extra key bindings.
-func (p *Pulse) SetBindKeysFn(BindKeysFunc) {}
+// AddBindKeysFn sets up extra key bindings.
+func (p *Pulse) AddBindKeysFn(BindKeysFunc) {}
 
 // SetContextFn sets custom context.
 func (p *Pulse) SetContextFn(ContextFunc) {}

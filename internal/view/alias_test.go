@@ -12,7 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -35,7 +35,7 @@ func TestAliasSearch(t *testing.T) {
 	v.App().Prompt().SendStrokes("blee")
 
 	assert.Equal(t, 3, v.GetTable().GetColumnCount())
-	assert.Equal(t, 2, v.GetTable().GetRowCount())
+	assert.Equal(t, 3, v.GetTable().GetRowCount())
 }
 
 func TestAliasGoto(t *testing.T) {
@@ -62,6 +62,8 @@ type buffL struct {
 func (b *buffL) BufferChanged(s string) {
 	b.changed++
 }
+func (b *buffL) BufferCompleted(s string) {}
+
 func (b *buffL) BufferActive(state bool, kind model.BufferKind) {
 	b.active++
 }
@@ -114,8 +116,8 @@ func (t *mockModel) SetNamespace(string)                {}
 func (t *mockModel) ToggleToast()                       {}
 func (t *mockModel) AddListener(model.TableListener)    {}
 func (t *mockModel) RemoveListener(model.TableListener) {}
-func (t *mockModel) Watch(context.Context)              {}
-func (t *mockModel) Refresh(context.Context)            {}
+func (t *mockModel) Watch(context.Context) error        { return nil }
+func (t *mockModel) Refresh(context.Context) error      { return nil }
 func (t *mockModel) Get(context.Context, string) (runtime.Object, error) {
 
 	return nil, nil

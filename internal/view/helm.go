@@ -6,7 +6,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 )
 
 // Helm represents a helm chart view.
@@ -21,8 +21,8 @@ func NewHelm(gvr client.GVR) ResourceViewer {
 	}
 	c.GetTable().SetColorerFn(render.Helm{}.ColorerFunc())
 	c.GetTable().SetBorderFocusColor(tcell.ColorMediumSpringGreen)
-	c.GetTable().SetSelectedStyle(tcell.ColorWhite, tcell.ColorMediumSpringGreen, tcell.AttrNone)
-	c.SetBindKeysFn(c.bindKeys)
+	c.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorMediumSpringGreen).Attributes(tcell.AttrNone))
+	c.AddBindKeysFn(c.bindKeys)
 	c.SetContextFn(c.chartContext)
 
 	return &c

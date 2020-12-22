@@ -12,7 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/xray"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -62,7 +62,7 @@ func (s *Sanitizer) Init(ctx context.Context) error {
 
 	s.bindKeys()
 	s.SetBackgroundColor(s.app.Styles.Xray().BgColor.Color())
-	s.SetBorderColor(s.app.Styles.Xray().FgColor.Color())
+	s.SetBorderColor(s.app.Styles.Frame().Border.FgColor.Color())
 	s.SetBorderFocusColor(s.app.Styles.Frame().Border.FocusColor.Color())
 	s.SetGraphicsColor(s.app.Styles.Xray().GraphicColor.Color())
 	s.SetTitle(strings.Title(s.gvr.R()))
@@ -235,6 +235,10 @@ func (s *Sanitizer) filter(root *xray.TreeNode) *xray.TreeNode {
 		return root.Filter(q, fuzzyFilter)
 	}
 
+	if ui.IsInverseSelector(q) {
+		return root.Filter(q, rxInverseFilter)
+	}
+
 	return root.Filter(q, rxFilter)
 }
 
@@ -315,7 +319,10 @@ func (s *Sanitizer) SetEnvFn(EnvFunc) {}
 func (s *Sanitizer) Refresh() {}
 
 // BufferChanged indicates the buffer was changed.
-func (s *Sanitizer) BufferChanged(q string) {
+func (s *Sanitizer) BufferChanged(q string) {}
+
+// BufferCompleted indicates input was accepted.
+func (s *Sanitizer) BufferCompleted(q string) {
 	s.update(s.filter(s.model.Peek()))
 }
 
@@ -360,8 +367,8 @@ func (s *Sanitizer) Stop() {
 	s.CmdBuff().RemoveListener(s)
 }
 
-// SetBindKeysFn sets up extra key bindings.
-func (s *Sanitizer) SetBindKeysFn(BindKeysFunc) {}
+// AddBindKeysFn sets up extra key bindings.
+func (s *Sanitizer) AddBindKeysFn(BindKeysFunc) {}
 
 // SetContextFn sets custom context.
 func (s *Sanitizer) SetContextFn(f ContextFunc) {

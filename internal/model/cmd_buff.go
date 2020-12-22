@@ -1,25 +1,38 @@
 package model
 
-const maxBuff = 10
+import (
+	"context"
+	"sync"
+	"time"
+)
 
 const (
+	maxBuff = 10
+
+	keyEntryDelay = 200 * time.Millisecond
+
 	// CommandBuffer represents a command buffer.
 	CommandBuffer BufferKind = 1 << iota
 	// FilterBuffer represents a filter buffer.
 	FilterBuffer
 )
 
-// BufferKind indicates a buffer type
-type BufferKind int8
+type (
+	// BufferKind indicates a buffer type
+	BufferKind int8
 
-// BuffWatcher represents a command buffer listener.
-type BuffWatcher interface {
-	// Changed indicates the buffer was changed.
-	BufferChanged(s string)
+	// BuffWatcher represents a command buffer listener.
+	BuffWatcher interface {
+		// BufferCompleted indicates input was accepted.
+		BufferCompleted(s string)
 
-	// Active indicates the buff activity changed.
-	BufferActive(state bool, kind BufferKind)
-}
+		// BufferChanged indicates the buffer was changed.
+		BufferChanged(s string)
+
+		// BufferActive indicates the buff activity changed.
+		BufferActive(state bool, kind BufferKind)
+	}
+)
 
 // CmdBuff represents user command input.
 type CmdBuff struct {
@@ -28,6 +41,8 @@ type CmdBuff struct {
 	hotKey    rune
 	kind      BufferKind
 	active    bool
+	cancel    context.CancelFunc
+	mx        sync.RWMutex
 }
 
 // NewCmdBuff returns a new command buffer.
@@ -64,29 +79,66 @@ func (c *CmdBuff) GetText() string {
 // SetText initializes the buffer with a command.
 func (c *CmdBuff) SetText(cmd string) {
 	c.buff = []rune(cmd)
-	c.fireBufferChanged()
+	c.fireBufferCompleted()
 }
 
 // Add adds a new character to the buffer.
 func (c *CmdBuff) Add(r rune) {
+	c.mx.Lock()
+	defer c.mx.Unlock()
 	c.buff = append(c.buff, r)
 	c.fireBufferChanged()
+	if c.cancel != nil {
+		return
+	}
+	var ctx context.Context
+	ctx, c.cancel = context.WithTimeout(context.Background(), keyEntryDelay)
+
+	go func() {
+		<-ctx.Done()
+		c.mx.Lock()
+		{
+			c.fireBufferCompleted()
+			c.cancel = nil
+		}
+		c.mx.Unlock()
+	}()
 }
 
 // Delete removes the last character from the buffer.
 func (c *CmdBuff) Delete() {
+	c.mx.Lock()
+	defer c.mx.Unlock()
 	if c.Empty() {
 		return
 	}
 	c.buff = c.buff[:len(c.buff)-1]
 	c.fireBufferChanged()
+	if c.cancel != nil {
+		return
+	}
+
+	var ctx context.Context
+	ctx, c.cancel = context.WithTimeout(context.Background(), 800*time.Millisecond)
+
+	go func() {
+		<-ctx.Done()
+		c.mx.Lock()
+		{
+			c.fireBufferCompleted()
+			c.cancel = nil
+		}
+		c.mx.Unlock()
+	}()
 }
 
 // ClearText clears out command buffer.
 func (c *CmdBuff) ClearText(fire bool) {
+	c.mx.Lock()
+	defer c.mx.Unlock()
 	c.buff = make([]rune, 0, maxBuff)
 	if fire {
-		c.fireBufferChanged()
+		c.fireBufferCompleted()
 	}
 }
 
@@ -94,6 +146,7 @@ func (c *CmdBuff) ClearText(fire bool) {
 func (c *CmdBuff) Reset() {
 	c.ClearText(true)
 	c.SetActive(false)
+	c.fireBufferCompleted()
 }
 
 // Empty returns true if no cmd, false otherwise.
@@ -106,11 +159,16 @@ func (c *CmdBuff) Empty() bool {
 
 // AddListener registers a cmd buffer listener.
 func (c *CmdBuff) AddListener(w BuffWatcher) {
+	c.mx.Lock()
+	defer c.mx.Unlock()
 	c.listeners = append(c.listeners, w)
 }
 
 // RemoveListener removes a listener.
 func (c *CmdBuff) RemoveListener(l BuffWatcher) {
+	c.mx.Lock()
+	defer c.mx.Unlock()
+
 	victim := -1
 	for i, lis := range c.listeners {
 		if l == lis {
@@ -125,9 +183,17 @@ func (c *CmdBuff) RemoveListener(l BuffWatcher) {
 	c.listeners = append(c.listeners[:victim], c.listeners[victim+1:]...)
 }
 
-func (c *CmdBuff) fireBufferChanged() {
+func (c *CmdBuff) fireBufferCompleted() {
+	text := c.GetText()
 	for _, l := range c.listeners {
-		l.BufferChanged(c.GetText())
+		l.BufferCompleted(text)
+	}
+}
+
+func (c *CmdBuff) fireBufferChanged() {
+	text := c.GetText()
+	for _, l := range c.listeners {
+		l.BufferChanged(text)
 	}
 }
 

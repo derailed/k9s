@@ -33,7 +33,7 @@ func TestTableReconcile(t *testing.T) {
 	err := ta.reconcile(ctx)
 	assert.Nil(t, err)
 	data := ta.Peek()
-	assert.Equal(t, 18, len(data.Header))
+	assert.Equal(t, 20, len(data.Header))
 	assert.Equal(t, 1, len(data.RowEvents))
 	assert.Equal(t, client.NamespaceAll, data.Namespace)
 }
@@ -91,7 +91,7 @@ func TestTableMeta(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		ta := NewTable(client.NewGVR(u.gvr))
-		m := ta.resourceMeta()
+		m := resourceMeta(ta.gvr)
 
 		assert.Equal(t, u.accessor, m.DAO)
 		assert.Equal(t, u.renderer, m.Renderer)
@@ -106,7 +106,7 @@ func TestTableHydrate(t *testing.T) {
 
 	assert.Nil(t, hydrate("blee", oo, rr, render.Pod{}))
 	assert.Equal(t, 1, len(rr))
-	assert.Equal(t, 18, len(rr[0].Fields))
+	assert.Equal(t, 20, len(rr[0].Fields))
 }
 
 func TestTableGenericHydrate(t *testing.T) {
@@ -179,7 +179,7 @@ type testFactory struct {
 var _ dao.Factory = testFactory{}
 
 func (f testFactory) Client() client.Connection {
-	return client.NewTestClient()
+	return client.NewTestAPIClient()
 }
 func (f testFactory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
 	if len(f.rows) > 0 {

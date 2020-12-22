@@ -83,5 +83,8 @@ func numbToStr(n *intstr.IntOrString) string {
 	if n == nil {
 		return NAValue
 	}
-	return strconv.Itoa(int(n.IntVal))
+	if n.Type == intstr.Int {
+		return strconv.Itoa(int(n.IntVal))
+	}
+	return n.StrVal
 }

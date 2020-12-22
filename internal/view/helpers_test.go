@@ -9,7 +9,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -96,7 +96,7 @@ func TestK8sEnv(t *testing.T) {
 	assert.Equal(t, cl, env["CLUSTER"])
 	assert.Equal(t, ctx, env["CONTEXT"])
 	assert.Equal(t, u, env["USER"])
-	assert.Equal(t, "n/a", env["GROUPS"])
+	assert.Equal(t, render.NAValue, env["GROUPS"])
 	assert.Equal(t, cfg, env["KUBECONFIG"])
 }
 
@@ -123,7 +123,7 @@ func TestK9sEnv(t *testing.T) {
 	assert.Equal(t, cl, env["CLUSTER"])
 	assert.Equal(t, ctx, env["CONTEXT"])
 	assert.Equal(t, u, env["USER"])
-	assert.Equal(t, "n/a", env["GROUPS"])
+	assert.Equal(t, render.NAValue, env["GROUPS"])
 	assert.Equal(t, cfg, env["KUBECONFIG"])
 	assert.Equal(t, "fred", env["NAMESPACE"])
 	assert.Equal(t, "blee", env["NAME"])

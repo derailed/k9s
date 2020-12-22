@@ -26,8 +26,8 @@ import (
 const (
 	cacheSize     = 100
 	cacheExpiry   = 5 * time.Minute
-	cacheMXKey    = "metrics"
 	cacheMXAPIKey = "metricsAPI"
+	serverVersion = "serverVersion"
 )
 
 var supportedMetricsAPIVersions = []string{"v1beta1"}
@@ -45,8 +45,8 @@ type APIClient struct {
 	connOK       bool
 }
 
-// NewTestClient for testing ONLY!!
-func NewTestClient() *APIClient {
+// NewTestAPIClient for testing ONLY!!
+func NewTestAPIClient() *APIClient {
 	return &APIClient{
 		config: NewConfig(nil),
 		cache:  cache.NewLRUExpireCache(cacheSize),
@@ -59,12 +59,16 @@ func InitConnection(config *Config) (*APIClient, error) {
 	a := APIClient{
 		config: config,
 		cache:  cache.NewLRUExpireCache(cacheSize),
+		connOK: true,
 	}
-	a.connOK = true
-	_, err := a.supportsMetricsResources()
+	err := a.supportsMetricsResources()
 	if err != nil {
-		a.connOK = false
+		log.Error().Err(err).Msgf("Checking metrics-server")
 	}
+	if errors.Is(err, noMetricServerErr) || errors.Is(err, metricsUnsupportedErr) {
+		return &a, nil
+	}
+	a.connOK = false
 
 	return &a, err
 }
@@ -181,11 +185,23 @@ func (a *APIClient) CurrentNamespaceName() (string, error) {
 
 // ServerVersion returns the current server version info.
 func (a *APIClient) ServerVersion() (*version.Info, error) {
+	if v, ok := a.cache.Get(serverVersion); ok {
+		if version, ok := v.(*version.Info); ok {
+			return version, nil
+		}
+	}
 	dial, err := a.CachedDiscovery()
 	if err != nil {
 		return nil, err
 	}
-	return dial.ServerVersion()
+
+	info, err := dial.ServerVersion()
+	if err != nil {
+		return nil, err
+	}
+	a.cache.Add(serverVersion, info, cacheExpiry)
+
+	return info, nil
 }
 
 // ValidNamespaces returns all available namespaces.
@@ -231,7 +247,7 @@ func (a *APIClient) CheckConnectivity() bool {
 		a.connOK = false
 		return a.connOK
 	}
-	cfg.Timeout = defaultCallTimeoutDuration
+	cfg.Timeout = a.config.CallTimeout()
 	client, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to connect to api server")
@@ -242,7 +258,6 @@ func (a *APIClient) CheckConnectivity() bool {
 	// Check connection
 	if _, err := client.ServerVersion(); err == nil {
 		if !a.connOK {
-			log.Debug().Msgf("RESETING CON!!")
 			a.reset()
 		}
 	} else {
@@ -258,39 +273,10 @@ func (a *APIClient) Config() *Config {
 	return a.config
 }
 
-// HasMetrics returns true if the cluster supports metrics.
+// HasMetrics checks if the cluster supports metrics.
 func (a *APIClient) HasMetrics() bool {
-	ok, err := a.supportsMetricsResources()
-	if !ok || err != nil {
-		return false
-	}
-	v, ok := a.cache.Get(cacheMXKey)
-	if ok {
-		flag, k := v.(bool)
-		return k && flag
-	}
-
-	var flag bool
-	dial, err := a.MXDial()
-	if err != nil {
-		a.cache.Add(cacheMXKey, flag, cacheExpiry)
-		return flag
-	}
-
-	timeout, err := time.ParseDuration(*a.config.flags.Timeout)
-	if err != nil {
-		timeout = defaultCallTimeoutDuration
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
-	if _, err := dial.MetricsV1beta1().NodeMetricses().List(ctx, metav1.ListOptions{Limit: 1}); err == nil {
-		flag = true
-	} else {
-		log.Error().Err(err).Msgf("List metrics failed")
-	}
-	a.cache.Add(cacheMXKey, flag, cacheExpiry)
-
-	return flag
+	err := a.supportsMetricsResources()
+	return err == nil
 }
 
 // Dial returns a handle to api server or die.
@@ -415,28 +401,37 @@ func (a *APIClient) reset() {
 	a.connOK = true
 }
 
-func (a *APIClient) supportsMetricsResources() (supported bool, err error) {
+func (a *APIClient) checkCacheBool(key string) (state bool, ok bool) {
+	v, found := a.cache.Get(key)
+	if !found {
+		return
+	}
+	state, ok = v.(bool)
+	return
+}
+
+func (a *APIClient) supportsMetricsResources() error {
+	supported, ok := a.checkCacheBool(cacheMXAPIKey)
+	if ok {
+		if supported {
+			return nil
+		}
+		return noMetricServerErr
+	}
+
 	defer func() {
 		a.cache.Add(cacheMXAPIKey, supported, cacheExpiry)
 	}()
 
-	if v, ok := a.cache.Get(cacheMXAPIKey); ok {
-		flag, k := v.(bool)
-		supported = k && flag
-		return
-	}
-	if a.config == nil || a.config.flags == nil {
-		return
-	}
-
 	dial, err := a.CachedDiscovery()
 	if err != nil {
-		return false, err
+		log.Warn().Err(err).Msgf("Unable to dial discovery API")
+		return err
 	}
 	apiGroups, err := dial.ServerGroups()
 	if err != nil {
-		log.Debug().Msgf("Unable to access servergroups %#v", err)
-		return
+		log.Warn().Err(err).Msgf("Unable to fetch APIGroups")
+		return err
 	}
 	for _, grp := range apiGroups.Groups {
 		if grp.Name != metricsapi.GroupName {
@@ -444,11 +439,11 @@ func (a *APIClient) supportsMetricsResources() (supported bool, err error) {
 		}
 		if checkMetricsVersion(grp) {
 			supported = true
-			return
+			return nil
 		}
 	}
 
-	return
+	return metricsUnsupportedErr
 }
 
 func checkMetricsVersion(grp metav1.APIGroup) bool {

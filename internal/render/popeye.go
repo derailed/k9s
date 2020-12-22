@@ -2,14 +2,15 @@ package render
 
 import (
 	"fmt"
-	"github.com/derailed/k9s/internal/client"
 	"math"
 	"strconv"
 	"strings"
 
+	"github.com/derailed/k9s/internal/client"
+
 	"github.com/derailed/popeye/pkg/config"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )

@@ -17,6 +17,10 @@ func (l *testListener) BufferChanged(s string) {
 	l.text = s
 }
 
+func (l *testListener) BufferCompleted(s string) {
+	l.text = s
+}
+
 func (l *testListener) BufferActive(s bool, _ model.BufferKind) {
 	if s {
 		l.act++

@@ -7,6 +7,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	backoff "github.com/cenkalti/backoff/v4"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
@@ -51,7 +52,9 @@ func NewTable(gvr client.GVR) *Table {
 
 // SetLabelFilter sets the labels filter.
 func (t *Table) SetLabelFilter(f string) {
+	t.mx.Lock()
 	t.labelFilter = f
+	t.mx.Unlock()
 }
 
 // SetInstance sets a single entry table.
@@ -82,19 +85,23 @@ func (t *Table) RemoveListener(l TableListener) {
 }
 
 // Watch initiates model updates.
-func (t *Table) Watch(ctx context.Context) {
-	t.refresh(ctx)
+func (t *Table) Watch(ctx context.Context) error {
+	if err := t.refresh(ctx); err != nil {
+		return err
+	}
 	go t.updater(ctx)
+
+	return nil
 }
 
 // Refresh updates the table content.
-func (t *Table) Refresh(ctx context.Context) {
-	t.refresh(ctx)
+func (t *Table) Refresh(ctx context.Context) error {
+	return t.refresh(ctx)
 }
 
 // Get returns a resource instance if found, else an error.
 func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
-	meta, err := t.getMeta(ctx)
+	meta, err := getMeta(ctx, t.gvr)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +111,7 @@ func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
 
 // Delete deletes a resource.
 func (t *Table) Delete(ctx context.Context, path string, cascade, force bool) error {
-	meta, err := t.getMeta(ctx)
+	meta, err := getMeta(ctx, t.gvr)
 	if err != nil {
 		return err
 	}
@@ -115,36 +122,6 @@ func (t *Table) Delete(ctx context.Context, path string, cascade, force bool) er
 	}
 
 	return nuker.Delete(path, cascade, force)
-}
-
-// Describe describes a given resource.
-func (t *Table) Describe(ctx context.Context, path string) (string, error) {
-	meta, err := t.getMeta(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	desc, ok := meta.DAO.(dao.Describer)
-	if !ok {
-		return "", fmt.Errorf("no describer for %q", meta.DAO.GVR())
-	}
-
-	return desc.Describe(path)
-}
-
-// ToYAML returns a resource yaml.
-func (t *Table) ToYAML(ctx context.Context, path string) (string, error) {
-	meta, err := t.getMeta(ctx)
-	if err != nil {
-		return "", err
-	}
-
-	desc, ok := meta.DAO.(dao.Describer)
-	if !ok {
-		return "", fmt.Errorf("no describer for %q", meta.DAO.GVR())
-	}
-
-	return desc.ToYAML(path)
 }
 
 // GetNamespace returns the model namespace.
@@ -189,6 +166,8 @@ func (t *Table) Peek() render.TableData {
 func (t *Table) updater(ctx context.Context) {
 	defer log.Debug().Msgf("TABLE-MODEL canceled -- %q", t.gvr)
 
+	bf := backoff.NewExponentialBackOff()
+	bf.InitialInterval, bf.MaxElapsedTime = initRefreshRate, maxReaderRetryInterval
 	rate := initRefreshRate
 	for {
 		select {
@@ -196,24 +175,31 @@ func (t *Table) updater(ctx context.Context) {
 			return
 		case <-time.After(rate):
 			rate = t.refreshRate
-			t.refresh(ctx)
+			err := backoff.Retry(func() error {
+				return t.refresh(ctx)
+			}, backoff.WithContext(bf, ctx))
+			if err != nil {
+				log.Error().Err(err).Msgf("Retry failed")
+				t.fireTableLoadFailed(err)
+				return
+			}
 		}
 	}
 }
 
-func (t *Table) refresh(ctx context.Context) {
+func (t *Table) refresh(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&t.inUpdate, 0, 1) {
 		log.Debug().Msgf("Dropping update...")
-		return
+		return nil
 	}
 	defer atomic.StoreInt32(&t.inUpdate, 0)
 
 	if err := t.reconcile(ctx); err != nil {
-		log.Error().Err(err).Msgf("reconcile failed %q::%q", t.gvr, t.instance)
-		t.fireTableLoadFailed(err)
-		return
+		return err
 	}
 	t.fireTableChanged(t.Peek())
+
+	return nil
 }
 
 func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, error) {
@@ -232,7 +218,9 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 }
 
 func (t *Table) reconcile(ctx context.Context) error {
-	meta := t.resourceMeta()
+	t.mx.Lock()
+	defer t.mx.Unlock()
+	meta := resourceMeta(t.gvr)
 	if t.labelFilter != "" {
 		ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
 	}
@@ -269,8 +257,6 @@ func (t *Table) reconcile(ctx context.Context) error {
 		}
 	}
 
-	t.mx.Lock()
-	defer t.mx.Unlock()
 	// if labelSelector in place might as well clear the model data.
 	sel, ok := ctx.Value(internal.KeyLabels).(string)
 	if ok && sel != "" {
@@ -284,32 +270,6 @@ func (t *Table) reconcile(ctx context.Context) error {
 	}
 
 	return nil
-}
-
-func (t *Table) getMeta(ctx context.Context) (ResourceMeta, error) {
-	meta := t.resourceMeta()
-	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
-	if !ok {
-		return ResourceMeta{}, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
-	}
-	meta.DAO.Init(factory, t.gvr)
-
-	return meta, nil
-}
-
-func (t *Table) resourceMeta() ResourceMeta {
-	meta, ok := Registry[t.gvr.String()]
-	if !ok {
-		meta = ResourceMeta{
-			DAO:      &dao.Table{},
-			Renderer: &render.Generic{},
-		}
-	}
-	if meta.DAO == nil {
-		meta.DAO = &dao.Resource{}
-	}
-
-	return meta
 }
 
 func (t *Table) fireTableChanged(data render.TableData) {

@@ -10,7 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 )
 
 // Popeye represents a sanitizer view.
@@ -25,10 +25,10 @@ func NewPopeye(gvr client.GVR) ResourceViewer {
 	}
 	p.GetTable().SetColorerFn(render.Popeye{}.ColorerFunc())
 	p.GetTable().SetBorderFocusColor(tcell.ColorMediumSpringGreen)
-	p.GetTable().SetSelectedStyle(tcell.ColorWhite, tcell.ColorMediumSpringGreen, tcell.AttrNone)
+	p.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorMediumSpringGreen).Attributes(tcell.AttrNone))
 	p.GetTable().SetSortCol("SCORE%", true)
 	p.GetTable().SetDecorateFn(p.decorateRows)
-	p.SetBindKeysFn(p.bindKeys)
+	p.AddBindKeysFn(p.bindKeys)
 
 	return &p
 }

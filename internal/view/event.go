@@ -4,7 +4,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 )
 
 // Event represents a command alias view.
@@ -18,7 +18,7 @@ func NewEvent(gvr client.GVR) ResourceViewer {
 		ResourceViewer: NewBrowser(gvr),
 	}
 	e.GetTable().SetColorerFn(render.Event{}.ColorerFunc())
-	e.SetBindKeysFn(e.bindKeys)
+	e.AddBindKeysFn(e.bindKeys)
 	e.GetTable().SetSortCol(ageCol, true)
 
 	return &e

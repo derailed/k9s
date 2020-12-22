@@ -9,7 +9,7 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -25,7 +25,7 @@ type CronJob struct {
 // NewCronJob returns a new viewer.
 func NewCronJob(gvr client.GVR) ResourceViewer {
 	c := CronJob{ResourceViewer: NewBrowser(gvr)}
-	c.SetBindKeysFn(c.bindKeys)
+	c.AddBindKeysFn(c.bindKeys)
 	c.GetTable().SetEnterFn(c.showJobs)
 	c.GetTable().SetColorerFn(render.CronJob{}.ColorerFunc())
 

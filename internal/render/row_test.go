@@ -231,10 +231,10 @@ func TestRowsUpsert(t *testing.T) {
 
 func TestRowsSortText(t *testing.T) {
 	uu := map[string]struct {
-		rows render.Rows
-		col  int
-		asc  bool
-		e    render.Rows
+		rows     render.Rows
+		col      int
+		asc, num bool
+		e        render.Rows
 	}{
 		"plainAsc": {
 			rows: render.Rows{
@@ -266,6 +266,7 @@ func TestRowsSortText(t *testing.T) {
 				{Fields: []string{"1", "blee"}},
 			},
 			col: 0,
+			num: true,
 			asc: true,
 			e: render.Rows{
 				{Fields: []string{"1", "blee"}},
@@ -278,6 +279,7 @@ func TestRowsSortText(t *testing.T) {
 				{Fields: []string{"1", "blee"}},
 			},
 			col: 0,
+			num: true,
 			asc: false,
 			e: render.Rows{
 				{Fields: []string{"10", "duh"}},
@@ -301,7 +303,7 @@ func TestRowsSortText(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.rows.Sort(u.col, u.asc)
+			u.rows.Sort(u.col, u.asc, u.num, false)
 			assert.Equal(t, u.e, u.rows)
 		})
 	}
@@ -342,7 +344,7 @@ func TestRowsSortDuration(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.rows.Sort(u.col, u.asc)
+			u.rows.Sort(u.col, u.asc, false, true)
 			assert.Equal(t, u.e, u.rows)
 		})
 	}
@@ -369,13 +371,13 @@ func TestRowsSortMetrics(t *testing.T) {
 		},
 		"metricDesc": {
 			rows: render.Rows{
-				{Fields: []string{"10m", "100Mi"}},
+				{Fields: []string{"10000m", "1000Mi"}},
 				{Fields: []string{"1m", "50Mi"}},
 			},
 			col: 1,
 			asc: false,
 			e: render.Rows{
-				{Fields: []string{"10m", "100Mi"}},
+				{Fields: []string{"10000m", "1000Mi"}},
 				{Fields: []string{"1m", "50Mi"}},
 			},
 		},
@@ -384,7 +386,7 @@ func TestRowsSortMetrics(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.rows.Sort(u.col, u.asc)
+			u.rows.Sort(u.col, u.asc, true, false)
 			assert.Equal(t, u.e, u.rows)
 		})
 	}

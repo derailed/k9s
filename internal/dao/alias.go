@@ -84,18 +84,18 @@ func (a *Alias) load() error {
 		if err != nil {
 			return err
 		}
-		if _, ok := a.Alias[meta.Kind]; ok || IsK9sMeta(meta) {
+		if IsK9sMeta(meta) {
 			continue
 		}
-		gvrs := gvr.String()
-		a.Define(gvrs, strings.ToLower(meta.Kind), meta.Name)
+		gvrStr := gvr.String()
+		a.Define(gvrStr, strings.ToLower(meta.Kind), meta.Name)
 		if meta.SingularName != "" {
-			a.Define(gvrs, meta.SingularName)
+			a.Define(gvrStr, meta.SingularName)
 		}
 		if meta.ShortNames != nil {
-			a.Define(gvrs, meta.ShortNames...)
+			a.Define(gvrStr, meta.ShortNames...)
 		}
-		a.Define(gvrs, gvrs)
+		a.Define(gvrStr, gvrStr)
 	}
 
 	return nil

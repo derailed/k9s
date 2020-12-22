@@ -47,7 +47,6 @@ func (n *Namespace) Validate(c client.Connection, ks KubeSettings) {
 
 // SetActive set the active namespace.
 func (n *Namespace) SetActive(ns string, ks KubeSettings) error {
-	log.Debug().Msgf("Setting active ns %q", ns)
 	n.Active = ns
 	if ns != "" {
 		n.addFavNS(ns)

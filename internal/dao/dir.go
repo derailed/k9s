@@ -28,7 +28,7 @@ func NewDir(f Factory) *Dir {
 	return &a
 }
 
-var yamlRX = regexp.MustCompile(`.*\.(yml|yaml)`)
+var yamlRX = regexp.MustCompile(`.*\.(yml|yaml|json)`)
 
 // List returns a collection of aliases.
 func (a *Dir) List(ctx context.Context, _ string) ([]runtime.Object, error) {

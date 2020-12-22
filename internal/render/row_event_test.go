@@ -409,10 +409,10 @@ func TestRowEventsDelete(t *testing.T) {
 
 func TestRowEventsSort(t *testing.T) {
 	uu := map[string]struct {
-		re       render.RowEvents
-		col      int
-		age, asc bool
-		e        render.RowEvents
+		re            render.RowEvents
+		col           int
+		age, num, asc bool
+		e             render.RowEvents
 	}{
 		"age_time": {
 			re: render.RowEvents{
@@ -483,7 +483,7 @@ func TestRowEventsSort(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.re.Sort("", u.col, u.age, u.asc)
+			u.re.Sort("", u.col, u.age, u.num, u.asc)
 			assert.Equal(t, u.e, u.re)
 		})
 	}

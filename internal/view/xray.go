@@ -17,7 +17,7 @@ import (
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/k9s/internal/xray"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -162,12 +162,12 @@ func (x *Xray) refreshActions() {
 		x.Actions().Delete(tcell.KeyEnter)
 		aa[ui.KeyS] = ui.NewKeyAction("Shell", x.shellCmd, true)
 		aa[ui.KeyL] = ui.NewKeyAction("Logs", x.logsCmd(false), true)
-		aa[ui.KeyShiftL] = ui.NewKeyAction("Logs Previous", x.logsCmd(true), true)
+		aa[ui.KeyP] = ui.NewKeyAction("Logs Previous", x.logsCmd(true), true)
 	case "v1/pods":
 		aa[ui.KeyS] = ui.NewKeyAction("Shell", x.shellCmd, true)
 		aa[ui.KeyA] = ui.NewKeyAction("Attach", x.attachCmd, true)
 		aa[ui.KeyL] = ui.NewKeyAction("Logs", x.logsCmd(false), true)
-		aa[ui.KeyShiftL] = ui.NewKeyAction("Logs Previous", x.logsCmd(true), true)
+		aa[ui.KeyP] = ui.NewKeyAction("Logs Previous", x.logsCmd(true), true)
 	}
 	x.Actions().Add(aa)
 }
@@ -466,6 +466,10 @@ func (x *Xray) filter(root *xray.TreeNode) *xray.TreeNode {
 		return root.Filter(q, fuzzyFilter)
 	}
 
+	if ui.IsInverseSelector(q) {
+		return root.Filter(q, rxInverseFilter)
+	}
+
 	return root.Filter(q, rxFilter)
 }
 
@@ -545,10 +549,13 @@ func (x *Xray) SetEnvFn(EnvFunc) {}
 // Refresh updates the view
 func (x *Xray) Refresh() {}
 
-// BufferChanged indicates the buffer was changed.
-func (x *Xray) BufferChanged(s string) {
+// BufferCompleted indicates the buffer was changed.
+func (x *Xray) BufferCompleted(s string) {
 	x.update(x.filter(x.model.Peek()))
 }
+
+// BufferChanged indicates the buffer was changed.
+func (x *Xray) BufferChanged(s string) {}
 
 // BufferActive indicates the buff activity changed.
 func (x *Xray) BufferActive(state bool, k model.BufferKind) {
@@ -588,8 +595,8 @@ func (x *Xray) Stop() {
 	x.CmdBuff().RemoveListener(x)
 }
 
-// SetBindKeysFn sets up extra key bindings.
-func (x *Xray) SetBindKeysFn(BindKeysFunc) {}
+// AddBindKeysFn sets up extra key bindings.
+func (x *Xray) AddBindKeysFn(BindKeysFunc) {}
 
 // SetContextFn sets custom context.
 func (x *Xray) SetContextFn(ContextFunc) {}
@@ -685,6 +692,19 @@ func rxFilter(q, path string) bool {
 	}
 
 	return false
+}
+
+func rxInverseFilter(q, path string) bool {
+	q = strings.TrimSpace(q[1:])
+	rx := regexp.MustCompile(`(?i)` + q)
+	tokens := strings.Split(path, xray.PathSeparator)
+	for _, t := range tokens {
+		if rx.MatchString(t) {
+			return false
+		}
+	}
+
+	return true
 }
 
 func makeTreeNode(node *xray.TreeNode, expanded bool, showIcons bool, styles *config.Styles) *tview.TreeNode {

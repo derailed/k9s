@@ -12,7 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -71,11 +71,6 @@ func (t *Table) Init(ctx context.Context) {
 	t.SetSelectionChangedFunc(t.selectionChanged)
 	t.SetBackgroundColor(tcell.ColorDefault)
 	t.Select(1, 0)
-	t.hasMetrics = false
-	if mx, ok := ctx.Value(internal.KeyHasMetrics).(bool); ok {
-		t.hasMetrics = mx
-	}
-
 	if cfg, ok := ctx.Value(internal.KeyViewConfig).(*config.CustomView); ok && cfg != nil {
 		cfg.AddListener(t.GVR().String(), t)
 	}
@@ -95,13 +90,9 @@ func (t *Table) ViewSettingsChanged(settings config.ViewSetting) {
 // StylesChanged notifies the skin changed.
 func (t *Table) StylesChanged(s *config.Styles) {
 	t.SetBackgroundColor(s.Table().BgColor.Color())
-	t.SetBorderColor(s.Table().FgColor.Color())
+	t.SetBorderColor(s.Frame().Border.FgColor.Color())
 	t.SetBorderFocusColor(s.Frame().Border.FocusColor.Color())
-	t.SetSelectedStyle(
-		t.styles.Table().CursorFgColor.Color(),
-		t.styles.Table().CursorBgColor.Color(),
-		tcell.AttrBold,
-	)
+	t.SetSelectedStyle(tcell.StyleDefault.Foreground(t.styles.Table().CursorFgColor.Color()).Background(t.styles.Table().CursorBgColor.Color()).Attributes(tcell.AttrBold))
 	t.fgColor = s.Table().CursorFgColor.Color()
 	t.Refresh()
 }
@@ -187,11 +178,12 @@ func (t *Table) SetSortCol(name string, asc bool) {
 }
 
 // Update table content.
-func (t *Table) Update(data render.TableData) {
+func (t *Table) Update(data render.TableData, hasMetrics bool) {
 	t.header = data.Header
 	if t.decorateFn != nil {
 		data = t.decorateFn(data)
 	}
+	t.hasMetrics = hasMetrics
 	t.doUpdate(t.filtered(data))
 	t.UpdateTitle()
 }
@@ -234,10 +226,12 @@ func (t *Table) doUpdate(data render.TableData) {
 		c.SetTextColor(fg)
 		col++
 	}
+	colIndex := custData.Header.IndexOf(t.sortCol.name, false)
 	custData.RowEvents.Sort(
 		custData.Namespace,
-		custData.Header.IndexOf(t.sortCol.name, false),
+		colIndex,
 		t.sortCol.name == "AGE",
+		data.Header.IsMetricsCol(colIndex),
 		t.sortCol.asc,
 	)
 
@@ -332,7 +326,7 @@ func (t *Table) Refresh() {
 		return
 	}
 	// BOZO!! Really want to tell model reload now. Refactor!
-	t.Update(data)
+	t.Update(data, t.hasMetrics)
 }
 
 // GetSelectedRow returns the entire selected row.
@@ -380,7 +374,7 @@ func (t *Table) filtered(data render.TableData) render.TableData {
 		return fuzzyFilter(q[2:], filtered)
 	}
 
-	filtered, err := rxFilter(t.cmdBuff.GetText(), filtered)
+	filtered, err := rxFilter(q, IsInverseSelector(q), filtered)
 	if err != nil {
 		log.Error().Err(errors.New("Invalid filter expression")).Msg("Regexp")
 		t.cmdBuff.ClearText(true)

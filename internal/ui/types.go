@@ -39,12 +39,6 @@ type Namespaceable interface {
 type Lister interface {
 	// Get returns a resource instance.
 	Get(ctx context.Context, path string) (runtime.Object, error)
-
-	// ToYAML returns a resource yaml representation.
-	ToYAML(ctx context.Context, path string) (string, error)
-
-	// Describes describes a given resource.
-	Describe(ctx context.Context, path string) (string, error)
 }
 
 // Tabular represents a tabular model.
@@ -65,10 +59,10 @@ type Tabular interface {
 	Peek() render.TableData
 
 	// Watch watches a given resource for changes.
-	Watch(context.Context)
+	Watch(context.Context) error
 
 	// Refresh forces a new refresh.
-	Refresh(context.Context)
+	Refresh(context.Context) error
 
 	// SetRefreshRate sets the model watch loop rate.
 	SetRefreshRate(time.Duration)

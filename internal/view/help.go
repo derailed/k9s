@@ -14,7 +14,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 )
 
 const (
@@ -56,7 +56,7 @@ func (h *Help) Init(ctx context.Context) error {
 }
 
 func (h *Help) bindKeys() {
-	h.Actions().Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlS)
+	h.Actions().Delete(ui.KeySpace, tcell.KeyCtrlSpace, tcell.KeyCtrlS, ui.KeySlash)
 	h.Actions().Set(ui.KeyActions{
 		tcell.KeyEscape: ui.NewKeyAction("Back", h.app.PrevCmd, true),
 		ui.KeyHelp:      ui.NewKeyAction("Back", h.app.PrevCmd, false),
@@ -237,6 +237,10 @@ func (h *Help) showGeneral() model.MenuHints {
 		{
 			Mnemonic:    "Ctrl-e",
 			Description: "Toggle Header",
+		},
+		{
+			Mnemonic:    "Ctrl-g",
+			Description: "Toggle Crumbs",
 		},
 		{
 			Mnemonic:    ":q",

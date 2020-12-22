@@ -1,5 +1,6 @@
 k9s:
   refreshRate: 2
+  readOnly: false
   logger:
     tail: 200
     buffer: 2000

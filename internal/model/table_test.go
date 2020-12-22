@@ -33,7 +33,7 @@ func TestTableRefresh(t *testing.T) {
 	ctx = context.WithValue(ctx, internal.KeyWithMetrics, false)
 	ta.Refresh(ctx)
 	data := ta.Peek()
-	assert.Equal(t, 18, len(data.Header))
+	assert.Equal(t, 20, len(data.Header))
 	assert.Equal(t, 1, len(data.RowEvents))
 	assert.Equal(t, client.NamespaceAll, data.Namespace)
 	assert.Equal(t, 1, l.count)
@@ -86,7 +86,7 @@ type tableFactory struct {
 var _ dao.Factory = tableFactory{}
 
 func (f tableFactory) Client() client.Connection {
-	return client.NewTestClient()
+	return client.NewTestAPIClient()
 }
 func (f tableFactory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
 	if len(f.rows) > 0 {

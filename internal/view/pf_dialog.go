@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 )
@@ -29,7 +30,12 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 		SetFieldBackgroundColor(styles.BgColor.Color())
 
 	address := v.App().Config.CurrentCluster().PortForwardAddress
-	p1, p2 := ports[0], extractPort(ports[0])
+
+	var p1, p2 string
+	if len(ports) > 0 {
+		p1, p2 = ports[0], extractPort(ports[0])
+	}
+
 	f.AddInputField("Container Port:", p1, 30, nil, func(p string) {
 		p1 = p
 	})
@@ -79,7 +85,11 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 	}
 
 	modal := tview.NewModalForm(fmt.Sprintf("<PortForward on %s>", path), f)
-	modal.SetText("Exposed Ports: " + strings.Join(ports, ","))
+
+	if len(ports) != 0 {
+		modal.SetText("Exposed Ports: " + strings.Join(ports, ","))
+	}
+
 	modal.SetTextColor(styles.FgColor.Color())
 	modal.SetBackgroundColor(styles.BgColor.Color())
 	modal.SetDoneFunc(func(_ int, b string) {
@@ -117,7 +127,7 @@ func extractPort(p string) string {
 func extractContainer(p string) string {
 	tokens := strings.Split(p, ":")
 	if len(tokens) != 2 {
-		return "n/a"
+		return render.NAValue
 	}
 
 	co, _ := client.Namespaced(tokens[0])

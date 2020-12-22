@@ -1,14 +1,21 @@
 package config
 
-import "github.com/derailed/k9s/internal/client"
+import (
+	"github.com/derailed/k9s/internal/client"
+)
 
-const defaultRefreshRate = 2
+const (
+	defaultRefreshRate  = 2
+	defaultMaxConnRetry = 5
+)
 
 // K9s tracks K9s configuration options.
 type K9s struct {
 	RefreshRate       int                 `yaml:"refreshRate"`
+	MaxConnRetry      int                 `yaml:"maxConnRetry"`
 	EnableMouse       bool                `yaml:"enableMouse"`
 	Headless          bool                `yaml:"headless"`
+	Crumbsless        bool                `yaml:"crumbsless"`
 	ReadOnly          bool                `yaml:"readOnly"`
 	NoIcons           bool                `yaml:"noIcons"`
 	Logger            *Logger             `yaml:"logger"`
@@ -18,6 +25,7 @@ type K9s struct {
 	Thresholds        Threshold           `yaml:"thresholds"`
 	manualRefreshRate int
 	manualHeadless    *bool
+	manualCrumbsless  *bool
 	manualReadOnly    *bool
 	manualCommand     *string
 }
@@ -25,10 +33,11 @@ type K9s struct {
 // NewK9s create a new K9s configuration.
 func NewK9s() *K9s {
 	return &K9s{
-		RefreshRate: defaultRefreshRate,
-		Logger:      NewLogger(),
-		Clusters:    make(map[string]*Cluster),
-		Thresholds:  NewThreshold(),
+		RefreshRate:  defaultRefreshRate,
+		MaxConnRetry: defaultMaxConnRetry,
+		Logger:       NewLogger(),
+		Clusters:     make(map[string]*Cluster),
+		Thresholds:   NewThreshold(),
 	}
 }
 
@@ -42,9 +51,24 @@ func (k *K9s) OverrideHeadless(b bool) {
 	k.manualHeadless = &b
 }
 
+// OverrideCrumbsless set the headlessness manually.
+func (k *K9s) OverrideCrumbsless(b bool) {
+	k.manualCrumbsless = &b
+}
+
 // OverrideReadOnly set the readonly mode manually.
 func (k *K9s) OverrideReadOnly(b bool) {
-	k.manualReadOnly = &b
+	if b {
+		k.manualReadOnly = &b
+	}
+}
+
+// OverrideWrite set the write mode manually.
+func (k *K9s) OverrideWrite(b bool) {
+	if b {
+		var flag bool
+		k.manualReadOnly = &flag
+	}
 }
 
 // OverrideCommand set the command manually.
@@ -52,11 +76,21 @@ func (k *K9s) OverrideCommand(cmd string) {
 	k.manualCommand = &cmd
 }
 
-// GetHeadless returns headless setting.
-func (k *K9s) GetHeadless() bool {
+// IsHeadless returns headless setting.
+func (k *K9s) IsHeadless() bool {
 	h := k.Headless
 	if k.manualHeadless != nil && *k.manualHeadless {
 		h = *k.manualHeadless
+	}
+
+	return h
+}
+
+// IsCrumbsless returns crumbsless setting.
+func (k *K9s) IsCrumbsless() bool {
+	h := k.Crumbsless
+	if k.manualCrumbsless != nil && *k.manualCrumbsless {
+		h = *k.manualCrumbsless
 	}
 
 	return h
@@ -72,12 +106,13 @@ func (k *K9s) GetRefreshRate() int {
 	return rate
 }
 
-// GetReadOnly returns the readonly setting.
-func (k *K9s) GetReadOnly() bool {
+// IsReadOnly returns the readonly setting.
+func (k *K9s) IsReadOnly() bool {
 	readOnly := k.ReadOnly
-	if k.manualReadOnly != nil && *k.manualReadOnly {
+	if k.manualReadOnly != nil {
 		readOnly = *k.manualReadOnly
 	}
+
 	return readOnly
 }
 
@@ -98,6 +133,9 @@ func (k *K9s) ActiveCluster() *Cluster {
 func (k *K9s) validateDefaults() {
 	if k.RefreshRate <= 0 {
 		k.RefreshRate = defaultRefreshRate
+	}
+	if k.MaxConnRetry <= 0 {
+		k.MaxConnRetry = defaultMaxConnRetry
 	}
 }
 

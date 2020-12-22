@@ -13,6 +13,8 @@ import (
 	"k8s.io/client-go/rest"
 )
 
+// BOZO!! Figure out how to convert to table def and use factory.
+
 // Table retrieves K8s resources as tabular data.
 type Table struct {
 	Generic

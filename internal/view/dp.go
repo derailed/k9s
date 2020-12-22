@@ -21,15 +21,17 @@ func NewDeploy(gvr client.GVR) ResourceViewer {
 		ResourceViewer: NewPortForwardExtender(
 			NewRestartExtender(
 				NewScaleExtender(
-					NewLogsExtender(
-						NewBrowser(gvr),
-						nil,
+					NewImageExtender(
+						NewLogsExtender(
+							NewBrowser(gvr),
+							nil,
+						),
 					),
 				),
 			),
 		),
 	}
-	d.SetBindKeysFn(d.bindKeys)
+	d.AddBindKeysFn(d.bindKeys)
 	d.GetTable().SetEnterFn(d.showPods)
 	d.GetTable().SetColorerFn(render.Deployment{}.ColorerFunc())
 

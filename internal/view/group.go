@@ -7,7 +7,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 )
 
 // Group presents a RBAC group viewer.
@@ -19,7 +19,7 @@ type Group struct {
 func NewGroup(gvr client.GVR) ResourceViewer {
 	g := Group{ResourceViewer: NewBrowser(gvr)}
 	g.GetTable().SetColorerFn(render.Subject{}.ColorerFunc())
-	g.SetBindKeysFn(g.bindKeys)
+	g.AddBindKeysFn(g.bindKeys)
 	g.SetContextFn(g.subjectCtx)
 
 	return &g

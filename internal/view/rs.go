@@ -8,7 +8,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 )
 
 // ReplicaSet presents a replicaset viewer.
@@ -21,7 +21,7 @@ func NewReplicaSet(gvr client.GVR) ResourceViewer {
 	r := ReplicaSet{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	r.SetBindKeysFn(r.bindKeys)
+	r.AddBindKeysFn(r.bindKeys)
 	r.GetTable().SetEnterFn(r.showPods)
 	r.GetTable().SetColorerFn(render.ReplicaSet{}.ColorerFunc())
 

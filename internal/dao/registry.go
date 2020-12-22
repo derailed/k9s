@@ -57,7 +57,7 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 	r, ok := m[gvr]
 	if !ok {
 		r = &Generic{}
-		log.Debug().Msgf("No DAO registry entry for %q. Using factory!", gvr)
+		log.Debug().Msgf("No DAO registry entry for %q. Using generics!", gvr)
 	}
 	r.Init(f, gvr)
 
@@ -135,7 +135,7 @@ func (m *Meta) LoadResources(f Factory) error {
 	return nil
 }
 
-// BOZO!! Need contermeasure for direct commands!
+// BOZO!! Need countermeasures for direct commands!
 func loadNonResource(m ResourceMetas) {
 	loadK9s(m)
 	loadRBAC(m)

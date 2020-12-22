@@ -154,6 +154,8 @@ K9s is available on Linux, macOS and Windows platforms.
     export K9S_EDITOR=my_fav_editor
     ```
 
+* K9s prefers recent kubernetes versions ie 1.16+
+
 ---
 
 ## The Command Line
@@ -167,7 +169,7 @@ k9s info
 k9s -n mycoolns
 # Start K9s in an existing KubeConfig context
 k9s --context coolCtx
-# Start K9s in readonly mode - with all modification commands disabled
+# Start K9s in readonly mode - with all cluster modification commands disabled
 k9s --readonly
 ```
 
@@ -208,6 +210,7 @@ K9s uses aliases to navigate most K8s resources.
 | View a Kubernetes resource using singular/plural or short-name | `:`po⏎                        | accepts singular, plural, short-name or alias ie pod or pods           |
 | View a Kubernetes resource in a given namespace                | `:`alias namespace⏎           |                                                                        |
 | Filter out a resource view given a filter                      | `/`filter⏎                    | Regex2 supported ie `fred|blee` to filter resources named fred or blee |
+| Inverse regex filer                                            | `/`! filter⏎                  | Keep everything that *doesn't* match.                                  |
 | Filter resource view by labels                                 | `/`-l label-selector⏎         |                                                                        |
 | Fuzzy find a resource given a filter                           | `/`-f filter⏎                 |                                                                        |
 | Bails out of view/command/filter mode                          | `<esc>`                       |                                                                        |
@@ -220,6 +223,7 @@ K9s uses aliases to navigate most K8s resources.
 | To kill a resource (no confirmation dialog!)                   | `ctrl-k`                      |                                                                        |
 | Launch pulses view                                             | `:`pulses or pu⏎              |                                                                        |
 | Launch XRay view                                               | `:`xray RESOURCE [NAMESPACE]⏎ | RESOURCE can be one of po, svc, dp, rs, sts, ds, NAMESPACE is optional |
+| Launch Popeye view                                             | `:`popeye or pop⏎             | See https://popeyecli.io                                               |
 
 ---
 
@@ -262,10 +266,14 @@ K9s uses aliases to navigate most K8s resources.
   k9s:
     # Represents ui poll intervals. Default 2secs
     refreshRate: 2
+    # Number of retries once the connection to the api-server is lost. Default 15.
+    maxConnRetry: 5
     # Enable mouse support. Default false
-    enableMouse: false
+    enableMouse: true
     # Set to true to hide K9s header. Default false
     headless: false
+    # Set to true to hide K9s crumbs. Default false
+    crumbsless: false
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
     readOnly: false
     # Toggles icons display as not all terminal support these chars.
@@ -276,8 +284,8 @@ K9s uses aliases to navigate most K8s resources.
       tail: 200
       # Defines the total number of log lines to allow in the view. Default 1000
       buffer: 500
-      # Represents how far to go back in the log timeline in seconds. Default is 1min
-      sinceSeconds: 60
+      # Represents how far to go back in the log timeline in seconds. Setting to -1 will show all available logs. Default is 5min.
+      sinceSeconds: 300
       # Go full screen while displaying logs. Default false
       fullScreenLogs: false
       # Toggles log line wrap. Default false
@@ -740,7 +748,7 @@ k9s:
 ## Known Issues
 
 This is still work in progress! If something is broken or there's a feature
-that you want, please open a PR or file a ticket.
+that you want, please file an issue and if so inclined submit a PR!
 
 K9s will most likely blow up if...
 
@@ -762,7 +770,15 @@ to make this project a reality!
 * [Fernand Galiana](https://github.com/derailed)
   * <img src="assets/mail.png" width="16" height="auto" alt="email"/>  fernand@imhotep.io
   * <img src="assets/twitter.png" width="16" height="auto" alt="twitter"/> [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
-We always enjoy hearing from folks who benefit from our work.
+
+We always enjoy hearing from folks who benefit from our work!
+
+## Contributions Guideline
+
+* File an issue first prior to submitting a PR!
+* Ensure all exported items are properly commented
+* If applicable, submit a test suite against your PR
+
 ---
 
 <img src="assets/imhotep_logo.png" width="32" height="auto" alt="Imhotep"/> &nbsp;© 2020 Imhotep Software LLC. All materials licensed under [Apache v2.0](http://www.apache.org/licenses/LICENSE-2.0)

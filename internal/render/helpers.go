@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	runewidth "github.com/mattn/go-runewidth"
 	"github.com/rs/zerolog/log"
@@ -51,7 +52,7 @@ func AsThousands(n int64) string {
 	return p.Sprintf("%d", n)
 }
 
-// Happy returns true if resoure is happy, false otherwise
+// Happy returns true if resource is happy, false otherwise
 func Happy(ns string, h Header, r Row) bool {
 	if len(r.Fields) == 0 {
 		return true
@@ -62,13 +63,6 @@ func Happy(ns string, h Header, r Row) bool {
 	}
 	return strings.TrimSpace(r.Fields[validCol]) == ""
 }
-
-// const megaByte = 1024 * 1024
-
-// // ToMB converts bytes to megabytes.
-// func ToMB(v int64) float64 {
-// 	return float64(v) / megaByte
-// }
 
 func asStatus(err error) string {
 	if err == nil {
@@ -85,14 +79,6 @@ func asSelector(s *metav1.LabelSelector) string {
 	}
 
 	return sel.String()
-}
-
-type metric struct {
-	cpu, mem, cpuLim, memLim string
-}
-
-func noMetric() metric {
-	return metric{cpu: NAValue, mem: NAValue, cpuLim: NAValue, memLim: NAValue}
 }
 
 // ToSelector flattens a map selector to a string selector.
@@ -115,6 +101,13 @@ func blank(s []string) bool {
 	return true
 }
 
+func strpToStr(p *string) string {
+	if p == nil || *p == "" {
+		return MissingValue
+	}
+	return *p
+}
+
 // Join a slice of strings, skipping blanks.
 func join(a []string, sep string) string {
 	switch len(a) {
@@ -124,7 +117,7 @@ func join(a []string, sep string) string {
 		return a[0]
 	}
 
-	var b []string
+	b := make([]string, 0, len(a))
 	for _, s := range a {
 		if s != "" {
 			b = append(b, s)
@@ -148,6 +141,11 @@ func join(a []string, sep string) string {
 	}
 
 	return buff.String()
+}
+
+// AsPerc prints a number as percentage with parans.
+func AsPerc(p string) string {
+	return "(" + p + ")"
 }
 
 // PrintPerc prints a number as percentage.
@@ -257,14 +255,18 @@ func mapToIfc(m interface{}) (s string) {
 	return
 }
 
-// ToMillicore shows cpu reading for human.
-func ToMillicore(v int64) string {
+func toMc(v int64) string {
+	if v == 0 {
+		return ZeroValue
+	}
 	return strconv.Itoa(int(v))
 }
 
-// ToMi shows mem reading for human.
-func ToMi(v int64) string {
-	return strconv.Itoa(int(v))
+func toMi(v int64) string {
+	if v == 0 {
+		return ZeroValue
+	}
+	return strconv.Itoa(int(client.ToMB(v)))
 }
 
 func boolPtrToStr(b *bool) string {

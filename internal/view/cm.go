@@ -7,7 +7,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 )
 
 // ConfigMap represents a configmap viewer.
@@ -20,7 +20,7 @@ func NewConfigMap(gvr client.GVR) ResourceViewer {
 	s := ConfigMap{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	s.SetBindKeysFn(s.bindKeys)
+	s.AddBindKeysFn(s.bindKeys)
 
 	return &s
 }

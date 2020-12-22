@@ -9,7 +9,7 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -21,12 +21,15 @@ type ScaleExtender struct {
 // NewScaleExtender returns a new extender.
 func NewScaleExtender(r ResourceViewer) ResourceViewer {
 	s := ScaleExtender{ResourceViewer: r}
-	s.bindKeys(s.Actions())
+	s.AddBindKeysFn(s.bindKeys)
 
 	return &s
 }
 
 func (s *ScaleExtender) bindKeys(aa ui.KeyActions) {
+	if s.App().Config.K9s.IsReadOnly() {
+		return
+	}
 	aa.Add(ui.KeyActions{
 		ui.KeyS: ui.NewKeyAction("Scale", s.scaleCmd, true),
 	})
@@ -59,7 +62,7 @@ func (s *ScaleExtender) makeScaleForm(sel string) *tview.Form {
 	f := s.makeStyledForm()
 	replicas := strings.TrimSpace(s.GetTable().GetCell(s.GetTable().GetSelectedRowIndex(), s.GetTable().NameColIndex()+1).Text)
 	tokens := strings.Split(replicas, "/")
-	replicas = tokens[1]
+	replicas = strings.TrimRight(tokens[1], ui.DeltaSign)
 	f.AddInputField("Replicas:", replicas, 4, func(textToCheck string, lastChar rune) bool {
 		_, err := strconv.Atoi(textToCheck)
 		return err == nil

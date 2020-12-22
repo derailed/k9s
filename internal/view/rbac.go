@@ -7,7 +7,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 )
 
 // Rbac presents an RBAC policy viewer.
@@ -21,7 +21,7 @@ func NewRbac(gvr client.GVR) ResourceViewer {
 		ResourceViewer: NewBrowser(gvr),
 	}
 	r.GetTable().SetColorerFn(render.Rbac{}.ColorerFunc())
-	r.SetBindKeysFn(r.bindKeys)
+	r.AddBindKeysFn(r.bindKeys)
 	r.GetTable().SetSortCol("APIGROUP", true)
 	r.GetTable().SetEnterFn(blankEnterFn)
 

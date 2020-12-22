@@ -8,7 +8,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -85,6 +85,9 @@ func (a *App) SetRunning(f bool) {
 	defer a.mx.Unlock()
 	a.running = f
 }
+
+// BufferCompleted indicates input was accepted.
+func (a *App) BufferCompleted(s string) {}
 
 // BufferChanged indicates the buffer was changed.
 func (a *App) BufferChanged(s string) {}

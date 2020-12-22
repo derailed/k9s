@@ -1,0 +1,5 @@
+commonLabels:
+  app: fred
+
+resources:
+  - cm.yaml

@@ -6,7 +6,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell"
+	"github.com/gdamore/tcell/v2"
 )
 
 const (
@@ -46,7 +46,7 @@ type PromptModel interface {
 	ClearText(fire bool)
 
 	// Notify notifies all listener of current suggestions.
-	Notify()
+	Notify(bool)
 
 	// AddListener registers a command listener.
 	AddListener(model.BuffWatcher)
@@ -178,7 +178,7 @@ func (p *Prompt) InCmdMode() bool {
 func (p *Prompt) activate() {
 	p.SetCursorIndex(len(p.model.GetText()))
 	p.write(p.model.GetText(), "")
-	p.model.Notify()
+	p.model.Notify(false)
 }
 
 func (p *Prompt) update(s string) {
@@ -202,6 +202,11 @@ func (p *Prompt) write(text, suggest string) {
 
 // ----------------------------------------------------------------------------
 // Event Listener protocol...
+
+// BufferCompleted indicates input was accepted.
+func (p *Prompt) BufferCompleted(s string) {
+	p.update(s)
+}
 
 // BufferChanged indicates the buffer was changed.
 func (p *Prompt) BufferChanged(s string) {
