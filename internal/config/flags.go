@@ -83,7 +83,7 @@ func (f *Flags) Kubeconfig() string {
 	}
 
 	for index, file := range files {
-		fmt.Printf("%d\t%s\n", index, file)
+		fmt.Printf("%d:\t%s\n", index, file)
 	}
 
 	reader := bufio.NewReader(os.Stdin)
