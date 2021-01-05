@@ -72,21 +72,30 @@ func (f *Flags) IsKubeconfigDirSet() bool {
 func (f *Flags) Kubeconfig() string {
 
 	var files []string
-	filepath.Walk(*f.KubeconfigDir, func(path string, info os.FileInfo, err error) error {
+	err := filepath.Walk(*f.KubeconfigDir, func(path string, info os.FileInfo, err error) error {
 		if !info.IsDir() {
 			files = append(files, path)
 		}
 		return nil
 	})
+	if err != nil {
+		return ""
+	}
 
+	textInt := chooseKubeconfig(files)
+
+	return files[textInt]
+}
+
+func chooseKubeconfig(files []string) int {
 	for index, file := range files {
 		fmt.Printf("%d:\t%s\n", index, file)
 	}
 
 	reader := bufio.NewReader(os.Stdin)
-	fmt.Print("Select the config: ")
+	fmt.Print("Choose the config: ")
 	text, _ := reader.ReadString('\n')
 	textInt, _ := strconv.Atoi(strings.Replace(text, "\n", "", -1))
 
-	return files[textInt]
+	return textInt
 }

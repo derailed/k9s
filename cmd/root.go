@@ -94,9 +94,11 @@ func run(cmd *cobra.Command, args []string) {
 
 func loadConfiguration() *config.Config {
 	log.Info().Msg("🐶 K9s starting up...")
+
 	if k9sFlags.IsKubeconfigDirSet() {
 		*k8sFlags.KubeConfig = k9sFlags.Kubeconfig()
 	}
+
 	// Load K9s config file...
 	k8sCfg := client.NewConfig(k8sFlags)
 	k9sCfg := config.NewConfig(k8sCfg)
