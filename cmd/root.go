@@ -95,6 +95,10 @@ func run(cmd *cobra.Command, args []string) {
 func loadConfiguration() *config.Config {
 	log.Info().Msg("🐶 K9s starting up...")
 
+	if k9sFlags.IsKubeconfigDirSet() {
+		*k8sFlags.KubeConfig = k9sFlags.Kubeconfig()
+	}
+
 	// Load K9s config file...
 	k8sCfg := client.NewConfig(k8sFlags)
 	k9sCfg := config.NewConfig(k8sCfg)
@@ -209,6 +213,12 @@ func initK9sFlags() {
 		"write",
 		false,
 		"Sets write mode by overriding the readOnly configuration setting",
+	)
+	rootCmd.Flags().StringVar(
+		k9sFlags.KubeconfigDir,
+		"kubeconfig-dir",
+		"",
+		"Sets the kubeconfig directory. Useful when you have multiple kubeconfigs (e.g. KUBECONFIG_DIR/*.config)",
 	)
 }
 

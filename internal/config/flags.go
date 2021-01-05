@@ -1,5 +1,14 @@
 package config
 
+import (
+	"bufio"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+)
+
 const (
 	// DefaultRefreshRate represents the refresh interval.
 	DefaultRefreshRate = 2 // secs
@@ -9,6 +18,9 @@ const (
 
 	// DefaultCommand represents the default command to run.
 	DefaultCommand = ""
+
+	// KubeconfigDirDefault represents the default kubeconfig directory.
+	KubeconfigDirDefault = ""
 )
 
 // Flags represents K9s configuration flags.
@@ -21,6 +33,7 @@ type Flags struct {
 	ReadOnly      *bool
 	Write         *bool
 	Crumbsless    *bool
+	KubeconfigDir *string
 }
 
 // NewFlags returns new configuration flags.
@@ -34,6 +47,7 @@ func NewFlags() *Flags {
 		ReadOnly:      boolPtr(false),
 		Write:         boolPtr(false),
 		Crumbsless:    boolPtr(false),
+		KubeconfigDir: strPtr(KubeconfigDirDefault),
 	}
 }
 
@@ -47,4 +61,37 @@ func intPtr(i int) *int {
 
 func strPtr(s string) *string {
 	return &s
+}
+
+// IsKubeconfigDirSet returns true if the kubeconfigDir was set and false otherwise.
+func (f *Flags) IsKubeconfigDirSet() bool {
+	return *f.KubeconfigDir != ""
+}
+
+// Kubeconfig returns the kubeconfig of choice.
+func (f *Flags) Kubeconfig() string {
+
+	var files []string
+	err := filepath.Walk(*f.KubeconfigDir, func(path string, info os.FileInfo, err error) error {
+		if !info.IsDir() {
+			files = append(files, path)
+		}
+		return nil
+	})
+	if err != nil {
+		return ""
+	}
+
+	for index, file := range files {
+		fmt.Printf("%d\t%s\n", index, file)
+	}
+
+	reader := bufio.NewReader(os.Stdin)
+	fmt.Print("Select the config: ")
+	text, _ := reader.ReadString('\n')
+	text = strings.Replace(text, "\n", "", -1)
+
+	textInt, _ := strconv.Atoi(text)
+
+	return files[textInt]
 }
