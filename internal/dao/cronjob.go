@@ -60,7 +60,7 @@ func (c *CronJob) Run(path string) error {
 			Labels:    cj.Spec.JobTemplate.Labels,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         "batch/v1beta",
+					APIVersion:         "batch/v1beta1",
 					Kind:               "CronJob",
 					BlockOwnerDeletion: &true,
 					Name:               cj.Name,
