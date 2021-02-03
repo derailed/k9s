@@ -37,14 +37,6 @@ func InNSList(nn []interface{}, ns string) bool {
 	return InList(ss, ns)
 }
 
-func mustK9sHome() string {
-	usr, err := user.Current()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Die on retrieving user home")
-	}
-	return usr.HomeDir
-}
-
 // MustK9sUser establishes current user identity or fail.
 func MustK9sUser() string {
 	usr, err := user.Current()
