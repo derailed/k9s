@@ -12,7 +12,7 @@ import (
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-        "github.com/adrg/xdg"
+	"github.com/adrg/xdg"
 )
 
 // K9sConfig represents K9s configuration dir env var.
@@ -60,10 +60,10 @@ func K9sHome() string {
 	if env := os.Getenv(K9sConfig); env != "" {
 		return env
 	}
-        xdgK9sHome, err := xdg.ConfigFile("k9s")
-        if err != nil {
-                log.Fatal().Err(err).Msg("Unable to create configuration directory for k9s")
-        }
+	xdgK9sHome, err := xdg.ConfigFile("k9s")
+	if err != nil {
+		log.Fatal().Err(err).Msg("Unable to create configuration directory for k9s")
+	}
 
 	return xdgK9sHome
 }
