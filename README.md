@@ -281,7 +281,7 @@ K9s uses aliases to navigate most K8s resources.
 
   | Unix            | macOS                       | Windows               |
   |-----------------|-----------------------------|-----------------------|
-  | `~/.config/k9s` | `~/Library/Preferences/k9s` | `%LOCALAPPDATA%\\k9s` |
+  | `~/.config/k9s` | `~/Library/Preferences/k9s` | `%LOCALAPPDATA%\k9s` |
 
   > NOTE: This is still in flux and will change while in pre-release stage!
 
