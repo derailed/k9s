@@ -1,11 +1,40 @@
 <img src="assets/k9s.png" alt="k9s">
 
-# K9s - Kubernetes CLI To Manage Your Clusters In Style!
+## K9s - Kubernetes CLI To Manage Your Clusters In Style!
 
 K9s provides a terminal UI to interact with your Kubernetes clusters.
 The aim of this project is to make it easier to navigate, observe and manage
 your applications in the wild. K9s continually watches Kubernetes
 for changes and offers subsequent commands to interact with your observed resources.
+
+---
+
+## Announcement
+
+<center>
+<img src="https://raw.githubusercontent.com/imhotepio/k9salpha/master/assets/k9sa_blue_300.png" alt="k9salpha" width="300"/>
+<h1>K9sAlpha RC-0 Is Out!</h1>
+</center>
+
+<br/>
+
+Fresh off the press [K9sAlpha](https://k9salpha.io) is now available!
+Please read the details in the docs and checkout the new repo.
+
+- Store: [K9sAlpha Store](https://store.k9salpha.io).
+- Screencast: [K9sAlpha-v1.0.0-rc.0](https://www.youtube.com/watch?v=hLYK0oPLOIY&t=787s)
+
+> NOTE: Upon purchase, in order to activate your license, please send us a valid user name so we can generate your personalized license key. All licenses are valid for a whole year from the date of purchase.
+
+For all other cases, please reach out to us so we can discuss your needs:
+
+- Corporate licenses
+- Education
+- Non Profit
+- Active K9s sponsors
+- Long term K9s supporters and contributors
+- Can't afford it
+- Others...
 
 ---
 
