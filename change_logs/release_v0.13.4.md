@@ -28,7 +28,7 @@ A small change here based on [Benjamin](https://github.com/binarycoded) excellen
 |--------|--------------------------------|-----------|
 | %CPU/R | Percentage of requested cpu    | shift-x   |
 | %MEM/R | Percentage of requested memory | shift-z   |
-| %MEM/L | Percentage of limited cpu      | ctrl-x    |
+| %CPU/L | Percentage of limited cpu      | ctrl-x    |
 | %MEM/L | Percentage of limited memory   | ctrl-z    |
 
 ---
