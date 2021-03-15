@@ -263,7 +263,7 @@ var expectedConfig = `k9s:
   refreshRate: 100
   maxConnRetry: 5
   enableMouse: false
-  headless: false
+  headerless: false
   crumbsless: false
   readOnly: true
   noIcons: false
@@ -346,7 +346,7 @@ var resetConfig = `k9s:
   refreshRate: 2
   maxConnRetry: 5
   enableMouse: false
-  headless: false
+  headerless: false
   crumbsless: false
   readOnly: false
   noIcons: false

@@ -14,7 +14,7 @@ type K9s struct {
 	RefreshRate       int                 `yaml:"refreshRate"`
 	MaxConnRetry      int                 `yaml:"maxConnRetry"`
 	EnableMouse       bool                `yaml:"enableMouse"`
-	Headless          bool                `yaml:"headless"`
+	Headerless          bool                `yaml:"headerless"`
 	Crumbsless        bool                `yaml:"crumbsless"`
 	ReadOnly          bool                `yaml:"readOnly"`
 	NoIcons           bool                `yaml:"noIcons"`
@@ -24,7 +24,7 @@ type K9s struct {
 	Clusters          map[string]*Cluster `yaml:"clusters,omitempty"`
 	Thresholds        Threshold           `yaml:"thresholds"`
 	manualRefreshRate int
-	manualHeadless    *bool
+	manualHeaderless    *bool
 	manualCrumbsless  *bool
 	manualReadOnly    *bool
 	manualCommand     *string
@@ -46,12 +46,12 @@ func (k *K9s) OverrideRefreshRate(r int) {
 	k.manualRefreshRate = r
 }
 
-// OverrideHeadless set the headlessness manually.
-func (k *K9s) OverrideHeadless(b bool) {
-	k.manualHeadless = &b
+// OverrideHeaderless set the headerlessness manually.
+func (k *K9s) OverrideHeaderless(b bool) {
+	k.manualHeaderless = &b
 }
 
-// OverrideCrumbsless set the headlessness manually.
+// OverrideCrumbsless set the headerlessness manually.
 func (k *K9s) OverrideCrumbsless(b bool) {
 	k.manualCrumbsless = &b
 }
@@ -76,11 +76,11 @@ func (k *K9s) OverrideCommand(cmd string) {
 	k.manualCommand = &cmd
 }
 
-// IsHeadless returns headless setting.
-func (k *K9s) IsHeadless() bool {
-	h := k.Headless
-	if k.manualHeadless != nil && *k.manualHeadless {
-		h = *k.manualHeadless
+// IsHeaderless returns headerless setting.
+func (k *K9s) IsHeaderless() bool {
+	h := k.Headerless
+	if k.manualHeaderless != nil && *k.manualHeaderless {
+		h = *k.manualHeaderless
 	}
 
 	return h

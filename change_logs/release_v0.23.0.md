@@ -73,7 +73,7 @@ We've added a new configuCCration to turn off the crumbs via `crumbsLess` config
 ```yaml
 k9s:
   refreshRate: 2
-  headless: false
+  headerless: false
   crumbsless: false
   readOnly: true
   ...

@@ -15,7 +15,7 @@ const (
 type Flags struct {
 	RefreshRate   *int
 	LogLevel      *string
-	Headless      *bool
+	Headerless      *bool
 	Command       *string
 	AllNamespaces *bool
 	ReadOnly      *bool
@@ -28,7 +28,7 @@ func NewFlags() *Flags {
 	return &Flags{
 		RefreshRate:   intPtr(DefaultRefreshRate),
 		LogLevel:      strPtr(DefaultLogLevel),
-		Headless:      boolPtr(false),
+		Headerless:      boolPtr(false),
 		Command:       strPtr(DefaultCommand),
 		AllNamespaces: boolPtr(false),
 		ReadOnly:      boolPtr(false),

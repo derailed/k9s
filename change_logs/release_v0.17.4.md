@@ -24,7 +24,7 @@ In order to override the default thresholds (cpu/mem: 80% ), you will need to mo
 # $HOME/.k9s/config.yml
 k9s:
   refreshRate: 2
-  headless: false
+  headerless: false
   ...
   # Specify resources thresholds percentages
   thresholds:
