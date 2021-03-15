@@ -73,7 +73,7 @@ func (n *Node) drainCmd(evt *tcell.EventKey) *tcell.EventKey {
 	defaults := dao.DrainOptions{
 		GracePeriodSeconds:  -1,
 		Timeout:             5 * time.Second,
-		DeleteLocalData:     false,
+		DeleteEmptyDirData:  false,
 		IgnoreAllDaemonSets: false,
 	}
 	ShowDrain(n, path, defaults, drainNode)

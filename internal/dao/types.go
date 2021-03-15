@@ -77,7 +77,7 @@ type DrainOptions struct {
 	GracePeriodSeconds  int
 	Timeout             time.Duration
 	IgnoreAllDaemonSets bool
-	DeleteLocalData     bool
+	DeleteEmptyDirData  bool
 	Force               bool
 }
 
