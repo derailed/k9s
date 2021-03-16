@@ -490,6 +490,12 @@ func toEmoji(gvr string) string {
 		return "🏷 "
 	case "policy/v1beta1/podsecuritypolicies":
 		return "👮‍♂️"
+	case "apiextensions.k8s.io/v1/customresourcedefinitions":
+		return "📔"
+	case "argoproj.io/v1alpha1/applications":
+		return "🏠"
+	case "argoproj.io/v1alpha1/appprojects":
+		return "🏘"
 	case "containers":
 		return "🐳"
 	case "report":

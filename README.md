@@ -1,11 +1,40 @@
 <img src="assets/k9s.png" alt="k9s">
 
-# K9s - Kubernetes CLI To Manage Your Clusters In Style!
+## K9s - Kubernetes CLI To Manage Your Clusters In Style!
 
 K9s provides a terminal UI to interact with your Kubernetes clusters.
 The aim of this project is to make it easier to navigate, observe and manage
 your applications in the wild. K9s continually watches Kubernetes
 for changes and offers subsequent commands to interact with your observed resources.
+
+---
+
+## Announcement
+
+<center>
+<img src="https://raw.githubusercontent.com/imhotepio/k9salpha/master/assets/k9sa_blue_300.png" alt="k9salpha" width="300"/>
+<h1>K9sAlpha RC-0 Is Out!</h1>
+</center>
+
+<br/>
+
+Fresh off the press [K9sAlpha](https://k9salpha.io) is now available!
+Please read the details in the docs and checkout the new repo.
+
+- Store: [K9sAlpha Store](https://store.k9salpha.io).
+- Screencast: [K9sAlpha-v1.0.0-rc.0](https://www.youtube.com/watch?v=hLYK0oPLOIY&t=787s)
+
+> NOTE: Upon purchase, in order to activate your license, please send us a valid user name so we can generate your personalized license key. All licenses are valid for a whole year from the date of purchase.
+
+For all other cases, please reach out to us so we can discuss your needs:
+
+- Corporate licenses
+- Education
+- Non Profit
+- Active K9s sponsors
+- Long term K9s supporters and contributors
+- Can't afford it
+- Others...
 
 ---
 
@@ -82,6 +111,17 @@ K9s is available on Linux, macOS and Windows platforms.
   go get -u github.com/derailed/k9s
   ```
 
+* Via [Webi](https://webinstall.dev) for Linux and macOS
+
+  ```shell
+  curl -sS https://webinstall.dev/k9s | bash
+  ```
+
+* Via [Webi](https://webinstall.dev) for Windows
+
+  ```shell
+  curl.exe -A MS https://webinstall.dev/k9s | powershell
+  ```
 ---
 
 ## Building From Source
@@ -242,6 +282,7 @@ K9s uses aliases to navigate most K8s resources.
 
 ## Demo Videos/Recordings
 
+* [k9s Kubernetes UI - A Terminal-Based Vim-Like Kubernetes Dashboard](https://youtu.be/boaW9odvRCc)
 * [K9s v0.21.3](https://youtu.be/wG8KCwDAhnw)
 * [K9s v0.19.X](https://youtu.be/kj-WverKZ24)
 * [K9s v0.18.0](https://www.youtube.com/watch?v=zMnD5e53yRw)
@@ -666,7 +707,7 @@ Example: Dracula Skin ;)
 
 You can style K9s based on your own sense of look and style. Skins are YAML files, that enable a user to change the K9s presentation layer. K9s skins are loaded from `$HOME/.k9s/skin.yml`. If a skin file is detected then the skin would be loaded if not the current stock skin remains in effect.
 
-You can also change K9s skins based on the cluster you are connecting too. In this case, you can specify the skin file name as `$HOME/.k9s/mycluster_skin.yml`
+You can also change K9s skins based on the cluster you are connecting too. In this case, you can specify the skin file name as `$HOME/.k9s/mycontext_skin.yml`
 Below is a sample skin file, more skins are available in the skins directory in this repo, just simply copy any of these in your user's home dir as `skin.yml`.
 
 Colors can be defined by name or uing an hex representation. Of recent, we've added a color named `default` to indicate a transparent background color to preserve your terminal background color settings if so desired.

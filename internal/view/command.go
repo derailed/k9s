@@ -69,6 +69,8 @@ func allowedXRay(gvr client.GVR) bool {
 		"apps/v1/daemonsets",
 		"apps/v1/statefulsets",
 		"apps/v1/replicasets",
+		"argoproj.io/v1alpha1/applications",
+		"argoproj.io/v1alpha1/appprojects",
 	}
 	for _, g := range gg {
 		if g == gvr.String() {
