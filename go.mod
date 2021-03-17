@@ -28,6 +28,8 @@ replace (
 	k8s.io/sample-apiserver => k8s.ios/sample-apiserver v0.20.2
 )
 
+replace github.com/argoproj/argo-cd => github.com/argoproj/argo-cd v1.5.5
+
 require (
 	github.com/atotto/clipboard v0.1.2
 	github.com/cenkalti/backoff v2.2.1+incompatible
@@ -53,6 +55,7 @@ require (
 	github.com/openfaas/faas-provider v0.15.0
 	github.com/petergtz/pegomock v2.7.0+incompatible
 	github.com/rakyll/hey v0.1.4
+	github.com/robfig/cron v1.2.0 // indirect
 	github.com/rs/zerolog v1.20.0
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sahilm/fuzzy v0.1.0

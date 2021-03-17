@@ -204,4 +204,14 @@ var Registry = map[string]ResourceMeta{
 	"rbac.authorization.k8s.io/v1/rolebindings": {
 		Renderer: &render.RoleBinding{},
 	},
+
+	// ArgoCD...
+	"argoproj.io/v1alpha1/applications": {
+		Renderer:     &render.Application{},
+		TreeRenderer: &xray.Application{},
+	},
+	"argoproj.io/v1alpha1/appprojects": {
+		Renderer:     &render.AppProject{},
+		TreeRenderer: &xray.AppProject{},
+	},
 }

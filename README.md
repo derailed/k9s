@@ -111,6 +111,17 @@ K9s is available on Linux, macOS and Windows platforms.
   go get -u github.com/derailed/k9s
   ```
 
+* Via [Webi](https://webinstall.dev) for Linux and macOS
+
+  ```shell
+  curl -sS https://webinstall.dev/k9s | bash
+  ```
+
+* Via [Webi](https://webinstall.dev) for Windows
+
+  ```shell
+  curl.exe -A MS https://webinstall.dev/k9s | powershell
+  ```
 ---
 
 ## Building From Source
@@ -271,6 +282,7 @@ K9s uses aliases to navigate most K8s resources.
 
 ## Demo Videos/Recordings
 
+* [k9s Kubernetes UI - A Terminal-Based Vim-Like Kubernetes Dashboard](https://youtu.be/boaW9odvRCc)
 * [K9s v0.21.3](https://youtu.be/wG8KCwDAhnw)
 * [K9s v0.19.X](https://youtu.be/kj-WverKZ24)
 * [K9s v0.18.0](https://www.youtube.com/watch?v=zMnD5e53yRw)
