@@ -76,6 +76,8 @@ func (Pod) Header(ns string) Header {
 		HeaderColumn{Name: "QOS", Wide: true},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
+		HeaderColumn{Name: "NOMINATED NODE", Wide: true},
+		HeaderColumn{Name: "READINESS GATES", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
 	}
 }
@@ -118,6 +120,8 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 		p.mapQOS(po.Status.QOSClass),
 		mapToStr(po.Labels),
 		asStatus(p.diagnose(phase, cr, len(ss))),
+		asNominated(po.Status.NominatedNodeName),
+		asReadinessGate(po.Spec.ReadinessGates),
 		toAge(po.ObjectMeta.CreationTimestamp),
 	}
 
@@ -137,6 +141,24 @@ func (p Pod) diagnose(phase string, cr, ct int) error {
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func asNominated(n string) string {
+	if n == "" {
+		return MissingValue
+	}
+	return n
+}
+
+func asReadinessGate(gg []v1.PodReadinessGate) string {
+	if len(gg) == 0 {
+		return MissingValue
+	}
+	ss := make([]string, 0, len(gg))
+	for _, g := range gg {
+		ss = append(ss, string(g.ConditionType))
+	}
+	return strings.Join(ss, ",")
+}
 
 // PodWithMetrics represents a pod and its metrics.
 type PodWithMetrics struct {

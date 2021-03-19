@@ -1,5 +1,5 @@
 {
-  "apiVersion": "extensions/v1beta1",
+  "apiVersion": "networking.k8s.io/v1",
   "kind": "NetworkPolicy",
   "metadata": {
     "annotations": {
@@ -10,7 +10,7 @@
     "name": "fred",
     "namespace": "default",
     "resourceVersion": "48999995",
-    "selfLink": "/apis/extensions/v1beta1/namespaces/default/networkpolicies/fred",
+    "selfLink": "/apis/networking.k8s.io/v1/namespaces/default/networkpolicies/fred",
     "uid": "e4aada4d-c8fd-11e9-990f-42010a800218"
   },
   "spec": {

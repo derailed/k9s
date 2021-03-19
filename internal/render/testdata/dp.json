@@ -1,5 +1,5 @@
 {
-  "apiVersion": "extensions/v1beta1",
+  "apiVersion": "apps/v1",
   "kind": "Deployment",
   "metadata": {
     "annotations": {
@@ -14,7 +14,7 @@
     "name": "icx-db",
     "namespace": "icx",
     "resourceVersion": "37116271",
-    "selfLink": "/apis/extensions/v1beta1/namespaces/icx/deployments/icx-db",
+    "selfLink": "/apis/apps/v1/namespaces/icx/deployments/icx-db",
     "uid": "6f6143bc-a5f3-11e9-990f-42010a800218"
   },
   "spec": {

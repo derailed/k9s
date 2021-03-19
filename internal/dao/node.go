@@ -73,7 +73,7 @@ func (o DrainOptions) toDrainHelper(k kubernetes.Interface, w io.Writer) drain.H
 		Client:              k,
 		GracePeriodSeconds:  o.GracePeriodSeconds,
 		Timeout:             o.Timeout,
-		DeleteLocalData:     o.DeleteLocalData,
+		DeleteEmptyDirData:  o.DeleteEmptyDirData,
 		IgnoreAllDaemonSets: o.IgnoreAllDaemonSets,
 		Out:                 w,
 		ErrOut:              w,

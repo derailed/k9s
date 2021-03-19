@@ -82,7 +82,8 @@ func (v *LiveView) Init(_ context.Context) error {
 // ResourceFailed notifies when their is an issue.
 func (v *LiveView) ResourceFailed(err error) {
 	v.text.SetTextAlign(tview.AlignCenter)
-	v.text.SetText(cowTalk(err.Error()))
+	x, _, w, _ := v.GetRect()
+	v.text.SetText(cowTalk(err.Error(), x+w))
 }
 
 // ResourceChanged notifies when the filter changes.

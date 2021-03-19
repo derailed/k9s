@@ -48,8 +48,8 @@ func ShowDrain(view ResourceViewer, path string, defaults dao.DrainOptions, okFn
 	f.AddCheckbox("Ignore DaemonSets:", defaults.IgnoreAllDaemonSets, func(v bool) {
 		opts.IgnoreAllDaemonSets = v
 	})
-	f.AddCheckbox("Delete Local Data:", defaults.DeleteLocalData, func(v bool) {
-		opts.DeleteLocalData = v
+	f.AddCheckbox("Delete Local Data:", defaults.DeleteEmptyDirData, func(v bool) {
+		opts.DeleteEmptyDirData = v
 	})
 	f.AddCheckbox("Force:", defaults.Force, func(v bool) {
 		opts.Force = v
