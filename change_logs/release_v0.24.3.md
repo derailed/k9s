@@ -26,23 +26,38 @@ I would like to extend a `Big Thank You` to the following generous K9s friends f
 
 ## Maintenance Release!
 
-o Updated Kubernetes to v0.20.2
+o Update Kubernetes to v0.20.5
 
-## A Note About Alpha!
+## There are some that call me... Alpha!
 
-As you may know, we've just launched [K9sAlpha](https://k9salpha.io). As a thank you to supporters of K9s, all the good folks past/present that have contributed to the project either via PRs or sponsorships are eligible for a free P2 K9sAlpha license. Please reach out to me directly with your machine user name ie `whoami` and I will send you a license key.
+K9s is still and will remain an open source software. As such it is free and we will continue to maintain this repo!
+
+That said in order to support our efforts, we've recently launched [K9sAlpha](https://k9salpha.io) which is a freemium version of K9s. K9sAlpha unlocks additional features and enhancement.
+
+If you would like to support us, you can either join our github sponsors or purchase a K9sAlpha license. If you are an active member of our github sponsorship program, you are eligible for a free K9sAlpha license. Please reach out for your shoe-phone and contact us for your personalized license key.
 
 <img src="https://k9salpha.io/assets/k9salpha-blue.png" align="center" width="300" height="auto"/>
 
 ---
 
+## Resolved Issues
+
+* [Issue #1038](https://github.com/derailed/k9s/issues/1038) Release Cronjob API
+* [Issue #1035](https://github.com/derailed/k9s/issues/1035) Update Ingress API Group
+* [Issue #1028](https://github.com/derailed/k9s/issues/1028) Go compile
+* [Issue #1024](https://github.com/derailed/k9s/issues/1024) Add Pod Readiness/Nominated cols
+* [Issue #1013](https://github.com/derailed/k9s/issues/1013) Panic string negative repeat count
+* [Issue #1005](https://github.com/derailed/k9s/issues/1005) No x86_64 binaries
+* [Issue #735](https://github.com/derailed/k9s/issues/735) Shell into windows containers
+
 ## Resolved PRs
 
 * [PR #1022](https://github.com/derailed/k9s/pull/1022) Update release
-* [PR #1012](https://github.com/derailed/k9s/pull/1012) fix typo for cluster based skins
+* [PR #1012](https://github.com/derailed/k9s/pull/1012) Fix typo for cluster based skins
 * [PR #1009](https://github.com/derailed/k9s/pull/1009) Add webi installer info
 * [PR #1004](https://github.com/derailed/k9s/pull/1004) Correction CronJob ApiVersion
-* [PR #952](https://github.com/derailed/k9s/pull/952) Add ArgoCD views
+* [PR #1026](https://github.com/derailed/k9s/pull/1026) Add option to hide logo
+* [PR #997](https://github.com/derailed/k9s/pull/997) Shell into windows containers
 
 ---
 

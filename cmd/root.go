@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"flag"
 	"fmt"
 	"runtime/debug"
 
@@ -13,7 +12,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/klog"
 )
 
 const (
@@ -41,24 +39,6 @@ func init() {
 	rootCmd.AddCommand(versionCmd(), infoCmd())
 	initK9sFlags()
 	initK8sFlags()
-
-	var flags flag.FlagSet
-	klog.InitFlags(&flags)
-	if err := flags.Set("logtostderr", "false"); err != nil {
-		panic(err)
-	}
-	if err := flags.Set("alsologtostderr", "false"); err != nil {
-		panic(err)
-	}
-	if err := flags.Set("stderrthreshold", "fatal"); err != nil {
-		panic(err)
-	}
-	if err := flags.Set("v", "0"); err != nil {
-		panic(err)
-	}
-	if err := flags.Set("log_file", config.K9sLogs); err != nil {
-		panic(err)
-	}
 }
 
 // Execute root command
@@ -108,6 +88,7 @@ func loadConfiguration() *config.Config {
 	}
 
 	k9sCfg.K9s.OverrideHeadless(*k9sFlags.Headless)
+	k9sCfg.K9s.OverrideLogoless(*k9sFlags.Logoless)
 	k9sCfg.K9s.OverrideCrumbsless(*k9sFlags.Crumbsless)
 	k9sCfg.K9s.OverrideReadOnly(*k9sFlags.ReadOnly)
 	k9sCfg.K9s.OverrideWrite(*k9sFlags.Write)
@@ -179,6 +160,12 @@ func initK9sFlags() {
 		"headless",
 		false,
 		"Turn K9s header off",
+	)
+	rootCmd.Flags().BoolVar(
+		k9sFlags.Logoless,
+		"logoless",
+		false,
+		"Turn K9s logo off",
 	)
 	rootCmd.Flags().BoolVar(
 		k9sFlags.Crumbsless,

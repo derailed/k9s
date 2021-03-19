@@ -26,6 +26,6 @@ func (c *CustomResourceDefinition) List(ctx context.Context, _ string) ([]runtim
 		labelSel = sel.AsSelector()
 	}
 
-	const gvr = "apiextensions.k8s.io/v1beta1/customresourcedefinitions"
+	const gvr = "apiextensions.k8s.io/v1/customresourcedefinitions"
 	return c.Factory.List(gvr, "-", false, labelSel)
 }

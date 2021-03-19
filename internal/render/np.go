@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
-	v1beta1 "k8s.io/api/extensions/v1beta1"
+	netv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -42,7 +42,7 @@ func (n NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
 	if !ok {
 		return fmt.Errorf("Expected NetworkPolicy, but got %T", o)
 	}
-	var np v1beta1.NetworkPolicy
+	var np netv1.NetworkPolicy
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &np)
 	if err != nil {
 		return err
@@ -71,7 +71,7 @@ func (n NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
 
 // Helpers...
 
-func ingress(ii []v1beta1.NetworkPolicyIngressRule) (string, string, string) {
+func ingress(ii []netv1.NetworkPolicyIngressRule) (string, string, string) {
 	var ports, sels, blocks []string
 	for _, i := range ii {
 		if p := portsToStr(i.Ports); p != "" {
@@ -88,7 +88,7 @@ func ingress(ii []v1beta1.NetworkPolicyIngressRule) (string, string, string) {
 	return strings.Join(ports, ","), strings.Join(sels, ","), strings.Join(blocks, ",")
 }
 
-func egress(ee []v1beta1.NetworkPolicyEgressRule) (string, string, string) {
+func egress(ee []netv1.NetworkPolicyEgressRule) (string, string, string) {
 	var ports, sels, blocks []string
 	for _, e := range ee {
 		if p := portsToStr(e.Ports); p != "" {
@@ -105,7 +105,7 @@ func egress(ee []v1beta1.NetworkPolicyEgressRule) (string, string, string) {
 	return strings.Join(ports, ","), strings.Join(sels, ","), strings.Join(blocks, ",")
 }
 
-func portsToStr(pp []v1beta1.NetworkPolicyPort) string {
+func portsToStr(pp []netv1.NetworkPolicyPort) string {
 	ports := make([]string, 0, len(pp))
 	for _, p := range pp {
 		proto, port := NAValue, NAValue
@@ -120,7 +120,7 @@ func portsToStr(pp []v1beta1.NetworkPolicyPort) string {
 	return strings.Join(ports, ",")
 }
 
-func peersToStr(pp []v1beta1.NetworkPolicyPeer) (string, string) {
+func peersToStr(pp []netv1.NetworkPolicyPeer) (string, string) {
 	sels := make([]string, 0, len(pp))
 	ips := make([]string, 0, len(pp))
 	for _, p := range pp {
@@ -138,7 +138,7 @@ func peersToStr(pp []v1beta1.NetworkPolicyPeer) (string, string) {
 	return strings.Join(sels, ","), strings.Join(ips, ",")
 }
 
-func renderBlock(b *v1beta1.IPBlock) string {
+func renderBlock(b *netv1.IPBlock) string {
 	s := b.CIDR
 
 	if len(b.Except) == 0 {
@@ -155,7 +155,7 @@ func renderBlock(b *v1beta1.IPBlock) string {
 	return s + "[" + strings.Join(b.Except, ",") + "]"
 }
 
-func renderPeer(i v1beta1.NetworkPolicyPeer) string {
+func renderPeer(i netv1.NetworkPolicyPeer) string {
 	var s string
 
 	if i.PodSelector != nil {

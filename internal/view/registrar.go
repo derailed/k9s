@@ -105,7 +105,7 @@ func appsViewers(vv MetaViewers) {
 	vv[client.NewGVR("apps/v1/daemonsets")] = MetaViewer{
 		viewerFn: NewDaemonSet,
 	}
-	vv[client.NewGVR("extensions/v1beta1/daemonsets")] = MetaViewer{
+	vv[client.NewGVR("apps/v1/daemonsets")] = MetaViewer{
 		viewerFn: NewDaemonSet,
 	}
 }
@@ -147,7 +147,7 @@ func extViewers(vv MetaViewers) {
 	vv[client.NewGVR("apiextensions.k8s.io/v1/customresourcedefinitions")] = MetaViewer{
 		enterFn: showCRD,
 	}
-	vv[client.NewGVR("apiextensions.k8s.io/v1beta1/customresourcedefinitions")] = MetaViewer{
+	vv[client.NewGVR("apiextensions.k8s.io/v1/customresourcedefinitions")] = MetaViewer{
 		enterFn: showCRD,
 	}
 }

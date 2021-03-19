@@ -33,25 +33,25 @@ func NewMeta() *Meta {
 // Customize here for non resource types or types with metrics or logs.
 func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 	m := Accessors{
-		client.NewGVR("contexts"):                      &Context{},
-		client.NewGVR("containers"):                    &Container{},
-		client.NewGVR("screendumps"):                   &ScreenDump{},
-		client.NewGVR("benchmarks"):                    &Benchmark{},
-		client.NewGVR("portforwards"):                  &PortForward{},
-		client.NewGVR("v1/services"):                   &Service{},
-		client.NewGVR("v1/pods"):                       &Pod{},
-		client.NewGVR("v1/nodes"):                      &Node{},
-		client.NewGVR("apps/v1/deployments"):           &Deployment{},
-		client.NewGVR("apps/v1/daemonsets"):            &DaemonSet{},
-		client.NewGVR("extensions/v1beta1/daemonsets"): &DaemonSet{},
-		client.NewGVR("apps/v1/statefulsets"):          &StatefulSet{},
-		client.NewGVR("batch/v1beta1/cronjobs"):        &CronJob{},
-		client.NewGVR("batch/v1/jobs"):                 &Job{},
-		client.NewGVR("openfaas"):                      &OpenFaas{},
-		client.NewGVR("popeye"):                        &Popeye{},
-		client.NewGVR("sanitizer"):                     &Popeye{},
-		client.NewGVR("helm"):                          &Helm{},
-		client.NewGVR("dir"):                           &Dir{},
+		client.NewGVR("contexts"):               &Context{},
+		client.NewGVR("containers"):             &Container{},
+		client.NewGVR("screendumps"):            &ScreenDump{},
+		client.NewGVR("benchmarks"):             &Benchmark{},
+		client.NewGVR("portforwards"):           &PortForward{},
+		client.NewGVR("v1/services"):            &Service{},
+		client.NewGVR("v1/pods"):                &Pod{},
+		client.NewGVR("v1/nodes"):               &Node{},
+		client.NewGVR("apps/v1/deployments"):    &Deployment{},
+		client.NewGVR("apps/v1/daemonsets"):     &DaemonSet{},
+		client.NewGVR("apps/v1/daemonsets"):     &DaemonSet{},
+		client.NewGVR("apps/v1/statefulsets"):   &StatefulSet{},
+		client.NewGVR("batch/v1beta1/cronjobs"): &CronJob{},
+		client.NewGVR("batch/v1/jobs"):          &Job{},
+		client.NewGVR("openfaas"):               &OpenFaas{},
+		client.NewGVR("popeye"):                 &Popeye{},
+		client.NewGVR("sanitizer"):              &Popeye{},
+		client.NewGVR("helm"):                   &Helm{},
+		client.NewGVR("dir"):                    &Dir{},
 	}
 
 	r, ok := m[gvr]
@@ -298,6 +298,9 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 	for _, r := range rr {
 		for _, res := range r.APIResources {
 			gvr := client.FromGVAndR(r.GroupVersion, res.Name)
+			if isDeprecated(gvr) {
+				continue
+			}
 			res.Group, res.Version = gvr.G(), gvr.V()
 			if res.SingularName == "" {
 				res.SingularName = strings.ToLower(res.Kind)
@@ -309,8 +312,17 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 	return nil
 }
 
+var deprecatedGVRs = map[client.GVR]struct{}{
+	client.NewGVR("extensions/v1beta1/ingresses"): {},
+}
+
+func isDeprecated(gvr client.GVR) bool {
+	_, ok := deprecatedGVRs[gvr]
+	return ok
+}
+
 func loadCRDs(f Factory, m ResourceMetas) {
-	const crdGVR = "apiextensions.k8s.io/v1beta1/customresourcedefinitions"
+	const crdGVR = "apiextensions.k8s.io/v1/customresourcedefinitions"
 	oo, err := f.List(crdGVR, client.ClusterScope, false, labels.Everything())
 	if err != nil {
 		log.Warn().Err(err).Msgf("Fail CRDs load")
@@ -347,7 +359,10 @@ func extractMeta(o runtime.Object) (metav1.APIResource, []error) {
 	m.Name, errs = extractStr(meta, "name", errs)
 
 	m.Group, errs = extractStr(spec, "group", errs)
-	m.Version, errs = extractStr(spec, "version", errs)
+	versions, errs := extractSlice(spec, "versions", errs)
+	if len(versions) > 0 {
+		m.Version = versions[0]
+	}
 
 	var scope string
 	scope, errs = extractStr(spec, "scope", errs)
@@ -383,11 +398,20 @@ func extractSlice(m map[string]interface{}, n string, errs []error) ([]string, [
 		return s, append(errs, fmt.Errorf("failed to extract slice %s -- %#v", n, m))
 	}
 
-	ss := make([]string, len(ii))
-	for i, name := range ii {
-		ss[i], ok = name.(string)
-		if !ok {
-			return ss, append(errs, fmt.Errorf("expecting string shortnames"))
+	ss := make([]string, 0, len(ii))
+	for _, name := range ii {
+		switch o := name.(type) {
+		case string:
+			ss = append(ss, o)
+		case map[string]interface{}:
+			s, ok := o["name"].(string)
+			if ok {
+				ss = append(ss, s)
+			} else {
+				errs = append(errs, fmt.Errorf("unable to find key %q in map", n))
+			}
+		default:
+			errs = append(errs, fmt.Errorf("unknown field type %t for key %q", o, n))
 		}
 	}
 

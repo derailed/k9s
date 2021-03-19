@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"os"
 
 	"github.com/derailed/k9s/cmd"
@@ -8,10 +9,31 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/klog/v2"
 )
 
 func init() {
 	config.EnsurePath(config.K9sLogs, config.DefaultDirMod)
+}
+
+func init() {
+	klog.InitFlags(nil)
+
+	if err := flag.Set("logtostderr", "false"); err != nil {
+		panic(err)
+	}
+	if err := flag.Set("alsologtostderr", "false"); err != nil {
+		panic(err)
+	}
+	if err := flag.Set("stderrthreshold", "fatal"); err != nil {
+		panic(err)
+	}
+	if err := flag.Set("v", "0"); err != nil {
+		panic(err)
+	}
+	if err := flag.Set("log_file", config.K9sLogs); err != nil {
+		panic(err)
+	}
 }
 
 func main() {

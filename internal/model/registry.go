@@ -18,12 +18,12 @@ var Registry = map[string]ResourceMeta{
 		DAO:      &dao.Dir{},
 		Renderer: &render.Dir{},
 	},
+	"pulses": {
+		DAO: &dao.Pulse{},
+	},
 	"helm": {
 		DAO:      &dao.Helm{},
 		Renderer: &render.Helm{},
-	},
-	"pulses": {
-		DAO: &dao.Pulse{},
 	},
 	"openfaas": {
 		DAO:      &dao.OpenFaas{},
@@ -135,15 +135,6 @@ var Registry = map[string]ResourceMeta{
 	},
 
 	// Extensions...
-	"extensions/v1beta1/daemonsets": {
-		Renderer: &render.DaemonSet{},
-	},
-	"extensions/v1beta1/ingresses": {
-		Renderer: &render.Ingress{},
-	},
-	"extensions/v1beta1/networkpolicies": {
-		Renderer: &render.NetworkPolicy{},
-	},
 	"networking.k8s.io/v1/networkpolicies": {
 		Renderer: &render.NetworkPolicy{},
 	},
@@ -176,9 +167,6 @@ var Registry = map[string]ResourceMeta{
 	"apiextensions.k8s.io/v1/customresourcedefinitions": {
 		Renderer: &render.CustomResourceDefinition{},
 	},
-	"apiextensions.k8s.io/v1beta1/customresourcedefinitions": {
-		Renderer: &render.CustomResourceDefinition{},
-	},
 
 	// Storage...
 	"storage.k8s.io/v1/storageclasses": {
@@ -203,15 +191,5 @@ var Registry = map[string]ResourceMeta{
 	},
 	"rbac.authorization.k8s.io/v1/rolebindings": {
 		Renderer: &render.RoleBinding{},
-	},
-
-	// ArgoCD...
-	"argoproj.io/v1alpha1/applications": {
-		Renderer:     &render.Application{},
-		TreeRenderer: &xray.Application{},
-	},
-	"argoproj.io/v1alpha1/appprojects": {
-		Renderer:     &render.AppProject{},
-		TreeRenderer: &xray.AppProject{},
 	},
 }

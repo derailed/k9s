@@ -16,7 +16,11 @@ import (
 	"k8s.io/apimachinery/pkg/util/rand"
 )
 
-const maxJobNameSize = 42
+const (
+	maxJobNameSize = 42
+	cronJobGVR     = "batch/v1beta1/cronjobs"
+	jobGVR         = "batch/v1/jobs"
+)
 
 var (
 	_ Accessor = (*CronJob)(nil)
@@ -31,7 +35,7 @@ type CronJob struct {
 // Run a CronJob.
 func (c *CronJob) Run(path string) error {
 	ns, _ := client.Namespaced(path)
-	auth, err := c.Client().CanI(ns, "batch/v1/jobs", []string{client.GetVerb, client.CreateVerb})
+	auth, err := c.Client().CanI(ns, jobGVR, []string{client.GetVerb, client.CreateVerb})
 	if err != nil {
 		return err
 	}
@@ -39,7 +43,7 @@ func (c *CronJob) Run(path string) error {
 		return fmt.Errorf("user is not authorized to run jobs")
 	}
 
-	o, err := c.Factory.Get("batch/v1beta1/cronjobs", path, true, labels.Everything())
+	o, err := c.Factory.Get(cronJobGVR, path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -105,6 +109,44 @@ func (c *CronJob) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, erro
 	}
 
 	return refs, nil
+}
+
+// Suspend toggles suspend/resume on a CronJob.
+func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
+	ns, _ := client.Namespaced(path)
+
+	auth, err := c.Client().CanI(cronJobGVR, ns, []string{client.GetVerb, client.UpdateVerb})
+	if err != nil {
+		return err
+	}
+	if !auth {
+		return fmt.Errorf("user is not authorized to run jobs")
+	}
+
+	o, err := c.Get(ctx, path)
+	if err != nil {
+		return err
+	}
+	var cj batchv1beta1.CronJob
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cj)
+	if err != nil {
+		return errors.New("expecting CronJob resource")
+	}
+
+	dial, err := c.Client().Dial()
+	if err != nil {
+		return err
+	}
+	if cj.Spec.Suspend != nil {
+		current := !*cj.Spec.Suspend
+		cj.Spec.Suspend = &current
+	} else {
+		true := true
+		cj.Spec.Suspend = &true
+	}
+	_, err = dial.BatchV1beta1().CronJobs(ns).Update(ctx, &cj, metav1.UpdateOptions{})
+
+	return err
 }
 
 // Scan scans for cluster resource refs.

@@ -58,15 +58,21 @@ func (c *Cow) talk() {
 	if len(says) == 0 {
 		says = "Nothing to report here. Please move along..."
 	}
-	c.SetText(cowTalk(says))
+	x, _, w, _ := c.GetRect()
+	c.SetText(cowTalk(says, (x+w)/2))
 }
 
-func cowTalk(says string) string {
+func cowTalk(says string, w int) string {
+	msg := fmt.Sprintf("[red::]< [::b]Ruroh? %s[::-] >", says)
 	buff := make([]string, 0, len(cow)+3)
+	buff = append(buff, "[red::] "+strings.Repeat("─", len(says)+8))
+	buff = append(buff, msg)
 	buff = append(buff, " "+strings.Repeat("─", len(says)+8))
-	buff = append(buff, fmt.Sprintf("< [red::b]Ruroh? %s[-::-] >", says))
-	buff = append(buff, " "+strings.Repeat("─", len(says)+8))
-	spacer := strings.Repeat(" ", len(says)/2-8)
+	rCount := w/2 - 8
+	if rCount < 0 {
+		rCount = w / 2
+	}
+	spacer := strings.Repeat(" ", rCount)
 	for _, s := range cow {
 		buff = append(buff, "[red::b]"+spacer+s)
 	}

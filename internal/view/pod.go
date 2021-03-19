@@ -20,6 +20,13 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+const (
+	windowsOS      = "windows"
+	powerShell     = "powershell"
+	osBetaSelector = "beta.kubernetes.io/os"
+	osSelector     = "kubernetes.io/os"
+)
+
 // Pod represents a pod viewer.
 type Pod struct {
 	ResourceViewer
@@ -241,11 +248,15 @@ func resumeShellIn(a *App, c model.Component, path, co string) {
 	shellIn(a, path, co)
 }
 
-func shellIn(a *App, path, co string) {
-	args := computeShellArgs(path, co, a.Conn().Config().Flags().KubeConfig)
+func shellIn(a *App, fqn, co string) {
+	os, err := getPodOS(a.factory, fqn)
+	if err != nil {
+		log.Warn().Err(err).Msgf("os detect failed")
+	}
+	args := computeShellArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os)
 
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
-	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, path, co), args: args}) {
+	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, fqn, co), args: args}) {
 		a.Flash().Err(errors.New("Shell exec failed"))
 	}
 }
@@ -291,8 +302,11 @@ func attachIn(a *App, path, co string) {
 	}
 }
 
-func computeShellArgs(path, co string, kcfg *string) []string {
+func computeShellArgs(path, co string, kcfg *string, os string) []string {
 	args := buildShellArgs("exec", path, co, kcfg)
+	if os == windowsOS {
+		return append(args, "--", powerShell)
+	}
 	return append(args, "--", "sh", "-c", shellCheck)
 }
 
@@ -358,6 +372,22 @@ func podIsRunning(f dao.Factory, path string) bool {
 
 	var re render.Pod
 	return re.Phase(po) == render.Running
+}
+
+func getPodOS(f dao.Factory, fqn string) (string, error) {
+	po, err := fetchPod(f, fqn)
+	if err != nil {
+		return "", err
+	}
+	if os, ok := po.Spec.NodeSelector[osBetaSelector]; ok {
+		return os, nil
+	}
+	os, ok := po.Spec.NodeSelector[osSelector]
+	if !ok {
+		return "", fmt.Errorf("no os information available")
+	}
+
+	return os, nil
 }
 
 func resourceSorters(t *Table) ui.KeyActions {
