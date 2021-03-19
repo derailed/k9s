@@ -21,9 +21,10 @@ func loadCustomViewers() MetaViewers {
 }
 
 func helmViewers(vv MetaViewers) {
-	vv[client.NewGVR("helm")] = MetaViewer{
-		viewerFn: NewHelm,
-	}
+	// BOZO!!
+	// vv[client.NewGVR("helm")] = MetaViewer{
+	// 	viewerFn: NewHelm,
+	// }
 }
 
 func coreViewers(vv MetaViewers) {
@@ -60,9 +61,10 @@ func miscViewers(vv MetaViewers) {
 	vv[client.NewGVR("contexts")] = MetaViewer{
 		viewerFn: NewContext,
 	}
-	vv[client.NewGVR("openfaas")] = MetaViewer{
-		viewerFn: NewOpenFaas,
-	}
+	// BOZO!!
+	// vv[client.NewGVR("openfaas")] = MetaViewer{
+	// 	viewerFn: NewOpenFaas,
+	// }
 	vv[client.NewGVR("containers")] = MetaViewer{
 		viewerFn: NewContainer,
 	}

@@ -18,17 +18,18 @@ var Registry = map[string]ResourceMeta{
 		DAO:      &dao.Dir{},
 		Renderer: &render.Dir{},
 	},
-	"helm": {
-		DAO:      &dao.Helm{},
-		Renderer: &render.Helm{},
-	},
 	"pulses": {
 		DAO: &dao.Pulse{},
 	},
-	"openfaas": {
-		DAO:      &dao.OpenFaas{},
-		Renderer: &render.OpenFaas{},
-	},
+	// BOZO!!
+	// "helm": {
+	// 	DAO:      &dao.Helm{},
+	// 	Renderer: &render.Helm{},
+	// },
+	// "openfaas": {
+	// 	DAO:      &dao.OpenFaas{},
+	// 	Renderer: &render.OpenFaas{},
+	// },
 	"containers": {
 		DAO:          &dao.Container{},
 		Renderer:     &render.Container{},
@@ -206,12 +207,13 @@ var Registry = map[string]ResourceMeta{
 	},
 
 	// ArgoCD...
-	"argoproj.io/v1alpha1/applications": {
-		Renderer:     &render.Application{},
-		TreeRenderer: &xray.Application{},
-	},
-	"argoproj.io/v1alpha1/appprojects": {
-		Renderer:     &render.AppProject{},
-		TreeRenderer: &xray.AppProject{},
-	},
+	// BOZO!!
+	// "argoproj.io/v1alpha1/applications": {
+	// 	Renderer:     &render.Application{},
+	// 	TreeRenderer: &xray.Application{},
+	// },
+	// "argoproj.io/v1alpha1/appprojects": {
+	// 	Renderer:     &render.AppProject{},
+	// 	TreeRenderer: &xray.AppProject{},
+	// },
 }

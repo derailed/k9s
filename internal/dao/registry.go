@@ -47,11 +47,13 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		client.NewGVR("apps/v1/statefulsets"):          &StatefulSet{},
 		client.NewGVR("batch/v1beta1/cronjobs"):        &CronJob{},
 		client.NewGVR("batch/v1/jobs"):                 &Job{},
-		client.NewGVR("openfaas"):                      &OpenFaas{},
-		client.NewGVR("popeye"):                        &Popeye{},
-		client.NewGVR("sanitizer"):                     &Popeye{},
-		client.NewGVR("helm"):                          &Helm{},
-		client.NewGVR("dir"):                           &Dir{},
+		// BOZO!!
+		// client.NewGVR("openfaas"):                      &OpenFaas{},
+		client.NewGVR("popeye"):    &Popeye{},
+		client.NewGVR("sanitizer"): &Popeye{},
+		// BOZO!!
+		// client.NewGVR("helm"):                          &Helm{},
+		client.NewGVR("dir"): &Dir{},
 	}
 
 	r, ok := m[gvr]
@@ -139,10 +141,12 @@ func (m *Meta) LoadResources(f Factory) error {
 func loadNonResource(m ResourceMetas) {
 	loadK9s(m)
 	loadRBAC(m)
-	loadHelm(m)
-	if IsOpenFaasEnabled() {
-		loadOpenFaas(m)
-	}
+	// BOZO!!
+
+	// loadHelm(m)
+	// if IsOpenFaasEnabled() {
+	// 	loadOpenFaas(m)
+	// }
 }
 
 func loadK9s(m ResourceMetas) {
