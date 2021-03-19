@@ -6,7 +6,7 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/api/extensions/v1beta1"
+	netv1 "k8s.io/api/networking/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -39,7 +39,7 @@ func (i Ingress) Render(o interface{}, ns string, r *Row) error {
 	if !ok {
 		return fmt.Errorf("Expected Ingress, but got %T", o)
 	}
-	var ing v1beta1.Ingress
+	var ing netv1.Ingress
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &ing)
 	if err != nil {
 		return err
@@ -77,7 +77,7 @@ func toAddress(lbs v1.LoadBalancerStatus) string {
 	return strings.Join(res, ",")
 }
 
-func toTLSPorts(tls []v1beta1.IngressTLS) string {
+func toTLSPorts(tls []netv1.IngressTLS) string {
 	if len(tls) != 0 {
 		return "80, 443"
 	}
@@ -85,7 +85,7 @@ func toTLSPorts(tls []v1beta1.IngressTLS) string {
 	return "80"
 }
 
-func toHosts(rr []v1beta1.IngressRule) string {
+func toHosts(rr []netv1.IngressRule) string {
 	hh := make([]string, 0, len(rr))
 	for _, r := range rr {
 		if r.Host == "" {

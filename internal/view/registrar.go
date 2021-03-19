@@ -105,7 +105,7 @@ func appsViewers(vv MetaViewers) {
 	vv[client.NewGVR("apps/v1/daemonsets")] = MetaViewer{
 		viewerFn: NewDaemonSet,
 	}
-	vv[client.NewGVR("extensions/v1beta1/daemonsets")] = MetaViewer{
+	vv[client.NewGVR("apps/v1/daemonsets")] = MetaViewer{
 		viewerFn: NewDaemonSet,
 	}
 }

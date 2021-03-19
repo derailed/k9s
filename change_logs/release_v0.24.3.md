@@ -26,20 +26,30 @@ I would like to extend a `Big Thank You` to the following generous K9s friends f
 
 ## Maintenance Release!
 
-o Updated Kubernetes to v0.20.2
+o Updated Kubernetes to v0.20.5
 
 ## A Note About Alpha!
 
-As you may know, we've just launched [K9sAlpha](https://k9salpha.io). As a thank you to supporters of K9s, all the good folks past/present that have sponsored the project are eligible for a K9sAlpha license. Please reach out for you shoe-phone and contact us for your license key.
+K9s will remain free for all OSS and we will continue maintaining this repo!
+If you would like to support this effort, you can either join our github sponsors and purchase a [K9sAlpha](https://k9salpha.io) license. As a thank you to supporters of K9s, all the good folks that have active sponsorships are eligible for a free K9sAlpha license. K9sAlpha unlocks new features and enhancements. Please reach out for your shoe-phone and contact us for your personalized license key.
 
 <img src="https://k9salpha.io/assets/k9salpha-blue.png" align="center" width="300" height="auto"/>
 
 ---
 
+## Resolved Issues
+
+* [Issue #1038](https://github.com/derailed/k9s/issues/1038) Release Cronjob API
+* [Issue #1035](https://github.com/derailed/k9s/issues/1035) Update Ingress API Group
+* [Issue #1028](https://github.com/derailed/k9s/issues/1028) Go compile
+* [Issue #1024](https://github.com/derailed/k9s/issues/1024) Add Pod Readiness/Nominated cols
+* [Issue #1013](https://github.com/derailed/k9s/issues/1013) Panic string negative repeat count
+* [Issue #1005](https://github.com/derailed/k9s/issues/1005) No x86_64 binaries
+
 ## Resolved PRs
 
 * [PR #1022](https://github.com/derailed/k9s/pull/1022) Update release
-* [PR #1012](https://github.com/derailed/k9s/pull/1012) fix typo for cluster based skins
+* [PR #1012](https://github.com/derailed/k9s/pull/1012) Fix typo for cluster based skins
 * [PR #1009](https://github.com/derailed/k9s/pull/1009) Add webi installer info
 * [PR #1004](https://github.com/derailed/k9s/pull/1004) Correction CronJob ApiVersion
 

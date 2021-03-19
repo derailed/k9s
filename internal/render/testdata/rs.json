@@ -1,5 +1,5 @@
 {
-  "apiVersion": "extensions/v1beta1",
+  "apiVersion": "networking.k8s.io/v1",
   "kind": "ReplicaSet",
   "metadata": {
     "annotations": {
@@ -26,7 +26,7 @@
       }
     ],
     "resourceVersion": "37116270",
-    "selfLink": "/apis/extensions/v1beta1/namespaces/icx/replicasets/icx-db-7d4b578979",
+    "selfLink": "/apis/networking.k8s.io/v1/namespaces/icx/replicasets/icx-db-7d4b578979",
     "uid": "6f637a60-a5f3-11e9-990f-42010a800218"
   },
   "spec": {
