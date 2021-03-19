@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
@@ -67,12 +68,41 @@ func jobCtx(path, uid string) ContextFunc {
 
 func (c *CronJob) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		tcell.KeyCtrlT: ui.NewKeyAction("Trigger", c.trigger, true),
-		ui.KeyShiftS:   ui.NewKeyAction("ToggleSuspend", c.toggleSuspend, true),
+		ui.KeyT: ui.NewKeyAction("Trigger", c.triggerCmd, true),
+		ui.KeyS: ui.NewKeyAction("Suspend/Resume", c.toggleSuspendCmd, true),
 	})
 }
 
-func (c *CronJob) toggleSuspend(evt *tcell.EventKey) *tcell.EventKey {
+func (c *CronJob) triggerCmd(evt *tcell.EventKey) *tcell.EventKey {
+	fqn := c.GetTable().GetSelectedItem()
+	if fqn == "" {
+		return evt
+	}
+
+	msg := fmt.Sprintf("Trigger Cronjob %s?", fqn)
+	dialog.ShowConfirm(c.App().Styles.Dialog(), c.App().Content.Pages, "Confirm Job Trigger", msg, func() {
+		res, err := dao.AccessorFor(c.App().factory, c.GVR())
+		if err != nil {
+			c.App().Flash().Err(fmt.Errorf("no accessor for %q", c.GVR()))
+			return
+		}
+		runner, ok := res.(dao.Runnable)
+		if !ok {
+			c.App().Flash().Err(fmt.Errorf("expecting a jobrunner resource for %q", c.GVR()))
+			return
+		}
+
+		if err := runner.Run(fqn); err != nil {
+			c.App().Flash().Errf("Cronjob trigger failed %v", err)
+			return
+		}
+		c.App().Flash().Infof("Triggering Job %s %s", c.GVR(), fqn)
+	}, func() {})
+
+	return nil
+}
+
+func (c *CronJob) toggleSuspendCmd(evt *tcell.EventKey) *tcell.EventKey {
 	sel := c.GetTable().GetSelectedItem()
 	if sel == "" {
 		return evt
@@ -86,18 +116,19 @@ func (c *CronJob) toggleSuspend(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (c *CronJob) showSuspendDialog(sel string) {
-	cell := c.GetTable().GetCell(c.GetTable().GetSelectedRowIndex(), c.GetTable().NameColIndex() + 2)
+	cell := c.GetTable().GetCell(c.GetTable().GetSelectedRowIndex(), c.GetTable().NameColIndex()+2)
 	if cell == nil {
+		c.App().Flash().Errf("Unable to assert current status")
 		return
 	}
 	suspended := strings.TrimSpace(cell.Text) == "true"
 	title := "Suspend"
 	if suspended {
-		title = "Unsuspend"
+		title = "Resume"
 	}
 
 	confirm := tview.NewModalForm(fmt.Sprintf("<%s>", title), c.makeSuspendForm(sel, !suspended))
-	confirm.SetText(fmt.Sprintf("%s CronJob %s", title, sel))
+	confirm.SetText(fmt.Sprintf("%s CronJob %s?", title, sel))
 	confirm.SetDoneFunc(func(int, string) {
 		c.dismissDialog()
 	})
@@ -107,17 +138,20 @@ func (c *CronJob) showSuspendDialog(sel string) {
 
 func (c *CronJob) makeSuspendForm(sel string, suspend bool) *tview.Form {
 	f := c.makeStyledForm()
-	action := "suspended"
+	action := "suspend"
 	if !suspend {
-		action ="unsuspended"
+		action = "resume"
 	}
 
+	f.AddButton("Cancel", func() {
+		c.dismissDialog()
+	})
 	f.AddButton("OK", func() {
 		defer c.dismissDialog()
 
 		ctx, cancel := context.WithTimeout(context.Background(), c.App().Conn().Config().CallTimeout())
 		defer cancel()
-		if err := c.setSuspend(ctx, sel, suspend); err != nil {
+		if err := c.toggleSuspend(ctx, sel); err != nil {
 			log.Error().Err(err).Msgf("CronJOb %s %s failed", sel, action)
 			c.App().Flash().Err(err)
 		} else {
@@ -125,14 +159,10 @@ func (c *CronJob) makeSuspendForm(sel string, suspend bool) *tview.Form {
 		}
 	})
 
-	f.AddButton("Cancel", func() {
-		c.dismissDialog()
-	})
-
 	return f
 }
 
-func (c *CronJob) setSuspend(ctx context.Context, path string, suspend bool) error {
+func (c *CronJob) toggleSuspend(ctx context.Context, path string) error {
 	res, err := dao.AccessorFor(c.App().factory, c.GVR())
 	if err != nil {
 		return nil
@@ -142,7 +172,7 @@ func (c *CronJob) setSuspend(ctx context.Context, path string, suspend bool) err
 		return fmt.Errorf("expecting a scalable resource for %q", c.GVR())
 	}
 
-	return cronJob.SetSuspend(ctx, path, suspend)
+	return cronJob.ToggleSuspend(ctx, path)
 }
 
 func (c *CronJob) makeStyledForm() *tview.Form {
@@ -159,29 +189,4 @@ func (c *CronJob) makeStyledForm() *tview.Form {
 
 func (c *CronJob) dismissDialog() {
 	c.App().Content.RemovePage(suspendDialogKey)
-}
-
-func (c *CronJob) trigger(evt *tcell.EventKey) *tcell.EventKey {
-	sel := c.GetTable().GetSelectedItem()
-	if sel == "" {
-		return evt
-	}
-
-	res, err := dao.AccessorFor(c.App().factory, c.GVR())
-	if err != nil {
-		return nil
-	}
-	runner, ok := res.(dao.Runnable)
-	if !ok {
-		c.App().Flash().Err(fmt.Errorf("expecting a jobrunner resource for %q", c.GVR()))
-		return nil
-	}
-
-	if err := runner.Run(sel); err != nil {
-		c.App().Flash().Errf("Cronjob trigger failed %v", err)
-		return evt
-	}
-	c.App().Flash().Infof("Triggering Job %s %s", c.GVR(), sel)
-
-	return nil
 }

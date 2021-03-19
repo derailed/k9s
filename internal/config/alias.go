@@ -84,6 +84,11 @@ func (a *Aliases) Define(gvr string, aliases ...string) {
 	a.mx.Lock()
 	defer a.mx.Unlock()
 
+	// BOZO!! Could not get full events struct using this api group??
+	if gvr == "events.k8s.io/v1/events" || gvr == "extensions/v1beta1" {
+		return
+	}
+
 	for _, alias := range aliases {
 		if _, ok := a.Alias[alias]; ok {
 			continue

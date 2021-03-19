@@ -47,12 +47,11 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		client.NewGVR("apps/v1/statefulsets"):   &StatefulSet{},
 		client.NewGVR("batch/v1beta1/cronjobs"): &CronJob{},
 		client.NewGVR("batch/v1/jobs"):          &Job{},
-		// BOZO!!
-		// client.NewGVR("openfaas"):                      &OpenFaas{},
-		client.NewGVR("popeye"):    &Popeye{},
-		client.NewGVR("sanitizer"): &Popeye{},
-		client.NewGVR("helm"):      &Helm{},
-		client.NewGVR("dir"):       &Dir{},
+		client.NewGVR("openfaas"):               &OpenFaas{},
+		client.NewGVR("popeye"):                 &Popeye{},
+		client.NewGVR("sanitizer"):              &Popeye{},
+		client.NewGVR("helm"):                   &Helm{},
+		client.NewGVR("dir"):                    &Dir{},
 	}
 
 	r, ok := m[gvr]
@@ -299,6 +298,9 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 	for _, r := range rr {
 		for _, res := range r.APIResources {
 			gvr := client.FromGVAndR(r.GroupVersion, res.Name)
+			if isDeprecated(gvr) {
+				continue
+			}
 			res.Group, res.Version = gvr.G(), gvr.V()
 			if res.SingularName == "" {
 				res.SingularName = strings.ToLower(res.Kind)
@@ -308,6 +310,15 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 	}
 
 	return nil
+}
+
+var deprecatedGVRs = map[client.GVR]struct{}{
+	client.NewGVR("extensions/v1beta1/ingresses"): {},
+}
+
+func isDeprecated(gvr client.GVR) bool {
+	_, ok := deprecatedGVRs[gvr]
+	return ok
 }
 
 func loadCRDs(f Factory, m ResourceMetas) {
