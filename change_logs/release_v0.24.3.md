@@ -30,7 +30,7 @@ o Updated Kubernetes to v0.20.2
 
 ## A Note About Alpha!
 
-As you may know, we've just launched [K9sAlpha](https://k9salpha.io). As a thank you to supporters of K9s, all the good folks past/present that have contributed to the project either via PRs or sponsorships are eligible for a free P2 K9sAlpha license. Please reach out to me directly with your machine user name ie `whoami` and I will send you a license key.
+As you may know, we've just launched [K9sAlpha](https://k9salpha.io). As a thank you to supporters of K9s, all the good folks past/present that have sponsored the project are eligible for a K9sAlpha license. Please reach out for you shoe-phone and contact us for your license key.
 
 <img src="https://k9salpha.io/assets/k9salpha-blue.png" align="center" width="300" height="auto"/>
 
@@ -42,7 +42,6 @@ As you may know, we've just launched [K9sAlpha](https://k9salpha.io). As a thank
 * [PR #1012](https://github.com/derailed/k9s/pull/1012) fix typo for cluster based skins
 * [PR #1009](https://github.com/derailed/k9s/pull/1009) Add webi installer info
 * [PR #1004](https://github.com/derailed/k9s/pull/1004) Correction CronJob ApiVersion
-* [PR #952](https://github.com/derailed/k9s/pull/952) Add ArgoCD views
 
 ---
 
