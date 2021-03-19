@@ -13,6 +13,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.1.0
 	github.com/derailed/popeye v0.9.0
 	github.com/derailed/tview v0.4.10
+	github.com/drone/envsubst v1.0.2 // indirect
 	github.com/fatih/color v1.10.0
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/fvbommel/sortorder v1.0.2
@@ -20,9 +21,13 @@ require (
 	github.com/ghodss/yaml v1.0.0
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mattn/go-runewidth v0.0.10
+	github.com/openfaas/faas v0.0.0-20200207215241-6afae214e3ec
+	github.com/openfaas/faas-cli v0.0.0-20200124160744-30b7cec9634c
+	github.com/openfaas/faas-provider v0.15.0
 	github.com/petergtz/pegomock v2.9.0+incompatible
 	github.com/rakyll/hey v0.1.4
 	github.com/rs/zerolog v1.20.0
+	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sahilm/fuzzy v0.1.0
 	github.com/spf13/cobra v1.1.3
 	github.com/stretchr/testify v1.7.0

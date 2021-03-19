@@ -60,10 +60,9 @@ func miscViewers(vv MetaViewers) {
 	vv[client.NewGVR("contexts")] = MetaViewer{
 		viewerFn: NewContext,
 	}
-	// BOZO!!
-	// vv[client.NewGVR("openfaas")] = MetaViewer{
-	// 	viewerFn: NewOpenFaas,
-	// }
+	vv[client.NewGVR("openfaas")] = MetaViewer{
+		viewerFn: NewOpenFaas,
+	}
 	vv[client.NewGVR("containers")] = MetaViewer{
 		viewerFn: NewContainer,
 	}

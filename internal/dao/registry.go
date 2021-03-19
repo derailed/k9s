@@ -141,10 +141,9 @@ func loadNonResource(m ResourceMetas) {
 	loadK9s(m)
 	loadRBAC(m)
 	loadHelm(m)
-	// BOZO!!
-	// if IsOpenFaasEnabled() {
-	// 	loadOpenFaas(m)
-	// }
+	if IsOpenFaasEnabled() {
+		loadOpenFaas(m)
+	}
 }
 
 func loadK9s(m ResourceMetas) {
