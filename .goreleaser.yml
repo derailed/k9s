@@ -13,7 +13,6 @@ builds:
       - darwin
       - windows
     goarch:
-      # - 386
       - amd64
       - arm64
       - arm
@@ -49,7 +48,7 @@ changelog:
 # Homebrews
 brews:
   - name: k9s
-    github:
+    tap:
       owner: derailed
       name: homebrew-k9s
     commit_author:
