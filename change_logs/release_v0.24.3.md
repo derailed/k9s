@@ -45,6 +45,7 @@ If you would like to support this effort, you can either join our github sponsor
 * [Issue #1024](https://github.com/derailed/k9s/issues/1024) Add Pod Readiness/Nominated cols
 * [Issue #1013](https://github.com/derailed/k9s/issues/1013) Panic string negative repeat count
 * [Issue #1005](https://github.com/derailed/k9s/issues/1005) No x86_64 binaries
+* [Issue #735](https://github.com/derailed/k9s/issues/735) Shell into windows containers
 
 ## Resolved PRs
 
@@ -52,6 +53,8 @@ If you would like to support this effort, you can either join our github sponsor
 * [PR #1012](https://github.com/derailed/k9s/pull/1012) Fix typo for cluster based skins
 * [PR #1009](https://github.com/derailed/k9s/pull/1009) Add webi installer info
 * [PR #1004](https://github.com/derailed/k9s/pull/1004) Correction CronJob ApiVersion
+* [PR #1026](https://github.com/derailed/k9s/pull/1026) Add option to hide logo
+* [PR #997](https://github.com/derailed/k9s/pull/997) Shell into windows containers
 
 ---
 
