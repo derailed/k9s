@@ -149,33 +149,6 @@ func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
 	return err
 }
 
-// BOZO!!
-// // SetSuspend a CronJob.
-// func (c *CronJob) SetSuspend(ctx context.Context, path string, suspend bool) error {
-// 	ns, n := client.Namespaced(path)
-// 	auth, err := c.Client().CanI(ns, "batch/v1beta1/CronJob", []string{client.GetVerb, client.UpdateVerb})
-// 	if err != nil {
-// 		return err
-// 	}
-// 	if !auth {
-// 		return fmt.Errorf("user is not authorized to update a CronJob")
-// 	}
-
-// 	dial, err := c.Client().Dial()
-// 	if err != nil {
-// 		return err
-// 	}
-// 	cronjob, err := dial.BatchV1beta1().CronJobs(ns).Get(ctx, n, metav1.GetOptions{})
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	cronjob.Spec.Suspend = &suspend
-// 	_, err = dial.BatchV1beta1().CronJobs(ns).Update(ctx, cronjob, metav1.UpdateOptions{})
-
-// 	return err
-// }
-
 // Scan scans for cluster resource refs.
 func (c *CronJob) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)

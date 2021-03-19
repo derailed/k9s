@@ -26,12 +26,15 @@ I would like to extend a `Big Thank You` to the following generous K9s friends f
 
 ## Maintenance Release!
 
-o Updated Kubernetes to v0.20.5
+o Update Kubernetes to v0.20.5
 
-## A Note About Alpha!
+## There are some that call me... Alpha!
 
-K9s will remain free for all OSS and we will continue maintaining this repo!
-If you would like to support this effort, you can either join our github sponsors and purchase a [K9sAlpha](https://k9salpha.io) license. As a thank you to supporters of K9s, all the good folks that have active sponsorships are eligible for a free K9sAlpha license. K9sAlpha unlocks new features and enhancements. Please reach out for your shoe-phone and contact us for your personalized license key.
+K9s is still and will remain an open source software. As such it is free and we will continue to maintain this repo!
+
+That said in order to support our efforts, we've recently launched [K9sAlpha](https://k9salpha.io) which is a freemium version of K9s. K9sAlpha unlocks additional features and enhancement.
+
+If you would like to support us, you can either join our github sponsors or purchase a K9sAlpha license. If you are an active member of our github sponsorship program, you are eligible for a free K9sAlpha license. Please reach out for your shoe-phone and contact us for your personalized license key.
 
 <img src="https://k9salpha.io/assets/k9salpha-blue.png" align="center" width="300" height="auto"/>
 
