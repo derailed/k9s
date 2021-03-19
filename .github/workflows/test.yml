@@ -1,17 +1,15 @@
 name: K9s Checks
 
 on:
-  push:
+  workflow_dispatch:
+    push:
     branches:
       - master
-
     tags:
       - rc*
-
   pull_request:
     branches:
       - master
-
 jobs:
   build:
     runs-on: ubuntu-20.04
