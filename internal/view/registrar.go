@@ -21,10 +21,9 @@ func loadCustomViewers() MetaViewers {
 }
 
 func helmViewers(vv MetaViewers) {
-	// BOZO!!
-	// vv[client.NewGVR("helm")] = MetaViewer{
-	// 	viewerFn: NewHelm,
-	// }
+	vv[client.NewGVR("helm")] = MetaViewer{
+		viewerFn: NewHelm,
+	}
 }
 
 func coreViewers(vv MetaViewers) {
@@ -149,7 +148,7 @@ func extViewers(vv MetaViewers) {
 	vv[client.NewGVR("apiextensions.k8s.io/v1/customresourcedefinitions")] = MetaViewer{
 		enterFn: showCRD,
 	}
-	vv[client.NewGVR("apiextensions.k8s.io/v1beta1/customresourcedefinitions")] = MetaViewer{
+	vv[client.NewGVR("apiextensions.k8s.io/v1/customresourcedefinitions")] = MetaViewer{
 		enterFn: showCRD,
 	}
 }

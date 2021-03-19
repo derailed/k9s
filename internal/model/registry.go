@@ -21,11 +21,11 @@ var Registry = map[string]ResourceMeta{
 	"pulses": {
 		DAO: &dao.Pulse{},
 	},
+	"helm": {
+		DAO:      &dao.Helm{},
+		Renderer: &render.Helm{},
+	},
 	// BOZO!!
-	// "helm": {
-	// 	DAO:      &dao.Helm{},
-	// 	Renderer: &render.Helm{},
-	// },
 	// "openfaas": {
 	// 	DAO:      &dao.OpenFaas{},
 	// 	Renderer: &render.OpenFaas{},
@@ -136,15 +136,6 @@ var Registry = map[string]ResourceMeta{
 	},
 
 	// Extensions...
-	"extensions/v1beta1/daemonsets": {
-		Renderer: &render.DaemonSet{},
-	},
-	"extensions/v1beta1/ingresses": {
-		Renderer: &render.Ingress{},
-	},
-	"extensions/v1beta1/networkpolicies": {
-		Renderer: &render.NetworkPolicy{},
-	},
 	"networking.k8s.io/v1/networkpolicies": {
 		Renderer: &render.NetworkPolicy{},
 	},
@@ -175,9 +166,6 @@ var Registry = map[string]ResourceMeta{
 
 	// CRDs...
 	"apiextensions.k8s.io/v1/customresourcedefinitions": {
-		Renderer: &render.CustomResourceDefinition{},
-	},
-	"apiextensions.k8s.io/v1beta1/customresourcedefinitions": {
 		Renderer: &render.CustomResourceDefinition{},
 	},
 

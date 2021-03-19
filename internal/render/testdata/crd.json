@@ -1,10 +1,10 @@
 {
-  "apiVersion": "apiextensions.k8s.io/v1beta1",
+  "apiVersion": "apiextensions.k8s.io/v1",
   "kind": "CustomResourceDefinition",
   "metadata": {
     "annotations": {
       "helm.sh/hook": "crd-install",
-      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apiextensions.k8s.io/v1beta1\",\"kind\":\"CustomResourceDefinition\",\"metadata\":{\"annotations\":{\"helm.sh/hook\":\"crd-install\"},\"labels\":{\"addonmanager.kubernetes.io/mode\":\"Reconcile\",\"app\":\"mixer\",\"istio\":\"mixer-adapter\",\"k8s-app\":\"istio\",\"package\":\"adapter\"},\"name\":\"adapters.config.istio.io\",\"namespace\":\"\"},\"spec\":{\"group\":\"config.istio.io\",\"names\":{\"categories\":[\"istio-io\",\"policy-istio-io\"],\"kind\":\"adapter\",\"plural\":\"adapters\",\"singular\":\"adapter\"},\"scope\":\"Namespaced\",\"version\":\"v1alpha2\"}}\n"
+      "kubectl.kubernetes.io/last-applied-configuration": "{\"apiVersion\":\"apiextensions.k8s.io/v1\",\"kind\":\"CustomResourceDefinition\",\"metadata\":{\"annotations\":{\"helm.sh/hook\":\"crd-install\"},\"labels\":{\"addonmanager.kubernetes.io/mode\":\"Reconcile\",\"app\":\"mixer\",\"istio\":\"mixer-adapter\",\"k8s-app\":\"istio\",\"package\":\"adapter\"},\"name\":\"adapters.config.istio.io\",\"namespace\":\"\"},\"spec\":{\"group\":\"config.istio.io\",\"names\":{\"categories\":[\"istio-io\",\"policy-istio-io\"],\"kind\":\"adapter\",\"plural\":\"adapters\",\"singular\":\"adapter\"},\"scope\":\"Namespaced\",\"version\":\"v1alpha2\"}}\n"
     },
     "creationTimestamp": "2019-02-05T22:04:29Z",
     "generation": 1,
@@ -17,7 +17,7 @@
     },
     "name": "adapters.config.istio.io",
     "resourceVersion": "37115599",
-    "selfLink": "/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/adapters.config.istio.io",
+    "selfLink": "/apis/apiextensions.k8s.io/v1/customresourcedefinitions/adapters.config.istio.io",
     "uid": "029b8c3e-2992-11e9-81cd-42010a80005b"
   },
   "spec": {

@@ -51,9 +51,8 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		// client.NewGVR("openfaas"):                      &OpenFaas{},
 		client.NewGVR("popeye"):    &Popeye{},
 		client.NewGVR("sanitizer"): &Popeye{},
-		// BOZO!!
-		// client.NewGVR("helm"):                          &Helm{},
-		client.NewGVR("dir"): &Dir{},
+		client.NewGVR("helm"):      &Helm{},
+		client.NewGVR("dir"):       &Dir{},
 	}
 
 	r, ok := m[gvr]
@@ -141,9 +140,8 @@ func (m *Meta) LoadResources(f Factory) error {
 func loadNonResource(m ResourceMetas) {
 	loadK9s(m)
 	loadRBAC(m)
+	loadHelm(m)
 	// BOZO!!
-
-	// loadHelm(m)
 	// if IsOpenFaasEnabled() {
 	// 	loadOpenFaas(m)
 	// }
@@ -314,7 +312,7 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 }
 
 func loadCRDs(f Factory, m ResourceMetas) {
-	const crdGVR = "apiextensions.k8s.io/v1beta1/customresourcedefinitions"
+	const crdGVR = "apiextensions.k8s.io/v1/customresourcedefinitions"
 	oo, err := f.List(crdGVR, client.ClusterScope, false, labels.Everything())
 	if err != nil {
 		log.Warn().Err(err).Msgf("Fail CRDs load")
@@ -351,7 +349,10 @@ func extractMeta(o runtime.Object) (metav1.APIResource, []error) {
 	m.Name, errs = extractStr(meta, "name", errs)
 
 	m.Group, errs = extractStr(spec, "group", errs)
-	m.Version, errs = extractStr(spec, "version", errs)
+	versions, errs := extractSlice(spec, "versions", errs)
+	if len(versions) > 0 {
+		m.Version = versions[0]
+	}
 
 	var scope string
 	scope, errs = extractStr(spec, "scope", errs)
@@ -387,11 +388,20 @@ func extractSlice(m map[string]interface{}, n string, errs []error) ([]string, [
 		return s, append(errs, fmt.Errorf("failed to extract slice %s -- %#v", n, m))
 	}
 
-	ss := make([]string, len(ii))
-	for i, name := range ii {
-		ss[i], ok = name.(string)
-		if !ok {
-			return ss, append(errs, fmt.Errorf("expecting string shortnames"))
+	ss := make([]string, 0, len(ii))
+	for _, name := range ii {
+		switch o := name.(type) {
+		case string:
+			ss = append(ss, o)
+		case map[string]interface{}:
+			s, ok := o["name"].(string)
+			if ok {
+				ss = append(ss, s)
+			} else {
+				errs = append(errs, fmt.Errorf("unable to find key %q in map", n))
+			}
+		default:
+			errs = append(errs, fmt.Errorf("unknown field type %t for key %q", o, n))
 		}
 	}
 
