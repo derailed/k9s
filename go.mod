@@ -39,7 +39,7 @@ require (
 	k8s.io/apimachinery v0.20.5
 	k8s.io/cli-runtime v0.20.5
 	k8s.io/client-go v0.20.5
-	k8s.io/klog/v2 v2.4.0
+	k8s.io/klog/v2 v2.8.0
 	k8s.io/kubectl v0.20.5
 	k8s.io/metrics v0.20.5
 	sigs.k8s.io/yaml v1.2.0
