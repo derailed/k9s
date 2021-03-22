@@ -12,8 +12,8 @@ RUN apk --no-cache add make git gcc libc-dev curl && make build
 # -----------------------------------------------------------------------------
 # Build the final Docker image
 
-FROM alpine:3.13.0
-ARG KUBECTL_VERSION="v1.18.2"
+FROM alpine:3.13.2
+ARG KUBECTL_VERSION="v1.20.5"
 
 COPY --from=build /k9s/execs/k9s /bin/k9s
 RUN apk add --update ca-certificates \
