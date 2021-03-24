@@ -12,7 +12,7 @@ require (
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cenkalti/backoff/v4 v4.1.0
 	github.com/derailed/popeye v0.9.0
-	github.com/derailed/tview v0.4.10
+	github.com/derailed/tview v0.4.11
 	github.com/drone/envsubst v1.0.2 // indirect
 	github.com/emicklei/go-restful v2.15.0+incompatible // indirect
 	github.com/fatih/color v1.10.0

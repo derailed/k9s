@@ -13,7 +13,6 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/client-go/1.5/pkg/api"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -160,7 +159,7 @@ func asReadinessGate(pod v1.Pod) string {
 		conditionType := readinessGate.ConditionType
 		for _, condition := range pod.Status.Conditions {
 			if condition.Type == conditionType {
-				if condition.Status == api.ConditionTrue {
+				if condition.Status == "True" {
 					trueConditions++
 				}
 				break
