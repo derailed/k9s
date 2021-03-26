@@ -154,7 +154,7 @@ func (v *LiveView) pauseCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.app.Flash().Info("Auto-refresh is enabled")
 	} else {
 		v.Stop()
-		v.app.Flash().Infof("Auto-refresh is disabled")
+		v.app.Flash().Info("Auto-refresh is disabled")
 	}
 
 	v.paused = !v.paused
