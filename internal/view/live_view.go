@@ -33,6 +33,7 @@ type LiveView struct {
 	fullScreen                bool
 	managedField              bool
 	cancel                    context.CancelFunc
+	paused                    bool
 }
 
 // NewLiveView returns a live viewer.
@@ -132,6 +133,7 @@ func (v *LiveView) bindKeys() {
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", v.saveCmd, false),
 		ui.KeyC:         ui.NewKeyAction("Copy", v.cpCmd, true),
 		ui.KeyF:         ui.NewKeyAction("Toggle FullScreen", v.toggleFullScreenCmd, true),
+		ui.KeyP:         ui.NewKeyAction("Enable/Disable Auto-Refresh", v.pauseCmd, true),
 		ui.KeyN:         ui.NewKeyAction("Next Match", v.nextCmd, true),
 		ui.KeyShiftN:    ui.NewKeyAction("Prev Match", v.prevCmd, true),
 		ui.KeySlash:     ui.NewSharedKeyAction("Filter Mode", v.activateCmd, false),
@@ -143,6 +145,21 @@ func (v *LiveView) bindKeys() {
 			ui.KeyM: ui.NewKeyAction("Toggle ManagedFields", v.toggleManagedCmd, true),
 		})
 	}
+}
+
+// pauseCmd is used for pausing the refreshing of data on config map and secrets
+func (v *LiveView) pauseCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if v.paused {
+		v.Start()
+		v.app.Flash().Info("Auto-refresh is enabled")
+	} else {
+		v.Stop()
+		v.app.Flash().Infof("Auto-refresh is disabled")
+	}
+
+	v.paused = !v.paused
+
+	return evt
 }
 
 func (v *LiveView) keyboard(evt *tcell.EventKey) *tcell.EventKey {
