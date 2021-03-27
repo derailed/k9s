@@ -48,6 +48,7 @@ func NewLiveView(app *App, title string, m model.ResourceViewer) *LiveView {
 		maxRegions:    0,
 		cmdBuff:       model.NewFishBuff('/', model.FilterBuffer),
 		model:         m,
+		paused:        true, // Default is to NOT automatically refresh for a better user experience
 	}
 	v.AddItem(v.text, 0, 1, true)
 
@@ -133,7 +134,7 @@ func (v *LiveView) bindKeys() {
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", v.saveCmd, false),
 		ui.KeyC:         ui.NewKeyAction("Copy", v.cpCmd, true),
 		ui.KeyF:         ui.NewKeyAction("Toggle FullScreen", v.toggleFullScreenCmd, true),
-		ui.KeyP:         ui.NewKeyAction("Toggle Auto-Refresh", v.pauseCmd, true),
+		ui.KeyR:         ui.NewKeyAction("Toggle Auto-Refresh", v.pauseCmd, true),
 		ui.KeyN:         ui.NewKeyAction("Next Match", v.nextCmd, true),
 		ui.KeyShiftN:    ui.NewKeyAction("Prev Match", v.prevCmd, true),
 		ui.KeySlash:     ui.NewSharedKeyAction("Filter Mode", v.activateCmd, false),
@@ -149,15 +150,16 @@ func (v *LiveView) bindKeys() {
 
 // pauseCmd is used for pausing the refreshing of data on config map and secrets
 func (v *LiveView) pauseCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if v.paused {
+	// We save the old variable because we need to toggle it for the correct behavior in the Start function
+	p := v.paused
+	v.paused = !v.paused
+	if p {
 		v.Start()
 		v.app.Flash().Info("Auto-refresh is enabled")
 	} else {
 		v.Stop()
 		v.app.Flash().Info("Auto-refresh is disabled")
 	}
-
-	v.paused = !v.paused
 
 	return evt
 }
@@ -193,6 +195,11 @@ func (v *LiveView) Start() {
 
 	if err := v.model.Watch(ctx); err != nil {
 		log.Error().Err(err).Msgf("LiveView watcher failed")
+	}
+
+	// Determine if we want to auto-refresh or not
+	if v.paused {
+		v.Stop()
 	}
 }
 
