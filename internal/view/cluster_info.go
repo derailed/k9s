@@ -73,7 +73,7 @@ func (c *ClusterInfo) layout() {
 func (c *ClusterInfo) sectionCell(t string) *tview.TableCell {
 	cell := tview.NewTableCell(t + ":")
 	cell.SetAlign(tview.AlignLeft)
-	cell.SetBackgroundColor(tcell.ColorGreen)
+	cell.SetBackgroundColor(c.app.Styles.BgColor())
 
 	return cell
 }
