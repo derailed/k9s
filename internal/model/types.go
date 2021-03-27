@@ -34,6 +34,7 @@ type ResourceViewer interface {
 	Peek() []string
 	SetOptions(context.Context, ViewerToggleOpts)
 	Watch(context.Context) error
+	Refresh(context.Context) error
 	AddListener(ResourceViewerListener)
 	RemoveListener(ResourceViewerListener)
 }

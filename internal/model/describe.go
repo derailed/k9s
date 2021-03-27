@@ -104,6 +104,11 @@ func (d *Describe) Peek() []string {
 	return d.lines
 }
 
+// Refresh updates model data.
+func (d *Describe) Refresh(ctx context.Context) error {
+	return d.refresh(ctx)
+}
+
 // Watch watches for describe data changes.
 func (d *Describe) Watch(ctx context.Context) error {
 	if err := d.refresh(ctx); err != nil {

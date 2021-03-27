@@ -114,6 +114,11 @@ func (y *YAML) Peek() []string {
 	return y.lines
 }
 
+// Refresh updates model data
+func (y *YAML) Refresh(ctx context.Context) error {
+	return y.refresh(ctx)
+}
+
 // Watch watches for YAML changes.
 func (y *YAML) Watch(ctx context.Context) error {
 	if err := y.refresh(ctx); err != nil {

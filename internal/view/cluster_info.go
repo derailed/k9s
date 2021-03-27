@@ -147,7 +147,10 @@ func (c *ClusterInfo) updateStyle() {
 		c.GetCell(row, 0).SetTextColor(c.styles.K9s.Info.FgColor.Color())
 		c.GetCell(row, 0).SetBackgroundColor(c.styles.BgColor())
 		var s tcell.Style
-		c.GetCell(row, 1).SetStyle(s.Bold(true).Foreground(c.styles.K9s.Info.SectionColor.Color()))
+		s = s.Bold(true)
+		s = s.Foreground(c.styles.K9s.Info.SectionColor.Color())
+		s = s.Background(c.styles.BgColor())
+		c.GetCell(row, 1).SetStyle(s)
 	}
 }
 

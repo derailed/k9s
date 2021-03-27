@@ -510,5 +510,12 @@ func (s *Styles) Update() {
 	tview.Styles.PrimaryTextColor = s.FgColor()
 	tview.Styles.BorderColor = s.K9s.Frame.Border.FgColor.Color()
 	tview.Styles.FocusColor = s.K9s.Frame.Border.FocusColor.Color()
+	tview.Styles.TitleColor = s.FgColor()
+	tview.Styles.GraphicsColor = s.FgColor()
+	tview.Styles.SecondaryTextColor = s.FgColor()
+	tview.Styles.TertiaryTextColor = s.FgColor()
+	tview.Styles.InverseTextColor = s.FgColor()
+	tview.Styles.ContrastSecondaryTextColor = s.FgColor()
+
 	s.fireStylesChanged()
 }

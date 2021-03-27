@@ -372,7 +372,6 @@ func readLogs(stream io.ReadCloser, c LogChan, opts LogOptions) {
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				log.Warn().Err(err).Msgf("Stream closed for %s", opts.Info())
-				c <- opts.DecorateLog([]byte("\nlog stream closed\n"))
 				return
 			}
 			log.Warn().Err(err).Msgf("Stream READ error %s", opts.Info())
