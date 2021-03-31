@@ -2,6 +2,8 @@ module github.com/derailed/k9s
 
 go 1.16
 
+replace github.com/derailed/tview => ../tview
+
 replace (
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
 	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
@@ -12,7 +14,7 @@ require (
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cenkalti/backoff/v4 v4.1.0
 	github.com/derailed/popeye v0.9.0
-	github.com/derailed/tview v0.5.2
+	github.com/derailed/tview v0.5.3
 	github.com/drone/envsubst v1.0.2 // indirect
 	github.com/emicklei/go-restful v2.15.0+incompatible // indirect
 	github.com/fatih/color v1.10.0

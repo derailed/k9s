@@ -70,27 +70,34 @@ func (s *ImageExtender) setImageCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	s.Stop()
 	defer s.Start()
-	s.showImageDialog(path)
+	if err := s.showImageDialog(path); err != nil {
+		s.App().Flash().Err(err)
+	}
 
 	return nil
 }
 
-func (s *ImageExtender) showImageDialog(path string) {
-	confirm := tview.NewModalForm("<Set image>", s.makeSetImageForm(path))
+func (s *ImageExtender) showImageDialog(path string) error {
+	form, err := s.makeSetImageForm(path)
+	if err != nil {
+		return err
+	}
+	confirm := tview.NewModalForm("<Set image>", form)
 	confirm.SetText(fmt.Sprintf("Set image %s %s", s.GVR(), path))
 	confirm.SetDoneFunc(func(int, string) {
 		s.dismissDialog()
 	})
 	s.App().Content.AddPage(imageKey, confirm, false, false)
 	s.App().Content.ShowPage(imageKey)
+
+	return nil
 }
 
-func (s *ImageExtender) makeSetImageForm(sel string) *tview.Form {
+func (s *ImageExtender) makeSetImageForm(sel string) (*tview.Form, error) {
 	f := s.makeStyledForm()
 	podSpec, err := s.getPodSpec(sel)
 	if err != nil {
-		s.App().Flash().Err(err)
-		return nil
+		return nil, err
 	}
 	formContainerLines := make([]*imageFormSpec, 0, len(podSpec.InitContainers)+len(podSpec.Containers))
 	for _, spec := range podSpec.InitContainers {
@@ -126,7 +133,8 @@ func (s *ImageExtender) makeSetImageForm(sel string) *tview.Form {
 	f.AddButton("Cancel", func() {
 		s.dismissDialog()
 	})
-	return f
+
+	return f, nil
 }
 
 func (s *ImageExtender) dismissDialog() {

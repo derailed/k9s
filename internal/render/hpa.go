@@ -148,20 +148,19 @@ func toMetricsV2b1(specs []autoscalingv2beta1.MetricSpec, statuses []autoscaling
 		return MissingValue
 	}
 
-	list, count := []string{}, 0
+	list := make([]string, 0, len(specs))
 	for i, spec := range specs {
 		list = append(list, checkHPAType(i, spec, statuses))
-		count++
 	}
 
-	max, more := 2, false
-	if count > max {
+	max, more := 10, false
+	if len(list) > max {
 		list, more = list[:max], true
 	}
 
 	ret := strings.Join(list, ", ")
 	if more {
-		return ret + " + " + strconv.Itoa(count-max) + "more..."
+		return ret + " + " + strconv.Itoa(len(list)-max) + "more..."
 	}
 
 	return ret
