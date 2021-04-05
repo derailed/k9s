@@ -21,7 +21,7 @@ require (
 	github.com/gdamore/tcell/v2 v2.2.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/kylelemons/godebug v1.1.0 // indirect
-	github.com/mattn/go-runewidth v0.0.10
+	github.com/mattn/go-runewidth v0.0.12
 	github.com/openfaas/faas v0.0.0-20200207215241-6afae214e3ec
 	github.com/openfaas/faas-cli v0.0.0-20200124160744-30b7cec9634c
 	github.com/openfaas/faas-provider v0.15.0
