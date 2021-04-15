@@ -38,8 +38,8 @@ k9s:
       numKeyColor: *magenta
     crumbs:
       fgColor: *foreground
-      bgColor: *current_line
-      activeColor: *current_line
+      bgColor: *comment
+      activeColor: *blue
     status:
       newColor: *cyan
       modifyColor: *blue
