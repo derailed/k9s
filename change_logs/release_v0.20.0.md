@@ -16,7 +16,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 And now for something a `beat` different?
 
-I figured, why not share one of the tunes I was spinning when powering thru teh bugs? Might as well share the pain/pleasure roaght?
+I figured, why not share one of the tunes I was spinning when powering thru teh bugs? Might as well share the pain/pleasure right?
 
 I've just discovered this Turkish band, that I dig and figured I'll share it with you while you read these release notes...
 

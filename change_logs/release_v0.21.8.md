@@ -16,7 +16,7 @@ Maintenance Release!
 
 ## ♫ The Sound Behind The Release ♭
 
-I figured, why not share one of the tunes I was spinning when powering thru teh bugs? Might as well share the pain/pleasure while viewing this release notes roaght?
+I figured, why not share one of the tunes I was spinning when powering thru teh bugs? Might as well share the pain/pleasure while viewing this release notes right?
 
 [Strange Ritual - David Byrne](https://www.youtube.com/watch?v=gsramZ3sOjI) ;)
 
