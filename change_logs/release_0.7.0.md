@@ -18,7 +18,7 @@ I always seem to get this wrong... Does Labor Day weekend mean you get to work o
 
 I am very excited about this drop and hopefully won't be hunamimous on this? 🐭
 
-For the impatients watch this! [K9s v0.7.0 Features](https://youtu.be/83jYehwlql8)
+For the impatient watch this! [K9s v0.7.0 Features](https://youtu.be/83jYehwlql8)
 
 ### Service Traversals
 
