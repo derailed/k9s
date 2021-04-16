@@ -37,14 +37,14 @@ func (r *Rbac) bindKeys(aa ui.KeyActions) {
 
 func showRules(app *App, _ ui.Tabular, gvr, path string) {
 	v := NewRbac(client.NewGVR("rbac"))
-	v.SetContextFn(rbacCtxt(gvr, path))
+	v.SetContextFn(rbacCtx(gvr, path))
 
 	if err := app.inject(v); err != nil {
 		app.Flash().Err(err)
 	}
 }
 
-func rbacCtxt(gvr, path string) ContextFunc {
+func rbacCtx(gvr, path string) ContextFunc {
 	return func(ctx context.Context) context.Context {
 		ctx = context.WithValue(ctx, internal.KeyPath, path)
 		return context.WithValue(ctx, internal.KeyGVR, gvr)
