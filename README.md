@@ -250,7 +250,7 @@ K9s uses aliases to navigate most K8s resources.
 | View a Kubernetes resource using singular/plural or short-name | `:`po⏎                        | accepts singular, plural, short-name or alias ie pod or pods           |
 | View a Kubernetes resource in a given namespace                | `:`alias namespace⏎           |                                                                        |
 | Filter out a resource view given a filter                      | `/`filter⏎                    | Regex2 supported ie `fred|blee` to filter resources named fred or blee |
-| Inverse regex filer                                            | `/`! filter⏎                  | Keep everything that *doesn't* match.                                  |
+| Inverse regex filter                                           | `/`! filter⏎                  | Keep everything that *doesn't* match.                                  |
 | Filter resource view by labels                                 | `/`-l label-selector⏎         |                                                                        |
 | Fuzzy find a resource given a filter                           | `/`-f filter⏎                 |                                                                        |
 | Bails out of view/command/filter mode                          | `<esc>`                       |                                                                        |
