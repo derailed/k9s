@@ -72,7 +72,7 @@ func PortForwardID(path, co string) string {
 	return path + ":" + co
 }
 
-// Container returns the targetes container.
+// Container returns the target's container.
 func (p *PortForwarder) Container() string {
 	return p.container
 }
