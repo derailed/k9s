@@ -58,7 +58,7 @@ func (l *Logger) Init(_ context.Context) error {
 // BufferChanged indicates the buffer was changel.
 func (l *Logger) BufferChanged(s string) {}
 
-// BufferCompleted indicates input was acceptel.
+// BufferCompleted indicates input was accepted.
 func (l *Logger) BufferCompleted(s string) {
 }
 
