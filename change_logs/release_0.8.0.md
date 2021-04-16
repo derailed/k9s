@@ -24,7 +24,7 @@ In the mist of the next Kubernetes 1.16 drop, deprecating some old apis, we've d
 ### Scaling Pods
 
 This was feature #12 filed by [Tyler Lewis](https://github.com/alairock) many moons ago. So big thanks to Tyler!! To be honest I was on the fence with this feature as I am not a big fan of one offs when it comes to cluster management. However I think it's a great way to validate adequate HPA settings while putting your cluster under load and use K9s to figure out what reasonable number of pods might be. Now this feature was not my own implementation so all kudos on this one goes to [Nathan Piper](https://github.com/nathanpiper) for spending the time to make this a reality for all of us. So many thanks to you Nathan!!
-By Nathan's implementation you can now leverage the `s` shorcut for scale deployments, replication controllers and statefulsets. Very cool!
+By Nathan's implementation you can now leverage the `s` shortcut for scale deployments, replication controllers and statefulsets. Very cool!
 
 ### FuzzBuzz!
 

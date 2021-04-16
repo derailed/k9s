@@ -53,7 +53,7 @@ Please keep in mind, this is very much a moving target at this point and will ch
 + [Issue #195](https://github.com/derailed/k9s/issues/195) Thanks to the awesome [Sebastiaan](https://github.com/tammert). You Rock Sir!!
 + [Issue #194](https://github.com/derailed/k9s/issues/194)
 + [Issue #187](https://github.com/derailed/k9s/issues/187)
-+ [Issue #119](https://github.com/derailed/k9s/issues/119) Added `Ctrl-S` shorcut to dump table data as csv and log data as text.
++ [Issue #119](https://github.com/derailed/k9s/issues/119) Added `Ctrl-S` shortcut to dump table data as csv and log data as text.
 + [Issue #69](https://github.com/derailed/k9s/issues/69)
 
 ---
