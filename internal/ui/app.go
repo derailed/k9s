@@ -203,12 +203,12 @@ func (a *App) HasAction(key tcell.Key) (KeyAction, bool) {
 	return act, ok
 }
 
-// GetActions returns a collection of actiona.
+// GetActions returns a collection of actions.
 func (a *App) GetActions() KeyActions {
 	return a.actions
 }
 
-// AddActions returns the application actiona.
+// AddActions returns the application actions.
 func (a *App) AddActions(aa KeyActions) {
 	for k, v := range aa {
 		a.actions[k] = v
