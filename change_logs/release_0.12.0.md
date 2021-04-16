@@ -21,7 +21,7 @@ At times, it could be you've lost your api server connection while K9s was up wh
 ### FullScreen Logs
 
 I've been told having a flag to set fullScreen mode preference while viewing the logs would be `awesome`. Thanks [Fardin Khanjani](https://github.com/fardin01)!
-So there is now a new K9s config flag available to set your fullsreen logs `drathers` in your .k9s/config.yml. This flag defaults to false if not set.
+So there is now a new K9s config flag available to set your fullscreen logs `drathers` in your .k9s/config.yml. This flag defaults to false if not set.
 
 Here is a snippet:
 
