@@ -135,7 +135,7 @@ func (rr Rows) Upsert(r Row) Rows {
 	return rr
 }
 
-// Find locates a row by id. Retturns false is not found.
+// Find locates a row by id. Returns false is not found.
 func (rr Rows) Find(id string) (int, bool) {
 	for i, r := range rr {
 		if r.ID == id {

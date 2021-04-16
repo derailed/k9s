@@ -83,7 +83,7 @@ func (ss Subjects) Upsert(s SubjectRes) Subjects {
 	return ss
 }
 
-// Find locates a row by id. Retturns false is not found.
+// Find locates a row by id. Returns false is not found.
 func (ss Subjects) find(res string) (int, bool) {
 	for i, s := range ss {
 		if s.Name == res {

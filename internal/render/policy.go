@@ -122,7 +122,7 @@ func (pp Policies) Upsert(p PolicyRes) Policies {
 	return pp
 }
 
-// Find locates a row by id. Retturns false is not found.
+// Find locates a row by id. Returns false is not found.
 func (pp Policies) find(res string) (int, bool) {
 	for i, p := range pp {
 		if p.Resource == res {
