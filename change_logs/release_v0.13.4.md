@@ -15,7 +15,7 @@ Maintenance Release!
 ## GH Sponsors
 
 A Big Thank You to the following folks that I've decided to dig in and give back!! 👏🙏🎊
-Thank you for your gesture of kindness and for supporting K9s!! (not to mention for replainishing my liquids during oh-dark-thirty hours 🍺🍹🍸)
+Thank you for your gesture of kindness and for supporting K9s!! (not to mention for replenishing my liquids during oh-dark-thirty hours 🍺🍹🍸)
 
 * [w11d](https://github.com/w11d)
 * [vglen](https://github.com/vglen)
