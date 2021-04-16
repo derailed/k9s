@@ -247,7 +247,7 @@ func (a *App) redrawCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 // View Accessors...
 
-// Crumbs return app crumba.
+// Crumbs return app crumbs.
 func (a *App) Crumbs() *Crumbs {
 	return a.views["crumbs"].(*Crumbs)
 }
