@@ -48,7 +48,7 @@ In order to specify a custom plugin command, you will need to modify your .k9s/c
 ```yaml
 plugins:
   cmd1:
-    # The menu mnmemoic to trigger the command. Valid values are [a-z], Shift-[A-Z], Ctrl-[A-Z] or Alt-[A-Z]
+    # The menu mnemonic to trigger the command. Valid values are [a-z], Shift-[A-Z], Ctrl-[A-Z] or Alt-[A-Z]
     # Note! Mind the cases!!!
     shortCut: Alt-P
     scopes: # View names are typically matching the resource shortname ie po for pod, deploy for deployment, svc for service etc... If no shortname is available use the resource name.
