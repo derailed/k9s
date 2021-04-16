@@ -30,7 +30,7 @@ If you're using Helm3 in your current clusters, please give it a rip and also pi
 
 ### Bring Out Your Deads...
 
-There are also a few bugs fixes from the refactor aftermath that made this drop. I know this was a bit of a brutal transition, so thank you all for your patience and for filing issues! I am hopefull that K9s will stabilize quickly so we can move on to bigger things.
+There are also a few bugs fixes from the refactor aftermath that made this drop. I know this was a bit of a brutal transition, so thank you all for your patience and for filing issues! I am hopeful that K9s will stabilize quickly so we can move on to bigger things.
 
 ---
 
