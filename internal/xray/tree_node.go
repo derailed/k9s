@@ -19,7 +19,7 @@ const (
 	// KeySAAutomount indicates whether an automount sa token is active or not.
 	KeySAAutomount TreeRef = "automount"
 
-	// PathSeparator represents a node path separatot.
+	// PathSeparator represents a node path separator.
 	PathSeparator = "::"
 
 	// StatusKey status map key.
