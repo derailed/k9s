@@ -46,7 +46,7 @@ func TestExtractApp(t *testing.T) {
 	}
 }
 
-func TestFwFWQN(t *testing.T) {
+func TestFwFQN(t *testing.T) {
 	uu := map[string]struct {
 		po, co, e string
 	}{
