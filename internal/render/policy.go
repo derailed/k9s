@@ -78,7 +78,7 @@ func cleanseResource(r string) string {
 	return n
 }
 
-// PolicyRes represents a rback policy rule.
+// PolicyRes represents a rbac policy rule.
 type PolicyRes struct {
 	Namespace, Binding string
 	Resource, Group    string
