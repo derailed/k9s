@@ -18,7 +18,7 @@ Thanks to the good Helm folks, we're now back on par with the Helm charts suppor
 
 ## Boh-Bye Windows 386!
 
-As of this drop, I've decided to axe Windows 386 support. Our good friend [Guy Barrette](https://github.com/guybarrette) reported K9s Windows-386 binary is triping his virus scanner. After double checking my installed SHAs/binaries/dependencies/etc... and performing vulnerabily scans on various win-i386 K9s binaries, I just could not figure out which dependencies are causing the exec to bomb on the scans??
+As of this drop, I've decided to axe Windows 386 support. Our good friend [Guy Barrette](https://github.com/guybarrette) reported K9s Windows-386 binary is tripping his virus scanner. After double checking my installed SHAs/binaries/dependencies/etc... and performing vulnerabily scans on various win-i386 K9s binaries, I just could not figure out which dependencies are causing the exec to bomb on the scans??
 
 Note: This does not necessary entails that there is a deliberate or malicious intent with the software, but likely a false positive thrown by the Windows virus scanner. This has been [reported](https://golang.org/doc/faq#virus) with other GO binaries on windows as well ;(
 
