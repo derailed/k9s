@@ -143,7 +143,7 @@ func join(a []string, sep string) string {
 	return buff.String()
 }
 
-// AsPerc prints a number as percentage with parans.
+// AsPerc prints a number as percentage with parens.
 func AsPerc(p string) string {
 	return "(" + p + ")"
 }
