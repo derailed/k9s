@@ -100,7 +100,7 @@ func (c *ClusterInfo) fetchK9sLatestRev() string {
 		return rev.(string)
 	}
 
-	latestRev, err := fetchLastestRev()
+	latestRev, err := fetchLatestRev()
 	if err != nil {
 		log.Error().Msgf("k9s latest rev fetch failed")
 	} else {
@@ -181,7 +181,7 @@ func (c *ClusterInfo) fireNoMetaChanged(data ClusterMeta) {
 
 // Helpers...
 
-func fetchLastestRev() (string, error) {
+func fetchLatestRev() (string, error) {
 	log.Debug().Msgf("Fetching latest k9s rev...")
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
