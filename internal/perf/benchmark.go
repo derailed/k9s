@@ -109,7 +109,7 @@ func (b *Benchmark) Run(cluster string, done func()) {
 	log.Debug().Msgf("Running benchmark on cluster %s", cluster)
 	buff := new(bytes.Buffer)
 	b.worker.Writer = buff
-	// this call will block until the benchmark is complete or timesout.
+	// this call will block until the benchmark is complete or times out.
 	b.worker.Run()
 	b.worker.Stop()
 	if len(buff.Bytes()) > 0 {
