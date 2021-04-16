@@ -19,7 +19,7 @@ type LogsListener interface {
 	// LogChanged notifies the model changed.
 	LogChanged([][]byte)
 
-	// LogCleanred indicates logs are cleared.
+	// LogCleared indicates logs are cleared.
 	LogCleared()
 
 	// LogFailed indicates a log failure.
