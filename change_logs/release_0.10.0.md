@@ -55,7 +55,7 @@ Feeling like you want to be able to quickly switch around your favorite resource
 
  Not feeling too `Hot`? No worried, your custom hotkeys list will be listed in the help view.`<?>`.
 
- You can choose any keyboard shotcuts that make sense to you, provided they are not part of the standard K9s shortcuts list.
+ You can choose any keyboard shortcuts that make sense to you, provided they are not part of the standard K9s shortcuts list.
 
 ## PullRequests
 
