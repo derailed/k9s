@@ -85,7 +85,7 @@ plugins:
     - -n
     # Use K9s current namespace
     - $NAMESPACE
-    # Oh and pick out the container name from column 0 on that table. Noace!!
+    # Oh and pick out the container name from column 0 on that table. Nice!!
     - -c
     - $COL-0 # Use $COL-[0-9] to pick up the value from the desired resource table column.
 ```
