@@ -12,7 +12,7 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ### Searchable Logs
 
-There has been quiet a few demands for this feature. It should now be generally available in this drop. It works the same as the resource view ie `/fred`, you can also specify a fuzzy filter using `/-f blee-duh`. The paint is still fresh on that deal and not super confident that it will work nominaly as I had to rework the logs to enable. So totally possible I've hosed something in the process.
+There has been quiet a few demands for this feature. It should now be generally available in this drop. It works the same as the resource view ie `/fred`, you can also specify a fuzzy filter using `/-f blee-duh`. The paint is still fresh on that deal and not super confident that it will work nominally as I had to rework the logs to enable. So totally possible I've hosed something in the process.
 
 ### APIServer Dud
 
