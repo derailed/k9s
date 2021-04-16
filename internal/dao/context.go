@@ -15,7 +15,7 @@ var (
 	_ Switchable = (*Context)(nil)
 )
 
-// Context represents a kubenetes context.
+// Context represents a kubernetes context.
 type Context struct {
 	NonResource
 }
