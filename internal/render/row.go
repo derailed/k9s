@@ -47,7 +47,7 @@ func (f Fields) Clone() Fields {
 
 // ----------------------------------------------------------------------------
 
-// Row represents a colllection of columns.
+// Row represents a collection of columns.
 type Row struct {
 	ID     string
 	Fields Fields
