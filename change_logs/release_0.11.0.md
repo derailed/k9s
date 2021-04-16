@@ -16,7 +16,7 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ### Anyone At The Helm?
 
-K9s now offers prelimary support for Helm 3 charts! It's been a long time coming and I know a few early users had mentioned the need, but I wanted to see where Helm3 was going first. This is a preview release to see how we fair in Helm land. Besides managing your installed charts, you will be able to perform the following operations:
+K9s now offers preliminary support for Helm 3 charts! It's been a long time coming and I know a few early users had mentioned the need, but I wanted to see where Helm3 was going first. This is a preview release to see how we fair in Helm land. Besides managing your installed charts, you will be able to perform the following operations:
 
 * Uninstall a chart
 * View chart release notes
