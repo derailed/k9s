@@ -14,7 +14,7 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 <img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s_xray.png"/>
 
-In the last release excitments, forgot to link the video update. Check it out! [K9s Xray](https://www.youtube.com/watch?v=qaeR2iK7U0o). Yup, got a cold... The joy of transports on the flying Petri dishes we call airplanes ;(
+In the last release excitement, forgot to link the video update. Check it out! [K9s Xray](https://www.youtube.com/watch?v=qaeR2iK7U0o). Yup, got a cold... The joy of transports on the flying Petri dishes we call airplanes ;(
 
 Based on some reported issues, decided to axe the xray icons in this drop for portability sake and also added support for replicasets. So here is the official list of supported Xray resources.
 
