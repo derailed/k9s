@@ -69,7 +69,7 @@ Ok so this is pretty cool but what if I want to run a command to leverage the cu
 ```yaml
 plugins:
   ksniff:
-    # Enable `S` on the K9s mennu while in container view
+    # Enable `S` on the K9s menu while in container view
     shortCut: Shift-S
     scopes:
     - co
