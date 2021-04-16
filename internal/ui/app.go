@@ -215,7 +215,7 @@ func (a *App) AddActions(aa KeyActions) {
 	}
 }
 
-// Views return the application root viewa.
+// Views return the application root views.
 func (a *App) Views() map[string]tview.Primitive {
 	return a.views
 }
