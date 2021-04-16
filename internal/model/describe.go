@@ -16,7 +16,7 @@ import (
 	"github.com/sahilm/fuzzy"
 )
 
-// Describe tracks describeable resources.
+// Describe tracks describable resources.
 type Describe struct {
 	gvr         client.GVR
 	inUpdate    int32
