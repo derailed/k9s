@@ -56,7 +56,7 @@ plugins:
     - deploy
     description: ViewPods # => Name to show on K9s menu
     command: kubectl      # => The binary to use. Must be on your $PATH.
-    # Arguments on per line preceeded with a dash! This will run > kubectl get pods -n fred
+    # Arguments on per line preceded with a dash! This will run > kubectl get pods -n fred
     args:
     - get
     - pods
