@@ -68,7 +68,7 @@ NOTE! This is a one shot commands applied directly against your cluster and won'
 
 ## Crumbs On...Crumbs Off, Caterpillar
 
-We've added a new configuCCration to turn off the crumbs via `crumbsLess` configuration option. You can also toggle the crumbs via the new key option `Ctrl-g`. You can enable/disable this option in your ~/.k9s/config.yml or via command line using `--crumbsless` CLI option.
+We've added a new configuration to turn off the crumbs via `crumbsLess` configuration option. You can also toggle the crumbs via the new key option `Ctrl-g`. You can enable/disable this option in your ~/.k9s/config.yml or via command line using `--crumbsless` CLI option.
 
 ```yaml
 k9s:
