@@ -22,7 +22,7 @@ As of this drop, I've decided to axe Windows 386 support. Our good friend [Guy B
 
 Note: This does not necessary entails that there is a deliberate or malicious intent with the software, but likely a false positive thrown by the Windows virus scanner. This has been [reported](https://golang.org/doc/faq#virus) with other GO binaries on windows as well ;(
 
-That said, I've repeatdly scanned the K9s Windows-x64 and ended up with a clean bill of health on every single scans. So I've decided to drop the 386 windows support for the time being. If that causes you some grief, please land a hand as I am fresh out of ideas...
+That said, I've repeatedly scanned the K9s Windows-x64 and ended up with a clean bill of health on every single scans. So I've decided to drop the 386 windows support for the time being. If that causes you some grief, please land a hand as I am fresh out of ideas...
 
 ## And Now For Something A Bit More... Controversial?
 
