@@ -14,7 +14,7 @@ Thank you so much for your support!!
 
 ## Change Logs
 
-1. Refactored a lot of code! So please watch for disturbence in the force!
+1. Refactored a lot of code! So please watch for disturbance in the force!
 1. Changed cronjob and job aliases names to `cj` and `jo` respectively
 1. *JobView*: Added new columns
    1. Completions
