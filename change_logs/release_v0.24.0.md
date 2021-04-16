@@ -30,7 +30,7 @@ Your sponsorships efforts are vital to keep this project alive and evolving. So 
 ## Resolved Issues/Features
 
 * [Issue #953](https://github.com/derailed/k9s/issues/953) Pdb with percentages show as "0".
-* [Issue #947](https://github.com/derailed/k9s/issues/947) Selection is applied for nonexistant items.
+* [Issue #947](https://github.com/derailed/k9s/issues/947) Selection is applied for nonexistent items.
 * [Issue #944](https://github.com/derailed/k9s/issues/944) Can not launch ksniff.
 * [Issue #940](https://github.com/derailed/k9s/issues/940) Indeterminate search results when filtering with numbers.
 * [Issue #914](https://github.com/derailed/k9s/issues/914) Unable to edit resources with colliding singular names.
