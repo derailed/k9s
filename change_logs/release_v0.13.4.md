@@ -22,7 +22,7 @@ Thank you for your gesture of kindness and for supporting K9s!! (not to mention 
 
 ## CPU/MEM Metrics
 
-A small change here based on [Benjamin](https://github.com/binarycoded) excellent PR! We've added 2 new columms for pod/container views to indicate percentages of resources request/limits if set on the containers. The columms have been renamed to represent the resources requests/limits as follows:
+A small change here based on [Benjamin](https://github.com/binarycoded) excellent PR! We've added 2 new columns for pod/container views to indicate percentages of resources request/limits if set on the containers. The columns have been renamed to represent the resources requests/limits as follows:
 
 | Name   | Description                    | Sort Keys |
 |--------|--------------------------------|-----------|
