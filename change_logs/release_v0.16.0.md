@@ -14,7 +14,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 <img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s_doc.png" align="center"/>
 
-This is one of these drops that may make you wonder if you'll go from zero to hero or likely the reverse?? Will see how this goes... Please proceed with caution on this one as there could very well be much distrubances in the force...
+This is one of these drops that may make you wonder if you'll go from zero to hero or likely the reverse?? Will see how this goes... Please proceed with caution on this one as there could very well be much disturbances in the force...
 
 Lots of code churns so could have totally hose some stuff, but like my GranPappy used to say `can't cook without making a mess!`
 
