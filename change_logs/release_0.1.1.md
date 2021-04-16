@@ -15,7 +15,7 @@ rev and see if we're happier with some of the fixes!
 ## Change Logs
 
 + Added config file to tracks K9s configuration ~/.k9s/config.yml
-+ Changeg log file location to use Go tmp dir stdlib package.
++ Change log file location to use Go tmp dir stdlib package.
   Check the log destination and config file location using
     ```shell
     k9s info
