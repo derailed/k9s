@@ -77,6 +77,7 @@ const (
 	KeySlash = 47
 	KeyColon = 58
 	KeySpace = 32
+	KeyHRule = 45
 )
 
 // Define Shift Keys

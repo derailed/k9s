@@ -46,6 +46,7 @@ type App struct {
 	clusterModel  *model.ClusterInfo
 	cmdHistory    *model.History
 	filterHistory *model.History
+	navHistory    *model.NavHistory
 	conRetry      int32
 	showHeader    bool
 	showLogo      bool
@@ -57,6 +58,7 @@ func NewApp(cfg *config.Config) *App {
 	a := App{
 		App:           ui.NewApp(cfg, cfg.K9s.CurrentContext),
 		cmdHistory:    model.NewHistory(model.MaxHistory),
+		navHistory:    model.NewNavHistory(model.MaxNavHistory),
 		filterHistory: model.NewHistory(model.MaxHistory),
 		Content:       NewPageStack(),
 	}
@@ -188,6 +190,7 @@ func (a *App) bindKeys() {
 		tcell.KeyCtrlE: ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
 		tcell.KeyCtrlG: ui.NewSharedKeyAction("toggleCrumbs", a.toggleCrumbsCmd, false),
 		ui.KeyHelp:     ui.NewSharedKeyAction("Help", a.helpCmd, false),
+		ui.KeyHRule:    ui.NewSharedKeyAction("Prev", a.backCmd, false),
 		tcell.KeyCtrlA: ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
 	})
@@ -583,6 +586,15 @@ func (a *App) dirCmd(path string) error {
 	a.cmdHistory.Push("dir " + path)
 
 	return a.inject(NewDir(path))
+}
+
+func (a *App) backCmd(evt *tcell.EventKey) *tcell.EventKey {
+	backCmd := a.navHistory.Prev()
+	if backCmd == "" {
+		return nil
+	}
+	a.command.run(backCmd, "", true)
+	return nil
 }
 
 func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
