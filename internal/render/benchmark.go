@@ -76,7 +76,7 @@ func (b Benchmark) Render(o interface{}, ns string, r *Row) error {
 	return nil
 }
 
-// Happy returns true if resoure is happy, false otherwise
+// Happy returns true if resource is happy, false otherwise
 func (Benchmark) diagnose(ns string, ff Fields) error {
 	statusCol := 3
 	if !client.IsAllNamespaces(ns) {

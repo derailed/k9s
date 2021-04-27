@@ -16,7 +16,7 @@ Maintenance release
 
 ## Merged PRs
 
-* [PR #385](https://github.com/derailed/k9s/pull/385) Remove debuging calls from HPA
+* [PR #385](https://github.com/derailed/k9s/pull/385) Remove debugging calls from HPA
 * [PR #384](https://github.com/derailed/k9s/issues/384) Invalidate cache when switching context
 * [PR #372](https://github.com/derailed/k9s/pull/372) Fix race when switching context
 

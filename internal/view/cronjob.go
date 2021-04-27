@@ -88,7 +88,7 @@ func (c *CronJob) triggerCmd(evt *tcell.EventKey) *tcell.EventKey {
 		}
 		runner, ok := res.(dao.Runnable)
 		if !ok {
-			c.App().Flash().Err(fmt.Errorf("expecting a jobrunner resource for %q", c.GVR()))
+			c.App().Flash().Err(fmt.Errorf("expecting a job runner resource for %q", c.GVR()))
 			return
 		}
 

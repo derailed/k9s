@@ -16,9 +16,9 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 I always seem to get this wrong... Does Labor Day weekend mean you get to work on your OSS projects all weekend?
 
-I am very excited about this drop and hopefully won't be hunamimous on this? 🐭
+I am very excited about this drop and hopefully won't be unanimous (?) on this? 🐭
 
-For the impatients watch this! [K9s v0.7.0 Features](https://youtu.be/83jYehwlql8)
+For the impatient watch this! [K9s v0.7.0 Features](https://youtu.be/83jYehwlql8)
 
 ### Service Traversals
 
@@ -28,7 +28,7 @@ Provided your K8s services are head(Full), you can now navigate to the pods that
 
 In this drop, we've added support for port-forwarding that allows you to exercise your container from your local machine. To setup a port-forward, from the Pod view drill down to a selected Pod's containers, select the container that exposes the port of interest and hit `Ctrl-F`. A dialog will popup allowing you to configure a localhost port to forward to. Once set up, K9s will take you to you to the new PortForward view aka `pf`. Pending your terminal feature and container setup, you should be able to pop the forwarded URL directly into your browse. On iTerm2 me think `command+click` does the trick?
 
-Big thanks and ATTABOY! in full effect all week to [Brent](https://github.com/brentco) for filing this initial issue. Please keep in mind, these port-forward babies are a bit expensive to run, so make sure you choose wisely and delete any superflous PFs!!
+Big thanks and ATTABOY! in full effect all week to [Brent](https://github.com/brentco) for filing this initial issue. Please keep in mind, these port-forward babies are a bit expensive to run, so make sure you choose wisely and delete any superfluous PFs!!
 
 This feature is still work in progress. It does require a new config file to help assist with URL configurations. As it stands, your PortForwards are in effect for the current K9s session and will be terminated on exit. Please thread lightly and checkout the README under the Benchmarking section. Your feedback on this as always, is welcome and encouraged!
 
@@ -40,7 +40,7 @@ Benchmarking is enabled via keyboard shortcuts `Ctrl-B` and `Alt-B` to activate/
 
 So you now have the ability to stretch out your cluster legs by benchmarking your pods and services and gather all kind of interesting statistics directly in K9s. Generating load on your resources will help you tune your cluster resources, exercise your auto scalers, compare Canary builds perf, etc...
 
-Please keep in mind, this is very much a moving target at this point and will change. Ingress support will come next once we solidy the existing feature. Also checkout the README for additional configuration for this feature. With the understanding the Full Monty is coming, please help us solidify these features as these are the base ingredients to even cooler things coming down the line...
+Please keep in mind, this is very much a moving target at this point and will change. Ingress support will come next once we solidify the existing feature. Also checkout the README for additional configuration for this feature. With the understanding the Full Monty is coming, please help us solidify these features as these are the base ingredients to even cooler things coming down the line...
 
 > NOTE! As with anything in life `Aim small, Miss small!`. You could totally overwhelm K9s with over-zealous benchmarks and port-forwards, so please start small say C:1 N:1000, measure and go from there.
 
@@ -53,7 +53,7 @@ Please keep in mind, this is very much a moving target at this point and will ch
 + [Issue #195](https://github.com/derailed/k9s/issues/195) Thanks to the awesome [Sebastiaan](https://github.com/tammert). You Rock Sir!!
 + [Issue #194](https://github.com/derailed/k9s/issues/194)
 + [Issue #187](https://github.com/derailed/k9s/issues/187)
-+ [Issue #119](https://github.com/derailed/k9s/issues/119) Added `Ctrl-S` shorcut to dump table data as csv and log data as text.
++ [Issue #119](https://github.com/derailed/k9s/issues/119) Added `Ctrl-S` shortcut to dump table data as csv and log data as text.
 + [Issue #69](https://github.com/derailed/k9s/issues/69)
 
 ---

@@ -76,7 +76,7 @@ func (s *Service) getExternalPort(svc *v1.Service) (string, error) {
 	}
 	ports := render.ToPorts(svc.Spec.Ports)
 	pp := strings.Split(ports, " ")
-	// Grap the first port pair for now...
+	// Grab the first port pair for now...
 	tokens := strings.Split(pp[0], "►")
 	if len(tokens) < 2 {
 		return "", errors.New("No ports pair found")

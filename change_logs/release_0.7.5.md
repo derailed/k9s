@@ -13,7 +13,7 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 ## Change Logs
 
 Rats, looks like 0.7.4 is a dud! Sorry my fault, feeling burned out ;(
-Please ugrade to 0.7.5. Thank you for your patience and support!
+Please upgrade to 0.7.5. Thank you for your patience and support!
 
 ---
 

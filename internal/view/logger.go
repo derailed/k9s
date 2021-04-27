@@ -55,14 +55,14 @@ func (l *Logger) Init(_ context.Context) error {
 	return nil
 }
 
-// BufferChanged indicates the buffer was changel.
+// BufferChanged indicates the buffer was changed.
 func (l *Logger) BufferChanged(s string) {}
 
-// BufferCompleted indicates input was acceptel.
+// BufferCompleted indicates input was accepted.
 func (l *Logger) BufferCompleted(s string) {
 }
 
-// BufferActive indicates the buff activity changel.
+// BufferActive indicates the buff activity changed.
 func (l *Logger) BufferActive(state bool, k model.BufferKind) {
 	l.app.BufferActive(state, k)
 }
@@ -85,7 +85,7 @@ func (l *Logger) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
-// StylesChanged notifies the skin changel.
+// StylesChanged notifies the skin changed.
 func (l *Logger) StylesChanged(s *config.Styles) {
 	l.SetBackgroundColor(l.app.Styles.BgColor())
 	l.SetTextColor(l.app.Styles.FgColor())

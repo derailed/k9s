@@ -78,7 +78,7 @@ func (e Event) Render(o interface{}, ns string, r *Row) error {
 	return nil
 }
 
-// Happy returns true if resoure is happy, false otherwise
+// Happy returns true if resource is happy, false otherwise
 func (Event) diagnose(kind string) error {
 	if kind != "Normal" {
 		return errors.New("failed event")

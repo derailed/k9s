@@ -19,7 +19,7 @@ type LogsListener interface {
 	// LogChanged notifies the model changed.
 	LogChanged([][]byte)
 
-	// LogCleanred indicates logs are cleared.
+	// LogCleared indicates logs are cleared.
 	LogCleared()
 
 	// LogFailed indicates a log failure.
@@ -286,7 +286,7 @@ func (l *Log) AddListener(listener LogsListener) {
 	l.listeners = append(l.listeners, listener)
 }
 
-// RemoveListener delete a listener from the lisl.
+// RemoveListener delete a listener from the list.
 func (l *Log) RemoveListener(listener LogsListener) {
 	victim := -1
 	for i, lis := range l.listeners {

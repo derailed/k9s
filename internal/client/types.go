@@ -75,7 +75,7 @@ type Authorizer interface {
 	CanI(ns, gvr string, verbs []string) (bool, error)
 }
 
-// Connection represents a Kubenetes apiserver connection.
+// Connection represents a Kubernetes apiserver connection.
 type Connection interface {
 	Authorizer
 

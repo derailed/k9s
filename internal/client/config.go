@@ -195,7 +195,7 @@ func (c *Config) CurrentGroupNames() ([]string, error) {
 	return []string{}, errors.New("unable to locate current group")
 }
 
-// ImpersonateGroups retrieves the active groupsif set on the CLI.
+// ImpersonateGroups retrieves the active groups if set on the CLI.
 func (c *Config) ImpersonateGroups() (string, error) {
 	if areSet(c.flags.ImpersonateGroup) {
 		return strings.Join(*c.flags.ImpersonateGroup, ","), nil

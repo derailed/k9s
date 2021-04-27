@@ -11,7 +11,7 @@ import (
 // Subject renders a rbac to screen.
 type Subject struct{}
 
-// Happy returns true if resoure is happy, false otherwise
+// Happy returns true if resource is happy, false otherwise
 func (Subject) Happy(_ string, _ Row) bool {
 	return true
 }
@@ -83,7 +83,7 @@ func (ss Subjects) Upsert(s SubjectRes) Subjects {
 	return ss
 }
 
-// Find locates a row by id. Retturns false is not found.
+// Find locates a row by id. Returns false is not found.
 func (ss Subjects) find(res string) (int, bool) {
 	for i, s := range ss {
 		if s.Name == res {

@@ -51,7 +51,7 @@ func NewRowEventWithDeltas(row Row, delta DeltaRow) RowEvent {
 	}
 }
 
-// Clone returns a rowevent deep copy.
+// Clone returns a row event deep copy.
 func (r RowEvent) Clone() RowEvent {
 	return RowEvent{
 		Kind:   r.Kind,

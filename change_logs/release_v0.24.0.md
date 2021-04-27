@@ -6,7 +6,7 @@
 
 Thank you to all that contributed with flushing out issues and enhancements for K9s! I'll try to mark some of these issues as fixed. But if you don't mind grab the latest rev and see if we're happier with some of the fixes! If you've filed an issue please help me verify and close. Your support, kindness and awesome suggestions to make K9s better are as ever very much noted and appreciated!
 
-If you feel K9s is helping your Kubernetes journey, please consider joining our [sponsorhip program](https://github.com/sponsors/derailed) and/or make some noise on social! [@kitesurfer](https://twitter.com/kitesurfer)
+If you feel K9s is helping your Kubernetes journey, please consider joining our [sponsorship program](https://github.com/sponsors/derailed) and/or make some noise on social! [@kitesurfer](https://twitter.com/kitesurfer)
 
 On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_invite/enQtOTA5MDEyNzI5MTU0LWQ1ZGI3MzliYzZhZWEyNzYxYzA3NjE0YTk1YmFmNzViZjIyNzhkZGI0MmJjYzhlNjdlMGJhYzE2ZGU1NjkyNTM)
 
@@ -30,7 +30,7 @@ Your sponsorships efforts are vital to keep this project alive and evolving. So 
 ## Resolved Issues/Features
 
 * [Issue #953](https://github.com/derailed/k9s/issues/953) Pdb with percentages show as "0".
-* [Issue #947](https://github.com/derailed/k9s/issues/947) Selection is applied for nonexistant items.
+* [Issue #947](https://github.com/derailed/k9s/issues/947) Selection is applied for nonexistent items.
 * [Issue #944](https://github.com/derailed/k9s/issues/944) Can not launch ksniff.
 * [Issue #940](https://github.com/derailed/k9s/issues/940) Indeterminate search results when filtering with numbers.
 * [Issue #914](https://github.com/derailed/k9s/issues/914) Unable to edit resources with colliding singular names.

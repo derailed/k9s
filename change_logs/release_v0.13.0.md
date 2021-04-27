@@ -33,7 +33,7 @@ Since we're in the thank you phase, might as well lasso in [Josh Symonds](https:
 
 Since we've launched K9s, we've longed for a view that would display the relationships among resources. For instance, pods may reference configmaps/secrets directly via volumes or indirectly with containers referencing configmaps/secrets via say env vars. Having the ability to know which pods/deployments use a given configmap may involve some serious `kubectl` wizardry. K9s now has xray vision which allows one to view and traverse these relationships/associations as well as check for referential integrity.
 
-For this, we are introducing a new command aka `xray`. Xray initally supports the following resources (more to come later...)
+For this, we are introducing a new command aka `xray`. Xray initially supports the following resources (more to come later...)
 
 1. Deployments
 2. Services

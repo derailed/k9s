@@ -6,7 +6,7 @@
 
 Thank you to all that contributed with flushing out issues and enhancements for K9s! I'll try to mark some of these issues as fixed. But if you don't mind grab the latest rev and see if we're happier with some of the fixes! If you've filed an issue please help me verify and close. Your support, kindness and awesome suggestions to make K9s better is as ever very much noticed and appreciated!
 
-Also if you dig this tool, consider joining our [sponsorhip program](https://github.com/sponsors/derailed) and/or make some noise on social! [@kitesurfer](https://twitter.com/kitesurfer)
+Also if you dig this tool, consider joining our [sponsorship program](https://github.com/sponsors/derailed) and/or make some noise on social! [@kitesurfer](https://twitter.com/kitesurfer)
 
 On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_invite/enQtOTA5MDEyNzI5MTU0LWQ1ZGI3MzliYzZhZWEyNzYxYzA3NjE0YTk1YmFmNzViZjIyNzhkZGI0MmJjYzhlNjdlMGJhYzE2ZGU1NjkyNTM)
 
@@ -16,7 +16,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 And now for something a `beat` different?
 
-I figured, why not share one of the tunes I was spinning when powering thru teh bugs? Might as well share the pain/pleasure roaght?
+I figured, why not share one of the tunes I was spinning when powering thru teh bugs? Might as well share the pain/pleasure right?
 
 I've just discovered this Turkish band, that I dig and figured I'll share it with you while you read these release notes...
 

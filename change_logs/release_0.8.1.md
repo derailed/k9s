@@ -37,7 +37,7 @@ k9s:
   ...
 ```
 
-### Menu Shorcuts
+### Menu Shortcuts
 
 Some folks correctly pointed out the issue with the `Alt-XXX`. Totally my bad as my external mac keyboard unlike my MBP keyboard shows `option` and `alt` as the same key. So I've added a check to make sure the correct mnemonic is displayed based on you OS. Big Thanks for the call out to Ming, Eldad, Raman and Andrew!! Hopefully it did not hose the menu options in the process... 🙏
 

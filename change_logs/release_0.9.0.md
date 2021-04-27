@@ -85,7 +85,7 @@ You can now keep filters sticky allowing you to filter a view bases on regex, fu
 
 ### New Resources
 
-Added support for StorageClass, you can now view this resource and describe it directly in K9s. Major shoutout to [Oscar F](https://github.com/fridokus), zero go chops and yet managed to push this PR thru with minimal suppport. You Sir, blew me away. Thank you!!
+Added support for StorageClass, you can now view this resource and describe it directly in K9s. Major shoutout to [Oscar F](https://github.com/fridokus), zero go chops and yet managed to push this PR thru with minimal support. You Sir, blew me away. Thank you!!
 
 ---
 
