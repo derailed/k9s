@@ -47,7 +47,7 @@ func (r *Resource) ToYAML(path string, showManaged bool) (string, error) {
 
 	raw, err := ToYAML(o, showManaged)
 	if err != nil {
-		return "", fmt.Errorf("unable to marshal resource %s", err)
+		return "", fmt.Errorf("unable to marshal resource %w", err)
 	}
 	return raw, nil
 }

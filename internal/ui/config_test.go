@@ -24,6 +24,6 @@ func TestConfiguratorRefreshStyle(t *testing.T) {
 	cfg.RefreshStyles("")
 
 	assert.True(t, cfg.HasSkin())
-	assert.Equal(t, tcell.ColorGhostWhite, render.StdColor)
-	assert.Equal(t, tcell.ColorWhiteSmoke, render.ErrColor)
+	assert.Equal(t, tcell.ColorGhostWhite.TrueColor(), render.StdColor)
+	assert.Equal(t, tcell.ColorWhiteSmoke.TrueColor(), render.ErrColor)
 }

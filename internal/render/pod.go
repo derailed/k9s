@@ -257,6 +257,7 @@ func currentRes(mx *mv1beta1.PodMetrics) (resource.Quantity, resource.Quantity) 
 }
 
 func (*Pod) mapQOS(class v1.PodQOSClass) string {
+	// nolint:exhaustive
 	switch class {
 	case v1.PodQOSGuaranteed:
 		return "GA"

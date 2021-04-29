@@ -173,7 +173,7 @@ func clearScreen() {
 const (
 	k9sShell           = "k9s-shell"
 	k9sShellRetryCount = 10
-	k9sShellRetryDelay = 500 * time.Millisecond
+	k9sShellRetryDelay = 1 * time.Second
 )
 
 func ssh(a *App, node string) error {
@@ -218,6 +218,7 @@ func nukeK9sShell(a *App) error {
 }
 
 func launchShellPod(a *App, node string) error {
+	a.Flash().Infof("Launching node shell on %s...", node)
 	ns := a.Config.K9s.ActiveCluster().ShellPod.Namespace
 	spec := k9sShellPod(node, a.Config.K9s.ActiveCluster().ShellPod)
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
@@ -242,6 +243,7 @@ func launchShellPod(a *App, node string) error {
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod); err != nil {
 			return err
 		}
+		log.Debug().Msgf("Checking shell pod [%d] %v", i, pod.Status.Phase)
 		if pod.Status.Phase == v1.PodRunning {
 			return nil
 		}
@@ -258,6 +260,30 @@ func k9sShellPodName() string {
 func k9sShellPod(node string, cfg *config.ShellPod) v1.Pod {
 	var grace int64
 	var priv bool = true
+
+	log.Debug().Msgf("Shell Config %#v", cfg)
+	c := v1.Container{
+		Name:  k9sShell,
+		Image: cfg.Image,
+		VolumeMounts: []v1.VolumeMount{
+			{
+				Name:      "root-vol",
+				MountPath: "/host",
+				ReadOnly:  true,
+			},
+		},
+		Resources: asResource(cfg.Limits),
+		Stdin:     true,
+		SecurityContext: &v1.SecurityContext{
+			Privileged: &priv,
+		},
+	}
+	if len(cfg.Command) != 0 {
+		c.Command = cfg.Command
+	}
+	if len(cfg.Args) > 0 {
+		c.Args = cfg.Args
+	}
 
 	return v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
@@ -280,24 +306,7 @@ func k9sShellPod(node string, cfg *config.ShellPod) v1.Pod {
 					},
 				},
 			},
-			Containers: []v1.Container{
-				{
-					Name:  k9sShell,
-					Image: cfg.Image,
-					VolumeMounts: []v1.VolumeMount{
-						{
-							Name:      "root-vol",
-							MountPath: "/host",
-							ReadOnly:  true,
-						},
-					},
-					Resources: asResource(cfg.Limits),
-					Stdin:     true,
-					SecurityContext: &v1.SecurityContext{
-						Privileged: &priv,
-					},
-				},
-			},
+			Containers: []v1.Container{c},
 		},
 	}
 }

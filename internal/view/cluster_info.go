@@ -62,9 +62,6 @@ func (c *ClusterInfo) hasMetrics() bool {
 
 func (c *ClusterInfo) layout() {
 	for row, section := range []string{"Context", "Cluster", "User", "K9s Rev", "K8s Rev", "CPU", "MEM"} {
-		if (section == "CPU" || section == "MEM") && !c.hasMetrics() {
-			continue
-		}
 		c.SetCell(row, 0, c.sectionCell(section))
 		c.SetCell(row, 1, c.infoCell(render.NAValue))
 	}
@@ -118,6 +115,9 @@ func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
 			row = c.setCell(row, ui.AsPercDelta(prev.Cpu, curr.Cpu))
 			_ = c.setCell(row, ui.AsPercDelta(prev.Mem, curr.Mem))
 			c.setDefCon(curr.Cpu, curr.Mem)
+		} else {
+			row = c.setCell(row, "[orangered::b]n/a")
+			_ = c.setCell(row, "[orangered::b]n/a")
 		}
 		c.updateStyle()
 	})
@@ -158,6 +158,7 @@ func (c *ClusterInfo) updateStyle() {
 // Helpers...
 
 func flashLevel(l config.SeverityLevel) model.FlashLevel {
+	// nolint:exhaustive
 	switch l {
 	case config.SeverityHigh:
 		return model.FlashErr
@@ -169,6 +170,7 @@ func flashLevel(l config.SeverityLevel) model.FlashLevel {
 }
 
 func flashMessage(l config.SeverityLevel) string {
+	// nolint:exhaustive
 	switch l {
 	case config.SeverityHigh:
 		return "Critical"

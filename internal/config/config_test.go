@@ -289,6 +289,8 @@ var expectedConfig = `k9s:
         nodeShell: false
       shellPod:
         image: busybox:1.31
+        command: []
+        args: []
         namespace: default
         limits:
           cpu: 100m
@@ -309,6 +311,8 @@ var expectedConfig = `k9s:
         nodeShell: false
       shellPod:
         image: busybox:1.31
+        command: []
+        args: []
         namespace: default
         limits:
           cpu: 100m
@@ -329,6 +333,8 @@ var expectedConfig = `k9s:
         nodeShell: false
       shellPod:
         image: busybox:1.31
+        command: []
+        args: []
         namespace: default
         limits:
           cpu: 100m
@@ -373,6 +379,8 @@ var resetConfig = `k9s:
         nodeShell: false
       shellPod:
         image: busybox:1.31
+        command: []
+        args: []
         namespace: default
         limits:
           cpu: 100m

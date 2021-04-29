@@ -48,7 +48,7 @@ func (h *PulseHealth) List(ctx context.Context, ns string) ([]runtime.Object, er
 
 	mm, err := h.checkMetrics(ctx)
 	if err != nil {
-		return hh, nil
+		return hh, err
 	}
 	for _, m := range mm {
 		hh = append(hh, m)

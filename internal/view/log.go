@@ -409,6 +409,11 @@ func (l *Log) toggleFullScreenCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (l *Log) goFullScreen() {
 	l.SetFullScreen(l.indicator.FullScreen())
 	l.Box.SetBorder(!l.indicator.FullScreen())
+	if l.indicator.FullScreen() {
+		l.logs.SetBorderPadding(0, 0, 0, 0)
+	} else {
+		l.logs.SetBorderPadding(0, 0, 1, 1)
+	}
 }
 
 // ----------------------------------------------------------------------------

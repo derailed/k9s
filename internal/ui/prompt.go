@@ -129,6 +129,7 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
+	// nolint:exhaustive
 	switch evt.Key() {
 	case tcell.KeyBackspace2, tcell.KeyBackspace, tcell.KeyDelete:
 		p.model.Delete()
@@ -242,6 +243,7 @@ func (p *Prompt) iconFor(k model.BufferKind) rune {
 		return ' '
 	}
 
+	// nolint:exhaustive
 	switch k {
 	case model.CommandBuffer:
 		return '🐶'
@@ -254,6 +256,7 @@ func (p *Prompt) iconFor(k model.BufferKind) rune {
 // Helpers...
 
 func colorFor(k model.BufferKind) tcell.Color {
+	// nolint:exhaustive
 	switch k {
 	case model.CommandBuffer:
 		return tcell.ColorAqua

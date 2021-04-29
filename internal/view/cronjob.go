@@ -165,7 +165,7 @@ func (c *CronJob) makeSuspendForm(sel string, suspend bool) *tview.Form {
 func (c *CronJob) toggleSuspend(ctx context.Context, path string) error {
 	res, err := dao.AccessorFor(c.App().factory, c.GVR())
 	if err != nil {
-		return nil
+		return err
 	}
 	cronJob, ok := res.(*dao.CronJob)
 	if !ok {

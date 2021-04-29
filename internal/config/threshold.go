@@ -91,6 +91,7 @@ func (t Threshold) LevelFor(k string, v int) SeverityLevel {
 
 // SeverityColor returns an defcon level associated level.
 func (t *Threshold) SeverityColor(k string, v int) string {
+	// nolint:exhaustive
 	switch t.LevelFor(k, v) {
 	case SeverityHigh:
 		return "red"

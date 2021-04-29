@@ -188,6 +188,7 @@ func nodeRoles(node *v1.Node, res []string) {
 
 func getIPs(addrs []v1.NodeAddress) (iIP, eIP string) {
 	for _, a := range addrs {
+		// nolint:exhaustive
 		switch a.Type {
 		case v1.NodeExternalIP:
 			eIP = a.Address

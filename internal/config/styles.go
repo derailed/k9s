@@ -221,7 +221,7 @@ func (c Color) Color() tcell.Color {
 		return tcell.ColorDefault
 	}
 
-	return tcell.GetColor(string(c))
+	return tcell.GetColor(string(c)).TrueColor()
 }
 
 // Colors converts series string colors to colors.

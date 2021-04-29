@@ -23,16 +23,16 @@ const liveViewTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
 type LiveView struct {
 	*tview.Flex
 
+	title                     string
+	model                     model.ResourceViewer
 	text                      *tview.TextView
 	actions                   ui.KeyActions
 	app                       *App
-	title                     string
 	cmdBuff                   *model.FishBuff
-	model                     model.ResourceViewer
 	currentRegion, maxRegions int
+	cancel                    context.CancelFunc
 	fullScreen                bool
 	managedField              bool
-	cancel                    context.CancelFunc
 	autoRefresh               bool
 }
 
@@ -196,7 +196,9 @@ func (v *LiveView) Start() {
 		}
 		return
 	}
-	v.model.Refresh(v.defaultCtx())
+	if err := v.model.Refresh(v.defaultCtx()); err != nil {
+		log.Error().Err(err).Msgf("refresh failed")
+	}
 }
 
 func (v *LiveView) defaultCtx() context.Context {
@@ -241,6 +243,11 @@ func (v *LiveView) toggleFullScreenCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.fullScreen = !v.fullScreen
 	v.SetFullScreen(v.fullScreen)
 	v.Box.SetBorder(!v.fullScreen)
+	if v.fullScreen {
+		v.Box.SetBorderPadding(0, 0, 0, 0)
+	} else {
+		v.Box.SetBorderPadding(0, 0, 1, 1)
+	}
 
 	return nil
 }

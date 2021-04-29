@@ -175,6 +175,7 @@ func toMetricsV2b2(specs []autoscalingv2beta2.MetricSpec, statuses []autoscaling
 	for i, spec := range specs {
 		current := "<unknown>"
 
+		// nolint:exhaustive
 		switch spec.Type {
 		case autoscalingv2beta2.ExternalMetricSourceType:
 			list = append(list, externalMetricsV2b2(i, spec, statuses))
@@ -211,6 +212,7 @@ func toMetricsV2b2(specs []autoscalingv2beta2.MetricSpec, statuses []autoscaling
 func checkHPAType(i int, spec autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {
 	current := "<unknown>"
 
+	// nolint:exhaustive
 	switch spec.Type {
 	case autoscalingv2beta1.ExternalMetricSourceType:
 		return externalMetricsV2b1(i, spec, statuses)
@@ -235,7 +237,7 @@ func externalMetricsV2b2(i int, spec autoscalingv2beta2.MetricSpec, statuses []a
 	current := "<unknown>"
 
 	if spec.External.Target.AverageValue != nil {
-		if len(statuses) > i && statuses[i].External != nil && &statuses[i].External.Current.AverageValue != nil {
+		if len(statuses) > i && statuses[i].External != nil && statuses[i].External.Current.AverageValue != nil {
 			current = statuses[i].External.Current.AverageValue.String()
 		}
 		return current + "/" + spec.External.Target.AverageValue.String() + " (avg)"
@@ -272,7 +274,7 @@ func resourceMetricsV2b2(i int, spec autoscalingv2beta2.MetricSpec, statuses []a
 func externalMetricsV2b1(i int, spec autoscalingv2beta1.MetricSpec, statuses []autoscalingv2beta1.MetricStatus) string {
 	current := "<unknown>"
 	if spec.External.TargetAverageValue != nil {
-		if len(statuses) > i && statuses[i].External != nil && &statuses[i].External.CurrentAverageValue != nil {
+		if len(statuses) > i && statuses[i].External != nil && statuses[i].External.CurrentAverageValue != nil {
 			current = statuses[i].External.CurrentAverageValue.String()
 		}
 		return current + "/" + spec.External.TargetAverageValue.String() + " (avg)"

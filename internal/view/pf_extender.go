@@ -63,7 +63,7 @@ func (p *PortForwardExtender) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (p *PortForwardExtender) fetchPodName(path string) (string, error) {
 	res, err := dao.AccessorFor(p.App().factory, p.GVR())
 	if err != nil {
-		return "", nil
+		return "", err
 	}
 	ctrl, ok := res.(dao.Controller)
 	if !ok {

@@ -34,7 +34,7 @@ var _ os.FileInfo = fileInfo{}
 
 func (f fileInfo) Name() string       { return "bob" }
 func (f fileInfo) Size() int64        { return 100 }
-func (f fileInfo) Mode() os.FileMode  { return os.FileMode(644) }
+func (f fileInfo) Mode() os.FileMode  { return os.FileMode(0644) }
 func (f fileInfo) ModTime() time.Time { return testTime() }
 func (f fileInfo) IsDir() bool        { return false }
 func (f fileInfo) Sys() interface{}   { return nil }

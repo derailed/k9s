@@ -12,7 +12,7 @@ func TestNewLogoView(t *testing.T) {
 	v := ui.NewLogo(config.NewStyles())
 	v.Reset()
 
-	const elogo = "[orange::b] ____  __.________       \n[orange::b]|    |/ _/   __   \\______\n[orange::b]|      < \\____    /  ___/\n[orange::b]|    |  \\   /    /\\___ \\ \n[orange::b]|____|__ \\ /____//____  >\n[orange::b]        \\/            \\/ \n"
+	const elogo = "[#ffa500::b] ____  __.________       \n[#ffa500::b]|    |/ _/   __   \\______\n[#ffa500::b]|      < \\____    /  ___/\n[#ffa500::b]|    |  \\   /    /\\___ \\ \n[#ffa500::b]|____|__ \\ /____//____  >\n[#ffa500::b]        \\/            \\/ \n"
 	assert.Equal(t, elogo, v.Logo().GetText(false))
 	assert.Equal(t, "", v.Status().GetText(false))
 }
@@ -22,17 +22,17 @@ func TestLogoStatus(t *testing.T) {
 		logo, msg, e string
 	}{
 		"info": {
-			"[green::b] ____  __.________       \n[green::b]|    |/ _/   __   \\______\n[green::b]|      < \\____    /  ___/\n[green::b]|    |  \\   /    /\\___ \\ \n[green::b]|____|__ \\ /____//____  >\n[green::b]        \\/            \\/ \n",
+			"[#008000::b] ____  __.________       \n[#008000::b]|    |/ _/   __   \\______\n[#008000::b]|      < \\____    /  ___/\n[#008000::b]|    |  \\   /    /\\___ \\ \n[#008000::b]|____|__ \\ /____//____  >\n[#008000::b]        \\/            \\/ \n",
 			"blee",
 			"[white::b]blee\n",
 		},
 		"warn": {
-			"[mediumvioletred::b] ____  __.________       \n[mediumvioletred::b]|    |/ _/   __   \\______\n[mediumvioletred::b]|      < \\____    /  ___/\n[mediumvioletred::b]|    |  \\   /    /\\___ \\ \n[mediumvioletred::b]|____|__ \\ /____//____  >\n[mediumvioletred::b]        \\/            \\/ \n",
+			"[#c71585::b] ____  __.________       \n[#c71585::b]|    |/ _/   __   \\______\n[#c71585::b]|      < \\____    /  ___/\n[#c71585::b]|    |  \\   /    /\\___ \\ \n[#c71585::b]|____|__ \\ /____//____  >\n[#c71585::b]        \\/            \\/ \n",
 			"blee",
 			"[white::b]blee\n",
 		},
 		"err": {
-			"[red::b] ____  __.________       \n[red::b]|    |/ _/   __   \\______\n[red::b]|      < \\____    /  ___/\n[red::b]|    |  \\   /    /\\___ \\ \n[red::b]|____|__ \\ /____//____  >\n[red::b]        \\/            \\/ \n",
+			"[#ff0000::b] ____  __.________       \n[#ff0000::b]|    |/ _/   __   \\______\n[#ff0000::b]|      < \\____    /  ___/\n[#ff0000::b]|    |  \\   /    /\\___ \\ \n[#ff0000::b]|____|__ \\ /____//____  >\n[#ff0000::b]        \\/            \\/ \n",
 			"blee",
 			"[white::b]blee\n",
 		},

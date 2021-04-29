@@ -42,7 +42,7 @@ func NewHelp() *Help {
 // Init initializes the component.
 func (h *Help) Init(ctx context.Context) error {
 	if err := h.Table.Init(ctx); err != nil {
-		return nil
+		return err
 	}
 	h.SetSelectable(false, false)
 	h.resetTitle()

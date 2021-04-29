@@ -113,7 +113,7 @@ func (s *ScaleExtender) makeStyledForm() *tview.Form {
 func (s *ScaleExtender) scale(ctx context.Context, path string, replicas int) error {
 	res, err := dao.AccessorFor(s.App().factory, s.GVR())
 	if err != nil {
-		return nil
+		return err
 	}
 	scaler, ok := res.(dao.Scalable)
 	if !ok {

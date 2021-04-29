@@ -14,44 +14,44 @@ func TestYaml(t *testing.T) {
 		{
 			`api: fred
 		   version: v1`,
-			`[steelblue::b]api[white::-]: [papayawhip::]fred
-		   [steelblue::b]version[white::-]: [papayawhip::]v1`,
+			`[#4682b4::b]api[#ffffff::-]: [#ffefd5::]fred
+		   [#4682b4::b]version[#ffffff::-]: [#ffefd5::]v1`,
 		},
 		{
 			`api: <<<"search_0">>>fred<<<"">>>
 		   version: v1`,
-			`[steelblue::b]api[white::-]: [papayawhip::]["search_0"]fred[""]
-		   [steelblue::b]version[white::-]: [papayawhip::]v1`,
+			`[#4682b4::b]api[#ffffff::-]: [#ffefd5::]["search_0"]fred[""]
+		   [#4682b4::b]version[#ffffff::-]: [#ffefd5::]v1`,
 		},
 		{
 			`api:
 			version: v1`,
-			`[steelblue::b]api[white::-]:
-			[steelblue::b]version[white::-]: [papayawhip::]v1`,
+			`[#4682b4::b]api[#ffffff::-]:
+			[#4682b4::b]version[#ffffff::-]: [#ffefd5::]v1`,
 		},
 		{
 			"      fred:blee",
-			"[papayawhip::]      fred:blee",
+			"[#ffefd5::]      fred:blee",
 		},
 		{
 			"fred blee: blee",
-			"[steelblue::b]fred blee[white::-]: [papayawhip::]blee",
+			"[#4682b4::b]fred blee[#ffffff::-]: [#ffefd5::]blee",
 		},
 		{
 			"Node-Selectors:  <none>",
-			"[steelblue::b]Node-Selectors[white::-]: [papayawhip::] <none>",
+			"[#4682b4::b]Node-Selectors[#ffffff::-]: [#ffefd5::] <none>",
 		},
 		{
 			"fred.blee:  <none>",
-			"[steelblue::b]fred.blee[white::-]: [papayawhip::] <none>",
+			"[#4682b4::b]fred.blee[#ffffff::-]: [#ffefd5::] <none>",
 		},
 		{
 			"certmanager.k8s.io/cluster-issuer: nameOfClusterIssuer",
-			"[steelblue::b]certmanager.k8s.io/cluster-issuer[white::-]: [papayawhip::]nameOfClusterIssuer",
+			"[#4682b4::b]certmanager.k8s.io/cluster-issuer[#ffffff::-]: [#ffefd5::]nameOfClusterIssuer",
 		},
 		{
 			"Message: Pod The node was low on resource: [DiskPressure].",
-			"[steelblue::b]Message[white::-]: [papayawhip::]Pod The node was low on resource: [DiskPressure[].",
+			"[#4682b4::b]Message[#ffffff::-]: [#ffefd5::]Pod The node was low on resource: [DiskPressure[].",
 		},
 	}
 

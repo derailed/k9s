@@ -56,6 +56,7 @@ func (*Section) outcomeRefs(parent *TreeNode, section render.Section) {
 
 func colorize(s string, l config.Level) string {
 	c := "green"
+	// nolint:exhaustive
 	switch l {
 	case config.ErrorLevel:
 		c = "red"

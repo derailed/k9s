@@ -17,9 +17,9 @@ func TestNewMenu(t *testing.T) {
 		{Mnemonic: "0", Description: "zero", Visible: true},
 	})
 
-	assert.Equal(t, " [fuchsia:-:b]<0> [white:-:d]zero ", v.GetCell(0, 0).Text)
-	assert.Equal(t, " [dodgerblue:-:b]<a> [white:-:d]bleeA ", v.GetCell(0, 1).Text)
-	assert.Equal(t, " [dodgerblue:-:b]<b> [white:-:d]bleeB ", v.GetCell(1, 1).Text)
+	assert.Equal(t, " [#ff00ff:-:b]<0> [#ffffff:-:d]zero ", v.GetCell(0, 0).Text)
+	assert.Equal(t, " [#1e90ff:-:b]<a> [#ffffff:-:d]bleeA ", v.GetCell(0, 1).Text)
+	assert.Equal(t, " [#1e90ff:-:b]<b> [#ffffff:-:d]bleeB ", v.GetCell(1, 1).Text)
 }
 
 func TestActionHints(t *testing.T) {
