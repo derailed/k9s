@@ -10,6 +10,7 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/rs/zerolog/log"
@@ -18,12 +19,12 @@ import (
 func computeFilename(cluster, ns, title, path string) (string, error) {
 	now := time.Now().UnixNano()
 
-	dir := filepath.Join(config.K9sDumpDir, sanitizeFilename(cluster))
+	dir := filepath.Join(config.K9sDumpDir, dao.SanitizeFilename(cluster))
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}
 
-	name := title + "-" + sanitizeFilename(path)
+	name := title + "-" + dao.SanitizeFilename(path)
 	if path == "" {
 		name = title
 	}

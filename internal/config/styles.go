@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"io/ioutil"
 	"path/filepath"
 
@@ -196,7 +197,22 @@ func NewColor(c string) Color {
 
 // String returns color as string.
 func (c Color) String() string {
-	return string(c)
+	if c.isHex() {
+		return string(c)
+	}
+	if c == DefaultColor {
+		return "-"
+	}
+	col := c.Color().TrueColor().Hex()
+	if col < 0 {
+		return "-"
+	}
+
+	return fmt.Sprintf("#%06x", col)
+}
+
+func (c Color) isHex() bool {
+	return len(c) == 7 && c[0] == '#'
 }
 
 // Color returns a view color.
@@ -204,10 +220,8 @@ func (c Color) Color() tcell.Color {
 	if c == DefaultColor {
 		return tcell.ColorDefault
 	}
-	if color, ok := tcell.ColorNames[c.String()]; ok {
-		return color
-	}
-	return tcell.GetColor(c.String())
+
+	return tcell.GetColor(string(c))
 }
 
 // Colors converts series string colors to colors.

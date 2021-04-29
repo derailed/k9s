@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"regexp"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/render"
@@ -14,6 +15,9 @@ import (
 var (
 	_ Accessor = (*ScreenDump)(nil)
 	_ Nuker    = (*ScreenDump)(nil)
+
+	// InvalidCharsRX contains invalid filename characters.
+	invalidPathCharsRX = regexp.MustCompile(`[:/\\]+`)
 )
 
 // ScreenDump represents a scraped resources.
@@ -33,7 +37,7 @@ func (d *ScreenDump) List(ctx context.Context, _ string) ([]runtime.Object, erro
 		return nil, errors.New("no screendump dir found in context")
 	}
 
-	ff, err := ioutil.ReadDir(dir)
+	ff, err := ioutil.ReadDir(SanitizeFilename(dir))
 	if err != nil {
 		return nil, err
 	}
@@ -44,4 +48,10 @@ func (d *ScreenDump) List(ctx context.Context, _ string) ([]runtime.Object, erro
 	}
 
 	return oo, nil
+}
+
+// Helpers...
+
+func SanitizeFilename(name string) string {
+	return invalidPathCharsRX.ReplaceAllString(name, "-")
 }
