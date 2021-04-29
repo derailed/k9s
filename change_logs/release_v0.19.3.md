@@ -6,7 +6,7 @@
 
 Thank you to all that contributed with flushing out issues and enhancements for K9s! I'll try to mark some of these issues as fixed. But if you don't mind grab the latest rev and see if we're happier with some of the fixes! If you've filed an issue please help me verify and close. Your support, kindness and awesome suggestions to make K9s better is as ever very much noticed and appreciated!
 
-Also if you dig this tool, consider joining our [sponsorhip program](https://github.com/sponsors/derailed) and/or make some noise on social! [@kitesurfer](https://twitter.com/kitesurfer)
+Also if you dig this tool, consider joining our [sponsorship program](https://github.com/sponsors/derailed) and/or make some noise on social! [@kitesurfer](https://twitter.com/kitesurfer)
 
 On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_invite/enQtOTA5MDEyNzI5MTU0LWQ1ZGI3MzliYzZhZWEyNzYxYzA3NjE0YTk1YmFmNzViZjIyNzhkZGI0MmJjYzhlNjdlMGJhYzE2ZGU1NjkyNTM)
 
@@ -18,11 +18,11 @@ Thanks to the good Helm folks, we're now back on par with the Helm charts suppor
 
 ## Boh-Bye Windows 386!
 
-As of this drop, I've decided to axe Windows 386 support. Our good friend [Guy Barrette](https://github.com/guybarrette) reported K9s Windows-386 binary is triping his virus scanner. After double checking my installed shas/binaries/dependencies/etc... and performing vulnerabily scans on various win-i386 K9s binaries, I just could not figure out which dependencies are causing the exec to bomb on the scans??
+As of this drop, I've decided to axe Windows 386 support. Our good friend [Guy Barrette](https://github.com/guybarrette) reported K9s Windows-386 binary is tripping his virus scanner. After double checking my installed SHAs/binaries/dependencies/etc... and performing vulnerability scans on various win-i386 K9s binaries, I just could not figure out which dependencies are causing the exec to bomb on the scans??
 
 Note: This does not necessary entails that there is a deliberate or malicious intent with the software, but likely a false positive thrown by the Windows virus scanner. This has been [reported](https://golang.org/doc/faq#virus) with other GO binaries on windows as well ;(
 
-That said, I've repeatdly scanned the K9s Windows-x64 and ended up with a clean bill of health on every single scans. So I've decided to drop the 386 windows support for the time being. If that causes you some grief, please land a hand as I am fresh out of ideas...
+That said, I've repeatedly scanned the K9s Windows-x64 and ended up with a clean bill of health on every single scans. So I've decided to drop the 386 windows support for the time being. If that causes you some grief, please land a hand as I am fresh out of ideas...
 
 ## And Now For Something A Bit More... Controversial?
 

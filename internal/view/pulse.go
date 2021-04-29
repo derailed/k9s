@@ -18,8 +18,8 @@ import (
 	"github.com/gdamore/tcell/v2"
 )
 
-// Grapheable represents a graphic component.
-type Grapheable interface {
+// Graphable represents a graphic component.
+type Graphable interface {
 	tview.Primitive
 
 	// ID returns the graph id.
@@ -60,7 +60,7 @@ type Pulse struct {
 	model    *model.Pulse
 	cancelFn context.CancelFunc
 	actions  ui.KeyActions
-	charts   []Grapheable
+	charts   []Graphable
 }
 
 // NewPulse returns a new alias view.
@@ -83,7 +83,7 @@ func (p *Pulse) Init(ctx context.Context) error {
 		return err
 	}
 
-	p.charts = []Grapheable{
+	p.charts = []Graphable{
 		p.makeGA(image.Point{X: 0, Y: 0}, image.Point{X: 2, Y: 2}, "apps/v1/deployments"),
 		p.makeGA(image.Point{X: 0, Y: 2}, image.Point{X: 2, Y: 2}, "apps/v1/replicasets"),
 		p.makeGA(image.Point{X: 0, Y: 4}, image.Point{X: 2, Y: 2}, "apps/v1/statefulsets"),
@@ -139,7 +139,7 @@ func (p *Pulse) PulseChanged(c *health.Check) {
 		return
 	}
 
-	v, ok := p.GetItem(index).Item.(Grapheable)
+	v, ok := p.GetItem(index).Item.(Graphable)
 	if !ok {
 		return
 	}
@@ -201,7 +201,7 @@ func (p *Pulse) bindKeys() {
 	})
 
 	for i, v := range p.charts {
-		t := strings.Title(client.NewGVR(v.(Grapheable).ID()).R())
+		t := strings.Title(client.NewGVR(v.(Graphable).ID()).R())
 		p.actions[tcell.Key(ui.NumKeys[i])] = ui.NewKeyAction(t, p.sparkFocusCmd(i), true)
 	}
 }
@@ -299,7 +299,7 @@ func (p *Pulse) sparkFocusCmd(i int) func(evt *tcell.EventKey) *tcell.EventKey {
 
 func (p *Pulse) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v := p.App().GetFocus()
-	s, ok := v.(Grapheable)
+	s, ok := v.(Graphable)
 	if !ok {
 		return nil
 	}
@@ -365,7 +365,7 @@ func (p *Pulse) makeGA(loc image.Point, span image.Point, gvr string) *tchart.Ga
 // ----------------------------------------------------------------------------
 // Helpers
 
-func nextFocus(pp []Grapheable, index int) (int, tview.Primitive) {
+func nextFocus(pp []Graphable, index int) (int, tview.Primitive) {
 	if index >= len(pp) {
 		return 0, pp[0]
 	}
@@ -377,7 +377,7 @@ func nextFocus(pp []Grapheable, index int) (int, tview.Primitive) {
 	return index, pp[index]
 }
 
-func findIndex(pp []Grapheable, p tview.Primitive) int {
+func findIndex(pp []Graphable, p tview.Primitive) int {
 	for i, v := range pp {
 		if v == p {
 			return i
@@ -386,9 +386,9 @@ func findIndex(pp []Grapheable, p tview.Primitive) int {
 	return 0
 }
 
-func findIndexGVR(pp []Grapheable, gvr string) (int, bool) {
+func findIndexGVR(pp []Graphable, gvr string) (int, bool) {
 	for i, v := range pp {
-		if v.(Grapheable).ID() == gvr {
+		if v.(Graphable).ID() == gvr {
 			return i, true
 		}
 	}

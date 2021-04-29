@@ -17,7 +17,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 This was in the backlogs for a while, so I've decided to give it a bit of TLC. Thank you [Mitchell Maler](https://github.com/mitchellmaler) for this issue!
 
 🏝Feeling your clusters could use a bit of spring cleaning 🧽🧼?
-As of this drop, you can now perform direct cluster nodes maintenance by leveraging cordon `c`, uncordon `u` and drain `d` while in node view! Each operation comes with a dialog to either configure the options or comfirm the operation. You dig?
+As of this drop, you can now perform direct cluster nodes maintenance by leveraging cordon `c`, uncordon `u` and drain `d` while in node view! Each operation comes with a dialog to either configure the options or confirm the operation. You dig?
 
 ## Resolved Bugs/Features/PRs
 

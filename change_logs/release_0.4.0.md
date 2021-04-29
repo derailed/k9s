@@ -23,7 +23,7 @@ Thank you so much for your support and awesome suggestions to make K9s better!!
    4. Any verbs not in this standard K8s verb list, will end up in the EXTRAS column.
    5. For non resource URLS, we map standard REST verbs to K8s verbs ie post=create patch=update, etc..
    6. Added initial sorts by name and group while in RBAC view.
-   7. Usage: To activate, enter command mode via `:cr` or `:ro` for clusterole(cr)/role(ro), select a row and press `<enter>`
+   7. Usage: To activate, enter command mode via `:cr` or `:ro` for clusterrole(cr)/role(ro), select a row and press `<enter>`
    8. To bail out of the view and return to previous use `p` or `<esc>`
 2. One feature that was mentioned in the comments for the RBAC feature above Tx [faheem-cliqz](https://github.com/faheem-cliqz)! was the ability to check RBAC rules for a given user. Namely reverse RBAC lookup
    1. Added a new view, code name *Fu* view to show all the clusterroles/roles associated with a given user.

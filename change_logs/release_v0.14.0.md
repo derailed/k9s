@@ -38,7 +38,7 @@ Also I'd like to take this opportunity to recognize and thank a few folks that h
 * [Eldad Assis](https://github.com/eldada)
 * [Tobias](https://github.com/mycrEEpy)
 * [Helge Sychla](https://github.com/hsychla)
-* [Markusi75](https://github.com/Makusi75)
+* [Makusi75](https://github.com/Makusi75)
 * [Swe-Covis](https://github.com/swe-covis)
 * [Evgeniy Shubin](https://github.com/com30n)
 

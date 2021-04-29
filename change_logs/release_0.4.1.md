@@ -37,7 +37,7 @@ Thank you so much for your support and awesome suggestions to make K9s better!!
 
 ### o ~~FuView~~ is now PolicyView
 
-  The Fu command has been depracated for pol(icy) command to see all RBAC policies available on a subject. You can use `pol` (instead of `fu`) to list out RBAC policies associated with a
+  The Fu command has been deprecated for pol(icy) command to see all RBAC policies available on a subject. You can use `pol` (instead of `fu`) to list out RBAC policies associated with a
   user/group or serviceaccount.
 
   ```text

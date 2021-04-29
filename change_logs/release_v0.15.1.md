@@ -47,7 +47,7 @@ Keep in mind, the paint is way fresh here and this feature could be a complete d
 
 ## Moving Forward!
 
-A few folks had mentioned the eagerness to port-forward directly from a pod or a service. Well now you can! Port Forwarding is now available on both the pod view and services view. Note! at the end of the day, you are still port-fowarding to a container! So the port-forward dialog is a bit different for these views as there might be several container ports available now when looking at this from a pod perspective. So the first field in the dialog is a combo-box that allows one to pick their desired ports. The rest of the dialog works the same as the container port-forward dialog.
+A few folks had mentioned the eagerness to port-forward directly from a pod or a service. Well now you can! Port Forwarding is now available on both the pod view and services view. Note! at the end of the day, you are still port-forwarding to a container! So the port-forward dialog is a bit different for these views as there might be several container ports available now when looking at this from a pod perspective. So the first field in the dialog is a combo-box that allows one to pick their desired ports. The rest of the dialog works the same as the container port-forward dialog.
 
 ## Resolved Bugs/Features/PRs
 

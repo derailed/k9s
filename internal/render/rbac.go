@@ -164,7 +164,7 @@ func (rr Rules) Upsert(r RuleRes) Rules {
 	return rr
 }
 
-// Find locates a row by id. Retturns false is not found.
+// Find locates a row by id. Returns false is not found.
 func (rr Rules) find(res string) (int, bool) {
 	for i, r := range rr {
 		if r.Resource == res {

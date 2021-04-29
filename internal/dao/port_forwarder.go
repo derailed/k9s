@@ -72,12 +72,12 @@ func PortForwardID(path, co string) string {
 	return path + ":" + co
 }
 
-// Container returns the targetes container.
+// Container returns the target's container.
 func (p *PortForwarder) Container() string {
 	return p.container
 }
 
-// Stop terminates a port forard
+// Stop terminates a port forward
 func (p *PortForwarder) Stop() {
 	log.Debug().Msgf("<<< Stopping PortForward %q %v", p.path, p.ports)
 	p.active = false

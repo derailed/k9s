@@ -47,7 +47,7 @@ func (f Fields) Clone() Fields {
 
 // ----------------------------------------------------------------------------
 
-// Row represents a colllection of columns.
+// Row represents a collection of columns.
 type Row struct {
 	ID     string
 	Fields Fields
@@ -135,7 +135,7 @@ func (rr Rows) Upsert(r Row) Rows {
 	return rr
 }
 
-// Find locates a row by id. Retturns false is not found.
+// Find locates a row by id. Returns false is not found.
 func (rr Rows) Find(id string) (int, bool) {
 	for i, r := range rr {
 		if r.ID == id {

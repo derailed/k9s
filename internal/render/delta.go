@@ -4,7 +4,7 @@ import (
 	"reflect"
 )
 
-// DeltaRow represents a collection of row detlas between old and new row.
+// DeltaRow represents a collection of row deltas between old and new row.
 type DeltaRow []string
 
 // NewDeltaRow computes the delta between 2 rows.

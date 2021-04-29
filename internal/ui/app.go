@@ -203,19 +203,19 @@ func (a *App) HasAction(key tcell.Key) (KeyAction, bool) {
 	return act, ok
 }
 
-// GetActions returns a collection of actiona.
+// GetActions returns a collection of actions.
 func (a *App) GetActions() KeyActions {
 	return a.actions
 }
 
-// AddActions returns the application actiona.
+// AddActions returns the application actions.
 func (a *App) AddActions(aa KeyActions) {
 	for k, v := range aa {
 		a.actions[k] = v
 	}
 }
 
-// Views return the application root viewa.
+// Views return the application root views.
 func (a *App) Views() map[string]tview.Primitive {
 	return a.views
 }
@@ -247,7 +247,7 @@ func (a *App) redrawCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 // View Accessors...
 
-// Crumbs return app crumba.
+// Crumbs return app crumbs.
 func (a *App) Crumbs() *Crumbs {
 	return a.views["crumbs"].(*Crumbs)
 }

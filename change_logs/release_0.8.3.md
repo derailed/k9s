@@ -18,7 +18,7 @@ NetworkPolicy resource is now available under the command `np` while in command 
 
 ### Arrrggg! New CLI Argument
 
-There isa new K9s command option available on the CLI that affords for launching K9s with a given resource. For example using `k9s -c svc` willlaunch K9s with a preloaded service view. You can use the same aliases as you would while in K9s to navigate a resources. For all supports resource aliases please view the `Alias View` using `Ctrl-A`.
+There is a new K9s command option available on the CLI that affords for launching K9s with a given resource. For example using `k9s -c svc` will launch K9s with a preloaded service view. You can use the same aliases as you would while in K9s to navigate a resources. For all supports resource aliases please view the `Alias View` using `Ctrl-A`.
 
 ### CRDS!
 

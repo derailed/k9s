@@ -14,7 +14,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 <img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s_doc.png" align="center"/>
 
-This is one of these drops that may make you wonder if you'll go from zero to hero or likely the reverse?? Will see how this goes... Please proceed with caution on this one as there could very well be much distrubances in the force...
+This is one of these drops that may make you wonder if you'll go from zero to hero or likely the reverse?? Will see how this goes... Please proceed with caution on this one as there could very well be much disturbances in the force...
 
 Lots of code churns so could have totally hose some stuff, but like my GranPappy used to say `can't cook without making a mess!`
 
@@ -28,7 +28,7 @@ While viewing some resources that may contain errors, sorting on columns may not
 
 ## Does Your Cluster Have A Pulse 💓?
 
-In this drop, we're introducing a brand new view aka `K9s Pulses` 💓. This is a summary view listing the most sailient resources in your clusters and their current states. This view tracks two main metrics ie Ok and Toast on a 5sec beat. This view affords cluster activity and failure rates. BTW this is the zero to hero deal 🙀 Hopefully you'll dig it as this was much work to put together and I personally think it's the `ducks nuts`... If you like, please give me some luving on social or via GH sponsors as batteries are running low...
+In this drop, we're introducing a brand new view aka `K9s Pulses` 💓. This is a summary view listing the most salient resources in your clusters and their current states. This view tracks two main metrics ie Ok and Toast on a 5sec beat. This view affords cluster activity and failure rates. BTW this is the zero to hero deal 🙀 Hopefully you'll dig it as this was much work to put together and I personally think it's the `ducks nuts`... If you like, please give me some luving on social or via GH sponsors as batteries are running low...
 
 To active, enter command mode by typing in `:pulse` aliases are `pu`, `pulses` or `hz`
 To navigate thru the various pulses, you can use `tab`/`backtab` or use the menu index (just like namespaces selectors). Once on a pulse view, you can press `enter` to see the associated resource table view. Pressing `esc` will nav you back.

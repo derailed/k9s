@@ -12,7 +12,7 @@ Also if you dig this tool, please make some noise on social! [@kitesurfer](https
 
 ### Searchable Logs
 
-There has been quiet a few demands for this feature. It should now be generally available in this drop. It works the same as the resource view ie `/fred`, you can also specify a fuzzy filter using `/-f blee-duh`. The paint is still fresh on that deal and not super confident that it will work nominaly as I had to rework the logs to enable. So totally possible I've hosed something in the process.
+There has been quiet a few demands for this feature. It should now be generally available in this drop. It works the same as the resource view ie `/fred`, you can also specify a fuzzy filter using `/-f blee-duh`. The paint is still fresh on that deal and not super confident that it will work nominally as I had to rework the logs to enable. So totally possible I've hosed something in the process.
 
 ### APIServer Dud
 
@@ -21,7 +21,7 @@ At times, it could be you've lost your api server connection while K9s was up wh
 ### FullScreen Logs
 
 I've been told having a flag to set fullScreen mode preference while viewing the logs would be `awesome`. Thanks [Fardin Khanjani](https://github.com/fardin01)!
-So there is now a new K9s config flag available to set your fullsreen logs `drathers` in your .k9s/config.yml. This flag defaults to false if not set.
+So there is now a new K9s config flag available to set your fullscreen logs `drathers` in your .k9s/config.yml. This flag defaults to false if not set.
 
 Here is a snippet:
 

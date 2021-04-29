@@ -14,7 +14,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ## 🙀(PLUGIN-19)
 
-[BR]eaking bad on K9s plugins! In previous releases, we used the COL<INDEX> semantic to reference view column data in the plugin extensions. In this drop, we've axed this in favor of column name vs column index. This makes K9s plugin more readable and usable. Also, in light of custom columns, this old semantic just did not jive to well. To boot, all columns available on the viewed resource, regardless of display preferences or order are now free game to plugin authors. So for folks currently leveraging K9s plugins, this drop will break you I am hopeful you guys dig this approach betta??
+[Br]eaking [Ba]d on K9s plugins! In previous releases, we used the COL<INDEX> semantic to reference view column data in the plugin extensions. In this drop, we've axed this in favor of column name vs column index. This makes K9s plugin more readable and usable. Also, in light of custom columns, this old semantic just did not jive to well. To boot, all columns available on the viewed resource, regardless of display preferences or order are now free game to plugin authors. So for folks currently leveraging K9s plugins, this drop will break you I am hopeful you guys dig this approach betta'??
 
 Here is a sample plugin file that highlights the new functionality. Please see the updated docs for additional information!
 

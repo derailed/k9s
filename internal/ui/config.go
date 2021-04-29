@@ -17,7 +17,7 @@ type synchronizer interface {
 	QueueUpdate(func())
 }
 
-// Configurator represents an application configurationa.
+// Configurator represents an application configuration.
 type Configurator struct {
 	Config     *config.Config
 	Styles     *config.Styles

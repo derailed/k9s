@@ -16,7 +16,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ## Pulses Part Duh!
 
-In this drop, we've updated pulses to now show used/allocatable resources for cpu and mem as recommended by the awesome and kind [Eldad Assis](https://github.com/eldada)! We've also added the concept of threshold to alert you when things in your clusters are going south. These currently come in the shape of cpu and mem thresholds. They are set at the cluster level. K9s will now let you know when these limits are reached or surpassed. As it stands, the k9s logo will change color and a flash message will appear to let you know which resource thresold was exceeded. Once the load subsumes the logo/flash will return to their orginal states.
+In this drop, we've updated pulses to now show used/allocatable resources for cpu and mem as recommended by the awesome and kind [Eldad Assis](https://github.com/eldada)! We've also added the concept of threshold to alert you when things in your clusters are going south. These currently come in the shape of cpu and mem thresholds. They are set at the cluster level. K9s will now let you know when these limits are reached or surpassed. As it stands, the k9s logo will change color and a flash message will appear to let you know which resource threshold was exceeded. Once the load subsumes the logo/flash will return to their original states.
 
 In order to override the default thresholds (cpu/mem: 80% ), you will need to modify your `$HOME/.k9s/config.yml` using the new config section named `thresholds` as follows:
 

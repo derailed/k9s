@@ -228,7 +228,7 @@ K9s uses aliases to navigate most K8s resources.
 | View a Kubernetes resource using singular/plural or short-name | `:`po⏎                        | accepts singular, plural, short-name or alias ie pod or pods           |
 | View a Kubernetes resource in a given namespace                | `:`alias namespace⏎           |                                                                        |
 | Filter out a resource view given a filter                      | `/`filter⏎                    | Regex2 supported ie `fred|blee` to filter resources named fred or blee |
-| Inverse regex filer                                            | `/`! filter⏎                  | Keep everything that *doesn't* match.                                  |
+| Inverse regex filter                                           | `/`! filter⏎                  | Keep everything that *doesn't* match.                                  |
 | Filter resource view by labels                                 | `/`-l label-selector⏎         |                                                                        |
 | Fuzzy find a resource given a filter                           | `/`-f filter⏎                 |                                                                        |
 | Bails out of view/command/filter mode                          | `<esc>`                       |                                                                        |
@@ -688,7 +688,7 @@ You can style K9s based on your own sense of look and style. Skins are YAML file
 You can also change K9s skins based on the cluster you are connecting too. In this case, you can specify the skin file name as `$HOME/.k9s/mycontext_skin.yml`
 Below is a sample skin file, more skins are available in the skins directory in this repo, just simply copy any of these in your user's home dir as `skin.yml`.
 
-Colors can be defined by name or uing an hex representation. Of recent, we've added a color named `default` to indicate a transparent background color to preserve your terminal background color settings if so desired.
+Colors can be defined by name or using a hex representation. Of recent, we've added a color named `default` to indicate a transparent background color to preserve your terminal background color settings if so desired.
 
 > NOTE: This is very much an experimental feature at this time, more will be added/modified if this feature has legs so thread accordingly!
 

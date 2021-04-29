@@ -19,7 +19,7 @@ back in January 2019 that I've seen some many external contributions and PRs. Th
 
 As you may have noticed, there is a new voice on the project. [Gustavo Silva Paiva](https://github.com/paivagustavo) kindly accepted to become a K9s core member. Gustavo has been following and contributing to K9s for a while now and have patiently plowed thru my code ;( Raising issues, fixing them, improving code and test coverage, he has demonstrated a genuine interest on making sure K9s is better for all of us.
 
-Actually, I can say enough about Gustavo since I don't know him that well yet ;) But I can tell from my interactions with him that he is a great human being, smart, kind and concensious and hence an awesome K9s addition. Please help me in welcoming him to the K9s pac!
+Actually, I can say enough about Gustavo since I don't know him that well yet ;) But I can tell from my interactions with him that he is a great human being, smart, kind and consensus and hence an awesome K9s addition. Please help me in welcoming him to the K9s pac!
 
 ### Breaking Bad
 
