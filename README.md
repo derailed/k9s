@@ -9,32 +9,10 @@ for changes and offers subsequent commands to interact with your observed resour
 
 ---
 
-## Announcement
+## Note...
 
-<center>
-<img src="https://raw.githubusercontent.com/imhotepio/k9salpha/master/assets/k9sa_blue_300.png" alt="k9salpha" width="300"/>
-<h1>K9sAlpha RC-0 Is Out!</h1>
-</center>
-
-<br/>
-
-Fresh off the press [K9sAlpha](https://k9salpha.io) is now available!
-Please read the details in the docs and checkout the new repo.
-
-- Store: [K9sAlpha Store](https://store.k9salpha.io).
-- Screencast: [K9sAlpha-v1.0.0-rc.0](https://www.youtube.com/watch?v=hLYK0oPLOIY&t=787s)
-
-> NOTE: Upon purchase, in order to activate your license, please send us a valid user name so we can generate your personalized license key. All licenses are valid for a whole year from the date of purchase.
-
-For all other cases, please reach out to us so we can discuss your needs:
-
-- Corporate licenses
-- Education
-- Non Profit
-- Active K9s sponsors
-- Long term K9s supporters and contributors
-- Can't afford it
-- Others...
+As you may know K9s is not pimped out by a big corporation with deep pockets. It is a complex OSS project that demands a lot of my time to maintain. K9s will remain OSS and free. That said if you feel, K9s makes your day to day Kubernetes journey a bit brighter, please consider sponsoring this repo or purchasing a [K9sAlpha license](https://k9salpha.io).
+This does go a long way in keeping us our servers lights on and beers in our fridge! Thank you!!
 
 ---
 
