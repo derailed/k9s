@@ -11,8 +11,9 @@ for changes and offers subsequent commands to interact with your observed resour
 
 ## Note...
 
-As you may know K9s is not pimped out by a big corporation with deep pockets. It is a complex OSS project that demands a lot of my time to maintain. K9s will remain OSS and free. That said if you feel, K9s makes your day to day Kubernetes journey a bit brighter, please consider sponsoring this repo or purchasing a [K9sAlpha license](https://k9salpha.io).
-This does go a long way in keeping us our servers lights on and beers in our fridge! Thank you!!
+As you may know k9s is not pimped out by a big corporation with deep pockets. It is a complex OSS project that demands a lot of my time to maintain and support. K9s will always remain OSS and therefore free! That said if you feel, k9s makes your day to day Kubernetes journey a tad brighter, please consider sponsoring us or purchase a [K9sAlpha license](https://k9salpha.io). Your donations will go a long way in keeping our servers lights on and beers in our fridge! 
+
+**Thank you!**
 
 ---
 
