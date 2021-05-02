@@ -27,6 +27,7 @@ type Config struct {
 	rawConfig    *clientcmdapi.Config
 	restConfig   *restclient.Config
 	mutex        *sync.RWMutex
+	OverrideNS bool
 }
 
 // NewConfig returns a new k8s config or an error if the flags are invalid.

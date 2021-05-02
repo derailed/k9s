@@ -595,7 +595,7 @@ func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	if err := a.inject(NewHelp()); err != nil {
+	if err := a.inject(NewHelp(a, a.Styles)); err != nil {
 		a.Flash().Err(err)
 	}
 

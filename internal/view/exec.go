@@ -14,6 +14,7 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/fatih/color"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	kerrors "k8s.io/apimachinery/pkg/api/errors"
@@ -192,9 +193,35 @@ func ssh(a *App, node string) error {
 		return err
 	}
 	ns := a.Config.K9s.ActiveCluster().ShellPod.Namespace
-	shellIn(a, client.FQN(ns, k9sShellPodName()), k9sShell)
+	sshIn(a, client.FQN(ns, k9sShellPodName()), k9sShell)
 
 	return nil
+}
+
+func sshIn(a *App, fqn, co string) {
+	cfg := a.Config.K9s.ActiveCluster().ShellPod
+	os, err := getPodOS(a.factory, fqn)
+	if err != nil {
+		log.Warn().Err(err).Msgf("os detect failed")
+	}
+
+	args := buildShellArgs("exec", fqn, co, a.Conn().Config().Flags().KubeConfig)
+	args = append(args, "--")
+	if len(cfg.Command) > 0 {
+		args = append(args, cfg.Command...)
+		args = append(args, cfg.Args...)
+	} else {
+		if os == windowsOS {
+			args = append(args, "--", powerShell)
+		}
+		args = append(args, "sh", "-c", shellCheck)
+	}
+	log.Debug().Msgf("ARGS %#v", args)
+
+	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
+	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, fqn, co), args: args}) {
+		a.Flash().Err(errors.New("Shell exec failed"))
+	}
 }
 
 func nukeK9sShell(a *App) error {
@@ -224,7 +251,7 @@ func launchShellPod(a *App, node string) error {
 	a.Flash().Infof("Launching node shell on %s...", node)
 	ns := a.Config.K9s.ActiveCluster().ShellPod.Namespace
 	spec := k9sShellPod(node, a.Config.K9s.ActiveCluster().ShellPod)
-	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	dial, err := a.Conn().Dial()

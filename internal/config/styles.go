@@ -35,10 +35,20 @@ type (
 	// Style tracks K9s styles.
 	Style struct {
 		Body   Body   `yaml:"body"`
+		Help   Help   `yaml:"help"`
 		Frame  Frame  `yaml:"frame"`
 		Info   Info   `yaml:"info"`
 		Views  Views  `yaml:"views"`
 		Dialog Dialog `yaml:"dialog"`
+	}
+
+	// Helps tracks help styles.
+	Help struct {
+		FgColor      Color `yaml:"fgColor"`
+		BgColor      Color `yaml:"bgColor"`
+		SectionColor Color `yaml:"sectionColor"`
+		KeyColor     Color `yaml:"keyColor"`
+		NumKeyColor  Color `yaml:"numKeyColor"`
 	}
 
 	// Body tracks body styles.
@@ -236,6 +246,7 @@ func (c Colors) Colors() []tcell.Color {
 func newStyle() Style {
 	return Style{
 		Body:   newBody(),
+		Help:   newHelp(),
 		Frame:  newFrame(),
 		Info:   newInfo(),
 		Views:  newViews(),
@@ -287,6 +298,16 @@ func newFrame() Frame {
 		Menu:   newMenu(),
 		Crumb:  newCrumb(),
 		Status: newStatus(),
+	}
+}
+
+func newHelp() Help {
+	return Help{
+		FgColor:      "cadetblue",
+		BgColor:      "black",
+		SectionColor: "green",
+		KeyColor:     "dodgerblue",
+		NumKeyColor:  "fuchsia",
 	}
 }
 

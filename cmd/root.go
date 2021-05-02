@@ -94,11 +94,7 @@ func loadConfiguration() *config.Config {
 	k9sCfg.K9s.OverrideWrite(*k9sFlags.Write)
 	k9sCfg.K9s.OverrideCommand(*k9sFlags.Command)
 
-	if isBoolSet(k9sFlags.AllNamespaces) && k9sCfg.SetActiveNamespace(client.AllNamespaces) != nil {
-		log.Error().Msg("Setting active namespace")
-	}
-
-	if err := k9sCfg.Refine(k8sFlags); err != nil {
+	if err := k9sCfg.Refine(k8sFlags, k9sFlags); err != nil {
 		log.Error().Err(err).Msgf("refine failed")
 	}
 	conn, err := client.InitConnection(k8sCfg)
@@ -120,10 +116,6 @@ func loadConfiguration() *config.Config {
 	}
 
 	return k9sCfg
-}
-
-func isBoolSet(b *bool) bool {
-	return b != nil && *b
 }
 
 func parseLevel(level string) zerolog.Level {
@@ -300,4 +292,8 @@ func initCertFlags() {
 		"",
 		"Bearer token for authentication to the API server",
 	)
+}
+
+func isBoolSet(b *bool) bool {
+	return b != nil && *b
 }

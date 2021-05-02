@@ -29,14 +29,28 @@ type HelpFunc func() model.MenuHints
 type Help struct {
 	*Table
 
+	styles                   *config.Styles
+	hints                    HelpFunc
 	maxKey, maxDesc, maxRows int
 }
 
 // NewHelp returns a new help viewer.
-func NewHelp() *Help {
-	return &Help{
-		Table: NewTable(client.NewGVR("help")),
+func NewHelp(app *App, styles *config.Styles) *Help {
+	h := &Help{
+		Table:  NewTable(client.NewGVR("help")),
+		styles: styles,
+		hints:  app.Content.Top().Hints,
 	}
+	styles.AddListener(h)
+
+	return h
+}
+
+// StylesChanged notifies skin changed.
+func (h *Help) StylesChanged(s *config.Styles) {
+	h.styles = s
+	h.SetBackgroundColor(s.BgColor())
+	h.build()
 }
 
 // Init initializes the component.
@@ -90,14 +104,14 @@ func (h *Help) build() {
 	h.Clear()
 
 	sections := []string{"RESOURCE", "GENERAL", "NAVIGATION", "HELP"}
-
 	h.maxRows = len(h.showGeneral())
 	ff := []HelpFunc{
-		h.app.Content.Top().Hints,
+		h.hints,
 		h.showGeneral,
 		h.showNav,
 		h.showHelp,
 	}
+
 	var col int
 	extras := h.app.Content.Top().ExtraHints()
 	for i, section := range sections {
@@ -281,15 +295,15 @@ func (h *Help) addSection(c int, title string, hh model.MenuHints) {
 		h.maxRows = len(hh)
 	}
 	row := 0
-	h.SetCell(row, c, titleCell(title))
+	h.SetCell(row, c, h.titleCell(title))
 	h.addSpacer(c + 1)
 	row++
 
 	for _, hint := range hh {
 		col := c
-		h.SetCell(row, col, keyCell(hint.Mnemonic, h.maxKey))
+		h.SetCell(row, col, h.keyCell(hint.Mnemonic, h.maxKey))
 		col++
-		h.SetCell(row, col, infoCell(hint.Description, h.maxDesc))
+		h.SetCell(row, col, h.infoCell(hint.Description, h.maxDesc))
 		row++
 	}
 
@@ -329,9 +343,9 @@ func keyConv(s string) string {
 	return strings.Replace(s, "alt", "opt", 1)
 }
 
-func titleCell(title string) *tview.TableCell {
+func (h *Help) titleCell(title string) *tview.TableCell {
 	c := tview.NewTableCell(title)
-	c.SetTextColor(tcell.ColorGreen)
+	c.SetTextColor(h.Styles().K9s.Help.SectionColor.Color())
 	c.SetAttributes(tcell.AttrBold)
 	c.SetExpansion(1)
 	c.SetAlign(tview.AlignLeft)
@@ -339,21 +353,21 @@ func titleCell(title string) *tview.TableCell {
 	return c
 }
 
-func keyCell(k string, width int) *tview.TableCell {
+func (h *Help) keyCell(k string, width int) *tview.TableCell {
 	c := padCell(toMnemonic(k), width)
 	if _, err := strconv.Atoi(k); err != nil {
-		c.SetTextColor(tcell.ColorDodgerBlue)
+		c.SetTextColor(h.styles.K9s.Help.KeyColor.Color())
 	} else {
-		c.SetTextColor(tcell.ColorFuchsia)
+		c.SetTextColor(h.styles.K9s.Help.NumKeyColor.Color())
 	}
 	c.SetAttributes(tcell.AttrBold)
 
 	return c
 }
 
-func infoCell(info string, width int) *tview.TableCell {
+func (h *Help) infoCell(info string, width int) *tview.TableCell {
 	c := padCell(info, width)
-	c.SetTextColor(tcell.ColorWhite)
+	c.SetTextColor(h.styles.K9s.Help.FgColor.Color())
 
 	return c
 }

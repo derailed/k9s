@@ -49,9 +49,10 @@ type (
 
 	// Config tracks K9s configuration options.
 	Config struct {
-		K9s      *K9s `yaml:"k9s"`
-		client   client.Connection
-		settings KubeSettings
+		K9s        *K9s `yaml:"k9s"`
+		client     client.Connection
+		settings   KubeSettings
+		overrideNS bool
 	}
 )
 
@@ -70,7 +71,7 @@ func NewConfig(ks KubeSettings) *Config {
 }
 
 // Refine the configuration based on cli args.
-func (c *Config) Refine(flags *genericclioptions.ConfigFlags) error {
+func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags) error {
 	cfg, err := flags.ToRawKubeConfigLoader().RawConfig()
 	if err != nil {
 		return err
@@ -90,20 +91,23 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags) error {
 		return fmt.Errorf("The specified context %q does not exists in kubeconfig", c.K9s.CurrentContext)
 	}
 	c.K9s.CurrentCluster = context.Cluster
-	if len(context.Namespace) != 0 {
-		if err := c.SetActiveNamespace(context.Namespace); err != nil {
-			return err
-		}
+
+	var ns string
+	var override bool
+	if IsBoolSet(k9sFlags.AllNamespaces) {
+		ns, override = client.NamespaceAll, true
+	} else if isSet(flags.Namespace) {
+		ns, override = *flags.Namespace, true
+	} else if len(context.Namespace) != 0 {
+		ns = context.Namespace
 	}
+	if err := c.SetActiveNamespace(ns); err != nil {
+		return err
+	}
+	flags.Namespace, c.overrideNS = &ns, override
 
 	if isSet(flags.ClusterName) {
 		c.K9s.CurrentCluster = *flags.ClusterName
-	}
-
-	if isSet(flags.Namespace) {
-		if err := c.SetActiveNamespace(*flags.Namespace); err != nil {
-			return err
-		}
 	}
 
 	return nil
@@ -193,6 +197,7 @@ func (c *Config) GetConnection() client.Connection {
 // SetConnection set an api server connection.
 func (c *Config) SetConnection(conn client.Connection) {
 	c.client = conn
+	c.client.Config().OverrideNS = c.overrideNS
 }
 
 // Load K9s configuration from file

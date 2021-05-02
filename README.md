@@ -708,6 +708,13 @@ k9s:
   info:
     fgColor: lightskyblue
     sectionColor: steelblue
+  # Help panel styles
+  help:
+    fgColor: white
+    bgColor: black
+    keyColor: cyan
+    numKeyColor: blue
+    sectionColor: gray
   frame:
     # Borders styles.
     border:

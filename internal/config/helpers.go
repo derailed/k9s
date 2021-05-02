@@ -68,3 +68,7 @@ func EnsureFullPath(path string, mod os.FileMode) {
 		}
 	}
 }
+
+func IsBoolSet(b *bool) bool {
+	return b != nil && *b
+}
