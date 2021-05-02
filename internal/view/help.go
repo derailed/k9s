@@ -15,6 +15,7 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
+	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -35,15 +36,11 @@ type Help struct {
 }
 
 // NewHelp returns a new help viewer.
-func NewHelp(app *App, styles *config.Styles) *Help {
-	h := &Help{
-		Table:  NewTable(client.NewGVR("help")),
-		styles: styles,
-		hints:  app.Content.Top().Hints,
+func NewHelp(app *App) *Help {
+	return &Help{
+		Table: NewTable(client.NewGVR("help")),
+		hints: app.Content.Top().Hints,
 	}
-	styles.AddListener(h)
-
-	return h
 }
 
 // StylesChanged notifies skin changed.
@@ -63,8 +60,9 @@ func (h *Help) Init(ctx context.Context) error {
 	h.SetBorder(true)
 	h.SetBorderPadding(0, 0, 1, 1)
 	h.bindKeys()
+	h.styles = h.App().Styles
+	h.App().Styles.AddListener(h)
 	h.build()
-	h.SetBackgroundColor(h.App().Styles.BgColor())
 
 	return nil
 }
@@ -101,6 +99,7 @@ func (h *Help) computeExtraMaxes(ee map[string]string) {
 }
 
 func (h *Help) build() {
+	log.Debug().Msgf("BUILD!!")
 	h.Clear()
 
 	sections := []string{"RESOURCE", "GENERAL", "NAVIGATION", "HELP"}

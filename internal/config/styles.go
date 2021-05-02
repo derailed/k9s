@@ -532,7 +532,7 @@ func (s *Styles) Load(path string) error {
 	if err := yaml.Unmarshal(f, s); err != nil {
 		return err
 	}
-	s.fireStylesChanged()
+	//s.fireStylesChanged()
 
 	return nil
 }

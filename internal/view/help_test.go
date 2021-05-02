@@ -18,7 +18,7 @@ func TestHelp(t *testing.T) {
 	po.Init(ctx)
 	app.Content.Push(po)
 
-	v := view.NewHelp(app.Styles)
+	v := view.NewHelp(app)
 
 	assert.Nil(t, v.Init(ctx))
 	assert.Equal(t, 25, v.GetRowCount())
