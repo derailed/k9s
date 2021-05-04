@@ -76,7 +76,6 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags) e
 	if err != nil {
 		return err
 	}
-
 	if isSet(flags.Context) {
 		c.K9s.CurrentContext = *flags.Context
 	} else {
@@ -91,10 +90,11 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags) e
 		return fmt.Errorf("The specified context %q does not exists in kubeconfig", c.K9s.CurrentContext)
 	}
 	c.K9s.CurrentCluster = context.Cluster
+	c.K9s.ActivateCluster()
 
 	var ns string
 	var override bool
-	if IsBoolSet(k9sFlags.AllNamespaces) {
+	if k9sFlags != nil && IsBoolSet(k9sFlags.AllNamespaces) {
 		ns, override = client.NamespaceAll, true
 	} else if isSet(flags.Namespace) {
 		ns, override = *flags.Namespace, true
@@ -129,11 +129,19 @@ func (c *Config) CurrentCluster() *Cluster {
 
 // ActiveNamespace returns the active namespace in the current cluster.
 func (c *Config) ActiveNamespace() string {
-	if cl := c.CurrentCluster(); cl != nil {
-		if cl.Namespace != nil {
-			return cl.Namespace.Active
-		}
+	if c.K9s.Clusters == nil {
+		log.Warn().Msgf("No context detected returning default namespace")
+		return "default"
 	}
+	cl := c.CurrentCluster()
+	if cl == nil {
+		cl = NewCluster()
+		c.K9s.Clusters[c.K9s.CurrentCluster] = cl
+	}
+	if cl.Namespace != nil {
+		return cl.Namespace.Active
+	}
+
 	return "default"
 }
 
@@ -197,7 +205,9 @@ func (c *Config) GetConnection() client.Connection {
 // SetConnection set an api server connection.
 func (c *Config) SetConnection(conn client.Connection) {
 	c.client = conn
-	c.client.Config().OverrideNS = c.overrideNS
+	if c.client != nil && c.client.Config() != nil {
+		c.client.Config().OverrideNS = c.overrideNS
+	}
 }
 
 // Load K9s configuration from file
