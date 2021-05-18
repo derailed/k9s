@@ -111,7 +111,7 @@ func (s *SelectTable) updateSelection(broadcast bool) {
 }
 
 func (s *SelectTable) selectionChanged(r, c int) {
-	if r < 0 {
+	if r < 0 || c < 0 {
 		return
 	}
 	if cell := s.GetCell(r, c); cell != nil {
