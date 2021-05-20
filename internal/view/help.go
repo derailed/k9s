@@ -100,7 +100,6 @@ func (h *Help) computeExtraMaxes(ee map[string]string) {
 }
 
 func (h *Help) build() {
-	log.Debug().Msgf("BUILD!!")
 	h.Clear()
 
 	sections := []string{"RESOURCE", "GENERAL", "NAVIGATION", "HELP"}

@@ -5,7 +5,7 @@ go 1.16
 replace (
 	github.com/docker/distribution => github.com/docker/distribution v0.0.0-20191216044856-a8371794149d
 	github.com/docker/docker => github.com/moby/moby v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
-	github.com/gdamore/tcell/v2 => github.com/derailed/tcell/v2 v2.2.1-rc.6
+	github.com/gdamore/tcell/v2 => github.com/derailed/tcell/v2 v2.3.1-rc.2
 )
 
 require (
@@ -19,7 +19,7 @@ require (
 	github.com/fatih/color v1.10.0
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/fvbommel/sortorder v1.0.2
-	github.com/gdamore/tcell/v2 v2.2.1
+	github.com/gdamore/tcell/v2 v2.3.1
 	github.com/ghodss/yaml v1.0.0
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/mattn/go-runewidth v0.0.12
@@ -28,7 +28,7 @@ require (
 	github.com/openfaas/faas-provider v0.15.0
 	github.com/petergtz/pegomock v2.9.0+incompatible
 	github.com/rakyll/hey v0.1.4
-	github.com/rs/zerolog v1.21.0
+	github.com/rs/zerolog v1.22.0
 	github.com/ryanuber/go-glob v1.0.0 // indirect
 	github.com/sahilm/fuzzy v0.1.0
 	github.com/spf13/cobra v1.1.3

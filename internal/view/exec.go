@@ -103,9 +103,13 @@ func execute(opts shellOpts) error {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
 	go func() {
-		<-sigChan
-		log.Debug().Msg("Command canceled with signal!")
-		cancel()
+		select {
+		case <-sigChan:
+			log.Debug().Msg("Command canceled with signal!")
+			cancel()
+		case <-ctx.Done():
+			return
+		}
 	}()
 
 	log.Debug().Msgf("Running command> %s %s", opts.binary, strings.Join(opts.args, " "))

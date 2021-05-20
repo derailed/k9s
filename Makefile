@@ -3,7 +3,7 @@ PACKAGE := github.com/derailed/$(NAME)
 GIT     := $(shell git rev-parse --short HEAD)
 SOURCE_DATE_EPOCH ?= $(shell date +%s)
 DATE    := $(shell date -u -d @${SOURCE_DATE_EPOCH} +"%Y-%m-%dT%H:%M:%SZ")
-VERSION  ?= v0.24.9
+VERSION  ?= v0.24.10
 IMG_NAME := derailed/k9s
 IMAGE    := ${IMG_NAME}:${VERSION}
 
