@@ -5,7 +5,8 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-const defaultDockerShellImage = "busybox:1.31"
+const defaultDockerShellImage   = "busybox:1.31"
+const defaultDockerShellTimeout = 30
 
 // Limits represents resource limits.
 type Limits map[v1.ResourceName]string
@@ -24,9 +25,9 @@ type ShellPod struct {
 func NewShellPod() *ShellPod {
 	return &ShellPod{
 		Image:       defaultDockerShellImage,
-		Namespace:   "defaulta",
+		Namespace:   "default",
 		Limits:      defaultLimits(),
-		Timeout:     30,
+		Timeout:     defaultDockerShellTimeout,
 	}
 }
 
