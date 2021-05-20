@@ -12,19 +12,21 @@ type Limits map[v1.ResourceName]string
 
 // ShellPod represents k9s shell configuration.
 type ShellPod struct {
-	Image     string   `json:"image"`
-	Command   []string `json:"command,omitempty"`
-	Args      []string `json:"args,omitempty"`
-	Namespace string   `json:"namespace"`
-	Limits    Limits   `json:"resources,omitempty"`
+	Image       string   `json:"image"`
+	Command     []string `json:"command,omitempty"`
+	Args        []string `json:"args,omitempty"`
+	Namespace   string   `json:"namespace"`
+	Limits      Limits   `json:"resources,omitempty"`
+	Timeout     int      `json:"timeout"`
 }
 
 // NewShellPod returns a new instance.
 func NewShellPod() *ShellPod {
 	return &ShellPod{
-		Image:     defaultDockerShellImage,
-		Namespace: "default",
-		Limits:    defaultLimits(),
+		Image:       defaultDockerShellImage,
+		Namespace:   "defaulta",
+		Limits:      defaultLimits(),
+		Timeout:     30,
 	}
 }
 
