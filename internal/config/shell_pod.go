@@ -39,6 +39,9 @@ func (s *ShellPod) Validate(client.Connection, KubeSettings) {
 	if len(s.Limits) == 0 {
 		s.Limits = defaultLimits()
 	}
+	if s.Timeout <= 0 {
+		s.Timeout = defaultDockerShellTimeout
+	}
 }
 
 func defaultLimits() Limits {
