@@ -197,7 +197,7 @@ func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
 		return tailLogs(ctx, p, c, opts)
 	}
 
-	if defaultContainer := getDefaultLogContainer(po); defaultContainer != "" {
+	if defaultContainer, ok := getDefaultLogContainer(po); ok {
 		opts.SingleContainer = true
 		opts.Container = defaultContainer
 		return tailLogs(ctx, p, c, opts)
@@ -500,19 +500,16 @@ func (p *Pod) isControlled(path string) (string, bool, error) {
 	return "", false, nil
 }
 
-func getDefaultLogContainer(po v1.Pod) string {
-	defaultContainer := po.GetAnnotations()[defaultLogContainerAnnotation]
-	if defaultContainer == "" {
-		return ""
+func getDefaultLogContainer(po v1.Pod) (string, bool) {
+	defaultContainer, ok := po.GetAnnotations()[defaultLogContainerAnnotation]
+	if !ok {
+		return "", false
 	}
 	for _, container := range po.Spec.Containers {
 		if container.Name == defaultContainer {
-			return defaultContainer
+			return defaultContainer, true
 		}
 	}
-	if defaultContainer != "" {
-		log.Info().Msg(defaultLogContainerAnnotation + " annotation is set to " + defaultContainer + ", but there is no container with this name. Ignoring kubectl.kubernetes.io/default-logs-container annotation")
-	}
 
-	return ""
+	return "", false
 }
