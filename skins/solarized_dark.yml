@@ -1,15 +1,15 @@
-# # K9s Solarized Dark Skin Contributed by [@danmikita](danmikita@gmail.com)
-foreground: &foreground "#839496"
-background: &background "#002b36"
-current_line: &current_line "#073642"
-selection: &selection "#073642"
+# Based on K9s Solarized Dark Skin Contributed by [@danmikita](danmikita@gmail.com)
+foreground: &foreground "#839495"
+background: &background "#002833"
+current_line: &current_line "#003440"
+selection: &selection "#003440"
 comment: &comment "#6272a4"
-cyan: &cyan "#2aa198"
-green: &green "#859900"
-orange: &orange "#cb4b16"
-magenta: &magenta "#d33682"
-blue: &blue "#268bd2"
-red: &red "#dc322f"
+cyan: &cyan "#2aa197"
+green: &green "#859901"
+orange: &orange "#cb4a16"
+magenta: &magenta "#d33582"
+blue: &blue "#2aa198"
+red: &red "#dc312e"
 
 k9s:
   body:
@@ -66,7 +66,7 @@ k9s:
     table:
       fgColor: *foreground
       bgColor: *background
-      cursorFgColor: *foreground
+      cursorFgColor: *selection
       cursorBgColor: *current_line
       header:
         fgColor: *foreground
