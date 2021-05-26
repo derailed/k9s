@@ -32,8 +32,9 @@ var (
 )
 
 const (
-	logRetryCount = 20
-	logRetryWait  = 1 * time.Second
+	logRetryCount                 = 20
+	logRetryWait                  = 1 * time.Second
+	defaultLogContainerAnnotation = "kubectl.kubernetes.io/default-logs-container"
 )
 
 // Pod represents a pod resource.
@@ -195,6 +196,13 @@ func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
 		opts.SingleContainer = true
 		return tailLogs(ctx, p, c, opts)
 	}
+
+	if defaultContainer, ok := getDefaultLogContainer(po); ok {
+		opts.SingleContainer = true
+		opts.Container = defaultContainer
+		return tailLogs(ctx, p, c, opts)
+	}
+
 	if len(po.Spec.InitContainers)+len(po.Spec.Containers) == 1 {
 		opts.SingleContainer = true
 	}
@@ -490,4 +498,18 @@ func (p *Pod) isControlled(path string) (string, bool, error) {
 		return fmt.Sprintf("%s/%s", references[0].Kind, references[0].Name), true, nil
 	}
 	return "", false, nil
+}
+
+func getDefaultLogContainer(po v1.Pod) (string, bool) {
+	defaultContainer, ok := po.GetAnnotations()[defaultLogContainerAnnotation]
+	if ok {
+		for _, container := range po.Spec.Containers {
+			if container.Name == defaultContainer {
+				return defaultContainer, true
+			}
+		}
+		log.Warn().Msg(defaultContainer + " container  not found. " + defaultLogContainerAnnotation + " annotation will be ignored")
+	}
+
+	return "", false
 }
