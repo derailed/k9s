@@ -502,13 +502,13 @@ func (p *Pod) isControlled(path string) (string, bool, error) {
 
 func getDefaultLogContainer(po v1.Pod) (string, bool) {
 	defaultContainer, ok := po.GetAnnotations()[defaultLogContainerAnnotation]
-	if !ok {
-		return "", false
-	}
-	for _, container := range po.Spec.Containers {
-		if container.Name == defaultContainer {
-			return defaultContainer, true
+	if ok {
+		for _, container := range po.Spec.Containers {
+			if container.Name == defaultContainer {
+				return defaultContainer, true
+			}
 		}
+		log.Warn().Msg(defaultContainer + " container  not found. " + defaultLogContainerAnnotation + " annotation will be ignored")
 	}
 
 	return "", false
