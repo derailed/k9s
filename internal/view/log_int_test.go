@@ -16,10 +16,10 @@ func TestLogAutoScroll(t *testing.T) {
 	v.GetModel().Set(dao.LogItems{dao.NewLogItemFromString("blee"), dao.NewLogItemFromString("bozo")})
 	v.GetModel().Notify()
 
-	assert.Equal(t, 15, len(v.Hints()))
+	assert.Equal(t, 16, len(v.Hints()))
 
 	v.toggleAutoScrollCmd(nil)
-	assert.Equal(t, "Autoscroll:Off     FullScreen:Off     Timestamps:Off     Wrap:Off", v.Indicator().GetText(true))
+	assert.Equal(t, "AllContainers:Off     Autoscroll:Off     FullScreen:Off     Timestamps:Off     Wrap:Off", v.Indicator().GetText(true))
 }
 
 func TestLogViewNav(t *testing.T) {

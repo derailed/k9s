@@ -10,8 +10,19 @@ import (
 
 func TestLogIndicatorRefresh(t *testing.T) {
 	defaults := config.NewStyles()
-	v := view.NewLogIndicator(config.NewConfig(nil), defaults)
-	v.Refresh()
+	uu := map[string]struct {
+		li *view.LogIndicator
+		e  string
+	}{
+		"all containers":    {view.NewLogIndicator(config.NewConfig(nil), defaults, true), "[::b]AllContainers:Off     [::b]Autoscroll:On     [::b]FullScreen:Off     [::b]Timestamps:Off     [::b]Wrap:Off\n"},
+		"no all containers": {view.NewLogIndicator(config.NewConfig(nil), defaults, false), "[::b]Autoscroll:On     [::b]FullScreen:Off     [::b]Timestamps:Off     [::b]Wrap:Off\n"},
+	}
 
-	assert.Equal(t, "[::b]Autoscroll:On     [::b]FullScreen:Off     [::b]Timestamps:Off     [::b]Wrap:Off\n", v.GetText(false))
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			u.li.Refresh()
+			assert.Equal(t, u.li.GetText(false), u.e)
+		})
+	}
 }

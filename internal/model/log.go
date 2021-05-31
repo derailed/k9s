@@ -28,25 +28,27 @@ type LogsListener interface {
 
 // Log represents a resource logger.
 type Log struct {
-	factory      dao.Factory
-	lines        dao.LogItems
-	listeners    []LogsListener
-	gvr          client.GVR
-	logOptions   dao.LogOptions
-	cancelFn     context.CancelFunc
-	mx           sync.RWMutex
-	filter       string
-	lastSent     int
-	flushTimeout time.Duration
+	factory           dao.Factory
+	lines             dao.LogItems
+	listeners         []LogsListener
+	gvr               client.GVR
+	logOptions        dao.LogOptions
+	cancelFn          context.CancelFunc
+	mx                sync.RWMutex
+	filter            string
+	lastSent          int
+	flushTimeout      time.Duration
+	originalContainer string
 }
 
 // NewLog returns a new model.
 func NewLog(gvr client.GVR, opts dao.LogOptions, flushTimeout time.Duration) *Log {
 	return &Log{
-		gvr:          gvr,
-		logOptions:   opts,
-		lines:        nil,
-		flushTimeout: flushTimeout,
+		gvr:               gvr,
+		logOptions:        opts,
+		lines:             nil,
+		flushTimeout:      flushTimeout,
+		originalContainer: opts.Container,
 	}
 }
 
@@ -248,6 +250,16 @@ func (l *Log) Notify() {
 		l.fireLogBuffChanged(l.lines[l.lastSent:])
 		l.lastSent = len(l.lines)
 	}
+}
+
+// ToggleShowTimestamp toggles to show all containers logs.
+func (l *Log) ToggleAllContainers() {
+	if l.logOptions.Container != "" {
+		l.logOptions.Container = ""
+	} else {
+		l.logOptions.Container = l.originalContainer
+	}
+	l.Restart()
 }
 
 func (l *Log) updateLogs(ctx context.Context, c dao.LogChan) {
