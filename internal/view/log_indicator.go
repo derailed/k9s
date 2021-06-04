@@ -8,36 +8,40 @@ import (
 )
 
 const (
-	autoscroll = "Autoscroll"
-	fullscreen = "FullScreen"
-	timestamp  = "Timestamps"
-	wrap       = "Wrap"
-	on         = "On"
-	off        = "Off"
-	spacer     = "     "
-	bold       = "[::b]"
+	autoscroll    = "Autoscroll"
+	fullscreen    = "FullScreen"
+	timestamp     = "Timestamps"
+	wrap          = "Wrap"
+	allContainers = "AllContainers"
+	on            = "On"
+	off           = "Off"
+	spacer        = "     "
+	bold          = "[::b]"
 )
 
 // LogIndicator represents a log view indicator.
 type LogIndicator struct {
 	*tview.TextView
 
-	styles       *config.Styles
-	scrollStatus int32
-	fullScreen   bool
-	textWrap     bool
-	showTime     bool
+	styles                     *config.Styles
+	scrollStatus               int32
+	fullScreen                 bool
+	textWrap                   bool
+	showTime                   bool
+	allContainers              bool
+	shouldDisplayAllContainers bool
 }
 
 // NewLogIndicator returns a new indicator.
-func NewLogIndicator(cfg *config.Config, styles *config.Styles) *LogIndicator {
+func NewLogIndicator(cfg *config.Config, styles *config.Styles, isContainerLogView bool) *LogIndicator {
 	l := LogIndicator{
-		styles:       styles,
-		TextView:     tview.NewTextView(),
-		scrollStatus: 1,
-		fullScreen:   cfg.K9s.Logger.FullScreenLogs,
-		textWrap:     cfg.K9s.Logger.TextWrap,
-		showTime:     cfg.K9s.Logger.ShowTime,
+		styles:                     styles,
+		TextView:                   tview.NewTextView(),
+		scrollStatus:               1,
+		fullScreen:                 cfg.K9s.Logger.FullScreenLogs,
+		textWrap:                   cfg.K9s.Logger.TextWrap,
+		showTime:                   cfg.K9s.Logger.ShowTime,
+		shouldDisplayAllContainers: isContainerLogView,
 	}
 	l.StylesChanged(styles)
 	styles.AddListener(&l)
@@ -100,9 +104,18 @@ func (l *LogIndicator) ToggleAutoScroll() {
 	l.Refresh()
 }
 
+// ToggleTextWrap toggles the wrap mode.
+func (l *LogIndicator) ToggleAllContainers() {
+	l.allContainers = !l.allContainers
+	l.Refresh()
+}
+
 // Refresh updates the view.
 func (l *LogIndicator) Refresh() {
 	l.Clear()
+	if l.shouldDisplayAllContainers {
+		l.update(allContainers, l.allContainers, spacer)
+	}
 	l.update(autoscroll, l.AutoScroll(), spacer)
 	l.update(fullscreen, l.fullScreen, spacer)
 	l.update(timestamp, l.showTime, spacer)

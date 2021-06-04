@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
@@ -71,6 +72,24 @@ func TestLogViewSave(t *testing.T) {
 	v.SaveCmd(nil)
 	c2, _ := ioutil.ReadDir(dir)
 	assert.Equal(t, len(c2), len(c1)+1)
+}
+
+func TestAllContainerKeyBinding(t *testing.T) {
+	uu := map[string]struct {
+		l *view.Log
+		e bool
+	}{
+		"all containers":    {view.NewLog(client.NewGVR("v1/pods"), "", "container", false), true},
+		"no all containers": {view.NewLog(client.NewGVR("v1/pods"), "", "", false), false},
+	}
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			u.l.Init(makeContext())
+			_, got := u.l.Logs().Actions()[ui.KeyA]
+			assert.Equal(t, u.e, got)
+		})
+	}
 }
 
 // ----------------------------------------------------------------------------

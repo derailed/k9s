@@ -68,7 +68,7 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	l.SetBorder(true)
 	l.SetDirection(tview.FlexRow)
 
-	l.indicator = NewLogIndicator(l.app.Config, l.app.Styles)
+	l.indicator = NewLogIndicator(l.app.Config, l.app.Styles, l.isContainerLogView())
 	l.AddItem(l.indicator, 1, 1, false)
 	l.indicator.Refresh()
 
@@ -198,6 +198,11 @@ func (l *Log) bindKeys() {
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.SaveCmd, true),
 		ui.KeyC:         ui.NewKeyAction("Copy", l.cpCmd, true),
 	})
+	if l.isContainerLogView() {
+		l.logs.Actions().Set(ui.KeyActions{
+			ui.KeyA: ui.NewKeyAction("Toggle AllContainers", l.showAllContainers, true),
+		})
+	}
 }
 
 func (l *Log) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -285,6 +290,15 @@ func (l *Log) sinceCmd(a int) func(evt *tcell.EventKey) *tcell.EventKey {
 		l.updateTitle()
 		return nil
 	}
+}
+
+func (l *Log) showAllContainers(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() {
+		return evt
+	}
+	l.indicator.ToggleAllContainers()
+	l.model.ToggleAllContainers()
+	return nil
 }
 
 func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -414,6 +428,10 @@ func (l *Log) goFullScreen() {
 	} else {
 		l.logs.SetBorderPadding(0, 0, 1, 1)
 	}
+}
+
+func (l *Log) isContainerLogView() bool {
+	return l.model.GetContainer() != ""
 }
 
 // ----------------------------------------------------------------------------

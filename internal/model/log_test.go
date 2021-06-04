@@ -205,6 +205,16 @@ func TestLogTimedout(t *testing.T) {
 	assert.Equal(t, e, string(v.data[0]))
 }
 
+func TestToggleAllContainers(t *testing.T) {
+	m := model.NewLog(client.NewGVR(""), makeLogOpts(1), 10*time.Millisecond)
+	m.Init(makeFactory())
+	assert.Equal(t, m.GetContainer(), "blee")
+	m.ToggleAllContainers()
+	assert.Equal(t, m.GetContainer(), "")
+	m.ToggleAllContainers()
+	assert.Equal(t, m.GetContainer(), "blee")
+}
+
 // ----------------------------------------------------------------------------
 // Helpers...
 
