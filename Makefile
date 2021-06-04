@@ -1,11 +1,13 @@
-NAME    := k9s
-PACKAGE := github.com/derailed/$(NAME)
-GIT     := $(shell git rev-parse --short HEAD)
+GO_FLAGS   ?=
+NAME       := k9s
+OUTPUT_BIN ?= execs/${NAME}
+PACKAGE    := github.com/derailed/$(NAME)
+GIT_REV    ?= $(shell git rev-parse --short HEAD)
 SOURCE_DATE_EPOCH ?= $(shell date +%s)
-DATE    := $(shell date -u -d @${SOURCE_DATE_EPOCH} +"%Y-%m-%dT%H:%M:%SZ")
-VERSION  ?= v0.24.10
-IMG_NAME := derailed/k9s
-IMAGE    := ${IMG_NAME}:${VERSION}
+DATE       ?= $(shell date -u -d @${SOURCE_DATE_EPOCH} +"%Y-%m-%dT%H:%M:%SZ")
+VERSION    ?= v0.24.10
+IMG_NAME   := derailed/k9s
+IMAGE      := ${IMG_NAME}:${VERSION}
 
 default: help
 
@@ -17,9 +19,9 @@ cover:  ## Run test coverage suite
 	@go tool cover --html=cov.out
 
 build:  ## Builds the CLI
-	@go build \
-	-ldflags "-w -s -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT} -X ${PACKAGE}/cmd.date=${DATE}" \
-	-a -tags netgo -o execs/${NAME} main.go
+	@go build ${GO_FLAGS} \
+	-ldflags "-w -s -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT_REV} -X ${PACKAGE}/cmd.date=${DATE}" \
+	-a -tags netgo -o ${OUTPUT_BIN} main.go
 
 kubectl-stable-version:  ## Get kubectl latest stable version
 	@curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt
