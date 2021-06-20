@@ -29,11 +29,12 @@ type (
 
 // Table represents tabular data.
 type Table struct {
-	gvr     client.GVR
-	sortCol SortColumn
-	header  render.Header
-	Path    string
-	Extras  string
+	gvr           client.GVR
+	sortCol       SortColumn
+	readyColIndex int
+	header        render.Header
+	Path          string
+	Extras        string
 	*SelectTable
 	actions     KeyActions
 	cmdBuff     *model.FishBuff
@@ -227,6 +228,7 @@ func (t *Table) doUpdate(data render.TableData) {
 		col++
 	}
 	colIndex := custData.Header.IndexOf(t.sortCol.name, false)
+	t.readyColIndex = custData.Header.IndexOf("READY", true)
 	custData.RowEvents.Sort(
 		custData.Namespace,
 		colIndex,
@@ -349,6 +351,14 @@ func (t *Table) NameColIndex() int {
 		col++
 	}
 	return col
+}
+
+// ReadyColIndex returns the index of the ready column, or -1 if not applicable
+func (t *Table) ReadyColIndex() int {
+	if t.GetModel().ClusterWide() {
+		return t.readyColIndex
+	}
+	return t.readyColIndex - 1
 }
 
 // AddHeaderCell configures a table cell header.

@@ -60,7 +60,7 @@ func (s *ScaleExtender) showScaleDialog(path string) {
 
 func (s *ScaleExtender) makeScaleForm(sel string) *tview.Form {
 	f := s.makeStyledForm()
-	replicas := strings.TrimSpace(s.GetTable().GetCell(s.GetTable().GetSelectedRowIndex(), s.GetTable().NameColIndex()+1).Text)
+	replicas := strings.TrimSpace(s.GetTable().GetCell(s.GetTable().GetSelectedRowIndex(), s.GetTable().ReadyColIndex()).Text)
 	tokens := strings.Split(replicas, "/")
 	replicas = strings.TrimRight(tokens[1], ui.DeltaSign)
 	f.AddInputField("Replicas:", replicas, 4, func(textToCheck string, lastChar rune) bool {
