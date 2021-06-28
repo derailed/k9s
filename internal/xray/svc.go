@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal"
-
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"

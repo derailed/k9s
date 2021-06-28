@@ -98,8 +98,10 @@ func (k ks) NamespaceNames(nn []v1.Namespace) []string {
 
 type mockModel struct{}
 
-var _ ui.Tabular = (*mockModel)(nil)
-var _ ui.Suggester = (*mockModel)(nil)
+var (
+	_ ui.Tabular   = (*mockModel)(nil)
+	_ ui.Suggester = (*mockModel)(nil)
+)
 
 func (t *mockModel) CurrentSuggestion() (string, bool)  { return "", false }
 func (t *mockModel) NextSuggestion() (string, bool)     { return "", false }
@@ -119,15 +121,17 @@ func (t *mockModel) RemoveListener(model.TableListener) {}
 func (t *mockModel) Watch(context.Context) error        { return nil }
 func (t *mockModel) Refresh(context.Context) error      { return nil }
 func (t *mockModel) Get(context.Context, string) (runtime.Object, error) {
-
 	return nil, nil
 }
+
 func (t *mockModel) Delete(context.Context, string, bool, bool) error {
 	return nil
 }
+
 func (t *mockModel) Describe(context.Context, string) (string, error) {
 	return "", nil
 }
+
 func (t *mockModel) ToYAML(ctx context.Context, path string) (string, error) {
 	return "", nil
 }

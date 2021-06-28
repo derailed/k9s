@@ -41,7 +41,7 @@ func init() {
 	initK8sFlags()
 }
 
-// Execute root command
+// Execute root command.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		log.Panic().Err(err)

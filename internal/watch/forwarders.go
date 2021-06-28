@@ -49,7 +49,7 @@ func NewForwarders() Forwarders {
 	return make(map[string]Forwarder)
 }
 
-// IsPodForwarded checks if pod has a forward
+// IsPodForwarded checks if pod has a forward.
 func (ff Forwarders) IsPodForwarded(path string) bool {
 	for k := range ff {
 		fqn := strings.Split(k, ":")
@@ -60,7 +60,7 @@ func (ff Forwarders) IsPodForwarded(path string) bool {
 	return false
 }
 
-// IsContainerForwarded checks if pod has a forward
+// IsContainerForwarded checks if pod has a forward.
 func (ff Forwarders) IsContainerForwarded(path, co string) bool {
 	_, ok := ff[path+":"+co]
 

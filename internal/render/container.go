@@ -129,7 +129,7 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 	return nil
 }
 
-// Happy returns true if resource is happy, false otherwise
+// Happy returns true if resource is happy, false otherwise.
 func (Container) diagnose(state, ready string) error {
 	if state == "Completed" {
 		return nil

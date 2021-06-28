@@ -43,7 +43,7 @@ type Element struct {
 	Name  string `json:"name"`
 }
 
-// GetTemplateJsonPatch builds a json patch string to update PodSpec images
+// GetTemplateJsonPatch builds a json patch string to update PodSpec images.
 func GetTemplateJsonPatch(imageSpecs ImageSpecs) ([]byte, error) {
 	jsonPatch := JsonPatch{
 		Spec: Spec{

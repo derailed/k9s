@@ -249,10 +249,12 @@ func (t *testView) LogChanged(ll [][]byte) {
 	t.data = ll
 	t.dataCalled++
 }
+
 func (t *testView) LogCleared() {
 	t.clearCalled++
 	t.data = nil
 }
+
 func (t *testView) LogFailed(err error) {
 	fmt.Println("LogErr", err)
 	t.errCalled++
@@ -267,15 +269,19 @@ var _ dao.Factory = testFactory{}
 func (f testFactory) Client() client.Connection {
 	return nil
 }
+
 func (f testFactory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
 	return nil, nil
 }
+
 func (f testFactory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error) {
 	return nil, nil
 }
+
 func (f testFactory) ForResource(ns, gvr string) (informers.GenericInformer, error) {
 	return nil, nil
 }
+
 func (f testFactory) CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error) {
 	return nil, nil
 }

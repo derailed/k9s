@@ -86,6 +86,7 @@ func (d *Deploy) logOptions() (*dao.LogOptions, error) {
 
 	return &opts, nil
 }
+
 func (d *Deploy) showPods(app *App, model ui.Tabular, gvr, path string) {
 	var ddp dao.Deployment
 	dp, err := ddp.Load(app.factory, path)

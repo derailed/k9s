@@ -145,7 +145,7 @@ func (l *LogItems) Render(showTime bool, ll [][]byte) {
 	}
 }
 
-// DumpDebug for debugging
+// DumpDebug for debugging.
 func (l *LogItems) DumpDebug(m string) {
 	fmt.Println(m + strings.Repeat("-", 50))
 	for i, line := range l.items {

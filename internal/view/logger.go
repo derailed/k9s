@@ -97,7 +97,7 @@ func (l *Logger) SetSubject(s string) {
 	l.subject = s
 }
 
-// Actions returns menu actions
+// Actions returns menu actions.
 func (l *Logger) Actions() ui.KeyActions {
 	return l.actions
 }

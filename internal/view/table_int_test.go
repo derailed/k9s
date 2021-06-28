@@ -108,12 +108,15 @@ func (t *mockTableModel) Watch(context.Context) error        { return nil }
 func (t *mockTableModel) Get(context.Context, string) (runtime.Object, error) {
 	return nil, nil
 }
+
 func (t *mockTableModel) Delete(context.Context, string, bool, bool) error {
 	return nil
 }
+
 func (t *mockTableModel) Describe(context.Context, string) (string, error) {
 	return "", nil
 }
+
 func (t *mockTableModel) ToYAML(ctx context.Context, path string) (string, error) {
 	return "", nil
 }

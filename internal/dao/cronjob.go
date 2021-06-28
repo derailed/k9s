@@ -8,7 +8,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -47,12 +46,12 @@ func (c *CronJob) Run(path string) error {
 	if err != nil {
 		return err
 	}
-	var cj batchv1beta1.CronJob
+	var cj batchv1.CronJob
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cj)
 	if err != nil {
 		return errors.New("expecting CronJob resource")
 	}
-	var jobName = cj.Name
+	jobName := cj.Name
 	if len(cj.Name) >= maxJobNameSize {
 		jobName = cj.Name[0:maxJobNameSize]
 	}
@@ -95,7 +94,7 @@ func (c *CronJob) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, erro
 
 	refs := make(Refs, 0, len(oo))
 	for _, o := range oo {
-		var cj batchv1beta1.CronJob
+		var cj batchv1.CronJob
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cj)
 		if err != nil {
 			return nil, errors.New("expecting CronJob resource")
@@ -127,7 +126,7 @@ func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
 	if err != nil {
 		return err
 	}
-	var cj batchv1beta1.CronJob
+	var cj batchv1.CronJob
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cj)
 	if err != nil {
 		return errors.New("expecting CronJob resource")
@@ -144,7 +143,7 @@ func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
 		true := true
 		cj.Spec.Suspend = &true
 	}
-	_, err = dial.BatchV1beta1().CronJobs(ns).Update(ctx, &cj, metav1.UpdateOptions{})
+	_, err = dial.BatchV1().CronJobs(ns).Update(ctx, &cj, metav1.UpdateOptions{})
 
 	return err
 }
@@ -159,7 +158,7 @@ func (c *CronJob) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, e
 
 	refs := make(Refs, 0, len(oo))
 	for _, o := range oo {
-		var cj batchv1beta1.CronJob
+		var cj batchv1.CronJob
 		err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cj)
 		if err != nil {
 			return nil, errors.New("expecting CronJob resource")

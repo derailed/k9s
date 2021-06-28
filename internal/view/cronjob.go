@@ -14,7 +14,7 @@ import (
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
+	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -45,7 +45,7 @@ func (c *CronJob) showJobs(app *App, model ui.Tabular, gvr, path string) {
 		return
 	}
 
-	var cj batchv1beta1.CronJob
+	var cj batchv1.CronJob
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cj)
 	if err != nil {
 		app.Flash().Err(err)

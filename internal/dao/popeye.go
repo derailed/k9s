@@ -123,6 +123,7 @@ var _ types.Factory = (*popFactory)(nil)
 func newPopeyeFactory(f Factory) *popFactory {
 	return &popFactory{Factory: f}
 }
+
 func (p *popFactory) Client() types.Connection {
 	return &popeyeConnection{Connection: p.Factory.Client()}
 }

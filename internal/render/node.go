@@ -220,7 +220,6 @@ func status(conds []v1.NodeCondition, exempt bool, res []string) {
 		}
 		res[index] = neg + string(condition.Type)
 		index++
-
 	}
 	if len(res) == 0 {
 		res[index] = "Unknown"

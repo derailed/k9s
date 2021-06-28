@@ -77,12 +77,15 @@ func (t *mockModel) Watch(context.Context) error        { return nil }
 func (t *mockModel) Get(ctx context.Context, path string) (runtime.Object, error) {
 	return nil, nil
 }
+
 func (t *mockModel) Delete(ctx context.Context, path string, c, f bool) error {
 	return nil
 }
+
 func (t *mockModel) Describe(context.Context, string) (string, error) {
 	return "", nil
 }
+
 func (t *mockModel) ToYAML(ctx context.Context, path string) (string, error) {
 	return "", nil
 }

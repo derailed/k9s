@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
-
 	"github.com/derailed/popeye/pkg/config"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
@@ -89,7 +88,7 @@ type (
 	// Sections represents a collection of sections.
 	Sections []Section
 
-	// Section represents a sanitizer pass
+	// Section represents a sanitizer pass.
 	Section struct {
 		Title   string  `json:"sanitizer" yaml:"sanitizer"`
 		GVR     string  `yaml:"gvr" json:"gvr"`
@@ -187,7 +186,7 @@ func (i Issues) MaxSeverity() config.Level {
 	return max
 }
 
-// CountSeverity counts severity level instances
+// CountSeverity counts severity level instances.
 func (i Issues) CountSeverity(l config.Level) int {
 	var count int
 	for _, is := range i {

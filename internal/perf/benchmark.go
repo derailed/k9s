@@ -19,7 +19,7 @@ import (
 )
 
 const (
-	// BOZO!! Revisit bench and when we should timeout
+	// BOZO!! Revisit bench and when we should timeout.
 	benchTimeout = 2 * time.Minute
 	benchFmat    = "%s_%s_%d.txt"
 	k9sUA        = "k9s/"
@@ -104,7 +104,7 @@ func (b *Benchmark) Canceled() bool {
 	return b.canceled
 }
 
-// Run starts a benchmark,
+// Run starts a benchmark,.
 func (b *Benchmark) Run(cluster string, done func()) {
 	log.Debug().Msgf("Running benchmark on cluster %s", cluster)
 	buff := new(bytes.Buffer)

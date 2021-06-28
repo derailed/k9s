@@ -19,7 +19,7 @@ type Generic struct {
 	ageIndex int
 }
 
-// Happy returns true if resource is happy, false otherwise
+// Happy returns true if resource is happy, false otherwise.
 func (Generic) Happy(ns string, r Row) bool {
 	return true
 }

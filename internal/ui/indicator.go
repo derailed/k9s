@@ -80,7 +80,7 @@ func (s *StatusIndicator) ClusterInfoChanged(prev, cur model.ClusterMeta) {
 	})
 }
 
-// SetPermanent sets permanent title to be reset to after updates
+// SetPermanent sets permanent title to be reset to after updates.
 func (s *StatusIndicator) SetPermanent(info string) {
 	s.permanent = info
 	s.SetText(info)

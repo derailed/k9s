@@ -151,7 +151,6 @@ func (m *Menu) layout(table []model.MenuHints, mm []int, out [][]string) {
 			out[r][c] = keyConv(m.formatMenu(table[r][c], mm[c]))
 		}
 	}
-
 }
 
 func (m *Menu) formatMenu(h model.MenuHint, size int) string {

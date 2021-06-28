@@ -392,5 +392,4 @@ func TestTableDataDelete(t *testing.T) {
 			assert.Equal(t, u.e, table.RowEvents)
 		})
 	}
-
 }

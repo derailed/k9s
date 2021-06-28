@@ -46,13 +46,13 @@ func (c *Crumbs) StackPushed(comp model.Component) {
 	c.refresh(c.stack.Flatten())
 }
 
-// StackPopped indicates an item was deleted
+// StackPopped indicates an item was deleted.
 func (c *Crumbs) StackPopped(_, _ model.Component) {
 	c.stack.Pop()
 	c.refresh(c.stack.Flatten())
 }
 
-// StackTop indicates the top of the stack
+// StackTop indicates the top of the stack.
 func (c *Crumbs) StackTop(top model.Component) {}
 
 // Refresh updates view with new crumbs.

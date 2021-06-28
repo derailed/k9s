@@ -436,7 +436,7 @@ func (s *Styles) Reset() {
 	s.K9s = newStyle()
 }
 
-// DefaultSkin loads the default skin
+// DefaultSkin loads the default skin.
 func (s *Styles) DefaultSkin() {
 	s.K9s = newStyle()
 }
@@ -522,7 +522,7 @@ func (s *Styles) Views() Views {
 	return s.K9s.Views
 }
 
-// Load K9s configuration from file
+// Load K9s configuration from file.
 func (s *Styles) Load(path string) error {
 	f, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -532,7 +532,7 @@ func (s *Styles) Load(path string) error {
 	if err := yaml.Unmarshal(f, s); err != nil {
 		return err
 	}
-	//s.fireStylesChanged()
+	// s.fireStylesChanged()
 
 	return nil
 }
