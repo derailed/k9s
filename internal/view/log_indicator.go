@@ -13,10 +13,10 @@ const (
 	timestamp     = "Timestamps"
 	wrap          = "Wrap"
 	allContainers = "AllContainers"
-	on            = "On"
-	off           = "Off"
+	on            = "[limegreen::]On"
+	off           = "[gray::]Off"
 	spacer        = "     "
-	bold          = "[::b]"
+	bold          = "[-::b]"
 )
 
 // LogIndicator represents a log view indicator.
@@ -104,7 +104,7 @@ func (l *LogIndicator) ToggleAutoScroll() {
 	l.Refresh()
 }
 
-// ToggleTextWrap toggles the wrap mode.
+// ToggleAllContainers toggles the all-containers mode.
 func (l *LogIndicator) ToggleAllContainers() {
 	l.allContainers = !l.allContainers
 	l.Refresh()

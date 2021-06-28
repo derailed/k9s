@@ -177,11 +177,11 @@ func (p *Pod) GetInstance(fqn string) (*v1.Pod, error) {
 }
 
 // TailLogs tails a given container logs
-func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
+func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts *LogOptions) error {
 	log.Debug().Msgf("TAIL-LOGS for %q:%q", opts.Path, opts.Container)
 	fac, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
 	if !ok {
-		return errors.New("Expecting an informer")
+		return errors.New("No factory in context")
 	}
 	o, err := fac.Get(p.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
@@ -192,39 +192,40 @@ func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
 		return err
 	}
 
-	if opts.HasContainer() {
-		opts.SingleContainer = true
-		return tailLogs(ctx, p, c, opts)
-	}
-
-	if defaultContainer, ok := getDefaultLogContainer(po); ok {
-		opts.SingleContainer = true
-		opts.Container = defaultContainer
-		return tailLogs(ctx, p, c, opts)
-	}
-
 	if len(po.Spec.InitContainers)+len(po.Spec.Containers) == 1 {
 		opts.SingleContainer = true
 	}
 
+	if co, ok := GetDefaultLogContainer(po.ObjectMeta, po.Spec); ok && !opts.AllContainers {
+		opts.DefaultContainer = co
+		return tailLogs(ctx, p, c, opts)
+	}
+
+	if opts.HasContainer() && !opts.AllContainers {
+		return tailLogs(ctx, p, c, opts)
+	}
+
 	var tailed bool
 	for _, co := range po.Spec.InitContainers {
-		opts.Container = co.Name
-		if err := tailLogs(ctx, p, c, opts); err != nil {
+		o := opts.Clone()
+		o.Container = co.Name
+		if err := tailLogs(ctx, p, c, o); err != nil {
 			return err
 		}
 		tailed = true
 	}
 	for _, co := range po.Spec.Containers {
-		opts.Container = co.Name
-		if err := tailLogs(ctx, p, c, opts); err != nil {
+		o := opts.Clone()
+		o.Container = co.Name
+		if err := tailLogs(ctx, p, c, o); err != nil {
 			return err
 		}
 		tailed = true
 	}
 	for _, co := range po.Spec.EphemeralContainers {
-		opts.Container = co.Name
-		if err := tailLogs(ctx, p, c, opts); err != nil {
+		o := opts.Clone()
+		o.Container = co.Name
+		if err := tailLogs(ctx, p, c, o); err != nil {
 			return err
 		}
 		tailed = true
@@ -325,8 +326,8 @@ func (p *Pod) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func tailLogs(ctx context.Context, logger Logger, c LogChan, opts LogOptions) error {
-	log.Debug().Msgf("Tailing logs for %q:%q", opts.Path, opts.Container)
+func tailLogs(ctx context.Context, logger Logger, c LogChan, opts *LogOptions) error {
+	log.Debug().Msgf("Tailing logs for %#v", opts)
 
 	var (
 		err    error
@@ -366,7 +367,7 @@ done:
 	return nil
 }
 
-func readLogs(stream io.ReadCloser, c LogChan, opts LogOptions) {
+func readLogs(stream io.ReadCloser, c LogChan, opts *LogOptions) {
 	defer func() {
 		log.Debug().Msgf(">>> Closing stream %s", opts.Info())
 		if err := stream.Close(); err != nil {
@@ -500,10 +501,10 @@ func (p *Pod) isControlled(path string) (string, bool, error) {
 	return "", false, nil
 }
 
-func getDefaultLogContainer(po v1.Pod) (string, bool) {
-	defaultContainer, ok := po.GetAnnotations()[defaultLogContainerAnnotation]
+func GetDefaultLogContainer(m metav1.ObjectMeta, spec v1.PodSpec) (string, bool) {
+	defaultContainer, ok := m.Annotations[defaultLogContainerAnnotation]
 	if ok {
-		for _, container := range po.Spec.Containers {
+		for _, container := range spec.Containers {
 			if container.Name == defaultContainer {
 				return defaultContainer, true
 			}

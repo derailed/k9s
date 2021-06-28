@@ -53,6 +53,10 @@ func (c *Cow) Init(_ context.Context) error {
 	return nil
 }
 
+func (*Cow) InCmdMode() bool {
+	return false
+}
+
 func (c *Cow) talk() {
 	says := c.says
 	if len(says) == 0 {

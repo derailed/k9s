@@ -106,19 +106,17 @@ func (a *Aliases) Load() error {
 // LoadFileAliases loads alias from a given file.
 func (a *Aliases) LoadFileAliases(path string) error {
 	f, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil
-	}
+	if err == nil {
+		var aa Aliases
+		if err := yaml.Unmarshal(f, &aa); err != nil {
+			return err
+		}
 
-	var aa Aliases
-	if err := yaml.Unmarshal(f, &aa); err != nil {
-		return err
-	}
-
-	a.mx.Lock()
-	defer a.mx.Unlock()
-	for k, v := range aa.Alias {
-		a.Alias[k] = v
+		a.mx.Lock()
+		defer a.mx.Unlock()
+		for k, v := range aa.Alias {
+			a.Alias[k] = v
+		}
 	}
 
 	return nil

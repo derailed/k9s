@@ -377,7 +377,7 @@ func (t *Table) filtered(data render.TableData) render.TableData {
 	filtered, err := rxFilter(q, IsInverseSelector(q), filtered)
 	if err != nil {
 		log.Error().Err(errors.New("Invalid filter expression")).Msg("Regexp")
-		t.cmdBuff.ClearText(true)
+		//t.cmdBuff.ClearText(true)
 	}
 
 	return filtered

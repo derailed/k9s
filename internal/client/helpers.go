@@ -53,6 +53,11 @@ func Namespaced(p string) (string, string) {
 	return strings.Trim(ns, "/"), n
 }
 
+// CoFQN returns a fully qualified container name.
+func CoFQN(m metav1.ObjectMeta, co string) string {
+	return MetaFQN(m) + ":" + co
+}
+
 // FQN returns a fully qualified resource name.
 func FQN(ns, n string) string {
 	if ns == "" {

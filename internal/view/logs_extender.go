@@ -2,6 +2,7 @@ package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell/v2"
 )
@@ -10,14 +11,14 @@ import (
 type LogsExtender struct {
 	ResourceViewer
 
-	containerFn ContainerFunc
+	optionsFn LogOptionsFunc
 }
 
 // NewLogsExtender returns a new extender.
-func NewLogsExtender(v ResourceViewer, f ContainerFunc) ResourceViewer {
+func NewLogsExtender(v ResourceViewer, f LogOptionsFunc) ResourceViewer {
 	l := LogsExtender{
 		ResourceViewer: v,
-		containerFn:    f,
+		optionsFn:      f,
 	}
 	l.AddBindKeysFn(l.bindKeys)
 
@@ -60,11 +61,31 @@ func (l *LogsExtender) showLogs(path string, prev bool) {
 		return
 	}
 
-	co := ""
-	if l.containerFn != nil {
-		co = l.containerFn()
+	opts := l.buildLogOpts(path, "", prev)
+	if l.optionsFn != nil {
+		if opts, err = l.optionsFn(); err != nil {
+			l.App().Flash().Err(err)
+			return
+		}
 	}
-	if err := l.App().inject(NewLog(l.GVR(), path, co, prev)); err != nil {
+	if err := l.App().inject(NewLog(l.GVR(), opts)); err != nil {
 		l.App().Flash().Err(err)
 	}
+}
+
+// buildLogOpts(path, co, prev, false, config.DefaultLoggerTailCount),
+func (l *LogsExtender) buildLogOpts(path, co string, prevLogs bool) *dao.LogOptions {
+	cfg := l.App().Config.K9s.Logger
+	opts := dao.LogOptions{
+		Path:          path,
+		Container:     co,
+		Lines:         int64(cfg.TailCount),
+		Previous:      prevLogs,
+		ShowTimestamp: cfg.ShowTime,
+	}
+	if opts.Container == "" {
+		opts.AllContainers = true
+	}
+
+	return &opts
 }

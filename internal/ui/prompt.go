@@ -196,7 +196,7 @@ func (p *Prompt) write(text, suggest string) {
 	p.SetCursorIndex(p.spacer + len(text))
 	txt := text
 	if suggest != "" {
-		txt += "[gray::-]" + suggest
+		txt += "[dodgerblue::-]" + suggest
 	}
 	fmt.Fprintf(p, defaultPrompt, p.icon, txt)
 }

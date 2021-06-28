@@ -52,6 +52,7 @@ func (d *ScreenDump) List(ctx context.Context, _ string) ([]runtime.Object, erro
 
 // Helpers...
 
+// SanitizeFilename sanitizes the dump filename.
 func SanitizeFilename(name string) string {
 	return invalidPathCharsRX.ReplaceAllString(name, "-")
 }

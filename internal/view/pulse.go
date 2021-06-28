@@ -108,6 +108,10 @@ func (p *Pulse) Init(ctx context.Context) error {
 	return nil
 }
 
+func (*Pulse) InCmdMode() bool {
+	return false
+}
+
 // StylesChanged notifies the skin changed.
 func (p *Pulse) StylesChanged(s *config.Styles) {
 	p.SetBackgroundColor(s.Charts().BgColor.Color())
@@ -201,7 +205,7 @@ func (p *Pulse) bindKeys() {
 	})
 
 	for i, v := range p.charts {
-		t := strings.Title(client.NewGVR(v.(Graphable).ID()).R())
+		t := strings.Title(client.NewGVR(v.ID()).R())
 		p.actions[tcell.Key(ui.NumKeys[i])] = ui.NewKeyAction(t, p.sparkFocusCmd(i), true)
 	}
 }
@@ -307,9 +311,7 @@ func (p *Pulse) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if res == "cpu" || res == "mem" {
 		res = "pod"
 	}
-	if err := p.App().gotoResource(res+" all", "", false); err != nil {
-		p.App().Flash().Err(err)
-	}
+	p.App().gotoResource(res+" all", "", false)
 
 	return nil
 }
@@ -388,7 +390,7 @@ func findIndex(pp []Graphable, p tview.Primitive) int {
 
 func findIndexGVR(pp []Graphable, gvr string) (int, bool) {
 	for i, v := range pp {
-		if v.(Graphable).ID() == gvr {
+		if v.ID() == gvr {
 			return i, true
 		}
 	}

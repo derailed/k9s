@@ -68,11 +68,16 @@ type Primitive interface {
 	Name() string
 }
 
+type Commander interface {
+	InCmdMode() bool
+}
+
 // Component represents a ui component
 type Component interface {
 	Primitive
 	Igniter
 	Hinter
+	Commander
 }
 
 // Renderer represents a resource renderer.

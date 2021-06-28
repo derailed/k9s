@@ -69,6 +69,7 @@ func EnsureFullPath(path string, mod os.FileMode) {
 	}
 }
 
+// IsBoolSet checks if a bool prt is set.
 func IsBoolSet(b *bool) bool {
 	return b != nil && *b
 }

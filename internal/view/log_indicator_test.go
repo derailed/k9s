@@ -14,8 +14,12 @@ func TestLogIndicatorRefresh(t *testing.T) {
 		li *view.LogIndicator
 		e  string
 	}{
-		"all containers":    {view.NewLogIndicator(config.NewConfig(nil), defaults, true), "[::b]AllContainers:Off     [::b]Autoscroll:On     [::b]FullScreen:Off     [::b]Timestamps:Off     [::b]Wrap:Off\n"},
-		"no all containers": {view.NewLogIndicator(config.NewConfig(nil), defaults, false), "[::b]Autoscroll:On     [::b]FullScreen:Off     [::b]Timestamps:Off     [::b]Wrap:Off\n"},
+		"all containers": {
+			view.NewLogIndicator(config.NewConfig(nil), defaults, true), "[-::b]AllContainers:[gray::]Off     [-::b]Autoscroll:[limegreen::]On     [-::b]FullScreen:[gray::]Off     [-::b]Timestamps:[gray::]Off     [-::b]Wrap:[gray::]Off\n",
+		},
+		"no all containers": {
+			view.NewLogIndicator(config.NewConfig(nil), defaults, false), "[-::b]Autoscroll:[limegreen::]On     [-::b]FullScreen:[gray::]Off     [-::b]Timestamps:[gray::]Off     [-::b]Wrap:[gray::]Off\n",
+		},
 	}
 
 	for k := range uu {

@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 )
@@ -29,8 +30,8 @@ type (
 	// EnterFunc represents an enter key action.
 	EnterFunc func(app *App, model ui.Tabular, gvr, path string)
 
-	// ContainerFunc returns the active container name.
-	ContainerFunc func() string
+	// LogOptionsFunc returns the active log options.
+	LogOptionsFunc func() (*dao.LogOptions, error)
 
 	// ContextFunc enhances a given context.
 	ContextFunc func(context.Context) context.Context

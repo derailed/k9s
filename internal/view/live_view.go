@@ -80,6 +80,10 @@ func (v *LiveView) Init(_ context.Context) error {
 	return nil
 }
 
+func (v *LiveView) InCmdMode() bool {
+	return v.cmdBuff.InCmdMode()
+}
+
 // ResourceFailed notifies when their is an issue.
 func (v *LiveView) ResourceFailed(err error) {
 	v.text.SetTextAlign(tview.AlignCenter)

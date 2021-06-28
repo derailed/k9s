@@ -66,9 +66,7 @@ func (a *Alias) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if r != 0 {
 		s := ui.TrimCell(a.GetTable().SelectTable, r, 1)
 		tokens := strings.Split(s, ",")
-		if err := a.App().gotoResource(tokens[0], "", true); err != nil {
-			a.App().Flash().Err(err)
-		}
+		a.App().gotoResource(tokens[0], "", true)
 		return nil
 	}
 

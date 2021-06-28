@@ -56,8 +56,8 @@ func BenchmarkUpdateLogs(b *testing.B) {
 
 // Helpers...
 
-func makeLogOpts(count int) dao.LogOptions {
-	return dao.LogOptions{
+func makeLogOpts(count int) *dao.LogOptions {
+	return &dao.LogOptions{
 		Path:      "fred",
 		Container: "blee",
 		Lines:     int64(count),

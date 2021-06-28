@@ -11,24 +11,35 @@ import (
 )
 
 func TestLogAutoScroll(t *testing.T) {
-	v := NewLog(client.NewGVR("v1/pods"), "fred/p1", "blee", false)
+	opts := dao.LogOptions{
+		Path:            "fred/p1",
+		Container:       "blee",
+		SingleContainer: true,
+	}
+	v := NewLog(client.NewGVR("v1/pods"), &opts)
 	v.Init(makeContext())
-	v.GetModel().Set(dao.LogItems{dao.NewLogItemFromString("blee"), dao.NewLogItemFromString("bozo")})
+	ii := dao.NewLogItems()
+	ii.Add(dao.NewLogItemFromString("blee"), dao.NewLogItemFromString("bozo"))
+	v.GetModel().Set(ii)
 	v.GetModel().Notify()
 
-	assert.Equal(t, 16, len(v.Hints()))
+	assert.Equal(t, 15, len(v.Hints()))
 
 	v.toggleAutoScrollCmd(nil)
-	assert.Equal(t, "AllContainers:Off     Autoscroll:Off     FullScreen:Off     Timestamps:Off     Wrap:Off", v.Indicator().GetText(true))
+	assert.Equal(t, "Autoscroll:Off     FullScreen:Off     Timestamps:Off     Wrap:Off", v.Indicator().GetText(true))
 }
 
 func TestLogViewNav(t *testing.T) {
-	v := NewLog(client.NewGVR("v1/pods"), "fred/p1", "blee", false)
+	opts := dao.LogOptions{
+		Path:      "fred/p1",
+		Container: "blee",
+	}
+	v := NewLog(client.NewGVR("v1/pods"), &opts)
 	v.Init(makeContext())
 
-	var buff dao.LogItems
+	buff := dao.NewLogItems()
 	for i := 0; i < 100; i++ {
-		buff = append(buff, dao.NewLogItemFromString(fmt.Sprintf("line-%d\n", i)))
+		buff.Add(dao.NewLogItemFromString(fmt.Sprintf("line-%d\n", i)))
 	}
 	v.GetModel().Set(buff)
 	v.toggleAutoScrollCmd(nil)
@@ -38,7 +49,11 @@ func TestLogViewNav(t *testing.T) {
 }
 
 func TestLogViewClear(t *testing.T) {
-	v := NewLog(client.NewGVR("v1/pods"), "fred/p1", "blee", false)
+	opts := dao.LogOptions{
+		Path:      "fred/p1",
+		Container: "blee",
+	}
+	v := NewLog(client.NewGVR("v1/pods"), &opts)
 	v.Init(makeContext())
 
 	v.toggleAutoScrollCmd(nil)
@@ -49,16 +64,21 @@ func TestLogViewClear(t *testing.T) {
 }
 
 func TestLogTimestamp(t *testing.T) {
-	l := NewLog(client.NewGVR("test"), "fred/blee", "c1", false)
+	opts := dao.LogOptions{
+		Path:      "fred/blee",
+		Container: "c1",
+	}
+	l := NewLog(client.NewGVR("test"), &opts)
 	l.Init(makeContext())
-	ii := dao.LogItems{
+	ii := dao.NewLogItems()
+	ii.Add(
 		&dao.LogItem{
 			Pod:       "fred/blee",
 			Container: "c1",
 			Timestamp: "ttt",
 			Bytes:     []byte("Testing 1, 2, 3"),
 		},
-	}
+	)
 	var list logList
 	l.GetModel().AddListener(&list)
 	l.GetModel().Set(ii)
@@ -73,12 +93,17 @@ func TestLogTimestamp(t *testing.T) {
 }
 
 func TestLogFilter(t *testing.T) {
-	l := NewLog(client.NewGVR("test"), "fred/blee", "c1", false)
+	opts := dao.LogOptions{
+		Path:      "fred/blee",
+		Container: "c1",
+	}
+	l := NewLog(client.NewGVR("test"), &opts)
 	l.Init(makeContext())
-	buff := dao.LogItems{
+	buff := dao.NewLogItems()
+	buff.Add(
 		dao.NewLogItemFromString("duh"),
 		dao.NewLogItemFromString("zorg"),
-	}
+	)
 	var list logList
 	l.GetModel().AddListener(&list)
 	l.GetModel().Set(buff)

@@ -293,7 +293,3 @@ func initCertFlags() {
 		"Bearer token for authentication to the API server",
 	)
 }
-
-func isBoolSet(b *bool) bool {
-	return b != nil && *b
-}

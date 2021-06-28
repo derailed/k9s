@@ -153,7 +153,7 @@ func rxFilter(q string, inverse bool, data render.TableData) (render.TableData, 
 	}
 	rx, err := regexp.Compile(`(?i)(` + q + `)`)
 	if err != nil {
-		return data, err
+		return data, fmt.Errorf("%w -- %s", err, q)
 	}
 
 	filtered := render.TableData{

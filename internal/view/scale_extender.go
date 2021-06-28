@@ -49,7 +49,12 @@ func (s *ScaleExtender) scaleCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (s *ScaleExtender) showScaleDialog(path string) {
-	confirm := tview.NewModalForm("<Scale>", s.makeScaleForm(path))
+	form, err := s.makeScaleForm(path)
+	if err != nil {
+		s.App().Flash().Err(err)
+		return
+	}
+	confirm := tview.NewModalForm("<Scale>", form)
 	confirm.SetText(fmt.Sprintf("Scale %s %s", s.GVR(), path))
 	confirm.SetDoneFunc(func(int, string) {
 		s.dismissDialog()
@@ -58,10 +63,30 @@ func (s *ScaleExtender) showScaleDialog(path string) {
 	s.App().Content.ShowPage(scaleDialogKey)
 }
 
-func (s *ScaleExtender) makeScaleForm(sel string) *tview.Form {
+func (s *ScaleExtender) valueOf(col string, index int) (string, error) {
+	data := s.GetTable().GetFilteredData()
+	colIdx := data.IndexOfHeader(col)
+	if colIdx < 0 {
+		return "", fmt.Errorf("no column index for %s", col)
+	}
+	if index > len(data.RowEvents) {
+		return "", fmt.Errorf("invalid row index %d", index)
+	}
+
+	return data.RowEvents[index].Row.Fields[colIdx], nil
+}
+
+func (s *ScaleExtender) makeScaleForm(sel string) (*tview.Form, error) {
 	f := s.makeStyledForm()
-	replicas := strings.TrimSpace(s.GetTable().GetCell(s.GetTable().GetSelectedRowIndex(), s.GetTable().NameColIndex()+1).Text)
+
+	replicas, err := s.valueOf("READY", s.GetTable().GetSelectedRowIndex())
+	if err != nil {
+		return nil, err
+	}
 	tokens := strings.Split(replicas, "/")
+	if len(tokens) < 2 {
+		return nil, fmt.Errorf("unable to locate replicas from %s", replicas)
+	}
 	replicas = strings.TrimRight(tokens[1], ui.DeltaSign)
 	f.AddInputField("Replicas:", replicas, 4, func(textToCheck string, lastChar rune) bool {
 		_, err := strconv.Atoi(textToCheck)
@@ -91,7 +116,7 @@ func (s *ScaleExtender) makeScaleForm(sel string) *tview.Form {
 		s.dismissDialog()
 	})
 
-	return f
+	return f, nil
 }
 
 func (s *ScaleExtender) dismissDialog() {

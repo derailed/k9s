@@ -98,8 +98,24 @@ func (s *StatefulSet) Restart(ctx context.Context, path string) error {
 	return err
 }
 
+// Load returns a statefulset instance.
+func (*StatefulSet) Load(f Factory, fqn string) (*appsv1.StatefulSet, error) {
+	o, err := f.Get("apps/v1/statefulsets", fqn, true, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	var sts appsv1.StatefulSet
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &sts)
+	if err != nil {
+		return nil, errors.New("expecting Statefulset resource")
+	}
+
+	return &sts, nil
+}
+
 // TailLogs tail logs for all pods represented by this StatefulSet.
-func (s *StatefulSet) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
+func (s *StatefulSet) TailLogs(ctx context.Context, c LogChan, opts *LogOptions) error {
 	sts, err := s.getStatefulSet(opts.Path)
 	if err != nil {
 		return errors.New("expecting StatefulSet resource")

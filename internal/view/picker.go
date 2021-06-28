@@ -49,6 +49,10 @@ func (p *Picker) Init(ctx context.Context) error {
 	return nil
 }
 
+func (*Picker) InCmdMode() bool {
+	return false
+}
+
 // Start starts the view.
 func (p *Picker) Start() {}
 

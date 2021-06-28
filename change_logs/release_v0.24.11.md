@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s_small.png" align="right" width="200" height="auto"/>
 
-# Release v0.24.10
+# Release v0.24.11
 
 ## Notes
 
@@ -12,11 +12,19 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ## Maintenance Release!
 
+> NOTE: Made a mistake with the last release binaries including a release tag. My bad as his caused a headache for the good folks managing the release upstream. Reverted the change on this drop!
+
 ---
 
 ## Resolved Issues
 
-* [Issue #1123](https://github.com/derailed/k9s/issues/1123) Cannotresponse to keyboard strike after exit pod shell in windows 10
+* [Issue #1163](https://github.com/derailed/k9s/issues/1163) Color for autocomplete text
+* [Issue #1153](https://github.com/derailed/k9s/issues/1153) Crash when scaling a deployment with a custom view
+* [Issue #1151](https://github.com/derailed/k9s/issues/1151) k9s does not use current namespace of current context
+* [Issue #1140](https://github.com/derailed/k9s/issues/1140) Can no longer trigger cronjobs manually
+* [Issue #1137](https://github.com/derailed/k9s/issues/1137) Unreadable container name
+* [Issue #1132](https://github.com/derailed/k9s/issues/1132) Searching for regex not always working
+* [Issue #1131](https://github.com/derailed/k9s/issues/1131) Changed release filenames starting k9s v0.24.10
 
 ---
 

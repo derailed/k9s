@@ -135,9 +135,13 @@ func rbacViewers(vv MetaViewers) {
 }
 
 func batchViewers(vv MetaViewers) {
+	vv[client.NewGVR("batch/v1/cronjobs")] = MetaViewer{
+		viewerFn: NewCronJob,
+	}
 	vv[client.NewGVR("batch/v1beta1/cronjobs")] = MetaViewer{
 		viewerFn: NewCronJob,
 	}
+
 	vv[client.NewGVR("batch/v1/jobs")] = MetaViewer{
 		viewerFn: NewJob,
 	}
@@ -155,7 +159,5 @@ func extViewers(vv MetaViewers) {
 func showCRD(app *App, _ ui.Tabular, _, path string) {
 	_, crdGVR := client.Namespaced(path)
 	tokens := strings.Split(crdGVR, ".")
-	if err := app.gotoResource(tokens[0], "", false); err != nil {
-		app.Flash().Err(err)
-	}
+	app.gotoResource(tokens[0], "", false)
 }

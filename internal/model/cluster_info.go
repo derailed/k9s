@@ -102,7 +102,7 @@ func (c *ClusterInfo) fetchK9sLatestRev() string {
 
 	latestRev, err := fetchLatestRev()
 	if err != nil {
-		log.Error().Msgf("k9s latest rev fetch failed")
+		log.Warn().Err(err).Msgf("k9s latest rev fetch failed")
 	} else {
 		c.cache.Add(k9sLatestRevKey, latestRev, cacheExpiry)
 	}
@@ -136,7 +136,7 @@ func (c *ClusterInfo) Refresh() {
 	if err := c.cluster.Metrics(ctx, &mx); err == nil {
 		data.Cpu, data.Mem, data.Ephemeral = mx.PercCPU, mx.PercMEM, mx.PercEphemeral
 	} else {
-		log.Error().Err(err).Msgf("Cluster metrics failed")
+		log.Warn().Err(err).Msgf("Cluster metrics failed")
 	}
 
 	if c.data.Deltas(data) {

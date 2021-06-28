@@ -111,7 +111,7 @@ func (c *CronJob) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, erro
 	return refs, nil
 }
 
-// Suspend toggles suspend/resume on a CronJob.
+// ToggleSuspend toggles suspend/resume on a CronJob.
 func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
 	ns, _ := client.Namespaced(path)
 

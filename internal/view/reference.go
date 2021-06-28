@@ -54,10 +54,7 @@ func (r *Reference) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	path := r.GetTable().GetSelectedItem()
 	gvr := ui.TrimCell(r.GetTable().SelectTable, row, 2)
-
-	if err := r.App().gotoResource(client.NewGVR(gvr).R(), path, false); err != nil {
-		r.App().Flash().Err(err)
-	}
+	r.App().gotoResource(client.NewGVR(gvr).R(), path, false)
 
 	return evt
 }

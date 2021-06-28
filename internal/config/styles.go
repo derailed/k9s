@@ -42,7 +42,7 @@ type (
 		Dialog Dialog `yaml:"dialog"`
 	}
 
-	// Helps tracks help styles.
+	// Help tracks help styles.
 	Help struct {
 		FgColor      Color `yaml:"fgColor"`
 		BgColor      Color `yaml:"bgColor"`

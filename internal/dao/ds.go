@@ -73,7 +73,7 @@ func (d *DaemonSet) Restart(ctx context.Context, path string) error {
 }
 
 // TailLogs tail logs for all pods represented by this DaemonSet.
-func (d *DaemonSet) TailLogs(ctx context.Context, c LogChan, opts LogOptions) error {
+func (d *DaemonSet) TailLogs(ctx context.Context, c LogChan, opts *LogOptions) error {
 	ds, err := d.GetInstance(opts.Path)
 	if err != nil {
 		return err
@@ -86,7 +86,7 @@ func (d *DaemonSet) TailLogs(ctx context.Context, c LogChan, opts LogOptions) er
 	return podLogs(ctx, c, ds.Spec.Selector.MatchLabels, opts)
 }
 
-func podLogs(ctx context.Context, c LogChan, sel map[string]string, opts LogOptions) error {
+func podLogs(ctx context.Context, c LogChan, sel map[string]string, opts *LogOptions) error {
 	f, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
 	if !ok {
 		return errors.New("expecting a context factory")
@@ -115,6 +115,7 @@ func podLogs(ctx context.Context, c LogChan, sel map[string]string, opts LogOpti
 		if err != nil {
 			return err
 		}
+		opts = opts.Clone()
 		opts.Path = client.FQN(pod.Namespace, pod.Name)
 		if err := po.TailLogs(ctx, c, opts); err != nil {
 			return err

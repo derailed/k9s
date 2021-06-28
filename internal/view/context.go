@@ -48,7 +48,7 @@ func useContext(app *App, name string) error {
 	}
 	res, err := dao.AccessorFor(app.factory, client.NewGVR("contexts"))
 	if err != nil {
-		return nil
+		return err
 	}
 	switcher, ok := res.(dao.Switchable)
 	if !ok {

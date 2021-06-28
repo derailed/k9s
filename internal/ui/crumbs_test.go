@@ -36,6 +36,7 @@ func makeComponent(n string) c {
 	return c{name: n}
 }
 
+func (c) InCmdMode() bool                                              { return false }
 func (c c) HasFocus() bool                                             { return true }
 func (c c) Hints() model.MenuHints                                     { return nil }
 func (c c) ExtraHints() map[string]string                              { return nil }

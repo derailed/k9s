@@ -410,9 +410,7 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 
 		a.Flash().Infof("Switching context to %s", name)
 		a.ReloadStyles(name)
-		if err := a.gotoResource(v, "", true); loadPods && err != nil {
-			a.Flash().Err(err)
-		}
+		a.gotoResource(v, "", true)
 		a.clusterModel.Reset(a.factory)
 	}
 
@@ -550,10 +548,7 @@ func (a *App) toggleCrumbsCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.CmdBuff().IsActive() && !a.CmdBuff().Empty() {
-		if err := a.gotoResource(a.GetCmd(), "", true); err != nil {
-			log.Error().Err(err).Msgf("Goto resource for %q failed", a.GetCmd())
-			a.Flash().Err(err)
-		}
+		a.gotoResource(a.GetCmd(), "", true)
 		a.ResetCmd()
 		return nil
 	}
@@ -586,11 +581,13 @@ func (a *App) dirCmd(path string) error {
 }
 
 func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.CmdBuff().InCmdMode() {
+	top := a.Content.Top()
+
+	if a.CmdBuff().InCmdMode() || (top != nil && top.InCmdMode()) {
 		return evt
 	}
 
-	if a.Content.Top() != nil && a.Content.Top().Name() == "help" {
+	if top != nil && top.Name() == "help" {
 		a.Content.Pop()
 		return nil
 	}
@@ -619,10 +616,10 @@ func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (a *App) gotoResource(cmd, path string, clearStack bool) error {
+func (a *App) gotoResource(cmd, path string, clearStack bool) {
 	err := a.command.run(cmd, path, clearStack)
 	if err == nil {
-		return nil
+		return
 	}
 
 	c := NewCow(a, err.Error())
@@ -631,8 +628,6 @@ func (a *App) gotoResource(cmd, path string, clearStack bool) error {
 		a.Content.Stack.Clear()
 	}
 	a.Content.Push(c)
-
-	return nil
 }
 
 func (a *App) inject(c model.Component) error {

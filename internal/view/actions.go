@@ -79,10 +79,7 @@ func hotKeyActions(r Runner, aa ui.KeyActions) {
 
 func gotoCmd(r Runner, cmd, path string) ui.ActionHandler {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		if err := r.App().gotoResource(cmd, path, true); err != nil {
-			log.Error().Err(err).Msgf("Command fail")
-			r.App().Flash().Err(err)
-		}
+		r.App().gotoResource(cmd, path, true)
 		return nil
 	}
 }

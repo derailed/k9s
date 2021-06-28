@@ -45,14 +45,10 @@ type Log struct {
 var _ model.Component = (*Log)(nil)
 
 // NewLog returns a new viewer.
-func NewLog(gvr client.GVR, path, co string, prev bool) *Log {
+func NewLog(gvr client.GVR, opts *dao.LogOptions) *Log {
 	l := Log{
-		Flex: tview.NewFlex(),
-		model: model.NewLog(
-			gvr,
-			buildLogOpts(path, co, prev, false, config.DefaultLoggerTailCount),
-			flushTimeout,
-		),
+		Flex:  tview.NewFlex(),
+		model: model.NewLog(gvr, opts, flushTimeout),
 	}
 
 	return &l
@@ -70,6 +66,9 @@ func (l *Log) Init(ctx context.Context) (err error) {
 
 	l.indicator = NewLogIndicator(l.app.Config, l.app.Styles, l.isContainerLogView())
 	l.AddItem(l.indicator, 1, 1, false)
+	if !l.model.HasDefaultContainer() {
+		l.indicator.ToggleAllContainers()
+	}
 	l.indicator.Refresh()
 
 	l.logs = NewLogger(l.app)
@@ -97,6 +96,10 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	l.model.ToggleShowTimestamp(l.app.Config.K9s.Logger.ShowTime)
 
 	return nil
+}
+
+func (v *Log) InCmdMode() bool {
+	return v.logs.cmdBuff.InCmdMode()
 }
 
 // LogCleared clears the logs.
@@ -198,9 +201,9 @@ func (l *Log) bindKeys() {
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.SaveCmd, true),
 		ui.KeyC:         ui.NewKeyAction("Copy", l.cpCmd, true),
 	})
-	if l.isContainerLogView() {
+	if l.model.HasDefaultContainer() {
 		l.logs.Actions().Set(ui.KeyActions{
-			ui.KeyA: ui.NewKeyAction("Toggle AllContainers", l.showAllContainers, true),
+			ui.KeyA: ui.NewKeyAction("Toggle AllContainers", l.toggleAllContainers, true),
 		})
 	}
 }
@@ -292,12 +295,14 @@ func (l *Log) sinceCmd(a int) func(evt *tcell.EventKey) *tcell.EventKey {
 	}
 }
 
-func (l *Log) showAllContainers(evt *tcell.EventKey) *tcell.EventKey {
+func (l *Log) toggleAllContainers(evt *tcell.EventKey) *tcell.EventKey {
 	if l.app.InCmdMode() {
 		return evt
 	}
 	l.indicator.ToggleAllContainers()
 	l.model.ToggleAllContainers()
+	l.updateTitle()
+
 	return nil
 }
 
@@ -431,18 +436,5 @@ func (l *Log) goFullScreen() {
 }
 
 func (l *Log) isContainerLogView() bool {
-	return l.model.GetContainer() != ""
-}
-
-// ----------------------------------------------------------------------------
-// Helpers...
-
-func buildLogOpts(path, co string, prevLogs, showTime bool, tailLineCount int) dao.LogOptions {
-	return dao.LogOptions{
-		Path:          path,
-		Container:     co,
-		Lines:         int64(tailLineCount),
-		Previous:      prevLogs,
-		ShowTimestamp: showTime,
-	}
+	return l.model.HasDefaultContainer()
 }

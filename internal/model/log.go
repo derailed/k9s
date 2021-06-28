@@ -28,27 +28,25 @@ type LogsListener interface {
 
 // Log represents a resource logger.
 type Log struct {
-	factory           dao.Factory
-	lines             dao.LogItems
-	listeners         []LogsListener
-	gvr               client.GVR
-	logOptions        dao.LogOptions
-	cancelFn          context.CancelFunc
-	mx                sync.RWMutex
-	filter            string
-	lastSent          int
-	flushTimeout      time.Duration
-	originalContainer string
+	factory      dao.Factory
+	items        *dao.LogItems
+	listeners    []LogsListener
+	gvr          client.GVR
+	logOptions   *dao.LogOptions
+	cancelFn     context.CancelFunc
+	mx           sync.RWMutex
+	filter       string
+	lastSent     int
+	flushTimeout time.Duration
 }
 
 // NewLog returns a new model.
-func NewLog(gvr client.GVR, opts dao.LogOptions, flushTimeout time.Duration) *Log {
+func NewLog(gvr client.GVR, opts *dao.LogOptions, flushTimeout time.Duration) *Log {
 	return &Log{
-		gvr:               gvr,
-		logOptions:        opts,
-		lines:             nil,
-		flushTimeout:      flushTimeout,
-		originalContainer: opts.Container,
+		gvr:          gvr,
+		logOptions:   opts,
+		items:        dao.NewLogItems(),
+		flushTimeout: flushTimeout,
 	}
 }
 
@@ -88,6 +86,11 @@ func (l *Log) GetContainer() string {
 	return l.logOptions.Container
 }
 
+// HasDefaultContainer returns true if the pod has a default container, false otherwise.
+func (l *Log) HasDefaultContainer() bool {
+	return l.logOptions.DefaultContainer != ""
+}
+
 // Init initializes the model.
 func (l *Log) Init(f dao.Factory) {
 	l.factory = f
@@ -97,7 +100,8 @@ func (l *Log) Init(f dao.Factory) {
 func (l *Log) Clear() {
 	l.mx.Lock()
 	{
-		l.lines, l.lastSent = dao.LogItems{}, 0
+		l.items.Clear()
+		l.lastSent = 0
 	}
 	l.mx.Unlock()
 
@@ -107,8 +111,8 @@ func (l *Log) Clear() {
 // Refresh refreshes the logs.
 func (l *Log) Refresh() {
 	l.fireLogCleared()
-	ll := make([][]byte, len(l.lines))
-	l.lines.Render(l.logOptions.ShowTimestamp, ll)
+	ll := make([][]byte, l.items.Len())
+	l.items.Render(l.logOptions.ShowTimestamp, ll)
 	l.fireLogChanged(ll)
 }
 
@@ -119,7 +123,7 @@ func (l *Log) Restart() {
 	l.Start()
 }
 
-// Start initialize log tailer.
+// Start starts logging.
 func (l *Log) Start() {
 	if err := l.load(); err != nil {
 		log.Error().Err(err).Msgf("Tail logs failed!")
@@ -127,7 +131,7 @@ func (l *Log) Start() {
 	}
 }
 
-// Stop terminates log tailing.
+// Stop terminates logging.
 func (l *Log) Stop() {
 	defer log.Debug().Msgf("<<<< Logger STOPPED!")
 	if l.cancelFn != nil {
@@ -137,16 +141,16 @@ func (l *Log) Stop() {
 }
 
 // Set sets the log lines (for testing only!)
-func (l *Log) Set(items dao.LogItems) {
+func (l *Log) Set(items *dao.LogItems) {
 	l.mx.Lock()
 	{
-		l.lines = items
+		l.items.Merge(items)
 	}
 	l.mx.Unlock()
 
 	l.fireLogCleared()
-	ll := make([][]byte, len(l.lines))
-	l.lines.Render(l.logOptions.ShowTimestamp, ll)
+	ll := make([][]byte, l.items.Len())
+	l.items.Render(l.logOptions.ShowTimestamp, ll)
 	l.fireLogChanged(ll)
 }
 
@@ -159,8 +163,8 @@ func (l *Log) ClearFilter() {
 	l.mx.Unlock()
 
 	l.fireLogCleared()
-	ll := make([][]byte, len(l.lines))
-	l.lines.Render(l.logOptions.ShowTimestamp, ll)
+	ll := make([][]byte, l.items.Len())
+	l.items.Render(l.logOptions.ShowTimestamp, ll)
 	l.fireLogChanged(ll)
 }
 
@@ -172,13 +176,13 @@ func (l *Log) Filter(q string) {
 	if len(q) == 0 {
 		l.filter = ""
 		l.fireLogCleared()
-		l.fireLogBuffChanged(l.lines)
+		l.fireLogBuffChanged(l.items)
 		return
 	}
 
 	l.filter = q
 	l.fireLogCleared()
-	l.fireLogBuffChanged(l.lines)
+	l.fireLogBuffChanged(l.items)
 }
 
 func (l *Log) load() error {
@@ -193,17 +197,19 @@ func (l *Log) load() error {
 	if err != nil {
 		return err
 	}
-	logger, ok := accessor.(dao.Loggable)
+	loggable, ok := accessor.(dao.Loggable)
 	if !ok {
 		return fmt.Errorf("Resource %s is not Loggable", l.gvr)
 	}
 
 	go func() {
-		if err = logger.TailLogs(ctx, c, l.logOptions); err != nil {
+		if err = loggable.TailLogs(ctx, c, l.logOptions); err != nil {
 			log.Error().Err(err).Msgf("Tail logs failed")
+			l.mx.Lock()
 			if l.cancelFn != nil {
 				l.cancelFn()
 			}
+			l.mx.Unlock()
 		}
 	}()
 
@@ -216,25 +222,23 @@ func (l *Log) Append(line *dao.LogItem) {
 		return
 	}
 
-	var lines dao.LogItems
 	l.mx.Lock()
 	{
 		l.logOptions.SinceTime = line.Timestamp
-		lines = l.lines
 	}
 	l.mx.Unlock()
 
-	if lines == nil {
+	if l.items.Len() == 0 {
 		l.fireLogCleared()
 	}
 
 	l.mx.Lock()
 	defer l.mx.Unlock()
-	if len(l.lines) < int(l.logOptions.Lines) {
-		l.lines = append(l.lines, line)
+	if l.items.Len() < int(l.logOptions.Lines) {
+		l.items.Add(line)
 		return
 	}
-	l.lines = append(l.lines[1:], line)
+	l.items.Shift(line)
 	l.lastSent--
 	if l.lastSent < 0 {
 		l.lastSent = 0
@@ -246,19 +250,15 @@ func (l *Log) Notify() {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
-	if l.lastSent < len(l.lines) {
-		l.fireLogBuffChanged(l.lines[l.lastSent:])
-		l.lastSent = len(l.lines)
+	if l.lastSent < l.items.Len() {
+		l.fireLogBuffChanged(l.items.Subset(l.lastSent))
+		l.lastSent = l.items.Len()
 	}
 }
 
-// ToggleShowTimestamp toggles to show all containers logs.
+// ToggleAllContainers toggles to show all containers logs.
 func (l *Log) ToggleAllContainers() {
-	if l.logOptions.Container != "" {
-		l.logOptions.Container = ""
-	} else {
-		l.logOptions.Container = l.originalContainer
-	}
+	l.logOptions.ToggleAllContainers()
 	l.Restart()
 }
 
@@ -279,7 +279,7 @@ func (l *Log) updateLogs(ctx context.Context, c dao.LogChan) {
 			var overflow bool
 			l.mx.RLock()
 			{
-				overflow = int64(len(l.lines)-l.lastSent) > l.logOptions.Lines
+				overflow = int64(l.items.Len()-l.lastSent) > l.logOptions.Lines
 			}
 			l.mx.RUnlock()
 			if overflow {
@@ -317,15 +317,15 @@ func (l *Log) applyFilter(q string) ([][]byte, error) {
 	if q == "" {
 		return nil, nil
 	}
-	matches, indices, err := l.lines.Filter(q, l.logOptions.ShowTimestamp)
+	matches, indices, err := l.items.Filter(q, l.logOptions.ShowTimestamp)
 	if err != nil {
 		return nil, err
 	}
 
 	// No filter!
 	if matches == nil {
-		ll := make([][]byte, len(l.lines))
-		l.lines.Render(l.logOptions.ShowTimestamp, ll)
+		ll := make([][]byte, l.items.Len())
+		l.items.Render(l.logOptions.ShowTimestamp, ll)
 		return ll, nil
 	}
 	// Blank filter
@@ -333,7 +333,7 @@ func (l *Log) applyFilter(q string) ([][]byte, error) {
 		return nil, nil
 	}
 	filtered := make([][]byte, 0, len(matches))
-	lines := l.lines.Lines(l.logOptions.ShowTimestamp)
+	lines := l.items.Lines(l.logOptions.ShowTimestamp)
 	for i, idx := range matches {
 		filtered = append(filtered, color.Highlight(lines[idx], indices[i], 209))
 	}
@@ -341,8 +341,8 @@ func (l *Log) applyFilter(q string) ([][]byte, error) {
 	return filtered, nil
 }
 
-func (l *Log) fireLogBuffChanged(lines dao.LogItems) {
-	ll := make([][]byte, len(lines))
+func (l *Log) fireLogBuffChanged(lines *dao.LogItems) {
+	ll := make([][]byte, lines.Len())
 	if l.filter == "" {
 		lines.Render(l.logOptions.ShowTimestamp, ll)
 	} else {

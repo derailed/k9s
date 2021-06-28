@@ -8,6 +8,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell/v2"
@@ -25,7 +26,7 @@ type Container struct {
 // NewContainer returns a new container view.
 func NewContainer(gvr client.GVR) ResourceViewer {
 	c := Container{}
-	c.ResourceViewer = NewLogsExtender(NewBrowser(gvr), c.selectedContainer)
+	c.ResourceViewer = NewLogsExtender(NewBrowser(gvr), c.logOptions)
 	c.SetEnvFn(c.k9sEnv)
 	c.GetTable().SetEnterFn(c.viewLogs)
 	c.GetTable().SetColorerFn(render.Container{}.ColorerFunc())
@@ -90,9 +91,23 @@ func (c *Container) k9sEnv() Env {
 	return env
 }
 
-func (c *Container) selectedContainer() string {
-	tokens := strings.Split(c.GetTable().GetSelectedItem(), "/")
-	return tokens[0]
+func (c *Container) logOptions() (*dao.LogOptions, error) {
+	path := c.GetTable().GetSelectedItem()
+	if path == "" {
+		return nil, errors.New("nothing selected")
+	}
+
+	cfg := c.App().Config.K9s.Logger
+	opts := dao.LogOptions{
+		Path:            c.GetTable().Path,
+		Container:       path,
+		Lines:           int64(cfg.TailCount),
+		SinceSeconds:    cfg.SinceSeconds,
+		SingleContainer: true,
+		ShowTimestamp:   cfg.ShowTime,
+	}
+
+	return &opts, nil
 }
 
 func (c *Container) viewLogs(app *App, model ui.Tabular, gvr, path string) {
@@ -126,14 +141,14 @@ func (c *Container) portForwardContext(ctx context.Context) context.Context {
 }
 
 func (c *Container) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
-	sel := c.GetTable().GetSelectedItem()
-	if sel == "" {
+	path := c.GetTable().GetSelectedItem()
+	if path == "" {
 		return evt
 	}
 
 	c.Stop()
 	defer c.Start()
-	shellIn(c.App(), c.GetTable().Path, sel)
+	shellIn(c.App(), c.GetTable().Path, path)
 
 	return nil
 }
