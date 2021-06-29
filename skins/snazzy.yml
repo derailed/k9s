@@ -3,6 +3,10 @@ k9s:
     fgColor: "#97979b"
     bgColor: "#282a36"
     logoColor: "#5af78e"
+  prompt:
+    fgColor: "#97979b"
+    bgColor: "#282a36"
+    suggestColor: "#5af78e"
   info:
     fgColor: white
     sectionColor: "#5af78e"
