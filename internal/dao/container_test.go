@@ -72,6 +72,7 @@ var _ dao.Factory = testFactory{}
 func (f podFactory) Client() client.Connection {
 	return makeConn()
 }
+
 func (f podFactory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
 	var m map[string]interface{}
 	if err := yaml.Unmarshal([]byte(poYaml()), &m); err != nil {
@@ -79,6 +80,7 @@ func (f podFactory) Get(gvr, path string, wait bool, sel labels.Selector) (runti
 	}
 	return &unstructured.Unstructured{Object: m}, nil
 }
+
 func (f podFactory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error) {
 	return nil, nil
 }

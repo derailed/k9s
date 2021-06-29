@@ -21,7 +21,7 @@ type Namespace struct {
 	ResourceViewer
 }
 
-// NewNamespace returns a new viewer
+// NewNamespace returns a new viewer.
 func NewNamespace(gvr client.GVR) ResourceViewer {
 	n := Namespace{
 		ResourceViewer: NewBrowser(gvr),

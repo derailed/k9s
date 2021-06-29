@@ -50,8 +50,8 @@ func (a *Aliases) ShortNames() ShortNames {
 
 	m := make(ShortNames, len(a.Alias))
 	for alias, gvr := range a.Alias {
-		if _, ok := m[gvr]; ok {
-			m[gvr] = append(m[gvr], alias)
+		if v, ok := m[gvr]; ok {
+			m[gvr] = append(v, alias)
 		} else {
 			m[gvr] = []string{alias}
 		}

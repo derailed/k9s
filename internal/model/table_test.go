@@ -75,6 +75,7 @@ type tableListener struct {
 func (l *tableListener) TableDataChanged(render.TableData) {
 	l.count++
 }
+
 func (l *tableListener) TableLoadFailed(error) {
 	l.errs++
 }
@@ -88,21 +89,25 @@ var _ dao.Factory = tableFactory{}
 func (f tableFactory) Client() client.Connection {
 	return client.NewTestAPIClient()
 }
+
 func (f tableFactory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
 	if len(f.rows) > 0 {
 		return f.rows[0], nil
 	}
 	return nil, nil
 }
+
 func (f tableFactory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error) {
 	if len(f.rows) > 0 {
 		return f.rows, nil
 	}
 	return nil, nil
 }
+
 func (f tableFactory) ForResource(ns, gvr string) (informers.GenericInformer, error) {
 	return nil, nil
 }
+
 func (f tableFactory) CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error) {
 	return nil, nil
 }

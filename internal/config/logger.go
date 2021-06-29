@@ -13,7 +13,7 @@ const (
 	DefaultSinceSeconds = 60 // all logs
 )
 
-// Logger tracks logger options
+// Logger tracks logger options.
 type Logger struct {
 	TailCount      int64 `yaml:"tail"`
 	BufferSize     int   `yaml:"buffer"`

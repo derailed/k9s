@@ -15,7 +15,7 @@ type Plugins struct {
 	Plugin map[string]Plugin `yaml:"plugin"`
 }
 
-// Plugin describes a K9s plugin
+// Plugin describes a K9s plugin.
 type Plugin struct {
 	Scopes      []string `yaml:"scopes"`
 	Args        []string `yaml:"args"`

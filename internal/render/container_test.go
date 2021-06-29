@@ -75,7 +75,6 @@ func BenchmarkContainerRender(b *testing.B) {
 func toQty(s string) resource.Quantity {
 	q, _ := resource.ParseQuantity(s)
 	return q
-
 }
 
 func makeContainerMetrics() *mv1beta1.ContainerMetrics {

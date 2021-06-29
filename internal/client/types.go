@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	// NA Not available
+	// NA Not available.
 	NA = "n/a"
 
 	// NamespaceAll designates the fictional all namespace.

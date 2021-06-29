@@ -76,7 +76,7 @@ func (c *Component) InputHandler() func(event *tcell.EventKey, setFocus func(p t
 	})
 }
 
-// IsDial returns true if chart is a dial
+// IsDial returns true if chart is a dial.
 func (c *Component) IsDial() bool {
 	return false
 }

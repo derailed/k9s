@@ -146,7 +146,7 @@ func (t *TreeNode) CountChildren() int {
 	return len(t.Children)
 }
 
-// Count all the nodes from this node
+// Count all the nodes from this node.
 func (t *TreeNode) Count(gvr string) int {
 	counter := 0
 	if t.GVR == gvr || gvr == "" {

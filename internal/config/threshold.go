@@ -61,7 +61,7 @@ func NewThreshold() Threshold {
 	}
 }
 
-// Validate a namespace is setup correctly
+// Validate a namespace is setup correctly.
 func (t Threshold) Validate(c client.Connection, ks KubeSettings) {
 	for _, k := range []string{"cpu", "memory"} {
 		v, ok := t[k]

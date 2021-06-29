@@ -8,7 +8,7 @@ import (
 
 const ageCol = "AGE"
 
-// HeaderColumn represent a table header
+// HeaderColumn represent a table header.
 type HeaderColumn struct {
 	Name      string
 	Align     int

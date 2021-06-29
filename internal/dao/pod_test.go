@@ -35,7 +35,8 @@ func TestGetDefaultLogContainer(t *testing.T) {
 		"container_found": {
 			po: &v1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
-					Annotations: map[string]string{"kubectl.kubernetes.io/default-logs-container": "container1"}},
+					Annotations: map[string]string{"kubectl.kubernetes.io/default-logs-container": "container1"},
+				},
 				Spec: v1.PodSpec{
 					Containers: []v1.Container{{Name: "container1"}},
 				},

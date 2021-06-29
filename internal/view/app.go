@@ -437,7 +437,7 @@ func (a *App) BailOut() {
 	a.App.BailOut()
 }
 
-// Run starts the application loop
+// Run starts the application loop.
 func (a *App) Run() error {
 	a.Resume()
 

@@ -77,7 +77,7 @@ func (p *PortForwarder) Container() string {
 	return p.container
 }
 
-// Stop terminates a port forward
+// Stop terminates a port forward.
 func (p *PortForwarder) Stop() {
 	log.Debug().Msgf("<<< Stopping PortForward %q %v", p.path, p.ports)
 	p.active = false

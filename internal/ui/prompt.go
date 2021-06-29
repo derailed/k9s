@@ -34,7 +34,7 @@ type Suggester interface {
 	ClearSuggestions()
 }
 
-// PromptModel represents a prompt buffer
+// PromptModel represents a prompt buffer.
 type PromptModel interface {
 	// SetText sets the model text.
 	SetText(string)

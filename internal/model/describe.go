@@ -95,7 +95,7 @@ func (d *Describe) fireResourceFailed(err error) {
 	}
 }
 
-// ClearFilter clear out the filter
+// ClearFilter clear out the filter.
 func (d *Describe) ClearFilter() {
 }
 
@@ -141,6 +141,7 @@ func (d *Describe) updater(ctx context.Context) {
 		}
 	}
 }
+
 func (d *Describe) refresh(ctx context.Context) error {
 	if !atomic.CompareAndSwapInt32(&d.inUpdate, 0, 1) {
 		log.Debug().Msgf("Dropping update...")

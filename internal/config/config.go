@@ -189,7 +189,7 @@ func (c *Config) ActiveView() string {
 	return cmd
 }
 
-// SetActiveView set the currently cluster active view
+// SetActiveView set the currently cluster active view.
 func (c *Config) SetActiveView(view string) {
 	cl := c.K9s.ActiveCluster()
 	if cl != nil {
@@ -210,7 +210,7 @@ func (c *Config) SetConnection(conn client.Connection) {
 	}
 }
 
-// Load K9s configuration from file
+// Load K9s configuration from file.
 func (c *Config) Load(path string) error {
 	f, err := ioutil.ReadFile(path)
 	if err != nil {

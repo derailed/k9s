@@ -18,7 +18,7 @@ const (
 )
 
 type (
-	// BufferKind indicates a buffer type
+	// BufferKind indicates a buffer type.
 	BufferKind int8
 
 	// BuffWatcher represents a command buffer listener.

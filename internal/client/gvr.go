@@ -12,7 +12,7 @@ import (
 )
 
 // GVR represents a kubernetes resource schema as a string.
-// Format is group/version/resources:subresource
+// Format is group/version/resources:subresource.
 type GVR struct {
 	raw, g, v, r, sr string
 }

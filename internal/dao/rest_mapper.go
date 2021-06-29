@@ -10,7 +10,7 @@ import (
 	"k8s.io/client-go/restmapper"
 )
 
-// RestMapping holds k8s resource mapping
+// RestMapping holds k8s resource mapping.
 var RestMapping = &RestMapper{}
 
 // RestMapper map resource to REST mapping ie kind, group, version.

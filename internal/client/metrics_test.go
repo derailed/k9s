@@ -8,7 +8,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 	v1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -45,7 +44,7 @@ func TestToMB(t *testing.T) {
 
 func TestPodsMetrics(t *testing.T) {
 	uu := map[string]struct {
-		metrics *mv1beta1.PodMetricsList
+		metrics *v1beta1.PodMetricsList
 		eSize   int
 		e       client.PodsMetrics
 	}{
@@ -110,7 +109,7 @@ func BenchmarkPodsMetrics(b *testing.B) {
 func TestNodesMetrics(t *testing.T) {
 	uu := map[string]struct {
 		nodes   *v1.NodeList
-		metrics *mv1beta1.NodeMetricsList
+		metrics *v1beta1.NodeMetricsList
 		eSize   int
 		e       client.NodesMetrics
 	}{
@@ -212,7 +211,7 @@ func BenchmarkNodesMetrics(b *testing.B) {
 func TestClusterLoad(t *testing.T) {
 	uu := map[string]struct {
 		nodes   *v1.NodeList
-		metrics *mv1beta1.NodeMetricsList
+		metrics *v1beta1.NodeMetricsList
 		eSize   int
 		e       client.ClusterMetrics
 	}{
@@ -279,8 +278,8 @@ func BenchmarkClusterLoad(b *testing.B) {
 		},
 	}
 
-	metrics := mv1beta1.NodeMetricsList{
-		Items: []mv1beta1.NodeMetrics{
+	metrics := v1beta1.NodeMetricsList{
+		Items: []v1beta1.NodeMetrics{
 			*makeMxNode("n1", "50m", "1Mi"),
 			*makeMxNode("n2", "50m", "1Mi"),
 		},

@@ -72,7 +72,7 @@ type Commander interface {
 	InCmdMode() bool
 }
 
-// Component represents a ui component
+// Component represents a ui component.
 type Component interface {
 	Primitive
 	Igniter

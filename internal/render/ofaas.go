@@ -61,7 +61,7 @@ func (o OpenFaas) Render(i interface{}, ns string, r *Row) error {
 	if fn.Function.Labels != nil {
 		labels = mapToStr(*fn.Function.Labels)
 	}
-	var status = fnStatusReady
+	status := fnStatusReady
 	if fn.Function.AvailableReplicas == 0 {
 		status = fnStatusNotReady
 	}

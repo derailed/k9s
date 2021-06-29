@@ -17,7 +17,7 @@ func initKeys() {
 	initShiftNumKeys()
 }
 
-// Defines numeric keys for container actions
+// Defines numeric keys for container actions.
 const (
 	Key0 tcell.Key = iota + 48
 	Key1
@@ -31,7 +31,7 @@ const (
 	Key9
 )
 
-// Defines numeric keys for container actions
+// Defines numeric keys for container actions.
 const (
 	KeyShift0 tcell.Key = 41
 	KeyShift1 tcell.Key = 33
@@ -45,7 +45,7 @@ const (
 	KeyShift9 tcell.Key = 40
 )
 
-// Defines char keystrokes
+// Defines char keystrokes.
 const (
 	KeyA tcell.Key = iota + 97
 	KeyB
@@ -79,7 +79,7 @@ const (
 	KeySpace = 32
 )
 
-// Define Shift Keys
+// Define Shift Keys.
 const (
 	KeyShiftA tcell.Key = iota + 65
 	KeyShiftB

@@ -179,7 +179,7 @@ func (r RowEvents) Delete(id string) RowEvents {
 	return append(r[0:victim], r[victim+1:]...)
 }
 
-// Clear delete all row events
+// Clear delete all row events.
 func (r RowEvents) Clear() RowEvents {
 	return RowEvents{}
 }

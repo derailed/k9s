@@ -48,7 +48,7 @@ func NewXray(gvr client.GVR) ResourceViewer {
 	}
 }
 
-// Init initializes the view
+// Init initializes the view.
 func (x *Xray) Init(ctx context.Context) error {
 	x.envFn = x.k9sEnv
 
@@ -553,7 +553,7 @@ func (x *Xray) hydrate(parent *tview.TreeNode, n *xray.TreeNode) {
 // SetEnvFn sets the custom environment function.
 func (x *Xray) SetEnvFn(EnvFunc) {}
 
-// Refresh updates the view
+// Refresh updates the view.
 func (x *Xray) Refresh() {}
 
 // BufferCompleted indicates the buffer was changed.

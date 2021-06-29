@@ -73,7 +73,7 @@ func (l *LogsExtender) showLogs(path string, prev bool) {
 	}
 }
 
-// buildLogOpts(path, co, prev, false, config.DefaultLoggerTailCount),
+// buildLogOpts(path, co, prev, false, config.DefaultLoggerTailCount),.
 func (l *LogsExtender) buildLogOpts(path, co string, prevLogs bool) *dao.LogOptions {
 	cfg := l.App().Config.K9s.Logger
 	opts := dao.LogOptions{

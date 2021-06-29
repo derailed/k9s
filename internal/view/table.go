@@ -33,7 +33,7 @@ func NewTable(gvr client.GVR) *Table {
 	return &t
 }
 
-// Init initializes the component
+// Init initializes the component.
 func (t *Table) Init(ctx context.Context) (err error) {
 	if t.app, err = extractApp(ctx); err != nil {
 		return err

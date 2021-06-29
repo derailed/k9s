@@ -274,6 +274,7 @@ type stackL struct {
 func (s *stackL) StackPushed(model.Component) {
 	s.count++
 }
+
 func (s *stackL) StackPopped(c, top model.Component) {
 	s.count--
 }

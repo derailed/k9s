@@ -54,5 +54,4 @@ func TestLogoStatus(t *testing.T) {
 			assert.Equal(t, u.e, v.Status().GetText(false))
 		})
 	}
-
 }

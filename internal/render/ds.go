@@ -64,7 +64,7 @@ func (d DaemonSet) Render(o interface{}, ns string, r *Row) error {
 	return nil
 }
 
-// Happy returns true if resource is happy, false otherwise
+// Happy returns true if resource is happy, false otherwise.
 func (DaemonSet) diagnose(d, r int32) error {
 	if d != r {
 		return fmt.Errorf("desiring %d replicas but %d ready", d, r)
