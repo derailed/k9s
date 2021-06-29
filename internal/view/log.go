@@ -350,6 +350,7 @@ func saveData(cluster, name, data string) (string, error) {
 
 	path := filepath.Join(dir, fName)
 	mod := os.O_CREATE | os.O_WRONLY
+	/* #nosec G304 */
 	file, err := os.OpenFile(path, mod, 0600)
 	if err != nil {
 		log.Error().Err(err).Msgf("LogFile create %s", path)

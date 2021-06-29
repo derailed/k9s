@@ -96,6 +96,8 @@ func (s *Bench) Reload(path string) error {
 
 // Load K9s benchmark configs from file.
 func (s *Bench) load(path string) error {
+	/* #nosec G304 */
+	// Currently only loads variables that come from hard-coded configs
 	f, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
