@@ -52,6 +52,15 @@ func (t *Table) Init(ctx context.Context) (err error) {
 	return nil
 }
 
+func (t *Table) HeaderIndex(header string) (int, bool) {
+	for i := 0; i < t.GetColumnCount(); i++ {
+		if h := t.GetCell(0, i); h != nil && h.Text == header {
+			return i, true
+		}
+	}
+	return 0, false
+}
+
 // SendKey sends an keyboard event (testing only!).
 func (t *Table) SendKey(evt *tcell.EventKey) {
 	t.app.Prompt().SendKey(evt)
