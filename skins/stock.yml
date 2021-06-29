@@ -3,6 +3,10 @@ k9s:
     fgColor: dodgerblue
     bgColor: black
     logoColor: orange
+  prompt:
+    fgColor: cadetblue
+    bgColor: black
+    suggestColor: dodgerblue
   info:
     fgColor: white
     sectionColor: dodgerblue

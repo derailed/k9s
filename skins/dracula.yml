@@ -19,6 +19,11 @@ k9s:
     fgColor: *foreground
     bgColor: *background
     logoColor: *purple
+  # Command prompt styles
+  prompt:
+    fgColor: *foreground
+    bgColor: *background
+    suggestColor: *purple
   # ClusterInfoView styles.
   info:
     fgColor: *pink

@@ -4,6 +4,10 @@ k9s:
     fgColor: default
     bgColor: default
     logoColor: default
+  prompt:
+    fgColor: default
+    bgColor: default
+    suggestColor: default
   info:
     fgColor: default
     sectionColor: default

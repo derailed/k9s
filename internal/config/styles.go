@@ -35,11 +35,19 @@ type (
 	// Style tracks K9s styles.
 	Style struct {
 		Body   Body   `yaml:"body"`
+		Prompt Prompt `yaml:"prompt"`
 		Help   Help   `yaml:"help"`
 		Frame  Frame  `yaml:"frame"`
 		Info   Info   `yaml:"info"`
 		Views  Views  `yaml:"views"`
 		Dialog Dialog `yaml:"dialog"`
+	}
+
+	// Prompt tracks command styles
+	Prompt struct {
+		FgColor      Color `yaml:"fgColor"`
+		BgColor      Color `yaml:"bgColor"`
+		SuggestColor Color `yaml:"suggestColor"`
 	}
 
 	// Help tracks help styles.
@@ -246,6 +254,7 @@ func (c Colors) Colors() []tcell.Color {
 func newStyle() Style {
 	return Style{
 		Body:   newBody(),
+		Prompt: newPrompt(),
 		Help:   newHelp(),
 		Frame:  newFrame(),
 		Info:   newInfo(),
@@ -264,6 +273,14 @@ func newDialog() Dialog {
 		ButtonFocusFgColor: "black",
 		LabelFgColor:       "white",
 		FieldFgColor:       "white",
+	}
+}
+
+func newPrompt() Prompt {
+	return Prompt{
+		FgColor:      "cadetBlue",
+		BgColor:      "black",
+		SuggestColor: "dodgerblue",
 	}
 }
 
