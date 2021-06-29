@@ -9,8 +9,13 @@ replace (
 )
 
 require (
+<<<<<<< HEAD
 	github.com/atotto/clipboard v0.1.4
+=======
+	github.com/Azure/go-autorest v14.0.0+incompatible // indirect
 	github.com/adrg/xdg v0.3.0
+	github.com/atotto/clipboard v0.1.2
+>>>>>>> 0bf0b671 (Make k9s configuration compatible with XDG Base Directory Specification to not pollute user home directories.)
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cenkalti/backoff/v4 v4.1.0
 	github.com/derailed/popeye v0.9.0
