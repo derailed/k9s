@@ -206,6 +206,11 @@ func (t *Table) doUpdate(data render.TableData) {
 
 	if (t.sortCol.name == "" || custData.Header.IndexOf(t.sortCol.name, false) == -1) && len(custData.Header) > 0 && t.sortCol.name != "NONE" {
 		t.sortCol.name = custData.Header[0].Name
+		if t.sortCol.name == "NAMESPACE" && !client.IsAllNamespaces(data.Namespace) {
+			if idx := custData.Header.IndexOf("NAME", false); idx != -1 {
+				t.sortCol.name = custData.Header[idx].Name
+			}
+		}
 	}
 
 	t.Clear()
