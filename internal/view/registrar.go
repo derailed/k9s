@@ -135,9 +135,6 @@ func rbacViewers(vv MetaViewers) {
 }
 
 func batchViewers(vv MetaViewers) {
-	vv[client.NewGVR("batch/v1/cronjobs")] = MetaViewer{
-		viewerFn: NewCronJob,
-	}
 	vv[client.NewGVR("batch/v1beta1/cronjobs")] = MetaViewer{
 		viewerFn: NewCronJob,
 	}

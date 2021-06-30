@@ -17,6 +17,10 @@ k9s:
     fgColor: *fg
     bgColor: *bg
     logoColor: *fg
+  prompt:
+    fgColor: *fg
+    bgColor: *bg
+    suggestColor: &gray
   info:
     fgColor: *text
     sectionColor: *fg
