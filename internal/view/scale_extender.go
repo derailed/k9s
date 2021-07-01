@@ -63,7 +63,7 @@ func (s *ScaleExtender) showScaleDialog(path string) {
 	s.App().Content.ShowPage(scaleDialogKey)
 }
 
-func (s *ScaleExtender) valueOf(col string, rowIndex int) (string, error) {
+func (s *ScaleExtender) valueOf(col string) (string, error) {
 	colIdx, ok := s.GetTable().HeaderIndex(col)
 	if !ok {
 		return "", fmt.Errorf("no column index for %s", col)
@@ -74,7 +74,7 @@ func (s *ScaleExtender) valueOf(col string, rowIndex int) (string, error) {
 func (s *ScaleExtender) makeScaleForm(sel string) (*tview.Form, error) {
 	f := s.makeStyledForm()
 
-	replicas, err := s.valueOf("READY", s.GetTable().GetSelectedRowIndex()-1)
+	replicas, err := s.valueOf("READY")
 	if err != nil {
 		return nil, err
 	}
