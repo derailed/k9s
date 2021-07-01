@@ -112,8 +112,7 @@ func (c *CronJob) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, erro
 
 // ToggleSuspend toggles suspend/resume on a CronJob.
 func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
-	ns, _ := client.Namespaced(path)
-
+	ns, n := client.Namespaced(path)
 	auth, err := c.Client().CanI(cronJobGVR, ns, []string{client.GetVerb, client.UpdateVerb})
 	if err != nil {
 		return err
@@ -122,20 +121,15 @@ func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
 		return fmt.Errorf("user is not authorized to run jobs")
 	}
 
-	o, err := c.Get(ctx, path)
-	if err != nil {
-		return err
-	}
-	var cj batchv1.CronJob
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cj)
-	if err != nil {
-		return errors.New("expecting CronJob resource")
-	}
-
 	dial, err := c.Client().Dial()
 	if err != nil {
 		return err
 	}
+	cj, err := dial.BatchV1beta1().CronJobs(ns).Get(ctx, n, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
 	if cj.Spec.Suspend != nil {
 		current := !*cj.Spec.Suspend
 		cj.Spec.Suspend = &current
@@ -143,7 +137,7 @@ func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
 		true := true
 		cj.Spec.Suspend = &true
 	}
-	_, err = dial.BatchV1().CronJobs(ns).Update(ctx, &cj, metav1.UpdateOptions{})
+	_, err = dial.BatchV1beta1().CronJobs(ns).Update(ctx, cj, metav1.UpdateOptions{})
 
 	return err
 }

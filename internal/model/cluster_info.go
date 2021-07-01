@@ -102,7 +102,7 @@ func (c *ClusterInfo) fetchK9sLatestRev() string {
 
 	latestRev, err := fetchLatestRev()
 	if err != nil {
-		log.Warn().Err(err).Msgf("k9s latest rev fetch failed")
+		log.Warn().Msgf("k9s latest rev fetch failed %s", err)
 	} else {
 		c.cache.Add(k9sLatestRevKey, latestRev, cacheExpiry)
 	}
