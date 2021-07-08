@@ -91,7 +91,7 @@ func (c *Container) k9sEnv() Env {
 	return env
 }
 
-func (c *Container) logOptions() (*dao.LogOptions, error) {
+func (c *Container) logOptions(prev bool) (*dao.LogOptions, error) {
 	path := c.GetTable().GetSelectedItem()
 	if path == "" {
 		return nil, errors.New("nothing selected")
@@ -105,6 +105,7 @@ func (c *Container) logOptions() (*dao.LogOptions, error) {
 		SinceSeconds:    cfg.SinceSeconds,
 		SingleContainer: true,
 		ShowTimestamp:   cfg.ShowTime,
+		Previous:        prev,
 	}
 
 	return &opts, nil
