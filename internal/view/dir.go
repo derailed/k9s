@@ -89,7 +89,7 @@ func (d *Dir) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path.Ext(sel) == "" {
 		return nil
 	}
-
+	/* #nosec G304 */
 	yaml, err := ioutil.ReadFile(sel)
 	if err != nil {
 		d.App().Flash().Err(err)

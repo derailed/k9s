@@ -40,6 +40,7 @@ func (p Plugins) Load() error {
 
 // LoadPlugins loads plugins from a given file.
 func (p Plugins) LoadPlugins(path string) error {
+	/* #nosec G304 */
 	f, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err

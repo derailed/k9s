@@ -52,6 +52,7 @@ func saveTable(cluster, title, path string, data render.TableData) (string, erro
 	log.Debug().Msgf("Saving Table to %s", fPath)
 
 	mod := os.O_CREATE | os.O_WRONLY
+	/* #nosec G304 */
 	out, err := os.OpenFile(fPath, mod, 0600)
 	if err != nil {
 		return "", err
