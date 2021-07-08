@@ -17,10 +17,11 @@ ARG KUBECTL_VERSION="v1.21.2"
 
 COPY --from=build /k9s/execs/k9s /bin/k9s
 RUN apk add --update ca-certificates \
-  && apk add --update -t deps curl vim \
+  && apk add --update -t deps curl \
   && curl -L https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl -o /usr/local/bin/kubectl \
   && chmod +x /usr/local/bin/kubectl \
   && apk del --purge deps \
+  && apk add vim nano \
   && rm /var/cache/apk/*
 
 ENTRYPOINT [ "/bin/k9s" ]
