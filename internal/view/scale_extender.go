@@ -102,9 +102,9 @@ func (s *ScaleExtender) makeScaleForm(sel string) (*tview.Form, error) {
 		if err := s.scale(ctx, sel, count); err != nil {
 			log.Error().Err(err).Msgf("DP %s scaling failed", sel)
 			s.App().Flash().Err(err)
-		} else {
-			s.App().Flash().Infof("Resource %s:%s scaled successfully", s.GVR(), sel)
+			return
 		}
+		s.App().Flash().Infof("Resource %s:%s scaled successfully", s.GVR(), sel)
 	})
 
 	f.AddButton("Cancel", func() {

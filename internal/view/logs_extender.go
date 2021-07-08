@@ -63,11 +63,12 @@ func (l *LogsExtender) showLogs(path string, prev bool) {
 
 	opts := l.buildLogOpts(path, "", prev)
 	if l.optionsFn != nil {
-		if opts, err = l.optionsFn(); err != nil {
+		if opts, err = l.optionsFn(prev); err != nil {
 			l.App().Flash().Err(err)
 			return
 		}
 	}
+
 	if err := l.App().inject(NewLog(l.GVR(), opts)); err != nil {
 		l.App().Flash().Err(err)
 	}
