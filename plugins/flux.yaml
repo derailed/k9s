@@ -1,0 +1,60 @@
+# $HOME/.k9s/plugin.yml
+# move selected line to chosen resource in K9s, then:
+# Shift-T (with confirmation) to toggle helm releases or kustomizations suspend and resume
+# Shift-R (no confirmation) to reconcile a git source or a helm release or a kustomization
+plugin:
+  toggle-helmrelease:
+    shortCut: Shift-T
+    confirm: true
+    scopes:
+      - helmreleases
+    description: Toggle to suspend or resume a HelmRelease
+    command: sh
+    background: false
+    args:
+      - -c
+      - "flux $([ $(kubectl get helmreleases -n $NAMESPACE $NAME -o=custom-columns=TYPE:.spec.suspend | tail -1) = \"true\" ] && echo \"resume\" || echo \"suspend\") helmrelease -n $NAMESPACE $NAME | less"
+  toggle-kustomization:
+    shortCut: Shift-T
+    confirm: true
+    scopes:
+      - kustomizations
+    description: Toggle to suspend or resume a Kustomization
+    command: sh
+    background: false
+    args:
+      - -c
+      - "flux $([ $(kubectl get kustomizations -n $NAMESPACE $NAME -o=custom-columns=TYPE:.spec.suspend | tail -1) = \"true\" ] && echo \"resume\" || echo \"suspend\") kustomization -n $NAMESPACE $NAME | less"
+  reconcile-git:
+    shortCut: Shift-R
+    confirm: false
+    description: Flux reconcile
+    scopes:
+    - gitrepositories
+    command: sh
+    background: false
+    args:
+    - -c
+    - "flux reconcile source git -n $NAMESPACE $NAME | less"
+  reconcile-hr:
+    shortCut: Shift-R
+    confirm: false
+    description: Flux reconcile
+    scopes:
+    - helmreleases
+    command: sh
+    background: false
+    args:
+    - -c
+    - "flux reconcile helmrelease -n $NAMESPACE $NAME | less"
+  reconcile-ks:
+    shortCut: Shift-R
+    confirm: false
+    description: Flux reconcile
+    scopes:
+    - kustomizations
+    command: sh
+    background: false
+    args:
+    - -c
+    - "flux reconcile kustomization -n $NAMESPACE $NAME | less"
