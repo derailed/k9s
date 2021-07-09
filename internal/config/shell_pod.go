@@ -5,26 +5,29 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-const defaultDockerShellImage = "busybox:1.31"
+const defaultDockerShellImage   = "busybox:1.31"
+const defaultDockerShellTimeout = 30
 
 // Limits represents resource limits.
 type Limits map[v1.ResourceName]string
 
 // ShellPod represents k9s shell configuration.
 type ShellPod struct {
-	Image     string   `json:"image"`
-	Command   []string `json:"command,omitempty"`
-	Args      []string `json:"args,omitempty"`
-	Namespace string   `json:"namespace"`
-	Limits    Limits   `json:"resources,omitempty"`
+	Image       string   `json:"image"`
+	Command     []string `json:"command,omitempty"`
+	Args        []string `json:"args,omitempty"`
+	Namespace   string   `json:"namespace"`
+	Limits      Limits   `json:"resources,omitempty"`
+	Timeout     int      `json:"timeout"`
 }
 
 // NewShellPod returns a new instance.
 func NewShellPod() *ShellPod {
 	return &ShellPod{
-		Image:     defaultDockerShellImage,
-		Namespace: "default",
-		Limits:    defaultLimits(),
+		Image:       defaultDockerShellImage,
+		Namespace:   "default",
+		Limits:      defaultLimits(),
+		Timeout:     defaultDockerShellTimeout,
 	}
 }
 
@@ -35,6 +38,9 @@ func (s *ShellPod) Validate(client.Connection, KubeSettings) {
 	}
 	if len(s.Limits) == 0 {
 		s.Limits = defaultLimits()
+	}
+	if s.Timeout <= 0 {
+		s.Timeout = defaultDockerShellTimeout
 	}
 }
 

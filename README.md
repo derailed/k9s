@@ -339,6 +339,8 @@ K9s uses aliases to navigate most K8s resources.
           limits:
             cpu: 100m
             memory: 100Mi
+          # Timeout to pull the image
+          timeout: 30
         # The IP Address to use when launching a port-forward.
         portForwardAddress: 1.2.3.4
       kind:

@@ -180,7 +180,6 @@ func clearScreen() {
 
 const (
 	k9sShell           = "k9s-shell"
-	k9sShellRetryCount = 10
 	k9sShellRetryDelay = 1 * time.Second
 )
 
@@ -255,6 +254,7 @@ func launchShellPod(a *App, node string) error {
 	a.Flash().Infof("Launching node shell on %s...", node)
 	ns := a.Config.K9s.ActiveCluster().ShellPod.Namespace
 	spec := k9sShellPod(node, a.Config.K9s.ActiveCluster().ShellPod)
+	timeout := a.Config.K9s.ActiveCluster().ShellPod.Timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -267,7 +267,7 @@ func launchShellPod(a *App, node string) error {
 		return err
 	}
 
-	for i := 0; i < k9sShellRetryCount; i++ {
+	for i := 0; i < timeout; i++ {
 		o, err := a.factory.Get("v1/pods", client.FQN(ns, k9sShellPodName()), true, labels.Everything())
 		if err != nil {
 			time.Sleep(k9sShellRetryDelay)
