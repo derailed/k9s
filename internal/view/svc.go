@@ -60,6 +60,10 @@ func (s *Service) showPods(a *App, _ ui.Tabular, gvr, path string) {
 		return
 	}
 
+	if svc.Spec.Type == v1.ServiceTypeExternalName {
+		a.Flash().Warnf("No <enter> view for %s services. They do not target pods", v1.ServiceTypeExternalName)
+		return
+	}
 	showPodsWithLabels(a, path, svc.Spec.Selector)
 }
 
