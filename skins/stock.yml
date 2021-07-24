@@ -8,8 +8,8 @@ k9s:
     bgColor: black
     suggestColor: dodgerblue
   info:
-    fgColor: white
-    sectionColor: dodgerblue
+    fgColor: orange
+    sectionColor: white
   dialog:
     fgColor: dodgerblue
     bgColor: black
