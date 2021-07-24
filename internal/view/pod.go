@@ -85,7 +85,7 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 	aa.Add(resourceSorters(p.GetTable()))
 }
 
-func (p *Pod) logOptions() (*dao.LogOptions, error) {
+func (p *Pod) logOptions(prev bool) (*dao.LogOptions, error) {
 	path := p.GetTable().GetSelectedItem()
 	if path == "" {
 		return nil, errors.New("you must provide a selection")
@@ -96,16 +96,14 @@ func (p *Pod) logOptions() (*dao.LogOptions, error) {
 		return nil, err
 	}
 
-	cc := fetchContainers(pod.Spec, true)
-
-	cfg := p.App().Config.K9s.Logger
+	cc, cfg := fetchContainers(pod.Spec, true), p.App().Config.K9s.Logger
 	opts := dao.LogOptions{
 		Path:            path,
 		Lines:           int64(cfg.TailCount),
 		SinceSeconds:    cfg.SinceSeconds,
 		SingleContainer: len(cc) == 1,
-		AllContainers:   false,
 		ShowTimestamp:   cfg.ShowTime,
+		Previous:        prev,
 	}
 	if c, ok := dao.GetDefaultLogContainer(pod.ObjectMeta, pod.Spec); ok {
 		opts.Container, opts.DefaultContainer = c, c

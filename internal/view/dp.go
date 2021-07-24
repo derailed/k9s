@@ -45,7 +45,7 @@ func (d *Deploy) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (d *Deploy) logOptions() (*dao.LogOptions, error) {
+func (d *Deploy) logOptions(prev bool) (*dao.LogOptions, error) {
 	path := d.GetTable().GetSelectedItem()
 	if path == "" {
 		return nil, errors.New("you must provide a selection")
@@ -78,6 +78,7 @@ func (d *Deploy) logOptions() (*dao.LogOptions, error) {
 		SingleContainer: len(cc) == 1,
 		AllContainers:   allCos,
 		ShowTimestamp:   cfg.ShowTime,
+		Previous:        prev,
 	}
 	if co == "" {
 		opts.AllContainers = true
