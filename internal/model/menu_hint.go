@@ -25,7 +25,7 @@ func (m MenuHint) String() string {
 // MenuHints represents a collection of hints.
 type MenuHints []MenuHint
 
-// Len returns the hints length
+// Len returns the hints length.
 func (h MenuHints) Len() int {
 	return len(h)
 }

@@ -142,7 +142,7 @@ func (f *OpenFaas) Describe(path string) (string, error) {
 	return string(bytes), nil
 }
 
-// BOZO!! Meow! openfaas fn prints to stdout have to dup ;(
+// BOZO!! Meow! openfaas fn prints to stdout have to dup ;(.
 func deleteFunctionToken(gateway string, functionName string, tlsInsecure bool, token string, namespace string) error {
 	defaultCommandTimeout := 60 * time.Second
 
@@ -158,7 +158,7 @@ func deleteFunctionToken(gateway string, functionName string, tlsInsecure bool, 
 		return err
 	}
 
-	req, err := http.NewRequest("DELETE", deleteEndpoint, reader)
+	req, err := http.NewRequestWithContext(context.Background(), "DELETE", deleteEndpoint, reader)
 	if err != nil {
 		return err
 	}

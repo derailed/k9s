@@ -35,11 +35,19 @@ type (
 	// Style tracks K9s styles.
 	Style struct {
 		Body   Body   `yaml:"body"`
+		Prompt Prompt `yaml:"prompt"`
 		Help   Help   `yaml:"help"`
 		Frame  Frame  `yaml:"frame"`
 		Info   Info   `yaml:"info"`
 		Views  Views  `yaml:"views"`
 		Dialog Dialog `yaml:"dialog"`
+	}
+
+	// Prompt tracks command styles
+	Prompt struct {
+		FgColor      Color `yaml:"fgColor"`
+		BgColor      Color `yaml:"bgColor"`
+		SuggestColor Color `yaml:"suggestColor"`
 	}
 
 	// Help tracks help styles.
@@ -246,6 +254,7 @@ func (c Colors) Colors() []tcell.Color {
 func newStyle() Style {
 	return Style{
 		Body:   newBody(),
+		Prompt: newPrompt(),
 		Help:   newHelp(),
 		Frame:  newFrame(),
 		Info:   newInfo(),
@@ -264,6 +273,14 @@ func newDialog() Dialog {
 		ButtonFocusFgColor: "black",
 		LabelFgColor:       "white",
 		FieldFgColor:       "white",
+	}
+}
+
+func newPrompt() Prompt {
+	return Prompt{
+		FgColor:      "cadetBlue",
+		BgColor:      "black",
+		SuggestColor: "dodgerblue",
 	}
 }
 
@@ -436,7 +453,7 @@ func (s *Styles) Reset() {
 	s.K9s = newStyle()
 }
 
-// DefaultSkin loads the default skin
+// DefaultSkin loads the default skin.
 func (s *Styles) DefaultSkin() {
 	s.K9s = newStyle()
 }
@@ -522,7 +539,7 @@ func (s *Styles) Views() Views {
 	return s.K9s.Views
 }
 
-// Load K9s configuration from file
+// Load K9s configuration from file.
 func (s *Styles) Load(path string) error {
 	f, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -532,7 +549,7 @@ func (s *Styles) Load(path string) error {
 	if err := yaml.Unmarshal(f, s); err != nil {
 		return err
 	}
-	//s.fireStylesChanged()
+	// s.fireStylesChanged()
 
 	return nil
 }

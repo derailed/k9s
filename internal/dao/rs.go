@@ -87,7 +87,8 @@ func (r *ReplicaSet) Rollback(fqn string) error {
 
 	rb, err := polymorphichelpers.RollbackerFor(schema.GroupKind{
 		Group: apiGroup,
-		Kind:  kind},
+		Kind:  kind,
+	},
 		dial,
 	)
 	if err != nil {

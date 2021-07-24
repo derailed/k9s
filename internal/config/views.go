@@ -80,7 +80,6 @@ func (v *CustomView) AddListener(gvr string, l ViewConfigListener) {
 // RemoveListener unregister a listener.
 func (v *CustomView) RemoveListener(gvr string) {
 	delete(v.listeners, gvr)
-
 }
 
 func (v *CustomView) fireConfigChanged() {

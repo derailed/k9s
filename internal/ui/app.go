@@ -275,7 +275,7 @@ func (a *App) Flash() *model.Flash {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-// AsKey converts rune to keyboard key.,
+// AsKey converts rune to keyboard key.,.
 func AsKey(evt *tcell.EventKey) tcell.Key {
 	if evt.Key() != tcell.KeyRune {
 		return evt.Key()

@@ -23,6 +23,10 @@ k9s:
     fgColor: *fg
     bgColor: *bg
     logoColor: *blue
+  prompt:
+    fgColor: *fg
+    bgColor: *bg
+    suggestColor: *cadet
   info:
     fgColor: *sky
     sectionColor: *steel

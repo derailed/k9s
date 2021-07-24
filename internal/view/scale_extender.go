@@ -63,23 +63,18 @@ func (s *ScaleExtender) showScaleDialog(path string) {
 	s.App().Content.ShowPage(scaleDialogKey)
 }
 
-func (s *ScaleExtender) valueOf(col string, index int) (string, error) {
-	data := s.GetTable().GetFilteredData()
-	colIdx := data.IndexOfHeader(col)
-	if colIdx < 0 {
+func (s *ScaleExtender) valueOf(col string) (string, error) {
+	colIdx, ok := s.GetTable().HeaderIndex(col)
+	if !ok {
 		return "", fmt.Errorf("no column index for %s", col)
 	}
-	if index > len(data.RowEvents) {
-		return "", fmt.Errorf("invalid row index %d", index)
-	}
-
-	return data.RowEvents[index].Row.Fields[colIdx], nil
+	return s.GetTable().GetSelectedCell(colIdx), nil
 }
 
 func (s *ScaleExtender) makeScaleForm(sel string) (*tview.Form, error) {
 	f := s.makeStyledForm()
 
-	replicas, err := s.valueOf("READY", s.GetTable().GetSelectedRowIndex())
+	replicas, err := s.valueOf("READY")
 	if err != nil {
 		return nil, err
 	}
@@ -107,9 +102,9 @@ func (s *ScaleExtender) makeScaleForm(sel string) (*tview.Form, error) {
 		if err := s.scale(ctx, sel, count); err != nil {
 			log.Error().Err(err).Msgf("DP %s scaling failed", sel)
 			s.App().Flash().Err(err)
-		} else {
-			s.App().Flash().Infof("Resource %s:%s scaled successfully", s.GVR(), sel)
+			return
 		}
+		s.App().Flash().Infof("Resource %s:%s scaled successfully", s.GVR(), sel)
 	})
 
 	f.AddButton("Cancel", func() {

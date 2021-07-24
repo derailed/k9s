@@ -37,7 +37,7 @@ const (
 )
 
 var (
-	// LabelRx identifies a label query
+	// LabelRx identifies a label query.
 	LabelRx = regexp.MustCompile(`\A\-l`)
 
 	inverseRx = regexp.MustCompile(`\A\!`)

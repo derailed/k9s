@@ -151,7 +151,7 @@ func (v *LiveView) bindKeys() {
 	}
 }
 
-// ToggleRefreshCmd is used for pausing the refreshing of data on config map and secrets
+// ToggleRefreshCmd is used for pausing the refreshing of data on config map and secrets.
 func (v *LiveView) toggleRefreshCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.autoRefresh = !v.autoRefresh
 	if v.autoRefresh {
@@ -181,7 +181,7 @@ func (v *LiveView) StylesChanged(s *config.Styles) {
 	v.ResourceChanged(v.model.Peek(), nil)
 }
 
-// Actions returns menu actions
+// Actions returns menu actions.
 func (v *LiveView) Actions() ui.KeyActions {
 	return v.actions
 }

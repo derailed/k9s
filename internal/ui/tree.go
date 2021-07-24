@@ -33,7 +33,7 @@ func NewTree() *Tree {
 	}
 }
 
-// Init initializes the view
+// Init initializes the view.
 func (t *Tree) Init(ctx context.Context) error {
 	t.BindKeys()
 	t.SetBorder(true)

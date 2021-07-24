@@ -159,7 +159,8 @@ func (h *Help) showNav() model.MenuHints {
 		},
 		{
 			Mnemonic:    "Ctrl-b",
-			Description: "Page Up"},
+			Description: "Page Up",
+		},
 		{
 			Mnemonic:    "Ctrl-f",
 			Description: "Page Down",

@@ -40,7 +40,7 @@ func NewBrowser(gvr client.GVR) ResourceViewer {
 	}
 }
 
-// Init watches all running pods in given namespace
+// Init watches all running pods in given namespace.
 func (b *Browser) Init(ctx context.Context) error {
 	var err error
 	b.meta, err = dao.MetaAccess.MetaFor(b.GVR())
@@ -343,7 +343,6 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := b.GetSelectedItem()
 	if path == "" {
 		return evt
-
 	}
 	ns, n := client.Namespaced(path)
 	if client.IsClusterScoped(ns) {

@@ -7,7 +7,6 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	batchv1 "k8s.io/api/batch/v1"
-	batchv1beta1 "k8s.io/api/batch/v1beta1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -45,7 +44,7 @@ func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 	if !ok {
 		return fmt.Errorf("Expected CronJob, but got %T", o)
 	}
-	var cj batchv1beta1.CronJob
+	var cj batchv1.CronJob
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &cj)
 	if err != nil {
 		return err

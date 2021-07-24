@@ -6,7 +6,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// MaxHistory tracks max command history
+// MaxHistory tracks max command history.
 const MaxHistory = 20
 
 // History represents a command history.

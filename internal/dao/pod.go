@@ -134,7 +134,7 @@ func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, er
 	return dial.CoreV1().Pods(ns).GetLogs(n, opts), nil
 }
 
-// Containers returns all container names on pod
+// Containers returns all container names on pod.
 func (p *Pod) Containers(path string, includeInit bool) ([]string, error) {
 	pod, err := p.GetInstance(path)
 	if err != nil {
@@ -176,7 +176,7 @@ func (p *Pod) GetInstance(fqn string) (*v1.Pod, error) {
 	return &pod, nil
 }
 
-// TailLogs tails a given container logs
+// TailLogs tails a given container logs.
 func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts *LogOptions) error {
 	log.Debug().Msgf("TAIL-LOGS for %q:%q", opts.Path, opts.Container)
 	fac, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)

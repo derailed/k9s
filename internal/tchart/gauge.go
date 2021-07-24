@@ -44,7 +44,7 @@ func (g *Gauge) SetResolution(n int) {
 	g.resolution = n
 }
 
-// IsDial returns true if chart is a dial
+// IsDial returns true if chart is a dial.
 func (g *Gauge) IsDial() bool {
 	return true
 }

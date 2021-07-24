@@ -164,7 +164,7 @@ func (d *Details) SetSubject(s string) {
 	d.subject = s
 }
 
-// Actions returns menu actions
+// Actions returns menu actions.
 func (d *Details) Actions() ui.KeyActions {
 	return d.actions
 }

@@ -206,6 +206,11 @@ func (t *Table) doUpdate(data render.TableData) {
 
 	if (t.sortCol.name == "" || custData.Header.IndexOf(t.sortCol.name, false) == -1) && len(custData.Header) > 0 && t.sortCol.name != "NONE" {
 		t.sortCol.name = custData.Header[0].Name
+		if t.sortCol.name == "NAMESPACE" && !client.IsAllNamespaces(data.Namespace) {
+			if idx := custData.Header.IndexOf("NAME", false); idx != -1 {
+				t.sortCol.name = custData.Header[idx].Name
+			}
+		}
 	}
 
 	t.Clear()
@@ -377,7 +382,7 @@ func (t *Table) filtered(data render.TableData) render.TableData {
 	filtered, err := rxFilter(q, IsInverseSelector(q), filtered)
 	if err != nil {
 		log.Error().Err(errors.New("Invalid filter expression")).Msg("Regexp")
-		//t.cmdBuff.ClearText(true)
+		// t.cmdBuff.ClearText(true)
 	}
 
 	return filtered

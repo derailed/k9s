@@ -31,7 +31,7 @@ type (
 	EnterFunc func(app *App, model ui.Tabular, gvr, path string)
 
 	// LogOptionsFunc returns the active log options.
-	LogOptionsFunc func() (*dao.LogOptions, error)
+	LogOptionsFunc func(bool) (*dao.LogOptions, error)
 
 	// ContextFunc enhances a given context.
 	ContextFunc func(context.Context) context.Context

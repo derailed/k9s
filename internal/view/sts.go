@@ -34,7 +34,7 @@ func NewStatefulSet(gvr client.GVR) ResourceViewer {
 	return &s
 }
 
-func (s *StatefulSet) logOptions() (*dao.LogOptions, error) {
+func (s *StatefulSet) logOptions(prev bool) (*dao.LogOptions, error) {
 	path := s.GetTable().GetSelectedItem()
 	if path == "" {
 		return nil, errors.New("you must provide a selection")
@@ -67,6 +67,7 @@ func (s *StatefulSet) logOptions() (*dao.LogOptions, error) {
 		SinceSeconds:    cfg.SinceSeconds,
 		AllContainers:   allCos,
 		ShowTimestamp:   cfg.ShowTime,
+		Previous:        prev,
 	}
 	if co == "" {
 		opts.AllContainers = true

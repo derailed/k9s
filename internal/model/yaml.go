@@ -114,7 +114,7 @@ func (y *YAML) Peek() []string {
 	return y.lines
 }
 
-// Refresh updates model data
+// Refresh updates model data.
 func (y *YAML) Refresh(ctx context.Context) error {
 	return y.refresh(ctx)
 }

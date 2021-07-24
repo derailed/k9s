@@ -8,7 +8,6 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal"
-
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
@@ -181,21 +180,25 @@ var _ dao.Factory = testFactory{}
 func (f testFactory) Client() client.Connection {
 	return client.NewTestAPIClient()
 }
+
 func (f testFactory) Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error) {
 	if len(f.rows) > 0 {
 		return f.rows[0], nil
 	}
 	return nil, nil
 }
+
 func (f testFactory) List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error) {
 	if len(f.rows) > 0 {
 		return f.rows, nil
 	}
 	return nil, nil
 }
+
 func (f testFactory) ForResource(ns, gvr string) (informers.GenericInformer, error) {
 	return nil, nil
 }
+
 func (f testFactory) CanForResource(ns, gvr string, verbs []string) (informers.GenericInformer, error) {
 	return nil, nil
 }
@@ -224,6 +227,7 @@ func (a *accessor) Get(ctx context.Context, path string) (runtime.Object, error)
 func (a *accessor) Init(_ dao.Factory, gvr client.GVR) {
 	a.gvr = gvr
 }
+
 func (a *accessor) GVR() string {
 	return a.gvr.String()
 }

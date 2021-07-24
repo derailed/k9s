@@ -15,6 +15,7 @@ func TestEnvReplace(t *testing.T) {
 	}{
 		"no-args":   {arg: "blee blah", e: "blee blah"},
 		"simple":    {arg: "$A", e: "10"},
+		"substring": {arg: "$A and $AA", e: "10 and 20"},
 		"with-text": {arg: "Something $A", e: "Something 10"},
 		"noMatch":   {arg: "blah blah and $BLEE", err: errors.New(`no environment matching key "$BLEE":"BLEE"`), e: ""},
 		"lower":     {arg: "And then $b happened", e: "And then blee happened"},
@@ -27,6 +28,7 @@ func TestEnvReplace(t *testing.T) {
 
 	e := Env{
 		"A":        "10",
+		"AA":       "20",
 		"B":        "blee",
 		"COL0":     "fred",
 		"FRED":     "fred",

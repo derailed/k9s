@@ -21,12 +21,12 @@ type imageFormSpec struct {
 }
 
 func (m *imageFormSpec) modified() bool {
-	var newDockerImage = strings.TrimSpace(m.newDockerImage)
+	newDockerImage := strings.TrimSpace(m.newDockerImage)
 	return newDockerImage != "" && m.dockerImage != newDockerImage
 }
 
 func (m *imageFormSpec) imageSpec() dao.ImageSpec {
-	var ret = dao.ImageSpec{
+	ret := dao.ImageSpec{
 		Name: m.name,
 		Init: m.init,
 	}

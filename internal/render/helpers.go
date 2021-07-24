@@ -52,7 +52,7 @@ func AsThousands(n int64) string {
 	return p.Sprintf("%d", n)
 }
 
-// Happy returns true if resource is happy, false otherwise
+// Happy returns true if resource is happy, false otherwise.
 func Happy(ns string, h Header, r Row) bool {
 	if len(r.Fields) == 0 {
 		return true
@@ -300,7 +300,7 @@ func Pad(s string, width int) string {
 	return s + strings.Repeat(" ", width-len(s))
 }
 
-// Converts labels string to map
+// Converts labels string to map.
 func labelize(labels string) map[string]string {
 	ll := strings.Split(labels, ",")
 	data := make(map[string]string, len(ll))

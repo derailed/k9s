@@ -3,6 +3,7 @@ package view
 import (
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -19,6 +20,12 @@ func (e Env) Substitute(arg string) (string, error) {
 	if len(kk) == 0 {
 		return arg, nil
 	}
+
+	// To prevent the substitution starts with the shorter environment variable,
+	// sort with the length of the found environment variables.
+	sort.Slice(kk, func (i, j int) bool {
+		return len(kk[i]) > len(kk[j])
+	})
 
 	for _, k := range kk {
 		key, inverse := k[1:], false

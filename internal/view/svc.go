@@ -60,6 +60,10 @@ func (s *Service) showPods(a *App, _ ui.Tabular, gvr, path string) {
 		return
 	}
 
+	if svc.Spec.Type == v1.ServiceTypeExternalName {
+		a.Flash().Warnf("No pod view available. Service %s is an external service.", path)
+		return
+	}
 	showPodsWithLabels(a, path, svc.Spec.Selector)
 }
 
@@ -135,7 +139,7 @@ func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-// BOZO!! Refactor used by forwards
+// BOZO!! Refactor used by forwards.
 func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
 	if cfg.HTTP.Host == "" {
 		return fmt.Errorf("Invalid benchmark host %q", cfg.HTTP.Host)

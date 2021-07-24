@@ -7,7 +7,7 @@ import (
 )
 
 // Registry tracks resources metadata.
-// BOZO!! Break up deps and merge into single registrar
+// BOZO!! Break up deps and merge into single registrar.
 var Registry = map[string]ResourceMeta{
 	// Custom...
 	"references": {

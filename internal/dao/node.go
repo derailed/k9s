@@ -129,7 +129,6 @@ func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
 
 // List returns a collection of node resources.
 func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-
 	oo, err := n.Resource.List(ctx, ns)
 	if err != nil {
 		return oo, err

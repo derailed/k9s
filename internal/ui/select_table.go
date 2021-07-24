@@ -131,7 +131,7 @@ func (s *SelectTable) DeleteMark(k string) {
 	delete(s.marks, k)
 }
 
-// ToggleMark toggles marked row
+// ToggleMark toggles marked row.
 func (s *SelectTable) ToggleMark() {
 	sel := s.GetSelectedItem()
 	if sel == "" {
@@ -148,7 +148,7 @@ func (s *SelectTable) ToggleMark() {
 	}
 }
 
-// SpanMark toggles marked row
+// SpanMark toggles marked row.
 func (s *SelectTable) SpanMark() {
 	selIndex, prev := s.GetSelectedRowIndex(), -1
 	if selIndex <= 0 {

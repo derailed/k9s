@@ -26,7 +26,7 @@ func NewNamespace() *Namespace {
 	}
 }
 
-// Validate a namespace is setup correctly
+// Validate a namespace is setup correctly.
 func (n *Namespace) Validate(c client.Connection, ks KubeSettings) {
 	nns, err := c.ValidNamespaces()
 	if err != nil {

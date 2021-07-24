@@ -244,7 +244,7 @@ func (p *Pulse) Stop() {
 	p.cancelFn = nil
 }
 
-// Refresh updates the view
+// Refresh updates the view.
 func (p *Pulse) Refresh() {}
 
 // GVR returns a resource descriptor.
