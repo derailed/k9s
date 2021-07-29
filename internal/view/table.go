@@ -107,6 +107,8 @@ func (t *Table) defaultEnv() Env {
 		env["NAMESPACE"], env["FILTER"] = client.Namespaced(path)
 	}
 
+	env["RESOURCE"] = t.GVR().R()
+
 	return env
 }
 
