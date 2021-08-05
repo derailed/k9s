@@ -9,14 +9,14 @@ replace (
 )
 
 require (
-	github.com/atotto/clipboard v0.1.4
 	github.com/adrg/xdg v0.3.0
+	github.com/atotto/clipboard v0.1.4
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cenkalti/backoff/v4 v4.1.0
 	github.com/derailed/popeye v0.9.0
 	github.com/derailed/tview v0.6.1
 	github.com/drone/envsubst v1.0.2 // indirect
-	github.com/fatih/color v1.10.0
+	github.com/fatih/color v1.12.0
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/fvbommel/sortorder v1.0.2
 	github.com/gdamore/tcell/v2 v2.3.1
