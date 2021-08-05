@@ -12,14 +12,13 @@ import (
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"github.com/adrg/xdg"
 )
 
 // K9sConfig represents K9s configuration dir env var.
 const K9sConfig = "K9SCONFIG"
 
 var (
-	// DefaultK9sHome represent K9s home directory.
-	DefaultK9sHome = filepath.Join(mustK9sHome(), ".k9s")
 	// K9sConfigFile represents K9s config file location.
 	K9sConfigFile = filepath.Join(K9sHome(), "config.yml")
 	// K9sLogs represents K9s log.
@@ -61,8 +60,12 @@ func K9sHome() string {
 	if env := os.Getenv(K9sConfig); env != "" {
 		return env
 	}
+	xdgK9sHome, err := xdg.ConfigFile("k9s")
+	if err != nil {
+		log.Fatal().Err(err).Msg("Unable to create configuration directory for k9s")
+	}
 
-	return DefaultK9sHome
+	return xdgK9sHome
 }
 
 // NewConfig creates a new default config.
