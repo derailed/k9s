@@ -7,6 +7,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -272,6 +273,7 @@ var EOL = []byte{'\n'}
 
 // Flush write logs to viewer.
 func (l *Log) Flush(lines [][]byte) {
+	log.Debug().Msgf("LINES [%d]%d", runtime.NumGoroutine(), len(strings.Split(l.logs.GetText(true), "\n")))
 	if !l.indicator.AutoScroll() {
 		return
 	}
