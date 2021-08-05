@@ -9,8 +9,8 @@ replace (
 )
 
 require (
-	github.com/atotto/clipboard v0.1.4
 	github.com/adrg/xdg v0.3.0
+	github.com/atotto/clipboard v0.1.4
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cenkalti/backoff/v4 v4.1.1
 	github.com/derailed/popeye v0.9.7
