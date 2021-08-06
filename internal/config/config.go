@@ -101,13 +101,16 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags) e
 		ns, override = client.NamespaceAll, true
 	} else if isSet(flags.Namespace) {
 		ns, override = *flags.Namespace, true
-	} else if len(context.Namespace) != 0 {
+	} else if context.Namespace != "" {
 		ns = context.Namespace
 	}
-	if err := c.SetActiveNamespace(ns); err != nil {
-		return err
+
+	if ns != "" {
+		if err := c.SetActiveNamespace(ns); err != nil {
+			return err
+		}
+		flags.Namespace, c.overrideNS = &ns, override
 	}
-	flags.Namespace, c.overrideNS = &ns, override
 
 	if isSet(flags.ClusterName) {
 		c.K9s.CurrentCluster = *flags.ClusterName
