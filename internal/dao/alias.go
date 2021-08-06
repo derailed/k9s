@@ -79,6 +79,7 @@ func (a *Alias) load() error {
 		return err
 	}
 
+	crdGVRS := make(client.GVRs, 0, 50)
 	for _, gvr := range MetaAccess.AllGVRs() {
 		meta, err := MetaAccess.MetaFor(gvr)
 		if err != nil {
@@ -86,6 +87,28 @@ func (a *Alias) load() error {
 		}
 		if IsK9sMeta(meta) {
 			continue
+		}
+
+		gvrStr := gvr.String()
+		if IsCRD(meta) {
+			crdGVRS = append(crdGVRS, gvr)
+			continue
+		}
+
+		a.Define(gvrStr, strings.ToLower(meta.Kind), meta.Name)
+		if meta.SingularName != "" {
+			a.Define(gvrStr, meta.SingularName)
+		}
+		if meta.ShortNames != nil {
+			a.Define(gvrStr, meta.ShortNames...)
+		}
+		a.Define(gvrStr, gvrStr)
+	}
+
+	for _, gvr := range crdGVRS {
+		meta, err := MetaAccess.MetaFor(gvr)
+		if err != nil {
+			return err
 		}
 		gvrStr := gvr.String()
 		a.Define(gvrStr, strings.ToLower(meta.Kind), meta.Name)
