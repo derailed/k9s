@@ -86,6 +86,7 @@ func (d *Deployment) Restart(ctx context.Context, path string) error {
 	if err != nil {
 		return err
 	}
+
 	_, err = dial.AppsV1().Deployments(dp.Namespace).Patch(
 		ctx,
 		dp.Name,

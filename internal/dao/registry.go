@@ -9,13 +9,58 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
+// CRD identifies a CRD.
+const CRD = "crd"
+
 // MetaAccess tracks resources metadata.
 var MetaAccess = NewMeta()
+
+var stdGroups = []string{
+	"admissionregistration.k8s.io/v1",
+	"admissionregistration.k8s.io/v1beta1",
+	"apiextensions.k8s.io/v1",
+	"apiextensions.k8s.io/v1beta1",
+	"apiregistration.k8s.io/v1",
+	"apiregistration.k8s.io/v1beta1",
+	"apps/v1",
+	"authentication.k8s.io/v1",
+	"authentication.k8s.io/v1beta1",
+	"authorization.k8s.io/v1",
+	"authorization.k8s.io/v1beta1",
+	"autoscaling/v1",
+	"autoscaling/v2beta1",
+	"autoscaling/v2beta2",
+	"batch/v1",
+	"batch/v1beta1",
+	"certificates.k8s.io/v1",
+	"certificates.k8s.io/v1beta1",
+	"coordination.k8s.io/v1",
+	"coordination.k8s.io/v1beta1",
+	"discovery.k8s.io/v1beta1",
+	"dynatrace.com/v1alpha1",
+	"events.k8s.io/v1",
+	"extensions/v1beta1",
+	"flowcontrol.apiserver.k8s.io/v1beta1",
+	"metrics.k8s.io/v1beta1",
+	"networking.k8s.io/v1",
+	"networking.k8s.io/v1beta1",
+	"node.k8s.io/v1",
+	"node.k8s.io/v1beta1",
+	"policy/v1beta1",
+	"rbac.authorization.k8s.io/v1",
+	"rbac.authorization.k8s.io/v1beta1",
+	"scheduling.k8s.io/v1",
+	"scheduling.k8s.io/v1beta1",
+	"storage.k8s.io/v1",
+	"storage.k8s.io/v1beta1",
+	"v1",
+}
 
 // Meta represents available resource metas.
 type Meta struct {
@@ -84,6 +129,16 @@ func (m *Meta) AllGVRs() client.GVRs {
 	sort.Sort(kk)
 
 	return kk
+}
+
+// IsCRD checks if resource represents a CRD
+func IsCRD(r v1.APIResource) bool {
+	for _, c := range r.Categories {
+		if c == CRD {
+			return true
+		}
+	}
+	return false
 }
 
 // MetaFor returns a resource metadata for a given gvr.
@@ -305,11 +360,24 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 			if res.SingularName == "" {
 				res.SingularName = strings.ToLower(res.Kind)
 			}
+			if !isStandardGroup(res.Group) {
+				res.Categories = append(res.Categories, CRD)
+			}
 			m[gvr] = res
 		}
 	}
 
 	return nil
+}
+
+func isStandardGroup(r string) bool {
+	for _, res := range stdGroups {
+		if strings.Index(res, r) == 0 {
+			return true
+		}
+	}
+
+	return false
 }
 
 var deprecatedGVRs = map[client.GVR]struct{}{
@@ -335,6 +403,7 @@ func loadCRDs(f Factory, m ResourceMetas) {
 			log.Error().Err(errs[0]).Msgf("Fail to extract CRD meta (%d) errors", len(errs))
 			continue
 		}
+		meta.Categories = append(meta.Categories, CRD)
 		gvr := client.NewGVRFromMeta(meta)
 		m[gvr] = meta
 	}

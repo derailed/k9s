@@ -101,6 +101,7 @@ K9s is available on Linux, macOS and Windows platforms.
   ```shell
   curl.exe -A MS https://webinstall.dev/k9s | powershell
   ```
+
 ---
 
 ## Building From Source
@@ -277,7 +278,7 @@ K9s uses aliases to navigate most K8s resources.
 
 ## K9s Configuration
 
-  K9s keeps its configurations inside of a `k9s` directory and the location depends on your operating system.
+  K9s keeps its configurations inside of a `k9s` directory and the location depends on your operating system. K9s leverages [XDG](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html) to load its various configurations files.
 
   | Unix            | macOS                       | Windows               |
   |-----------------|-----------------------------|-----------------------|
