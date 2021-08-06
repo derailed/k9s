@@ -480,6 +480,9 @@ K9s allows you to extend your command line and tooling by defining your very own
 
 K9s does provide additional environment variables for you to customize your plugins arguments. Currently, the available environment variables are as follows:
 
+* `$RESOURCE_GROUP` -- the selected resource group
+* `$RESOURCE_VERSION` -- the selected resource api version
+* `$RESOURCE_NAME` -- the selected resource name
 * `$NAMESPACE` -- the selected resource namespace
 * `$NAME` -- the selected resource name
 * `$CONTAINER` -- the current container if applicable
