@@ -7,12 +7,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/adrg/xdg"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"github.com/adrg/xdg"
 )
 
 // K9sConfig represents K9s configuration dir env var.

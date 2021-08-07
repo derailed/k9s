@@ -59,6 +59,7 @@ func (h *Help) Init(ctx context.Context) error {
 	return nil
 }
 
+// InCmdMode checks if prompt is active.
 func (*Help) InCmdMode() bool {
 	return false
 }

@@ -49,6 +49,7 @@ func (p *Picker) Init(ctx context.Context) error {
 	return nil
 }
 
+// InCmdMode checks if prompt is active.
 func (*Picker) InCmdMode() bool {
 	return false
 }

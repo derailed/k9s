@@ -53,6 +53,7 @@ func (c *Cow) Init(_ context.Context) error {
 	return nil
 }
 
+// InCmdMode checks if prompt is active.
 func (*Cow) InCmdMode() bool {
 	return false
 }

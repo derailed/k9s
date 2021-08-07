@@ -98,6 +98,7 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	return nil
 }
 
+// InCmdMode checks if prompt is active.
 func (v *Log) InCmdMode() bool {
 	return v.logs.cmdBuff.InCmdMode()
 }

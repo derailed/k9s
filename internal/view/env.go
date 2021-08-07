@@ -23,7 +23,7 @@ func (e Env) Substitute(arg string) (string, error) {
 
 	// To prevent the substitution starts with the shorter environment variable,
 	// sort with the length of the found environment variables.
-	sort.Slice(kk, func (i, j int) bool {
+	sort.Slice(kk, func(i, j int) bool {
 		return len(kk[i]) > len(kk[j])
 	})
 

@@ -43,7 +43,7 @@ func NewK9s() *K9s {
 	}
 }
 
-// ActiveCluster initializes the active cluster is not present.
+// ActivateCluster initializes the active cluster is not present.
 func (k *K9s) ActivateCluster() {
 	if _, ok := k.Clusters[k.CurrentCluster]; ok {
 		return
