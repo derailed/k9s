@@ -84,6 +84,7 @@ func (s *Sanitizer) Init(ctx context.Context) error {
 	return nil
 }
 
+// InCmdMode checks if prompt is active.
 func (*Sanitizer) InCmdMode() bool {
 	return false
 }

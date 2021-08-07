@@ -108,6 +108,7 @@ func (p *Pulse) Init(ctx context.Context) error {
 	return nil
 }
 
+// InCmdMode checks if prompt is active.
 func (*Pulse) InCmdMode() bool {
 	return false
 }

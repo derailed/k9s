@@ -501,6 +501,7 @@ func (p *Pod) isControlled(path string) (string, bool, error) {
 	return "", false, nil
 }
 
+// GetDefaultLogContainer returns a container name if specified in an annotation.
 func GetDefaultLogContainer(m metav1.ObjectMeta, spec v1.PodSpec) (string, bool) {
 	defaultContainer, ok := m.Annotations[defaultLogContainerAnnotation]
 	if ok {

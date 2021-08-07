@@ -92,6 +92,7 @@ func (x *Xray) Init(ctx context.Context) error {
 	return nil
 }
 
+// InCmdMode checks if prompt is active.
 func (*Xray) InCmdMode() bool {
 	return false
 }

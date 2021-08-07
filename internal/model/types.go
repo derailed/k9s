@@ -68,7 +68,9 @@ type Primitive interface {
 	Name() string
 }
 
+// Commander tracks prompt status.
 type Commander interface {
+	// InCmdMode checks if prompt is active.
 	InCmdMode() bool
 }
 

@@ -75,6 +75,7 @@ func (d *Details) Init(_ context.Context) error {
 	return nil
 }
 
+// InCmdMode checks if prompt is active.
 func (d *Details) InCmdMode() bool {
 	return d.cmdBuff.InCmdMode()
 }

@@ -82,6 +82,7 @@ func (b *Browser) Init(ctx context.Context) error {
 	return nil
 }
 
+// InCmdMode checks if prompt is active.
 func (b *Browser) InCmdMode() bool {
 	return b.CmdBuff().InCmdMode()
 }

@@ -80,6 +80,7 @@ func (v *LiveView) Init(_ context.Context) error {
 	return nil
 }
 
+// InCmdMode checks if prompt is active.
 func (v *LiveView) InCmdMode() bool {
 	return v.cmdBuff.InCmdMode()
 }
