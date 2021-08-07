@@ -99,8 +99,8 @@ func (l *Log) Init(ctx context.Context) (err error) {
 }
 
 // InCmdMode checks if prompt is active.
-func (v *Log) InCmdMode() bool {
-	return v.logs.cmdBuff.InCmdMode()
+func (l *Log) InCmdMode() bool {
+	return l.logs.cmdBuff.InCmdMode()
 }
 
 // LogCleared clears the logs.

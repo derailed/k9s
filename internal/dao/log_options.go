@@ -30,6 +30,7 @@ func (o *LogOptions) Info() string {
 	return fmt.Sprintf("%q::%q", o.Path, o.Container)
 }
 
+// Clone clones options.
 func (o *LogOptions) Clone() *LogOptions {
 	return &LogOptions{
 		Path:             o.Path,
