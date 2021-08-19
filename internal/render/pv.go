@@ -134,6 +134,8 @@ func accessMode(aa []v1.PersistentVolumeAccessMode) string {
 			s = append(s, "ROX")
 		case accessContains(dd, v1.ReadWriteMany):
 			s = append(s, "RWX")
+		case accessContains(dd, v1.ReadWriteOncePod):
+			s = append(s, "RWOP")
 		}
 	}
 
