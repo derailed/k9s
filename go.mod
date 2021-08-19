@@ -17,7 +17,7 @@ require (
 	github.com/derailed/tview v0.6.1
 	github.com/drone/envsubst v1.0.3 // indirect
 	github.com/fatih/color v1.12.0
-	github.com/fsnotify/fsnotify v1.4.9
+	github.com/fsnotify/fsnotify v1.5.0
 	github.com/fvbommel/sortorder v1.0.2
 	github.com/gdamore/tcell/v2 v2.3.1
 	github.com/ghodss/yaml v1.0.0
@@ -36,12 +36,12 @@ require (
 	golang.org/x/text v0.3.6
 	gopkg.in/yaml.v2 v2.4.0
 	helm.sh/helm/v3 v3.6.3
-	k8s.io/api v0.21.3
-	k8s.io/apimachinery v0.21.3
-	k8s.io/cli-runtime v0.21.3
-	k8s.io/client-go v0.21.3
+	k8s.io/api v0.22.0
+	k8s.io/apimachinery v0.22.0
+	k8s.io/cli-runtime v0.22.0
+	k8s.io/client-go v0.22.0
 	k8s.io/klog/v2 v2.10.0
-	k8s.io/kubectl v0.21.3
-	k8s.io/metrics v0.21.3
+	k8s.io/kubectl v0.22.0
+	k8s.io/metrics v0.22.0
 	sigs.k8s.io/yaml v1.2.0
 )
