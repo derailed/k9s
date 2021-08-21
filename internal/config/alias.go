@@ -105,6 +105,8 @@ func (a *Aliases) Load() error {
 
 // LoadFileAliases loads alias from a given file.
 func (a *Aliases) LoadFileAliases(path string) error {
+	/* #nosec G304 */
+	// functional only called with K9sAlias variable as arg
 	f, err := ioutil.ReadFile(path)
 	if err == nil {
 		var aa Aliases
@@ -171,5 +173,6 @@ func (a *Aliases) SaveAliases(path string) error {
 	if err != nil {
 		return err
 	}
+	/* #nosec G306 */
 	return ioutil.WriteFile(path, cfg, 0644)
 }

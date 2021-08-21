@@ -113,6 +113,7 @@ func execute(opts shellOpts) error {
 	}()
 
 	log.Debug().Msgf("Running command> %s %s", opts.binary, strings.Join(opts.args, " "))
+	/* #nosec G204 */
 	cmd := exec.Command(opts.binary, opts.args...)
 
 	var err error
@@ -163,6 +164,7 @@ func oneShoot(opts shellOpts) (string, error) {
 	}
 
 	log.Debug().Msgf("Running command> %s %s", opts.binary, strings.Join(opts.args, " "))
+	/* #nosec G204 */
 	cmd := exec.Command(opts.binary, opts.args...)
 
 	var err error

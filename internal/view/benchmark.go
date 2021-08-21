@@ -71,6 +71,7 @@ func benchDir(cfg *config.Config) string {
 }
 
 func readBenchFile(cfg *config.Config, n string) (string, error) {
+	/* #nosec G304 */
 	data, err := ioutil.ReadFile(filepath.Join(benchDir(cfg), n))
 	if err != nil {
 		return "", err

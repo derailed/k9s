@@ -97,6 +97,7 @@ func (Benchmark) diagnose(ns string, ff Fields) error {
 // Helpers...
 
 func (Benchmark) readFile(file string) (string, error) {
+	/* #nosec G304 */
 	data, err := ioutil.ReadFile(file)
 	if err != nil {
 		return "", err

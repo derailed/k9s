@@ -541,6 +541,7 @@ func (s *Styles) Views() Views {
 
 // Load K9s configuration from file.
 func (s *Styles) Load(path string) error {
+	/* #nosec G304 */
 	f, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err

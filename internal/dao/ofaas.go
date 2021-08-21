@@ -24,7 +24,8 @@ import (
 )
 
 const (
-	oFaasGatewayEnv  = "OPENFAAS_GATEWAY"
+	oFaasGatewayEnv = "OPENFAAS_GATEWAY"
+	/* #nosec G101 */
 	oFaasJWTTokenEnv = "OPENFAAS_JWT_TOKEN"
 	oFaasTLSInsecure = "OPENFAAS_TLS_INSECURE"
 )
