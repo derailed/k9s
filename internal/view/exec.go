@@ -341,6 +341,11 @@ func k9sShellPod(node string, cfg *config.ShellPod) v1.Pod {
 				},
 			},
 			Containers: []v1.Container{c},
+			Tolerations: []v1.Toleration{
+				{
+					Operator: v1.TolerationOperator("Exists"),
+				},
+			},
 		},
 	}
 }
