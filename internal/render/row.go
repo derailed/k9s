@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/fvbommel/sortorder"
+	"github.com/rs/zerolog/log"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 // Fields represents a collection of row fields.
@@ -162,10 +164,10 @@ func (rr Rows) Sort(col int, asc, isNum, isDur bool) {
 
 // RowSorter sorts rows.
 type RowSorter struct {
-	Rows                 Rows
-	Index                int
-	IsNumber, IsDuration bool
-	Asc                  bool
+	Rows                             Rows
+	Index                            int
+	IsNumber, IsDuration, IsQuantity bool
+	Asc                              bool
 }
 
 func (s RowSorter) Len() int {
@@ -177,7 +179,7 @@ func (s RowSorter) Swap(i, j int) {
 }
 
 func (s RowSorter) Less(i, j int) bool {
-	return Less(s.Asc, s.IsNumber, s.IsDuration, s.Rows[i].Fields[s.Index], s.Rows[j].Fields[s.Index])
+	return Less(s.Asc, s.IsNumber, s.IsDuration, s.IsQuantity, s.Rows[i].Fields[s.Index], s.Rows[j].Fields[s.Index])
 }
 
 // ----------------------------------------------------------------------------
@@ -193,7 +195,22 @@ func toAgeDuration(dur string) string {
 }
 
 // Less return true if c1 < c2.
-func Less(asc, isNumber, isDuration bool, c1, c2 string) bool {
+func Less(asc, isNumber, isDuration, isQuantity bool, c1, c2 string) bool {
+	if isQuantity {
+		q1, errQ1 := resource.ParseQuantity(c1)
+		q2, errQ2 := resource.ParseQuantity(c2)
+		if errQ1 == nil && errQ2 == nil {
+			cmp := q1.Cmp(q2)
+			b := cmp == -1
+			if asc {
+				return b
+			}
+			return !b
+		} else {
+			log.Debug().Msgf("Failed to parse quantities: %s - %s", c1, c2)
+			// Use default comparison even if it might be incorrect
+		}
+	}
 	if isNumber {
 		c1, c2 = strings.Replace(c1, ",", "", -1), strings.Replace(c2, ",", "", -1)
 	}

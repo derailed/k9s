@@ -13,5 +13,5 @@ func TestPVCNew(t *testing.T) {
 
 	assert.Nil(t, v.Init(makeCtx()))
 	assert.Equal(t, "PersistentVolumeClaims", v.Name())
-	assert.Equal(t, 10, len(v.Hints()))
+	assert.Equal(t, 13, len(v.Hints()))
 }

@@ -409,10 +409,10 @@ func TestRowEventsDelete(t *testing.T) {
 
 func TestRowEventsSort(t *testing.T) {
 	uu := map[string]struct {
-		re            render.RowEvents
-		col           int
-		age, num, asc bool
-		e             render.RowEvents
+		re                 render.RowEvents
+		col                int
+		age, num, qty, asc bool
+		e                  render.RowEvents
 	}{
 		"age_time": {
 			re: render.RowEvents{
@@ -442,6 +442,38 @@ func TestRowEventsSort(t *testing.T) {
 				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "1m10s"}}},
 				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3h20m5s"}}},
 				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "32d"}}},
+			},
+		},
+		"qty": {
+			re: render.RowEvents{
+				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "900Mi"}}},
+				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "100Mi"}}},
+				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "8Gi"}}},
+			},
+
+			col: 2,
+			asc: true,
+			qty: true,
+			e: render.RowEvents{
+				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "100Mi"}}},
+				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "900Mi"}}},
+				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "8Gi"}}},
+			},
+		},
+		"qty_desc": {
+			re: render.RowEvents{
+				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "900Mi"}}},
+				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "100Mi"}}},
+				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "8Gi"}}},
+			},
+
+			col: 2,
+			asc: false,
+			qty: true,
+			e: render.RowEvents{
+				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "8Gi"}}},
+				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "900Mi"}}},
+				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "100Mi"}}},
 			},
 		},
 		"col0": {
@@ -483,7 +515,7 @@ func TestRowEventsSort(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.re.Sort("", u.col, u.age, u.num, u.asc)
+			u.re.Sort("", u.col, u.age, u.num, u.qty, u.asc)
 			assert.Equal(t, u.e, u.re)
 		})
 	}

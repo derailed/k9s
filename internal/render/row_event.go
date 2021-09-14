@@ -196,7 +196,7 @@ func (r RowEvents) FindIndex(id string) (int, bool) {
 }
 
 // Sort rows based on column index and order.
-func (r RowEvents) Sort(ns string, sortCol int, ageCol, numCol, asc bool) {
+func (r RowEvents) Sort(ns string, sortCol int, ageCol, numCol, qtyCol, asc bool) {
 	if sortCol == -1 {
 		return
 	}
@@ -208,6 +208,7 @@ func (r RowEvents) Sort(ns string, sortCol int, ageCol, numCol, asc bool) {
 		Asc:        asc,
 		IsNumber:   numCol,
 		IsDuration: ageCol,
+		IsQuantity: qtyCol,
 	}
 	sort.Sort(t)
 
@@ -239,6 +240,7 @@ type RowEventSorter struct {
 	NS         string
 	IsNumber   bool
 	IsDuration bool
+	IsQuantity bool
 	Asc        bool
 }
 
@@ -252,7 +254,7 @@ func (r RowEventSorter) Swap(i, j int) {
 
 func (r RowEventSorter) Less(i, j int) bool {
 	f1, f2 := r.Events[i].Row.Fields, r.Events[j].Row.Fields
-	return Less(r.Asc, r.IsNumber, r.IsDuration, f1[r.Index], f2[r.Index])
+	return Less(r.Asc, r.IsNumber, r.IsDuration, r.IsQuantity, f1[r.Index], f2[r.Index])
 }
 
 // ----------------------------------------------------------------------------

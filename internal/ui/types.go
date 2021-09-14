@@ -18,6 +18,14 @@ type (
 		name string
 		asc  bool
 	}
+
+	// SortChange changes the column on which to sort
+	SortChange bool
+)
+
+const (
+	SortNextCol SortChange = true
+	SortPrevCol SortChange = false
 )
 
 // Namespaceable represents a namespaceable model.
