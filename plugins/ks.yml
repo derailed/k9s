@@ -1,0 +1,21 @@
+# $HOME/.k9s/plugin.yml
+# Run a Pipeline of KubeSphere DevOps
+# See also https://github.com/kubesphere/ks-devops
+plugin:
+  ks:
+    shortCut: r
+    scopes:
+      - pipeline
+    command: ks
+    background: false
+    description: Trigger Pipeline
+    args:
+      - pip
+      - run
+      - --context
+      - $CONTEXT
+      - -b
+      - -n
+      - $NAMESPACE
+      - -p
+      - $NAME

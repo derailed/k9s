@@ -9,3 +9,4 @@ K9s plugins extend the tool to provide additional functionality via actions to f
 | job_suspend.yml | Suspends a running cronjob       | cronjobs           | Ctrl-s   |                                                                                       |
 | dive.yml        | Dive image layers                | containers         | d        | [Dive](https://github.com/wagoodman/dive)                                             |
 | get-all.yml     | get all resources in a namespace | all                | g        | [Krew](https://krew.sigs.k8s.io/), [ketall](https://github.com/corneliusweig/ketall/) |
+| ks.yml          | Trigger a Pipeline of KubeSphere | pipelines          | r        | [KubeSphere CLI](https://github.com/kubesphere-sigs/ks)                               |
