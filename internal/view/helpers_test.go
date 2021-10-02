@@ -19,6 +19,41 @@ func init() {
 	zerolog.SetGlobalLevel(zerolog.Disabled)
 }
 
+func TestParsePFAnn(t *testing.T) {
+	uu := map[string]struct {
+		ann, co, port string
+		ok            bool
+	}{
+		"named-port": {
+			ann:  "fred:blee",
+			co:   "fred",
+			port: "blee",
+			ok:   true,
+		},
+		"port-num": {
+			ann:  "fred:1234",
+			co:   "fred",
+			port: "1234",
+			ok:   true,
+		},
+		"toast": {
+			ann: "zorg",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			co, port, ok := parsePFAnn(u.ann)
+			if u.ok {
+				assert.Equal(t, u.co, co)
+				assert.Equal(t, u.port, port)
+				assert.Equal(t, u.ok, ok)
+			}
+		})
+	}
+}
+
 func TestExtractApp(t *testing.T) {
 	app := NewApp(config.NewConfig(nil))
 

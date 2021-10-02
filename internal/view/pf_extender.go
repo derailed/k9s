@@ -19,6 +19,8 @@ import (
 	"k8s.io/client-go/tools/portforward"
 )
 
+const AnnDefaultPF = "k9s.imhotep.io/default-portforward-container"
+
 // PortForwardExtender adds port-forward extensions.
 type PortForwardExtender struct {
 	ResourceViewer
@@ -130,7 +132,7 @@ func startFwdCB(v ResourceViewer, path, co string, tt []client.PortTunnel) {
 }
 
 func showFwdDialog(v ResourceViewer, path string, cb PortForwardCB) error {
-	mm, err := fetchPodPorts(v.App().factory, path)
+	mm, coPort, err := fetchPodPorts(v.App().factory, path)
 	if err != nil {
 		return err
 	}
@@ -143,22 +145,22 @@ func showFwdDialog(v ResourceViewer, path string, cb PortForwardCB) error {
 			ports = append(ports, client.FQN(co, p.Name)+":"+strconv.Itoa(int(p.ContainerPort)))
 		}
 	}
-	ShowPortForwards(v, path, ports, cb)
+	ShowPortForwards(v, path, ports, coPort, cb)
 
 	return nil
 }
 
-func fetchPodPorts(f *watch.Factory, path string) (map[string][]v1.ContainerPort, error) {
+func fetchPodPorts(f *watch.Factory, path string) (map[string][]v1.ContainerPort, string, error) {
 	log.Debug().Msgf("Fetching ports on pod %q", path)
 	o, err := f.Get("v1/pods", path, true, labels.Everything())
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	var pod v1.Pod
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
 	pp := make(map[string][]v1.ContainerPort)
@@ -166,5 +168,5 @@ func fetchPodPorts(f *watch.Factory, path string) (map[string][]v1.ContainerPort
 		pp[co.Name] = co.Ports
 	}
 
-	return pp, nil
+	return pp, pod.Annotations[AnnDefaultPF], nil
 }

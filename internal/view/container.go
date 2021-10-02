@@ -182,7 +182,7 @@ func (c *Container) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !ok {
 		return nil
 	}
-	ShowPortForwards(c, c.GetTable().Path, ports, startFwdCB)
+	ShowPortForwards(c, c.GetTable().Path, ports, "", startFwdCB)
 
 	return nil
 }
@@ -193,8 +193,8 @@ func (c *Container) isForwardable(path string) ([]string, bool) {
 		return nil, false
 	}
 
-	cc := po.Spec.Containers
 	var co *v1.Container
+	cc := po.Spec.Containers
 	for i := range cc {
 		if cc[i].Name == path {
 			co = &cc[i]
@@ -230,6 +230,14 @@ func (c *Container) isForwardable(path string) ([]string, bool) {
 	}
 
 	pp := make([]string, 0, len(ports))
+	container, port, ok := parsePFAnn(po.Annotations[AnnDefaultPF])
+	if ok && container == path {
+		if index := indexOfPort(ports, port); index != -1 {
+			pp = append(pp, path+"/"+port)
+			ports = append(ports[:index], ports[index+1:]...)
+		}
+	}
+
 	for _, p := range ports {
 		if !isTCPPort(p) {
 			continue
@@ -242,4 +250,17 @@ func (c *Container) isForwardable(path string) ([]string, bool) {
 	}
 
 	return pp, true
+}
+
+func indexOfPort(pp []string, port string) int {
+	for i, p := range pp {
+		tokens := strings.Split(p, ":")
+		if len(tokens) == 2 {
+			if tokens[0] == port || tokens[1] == port {
+				return i
+			}
+		}
+	}
+
+	return -1
 }
