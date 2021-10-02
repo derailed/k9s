@@ -75,6 +75,16 @@ func TestDurationToSecond(t *testing.T) {
 	}
 }
 
+func BenchmarkDurationToSecond(b *testing.B) {
+	t := "2d22h3m50s"
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		durationToSeconds(t)
+	}
+}
+
 func TestToAge(t *testing.T) {
 	uu := map[string]struct {
 		t time.Time
@@ -360,6 +370,47 @@ func BenchmarkMapToStr(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		mapToStr(ll)
+	}
+}
+
+func TestRunesToNum(t *testing.T) {
+	uu := map[string]struct {
+		rr []rune
+		e  int
+	}{
+		"0": {
+			rr: []rune(""),
+			e:  0,
+		},
+		"100": {
+			rr: []rune("100"),
+			e:  100,
+		},
+		"64": {
+			rr: []rune("64"),
+			e:  64,
+		},
+		"52640": {
+			rr: []rune("52640"),
+			e:  52640,
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, runesToNum(u.rr))
+		})
+	}
+}
+
+func BenchmarkRunesToNum(b *testing.B) {
+	rr := []rune("5465")
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		runesToNum(rr)
 	}
 }
 

@@ -1,7 +1,6 @@
 package render
 
 import (
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -17,33 +16,42 @@ import (
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
-var durationRx = regexp.MustCompile(`\A(\d*y)*?(\d*d)*?(\d*h)*?(\d*m)*?(\d*s)*?\z`)
+func runesToNum(rr []rune) int {
+	var n int
+	m := 1
+	for i := len(rr) - 1; i >= 0; i-- {
+		v := int(rr[i] - '0')
+		n += v * m
+		m *= 10
+	}
+
+	return n
+}
 
 func durationToSeconds(duration string) string {
-	tokens := durationRx.FindAllStringSubmatch(duration, -1)
-	if len(tokens) == 0 {
-		return duration
-	}
-	if len(tokens[0]) < 6 {
+	if len(duration) == 0 {
 		return duration
 	}
 
-	y, d, h, m, s := tokens[0][1], tokens[0][2], tokens[0][3], tokens[0][4], tokens[0][5]
-	var n int
-	if v, err := strconv.Atoi(strings.Replace(y, "y", "", 1)); err == nil {
-		n += v * 365 * 24 * 60 * 60
-	}
-	if v, err := strconv.Atoi(strings.Replace(d, "d", "", 1)); err == nil {
-		n += v * 24 * 60 * 60
-	}
-	if v, err := strconv.Atoi(strings.Replace(h, "h", "", 1)); err == nil {
-		n += v * 60 * 60
-	}
-	if v, err := strconv.Atoi(strings.Replace(m, "m", "", 1)); err == nil {
-		n += v * 60
-	}
-	if v, err := strconv.Atoi(strings.Replace(s, "s", "", 1)); err == nil {
-		n += v
+	num := make([]rune, 0, 5)
+	var n, m int
+	for _, r := range duration {
+		switch r {
+		case 'y':
+			m = 365 * 24 * 60 * 60
+		case 'd':
+			m = 24 * 60 * 60
+		case 'h':
+			m = 60 * 60
+		case 'm':
+			m = 60
+		case 's':
+			m = 1
+		default:
+			num = append(num, r)
+			continue
+		}
+		n, num = n+runesToNum(num)*m, num[:0]
 	}
 
 	return strconv.Itoa(n)
