@@ -25,10 +25,11 @@ var Registry = map[string]ResourceMeta{
 		DAO:      &dao.Helm{},
 		Renderer: &render.Helm{},
 	},
-	"openfaas": {
-		DAO:      &dao.OpenFaas{},
-		Renderer: &render.OpenFaas{},
-	},
+	// BOZO!! revamp with latest...
+	// "openfaas": {
+	// 	DAO:      &dao.OpenFaas{},
+	// 	Renderer: &render.OpenFaas{},
+	// },
 	"containers": {
 		DAO:          &dao.Container{},
 		Renderer:     &render.Container{},

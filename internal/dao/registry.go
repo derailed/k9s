@@ -92,11 +92,12 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		client.NewGVR("batch/v1/cronjobs"):      &CronJob{},
 		client.NewGVR("batch/v1beta1/cronjobs"): &CronJob{},
 		client.NewGVR("batch/v1/jobs"):          &Job{},
-		client.NewGVR("openfaas"):               &OpenFaas{},
-		client.NewGVR("popeye"):                 &Popeye{},
-		client.NewGVR("sanitizer"):              &Popeye{},
-		client.NewGVR("helm"):                   &Helm{},
-		client.NewGVR("dir"):                    &Dir{},
+		// BOZO!! Revamp with latest...
+		// client.NewGVR("openfaas"):               &OpenFaas{},
+		client.NewGVR("popeye"):    &Popeye{},
+		client.NewGVR("sanitizer"): &Popeye{},
+		client.NewGVR("helm"):      &Helm{},
+		client.NewGVR("dir"):       &Dir{},
 	}
 
 	r, ok := m[gvr]
@@ -195,9 +196,10 @@ func loadNonResource(m ResourceMetas) {
 	loadK9s(m)
 	loadRBAC(m)
 	loadHelm(m)
-	if IsOpenFaasEnabled() {
-		loadOpenFaas(m)
-	}
+	// BOZO!! Revamp with latest...
+	// if IsOpenFaasEnabled() {
+	// 	loadOpenFaas(m)
+	// }
 }
 
 func loadK9s(m ResourceMetas) {
@@ -301,16 +303,17 @@ func loadHelm(m ResourceMetas) {
 	}
 }
 
-func loadOpenFaas(m ResourceMetas) {
-	m[client.NewGVR("openfaas")] = metav1.APIResource{
-		Name:       "openfaas",
-		Kind:       "OpenFaaS",
-		ShortNames: []string{"ofaas", "ofa"},
-		Namespaced: true,
-		Verbs:      []string{"delete"},
-		Categories: []string{"faas"},
-	}
-}
+// BOZO!! revamp with latest...
+// func loadOpenFaas(m ResourceMetas) {
+// 	m[client.NewGVR("openfaas")] = metav1.APIResource{
+// 		Name:       "openfaas",
+// 		Kind:       "OpenFaaS",
+// 		ShortNames: []string{"ofaas", "ofa"},
+// 		Namespaced: true,
+// 		Verbs:      []string{"delete"},
+// 		Categories: []string{"faas"},
+// 	}
+// }
 
 func loadRBAC(m ResourceMetas) {
 	m[client.NewGVR("rbac")] = metav1.APIResource{
