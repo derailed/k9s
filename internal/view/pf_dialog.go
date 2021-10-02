@@ -2,6 +2,7 @@ package view
 
 import (
 	"fmt"
+	"math"
 	"regexp"
 	"strings"
 
@@ -17,7 +18,7 @@ const portForwardKey = "portforward"
 type PortForwardCB func(v ResourceViewer, path, co string, mapper []client.PortTunnel)
 
 // ShowPortForwards pops a port forwarding configuration dialog.
-func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortForwardCB) {
+func ShowPortForwards(v ResourceViewer, path string, ports []string, ann string, okFn PortForwardCB) {
 	styles := v.App().Styles.Dialog()
 
 	f := tview.NewForm()
@@ -34,15 +35,35 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 	var p1, p2 string
 	if len(ports) > 0 {
 		p1, p2 = ports[0], extractPort(ports[0])
+		if len(ann) != 0 {
+			container, port, ok := parsePFAnn(ann)
+			if ok {
+				for _, p := range ports {
+					co, po, portNum := parsePort(p)
+					if co == container && port == po || port == portNum {
+						p1, p2 = p, extractPort(p)
+						break
+					}
+				}
+			}
+		}
 	}
-
-	f.AddInputField("Container Port:", p1, 30, nil, func(p string) {
+	fieldLen := int(math.Max(30, float64(len(p1))))
+	f.AddInputField("Container Port:", p1, fieldLen, nil, func(p string) {
 		p1 = p
 	})
-	f.AddInputField("Local Port:", p2, 30, nil, func(p string) {
+	field := f.GetFormItemByLabel("Container Port:").(*tview.InputField)
+	if field.GetText() == "" {
+		field.SetPlaceholder("Enter a container name/port")
+	}
+	f.AddInputField("Local Port:", p2, fieldLen, nil, func(p string) {
 		p2 = p
 	})
-	f.AddInputField("Address:", address, 30, nil, func(h string) {
+	field = f.GetFormItemByLabel("Local Port:").(*tview.InputField)
+	if field.GetText() == "" {
+		field.SetPlaceholder("Enter a local port")
+	}
+	f.AddInputField("Address:", address, fieldLen, nil, func(h string) {
 		address = h
 	})
 	for i := 0; i < 3; i++ {
@@ -84,12 +105,12 @@ func ShowPortForwards(v ResourceViewer, path string, ports []string, okFn PortFo
 		b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
 	}
 
-	modal := tview.NewModalForm(fmt.Sprintf("<PortForward on %s>", path), f)
-
-	if len(ports) != 0 {
-		modal.SetText("Exposed Ports: " + strings.Join(ports, ","))
+	modal := tview.NewModalForm("<PortForward>", f)
+	msg := path
+	if len(ports) > 1 {
+		msg += "\n\nExposed Ports:\n" + strings.Join(ports, "\n")
 	}
-
+	modal.SetText(msg)
 	modal.SetTextColor(styles.FgColor.Color())
 	modal.SetBackgroundColor(styles.BgColor.Color())
 	modal.SetDoneFunc(func(_ int, b string) {
@@ -109,6 +130,16 @@ func DismissPortForwards(v ResourceViewer, p *ui.Pages) {
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func parsePort(p string) (string, string, string) {
+	rx := regexp.MustCompile(`\A([\w|-]+)/?([\w|-]+)?:?(\d+)?(╱UDP)?\z`)
+	mm := rx.FindStringSubmatch(p)
+	if len(mm) != 5 {
+		return "", "", ""
+	}
+
+	return mm[1], mm[2], mm[3]
+}
 
 func extractPort(p string) string {
 	rx := regexp.MustCompile(`\A([\w|-]+)/?([\w|-]+)?:?(\d+)?(╱UDP)?\z`)

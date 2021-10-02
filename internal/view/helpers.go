@@ -17,6 +17,15 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+func parsePFAnn(s string) (string, string, bool) {
+	tokens := strings.Split(s, ":")
+	if len(tokens) != 2 {
+		return "", "", false
+	}
+
+	return tokens[0], tokens[1], true
+}
+
 func k8sEnv(c *client.Config) Env {
 	ctx, err := c.CurrentContextName()
 	if err != nil {
