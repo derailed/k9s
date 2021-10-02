@@ -17,19 +17,22 @@ import (
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
-var durationRx = regexp.MustCompile(`\A(\d*d)*?(\d*h)*?(\d*m)*?(\d*s)*?\z`)
+var durationRx = regexp.MustCompile(`\A(\d*y)*?(\d*d)*?(\d*h)*?(\d*m)*?(\d*s)*?\z`)
 
 func durationToSeconds(duration string) string {
 	tokens := durationRx.FindAllStringSubmatch(duration, -1)
 	if len(tokens) == 0 {
 		return duration
 	}
-	if len(tokens[0]) < 5 {
+	if len(tokens[0]) < 6 {
 		return duration
 	}
 
-	d, h, m, s := tokens[0][1], tokens[0][2], tokens[0][3], tokens[0][4]
+	y, d, h, m, s := tokens[0][1], tokens[0][2], tokens[0][3], tokens[0][4], tokens[0][5]
 	var n int
+	if v, err := strconv.Atoi(strings.Replace(y, "y", "", 1)); err == nil {
+		n += v * 365 * 24 * 60 * 60
+	}
 	if v, err := strconv.Atoi(strings.Replace(d, "d", "", 1)); err == nil {
 		n += v * 24 * 60 * 60
 	}
@@ -201,7 +204,7 @@ func Truncate(str string, width int) string {
 	return runewidth.Truncate(str, width, string(tview.SemigraphicsHorizontalEllipsis))
 }
 
-func mapToStr(m map[string]string) (s string) {
+func mapToStr(m map[string]string) string {
 	if len(m) == 0 {
 		return ""
 	}
@@ -212,14 +215,15 @@ func mapToStr(m map[string]string) (s string) {
 	}
 	sort.Strings(kk)
 
+	bb := make([]byte, 0, 100)
 	for i, k := range kk {
-		s += k + "=" + m[k]
+		bb = append(bb, k+"="+m[k]...)
 		if i < len(kk)-1 {
-			s += " "
+			bb = append(bb, ' ')
 		}
 	}
 
-	return
+	return string(bb)
 }
 
 func mapToIfc(m interface{}) (s string) {

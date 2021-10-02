@@ -52,7 +52,7 @@ func TestLabelize(t *testing.T) {
 	}
 }
 
-func TestDurationToNumber(t *testing.T) {
+func TestDurationToSecond(t *testing.T) {
 	uu := map[string]struct {
 		s, e string
 	}{
@@ -63,6 +63,8 @@ func TestDurationToNumber(t *testing.T) {
 		"day_hour":                {s: "3d9h", e: "291600"},
 		"day_hour_minute":         {s: "2d22h3m", e: "252180"},
 		"day_hour_minute_seconds": {s: "2d22h3m50s", e: "252230"},
+		"year":                    {s: "3y", e: "94608000"},
+		"year_day":                {s: "1y2d", e: "31708800"},
 	}
 
 	for k := range uu {
@@ -353,9 +355,9 @@ func BenchmarkMapToStr(b *testing.B) {
 		"blee": "duh",
 		"aa":   "bb",
 	}
-	b.ResetTimer()
-	b.ReportAllocs()
 
+	b.ReportAllocs()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		mapToStr(ll)
 	}
