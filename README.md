@@ -243,7 +243,7 @@ K9s uses aliases to navigate most K8s resources.
 | To kill a resource (no confirmation dialog!)                   | `ctrl-k`                      |                                                                        |
 | Launch pulses view                                             | `:`pulses or pu⏎              |                                                                        |
 | Launch XRay view                                               | `:`xray RESOURCE [NAMESPACE]⏎ | RESOURCE can be one of po, svc, dp, rs, sts, ds, NAMESPACE is optional |
-| Launch Popeye view                                             | `:`popeye or pop⏎             | See https://popeyecli.io                                               |
+| Launch Popeye view                                             | `:`popeye or pop⏎             | See [popeye](#popeye)                                               |
 
 ---
 
@@ -356,6 +356,12 @@ K9s uses aliases to navigate most K8s resources.
         view:
           active: dp
   ```
+
+---
+
+## <a id="popeye"></a>Popeye Configuration
+
+K9s has integration with [Popeye](https://popeyecli.io/), which is a Kubernetes cluster sanitizer.  Popeye itself uses a configuration called `spinach.yml`, but when integrating with K9s the cluster-specific file should be name `$XDG_CONFIG_HOME/k9s/<context>_spinach.yml`.  This allows you to have a different spinach config per cluster.
 
 ---
 
