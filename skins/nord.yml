@@ -81,8 +81,6 @@ k9s:
     table:
       fgColor: *foreground
       bgColor: default
-      cursorFgColor: *foreground
-      cursorBgColor: *current_line
       # Header row styles.
       header:
         fgColor: *foreground
