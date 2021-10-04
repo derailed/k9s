@@ -42,7 +42,7 @@ require (
 	k8s.io/klog/v2 v2.10.0
 	k8s.io/kubectl v0.22.0
 	k8s.io/metrics v0.22.0
-	sigs.k8s.io/yaml v1.2.0
+	sigs.k8s.io/yaml v1.3.0
 )
 
 require (
