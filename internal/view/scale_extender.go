@@ -111,6 +111,16 @@ func (s *ScaleExtender) makeScaleForm(sel string) (*tview.Form, error) {
 		s.dismissDialog()
 	})
 
+	styles := s.App().Styles.Dialog()
+	for i := 0; i < 2; i++ {
+		b := f.GetButton(i)
+		if b == nil {
+			continue
+		}
+		b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
+		b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
+	}
+
 	return f, nil
 }
 
