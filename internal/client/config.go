@@ -62,10 +62,12 @@ func (c *Config) SwitchContext(name string) error {
 		return nil
 	}
 
-	if _, err := c.GetContext(name); err != nil {
+	newContext, err := c.GetContext(name)
+	if err != nil {
 		return fmt.Errorf("context %s does not exist", name)
 	}
 	c.reset()
+	c.flags.Namespace = &(newContext.Namespace)
 	c.flags.Context = &name
 
 	return nil

@@ -73,7 +73,7 @@ func (a *App) ConOK() bool {
 }
 
 // Init initializes the application.
-func (a *App) Init(version string, rate int) error {
+func (a *App) Init(version string, _ int) error {
 	a.version = model.NormalizeVersion(version)
 
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
@@ -394,6 +394,10 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 			log.Warn().Msg("No namespace specified in context. Using K9s config")
 		}
 		a.initFactory(ns)
+		err = a.Config.SetActiveNamespace(ns)
+		if err != nil {
+			log.Warn().Msgf("Failed to change to namespace '%s' in context switch, %v", ns, err)
+		}
 
 		if err := a.command.Reset(true); err != nil {
 			return err
@@ -512,7 +516,7 @@ func (a *App) setIndicator(l model.FlashLevel, msg string) {
 }
 
 // PrevCmd pops the command stack.
-func (a *App) PrevCmd(evt *tcell.EventKey) *tcell.EventKey {
+func (a *App) PrevCmd(_ *tcell.EventKey) *tcell.EventKey {
 	if !a.Content.IsLast() {
 		a.Content.Pop()
 	}
