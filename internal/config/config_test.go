@@ -268,6 +268,7 @@ var expectedConfig = `k9s:
   crumbsless: false
   readOnly: true
   noIcons: false
+  fixWindowSize: false
   logger:
     tail: 500
     buffer: 800
@@ -358,6 +359,7 @@ var resetConfig = `k9s:
   crumbsless: false
   readOnly: false
   noIcons: false
+  fixWindowSize: false
   logger:
     tail: 200
     buffer: 2000

@@ -19,6 +19,7 @@ type K9s struct {
 	Crumbsless        bool                `yaml:"crumbsless"`
 	ReadOnly          bool                `yaml:"readOnly"`
 	NoIcons           bool                `yaml:"noIcons"`
+	FixWindowSize     bool                `yaml:"fixWindowSize"`
 	Logger            *Logger             `yaml:"logger"`
 	CurrentContext    string              `yaml:"currentContext"`
 	CurrentCluster    string              `yaml:"currentCluster"`

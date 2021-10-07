@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"os/exec"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -265,12 +267,31 @@ func shellIn(a *App, fqn, co string) {
 	if err != nil {
 		log.Warn().Err(err).Msgf("os detect failed")
 	}
-	args := computeShellArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os)
+
+	env := make(map[string]string)
+
+	if a.Config.K9s.FixWindowSize {
+		if cols, lines, ok := getWindowSize(); ok {
+			env["COLUMNS"] = fmt.Sprint(cols)
+			env["LINES"] = fmt.Sprint(lines)
+		}
+	}
+
+	args := computeShellArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os, env)
 
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
 	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, fqn, co), args: args}) {
 		a.Flash().Err(errors.New("Shell exec failed"))
 	}
+}
+
+func getWindowSize() (cols int, lines int, ok bool) {
+	cmd := exec.Command("stty", "size")
+	cmd.Stdin = os.Stdin
+	out, _ := cmd.Output()
+	n, err := fmt.Sscanf(string(out), "%d %d", &lines, &cols)
+	ok = n == 2 && err == nil && cols > 0 && lines > 0
+	return
 }
 
 func containerAttachIn(a *App, comp model.Component, path, co string) error {
@@ -315,12 +336,19 @@ func attachIn(a *App, path, co string) {
 	}
 }
 
-func computeShellArgs(path, co string, kcfg *string, os string) []string {
+func computeShellArgs(path, co string, kcfg *string, os string, env map[string]string) []string {
 	args := buildShellArgs("exec", path, co, kcfg)
 	if os == windowsOS {
 		return append(args, "--", powerShell)
 	}
-	return append(args, "--", "sh", "-c", shellCheck)
+	args = append(args, "--")
+	if len(env) > 0 {
+		args = append(args, "env")
+		for k, v := range env {
+			args = append(args, fmt.Sprintf("%s=%s", k, v))
+		}
+	}
+	return append(args, "sh", "-c", shellCheck)
 }
 
 func buildShellArgs(cmd, path, co string, kcfg *string) []string {
