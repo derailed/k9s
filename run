@@ -33,4 +33,4 @@ if [ -z "$REGION" ]; then
 fi
 
 
- docker run --rm -it -v $HOME/.aws:/root/.aws ghcr.io/ozlevka-work/k9s:v2.4.7 /bin/sh -c "aws eks --region $REGION update-kubeconfig --profile $PROFILE --name $CLUSTER --no-verify-ssl && /bin/k9s" 
+ docker run --rm -it -v $HOME/.aws:/root/.aws ghcr.io/ozlevka-work/k9s:v2.4.15 /bin/sh -c "aws eks --region $REGION update-kubeconfig --profile $PROFILE --name $CLUSTER --no-verify-ssl && /bin/k9s" 
