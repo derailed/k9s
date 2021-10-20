@@ -63,3 +63,6 @@ k9s:
     logs:
       fgColor: default
       bgColor: default
+      indicator:
+        fgColor: default
+        bgColor: default
