@@ -116,7 +116,7 @@ func (c *ClusterInfo) Reset(f dao.Factory) {
 	c.Refresh()
 }
 
-// Refresh fetches latest cluster meta.
+// Refresh fetches the latest cluster meta.
 func (c *ClusterInfo) Refresh() {
 	data := NewClusterMeta()
 	data.Context = c.cluster.ContextName()
