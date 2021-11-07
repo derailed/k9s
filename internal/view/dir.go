@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 
@@ -90,7 +90,7 @@ func (d *Dir) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	yaml, err := ioutil.ReadFile(sel)
+	yaml, err := os.ReadFile(sel)
 	if err != nil {
 		d.App().Flash().Err(err)
 		return nil
@@ -157,7 +157,7 @@ func isKustomized(sel string) bool {
 		return false
 	}
 
-	ff, err := ioutil.ReadDir(sel)
+	ff, err := os.ReadDir(sel)
 	if err != nil {
 		return false
 	}
@@ -176,7 +176,7 @@ func containsDir(sel string) bool {
 		return false
 	}
 
-	ff, err := ioutil.ReadDir(sel)
+	ff, err := os.ReadDir(sel)
 	if err != nil {
 		return false
 	}

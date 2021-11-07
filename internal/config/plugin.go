@@ -1,7 +1,7 @@
 package config
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"gopkg.in/yaml.v2"
@@ -40,7 +40,7 @@ func (p Plugins) Load() error {
 
 // LoadPlugins loads plugins from a given file.
 func (p Plugins) LoadPlugins(path string) error {
-	f, err := ioutil.ReadFile(path)
+	f, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}

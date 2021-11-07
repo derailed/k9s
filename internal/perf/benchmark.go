@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -138,7 +137,7 @@ func (b *Benchmark) save(cluster string, r io.Reader) error {
 		}
 	}()
 
-	bb, err := ioutil.ReadAll(r)
+	bb, err := io.ReadAll(r)
 	if err != nil {
 		return err
 	}

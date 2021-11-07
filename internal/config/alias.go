@@ -1,7 +1,7 @@
 package config
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"sync"
 
@@ -105,7 +105,7 @@ func (a *Aliases) Load() error {
 
 // LoadFileAliases loads alias from a given file.
 func (a *Aliases) LoadFileAliases(path string) error {
-	f, err := ioutil.ReadFile(path)
+	f, err := os.ReadFile(path)
 	if err == nil {
 		var aa Aliases
 		if err := yaml.Unmarshal(f, &aa); err != nil {
@@ -171,5 +171,5 @@ func (a *Aliases) SaveAliases(path string) error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(path, cfg, 0644)
+	return os.WriteFile(path, cfg, 0644)
 }

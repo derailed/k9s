@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -218,7 +217,7 @@ func (c *Config) SetConnection(conn client.Connection) {
 
 // Load K9s configuration from file.
 func (c *Config) Load(path string) error {
-	f, err := ioutil.ReadFile(path)
+	f, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
@@ -252,7 +251,7 @@ func (c *Config) SaveFile(path string) error {
 		log.Error().Msgf("[Config] Unable to save K9s config file: %v", err)
 		return err
 	}
-	return ioutil.WriteFile(path, cfg, 0644)
+	return os.WriteFile(path, cfg, 0644)
 }
 
 // Validate the configuration.
