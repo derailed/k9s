@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/derailed/k9s/internal"
@@ -238,7 +238,7 @@ func makeDoubleCMKeysContainer(n string, optional bool) *v1.Container {
 }
 
 func load(t *testing.T, n string) *unstructured.Unstructured {
-	raw, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", n))
+	raw, err := os.ReadFile(fmt.Sprintf("testdata/%s.json", n))
 	assert.Nil(t, err)
 
 	var o unstructured.Unstructured

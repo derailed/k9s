@@ -35,10 +35,10 @@ func (Dir) Render(o interface{}, ns string, r *Row) error {
 	}
 
 	name := "🦄 "
-	if d.Info.IsDir() {
+	if d.Entry.IsDir() {
 		name = "📁 "
 	}
-	name += d.Info.Name()
+	name += d.Entry.Name()
 	r.ID, r.Fields = d.Path, append(r.Fields, name)
 
 	return nil
@@ -49,8 +49,8 @@ func (Dir) Render(o interface{}, ns string, r *Row) error {
 
 // DirRes represents an alias resource.
 type DirRes struct {
-	Info os.FileInfo
-	Path string
+	Entry os.DirEntry
+	Path  string
 }
 
 // GetObjectKind returns a schema object.

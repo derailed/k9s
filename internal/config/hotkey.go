@@ -1,7 +1,7 @@
 package config
 
 import (
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"gopkg.in/yaml.v2"
@@ -36,7 +36,7 @@ func (h HotKeys) Load() error {
 
 // LoadHotKeys loads plugins from a given file.
 func (h HotKeys) LoadHotKeys(path string) error {
-	f, err := ioutil.ReadFile(path)
+	f, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
