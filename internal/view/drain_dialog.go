@@ -45,13 +45,13 @@ func ShowDrain(view ResourceViewer, path string, defaults dao.DrainOptions, okFn
 		view.App().Flash().Clear()
 		opts.Timeout = a
 	})
-	f.AddCheckbox("Ignore DaemonSets:", defaults.IgnoreAllDaemonSets, func(v bool) {
+	f.AddCheckbox("Ignore DaemonSets:", defaults.IgnoreAllDaemonSets, func(_ string, v bool) {
 		opts.IgnoreAllDaemonSets = v
 	})
-	f.AddCheckbox("Delete Local Data:", defaults.DeleteEmptyDirData, func(v bool) {
+	f.AddCheckbox("Delete Local Data:", defaults.DeleteEmptyDirData, func(_ string, v bool) {
 		opts.DeleteEmptyDirData = v
 	})
-	f.AddCheckbox("Force:", defaults.Force, func(v bool) {
+	f.AddCheckbox("Force:", defaults.Force, func(_ string, v bool) {
 		opts.Force = v
 	})
 

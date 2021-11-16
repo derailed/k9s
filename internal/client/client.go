@@ -63,7 +63,7 @@ func InitConnection(config *Config) (*APIClient, error) {
 	}
 	err := a.supportsMetricsResources()
 	if err != nil {
-		log.Error().Err(err).Msgf("Checking metrics-server")
+		log.Error().Err(err).Msgf("Fail to locate metrics-server")
 	}
 	if errors.Is(err, noMetricServerErr) || errors.Is(err, metricsUnsupportedErr) {
 		return &a, nil
@@ -120,11 +120,11 @@ func (a *APIClient) IsActiveNamespace(ns string) bool {
 
 // ActiveNamespace returns the current namespace.
 func (a *APIClient) ActiveNamespace() string {
-	ns, err := a.CurrentNamespaceName()
-	if err != nil {
-		return AllNamespaces
+	if ns, err := a.CurrentNamespaceName(); err == nil {
+		return ns
 	}
-	return ns
+
+	return AllNamespaces
 }
 
 func (a *APIClient) clearCache() {
@@ -261,7 +261,7 @@ func (a *APIClient) CheckConnectivity() bool {
 			a.reset()
 		}
 	} else {
-		log.Error().Err(err).Msgf("K9s can't connect to cluster")
+		log.Error().Err(err).Msgf("can't connect to cluster")
 		a.connOK = false
 	}
 
@@ -301,11 +301,7 @@ func (a *APIClient) Dial() (kubernetes.Interface, error) {
 
 // RestConfig returns a rest api client.
 func (a *APIClient) RestConfig() (*restclient.Config, error) {
-	cfg, err := a.config.RESTConfig()
-	if err != nil {
-		return nil, err
-	}
-	return cfg, nil
+	return a.config.RESTConfig()
 }
 
 // CachedDiscovery returns a cached discovery client.
@@ -430,7 +426,6 @@ func (a *APIClient) supportsMetricsResources() error {
 	}
 	apiGroups, err := dial.ServerGroups()
 	if err != nil {
-		log.Warn().Err(err).Msgf("Unable to fetch APIGroups")
 		return err
 	}
 	for _, grp := range apiGroups.Groups {

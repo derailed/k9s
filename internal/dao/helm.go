@@ -111,8 +111,7 @@ func (c *Helm) Delete(path string, cascade, force bool) error {
 // EnsureHelmConfig return a new configuration.
 func (c *Helm) EnsureHelmConfig(ns string) (*action.Configuration, error) {
 	cfg := new(action.Configuration)
-	flags := c.Client().Config().Flags()
-	if err := cfg.Init(flags, ns, os.Getenv("HELM_DRIVER"), helmLogger); err != nil {
+	if err := cfg.Init(c.Client().Config().Flags(), ns, os.Getenv("HELM_DRIVER"), helmLogger); err != nil {
 		return nil, err
 	}
 	return cfg, nil

@@ -86,7 +86,7 @@ func (d *DaemonSet) TailLogs(ctx context.Context, c LogChan, opts *LogOptions) e
 	return podLogs(ctx, c, ds.Spec.Selector.MatchLabels, opts)
 }
 
-func podLogs(ctx context.Context, c LogChan, sel map[string]string, opts *LogOptions) error {
+func podLogs(ctx context.Context, out LogChan, sel map[string]string, opts *LogOptions) error {
 	f, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
 	if !ok {
 		return errors.New("expecting a context factory")
@@ -110,14 +110,13 @@ func podLogs(ctx context.Context, c LogChan, sel map[string]string, opts *LogOpt
 	po := Pod{}
 	po.Init(f, client.NewGVR("v1/pods"))
 	for _, o := range oo {
-		var pod v1.Pod
-		err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod)
-		if err != nil {
-			return err
+		u, ok := o.(*unstructured.Unstructured)
+		if !ok {
+			return fmt.Errorf("expected unstructured got %t", o)
 		}
 		opts = opts.Clone()
-		opts.Path = client.FQN(pod.Namespace, pod.Name)
-		if err := po.TailLogs(ctx, c, opts); err != nil {
+		opts.Path = client.FQN(u.GetNamespace(), u.GetName())
+		if err := po.TailLogs(ctx, out, opts); err != nil {
 			return err
 		}
 	}

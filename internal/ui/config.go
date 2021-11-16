@@ -50,7 +50,7 @@ func (c *Configurator) CustomViewsWatcher(ctx context.Context, s synchronizer) e
 				log.Warn().Err(err).Msg("CustomView watcher failed")
 				return
 			case <-ctx.Done():
-				log.Debug().Msgf("CustomViewWatcher Done `%s!!", config.K9sViewConfigFile)
+				log.Debug().Msgf("CustomViewWatcher CANCELED `%s!!", config.K9sViewConfigFile)
 				if err := w.Close(); err != nil {
 					log.Error().Err(err).Msg("Closing CustomView watcher")
 				}
@@ -102,7 +102,7 @@ func (c *Configurator) StylesWatcher(ctx context.Context, s synchronizer) error 
 				log.Info().Err(err).Msg("Skin watcher failed")
 				return
 			case <-ctx.Done():
-				log.Debug().Msgf("SkinWatcher Done `%s!!", c.skinFile)
+				log.Debug().Msgf("SkinWatcher CANCELED `%s!!", c.skinFile)
 				if err := w.Close(); err != nil {
 					log.Error().Err(err).Msg("Closing Skin watcher")
 				}

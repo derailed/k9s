@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"errors"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
@@ -63,14 +64,14 @@ func (c *Context) Switch(ctx string) error {
 
 // KubeUpdate modifies kubeconfig default context.
 func (c *Context) KubeUpdate(n string) error {
-	config, err := c.config().RawConfig()
-	if err != nil {
-		return err
+	cfg := c.config().RawConfig()
+	if cfg == nil {
+		return errors.New("unable to fetch raw config")
 	}
 	if err := c.Switch(n); err != nil {
 		return err
 	}
 	return clientcmd.ModifyConfig(
-		clientcmd.NewDefaultPathOptions(), config, true,
+		clientcmd.NewDefaultPathOptions(), *cfg, true,
 	)
 }

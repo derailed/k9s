@@ -52,7 +52,7 @@ func (f *Flash) StylesChanged(s *config.Styles) {
 
 // Watch watches for flash changes.
 func (f *Flash) Watch(ctx context.Context, c model.FlashChan) {
-	defer log.Debug().Msgf("Flash Canceled!")
+	defer log.Debug().Msgf("Flash Watch Canceled!")
 	for {
 		select {
 		case <-ctx.Done():

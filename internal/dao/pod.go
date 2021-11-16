@@ -177,7 +177,7 @@ func (p *Pod) GetInstance(fqn string) (*v1.Pod, error) {
 }
 
 // TailLogs tails a given container logs.
-func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts *LogOptions) error {
+func (p *Pod) TailLogs(ctx context.Context, out LogChan, opts *LogOptions) error {
 	log.Debug().Msgf("TAIL-LOGS for %q:%q", opts.Path, opts.Container)
 	fac, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
 	if !ok {
@@ -198,18 +198,18 @@ func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts *LogOptions) error {
 
 	if co, ok := GetDefaultLogContainer(po.ObjectMeta, po.Spec); ok && !opts.AllContainers {
 		opts.DefaultContainer = co
-		return tailLogs(ctx, p, c, opts)
+		return tailLogs(ctx, p, out, opts)
 	}
 
 	if opts.HasContainer() && !opts.AllContainers {
-		return tailLogs(ctx, p, c, opts)
+		return tailLogs(ctx, p, out, opts)
 	}
 
 	var tailed bool
 	for _, co := range po.Spec.InitContainers {
 		o := opts.Clone()
 		o.Container = co.Name
-		if err := tailLogs(ctx, p, c, o); err != nil {
+		if err := tailLogs(ctx, p, out, o); err != nil {
 			return err
 		}
 		tailed = true
@@ -217,7 +217,7 @@ func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts *LogOptions) error {
 	for _, co := range po.Spec.Containers {
 		o := opts.Clone()
 		o.Container = co.Name
-		if err := tailLogs(ctx, p, c, o); err != nil {
+		if err := tailLogs(ctx, p, out, o); err != nil {
 			return err
 		}
 		tailed = true
@@ -225,7 +225,7 @@ func (p *Pod) TailLogs(ctx context.Context, c LogChan, opts *LogOptions) error {
 	for _, co := range po.Spec.EphemeralContainers {
 		o := opts.Clone()
 		o.Container = co.Name
-		if err := tailLogs(ctx, p, c, o); err != nil {
+		if err := tailLogs(ctx, p, out, o); err != nil {
 			return err
 		}
 		tailed = true
@@ -326,21 +326,22 @@ func (p *Pod) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func tailLogs(ctx context.Context, logger Logger, c LogChan, opts *LogOptions) error {
-	log.Debug().Msgf("Tailing logs for %#v", opts)
-
+func tailLogs(ctx context.Context, logger Logger, out LogChan, opts *LogOptions) error {
 	var (
 		err    error
 		req    *restclient.Request
 		stream io.ReadCloser
 	)
+
+	o := opts.ToPodLogOptions()
+	log.Debug().Msgf("TAIL_LOGS! %#v", o)
 done:
 	for r := 0; r < logRetryCount; r++ {
-		req, err = logger.Logs(opts.Path, opts.ToPodLogOptions())
+		req, err = logger.Logs(opts.Path, o)
 		if err == nil {
 			// This call will block if nothing is in the stream!!
 			if stream, err = req.Stream(ctx); err == nil {
-				go readLogs(stream, c, opts)
+				go readLogs(ctx, stream, out, opts)
 				break
 			} else {
 				log.Error().Err(err).Msg("Streaming logs")
@@ -351,6 +352,7 @@ done:
 
 		select {
 		case <-ctx.Done():
+			log.Debug().Msgf("!!!!TAIL_LOGS CANCELED!!!!")
 			err = ctx.Err()
 			break done
 		default:
@@ -358,36 +360,36 @@ done:
 		}
 	}
 
-	if err != nil {
-		log.Error().Err(err).Msgf("Unable to obtain log stream failed for `%s", opts.Path)
-		c <- opts.DecorateLog([]byte("\n" + err.Error() + "\n"))
-		return err
-	}
-
-	return nil
+	return err
 }
 
-func readLogs(stream io.ReadCloser, c LogChan, opts *LogOptions) {
+func readLogs(ctx context.Context, stream io.ReadCloser, c LogChan, opts *LogOptions) {
 	defer func() {
-		log.Debug().Msgf(">>> Closing stream %s", opts.Info())
+		log.Debug().Msgf("READ_LOGS BAILED!!!")
 		if err := stream.Close(); err != nil {
 			log.Error().Err(err).Msgf("Fail to close stream %s", opts.Info())
 		}
 	}()
 
+	log.Debug().Msgf("READ_LOGS PROCESSING %#v", opts)
 	r := bufio.NewReader(stream)
 	for {
 		bytes, err := r.ReadBytes('\n')
 		if err != nil {
 			if errors.Is(err, io.EOF) {
 				log.Warn().Err(err).Msgf("Stream closed for %s", opts.Info())
+				// c <- ItemEOF
 				return
 			}
 			log.Warn().Err(err).Msgf("Stream READ error %s", opts.Info())
-			c <- opts.DecorateLog([]byte(fmt.Sprintf("\nlog stream failed: %#v\n", err)))
 			return
 		}
-		c <- opts.DecorateLog(bytes)
+		select {
+		case c <- opts.DecorateLog(bytes):
+		case <-ctx.Done():
+			log.Debug().Msgf("READER CANCELED")
+			return
+		}
 	}
 }
 

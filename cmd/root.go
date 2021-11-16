@@ -94,25 +94,25 @@ func loadConfiguration() *config.Config {
 	k9sCfg.K9s.OverrideWrite(*k9sFlags.Write)
 	k9sCfg.K9s.OverrideCommand(*k9sFlags.Command)
 
-	if err := k9sCfg.Refine(k8sFlags, k9sFlags); err != nil {
+	if err := k9sCfg.Refine(k8sFlags, k9sFlags, k8sCfg); err != nil {
 		log.Error().Err(err).Msgf("refine failed")
 	}
 	conn, err := client.InitConnection(k8sCfg)
 	k9sCfg.SetConnection(conn)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to connect to cluster")
-	} else {
-		// Try to access server version if that fail. Connectivity issue?
-		if !k9sCfg.GetConnection().CheckConnectivity() {
-			log.Panic().Msgf("K9s can't connect to cluster")
-		}
-		if !k9sCfg.GetConnection().ConnectionOK() {
-			panic("No connectivity")
-		}
-		log.Info().Msg("✅ Kubernetes connectivity")
-		if err := k9sCfg.Save(); err != nil {
-			log.Error().Err(err).Msg("Config save")
-		}
+		return k9sCfg
+	}
+	// Try to access server version if that fail. Connectivity issue?
+	if !k9sCfg.GetConnection().CheckConnectivity() {
+		log.Panic().Msgf("Cannot connect to cluster")
+	}
+	if !k9sCfg.GetConnection().ConnectionOK() {
+		panic("No connectivity")
+	}
+	log.Info().Msg("✅ Kubernetes connectivity")
+	if err := k9sCfg.Save(); err != nil {
+		log.Error().Err(err).Msg("Config save")
 	}
 
 	return k9sCfg

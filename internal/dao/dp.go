@@ -69,20 +69,20 @@ func (d *Deployment) Restart(ctx context.Context, path string) error {
 		return err
 	}
 
-	ns, _ := client.Namespaced(path)
-	auth, err := d.Client().CanI(ns, "apps/v1/deployments", []string{client.PatchVerb})
+	auth, err := d.Client().CanI(dp.Namespace, "apps/v1/deployments", []string{client.PatchVerb})
 	if err != nil {
 		return err
 	}
 	if !auth {
 		return fmt.Errorf("user is not authorized to restart a deployment")
 	}
-	update, err := polymorphichelpers.ObjectRestarterFn(dp)
+
+	dial, err := d.Client().Dial()
 	if err != nil {
 		return err
 	}
 
-	dial, err := d.Client().Dial()
+	restarter, err := polymorphichelpers.ObjectRestarterFn(dp)
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (d *Deployment) Restart(ctx context.Context, path string) error {
 		ctx,
 		dp.Name,
 		types.StrategicMergePatchType,
-		update,
+		restarter,
 		metav1.PatchOptions{},
 	)
 	return err

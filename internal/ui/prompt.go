@@ -71,6 +71,7 @@ type PromptModel interface {
 type Prompt struct {
 	*tview.TextView
 
+	app     *App
 	noIcons bool
 	icon    rune
 	styles  *config.Styles
@@ -79,8 +80,9 @@ type Prompt struct {
 }
 
 // NewPrompt returns a new command view.
-func NewPrompt(noIcons bool, styles *config.Styles) *Prompt {
+func NewPrompt(app *App, noIcons bool, styles *config.Styles) *Prompt {
 	p := Prompt{
+		app:      app,
 		styles:   styles,
 		noIcons:  noIcons,
 		TextView: tview.NewTextView(),
@@ -183,8 +185,15 @@ func (p *Prompt) activate() {
 }
 
 func (p *Prompt) update(s string) {
-	p.Clear()
-	p.write(s, "")
+	f := func() {
+		p.Clear()
+		p.write(s, "")
+	}
+	if p.app == nil {
+		f()
+		return
+	}
+	p.app.QueueUpdate(f)
 }
 
 func (p *Prompt) suggest(text, suggestion string) {

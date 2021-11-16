@@ -14,7 +14,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ## ♫ Sounds Behind The Release ♭
 
-* [High Fidelity - By Elvis Costello (yup! he started as a computer operator. Can u tell?)](https://www.youtube.com/watch?v=DJS-2kacmpU)
+* [High Fidelity - By Elvis Costello (Yup! he started is career as a computer operator. Can u tell??)](https://www.youtube.com/watch?v=DJS-2kacmpU)
 * [Walk With A Big Stick - Foster The People](https://www.youtube.com/watch?v=XMY1VMTyl8s)
 * [Beirut - Steps Ahead -- Love this band!! with the ever so talented and sadly late Michael Brecker ;(](https://www.youtube.com/watch?v=UExKTZ3veB8)
 
@@ -25,20 +25,31 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 I want to recognize the following folks that have been kind enough to join our sponsorship program and opted to `pay it forward`!
 
 * [Andrew Regan](https://github.com/poblish)
-* [Astraea](https://github.com/s22s)
-* [DataRoots](https://github.com/datarootsio)
+* [Bruno Brito](https://github.com/brunohbrito)
+* [ScubaDrew](https://github.com/ScubaDrew)
+* [mike-code](https://github.com/mike-code)
+* [Andrew Aadland](https://github.com/DaemonDude23)
+* [Michael Albers](https://github.com/michaeljohnalbers)
 
 So if you feel K9s is helping with your productivity while administering your Kubernetes clusters, please consider pitching in as it will go a long way in ensuring a thriving environment for this repo and our k9ers community at large.
+
+Also please take some time and give a huge shoot out to all the good folks below that have spent time plowing thru the code to help improve K9s for all of us!
 
 Thank you!!
 
 ---
 
-## Forward That!
+## Personal Note...
 
-Ever been in a situation where you need to constantly port-forward on a given pod with multiple containers exposing multiple ports? If so it might be cumbersome to have to type in the full container:port specification to activate a forward. If you fall in this use cases, you can now specify which container and port you would rather port-forward to by default. In this drop, we introduce a new annotation that you can use to specify and container/port to forward to by default. If set the port-forward dialog will know default to your settings.
+I had so many distractions this cycle so expect some `disturbance in the farce!` on this drop.
+To boot rat holed quiet a bit on improving speed. So I might have drop some stuff on the floor in the process...
+Please report back if that's the case and we will address shortly. Tx!!
 
-> NOTE: you can either use a port name or number in your annotation.
+## Port It Forward??
+
+Ever been in a situation where you need to constantly port-forward on a given pod with multiple containers or exposing multiple ports? If so it might be cumbersome to have to type in the full container:port specification to activate a forward. If you fall in this use cases, you can now specify which container and port you would rather port-forward to by default. In this drop, we introduce a new annotation that you can use to specify and container/port to forward to by default. If set, the port-forward dialog will know to default to your settings.
+
+> NOTE: you can either use a container port name or number in your annotation!
 
 ```yaml
 # Pod fred
@@ -47,9 +58,10 @@ kind: Pod
 metadata:
   name: fred
   annotations:
-    k9s.imhotep.io/default-portforward-container: bozo:p1 # => will default to container bozo port named p1
+    k9scli.io/auto-portforwards: zorg::5556        # => will default to container zorg port 5556 and local port 5566. No port-forward dialog will be shown.
     # Or...
-    k9s.imhotep.io/default-portforward-container: bozo:8081 # => will default to container bozo port number 8081
+    k9scli.io/portforward: bozo::6666:p1           # => launches the port-forward dialog selecting default port-forward on container bozo port named p1(8081)
+                                                   # mapping to local port 6666.
     ...
 spec:
   containers:
@@ -67,18 +79,35 @@ spec:
     ...
 ```
 
+The annotation value must specify a container to forward to as well as a local port and container port. The container port may be specified as either a port number or port name. If the local port is omitted then the local port will default to the container port number. Here are a few examples:
+
+1. bozo::http      - creates a pf on container `bozo` with port name http. If http specifies port number 8080 then the local port will be 8080 as well.
+2. bozo::9090:http - creates a pf on container `bozo` mapping local port 9090->http(8080)
+3. bozo::9090:8080 - creates a pf on container `bozo` mapping local port 9090->8080
+
 ---
 
 ## Resolved Issues
 
+* [Issue #1299](https://github.com/derailed/k9s/issues/1299) After upgrade to 0.24.15 sorting shortcuts not working
+* [Issue #1298](https://github.com/derailed/k9s/issues/1298) Install K9s through go get reporting ambiguous import error
+* [Issue #1296](https://github.com/derailed/k9s/issues/1296) Crash when clicking between border of K9s and terminal pane
+* [Issue #1289](https://github.com/derailed/k9s/issues/1289) Homebrew calling bottle :unneeded is deprecated! There is no replacement
+* [Issue #1273](https://github.com/derailed/k9s/issues/1273) Not loading config from correct default location when XDG_CONFIG_HOME is unset
 * [Issue #1268](https://github.com/derailed/k9s/issues/1268) Age sorting wrong for years
 * [Issue #1258](https://github.com/derailed/k9s/issues/1258) Configurable or recent use based port-forward
 * [Issue #1257](https://github.com/derailed/k9s/issues/1257) Why is the latest chocolatey on 0.24.10
+* [Issue #1243](https://github.com/derailed/k9s/issues/1243) Port forward fails in kind on windows 10
 
 ---
 
 ## PRs
 
+* [PR #1300](https://github.com/derailed/k9s/pull/1300) move from io/ioutil to io/os packages
+* [PR #1287](https://github.com/derailed/k9s/pull/1287) Add missing styles to kiss
+* [PR #1286](https://github.com/derailed/k9s/pull/1286) Some small color modifications
+* [PR #1284](https://github.com/derailed/k9s/pull/1284) Fix a small typo which comes from cluster view info
+* [PR #1271](https://github.com/derailed/k9s/pull/1271) Removed cursor colors that are too light to read
 * [PR #1266](https://github.com/derailed/k9s/pull/1266) Skin to preserve your terminal session background color
 * [PR #1264](https://github.com/derailed/k9s/pull/1205) Adding note on popeye config
 * [PR #1261](https://github.com/derailed/k9s/pull/1261) Blurry logo

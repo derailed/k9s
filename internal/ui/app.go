@@ -41,7 +41,7 @@ func NewApp(cfg *config.Config, context string) *App {
 	a.views = map[string]tview.Primitive{
 		"menu":   NewMenu(a.Styles),
 		"logo":   NewLogo(a.Styles),
-		"prompt": NewPrompt(a.Config.K9s.NoIcons, a.Styles),
+		"prompt": NewPrompt(&a, a.Config.K9s.NoIcons, a.Styles),
 		"crumbs": NewCrumbs(a.Styles),
 	}
 
@@ -60,6 +60,9 @@ func (a *App) Init() {
 
 // QueueUpdate queues up a ui action.
 func (a *App) QueueUpdate(f func()) {
+	if a.Application == nil {
+		return
+	}
 	go func() {
 		a.Application.QueueUpdate(f)
 	}()
@@ -67,6 +70,9 @@ func (a *App) QueueUpdate(f func()) {
 
 // QueueUpdateDraw queues up a ui action and redraw the ui.
 func (a *App) QueueUpdateDraw(f func()) {
+	if a.Application == nil {
+		return
+	}
 	go func() {
 		a.Application.QueueUpdateDraw(f)
 	}()

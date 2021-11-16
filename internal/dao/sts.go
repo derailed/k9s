@@ -70,8 +70,7 @@ func (s *StatefulSet) Restart(ctx context.Context, path string) error {
 		return err
 	}
 
-	ns, _ := client.Namespaced(path)
-	auth, err := s.Client().CanI(ns, "apps/v1/statefulsets", []string{client.PatchVerb})
+	auth, err := s.Client().CanI(sts.Namespace, "apps/v1/statefulsets", []string{client.PatchVerb})
 	if err != nil {
 		return err
 	}
@@ -95,6 +94,7 @@ func (s *StatefulSet) Restart(ctx context.Context, path string) error {
 		update,
 		metav1.PatchOptions{},
 	)
+
 	return err
 }
 
