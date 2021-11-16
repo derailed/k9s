@@ -19,7 +19,7 @@ type Forwarder interface {
 	Container() string
 
 	// Ports returns container exposed ports.
-	Ports() []string
+	Port() string
 
 	// Active returns forwarder current state.
 	Active() bool
@@ -60,7 +60,7 @@ func (f PortForward) Render(o interface{}, gvr string, r *Row) error {
 		return fmt.Errorf("expecting a ForwardRes but got %T", o)
 	}
 
-	ports := strings.Split(pf.Ports()[0], ":")
+	ports := strings.Split(pf.Port(), ":")
 	ns, n := client.Namespaced(pf.Path())
 
 	r.ID = pf.Path()
@@ -68,7 +68,7 @@ func (f PortForward) Render(o interface{}, gvr string, r *Row) error {
 		ns,
 		trimContainer(n),
 		pf.Container(),
-		strings.Join(pf.Ports(), ","),
+		pf.Port(),
 		UrlFor(pf.Config.Host, pf.Config.Path, ports[0]),
 		AsThousands(int64(pf.Config.C)),
 		AsThousands(int64(pf.Config.N)),
@@ -82,11 +82,13 @@ func (f PortForward) Render(o interface{}, gvr string, r *Row) error {
 // Helpers...
 
 func trimContainer(n string) string {
-	tokens := strings.Split(n, ":")
+	tokens := strings.Split(n, "|")
 	if len(tokens) == 0 {
 		return n
 	}
-	return tokens[0]
+	_, name := client.Namespaced(tokens[0])
+
+	return name
 }
 
 // UrlFor computes fq url for a given benchmark configuration.

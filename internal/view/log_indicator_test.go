@@ -14,11 +14,11 @@ func TestLogIndicatorRefresh(t *testing.T) {
 		li *view.LogIndicator
 		e  string
 	}{
-		"all containers": {
-			view.NewLogIndicator(config.NewConfig(nil), defaults, true), "[-::b]AllContainers:[gray::]Off     [-::b]Autoscroll:[limegreen::]On     [-::b]FullScreen:[gray::]Off     [-::b]Timestamps:[gray::]Off     [-::b]Wrap:[gray::]Off\n",
+		"all-containers": {
+			view.NewLogIndicator(config.NewConfig(nil), defaults, true), "[::b]AllContainers:[gray::d]Off[-::]     [::b]Autoscroll:[limegreen::b]On[-::]     [::b]FullScreen:[gray::d]Off[-::]     [::b]Timestamps:[gray::d]Off[-::]     [::b]Wrap:[gray::d]Off[-::]\n",
 		},
-		"no all containers": {
-			view.NewLogIndicator(config.NewConfig(nil), defaults, false), "[-::b]Autoscroll:[limegreen::]On     [-::b]FullScreen:[gray::]Off     [-::b]Timestamps:[gray::]Off     [-::b]Wrap:[gray::]Off\n",
+		"plain": {
+			view.NewLogIndicator(config.NewConfig(nil), defaults, false), "[::b]Autoscroll:[limegreen::b]On[-::]     [::b]FullScreen:[gray::d]Off[-::]     [::b]Timestamps:[gray::d]Off[-::]     [::b]Wrap:[gray::d]Off[-::]\n",
 		},
 	}
 
@@ -26,7 +26,18 @@ func TestLogIndicatorRefresh(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			u.li.Refresh()
-			assert.Equal(t, u.li.GetText(false), u.e)
+			assert.Equal(t, u.e, u.li.GetText(false))
 		})
+	}
+}
+
+func BenchmarkLogIndicatorRefresh(b *testing.B) {
+	defaults := config.NewStyles()
+	v := view.NewLogIndicator(config.NewConfig(nil), defaults, true)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for n := 0; n < b.N; n++ {
+		v.Refresh()
 	}
 }

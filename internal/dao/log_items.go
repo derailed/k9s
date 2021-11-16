@@ -1,37 +1,37 @@
 package dao
 
 import (
+	"bytes"
 	"fmt"
 	"regexp"
 	"strings"
 	"sync"
 
-	"github.com/gdamore/tcell/v2"
 	"github.com/sahilm/fuzzy"
 )
 
-var colorPalette = []tcell.Color{
-	tcell.ColorTeal,
-	tcell.ColorGreen,
-	tcell.ColorPurple,
-	tcell.ColorLime,
-	tcell.ColorBlue,
-	tcell.ColorYellow,
-	tcell.ColorFuchsia,
-	tcell.ColorAqua,
+var podPalette = []string{
+	"teal",
+	"green",
+	"purple",
+	"lime",
+	"blue",
+	"yellow",
+	"fushia",
+	"aqua",
 }
 
 // LogItems represents a collection of log items.
 type LogItems struct {
-	items  []*LogItem
-	colors map[string]tcell.Color
-	mx     sync.RWMutex
+	items     []*LogItem
+	podColors map[string]string
+	mx        sync.RWMutex
 }
 
 // NewLogItems returns a new instance.
 func NewLogItems() *LogItems {
 	return &LogItems{
-		colors: make(map[string]tcell.Color),
+		podColors: make(map[string]string),
 	}
 }
 
@@ -56,9 +56,9 @@ func (l *LogItems) Clear() {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
-	l.items = nil
-	for k := range l.colors {
-		delete(l.colors, k)
+	l.items = l.items[:0]
+	for k := range l.podColors {
+		delete(l.podColors, k)
 	}
 }
 
@@ -76,8 +76,8 @@ func (l *LogItems) Subset(index int) *LogItems {
 	defer l.mx.RUnlock()
 
 	return &LogItems{
-		items:  l.items[index:],
-		colors: l.colors,
+		items:     l.items[index:],
+		podColors: l.podColors,
 	}
 }
 
@@ -87,8 +87,8 @@ func (l *LogItems) Merge(n *LogItems) {
 	defer l.mx.Unlock()
 
 	l.items = append(l.items, n.items...)
-	for k, v := range n.colors {
-		l.colors[k] = v
+	for k, v := range n.podColors {
+		l.podColors[k] = v
 	}
 }
 
@@ -101,47 +101,60 @@ func (l *LogItems) Add(ii ...*LogItem) {
 }
 
 // Lines returns a collection of log lines.
-func (l *LogItems) Lines(showTime bool) [][]byte {
+func (l *LogItems) Lines(index int, showTime bool, ll [][]byte) {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
-	ll := make([][]byte, len(l.items))
-	for i, item := range l.items {
-		color := l.colors[item.ID()]
-		ll[i] = item.Render(int(color-tcell.ColorValid), showTime)
+	var colorIndex int
+	for i, item := range l.items[index:] {
+		id := item.ID()
+		color, ok := l.podColors[id]
+		if !ok {
+			if colorIndex >= len(podPalette) {
+				colorIndex = 0
+			}
+			color = podPalette[colorIndex]
+			l.podColors[id] = color
+			colorIndex++
+		}
+		bb := bytes.NewBuffer(make([]byte, 0, item.Size()))
+		item.Render(color, showTime, bb)
+		ll[i] = bb.Bytes()
 	}
-
-	return ll
 }
 
 // StrLines returns a collection of log lines.
-func (l *LogItems) StrLines(showTime bool) []string {
+func (l *LogItems) StrLines(index int, showTime bool) []string {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
-	ll := make([]string, len(l.items))
-	for i, item := range l.items {
-		ll[i] = string(item.Render(0, showTime))
+	ll := make([]string, len(l.items[index:]))
+	for i, item := range l.items[index:] {
+		bb := bytes.NewBuffer(make([]byte, 0, item.Size()))
+		item.Render("white", showTime, bb)
+		ll[i] = bb.String()
 	}
 
 	return ll
 }
 
 // Render returns logs as a collection of strings.
-func (l *LogItems) Render(showTime bool, ll [][]byte) {
-	index := len(l.colors)
-	for i, item := range l.items {
+func (l *LogItems) Render(index int, showTime bool, ll [][]byte) {
+	var colorIndex int
+	for i, item := range l.items[index:] {
 		id := item.ID()
-		color, ok := l.colors[id]
+		color, ok := l.podColors[id]
 		if !ok {
-			if index >= len(colorPalette) {
-				index = 0
+			if colorIndex >= len(podPalette) {
+				colorIndex = 0
 			}
-			color = colorPalette[index]
-			l.colors[id] = color
-			index++
+			color = podPalette[colorIndex]
+			l.podColors[id] = color
+			colorIndex++
 		}
-		ll[i] = item.Render(int(color-tcell.ColorValid), showTime)
+		bb := bytes.NewBuffer(make([]byte, 0, item.Size()))
+		item.Render(color, showTime, bb)
+		ll[i] = bb.Bytes()
 	}
 }
 
@@ -154,15 +167,15 @@ func (l *LogItems) DumpDebug(m string) {
 }
 
 // Filter filters out log items based on given filter.
-func (l *LogItems) Filter(q string, showTime bool) ([]int, [][]int, error) {
+func (l *LogItems) Filter(index int, q string, showTime bool) ([]int, [][]int, error) {
 	if q == "" {
 		return nil, nil, nil
 	}
 	if IsFuzzySelector(q) {
-		mm, ii := l.fuzzyFilter(strings.TrimSpace(q[2:]), showTime)
+		mm, ii := l.fuzzyFilter(index, strings.TrimSpace(q[2:]), showTime)
 		return mm, ii, nil
 	}
-	matches, indices, err := l.filterLogs(q, showTime)
+	matches, indices, err := l.filterLogs(index, q, showTime)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -170,10 +183,10 @@ func (l *LogItems) Filter(q string, showTime bool) ([]int, [][]int, error) {
 	return matches, indices, nil
 }
 
-func (l *LogItems) fuzzyFilter(q string, showTime bool) ([]int, [][]int) {
+func (l *LogItems) fuzzyFilter(index int, q string, showTime bool) ([]int, [][]int) {
 	q = strings.TrimSpace(q)
 	matches, indices := make([]int, 0, len(l.items)), make([][]int, 0, 10)
-	mm := fuzzy.Find(q, l.StrLines(showTime))
+	mm := fuzzy.Find(q, l.StrLines(index, showTime))
 	for _, m := range mm {
 		matches = append(matches, m.Index)
 		indices = append(indices, m.MatchedIndexes)
@@ -182,7 +195,7 @@ func (l *LogItems) fuzzyFilter(q string, showTime bool) ([]int, [][]int) {
 	return matches, indices
 }
 
-func (l *LogItems) filterLogs(q string, showTime bool) ([]int, [][]int, error) {
+func (l *LogItems) filterLogs(index int, q string, showTime bool) ([]int, [][]int, error) {
 	var invert bool
 	if IsInverseSelector(q) {
 		invert = true
@@ -193,7 +206,9 @@ func (l *LogItems) filterLogs(q string, showTime bool) ([]int, [][]int, error) {
 		return nil, nil, err
 	}
 	matches, indices := make([]int, 0, len(l.items)), make([][]int, 0, 10)
-	for i, line := range l.Lines(showTime) {
+	ll := make([][]byte, len(l.items[index:]))
+	l.Lines(index, showTime, ll)
+	for i, line := range ll {
 		locs := rx.FindIndex(line)
 		if locs != nil && invert {
 			continue

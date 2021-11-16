@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/adrg/xdg"
@@ -59,6 +60,15 @@ func K9sHome() string {
 	if env := os.Getenv(K9sConfig); env != "" {
 		return env
 	}
+	if env := os.Getenv("XDG_CONFIG_HOME"); env == "" {
+		dir, err := os.UserHomeDir()
+		if err != nil {
+			log.Error().Err(err).Msgf("user home dir")
+			return ""
+		}
+		return path.Join(dir, ".config", "k9s")
+	}
+
 	xdgK9sHome, err := xdg.ConfigFile("k9s")
 	if err != nil {
 		log.Fatal().Err(err).Msg("Unable to create configuration directory for k9s")
@@ -73,21 +83,25 @@ func NewConfig(ks KubeSettings) *Config {
 }
 
 // Refine the configuration based on cli args.
-func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags) error {
-	cfg, err := flags.ToRawKubeConfigLoader().RawConfig()
-	if err != nil {
-		return err
-	}
+func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, cfg *client.Config) error {
 	if isSet(flags.Context) {
 		c.K9s.CurrentContext = *flags.Context
 	} else {
-		c.K9s.CurrentContext = cfg.CurrentContext
+		context, err := cfg.CurrentContextName()
+		if err != nil {
+			return err
+		}
+		c.K9s.CurrentContext = context
 	}
 	log.Debug().Msgf("Active Context %q", c.K9s.CurrentContext)
 	if c.K9s.CurrentContext == "" {
 		return errors.New("Invalid kubeconfig context detected")
 	}
-	context, ok := cfg.Contexts[c.K9s.CurrentContext]
+	cc, err := cfg.Contexts()
+	if err != nil {
+		return err
+	}
+	context, ok := cc[c.K9s.CurrentContext]
 	if !ok {
 		return fmt.Errorf("The specified context %q does not exists in kubeconfig", c.K9s.CurrentContext)
 	}

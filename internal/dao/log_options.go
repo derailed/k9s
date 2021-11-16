@@ -2,7 +2,6 @@ package dao
 
 import (
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
@@ -12,12 +11,14 @@ import (
 
 // LogOptions represents logger options.
 type LogOptions struct {
+	CreateDuration   time.Duration
 	Path             string
 	Container        string
 	DefaultContainer string
 	SinceTime        string
 	Lines            int64
 	SinceSeconds     int64
+	Head             bool
 	Previous         bool
 	SingleContainer  bool
 	MultiPods        bool
@@ -77,6 +78,18 @@ func (o *LogOptions) ToPodLogOptions() *v1.PodLogOptions {
 		Previous:   o.Previous,
 		TailLines:  &o.Lines,
 	}
+	if o.Head {
+		var maxBytes int64 = 1000
+		//var defaultTail int64 = -1
+		//var defaultSince int64
+
+		opts.Follow = false
+		opts.TailLines, opts.SinceSeconds, opts.SinceTime = nil, nil, nil
+		//opts.TailLines = &defaultTail
+		//opts.SinceSeconds = &defaultSince
+		opts.LimitBytes = &maxBytes
+		return &opts
+	}
 	if o.SinceSeconds < 0 {
 		return &opts
 	}
@@ -94,21 +107,6 @@ func (o *LogOptions) ToPodLogOptions() *v1.PodLogOptions {
 	}
 
 	return &opts
-}
-
-// FixedSizeName returns a normalize fixed size pod name if possible.
-func (o *LogOptions) FixedSizeName() string {
-	_, n := client.Namespaced(o.Path)
-	tokens := strings.Split(n, "-")
-	if len(tokens) < 3 {
-		return n
-	}
-	var s []string
-	for i := 0; i < len(tokens)-1; i++ {
-		s = append(s, tokens[i])
-	}
-
-	return Truncate(strings.Join(s, "-"), 15) + "-" + tokens[len(tokens)-1]
 }
 
 // DecorateLog add a log header to display po/co information along with the log message.

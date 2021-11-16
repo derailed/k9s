@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"runtime"
 	"sort"
 	"strings"
 	"sync/atomic"
@@ -107,8 +108,10 @@ func (a *App) Init(version string, rate int) error {
 	a.clusterModel = model.NewClusterInfo(a.factory, a.version)
 	a.clusterModel.AddListener(a.clusterInfo())
 	a.clusterModel.AddListener(a.statusIndicator())
-	a.clusterModel.Refresh()
-	a.clusterInfo().Init()
+	if a.Conn().ConnectionOK() {
+		a.clusterModel.Refresh()
+		a.clusterInfo().Init()
+	}
 
 	a.command = NewCommand(a)
 	if err := a.command.Init(); err != nil {
@@ -185,12 +188,20 @@ func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) bindKeys() {
 	a.AddActions(ui.KeyActions{
+		ui.KeyShiftG:   ui.NewSharedKeyAction("DumpGOR", a.dumpGOR, false),
 		tcell.KeyCtrlE: ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
 		tcell.KeyCtrlG: ui.NewSharedKeyAction("toggleCrumbs", a.toggleCrumbsCmd, false),
 		ui.KeyHelp:     ui.NewSharedKeyAction("Help", a.helpCmd, false),
 		tcell.KeyCtrlA: ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
 	})
+}
+
+func (a *App) dumpGOR(evt *tcell.EventKey) *tcell.EventKey {
+	bb := make([]byte, 5_000_000)
+	runtime.Stack(bb, true)
+	log.Debug().Msgf("GOR\n%s", string(bb))
+	return evt
 }
 
 // ActiveView returns the currently active view.

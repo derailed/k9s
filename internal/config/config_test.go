@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	m "github.com/petergtz/pegomock"
 	"github.com/rs/zerolog"
@@ -63,7 +64,7 @@ func TestConfigRefine(t *testing.T) {
 			m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"default"})
 			cfg := config.NewConfig(mk)
 
-			err := cfg.Refine(u.flags, nil)
+			err := cfg.Refine(u.flags, nil, client.NewConfig(u.flags))
 			if u.issue {
 				assert.NotNil(t, err)
 			} else {
@@ -87,7 +88,6 @@ func TestConfigValidate(t *testing.T) {
 	cfg.SetConnection(mc)
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 	cfg.Validate()
-	// mc.VerifyWasCalledOnce().ValidNamespaces()
 }
 
 func TestConfigLoad(t *testing.T) {

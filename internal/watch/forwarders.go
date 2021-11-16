@@ -3,7 +3,7 @@ package watch
 import (
 	"strings"
 
-	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/port"
 	"github.com/rs/zerolog/log"
 	"k8s.io/client-go/tools/portforward"
 )
@@ -11,10 +11,13 @@ import (
 // Forwarder represents a port forwarder.
 type Forwarder interface {
 	// Start starts a port-forward.
-	Start(path, co string, tt []client.PortTunnel) (*portforward.PortForwarder, error)
+	Start(path string, tunnel port.PortTunnel) (*portforward.PortForwarder, error)
 
 	// Stop terminates a port forward.
 	Stop()
+
+	// ID returns the pf id.
+	ID() string
 
 	// Path returns a resource FQN.
 	Path() string
@@ -22,8 +25,8 @@ type Forwarder interface {
 	// Container returns a container name.
 	Container() string
 
-	// Ports returns container exposed ports.
-	Ports() []string
+	// Ports returns the port mapping.
+	Port() string
 
 	// FQN returns the full port-forward name.
 	FQN() string
@@ -49,10 +52,11 @@ func NewForwarders() Forwarders {
 	return make(map[string]Forwarder)
 }
 
+// BOZO!! Review!!!
 // IsPodForwarded checks if pod has a forward.
 func (ff Forwarders) IsPodForwarded(path string) bool {
 	for k := range ff {
-		fqn := strings.Split(k, ":")
+		fqn := strings.Split(k, "|")
 		if fqn[0] == path {
 			return true
 		}
@@ -78,18 +82,14 @@ func (ff Forwarders) DeleteAll() {
 
 // Kill stops and delete a port-forwards associated with pod.
 func (ff Forwarders) Kill(path string) int {
-	hasContainer := strings.Contains(path, ":")
 	var stats int
 	for k, f := range ff {
 		victim := k
-		if !hasContainer {
-			victim = strings.Split(k, ":")[0]
-		}
 		if victim == path {
 			stats++
-			log.Debug().Msgf("Stop + Delete port-forward %s", k)
+			log.Debug().Msgf("Stop + Delete port-forward %s", victim)
 			f.Stop()
-			delete(ff, k)
+			delete(ff, victim)
 		}
 	}
 

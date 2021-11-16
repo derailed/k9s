@@ -36,7 +36,7 @@ func (r *RestartExtender) bindKeys(aa ui.KeyActions) {
 
 func (r *RestartExtender) restartCmd(evt *tcell.EventKey) *tcell.EventKey {
 	paths := r.GetTable().GetSelectedItems()
-	if len(paths) == 0 {
+	if len(paths) == 0 || paths[0] == "" {
 		return nil
 	}
 

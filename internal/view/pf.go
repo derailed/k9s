@@ -3,6 +3,7 @@ package view
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/derailed/k9s/internal"
@@ -138,19 +139,35 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	path := p.GetTable().GetSelectedItem()
-	if path == "" {
-		return nil
+	selections := p.GetTable().GetSelectedItems()
+	if len(selections) == 0 {
+		return evt
 	}
 
-	showModal(p.App().Content.Pages, fmt.Sprintf("Delete PortForward `%s?", path), func() {
-		var pf dao.PortForward
-		pf.Init(p.App().factory, client.NewGVR("portforwards"))
-		if err := pf.Delete(path, true, true); err != nil {
+	p.Stop()
+	defer p.Start()
+	var msg string
+	if len(selections) > 1 {
+		msg = fmt.Sprintf("Delete %d marked %s?", len(selections), p.GVR())
+	} else {
+		h, err := pfToHuman(selections[0])
+		if err == nil {
+			msg = fmt.Sprintf("Delete %s %s?", p.GVR().R(), h)
+		} else {
 			p.App().Flash().Err(err)
-			return
+			return nil
 		}
-		p.App().Flash().Infof("PortForward %s deleted!", path)
+	}
+	showModal(p.App().Content.Pages, msg, func() {
+		for _, s := range selections {
+			var pf dao.PortForward
+			pf.Init(p.App().factory, client.NewGVR("portforwards"))
+			if err := pf.Delete(s, true, true); err != nil {
+				p.App().Flash().Err(err)
+				return
+			}
+		}
+		p.App().Flash().Infof("Successfully deleted %d PortForward!", len(selections))
 		p.GetTable().Refresh()
 	})
 
@@ -159,6 +176,16 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+var selRx = regexp.MustCompile(`\A([\w-]+)/([\w-]+)\|([\w-]+)\|(\d+):(\d+)`)
+
+func pfToHuman(s string) (string, error) {
+	mm := selRx.FindStringSubmatch(s)
+	if len(mm) < 6 {
+		return "", fmt.Errorf("Unable to parse selection %s", s)
+	}
+	return fmt.Sprintf("%s::%s %s->%s", mm[2], mm[3], mm[4], mm[5]), nil
+}
 
 func showModal(p *ui.Pages, msg string, ok func()) {
 	m := tview.NewModal().

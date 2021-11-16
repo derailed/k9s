@@ -10,7 +10,7 @@ import (
 )
 
 func TestCmdNew(t *testing.T) {
-	v := ui.NewPrompt(true, config.NewStyles())
+	v := ui.NewPrompt(nil, true, config.NewStyles())
 	model := model.NewFishBuff(':', model.CommandBuffer)
 	v.SetModel(model)
 	model.AddListener(v)
@@ -23,7 +23,7 @@ func TestCmdNew(t *testing.T) {
 
 func TestCmdUpdate(t *testing.T) {
 	model := model.NewFishBuff(':', model.CommandBuffer)
-	v := ui.NewPrompt(true, config.NewStyles())
+	v := ui.NewPrompt(nil, true, config.NewStyles())
 	v.SetModel(model)
 
 	model.AddListener(v)
@@ -36,7 +36,7 @@ func TestCmdUpdate(t *testing.T) {
 
 func TestCmdMode(t *testing.T) {
 	model := model.NewFishBuff(':', model.CommandBuffer)
-	v := ui.NewPrompt(true, config.NewStyles())
+	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles())
 	v.SetModel(model)
 	model.AddListener(v)
 

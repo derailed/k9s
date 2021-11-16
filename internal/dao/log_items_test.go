@@ -71,7 +71,7 @@ func TestLogItemsFilter(t *testing.T) {
 			for _, i := range ii.Items() {
 				i.Pod, i.Container = n, u.opts.Container
 			}
-			res, _, err := ii.Filter(u.q, false)
+			res, _, err := ii.Filter(0, u.q, false)
 			assert.Equal(t, u.err, err)
 			if err == nil {
 				assert.Equal(t, u.e, res)
@@ -87,20 +87,20 @@ func TestLogItemsRender(t *testing.T) {
 	}{
 		"empty": {
 			opts: dao.LogOptions{},
-			e:    "Testing 1,2,3...",
+			e:    "Testing 1,2,3...\n",
 		},
 		"container": {
 			opts: dao.LogOptions{
 				Container: "fred",
 			},
-			e: "\x1b[38;5;6mfred\x1b[0m Testing 1,2,3...",
+			e: "[teal::b]fred[-::-] Testing 1,2,3...\n",
 		},
-		"pod": {
+		"pod-container": {
 			opts: dao.LogOptions{
 				Path:      "blee/fred",
 				Container: "blee",
 			},
-			e: "\x1b[38;5;6mfred\x1b[0m:\x1b[38;5;6mblee\x1b[0m Testing 1,2,3...",
+			e: "[teal::]fred [teal::b]blee[-::-] Testing 1,2,3...\n",
 		},
 		"full": {
 			opts: dao.LogOptions{
@@ -108,7 +108,7 @@ func TestLogItemsRender(t *testing.T) {
 				Container:     "blee",
 				ShowTimestamp: true,
 			},
-			e: "\x1b[38;5;106m2018-12-14T10:36:43.326972-07:00\x1b[0m \x1b[38;5;6mfred\x1b[0m:\x1b[38;5;6mblee\x1b[0m Testing 1,2,3...",
+			e: "[gray::]2018-12-14T10:36:43.326972-07:00 [teal::]fred [teal::b]blee[-::-] Testing 1,2,3...\n",
 		},
 	}
 
@@ -121,7 +121,7 @@ func TestLogItemsRender(t *testing.T) {
 		ii.Items()[0].Pod, ii.Items()[0].Container = n, u.opts.Container
 		t.Run(k, func(t *testing.T) {
 			res := make([][]byte, 1)
-			ii.Render(u.opts.ShowTimestamp, res)
+			ii.Render(0, u.opts.ShowTimestamp, res)
 			assert.Equal(t, u.e, string(res[0]))
 		})
 	}

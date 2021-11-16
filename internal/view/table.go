@@ -2,6 +2,7 @@ package view
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/atotto/clipboard"
@@ -53,9 +54,17 @@ func (t *Table) Init(ctx context.Context) (err error) {
 }
 
 // HeaderIndex returns index of a given column or false if not found.
-func (t *Table) HeaderIndex(header string) (int, bool) {
+func (t *Table) HeaderIndex(colName string) (int, bool) {
 	for i := 0; i < t.GetColumnCount(); i++ {
-		if h := t.GetCell(0, i); h != nil && h.Text == header {
+		h := t.GetCell(0, i)
+		if h == nil {
+			continue
+		}
+		s := h.Text
+		if idx := strings.Index(s, "["); idx > 0 {
+			s = s[:idx]
+		}
+		if s == colName {
 			return i, true
 		}
 	}

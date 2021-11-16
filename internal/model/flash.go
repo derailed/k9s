@@ -126,8 +126,8 @@ func (f *Flash) SetMessage(level FlashLevel, msg string) {
 	f.setLevelMessage(LevelMessage{Level: level, Text: msg})
 	f.fireFlashChanged()
 
-	var ctx context.Context
-	ctx, f.cancel = context.WithCancel(context.Background())
+	ctx := context.Background()
+	ctx, f.cancel = context.WithCancel(ctx)
 	go f.refresh(ctx)
 }
 

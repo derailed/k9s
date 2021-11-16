@@ -1,8 +1,10 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"gopkg.in/yaml.v2"
 )
@@ -20,10 +22,15 @@ type Plugin struct {
 	Scopes      []string `yaml:"scopes"`
 	Args        []string `yaml:"args"`
 	ShortCut    string   `yaml:"shortCut"`
+	Pipes       []string `yaml:"pipes"`
 	Description string   `yaml:"description"`
 	Command     string   `yaml:"command"`
 	Confirm     bool     `yaml:"confirm"`
 	Background  bool     `yaml:"background"`
+}
+
+func (p Plugin) String() string {
+	return fmt.Sprintf("[%s] %s(%s)", p.ShortCut, p.Command, strings.Join(p.Args, " "))
 }
 
 // NewPlugins returns a new plugin.

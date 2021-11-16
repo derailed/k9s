@@ -2,39 +2,31 @@ package dao
 
 import (
 	"bytes"
-	"fmt"
-	"regexp"
-	"time"
-
-	"github.com/derailed/k9s/internal/color"
 )
 
 // LogChan represents a channel for logs.
 type LogChan chan *LogItem
 
+var ItemEOF = new(LogItem)
+
 // LogItem represents a container log line.
 type LogItem struct {
-	Pod, Container, Timestamp string
-	SingleContainer           bool
-	Bytes                     []byte
+	Pod, Container  string
+	SingleContainer bool
+	Bytes           []byte
 }
 
 // NewLogItem returns a new item.
-func NewLogItem(b []byte) *LogItem {
-	space := []byte(" ")
-	cols := bytes.Split(b[:len(b)-1], space)
-
+func NewLogItem(bb []byte) *LogItem {
 	return &LogItem{
-		Timestamp: string(cols[0]),
-		Bytes:     bytes.Join(cols[1:], space),
+		Bytes: bb,
 	}
 }
 
 // NewLogItemFromString returns a new item.
 func NewLogItemFromString(s string) *LogItem {
 	return &LogItem{
-		Bytes:     []byte(s),
-		Timestamp: time.Now().String(),
+		Bytes: []byte(s),
 	}
 }
 
@@ -46,22 +38,18 @@ func (l *LogItem) ID() string {
 	return l.Container
 }
 
-// Clone copies an item.
-func (l *LogItem) Clone() *LogItem {
-	bytes := make([]byte, len(l.Bytes))
-	copy(bytes, l.Bytes)
-	return &LogItem{
-		Container:       l.Container,
-		Pod:             l.Pod,
-		Timestamp:       l.Timestamp,
-		SingleContainer: l.SingleContainer,
-		Bytes:           bytes,
+// GetTimestamp fetch log lime timestamp
+func (l *LogItem) GetTimestamp() string {
+	index := bytes.Index(l.Bytes, []byte{' '})
+	if index < 0 {
+		return ""
 	}
+	return string(l.Bytes[:index])
 }
 
 // Info returns pod and container information.
 func (l *LogItem) Info() string {
-	return fmt.Sprintf("%q::%q", l.Pod, l.Container)
+	return l.Pod + "::" + l.Container
 }
 
 // IsEmpty checks if the entry is empty.
@@ -69,37 +57,39 @@ func (l *LogItem) IsEmpty() bool {
 	return len(l.Bytes) == 0
 }
 
-var (
-	escPattern = regexp.MustCompile(`(\[[a-zA-Z0-9_,;: \-\."#]+\[*)\]`)
-	matcher    = []byte("$1[]")
-)
+// Size returns the size of the item.
+func (l *LogItem) Size() int {
+	return 100 + len(l.Bytes) + len(l.Pod) + len(l.Container)
+}
 
 // Render returns a log line as string.
-func (l *LogItem) Render(paint int, showTime bool) []byte {
-	bb := make([]byte, 0, 200)
-	if showTime {
-		t := l.Timestamp
-		for i := len(t); i < 30; i++ {
-			t += " "
+func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
+	index := bytes.Index(l.Bytes, []byte{' '})
+	if showTime && index > 0 {
+		bb.WriteString("[gray::]")
+		bb.Write(l.Bytes[:index])
+		bb.WriteString(" ")
+		for i := len(l.Bytes[:index]); i < 30; i++ {
+			bb.WriteByte(' ')
 		}
-		bb = append(bb, color.ANSIColorize(t, 106)...)
-		bb = append(bb, ' ')
 	}
 
-	var hasPod bool
 	if l.Pod != "" {
-		bb = append(bb, color.ANSIColorize(l.Pod, paint)...)
-		hasPod = true
-	}
-	if !l.SingleContainer && l.Container != "" {
-		if hasPod {
-			bb = append(bb, ':')
-		}
-		bb = append(bb, color.ANSIColorize(l.Container, paint)...)
-		bb = append(bb, ' ')
-	} else if hasPod {
-		bb = append(bb, ' ')
+		bb.WriteString("[" + paint + "::]" + l.Pod)
 	}
 
-	return append(bb, escPattern.ReplaceAll(l.Bytes, matcher)...)
+	if !l.SingleContainer && l.Container != "" {
+		if len(l.Pod) > 0 {
+			bb.WriteString(" ")
+		}
+		bb.WriteString("[" + paint + "::b]" + l.Container + "[-::-] ")
+	} else if len(l.Pod) > 0 {
+		bb.WriteString("[-::]")
+	}
+
+	if index > 0 {
+		bb.Write(l.Bytes[index+1:])
+	} else {
+		bb.Write(l.Bytes)
+	}
 }
