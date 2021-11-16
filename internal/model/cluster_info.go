@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -55,13 +55,7 @@ func NewClusterMeta() ClusterMeta {
 
 // Deltas diffs cluster meta return true if different, false otherwise.
 func (c ClusterMeta) Deltas(n ClusterMeta) bool {
-	if c.Cpu != n.Cpu {
-		return true
-	}
-	if c.Mem != n.Mem {
-		return true
-	}
-	if c.Ephemeral != n.Ephemeral {
+	if c.Cpu != n.Cpu || c.Mem != n.Mem || c.Ephemeral != n.Ephemeral {
 		return true
 	}
 
@@ -76,6 +70,7 @@ func (c ClusterMeta) Deltas(n ClusterMeta) bool {
 // ClusterInfo models cluster metadata.
 type ClusterInfo struct {
 	cluster   *Cluster
+	factory   dao.Factory
 	data      ClusterMeta
 	version   string
 	listeners []ClusterInfoListener
@@ -83,11 +78,12 @@ type ClusterInfo struct {
 }
 
 // NewClusterInfo returns a new instance.
-func NewClusterInfo(f dao.Factory, version string) *ClusterInfo {
+func NewClusterInfo(f dao.Factory, v string) *ClusterInfo {
 	c := ClusterInfo{
+		factory: f,
 		cluster: NewCluster(f),
 		data:    NewClusterMeta(),
-		version: version,
+		version: v,
 		cache:   cache.NewLRUExpireCache(cacheSize),
 	}
 
@@ -116,27 +112,28 @@ func (c *ClusterInfo) Reset(f dao.Factory) {
 	c.Refresh()
 }
 
-// Refresh fetches latest cluster meta.
+// Refresh fetches the latest cluster meta.
 func (c *ClusterInfo) Refresh() {
 	data := NewClusterMeta()
-	data.Context = c.cluster.ContextName()
-	data.Cluster = c.cluster.ClusterName()
-	data.User = c.cluster.UserName()
+	if c.factory.Client().ConnectionOK() {
+		data.Context = c.cluster.ContextName()
+		data.Cluster = c.cluster.ClusterName()
+		data.User = c.cluster.UserName()
+		data.K8sVer = c.cluster.Version()
+		ctx, cancel := context.WithTimeout(context.Background(), c.cluster.factory.Client().Config().CallTimeout())
+		defer cancel()
+		var mx client.ClusterMetrics
+		if err := c.cluster.Metrics(ctx, &mx); err == nil {
+			data.Cpu, data.Mem, data.Ephemeral = mx.PercCPU, mx.PercMEM, mx.PercEphemeral
+		} else {
+			log.Warn().Err(err).Msgf("Cluster metrics failed")
+		}
+	}
 	data.K9sVer = c.version
 	v1, v2 := NewSemVer(data.K9sVer), NewSemVer(c.fetchK9sLatestRev())
 	data.K9sVer, data.K9sLatest = v1.String(), v2.String()
 	if v1.IsCurrent(v2) {
 		data.K9sLatest = ""
-	}
-	data.K8sVer = c.cluster.Version()
-
-	ctx, cancel := context.WithTimeout(context.Background(), c.cluster.factory.Client().Config().CallTimeout())
-	defer cancel()
-	var mx client.ClusterMetrics
-	if err := c.cluster.Metrics(ctx, &mx); err == nil {
-		data.Cpu, data.Mem, data.Ephemeral = mx.PercCPU, mx.PercMEM, mx.PercEphemeral
-	} else {
-		log.Warn().Err(err).Msgf("Cluster metrics failed")
 	}
 
 	if c.data.Deltas(data) {
@@ -200,7 +197,7 @@ func fetchLatestRev() (string, error) {
 		}
 	}()
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}

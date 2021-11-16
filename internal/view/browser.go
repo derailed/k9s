@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/derailed/k9s/internal"
@@ -31,6 +32,7 @@ type Browser struct {
 	accessor   dao.Accessor
 	contextFn  ContextFunc
 	cancelFn   context.CancelFunc
+	mx         sync.RWMutex
 }
 
 // NewBrowser returns a new browser.
@@ -140,10 +142,14 @@ func (b *Browser) Start() {
 
 // Stop terminates browser updates.
 func (b *Browser) Stop() {
-	if b.cancelFn != nil {
-		b.cancelFn()
-		b.cancelFn = nil
+	b.mx.Lock()
+	{
+		if b.cancelFn != nil {
+			b.cancelFn()
+			b.cancelFn = nil
+		}
 	}
+	b.mx.Unlock()
 	b.GetModel().RemoveListener(b)
 	b.CmdBuff().RemoveListener(b)
 	b.Table.Stop()
@@ -213,7 +219,12 @@ func (b *Browser) Aliases() []string {
 
 // TableDataChanged notifies view new data is available.
 func (b *Browser) TableDataChanged(data render.TableData) {
-	if !b.app.ConOK() || b.cancelFn == nil || !b.app.IsRunning() {
+	var cancel context.CancelFunc
+	b.mx.RLock()
+	cancel = b.cancelFn
+	b.mx.RUnlock()
+
+	if !b.app.ConOK() || cancel == nil || !b.app.IsRunning() {
 		return
 	}
 

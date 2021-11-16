@@ -23,10 +23,10 @@ func ShowDelete(styles config.Dialog, pages *ui.Pages, msg string, ok okFunc, ca
 		SetButtonTextColor(styles.ButtonFgColor.Color()).
 		SetLabelColor(styles.LabelFgColor.Color()).
 		SetFieldTextColor(styles.FieldFgColor.Color())
-	f.AddCheckbox("Cascade:", cascade, func(checked bool) {
+	f.AddCheckbox("Cascade:", cascade, func(_ string, checked bool) {
 		cascade = checked
 	})
-	f.AddCheckbox("Force:", force, func(checked bool) {
+	f.AddCheckbox("Force:", force, func(_ string, checked bool) {
 		force = checked
 	})
 	f.AddButton("Cancel", func() {

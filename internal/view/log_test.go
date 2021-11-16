@@ -3,7 +3,7 @@ package view_test
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -25,10 +25,32 @@ func TestLog(t *testing.T) {
 	v.Init(makeContext())
 
 	ii := dao.NewLogItems()
-	ii.Add(dao.NewLogItemFromString("blee"), dao.NewLogItemFromString("bozo"))
-	v.Flush(ii.Lines(false))
+	ii.Add(dao.NewLogItemFromString("blee\n"), dao.NewLogItemFromString("bozo\n"))
+	ll := make([][]byte, ii.Len())
+	ii.Lines(0, false, ll)
+	v.Flush(ll)
 
-	assert.Equal(t, 29, len(v.Logs().GetText(true)))
+	assert.Equal(t, "Waiting for logs...\nblee\nbozo\n", v.Logs().GetText(true))
+}
+
+func TestLogFlush(t *testing.T) {
+	opts := dao.LogOptions{
+		Path:      "fred/p1",
+		Container: "blee",
+	}
+	v := view.NewLog(client.NewGVR("v1/pods"), &opts)
+	v.Init(makeContext())
+
+	items := dao.NewLogItems()
+	items.Add(
+		dao.NewLogItemFromString("\033[0;30mblee\n"),
+		dao.NewLogItemFromString("\033[0;32mBozo\n"),
+	)
+	ll := make([][]byte, items.Len())
+	items.Lines(0, false, ll)
+	v.Flush(ll)
+
+	assert.Equal(t, "[orange::d]Waiting for logs...\n[black:]blee\n[green:]Bozo\n\n", v.Logs().GetText(false))
 }
 
 func BenchmarkLogFlush(b *testing.B) {
@@ -41,13 +63,17 @@ func BenchmarkLogFlush(b *testing.B) {
 
 	items := dao.NewLogItems()
 	items.Add(
-		dao.NewLogItemFromString("blee"),
-		dao.NewLogItemFromString("bozo"),
+		dao.NewLogItemFromString("\033[0;30mblee\n"),
+		dao.NewLogItemFromString("\033[0;101mBozo\n"),
+		dao.NewLogItemFromString("\033[0;101mBozo\n"),
 	)
+	ll := make([][]byte, items.Len())
+	items.Lines(0, false, ll)
+
 	b.ReportAllocs()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		v.Flush(items.Lines(false))
+		v.Flush(ll)
 	}
 }
 
@@ -76,12 +102,15 @@ func TestLogViewSave(t *testing.T) {
 	app := makeApp()
 	ii := dao.NewLogItems()
 	ii.Add(dao.NewLogItemFromString("blee"), dao.NewLogItemFromString("bozo"))
-	v.Flush(ii.Lines(false))
+	ll := make([][]byte, ii.Len())
+	ii.Lines(0, false, ll)
+	v.Flush(ll)
+
 	config.K9sDumpDir = "/tmp"
 	dir := filepath.Join(config.K9sDumpDir, app.Config.K9s.CurrentCluster)
-	c1, _ := ioutil.ReadDir(dir)
+	c1, _ := os.ReadDir(dir)
 	v.SaveCmd(nil)
-	c2, _ := ioutil.ReadDir(dir)
+	c2, _ := os.ReadDir(dir)
 	assert.Equal(t, len(c2), len(c1)+1)
 }
 

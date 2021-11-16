@@ -2,7 +2,7 @@ package view
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
@@ -25,10 +25,10 @@ func TestTableSave(t *testing.T) {
 	v.SetTitle("k9s-test")
 
 	dir := filepath.Join(config.K9sDumpDir, v.app.Config.K9s.CurrentCluster)
-	c1, _ := ioutil.ReadDir(dir)
+	c1, _ := os.ReadDir(dir)
 	v.saveCmd(nil)
 
-	c2, _ := ioutil.ReadDir(dir)
+	c2, _ := os.ReadDir(dir)
 	assert.Equal(t, len(c2), len(c1)+1)
 }
 

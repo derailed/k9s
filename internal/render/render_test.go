@@ -3,7 +3,7 @@ package render_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -13,7 +13,7 @@ import (
 // Helpers...
 
 func load(t testing.TB, n string) *unstructured.Unstructured {
-	raw, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", n))
+	raw, err := os.ReadFile(fmt.Sprintf("testdata/%s.json", n))
 	assert.Nil(t, err)
 
 	var o unstructured.Unstructured

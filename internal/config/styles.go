@@ -2,7 +2,7 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 
 	"github.com/derailed/tview"
@@ -541,7 +541,7 @@ func (s *Styles) Views() Views {
 
 // Load K9s configuration from file.
 func (s *Styles) Load(path string) error {
-	f, err := ioutil.ReadFile(path)
+	f, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}

@@ -19,15 +19,14 @@ func TestUpdateLogs(t *testing.T) {
 	v := newMockLogView()
 	m.AddListener(v)
 
-	c := make(dao.LogChan)
-	go func() {
-		m.updateLogs(context.Background(), c)
-	}()
+	c := make(dao.LogChan, 2)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go m.updateLogs(ctx, c)
 
 	for i := 0; i < 2*size; i++ {
 		c <- dao.NewLogItemFromString("line" + strconv.Itoa(i))
 	}
-	close(c)
 
 	time.Sleep(2 * time.Second)
 	assert.Equal(t, size, v.count)
@@ -45,11 +44,12 @@ func BenchmarkUpdateLogs(b *testing.B) {
 	go func() {
 		m.updateLogs(context.Background(), c)
 	}()
+	item := dao.NewLogItem([]byte("\033[0;38m2018-12-14T10:36:43.326972-07:00 \033[0;32mblee line"))
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		c <- dao.NewLogItemFromString("line" + strconv.Itoa(n))
+		c <- item
 	}
 	close(c)
 }
@@ -75,5 +75,8 @@ func newMockLogView() *mockLogView {
 func (t *mockLogView) LogChanged(ll [][]byte) {
 	t.count += len(ll)
 }
+func (t *mockLogView) LogStop()            {}
+func (t *mockLogView) LogCanceled()        {}
+func (t *mockLogView) LogResume()          {}
 func (t *mockLogView) LogCleared()         {}
 func (t *mockLogView) LogFailed(err error) {}

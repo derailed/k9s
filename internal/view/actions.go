@@ -136,6 +136,7 @@ func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
 				clear:      true,
 				binary:     p.Command,
 				background: p.Background,
+				pipes:      p.Pipes,
 				args:       args,
 			}
 			if run(r.App(), opts) {

@@ -29,16 +29,16 @@ k9s:
       numKeyColor: red
     crumbs:
       fgColor: black
-      bgColor: steelblue
+      bgColor: red
       activeColor: red
     status:
-      newColor: lightskyblue
+      newColor: red
       modifyColor: greenyellow
       addColor: white
-      errorColor: redred
+      errorColor: red
       pendingColor: darkred
       highlightcolor: red
-      killColor: mediumpurple
+      killColor: red
       completedColor: gray
     title:
       fgColor: red
@@ -55,7 +55,7 @@ k9s:
         - linegreen
         - redred
     table:
-      fgColor: blue
+      fgColor: red
       bgColor: black
       cursorFgColor: black
       cursorBgColor: red
@@ -65,15 +65,15 @@ k9s:
         bgColor: black
         sorterColor: red
     xray:
-      fgColor: blue
+      fgColor: red
       bgColor: black
       cursorColor: red
       graphicColor: darkgoldenrod
       showIcons: false
     yaml:
-      keyColor: steelblue
+      keyColor: red
       colonColor: white
-      valueColor: papayawhip
+      valueColor: red
     logs:
       fgColor: white
       bgColor: black

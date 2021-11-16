@@ -25,14 +25,14 @@ func TestParsePFAnn(t *testing.T) {
 		ok            bool
 	}{
 		"named-port": {
-			ann:  "fred:blee",
-			co:   "fred",
+			ann:  "c1:blee",
+			co:   "c1",
 			port: "blee",
 			ok:   true,
 		},
 		"port-num": {
-			ann:  "fred:1234",
-			co:   "fred",
+			ann:  "c1:1234",
+			co:   "c1",
 			port: "1234",
 			ok:   true,
 		},

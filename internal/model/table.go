@@ -164,7 +164,7 @@ func (t *Table) Peek() render.TableData {
 }
 
 func (t *Table) updater(ctx context.Context) {
-	defer log.Debug().Msgf("TABLE-MODEL canceled -- %q", t.gvr)
+	defer log.Debug().Msgf("TABLE-UPDATER canceled -- %q", t.gvr)
 
 	bf := backoff.NewExponentialBackOff()
 	bf.InitialInterval, bf.MaxElapsedTime = initRefreshRate, maxReaderRetryInterval

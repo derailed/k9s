@@ -58,8 +58,6 @@ k9s:
     table:
       fgColor: "#57c7ff"
       bgColor: "#282a36"
-      cursorFgColor: "#57c7ff"
-      cursorBgColor: "#5af78e"
       markColor: darkgoldenrod
       header:
         fgColor: white

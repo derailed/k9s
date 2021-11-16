@@ -36,26 +36,30 @@ func (s *ScaleExtender) bindKeys(aa ui.KeyActions) {
 }
 
 func (s *ScaleExtender) scaleCmd(evt *tcell.EventKey) *tcell.EventKey {
-	path := s.GetTable().GetSelectedItem()
-	if path == "" {
+	paths := s.GetTable().GetSelectedItems()
+	if len(paths) == 0 {
 		return nil
 	}
 
 	s.Stop()
 	defer s.Start()
-	s.showScaleDialog(path)
+	s.showScaleDialog(paths)
 
 	return nil
 }
 
-func (s *ScaleExtender) showScaleDialog(path string) {
-	form, err := s.makeScaleForm(path)
+func (s *ScaleExtender) showScaleDialog(paths []string) {
+	form, err := s.makeScaleForm(paths)
 	if err != nil {
 		s.App().Flash().Err(err)
 		return
 	}
 	confirm := tview.NewModalForm("<Scale>", form)
-	confirm.SetText(fmt.Sprintf("Scale %s %s", s.GVR(), path))
+	msg := fmt.Sprintf("Scale %s %s?", s.GVR().R(), paths[0])
+	if len(paths) > 1 {
+		msg = fmt.Sprintf("Scale [%d] %s?", len(paths), s.GVR().R())
+	}
+	confirm.SetText(msg)
 	confirm.SetDoneFunc(func(int, string) {
 		s.dismissDialog()
 	})
@@ -71,40 +75,49 @@ func (s *ScaleExtender) valueOf(col string) (string, error) {
 	return s.GetTable().GetSelectedCell(colIdx), nil
 }
 
-func (s *ScaleExtender) makeScaleForm(sel string) (*tview.Form, error) {
+func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
 	f := s.makeStyledForm()
 
-	replicas, err := s.valueOf("READY")
-	if err != nil {
-		return nil, err
+	factor := "0"
+	if len(sels) == 1 {
+		replicas, err := s.valueOf("READY")
+		if err != nil {
+			return nil, err
+		}
+		tokens := strings.Split(replicas, "/")
+		if len(tokens) < 2 {
+			return nil, fmt.Errorf("unable to locate replicas from %s", replicas)
+		}
+		factor = strings.TrimRight(tokens[1], ui.DeltaSign)
 	}
-	tokens := strings.Split(replicas, "/")
-	if len(tokens) < 2 {
-		return nil, fmt.Errorf("unable to locate replicas from %s", replicas)
-	}
-	replicas = strings.TrimRight(tokens[1], ui.DeltaSign)
-	f.AddInputField("Replicas:", replicas, 4, func(textToCheck string, lastChar rune) bool {
+	f.AddInputField("Replicas:", factor, 4, func(textToCheck string, lastChar rune) bool {
 		_, err := strconv.Atoi(textToCheck)
 		return err == nil
 	}, func(changed string) {
-		replicas = changed
+		factor = changed
 	})
 
 	f.AddButton("OK", func() {
 		defer s.dismissDialog()
-		count, err := strconv.Atoi(replicas)
+		count, err := strconv.Atoi(factor)
 		if err != nil {
 			s.App().Flash().Err(err)
 			return
 		}
 		ctx, cancel := context.WithTimeout(context.Background(), s.App().Conn().Config().CallTimeout())
 		defer cancel()
-		if err := s.scale(ctx, sel, count); err != nil {
-			log.Error().Err(err).Msgf("DP %s scaling failed", sel)
-			s.App().Flash().Err(err)
-			return
+		for _, sel := range sels {
+			if err := s.scale(ctx, sel, count); err != nil {
+				log.Error().Err(err).Msgf("DP %s scaling failed", sel)
+				s.App().Flash().Err(err)
+				return
+			}
 		}
-		s.App().Flash().Infof("Resource %s:%s scaled successfully", s.GVR(), sel)
+		if len(sels) == 1 {
+			s.App().Flash().Infof("[%d] %s scaled successfully", len(sels), s.GVR().R())
+		} else {
+			s.App().Flash().Infof("%s %s scaled successfully", s.GVR().R(), sels[0])
+		}
 	})
 
 	f.AddButton("Cancel", func() {

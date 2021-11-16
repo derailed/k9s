@@ -59,8 +59,7 @@ func (l *Logger) Init(_ context.Context) error {
 func (l *Logger) BufferChanged(s string) {}
 
 // BufferCompleted indicates input was accepted.
-func (l *Logger) BufferCompleted(s string) {
-}
+func (l *Logger) BufferCompleted(s string) {}
 
 // BufferActive indicates the buff activity changed.
 func (l *Logger) BufferActive(state bool, k model.BufferKind) {

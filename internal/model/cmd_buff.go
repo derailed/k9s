@@ -91,8 +91,8 @@ func (c *CmdBuff) Add(r rune) {
 	if c.cancel != nil {
 		return
 	}
-	var ctx context.Context
-	ctx, c.cancel = context.WithTimeout(context.Background(), keyEntryDelay)
+	ctx := context.Background()
+	ctx, c.cancel = context.WithTimeout(ctx, keyEntryDelay)
 
 	go func() {
 		<-ctx.Done()
@@ -118,8 +118,8 @@ func (c *CmdBuff) Delete() {
 		return
 	}
 
-	var ctx context.Context
-	ctx, c.cancel = context.WithTimeout(context.Background(), 800*time.Millisecond)
+	ctx := context.Background()
+	ctx, c.cancel = context.WithTimeout(ctx, 800*time.Millisecond)
 
 	go func() {
 		<-ctx.Done()

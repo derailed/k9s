@@ -244,11 +244,8 @@ func (f *Factory) ensureFactory(ns string) (di.DynamicSharedInformerFactory, err
 func (f *Factory) AddForwarder(pf Forwarder) {
 	f.mx.Lock()
 	defer f.mx.Unlock()
-	f.forwarders[pf.Path()] = pf
 
-	for k, v := range f.forwarders {
-		log.Debug().Msgf("%q -- %#v", k, v)
-	}
+	f.forwarders[pf.Path()] = pf
 }
 
 // DeleteForwarder deletes portforward for a given container.
@@ -277,11 +274,20 @@ func (f *Factory) ForwarderFor(path string) (Forwarder, bool) {
 	return fwd, ok
 }
 
+// BOZO!! Review!!!
 // ValidatePortForwards check if pods are still around for portforwards.
 func (f *Factory) ValidatePortForwards() {
 	for k, fwd := range f.forwarders {
 		tokens := strings.Split(k, ":")
-		_, err := f.Get("v1/pods", tokens[0], false, labels.Everything())
+		if len(tokens) != 2 {
+			log.Error().Msgf("Invalid fwd keys %q", k)
+			return
+		}
+		paths := strings.Split(tokens[0], "|")
+		if len(paths) < 1 {
+			log.Error().Msgf("Invalid path %q", tokens[0])
+		}
+		_, err := f.Get("v1/pods", paths[0], false, labels.Everything())
 		if err != nil {
 			fwd.Stop()
 			delete(f.forwarders, k)

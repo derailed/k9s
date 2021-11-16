@@ -7,17 +7,7 @@ import (
 	"github.com/derailed/tview"
 )
 
-const (
-	autoscroll    = "Autoscroll"
-	fullscreen    = "FullScreen"
-	timestamp     = "Timestamps"
-	wrap          = "Wrap"
-	allContainers = "AllContainers"
-	on            = "[limegreen::]On"
-	off           = "[gray::]Off"
-	spacer        = "     "
-	bold          = "[-::b]"
-)
+const spacer = "     "
 
 // LogIndicator represents a log view indicator.
 type LogIndicator struct {
@@ -25,6 +15,7 @@ type LogIndicator struct {
 
 	styles                     *config.Styles
 	scrollStatus               int32
+	indicator                  []byte
 	fullScreen                 bool
 	textWrap                   bool
 	showTime                   bool
@@ -33,15 +24,16 @@ type LogIndicator struct {
 }
 
 // NewLogIndicator returns a new indicator.
-func NewLogIndicator(cfg *config.Config, styles *config.Styles, isContainerLogView bool) *LogIndicator {
+func NewLogIndicator(cfg *config.Config, styles *config.Styles, allContainers bool) *LogIndicator {
 	l := LogIndicator{
 		styles:                     styles,
 		TextView:                   tview.NewTextView(),
+		indicator:                  make([]byte, 0, 100),
 		scrollStatus:               1,
 		fullScreen:                 cfg.K9s.Logger.FullScreenLogs,
 		textWrap:                   cfg.K9s.Logger.TextWrap,
 		showTime:                   cfg.K9s.Logger.ShowTime,
-		shouldDisplayAllContainers: isContainerLogView,
+		shouldDisplayAllContainers: allContainers,
 	}
 	l.StylesChanged(styles)
 	styles.AddListener(&l)
@@ -110,24 +102,46 @@ func (l *LogIndicator) ToggleAllContainers() {
 	l.Refresh()
 }
 
-// Refresh updates the view.
-func (l *LogIndicator) Refresh() {
+func (l *LogIndicator) reset() {
 	l.Clear()
-	if l.shouldDisplayAllContainers {
-		l.update(allContainers, l.allContainers, spacer)
-	}
-	l.update(autoscroll, l.AutoScroll(), spacer)
-	l.update(fullscreen, l.fullScreen, spacer)
-	l.update(timestamp, l.showTime, spacer)
-	l.update(wrap, l.textWrap, "")
+	l.indicator = l.indicator[:0]
 }
 
-func (l *LogIndicator) update(title string, state bool, padding string) {
-	bb := []byte(bold + title + ":")
-	if state {
-		bb = append(bb, []byte(on)...)
-	} else {
-		bb = append(bb, []byte(off)...)
+// Refresh updates the view.
+func (l *LogIndicator) Refresh() {
+	l.reset()
+
+	if l.shouldDisplayAllContainers {
+		if l.allContainers {
+			l.indicator = append(l.indicator, "[::b]AllContainers:[limegreen::b]On[-::]"+spacer...)
+		} else {
+			l.indicator = append(l.indicator, "[::b]AllContainers:[gray::d]Off[-::]"+spacer...)
+		}
 	}
-	_, _ = l.Write(append(bb, []byte(padding)...))
+
+	if l.AutoScroll() {
+		l.indicator = append(l.indicator, "[::b]Autoscroll:[limegreen::b]On[-::]"+spacer...)
+	} else {
+		l.indicator = append(l.indicator, "[::b]Autoscroll:[gray::d]Off[-::]"+spacer...)
+	}
+
+	if l.FullScreen() {
+		l.indicator = append(l.indicator, "[::b]FullScreen:[limegreen::b]On[-::]"+spacer...)
+	} else {
+		l.indicator = append(l.indicator, "[::b]FullScreen:[gray::d]Off[-::]"+spacer...)
+	}
+
+	if l.Timestamp() {
+		l.indicator = append(l.indicator, "[::b]Timestamps:[limegreen::b]On[-::]"+spacer...)
+	} else {
+		l.indicator = append(l.indicator, "[::b]Timestamps:[gray::d]Off[-::]"+spacer...)
+	}
+
+	if l.TextWrap() {
+		l.indicator = append(l.indicator, "[::b]Wrap:[limegreen::b]On[-::]"...)
+	} else {
+		l.indicator = append(l.indicator, "[::b]Wrap:[gray::d]Off[-::]"...)
+	}
+
+	_, _ = l.Write(l.indicator)
 }

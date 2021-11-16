@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/derailed/k9s/internal"
@@ -139,7 +139,7 @@ func TestTableGenericHydrate(t *testing.T) {
 // Helpers...
 
 func mustLoad(n string) *unstructured.Unstructured {
-	raw, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", n))
+	raw, err := os.ReadFile(fmt.Sprintf("testdata/%s.json", n))
 	if err != nil {
 		panic(err)
 	}
@@ -151,7 +151,7 @@ func mustLoad(n string) *unstructured.Unstructured {
 }
 
 func load(t *testing.T, n string) *unstructured.Unstructured {
-	raw, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", n))
+	raw, err := os.ReadFile(fmt.Sprintf("testdata/%s.json", n))
 	assert.Nil(t, err)
 	var o unstructured.Unstructured
 	err = json.Unmarshal(raw, &o)
@@ -160,7 +160,7 @@ func load(t *testing.T, n string) *unstructured.Unstructured {
 }
 
 func raw(t *testing.T, n string) []byte {
-	raw, err := ioutil.ReadFile(fmt.Sprintf("testdata/%s.json", n))
+	raw, err := os.ReadFile(fmt.Sprintf("testdata/%s.json", n))
 	assert.Nil(t, err)
 	return raw
 }

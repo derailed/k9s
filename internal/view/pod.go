@@ -176,7 +176,6 @@ func (p *Pod) killCmd(evt *tcell.EventKey) *tcell.EventKey {
 		p.App().Flash().Infof("Delete resource %s %s", p.GVR(), selections[0])
 	}
 	p.GetTable().ShowDeleted()
-	log.Debug().Msgf("SELS %v", selections)
 	for _, path := range selections {
 		if err := nuker.Delete(path, true, true); err != nil {
 			p.App().Flash().Errf("Delete failed with %s", err)

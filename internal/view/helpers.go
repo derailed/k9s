@@ -132,7 +132,7 @@ func extractApp(ctx context.Context) (*App, error) {
 // AsKey maps a string representation of a key to a tcell key.
 func asKey(key string) (tcell.Key, error) {
 	for k, v := range tcell.KeyNames {
-		if v == key {
+		if key == v {
 			return k, nil
 		}
 	}
