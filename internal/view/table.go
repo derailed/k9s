@@ -151,14 +151,14 @@ func (t *Table) SetEnterFn(f EnterFunc) {
 func (t *Table) SetExtraActionsFn(BoostActionsFunc) {}
 
 // BufferCompleted indicates input was accepted.
-func (t *Table) BufferCompleted(s string) {
+func (t *Table) BufferCompleted(text, _ string) {
 	t.app.QueueUpdateDraw(func() {
-		t.Filter(s)
+		t.Filter(text)
 	})
 }
 
 // BufferChanged indicates the buffer was changed.
-func (t *Table) BufferChanged(s string) {}
+func (t *Table) BufferChanged(_, _ string) {}
 
 // BufferActive indicates the buff activity changed.
 func (t *Table) BufferActive(state bool, k model.BufferKind) {

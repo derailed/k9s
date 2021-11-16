@@ -87,11 +87,7 @@ func (c *Config) reset() {
 
 // SwitchContext changes the kubeconfig context to a new cluster.
 func (c *Config) SwitchContext(name string) error {
-	cfg, err := c.rawConfig()
-	if err != nil {
-		return err
-	}
-	if cfg.CurrentContext == name {
+	if n, err := c.CurrentContextName(); err == nil && n == name {
 		return nil
 	}
 	context, err := c.GetContext(name)
@@ -196,9 +192,12 @@ func (c *Config) CurrentClusterName() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	current := cfg.CurrentContext
+	context, err := c.CurrentContextName()
+	if err != nil {
+		context = cfg.CurrentContext
+	}
 
-	if ctx, ok := cfg.Contexts[current]; ok {
+	if ctx, ok := cfg.Contexts[context]; ok {
 		return ctx.Cluster, nil
 	}
 

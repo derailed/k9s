@@ -161,13 +161,13 @@ func (l *Log) LogChanged(lines [][]byte) {
 }
 
 // BufferCompleted indicates input was accepted.
-func (l *Log) BufferCompleted(s string) {
-	l.model.Filter(s)
+func (l *Log) BufferCompleted(text, _ string) {
+	l.model.Filter(text)
 	l.updateTitle()
 }
 
 // BufferChanged indicates the buffer was changed.
-func (l *Log) BufferChanged(string) {}
+func (l *Log) BufferChanged(_, _ string) {}
 
 // BufferActive indicates the buff activity changed.
 func (l *Log) BufferActive(state bool, k model.BufferKind) {

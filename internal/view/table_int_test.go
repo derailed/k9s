@@ -67,7 +67,7 @@ func TestTableViewFilter(t *testing.T) {
 	v.SetModel(&mockTableModel{})
 	v.Refresh()
 	v.CmdBuff().SetActive(true)
-	v.CmdBuff().SetText("blee")
+	v.CmdBuff().SetText("blee", "")
 
 	assert.Equal(t, 3, v.GetRowCount())
 }

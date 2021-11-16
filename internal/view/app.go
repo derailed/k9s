@@ -19,6 +19,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
@@ -567,10 +568,8 @@ func (a *App) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return evt
 }
 
-func (a *App) meowCmd(msg string) {
-	if err := a.inject(NewCow(a, msg)); err != nil {
-		a.Flash().Err(err)
-	}
+func (a *App) cowCmd(msg string) {
+	dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, msg)
 }
 
 func (a *App) dirCmd(path string) error {
@@ -633,20 +632,14 @@ func (a *App) gotoResource(cmd, path string, clearStack bool) {
 		return
 	}
 
-	c := NewCow(a, err.Error())
-	_ = c.Init(context.Background())
-	if clearStack {
-		a.Content.Stack.Clear()
-	}
-	a.Content.Push(c)
+	dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
 }
 
 func (a *App) inject(c model.Component) error {
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	if err := c.Init(ctx); err != nil {
 		log.Error().Err(err).Msgf("component init failed for %q %v", c.Name(), err)
-		c = NewCow(a, err.Error())
-		_ = c.Init(ctx)
+		dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
 	}
 	a.Content.Push(c)
 

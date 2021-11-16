@@ -176,8 +176,8 @@ func isContextCmd(c string) bool {
 func (c *Command) specialCmd(cmd, path string) bool {
 	cmds := strings.Split(cmd, " ")
 	switch cmds[0] {
-	case "meow":
-		c.app.meowCmd(path)
+	case "cow":
+		c.app.cowCmd(path)
 		return true
 	case "q", "Q", "quit":
 		c.app.BailOut()

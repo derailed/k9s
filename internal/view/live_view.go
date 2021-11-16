@@ -119,11 +119,11 @@ func (v *LiveView) ResourceChanged(lines []string, matches fuzzy.Matches) {
 }
 
 // BufferChanged indicates the buffer was changed.
-func (v *LiveView) BufferChanged(s string) {}
+func (v *LiveView) BufferChanged(_, _ string) {}
 
 // BufferCompleted indicates input was accepted.
-func (v *LiveView) BufferCompleted(s string) {
-	v.model.Filter(s)
+func (v *LiveView) BufferCompleted(text, _ string) {
+	v.model.Filter(text)
 }
 
 // BufferActive indicates the buff activity changed.

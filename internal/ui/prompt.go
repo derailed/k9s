@@ -37,10 +37,13 @@ type Suggester interface {
 // PromptModel represents a prompt buffer.
 type PromptModel interface {
 	// SetText sets the model text.
-	SetText(string)
+	SetText(txt, sug string)
 
 	// GetText returns the current text.
 	GetText() string
+
+	// GetSuggestion returns the current suggestion.
+	GetSuggestion() string
 
 	// ClearText clears out model text.
 	ClearText(fire bool)
@@ -141,7 +144,7 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		p.model.ClearText(true)
 		p.model.SetActive(false)
 	case tcell.KeyEnter, tcell.KeyCtrlE:
-		p.model.SetText(p.model.GetText())
+		p.model.SetText(p.model.GetText(), "")
 		p.model.SetActive(false)
 	case tcell.KeyCtrlW, tcell.KeyCtrlU:
 		p.model.ClearText(true)
@@ -155,7 +158,7 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 		}
 	case tcell.KeyTab, tcell.KeyRight, tcell.KeyCtrlF:
 		if s, ok := m.CurrentSuggestion(); ok {
-			p.model.SetText(p.model.GetText() + s)
+			p.model.SetText(p.model.GetText()+s, "")
 			m.ClearSuggestions()
 		}
 	}
@@ -180,20 +183,13 @@ func (p *Prompt) InCmdMode() bool {
 
 func (p *Prompt) activate() {
 	p.SetCursorIndex(len(p.model.GetText()))
-	p.write(p.model.GetText(), "")
+	p.write(p.model.GetText(), p.model.GetSuggestion())
 	p.model.Notify(false)
 }
 
-func (p *Prompt) update(s string) {
-	f := func() {
-		p.Clear()
-		p.write(s, "")
-	}
-	if p.app == nil {
-		f()
-		return
-	}
-	p.app.QueueUpdate(f)
+func (p *Prompt) update(text, suggestion string) {
+	p.Clear()
+	p.write(text, suggestion)
 }
 
 func (p *Prompt) suggest(text, suggestion string) {
@@ -214,19 +210,18 @@ func (p *Prompt) write(text, suggest string) {
 // Event Listener protocol...
 
 // BufferCompleted indicates input was accepted.
-func (p *Prompt) BufferCompleted(s string) {
-	p.update(s)
+func (p *Prompt) BufferCompleted(text, suggestion string) {
+	p.update(text, suggestion)
 }
 
 // BufferChanged indicates the buffer was changed.
-func (p *Prompt) BufferChanged(s string) {
-	p.update(s)
+func (p *Prompt) BufferChanged(text, suggestion string) {
+	p.update(text, suggestion)
 }
 
 // SuggestionChanged notifies the suggestion changed.
-func (p *Prompt) SuggestionChanged(text, sugg string) {
-	p.Clear()
-	p.write(text, sugg)
+func (p *Prompt) SuggestionChanged(text, suggestion string) {
+	p.suggest(text, suggestion)
 }
 
 // BufferActive indicates the buff activity changed.

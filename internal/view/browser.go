@@ -156,12 +156,12 @@ func (b *Browser) Stop() {
 }
 
 // BufferChanged indicates the buffer was changed.
-func (b *Browser) BufferChanged(s string) {}
+func (b *Browser) BufferChanged(_, _ string) {}
 
 // BufferCompleted indicates input was accepted.
-func (b *Browser) BufferCompleted(s string) {
-	if ui.IsLabelSelector(s) {
-		b.GetModel().SetLabelFilter(ui.TrimLabelSelector(s))
+func (b *Browser) BufferCompleted(text, _ string) {
+	if ui.IsLabelSelector(text) {
+		b.GetModel().SetLabelFilter(ui.TrimLabelSelector(text))
 	} else {
 		b.GetModel().SetLabelFilter("")
 	}

@@ -558,12 +558,12 @@ func (x *Xray) SetEnvFn(EnvFunc) {}
 func (x *Xray) Refresh() {}
 
 // BufferCompleted indicates the buffer was changed.
-func (x *Xray) BufferCompleted(s string) {
+func (x *Xray) BufferCompleted(_, _ string) {
 	x.update(x.filter(x.model.Peek()))
 }
 
 // BufferChanged indicates the buffer was changed.
-func (x *Xray) BufferChanged(s string) {}
+func (x *Xray) BufferChanged(_, _ string) {}
 
 // BufferActive indicates the buff activity changed.
 func (x *Xray) BufferActive(state bool, k model.BufferKind) {
