@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -240,17 +239,4 @@ func (c *Container) listForwardable(path string) (port.ContainerPortSpecs, map[s
 	}
 
 	return port.FromContainerPorts(path, co.Ports), po.Annotations, true
-}
-
-func indexOfPort(pp []string, port string) int {
-	for i, p := range pp {
-		tokens := strings.Split(p, ":")
-		if len(tokens) == 2 {
-			if tokens[0] == port || tokens[1] == port {
-				return i
-			}
-		}
-	}
-
-	return -1
 }

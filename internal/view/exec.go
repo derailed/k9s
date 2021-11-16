@@ -135,48 +135,6 @@ func execute(opts shellOpts) error {
 	return pipe(ctx, opts, cmds...)
 }
 
-// func execute(opts shellOpts) error {
-// 	if opts.clear {
-// 		clearScreen()
-// 	}
-// 	ctx, cancel := context.WithCancel(context.Background())
-// 	defer func() {
-// 		cancel()
-// 		clearScreen()
-// 	}()
-
-// 	sigChan := make(chan os.Signal, 1)
-// 	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
-// 	go func() {
-// 		select {
-// 		case <-sigChan:
-// 			log.Debug().Msg("Command canceled with signal!")
-// 			cancel()
-// 		case <-ctx.Done():
-// 			return
-// 		}
-// 	}()
-
-// 	log.Debug().Msgf("Running command> %s %s", opts.binary, strings.Join(opts.args, " "))
-// 	cmd := exec.Command(opts.binary, opts.args...)
-
-// 	var err error
-// 	if opts.background {
-// 		err = cmd.Start()
-// 	} else {
-// 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-// 		_, _ = cmd.Stdout.Write([]byte(opts.banner))
-// 		err = cmd.Run()
-// 	}
-
-// 	select {
-// 	case <-ctx.Done():
-// 		return errors.New("canceled by operator")
-// 	default:
-// 		return err
-// 	}
-// }
-
 func runKu(a *App, opts shellOpts) (string, error) {
 	bin, err := exec.LookPath("kubectl")
 	if err != nil {
@@ -441,8 +399,7 @@ func pipe(ctx context.Context, opts shellOpts, cmds ...*exec.Cmd) error {
 		cmds[i].Stderr = os.Stderr
 		if i+1 < len(cmds) {
 			r, w := io.Pipe()
-			cmds[i].Stdout = w
-			cmds[i+1].Stdin = r
+			cmds[i].Stdout, cmds[i+1].Stdin = w, r
 		}
 	}
 	cmds[last].Stdout = os.Stdout

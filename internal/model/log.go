@@ -408,12 +408,6 @@ func (l *Log) fireLogResume() {
 	}
 }
 
-func (l *Log) fireLogStopped() {
-	for _, lis := range l.listeners {
-		lis.LogStop()
-	}
-}
-
 func (l *Log) fireCanceled() {
 	for _, lis := range l.listeners {
 		lis.LogCanceled()

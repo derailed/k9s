@@ -78,7 +78,9 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 			v.App().Flash().Err(err)
 			return
 		}
-		okFn(v, path, tt)
+		if err := okFn(v, path, tt); err != nil {
+			v.App().Flash().Err(err)
+		}
 	})
 	pages := v.App().Content.Pages
 	f.AddButton("Cancel", func() {
@@ -118,26 +120,6 @@ func DismissPortForwards(v ResourceViewer, p *ui.Pages) {
 
 // ----------------------------------------------------------------------------
 // Helpers...
-
-func matchPorts(pp []string, port string) bool {
-	for _, p := range pp {
-		if port == p {
-			return true
-		}
-	}
-
-	return false
-}
-
-func parsePort(p string) (string, string, string) {
-	rx := regexp.MustCompile(`\A([\w|-]+)/?([\w|-]+)?:?(\d+)?(╱UDP)?\z`)
-	mm := rx.FindStringSubmatch(p)
-	if len(mm) != 5 {
-		return "", "", ""
-	}
-
-	return mm[1], mm[2], mm[3]
-}
 
 func extractPort(p string) string {
 	rx := regexp.MustCompile(`\A([\w|-]+)/?([\w|-]+)?:?(\d+)?(╱UDP)?\z`)

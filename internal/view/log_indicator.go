@@ -143,5 +143,5 @@ func (l *LogIndicator) Refresh() {
 		l.indicator = append(l.indicator, "[::b]Wrap:[gray::d]Off[-::]"...)
 	}
 
-	l.Write(l.indicator)
+	_, _ = l.Write(l.indicator)
 }

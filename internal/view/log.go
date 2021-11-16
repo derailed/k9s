@@ -350,7 +350,7 @@ func (l *Log) Flush(lines [][]byte) {
 		if l.cancelUpdates {
 			break
 		}
-		l.ansiWriter.Write(lines[i])
+		_, _ = l.ansiWriter.Write(lines[i])
 	}
 	if l.follow {
 		l.logs.ScrollToEnd()

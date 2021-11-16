@@ -15,8 +15,6 @@ import (
 )
 
 const (
-	defaultQPS                               = 50
-	defaultBurst                             = 50
 	defaultCallTimeoutDuration time.Duration = 5 * time.Second
 )
 

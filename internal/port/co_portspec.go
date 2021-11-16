@@ -70,7 +70,7 @@ func (c ContainerPortSpecs) MatchAnnotations(s string) PFAnns {
 
 // FromContainerPorts hydrates from a pod container specification.
 func FromContainerPorts(co string, pp []v1.ContainerPort) ContainerPortSpecs {
-	specs := make(ContainerPortSpecs, len(pp))
+	specs := make(ContainerPortSpecs, 0, len(pp))
 	for _, p := range pp {
 		if p.Protocol != v1.ProtocolTCP {
 			continue
@@ -144,12 +144,4 @@ func (c ContainerPortSpec) String() string {
 		s += "(" + c.PortName + ")"
 	}
 	return s
-}
-
-func containerPortSpec(co, portName string) string {
-	if portName == "" {
-		return co
-	}
-
-	return co + "/" + portName
 }
