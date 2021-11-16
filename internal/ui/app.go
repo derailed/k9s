@@ -93,10 +93,10 @@ func (a *App) SetRunning(f bool) {
 }
 
 // BufferCompleted indicates input was accepted.
-func (a *App) BufferCompleted(s string) {}
+func (a *App) BufferCompleted(_, _ string) {}
 
 // BufferChanged indicates the buffer was changed.
-func (a *App) BufferChanged(s string) {}
+func (a *App) BufferChanged(_, _ string) {}
 
 // BufferActive indicates the buff activity changed.
 func (a *App) BufferActive(state bool, kind model.BufferKind) {

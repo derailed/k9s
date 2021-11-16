@@ -122,15 +122,19 @@ func (f *FishBuff) Delete() {
 
 func (f *FishBuff) fireSuggestionChanged(ss []string) {
 	f.suggestions, f.suggestionIndex = ss, 0
+
+	var suggest string
 	if len(ss) == 0 {
 		f.suggestionIndex = -1
-		return
+	} else {
+		suggest = ss[f.suggestionIndex]
 	}
+    f.SetText(f.GetText(), suggest)
 
-	text, sug := f.GetText(), ss[f.suggestionIndex]
-	for _, l := range f.listeners {
-		if listener, ok := l.(SuggestionListener); ok {
-			listener.SuggestionChanged(text, sug)
-		}
-	}
+	// BOZO!!
+	//for _, l := range f.listeners {
+	//	if listener, ok := l.(SuggestionListener); ok {
+	//		listener.SuggestionChanged(text, sug)
+	//	}
+	//}
 }

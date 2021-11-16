@@ -50,7 +50,7 @@ func TestFishDelete(t *testing.T) {
 	f.SetActive(true)
 
 	assert.Equal(t, 2, m.changeCount)
-	assert.Equal(t, 2, m.suggCount)
+	assert.Equal(t, 1, m.suggCount)
 	assert.True(t, m.active)
 	assert.Equal(t, "blee", m.suggestion)
 
@@ -75,12 +75,15 @@ type mockSuggestionListener struct {
 	active                 bool
 }
 
-func (m *mockSuggestionListener) BufferChanged(s string) {
+func (m *mockSuggestionListener) BufferChanged(_, _ string) {
 	m.changeCount++
 }
 
-func (m *mockSuggestionListener) BufferCompleted(s string) {
-	m.text = s
+func (m *mockSuggestionListener) BufferCompleted(text, suggest string) {
+	if m.suggestion != suggest {
+		m.suggCount++
+	}
+	m.text, m.suggestion = text, suggest
 }
 
 func (m *mockSuggestionListener) BufferActive(state bool, kind model.BufferKind) {

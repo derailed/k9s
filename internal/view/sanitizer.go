@@ -322,10 +322,10 @@ func (s *Sanitizer) SetEnvFn(EnvFunc) {}
 func (s *Sanitizer) Refresh() {}
 
 // BufferChanged indicates the buffer was changed.
-func (s *Sanitizer) BufferChanged(q string) {}
+func (s *Sanitizer) BufferChanged(_, _ string) {}
 
 // BufferCompleted indicates input was accepted.
-func (s *Sanitizer) BufferCompleted(q string) {
+func (s *Sanitizer) BufferCompleted(_, _ string) {
 	s.update(s.filter(s.model.Peek()))
 }
 

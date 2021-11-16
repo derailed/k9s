@@ -8,17 +8,17 @@ import (
 )
 
 type testListener struct {
-	text  string
-	act   int
-	inact int
+	text, suggestion string
+	act              int
+	inact            int
 }
 
-func (l *testListener) BufferChanged(s string) {
-	l.text = s
+func (l *testListener) BufferChanged(t, s string) {
+	l.text, l.suggestion = t, s
 }
 
-func (l *testListener) BufferCompleted(s string) {
-	l.text = s
+func (l *testListener) BufferCompleted(t, s string) {
+	l.text, l.suggestion = t, s
 }
 
 func (l *testListener) BufferActive(s bool, _ model.BufferKind) {

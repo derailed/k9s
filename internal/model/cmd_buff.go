@@ -9,7 +9,7 @@ import (
 const (
 	maxBuff = 10
 
-	keyEntryDelay = 200 * time.Millisecond
+	keyEntryDelay = 100 * time.Millisecond
 
 	// CommandBuffer represents a command buffer.
 	CommandBuffer BufferKind = 1 << iota
@@ -24,10 +24,10 @@ type (
 	// BuffWatcher represents a command buffer listener.
 	BuffWatcher interface {
 		// BufferCompleted indicates input was accepted.
-		BufferCompleted(s string)
+		BufferCompleted(text, suggestion string)
 
 		// BufferChanged indicates the buffer was changed.
-		BufferChanged(s string)
+		BufferChanged(text, suggestion string)
 
 		// BufferActive indicates the buff activity changed.
 		BufferActive(state bool, kind BufferKind)
@@ -36,13 +36,14 @@ type (
 
 // CmdBuff represents user command input.
 type CmdBuff struct {
-	buff      []rune
-	listeners []BuffWatcher
-	hotKey    rune
-	kind      BufferKind
-	active    bool
-	cancel    context.CancelFunc
-	mx        sync.RWMutex
+	buff       []rune
+	suggestion string
+	listeners  []BuffWatcher
+	hotKey     rune
+	kind       BufferKind
+	active     bool
+	cancel     context.CancelFunc
+	mx         sync.RWMutex
 }
 
 // NewCmdBuff returns a new command buffer.
@@ -76,9 +77,14 @@ func (c *CmdBuff) GetText() string {
 	return string(c.buff)
 }
 
+// GetSuggestion returns the current suggestion.
+func (c *CmdBuff) GetSuggestion() string {
+	return c.suggestion
+}
+
 // SetText initializes the buffer with a command.
-func (c *CmdBuff) SetText(cmd string) {
-	c.buff = []rune(cmd)
+func (c *CmdBuff) SetText(text, suggestion string) {
+	c.buff, c.suggestion = []rune(text), suggestion
 	c.fireBufferCompleted()
 }
 
@@ -186,14 +192,14 @@ func (c *CmdBuff) RemoveListener(l BuffWatcher) {
 func (c *CmdBuff) fireBufferCompleted() {
 	text := c.GetText()
 	for _, l := range c.listeners {
-		l.BufferCompleted(text)
+		l.BufferCompleted(text, c.suggestion)
 	}
 }
 
 func (c *CmdBuff) fireBufferChanged() {
 	text := c.GetText()
 	for _, l := range c.listeners {
-		l.BufferChanged(text)
+		l.BufferChanged(text, c.suggestion)
 	}
 }
 
