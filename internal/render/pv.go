@@ -126,15 +126,15 @@ func (PersistentVolume) volumeMode(m *v1.PersistentVolumeMode) string {
 func accessMode(aa []v1.PersistentVolumeAccessMode) string {
 	dd := accessDedup(aa)
 	s := make([]string, 0, len(dd))
-	for i := 0; i < len(aa); i++ {
+	for _, am := range dd {
 		switch {
-		case accessContains(dd, v1.ReadWriteOnce):
+		case am == v1.ReadWriteOnce:
 			s = append(s, "RWO")
-		case accessContains(dd, v1.ReadOnlyMany):
+		case am == v1.ReadOnlyMany:
 			s = append(s, "ROX")
-		case accessContains(dd, v1.ReadWriteMany):
+		case am == v1.ReadWriteMany:
 			s = append(s, "RWX")
-		case accessContains(dd, v1.ReadWriteOncePod):
+		case am == v1.ReadWriteOncePod:
 			s = append(s, "RWOP")
 		}
 	}
