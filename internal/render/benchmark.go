@@ -3,7 +3,6 @@ package render
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"regexp"
 	"strconv"
@@ -97,7 +96,7 @@ func (Benchmark) diagnose(ns string, ff Fields) error {
 // Helpers...
 
 func (Benchmark) readFile(file string) (string, error) {
-	data, err := ioutil.ReadFile(file)
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return "", err
 	}

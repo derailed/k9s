@@ -1,8 +1,7 @@
 package config
 
 import (
-	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -47,7 +46,7 @@ func (p Plugins) Load() error {
 
 // LoadPlugins loads plugins from a given file.
 func (p Plugins) LoadPlugins(path string) error {
-	f, err := ioutil.ReadFile(path)
+	f, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"time"
 
@@ -112,7 +112,7 @@ func (c *ClusterInfo) Reset(f dao.Factory) {
 	c.Refresh()
 }
 
-// Refresh fetches latest cluster meta.
+// Refresh fetches the latest cluster meta.
 func (c *ClusterInfo) Refresh() {
 	data := NewClusterMeta()
 	if c.factory.Client().ConnectionOK() {
@@ -197,7 +197,7 @@ func fetchLatestRev() (string, error) {
 		}
 	}()
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", err
 	}

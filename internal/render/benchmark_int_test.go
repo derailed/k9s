@@ -1,7 +1,7 @@
 package render
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/rs/zerolog"
@@ -38,7 +38,7 @@ func TestAugmentRow(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			data, err := ioutil.ReadFile(u.file)
+			data, err := os.ReadFile(u.file)
 
 			assert.Nil(t, err)
 			fields := make(Fields, 8)

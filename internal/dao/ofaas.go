@@ -8,7 +8,7 @@ package dao
 // 	"encoding/json"
 // 	"errors"
 // 	"fmt"
-// 	"io/ioutil"
+// 	"io"
 // 	"net/http"
 // 	"net/url"
 // 	"os"
@@ -193,7 +193,7 @@ package dao
 // 	case http.StatusUnauthorized:
 // 		return fmt.Errorf("unauthorized access, run \"faas-cli login\" to setup authentication for this server")
 // 	default:
-// 		bytesOut, err := ioutil.ReadAll(delRes.Body)
+// 		bytesOut, err := io.ReadAll(delRes.Body)
 // 		if err != nil {
 // 			return err
 // 		}

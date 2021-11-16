@@ -2,7 +2,7 @@ package config_test
 
 import (
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -216,7 +216,7 @@ func TestConfigSaveFile(t *testing.T) {
 	err := cfg.SaveFile(path)
 	assert.Nil(t, err)
 
-	raw, err := ioutil.ReadFile(path)
+	raw, err := os.ReadFile(path)
 	assert.Nil(t, err)
 	assert.Equal(t, expectedConfig, string(raw))
 }
@@ -242,7 +242,7 @@ func TestConfigReset(t *testing.T) {
 	err := cfg.SaveFile(path)
 	assert.Nil(t, err)
 
-	raw, err := ioutil.ReadFile(path)
+	raw, err := os.ReadFile(path)
 	assert.Nil(t, err)
 	assert.Equal(t, resetConfig, string(raw))
 }

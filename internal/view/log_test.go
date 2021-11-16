@@ -3,7 +3,7 @@ package view_test
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"testing"
 
@@ -108,9 +108,9 @@ func TestLogViewSave(t *testing.T) {
 
 	config.K9sDumpDir = "/tmp"
 	dir := filepath.Join(config.K9sDumpDir, app.Config.K9s.CurrentCluster)
-	c1, _ := ioutil.ReadDir(dir)
+	c1, _ := os.ReadDir(dir)
 	v.SaveCmd(nil)
-	c2, _ := ioutil.ReadDir(dir)
+	c2, _ := os.ReadDir(dir)
 	assert.Equal(t, len(c2), len(c1)+1)
 }
 

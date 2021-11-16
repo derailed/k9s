@@ -2,7 +2,7 @@ package view
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -71,7 +71,7 @@ func benchDir(cfg *config.Config) string {
 }
 
 func readBenchFile(cfg *config.Config, n string) (string, error) {
-	data, err := ioutil.ReadFile(filepath.Join(benchDir(cfg), n))
+	data, err := os.ReadFile(filepath.Join(benchDir(cfg), n))
 	if err != nil {
 		return "", err
 	}

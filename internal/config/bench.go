@@ -1,8 +1,8 @@
 package config
 
 import (
-	"io/ioutil"
 	"net/http"
+	"os"
 
 	"gopkg.in/yaml.v2"
 )
@@ -96,7 +96,7 @@ func (s *Bench) Reload(path string) error {
 
 // Load K9s benchmark configs from file.
 func (s *Bench) load(path string) error {
-	f, err := ioutil.ReadFile(path)
+	f, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}

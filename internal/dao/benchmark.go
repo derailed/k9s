@@ -3,7 +3,6 @@ package dao
 import (
 	"context"
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -41,7 +40,7 @@ func (b *Benchmark) List(ctx context.Context, _ string) ([]runtime.Object, error
 	}
 	path, _ := ctx.Value(internal.KeyPath).(string)
 
-	ff, err := ioutil.ReadDir(dir)
+	ff, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +50,10 @@ func (b *Benchmark) List(ctx context.Context, _ string) ([]runtime.Object, error
 		if path != "" && !strings.HasPrefix(f.Name(), strings.Replace(path, "/", "_", 1)) {
 			continue
 		}
-		oo = append(oo, render.BenchInfo{File: f, Path: filepath.Join(dir, f.Name())})
+
+		if fi, err := f.Info(); err == nil {
+			oo = append(oo, render.BenchInfo{File: fi, Path: filepath.Join(dir, f.Name())})
+		}
 	}
 
 	return oo, nil

@@ -3,7 +3,7 @@ package dao
 import (
 	"context"
 	"errors"
-	"io/ioutil"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -37,7 +37,7 @@ func (a *Dir) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 		return nil, errors.New("No dir in context")
 	}
 
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
@@ -48,8 +48,8 @@ func (a *Dir) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 			continue
 		}
 		oo = append(oo, render.DirRes{
-			Path: filepath.Join(dir, f.Name()),
-			Info: f,
+			Path:  filepath.Join(dir, f.Name()),
+			Entry: f,
 		})
 	}
 

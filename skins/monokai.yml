@@ -104,8 +104,6 @@ k9s:
     table:
       fgColor: *foreground
       bgColor: *background
-      cursorFgColor: *foreground
-      cursorBgColor: *backgroundOpaque
       markColor: *magenta
       # Header row styles.
       header:
