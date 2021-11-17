@@ -31,7 +31,7 @@ func printInfo() {
 
 func printLogo(c color.Paint) {
 	for _, l := range ui.LogoSmall {
-		fmt.Println(color.Colorize(l, c))
+		fmt.Fprintln(out, color.Colorize(l, c))
 	}
-	fmt.Println()
+	fmt.Fprintln(out)
 }
