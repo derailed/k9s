@@ -15,7 +15,9 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/apimachinery/pkg/util/strategicpatch"
 	"k8s.io/kubectl/pkg/polymorphichelpers"
+	"k8s.io/kubectl/pkg/scheme"
 )
 
 var (
@@ -65,7 +67,12 @@ func (s *StatefulSet) Scale(ctx context.Context, path string, replicas int32) er
 
 // Restart a StatefulSet rollout.
 func (s *StatefulSet) Restart(ctx context.Context, path string) error {
-	sts, err := s.getStatefulSet(path)
+	o, err := s.Factory.Get("apps/v1/statefulsets", path, true, labels.Everything())
+	if err != nil {
+		return err
+	}
+	var sts appsv1.StatefulSet
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &sts)
 	if err != nil {
 		return err
 	}
@@ -75,15 +82,24 @@ func (s *StatefulSet) Restart(ctx context.Context, path string) error {
 		return err
 	}
 	if !auth {
-		return fmt.Errorf("user is not authorized to update statefulsets")
+		return fmt.Errorf("user is not authorized to restart a statefulset")
 	}
 
-	update, err := polymorphichelpers.ObjectRestarterFn(sts)
+	dial, err := s.Client().Dial()
 	if err != nil {
 		return err
 	}
 
-	dial, err := s.Client().Dial()
+	before, err := runtime.Encode(scheme.Codecs.LegacyCodec(appsv1.SchemeGroupVersion), &sts)
+	if err != nil {
+		return err
+	}
+
+	after, err := polymorphichelpers.ObjectRestarterFn(&sts)
+	if err != nil {
+		return err
+	}
+	diff, err := strategicpatch.CreateTwoWayMergePatch(before, after, sts)
 	if err != nil {
 		return err
 	}
@@ -91,11 +107,12 @@ func (s *StatefulSet) Restart(ctx context.Context, path string) error {
 		ctx,
 		sts.Name,
 		types.StrategicMergePatchType,
-		update,
+		diff,
 		metav1.PatchOptions{},
 	)
 
 	return err
+
 }
 
 // Load returns a statefulset instance.
