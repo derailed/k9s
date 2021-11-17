@@ -17,6 +17,7 @@ builds:
       - arm64
       - arm
       - ppc64le
+      - s390x
     goarm:
       - 7
     flags:
