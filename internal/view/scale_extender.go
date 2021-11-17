@@ -55,7 +55,7 @@ func (s *ScaleExtender) showScaleDialog(paths []string) {
 		return
 	}
 	confirm := tview.NewModalForm("<Scale>", form)
-	msg := fmt.Sprintf("Scale %s %s?", s.GVR().R(), paths[0])
+	msg := fmt.Sprintf("Scale %s %s?", singularize(s.GVR().R()), paths[0])
 	if len(paths) > 1 {
 		msg = fmt.Sprintf("Scale [%d] %s?", len(paths), s.GVR().R())
 	}
@@ -114,7 +114,7 @@ func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
 			}
 		}
 		if len(sels) == 1 {
-			s.App().Flash().Infof("[%d] %s scaled successfully", len(sels), s.GVR().R())
+			s.App().Flash().Infof("[%d] %s scaled successfully", len(sels), singularize(s.GVR().R()))
 		} else {
 			s.App().Flash().Infof("%s %s scaled successfully", s.GVR().R(), sels[0])
 		}
