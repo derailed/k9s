@@ -2,6 +2,7 @@ package config
 
 import (
 	"github.com/derailed/k9s/internal/client"
+	"os"
 )
 
 const (
@@ -24,12 +25,14 @@ type K9s struct {
 	CurrentCluster    string              `yaml:"currentCluster"`
 	Clusters          map[string]*Cluster `yaml:"clusters,omitempty"`
 	Thresholds        Threshold           `yaml:"thresholds"`
+	DumpDirPath       string              `yaml:"dumpDirPath"`
 	manualRefreshRate int
 	manualHeadless    *bool
 	manualLogoless    *bool
 	manualCrumbsless  *bool
 	manualReadOnly    *bool
 	manualCommand     *string
+	manualDumpDirPath *string
 }
 
 // NewK9s create a new K9s configuration.
@@ -40,6 +43,7 @@ func NewK9s() *K9s {
 		Logger:       NewLogger(),
 		Clusters:     make(map[string]*Cluster),
 		Thresholds:   NewThreshold(),
+		DumpDirPath:  os.TempDir(),
 	}
 }
 
@@ -89,6 +93,11 @@ func (k *K9s) OverrideWrite(b bool) {
 // OverrideCommand set the command manually.
 func (k *K9s) OverrideCommand(cmd string) {
 	k.manualCommand = &cmd
+}
+
+// OverrideDumpDirPath set the dump dir path manually.
+func (k *K9s) OverrideDumpDirPath(path string) {
+	k.manualDumpDirPath = &path
 }
 
 // IsHeadless returns headless setting.
@@ -153,6 +162,16 @@ func (k *K9s) ActiveCluster() *Cluster {
 	k.Clusters[k.CurrentCluster] = NewCluster()
 
 	return k.Clusters[k.CurrentCluster]
+}
+
+func (k *K9s) GetDumpDirPath() string {
+	dumpDirPath := k.DumpDirPath
+
+	if k.manualDumpDirPath != nil && *k.manualDumpDirPath != "" {
+		dumpDirPath = *k.manualDumpDirPath
+	}
+
+	return dumpDirPath
 }
 
 func (k *K9s) validateDefaults() {

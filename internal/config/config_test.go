@@ -3,6 +3,7 @@ package config_test
 import (
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
 	"testing"
 
@@ -247,6 +248,85 @@ func TestConfigReset(t *testing.T) {
 	assert.Equal(t, resetConfig, string(raw))
 }
 
+func TestGetDumpConfigDirPath_WithEmptyK9sConfig(t *testing.T) {
+	dcdp := map[string]struct {
+		actualPath   string
+		expectedPath string
+	}{
+		"emptyK9sConfig": {
+			actualPath:   config.GetDumpConfigDirPath(""),
+			expectedPath: os.TempDir(),
+		},
+		"missingFile": {
+			actualPath:   config.GetDumpConfigDirPath("invalid"),
+			expectedPath: os.TempDir(),
+		},
+		"emptyDumpDirPathProperty": {
+			actualPath:   config.GetDumpConfigDirPath("testdata/k9s1.yml"),
+			expectedPath: os.TempDir(),
+		},
+		"validContent": {
+			actualPath:   config.GetDumpConfigDirPath("testdata/k9s.yml"),
+			expectedPath: "/tmp",
+		},
+	}
+
+	for name, test := range dcdp {
+		t.Run(name, func(t *testing.T) {
+			assert.Equal(t, test.expectedPath, test.actualPath)
+		})
+	}
+}
+
+func TestInstantiateK9sDumpDirCustom(t *testing.T) {
+	mk := NewMockKubeSettings()
+	usr, err := user.Current()
+	assert.Nil(t, err)
+
+	expectedDumpDirPath := filepath.Join("/tmp", fmt.Sprintf("k9s-screens-%s", usr.Username))
+
+	cfg := config.NewConfig(mk)
+	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
+
+	cfg.InstantiateK9sDumpDir()
+
+	assert.Equal(t, expectedDumpDirPath, config.K9sDumpDir)
+
+	_ = os.RemoveAll(config.K9sDumpDir)
+}
+
+func TestInstantiateK9sDumpDirEmpty(t *testing.T) {
+	mk := NewMockKubeSettings()
+	cfg := config.NewConfig(mk)
+	assert.Nil(t, cfg.Load("testdata/k9s1.yml"))
+
+	expectedDumpDirPath := config.K9sDumpDir
+
+	cfg.InstantiateK9sDumpDir()
+
+	assert.Equal(t, expectedDumpDirPath, config.K9sDumpDir)
+
+	_ = os.RemoveAll(config.K9sDumpDir)
+}
+
+func TestInstantiateK9sDumpDirManual(t *testing.T) {
+	mk := NewMockKubeSettings()
+	usr, err := user.Current()
+	assert.Nil(t, err)
+
+	expectedDumpDirPath := filepath.Join("/tmp/test/", fmt.Sprintf("k9s-screens-%s", usr.Username))
+
+	cfg := config.NewConfig(mk)
+	assert.Nil(t, cfg.Load("testdata/k9s1.yml"))
+	cfg.K9s.OverrideDumpDirPath(filepath.Join("/tmp/test"))
+
+	cfg.InstantiateK9sDumpDir()
+
+	assert.Equal(t, expectedDumpDirPath, config.K9sDumpDir)
+
+	_ = os.RemoveAll(config.K9sDumpDir)
+}
+
 // Helpers...
 
 func TestSetup(t *testing.T) {
@@ -347,6 +427,7 @@ var expectedConfig = `k9s:
     memory:
       critical: 90
       warn: 70
+  dumpDirPath: /tmp
 `
 
 var resetConfig = `k9s:
@@ -393,4 +474,5 @@ var resetConfig = `k9s:
     memory:
       critical: 90
       warn: 70
+  dumpDirPath: /tmp
 `
