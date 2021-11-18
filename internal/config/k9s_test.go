@@ -130,3 +130,29 @@ func TestK9sActiveCluster(t *testing.T) {
 	assert.Equal(t, "kube-system", cl.Namespace.Active)
 	assert.Equal(t, 5, len(cl.Namespace.Favorites))
 }
+
+func TestGetDumpDirPath(t *testing.T) {
+	mk := NewMockKubeSettings()
+	cfg := config.NewConfig(mk)
+	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
+
+	assert.Equal(t, "/usr/local", cfg.K9s.GetDumpDirPath())
+}
+
+func TestGetDumpDirPathOverride(t *testing.T) {
+	mk := NewMockKubeSettings()
+	cfg := config.NewConfig(mk)
+	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
+	cfg.K9s.OverrideDumpDirPath("/override")
+
+	assert.Equal(t, "/override", cfg.K9s.GetDumpDirPath())
+}
+
+func TestGetDumpDirPathOverrideEmpty(t *testing.T) {
+	mk := NewMockKubeSettings()
+	cfg := config.NewConfig(mk)
+	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
+	cfg.K9s.OverrideDumpDirPath("")
+
+	assert.Equal(t, "/usr/local", cfg.K9s.GetDumpDirPath())
+}

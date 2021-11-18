@@ -356,6 +356,8 @@ K9s uses aliases to navigate most K8s resources.
           - default
         view:
           active: dp
+    # The path to screen dump. The additional directory adds inside the directory 'k9s-screens-%username%'. Default: '%temp_dir%/k9s-screens-%username%' (k9s info) 
+    dumpDirPath: /tmp
   ```
 
 ---
