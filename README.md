@@ -442,10 +442,12 @@ Entering the command mode and typing a resource name or alias, could be cumberso
 
 ## FastForwards
 
-As of v0.25.0, you can leverage the `FastForwards` feature to tell K9s how to default with port-forwards. In situations where you are dealing with multiple containers or containers exposing multiple ports, it can be cumbersome to specify the desired port-forward from the dialog as in most cases, you already know which container/port tuple you desire. For these use cases, you can now annotate your manifests with the following annotations:
+As of v0.25.0, you can leverage the `FastForwards` feature to tell K9s how to default port-forwards. In situations where you are dealing with multiple containers or containers exposing multiple ports, it can be cumbersome to specify the desired port-forward from the dialog as in most cases, you already know which container/port tuple you desire. For these use cases, you can now annotate your manifests with the following annotations:
 
 1. k9scli.io/auto-portforwards -> activates one or more port-forwards directly bypassing the port-forward dialog all together.
 2. k9scli.io/portforwards      -> pre-selects one or more port-forwards when launching the port-forward dialog.
+
+The annotation value takes on the shape `container-name::[local-port:]container-port`
 
 > NOTE: for either cases above you can specify the container port by name or number in your annotation!
 
