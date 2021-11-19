@@ -278,7 +278,7 @@ K9s uses aliases to navigate most K8s resources.
 
 ## K9s Configuration
 
-  K9s keeps its configurations inside of a `k9s` directory and the location depends on your operating system. K9s leverages [XDG](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html) to load its various configurations files. For information on the default locations for your OS please see [this link](https://github.com/adrg/xdg/blob/master/README.md). If you are still confused a quick `k9s info` will reveal where k9s is loading its configurations from.
+  K9s keeps its configurations inside of a `k9s` directory and the location depends on your operating system. K9s leverages [XDG](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html) to load its various configurations files. For information on the default locations for your OS please see [this link](https://github.com/adrg/xdg/blob/master/README.md). If you are still confused a quick `k9s info` will reveal where k9s is loading its configurations from. if `XDG_CONFIG_HOME` is unset, then K9s will default to look for its configuration in `$HOME/.config/k9s`. Alternatively, you can set `K9SCONFIG` to tell K9s the directory location to pull its configurations from.
 
 
   | Unix            | macOS                       | Windows               |
@@ -437,6 +437,53 @@ Entering the command mode and typing a resource name or alias, could be cumberso
  You can choose any keyboard shortcuts that make sense to you, provided they are not part of the standard K9s shortcuts list.
 
 > NOTE: This feature/configuration might change in future releases!
+
+---
+
+## FastForwards
+
+As of v0.25.0, you can leverage the `FastForwards` feature to tell K9s how to default with port-forwards. In situations where you are dealing with multiple containers or containers exposing multiple ports, it can be cumbersome to specify the desired port-forward from the dialog as in most cases, you already know which container/port tuple you desire. For these use cases, you can now annotate your manifests with the following annotations:
+
+1. k9scli.io/auto-portforwards -> activates one or more port-forwards directly bypassing the port-forward dialog all together.
+2. k9scli.io/portforwards      -> pre-selects one or more port-forwards when launching the port-forward dialog.
+
+> NOTE: for either cases above you can specify the container port by name or number in your annotation!
+
+### Example
+
+```yaml
+# Pod fred
+apiVersion: v1
+kind: Pod
+metadata:
+  name: fred
+  annotations:
+    k9scli.io/auto-portforwards: zorg::5556        # => will default to container zorg port 5556 and local port 5566. No port-forward dialog will be shown.
+    # Or...
+    k9scli.io/portforward: bozo::9090:p1           # => launches the port-forward dialog selecting default port-forward on container bozo port named p1(8081)
+                                                   # mapping to local port 9090.
+    ...
+spec:
+  containers:
+  - name: zorg
+    ports:
+    - name: p1
+      containerPort: 5556
+    ...
+  - name: bozo
+    ports:
+    - name: p1
+      containerPort: 8081
+    - name: p2
+      containerPort: 5555
+    ...
+```
+
+The annotation value must specify a container to forward to as well as a local port and container port. The container port may be specified as either a port number or port name. If the local port is omitted then the local port will default to the container port number. Here are a few examples:
+
+1. bozo::http      - creates a pf on container `bozo` with port name http. If http specifies port number 8080 then the local port will be 8080 as well.
+2. bozo::9090:http - creates a pf on container `bozo` mapping local port 9090->http(8080)
+3. bozo::9090:8080 - creates a pf on container `bozo` mapping local port 9090->8080
 
 ---
 
