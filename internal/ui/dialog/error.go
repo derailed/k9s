@@ -28,7 +28,7 @@ func ShowError(styles config.Dialog, pages *ui.Pages, msg string) {
 	}
 	f.SetFocus(0)
 	modal := tview.NewModalForm("<error>", f)
-	modal.SetText(cowTalk(f, msg))
+	modal.SetText(cowTalk(msg))
 	modal.SetTextColor(tcell.ColorOrangeRed)
 	modal.SetDoneFunc(func(int, string) {
 		dismissError(pages)
@@ -41,7 +41,7 @@ func dismissError(pages *ui.Pages) {
 	pages.RemovePage(confirmKey)
 }
 
-func cowTalk(f *tview.Form, says string) string {
+func cowTalk(says string) string {
 	msg := fmt.Sprintf("< Ruroh? %s >", says)
 	buff := make([]string, 0, len(cow)+3)
 	buff = append(buff, msg)

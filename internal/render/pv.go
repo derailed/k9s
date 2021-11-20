@@ -127,14 +127,14 @@ func accessMode(aa []v1.PersistentVolumeAccessMode) string {
 	dd := accessDedup(aa)
 	s := make([]string, 0, len(dd))
 	for _, am := range dd {
-		switch {
-		case am == v1.ReadWriteOnce:
+		switch am {
+		case v1.ReadWriteOnce:
 			s = append(s, "RWO")
-		case am == v1.ReadOnlyMany:
+		case v1.ReadOnlyMany:
 			s = append(s, "ROX")
-		case am == v1.ReadWriteMany:
+		case v1.ReadWriteMany:
 			s = append(s, "RWX")
-		case am == v1.ReadWriteOncePod:
+		case v1.ReadWriteOncePod:
 			s = append(s, "RWOP")
 		}
 	}
