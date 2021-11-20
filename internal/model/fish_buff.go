@@ -129,12 +129,6 @@ func (f *FishBuff) fireSuggestionChanged(ss []string) {
 	} else {
 		suggest = ss[f.suggestionIndex]
 	}
-    f.SetText(f.GetText(), suggest)
+	f.SetText(f.GetText(), suggest)
 
-	// BOZO!!
-	//for _, l := range f.listeners {
-	//	if listener, ok := l.(SuggestionListener); ok {
-	//		listener.SuggestionChanged(text, sug)
-	//	}
-	//}
 }
