@@ -106,8 +106,7 @@ func TestLogViewSave(t *testing.T) {
 	ii.Lines(0, false, ll)
 	v.Flush(ll)
 
-	config.K9sDumpDir = "/tmp"
-	dir := filepath.Join(config.K9sDumpDir, app.Config.K9s.CurrentCluster)
+	dir := filepath.Join(app.Config.K9s.GetScreenDumpDir(), app.Config.K9s.CurrentCluster)
 	c1, _ := os.ReadDir(dir)
 	v.SaveCmd(nil)
 	c2, _ := os.ReadDir(dir)

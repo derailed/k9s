@@ -2,7 +2,6 @@ package config
 
 import (
 	"github.com/derailed/k9s/internal/client"
-	"os"
 )
 
 const (
@@ -12,38 +11,38 @@ const (
 
 // K9s tracks K9s configuration options.
 type K9s struct {
-	RefreshRate       int                 `yaml:"refreshRate"`
-	MaxConnRetry      int                 `yaml:"maxConnRetry"`
-	EnableMouse       bool                `yaml:"enableMouse"`
-	Headless          bool                `yaml:"headless"`
-	Logoless          bool                `yaml:"logoless"`
-	Crumbsless        bool                `yaml:"crumbsless"`
-	ReadOnly          bool                `yaml:"readOnly"`
-	NoIcons           bool                `yaml:"noIcons"`
-	Logger            *Logger             `yaml:"logger"`
-	CurrentContext    string              `yaml:"currentContext"`
-	CurrentCluster    string              `yaml:"currentCluster"`
-	Clusters          map[string]*Cluster `yaml:"clusters,omitempty"`
-	Thresholds        Threshold           `yaml:"thresholds"`
-	DumpDirPath       string              `yaml:"dumpDirPath"`
-	manualRefreshRate int
-	manualHeadless    *bool
-	manualLogoless    *bool
-	manualCrumbsless  *bool
-	manualReadOnly    *bool
-	manualCommand     *string
-	manualDumpDirPath *string
+	RefreshRate         int                 `yaml:"refreshRate"`
+	MaxConnRetry        int                 `yaml:"maxConnRetry"`
+	EnableMouse         bool                `yaml:"enableMouse"`
+	Headless            bool                `yaml:"headless"`
+	Logoless            bool                `yaml:"logoless"`
+	Crumbsless          bool                `yaml:"crumbsless"`
+	ReadOnly            bool                `yaml:"readOnly"`
+	NoIcons             bool                `yaml:"noIcons"`
+	Logger              *Logger             `yaml:"logger"`
+	CurrentContext      string              `yaml:"currentContext"`
+	CurrentCluster      string              `yaml:"currentCluster"`
+	Clusters            map[string]*Cluster `yaml:"clusters,omitempty"`
+	Thresholds          Threshold           `yaml:"thresholds"`
+	ScreenDumpDir       string              `yaml:"screenDumpDir"`
+	manualRefreshRate   int
+	manualHeadless      *bool
+	manualLogoless      *bool
+	manualCrumbsless    *bool
+	manualReadOnly      *bool
+	manualCommand       *string
+	manualScreenDumpDir *string
 }
 
 // NewK9s create a new K9s configuration.
 func NewK9s() *K9s {
 	return &K9s{
-		RefreshRate:  defaultRefreshRate,
-		MaxConnRetry: defaultMaxConnRetry,
-		Logger:       NewLogger(),
-		Clusters:     make(map[string]*Cluster),
-		Thresholds:   NewThreshold(),
-		DumpDirPath:  os.TempDir(),
+		RefreshRate:   defaultRefreshRate,
+		MaxConnRetry:  defaultMaxConnRetry,
+		Logger:        NewLogger(),
+		Clusters:      make(map[string]*Cluster),
+		Thresholds:    NewThreshold(),
+		ScreenDumpDir: K9sDefaultScreenDumpDir,
 	}
 }
 
@@ -95,9 +94,9 @@ func (k *K9s) OverrideCommand(cmd string) {
 	k.manualCommand = &cmd
 }
 
-// OverrideDumpDirPath set the dump dir path manually.
-func (k *K9s) OverrideDumpDirPath(path string) {
-	k.manualDumpDirPath = &path
+// OverrideScreenDumpDir set the screen dump dir manually.
+func (k *K9s) OverrideScreenDumpDir(dir string) {
+	k.manualScreenDumpDir = &dir
 }
 
 // IsHeadless returns headless setting.
@@ -164,14 +163,18 @@ func (k *K9s) ActiveCluster() *Cluster {
 	return k.Clusters[k.CurrentCluster]
 }
 
-func (k *K9s) GetDumpDirPath() string {
-	dumpDirPath := k.DumpDirPath
+func (k *K9s) GetScreenDumpDir() string {
+	screenDumpDir := k.ScreenDumpDir
 
-	if k.manualDumpDirPath != nil && *k.manualDumpDirPath != "" {
-		dumpDirPath = *k.manualDumpDirPath
+	if k.manualScreenDumpDir != nil && *k.manualScreenDumpDir != "" {
+		screenDumpDir = *k.manualScreenDumpDir
 	}
 
-	return dumpDirPath
+	if screenDumpDir == "" {
+		return K9sDefaultScreenDumpDir
+	}
+
+	return screenDumpDir
 }
 
 func (k *K9s) validateDefaults() {
@@ -180,6 +183,9 @@ func (k *K9s) validateDefaults() {
 	}
 	if k.MaxConnRetry <= 0 {
 		k.MaxConnRetry = defaultMaxConnRetry
+	}
+	if k.ScreenDumpDir == "" {
+		k.ScreenDumpDir = K9sDefaultScreenDumpDir
 	}
 }
 

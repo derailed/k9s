@@ -1,7 +1,5 @@
 package config
 
-import "os"
-
 const (
 	// DefaultRefreshRate represents the refresh interval.
 	DefaultRefreshRate = 2 // secs
@@ -24,7 +22,7 @@ type Flags struct {
 	ReadOnly      *bool
 	Write         *bool
 	Crumbsless    *bool
-	DumpDirPath   *string
+	ScreenDumpDir *string
 }
 
 // NewFlags returns new configuration flags.
@@ -39,7 +37,7 @@ func NewFlags() *Flags {
 		ReadOnly:      boolPtr(false),
 		Write:         boolPtr(false),
 		Crumbsless:    boolPtr(false),
-		DumpDirPath:   strPtr(os.TempDir()),
+		ScreenDumpDir: strPtr(K9sDefaultScreenDumpDir),
 	}
 }
 

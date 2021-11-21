@@ -61,8 +61,8 @@ func enableRegion(str string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(str, "<<<", "["), ">>>", "]")
 }
 
-func saveYAML(cluster, name, data string) (string, error) {
-	dir := filepath.Join(config.K9sDumpDir, dao.SanitizeFilename(cluster))
+func saveYAML(screenDumpDir, cluster, name, data string) (string, error) {
+	dir := filepath.Join(screenDumpDir, dao.SanitizeFilename(cluster))
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}

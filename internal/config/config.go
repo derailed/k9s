@@ -23,10 +23,8 @@ var (
 	K9sConfigFile = filepath.Join(K9sHome(), "config.yml")
 	// K9sLogs represents K9s log.
 	K9sLogs = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-%s.log", MustK9sUser()))
-	// k9sDumpDirPath represents a base directory where K9s screen dumps will be persisted.
-	k9sDumpDirPath = GetDumpConfigDirPath(K9sConfigFile)
-	// K9sDumpDir represents a directory where K9s screen dumps will be persisted.
-	K9sDumpDir = filepath.Join(k9sDumpDirPath, fmt.Sprintf("k9s-screens-%s", MustK9sUser()))
+	// K9sDefaultScreenDumpDir represents a default directory where K9s screen dumps will be persisted.
+	K9sDefaultScreenDumpDir = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-screens-%s", MustK9sUser()))
 )
 
 type (
@@ -130,6 +128,8 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 	if isSet(flags.ClusterName) {
 		c.K9s.CurrentCluster = *flags.ClusterName
 	}
+
+	EnsurePath(c.K9s.GetScreenDumpDir(), DefaultDirMod)
 
 	return nil
 }
@@ -281,39 +281,6 @@ func (c *Config) Dump(msg string) {
 	for k, cl := range c.K9s.Clusters {
 		log.Debug().Msgf("K9s cluster: %s -- %s\n", k, cl.Namespace)
 	}
-}
-
-// InstantiateK9sDumpDir create path to the K9sDumpDir with configurable path
-func (c *Config) InstantiateK9sDumpDir() {
-	dirPath := c.K9s.GetDumpDirPath()
-
-	if dirPath != "" && dirPath != k9sDumpDirPath {
-		K9sDumpDir = filepath.Join(dirPath, fmt.Sprintf("k9s-screens-%s", MustK9sUser()))
-	}
-
-	EnsurePath(K9sDumpDir, DefaultDirMod)
-}
-
-// GetDumpConfigDirPath get dump config dir path default or from K9sConfigFile configuration. For display
-func GetDumpConfigDirPath(configFilePath string) string {
-	defaultDir := os.TempDir()
-	if configFilePath != "" {
-		f, err := os.ReadFile(configFilePath)
-		if err != nil {
-			return defaultDir
-		}
-
-		var cfg Config
-		if err := yaml.Unmarshal(f, &cfg); err != nil {
-			return defaultDir
-		}
-		if cfg.K9s.DumpDirPath == "" {
-			return defaultDir
-		}
-		return cfg.K9s.DumpDirPath
-	}
-
-	return defaultDir
 }
 
 // ----------------------------------------------------------------------------

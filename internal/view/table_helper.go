@@ -9,17 +9,16 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/rs/zerolog/log"
 )
 
-func computeFilename(cluster, ns, title, path string) (string, error) {
+func computeFilename(screenDumpDir, cluster, ns, title, path string) (string, error) {
 	now := time.Now().UnixNano()
 
-	dir := filepath.Join(config.K9sDumpDir, dao.SanitizeFilename(cluster))
+	dir := filepath.Join(screenDumpDir, dao.SanitizeFilename(cluster))
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}
@@ -39,13 +38,13 @@ func computeFilename(cluster, ns, title, path string) (string, error) {
 	return strings.ToLower(filepath.Join(dir, fName)), nil
 }
 
-func saveTable(cluster, title, path string, data render.TableData) (string, error) {
+func saveTable(screenDumpDir, cluster, title, path string, data render.TableData) (string, error) {
 	ns := data.Namespace
 	if client.IsClusterWide(ns) {
 		ns = client.NamespaceAll
 	}
 
-	fPath, err := computeFilename(cluster, ns, title, path)
+	fPath, err := computeFilename(screenDumpDir, cluster, ns, title, path)
 	if err != nil {
 		return "", err
 	}
