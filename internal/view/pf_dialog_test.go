@@ -6,25 +6,23 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestExtractContainer(t *testing.T) {
+func TestExtractPort(t *testing.T) {
 	uu := map[string]struct {
-		port, e string
+		portSpec, e string
 	}{
 		"full": {
-			"co/port:8000", "co",
+			portSpec: "co::8000",
+			e:        "8000",
 		},
-		"unamed": {
-			"co/:8000", "co",
-		},
-		"protocol": {
-			"co/dns:53╱UDP", "co",
+		"toast": {
+			portSpec: "co:8000",
 		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, extractContainer(u.port))
+			assert.Equal(t, u.e, extractPort(u.portSpec))
 		})
 	}
 }

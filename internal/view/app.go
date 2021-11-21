@@ -91,13 +91,7 @@ func (a *App) Init(version string, rate int) error {
 	if a.Conn() == nil {
 		return errors.New("No client connection detected")
 	}
-	ns, err := a.Conn().Config().CurrentNamespaceName()
-	log.Debug().Msgf("CURRENT-NS %q -- %v", ns, err)
-	if err != nil {
-		log.Info().Msg("No namespace specified using cluster default namespace")
-	} else if err = a.Config.SetActiveNamespace(ns); err != nil {
-		log.Error().Err(err).Msgf("Fail to set active namespace to %q", ns)
-	}
+	ns := a.Config.ActiveNamespace()
 
 	a.factory = watch.NewFactory(a.Conn())
 	ok, err := a.isValidNS(ns)

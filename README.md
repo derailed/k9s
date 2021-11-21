@@ -278,12 +278,11 @@ K9s uses aliases to navigate most K8s resources.
 
 ## K9s Configuration
 
-  K9s keeps its configurations inside of a `k9s` directory and the location depends on your operating system. K9s leverages [XDG](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html) to load its various configurations files. For information on the default locations for your OS please see [this link](https://github.com/adrg/xdg/blob/master/README.md). If you are still confused a quick `k9s info` will reveal where k9s is loading its configurations from. if `XDG_CONFIG_HOME` is unset, then K9s will default to look for its configuration in `$HOME/.config/k9s`. Alternatively, you can set `K9SCONFIG` to tell K9s the directory location to pull its configurations from.
+  K9s keeps its configurations inside of a `k9s` directory and the location depends on your operating system. K9s leverages [XDG](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html) to load its various configurations files. For information on the default locations for your OS please see [this link](https://github.com/adrg/xdg/blob/master/README.md). If you are still confused a quick `k9s info` will reveal where k9s is loading its configurations from. Alternatively, you can set `K9SCONFIG` to tell K9s the directory location to pull its configurations from.
 
-
-  | Unix            | macOS                       | Windows               |
-  |-----------------|-----------------------------|-----------------------|
-  | `~/.config/k9s` | `~/Library/Preferences/k9s` | `%LOCALAPPDATA%\k9s` |
+  | Unix            | macOS                              | Windows               |
+  |-----------------|------------------------------------|-----------------------|
+  | `~/.config/k9s` | `~/Library/Application Support/k9s` | `%LOCALAPPDATA%\k9s`  |
 
   > NOTE: This is still in flux and will change while in pre-release stage!
 

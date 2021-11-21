@@ -155,11 +155,8 @@ func (c *Command) defaultCmd() error {
 	}
 	tokens := strings.Split(view, " ")
 	cmd := view
-	if len(tokens) == 1 || c.app.Conn().Config().OverrideNS {
-		ns, err := c.app.Conn().Config().CurrentNamespaceName()
-		if err == nil && !isContextCmd(tokens[0]) {
-			cmd = tokens[0] + " " + ns
-		}
+	if len(tokens) == 1 {
+		cmd = tokens[0] + " " + c.app.Config.ActiveNamespace()
 	}
 
 	if err := c.run(cmd, "", true); err != nil {

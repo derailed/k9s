@@ -20,6 +20,17 @@ func (c ContainerPortSpecs) Dump() string {
 	return strings.Join(ss, "\n")
 }
 
+// InSpecs checks if given port matches a spec.
+func (c ContainerPortSpecs) MatchSpec(s string) bool {
+	for _, spec := range c {
+		if spec.MatchSpec(s) {
+			return true
+		}
+	}
+
+	return false
+}
+
 // ToTunnels convert port specs to tunnels.
 func (c ContainerPortSpecs) ToTunnels(address string) PortTunnels {
 	tt := make(PortTunnels, 0, len(c))
@@ -95,6 +106,15 @@ func NewPortSpec(co, portName string, port int32) ContainerPortSpec {
 		PortName:  portName,
 		PortNum:   strconv.Itoa(int(port)),
 	}
+}
+
+func (c ContainerPortSpec) MatchSpec(s string) bool {
+	tokens := strings.Split(s, "::")
+	if len(tokens) < 2 {
+		return false
+	}
+
+	return tokens[0] == c.Container && tokens[1] == c.PortNum
 }
 
 func (c ContainerPortSpec) ToTunnel(address string) PortTunnel {

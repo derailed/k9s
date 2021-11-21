@@ -374,6 +374,7 @@ func pipe(ctx context.Context, opts shellOpts, cmds ...*exec.Cmd) error {
 			return cmd.Start()
 		}
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+		// BOZO!!
 		//cmd.SysProcAttr = &syscall.SysProcAttr{
 		////	//Setpgid:    true,
 		////	//Setctty:    true,
@@ -385,6 +386,8 @@ func pipe(ctx context.Context, opts shellOpts, cmds ...*exec.Cmd) error {
 		err := cmd.Run()
 		log.Debug().Msgf("Running Done")
 		return err
+
+		// BOZO!!
 		// select {
 		// case <-ctx.Done():
 		// 	return errors.New("canceled by operator")

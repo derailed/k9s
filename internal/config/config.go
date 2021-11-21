@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 
 	"github.com/adrg/xdg"
@@ -60,14 +59,6 @@ func K9sHome() string {
 	if env := os.Getenv(K9sConfig); env != "" {
 		return env
 	}
-	if env := os.Getenv("XDG_CONFIG_HOME"); env == "" {
-		dir, err := os.UserHomeDir()
-		if err != nil {
-			log.Error().Err(err).Msgf("user home dir")
-			return ""
-		}
-		return path.Join(dir, ".config", "k9s")
-	}
 
 	xdgK9sHome, err := xdg.ConfigFile("k9s")
 	if err != nil {
@@ -116,6 +107,8 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 		ns, override = *flags.Namespace, true
 	} else if context.Namespace != "" {
 		ns = context.Namespace
+	} else if cl := c.K9s.ActiveCluster(); cl != nil {
+		ns = cl.Namespace.Active
 	}
 
 	if ns != "" {
