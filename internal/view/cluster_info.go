@@ -2,7 +2,6 @@ package view
 
 import (
 	"fmt"
-	"runtime"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -103,7 +102,7 @@ func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
 	c.app.QueueUpdateDraw(func() {
 		c.Clear()
 		c.layout()
-		row := c.setCell(0, fmt.Sprintf("%s [%d]", curr.Context, runtime.NumGoroutine()))
+		row := c.setCell(0, curr.Context)
 		row = c.setCell(row, curr.Cluster)
 		row = c.setCell(row, curr.User)
 		if curr.K9sLatest != "" {

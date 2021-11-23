@@ -156,12 +156,15 @@ func (c *Command) defaultCmd() error {
 	tokens := strings.Split(view, " ")
 	cmd := view
 	if len(tokens) == 1 {
-		cmd = tokens[0] + " " + c.app.Config.ActiveNamespace()
+		if !isContextCmd(tokens[0]) {
+			cmd = tokens[0] + " " + c.app.Config.ActiveNamespace()
+		}
 	}
 
 	if err := c.run(cmd, "", true); err != nil {
-		log.Error().Err(err).Msgf("Default run command failed")
-		return c.run("meow", err.Error(), true)
+		log.Error().Err(err).Msgf("Default run command failed %q", cmd)
+		c.app.cowCmd(err.Error())
+		return err
 	}
 	return nil
 }

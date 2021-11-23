@@ -41,7 +41,7 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 	f.AddInputField("Container Port:", p1, fieldLen, nil, nil)
 	coField := f.GetFormItemByLabel("Container Port:").(*tview.InputField)
 	if coField.GetText() == "" {
-		coField.SetPlaceholder("Enter a container name/port")
+		coField.SetPlaceholder("Enter a container name::port")
 	}
 	f.AddInputField("Local Port:", p2, fieldLen, nil, nil)
 	loField := f.GetFormItemByLabel("Local Port:").(*tview.InputField)
