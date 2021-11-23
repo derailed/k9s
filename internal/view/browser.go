@@ -127,7 +127,7 @@ func (b *Browser) SetInstance(path string) {
 // Start initializes browser updates.
 func (b *Browser) Start() {
 	b.app.Config.ValidateFavorites()
-	if err := b.app.switchNS(b.GetModel().GetNamespace()); err != nil {
+	if err := b.app.switchNS(b.app.Config.ActiveNamespace()); err != nil {
 		log.Error().Err(err).Msgf("ns switch failed")
 	}
 	if err := b.app.Config.Save(); err != nil {

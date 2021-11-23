@@ -84,7 +84,7 @@ func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
 		}
 		bb.WriteString("[" + paint + "::b]" + l.Container + "[-::-] ")
 	} else if len(l.Pod) > 0 {
-		bb.WriteString("[-::]")
+		bb.WriteString("[-::] ")
 	}
 
 	if index > 0 {
