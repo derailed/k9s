@@ -92,7 +92,7 @@ func (c *Config) SwitchContext(name string) error {
 	}
 	context, err := c.GetContext(name)
 	if err != nil {
-		return fmt.Errorf("context %s does not exist", name)
+		return fmt.Errorf("context %q does not exist", name)
 	}
 	c.flags.Context = &name
 	c.flags.ClusterName = &(context.Cluster)
