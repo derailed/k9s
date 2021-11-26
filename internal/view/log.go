@@ -23,11 +23,11 @@ import (
 )
 
 const (
-	logTitle     = "logs"
-	logMessage   = "Waiting for logs...\n"
-	logFmt       = " Logs([hilite:bg:]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
-	logCoFmt     = " Logs([hilite:bg:]%s:[hilite:bg:b]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
-	flushTimeout = 1 * time.Millisecond
+	logTitle            = "logs"
+	logMessage          = "Waiting for logs...\n"
+	logFmt              = " Logs([hilite:bg:]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
+	logCoFmt            = " Logs([hilite:bg:]%s:[hilite:bg:b]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
+	defaultFlushTimeout = 50 * time.Millisecond
 )
 
 // Log represents a generic log viewer.
@@ -53,7 +53,7 @@ func NewLog(gvr client.GVR, opts *dao.LogOptions) *Log {
 	l := Log{
 		Flex:    tview.NewFlex(),
 		logChan: make(dao.LogChan, 2),
-		model:   model.NewLog(gvr, opts, flushTimeout),
+		model:   model.NewLog(gvr, opts, defaultFlushTimeout),
 		follow:  true,
 	}
 

@@ -333,8 +333,8 @@ github.com/derailed/popeye v0.9.8 h1:53Rdx09WloOj6ltZZq9OeS48zH0F44mEMcs8XaI1g0Q
 github.com/derailed/popeye v0.9.8/go.mod h1:Ih3wTG7wBOuxdqz5tlCuCFq/vyB+Te/IpqY5HwgUTEA=
 github.com/derailed/tcell/v2 v2.3.1-rc.2 h1:9TmZB/IwL3MA1Jf4pC4rfMaPTcVYIN62IwE7X7A9emU=
 github.com/derailed/tcell/v2 v2.3.1-rc.2/go.mod h1:wegJ+SscH+jPjEQIAV/dI/grLTRm5R4IE2M479NDSL0=
-github.com/derailed/tview v0.6.4 h1:LKNIqodvwW/IT/OXGMz52bIV53sGBBYFYqSFT68ExZk=
-github.com/derailed/tview v0.6.4/go.mod h1:A1LXWlbx/YDMXr3GVTy+IgclAkBssJpw/FiZ7aqUgzU=
+github.com/derailed/tview v0.6.5 h1:e377Rv6zYtwtmzDZFmwgkJiiZl/Ax3KIqfx2rlcwWo4=
+github.com/derailed/tview v0.6.5/go.mod h1:A1LXWlbx/YDMXr3GVTy+IgclAkBssJpw/FiZ7aqUgzU=
 github.com/dgrijalva/jwt-go v0.0.0-20170104182250-a601269ab70c/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgryski/go-sip13 v0.0.0-20181026042036-e10d5fee7954/go.mod h1:vAd38F8PWV+bWy6jNmig1y/TA+kYO4g3RSRF0IAv0no=

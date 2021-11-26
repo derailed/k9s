@@ -50,7 +50,7 @@ func TestLogFlush(t *testing.T) {
 	items.Lines(0, false, ll)
 	v.Flush(ll)
 
-	assert.Equal(t, "[orange::d]Waiting for logs...\n[black:]blee\n[green:]Bozo\n\n", v.Logs().GetText(false))
+	assert.Equal(t, "[orange::d]Waiting for logs...\n[black::]blee\n[green::]Bozo\n\n", v.Logs().GetText(false))
 }
 
 func BenchmarkLogFlush(b *testing.B) {

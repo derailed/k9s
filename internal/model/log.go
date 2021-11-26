@@ -306,7 +306,6 @@ func (l *Log) updateLogs(ctx context.Context, c dao.LogChan) {
 				return
 			}
 			if item == dao.ItemEOF {
-				log.Debug().Msgf("!!!!!GOT EOF!!!!!!")
 				l.fireCanceled()
 				return
 			}
@@ -323,7 +322,6 @@ func (l *Log) updateLogs(ctx context.Context, c dao.LogChan) {
 		case <-time.After(l.flushTimeout):
 			l.Notify()
 		case <-ctx.Done():
-			log.Debug().Msgf("!!!LOG_MODEL IS CANCELED!!!")
 			return
 		}
 	}
