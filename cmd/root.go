@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"runtime/debug"
 
 	"github.com/derailed/k9s/internal/client"
@@ -61,6 +62,17 @@ func run(cmd *cobra.Command, args []string) {
 			fmt.Println(color.Colorize(fmt.Sprintf("%v.", err), color.LightGray))
 		}
 	}()
+
+	config.EnsurePath(*k9sFlags.LogFile, config.DefaultDirMod)
+	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
+	file, err := os.OpenFile(*k9sFlags.LogFile, mod, config.DefaultFileMod)
+	defer func() {
+		_ = file.Close()
+	}()
+	if err != nil {
+		panic(err)
+	}
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: file})
 
 	zerolog.SetGlobalLevel(parseLevel(*k9sFlags.LogLevel))
 	app := view.NewApp(loadConfiguration())
@@ -149,6 +161,12 @@ func initK9sFlags() {
 		"logLevel", "l",
 		config.DefaultLogLevel,
 		"Specify a log level (info, warn, debug, error, fatal, panic, trace)",
+	)
+	rootCmd.Flags().StringVarP(
+		k9sFlags.LogFile,
+		"logFile", "",
+		config.DefaultLogFile,
+		"Specify the log file",
 	)
 	rootCmd.Flags().BoolVar(
 		k9sFlags.Headless,

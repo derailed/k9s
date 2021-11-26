@@ -25,7 +25,7 @@ func printInfo() {
 
 	printLogo(color.Cyan)
 	printTuple(fmat, "Configuration", config.K9sConfigFile, color.Cyan)
-	printTuple(fmat, "Logs", config.K9sLogs, color.Cyan)
+	printTuple(fmat, "Logs", config.DefaultLogFile, color.Cyan)
 	printTuple(fmat, "Screen Dumps", config.K9sDumpDir, color.Cyan)
 }
 

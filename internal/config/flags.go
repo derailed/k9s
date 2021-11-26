@@ -1,5 +1,11 @@
 package config
 
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+)
+
 const (
 	// DefaultRefreshRate represents the refresh interval.
 	DefaultRefreshRate = 2 // secs
@@ -11,10 +17,14 @@ const (
 	DefaultCommand = ""
 )
 
+// DefaultLogFile represents the default K9s log file.
+var DefaultLogFile = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-%s.log", MustK9sUser()))
+
 // Flags represents K9s configuration flags.
 type Flags struct {
 	RefreshRate   *int
 	LogLevel      *string
+	LogFile       *string
 	Headless      *bool
 	Logoless      *bool
 	Command       *string
@@ -29,6 +39,7 @@ func NewFlags() *Flags {
 	return &Flags{
 		RefreshRate:   intPtr(DefaultRefreshRate),
 		LogLevel:      strPtr(DefaultLogLevel),
+		LogFile:       strPtr(DefaultLogFile),
 		Headless:      boolPtr(false),
 		Logoless:      boolPtr(false),
 		Command:       strPtr(DefaultCommand),
