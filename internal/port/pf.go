@@ -11,13 +11,16 @@ import (
 
 const (
 	// K9sAutoPortForwardKey represents an auto portforwards annotation.
-	K9sAutoPortForwardsKey = "k9scli.io/auto-portforwards"
+	K9sAutoPortForwardsKey = "k9scli.io/auto-port-forwards"
 
 	// K9sPortForwardKey represents a portforwards annotation.
-	K9sPortForwardsKey = "k9scli.io/portforwards"
+	K9sPortForwardsKey = "k9scli.io/port-forwards"
 )
 
-var pfRX = regexp.MustCompile(`\A([\w-]+)::(\d*):?(\d*|[\w-]*)/?(\d+)?\z`)
+var (
+	pfRX      = regexp.MustCompile(`\A([\w-]+)::(\d*):?(\d*|[\w-]*)/?(\d+)?\z`)
+	pfPlainRX = regexp.MustCompile(`\A(\d*):?(\d*|[\w-]*)\z`)
+)
 
 // PFAnn represents a portforward annotation value.
 // Shape: container/portname|portNum:localPort
@@ -28,12 +31,37 @@ type PFAnn struct {
 	containerPortNum string
 }
 
+func ParsePlainPF(ann string) (*PFAnn, error) {
+	if len(ann) == 0 {
+		return nil, fmt.Errorf("invalid annotation %q", ann)
+	}
+	var pf PFAnn
+	mm := pfPlainRX.FindStringSubmatch(strings.TrimSpace(ann))
+	if len(mm) < 3 {
+		return nil, fmt.Errorf("Invalid plain port-forward %s", ann)
+	}
+	if len(mm[2]) == 0 {
+		pf.ContainerPort = intstr.Parse(mm[1])
+		pf.LocalPort = mm[1]
+		return &pf, nil
+	}
+	pf.LocalPort, pf.ContainerPort = mm[1], intstr.Parse(mm[2])
+
+	return &pf, nil
+}
+
 // ParsePF hydrate a portforward annotation from string.
 func ParsePF(ann string) (*PFAnn, error) {
+	if pf, err := ParsePlainPF(ann); err == nil {
+		return pf, nil
+	}
 	var pf PFAnn
+	if mm := pfPlainRX.FindStringSubmatch(strings.TrimSpace(ann)); len(mm) == 3 {
+		pf.containerPortNum = mm[0]
+	}
 	r := pfRX.FindStringSubmatch(strings.TrimSpace(ann))
 	if len(r) < 4 {
-		return &pf, fmt.Errorf("invalid pf annotation %s", ann)
+		return &pf, fmt.Errorf("invalid port-forward specification %s", ann)
 	}
 	pf.Container = r[1]
 	pf.LocalPort, pf.ContainerPort = r[2], intstr.Parse(r[3])

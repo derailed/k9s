@@ -11,40 +11,47 @@ import (
 
 func TestParsePFs(t *testing.T) {
 	uu := map[string]struct {
-		exp string
-		pfs port.PFAnns
-		e   error
+		spec string
+		pfs  port.PFAnns
+		e    error
 	}{
 		"single": {
-			exp: "c2::4321:1234",
+			spec: "c2::4321:1234",
 			pfs: port.PFAnns{
 				{Container: "c2", ContainerPort: intstr.Parse("1234"), LocalPort: "4321"},
 			},
 		},
 		"multi": {
-			exp: "c1::4321:1234,c2::6666:6543",
+			spec: "c1::4321:1234,c2::6666:6543",
 			pfs: port.PFAnns{
 				{Container: "c1", ContainerPort: intstr.Parse("1234"), LocalPort: "4321"},
 				{Container: "c2", ContainerPort: intstr.Parse("6543"), LocalPort: "6666"},
 			},
 		},
 		"spaces": {
-			exp: " c1::4321:1234 , c2::6666:6543 ",
+			spec: " c1::4321:1234 , c2::6666:6543 ",
 			pfs: port.PFAnns{
 				{Container: "c1", ContainerPort: intstr.Parse("1234"), LocalPort: "4321"},
 				{Container: "c2", ContainerPort: intstr.Parse("6543"), LocalPort: "6666"},
 			},
 		},
+		"plain-multi": {
+			spec: "4321:1234, 6666:6543",
+			pfs: port.PFAnns{
+				{ContainerPort: intstr.Parse("1234"), LocalPort: "4321"},
+				{ContainerPort: intstr.Parse("6543"), LocalPort: "6666"},
+			},
+		},
 		"toast": {
-			exp: "c1::p1:1234,c2::4321",
-			e:   errors.New("invalid pf annotation c1::p1:1234"),
+			spec: "c1::p1:1234,c2::4321",
+			e:    errors.New("invalid port-forward specification c1::p1:1234"),
 		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			pfs, err := port.ParsePFs(u.exp)
+			pfs, err := port.ParsePFs(u.spec)
 			assert.Equal(t, u.e, err)
 			if err != nil {
 				return
@@ -78,7 +85,7 @@ func TestPFsToTunnel(t *testing.T) {
 			pts: port.PortTunnels{
 				{Address: "fred", Container: "c2", ContainerPort: "1234", LocalPort: "4321"},
 			},
-			e: errors.New("ann does not match container port specs"),
+			e: errors.New("no port number assigned"),
 		},
 	}
 

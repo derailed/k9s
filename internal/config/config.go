@@ -10,7 +10,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
@@ -40,9 +39,6 @@ type (
 
 		// ClusterNames() returns all available cluster names.
 		ClusterNames() ([]string, error)
-
-		// NamespaceNames returns all available namespace names.
-		NamespaceNames(nn []v1.Namespace) []string
 	}
 
 	// Config tracks K9s configuration options.

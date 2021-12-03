@@ -21,7 +21,7 @@ func TestGenericRender(t *testing.T) {
 		"withNS": {
 			ns:      "ns1",
 			table:   makeNSGeneric(),
-			eID:     "ns1/c1",
+			eID:     "ns1/fred",
 			eFields: render.Fields{"ns1", "c1", "c2", "c3"},
 			eHeader: render.Header{
 				render.HeaderColumn{Name: "NAMESPACE"},
@@ -33,7 +33,7 @@ func TestGenericRender(t *testing.T) {
 		"all": {
 			ns:      client.NamespaceAll,
 			table:   makeNSGeneric(),
-			eID:     "ns1/c1",
+			eID:     "ns1/fred",
 			eFields: render.Fields{"ns1", "c1", "c2", "c3"},
 			eHeader: render.Header{
 				render.HeaderColumn{Name: "NAMESPACE"},
@@ -45,7 +45,7 @@ func TestGenericRender(t *testing.T) {
 		"allNS": {
 			ns:      client.AllNamespaces,
 			table:   makeNSGeneric(),
-			eID:     "ns1/c1",
+			eID:     "ns1/fred",
 			eFields: render.Fields{"ns1", "c1", "c2", "c3"},
 			eHeader: render.Header{
 				render.HeaderColumn{Name: "NAMESPACE"},
@@ -57,7 +57,7 @@ func TestGenericRender(t *testing.T) {
 		"clusterWide": {
 			ns:      client.ClusterScope,
 			table:   makeNoNSGeneric(),
-			eID:     "-/c1",
+			eID:     "-/fred",
 			eFields: render.Fields{"-", "c1", "c2", "c3"},
 			eHeader: render.Header{
 				render.HeaderColumn{Name: "NAMESPACE"},
@@ -69,7 +69,7 @@ func TestGenericRender(t *testing.T) {
 		"age": {
 			ns:      client.ClusterScope,
 			table:   makeAgeGeneric(),
-			eID:     "-/c1",
+			eID:     "-/fred",
 			eFields: render.Fields{"-", "c1", "c2", "Age"},
 			eHeader: render.Header{
 				render.HeaderColumn{Name: "NAMESPACE"},

@@ -285,20 +285,12 @@ func TestConfigBadConfig(t *testing.T) {
 }
 
 func TestNamespaceNames(t *testing.T) {
-	kubeConfig := "./testdata/config"
-
-	flags := genericclioptions.ConfigFlags{
-		KubeConfig: &kubeConfig,
-	}
-
-	cfg := client.NewConfig(&flags)
-
 	nn := []v1.Namespace{
 		{ObjectMeta: metav1.ObjectMeta{Name: "ns1"}},
 		{ObjectMeta: metav1.ObjectMeta{Name: "ns2"}},
 	}
 
-	nns := cfg.NamespaceNames(nn)
+	nns := client.NamespaceNames(nn)
 	assert.Equal(t, 2, len(nns))
 	assert.Equal(t, []string{"ns1", "ns2"}, nns)
 }
