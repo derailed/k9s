@@ -2,6 +2,7 @@ package view
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/port"
@@ -41,16 +42,21 @@ func (p *PortForwardExtender) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	pod, err := p.fetchPodName(path)
+	p.fetchPodName(path)
+	pod, err := fetchPod(p.App().factory, path)
 	if err != nil {
 		p.App().Flash().Err(err)
 		return nil
 	}
-	if p.App().factory.Forwarders().IsPodForwarded(pod) {
+	if pod.Status.Phase != v1.PodRunning {
+		p.App().Flash().Errf("pod must be running. Current status=%v", pod.Status.Phase)
+		return nil
+	}
+	if p.App().factory.Forwarders().IsPodForwarded(path) {
 		p.App().Flash().Errf("A PortForward already exist for pod %s", pod)
 		return nil
 	}
-	if err := showFwdDialog(p, pod, startFwdCB); err != nil {
+	if err := showFwdDialog(p, path, startFwdCB); err != nil {
 		p.App().Flash().Err(err)
 	}
 
@@ -77,7 +83,6 @@ func runForward(v ResourceViewer, pf watch.Forwarder, f *portforward.PortForward
 	v.App().factory.AddForwarder(pf)
 
 	v.App().QueueUpdateDraw(func() {
-		v.App().Flash().Infof("PortForward activated %s", pf.ID())
 		DismissPortForwards(v, v.App().Content.Pages)
 	})
 
@@ -98,6 +103,7 @@ func startFwdCB(v ResourceViewer, path string, pts port.PortTunnels) error {
 		return err
 	}
 
+	tt := make([]string, 0, len(pts))
 	for _, pt := range pts {
 		if _, ok := v.App().factory.ForwarderFor(dao.PortForwardID(path, pt.Container, pt.PortMap())); ok {
 			return fmt.Errorf("A port-forward is already active on pod %s", path)
@@ -109,7 +115,13 @@ func startFwdCB(v ResourceViewer, path string, pts port.PortTunnels) error {
 		}
 		log.Debug().Msgf(">>> Starting port forward %q -- %#v", pf.ID(), pt)
 		go runForward(v, pf, fwd)
+		tt = append(tt, pt.ContainerPort)
 	}
+	if len(tt) == 1 {
+		v.App().Flash().Infof("PortForward activated %s", tt[0])
+		return nil
+	}
+	v.App().Flash().Infof("PortForwards activated %s", strings.Join(tt, ","))
 
 	return nil
 }

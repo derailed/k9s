@@ -84,9 +84,6 @@ var Registry = map[string]ResourceMeta{
 	"v1/endpoints": {
 		Renderer: &render.Endpoints{},
 	},
-	"v1/events": {
-		Renderer: &render.Event{},
-	},
 	"v1/pods": {
 		DAO:          &dao.Pod{},
 		Renderer:     &render.Pod{},

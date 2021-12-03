@@ -41,9 +41,21 @@ func TestParsePF(t *testing.T) {
 			containerPort: intstr.Parse("1234"),
 			localPort:     "1234",
 		},
+		"plain-single": {
+			exp:           "1234",
+			container:     "",
+			containerPort: intstr.Parse("1234"),
+			localPort:     "1234",
+		},
+		"plain-full": {
+			exp:           "4321:1234",
+			container:     "",
+			containerPort: intstr.Parse("1234"),
+			localPort:     "4321",
+		},
 		"toast": {
 			exp: "c1:4321:1234",
-			e:   errors.New("invalid pf annotation c1:4321:1234"),
+			e:   errors.New("invalid port-forward specification c1:4321:1234"),
 		},
 	}
 

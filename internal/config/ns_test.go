@@ -27,14 +27,12 @@ func TestNSValidateMissing(t *testing.T) {
 	mc := NewMockConnection()
 	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
 	mk := NewMockKubeSettings()
-	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"ns1", "ns2"})
 
 	ns := config.NewNamespace()
 	ns.Validate(mc, mk)
 
-	mk.VerifyWasCalledOnce()
 	assert.Equal(t, "default", ns.Active)
-	assert.Equal(t, []string{}, ns.Favorites)
+	assert.Equal(t, []string{"default"}, ns.Favorites)
 }
 
 func TestNSValidateNoNS(t *testing.T) {
@@ -78,17 +76,13 @@ func TestNSSetActive(t *testing.T) {
 }
 
 func TestNSValidateRmFavs(t *testing.T) {
-	allNS := []string{"default", "kube-system"}
-
 	mc := NewMockConnection()
 	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
-
 	mk := NewMockKubeSettings()
-	m.When(mk.NamespaceNames(namespaces())).ThenReturn(allNS)
 
 	ns := config.NewNamespace()
 	ns.Favorites = []string{"default", "fred", "blee"}
 	ns.Validate(mc, mk)
 
-	assert.Equal(t, []string{"default"}, ns.Favorites)
+	assert.Equal(t, []string{"default", "fred"}, ns.Favorites)
 }

@@ -32,9 +32,6 @@ func (aa PFAnns) ToPortSpec(pp ContainerPortSpecs) (string, string) {
 func (aa PFAnns) ToTunnels(address string, pp ContainerPortSpecs, available PortChecker) (PortTunnels, error) {
 	pts := make(PortTunnels, 0, len(aa))
 	for _, a := range aa {
-		if !a.Match(pp) {
-			return nil, fmt.Errorf("ann does not match container port specs")
-		}
 		pt, err := a.ToTunnel(address)
 		if err != nil {
 			return pts, err

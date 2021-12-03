@@ -32,7 +32,7 @@ func (n *Namespace) Validate(c client.Connection, ks KubeSettings) {
 	if err != nil {
 		return
 	}
-	nn := ks.NamespaceNames(nns)
+	nn := client.NamespaceNames(nns)
 	if !n.isAllNamespaces() && !InList(nn, n.Active) {
 		log.Error().Msgf("[Config] Validation error active namespace %q does not exists", n.Active)
 	}

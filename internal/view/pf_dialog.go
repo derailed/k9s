@@ -3,6 +3,7 @@ package view
 import (
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal/port"
@@ -39,20 +40,20 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 	p1, p2 := pf.ToPortSpec(ports)
 	fieldLen := int(math.Max(30, float64(len(p1))))
 	f.AddInputField("Container Port:", p1, fieldLen, nil, nil)
+	f.AddInputField("Local Port:", p2, fieldLen, nil, nil)
 	coField := f.GetFormItemByLabel("Container Port:").(*tview.InputField)
+	loField := f.GetFormItemByLabel("Local Port:").(*tview.InputField)
 	if coField.GetText() == "" {
 		coField.SetPlaceholder("Enter a container name::port")
-	}
-	f.AddInputField("Local Port:", p2, fieldLen, nil, nil)
-	loField := f.GetFormItemByLabel("Local Port:").(*tview.InputField)
-	if loField.GetText() == "" {
-		loField.SetPlaceholder("Enter a local port")
 	}
 	coField.SetChangedFunc(func(s string) {
 		port := extractPort(s)
 		loField.SetText(port)
 		p2 = port
 	})
+	if loField.GetText() == "" {
+		loField.SetPlaceholder("Enter a local port")
+	}
 	f.AddInputField("Address:", address, fieldLen, nil, func(h string) {
 		address = h
 	})
@@ -68,10 +69,6 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 	f.AddButton("OK", func() {
 		if coField.GetText() == "" || loField.GetText() == "" {
 			v.App().Flash().Err(fmt.Errorf("container to local port mismatch"))
-			return
-		}
-		if !ports.MatchSpec(coField.GetText()) {
-			v.App().Flash().Err(fmt.Errorf("invalid container port"))
 			return
 		}
 		tt, err := port.ToTunnels(address, coField.GetText(), loField.GetText())
@@ -122,10 +119,16 @@ func DismissPortForwards(v ResourceViewer, p *ui.Pages) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func extractPort(coPort string) string {
-	tokens := strings.Split(coPort, "::")
+func extractPort(port string) string {
+	tokens := strings.Split(port, "::")
 	if len(tokens) < 2 {
-		return ""
+		ports := strings.Split(port, ",")
+		for _, t := range ports {
+			if _, err := strconv.Atoi(strings.TrimSpace(t)); err != nil {
+				return ""
+			}
+		}
+		return port
 	}
 
 	return tokens[1]

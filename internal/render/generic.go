@@ -61,16 +61,15 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 	if !ok {
 		return fmt.Errorf("expecting a TableRow but got %T", o)
 	}
-	nns, err := resourceNS(row.Object.Raw)
+	nns, name, err := resourceNS(row.Object.Raw)
 	if err != nil {
 		return err
 	}
 
-	n, ok := row.Cells[0].(string)
 	if !ok {
 		return fmt.Errorf("expecting row 0 to be a string but got %T", row.Cells[0])
 	}
-	r.ID = client.FQN(nns, n)
+	r.ID = client.FQN(nns, name)
 	r.Fields = make(Fields, 0, len(g.Header(ns)))
 	r.Fields = append(r.Fields, nns)
 	var ageCell interface{}
@@ -95,26 +94,35 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func resourceNS(raw []byte) (string, error) {
+func resourceNS(raw []byte) (string, string, error) {
 	var obj map[string]interface{}
+	var ns, name string
 	err := json.Unmarshal(raw, &obj)
 	if err != nil {
-		return "", err
+		return ns, name, err
 	}
 
 	meta, ok := obj["metadata"].(map[string]interface{})
 	if !ok {
-		return "", errors.New("no metadata found on generic resource")
+		return ns, name, errors.New("no metadata found on generic resource")
+	}
+	ina, ok := meta["name"]
+	if !ok {
+		return ns, name, errors.New("unable to extract resource name")
+	}
+	name, ok = ina.(string)
+	if !ok {
+		return ns, name, fmt.Errorf("expecting name string type but got %T", ns)
 	}
 
-	ns, ok := meta["namespace"]
+	ins, ok := meta["namespace"]
 	if !ok {
-		return client.ClusterScope, nil
+		return client.ClusterScope, name, nil
 	}
 
-	nns, ok := ns.(string)
+	ns, ok = ins.(string)
 	if !ok {
-		return "", fmt.Errorf("expecting namespace string type but got %T", ns)
+		return ns, name, fmt.Errorf("expecting namespace string type but got %T", ns)
 	}
-	return nns, nil
+	return ns, name, nil
 }

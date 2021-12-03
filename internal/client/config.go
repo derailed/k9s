@@ -82,7 +82,7 @@ func (c *Config) clientConfig() clientcmd.ClientConfig {
 }
 
 func (c *Config) reset() {
-	c.clientCfg = nil
+	c.clientCfg, c.rawCfg = nil, nil
 }
 
 // SwitchContext changes the kubeconfig context to a new cluster.
@@ -94,8 +94,10 @@ func (c *Config) SwitchContext(name string) error {
 	if err != nil {
 		return fmt.Errorf("context %q does not exist", name)
 	}
+	c.flags.Namespace = &context.Namespace
 	c.flags.Context = &name
 	c.flags.ClusterName = &(context.Cluster)
+	c.reset()
 
 	return nil
 }
@@ -279,16 +281,6 @@ func (c *Config) CurrentNamespaceName() (string, error) {
 	return ns, err
 }
 
-// NamespaceNames fetch all available namespaces on current cluster.
-func (c *Config) NamespaceNames(nns []v1.Namespace) []string {
-	nn := make([]string, 0, len(nns))
-	for _, ns := range nns {
-		nn = append(nn, ns.Name)
-	}
-
-	return nn
-}
-
 // ConfigAccess return the current kubeconfig api server access configuration.
 func (c *Config) ConfigAccess() (clientcmd.ConfigAccess, error) {
 	c.mutex.RLock()
@@ -299,6 +291,16 @@ func (c *Config) ConfigAccess() (clientcmd.ConfigAccess, error) {
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+// NamespaceNames fetch all available namespaces on current cluster.
+func NamespaceNames(nns []v1.Namespace) []string {
+	nn := make([]string, 0, len(nns))
+	for _, ns := range nns {
+		nn = append(nn, ns.Name)
+	}
+
+	return nn
+}
 
 func isSet(s *string) bool {
 	return s != nil && len(*s) != 0
