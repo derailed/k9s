@@ -245,7 +245,7 @@ func (f *Factory) AddForwarder(pf Forwarder) {
 	f.mx.Lock()
 	defer f.mx.Unlock()
 
-	f.forwarders[pf.Path()] = pf
+	f.forwarders[pf.ID()] = pf
 }
 
 // DeleteForwarder deletes portforward for a given container.

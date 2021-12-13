@@ -409,10 +409,11 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 			v = "pod"
 			a.Config.SetActiveView(v)
 		}
+		a.Config.Reset()
+		a.Config.K9s.CurrentContext = name
 		if err := a.Config.Save(); err != nil {
 			log.Error().Err(err).Msg("Config save failed!")
 		}
-		a.Config.Reset()
 
 		a.Flash().Infof("Switching context to %s", name)
 		a.ReloadStyles(name)
@@ -632,7 +633,7 @@ func (a *App) gotoResource(cmd, path string, clearStack bool) {
 func (a *App) inject(c model.Component) error {
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	if err := c.Init(ctx); err != nil {
-		log.Error().Err(err).Msgf("component init failed for %q %v", c.Name(), err)
+		log.Error().Err(err).Msgf("component init failed for %q", c.Name())
 		dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
 	}
 	a.Content.Push(c)

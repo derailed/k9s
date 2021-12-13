@@ -39,6 +39,10 @@ func TestPortForwardRender(t *testing.T) {
 
 type fwd struct{}
 
+func (f fwd) ID() string {
+	return "blee/fred"
+}
+
 func (f fwd) Path() string {
 	return "blee/fred"
 }

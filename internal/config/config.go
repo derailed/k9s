@@ -146,6 +146,14 @@ func (c *Config) ActiveNamespace() string {
 		cl = NewCluster()
 		c.K9s.Clusters[c.K9s.CurrentCluster] = cl
 	}
+	if ns, err := c.settings.CurrentNamespaceName(); err == nil && ns != "" {
+		if cl.Namespace == nil {
+			cl.Namespace = NewNamespace()
+		}
+		cl.Namespace.Active = ns
+		return ns
+	}
+
 	if cl.Namespace != nil {
 		return cl.Namespace.Active
 	}

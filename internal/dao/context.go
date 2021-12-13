@@ -2,13 +2,11 @@ package dao
 
 import (
 	"context"
-	"errors"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 var (
@@ -60,18 +58,4 @@ func (c *Context) MustCurrentContextName() string {
 // Switch to another context.
 func (c *Context) Switch(ctx string) error {
 	return c.Factory.Client().SwitchContext(ctx)
-}
-
-// KubeUpdate modifies kubeconfig default context.
-func (c *Context) KubeUpdate(n string) error {
-	cfg := c.config().RawConfig()
-	if cfg == nil {
-		return errors.New("unable to fetch raw config")
-	}
-	if err := c.Switch(n); err != nil {
-		return err
-	}
-	return clientcmd.ModifyConfig(
-		clientcmd.NewDefaultPathOptions(), *cfg, true,
-	)
 }
