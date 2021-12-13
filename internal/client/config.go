@@ -252,8 +252,8 @@ func (c *Config) CurrentUserName() (string, error) {
 
 // CurrentNamespaceName retrieves the active namespace.
 func (c *Config) CurrentNamespaceName() (string, error) {
-	ns, ov, err := c.clientConfig().Namespace()
-	fmt.Printf("!!!ZOB!!! %q -- %t\n", ns, ov)
+	ns, _, err := c.clientConfig().Namespace()
+
 	return ns, err
 }
 
