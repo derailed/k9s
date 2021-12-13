@@ -21,6 +21,8 @@ I want to recognize the following folks that have been kind enough to join our s
 
 So if you feel K9s is helping with your productivity while administering your Kubernetes clusters, please consider pitching in as it will go a long way in ensuring a thriving environment for this repo and our k9ers community at large.
 
+Also please take some time and give a huge shoot out to all the good folks below that have spent time plowing thru the code to help improve K9s for all of us!
+
 Thank you!!
 
 ---
@@ -39,4 +41,14 @@ Thank you!!
 
 ---
 
-<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/imhotep_logo.png" width="32" height="auto"/> © 2020 Imhotep Software LLC. All materials licensed under [Apache v2.0](http://www.apache.org/licenses/LICENSE-2.0)
+## PRs
+
+* [PR #1363](https://github.com/derailed/k9s/pull/1363) Add rose-pine skin.
+  [Sergio Soria](https://github.com/sasoria)
+* [PR #1356](https://github.com/derailed/k9s/pull/1356) Add flux trace shortcut to flux plugin.
+  [Guillaume Berche](https://github.com/gberche-orange)
+* [PR #1321](https://github.com/derailed/k9s/pull/1321) Add customizable dump directory property.
+  [Vlasov Artem](https://github.com/VlasovArtem)
+
+
+<img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/imhotep_logo.png" width="32" height="auto"/> © 2021 Imhotep Software LLC. All materials licensed under [Apache v2.0](http://www.apache.org/licenses/LICENSE-2.0)
