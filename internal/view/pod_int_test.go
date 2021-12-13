@@ -55,7 +55,7 @@ func TestComputeShellArgs(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			args := computeShellArgs(u.fqn, u.co, u.cfg, u.os)
+			args := computeShellArgs(u.fqn, u.co, u.cfg, u.os, nil)
 			assert.Equal(t, u.e, strings.Join(args, " "))
 		})
 	}
