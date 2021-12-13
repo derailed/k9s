@@ -32,6 +32,7 @@ type Flags struct {
 	ReadOnly      *bool
 	Write         *bool
 	Crumbsless    *bool
+	ScreenDumpDir *string
 }
 
 // NewFlags returns new configuration flags.
@@ -47,6 +48,7 @@ func NewFlags() *Flags {
 		ReadOnly:      boolPtr(false),
 		Write:         boolPtr(false),
 		Crumbsless:    boolPtr(false),
+		ScreenDumpDir: strPtr(K9sDefaultScreenDumpDir),
 	}
 }
 

@@ -24,7 +24,7 @@ func TestTableSave(t *testing.T) {
 	v.Init(makeContext())
 	v.SetTitle("k9s-test")
 
-	dir := filepath.Join(config.K9sDumpDir, v.app.Config.K9s.CurrentCluster)
+	dir := filepath.Join(v.app.Config.K9s.GetScreenDumpDir(), v.app.Config.K9s.CurrentCluster)
 	c1, _ := os.ReadDir(dir)
 	v.saveCmd(nil)
 

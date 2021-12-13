@@ -347,6 +347,7 @@ var expectedConfig = `k9s:
     memory:
       critical: 90
       warn: 70
+  screenDumpDir: /tmp
 `
 
 var resetConfig = `k9s:
@@ -393,4 +394,5 @@ var resetConfig = `k9s:
     memory:
       critical: 90
       warn: 70
+  screenDumpDir: /tmp
 `

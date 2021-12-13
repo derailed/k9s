@@ -409,7 +409,7 @@ func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 // SaveCmd dumps the logs to file.
 func (l *Log) SaveCmd(*tcell.EventKey) *tcell.EventKey {
-	if path, err := saveData(l.app.Config.K9s.CurrentContext, l.model.GetPath(), l.logs.GetText(true)); err != nil {
+	if path, err := saveData(l.app.Config.K9s.GetScreenDumpDir(), l.app.Config.K9s.CurrentContext, l.model.GetPath(), l.logs.GetText(true)); err != nil {
 		l.app.Flash().Err(err)
 	} else {
 		l.app.Flash().Infof("Log %s saved successfully!", path)
@@ -429,8 +429,8 @@ func ensureDir(dir string) error {
 	return os.MkdirAll(dir, 0744)
 }
 
-func saveData(cluster, name, data string) (string, error) {
-	dir := filepath.Join(config.K9sDumpDir, dao.SanitizeFilename(cluster))
+func saveData(screenDumpDir, cluster, name, data string) (string, error) {
+	dir := filepath.Join(screenDumpDir, dao.SanitizeFilename(cluster))
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}

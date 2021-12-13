@@ -108,6 +108,7 @@ func loadConfiguration() *config.Config {
 	k9sCfg.K9s.OverrideReadOnly(*k9sFlags.ReadOnly)
 	k9sCfg.K9s.OverrideWrite(*k9sFlags.Write)
 	k9sCfg.K9s.OverrideCommand(*k9sFlags.Command)
+	k9sCfg.K9s.OverrideScreenDumpDir(*k9sFlags.ScreenDumpDir)
 
 	if err := k9sCfg.Refine(k8sFlags, k9sFlags, k8sCfg); err != nil {
 		log.Error().Err(err).Msgf("refine failed")
@@ -210,6 +211,13 @@ func initK9sFlags() {
 		false,
 		"Sets write mode by overriding the readOnly configuration setting",
 	)
+	rootCmd.Flags().StringVar(
+		k9sFlags.ScreenDumpDir,
+		"screen-dump-dir",
+		"",
+		"Sets a path to a dir for a screen dumps",
+	)
+	rootCmd.Flags()
 }
 
 func initK8sFlags() {

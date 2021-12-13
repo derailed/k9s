@@ -78,6 +78,7 @@ func TestK9sValidate(t *testing.T) {
 	assert.Equal(t, "ctx1", c.CurrentContext)
 	assert.Equal(t, "c1", c.CurrentCluster)
 	assert.Equal(t, 1, len(c.Clusters))
+	assert.Equal(t, config.K9sDefaultScreenDumpDir, c.GetScreenDumpDir())
 	_, ok := c.Clusters[c.CurrentCluster]
 	assert.True(t, ok)
 }
@@ -129,4 +130,39 @@ func TestK9sActiveCluster(t *testing.T) {
 	assert.NotNil(t, cl)
 	assert.Equal(t, "kube-system", cl.Namespace.Active)
 	assert.Equal(t, 5, len(cl.Namespace.Favorites))
+}
+
+func TestGetScreenDumpDir(t *testing.T) {
+	mk := NewMockKubeSettings()
+	cfg := config.NewConfig(mk)
+	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
+
+	assert.Equal(t, "/tmp", cfg.K9s.GetScreenDumpDir())
+}
+
+func TestGetScreenDumpDirOverride(t *testing.T) {
+	mk := NewMockKubeSettings()
+	cfg := config.NewConfig(mk)
+	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
+	cfg.K9s.OverrideScreenDumpDir("/override")
+
+	assert.Equal(t, "/override", cfg.K9s.GetScreenDumpDir())
+}
+
+func TestGetScreenDumpDirOverrideEmpty(t *testing.T) {
+	mk := NewMockKubeSettings()
+	cfg := config.NewConfig(mk)
+	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
+	cfg.K9s.OverrideScreenDumpDir("")
+
+	assert.Equal(t, "/tmp", cfg.K9s.GetScreenDumpDir())
+}
+
+func TestGetScreenDumpDirEmpty(t *testing.T) {
+	mk := NewMockKubeSettings()
+	cfg := config.NewConfig(mk)
+	assert.Nil(t, cfg.Load("testdata/k9s1.yml"))
+	cfg.K9s.OverrideScreenDumpDir("")
+
+	assert.Equal(t, config.K9sDefaultScreenDumpDir, cfg.K9s.GetScreenDumpDir())
 }
