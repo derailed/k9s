@@ -12,7 +12,10 @@ import (
 
 // Forwarder represents a port forwarder.
 type Forwarder interface {
-	// Path returns a resource FQN.
+	// ID returns the PF FQN.
+	ID() string
+
+	// Path returns a resource path.
 	Path() string
 
 	// Container returns a container name.
@@ -61,9 +64,9 @@ func (f PortForward) Render(o interface{}, gvr string, r *Row) error {
 	}
 
 	ports := strings.Split(pf.Port(), ":")
-	ns, n := client.Namespaced(pf.Path())
+	ns, n := client.Namespaced(pf.ID())
 
-	r.ID = pf.Path()
+	r.ID = pf.ID()
 	r.Fields = Fields{
 		ns,
 		trimContainer(n),

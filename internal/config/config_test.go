@@ -60,8 +60,7 @@ func TestConfigRefine(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			mc := NewMockConnection()
 			m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
-			mk := NewMockKubeSettings()
-			m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"default"})
+			mk := newMockSettings(u.flags)
 			cfg := config.NewConfig(mk)
 
 			err := cfg.Refine(u.flags, nil, client.NewConfig(u.flags))
@@ -255,6 +254,24 @@ func TestSetup(t *testing.T) {
 		fmt.Println("Boom!", m, i)
 	})
 }
+
+type mockSettings struct {
+	flags *genericclioptions.ConfigFlags
+}
+
+var _ config.KubeSettings = (*mockSettings)(nil)
+
+func newMockSettings(flags *genericclioptions.ConfigFlags) *mockSettings {
+	return &mockSettings{flags: flags}
+}
+func (m *mockSettings) CurrentContextName() (string, error) {
+	return *m.flags.Context, nil
+}
+func (m *mockSettings) CurrentClusterName() (string, error) { return "", nil }
+func (m *mockSettings) CurrentNamespaceName() (string, error) {
+	return *m.flags.Namespace, nil
+}
+func (m *mockSettings) ClusterNames() ([]string, error) { return nil, nil }
 
 // ----------------------------------------------------------------------------
 // Test Data...

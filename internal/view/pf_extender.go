@@ -42,7 +42,6 @@ func (p *PortForwardExtender) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	p.fetchPodName(path)
 	pod, err := fetchPod(p.App().factory, path)
 	if err != nil {
 		p.App().Flash().Err(err)

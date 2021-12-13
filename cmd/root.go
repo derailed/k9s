@@ -160,7 +160,7 @@ func initK9sFlags() {
 		k9sFlags.LogLevel,
 		"logLevel", "l",
 		config.DefaultLogLevel,
-		"Specify a log level (info, warn, debug, error, fatal, panic, trace)",
+		"Specify a log level (info, warn, debug, error)",
 	)
 	rootCmd.Flags().StringVarP(
 		k9sFlags.LogFile,
@@ -213,7 +213,7 @@ func initK9sFlags() {
 }
 
 func initK8sFlags() {
-	k8sFlags = genericclioptions.NewConfigFlags(false)
+	k8sFlags = genericclioptions.NewConfigFlags(client.UsePersistentConfig)
 
 	rootCmd.Flags().StringVar(
 		k8sFlags.KubeConfig,
