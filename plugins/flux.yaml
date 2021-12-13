@@ -58,3 +58,14 @@ plugin:
     args:
     - -c
     - "flux reconcile kustomization -n $NAMESPACE $NAME | less"
+  trace:
+    shortCut: Shift-A
+    confirm: false
+    description: Flux trace
+    scopes:
+    - all
+    command: sh
+    background: false
+    args:
+    - -c
+    - "flux trace $NAME --kind `echo $RESOURCE_NAME | sed -E 's/(s|es)$//g'` --api-version $RESOURCE_GROUP/$RESOURCE_VERSION --namespace $NAMESPACE $NAME | less"
