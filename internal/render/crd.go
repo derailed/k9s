@@ -11,11 +11,8 @@ import (
 )
 
 // CustomResourceDefinition renders a K8s CustomResourceDefinition to screen.
-type CustomResourceDefinition struct{}
-
-// ColorerFunc colors a resource row.
-func (CustomResourceDefinition) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+type CustomResourceDefinition struct {
+	Base
 }
 
 // Header returns a header rbw.

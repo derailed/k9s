@@ -12,7 +12,9 @@ import (
 )
 
 // Context renders a K8s ConfigMap to screen.
-type Context struct{}
+type Context struct {
+	Base
+}
 
 // ColorerFunc colors a resource row.
 func (Context) ColorerFunc() ColorerFunc {

@@ -30,7 +30,9 @@ var (
 )
 
 // Rbac renders a rbac to screen.
-type Rbac struct{}
+type Rbac struct {
+	Base
+}
 
 // ColorerFunc colors a resource row.
 func (Rbac) ColorerFunc() ColorerFunc {

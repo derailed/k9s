@@ -198,7 +198,7 @@ func TestConfigSaveFile(t *testing.T) {
 	m.When(mk.CurrentContextName()).ThenReturn("minikube", nil)
 	m.When(mk.CurrentClusterName()).ThenReturn("minikube", nil)
 	m.When(mk.CurrentNamespaceName()).ThenReturn("default", nil)
-	m.When(mk.ClusterNames()).ThenReturn([]string{"minikube", "fred", "blee"}, nil)
+	m.When(mk.ClusterNames()).ThenReturn(map[string]struct{}{"minikube": {}, "fred": {}, "blee": {}}, nil)
 	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"default"})
 
 	cfg := config.NewConfig(mk)
@@ -228,7 +228,7 @@ func TestConfigReset(t *testing.T) {
 	m.When(mk.CurrentContextName()).ThenReturn("blee", nil)
 	m.When(mk.CurrentClusterName()).ThenReturn("blee", nil)
 	m.When(mk.CurrentNamespaceName()).ThenReturn("default", nil)
-	m.When(mk.ClusterNames()).ThenReturn([]string{"blee"}, nil)
+	m.When(mk.ClusterNames()).ThenReturn(map[string]struct{}{"blee": {}}, nil)
 	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"default"})
 
 	cfg := config.NewConfig(mk)
@@ -271,7 +271,7 @@ func (m *mockSettings) CurrentClusterName() (string, error) { return "", nil }
 func (m *mockSettings) CurrentNamespaceName() (string, error) {
 	return *m.flags.Namespace, nil
 }
-func (m *mockSettings) ClusterNames() ([]string, error) { return nil, nil }
+func (m *mockSettings) ClusterNames() (map[string]struct{}, error) { return nil, nil }
 
 // ----------------------------------------------------------------------------
 // Test Data...

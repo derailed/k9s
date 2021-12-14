@@ -32,7 +32,9 @@ type Forwarder interface {
 }
 
 // PortForward renders a portforwards to screen.
-type PortForward struct{}
+type PortForward struct {
+	Base
+}
 
 // ColorerFunc colors a resource row.
 func (PortForward) ColorerFunc() ColorerFunc {

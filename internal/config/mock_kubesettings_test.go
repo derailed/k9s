@@ -25,17 +25,17 @@ func NewMockKubeSettings(options ...pegomock.Option) *MockKubeSettings {
 func (mock *MockKubeSettings) SetFailHandler(fh pegomock.FailHandler) { mock.fail = fh }
 func (mock *MockKubeSettings) FailHandler() pegomock.FailHandler      { return mock.fail }
 
-func (mock *MockKubeSettings) ClusterNames() ([]string, error) {
+func (mock *MockKubeSettings) ClusterNames() (map[string]struct{}, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockKubeSettings().")
 	}
 	params := []pegomock.Param{}
-	result := pegomock.GetGenericMockFrom(mock).Invoke("ClusterNames", params, []reflect.Type{reflect.TypeOf((*[]string)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
-	var ret0 []string
+	result := pegomock.GetGenericMockFrom(mock).Invoke("ClusterNames", params, []reflect.Type{reflect.TypeOf((*map[string]struct{})(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 map[string]struct{}
 	var ret1 error
 	if len(result) != 0 {
 		if result[0] != nil {
-			ret0 = result[0].([]string)
+			ret0 = result[0].(map[string]struct{})
 		}
 		if result[1] != nil {
 			ret1 = result[1].(error)

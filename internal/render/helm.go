@@ -15,6 +15,11 @@ import (
 // Helm renders a helm chart to screen.
 type Helm struct{}
 
+// IsGeneric identifies a generic handler.
+func (Helm) IsGeneric() bool {
+	return false
+}
+
 // ColorerFunc colors a resource row.
 func (Helm) ColorerFunc() ColorerFunc {
 	return func(ns string, h Header, re RowEvent) tcell.Color {

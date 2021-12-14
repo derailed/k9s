@@ -17,7 +17,9 @@ import (
 )
 
 // Pod renders a K8s Pod to screen.
-type Pod struct{}
+type Pod struct {
+	Base
+}
 
 // ColorerFunc colors a resource row.
 func (p Pod) ColorerFunc() ColorerFunc {

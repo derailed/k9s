@@ -171,8 +171,8 @@ func (k ks) CurrentNamespaceName() (string, error) {
 	return "test", nil
 }
 
-func (k ks) ClusterNames() ([]string, error) {
-	return []string{"test"}, nil
+func (k ks) ClusterNames() (map[string]struct{}, error) {
+	return map[string]struct{}{"test": {}}, nil
 }
 
 func (k ks) NamespaceNames(nn []v1.Namespace) []string {

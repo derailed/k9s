@@ -12,21 +12,15 @@ import (
 )
 
 // ScreenDump renders a screendumps to screen.
-type ScreenDump struct{}
+type ScreenDump struct {
+	Base
+}
 
 // ColorerFunc colors a resource row.
 func (ScreenDump) ColorerFunc() ColorerFunc {
 	return func(ns string, _ Header, re RowEvent) tcell.Color {
 		return tcell.ColorNavajoWhite
 	}
-}
-
-// DecoratorFunc decorates a string.
-type DecoratorFunc func(string) string
-
-// AgeDecorator represents a timestamped as human column.
-var AgeDecorator = func(a string) string {
-	return toAgeHuman(a)
 }
 
 // Header returns a header row.

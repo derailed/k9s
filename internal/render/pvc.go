@@ -10,11 +10,8 @@ import (
 )
 
 // PersistentVolumeClaim renders a K8s PersistentVolumeClaim to screen.
-type PersistentVolumeClaim struct{}
-
-// ColorerFunc colors a resource row.
-func (p PersistentVolumeClaim) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+type PersistentVolumeClaim struct {
+	Base
 }
 
 // Header returns a header rbw.

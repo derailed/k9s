@@ -24,7 +24,9 @@ func rbacVerbHeader() Header {
 }
 
 // Policy renders a rbac policy to screen.
-type Policy struct{}
+type Policy struct {
+	Base
+}
 
 // ColorerFunc colors a resource row.
 func (Policy) ColorerFunc() ColorerFunc {

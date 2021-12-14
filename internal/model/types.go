@@ -84,6 +84,9 @@ type Component interface {
 
 // Renderer represents a resource renderer.
 type Renderer interface {
+	// IsGeneric identifies a generic handler.
+	IsGeneric() bool
+
 	// Render converts raw resources to tabular data.
 	Render(o interface{}, ns string, row *render.Row) error
 

@@ -276,10 +276,10 @@ func (a *App) Resume() {
 
 	go a.clusterUpdater(ctx)
 	if err := a.StylesWatcher(ctx, a); err != nil {
-		log.Error().Err(err).Msgf("Styles watcher failed")
+		log.Warn().Err(err).Msgf("Styles watcher failed")
 	}
 	if err := a.CustomViewsWatcher(ctx, a); err != nil {
-		log.Error().Err(err).Msgf("CustomView watcher failed")
+		log.Warn().Err(err).Msgf("CustomView watcher failed")
 	}
 }
 
@@ -357,6 +357,10 @@ func (a *App) switchNS(ns string) error {
 	if ns == client.ClusterScope {
 		ns = client.AllNamespaces
 	}
+	if ns == a.Config.ActiveNamespace() {
+		return nil
+	}
+
 	ok, err := a.isValidNS(ns)
 	if err != nil {
 		return err
@@ -365,7 +369,10 @@ func (a *App) switchNS(ns string) error {
 		return fmt.Errorf("Invalid namespace %q", ns)
 	}
 	if err := a.Config.SetActiveNamespace(ns); err != nil {
-		return fmt.Errorf("Unable to save active namespace in config")
+		return err
+	}
+	if err := a.Config.Save(); err != nil {
+		return err
 	}
 
 	return a.factory.SetActiveNS(ns)

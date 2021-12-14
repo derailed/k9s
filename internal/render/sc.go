@@ -10,11 +10,8 @@ import (
 )
 
 // StorageClass renders a K8s StorageClass to screen.
-type StorageClass struct{}
-
-// ColorerFunc colors a resource row.
-func (StorageClass) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+type StorageClass struct {
+	Base
 }
 
 // Header returns a header row.

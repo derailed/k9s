@@ -194,9 +194,9 @@ func (k *K9s) validateClusters(c client.Connection, ks KubeSettings) {
 	if err != nil {
 		return
 	}
-	for key := range k.Clusters {
-		k.Clusters[key].Validate(c, ks)
-		if InList(cc, key) {
+	for key, cluster := range k.Clusters {
+		cluster.Validate(c, ks)
+		if _, ok := cc[key]; ok {
 			continue
 		}
 		if k.CurrentCluster == key {
@@ -224,8 +224,8 @@ func (k *K9s) Validate(c client.Connection, ks KubeSettings) {
 	}
 	k.Thresholds.Validate(c, ks)
 
-	if ctx, err := ks.CurrentContextName(); err == nil && len(k.CurrentContext) == 0 {
-		k.CurrentContext = ctx
+	if context, err := ks.CurrentContextName(); err == nil && len(k.CurrentContext) == 0 {
+		k.CurrentContext = context
 		k.CurrentCluster = ""
 	}
 

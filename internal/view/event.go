@@ -17,7 +17,8 @@ func NewEvent(gvr client.GVR) ResourceViewer {
 	e := Event{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	e.GetTable().SetColorerFn(render.Event{}.ColorerFunc())
+	var r *render.Event
+	e.GetTable().SetColorerFn(r.ColorerFunc())
 	e.AddBindKeysFn(e.bindKeys)
 	e.GetTable().SetSortCol("LAST SEEN", false)
 
@@ -25,9 +26,10 @@ func NewEvent(gvr client.GVR) ResourceViewer {
 }
 
 func (e *Event) bindKeys(aa ui.KeyActions) {
-	aa.Delete(tcell.KeyCtrlD, ui.KeyE)
+	aa.Delete(tcell.KeyCtrlD, ui.KeyE, ui.KeyA)
 	aa.Add(ui.KeyActions{
 		ui.KeyShiftL: ui.NewKeyAction("Sort LastSeen", e.GetTable().SortColCmd("LAST SEEN", false), false),
+		ui.KeyShiftF: ui.NewKeyAction("Sort FirstSeen", e.GetTable().SortColCmd("FIRST SEEN", false), false),
 		ui.KeyShiftT: ui.NewKeyAction("Sort Type", e.GetTable().SortColCmd("TYPE", true), false),
 		ui.KeyShiftR: ui.NewKeyAction("Sort Reason", e.GetTable().SortColCmd("REASON", true), false),
 		ui.KeyShiftS: ui.NewKeyAction("Sort Source", e.GetTable().SortColCmd("SOURCE", true), false),

@@ -35,7 +35,9 @@ type ContainerWithMetrics interface {
 }
 
 // Container renders a K8s Container to screen.
-type Container struct{}
+type Container struct {
+	Base
+}
 
 // ColorerFunc colors a resource row.
 func (c Container) ColorerFunc() ColorerFunc {

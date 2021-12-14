@@ -9,11 +9,8 @@ import (
 )
 
 // Subject renders a rbac to screen.
-type Subject struct{}
-
-// Happy returns true if resource is happy, false otherwise.
-func (Subject) Happy(_ string, _ Row) bool {
-	return true
+type Subject struct {
+	Base
 }
 
 // ColorerFunc colors a resource row.

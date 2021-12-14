@@ -16,11 +16,8 @@ import (
 )
 
 // Job renders a K8s Job to screen.
-type Job struct{}
-
-// ColorerFunc colors a resource row.
-func (Job) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+type Job struct {
+	Base
 }
 
 // Header returns a header row.

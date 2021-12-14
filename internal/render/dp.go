@@ -12,7 +12,9 @@ import (
 )
 
 // Deployment renders a K8s Deployment to screen.
-type Deployment struct{}
+type Deployment struct {
+	Base
+}
 
 // ColorerFunc colors a resource row.
 func (d Deployment) ColorerFunc() ColorerFunc {
