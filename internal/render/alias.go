@@ -10,11 +10,8 @@ import (
 )
 
 // Alias renders a aliases to screen.
-type Alias struct{}
-
-// ColorerFunc colors a resource row.
-func (Alias) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+type Alias struct {
+	Base
 }
 
 // Header returns a header row.

@@ -12,6 +12,11 @@ import (
 // Dir renders a directory entry to screen.
 type Dir struct{}
 
+// IsGeneric identifies a generic handler.
+func (Dir) IsGeneric() bool {
+	return false
+}
+
 // ColorerFunc colors a resource row.
 func (Dir) ColorerFunc() ColorerFunc {
 	return func(ns string, _ Header, re RowEvent) tcell.Color {

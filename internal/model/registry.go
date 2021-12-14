@@ -110,6 +110,10 @@ var Registry = map[string]ResourceMeta{
 	"v1/persistentvolumeclaims": {
 		Renderer: &render.PersistentVolumeClaim{},
 	},
+	"v1/events": {
+		DAO:      &dao.Table{},
+		Renderer: &render.Event{},
+	},
 
 	// Apps...
 	"apps/v1/deployments": {

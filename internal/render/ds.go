@@ -12,11 +12,8 @@ import (
 )
 
 // DaemonSet renders a K8s DaemonSet to screen.
-type DaemonSet struct{}
-
-// ColorerFunc colors a resource row.
-func (d DaemonSet) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+type DaemonSet struct {
+	Base
 }
 
 // Header returns a header row.

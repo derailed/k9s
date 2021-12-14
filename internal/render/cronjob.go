@@ -13,11 +13,8 @@ import (
 )
 
 // CronJob renders a K8s CronJob to screen.
-type CronJob struct{}
-
-// ColorerFunc colors a resource row.
-func (CronJob) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+type CronJob struct {
+	Base
 }
 
 // Header returns a header row.

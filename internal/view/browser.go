@@ -134,9 +134,6 @@ func (b *Browser) Start() {
 	if err := b.app.switchNS(ns); err != nil {
 		log.Error().Err(err).Msgf("ns switch failed")
 	}
-	if err := b.app.Config.Save(); err != nil {
-		log.Error().Err(err).Msgf("Config Save")
-	}
 
 	b.Stop()
 	b.GetModel().AddListener(b)

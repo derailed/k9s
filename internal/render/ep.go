@@ -12,11 +12,8 @@ import (
 )
 
 // Endpoints renders a K8s Endpoints to screen.
-type Endpoints struct{}
-
-// ColorerFunc colors a resource row.
-func (Endpoints) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+type Endpoints struct {
+	Base
 }
 
 // Header returns a header row.

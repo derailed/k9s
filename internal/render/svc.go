@@ -13,11 +13,8 @@ import (
 )
 
 // Service renders a K8s Service to screen.
-type Service struct{}
-
-// ColorerFunc colors a resource row.
-func (Service) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+type Service struct {
+	Base
 }
 
 // Header returns a header row.

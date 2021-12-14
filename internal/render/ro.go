@@ -10,11 +10,8 @@ import (
 )
 
 // Role renders a K8s Role to screen.
-type Role struct{}
-
-// ColorerFunc colors a resource row.
-func (Role) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+type Role struct {
+	Base
 }
 
 // Header returns a header row.

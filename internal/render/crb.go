@@ -10,11 +10,8 @@ import (
 )
 
 // ClusterRoleBinding renders a K8s ClusterRoleBinding to screen.
-type ClusterRoleBinding struct{}
-
-// ColorerFunc colors a resource row.
-func (ClusterRoleBinding) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+type ClusterRoleBinding struct {
+	Base
 }
 
 // Header returns a header rbw.

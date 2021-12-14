@@ -12,7 +12,9 @@ import (
 )
 
 // ReplicaSet renders a K8s ReplicaSet to screen.
-type ReplicaSet struct{}
+type ReplicaSet struct {
+	Base
+}
 
 // ColorerFunc colors a resource row.
 func (r ReplicaSet) ColorerFunc() ColorerFunc {

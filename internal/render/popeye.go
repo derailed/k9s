@@ -15,7 +15,9 @@ import (
 )
 
 // Popeye renders a sanitizer to screen.
-type Popeye struct{}
+type Popeye struct {
+	Base
+}
 
 // ColorerFunc colors a resource row.
 func (Popeye) ColorerFunc() ColorerFunc {

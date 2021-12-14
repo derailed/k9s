@@ -13,7 +13,9 @@ import (
 )
 
 // Namespace renders a K8s Namespace to screen.
-type Namespace struct{}
+type Namespace struct {
+	Base
+}
 
 // ColorerFunc colors a resource row.
 func (n Namespace) ColorerFunc() ColorerFunc {

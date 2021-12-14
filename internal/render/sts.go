@@ -11,11 +11,8 @@ import (
 )
 
 // StatefulSet renders a K8s StatefulSet to screen.
-type StatefulSet struct{}
-
-// ColorerFunc colors a resource row.
-func (s StatefulSet) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+type StatefulSet struct {
+	Base
 }
 
 // Header returns a header row.

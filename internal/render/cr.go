@@ -10,11 +10,8 @@ import (
 )
 
 // ClusterRole renders a K8s ClusterRole to screen.
-type ClusterRole struct{}
-
-// ColorerFunc colors a resource row.
-func (ClusterRole) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+type ClusterRole struct {
+	Base
 }
 
 // Header returns a header rbw.

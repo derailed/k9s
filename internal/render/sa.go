@@ -11,11 +11,8 @@ import (
 )
 
 // ServiceAccount renders a K8s ServiceAccount to screen.
-type ServiceAccount struct{}
-
-// ColorerFunc colors a resource row.
-func (ServiceAccount) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+type ServiceAccount struct {
+	Base
 }
 
 // Header returns a header row.

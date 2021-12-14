@@ -24,7 +24,9 @@ var (
 )
 
 // Benchmark renders a benchmarks to screen.
-type Benchmark struct{}
+type Benchmark struct {
+	Base
+}
 
 // ColorerFunc colors a resource row.
 func (b Benchmark) ColorerFunc() ColorerFunc {

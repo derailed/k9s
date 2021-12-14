@@ -14,13 +14,13 @@ const ageTableCol = "Age"
 
 // Generic renders a generic resource to screen.
 type Generic struct {
+	Base
 	table *metav1beta1.Table
 
 	ageIndex int
 }
 
-// Happy returns true if resource is happy, false otherwise.
-func (Generic) Happy(ns string, r Row) bool {
+func (*Generic) IsGeneric() bool {
 	return true
 }
 
@@ -30,7 +30,7 @@ func (g *Generic) SetTable(t *metav1beta1.Table) {
 }
 
 // ColorerFunc colors a resource row.
-func (Generic) ColorerFunc() ColorerFunc {
+func (*Generic) ColorerFunc() ColorerFunc {
 	return DefaultColorer
 }
 

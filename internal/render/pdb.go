@@ -13,11 +13,8 @@ import (
 )
 
 // PodDisruptionBudget renders a K8s PodDisruptionBudget to screen.
-type PodDisruptionBudget struct{}
-
-// ColorerFunc colors a resource row.
-func (p PodDisruptionBudget) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+type PodDisruptionBudget struct {
+	Base
 }
 
 // Header returns a header row.

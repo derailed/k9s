@@ -12,11 +12,8 @@ import (
 )
 
 // NetworkPolicy renders a K8s NetworkPolicy to screen.
-type NetworkPolicy struct{}
-
-// ColorerFunc colors a resource row.
-func (NetworkPolicy) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+type NetworkPolicy struct {
+	Base
 }
 
 // Header returns a header row.

@@ -11,11 +11,8 @@ import (
 )
 
 // RoleBinding renders a K8s RoleBinding to screen.
-type RoleBinding struct{}
-
-// ColorerFunc colors a resource row.
-func (RoleBinding) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+type RoleBinding struct {
+	Base
 }
 
 // Header returns a header rbw.

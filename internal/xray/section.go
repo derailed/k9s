@@ -10,7 +10,9 @@ import (
 )
 
 // Section represents an xray renderer.
-type Section struct{}
+type Section struct {
+	render.Base
+}
 
 // Render renders an xray node.
 func (s *Section) Render(ctx context.Context, ns string, o interface{}) error {

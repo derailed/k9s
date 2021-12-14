@@ -10,7 +10,9 @@ import (
 )
 
 // Reference renders a reference to screen.
-type Reference struct{}
+type Reference struct {
+	Base
+}
 
 // ColorerFunc colors a resource row.
 func (Reference) ColorerFunc() ColorerFunc {

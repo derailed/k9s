@@ -23,9 +23,8 @@ const (
 
 // Config tracks a kubernetes configuration.
 type Config struct {
-	flags      *genericclioptions.ConfigFlags
-	mutex      *sync.RWMutex
-	OverrideNS bool
+	flags *genericclioptions.ConfigFlags
+	mutex *sync.RWMutex
 }
 
 // NewConfig returns a new k8s config or an error if the flags are invalid.
@@ -183,15 +182,15 @@ func (c *Config) CurrentClusterName() (string, error) {
 }
 
 // ClusterNames fetch all kubeconfig defined clusters.
-func (c *Config) ClusterNames() ([]string, error) {
+func (c *Config) ClusterNames() (map[string]struct{}, error) {
 	cfg, err := c.RawConfig()
 	if err != nil {
 		return nil, err
 	}
 
-	cc := make([]string, 0, len(cfg.Clusters))
+	cc := make(map[string]struct{}, len(cfg.Clusters))
 	for name := range cfg.Clusters {
-		cc = append(cc, name)
+		cc[name] = struct{}{}
 	}
 
 	return cc, nil

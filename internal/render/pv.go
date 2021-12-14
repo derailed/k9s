@@ -13,7 +13,9 @@ import (
 )
 
 // PersistentVolume renders a K8s PersistentVolume to screen.
-type PersistentVolume struct{}
+type PersistentVolume struct {
+	Base
+}
 
 // ColorerFunc colors a resource row.
 func (p PersistentVolume) ColorerFunc() ColorerFunc {

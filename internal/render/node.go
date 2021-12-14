@@ -22,11 +22,8 @@ const (
 )
 
 // Node renders a K8s Node to screen.
-type Node struct{}
-
-// ColorerFunc colors a resource row.
-func (n Node) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+type Node struct {
+	Base
 }
 
 // Header returns a header row.
