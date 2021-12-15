@@ -142,7 +142,7 @@ func asKey(key string) (tcell.Key, error) {
 
 // FwFQN returns a fully qualified ns/name:container id.
 func fwFQN(po, co string) string {
-	return po + ":" + co
+	return po + "|" + co
 }
 
 func isTCPPort(p string) bool {

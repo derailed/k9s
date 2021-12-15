@@ -99,7 +99,10 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 		ns = *flags.Namespace
 	} else if context.Namespace != "" {
 		ns = context.Namespace
-	} else if cl := c.K9s.ActiveCluster(); cl != nil {
+		if cl := c.K9s.ActiveCluster(); cl != nil && cl.Namespace != nil && cl.Namespace.Active != "" {
+			ns = cl.Namespace.Active
+		}
+	} else if cl := c.K9s.ActiveCluster(); cl != nil && cl.Namespace != nil {
 		ns = cl.Namespace.Active
 	}
 

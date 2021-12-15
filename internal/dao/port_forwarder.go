@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
@@ -72,11 +73,6 @@ func (p *PortForwarder) LocalPort() string {
 	return p.tunnel.LocalPort
 }
 
-// Path returns the pod resource path.
-func (p *PortForwarder) Path() string {
-	return PortForwardID(p.path, p.tunnel.Container, p.tunnel.PortMap())
-}
-
 // ID returns a pf id.
 func (p *PortForwarder) ID() string {
 	return PortForwardID(p.path, p.tunnel.Container, p.tunnel.PortMap())
@@ -117,9 +113,10 @@ func (p *PortForwarder) Start(path string, tt port.PortTunnel) (*portforward.Por
 		return nil, fmt.Errorf("user is not authorized to get pods")
 	}
 
+	podName := strings.Split(n, "|")[0]
 	var res Pod
 	res.Init(p, client.NewGVR("v1/pods"))
-	pod, err := res.GetInstance(path)
+	pod, err := res.GetInstance(client.FQN(ns, podName))
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +147,7 @@ func (p *PortForwarder) Start(path string, tt port.PortTunnel) (*portforward.Por
 	req := clt.Post().
 		Resource("pods").
 		Namespace(ns).
-		Name(n).
+		Name(podName).
 		SubResource("portforward")
 
 	return p.forwardPorts("POST", req.URL(), tt.Address, tt.PortMap())
@@ -175,6 +172,10 @@ func (p *PortForwarder) forwardPorts(method string, url *url.URL, addr, portMap 
 
 // PortForwardID computes port-forward identifier.
 func PortForwardID(path, co, portMap string) string {
+	if strings.Contains(path, "|") {
+		return path + "|" + portMap
+	}
+
 	return path + "|" + co + "|" + portMap
 }
 

@@ -42,7 +42,12 @@ func (p *PortForwardExtender) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	pod, err := fetchPod(p.App().factory, path)
+	podName, err := p.fetchPodName(path)
+	if err != nil {
+		p.App().Flash().Err(err)
+		return nil
+	}
+	pod, err := fetchPod(p.App().factory, podName)
 	if err != nil {
 		p.App().Flash().Err(err)
 		return nil
@@ -52,10 +57,10 @@ func (p *PortForwardExtender) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 	if p.App().factory.Forwarders().IsPodForwarded(path) {
-		p.App().Flash().Errf("A PortForward already exist for pod %s", pod)
+		p.App().Flash().Errf("A PortForward already exist for pod %s", pod.Name)
 		return nil
 	}
-	if err := showFwdDialog(p, path, startFwdCB); err != nil {
+	if err := showFwdDialog(p, podName, startFwdCB); err != nil {
 		p.App().Flash().Err(err)
 	}
 

@@ -85,7 +85,7 @@ func TestFwFQN(t *testing.T) {
 	uu := map[string]struct {
 		po, co, e string
 	}{
-		"cool": {po: "p1", co: "c1", e: "p1:c1"},
+		"cool": {po: "p1", co: "c1", e: "p1|c1"},
 	}
 
 	for k := range uu {

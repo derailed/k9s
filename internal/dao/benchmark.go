@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"github.com/derailed/k9s/internal"
@@ -15,6 +16,8 @@ import (
 var (
 	_ Accessor = (*Benchmark)(nil)
 	_ Nuker    = (*Benchmark)(nil)
+
+	BenchRx = regexp.MustCompile(`[:|]+`)
 )
 
 // Benchmark represents a benchmark resource.
@@ -45,9 +48,10 @@ func (b *Benchmark) List(ctx context.Context, _ string) ([]runtime.Object, error
 		return nil, err
 	}
 
+	fileName := BenchRx.ReplaceAllString(strings.Replace(path, "/", "_", 1), "_")
 	oo := make([]runtime.Object, 0, len(ff))
 	for _, f := range ff {
-		if path != "" && !strings.HasPrefix(f.Name(), strings.Replace(path, "/", "_", 1)) {
+		if path != "" && !strings.HasPrefix(f.Name(), fileName) {
 			continue
 		}
 
