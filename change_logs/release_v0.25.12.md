@@ -44,9 +44,9 @@ Hoy! end of year is... sucking! Feeling the burn ;( Apologies for the disruption
 ## Resolved Issues
 
 * [Issue #1378](https://github.com/derailed/k9s/issues/1378) Regression: Namespace filters are no longer applied on startup
-* [Issue #1376](https://github.com/derailed/k9s/issues/1376) Unable to show port forwards
-* [Issue #1374](https://github.com/derailed/k9s/issues/1374) --all-namespaces does not work v0.25.10
 * [Issue #1376](https://github.com/derailed/k9s/issues/1376) Events not sorted correctly by dates
+* [Issue #1375](https://github.com/derailed/k9s/issues/1375) Unable to show port forwards
+* [Issue #1374](https://github.com/derailed/k9s/issues/1374) --all-namespaces does not work v0.25.10
 * [Issue #1373](https://github.com/derailed/k9s/issues/1373) change namespace not possible
 
 ---
