@@ -267,10 +267,8 @@ func (f *Factory) ForwarderFor(path string) (Forwarder, bool) {
 	f.mx.RLock()
 	defer f.mx.RUnlock()
 
-	for k := range f.forwarders {
-		log.Debug().Msgf("KEY %q::%q", k, path)
-	}
 	fwd, ok := f.forwarders[path]
+
 	return fwd, ok
 }
 

@@ -34,7 +34,7 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 
 	pf, err := aa.PreferredPorts(ports)
 	if err != nil {
-		log.Warn().Err(err).Msgf("unable to resolve ports")
+		log.Warn().Err(err).Msgf("unable to resolve ports on %s", path)
 	}
 
 	p1, p2 := pf.ToPortSpec(ports)

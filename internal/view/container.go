@@ -124,7 +124,7 @@ func (c *Container) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if !c.App().factory.Forwarders().IsContainerForwarded(c.GetTable().Path, path) {
-		c.App().Flash().Errf("no portforwards defined")
+		c.App().Flash().Errf("no port-forward defined")
 		return nil
 	}
 	pf := NewPortForward(client.NewGVR("portforwards"))
@@ -174,7 +174,7 @@ func (c *Container) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if _, ok := c.App().factory.ForwarderFor(fwFQN(c.GetTable().Path, path)); ok {
-		c.App().Flash().Err(fmt.Errorf("A PortForward already exist on container %s", c.GetTable().Path))
+		c.App().Flash().Err(fmt.Errorf("A port-forward already exist on container %s", c.GetTable().Path))
 		return nil
 	}
 
@@ -182,7 +182,7 @@ func (c *Container) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !ok {
 		return nil
 	}
-	ShowPortForwards(c, c.GetTable().Path, ports, ann, startFwdCB)
+	ShowPortForwards(c, c.GetTable().Path+"|"+path, ports, ann, startFwdCB)
 
 	return nil
 }
@@ -229,12 +229,6 @@ func (c *Container) listForwardable(path string) (port.ContainerPortSpecs, map[s
 
 	if err := checkRunningStatus(path, po.Status.ContainerStatuses); err != nil {
 		c.App().Flash().Err(err)
-		return nil, nil, false
-	}
-
-	exposedPorts := port.FromContainerPorts(path, co.Ports)
-	if len(exposedPorts) == 0 {
-		c.App().Flash().Err(errors.New("Container exposes no ports"))
 		return nil, nil, false
 	}
 

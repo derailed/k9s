@@ -19,9 +19,6 @@ type Forwarder interface {
 	// ID returns the pf id.
 	ID() string
 
-	// Path returns a resource FQN.
-	Path() string
-
 	// Container returns a container name.
 	Container() string
 
@@ -54,27 +51,32 @@ func NewForwarders() Forwarders {
 
 // BOZO!! Review!!!
 // IsPodForwarded checks if pod has a forward.
-func (ff Forwarders) IsPodForwarded(path string) bool {
+func (ff Forwarders) IsPodForwarded(fqn string) bool {
 	for k := range ff {
-		fqn := strings.Split(k, "|")
-		if fqn[0] == path {
+		if strings.HasPrefix(k, fqn) {
 			return true
 		}
 	}
+
 	return false
 }
 
 // IsContainerForwarded checks if pod has a forward.
-func (ff Forwarders) IsContainerForwarded(path, co string) bool {
-	_, ok := ff[path+":"+co]
+func (ff Forwarders) IsContainerForwarded(fqn, co string) bool {
+	prefix := fqn+"|"+co
+	for k := range ff {
+		if strings.HasPrefix(k, prefix) {
+			return true
+		}
+	}
 
-	return ok
+	return false
 }
 
 // DeleteAll stops and delete all port-forwards.
 func (ff Forwarders) DeleteAll() {
 	for k, f := range ff {
-		log.Debug().Msgf("Deleting forwarder %s", f.Path())
+		log.Debug().Msgf("Deleting forwarder %s", f.ID())
 		f.Stop()
 		delete(ff, k)
 	}

@@ -41,7 +41,7 @@ func (p *PortForward) List(ctx context.Context, _ string) ([]runtime.Object, err
 
 	config, err := config.NewBench(benchFile)
 	if err != nil {
-		log.Debug().Msgf("No custom benchmark config file found")
+		log.Warn().Msgf("No custom benchmark config file found")
 	}
 
 	ff, cc := p.Factory.Forwarders(), config.Benchmarks.Containers

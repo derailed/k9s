@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"github.com/derailed/k9s/internal/dao"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"sync"
 	"time"
 
@@ -29,8 +29,6 @@ const (
 var (
 	// K9sBenchDir directory to store K9s Benchmark files.
 	K9sBenchDir = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-bench-%s", config.MustK9sUser()))
-
-	pathRx = regexp.MustCompile(`[:|]+`)
 )
 
 // Benchmark puts a workload under load.
@@ -132,7 +130,7 @@ func (b *Benchmark) save(cluster string, r io.Reader) error {
 	}
 
 	ns, n := client.Namespaced(b.config.Name)
-	file := filepath.Join(dir, fmt.Sprintf(benchFmat, ns, pathRx.ReplaceAllString(n, "_"), time.Now().UnixNano()))
+	file := filepath.Join(dir, fmt.Sprintf(benchFmat, ns, dao.BenchRx.ReplaceAllString(n, "_"), time.Now().UnixNano()))
 	f, err := os.Create(file)
 	if err != nil {
 		return err

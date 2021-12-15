@@ -1,45 +1,42 @@
 package cmd
 
 import (
+	"testing"
+
 	"github.com/derailed/k9s/internal/config"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func Test_getScreenDumpDirForInfo(t *testing.T) {
-	tests := []struct {
-		name                  string
+	tests := map[string]struct {
 		k9sConfigFile         string
 		expectedScreenDumpDir string
 	}{
-		{
-			name:                  "withK9sConfigFile",
+		"withK9sConfigFile": {
 			k9sConfigFile:         "testdata/k9s.yml",
 			expectedScreenDumpDir: "/tmp",
 		},
-		{
-			name:                  "withEmptyK9sConfigFile",
+		"withEmptyK9sConfigFile": {
 			k9sConfigFile:         "",
 			expectedScreenDumpDir: config.K9sDefaultScreenDumpDir,
 		},
-		{
-			name:                  "withInvalidK9sConfigFilePath",
+		"withInvalidK9sConfigFilePath": {
 			k9sConfigFile:         "invalid",
 			expectedScreenDumpDir: config.K9sDefaultScreenDumpDir,
 		},
-		{
-			name:                  "withScreenDumpDirEmptyInK9sConfigFile",
+		"withScreenDumpDirEmptyInK9sConfigFile": {
 			k9sConfigFile:         "testdata/k9s1.yml",
 			expectedScreenDumpDir: config.K9sDefaultScreenDumpDir,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for k := range tests {
+		u := tests[k]
+		t.Run(k, func(t *testing.T) {
 			initK9sConfigFile := config.K9sConfigFile
 
-			config.K9sConfigFile = tt.k9sConfigFile
+			config.K9sConfigFile = u.k9sConfigFile
 
-			assert.Equal(t, tt.expectedScreenDumpDir, getScreenDumpDirForInfo())
+			assert.Equal(t, u.expectedScreenDumpDir, getScreenDumpDirForInfo())
 
 			config.K9sConfigFile = initK9sConfigFile
 		})

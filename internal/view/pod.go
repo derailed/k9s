@@ -137,7 +137,7 @@ func (p *Pod) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	if !p.App().factory.Forwarders().IsPodForwarded(path) {
-		p.App().Flash().Errf("no portforwards defined")
+		p.App().Flash().Errf("no port-forward defined")
 		return nil
 	}
 	pf := NewPortForward(client.NewGVR("portforwards"))
