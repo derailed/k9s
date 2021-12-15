@@ -177,6 +177,23 @@ func (t *Table) SetSortCol(name string, asc bool) {
 	t.sortCol.name, t.sortCol.asc = name, asc
 }
 
+func (t *Table) GetSortCol() (string, bool) {
+	return t.sortCol.name, t.sortCol.asc
+}
+
+func (t *Table) isVisible(h render.HeaderColumn) bool {
+	if h.Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
+		return false
+	}
+	if h.MX && !t.hasMetrics {
+		return false
+	}
+	if h.Wide && !t.wide {
+		return false
+	}
+	return true
+}
+
 // Update table content.
 func (t *Table) Update(data render.TableData, hasMetrics bool) {
 	t.header = data.Header
@@ -219,10 +236,7 @@ func (t *Table) doUpdate(data render.TableData) {
 
 	var col int
 	for _, h := range custData.Header {
-		if h.Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
-			continue
-		}
-		if h.MX && !t.hasMetrics {
+		if !t.isVisible(h) {
 			continue
 		}
 		t.AddHeaderCell(col, h)
@@ -237,6 +251,7 @@ func (t *Table) doUpdate(data render.TableData) {
 		colIndex,
 		t.sortCol.name == "AGE",
 		data.Header.IsMetricsCol(colIndex),
+		t.sortCol.name == "CAPACITY",
 		t.sortCol.asc,
 	)
 
@@ -263,10 +278,7 @@ func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads M
 			continue
 		}
 
-		if h[c].Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
-			continue
-		}
-		if h[c].MX && !t.hasMetrics {
+		if !t.isVisible(h[c]) {
 			continue
 		}
 
@@ -305,6 +317,46 @@ func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tce
 			t.sortCol.asc = asc
 		}
 		t.sortCol.name = name
+		t.Refresh()
+		return nil
+	}
+}
+
+// SortColChange changes on which column to sort
+func (t *Table) SortColChange(direction SortChange) func(evt *tcell.EventKey) *tcell.EventKey {
+	return func(evt *tcell.EventKey) *tcell.EventKey {
+		sortCol := t.sortCol.name
+		sortColIdx := -1
+		newSortColIdx := -1
+		for i := range t.header {
+			if direction == SortPrevCol {
+				i = len(t.header) - i - 1
+			}
+			h := t.header[i]
+
+			if !t.isVisible(h) {
+				continue
+			}
+			if newSortColIdx == -1 {
+				// This is the wrap around value, also default value if current sort col name is not found
+				newSortColIdx = i
+			}
+			if sortColIdx != -1 {
+				// Next match after finding the col name is the target sort column
+				newSortColIdx = i
+				break
+			}
+			if h.Name == sortCol {
+				sortColIdx = i
+			}
+		}
+		log.Debug().Msgf("Currently sorting on col %s with index %d", t.sortCol.name, sortColIdx)
+		// sortColIdx equals -1 is a possible outcome, don't check for it
+		if newSortColIdx != -1 {
+			t.sortCol.name = t.header[newSortColIdx].Name
+			log.Debug().Msgf("New sort col is %s with index %d", t.sortCol.name, newSortColIdx)
+			// Leave sort order as is
+		}
 		t.Refresh()
 		return nil
 	}
