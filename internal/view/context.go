@@ -59,5 +59,5 @@ func useContext(app *App, name string) error {
 		return err
 	}
 
-	return app.switchCtx(name, true)
+	return app.switchContext(name, true)
 }

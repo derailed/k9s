@@ -164,6 +164,25 @@ func (mock *MockConnection) Dial() (kubernetes.Interface, error) {
 	return ret0, ret1
 }
 
+func (mock *MockConnection) DialLogs() (kubernetes.Interface, error) {
+	if mock == nil {
+		panic("mock must not be nil. Use myMock := NewMockConnection().")
+	}
+	params := []pegomock.Param{}
+	result := pegomock.GetGenericMockFrom(mock).Invoke("DialLogs", params, []reflect.Type{reflect.TypeOf((*kubernetes.Interface)(nil)).Elem(), reflect.TypeOf((*error)(nil)).Elem()})
+	var ret0 kubernetes.Interface
+	var ret1 error
+	if len(result) != 0 {
+		if result[0] != nil {
+			ret0 = result[0].(kubernetes.Interface)
+		}
+		if result[1] != nil {
+			ret1 = result[1].(error)
+		}
+	}
+	return ret0, ret1
+}
+
 func (mock *MockConnection) DynDial() (dynamic.Interface, error) {
 	if mock == nil {
 		panic("mock must not be nil. Use myMock := NewMockConnection().")

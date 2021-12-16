@@ -24,10 +24,15 @@ func TestDeltaLabelize(t *testing.T) {
 		},
 	}
 
+	hh := render.Header{
+		render.HeaderColumn{Name: "A"},
+		render.HeaderColumn{Name: "B"},
+		render.HeaderColumn{Name: "C"},
+	}
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			d := render.NewDeltaRow(u.o, u.n, false)
+			d := render.NewDeltaRow(u.o, u.n, hh)
 			d = d.Labelize([]int{0, 1}, 2)
 			assert.Equal(t, u.e, d)
 		})
@@ -111,10 +116,15 @@ func TestDeltaCustomize(t *testing.T) {
 		},
 	}
 
+	hh := render.Header{
+		render.HeaderColumn{Name: "A"},
+		render.HeaderColumn{Name: "B"},
+		render.HeaderColumn{Name: "C"},
+	}
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			d := render.NewDeltaRow(u.r1, u.r2, false)
+			d := render.NewDeltaRow(u.r1, u.r2, hh)
 			out := make(render.DeltaRow, len(u.cols))
 			d.Customize(u.cols, out)
 			assert.Equal(t, u.e, out)
@@ -168,10 +178,15 @@ func TestDeltaNew(t *testing.T) {
 		},
 	}
 
+	hh := render.Header{
+		render.HeaderColumn{Name: "A"},
+		render.HeaderColumn{Name: "B"},
+		render.HeaderColumn{Name: "C"},
+	}
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			d := render.NewDeltaRow(u.o, u.n, false)
+			d := render.NewDeltaRow(u.o, u.n, hh)
 			assert.Equal(t, u.e, d)
 			assert.Equal(t, u.blank, d.IsBlank())
 		})

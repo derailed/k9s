@@ -31,7 +31,6 @@ type Config struct {
 func NewConfig(f *genericclioptions.ConfigFlags) *Config {
 	return &Config{
 		flags: f,
-		// pathOptions: clientcmd.NewDefaultPathOptions(),
 		mutex: &sync.RWMutex{},
 	}
 }

@@ -19,6 +19,15 @@ var (
 	fuzzyRx   = regexp.MustCompile(`\A\-f`)
 )
 
+func inList(ll []string, s string) bool {
+	for _, l := range ll {
+		if l == s {
+			return true
+		}
+	}
+	return false
+}
+
 // IsInverseSelector checks if inverse char has been provided.
 func IsInverseSelector(s string) bool {
 	if s == "" {

@@ -125,7 +125,7 @@ func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, er
 		return nil, fmt.Errorf("user is not authorized to view pod logs")
 	}
 
-	dial, err := p.Client().Dial()
+	dial, err := p.Client().DialLogs()
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +178,6 @@ func (p *Pod) GetInstance(fqn string) (*v1.Pod, error) {
 
 // TailLogs tails a given container logs.
 func (p *Pod) TailLogs(ctx context.Context, out LogChan, opts *LogOptions) error {
-	log.Debug().Msgf("TAIL-LOGS for %q:%q", opts.Path, opts.Container)
 	fac, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
 	if !ok {
 		return errors.New("No factory in context")
@@ -334,28 +333,31 @@ func tailLogs(ctx context.Context, logger Logger, out LogChan, opts *LogOptions)
 	)
 
 	o := opts.ToPodLogOptions()
-	log.Debug().Msgf("TAIL_LOGS! %#v", o)
 done:
 	for r := 0; r < logRetryCount; r++ {
+		var e error
 		req, err = logger.Logs(opts.Path, o)
 		if err == nil {
 			// This call will block if nothing is in the stream!!
 			if stream, err = req.Stream(ctx); err == nil {
 				go readLogs(ctx, stream, out, opts)
 				break
-			} else {
-				log.Error().Err(err).Msg("Streaming logs")
 			}
+			e = fmt.Errorf("stream logs failed %w for %s", err, opts.Info())
+			log.Error().Err(e).Msg("logs-stream")
 		} else {
-			log.Error().Err(err).Msg("Requesting logs")
+			e = fmt.Errorf("stream logs failed %w for %s", err, opts.Info())
+			log.Error().Err(e).Msg("log-request")
 		}
 
 		select {
 		case <-ctx.Done():
-			log.Debug().Msgf("!!!!TAIL_LOGS CANCELED!!!!")
 			err = ctx.Err()
 			break done
 		default:
+			if e != nil {
+				out <- opts.ToErrLogItem(e)
+			}
 			time.Sleep(logRetryWait)
 		}
 	}
@@ -365,7 +367,6 @@ done:
 
 func readLogs(ctx context.Context, stream io.ReadCloser, c LogChan, opts *LogOptions) {
 	defer func() {
-		log.Debug().Msgf("READ_LOGS BAILED!!!")
 		if err := stream.Close(); err != nil {
 			log.Error().Err(err).Msgf("Fail to close stream %s", opts.Info())
 		}
@@ -374,20 +375,27 @@ func readLogs(ctx context.Context, stream io.ReadCloser, c LogChan, opts *LogOpt
 	log.Debug().Msgf("READ_LOGS PROCESSING %#v", opts)
 	r := bufio.NewReader(stream)
 	for {
+		var item *LogItem
 		bytes, err := r.ReadBytes('\n')
-		if err != nil {
+		if err == nil {
+			item = opts.ToLogItem(bytes)
+		} else {
 			if errors.Is(err, io.EOF) {
-				log.Warn().Err(err).Msgf("Stream closed for %s", opts.Info())
-				// c <- ItemEOF
-				return
+				e := fmt.Errorf("Stream closed %w for %s", err, opts.Info())
+				item = opts.ToErrLogItem(e)
+				log.Warn().Err(e).Msgf("stream closed")
+			} else {
+				e := fmt.Errorf("Stream failed %w for %s", err, opts.Info())
+				item = opts.ToErrLogItem(e)
+				log.Warn().Err(e).Msgf("stream read failed")
 			}
-			log.Warn().Err(err).Msgf("Stream READ error %s", opts.Info())
-			return
 		}
 		select {
-		case c <- opts.DecorateLog(bytes):
+		case c <- item:
+			if item.IsError {
+				return
+			}
 		case <-ctx.Done():
-			log.Debug().Msgf("READER CANCELED")
 			return
 		}
 	}
@@ -416,34 +424,8 @@ func extractFQN(o runtime.Object) string {
 		log.Error().Err(fmt.Errorf("expecting unstructured but got %T", o))
 		return client.NA
 	}
-	m, ok := u.Object["metadata"].(map[string]interface{})
-	if !ok {
-		log.Error().Err(fmt.Errorf("expecting interface map for metadata but got %T", u.Object["metadata"]))
-		return client.NA
-	}
 
-	n, ok := m["name"].(string)
-	if !ok {
-		log.Error().Err(fmt.Errorf("expecting interface map for name but got %T", m["name"]))
-		return client.NA
-	}
-
-	ns, ok := m["namespace"].(string)
-	if !ok {
-		return FQN("", n)
-	}
-
-	return FQN(ns, n)
-}
-
-// Check if string is in a string list.
-func in(ll []string, s string) bool {
-	for _, l := range ll {
-		if l == s {
-			return true
-		}
-	}
-	return false
+	return FQN(u.GetNamespace(), u.GetName())
 }
 
 // GetPodSpec returns a pod spec given a resource.

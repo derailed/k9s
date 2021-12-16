@@ -108,8 +108,10 @@ func TestLogViewSave(t *testing.T) {
 
 	dir := filepath.Join(app.Config.K9s.GetScreenDumpDir(), app.Config.K9s.CurrentCluster)
 	c1, _ := os.ReadDir(dir)
+	fmt.Println("C1", c1)
 	v.SaveCmd(nil)
 	c2, _ := os.ReadDir(dir)
+	fmt.Println("C2", c2)
 	assert.Equal(t, len(c2), len(c1)+1)
 }
 

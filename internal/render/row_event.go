@@ -196,7 +196,7 @@ func (r RowEvents) FindIndex(id string) (int, bool) {
 }
 
 // Sort rows based on column index and order.
-func (r RowEvents) Sort(ns string, sortCol int, ageCol, numCol, asc bool) {
+func (r RowEvents) Sort(ns string, sortCol int, isDuration, numCol, asc bool) {
 	if sortCol == -1 {
 		return
 	}
@@ -207,14 +207,14 @@ func (r RowEvents) Sort(ns string, sortCol int, ageCol, numCol, asc bool) {
 		Index:      sortCol,
 		Asc:        asc,
 		IsNumber:   numCol,
-		IsDuration: ageCol,
+		IsDuration: isDuration,
 	}
 	sort.Sort(t)
 
 	iids, fields := map[string][]string{}, make(StringSet, 0, len(r))
 	for _, re := range r {
 		field := re.Row.Fields[sortCol]
-		if ageCol {
+		if isDuration {
 			field = toAgeDuration(field)
 		}
 		fields = fields.Add(field)

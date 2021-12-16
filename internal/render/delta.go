@@ -8,15 +8,10 @@ import (
 type DeltaRow []string
 
 // NewDeltaRow computes the delta between 2 rows.
-func NewDeltaRow(o, n Row, excludeLast bool) DeltaRow {
+func NewDeltaRow(o, n Row, h Header) DeltaRow {
 	deltas := make(DeltaRow, len(o.Fields))
-	// Exclude age col
-	oldFields := o.Fields[:len(o.Fields)-1]
-	if !excludeLast {
-		oldFields = o.Fields[:len(o.Fields)]
-	}
-	for i, old := range oldFields {
-		if old != "" && old != n.Fields[i] {
+	for i, old := range o.Fields {
+		if old != "" && old != n.Fields[i] && !h.IsTimeCol(i) {
 			deltas[i] = old
 		}
 	}

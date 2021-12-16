@@ -92,6 +92,10 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 	c.K9s.CurrentCluster = context.Cluster
 	c.K9s.ActivateCluster()
 
+	var cns string
+	if cl := c.K9s.ActiveCluster(); cl != nil && cl.Namespace != nil {
+		cns = cl.Namespace.Active
+	}
 	var ns string
 	if k9sFlags != nil && IsBoolSet(k9sFlags.AllNamespaces) {
 		ns = client.NamespaceAll
@@ -99,11 +103,11 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 		ns = *flags.Namespace
 	} else if context.Namespace != "" {
 		ns = context.Namespace
-		if cl := c.K9s.ActiveCluster(); cl != nil && cl.Namespace != nil && cl.Namespace.Active != "" {
-			ns = cl.Namespace.Active
+		if  cns != "" {
+			ns = cns
 		}
-	} else if cl := c.K9s.ActiveCluster(); cl != nil && cl.Namespace != nil {
-		ns = cl.Namespace.Active
+	} else {
+		ns = cns
 	}
 
 	if ns != "" {
@@ -112,11 +116,9 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 		}
 		flags.Namespace = &ns
 	}
-
 	if isSet(flags.ClusterName) {
 		c.K9s.CurrentCluster = *flags.ClusterName
 	}
-
 	EnsurePath(c.K9s.GetScreenDumpDir(), DefaultDirMod)
 
 	return nil

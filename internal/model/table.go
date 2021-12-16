@@ -302,6 +302,7 @@ func hydrate(ns string, oo []runtime.Object, rr render.Rows, re Renderer) error 
 
 type Generic interface {
 	SetTable(*metav1beta1.Table)
+	Header(string) render.Header
 	Render(interface{}, string, *render.Row) error
 }
 

@@ -397,7 +397,7 @@ func (a *App) isValidNS(ns string) (bool, error) {
 	return true, nil
 }
 
-func (a *App) switchCtx(name string, loadPods bool) error {
+func (a *App) switchContext(name string, loadPods bool) error {
 	log.Debug().Msgf("--> Switching Context %q--%q", name, a.Config.ActiveView())
 	a.Halt()
 	defer a.Resume()
@@ -408,8 +408,8 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 		}
 		a.initFactory(ns)
 
-		if err := a.command.Reset(true); err != nil {
-			return err
+		if e := a.command.Reset(true); e != nil {
+			return e
 		}
 		v := a.Config.ActiveView()
 		if v == "" || isContextCmd(v) || loadPods {
@@ -418,8 +418,16 @@ func (a *App) switchCtx(name string, loadPods bool) error {
 		}
 		a.Config.Reset()
 		a.Config.K9s.CurrentContext = name
+		cluster, err := a.Conn().Config().CurrentClusterName()
+		if err != nil {
+			return err
+		}
+		a.Config.K9s.CurrentCluster = cluster
+		if err := a.Config.SetActiveNamespace(ns); err != nil {
+			log.Error().Err(err).Msg("unable to set active ns")
+		}
 		if err := a.Config.Save(); err != nil {
-			log.Error().Err(err).Msg("Config save failed!")
+			log.Error().Err(err).Msg("config save failed!")
 		}
 
 		a.Flash().Infof("Switching context to %s", name)

@@ -81,7 +81,7 @@ func (t *TableData) Update(rows Rows) {
 		}
 
 		if index, ok := t.RowEvents.FindIndex(row.ID); ok {
-			delta := NewDeltaRow(t.RowEvents[index].Row, row, t.Header.HasAge())
+			delta := NewDeltaRow(t.RowEvents[index].Row, row, t.Header)
 			if delta.IsBlank() {
 				t.RowEvents[index].Kind, t.RowEvents[index].Deltas = EventUnchanged, blankDelta
 				t.RowEvents[index].Row = row
