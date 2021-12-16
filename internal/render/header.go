@@ -150,11 +150,12 @@ func (h Header) IsMetricsCol(col int) bool {
 	return h[col].MX
 }
 
-// IsAgeCol checks if given column index is the age column.
-func (h Header) IsAgeCol(col int) bool {
-	if !h.HasAge() || col >= len(h) {
+// IsTimeCol checks if given column index represents a timestamp.
+func (h Header) IsTimeCol(col int) bool {
+	if col >= len(h) {
 		return false
 	}
+
 	return h[col].Time
 }
 

@@ -26,7 +26,7 @@ func ComputeMaxColumns(pads MaxyPad, sortColName string, header render.Header, e
 	var row int
 	for _, e := range ee {
 		for index, field := range e.Row.Fields {
-			if header.IsAgeCol(index) {
+			if header.IsTimeCol(index) {
 				field = toAgeHuman(field)
 			}
 			width := len(field) + colPadding

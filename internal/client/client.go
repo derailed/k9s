@@ -34,15 +34,15 @@ var supportedMetricsAPIVersions = []string{"v1beta1"}
 
 // APIClient represents a Kubernetes api client.
 type APIClient struct {
-	client       kubernetes.Interface
-	dClient      dynamic.Interface
-	nsClient     dynamic.NamespaceableResourceInterface
-	mxsClient    *versioned.Clientset
-	cachedClient *disk.CachedDiscoveryClient
-	config       *Config
-	mx           sync.Mutex
-	cache        *cache.LRUExpireCache
-	connOK       bool
+	client, logClient kubernetes.Interface
+	dClient           dynamic.Interface
+	nsClient          dynamic.NamespaceableResourceInterface
+	mxsClient         *versioned.Clientset
+	cachedClient      *disk.CachedDiscoveryClient
+	config            *Config
+	mx                sync.Mutex
+	cache             *cache.LRUExpireCache
+	connOK            bool
 }
 
 // NewTestAPIClient for testing ONLY!!
@@ -279,6 +279,27 @@ func (a *APIClient) HasMetrics() bool {
 	return err == nil
 }
 
+// LogDial returns a handle to api server for logs.
+func (a *APIClient) DialLogs() (kubernetes.Interface, error) {
+	if !a.connOK {
+		return nil, errors.New("No connection to dial")
+	}
+	if a.logClient != nil {
+		return a.logClient, nil
+	}
+
+	cfg, err := a.RestConfig()
+	if err != nil {
+		return nil, err
+	}
+	cfg.Timeout = 0
+	if a.logClient, err = kubernetes.NewForConfig(cfg); err != nil {
+		return nil, err
+	}
+
+	return a.logClient, nil
+}
+
 // Dial returns a handle to api server or die.
 func (a *APIClient) Dial() (kubernetes.Interface, error) {
 	if !a.connOK {
@@ -393,7 +414,7 @@ func (a *APIClient) reset() {
 	a.config.reset()
 	a.cache = cache.NewLRUExpireCache(cacheSize)
 	a.client, a.dClient, a.nsClient, a.mxsClient = nil, nil, nil, nil
-	a.cachedClient = nil
+	a.cachedClient, a.logClient = nil, nil
 	a.connOK = true
 }
 

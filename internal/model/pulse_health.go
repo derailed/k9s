@@ -103,7 +103,6 @@ func (h *PulseHealth) check(ctx context.Context, ns, gvr string) (*health.Check,
 			DAO:      &dao.Table{},
 			Renderer: &render.Generic{},
 		}
-		// return nil, fmt.Errorf("No meta for %q", gvr)
 	}
 	if meta.DAO == nil {
 		meta.DAO = &dao.Resource{}
@@ -116,19 +115,19 @@ func (h *PulseHealth) check(ctx context.Context, ns, gvr string) (*health.Check,
 	}
 	c := health.NewCheck(gvr)
 
-	if _, ok := meta.Renderer.(*render.Generic); ok {
+	if meta.Renderer.IsGeneric() {
 		table, ok := oo[0].(*metav1beta1.Table)
 		if !ok {
 			return nil, fmt.Errorf("expecting a meta table but got %T", oo[0])
 		}
 		rows := make(render.Rows, len(table.Rows))
-		gr, _ := meta.Renderer.(*render.Generic)
-		gr.SetTable(table)
+		re, _ := meta.Renderer.(Generic)
+		re.SetTable(table)
 		for i, row := range table.Rows {
-			if err := gr.Render(row, ns, &rows[i]); err != nil {
+			if err := re.Render(row, ns, &rows[i]); err != nil {
 				return nil, err
 			}
-			if !render.Happy(ns, gr.Header(ns), rows[i]) {
+			if !render.Happy(ns, re.Header(ns), rows[i]) {
 				c.Inc(health.S2)
 				continue
 			}

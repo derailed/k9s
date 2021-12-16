@@ -22,7 +22,7 @@ type Namespace struct {
 func NewNamespace() *Namespace {
 	return &Namespace{
 		Active:    defaultNS,
-		Favorites: []string{defaultNS},
+		Favorites: []string{"default"},
 	}
 }
 

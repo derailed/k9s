@@ -237,6 +237,7 @@ func (l *Log) load(ctx context.Context, c dao.LogChan) error {
 		if err = loggable.TailLogs(ctx, c, l.logOptions); err != nil {
 			log.Error().Err(err).Msgf("Tail logs failed")
 			l.cancel()
+			l.fireLogError(err)
 		}
 	}()
 

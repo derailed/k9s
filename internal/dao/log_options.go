@@ -28,7 +28,10 @@ type LogOptions struct {
 
 // Info returns the option pod and container info.
 func (o *LogOptions) Info() string {
-	return fmt.Sprintf("%q::%q", o.Path, o.Container)
+	if len(o.Container) != 0 {
+		return fmt.Sprintf("%s (%s)", o.Path, o.Container)
+	}
+	return o.Path
 }
 
 // Clone clones options.
@@ -109,8 +112,8 @@ func (o *LogOptions) ToPodLogOptions() *v1.PodLogOptions {
 	return &opts
 }
 
-// DecorateLog add a log header to display po/co information along with the log message.
-func (o *LogOptions) DecorateLog(bytes []byte) *LogItem {
+// ToLogItem add a log header to display po/co information along with the log message.
+func (o *LogOptions) ToLogItem(bytes []byte) *LogItem {
 	item := NewLogItem(bytes)
 	if len(bytes) == 0 {
 		return item
@@ -126,5 +129,12 @@ func (o *LogOptions) DecorateLog(bytes []byte) *LogItem {
 		item.Container = o.Container
 	}
 
+	return item
+}
+
+func (o *LogOptions) ToErrLogItem(err error) *LogItem {
+	t := time.Now().UTC().Format(time.RFC3339Nano)
+	item := NewLogItem([]byte(fmt.Sprintf("%s [red::b]%s\n", t, err)))
+	item.IsError = true
 	return item
 }

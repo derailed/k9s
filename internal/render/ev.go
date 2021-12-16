@@ -21,14 +21,8 @@ func (*Event) IsGeneric() bool {
 // ColorerFunc colors a resource row.
 func (e *Event) ColorerFunc() ColorerFunc {
 	return func(ns string, h Header, re RowEvent) tcell.Color {
-		if !Happy(ns, h, re.Row) {
-			return ErrColor
-		}
 		reasonCol := h.IndexOf("REASON", true)
-		if reasonCol == -1 {
-			return DefaultColorer(ns, h, re)
-		}
-		if strings.TrimSpace(re.Row.Fields[reasonCol]) == "Killing" {
+		if reasonCol >= 0 && strings.TrimSpace(re.Row.Fields[reasonCol]) == "Killing" {
 			return KillColor
 		}
 
@@ -86,13 +80,31 @@ func (e *Event) Render(o interface{}, ns string, r *Row) error {
 	r.ID = client.FQN(nns, name)
 	r.Fields = make(Fields, 0, len(e.Header(ns)))
 	r.Fields = append(r.Fields, nns)
-	for _, c := range row.Cells {
-		if c == nil {
+	for _, o := range row.Cells {
+		if o == nil {
 			r.Fields = append(r.Fields, Blank)
 			continue
 		}
-		r.Fields = append(r.Fields, fmt.Sprintf("%v", c))
+		if s, ok := o.(fmt.Stringer); ok {
+			r.Fields = append(r.Fields, s.String())
+			continue
+		}
+		if s, ok := o.(string); ok {
+			r.Fields = append(r.Fields, s)
+			continue
+		}
+		r.Fields = append(r.Fields, fmt.Sprintf("%v", o))
 	}
 
 	return nil
+}
+
+func (e *Event) cellFor(n string, row metav1beta1.TableRow) (string, bool) {
+	for i, h := range e.table.ColumnDefinitions {
+		if h.Name == n {
+			return fmt.Sprintf("%v", row.Cells[i]), true
+		}
+	}
+
+	return "", false
 }

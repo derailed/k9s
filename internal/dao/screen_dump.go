@@ -16,7 +16,7 @@ var (
 	_ Nuker    = (*ScreenDump)(nil)
 
 	// InvalidCharsRX contains invalid filename characters.
-	invalidPathCharsRX = regexp.MustCompile(`[:/\\]+`)
+	invalidPathCharsRX = regexp.MustCompile(`[:]+`)
 )
 
 // ScreenDump represents a scraped resources.

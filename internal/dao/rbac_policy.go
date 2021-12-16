@@ -76,7 +76,7 @@ func (p *Policy) loadClusterRoleBinding(kind, name string) (render.Policies, err
 
 	rows := make(render.Policies, 0, len(nn))
 	for _, cr := range crs {
-		if !in(nn, cr.Name) {
+		if !inList(nn, cr.Name) {
 			continue
 		}
 		rows = append(rows, parseRules("*", "CR:"+cr.Name, cr.Rules)...)
@@ -97,7 +97,7 @@ func (p *Policy) loadRoleBinding(kind, name string) (render.Policies, error) {
 	}
 	rows := make(render.Policies, 0, len(crs))
 	for _, cr := range crs {
-		if !in(ss, "ClusterRole:"+cr.Name) {
+		if !inList(ss, "ClusterRole:"+cr.Name) {
 			continue
 		}
 		rows = append(rows, parseRules("*", "CR:"+cr.Name, cr.Rules)...)
@@ -108,7 +108,7 @@ func (p *Policy) loadRoleBinding(kind, name string) (render.Policies, error) {
 		return nil, err
 	}
 	for _, ro := range ros {
-		if !in(ss, "Role:"+ro.Name) {
+		if !inList(ss, "Role:"+ro.Name) {
 			continue
 		}
 		log.Debug().Msgf("Loading rules for role %q:%q", ro.Namespace, ro.Name)

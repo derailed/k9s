@@ -25,8 +25,8 @@ import (
 const (
 	logTitle            = "logs"
 	logMessage          = "Waiting for logs...\n"
-	logFmt              = " Logs([hilite:bg:]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
-	logCoFmt            = " Logs([hilite:bg:]%s:[hilite:bg:b]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
+	logFmt              = "([hilite:bg:]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
+	logCoFmt            = "([hilite:bg:]%s:[hilite:bg:b]%s[-:bg:-])[[green:bg:b]%s[-:bg:-]] "
 	defaultFlushTimeout = 50 * time.Millisecond
 )
 
@@ -207,8 +207,6 @@ func (l *Log) getContext() context.Context {
 
 // Start runs the component.
 func (l *Log) Start() {
-	log.Debug().Msgf("LOG_VIEW STARTED!!")
-
 	l.model.Restart(l.getContext(), l.logChan, true)
 	l.model.AddListener(l)
 	l.app.Styles.AddListener(l)
@@ -219,10 +217,8 @@ func (l *Log) Start() {
 
 // Stop terminates the component.
 func (l *Log) Stop() {
-	log.Debug().Msgf("LOG_VIEW STOPPED!")
 	l.model.RemoveListener(l)
 	l.model.Stop()
-	log.Debug().Msgf("CLOSING LOG_CHANNEL!!!")
 	l.mx.Lock()
 	{
 		if l.cancelFn != nil {
@@ -314,12 +310,15 @@ func (l *Log) updateTitle() {
 		since = "head"
 	}
 
-	var title string
+	title := " Logs"
+	if l.model.LogOptions().Previous {
+		title = " Previous Logs"
+	}
 	path, co := l.model.GetPath(), l.model.GetContainer()
 	if co == "" {
-		title = ui.SkinTitle(fmt.Sprintf(logFmt, path, since), l.app.Styles.Frame())
+		title += ui.SkinTitle(fmt.Sprintf(logFmt, path, since), l.app.Styles.Frame())
 	} else {
-		title = ui.SkinTitle(fmt.Sprintf(logCoFmt, path, co, since), l.app.Styles.Frame())
+		title += ui.SkinTitle(fmt.Sprintf(logCoFmt, path, co, since), l.app.Styles.Frame())
 	}
 
 	buff := l.logs.cmdBuff.GetText()
@@ -409,11 +408,13 @@ func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 // SaveCmd dumps the logs to file.
 func (l *Log) SaveCmd(*tcell.EventKey) *tcell.EventKey {
-	if path, err := saveData(l.app.Config.K9s.GetScreenDumpDir(), l.app.Config.K9s.CurrentContext, l.model.GetPath(), l.logs.GetText(true)); err != nil {
+	path, err := saveData(l.app.Config.K9s.GetScreenDumpDir(), l.app.Config.K9s.CurrentContext, l.model.GetPath(), l.logs.GetText(true))
+	if err != nil {
 		l.app.Flash().Err(err)
-	} else {
-		l.app.Flash().Infof("Log %s saved successfully!", path)
+		return nil
 	}
+	l.app.Flash().Infof("Log %s saved successfully!", path)
+
 	return nil
 }
 
@@ -429,14 +430,14 @@ func ensureDir(dir string) error {
 	return os.MkdirAll(dir, 0744)
 }
 
-func saveData(screenDumpDir, cluster, name, data string) (string, error) {
+func saveData(screenDumpDir, cluster, fqn, data string) (string, error) {
 	dir := filepath.Join(screenDumpDir, dao.SanitizeFilename(cluster))
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}
 
 	now := time.Now().UnixNano()
-	fName := fmt.Sprintf("%s-%d.log", dao.SanitizeFilename(name), now)
+	fName := fmt.Sprintf("%s-%d.log", strings.Replace(fqn, "/", "-", 1), now)
 
 	path := filepath.Join(dir, fName)
 	mod := os.O_CREATE | os.O_WRONLY

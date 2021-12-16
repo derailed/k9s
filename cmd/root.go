@@ -121,7 +121,7 @@ func loadConfiguration() *config.Config {
 	}
 	// Try to access server version if that fail. Connectivity issue?
 	if !k9sCfg.GetConnection().CheckConnectivity() {
-		log.Panic().Msgf("Cannot connect to cluster")
+		log.Panic().Msgf("Cannot connect to cluster %s", k9sCfg.K9s.CurrentCluster)
 	}
 	if !k9sCfg.GetConnection().ConnectionOK() {
 		panic("No connectivity")

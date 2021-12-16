@@ -241,7 +241,7 @@ func TestHeaderHasAge(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, u.h.HasAge())
-			assert.Equal(t, u.e, u.h.IsAgeCol(2))
+			assert.Equal(t, u.e, u.h.IsTimeCol(2))
 		})
 	}
 }

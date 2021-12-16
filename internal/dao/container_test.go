@@ -44,6 +44,7 @@ func makeConn() *conn {
 
 func (c *conn) Config() *client.Config                                { return nil }
 func (c *conn) Dial() (kubernetes.Interface, error)                   { return nil, nil }
+func (c *conn) DialLogs() (kubernetes.Interface, error)               { return nil, nil }
 func (c *conn) ConnectionOK() bool                                    { return true }
 func (c *conn) SwitchContext(ctx string) error                        { return nil }
 func (c *conn) CachedDiscovery() (*disk.CachedDiscoveryClient, error) { return nil, nil }

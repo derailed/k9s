@@ -235,7 +235,7 @@ func (t *Table) doUpdate(data render.TableData) {
 	custData.RowEvents.Sort(
 		custData.Namespace,
 		colIndex,
-		t.sortCol.name == "AGE",
+		custData.Header.IsTimeCol(colIndex),
 		data.Header.IsMetricsCol(colIndex),
 		t.sortCol.asc,
 	)
@@ -270,7 +270,7 @@ func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads M
 			continue
 		}
 
-		if !re.Deltas.IsBlank() && !h.IsAgeCol(c) {
+		if !re.Deltas.IsBlank() && !h.IsTimeCol(c) {
 			field += Deltas(re.Deltas[c], field)
 		}
 

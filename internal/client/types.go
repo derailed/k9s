@@ -85,8 +85,11 @@ type Connection interface {
 	// ConnectionOK checks api server connection status.
 	ConnectionOK() bool
 
-	// DialOrDie connects to api server.
+	// Dial connects to api server.
 	Dial() (kubernetes.Interface, error)
+
+	// DialLogs connects to api server for logs.
+	DialLogs() (kubernetes.Interface, error)
 
 	// SwitchContext switches cluster based on context.
 	SwitchContext(ctx string) error
