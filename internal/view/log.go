@@ -225,10 +225,6 @@ func (l *Log) Stop() {
 			l.cancelFn()
 			l.cancelFn = nil
 		}
-		if l.logChan != nil {
-			close(l.logChan)
-			l.logChan = nil
-		}
 	}
 	l.mx.Unlock()
 	l.app.Styles.RemoveListener(l)
