@@ -391,12 +391,14 @@ func readLogs(ctx context.Context, stream io.ReadCloser, c LogChan, opts *LogOpt
 			}
 		}
 		select {
+		case <-ctx.Done():
+			close(c)
+			return
 		case c <- item:
 			if item.IsError {
+				close(c)
 				return
 			}
-		case <-ctx.Done():
-			return
 		}
 	}
 }
