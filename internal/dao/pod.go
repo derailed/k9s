@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/derailed/k9s/internal"
@@ -125,12 +126,12 @@ func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, er
 		return nil, fmt.Errorf("user is not authorized to view pod logs")
 	}
 
+	ns, n := client.Namespaced(path)
 	dial, err := p.Client().DialLogs()
 	if err != nil {
 		return nil, err
 	}
 
-	ns, n := client.Namespaced(path)
 	return dial.CoreV1().Pods(ns).GetLogs(n, opts), nil
 }
 
@@ -177,64 +178,49 @@ func (p *Pod) GetInstance(fqn string) (*v1.Pod, error) {
 }
 
 // TailLogs tails a given container logs.
-func (p *Pod) TailLogs(ctx context.Context, out LogChan, opts *LogOptions) error {
+func (p *Pod) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error) {
 	fac, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
 	if !ok {
-		return errors.New("No factory in context")
+		return nil, errors.New("No factory in context")
 	}
 	o, err := fac.Get(p.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
-		return err
+		return nil, err
 	}
 	var po v1.Pod
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &po); err != nil {
-		return err
+		return nil, err
 	}
-
-	if len(po.Spec.InitContainers)+len(po.Spec.Containers) == 1 {
+	coCounts := len(po.Spec.InitContainers) + len(po.Spec.Containers) + len(po.Spec.EphemeralContainers)
+	if coCounts == 1 {
 		opts.SingleContainer = true
 	}
 
+	outs := make([]LogChan, 0, coCounts)
 	if co, ok := GetDefaultLogContainer(po.ObjectMeta, po.Spec); ok && !opts.AllContainers {
 		opts.DefaultContainer = co
-		return tailLogs(ctx, p, out, opts)
+		return append(outs, tailLogs(ctx, p, opts)), nil
 	}
-
 	if opts.HasContainer() && !opts.AllContainers {
-		return tailLogs(ctx, p, out, opts)
+		return append(outs, tailLogs(ctx, p, opts)), nil
 	}
-
-	var tailed bool
 	for _, co := range po.Spec.InitContainers {
 		o := opts.Clone()
 		o.Container = co.Name
-		if err := tailLogs(ctx, p, out, o); err != nil {
-			return err
-		}
-		tailed = true
+		outs = append(outs, tailLogs(ctx, p, o))
 	}
 	for _, co := range po.Spec.Containers {
 		o := opts.Clone()
 		o.Container = co.Name
-		if err := tailLogs(ctx, p, out, o); err != nil {
-			return err
-		}
-		tailed = true
+		outs = append(outs, tailLogs(ctx, p, o))
 	}
 	for _, co := range po.Spec.EphemeralContainers {
 		o := opts.Clone()
 		o.Container = co.Name
-		if err := tailLogs(ctx, p, out, o); err != nil {
-			return err
-		}
-		tailed = true
+		outs = append(outs, tailLogs(ctx, p, o))
 	}
 
-	if !tailed {
-		return fmt.Errorf("no loggable containers found for pod %s", opts.Path)
-	}
-
-	return nil
+	return outs, nil
 }
 
 // ScanSA scans for ServiceAccount refs.
@@ -325,78 +311,90 @@ func (p *Pod) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func tailLogs(ctx context.Context, logger Logger, out LogChan, opts *LogOptions) error {
+func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 	var (
-		err    error
-		req    *restclient.Request
-		stream io.ReadCloser
+		out    = make(LogChan, 2)
+		wg     sync.WaitGroup
 	)
 
-	o := opts.ToPodLogOptions()
-done:
-	for r := 0; r < logRetryCount; r++ {
-		var e error
-		req, err = logger.Logs(opts.Path, o)
-		if err == nil {
-			// This call will block if nothing is in the stream!!
-			if stream, err = req.Stream(ctx); err == nil {
-				go readLogs(ctx, stream, out, opts)
-				break
+	wg.Add(1)
+	go func() {
+		defer func() {
+			wg.Done()
+			log.Debug().Msgf("<<< RETRY-TAIL DONE!!! %s", opts.Info())
+		}()
+		podOpts := opts.ToPodLogOptions()
+		log.Debug().Msgf(">>> RETRY-TAIL START %s", opts.Info())
+		var stream io.ReadCloser
+		for r := 0; r < logRetryCount; r++ {
+			var e error
+			req, err := logger.Logs(opts.Path, podOpts)
+			if err == nil {
+				// This call will block if nothing is in the stream!!
+				if stream, err = req.Stream(ctx); err == nil {
+					wg.Add(1)
+					go readLogs(ctx, &wg, stream, out, opts)
+					return
+				}
+				e = fmt.Errorf("stream logs failed %w for %s", err, opts.Info())
+				log.Error().Err(e).Msg("logs-stream")
+			} else {
+				e = fmt.Errorf("stream logs failed %w for %s", err, opts.Info())
+				log.Error().Err(e).Msg("log-request")
 			}
-			e = fmt.Errorf("stream logs failed %w for %s", err, opts.Info())
-			log.Error().Err(e).Msg("logs-stream")
-		} else {
-			e = fmt.Errorf("stream logs failed %w for %s", err, opts.Info())
-			log.Error().Err(e).Msg("log-request")
-		}
 
-		select {
-		case <-ctx.Done():
-			err = ctx.Err()
-			break done
-		default:
-			if e != nil {
-				out <- opts.ToErrLogItem(e)
+			select {
+			case <-ctx.Done():
+				log.Debug().Msgf("LOG CANCELED %s", opts.Info())
+				return
+			default:
+				if e != nil {
+					out <- opts.ToErrLogItem(e)
+				}
+				time.Sleep(logRetryWait)
 			}
-			time.Sleep(logRetryWait)
 		}
-	}
+	}()
+	go func() {
+		wg.Wait()
+		close(out)
+		log.Debug().Msgf("<<< LOG-TAILER %s DONE!!", opts.Info())
+	}()
 
-	return err
+	return out
 }
 
-func readLogs(ctx context.Context, stream io.ReadCloser, c LogChan, opts *LogOptions) {
+func readLogs(ctx context.Context, wg *sync.WaitGroup, stream io.ReadCloser, out chan<- *LogItem, opts *LogOptions) {
 	defer func() {
 		if err := stream.Close(); err != nil {
 			log.Error().Err(err).Msgf("Fail to close stream %s", opts.Info())
 		}
+		log.Debug().Msgf("<<< LOG-READER EXIT!!! %s", opts.Info())
+		wg.Done()
 	}()
 
-	log.Debug().Msgf("READ_LOGS PROCESSING %#v", opts)
+	log.Debug().Msgf(">>> LOG-READER PROCESSING %#v", opts)
 	r := bufio.NewReader(stream)
 	for {
 		var item *LogItem
-		bytes, err := r.ReadBytes('\n')
-		if err == nil {
+		if bytes, err := r.ReadBytes('\n'); err == nil {
 			item = opts.ToLogItem(bytes)
 		} else {
 			if errors.Is(err, io.EOF) {
 				e := fmt.Errorf("Stream closed %w for %s", err, opts.Info())
 				item = opts.ToErrLogItem(e)
-				log.Warn().Err(e).Msgf("stream closed")
+				log.Debug().Err(e).Msg("log-reader EOF")
 			} else {
-				e := fmt.Errorf("Stream failed %w for %s", err, opts.Info())
+				e := fmt.Errorf("Stream canceled %w for %s", err, opts.Info())
 				item = opts.ToErrLogItem(e)
-				log.Warn().Err(e).Msgf("stream read failed")
+				log.Debug().Err(e).Msg("log-reader canceled")
 			}
 		}
 		select {
 		case <-ctx.Done():
-			close(c)
 			return
-		case c <- item:
+		case out <- item:
 			if item.IsError {
-				close(c)
 				return
 			}
 		}

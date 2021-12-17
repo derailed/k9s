@@ -24,16 +24,16 @@ type Service struct {
 }
 
 // TailLogs tail logs for all pods represented by this Service.
-func (s *Service) TailLogs(ctx context.Context, c LogChan, opts *LogOptions) error {
+func (s *Service) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error) {
 	svc, err := s.GetInstance(opts.Path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if svc.Spec.Selector == nil || len(svc.Spec.Selector) == 0 {
-		return fmt.Errorf("no valid selector found on Service %s", opts.Path)
+		return nil, fmt.Errorf("no valid selector found on Service %s", opts.Path)
 	}
 
-	return podLogs(ctx, c, svc.Spec.Selector, opts)
+	return podLogs(ctx, svc.Spec.Selector, opts)
 }
 
 // Pod returns a pod victim by name.

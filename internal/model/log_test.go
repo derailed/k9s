@@ -99,10 +99,9 @@ func TestLogStartStop(t *testing.T) {
 	v := newTestView()
 	m.AddListener(v)
 
-	c := make(dao.LogChan, 2)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	m.Start(ctx, c)
+	m.Start(ctx)
 	data := dao.NewLogItems()
 	data.Add(dao.NewLogItemFromString("line1"), dao.NewLogItemFromString("line2"))
 	for _, d := range data.Items() {
@@ -227,10 +226,9 @@ func TestToggleAllContainers(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	c := make(dao.LogChan, 2)
-	m.ToggleAllContainers(ctx, c)
+	m.ToggleAllContainers(ctx)
 	assert.Equal(t, "", m.GetContainer())
-	m.ToggleAllContainers(ctx, c)
+	m.ToggleAllContainers(ctx)
 	assert.Equal(t, "blee", m.GetContainer())
 }
 

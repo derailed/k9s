@@ -42,6 +42,7 @@ func (o *LogOptions) Clone() *LogOptions {
 		DefaultContainer: o.DefaultContainer,
 		Lines:            o.Lines,
 		Previous:         o.Previous,
+		Head:             o.Head,
 		SingleContainer:  o.SingleContainer,
 		MultiPods:        o.MultiPods,
 		ShowTimestamp:    o.ShowTimestamp,
@@ -82,14 +83,9 @@ func (o *LogOptions) ToPodLogOptions() *v1.PodLogOptions {
 		TailLines:  &o.Lines,
 	}
 	if o.Head {
-		var maxBytes int64 = 1000
-		//var defaultTail int64 = -1
-		//var defaultSince int64
-
+		var maxBytes int64 = 5000
 		opts.Follow = false
 		opts.TailLines, opts.SinceSeconds, opts.SinceTime = nil, nil, nil
-		//opts.TailLines = &defaultTail
-		//opts.SinceSeconds = &defaultSince
 		opts.LimitBytes = &maxBytes
 		return &opts
 	}

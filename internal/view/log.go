@@ -42,7 +42,6 @@ type Log struct {
 	cancelFn      context.CancelFunc
 	cancelUpdates bool
 	mx            sync.Mutex
-	logChan       dao.LogChan
 	follow        bool
 }
 
@@ -51,13 +50,16 @@ var _ model.Component = (*Log)(nil)
 // NewLog returns a new viewer.
 func NewLog(gvr client.GVR, opts *dao.LogOptions) *Log {
 	l := Log{
-		Flex:    tview.NewFlex(),
-		logChan: make(dao.LogChan, 2),
-		model:   model.NewLog(gvr, opts, defaultFlushTimeout),
-		follow:  true,
+		Flex:   tview.NewFlex(),
+		model:  model.NewLog(gvr, opts, defaultFlushTimeout),
+		follow: true,
 	}
 
 	return &l
+}
+
+func logChan() dao.LogChan {
+	return make(dao.LogChan, 2)
 }
 
 // Init initializes the viewer.
@@ -91,7 +93,7 @@ func (l *Log) Init(ctx context.Context) (err error) {
 	l.bindKeys()
 
 	l.StylesChanged(l.app.Styles)
-	l.goFullScreen()
+	l.toggleFullScreen()
 
 	l.model.Init(l.app.factory)
 	l.updateTitle()
@@ -126,7 +128,6 @@ func (l *Log) LogResume() {
 	l.mx.Lock()
 	defer l.mx.Unlock()
 
-	log.Debug().Msgf("LOG_RESUME!!!")
 	l.cancelUpdates = false
 }
 
@@ -196,18 +197,27 @@ func (l *Log) ExtraHints() map[string]string {
 	return nil
 }
 
-func (l *Log) getContext() context.Context {
+func (l *Log) cancel() {
+	l.mx.Lock()
+	defer l.mx.Unlock()
 	if l.cancelFn != nil {
+		log.Debug().Msgf("!!! LOG-VIEWER CANCELED !!!")
 		l.cancelFn()
+		l.cancelFn = nil
 	}
+}
+
+func (l *Log) getContext() context.Context {
+	l.cancel()
 	ctx := context.Background()
 	ctx, l.cancelFn = context.WithCancel(ctx)
+
 	return ctx
 }
 
 // Start runs the component.
 func (l *Log) Start() {
-	l.model.Restart(l.getContext(), l.logChan, true)
+	l.model.Start(l.getContext())
 	l.model.AddListener(l)
 	l.app.Styles.AddListener(l)
 	l.logs.cmdBuff.AddListener(l)
@@ -219,14 +229,7 @@ func (l *Log) Start() {
 func (l *Log) Stop() {
 	l.model.RemoveListener(l)
 	l.model.Stop()
-	l.mx.Lock()
-	{
-		if l.cancelFn != nil {
-			l.cancelFn()
-			l.cancelFn = nil
-		}
-	}
-	l.mx.Unlock()
+	l.cancel()
 	l.app.Styles.RemoveListener(l)
 	l.logs.cmdBuff.RemoveListener(l)
 	l.logs.cmdBuff.RemoveListener(l.app.Prompt())
@@ -238,7 +241,7 @@ func (l *Log) Name() string { return logTitle }
 func (l *Log) bindKeys() {
 	l.logs.Actions().Set(ui.KeyActions{
 		ui.Key0:         ui.NewKeyAction("tail", l.sinceCmd(-1), true),
-		ui.Key1:         ui.NewKeyAction("head", l.head(), true),
+		ui.Key1:         ui.NewKeyAction("head", l.sinceCmd(0), true),
 		ui.Key2:         ui.NewKeyAction("1m", l.sinceCmd(60), true),
 		ui.Key3:         ui.NewKeyAction("5m", l.sinceCmd(5*60), true),
 		ui.Key4:         ui.NewKeyAction("15m", l.sinceCmd(15*60), true),
@@ -355,24 +358,17 @@ func (l *Log) Flush(lines [][]byte) {
 }
 
 // ----------------------------------------------------------------------------
-// Actions()...
+// Actions...
 
-func (l *Log) head() func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		log.Debug().Msgf("!!!!HEAD!!!!")
-		l.cancelUpdates = true
-		l.logs.Clear()
-		l.model.Head(l.getContext(), l.logChan)
-		l.updateTitle()
-
-		return nil
-	}
-}
-
-func (l *Log) sinceCmd(a int) func(evt *tcell.EventKey) *tcell.EventKey {
+func (l *Log) sinceCmd(n int) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		l.logs.Clear()
-		l.model.SetSinceSeconds(l.getContext(), l.logChan, int64(a))
+		ctx := l.getContext()
+		if n == 0 {
+			l.model.Head(ctx)
+		} else {
+			l.model.SetSinceSeconds(ctx, int64(n))
+		}
 		l.updateTitle()
 
 		return nil
@@ -384,7 +380,7 @@ func (l *Log) toggleAllContainers(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	l.indicator.ToggleAllContainers()
-	l.model.ToggleAllContainers(l.getContext(), l.logChan)
+	l.model.ToggleAllContainers(l.getContext())
 	l.updateTitle()
 
 	return nil
@@ -499,12 +495,6 @@ func (l *Log) toggleAutoScrollCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	l.indicator.ToggleAutoScroll()
 	l.follow = l.indicator.AutoScroll()
-	// if l.indicator.AutoScroll() {
-
-	// 	// l.model.Restart(l.getContext(), l.logChan, false)
-	// } else {
-	// 	// l.model.Stop()
-	// }
 	l.indicator.Refresh()
 
 	return nil
@@ -515,13 +505,13 @@ func (l *Log) toggleFullScreenCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	l.indicator.ToggleFullScreen()
-	l.goFullScreen()
+	l.toggleFullScreen()
 	l.indicator.Refresh()
 
 	return nil
 }
 
-func (l *Log) goFullScreen() {
+func (l *Log) toggleFullScreen() {
 	l.SetFullScreen(l.indicator.FullScreen())
 	l.Box.SetBorder(!l.indicator.FullScreen())
 	if l.indicator.FullScreen() {
