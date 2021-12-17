@@ -132,16 +132,16 @@ func (*StatefulSet) Load(f Factory, fqn string) (*appsv1.StatefulSet, error) {
 }
 
 // TailLogs tail logs for all pods represented by this StatefulSet.
-func (s *StatefulSet) TailLogs(ctx context.Context, c LogChan, opts *LogOptions) error {
+func (s *StatefulSet) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error) {
 	sts, err := s.getStatefulSet(opts.Path)
 	if err != nil {
-		return errors.New("expecting StatefulSet resource")
+		return nil, errors.New("expecting StatefulSet resource")
 	}
 	if sts.Spec.Selector == nil || len(sts.Spec.Selector.MatchLabels) == 0 {
-		return fmt.Errorf("No valid selector found on StatefulSet %s", opts.Path)
+		return nil, fmt.Errorf("No valid selector found on StatefulSet %s", opts.Path)
 	}
 
-	return podLogs(ctx, c, sts.Spec.Selector.MatchLabels, opts)
+	return podLogs(ctx, sts.Spec.Selector.MatchLabels, opts)
 }
 
 // Pod returns a pod victim by name.

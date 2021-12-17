@@ -89,19 +89,19 @@ func (l *Log) ToggleShowTimestamp(b bool) {
 	l.Refresh()
 }
 
-func (l *Log) Head(ctx context.Context, c dao.LogChan) {
+func (l *Log) Head(ctx context.Context) {
 	l.mx.Lock()
 	{
 		l.logOptions.Head = true
 	}
 	l.mx.Unlock()
-	l.Restart(ctx, c, true)
+	l.Restart(ctx)
 }
 
 // SetSinceSeconds sets the logs retrieval time.
-func (l *Log) SetSinceSeconds(ctx context.Context, c dao.LogChan, i int64) {
+func (l *Log) SetSinceSeconds(ctx context.Context, i int64) {
 	l.logOptions.SinceSeconds, l.logOptions.Head = i, false
-	l.Restart(ctx, c, true)
+	l.Restart(ctx)
 }
 
 // Configure sets logger configuration.
@@ -151,18 +151,16 @@ func (l *Log) Refresh() {
 }
 
 // Restart restarts the logger.
-func (l *Log) Restart(ctx context.Context, c dao.LogChan, clear bool) {
+func (l *Log) Restart(ctx context.Context) {
 	l.Stop()
-	if clear {
-		l.Clear()
-	}
+	l.Clear()
 	l.fireLogResume()
-	l.Start(ctx, c)
+	l.Start(ctx)
 }
 
 // Start starts logging.
-func (l *Log) Start(ctx context.Context, c dao.LogChan) {
-	if err := l.load(ctx, c); err != nil {
+func (l *Log) Start(ctx context.Context) {
+	if err := l.load(ctx); err != nil {
 		log.Error().Err(err).Msgf("Tail logs failed!")
 		l.fireLogError(err)
 	}
@@ -170,7 +168,6 @@ func (l *Log) Start(ctx context.Context, c dao.LogChan) {
 
 // Stop terminates logging.
 func (l *Log) Stop() {
-	defer log.Debug().Msgf("<<<< Logger STOPPED!")
 	l.cancel()
 }
 
@@ -214,16 +211,17 @@ func (l *Log) Filter(q string) {
 	l.fireLogBuffChanged(0)
 }
 
-func (l *Log) load(ctx context.Context, c dao.LogChan) error {
+func (l *Log) cancel() {
+	l.mx.Lock()
+	defer l.mx.Unlock()
 	if l.cancelFn != nil {
 		l.cancelFn()
+		log.Debug().Msgf("!!! LOG-MODEL CANCELED !!!")
 		l.cancelFn = nil
 	}
+}
 
-	ctx = context.WithValue(context.Background(), internal.KeyFactory, l.factory)
-	ctx, l.cancelFn = context.WithCancel(ctx)
-	go l.updateLogs(ctx, c)
-
+func (l *Log) load(ctx context.Context) error {
 	accessor, err := dao.AccessorFor(l.factory, l.gvr)
 	if err != nil {
 		return err
@@ -233,28 +231,21 @@ func (l *Log) load(ctx context.Context, c dao.LogChan) error {
 		return fmt.Errorf("Resource %s is not Loggable", l.gvr)
 	}
 
-	go func() {
-		if err = loggable.TailLogs(ctx, c, l.logOptions); err != nil {
-			log.Error().Err(err).Msgf("Tail logs failed")
-			l.cancel()
-			l.fireLogError(err)
-		}
-	}()
+	l.cancel()
+	ctx = context.WithValue(ctx, internal.KeyFactory, l.factory)
+	ctx, l.cancelFn = context.WithCancel(ctx)
+
+	cc, err := loggable.TailLogs(ctx, l.logOptions)
+	if err != nil {
+		log.Error().Err(err).Msgf("Tail logs failed")
+		l.cancel()
+		l.fireLogError(err)
+	}
+	for _, c := range cc {
+		go l.updateLogs(ctx, c)
+	}
 
 	return nil
-}
-
-func (l *Log) cancel() {
-	l.mx.Lock()
-	{
-		if l.cancelFn == nil {
-			l.mx.Unlock()
-			return
-		}
-		l.cancelFn()
-		l.cancelFn = nil
-	}
-	l.mx.Unlock()
 }
 
 // Append adds a log line.
@@ -262,7 +253,6 @@ func (l *Log) Append(line *dao.LogItem) {
 	if line == nil || line.IsEmpty() {
 		return
 	}
-
 	l.mx.Lock()
 	defer l.mx.Unlock()
 	l.logOptions.SinceTime = line.GetTimestamp()
@@ -289,19 +279,18 @@ func (l *Log) Notify() {
 }
 
 // ToggleAllContainers toggles to show all containers logs.
-func (l *Log) ToggleAllContainers(ctx context.Context, c dao.LogChan) {
+func (l *Log) ToggleAllContainers(ctx context.Context) {
 	l.logOptions.ToggleAllContainers()
-	l.Restart(ctx, c, true)
+	l.Restart(ctx)
 }
 
 func (l *Log) updateLogs(ctx context.Context, c dao.LogChan) {
-	defer log.Debug().Msgf("updateLogs view bailing out!")
-
+	defer log.Debug().Msgf("<<< LOG-MODEL UPDATER DONE %s!!!!", l.logOptions.Info())
+	log.Debug().Msgf(">>> START LOG-MODEL UPDATER %s", l.logOptions.Info())
 	for {
 		select {
 		case item, ok := <-c:
 			if !ok {
-				log.Debug().Msgf("Closed channel detected. Bailing out!")
 				l.Append(item)
 				l.Notify()
 				return

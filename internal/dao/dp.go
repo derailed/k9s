@@ -114,16 +114,16 @@ func (d *Deployment) Restart(ctx context.Context, path string) error {
 }
 
 // TailLogs tail logs for all pods represented by this Deployment.
-func (d *Deployment) TailLogs(ctx context.Context, c LogChan, opts *LogOptions) error {
+func (d *Deployment) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error) {
 	dp, err := d.Load(d.Factory, opts.Path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if dp.Spec.Selector == nil || len(dp.Spec.Selector.MatchLabels) == 0 {
-		return fmt.Errorf("No valid selector found on Deployment %s", opts.Path)
+		return nil, fmt.Errorf("No valid selector found on Deployment %s", opts.Path)
 	}
 
-	return podLogs(ctx, c, dp.Spec.Selector.MatchLabels, opts)
+	return podLogs(ctx, dp.Spec.Selector.MatchLabels, opts)
 }
 
 // Pod returns a pod victim by name.

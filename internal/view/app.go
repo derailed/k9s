@@ -183,7 +183,7 @@ func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) bindKeys() {
 	a.AddActions(ui.KeyActions{
-		ui.KeyShiftG:   ui.NewSharedKeyAction("DumpGOR", a.dumpGOR, false),
+		ui.KeyShift9:   ui.NewSharedKeyAction("DumpGOR", a.dumpGOR, false),
 		tcell.KeyCtrlE: ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
 		tcell.KeyCtrlG: ui.NewSharedKeyAction("toggleCrumbs", a.toggleCrumbsCmd, false),
 		ui.KeyHelp:     ui.NewSharedKeyAction("Help", a.helpCmd, false),
@@ -193,9 +193,10 @@ func (a *App) bindKeys() {
 }
 
 func (a *App) dumpGOR(evt *tcell.EventKey) *tcell.EventKey {
-	bb := make([]byte, 5_000_000)
-	runtime.Stack(bb, true)
-	log.Debug().Msgf("GOR\n%s", string(bb))
+	log.Debug().Msgf("GOR %d", runtime.NumGoroutine())
+	// bb := make([]byte, 5_000_000)
+	// runtime.Stack(bb, true)
+	// log.Debug().Msgf("GOR\n%s", string(bb))
 	return evt
 }
 

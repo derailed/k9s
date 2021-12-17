@@ -91,54 +91,59 @@ func (d *DaemonSet) Restart(ctx context.Context, path string) error {
 }
 
 // TailLogs tail logs for all pods represented by this DaemonSet.
-func (d *DaemonSet) TailLogs(ctx context.Context, c LogChan, opts *LogOptions) error {
+func (d *DaemonSet) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error) {
 	ds, err := d.GetInstance(opts.Path)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if ds.Spec.Selector == nil || len(ds.Spec.Selector.MatchLabels) == 0 {
-		return fmt.Errorf("no valid selector found on daemonset %q", opts.Path)
+		return nil, fmt.Errorf("no valid selector found on daemonset %q", opts.Path)
 	}
 
-	return podLogs(ctx, c, ds.Spec.Selector.MatchLabels, opts)
+	return podLogs(ctx, ds.Spec.Selector.MatchLabels, opts)
 }
 
-func podLogs(ctx context.Context, out LogChan, sel map[string]string, opts *LogOptions) error {
+func podLogs(ctx context.Context, sel map[string]string, opts *LogOptions) ([]LogChan, error) {
 	f, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
 	if !ok {
-		return errors.New("expecting a context factory")
+		return nil, errors.New("expecting a context factory")
 	}
 	ls, err := metav1.ParseToLabelSelector(toSelector(sel))
 	if err != nil {
-		return err
+		return nil, err
 	}
 	lsel, err := metav1.LabelSelectorAsSelector(ls)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	ns, _ := client.Namespaced(opts.Path)
 	oo, err := f.List("v1/pods", ns, true, lsel)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	opts.MultiPods = true
 
 	po := Pod{}
 	po.Init(f, client.NewGVR("v1/pods"))
+
+	outs := make([]LogChan, 0, len(oo))
 	for _, o := range oo {
 		u, ok := o.(*unstructured.Unstructured)
 		if !ok {
-			return fmt.Errorf("expected unstructured got %t", o)
+			return nil, fmt.Errorf("expected unstructured got %t", o)
 		}
 		opts = opts.Clone()
 		opts.Path = client.FQN(u.GetNamespace(), u.GetName())
-		if err := po.TailLogs(ctx, out, opts); err != nil {
-			return err
+		cc, err := po.TailLogs(ctx, opts)
+		if err != nil {
+			return nil, err
 		}
+		outs = append(outs, cc...)
 	}
-	return nil
+
+	return outs, nil
 }
 
 // Pod returns a pod victim by name.
