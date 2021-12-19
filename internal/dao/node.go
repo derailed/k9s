@@ -148,43 +148,50 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 		fqn := extractFQN(o)
 		_, name := client.Namespaced(fqn)
-		podCount, err := n.CountPods(name)
+		podInfo, err := n.GetPodInfo(name)
 		if err != nil {
 			return nil, err
 		}
 		res = append(res, &render.NodeWithMetrics{
-			Raw:      u,
-			MX:       nmx[name],
-			PodCount: podCount,
+			Raw:     u,
+			MX:      nmx[name],
+			PodInfo: podInfo,
 		})
 	}
 
 	return res, nil
 }
 
-// CountPods counts the pods scheduled on a given node.
-func (n *Node) CountPods(nodeName string) (int, error) {
-	var count int
+// GetPodInfo counts the pods scheduled on a given node.
+func (n *Node) GetPodInfo(nodeName string) (*render.PodInfo, error) {
+	var info render.PodInfo
 	oo, err := n.Factory.List("v1/pods", client.AllNamespaces, false, labels.Everything())
 	if err != nil {
-		return 0, err
+		return &info, err
 	}
 
 	for _, o := range oo {
+		var pod v1.Pod
 		u, ok := o.(*unstructured.Unstructured)
 		if !ok {
-			return count, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
+			return &info, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
 		}
 		spec, ok := u.Object["spec"].(map[string]interface{})
 		if !ok {
-			return count, fmt.Errorf("expecting interface map but got `%T", o)
+			return &info, fmt.Errorf("expecting interface map but got `%T", o)
 		}
 		if node, ok := spec["nodeName"]; ok && node == nodeName {
-			count++
+			err := runtime.DefaultUnstructuredConverter.FromUnstructured(u.UnstructuredContent(), &pod)
+			if err != nil {
+				return &info, fmt.Errorf("Can't convert to Pod. err", err)
+			}
+			info.Count++
+			log.Debug().Msgf("Pod for Node %+v::%+v", nodeName, pod)
+			info.PodList = append(info.PodList, pod)
 		}
 	}
 
-	return count, nil
+	return &info, nil
 }
 
 // GetPods returns all pods running on given node.

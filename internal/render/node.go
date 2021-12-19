@@ -10,9 +10,11 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	resourcehelper "k8s.io/kubectl/pkg/util/resource"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
 
@@ -41,8 +43,16 @@ func (Node) Header(_ string) Header {
 		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "%CPU", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "%MEM", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "CPU/A", Align: tview.AlignRight, MX: true},
-		HeaderColumn{Name: "MEM/A", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "CPU/T", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "MEM/T", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "CPU/R", Wide: true, Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "MEM/R", Wide: true, Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "%CPU/R", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "%MEM/R", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "CPU/A", Wide: true, Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "MEM/A", Wide: true, Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "CPU/L", Wide: true, Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "MEM/L", Wide: true, Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
@@ -69,13 +79,15 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 	iIP, eIP := getIPs(no.Status.Addresses)
 	iIP, eIP = missing(iIP), missing(eIP)
 
-	c, a := gatherNodeMX(&no, oo.MX)
+	c, a, t := gatherNodeMX(&no, oo.MX)
 	statuses := make(sort.StringSlice, 10)
 	status(no.Status.Conditions, no.Spec.Unschedulable, statuses)
 	sort.Sort(statuses)
 	roles := make(sort.StringSlice, 10)
 	nodeRoles(&no, roles)
 	sort.Sort(roles)
+
+	res := getTotalResources(oo.PodInfo.PodList, &no)
 
 	r.ID = client.FQN("", na)
 	r.Fields = Fields{
@@ -86,13 +98,21 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 		no.Status.NodeInfo.KernelVersion,
 		iIP,
 		eIP,
-		strconv.Itoa(oo.PodCount),
+		strconv.Itoa(oo.PodInfo.Count),
 		toMc(c.cpu),
 		toMi(c.mem),
-		client.ToPercentageStr(c.cpu, a.cpu),
-		client.ToPercentageStr(c.mem, a.mem),
+		client.ToPercentageStr(c.cpu, t.cpu),
+		client.ToPercentageStr(c.mem, t.mem),
+		toMc(t.cpu),
+		toMi(t.mem),
+		toMc(res.cpu),
+		toMi(res.mem),
+		client.ToPercentageStr(res.cpu, a.cpu),
+		client.ToPercentageStr(res.mem, a.mem),
 		toMc(a.cpu),
 		toMi(a.mem),
+		toMc(res.lcpu),
+		toMi(res.lmem),
 		mapToStr(no.Labels),
 		asStatus(n.diagnose(statuses)),
 		toAge(no.ObjectMeta.CreationTimestamp),
@@ -126,14 +146,54 @@ func (Node) diagnose(ss []string) error {
 	return nil
 }
 
+func getTotalResources(nodeNonTerminatedPodsList []v1.Pod, node *v1.Node) (m metric) {
+
+	reqs, limits := getPodsTotalRequestsAndLimits(nodeNonTerminatedPodsList)
+	cpuReqs, cpuLimits, memoryReqs, memoryLimits :=
+		reqs[v1.ResourceCPU], limits[v1.ResourceCPU], reqs[v1.ResourceMemory], limits[v1.ResourceMemory]
+	m.cpu, m.mem = cpuReqs.MilliValue(), memoryReqs.Value()
+	m.lcpu, m.lmem = cpuLimits.MilliValue(), memoryLimits.Value()
+
+	return
+}
+
+func getPodsTotalRequestsAndLimits(podList []v1.Pod) (reqs map[v1.ResourceName]resource.Quantity, limits map[v1.ResourceName]resource.Quantity) {
+	reqs, limits = map[v1.ResourceName]resource.Quantity{}, map[v1.ResourceName]resource.Quantity{}
+	for _, pod := range podList {
+		podReqs, podLimits := resourcehelper.PodRequestsAndLimits(&pod)
+		for podReqName, podReqValue := range podReqs {
+			if value, ok := reqs[podReqName]; !ok {
+				reqs[podReqName] = podReqValue.DeepCopy()
+			} else {
+				value.Add(podReqValue)
+				reqs[podReqName] = value
+			}
+		}
+		for podLimitName, podLimitValue := range podLimits {
+			if value, ok := limits[podLimitName]; !ok {
+				limits[podLimitName] = podLimitValue.DeepCopy()
+			} else {
+				value.Add(podLimitValue)
+				limits[podLimitName] = value
+			}
+		}
+	}
+	return
+}
+
 // ----------------------------------------------------------------------------
 // Helpers...
 
 // NodeWithMetrics represents a node with its associated metrics.
 type NodeWithMetrics struct {
-	Raw      *unstructured.Unstructured
-	MX       *mv1beta1.NodeMetrics
-	PodCount int
+	Raw     *unstructured.Unstructured
+	MX      *mv1beta1.NodeMetrics
+	PodInfo *PodInfo
+}
+
+type PodInfo struct {
+	Count   int
+	PodList []v1.Pod
 }
 
 // GetObjectKind returns a schema object.
@@ -151,8 +211,9 @@ type metric struct {
 	lcpu, lmem int64
 }
 
-func gatherNodeMX(no *v1.Node, mx *mv1beta1.NodeMetrics) (c, a metric) {
+func gatherNodeMX(no *v1.Node, mx *mv1beta1.NodeMetrics) (c, a, t metric) {
 	a.cpu, a.mem = no.Status.Allocatable.Cpu().MilliValue(), no.Status.Allocatable.Memory().Value()
+	t.cpu, t.mem = no.Status.Capacity.Cpu().MilliValue(), no.Status.Capacity.Memory().Value()
 	if mx != nil {
 		c.cpu, c.mem = mx.Usage.Cpu().MilliValue(), mx.Usage.Memory().Value()
 	}

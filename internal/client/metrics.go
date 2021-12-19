@@ -59,8 +59,8 @@ func (m *MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsL
 	nodeMetrics := make(NodesMetrics, len(nos.Items))
 	for _, no := range nos.Items {
 		nodeMetrics[no.Name] = NodeMetrics{
-			AllocatableCPU: no.Status.Allocatable.Cpu().MilliValue(),
-			AllocatableMEM: no.Status.Allocatable.Memory().Value(),
+			TotalCPU: no.Status.Capacity.Cpu().MilliValue(),
+			TotalMEM: no.Status.Capacity.Memory().Value(),
 		}
 	}
 	for _, mx := range nmx.Items {
@@ -75,8 +75,8 @@ func (m *MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsL
 	for _, mx := range nodeMetrics {
 		ccpu += mx.CurrentCPU
 		cmem += mx.CurrentMEM
-		tcpu += mx.AllocatableCPU
-		tmem += mx.AllocatableMEM
+		tcpu += mx.TotalCPU
+		tmem += mx.TotalMEM
 	}
 	mx.PercCPU, mx.PercMEM = ToPercentage(ccpu, tcpu), ToPercentage(cmem, tmem)
 
@@ -118,8 +118,8 @@ func (m *MetricsServer) NodesMetrics(nodes *v1.NodeList, metrics *mv1beta1.NodeM
 		if mx, ok := mmx[c.Name]; ok {
 			mx.CurrentCPU = c.Usage.Cpu().MilliValue()
 			mx.CurrentMEM = ToMB(c.Usage.Memory().Value())
-			mx.AvailableCPU = mx.AllocatableCPU - mx.CurrentCPU
-			mx.AvailableMEM = mx.AllocatableMEM - mx.CurrentMEM
+			mx.TotalCPU = mx.TotalCPU - mx.CurrentCPU
+			mx.TotalMEM = mx.TotalMEM - mx.CurrentMEM
 			mmx[c.Name] = mx
 		}
 	}

@@ -313,8 +313,8 @@ func (p *Pod) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 
 func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 	var (
-		out    = make(LogChan, 2)
-		wg     sync.WaitGroup
+		out = make(LogChan, 2)
+		wg  sync.WaitGroup
 	)
 
 	wg.Add(1)

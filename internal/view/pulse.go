@@ -160,7 +160,7 @@ func (p *Pulse) PulseChanged(c *health.Check) {
 	gvr := client.NewGVR(c.GVR)
 	switch c.GVR {
 	case "cpu":
-		perc := client.ToPercentage(c.Tally(health.S1), c.Tally(health.S2))
+		perc := client.ToPercentage(c.Tally(health.S1), c.Tally(health.S3))
 		v.SetLegend(fmt.Sprintf(cpuFmt,
 			strings.Title(gvr.R()),
 			p.app.Config.K9s.Thresholds.SeverityColor("cpu", perc),
@@ -168,10 +168,10 @@ func (p *Pulse) PulseChanged(c *health.Check) {
 			nn[0],
 			render.AsThousands(c.Tally(health.S1)),
 			nn[1],
-			render.AsThousands(c.Tally(health.S2)),
+			render.AsThousands(c.Tally(health.S3)),
 		))
 	case "mem":
-		perc := client.ToPercentage(c.Tally(health.S1), c.Tally(health.S2))
+		perc := client.ToPercentage(c.Tally(health.S1), c.Tally(health.S3))
 		v.SetLegend(fmt.Sprintf(memFmt,
 			strings.Title(gvr.R()),
 			p.app.Config.K9s.Thresholds.SeverityColor("memory", perc),
@@ -179,7 +179,7 @@ func (p *Pulse) PulseChanged(c *health.Check) {
 			nn[0],
 			render.AsThousands(c.Tally(health.S1)),
 			nn[1],
-			render.AsThousands(c.Tally(health.S2)),
+			render.AsThousands(c.Tally(health.S3)),
 		))
 	default:
 		v.SetLegend(fmt.Sprintf(genFmat,
