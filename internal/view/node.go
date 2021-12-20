@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
@@ -28,8 +29,13 @@ func NewNode(gvr client.GVR) ResourceViewer {
 	}
 	n.AddBindKeysFn(n.bindKeys)
 	n.GetTable().SetEnterFn(n.showPods)
+	n.GetTable().SetDecorateFn(n.decorateRows)
 
 	return &n
+}
+
+func (n *Node) decorateRows(data render.TableData) render.TableData {
+	return decorateCpuMemHeaderRows(n.App(), data)
 }
 
 func (n *Node) bindDangerousKeys(aa ui.KeyActions) {

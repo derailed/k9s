@@ -182,6 +182,12 @@ func fqn(ns, n string) string {
 func decorateCpuMemHeaderRows(app *App, data render.TableData) render.TableData {
 	for colIndex, header := range data.Header {
 		check := ""
+		if header.Name == "%CPU" {
+			check = "cpu"
+		}
+		if header.Name == "%MEM" {
+			check = "memory"
+		}
 		if header.Name == "%CPU/L" {
 			check = "cpu"
 		}
