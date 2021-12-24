@@ -313,18 +313,14 @@ func (p *Pod) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 
 func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 	var (
-		out    = make(LogChan, 2)
-		wg     sync.WaitGroup
+		out = make(LogChan, 2)
+		wg  sync.WaitGroup
 	)
 
 	wg.Add(1)
 	go func() {
-		defer func() {
-			wg.Done()
-			log.Debug().Msgf("<<< RETRY-TAIL DONE!!! %s", opts.Info())
-		}()
+		defer wg.Done()
 		podOpts := opts.ToPodLogOptions()
-		log.Debug().Msgf(">>> RETRY-TAIL START %s", opts.Info())
 		var stream io.ReadCloser
 		for r := 0; r < logRetryCount; r++ {
 			var e error
@@ -345,7 +341,6 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 
 			select {
 			case <-ctx.Done():
-				log.Debug().Msgf("LOG CANCELED %s", opts.Info())
 				return
 			default:
 				if e != nil {
@@ -358,7 +353,6 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 	go func() {
 		wg.Wait()
 		close(out)
-		log.Debug().Msgf("<<< LOG-TAILER %s DONE!!", opts.Info())
 	}()
 
 	return out
@@ -369,7 +363,6 @@ func readLogs(ctx context.Context, wg *sync.WaitGroup, stream io.ReadCloser, out
 		if err := stream.Close(); err != nil {
 			log.Error().Err(err).Msgf("Fail to close stream %s", opts.Info())
 		}
-		log.Debug().Msgf("<<< LOG-READER EXIT!!! %s", opts.Info())
 		wg.Done()
 	}()
 
@@ -383,11 +376,11 @@ func readLogs(ctx context.Context, wg *sync.WaitGroup, stream io.ReadCloser, out
 			if errors.Is(err, io.EOF) {
 				e := fmt.Errorf("Stream closed %w for %s", err, opts.Info())
 				item = opts.ToErrLogItem(e)
-				log.Debug().Err(e).Msg("log-reader EOF")
+				log.Warn().Err(e).Msg("log-reader EOF")
 			} else {
 				e := fmt.Errorf("Stream canceled %w for %s", err, opts.Info())
 				item = opts.ToErrLogItem(e)
-				log.Debug().Err(e).Msg("log-reader canceled")
+				log.Warn().Err(e).Msg("log-reader canceled")
 			}
 		}
 		select {

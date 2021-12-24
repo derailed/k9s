@@ -34,6 +34,9 @@ func (c *Cluster) Validate(conn client.Connection, ks KubeSettings) {
 	if c.Namespace == nil {
 		c.Namespace = NewNamespace()
 	}
+	if c.Namespace.Active == client.AllNamespaces {
+		c.Namespace.Active = client.NamespaceAll
+	}
 
 	if c.FeatureGates == nil {
 		c.FeatureGates = NewFeatureGates()

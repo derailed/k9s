@@ -18,7 +18,8 @@ type ViewConfigListener interface {
 
 // ViewSetting represents a view configuration.
 type ViewSetting struct {
-	Columns []string `yaml:"columns"`
+	Columns    []string `yaml:"columns"`
+	SortColumn string   `yaml:"sortColumn"`
 }
 
 // ViewSettings represent a collection of view configurations.
