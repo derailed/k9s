@@ -47,11 +47,13 @@ func NewK9s() *K9s {
 }
 
 // ActivateCluster initializes the active cluster is not present.
-func (k *K9s) ActivateCluster() {
+func (k *K9s) ActivateCluster(ns string) {
 	if _, ok := k.Clusters[k.CurrentCluster]; ok {
 		return
 	}
-	k.Clusters[k.CurrentCluster] = NewCluster()
+	cl := NewCluster()
+	cl.Namespace.Active = ns
+	k.Clusters[k.CurrentCluster] = cl
 }
 
 // OverrideRefreshRate set the refresh rate manually.
@@ -59,17 +61,17 @@ func (k *K9s) OverrideRefreshRate(r int) {
 	k.manualRefreshRate = r
 }
 
-// OverrideHeadless set the headlessness manually.
+// OverrideHeadless toggle the header manually.
 func (k *K9s) OverrideHeadless(b bool) {
 	k.manualHeadless = &b
 }
 
-// OverrideLogoless set the logolessness manually.
+// OverrideLogoless toggle the k9s logo manually.
 func (k *K9s) OverrideLogoless(b bool) {
 	k.manualLogoless = &b
 }
 
-// OverrideCrumbsless set the crumbslessness manually.
+// OverrideCrumbsless tooh the crumbslessness manually.
 func (k *K9s) OverrideCrumbsless(b bool) {
 	k.manualCrumbsless = &b
 }
@@ -154,7 +156,6 @@ func (k *K9s) ActiveCluster() *Cluster {
 	if k.Clusters == nil {
 		k.Clusters = map[string]*Cluster{}
 	}
-
 	if c, ok := k.Clusters[k.CurrentCluster]; ok {
 		return c
 	}

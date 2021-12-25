@@ -30,7 +30,7 @@ func TestConfigRefine(t *testing.T) {
 			issue:     false,
 			context:   "test1",
 			cluster:   "cluster1",
-			namespace: "default",
+			namespace: "ns1",
 		},
 		"overrideNS": {
 			flags: &genericclioptions.ConfigFlags{

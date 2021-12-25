@@ -21,6 +21,9 @@ const (
 	// AllNamespaces designates all namespaces.
 	AllNamespaces = ""
 
+	// DefaultNamespace designates the default namespace.
+	DefaultNamespace = "default"
+
 	// ClusterScope designates a resource is not namespaced.
 	ClusterScope = "-"
 

@@ -199,14 +199,17 @@ func ssh(a *App, node string) error {
 	if err := launchShellPod(a, node); err != nil {
 		return err
 	}
-	ns := a.Config.K9s.ActiveCluster().ShellPod.Namespace
+
+	cl := a.Config.K9s.ActiveCluster()
+	ns := cl.ShellPod.Namespace
 	sshIn(a, client.FQN(ns, k9sShellPodName()), k9sShell)
 
 	return nil
 }
 
 func sshIn(a *App, fqn, co string) {
-	cfg := a.Config.K9s.ActiveCluster().ShellPod
+	cl := a.Config.K9s.ActiveCluster()
+	cfg := cl.ShellPod
 	os, err := getPodOS(a.factory, fqn)
 	if err != nil {
 		log.Warn().Err(err).Msgf("os detect failed")
@@ -232,12 +235,13 @@ func sshIn(a *App, fqn, co string) {
 }
 
 func nukeK9sShell(a *App) error {
-	cl := a.Config.K9s.CurrentCluster
-	if !a.Config.K9s.Clusters[cl].FeatureGates.NodeShell {
+	clName := a.Config.K9s.CurrentCluster
+	if !a.Config.K9s.Clusters[clName].FeatureGates.NodeShell {
 		return nil
 	}
 
-	ns := a.Config.K9s.ActiveCluster().ShellPod.Namespace
+	cl := a.Config.K9s.ActiveCluster()
+	ns := cl.ShellPod.Namespace
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
@@ -256,8 +260,9 @@ func nukeK9sShell(a *App) error {
 
 func launchShellPod(a *App, node string) error {
 	a.Flash().Infof("Launching node shell on %s...", node)
-	ns := a.Config.K9s.ActiveCluster().ShellPod.Namespace
-	spec := k9sShellPod(node, a.Config.K9s.ActiveCluster().ShellPod)
+	cl := a.Config.K9s.ActiveCluster()
+	ns := cl.ShellPod.Namespace
+	spec := k9sShellPod(node, cl.ShellPod)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 

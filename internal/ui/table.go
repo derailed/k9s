@@ -191,7 +191,9 @@ func (t *Table) Update(data render.TableData, hasMetrics bool) {
 func (t *Table) doUpdate(data render.TableData) {
 	if client.IsAllNamespaces(data.Namespace) {
 		t.actions[KeyShiftP] = NewKeyAction("Sort Namespace", t.SortColCmd("NAMESPACE", true), false)
+		t.sortCol.name = "NAMESPACE"
 	} else {
+		t.sortCol.name = "NAME"
 		t.actions.Delete(KeyShiftP)
 	}
 
@@ -203,13 +205,21 @@ func (t *Table) doUpdate(data render.TableData) {
 		cols = t.header.Columns(t.wide)
 	}
 	custData := data.Customize(cols, t.wide)
-
-	if (t.sortCol.name == "" || custData.Header.IndexOf(t.sortCol.name, false) == -1) && len(custData.Header) > 0 && t.sortCol.name != "NONE" {
-		t.sortCol.name = custData.Header[0].Name
-		if t.sortCol.name == "NAMESPACE" && !client.IsAllNamespaces(data.Namespace) {
-			if idx := custData.Header.IndexOf("NAME", false); idx != -1 {
-				t.sortCol.name = custData.Header[idx].Name
+	if t.viewSetting != nil && t.viewSetting.SortColumn != "" {
+		tokens := strings.Split(t.viewSetting.SortColumn, ":")
+		if custData.Header.IndexOf(tokens[0], false) >= 0 {
+			t.sortCol.name, t.sortCol.asc = tokens[0], true
+			if len(tokens) == 2 && tokens[1] == "desc" {
+				t.sortCol.asc = false
 			}
+		}
+	}
+
+	if t.sortCol.name == "NAMESPACE" && !client.IsAllNamespaces(data.Namespace) && len(custData.Header) > 0 {
+		if idx := custData.Header.IndexOf("NAME", false); idx >= 0 {
+			t.sortCol.name = custData.Header[idx].Name
+		} else {
+			t.sortCol.name = custData.Header[0].Name
 		}
 	}
 

@@ -130,7 +130,7 @@ func (o *LogOptions) ToLogItem(bytes []byte) *LogItem {
 
 func (o *LogOptions) ToErrLogItem(err error) *LogItem {
 	t := time.Now().UTC().Format(time.RFC3339Nano)
-	item := NewLogItem([]byte(fmt.Sprintf("%s [red::b]%s\n", t, err)))
+	item := NewLogItem([]byte(fmt.Sprintf("%s [orange::b]%s[::-]\n", t, err)))
 	item.IsError = true
 	return item
 }

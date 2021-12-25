@@ -2,9 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"runtime/debug"
-
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
@@ -14,6 +11,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"os"
+	"runtime/debug"
 )
 
 const (
@@ -53,6 +52,17 @@ func Execute() {
 }
 
 func run(cmd *cobra.Command, args []string) {
+	config.EnsurePath(*k9sFlags.LogFile, config.DefaultDirMod)
+	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
+	file, err := os.OpenFile(*k9sFlags.LogFile, mod, config.DefaultFileMod)
+	if err != nil {
+		panic(err)
+	}
+	defer func() {
+		if file != nil {
+			_ = file.Close()
+		}
+	}()
 	defer func() {
 		if err := recover(); err != nil {
 			log.Error().Msgf("Boom! %v", err)
@@ -63,15 +73,6 @@ func run(cmd *cobra.Command, args []string) {
 		}
 	}()
 
-	config.EnsurePath(*k9sFlags.LogFile, config.DefaultDirMod)
-	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
-	file, err := os.OpenFile(*k9sFlags.LogFile, mod, config.DefaultFileMod)
-	defer func() {
-		_ = file.Close()
-	}()
-	if err != nil {
-		panic(err)
-	}
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: file})
 
 	zerolog.SetGlobalLevel(parseLevel(*k9sFlags.LogLevel))
@@ -136,6 +137,8 @@ func loadConfiguration() *config.Config {
 
 func parseLevel(level string) zerolog.Level {
 	switch level {
+	case "trace":
+		return zerolog.TraceLevel
 	case "debug":
 		return zerolog.DebugLevel
 	case "warn":
@@ -161,7 +164,7 @@ func initK9sFlags() {
 		k9sFlags.LogLevel,
 		"logLevel", "l",
 		config.DefaultLogLevel,
-		"Specify a log level (info, warn, debug, error)",
+		"Specify a log level (info, warn, debug, trace, error)",
 	)
 	rootCmd.Flags().StringVarP(
 		k9sFlags.LogFile,

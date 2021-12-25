@@ -89,6 +89,7 @@ func makeSAR(ns, gvr string) *authorizationv1.SelfSubjectAccessReview {
 			ResourceAttributes: &authorizationv1.ResourceAttributes{
 				Namespace:   ns,
 				Group:       res.Group,
+				Version:     res.Version,
 				Resource:    res.Resource,
 				Subresource: spec.SubResource(),
 			},
@@ -162,6 +163,7 @@ func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) 
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
 		resp, err := client.Create(ctx, sar, metav1.CreateOptions{})
+		log.Trace().Msgf("[CAN] %s(%s) %v <<%v>>", gvr, verbs, resp, err)
 		if err != nil {
 			log.Warn().Err(err).Msgf("  Dial Failed!")
 			a.cache.Add(key, false, cacheExpiry)
