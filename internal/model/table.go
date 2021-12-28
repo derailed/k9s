@@ -150,9 +150,14 @@ func (t *Table) ClusterWide() bool {
 	return client.IsClusterWide(t.namespace)
 }
 
-// Empty return true if no model data.
+// Empty returns true if no model data.
 func (t *Table) Empty() bool {
 	return len(t.data.RowEvents) == 0
+}
+
+// Count returns the row count.
+func (t *Table) Count() int {
+	return len(t.data.RowEvents)
 }
 
 // Peek returns model data.

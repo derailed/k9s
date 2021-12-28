@@ -64,6 +64,7 @@ var _ ui.Tabular = &mockModel{}
 func (t *mockModel) SetInstance(string)                 {}
 func (t *mockModel) SetLabelFilter(string)              {}
 func (t *mockModel) Empty() bool                        { return false }
+func (t *mockModel) Count() int                         { return 1 }
 func (t *mockModel) HasMetrics() bool                   { return true }
 func (t *mockModel) Peek() render.TableData             { return makeTableData() }
 func (t *mockModel) Refresh(context.Context) error      { return nil }

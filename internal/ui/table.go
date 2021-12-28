@@ -193,7 +193,6 @@ func (t *Table) doUpdate(data render.TableData) {
 		t.actions[KeyShiftP] = NewKeyAction("Sort Namespace", t.SortColCmd("NAMESPACE", true), false)
 		t.sortCol.name = "NAMESPACE"
 	} else {
-		t.sortCol.name = "NAME"
 		t.actions.Delete(KeyShiftP)
 	}
 
@@ -215,7 +214,7 @@ func (t *Table) doUpdate(data render.TableData) {
 		}
 	}
 
-	if t.sortCol.name == "NAMESPACE" && !client.IsAllNamespaces(data.Namespace) && len(custData.Header) > 0 {
+	if t.sortCol.name == "" || (t.sortCol.name == "NAMESPACE" && !client.IsAllNamespaces(data.Namespace)) && len(custData.Header) > 0 {
 		if idx := custData.Header.IndexOf("NAME", false); idx >= 0 {
 			t.sortCol.name = custData.Header[idx].Name
 		} else {
