@@ -64,6 +64,8 @@ type (
 		FgColor        Color `yaml:"fgColor"`
 		BgColor        Color `yaml:"bgColor"`
 		LogoColor      Color `yaml:"logoColor"`
+		LogoColorMsg   Color `yaml:"logoColorMsg"`
+		LogoColorInfo  Color `yaml:"logoColorInfo"`
 		LogoColorWarn  Color `yaml:"logoColorWarn"`
 		LogoColorError Color `yaml:"logoColorError"`
 	}
@@ -332,10 +334,12 @@ func newHelp() Help {
 
 func newBody() Body {
 	return Body{
-		FgColor:   "cadetblue",
-		BgColor:   "black",
-		LogoColor: "orange",
-		LogoColorWarn: "mediumpurple",
+		FgColor:        "cadetblue",
+		BgColor:        "black",
+		LogoColor:      "orange",
+		LogoColorMsg:   "white",
+		LogoColorInfo:  "green",
+		LogoColorWarn:  "mediumvioletred",
 		LogoColorError: "red",
 	}
 }

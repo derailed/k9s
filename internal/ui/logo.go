@@ -77,7 +77,7 @@ func (l *Logo) Warn(msg string) {
 
 // Info displays a log info state.
 func (l *Logo) Info(msg string) {
-	l.update(msg, l.styles.Body().LogoColor)
+	l.update(msg, l.styles.Body().LogoColorInfo)
 }
 
 func (l *Logo) update(msg string, c config.Color) {
@@ -87,7 +87,7 @@ func (l *Logo) update(msg string, c config.Color) {
 
 func (l *Logo) refreshStatus(msg string, c config.Color) {
 	l.status.SetBackgroundColor(c.Color())
-	l.status.SetText(fmt.Sprintf(l.styles.Body().FgColor.String(), msg))
+	l.status.SetText(fmt.Sprintf("%s%s", l.styles.Body().LogoColorMsg.String(), msg))
 }
 
 func (l *Logo) refreshLogo(c config.Color) {
