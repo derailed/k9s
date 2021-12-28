@@ -55,6 +55,9 @@ type Tabular interface {
 	// Empty returns true if model has no data.
 	Empty() bool
 
+	// Count returns the model data count.
+	Count() int
+
 	// Peek returns current model data.
 	Peek() render.TableData
 

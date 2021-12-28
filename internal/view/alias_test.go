@@ -110,6 +110,7 @@ func (t *mockModel) ClearSuggestions()                  {}
 func (t *mockModel) SetInstance(string)                 {}
 func (t *mockModel) SetLabelFilter(string)              {}
 func (t *mockModel) Empty() bool                        { return false }
+func (t *mockModel) Count() int                         { return 1 }
 func (t *mockModel) HasMetrics() bool                   { return true }
 func (t *mockModel) Peek() render.TableData             { return makeTableData() }
 func (t *mockModel) ClusterWide() bool                  { return false }
