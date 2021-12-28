@@ -103,7 +103,7 @@ func (s *SelectTable) SelectRow(r int, broadcast bool) {
 	if !broadcast {
 		s.SetSelectionChangedFunc(nil)
 	}
-	if r >= s.model.Count() {
+	if s.model.Count() > 0 && r >= s.model.Count() {
 		r = s.model.Count()
 	}
 	defer s.SetSelectionChangedFunc(s.selectionChanged)
