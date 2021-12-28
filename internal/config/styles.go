@@ -61,9 +61,11 @@ type (
 
 	// Body tracks body styles.
 	Body struct {
-		FgColor   Color `yaml:"fgColor"`
-		BgColor   Color `yaml:"bgColor"`
-		LogoColor Color `yaml:"logoColor"`
+		FgColor        Color `yaml:"fgColor"`
+		BgColor        Color `yaml:"bgColor"`
+		LogoColor      Color `yaml:"logoColor"`
+		LogoColorWarn  Color `yaml:"logoColorWarn"`
+		LogoColorError Color `yaml:"logoColorError"`
 	}
 
 	// Dialog tracks dialog styles.
@@ -333,6 +335,8 @@ func newBody() Body {
 		FgColor:   "cadetblue",
 		BgColor:   "black",
 		LogoColor: "orange",
+		LogoColorWarn: "mediumpurple",
+		LogoColorError: "red",
 	}
 }
 
