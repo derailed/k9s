@@ -87,7 +87,9 @@ func (l *Logo) update(msg string, c config.Color) {
 
 func (l *Logo) refreshStatus(msg string, c config.Color) {
 	l.status.SetBackgroundColor(c.Color())
-  l.status.SetText(fmt.Sprintf("[%s::b]%s", l.styles.Body().LogoColorMsg.String(), msg))
+	l.status.SetText(
+		fmt.Sprintf("[%s::b]%s", l.styles.Body().LogoColorMsg, msg),
+	)
 }
 
 func (l *Logo) refreshLogo(c config.Color) {
