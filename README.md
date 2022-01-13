@@ -170,7 +170,7 @@ K9s is available on Linux, macOS and Windows platforms.
     ```shell
     # Kubectl edit command will use this env var.
     export EDITOR=my_fav_editor
-    # Should your editor deals with streamed vs on disk files differently, also set...
+    # Should your editor deal with streamed vs on disk files differently, also set...
     export K9S_EDITOR=my_fav_editor
     ```
 
