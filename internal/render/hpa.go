@@ -182,10 +182,18 @@ func toMetricsV2b2(specs []autoscalingv2beta2.MetricSpec, statuses []autoscaling
 			}
 			list = append(list, current+"/"+spec.Pods.Target.AverageValue.String())
 		case autoscalingv2beta2.ObjectMetricSourceType:
+			var target string
 			if len(statuses) > i && statuses[i].Object != nil {
-				current = statuses[i].Object.Current.Value.String()
+				if (statuses[i].Object.Current.AverageValue != nil && !statuses[i].Object.Current.AverageValue.IsZero()) ||
+					(spec.Object.Target.AverageValue != nil && !spec.Object.Target.AverageValue.IsZero()) {
+					current = statuses[i].Object.Current.AverageValue.String()
+					target = spec.Object.Target.AverageValue.String()
+				} else {
+					current = statuses[i].Object.Current.Value.String()
+					target = spec.Object.Target.Value.String()
+				}
 			}
-			list = append(list, current+"/"+spec.Object.Target.Value.String())
+			list = append(list, current+"/"+target)
 		case autoscalingv2beta2.ResourceMetricSourceType:
 			list = append(list, resourceMetricsV2b2(i, spec, statuses))
 		default:
