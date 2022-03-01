@@ -194,7 +194,7 @@ func (c *Config) ActiveView() string {
 	return cmd
 }
 
-// SetActiveView set the currently cluster active view.
+// SetActiveView set the current cluster active view.
 func (c *Config) SetActiveView(view string) {
 	if cl := c.K9s.ActiveCluster(); cl != nil {
 		cl.View.Active = view

@@ -19,7 +19,7 @@ import (
 
 var _ ResourceViewer = (*Sanitizer)(nil)
 
-// Sanitizer represents an sanitizer tree view.
+// Sanitizer represents a sanitizer tree view.
 type Sanitizer struct {
 	*ui.Tree
 

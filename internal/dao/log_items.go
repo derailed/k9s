@@ -43,7 +43,7 @@ func (l *LogItems) Items() []*LogItem {
 	return l.items
 }
 
-// Len returns the items length.
+// Len returns the items' length.
 func (l *LogItems) Len() int {
 	l.mx.RLock()
 	defer l.mx.RUnlock()

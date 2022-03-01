@@ -9,7 +9,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// Alias renders a aliases to screen.
+// Alias renders an aliases to screen.
 type Alias struct {
 	Base
 }

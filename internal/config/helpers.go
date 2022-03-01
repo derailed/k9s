@@ -26,7 +26,7 @@ func InList(ll []string, n string) bool {
 	return false
 }
 
-// InNSList check if ns is in an ns collection.
+// InNSList check if ns is in a ns collection.
 func InNSList(nn []interface{}, ns string) bool {
 	ss := make([]string, len(nn))
 	for i, n := range nn {

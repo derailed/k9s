@@ -78,7 +78,7 @@ func (c Helm) diagnose(s string) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-// HelmRes represents an helm chart resource.
+// HelmRes represents a helm chart resource.
 type HelmRes struct {
 	Release *release.Release
 }

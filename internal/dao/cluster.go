@@ -15,7 +15,7 @@ import (
 type RefScanner interface {
 	// Init initializes the scanner
 	Init(Factory, client.GVR)
-	// Scan scan the resource for references.
+	// Scan scans the resource for references.
 	Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error)
 	ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error)
 }

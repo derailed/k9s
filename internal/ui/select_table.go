@@ -55,7 +55,7 @@ func (s *SelectTable) GetSelectedItems() []string {
 	return items
 }
 
-// GetRowID returns the row id at at given location.
+// GetRowID returns the row id at a given location.
 func (s *SelectTable) GetRowID(index int) (string, bool) {
 	cell := s.GetCell(index, 0)
 	if cell == nil {
@@ -176,7 +176,7 @@ func (s *SelectTable) SpanMark() {
 		return
 	}
 
-	// Look forward to see if we have a mark
+	// Look forward to seeing if we have a mark
 	for i := selIndex; i < s.GetRowCount(); i++ {
 		id, ok := s.GetRowID(i)
 		if !ok {

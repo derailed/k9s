@@ -41,7 +41,7 @@ type readWriteCloser struct {
 	*bytes.Buffer
 }
 
-// Close close read stream.
+// Close closes read stream.
 func (readWriteCloser) Close() error {
 	return nil
 }

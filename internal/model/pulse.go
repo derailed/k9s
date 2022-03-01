@@ -20,11 +20,11 @@ type PulseListener interface {
 	// PulseChanged notifies the model data changed.
 	PulseChanged(*health.Check)
 
-	// TreeFailed notifies the health check failed.
+	// PulseFailed notifies the health check failed.
 	PulseFailed(error)
 }
 
-// Pulse tracks multiple resources health.
+// Pulse tracks multiple resources' health.
 type Pulse struct {
 	gvr         string
 	namespace   string

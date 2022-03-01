@@ -80,7 +80,7 @@ func (c *Cluster) ClusterName() string {
 	return n
 }
 
-// UserName returns the user name.
+// UserName returns the username.
 func (c *Cluster) UserName() string {
 	n, err := c.factory.Client().Config().CurrentUserName()
 	if err != nil {

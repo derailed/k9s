@@ -14,13 +14,13 @@ const (
 
 	// FlashInfo represents an info message.
 	FlashInfo FlashLevel = iota
-	// FlashWarn represents an warning message.
+	// FlashWarn represents a warning message.
 	FlashWarn
 	// FlashErr represents an error message.
 	FlashErr
 )
 
-// LevelMessage tracks an message and severity.
+// LevelMessage tracks a message and severity.
 type LevelMessage struct {
 	Level FlashLevel
 	Text  string

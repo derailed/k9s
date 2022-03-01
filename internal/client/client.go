@@ -242,7 +242,7 @@ func (a *APIClient) CheckConnectivity() bool {
 		}
 	}()
 
-	// Need to reload to pickup any kubeconfig changes.
+	// Need to reload to pick up any kubeconfig changes.
 	cfg, err := NewConfig(a.config.flags).RESTConfig()
 	if err != nil {
 		log.Error().Err(err).Msgf("restConfig load failed")

@@ -29,7 +29,7 @@ type Factory interface {
 	// Get fetch a given resource.
 	Get(gvr, path string, wait bool, sel labels.Selector) (runtime.Object, error)
 
-	// List fetch a collection of resources.
+	// List fetches a collection of resources.
 	List(gvr, ns string, wait bool, sel labels.Selector) ([]runtime.Object, error)
 
 	// ForResource fetch an informer for a given resource.
@@ -44,7 +44,7 @@ type Factory interface {
 	// DeleteForwarder deletes a pod forwarder.
 	DeleteForwarder(path string)
 
-	// Forwards returns all portforwards.
+	// Forwarders returns all portforwards.
 	Forwarders() watch.Forwarders
 }
 

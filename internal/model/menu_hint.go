@@ -12,7 +12,7 @@ type MenuHint struct {
 	Visible     bool
 }
 
-// IsBlank checks if menu hint is a place holder.
+// IsBlank checks if menu hint is a placeholder.
 func (m MenuHint) IsBlank() bool {
 	return m.Mnemonic == "" && m.Description == "" && !m.Visible
 }
@@ -25,7 +25,7 @@ func (m MenuHint) String() string {
 // MenuHints represents a collection of hints.
 type MenuHints []MenuHint
 
-// Len returns the hints length.
+// Len returns the hints' length.
 func (h MenuHints) Len() int {
 	return len(h)
 }

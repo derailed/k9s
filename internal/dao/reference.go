@@ -36,7 +36,7 @@ func (r *Reference) Get(ctx context.Context, path string) (runtime.Object, error
 	panic("NYI")
 }
 
-// Scan scan cluster resources for references.
+// Scan scans cluster resources for references.
 func (r *Reference) Scan(ctx context.Context) ([]runtime.Object, error) {
 	refs, err := ScanForRefs(ctx, r.Factory)
 	if err != nil {

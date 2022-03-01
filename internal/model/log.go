@@ -98,7 +98,7 @@ func (l *Log) Head(ctx context.Context) {
 	l.Restart(ctx)
 }
 
-// SetSinceSeconds sets the logs retrieval time.
+// SetSinceSeconds sets the logs' retrieval time.
 func (l *Log) SetSinceSeconds(ctx context.Context, i int64) {
 	l.logOptions.SinceSeconds, l.logOptions.Head = i, false
 	l.Restart(ctx)
