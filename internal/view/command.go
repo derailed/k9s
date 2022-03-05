@@ -115,7 +115,12 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 	cmds := strings.Split(cmd, " ")
 	gvr, v, err := c.viewMetaFor(cmds[0])
 	if err != nil {
-		return err
+		if cmds[0] == "pod" {
+			return err
+		}
+
+		// Maybe the resource kind got deleted, try again with pod view.
+		return c.run("pod", "", clearStack)
 	}
 
 	switch cmds[0] {
