@@ -17,24 +17,31 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/port"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/labels"
+	k8sRuntime "k8s.io/apimachinery/pkg/runtime"
 )
 
 // ExitStatus indicates UI exit conditions.
 var ExitStatus = ""
 
 const (
-	splashDelay      = 1 * time.Second
-	clusterRefresh   = 15 * time.Second
-	clusterInfoWidth = 50
-	clusterInfoPad   = 15
+	splashDelay        = 1 * time.Second
+	clusterRefresh     = 15 * time.Second
+	autoPfScanInterval = 30 * time.Second
+	clusterInfoWidth   = 50
+	clusterInfoPad     = 15
 )
 
 // App represents an application view.
@@ -117,7 +124,92 @@ func (a *App) Init(version string, rate int) error {
 	a.layout(ctx)
 	a.initSignals()
 
+	if a.Config.K9s.ShouldScanForAutoPf() {
+		a.QueueUpdate(func() {
+			a.scanForAutoPf()
+		})
+
+		go func() {
+			for {
+				select {
+				case <-time.After(autoPfScanInterval):
+					a.QueueUpdate(func() {
+						a.scanForAutoPf()
+					})
+				}
+			}
+		}()
+	}
+
 	return nil
+}
+
+func (app *App) scanForAutoPf() {
+	log.Debug().Msg("Scanning pods for auto port forwards")
+	pods, err := app.factory.List("v1/pods", "", true, labels.Everything())
+	if err != nil {
+		return
+	}
+	for _, o := range pods {
+		var pod v1.Pod
+		err = k8sRuntime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod)
+		if err != nil {
+			log.Debug().Msg(err.Error())
+			continue
+		}
+		if spec, ok := pod.Annotations[port.K9sAutoPortForwardsKey]; ok {
+			pfs, err := port.ParsePFs(spec)
+			if err != nil {
+				log.Debug().Msg(err.Error())
+				continue
+			}
+
+			podPorts := make(map[string][]v1.ContainerPort, len(pod.Spec.Containers))
+			for _, co := range pod.Spec.Containers {
+				podPorts[co.Name] = co.Ports
+			}
+
+			ports := make(port.ContainerPortSpecs, 0, len(podPorts))
+			for co, pp := range podPorts {
+				for _, p := range pp {
+					if p.Protocol != v1.ProtocolTCP {
+						log.Debug().Msg("Port forward supports TCP only")
+						continue
+					}
+					ports = append(ports, port.NewPortSpec(co, p.Name, p.ContainerPort))
+				}
+			}
+
+			pts, err := pfs.ToTunnels(app.Config.CurrentCluster().PortForwardAddress, ports, port.IsPortFree)
+			if err != nil {
+				log.Debug().Msg(err.Error())
+				continue
+			}
+
+			if err := pts.CheckAvailable(); err != nil {
+				log.Debug().Msg(err.Error())
+				continue
+			}
+
+			path := client.FQN(pod.Namespace, pod.Name)
+			for _, pt := range pts {
+				if _, ok := app.factory.ForwarderFor(dao.PortForwardID(path, pt.Container, pt.PortMap())); ok {
+					continue
+				}
+				pf := dao.NewPortForwarder(app.factory)
+				fwd, err := pf.Start(path, pt)
+				if err != nil {
+					log.Debug().Msg(err.Error())
+					continue
+				}
+				app.factory.AddForwarder(pf)
+				pf.SetActive(true)
+				go fwd.ForwardPorts()
+
+				log.Debug().Msgf(">>> Starting port forward %q -- %#v", pf.ID(), pt)
+			}
+		}
+	}
 }
 
 func (a *App) layout(ctx context.Context) {
