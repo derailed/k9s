@@ -124,28 +124,28 @@ func (a *App) Init(version string, rate int) error {
 	a.layout(ctx)
 	a.initSignals()
 
-	a.scheduleScanForAutoPf()
+	if a.Config.K9s.ShouldScanForAutoPf() {
+		a.scheduleScanForAutoPf()
+	}
 
 	return nil
 }
 
 func (a *App) scheduleScanForAutoPf() {
-	if a.Config.K9s.ShouldScanForAutoPf() {
-		a.QueueUpdate(func() {
-			a.scanForAutoPf()
-		})
+	a.QueueUpdate(func() {
+		a.scanForAutoPf()
+	})
 
-		go func() {
-			for {
-				select {
-				case <-time.After(autoPfScanInterval):
-					a.QueueUpdate(func() {
-						a.scanForAutoPf()
-					})
-				}
+	go func() {
+		for {
+			select {
+			case <-time.After(autoPfScanInterval):
+				a.QueueUpdate(func() {
+					a.scanForAutoPf()
+				})
 			}
-		}()
-	}
+		}
+	}()
 }
 
 func (app *App) scanForAutoPf() {

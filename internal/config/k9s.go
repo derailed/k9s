@@ -29,7 +29,6 @@ type K9s struct {
 	manualRefreshRate   int
 	manualHeadless      *bool
 	manualLogoless      *bool
-	manualScanForAutoPf *bool
 	manualCrumbsless    *bool
 	manualReadOnly      *bool
 	manualCommand       *string
@@ -71,11 +70,6 @@ func (k *K9s) OverrideHeadless(b bool) {
 // OverrideLogoless toggle the k9s logo manually.
 func (k *K9s) OverrideLogoless(b bool) {
 	k.manualLogoless = &b
-}
-
-// OverrideScanForAutoPf toggle the k9s logo manually.
-func (k *K9s) OverrideScanForAutoPf(b bool) {
-	k.manualScanForAutoPf = &b
 }
 
 // OverrideCrumbsless tooh the crumbslessness manually.
