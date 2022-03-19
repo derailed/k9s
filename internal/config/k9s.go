@@ -124,12 +124,7 @@ func (k *K9s) IsLogoless() bool {
 
 // ScanForAutoPf returns scanForAutoPf setting.
 func (k *K9s) ShouldScanForAutoPf() bool {
-	h := k.ScanForAutoPf
-	if k.manualScanForAutoPf != nil && *k.manualScanForAutoPf {
-		h = *k.manualScanForAutoPf
-	}
-
-	return h
+	return k.ScanForAutoPf
 }
 
 // IsCrumbsless returns crumbsless setting.
