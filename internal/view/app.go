@@ -124,6 +124,12 @@ func (a *App) Init(version string, rate int) error {
 	a.layout(ctx)
 	a.initSignals()
 
+	a.scheduleScanForAutoPf()
+
+	return nil
+}
+
+func (a *App) scheduleScanForAutoPf() {
 	if a.Config.K9s.ShouldScanForAutoPf() {
 		a.QueueUpdate(func() {
 			a.scanForAutoPf()
@@ -140,8 +146,6 @@ func (a *App) Init(version string, rate int) error {
 			}
 		}()
 	}
-
-	return nil
 }
 
 func (app *App) scanForAutoPf() {
@@ -157,59 +161,71 @@ func (app *App) scanForAutoPf() {
 			log.Debug().Msg(err.Error())
 			continue
 		}
-		if spec, ok := pod.Annotations[port.K9sAutoPortForwardsKey]; ok {
-			pfs, err := port.ParsePFs(spec)
-			if err != nil {
-				log.Debug().Msg(err.Error())
-				continue
-			}
+		app.scanPodForAutoPf(pod)
+	}
+}
 
-			podPorts := make(map[string][]v1.ContainerPort, len(pod.Spec.Containers))
-			for _, co := range pod.Spec.Containers {
-				podPorts[co.Name] = co.Ports
-			}
+func (app *App) scanPodForAutoPf(pod v1.Pod) {
+	if spec, ok := pod.Annotations[port.K9sAutoPortForwardsKey]; ok {
+		ports := app.getPodPorts(pod)
 
-			ports := make(port.ContainerPortSpecs, 0, len(podPorts))
-			for co, pp := range podPorts {
-				for _, p := range pp {
-					if p.Protocol != v1.ProtocolTCP {
-						log.Debug().Msg("Port forward supports TCP only")
-						continue
-					}
-					ports = append(ports, port.NewPortSpec(co, p.Name, p.ContainerPort))
-				}
-			}
+		pfs, err := port.ParsePFs(spec)
+		if err != nil {
+			log.Debug().Msg(err.Error())
+			return
+		}
 
-			pts, err := pfs.ToTunnels(app.Config.CurrentCluster().PortForwardAddress, ports, port.IsPortFree)
-			if err != nil {
-				log.Debug().Msg(err.Error())
-				continue
-			}
+		pts, err := pfs.ToTunnels(app.Config.CurrentCluster().PortForwardAddress, ports, port.IsPortFree)
+		if err != nil {
+			log.Debug().Msg(err.Error())
+			return
+		}
 
-			if err := pts.CheckAvailable(); err != nil {
-				log.Debug().Msg(err.Error())
-				continue
-			}
+		if err := pts.CheckAvailable(); err != nil {
+			log.Debug().Msg(err.Error())
+			return
+		}
 
-			path := client.FQN(pod.Namespace, pod.Name)
-			for _, pt := range pts {
-				if _, ok := app.factory.ForwarderFor(dao.PortForwardID(path, pt.Container, pt.PortMap())); ok {
-					continue
-				}
-				pf := dao.NewPortForwarder(app.factory)
-				fwd, err := pf.Start(path, pt)
-				if err != nil {
-					log.Debug().Msg(err.Error())
-					continue
-				}
-				app.factory.AddForwarder(pf)
-				pf.SetActive(true)
-				go fwd.ForwardPorts()
-
-				log.Debug().Msgf(">>> Starting port forward %q -- %#v", pf.ID(), pt)
-			}
+		path := client.FQN(pod.Namespace, pod.Name)
+		for _, pt := range pts {
+			app.startPortForward(path, pt)
 		}
 	}
+}
+
+func (app *App) getPodPorts(pod v1.Pod) port.ContainerPortSpecs {
+	podPorts := make(map[string][]v1.ContainerPort, len(pod.Spec.Containers))
+	for _, co := range pod.Spec.Containers {
+		podPorts[co.Name] = co.Ports
+	}
+	ports := make(port.ContainerPortSpecs, 0, len(podPorts))
+	for co, pp := range podPorts {
+		for _, p := range pp {
+			if p.Protocol != v1.ProtocolTCP {
+				log.Debug().Msg("Port forward supports TCP only")
+				continue
+			}
+			ports = append(ports, port.NewPortSpec(co, p.Name, p.ContainerPort))
+		}
+	}
+	return ports
+}
+
+func (app *App) startPortForward(path string, pt port.PortTunnel) {
+	if _, ok := app.factory.ForwarderFor(dao.PortForwardID(path, pt.Container, pt.PortMap())); ok {
+		return
+	}
+	pf := dao.NewPortForwarder(app.factory)
+	fwd, err := pf.Start(path, pt)
+	if err != nil {
+		log.Debug().Msg(err.Error())
+		return
+	}
+	app.factory.AddForwarder(pf)
+	pf.SetActive(true)
+	go fwd.ForwardPorts()
+
+	log.Debug().Msgf(">>> Starting port forward %q -- %#v", pf.ID(), pt)
 }
 
 func (a *App) layout(ctx context.Context) {
