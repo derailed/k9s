@@ -14,6 +14,7 @@ import (
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
+	"github.com/tidwall/gjson"
 )
 
 type (
@@ -276,6 +277,9 @@ func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads M
 		}
 		if h[c].MX && !t.hasMetrics {
 			continue
+		}
+		if h[c].Path != "" {
+			field = gjson.Get(field, h[c].Path).String()
 		}
 
 		if !re.Deltas.IsBlank() && !h.IsTimeCol(c) {

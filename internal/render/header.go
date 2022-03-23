@@ -2,6 +2,7 @@ package render
 
 import (
 	"reflect"
+	"strings"
 
 	"github.com/rs/zerolog/log"
 )
@@ -17,6 +18,7 @@ type HeaderColumn struct {
 	Wide      bool
 	MX        bool
 	Time      bool
+	Path      string
 }
 
 // Clone copies a header.
@@ -58,7 +60,12 @@ func (h Header) MapIndices(cols []string, wide bool) []int {
 	ii := make([]int, 0, len(cols))
 	cc := make(map[int]struct{}, len(cols))
 	for _, col := range cols {
-		idx := h.IndexOf(col, true)
+		var idx int
+		if strings.Contains(col, ":") {
+			idx = h.IndexOf("JSON", true)
+		} else {
+			idx = h.IndexOf(col, true)
+		}
 		if idx < 0 {
 			log.Warn().Msgf("Column %q not found on resource", col)
 		}
@@ -85,6 +92,14 @@ func (h Header) Customize(cols []string, wide bool) Header {
 	cc := make(Header, 0, len(h))
 	xx := make(map[int]struct{}, len(h))
 	for _, c := range cols {
+		if csplit := strings.Split(c, ":"); len(csplit) == 2 {
+			col := HeaderColumn{
+				Name: csplit[0],
+				Path: csplit[1],
+			}
+			cc = append(cc, col)
+			continue
+		}
 		idx := h.IndexOf(c, true)
 		if idx == -1 {
 			log.Warn().Msgf("Column %s is not available on this resource", c)

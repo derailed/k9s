@@ -1,6 +1,7 @@
 package render
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
@@ -81,6 +82,7 @@ func (Pod) Header(ns string) Header {
 		HeaderColumn{Name: "NOMINATED NODE", Wide: true},
 		HeaderColumn{Name: "READINESS GATES", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "JSON"},
 	}
 }
 
@@ -102,6 +104,10 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 	c, r := p.gatherPodMX(&po, pwm.MX)
 	phase := p.Phase(&po)
 	row.ID = client.MetaFQN(po.ObjectMeta)
+	json, err := json.Marshal(po)
+	if err != nil {
+		return fmt.Errorf("Cannot Marshal Pod %s", po.GetName())
+	}
 	row.Fields = Fields{
 		po.Namespace,
 		po.ObjectMeta.Name,
@@ -125,6 +131,7 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 		asNominated(po.Status.NominatedNodeName),
 		asReadinessGate(po),
 		toAge(po.ObjectMeta.CreationTimestamp),
+		string(json),
 	}
 
 	return nil
