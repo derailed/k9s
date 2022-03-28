@@ -1,0 +1,99 @@
+name: Build
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: ["linux"]
+        goarch: ["386", "amd64", "arm", "arm64"]
+      fail-fast: false
+    env:
+      GOOS: ${{ matrix.goos }}
+      GOARCH: ${{ matrix.goarch }}
+    name: Linux build ${{ matrix.goos }} ${{ matrix.goarch }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+      - run: make release
+      - uses: actions/upload-artifact@v2
+        with:
+          name: artifacts
+          path: ./releases/*.gz
+
+  build-darwin:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        goos: ["darwin"]
+        goarch: ["amd64", "arm64"]
+      fail-fast: false
+    env:
+      GOOS: ${{ matrix.goos }}
+      GOARCH: ${{ matrix.goarch }}
+    name: Mac build ${{ matrix.goos }} ${{ matrix.goarch }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+      - run: make release
+      - uses: actions/upload-artifact@v2
+        with:
+          name: artifacts
+          path: ./releases/*.gz
+
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        goos: ["windows"]
+        goarch: ["386", "amd64", "arm", "arm64"]
+      fail-fast: false
+    env:
+      GOOS: ${{ matrix.goos }}
+      GOARCH: ${{ matrix.goarch }}
+    name: Windows build ${{ matrix.goos }} ${{ matrix.goarch }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+      - run: make release
+      - uses: actions/upload-artifact@v2
+        with:
+          name: artifacts
+          path: ./releases/*.gz
+
+  release:
+    needs:
+      - build-linux
+      - build-darwin
+      - build-windows
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    env:
+      BUILD_NUMBER: ${{github.run_number}}
+    steps:
+      - name: Download manifest artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: artifacts
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          name: Build ${{github.run_number}}
+          tag_name: ${{github.run_number}}
+          draft: false
+          prerelease: false
+          files: ./releases/*.gz

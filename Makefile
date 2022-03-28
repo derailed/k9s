@@ -31,3 +31,10 @@ img:    ## Build Docker Image
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":[^:]*?## "}; {printf "\033[38;5;69m%-30s\033[38;5;38m %s\033[0m\n", $$1, $$2}'
+
+run: build
+	@./execs/k9s
+
+release: build
+	-mkdir ./release
+	tar -czf ./release/k9s_${GOOS}_${GOARCH}.gz ./execs/k9s
