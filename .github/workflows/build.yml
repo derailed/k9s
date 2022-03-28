@@ -82,6 +82,7 @@ jobs:
       BUILD_NUMBER: ${{github.run_number}}
     steps:
       - name: Download manifest artifacts
+        id: download
         uses: actions/download-artifact@v2
         with:
           name: artifacts
