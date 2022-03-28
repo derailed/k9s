@@ -25,7 +25,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: artifacts
-          path: ./releases/*.gz
+          path: ./release/*.gz
 
   build-darwin:
     runs-on: macos-latest
@@ -47,7 +47,7 @@ jobs:
       - uses: actions/upload-artifact@v2
         with:
           name: artifacts
-          path: ./releases/*.gz
+          path: ./release/*.gz
 
   build-windows:
     runs-on: windows-latest
