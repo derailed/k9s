@@ -72,9 +72,13 @@ func (c *Helm) GetValues(path string, allValues bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	yamlBytes, err := yaml.Marshal(resp)
-	yamlString := string(yamlBytes)
-	return yamlString, err
+
+	y, err := yaml.Marshal(resp)
+	if err != nil {
+		return "", err
+	}
+
+	return string(y), err
 }
 
 // Describe returns the chart notes.
