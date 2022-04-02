@@ -8,6 +8,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/action"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -56,6 +57,24 @@ func (c *Helm) Get(_ context.Context, path string) (runtime.Object, error) {
 	}
 
 	return render.HelmRes{Release: resp}, nil
+}
+
+// GetValues returns values of a release
+func (c *Helm) GetValues(path string, allValues bool) (string, error) {
+	ns, n := client.Namespaced(path)
+	cfg, err := c.EnsureHelmConfig(ns)
+	if err != nil {
+		return "", err
+	}
+	vals := action.NewGetValues(cfg)
+	vals.AllValues = allValues
+	resp, err := vals.Run(n)
+	if err != nil {
+		return "", err
+	}
+	yamlBytes, err := yaml.Marshal(resp)
+	yamlString := string(yamlBytes)
+	return yamlString, err
 }
 
 // Describe returns the chart notes.
