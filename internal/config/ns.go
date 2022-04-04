@@ -14,15 +14,17 @@ const (
 
 // Namespace tracks active and favorites namespaces.
 type Namespace struct {
-	Active    string   `yaml:"active"`
-	Favorites []string `yaml:"favorites"`
+	Active        string   `yaml:"active"`
+	LockFavorites bool     `yaml:"lockFavorites"`
+	Favorites     []string `yaml:"favorites"`
 }
 
 // NewNamespace create a new namespace configuration.
 func NewNamespace() *Namespace {
 	return &Namespace{
-		Active:    defaultNS,
-		Favorites: []string{defaultNS},
+		Active:        defaultNS,
+		Favorites:     []string{defaultNS},
+		LockFavorites: false,
 	}
 }
 
@@ -48,7 +50,7 @@ func (n *Namespace) Validate(c client.Connection, ks KubeSettings) {
 // SetActive set the active namespace.
 func (n *Namespace) SetActive(ns string, ks KubeSettings) error {
 	n.Active = ns
-	if ns != "" {
+	if ns != "" && !n.LockFavorites {
 		n.addFavNS(ns)
 	}
 	return nil

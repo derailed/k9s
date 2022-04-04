@@ -298,6 +298,7 @@ var expectedConfig = `k9s:
     blee:
       namespace:
         active: default
+        lockFavorites: false
         favorites:
         - default
       view:
@@ -316,6 +317,7 @@ var expectedConfig = `k9s:
     fred:
       namespace:
         active: default
+        lockFavorites: false
         favorites:
         - default
         - kube-public
@@ -338,6 +340,7 @@ var expectedConfig = `k9s:
     minikube:
       namespace:
         active: kube-system
+        lockFavorites: false
         favorites:
         - default
         - kube-public
@@ -389,6 +392,7 @@ var resetConfig = `k9s:
     blee:
       namespace:
         active: default
+        lockFavorites: false
         favorites:
         - default
       view:
