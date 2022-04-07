@@ -22,9 +22,8 @@ type Namespace struct {
 // NewNamespace create a new namespace configuration.
 func NewNamespace() *Namespace {
 	return &Namespace{
-		Active:        defaultNS,
-		Favorites:     []string{defaultNS},
-		LockFavorites: false,
+		Active:    defaultNS,
+		Favorites: []string{defaultNS},
 	}
 }
 
