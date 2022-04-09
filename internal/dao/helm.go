@@ -59,26 +59,26 @@ func (c *Helm) Get(_ context.Context, path string) (runtime.Object, error) {
 	return render.HelmRes{Release: resp}, nil
 }
 
-// GetValues returns values of a release
-func (c *Helm) GetValues(path string, allValues bool) (string, error) {
+// GetValues returns values for a release
+func (c *Helm) GetValues(path string, allValues bool) ([]byte, error) {
 	ns, n := client.Namespaced(path)
 	cfg, err := c.EnsureHelmConfig(ns)
 	if err != nil {
-		return "", err
+		return []byte{}, err
 	}
 	vals := action.NewGetValues(cfg)
 	vals.AllValues = allValues
 	resp, err := vals.Run(n)
 	if err != nil {
-		return "", err
+		return []byte{}, err
 	}
 
 	y, err := yaml.Marshal(resp)
 	if err != nil {
-		return "", err
+		return []byte{}, err
 	}
 
-	return string(y), err
+	return y, err
 }
 
 // Describe returns the chart notes.

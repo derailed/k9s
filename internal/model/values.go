@@ -14,24 +14,45 @@ import (
 	"github.com/sahilm/fuzzy"
 )
 
-// YAML tracks yaml resource representations.
+// Values tracks Helm values representations.
 type Values struct {
 	gvr       client.GVR
 	inUpdate  int32
 	path      string
 	query     string
 	lines     []string
+	allValues bool
 	listeners []ResourceViewerListener
 	options   ViewerToggleOpts
 }
 
-// NewYAML return a new yaml resource model.
-func NewValues(gvr client.GVR, path string, vals string) *Values {
+// NewValues return a new Helm values resource model.
+func NewValues(gvr client.GVR, path string) *Values {
 	return &Values{
-		gvr:   gvr,
-		path:  path,
-		lines: strings.Split(vals, "\n"),
+		gvr:       gvr,
+		path:      path,
+		allValues: false,
+		lines:     getValues(path, false),
 	}
+}
+
+func getHelmDao() *dao.Helm {
+	return Registry["helm"].DAO.(*dao.Helm)
+}
+
+func getValues(path string, allValues bool) []string {
+	vals, err := getHelmDao().GetValues(path, allValues)
+	if err != nil {
+		log.Error().Err(err).Msgf("Failed to get Helm values")
+	}
+	return strings.Split(string(vals), "\n")
+}
+
+// ToggleValues toggles between user supplied values and computed values.
+func (v *Values) ToggleValues() {
+	v.allValues = !v.allValues
+	lines := getValues(v.path, v.allValues)
+	v.lines = lines
 }
 
 // GetPath returns the active resource path.
@@ -113,7 +134,7 @@ func (v *Values) Refresh(ctx context.Context) error {
 	return v.refresh(ctx)
 }
 
-// Watch watches for YAML changes.
+// Watch watches for Values changes.
 func (v *Values) Watch(ctx context.Context) error {
 	if err := v.refresh(ctx); err != nil {
 		return err
@@ -136,7 +157,7 @@ func (v *Values) updater(ctx context.Context) {
 			if err := v.refresh(ctx); err != nil {
 				v.fireResourceFailed(err)
 				if delay = backOff.NextBackOff(); delay == backoff.Stop {
-					log.Error().Err(err).Msgf("YAML gave up!")
+					log.Error().Err(err).Msgf("Values gave up!")
 					return
 				}
 			} else {
@@ -153,6 +174,16 @@ func (v *Values) refresh(ctx context.Context) error {
 		return nil
 	}
 	defer atomic.StoreInt32(&v.inUpdate, 0)
+
+	if err := v.reconcile(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (v *Values) reconcile(ctx context.Context) error {
+	v.fireResourceChanged(v.lines, v.filter(v.query, v.lines))
 
 	return nil
 }
