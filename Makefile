@@ -33,7 +33,7 @@ help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":[^:]*?## "}; {printf "\033[38;5;69m%-30s\033[38;5;38m %s\033[0m\n", $$1, $$2}'
 
 run: build
-	@./execs/k9s
+	@./execs/k9s -l debug
 
 release: build
 	-mkdir ./release

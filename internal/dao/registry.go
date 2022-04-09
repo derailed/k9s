@@ -95,6 +95,7 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		// BOZO!! Revamp with latest...
 		// client.NewGVR("openfaas"):               &OpenFaas{},
 		client.NewGVR("popeye"):    &Popeye{},
+		client.NewGVR("dashboard"): &Dashboard{},
 		client.NewGVR("sanitizer"): &Popeye{},
 		client.NewGVR("helm"):      &Helm{},
 		client.NewGVR("dir"):       &Dir{},
@@ -288,6 +289,13 @@ func loadK9s(m ResourceMetas) {
 		Name:         "containers",
 		Kind:         "Containers",
 		SingularName: "container",
+		Verbs:        []string{},
+		Categories:   []string{"k9s"},
+	}
+	m[client.NewGVR("dashboard")] = metav1.APIResource{
+		Name:         "dashboard",
+		Kind:         "Dashboard",
+		SingularName: "dashboard",
 		Verbs:        []string{},
 		Categories:   []string{"k9s"},
 	}

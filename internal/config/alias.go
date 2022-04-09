@@ -156,6 +156,7 @@ func (a *Aliases) loadDefaultAliases() {
 	a.declare("screendumps", "screendump", "sd")
 	a.declare("pulses", "pulse", "pu", "hz")
 	a.declare("xrays", "xray", "x")
+	a.declare("dashboard", "dash")
 }
 
 // Save alias to disk.

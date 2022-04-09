@@ -45,12 +45,20 @@ type Pod struct {
 
 // IsHappy check for happy deployments.
 func (p *Pod) IsHappy(po v1.Pod) bool {
-	for _, c := range po.Status.Conditions {
-		if c.Status == v1.ConditionFalse {
-			return false
-		}
+	switch po.Status.Phase {
+	case "Running":
+		return true
+	case "Succeeded":
+		return true
+	case "Pending":
+		return false
+	case "Failed":
+		return false
+	case "Unknown":
+		return false
+	default:
+		return false
 	}
-	return true
 }
 
 // Get returns a resource instance if found, else an error.
