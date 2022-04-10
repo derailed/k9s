@@ -227,6 +227,9 @@ func (t *Table) doUpdate(data render.TableData) {
 
 	var col int
 	for _, h := range custData.Header {
+		if h.Hide {
+			continue
+		}
 		if h.Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
 			continue
 		}
@@ -271,6 +274,9 @@ func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads M
 			continue
 		}
 
+		if h[c].Hide {
+			continue
+		}
 		if h[c].Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
 			continue
 		}

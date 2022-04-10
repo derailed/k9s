@@ -10,7 +10,26 @@ import (
 var DashboarFilePath = filepath.Join(K9sHome(), "dashboard.yml")
 
 type Dashboard struct {
-	GVRs []string `yaml:"gvrs"`
+	GVRs map[string]DashboardGVR `yaml:"gvrs"`
+}
+
+type DashboardGVR struct {
+	Active  bool                 `yaml:"active"`
+	Colors  DashboardGVRColorMap `yaml:"colors"`
+	Columns DashboardGVRColumns  `yaml:"columns"`
+}
+
+type DashboardGVRColumns map[string]string
+
+type DashboardGVRColorMap struct {
+	Modified  string `yaml:"modified"`
+	Added     string `yaml:"added"`
+	Pending   string `yaml:"pending"`
+	Error     string `yaml:"error"`
+	Std       string `yaml:"std"`
+	Highlight string `yaml:"highlight"`
+	Kill      string `yaml:"kill"`
+	Completed string `yaml:"completed"`
 }
 
 func LoadDashboard() (Dashboard, error) {
