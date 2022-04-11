@@ -298,6 +298,7 @@ func loadK9s(m ResourceMetas) {
 		SingularName: "dashboard",
 		Verbs:        []string{},
 		Categories:   []string{"k9s"},
+		Namespaced:   true,
 	}
 }
 
