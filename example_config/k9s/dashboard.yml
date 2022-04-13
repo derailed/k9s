@@ -1,0 +1,341 @@
+gvrs:
+  v1/services:
+    active: true
+  apps/v1/deployments:
+    active: true
+    colors:
+      modified: ".status.replicas==.status.availableReplicas"
+      added: ""
+      pending: ".spec.replicas!=.status.availableReplicas"
+      error: ".spec.replicas<.status.availableReplicas"
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+      READY: ".status.replicas==.status.availableReplicas"
+      SCALING: ".spec.replicas!=.status.availableReplicas"
+  v1/pods:
+    active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  apps/v1/statefulsets:
+    active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  batch/v1/cronjobs:
+    active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  apps/v1/daemonsets:
+    active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  batch/v1/jobs:
+    active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  v1/nodes:
+    active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  apps/v1/replicasets:
+    active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  v1/replicationcontrollers:
+    active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  monitoring.coreos.com/v1alpha1/alertmanagerconfigs:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  monitoring.coreos.com/v1/alertmanagers:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  jabos.io/v1/cdk8s-manifests:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  metacontroller.k8s.io/v1alpha1/compositecontrollers:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  metacontroller.k8s.io/v1alpha1/controllerrevisions:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  metacontroller.k8s.io/v1alpha1/decoratorcontrollers:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  jabos.io/v1/docker-images:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  jabos.io/v1/git-repositories:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  grafana.operators/v1/grafana-dashboards:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  jabos.io/v1/helm-template-manifests:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  jabos.io/v1/jsonnet-manifests:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  jabos.io/v1/kustomize-manifests:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  jabos.io/v1/plain-manifests:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  monitoring.coreos.com/v1/podmonitors:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  monitoring.coreos.com/v1/probes:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  monitoring.coreos.com/v1/prometheuses:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  monitoring.coreos.com/v1/prometheusrules:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  monitoring.coreos.com/v1/servicemonitors:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:
+  monitoring.coreos.com/v1/thanosrulers:
+    # active: true
+    colors:
+      modified: ""
+      added: ""
+      pending: ""
+      error: ""
+      std: ""
+      highlight: ""
+      kill: ""
+      completed: ""
+    columns:

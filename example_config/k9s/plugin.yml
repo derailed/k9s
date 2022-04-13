@@ -1,0 +1,29 @@
+plugin:
+  pod-logs:
+    shortCut: Ctrl-L
+    confirm: false
+    description: Pod logs
+    scopes:
+      - pods
+    command: kubectl
+    background: false
+    args:
+      - logs
+      - -f
+      - $NAME
+      - -n
+      - $NAMESPACE
+      - --context
+      - $CONTEXT
+  service-port-forward:
+    description: Service Port Forward
+    shortCut: Ctrl-F
+    confirm: false
+    background: true
+    scopes:
+      - services
+    command: service-port-forward.sh
+    args:
+      - $CONTEXT
+      - $NAMESPACE
+      - $NAME

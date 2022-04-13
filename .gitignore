@@ -4,7 +4,6 @@
 .envrc
 cov.out
 execs
-k9s
 /k8s
 dist
 notes

@@ -1,0 +1,25 @@
+hotKey:
+  services:
+    shortCut: Shift-1
+    description: Viewing services
+    command: services
+  jobs:
+    shortCut: Shift-2
+    description: Viewing jobs
+    command: jobs
+  deployments:
+    shortCut: Shift-3
+    description: View deployments
+    command: dp
+  pods:
+    shortCut: Shift-4
+    description: View pods
+    command: pods
+  statefulsets:
+    shortCut: Shift-5
+    description: View stateful sets
+    command: statefulsets
+  xray-deploy:
+    shortCut: Shift-0
+    description: Xray Deployments
+    command: xray deploy

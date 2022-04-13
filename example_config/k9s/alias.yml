@@ -1,0 +1,6 @@
+alias:
+  sv: v1/services
+  pp: v1/pods
+  dd: apps/v1/deployments
+  ss: apps/v1/statefulsets
+  jj: batch/v1/jobs
