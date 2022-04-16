@@ -31,8 +31,8 @@ type Helm struct {
 	NonResource
 }
 
-func (d *Helm) Create(ctx context.Context,  _ runtime.Object) (runtime.Object, error) {
-	panic("NYI")
+func (d *Helm) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("Helm create NYI")
 }
 
 // List returns a collection of resources.

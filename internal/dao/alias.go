@@ -55,8 +55,8 @@ func (a *Alias) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	return oo, nil
 }
 
-func (a *Alias) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
-	panic("NYI")
+func (a *Alias) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("Alias create NYI")
 }
 
 // AsGVR returns a matching gvr if it exists.

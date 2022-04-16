@@ -34,8 +34,8 @@ type Rbac struct {
 	Resource
 }
 
-func (r *Rbac) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
-	panic("NYI")
+func (r *Rbac) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("Rbac create NYI")
 }
 
 // List lists out rbac resources.

@@ -36,8 +36,8 @@ type CronJob struct {
 	Generic
 }
 
-func (c *CronJob) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
-	panic("NYI")
+func (c *CronJob) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("CronJob create NYI")
 }
 
 // Run a CronJob.

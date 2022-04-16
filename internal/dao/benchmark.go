@@ -32,8 +32,8 @@ type Benchmark struct {
 	NonResource
 }
 
-func (b *Benchmark) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
-	panic("NYI")
+func (b *Benchmark) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("Benchmark create NYI")
 }
 
 // Delete nukes a resource.

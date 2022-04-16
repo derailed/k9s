@@ -35,8 +35,8 @@ func (c *CustomResourceDefinition) IsHappy(crd v1.CustomResourceDefinition) bool
 	return len(versions) > 0
 }
 
-func (c *CustomResourceDefinition) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
-	panic("NYI")
+func (c *CustomResourceDefinition) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("CustomResourceDefinition create NYI")
 }
 
 // List returns a collection of nodes.

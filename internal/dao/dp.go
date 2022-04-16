@@ -40,8 +40,26 @@ type Deployment struct {
 	Resource
 }
 
-func (d *Deployment) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
-	panic("NYI")
+func (d *Deployment) Create(ctx context.Context, ns string, obj runtime.Object) (runtime.Object, error) {
+	dp, ok := obj.(*appsv1.Deployment)
+	if !ok {
+		return nil, fmt.Errorf("Expecting *appsv1.Deployment but got %T", obj)
+	}
+
+	auth, err := d.Client().CanI(ns, "apps/v1/deployments:create", []string{client.CreateVerb})
+	if err != nil {
+		return nil, err
+	}
+	if !auth {
+		return nil, fmt.Errorf("user is not authorized to create a deployment")
+	}
+
+	dial, err := d.Client().Dial()
+	if err != nil {
+		return nil, err
+	}
+
+	return dial.AppsV1().Deployments(ns).Create(ctx, dp, metav1.CreateOptions{})
 }
 
 // IsHappy check for happy deployments.

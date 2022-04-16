@@ -8,6 +8,9 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal"
+	"github.com/derailed/k9s/internal/client"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -23,8 +26,25 @@ type Resource struct {
 	Generic
 }
 
-func (r *Resource) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
-	panic("NYI")
+func (r *Resource) Create(ctx context.Context, ns string, obj runtime.Object) (runtime.Object, error) {
+	dial, err := r.dynClient()
+	if err != nil {
+		return nil, err
+	}
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	if err != nil {
+		return nil, err
+	}
+	var respObj *unstructured.Unstructured
+	if client.IsClusterScoped(ns) {
+		respObj, err = dial.Create(ctx, &unstructured.Unstructured{Object: unstructuredObj}, metav1.CreateOptions{})
+	} else {
+		respObj, err = dial.Namespace(ns).Create(ctx, &unstructured.Unstructured{Object: unstructuredObj}, metav1.CreateOptions{})
+	}
+	if err != nil {
+		return nil, err
+	}
+	return respObj, nil
 }
 
 // List returns a collection of resources.

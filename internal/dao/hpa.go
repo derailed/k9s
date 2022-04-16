@@ -20,8 +20,8 @@ type HorizontalPodAutoscaler struct {
 	Resource
 }
 
-func (h *HorizontalPodAutoscaler) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
-	panic("NYI")
+func (h *HorizontalPodAutoscaler) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("HorizontalPodAutoscaler create NYI")
 }
 
 // List returns a collection of nodes.

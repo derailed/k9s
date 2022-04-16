@@ -49,8 +49,8 @@ func (readWriteCloser) Close() error {
 	return nil
 }
 
-func (p *Popeye) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
-	panic("NYI")
+func (p *Popeye) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("Popeye create NYI")
 }
 
 // List returns a collection of aliases.

@@ -27,8 +27,8 @@ type Policy struct {
 	Resource
 }
 
-func (p *Policy) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
-	panic("NYI")
+func (p *Policy) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("Policy create NYI")
 }
 
 // List returns available policies.

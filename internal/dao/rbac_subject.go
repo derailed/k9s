@@ -22,8 +22,8 @@ type Subject struct {
 	Resource
 }
 
-func (s *Subject) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
-	panic("NYI")
+func (s *Subject) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("Subject create NYI")
 }
 
 // List returns a collection of subjects.

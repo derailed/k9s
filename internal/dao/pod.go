@@ -80,9 +80,11 @@ func (p *Pod) Get(ctx context.Context, path string) (runtime.Object, error) {
 	return &render.PodWithMetrics{Raw: u, MX: pmx}, nil
 }
 
-func (p *Pod) Create(ctx context.Context, obj runtime.Object) (runtime.Object, error) {
-	var pod = obj.(*v1.Pod)
-	var ns = pod.Namespace
+func (p *Pod) Create(ctx context.Context, ns string, obj runtime.Object) (runtime.Object, error) {
+	pod, ok := obj.(*v1.Pod)
+	if !ok {
+		return nil, fmt.Errorf("Expecting *v1.Pod but got %T", obj)
+	}
 	auth, err := p.Client().CanI(ns, "v1/pods:create", []string{client.CreateVerb})
 	if err != nil {
 		return nil, err

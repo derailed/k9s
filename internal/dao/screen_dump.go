@@ -24,8 +24,8 @@ type ScreenDump struct {
 	NonResource
 }
 
-func (d *ScreenDump) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
-	panic("NYI")
+func (d *ScreenDump) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("ScreenDump create NYI")
 }
 
 // Delete a ScreenDump.

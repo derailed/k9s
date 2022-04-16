@@ -219,7 +219,7 @@ type accessor struct {
 
 var _ dao.Accessor = (*accessor)(nil)
 
-func (a *accessor) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+func (a *accessor) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
 	panic("NYI")
 }
 

@@ -39,8 +39,8 @@ type DaemonSet struct {
 	Resource
 }
 
-func (d *DaemonSet) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
-	panic("NYI")
+func (d *DaemonSet) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("DaemonSet create NYI")
 }
 
 // IsHappy check for happy deployments.

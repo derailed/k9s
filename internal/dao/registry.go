@@ -115,7 +115,7 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 }
 
 func (m *Meta) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
-	panic("NYI")
+	panic("Meta create NYI")
 }
 
 // RegisterMeta registers a new resource meta object.

@@ -39,8 +39,8 @@ type Node struct {
 	Resource
 }
 
-func (n *Node) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
-	panic("NYI")
+func (n *Node) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("Node create NYI")
 }
 
 // ToggleCordon toggles cordon/uncordon a node.

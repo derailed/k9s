@@ -27,8 +27,8 @@ type Container struct {
 	NonResource
 }
 
-func (c *Container) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
-	panic("NYI")
+func (c *Container) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("Container create NYI")
 }
 
 // List returns a collection of containers.

@@ -35,8 +35,8 @@ func (p *PortForward) Delete(_ context.Context, path string, _ *metav1.DeletionP
 	return nil
 }
 
-func (p *PortForward) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
-	panic("NYI")
+func (p *PortForward) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("PortForward create NYI")
 }
 
 // List returns a collection of port forwards.

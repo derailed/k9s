@@ -245,7 +245,10 @@ func (a *App) createResource(evt *tcell.EventKey) *tcell.EventKey {
 		a.Flash().Warnf("Get gvr dao with error: %v", err)
 	}
 	err = dialog.ShowCreate(a.Styles.Dialog(), a.Content.Pages, a.Flash(), gvr, ns, func(obj k8sruntime.Object) error {
-		_, err := res.Create(context.Background(), obj)
+		if gvr.R() == "namespaces" {
+			ns = ""
+		}
+		_, err := res.Create(context.Background(), ns, obj)
 		return err
 	}, func() {})
 	if err != nil {
