@@ -63,10 +63,17 @@ type Lister interface {
 	List(ctx context.Context, ns string) ([]runtime.Object, error)
 }
 
+// Creator represents a resource creator.
+type Creator interface {
+	// Create creates a resource.
+	Create(ctx context.Context, obj runtime.Object) (runtime.Object, error)
+}
+
 // Accessor represents an accessible k8s resource.
 type Accessor interface {
 	Lister
 	Getter
+	Creator
 
 	// Init the resource with a factory object.
 	Init(Factory, client.GVR)

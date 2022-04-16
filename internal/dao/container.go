@@ -27,6 +27,10 @@ type Container struct {
 	NonResource
 }
 
+func (c *Container) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 // List returns a collection of containers.
 func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	fqn, ok := ctx.Value(internal.KeyPath).(string)

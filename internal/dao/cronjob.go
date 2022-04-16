@@ -36,6 +36,10 @@ type CronJob struct {
 	Generic
 }
 
+func (c *CronJob) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 // Run a CronJob.
 func (c *CronJob) Run(path string) error {
 	ns, _ := client.Namespaced(path)

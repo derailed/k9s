@@ -38,6 +38,10 @@ type Generic struct {
 	NonResource
 }
 
+func (g *Generic) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 // List returns a collection of resources.
 // BOZO!! no auth check??
 func (g *Generic) List(ctx context.Context, ns string) ([]runtime.Object, error) {

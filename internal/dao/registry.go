@@ -4,6 +4,7 @@
 package dao
 
 import (
+	"context"
 	"fmt"
 	"sort"
 	"strings"
@@ -111,6 +112,10 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 	r.Init(f, gvr)
 
 	return r, nil
+}
+
+func (m *Meta) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
 }
 
 // RegisterMeta registers a new resource meta object.

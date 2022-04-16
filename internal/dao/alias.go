@@ -55,6 +55,10 @@ func (a *Alias) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	return oo, nil
 }
 
+func (a *Alias) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 // AsGVR returns a matching gvr if it exists.
 func (a *Alias) AsGVR(cmd string) (client.GVR, bool) {
 	gvr, ok := a.Aliases.Get(cmd)

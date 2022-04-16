@@ -15,6 +15,10 @@ type Pulse struct {
 	NonResource
 }
 
+func (h *Pulse) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 // List lists out pulses.
 func (h *Pulse) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	return nil, fmt.Errorf("NYI")

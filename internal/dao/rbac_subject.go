@@ -22,6 +22,10 @@ type Subject struct {
 	Resource
 }
 
+func (s *Subject) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 // List returns a collection of subjects.
 func (s *Subject) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	kind, ok := ctx.Value(internal.KeySubjectKind).(string)

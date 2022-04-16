@@ -39,6 +39,10 @@ type Node struct {
 	Resource
 }
 
+func (n *Node) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 // ToggleCordon toggles cordon/uncordon a node.
 func (n *Node) ToggleCordon(path string, cordon bool) error {
 	log.Debug().Msgf("CORDON %q::%t -- %q", path, cordon, n.gvr.GVK())

@@ -35,6 +35,10 @@ func (c *CustomResourceDefinition) IsHappy(crd v1.CustomResourceDefinition) bool
 	return len(versions) > 0
 }
 
+func (c *CustomResourceDefinition) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 // List returns a collection of nodes.
 func (c *CustomResourceDefinition) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	strLabel, ok := ctx.Value(internal.KeyLabels).(string)

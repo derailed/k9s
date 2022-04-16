@@ -28,6 +28,10 @@ type Job struct {
 	Resource
 }
 
+func (h *Job) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 // List returns a collection of resources.
 func (j *Job) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	oo, err := j.Resource.List(ctx, ns)

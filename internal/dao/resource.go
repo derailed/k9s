@@ -23,6 +23,10 @@ type Resource struct {
 	Generic
 }
 
+func (r *Resource) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 // List returns a collection of resources.
 func (r *Resource) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	strLabel, _ := ctx.Value(internal.KeyLabels).(string)

@@ -32,6 +32,10 @@ type Benchmark struct {
 	NonResource
 }
 
+func (b *Benchmark) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 // Delete nukes a resource.
 func (b *Benchmark) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, _ Grace) error {
 	return os.Remove(path)

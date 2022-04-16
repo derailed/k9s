@@ -26,6 +26,7 @@ import (
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 )
@@ -77,6 +78,34 @@ func (p *Pod) Get(ctx context.Context, path string) (runtime.Object, error) {
 	}
 
 	return &render.PodWithMetrics{Raw: u, MX: pmx}, nil
+}
+
+func (p *Pod) Create(ctx context.Context, obj runtime.Object) (runtime.Object, error) {
+	var pod = obj.(*v1.Pod)
+	var ns = pod.Namespace
+	auth, err := p.Client().CanI(ns, "v1/pods:create", []string{client.CreateVerb})
+	if err != nil {
+		return nil, err
+	}
+	if !auth {
+		return nil, fmt.Errorf("user is not authorized to create pods")
+	}
+
+	cfg, err := p.Client().RestConfig()
+	if err != nil {
+		return nil, err
+	}
+	cli, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := cli.CoreV1().Pods(ns).Create(ctx, pod, metav1.CreateOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 // List returns a collection of nodes.

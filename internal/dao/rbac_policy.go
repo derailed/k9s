@@ -27,6 +27,10 @@ type Policy struct {
 	Resource
 }
 
+func (p *Policy) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 // List returns available policies.
 func (p *Policy) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	kind, ok := ctx.Value(internal.KeySubjectKind).(string)

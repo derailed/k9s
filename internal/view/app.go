@@ -20,6 +20,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
@@ -28,6 +29,7 @@ import (
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 )
 
 // ExitStatus indicates UI exit conditions.
@@ -221,6 +223,7 @@ func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) bindKeys() {
 	a.AddActions(ui.KeyActions{
+		tcell.KeyCtrlN: ui.NewSharedKeyAction("Create Resource", a.createResource, true),
 		ui.KeyShift9:   ui.NewSharedKeyAction("DumpGOR", a.dumpGOR, false),
 		tcell.KeyCtrlE: ui.NewSharedKeyAction("ToggleHeader", a.toggleHeaderCmd, false),
 		tcell.KeyCtrlG: ui.NewSharedKeyAction("toggleCrumbs", a.toggleCrumbsCmd, false),
@@ -228,6 +231,27 @@ func (a *App) bindKeys() {
 		tcell.KeyCtrlA: ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
 	})
+}
+
+func (a *App) createResource(evt *tcell.EventKey) *tcell.EventKey {
+	ns := a.Config.ActiveNamespace()
+	v := a.Config.ActiveView()
+	gvr, ok := a.command.alias.AsGVR(v)
+	if !ok {
+		a.Flash().Warnf("Cannot convert %s to gvr", v)
+	}
+	res, err := dao.AccessorFor(a.factory, gvr)
+	if err != nil {
+		a.Flash().Warnf("Get gvr dao with error: %v", err)
+	}
+	err = dialog.ShowCreate(a.Styles.Dialog(), a.Content.Pages, a.Flash(), gvr, ns, func(obj k8sruntime.Object) error {
+		_, err := res.Create(context.Background(), obj)
+		return err
+	}, func() {})
+	if err != nil {
+		a.Flash().Warnf("Create resource with error: %v", err)
+	}
+	return nil
 }
 
 func (a *App) dumpGOR(evt *tcell.EventKey) *tcell.EventKey {

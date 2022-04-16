@@ -34,6 +34,10 @@ type Rbac struct {
 	Resource
 }
 
+func (r *Rbac) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 // List lists out rbac resources.
 func (r *Rbac) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	gvr, ok := ctx.Value(internal.KeyGVR).(string)

@@ -39,6 +39,10 @@ type DaemonSet struct {
 	Resource
 }
 
+func (d *DaemonSet) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 // IsHappy check for happy deployments.
 func (d *DaemonSet) IsHappy(ds appsv1.DaemonSet) bool {
 	return ds.Status.DesiredNumberScheduled == ds.Status.CurrentNumberScheduled

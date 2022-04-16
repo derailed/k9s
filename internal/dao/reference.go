@@ -20,6 +20,10 @@ type Reference struct {
 	NonResource
 }
 
+func (r *Reference) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 // List collects all references.
 func (r *Reference) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	gvr, ok := ctx.Value(internal.KeyGVR).(string)

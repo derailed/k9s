@@ -40,6 +40,10 @@ type Deployment struct {
 	Resource
 }
 
+func (d *Deployment) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 // IsHappy check for happy deployments.
 func (d *Deployment) IsHappy(dp appsv1.Deployment) bool {
 	return dp.Status.Replicas == dp.Status.AvailableReplicas

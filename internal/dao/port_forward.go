@@ -35,6 +35,10 @@ func (p *PortForward) Delete(_ context.Context, path string, _ *metav1.DeletionP
 	return nil
 }
 
+func (p *PortForward) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 // List returns a collection of port forwards.
 func (p *PortForward) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	benchFile, ok := ctx.Value(internal.KeyBenchCfg).(string)

@@ -219,6 +219,10 @@ type accessor struct {
 
 var _ dao.Accessor = (*accessor)(nil)
 
+func (a *accessor) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 func (a *accessor) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	return []runtime.Object{&render.PodWithMetrics{Raw: mustLoad("p1")}}, nil
 }

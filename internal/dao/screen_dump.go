@@ -24,6 +24,10 @@ type ScreenDump struct {
 	NonResource
 }
 
+func (d *ScreenDump) Create(ctx context.Context, _ runtime.Object) (runtime.Object, error) {
+	panic("NYI")
+}
+
 // Delete a ScreenDump.
 func (d *ScreenDump) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, _ Grace) error {
 	return os.Remove(path)
