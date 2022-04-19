@@ -289,73 +289,86 @@ K9s uses aliases to navigate most K8s resources.
   ```yaml
   # $XDG_CONFIG_HOME/k9s/config.yml
   k9s:
-    # Represents ui poll intervals. Default 2secs
+    # UI poll interval (seconds). Default 2
     refreshRate: 2
-    # Number of retries once the connection to the api-server is lost. Default 15.
+    # Number of retries once the connection to the api-server is lost. Default 15
     maxConnRetry: 5
-    # Enable mouse support. Default false
+    # Whether to enable mouse support. Default false
     enableMouse: true
-    # Set to true to hide K9s header. Default false
+    # Whether to hide the K9s header. Default false
     headless: false
-    # Set to true to hide K9s crumbs. Default false
+    # Whether to hide the K9s logo. Default false
+    logoless: false
+    # Whether to hide K9s crumbs. Default false
     crumbsless: false
-    # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
+    # Whether cluster modification commands (delete/kill/edit) are disabled.
+    # Default false
     readOnly: false
-    # Toggles icons display as not all terminal support these chars.
+    # Whether icons are displayed (not all terminals support these characters).
+    # Default false
     noIcons: false
-    # Logs configuration
+    # Log configuration
     logger:
-      # Defines the number of lines to return. Default 100
-      tail: 200
-      # Defines the total number of log lines to allow in the view. Default 1000
-      buffer: 500
-      # Represents how far to go back in the log timeline in seconds. Setting to -1 will show all available logs. Default is 5min.
+      # Number of log lines to display. Default 100
+      tail: 100
+      # Number of log lines to allow in the view. Default 5000
+      buffer: 5000
+      # Duration (seconds) to go back in the log timeline. Setting this value to
+      # -1 will show all available logs. Default 300 (5 minutes)
       sinceSeconds: 300
-      # Go full screen while displaying logs. Default false
+      # Whether to use the full screen when displaying logs. Default false
       fullScreenLogs: false
-      # Toggles log line wrap. Default false
+      # Whether to wrap log lines. Default false
       textWrap: false
-      # Toggles log line timestamp info. Default false
+      # Whether to show timestamp info in log lines. Default false
       showTime: false
-    # Indicates the current kube context. Defaults to current context
+    # The current Kubernetes context. Defaults to the current context
     currentContext: minikube
-    # Indicates the current kube cluster. Defaults to current context cluster
+    # The current Kubernetes cluster. Defaults to the current context cluster
     currentCluster: minikube
-    # Persists per cluster preferences for favorite namespaces and view.
+    # Persist cluster-specific preferences
     clusters:
-      coolio:
-        namespace:
-          active: coolio
-          favorites:
-          - cassandra
-          - default
-        view:
-          active: po
-        featureGates:
-          # Toggles NodeShell support. Allow K9s to shell into nodes if needed. Default false.
-          nodeShell: false
-        # Provide shell pod customization of feature gate is enabled
-        shellPod:
-          # The shell pod image to use.
-          image: killerAdmin
-          # The namespace to launch to shell pod into.
-          namespace: fred
-          # The resource limit to set on the shell pod.
-          limits:
-            cpu: 100m
-            memory: 100Mi
-        # The IP Address to use when launching a port-forward.
-        portForwardAddress: 1.2.3.4
-      kind:
+      minikube:
         namespace:
           active: all
           favorites:
           - all
-          - kube-system
           - default
         view:
-          active: dp
-    # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info) 
+          active: pod
+        featureGates:
+          # Whether to enable NodeShell support. This allows K9s to shell into
+          # Nodes if needed. Default false
+          #
+          # See: https://k9scli.io/topics/shell
+          nodeShell: false
+        # Shell Pod configuration (nodeShell must be enabled)
+        shellPod:
+          # Container image to use when getting a shell to a Node.
+          image: busybox:1.31
+          # Commands to pass to the container.
+          command: []
+          # Arguments to pass to the container.
+          args: []
+          # Namespace to use for the Pod when getting a shell to a Node.
+          namespace: default
+          # Resource limits for the Pod when getting a shell to a Node.
+          limits:
+            cpu: 100m
+            memory: 100Mi
+        # The IP address to use when using `port-forward`.
+        #
+        # See: https://kubernetes.io/docs/tasks/access-application-cluster/port-forward-access-application-cluster
+        portForwardAddress: localhost
+    thresholds:
+      cpu:
+        critical: 90
+        warn: 70
+      memory:
+        critical: 90
+        warn: 70
+    # Location of screen dump. Use `k9s info` to show location.
+    # Default: '%temp_dir%/k9s-screens-%username%'
     screenDumpDir: /tmp
   ```
 
