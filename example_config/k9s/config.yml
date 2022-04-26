@@ -4,7 +4,7 @@ k9s:
   enableMouse: false
   headless: false
   logoless: false
-  scanForAutoPf: false
+  scanForAutoPf: true
   crumbsless: false
   readOnly: false
   noIcons: false
@@ -22,6 +22,7 @@ k9s:
       namespace:
         active: all
         favorites:
+        - kube-system
         - all
         - default
       view:

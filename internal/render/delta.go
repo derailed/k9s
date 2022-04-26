@@ -10,8 +10,12 @@ type DeltaRow []string
 // NewDeltaRow computes the delta between 2 rows.
 func NewDeltaRow(o, n Row, h Header) DeltaRow {
 	deltas := make(DeltaRow, len(o.Fields))
+	if len(n.Fields) != len(o.Fields) {
+		return deltas
+	}
+
 	for i, old := range o.Fields {
-		if old != "" && old != n.Fields[i] && !h.IsTimeCol(i) {
+		if old != "" && len(n.Fields) >= i && old != n.Fields[i] && !h.IsTimeCol(i) {
 			deltas[i] = old
 		}
 	}

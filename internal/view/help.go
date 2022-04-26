@@ -272,6 +272,10 @@ func (h *Help) showGeneral() model.MenuHints {
 			Mnemonic:    "Ctrl-s",
 			Description: "Save",
 		},
+		{
+			Mnemonic:    "Ctrl-p",
+			Description: "Scan Auto Port Forwards",
+		},
 	}
 }
 

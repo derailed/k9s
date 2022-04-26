@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"sort"
 	"strings"
+
 	"sync/atomic"
 	"syscall"
 	"time"
@@ -37,11 +38,10 @@ import (
 var ExitStatus = ""
 
 const (
-	splashDelay        = 1 * time.Second
-	clusterRefresh     = 15 * time.Second
-	autoPfScanInterval = 30 * time.Second
-	clusterInfoWidth   = 50
-	clusterInfoPad     = 15
+	splashDelay      = 1 * time.Second
+	clusterRefresh   = 15 * time.Second
+	clusterInfoWidth = 50
+	clusterInfoPad   = 15
 )
 
 // App represents an application view.
@@ -125,27 +125,20 @@ func (a *App) Init(version string, rate int) error {
 	a.initSignals()
 
 	if a.Config.K9s.ShouldScanForAutoPf() {
-		a.scheduleScanForAutoPf()
+		a.QueueUpdate(func() {
+			a.scanForAutoPf()
+		})
 	}
 
 	return nil
 }
 
-func (a *App) scheduleScanForAutoPf() {
+func (a *App) scanForAutoPfCmd(evt *tcell.EventKey) *tcell.EventKey {
 	a.QueueUpdate(func() {
 		a.scanForAutoPf()
 	})
 
-	go func() {
-		for {
-			select {
-			case <-time.After(autoPfScanInterval):
-				a.QueueUpdate(func() {
-					a.scanForAutoPf()
-				})
-			}
-		}
-	}()
+	return nil
 }
 
 func (app *App) scanForAutoPf() {
@@ -296,6 +289,7 @@ func (a *App) bindKeys() {
 		tcell.KeyCtrlG: ui.NewSharedKeyAction("toggleCrumbs", a.toggleCrumbsCmd, false),
 		ui.KeyHelp:     ui.NewSharedKeyAction("Help", a.helpCmd, false),
 		tcell.KeyCtrlA: ui.NewSharedKeyAction("Aliases", a.aliasCmd, false),
+		tcell.KeyCtrlP: ui.NewSharedKeyAction("Scan Auto Port Forwards", a.scanForAutoPfCmd, false),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, false),
 	})
 }

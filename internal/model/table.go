@@ -50,6 +50,10 @@ func NewTable(gvr client.GVR) *Table {
 	}
 }
 
+func (t *Table) Mutex() *sync.RWMutex {
+	return &t.mx
+}
+
 // SetLabelFilter sets the labels filter.
 func (t *Table) SetLabelFilter(f string) {
 	t.mx.Lock()
