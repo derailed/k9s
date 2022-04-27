@@ -157,7 +157,7 @@ func (v *Values) updater(ctx context.Context) {
 			if err := v.refresh(ctx); err != nil {
 				v.fireResourceFailed(err)
 				if delay = backOff.NextBackOff(); delay == backoff.Stop {
-					log.Error().Err(err).Msgf("Values gave up!")
+					log.Error().Err(err).Msgf("giving up retrieving chart values")
 					return
 				}
 			} else {
