@@ -48,15 +48,17 @@ func (c *Helm) bindKeys(aa ui.KeyActions) {
 
 func (c *Helm) getValsCmd() func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		if path := c.GetTable().GetSelectedItem(); path != "" {
-			c.Values = model.NewValues(c.GVR(), path)
-			v := NewLiveView(c.App(), "Values", c.Values)
-			v.actions.Add(ui.KeyActions{
-				ui.KeyV: ui.NewKeyAction("Toggle All Values", c.toggleValuesCmd, true),
-			})
-			if err := v.app.inject(v); err != nil {
-				v.app.Flash().Err(err)
-			}
+		path := c.GetTable().GetSelectedItem()
+		if path == "" {
+			return evt
+		}
+		c.Values = model.NewValues(c.GVR(), path)
+		v := NewLiveView(c.App(), "Values", c.Values)
+		v.actions.Add(ui.KeyActions{
+			ui.KeyV: ui.NewKeyAction("Toggle All Values", c.toggleValuesCmd, true),
+		})
+		if err := v.app.inject(v); err != nil {
+			v.app.Flash().Err(err)
 		}
 		return nil
 	}
