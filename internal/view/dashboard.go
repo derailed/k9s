@@ -15,8 +15,10 @@ type Dashboard struct {
 func NewDashboard(gvr client.GVR) ResourceViewer {
 	dash := Dashboard{ResourceViewer: NewBrowser(gvr)}
 
-	dash.GetTable().SetColorerFn(render.Dashboard{}.ColorerFunc())
-	dash.GetTable().SetEnterFn(dash.EnterFunc)
+	table := dash.GetTable()
+	table.SetColorerFn(render.Dashboard{}.ColorerFunc())
+	table.SetEnterFn(dash.EnterFunc)
+	table.SetSortCol("RESOURCE", true)
 
 	return &dash
 }
