@@ -132,7 +132,7 @@ func getQuery(queryString string) *gojq.Query {
 	}
 	query, err := gojq.Parse(queryString)
 	if err != nil {
-		log.Error().Msgf("%s", err)
+		log.Error().Msgf("JQ Parse Error: %s", err)
 		return nil
 	}
 	return query
@@ -142,18 +142,8 @@ func isMatch(query *gojq.Query, obj interface{}) bool {
 	if query == nil {
 		return false
 	}
-	values := make([]interface{}, 0)
-	iter := query.Run(obj)
-	for {
-		v, ok := iter.Next()
-		if !ok {
-			break
-		}
-		if err, ok := v.(error); ok {
-			log.Error().Msgf("%s", err)
-		}
-		values = append(values, v)
-	}
+
+	values := jqQuery(query, obj)
 
 	if len(values) == 0 {
 		return false
@@ -167,6 +157,30 @@ func isMatch(query *gojq.Query, obj interface{}) bool {
 	} else {
 		return res
 	}
+}
+
+func jqQuery(query *gojq.Query, obj interface{}) []interface{} {
+	values := make([]interface{}, 0)
+	defer func() {
+		if r := recover(); r != nil {
+			log.Error().Msgf("JQ panic: %s", r)
+		}
+	}()
+	iter := query.Run(obj)
+	if iter == nil {
+		return values
+	}
+	for {
+		v, ok := iter.Next()
+		if !ok {
+			break
+		}
+		if _, ok := v.(error); ok {
+			break
+		}
+		values = append(values, v)
+	}
+	return values
 }
 
 type ApiObject struct {
