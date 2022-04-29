@@ -60,89 +60,61 @@ gvrs:
       READY: '.status.conditions[] | select(.type=="Ready" and .status=="True")'
       ERRORS: '.status.conditions[] | select(.type=="Ready" and .status=="False")'
   jabos.io/v1/cdk8s-manifests:
-    # active: true
+    active: true
     colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
+      modified: '.status.conditions[] | select(.type=="Synced" and .status=="True")'
+      error: '.status.conditions[] | select(.type=="Synced" and .status=="False")'
     columns:
+      ACTIVE: '.status.conditions[] | select(.type=="Synced" and .status=="True")'
+      ERRORS: '.status.conditions[] | select(.type=="Synced" and .status=="False")'
   jabos.io/v1/docker-images:
-    # active: true
+    active: true
     colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
+      modified: '.status.conditions[] | select(.type=="Synced" and .status=="True")'
+      error: '.status.conditions[] | select(.type=="Synced" and .status=="False")'
     columns:
+      ACTIVE: '.status.conditions[] | select(.type=="Synced" and .status=="True")'
+      ERRORS: '.status.conditions[] | select(.type=="Synced" and .status=="False")'
   jabos.io/v1/git-repositories:
-    # active: true
+    active: true
     colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
+      modified: '.status.conditions[] | select(.type=="Syncing" and .status=="True")'
+      error: '.status.conditions[] | select(.type=="Syncing" and .status=="False")'
     columns:
+      ACTIVE: '.status.conditions[] | select(.type=="Syncing" and .status=="True")'
+      ERRORS: '.status.conditions[] | select(.type=="Syncing" and .status=="False")'
   jabos.io/v1/helm-template-manifests:
-    # active: true
+    active: true
     colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
+      modified: '.status.conditions[] | select(.type=="Synced" and .status=="True")'
+      error: '.status.conditions[] | select(.type=="Synced" and .status=="False")'
     columns:
+      ACTIVE: '.status.conditions[] | select(.type=="Synced" and .status=="True")'
+      ERRORS: '.status.conditions[] | select(.type=="Synced" and .status=="False")'
   jabos.io/v1/jsonnet-manifests:
-    # active: true
+    active: true
     colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
+      modified: '.status.conditions[] | select(.type=="Synced" and .status=="True")'
+      error: '.status.conditions[] | select(.type=="Synced" and .status=="False")'
     columns:
+      ACTIVE: '.status.conditions[] | select(.type=="Synced" and .status=="True")'
+      ERRORS: '.status.conditions[] | select(.type=="Synced" and .status=="False")'
   jabos.io/v1/kustomize-manifests:
-    # active: true
+    active: true
     colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
+      modified: '.status.conditions[] | select(.type=="Synced" and .status=="True")'
+      error: '.status.conditions[] | select(.type=="Synced" and .status=="False")'
     columns:
+      ACTIVE: '.status.conditions[] | select(.type=="Synced" and .status=="True")'
+      ERRORS: '.status.conditions[] | select(.type=="Synced" and .status=="False")'
   jabos.io/v1/plain-manifests:
-    # active: true
+    active: true
     colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
+      modified: '.status.conditions[] | select(.type=="Synced" and .status=="True")'
+      error: '.status.conditions[] | select(.type=="Synced" and .status=="False")'
     columns:
+      ACTIVE: '.status.conditions[] | select(.type=="Synced" and .status=="True")'
+      ERRORS: '.status.conditions[] | select(.type=="Synced" and .status=="False")'
   example.com/v1/example:
     # active: true
     colors:
