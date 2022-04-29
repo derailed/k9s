@@ -5,173 +5,61 @@ gvrs:
     active: true
     colors:
       modified: ".status.replicas==.status.availableReplicas"
-      added: ""
-      pending: ".spec.replicas!=.status.availableReplicas"
-      error: ".spec.replicas<.status.availableReplicas"
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
+      pending: ".spec.replicas<.status.availableReplicas"
+      error: ".spec.replicas>.status.availableReplicas"
     columns:
       READY: ".status.replicas==.status.availableReplicas"
       SCALING: ".spec.replicas!=.status.availableReplicas"
   v1/pods:
     active: true
     colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
+      modified: '.status.phase=="Running"'
+      pending: '.status.phase=="Pending"'
+      error: '.status.phase=="Failed" or .status.phase=="Unknown"'
+      completed: '.status.phase=="Succeeded"'
     columns:
+      READY: '.status.conditions[] | select(.type=="Ready" and .status=="True")'
+      ERRORS: '.status.conditions[] | select(.type=="Ready" and .status=="True")'
   apps/v1/statefulsets:
     active: true
     colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
+      modified: ".status.replicas==.status.availableReplicas"
+      pending: ".spec.replicas<.status.availableReplicas"
+      error: ".spec.replicas>.status.availableReplicas"
     columns:
+      READY: ".status.replicas==.status.availableReplicas"
+      SCALING: ".spec.replicas!=.status.availableReplicas"
   batch/v1/cronjobs:
     active: true
-    colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
-    columns:
   apps/v1/daemonsets:
     active: true
     colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
+      modified: ".status.replicas==.status.availableReplicas"
+      pending: ".spec.replicas>.status.availableReplicas"
+      error: ".spec.replicas<.status.availableReplicas"
     columns:
+      READY: ".status.replicas==.status.availableReplicas"
+      SCALING: ".spec.replicas!=.status.availableReplicas"
   batch/v1/jobs:
     active: true
     colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
+      modified: ".status.succeeded==.spec.completions"
+      pending: ".status.active>0"
+      error: ".status.failed>0"
+      completed: ".status.succeeded==.spec.completions"
     columns:
+      SUCCEEDED: ".status.succeeded==.spec.completions"
+      FAILED: ".status.failed>0"
+      ACTIVE: ".status.active>0"
   v1/nodes:
     active: true
     colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
+      modified: '.status.conditions[] | select(.type=="Ready" and .status=="True")'
+      error: '.status.conditions[] | select(.type=="Ready" and .status=="False")'
     columns:
-  apps/v1/replicasets:
-    active: true
-    colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
-    columns:
-  v1/replicationcontrollers:
-    active: true
-    colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
-    columns:
-  monitoring.coreos.com/v1alpha1/alertmanagerconfigs:
-    # active: true
-    colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
-    columns:
-  monitoring.coreos.com/v1/alertmanagers:
-    # active: true
-    colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
-    columns:
+      READY: '.status.conditions[] | select(.type=="Ready" and .status=="True")'
+      ERRORS: '.status.conditions[] | select(.type=="Ready" and .status=="False")'
   jabos.io/v1/cdk8s-manifests:
-    # active: true
-    colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
-    columns:
-  metacontroller.k8s.io/v1alpha1/compositecontrollers:
-    # active: true
-    colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
-    columns:
-  metacontroller.k8s.io/v1alpha1/controllerrevisions:
-    # active: true
-    colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
-    columns:
-  metacontroller.k8s.io/v1alpha1/decoratorcontrollers:
     # active: true
     colors:
       modified: ""
@@ -196,18 +84,6 @@ gvrs:
       completed: ""
     columns:
   jabos.io/v1/git-repositories:
-    # active: true
-    colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
-    columns:
-  grafana.operators/v1/grafana-dashboards:
     # active: true
     colors:
       modified: ""
@@ -267,7 +143,7 @@ gvrs:
       kill: ""
       completed: ""
     columns:
-  monitoring.coreos.com/v1/podmonitors:
+  example.com/v1/example:
     # active: true
     colors:
       modified: ""
@@ -279,63 +155,4 @@ gvrs:
       kill: ""
       completed: ""
     columns:
-  monitoring.coreos.com/v1/probes:
-    # active: true
-    colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
-    columns:
-  monitoring.coreos.com/v1/prometheuses:
-    # active: true
-    colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
-    columns:
-  monitoring.coreos.com/v1/prometheusrules:
-    # active: true
-    colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
-    columns:
-  monitoring.coreos.com/v1/servicemonitors:
-    # active: true
-    colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
-    columns:
-  monitoring.coreos.com/v1/thanosrulers:
-    # active: true
-    colors:
-      modified: ""
-      added: ""
-      pending: ""
-      error: ""
-      std: ""
-      highlight: ""
-      kill: ""
-      completed: ""
-    columns:
+      READY: ""
