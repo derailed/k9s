@@ -25,7 +25,7 @@ type PortForward struct {
 }
 
 // Delete a portforward.
-func (p *PortForward) Delete(path string, cascade, force bool) error {
+func (p *PortForward) Delete(path string, _ string, force bool) error {
 	p.Factory.DeleteForwarder(path)
 
 	return nil

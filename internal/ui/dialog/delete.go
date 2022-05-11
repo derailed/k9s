@@ -4,18 +4,27 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const deleteKey = "delete"
 
+const defaultPropagationIdx = 0
+
+var propagationOptions []string = []string{
+	string(metav1.DeletePropagationBackground),
+	string(metav1.DeletePropagationForeground),
+	string(metav1.DeletePropagationOrphan),
+}
+
 type (
-	okFunc     func(cascade, force bool)
+	okFunc     func(propagation string, force bool)
 	cancelFunc func()
 )
 
 // ShowDelete pops a resource deletion dialog.
 func ShowDelete(styles config.Dialog, pages *ui.Pages, msg string, ok okFunc, cancel cancelFunc) {
-	cascade, force := true, false
+	propagation, force := "", false
 	f := tview.NewForm()
 	f.SetItemPadding(0)
 	f.SetButtonsAlign(tview.AlignCenter).
@@ -23,8 +32,8 @@ func ShowDelete(styles config.Dialog, pages *ui.Pages, msg string, ok okFunc, ca
 		SetButtonTextColor(styles.ButtonFgColor.Color()).
 		SetLabelColor(styles.LabelFgColor.Color()).
 		SetFieldTextColor(styles.FieldFgColor.Color())
-	f.AddCheckbox("Cascade:", cascade, func(_ string, checked bool) {
-		cascade = checked
+	f.AddDropDown("Propagation:", propagationOptions, defaultPropagationIdx, func(_ string, optionIndex int) {
+		propagation = propagationOptions[optionIndex]
 	})
 	f.AddCheckbox("Force:", force, func(_ string, checked bool) {
 		force = checked
@@ -34,7 +43,7 @@ func ShowDelete(styles config.Dialog, pages *ui.Pages, msg string, ok okFunc, ca
 		cancel()
 	})
 	f.AddButton("OK", func() {
-		ok(cascade, force)
+		ok(propagation, force)
 		dismissDelete(pages)
 		cancel()
 	})

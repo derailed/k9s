@@ -25,7 +25,7 @@ type ScreenDump struct {
 }
 
 // Delete a ScreenDump.
-func (d *ScreenDump) Delete(path string, cascade, force bool) error {
+func (d *ScreenDump) Delete(path string, _ string, force bool) error {
 	return os.Remove(path)
 }
 

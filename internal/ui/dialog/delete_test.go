@@ -12,8 +12,8 @@ import (
 func TestDeleteDialog(t *testing.T) {
 	p := ui.NewPages()
 
-	okFunc := func(c, f bool) {
-		assert.True(t, c)
+	okFunc := func(p string, f bool) {
+		assert.Equal(t, propagationOptions[defaultPropagationIdx], p)
 		assert.True(t, f)
 	}
 	caFunc := func() {

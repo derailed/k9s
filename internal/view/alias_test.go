@@ -125,7 +125,7 @@ func (t *mockModel) Get(context.Context, string) (runtime.Object, error) {
 	return nil, nil
 }
 
-func (t *mockModel) Delete(context.Context, string, bool, bool) error {
+func (t *mockModel) Delete(context.Context, string, string, bool) error {
 	return nil
 }
 

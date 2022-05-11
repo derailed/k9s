@@ -110,7 +110,7 @@ func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
 }
 
 // Delete deletes a resource.
-func (t *Table) Delete(ctx context.Context, path string, cascade, force bool) error {
+func (t *Table) Delete(ctx context.Context, path string, propagation string, force bool) error {
 	meta, err := getMeta(ctx, t.gvr)
 	if err != nil {
 		return err
@@ -121,7 +121,7 @@ func (t *Table) Delete(ctx context.Context, path string, cascade, force bool) er
 		return fmt.Errorf("no nuker for %q", meta.DAO.GVR())
 	}
 
-	return nuker.Delete(path, cascade, force)
+	return nuker.Delete(path, propagation, force)
 }
 
 // GetNamespace returns the model namespace.

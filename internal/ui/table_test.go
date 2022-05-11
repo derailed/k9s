@@ -79,7 +79,7 @@ func (t *mockModel) Get(ctx context.Context, path string) (runtime.Object, error
 	return nil, nil
 }
 
-func (t *mockModel) Delete(ctx context.Context, path string, c, f bool) error {
+func (t *mockModel) Delete(ctx context.Context, path string, p string, f bool) error {
 	return nil
 }
 

@@ -110,7 +110,7 @@ func (t *mockTableModel) Get(context.Context, string) (runtime.Object, error) {
 	return nil, nil
 }
 
-func (t *mockTableModel) Delete(context.Context, string, bool, bool) error {
+func (t *mockTableModel) Delete(context.Context, string, string, bool) error {
 	return nil
 }
 

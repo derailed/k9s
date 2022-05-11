@@ -77,5 +77,5 @@ type Tabular interface {
 	RemoveListener(model.TableListener)
 
 	// Delete a resource.
-	Delete(ctx context.Context, path string, cascade, force bool) error
+	Delete(ctx context.Context, path string, propagation string, force bool) error
 }

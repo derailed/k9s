@@ -26,7 +26,7 @@ type Benchmark struct {
 }
 
 // Delete nukes a resource.
-func (b *Benchmark) Delete(path string, cascade, force bool) error {
+func (b *Benchmark) Delete(path string, _ string, force bool) error {
 	return os.Remove(path)
 }
 
