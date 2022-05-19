@@ -76,6 +76,7 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 
 	aa.Add(ui.KeyActions{
 		ui.KeyF:      ui.NewKeyAction("Show PortForward", p.showPFCmd, true),
+		ui.KeyN:      ui.NewKeyAction("Show Node", p.showNode, true),
 		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", p.GetTable().SortColCmd(readyCol, true), false),
 		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd("RESTARTS", false), false),
 		ui.KeyShiftS: ui.NewKeyAction("Sort Status", p.GetTable().SortColCmd(statusCol, true), false),
@@ -121,6 +122,31 @@ func (p *Pod) showContainers(app *App, model ui.Tabular, gvr, path string) {
 	co.SetContextFn(p.coContext)
 	if err := app.inject(co); err != nil {
 		app.Flash().Err(err)
+	}
+}
+
+func (p *Pod) showNode(evt *tcell.EventKey) *tcell.EventKey {
+	path := p.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+	pod, err := fetchPod(p.App().factory, path)
+	if err != nil {
+		p.App().Flash().Err(err)
+		return nil
+	}
+	no := NewNode(client.NewGVR("v1/nodes"))
+	no.SetContextFn(nodeCtx(pod.Spec.NodeName))
+	if err := p.App().inject(no); err != nil {
+		p.App().Flash().Err(err)
+	}
+	return nil
+}
+
+func nodeCtx(path string) ContextFunc {
+	return func(ctx context.Context) context.Context {
+		ctx = context.WithValue(ctx, internal.KeyPath, path)
+		return ctx
 	}
 }
 
