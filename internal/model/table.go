@@ -13,6 +13,7 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -110,7 +111,7 @@ func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
 }
 
 // Delete deletes a resource.
-func (t *Table) Delete(ctx context.Context, path string, propagation string, force bool) error {
+func (t *Table) Delete(ctx context.Context, path string, propagation *metav1.DeletionPropagation, force bool) error {
 	meta, err := getMeta(ctx, t.gvr)
 	if err != nil {
 		return err

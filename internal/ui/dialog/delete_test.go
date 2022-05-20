@@ -7,12 +7,13 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 func TestDeleteDialog(t *testing.T) {
 	p := ui.NewPages()
 
-	okFunc := func(p string, f bool) {
+	okFunc := func(p *metav1.DeletionPropagation, f bool) {
 		assert.Equal(t, propagationOptions[defaultPropagationIdx], p)
 		assert.True(t, f)
 	}

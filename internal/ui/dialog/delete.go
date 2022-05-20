@@ -9,16 +9,19 @@ import (
 
 const deleteKey = "delete"
 
+const noDeletePropagation = "None"
+
 const defaultPropagationIdx = 0
 
 var propagationOptions []string = []string{
 	string(metav1.DeletePropagationBackground),
 	string(metav1.DeletePropagationForeground),
 	string(metav1.DeletePropagationOrphan),
+	noDeletePropagation,
 }
 
 type (
-	okFunc     func(propagation string, force bool)
+	okFunc     func(propagation *metav1.DeletionPropagation, force bool)
 	cancelFunc func()
 )
 
@@ -43,7 +46,13 @@ func ShowDelete(styles config.Dialog, pages *ui.Pages, msg string, ok okFunc, ca
 		cancel()
 	})
 	f.AddButton("OK", func() {
-		ok(propagation, force)
+		switch propagation {
+		case noDeletePropagation:
+			ok(nil, force)
+		default:
+			p := metav1.DeletionPropagation(propagation)
+			ok(&p, force)
+		}
 		dismissDelete(pages)
 		cancel()
 	})
