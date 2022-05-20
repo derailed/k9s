@@ -326,6 +326,8 @@ K9s uses aliases to navigate most K8s resources.
       coolio:
         namespace:
           active: coolio
+          # With this set, the favorites list won't be updated as you switch namespaces
+          lockFavorites: false
           favorites:
           - cassandra
           - default
