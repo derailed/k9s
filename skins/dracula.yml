@@ -59,7 +59,7 @@ k9s:
       modifyColor: *purple
       addColor: *green
       errorColor: *red
-      highlightcolor: *orange
+      highlightColor: *orange
       killColor: *comment
       completedColor: *comment
     # Border title styles.

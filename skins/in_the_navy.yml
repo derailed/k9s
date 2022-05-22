@@ -57,7 +57,7 @@ k9s:
       modifyColor: *powder
       addColor: *sky
       errorColor: *err
-      highlightcolor: *royal
+      highlightColor: *royal
       killColor: *slate
       completedColor: *gray
     title:
