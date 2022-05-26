@@ -8,6 +8,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/render"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -25,7 +26,7 @@ type ScreenDump struct {
 }
 
 // Delete a ScreenDump.
-func (d *ScreenDump) Delete(path string, cascade, force bool) error {
+func (d *ScreenDump) Delete(path string, _ *metav1.DeletionPropagation, force bool) error {
 	return os.Remove(path)
 }
 

@@ -16,6 +16,7 @@ import (
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -110,7 +111,7 @@ func (t *mockTableModel) Get(context.Context, string) (runtime.Object, error) {
 	return nil, nil
 }
 
-func (t *mockTableModel) Delete(context.Context, string, bool, bool) error {
+func (t *mockTableModel) Delete(context.Context, string, *metav1.DeletionPropagation, bool) error {
 	return nil
 }
 

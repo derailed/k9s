@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -79,7 +80,7 @@ func (t *mockModel) Get(ctx context.Context, path string) (runtime.Object, error
 	return nil, nil
 }
 
-func (t *mockModel) Delete(ctx context.Context, path string, c, f bool) error {
+func (t *mockModel) Delete(ctx context.Context, path string, p *metav1.DeletionPropagation, f bool) error {
 	return nil
 }
 

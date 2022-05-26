@@ -523,7 +523,7 @@ func (b *Browser) simpleDelete(selections []string, msg string) {
 				b.app.Flash().Errf("Invalid nuker %T", b.accessor)
 				continue
 			}
-			if err := nuker.Delete(sel, true, true); err != nil {
+			if err := nuker.Delete(sel, nil, true); err != nil {
 				b.app.Flash().Errf("Delete failed with `%s", err)
 			} else {
 				b.app.factory.DeleteForwarder(sel)
@@ -535,7 +535,7 @@ func (b *Browser) simpleDelete(selections []string, msg string) {
 }
 
 func (b *Browser) resourceDelete(selections []string, msg string) {
-	dialog.ShowDelete(b.app.Styles.Dialog(), b.app.Content.Pages, msg, func(cascade, force bool) {
+	dialog.ShowDelete(b.app.Styles.Dialog(), b.app.Content.Pages, msg, func(propagation *metav1.DeletionPropagation, force bool) {
 		b.ShowDeleted()
 		if len(selections) > 1 {
 			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.GVR())
@@ -543,7 +543,7 @@ func (b *Browser) resourceDelete(selections []string, msg string) {
 			b.app.Flash().Infof("Delete resource %s %s", b.GVR(), selections[0])
 		}
 		for _, sel := range selections {
-			if err := b.GetModel().Delete(b.defaultContext(), sel, cascade, force); err != nil {
+			if err := b.GetModel().Delete(b.defaultContext(), sel, propagation, force); err != nil {
 				b.app.Flash().Errf("Delete failed with `%s", err)
 			} else {
 				b.app.factory.DeleteForwarder(sel)

@@ -6,6 +6,7 @@ import (
 
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -77,5 +78,5 @@ type Tabular interface {
 	RemoveListener(model.TableListener)
 
 	// Delete a resource.
-	Delete(ctx context.Context, path string, cascade, force bool) error
+	Delete(ctx context.Context, path string, propagation *metav1.DeletionPropagation, force bool) error
 }

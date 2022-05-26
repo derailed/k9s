@@ -657,7 +657,7 @@ func (x *Xray) styleTitle() string {
 }
 
 func (x *Xray) resourceDelete(gvr client.GVR, spec *xray.NodeSpec, msg string) {
-	dialog.ShowDelete(x.app.Styles.Dialog(), x.app.Content.Pages, msg, func(cascade, force bool) {
+	dialog.ShowDelete(x.app.Styles.Dialog(), x.app.Content.Pages, msg, func(propagation *metav1.DeletionPropagation, force bool) {
 		x.app.Flash().Infof("Delete resource %s %s", spec.GVR(), spec.Path())
 		accessor, err := dao.AccessorFor(x.app.factory, gvr)
 		if err != nil {
@@ -670,7 +670,7 @@ func (x *Xray) resourceDelete(gvr client.GVR, spec *xray.NodeSpec, msg string) {
 			x.app.Flash().Errf("Invalid nuker %T", accessor)
 			return
 		}
-		if err := nuker.Delete(spec.Path(), true, true); err != nil {
+		if err := nuker.Delete(spec.Path(), nil, true); err != nil {
 			x.app.Flash().Errf("Delete failed with `%s", err)
 		} else {
 			x.app.Flash().Infof("%s `%s deleted successfully", x.GVR(), spec.Path())

@@ -90,7 +90,7 @@ func (g *Generic) ToYAML(path string, showManaged bool) (string, error) {
 }
 
 // Delete deletes a resource.
-func (g *Generic) Delete(path string, cascade, force bool) error {
+func (g *Generic) Delete(path string, propagation *metav1.DeletionPropagation, force bool) error {
 	ns, n := client.Namespaced(path)
 	auth, err := g.Client().CanI(ns, g.gvr.String(), []string{client.DeleteVerb})
 	if err != nil {
@@ -100,16 +100,12 @@ func (g *Generic) Delete(path string, cascade, force bool) error {
 		return fmt.Errorf("user is not authorized to delete %s", path)
 	}
 
-	p := metav1.DeletePropagationOrphan
-	if cascade {
-		p = metav1.DeletePropagationBackground
-	}
 	var grace *int64
 	if force {
 		grace = &defaultKillGrace
 	}
 	opts := metav1.DeleteOptions{
-		PropagationPolicy:  &p,
+		PropagationPolicy:  propagation,
 		GracePeriodSeconds: grace,
 	}
 

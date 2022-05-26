@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/action"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -107,7 +108,7 @@ func (c *Helm) ToYAML(path string, showManaged bool) (string, error) {
 }
 
 // Delete uninstall a Helm.
-func (c *Helm) Delete(path string, cascade, force bool) error {
+func (c *Helm) Delete(path string, _ *metav1.DeletionPropagation, force bool) error {
 	ns, n := client.Namespaced(path)
 	cfg, err := c.EnsureHelmConfig(ns)
 	if err != nil {
