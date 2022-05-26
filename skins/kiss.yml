@@ -37,7 +37,7 @@ k9s:
       modifyColor: default
       addColor: default
       errorColor: default
-      highlightcolor: default
+      highlightColor: default
       killColor: default
       completedColor: default
     title:

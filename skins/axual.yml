@@ -63,7 +63,7 @@ k9s:
       modifyColor: *blue
       addColor: *blue
       errorColor: *red
-      highlightcolor: *yellow
+      highlightColor: *yellow
       killColor: *red
       completedColor: *grey
 

@@ -50,7 +50,7 @@ k9s:
       addColor: *grey
       pendingColor: *orange
       errorColor: *red
-      highlightcolor: *yellow
+      highlightColor: *yellow
       killColor: *purple
       completedColor: *grey
     title:
