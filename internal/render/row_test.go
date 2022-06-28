@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
@@ -318,25 +319,25 @@ func TestRowsSortDuration(t *testing.T) {
 	}{
 		"durationAsc": {
 			rows: render.Rows{
-				{Fields: []string{"10m10s", "duh"}},
-				{Fields: []string{"19s", "blee"}},
+				{Fields: []string{testTime().Add(10 * time.Second).String(), "duh"}},
+				{Fields: []string{testTime().String(), "blee"}},
 			},
 			col: 0,
 			asc: true,
 			e: render.Rows{
-				{Fields: []string{"19s", "blee"}},
-				{Fields: []string{"10m10s", "duh"}},
+				{Fields: []string{testTime().String(), "blee"}},
+				{Fields: []string{testTime().Add(10 * time.Second).String(), "duh"}},
 			},
 		},
 		"durationDesc": {
 			rows: render.Rows{
-				{Fields: []string{"10m10s", "duh"}},
-				{Fields: []string{"19s", "blee"}},
+				{Fields: []string{testTime().Add(10 * time.Second).String(), "duh"}},
+				{Fields: []string{testTime().String(), "blee"}},
 			},
 			col: 0,
 			e: render.Rows{
-				{Fields: []string{"10m10s", "duh"}},
-				{Fields: []string{"19s", "blee"}},
+				{Fields: []string{testTime().Add(10 * time.Second).String(), "duh"}},
+				{Fields: []string{testTime().String(), "blee"}},
 			},
 		},
 	}

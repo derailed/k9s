@@ -1,7 +1,6 @@
 package view
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -17,7 +16,7 @@ func TestEnvReplace(t *testing.T) {
 		"simple":    {arg: "$A", e: "10"},
 		"substring": {arg: "$A and $AA", e: "10 and 20"},
 		"with-text": {arg: "Something $A", e: "Something 10"},
-		"noMatch":   {arg: "blah blah and $BLEE", err: errors.New(`no environment matching key "$BLEE":"BLEE"`), e: ""},
+		"noMatch":   {arg: "blah blah and $BLEE", e: "blah blah and $BLEE"},
 		"lower":     {arg: "And then $b happened", e: "And then blee happened"},
 		"dash":      {arg: "$col0", e: "fred"},
 		"mix":       {arg: "$col0 and then $a but $B", e: "fred and then 10 but blee"},

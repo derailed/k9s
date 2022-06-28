@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/rs/zerolog/log"
 )
 
 // Env represent K9s and K8s available environment variables.
@@ -34,7 +36,8 @@ func (e Env) Substitute(arg string) (string, error) {
 		}
 		v, ok := e[strings.ToUpper(key)]
 		if !ok {
-			return "", fmt.Errorf("no environment matching key %q:%q", k, key)
+			log.Warn().Msgf("no k9s environment matching key %q:%q", k, key)
+			continue
 		}
 		if b, err := strconv.ParseBool(v); err == nil {
 			if inverse {

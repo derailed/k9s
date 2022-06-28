@@ -80,7 +80,7 @@ func (Pod) Header(ns string) Header {
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "NOMINATED NODE", Wide: true},
 		HeaderColumn{Name: "READINESS GATES", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 

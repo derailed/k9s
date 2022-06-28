@@ -3,9 +3,7 @@ package render
 import (
 	"reflect"
 	"sort"
-	"strconv"
 	"strings"
-	"time"
 
 	"github.com/fvbommel/sortorder"
 )
@@ -177,32 +175,33 @@ func (s RowSorter) Swap(i, j int) {
 }
 
 func (s RowSorter) Less(i, j int) bool {
-	return Less(s.Asc, s.IsNumber, s.IsDuration, s.Rows[i].Fields[s.Index], s.Rows[j].Fields[s.Index])
+	v1, v2 := s.Rows[i].Fields[s.Index], s.Rows[j].Fields[s.Index]
+	id1, id2 := s.Rows[i].ID, s.Rows[j].ID
+	return Less(s.Asc, s.IsNumber, s.IsDuration, id1, id2, v1, v2)
 }
 
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func toAgeDuration(dur string) string {
-	d, err := time.ParseDuration(dur)
-	if err != nil {
-		return durationToSeconds(dur)
-	}
-
-	return strconv.Itoa(int(d.Seconds()))
-}
-
 // Less return true if c1 < c2.
-func Less(asc, isNumber, isDuration bool, c1, c2 string) bool {
-	if isNumber {
-		c1, c2 = strings.Replace(c1, ",", "", -1), strings.Replace(c2, ",", "", -1)
+func Less(asc, isNumber, isDuration bool, id1, id2, v1, v2 string) bool {
+	var less bool
+	switch {
+	case isNumber:
+		v1, v2 = strings.Replace(v1, ",", "", -1), strings.Replace(v2, ",", "", -1)
+		less = sortorder.NaturalLess(v1, v2)
+	case isDuration:
+		d1, d2 := durationToSeconds(v1), durationToSeconds(v2)
+		less = d1 <= d2
+	default:
+		less = sortorder.NaturalLess(v1, v2)
 	}
-	if isDuration {
-		c1, c2 = toAgeDuration(c1), toAgeDuration(c2)
+
+	if v1 == v2 {
+		return sortorder.NaturalLess(id1, id2)
 	}
-	b := sortorder.NaturalLess(c1, c2)
 	if asc {
-		return b
+		return less
 	}
-	return !b
+	return !less
 }

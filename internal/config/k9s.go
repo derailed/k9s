@@ -166,7 +166,6 @@ func (k *K9s) ActiveCluster() *Cluster {
 
 func (k *K9s) GetScreenDumpDir() string {
 	screenDumpDir := k.ScreenDumpDir
-
 	if k.manualScreenDumpDir != nil && *k.manualScreenDumpDir != "" {
 		screenDumpDir = *k.manualScreenDumpDir
 	}
