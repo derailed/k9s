@@ -20,7 +20,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.13
 	github.com/petergtz/pegomock v2.9.0+incompatible
 	github.com/rakyll/hey v0.1.4
-	github.com/rs/zerolog v1.26.0
+	github.com/rs/zerolog v1.27.0
 	github.com/sahilm/fuzzy v0.1.0
 	github.com/spf13/cobra v1.4.0
 	github.com/stretchr/testify v1.7.1
