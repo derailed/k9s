@@ -350,7 +350,6 @@ func (l *Log) Flush(lines [][]byte) {
 		if l.cancelUpdates {
 			break
 		}
-		log.Debug().Msgf("FLUSH %q", string(lines[i]))
 		_, _ = l.ansiWriter.Write(lines[i])
 	}
 	if l.follow {

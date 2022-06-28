@@ -109,14 +109,19 @@ func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
 
 // Get returns a node resource.
 func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
-	o, err := n.Resource.Get(ctx, path)
+	oo, err := n.Resource.List(ctx, "")
 	if err != nil {
-		return o, err
+		return nil, err
 	}
 
-	u, ok := o.(*unstructured.Unstructured)
-	if !ok {
-		return nil, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
+	var raw *unstructured.Unstructured
+	for _, o := range oo {
+		if u, ok := o.(*unstructured.Unstructured); ok && u.GetName() == path {
+			raw = u
+		}
+	}
+	if raw == nil {
+		return nil, fmt.Errorf("unable to locate node %s", path)
 	}
 
 	var nmx *mv1beta1.NodeMetrics
@@ -124,7 +129,7 @@ func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
 		nmx, _ = client.DialMetrics(n.Client()).FetchNodeMetrics(ctx, path)
 	}
 
-	return &render.NodeWithMetrics{Raw: u, MX: nmx}, nil
+	return &render.NodeWithMetrics{Raw: raw, MX: nmx}, nil
 }
 
 // List returns a collection of node resources.

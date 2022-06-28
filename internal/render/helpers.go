@@ -16,25 +16,25 @@ import (
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
-func runesToNum(rr []rune) int {
-	var n int
-	m := 1
+func runesToNum(rr []rune) int64 {
+	var r int64
+	var m int64 = 1
 	for i := len(rr) - 1; i >= 0; i-- {
-		v := int(rr[i] - '0')
-		n += v * m
+		v := int64(rr[i] - '0')
+		r += v * m
 		m *= 10
 	}
 
-	return n
+	return r
 }
 
-func durationToSeconds(duration string) string {
+func durationToSeconds(duration string) int64 {
 	if len(duration) == 0 {
-		return duration
+		return 0
 	}
 
 	num := make([]rune, 0, 5)
-	var n, m int
+	var n, m int64
 	for _, r := range duration {
 		switch r {
 		case 'y':
@@ -54,7 +54,7 @@ func durationToSeconds(duration string) string {
 		n, num = n+runesToNum(num)*m, num[:0]
 	}
 
-	return strconv.Itoa(n)
+	return n
 }
 
 // AsThousands prints a number with thousand separator.
@@ -194,17 +194,25 @@ func boolToStr(b bool) string {
 	}
 }
 
-func toAge(timestamp metav1.Time) string {
-	return time.Since(timestamp.Time).String()
+func toAge(t metav1.Time) string {
+	if t.IsZero() {
+		return UnknownValue
+	}
+
+	return duration.HumanDuration(time.Since(t.Time))
 }
 
 func toAgeHuman(s string) string {
-	d, err := time.ParseDuration(s)
+	if len(s) == 0 {
+		return UnknownValue
+	}
+
+	t, err := time.Parse(time.RFC3339, s)
 	if err != nil {
 		return NAValue
 	}
 
-	return duration.HumanDuration(d)
+	return duration.HumanDuration(time.Since(t))
 }
 
 // Truncate a string to the given l and suffix ellipsis if needed.

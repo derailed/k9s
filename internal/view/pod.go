@@ -75,6 +75,7 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 	}
 
 	aa.Add(ui.KeyActions{
+		ui.KeyN:      ui.NewKeyAction("Show Node", p.showNode, true),
 		ui.KeyF:      ui.NewKeyAction("Show PortForward", p.showPFCmd, true),
 		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", p.GetTable().SortColCmd(readyCol, true), false),
 		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd("RESTARTS", false), false),
@@ -129,6 +130,37 @@ func (p *Pod) coContext(ctx context.Context) context.Context {
 }
 
 // Handlers...
+
+func (p *Pod) showNode(evt *tcell.EventKey) *tcell.EventKey {
+	path := p.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+	pod, err := fetchPod(p.App().factory, path)
+	if err != nil {
+		p.App().Flash().Err(err)
+		return nil
+	}
+	if pod.Spec.NodeName == "" {
+		p.App().Flash().Err(errors.New("no node assigned"))
+		return nil
+	}
+	no := NewNode(client.NewGVR("v1/nodes"))
+	no.SetInstance(pod.Spec.NodeName)
+	//no.SetContextFn(nodeContext(pod.Spec.NodeName))
+	if err := p.App().inject(no); err != nil {
+		p.App().Flash().Err(err)
+	}
+
+	return nil
+}
+
+func nodeContext(path string) ContextFunc {
+	return func(ctx context.Context) context.Context {
+		ctx = context.WithValue(ctx, internal.KeyPath, path)
+		return ctx
+	}
+}
 
 func (p *Pod) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := p.GetTable().GetSelectedItem()

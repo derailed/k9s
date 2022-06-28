@@ -26,9 +26,6 @@ func ComputeMaxColumns(pads MaxyPad, sortColName string, header render.Header, e
 	var row int
 	for _, e := range ee {
 		for index, field := range e.Row.Fields {
-			if header.IsTimeCol(index) {
-				field = toAgeHuman(field)
-			}
 			width := len(field) + colPadding
 			if index < len(pads) && width > pads[index] {
 				pads[index] = width
@@ -60,10 +57,10 @@ func Pad(s string, width int) string {
 }
 
 func toAgeHuman(s string) string {
-	d, err := time.ParseDuration(s)
+	t, err := time.Parse(time.RFC3339Nano, s)
 	if err != nil {
 		return render.NAValue
 	}
 
-	return duration.HumanDuration(d)
+	return duration.HumanDuration(time.Since(t))
 }

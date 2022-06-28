@@ -72,10 +72,10 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 	r.ID = client.FQN(nns, name)
 	r.Fields = make(Fields, 0, len(g.Header(ns)))
 	r.Fields = append(r.Fields, nns)
-	var ageCell interface{}
+	var duration interface{}
 	for i, c := range row.Cells {
 		if g.ageIndex > 0 && i == g.ageIndex {
-			ageCell = c
+			duration = c
 			continue
 		}
 		if c == nil {
@@ -84,8 +84,8 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 		}
 		r.Fields = append(r.Fields, fmt.Sprintf("%v", c))
 	}
-	if ageCell != nil {
-		r.Fields = append(r.Fields, fmt.Sprintf("%v", ageCell))
+	if d, ok := duration.(string); ok {
+		r.Fields = append(r.Fields, d)
 	}
 
 	return nil

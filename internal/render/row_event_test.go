@@ -2,6 +2,7 @@ package render_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
@@ -409,39 +410,24 @@ func TestRowEventsDelete(t *testing.T) {
 
 func TestRowEventsSort(t *testing.T) {
 	uu := map[string]struct {
-		re            render.RowEvents
-		col           int
-		age, num, asc bool
-		e             render.RowEvents
+		re                 render.RowEvents
+		col                int
+		duration, num, asc bool
+		e                  render.RowEvents
 	}{
 		"age_time": {
 			re: render.RowEvents{
-				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "1h10m10.5s"}}},
-				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "10.5s"}}},
-				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3h20m5.2s"}}},
+				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", testTime().Add(20 * time.Second).String()}}},
+				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", testTime().Add(10 * time.Second).String()}}},
+				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", testTime().String()}}},
 			},
-			col: 2,
-			asc: true,
-			age: true,
+			col:      2,
+			asc:      true,
+			duration: true,
 			e: render.RowEvents{
-				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "10.5s"}}},
-				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "1h10m10.5s"}}},
-				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3h20m5.2s"}}},
-			},
-		},
-		"age_duration": {
-			re: render.RowEvents{
-				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "32d"}}},
-				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "1m10s"}}},
-				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3h20m5s"}}},
-			},
-			col: 2,
-			asc: true,
-			age: true,
-			e: render.RowEvents{
-				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "1m10s"}}},
-				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3h20m5s"}}},
-				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "32d"}}},
+				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", testTime().String()}}},
+				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", testTime().Add(10 * time.Second).String()}}},
+				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", testTime().Add(20 * time.Second).String()}}},
 			},
 		},
 		"col0": {
@@ -483,7 +469,7 @@ func TestRowEventsSort(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.re.Sort("", u.col, u.age, u.num, u.asc)
+			u.re.Sort("", u.col, u.duration, u.num, u.asc)
 			assert.Equal(t, u.e, u.re)
 		})
 	}

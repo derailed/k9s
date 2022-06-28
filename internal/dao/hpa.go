@@ -2,10 +2,8 @@ package dao
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/derailed/k9s/internal"
-	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -28,21 +26,17 @@ func (h *HorizontalPodAutoscaler) List(ctx context.Context, ns string) ([]runtim
 		lsel = sel.AsSelector()
 	}
 
-	gvrs := []string{
-		"autoscaling/v2beta2/horizontalpodautoscalers",
-		"autoscaling/v2beta1/horizontalpodautoscalers",
-		"autoscaling/v1/horizontalpodautoscalers",
+	rev, err := h.Factory.Client().ServerVersion()
+	if err != nil {
+		return nil, err
 	}
 
-	for _, gvr := range gvrs {
-		oo, err := h.list(gvr, ns, lsel)
-		if err == nil && len(oo) > 0 {
-			return oo, nil
-		}
+	gvr := "autoscaling/v1/horizontalpodautoscalers"
+	if rev.Minor >= "23" {
+		gvr = "autoscaling/v2/horizontalpodautoscalers"
 	}
-	log.Error().Err(fmt.Errorf("No results for any known HPA versions"))
 
-	return []runtime.Object{}, nil
+	return h.list(gvr, ns, lsel)
 }
 
 func (h *HorizontalPodAutoscaler) list(gvr, ns string, sel labels.Selector) ([]runtime.Object, error) {

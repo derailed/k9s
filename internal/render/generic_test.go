@@ -70,7 +70,7 @@ func TestGenericRender(t *testing.T) {
 			ns:      client.ClusterScope,
 			table:   makeAgeGeneric(),
 			eID:     "-/fred",
-			eFields: render.Fields{"-", "c1", "c2", "Age"},
+			eFields: render.Fields{"-", "c1", "c2", "2d"},
 			eHeader: render.Header{
 				render.HeaderColumn{Name: "NAMESPACE"},
 				render.HeaderColumn{Name: "A"},
@@ -172,7 +172,7 @@ func makeAgeGeneric() *metav1beta1.Table {
 				},
 				Cells: []interface{}{
 					"c1",
-					"Age",
+					"2d",
 					"c2",
 				},
 			},
