@@ -41,7 +41,7 @@ func (Helm) Header(_ string) Header {
 		HeaderColumn{Name: "CHART"},
 		HeaderColumn{Name: "APP VERSION"},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 

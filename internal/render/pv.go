@@ -57,7 +57,7 @@ func (PersistentVolume) Header(string) Header {
 		HeaderColumn{Name: "VOLUMEMODE", Wide: true},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 

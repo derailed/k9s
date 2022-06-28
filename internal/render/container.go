@@ -88,7 +88,7 @@ func (Container) Header(ns string) Header {
 		HeaderColumn{Name: "%MEM/L", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "PORTS"},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 

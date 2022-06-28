@@ -29,7 +29,7 @@ func (Ingress) Header(ns string) Header {
 		HeaderColumn{Name: "ADDRESS"},
 		HeaderColumn{Name: "PORTS"},
 		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 

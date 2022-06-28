@@ -50,7 +50,7 @@ func (Benchmark) Header(ns string) Header {
 		HeaderColumn{Name: "4XX/5XX", Align: tview.AlignRight},
 		HeaderColumn{Name: "REPORT"},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 

@@ -19,7 +19,7 @@ func (ClusterRole) Header(string) Header {
 	return Header{
 		HeaderColumn{Name: "NAME"},
 		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
