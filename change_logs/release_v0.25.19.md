@@ -33,7 +33,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 * [PR #1553](https://github.com/derailed/k9s/pull/1553) Allow `all` deletion propagation policy
 * [PR #1539](https://github.com/derailed/k9s/pull/1539) Plugin to allow default chart values retrieval
 * [PR #1529](https://github.com/derailed/k9s/pull/1529) Update example k9s config file
-* [PR #1518](https://github.com/derailed/k9s/pull/1519) Add Helm values support
+* [PR #1518](https://github.com/derailed/k9s/pull/1518) Add Helm values support
 * [PR #1493](https://github.com/derailed/k9s/pull/1493) Fix padding is not 0 in fullscreen
 * [PR #1422](https://github.com/derailed/k9s/pull/1422) Fix typo in README
 
