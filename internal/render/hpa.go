@@ -29,7 +29,7 @@ func (HorizontalPodAutoscaler) Header(ns string) Header {
 		HeaderColumn{Name: "MAXPODS", Align: tview.AlignRight},
 		HeaderColumn{Name: "REPLICAS", Align: tview.AlignRight},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
@@ -102,12 +102,10 @@ func (h HorizontalPodAutoscaler) renderV2(raw *unstructured.Unstructured, _ stri
 // Helpers...
 
 func toMetricsV1(spec autoscalingv1.HorizontalPodAutoscalerSpec, status autoscalingv1.HorizontalPodAutoscalerStatus) string {
-	current := "<unknown>"
+	current, target := "<unknown>", "<unkown>"
 	if status.CurrentCPUUtilizationPercentage != nil {
 		current = strconv.Itoa(int(*status.CurrentCPUUtilizationPercentage)) + "%"
 	}
-
-	target := "<unknown>"
 	if spec.TargetCPUUtilizationPercentage != nil {
 		target = strconv.Itoa(int(*spec.TargetCPUUtilizationPercentage))
 	}

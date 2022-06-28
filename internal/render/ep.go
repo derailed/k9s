@@ -22,7 +22,7 @@ func (Endpoints) Header(ns string) Header {
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
 		HeaderColumn{Name: "ENDPOINTS"},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 

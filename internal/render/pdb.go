@@ -30,7 +30,7 @@ func (PodDisruptionBudget) Header(ns string) Header {
 		HeaderColumn{Name: "EXPECTED", Align: tview.AlignRight},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 

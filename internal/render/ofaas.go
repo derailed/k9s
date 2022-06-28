@@ -49,7 +49,7 @@ package render
 // 		HeaderColumn{Name: "REPLICAS", Align: tview.AlignRight},
 // 		HeaderColumn{Name: "AVAILABLE", Align: tview.AlignRight},
 // 		HeaderColumn{Name: "VALID", Wide: true},
-// 		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+// 		HeaderColumn{Name: "AGE", Time: true},
 // 	}
 // }
 

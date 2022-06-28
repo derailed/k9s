@@ -26,7 +26,7 @@ func (PersistentVolumeClaim) Header(ns string) Header {
 		HeaderColumn{Name: "STORAGECLASS"},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 

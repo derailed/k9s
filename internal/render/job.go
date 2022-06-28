@@ -31,7 +31,7 @@ func (Job) Header(ns string) Header {
 		HeaderColumn{Name: "CONTAINERS", Wide: true},
 		HeaderColumn{Name: "IMAGES", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
