@@ -121,7 +121,7 @@ func (c *CronJob) showSuspendDialog(sel string) {
 		c.App().Flash().Errf("Unable to assert current status")
 		return
 	}
-	suspended := strings.TrimSpace(cell.Text) == "true"
+	suspended := strings.TrimSpace(cell.Text) == "True"
 	title := "Suspend"
 	if suspended {
 		title = "Resume"
