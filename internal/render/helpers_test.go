@@ -98,7 +98,7 @@ func TestToAge(t *testing.T) {
 		},
 		"good": {
 			t: testTime().Add(-10 * time.Second),
-			e: "3y196d",
+			e: "3y197d",
 		},
 	}
 
