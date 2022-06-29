@@ -62,7 +62,7 @@ func TestLogItemsFilter(t *testing.T) {
 		u := uu[k]
 		ii := dao.NewLogItems()
 		ii.Add(
-			dao.NewLogItem([]byte(fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", "Testing 1,2,3..."))),
+			u.opts.ToLogItem([]byte(fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", "Testing 1,2,3..."))),
 			dao.NewLogItemFromString("Bumble bee tuna"),
 			dao.NewLogItemFromString("Jean Batiste Emmanuel Zorg"),
 		)
@@ -107,6 +107,7 @@ func TestLogItemsRender(t *testing.T) {
 				Path:          "blee/fred",
 				Container:     "blee",
 				ShowTimestamp: true,
+				UseUTC:        true,
 			},
 			e: "[gray::b]2018-12-14T10:36:43.326972-07:00 [teal::]fred [teal::b]blee[-::-] Testing 1,2,3...\n",
 		},
@@ -115,8 +116,8 @@ func TestLogItemsRender(t *testing.T) {
 	s := []byte(fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", "Testing 1,2,3..."))
 	for k := range uu {
 		ii := dao.NewLogItems()
-		ii.Add(dao.NewLogItem(s))
 		u := uu[k]
+		ii.Add(u.opts.ToLogItem(s))
 		_, n := client.Namespaced(u.opts.Path)
 		ii.Items()[0].Pod, ii.Items()[0].Container = n, u.opts.Container
 		t.Run(k, func(t *testing.T) {

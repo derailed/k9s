@@ -21,6 +21,7 @@ type Logger struct {
 	FullScreenLogs bool  `yaml:"fullScreenLogs"`
 	TextWrap       bool  `yaml:"textWrap"`
 	ShowTime       bool  `yaml:"showTime"`
+	UseUTC         bool  `yaml:"useUTC"`
 }
 
 // NewLogger returns a new instance.

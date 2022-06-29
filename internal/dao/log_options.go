@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -12,6 +13,7 @@ import (
 // LogOptions represents logger options.
 type LogOptions struct {
 	CreateDuration   time.Duration
+	UseUTC           bool
 	Path             string
 	Container        string
 	DefaultContainer string
@@ -49,6 +51,7 @@ func (o *LogOptions) Clone() *LogOptions {
 		SinceTime:        o.SinceTime,
 		SinceSeconds:     o.SinceSeconds,
 		AllContainers:    o.AllContainers,
+		UseUTC:           o.UseUTC,
 	}
 }
 
@@ -114,6 +117,20 @@ func (o *LogOptions) ToLogItem(bytes []byte) *LogItem {
 	if len(bytes) == 0 {
 		return item
 	}
+
+	if item.GetTimestamp() != "" {
+		t, err := time.Parse(time.RFC3339, item.GetTimestamp())
+		if err != nil {
+			log.Error().Msgf("Log timestamp parse error: %s", err)
+		} else {
+			if !o.UseUTC {
+				t = t.Local()
+			}
+			item.Time = t.Format(time.RFC3339Nano)
+		}
+		item.Bytes = item.GetLogWithoutTimestamp()
+	}
+
 	item.SingleContainer = o.SingleContainer
 	if item.SingleContainer {
 		item.Container = o.Container

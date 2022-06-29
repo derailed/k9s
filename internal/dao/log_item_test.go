@@ -50,7 +50,7 @@ func TestLogItemRender(t *testing.T) {
 			opts: dao.LogOptions{
 				Path:            "blee/fred",
 				Container:       "blee",
-				SingleContainer: true,
+				SingleContainer: false,
 			},
 			log: fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", "Testing 1,2,3..."),
 			e:   "[yellow::]fred [yellow::b]blee[-::-] Testing 1,2,3...\n",
@@ -59,8 +59,9 @@ func TestLogItemRender(t *testing.T) {
 			opts: dao.LogOptions{
 				Path:            "blee/fred",
 				Container:       "blee",
-				SingleContainer: true,
+				SingleContainer: false,
 				ShowTimestamp:   true,
+				UseUTC:          true,
 			},
 			log: fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", "Testing 1,2,3..."),
 			e:   "[gray::b]2018-12-14T10:36:43.326972-07:00 [yellow::]fred [yellow::b]blee[-::-] Testing 1,2,3...\n",
@@ -80,7 +81,7 @@ func TestLogItemRender(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			i := dao.NewLogItem([]byte(u.log))
+			i := u.opts.ToLogItem([]byte(u.log))
 			_, n := client.Namespaced(u.opts.Path)
 			i.Pod, i.Container = n, u.opts.Container
 

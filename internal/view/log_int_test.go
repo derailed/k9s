@@ -73,9 +73,10 @@ func TestLogTimestamp(t *testing.T) {
 	ii := dao.NewLogItems()
 	ii.Add(
 		&dao.LogItem{
+			Time:      "ttt",
 			Pod:       "fred/blee",
 			Container: "c1",
-			Bytes:     []byte("ttt Testing 1, 2, 3\n"),
+			Bytes:     []byte("Testing 1, 2, 3\n"),
 		},
 	)
 	var list logList

@@ -15,6 +15,7 @@ type LogItem struct {
 	SingleContainer bool
 	Bytes           []byte
 	IsError         bool
+	Time            string
 }
 
 // NewLogItem returns a new item.
@@ -39,13 +40,22 @@ func (l *LogItem) ID() string {
 	return l.Container
 }
 
-// GetTimestamp fetch log lime timestamp
+// GetTimestamp fetch log time timestamp
 func (l *LogItem) GetTimestamp() string {
 	index := bytes.Index(l.Bytes, []byte{' '})
 	if index < 0 {
 		return ""
 	}
 	return string(l.Bytes[:index])
+}
+
+// GetLogWithoutTimestamp fetch log message without timestamp
+func (l *LogItem) GetLogWithoutTimestamp() []byte {
+	index := bytes.Index(l.Bytes, []byte{' '})
+	if index < 0 {
+		return l.Bytes
+	}
+	return l.Bytes[index+1:]
 }
 
 // Info returns pod and container information.
@@ -65,12 +75,11 @@ func (l *LogItem) Size() int {
 
 // Render returns a log line as string.
 func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
-	index := bytes.Index(l.Bytes, []byte{' '})
-	if showTime && index > 0 {
+	if showTime && l.Time != "" {
 		bb.WriteString("[gray::b]")
-		bb.Write(l.Bytes[:index])
+		bb.Write([]byte(l.Time))
 		bb.WriteString(" ")
-		for i := len(l.Bytes[:index]); i < 30; i++ {
+		for i := len(l.Time); i < 30; i++ {
 			bb.WriteByte(' ')
 		}
 	}
@@ -88,9 +97,5 @@ func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
 		bb.WriteString("[-::] ")
 	}
 
-	if index > 0 {
-		bb.Write(l.Bytes[index+1:])
-	} else {
-		bb.Write(l.Bytes)
-	}
+	bb.Write(l.Bytes)
 }

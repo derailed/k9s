@@ -108,6 +108,7 @@ func (l *Log) SetSinceSeconds(ctx context.Context, i int64) {
 func (l *Log) Configure(opts *config.Logger) {
 	l.logOptions.Lines = int64(opts.TailCount)
 	l.logOptions.SinceSeconds = opts.SinceSeconds
+	l.logOptions.UseUTC = opts.UseUTC
 }
 
 // GetPath returns resource path.
