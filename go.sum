@@ -185,6 +185,10 @@ github.com/derailed/tcell/v2 v2.3.1-rc.2 h1:9TmZB/IwL3MA1Jf4pC4rfMaPTcVYIN62IwE7
 github.com/derailed/tcell/v2 v2.3.1-rc.2/go.mod h1:wegJ+SscH+jPjEQIAV/dI/grLTRm5R4IE2M479NDSL0=
 github.com/derailed/tview v0.6.6 h1:hNqBewhRTYRgfLp1p5KGw0DFdbGMS68iocBSmGGNg4s=
 github.com/derailed/tview v0.6.6/go.mod h1:A1LXWlbx/YDMXr3GVTy+IgclAkBssJpw/FiZ7aqUgzU=
+github.com/derailed/tview v0.7.0 h1:xKdhWvyWWXau8gWgQmFEaflooPwxaX0wFpfsoBxEnos=
+github.com/derailed/tview v0.7.0/go.mod h1:zH4i4fRLbUKOuqQwdcMefak2YyAjUj9bmKsiKTMf9gg=
+github.com/derailed/tview v0.7.1 h1:kV8nPWUpftbduH1hlPXqA/09iyyP9ZH6nSfZF9m+d8U=
+github.com/derailed/tview v0.7.1/go.mod h1:zH4i4fRLbUKOuqQwdcMefak2YyAjUj9bmKsiKTMf9gg=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgryski/go-sip13 v0.0.0-20181026042036-e10d5fee7954/go.mod h1:vAd38F8PWV+bWy6jNmig1y/TA+kYO4g3RSRF0IAv0no=
 github.com/distribution/distribution/v3 v3.0.0-20211118083504-a29a3c99a684 h1:DBZ2sN7CK6dgvHVpQsQj4sRMCbWTmd17l+5SUCjnQSY=
