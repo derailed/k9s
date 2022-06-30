@@ -317,6 +317,18 @@ func TestRowsSortDuration(t *testing.T) {
 		asc  bool
 		e    render.Rows
 	}{
+		"years": {
+			rows: render.Rows{
+				{Fields: []string{testTime().Add(-365 * 24 * time.Hour).String(), "blee"}},
+				{Fields: []string{testTime().String(), "duh"}},
+			},
+			col: 0,
+			asc: true,
+			e: render.Rows{
+				{Fields: []string{testTime().String(), "duh"}},
+				{Fields: []string{testTime().Add(-365 * 24 * time.Hour).String(), "blee"}},
+			},
+		},
 		"durationAsc": {
 			rows: render.Rows{
 				{Fields: []string{testTime().Add(10 * time.Second).String(), "duh"}},
@@ -389,6 +401,39 @@ func TestRowsSortMetrics(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			u.rows.Sort(u.col, u.asc, true, false)
 			assert.Equal(t, u.e, u.rows)
+		})
+	}
+}
+
+func TestLess(t *testing.T) {
+	uu := map[string]struct {
+		isNumber, isDuration bool
+		id1, id2             string
+		v1, v2               string
+		e                    bool
+	}{
+		"years": {
+			isNumber:   false,
+			isDuration: true,
+			id1:        "id1",
+			id2:        "id2",
+			v1:         "2y263d",
+			v2:         "1y179d",
+		},
+		"hours": {
+			isNumber:   false,
+			isDuration: true,
+			id1:        "id1",
+			id2:        "id2",
+			v1:         "2y263d",
+			v2:         "19h",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, render.Less(u.isNumber, u.isDuration, u.id1, u.id2, u.v1, u.v2))
 		})
 	}
 }

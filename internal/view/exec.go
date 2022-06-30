@@ -184,7 +184,7 @@ func clearScreen() {
 const (
 	k9sShell           = "k9s-shell"
 	k9sShellRetryCount = 10
-	k9sShellRetryDelay = 1 * time.Second
+	k9sShellRetryDelay = 10 * time.Second
 )
 
 func ssh(a *App, node string) error {

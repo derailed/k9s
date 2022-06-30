@@ -1,8 +1,6 @@
 package view
 
 import (
-	"time"
-
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
@@ -85,7 +83,7 @@ func (n *Namespace) decorate(data render.TableData) render.TableData {
 				Kind: render.EventUnchanged,
 				Row: render.Row{
 					ID:     client.NamespaceAll,
-					Fields: render.Fields{client.NamespaceAll, "Active", "", "", time.Now().String()},
+					Fields: render.Fields{client.NamespaceAll, "Active", "", "", ""},
 				},
 			},
 		)

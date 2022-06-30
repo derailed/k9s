@@ -23,15 +23,16 @@ var (
 // Helm represents a helm chart.
 type Helm struct {
 	NonResource
+	cfg *action.Configuration
+	ns  string
 }
 
 // List returns a collection of resources.
-func (c *Helm) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	cfg, err := c.EnsureHelmConfig(ns)
+func (h *Helm) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+	cfg, err := h.EnsureHelmConfig(ns)
 	if err != nil {
 		return nil, err
 	}
-
 	rr, err := action.NewList(cfg).Run()
 	if err != nil {
 		return nil, err
@@ -46,9 +47,9 @@ func (c *Helm) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 }
 
 // Get returns a resource.
-func (c *Helm) Get(_ context.Context, path string) (runtime.Object, error) {
+func (h *Helm) Get(_ context.Context, path string) (runtime.Object, error) {
 	ns, n := client.Namespaced(path)
-	cfg, err := c.EnsureHelmConfig(ns)
+	cfg, err := h.EnsureHelmConfig(ns)
 	if err != nil {
 		return nil, err
 	}
@@ -61,9 +62,9 @@ func (c *Helm) Get(_ context.Context, path string) (runtime.Object, error) {
 }
 
 // GetValues returns values for a release
-func (c *Helm) GetValues(path string, allValues bool) ([]byte, error) {
+func (h *Helm) GetValues(path string, allValues bool) ([]byte, error) {
 	ns, n := client.Namespaced(path)
-	cfg, err := c.EnsureHelmConfig(ns)
+	cfg, err := h.EnsureHelmConfig(ns)
 	if err != nil {
 		return nil, err
 	}
@@ -78,9 +79,9 @@ func (c *Helm) GetValues(path string, allValues bool) ([]byte, error) {
 }
 
 // Describe returns the chart notes.
-func (c *Helm) Describe(path string) (string, error) {
+func (h *Helm) Describe(path string) (string, error) {
 	ns, n := client.Namespaced(path)
-	cfg, err := c.EnsureHelmConfig(ns)
+	cfg, err := h.EnsureHelmConfig(ns)
 	if err != nil {
 		return "", err
 	}
@@ -93,9 +94,9 @@ func (c *Helm) Describe(path string) (string, error) {
 }
 
 // ToYAML returns the chart manifest.
-func (c *Helm) ToYAML(path string, showManaged bool) (string, error) {
+func (h *Helm) ToYAML(path string, showManaged bool) (string, error) {
 	ns, n := client.Namespaced(path)
-	cfg, err := c.EnsureHelmConfig(ns)
+	cfg, err := h.EnsureHelmConfig(ns)
 	if err != nil {
 		return "", err
 	}
@@ -108,9 +109,9 @@ func (c *Helm) ToYAML(path string, showManaged bool) (string, error) {
 }
 
 // Delete uninstall a Helm.
-func (c *Helm) Delete(path string, _ *metav1.DeletionPropagation, force bool) error {
+func (h *Helm) Delete(path string, _ *metav1.DeletionPropagation, force bool) error {
 	ns, n := client.Namespaced(path)
-	cfg, err := c.EnsureHelmConfig(ns)
+	cfg, err := h.EnsureHelmConfig(ns)
 	if err != nil {
 		return err
 	}
@@ -128,12 +129,15 @@ func (c *Helm) Delete(path string, _ *metav1.DeletionPropagation, force bool) er
 }
 
 // EnsureHelmConfig return a new configuration.
-func (c *Helm) EnsureHelmConfig(ns string) (*action.Configuration, error) {
-	cfg := new(action.Configuration)
-	if err := cfg.Init(c.Client().Config().Flags(), ns, os.Getenv("HELM_DRIVER"), helmLogger); err != nil {
+func (h *Helm) EnsureHelmConfig(ns string) (*action.Configuration, error) {
+	if h.cfg != nil && h.ns == ns {
+		return h.cfg, nil
+	}
+	h.cfg = new(action.Configuration)
+	if err := h.cfg.Init(h.Client().Config().Flags(), ns, os.Getenv("HELM_DRIVER"), helmLogger); err != nil {
 		return nil, err
 	}
-	return cfg, nil
+	return h.cfg, nil
 }
 
 func helmLogger(s string, args ...interface{}) {
