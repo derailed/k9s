@@ -10,7 +10,7 @@ require (
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/derailed/popeye v0.10.1
-	github.com/derailed/tview v0.6.6
+	github.com/derailed/tview v0.7.1
 	github.com/fatih/color v1.13.0
 	github.com/fsnotify/fsnotify v1.5.1
 	github.com/fvbommel/sortorder v1.0.1
