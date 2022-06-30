@@ -177,14 +177,18 @@ func (s RowSorter) Swap(i, j int) {
 func (s RowSorter) Less(i, j int) bool {
 	v1, v2 := s.Rows[i].Fields[s.Index], s.Rows[j].Fields[s.Index]
 	id1, id2 := s.Rows[i].ID, s.Rows[j].ID
-	return Less(s.Asc, s.IsNumber, s.IsDuration, id1, id2, v1, v2)
+	less := Less(s.IsNumber, s.IsDuration, id1, id2, v1, v2)
+	if s.Asc {
+		return less
+	}
+	return !less
 }
 
 // ----------------------------------------------------------------------------
 // Helpers...
 
 // Less return true if c1 < c2.
-func Less(asc, isNumber, isDuration bool, id1, id2, v1, v2 string) bool {
+func Less(isNumber, isDuration bool, id1, id2, v1, v2 string) bool {
 	var less bool
 	switch {
 	case isNumber:
@@ -196,12 +200,9 @@ func Less(asc, isNumber, isDuration bool, id1, id2, v1, v2 string) bool {
 	default:
 		less = sortorder.NaturalLess(v1, v2)
 	}
-
 	if v1 == v2 {
 		return sortorder.NaturalLess(id1, id2)
 	}
-	if asc {
-		return less
-	}
-	return !less
+
+	return less
 }

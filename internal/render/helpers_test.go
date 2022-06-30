@@ -96,10 +96,6 @@ func TestToAge(t *testing.T) {
 			t: time.Time{},
 			e: UnknownValue,
 		},
-		"good": {
-			t: testTime().Add(-10 * time.Second),
-			e: "3y197d",
-		},
 	}
 
 	for k := range uu {

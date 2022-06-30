@@ -150,6 +150,7 @@ func (h Header) IsMetricsCol(col int) bool {
 	if col < 0 || col >= len(h) {
 		return false
 	}
+
 	return h[col].MX
 }
 

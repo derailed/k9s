@@ -244,7 +244,7 @@ func (t *Table) doUpdate(data render.TableData) {
 		custData.Namespace,
 		colIndex,
 		custData.Header.IsTimeCol(colIndex),
-		data.Header.IsMetricsCol(colIndex),
+		custData.Header.IsMetricsCol(colIndex),
 		t.sortCol.asc,
 	)
 
