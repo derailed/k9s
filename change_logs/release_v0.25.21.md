@@ -19,6 +19,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 ## Resolved Issues
 
 * [Issue #1634](https://github.com/derailed/k9s/issues/1634) Namespace view all has the age field in strange format
+* [Issue #1633](https://github.com/derailed/k9s/issues/1633) Nodes sort by age has wrong order
 
 ## Resolved PR
 
