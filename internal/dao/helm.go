@@ -130,7 +130,7 @@ func (h *Helm) Delete(path string, _ *metav1.DeletionPropagation, force bool) er
 
 // EnsureHelmConfig return a new configuration.
 func (h *Helm) EnsureHelmConfig(ns string) (*action.Configuration, error) {
-	if h.cfg != nil && h.ns == ns {
+	if h.cfg != nil {
 		return h.cfg, nil
 	}
 	h.cfg = new(action.Configuration)
