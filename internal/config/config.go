@@ -241,6 +241,9 @@ func (c *Config) Save() error {
 
 // SaveFile K9s configuration to disk.
 func (c *Config) SaveFile(path string) error {
+	if c.K9s.IsLockConfig() == true {
+		return nil
+	}
 	EnsurePath(path, DefaultDirMod)
 	cfg, err := yaml.Marshal(c)
 	if err != nil {

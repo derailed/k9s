@@ -299,6 +299,8 @@ K9s uses aliases to navigate most K8s resources.
     headless: false
     # Set to true to hide K9s crumbs. Default false
     crumbsless: false
+    # Makes config file read only. Runtime config changes only stored in memory. Default false
+    lockConfig: false
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
     readOnly: false
     # Toggles icons display as not all terminal support these chars.
