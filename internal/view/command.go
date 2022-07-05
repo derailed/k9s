@@ -137,9 +137,7 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 			if cmds[1] != "" && cmds[1][0:1] == "/" {
 				// update the filter of the table
 				table := view.GetTable()
-				for _, c := range cmds[1][1:] {
-					table.CmdBuff().Add(c)
-				}
+				table.CmdBuff().SetText(cmds[1][1:], table.CmdBuff().GetSuggestion())
 			} else {
 				ns = cmds[1]
 			}
