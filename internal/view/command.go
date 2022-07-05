@@ -140,7 +140,6 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 				for _, c := range cmds[1][1:] {
 					table.CmdBuff().Add(c)
 				}
-				defer table.Filter("")
 			} else {
 				ns = cmds[1]
 			}
