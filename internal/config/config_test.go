@@ -282,6 +282,7 @@ var expectedConfig = `k9s:
   enableMouse: false
   headless: false
   logoless: false
+  lockConfig: false
   crumbsless: false
   readOnly: true
   noIcons: false
@@ -376,6 +377,7 @@ var resetConfig = `k9s:
   enableMouse: false
   headless: false
   logoless: false
+  lockConfig: false
   crumbsless: false
   readOnly: false
   noIcons: false
