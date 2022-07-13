@@ -158,7 +158,7 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 			return nil
 		}
 	}
-	showModal(p.App().Content.Pages, msg, func() {
+	showModal(p.App(), msg, func() {
 		for _, s := range selections {
 			var pf dao.PortForward
 			pf.Init(p.App().factory, client.NewGVR("portforwards"))
@@ -187,9 +187,12 @@ func pfToHuman(s string) (string, error) {
 	return fmt.Sprintf("%s::%s %s->%s", mm[2], mm[3], mm[4], mm[5]), nil
 }
 
-func showModal(p *ui.Pages, msg string, ok func()) {
+func showModal(a *App, msg string, ok func()) {
+	p := a.Content.Pages
+	styles := a.Styles.Dialog()
 	m := tview.NewModal().
 		AddButtons([]string{"Cancel", "OK"}).
+		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
 		SetTextColor(tcell.ColorFuchsia).
 		SetText(msg).
 		SetDoneFunc(func(_ int, b string) {
