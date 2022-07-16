@@ -79,8 +79,10 @@ func (r *ReplicaSet) dismissModal() {
 }
 
 func (r *ReplicaSet) showModal(msg string, done func(int, string)) {
+	styles := r.App().Styles.Dialog()
 	confirm := tview.NewModal().
 		AddButtons([]string{"Cancel", "OK"}).
+		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
 		SetTextColor(tcell.ColorFuchsia).
 		SetText(msg).
 		SetDoneFunc(done)
