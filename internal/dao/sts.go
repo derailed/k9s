@@ -67,7 +67,7 @@ func (s *StatefulSet) Scale(ctx context.Context, path string, replicas int32) er
 
 // Restart a StatefulSet rollout.
 func (s *StatefulSet) Restart(ctx context.Context, path string) error {
-	o, err := s.Factory.Get("apps/v1/statefulsets", path, true, labels.Everything())
+	o, err := s.GetFactory().Get("apps/v1/statefulsets", path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (s *StatefulSet) Pod(fqn string) (string, error) {
 }
 
 func (s *StatefulSet) getStatefulSet(fqn string) (*appsv1.StatefulSet, error) {
-	o, err := s.Factory.Get(s.gvr.String(), fqn, true, labels.Everything())
+	o, err := s.GetFactory().Get(s.gvr.String(), fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +172,7 @@ func (s *StatefulSet) getStatefulSet(fqn string) (*appsv1.StatefulSet, error) {
 // ScanSA scans for serviceaccount refs.
 func (s *StatefulSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := s.Factory.List(s.GVR(), ns, wait, labels.Everything())
+	oo, err := s.GetFactory().List(s.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -198,7 +198,7 @@ func (s *StatefulSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, 
 // Scan scans for cluster resource refs.
 func (s *StatefulSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := s.Factory.List(s.GVR(), ns, wait, labels.Everything())
+	oo, err := s.GetFactory().List(s.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

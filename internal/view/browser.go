@@ -222,7 +222,7 @@ func (b *Browser) Aliases() []string {
 // Model Protocol...
 
 // TableDataChanged notifies view new data is available.
-func (b *Browser) TableDataChanged(data render.TableData) {
+func (b *Browser) TableDataChanged(data *render.TableData) {
 	var cancel context.CancelFunc
 	b.mx.RLock()
 	cancel = b.cancelFn

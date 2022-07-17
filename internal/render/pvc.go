@@ -72,7 +72,7 @@ func (p PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
 		class,
 		mapToStr(pvc.Labels),
 		asStatus(p.diagnose(string(phase))),
-		toAge(pvc.ObjectMeta.CreationTimestamp),
+		toAge(pvc.GetCreationTimestamp()),
 	}
 
 	return nil

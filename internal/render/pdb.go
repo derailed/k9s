@@ -58,7 +58,7 @@ func (p PodDisruptionBudget) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(int(pdb.Status.ExpectedPods)),
 		mapToStr(pdb.Labels),
 		asStatus(p.diagnose(pdb.Spec.MinAvailable, pdb.Status.CurrentHealthy)),
-		toAge(pdb.ObjectMeta.CreationTimestamp),
+		toAge(pdb.GetCreationTimestamp()),
 	}
 
 	return nil

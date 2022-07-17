@@ -66,7 +66,7 @@ func (n Namespace) Render(o interface{}, _ string, r *Row) error {
 		string(ns.Status.Phase),
 		mapToStr(ns.Labels),
 		asStatus(n.diagnose(ns.Status.Phase)),
-		toAge(ns.ObjectMeta.CreationTimestamp),
+		toAge(ns.GetCreationTimestamp()),
 	}
 
 	return nil

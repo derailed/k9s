@@ -42,7 +42,7 @@ func (c *CronJob) Run(path string) error {
 		return fmt.Errorf("user is not authorized to run jobs")
 	}
 
-	o, err := c.Factory.Get(cronJobGVR, path, true, labels.Everything())
+	o, err := c.GetFactory().Get(cronJobGVR, path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func (c *CronJob) Run(path string) error {
 // ScanSA scans for serviceaccount refs.
 func (c *CronJob) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := c.Factory.List(c.GVR(), ns, wait, labels.Everything())
+	oo, err := c.GetFactory().List(c.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +145,7 @@ func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
 // Scan scans for cluster resource refs.
 func (c *CronJob) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := c.Factory.List(c.GVR(), ns, wait, labels.Everything())
+	oo, err := c.GetFactory().List(c.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

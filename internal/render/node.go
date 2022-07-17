@@ -95,7 +95,7 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 		toMi(a.mem),
 		mapToStr(no.Labels),
 		asStatus(n.diagnose(statuses)),
-		toAge(no.ObjectMeta.CreationTimestamp),
+		toAge(no.GetCreationTimestamp()),
 	}
 
 	return nil

@@ -71,7 +71,7 @@ func makeContainerRes(co v1.Container, po *v1.Pod, cmx *mv1beta1.ContainerMetric
 		Status:    getContainerStatus(co.Name, po.Status),
 		MX:        cmx,
 		IsInit:    isInit,
-		Age:       po.ObjectMeta.CreationTimestamp,
+		Age:       po.GetCreationTimestamp(),
 	}
 }
 
@@ -91,7 +91,7 @@ func getContainerStatus(co string, status v1.PodStatus) *v1.ContainerStatus {
 }
 
 func (c *Container) fetchPod(fqn string) (*v1.Pod, error) {
-	o, err := c.Factory.Get("v1/pods", fqn, true, labels.Everything())
+	o, err := c.GetFactory().Get("v1/pods", fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

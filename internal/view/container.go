@@ -37,21 +37,18 @@ func NewContainer(gvr client.GVR) ResourceViewer {
 	return &c
 }
 
-func (c *Container) portForwardIndicator(data render.TableData) render.TableData {
+func (c *Container) portForwardIndicator(data *render.TableData) {
 	ff := c.App().factory.Forwarders()
-
 	col := data.IndexOfHeader("PF")
 	for _, re := range data.RowEvents {
 		if ff.IsContainerForwarded(c.GetTable().Path, re.Row.ID) {
 			re.Row.Fields[col] = "[orange::b]Ⓕ"
 		}
 	}
-
-	return data
 }
 
-func (c *Container) decorateRows(data render.TableData) render.TableData {
-	return decorateCpuMemHeaderRows(c.App(), data)
+func (c *Container) decorateRows(data *render.TableData) {
+	decorateCpuMemHeaderRows(c.App(), data)
 }
 
 // Name returns the component name.
