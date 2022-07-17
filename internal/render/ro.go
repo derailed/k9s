@@ -50,7 +50,7 @@ func (r Role) Render(o interface{}, ns string, row *Row) error {
 		ro.Name,
 		mapToStr(ro.Labels),
 		"",
-		toAge(ro.ObjectMeta.CreationTimestamp),
+		toAge(ro.GetCreationTimestamp()),
 	)
 
 	return nil

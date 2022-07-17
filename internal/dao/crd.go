@@ -27,5 +27,5 @@ func (c *CustomResourceDefinition) List(ctx context.Context, _ string) ([]runtim
 	}
 
 	const gvr = "apiextensions.k8s.io/v1/customresourcedefinitions"
-	return c.Factory.List(gvr, "-", false, labelSel)
+	return c.GetFactory().List(gvr, "-", false, labelSel)
 }

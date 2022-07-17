@@ -46,7 +46,7 @@ func (s ServiceAccount) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(len(sa.Secrets)),
 		mapToStr(sa.Labels),
 		"",
-		toAge(sa.ObjectMeta.CreationTimestamp),
+		toAge(sa.GetCreationTimestamp()),
 	}
 
 	return nil

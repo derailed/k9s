@@ -56,7 +56,7 @@ func (s Service) Render(o interface{}, ns string, r *Row) error {
 		ToPorts(svc.Spec.Ports),
 		mapToStr(svc.Labels),
 		asStatus(s.diagnose()),
-		toAge(svc.ObjectMeta.CreationTimestamp),
+		toAge(svc.GetCreationTimestamp()),
 	}
 
 	return nil

@@ -124,7 +124,7 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 		asStatus(p.diagnose(phase, cr, len(ss))),
 		asNominated(po.Status.NominatedNodeName),
 		asReadinessGate(po),
-		toAge(po.ObjectMeta.CreationTimestamp),
+		toAge(po.GetCreationTimestamp()),
 	}
 
 	return nil

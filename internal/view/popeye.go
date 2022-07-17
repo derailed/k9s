@@ -43,7 +43,7 @@ func (p *Popeye) Init(ctx context.Context) error {
 	return nil
 }
 
-func (p *Popeye) decorateRows(data render.TableData) render.TableData {
+func (p *Popeye) decorateRows(data *render.TableData) {
 	var sum int
 	for _, re := range data.RowEvents {
 		n, err := strconv.Atoi(re.Row.Fields[1])
@@ -58,8 +58,6 @@ func (p *Popeye) decorateRows(data render.TableData) render.TableData {
 		letter = grade(score)
 	}
 	p.GetTable().Extras = fmt.Sprintf("Score %d -- %s", score, letter)
-
-	return data
 }
 
 func (p *Popeye) bindKeys(aa ui.KeyActions) {

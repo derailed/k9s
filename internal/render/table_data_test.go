@@ -9,13 +9,12 @@ import (
 
 func TestTableDataCustomize(t *testing.T) {
 	uu := map[string]struct {
-		t1   render.TableData
-		cols []string
-		wide bool
-		e    render.TableData
+		t1, e *render.TableData
+		cols  []string
+		wide  bool
 	}{
 		"same": {
-			t1: render.TableData{
+			t1: &render.TableData{
 				Namespace: "fred",
 				Header: render.Header{
 					render.HeaderColumn{Name: "A"},
@@ -29,7 +28,7 @@ func TestTableDataCustomize(t *testing.T) {
 				},
 			},
 			cols: []string{"A", "B", "C"},
-			e: render.TableData{
+			e: &render.TableData{
 				Namespace: "fred",
 				Header: render.Header{
 					render.HeaderColumn{Name: "A"},
@@ -44,7 +43,7 @@ func TestTableDataCustomize(t *testing.T) {
 			},
 		},
 		"wide-col": {
-			t1: render.TableData{
+			t1: &render.TableData{
 				Namespace: "fred",
 				Header: render.Header{
 					render.HeaderColumn{Name: "A"},
@@ -58,7 +57,7 @@ func TestTableDataCustomize(t *testing.T) {
 				},
 			},
 			cols: []string{"A", "B", "C"},
-			e: render.TableData{
+			e: &render.TableData{
 				Namespace: "fred",
 				Header: render.Header{
 					render.HeaderColumn{Name: "A"},
@@ -73,7 +72,7 @@ func TestTableDataCustomize(t *testing.T) {
 			},
 		},
 		"wide": {
-			t1: render.TableData{
+			t1: &render.TableData{
 				Namespace: "fred",
 				Header: render.Header{
 					render.HeaderColumn{Name: "A"},
@@ -88,7 +87,7 @@ func TestTableDataCustomize(t *testing.T) {
 			},
 			wide: true,
 			cols: []string{"A", "C"},
-			e: render.TableData{
+			e: &render.TableData{
 				Namespace: "fred",
 				Header: render.Header{
 					render.HeaderColumn{Name: "A"},
@@ -114,12 +113,11 @@ func TestTableDataCustomize(t *testing.T) {
 
 func TestTableDataDiff(t *testing.T) {
 	uu := map[string]struct {
-		t1 render.TableData
-		t2 render.TableData
-		e  bool
+		t1, t2 *render.TableData
+		e      bool
 	}{
 		"empty": {
-			t1: render.TableData{
+			t1: &render.TableData{
 				Namespace: "fred",
 				Header: render.Header{
 					render.HeaderColumn{Name: "A"},
@@ -135,7 +133,7 @@ func TestTableDataDiff(t *testing.T) {
 			e: true,
 		},
 		"same": {
-			t1: render.TableData{
+			t1: &render.TableData{
 				Namespace: "fred",
 				Header: render.Header{
 					render.HeaderColumn{Name: "A"},
@@ -148,7 +146,7 @@ func TestTableDataDiff(t *testing.T) {
 					{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
 				},
 			},
-			t2: render.TableData{
+			t2: &render.TableData{
 				Namespace: "fred",
 				Header: render.Header{
 					render.HeaderColumn{Name: "A"},
@@ -163,7 +161,7 @@ func TestTableDataDiff(t *testing.T) {
 			},
 		},
 		"ns-diff": {
-			t1: render.TableData{
+			t1: &render.TableData{
 				Namespace: "fred",
 				Header: render.Header{
 					render.HeaderColumn{Name: "A"},
@@ -176,7 +174,7 @@ func TestTableDataDiff(t *testing.T) {
 					{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
 				},
 			},
-			t2: render.TableData{
+			t2: &render.TableData{
 				Namespace: "blee",
 				Header: render.Header{
 					render.HeaderColumn{Name: "A"},
@@ -192,7 +190,7 @@ func TestTableDataDiff(t *testing.T) {
 			e: true,
 		},
 		"header-diff": {
-			t1: render.TableData{
+			t1: &render.TableData{
 				Namespace: "fred",
 				Header: render.Header{
 					render.HeaderColumn{Name: "A"},
@@ -205,7 +203,7 @@ func TestTableDataDiff(t *testing.T) {
 					{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
 				},
 			},
-			t2: render.TableData{
+			t2: &render.TableData{
 				Namespace: "fred",
 				Header: render.Header{
 					render.HeaderColumn{Name: "A"},
@@ -221,7 +219,7 @@ func TestTableDataDiff(t *testing.T) {
 			e: true,
 		},
 		"row-diff": {
-			t1: render.TableData{
+			t1: &render.TableData{
 				Namespace: "fred",
 				Header: render.Header{
 					render.HeaderColumn{Name: "A"},
@@ -234,7 +232,7 @@ func TestTableDataDiff(t *testing.T) {
 					{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
 				},
 			},
-			t2: render.TableData{
+			t2: &render.TableData{
 				Namespace: "fred",
 				Header: render.Header{
 					render.HeaderColumn{Name: "A"},

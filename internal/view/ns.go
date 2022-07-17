@@ -71,9 +71,9 @@ func (n *Namespace) useNamespace(fqn string) {
 	}
 }
 
-func (n *Namespace) decorate(data render.TableData) render.TableData {
+func (n *Namespace) decorate(data *render.TableData) {
 	if n.App().Conn() == nil || len(data.RowEvents) == 0 {
-		return data
+		return
 	}
 
 	// checks if all ns is in the list if not add it.
@@ -99,6 +99,4 @@ func (n *Namespace) decorate(data render.TableData) render.TableData {
 			re.Kind = render.EventUnchanged
 		}
 	}
-
-	return data
 }

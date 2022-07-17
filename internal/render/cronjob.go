@@ -65,7 +65,7 @@ func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 		podImageNames(cj.Spec.JobTemplate.Spec.Template.Spec, true),
 		mapToStr(cj.Labels),
 		"",
-		toAge(cj.ObjectMeta.CreationTimestamp),
+		toAge(cj.GetCreationTimestamp()),
 	}
 
 	return nil

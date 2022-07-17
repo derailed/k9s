@@ -58,7 +58,7 @@ func (j *Job) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 // TailLogs tail logs for all pods represented by this Job.
 func (j *Job) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error) {
-	o, err := j.Factory.Get(j.gvr.String(), opts.Path, true, labels.Everything())
+	o, err := j.GetFactory().Get(j.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (j *Job) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 // ScanSA scans for serviceaccount refs.
 func (j *Job) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := j.Factory.List(j.GVR(), ns, wait, labels.Everything())
+	oo, err := j.GetFactory().List(j.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -105,7 +105,7 @@ func (j *Job) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 // Scan scans for resource references.
 func (j *Job) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := j.Factory.List(j.GVR(), ns, wait, labels.Everything())
+	oo, err := j.GetFactory().List(j.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

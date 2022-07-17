@@ -43,7 +43,7 @@ func (StorageClass) Render(o interface{}, ns string, r *Row) error {
 		string(sc.Provisioner),
 		mapToStr(sc.Labels),
 		"",
-		toAge(sc.ObjectMeta.CreationTimestamp),
+		toAge(sc.GetCreationTimestamp()),
 	}
 
 	return nil

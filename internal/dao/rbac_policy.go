@@ -174,7 +174,7 @@ func (p *Policy) fetchRoleBindingSubjects(kind, name string) ([]string, error) {
 func (p *Policy) fetchClusterRoles() ([]rbacv1.ClusterRole, error) {
 	const gvr = "rbac.authorization.k8s.io/v1/clusterroles"
 
-	oo, err := p.Factory.List(gvr, client.ClusterScope, false, labels.Everything())
+	oo, err := p.GetFactory().List(gvr, client.ClusterScope, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -194,7 +194,7 @@ func (p *Policy) fetchClusterRoles() ([]rbacv1.ClusterRole, error) {
 func (p *Policy) fetchRoles() ([]rbacv1.Role, error) {
 	const gvr = "rbac.authorization.k8s.io/v1/roles"
 
-	oo, err := p.Factory.List(gvr, client.AllNamespaces, false, labels.Everything())
+	oo, err := p.GetFactory().List(gvr, client.AllNamespaces, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

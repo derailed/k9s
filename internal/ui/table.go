@@ -21,7 +21,7 @@ type (
 	ColorerFunc func(ns string, evt render.RowEvent) tcell.Color
 
 	// DecorateFunc represents a row decorator.
-	DecorateFunc func(render.TableData) render.TableData
+	DecorateFunc func(*render.TableData)
 
 	// SelectedRowFunc a table selection callback.
 	SelectedRowFunc func(r int)
@@ -158,7 +158,7 @@ func (t *Table) ExtraHints() map[string]string {
 }
 
 // GetFilteredData fetch filtered tabular data.
-func (t *Table) GetFilteredData() render.TableData {
+func (t *Table) GetFilteredData() *render.TableData {
 	return t.filtered(t.GetModel().Peek())
 }
 
@@ -178,17 +178,17 @@ func (t *Table) SetSortCol(name string, asc bool) {
 }
 
 // Update table content.
-func (t *Table) Update(data render.TableData, hasMetrics bool) {
+func (t *Table) Update(data *render.TableData, hasMetrics bool) {
 	t.header = data.Header
 	if t.decorateFn != nil {
-		data = t.decorateFn(data)
+		t.decorateFn(data)
 	}
 	t.hasMetrics = hasMetrics
 	t.doUpdate(t.filtered(data))
 	t.UpdateTitle()
 }
 
-func (t *Table) doUpdate(data render.TableData) {
+func (t *Table) doUpdate(data *render.TableData) {
 	if client.IsAllNamespaces(data.Namespace) {
 		t.actions[KeyShiftP] = NewKeyAction("Sort Namespace", t.SortColCmd("NAMESPACE", true), false)
 	} else {
@@ -373,7 +373,7 @@ func (t *Table) AddHeaderCell(col int, h render.HeaderColumn) {
 	t.SetCell(0, col, c)
 }
 
-func (t *Table) filtered(data render.TableData) render.TableData {
+func (t *Table) filtered(data *render.TableData) *render.TableData {
 	filtered := data
 	if t.toast {
 		filtered = filterToast(data)

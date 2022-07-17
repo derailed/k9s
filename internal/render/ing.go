@@ -54,7 +54,7 @@ func (i Ingress) Render(o interface{}, ns string, r *Row) error {
 		toAddress(ing.Status.LoadBalancer),
 		toTLSPorts(ing.Spec.TLS),
 		mapToStr(ing.Labels),
-		toAge(ing.ObjectMeta.CreationTimestamp),
+		toAge(ing.GetCreationTimestamp()),
 	}
 
 	return nil

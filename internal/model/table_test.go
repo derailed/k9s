@@ -72,7 +72,7 @@ type tableListener struct {
 	count, errs int
 }
 
-func (l *tableListener) TableDataChanged(render.TableData) {
+func (l *tableListener) TableDataChanged(*render.TableData) {
 	l.count++
 }
 
