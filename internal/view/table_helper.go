@@ -38,7 +38,7 @@ func computeFilename(screenDumpDir, cluster, ns, title, path string) (string, er
 	return strings.ToLower(filepath.Join(dir, fName)), nil
 }
 
-func saveTable(screenDumpDir, cluster, title, path string, data render.TableData) (string, error) {
+func saveTable(screenDumpDir, cluster, title, path string, data *render.TableData) (string, error) {
 	ns := data.Namespace
 	if client.IsClusterWide(ns) {
 		ns = client.NamespaceAll

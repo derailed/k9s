@@ -59,7 +59,7 @@ func (r RoleBinding) Render(o interface{}, ns string, row *Row) error {
 		ss,
 		mapToStr(rb.Labels),
 		"",
-		toAge(rb.ObjectMeta.CreationTimestamp),
+		toAge(rb.GetCreationTimestamp()),
 	)
 
 	return nil

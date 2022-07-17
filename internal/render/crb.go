@@ -47,7 +47,7 @@ func (ClusterRoleBinding) Render(o interface{}, ns string, r *Row) error {
 		kind,
 		ss,
 		mapToStr(crb.Labels),
-		toAge(crb.ObjectMeta.CreationTimestamp),
+		toAge(crb.GetCreationTimestamp()),
 	}
 
 	return nil

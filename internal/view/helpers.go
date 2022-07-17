@@ -179,7 +179,7 @@ func fqn(ns, n string) string {
 	return ns + "/" + n
 }
 
-func decorateCpuMemHeaderRows(app *App, data render.TableData) render.TableData {
+func decorateCpuMemHeaderRows(app *App, data *render.TableData) *render.TableData {
 	for colIndex, header := range data.Header {
 		check := ""
 		if header.Name == "%CPU/L" {

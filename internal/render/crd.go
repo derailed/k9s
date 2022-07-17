@@ -2,12 +2,13 @@ package render
 
 import (
 	"fmt"
-	"time"
+	"path"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // CustomResourceDefinition renders a K8s CustomResourceDefinition to screen.
@@ -26,25 +27,34 @@ func (CustomResourceDefinition) Header(string) Header {
 
 // Render renders a K8s resource to screen.
 func (CustomResourceDefinition) Render(o interface{}, ns string, r *Row) error {
-	crd, ok := o.(*unstructured.Unstructured)
+	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("Expected CustomResourceDefinition, but got %T", o)
 	}
 
-	meta, ok := crd.Object["metadata"].(map[string]interface{})
-	if !ok {
-		return fmt.Errorf("expecting an interface map but got %T", crd.Object["metadata"])
-	}
-	t, err := time.Parse(time.RFC3339, extractMetaField(meta, "creationTimestamp"))
+	var crd v1.CustomResourceDefinition
+	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &crd)
 	if err != nil {
-		log.Error().Err(err).Msgf("Fields timestamp %v", err)
+		return err
 	}
 
-	r.ID = client.FQN(client.ClusterScope, extractMetaField(meta, "name"))
+	var version string
+	for _, v := range crd.Spec.Versions {
+		if v.Served && !v.Deprecated {
+			version = v.Name
+			break
+		}
+	}
+	if version == "" {
+		return fmt.Errorf("unable to assert resource version")
+	}
+	id := path.Join(crd.Spec.Group, version, crd.Spec.Names.Plural)
+
+	r.ID = client.FQN(client.ClusterScope, id)
 	r.Fields = Fields{
-		extractMetaField(meta, "name"),
-		mapToIfc(meta["labels"]),
-		toAge(metav1.Time{Time: t}),
+		crd.GetName(),
+		mapToIfc(crd.GetLabels()),
+		toAge(crd.GetCreationTimestamp()),
 	}
 
 	return nil

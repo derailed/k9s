@@ -20,7 +20,7 @@ type Context struct {
 }
 
 func (c *Context) config() *client.Config {
-	return c.Factory.Client().Config()
+	return c.GetFactory().Client().Config()
 }
 
 // Get a Context.
@@ -57,5 +57,5 @@ func (c *Context) MustCurrentContextName() string {
 
 // Switch to another context.
 func (c *Context) Switch(ctx string) error {
-	return c.Factory.Client().SwitchContext(ctx)
+	return c.GetFactory().Client().SwitchContext(ctx)
 }

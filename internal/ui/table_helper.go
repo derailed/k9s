@@ -128,7 +128,7 @@ func formatCell(field string, padding int) string {
 	return field
 }
 
-func filterToast(data render.TableData) render.TableData {
+func filterToast(data *render.TableData) *render.TableData {
 	validX := data.Header.IndexOf("VALID", true)
 	if validX == -1 {
 		return data
@@ -144,10 +144,11 @@ func filterToast(data render.TableData) render.TableData {
 			toast.RowEvents = append(toast.RowEvents, re)
 		}
 	}
-	return toast
+
+	return &toast
 }
 
-func rxFilter(q string, inverse bool, data render.TableData) (render.TableData, error) {
+func rxFilter(q string, inverse bool, data *render.TableData) (*render.TableData, error) {
 	if inverse {
 		q = q[1:]
 	}
@@ -178,10 +179,10 @@ func rxFilter(q string, inverse bool, data render.TableData) (render.TableData, 
 		}
 	}
 
-	return filtered, nil
+	return &filtered, nil
 }
 
-func fuzzyFilter(q string, data render.TableData) render.TableData {
+func fuzzyFilter(q string, data *render.TableData) *render.TableData {
 	q = strings.TrimSpace(q)
 	ss := make([]string, 0, len(data.RowEvents))
 	for _, re := range data.RowEvents {
@@ -198,5 +199,5 @@ func fuzzyFilter(q string, data render.TableData) render.TableData {
 		filtered.RowEvents = append(filtered.RowEvents, data.RowEvents[m.Index])
 	}
 
-	return filtered
+	return &filtered
 }

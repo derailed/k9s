@@ -60,7 +60,7 @@ func (j Job) Render(o interface{}, ns string, r *Row) error {
 		cc,
 		ii,
 		asStatus(j.diagnose(ready, job.Status.CompletionTime)),
-		toAge(job.ObjectMeta.CreationTimestamp),
+		toAge(job.GetCreationTimestamp()),
 	}
 
 	return nil
