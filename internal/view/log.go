@@ -58,10 +58,6 @@ func NewLog(gvr client.GVR, opts *dao.LogOptions) *Log {
 	return &l
 }
 
-func logChan() dao.LogChan {
-	return make(dao.LogChan, 2)
-}
-
 // Init initializes the viewer.
 func (l *Log) Init(ctx context.Context) (err error) {
 	if l.app, err = extractApp(ctx); err != nil {

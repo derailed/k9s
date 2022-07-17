@@ -14,6 +14,8 @@ import (
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type (
@@ -421,7 +423,7 @@ func (t *Table) styleTitle() string {
 		rc--
 	}
 
-	base := strings.Title(t.gvr.R())
+	base := cases.Title(language.Und, cases.NoLower).String(t.gvr.R())
 	ns := t.GetModel().GetNamespace()
 	if client.IsClusterWide(ns) || ns == client.NotNamespaced {
 		ns = client.NamespaceAll

@@ -367,7 +367,7 @@ func asResource(r config.Limits) v1.ResourceRequirements {
 	}
 }
 
-func pipe(ctx context.Context, opts shellOpts, cmds ...*exec.Cmd) error {
+func pipe(_ context.Context, opts shellOpts, cmds ...*exec.Cmd) error {
 	if len(cmds) == 0 {
 		return nil
 	}

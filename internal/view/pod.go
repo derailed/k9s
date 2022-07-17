@@ -154,13 +154,6 @@ func (p *Pod) showNode(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func nodeContext(path string) ContextFunc {
-	return func(ctx context.Context) context.Context {
-		ctx = context.WithValue(ctx, internal.KeyPath, path)
-		return ctx
-	}
-}
-
 func (p *Pod) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := p.GetTable().GetSelectedItem()
 	if path == "" {

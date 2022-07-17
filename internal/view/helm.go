@@ -9,6 +9,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell/v2"
+	"github.com/rs/zerolog/log"
 )
 
 // Helm represents a helm chart view.
@@ -66,7 +67,10 @@ func (c *Helm) getValsCmd() func(evt *tcell.EventKey) *tcell.EventKey {
 
 func (c *Helm) toggleValuesCmd(evt *tcell.EventKey) *tcell.EventKey {
 	c.Values.ToggleValues()
-	c.Values.Refresh(c.defaultCtx())
+	if err := c.Values.Refresh(c.defaultCtx()); err != nil {
+		log.Error().Err(err).Msgf("helm refresh failed")
+		return nil
+	}
 	c.App().Flash().Infof("Values toggled")
 	return nil
 }

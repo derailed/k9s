@@ -195,10 +195,6 @@ func (r RowEvents) FindIndex(id string) (int, bool) {
 	return 0, false
 }
 
-type tuple struct {
-	field, id string
-}
-
 // Sort rows based on column index and order.
 func (r RowEvents) Sort(ns string, sortCol int, isDuration, numCol, asc bool) {
 	if sortCol == -1 {

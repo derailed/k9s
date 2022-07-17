@@ -1,7 +1,6 @@
 package render
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -469,14 +468,4 @@ func BenchmarkIntToStr(b *testing.B) {
 	for n := 0; n < b.N; n++ {
 		IntToStr(v)
 	}
-}
-
-// Helpers
-
-func testTime() time.Time {
-	t, err := time.Parse(time.RFC3339, "2018-12-14T10:36:43.326972-07:00")
-	if err != nil {
-		fmt.Println("TestTime Failed", err)
-	}
-	return t
 }
