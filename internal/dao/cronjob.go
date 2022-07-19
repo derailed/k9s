@@ -179,6 +179,14 @@ func (c *CronJob) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, e
 				GVR: c.GVR(),
 				FQN: client.FQN(cj.Namespace, cj.Name),
 			})
+		case "scheduling.k8s.io/v1/priorityclasses":
+			if !hasPC(&cj.Spec.JobTemplate.Spec.Template.Spec, n) {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: c.GVR(),
+				FQN: client.FQN(cj.Namespace, cj.Name),
+			})
 		}
 	}
 

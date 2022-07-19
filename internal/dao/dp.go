@@ -223,7 +223,16 @@ func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs
 				GVR: d.GVR(),
 				FQN: client.FQN(dp.Namespace, dp.Name),
 			})
+		case "scheduling.k8s.io/v1/priorityclasses":
+			if !hasPC(&dp.Spec.Template.Spec, n) {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: d.GVR(),
+				FQN: client.FQN(dp.Namespace, dp.Name),
+			})
 		}
+
 	}
 
 	return refs, nil
@@ -274,6 +283,10 @@ func hasPVC(spec *v1.PodSpec, name string) bool {
 		}
 	}
 	return false
+}
+
+func hasPC(spec *v1.PodSpec, name string) bool {
+	return spec.PriorityClassName == name
 }
 
 func hasConfigMap(spec *v1.PodSpec, name string) bool {
