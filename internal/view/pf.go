@@ -177,7 +177,7 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-var selRx = regexp.MustCompile(`\A([\w-]+)/([\w-]+)\|([\w-]+)\|(\d+):(\d+)`)
+var selRx = regexp.MustCompile(`\A([\w-]+)/([\w-]+)\|([\w-]+)?\|(\d+):(\d+)`)
 
 func pfToHuman(s string) (string, error) {
 	mm := selRx.FindStringSubmatch(s)
