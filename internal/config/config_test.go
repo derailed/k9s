@@ -284,6 +284,7 @@ var expectedConfig = `k9s:
   logoless: false
   crumbsless: false
   readOnly: true
+  noExitOnCtrlC: false
   noIcons: false
   logger:
     tail: 500
@@ -378,6 +379,7 @@ var resetConfig = `k9s:
   logoless: false
   crumbsless: false
   readOnly: false
+  noExitOnCtrlC: false
   noIcons: false
   logger:
     tail: 200

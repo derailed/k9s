@@ -18,6 +18,7 @@ type K9s struct {
 	Logoless            bool                `yaml:"logoless"`
 	Crumbsless          bool                `yaml:"crumbsless"`
 	ReadOnly            bool                `yaml:"readOnly"`
+	NoExitOnCtrlC       bool                `yaml:"noExitOnCtrlC"`
 	NoIcons             bool                `yaml:"noIcons"`
 	Logger              *Logger             `yaml:"logger"`
 	CurrentContext      string              `yaml:"currentContext"`
