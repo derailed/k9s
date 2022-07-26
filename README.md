@@ -301,6 +301,8 @@ K9s uses aliases to navigate most K8s resources.
     crumbsless: false
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
     readOnly: false
+    # Toggles whether k9s should exit when CTRL-C is pressed. When set to true, you will need to exist k9s via the :quit command. Default is false.
+    noExitOnCtrlC: false
     # Toggles icons display as not all terminal support these chars.
     noIcons: false
     # Logs configuration

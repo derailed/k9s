@@ -193,8 +193,12 @@ func (a *App) quitCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if a.InCmdMode() {
 		return evt
 	}
-	a.BailOut()
 
+	if !a.Config.K9s.NoExitOnCtrlC {
+		a.BailOut()
+	}
+
+	// overwrite the default ctrl-c behavior of tview
 	return nil
 }
 
