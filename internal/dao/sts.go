@@ -249,6 +249,15 @@ func (s *StatefulSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Ref
 				GVR: s.GVR(),
 				FQN: client.FQN(sts.Namespace, sts.Name),
 			})
+		case "scheduling.k8s.io/v1/priorityclasses":
+			if !hasPC(&sts.Spec.Template.Spec, n) {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: s.GVR(),
+				FQN: client.FQN(sts.Namespace, sts.Name),
+			})
+
 		}
 	}
 

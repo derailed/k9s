@@ -139,6 +139,14 @@ func (j *Job) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 				GVR: j.GVR(),
 				FQN: client.FQN(job.Namespace, job.Name),
 			})
+		case "scheduling.k8s.io/v1/priorityclasses":
+			if !hasPC(&job.Spec.Template.Spec, n) {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: j.GVR(),
+				FQN: client.FQN(job.Namespace, job.Name),
+			})
 		}
 	}
 
