@@ -75,7 +75,7 @@ func (p PersistentVolume) Render(o interface{}, ns string, r *Row) error {
 
 	phase := pv.Status.Phase
 	if pv.ObjectMeta.DeletionTimestamp != nil {
-		phase = "Terminated"
+		phase = "Terminating"
 	}
 	var claim string
 	if pv.Spec.ClaimRef != nil {
@@ -94,7 +94,7 @@ func (p PersistentVolume) Render(o interface{}, ns string, r *Row) error {
 		size.String(),
 		accessMode(pv.Spec.AccessModes),
 		string(pv.Spec.PersistentVolumeReclaimPolicy),
-		string(pv.Status.Phase),
+		string(phase),
 		claim,
 		class,
 		pv.Status.Reason,
