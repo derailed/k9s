@@ -38,7 +38,7 @@ func TestCheckCacheBool(t *testing.T) {
 		},
 	}
 
-	expiry := 1 * time.Millisecond
+	expiry := 10 * time.Millisecond
 	for k := range uu {
 		u := uu[k]
 		c.cache.Add(key, u.val, expiry)
