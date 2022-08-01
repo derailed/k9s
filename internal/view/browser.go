@@ -525,7 +525,6 @@ func (b *Browser) simpleDelete(selections []string, msg string) {
 		} else {
 			b.app.Flash().Infof("Delete resource %s %s", b.GVR(), selections[0])
 		}
-		log.Debug().Msgf("SELS %v", selections)
 		for _, sel := range selections {
 			nuker, ok := b.accessor.(dao.Nuker)
 			if !ok {
