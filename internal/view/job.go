@@ -2,7 +2,6 @@ package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -19,7 +18,6 @@ type Job struct {
 func NewJob(gvr client.GVR) ResourceViewer {
 	j := Job{ResourceViewer: NewLogsExtender(NewBrowser(gvr), nil)}
 	j.GetTable().SetEnterFn(j.showPods)
-	j.GetTable().SetColorerFn(render.Job{}.ColorerFunc())
 	j.GetTable().SetSortCol("AGE", true)
 
 	return &j

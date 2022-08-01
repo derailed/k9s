@@ -5,7 +5,6 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell/v2"
 )
@@ -20,7 +19,6 @@ func NewRbac(gvr client.GVR) ResourceViewer {
 	r := Rbac{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	r.GetTable().SetColorerFn(render.Rbac{}.ColorerFunc())
 	r.AddBindKeysFn(r.bindKeys)
 	r.GetTable().SetSortCol("APIGROUP", true)
 	r.GetTable().SetEnterFn(blankEnterFn)

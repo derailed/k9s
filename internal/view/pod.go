@@ -42,7 +42,6 @@ func NewPod(gvr client.GVR) ResourceViewer {
 	)
 	p.AddBindKeysFn(p.bindKeys)
 	p.GetTable().SetEnterFn(p.showContainers)
-	p.GetTable().SetColorerFn(render.Pod{}.ColorerFunc())
 	p.GetTable().SetDecorateFn(p.portForwardIndicator)
 
 	return &p
@@ -201,7 +200,7 @@ func (p *Pod) killCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	p.GetTable().ShowDeleted()
 	for _, path := range selections {
-		if err := nuker.Delete(path, nil, true); err != nil {
+		if err := nuker.Delete(context.Background(), path, nil, true); err != nil {
 			p.App().Flash().Errf("Delete failed with %s", err)
 		} else {
 			p.App().factory.DeleteForwarder(path)

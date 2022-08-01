@@ -37,7 +37,7 @@ func (a *Alias) Init(ctx context.Context) error {
 	if err := a.ResourceViewer.Init(ctx); err != nil {
 		return err
 	}
-	a.GetTable().GetModel().SetNamespace("*")
+	a.GetTable().GetModel().SetNamespace(client.NotNamespaced)
 
 	return nil
 }

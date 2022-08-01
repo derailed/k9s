@@ -5,7 +5,6 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell/v2"
 )
@@ -18,7 +17,6 @@ type User struct {
 // NewUser returns a new subject viewer.
 func NewUser(gvr client.GVR) ResourceViewer {
 	u := User{ResourceViewer: NewBrowser(gvr)}
-	u.GetTable().SetColorerFn(render.Subject{}.ColorerFunc())
 	u.AddBindKeysFn(u.bindKeys)
 	u.SetContextFn(u.subjectCtx)
 

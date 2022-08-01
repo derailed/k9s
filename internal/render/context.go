@@ -20,9 +20,6 @@ type Context struct {
 func (Context) ColorerFunc() ColorerFunc {
 	return func(ns string, h Header, r RowEvent) tcell.Color {
 		c := DefaultColorer(ns, h, r)
-		if r.Kind == EventAdd || r.Kind == EventUpdate {
-			return c
-		}
 		if strings.Contains(strings.TrimSpace(r.Row.Fields[0]), "*") {
 			return HighlightColor
 		}
