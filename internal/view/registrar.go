@@ -45,6 +45,9 @@ func coreViewers(vv MetaViewers) {
 	vv[client.NewGVR("v1/secrets")] = MetaViewer{
 		viewerFn: NewSecret,
 	}
+	vv[client.NewGVR("scheduling.k8s.io/v1/priorityclasses")] = MetaViewer{
+		viewerFn: NewPriorityClass,
+	}
 	vv[client.NewGVR("v1/configmaps")] = MetaViewer{
 		viewerFn: NewConfigMap,
 	}

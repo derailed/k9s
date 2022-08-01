@@ -49,6 +49,14 @@ func init() {
 		Verbs:        []string{"get", "list", "watch", "delete"},
 		Categories:   []string{"k9s"},
 	})
+	dao.MetaAccess.RegisterMeta("scheduling.k8s.io/v1/priorityclasses", metav1.APIResource{
+		Name:         "priorityclasses",
+		SingularName: "priorityclass",
+		Namespaced:   false,
+		Kind:         "PriorityClass",
+		Verbs:        []string{"get", "list", "watch", "delete"},
+		Categories:   []string{"k9s"},
+	})
 	dao.MetaAccess.RegisterMeta("v1/configmaps", metav1.APIResource{
 		Name:         "configmaps",
 		SingularName: "configmap",

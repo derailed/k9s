@@ -302,6 +302,14 @@ func (p *Pod) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 				GVR: p.GVR(),
 				FQN: client.FQN(pod.Namespace, pod.Name),
 			})
+		case "scheduling.k8s.io/v1/priorityclasses":
+			if !hasPC(&pod.Spec, n) {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: p.GVR(),
+				FQN: client.FQN(pod.Namespace, pod.Name),
+			})
 		}
 	}
 
