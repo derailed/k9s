@@ -20,7 +20,7 @@ require (
 	github.com/rakyll/hey v0.1.4
 	github.com/rs/zerolog v1.27.0
 	github.com/sahilm/fuzzy v0.1.0
-	github.com/spf13/cobra v1.4.0
+	github.com/spf13/cobra v1.5.0
 	github.com/stretchr/testify v1.8.0
 	golang.org/x/text v0.3.7
 	gopkg.in/yaml.v2 v2.4.0
