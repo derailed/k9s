@@ -29,7 +29,6 @@ func NewContainer(gvr client.GVR) ResourceViewer {
 	c.ResourceViewer = NewLogsExtender(NewBrowser(gvr), c.logOptions)
 	c.SetEnvFn(c.k9sEnv)
 	c.GetTable().SetEnterFn(c.viewLogs)
-	c.GetTable().SetColorerFn(render.Container{}.ColorerFunc())
 	c.GetTable().SetDecorateFn(c.decorateRows)
 	c.AddBindKeysFn(c.bindKeys)
 	c.GetTable().SetDecorateFn(c.portForwardIndicator)

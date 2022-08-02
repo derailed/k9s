@@ -10,7 +10,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/perf"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell/v2"
 )
@@ -27,7 +26,6 @@ func NewBenchmark(gvr client.GVR) ResourceViewer {
 	}
 	b.GetTable().SetBorderFocusColor(tcell.ColorSeaGreen)
 	b.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorSeaGreen).Attributes(tcell.AttrNone))
-	b.GetTable().SetColorerFn(render.Benchmark{}.ColorerFunc())
 	b.GetTable().SetSortCol(ageCol, true)
 	b.SetContextFn(b.benchContext)
 	b.GetTable().SetEnterFn(b.viewBench)

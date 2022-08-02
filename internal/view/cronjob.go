@@ -8,7 +8,6 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tview"
@@ -32,7 +31,6 @@ func NewCronJob(gvr client.GVR) ResourceViewer {
 	c := CronJob{ResourceViewer: NewBrowser(gvr)}
 	c.AddBindKeysFn(c.bindKeys)
 	c.GetTable().SetEnterFn(c.showJobs)
-	c.GetTable().SetColorerFn(render.CronJob{}.ColorerFunc())
 
 	return &c
 }

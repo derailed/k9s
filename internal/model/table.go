@@ -122,7 +122,7 @@ func (t *Table) Delete(ctx context.Context, path string, propagation *metav1.Del
 		return fmt.Errorf("no nuker for %q", meta.DAO.GVR())
 	}
 
-	return nuker.Delete(path, propagation, force)
+	return nuker.Delete(ctx, path, propagation, force)
 }
 
 // GetNamespace returns the model namespace.

@@ -25,7 +25,6 @@ func NewNamespace(gvr client.GVR) ResourceViewer {
 		ResourceViewer: NewBrowser(gvr),
 	}
 	n.GetTable().SetDecorateFn(n.decorate)
-	n.GetTable().SetColorerFn(render.Namespace{}.ColorerFunc())
 	n.GetTable().SetEnterFn(n.switchNs)
 	n.AddBindKeysFn(n.bindKeys)
 

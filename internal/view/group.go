@@ -5,7 +5,6 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell/v2"
 )
@@ -18,7 +17,6 @@ type Group struct {
 // NewGroup returns a new subject viewer.
 func NewGroup(gvr client.GVR) ResourceViewer {
 	g := Group{ResourceViewer: NewBrowser(gvr)}
-	g.GetTable().SetColorerFn(render.Subject{}.ColorerFunc())
 	g.AddBindKeysFn(g.bindKeys)
 	g.SetContextFn(g.subjectCtx)
 

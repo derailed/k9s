@@ -19,7 +19,6 @@ package view
 // 	o := OpenFaas{ResourceViewer: NewBrowser(gvr)}
 // 	o.AddBindKeysFn(o.bindKeys)
 // 	o.GetTable().SetEnterFn(o.showPods)
-// 	o.GetTable().SetColorerFn(render.OpenFaas{}.ColorerFunc())
 
 // 	return &o
 // }

@@ -79,7 +79,7 @@ func (p *Policy) loadClusterRoleBinding(kind, name string) (render.Policies, err
 		if !inList(nn, cr.Name) {
 			continue
 		}
-		rows = append(rows, parseRules("*", "CR:"+cr.Name, cr.Rules)...)
+		rows = append(rows, parseRules(client.NotNamespaced, "CR:"+cr.Name, cr.Rules)...)
 	}
 
 	return rows, nil

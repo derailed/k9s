@@ -2,7 +2,6 @@ package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell/v2"
 )
@@ -17,8 +16,6 @@ func NewEvent(gvr client.GVR) ResourceViewer {
 	e := Event{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	var r *render.Event
-	e.GetTable().SetColorerFn(r.ColorerFunc())
 	e.AddBindKeysFn(e.bindKeys)
 	e.GetTable().SetSortCol("LAST SEEN", false)
 

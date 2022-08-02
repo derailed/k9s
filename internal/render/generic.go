@@ -40,7 +40,9 @@ func (g *Generic) Header(ns string) Header {
 		return Header{}
 	}
 	h := make(Header, 0, len(g.table.ColumnDefinitions))
-	h = append(h, HeaderColumn{Name: "NAMESPACE"})
+	if !client.IsClusterScoped(ns) {
+		h = append(h, HeaderColumn{Name: "NAMESPACE"})
+	}
 	for i, c := range g.table.ColumnDefinitions {
 		if c.Name == ageTableCol {
 			g.ageIndex = i
@@ -71,7 +73,9 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 	}
 	r.ID = client.FQN(nns, name)
 	r.Fields = make(Fields, 0, len(g.Header(ns)))
-	r.Fields = append(r.Fields, nns)
+	if !client.IsClusterScoped(ns) {
+		r.Fields = append(r.Fields, nns)
+	}
 	var duration interface{}
 	for i, c := range row.Cells {
 		if g.ageIndex > 0 && i == g.ageIndex {

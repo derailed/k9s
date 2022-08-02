@@ -11,7 +11,6 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/perf"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
@@ -34,7 +33,6 @@ func NewPortForward(gvr client.GVR) ResourceViewer {
 	}
 	p.GetTable().SetBorderFocusColor(tcell.ColorDodgerBlue)
 	p.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorDodgerBlue).Attributes(tcell.AttrNone))
-	p.GetTable().SetColorerFn(render.PortForward{}.ColorerFunc())
 	p.GetTable().SetSortCol(ageCol, true)
 	p.SetContextFn(p.portForwardContext)
 	p.AddBindKeysFn(p.bindKeys)
@@ -162,7 +160,7 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		for _, s := range selections {
 			var pf dao.PortForward
 			pf.Init(p.App().factory, client.NewGVR("portforwards"))
-			if err := pf.Delete(s, nil, true); err != nil {
+			if err := pf.Delete(context.Background(), s, nil, true); err != nil {
 				p.App().Flash().Err(err)
 				return
 			}
@@ -184,6 +182,7 @@ func pfToHuman(s string) (string, error) {
 	if len(mm) < 6 {
 		return "", fmt.Errorf("Unable to parse selection %s", s)
 	}
+
 	return fmt.Sprintf("%s::%s %s->%s", mm[2], mm[3], mm[4], mm[5]), nil
 }
 

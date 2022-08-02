@@ -25,8 +25,8 @@ type PortForward struct {
 	NonResource
 }
 
-// Delete a portforward.
-func (p *PortForward) Delete(path string, _ *metav1.DeletionPropagation, force bool) error {
+// Delete deletes a portforward.
+func (p *PortForward) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, force bool) error {
 	p.GetFactory().DeleteForwarder(path)
 
 	return nil
