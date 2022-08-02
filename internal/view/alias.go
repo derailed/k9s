@@ -6,7 +6,6 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell/v2"
 )
@@ -23,7 +22,6 @@ func NewAlias(gvr client.GVR) ResourceViewer {
 	a := Alias{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	a.GetTable().SetColorerFn(render.Alias{}.ColorerFunc())
 	a.GetTable().SetBorderFocusColor(tcell.ColorAliceBlue)
 	a.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorAliceBlue).Attributes(tcell.AttrNone))
 	a.AddBindKeysFn(a.bindKeys)
