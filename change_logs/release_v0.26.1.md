@@ -14,18 +14,18 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ## ♫ Sounds Behind The Release ♭
 
-Oldies... but goodies...
+Oldies but goodies...
 
 * [Love In Vain - Rolling Stones](https://www.youtube.com/watch?v=ryRDcE2sB2A)
 * [Old Love - Eric Clapton](https://www.youtube.com/watch?v=qv63M6XXgGE)
 * [Warm Weather - Pieces Of A Dream](https://www.youtube.com/watch?v=hYm6fR1Zjm4)
+* [Funerailles d'antan - George Brassens](https://www.youtube.com/watch?v=-mOalHzOCCM)
 
 ---
 
 ## A Word From Our Sponsors...
 
 To all the good folks below that opted to `pay it forward` and join our sponsorship program, I salute you!
-THANK YOU!!
 
 * [Jacky Nguyen](https://github.com/nktpro)
 * [Aleksei Romanenko](https://github.com/slimus)
@@ -33,6 +33,7 @@ THANK YOU!!
 * [Mario Bris](https://github.com/mariobris)
 * [Thorsten Schifferdecker](https://github.com/curx)
 * [Lungdart](https://github.com/lungdart)
+* [Azar](https://github.com/azarudeena)
 
 ---
 
@@ -51,10 +52,10 @@ THANK YOU!!
 
 ## Resolved PR
 
-* [PR #1682](https://github.com/derailed/k9s/pull/1682) Fix persistentvolumes not showing terminating status.
-* [PR #1672](https://github.com/derailed/k9s/pull/1672) feat: allow to disable ctrl-c behavior
-* [PR #1666](https://github.com/derailed/k9s/pull/1666) feat: show usedBy for priorityclasses
-* [PR #1668](https://github.com/derailed/k9s/pull/1668) Fix PF delete with no container
+* [PR #1682](https://github.com/derailed/k9s/pull/1682) Fix: persistentvolumes not showing terminating status.
+* [PR #1672](https://github.com/derailed/k9s/pull/1672) Feat: allow to disable ctrl-c behavior
+* [PR #1666](https://github.com/derailed/k9s/pull/1666) Feat: show usedBy for priorityclasses
+* [PR #1668](https://github.com/derailed/k9s/pull/1668) Fix: PF delete with no container
 
 ---
 
