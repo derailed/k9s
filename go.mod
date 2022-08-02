@@ -11,7 +11,7 @@ require (
 	github.com/derailed/tview v0.7.2
 	github.com/fatih/color v1.13.0
 	github.com/fsnotify/fsnotify v1.5.1
-	github.com/fvbommel/sortorder v1.0.1
+	github.com/fvbommel/sortorder v1.0.2
 	github.com/gdamore/tcell/v2 v2.2.1
 	github.com/ghodss/yaml v1.0.0
 	github.com/mattn/go-colorable v0.1.12
