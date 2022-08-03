@@ -16,11 +16,15 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 Doh! Looks like I've broken windows on this last drop ;(
 
+NOTE: I currently don't have access to a windows/m1 box. So if you do please report back and help us zoom in on the issues below...
+Thank you!!
+
 ---
 
-## Resolved Issues
+## Resolved Issues (Wishfully...)
 
-* [Issue #1690](https://github.com/derailed/k9s/issues/1690) 0.26.1 stuck after exit from container shell, panels refreshed but arrow keys not works windows 10
+* [Issue #1690](https://github.com/derailed/k9s/issues/1690) 0.26.1 stuck after exit from container shell, panels refreshed but arrow keys not works windows 10.
+* [Issue #1673](https://github.com/derailed/k9s/issues/1673) Screen goes blank after existing shell while running k9s on M1
 
 ---
 
