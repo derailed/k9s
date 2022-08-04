@@ -2,6 +2,8 @@ module github.com/derailed/k9s
 
 go 1.18
 
+replace github.com/gdamore/tcell/v2 => github.com/derailed/tcell/v2 v2.3.1-rc.2
+
 require (
 	github.com/adrg/xdg v0.4.0
 	github.com/atotto/clipboard v0.1.4
