@@ -101,6 +101,12 @@ K9s is available on Linux, macOS and Windows platforms.
   ```shell
   curl.exe -A MS https://webinstall.dev/k9s | powershell
   ```
+  
+* As a [Docker Desktop Extension](https://docs.docker.com/desktop/extensions/) (for the Docker Desktop built in Kubernetes Server)
+
+  ```shell
+  docker extension install spurin/k9s-dd-extension:latest
+  ```
 
 ---
 
