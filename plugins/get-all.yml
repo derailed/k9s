@@ -10,4 +10,4 @@ plugin:
     background: false
     args:
     - -c
-    - "kubectl get-all -n $NAMESPACE | less"
+    - "kubectl --context $CONTEXT get-all -n $NAMESPACE | less"
