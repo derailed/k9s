@@ -305,6 +305,8 @@ K9s uses aliases to navigate most K8s resources.
     noExitOnCtrlC: false
     # Toggles icons display as not all terminal support these chars.
     noIcons: false
+    # Sometimes the initial shell window dimensions may be wrong, set this to true to try to fix it. Default false.
+    fixWindowSize: false
     # Logs configuration
     logger:
       # Defines the number of lines to return. Default 100
