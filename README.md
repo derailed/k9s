@@ -306,7 +306,7 @@ K9s uses aliases to navigate most K8s resources.
     # Toggles icons display as not all terminal support these chars.
     noIcons: false
     # Sometimes the initial shell window dimensions may be wrong, set this to true to try to fix it. Default false.
-    fixWindowSize: false
+    fixShellWindowSize: false
     # Logs configuration
     logger:
       # Defines the number of lines to return. Default 100
@@ -361,7 +361,7 @@ K9s uses aliases to navigate most K8s resources.
           - default
         view:
           active: dp
-    # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info) 
+    # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info)
     screenDumpDir: /tmp
   ```
 

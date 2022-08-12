@@ -21,7 +21,7 @@ type K9s struct {
 	NoExitOnCtrlC       bool                `yaml:"noExitOnCtrlC"`
 	NoIcons             bool                `yaml:"noIcons"`
 	Logger              *Logger             `yaml:"logger"`
-	FixWindowSize       bool                `yaml:"fixWindowSize"`
+	FixShellWindowSize  bool                `yaml:"fixShellWindowSize"`
 	CurrentContext      string              `yaml:"currentContext"`
 	CurrentCluster      string              `yaml:"currentCluster"`
 	Clusters            map[string]*Cluster `yaml:"clusters,omitempty"`

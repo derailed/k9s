@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -28,6 +29,8 @@ const (
 	osBetaSelector = "beta.kubernetes.io/os"
 	osSelector     = "kubernetes.io/os"
 )
+
+type TerminalSize struct{ width, height int }
 
 // Pod represents a pod viewer.
 type Pod struct {
@@ -290,16 +293,17 @@ func shellIn(a *App, fqn, co string) {
 		log.Warn().Err(err).Msgf("os detect failed")
 	}
 
-	env := make(map[string]string)
+	var terminalSize TerminalSize
+	if a.Config.K9s.FixShellWindowSize {
+		size, err := getWindowSize()
+		terminalSize = size
 
-	if a.Config.K9s.FixWindowSize {
-		if cols, lines, ok := getWindowSize(); ok {
-			env["COLUMNS"] = fmt.Sprint(cols)
-			env["LINES"] = fmt.Sprint(lines)
+		if err != nil {
+			log.Warn().Err(err).Msg("could not get terminal window size")
 		}
 	}
 
-	args := computeShellArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os, env)
+	args := computeShellArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os, terminalSize)
 
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
 	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, fqn, co), args: args}) {
@@ -307,13 +311,22 @@ func shellIn(a *App, fqn, co string) {
 	}
 }
 
-func getWindowSize() (cols int, lines int, ok bool) {
+func getWindowSize() (TerminalSize, error) {
+	var terminalSize TerminalSize
+
 	cmd := exec.Command("stty", "size")
 	cmd.Stdin = os.Stdin
-	out, _ := cmd.Output()
-	n, err := fmt.Sscanf(string(out), "%d %d", &lines, &cols)
-	ok = n == 2 && err == nil && cols > 0 && lines > 0
-	return
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return terminalSize, fmt.Errorf("Error: %v. Output: %v", err, string(out))
+	}
+
+	n, err := fmt.Sscanf(string(out), "%d %d", &terminalSize.height, &terminalSize.width)
+	if err != nil || n != 2 || terminalSize.width < 1 || terminalSize.height < 1 {
+		return terminalSize, errors.New("unexpected output")
+	}
+
+	return terminalSize, nil
 }
 
 func containerAttachIn(a *App, comp model.Component, path, co string) error {
@@ -358,17 +371,15 @@ func attachIn(a *App, path, co string) {
 	}
 }
 
-func computeShellArgs(path, co string, kcfg *string, os string, env map[string]string) []string {
+func computeShellArgs(path, co string, kcfg *string, os string, terminalSize TerminalSize) []string {
 	args := buildShellArgs("exec", path, co, kcfg)
 	if os == windowsOS {
 		return append(args, "--", powerShell)
 	}
 	args = append(args, "--")
-	if len(env) > 0 {
+	if terminalSize.width > 0 && terminalSize.height > 0 {
 		args = append(args, "env")
-		for k, v := range env {
-			args = append(args, fmt.Sprintf("%s=%s", k, v))
-		}
+		args = append(args, fmt.Sprintf("COLUMNS=%s LINES=%s", strconv.Itoa(terminalSize.width), strconv.Itoa(terminalSize.height)))
 	}
 	return append(args, "sh", "-c", shellCheck)
 }
