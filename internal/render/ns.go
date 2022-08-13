@@ -44,7 +44,7 @@ func (Namespace) Header(string) Header {
 		HeaderColumn{Name: "STATUS"},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
@@ -66,7 +66,7 @@ func (n Namespace) Render(o interface{}, _ string, r *Row) error {
 		string(ns.Status.Phase),
 		mapToStr(ns.Labels),
 		asStatus(n.diagnose(ns.Status.Phase)),
-		toAge(ns.ObjectMeta.CreationTimestamp),
+		toAge(ns.GetCreationTimestamp()),
 	}
 
 	return nil

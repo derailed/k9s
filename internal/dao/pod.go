@@ -163,7 +163,7 @@ func (p *Pod) Pod(fqn string) (string, error) {
 
 // GetInstance returns a pod instance.
 func (p *Pod) GetInstance(fqn string) (*v1.Pod, error) {
-	o, err := p.Factory.Get(p.gvr.String(), fqn, true, labels.Everything())
+	o, err := p.GetFactory().Get(p.gvr.String(), fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +226,7 @@ func (p *Pod) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 // ScanSA scans for ServiceAccount refs.
 func (p *Pod) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := p.Factory.List(p.GVR(), ns, wait, labels.Everything())
+	oo, err := p.GetFactory().List(p.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -256,7 +256,7 @@ func (p *Pod) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 // Scan scans for cluster resource refs.
 func (p *Pod) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := p.Factory.List(p.GVR(), ns, wait, labels.Everything())
+	oo, err := p.GetFactory().List(p.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -296,6 +296,14 @@ func (p *Pod) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 			})
 		case "v1/persistentvolumeclaims":
 			if !hasPVC(&pod.Spec, n) {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: p.GVR(),
+				FQN: client.FQN(pod.Namespace, pod.Name),
+			})
+		case "scheduling.k8s.io/v1/priorityclasses":
+			if !hasPC(&pod.Spec, n) {
 				continue
 			}
 			refs = append(refs, Ref{

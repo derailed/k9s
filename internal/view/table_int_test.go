@@ -58,7 +58,7 @@ func TestTableNew(t *testing.T) {
 	}
 	data.Namespace = ""
 
-	v.Update(*data, false)
+	v.Update(data, false)
 	assert.Equal(t, 3, v.GetRowCount())
 }
 
@@ -70,20 +70,49 @@ func TestTableViewFilter(t *testing.T) {
 	v.CmdBuff().SetActive(true)
 	v.CmdBuff().SetText("blee", "")
 
-	assert.Equal(t, 3, v.GetRowCount())
+	assert.Equal(t, 5, v.GetRowCount())
 }
 
 func TestTableViewSort(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
 	v.Init(makeContext())
 	v.SetModel(&mockTableModel{})
-	v.SortColCmd("NAME", true)(nil)
-	assert.Equal(t, 3, v.GetRowCount())
-	assert.Equal(t, "blee", v.GetCell(1, 0).Text)
 
-	v.SortInvertCmd(nil)
-	assert.Equal(t, 3, v.GetRowCount())
-	assert.Equal(t, "fred", v.GetCell(1, 0).Text)
+	uu := map[string]struct {
+		sortCol  string
+		sorted   []string
+		reversed []string
+	}{
+		"by_name": {
+			sortCol:  "NAME",
+			sorted:   []string{"r0", "r1", "r2", "r3"},
+			reversed: []string{"r3", "r2", "r1", "r0"},
+		},
+		"by_age": {
+			sortCol:  "AGE",
+			sorted:   []string{"r0", "r1", "r2", "r3"},
+			reversed: []string{"r3", "r2", "r1", "r0"},
+		},
+		"by_fred": {
+			sortCol:  "FRED",
+			sorted:   []string{"r3", "r2", "r0", "r1"},
+			reversed: []string{"r1", "r0", "r2", "r3"},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		v.SortColCmd(u.sortCol, true)(nil)
+		assert.Equal(t, len(u.sorted)+1, v.GetRowCount())
+		for i, s := range u.sorted {
+			assert.Equal(t, s, v.GetCell(i+1, 0).Text)
+		}
+		v.SortInvertCmd(nil)
+		assert.Equal(t, len(u.reversed)+1, v.GetRowCount())
+		for i, s := range u.reversed {
+			assert.Equal(t, s, v.GetCell(i+1, 0).Text)
+		}
+	}
 }
 
 // ----------------------------------------------------------------------------
@@ -98,7 +127,7 @@ func (t *mockTableModel) SetLabelFilter(string)              {}
 func (t *mockTableModel) Empty() bool                        { return false }
 func (t *mockTableModel) Count() int                         { return 1 }
 func (t *mockTableModel) HasMetrics() bool                   { return true }
-func (t *mockTableModel) Peek() render.TableData             { return makeTableData() }
+func (t *mockTableModel) Peek() *render.TableData            { return makeTableData() }
 func (t *mockTableModel) Refresh(context.Context) error      { return nil }
 func (t *mockTableModel) ClusterWide() bool                  { return false }
 func (t *mockTableModel) GetNamespace() string               { return "blee" }
@@ -126,31 +155,39 @@ func (t *mockTableModel) ToYAML(ctx context.Context, path string) (string, error
 func (t *mockTableModel) InNamespace(string) bool      { return true }
 func (t *mockTableModel) SetRefreshRate(time.Duration) {}
 
-func makeTableData() render.TableData {
+func makeTableData() *render.TableData {
 	t := render.NewTableData()
-
 	t.Header = render.Header{
 		render.HeaderColumn{Name: "NAMESPACE"},
 		render.HeaderColumn{Name: "NAME", Align: tview.AlignRight},
 		render.HeaderColumn{Name: "FRED"},
-		render.HeaderColumn{Name: "AGE", Time: true, Decorator: render.AgeDecorator},
+		render.HeaderColumn{Name: "AGE", Time: true},
 	}
 	t.RowEvents = render.RowEvents{
 		render.RowEvent{
 			Row: render.Row{
-				Fields: render.Fields{"ns1", "blee", "10", "3m"},
+				Fields: render.Fields{"ns1", "r3", "10", "3y125d"},
 			},
 		},
 		render.RowEvent{
 			Row: render.Row{
-				Fields: render.Fields{"ns1", "fred", "15", "1m"},
+				Fields: render.Fields{"ns1", "r2", "15", "2y12d"},
 			},
 			Deltas: render.DeltaRow{"", "", "20", ""},
 		},
+		render.RowEvent{
+			Row: render.Row{
+				Fields: render.Fields{"ns1", "r1", "20", "19h"},
+			},
+		},
+		render.RowEvent{
+			Row: render.Row{
+				Fields: render.Fields{"ns1", "r0", "15", "10s"},
+			},
+		},
 	}
-	t.Namespace = ""
 
-	return *t
+	return t
 }
 
 func makeContext() context.Context {

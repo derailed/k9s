@@ -57,7 +57,7 @@ func (p *PortForwardExtender) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 	if p.App().factory.Forwarders().IsPodForwarded(path) {
-		p.App().Flash().Errf("A PortForward already exist for pod %s", pod.Name)
+		p.App().Flash().Errf("A PortForward already exists for pod %s", pod.Name)
 		return nil
 	}
 	if err := showFwdDialog(p, podName, startFwdCB); err != nil {

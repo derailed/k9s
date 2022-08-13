@@ -45,7 +45,7 @@ func (Node) Header(_ string) Header {
 		HeaderColumn{Name: "MEM/A", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
@@ -95,7 +95,7 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 		toMi(a.mem),
 		mapToStr(no.Labels),
 		asStatus(n.diagnose(statuses)),
-		toAge(no.ObjectMeta.CreationTimestamp),
+		toAge(no.GetCreationTimestamp()),
 	}
 
 	return nil

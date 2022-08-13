@@ -60,7 +60,7 @@ type Tabular interface {
 	Count() int
 
 	// Peek returns current model data.
-	Peek() render.TableData
+	Peek() *render.TableData
 
 	// Watch watches a given resource for changes.
 	Watch(context.Context) error

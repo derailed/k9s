@@ -29,7 +29,7 @@ func (RoleBinding) Header(ns string) Header {
 		HeaderColumn{Name: "SUBJECTS"},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	)
 }
 
@@ -59,7 +59,7 @@ func (r RoleBinding) Render(o interface{}, ns string, row *Row) error {
 		ss,
 		mapToStr(rb.Labels),
 		"",
-		toAge(rb.ObjectMeta.CreationTimestamp),
+		toAge(rb.GetCreationTimestamp()),
 	)
 
 	return nil

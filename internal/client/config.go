@@ -75,6 +75,7 @@ func (c *Config) SwitchContext(name string) error {
 	flags := genericclioptions.NewConfigFlags(UsePersistentConfig)
 	flags.Context = &name
 	flags.Timeout = c.flags.Timeout
+	flags.KubeConfig = c.flags.KubeConfig
 	c.flags = flags
 
 	return nil

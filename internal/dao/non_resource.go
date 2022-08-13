@@ -20,14 +20,24 @@ type NonResource struct {
 // Init initializes the resource.
 func (n *NonResource) Init(f Factory, gvr client.GVR) {
 	n.mx.Lock()
-	defer n.mx.Unlock()
-	n.Factory, n.gvr = f, gvr
+	{
+		n.Factory, n.gvr = f, gvr
+	}
+	n.mx.Unlock()
+}
+
+func (n *NonResource) GetFactory() Factory {
+	n.mx.RLock()
+	defer n.mx.RUnlock()
+
+	return n.Factory
 }
 
 // GVR returns a gvr.
 func (n *NonResource) GVR() string {
 	n.mx.RLock()
 	defer n.mx.RUnlock()
+
 	return n.gvr.String()
 }
 

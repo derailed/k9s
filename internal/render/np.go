@@ -29,7 +29,7 @@ func (NetworkPolicy) Header(ns string) Header {
 		HeaderColumn{Name: "EGR-BLOCK"},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
@@ -60,7 +60,7 @@ func (n NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
 		eb,
 		mapToStr(np.Labels),
 		"",
-		toAge(np.ObjectMeta.CreationTimestamp),
+		toAge(np.GetCreationTimestamp()),
 	}
 
 	return nil

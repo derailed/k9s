@@ -29,7 +29,7 @@ func (Service) Header(ns string) Header {
 		HeaderColumn{Name: "PORTS", Wide: false},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
@@ -56,7 +56,7 @@ func (s Service) Render(o interface{}, ns string, r *Row) error {
 		ToPorts(svc.Spec.Ports),
 		mapToStr(svc.Labels),
 		asStatus(s.diagnose()),
-		toAge(svc.ObjectMeta.CreationTimestamp),
+		toAge(svc.GetCreationTimestamp()),
 	}
 
 	return nil

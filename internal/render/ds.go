@@ -28,7 +28,7 @@ func (DaemonSet) Header(ns string) Header {
 		HeaderColumn{Name: "AVAILABLE", Align: tview.AlignRight},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
@@ -55,7 +55,7 @@ func (d DaemonSet) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(int(ds.Status.NumberAvailable)),
 		mapToStr(ds.Labels),
 		asStatus(d.diagnose(ds.Status.DesiredNumberScheduled, ds.Status.NumberReady)),
-		toAge(ds.ObjectMeta.CreationTimestamp),
+		toAge(ds.GetCreationTimestamp()),
 	}
 
 	return nil

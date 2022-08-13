@@ -31,7 +31,7 @@ func (Job) Header(ns string) Header {
 		HeaderColumn{Name: "CONTAINERS", Wide: true},
 		HeaderColumn{Name: "IMAGES", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
@@ -60,7 +60,7 @@ func (j Job) Render(o interface{}, ns string, r *Row) error {
 		cc,
 		ii,
 		asStatus(j.diagnose(ready, job.Status.CompletionTime)),
-		toAge(job.ObjectMeta.CreationTimestamp),
+		toAge(job.GetCreationTimestamp()),
 	}
 
 	return nil

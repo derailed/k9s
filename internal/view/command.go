@@ -163,8 +163,7 @@ func (c *Command) defaultCmd() error {
 
 	if err := c.run(cmd, "", true); err != nil {
 		log.Error().Err(err).Msgf("Default run command failed %q", cmd)
-		c.app.cowCmd(err.Error())
-		return err
+		return c.run("pod", "", true)
 	}
 	return nil
 }

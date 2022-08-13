@@ -18,6 +18,7 @@ type K9s struct {
 	Logoless            bool                `yaml:"logoless"`
 	Crumbsless          bool                `yaml:"crumbsless"`
 	ReadOnly            bool                `yaml:"readOnly"`
+	NoExitOnCtrlC       bool                `yaml:"noExitOnCtrlC"`
 	NoIcons             bool                `yaml:"noIcons"`
 	Logger              *Logger             `yaml:"logger"`
 	CurrentContext      string              `yaml:"currentContext"`
@@ -166,7 +167,6 @@ func (k *K9s) ActiveCluster() *Cluster {
 
 func (k *K9s) GetScreenDumpDir() string {
 	screenDumpDir := k.ScreenDumpDir
-
 	if k.manualScreenDumpDir != nil && *k.manualScreenDumpDir != "" {
 		screenDumpDir = *k.manualScreenDumpDir
 	}

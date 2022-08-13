@@ -23,7 +23,7 @@ const initRefreshRate = 300 * time.Millisecond
 // TableListener represents a table model listener.
 type TableListener interface {
 	// TableDataChanged notifies the model data changed.
-	TableDataChanged(render.TableData)
+	TableDataChanged(*render.TableData)
 
 	// TableLoadFailed notifies the load failed.
 	TableLoadFailed(error)
@@ -122,7 +122,7 @@ func (t *Table) Delete(ctx context.Context, path string, propagation *metav1.Del
 		return fmt.Errorf("no nuker for %q", meta.DAO.GVR())
 	}
 
-	return nuker.Delete(path, propagation, force)
+	return nuker.Delete(ctx, path, propagation, force)
 }
 
 // GetNamespace returns the model namespace.
@@ -153,16 +153,16 @@ func (t *Table) ClusterWide() bool {
 
 // Empty returns true if no model data.
 func (t *Table) Empty() bool {
-	return len(t.data.RowEvents) == 0
+	return t.data.Empty()
 }
 
 // Count returns the row count.
 func (t *Table) Count() int {
-	return len(t.data.RowEvents)
+	return t.data.Count()
 }
 
 // Peek returns model data.
-func (t *Table) Peek() render.TableData {
+func (t *Table) Peek() *render.TableData {
 	t.mx.RLock()
 	defer t.mx.RUnlock()
 
@@ -278,7 +278,7 @@ func (t *Table) reconcile(ctx context.Context) error {
 	return nil
 }
 
-func (t *Table) fireTableChanged(data render.TableData) {
+func (t *Table) fireTableChanged(data *render.TableData) {
 	t.mx.RLock()
 	defer t.mx.RUnlock()
 

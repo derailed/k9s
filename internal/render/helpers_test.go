@@ -54,17 +54,18 @@ func TestLabelize(t *testing.T) {
 
 func TestDurationToSecond(t *testing.T) {
 	uu := map[string]struct {
-		s, e string
+		s string
+		e int64
 	}{
-		"seconds":                 {s: "22s", e: "22"},
-		"minutes":                 {s: "22m", e: "1320"},
-		"hours":                   {s: "12h", e: "43200"},
-		"days":                    {s: "3d", e: "259200"},
-		"day_hour":                {s: "3d9h", e: "291600"},
-		"day_hour_minute":         {s: "2d22h3m", e: "252180"},
-		"day_hour_minute_seconds": {s: "2d22h3m50s", e: "252230"},
-		"year":                    {s: "3y", e: "94608000"},
-		"year_day":                {s: "1y2d", e: "31708800"},
+		"seconds":                 {s: "22s", e: 22},
+		"minutes":                 {s: "22m", e: 1320},
+		"hours":                   {s: "12h", e: 43200},
+		"days":                    {s: "3d", e: 259200},
+		"day_hour":                {s: "3d9h", e: 291600},
+		"day_hour_minute":         {s: "2d22h3m", e: 252180},
+		"day_hour_minute_seconds": {s: "2d22h3m50s", e: 252230},
+		"year":                    {s: "3y", e: 94608000},
+		"year_day":                {s: "1y2d", e: 31708800},
 	}
 
 	for k := range uu {
@@ -90,36 +91,38 @@ func TestToAge(t *testing.T) {
 		t time.Time
 		e string
 	}{
-		"good": {
-			t: time.Now().Add(-10 * time.Second),
-			e: "10",
+		"zero": {
+			t: time.Time{},
+			e: UnknownValue,
 		},
 	}
 
 	for k := range uu {
 		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, uc.e, toAge(metav1.Time{Time: uc.t})[:2])
+			assert.Equal(t, uc.e, toAge(metav1.Time{Time: uc.t}))
 		})
 	}
 }
 
-func TestToAgeHuma(t *testing.T) {
+func TestToAgeHuman(t *testing.T) {
 	uu := map[string]struct {
-		t time.Time
-		e string
+		t, e string
 	}{
+		"blank": {
+			t: "",
+			e: UnknownValue,
+		},
 		"good": {
-			t: time.Now().Add(-10 * time.Second),
-			e: "10",
+			t: time.Now().Add(-10 * time.Second).Format(time.RFC3339Nano),
+			e: "10s",
 		},
 	}
 
 	for k := range uu {
-		uc := uu[k]
+		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			ti := toAge(metav1.Time{Time: uc.t})
-			assert.Equal(t, uc.e, toAgeHuman(ti)[:2])
+			assert.Equal(t, u.e, toAgeHuman(u.t))
 		})
 	}
 }
@@ -376,7 +379,7 @@ func BenchmarkMapToStr(b *testing.B) {
 func TestRunesToNum(t *testing.T) {
 	uu := map[string]struct {
 		rr []rune
-		e  int
+		e  int64
 	}{
 		"0": {
 			rr: []rune(""),

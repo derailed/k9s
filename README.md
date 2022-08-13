@@ -301,6 +301,8 @@ K9s uses aliases to navigate most K8s resources.
     crumbsless: false
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
     readOnly: false
+    # Toggles whether k9s should exit when CTRL-C is pressed. When set to true, you will need to exist k9s via the :quit command. Default is false.
+    noExitOnCtrlC: false
     # Toggles icons display as not all terminal support these chars.
     noIcons: false
     # Logs configuration
@@ -447,7 +449,7 @@ Entering the command mode and typing a resource name or alias, could be cumberso
 
 As of v0.25.0, you can leverage the `FastForwards` feature to tell K9s how to default port-forwards. In situations where you are dealing with multiple containers or containers exposing multiple ports, it can be cumbersome to specify the desired port-forward from the dialog as in most cases, you already know which container/port tuple you desire. For these use cases, you can now annotate your manifests with the following annotations:
 
-1. k9scli.io/auto-portforwards -> activates one or more port-forwards directly bypassing the port-forward dialog all together.
+1. k9scli.io/auto-port-forwards -> activates one or more port-forwards directly bypassing the port-forward dialog all together.
 2. k9scli.io/portforwards      -> pre-selects one or more port-forwards when launching the port-forward dialog.
 
 The annotation value takes on the shape `container-name::[local-port:]container-port`

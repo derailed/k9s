@@ -49,6 +49,11 @@ func (b *Browser) Init(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	colorerFn := render.DefaultColorer
+	if r, ok := model.Registry[b.GVR().String()]; ok {
+		colorerFn = r.Renderer.ColorerFunc()
+	}
+	b.GetTable().SetColorerFn(colorerFn)
 
 	if err = b.Table.Init(ctx); err != nil {
 		return err
@@ -222,7 +227,7 @@ func (b *Browser) Aliases() []string {
 // Model Protocol...
 
 // TableDataChanged notifies view new data is available.
-func (b *Browser) TableDataChanged(data render.TableData) {
+func (b *Browser) TableDataChanged(data *render.TableData) {
 	var cancel context.CancelFunc
 	b.mx.RLock()
 	cancel = b.cancelFn
@@ -406,6 +411,10 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
+	if client.IsAllNamespace(ns) {
+		b.GetTable().SetSortCol("NAMESPACE", true)
+	}
+
 	if err := b.app.switchNS(ns); err != nil {
 		b.App().Flash().Err(err)
 		return nil
@@ -523,7 +532,7 @@ func (b *Browser) simpleDelete(selections []string, msg string) {
 				b.app.Flash().Errf("Invalid nuker %T", b.accessor)
 				continue
 			}
-			if err := nuker.Delete(sel, nil, true); err != nil {
+			if err := nuker.Delete(context.Background(), sel, nil, true); err != nil {
 				b.app.Flash().Errf("Delete failed with `%s", err)
 			} else {
 				b.app.factory.DeleteForwarder(sel)

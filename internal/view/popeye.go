@@ -23,7 +23,6 @@ func NewPopeye(gvr client.GVR) ResourceViewer {
 	p := Popeye{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	p.GetTable().SetColorerFn(render.Popeye{}.ColorerFunc())
 	p.GetTable().SetBorderFocusColor(tcell.ColorMediumSpringGreen)
 	p.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorMediumSpringGreen).Attributes(tcell.AttrNone))
 	p.GetTable().SetSortCol("SCORE%", true)
@@ -43,7 +42,7 @@ func (p *Popeye) Init(ctx context.Context) error {
 	return nil
 }
 
-func (p *Popeye) decorateRows(data render.TableData) render.TableData {
+func (p *Popeye) decorateRows(data *render.TableData) {
 	var sum int
 	for _, re := range data.RowEvents {
 		n, err := strconv.Atoi(re.Row.Fields[1])
@@ -58,8 +57,6 @@ func (p *Popeye) decorateRows(data render.TableData) render.TableData {
 		letter = grade(score)
 	}
 	p.GetTable().Extras = fmt.Sprintf("Score %d -- %s", score, letter)
-
-	return data
 }
 
 func (p *Popeye) bindKeys(aa ui.KeyActions) {

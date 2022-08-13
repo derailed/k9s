@@ -29,7 +29,7 @@ func (Ingress) Header(ns string) Header {
 		HeaderColumn{Name: "ADDRESS"},
 		HeaderColumn{Name: "PORTS"},
 		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
@@ -54,7 +54,7 @@ func (i Ingress) Render(o interface{}, ns string, r *Row) error {
 		toAddress(ing.Status.LoadBalancer),
 		toTLSPorts(ing.Spec.TLS),
 		mapToStr(ing.Labels),
-		toAge(ing.ObjectMeta.CreationTimestamp),
+		toAge(ing.GetCreationTimestamp()),
 	}
 
 	return nil

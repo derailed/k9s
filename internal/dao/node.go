@@ -52,7 +52,7 @@ func (n *Node) ToggleCordon(path string, cordon bool) error {
 		}
 		return fmt.Errorf("node is already uncordoned")
 	}
-	dial, err := n.Factory.Client().Dial()
+	dial, err := n.GetFactory().Client().Dial()
 	if err != nil {
 		return err
 	}
@@ -84,7 +84,7 @@ func (o DrainOptions) toDrainHelper(k kubernetes.Interface, w io.Writer) drain.H
 func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
 	_ = n.ToggleCordon(path, true)
 
-	dial, err := n.Factory.Client().Dial()
+	dial, err := n.GetFactory().Client().Dial()
 	if err != nil {
 		return err
 	}
@@ -109,14 +109,19 @@ func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
 
 // Get returns a node resource.
 func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
-	o, err := n.Resource.Get(ctx, path)
+	oo, err := n.Resource.List(ctx, "")
 	if err != nil {
-		return o, err
+		return nil, err
 	}
 
-	u, ok := o.(*unstructured.Unstructured)
-	if !ok {
-		return nil, fmt.Errorf("expecting *unstructured.Unstructured but got `%T", o)
+	var raw *unstructured.Unstructured
+	for _, o := range oo {
+		if u, ok := o.(*unstructured.Unstructured); ok && u.GetName() == path {
+			raw = u
+		}
+	}
+	if raw == nil {
+		return nil, fmt.Errorf("unable to locate node %s", path)
 	}
 
 	var nmx *mv1beta1.NodeMetrics
@@ -124,7 +129,7 @@ func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
 		nmx, _ = client.DialMetrics(n.Client()).FetchNodeMetrics(ctx, path)
 	}
 
-	return &render.NodeWithMetrics{Raw: u, MX: nmx}, nil
+	return &render.NodeWithMetrics{Raw: raw, MX: nmx}, nil
 }
 
 // List returns a collection of node resources.
@@ -165,7 +170,7 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 // CountPods counts the pods scheduled on a given node.
 func (n *Node) CountPods(nodeName string) (int, error) {
 	var count int
-	oo, err := n.Factory.List("v1/pods", client.AllNamespaces, false, labels.Everything())
+	oo, err := n.GetFactory().List("v1/pods", client.AllNamespaces, false, labels.Everything())
 	if err != nil {
 		return 0, err
 	}
@@ -189,7 +194,7 @@ func (n *Node) CountPods(nodeName string) (int, error) {
 
 // GetPods returns all pods running on given node.
 func (n *Node) GetPods(nodeName string) ([]*v1.Pod, error) {
-	oo, err := n.Factory.List("v1/pods", client.AllNamespaces, false, labels.Everything())
+	oo, err := n.GetFactory().List("v1/pods", client.AllNamespaces, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

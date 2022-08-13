@@ -29,7 +29,7 @@ func (ScreenDump) Header(ns string) Header {
 		HeaderColumn{Name: "NAME"},
 		HeaderColumn{Name: "DIR"},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 

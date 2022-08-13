@@ -67,7 +67,7 @@ func (t *mockModel) SetLabelFilter(string)              {}
 func (t *mockModel) Empty() bool                        { return false }
 func (t *mockModel) Count() int                         { return 1 }
 func (t *mockModel) HasMetrics() bool                   { return true }
-func (t *mockModel) Peek() render.TableData             { return makeTableData() }
+func (t *mockModel) Peek() *render.TableData            { return makeTableData() }
 func (t *mockModel) Refresh(context.Context) error      { return nil }
 func (t *mockModel) ClusterWide() bool                  { return false }
 func (t *mockModel) GetNamespace() string               { return "blee" }
@@ -94,7 +94,7 @@ func (t *mockModel) ToYAML(ctx context.Context, path string) (string, error) {
 func (t *mockModel) InNamespace(string) bool      { return true }
 func (t *mockModel) SetRefreshRate(time.Duration) {}
 
-func makeTableData() render.TableData {
+func makeTableData() *render.TableData {
 	t := render.NewTableData()
 	t.Namespace = ""
 	t.Header = render.Header{
@@ -117,7 +117,7 @@ func makeTableData() render.TableData {
 		},
 	}
 
-	return *t
+	return t
 }
 
 func makeContext() context.Context {

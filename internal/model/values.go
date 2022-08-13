@@ -182,7 +182,7 @@ func (v *Values) refresh(ctx context.Context) error {
 	return nil
 }
 
-func (v *Values) reconcile(ctx context.Context) error {
+func (v *Values) reconcile(_ context.Context) error {
 	v.fireResourceChanged(v.lines, v.filter(v.query, v.lines))
 
 	return nil

@@ -92,7 +92,6 @@ func showPods(app *App, path, labelSel, fieldSel string) {
 
 	v := NewPod(client.NewGVR("v1/pods"))
 	v.SetContextFn(podCtx(app, path, labelSel, fieldSel))
-	v.GetTable().SetColorerFn(render.Pod{}.ColorerFunc())
 
 	ns, _ := client.Namespaced(path)
 	if err := app.Config.SetActiveNamespace(ns); err != nil {
@@ -179,9 +178,9 @@ func fqn(ns, n string) string {
 	return ns + "/" + n
 }
 
-func decorateCpuMemHeaderRows(app *App, data render.TableData) render.TableData {
+func decorateCpuMemHeaderRows(app *App, data *render.TableData) *render.TableData {
 	for colIndex, header := range data.Header {
-		check := ""
+		var check string
 		if header.Name == "%CPU/L" {
 			check = "cpu"
 		}

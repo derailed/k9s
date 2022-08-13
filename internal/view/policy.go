@@ -5,7 +5,6 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell/v2"
 )
@@ -30,7 +29,6 @@ func NewPolicy(app *App, subject, name string) *Policy {
 		subjectKind:    subject,
 		subjectName:    name,
 	}
-	p.GetTable().SetColorerFn(render.Policy{}.ColorerFunc())
 	p.AddBindKeysFn(p.bindKeys)
 	p.GetTable().SetSortCol(nameCol, false)
 	p.SetContextFn(p.subjectCtx)

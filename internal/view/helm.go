@@ -6,9 +6,9 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell/v2"
+	"github.com/rs/zerolog/log"
 )
 
 // Helm represents a helm chart view.
@@ -23,7 +23,6 @@ func NewHelm(gvr client.GVR) ResourceViewer {
 	c := Helm{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	c.GetTable().SetColorerFn(render.Helm{}.ColorerFunc())
 	c.GetTable().SetBorderFocusColor(tcell.ColorMediumSpringGreen)
 	c.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorMediumSpringGreen).Attributes(tcell.AttrNone))
 	c.AddBindKeysFn(c.bindKeys)
@@ -66,7 +65,10 @@ func (c *Helm) getValsCmd() func(evt *tcell.EventKey) *tcell.EventKey {
 
 func (c *Helm) toggleValuesCmd(evt *tcell.EventKey) *tcell.EventKey {
 	c.Values.ToggleValues()
-	c.Values.Refresh(c.defaultCtx())
+	if err := c.Values.Refresh(c.defaultCtx()); err != nil {
+		log.Error().Err(err).Msgf("helm refresh failed")
+		return nil
+	}
 	c.App().Flash().Infof("Values toggled")
 	return nil
 }

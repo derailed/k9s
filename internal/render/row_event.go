@@ -210,24 +210,6 @@ func (r RowEvents) Sort(ns string, sortCol int, isDuration, numCol, asc bool) {
 		IsDuration: isDuration,
 	}
 	sort.Sort(t)
-
-	iids, fields := map[string][]string{}, make(StringSet, 0, len(r))
-	for _, re := range r {
-		field := re.Row.Fields[sortCol]
-		if isDuration {
-			field = toAgeDuration(field)
-		}
-		fields = fields.Add(field)
-		iids[field] = append(iids[field], re.Row.ID)
-	}
-
-	ids := make([]string, 0, len(r))
-	for _, field := range fields {
-		sort.StringSlice(iids[field]).Sort()
-		ids = append(ids, iids[field]...)
-	}
-	s := IdSorter{Ids: ids, Events: r}
-	sort.Sort(s)
 }
 
 // ----------------------------------------------------------------------------
@@ -252,7 +234,13 @@ func (r RowEventSorter) Swap(i, j int) {
 
 func (r RowEventSorter) Less(i, j int) bool {
 	f1, f2 := r.Events[i].Row.Fields, r.Events[j].Row.Fields
-	return Less(r.Asc, r.IsNumber, r.IsDuration, f1[r.Index], f2[r.Index])
+	id1, id2 := r.Events[i].Row.ID, r.Events[j].Row.ID
+	less := Less(r.IsNumber, r.IsDuration, id1, id2, f1[r.Index], f2[r.Index])
+	if r.Asc {
+		return less
+	}
+
+	return !less
 }
 
 // ----------------------------------------------------------------------------

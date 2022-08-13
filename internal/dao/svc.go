@@ -48,7 +48,7 @@ func (s *Service) Pod(fqn string) (string, error) {
 
 // GetInstance returns a service instance.
 func (s *Service) GetInstance(fqn string) (*v1.Service, error) {
-	o, err := s.Factory.Get(s.gvr.String(), fqn, true, labels.Everything())
+	o, err := s.GetFactory().Get(s.gvr.String(), fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
