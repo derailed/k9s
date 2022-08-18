@@ -14,7 +14,7 @@ plugin:
         # Check dependencies
         command -v jq >/dev/null || { echo -e "jq is not installed (https://stedolan.github.io/jq/)\nPress 'q' to close" | less; exit 1; }
         # Extract node name and container ID
-        POD_DATA="$(kubectl get pod/$POD -o json)"
+        POD_DATA="$(kubectl get pod/$POD -o json --namespace $NAMESPACE --context $CONTEXT)"
         # ${...} is used to prevent variable substitution by k9s (e.g. $POD_DATA)
         NODE_NAME=$(echo "${POD_DATA}" | jq -r '.spec.nodeName')
         CONTAINER_ID=$(echo "${POD_DATA}" | jq -r '.status.containerStatuses[] | select(.name == "$COL-NAME") | .containerID ' | grep -oP '(?<=containerd://).*')
