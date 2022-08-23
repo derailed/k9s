@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
@@ -20,6 +19,7 @@ import (
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
+	"golang.design/x/clipboard"
 )
 
 const (
@@ -408,9 +408,10 @@ func (l *Log) SaveCmd(*tcell.EventKey) *tcell.EventKey {
 
 func (l *Log) cpCmd(*tcell.EventKey) *tcell.EventKey {
 	l.app.Flash().Info("Content copied to clipboard...")
-	if err := clipboard.WriteAll(l.logs.GetText(true)); err != nil {
+	if err := clipboard.Init(); err != nil {
 		l.app.Flash().Err(err)
 	}
+	clipboard.Write(clipboard.FmtText, []byte(l.logs.GetText(true)))
 	return nil
 }
 

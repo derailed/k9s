@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
 	"github.com/sahilm/fuzzy"
+	"golang.design/x/clipboard"
 )
 
 const detailsTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
@@ -294,9 +294,10 @@ func (d *Details) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (d *Details) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	d.app.Flash().Info("Content copied to clipboard...")
-	if err := clipboard.WriteAll(d.text.GetText(true)); err != nil {
+	if err := clipboard.Init(); err != nil {
 		d.app.Flash().Err(err)
 	}
+	clipboard.Write(clipboard.FmtText, []byte(d.text.GetText(true)))
 
 	return nil
 }

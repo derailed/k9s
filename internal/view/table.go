@@ -5,13 +5,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
+	"golang.design/x/clipboard"
 )
 
 // Table represents a table viewer.
@@ -211,9 +211,10 @@ func (t *Table) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	_, n := client.Namespaced(path)
 	log.Debug().Msgf("Copied selection to clipboard %q", n)
 	t.app.Flash().Info("Current selection copied to clipboard...")
-	if err := clipboard.WriteAll(n); err != nil {
+	if err := clipboard.Init(); err != nil {
 		t.app.Flash().Err(err)
 	}
+	clipboard.Write(clipboard.FmtText, []byte(n))
 
 	return nil
 }
