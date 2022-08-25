@@ -2,6 +2,7 @@ package view
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -214,7 +215,9 @@ func (t *Table) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if err := clipboard.Init(); err != nil {
 		t.app.Flash().Err(err)
 	}
-	clipboard.Write(clipboard.FmtText, []byte(n))
+	if clipboard.Write(clipboard.FmtText, []byte(n)) == nil {
+		t.app.Flash().Err(errors.New("Failed to write to clipboard"))
+	}
 
 	return nil
 }

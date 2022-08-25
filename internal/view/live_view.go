@@ -2,6 +2,7 @@ package view
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -346,7 +347,9 @@ func (v *LiveView) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if err := clipboard.Init(); err != nil {
 		v.app.Flash().Err(err)
 	}
-	clipboard.Write(clipboard.FmtText, []byte(v.text.GetText(true)))
+	if clipboard.Write(clipboard.FmtText, []byte(v.text.GetText(true))) == nil {
+		v.app.Flash().Err(errors.New("Failed to write to clipboard"))
+	}
 
 	return nil
 }

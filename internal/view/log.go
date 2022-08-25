@@ -2,6 +2,7 @@ package view
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -411,7 +412,9 @@ func (l *Log) cpCmd(*tcell.EventKey) *tcell.EventKey {
 	if err := clipboard.Init(); err != nil {
 		l.app.Flash().Err(err)
 	}
-	clipboard.Write(clipboard.FmtText, []byte(l.logs.GetText(true)))
+	if clipboard.Write(clipboard.FmtText, []byte(l.logs.GetText(true))) == nil {
+		l.app.Flash().Err(errors.New("Failed to write to clipboard"))
+	}
 	return nil
 }
 
