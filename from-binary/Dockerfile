@@ -1,7 +1,7 @@
 FROM python:3-alpine3.12
 
-ARG KUBECTL_VERSION="v1.18.2"
-ARG K9S_VERSION="v0.24.15"
+ARG KUBECTL_VERSION="v1.20.15"
+ARG K9S_VERSION="v0.26.0"
 
 
 RUN apk add --update ca-certificates \
