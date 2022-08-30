@@ -213,10 +213,11 @@ func (t *Table) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	log.Debug().Msgf("Copied selection to clipboard %q", n)
 	t.app.Flash().Info("Current selection copied to clipboard...")
 	if err := clipboard.Init(); err != nil {
-		t.app.Flash().Err(err)
-	}
-	if clipboard.Write(clipboard.FmtText, []byte(n)) == nil {
-		t.app.Flash().Err(errors.New("Failed to write to clipboard"))
+		panic(err)
+	} else {
+		if clipboard.Write(clipboard.FmtText, []byte(n)) == nil {
+			t.app.Flash().Err(errors.New("Failed to write to clipboard"))
+		}
 	}
 
 	return nil

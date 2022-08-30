@@ -296,10 +296,11 @@ func (d *Details) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (d *Details) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	d.app.Flash().Info("Content copied to clipboard...")
 	if err := clipboard.Init(); err != nil {
-		d.app.Flash().Err(err)
-	}
-	if clipboard.Write(clipboard.FmtText, []byte(d.text.GetText(true))) == nil {
-		d.app.Flash().Err(errors.New("Failed to write to clipboard"))
+		panic(err)
+	} else {
+		if clipboard.Write(clipboard.FmtText, []byte(d.text.GetText(true))) == nil {
+			d.app.Flash().Err(errors.New("Failed to write to clipboard"))
+		}
 	}
 
 	return nil
