@@ -69,6 +69,7 @@ func (l *Logger) BufferActive(state bool, k model.BufferKind) {
 func (l *Logger) bindKeys() {
 	l.actions.Set(ui.KeyActions{
 		tcell.KeyEscape: ui.NewKeyAction("Back", l.resetCmd, false),
+		ui.BackKey:      ui.NewKeyAction("Back", l.resetCmd, false),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.saveCmd, false),
 		ui.KeyC:         ui.NewKeyAction("Copy", l.cpCmd, true),
 		ui.KeySlash:     ui.NewSharedKeyAction("Filter Mode", l.activateCmd, false),

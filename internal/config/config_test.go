@@ -210,6 +210,7 @@ func TestConfigSaveFile(t *testing.T) {
 	cfg.K9s.Logger.BufferSize = 800
 	cfg.K9s.CurrentContext = "blee"
 	cfg.K9s.CurrentCluster = "blee"
+	cfg.K9s.CustomBackButton = "q"
 	cfg.Validate()
 	path := filepath.Join("/tmp", "k9s.yml")
 	err := cfg.SaveFile(path)
@@ -285,6 +286,7 @@ var expectedConfig = `k9s:
   crumbsless: false
   readOnly: true
   noExitOnCtrlC: false
+	customBackButton: q
   noIcons: false
   logger:
     tail: 500

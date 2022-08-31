@@ -109,6 +109,8 @@ const (
 	KeyShiftZ
 )
 
+var BackKey = tcell.KeyEscape
+
 // NumKeys tracks number keys.
 var NumKeys = map[int]tcell.Key{
 	0: Key0,

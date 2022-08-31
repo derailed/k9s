@@ -135,6 +135,7 @@ func (v *LiveView) bindKeys() {
 	v.actions.Set(ui.KeyActions{
 		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", v.filterCmd, false),
 		tcell.KeyEscape: ui.NewKeyAction("Back", v.resetCmd, false),
+		ui.BackKey:      ui.NewKeyAction("Back", v.resetCmd, false),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", v.saveCmd, false),
 		ui.KeyC:         ui.NewKeyAction("Copy", v.cpCmd, true),
 		ui.KeyF:         ui.NewKeyAction("Toggle FullScreen", v.toggleFullScreenCmd, true),

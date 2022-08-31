@@ -233,7 +233,7 @@ K9s uses aliases to navigate most K8s resources.
 | Inverse regex filter                                           | `/`! filter⏎                  | Keep everything that *doesn't* match.                                  |
 | Filter resource view by labels                                 | `/`-l label-selector⏎         |                                                                        |
 | Fuzzy find a resource given a filter                           | `/`-f filter⏎                 |                                                                        |
-| Bails out of view/command/filter mode                          | `<esc>`                       |                                                                        |
+| Bails out of view/command/filter mode                          | `<esc>`                       | Can be overridden with `customBackButton` option                         |
 | Key mapping to describe, view, edit, view logs,...             | `d`,`v`, `e`, `l`,...         |                                                                        |
 | To view and switch to another Kubernetes context               | `:`ctx⏎                       |                                                                        |
 | To view and switch to another Kubernetes context               | `:`ctx context-name⏎          |                                                                        |
@@ -303,6 +303,8 @@ K9s uses aliases to navigate most K8s resources.
     readOnly: false
     # Toggles whether k9s should exit when CTRL-C is pressed. When set to true, you will need to exist k9s via the :quit command. Default is false.
     noExitOnCtrlC: false
+    # Mimic the Esc-key behaviour on the custom back button. Optional
+    customBackButton: q
     # Toggles icons display as not all terminal support these chars.
     noIcons: false
     # Logs configuration

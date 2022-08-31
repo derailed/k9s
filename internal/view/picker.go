@@ -31,6 +31,7 @@ func (p *Picker) Init(ctx context.Context) error {
 		return err
 	}
 	p.actions[tcell.KeyEscape] = ui.NewKeyAction("Back", app.PrevCmd, true)
+	p.actions[ui.BackKey] = ui.NewKeyAction("Back", app.PrevCmd, true)
 
 	p.SetBorder(true)
 	p.SetMainTextColor(tcell.ColorWhite)
