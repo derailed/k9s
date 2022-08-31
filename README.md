@@ -303,8 +303,6 @@ K9s uses aliases to navigate most K8s resources.
     readOnly: false
     # Toggles whether k9s should exit when CTRL-C is pressed. When set to true, you will need to exist k9s via the :quit command. Default is false.
     noExitOnCtrlC: false
-    # Mimic the Esc-key behaviour on the custom back button. Optional
-    customBackButton: q
     # Toggles icons display as not all terminal support these chars.
     noIcons: false
     # Logs configuration
@@ -321,6 +319,8 @@ K9s uses aliases to navigate most K8s resources.
       textWrap: false
       # Toggles log line timestamp info. Default false
       showTime: false
+    # Mimic the Esc-key behaviour on the custom back button. Optional
+    customBackButton: q
     # Indicates the current kube context. Defaults to current context
     currentContext: minikube
     # Indicates the current kube cluster. Defaults to current context cluster
