@@ -98,14 +98,13 @@ func (g *Generic) Delete(ctx context.Context, path string, propagation *metav1.D
 		return fmt.Errorf("user is not authorized to delete %s", path)
 	}
 
-	const defaultKillGrace = 1
-	var grace int64
-	if force {
-		grace = defaultKillGrace
-	}
 	opts := metav1.DeleteOptions{
-		PropagationPolicy:  propagation,
-		GracePeriodSeconds: &grace,
+		PropagationPolicy: propagation,
+	}
+
+	if force {
+		var defaultKillGrace int64 = 1
+		opts.GracePeriodSeconds = &defaultKillGrace
 	}
 
 	dial, err := g.dynClient()
