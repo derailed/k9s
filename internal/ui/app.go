@@ -51,6 +51,7 @@ func NewApp(cfg *config.Config, context string) *App {
 // Init initializes the application.
 func (a *App) Init() {
 	a.bindKeys()
+	a.maybeSetCustomBackBtn()
 	a.Prompt().SetModel(a.cmdBuff)
 	a.cmdBuff.AddListener(a)
 	a.Styles.AddListener(a)
@@ -141,14 +142,7 @@ func (a *App) Conn() client.Connection {
 	return a.Config.GetConnection()
 }
 
-func (a *App) bindKeys() {
-	a.actions = KeyActions{
-		KeyColon:       NewKeyAction("Cmd", a.activateCmd, false),
-		tcell.KeyCtrlR: NewKeyAction("Redraw", a.redrawCmd, false),
-		tcell.KeyCtrlC: NewKeyAction("Quit", a.quitCmd, false),
-		tcell.KeyCtrlU: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
-		tcell.KeyCtrlQ: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
-	}
+func (a *App) maybeSetCustomBackBtn() {
 	if a.Config.K9s.HasCustomBackButtonConfigured() {
 		if foundKey := GetKeyWithName(a.Config.K9s.CustomBackButton); foundKey != nil {
 			BackKey = *foundKey
@@ -156,6 +150,16 @@ func (a *App) bindKeys() {
 		}
 	} else {
 		log.Debug().Msg("Using no custom back button")
+	}
+}
+
+func (a *App) bindKeys() {
+	a.actions = KeyActions{
+		KeyColon:       NewKeyAction("Cmd", a.activateCmd, false),
+		tcell.KeyCtrlR: NewKeyAction("Redraw", a.redrawCmd, false),
+		tcell.KeyCtrlC: NewKeyAction("Quit", a.quitCmd, false),
+		tcell.KeyCtrlU: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
+		tcell.KeyCtrlQ: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 	}
 }
 
