@@ -149,11 +149,13 @@ func (a *App) bindKeys() {
 		tcell.KeyCtrlU: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 		tcell.KeyCtrlQ: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 	}
-	if !a.Config.K9s.HasCustomBackButtonConfigured() {
+	if a.Config.K9s.HasCustomBackButtonConfigured() {
+		if foundKey := GetKeyWithName(a.Config.K9s.CustomBackButton); foundKey != nil {
+			BackKey = *foundKey
+			log.Debug().Msgf("Using %s as custom back button", BackKey)
+		}
+	} else {
 		log.Debug().Msg("Using no custom back button")
-	} else if foundKey := GetKeyWithName(a.Config.K9s.CustomBackButton); foundKey != nil {
-		BackKey = *foundKey
-		log.Debug().Msgf("Using %s as custom back button", BackKey)
 	}
 }
 
