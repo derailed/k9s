@@ -469,7 +469,7 @@ metadata:
   annotations:
     k9scli.io/auto-port-forwards: zorg::5556        # => will default to container zorg port 5556 and local port 5566. No port-forward dialog will be shown.
     # Or...
-    k9scli.io/port-forward: bozo::9090:p1           # => launches the port-forward dialog selecting default port-forward on container bozo port named p1(8081)
+    k9scli.io/port-forwards: bozo::9090:p1           # => launches the port-forward dialog selecting default port-forward on container bozo port named p1(8081)
                                                    # mapping to local port 9090.
     ...
 spec:
