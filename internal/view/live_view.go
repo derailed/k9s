@@ -345,7 +345,7 @@ func (v *LiveView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (v *LiveView) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	v.app.Flash().Info("Content copied to clipboard...")
 	if err := clipboard.Init(); err != nil {
-		panic(err)
+		v.app.Flash().Err(err)
 	} else {
 		if clipboard.Write(clipboard.FmtText, []byte(v.text.GetText(true))) == nil {
 			v.app.Flash().Err(errors.New("Failed to write to clipboard"))

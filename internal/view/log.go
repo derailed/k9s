@@ -410,7 +410,7 @@ func (l *Log) SaveCmd(*tcell.EventKey) *tcell.EventKey {
 func (l *Log) cpCmd(*tcell.EventKey) *tcell.EventKey {
 	l.app.Flash().Info("Content copied to clipboard...")
 	if err := clipboard.Init(); err != nil {
-		panic(err)
+		l.app.Flash().Err(err)
 	} else {
 		if clipboard.Write(clipboard.FmtText, []byte(l.logs.GetText(true))) == nil {
 			l.app.Flash().Err(errors.New("Failed to write to clipboard"))
