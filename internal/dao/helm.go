@@ -31,7 +31,18 @@ func (h *Helm) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	rr, err := action.NewList(cfg).Run()
+
+	// List all helm releases
+	client := action.NewList(cfg)
+	client.Uninstalled = true
+	client.Superseded = true
+	client.Uninstalling = true
+	client.Deployed = true
+	client.Failed = true
+	client.Pending = true
+	client.SetStateMask()
+
+	rr, err := client.Run()
 	if err != nil {
 		return nil, err
 	}
