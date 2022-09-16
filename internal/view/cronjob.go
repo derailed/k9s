@@ -150,10 +150,10 @@ func (c *CronJob) makeSuspendForm(sel string, suspend bool) *tview.Form {
 		ctx, cancel := context.WithTimeout(context.Background(), c.App().Conn().Config().CallTimeout())
 		defer cancel()
 		if err := c.toggleSuspend(ctx, sel); err != nil {
-			log.Error().Err(err).Msgf("CronJOb %s %s failed", sel, action)
+			log.Error().Err(err).Msgf("CronJob %s %s failed", sel, action)
 			c.App().Flash().Err(err)
 		} else {
-			c.App().Flash().Infof("CronJOb %s %s successfully", sel, action)
+			c.App().Flash().Infof("CronJob %s %s successfully", sel, action)
 		}
 	})
 
