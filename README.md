@@ -449,8 +449,10 @@ Entering the command mode and typing a resource name or alias, could be cumberso
 
 As of v0.25.0, you can leverage the `FastForwards` feature to tell K9s how to default port-forwards. In situations where you are dealing with multiple containers or containers exposing multiple ports, it can be cumbersome to specify the desired port-forward from the dialog as in most cases, you already know which container/port tuple you desire. For these use cases, you can now annotate your manifests with the following annotations:
 
-1. k9scli.io/auto-port-forwards -> activates one or more port-forwards directly bypassing the port-forward dialog all together.
-2. k9scli.io/portforwards      -> pre-selects one or more port-forwards when launching the port-forward dialog.
+- `k9scli.io/auto-port-forwards`  
+  activates one or more port-forwards directly bypassing the port-forward dialog all together.
+- `k9scli.io/port-forwards`  
+  pre-selects one or more port-forwards when launching the port-forward dialog.
 
 The annotation value takes on the shape `container-name::[local-port:]container-port`
 
@@ -465,9 +467,9 @@ kind: Pod
 metadata:
   name: fred
   annotations:
-    k9scli.io/auto-portforwards: zorg::5556        # => will default to container zorg port 5556 and local port 5566. No port-forward dialog will be shown.
+    k9scli.io/auto-port-forwards: zorg::5556        # => will default to container zorg port 5556 and local port 5566. No port-forward dialog will be shown.
     # Or...
-    k9scli.io/portforward: bozo::9090:p1           # => launches the port-forward dialog selecting default port-forward on container bozo port named p1(8081)
+    k9scli.io/port-forwards: bozo::9090:p1           # => launches the port-forward dialog selecting default port-forward on container bozo port named p1(8081)
                                                    # mapping to local port 9090.
     ...
 spec:
