@@ -2,7 +2,6 @@ package view
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
 	"github.com/sahilm/fuzzy"
-	"golang.design/x/clipboard"
 )
 
 const detailsTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
@@ -294,16 +292,7 @@ func (d *Details) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (d *Details) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	d.app.Flash().Info("Content copied to clipboard...")
-	if err := clipboard.Init(); err != nil {
-		d.app.Flash().Err(err)
-	} else {
-		if clipboard.Write(clipboard.FmtText, []byte(d.text.GetText(true))) == nil {
-			d.app.Flash().Err(errors.New("Failed to write to clipboard"))
-		}
-	}
-
-	return nil
+	return cpCmd(d.app.Flash(), d.text.GetText(true))(evt)
 }
 
 func (d *Details) updateTitle() {

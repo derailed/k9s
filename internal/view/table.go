@@ -2,7 +2,6 @@ package view
 
 import (
 	"context"
-	"errors"
 	"strings"
 	"time"
 
@@ -12,7 +11,6 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
-	"golang.design/x/clipboard"
 )
 
 // Table represents a table viewer.
@@ -210,17 +208,7 @@ func (t *Table) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	_, n := client.Namespaced(path)
-	log.Debug().Msgf("Copied selection to clipboard %q", n)
-	t.app.Flash().Info("Current selection copied to clipboard...")
-	if err := clipboard.Init(); err != nil {
-		t.app.Flash().Err(err)
-	} else {
-		if clipboard.Write(clipboard.FmtText, []byte(n)) == nil {
-			t.app.Flash().Err(errors.New("Failed to write to clipboard"))
-		}
-	}
-
-	return nil
+	return cpCmd(t.app.Flash(), n)(evt)
 }
 
 func (t *Table) markCmd(evt *tcell.EventKey) *tcell.EventKey {

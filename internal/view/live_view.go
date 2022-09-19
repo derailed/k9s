@@ -2,7 +2,6 @@ package view
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -15,7 +14,6 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
-	"golang.design/x/clipboard"
 )
 
 const liveViewTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
@@ -343,16 +341,7 @@ func (v *LiveView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *LiveView) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	v.app.Flash().Info("Content copied to clipboard...")
-	if err := clipboard.Init(); err != nil {
-		v.app.Flash().Err(err)
-	} else {
-		if clipboard.Write(clipboard.FmtText, []byte(v.text.GetText(true))) == nil {
-			v.app.Flash().Err(errors.New("Failed to write to clipboard"))
-		}
-	}
-
-	return nil
+	return cpCmd(v.app.Flash(), v.text.GetText(true))(evt)
 }
 
 func (v *LiveView) updateTitle() {

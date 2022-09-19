@@ -2,14 +2,12 @@ package view
 
 import (
 	"context"
-	"errors"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
-	"golang.design/x/clipboard"
 )
 
 // Logger represents a generic log viewer.
@@ -163,14 +161,5 @@ func (l *Logger) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (l *Logger) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	l.app.Flash().Info("Content copied to clipboard...")
-	if err := clipboard.Init(); err != nil {
-		l.app.Flash().Err(err)
-	} else {
-		if clipboard.Write(clipboard.FmtText, []byte(l.GetText(true))) == nil {
-			l.app.Flash().Err(errors.New("Failed to write to clipboard"))
-		}
-	}
-
-	return nil
+	return cpCmd(l.app.Flash(), l.TextView.GetText(true))(evt)
 }

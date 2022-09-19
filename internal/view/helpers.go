@@ -15,6 +15,7 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
+	"golang.design/x/clipboard"
 )
 
 func parsePFAnn(s string) (string, string, bool) {
@@ -213,4 +214,25 @@ func decorateCpuMemHeaderRows(app *App, data *render.TableData) *render.TableDat
 	}
 
 	return data
+}
+
+func clipboardWrite(text string) error {
+	if err := clipboard.Init(); err != nil {
+		return err
+	}
+	if clipboard.Write(clipboard.FmtText, []byte(text)) == nil {
+		return errors.New("unable to write to clipboard")
+	}
+	return nil
+}
+
+func cpCmd(flash *model.Flash, text string) func(*tcell.EventKey) *tcell.EventKey {
+	return func(evt *tcell.EventKey) *tcell.EventKey {
+		if err := clipboardWrite(text); err != nil {
+			flash.Err(err)
+			return evt
+		}
+		flash.Info("Content copied to clipboard...")
+		return nil
+	}
 }

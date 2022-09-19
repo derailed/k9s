@@ -2,7 +2,6 @@ package view
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -20,7 +19,6 @@ import (
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
-	"golang.design/x/clipboard"
 )
 
 const (
@@ -407,16 +405,8 @@ func (l *Log) SaveCmd(*tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (l *Log) cpCmd(*tcell.EventKey) *tcell.EventKey {
-	l.app.Flash().Info("Content copied to clipboard...")
-	if err := clipboard.Init(); err != nil {
-		l.app.Flash().Err(err)
-	} else {
-		if clipboard.Write(clipboard.FmtText, []byte(l.logs.GetText(true))) == nil {
-			l.app.Flash().Err(errors.New("Failed to write to clipboard"))
-		}
-	}
-	return nil
+func (l *Log) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
+	return cpCmd(l.app.Flash(), l.logs.TextView.GetText(true))(evt)
 }
 
 func ensureDir(dir string) error {
