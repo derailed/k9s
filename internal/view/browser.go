@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -254,6 +256,18 @@ func (b *Browser) TableLoadFailed(err error) {
 // ----------------------------------------------------------------------------
 // Actions...
 
+func (b *Browser) newCmd(_ *tcell.EventKey) *tcell.EventKey {
+	tmpFile, err := ioutil.TempFile(config.DefaultK9sHome, "tmp_*.yml")
+	if err != nil {
+		b.App().Flash().Err(errors.New("Failed to create temporary resource file: " + err.Error()))
+		return nil
+	}
+	defer os.Remove(tmpFile.Name())
+	defer tmpFile.Close()
+
+	return editAndApplyFile(b.App(), tmpFile.Name())
+}
+
 func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := b.GetSelectedItem()
 	if path == "" {
@@ -486,6 +500,7 @@ func (b *Browser) refreshActions() {
 	}
 
 	if !dao.IsK9sMeta(b.meta) {
+		aa[ui.KeyN] = ui.NewKeyAction("New", b.newCmd, true)
 		aa[ui.KeyY] = ui.NewKeyAction("YAML", b.viewCmd, true)
 		aa[ui.KeyD] = ui.NewKeyAction("Describe", b.describeCmd, true)
 	}
@@ -561,4 +576,47 @@ func (b *Browser) resourceDelete(selections []string, msg string) {
 		}
 		b.refresh()
 	}, func() {})
+}
+
+func editAndApplyFile(app *App, filePath string) *tcell.EventKey {
+	if !edit(app, shellOpts{clear: true, args: []string{filePath}}) {
+		app.Flash().Err(errors.New("Failed to launch editor"))
+		return nil
+	}
+
+	if isEmpty, err := isFileEmpty(filePath); err != nil || isEmpty {
+		if err != nil {
+			app.Flash().Err(err)
+		}
+		return nil
+	}
+
+	return applyFile(app, filePath)
+}
+
+func isFileEmpty(filePath string) (bool, error) {
+	fileStat, err := os.Stat(filePath)
+	if err != nil {
+		return false, errors.New("Failed to get temporary resource file information: " + err.Error())
+	}
+
+	return fileStat.Size() == 0, nil
+}
+
+func applyFile(app *App, filePath string) *tcell.EventKey {
+	args := []string{"apply", "-f", filePath}
+	res, err := runKu(app, shellOpts{clear: false, args: args})
+	if err != nil {
+		res = "status:\n  " + err.Error() + "\nmessage:\n" + fmtResults(res)
+	} else {
+		res = "message:\n" + fmtResults(res)
+	}
+
+	details := NewDetails(app, "Applied Manifest", filePath, true).Update(res)
+	if err := app.inject(details); err != nil {
+		app.Flash().Err(err)
+		return nil
+	}
+
+	return nil
 }
