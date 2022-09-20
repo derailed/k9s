@@ -9,6 +9,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 )
@@ -206,9 +207,11 @@ func (t *Table) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path == "" {
 		return evt
 	}
-
 	_, n := client.Namespaced(path)
-	return cpCmd(t.app.Flash(), n)(evt)
+	v := tview.NewTextView().SetText(n)
+	cpCmd(t.app.Flash(), v)(evt)
+
+	return nil
 }
 
 func (t *Table) markCmd(evt *tcell.EventKey) *tcell.EventKey {

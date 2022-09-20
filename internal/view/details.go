@@ -124,7 +124,7 @@ func (d *Details) bindKeys() {
 		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", d.filterCmd, false),
 		tcell.KeyEscape: ui.NewKeyAction("Back", d.resetCmd, false),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", d.saveCmd, false),
-		ui.KeyC:         ui.NewKeyAction("Copy", d.cpCmd, true),
+		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(d.app.Flash(), d.text), true),
 		ui.KeyF:         ui.NewKeyAction("Toggle FullScreen", d.toggleFullScreenCmd, true),
 		ui.KeyN:         ui.NewKeyAction("Next Match", d.nextCmd, true),
 		ui.KeyShiftN:    ui.NewKeyAction("Prev Match", d.prevCmd, true),
@@ -289,10 +289,6 @@ func (d *Details) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return nil
-}
-
-func (d *Details) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return cpCmd(d.app.Flash(), d.text.GetText(true))(evt)
 }
 
 func (d *Details) updateTitle() {

@@ -69,7 +69,7 @@ func (l *Logger) bindKeys() {
 	l.actions.Set(ui.KeyActions{
 		tcell.KeyEscape: ui.NewKeyAction("Back", l.resetCmd, false),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.saveCmd, false),
-		ui.KeyC:         ui.NewKeyAction("Copy", l.cpCmd, true),
+		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(l.app.Flash(), l.TextView), true),
 		ui.KeySlash:     ui.NewSharedKeyAction("Filter Mode", l.activateCmd, false),
 		tcell.KeyDelete: ui.NewSharedKeyAction("Erase", l.eraseCmd, false),
 	})
@@ -158,8 +158,4 @@ func (l *Logger) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return nil
-}
-
-func (l *Logger) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return cpCmd(l.app.Flash(), l.TextView.GetText(true))(evt)
 }

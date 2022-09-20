@@ -13,6 +13,7 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	"golang.design/x/clipboard"
@@ -226,9 +227,9 @@ func clipboardWrite(text string) error {
 	return nil
 }
 
-func cpCmd(flash *model.Flash, text string) func(*tcell.EventKey) *tcell.EventKey {
+func cpCmd(flash *model.Flash, v *tview.TextView) func(*tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		if err := clipboardWrite(text); err != nil {
+		if err := clipboardWrite(v.GetText(true)); err != nil {
 			flash.Err(err)
 			return evt
 		}

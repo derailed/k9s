@@ -251,7 +251,7 @@ func (l *Log) bindKeys() {
 		ui.KeyT:         ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
 		ui.KeyW:         ui.NewKeyAction("Toggle Wrap", l.toggleTextWrapCmd, true),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.SaveCmd, true),
-		ui.KeyC:         ui.NewKeyAction("Copy", l.cpCmd, true),
+		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(l.app.Flash(), l.logs.TextView), true),
 	})
 	if l.model.HasDefaultContainer() {
 		l.logs.Actions().Set(ui.KeyActions{
@@ -403,10 +403,6 @@ func (l *Log) SaveCmd(*tcell.EventKey) *tcell.EventKey {
 	l.app.Flash().Infof("Log %s saved successfully!", path)
 
 	return nil
-}
-
-func (l *Log) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return cpCmd(l.app.Flash(), l.logs.TextView.GetText(true))(evt)
 }
 
 func ensureDir(dir string) error {
