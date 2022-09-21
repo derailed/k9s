@@ -40,8 +40,6 @@ To all the good folks below that opted to `pay it forward` and join our sponsors
 
 ---
 
-
-
 ## Resolved Issues
 
 * [Issue #1742](https://github.com/derailed/k9s/issues/1742) Edit and shell not working on Arch linux
