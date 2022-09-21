@@ -74,7 +74,7 @@ func (a KeyActions) Hints() model.MenuHints {
 
 	hh := make(model.MenuHints, 0, len(kk))
 	for _, k := range kk {
-		if name, ok := tcell.KeyNames[tcell.Key(k)]; ok {
+		if name, ok := tcell.KeyNames[tcell.Key(int16(k))]; ok {
 			hh = append(hh,
 				model.MenuHint{
 					Mnemonic:    name,

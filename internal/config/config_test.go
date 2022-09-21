@@ -307,7 +307,7 @@ var expectedConfig = `k9s:
       featureGates:
         nodeShell: false
       shellPod:
-        image: busybox:1.31
+        image: busybox:1.35.0
         command: []
         args: []
         namespace: default
@@ -330,7 +330,7 @@ var expectedConfig = `k9s:
       featureGates:
         nodeShell: false
       shellPod:
-        image: busybox:1.31
+        image: busybox:1.35.0
         command: []
         args: []
         namespace: default
@@ -353,7 +353,7 @@ var expectedConfig = `k9s:
       featureGates:
         nodeShell: false
       shellPod:
-        image: busybox:1.31
+        image: busybox:1.35.0
         command: []
         args: []
         namespace: default
@@ -402,7 +402,7 @@ var resetConfig = `k9s:
       featureGates:
         nodeShell: false
       shellPod:
-        image: busybox:1.31
+        image: busybox:1.35.0
         command: []
         args: []
         namespace: default

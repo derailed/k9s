@@ -317,6 +317,18 @@ func TestRowsSortDuration(t *testing.T) {
 		asc  bool
 		e    render.Rows
 	}{
+		"fred": {
+			rows: render.Rows{
+				{Fields: []string{"2m24s", "blee"}},
+				{Fields: []string{"2m12s", "duh"}},
+			},
+			col: 0,
+			asc: true,
+			e: render.Rows{
+				{Fields: []string{"2m12s", "duh"}},
+				{Fields: []string{"2m24s", "blee"}},
+			},
+		},
 		"years": {
 			rows: render.Rows{
 				{Fields: []string{testTime().Add(-365 * 24 * time.Hour).String(), "blee"}},

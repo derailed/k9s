@@ -207,12 +207,11 @@ func (t *Table) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	_, n := client.Namespaced(path)
-	err := clipboardWrite(n)
-	if err != nil {
+	if err := clipboardWrite(n); err != nil {
 		t.app.Flash().Err(err)
-	} else {
-		t.app.Flash().Info("Current selection copied to clipboard...")
+		return nil
 	}
+	t.app.Flash().Info("Current selection copied to clipboard...")
 
 	return nil
 }

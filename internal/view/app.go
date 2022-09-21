@@ -639,11 +639,9 @@ func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) gotoResource(cmd, path string, clearStack bool) {
 	err := a.command.run(cmd, path, clearStack)
-	if err == nil {
-		return
+	if err != nil {
+		dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
 	}
-
-	dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
 }
 
 func (a *App) inject(c model.Component) error {

@@ -7,12 +7,12 @@ WORKDIR /k9s
 COPY go.mod go.sum main.go Makefile ./
 COPY internal internal
 COPY cmd cmd
-RUN apk --no-cache add --update make git gcc libc-dev curl && make build
+RUN apk --no-cache add --update make libx11-dev git gcc libc-dev curl && make build
 
 # -----------------------------------------------------------------------------
 # Build the final Docker image
 
-FROM alpine:3.16.1
+FROM alpine:3.16.2
 ARG KUBECTL_VERSION="v1.24.3"
 
 COPY --from=build /k9s/execs/k9s /bin/k9s

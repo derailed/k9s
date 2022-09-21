@@ -1,8 +1,6 @@
 package view
 
 import (
-	"strings"
-
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
 )
@@ -154,13 +152,9 @@ func extViewers(vv MetaViewers) {
 	vv[client.NewGVR("apiextensions.k8s.io/v1/customresourcedefinitions")] = MetaViewer{
 		enterFn: showCRD,
 	}
-	vv[client.NewGVR("apiextensions.k8s.io/v1/customresourcedefinitions")] = MetaViewer{
-		enterFn: showCRD,
-	}
 }
 
 func showCRD(app *App, _ ui.Tabular, _, path string) {
-	_, crdGVR := client.Namespaced(path)
-	tokens := strings.Split(crdGVR, ".")
-	app.gotoResource(tokens[0], "", false)
+	_, crd := client.Namespaced(path)
+	app.gotoResource(crd, "", false)
 }

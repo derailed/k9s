@@ -45,7 +45,7 @@ func runK(a *App, opts shellOpts) bool {
 		log.Error().Err(err).Msgf("kubectl command is not in your path")
 		return false
 	}
-	var args []string
+	args := []string{opts.args[0]}
 	if u, err := a.Conn().Config().ImpersonateUser(); err == nil {
 		args = append(args, "--as", u)
 	}
@@ -60,7 +60,7 @@ func runK(a *App, opts shellOpts) bool {
 		args = append(args, "--kubeconfig", *cfg)
 	}
 	if len(args) > 0 {
-		opts.args = append(args, opts.args...)
+		opts.args = append(args, opts.args[1:]...)
 	}
 	opts.binary, opts.background = bin, false
 

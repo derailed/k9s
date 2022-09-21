@@ -25,7 +25,7 @@ func (CronJob) Header(ns string) Header {
 		HeaderColumn{Name: "SCHEDULE"},
 		HeaderColumn{Name: "SUSPEND"},
 		HeaderColumn{Name: "ACTIVE"},
-		HeaderColumn{Name: "LAST_SCHEDULE"},
+		HeaderColumn{Name: "LAST_SCHEDULE", Time: true},
 		HeaderColumn{Name: "SELECTOR", Wide: true},
 		HeaderColumn{Name: "CONTAINERS", Wide: true},
 		HeaderColumn{Name: "IMAGES", Wide: true},
@@ -49,7 +49,7 @@ func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 
 	lastScheduled := "<none>"
 	if cj.Status.LastScheduleTime != nil {
-		lastScheduled = toAgeHuman(toAge(*cj.Status.LastScheduleTime))
+		lastScheduled = toAge(*cj.Status.LastScheduleTime)
 	}
 
 	r.ID = client.MetaFQN(cj.ObjectMeta)

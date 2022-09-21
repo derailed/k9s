@@ -7,9 +7,9 @@ func init() {
 }
 
 func initKeys() {
-	tcell.KeyNames[tcell.Key(KeyHelp)] = "?"
-	tcell.KeyNames[tcell.Key(KeySlash)] = "/"
-	tcell.KeyNames[tcell.Key(KeySpace)] = "space"
+	tcell.KeyNames[KeyHelp] = "?"
+	tcell.KeyNames[KeySlash] = "/"
+	tcell.KeyNames[KeySpace] = "space"
 
 	initNumbKeys()
 	initStdKeys()
