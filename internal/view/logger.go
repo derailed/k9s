@@ -3,7 +3,6 @@ package view
 import (
 	"context"
 
-	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
@@ -156,15 +155,6 @@ func (l *Logger) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 		l.app.Flash().Err(err)
 	} else {
 		l.app.Flash().Infof("Log %s saved successfully!", path)
-	}
-
-	return nil
-}
-
-func (l *Logger) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	l.app.Flash().Info("Content copied to clipboard...")
-	if err := clipboard.WriteAll(l.GetText(true)); err != nil {
-		l.app.Flash().Err(err)
 	}
 
 	return nil
