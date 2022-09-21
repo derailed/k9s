@@ -5,6 +5,11 @@ import (
 	"fmt"
 	"image"
 
+	"github.com/derailed/tview"
+	"github.com/gdamore/tcell/v2"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
+
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -13,10 +18,6 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/tchart"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 // Graphable represents a graphic component.
