@@ -44,9 +44,7 @@ func TestMenuHintsSort(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			o := make(model.MenuHints, len(u.hh))
-			for i := range u.hh {
-				o[i] = u.hh[i]
-			}
+			assert.Equal(t, copy(o, u.hh), len(u.hh))
 			sort.Sort(u.hh)
 			for i, idx := range u.e {
 				assert.Equal(t, o[idx], u.hh[i])
