@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
@@ -336,15 +335,6 @@ func (v *LiveView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 		v.app.Flash().Err(err)
 	} else {
 		v.app.Flash().Infof("Log %s saved successfully!", path)
-	}
-
-	return nil
-}
-
-func (v *LiveView) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	v.app.Flash().Info("Content copied to clipboard...")
-	if err := clipboard.WriteAll(v.text.GetText(true)); err != nil {
-		v.app.Flash().Err(err)
 	}
 
 	return nil

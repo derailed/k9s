@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
@@ -287,15 +286,6 @@ func (d *Details) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 		d.app.Flash().Err(err)
 	} else {
 		d.app.Flash().Infof("Log %s saved successfully!", path)
-	}
-
-	return nil
-}
-
-func (d *Details) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	d.app.Flash().Info("Content copied to clipboard...")
-	if err := clipboard.WriteAll(d.text.GetText(true)); err != nil {
-		d.app.Flash().Err(err)
 	}
 
 	return nil
