@@ -31,7 +31,11 @@ func (h *Helm) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	rr, err := action.NewList(cfg).Run()
+	list := action.NewList(cfg)
+	list.All = true
+	list.SetStateMask()
+
+	rr, err := list.Run()
 	if err != nil {
 		return nil, err
 	}

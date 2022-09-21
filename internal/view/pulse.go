@@ -208,7 +208,7 @@ func (p *Pulse) bindKeys() {
 
 	for i, v := range p.charts {
 		t := cases.Title(language.Und, cases.NoLower).String(client.NewGVR(v.ID()).R())
-		p.actions[tcell.Key(ui.NumKeys[i])] = ui.NewKeyAction(t, p.sparkFocusCmd(i), true)
+		p.actions[ui.NumKeys[i]] = ui.NewKeyAction(t, p.sparkFocusCmd(i), true)
 	}
 }
 

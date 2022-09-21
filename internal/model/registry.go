@@ -142,7 +142,7 @@ var Registry = map[string]ResourceMeta{
 	},
 
 	// Batch...
-	"batch/v1beta1/cronjobs": {
+	"batch/v1/cronjobs": {
 		DAO:      &dao.CronJob{},
 		Renderer: &render.CronJob{},
 	},

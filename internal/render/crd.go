@@ -2,7 +2,6 @@ package render
 
 import (
 	"fmt"
-	"path"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
@@ -48,9 +47,8 @@ func (CustomResourceDefinition) Render(o interface{}, ns string, r *Row) error {
 	if version == "" {
 		return fmt.Errorf("unable to assert resource version")
 	}
-	id := path.Join(crd.Spec.Group, version, crd.Spec.Names.Plural)
 
-	r.ID = client.FQN(client.ClusterScope, id)
+	r.ID = client.FQN(client.ClusterScope, crd.GetName())
 	r.Fields = Fields{
 		crd.GetName(),
 		mapToIfc(crd.GetLabels()),

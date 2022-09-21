@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
@@ -252,7 +251,7 @@ func (l *Log) bindKeys() {
 		ui.KeyT:         ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
 		ui.KeyW:         ui.NewKeyAction("Toggle Wrap", l.toggleTextWrapCmd, true),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.SaveCmd, true),
-		ui.KeyC:         ui.NewKeyAction("Copy", l.cpCmd, true),
+		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(l.app.Flash(), l.logs.TextView), true),
 	})
 	if l.model.HasDefaultContainer() {
 		l.logs.Actions().Set(ui.KeyActions{
@@ -403,14 +402,6 @@ func (l *Log) SaveCmd(*tcell.EventKey) *tcell.EventKey {
 	}
 	l.app.Flash().Infof("Log %s saved successfully!", path)
 
-	return nil
-}
-
-func (l *Log) cpCmd(*tcell.EventKey) *tcell.EventKey {
-	l.app.Flash().Info("Content copied to clipboard...")
-	if err := clipboard.WriteAll(l.logs.GetText(true)); err != nil {
-		l.app.Flash().Err(err)
-	}
 	return nil
 }
 

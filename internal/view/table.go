@@ -5,7 +5,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model"
@@ -207,13 +206,12 @@ func (t *Table) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path == "" {
 		return evt
 	}
-
 	_, n := client.Namespaced(path)
-	log.Debug().Msgf("Copied selection to clipboard %q", n)
-	t.app.Flash().Info("Current selection copied to clipboard...")
-	if err := clipboard.WriteAll(n); err != nil {
+	if err := clipboardWrite(n); err != nil {
 		t.app.Flash().Err(err)
+		return nil
 	}
+	t.app.Flash().Info("Current selection copied to clipboard...")
 
 	return nil
 }

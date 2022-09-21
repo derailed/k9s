@@ -15,8 +15,7 @@ const ageTableCol = "Age"
 // Generic renders a generic resource to screen.
 type Generic struct {
 	Base
-	table *metav1beta1.Table
-
+	table    *metav1beta1.Table
 	ageIndex int
 }
 

@@ -532,7 +532,7 @@ func (b *Browser) simpleDelete(selections []string, msg string) {
 				b.app.Flash().Errf("Invalid nuker %T", b.accessor)
 				continue
 			}
-			if err := nuker.Delete(context.Background(), sel, nil, true); err != nil {
+			if err := nuker.Delete(context.Background(), sel, nil, false); err != nil {
 				b.app.Flash().Errf("Delete failed with `%s", err)
 			} else {
 				b.app.factory.DeleteForwarder(sel)
