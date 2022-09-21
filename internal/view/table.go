@@ -9,7 +9,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 )
@@ -208,8 +207,12 @@ func (t *Table) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 	_, n := client.Namespaced(path)
-	v := tview.NewTextView().SetText(n)
-	cpCmd(t.app.Flash(), v)(evt)
+	err := clipboardWrite(n)
+	if err != nil {
+		t.app.Flash().Err(err)
+	} else {
+		t.app.Flash().Info("Current selection copied to clipboard...")
+	}
 
 	return nil
 }
