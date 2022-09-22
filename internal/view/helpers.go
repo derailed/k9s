@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -16,17 +17,10 @@ import (
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
-	"golang.design/x/clipboard"
 )
 
 func clipboardWrite(text string) error {
-	if err := clipboard.Init(); err != nil {
-		return err
-	}
-	if clipboard.Write(clipboard.FmtText, []byte(text)) == nil {
-		return errors.New("unable to write to clipboard")
-	}
-	return nil
+	return clipboard.WriteAll(text)
 }
 
 func cpCmd(flash *model.Flash, v *tview.TextView) func(*tcell.EventKey) *tcell.EventKey {
