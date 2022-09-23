@@ -19,6 +19,7 @@ type LogIndicator struct {
 	fullScreen                 bool
 	textWrap                   bool
 	showTime                   bool
+	showJson                   bool
 	allContainers              bool
 	shouldDisplayAllContainers bool
 }
@@ -33,6 +34,7 @@ func NewLogIndicator(cfg *config.Config, styles *config.Styles, allContainers bo
 		fullScreen:                 cfg.K9s.Logger.FullScreenLogs,
 		textWrap:                   cfg.K9s.Logger.TextWrap,
 		showTime:                   cfg.K9s.Logger.ShowTime,
+		showJson:                   cfg.K9s.Logger.ShowJSON,
 		shouldDisplayAllContainers: allContainers,
 	}
 	l.StylesChanged(styles)
@@ -69,6 +71,11 @@ func (l *LogIndicator) FullScreen() bool {
 	return l.fullScreen
 }
 
+// Json reports the whether the logs are JSON colorized.
+func (l *LogIndicator) Json() bool {
+	return l.showJson
+}
+
 // ToggleTimestamp toggles the current timestamp mode.
 func (l *LogIndicator) ToggleTimestamp() {
 	l.showTime = !l.showTime
@@ -77,6 +84,12 @@ func (l *LogIndicator) ToggleTimestamp() {
 // ToggleFullScreen toggles the screen mode.
 func (l *LogIndicator) ToggleFullScreen() {
 	l.fullScreen = !l.fullScreen
+	l.Refresh()
+}
+
+// ToggleJSON toggles the whether JSON logging is colorized.
+func (l *LogIndicator) ToggleJSON() {
+	l.showJson = !l.showJson
 	l.Refresh()
 }
 
@@ -129,6 +142,12 @@ func (l *LogIndicator) Refresh() {
 		l.indicator = append(l.indicator, "[::b]FullScreen:[limegreen::b]On[-::] "+spacer...)
 	} else {
 		l.indicator = append(l.indicator, "[::b]FullScreen:[gray::d]Off[-::]"+spacer...)
+	}
+
+	if l.Json() {
+		l.indicator = append(l.indicator, "[::b]JSON:[limegreen::b]On[-::] "+spacer...)
+	} else {
+		l.indicator = append(l.indicator, "[::b]JSON:[gray::d]Off[-::]"+spacer...)
 	}
 
 	if l.Timestamp() {

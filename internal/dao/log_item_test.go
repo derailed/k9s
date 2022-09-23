@@ -85,7 +85,7 @@ func TestLogItemRender(t *testing.T) {
 			i.Pod, i.Container = n, u.opts.Container
 
 			bb := bytes.NewBuffer(make([]byte, 0, i.Size()))
-			i.Render("yellow", u.opts.ShowTimestamp, bb)
+			i.Render("yellow", u.opts.ShowTimestamp, u.opts.ShowJSON, bb)
 			assert.Equal(t, u.e, bb.String())
 		})
 	}
@@ -100,7 +100,7 @@ func BenchmarkLogItemRender(b *testing.B) {
 	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
 		bb := bytes.NewBuffer(make([]byte, 0, i.Size()))
-		i.Render("yellow", true, bb)
+		i.Render("yellow", true, false, bb)
 	}
 }
 
@@ -113,6 +113,6 @@ func BenchmarkLogItemRenderNoTS(b *testing.B) {
 	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
 		bb := bytes.NewBuffer(make([]byte, 0, i.Size()))
-		i.Render("yellow", false, bb)
+		i.Render("yellow", false, false, bb)
 	}
 }

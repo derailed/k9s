@@ -294,6 +294,7 @@ var expectedConfig = `k9s:
     fullScreenLogs: false
     textWrap: false
     showTime: false
+    showJSON: false
   currentContext: blee
   currentCluster: blee
   clusters:
@@ -393,6 +394,7 @@ var resetConfig = `k9s:
     fullScreenLogs: false
     textWrap: false
     showTime: false
+    showJSON: false
   currentContext: blee
   currentCluster: blee
   clusters:

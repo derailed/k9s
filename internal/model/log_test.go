@@ -154,7 +154,7 @@ func TestLogBasic(t *testing.T) {
 	assert.Equal(t, 1, v.clearCalled)
 	assert.Equal(t, 0, v.errCalled)
 	ll := make([][]byte, data.Len())
-	data.Lines(0, false, ll)
+	data.Lines(0, false, false, ll)
 	assert.Equal(t, ll, v.data)
 }
 
@@ -168,7 +168,7 @@ func TestLogAppend(t *testing.T) {
 	items.Add(dao.NewLogItemFromString("blah blah"))
 	m.Set(items)
 	ll := make([][]byte, items.Len())
-	items.Lines(0, false, ll)
+	items.Lines(0, false, false, ll)
 	assert.Equal(t, ll, v.data)
 
 	data := dao.NewLogItems()
@@ -181,7 +181,7 @@ func TestLogAppend(t *testing.T) {
 	}
 	assert.Equal(t, 1, v.dataCalled)
 	ll = make([][]byte, items.Len())
-	items.Lines(0, false, ll)
+	items.Lines(0, false, false, ll)
 	assert.Equal(t, ll, v.data)
 
 	m.Notify()

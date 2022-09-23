@@ -339,6 +339,8 @@ K9s uses aliases to navigate most K8s resources.
       textWrap: false
       # Toggles log line timestamp info. Default false
       showTime: false
+      # Toggles whether JSON log lines should be colorized. Default false
+      showJSON: false
     # Indicates the current kube context. Defaults to current context
     currentContext: minikube
     # Indicates the current kube cluster. Defaults to current context cluster

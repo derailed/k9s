@@ -2,6 +2,9 @@ package dao
 
 import (
 	"bytes"
+	"encoding/json"
+
+	"github.com/rm-hull/colorjson"
 )
 
 // LogChan represents a channel for logs.
@@ -64,7 +67,7 @@ func (l *LogItem) Size() int {
 }
 
 // Render returns a log line as string.
-func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
+func (l *LogItem) Render(paint string, showTime bool, showJson bool, bb *bytes.Buffer) {
 	index := bytes.Index(l.Bytes, []byte{' '})
 	if showTime && index > 0 {
 		bb.WriteString("[gray::b]")
@@ -89,9 +92,25 @@ func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
 		bb.WriteString("[-::] ")
 	}
 
-	if index > 0 {
-		bb.Write(l.Bytes[index+1:])
-	} else {
-		bb.Write(l.Bytes)
+	bb.Write(colorizeJSON(l.Bytes[index+1:], showJson))
+}
+
+func colorizeJSON(text []byte, showJson bool) []byte {
+	if !showJson {
+		return text
 	}
+	var obj map[string]interface{}
+	err := json.Unmarshal(text, &obj)
+	if err != nil {
+		return text
+	}
+	f := colorjson.NewFormatter()
+	f.Indent = 0
+	f.ObjectSeparator = false
+
+	s, err := f.Marshal(obj)
+	if err != nil {
+		return text
+	}
+	return append(s, '\n')
 }

@@ -65,6 +65,7 @@ func (s *StatefulSet) logOptions(prev bool) (*dao.LogOptions, error) {
 		SinceSeconds:    cfg.SinceSeconds,
 		AllContainers:   allCos,
 		ShowTimestamp:   cfg.ShowTime,
+		ShowJSON:        cfg.ShowJSON,
 		Previous:        prev,
 	}
 	if co == "" {
