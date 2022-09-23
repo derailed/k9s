@@ -81,6 +81,7 @@ func (l *LogsExtender) buildLogOpts(path, co string, prevLogs bool) *dao.LogOpti
 		Lines:         int64(cfg.TailCount),
 		Previous:      prevLogs,
 		ShowTimestamp: cfg.ShowTime,
+		ShowJSON:      cfg.ShowJSON,
 	}
 	if opts.Container == "" {
 		opts.AllContainers = true

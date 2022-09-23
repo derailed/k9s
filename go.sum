@@ -542,6 +542,8 @@ github.com/rakyll/hey v0.1.4/go.mod h1:nAOTOo+L52KB9SZq/M6J18kxjto4yVtXQDjU2HgjU
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rivo/uniseg v0.4.3 h1:utMvzDsuh3suAEnhH0RdHmoPbU648o6CvXxTx4SBMOw=
 github.com/rivo/uniseg v0.4.3/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
+github.com/rm-hull/colorjson v0.0.0-20220923220430-b50ee91dc6f6 h1:avrA8y9AJF9WtGipEvrM8I/7XoKcxEk30659rPHJlnM=
+github.com/rm-hull/colorjson v0.0.0-20220923220430-b50ee91dc6f6/go.mod h1:tJTNxpJk1e15vd8WY5lsj9Tq5vjdnNz3YAbCwxYskBs=
 github.com/rogpeppe/fastuuid v1.2.0/go.mod h1:jVj6XXZzXRy/MSR5jhDC/2q6DgLz+nrA6LYCDYWNEvQ=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/rogpeppe/go-internal v1.8.0/go.mod h1:WmiCO8CzOY8rg0OYDC4/i/2WRWAB6poM+XZ2dLUbcbE=

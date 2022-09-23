@@ -101,6 +101,7 @@ func (c *Container) logOptions(prev bool) (*dao.LogOptions, error) {
 		SinceSeconds:    cfg.SinceSeconds,
 		SingleContainer: true,
 		ShowTimestamp:   cfg.ShowTime,
+		ShowJSON:        cfg.ShowJSON,
 		Previous:        prev,
 	}
 

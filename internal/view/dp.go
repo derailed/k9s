@@ -76,6 +76,7 @@ func (d *Deploy) logOptions(prev bool) (*dao.LogOptions, error) {
 		SingleContainer: len(cc) == 1,
 		AllContainers:   allCos,
 		ShowTimestamp:   cfg.ShowTime,
+		ShowJSON:        cfg.ShowJSON,
 		Previous:        prev,
 	}
 	if co == "" {
