@@ -47,7 +47,7 @@ K9s is available on Linux, macOS and Windows platforms.
 
 * Binaries for Linux, Windows and Mac are available as tarballs in the [release](https://github.com/derailed/k9s/releases) page.
 
-* Via Homebrew for macOS or LinuxBrew for Linux
+* Via [Homebrew](https://brew.sh/) for macOS or Linux
 
    ```shell
    brew install k9s
