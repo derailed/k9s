@@ -37,7 +37,7 @@ func (d *ScreenDump) List(ctx context.Context, _ string) ([]runtime.Object, erro
 		return nil, errors.New("no screendump dir found in context")
 	}
 
-	ff, err := os.ReadDir(SanitizeFilename(dir))
+	ff, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
