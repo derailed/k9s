@@ -113,32 +113,32 @@ func (l *LogIndicator) Refresh() {
 
 	if l.shouldDisplayAllContainers {
 		if l.allContainers {
-			l.indicator = append(l.indicator, "[::b]AllContainers:[limegreen::b]On[-::]"+spacer...)
+			l.indicator = append(l.indicator, "[::b]AllContainers:[limegreen::b]On[-::] "+spacer...)
 		} else {
 			l.indicator = append(l.indicator, "[::b]AllContainers:[gray::d]Off[-::]"+spacer...)
 		}
 	}
 
 	if l.AutoScroll() {
-		l.indicator = append(l.indicator, "[::b]Autoscroll:[limegreen::b]On[-::]"+spacer...)
+		l.indicator = append(l.indicator, "[::b]Autoscroll:[limegreen::b]On[-::] "+spacer...)
 	} else {
 		l.indicator = append(l.indicator, "[::b]Autoscroll:[gray::d]Off[-::]"+spacer...)
 	}
 
 	if l.FullScreen() {
-		l.indicator = append(l.indicator, "[::b]FullScreen:[limegreen::b]On[-::]"+spacer...)
+		l.indicator = append(l.indicator, "[::b]FullScreen:[limegreen::b]On[-::] "+spacer...)
 	} else {
 		l.indicator = append(l.indicator, "[::b]FullScreen:[gray::d]Off[-::]"+spacer...)
 	}
 
 	if l.Timestamp() {
-		l.indicator = append(l.indicator, "[::b]Timestamps:[limegreen::b]On[-::]"+spacer...)
+		l.indicator = append(l.indicator, "[::b]Timestamps:[limegreen::b]On[-::] "+spacer...)
 	} else {
 		l.indicator = append(l.indicator, "[::b]Timestamps:[gray::d]Off[-::]"+spacer...)
 	}
 
 	if l.TextWrap() {
-		l.indicator = append(l.indicator, "[::b]Wrap:[limegreen::b]On[-::]"...)
+		l.indicator = append(l.indicator, "[::b]Wrap:[limegreen::b]On[-::] "...)
 	} else {
 		l.indicator = append(l.indicator, "[::b]Wrap:[gray::d]Off[-::]"...)
 	}
