@@ -63,7 +63,7 @@ func TestLogItemRender(t *testing.T) {
 				ShowTimestamp:   true,
 			},
 			log: fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", "Testing 1,2,3..."),
-			e:   "[gray::b]2018-12-14T10:36:43.326972-07:00 [yellow::]fred [yellow::b]blee[-::-] Testing 1,2,3...\n",
+			e:   "[gray::b]2018-12-14T10:36:43.326972-07:00 [-::][yellow::]fred [yellow::b]blee[-::-] Testing 1,2,3...\n",
 		},
 		"log-level": {
 			opts: dao.LogOptions{
