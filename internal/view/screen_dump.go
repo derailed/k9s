@@ -8,7 +8,6 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
@@ -35,7 +34,7 @@ func NewScreenDump(gvr client.GVR) ResourceViewer {
 }
 
 func (s *ScreenDump) dirContext(ctx context.Context) context.Context {
-	dir := filepath.Join(s.App().Config.K9s.GetScreenDumpDir(), dao.SanitizeFilename(s.App().Config.K9s.CurrentContext))
+	dir := filepath.Join(s.App().Config.K9s.GetScreenDumpDir(), s.App().Config.K9s.CurrentContextDir())
 	log.Debug().Msgf("SD-DIR %q", dir)
 	config.EnsureFullPath(dir, config.DefaultDirMod)
 

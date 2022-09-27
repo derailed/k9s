@@ -83,7 +83,7 @@ func TestGenericRender(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			var r render.Row
-			re.SetTable(u.table)
+			re.SetTable(u.ns, u.table)
 
 			assert.Equal(t, u.eHeader, re.Header(u.ns))
 			assert.Nil(t, re.Render(u.table.Rows[0], u.ns, &r))

@@ -72,6 +72,7 @@ func Happy(ns string, h Header, r Row) bool {
 	if validCol < 0 {
 		return true
 	}
+
 	return strings.TrimSpace(r.Fields[validCol]) == ""
 }
 
@@ -171,6 +172,13 @@ func IntToStr(p int) string {
 
 func missing(s string) string {
 	return check(s, MissingValue)
+}
+
+func naStrings(ss []string) string {
+	if len(ss) == 0 {
+		return NAValue
+	}
+	return strings.Join(ss, ",")
 }
 
 func na(s string) string {

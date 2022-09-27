@@ -47,6 +47,10 @@ func NewK9s() *K9s {
 	}
 }
 
+func (k *K9s) CurrentContextDir() string {
+	return SanitizeFilename(k.CurrentContext)
+}
+
 // ActivateCluster initializes the active cluster is not present.
 func (k *K9s) ActivateCluster(ns string) {
 	if _, ok := k.Clusters[k.CurrentCluster]; ok {

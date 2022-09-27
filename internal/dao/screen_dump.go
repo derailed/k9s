@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"os"
-	"regexp"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/render"
@@ -15,9 +14,6 @@ import (
 var (
 	_ Accessor = (*ScreenDump)(nil)
 	_ Nuker    = (*ScreenDump)(nil)
-
-	// InvalidCharsRX contains invalid filename characters.
-	invalidPathCharsRX = regexp.MustCompile(`[:]+`)
 )
 
 // ScreenDump represents a scraped resources.
@@ -41,7 +37,6 @@ func (d *ScreenDump) List(ctx context.Context, _ string) ([]runtime.Object, erro
 	if err != nil {
 		return nil, err
 	}
-
 	oo := make([]runtime.Object, len(ff))
 	for i, f := range ff {
 		if fi, err := f.Info(); err == nil {
@@ -50,11 +45,4 @@ func (d *ScreenDump) List(ctx context.Context, _ string) ([]runtime.Object, erro
 	}
 
 	return oo, nil
-}
-
-// Helpers...
-
-// SanitizeFilename sanitizes the dump filename.
-func SanitizeFilename(name string) string {
-	return invalidPathCharsRX.ReplaceAllString(name, "-")
 }
