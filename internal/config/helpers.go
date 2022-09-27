@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"regexp"
 
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -15,6 +16,13 @@ const (
 	// DefaultFileMod default unix perms for k9s files.
 	DefaultFileMod os.FileMode = 0600
 )
+
+var invalidPathCharsRX = regexp.MustCompile(`[:]+`)
+
+// SanitizeFilename sanitizes the dump filename.
+func SanitizeFilename(name string) string {
+	return invalidPathCharsRX.ReplaceAllString(name, "-")
+}
 
 // InList check if string is in a collection of strings.
 func InList(ll []string, n string) bool {

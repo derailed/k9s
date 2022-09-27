@@ -122,7 +122,7 @@ func (h *PulseHealth) check(ctx context.Context, ns, gvr string) (*health.Check,
 		}
 		rows := make(render.Rows, len(table.Rows))
 		re, _ := meta.Renderer.(Generic)
-		re.SetTable(table)
+		re.SetTable(ns, table)
 		for i, row := range table.Rows {
 			if err := re.Render(row, ns, &rows[i]); err != nil {
 				return nil, err

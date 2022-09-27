@@ -305,7 +305,7 @@ func genericTreeHydrate(ctx context.Context, ns string, table *metav1beta1.Table
 		return fmt.Errorf("expecting xray.Generic renderer but got %T", re)
 	}
 
-	tre.SetTable(table)
+	tre.SetTable(ns, table)
 	// BOZO!! Need table row sorter!!
 	for _, row := range table.Rows {
 		if err := tre.Render(ctx, ns, row); err != nil {
