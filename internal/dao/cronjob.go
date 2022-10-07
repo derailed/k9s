@@ -17,7 +17,7 @@ import (
 
 const (
 	maxJobNameSize = 42
-	cronJobGVR     = "batch/v1beta1/cronjobs"
+	cronJobGVR     = "batch/v1/cronjobs"
 	jobGVR         = "batch/v1/jobs"
 )
 
@@ -63,7 +63,7 @@ func (c *CronJob) Run(path string) error {
 			Labels:    cj.Spec.JobTemplate.Labels,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         "batch/v1beta1",
+					APIVersion:         "batch/v1",
 					Kind:               "CronJob",
 					BlockOwnerDeletion: &true,
 					Name:               cj.Name,
