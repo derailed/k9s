@@ -8,6 +8,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
+	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -16,14 +17,16 @@ import (
 )
 
 const (
-	maxJobNameSize = 42
-	cronJobGVR     = "batch/v1/cronjobs"
-	jobGVR         = "batch/v1/jobs"
+	maxJobNameSize  = 42
+	cronJobResource = "cronjobs"
+	cronJobGVR      = "batch/v1beta1/cronjobs"
+	jobGVR          = "batch/v1beta1/jobs"
 )
 
 var (
-	_ Accessor = (*CronJob)(nil)
-	_ Runnable = (*CronJob)(nil)
+	_           Accessor = (*CronJob)(nil)
+	_           Runnable = (*CronJob)(nil)
+	apiVersions          = []string{"batch/v1beta1", "batch/v1"}
 )
 
 // CronJob represents a cronjob K8s resource.
@@ -42,9 +45,19 @@ func (c *CronJob) Run(path string) error {
 		return fmt.Errorf("user is not authorized to run jobs")
 	}
 
-	o, err := c.GetFactory().Get(cronJobGVR, path, true, labels.Everything())
-	if err != nil {
-		return err
+	batchVersion := ""
+	var o runtime.Object
+	for _, version := range apiVersions {
+		o, err = c.GetFactory().Get(version+"/"+cronJobResource, path, true, labels.Everything())
+		if err != nil {
+			statusErr, ok := err.(*k8serr.StatusError)
+			if ok && statusErr.ErrStatus.Reason == "NotFound" {
+				// not found in this version, try the next one
+				continue
+			}
+			return err
+		}
+		batchVersion = version
 	}
 	var cj batchv1.CronJob
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cj)
@@ -63,7 +76,7 @@ func (c *CronJob) Run(path string) error {
 			Labels:    cj.Spec.JobTemplate.Labels,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         "batch/v1",
+					APIVersion:         batchVersion,
 					Kind:               "CronJob",
 					BlockOwnerDeletion: &true,
 					Name:               cj.Name,
