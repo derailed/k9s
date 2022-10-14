@@ -8,7 +8,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
-	k8serr "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -17,16 +16,13 @@ import (
 )
 
 const (
-	maxJobNameSize  = 42
-	cronJobResource = "cronjobs"
-	cronJobGVR      = "batch/v1beta1/cronjobs"
-	jobGVR          = "batch/v1beta1/jobs"
+	maxJobNameSize = 42
+	jobGVR         = "batch/v1/jobs"
 )
 
 var (
-	_           Accessor = (*CronJob)(nil)
-	_           Runnable = (*CronJob)(nil)
-	apiVersions          = []string{"batch/v1beta1", "batch/v1"}
+	_ Accessor = (*CronJob)(nil)
+	_ Runnable = (*CronJob)(nil)
 )
 
 // CronJob represents a cronjob K8s resource.
@@ -45,19 +41,9 @@ func (c *CronJob) Run(path string) error {
 		return fmt.Errorf("user is not authorized to run jobs")
 	}
 
-	batchVersion := ""
-	var o runtime.Object
-	for _, version := range apiVersions {
-		o, err = c.GetFactory().Get(version+"/"+cronJobResource, path, true, labels.Everything())
-		if err != nil {
-			statusErr, ok := err.(*k8serr.StatusError)
-			if ok && statusErr.ErrStatus.Reason == "NotFound" {
-				// not found in this version, try the next one
-				continue
-			}
-			return err
-		}
-		batchVersion = version
+	o, err := c.GetFactory().Get(c.GVR(), path, true, labels.Everything())
+	if err != nil {
+		return err
 	}
 	var cj batchv1.CronJob
 	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &cj)
@@ -76,7 +62,7 @@ func (c *CronJob) Run(path string) error {
 			Labels:    cj.Spec.JobTemplate.Labels,
 			OwnerReferences: []metav1.OwnerReference{
 				{
-					APIVersion:         batchVersion,
+					APIVersion:         c.gvr.G() + "/" + c.gvr.V(),
 					Kind:               "CronJob",
 					BlockOwnerDeletion: &true,
 					Name:               cj.Name,
@@ -126,33 +112,54 @@ func (c *CronJob) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, erro
 // ToggleSuspend toggles suspend/resume on a CronJob.
 func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
 	ns, n := client.Namespaced(path)
-	auth, err := c.Client().CanI(cronJobGVR, ns, []string{client.GetVerb, client.UpdateVerb})
+	auth, err := c.Client().CanI(c.GVR(), ns, []string{client.GetVerb, client.UpdateVerb})
 	if err != nil {
 		return err
 	}
 	if !auth {
-		return fmt.Errorf("user is not authorized to run jobs")
+		return fmt.Errorf("user is not authorized to (un)suspend cronjobs")
 	}
 
 	dial, err := c.Client().Dial()
 	if err != nil {
 		return err
 	}
-	cj, err := dial.BatchV1beta1().CronJobs(ns).Get(ctx, n, metav1.GetOptions{})
-	if err != nil {
+	switch c.gvr.V() {
+	case "v1": // since v1.21
+		cj, err := dial.BatchV1().CronJobs(ns).Get(ctx, n, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
+
+		if cj.Spec.Suspend != nil {
+			current := !*cj.Spec.Suspend
+			cj.Spec.Suspend = &current
+		} else {
+			true := true
+			cj.Spec.Suspend = &true
+		}
+		_, err = dial.BatchV1().CronJobs(ns).Update(ctx, cj, metav1.UpdateOptions{})
+
 		return err
-	}
+	case "v1beta1": // up to v1.24
+		cj, err := dial.BatchV1beta1().CronJobs(ns).Get(ctx, n, metav1.GetOptions{})
+		if err != nil {
+			return err
+		}
 
-	if cj.Spec.Suspend != nil {
-		current := !*cj.Spec.Suspend
-		cj.Spec.Suspend = &current
-	} else {
-		true := true
-		cj.Spec.Suspend = &true
-	}
-	_, err = dial.BatchV1beta1().CronJobs(ns).Update(ctx, cj, metav1.UpdateOptions{})
+		if cj.Spec.Suspend != nil {
+			current := !*cj.Spec.Suspend
+			cj.Spec.Suspend = &current
+		} else {
+			true := true
+			cj.Spec.Suspend = &true
+		}
+		_, err = dial.BatchV1beta1().CronJobs(ns).Update(ctx, cj, metav1.UpdateOptions{})
 
-	return err
+		return err
+	default:
+		return errors.New("Unsupported batch version")
+	}
 }
 
 // Scan scans for cluster resource refs.
