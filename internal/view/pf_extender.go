@@ -47,17 +47,8 @@ func (p *PortForwardExtender) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
 		p.App().Flash().Err(err)
 		return nil
 	}
-	pod, err := fetchPod(p.App().factory, podName)
-	if err != nil {
+	if err := ensurePodPortFwdAllowed(p.App().factory, podName); err != nil {
 		p.App().Flash().Err(err)
-		return nil
-	}
-	if pod.Status.Phase != v1.PodRunning {
-		p.App().Flash().Errf("pod must be running. Current status=%v", pod.Status.Phase)
-		return nil
-	}
-	if p.App().factory.Forwarders().IsPodForwarded(path) {
-		p.App().Flash().Errf("A PortForward already exists for pod %s", pod.Name)
 		return nil
 	}
 	if err := showFwdDialog(p, podName, startFwdCB); err != nil {
@@ -82,6 +73,18 @@ func (p *PortForwardExtender) fetchPodName(path string) (string, error) {
 
 // ----------------------------------------------------------------------------
 // Helpers...
+
+func ensurePodPortFwdAllowed(factory dao.Factory, podName string) error {
+	pod, err := fetchPod(factory, podName)
+	if err != nil {
+		return err
+	}
+	if pod.Status.Phase != v1.PodRunning {
+		return fmt.Errorf("pod must be running. Current status=%v", pod.Status.Phase)
+	}
+
+	return nil
+}
 
 func runForward(v ResourceViewer, pf watch.Forwarder, f *portforward.PortForwarder) {
 	v.App().factory.AddForwarder(pf)
