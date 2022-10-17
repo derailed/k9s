@@ -124,42 +124,20 @@ func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
 	if err != nil {
 		return err
 	}
-	switch c.gvr.V() {
-	case "v1": // since v1.21
-		cj, err := dial.BatchV1().CronJobs(ns).Get(ctx, n, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-
-		if cj.Spec.Suspend != nil {
-			current := !*cj.Spec.Suspend
-			cj.Spec.Suspend = &current
-		} else {
-			true := true
-			cj.Spec.Suspend = &true
-		}
-		_, err = dial.BatchV1().CronJobs(ns).Update(ctx, cj, metav1.UpdateOptions{})
-
+	cj, err := dial.BatchV1().CronJobs(ns).Get(ctx, n, metav1.GetOptions{})
+	if err != nil {
 		return err
-	case "v1beta1": // up to v1.24
-		cj, err := dial.BatchV1beta1().CronJobs(ns).Get(ctx, n, metav1.GetOptions{})
-		if err != nil {
-			return err
-		}
-
-		if cj.Spec.Suspend != nil {
-			current := !*cj.Spec.Suspend
-			cj.Spec.Suspend = &current
-		} else {
-			true := true
-			cj.Spec.Suspend = &true
-		}
-		_, err = dial.BatchV1beta1().CronJobs(ns).Update(ctx, cj, metav1.UpdateOptions{})
-
-		return err
-	default:
-		return errors.New("Unsupported batch version")
 	}
+	if cj.Spec.Suspend != nil {
+		current := !*cj.Spec.Suspend
+		cj.Spec.Suspend = &current
+	} else {
+		true := true
+		cj.Spec.Suspend = &true
+	}
+	_, err = dial.BatchV1().CronJobs(ns).Update(ctx, cj, metav1.UpdateOptions{})
+
+	return err
 }
 
 // Scan scans for cluster resource refs.
