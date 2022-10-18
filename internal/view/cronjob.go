@@ -19,7 +19,11 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
-const suspendDialogKey = "suspend"
+const (
+	suspendDialogKey     = "suspend"
+	lastScheduledCol     = "LAST_SCHEDULE"
+	defaultSuspendStatus = "true"
+)
 
 // CronJob represents a cronjob viewer.
 type CronJob struct {
@@ -66,8 +70,9 @@ func jobCtx(path, uid string) ContextFunc {
 
 func (c *CronJob) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		ui.KeyT: ui.NewKeyAction("Trigger", c.triggerCmd, true),
-		ui.KeyS: ui.NewKeyAction("Suspend/Resume", c.toggleSuspendCmd, true),
+		ui.KeyT:      ui.NewKeyAction("Trigger", c.triggerCmd, true),
+		ui.KeyS:      ui.NewKeyAction("Suspend/Resume", c.toggleSuspendCmd, true),
+		ui.KeyShiftL: ui.NewKeyAction("Sort LastScheduled", c.GetTable().SortColCmd(lastScheduledCol, true), false),
 	})
 }
 
@@ -119,7 +124,7 @@ func (c *CronJob) showSuspendDialog(sel string) {
 		c.App().Flash().Errf("Unable to assert current status")
 		return
 	}
-	suspended := strings.TrimSpace(cell.Text) == "True"
+	suspended := strings.TrimSpace(cell.Text) == defaultSuspendStatus
 	title := "Suspend"
 	if suspended {
 		title = "Resume"
@@ -136,9 +141,9 @@ func (c *CronJob) showSuspendDialog(sel string) {
 
 func (c *CronJob) makeSuspendForm(sel string, suspend bool) *tview.Form {
 	f := c.makeStyledForm()
-	action := "suspend"
+	action := "suspended"
 	if !suspend {
-		action = "resume"
+		action = "resumed"
 	}
 
 	f.AddButton("Cancel", func() {
@@ -153,7 +158,7 @@ func (c *CronJob) makeSuspendForm(sel string, suspend bool) *tview.Form {
 			log.Error().Err(err).Msgf("CronJob %s %s failed", sel, action)
 			c.App().Flash().Err(err)
 		} else {
-			c.App().Flash().Infof("CronJob %s %s successfully", sel, action)
+			c.App().Flash().Infof("CronJob %s %s successfully!", sel, action)
 		}
 	})
 

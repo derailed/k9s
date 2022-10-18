@@ -87,7 +87,7 @@ K9s is available on Linux, macOS and Windows platforms.
 
   ```shell
   # NOTE: The dev version will be in effect!
-  go install github.com/derailed/k9s
+  go install github.com/derailed/k9s@latest
   ```
 
 * Via [Webi](https://webinstall.dev) for Linux and macOS
@@ -359,7 +359,7 @@ K9s uses aliases to navigate most K8s resources.
           - default
         view:
           active: dp
-    # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info) 
+    # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info)
     screenDumpDir: /tmp
   ```
 
@@ -449,9 +449,9 @@ Entering the command mode and typing a resource name or alias, could be cumberso
 
 As of v0.25.0, you can leverage the `FastForwards` feature to tell K9s how to default port-forwards. In situations where you are dealing with multiple containers or containers exposing multiple ports, it can be cumbersome to specify the desired port-forward from the dialog as in most cases, you already know which container/port tuple you desire. For these use cases, you can now annotate your manifests with the following annotations:
 
-- `k9scli.io/auto-port-forwards`  
+- `k9scli.io/auto-port-forwards`
   activates one or more port-forwards directly bypassing the port-forward dialog all together.
-- `k9scli.io/port-forwards`  
+- `k9scli.io/port-forwards`
   pre-selects one or more port-forwards when launching the port-forward dialog.
 
 The annotation value takes on the shape `container-name::[local-port:]container-port`

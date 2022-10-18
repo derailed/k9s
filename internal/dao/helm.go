@@ -117,7 +117,9 @@ func (h *Helm) Delete(_ context.Context, path string, _ *metav1.DeletionPropagat
 	if err != nil {
 		return err
 	}
-	res, err := action.NewUninstall(cfg).Run(n)
+	u := action.NewUninstall(cfg)
+	u.KeepHistory = true
+	res, err := u.Run(n)
 	if err != nil {
 		return err
 	}
