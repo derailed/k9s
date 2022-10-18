@@ -87,7 +87,7 @@ K9s is available on Linux, macOS and Windows platforms.
 
   ```shell
   # NOTE: The dev version will be in effect!
-  go get -u github.com/derailed/k9s
+  go install github.com/derailed/k9s
   ```
 
 * Via [Webi](https://webinstall.dev) for Linux and macOS
