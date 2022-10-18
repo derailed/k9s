@@ -17,7 +17,7 @@ require (
 	github.com/gdamore/tcell/v2 v2.5.2
 	github.com/ghodss/yaml v1.0.0
 	github.com/mattn/go-colorable v0.1.13
-	github.com/mattn/go-runewidth v0.0.13
+	github.com/mattn/go-runewidth v0.0.14
 	github.com/petergtz/pegomock v2.9.0+incompatible
 	github.com/rakyll/hey v0.1.4
 	github.com/rs/zerolog v1.27.0
