@@ -44,26 +44,4 @@ plugin:
     args:
       - -c
       - "export FORCE_COLOR=1;kctrl app kick -a $NAME --namespace $NAMESPACE --yes --color --tty |& less -R"
-  toggle-helmrelease:
-    shortCut: Shift-T
-    confirm: true
-    description: Toggle suspend/resume
-    scopes:
-      - helmreleases
-    command: bash
-    background: false
-    args:
-      - -c
-      - "flux $([ $(kubectl get helmreleases --context $CONTEXT -n $NAMESPACE $NAME -o=custom-columns=TYPE:.spec.suspend | tail -1) = \"true\" ] && echo \"resume\" || echo \"suspend\") helmrelease --context $CONTEXT -n $NAMESPACE $NAME |& less"
-  toggle-kustomization:
-    shortCut: Shift-T
-    confirm: true
-    description: Toggle suspend/resume
-    scopes:
-      - kustomizations
-    command: bash
-    background: false
-    args:
-      - -c
-      - "flux $([ $(kubectl get kustomizations --context $CONTEXT -n $NAMESPACE $NAME -o=custom-columns=TYPE:.spec.suspend | tail -1) = \"true\" ] && echo \"resume\" || echo \"suspend\") kustomization --context $CONTEXT -n $NAMESPACE $NAME |& less"
  
