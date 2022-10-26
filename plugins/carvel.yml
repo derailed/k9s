@@ -1,0 +1,69 @@
+# $HOME/.k9s/plugin.yml
+plugin:
+  kapp-inspect:
+    shortCut: Shift-Z
+    confirm: false
+    description: Kapp inspect
+    scopes:
+      - app
+    command: bash
+    background: false
+    args:
+      - -c
+      - "export FORCE_COLOR=1;kapp inspect -a $NAME.app --namespace $NAMESPACE --color --tty |& less -R"
+  kctrl-app-status:
+    shortCut: Shift-Q
+    confirm: false
+    description: kctrl app status
+    scopes:
+      - app
+    command: bash
+    background: false
+    args:
+      - -c
+      - "export FORCE_COLOR=1;kctrl app status -a $NAME --namespace $NAMESPACE --color --tty |& less -R"
+  kctrl-app-pause:
+    shortCut: Shift-T
+    confirm: false
+    description: kctrl app pause
+    scopes:
+      - app
+    command: bash
+    background: false
+    args:
+      - -c
+      - "export FORCE_COLOR=1;kctrl app pause -a $NAME --namespace $NAMESPACE --yes --color --tty |& less -R"
+  kctrl-app-kick:
+    shortCut: Shift-Z
+    confirm: false
+    description: kctrl app kick
+    scopes:
+      - app
+    command: bash
+    background: false
+    args:
+      - -c
+      - "export FORCE_COLOR=1;kctrl app kick -a $NAME --namespace $NAMESPACE --yes --color --tty |& less -R"
+  toggle-helmrelease:
+    shortCut: Shift-T
+    confirm: true
+    description: Toggle suspend/resume
+    scopes:
+      - helmreleases
+    command: bash
+    background: false
+    args:
+      - -c
+      - "flux $([ $(kubectl get helmreleases --context $CONTEXT -n $NAMESPACE $NAME -o=custom-columns=TYPE:.spec.suspend | tail -1) = \"true\" ] && echo \"resume\" || echo \"suspend\") helmrelease --context $CONTEXT -n $NAMESPACE $NAME |& less"
+  toggle-kustomization:
+    shortCut: Shift-T
+    confirm: true
+    description: Toggle suspend/resume
+    scopes:
+      - kustomizations
+    command: bash
+    background: false
+    args:
+      - -c
+      - "flux $([ $(kubectl get kustomizations --context $CONTEXT -n $NAMESPACE $NAME -o=custom-columns=TYPE:.spec.suspend | tail -1) = \"true\" ] && echo \"resume\" || echo \"suspend\") kustomization --context $CONTEXT -n $NAMESPACE $NAME |& less"
+ 
