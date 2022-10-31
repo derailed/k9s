@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/cenkalti/backoff"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/derailed/tview"
 	runewidth "github.com/mattn/go-runewidth"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
