@@ -3,6 +3,7 @@ package view
 import (
 	"context"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
@@ -20,18 +21,36 @@ func NewServiceAccount(gvr client.GVR) ResourceViewer {
 		ResourceViewer: NewBrowser(gvr),
 	}
 	s.AddBindKeysFn(s.bindKeys)
+	s.SetContextFn(s.subjectCtx)
 
 	return &s
 }
 
 func (s *ServiceAccount) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		ui.KeyU: ui.NewKeyAction("UsedBy", s.refCmd, true),
+		ui.KeyU:        ui.NewKeyAction("UsedBy", s.refCmd, true),
+		tcell.KeyEnter: ui.NewKeyAction("Rules", s.policyCmd, true),
 	})
+}
+
+func (s *ServiceAccount) subjectCtx(ctx context.Context) context.Context {
+	return context.WithValue(ctx, internal.KeySubjectKind, sa)
 }
 
 func (s *ServiceAccount) refCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return scanSARefs(evt, s.App(), s.GetTable(), "v1/serviceaccounts")
+}
+
+func (s *ServiceAccount) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := s.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+	if err := s.App().inject(NewPolicy(s.App(), sa, path)); err != nil {
+		s.App().Flash().Err(err)
+	}
+
+	return nil
 }
 
 func scanSARefs(evt *tcell.EventKey, a *App, t *Table, gvr string) *tcell.EventKey {
