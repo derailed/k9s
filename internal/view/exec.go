@@ -331,6 +331,7 @@ func k9sShellPod(node string, cfg *config.ShellPod) v1.Pod {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k9sShellPodName(),
 			Namespace: cfg.Namespace,
+			Labels:    cfg.Labels,
 		},
 		Spec: v1.PodSpec{
 			NodeName:                      node,
