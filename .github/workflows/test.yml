@@ -11,10 +11,21 @@ on:
   pull_request:
     branches:
       - master
+
+env:
+  FORESIGHT_UPLOADER_SIGNER_URL: https://upload.service.runforesight.us
+  WORKFLOW_TELEMETRY_BASE_URL: https://api.service.runforesight.us
+
 jobs:
   build:
     runs-on: ubuntu-20.04
     steps:
+      - name: Collect Workflow Telemetry
+        if: always()
+        uses: runforesight/foresight-workflow-kit-action@v1
+        with:
+          api_key: ${{ secrets.FORESIGHT_PROJECT_WALL_APIKEY }}
+
       - name: Install Go
         uses: actions/setup-go@v3.3.1
         with:
@@ -30,3 +41,12 @@ jobs:
         run: make test
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Analyze Test and/or Coverage Results
+        if: always()
+        uses: runforesight/foresight-test-kit-action@v1
+        with:
+          api_key: ${{ secrets.FORESIGHT_PROJECT_WALL_APIKEY }}
+          test_framework: golang
+          test_format: json
+          test_path: "./test-report.json"
