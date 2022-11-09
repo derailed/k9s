@@ -7,6 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+func foresightUncoverageVersion(ext string) string {
+	return "Foresight uncoverage version file!"
+}
+
 func versionCmd() *cobra.Command {
 	var short bool
 
