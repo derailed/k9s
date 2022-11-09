@@ -295,6 +295,19 @@ func shellIn(a *App, fqn, co string) {
 	}
 }
 
+func debugIn(a *App, fqn, co string) {
+	os, err := getPodOS(a.factory, fqn)
+	if err != nil {
+		log.Warn().Err(err).Msgf("os detect failed")
+	}
+	args := computeDebugArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os)
+
+	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
+	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, fqn, co), args: args}) {
+		a.Flash().Err(errors.New("Debug failed"))
+	}
+}
+
 func containerAttachIn(a *App, comp model.Component, path, co string) error {
 	if co != "" {
 		resumeAttachIn(a, comp, path, co)
@@ -335,6 +348,26 @@ func attachIn(a *App, path, co string) {
 	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, path, co), args: args}) {
 		a.Flash().Err(errors.New("Attach exec failed"))
 	}
+}
+
+func computeDebugArgs(path, co string, kcfg *string, os string) []string {
+	args := make([]string, 0, 15)
+	args = append(args, "debug", "-it")
+
+	ns, po := client.Namespaced(path)
+	if ns != client.AllNamespaces {
+		args = append(args, "-n", ns)
+	}
+	args = append(args, po)
+	if kcfg != nil && *kcfg != "" {
+		args = append(args, "--kubeconfig", *kcfg)
+	}
+
+	args = append(args, po)
+	args = append(args, "--target", co)
+	args = append(args, "--image=alpine")
+
+	return args
 }
 
 func computeShellArgs(path, co string, kcfg *string, os string) []string {

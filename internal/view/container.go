@@ -55,8 +55,9 @@ func (c *Container) Name() string { return containerTitle }
 
 func (c *Container) bindDangerousKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		ui.KeyS: ui.NewKeyAction("Shell", c.shellCmd, true),
-		ui.KeyA: ui.NewKeyAction("Attach", c.attachCmd, true),
+		ui.KeyS:      ui.NewKeyAction("Shell", c.shellCmd, true),
+		ui.KeyA:      ui.NewKeyAction("Attach", c.attachCmd, true),
+		ui.KeyShiftD: ui.NewKeyAction("Debug", c.debugCmd, true),
 	})
 }
 
@@ -146,6 +147,19 @@ func (c *Container) shellCmd(evt *tcell.EventKey) *tcell.EventKey {
 	c.Stop()
 	defer c.Start()
 	shellIn(c.App(), c.GetTable().Path, path)
+
+	return nil
+}
+
+func (c *Container) debugCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := c.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	c.Stop()
+	defer c.Start()
+	debugIn(c.App(), c.GetTable().Path, path)
 
 	return nil
 }
