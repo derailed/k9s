@@ -49,4 +49,7 @@ jobs:
           api_key: ${{ secrets.FORESIGHT_PROJECT_WALL_APIKEY }}
           test_framework: golang
           test_format: json
-          test_path: "./test-report.json"
+          test_path: ./test-report.json
+          coverage_format: golang
+          coverage_path: |
+              coverage.out
