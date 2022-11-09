@@ -15,6 +15,10 @@ import (
 	"runtime/debug"
 )
 
+func foresightUncoverageRoot(ext string) string {
+	return "Foresight uncoverage root file!"
+}
+
 const (
 	appName      = "k9s"
 	shortAppDesc = "A graphical CLI for your Kubernetes cluster management."
