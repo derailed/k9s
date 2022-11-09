@@ -363,7 +363,6 @@ func computeDebugArgs(path, co string, kcfg *string, os string) []string {
 		args = append(args, "--kubeconfig", *kcfg)
 	}
 
-	args = append(args, po)
 	args = append(args, "--target", co)
 	args = append(args, "--image=alpine")
 
