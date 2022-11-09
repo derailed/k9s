@@ -12,6 +12,11 @@ import (
 	"os"
 )
 
+
+func foresightUncoverageInfo(ext string) string {
+	return "Foresight uncoverage file info.go!"
+}
+
 func infoCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "info",
