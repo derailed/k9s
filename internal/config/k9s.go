@@ -26,6 +26,7 @@ type K9s struct {
 	Clusters            map[string]*Cluster `yaml:"clusters,omitempty"`
 	Thresholds          Threshold           `yaml:"thresholds"`
 	ScreenDumpDir       string              `yaml:"screenDumpDir"`
+	DebugImage          string              `yaml:"debugImage"`
 	manualRefreshRate   int
 	manualHeadless      *bool
 	manualLogoless      *bool

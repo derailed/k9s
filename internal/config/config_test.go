@@ -369,6 +369,7 @@ var expectedConfig = `k9s:
       critical: 90
       warn: 70
   screenDumpDir: /tmp
+  debugImage: busybox:1.35.0
 `
 
 var resetConfig = `k9s:
@@ -418,4 +419,5 @@ var resetConfig = `k9s:
       critical: 90
       warn: 70
   screenDumpDir: /tmp
+  debugImage: busybox:1.35.0
 `

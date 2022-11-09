@@ -367,6 +367,8 @@ K9s uses aliases to navigate most K8s resources.
           active: dp
     # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info)
     screenDumpDir: /tmp
+    # The image to use when launching the container debug action
+    debugImage: busybox:1.35.0
   ```
 
 ---

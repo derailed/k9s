@@ -21,10 +21,11 @@ import (
 )
 
 const (
-	windowsOS      = "windows"
-	powerShell     = "powershell"
-	osBetaSelector = "beta.kubernetes.io/os"
-	osSelector     = "kubernetes.io/os"
+	windowsOS         = "windows"
+	powerShell        = "powershell"
+	osBetaSelector    = "beta.kubernetes.io/os"
+	osSelector        = "kubernetes.io/os"
+	defaultDebugImage = "busybox:1.35.0"
 )
 
 // Pod represents a pod viewer.
@@ -300,7 +301,15 @@ func debugIn(a *App, fqn, co string) {
 	if err != nil {
 		log.Warn().Err(err).Msgf("os detect failed")
 	}
-	args := computeDebugArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os)
+
+	image := defaultDebugImage
+	log.Info().Str("default", image).Msg("Defaulted image")
+	if a.Config.K9s.DebugImage != "" {
+		log.Info().Str("configured", a.Config.K9s.DebugImage).Msg("Resolving configured image")
+		image = a.Config.K9s.DebugImage
+	}
+	log.Info().Str("image", image).Msg("Resolved image")
+	args := computeDebugArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os, image)
 
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
 	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, fqn, co), args: args}) {
@@ -350,7 +359,7 @@ func attachIn(a *App, path, co string) {
 	}
 }
 
-func computeDebugArgs(path, co string, kcfg *string, os string) []string {
+func computeDebugArgs(path, co string, kcfg *string, os string, image string) []string {
 	args := make([]string, 0, 15)
 	args = append(args, "debug", "-it")
 
@@ -364,7 +373,7 @@ func computeDebugArgs(path, co string, kcfg *string, os string) []string {
 	}
 
 	args = append(args, "--target", co)
-	args = append(args, "--image=alpine")
+	args = append(args, fmt.Sprintf("--image=%s", image))
 
 	return args
 }
