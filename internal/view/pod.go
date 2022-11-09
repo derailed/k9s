@@ -303,12 +303,9 @@ func debugIn(a *App, fqn, co string) {
 	}
 
 	image := defaultDebugImage
-	log.Info().Str("default", image).Msg("Defaulted image")
 	if a.Config.K9s.DebugImage != "" {
-		log.Info().Str("configured", a.Config.K9s.DebugImage).Msg("Resolving configured image")
 		image = a.Config.K9s.DebugImage
 	}
-	log.Info().Str("image", image).Msg("Resolved image")
 	args := computeDebugArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os, image)
 
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
