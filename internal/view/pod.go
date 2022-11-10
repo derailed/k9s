@@ -302,11 +302,7 @@ func debugIn(a *App, fqn, co string) {
 		log.Warn().Err(err).Msgf("os detect failed")
 	}
 
-	image := defaultDebugImage
-	if a.Config.K9s.DebugImage != "" {
-		image = a.Config.K9s.DebugImage
-	}
-	args := computeDebugArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os, image)
+	args := computeDebugArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os, a.Config.K9s.DebugImage)
 
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
 	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, fqn, co), args: args}) {

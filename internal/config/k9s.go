@@ -7,6 +7,7 @@ import (
 const (
 	defaultRefreshRate  = 2
 	defaultMaxConnRetry = 5
+	defaultDebugImage   = "busybox:1.35.0"
 )
 
 // K9s tracks K9s configuration options.
@@ -41,6 +42,7 @@ func NewK9s() *K9s {
 	return &K9s{
 		RefreshRate:   defaultRefreshRate,
 		MaxConnRetry:  defaultMaxConnRetry,
+		DebugImage:    defaultDebugImage,
 		Logger:        NewLogger(),
 		Clusters:      make(map[string]*Cluster),
 		Thresholds:    NewThreshold(),
