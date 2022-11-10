@@ -370,7 +370,7 @@ func computeDebugArgs(path, co string, kcfg *string, os string, image string) []
 	}
 
 	args = append(args, "--target", co)
-	args = append(args, fmt.Sprintf("--image=%s", image))
+	args = append(args, "--image", image)
 
 	return args
 }
