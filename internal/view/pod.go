@@ -296,12 +296,7 @@ func shellIn(a *App, fqn, co string) {
 }
 
 func debugIn(a *App, fqn, co string) {
-	os, err := getPodOS(a.factory, fqn)
-	if err != nil {
-		log.Warn().Err(err).Msgf("os detect failed")
-	}
-
-	args := computeDebugArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os, a.Config.K9s.DebugImage)
+	args := computeDebugArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, a.Config.K9s.DebugImage)
 
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
 	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, fqn, co), args: args}) {
@@ -351,7 +346,7 @@ func attachIn(a *App, path, co string) {
 	}
 }
 
-func computeDebugArgs(path, co string, kcfg *string, os string, image string) []string {
+func computeDebugArgs(path, co string, kcfg *string, image string) []string {
 	args := make([]string, 0, 15)
 	args = append(args, "debug", "-it")
 
