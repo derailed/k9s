@@ -21,11 +21,10 @@ import (
 )
 
 const (
-	windowsOS         = "windows"
-	powerShell        = "powershell"
-	osBetaSelector    = "beta.kubernetes.io/os"
-	osSelector        = "kubernetes.io/os"
-	defaultDebugImage = "busybox:1.35.0"
+	windowsOS      = "windows"
+	powerShell     = "powershell"
+	osBetaSelector = "beta.kubernetes.io/os"
+	osSelector     = "kubernetes.io/os"
 )
 
 // Pod represents a pod viewer.
