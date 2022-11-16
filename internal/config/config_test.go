@@ -314,6 +314,7 @@ var expectedConfig = `k9s:
         limits:
           cpu: 100m
           memory: 100Mi
+        labels: {}
       portForwardAddress: localhost
     fred:
       namespace:
@@ -337,6 +338,7 @@ var expectedConfig = `k9s:
         limits:
           cpu: 100m
           memory: 100Mi
+        labels: {}
       portForwardAddress: localhost
     minikube:
       namespace:
@@ -360,6 +362,7 @@ var expectedConfig = `k9s:
         limits:
           cpu: 100m
           memory: 100Mi
+        labels: {}
       portForwardAddress: localhost
   thresholds:
     cpu:
@@ -409,6 +412,7 @@ var resetConfig = `k9s:
         limits:
           cpu: 100m
           memory: 100Mi
+        labels: {}
       portForwardAddress: localhost
   thresholds:
     cpu:
