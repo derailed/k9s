@@ -178,7 +178,7 @@ func (c *Command) specialCmd(cmd, path string) bool {
 	case "cow":
 		c.app.cowCmd(path)
 		return true
-	case "q", "Q", "quit":
+	case "q", "q!", "Q", "quit":
 		c.app.BailOut()
 		return true
 	case "?", "h", "help":

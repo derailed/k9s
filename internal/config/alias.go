@@ -143,7 +143,7 @@ func (a *Aliases) loadDefaultAliases() {
 	a.Alias["np"] = "networking.k8s.io/v1/networkpolicies"
 
 	a.declare("help", "h", "?")
-	a.declare("quit", "q", "Q")
+	a.declare("quit", "q", "q!", "Q")
 	a.declare("aliases", "alias", "a")
 	a.declare("popeye", "pop")
 	a.declare("helm", "charts", "chart", "hm")
