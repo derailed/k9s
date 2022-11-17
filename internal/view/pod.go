@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"os/exec"
+	"strconv"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -26,6 +29,8 @@ const (
 	osBetaSelector = "beta.kubernetes.io/os"
 	osSelector     = "kubernetes.io/os"
 )
+
+type TerminalSize struct{ width, height int }
 
 // Pod represents a pod viewer.
 type Pod struct {
@@ -287,12 +292,41 @@ func shellIn(a *App, fqn, co string) {
 	if err != nil {
 		log.Warn().Err(err).Msgf("os detect failed")
 	}
-	args := computeShellArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os)
+
+	var terminalSize TerminalSize
+	if a.Config.K9s.FixShellWindowSize {
+		size, err := getWindowSize()
+		terminalSize = size
+
+		if err != nil {
+			log.Warn().Err(err).Msg("could not get terminal window size")
+		}
+	}
+
+	args := computeShellArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os, terminalSize)
 
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
 	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, fqn, co), args: args}) {
 		a.Flash().Err(errors.New("Shell exec failed"))
 	}
+}
+
+func getWindowSize() (TerminalSize, error) {
+	var terminalSize TerminalSize
+
+	cmd := exec.Command("stty", "size")
+	cmd.Stdin = os.Stdin
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return terminalSize, fmt.Errorf("Error: %v. Output: %v", err, string(out))
+	}
+
+	n, err := fmt.Sscanf(string(out), "%d %d", &terminalSize.height, &terminalSize.width)
+	if err != nil || n != 2 || terminalSize.width < 1 || terminalSize.height < 1 {
+		return terminalSize, errors.New("unexpected output")
+	}
+
+	return terminalSize, nil
 }
 
 func containerAttachIn(a *App, comp model.Component, path, co string) error {
@@ -337,12 +371,17 @@ func attachIn(a *App, path, co string) {
 	}
 }
 
-func computeShellArgs(path, co string, kcfg *string, os string) []string {
+func computeShellArgs(path, co string, kcfg *string, os string, terminalSize TerminalSize) []string {
 	args := buildShellArgs("exec", path, co, kcfg)
 	if os == windowsOS {
 		return append(args, "--", powerShell)
 	}
-	return append(args, "--", "sh", "-c", shellCheck)
+	args = append(args, "--")
+	if terminalSize.width > 0 && terminalSize.height > 0 {
+		args = append(args, "env")
+		args = append(args, fmt.Sprintf("COLUMNS=%s LINES=%s", strconv.Itoa(terminalSize.width), strconv.Itoa(terminalSize.height)))
+	}
+	return append(args, "sh", "-c", shellCheck)
 }
 
 func buildShellArgs(cmd, path, co string, kcfg *string) []string {
