@@ -184,7 +184,7 @@ func (s *StatefulSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, 
 		if err != nil {
 			return nil, errors.New("expecting StatefulSet resource")
 		}
-		if sts.Spec.Template.Spec.ServiceAccountName == n {
+		if serviceAccountMatches(sts.Spec.Template.Spec.ServiceAccountName, n) {
 			refs = append(refs, Ref{
 				GVR: s.GVR(),
 				FQN: client.FQN(sts.Namespace, sts.Name),

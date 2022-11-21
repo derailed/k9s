@@ -98,7 +98,7 @@ func (c *CronJob) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, erro
 		if err != nil {
 			return nil, errors.New("expecting CronJob resource")
 		}
-		if cj.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName == n {
+		if serviceAccountMatches(cj.Spec.JobTemplate.Spec.Template.Spec.ServiceAccountName, n) {
 			refs = append(refs, Ref{
 				GVR: c.GVR(),
 				FQN: client.FQN(cj.Namespace, cj.Name),

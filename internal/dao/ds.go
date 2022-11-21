@@ -187,7 +187,7 @@ func (d *DaemonSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, er
 		if err != nil {
 			return nil, errors.New("expecting DaemonSet resource")
 		}
-		if ds.Spec.Template.Spec.ServiceAccountName == n {
+		if serviceAccountMatches(ds.Spec.Template.Spec.ServiceAccountName, n) {
 			refs = append(refs, Ref{
 				GVR: d.GVR(),
 				FQN: client.FQN(ds.Namespace, ds.Name),
