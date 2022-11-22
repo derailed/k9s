@@ -41,6 +41,19 @@ Wanna discuss K9s features with your fellow `K9sers` or simply show your support
 
 ---
 
+## K8S Compatibility Matrix
+|         k9s        | k8s client |
+| ------------------ | ---------- |
+| v0.26.7 - v0.26.6  |   0.25.3   |
+| v0.26.5 - v0.26.4  |   0.25.1   |
+| v0.26.3 - v0.26.1  |   0.24.3   |
+| v0.26.0 - v0.25.19 |   0.24.2   |
+| v0.25.18 - v0.25.3 |   0.22.3   |
+| v0.25.2 - v0.25.0  |   0.22.0   |
+|      <= v0.24      |   0.21.3   |
+
+
+
 ## Installation
 
 K9s is available on Linux, macOS and Windows platforms.
