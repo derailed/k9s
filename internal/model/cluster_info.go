@@ -69,24 +69,24 @@ func (c ClusterMeta) Deltas(n ClusterMeta) bool {
 
 // ClusterInfo models cluster metadata.
 type ClusterInfo struct {
-	cluster          *Cluster
-	factory          dao.Factory
-	data             ClusterMeta
-	version          string
-	noLatestRevCheck bool
-	listeners        []ClusterInfoListener
-	cache            *cache.LRUExpireCache
+	cluster            *Cluster
+	factory            dao.Factory
+	data               ClusterMeta
+	version            string
+	skipLatestRevCheck bool
+	listeners          []ClusterInfoListener
+	cache              *cache.LRUExpireCache
 }
 
 // NewClusterInfo returns a new instance.
-func NewClusterInfo(f dao.Factory, v string, noLatestRevCheck bool) *ClusterInfo {
+func NewClusterInfo(f dao.Factory, v string, skipLatestRevCheck bool) *ClusterInfo {
 	c := ClusterInfo{
-		factory:          f,
-		cluster:          NewCluster(f),
-		data:             NewClusterMeta(),
-		version:          v,
-		noLatestRevCheck: noLatestRevCheck,
-		cache:            cache.NewLRUExpireCache(cacheSize),
+		factory:            f,
+		cluster:            NewCluster(f),
+		data:               NewClusterMeta(),
+		version:            v,
+		skipLatestRevCheck: skipLatestRevCheck,
+		cache:              cache.NewLRUExpireCache(cacheSize),
 	}
 
 	return &c
@@ -135,7 +135,7 @@ func (c *ClusterInfo) Refresh() {
 	v1 := NewSemVer(data.K9sVer)
 
 	var latestRev string
-	if !c.noLatestRevCheck {
+	if !c.skipLatestRevCheck {
 		latestRev = c.fetchK9sLatestRev()
 	}
 	v2 := NewSemVer(latestRev)

@@ -312,7 +312,7 @@ K9s uses aliases to navigate most K8s resources.
     # Toggles icons display as not all terminal support these chars.
     noIcons: false
     # Toggles whether k9s should check for the latest revision from the Github repository releases. Default is false.
-    noLatestRevCheck: false
+    skipLatestRevCheck: false
     # Logs configuration
     logger:
       # Defines the number of lines to return. Default 100
