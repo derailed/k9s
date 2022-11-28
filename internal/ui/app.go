@@ -151,7 +151,7 @@ func (a *App) bindKeys() {
 	}
 }
 
-// BailOut exists the application.
+// BailOut exits the application.
 func (a *App) BailOut() {
 	a.Stop()
 	os.Exit(0)
