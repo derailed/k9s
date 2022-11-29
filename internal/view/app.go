@@ -100,7 +100,7 @@ func (a *App) Init(version string, rate int) error {
 	}
 	a.initFactory(ns)
 
-	a.clusterModel = model.NewClusterInfo(a.factory, a.version)
+	a.clusterModel = model.NewClusterInfo(a.factory, a.version, a.Config.K9s.SkipLatestRevCheck)
 	a.clusterModel.AddListener(a.clusterInfo())
 	a.clusterModel.AddListener(a.statusIndicator())
 	if a.Conn().ConnectionOK() {

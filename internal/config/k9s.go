@@ -20,6 +20,7 @@ type K9s struct {
 	ReadOnly            bool                `yaml:"readOnly"`
 	NoExitOnCtrlC       bool                `yaml:"noExitOnCtrlC"`
 	NoIcons             bool                `yaml:"noIcons"`
+	SkipLatestRevCheck  bool                `yaml:"skipLatestRevCheck"`
 	Logger              *Logger             `yaml:"logger"`
 	CurrentContext      string              `yaml:"currentContext"`
 	CurrentCluster      string              `yaml:"currentCluster"`
