@@ -75,7 +75,7 @@ var podNameRX = regexp.MustCompile(`\A(.+)\-(\w{10})\-(\w{5})\z`)
 
 // PodToKey converts a pod path to a generic bench config key.
 func PodToKey(path string) string {
-	tokens := strings.Split(path, ":")
+	tokens := strings.Split(path, "|")
 	ns, po := client.Namespaced(tokens[0])
 	sections := podNameRX.FindStringSubmatch(po)
 	if len(sections) >= 1 {
