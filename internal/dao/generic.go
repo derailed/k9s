@@ -103,7 +103,7 @@ func (g *Generic) Delete(ctx context.Context, path string, propagation *metav1.D
 	}
 
 	if force {
-		var defaultKillGrace int64 = 1
+		var defaultKillGrace int64 = 0
 		opts.GracePeriodSeconds = &defaultKillGrace
 	}
 
