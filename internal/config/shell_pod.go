@@ -12,11 +12,12 @@ type Limits map[v1.ResourceName]string
 
 // ShellPod represents k9s shell configuration.
 type ShellPod struct {
-	Image     string   `json:"image"`
-	Command   []string `json:"command,omitempty"`
-	Args      []string `json:"args,omitempty"`
-	Namespace string   `json:"namespace"`
-	Limits    Limits   `json:"resources,omitempty"`
+	Image     string            `json:"image"`
+	Command   []string          `json:"command,omitempty"`
+	Args      []string          `json:"args,omitempty"`
+	Namespace string            `json:"namespace"`
+	Limits    Limits            `json:"resources,omitempty"`
+	Labels    map[string]string `json:"labels,omitempty"`
 }
 
 // NewShellPod returns a new instance.
