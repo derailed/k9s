@@ -91,7 +91,7 @@ func (j *Job) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 		if err != nil {
 			return nil, errors.New("expecting Job resource")
 		}
-		if job.Spec.Template.Spec.ServiceAccountName == n {
+		if serviceAccountMatches(job.Spec.Template.Spec.ServiceAccountName, n) {
 			refs = append(refs, Ref{
 				GVR: j.GVR(),
 				FQN: client.FQN(job.Namespace, job.Name),

@@ -167,7 +167,7 @@ func (d *Deployment) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, e
 		if err != nil {
 			return nil, errors.New("expecting Deployment resource")
 		}
-		if dp.Spec.Template.Spec.ServiceAccountName == n {
+		if serviceAccountMatches(dp.Spec.Template.Spec.ServiceAccountName, n) {
 			refs = append(refs, Ref{
 				GVR: d.GVR(),
 				FQN: client.FQN(dp.Namespace, dp.Name),

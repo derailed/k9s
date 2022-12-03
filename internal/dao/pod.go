@@ -242,7 +242,7 @@ func (p *Pod) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 		if len(pod.ObjectMeta.OwnerReferences) > 0 {
 			continue
 		}
-		if pod.Spec.ServiceAccountName == n {
+		if serviceAccountMatches(pod.Spec.ServiceAccountName, n) {
 			refs = append(refs, Ref{
 				GVR: p.GVR(),
 				FQN: client.FQN(pod.Namespace, pod.Name),
