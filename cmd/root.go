@@ -69,7 +69,7 @@ func run(cmd *cobra.Command, args []string) {
 			log.Error().Msg(string(debug.Stack()))
 			printLogo(color.Red)
 			fmt.Printf("%s", color.Colorize("Boom!! ", color.Red))
-			fmt.Println(color.Colorize(fmt.Sprintf("%v.", err), color.LightGray))
+			fmt.Printf("%v.\n", err)
 		}
 	}()
 

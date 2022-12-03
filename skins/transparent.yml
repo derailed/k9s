@@ -4,19 +4,27 @@ k9s:
     bgColor: default
   promt:
     bgColor: default
+  info:
+    sectionColor: default
   dialog:
     bgColor: default
+    labelFgColor: default
+    fieldFgColor: default
   frame:
     crumbs:
       bgColor: default
     title:
       bgColor: default
+      counterColor: default
+    menu:
+      fgColor: default
   views:
     charts:
       bgColor: default
     table:
       bgColor: default
       header:
+        fgColor: default
         bgColor: default
     xray:
       bgColor: default
@@ -24,3 +32,6 @@ k9s:
       bgColor: default
       indicator:
         bgColor: default
+    yaml:
+      colonColor: default
+      valueColor: default
