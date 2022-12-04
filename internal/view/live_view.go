@@ -92,6 +92,21 @@ func (v *LiveView) ResourceFailed(err error) {
 	v.text.SetText(cowTalk(err.Error(), x+w))
 }
 
+func (*LiveView) linesWithRegions(lines []string, matches fuzzy.Matches) []string {
+	ll := make([]string, len(lines))
+	copy(ll, lines)
+	offsetForLine := make(map[int]int)
+	for i, m := range matches {
+		loc, line := m.MatchedIndexes, ll[m.Index]
+		offset := offsetForLine[m.Index]
+		loc[0], loc[1] = loc[0]+offset, loc[1]+offset
+		regionStr := `<<<"search_` + strconv.Itoa(i) + `">>>` + line[loc[0]:loc[1]] + `<<<"">>>`
+		ll[m.Index] = line[:loc[0]] + regionStr + line[loc[1]:]
+		offsetForLine[m.Index] += len(regionStr) - (loc[1] - loc[0])
+	}
+	return ll
+}
+
 // ResourceChanged notifies when the filter changes.
 func (v *LiveView) ResourceChanged(lines []string, matches fuzzy.Matches) {
 	v.app.QueueUpdateDraw(func() {
@@ -101,23 +116,14 @@ func (v *LiveView) ResourceChanged(lines []string, matches fuzzy.Matches) {
 
 		v.text.SetTextAlign(tview.AlignLeft)
 		v.maxRegions = len(matches)
-		var ll []string
-		if len(matches) == 0 {
-			ll = lines
-		} else {
-			ll = make([]string, len(lines))
-			copy(ll, lines)
-			for i, m := range matches {
-				loc, line := m.MatchedIndexes, ll[m.Index]
-				ll[m.Index] = line[:loc[0]] + `<<<"search_` + strconv.Itoa(i) + `">>>` + line[loc[0]:loc[1]] + `<<<"">>>` + line[loc[1]:]
-			}
-		}
 
 		if v.text.GetText(true) == "" {
 			v.text.ScrollToBeginning()
 		}
 
-		v.text.SetText(colorizeYAML(v.app.Styles.Views().Yaml, strings.Join(ll, "\n")))
+		lines = v.linesWithRegions(lines, matches)
+
+		v.text.SetText(colorizeYAML(v.app.Styles.Views().Yaml, strings.Join(lines, "\n")))
 		v.text.Highlight()
 		if v.currentRegion < v.maxRegions {
 			v.text.Highlight("search_" + strconv.Itoa(v.currentRegion))
