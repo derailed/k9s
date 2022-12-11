@@ -27,6 +27,7 @@ type Flags struct {
 	LogFile       *string
 	Headless      *bool
 	Logoless      *bool
+	LockConfig    *bool
 	Command       *string
 	AllNamespaces *bool
 	ReadOnly      *bool
@@ -43,6 +44,7 @@ func NewFlags() *Flags {
 		LogFile:       strPtr(DefaultLogFile),
 		Headless:      boolPtr(false),
 		Logoless:      boolPtr(false),
+		LockConfig:    boolPtr(false),
 		Command:       strPtr(DefaultCommand),
 		AllNamespaces: boolPtr(false),
 		ReadOnly:      boolPtr(false),

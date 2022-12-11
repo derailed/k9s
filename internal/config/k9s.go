@@ -16,6 +16,7 @@ type K9s struct {
 	EnableMouse         bool                `yaml:"enableMouse"`
 	Headless            bool                `yaml:"headless"`
 	Logoless            bool                `yaml:"logoless"`
+	LockConfig          bool                `yaml:"lockConfig"`
 	Crumbsless          bool                `yaml:"crumbsless"`
 	ReadOnly            bool                `yaml:"readOnly"`
 	NoExitOnCtrlC       bool                `yaml:"noExitOnCtrlC"`
@@ -30,6 +31,7 @@ type K9s struct {
 	manualRefreshRate   int
 	manualHeadless      *bool
 	manualLogoless      *bool
+	manualLockConfig    *bool
 	manualCrumbsless    *bool
 	manualReadOnly      *bool
 	manualCommand       *string
@@ -77,6 +79,11 @@ func (k *K9s) OverrideLogoless(b bool) {
 	k.manualLogoless = &b
 }
 
+// OverrideLockConfig toggle the k9s LockConfig manually.
+func (k *K9s) OverrideLockConfig(b bool) {
+	k.manualLockConfig = &b
+}
+
 // OverrideCrumbsless tooh the crumbslessness manually.
 func (k *K9s) OverrideCrumbsless(b bool) {
 	k.manualCrumbsless = &b
@@ -122,6 +129,16 @@ func (k *K9s) IsLogoless() bool {
 	h := k.Logoless
 	if k.manualLogoless != nil && *k.manualLogoless {
 		h = *k.manualLogoless
+	}
+
+	return h
+}
+
+// IsLockConfig returns LockConfig setting.
+func (k *K9s) IsLockConfig() bool {
+	h := k.LockConfig
+	if k.manualLockConfig != nil && *k.manualLockConfig {
+		h = *k.manualLockConfig
 	}
 
 	return h

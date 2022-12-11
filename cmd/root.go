@@ -105,6 +105,7 @@ func loadConfiguration() *config.Config {
 
 	k9sCfg.K9s.OverrideHeadless(*k9sFlags.Headless)
 	k9sCfg.K9s.OverrideLogoless(*k9sFlags.Logoless)
+	k9sCfg.K9s.OverrideLockConfig(*k9sFlags.LockConfig)
 	k9sCfg.K9s.OverrideCrumbsless(*k9sFlags.Crumbsless)
 	k9sCfg.K9s.OverrideReadOnly(*k9sFlags.ReadOnly)
 	k9sCfg.K9s.OverrideWrite(*k9sFlags.Write)
@@ -183,6 +184,12 @@ func initK9sFlags() {
 		"logoless",
 		false,
 		"Turn K9s logo off",
+	)
+	rootCmd.Flags().BoolVar(
+		k9sFlags.LockConfig,
+		"lockConfig",
+		false,
+		"Don't write to config file during runtime",
 	)
 	rootCmd.Flags().BoolVar(
 		k9sFlags.Crumbsless,
