@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
+	"github.com/derailed/k9s/internal/prettyjson"
 )
 
 func TestLogItemEmpty(t *testing.T) {
@@ -90,7 +91,7 @@ func TestLogItemRender(t *testing.T) {
 			e:   `[yellow::]fred[-::] {"foo":["bar"[]} Server listening on: [::[]:5000` + "\n",
 		},
 	}
-
+	colorEncoder := prettyjson.NewColorEncoder()
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
@@ -99,7 +100,7 @@ func TestLogItemRender(t *testing.T) {
 			i.Pod, i.Container = n, u.opts.Container
 
 			bb := bytes.NewBuffer(make([]byte, 0, i.Size()))
-			i.Render("yellow", u.opts.ShowTimestamp, bb)
+			i.Render("yellow", u.opts.ShowTimestamp, u.opts.JsonPretty, colorEncoder, bb)
 			assert.Equal(t, u.e, bb.String())
 		})
 	}
@@ -112,9 +113,10 @@ func BenchmarkLogItemRenderTS(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
+	colorEncoder := prettyjson.NewColorEncoder()
 	for n := 0; n < b.N; n++ {
 		bb := bytes.NewBuffer(make([]byte, 0, i.Size()))
-		i.Render("yellow", true, bb)
+		i.Render("yellow", true, false, colorEncoder, bb)
 	}
 }
 
@@ -125,8 +127,9 @@ func BenchmarkLogItemRenderNoTS(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
+	colorEncoder := prettyjson.NewColorEncoder()
 	for n := 0; n < b.N; n++ {
 		bb := bytes.NewBuffer(make([]byte, 0, i.Size()))
-		i.Render("yellow", false, bb)
+		i.Render("yellow", false, false, colorEncoder, bb)
 	}
 }

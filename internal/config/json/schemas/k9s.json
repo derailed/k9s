@@ -103,7 +103,8 @@
             "buffer": {"type": "integer"},
             "sinceSeconds": {"type": "integer"},
             "textWrap": {"type": "boolean"},
-            "showTime": {"type": "boolean"}
+            "showTime": {"type": "boolean"},
+            "jsonPretty": {"type": "boolean"}
           }
         },
         "thresholds": {
