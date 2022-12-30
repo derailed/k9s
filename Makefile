@@ -1,4 +1,5 @@
 GO_FLAGS   ?=
+GO_TAGS	   ?= netcgo
 NAME       := k9s
 OUTPUT_BIN ?= execs/${NAME}
 PACKAGE    := github.com/derailed/$(NAME)
@@ -25,7 +26,7 @@ cover:  ## Run test coverage suite
 build:  ## Builds the CLI
 	@go build ${GO_FLAGS} \
 	-ldflags "-w -s -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT_REV} -X ${PACKAGE}/cmd.date=${DATE}" \
-	-a -tags netgo -o ${OUTPUT_BIN} main.go
+	-a -tags=${GO_TAGS} -o ${OUTPUT_BIN} main.go
 
 kubectl-stable-version:  ## Get kubectl latest stable version
 	@curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt
