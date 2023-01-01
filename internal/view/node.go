@@ -34,8 +34,8 @@ func NewNode(gvr client.GVR) ResourceViewer {
 	return &n
 }
 
-func (n *Node) decorateRows(data render.TableData) render.TableData {
-	return decorateCpuMemHeaderRows(n.App(), data)
+func (n *Node) decorateRows(data *render.TableData) {
+	decorateCpuMemHeaderRows(n.App(), data)
 }
 
 func (n *Node) bindDangerousKeys(aa ui.KeyActions) {
