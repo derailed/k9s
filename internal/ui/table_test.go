@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/stretchr/testify/assert"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -64,8 +65,9 @@ var _ ui.Tabular = &mockModel{}
 func (t *mockModel) SetInstance(string)                 {}
 func (t *mockModel) SetLabelFilter(string)              {}
 func (t *mockModel) Empty() bool                        { return false }
+func (t *mockModel) Count() int                         { return 1 }
 func (t *mockModel) HasMetrics() bool                   { return true }
-func (t *mockModel) Peek() render.TableData             { return makeTableData() }
+func (t *mockModel) Peek() *render.TableData            { return makeTableData() }
 func (t *mockModel) Refresh(context.Context) error      { return nil }
 func (t *mockModel) ClusterWide() bool                  { return false }
 func (t *mockModel) GetNamespace() string               { return "blee" }
@@ -78,7 +80,7 @@ func (t *mockModel) Get(ctx context.Context, path string) (runtime.Object, error
 	return nil, nil
 }
 
-func (t *mockModel) Delete(ctx context.Context, path string, c, f bool) error {
+func (t *mockModel) Delete(ctx context.Context, path string, p *metav1.DeletionPropagation, f bool) error {
 	return nil
 }
 
@@ -92,7 +94,7 @@ func (t *mockModel) ToYAML(ctx context.Context, path string) (string, error) {
 func (t *mockModel) InNamespace(string) bool      { return true }
 func (t *mockModel) SetRefreshRate(time.Duration) {}
 
-func makeTableData() render.TableData {
+func makeTableData() *render.TableData {
 	t := render.NewTableData()
 	t.Namespace = ""
 	t.Header = render.Header{
@@ -115,7 +117,7 @@ func makeTableData() render.TableData {
 		},
 	}
 
-	return *t
+	return t
 }
 
 func makeContext() context.Context {

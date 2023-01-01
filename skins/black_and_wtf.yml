@@ -50,7 +50,7 @@ k9s:
       modifyColor: *text
       addColor: *ghost
       errorColor: *err
-      highlightcolor: *dslate
+      highlightColor: *dslate
       killColor: *slate
       completedColor: *gray
     title:

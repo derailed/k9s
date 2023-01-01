@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cenkalti/backoff"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -100,7 +100,7 @@ func (a *App) Init(version string, rate int) error {
 	}
 	a.initFactory(ns)
 
-	a.clusterModel = model.NewClusterInfo(a.factory, a.version)
+	a.clusterModel = model.NewClusterInfo(a.factory, a.version, a.Config.K9s.SkipLatestRevCheck)
 	a.clusterModel.AddListener(a.clusterInfo())
 	a.clusterModel.AddListener(a.statusIndicator())
 	if a.Conn().ConnectionOK() {
@@ -639,11 +639,9 @@ func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) gotoResource(cmd, path string, clearStack bool) {
 	err := a.command.run(cmd, path, clearStack)
-	if err == nil {
-		return
+	if err != nil {
+		dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
 	}
-
-	dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
 }
 
 func (a *App) inject(c model.Component) error {

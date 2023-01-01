@@ -59,7 +59,7 @@ k9s:
       addColor: *green
       pendingColor: *orange
       errorColor: *magenta
-      highlightcolor: *blue
+      highlightColor: *blue
       killColor: *green
       completedColor: *darkBlue
     # Border title styles.

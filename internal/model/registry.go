@@ -142,27 +142,13 @@ var Registry = map[string]ResourceMeta{
 	},
 
 	// Batch...
-	"batch/v1beta1/cronjobs": {
+	"batch/v1/cronjobs": {
 		DAO:      &dao.CronJob{},
 		Renderer: &render.CronJob{},
 	},
 	"batch/v1/jobs": {
 		DAO:      &dao.Job{},
 		Renderer: &render.Job{},
-	},
-
-	// Autoscaling...
-	"autoscaling/v1/horizontalpodautoscalers": {
-		DAO:      &dao.HorizontalPodAutoscaler{},
-		Renderer: &render.HorizontalPodAutoscaler{},
-	},
-	"autoscaling/v2beta1/horizontalpodautoscalers": {
-		DAO:      &dao.HorizontalPodAutoscaler{},
-		Renderer: &render.HorizontalPodAutoscaler{},
-	},
-	"autoscaling/v2beta2/horizontalpodautoscalers": {
-		DAO:      &dao.HorizontalPodAutoscaler{},
-		Renderer: &render.HorizontalPodAutoscaler{},
 	},
 
 	// CRDs...

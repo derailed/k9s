@@ -8,7 +8,9 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
+	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/action"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -24,13 +26,16 @@ type Helm struct {
 }
 
 // List returns a collection of resources.
-func (c *Helm) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	cfg, err := c.EnsureHelmConfig(ns)
+func (h *Helm) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+	cfg, err := h.EnsureHelmConfig(ns)
 	if err != nil {
 		return nil, err
 	}
 
-	rr, err := action.NewList(cfg).Run()
+	list := action.NewList(cfg)
+	list.All = true
+	list.SetStateMask()
+	rr, err := list.Run()
 	if err != nil {
 		return nil, err
 	}
@@ -44,9 +49,9 @@ func (c *Helm) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 }
 
 // Get returns a resource.
-func (c *Helm) Get(_ context.Context, path string) (runtime.Object, error) {
+func (h *Helm) Get(_ context.Context, path string) (runtime.Object, error) {
 	ns, n := client.Namespaced(path)
-	cfg, err := c.EnsureHelmConfig(ns)
+	cfg, err := h.EnsureHelmConfig(ns)
 	if err != nil {
 		return nil, err
 	}
@@ -58,10 +63,27 @@ func (c *Helm) Get(_ context.Context, path string) (runtime.Object, error) {
 	return render.HelmRes{Release: resp}, nil
 }
 
-// Describe returns the chart notes.
-func (c *Helm) Describe(path string) (string, error) {
+// GetValues returns values for a release
+func (h *Helm) GetValues(path string, allValues bool) ([]byte, error) {
 	ns, n := client.Namespaced(path)
-	cfg, err := c.EnsureHelmConfig(ns)
+	cfg, err := h.EnsureHelmConfig(ns)
+	if err != nil {
+		return nil, err
+	}
+	vals := action.NewGetValues(cfg)
+	vals.AllValues = allValues
+	resp, err := vals.Run(n)
+	if err != nil {
+		return nil, err
+	}
+
+	return yaml.Marshal(resp)
+}
+
+// Describe returns the chart notes.
+func (h *Helm) Describe(path string) (string, error) {
+	ns, n := client.Namespaced(path)
+	cfg, err := h.EnsureHelmConfig(ns)
 	if err != nil {
 		return "", err
 	}
@@ -74,9 +96,9 @@ func (c *Helm) Describe(path string) (string, error) {
 }
 
 // ToYAML returns the chart manifest.
-func (c *Helm) ToYAML(path string, showManaged bool) (string, error) {
+func (h *Helm) ToYAML(path string, showManaged bool) (string, error) {
 	ns, n := client.Namespaced(path)
-	cfg, err := c.EnsureHelmConfig(ns)
+	cfg, err := h.EnsureHelmConfig(ns)
 	if err != nil {
 		return "", err
 	}
@@ -89,18 +111,18 @@ func (c *Helm) ToYAML(path string, showManaged bool) (string, error) {
 }
 
 // Delete uninstall a Helm.
-func (c *Helm) Delete(path string, cascade, force bool) error {
+func (h *Helm) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, force bool) error {
 	ns, n := client.Namespaced(path)
-	cfg, err := c.EnsureHelmConfig(ns)
+	cfg, err := h.EnsureHelmConfig(ns)
 	if err != nil {
 		return err
 	}
-
-	res, err := action.NewUninstall(cfg).Run(n)
+	u := action.NewUninstall(cfg)
+	u.KeepHistory = true
+	res, err := u.Run(n)
 	if err != nil {
 		return err
 	}
-
 	if res != nil && res.Info != "" {
 		return fmt.Errorf("%s", res.Info)
 	}
@@ -109,12 +131,11 @@ func (c *Helm) Delete(path string, cascade, force bool) error {
 }
 
 // EnsureHelmConfig return a new configuration.
-func (c *Helm) EnsureHelmConfig(ns string) (*action.Configuration, error) {
+func (h *Helm) EnsureHelmConfig(ns string) (*action.Configuration, error) {
 	cfg := new(action.Configuration)
-	if err := cfg.Init(c.Client().Config().Flags(), ns, os.Getenv("HELM_DRIVER"), helmLogger); err != nil {
-		return nil, err
-	}
-	return cfg, nil
+	err := cfg.Init(h.Client().Config().Flags(), ns, os.Getenv("HELM_DRIVER"), helmLogger)
+
+	return cfg, err
 }
 
 func helmLogger(s string, args ...interface{}) {

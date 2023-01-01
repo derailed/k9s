@@ -14,6 +14,8 @@ import (
 	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type (
@@ -21,7 +23,7 @@ type (
 	ColorerFunc func(ns string, evt render.RowEvent) tcell.Color
 
 	// DecorateFunc represents a row decorator.
-	DecorateFunc func(render.TableData) render.TableData
+	DecorateFunc func(*render.TableData)
 
 	// SelectedRowFunc a table selection callback.
 	SelectedRowFunc func(r int)
@@ -158,7 +160,7 @@ func (t *Table) ExtraHints() map[string]string {
 }
 
 // GetFilteredData fetch filtered tabular data.
-func (t *Table) GetFilteredData() render.TableData {
+func (t *Table) GetFilteredData() *render.TableData {
 	return t.filtered(t.GetModel().Peek())
 }
 
@@ -178,38 +180,46 @@ func (t *Table) SetSortCol(name string, asc bool) {
 }
 
 // Update table content.
-func (t *Table) Update(data render.TableData, hasMetrics bool) {
+func (t *Table) Update(data *render.TableData, hasMetrics bool) {
 	t.header = data.Header
 	if t.decorateFn != nil {
-		data = t.decorateFn(data)
+		t.decorateFn(data)
 	}
 	t.hasMetrics = hasMetrics
 	t.doUpdate(t.filtered(data))
 	t.UpdateTitle()
 }
 
-func (t *Table) doUpdate(data render.TableData) {
+func (t *Table) doUpdate(data *render.TableData) {
 	if client.IsAllNamespaces(data.Namespace) {
 		t.actions[KeyShiftP] = NewKeyAction("Sort Namespace", t.SortColCmd("NAMESPACE", true), false)
 	} else {
 		t.actions.Delete(KeyShiftP)
 	}
 
-	var cols []string
-	if t.viewSetting != nil {
+	cols := t.header.Columns(t.wide)
+	if t.viewSetting != nil && len(t.viewSetting.Columns) > 0 {
 		cols = t.viewSetting.Columns
 	}
-	if len(cols) == 0 {
-		cols = t.header.Columns(t.wide)
-	}
 	custData := data.Customize(cols, t.wide)
-
-	if (t.sortCol.name == "" || custData.Header.IndexOf(t.sortCol.name, false) == -1) && len(custData.Header) > 0 && t.sortCol.name != "NONE" {
-		t.sortCol.name = custData.Header[0].Name
-		if t.sortCol.name == "NAMESPACE" && !client.IsAllNamespaces(data.Namespace) {
-			if idx := custData.Header.IndexOf("NAME", false); idx != -1 {
-				t.sortCol.name = custData.Header[idx].Name
+	if t.viewSetting != nil && t.viewSetting.SortColumn != "" {
+		tokens := strings.Split(t.viewSetting.SortColumn, ":")
+		if custData.Header.IndexOf(tokens[0], false) >= 0 {
+			t.sortCol.name, t.sortCol.asc = tokens[0], true
+			if len(tokens) == 2 && tokens[1] == "desc" {
+				t.sortCol.asc = false
 			}
+		}
+	}
+
+	if t.sortCol.name == "" && client.IsAllNamespaces(data.Namespace) {
+		t.sortCol.name = "NAMESPACE"
+	}
+	if t.sortCol.name == "" || (t.sortCol.name == "NAMESPACE" && !client.IsAllNamespaces(data.Namespace)) && len(custData.Header) > 0 {
+		if idx := custData.Header.IndexOf("NAME", false); idx >= 0 {
+			t.sortCol.name = custData.Header[idx].Name
+		} else {
+			t.sortCol.name = custData.Header[0].Name
 		}
 	}
 
@@ -236,7 +246,7 @@ func (t *Table) doUpdate(data render.TableData) {
 		custData.Namespace,
 		colIndex,
 		custData.Header.IsTimeCol(colIndex),
-		data.Header.IsMetricsCol(colIndex),
+		custData.Header.IsMetricsCol(colIndex),
 		t.sortCol.asc,
 	)
 
@@ -365,7 +375,7 @@ func (t *Table) AddHeaderCell(col int, h render.HeaderColumn) {
 	t.SetCell(0, col, c)
 }
 
-func (t *Table) filtered(data render.TableData) render.TableData {
+func (t *Table) filtered(data *render.TableData) *render.TableData {
 	filtered := data
 	if t.toast {
 		filtered = filterToast(data)
@@ -413,7 +423,7 @@ func (t *Table) styleTitle() string {
 		rc--
 	}
 
-	base := strings.Title(t.gvr.R())
+	base := cases.Title(language.Und, cases.NoLower).String(t.gvr.R())
 	ns := t.GetModel().GetNamespace()
 	if client.IsClusterWide(ns) || ns == client.NotNamespaced {
 		ns = client.NamespaceAll

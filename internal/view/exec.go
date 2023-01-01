@@ -45,7 +45,7 @@ func runK(a *App, opts shellOpts) bool {
 		log.Error().Err(err).Msgf("kubectl command is not in your path")
 		return false
 	}
-	var args []string
+	args := []string{opts.args[0]}
 	if u, err := a.Conn().Config().ImpersonateUser(); err == nil {
 		args = append(args, "--as", u)
 	}
@@ -60,7 +60,7 @@ func runK(a *App, opts shellOpts) bool {
 		args = append(args, "--kubeconfig", *cfg)
 	}
 	if len(args) > 0 {
-		opts.args = append(args, opts.args...)
+		opts.args = append(args, opts.args[1:]...)
 	}
 	opts.binary, opts.background = bin, false
 
@@ -184,7 +184,7 @@ func clearScreen() {
 const (
 	k9sShell           = "k9s-shell"
 	k9sShellRetryCount = 10
-	k9sShellRetryDelay = 1 * time.Second
+	k9sShellRetryDelay = 10 * time.Second
 )
 
 func ssh(a *App, node string) error {
@@ -199,14 +199,17 @@ func ssh(a *App, node string) error {
 	if err := launchShellPod(a, node); err != nil {
 		return err
 	}
-	ns := a.Config.K9s.ActiveCluster().ShellPod.Namespace
+
+	cl := a.Config.K9s.ActiveCluster()
+	ns := cl.ShellPod.Namespace
 	sshIn(a, client.FQN(ns, k9sShellPodName()), k9sShell)
 
 	return nil
 }
 
 func sshIn(a *App, fqn, co string) {
-	cfg := a.Config.K9s.ActiveCluster().ShellPod
+	cl := a.Config.K9s.ActiveCluster()
+	cfg := cl.ShellPod
 	os, err := getPodOS(a.factory, fqn)
 	if err != nil {
 		log.Warn().Err(err).Msgf("os detect failed")
@@ -232,12 +235,13 @@ func sshIn(a *App, fqn, co string) {
 }
 
 func nukeK9sShell(a *App) error {
-	cl := a.Config.K9s.CurrentCluster
-	if !a.Config.K9s.Clusters[cl].FeatureGates.NodeShell {
+	clName := a.Config.K9s.CurrentCluster
+	if !a.Config.K9s.Clusters[clName].FeatureGates.NodeShell {
 		return nil
 	}
 
-	ns := a.Config.K9s.ActiveCluster().ShellPod.Namespace
+	cl := a.Config.K9s.ActiveCluster()
+	ns := cl.ShellPod.Namespace
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
@@ -256,8 +260,9 @@ func nukeK9sShell(a *App) error {
 
 func launchShellPod(a *App, node string) error {
 	a.Flash().Infof("Launching node shell on %s...", node)
-	ns := a.Config.K9s.ActiveCluster().ShellPod.Namespace
-	spec := k9sShellPod(node, a.Config.K9s.ActiveCluster().ShellPod)
+	cl := a.Config.K9s.ActiveCluster()
+	ns := cl.ShellPod.Namespace
+	spec := k9sShellPod(node, cl.ShellPod)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -326,6 +331,7 @@ func k9sShellPod(node string, cfg *config.ShellPod) v1.Pod {
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k9sShellPodName(),
 			Namespace: cfg.Namespace,
+			Labels:    cfg.Labels,
 		},
 		Spec: v1.PodSpec{
 			NodeName:                      node,
@@ -362,7 +368,7 @@ func asResource(r config.Limits) v1.ResourceRequirements {
 	}
 }
 
-func pipe(ctx context.Context, opts shellOpts, cmds ...*exec.Cmd) error {
+func pipe(_ context.Context, opts shellOpts, cmds ...*exec.Cmd) error {
 	if len(cmds) == 0 {
 		return nil
 	}

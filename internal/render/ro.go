@@ -25,7 +25,7 @@ func (Role) Header(ns string) Header {
 		HeaderColumn{Name: "NAME"},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	)
 }
 
@@ -50,7 +50,7 @@ func (r Role) Render(o interface{}, ns string, row *Row) error {
 		ro.Name,
 		mapToStr(ro.Labels),
 		"",
-		toAge(ro.ObjectMeta.CreationTimestamp),
+		toAge(ro.GetCreationTimestamp()),
 	)
 
 	return nil

@@ -5,7 +5,6 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	appsv1 "k8s.io/api/apps/v1"
 )
@@ -29,7 +28,6 @@ func NewStatefulSet(gvr client.GVR) ResourceViewer {
 	)
 	s.AddBindKeysFn(s.bindKeys)
 	s.GetTable().SetEnterFn(s.showPods)
-	s.GetTable().SetColorerFn(render.StatefulSet{}.ColorerFunc())
 
 	return &s
 }

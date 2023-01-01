@@ -58,9 +58,8 @@ func TestGenericRender(t *testing.T) {
 			ns:      client.ClusterScope,
 			table:   makeNoNSGeneric(),
 			eID:     "-/fred",
-			eFields: render.Fields{"-", "c1", "c2", "c3"},
+			eFields: render.Fields{"c1", "c2", "c3"},
 			eHeader: render.Header{
-				render.HeaderColumn{Name: "NAMESPACE"},
 				render.HeaderColumn{Name: "A"},
 				render.HeaderColumn{Name: "B"},
 				render.HeaderColumn{Name: "C"},
@@ -70,9 +69,8 @@ func TestGenericRender(t *testing.T) {
 			ns:      client.ClusterScope,
 			table:   makeAgeGeneric(),
 			eID:     "-/fred",
-			eFields: render.Fields{"-", "c1", "c2", "Age"},
+			eFields: render.Fields{"c1", "c2", "2d"},
 			eHeader: render.Header{
-				render.HeaderColumn{Name: "NAMESPACE"},
 				render.HeaderColumn{Name: "A"},
 				render.HeaderColumn{Name: "C"},
 				render.HeaderColumn{Name: "AGE", Time: true},
@@ -85,7 +83,7 @@ func TestGenericRender(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			var r render.Row
-			re.SetTable(u.table)
+			re.SetTable(u.ns, u.table)
 
 			assert.Equal(t, u.eHeader, re.Header(u.ns))
 			assert.Nil(t, re.Render(u.table.Rows[0], u.ns, &r))
@@ -172,7 +170,7 @@ func makeAgeGeneric() *metav1beta1.Table {
 				},
 				Cells: []interface{}{
 					"c1",
-					"Age",
+					"2d",
 					"c2",
 				},
 			},

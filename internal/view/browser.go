@@ -49,6 +49,11 @@ func (b *Browser) Init(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	colorerFn := render.DefaultColorer
+	if r, ok := model.Registry[b.GVR().String()]; ok {
+		colorerFn = r.Renderer.ColorerFunc()
+	}
+	b.GetTable().SetColorerFn(colorerFn)
 
 	if err = b.Table.Init(ctx); err != nil {
 		return err
@@ -140,7 +145,7 @@ func (b *Browser) Start() {
 	b.Table.Start()
 	b.CmdBuff().AddListener(b)
 	if err := b.GetModel().Watch(b.prepareContext()); err != nil {
-		log.Error().Err(err).Msgf("Watcher failed for %s", b.GVR())
+		b.App().Flash().Err(fmt.Errorf("Watcher failed for %s -- %w", b.GVR(), err))
 	}
 }
 
@@ -222,7 +227,7 @@ func (b *Browser) Aliases() []string {
 // Model Protocol...
 
 // TableDataChanged notifies view new data is available.
-func (b *Browser) TableDataChanged(data render.TableData) {
+func (b *Browser) TableDataChanged(data *render.TableData) {
 	var cancel context.CancelFunc
 	b.mx.RLock()
 	cancel = b.cancelFn
@@ -406,6 +411,10 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
+	if client.IsAllNamespace(ns) {
+		b.GetTable().SetSortCol("NAMESPACE", true)
+	}
+
 	if err := b.app.switchNS(ns); err != nil {
 		b.App().Flash().Err(err)
 		return nil
@@ -523,7 +532,7 @@ func (b *Browser) simpleDelete(selections []string, msg string) {
 				b.app.Flash().Errf("Invalid nuker %T", b.accessor)
 				continue
 			}
-			if err := nuker.Delete(sel, true, true); err != nil {
+			if err := nuker.Delete(context.Background(), sel, nil, false); err != nil {
 				b.app.Flash().Errf("Delete failed with `%s", err)
 			} else {
 				b.app.factory.DeleteForwarder(sel)
@@ -535,7 +544,7 @@ func (b *Browser) simpleDelete(selections []string, msg string) {
 }
 
 func (b *Browser) resourceDelete(selections []string, msg string) {
-	dialog.ShowDelete(b.app.Styles.Dialog(), b.app.Content.Pages, msg, func(cascade, force bool) {
+	dialog.ShowDelete(b.app.Styles.Dialog(), b.app.Content.Pages, msg, func(propagation *metav1.DeletionPropagation, force bool) {
 		b.ShowDeleted()
 		if len(selections) > 1 {
 			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.GVR())
@@ -543,7 +552,7 @@ func (b *Browser) resourceDelete(selections []string, msg string) {
 			b.app.Flash().Infof("Delete resource %s %s", b.GVR(), selections[0])
 		}
 		for _, sel := range selections {
-			if err := b.GetModel().Delete(b.defaultContext(), sel, cascade, force); err != nil {
+			if err := b.GetModel().Delete(b.defaultContext(), sel, propagation, force); err != nil {
 				b.app.Flash().Errf("Delete failed with `%s", err)
 			} else {
 				b.app.factory.DeleteForwarder(sel)

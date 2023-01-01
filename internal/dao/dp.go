@@ -66,7 +66,7 @@ func (d *Deployment) Scale(ctx context.Context, path string, replicas int32) err
 
 // Restart a Deployment rollout.
 func (d *Deployment) Restart(ctx context.Context, path string) error {
-	o, err := d.Factory.Get("apps/v1/deployments", path, true, labels.Everything())
+	o, err := d.GetFactory().Get("apps/v1/deployments", path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -155,7 +155,7 @@ func (*Deployment) Load(f Factory, fqn string) (*appsv1.Deployment, error) {
 // ScanSA scans for serviceaccount refs.
 func (d *Deployment) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := d.Factory.List(d.GVR(), ns, wait, labels.Everything())
+	oo, err := d.GetFactory().List(d.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -167,7 +167,7 @@ func (d *Deployment) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, e
 		if err != nil {
 			return nil, errors.New("expecting Deployment resource")
 		}
-		if dp.Spec.Template.Spec.ServiceAccountName == n {
+		if serviceAccountMatches(dp.Spec.Template.Spec.ServiceAccountName, n) {
 			refs = append(refs, Ref{
 				GVR: d.GVR(),
 				FQN: client.FQN(dp.Namespace, dp.Name),
@@ -181,7 +181,7 @@ func (d *Deployment) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, e
 // Scan scans for resource references.
 func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := d.Factory.List(d.GVR(), ns, wait, labels.Everything())
+	oo, err := d.GetFactory().List(d.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +223,16 @@ func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs
 				GVR: d.GVR(),
 				FQN: client.FQN(dp.Namespace, dp.Name),
 			})
+		case "scheduling.k8s.io/v1/priorityclasses":
+			if !hasPC(&dp.Spec.Template.Spec, n) {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: d.GVR(),
+				FQN: client.FQN(dp.Namespace, dp.Name),
+			})
 		}
+
 	}
 
 	return refs, nil
@@ -274,6 +283,10 @@ func hasPVC(spec *v1.PodSpec, name string) bool {
 		}
 	}
 	return false
+}
+
+func hasPC(spec *v1.PodSpec, name string) bool {
+	return spec.PriorityClassName == name
 }
 
 func hasConfigMap(spec *v1.PodSpec, name string) bool {

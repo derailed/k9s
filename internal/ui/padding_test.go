@@ -9,12 +9,12 @@ import (
 
 func TestMaxColumn(t *testing.T) {
 	uu := map[string]struct {
-		t render.TableData
+		t *render.TableData
 		s string
 		e MaxyPad
 	}{
 		"ascii col 0": {
-			render.TableData{
+			&render.TableData{
 				Header: render.Header{render.HeaderColumn{Name: "A"}, render.HeaderColumn{Name: "B"}},
 				RowEvents: render.RowEvents{
 					render.RowEvent{
@@ -33,7 +33,7 @@ func TestMaxColumn(t *testing.T) {
 			MaxyPad{6, 6},
 		},
 		"ascii col 1": {
-			render.TableData{
+			&render.TableData{
 				Header: render.Header{render.HeaderColumn{Name: "A"}, render.HeaderColumn{Name: "B"}},
 				RowEvents: render.RowEvents{
 					render.RowEvent{
@@ -52,7 +52,7 @@ func TestMaxColumn(t *testing.T) {
 			MaxyPad{6, 6},
 		},
 		"non_ascii": {
-			render.TableData{
+			&render.TableData{
 				Header: render.Header{render.HeaderColumn{Name: "A"}, render.HeaderColumn{Name: "B"}},
 				RowEvents: render.RowEvents{
 					render.RowEvent{

@@ -41,13 +41,26 @@ Wanna discuss K9s features with your fellow `K9sers` or simply show your support
 
 ---
 
+## K8S Compatibility Matrix
+|         k9s        | k8s client |
+| ------------------ | ---------- |
+| v0.26.7 - v0.26.6  |   0.25.3   |
+| v0.26.5 - v0.26.4  |   0.25.1   |
+| v0.26.3 - v0.26.1  |   0.24.3   |
+| v0.26.0 - v0.25.19 |   0.24.2   |
+| v0.25.18 - v0.25.3 |   0.22.3   |
+| v0.25.2 - v0.25.0  |   0.22.0   |
+|      <= v0.24      |   0.21.3   |
+
+
+
 ## Installation
 
 K9s is available on Linux, macOS and Windows platforms.
 
 * Binaries for Linux, Windows and Mac are available as tarballs in the [release](https://github.com/derailed/k9s/releases) page.
 
-* Via Homebrew for macOS or LinuxBrew for Linux
+* Via [Homebrew](https://brew.sh/) for macOS or Linux
 
    ```shell
    brew install k9s
@@ -87,7 +100,7 @@ K9s is available on Linux, macOS and Windows platforms.
 
   ```shell
   # NOTE: The dev version will be in effect!
-  go get -u github.com/derailed/k9s
+  go install github.com/derailed/k9s@latest
   ```
 
 * Via [Webi](https://webinstall.dev) for Linux and macOS
@@ -100,6 +113,12 @@ K9s is available on Linux, macOS and Windows platforms.
 
   ```shell
   curl.exe -A MS https://webinstall.dev/k9s | powershell
+  ```
+  
+* As a [Docker Desktop Extension](https://docs.docker.com/desktop/extensions/) (for the Docker Desktop built in Kubernetes Server)
+
+  ```shell
+  docker extension install spurin/k9s-dd-extension:latest
   ```
 
 ---
@@ -170,7 +189,7 @@ K9s is available on Linux, macOS and Windows platforms.
     ```shell
     # Kubectl edit command will use this env var.
     export EDITOR=my_fav_editor
-    # Should your editor deals with streamed vs on disk files differently, also set...
+    # Should your editor deal with streamed vs on disk files differently, also set...
     export K9S_EDITOR=my_fav_editor
     ```
 
@@ -301,8 +320,12 @@ K9s uses aliases to navigate most K8s resources.
     crumbsless: false
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
     readOnly: false
+    # Toggles whether k9s should exit when CTRL-C is pressed. When set to true, you will need to exist k9s via the :quit command. Default is false.
+    noExitOnCtrlC: false
     # Toggles icons display as not all terminal support these chars.
     noIcons: false
+    # Toggles whether k9s should check for the latest revision from the Github repository releases. Default is false.
+    skipLatestRevCheck: false
     # Logs configuration
     logger:
       # Defines the number of lines to return. Default 100
@@ -326,6 +349,8 @@ K9s uses aliases to navigate most K8s resources.
       coolio:
         namespace:
           active: coolio
+          # With this set, the favorites list won't be updated as you switch namespaces
+          lockFavorites: false
           favorites:
           - cassandra
           - default
@@ -355,7 +380,7 @@ K9s uses aliases to navigate most K8s resources.
           - default
         view:
           active: dp
-    # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info) 
+    # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info)
     screenDumpDir: /tmp
   ```
 
@@ -445,8 +470,10 @@ Entering the command mode and typing a resource name or alias, could be cumberso
 
 As of v0.25.0, you can leverage the `FastForwards` feature to tell K9s how to default port-forwards. In situations where you are dealing with multiple containers or containers exposing multiple ports, it can be cumbersome to specify the desired port-forward from the dialog as in most cases, you already know which container/port tuple you desire. For these use cases, you can now annotate your manifests with the following annotations:
 
-1. k9scli.io/auto-portforwards -> activates one or more port-forwards directly bypassing the port-forward dialog all together.
-2. k9scli.io/portforwards      -> pre-selects one or more port-forwards when launching the port-forward dialog.
+- `k9scli.io/auto-port-forwards`
+  activates one or more port-forwards directly bypassing the port-forward dialog all together.
+- `k9scli.io/port-forwards`
+  pre-selects one or more port-forwards when launching the port-forward dialog.
 
 The annotation value takes on the shape `container-name::[local-port:]container-port`
 
@@ -461,9 +488,9 @@ kind: Pod
 metadata:
   name: fred
   annotations:
-    k9scli.io/auto-portforwards: zorg::5556        # => will default to container zorg port 5556 and local port 5566. No port-forward dialog will be shown.
+    k9scli.io/auto-port-forwards: zorg::5556        # => will default to container zorg port 5556 and local port 5566. No port-forward dialog will be shown.
     # Or...
-    k9scli.io/portforward: bozo::9090:p1           # => launches the port-forward dialog selecting default port-forward on container bozo port named p1(8081)
+    k9scli.io/port-forwards: bozo::9090:p1           # => launches the port-forward dialog selecting default port-forward on container bozo port named p1(8081)
                                                    # mapping to local port 9090.
     ...
 spec:

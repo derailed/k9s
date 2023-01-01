@@ -15,6 +15,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -110,8 +111,9 @@ func (t *mockModel) ClearSuggestions()                  {}
 func (t *mockModel) SetInstance(string)                 {}
 func (t *mockModel) SetLabelFilter(string)              {}
 func (t *mockModel) Empty() bool                        { return false }
+func (t *mockModel) Count() int                         { return 1 }
 func (t *mockModel) HasMetrics() bool                   { return true }
-func (t *mockModel) Peek() render.TableData             { return makeTableData() }
+func (t *mockModel) Peek() *render.TableData            { return makeTableData() }
 func (t *mockModel) ClusterWide() bool                  { return false }
 func (t *mockModel) GetNamespace() string               { return "blee" }
 func (t *mockModel) SetNamespace(string)                {}
@@ -124,7 +126,7 @@ func (t *mockModel) Get(context.Context, string) (runtime.Object, error) {
 	return nil, nil
 }
 
-func (t *mockModel) Delete(context.Context, string, bool, bool) error {
+func (t *mockModel) Delete(context.Context, string, *metav1.DeletionPropagation, bool) error {
 	return nil
 }
 
@@ -139,8 +141,8 @@ func (t *mockModel) ToYAML(ctx context.Context, path string) (string, error) {
 func (t *mockModel) InNamespace(string) bool      { return true }
 func (t *mockModel) SetRefreshRate(time.Duration) {}
 
-func makeTableData() render.TableData {
-	return render.TableData{
+func makeTableData() *render.TableData {
+	return &render.TableData{
 		Namespace: client.ClusterScope,
 		Header: render.Header{
 			render.HeaderColumn{Name: "RESOURCE"},

@@ -90,32 +90,22 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 		return fmt.Errorf("The specified context %q does not exists in kubeconfig", c.K9s.CurrentContext)
 	}
 	c.K9s.CurrentCluster = context.Cluster
-	c.K9s.ActivateCluster()
+	c.K9s.ActivateCluster(context.Namespace)
 
-	var cns string
-	if cl := c.K9s.ActiveCluster(); cl != nil && cl.Namespace != nil {
-		cns = cl.Namespace.Active
-	}
-	var ns string
+	var ns = client.DefaultNamespace
 	if k9sFlags != nil && IsBoolSet(k9sFlags.AllNamespaces) {
 		ns = client.NamespaceAll
 	} else if isSet(flags.Namespace) {
 		ns = *flags.Namespace
-	} else if context.Namespace != "" {
-		ns = context.Namespace
-		if  cns != "" {
-			ns = cns
-		}
 	} else {
-		ns = cns
+		ns = context.Namespace
 	}
 
-	if ns != "" {
-		if err := c.SetActiveNamespace(ns); err != nil {
-			return err
-		}
-		flags.Namespace = &ns
+	if err := c.SetActiveNamespace(ns); err != nil {
+		return err
 	}
+	flags.Namespace = &ns
+
 	if isSet(flags.ClusterName) {
 		c.K9s.CurrentCluster = *flags.ClusterName
 	}
@@ -166,9 +156,6 @@ func (c *Config) ActiveNamespace() string {
 // ValidateFavorites ensure favorite ns are legit.
 func (c *Config) ValidateFavorites() {
 	cl := c.K9s.ActiveCluster()
-	if cl == nil {
-		cl = NewCluster()
-	}
 	cl.Validate(c.client, c.settings)
 	cl.Namespace.Validate(c.client, c.settings)
 }
@@ -176,16 +163,14 @@ func (c *Config) ValidateFavorites() {
 // FavNamespaces returns fav namespaces in the current cluster.
 func (c *Config) FavNamespaces() []string {
 	cl := c.K9s.ActiveCluster()
-	if cl == nil {
-		return nil
-	}
-	return c.K9s.ActiveCluster().Namespace.Favorites
+
+	return cl.Namespace.Favorites
 }
 
 // SetActiveNamespace set the active namespace in the current cluster.
 func (c *Config) SetActiveNamespace(ns string) error {
-	if c.K9s.ActiveCluster() != nil {
-		return c.K9s.ActiveCluster().Namespace.SetActive(ns, c.settings)
+	if cl := c.K9s.ActiveCluster(); cl != nil {
+		return cl.Namespace.SetActive(ns, c.settings)
 	}
 	err := errors.New("no active cluster. unable to set active namespace")
 	log.Error().Err(err).Msg("SetActiveNamespace")
@@ -195,11 +180,11 @@ func (c *Config) SetActiveNamespace(ns string) error {
 
 // ActiveView returns the active view in the current cluster.
 func (c *Config) ActiveView() string {
-	if c.K9s.ActiveCluster() == nil {
+	cl := c.K9s.ActiveCluster()
+	if cl == nil {
 		return defaultView
 	}
-
-	cmd := c.K9s.ActiveCluster().View.Active
+	cmd := cl.View.Active
 	if c.K9s.manualCommand != nil && *c.K9s.manualCommand != "" {
 		cmd = *c.K9s.manualCommand
 	}
@@ -209,8 +194,7 @@ func (c *Config) ActiveView() string {
 
 // SetActiveView set the currently cluster active view.
 func (c *Config) SetActiveView(view string) {
-	cl := c.K9s.ActiveCluster()
-	if cl != nil {
+	if cl := c.K9s.ActiveCluster(); cl != nil {
 		cl.View.Active = view
 	}
 }
@@ -273,7 +257,7 @@ func (c *Config) Validate() {
 func (c *Config) Dump(msg string) {
 	log.Debug().Msgf("Current Cluster: %s\n", c.K9s.CurrentCluster)
 	for k, cl := range c.K9s.Clusters {
-		log.Debug().Msgf("K9s cluster: %s -- %s\n", k, cl.Namespace)
+		log.Debug().Msgf("K9s cluster: %s -- %+v\n", k, cl.Namespace)
 	}
 }
 

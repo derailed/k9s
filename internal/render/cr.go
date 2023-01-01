@@ -19,7 +19,7 @@ func (ClusterRole) Header(string) Header {
 	return Header{
 		HeaderColumn{Name: "NAME"},
 		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
@@ -39,7 +39,7 @@ func (ClusterRole) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = Fields{
 		cr.Name,
 		mapToStr(cr.Labels),
-		toAge(cr.ObjectMeta.CreationTimestamp),
+		toAge(cr.GetCreationTimestamp()),
 	}
 
 	return nil

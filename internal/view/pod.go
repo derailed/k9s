@@ -42,13 +42,12 @@ func NewPod(gvr client.GVR) ResourceViewer {
 	)
 	p.AddBindKeysFn(p.bindKeys)
 	p.GetTable().SetEnterFn(p.showContainers)
-	p.GetTable().SetColorerFn(render.Pod{}.ColorerFunc())
 	p.GetTable().SetDecorateFn(p.portForwardIndicator)
 
 	return &p
 }
 
-func (p *Pod) portForwardIndicator(data render.TableData) render.TableData {
+func (p *Pod) portForwardIndicator(data *render.TableData) {
 	ff := p.App().factory.Forwarders()
 
 	col := data.IndexOfHeader("PF")
@@ -57,8 +56,7 @@ func (p *Pod) portForwardIndicator(data render.TableData) render.TableData {
 			re.Row.Fields[col] = "[orange::b]Ⓕ"
 		}
 	}
-
-	return decorateCpuMemHeaderRows(p.App(), data)
+	decorateCpuMemHeaderRows(p.App(), data)
 }
 
 func (p *Pod) bindDangerousKeys(aa ui.KeyActions) {
@@ -75,6 +73,7 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 	}
 
 	aa.Add(ui.KeyActions{
+		ui.KeyN:      ui.NewKeyAction("Show Node", p.showNode, true),
 		ui.KeyF:      ui.NewKeyAction("Show PortForward", p.showPFCmd, true),
 		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", p.GetTable().SortColCmd(readyCol, true), false),
 		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd("RESTARTS", false), false),
@@ -130,6 +129,30 @@ func (p *Pod) coContext(ctx context.Context) context.Context {
 
 // Handlers...
 
+func (p *Pod) showNode(evt *tcell.EventKey) *tcell.EventKey {
+	path := p.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+	pod, err := fetchPod(p.App().factory, path)
+	if err != nil {
+		p.App().Flash().Err(err)
+		return nil
+	}
+	if pod.Spec.NodeName == "" {
+		p.App().Flash().Err(errors.New("no node assigned"))
+		return nil
+	}
+	no := NewNode(client.NewGVR("v1/nodes"))
+	no.SetInstance(pod.Spec.NodeName)
+	//no.SetContextFn(nodeContext(pod.Spec.NodeName))
+	if err := p.App().inject(no); err != nil {
+		p.App().Flash().Err(err)
+	}
+
+	return nil
+}
+
 func (p *Pod) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := p.GetTable().GetSelectedItem()
 	if path == "" {
@@ -177,7 +200,7 @@ func (p *Pod) killCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	p.GetTable().ShowDeleted()
 	for _, path := range selections {
-		if err := nuker.Delete(path, true, true); err != nil {
+		if err := nuker.Delete(context.Background(), path, nil, true); err != nil {
 			p.App().Flash().Errf("Delete failed with %s", err)
 		} else {
 			p.App().factory.DeleteForwarder(path)

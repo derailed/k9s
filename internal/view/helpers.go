@@ -7,15 +7,33 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tview"
 	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 )
+
+func clipboardWrite(text string) error {
+	return clipboard.WriteAll(text)
+}
+
+func cpCmd(flash *model.Flash, v *tview.TextView) func(*tcell.EventKey) *tcell.EventKey {
+	return func(evt *tcell.EventKey) *tcell.EventKey {
+		if err := clipboardWrite(v.GetText(true)); err != nil {
+			flash.Err(err)
+			return evt
+		}
+		flash.Info("Content copied to clipboard...")
+
+		return nil
+	}
+}
 
 func parsePFAnn(s string) (string, string, bool) {
 	tokens := strings.Split(s, ":")
@@ -92,7 +110,6 @@ func showPods(app *App, path, labelSel, fieldSel string) {
 
 	v := NewPod(client.NewGVR("v1/pods"))
 	v.SetContextFn(podCtx(app, path, labelSel, fieldSel))
-	v.GetTable().SetColorerFn(render.Pod{}.ColorerFunc())
 
 	ns, _ := client.Namespaced(path)
 	if err := app.Config.SetActiveNamespace(ns); err != nil {
@@ -179,15 +196,9 @@ func fqn(ns, n string) string {
 	return ns + "/" + n
 }
 
-func decorateCpuMemHeaderRows(app *App, data render.TableData) render.TableData {
+func decorateCpuMemHeaderRows(app *App, data *render.TableData) *render.TableData {
 	for colIndex, header := range data.Header {
-		check := ""
-		if header.Name == "%CPU" {
-			check = "cpu"
-		}
-		if header.Name == "%MEM" {
-			check = "memory"
-		}
+		var check string
 		if header.Name == "%CPU/L" {
 			check = "cpu"
 		}

@@ -265,7 +265,7 @@ func newStyle() Style {
 
 func newDialog() Dialog {
 	return Dialog{
-		FgColor:            "cadetBlue",
+		FgColor:            "cadetblue",
 		BgColor:            "black",
 		ButtonBgColor:      "darkslateblue",
 		ButtonFgColor:      "black",
@@ -278,7 +278,7 @@ func newDialog() Dialog {
 
 func newPrompt() Prompt {
 	return Prompt{
-		FgColor:      "cadetBlue",
+		FgColor:      "cadetblue",
 		BgColor:      "black",
 		SuggestColor: "dodgerblue",
 	}

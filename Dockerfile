@@ -1,19 +1,19 @@
 # -----------------------------------------------------------------------------
 # The base image for building the k9s binary
 
-FROM golang:1.17-alpine3.14 AS build
+FROM golang:1.19.2-alpine3.16 AS build
 
 WORKDIR /k9s
 COPY go.mod go.sum main.go Makefile ./
 COPY internal internal
 COPY cmd cmd
-RUN apk --no-cache add make git gcc libc-dev curl && make build
+RUN apk --no-cache add --update make libx11-dev git gcc libc-dev curl && make build
 
 # -----------------------------------------------------------------------------
 # Build the final Docker image
 
-FROM alpine:3.14.3
-ARG KUBECTL_VERSION="v1.21.2"
+FROM alpine:3.16.2
+ARG KUBECTL_VERSION="v1.25.2"
 
 COPY --from=build /k9s/execs/k9s /bin/k9s
 RUN apk add --update ca-certificates \

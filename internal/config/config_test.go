@@ -30,7 +30,7 @@ func TestConfigRefine(t *testing.T) {
 			issue:     false,
 			context:   "test1",
 			cluster:   "cluster1",
-			namespace: "default",
+			namespace: "ns1",
 		},
 		"overrideNS": {
 			flags: &genericclioptions.ConfigFlags{
@@ -284,7 +284,9 @@ var expectedConfig = `k9s:
   logoless: false
   crumbsless: false
   readOnly: true
+  noExitOnCtrlC: false
   noIcons: false
+  skipLatestRevCheck: false
   logger:
     tail: 500
     buffer: 800
@@ -298,6 +300,7 @@ var expectedConfig = `k9s:
     blee:
       namespace:
         active: default
+        lockFavorites: false
         favorites:
         - default
       view:
@@ -305,17 +308,19 @@ var expectedConfig = `k9s:
       featureGates:
         nodeShell: false
       shellPod:
-        image: busybox:1.31
+        image: busybox:1.35.0
         command: []
         args: []
         namespace: default
         limits:
           cpu: 100m
           memory: 100Mi
+        labels: {}
       portForwardAddress: localhost
     fred:
       namespace:
         active: default
+        lockFavorites: false
         favorites:
         - default
         - kube-public
@@ -327,17 +332,19 @@ var expectedConfig = `k9s:
       featureGates:
         nodeShell: false
       shellPod:
-        image: busybox:1.31
+        image: busybox:1.35.0
         command: []
         args: []
         namespace: default
         limits:
           cpu: 100m
           memory: 100Mi
+        labels: {}
       portForwardAddress: localhost
     minikube:
       namespace:
         active: kube-system
+        lockFavorites: false
         favorites:
         - default
         - kube-public
@@ -349,13 +356,14 @@ var expectedConfig = `k9s:
       featureGates:
         nodeShell: false
       shellPod:
-        image: busybox:1.31
+        image: busybox:1.35.0
         command: []
         args: []
         namespace: default
         limits:
           cpu: 100m
           memory: 100Mi
+        labels: {}
       portForwardAddress: localhost
   thresholds:
     cpu:
@@ -375,7 +383,9 @@ var resetConfig = `k9s:
   logoless: false
   crumbsless: false
   readOnly: false
+  noExitOnCtrlC: false
   noIcons: false
+  skipLatestRevCheck: false
   logger:
     tail: 200
     buffer: 2000
@@ -389,6 +399,7 @@ var resetConfig = `k9s:
     blee:
       namespace:
         active: default
+        lockFavorites: false
         favorites:
         - default
       view:
@@ -396,13 +407,14 @@ var resetConfig = `k9s:
       featureGates:
         nodeShell: false
       shellPod:
-        image: busybox:1.31
+        image: busybox:1.35.0
         command: []
         args: []
         namespace: default
         limits:
           cpu: 100m
           memory: 100Mi
+        labels: {}
       portForwardAddress: localhost
   thresholds:
     cpu:

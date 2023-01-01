@@ -43,7 +43,7 @@ func (d *DaemonSet) IsHappy(ds appsv1.DaemonSet) bool {
 
 // Restart a DaemonSet rollout.
 func (d *DaemonSet) Restart(ctx context.Context, path string) error {
-	o, err := d.Factory.Get("apps/v1/daemonsets", path, true, labels.Everything())
+	o, err := d.GetFactory().Get("apps/v1/daemonsets", path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -158,7 +158,7 @@ func (d *DaemonSet) Pod(fqn string) (string, error) {
 
 // GetInstance returns a daemonset instance.
 func (d *DaemonSet) GetInstance(fqn string) (*appsv1.DaemonSet, error) {
-	o, err := d.Factory.Get(d.gvr.String(), fqn, true, labels.Everything())
+	o, err := d.GetFactory().Get(d.gvr.String(), fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func (d *DaemonSet) GetInstance(fqn string) (*appsv1.DaemonSet, error) {
 // ScanSA scans for serviceaccount refs.
 func (d *DaemonSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := d.Factory.List(d.GVR(), ns, wait, labels.Everything())
+	oo, err := d.GetFactory().List(d.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +187,7 @@ func (d *DaemonSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, er
 		if err != nil {
 			return nil, errors.New("expecting DaemonSet resource")
 		}
-		if ds.Spec.Template.Spec.ServiceAccountName == n {
+		if serviceAccountMatches(ds.Spec.Template.Spec.ServiceAccountName, n) {
 			refs = append(refs, Ref{
 				GVR: d.GVR(),
 				FQN: client.FQN(ds.Namespace, ds.Name),
@@ -201,7 +201,7 @@ func (d *DaemonSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, er
 // Scan scans for cluster refs.
 func (d *DaemonSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := d.Factory.List(d.GVR(), ns, wait, labels.Everything())
+	oo, err := d.GetFactory().List(d.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -237,6 +237,14 @@ func (d *DaemonSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs,
 			})
 		case "v1/persistentvolumeclaims":
 			if !hasPVC(&ds.Spec.Template.Spec, n) {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: d.GVR(),
+				FQN: client.FQN(ds.Namespace, ds.Name),
+			})
+		case "scheduling.k8s.io/v1/priorityclasses":
+			if !hasPC(&ds.Spec.Template.Spec, n) {
 				continue
 			}
 			refs = append(refs, Ref{

@@ -30,7 +30,7 @@ func (PodDisruptionBudget) Header(ns string) Header {
 		HeaderColumn{Name: "EXPECTED", Align: tview.AlignRight},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
@@ -58,7 +58,7 @@ func (p PodDisruptionBudget) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(int(pdb.Status.ExpectedPods)),
 		mapToStr(pdb.Labels),
 		asStatus(p.diagnose(pdb.Spec.MinAvailable, pdb.Status.CurrentHealthy)),
-		toAge(pdb.ObjectMeta.CreationTimestamp),
+		toAge(pdb.GetCreationTimestamp()),
 	}
 
 	return nil

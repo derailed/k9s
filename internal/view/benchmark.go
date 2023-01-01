@@ -10,7 +10,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/perf"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/gdamore/tcell/v2"
 )
@@ -27,7 +26,6 @@ func NewBenchmark(gvr client.GVR) ResourceViewer {
 	}
 	b.GetTable().SetBorderFocusColor(tcell.ColorSeaGreen)
 	b.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorSeaGreen).Attributes(tcell.AttrNone))
-	b.GetTable().SetColorerFn(render.Benchmark{}.ColorerFunc())
 	b.GetTable().SetSortCol(ageCol, true)
 	b.SetContextFn(b.benchContext)
 	b.GetTable().SetEnterFn(b.viewBench)
@@ -67,7 +65,7 @@ func fileToSubject(path string) string {
 }
 
 func benchDir(cfg *config.Config) string {
-	return filepath.Join(perf.K9sBenchDir, cfg.K9s.CurrentCluster)
+	return filepath.Join(perf.K9sBenchDir, cfg.K9s.CurrentContextDir())
 }
 
 func readBenchFile(cfg *config.Config, n string) (string, error) {

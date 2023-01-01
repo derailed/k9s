@@ -23,7 +23,7 @@ func (ServiceAccount) Header(ns string) Header {
 		HeaderColumn{Name: "SECRET"},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
@@ -46,7 +46,7 @@ func (s ServiceAccount) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(len(sa.Secrets)),
 		mapToStr(sa.Labels),
 		"",
-		toAge(sa.ObjectMeta.CreationTimestamp),
+		toAge(sa.GetCreationTimestamp()),
 	}
 
 	return nil

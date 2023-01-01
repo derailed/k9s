@@ -163,7 +163,7 @@ func (p *Pod) Pod(fqn string) (string, error) {
 
 // GetInstance returns a pod instance.
 func (p *Pod) GetInstance(fqn string) (*v1.Pod, error) {
-	o, err := p.Factory.Get(p.gvr.String(), fqn, true, labels.Everything())
+	o, err := p.GetFactory().Get(p.gvr.String(), fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +226,7 @@ func (p *Pod) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 // ScanSA scans for ServiceAccount refs.
 func (p *Pod) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := p.Factory.List(p.GVR(), ns, wait, labels.Everything())
+	oo, err := p.GetFactory().List(p.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -242,7 +242,7 @@ func (p *Pod) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 		if len(pod.ObjectMeta.OwnerReferences) > 0 {
 			continue
 		}
-		if pod.Spec.ServiceAccountName == n {
+		if serviceAccountMatches(pod.Spec.ServiceAccountName, n) {
 			refs = append(refs, Ref{
 				GVR: p.GVR(),
 				FQN: client.FQN(pod.Namespace, pod.Name),
@@ -256,7 +256,7 @@ func (p *Pod) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 // Scan scans for cluster resource refs.
 func (p *Pod) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := p.Factory.List(p.GVR(), ns, wait, labels.Everything())
+	oo, err := p.GetFactory().List(p.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -302,6 +302,14 @@ func (p *Pod) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 				GVR: p.GVR(),
 				FQN: client.FQN(pod.Namespace, pod.Name),
 			})
+		case "scheduling.k8s.io/v1/priorityclasses":
+			if !hasPC(&pod.Spec, n) {
+				continue
+			}
+			refs = append(refs, Ref{
+				GVR: p.GVR(),
+				FQN: client.FQN(pod.Namespace, pod.Name),
+			})
 		}
 	}
 
@@ -319,12 +327,8 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 
 	wg.Add(1)
 	go func() {
-		defer func() {
-			wg.Done()
-			log.Debug().Msgf("<<< RETRY-TAIL DONE!!! %s", opts.Info())
-		}()
+		defer wg.Done()
 		podOpts := opts.ToPodLogOptions()
-		log.Debug().Msgf(">>> RETRY-TAIL START %s", opts.Info())
 		var stream io.ReadCloser
 		for r := 0; r < logRetryCount; r++ {
 			var e error
@@ -345,7 +349,6 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 
 			select {
 			case <-ctx.Done():
-				log.Debug().Msgf("LOG CANCELED %s", opts.Info())
 				return
 			default:
 				if e != nil {
@@ -358,7 +361,6 @@ func tailLogs(ctx context.Context, logger Logger, opts *LogOptions) LogChan {
 	go func() {
 		wg.Wait()
 		close(out)
-		log.Debug().Msgf("<<< LOG-TAILER %s DONE!!", opts.Info())
 	}()
 
 	return out
@@ -369,7 +371,6 @@ func readLogs(ctx context.Context, wg *sync.WaitGroup, stream io.ReadCloser, out
 		if err := stream.Close(); err != nil {
 			log.Error().Err(err).Msgf("Fail to close stream %s", opts.Info())
 		}
-		log.Debug().Msgf("<<< LOG-READER EXIT!!! %s", opts.Info())
 		wg.Done()
 	}()
 
@@ -383,11 +384,11 @@ func readLogs(ctx context.Context, wg *sync.WaitGroup, stream io.ReadCloser, out
 			if errors.Is(err, io.EOF) {
 				e := fmt.Errorf("Stream closed %w for %s", err, opts.Info())
 				item = opts.ToErrLogItem(e)
-				log.Debug().Err(e).Msg("log-reader EOF")
+				log.Warn().Err(e).Msg("log-reader EOF")
 			} else {
 				e := fmt.Errorf("Stream canceled %w for %s", err, opts.Info())
 				item = opts.ToErrLogItem(e)
-				log.Debug().Err(e).Msg("log-reader canceled")
+				log.Warn().Err(e).Msg("log-reader canceled")
 			}
 		}
 		select {

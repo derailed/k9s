@@ -20,7 +20,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
 	metricsapi "k8s.io/metrics/pkg/apis/metrics"
-	versioned "k8s.io/metrics/pkg/client/clientset/versioned"
+	"k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
 const (
@@ -89,6 +89,7 @@ func makeSAR(ns, gvr string) *authorizationv1.SelfSubjectAccessReview {
 			ResourceAttributes: &authorizationv1.ResourceAttributes{
 				Namespace:   ns,
 				Group:       res.Group,
+				Version:     res.Version,
 				Resource:    res.Resource,
 				Subresource: spec.SubResource(),
 			},
@@ -162,6 +163,7 @@ func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) 
 	for _, v := range verbs {
 		sar.Spec.ResourceAttributes.Verb = v
 		resp, err := client.Create(ctx, sar, metav1.CreateOptions{})
+		log.Trace().Msgf("[CAN] %s(%s) %v <<%v>>", gvr, verbs, resp, err)
 		if err != nil {
 			log.Warn().Err(err).Msgf("  Dial Failed!")
 			a.cache.Add(key, false, cacheExpiry)
@@ -186,8 +188,8 @@ func (a *APIClient) CurrentNamespaceName() (string, error) {
 // ServerVersion returns the current server version info.
 func (a *APIClient) ServerVersion() (*version.Info, error) {
 	if v, ok := a.cache.Get(serverVersion); ok {
-		if version, ok := v.(*version.Info); ok {
-			return version, nil
+		if vi, ok := v.(*version.Info); ok {
+			return vi, nil
 		}
 	}
 	dial, err := a.CachedDiscovery()
@@ -240,7 +242,7 @@ func (a *APIClient) CheckConnectivity() bool {
 		}
 	}()
 
-	// Need to reload to pickup any kubeconfig changes.
+	// Need reload to pick up any kubeconfig changes.
 	cfg, err := NewConfig(a.config.flags).RESTConfig()
 	if err != nil {
 		log.Error().Err(err).Msgf("restConfig load failed")
@@ -279,10 +281,10 @@ func (a *APIClient) HasMetrics() bool {
 	return err == nil
 }
 
-// LogDial returns a handle to api server for logs.
+// DialLogs returns a handle to api server for logs.
 func (a *APIClient) DialLogs() (kubernetes.Interface, error) {
 	if !a.connOK {
-		return nil, errors.New("No connection to dial")
+		return nil, errors.New("no connection to dial")
 	}
 	if a.logClient != nil {
 		return a.logClient, nil
@@ -303,7 +305,7 @@ func (a *APIClient) DialLogs() (kubernetes.Interface, error) {
 // Dial returns a handle to api server or die.
 func (a *APIClient) Dial() (kubernetes.Interface, error) {
 	if !a.connOK {
-		return nil, errors.New("No connection to dial")
+		return nil, errors.New("no connection to dial")
 	}
 	if a.client != nil {
 		return a.client, nil
@@ -331,7 +333,7 @@ func (a *APIClient) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
 	defer a.mx.Unlock()
 
 	if !a.connOK {
-		return nil, errors.New("No connection to cached dial")
+		return nil, errors.New("no connection to cached dial")
 	}
 
 	if a.cachedClient != nil {
@@ -404,7 +406,7 @@ func (a *APIClient) SwitchContext(name string) error {
 	a.mx.Unlock()
 
 	if !a.CheckConnectivity() {
-		return fmt.Errorf("Unable to connect to context %q", name)
+		return fmt.Errorf("unable to connect to context %q", name)
 	}
 
 	return nil
@@ -463,9 +465,9 @@ func (a *APIClient) supportsMetricsResources() error {
 }
 
 func checkMetricsVersion(grp metav1.APIGroup) bool {
-	for _, version := range grp.Versions {
+	for _, v := range grp.Versions {
 		for _, supportedVersion := range supportedMetricsAPIVersions {
-			if version.Version == supportedVersion {
+			if v.Version == supportedVersion {
 				return true
 			}
 		}

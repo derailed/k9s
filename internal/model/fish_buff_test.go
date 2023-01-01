@@ -50,7 +50,7 @@ func TestFishDelete(t *testing.T) {
 	f.SetActive(true)
 
 	assert.Equal(t, 2, m.changeCount)
-	assert.Equal(t, 1, m.suggCount)
+	assert.Equal(t, 3, m.suggCount)
 	assert.True(t, m.active)
 	assert.Equal(t, "blee", m.suggestion)
 

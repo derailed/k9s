@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
@@ -125,7 +124,7 @@ func (d *Details) bindKeys() {
 		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", d.filterCmd, false),
 		tcell.KeyEscape: ui.NewKeyAction("Back", d.resetCmd, false),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", d.saveCmd, false),
-		ui.KeyC:         ui.NewKeyAction("Copy", d.cpCmd, true),
+		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(d.app.Flash(), d.text), true),
 		ui.KeyF:         ui.NewKeyAction("Toggle FullScreen", d.toggleFullScreenCmd, true),
 		ui.KeyN:         ui.NewKeyAction("Next Match", d.nextCmd, true),
 		ui.KeyShiftN:    ui.NewKeyAction("Prev Match", d.prevCmd, true),
@@ -215,6 +214,11 @@ func (d *Details) toggleFullScreenCmd(evt *tcell.EventKey) *tcell.EventKey {
 	d.fullScreen = !d.fullScreen
 	d.SetFullScreen(d.fullScreen)
 	d.Box.SetBorder(!d.fullScreen)
+	if d.fullScreen {
+		d.Box.SetBorderPadding(0, 0, 0, 0)
+	} else {
+		d.Box.SetBorderPadding(0, 0, 1, 1)
+	}
 
 	return nil
 }
@@ -278,19 +282,10 @@ func (d *Details) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (d *Details) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveYAML(d.app.Config.K9s.GetScreenDumpDir(), d.app.Config.K9s.CurrentCluster, d.title, d.text.GetText(true)); err != nil {
+	if path, err := saveYAML(d.app.Config.K9s.GetScreenDumpDir(), d.app.Config.K9s.CurrentContextDir(), d.title, d.text.GetText(true)); err != nil {
 		d.app.Flash().Err(err)
 	} else {
 		d.app.Flash().Infof("Log %s saved successfully!", path)
-	}
-
-	return nil
-}
-
-func (d *Details) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	d.app.Flash().Info("Content copied to clipboard...")
-	if err := clipboard.WriteAll(d.text.GetText(true)); err != nil {
-		d.app.Flash().Err(err)
 	}
 
 	return nil

@@ -1,0 +1,74 @@
+{
+  "apiVersion": "v1",
+  "kind": "PersistentVolume",
+  "metadata": {
+    "annotations": {
+      "kubernetes.io/createdby": "gce-pd-dynamic-provisioner",
+      "pv.kubernetes.io/bound-by-controller": "yes",
+      "pv.kubernetes.io/provisioned-by": "kubernetes.io/gce-pd"
+    },
+    "creationTimestamp": "2022-06-22T03:45:57Z",
+    "deletionGracePeriodSeconds": 0,
+    "deletionTimestamp": "2022-07-21T14:11:00Z",
+    "finalizers": [
+      "kubernetes.io/pv-protection"
+    ],
+    "labels": {
+      "topology.kubernetes.io/region": "asia-southeast1",
+      "topology.kubernetes.io/zone": "asia-southeast1-b"
+    },
+    "name": "pvc-a4d86f51-916c-476b-83af-b551c91a8ac0",
+    "resourceVersion": "29037811",
+    "uid": "aa195b1a-0e00-43e6-aad9-d4b016904930"
+  },
+  "spec": {
+    "accessModes": [
+      "ReadWriteOnce"
+    ],
+    "capacity": {
+      "storage": "1Gi"
+    },
+    "claimRef": {
+      "apiVersion": "v1",
+      "kind": "PersistentVolumeClaim",
+      "name": "www-nginx-sts-2",
+      "namespace": "default",
+      "resourceVersion": "4028123",
+      "uid": "a4d86f51-916c-476b-83af-b551c91a8ac0"
+    },
+    "gcePersistentDisk": {
+      "fsType": "ext4",
+      "pdName": "gke-k9s-fd5bf60e-pvc-a4d86f51-916c-476b-83af-b551c91a8ac0"
+    },
+    "nodeAffinity": {
+      "required": {
+        "nodeSelectorTerms": [
+          {
+            "matchExpressions": [
+              {
+                "key": "topology.kubernetes.io/zone",
+                "operator": "In",
+                "values": [
+                  "asia-southeast1-b"
+                ]
+              },
+              {
+                "key": "topology.kubernetes.io/region",
+                "operator": "In",
+                "values": [
+                  "asia-southeast1"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "persistentVolumeReclaimPolicy": "Delete",
+    "storageClassName": "standard",
+    "volumeMode": "Filesystem"
+  },
+  "status": {
+    "phase": "Bound"
+  }
+}

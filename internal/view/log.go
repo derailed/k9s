@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
@@ -56,10 +55,6 @@ func NewLog(gvr client.GVR, opts *dao.LogOptions) *Log {
 	}
 
 	return &l
-}
-
-func logChan() dao.LogChan {
-	return make(dao.LogChan, 2)
 }
 
 // Init initializes the viewer.
@@ -256,7 +251,7 @@ func (l *Log) bindKeys() {
 		ui.KeyT:         ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
 		ui.KeyW:         ui.NewKeyAction("Toggle Wrap", l.toggleTextWrapCmd, true),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.SaveCmd, true),
-		ui.KeyC:         ui.NewKeyAction("Copy", l.cpCmd, true),
+		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(l.app.Flash(), l.logs.TextView), true),
 	})
 	if l.model.HasDefaultContainer() {
 		l.logs.Actions().Set(ui.KeyActions{
@@ -400,7 +395,7 @@ func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 // SaveCmd dumps the logs to file.
 func (l *Log) SaveCmd(*tcell.EventKey) *tcell.EventKey {
-	path, err := saveData(l.app.Config.K9s.GetScreenDumpDir(), l.app.Config.K9s.CurrentContext, l.model.GetPath(), l.logs.GetText(true))
+	path, err := saveData(l.app.Config.K9s.GetScreenDumpDir(), l.app.Config.K9s.CurrentContextDir(), l.model.GetPath(), l.logs.GetText(true))
 	if err != nil {
 		l.app.Flash().Err(err)
 		return nil
@@ -410,20 +405,12 @@ func (l *Log) SaveCmd(*tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (l *Log) cpCmd(*tcell.EventKey) *tcell.EventKey {
-	l.app.Flash().Info("Content copied to clipboard...")
-	if err := clipboard.WriteAll(l.logs.GetText(true)); err != nil {
-		l.app.Flash().Err(err)
-	}
-	return nil
-}
-
 func ensureDir(dir string) error {
 	return os.MkdirAll(dir, 0744)
 }
 
-func saveData(screenDumpDir, cluster, fqn, data string) (string, error) {
-	dir := filepath.Join(screenDumpDir, dao.SanitizeFilename(cluster))
+func saveData(screenDumpDir, context, fqn, data string) (string, error) {
+	dir := filepath.Join(screenDumpDir, context)
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}

@@ -22,7 +22,7 @@ func (Endpoints) Header(ns string) Header {
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
 		HeaderColumn{Name: "ENDPOINTS"},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
@@ -44,7 +44,7 @@ func (e Endpoints) Render(o interface{}, ns string, r *Row) error {
 		ep.Namespace,
 		ep.Name,
 		missing(toEPs(ep.Subsets)),
-		toAge(ep.ObjectMeta.CreationTimestamp),
+		toAge(ep.GetCreationTimestamp()),
 	}
 
 	return nil

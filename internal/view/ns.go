@@ -1,8 +1,6 @@
 package view
 
 import (
-	"time"
-
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
@@ -27,7 +25,6 @@ func NewNamespace(gvr client.GVR) ResourceViewer {
 		ResourceViewer: NewBrowser(gvr),
 	}
 	n.GetTable().SetDecorateFn(n.decorate)
-	n.GetTable().SetColorerFn(render.Namespace{}.ColorerFunc())
 	n.GetTable().SetEnterFn(n.switchNs)
 	n.AddBindKeysFn(n.bindKeys)
 
@@ -73,9 +70,9 @@ func (n *Namespace) useNamespace(fqn string) {
 	}
 }
 
-func (n *Namespace) decorate(data render.TableData) render.TableData {
+func (n *Namespace) decorate(data *render.TableData) {
 	if n.App().Conn() == nil || len(data.RowEvents) == 0 {
-		return data
+		return
 	}
 
 	// checks if all ns is in the list if not add it.
@@ -85,7 +82,7 @@ func (n *Namespace) decorate(data render.TableData) render.TableData {
 				Kind: render.EventUnchanged,
 				Row: render.Row{
 					ID:     client.NamespaceAll,
-					Fields: render.Fields{client.NamespaceAll, "Active", "", "", time.Now().String()},
+					Fields: render.Fields{client.NamespaceAll, "Active", "", "", ""},
 				},
 			},
 		)
@@ -101,6 +98,4 @@ func (n *Namespace) decorate(data render.TableData) render.TableData {
 			re.Kind = render.EventUnchanged
 		}
 	}
-
-	return data
 }

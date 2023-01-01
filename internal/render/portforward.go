@@ -51,7 +51,7 @@ func (PortForward) Header(ns string) Header {
 		HeaderColumn{Name: "C"},
 		HeaderColumn{Name: "N"},
 		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 

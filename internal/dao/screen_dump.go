@@ -4,19 +4,16 @@ import (
 	"context"
 	"errors"
 	"os"
-	"regexp"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/render"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 var (
 	_ Accessor = (*ScreenDump)(nil)
 	_ Nuker    = (*ScreenDump)(nil)
-
-	// InvalidCharsRX contains invalid filename characters.
-	invalidPathCharsRX = regexp.MustCompile(`[:]+`)
 )
 
 // ScreenDump represents a scraped resources.
@@ -25,7 +22,7 @@ type ScreenDump struct {
 }
 
 // Delete a ScreenDump.
-func (d *ScreenDump) Delete(path string, cascade, force bool) error {
+func (d *ScreenDump) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, force bool) error {
 	return os.Remove(path)
 }
 
@@ -36,11 +33,10 @@ func (d *ScreenDump) List(ctx context.Context, _ string) ([]runtime.Object, erro
 		return nil, errors.New("no screendump dir found in context")
 	}
 
-	ff, err := os.ReadDir(SanitizeFilename(dir))
+	ff, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
-
 	oo := make([]runtime.Object, len(ff))
 	for i, f := range ff {
 		if fi, err := f.Info(); err == nil {
@@ -49,11 +45,4 @@ func (d *ScreenDump) List(ctx context.Context, _ string) ([]runtime.Object, erro
 	}
 
 	return oo, nil
-}
-
-// Helpers...
-
-// SanitizeFilename sanitizes the dump filename.
-func SanitizeFilename(name string) string {
-	return invalidPathCharsRX.ReplaceAllString(name, "-")
 }

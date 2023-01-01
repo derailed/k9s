@@ -36,7 +36,7 @@ k9s:
       modifyColor: "#5af78e"
       addColor: "#57c7ff"
       errorColor: "#ff5c57"
-      highlightcolor: "#f3f99d"
+      highlightColor: "#f3f99d"
       killColor: mediumpurple
       completedColor: gray
     title:

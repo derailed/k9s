@@ -92,6 +92,7 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		client.NewGVR("batch/v1/cronjobs"):      &CronJob{},
 		client.NewGVR("batch/v1beta1/cronjobs"): &CronJob{},
 		client.NewGVR("batch/v1/jobs"):          &Job{},
+		client.NewGVR("v1/namespaces"):          &Namespace{},
 		// BOZO!! Revamp with latest...
 		// client.NewGVR("openfaas"):               &OpenFaas{},
 		client.NewGVR("popeye"):    &Popeye{},

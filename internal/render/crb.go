@@ -22,7 +22,7 @@ func (ClusterRoleBinding) Header(string) Header {
 		HeaderColumn{Name: "SUBJECT-KIND"},
 		HeaderColumn{Name: "SUBJECTS"},
 		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true, Decorator: AgeDecorator},
+		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
@@ -47,7 +47,7 @@ func (ClusterRoleBinding) Render(o interface{}, ns string, r *Row) error {
 		kind,
 		ss,
 		mapToStr(crb.Labels),
-		toAge(crb.ObjectMeta.CreationTimestamp),
+		toAge(crb.GetCreationTimestamp()),
 	}
 
 	return nil
