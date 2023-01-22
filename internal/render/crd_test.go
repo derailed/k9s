@@ -10,8 +10,8 @@ import (
 func TestCustomResourceDefinitionRender(t *testing.T) {
 	c := render.CustomResourceDefinition{}
 	r := render.NewRow(2)
-	c.Render(load(t, "crd"), "", &r)
 
-	assert.Equal(t, "-/adapters.config.istio.io", r.ID)
+	assert.NoError(t, c.Render(load(t, "crd"), "", &r))
+	assert.Equal(t, "-/config.istio.io/v1alpha2/adapters", r.ID)
 	assert.Equal(t, render.Fields{"adapters.config.istio.io"}, r.Fields[:1])
 }

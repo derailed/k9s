@@ -196,7 +196,7 @@ func fqn(ns, n string) string {
 	return ns + "/" + n
 }
 
-func decorateCpuMemHeaderRows(app *App, data *render.TableData) *render.TableData {
+func decorateCpuMemHeaderRows(app *App, data *render.TableData) {
 	for colIndex, header := range data.Header {
 		var check string
 		if header.Name == "%CPU/L" {
@@ -229,6 +229,4 @@ func decorateCpuMemHeaderRows(app *App, data *render.TableData) *render.TableDat
 			}
 		}
 	}
-
-	return data
 }

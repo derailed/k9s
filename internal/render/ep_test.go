@@ -10,8 +10,8 @@ import (
 func TestEndpointsRender(t *testing.T) {
 	c := render.Endpoints{}
 	r := render.NewRow(4)
-	c.Render(load(t, "ep"), "", &r)
 
+	assert.NoError(t, c.Render(load(t, "ep"), "", &r))
 	assert.Equal(t, "default/dictionary1", r.ID)
 	assert.Equal(t, render.Fields{"default", "dictionary1", "<none>"}, r.Fields[:3])
 }
