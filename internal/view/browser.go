@@ -119,6 +119,7 @@ func (b *Browser) suggestFilter() model.SuggestionFunc {
 func (b *Browser) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
 		tcell.KeyEscape: ui.NewSharedKeyAction("Filter Reset", b.resetCmd, false),
+		ui.BackKey:      ui.NewSharedKeyAction("Filter Reset", b.maybeGoBack, false),
 		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", b.filterCmd, false),
 		tcell.KeyHelp:   ui.NewSharedKeyAction("Help", b.helpCmd, false),
 	})
@@ -273,6 +274,15 @@ func (b *Browser) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return evt
+}
+
+func (b *Browser) maybeGoBack(evt *tcell.EventKey) *tcell.EventKey {
+	// Only goes back if we are not in command mode
+	if !b.CmdBuff().InCmdMode() {
+		b.CmdBuff().ClearText(false)
+		return b.App().PrevCmd(evt)
+	}
+	return nil
 }
 
 func (b *Browser) resetCmd(evt *tcell.EventKey) *tcell.EventKey {

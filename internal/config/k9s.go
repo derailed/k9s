@@ -1,6 +1,8 @@
 package config
 
 import (
+	"strings"
+
 	"github.com/derailed/k9s/internal/client"
 )
 
@@ -22,6 +24,7 @@ type K9s struct {
 	NoIcons             bool                `yaml:"noIcons"`
 	SkipLatestRevCheck  bool                `yaml:"skipLatestRevCheck"`
 	Logger              *Logger             `yaml:"logger"`
+	CustomBackButton    string              `yaml:"customBackButton,omitempty"`
 	CurrentContext      string              `yaml:"currentContext"`
 	CurrentCluster      string              `yaml:"currentCluster"`
 	Clusters            map[string]*Cluster `yaml:"clusters,omitempty"`
@@ -125,6 +128,15 @@ func (k *K9s) IsLogoless() bool {
 	}
 
 	return h
+}
+
+// HasCustomBackButtonConfigured returns if there is a custom BackButton set, that is not the default one.
+func (k *K9s) HasCustomBackButtonConfigured() bool {
+	bb := k.CustomBackButton
+	if bb != "" && strings.ToLower(bb) != "esc" {
+		return true
+	}
+	return false
 }
 
 // IsCrumbsless returns crumbsless setting.

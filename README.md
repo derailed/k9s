@@ -252,7 +252,7 @@ K9s uses aliases to navigate most K8s resources.
 | Inverse regex filter                                           | `/`! filter⏎                  | Keep everything that *doesn't* match.                                  |
 | Filter resource view by labels                                 | `/`-l label-selector⏎         |                                                                        |
 | Fuzzy find a resource given a filter                           | `/`-f filter⏎                 |                                                                        |
-| Bails out of view/command/filter mode                          | `<esc>`                       |                                                                        |
+| Bails out of view/command/filter mode                          | `<esc>`                       | Can be overridden with `customBackButton` option                         |
 | Key mapping to describe, view, edit, view logs,...             | `d`,`v`, `e`, `l`,...         |                                                                        |
 | To view and switch to another Kubernetes context               | `:`ctx⏎                       |                                                                        |
 | To view and switch to another Kubernetes context               | `:`ctx context-name⏎          |                                                                        |
@@ -340,6 +340,8 @@ K9s uses aliases to navigate most K8s resources.
       textWrap: false
       # Toggles log line timestamp info. Default false
       showTime: false
+    # Mimic the Esc-key behaviour on the custom back button. Optional
+    customBackButton: q
     # Indicates the current kube context. Defaults to current context
     currentContext: minikube
     # Indicates the current kube cluster. Defaults to current context cluster

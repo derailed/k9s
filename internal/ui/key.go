@@ -1,6 +1,8 @@
 package ui
 
-import "github.com/gdamore/tcell/v2"
+import (
+	"github.com/gdamore/tcell/v2"
+)
 
 func init() {
 	initKeys()
@@ -15,6 +17,15 @@ func initKeys() {
 	initStdKeys()
 	initShiftKeys()
 	initShiftNumKeys()
+}
+
+func GetKeyWithName(keyName string) *tcell.Key {
+	for k, v := range tcell.KeyNames {
+		if v == keyName {
+			return &k
+		}
+	}
+	return nil
 }
 
 // Defines numeric keys for container actions.
@@ -108,6 +119,8 @@ const (
 	KeyShiftY
 	KeyShiftZ
 )
+
+var BackKey = tcell.KeyEscape
 
 // NumKeys tracks number keys.
 var NumKeys = map[int]tcell.Key{
