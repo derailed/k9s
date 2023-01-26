@@ -2,6 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"runtime/debug"
+
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
@@ -11,8 +14,6 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"os"
-	"runtime/debug"
 )
 
 const (
@@ -32,7 +33,7 @@ var (
 		Use:   appName,
 		Short: shortAppDesc,
 		Long:  longAppDesc,
-		Run:   run,
+		RunE:  run,
 	}
 
 	out = colorable.NewColorableStdout()
@@ -51,12 +52,14 @@ func Execute() {
 	}
 }
 
-func run(cmd *cobra.Command, args []string) {
-	config.EnsurePath(*k9sFlags.LogFile, config.DefaultDirMod)
+func run(cmd *cobra.Command, args []string) error {
+	if err := config.EnsureDirPath(*k9sFlags.LogFile, config.DefaultDirMod); err != nil {
+		return err
+	}
 	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
 	file, err := os.OpenFile(*k9sFlags.LogFile, mod, config.DefaultFileMod)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	defer func() {
 		if file != nil {
@@ -78,14 +81,16 @@ func run(cmd *cobra.Command, args []string) {
 	zerolog.SetGlobalLevel(parseLevel(*k9sFlags.LogLevel))
 	app := view.NewApp(loadConfiguration())
 	if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
-		panic(fmt.Sprintf("app init failed -- %v", err))
+		return err
 	}
 	if err := app.Run(); err != nil {
-		panic(fmt.Sprintf("app run failed %v", err))
+		return err
 	}
 	if view.ExitStatus != "" {
-		panic(fmt.Sprintf("view exit status %s", view.ExitStatus))
+		return fmt.Errorf("view exit status %s", view.ExitStatus)
 	}
+
+	return nil
 }
 
 func loadConfiguration() *config.Config {
@@ -117,7 +122,7 @@ func loadConfiguration() *config.Config {
 	conn, err := client.InitConnection(k8sCfg)
 	k9sCfg.SetConnection(conn)
 	if err != nil {
-		log.Error().Err(err).Msgf("failed to connect to cluster")
+		log.Error().Err(err).Msgf("failed to connect to cluster %q", k9sCfg.K9s.CurrentContext)
 		return k9sCfg
 	}
 	// Try to access server version if that fail. Connectivity issue?

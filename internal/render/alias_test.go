@@ -83,6 +83,6 @@ func BenchmarkAlias(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		var r render.Row
-		a.Render(o, "aliases", &r)
+		_ = a.Render(o, "aliases", &r)
 	}
 }

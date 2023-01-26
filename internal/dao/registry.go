@@ -341,7 +341,7 @@ func loadRBAC(m ResourceMetas) {
 }
 
 func loadPreferred(f Factory, m ResourceMetas) error {
-	if !f.Client().ConnectionOK() {
+	if f.Client() == nil || !f.Client().ConnectionOK() {
 		log.Error().Msgf("Load cluster resources - No API server connection")
 		return nil
 	}
@@ -394,7 +394,7 @@ func isDeprecated(gvr client.GVR) bool {
 }
 
 func loadCRDs(f Factory, m ResourceMetas) {
-	if !f.Client().ConnectionOK() {
+	if f.Client() == nil || !f.Client().ConnectionOK() {
 		return
 	}
 	const crdGVR = "apiextensions.k8s.io/v1/customresourcedefinitions"

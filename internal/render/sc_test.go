@@ -10,8 +10,8 @@ import (
 func TestStorageClassRender(t *testing.T) {
 	c := render.StorageClass{}
 	r := render.NewRow(4)
-	c.Render(load(t, "sc"), "", &r)
 
+	assert.NoError(t, c.Render(load(t, "sc"), "", &r))
 	assert.Equal(t, "-/standard", r.ID)
 	assert.Equal(t, render.Fields{"standard", "kubernetes.io/gce-pd"}, r.Fields[:2])
 }

@@ -22,7 +22,7 @@ func TestLog(t *testing.T) {
 		Container: "blee",
 	}
 	v := view.NewLog(client.NewGVR("v1/pods"), &opts)
-	v.Init(makeContext())
+	assert.NoError(t, v.Init(makeContext()))
 
 	ii := dao.NewLogItems()
 	ii.Add(dao.NewLogItemFromString("blee\n"), dao.NewLogItemFromString("bozo\n"))
@@ -39,7 +39,7 @@ func TestLogFlush(t *testing.T) {
 		Container: "blee",
 	}
 	v := view.NewLog(client.NewGVR("v1/pods"), &opts)
-	v.Init(makeContext())
+	assert.NoError(t, v.Init(makeContext()))
 
 	items := dao.NewLogItems()
 	items.Add(
@@ -59,7 +59,7 @@ func BenchmarkLogFlush(b *testing.B) {
 		Container: "blee",
 	}
 	v := view.NewLog(client.NewGVR("v1/pods"), &opts)
-	v.Init(makeContext())
+	_ = v.Init(makeContext())
 
 	items := dao.NewLogItems()
 	items.Add(
@@ -97,7 +97,7 @@ func TestLogViewSave(t *testing.T) {
 		Container: "blee",
 	}
 	v := view.NewLog(client.NewGVR("v1/pods"), &opts)
-	v.Init(makeContext())
+	assert.NoError(t, v.Init(makeContext()))
 
 	app := makeApp()
 	ii := dao.NewLogItems()
@@ -130,7 +130,7 @@ func TestAllContainerKeyBinding(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			v := view.NewLog(client.NewGVR("v1/pods"), u.opts)
-			v.Init(makeContext())
+			assert.NoError(t, v.Init(makeContext()))
 			_, got := v.Logs().Actions()[ui.KeyA]
 			assert.Equal(t, u.e, got)
 		})

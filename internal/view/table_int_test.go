@@ -22,7 +22,7 @@ import (
 
 func TestTableSave(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
-	v.Init(makeContext())
+	assert.NoError(t, v.Init(makeContext()))
 	v.SetTitle("k9s-test")
 
 	dir := filepath.Join(v.app.Config.K9s.GetScreenDumpDir(), v.app.Config.K9s.CurrentCluster)
@@ -35,7 +35,7 @@ func TestTableSave(t *testing.T) {
 
 func TestTableNew(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
-	v.Init(makeContext())
+	assert.NoError(t, v.Init(makeContext()))
 
 	data := render.NewTableData()
 	data.Header = render.Header{
@@ -64,7 +64,7 @@ func TestTableNew(t *testing.T) {
 
 func TestTableViewFilter(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
-	v.Init(makeContext())
+	assert.NoError(t, v.Init(makeContext()))
 	v.SetModel(&mockTableModel{})
 	v.Refresh()
 	v.CmdBuff().SetActive(true)
@@ -75,7 +75,7 @@ func TestTableViewFilter(t *testing.T) {
 
 func TestTableViewSort(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
-	v.Init(makeContext())
+	assert.NoError(t, v.Init(makeContext()))
 	v.SetModel(&mockTableModel{})
 
 	uu := map[string]struct {

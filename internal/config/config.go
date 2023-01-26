@@ -109,9 +109,8 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 	if isSet(flags.ClusterName) {
 		c.K9s.CurrentCluster = *flags.ClusterName
 	}
-	EnsurePath(c.K9s.GetScreenDumpDir(), DefaultDirMod)
 
-	return nil
+	return EnsureDirPath(c.K9s.GetScreenDumpDir(), DefaultDirMod)
 }
 
 // Reset the context to the new current context/cluster.
@@ -239,7 +238,9 @@ func (c *Config) Save() error {
 
 // SaveFile K9s configuration to disk.
 func (c *Config) SaveFile(path string) error {
-	EnsurePath(path, DefaultDirMod)
+	if err := EnsureDirPath(path, DefaultDirMod); err != nil {
+		return err
+	}
 	cfg, err := yaml.Marshal(c)
 	if err != nil {
 		log.Error().Msgf("[Config] Unable to save K9s config file: %v", err)

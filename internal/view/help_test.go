@@ -15,7 +15,7 @@ func TestHelp(t *testing.T) {
 
 	app := ctx.Value(internal.KeyApp).(*view.App)
 	po := view.NewPod(client.NewGVR("v1/pods"))
-	po.Init(ctx)
+	assert.NoError(t, po.Init(ctx))
 	app.Content.Push(po)
 
 	v := view.NewHelp(app)

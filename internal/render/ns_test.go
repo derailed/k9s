@@ -68,8 +68,8 @@ func TestNSColorer(t *testing.T) {
 func TestNamespaceRender(t *testing.T) {
 	c := render.Namespace{}
 	r := render.NewRow(3)
-	c.Render(load(t, "ns"), "-", &r)
 
+	assert.NoError(t, c.Render(load(t, "ns"), "-", &r))
 	assert.Equal(t, "-/kube-system", r.ID)
 	assert.Equal(t, render.Fields{"kube-system", "Active"}, r.Fields[:2])
 }
