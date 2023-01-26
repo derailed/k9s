@@ -54,19 +54,20 @@ func MustK9sUser() string {
 	return usr.Username
 }
 
-// EnsurePath ensures a directory exist from the given path.
-func EnsurePath(path string, mod os.FileMode) {
-	dir := filepath.Dir(path)
-	EnsureFullPath(dir, mod)
+// EnsureDirPath ensures a directory exist from the given path.
+func EnsureDirPath(path string, mod os.FileMode) error {
+	return EnsureFullPath(filepath.Dir(path), mod)
 }
 
 // EnsureFullPath ensures a directory exist from the given path.
-func EnsureFullPath(path string, mod os.FileMode) {
+func EnsureFullPath(path string, mod os.FileMode) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		if err = os.MkdirAll(path, mod); err != nil {
-			log.Fatal().Msgf("Unable to create dir %q %v", path, err)
+			return err
 		}
 	}
+
+	return nil
 }
 
 // IsBoolSet checks if a bool prt is set.

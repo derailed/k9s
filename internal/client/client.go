@@ -208,6 +208,10 @@ func (a *APIClient) ServerVersion() (*version.Info, error) {
 
 // ValidNamespaces returns all available namespaces.
 func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
+	if a == nil {
+		return []v1.Namespace{}, nil
+	}
+
 	if nn, ok := a.cache.Get("validNamespaces"); ok {
 		if nss, ok := nn.([]v1.Namespace); ok {
 			return nss, nil

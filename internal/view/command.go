@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"runtime/debug"
 	"strings"
 	"sync"
 
@@ -146,8 +147,8 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 }
 
 func (c *Command) defaultCmd() error {
-	if !c.app.Conn().ConnectionOK() {
-		return c.run("ctx", "", true)
+	if c.app.Conn() == nil || !c.app.Conn().ConnectionOK() {
+		return c.run("context", "", true)
 	}
 	view := c.app.Config.ActiveView()
 	if view == "" {
@@ -244,6 +245,7 @@ func (c *Command) exec(cmd, gvr string, comp model.Component, clearStack bool) (
 			log.Error().Msgf("Something bad happened! %#v", e)
 			c.app.Content.Dump()
 			log.Debug().Msgf("History %v", c.app.cmdHistory.List())
+			log.Error().Msg(string(debug.Stack()))
 
 			hh := c.app.cmdHistory.List()
 			if len(hh) == 0 {
