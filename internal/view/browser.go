@@ -133,6 +133,7 @@ func (b *Browser) SetInstance(path string) {
 func (b *Browser) Start() {
 	b.app.Config.ValidateFavorites()
 	ns := b.app.Config.ActiveNamespace()
+	b.setNamespace(ns)
 	if n := b.GetModel().GetNamespace(); !client.IsClusterScoped(n) {
 		ns = n
 	}
