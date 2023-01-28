@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -48,10 +49,24 @@ func InNSList(nn []interface{}, ns string) bool {
 // MustK9sUser establishes current user identity or fail.
 func MustK9sUser() string {
 	usr, err := user.Current()
-	if err != nil {
-		log.Fatal().Err(err).Msg("Die on retrieving user info")
+	if err == nil {
+		return usr.Username
 	}
-	return usr.Username
+
+	unknownUserIdError := user.UnknownUserIdError(1)
+	if errors.As(err, &unknownUserIdError) {
+		// error is raised due to unknown user id (which might happen on linux systems enrolled to a domain
+		// controller, see https://github.com/derailed/k9s/issues/1895 for more information), but $USER might
+		// contain the username
+		username := os.Getenv("USER")
+		if len(username) != 0 {
+			return username
+		}
+	}
+
+	// always return the error of user.Current, even if the $USER lookup failed -> the root cause is the same
+	log.Fatal().Err(err).Msg("Die on retrieving user info")
+	return "" // won't reach until here
 }
 
 // EnsureDirPath ensures a directory exist from the given path.
