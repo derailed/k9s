@@ -11,7 +11,7 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -189,7 +189,7 @@ func (n *Node) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	details := NewDetails(n.App(), "YAML", sel, true).Update(raw)
-	if err := n.App().inject(details); err != nil {
+	if err := n.App().inject(details, false); err != nil {
 		n.App().Flash().Err(err)
 	}
 

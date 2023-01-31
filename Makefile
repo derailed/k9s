@@ -1,5 +1,6 @@
-GO_FLAGS   ?=
 NAME       := k9s
+GO_FLAGS   ?=
+CGO_ENABLED?=0
 OUTPUT_BIN ?= execs/${NAME}
 PACKAGE    := github.com/derailed/$(NAME)
 GIT_REV    ?= $(shell git rev-parse --short HEAD)
@@ -9,7 +10,7 @@ DATE       ?= $(shell TZ=UTC date -j -f "%s" ${SOURCE_DATE_EPOCH} +"%Y-%m-%dT%H:
 else
 DATE       ?= $(shell date -u -d @${SOURCE_DATE_EPOCH} +"%Y-%m-%dT%H:%M:%SZ")
 endif
-VERSION    ?= v0.27.0
+VERSION    ?= v0.27.1
 IMG_NAME   := derailed/k9s
 IMAGE      := ${IMG_NAME}:${VERSION}
 
@@ -23,7 +24,7 @@ cover:  ## Run test coverage suite
 	@go tool cover --html=cov.out
 
 build:  ## Builds the CLI
-	@go build ${GO_FLAGS} \
+	@CGO_ENABLED=${CGO_ENABLED} go build ${GO_FLAGS} \
 	-ldflags "-w -s -X ${PACKAGE}/cmd.version=${VERSION} -X ${PACKAGE}/cmd.commit=${GIT_REV} -X ${PACKAGE}/cmd.date=${DATE}" \
 	-a -tags netgo -o ${OUTPUT_BIN} main.go
 

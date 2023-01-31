@@ -11,8 +11,8 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/fatih/color"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -118,7 +118,7 @@ func (p *Pod) logOptions(prev bool) (*dao.LogOptions, error) {
 func (p *Pod) showContainers(app *App, model ui.Tabular, gvr, path string) {
 	co := NewContainer(client.NewGVR("containers"))
 	co.SetContextFn(p.coContext)
-	if err := app.inject(co); err != nil {
+	if err := app.inject(co, false); err != nil {
 		app.Flash().Err(err)
 	}
 }
@@ -146,7 +146,7 @@ func (p *Pod) showNode(evt *tcell.EventKey) *tcell.EventKey {
 	no := NewNode(client.NewGVR("v1/nodes"))
 	no.SetInstance(pod.Spec.NodeName)
 	//no.SetContextFn(nodeContext(pod.Spec.NodeName))
-	if err := p.App().inject(no); err != nil {
+	if err := p.App().inject(no, false); err != nil {
 		p.App().Flash().Err(err)
 	}
 
@@ -165,7 +165,7 @@ func (p *Pod) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	pf := NewPortForward(client.NewGVR("portforwards"))
 	pf.SetContextFn(p.portForwardContext)
-	if err := p.App().inject(pf); err != nil {
+	if err := p.App().inject(pf, false); err != nil {
 		p.App().Flash().Err(err)
 	}
 
@@ -272,7 +272,7 @@ func containerShellin(a *App, comp model.Component, path, co string) error {
 		resumeShellIn(a, comp, path, co)
 	})
 
-	return a.inject(picker)
+	return a.inject(picker, false)
 }
 
 func resumeShellIn(a *App, c model.Component, path, co string) {
@@ -315,7 +315,7 @@ func containerAttachIn(a *App, comp model.Component, path, co string) error {
 	picker.SetSelectedFunc(func(_ int, co, _ string, _ rune) {
 		resumeAttachIn(a, comp, path, co)
 	})
-	if err := a.inject(picker); err != nil {
+	if err := a.inject(picker, false); err != nil {
 		return err
 	}
 

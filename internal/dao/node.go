@@ -155,7 +155,7 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		_, name := client.Namespaced(fqn)
 		podCount, err := n.CountPods(name)
 		if err != nil {
-			return nil, err
+			log.Error().Err(err).Msgf("unable to get pods count for %s", name)
 		}
 		res = append(res, &render.NodeWithMetrics{
 			Raw:      u,

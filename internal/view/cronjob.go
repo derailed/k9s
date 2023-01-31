@@ -10,8 +10,8 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -56,7 +56,7 @@ func (c *CronJob) showJobs(app *App, model ui.Tabular, gvr, path string) {
 
 	v := NewJob(client.NewGVR("batch/v1/jobs"))
 	v.SetContextFn(jobCtx(path, string(cj.UID)))
-	if err := app.inject(v); err != nil {
+	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
 	}
 }

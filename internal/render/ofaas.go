@@ -10,7 +10,7 @@ package render
 
 // 	"github.com/derailed/k9s/internal/client"
 // 	"github.com/derailed/tview"
-// 	"github.com/gdamore/tcell/v2"
+// 	"github.com/derailed/tcell/v2"
 
 // 	ofaas "github.com/openfaas/faas-provider/types"
 // 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

@@ -14,8 +14,8 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -89,7 +89,7 @@ func defaultEnv(c *client.Config, path string, header render.Header, row render.
 
 func describeResource(app *App, m ui.Tabular, gvr, path string) {
 	v := NewLiveView(app, "Describe", model.NewDescribe(client.NewGVR(gvr), path))
-	if err := app.inject(v); err != nil {
+	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
 	}
 }
@@ -115,7 +115,7 @@ func showPods(app *App, path, labelSel, fieldSel string) {
 	if err := app.Config.SetActiveNamespace(ns); err != nil {
 		log.Error().Err(err).Msg("Config NS set failed!")
 	}
-	if err := app.inject(v); err != nil {
+	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
 	}
 }

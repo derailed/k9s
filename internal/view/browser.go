@@ -18,7 +18,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -261,7 +261,7 @@ func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	v := NewLiveView(b.app, "YAML", model.NewYAML(b.GVR(), path))
-	if err := v.app.inject(v); err != nil {
+	if err := v.app.inject(v, false); err != nil {
 		v.app.Flash().Err(err)
 	}
 	return nil
@@ -464,7 +464,7 @@ func (b *Browser) defaultContext() context.Context {
 }
 
 func (b *Browser) refreshActions() {
-	if b.App().Content.Top().Name() != b.Name() {
+	if b.App().Content.Top() != nil && b.App().Content.Top().Name() != b.Name() {
 		return
 	}
 	aa := ui.KeyActions{

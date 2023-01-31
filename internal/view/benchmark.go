@@ -11,7 +11,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 )
 
 // Benchmark represents a service benchmark results view.
@@ -45,7 +45,7 @@ func (b *Benchmark) viewBench(app *App, model ui.Tabular, gvr, path string) {
 	}
 
 	details := NewDetails(b.App(), "Results", fileToSubject(path), false).Update(data)
-	if err := app.inject(details); err != nil {
+	if err := app.inject(details, false); err != nil {
 		app.Flash().Err(err)
 	}
 }

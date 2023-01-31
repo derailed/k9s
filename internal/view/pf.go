@@ -12,8 +12,8 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -57,7 +57,7 @@ func (p *PortForward) bindKeys(aa ui.KeyActions) {
 func (p *PortForward) showBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	b := NewBenchmark(client.NewGVR("benchmarks"))
 	b.SetContextFn(p.getContext)
-	if err := p.App().inject(b); err != nil {
+	if err := p.App().inject(b, false); err != nil {
 		p.App().Flash().Err(err)
 	}
 
