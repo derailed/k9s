@@ -199,7 +199,7 @@ func (c *Command) specialCmd(cmd, path string) bool {
 		}
 		tokens := canRX.FindAllStringSubmatch(cmd, -1)
 		if len(tokens) == 1 && len(tokens[0]) == 3 {
-			if err := c.app.inject(NewPolicy(c.app, tokens[0][1], tokens[0][2])); err != nil {
+			if err := c.app.inject(NewPolicy(c.app, tokens[0][1], tokens[0][2]), false); err != nil {
 				log.Error().Err(err).Msgf("policy view load failed")
 				return false
 			}
@@ -268,13 +268,10 @@ func (c *Command) exec(cmd, gvr string, comp model.Component, clearStack bool) (
 	if err := c.app.Config.Save(); err != nil {
 		log.Error().Err(err).Msg("Config save failed!")
 	}
-	if clearStack {
-		c.app.Content.Stack.Clear()
-	}
-
-	if err := c.app.inject(comp); err != nil {
+	if err := c.app.inject(comp, clearStack); err != nil {
 		return err
 	}
+
 	c.app.cmdHistory.Push(cmd)
 
 	return

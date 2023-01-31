@@ -8,8 +8,8 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/popeye/pkg/config"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )

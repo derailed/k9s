@@ -7,11 +7,11 @@ require (
 	github.com/atotto/clipboard v0.1.4
 	github.com/cenkalti/backoff/v4 v4.1.3
 	github.com/derailed/popeye v0.10.1
-	github.com/derailed/tview v0.8.0
+	github.com/derailed/tcell/v2 v2.3.1-rc.3
+	github.com/derailed/tview v0.8.1
 	github.com/fatih/color v1.13.0
 	github.com/fsnotify/fsnotify v1.6.0
 	github.com/fvbommel/sortorder v1.0.2
-	github.com/gdamore/tcell/v2 v2.5.4
 	github.com/ghodss/yaml v1.0.0
 	github.com/mattn/go-colorable v0.1.13
 	github.com/mattn/go-runewidth v0.0.14
@@ -20,8 +20,8 @@ require (
 	github.com/rs/zerolog v1.28.0
 	github.com/sahilm/fuzzy v0.1.0
 	github.com/spf13/cobra v1.6.0
-	github.com/stretchr/testify v1.8.0
-	golang.org/x/text v0.5.0
+	github.com/stretchr/testify v1.8.1
+	golang.org/x/text v0.6.0
 	gopkg.in/yaml.v2 v2.4.0
 	helm.sh/helm/v3 v3.10.1
 	k8s.io/api v0.26.1
@@ -121,7 +121,7 @@ require (
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.37.0 // indirect
 	github.com/prometheus/procfs v0.8.0 // indirect
-	github.com/rivo/uniseg v0.2.0 // indirect
+	github.com/rivo/uniseg v0.4.3 // indirect
 	github.com/rubenv/sql-migrate v1.1.2 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
@@ -138,8 +138,8 @@ require (
 	golang.org/x/net v0.3.1-0.20221206200815-1e63c2f08a10 // indirect
 	golang.org/x/oauth2 v0.0.0-20220223155221-ee480838109b // indirect
 	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
-	golang.org/x/sys v0.3.0 // indirect
-	golang.org/x/term v0.3.0 // indirect
+	golang.org/x/sys v0.4.0 // indirect
+	golang.org/x/term v0.4.0 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20220502173005-c8bf987b8c21 // indirect

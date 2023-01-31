@@ -1,6 +1,6 @@
 package ui
 
-import "github.com/gdamore/tcell/v2"
+import "github.com/derailed/tcell/v2"
 
 func init() {
 	initKeys()

@@ -16,8 +16,8 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/k9s/internal/xray"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 	"golang.org/x/text/cases"
@@ -274,7 +274,7 @@ func (x *Xray) showLogs(spec *xray.NodeSpec, prev bool) {
 		Container: co,
 		Previous:  prev,
 	}
-	if err := x.app.inject(NewLog(client.NewGVR("v1/pods"), &opts)); err != nil {
+	if err := x.app.inject(NewLog(client.NewGVR("v1/pods"), &opts), false); err != nil {
 		x.app.Flash().Err(err)
 	}
 }
@@ -340,7 +340,7 @@ func (x *Xray) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	details := NewDetails(x.app, "YAML", spec.Path(), true).Update(raw)
-	if err := x.app.inject(details); err != nil {
+	if err := x.app.inject(details, false); err != nil {
 		x.app.Flash().Err(err)
 	}
 
@@ -390,7 +390,7 @@ func (x *Xray) describe(gvr, path string) {
 	}
 
 	details := NewDetails(x.app, "Describe", path, true).Update(yaml)
-	if err := x.app.inject(details); err != nil {
+	if err := x.app.inject(details, false); err != nil {
 		x.app.Flash().Err(err)
 	}
 }

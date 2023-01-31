@@ -13,7 +13,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 )
 
 const (
@@ -95,7 +95,7 @@ func (d *Dir) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	details := NewDetails(d.App(), "YAML", sel, true).Update(string(yaml))
-	if err := d.App().inject(details); err != nil {
+	if err := d.App().inject(details, false); err != nil {
 		d.App().Flash().Err(err)
 	}
 
@@ -143,7 +143,7 @@ func (d *Dir) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	v := NewDir(sel)
-	if err := d.App().inject(v); err != nil {
+	if err := d.App().inject(v, false); err != nil {
 		d.App().Flash().Err(err)
 	}
 
@@ -215,7 +215,7 @@ func (d *Dir) applyCmd(evt *tcell.EventKey) *tcell.EventKey {
 		}
 
 		details := NewDetails(d.App(), "Applied Manifest", sel, true).Update(res)
-		if err := d.App().inject(details); err != nil {
+		if err := d.App().inject(details, false); err != nil {
 			d.App().Flash().Err(err)
 		}
 	}
@@ -244,7 +244,7 @@ func (d *Dir) delCmd(evt *tcell.EventKey) *tcell.EventKey {
 			res = "message:\n" + fmtResults(res)
 		}
 		details := NewDetails(d.App(), "Deleted Manifest", sel, true).Update(res)
-		if err := d.App().inject(details); err != nil {
+		if err := d.App().inject(details, false); err != nil {
 			d.App().Flash().Err(err)
 		}
 	}, func() {})

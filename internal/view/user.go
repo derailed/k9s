@@ -6,7 +6,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 )
 
 // User presents a user viewer.
@@ -40,7 +40,7 @@ func (u *User) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path == "" {
 		return evt
 	}
-	if err := u.App().inject(NewPolicy(u.App(), "User", path)); err != nil {
+	if err := u.App().inject(NewPolicy(u.App(), "User", path), false); err != nil {
 		u.App().Flash().Err(err)
 	}
 

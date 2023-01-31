@@ -7,7 +7,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 )
 
 // ConfigMap represents a configmap viewer.
@@ -54,7 +54,7 @@ func scanRefs(evt *tcell.EventKey, a *App, t *Table, gvr string) *tcell.EventKey
 	a.Flash().Infof("Viewing references for %s::%s", gvr, path)
 	view := NewReference(client.NewGVR("references"))
 	view.SetContextFn(refContext(gvr, path, false))
-	if err := a.inject(view); err != nil {
+	if err := a.inject(view, false); err != nil {
 		a.Flash().Err(err)
 	}
 
