@@ -98,7 +98,7 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 	} else if isSet(flags.Namespace) {
 		ns = *flags.Namespace
 	} else {
-		ns = context.Namespace
+		ns = c.K9s.ActiveCluster().Namespace.Active
 	}
 
 	if err := c.SetActiveNamespace(ns); err != nil {
