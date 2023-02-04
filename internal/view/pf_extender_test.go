@@ -17,45 +17,42 @@ import (
 )
 
 func TestEnsurePodPortFwdAllowed(t *testing.T) {
-	testCases := []struct {
-		name        string
+	uu := map[string]struct {
 		podExists   bool
 		podPhase    corev1.PodPhase
 		expectError bool
 	}{
-		{
-			name:        "pod_doesnt_exist",
+		"pod-not-exist": {
 			expectError: true,
 		},
-		{
-			name:        "pod_exists_pending",
+		"pod-pending": {
 			podExists:   true,
 			podPhase:    corev1.PodPending,
 			expectError: true,
 		},
-		{
-			name:        "pod_is_running",
+		"pod-running": {
 			podExists:   true,
 			podPhase:    corev1.PodRunning,
 			expectError: false,
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
 			f := testFactory{}
-			if tc.podExists {
+			if u.podExists {
 				f.expectedGet = &unstructured.Unstructured{
 					Object: map[string]interface{}{
 						"status": map[string]interface{}{
-							"phase": tc.podPhase,
+							"phase": u.podPhase,
 						},
 					},
 				}
 			}
 
 			err := ensurePodPortFwdAllowed(f, "ns/name")
-			if tc.expectError {
+			if u.expectError {
 				require.Error(t, err)
 				return
 			}

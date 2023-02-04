@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"runtime/debug"
 	"strings"
 	"sync"
 
@@ -146,8 +147,8 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 }
 
 func (c *Command) defaultCmd() error {
-	if !c.app.Conn().ConnectionOK() {
-		return c.run("ctx", "", true)
+	if c.app.Conn() == nil || !c.app.Conn().ConnectionOK() {
+		return c.run("context", "", true)
 	}
 	view := c.app.Config.ActiveView()
 	if view == "" {
@@ -198,7 +199,7 @@ func (c *Command) specialCmd(cmd, path string) bool {
 		}
 		tokens := canRX.FindAllStringSubmatch(cmd, -1)
 		if len(tokens) == 1 && len(tokens[0]) == 3 {
-			if err := c.app.inject(NewPolicy(c.app, tokens[0][1], tokens[0][2])); err != nil {
+			if err := c.app.inject(NewPolicy(c.app, tokens[0][1], tokens[0][2]), false); err != nil {
 				log.Error().Err(err).Msgf("policy view load failed")
 				return false
 			}
@@ -244,6 +245,7 @@ func (c *Command) exec(cmd, gvr string, comp model.Component, clearStack bool) (
 			log.Error().Msgf("Something bad happened! %#v", e)
 			c.app.Content.Dump()
 			log.Debug().Msgf("History %v", c.app.cmdHistory.List())
+			log.Error().Msg(string(debug.Stack()))
 
 			hh := c.app.cmdHistory.List()
 			if len(hh) == 0 {
@@ -266,13 +268,10 @@ func (c *Command) exec(cmd, gvr string, comp model.Component, clearStack bool) (
 	if err := c.app.Config.Save(); err != nil {
 		log.Error().Err(err).Msg("Config save failed!")
 	}
-	if clearStack {
-		c.app.Content.Stack.Clear()
-	}
-
-	if err := c.app.inject(comp); err != nil {
+	if err := c.app.inject(comp, clearStack); err != nil {
 		return err
 	}
+
 	c.app.cmdHistory.Push(cmd)
 
 	return

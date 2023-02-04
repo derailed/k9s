@@ -7,7 +7,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 )
 
 // ServiceAccount represents a serviceaccount viewer.
@@ -46,7 +46,7 @@ func (s *ServiceAccount) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path == "" {
 		return evt
 	}
-	if err := s.App().inject(NewPolicy(s.App(), sa, path)); err != nil {
+	if err := s.App().inject(NewPolicy(s.App(), sa, path), false); err != nil {
 		s.App().Flash().Err(err)
 	}
 
@@ -72,7 +72,7 @@ func scanSARefs(evt *tcell.EventKey, a *App, t *Table, gvr string) *tcell.EventK
 	a.Flash().Infof("Viewing references for %s::%s", gvr, path)
 	view := NewReference(client.NewGVR("references"))
 	view.SetContextFn(refContext(gvr, path, false))
-	if err := a.inject(view); err != nil {
+	if err := a.inject(view, false); err != nil {
 		a.Flash().Err(err)
 	}
 

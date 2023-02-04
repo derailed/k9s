@@ -113,13 +113,6 @@ func blank(s []string) bool {
 	return true
 }
 
-func strpToStr(p *string) string {
-	if p == nil || *p == "" {
-		return MissingValue
-	}
-	return *p
-}
-
 // Join a slice of strings, skipping blanks.
 func join(a []string, sep string) string {
 	switch len(a) {

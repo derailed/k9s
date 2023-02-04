@@ -13,7 +13,7 @@ import (
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"

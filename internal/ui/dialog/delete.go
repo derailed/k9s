@@ -40,10 +40,8 @@ func ShowDelete(styles config.Dialog, pages *ui.Pages, msg string, ok okFunc, ca
 	})
 	propField := f.GetFormItemByLabel("Propagation:").(*tview.DropDown)
 	propField.SetListStyles(
-		styles.FgColor.Color(),
-		styles.BgColor.Color(),
-		styles.ButtonFocusFgColor.Color(),
-		styles.ButtonFocusBgColor.Color(),
+		styles.FgColor.Color(), styles.BgColor.Color(),
+		styles.ButtonFocusFgColor.Color(), styles.ButtonFocusBgColor.Color(),
 	)
 	f.AddCheckbox("Force:", force, func(_ string, checked bool) {
 		force = checked

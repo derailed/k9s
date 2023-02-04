@@ -263,8 +263,7 @@ func TestClusterLoad(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			var cmx client.ClusterMetrics
-			m.ClusterLoad(u.nodes, u.metrics, &cmx)
-
+			_ = m.ClusterLoad(u.nodes, u.metrics, &cmx)
 			assert.Equal(t, u.e, cmx)
 		})
 	}
@@ -290,7 +289,7 @@ func BenchmarkClusterLoad(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for n := 0; n < b.N; n++ {
-		m.ClusterLoad(&nodes, &metrics, &mx)
+		_ = m.ClusterLoad(&nodes, &metrics, &mx)
 	}
 }
 

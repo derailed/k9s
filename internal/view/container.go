@@ -11,7 +11,7 @@ import (
 	"github.com/derailed/k9s/internal/port"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 )
@@ -125,7 +125,7 @@ func (c *Container) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	pf := NewPortForward(client.NewGVR("portforwards"))
 	pf.SetContextFn(c.portForwardContext)
-	if err := c.App().inject(pf); err != nil {
+	if err := c.App().inject(pf, false); err != nil {
 		c.App().Flash().Err(err)
 	}
 

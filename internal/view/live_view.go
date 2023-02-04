@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 )
@@ -94,13 +95,22 @@ func (v *LiveView) ResourceFailed(err error) {
 // ResourceChanged notifies when the filter changes.
 func (v *LiveView) ResourceChanged(lines []string, matches fuzzy.Matches) {
 	v.app.QueueUpdateDraw(func() {
+		defer func(t time.Time) {
+			log.Debug().Msgf("Live view render time: %v", time.Since(t))
+		}(time.Now())
+
 		v.text.SetTextAlign(tview.AlignLeft)
 		v.maxRegions = len(matches)
-		ll := make([]string, len(lines))
-		copy(ll, lines)
-		for i, m := range matches {
-			loc, line := m.MatchedIndexes, ll[m.Index]
-			ll[m.Index] = line[:loc[0]] + `<<<"search_` + strconv.Itoa(i) + `">>>` + line[loc[0]:loc[1]] + `<<<"">>>` + line[loc[1]:]
+		var ll []string
+		if len(matches) == 0 {
+			ll = lines
+		} else {
+			ll = make([]string, len(lines))
+			copy(ll, lines)
+			for i, m := range matches {
+				loc, line := m.MatchedIndexes, ll[m.Index]
+				ll[m.Index] = line[:loc[0]] + `<<<"search_` + strconv.Itoa(i) + `">>>` + line[loc[0]:loc[1]] + `<<<"">>>` + line[loc[1]:]
+			}
 		}
 
 		if v.text.GetText(true) == "" {

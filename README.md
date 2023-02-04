@@ -39,21 +39,6 @@ Wanna discuss K9s features with your fellow `K9sers` or simply show your support
 * Channel: [K9ersSlack](https://k9sers.slack.com/)
 * Invite: [K9slackers Invite](https://join.slack.com/t/k9sers/shared_invite/enQtOTA5MDEyNzI5MTU0LWQ1ZGI3MzliYzZhZWEyNzYxYzA3NjE0YTk1YmFmNzViZjIyNzhkZGI0MmJjYzhlNjdlMGJhYzE2ZGU1NjkyNTM)
 
----
-
-## K8S Compatibility Matrix
-|         k9s        | k8s client |
-| ------------------ | ---------- |
-| v0.26.7 - v0.26.6  |   0.25.3   |
-| v0.26.5 - v0.26.4  |   0.25.1   |
-| v0.26.3 - v0.26.1  |   0.24.3   |
-| v0.26.0 - v0.25.19 |   0.24.2   |
-| v0.25.18 - v0.25.3 |   0.22.3   |
-| v0.25.2 - v0.25.0  |   0.22.0   |
-|      <= v0.24      |   0.21.3   |
-
-
-
 ## Installation
 
 K9s is available on Linux, macOS and Windows platforms.
@@ -114,7 +99,7 @@ K9s is available on Linux, macOS and Windows platforms.
   ```shell
   curl.exe -A MS https://webinstall.dev/k9s | powershell
   ```
-  
+
 * As a [Docker Desktop Extension](https://docs.docker.com/desktop/extensions/) (for the Docker Desktop built in Kubernetes Server)
 
   ```shell
@@ -194,6 +179,20 @@ K9s is available on Linux, macOS and Windows platforms.
     ```
 
 * K9s prefers recent kubernetes versions ie 1.16+
+
+---
+
+## K8S Compatibility Matrix
+
+|         k9s        | k8s client |
+| ------------------ | ---------- |
+| v0.26.7 - v0.26.6  |   0.25.3   |
+| v0.26.5 - v0.26.4  |   0.25.1   |
+| v0.26.3 - v0.26.1  |   0.24.3   |
+| v0.26.0 - v0.25.19 |   0.24.2   |
+| v0.25.18 - v0.25.3 |   0.22.3   |
+| v0.25.2 - v0.25.0  |   0.22.0   |
+|      <= v0.24      |   0.21.3   |
 
 ---
 
@@ -490,8 +489,8 @@ metadata:
   annotations:
     k9scli.io/auto-port-forwards: zorg::5556        # => will default to container zorg port 5556 and local port 5566. No port-forward dialog will be shown.
     # Or...
-    k9scli.io/port-forwards: bozo::9090:p1           # => launches the port-forward dialog selecting default port-forward on container bozo port named p1(8081)
-                                                   # mapping to local port 9090.
+    k9scli.io/port-forwards: bozo::9090:p1          # => launches the port-forward dialog selecting default port-forward on container bozo port named p1(8081)
+                                                    # mapping to local port 9090.
     ...
 spec:
   containers:

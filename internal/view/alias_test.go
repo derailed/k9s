@@ -12,7 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"

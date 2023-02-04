@@ -10,7 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 )
 
 // Popeye represents a sanitizer view.
@@ -79,7 +79,7 @@ func (p *Popeye) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	v := NewSanitizer(client.NewGVR("sanitizer"))
 	v.SetContextFn(sanitizerCtx(path))
-	if err := p.App().inject(v); err != nil {
+	if err := p.App().inject(v, false); err != nil {
 		p.App().Flash().Err(err)
 	}
 

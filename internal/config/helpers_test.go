@@ -56,29 +56,29 @@ func TestHelperInNSList(t *testing.T) {
 	}
 }
 
-func TestEnsurePathNone(t *testing.T) {
+func TestEnsureDirPathNone(t *testing.T) {
 	var mod os.FileMode = 0744
 	dir := filepath.Join("/tmp", "fred")
 	os.Remove(dir)
 
 	path := filepath.Join(dir, "duh.yml")
-	config.EnsurePath(path, mod)
+	assert.NoError(t, config.EnsureDirPath(path, mod))
 
 	p, err := os.Stat(dir)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, "drwxr--r--", p.Mode().String())
 }
 
-func TestEnsurePathNoOpt(t *testing.T) {
+func TestEnsureDirPathNoOpt(t *testing.T) {
 	var mod os.FileMode = 0744
 	dir := filepath.Join("/tmp", "blee")
 	os.Remove(dir)
-	assert.Nil(t, os.Mkdir(dir, mod))
+	assert.NoError(t, os.Mkdir(dir, mod))
 
 	path := filepath.Join(dir, "duh.yml")
-	config.EnsurePath(path, mod)
+	assert.NoError(t, config.EnsureDirPath(path, mod))
 
 	p, err := os.Stat(dir)
-	assert.Nil(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, "drwxr--r--", p.Mode().String())
 }
