@@ -56,10 +56,5 @@ brews:
     folder: Formula
     homepage: https://k9scli.io/
     description: Kubernetes CLI To Manage Your Clusters In Style!
-    install: |
-      system "make", "build"
-      bin.install "execs/k9s"
-
-      generate_completions_from_executable(bin/"k9s", "completion")
     test: |
       system "k9s version"
