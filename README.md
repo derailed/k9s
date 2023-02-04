@@ -48,7 +48,7 @@ K9s is available on Linux, macOS and Windows platforms.
 * Via [Homebrew](https://brew.sh/) for macOS or Linux
 
    ```shell
-   brew install k9s
+   brew install derailed/k9s/k9s
    ```
 
 * Via [MacPorts](https://www.macports.org)

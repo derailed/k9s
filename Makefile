@@ -1,6 +1,6 @@
 NAME       := k9s
 GO_FLAGS   ?=
-GO_TAGS	   ?= netcgo
+GO_TAGS	   ?= netgo
 CGO_ENABLED?=0
 OUTPUT_BIN ?= execs/${NAME}
 PACKAGE    := github.com/derailed/$(NAME)
