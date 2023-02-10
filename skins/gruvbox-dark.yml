@@ -23,6 +23,12 @@ k9s:
   info:
     fgColor: *magenta
     sectionColor: *foreground
+  help:
+    fgColor: *foreground
+    bgColor: *background
+    keyColor: *magenta
+    numKeyColor: *blue
+    sectionColor: *green
   dialog:
     fgColor: *foreground
     bgColor: *background
