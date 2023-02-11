@@ -249,7 +249,7 @@ func (l *Log) bindKeys() {
 		ui.KeyM:         ui.NewKeyAction("Mark", l.markCmd, true),
 		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", l.toggleAutoScrollCmd, true),
 		ui.KeyF:         ui.NewKeyAction("Toggle FullScreen", l.toggleFullScreenCmd, true),
-		ui.KeyJ:         ui.NewKeyAction("Toggle JSON", l.toggleJSONCmd, true),
+		tcell.KeyCtrlJ:  ui.NewKeyAction("Toggle JSON", l.toggleJSONCmd, true),
 		ui.KeyT:         ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
 		ui.KeyW:         ui.NewKeyAction("Toggle Wrap", l.toggleTextWrapCmd, true),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.SaveCmd, true),
