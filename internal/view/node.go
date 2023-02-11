@@ -57,6 +57,7 @@ func (n *Node) bindKeys(aa ui.KeyActions) {
 		ui.KeyY:      ui.NewKeyAction("YAML", n.yamlCmd, true),
 		ui.KeyShiftC: ui.NewKeyAction("Sort CPU", n.GetTable().SortColCmd(cpuCol, false), false),
 		ui.KeyShiftM: ui.NewKeyAction("Sort MEM", n.GetTable().SortColCmd(memCol, false), false),
+		ui.KeyShift0: ui.NewKeyAction("Sort Pods", n.GetTable().SortColCmd("PODS", false), false),
 	})
 }
 
