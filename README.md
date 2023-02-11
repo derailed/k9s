@@ -579,6 +579,8 @@ K9s does provide additional environment variables for you to customize your plug
 * `$POD` while in a container view
 * `$COL-<RESOURCE_COLUMN_NAME>` use a given column name for a viewed resource. Must be prefixed by `COL-`!
 
+Curly braces can be used to embed an environment variable inside another string, or if the column name contains special characters. (e.g. `${NAME}-example` or `${COL-%CPU/L}`)
+
 ### Example
 
 This defines a plugin for viewing logs on a selected pod using `ctrl-l` for shortcut.
