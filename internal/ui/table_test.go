@@ -8,6 +8,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
@@ -80,7 +81,7 @@ func (t *mockModel) Get(ctx context.Context, path string) (runtime.Object, error
 	return nil, nil
 }
 
-func (t *mockModel) Delete(ctx context.Context, path string, p *metav1.DeletionPropagation, f bool) error {
+func (t *mockModel) Delete(context.Context, string, *metav1.DeletionPropagation, dao.Grace) error {
 	return nil
 }
 

@@ -120,7 +120,7 @@ type Controller interface {
 // Nuker represents a resource deleter.
 type Nuker interface {
 	// Delete removes a resource from the api server.
-	Delete(ctx context.Context, path string, propagation *metav1.DeletionPropagation, force bool) error
+	Delete(context.Context, string, *metav1.DeletionPropagation, Grace) error
 }
 
 // Switchable represents a switchable resource.

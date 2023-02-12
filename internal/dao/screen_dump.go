@@ -22,7 +22,7 @@ type ScreenDump struct {
 }
 
 // Delete a ScreenDump.
-func (d *ScreenDump) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, force bool) error {
+func (d *ScreenDump) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, _ Grace) error {
 	return os.Remove(path)
 }
 

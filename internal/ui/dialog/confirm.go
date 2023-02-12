@@ -6,11 +6,9 @@ import (
 	"github.com/derailed/tview"
 )
 
-const confirmKey = "confirm"
+const dialogKey = "dialog"
 
-type (
-	confirmFunc func()
-)
+type confirmFunc func()
 
 // ShowConfirm pops a confirmation dialog.
 func ShowConfirm(styles config.Dialog, pages *ui.Pages, title, msg string, ack confirmFunc, cancel cancelFunc) {
@@ -22,12 +20,12 @@ func ShowConfirm(styles config.Dialog, pages *ui.Pages, title, msg string, ack c
 		SetLabelColor(styles.LabelFgColor.Color()).
 		SetFieldTextColor(styles.FieldFgColor.Color())
 	f.AddButton("Cancel", func() {
-		dismissConfirm(pages)
+		dismiss(pages)
 		cancel()
 	})
 	f.AddButton("OK", func() {
 		ack()
-		dismissConfirm(pages)
+		dismiss(pages)
 		cancel()
 	})
 	for i := 0; i < 2; i++ {
@@ -43,13 +41,13 @@ func ShowConfirm(styles config.Dialog, pages *ui.Pages, title, msg string, ack c
 	modal.SetText(msg)
 	modal.SetTextColor(styles.FgColor.Color())
 	modal.SetDoneFunc(func(int, string) {
-		dismissConfirm(pages)
+		dismiss(pages)
 		cancel()
 	})
-	pages.AddPage(confirmKey, modal, false, false)
-	pages.ShowPage(confirmKey)
+	pages.AddPage(dialogKey, modal, false, false)
+	pages.ShowPage(dialogKey)
 }
 
-func dismissConfirm(pages *ui.Pages) {
-	pages.RemovePage(confirmKey)
+func dismiss(pages *ui.Pages) {
+	pages.RemovePage(dialogKey)
 }

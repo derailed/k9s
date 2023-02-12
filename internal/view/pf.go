@@ -160,7 +160,7 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		for _, s := range selections {
 			var pf dao.PortForward
 			pf.Init(p.App().factory, client.NewGVR("portforwards"))
-			if err := pf.Delete(context.Background(), s, nil, true); err != nil {
+			if err := pf.Delete(context.Background(), s, nil, dao.DefaultGrace); err != nil {
 				p.App().Flash().Err(err)
 				return
 			}
