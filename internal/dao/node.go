@@ -77,6 +77,7 @@ func (o DrainOptions) toDrainHelper(k kubernetes.Interface, w io.Writer) drain.H
 		IgnoreAllDaemonSets: o.IgnoreAllDaemonSets,
 		Out:                 w,
 		ErrOut:              w,
+		Force:               o.Force,
 	}
 }
 

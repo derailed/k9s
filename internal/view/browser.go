@@ -121,6 +121,7 @@ func (b *Browser) bindKeys(aa ui.KeyActions) {
 		tcell.KeyEscape: ui.NewSharedKeyAction("Filter Reset", b.resetCmd, false),
 		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", b.filterCmd, false),
 		tcell.KeyHelp:   ui.NewSharedKeyAction("Help", b.helpCmd, false),
+		ui.KeyV:         ui.NewSharedKeyAction("Zob", b.blahCmd, true),
 	})
 }
 
@@ -350,6 +351,28 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+func (b *Browser) blahCmd(evt *tcell.EventKey) *tcell.EventKey {
+	b.Stop()
+	defer b.Start()
+	{
+		v := NewDetails(b.app, "Results", "Blee", true)
+		if err := v.app.inject(v, false); err != nil {
+			v.app.Flash().Err(err)
+		}
+
+		for i := 0; i < 10; i++ {
+			j := i
+			b.app.QueueUpdateDraw(func() {
+				log.Debug().Msgf("YO %d", j)
+				fmt.Fprintf(v.GetWriter(), "Yo %d\n", j)
+				time.Sleep(1 * time.Second)
+			})
+		}
+	}
+
+	return nil
+}
+
 func (b *Browser) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := b.GetSelectedItem()
 	if path == "" {
@@ -531,7 +554,7 @@ func (b *Browser) simpleDelete(selections []string, msg string) {
 				b.app.Flash().Errf("Invalid nuker %T", b.accessor)
 				continue
 			}
-			if err := nuker.Delete(context.Background(), sel, nil, false); err != nil {
+			if err := nuker.Delete(context.Background(), sel, nil, dao.DefaultGrace); err != nil {
 				b.app.Flash().Errf("Delete failed with `%s", err)
 			} else {
 				b.app.factory.DeleteForwarder(sel)
@@ -551,7 +574,11 @@ func (b *Browser) resourceDelete(selections []string, msg string) {
 			b.app.Flash().Infof("Delete resource %s %s", b.GVR(), selections[0])
 		}
 		for _, sel := range selections {
-			if err := b.GetModel().Delete(b.defaultContext(), sel, propagation, force); err != nil {
+			grace := dao.DefaultGrace
+			if force {
+				grace = dao.ForceGrace
+			}
+			if err := b.GetModel().Delete(b.defaultContext(), sel, propagation, grace); err != nil {
 				b.app.Flash().Errf("Delete failed with `%s", err)
 			} else {
 				b.app.factory.DeleteForwarder(sel)

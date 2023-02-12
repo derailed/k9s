@@ -12,6 +12,19 @@ import (
 	"k8s.io/client-go/dynamic"
 )
 
+type Grace int64
+
+const (
+	// DefaultGrace uses delete default termination policy.
+	DefaultGrace Grace = -1
+
+	// ForceGrace sets delete grace-period to 0.
+	ForceGrace Grace = 0
+
+	// NowGrace set delete grace-period to 1,
+	NowGrace Grace = 1
+)
+
 var _ Describer = (*Generic)(nil)
 
 // Generic represents a generic resource.
@@ -88,7 +101,7 @@ func (g *Generic) ToYAML(path string, showManaged bool) (string, error) {
 }
 
 // Delete deletes a resource.
-func (g *Generic) Delete(ctx context.Context, path string, propagation *metav1.DeletionPropagation, force bool) error {
+func (g *Generic) Delete(ctx context.Context, path string, propagation *metav1.DeletionPropagation, grace Grace) error {
 	ns, n := client.Namespaced(path)
 	auth, err := g.Client().CanI(ns, g.gvr.String(), []string{client.DeleteVerb})
 	if err != nil {
@@ -98,13 +111,13 @@ func (g *Generic) Delete(ctx context.Context, path string, propagation *metav1.D
 		return fmt.Errorf("user is not authorized to delete %s", path)
 	}
 
-	opts := metav1.DeleteOptions{
-		PropagationPolicy: propagation,
+	var gracePeriod *int64
+	if grace != DefaultGrace {
+		gracePeriod = (*int64)(&grace)
 	}
-
-	if force {
-		var defaultKillGrace int64 = 1
-		opts.GracePeriodSeconds = &defaultKillGrace
+	opts := metav1.DeleteOptions{
+		PropagationPolicy:  propagation,
+		GracePeriodSeconds: gracePeriod,
 	}
 
 	dial, err := g.dynClient()

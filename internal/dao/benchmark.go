@@ -27,7 +27,7 @@ type Benchmark struct {
 }
 
 // Delete nukes a resource.
-func (b *Benchmark) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, force bool) error {
+func (b *Benchmark) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, _ Grace) error {
 	return os.Remove(path)
 }
 
