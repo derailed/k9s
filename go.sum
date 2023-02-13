@@ -123,8 +123,8 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/denisenkom/go-mssqldb v0.9.0/go.mod h1:xbL0rPBG9cCiLr28tMa8zpbdarY27NDyej4t/EjAShU=
-github.com/derailed/popeye v0.10.1 h1:+lyLDGUyKANfMiSHV8X1pHD1HhcxEXCa8ple0ZvyRqc=
-github.com/derailed/popeye v0.10.1/go.mod h1:ChD8GPNvgsgjLG5fQBZIxm3VOhFrqd10Xn8IxfuGn4w=
+github.com/derailed/popeye v0.11.0 h1:Yh3GS9nbzNohIkqaJ62miGWT4kRhh6lba0czbBStXdA=
+github.com/derailed/popeye v0.11.0/go.mod h1:NkvjHH1F94tE7Ui17PlYiagQcFt7yXUV2hIhPzSK+0w=
 github.com/derailed/tcell/v2 v2.3.1-rc.3 h1:9s1fmyRcSPRlwr/C9tcpJKCujbrtmPpST6dcMUD2piY=
 github.com/derailed/tcell/v2 v2.3.1-rc.3/go.mod h1:nf68BEL8fjmXQHJT3xZjoZFs2uXOzyJcNAQqGUEMrFY=
 github.com/derailed/tview v0.8.1 h1:hvNR3LLrWEuaQbPYfBnRn7bYkxCP26K6nX9J+MGlhyw=
