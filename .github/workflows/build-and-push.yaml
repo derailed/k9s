@@ -1,0 +1,19 @@
+name: Build k9s docker image
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build
+        run: |
+          docker build -t ghcr.io/ozlevka-work/k9s:latest --file Dockerfile .
