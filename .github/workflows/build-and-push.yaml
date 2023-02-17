@@ -14,6 +14,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Build
+      - name: Get version
         run: |
-          docker build -t ghcr.io/ozlevka-work/k9s:latest --file Dockerfile .
+          eval `cat Dockerfile | grep 'K9S_VERSION' | head -1 | awk '{print $2}'`
+      - name: Build and publish
+        run: |
+          docker build -t ghcr.io/ozlevka-work/k9s:$K9S_VERSION --file Dockerfile .
