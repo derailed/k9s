@@ -1,7 +1,7 @@
 FROM python:3.10
 
 ARG AZURE_CLI_VERSION=2.42.0
-ARG K9S_VERSION="v0.26.7"
+ARG K9S_VERSION="v0.27.1"
 #https://github.com/derailed/k9s/releases/download/v0.26.7/k9s_Darwin_arm64.tar.gz 
 ARG USERNAME=k9s
 ARG USER_UID=1000
