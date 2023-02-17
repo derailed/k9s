@@ -17,6 +17,7 @@ jobs:
       - name: Get version
         run: |
           eval `cat Dockerfile | grep 'K9S_VERSION' | head -1 | awk '{print $2}'`
+          echo "K9S_VERSION=$K9S_VERSION" >> $GITHUB_ENV
       - name: Build and publish
         run: |
-          docker build -t ghcr.io/ozlevka-work/k9s:$K9S_VERSION --file Dockerfile .
+          docker build -t ghcr.io/ozlevka-work/k9s:${{ env.K9S_VERSION }} --file Dockerfile .
