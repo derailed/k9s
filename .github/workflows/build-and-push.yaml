@@ -19,7 +19,7 @@ jobs:
           eval `cat Dockerfile | grep 'K9S_VERSION' | head -1 | awk '{print $2}'`
           echo "K9S_VERSION=$K9S_VERSION" >> $GITHUB_ENV
       - name: Build and publish
-        uses: VaultVulp/gp-docker-action@1.1.12
+        uses: VaultVulp/gp-docker-action@1.6.0
         with:
           github-token: ${{ secrets.MY_TOKEN }}
           image-name: ghcr.io/ozlevka-work/k9s
