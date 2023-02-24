@@ -69,6 +69,12 @@ K9s is available on Linux, macOS and Windows platforms.
   zypper install k9s
   ```
 
+* On FreeBSD
+
+  ```shell
+  pkg install k9s
+  ```
+
 * Via [Scoop](https://scoop.sh) for Windows
 
   ```shell
