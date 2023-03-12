@@ -133,6 +133,26 @@ func (c *Config) DelContext(n string) error {
 	return clientcmd.ModifyConfig(acc, cfg, true)
 }
 
+// RenameContext renames a context.
+func (c *Config) RenameContext(old string, new string) error {
+	cfg, err := c.RawConfig()
+	if err != nil {
+		return err
+	}
+
+	if _, ok := cfg.Contexts[new]; ok {
+		return fmt.Errorf("context with name %s already exists", new)
+	}
+	cfg.Contexts[new] = cfg.Contexts[old]
+	delete(cfg.Contexts, old)
+	acc, err := c.ConfigAccess()
+	if err != nil {
+		return err
+	}
+
+	return clientcmd.ModifyConfig(acc, cfg, true)
+}
+
 // ContextNames fetch all available contexts.
 func (c *Config) ContextNames() ([]string, error) {
 	cfg, err := c.RawConfig()
