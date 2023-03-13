@@ -11,7 +11,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const renamePage = "rename"
+const (
+	renamePage = "rename"
+	inputField = "New name:"
+)
 
 // Context presents a context viewer.
 type Context struct {
@@ -43,31 +46,34 @@ func (c *Context) renameCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	app := c.App()
-	c.showRenameModal(app, contextName, func(newName string)(error) {
-		if err := app.factory.Client().Config().RenameContext(contextName, newName); err != nil {
-			c.App().Flash().Err(err)
-			return nil
-		}
-		c.Refresh()
-		return nil
-	})
+	c.showRenameModal(app, contextName, c.renameDialogCallback)
 
 	return nil
 }
 
-func (c *Context) showRenameModal(a *App, msg string, ok func(newName string)(error)) {
+func (c *Context) renameDialogCallback(form *tview.Form, contextName string) error {
+	app := c.App()
+	input := form.GetFormItemByLabel(inputField).(*tview.InputField)
+	if err := app.factory.Client().Config().RenameContext(contextName, input.GetText()); err != nil {
+		c.App().Flash().Err(err)
+		return nil
+	}
+	c.Refresh()
+	return nil
+}
+
+func (c *Context) showRenameModal(a *App, name string, ok func(form *tview.Form, contextName string)(error)) {
 	p := a.Content.Pages
 	f := c.makeStyledForm()
-	f.AddInputField("New name:", msg, 0, nil, nil)
-	contextField := f.GetFormItemByLabel("New name:").(*tview.InputField)
-	f.AddButton("OK", func() {
-		if err := ok(contextField.GetText()); err != nil {
+	f.AddInputField(inputField, name, 0, nil, nil).
+	AddButton("OK", func() {
+		if err := ok(f, name); err != nil {
 			c.App().Flash().Err(err)
 			return
 		}
 		p.RemovePage(renamePage)
-	})
-	f.AddButton("Cancel", func() {
+	}).
+	AddButton("Cancel", func() {
 		p.RemovePage(renamePage)
 	})
 	m := tview.NewModalForm("<Rename>", f)
