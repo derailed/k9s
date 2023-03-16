@@ -121,7 +121,6 @@ func (b *Browser) bindKeys(aa ui.KeyActions) {
 		tcell.KeyEscape: ui.NewSharedKeyAction("Filter Reset", b.resetCmd, false),
 		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", b.filterCmd, false),
 		tcell.KeyHelp:   ui.NewSharedKeyAction("Help", b.helpCmd, false),
-		ui.KeyV:         ui.NewSharedKeyAction("Zob", b.blahCmd, true),
 	})
 }
 
@@ -346,28 +345,6 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 			return nil
 		}
 		b.resourceDelete(selections, msg)
-	}
-
-	return nil
-}
-
-func (b *Browser) blahCmd(evt *tcell.EventKey) *tcell.EventKey {
-	b.Stop()
-	defer b.Start()
-	{
-		v := NewDetails(b.app, "Results", "Blee", true)
-		if err := v.app.inject(v, false); err != nil {
-			v.app.Flash().Err(err)
-		}
-
-		for i := 0; i < 10; i++ {
-			j := i
-			b.app.QueueUpdateDraw(func() {
-				log.Debug().Msgf("YO %d", j)
-				fmt.Fprintf(v.GetWriter(), "Yo %d\n", j)
-				time.Sleep(1 * time.Second)
-			})
-		}
 	}
 
 	return nil
