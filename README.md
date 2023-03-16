@@ -192,6 +192,7 @@ K9s is available on Linux, macOS and Windows platforms.
 
 |         k9s        | k8s client |
 | ------------------ | ---------- |
+|     >= v0.27.0     |   0.26.1   |
 | v0.26.7 - v0.26.6  |   0.25.3   |
 | v0.26.5 - v0.26.4  |   0.25.1   |
 | v0.26.3 - v0.26.1  |   0.24.3   |
