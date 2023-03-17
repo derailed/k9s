@@ -54,6 +54,9 @@ func (k *K9s) CurrentContextDir() string {
 
 // ActivateCluster initializes the active cluster is not present.
 func (k *K9s) ActivateCluster(ns string) {
+	if k.Clusters == nil {
+		k.Clusters = map[string]*Cluster{}
+	}
 	if _, ok := k.Clusters[k.CurrentCluster]; ok {
 		return
 	}
