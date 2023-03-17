@@ -33,6 +33,9 @@ archives:
       bit: Arm
       bitv6: Arm6
       bitv7: Arm7
+    format_overrides:
+      - goos: windows
+        format: zip
 checksum:
   name_template: "checksums.txt"
 snapshot:
