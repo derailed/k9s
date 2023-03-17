@@ -204,7 +204,7 @@ func (t *Table) doUpdate(data *render.TableData) {
 	custData := data.Customize(cols, t.wide)
 	if t.viewSetting != nil && t.viewSetting.SortColumn != "" {
 		tokens := strings.Split(t.viewSetting.SortColumn, ":")
-		if custData.Header.IndexOf(tokens[0], false) >= 0 {
+		if custData.Header.IndexOf(tokens[0], false) >= 0 && custData.Header.IndexOf(t.sortCol.name, false) < 0 {
 			t.sortCol.name, t.sortCol.asc = tokens[0], true
 			if len(tokens) == 2 && tokens[1] == "desc" {
 				t.sortCol.asc = false

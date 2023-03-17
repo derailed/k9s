@@ -1,5 +1,5 @@
 plugin:
-  # Leverage stern (https://github.com/wercker/stern) to output logs.
+  # Leverage stern (https://github.com/stern/stern) to output logs.
   stern:
     shortCut: Ctrl-L
     confirm: false
