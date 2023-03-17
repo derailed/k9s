@@ -7,7 +7,13 @@ import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
+	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
+)
+
+const (
+	renamePage = "rename"
+	inputField = "New name:"
 )
 
 // Context presents a context viewer.
@@ -28,6 +34,63 @@ func NewContext(gvr client.GVR) ResourceViewer {
 
 func (c *Context) bindKeys(aa ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
+	aa.Add(ui.KeyActions{
+		ui.KeyR: ui.NewKeyAction("Rename", c.renameCmd, true),
+	})
+}
+
+func (c *Context) renameCmd(evt *tcell.EventKey) *tcell.EventKey {
+	contextName := c.GetTable().GetSelectedItem()
+	if contextName == "" {
+		return evt
+	}
+
+	app := c.App()
+	c.showRenameModal(app, contextName, c.renameDialogCallback)
+
+	return nil
+}
+
+func (c *Context) renameDialogCallback(form *tview.Form, contextName string) error {
+	app := c.App()
+	input := form.GetFormItemByLabel(inputField).(*tview.InputField)
+	if err := app.factory.Client().Config().RenameContext(contextName, input.GetText()); err != nil {
+		c.App().Flash().Err(err)
+		return nil
+	}
+	c.Refresh()
+	return nil
+}
+
+func (c *Context) showRenameModal(a *App, name string, ok func(form *tview.Form, contextName string)(error)) {
+	p := a.Content.Pages
+	f := c.makeStyledForm()
+	f.AddInputField(inputField, name, 0, nil, nil).
+	AddButton("OK", func() {
+		if err := ok(f, name); err != nil {
+			c.App().Flash().Err(err)
+			return
+		}
+		p.RemovePage(renamePage)
+	}).
+	AddButton("Cancel", func() {
+		p.RemovePage(renamePage)
+	})
+	m := tview.NewModalForm("<Rename>", f)
+	p.AddPage(renamePage, m, false, false)
+	p.ShowPage(renamePage)
+}
+
+func (c *Context) makeStyledForm() *tview.Form {
+	f := tview.NewForm()
+	f.SetItemPadding(0)
+	f.SetButtonsAlign(tview.AlignCenter).
+		SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
+		SetButtonTextColor(tview.Styles.PrimaryTextColor).
+		SetLabelColor(tcell.ColorAqua).
+		SetFieldTextColor(tcell.ColorOrange)
+
+	return f
 }
 
 func (c *Context) useCtx(app *App, model ui.Tabular, gvr, path string) {
