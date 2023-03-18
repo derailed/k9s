@@ -61,7 +61,11 @@ func (c *CmdBuff) InCmdMode() bool {
 	c.mx.RLock()
 	defer c.mx.RUnlock()
 
-	return c.active || len(c.buff) > 0
+	if !c.active {
+		return false
+	}
+
+	return len(c.buff) > 0
 }
 
 // IsActive checks if command buffer is active.

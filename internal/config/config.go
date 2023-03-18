@@ -87,18 +87,23 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 	}
 	context, ok := cc[c.K9s.CurrentContext]
 	if !ok {
-		return fmt.Errorf("The specified context %q does not exists in kubeconfig", c.K9s.CurrentContext)
+		return fmt.Errorf("the specified context %q does not exists in kubeconfig", c.K9s.CurrentContext)
 	}
 	c.K9s.CurrentCluster = context.Cluster
 	c.K9s.ActivateCluster(context.Namespace)
 
 	var ns = client.DefaultNamespace
-	if k9sFlags != nil && IsBoolSet(k9sFlags.AllNamespaces) {
+	switch {
+	case k9sFlags != nil && IsBoolSet(k9sFlags.AllNamespaces):
 		ns = client.NamespaceAll
-	} else if isSet(flags.Namespace) {
+	case isSet(flags.Namespace):
 		ns = *flags.Namespace
-	} else {
-		ns = context.Namespace
+	default:
+		if nss := context.Namespace; nss != "" {
+			ns = nss
+		} else if nss == "" {
+			ns = c.K9s.ActiveCluster().Namespace.Active
+		}
 	}
 
 	if err := c.SetActiveNamespace(ns); err != nil {
