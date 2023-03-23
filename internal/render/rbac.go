@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/derailed/tcell/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -36,9 +35,7 @@ type Rbac struct {
 
 // ColorerFunc colors a resource row.
 func (Rbac) ColorerFunc() ColorerFunc {
-	return func(_ string, _ Header, _re RowEvent) tcell.Color {
-		return tcell.ColorMediumSpringGreen
-	}
+	return DefaultColorer
 }
 
 // Header returns a header row.
