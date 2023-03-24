@@ -18,15 +18,20 @@ k9s:
     fgColor: *foreground
     bgColor: *background
     logoColor: *magenta
-  # Command prompt styles
-  prompt:
-    fgColor: *foreground
-    bgColor: *background
-    suggestColor: *orange
+
   # ClusterInfoView styles.
   info:
     fgColor: *blue
     sectionColor: *lightBlue
+
+  # Help Menu styles
+  help:
+    fgColor: *lightBlue
+    bgColor: *background
+    keyColor: *green
+    numKeyColor: *green
+    sectionColor: *blue
+
   # Dialog styles.
   dialog:
     fgColor: *foreground
@@ -37,21 +42,25 @@ k9s:
     buttonFocusBgColor: *darkBlue
     labelFgColor: *orange
     fieldFgColor: *blue
+
   frame:
     # Borders styles.
     border:
       fgColor: *blue
       focusColor: *darkBlue
+      
     menu:
       fgColor: *lightBlue
       keyColor: *green
       # Used for favorite namespaces
       numKeyColor: *green
+
     # CrumbView attributes for history navigation.
     crumbs:
       fgColor: *foreground
       bgColor: *backgroundOpaque
       activeColor: *blue
+
     # Resource status and update styles
     status:
       newColor: *blue
@@ -59,9 +68,10 @@ k9s:
       addColor: *green
       pendingColor: *orange
       errorColor: *magenta
-      highlightColor: *blue
+      highlightcolor: *blue
       killColor: *green
       completedColor: *darkBlue
+
     # Border title styles.
     title:
       fgColor: *foreground
@@ -69,6 +79,8 @@ k9s:
       highlightColor: *blue
       counterColor: *lightBlue
       filterColor: *orange
+
+  # Specific views styles
   views:
     # Charts skins...
     charts:
@@ -100,16 +112,20 @@ k9s:
         v1/pods:
           - *blue
           - *magenta
+
     # TableView attributes.
     table:
       fgColor: *foreground
       bgColor: *background
+      cursorFgColor: *foreground
+      cursorBgColor: *backgroundOpaque
       markColor: *magenta
       # Header row styles.
       header:
         fgColor: *foreground
         bgColor: *backgroundOpaque
         sorterColor: *blue
+
     # Xray view attributes.
     xray:
       fgColor: *foreground
@@ -117,11 +133,13 @@ k9s:
       cursorColor: *blue
       cursorTextColor: *foreground
       graphicColor: *blue
+
     # YAML info styles.
     yaml:
       keyColor: *orange
       colonColor: *orange
       valueColor: *foreground
+
     # Logs styles.
     logs:
       fgColor: *foreground
