@@ -74,7 +74,12 @@ K9s is available on Linux, macOS and Windows platforms.
   ```shell
   pkg install k9s
   ```
+* Via Snap for Ubuntu
 
+  ``` shell
+  snap install k9s
+  ```
+  
 * Via [Scoop](https://scoop.sh) for Windows
 
   ```shell
