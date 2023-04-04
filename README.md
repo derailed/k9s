@@ -866,8 +866,13 @@ k9s:
       valueColor: royalblue
     # Logs styles.
     logs:
-      fgColor: white
+      fgColor: lightskyblue
       bgColor: black
+      indicator:
+        fgColor: dodgerblue
+        bgColor: black
+        toggleOnColor: limegreen
+        toggleOffColor: gray
 ```
 
 ---

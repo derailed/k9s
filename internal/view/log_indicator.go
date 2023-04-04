@@ -1,6 +1,7 @@
 package view
 
 import (
+	"fmt"
 	"sync/atomic"
 
 	"github.com/derailed/k9s/internal/config"
@@ -47,6 +48,7 @@ func NewLogIndicator(cfg *config.Config, styles *config.Styles, allContainers bo
 func (l *LogIndicator) StylesChanged(styles *config.Styles) {
 	l.SetBackgroundColor(styles.K9s.Views.Log.Indicator.BgColor.Color())
 	l.SetTextColor(styles.K9s.Views.Log.Indicator.FgColor.Color())
+	l.Refresh()
 }
 
 // AutoScroll reports the current scrolling status.
@@ -111,36 +113,39 @@ func (l *LogIndicator) reset() {
 func (l *LogIndicator) Refresh() {
 	l.reset()
 
+	toggleOnFormat := "[::b]%s:[" + string(l.styles.K9s.Views.Log.Indicator.ToggleOnColor) + "::b]On[-::] %s"
+	toggleOffFormat := "[::b]%s:[" + string(l.styles.K9s.Views.Log.Indicator.ToggleOffColor) + "::d]Off[-::]%s"
+
 	if l.shouldDisplayAllContainers {
 		if l.allContainers {
-			l.indicator = append(l.indicator, "[::b]AllContainers:[limegreen::b]On[-::] "+spacer...)
+			l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFormat, "AllContainers", spacer)...)
 		} else {
-			l.indicator = append(l.indicator, "[::b]AllContainers:[gray::d]Off[-::]"+spacer...)
+			l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFormat, "AllContainers", spacer)...)
 		}
 	}
 
 	if l.AutoScroll() {
-		l.indicator = append(l.indicator, "[::b]Autoscroll:[limegreen::b]On[-::] "+spacer...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFormat, "Autoscroll", spacer)...)
 	} else {
-		l.indicator = append(l.indicator, "[::b]Autoscroll:[gray::d]Off[-::]"+spacer...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFormat, "Autoscroll", spacer)...)
 	}
 
 	if l.FullScreen() {
-		l.indicator = append(l.indicator, "[::b]FullScreen:[limegreen::b]On[-::] "+spacer...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFormat, "FullScreen", spacer)...)
 	} else {
-		l.indicator = append(l.indicator, "[::b]FullScreen:[gray::d]Off[-::]"+spacer...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFormat, "FullScreen", spacer)...)
 	}
 
 	if l.Timestamp() {
-		l.indicator = append(l.indicator, "[::b]Timestamps:[limegreen::b]On[-::] "+spacer...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFormat, "Timestamps", spacer)...)
 	} else {
-		l.indicator = append(l.indicator, "[::b]Timestamps:[gray::d]Off[-::]"+spacer...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFormat, "Timestamps", spacer)...)
 	}
 
 	if l.TextWrap() {
-		l.indicator = append(l.indicator, "[::b]Wrap:[limegreen::b]On[-::] "...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFormat, "Wrap", "")...)
 	} else {
-		l.indicator = append(l.indicator, "[::b]Wrap:[gray::d]Off[-::]"...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFormat, "Wrap", "")...)
 	}
 
 	_, _ = l.Write(l.indicator)
