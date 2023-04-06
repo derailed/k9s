@@ -260,8 +260,8 @@ K9s uses aliases to navigate most K8s resources.
 | Fuzzy find a resource given a filter                           | `/`-f filter⏎                 |                                                                        |
 | Bails out of view/command/filter mode                          | `<esc>`                       |                                                                        |
 | Key mapping to describe, view, edit, view logs,...             | `d`,`v`, `e`, `l`,...         |                                                                        |
-| To view and switch to another Kubernetes context               | `:`ctx⏎                       |                                                                        |
-| To view and switch to another Kubernetes context               | `:`ctx context-name⏎          |                                                                        |
+| To view and switch to another Kubernetes context (Pod view)    | `:`ctx⏎                       |                                                                        |
+| To view and switch directl to another Kubernetes context (Last used view) | `:`ctx context-name⏎          |                                                                        |
 | To view and switch to another Kubernetes namespace             | `:`ns⏎                        |                                                                        |
 | To view all saved resources                                    | `:`screendump or sd⏎          |                                                                        |
 | To delete a resource (TAB and ENTER to confirm)                | `ctrl-d`                      |                                                                        |

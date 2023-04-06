@@ -398,7 +398,7 @@ func (a *App) isValidNS(ns string) (bool, error) {
 	return true, nil
 }
 
-func (a *App) switchContext(name string, loadPods bool) error {
+func (a *App) switchContext(name string) error {
 	log.Debug().Msgf("--> Switching Context %q--%q", name, a.Config.ActiveView())
 	a.Halt()
 	defer a.Resume()
@@ -413,7 +413,7 @@ func (a *App) switchContext(name string, loadPods bool) error {
 			return e
 		}
 		v := a.Config.ActiveView()
-		if v == "" || isContextCmd(v) || loadPods {
+		if v == "" || isContextCmd(v) {
 			v = "pod"
 			a.Config.SetActiveView(v)
 		}
@@ -433,7 +433,7 @@ func (a *App) switchContext(name string, loadPods bool) error {
 
 		a.Flash().Infof("Switching context to %s", name)
 		a.ReloadStyles(name)
-		a.gotoResource(v, "", true)
+		a.gotoResource(a.Config.ActiveView(), "", true)
 		a.clusterModel.Reset(a.factory)
 	}
 
