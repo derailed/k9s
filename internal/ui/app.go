@@ -36,7 +36,11 @@ func NewApp(cfg *config.Config, context string) *App {
 		flash:        model.NewFlash(model.DefaultFlashDelay),
 		cmdBuff:      model.NewFishBuff(':', model.CommandBuffer),
 	}
-	a.ReloadStyles(context)
+	if cfg.K9s.GetThemeSource() == "cluster" {
+		a.ReloadStyles(cfg.K9s.CurrentCluster)
+	} else {
+		a.ReloadStyles(context)
+	}
 
 	a.views = map[string]tview.Primitive{
 		"menu":   NewMenu(a.Styles),

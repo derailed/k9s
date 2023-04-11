@@ -27,6 +27,7 @@ type K9s struct {
 	Clusters            map[string]*Cluster `yaml:"clusters,omitempty"`
 	Thresholds          Threshold           `yaml:"thresholds"`
 	ScreenDumpDir       string              `yaml:"screenDumpDir"`
+	ThemeSource         string              `yaml:"themeSource"`
 	manualRefreshRate   int
 	manualHeadless      *bool
 	manualLogoless      *bool
@@ -34,6 +35,7 @@ type K9s struct {
 	manualReadOnly      *bool
 	manualCommand       *string
 	manualScreenDumpDir *string
+	manualThemeSource   *string
 }
 
 // NewK9s create a new K9s configuration.
@@ -110,6 +112,11 @@ func (k *K9s) OverrideScreenDumpDir(dir string) {
 	k.manualScreenDumpDir = &dir
 }
 
+// OverrideThemeSource set the theme source manually
+func (k *K9s) OverrideThemeSource(source string) {
+	k.manualThemeSource = &source
+}
+
 // IsHeadless returns headless setting.
 func (k *K9s) IsHeadless() bool {
 	h := k.Headless
@@ -184,6 +191,19 @@ func (k *K9s) GetScreenDumpDir() string {
 	}
 
 	return screenDumpDir
+}
+
+func (k *K9s) GetThemeSource() string {
+	themeSource := k.ThemeSource
+	if k.manualThemeSource != nil && *k.manualThemeSource != "" {
+		themeSource = *k.manualThemeSource
+	}
+
+	if themeSource == "" {
+		return K9sDefaultThemeSource
+	}
+
+	return themeSource
 }
 
 func (k *K9s) validateDefaults() {
