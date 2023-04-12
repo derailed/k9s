@@ -15,16 +15,16 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3.3.0
+
       - name: Install Go
-        uses: actions/setup-go@v3.5.0
+        uses: actions/setup-go@v4.0.0
         with:
           go-version: 1.19
 
       - name: Setup GO env
         run: go env -w CGO_ENABLED=0
-
-      - name: Checkout Code
-        uses: actions/checkout@v3.3.0
 
       - name: Run Tests
         run: make test
