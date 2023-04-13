@@ -412,10 +412,8 @@ func (a *App) switchContext(name string) error {
 		if e := a.command.Reset(true); e != nil {
 			return e
 		}
-		v := a.Config.ActiveView()
-		if v == "" || isContextCmd(v) {
-			v = "pod"
-			a.Config.SetActiveView(v)
+		if a.Config.ActiveView() == "" || isContextCmd(a.Config.ActiveView()) {
+			a.Config.SetActiveView("pod")
 		}
 		a.Config.Reset()
 		a.Config.K9s.CurrentContext = name
