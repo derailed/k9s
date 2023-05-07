@@ -913,6 +913,8 @@ to make this project a reality!
   * <img src="assets/mail.png" width="16" height="auto" alt="email"/>  fernand@imhotep.io
   * <img src="assets/twitter.png" width="16" height="auto" alt="twitter"/> [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
 
+* [Aleksei Romanenko](https://github.com/slimus)
+
 We always enjoy hearing from folks who benefit from our work!
 
 ## Contributions Guideline
