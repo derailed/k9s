@@ -1,6 +1,10 @@
+# -----------------------------------------------------------------------------
 # K9s Nightfox Theme
 # Based on the Nightfox.nvim color scheme:
 # https://github.com/EdenEast/nightfox.nvim
+# -----------------------------------------------------------------------------
+
+# Styles...
 foreground: &foreground "#cdcecf"
 background: &background "#192330"
 current_line: &current_line "#2b3b51"
@@ -13,6 +17,7 @@ magenta: &magenta "#9d79d6"
 blue: &blue "#719cd6"
 red: &red "#c94f6d"
 
+# Skin...
 k9s:
   body:
     fgColor: *foreground
@@ -94,3 +99,5 @@ k9s:
       indicator:
         fgColor: *foreground
         bgColor: *selection
+        toggleOnColor: *margenta
+        toggleOffColor: *blue

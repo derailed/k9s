@@ -2,6 +2,7 @@ package view
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
@@ -62,21 +63,25 @@ func (c *Context) renameDialogCallback(form *tview.Form, contextName string) err
 	return nil
 }
 
-func (c *Context) showRenameModal(a *App, name string, ok func(form *tview.Form, contextName string)(error)) {
+func (c *Context) showRenameModal(a *App, name string, ok func(form *tview.Form, contextName string) error) {
 	p := a.Content.Pages
 	f := c.makeStyledForm()
 	f.AddInputField(inputField, name, 0, nil, nil).
-	AddButton("OK", func() {
-		if err := ok(f, name); err != nil {
-			c.App().Flash().Err(err)
-			return
-		}
-		p.RemovePage(renamePage)
-	}).
-	AddButton("Cancel", func() {
+		AddButton("OK", func() {
+			if err := ok(f, name); err != nil {
+				c.App().Flash().Err(err)
+				return
+			}
+			p.RemovePage(renamePage)
+		}).
+		AddButton("Cancel", func() {
+			p.RemovePage(renamePage)
+		})
+	m := tview.NewModalForm("<Rename>", f)
+	m.SetText(fmt.Sprintf("Rename context %q?", name))
+	m.SetDoneFunc(func(int, string) {
 		p.RemovePage(renamePage)
 	})
-	m := tview.NewModalForm("<Rename>", f)
 	p.AddPage(renamePage, m, false, false)
 	p.ShowPage(renamePage)
 }

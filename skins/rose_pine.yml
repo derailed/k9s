@@ -1,3 +1,7 @@
+# -----------------------------------------------------------------------------
+# Rose Pine skin
+# -----------------------------------------------------------------------------
+
 # Styles...
 foreground: &foreground "#e0def4"
 background: &background "#191724"
@@ -107,3 +111,5 @@ k9s:
       indicator:
         fgColor: *foreground
         bgColor: *purple
+        toggleOnColor: *pink
+        toggleOffColor: *purple

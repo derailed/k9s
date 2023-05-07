@@ -1,4 +1,9 @@
+# -----------------------------------------------------------------------------
+# Transparent skin
 # Preserve your terminal session background color
+# -----------------------------------------------------------------------------
+
+# Skin...
 k9s:
   body:
     bgColor: default
@@ -32,6 +37,8 @@ k9s:
       bgColor: default
       indicator:
         bgColor: default
+        toggleOnColor: default
+        toggleOffColor: default
     yaml:
       colonColor: default
       valueColor: default

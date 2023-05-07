@@ -149,8 +149,18 @@ func (c *Config) RenameContext(old string, new string) error {
 	if err != nil {
 		return err
 	}
+	if err := clientcmd.ModifyConfig(acc, cfg, true); err != nil {
+		return err
+	}
+	current, err := c.CurrentContextName()
+	if err != nil {
+		return err
+	}
+	if current == old {
+		return c.SwitchContext(new)
+	}
 
-	return clientcmd.ModifyConfig(acc, cfg, true)
+	return nil
 }
 
 // ContextNames fetch all available contexts.

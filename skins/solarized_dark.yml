@@ -1,4 +1,10 @@
-# Based on K9s Solarized Dark Skin Contributed by [@danmikita](danmikita@gmail.com)
+# -----------------------------------------------------------------------------
+# Solarized Dark Skin
+# Based on: K9s Solarized Dark Skin
+# Author:   [@danmikita](danmikita@gmail.com)
+# -----------------------------------------------------------------------------
+
+# Styles...
 foreground: &foreground "#839495"
 background: &background "#002833"
 current_line: &current_line "#003440"
@@ -11,6 +17,7 @@ magenta: &magenta "#d33582"
 blue: &blue "#2aa198"
 red: &red "#dc312e"
 
+# Skin...
 k9s:
   body:
     fgColor: *foreground
@@ -92,3 +99,5 @@ k9s:
       indicator:
         fgColor: *foreground
         bgColor: *selection
+        toggleOnColor: *magenta
+        toggleOffColor: *blue
