@@ -398,7 +398,7 @@ func (a *App) isValidNS(ns string) (bool, error) {
 	return true, nil
 }
 
-func (a *App) switchContext(name string, loadPods bool) error {
+func (a *App) switchContext(name string) error {
 	log.Debug().Msgf("--> Switching Context %q--%q", name, a.Config.ActiveView())
 	a.Halt()
 	defer a.Resume()
@@ -412,10 +412,8 @@ func (a *App) switchContext(name string, loadPods bool) error {
 		if e := a.command.Reset(true); e != nil {
 			return e
 		}
-		v := a.Config.ActiveView()
-		if v == "" || isContextCmd(v) || loadPods {
-			v = "pod"
-			a.Config.SetActiveView(v)
+		if a.Config.ActiveView() == "" || isContextCmd(a.Config.ActiveView()) {
+			a.Config.SetActiveView("pod")
 		}
 		a.Config.Reset()
 		a.Config.K9s.CurrentContext = name
@@ -433,7 +431,7 @@ func (a *App) switchContext(name string, loadPods bool) error {
 
 		a.Flash().Infof("Switching context to %s", name)
 		a.ReloadStyles(name)
-		a.gotoResource(v, "", true)
+		a.gotoResource(a.Config.ActiveView(), "", true)
 		a.clusterModel.Reset(a.factory)
 	}
 

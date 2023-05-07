@@ -119,6 +119,6 @@ func useContext(app *App, name string) error {
 		log.Error().Err(err).Msgf("Context switch failed")
 		return err
 	}
-
-	return app.switchContext(name, true)
+	
+	return app.switchContext(name)
 }
