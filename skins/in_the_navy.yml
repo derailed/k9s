@@ -1,5 +1,8 @@
-# Styles...
+# -----------------------------------------------------------------------------
+# In the Navy
+# -----------------------------------------------------------------------------
 
+# Styles...
 fg: &fg "dodgerblue"
 bg: &bg "white"
 blue: &blue "blue"
@@ -101,3 +104,5 @@ k9s:
       indicator:
         fgColor: *dark
         bgColor: *bg
+        toggleOnColor: *steel
+        toggleOffColor: *blue

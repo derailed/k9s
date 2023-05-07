@@ -1,4 +1,7 @@
-# monokai.yml
+# -----------------------------------------------------------------------------
+# Monokai skin
+# -----------------------------------------------------------------------------
+
 # Styles...
 foreground: &foreground "#ffffff"
 background: &background "default"
@@ -24,7 +27,7 @@ k9s:
     logoColorInfo: *lightBlue
     logoColorWarn: *orange
     logoColorError: *magenta
-    
+
   # Command prompt styles
   prompt:
     fgColor: *foreground
@@ -60,7 +63,7 @@ k9s:
     border:
       fgColor: *darkGray
       focusColor: *darkGray
-      
+
     menu:
       fgColor: *foreground
       keyColor: *magenta
@@ -159,3 +162,5 @@ k9s:
       indicator:
         fgColor: *foreground
         bgColor: *backgroundOpaque
+        toggleOnColor: *green
+        toggleOffColor: *magenta

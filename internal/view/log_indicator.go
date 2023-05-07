@@ -6,6 +6,7 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
+	"github.com/rs/zerolog/log"
 )
 
 const spacer = "     "
@@ -113,40 +114,45 @@ func (l *LogIndicator) reset() {
 func (l *LogIndicator) Refresh() {
 	l.reset()
 
-	toggleOnFormat := "[::b]%s:[" + string(l.styles.K9s.Views.Log.Indicator.ToggleOnColor) + "::b]On[-::] %s"
-	toggleOffFormat := "[::b]%s:[" + string(l.styles.K9s.Views.Log.Indicator.ToggleOffColor) + "::d]Off[-::]%s"
+	var (
+		toggleFmt    = "[::b]%s:["
+		toggleOnFmt  = toggleFmt + string(l.styles.K9s.Views.Log.Indicator.ToggleOnColor) + "::b]On[-::] %s"
+		toggleOffFmt = toggleFmt + string(l.styles.K9s.Views.Log.Indicator.ToggleOffColor) + "::d]Off[-::]%s"
+	)
 
 	if l.shouldDisplayAllContainers {
 		if l.allContainers {
-			l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFormat, "AllContainers", spacer)...)
+			l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "AllContainers", spacer)...)
 		} else {
-			l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFormat, "AllContainers", spacer)...)
+			l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "AllContainers", spacer)...)
 		}
 	}
 
 	if l.AutoScroll() {
-		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFormat, "Autoscroll", spacer)...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "Autoscroll", spacer)...)
 	} else {
-		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFormat, "Autoscroll", spacer)...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "Autoscroll", spacer)...)
 	}
 
 	if l.FullScreen() {
-		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFormat, "FullScreen", spacer)...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "FullScreen", spacer)...)
 	} else {
-		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFormat, "FullScreen", spacer)...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "FullScreen", spacer)...)
 	}
 
 	if l.Timestamp() {
-		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFormat, "Timestamps", spacer)...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "Timestamps", spacer)...)
 	} else {
-		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFormat, "Timestamps", spacer)...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "Timestamps", spacer)...)
 	}
 
 	if l.TextWrap() {
-		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFormat, "Wrap", "")...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "Wrap", "")...)
 	} else {
-		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFormat, "Wrap", "")...)
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "Wrap", "")...)
 	}
+
+	log.Debug().Msgf("INDICATOR: %q", l.indicator)
 
 	_, _ = l.Write(l.indicator)
 }

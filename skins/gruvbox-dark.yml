@@ -1,4 +1,9 @@
-# K9s Gruvbox Dark Skin Contributed by [@indiebrain](https://github.com/indiebrain)
+# -----------------------------------------------------------------------------
+# K9s Gruvbox Dark Skin
+# Author: [@indiebrain](https://github.com/indiebrain)
+# -----------------------------------------------------------------------------
+
+# Styles...
 foreground: &foreground "#ebdbb2"
 background: &background "#272727"
 current_line: &current_line "#ebdbb2"
