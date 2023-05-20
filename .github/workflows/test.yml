@@ -19,7 +19,7 @@ jobs:
         uses: actions/checkout@v3.5.2
 
       - name: Install Go
-        uses: actions/setup-go@v4.0.0
+        uses: actions/setup-go@v4.0.1
         with:
           go-version-file: go.mod
           cache-dependency-path: go.sum
