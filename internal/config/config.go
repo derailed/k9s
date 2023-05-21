@@ -191,6 +191,10 @@ func (c *Config) ActiveView() string {
 	cmd := cl.View.Active
 	if c.K9s.manualCommand != nil && *c.K9s.manualCommand != "" {
 		cmd = *c.K9s.manualCommand
+		// We reset the manualCommand property because
+		// the command-line switch should only be considered once,
+		// on startup.
+		*c.K9s.manualCommand = ""
 	}
 
 	return cmd
