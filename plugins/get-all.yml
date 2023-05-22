@@ -3,11 +3,11 @@ plugin:
   get-all:
     shortCut: g
     confirm: false
-    description: get-all
+    description: get all resources
     scopes:
     - all
     command: sh
     background: false
     args:
     - -c
-    - "kubectl get-all -n $NAMESPACE | less"
+    - "kubectl get all -n $NAMESPACE | less"
