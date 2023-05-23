@@ -10,7 +10,7 @@ plugin:
     background: false
     args:
       - -c
-      - "export FORCE_COLOR=1;kapp inspect -a $NAME.app --namespace $NAMESPACE --color --tty |& less -R"
+      - "export FORCE_COLOR=1;kapp inspect -a $NAME.app --namespace $NAMESPACE --kubeconfig-context $CONTEXT --color --tty |& less -R"
   kctrl-app-status:
     shortCut: Shift-Q
     confirm: false
@@ -21,7 +21,7 @@ plugin:
     background: false
     args:
       - -c
-      - "export FORCE_COLOR=1;kctrl app status -a $NAME --namespace $NAMESPACE --color --tty |& less -R"
+      - "export FORCE_COLOR=1;kctrl app status -a $NAME --namespace $NAMESPACE --kubeconfig-context $CONTEXT --color --tty |& less -R"
   kctrl-app-pause:
     shortCut: Shift-T
     confirm: false
@@ -32,7 +32,7 @@ plugin:
     background: false
     args:
       - -c
-      - "export FORCE_COLOR=1;kctrl app pause -a $NAME --namespace $NAMESPACE --yes --color --tty |& less -R"
+      - "export FORCE_COLOR=1;kctrl app pause -a $NAME --namespace $NAMESPACE --kubeconfig-context $CONTEXT --yes --color --tty |& less -R"
   kctrl-app-kick:
     shortCut: Shift-Z
     confirm: false
@@ -43,5 +43,5 @@ plugin:
     background: false
     args:
       - -c
-      - "export FORCE_COLOR=1;kctrl app kick -a $NAME --namespace $NAMESPACE --yes --color --tty |& less -R"
+      - "export FORCE_COLOR=1;kctrl app kick -a $NAME --namespace $NAMESPACE --kubeconfig-context $CONTEXT --yes --color --tty |& less -R"
  
