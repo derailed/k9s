@@ -38,7 +38,7 @@ type (
 type CmdBuff struct {
 	buff       []rune
 	suggestion string
-	listeners  []BuffWatcher
+	listeners  map[BuffWatcher]struct{}
 	hotKey     rune
 	kind       BufferKind
 	active     bool
@@ -52,7 +52,7 @@ func NewCmdBuff(key rune, kind BufferKind) *CmdBuff {
 		hotKey:    key,
 		kind:      kind,
 		buff:      make([]rune, 0, maxBuff),
-		listeners: []BuffWatcher{},
+		listeners: make(map[BuffWatcher]struct{}),
 	}
 }
 
@@ -221,7 +221,7 @@ func (c *CmdBuff) Empty() bool {
 func (c *CmdBuff) AddListener(w BuffWatcher) {
 	c.mx.Lock()
 	{
-		c.listeners = append(c.listeners, w)
+		c.listeners[w] = struct{}{}
 	}
 	c.mx.Unlock()
 }
@@ -229,36 +229,24 @@ func (c *CmdBuff) AddListener(w BuffWatcher) {
 // RemoveListener removes a listener.
 func (c *CmdBuff) RemoveListener(l BuffWatcher) {
 	c.mx.Lock()
-	defer c.mx.Unlock()
-
-	victim := -1
-	for i, lis := range c.listeners {
-		if l == lis {
-			victim = i
-			break
-		}
-	}
-	if victim == -1 {
-		return
-	}
-
-	c.listeners = append(c.listeners[:victim], c.listeners[victim+1:]...)
+	delete(c.listeners, l)
+	c.mx.Unlock()
 }
 
 func (c *CmdBuff) fireBufferCompleted(t, s string) {
-	for _, l := range c.listeners {
+	for l := range c.listeners {
 		l.BufferCompleted(t, s)
 	}
 }
 
 func (c *CmdBuff) fireBufferChanged(t, s string) {
-	for _, l := range c.listeners {
+	for l := range c.listeners {
 		l.BufferChanged(t, s)
 	}
 }
 
 func (c *CmdBuff) fireActive(b bool) {
-	for _, l := range c.listeners {
+	for l := range c.listeners {
 		l.BufferActive(b, c.GetKind())
 	}
 }
