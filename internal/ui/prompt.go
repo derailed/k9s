@@ -182,6 +182,7 @@ func (p *Prompt) InCmdMode() bool {
 }
 
 func (p *Prompt) activate() {
+	p.Clear()
 	p.SetCursorIndex(len(p.model.GetText()))
 	p.write(p.model.GetText(), p.model.GetSuggestion())
 	p.model.Notify(false)
