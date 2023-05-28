@@ -1,6 +1,17 @@
 plugin:
   #get all resources in a namespace using the krew get-all plugin
-  get-all:
+  get-all-namespace:
+    shortCut: g
+    confirm: false
+    description: get-all
+    scopes:
+    - namespaces
+    command: sh
+    background: false
+    args:
+    - -c
+    - "kubectl get-all -n $NAME | less"
+  get-all-other:
     shortCut: g
     confirm: false
     description: get-all
