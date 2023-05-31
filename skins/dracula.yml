@@ -112,4 +112,4 @@ k9s:
         fgColor: *foreground
         bgColor: *purple
         toggleOnColor: *green
-        toggleOffColor: *blue
+        toggleOffColor: *cyan
