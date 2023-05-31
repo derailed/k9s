@@ -2,7 +2,9 @@ package ui
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/derailed/k9s/internal/config"
@@ -131,14 +133,22 @@ func (c *Configurator) RefreshStyles(context string) {
 		c.Styles.Reset()
 	}
 	if err := c.Styles.Load(clusterSkins); err != nil {
-		log.Warn().Msgf("No context specific skin file found -- %s", clusterSkins)
+		if errors.Is(err, os.ErrNotExist) {
+			log.Warn().Msgf("No context specific skin file found -- %s", clusterSkins)
+		} else {
+			log.Error().Msgf("Failed to parse context specific skin file -- %s. %s.", clusterSkins, err)
+		}
 	} else {
 		c.updateStyles(clusterSkins)
 		return
 	}
 
 	if err := c.Styles.Load(config.K9sStylesFile); err != nil {
-		log.Warn().Msgf("No skin file found -- %s. Loading stock skins.", config.K9sStylesFile)
+		if errors.Is(err, os.ErrNotExist) {
+			log.Warn().Msgf("No skin file found -- %s. Loading stock skins.", config.K9sStylesFile)
+		} else {
+			log.Error().Msgf("Failed to parse skin file -- %s. %s. Loading stock skins.", config.K9sStylesFile, err)
+		}
 		c.updateStyles("")
 		return
 	}
