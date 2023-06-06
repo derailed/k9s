@@ -75,6 +75,11 @@ K9s is available on Linux, macOS and Windows platforms.
   pkg install k9s
   ```
 
+* Via [Winget](https://github.com/microsoft/winget-cli) for Windows
+  ```shell
+  winget install k9s
+  ```
+
 * Via [Scoop](https://scoop.sh) for Windows
 
   ```shell
