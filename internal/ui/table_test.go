@@ -56,6 +56,24 @@ func TestTableSelection(t *testing.T) {
 	assert.Equal(t, 1, v.GetSelectedRowIndex())
 }
 
+func TestToggleToastWithIcon(t *testing.T) {
+	v := ui.NewTable(client.NewGVR("fred"))
+	v.Init(makeContext())
+	v.SetModel(&mockModel{})
+
+	icon := "🐶"
+	iconType := config.Icon(icon)
+	v.Styles().K9s.Frame.Title.ToastIcon = iconType
+	v.Update(makeTableData(), false)
+
+	initTitle := v.GetTitle()
+
+	v.ToggleToast()
+	assert.Equal(t, " "+icon+initTitle, v.GetTitle())
+	v.ToggleToast()
+	assert.Equal(t, initTitle, v.GetTitle())
+}
+
 // ----------------------------------------------------------------------------
 // Helpers...
 

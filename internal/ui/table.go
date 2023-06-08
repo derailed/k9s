@@ -447,6 +447,11 @@ func (t *Table) styleTitle() string {
 		title = SkinTitle(fmt.Sprintf(NSTitleFmt, base, ns, rc), t.styles.Frame())
 	}
 
+	toastIcon := t.styles.K9s.Frame.Title.ToastIcon
+	if t.toast && toastIcon != "" {
+		title = fmt.Sprintf(" %s%s", toastIcon, title)
+	}
+
 	buff := t.cmdBuff.GetText()
 	if buff == "" {
 		return title

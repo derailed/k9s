@@ -23,6 +23,8 @@ type (
 	// Color represents a color.
 	Color string
 
+	Icon string
+
 	// Colors tracks multiple colors.
 	Colors []Color
 
@@ -141,6 +143,7 @@ type (
 		HighlightColor Color `yaml:"highlightColor"`
 		CounterColor   Color `yaml:"counterColor"`
 		FilterColor    Color `yaml:"filterColor"`
+		ToastIcon      Icon  `yaml:"toastIcon"`
 	}
 
 	// Info tracks info styles.
@@ -391,6 +394,7 @@ func newTitle() Title {
 		HighlightColor: "fuchsia",
 		CounterColor:   "papayawhip",
 		FilterColor:    "seagreen",
+		ToastIcon:      "󰚌",
 	}
 }
 
