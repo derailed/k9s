@@ -6,14 +6,28 @@ description: |
   K9s is a CLI to view and manage your Kubernetes clusters. By leveraging a terminal UI, you can easily traverse Kubernetes resources and view the state of you clusters in a single powerful session.
 
 grade: stable
-confinement: strict
+confinement: classic
 
 architectures:
   - amd64
   - arm64
   - armhf
   - i386
-  
+
+plugs:
+  kube-config:
+    interface: personal-files
+    read:
+      - $HOME/.kube/config
+
+apps:
+  k9s:
+    command: bin/k9s
+    plugs:
+      - network
+      - network-bind
+      - home
+      - kube-config
 
 parts:
   build:
