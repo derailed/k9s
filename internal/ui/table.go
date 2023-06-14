@@ -440,16 +440,17 @@ func (t *Table) styleTitle() string {
 	if t.Extras != "" {
 		ns = t.Extras
 	}
+
+	toastIndicator := t.styles.K9s.Frame.Title.ToastIndicator
+	if t.toast && toastIndicator != "" {
+		base = fmt.Sprintf("%s%s", base, toastIndicator)
+	}
+
 	var title string
 	if ns == client.ClusterScope {
 		title = SkinTitle(fmt.Sprintf(TitleFmt, base, rc), t.styles.Frame())
 	} else {
 		title = SkinTitle(fmt.Sprintf(NSTitleFmt, base, ns, rc), t.styles.Frame())
-	}
-
-	toastIcon := t.styles.K9s.Frame.Title.ToastIcon
-	if t.toast && toastIcon != "" {
-		title = fmt.Sprintf(" %s%s", toastIcon, title)
 	}
 
 	buff := t.cmdBuff.GetText()

@@ -848,7 +848,7 @@ k9s:
       highlightColor: skyblue
       counterColor: slateblue
       filterColor: slategray
-      toastIcon: "󰚌",
+      toastIndicator: "!",
   views:
     # TableView attributes.
     table:
