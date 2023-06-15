@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tview"
 	runewidth "github.com/mattn/go-runewidth"
 	"github.com/rs/zerolog/log"
@@ -14,6 +13,8 @@ import (
 	"golang.org/x/text/message"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
+
+	"github.com/derailed/k9s/internal/client"
 )
 
 func runesToNum(rr []rune) int64 {
@@ -296,6 +297,13 @@ func boolPtrToStr(b *bool) string {
 	}
 
 	return boolToStr(*b)
+}
+
+func strPtrToStr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 // Check if string is in a string list.
