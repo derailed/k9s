@@ -3,8 +3,9 @@ package render_test
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/derailed/k9s/internal/render"
 )
 
 func TestStorageClassRender(t *testing.T) {
@@ -13,5 +14,5 @@ func TestStorageClassRender(t *testing.T) {
 
 	assert.NoError(t, c.Render(load(t, "sc"), "", &r))
 	assert.Equal(t, "-/standard", r.ID)
-	assert.Equal(t, render.Fields{"standard", "kubernetes.io/gce-pd"}, r.Fields[:2])
+	assert.Equal(t, render.Fields{"standard (default)", "kubernetes.io/gce-pd"}, r.Fields[:2])
 }
