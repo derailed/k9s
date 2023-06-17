@@ -99,8 +99,7 @@ func NewPrompt(app *App, noIcons bool, styles *config.Styles) *Prompt {
 	p.SetDynamicColors(true)
 	p.SetBorder(true)
 	p.SetBorderPadding(0, 0, 1, 1)
-	p.SetBackgroundColor(styles.K9s.Prompt.BgColor.Color())
-	p.SetTextColor(styles.K9s.Prompt.FgColor.Color())
+	p.StylesChanged(p.styles)
 	styles.AddListener(&p)
 	p.SetInputCapture(p.keyboard)
 
@@ -169,6 +168,7 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 // StylesChanged notifies skin changed.
 func (p *Prompt) StylesChanged(s *config.Styles) {
 	p.styles = s
+	p.SetBorderColor(s.Frame().Border.FgColor.Color().TrueColor())
 	p.SetBackgroundColor(s.K9s.Prompt.BgColor.Color())
 	p.SetTextColor(s.K9s.Prompt.FgColor.Color())
 }
@@ -230,8 +230,6 @@ func (p *Prompt) BufferActive(activate bool, kind model.BufferKind) {
 	if activate {
 		p.ShowCursor(true)
 		p.SetBorder(true)
-		p.SetTextColor(p.styles.FgColor())
-		p.SetBorderColor(colorFor(kind))
 		p.icon = p.iconFor(kind)
 		p.activate()
 		return
@@ -254,18 +252,5 @@ func (p *Prompt) iconFor(k model.BufferKind) rune {
 		return '🐶'
 	default:
 		return '🐩'
-	}
-}
-
-// ----------------------------------------------------------------------------
-// Helpers...
-
-func colorFor(k model.BufferKind) tcell.Color {
-	// nolint:exhaustive
-	switch k {
-	case model.CommandBuffer:
-		return tcell.ColorAqua
-	default:
-		return tcell.ColorSeaGreen
 	}
 }

@@ -45,3 +45,33 @@ func TestCmdMode(t *testing.T) {
 		assert.Equal(t, f, v.InCmdMode())
 	}
 }
+
+func TestPromptStylesChanged(t *testing.T) {
+	style := config.NewStyles()
+	prompt := ui.NewPrompt(nil, true, style)
+
+	// Check that the style is respected when the prompt is created
+	assert.Equal(t, prompt.TextView.Box.GetBorderColor(), style.Frame().Border.FgColor.Color().TrueColor())
+	assert.Equal(t, prompt.TextView.Box.GetBackgroundColor(), style.K9s.Prompt.BgColor.Color())
+
+	// Create a new style with a different border and background color
+	newStyle := config.NewStyles()
+	newStyle.K9s.Frame.Border = config.Border{
+		FgColor:    "red",
+		FocusColor: "red",
+	}
+	newStyle.K9s.Prompt = config.Prompt {
+		FgColor:      "red",
+		BgColor:      "red",
+		SuggestColor: "red",
+	}
+
+	// Make sure the new style is different from the first one
+	assert.NotEqual(t, style.Frame().Border.FgColor.Color().TrueColor(), newStyle.Frame().Border.FgColor.Color().TrueColor())
+	assert.NotEqual(t, style.K9s.Prompt.BgColor.Color(), newStyle.K9s.Prompt.BgColor.Color())
+
+	prompt.StylesChanged(newStyle)
+
+	assert.Equal(t, prompt.TextView.Box.GetBorderColor(), newStyle.Frame().Border.FgColor.Color().TrueColor())
+	assert.Equal(t, prompt.TextView.Box.GetBackgroundColor(), newStyle.K9s.Prompt.BgColor.Color())
+}
