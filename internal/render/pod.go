@@ -5,7 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	v1 "k8s.io/api/core/v1"
@@ -14,6 +13,8 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+
+	"github.com/derailed/k9s/internal/client"
 )
 
 // Pod renders a K8s Pod to screen.
@@ -106,7 +107,7 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 		po.Namespace,
 		po.ObjectMeta.Name,
 		"●",
-		strconv.Itoa(cr) + "/" + strconv.Itoa(len(ss)),
+		strconv.Itoa(cr) + "/" + strconv.Itoa(len(po.Spec.Containers)),
 		strconv.Itoa(rc),
 		phase,
 		toMc(c.cpu),
