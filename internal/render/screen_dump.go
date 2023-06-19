@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/derailed/tcell/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -18,9 +17,7 @@ type ScreenDump struct {
 
 // ColorerFunc colors a resource row.
 func (ScreenDump) ColorerFunc() ColorerFunc {
-	return func(ns string, _ Header, re RowEvent) tcell.Color {
-		return tcell.ColorNavajoWhite
-	}
+	return DefaultColorer
 }
 
 // Header returns a header row.

@@ -81,7 +81,7 @@ func (r *ReplicaSet) showModal(msg string, done func(int, string)) {
 	confirm := tview.NewModal().
 		AddButtons([]string{"Cancel", "OK"}).
 		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
-		SetTextColor(tcell.ColorFuchsia).
+		SetTextColor(styles.ButtonFgColor.Color()).
 		SetText(msg).
 		SetDoneFunc(done)
 	r.App().Content.AddPage("confirm", confirm, false, false)

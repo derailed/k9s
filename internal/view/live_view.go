@@ -59,10 +59,9 @@ func (v *LiveView) Init(_ context.Context) error {
 	if v.title != "" {
 		v.SetBorder(true)
 	}
+
 	v.text.SetScrollable(true).SetWrap(true).SetRegions(true)
 	v.text.SetDynamicColors(true)
-	v.text.SetHighlightColor(tcell.ColorOrange)
-	v.SetTitleColor(tcell.ColorAqua)
 	v.SetInputCapture(v.keyboard)
 	v.SetBorderPadding(0, 0, 1, 1)
 	v.updateTitle()

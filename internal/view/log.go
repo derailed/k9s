@@ -173,8 +173,7 @@ func (l *Log) BufferActive(state bool, k model.BufferKind) {
 // StylesChanged reports skin changes.
 func (l *Log) StylesChanged(s *config.Styles) {
 	l.SetBackgroundColor(s.Views().Log.BgColor.Color())
-	l.logs.SetTextColor(s.Views().Log.FgColor.Color())
-	l.logs.SetBackgroundColor(s.Views().Log.BgColor.Color())
+	l.logs.StylesChanged(s)
 }
 
 // GetModel returns the log model.

@@ -3,7 +3,6 @@ package render
 import (
 	"fmt"
 
-	"github.com/derailed/tcell/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -15,9 +14,7 @@ type Subject struct {
 
 // ColorerFunc colors a resource row.
 func (Subject) ColorerFunc() ColorerFunc {
-	return func(ns string, _ Header, re RowEvent) tcell.Color {
-		return tcell.ColorMediumSpringGreen
-	}
+	return DefaultColorer
 }
 
 // Header returns a header row.

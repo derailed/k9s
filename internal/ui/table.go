@@ -71,7 +71,6 @@ func (t *Table) Init(ctx context.Context) {
 	t.SetBorderPadding(0, 0, 1, 1)
 	t.SetSelectable(true, false)
 	t.SetSelectionChangedFunc(t.selectionChanged)
-	t.SetBackgroundColor(tcell.ColorDefault)
 	t.Select(1, 0)
 	if cfg, ok := ctx.Value(internal.KeyViewConfig).(*config.CustomView); ok && cfg != nil {
 		cfg.AddListener(t.GVR().String(), t)

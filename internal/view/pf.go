@@ -12,8 +12,8 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
-	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
 )
 
@@ -31,8 +31,6 @@ func NewPortForward(gvr client.GVR) ResourceViewer {
 	p := PortForward{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	p.GetTable().SetBorderFocusColor(tcell.ColorDodgerBlue)
-	p.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorDodgerBlue).Attributes(tcell.AttrNone))
 	p.GetTable().SetSortCol(ageCol, true)
 	p.SetContextFn(p.portForwardContext)
 	p.AddBindKeysFn(p.bindKeys)
@@ -142,8 +140,6 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	p.Stop()
-	defer p.Start()
 	var msg string
 	if len(selections) > 1 {
 		msg = fmt.Sprintf("Delete %d marked %s?", len(selections), p.GVR())
@@ -156,18 +152,21 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 			return nil
 		}
 	}
-	showModal(p.App(), msg, func() {
+
+	dialog.ShowConfirm(p.App().Styles.Dialog(), p.App().Content.Pages, "<Prtoforward Delete>", msg, func() {
 		for _, s := range selections {
 			var pf dao.PortForward
 			pf.Init(p.App().factory, client.NewGVR("portforwards"))
+
 			if err := pf.Delete(context.Background(), s, nil, dao.DefaultGrace); err != nil {
 				p.App().Flash().Err(err)
 				return
 			}
 		}
+
 		p.App().Flash().Infof("Successfully deleted %d PortForward!", len(selections))
 		p.GetTable().Refresh()
-	})
+	}, func() {})
 
 	return nil
 }
@@ -184,27 +183,4 @@ func pfToHuman(s string) (string, error) {
 	}
 
 	return fmt.Sprintf("%s::%s %s->%s", mm[2], mm[3], mm[4], mm[5]), nil
-}
-
-func showModal(a *App, msg string, ok func()) {
-	p := a.Content.Pages
-	styles := a.Styles.Dialog()
-	m := tview.NewModal().
-		AddButtons([]string{"Cancel", "OK"}).
-		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
-		SetTextColor(tcell.ColorFuchsia).
-		SetText(msg).
-		SetDoneFunc(func(_ int, b string) {
-			if b == "OK" {
-				ok()
-			}
-			dismissModal(p)
-		})
-	m.SetTitle("<Delete Benchmark>")
-	p.AddPage(promptPage, m, false, false)
-	p.ShowPage(promptPage)
-}
-
-func dismissModal(p *ui.Pages) {
-	p.RemovePage(promptPage)
 }

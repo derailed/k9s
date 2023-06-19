@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/tcell/v2"
 	"helm.sh/helm/v3/pkg/release"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,13 +21,7 @@ func (Helm) IsGeneric() bool {
 
 // ColorerFunc colors a resource row.
 func (Helm) ColorerFunc() ColorerFunc {
-	return func(ns string, h Header, re RowEvent) tcell.Color {
-		if !Happy(ns, h, re.Row) {
-			return ErrColor
-		}
-
-		return tcell.ColorMediumSpringGreen
-	}
+	return DefaultColorer
 }
 
 // Header returns a header row.

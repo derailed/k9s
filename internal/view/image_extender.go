@@ -94,7 +94,7 @@ func (s *ImageExtender) showImageDialog(path string) error {
 }
 
 func (s *ImageExtender) makeSetImageForm(sel string) (*tview.Form, error) {
-	f := s.makeStyledForm()
+	f := tview.NewForm()
 	podSpec, err := s.getPodSpec(sel)
 	if err != nil {
 		return nil, err
@@ -134,22 +134,29 @@ func (s *ImageExtender) makeSetImageForm(sel string) (*tview.Form, error) {
 		s.dismissDialog()
 	})
 
+	styles := s.App().Styles.Dialog()
+
+	f.SetItemPadding(0)
+	f.SetButtonsAlign(tview.AlignCenter).
+		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
+		SetButtonTextColor(styles.ButtonFgColor.Color()).
+		SetLabelColor(styles.LabelFgColor.Color()).
+		SetFieldTextColor(styles.FieldFgColor.Color())
+
+	for i := 0; i < 2; i++ {
+		b := f.GetButton(i)
+		if b == nil {
+			continue
+		}
+		b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
+		b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
+	}
+
 	return f, nil
 }
 
 func (s *ImageExtender) dismissDialog() {
 	s.App().Content.RemovePage(imageKey)
-}
-
-func (s *ImageExtender) makeStyledForm() *tview.Form {
-	f := tview.NewForm()
-	f.SetItemPadding(0)
-	f.SetButtonsAlign(tview.AlignCenter).
-		SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
-		SetButtonTextColor(tview.Styles.PrimaryTextColor).
-		SetLabelColor(tcell.ColorAqua).
-		SetFieldTextColor(tcell.ColorOrange)
-	return f
 }
 
 func (s *ImageExtender) getPodSpec(path string) (*corev1.PodSpec, error) {

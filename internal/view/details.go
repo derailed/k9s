@@ -54,10 +54,9 @@ func (d *Details) Init(_ context.Context) error {
 	if d.title != "" {
 		d.SetBorder(true)
 	}
+
 	d.text.SetScrollable(true).SetWrap(true).SetRegions(true)
 	d.text.SetDynamicColors(true)
-	d.text.SetHighlightColor(tcell.ColorOrange)
-	d.SetTitleColor(tcell.ColorAqua)
 	d.SetInputCapture(d.keyboard)
 	d.SetBorderPadding(0, 0, 1, 1)
 	d.updateTitle()

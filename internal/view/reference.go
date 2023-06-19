@@ -18,8 +18,7 @@ func NewReference(gvr client.GVR) ResourceViewer {
 	r := Reference{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	r.GetTable().SetBorderFocusColor(tcell.ColorMediumSpringGreen)
-	r.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorMediumSpringGreen).Attributes(tcell.AttrNone))
+
 	r.AddBindKeysFn(r.bindKeys)
 
 	return &r

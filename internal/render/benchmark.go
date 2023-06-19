@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -30,12 +29,7 @@ type Benchmark struct {
 
 // ColorerFunc colors a resource row.
 func (b Benchmark) ColorerFunc() ColorerFunc {
-	return func(ns string, h Header, re RowEvent) tcell.Color {
-		if !Happy(ns, h, re.Row) {
-			return ErrColor
-		}
-		return tcell.ColorPaleGreen
-	}
+	return DefaultColorer
 }
 
 // Header returns a header row.

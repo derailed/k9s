@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -31,9 +30,7 @@ type Policy struct {
 
 // ColorerFunc colors a resource row.
 func (Policy) ColorerFunc() ColorerFunc {
-	return func(ns string, _ Header, re RowEvent) tcell.Color {
-		return tcell.ColorMediumSpringGreen
-	}
+	return DefaultColorer
 }
 
 // Header returns a header row.

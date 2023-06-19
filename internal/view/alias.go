@@ -22,8 +22,6 @@ func NewAlias(gvr client.GVR) ResourceViewer {
 	a := Alias{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	a.GetTable().SetBorderFocusColor(tcell.ColorAliceBlue)
-	a.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorAliceBlue).Attributes(tcell.AttrNone))
 	a.AddBindKeysFn(a.bindKeys)
 	a.SetContextFn(a.aliasContext)
 

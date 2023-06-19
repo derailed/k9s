@@ -9,7 +9,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -23,8 +22,6 @@ func NewScreenDump(gvr client.GVR) ResourceViewer {
 	s := ScreenDump{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	s.GetTable().SetBorderFocusColor(tcell.ColorSteelBlue)
-	s.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorRoyalBlue).Attributes(tcell.AttrNone))
 	s.GetTable().SetSortCol(ageCol, true)
 	s.GetTable().SelectRow(1, true)
 	s.GetTable().SetEnterFn(s.edit)

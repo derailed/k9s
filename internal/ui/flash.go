@@ -30,7 +30,7 @@ func NewFlash(app *App) *Flash {
 		app:      app,
 		TextView: tview.NewTextView(),
 	}
-	f.SetTextColor(tcell.ColorAqua)
+
 	f.SetDynamicColors(true)
 	f.SetTextAlign(tview.AlignCenter)
 	f.SetBorderPadding(0, 0, 1, 1)
@@ -70,7 +70,7 @@ func (f *Flash) SetMessage(m model.LevelMessage) {
 			f.Clear()
 			return
 		}
-		f.SetTextColor(flashColor(m.Level))
+		f.SetTextColor(f.flashColor(m.Level))
 		f.SetText(f.flashEmoji(m.Level) + " " + m.Text)
 	}
 
@@ -98,14 +98,16 @@ func (f *Flash) flashEmoji(l model.FlashLevel) string {
 
 // Helpers...
 
-func flashColor(l model.FlashLevel) tcell.Color {
+func (f *Flash) flashColor(l model.FlashLevel) tcell.Color {
+	styles := f.app.Styles
+
 	// nolint:exhaustive
 	switch l {
 	case model.FlashWarn:
-		return tcell.ColorOrange
+		return styles.FlashColorWarn()
 	case model.FlashErr:
-		return tcell.ColorOrangeRed
+		return styles.FlashColorError()
 	default:
-		return tcell.ColorNavajoWhite
+		return styles.FlashColorOk()
 	}
 }

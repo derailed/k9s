@@ -59,6 +59,7 @@ func (s *ScaleExtender) showScaleDialog(paths []string) {
 	if len(paths) > 1 {
 		msg = fmt.Sprintf("Scale [%d] %s?", len(paths), s.GVR().R())
 	}
+
 	confirm.SetText(msg)
 	confirm.SetDoneFunc(func(int, string) {
 		s.dismissDialog()
@@ -76,7 +77,15 @@ func (s *ScaleExtender) valueOf(col string) (string, error) {
 }
 
 func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
-	f := s.makeStyledForm()
+	f := tview.NewForm()
+	styles := s.App().Styles.Dialog()
+
+	f.SetItemPadding(0)
+	f.SetButtonsAlign(tview.AlignCenter).
+		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
+		SetButtonTextColor(styles.ButtonFgColor.Color()).
+		SetLabelColor(styles.LabelFgColor.Color()).
+		SetFieldTextColor(styles.FieldFgColor.Color())
 
 	factor := "0"
 	if len(sels) == 1 {
@@ -124,23 +133,20 @@ func (s *ScaleExtender) makeScaleForm(sels []string) (*tview.Form, error) {
 		s.dismissDialog()
 	})
 
+	for i := 0; i < f.GetButtonCount(); i++ {
+		b := f.GetButton(i)
+		if b == nil {
+			continue
+		}
+		b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
+		b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
+	}
+
 	return f, nil
 }
 
 func (s *ScaleExtender) dismissDialog() {
 	s.App().Content.RemovePage(scaleDialogKey)
-}
-
-func (s *ScaleExtender) makeStyledForm() *tview.Form {
-	f := tview.NewForm()
-	f.SetItemPadding(0)
-	f.SetButtonsAlign(tview.AlignCenter).
-		SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
-		SetButtonTextColor(tview.Styles.PrimaryTextColor).
-		SetLabelColor(tcell.ColorAqua).
-		SetFieldTextColor(tcell.ColorOrange)
-
-	return f
 }
 
 func (s *ScaleExtender) scale(ctx context.Context, path string, replicas int) error {

@@ -40,7 +40,6 @@ func (t *Tree) Init(ctx context.Context) error {
 	t.SetBorderAttributes(tcell.AttrBold)
 	t.SetBorderPadding(0, 0, 1, 1)
 	t.SetGraphics(true)
-	t.SetGraphicsColor(tcell.ColorCadetBlue)
 	t.SetInputCapture(t.keyboard)
 
 	return nil

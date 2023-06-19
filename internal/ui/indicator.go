@@ -8,7 +8,6 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
-	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 )
 
@@ -30,7 +29,7 @@ func NewStatusIndicator(app *App, styles *config.Styles) *StatusIndicator {
 		styles:   styles,
 	}
 	s.SetTextAlign(tview.AlignCenter)
-	s.SetTextColor(tcell.ColorWhite)
+	s.SetTextColor(styles.FgColor())
 	s.SetBackgroundColor(styles.BgColor())
 	s.SetDynamicColors(true)
 	styles.AddListener(&s)

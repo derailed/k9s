@@ -6,7 +6,6 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 )
 
@@ -18,7 +17,7 @@ func ShowError(styles config.Dialog, pages *ui.Pages, msg string) {
 		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
 		SetButtonTextColor(styles.ButtonFgColor.Color()).
 		SetLabelColor(styles.LabelFgColor.Color()).
-		SetFieldTextColor(tcell.ColorIndianRed)
+		SetFieldTextColor(styles.FieldFgColor.Color())
 	f.AddButton("Dismiss", func() {
 		dismiss(pages)
 	})
@@ -29,7 +28,7 @@ func ShowError(styles config.Dialog, pages *ui.Pages, msg string) {
 	f.SetFocus(0)
 	modal := tview.NewModalForm("<error>", f)
 	modal.SetText(cowTalk(msg))
-	modal.SetTextColor(tcell.ColorOrangeRed)
+	modal.SetTextColor(styles.ErrorColor.Color())
 	modal.SetDoneFunc(func(int, string) {
 		dismiss(pages)
 	})

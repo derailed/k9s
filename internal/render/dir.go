@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/derailed/tcell/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -19,9 +18,7 @@ func (Dir) IsGeneric() bool {
 
 // ColorerFunc colors a resource row.
 func (Dir) ColorerFunc() ColorerFunc {
-	return func(ns string, _ Header, re RowEvent) tcell.Color {
-		return tcell.ColorCadetBlue
-	}
+	return DefaultColorer
 }
 
 // Header returns a header row.

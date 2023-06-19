@@ -61,13 +61,16 @@ type (
 
 	// Body tracks body styles.
 	Body struct {
-		FgColor        Color `yaml:"fgColor"`
-		BgColor        Color `yaml:"bgColor"`
-		LogoColor      Color `yaml:"logoColor"`
-		LogoColorMsg   Color `yaml:"logoColorMsg"`
-		LogoColorInfo  Color `yaml:"logoColorInfo"`
-		LogoColorWarn  Color `yaml:"logoColorWarn"`
-		LogoColorError Color `yaml:"logoColorError"`
+		FgColor         Color `yaml:"fgColor"`
+		BgColor         Color `yaml:"bgColor"`
+		LogoColor       Color `yaml:"logoColor"`
+		LogoColorMsg    Color `yaml:"logoColorMsg"`
+		LogoColorInfo   Color `yaml:"logoColorInfo"`
+		LogoColorWarn   Color `yaml:"logoColorWarn"`
+		LogoColorError  Color `yaml:"logoColorError"`
+		FlashColorOk    Color `yaml:"flashColorOk"`
+		FlashColorWarn  Color `yaml:"flashColorWarn"`
+		FlashColorError Color `yaml:"flashColorError"`
 	}
 
 	// Dialog tracks dialog styles.
@@ -80,6 +83,7 @@ type (
 		ButtonFocusBgColor Color `yaml:"buttonFocusBgColor"`
 		LabelFgColor       Color `yaml:"labelFgColor"`
 		FieldFgColor       Color `yaml:"fieldFgColor"`
+		ErrorColor         Color `yaml:"errorColor"`
 	}
 
 	// Frame tracks frame styles.
@@ -279,6 +283,7 @@ func newDialog() Dialog {
 		ButtonFocusFgColor: "black",
 		LabelFgColor:       "white",
 		FieldFgColor:       "white",
+		ErrorColor:         "orangered",
 	}
 }
 
@@ -336,13 +341,16 @@ func newHelp() Help {
 
 func newBody() Body {
 	return Body{
-		FgColor:        "cadetblue",
-		BgColor:        "black",
-		LogoColor:      "orange",
-		LogoColorMsg:   "white",
-		LogoColorInfo:  "green",
-		LogoColorWarn:  "mediumvioletred",
-		LogoColorError: "red",
+		FgColor:         "cadetblue",
+		BgColor:         "black",
+		LogoColor:       "orange",
+		LogoColorMsg:    "white",
+		LogoColorInfo:   "green",
+		LogoColorWarn:   "mediumvioletred",
+		LogoColorError:  "red",
+		FlashColorOk:    "green",
+		FlashColorWarn:  "yellow",
+		FlashColorError: "red",
 	}
 }
 
@@ -478,6 +486,21 @@ func (s *Styles) FgColor() tcell.Color {
 // BgColor returns the background color.
 func (s *Styles) BgColor() tcell.Color {
 	return s.Body().BgColor.Color()
+}
+
+// FlashColorOk returns the color in combination with happy emoji.
+func (s *Styles) FlashColorOk() tcell.Color {
+	return s.Body().FlashColorOk.Color()
+}
+
+// FlashColorWarn returns the color in combination with warn emoji.
+func (s *Styles) FlashColorWarn() tcell.Color {
+	return s.Body().FlashColorWarn.Color()
+}
+
+// FlashColorWarn returns the color in combination with angry emoji.
+func (s *Styles) FlashColorError() tcell.Color {
+	return s.Body().FlashColorError.Color()
 }
 
 // AddListener registers a new listener.

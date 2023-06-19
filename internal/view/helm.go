@@ -23,8 +23,7 @@ func NewHelm(gvr client.GVR) ResourceViewer {
 	c := Helm{
 		ResourceViewer: NewBrowser(gvr),
 	}
-	c.GetTable().SetBorderFocusColor(tcell.ColorMediumSpringGreen)
-	c.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorMediumSpringGreen).Attributes(tcell.AttrNone))
+
 	c.AddBindKeysFn(c.bindKeys)
 	c.SetContextFn(c.chartContext)
 

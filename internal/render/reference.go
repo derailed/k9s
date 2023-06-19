@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/tcell/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -16,9 +15,7 @@ type Reference struct {
 
 // ColorerFunc colors a resource row.
 func (Reference) ColorerFunc() ColorerFunc {
-	return func(ns string, _ Header, re RowEvent) tcell.Color {
-		return tcell.ColorCadetBlue
-	}
+	return DefaultColorer
 }
 
 // Header returns a header row.

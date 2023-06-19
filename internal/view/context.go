@@ -78,22 +78,26 @@ func (c *Context) showRenameModal(a *App, name string, ok func(form *tview.Form,
 			p.RemovePage(renamePage)
 		})
 	m := tview.NewModalForm("<Rename>", f)
+
 	m.SetText(fmt.Sprintf("Rename context %q?", name))
 	m.SetDoneFunc(func(int, string) {
 		p.RemovePage(renamePage)
 	})
+
 	p.AddPage(renamePage, m, false, false)
 	p.ShowPage(renamePage)
 }
 
 func (c *Context) makeStyledForm() *tview.Form {
 	f := tview.NewForm()
+	styles := c.App().Styles.Dialog()
+
 	f.SetItemPadding(0)
 	f.SetButtonsAlign(tview.AlignCenter).
-		SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
-		SetButtonTextColor(tview.Styles.PrimaryTextColor).
-		SetLabelColor(tcell.ColorAqua).
-		SetFieldTextColor(tcell.ColorOrange)
+		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
+		SetButtonTextColor(styles.ButtonFgColor.Color()).
+		SetLabelColor(styles.LabelFgColor.Color()).
+		SetFieldTextColor(styles.FieldFgColor.Color())
 
 	return f
 }
@@ -124,6 +128,6 @@ func useContext(app *App, name string) error {
 		log.Error().Err(err).Msgf("Context switch failed")
 		return err
 	}
-	
+
 	return app.switchContext(name)
 }

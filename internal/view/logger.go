@@ -37,8 +37,6 @@ func (l *Logger) Init(_ context.Context) error {
 	}
 	l.SetScrollable(true).SetWrap(true)
 	l.SetDynamicColors(true)
-	l.SetHighlightColor(tcell.ColorOrange)
-	l.SetTitleColor(tcell.ColorAqua)
 	l.SetInputCapture(l.keyboard)
 	l.SetBorderPadding(0, 0, 1, 1)
 
@@ -85,9 +83,9 @@ func (l *Logger) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 
 // StylesChanged notifies the skin changed.
 func (l *Logger) StylesChanged(s *config.Styles) {
-	l.SetBackgroundColor(l.app.Styles.BgColor())
-	l.SetTextColor(l.app.Styles.FgColor())
-	l.SetBorderFocusColor(l.app.Styles.Frame().Border.FocusColor.Color())
+	l.SetBackgroundColor(s.Views().Log.BgColor.Color())
+	l.SetTextColor(s.Views().Log.FgColor.Color())
+	l.SetBackgroundColor(s.Views().Log.BgColor.Color())
 }
 
 // SetSubject updates the subject.
