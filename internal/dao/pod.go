@@ -33,9 +33,9 @@ var (
 )
 
 const (
-	logRetryCount                 = 20
-	logRetryWait                  = 1 * time.Second
-	defaultLogContainerAnnotation = "kubectl.kubernetes.io/default-logs-container"
+	logRetryCount              = 20
+	logRetryWait               = 1 * time.Second
+	defaultContainerAnnotation = "kubectl.kubernetes.io/default-container"
 )
 
 // Pod represents a pod resource.
@@ -197,7 +197,7 @@ func (p *Pod) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 	}
 
 	outs := make([]LogChan, 0, coCounts)
-	if co, ok := GetDefaultLogContainer(po.ObjectMeta, po.Spec); ok && !opts.AllContainers {
+	if co, ok := GetDefaultContainer(po.ObjectMeta, po.Spec); ok && !opts.AllContainers {
 		opts.DefaultContainer = co
 		return append(outs, tailLogs(ctx, p, opts)), nil
 	}
@@ -486,16 +486,16 @@ func (p *Pod) isControlled(path string) (string, bool, error) {
 	return "", false, nil
 }
 
-// GetDefaultLogContainer returns a container name if specified in an annotation.
-func GetDefaultLogContainer(m metav1.ObjectMeta, spec v1.PodSpec) (string, bool) {
-	defaultContainer, ok := m.Annotations[defaultLogContainerAnnotation]
+// GetDefaultContainer returns a container name if specified in an annotation.
+func GetDefaultContainer(m metav1.ObjectMeta, spec v1.PodSpec) (string, bool) {
+	defaultContainer, ok := m.Annotations[defaultContainerAnnotation]
 	if ok {
 		for _, container := range spec.Containers {
 			if container.Name == defaultContainer {
 				return defaultContainer, true
 			}
 		}
-		log.Warn().Msg(defaultContainer + " container  not found. " + defaultLogContainerAnnotation + " annotation will be ignored")
+		log.Warn().Msg(defaultContainer + " container  not found. " + defaultContainerAnnotation + " annotation will be ignored")
 	}
 
 	return "", false

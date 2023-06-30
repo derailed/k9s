@@ -104,7 +104,7 @@ func (p *Pod) logOptions(prev bool) (*dao.LogOptions, error) {
 		ShowTimestamp:   cfg.ShowTime,
 		Previous:        prev,
 	}
-	if c, ok := dao.GetDefaultLogContainer(pod.ObjectMeta, pod.Spec); ok {
+	if c, ok := dao.GetDefaultContainer(pod.ObjectMeta, pod.Spec); ok {
 		opts.Container, opts.DefaultContainer = c, c
 	} else if len(cc) == 1 {
 		opts.Container = cc[0]
