@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"os"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -145,6 +146,8 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		nmx, _ = client.DialMetrics(n.Client()).FetchNodesMetricsMap(ctx)
 	}
 
+	shouldCountPods := os.Getenv("K9S_DISABLE_POD_COUNTING") != "true"
+
 	res := make([]runtime.Object, 0, len(oo))
 	for _, o := range oo {
 		u, ok := o.(*unstructured.Unstructured)
@@ -154,9 +157,12 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 		fqn := extractFQN(o)
 		_, name := client.Namespaced(fqn)
-		podCount, err := n.CountPods(name)
-		if err != nil {
-			log.Error().Err(err).Msgf("unable to get pods count for %s", name)
+		podCount := -1
+		if shouldCountPods {
+			podCount, err = n.CountPods(name)
+			if err != nil {
+				log.Error().Err(err).Msgf("unable to get pods count for %s", name)
+			}
 		}
 		res = append(res, &render.NodeWithMetrics{
 			Raw:      u,
