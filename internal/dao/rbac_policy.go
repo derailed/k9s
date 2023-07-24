@@ -175,26 +175,6 @@ func (p *Policy) fetchRoleBindingNamespaces(kind, name string) (map[string]strin
 	return ss, nil
 }
 
-func (p *Policy) fetchRoleBindingSubjects(kind, name string) ([]string, error) {
-	rbs, err := fetchRoleBindings(p.Factory)
-	if err != nil {
-		return nil, err
-	}
-
-	ns, n := client.Namespaced(name)
-	ss := make([]string, 0, len(rbs))
-	for _, rb := range rbs {
-		for _, s := range rb.Subjects {
-			s := s
-			if isSameSubject(kind, ns, n, &s) {
-				ss = append(ss, rb.RoleRef.Kind+":"+rb.RoleRef.Name)
-			}
-		}
-	}
-
-	return ss, nil
-}
-
 // isSameSubject verifies if the incoming type name and namespace match a subject from a
 // cluster/roleBinding. A ServiceAccount will always have a namespace and needs to be validated to ensure
 // we don't display permissions for a ServiceAccount with the same name in a different namespace
