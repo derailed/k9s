@@ -1170,8 +1170,8 @@ k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f h1:2kWPakN3i/k81b0gvD5C5F
 k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f/go.mod h1:byini6yhqGC14c3ebc/QwanvYwhuMWF6yz2F8uwW8eg=
 k8s.io/kubectl v0.27.1 h1:9T5c5KdpburYiW8XKQSH0Uly1kMNE90aGSnbYUZNdcA=
 k8s.io/kubectl v0.27.1/go.mod h1:QsAkSmrRsKTPlAFzF8kODGDl4p35BIwQnc9XFhkcsy8=
-k8s.io/metrics v0.27.1 h1:qIASSok+9dhKPrfAZmFreIdpgBgKTfXwkM9CQ+tNM90=
-k8s.io/metrics v0.27.1/go.mod h1:5sYmQTC3aeL/24kkJ5fYECVuIz0xhO6oipfGJ81JC1Y=
+k8s.io/metrics v0.27.4 h1:2s04bods7rA507iouGbxD55YrKNlFjLYzm30noOl9Sk=
+k8s.io/metrics v0.27.4/go.mod h1:kRvfhFC7wCQEFvu6H92uiV7v05z3Ty/vtluYT5D2Xpk=
 k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5 h1:kmDqav+P+/5e1i9tFfHq1qcF3sOrDp+YEkVDAHu7Jwk=
 k8s.io/utils v0.0.0-20230220204549-a5ecb0141aa5/go.mod h1:OLgZIPagt7ERELqWJFomSt595RzquPNLL48iOWgYOg0=
 oras.land/oras-go v1.2.2 h1:0E9tOHUfrNH7TCDk5KU0jVBEzCqbfdyuVfGmJ7ZeRPE=
