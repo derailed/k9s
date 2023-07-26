@@ -15,6 +15,7 @@ import (
 	"github.com/fatih/color"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -95,7 +96,7 @@ func (p *Pod) logOptions(prev bool) (*dao.LogOptions, error) {
 		return nil, err
 	}
 
-	cc, cfg := fetchContainers(pod.Spec, true), p.App().Config.K9s.Logger
+	cc, cfg := fetchContainers(pod.ObjectMeta, pod.Spec, true), p.App().Config.K9s.Logger
 	opts := dao.LogOptions{
 		Path:            path,
 		Lines:           int64(cfg.TailCount),
@@ -104,7 +105,7 @@ func (p *Pod) logOptions(prev bool) (*dao.LogOptions, error) {
 		ShowTimestamp:   cfg.ShowTime,
 		Previous:        prev,
 	}
-	if c, ok := dao.GetDefaultLogContainer(pod.ObjectMeta, pod.Spec); ok {
+	if c, ok := dao.GetDefaultContainer(pod.ObjectMeta, pod.Spec); ok {
 		opts.Container, opts.DefaultContainer = c, c
 	} else if len(cc) == 1 {
 		opts.Container = cc[0]
@@ -261,7 +262,7 @@ func containerShellin(a *App, comp model.Component, path, co string) error {
 	if err != nil {
 		return err
 	}
-	cc := fetchContainers(pod.Spec, false)
+	cc := fetchContainers(pod.ObjectMeta, pod.Spec, false)
 	if len(cc) == 1 {
 		resumeShellIn(a, comp, path, cc[0])
 		return nil
@@ -305,7 +306,7 @@ func containerAttachIn(a *App, comp model.Component, path, co string) error {
 	if err != nil {
 		return err
 	}
-	cc := fetchContainers(pod.Spec, false)
+	cc := fetchContainers(pod.ObjectMeta, pod.Spec, false)
 	if len(cc) == 1 {
 		resumeAttachIn(a, comp, path, cc[0])
 		return nil
@@ -363,10 +364,19 @@ func buildShellArgs(cmd, path, co string, kcfg *string) []string {
 	return args
 }
 
-func fetchContainers(spec v1.PodSpec, allContainers bool) []string {
+func fetchContainers(meta metav1.ObjectMeta, spec v1.PodSpec, allContainers bool) []string {
 	nn := make([]string, 0, len(spec.Containers)+len(spec.InitContainers))
+
+	// put the default container as the first entry
+	defaultContainer, hasDefaultContainer := dao.GetDefaultContainer(meta, spec)
+	if hasDefaultContainer {
+		nn = append(nn, defaultContainer)
+	}
+
 	for _, c := range spec.Containers {
-		nn = append(nn, c.Name)
+		if !hasDefaultContainer || c.Name != defaultContainer {
+			nn = append(nn, c.Name)
+		}
 	}
 	if !allContainers {
 		return nn

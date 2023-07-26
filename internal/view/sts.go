@@ -48,7 +48,7 @@ func (s *StatefulSet) logOptions(prev bool) (*dao.LogOptions, error) {
 		co, dco string
 		allCos  bool
 	)
-	if c, ok := dao.GetDefaultLogContainer(sts.Spec.Template.ObjectMeta, sts.Spec.Template.Spec); ok {
+	if c, ok := dao.GetDefaultContainer(sts.Spec.Template.ObjectMeta, sts.Spec.Template.Spec); ok {
 		co, dco = c, c
 	} else if len(cc) == 1 {
 		co = cc[0].Name
