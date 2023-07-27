@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -146,7 +145,7 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		nmx, _ = client.DialMetrics(n.Client()).FetchNodesMetricsMap(ctx)
 	}
 
-	shouldCountPods := os.Getenv("K9S_DISABLE_POD_COUNTING") != "true"
+	shouldCountPods, _ := ctx.Value(internal.KeyPodCounting).(bool)
 
 	res := make([]runtime.Object, 0, len(oo))
 	for _, o := range oo {
