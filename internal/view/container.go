@@ -76,7 +76,7 @@ func (c *Container) bindKeys(aa ui.KeyActions) {
 		ui.KeyF:        ui.NewKeyAction("Show PortForward", c.showPFCmd, true),
 		ui.KeyShiftF:   ui.NewKeyAction("PortForward", c.portFwdCmd, true),
 		ui.KeyShiftT:   ui.NewKeyAction("Sort Restart", c.GetTable().SortColCmd("RESTARTS", false), false),
-		tcell.KeyCtrlY: ui.NewKeyAction("Copy image to ID", c.copyImageToClipboard, true),
+		tcell.KeyCtrlY: ui.NewKeyAction("Copy container image", c.copyImageToClipboard, true),
 	})
 	aa.Add(resourceSorters(c.GetTable()))
 }
