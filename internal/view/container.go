@@ -8,15 +8,17 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/atotto/clipboard"
+	"github.com/derailed/tcell/v2"
+	"github.com/rs/zerolog/log"
+	v1 "k8s.io/api/core/v1"
+
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/port"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
-	v1 "k8s.io/api/core/v1"
 )
 
 const containerTitle = "Containers"
@@ -71,9 +73,10 @@ func (c *Container) bindKeys(aa ui.KeyActions) {
 	}
 
 	aa.Add(ui.KeyActions{
-		ui.KeyF:      ui.NewKeyAction("Show PortForward", c.showPFCmd, true),
-		ui.KeyShiftF: ui.NewKeyAction("PortForward", c.portFwdCmd, true),
-		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", c.GetTable().SortColCmd("RESTARTS", false), false),
+		ui.KeyF:        ui.NewKeyAction("Show PortForward", c.showPFCmd, true),
+		ui.KeyShiftF:   ui.NewKeyAction("PortForward", c.portFwdCmd, true),
+		ui.KeyShiftT:   ui.NewKeyAction("Sort Restart", c.GetTable().SortColCmd("RESTARTS", false), false),
+		tcell.KeyCtrlY: ui.NewKeyAction("Copy image to ID", c.copyImageToClipboard, true),
 	})
 	aa.Add(resourceSorters(c.GetTable()))
 }
@@ -164,6 +167,33 @@ func (c *Container) attachCmd(evt *tcell.EventKey) *tcell.EventKey {
 	attachIn(c.App(), c.GetTable().Path, sel)
 
 	return nil
+}
+
+func (c *Container) copyImageToClipboard(evt *tcell.EventKey) *tcell.EventKey {
+	path := c.GetTable().GetSelectedItem()
+	if path == "" {
+		c.App().Flash().Err(errors.New("could not retrieve the selected item"))
+		return evt
+	}
+
+	po, err := fetchPod(c.App().factory, c.GetTable().Path)
+	if err != nil {
+		c.App().Flash().Err(err)
+		return evt
+	}
+
+	co, err := locateContainer(path, po.Spec.Containers)
+	if err != nil {
+		c.App().Flash().Err(errors.New("jere"))
+		return evt
+	}
+
+	if err := clipboard.WriteAll(co.Image); err != nil {
+		c.App().Flash().Err(err)
+		return evt
+	}
+
+	return evt
 }
 
 func (c *Container) portFwdCmd(evt *tcell.EventKey) *tcell.EventKey {
