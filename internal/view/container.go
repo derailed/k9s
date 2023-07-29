@@ -184,7 +184,7 @@ func (c *Container) copyImageToClipboard(evt *tcell.EventKey) *tcell.EventKey {
 
 	co, err := locateContainer(path, po.Spec.Containers)
 	if err != nil {
-		c.App().Flash().Err(errors.New("jere"))
+		c.App().Flash().Err(err)
 		return evt
 	}
 
