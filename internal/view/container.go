@@ -193,6 +193,7 @@ func (c *Container) copyImageToClipboard(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
+	c.App().Flash().Info("Container image was successfully copied")
 	return evt
 }
 
