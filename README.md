@@ -148,6 +148,11 @@ K9s is available on Linux, macOS and Windows platforms.
   docker run --rm -it -v ~/.kube/config:/root/.kube/config quay.io/derailed/k9s
   ```
 
+  An altername text editor (nano) would be enabled by passing EDITOR environemnt variable:
+  ```shell
+  docker run --rm -it -v ~/.kube/config:/root/.kube/config -e EDITOR=nano quay.io/derailed/k9s
+  ```
+
 ### Building your own Docker image
 
   You can build your own Docker image of k9s from the [Dockerfile](Dockerfile) with the following:
