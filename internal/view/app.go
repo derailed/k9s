@@ -466,6 +466,10 @@ func (a *App) Run() error {
 		<-time.After(splashDelay)
 		a.QueueUpdateDraw(func() {
 			a.Main.SwitchToPage("main")
+			// if command bar is already active, focus it
+			if a.CmdBuff().IsActive() {
+				a.SetFocus(a.Prompt())
+			}
 		})
 	}()
 
