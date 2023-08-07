@@ -27,12 +27,12 @@ func NewNode(gvr client.GVR) ResourceViewer {
 	}
 	n.AddBindKeysFn(n.bindKeys)
 	n.GetTable().SetEnterFn(n.showPods)
-	n.SetContextFn(n.aliasContext)
+	n.SetContextFn(n.nodeContext)
 
 	return &n
 }
 
-func (n *Node) aliasContext(ctx context.Context) context.Context {
+func (n *Node) nodeContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeyPodCounting, !n.App().Config.K9s.DisablePodCounting)
 }
 
