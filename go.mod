@@ -20,7 +20,7 @@ require (
 	github.com/rs/zerolog v1.29.1
 	github.com/sahilm/fuzzy v0.1.0
 	github.com/spf13/cobra v1.7.0
-	github.com/stretchr/testify v1.8.3
+	github.com/stretchr/testify v1.8.4
 	golang.org/x/text v0.12.0
 	gopkg.in/yaml.v2 v2.4.0
 	helm.sh/helm/v3 v3.12.0
