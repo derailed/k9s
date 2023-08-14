@@ -402,10 +402,7 @@ func (a *App) switchContext(name string) error {
 	a.Halt()
 	defer a.Resume()
 	{
-		ns, err := a.Conn().Config().CurrentNamespaceName()
-		if err != nil {
-			log.Warn().Msg("No namespace specified in context. Using K9s config")
-		}
+		ns := a.Config.ActiveNamespace()
 		a.initFactory(ns)
 
 		if e := a.command.Reset(true); e != nil {
