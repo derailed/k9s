@@ -33,15 +33,16 @@ const (
 type Log struct {
 	*tview.Flex
 
-	app           *App
-	logs          *Logger
-	indicator     *LogIndicator
-	ansiWriter    io.Writer
-	model         *model.Log
-	cancelFn      context.CancelFunc
-	cancelUpdates bool
-	mx            sync.Mutex
-	follow        bool
+	app               *App
+	logs              *Logger
+	indicator         *LogIndicator
+	ansiWriter        io.Writer
+	model             *model.Log
+	cancelFn          context.CancelFunc
+	cancelUpdates     bool
+	mx                sync.Mutex
+	follow            bool
+	requestOneRefresh bool
 }
 
 var _ model.Component = (*Log)(nil)
@@ -338,8 +339,11 @@ func (l *Log) Flush(lines [][]byte) {
 		}
 	}()
 
-	if len(lines) == 0 || !l.indicator.AutoScroll() || l.cancelUpdates {
+	if len(lines) == 0 || (!l.requestOneRefresh && !l.indicator.AutoScroll()) || l.cancelUpdates {
 		return
+	}
+	if l.requestOneRefresh {
+		l.requestOneRefresh = false
 	}
 	for i := 0; i < len(lines); i++ {
 		if l.cancelUpdates {
@@ -364,6 +368,7 @@ func (l *Log) sinceCmd(n int) func(evt *tcell.EventKey) *tcell.EventKey {
 		} else {
 			l.model.SetSinceSeconds(ctx, int64(n))
 		}
+		l.requestOneRefresh = true
 		l.updateTitle()
 
 		return nil
