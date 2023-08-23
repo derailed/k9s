@@ -393,6 +393,8 @@ K9s uses aliases to navigate most K8s resources.
           active: dp
     # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info)
     screenDumpDir: /tmp
+    # Name of the default skin file
+    skin: skin
   ```
 
 ---
@@ -793,6 +795,31 @@ You can style K9s based on your own sense of look and style. Skins are YAML file
 
 You can also change K9s skins based on the cluster you are connecting too. In this case, you can specify the skin file name as `$XDG_CONFIG_HOME/k9s/mycontext_skin.yml`
 Below is a sample skin file, more skins are available in the skins directory in this repo, just simply copy any of these in your user's home dir as `skin.yml`.
+
+You can also copy the skins to the `$XDG_CONFIG_HOME/k9s/` directory to further set the default skin in the `config.yml` config or select the desired skin in the cli.
+
+For example, in order to make `gruvbox-dark` the default skin, you need to:
+1. Copy skin file:
+   ```shell
+   cp skins/gruvbox-dark.yml $XDG_CONFIG_HOME/k9s/
+   ```
+2. Add `skin` field to `config.yml`
+   ```yaml
+   # $XDG_CONFIG_HOME/k9s/config.yml
+   k9s:
+     ...
+     skin: gruvbox-dark
+   ```
+   Or specify the name of the skin in the command line arguments:
+   ```
+   k9s --skin gruvbox-dark
+   ```
+
+Skin selection priority (highest to lowest):
+1. Command line argument `--skin`
+2. File for specific context: `$XDG_CONFIG_HOME/k9s/mycontext_skin.yml`
+3. The file specified in the `skin` field of the config `$XDG_CONFIG_HOME/k9s/config.yml`
+4. `$XDG_CONFIG_HOME/k9s/skin.yml` or `$XDG_CONFIG_HOME/k9s/skin.yaml`
 
 Colors can be defined by name or using a hex representation. Of recent, we've added a color named `default` to indicate a transparent background color to preserve your terminal background color settings if so desired.
 

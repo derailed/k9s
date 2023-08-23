@@ -97,7 +97,11 @@ func (c *Configurator) StylesWatcher(ctx context.Context, s synchronizer) error 
 			case evt := <-w.Events:
 				if evt.Op != fsnotify.Chmod {
 					s.QueueUpdateDraw(func() {
-						c.RefreshStyles(c.Config.K9s.CurrentCluster)
+						c.RefreshStyles(
+							c.Config.K9s.CurrentCluster,
+							c.Config.K9s.Skin,
+							c.Config.K9s.GetManualSkin(),
+						)
 					})
 				}
 			case err := <-w.Errors:
@@ -123,36 +127,60 @@ func BenchConfig(context string) string {
 }
 
 // RefreshStyles load for skin configuration changes.
-func (c *Configurator) RefreshStyles(context string) {
+func (c *Configurator) RefreshStyles(context string, configuredStyle string, manualStyle string) {
 	c.BenchFile = BenchConfig(context)
 
-	clusterSkins := filepath.Join(config.K9sHome(), fmt.Sprintf("%s_skin.yml", context))
 	if c.Styles == nil {
 		c.Styles = config.NewStyles()
 	} else {
 		c.Styles.Reset()
 	}
-	if err := c.Styles.Load(clusterSkins); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			log.Warn().Msgf("No context specific skin file found -- %s", clusterSkins)
-		} else {
-			log.Error().Msgf("Failed to parse context specific skin file -- %s. %s.", clusterSkins, err)
-		}
-	} else {
-		c.updateStyles(clusterSkins)
+
+	// Check skin from cli args
+	if manualStyle != "" && c.updateStylesWithFile(manualStyle) {
 		return
 	}
 
-	if err := c.Styles.Load(config.K9sStylesFile); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			log.Warn().Msgf("No skin file found -- %s. Loading stock skins.", config.K9sStylesFile)
-		} else {
-			log.Error().Msgf("Failed to parse skin file -- %s. %s. Loading stock skins.", config.K9sStylesFile, err)
-		}
-		c.updateStyles("")
+	// Check context specific skin files
+	if context != "" && c.updateStylesWithFile(fmt.Sprintf("%s_skin", context)) {
 		return
 	}
-	c.updateStyles(config.K9sStylesFile)
+
+	// Check prefered skin set from k9s config
+	if configuredStyle != "" && c.updateStylesWithFile(configuredStyle) {
+		return
+	}
+
+	// Check default files (skin.yml/skin.yaml)
+	if c.updateStylesWithFile(config.K9sDefaultSkin) {
+		return
+	}
+
+	c.updateStyles("")
+}
+
+func (c *Configurator) updateStylesWithFile(skinName string) bool {
+	for _, extension := range config.K9sStylesFileExtensions {
+		manualSkin := filepath.Join(config.K9sHome(), fmt.Sprintf("%s.%s", skinName, extension))
+		if c.loadSkinFile(manualSkin) {
+			return true
+		}
+	}
+	return false
+}
+
+func (c *Configurator) loadSkinFile(fileName string) bool {
+	if err := c.Styles.Load(fileName); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			log.Warn().Msgf("No skin file found -- %s", fileName)
+		} else {
+			log.Error().Msgf("Failed to parse skin file -- %s. %s.", fileName, err)
+		}
+		return false
+	} else {
+		c.updateStyles(fileName)
+		return true
+	}
 }
 
 func (c *Configurator) updateStyles(f string) {

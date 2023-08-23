@@ -13,14 +13,18 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-// K9sConfig represents K9s configuration dir env var.
-const K9sConfig = "K9SCONFIG"
+const (
+	// K9sConfig represents K9s configuration dir env var.
+	K9sConfig = "K9SCONFIG"
+)
 
 var (
 	// K9sConfigFile represents K9s config file location.
 	K9sConfigFile = filepath.Join(K9sHome(), "config.yml")
 	// K9sDefaultScreenDumpDir represents a default directory where K9s screen dumps will be persisted.
 	K9sDefaultScreenDumpDir = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-screens-%s", MustK9sUser()))
+	// K9sDefaultSkin represents default K9s style.
+	K9sDefaultSkin = "skin"
 )
 
 type (

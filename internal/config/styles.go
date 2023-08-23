@@ -3,15 +3,17 @@ package config
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"gopkg.in/yaml.v2"
 )
 
-// K9sStylesFile represents K9s skins file location.
-var K9sStylesFile = filepath.Join(K9sHome(), "skin.yml")
+// K9sStylesFileExtensions represents available K9s skins file extensions.
+var K9sStylesFileExtensions = [...]string{
+	"yaml",
+	"yml",
+}
 
 // StyleListener represents a skin's listener.
 type StyleListener interface {

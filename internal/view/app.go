@@ -430,7 +430,7 @@ func (a *App) switchContext(name string) error {
 		}
 
 		a.Flash().Infof("Switching context to %s", name)
-		a.ReloadStyles(name)
+		a.ReloadStyles(name, a.Config.K9s.Skin, a.Config.K9s.GetManualSkin())
 		a.gotoResource(a.Config.ActiveView(), "", true)
 		a.clusterModel.Reset(a.factory)
 	}

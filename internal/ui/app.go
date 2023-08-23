@@ -36,7 +36,7 @@ func NewApp(cfg *config.Config, context string) *App {
 		flash:        model.NewFlash(model.DefaultFlashDelay),
 		cmdBuff:      model.NewFishBuff(':', model.CommandBuffer),
 	}
-	a.ReloadStyles(context)
+	a.ReloadStyles(context, cfg.K9s.Skin, cfg.K9s.GetManualSkin())
 
 	a.views = map[string]tview.Primitive{
 		"menu":   NewMenu(a.Styles),
@@ -132,8 +132,8 @@ func (a *App) StylesChanged(s *config.Styles) {
 }
 
 // ReloadStyles reloads skin file.
-func (a *App) ReloadStyles(context string) {
-	a.RefreshStyles(context)
+func (a *App) ReloadStyles(context string, configuredStyle string, manualStyle string) {
+	a.RefreshStyles(context, configuredStyle, manualStyle)
 }
 
 // Conn returns an api server connection.
