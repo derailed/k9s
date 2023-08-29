@@ -94,6 +94,19 @@ func (c *Config) CurrentContextName() (string, error) {
 	return cfg.CurrentContext, nil
 }
 
+func (c *Config) CurrentContextNamespace() (string, error) {
+	name, err := c.CurrentContextName()
+	if err != nil {
+		return "", err
+	}
+	context, err := c.GetContext(name)
+	if err != nil {
+		return "", err
+	}
+
+	return context.Namespace, nil
+}
+
 // GetContext fetch a given context or error if it does not exists.
 func (c *Config) GetContext(n string) (*clientcmdapi.Context, error) {
 	cfg, err := c.RawConfig()
@@ -282,6 +295,13 @@ func (c *Config) CurrentUserName() (string, error) {
 // CurrentNamespaceName retrieves the active namespace.
 func (c *Config) CurrentNamespaceName() (string, error) {
 	ns, _, err := c.clientConfig().Namespace()
+
+	if ns == "default" {
+		ns, err = c.CurrentContextNamespace()
+		if ns == "" && err == nil {
+			return "", errors.New("No namespace specified in context")
+		}
+	}
 
 	return ns, err
 }
