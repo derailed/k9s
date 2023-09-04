@@ -296,6 +296,7 @@ var expectedConfig = `k9s:
     showTime: false
   currentContext: blee
   currentCluster: blee
+  keepMissingClusters: false
   clusters:
     blee:
       namespace:
@@ -395,6 +396,7 @@ var resetConfig = `k9s:
     showTime: false
   currentContext: blee
   currentCluster: blee
+  keepMissingClusters: false
   clusters:
     blee:
       namespace:

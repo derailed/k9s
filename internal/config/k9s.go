@@ -24,6 +24,7 @@ type K9s struct {
 	Logger              *Logger             `yaml:"logger"`
 	CurrentContext      string              `yaml:"currentContext"`
 	CurrentCluster      string              `yaml:"currentCluster"`
+	KeepMissingClusters bool                `yaml:"keepMissingClusters"`
 	Clusters            map[string]*Cluster `yaml:"clusters,omitempty"`
 	Thresholds          Threshold           `yaml:"thresholds"`
 	ScreenDumpDir       string              `yaml:"screenDumpDir"`
@@ -205,9 +206,17 @@ func (k *K9s) validateClusters(c client.Connection, ks KubeSettings) {
 	}
 	for key, cluster := range k.Clusters {
 		cluster.Validate(c, ks)
+		// if the cluster is defined in the $KUBECONFIG file, keep it in the k9s config file
 		if _, ok := cc[key]; ok {
 			continue
 		}
+
+		// if we asked to keep the clusters in the config file
+		if k.KeepMissingClusters {
+			continue
+		}
+
+		// else remove it from the k9s config file
 		if k.CurrentCluster == key {
 			k.CurrentCluster = ""
 		}
