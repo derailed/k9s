@@ -53,3 +53,13 @@ plugin:
     - $NAMESPACE
     - --context
     - $CONTEXT
+  download-container-logs:
+    shortCut: Ctrl-D
+    description: "download full log"
+    scopes:
+    - containers
+    command: bash
+    background: true
+    args:
+    - -c 
+    - "kubectl logs -n $NAMESPACE $POD -c $NAME --context $CONTEXT > $POD.log"
