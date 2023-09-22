@@ -2,6 +2,8 @@ package dao
 
 import (
 	"bytes"
+	"regexp"
+	"strings"
 )
 
 // LogChan represents a channel for logs.
@@ -63,6 +65,23 @@ func (l *LogItem) Size() int {
 	return 100 + len(l.Bytes) + len(l.Pod) + len(l.Container)
 }
 
+// TODO: make constant
+func ansiRegex() *regexp.Regexp {
+	// referenced
+	// - https://github.com/chalk/ansi-regex/blob/main/index.js
+	// - https://github.com/acarl005/stripansi/blob/master/stripansi.go
+	reg := []string{
+		"[\u001B\u009B][[\\]()#;?]*(?:(?:(?:(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d\\/#&.:=?%@~_]*)*)?\u0007)",
+		"(?:(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~]))",
+	}
+	pattern := strings.Join(reg[:], "|")
+	return regexp.MustCompile(pattern)
+}
+
+func stripAnsi(b []byte) []byte {
+	return []byte(ansiRegex().ReplaceAllString(string(b), ""))
+}
+
 // Render returns a log line as string.
 func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
 	index := bytes.Index(l.Bytes, []byte{' '})
@@ -89,9 +108,20 @@ func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
 		bb.WriteString("[-::] ")
 	}
 
+	// TODO: make configurable k9s.logger.stripAnsi
+	shouldStripAnsi := true
+
 	if index > 0 {
-		bb.Write(l.Bytes[index+1:])
+		if shouldStripAnsi {
+			bb.Write(stripAnsi(l.Bytes[index+1:]))
+		} else {
+			bb.Write(l.Bytes[index+1:])
+		}
 	} else {
-		bb.Write(l.Bytes)
+		if shouldStripAnsi {
+			bb.Write(stripAnsi(l.Bytes))
+		} else {
+			bb.Write(l.Bytes)
+		}
 	}
 }
