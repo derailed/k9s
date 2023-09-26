@@ -202,7 +202,7 @@ func (p *Prompt) write(text, suggest string) {
 	p.SetCursorIndex(p.spacer + len(text))
 	txt := text
 	if suggest != "" {
-		txt += fmt.Sprintf("[%s::-]%s", p.styles.K9s.Prompt.SuggestColor, suggest)
+		txt += fmt.Sprintf("[%s::-]%s", p.styles.Prompt().SuggestColor, suggest)
 	}
 	fmt.Fprintf(p, defaultPrompt, p.icon, txt)
 }
@@ -231,7 +231,7 @@ func (p *Prompt) BufferActive(activate bool, kind model.BufferKind) {
 		p.ShowCursor(true)
 		p.SetBorder(true)
 		p.SetTextColor(p.styles.FgColor())
-		p.SetBorderColor(colorFor(kind))
+		p.SetBorderColor(p.colorFor(kind))
 		p.icon = p.iconFor(kind)
 		p.activate()
 		return
@@ -260,12 +260,12 @@ func (p *Prompt) iconFor(k model.BufferKind) rune {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func colorFor(k model.BufferKind) tcell.Color {
+func (p *Prompt) colorFor(k model.BufferKind) tcell.Color {
 	// nolint:exhaustive
 	switch k {
 	case model.CommandBuffer:
-		return tcell.ColorAqua
+		return p.styles.Prompt().Border.CommandColor.Color()
 	default:
-		return tcell.ColorSeaGreen
+		return p.styles.Prompt().Border.DefaultColor.Color()
 	}
 }
