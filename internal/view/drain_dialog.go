@@ -26,7 +26,13 @@ func ShowDrain(view ResourceViewer, path string, defaults dao.DrainOptions, okFn
 		SetLabelColor(styles.K9s.Info.FgColor.Color()).
 		SetFieldTextColor(styles.K9s.Info.SectionColor.Color())
 
-	var opts dao.DrainOptions
+	opts := dao.DrainOptions{
+		GracePeriodSeconds:  defaults.GracePeriodSeconds,
+		Timeout:             defaults.Timeout,
+		IgnoreAllDaemonSets: defaults.IgnoreAllDaemonSets,
+		DeleteEmptyDirData:  defaults.DeleteEmptyDirData,
+		Force:               defaults.Force,
+	}
 	f.AddInputField("GracePeriod:", strconv.Itoa(defaults.GracePeriodSeconds), 0, nil, func(v string) {
 		a, err := asIntOpt(v)
 		if err != nil {
