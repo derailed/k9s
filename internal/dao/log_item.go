@@ -73,7 +73,7 @@ func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
 		for i := len(l.Bytes[:index]); i < 30; i++ {
 			bb.WriteByte(' ')
 		}
-		bb.WriteString("[-::]")
+		bb.WriteString("[-::-]")
 	}
 
 	if l.Pod != "" {
