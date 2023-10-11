@@ -1,3 +1,8 @@
+# -----------------------------------------------------------------------------
+# Stock skin
+# -----------------------------------------------------------------------------
+
+# Skin...
 k9s:
   body:
     fgColor: dodgerblue
@@ -81,3 +86,5 @@ k9s:
       indicator:
         fgColor: dodgerblue
         bgColor: black
+        toggleOnColor: papayawhip
+        toggleOffColor: steelblue

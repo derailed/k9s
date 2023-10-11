@@ -13,8 +13,8 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 )
 
 const (
@@ -281,7 +281,6 @@ func (h *Help) resetTitle() {
 
 func (h *Help) addSpacer(c int) {
 	cell := tview.NewTableCell(render.Pad("", h.maxKey))
-	cell.SetBackgroundColor(h.App().Styles.BgColor())
 	cell.SetExpansion(1)
 	h.SetCell(0, c, cell)
 }

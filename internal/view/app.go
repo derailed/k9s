@@ -13,7 +13,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/cenkalti/backoff"
+	"github.com/cenkalti/backoff/v4"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -21,8 +21,8 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/k9s/internal/watch"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -100,7 +100,7 @@ func (a *App) Init(version string, rate int) error {
 	}
 	a.initFactory(ns)
 
-	a.clusterModel = model.NewClusterInfo(a.factory, a.version)
+	a.clusterModel = model.NewClusterInfo(a.factory, a.version, a.Config.K9s.SkipLatestRevCheck)
 	a.clusterModel.AddListener(a.clusterInfo())
 	a.clusterModel.AddListener(a.statusIndicator())
 	if a.Conn().ConnectionOK() {
@@ -398,7 +398,7 @@ func (a *App) isValidNS(ns string) (bool, error) {
 	return true, nil
 }
 
-func (a *App) switchContext(name string, loadPods bool) error {
+func (a *App) switchContext(name string) error {
 	log.Debug().Msgf("--> Switching Context %q--%q", name, a.Config.ActiveView())
 	a.Halt()
 	defer a.Resume()
@@ -412,10 +412,8 @@ func (a *App) switchContext(name string, loadPods bool) error {
 		if e := a.command.Reset(true); e != nil {
 			return e
 		}
-		v := a.Config.ActiveView()
-		if v == "" || isContextCmd(v) || loadPods {
-			v = "pod"
-			a.Config.SetActiveView(v)
+		if a.Config.ActiveView() == "" || isContextCmd(a.Config.ActiveView()) {
+			a.Config.SetActiveView("pod")
 		}
 		a.Config.Reset()
 		a.Config.K9s.CurrentContext = name
@@ -433,7 +431,7 @@ func (a *App) switchContext(name string, loadPods bool) error {
 
 		a.Flash().Infof("Switching context to %s", name)
 		a.ReloadStyles(name)
-		a.gotoResource(v, "", true)
+		a.gotoResource(a.Config.ActiveView(), "", true)
 		a.clusterModel.Reset(a.factory)
 	}
 
@@ -468,6 +466,10 @@ func (a *App) Run() error {
 		<-time.After(splashDelay)
 		a.QueueUpdateDraw(func() {
 			a.Main.SwitchToPage("main")
+			// if command bar is already active, focus it
+			if a.CmdBuff().IsActive() {
+				a.SetFocus(a.Prompt())
+			}
 		})
 	}()
 
@@ -595,10 +597,9 @@ func (a *App) dirCmd(path string) error {
 			path = dir
 		}
 	}
-	a.Content.Stack.Clear()
 	a.cmdHistory.Push("dir " + path)
 
-	return a.inject(NewDir(path))
+	return a.inject(NewDir(path), true)
 }
 
 func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -613,7 +614,7 @@ func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	if err := a.inject(NewHelp(a)); err != nil {
+	if err := a.inject(NewHelp(a), false); err != nil {
 		a.Flash().Err(err)
 	}
 
@@ -630,7 +631,7 @@ func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	if err := a.inject(NewAlias(client.NewGVR("aliases"))); err != nil {
+	if err := a.inject(NewAlias(client.NewGVR("aliases")), false); err != nil {
 		a.Flash().Err(err)
 	}
 
@@ -639,19 +640,22 @@ func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (a *App) gotoResource(cmd, path string, clearStack bool) {
 	err := a.command.run(cmd, path, clearStack)
-	if err == nil {
-		return
+	if err != nil {
+		dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
 	}
-
-	dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
 }
 
-func (a *App) inject(c model.Component) error {
+func (a *App) inject(c model.Component, clearStack bool) error {
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	if err := c.Init(ctx); err != nil {
 		log.Error().Err(err).Msgf("component init failed for %q", c.Name())
-		dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
+		//dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
+		return err
 	}
+	if clearStack {
+		a.Content.Stack.Clear()
+	}
+
 	a.Content.Push(c)
 
 	return nil

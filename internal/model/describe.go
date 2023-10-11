@@ -175,6 +175,10 @@ func (d *Describe) reconcile(ctx context.Context) error {
 
 // Describe describes a given resource.
 func (d *Describe) describe(ctx context.Context, gvr client.GVR, path string) (string, error) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("Describe model elapsed: %v", time.Since(t))
+	}(time.Now())
+
 	meta, err := getMeta(ctx, gvr)
 	if err != nil {
 		return "", err

@@ -5,8 +5,8 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 )
 
 const (
@@ -182,6 +182,7 @@ func (p *Prompt) InCmdMode() bool {
 }
 
 func (p *Prompt) activate() {
+	p.Clear()
 	p.SetCursorIndex(len(p.model.GetText()))
 	p.write(p.model.GetText(), p.model.GetSuggestion())
 	p.model.Notify(false)

@@ -1,4 +1,9 @@
-# K9s Solarized Light Skin Contributed by [@leg100](louisgarman@gmail.com)
+# -----------------------------------------------------------------------------
+# Solarized Light Skin
+# Author: [@leg100](louisgarman@gmail.com)
+# -----------------------------------------------------------------------------
+
+# Styles...
 foreground: &foreground "#657b83"
 background: &background "#fdf6e3"
 current_line: &current_line "#eee8d5"
@@ -12,6 +17,7 @@ magenta: &magenta "#d33682"
 blue: &blue "#268bd2"
 red: &red "#dc322f"
 
+# Skin...
 k9s:
   body:
     fgColor: *foreground
@@ -94,3 +100,5 @@ k9s:
       indicator:
         fgColor: *foreground
         bgColor: *selection
+        toggleOnColor: *magenta
+        toggleOffColor: *blue

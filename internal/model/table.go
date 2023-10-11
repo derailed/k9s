@@ -111,7 +111,7 @@ func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
 }
 
 // Delete deletes a resource.
-func (t *Table) Delete(ctx context.Context, path string, propagation *metav1.DeletionPropagation, force bool) error {
+func (t *Table) Delete(ctx context.Context, path string, propagation *metav1.DeletionPropagation, grace dao.Grace) error {
 	meta, err := getMeta(ctx, t.gvr)
 	if err != nil {
 		return err
@@ -122,7 +122,7 @@ func (t *Table) Delete(ctx context.Context, path string, propagation *metav1.Del
 		return fmt.Errorf("no nuker for %q", meta.DAO.GVR())
 	}
 
-	return nuker.Delete(ctx, path, propagation, force)
+	return nuker.Delete(ctx, path, propagation, grace)
 }
 
 // GetNamespace returns the model namespace.
@@ -306,10 +306,16 @@ func hydrate(ns string, oo []runtime.Object, rr render.Rows, re Renderer) error 
 	return nil
 }
 
+// Generic represents a generic resource.
 type Generic interface {
-	SetTable(*metav1beta1.Table)
-	Header(string) render.Header
-	Render(interface{}, string, *render.Row) error
+	// SetTable sets up the resource tabular definition.
+	SetTable(ns string, table *metav1beta1.Table)
+
+	// Header returns a resource header.
+	Header(ns string) render.Header
+
+	// Render renders the resource.
+	Render(o interface{}, ns string, row *render.Row) error
 }
 
 func genericHydrate(ns string, table *metav1beta1.Table, rr render.Rows, re Renderer) error {
@@ -317,7 +323,7 @@ func genericHydrate(ns string, table *metav1beta1.Table, rr render.Rows, re Rend
 	if !ok {
 		return fmt.Errorf("expecting generic renderer but got %T", re)
 	}
-	gr.SetTable(table)
+	gr.SetTable(ns, table)
 	for i, row := range table.Rows {
 		if err := gr.Render(row, ns, &rr[i]); err != nil {
 			return err

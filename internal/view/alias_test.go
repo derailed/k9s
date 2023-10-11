@@ -8,11 +8,12 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -126,7 +127,7 @@ func (t *mockModel) Get(context.Context, string) (runtime.Object, error) {
 	return nil, nil
 }
 
-func (t *mockModel) Delete(context.Context, string, *metav1.DeletionPropagation, bool) error {
+func (t *mockModel) Delete(context.Context, string, *metav1.DeletionPropagation, dao.Grace) error {
 	return nil
 }
 

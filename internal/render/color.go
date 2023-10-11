@@ -1,7 +1,7 @@
 package render
 
 import (
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 )
 
 var (

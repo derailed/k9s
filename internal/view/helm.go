@@ -7,7 +7,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -56,7 +56,7 @@ func (c *Helm) getValsCmd() func(evt *tcell.EventKey) *tcell.EventKey {
 		v.actions.Add(ui.KeyActions{
 			ui.KeyV: ui.NewKeyAction("Toggle All Values", c.toggleValuesCmd, true),
 		})
-		if err := v.app.inject(v); err != nil {
+		if err := v.app.inject(v, false); err != nil {
 			v.app.Flash().Err(err)
 		}
 		return nil

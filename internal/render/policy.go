@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
@@ -74,6 +74,9 @@ func (Policy) Render(o interface{}, gvr string, r *Row) error {
 // Helpers...
 
 func cleanseResource(r string) string {
+	if r == "" {
+		return r
+	}
 	if r[0] == '/' {
 		return r
 	}

@@ -39,18 +39,16 @@ Wanna discuss K9s features with your fellow `K9sers` or simply show your support
 * Channel: [K9ersSlack](https://k9sers.slack.com/)
 * Invite: [K9slackers Invite](https://join.slack.com/t/k9sers/shared_invite/enQtOTA5MDEyNzI5MTU0LWQ1ZGI3MzliYzZhZWEyNzYxYzA3NjE0YTk1YmFmNzViZjIyNzhkZGI0MmJjYzhlNjdlMGJhYzE2ZGU1NjkyNTM)
 
----
-
 ## Installation
 
 K9s is available on Linux, macOS and Windows platforms.
 
 * Binaries for Linux, Windows and Mac are available as tarballs in the [release](https://github.com/derailed/k9s/releases) page.
 
-* Via Homebrew for macOS or LinuxBrew for Linux
+* Via [Homebrew](https://brew.sh/) for macOS or Linux
 
    ```shell
-   brew install k9s
+   brew install derailed/k9s/k9s
    ```
 
 * Via [MacPorts](https://www.macports.org)
@@ -71,6 +69,17 @@ K9s is available on Linux, macOS and Windows platforms.
   zypper install k9s
   ```
 
+* On FreeBSD
+
+  ```shell
+  pkg install k9s
+  ```
+
+* Via [Winget](https://github.com/microsoft/winget-cli) for Windows
+  ```shell
+  winget install k9s
+  ```
+
 * Via [Scoop](https://scoop.sh) for Windows
 
   ```shell
@@ -87,7 +96,7 @@ K9s is available on Linux, macOS and Windows platforms.
 
   ```shell
   # NOTE: The dev version will be in effect!
-  go get -u github.com/derailed/k9s
+  go install github.com/derailed/k9s@latest
   ```
 
 * Via [Webi](https://webinstall.dev) for Linux and macOS
@@ -100,6 +109,12 @@ K9s is available on Linux, macOS and Windows platforms.
 
   ```shell
   curl.exe -A MS https://webinstall.dev/k9s | powershell
+  ```
+
+* As a [Docker Desktop Extension](https://docs.docker.com/desktop/extensions/) (for the Docker Desktop built in Kubernetes Server)
+
+  ```shell
+  docker extension install spurin/k9s-dd-extension:latest
   ```
 
 ---
@@ -178,6 +193,21 @@ K9s is available on Linux, macOS and Windows platforms.
 
 ---
 
+## K8S Compatibility Matrix
+
+|         k9s        | k8s client |
+| ------------------ | ---------- |
+|     >= v0.27.0     |   0.26.1   |
+| v0.26.7 - v0.26.6  |   0.25.3   |
+| v0.26.5 - v0.26.4  |   0.25.1   |
+| v0.26.3 - v0.26.1  |   0.24.3   |
+| v0.26.0 - v0.25.19 |   0.24.2   |
+| v0.25.18 - v0.25.3 |   0.22.3   |
+| v0.25.2 - v0.25.0  |   0.22.0   |
+|      <= v0.24      |   0.21.3   |
+
+---
+
 ## The Command Line
 
 ```shell
@@ -235,12 +265,12 @@ K9s uses aliases to navigate most K8s resources.
 | Fuzzy find a resource given a filter                           | `/`-f filter⏎                 |                                                                        |
 | Bails out of view/command/filter mode                          | `<esc>`                       |                                                                        |
 | Key mapping to describe, view, edit, view logs,...             | `d`,`v`, `e`, `l`,...         |                                                                        |
-| To view and switch to another Kubernetes context               | `:`ctx⏎                       |                                                                        |
-| To view and switch to another Kubernetes context               | `:`ctx context-name⏎          |                                                                        |
+| To view and switch to another Kubernetes context (Pod view)    | `:`ctx⏎                       |                                                                        |
+| To view and switch directly to another Kubernetes context (Last used view) | `:`ctx context-name⏎          |                                                                        |
 | To view and switch to another Kubernetes namespace             | `:`ns⏎                        |                                                                        |
 | To view all saved resources                                    | `:`screendump or sd⏎          |                                                                        |
 | To delete a resource (TAB and ENTER to confirm)                | `ctrl-d`                      |                                                                        |
-| To kill a resource (no confirmation dialog!)                   | `ctrl-k`                      |                                                                        |
+| To kill a resource (no confirmation dialog, equivalent to kubectl delete --now)                   | `ctrl-k`                      |                                                                        |
 | Launch pulses view                                             | `:`pulses or pu⏎              |                                                                        |
 | Launch XRay view                                               | `:`xray RESOURCE [NAMESPACE]⏎ | RESOURCE can be one of po, svc, dp, rs, sts, ds, NAMESPACE is optional |
 | Launch Popeye view                                             | `:`popeye or pop⏎             | See [popeye](#popeye)                                               |
@@ -305,6 +335,8 @@ K9s uses aliases to navigate most K8s resources.
     noExitOnCtrlC: false
     # Toggles icons display as not all terminal support these chars.
     noIcons: false
+    # Toggles whether k9s should check for the latest revision from the Github repository releases. Default is false.
+    skipLatestRevCheck: false
     # Logs configuration
     logger:
       # Defines the number of lines to return. Default 100
@@ -359,7 +391,7 @@ K9s uses aliases to navigate most K8s resources.
           - default
         view:
           active: dp
-    # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info) 
+    # The path to screen dump. Default: '%temp_dir%/k9s-screens-%username%' (k9s info)
     screenDumpDir: /tmp
   ```
 
@@ -449,8 +481,10 @@ Entering the command mode and typing a resource name or alias, could be cumberso
 
 As of v0.25.0, you can leverage the `FastForwards` feature to tell K9s how to default port-forwards. In situations where you are dealing with multiple containers or containers exposing multiple ports, it can be cumbersome to specify the desired port-forward from the dialog as in most cases, you already know which container/port tuple you desire. For these use cases, you can now annotate your manifests with the following annotations:
 
-1. k9scli.io/auto-port-forwards -> activates one or more port-forwards directly bypassing the port-forward dialog all together.
-2. k9scli.io/portforwards      -> pre-selects one or more port-forwards when launching the port-forward dialog.
+- `k9scli.io/auto-port-forwards`
+  activates one or more port-forwards directly bypassing the port-forward dialog all together.
+- `k9scli.io/port-forwards`
+  pre-selects one or more port-forwards when launching the port-forward dialog.
 
 The annotation value takes on the shape `container-name::[local-port:]container-port`
 
@@ -465,10 +499,10 @@ kind: Pod
 metadata:
   name: fred
   annotations:
-    k9scli.io/auto-portforwards: zorg::5556        # => will default to container zorg port 5556 and local port 5566. No port-forward dialog will be shown.
+    k9scli.io/auto-port-forwards: zorg::5556        # => will default to container zorg port 5556 and local port 5566. No port-forward dialog will be shown.
     # Or...
-    k9scli.io/portforward: bozo::9090:p1           # => launches the port-forward dialog selecting default port-forward on container bozo port named p1(8081)
-                                                   # mapping to local port 9090.
+    k9scli.io/port-forwards: bozo::9090:p1          # => launches the port-forward dialog selecting default port-forward on container bozo port named p1(8081)
+                                                    # mapping to local port 9090.
     ...
 spec:
   containers:
@@ -556,6 +590,8 @@ K9s does provide additional environment variables for you to customize your plug
 * `$GROUPS` the active groups
 * `$POD` while in a container view
 * `$COL-<RESOURCE_COLUMN_NAME>` use a given column name for a viewed resource. Must be prefixed by `COL-`!
+
+Curly braces can be used to embed an environment variable inside another string, or if the column name contains special characters. (e.g. `${NAME}-example` or `${COL-%CPU/L}`)
 
 ### Example
 
@@ -835,8 +871,13 @@ k9s:
       valueColor: royalblue
     # Logs styles.
     logs:
-      fgColor: white
+      fgColor: lightskyblue
       bgColor: black
+      indicator:
+        fgColor: dodgerblue
+        bgColor: black
+        toggleOnColor: limegreen
+        toggleOffColor: gray
 ```
 
 ---
@@ -876,6 +917,8 @@ to make this project a reality!
 * [Fernand Galiana](https://github.com/derailed)
   * <img src="assets/mail.png" width="16" height="auto" alt="email"/>  fernand@imhotep.io
   * <img src="assets/twitter.png" width="16" height="auto" alt="twitter"/> [@kitesurfer](https://twitter.com/kitesurfer?lang=en)
+
+* [Aleksei Romanenko](https://github.com/slimus)
 
 We always enjoy hearing from folks who benefit from our work!
 

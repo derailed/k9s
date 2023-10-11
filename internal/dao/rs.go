@@ -8,7 +8,6 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	appsv1 "k8s.io/api/apps/v1"
-	v1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -23,7 +22,7 @@ type ReplicaSet struct {
 }
 
 // Load returns a given instance.
-func (r *ReplicaSet) Load(f Factory, path string) (*v1.ReplicaSet, error) {
+func (r *ReplicaSet) Load(f Factory, path string) (*appsv1.ReplicaSet, error) {
 	o, err := f.Get("apps/v1/replicasets", path, true, labels.Everything())
 	if err != nil {
 		return nil, err
@@ -38,7 +37,7 @@ func (r *ReplicaSet) Load(f Factory, path string) (*v1.ReplicaSet, error) {
 	return &rs, nil
 }
 
-func getRSRevision(rs *v1.ReplicaSet) (int64, error) {
+func getRSRevision(rs *appsv1.ReplicaSet) (int64, error) {
 	revision := rs.ObjectMeta.Annotations["deployment.kubernetes.io/revision"]
 	if rs.Status.Replicas != 0 {
 		return 0, errors.New("can not rollback current replica")
@@ -51,7 +50,7 @@ func getRSRevision(rs *v1.ReplicaSet) (int64, error) {
 	return int64(vers), nil
 }
 
-func controllerInfo(rs *v1.ReplicaSet) (string, string, string, error) {
+func controllerInfo(rs *appsv1.ReplicaSet) (string, string, string, error) {
 	for _, ref := range rs.ObjectMeta.OwnerReferences {
 		if ref.Controller == nil {
 			continue

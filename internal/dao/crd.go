@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/derailed/k9s/internal"
+	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -16,6 +17,19 @@ var (
 // CustomResourceDefinition represents a CRD resource model.
 type CustomResourceDefinition struct {
 	Resource
+}
+
+// IsHappy check for happy deployments.
+func (c *CustomResourceDefinition) IsHappy(crd v1.CustomResourceDefinition) bool {
+	versions := make([]string, 0, 3)
+	for _, v := range crd.Spec.Versions {
+		if v.Served && !v.Deprecated {
+			versions = append(versions, v.Name)
+			break
+		}
+	}
+
+	return len(versions) > 0
 }
 
 // List returns a collection of nodes.

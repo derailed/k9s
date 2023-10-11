@@ -15,16 +15,17 @@ jobs:
   build:
     runs-on: ubuntu-20.04
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4.1.0
+
       - name: Install Go
-        uses: actions/setup-go@v2
+        uses: actions/setup-go@v4.0.1
         with:
-          go-version: 1.17
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
 
       - name: Setup GO env
         run: go env -w CGO_ENABLED=0
-
-      - name: Checkout Code
-        uses: actions/checkout@v2
 
       - name: Run Tests
         run: make test

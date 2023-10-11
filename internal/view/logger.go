@@ -3,12 +3,11 @@ package view
 import (
 	"context"
 
-	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 )
 
 // Logger represents a generic log viewer.
@@ -70,7 +69,7 @@ func (l *Logger) bindKeys() {
 	l.actions.Set(ui.KeyActions{
 		tcell.KeyEscape: ui.NewKeyAction("Back", l.resetCmd, false),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.saveCmd, false),
-		ui.KeyC:         ui.NewKeyAction("Copy", l.cpCmd, true),
+		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(l.app.Flash(), l.TextView), true),
 		ui.KeySlash:     ui.NewSharedKeyAction("Filter Mode", l.activateCmd, false),
 		tcell.KeyDelete: ui.NewSharedKeyAction("Erase", l.eraseCmd, false),
 	})
@@ -152,19 +151,10 @@ func (l *Logger) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (l *Logger) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveYAML(l.app.Config.K9s.GetScreenDumpDir(), l.app.Config.K9s.CurrentCluster, l.title, l.GetText(true)); err != nil {
+	if path, err := saveYAML(l.app.Config.K9s.GetScreenDumpDir(), l.app.Config.K9s.CurrentContextDir(), l.title, l.GetText(true)); err != nil {
 		l.app.Flash().Err(err)
 	} else {
 		l.app.Flash().Infof("Log %s saved successfully!", path)
-	}
-
-	return nil
-}
-
-func (l *Logger) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	l.app.Flash().Info("Content copied to clipboard...")
-	if err := clipboard.WriteAll(l.GetText(true)); err != nil {
-		l.app.Flash().Err(err)
 	}
 
 	return nil

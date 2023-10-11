@@ -5,12 +5,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -168,7 +167,7 @@ func (t *Table) BufferActive(state bool, k model.BufferKind) {
 }
 
 func (t *Table) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveTable(t.app.Config.K9s.GetScreenDumpDir(), t.app.Config.K9s.CurrentCluster, t.GVR().R(), t.Path, t.GetFilteredData()); err != nil {
+	if path, err := saveTable(t.app.Config.K9s.GetScreenDumpDir(), t.app.Config.K9s.CurrentContextDir(), t.GVR().R(), t.Path, t.GetFilteredData()); err != nil {
 		t.app.Flash().Err(err)
 	} else {
 		t.app.Flash().Infof("File %s saved successfully!", path)
@@ -207,13 +206,12 @@ func (t *Table) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path == "" {
 		return evt
 	}
-
 	_, n := client.Namespaced(path)
-	log.Debug().Msgf("Copied selection to clipboard %q", n)
-	t.app.Flash().Info("Current selection copied to clipboard...")
-	if err := clipboard.WriteAll(n); err != nil {
+	if err := clipboardWrite(n); err != nil {
 		t.app.Flash().Err(err)
+		return nil
 	}
+	t.app.Flash().Info("Current selection copied to clipboard...")
 
 	return nil
 }

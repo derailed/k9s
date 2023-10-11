@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 
-	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 )
@@ -92,23 +92,38 @@ func (v *LiveView) ResourceFailed(err error) {
 	v.text.SetText(cowTalk(err.Error(), x+w))
 }
 
+func (*LiveView) linesWithRegions(lines []string, matches fuzzy.Matches) []string {
+	ll := make([]string, len(lines))
+	copy(ll, lines)
+	offsetForLine := make(map[int]int)
+	for i, m := range matches {
+		loc, line := m.MatchedIndexes, ll[m.Index]
+		offset := offsetForLine[m.Index]
+		loc[0], loc[1] = loc[0]+offset, loc[1]+offset
+		regionStr := `<<<"search_` + strconv.Itoa(i) + `">>>` + line[loc[0]:loc[1]] + `<<<"">>>`
+		ll[m.Index] = line[:loc[0]] + regionStr + line[loc[1]:]
+		offsetForLine[m.Index] += len(regionStr) - (loc[1] - loc[0])
+	}
+	return ll
+}
+
 // ResourceChanged notifies when the filter changes.
 func (v *LiveView) ResourceChanged(lines []string, matches fuzzy.Matches) {
 	v.app.QueueUpdateDraw(func() {
+		defer func(t time.Time) {
+			log.Debug().Msgf("Live view render time: %v", time.Since(t))
+		}(time.Now())
+
 		v.text.SetTextAlign(tview.AlignLeft)
 		v.maxRegions = len(matches)
-		ll := make([]string, len(lines))
-		copy(ll, lines)
-		for i, m := range matches {
-			loc, line := m.MatchedIndexes, ll[m.Index]
-			ll[m.Index] = line[:loc[0]] + `<<<"search_` + strconv.Itoa(i) + `">>>` + line[loc[0]:loc[1]] + `<<<"">>>` + line[loc[1]:]
-		}
 
 		if v.text.GetText(true) == "" {
 			v.text.ScrollToBeginning()
 		}
 
-		v.text.SetText(colorizeYAML(v.app.Styles.Views().Yaml, strings.Join(ll, "\n")))
+		lines = v.linesWithRegions(lines, matches)
+
+		v.text.SetText(colorizeYAML(v.app.Styles.Views().Yaml, strings.Join(lines, "\n")))
 		v.text.Highlight()
 		if v.currentRegion < v.maxRegions {
 			v.text.Highlight("search_" + strconv.Itoa(v.currentRegion))
@@ -136,7 +151,7 @@ func (v *LiveView) bindKeys() {
 		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", v.filterCmd, false),
 		tcell.KeyEscape: ui.NewKeyAction("Back", v.resetCmd, false),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", v.saveCmd, false),
-		ui.KeyC:         ui.NewKeyAction("Copy", v.cpCmd, true),
+		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(v.app.Flash(), v.text), true),
 		ui.KeyF:         ui.NewKeyAction("Toggle FullScreen", v.toggleFullScreenCmd, true),
 		ui.KeyR:         ui.NewKeyAction("Toggle Auto-Refresh", v.toggleRefreshCmd, true),
 		ui.KeyN:         ui.NewKeyAction("Next Match", v.nextCmd, true),
@@ -332,19 +347,10 @@ func (v *LiveView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *LiveView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveYAML(v.app.Config.K9s.GetScreenDumpDir(), v.app.Config.K9s.CurrentCluster, v.title, v.text.GetText(true)); err != nil {
+	if path, err := saveYAML(v.app.Config.K9s.GetScreenDumpDir(), v.app.Config.K9s.CurrentContextDir(), v.title, v.text.GetText(true)); err != nil {
 		v.app.Flash().Err(err)
 	} else {
 		v.app.Flash().Infof("Log %s saved successfully!", path)
-	}
-
-	return nil
-}
-
-func (v *LiveView) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	v.app.Flash().Info("Content copied to clipboard...")
-	if err := clipboard.WriteAll(v.text.GetText(true)); err != nil {
-		v.app.Flash().Err(err)
 	}
 
 	return nil

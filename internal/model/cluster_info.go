@@ -69,22 +69,24 @@ func (c ClusterMeta) Deltas(n ClusterMeta) bool {
 
 // ClusterInfo models cluster metadata.
 type ClusterInfo struct {
-	cluster   *Cluster
-	factory   dao.Factory
-	data      ClusterMeta
-	version   string
-	listeners []ClusterInfoListener
-	cache     *cache.LRUExpireCache
+	cluster            *Cluster
+	factory            dao.Factory
+	data               ClusterMeta
+	version            string
+	skipLatestRevCheck bool
+	listeners          []ClusterInfoListener
+	cache              *cache.LRUExpireCache
 }
 
 // NewClusterInfo returns a new instance.
-func NewClusterInfo(f dao.Factory, v string) *ClusterInfo {
+func NewClusterInfo(f dao.Factory, v string, skipLatestRevCheck bool) *ClusterInfo {
 	c := ClusterInfo{
-		factory: f,
-		cluster: NewCluster(f),
-		data:    NewClusterMeta(),
-		version: v,
-		cache:   cache.NewLRUExpireCache(cacheSize),
+		factory:            f,
+		cluster:            NewCluster(f),
+		data:               NewClusterMeta(),
+		version:            v,
+		skipLatestRevCheck: skipLatestRevCheck,
+		cache:              cache.NewLRUExpireCache(cacheSize),
 	}
 
 	return &c
@@ -130,7 +132,14 @@ func (c *ClusterInfo) Refresh() {
 		}
 	}
 	data.K9sVer = c.version
-	v1, v2 := NewSemVer(data.K9sVer), NewSemVer(c.fetchK9sLatestRev())
+	v1 := NewSemVer(data.K9sVer)
+
+	var latestRev string
+	if !c.skipLatestRevCheck {
+		latestRev = c.fetchK9sLatestRev()
+	}
+	v2 := NewSemVer(latestRev)
+
 	data.K9sVer, data.K9sLatest = v1.String(), v2.String()
 	if v1.IsCurrent(v2) {
 		data.K9sLatest = ""

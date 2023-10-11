@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"regexp"
 
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -15,6 +16,13 @@ const (
 	// DefaultFileMod default unix perms for k9s files.
 	DefaultFileMod os.FileMode = 0600
 )
+
+var invalidPathCharsRX = regexp.MustCompile(`[:]+`)
+
+// SanitizeFilename sanitizes the dump filename.
+func SanitizeFilename(name string) string {
+	return invalidPathCharsRX.ReplaceAllString(name, "-")
+}
 
 // InList check if string is in a collection of strings.
 func InList(ll []string, n string) bool {
@@ -46,19 +54,20 @@ func MustK9sUser() string {
 	return usr.Username
 }
 
-// EnsurePath ensures a directory exist from the given path.
-func EnsurePath(path string, mod os.FileMode) {
-	dir := filepath.Dir(path)
-	EnsureFullPath(dir, mod)
+// EnsureDirPath ensures a directory exist from the given path.
+func EnsureDirPath(path string, mod os.FileMode) error {
+	return EnsureFullPath(filepath.Dir(path), mod)
 }
 
 // EnsureFullPath ensures a directory exist from the given path.
-func EnsureFullPath(path string, mod os.FileMode) {
+func EnsureFullPath(path string, mod os.FileMode) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		if err = os.MkdirAll(path, mod); err != nil {
-			log.Fatal().Msgf("Unable to create dir %q %v", path, err)
+			return err
 		}
 	}
+
+	return nil
 }
 
 // IsBoolSet checks if a bool prt is set.

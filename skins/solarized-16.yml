@@ -1,0 +1,128 @@
+# K9s Solarized Skin Contributed by [@graelo](graelo@grael.cc)
+#
+# The table below is extracted from <https://github.com/gdamore/tcell/blob/bd74010edcb3e8e36c090323c2b1d4a6b182d487/color.go#L846-L861>
+# and joined with both the ascii standard names from <https://en.wikipedia.org/wiki/ANSI_escape_code#Colors>
+# and the solarized color names from <https://ethanschoonover.com/solarized/>
+#
+#	"black":                ColorBlack,        black            base02
+#	"maroon":               ColorMaroon,       red              red
+#	"green":                ColorGreen,        green            green
+#	"olive":                ColorOlive,        yellow           yellow
+#	"navy":                 ColorNavy,         blue             blue
+#	"purple":               ColorPurple,       magenta          magenta
+#	"teal":                 ColorTeal,         cyan             cyan
+#	"silver":               ColorSilver,       white            base2
+#	"gray":                 ColorGray,         brightblack      base03
+#	"red":                  ColorRed,          brightred        orange
+#	"lime":                 ColorLime,         brightgreen      base01
+#	"yellow":               ColorYellow,       brightyellow     base00
+#	"blue":                 ColorBlue,         brightblue       base0
+#	"fuchsia":              ColorFuchsia,      brightmagenta    violet
+#	"aqua":                 ColorAqua,         brightcyan       base1
+#	"white":                ColorWhite,        brightwhite      base3
+
+base03:       &base03   gray          # base03    brightblack
+base02:       &base02   black         # base02    black
+base01:       &base01   lime          # base01    brightgreen
+base00:       &base00   yellow        # base00    brightyellow
+base0:        &base0    blue          # base0     brightblue
+base1:        &base1    aqua          # base1     brightcyan
+base2:        &base2    silver        # base2     white
+base3:        &base3    white         # base3     brightwhite
+yellow:       &yellow   olive         # accent    yellow        #b58900
+orange:       &orange   red           # accent    orange        #cb4b16
+red:          &red      maroon        # accent    red           #dc322f
+magenta:      &magenta  purple        # accent    magenta       #d33682
+violet:       &violet   fuchsia       # accent    violet        #6c71c4
+blue:         &blue     navy          # accent    blue          #268bd2
+cyan:         &cyan     teal          # accent    cyan          #2aa198
+green:        &green    green         # accent    green         #859900
+
+background:   &background   default   # transparent
+foreground:   &foreground   yellow    # base00
+current_line: &current_line white     # base2
+selection:    &selection    silver    # base2
+comment:      &comment      aqua      # base1
+
+k9s:
+  body:
+    fgColor: *foreground
+    bgColor: *background
+    logoColor: *magenta
+  prompt:
+    fgColor: *foreground
+    bgColor: *background
+    suggestColor: *orange
+  info:
+    fgColor: *blue
+    sectionColor: *foreground
+  dialog:
+    fgColor: *foreground
+    bgColor: *background
+    buttonFgColor: *foreground
+    buttonBgColor: *magenta
+    buttonFocusFgColor: *base2
+    buttonFocusBgColor: *cyan
+    labelFgColor: *orange
+    fieldFgColor: *foreground
+  frame:
+    border:
+      fgColor: *selection
+      focusColor: *foreground
+    menu:
+      fgColor: *foreground
+      keyColor: *blue
+      numKeyColor: *green
+    crumbs:
+      fgColor: *base2
+      bgColor: *base0
+      activeColor: *blue
+    status:
+      newColor: *base00
+      modifyColor: *blue
+      addColor: *yellow
+      errorColor: *red
+      highlightColor: *orange
+      killColor: *violet
+      completedColor: *green
+    title:
+      fgColor: *foreground
+      bgColor: *background
+      highlightColor: *blue
+      counterColor: *magenta
+      filterColor: *magenta
+  views:
+    charts:
+      bgColor: default
+      defaultDialColors:
+        - *blue
+        - *red
+      defaultChartColors:
+        - *blue
+        - *red
+    table:
+      fgColor: *foreground
+      bgColor: *background
+      cursorFgColor: *base2
+      cursorBgColor: *background
+      markColor: *magenta
+      header:
+        fgColor: *foreground
+        bgColor: *background
+        sorterColor: *magenta
+    xray:
+      fgColor: *foreground
+      bgColor: *background
+      cursorColor: *current_line
+      graphicColor: *blue
+      showIcons: false
+    yaml:
+      keyColor: *green
+      colonColor: *base02
+      valueColor: *foreground
+    logs:
+      fgColor: *foreground
+      bgColor: *background
+      indicator:
+        fgColor: *foreground
+        bgColor: *selection

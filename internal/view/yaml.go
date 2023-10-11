@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
 )
@@ -61,14 +60,14 @@ func enableRegion(str string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(str, "<<<", "["), ">>>", "]")
 }
 
-func saveYAML(screenDumpDir, cluster, name, data string) (string, error) {
-	dir := filepath.Join(screenDumpDir, dao.SanitizeFilename(cluster))
+func saveYAML(screenDumpDir, context, name, data string) (string, error) {
+	dir := filepath.Join(screenDumpDir, context)
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}
 
 	now := time.Now().UnixNano()
-	fName := fmt.Sprintf("%s-%d.yml", dao.SanitizeFilename(name), now)
+	fName := fmt.Sprintf("%s-%d.yml", config.SanitizeFilename(name), now)
 
 	path := filepath.Join(dir, fName)
 	mod := os.O_CREATE | os.O_WRONLY

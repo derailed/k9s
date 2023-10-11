@@ -148,7 +148,7 @@ func (m *Menu) buildMenuTable(hh model.MenuHints, table []model.MenuHints, colCo
 func (m *Menu) layout(table []model.MenuHints, mm []int, out [][]string) {
 	for r := range table {
 		for c := range table[r] {
-			out[r][c] = keyConv(m.formatMenu(table[r][c], mm[c]))
+			out[r][c] = m.formatMenu(table[r][c], mm[c])
 		}
 	}
 }

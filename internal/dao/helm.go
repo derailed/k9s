@@ -31,7 +31,11 @@ func (h *Helm) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	rr, err := action.NewList(cfg).Run()
+
+	list := action.NewList(cfg)
+	list.All = true
+	list.SetStateMask()
+	rr, err := list.Run()
 	if err != nil {
 		return nil, err
 	}
@@ -107,13 +111,15 @@ func (h *Helm) ToYAML(path string, showManaged bool) (string, error) {
 }
 
 // Delete uninstall a Helm.
-func (h *Helm) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, force bool) error {
+func (h *Helm) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, _ Grace) error {
 	ns, n := client.Namespaced(path)
 	cfg, err := h.EnsureHelmConfig(ns)
 	if err != nil {
 		return err
 	}
-	res, err := action.NewUninstall(cfg).Run(n)
+	u := action.NewUninstall(cfg)
+	u.KeepHistory = true
+	res, err := u.Run(n)
 	if err != nil {
 		return err
 	}

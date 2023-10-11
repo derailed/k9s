@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )

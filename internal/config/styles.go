@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"gopkg.in/yaml.v2"
 )
 
@@ -61,9 +61,13 @@ type (
 
 	// Body tracks body styles.
 	Body struct {
-		FgColor   Color `yaml:"fgColor"`
-		BgColor   Color `yaml:"bgColor"`
-		LogoColor Color `yaml:"logoColor"`
+		FgColor        Color `yaml:"fgColor"`
+		BgColor        Color `yaml:"bgColor"`
+		LogoColor      Color `yaml:"logoColor"`
+		LogoColorMsg   Color `yaml:"logoColorMsg"`
+		LogoColorInfo  Color `yaml:"logoColorInfo"`
+		LogoColorWarn  Color `yaml:"logoColorWarn"`
+		LogoColorError Color `yaml:"logoColorError"`
 	}
 
 	// Dialog tracks dialog styles.
@@ -117,8 +121,10 @@ type (
 
 	// LogIndicator tracks log view indicator.
 	LogIndicator struct {
-		FgColor Color `yaml:"fgColor"`
-		BgColor Color `yaml:"bgColor"`
+		FgColor        Color `yaml:"fgColor"`
+		BgColor        Color `yaml:"bgColor"`
+		ToggleOnColor  Color `yaml:"toggleOnColor"`
+		ToggleOffColor Color `yaml:"toggleOffColor"`
 	}
 
 	// Yaml tracks yaml styles.
@@ -330,9 +336,13 @@ func newHelp() Help {
 
 func newBody() Body {
 	return Body{
-		FgColor:   "cadetblue",
-		BgColor:   "black",
-		LogoColor: "orange",
+		FgColor:        "cadetblue",
+		BgColor:        "black",
+		LogoColor:      "orange",
+		LogoColorMsg:   "white",
+		LogoColorInfo:  "green",
+		LogoColorWarn:  "mediumvioletred",
+		LogoColorError: "red",
 	}
 }
 
@@ -359,8 +369,10 @@ func newLog() Log {
 
 func newLogIndicator() LogIndicator {
 	return LogIndicator{
-		FgColor: "dodgerblue",
-		BgColor: "black",
+		FgColor:        "dodgerblue",
+		BgColor:        "black",
+		ToggleOnColor:  "limegreen",
+		ToggleOffColor: "gray",
 	}
 }
 

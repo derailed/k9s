@@ -14,6 +14,8 @@ import (
 	"k8s.io/cli-runtime/pkg/printers"
 )
 
+const defaultServiceAccount = "default"
+
 var (
 	inverseRx = regexp.MustCompile(`\A\!`)
 	fuzzyRx   = regexp.MustCompile(`\A\-f`)
@@ -80,4 +82,14 @@ func ToYAML(o runtime.Object, showManaged bool) (string, error) {
 	}
 
 	return buff.String(), nil
+}
+
+// serviceAccountMatches validates that the ServiceAccount referenced in the PodSpec matches the incoming
+// ServiceAccount. If the PodSpec ServiceAccount is blank kubernetes will use the "default" ServiceAccount
+// when deploying the pod, so if the incoming SA is "default" and podSA is an empty string that is also a match.
+func serviceAccountMatches(podSA, saName string) bool {
+	if podSA == "" {
+		podSA = defaultServiceAccount
+	}
+	return podSA == saName
 }

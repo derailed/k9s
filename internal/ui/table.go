@@ -11,8 +11,8 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	"github.com/gdamore/tcell/v2"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -204,7 +204,7 @@ func (t *Table) doUpdate(data *render.TableData) {
 	custData := data.Customize(cols, t.wide)
 	if t.viewSetting != nil && t.viewSetting.SortColumn != "" {
 		tokens := strings.Split(t.viewSetting.SortColumn, ":")
-		if custData.Header.IndexOf(tokens[0], false) >= 0 {
+		if custData.Header.IndexOf(tokens[0], false) >= 0 && custData.Header.IndexOf(t.sortCol.name, false) < 0 {
 			t.sortCol.name, t.sortCol.asc = tokens[0], true
 			if len(tokens) == 2 && tokens[1] == "desc" {
 				t.sortCol.asc = false

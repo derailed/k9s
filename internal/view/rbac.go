@@ -6,7 +6,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 )
 
 // Rbac presents an RBAC policy viewer.
@@ -37,7 +37,7 @@ func showRules(app *App, _ ui.Tabular, gvr, path string) {
 	v := NewRbac(client.NewGVR("rbac"))
 	v.SetContextFn(rbacCtx(gvr, path))
 
-	if err := app.inject(v); err != nil {
+	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
 	}
 }

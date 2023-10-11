@@ -7,15 +7,33 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/atotto/clipboard"
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
+	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
 )
+
+func clipboardWrite(text string) error {
+	return clipboard.WriteAll(text)
+}
+
+func cpCmd(flash *model.Flash, v *tview.TextView) func(*tcell.EventKey) *tcell.EventKey {
+	return func(evt *tcell.EventKey) *tcell.EventKey {
+		if err := clipboardWrite(v.GetText(true)); err != nil {
+			flash.Err(err)
+			return evt
+		}
+		flash.Info("Content copied to clipboard...")
+
+		return nil
+	}
+}
 
 func parsePFAnn(s string) (string, string, bool) {
 	tokens := strings.Split(s, ":")
@@ -71,7 +89,7 @@ func defaultEnv(c *client.Config, path string, header render.Header, row render.
 
 func describeResource(app *App, m ui.Tabular, gvr, path string) {
 	v := NewLiveView(app, "Describe", model.NewDescribe(client.NewGVR(gvr), path))
-	if err := app.inject(v); err != nil {
+	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
 	}
 }
@@ -97,7 +115,7 @@ func showPods(app *App, path, labelSel, fieldSel string) {
 	if err := app.Config.SetActiveNamespace(ns); err != nil {
 		log.Error().Err(err).Msg("Config NS set failed!")
 	}
-	if err := app.inject(v); err != nil {
+	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
 	}
 }
@@ -178,7 +196,7 @@ func fqn(ns, n string) string {
 	return ns + "/" + n
 }
 
-func decorateCpuMemHeaderRows(app *App, data *render.TableData) *render.TableData {
+func decorateCpuMemHeaderRows(app *App, data *render.TableData) {
 	for colIndex, header := range data.Header {
 		var check string
 		if header.Name == "%CPU/L" {
@@ -211,6 +229,4 @@ func decorateCpuMemHeaderRows(app *App, data *render.TableData) *render.TableDat
 			}
 		}
 	}
-
-	return data
 }

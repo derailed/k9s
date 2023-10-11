@@ -4,7 +4,7 @@ import (
 	"sort"
 
 	"github.com/derailed/k9s/internal/model"
-	"github.com/gdamore/tcell/v2"
+	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
 )
 
@@ -74,7 +74,7 @@ func (a KeyActions) Hints() model.MenuHints {
 
 	hh := make(model.MenuHints, 0, len(kk))
 	for _, k := range kk {
-		if name, ok := tcell.KeyNames[tcell.Key(k)]; ok {
+		if name, ok := tcell.KeyNames[tcell.Key(int16(k))]; ok {
 			hh = append(hh,
 				model.MenuHint{
 					Mnemonic:    name,

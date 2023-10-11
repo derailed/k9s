@@ -9,7 +9,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -134,7 +133,7 @@ func (m *Meta) AllGVRs() client.GVRs {
 }
 
 // IsCRD checks if resource represents a CRD
-func IsCRD(r v1.APIResource) bool {
+func IsCRD(r metav1.APIResource) bool {
 	for _, c := range r.Categories {
 		if c == CRD {
 			return true
@@ -341,7 +340,7 @@ func loadRBAC(m ResourceMetas) {
 }
 
 func loadPreferred(f Factory, m ResourceMetas) error {
-	if !f.Client().ConnectionOK() {
+	if f.Client() == nil || !f.Client().ConnectionOK() {
 		log.Error().Msgf("Load cluster resources - No API server connection")
 		return nil
 	}
@@ -394,7 +393,7 @@ func isDeprecated(gvr client.GVR) bool {
 }
 
 func loadCRDs(f Factory, m ResourceMetas) {
-	if !f.Client().ConnectionOK() {
+	if f.Client() == nil || !f.Client().ConnectionOK() {
 		return
 	}
 	const crdGVR = "apiextensions.k8s.io/v1/customresourcedefinitions"

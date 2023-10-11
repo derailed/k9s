@@ -1,10 +1,7 @@
 package render
 
 import (
-	"fmt"
 	"sort"
-
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -245,59 +242,47 @@ func (r RowEventSorter) Less(i, j int) bool {
 
 // ----------------------------------------------------------------------------
 
-// IdSorter sorts row events by a given id.
-type IdSorter struct {
-	Ids    []string
-	Events RowEvents
-}
+// // IdSorter sorts row events by a given id.
+// type IdSorter struct {
+// 	Ids    map[string]int
+// 	Events RowEvents
+// }
 
-func (s IdSorter) Len() int {
-	return len(s.Events)
-}
+// func (s IdSorter) Len() int {
+// 	return len(s.Events)
+// }
 
-func (s IdSorter) Swap(i, j int) {
-	s.Events[i], s.Events[j] = s.Events[j], s.Events[i]
-}
+// func (s IdSorter) Swap(i, j int) {
+// 	s.Events[i], s.Events[j] = s.Events[j], s.Events[i]
+// }
 
-func (s IdSorter) Less(i, j int) bool {
-	id1, id2 := s.Events[i].Row.ID, s.Events[j].Row.ID
-	i1, i2 := findIndex(s.Ids, id1), findIndex(s.Ids, id2)
-	return i1 < i2
-}
-
-func findIndex(ss []string, s string) int {
-	for i := range ss {
-		if ss[i] == s {
-			return i
-		}
-	}
-	log.Error().Err(fmt.Errorf("Doh! index not found for %s", s))
-	return -1
-}
+// func (s IdSorter) Less(i, j int) bool {
+// 	return s.Ids[s.Events[i].Row.ID] < s.Ids[s.Events[j].Row.ID]
+// }
 
 // ----------------------------------------------------------------------------
 
-// StringSet represents a collection of unique strings.
-type StringSet []string
+// // StringSet represents a collection of unique strings.
+// type StringSet []string
 
-// Add adds a new item in the set.
-func (ss StringSet) Add(item string) StringSet {
-	if ss.In(item) {
-		return ss
-	}
-	return append(ss, item)
-}
+// // Add adds a new item in the set.
+// func (ss StringSet) Add(item string) StringSet {
+// 	if ss.In(item) {
+// 		return ss
+// 	}
+// 	return append(ss, item)
+// }
 
-// In checks if a string is in the set.
-func (ss StringSet) In(item string) bool {
-	return ss.indexOf(item) >= 0
-}
+// // In checks if a string is in the set.
+// func (ss StringSet) In(item string) bool {
+// 	return ss.indexOf(item) >= 0
+// }
 
-func (ss StringSet) indexOf(item string) int {
-	for i, s := range ss {
-		if s == item {
-			return i
-		}
-	}
-	return -1
-}
+// func (ss StringSet) indexOf(item string) int {
+// 	for i, s := range ss {
+// 		if s == item {
+// 			return i
+// 		}
+// 	}
+// 	return -1
+// }

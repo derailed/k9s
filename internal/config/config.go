@@ -87,20 +87,23 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 	}
 	context, ok := cc[c.K9s.CurrentContext]
 	if !ok {
-		return fmt.Errorf("The specified context %q does not exists in kubeconfig", c.K9s.CurrentContext)
+		return fmt.Errorf("the specified context %q does not exists in kubeconfig", c.K9s.CurrentContext)
 	}
 	c.K9s.CurrentCluster = context.Cluster
 	c.K9s.ActivateCluster(context.Namespace)
 
 	var ns = client.DefaultNamespace
-	if k9sFlags != nil && IsBoolSet(k9sFlags.AllNamespaces) {
+	switch {
+	case k9sFlags != nil && IsBoolSet(k9sFlags.AllNamespaces):
 		ns = client.NamespaceAll
-	} else if isSet(flags.Namespace) {
+	case isSet(flags.Namespace):
 		ns = *flags.Namespace
-	} else if isSet(flags.Context) {
-		ns = context.Namespace
-	} else {
-		ns = c.K9s.ActiveCluster().Namespace.Active
+	default:
+		if nss := context.Namespace; nss != "" {
+			ns = nss
+		} else if nss == "" {
+			ns = c.K9s.ActiveCluster().Namespace.Active
+		}
 	}
 
 	if err := c.SetActiveNamespace(ns); err != nil {
@@ -111,9 +114,8 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 	if isSet(flags.ClusterName) {
 		c.K9s.CurrentCluster = *flags.ClusterName
 	}
-	EnsurePath(c.K9s.GetScreenDumpDir(), DefaultDirMod)
 
-	return nil
+	return EnsureDirPath(c.K9s.GetScreenDumpDir(), DefaultDirMod)
 }
 
 // Reset the context to the new current context/cluster.
@@ -189,6 +191,10 @@ func (c *Config) ActiveView() string {
 	cmd := cl.View.Active
 	if c.K9s.manualCommand != nil && *c.K9s.manualCommand != "" {
 		cmd = *c.K9s.manualCommand
+		// We reset the manualCommand property because
+		// the command-line switch should only be considered once,
+		// on startup.
+		*c.K9s.manualCommand = ""
 	}
 
 	return cmd
@@ -241,7 +247,9 @@ func (c *Config) Save() error {
 
 // SaveFile K9s configuration to disk.
 func (c *Config) SaveFile(path string) error {
-	EnsurePath(path, DefaultDirMod)
+	if err := EnsureDirPath(path, DefaultDirMod); err != nil {
+		return err
+	}
 	cfg, err := yaml.Marshal(c)
 	if err != nil {
 		log.Error().Msgf("[Config] Unable to save K9s config file: %v", err)
