@@ -23,7 +23,7 @@ func (PodDisruptionBudget) Header(ns string) Header {
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
 		HeaderColumn{Name: "MIN AVAILABLE", Align: tview.AlignRight},
-		HeaderColumn{Name: "MAX_ UNAVAILABLE", Align: tview.AlignRight},
+		HeaderColumn{Name: "MAX UNAVAILABLE", Align: tview.AlignRight},
 		HeaderColumn{Name: "ALLOWED DISRUPTIONS", Align: tview.AlignRight},
 		HeaderColumn{Name: "CURRENT", Align: tview.AlignRight},
 		HeaderColumn{Name: "DESIRED", Align: tview.AlignRight},
