@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"fmt"
 	"testing"
+	"os"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
@@ -92,6 +93,17 @@ func TestLogItemRender(t *testing.T) {
 			assert.Equal(t, u.e, bb.String())
 		})
 	}
+}
+
+func TestLogItemRenderWithTimezone(t *testing.T) {
+	os.Setenv("TZ", "Europe/Paris")
+	i := dao.NewLogItem([]byte(fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972000Z", "2021-10-28T13:06:37Z [INFO] [blah-blah] Testing 1,2,3...")))
+	bb := bytes.NewBuffer(make([]byte, 0, i.Size()))
+	i.Render("gray", true, bb)
+
+	assert.Equal(t, "[gray::b]2018-12-14T11:36:43.326972000Z [-::-]2021-10-28T13:06:37Z [INFO] [blah-blah] Testing 1,2,3...\n", bb.String())
+
+	os.Unsetenv("TZ")
 }
 
 func BenchmarkLogItemRenderTS(b *testing.B) {

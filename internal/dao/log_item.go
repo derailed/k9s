@@ -5,6 +5,10 @@ package dao
 
 import (
 	"bytes"
+	"os"
+	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 // LogChan represents a channel for logs.
@@ -69,9 +73,33 @@ func (l *LogItem) Size() int {
 // Render returns a log line as string.
 func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
 	index := bytes.Index(l.Bytes, []byte{' '})
+
 	if showTime && index > 0 {
 		bb.WriteString("[gray::b]")
-		bb.Write(l.Bytes[:index])
+		date := l.Bytes[:index]
+
+		if os.Getenv("TZ") != "" {
+			t, err := time.Parse("2006-01-02T15:04:05.000000000Z", string(date))
+
+			if err != nil {
+				log.Error().Err(err).Msg("Invalid date log format")
+				return
+			}
+
+			loc, err := time.LoadLocation(os.Getenv("TZ"))
+
+			if err != nil {
+				log.Error().Err(err).Msg("Invalid timezone")
+				return
+			}
+
+			dateTimezoned := t.In(loc).Format("2006-01-02T15:04:05.000000000Z")
+
+			bb.Write([]byte(dateTimezoned))
+		} else {
+			bb.Write(date)
+		}
+
 		bb.WriteString(" ")
 		if l := 30 - len(l.Bytes[:index]); l > 0 {
 			bb.Write(bytes.Repeat([]byte{' '}, l))
