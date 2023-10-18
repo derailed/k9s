@@ -21,7 +21,7 @@ func (PersistentVolumeClaim) Header(ns string) Header {
 		HeaderColumn{Name: "NAME"},
 		HeaderColumn{Name: "STATUS"},
 		HeaderColumn{Name: "VOLUME"},
-		HeaderColumn{Name: "CAPACITY"},
+		HeaderColumn{Name: "CAPACITY", Capacity: true},
 		HeaderColumn{Name: "ACCESS MODES"},
 		HeaderColumn{Name: "STORAGECLASS"},
 		HeaderColumn{Name: "LABELS", Wide: true},

@@ -49,7 +49,7 @@ func (p PersistentVolume) ColorerFunc() ColorerFunc {
 func (PersistentVolume) Header(string) Header {
 	return Header{
 		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "CAPACITY"},
+		HeaderColumn{Name: "CAPACITY", Capacity: true},
 		HeaderColumn{Name: "ACCESS MODES"},
 		HeaderColumn{Name: "RECLAIM POLICY"},
 		HeaderColumn{Name: "STATUS"},
