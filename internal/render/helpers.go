@@ -12,6 +12,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 )
@@ -55,6 +56,11 @@ func durationToSeconds(duration string) int64 {
 	}
 
 	return n
+}
+
+func capacityToNumber(capacity string) int64 {
+	quantity := resource.MustParse(capacity)
+	return quantity.Value()
 }
 
 // AsThousands prints a number with thousand separator.

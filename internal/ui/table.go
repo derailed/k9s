@@ -247,6 +247,7 @@ func (t *Table) doUpdate(data *render.TableData) {
 		colIndex,
 		custData.Header.IsTimeCol(colIndex),
 		custData.Header.IsMetricsCol(colIndex),
+		custData.Header.IsCapacityCol(colIndex),
 		t.sortCol.asc,
 	)
 
