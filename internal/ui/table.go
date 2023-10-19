@@ -46,7 +46,7 @@ type Table struct {
 	wide        bool
 	toast       bool
 	hasMetrics  bool
-	configSort  bool
+	manualSort  bool
 }
 
 // NewTable returns a new table view.
@@ -203,9 +203,9 @@ func (t *Table) doUpdate(data *render.TableData) {
 		cols = t.viewSetting.Columns
 	}
 	custData := data.Customize(cols, t.wide)
-	// The sortColumn settings in the configuration file can only be used once
-	if t.viewSetting != nil && t.viewSetting.SortColumn != "" && !t.configSort {
-		t.configSort = true
+	// The sortColumn settings in the configuration file are only used
+	// if the sortCol has not been modified manually
+	if t.viewSetting != nil && t.viewSetting.SortColumn != "" && !t.manualSort {
 		tokens := strings.Split(t.viewSetting.SortColumn, ":")
 		if custData.Header.IndexOf(tokens[0], false) >= 0 {
 			t.sortCol.name, t.sortCol.asc = tokens[0], true
@@ -318,6 +318,7 @@ func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tce
 			t.sortCol.asc = asc
 		}
 		t.sortCol.name = name
+		t.manualSort = true
 		t.Refresh()
 		return nil
 	}
