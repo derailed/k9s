@@ -3,13 +3,12 @@ package render
 import (
 	"fmt"
 
+	"github.com/derailed/k9s/internal/client"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/kubectl/pkg/util/storage"
-
-	"github.com/derailed/k9s/internal/client"
 )
 
 // StorageClass renders a K8s StorageClass to screen.
@@ -25,6 +24,8 @@ func (StorageClass) Header(ns string) Header {
 		HeaderColumn{Name: "RECLAIMPOLICY"},
 		HeaderColumn{Name: "VOLUMEBINDINGMODE"},
 		HeaderColumn{Name: "ALLOWVOLUMEEXPANSION"},
+		HeaderColumn{Name: "LABELS", Wide: true},
+		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
@@ -48,6 +49,8 @@ func (s StorageClass) Render(o interface{}, ns string, r *Row) error {
 		strPtrToStr((*string)(sc.ReclaimPolicy)),
 		strPtrToStr((*string)(sc.VolumeBindingMode)),
 		boolPtrToStr(sc.AllowVolumeExpansion),
+		mapToStr(sc.Labels),
+		"",
 		toAge(sc.GetCreationTimestamp()),
 	}
 
