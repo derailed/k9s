@@ -23,6 +23,9 @@ type (
 	// Color represents a color.
 	Color string
 
+	// Indicator represent a string or emoji.
+	Indicator string
+
 	// Colors tracks multiple colors.
 	Colors []Color
 
@@ -136,11 +139,12 @@ type (
 
 	// Title tracks title styles.
 	Title struct {
-		FgColor        Color `yaml:"fgColor"`
-		BgColor        Color `yaml:"bgColor"`
-		HighlightColor Color `yaml:"highlightColor"`
-		CounterColor   Color `yaml:"counterColor"`
-		FilterColor    Color `yaml:"filterColor"`
+		FgColor        Color     `yaml:"fgColor"`
+		BgColor        Color     `yaml:"bgColor"`
+		HighlightColor Color     `yaml:"highlightColor"`
+		CounterColor   Color     `yaml:"counterColor"`
+		FilterColor    Color     `yaml:"filterColor"`
+		ToastIndicator Indicator `yaml:"toastIndicator"`
 	}
 
 	// Info tracks info styles.
@@ -391,6 +395,7 @@ func newTitle() Title {
 		HighlightColor: "fuchsia",
 		CounterColor:   "papayawhip",
 		FilterColor:    "seagreen",
+		ToastIndicator: "!",
 	}
 }
 

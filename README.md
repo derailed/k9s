@@ -853,6 +853,7 @@ k9s:
       highlightColor: skyblue
       counterColor: slateblue
       filterColor: slategray
+      toastIndicator: "!",
   views:
     # TableView attributes.
     table:

@@ -441,6 +441,12 @@ func (t *Table) styleTitle() string {
 	if t.Extras != "" {
 		ns = t.Extras
 	}
+
+	toastIndicator := t.styles.K9s.Frame.Title.ToastIndicator
+	if t.toast && toastIndicator != "" {
+		base = fmt.Sprintf("%s%s", base, toastIndicator)
+	}
+
 	var title string
 	if ns == client.ClusterScope {
 		title = SkinTitle(fmt.Sprintf(TitleFmt, base, rc), t.styles.Frame())

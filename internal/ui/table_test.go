@@ -2,6 +2,7 @@ package ui_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -54,6 +55,24 @@ func TestTableSelection(t *testing.T) {
 	v.ClearSelection()
 	v.SelectFirstRow()
 	assert.Equal(t, 1, v.GetSelectedRowIndex())
+}
+
+func TestToggleToastWithIndicator(t *testing.T) {
+	v := ui.NewTable(client.NewGVR("fred"))
+	v.Init(makeContext())
+	v.SetModel(&mockModel{})
+
+	indicator := "Indicator"
+	v.Styles().K9s.Frame.Title.ToastIndicator = config.Indicator(indicator)
+	v.Update(makeTableData(), false)
+
+	initTitle := v.GetTitle()
+	expectedTitle := strings.Replace(initTitle, "Fred", "Fred"+indicator, 1)
+
+	v.ToggleToast()
+	assert.Equal(t, expectedTitle, v.GetTitle())
+	v.ToggleToast()
+	assert.Equal(t, initTitle, v.GetTitle())
 }
 
 // ----------------------------------------------------------------------------
