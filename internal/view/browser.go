@@ -356,7 +356,13 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 			b.simpleDelete(selections, msg)
 			return nil
 		}
-		b.resourceDelete(selections, msg)
+
+		challenge := ""
+		if b.GVR().R() == "nodes" {
+			challenge = "delete!"
+		}
+
+		b.resourceDelete(selections, msg, challenge)
 	}
 
 	return nil
@@ -577,7 +583,7 @@ func (b *Browser) simpleDelete(selections []string, msg string) {
 	}, func() {})
 }
 
-func (b *Browser) resourceDelete(selections []string, msg string) {
+func (b *Browser) resourceDelete(selections []string, msg string, challenge string) {
 	okFn := func(propagation *metav1.DeletionPropagation, force bool) {
 		b.ShowDeleted()
 		if len(selections) > 1 {
@@ -599,5 +605,5 @@ func (b *Browser) resourceDelete(selections []string, msg string) {
 		}
 		b.refresh()
 	}
-	dialog.ShowDelete(b.app.Styles.Dialog(), b.app.Content.Pages, msg, okFn, func() {})
+	dialog.ShowDelete(b.app.Styles.Dialog(), b.app.Content.Pages, msg, okFn, func() {}, challenge)
 }

@@ -151,7 +151,7 @@ func (w *Workload) resourceDelete(selections []string, msg string) {
 		}
 		w.GetTable().Start()
 	}
-	dialog.ShowDelete(w.App().Styles.Dialog(), w.App().Content.Pages, msg, okFn, func() {})
+	dialog.ShowDelete(w.App().Styles.Dialog(), w.App().Content.Pages, msg, okFn, func() {}, "")
 }
 
 func (w *Workload) describeCmd(evt *tcell.EventKey) *tcell.EventKey {

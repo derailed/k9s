@@ -693,7 +693,7 @@ func (x *Xray) resourceDelete(gvr client.GVR, spec *xray.NodeSpec, msg string) {
 			x.app.factory.DeleteForwarder(spec.Path())
 		}
 		x.Refresh()
-	}, func() {})
+	}, func() {}, "")
 }
 
 // ----------------------------------------------------------------------------
