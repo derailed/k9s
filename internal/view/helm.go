@@ -52,7 +52,7 @@ func (c *Helm) getValsCmd() func(evt *tcell.EventKey) *tcell.EventKey {
 			return evt
 		}
 		c.Values = model.NewValues(c.GVR(), path)
-		v := NewLiveView(c.App(), "Values", c.Values)
+		v := NewLiveView(c.App(), "Values", c.Values, c.App().Config.K9s.AutoRefresh)
 		v.actions.Add(ui.KeyActions{
 			ui.KeyV: ui.NewKeyAction("Toggle All Values", c.toggleValuesCmd, true),
 		})

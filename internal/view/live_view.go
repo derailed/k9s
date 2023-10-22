@@ -37,7 +37,7 @@ type LiveView struct {
 }
 
 // NewLiveView returns a live viewer.
-func NewLiveView(app *App, title string, m model.ResourceViewer) *LiveView {
+func NewLiveView(app *App, title string, m model.ResourceViewer, autoRefresh bool) *LiveView {
 	v := LiveView{
 		Flex:          tview.NewFlex(),
 		text:          tview.NewTextView(),
@@ -48,6 +48,7 @@ func NewLiveView(app *App, title string, m model.ResourceViewer) *LiveView {
 		maxRegions:    0,
 		cmdBuff:       model.NewFishBuff('/', model.FilterBuffer),
 		model:         m,
+		autoRefresh:   autoRefresh,
 	}
 	v.AddItem(v.text, 0, 1, true)
 

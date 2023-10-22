@@ -1,4 +1,5 @@
 k9s:
+  autoRefresh: true
   refreshRate: 2
   readOnly: false
   logger:
