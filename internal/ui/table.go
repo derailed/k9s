@@ -86,6 +86,7 @@ func (t *Table) GVR() client.GVR { return t.gvr }
 
 // ViewSettingsChanged notifies listener the view configuration changed.
 func (t *Table) ViewSettingsChanged(settings config.ViewSetting) {
+	t.manualSort = false // make user changes to the sortColumn take effect
 	t.viewSetting = &settings
 	t.Refresh()
 }
