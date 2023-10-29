@@ -10,7 +10,7 @@ require (
 	github.com/derailed/tcell/v2 v2.3.1-rc.3
 	github.com/derailed/tview v0.8.1
 	github.com/fatih/color v1.15.0
-	github.com/fsnotify/fsnotify v1.6.0
+	github.com/fsnotify/fsnotify v1.7.0
 	github.com/fvbommel/sortorder v1.1.0
 	github.com/ghodss/yaml v1.0.0
 	github.com/mattn/go-colorable v0.1.13
