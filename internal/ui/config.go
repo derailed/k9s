@@ -44,10 +44,11 @@ func (c *Configurator) CustomViewsWatcher(ctx context.Context, s synchronizer) e
 		for {
 			select {
 			case evt := <-w.Events:
-				_ = evt
-				s.QueueUpdateDraw(func() {
-					c.RefreshCustomViews()
-				})
+				if evt.Name == config.K9sViewConfigFile {
+					s.QueueUpdateDraw(func() {
+						c.RefreshCustomViews()
+					})
+				}
 			case err := <-w.Errors:
 				log.Warn().Err(err).Msg("CustomView watcher failed")
 				return
@@ -63,7 +64,7 @@ func (c *Configurator) CustomViewsWatcher(ctx context.Context, s synchronizer) e
 
 	log.Debug().Msgf("CustomView watching `%s", config.K9sViewConfigFile)
 	c.RefreshCustomViews()
-	return w.Add(config.K9sViewConfigFile)
+	return w.Add(config.K9sHome())
 }
 
 // RefreshCustomViews load view configuration changes.
@@ -95,7 +96,7 @@ func (c *Configurator) StylesWatcher(ctx context.Context, s synchronizer) error 
 		for {
 			select {
 			case evt := <-w.Events:
-				if evt.Op != fsnotify.Chmod {
+				if evt.Name == c.skinFile && evt.Op != fsnotify.Chmod {
 					s.QueueUpdateDraw(func() {
 						c.RefreshStyles(c.Config.K9s.CurrentCluster)
 					})
@@ -114,7 +115,7 @@ func (c *Configurator) StylesWatcher(ctx context.Context, s synchronizer) error 
 	}()
 
 	log.Debug().Msgf("SkinWatcher watching `%s", c.skinFile)
-	return w.Add(c.skinFile)
+	return w.Add(config.K9sHome())
 }
 
 // BenchConfig location of the benchmarks configuration file.
