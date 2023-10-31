@@ -11,7 +11,7 @@ const (
 
 // K9s tracks K9s configuration options.
 type K9s struct {
-	AutoRefresh         bool                `yaml:"autoRefresh"`
+	LiveViewAutoRefresh bool                `yaml:"liveViewAutoRefresh"`
 	RefreshRate         int                 `yaml:"refreshRate"`
 	MaxConnRetry        int                 `yaml:"maxConnRetry"`
 	EnableMouse         bool                `yaml:"enableMouse"`

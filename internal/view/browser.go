@@ -260,7 +260,7 @@ func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	v := NewLiveView(b.app, "YAML", model.NewYAML(b.GVR(), path), b.app.Config.K9s.AutoRefresh)
+	v := NewLiveView(b.app, "YAML", model.NewYAML(b.GVR(), path), b.app.Config.K9s.LiveViewAutoRefresh)
 	if err := v.app.inject(v, false); err != nil {
 		v.app.Flash().Err(err)
 	}
