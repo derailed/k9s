@@ -33,6 +33,7 @@ type Flags struct {
 	Write         *bool
 	Crumbsless    *bool
 	ScreenDumpDir *string
+	ThemeSource   *string
 }
 
 // NewFlags returns new configuration flags.
@@ -49,6 +50,7 @@ func NewFlags() *Flags {
 		Write:         boolPtr(false),
 		Crumbsless:    boolPtr(false),
 		ScreenDumpDir: strPtr(K9sDefaultScreenDumpDir),
+		ThemeSource:   strPtr(K9sDefaultThemeSource),
 	}
 }
 
