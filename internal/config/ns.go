@@ -8,8 +8,6 @@ import (
 const (
 	// MaxFavoritesNS number # favorite namespaces to keep in the configuration.
 	MaxFavoritesNS = 9
-	defaultNS      = "default"
-	allNS          = "all"
 )
 
 // Namespace tracks active and favorites namespaces.
@@ -22,8 +20,8 @@ type Namespace struct {
 // NewNamespace create a new namespace configuration.
 func NewNamespace() *Namespace {
 	return &Namespace{
-		Active:    defaultNS,
-		Favorites: []string{defaultNS},
+		Active:    client.DefaultNamespace,
+		Favorites: []string{client.DefaultNamespace},
 	}
 }
 
@@ -42,7 +40,7 @@ func (n *Namespace) Validate(c client.Connection, ks KubeSettings) {
 	}
 
 	for _, ns := range n.Favorites {
-		if ns != allNS && !InList(nn, ns) {
+		if ns != client.NamespaceAll && !InList(nn, ns) {
 			log.Debug().Msgf("[Config] Invalid favorite found '%s' - %t", ns, n.isAllNamespaces())
 			n.rmFavNS(ns)
 		}
@@ -63,7 +61,7 @@ func (n *Namespace) SetActive(ns string, ks KubeSettings) error {
 }
 
 func (n *Namespace) isAllNamespaces() bool {
-	return n.Active == allNS || n.Active == ""
+	return client.IsAllNamespaces(n.Active)
 }
 
 func (n *Namespace) addFavNS(ns string) {
