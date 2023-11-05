@@ -46,6 +46,7 @@ type Table struct {
 	wide        bool
 	toast       bool
 	hasMetrics  bool
+	manualSort  bool
 }
 
 // NewTable returns a new table view.
@@ -85,6 +86,7 @@ func (t *Table) GVR() client.GVR { return t.gvr }
 
 // ViewSettingsChanged notifies listener the view configuration changed.
 func (t *Table) ViewSettingsChanged(settings config.ViewSetting) {
+	t.manualSort = false // make user changes to the sortColumn take effect
 	t.viewSetting = &settings
 	t.Refresh()
 }
@@ -202,9 +204,11 @@ func (t *Table) doUpdate(data *render.TableData) {
 		cols = t.viewSetting.Columns
 	}
 	custData := data.Customize(cols, t.wide)
-	if t.viewSetting != nil && t.viewSetting.SortColumn != "" {
+	// The sortColumn settings in the configuration file are only used
+	// if the sortCol has not been modified manually
+	if t.viewSetting != nil && t.viewSetting.SortColumn != "" && !t.manualSort {
 		tokens := strings.Split(t.viewSetting.SortColumn, ":")
-		if custData.Header.IndexOf(tokens[0], false) >= 0 && custData.Header.IndexOf(t.sortCol.name, false) < 0 {
+		if custData.Header.IndexOf(tokens[0], false) >= 0 {
 			t.sortCol.name, t.sortCol.asc = tokens[0], true
 			if len(tokens) == 2 && tokens[1] == "desc" {
 				t.sortCol.asc = false
@@ -316,6 +320,7 @@ func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tce
 			t.sortCol.asc = asc
 		}
 		t.sortCol.name = name
+		t.manualSort = true
 		t.Refresh()
 		return nil
 	}
