@@ -88,7 +88,7 @@ func defaultEnv(c *client.Config, path string, header render.Header, row render.
 }
 
 func describeResource(app *App, m ui.Tabular, gvr, path string) {
-	v := NewLiveView(app, "Describe", model.NewDescribe(client.NewGVR(gvr), path), app.Config.K9s.LiveViewAutoRefresh)
+	v := NewLiveView(app, "Describe", model.NewDescribe(client.NewGVR(gvr), path))
 	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
 	}
