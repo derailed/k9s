@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -11,6 +13,7 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
 	"github.com/fatih/color"
 	"github.com/rs/zerolog/log"
@@ -26,6 +29,8 @@ const (
 	powerShell     = "powershell"
 	osBetaSelector = "beta.kubernetes.io/os"
 	osSelector     = "kubernetes.io/os"
+	trUpload       = "Upload"
+	trDownload     = "Download"
 )
 
 // Pod represents a pod viewer.
@@ -65,6 +70,7 @@ func (p *Pod) bindDangerousKeys(aa ui.KeyActions) {
 		tcell.KeyCtrlK: ui.NewKeyAction("Kill", p.killCmd, true),
 		ui.KeyS:        ui.NewKeyAction("Shell", p.shellCmd, true),
 		ui.KeyA:        ui.NewKeyAction("Attach", p.attachCmd, true),
+		ui.KeyT:        ui.NewKeyAction("Transfer", p.transferCmd, true),
 	})
 }
 
@@ -249,6 +255,69 @@ func (p *Pod) attachCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := p.GetTable().GetSelectedItem()
+	if path == "" {
+		return nil
+	}
+
+	ns, n := client.Namespaced(path)
+	ack := func(from, to, co string, download, no_preserve bool) bool {
+		local := to
+		if !download {
+			local = from
+		}
+		if _, err := os.Stat(local); !download && os.IsNotExist(err) {
+			p.App().Flash().Err(err)
+			return false
+		}
+
+		args := make([]string, 0, 10)
+		args = append(args, "cp")
+		args = append(args, strings.TrimSpace(from))
+		args = append(args, strings.TrimSpace(to))
+		args = append(args, fmt.Sprintf("--no-preserve=%t", no_preserve))
+		if co != "" {
+			args = append(args, "-c="+co)
+		}
+
+		opts := shellOpts{
+			background: true,
+			args:       args,
+		}
+		op := trUpload
+		if download {
+			op = trDownload
+		}
+
+		fqn := path + ":" + co
+		if err := runK(p.App(), opts); err != nil {
+			p.App().cowCmd(err.Error())
+		} else {
+			p.App().Flash().Infof("%s successful on %s!", op, fqn)
+		}
+		return true
+	}
+
+	pod, err := fetchPod(p.App().factory, path)
+	if err != nil {
+		p.App().Flash().Err(err)
+		return nil
+	}
+
+	opts := dialog.TransferDialogOpts{
+		Title:      "Transfer",
+		Containers: fetchContainers(pod.ObjectMeta, pod.Spec, false),
+		Message:    "Download Files",
+		Pod:        fmt.Sprintf("%s/%s:", ns, n),
+		Ack:        ack,
+		Cancel:     func() {},
+	}
+	dialog.ShowUploads(p.App().Styles.Dialog(), p.App().Content.Pages, opts)
+
+	return nil
+}
+
 // ----------------------------------------------------------------------------
 // Helpers...
 
@@ -291,8 +360,9 @@ func shellIn(a *App, fqn, co string) {
 	args := computeShellArgs(fqn, co, a.Conn().Config().Flags().KubeConfig, os)
 
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
-	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, fqn, co), args: args}) {
-		a.Flash().Err(errors.New("Shell exec failed"))
+	err = runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, fqn, co), args: args})
+	if err != nil {
+		a.Flash().Errf("Shell exec failed: %s", err)
 	}
 }
 
@@ -333,8 +403,8 @@ func resumeAttachIn(a *App, c model.Component, path, co string) {
 func attachIn(a *App, path, co string) {
 	args := buildShellArgs("attach", path, co, a.Conn().Config().Flags().KubeConfig)
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
-	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, path, co), args: args}) {
-		a.Flash().Err(errors.New("Attach exec failed"))
+	if err := runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, path, co), args: args}); err != nil {
+		a.Flash().Errf("Attach exec failed: %s", err)
 	}
 }
 
