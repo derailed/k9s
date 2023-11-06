@@ -3,10 +3,8 @@ package view
 import (
 	"context"
 	"fmt"
-	"runtime"
 	"sort"
 	"strconv"
-	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -296,7 +294,7 @@ func (h *Help) addSection(c int, title string, hh model.MenuHints) {
 
 	for _, hint := range hh {
 		col := c
-		h.SetCell(row, col, padCellWithRef(toMnemonic(hint.Mnemonic), h.maxKey, hint.Mnemonic))
+		h.SetCell(row, col, padCellWithRef(ui.ToMnemonic(hint.Mnemonic), h.maxKey, hint.Mnemonic))
 		col++
 		h.SetCell(row, col, padCell(hint.Description, h.maxDesc))
 		row++
@@ -348,32 +346,12 @@ func (h *Help) updateStyle() {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func toMnemonic(s string) string {
-	if len(s) == 0 {
-		return s
-	}
-
-	return "<" + keyConv(strings.ToLower(s)) + ">"
-}
-
 func extractRef(c *tview.TableCell) string {
 	if ref, ok := c.GetReference().(string); ok {
 		return ref
 	}
 
 	return c.Text
-}
-
-func keyConv(s string) string {
-	if !strings.Contains(s, "alt") {
-		return s
-	}
-
-	if runtime.GOOS != "darwin" {
-		return s
-	}
-
-	return strings.Replace(s, "alt", "opt", 1)
 }
 
 func (h *Help) titleCell(title string) *tview.TableCell {

@@ -63,7 +63,7 @@ func (ff Forwarders) IsPodForwarded(fqn string) bool {
 
 // IsContainerForwarded checks if pod has a forward.
 func (ff Forwarders) IsContainerForwarded(fqn, co string) bool {
-	prefix := fqn+"|"+co
+	prefix := fqn + "|" + co
 	for k := range ff {
 		if strings.HasPrefix(k, prefix) {
 			return true
@@ -86,12 +86,11 @@ func (ff Forwarders) DeleteAll() {
 func (ff Forwarders) Kill(path string) int {
 	var stats int
 	for k, f := range ff {
-		victim := k
-		if victim == path {
+		if strings.HasPrefix(k, path) {
 			stats++
-			log.Debug().Msgf("Stop + Delete port-forward %s", victim)
+			log.Debug().Msgf("Stop + Delete port-forward %s", k)
 			f.Stop()
-			delete(ff, victim)
+			delete(ff, k)
 		}
 	}
 

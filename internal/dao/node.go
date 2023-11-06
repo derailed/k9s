@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -83,7 +84,9 @@ func (o DrainOptions) toDrainHelper(k kubernetes.Interface, w io.Writer) drain.H
 
 // Drain drains a node.
 func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
-	_ = n.ToggleCordon(path, true)
+	if err := n.ToggleCordon(path, true); err != nil {
+		return err
+	}
 
 	dial, err := n.GetFactory().Client().Dial()
 	if err != nil {
@@ -97,7 +100,7 @@ func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
 				return err
 			}
 		}
-		return errs[0]
+		return errors.Join(errs...)
 	}
 
 	if err := h.DeleteOrEvictPods(dd.Pods()); err != nil {

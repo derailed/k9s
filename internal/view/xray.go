@@ -2,7 +2,6 @@ package view
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -413,8 +412,8 @@ func (x *Xray) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		if cfg := x.app.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
 			args = append(args, "--kubeconfig", *cfg)
 		}
-		if !runK(x.app, shellOpts{args: append(args, n)}) {
-			x.app.Flash().Err(errors.New("Edit exec failed"))
+		if err := runK(x.app, shellOpts{args: append(args, n)}); err != nil {
+			x.app.Flash().Errf("Edit exec failed: %s", err)
 		}
 	}
 

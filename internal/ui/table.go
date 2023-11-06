@@ -31,11 +31,12 @@ type (
 
 // Table represents tabular data.
 type Table struct {
-	gvr     client.GVR
-	sortCol SortColumn
-	header  render.Header
-	Path    string
-	Extras  string
+	gvr        client.GVR
+	sortCol    SortColumn
+	manualSort bool
+	header     render.Header
+	Path       string
+	Extras     string
 	*SelectTable
 	actions     KeyActions
 	cmdBuff     *model.FishBuff
@@ -46,7 +47,6 @@ type Table struct {
 	wide        bool
 	toast       bool
 	hasMetrics  bool
-	manualSort  bool
 }
 
 // NewTable returns a new table view.
@@ -86,8 +86,7 @@ func (t *Table) GVR() client.GVR { return t.gvr }
 
 // ViewSettingsChanged notifies listener the view configuration changed.
 func (t *Table) ViewSettingsChanged(settings config.ViewSetting) {
-	t.manualSort = false // make user changes to the sortColumn take effect
-	t.viewSetting = &settings
+	t.viewSetting, t.manualSort = &settings, false
 	t.Refresh()
 }
 
@@ -208,7 +207,7 @@ func (t *Table) doUpdate(data *render.TableData) {
 	// if the sortCol has not been modified manually
 	if t.viewSetting != nil && t.viewSetting.SortColumn != "" && !t.manualSort {
 		tokens := strings.Split(t.viewSetting.SortColumn, ":")
-		if custData.Header.IndexOf(tokens[0], false) >= 0 {
+		if custData.Header.IndexOf(tokens[0], false) >= 0 && !t.manualSort {
 			t.sortCol.name, t.sortCol.asc = tokens[0], true
 			if len(tokens) == 2 && tokens[1] == "desc" {
 				t.sortCol.asc = false
@@ -315,6 +314,7 @@ func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads M
 // SortColCmd designates a sorted column.
 func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
+		t.manualSort = true
 		t.sortCol.asc = !t.sortCol.asc
 		if t.sortCol.name != name {
 			t.sortCol.asc = asc

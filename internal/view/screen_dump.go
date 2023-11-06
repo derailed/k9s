@@ -2,7 +2,6 @@ package view
 
 import (
 	"context"
-	"errors"
 	"path/filepath"
 
 	"github.com/derailed/k9s/internal"
@@ -49,6 +48,6 @@ func (s *ScreenDump) edit(app *App, model ui.Tabular, gvr, path string) {
 	s.Stop()
 	defer s.Start()
 	if !edit(app, shellOpts{clear: true, args: []string{path}}) {
-		app.Flash().Err(errors.New("Failed to launch editor"))
+		app.Flash().Errf("Failed to launch editor")
 	}
 }
