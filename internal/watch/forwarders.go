@@ -1,7 +1,6 @@
 package watch
 
 import (
-	"fmt"
 	"strings"
 
 	"github.com/derailed/k9s/internal/port"
@@ -23,7 +22,7 @@ type Forwarder interface {
 	// Container returns a container name.
 	Container() string
 
-	// Ports returns the port mapping.
+	// Port returns the port mapping.
 	Port() string
 
 	// FQN returns the full port-forward name.
@@ -50,9 +49,9 @@ func NewForwarders() Forwarders {
 	return make(map[string]Forwarder)
 }
 
-// BOZO!! Review!!!
 // IsPodForwarded checks if pod has a forward.
 func (ff Forwarders) IsPodForwarded(fqn string) bool {
+	fqn += "|"
 	for k := range ff {
 		if strings.HasPrefix(k, fqn) {
 			return true
@@ -64,9 +63,9 @@ func (ff Forwarders) IsPodForwarded(fqn string) bool {
 
 // IsContainerForwarded checks if pod has a forward.
 func (ff Forwarders) IsContainerForwarded(fqn, co string) bool {
-	prefix := fqn + "|" + co
+	fqn += "|" + co
 	for k := range ff {
-		if strings.HasPrefix(k, prefix) {
+		if strings.HasPrefix(k, fqn) {
 			return true
 		}
 	}
@@ -91,8 +90,7 @@ func (ff Forwarders) Kill(path string) int {
 	// The '|' is added to make sure we do not delete port forwards from other pods that have the same prefix
 	// Without the `|` port forwards for pods, default/web-0 and default/web-0-bla would be both deleted
 	// even if we want only port forwards for default/web-0 to be deleted
-	prefix := fmt.Sprintf("%s|", path)
-
+	prefix := path + "|"
 	for k, f := range ff {
 		if k == path || strings.HasPrefix(k, prefix) {
 			stats++
@@ -109,6 +107,6 @@ func (ff Forwarders) Kill(path string) int {
 func (ff Forwarders) Dump() {
 	log.Debug().Msgf("----------- PORT-FORWARDS --------------")
 	for k, f := range ff {
-		log.Debug().Msgf("  %s -- %#v", k, f)
+		log.Debug().Msgf("  %s -- %s", k, f)
 	}
 }

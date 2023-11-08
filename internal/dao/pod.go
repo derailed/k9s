@@ -500,3 +500,37 @@ func GetDefaultContainer(m metav1.ObjectMeta, spec v1.PodSpec) (string, bool) {
 
 	return "", false
 }
+
+func (p *Pod) Sanitize(ctx context.Context, ns string) (int, error) {
+	oo, err := p.Resource.List(ctx, ns)
+	if err != nil {
+		return 0, err
+	}
+
+	var count int
+	for _, o := range oo {
+		u, ok := o.(*unstructured.Unstructured)
+		if !ok {
+			continue
+		}
+		var pod v1.Pod
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &pod)
+		if err != nil {
+			continue
+		}
+		log.Debug().Msgf("Pod status: %q", render.PodStatus(&pod))
+		switch render.PodStatus(&pod) {
+		case render.PhaseCompleted, render.PhaseCrashLoop, render.PhaseError, render.PhaseImagePullBackOff, render.PhaseOOMKilled:
+			log.Debug().Msgf("Sanitizing %s:%s", pod.Namespace, pod.Name)
+			fqn := client.FQN(pod.Namespace, pod.Name)
+			if err := p.Resource.Delete(ctx, fqn, nil, NowGrace); err != nil {
+				log.Warn().Err(err).Msgf("Pod %s deletion failed", fqn)
+				continue
+			}
+			count++
+		}
+	}
+	log.Debug().Msgf("Sanitizer deleted %d pods", count)
+
+	return count, nil
+}

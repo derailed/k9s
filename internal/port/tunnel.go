@@ -32,6 +32,11 @@ func NewPortTunnel(a, co, lp, cp string) PortTunnel {
 	}
 }
 
+// String dumps as string.
+func (t PortTunnel) String() string {
+	return fmt.Sprintf("%s|%s|%s:%s", t.Address, t.Container, t.LocalPort, t.ContainerPort)
+}
+
 // PortMap returns a port mapping.
 func (t PortTunnel) PortMap() string {
 	if t.LocalPort == "" {
