@@ -23,6 +23,8 @@ import (
 var (
 	_ Accessor       = (*Node)(nil)
 	_ NodeMaintainer = (*Node)(nil)
+
+	ErrNodeAlreadyCordoned = errors.New("node is already cordoned")
 )
 
 // NodeMetricsFunc retrieves node metrics.
@@ -49,7 +51,7 @@ func (n *Node) ToggleCordon(path string, cordon bool) error {
 
 	if !h.UpdateIfRequired(cordon) {
 		if cordon {
-			return fmt.Errorf("node is already cordoned")
+			return ErrNodeAlreadyCordoned
 		}
 		return fmt.Errorf("node is already uncordoned")
 	}
@@ -84,7 +86,7 @@ func (o DrainOptions) toDrainHelper(k kubernetes.Interface, w io.Writer) drain.H
 
 // Drain drains a node.
 func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
-	if err := n.ToggleCordon(path, true); err != nil {
+	if err := n.ToggleCordon(path, true); ignoreNodeAlreadyCordoned(err) != nil {
 		return err
 	}
 
@@ -269,4 +271,13 @@ func FetchNodes(ctx context.Context, f Factory, labelsSel string) (*v1.NodeList,
 	}
 
 	return &v1.NodeList{Items: nn}, nil
+}
+
+// ignoreNodeAlreadyCordoned returns nil on ErrNodeAlreadyCordoned errors.
+// All other values that are not ErrNodeAlreadyCordoned errors or nil are returned unmodified.
+func ignoreNodeAlreadyCordoned(err error) error {
+	if err == nil || errors.Is(err, ErrNodeAlreadyCordoned) {
+		return nil
+	}
+	return err
 }
