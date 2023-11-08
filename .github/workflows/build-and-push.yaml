@@ -1,0 +1,25 @@
+name: Build k9s docker image
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Get version
+        run: |
+          eval `cat Dockerfile | grep 'K9S_VERSION' | head -1 | awk '{print $2}'`
+          echo "K9S_VERSION=$K9S_VERSION" >> $GITHUB_ENV
+      - name: Build and publish
+        uses: ozlevka-work/docker-build-gh-repo-push@develop
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          image-tag: ${{ env.K9S_VERSION }}
