@@ -1,6 +1,7 @@
 package watch
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/derailed/k9s/internal/port"
@@ -85,8 +86,15 @@ func (ff Forwarders) DeleteAll() {
 // Kill stops and delete a port-forwards associated with pod.
 func (ff Forwarders) Kill(path string) int {
 	var stats int
+
+	// The way port forwards are stored is `pod_fqn|container|local_port:container_port`
+	// The '|' is added to make sure we do not delete port forwards from other pods that have the same prefix
+	// Without the `|` port forwards for pods, default/web-0 and default/web-0-bla would be both deleted
+	// even if we want only port forwards for default/web-0 to be deleted
+	prefix := fmt.Sprintf("%s|", path)
+
 	for k, f := range ff {
-		if strings.HasPrefix(k, path) {
+		if k == path || strings.HasPrefix(k, prefix) {
 			stats++
 			log.Debug().Msgf("Stop + Delete port-forward %s", k)
 			f.Stop()
