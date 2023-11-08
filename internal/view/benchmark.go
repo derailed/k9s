@@ -65,7 +65,7 @@ func fileToSubject(path string) string {
 }
 
 func benchDir(cfg *config.Config) string {
-	return filepath.Join(perf.K9sBenchDir, cfg.K9s.CurrentContextDir())
+	return filepath.Join(perf.K9sBenchDir, cfg.K9s.CurrentCluster)
 }
 
 func readBenchFile(cfg *config.Config, n string) (string, error) {
