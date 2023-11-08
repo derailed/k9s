@@ -91,7 +91,7 @@ func TestLogItemRender(t *testing.T) {
 	}
 }
 
-func BenchmarkLogItemRender(b *testing.B) {
+func BenchmarkLogItemRenderTS(b *testing.B) {
 	s := []byte(fmt.Sprintf("%s %s\n", "2018-12-14T10:36:43.326972-07:00", "Testing 1,2,3..."))
 	i := dao.NewLogItem(s)
 	i.Pod, i.Container = "fred", "blee"

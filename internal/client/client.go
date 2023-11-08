@@ -19,6 +19,7 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
+	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 	metricsapi "k8s.io/metrics/pkg/apis/metrics"
 	"k8s.io/metrics/pkg/client/clientset/versioned"
 )
@@ -31,6 +32,9 @@ const (
 )
 
 var supportedMetricsAPIVersions = []string{"v1beta1"}
+
+// Namespaces tracks a collection of namespace names.
+type Namespaces map[string]struct{}
 
 // APIClient represents a Kubernetes api client.
 type APIClient struct {
@@ -209,7 +213,7 @@ func (a *APIClient) ServerVersion() (*version.Info, error) {
 // ValidNamespaces returns all available namespaces.
 func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
 	if a == nil {
-		return []v1.Namespace{}, nil
+		return nil, fmt.Errorf("validNamespaces: no available client found")
 	}
 
 	if nn, ok := a.cache.Get("validNamespaces"); ok {
@@ -282,6 +286,9 @@ func (a *APIClient) Config() *Config {
 // HasMetrics checks if the cluster supports metrics.
 func (a *APIClient) HasMetrics() bool {
 	err := a.supportsMetricsResources()
+	if err != nil {
+		log.Debug().Msgf("Metrics server detect failed: %s", err)
+	}
 	return err == nil
 }
 
@@ -348,6 +355,7 @@ func (a *APIClient) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	httpCacheDir := filepath.Join(mustHomeDir(), ".kube", "http-cache")
 	discCacheDir := filepath.Join(mustHomeDir(), ".kube", "cache", "discovery", toHostDir(cfg.Host))
 
@@ -446,7 +454,9 @@ func (a *APIClient) supportsMetricsResources() error {
 		a.cache.Add(cacheMXAPIKey, supported, cacheExpiry)
 	}()
 
-	dial, err := a.CachedDiscovery()
+	cfg := cmdutil.NewMatchVersionFlags(a.config.flags)
+	f := cmdutil.NewFactory(cfg)
+	dial, err := f.ToDiscoveryClient()
 	if err != nil {
 		log.Warn().Err(err).Msgf("Unable to dial discovery API")
 		return err

@@ -89,14 +89,14 @@ func (a *App) Init(version string, rate int) error {
 	a.SetInputCapture(a.keyboard)
 	a.bindKeys()
 	if a.Conn() == nil {
-		return errors.New("No client connection detected")
+		return errors.New("no client connection detected")
 	}
 	ns := a.Config.ActiveNamespace()
 
 	a.factory = watch.NewFactory(a.Conn())
 	ok, err := a.isValidNS(ns)
 	if !ok && err == nil {
-		return fmt.Errorf("Invalid namespace %s", ns)
+		return fmt.Errorf("invalid namespace %s", ns)
 	}
 	a.initFactory(ns)
 
@@ -206,8 +206,7 @@ func (a *App) ActiveView() model.Component {
 }
 
 func (a *App) toggleHeader(header, logo bool) {
-	a.showHeader = header
-	a.showLogo = logo
+	a.showHeader, a.showLogo = header, logo
 	flex, ok := a.Main.GetPrimitive("main").(*tview.Flex)
 	if !ok {
 		log.Fatal().Msg("Expecting valid flex view")
@@ -285,7 +284,7 @@ func (a *App) Resume() {
 }
 
 func (a *App) clusterUpdater(ctx context.Context) {
-	if err := a.refreshCluster(); err != nil {
+	if err := a.refreshCluster(ctx); err != nil {
 		log.Error().Err(err).Msgf("Cluster updater failed!")
 		return
 	}
@@ -298,7 +297,7 @@ func (a *App) clusterUpdater(ctx context.Context) {
 			log.Debug().Msg("ClusterInfo updater canceled!")
 			return
 		case <-time.After(delay):
-			if err := a.refreshCluster(); err != nil {
+			if err := a.refreshCluster(ctx); err != nil {
 				log.Error().Err(err).Msgf("ClusterUpdater failed")
 				if delay = bf.NextBackOff(); delay == backoff.Stop {
 					a.BailOut()
@@ -312,7 +311,7 @@ func (a *App) clusterUpdater(ctx context.Context) {
 	}
 }
 
-func (a *App) refreshCluster() error {
+func (a *App) refreshCluster(context.Context) error {
 	c := a.Content.Top()
 	if ok := a.Conn().CheckConnectivity(); ok {
 		if atomic.LoadInt32(&a.conRetry) > 0 {
@@ -338,7 +337,7 @@ func (a *App) refreshCluster() error {
 	}
 	if count > 0 {
 		a.Status(model.FlashWarn, fmt.Sprintf("Dial K8s Toast [%d/%d]", count, maxConnRetry))
-		return fmt.Errorf("Conn check failed (%d/%d)", count, maxConnRetry)
+		return fmt.Errorf("conn check failed (%d/%d)", count, maxConnRetry)
 	}
 
 	// Reload alias
@@ -367,7 +366,7 @@ func (a *App) switchNS(ns string) error {
 		return err
 	}
 	if !ok {
-		return fmt.Errorf("Invalid namespace %q", ns)
+		return fmt.Errorf("invalid namespace %q", ns)
 	}
 	if err := a.Config.SetActiveNamespace(ns); err != nil {
 		return err

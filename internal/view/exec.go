@@ -39,15 +39,17 @@ type shellOpts struct {
 	args              []string
 }
 
-func runK(a *App, opts shellOpts) bool {
+func (s shellOpts) String() string {
+	return fmt.Sprintf("%s %s", s.binary, strings.Join(s.args, " "))
+}
+
+func runK(a *App, opts shellOpts) error {
 	bin, err := exec.LookPath("kubectl")
 	if errors.Is(err, exec.ErrDot) {
-		log.Error().Err(err).Msgf("kubectl command must not be in the current working directory")
-		return false
+		return fmt.Errorf("kubectl command must not be in the current working directory: %w", err)
 	}
 	if err != nil {
-		log.Error().Err(err).Msgf("kubectl command is not in your path")
-		return false
+		return fmt.Errorf("kubectl command is not in your path: %w", err)
 	}
 	args := []string{opts.args[0]}
 	if u, err := a.Conn().Config().ImpersonateUser(); err == nil {
@@ -66,20 +68,42 @@ func runK(a *App, opts shellOpts) bool {
 	if len(args) > 0 {
 		opts.args = append(args, opts.args[1:]...)
 	}
-	opts.binary, opts.background = bin, false
+	opts.binary = bin
 
-	return run(a, opts)
+	suspended, errChan := run(a, opts)
+	if !suspended {
+		return fmt.Errorf("unable to run command")
+	}
+	var errs error
+	for e := range errChan {
+		errs = errors.Join(errs, e)
+	}
+
+	return errs
 }
 
-func run(a *App, opts shellOpts) bool {
+func run(a *App, opts shellOpts) (bool, chan error) {
+	errChan := make(chan error, 1)
+
+	if opts.background {
+		if err := execute(opts); err != nil {
+			errChan <- err
+			a.Flash().Errf("Exec failed %q: %s", opts, err)
+		}
+		close(errChan)
+		return true, errChan
+	}
+
 	a.Halt()
 	defer a.Resume()
 
 	return a.Suspend(func() {
 		if err := execute(opts); err != nil {
-			a.Flash().Errf("Command exited: %v", err)
+			errChan <- err
+			a.Flash().Errf("Exec failed %q: %s", opts, err)
 		}
-	})
+		close(errChan)
+	}), errChan
 }
 
 func edit(a *App, opts shellOpts) bool {
@@ -93,7 +117,15 @@ func edit(a *App, opts shellOpts) bool {
 	}
 	opts.binary, opts.background = bin, false
 
-	return run(a, opts)
+	suspended, errChan := run(a, opts)
+	if !suspended {
+		a.Flash().Errf("edit command failed")
+	}
+	for e := range errChan {
+		a.Flash().Err(e)
+		return false
+	}
+	return true
 }
 
 func execute(opts shellOpts) error {
@@ -113,8 +145,8 @@ func execute(opts shellOpts) error {
 	go func(cancel context.CancelFunc) {
 		defer log.Debug().Msgf("SIGNAL_GOR - BAILED!!")
 		select {
-		case <-sigChan:
-			log.Debug().Msgf("Command canceled with signal!")
+		case sig := <-sigChan:
+			log.Debug().Msgf("Command canceled with signal! %#v", sig)
 			cancel()
 		case <-ctx.Done():
 			log.Debug().Msgf("SIGNAL Context CANCELED!")
@@ -123,7 +155,7 @@ func execute(opts shellOpts) error {
 
 	cmds := make([]*exec.Cmd, 0, 1)
 	cmd := exec.CommandContext(ctx, opts.binary, opts.args...)
-	log.Debug().Msgf("RUNNING> %s", cmd)
+	log.Debug().Msgf("RUNNING> %s", opts)
 	cmds = append(cmds, cmd)
 
 	for _, p := range opts.pipes {
@@ -136,7 +168,14 @@ func execute(opts shellOpts) error {
 		cmds = append(cmds, cmd)
 	}
 
-	return pipe(ctx, opts, cmds...)
+	var o, e bytes.Buffer
+	err := pipe(ctx, opts, &o, &e, cmds...)
+	if err != nil {
+		log.Err(err).Msgf("Command failed")
+		return errors.Join(err, fmt.Errorf("%s", e.String()))
+	}
+
+	return nil
 }
 
 func runKu(a *App, opts shellOpts) (string, error) {
@@ -209,18 +248,20 @@ func ssh(a *App, node string) error {
 	}
 
 	cl := a.Config.K9s.ActiveCluster()
+	if cl == nil {
+		return fmt.Errorf("no active cluster detected")
+	}
 	ns := cl.ShellPod.Namespace
-	sshIn(a, client.FQN(ns, k9sShellPodName()), k9sShell)
 
-	return nil
+	return sshIn(a, client.FQN(ns, k9sShellPodName()), k9sShell)
 }
 
-func sshIn(a *App, fqn, co string) {
+func sshIn(a *App, fqn, co string) error {
 	cl := a.Config.K9s.ActiveCluster()
 	cfg := cl.ShellPod
 	os, err := getPodOS(a.factory, fqn)
 	if err != nil {
-		log.Warn().Err(err).Msgf("os detect failed")
+		return fmt.Errorf("os detect failed: %w", err)
 	}
 
 	args := buildShellArgs("exec", fqn, co, a.Conn().Config().Flags().KubeConfig)
@@ -237,9 +278,12 @@ func sshIn(a *App, fqn, co string) {
 	log.Debug().Msgf("ARGS %#v", args)
 
 	c := color.New(color.BgGreen).Add(color.FgBlack).Add(color.Bold)
-	if !runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, fqn, co), args: args}) {
-		a.Flash().Err(errors.New("Shell exec failed"))
+	err = runK(a, shellOpts{clear: true, banner: c.Sprintf(bannerFmt, fqn, co), args: args})
+	if err != nil {
+		return fmt.Errorf("shell exec failed: %w", err)
 	}
+
+	return nil
 }
 
 func nukeK9sShell(a *App) error {
@@ -300,7 +344,7 @@ func launchShellPod(a *App, node string) error {
 		time.Sleep(k9sShellRetryDelay)
 	}
 
-	return fmt.Errorf("Unable to launch shell pod on node %s", node)
+	return fmt.Errorf("unable to launch shell pod on node %s", node)
 }
 
 func k9sShellPodName() string {
@@ -376,7 +420,7 @@ func asResource(r config.Limits) v1.ResourceRequirements {
 	}
 }
 
-func pipe(_ context.Context, opts shellOpts, cmds ...*exec.Cmd) error {
+func pipe(_ context.Context, opts shellOpts, w, e io.Writer, cmds ...*exec.Cmd) error {
 	if len(cmds) == 0 {
 		return nil
 	}
@@ -384,31 +428,17 @@ func pipe(_ context.Context, opts shellOpts, cmds ...*exec.Cmd) error {
 	if len(cmds) == 1 {
 		cmd := cmds[0]
 		if opts.background {
-			cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, log.Logger, log.Logger
-			return cmd.Start()
+			cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, w, e
+			return cmd.Run()
 		}
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
-		// BOZO!!
-		//cmd.SysProcAttr = &syscall.SysProcAttr{
-		////	//Setpgid:    true,
-		////	//Setctty:    true,
-		//	Foreground: true,
-		//}
 		_, _ = cmd.Stdout.Write([]byte(opts.banner))
 
 		log.Debug().Msgf("Running Start")
 		err := cmd.Run()
-		log.Debug().Msgf("Running Done")
-		return err
+		log.Debug().Msgf("Running Done: %s", err)
 
-		// BOZO!!
-		// select {
-		// case <-ctx.Done():
-		// 	return errors.New("canceled by operator")
-		// default:
-		// 	log.Debug().Msgf("PIPE RETURN %s", err)
-		// 	return err
-		// }
+		return err
 	}
 
 	last := len(cmds) - 1
@@ -428,8 +458,5 @@ func pipe(_ context.Context, opts shellOpts, cmds ...*exec.Cmd) error {
 		}
 	}
 
-	log.Debug().Msgf("WAITING!!!")
-	err := cmds[len(cmds)-1].Wait()
-	log.Debug().Msgf("DONE WAITING!!!")
-	return err
+	return cmds[len(cmds)-1].Wait()
 }

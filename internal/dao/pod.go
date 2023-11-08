@@ -181,7 +181,7 @@ func (p *Pod) GetInstance(fqn string) (*v1.Pod, error) {
 func (p *Pod) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error) {
 	fac, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
 	if !ok {
-		return nil, errors.New("No factory in context")
+		return nil, errors.New("no factory in context")
 	}
 	o, err := fac.Get(p.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {

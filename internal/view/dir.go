@@ -2,7 +2,6 @@ package view
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -121,7 +120,7 @@ func (d *Dir) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	d.Stop()
 	defer d.Start()
 	if !edit(d.App(), shellOpts{clear: true, args: []string{sel}}) {
-		d.App().Flash().Err(errors.New("Failed to launch editor"))
+		d.App().Flash().Errf("Failed to launch editor")
 	}
 
 	return nil
@@ -230,18 +229,18 @@ func (d *Dir) delCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	opts := []string{"-f"}
-	msgRessource := "manifest"
+	msgResource := "manifest"
 	if containsDir(sel) {
 		opts = append(opts, "-R")
 	}
 	if isKustomized(sel) {
 		opts = []string{"-k"}
-		msgRessource = "kustomization"
+		msgResource = "kustomization"
 	}
 
 	d.Stop()
 	defer d.Start()
-	msg := fmt.Sprintf("Delete resource(s) in %s %s", msgRessource, sel)
+	msg := fmt.Sprintf("Delete resource(s) in %s %s", msgResource, sel)
 	dialog.ShowConfirm(d.App().Styles.Dialog(), d.App().Content.Pages, "Confirm Delete", msg, func() {
 		args := make([]string, 0, 10)
 		args = append(args, "delete")

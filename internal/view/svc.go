@@ -69,7 +69,7 @@ func (s *Service) showPods(a *App, _ ui.Tabular, gvr, path string) {
 
 func (s *Service) checkSvc(svc *v1.Service) error {
 	if svc.Spec.Type != "NodePort" && svc.Spec.Type != "LoadBalancer" {
-		return errors.New("You must select a reachable service")
+		return errors.New("you must select a reachable service")
 	}
 	return nil
 }
@@ -83,7 +83,7 @@ func (s *Service) getExternalPort(svc *v1.Service) (string, error) {
 	// Grab the first port pair for now...
 	tokens := strings.Split(pp[0], "►")
 	if len(tokens) < 2 {
-		return "", errors.New("No ports pair found")
+		return "", errors.New("no ports pair found")
 	}
 
 	return tokens[1], nil
@@ -142,7 +142,7 @@ func (s *Service) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 // BOZO!! Refactor used by forwards.
 func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
 	if cfg.HTTP.Host == "" {
-		return fmt.Errorf("Invalid benchmark host %q", cfg.HTTP.Host)
+		return fmt.Errorf("invalid benchmark host %q", cfg.HTTP.Host)
 	}
 
 	var err error
