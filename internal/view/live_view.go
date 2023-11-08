@@ -48,6 +48,7 @@ func NewLiveView(app *App, title string, m model.ResourceViewer) *LiveView {
 		maxRegions:    0,
 		cmdBuff:       model.NewFishBuff('/', model.FilterBuffer),
 		model:         m,
+		autoRefresh:   app.Config.K9s.LiveViewAutoRefresh,
 	}
 	v.AddItem(v.text, 0, 1, true)
 

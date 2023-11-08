@@ -319,6 +319,8 @@ K9s uses aliases to navigate most K8s resources.
   ```yaml
   # $XDG_CONFIG_HOME/k9s/config.yml
   k9s:
+    # Enable periodic refresh of resource browser windows. Default false
+    liveViewAutoRefresh: false
     # Represents ui poll intervals. Default 2secs
     refreshRate: 2
     # Number of retries once the connection to the api-server is lost. Default 15.

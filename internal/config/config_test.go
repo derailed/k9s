@@ -277,6 +277,7 @@ func (m *mockSettings) ClusterNames() (map[string]struct{}, error) { return nil,
 // Test Data...
 
 var expectedConfig = `k9s:
+  liveViewAutoRefresh: true
   refreshRate: 100
   maxConnRetry: 5
   enableMouse: false
@@ -376,6 +377,7 @@ var expectedConfig = `k9s:
 `
 
 var resetConfig = `k9s:
+  liveViewAutoRefresh: true
   refreshRate: 2
   maxConnRetry: 5
   enableMouse: false

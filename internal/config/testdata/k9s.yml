@@ -1,4 +1,5 @@
 k9s:
+  liveViewAutoRefresh: true
   refreshRate: 2
   readOnly: false
   logger:
