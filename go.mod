@@ -12,7 +12,6 @@ require (
 	github.com/fatih/color v1.16.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/fvbommel/sortorder v1.1.0
-	github.com/ghodss/yaml v1.0.0
 	github.com/mattn/go-colorable v0.1.13
 	github.com/mattn/go-runewidth v0.0.14
 	github.com/petergtz/pegomock v2.9.0+incompatible
