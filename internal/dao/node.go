@@ -23,8 +23,6 @@ import (
 var (
 	_ Accessor       = (*Node)(nil)
 	_ NodeMaintainer = (*Node)(nil)
-
-	ErrNodeAlreadyCordoned = errors.New("node is already cordoned")
 )
 
 // NodeMetricsFunc retrieves node metrics.
@@ -51,7 +49,7 @@ func (n *Node) ToggleCordon(path string, cordon bool) error {
 
 	if !h.UpdateIfRequired(cordon) {
 		if cordon {
-			return ErrNodeAlreadyCordoned
+			return fmt.Errorf("node is already cordoned")
 		}
 		return fmt.Errorf("node is already uncordoned")
 	}
@@ -86,8 +84,15 @@ func (o DrainOptions) toDrainHelper(k kubernetes.Interface, w io.Writer) drain.H
 
 // Drain drains a node.
 func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
-	if err := n.ToggleCordon(path, true); ignoreNodeAlreadyCordoned(err) != nil {
+	cordoned, err := n.ensureCordoned(path)
+	if err != nil {
 		return err
+	}
+
+	if !cordoned {
+		if err = n.ToggleCordon(path, true); err != nil {
+			return err
+		}
 	}
 
 	dial, err := n.GetFactory().Client().Dial()
@@ -219,6 +224,16 @@ func (n *Node) GetPods(nodeName string) ([]*v1.Pod, error) {
 	return pp, nil
 }
 
+// ensureCordoned returns whether the given node has been cordoned
+func (n *Node) ensureCordoned(path string) (bool, error) {
+	o, err := FetchNode(context.Background(), n.Factory, path)
+	if err != nil {
+		return false, err
+	}
+
+	return o.Spec.Unschedulable, nil
+}
+
 // ----------------------------------------------------------------------------
 // Helpers...
 
@@ -271,13 +286,4 @@ func FetchNodes(ctx context.Context, f Factory, labelsSel string) (*v1.NodeList,
 	}
 
 	return &v1.NodeList{Items: nn}, nil
-}
-
-// ignoreNodeAlreadyCordoned returns nil on ErrNodeAlreadyCordoned errors.
-// All other values that are not ErrNodeAlreadyCordoned errors or nil are returned unmodified.
-func ignoreNodeAlreadyCordoned(err error) error {
-	if err == nil || errors.Is(err, ErrNodeAlreadyCordoned) {
-		return nil
-	}
-	return err
 }
