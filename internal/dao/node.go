@@ -84,8 +84,15 @@ func (o DrainOptions) toDrainHelper(k kubernetes.Interface, w io.Writer) drain.H
 
 // Drain drains a node.
 func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
-	if err := n.ToggleCordon(path, true); err != nil {
+	cordoned, err := n.ensureCordoned(path)
+	if err != nil {
 		return err
+	}
+
+	if !cordoned {
+		if err = n.ToggleCordon(path, true); err != nil {
+			return err
+		}
 	}
 
 	dial, err := n.GetFactory().Client().Dial()
@@ -215,6 +222,16 @@ func (n *Node) GetPods(nodeName string) ([]*v1.Pod, error) {
 	}
 
 	return pp, nil
+}
+
+// ensureCordoned returns whether the given node has been cordoned
+func (n *Node) ensureCordoned(path string) (bool, error) {
+	o, err := FetchNode(context.Background(), n.Factory, path)
+	if err != nil {
+		return false, err
+	}
+
+	return o.Spec.Unschedulable, nil
 }
 
 // ----------------------------------------------------------------------------
