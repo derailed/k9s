@@ -492,15 +492,28 @@ func getPodOS(f dao.Factory, fqn string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if os, ok := po.Spec.NodeSelector[osBetaSelector]; ok {
-		return os, nil
+	if podOS, ok := po.Spec.NodeSelector[osBetaSelector]; ok {
+		return podOS, nil
 	}
-	os, ok := po.Spec.NodeSelector[osSelector]
-	if !ok {
-		return "", fmt.Errorf("no os information available")
+	if podOS, ok := po.Spec.NodeSelector[osSelector]; ok {
+		return podOS, nil
 	}
 
-	return os, nil
+	if len(po.Spec.NodeName) != 0 {
+		node, err := dao.FetchNode(context.Background(), f, po.Spec.NodeName)
+		if err != nil {
+			return "", err
+		}
+
+		if nodeOS, ok := node.Labels[osBetaSelector]; ok {
+			return nodeOS, nil
+		}
+		if nodeOS, ok := node.Labels[osSelector]; ok {
+			return nodeOS, nil
+		}
+	}
+
+	return "", fmt.Errorf("no os information available")
 }
 
 func resourceSorters(t *Table) ui.KeyActions {
