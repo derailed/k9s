@@ -487,10 +487,6 @@ func podIsRunning(f dao.Factory, path string) bool {
 	return re.Phase(po) == render.Running
 }
 
-var (
-	ErrNoOSInfoFound = errors.New("no os information available")
-)
-
 func getPodOS(f dao.Factory, fqn string) (string, error) {
 	po, err := fetchPod(f, fqn)
 	if err != nil {
@@ -500,7 +496,7 @@ func getPodOS(f dao.Factory, fqn string) (string, error) {
 		return podOS, nil
 	}
 	if len(po.Spec.NodeName) == 0 {
-		return "", ErrNoOSInfoFound
+		return "", errors.New("no os information available")
 	}
 
 	node, err := dao.FetchNode(context.Background(), f, po.Spec.NodeName)
@@ -510,7 +506,7 @@ func getPodOS(f dao.Factory, fqn string) (string, error) {
 	if nodeOS, ok := osFromSelector(node.Labels); ok {
 		return nodeOS, nil
 	}
-	return "", ErrNoOSInfoFound
+	return "", errors.New("no os information available")
 }
 
 func osFromSelector(m map[string]string) (string, bool) {
