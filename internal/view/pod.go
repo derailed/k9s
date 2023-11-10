@@ -487,33 +487,39 @@ func podIsRunning(f dao.Factory, path string) bool {
 	return re.Phase(po) == render.Running
 }
 
+var (
+	ErrNoOSInfoFound = errors.New("no os information available")
+)
+
 func getPodOS(f dao.Factory, fqn string) (string, error) {
 	po, err := fetchPod(f, fqn)
 	if err != nil {
 		return "", err
 	}
-	if podOS, ok := po.Spec.NodeSelector[osBetaSelector]; ok {
+	if podOS, ok := osFromSelector(po.Spec.NodeSelector); ok {
 		return podOS, nil
 	}
-	if podOS, ok := po.Spec.NodeSelector[osSelector]; ok {
-		return podOS, nil
+	if len(po.Spec.NodeName) == 0 {
+		return "", ErrNoOSInfoFound
 	}
 
-	if len(po.Spec.NodeName) != 0 {
-		node, err := dao.FetchNode(context.Background(), f, po.Spec.NodeName)
-		if err != nil {
-			return "", err
-		}
+	node, err := dao.FetchNode(context.Background(), f, po.Spec.NodeName)
+	if err != nil {
+		return "", err
+	}
+	if nodeOS, ok := osFromSelector(node.Labels); ok {
+		return nodeOS, nil
+	}
+	return "", ErrNoOSInfoFound
+}
 
-		if nodeOS, ok := node.Labels[osBetaSelector]; ok {
-			return nodeOS, nil
-		}
-		if nodeOS, ok := node.Labels[osSelector]; ok {
-			return nodeOS, nil
-		}
+func osFromSelector(m map[string]string) (string, bool) {
+	if osName, ok := m[osBetaSelector]; ok {
+		return osName, true
 	}
 
-	return "", fmt.Errorf("no os information available")
+	osName, ok := m[osSelector]
+	return osName, ok
 }
 
 func resourceSorters(t *Table) ui.KeyActions {
