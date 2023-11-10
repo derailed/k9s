@@ -16,4 +16,4 @@ Following is an example of some of plugin files in this directory. Other files a
 | log_full.yml       | get full logs from pod/container                                 | pods/containers    | Ctrl-l   |                                                                                       |
 
 [1]: https://kubernetes.io/docs/tasks/debug/debug-application/debug-running-pod/#ephemeral-container
-[2]: https://github.dcom/nicolaka/netshoot
+[2]: https://github.com/nicolaka/netshoot
