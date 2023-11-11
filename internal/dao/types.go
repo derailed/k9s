@@ -155,3 +155,9 @@ type ContainsPodSpec interface {
 	// Set Images for a resource
 	SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error
 }
+
+// Sanitizer represents a resource sanitizer.
+type Sanitizer interface {
+	// Sanitize nukes all resources in unhappy state.
+	Sanitize(context.Context, string) (int, error)
+}
