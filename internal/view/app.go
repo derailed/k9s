@@ -161,19 +161,61 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 
 		s = strings.ToLower(s)
 		for _, k := range a.command.alias.Aliases.Keys() {
-			if k == s {
-				continue
-			}
-			if strings.HasPrefix(k, s) {
-				entries = append(entries, strings.Replace(k, s, "", 1))
+			if suggest, ok := shouldAddSuggest(s, k); ok {
+				entries = append(entries, suggest)
 			}
 		}
+
+		entries = append(entries, a.suggestSubCommand(s)...)
 		if len(entries) == 0 {
 			return nil
 		}
 		entries.Sort()
 		return
 	}
+}
+
+func (a *App) suggestSubCommand(command string) []string {
+	cmds := strings.Split(command, " ")
+	if len(cmds[0]) == 0 || len(cmds) != 2 {
+		return nil
+	}
+
+	var suggests []string
+	switch strings.ToLower(cmds[0]) {
+	case "cow", "q", "q!", "qa", "Q", "quit", "?", "h", "help", "a", "alias", "x", "xray", "dir":
+		return nil // ignore special commands
+	case "ctx", "context", "contexts":
+		ctxs, err := a.factory.Client().Config().Contexts()
+		if err != nil {
+			log.Error().Err(err).Msg("failed to list contexts")
+			return nil
+		}
+
+		for contextName := range ctxs {
+			if suggest, ok := shouldAddSuggest(cmds[1], contextName); ok {
+				suggests = append(suggests, suggest)
+			}
+		}
+	default:
+		nss, err := a.factory.Client().ValidNamespaces()
+		if err != nil {
+			log.Error().Err(err).Msg("failed to list nss")
+			return nil
+		}
+
+		if suggest, ok := shouldAddSuggest(cmds[1], client.NamespaceAll); ok {
+			suggests = append(suggests, suggest)
+		}
+
+		for _, ns := range nss {
+			if suggest, ok := shouldAddSuggest(cmds[1], ns.Name); ok {
+				suggests = append(suggests, suggest)
+			}
+		}
+	}
+
+	return suggests
 }
 
 func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
@@ -670,4 +712,12 @@ func (a *App) clusterInfo() *ClusterInfo {
 
 func (a *App) statusIndicator() *ui.StatusIndicator {
 	return a.Views()["statusIndicator"].(*ui.StatusIndicator)
+}
+
+func shouldAddSuggest(command, suggest string) (string, bool) {
+	if command != suggest && strings.HasPrefix(suggest, command) {
+		return strings.TrimPrefix(suggest, command), true
+	}
+
+	return "", false
 }
