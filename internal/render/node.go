@@ -77,6 +77,10 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 	nodeRoles(&no, roles)
 	sort.Sort(roles)
 
+	podCount := strconv.Itoa(oo.PodCount)
+	if pc := oo.PodCount; pc == -1 {
+		podCount = NAValue
+	}
 	r.ID = client.FQN("", na)
 	r.Fields = Fields{
 		no.Name,
@@ -86,7 +90,7 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 		no.Status.NodeInfo.KernelVersion,
 		iIP,
 		eIP,
-		strconv.Itoa(oo.PodCount),
+		podCount,
 		toMc(c.cpu),
 		toMi(c.mem),
 		client.ToPercentageStr(c.cpu, a.cpu),
