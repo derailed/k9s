@@ -15,6 +15,8 @@ plugin:
     - $NAMESPACE
     - --context
     - $CONTEXT
+    - --kubeconfig
+    - $KUBECONFIG
   log-less:
     shortCut: Shift-L
     description: "logs|less"
@@ -33,6 +35,8 @@ plugin:
     - $NAMESPACE
     - --context
     - $CONTEXT
+    - --kubeconfig
+    - $KUBECONFIG
   log-less-container:
     shortCut: Shift-L
     description: "logs|less"
@@ -53,3 +57,5 @@ plugin:
     - $NAMESPACE
     - --context
     - $CONTEXT
+    - --kubeconfig
+    - $KUBECONFIG
