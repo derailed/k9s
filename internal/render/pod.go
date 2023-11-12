@@ -124,7 +124,6 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 		po.ObjectMeta.Name,
 		"●",
 		strconv.Itoa(cr) + "/" + strconv.Itoa(len(po.Spec.Containers)),
-		strconv.Itoa(rc),
 		phase,
 		strconv.Itoa(rc),
 		na(po.Status.PodIP),
