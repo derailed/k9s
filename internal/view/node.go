@@ -151,7 +151,7 @@ func (n *Node) sshCmd(evt *tcell.EventKey) *tcell.EventKey {
 	defer n.Start()
 	_, node := client.Namespaced(path)
 	if err := ssh(n.App(), node); err != nil {
-		log.Error().Err(err).Msgf("SSH Failed")
+		log.Error().Err(err).Msgf("Node Shell Failed")
 	}
 
 	return nil

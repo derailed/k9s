@@ -522,26 +522,26 @@ func getPodOS(f dao.Factory, fqn string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if os, ok := osFromSelector(po.Spec.NodeSelector); ok {
-		return os, nil
+	if podOS, ok := osFromSelector(po.Spec.NodeSelector); ok {
+		return podOS, nil
 	}
 
-	no, err := dao.FetchNode(context.Background(), f, po.Spec.Hostname)
+	node, err := dao.FetchNode(context.Background(), f, po.Spec.NodeName)
 	if err == nil {
-		if os, ok := osFromSelector(no.Labels); ok {
-			return os, nil
+		if nodeOS, ok := osFromSelector(node.Labels); ok {
+			return nodeOS, nil
 		}
 	}
 
-	return "", fmt.Errorf("no os information available")
+	return "", errors.New("no os information available")
 }
 
 func osFromSelector(s map[string]string) (string, bool) {
 	if os, ok := s[osBetaSelector]; ok {
 		return os, ok
 	}
-	os, ok := s[osSelector]
 
+	os, ok := s[osSelector]
 	return os, ok
 }
 
