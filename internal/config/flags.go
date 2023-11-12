@@ -27,6 +27,7 @@ type Flags struct {
 	Write         *bool
 	Crumbsless    *bool
 	ScreenDumpDir *string
+	IdiotLight    *bool
 }
 
 // NewFlags returns new configuration flags.
@@ -43,6 +44,7 @@ func NewFlags() *Flags {
 		Write:         boolPtr(false),
 		Crumbsless:    boolPtr(false),
 		ScreenDumpDir: strPtr(AppDumpsDir),
+		IdiotLight:    boolPtr(false),
 	}
 }
 

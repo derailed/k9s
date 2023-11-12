@@ -28,11 +28,13 @@ type K9s struct {
 	ImageScans          ImageScans `json:"imageScans" yaml:"imageScans"`
 	Logger              Logger     `json:"logger" yaml:"logger"`
 	Thresholds          Threshold  `json:"thresholds" yaml:"thresholds"`
+	IdiotLight          bool       `json:"idiotLight" yaml:"idiotLight"`
 	manualRefreshRate   int
 	manualHeadless      *bool
 	manualLogoless      *bool
 	manualCrumbsless    *bool
 	manualReadOnly      *bool
+	manualIdiotLight    *bool
 	manualCommand       *string
 	manualScreenDumpDir *string
 	dir                 *data.Dir
@@ -99,6 +101,7 @@ func (k *K9s) Merge(k1 *K9s) {
 	k.ShellPod = k1.ShellPod
 	k.Logger = k1.Logger
 	k.ImageScans = k1.ImageScans
+	k.IdiotLight = k1.IdiotLight
 	if k1.Thresholds != nil {
 		k.Thresholds = k1.Thresholds
 	}
@@ -249,9 +252,11 @@ func (k *K9s) Override(k9sFlags *Flags) {
 
 	k.manualHeadless = k9sFlags.Headless
 	k.manualLogoless = k9sFlags.Logoless
+	k.manualIdiotLight = k9sFlags.IdiotLight
 	k.manualCrumbsless = k9sFlags.Crumbsless
 	if k9sFlags.ReadOnly != nil && *k9sFlags.ReadOnly {
 		k.manualReadOnly = k9sFlags.ReadOnly
+
 	}
 	if k9sFlags.Write != nil && *k9sFlags.Write {
 		var false bool
@@ -308,6 +313,15 @@ func (k *K9s) IsReadOnly() bool {
 	}
 
 	return ro
+}
+
+func (k *K9s) HasIdiotLight() bool {
+	idiotLight := k.IdiotLight
+	if k.manualIdiotLight != nil {
+		idiotLight = *k.manualIdiotLight
+	}
+
+	return idiotLight
 }
 
 // Validate the current configuration.

@@ -358,7 +358,7 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		}
 
 		challenge := ""
-		if b.GVR().R() == "nodes" {
+		if b.App().Config.K9s.HasIdiotLight() && b.GVR().R() == "nodes" {
 			challenge = "delete!"
 		}
 

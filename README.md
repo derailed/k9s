@@ -436,6 +436,8 @@ K9s uses aliases to navigate most K8s resources.
         memory: 100Mi
       # Enable TTY
       tty: true
+    # When enabled adds extra input field in which you have to confirm the deletion of a node
+    idiotLight: false
   ```
 
 ---
