@@ -3,6 +3,7 @@ package view
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/derailed/k9s/internal/config"
@@ -157,6 +158,10 @@ func (d *Details) StylesChanged(s *config.Styles) {
 func (d *Details) Update(buff string) *Details {
 	d.model.SetText(buff)
 	return d
+}
+
+func (d *Details) GetWriter() io.Writer {
+	return d.text
 }
 
 // SetSubject updates the subject.

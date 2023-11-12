@@ -672,7 +672,11 @@ func (x *Xray) resourceDelete(gvr client.GVR, spec *xray.NodeSpec, msg string) {
 			x.app.Flash().Errf("Invalid nuker %T", accessor)
 			return
 		}
-		if err := nuker.Delete(context.Background(), spec.Path(), nil, true); err != nil {
+		grace := dao.DefaultGrace
+		if force {
+			grace = dao.ForceGrace
+		}
+		if err := nuker.Delete(context.Background(), spec.Path(), nil, grace); err != nil {
 			x.app.Flash().Errf("Delete failed with `%s", err)
 		} else {
 			x.app.Flash().Infof("%s `%s deleted successfully", x.GVR(), spec.Path())

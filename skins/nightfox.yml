@@ -1,15 +1,17 @@
-# K9s Gruvbox Dark Skin Contributed by [@indiebrain](https://github.com/indiebrain)
-foreground: &foreground "#ebdbb2"
-background: &background "#272727"
-current_line: &current_line "#ebdbb2"
-selection: &selection "#3c3735"
-comment: &comment "#bdad93"
-cyan: &cyan "#689d69"
-green: &green "#989719"
-orange: &orange "#d79920"
-magenta: &magenta "#b16185"
-blue: &blue "#448488"
-red: &red "#cc231c"
+# K9s Nightfox Theme
+# Based on the Nightfox.nvim color scheme:
+# https://github.com/EdenEast/nightfox.nvim
+foreground: &foreground "#cdcecf"
+background: &background "#192330"
+current_line: &current_line "#2b3b51"
+selection: &selection "#2b3b51"
+comment: &comment "#738091"
+cyan: &cyan "#63cdcf"
+green: &green "#81b29a"
+orange: &orange "#f4a261"
+magenta: &magenta "#9d79d6"
+blue: &blue "#719cd6"
+red: &red "#c94f6d"
 
 k9s:
   body:
@@ -23,12 +25,6 @@ k9s:
   info:
     fgColor: *magenta
     sectionColor: *foreground
-  help:
-    fgColor: *foreground
-    bgColor: *background
-    keyColor: *magenta
-    numKeyColor: *blue
-    sectionColor: *green
   dialog:
     fgColor: *foreground
     bgColor: *background
@@ -48,8 +44,8 @@ k9s:
       numKeyColor: *magenta
     crumbs:
       fgColor: *foreground
-      bgColor: *comment
-      activeColor: *blue
+      bgColor: *current_line
+      activeColor: *current_line
     status:
       newColor: *cyan
       modifyColor: *blue
@@ -60,13 +56,13 @@ k9s:
       completedColor: *comment
     title:
       fgColor: *foreground
-      bgColor: *background
+      bgColor: *current_line
       highlightColor: *orange
       counterColor: *blue
       filterColor: *magenta
   views:
     charts:
-      bgColor: background
+      bgColor: default
       defaultDialColors:
         - *blue
         - *red
@@ -76,12 +72,12 @@ k9s:
     table:
       fgColor: *foreground
       bgColor: *background
-      cursorFgColor: "#fff"
+      cursorFgColor: *selection
       cursorBgColor: *current_line
       header:
         fgColor: *foreground
         bgColor: *background
-        sorterColor: *selection
+        sorterColor: *cyan
     xray:
       fgColor: *foreground
       bgColor: *background
@@ -97,4 +93,4 @@ k9s:
       bgColor: *background
       indicator:
         fgColor: *foreground
-        bgColor: *background
+        bgColor: *selection

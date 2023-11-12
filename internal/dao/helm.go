@@ -111,7 +111,7 @@ func (h *Helm) ToYAML(path string, showManaged bool) (string, error) {
 }
 
 // Delete uninstall a Helm.
-func (h *Helm) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, force bool) error {
+func (h *Helm) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, _ Grace) error {
 	ns, n := client.Namespaced(path)
 	cfg, err := h.EnsureHelmConfig(ns)
 	if err != nil {

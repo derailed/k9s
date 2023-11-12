@@ -7,11 +7,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-const deleteKey = "delete"
+const (
+	noDeletePropagation   = "None"
+	defaultPropagationIdx = 0
+)
 
-const noDeletePropagation = "None"
-
-const defaultPropagationIdx = 0
+type (
+	okFunc     func(propagation *metav1.DeletionPropagation, force bool)
+	cancelFunc func()
+)
 
 var propagationOptions []string = []string{
 	string(metav1.DeletePropagationBackground),
@@ -19,11 +23,6 @@ var propagationOptions []string = []string{
 	string(metav1.DeletePropagationOrphan),
 	noDeletePropagation,
 }
-
-type (
-	okFunc     func(propagation *metav1.DeletionPropagation, force bool)
-	cancelFunc func()
-)
 
 // ShowDelete pops a resource deletion dialog.
 func ShowDelete(styles config.Dialog, pages *ui.Pages, msg string, ok okFunc, cancel cancelFunc) {
@@ -47,7 +46,7 @@ func ShowDelete(styles config.Dialog, pages *ui.Pages, msg string, ok okFunc, ca
 		force = checked
 	})
 	f.AddButton("Cancel", func() {
-		dismissDelete(pages)
+		dismiss(pages)
 		cancel()
 	})
 	f.AddButton("OK", func() {
@@ -58,7 +57,7 @@ func ShowDelete(styles config.Dialog, pages *ui.Pages, msg string, ok okFunc, ca
 			p := metav1.DeletionPropagation(propagation)
 			ok(&p, force)
 		}
-		dismissDelete(pages)
+		dismiss(pages)
 		cancel()
 	})
 	for i := 0; i < 2; i++ {
@@ -74,13 +73,9 @@ func ShowDelete(styles config.Dialog, pages *ui.Pages, msg string, ok okFunc, ca
 	confirm := tview.NewModalForm("<Delete>", f)
 	confirm.SetText(msg)
 	confirm.SetDoneFunc(func(int, string) {
-		dismissDelete(pages)
+		dismiss(pages)
 		cancel()
 	})
-	pages.AddPage(deleteKey, confirm, false, false)
-	pages.ShowPage(deleteKey)
-}
-
-func dismissDelete(pages *ui.Pages) {
-	pages.RemovePage(deleteKey)
+	pages.AddPage(dialogKey, confirm, false, false)
+	pages.ShowPage(dialogKey)
 }

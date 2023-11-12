@@ -1,10 +1,8 @@
 package view
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
@@ -57,6 +55,7 @@ func (n *Node) bindKeys(aa ui.KeyActions) {
 		ui.KeyY:      ui.NewKeyAction("YAML", n.yamlCmd, true),
 		ui.KeyShiftC: ui.NewKeyAction("Sort CPU", n.GetTable().SortColCmd(cpuCol, false), false),
 		ui.KeyShiftM: ui.NewKeyAction("Sort MEM", n.GetTable().SortColCmd(memCol, false), false),
+		ui.KeyShift0: ui.NewKeyAction("Sort Pods", n.GetTable().SortColCmd("PODS", false), false),
 	})
 }
 
@@ -70,13 +69,11 @@ func (n *Node) drainCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	defaults := dao.DrainOptions{
-		GracePeriodSeconds:  -1,
-		Timeout:             5 * time.Second,
-		DeleteEmptyDirData:  false,
-		IgnoreAllDaemonSets: false,
+	opts := dao.DrainOptions{
+		GracePeriodSeconds: -1,
+		Timeout:            5 * time.Second,
 	}
-	ShowDrain(n, path, defaults, drainNode)
+	ShowDrain(n, path, opts, drainNode)
 
 	return nil
 }
@@ -93,18 +90,20 @@ func drainNode(v ResourceViewer, path string, opts dao.DrainOptions) {
 		return
 	}
 
-	buff := bytes.NewBufferString("")
-	if err := m.Drain(path, opts, buff); err != nil {
-		v.App().Flash().Err(err)
-		return
-	}
-	lines := strings.Split(buff.String(), "\n")
-	for _, l := range lines {
-		if len(l) > 0 {
-			v.App().Flash().Info(l)
+	v.Stop()
+	defer v.Start()
+	{
+		d := NewDetails(v.App(), "Drain Progress", path, true)
+		if err := v.App().inject(d, false); err != nil {
+			v.App().Flash().Err(err)
 		}
+
+		if err := m.Drain(path, opts, d.GetWriter()); err != nil {
+			v.App().Flash().Err(err)
+			return
+		}
+		v.Refresh()
 	}
-	v.Refresh()
 }
 
 func (n *Node) toggleCordonCmd(cordon bool) func(evt *tcell.EventKey) *tcell.EventKey {

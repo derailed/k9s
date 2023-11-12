@@ -281,7 +281,6 @@ func (h *Help) resetTitle() {
 
 func (h *Help) addSpacer(c int) {
 	cell := tview.NewTableCell(render.Pad("", h.maxKey))
-	cell.SetBackgroundColor(h.App().Styles.BgColor())
 	cell.SetExpansion(1)
 	h.SetCell(0, c, cell)
 }

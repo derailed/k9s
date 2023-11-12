@@ -74,6 +74,9 @@ func (Policy) Render(o interface{}, gvr string, r *Row) error {
 // Helpers...
 
 func cleanseResource(r string) string {
+	if r == "" {
+		return r
+	}
 	if r[0] == '/' {
 		return r
 	}
