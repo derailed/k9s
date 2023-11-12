@@ -304,6 +304,13 @@ func boolPtrToStr(b *bool) string {
 	return boolToStr(*b)
 }
 
+func strPtrToStr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
+}
+
 // Check if string is in a string list.
 func in(ll []string, s string) bool {
 	for _, l := range ll {

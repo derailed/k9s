@@ -13,5 +13,5 @@ func TestStorageClassRender(t *testing.T) {
 
 	assert.NoError(t, c.Render(load(t, "sc"), "", &r))
 	assert.Equal(t, "-/standard", r.ID)
-	assert.Equal(t, render.Fields{"standard", "kubernetes.io/gce-pd"}, r.Fields[:2])
+	assert.Equal(t, render.Fields{"standard (default)", "kubernetes.io/gce-pd", "Delete", "Immediate", "true"}, r.Fields[:5])
 }
