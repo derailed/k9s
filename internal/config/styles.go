@@ -45,9 +45,16 @@ type (
 
 	// Prompt tracks command styles
 	Prompt struct {
-		FgColor      Color `yaml:"fgColor"`
-		BgColor      Color `yaml:"bgColor"`
-		SuggestColor Color `yaml:"suggestColor"`
+		FgColor      Color        `yaml:"fgColor"`
+		BgColor      Color        `yaml:"bgColor"`
+		SuggestColor Color        `yaml:"suggestColor"`
+		Border       PromptBorder `yaml:"border"`
+	}
+
+	// PromptBorder tracks the color of the prompt depending on its kind (e.g., command or filter)
+	PromptBorder struct {
+		CommandColor Color `yaml:"command"`
+		DefaultColor Color `yaml:"default"`
 	}
 
 	// Help tracks help styles.
@@ -287,6 +294,10 @@ func newPrompt() Prompt {
 		FgColor:      "cadetblue",
 		BgColor:      "black",
 		SuggestColor: "dodgerblue",
+		Border: PromptBorder{
+			DefaultColor: "seagreen",
+			CommandColor: "aqua",
+		},
 	}
 }
 
@@ -509,6 +520,11 @@ func (s *Styles) fireStylesChanged() {
 // Body returns body styles.
 func (s *Styles) Body() Body {
 	return s.K9s.Body
+}
+
+// Prompt returns prompt styles.
+func (s *Styles) Prompt() Prompt {
+	return s.K9s.Prompt
 }
 
 // Frame returns frame styles.

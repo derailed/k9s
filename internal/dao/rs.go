@@ -95,7 +95,7 @@ func (r *ReplicaSet) Rollback(fqn string) error {
 	}
 
 	var ddp Deployment
-	dp, err := ddp.Load(r.Factory, client.FQN(rs.Namespace, name))
+	dp, err := ddp.GetInstance(r.Factory, client.FQN(rs.Namespace, name))
 	if err != nil {
 		return err
 	}

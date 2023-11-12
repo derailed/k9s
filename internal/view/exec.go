@@ -323,7 +323,7 @@ func launchShellPod(a *App, node string) error {
 		return err
 	}
 	conn := dial.CoreV1().Pods(ns)
-	if _, err := conn.Create(ctx, &spec, metav1.CreateOptions{}); err != nil {
+	if _, err := conn.Create(ctx, spec, metav1.CreateOptions{}); err != nil {
 		return err
 	}
 
@@ -351,7 +351,7 @@ func k9sShellPodName() string {
 	return fmt.Sprintf("%s-%d", k9sShell, os.Getpid())
 }
 
-func k9sShellPod(node string, cfg *config.ShellPod) v1.Pod {
+func k9sShellPod(node string, cfg *config.ShellPod) *v1.Pod {
 	var grace int64
 	var priv bool = true
 
@@ -379,7 +379,7 @@ func k9sShellPod(node string, cfg *config.ShellPod) v1.Pod {
 		c.Args = cfg.Args
 	}
 
-	return v1.Pod{
+	return &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      k9sShellPodName(),
 			Namespace: cfg.Namespace,

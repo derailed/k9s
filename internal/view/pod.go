@@ -27,8 +27,8 @@ import (
 const (
 	windowsOS      = "windows"
 	powerShell     = "powershell"
-	osBetaSelector = "beta.kubernetes.io/os"
 	osSelector     = "kubernetes.io/os"
+	osBetaSelector = "beta." + osSelector
 	trUpload       = "Upload"
 	trDownload     = "Download"
 )
@@ -71,6 +71,7 @@ func (p *Pod) bindDangerousKeys(aa ui.KeyActions) {
 		ui.KeyS:        ui.NewKeyAction("Shell", p.shellCmd, true),
 		ui.KeyA:        ui.NewKeyAction("Attach", p.attachCmd, true),
 		ui.KeyT:        ui.NewKeyAction("Transfer", p.transferCmd, true),
+		ui.KeyZ:        ui.NewKeyAction("Sanitize", p.sanitizeCmd, true),
 	})
 }
 
@@ -251,6 +252,35 @@ func (p *Pod) attachCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if err := containerAttachIn(p.App(), p, path, ""); err != nil {
 		p.App().Flash().Err(err)
 	}
+
+	return nil
+}
+
+func (p *Pod) sanitizeCmd(evt *tcell.EventKey) *tcell.EventKey {
+	res, err := dao.AccessorFor(p.App().factory, p.GVR())
+	if err != nil {
+		p.App().Flash().Err(err)
+		return nil
+	}
+	s, ok := res.(dao.Sanitizer)
+	if !ok {
+		p.App().Flash().Err(fmt.Errorf("expecting a sanitizer for %q", p.GVR()))
+		return nil
+	}
+
+	ack := "sanitize me pods!"
+	msg := fmt.Sprintf("Sanitize deletes all pods in completed/error state\nPlease enter [orange::b]%s[-::-] to proceed.", ack)
+	dialog.ShowConfirmAck(p.App().App, p.App().Content.Pages, ack, true, "Sanitize", msg, func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*p.App().Conn().Config().CallTimeout())
+		defer cancel()
+		total, err := s.Sanitize(ctx, p.GetTable().GetModel().GetNamespace())
+		if err != nil {
+			p.App().Flash().Err(err)
+			return
+		}
+		p.App().Flash().Infof("Sanitized %d %s", total, p.GVR())
+		p.Refresh()
+	}, func() {})
 
 	return nil
 }
@@ -495,27 +525,24 @@ func getPodOS(f dao.Factory, fqn string) (string, error) {
 	if podOS, ok := osFromSelector(po.Spec.NodeSelector); ok {
 		return podOS, nil
 	}
-	if len(po.Spec.NodeName) == 0 {
-		return "", errors.New("no os information available")
-	}
 
 	node, err := dao.FetchNode(context.Background(), f, po.Spec.NodeName)
-	if err != nil {
-		return "", err
-	}
-	if nodeOS, ok := osFromSelector(node.Labels); ok {
-		return nodeOS, nil
-	}
+	if err == nil {
+   	if nodeOS, ok := osFromSelector(node.Labels); ok {
+	  	return nodeOS, nil
+	  }
+  }
+  
 	return "", errors.New("no os information available")
 }
 
-func osFromSelector(m map[string]string) (string, bool) {
-	if osName, ok := m[osBetaSelector]; ok {
-		return osName, true
+func osFromSelector(s map[string]string) (string, bool) {
+	if os, ok := s[osBetaSelector]; ok {
+		return os, ok
 	}
-
-	osName, ok := m[osSelector]
-	return osName, ok
+  
+	os, ok := s[osSelector]
+	return os, ok
 }
 
 func resourceSorters(t *Table) ui.KeyActions {

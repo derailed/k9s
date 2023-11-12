@@ -88,7 +88,7 @@ func (d *Deploy) logOptions(prev bool) (*dao.LogOptions, error) {
 
 func (d *Deploy) showPods(app *App, model ui.Tabular, gvr, path string) {
 	var ddp dao.Deployment
-	dp, err := ddp.Load(app.factory, path)
+	dp, err := ddp.GetInstance(app.factory, path)
 	if err != nil {
 		app.Flash().Err(err)
 		return
@@ -99,7 +99,7 @@ func (d *Deploy) showPods(app *App, model ui.Tabular, gvr, path string) {
 
 func (d *Deploy) dp(path string) (*appsv1.Deployment, error) {
 	var dp dao.Deployment
-	return dp.Load(d.App().factory, path)
+	return dp.GetInstance(d.App().factory, path)
 }
 
 // ----------------------------------------------------------------------------

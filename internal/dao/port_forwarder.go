@@ -43,6 +43,11 @@ func NewPortForwarder(f Factory) *PortForwarder {
 	}
 }
 
+// String dumps as string.
+func (p *PortForwarder) String() string {
+	return fmt.Sprintf("%s|%s", p.path, p.tunnel)
+}
+
 // Age returns the port forward age.
 func (p *PortForwarder) Age() string {
 	return time.Since(p.age).String()
