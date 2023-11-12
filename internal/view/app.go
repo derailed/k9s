@@ -405,6 +405,7 @@ func (a *App) switchContext(name string) error {
 		ns, err := a.Conn().Config().CurrentNamespaceName()
 		if err != nil {
 			log.Warn().Msg("No namespace specified in context. Using K9s config")
+			ns = a.Config.ActiveNamespace()
 		}
 		a.initFactory(ns)
 

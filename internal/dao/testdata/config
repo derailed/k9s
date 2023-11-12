@@ -21,6 +21,7 @@ contexts:
   name: fred
 - context:
     cluster: blee
+    namespace: zorg
     user: blee
   name: blee
 - context:
