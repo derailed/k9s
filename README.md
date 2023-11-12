@@ -357,6 +357,8 @@ K9s uses aliases to navigate most K8s resources.
     currentContext: minikube
     # Indicates the current kube cluster. Defaults to current context cluster
     currentCluster: minikube
+    # KeepMissingClusters will keep clusters in the config if they are missing from the current kubeconfig file. Default false
+    KeepMissingClusters: false
     # Persists per cluster preferences for favorite namespaces and view.
     clusters:
       coolio:
