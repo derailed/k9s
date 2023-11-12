@@ -40,7 +40,7 @@ func TestSkinNone(t *testing.T) {
 
 func TestSkin(t *testing.T) {
 	s := config.NewStyles()
-	assert.Nil(t, s.Load("testdata/black_and_wtf.yml"))
+	assert.Nil(t, s.Load("testdata/black_and_wtf_1.yml"))
 	s.Update()
 
 	assert.Equal(t, "#ffffff", s.Body().FgColor.String())

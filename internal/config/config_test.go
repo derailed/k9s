@@ -375,6 +375,7 @@ var expectedConfig = `k9s:
       critical: 90
       warn: 70
   screenDumpDir: /tmp
+  skin: gruvbox-dark
 `
 
 var resetConfig = `k9s:
@@ -428,4 +429,5 @@ var resetConfig = `k9s:
       critical: 90
       warn: 70
   screenDumpDir: /tmp
+  skin: gruvbox-dark
 `

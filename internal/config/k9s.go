@@ -29,6 +29,7 @@ type K9s struct {
 	Clusters            map[string]*Cluster `yaml:"clusters,omitempty"`
 	Thresholds          Threshold           `yaml:"thresholds"`
 	ScreenDumpDir       string              `yaml:"screenDumpDir"`
+	Skin                string              `yaml:"skin"`
 	manualRefreshRate   int
 	manualHeadless      *bool
 	manualLogoless      *bool
@@ -36,6 +37,7 @@ type K9s struct {
 	manualReadOnly      *bool
 	manualCommand       *string
 	manualScreenDumpDir *string
+	manualSkin          *string
 }
 
 // NewK9s create a new K9s configuration.
@@ -47,6 +49,7 @@ func NewK9s() *K9s {
 		Clusters:      make(map[string]*Cluster),
 		Thresholds:    NewThreshold(),
 		ScreenDumpDir: K9sDefaultScreenDumpDir,
+		Skin:          K9sDefaultSkin,
 	}
 }
 
@@ -110,6 +113,11 @@ func (k *K9s) OverrideCommand(cmd string) {
 // OverrideScreenDumpDir set the screen dump dir manually.
 func (k *K9s) OverrideScreenDumpDir(dir string) {
 	k.manualScreenDumpDir = &dir
+}
+
+// OverrideSkin set the k9s ui skin manually.
+func (k *K9s) OverrideManualSkin(skin string) {
+	k.manualSkin = &skin
 }
 
 // IsHeadless returns headless setting.
@@ -256,4 +264,11 @@ func (k *K9s) Validate(c client.Connection, ks KubeSettings) {
 		k.Clusters[k.CurrentCluster] = NewCluster()
 	}
 	k.Clusters[k.CurrentCluster].Validate(c, ks)
+}
+
+func (k *K9s) GetManualSkin() string {
+	if k.manualSkin == nil {
+		return ""
+	}
+	return *k.manualSkin
 }

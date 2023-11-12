@@ -115,6 +115,7 @@ func loadConfiguration() *config.Config {
 	k9sCfg.K9s.OverrideWrite(*k9sFlags.Write)
 	k9sCfg.K9s.OverrideCommand(*k9sFlags.Command)
 	k9sCfg.K9s.OverrideScreenDumpDir(*k9sFlags.ScreenDumpDir)
+	k9sCfg.K9s.OverrideManualSkin(*k9sFlags.Skin)
 
 	if err := k9sCfg.Refine(k8sFlags, k9sFlags, k8sCfg); err != nil {
 		log.Error().Err(err).Msgf("refine failed")
@@ -224,6 +225,12 @@ func initK9sFlags() {
 		"screen-dump-dir",
 		"",
 		"Sets a path to a dir for a screen dumps",
+	)
+	rootCmd.Flags().StringVar(
+		k9sFlags.Skin,
+		"skin",
+		"",
+		"Sets a k9s skin",
 	)
 	rootCmd.Flags()
 }

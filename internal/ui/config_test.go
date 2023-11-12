@@ -18,10 +18,23 @@ func TestBenchConfig(t *testing.T) {
 }
 
 func TestConfiguratorRefreshStyle(t *testing.T) {
-	config.K9sStylesFile = filepath.Join("..", "config", "testdata", "black_and_wtf.yml")
+	os.Setenv(config.K9sConfig, filepath.Join("..", "config", "testdata"))
+	config.K9sDefaultSkin = "black_and_wtf_1"
 
 	cfg := ui.Configurator{}
-	cfg.RefreshStyles("")
+	cfg.RefreshStyles("", "", "")
+
+	assert.True(t, cfg.HasSkin())
+	assert.Equal(t, tcell.ColorGhostWhite.TrueColor(), render.StdColor)
+	assert.Equal(t, tcell.ColorWhiteSmoke.TrueColor(), render.ErrColor)
+}
+
+func TestConfiguratorRefreshStyleAnotherExtension(t *testing.T) {
+	os.Setenv(config.K9sConfig, filepath.Join("..", "config", "testdata"))
+	config.K9sDefaultSkin = "black_and_wtf_2"
+
+	cfg := ui.Configurator{}
+	cfg.RefreshStyles("", "", "")
 
 	assert.True(t, cfg.HasSkin())
 	assert.Equal(t, tcell.ColorGhostWhite.TrueColor(), render.StdColor)
