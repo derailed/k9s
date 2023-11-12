@@ -104,6 +104,7 @@ type (
 		Xray   Xray   `yaml:"xray"`
 		Charts Charts `yaml:"charts"`
 		Yaml   Yaml   `yaml:"yaml"`
+		Picker Picker `yaml:"picker"`
 		Log    Log    `yaml:"logs"`
 	}
 
@@ -124,6 +125,13 @@ type (
 		FgColor   Color        `yaml:"fgColor"`
 		BgColor   Color        `yaml:"bgColor"`
 		Indicator LogIndicator `yaml:"indicator"`
+	}
+
+	// Picker tracks color when selecting containers
+	Picker struct {
+		MainColor     Color `yaml:"mainColor"`
+		FocusColor    Color `yaml:"focusColor"`
+		ShortcutColor Color `yaml:"shortcutColor"`
 	}
 
 	// LogIndicator tracks log view indicator.
@@ -321,6 +329,7 @@ func newViews() Views {
 		Xray:   newXray(),
 		Charts: newCharts(),
 		Yaml:   newYaml(),
+		Picker: newPicker(),
 		Log:    newLog(),
 	}
 }
@@ -367,6 +376,14 @@ func newStatus() Status {
 		HighlightColor: "aqua",
 		KillColor:      "mediumpurple",
 		CompletedColor: "lightslategray",
+	}
+}
+
+func newPicker() Picker {
+	return Picker{
+		MainColor:     "white",
+		FocusColor:    "aqua",
+		ShortcutColor: "aqua",
 	}
 }
 
