@@ -30,4 +30,5 @@ const (
 	KeyWithMetrics ContextKey = "withMetrics"
 	KeyViewConfig  ContextKey = "viewConfig"
 	KeyWait        ContextKey = "wait"
+	KeyPodCounting ContextKey = "podCounting"
 )

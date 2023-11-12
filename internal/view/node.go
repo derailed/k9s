@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
@@ -26,8 +27,13 @@ func NewNode(gvr client.GVR) ResourceViewer {
 	}
 	n.AddBindKeysFn(n.bindKeys)
 	n.GetTable().SetEnterFn(n.showPods)
+	n.SetContextFn(n.nodeContext)
 
 	return &n
+}
+
+func (n *Node) nodeContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, internal.KeyPodCounting, !n.App().Config.K9s.DisablePodCounting)
 }
 
 func (n *Node) bindDangerousKeys(aa ui.KeyActions) {
