@@ -80,6 +80,28 @@ plugin:
     args:
     - -c
     - "flux --context $CONTEXT reconcile kustomization -n $NAMESPACE $NAME |& less"
+  reconcile-ir:
+    shortCut: Shift-R
+    confirm: false
+    description: Flux reconcile
+    scopes:
+    - imagerepositories
+    command: sh
+    background: false
+    args:
+    - -c
+    - "flux --context $CONTEXT reconcile image repository -n $NAMESPACE $NAME | less"
+  reconcile-iua:
+    shortCut: Shift-R
+    confirm: false
+    description: Flux reconcile
+    scopes:
+    - imageupdateautomations
+    command: sh
+    background: false
+    args:
+    - -c
+    - "flux --context $CONTEXT reconcile image update -n $NAMESPACE $NAME | less"
   trace:
     shortCut: Shift-A
     confirm: false
