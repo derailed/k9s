@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -83,7 +84,16 @@ func (o DrainOptions) toDrainHelper(k kubernetes.Interface, w io.Writer) drain.H
 
 // Drain drains a node.
 func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
-	_ = n.ToggleCordon(path, true)
+	cordoned, err := n.ensureCordoned(path)
+	if err != nil {
+		return err
+	}
+
+	if !cordoned {
+		if err = n.ToggleCordon(path, true); err != nil {
+			return err
+		}
+	}
 
 	dial, err := n.GetFactory().Client().Dial()
 	if err != nil {
@@ -97,7 +107,7 @@ func (n *Node) Drain(path string, opts DrainOptions, w io.Writer) error {
 				return err
 			}
 		}
-		return errs[0]
+		return errors.Join(errs...)
 	}
 
 	if err := h.DeleteOrEvictPods(dd.Pods()); err != nil {
@@ -145,6 +155,8 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		nmx, _ = client.DialMetrics(n.Client()).FetchNodesMetricsMap(ctx)
 	}
 
+	shouldCountPods, _ := ctx.Value(internal.KeyPodCounting).(bool)
+
 	res := make([]runtime.Object, 0, len(oo))
 	for _, o := range oo {
 		u, ok := o.(*unstructured.Unstructured)
@@ -154,9 +166,12 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 		fqn := extractFQN(o)
 		_, name := client.Namespaced(fqn)
-		podCount, err := n.CountPods(name)
-		if err != nil {
-			log.Error().Err(err).Msgf("unable to get pods count for %s", name)
+		podCount := -1
+		if shouldCountPods {
+			podCount, err = n.CountPods(name)
+			if err != nil {
+				log.Error().Err(err).Msgf("unable to get pods count for %s", name)
+			}
 		}
 		res = append(res, &render.NodeWithMetrics{
 			Raw:      u,
@@ -212,6 +227,16 @@ func (n *Node) GetPods(nodeName string) ([]*v1.Pod, error) {
 	}
 
 	return pp, nil
+}
+
+// ensureCordoned returns whether the given node has been cordoned
+func (n *Node) ensureCordoned(path string) (bool, error) {
+	o, err := FetchNode(context.Background(), n.Factory, path)
+	if err != nil {
+		return false, err
+	}
+
+	return o.Spec.Unschedulable, nil
 }
 
 // ----------------------------------------------------------------------------

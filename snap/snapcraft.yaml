@@ -1,0 +1,42 @@
+name: k9s
+base: core20 
+version: 'v0.27.4'
+summary: K9s is a CLI to view and manage your Kubernetes clusters.
+description: |
+  K9s is a CLI to view and manage your Kubernetes clusters. By leveraging a terminal UI, you can easily traverse Kubernetes resources and view the state of you clusters in a single powerful session.
+
+grade: stable
+confinement: classic
+
+architectures:
+  - amd64
+  - arm64
+  - armhf
+  - i386
+
+plugs:
+  kube-config:
+    interface: personal-files
+    read:
+      - $HOME/.kube/config
+
+apps:
+  k9s:
+    command: bin/k9s
+    plugs:
+      - network
+      - network-bind
+      - home
+      - kube-config
+
+parts:
+  build:
+    plugin: go
+    source: https://github.com/derailed/k9s.git
+    source-tag: $SNAPCRAFT_PROJECT_VERSION
+    override-build: |
+      make test
+      make build
+      install $SNAPCRAFT_PART_BUILD/execs/k9s -D $SNAPCRAFT_PART_INSTALL/bin/k9s
+    build-packages:
+      - build-essential

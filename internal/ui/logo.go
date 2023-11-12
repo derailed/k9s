@@ -67,17 +67,17 @@ func (l *Logo) Reset() {
 
 // Err displays a log error state.
 func (l *Logo) Err(msg string) {
-	l.update(msg, config.NewColor("red"))
+	l.update(msg, l.styles.Body().LogoColorError)
 }
 
 // Warn displays a log warning state.
 func (l *Logo) Warn(msg string) {
-	l.update(msg, config.NewColor("mediumvioletred"))
+	l.update(msg, l.styles.Body().LogoColorWarn)
 }
 
 // Info displays a log info state.
 func (l *Logo) Info(msg string) {
-	l.update(msg, config.NewColor("green"))
+	l.update(msg, l.styles.Body().LogoColorInfo)
 }
 
 func (l *Logo) update(msg string, c config.Color) {
@@ -87,7 +87,9 @@ func (l *Logo) update(msg string, c config.Color) {
 
 func (l *Logo) refreshStatus(msg string, c config.Color) {
 	l.status.SetBackgroundColor(c.Color())
-	l.status.SetText(fmt.Sprintf("[white::b]%s", msg))
+	l.status.SetText(
+		fmt.Sprintf("[%s::b]%s", l.styles.Body().LogoColorMsg, msg),
+	)
 }
 
 func (l *Logo) refreshLogo(c config.Color) {

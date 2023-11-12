@@ -45,9 +45,16 @@ type (
 
 	// Prompt tracks command styles
 	Prompt struct {
-		FgColor      Color `yaml:"fgColor"`
-		BgColor      Color `yaml:"bgColor"`
-		SuggestColor Color `yaml:"suggestColor"`
+		FgColor      Color        `yaml:"fgColor"`
+		BgColor      Color        `yaml:"bgColor"`
+		SuggestColor Color        `yaml:"suggestColor"`
+		Border       PromptBorder `yaml:"border"`
+	}
+
+	// PromptBorder tracks the color of the prompt depending on its kind (e.g., command or filter)
+	PromptBorder struct {
+		CommandColor Color `yaml:"command"`
+		DefaultColor Color `yaml:"default"`
 	}
 
 	// Help tracks help styles.
@@ -61,9 +68,13 @@ type (
 
 	// Body tracks body styles.
 	Body struct {
-		FgColor   Color `yaml:"fgColor"`
-		BgColor   Color `yaml:"bgColor"`
-		LogoColor Color `yaml:"logoColor"`
+		FgColor        Color `yaml:"fgColor"`
+		BgColor        Color `yaml:"bgColor"`
+		LogoColor      Color `yaml:"logoColor"`
+		LogoColorMsg   Color `yaml:"logoColorMsg"`
+		LogoColorInfo  Color `yaml:"logoColorInfo"`
+		LogoColorWarn  Color `yaml:"logoColorWarn"`
+		LogoColorError Color `yaml:"logoColorError"`
 	}
 
 	// Dialog tracks dialog styles.
@@ -93,6 +104,7 @@ type (
 		Xray   Xray   `yaml:"xray"`
 		Charts Charts `yaml:"charts"`
 		Yaml   Yaml   `yaml:"yaml"`
+		Picker Picker `yaml:"picker"`
 		Log    Log    `yaml:"logs"`
 	}
 
@@ -115,10 +127,19 @@ type (
 		Indicator LogIndicator `yaml:"indicator"`
 	}
 
+	// Picker tracks color when selecting containers
+	Picker struct {
+		MainColor     Color `yaml:"mainColor"`
+		FocusColor    Color `yaml:"focusColor"`
+		ShortcutColor Color `yaml:"shortcutColor"`
+	}
+
 	// LogIndicator tracks log view indicator.
 	LogIndicator struct {
-		FgColor Color `yaml:"fgColor"`
-		BgColor Color `yaml:"bgColor"`
+		FgColor        Color `yaml:"fgColor"`
+		BgColor        Color `yaml:"bgColor"`
+		ToggleOnColor  Color `yaml:"toggleOnColor"`
+		ToggleOffColor Color `yaml:"toggleOffColor"`
 	}
 
 	// Yaml tracks yaml styles.
@@ -281,6 +302,10 @@ func newPrompt() Prompt {
 		FgColor:      "cadetblue",
 		BgColor:      "black",
 		SuggestColor: "dodgerblue",
+		Border: PromptBorder{
+			DefaultColor: "seagreen",
+			CommandColor: "aqua",
+		},
 	}
 }
 
@@ -304,6 +329,7 @@ func newViews() Views {
 		Xray:   newXray(),
 		Charts: newCharts(),
 		Yaml:   newYaml(),
+		Picker: newPicker(),
 		Log:    newLog(),
 	}
 }
@@ -330,9 +356,13 @@ func newHelp() Help {
 
 func newBody() Body {
 	return Body{
-		FgColor:   "cadetblue",
-		BgColor:   "black",
-		LogoColor: "orange",
+		FgColor:        "cadetblue",
+		BgColor:        "black",
+		LogoColor:      "orange",
+		LogoColorMsg:   "white",
+		LogoColorInfo:  "green",
+		LogoColorWarn:  "mediumvioletred",
+		LogoColorError: "red",
 	}
 }
 
@@ -349,6 +379,14 @@ func newStatus() Status {
 	}
 }
 
+func newPicker() Picker {
+	return Picker{
+		MainColor:     "white",
+		FocusColor:    "aqua",
+		ShortcutColor: "aqua",
+	}
+}
+
 func newLog() Log {
 	return Log{
 		FgColor:   "lightskyblue",
@@ -359,8 +397,10 @@ func newLog() Log {
 
 func newLogIndicator() LogIndicator {
 	return LogIndicator{
-		FgColor: "dodgerblue",
-		BgColor: "black",
+		FgColor:        "dodgerblue",
+		BgColor:        "black",
+		ToggleOnColor:  "limegreen",
+		ToggleOffColor: "gray",
 	}
 }
 
@@ -497,6 +537,11 @@ func (s *Styles) fireStylesChanged() {
 // Body returns body styles.
 func (s *Styles) Body() Body {
 	return s.K9s.Body
+}
+
+// Prompt returns prompt styles.
+func (s *Styles) Prompt() Prompt {
+	return s.K9s.Prompt
 }
 
 // Frame returns frame styles.

@@ -84,11 +84,11 @@ func (*YAML) rxFilter(q string, lines []string) fuzzy.Matches {
 	}
 	matches := make(fuzzy.Matches, 0, len(lines))
 	for i, l := range lines {
-		if loc := rx.FindStringIndex(l); len(loc) == 2 {
+		locs := rx.FindAllStringIndex(l, -1)
+		for _, loc := range locs {
 			matches = append(matches, fuzzy.Match{Str: q, Index: i, MatchedIndexes: loc})
 		}
 	}
-
 	return matches
 }
 

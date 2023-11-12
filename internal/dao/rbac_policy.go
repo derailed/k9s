@@ -88,21 +88,20 @@ func (p *Policy) loadClusterRoleBinding(kind, name string) (render.Policies, err
 }
 
 func (p *Policy) loadRoleBinding(kind, name string) (render.Policies, error) {
-	ss, err := p.fetchRoleBindingSubjects(kind, name)
+	rbsMap, err := p.fetchRoleBindingNamespaces(kind, name)
 	if err != nil {
 		return nil, err
 	}
-
 	crs, err := p.fetchClusterRoles()
 	if err != nil {
 		return nil, err
 	}
 	rows := make(render.Policies, 0, len(crs))
 	for _, cr := range crs {
-		if !inList(ss, "ClusterRole:"+cr.Name) {
-			continue
+		if rbNs, ok := rbsMap["ClusterRole:"+cr.Name]; ok {
+			log.Debug().Msgf("Loading rules for clusterrole %q:%q", rbNs, cr.Name)
+			rows = append(rows, parseRules(rbNs, "CR:"+cr.Name, cr.Rules)...)
 		}
-		rows = append(rows, parseRules("*", "CR:"+cr.Name, cr.Rules)...)
 	}
 
 	ros, err := p.fetchRoles()
@@ -110,7 +109,7 @@ func (p *Policy) loadRoleBinding(kind, name string) (render.Policies, error) {
 		return nil, err
 	}
 	for _, ro := range ros {
-		if !inList(ss, "Role:"+ro.Name) {
+		if _, ok := rbsMap["Role:"+ro.Name]; !ok {
 			continue
 		}
 		log.Debug().Msgf("Loading rules for role %q:%q", ro.Namespace, ro.Name)
@@ -156,19 +155,19 @@ func fetchRoleBindings(f Factory) ([]rbacv1.RoleBinding, error) {
 	return rbs, nil
 }
 
-func (p *Policy) fetchRoleBindingSubjects(kind, name string) ([]string, error) {
+func (p *Policy) fetchRoleBindingNamespaces(kind, name string) (map[string]string, error) {
 	rbs, err := fetchRoleBindings(p.Factory)
 	if err != nil {
 		return nil, err
 	}
 
 	ns, n := client.Namespaced(name)
-	ss := make([]string, 0, len(rbs))
+	ss := make(map[string]string, len(rbs))
 	for _, rb := range rbs {
 		for _, s := range rb.Subjects {
 			s := s
 			if isSameSubject(kind, ns, n, &s) {
-				ss = append(ss, rb.RoleRef.Kind+":"+rb.RoleRef.Name)
+				ss[rb.RoleRef.Kind+":"+rb.RoleRef.Name] = rb.Namespace
 			}
 		}
 	}

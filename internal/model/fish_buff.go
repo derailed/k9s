@@ -70,6 +70,9 @@ func (f *FishBuff) NextSuggestion() (string, bool) {
 
 // ClearSuggestions clear out all suggestions.
 func (f *FishBuff) ClearSuggestions() {
+	if len(f.suggestions) > 0 {
+		f.suggestions = f.suggestions[:0]
+	}
 	f.suggestionIndex = -1
 }
 

@@ -2,7 +2,6 @@ package view
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -121,7 +120,6 @@ func (b *Browser) bindKeys(aa ui.KeyActions) {
 		tcell.KeyEscape: ui.NewSharedKeyAction("Filter Reset", b.resetCmd, false),
 		tcell.KeyEnter:  ui.NewSharedKeyAction("Filter", b.filterCmd, false),
 		tcell.KeyHelp:   ui.NewSharedKeyAction("Help", b.helpCmd, false),
-		ui.KeyV:         ui.NewSharedKeyAction("Zob", b.blahCmd, true),
 	})
 }
 
@@ -146,7 +144,7 @@ func (b *Browser) Start() {
 	b.Table.Start()
 	b.CmdBuff().AddListener(b)
 	if err := b.GetModel().Watch(b.prepareContext()); err != nil {
-		b.App().Flash().Err(fmt.Errorf("Watcher failed for %s -- %w", b.GVR(), err))
+		b.App().Flash().Errf("Watcher failed for %s -- %s", b.GVR(), err)
 	}
 }
 
@@ -351,28 +349,6 @@ func (b *Browser) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (b *Browser) blahCmd(evt *tcell.EventKey) *tcell.EventKey {
-	b.Stop()
-	defer b.Start()
-	{
-		v := NewDetails(b.app, "Results", "Blee", true)
-		if err := v.app.inject(v, false); err != nil {
-			v.app.Flash().Err(err)
-		}
-
-		for i := 0; i < 10; i++ {
-			j := i
-			b.app.QueueUpdateDraw(func() {
-				log.Debug().Msgf("YO %d", j)
-				fmt.Fprintf(v.GetWriter(), "Yo %d\n", j)
-				time.Sleep(1 * time.Second)
-			})
-		}
-	}
-
-	return nil
-}
-
 func (b *Browser) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	path := b.GetSelectedItem()
 	if path == "" {
@@ -396,7 +372,7 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		ns = n
 	}
 	if ok, err := b.app.Conn().CanI(ns, b.GVR().String(), []string{"patch"}); !ok || err != nil {
-		b.App().Flash().Err(fmt.Errorf("Current user can't edit resource %s", b.GVR()))
+		b.App().Flash().Errf("Current user can't edit resource %s", b.GVR())
 		return nil
 	}
 
@@ -409,8 +385,8 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		if ns != client.AllNamespaces {
 			args = append(args, "-n", ns)
 		}
-		if !runK(b.app, shellOpts{clear: true, args: args}) {
-			b.app.Flash().Err(errors.New("Edit exec failed"))
+		if err := runK(b.app, shellOpts{clear: true, args: args}); err != nil {
+			b.app.Flash().Errf("Edit command failed: %s", err)
 		}
 	}
 
@@ -566,7 +542,7 @@ func (b *Browser) simpleDelete(selections []string, msg string) {
 }
 
 func (b *Browser) resourceDelete(selections []string, msg string) {
-	dialog.ShowDelete(b.app.Styles.Dialog(), b.app.Content.Pages, msg, func(propagation *metav1.DeletionPropagation, force bool) {
+	okFn := func(propagation *metav1.DeletionPropagation, force bool) {
 		b.ShowDeleted()
 		if len(selections) > 1 {
 			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.GVR())
@@ -586,5 +562,6 @@ func (b *Browser) resourceDelete(selections []string, msg string) {
 			b.GetTable().DeleteMark(sel)
 		}
 		b.refresh()
-	}, func() {})
+	}
+	dialog.ShowDelete(b.app.Styles.Dialog(), b.app.Content.Pages, msg, okFn, func() {})
 }

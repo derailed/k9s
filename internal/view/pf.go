@@ -180,7 +180,7 @@ var selRx = regexp.MustCompile(`\A([\w-]+)/([\w-]+)\|([\w-]+)?\|(\d+):(\d+)`)
 func pfToHuman(s string) (string, error) {
 	mm := selRx.FindStringSubmatch(s)
 	if len(mm) < 6 {
-		return "", fmt.Errorf("Unable to parse selection %s", s)
+		return "", fmt.Errorf("unable to parse selection %s", s)
 	}
 
 	return fmt.Sprintf("%s::%s %s->%s", mm[2], mm[3], mm[4], mm[5]), nil

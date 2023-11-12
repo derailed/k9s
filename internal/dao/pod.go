@@ -33,9 +33,9 @@ var (
 )
 
 const (
-	logRetryCount                 = 20
-	logRetryWait                  = 1 * time.Second
-	defaultLogContainerAnnotation = "kubectl.kubernetes.io/default-logs-container"
+	logRetryCount              = 20
+	logRetryWait               = 1 * time.Second
+	defaultContainerAnnotation = "kubectl.kubernetes.io/default-container"
 )
 
 // Pod represents a pod resource.
@@ -181,7 +181,7 @@ func (p *Pod) GetInstance(fqn string) (*v1.Pod, error) {
 func (p *Pod) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error) {
 	fac, ok := ctx.Value(internal.KeyFactory).(*watch.Factory)
 	if !ok {
-		return nil, errors.New("No factory in context")
+		return nil, errors.New("no factory in context")
 	}
 	o, err := fac.Get(p.gvr.String(), opts.Path, true, labels.Everything())
 	if err != nil {
@@ -197,7 +197,7 @@ func (p *Pod) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 	}
 
 	outs := make([]LogChan, 0, coCounts)
-	if co, ok := GetDefaultLogContainer(po.ObjectMeta, po.Spec); ok && !opts.AllContainers {
+	if co, ok := GetDefaultContainer(po.ObjectMeta, po.Spec); ok && !opts.AllContainers {
 		opts.DefaultContainer = co
 		return append(outs, tailLogs(ctx, p, opts)), nil
 	}
@@ -486,17 +486,51 @@ func (p *Pod) isControlled(path string) (string, bool, error) {
 	return "", false, nil
 }
 
-// GetDefaultLogContainer returns a container name if specified in an annotation.
-func GetDefaultLogContainer(m metav1.ObjectMeta, spec v1.PodSpec) (string, bool) {
-	defaultContainer, ok := m.Annotations[defaultLogContainerAnnotation]
+// GetDefaultContainer returns a container name if specified in an annotation.
+func GetDefaultContainer(m metav1.ObjectMeta, spec v1.PodSpec) (string, bool) {
+	defaultContainer, ok := m.Annotations[defaultContainerAnnotation]
 	if ok {
 		for _, container := range spec.Containers {
 			if container.Name == defaultContainer {
 				return defaultContainer, true
 			}
 		}
-		log.Warn().Msg(defaultContainer + " container  not found. " + defaultLogContainerAnnotation + " annotation will be ignored")
+		log.Warn().Msg(defaultContainer + " container  not found. " + defaultContainerAnnotation + " annotation will be ignored")
 	}
 
 	return "", false
+}
+
+func (p *Pod) Sanitize(ctx context.Context, ns string) (int, error) {
+	oo, err := p.Resource.List(ctx, ns)
+	if err != nil {
+		return 0, err
+	}
+
+	var count int
+	for _, o := range oo {
+		u, ok := o.(*unstructured.Unstructured)
+		if !ok {
+			continue
+		}
+		var pod v1.Pod
+		err = runtime.DefaultUnstructuredConverter.FromUnstructured(u.Object, &pod)
+		if err != nil {
+			continue
+		}
+		log.Debug().Msgf("Pod status: %q", render.PodStatus(&pod))
+		switch render.PodStatus(&pod) {
+		case render.PhaseCompleted, render.PhaseCrashLoop, render.PhaseError, render.PhaseImagePullBackOff, render.PhaseOOMKilled:
+			log.Debug().Msgf("Sanitizing %s:%s", pod.Namespace, pod.Name)
+			fqn := client.FQN(pod.Namespace, pod.Name)
+			if err := p.Resource.Delete(ctx, fqn, nil, NowGrace); err != nil {
+				log.Warn().Err(err).Msgf("Pod %s deletion failed", fqn)
+				continue
+			}
+			count++
+		}
+	}
+	log.Debug().Msgf("Sanitizer deleted %d pods", count)
+
+	return count, nil
 }

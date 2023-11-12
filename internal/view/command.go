@@ -83,7 +83,7 @@ func allowedXRay(gvr client.GVR) bool {
 func (c *Command) xrayCmd(cmd string) error {
 	tokens := strings.Split(cmd, " ")
 	if len(tokens) < 2 {
-		return errors.New("You must specify a resource")
+		return errors.New("you must specify a resource")
 	}
 	gvr, ok := c.alias.AsGVR(tokens[1])
 	if !ok {
@@ -108,18 +108,24 @@ func (c *Command) xrayCmd(cmd string) error {
 	return c.exec(cmd, "xrays", x, true)
 }
 
-// Exec the Command by showing associated display.
+// Run execs the command by showing associated display.
 func (c *Command) run(cmd, path string, clearStack bool) error {
 	if c.specialCmd(cmd, path) {
 		return nil
 	}
 	cmds := strings.Split(cmd, " ")
-	gvr, v, err := c.viewMetaFor(cmds[0])
+	command := strings.ToLower(cmds[0])
+	gvr, v, err := c.viewMetaFor(command)
 	if err != nil {
 		return err
 	}
+	var cns string
+	tt := strings.Split(gvr, " ")
+	if len(tt) == 2 {
+		gvr, cns = tt[0], tt[1]
+	}
 
-	switch cmds[0] {
+	switch command {
 	case "ctx", "context", "contexts":
 		if len(cmds) == 2 {
 			return useContext(c.app, cmds[1])
@@ -127,7 +133,7 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 		return c.exec(cmd, gvr, c.componentFor(gvr, path, v), clearStack)
 	case "dir":
 		if len(cmds) != 2 {
-			return errors.New("You must specify a directory")
+			return errors.New("you must specify a directory")
 		}
 		return c.app.dirCmd(cmds[1])
 	default:
@@ -136,10 +142,13 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 		if len(cmds) == 2 {
 			ns = cmds[1]
 		}
+		if cns != "" {
+			ns = cns
+		}
 		if err := c.app.switchNS(ns); err != nil {
 			return err
 		}
-		if !c.alias.Check(cmds[0]) {
+		if !c.alias.Check(command) {
 			return fmt.Errorf("`%s` Command not found", cmd)
 		}
 		return c.exec(cmd, gvr, c.componentFor(gvr, path, v), clearStack)
@@ -179,7 +188,7 @@ func (c *Command) specialCmd(cmd, path string) bool {
 	case "cow":
 		c.app.cowCmd(path)
 		return true
-	case "q", "q!", "Q", "quit":
+	case "q", "q!", "qa", "Q", "quit":
 		c.app.BailOut()
 		return true
 	case "?", "h", "help":
@@ -253,12 +262,12 @@ func (c *Command) exec(cmd, gvr string, comp model.Component, clearStack bool) (
 			} else {
 				_ = c.run(hh[0], "", true)
 			}
-			err = fmt.Errorf("Invalid command %q", cmd)
+			err = fmt.Errorf("invalid command %q", cmd)
 		}
 	}()
 
 	if comp == nil {
-		return fmt.Errorf("No component found for %s", gvr)
+		return fmt.Errorf("no component found for %s", gvr)
 	}
 	c.app.Flash().Infof("Viewing %s...", client.NewGVR(gvr).R())
 	if tokens := strings.Split(cmd, " "); len(tokens) >= 2 {

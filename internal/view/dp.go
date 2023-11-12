@@ -59,7 +59,7 @@ func (d *Deploy) logOptions(prev bool) (*dao.LogOptions, error) {
 		co, dco string
 		allCos  bool
 	)
-	if c, ok := dao.GetDefaultLogContainer(sts.Spec.Template.ObjectMeta, sts.Spec.Template.Spec); ok {
+	if c, ok := dao.GetDefaultContainer(sts.Spec.Template.ObjectMeta, sts.Spec.Template.Spec); ok {
 		co, dco = c, c
 	} else if len(cc) == 1 {
 		co = cc[0].Name
@@ -89,7 +89,7 @@ func (d *Deploy) logOptions(prev bool) (*dao.LogOptions, error) {
 
 func (d *Deploy) showPods(app *App, model ui.Tabular, gvr, path string) {
 	var ddp dao.Deployment
-	dp, err := ddp.Load(app.factory, path)
+	dp, err := ddp.GetInstance(app.factory, path)
 	if err != nil {
 		app.Flash().Err(err)
 		return
@@ -100,7 +100,7 @@ func (d *Deploy) showPods(app *App, model ui.Tabular, gvr, path string) {
 
 func (d *Deploy) dp(path string) (*appsv1.Deployment, error) {
 	var dp dao.Deployment
-	return dp.Load(d.App().factory, path)
+	return dp.GetInstance(d.App().factory, path)
 }
 
 // ----------------------------------------------------------------------------

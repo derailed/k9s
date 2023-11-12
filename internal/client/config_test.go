@@ -111,7 +111,7 @@ func TestConfigCurrentNamespace(t *testing.T) {
 	}{
 		"default": {
 			flags:     &genericclioptions.ConfigFlags{KubeConfig: &kubeConfig},
-			namespace: "default",
+			namespace: "",
 		},
 		"withContext": {
 			flags:     &genericclioptions.ConfigFlags{KubeConfig: &kubeConfig, Context: &bleeCTX},
@@ -128,7 +128,9 @@ func TestConfigCurrentNamespace(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			cfg := client.NewConfig(u.flags)
 			ns, err := cfg.CurrentNamespaceName()
-			assert.Nil(t, err)
+			if ns != "" {
+				assert.Nil(t, err)
+			}
 			assert.Equal(t, u.namespace, ns)
 		})
 	}

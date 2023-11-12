@@ -89,14 +89,14 @@ func (a *App) Init(version string, rate int) error {
 	a.SetInputCapture(a.keyboard)
 	a.bindKeys()
 	if a.Conn() == nil {
-		return errors.New("No client connection detected")
+		return errors.New("no client connection detected")
 	}
 	ns := a.Config.ActiveNamespace()
 
 	a.factory = watch.NewFactory(a.Conn())
 	ok, err := a.isValidNS(ns)
 	if !ok && err == nil {
-		return fmt.Errorf("Invalid namespace %s", ns)
+		return fmt.Errorf("invalid namespace %s", ns)
 	}
 	a.initFactory(ns)
 
@@ -206,8 +206,7 @@ func (a *App) ActiveView() model.Component {
 }
 
 func (a *App) toggleHeader(header, logo bool) {
-	a.showHeader = header
-	a.showLogo = logo
+	a.showHeader, a.showLogo = header, logo
 	flex, ok := a.Main.GetPrimitive("main").(*tview.Flex)
 	if !ok {
 		log.Fatal().Msg("Expecting valid flex view")
@@ -285,7 +284,7 @@ func (a *App) Resume() {
 }
 
 func (a *App) clusterUpdater(ctx context.Context) {
-	if err := a.refreshCluster(); err != nil {
+	if err := a.refreshCluster(ctx); err != nil {
 		log.Error().Err(err).Msgf("Cluster updater failed!")
 		return
 	}
@@ -298,7 +297,7 @@ func (a *App) clusterUpdater(ctx context.Context) {
 			log.Debug().Msg("ClusterInfo updater canceled!")
 			return
 		case <-time.After(delay):
-			if err := a.refreshCluster(); err != nil {
+			if err := a.refreshCluster(ctx); err != nil {
 				log.Error().Err(err).Msgf("ClusterUpdater failed")
 				if delay = bf.NextBackOff(); delay == backoff.Stop {
 					a.BailOut()
@@ -312,7 +311,7 @@ func (a *App) clusterUpdater(ctx context.Context) {
 	}
 }
 
-func (a *App) refreshCluster() error {
+func (a *App) refreshCluster(context.Context) error {
 	c := a.Content.Top()
 	if ok := a.Conn().CheckConnectivity(); ok {
 		if atomic.LoadInt32(&a.conRetry) > 0 {
@@ -338,7 +337,7 @@ func (a *App) refreshCluster() error {
 	}
 	if count > 0 {
 		a.Status(model.FlashWarn, fmt.Sprintf("Dial K8s Toast [%d/%d]", count, maxConnRetry))
-		return fmt.Errorf("Conn check failed (%d/%d)", count, maxConnRetry)
+		return fmt.Errorf("conn check failed (%d/%d)", count, maxConnRetry)
 	}
 
 	// Reload alias
@@ -367,7 +366,7 @@ func (a *App) switchNS(ns string) error {
 		return err
 	}
 	if !ok {
-		return fmt.Errorf("Invalid namespace %q", ns)
+		return fmt.Errorf("invalid namespace %q", ns)
 	}
 	if err := a.Config.SetActiveNamespace(ns); err != nil {
 		return err
@@ -398,7 +397,7 @@ func (a *App) isValidNS(ns string) (bool, error) {
 	return true, nil
 }
 
-func (a *App) switchContext(name string, loadPods bool) error {
+func (a *App) switchContext(name string) error {
 	log.Debug().Msgf("--> Switching Context %q--%q", name, a.Config.ActiveView())
 	a.Halt()
 	defer a.Resume()
@@ -406,16 +405,15 @@ func (a *App) switchContext(name string, loadPods bool) error {
 		ns, err := a.Conn().Config().CurrentNamespaceName()
 		if err != nil {
 			log.Warn().Msg("No namespace specified in context. Using K9s config")
+			ns = a.Config.ActiveNamespace()
 		}
 		a.initFactory(ns)
 
 		if e := a.command.Reset(true); e != nil {
 			return e
 		}
-		v := a.Config.ActiveView()
-		if v == "" || isContextCmd(v) || loadPods {
-			v = "pod"
-			a.Config.SetActiveView(v)
+		if a.Config.ActiveView() == "" || isContextCmd(a.Config.ActiveView()) {
+			a.Config.SetActiveView("pod")
 		}
 		a.Config.Reset()
 		a.Config.K9s.CurrentContext = name
@@ -433,7 +431,7 @@ func (a *App) switchContext(name string, loadPods bool) error {
 
 		a.Flash().Infof("Switching context to %s", name)
 		a.ReloadStyles(name)
-		a.gotoResource(v, "", true)
+		a.gotoResource(a.Config.ActiveView(), "", true)
 		a.clusterModel.Reset(a.factory)
 	}
 
@@ -468,6 +466,10 @@ func (a *App) Run() error {
 		<-time.After(splashDelay)
 		a.QueueUpdateDraw(func() {
 			a.Main.SwitchToPage("main")
+			// if command bar is already active, focus it
+			if a.CmdBuff().IsActive() {
+				a.SetFocus(a.Prompt())
+			}
 		})
 	}()
 

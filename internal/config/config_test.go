@@ -277,6 +277,7 @@ func (m *mockSettings) ClusterNames() (map[string]struct{}, error) { return nil,
 // Test Data...
 
 var expectedConfig = `k9s:
+  liveViewAutoRefresh: true
   refreshRate: 100
   maxConnRetry: 5
   enableMouse: false
@@ -297,6 +298,7 @@ var expectedConfig = `k9s:
     showJSON: false
   currentContext: blee
   currentCluster: blee
+  keepMissingClusters: false
   clusters:
     blee:
       namespace:
@@ -374,9 +376,11 @@ var expectedConfig = `k9s:
       critical: 90
       warn: 70
   screenDumpDir: /tmp
+  disablePodCounting: false
 `
 
 var resetConfig = `k9s:
+  liveViewAutoRefresh: true
   refreshRate: 2
   maxConnRetry: 5
   enableMouse: false
@@ -397,6 +401,7 @@ var resetConfig = `k9s:
     showJSON: false
   currentContext: blee
   currentCluster: blee
+  keepMissingClusters: false
   clusters:
     blee:
       namespace:
@@ -426,4 +431,5 @@ var resetConfig = `k9s:
       critical: 90
       warn: 70
   screenDumpDir: /tmp
+  disablePodCounting: false
 `

@@ -413,6 +413,7 @@ func TestRowEventsSort(t *testing.T) {
 		re                 render.RowEvents
 		col                int
 		duration, num, asc bool
+		capacity           bool
 		e                  render.RowEvents
 	}{
 		"age_time": {
@@ -464,12 +465,33 @@ func TestRowEventsSort(t *testing.T) {
 				{Row: render.Row{ID: "ns2/C", Fields: render.Fields{"C", "2", "3"}}},
 			},
 		},
+		"capacity": {
+			re: render.RowEvents{
+				{Row: render.Row{ID: "ns1/B", Fields: render.Fields{"B", "2", "3", "1Gi"}}},
+				{Row: render.Row{ID: "ns1/A", Fields: render.Fields{"A", "2", "3", "1.1G"}}},
+				{Row: render.Row{ID: "ns1/C", Fields: render.Fields{"C", "2", "3", "0.5Ti"}}},
+				{Row: render.Row{ID: "ns2/B", Fields: render.Fields{"B", "2", "3", "12e6"}}},
+				{Row: render.Row{ID: "ns2/A", Fields: render.Fields{"A", "2", "3", "1234"}}},
+				{Row: render.Row{ID: "ns2/C", Fields: render.Fields{"C", "2", "3", "0.1Ei"}}},
+			},
+			col:      3,
+			asc:      true,
+			capacity: true,
+			e: render.RowEvents{
+				{Row: render.Row{ID: "ns2/A", Fields: render.Fields{"A", "2", "3", "1234"}}},
+				{Row: render.Row{ID: "ns2/B", Fields: render.Fields{"B", "2", "3", "12e6"}}},
+				{Row: render.Row{ID: "ns1/B", Fields: render.Fields{"B", "2", "3", "1Gi"}}},
+				{Row: render.Row{ID: "ns1/A", Fields: render.Fields{"A", "2", "3", "1.1G"}}},
+				{Row: render.Row{ID: "ns1/C", Fields: render.Fields{"C", "2", "3", "0.5Ti"}}},
+				{Row: render.Row{ID: "ns2/C", Fields: render.Fields{"C", "2", "3", "0.1Ei"}}},
+			},
+		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			u.re.Sort("", u.col, u.duration, u.num, u.asc)
+			u.re.Sort("", u.col, u.duration, u.num, u.capacity, u.asc)
 			assert.Equal(t, u.e, u.re)
 		})
 	}

@@ -60,6 +60,7 @@ func (c *CronJob) Run(path string) error {
 			Name:      jobName + "-manual-" + rand.String(3),
 			Namespace: ns,
 			Labels:    cj.Spec.JobTemplate.Labels,
+			Annotations: cj.Spec.JobTemplate.Annotations,
 			OwnerReferences: []metav1.OwnerReference{
 				{
 					APIVersion:         c.gvr.GV().String(),

@@ -81,7 +81,10 @@ func defaultEnv(c *client.Config, path string, header render.Header, row render.
 	env := k8sEnv(c)
 	env["NAMESPACE"], env["NAME"] = client.Namespaced(path)
 	for _, col := range header.Columns(true) {
-		env["COL-"+col] = row.Fields[header.IndexOf(col, true)]
+		i := header.IndexOf(col, true)
+		if i >= 0 && i < len(row.Fields) {
+			env["COL-"+col] = row.Fields[i]
+		}
 	}
 
 	return env
@@ -140,7 +143,7 @@ func podCtx(app *App, path, labelSel, fieldSel string) ContextFunc {
 func extractApp(ctx context.Context) (*App, error) {
 	app, ok := ctx.Value(internal.KeyApp).(*App)
 	if !ok {
-		return nil, errors.New("No application found in context")
+		return nil, errors.New("no application found in context")
 	}
 
 	return app, nil
@@ -154,7 +157,7 @@ func asKey(key string) (tcell.Key, error) {
 		}
 	}
 
-	return 0, fmt.Errorf("No matching key found %s", key)
+	return 0, fmt.Errorf("no matching key found %s", key)
 }
 
 // FwFQN returns a fully qualified ns/name:container id.

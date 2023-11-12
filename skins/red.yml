@@ -1,3 +1,8 @@
+# -----------------------------------------------------------------------------
+# Red skin
+# -----------------------------------------------------------------------------
+
+# Skin...
 k9s:
   body:
     fgColor: red
@@ -80,3 +85,5 @@ k9s:
       indicator:
         fgColor: red
         bgColor: black
+        toggleOnColor: red
+        toggleOffColor: white

@@ -145,12 +145,13 @@ func (rr Rows) Find(id string) (int, bool) {
 }
 
 // Sort rows based on column index and order.
-func (rr Rows) Sort(col int, asc, isNum, isDur bool) {
+func (rr Rows) Sort(col int, asc, isNum, isDur, isCapacity bool) {
 	t := RowSorter{
 		Rows:       rr,
 		Index:      col,
 		IsNumber:   isNum,
 		IsDuration: isDur,
+		IsCapacity: isCapacity,
 		Asc:        asc,
 	}
 	sort.Sort(t)
@@ -160,10 +161,12 @@ func (rr Rows) Sort(col int, asc, isNum, isDur bool) {
 
 // RowSorter sorts rows.
 type RowSorter struct {
-	Rows                 Rows
-	Index                int
-	IsNumber, IsDuration bool
-	Asc                  bool
+	Rows       Rows
+	Index      int
+	IsNumber   bool
+	IsDuration bool
+	IsCapacity bool
+	Asc        bool
 }
 
 func (s RowSorter) Len() int {
@@ -177,7 +180,7 @@ func (s RowSorter) Swap(i, j int) {
 func (s RowSorter) Less(i, j int) bool {
 	v1, v2 := s.Rows[i].Fields[s.Index], s.Rows[j].Fields[s.Index]
 	id1, id2 := s.Rows[i].ID, s.Rows[j].ID
-	less := Less(s.IsNumber, s.IsDuration, id1, id2, v1, v2)
+	less := Less(s.IsNumber, s.IsDuration, s.IsCapacity, id1, id2, v1, v2)
 	if s.Asc {
 		return less
 	}
@@ -188,7 +191,7 @@ func (s RowSorter) Less(i, j int) bool {
 // Helpers...
 
 // Less return true if c1 < c2.
-func Less(isNumber, isDuration bool, id1, id2, v1, v2 string) bool {
+func Less(isNumber, isDuration, isCapacity bool, id1, id2, v1, v2 string) bool {
 	var less bool
 	switch {
 	case isNumber:
@@ -197,6 +200,9 @@ func Less(isNumber, isDuration bool, id1, id2, v1, v2 string) bool {
 	case isDuration:
 		d1, d2 := durationToSeconds(v1), durationToSeconds(v2)
 		less = d1 <= d2
+	case isCapacity:
+		c1, c2 := capacityToNumber(v1), capacityToNumber(v2)
+		less = c1 <= c2
 	default:
 		less = sortorder.NaturalLess(v1, v2)
 	}

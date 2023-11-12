@@ -47,6 +47,28 @@ plugin:
     args:
     - -c
     - "flux --context $CONTEXT reconcile helmrelease -n $NAMESPACE $NAME |& less"
+  reconcile-helm-repo:
+    shortCut: Shift-Z
+    description: Flux reconcile
+    scopes:
+      - helmrepositories
+    command: bash
+    background: false
+    confirm: false
+    args:
+      - -c
+      - "flux reconcile source helm --context $CONTEXT -n $NAMESPACE $NAME |& less"
+  reconcile-oci-repo:
+    shortCut: Shift-Z
+    description: Flux reconcile
+    scopes:
+      - ocirepositories
+    command: bash
+    background: false
+    confirm: false
+    args:
+      - -c
+      - "flux reconcile source oci --context $CONTEXT -n $NAMESPACE $NAME |& less"
   reconcile-ks:
     shortCut: Shift-R
     confirm: false

@@ -1,4 +1,5 @@
 k9s:
+  liveViewAutoRefresh: true
   refreshRate: 2
   readOnly: false
   logger:
@@ -30,3 +31,4 @@ k9s:
       view:
         active: po
   screenDumpDir: /tmp
+  disablePodCounting: false

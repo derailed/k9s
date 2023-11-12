@@ -1,4 +1,9 @@
-# K9s Kiss Skin Contributed by [@beejeebus](justin.p.randell@gmail.com)
+# -----------------------------------------------------------------------------
+# K9s Kiss Skin
+# Author: [@beejeebus](justin.p.randell@gmail.com)
+# -----------------------------------------------------------------------------
+
+# Skin...
 k9s:
   body:
     fgColor: default
@@ -66,3 +71,5 @@ k9s:
       indicator:
         fgColor: default
         bgColor: default
+        toggleOnColor: default
+        toggleOffColor: default
