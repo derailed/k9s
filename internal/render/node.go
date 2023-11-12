@@ -53,11 +53,11 @@ func (Node) Header(_ string) Header {
 func (n Node) Render(o interface{}, ns string, r *Row) error {
 	oo, ok := o.(*NodeWithMetrics)
 	if !ok {
-		return fmt.Errorf("Expected *NodeAndMetrics, but got %T", o)
+		return fmt.Errorf("expected *NodeAndMetrics, but got %T", o)
 	}
 	meta, ok := oo.Raw.Object["metadata"].(map[string]interface{})
 	if !ok {
-		return fmt.Errorf("Unable to extract meta")
+		return fmt.Errorf("unable to extract meta")
 	}
 	na := extractMetaField(meta, "name")
 	var no v1.Node
