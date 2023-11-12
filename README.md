@@ -56,6 +56,11 @@ K9s is available on Linux, macOS and Windows platforms.
    ```shell
    sudo port install k9s
    ```
+* Via [snap](https://snapcraft.io/k9s) for Linux
+
+  ```shell
+  snap install k9s --devmode
+  ```
 
 * On Arch Linux
 
