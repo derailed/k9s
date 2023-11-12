@@ -31,3 +31,4 @@ k9s:
       view:
         active: po
   screenDumpDir: /tmp
+  disablePodCounting: false
