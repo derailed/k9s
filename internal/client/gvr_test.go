@@ -37,7 +37,7 @@ func TestGVRCan(t *testing.T) {
 		"view":      {[]string{"get", "list", "watch"}, "view", true},
 		"delete":    {[]string{"delete", "list", "watch"}, "delete", true},
 		"no_delete": {[]string{"get", "list", "watch"}, "delete", false},
-		"edit":      {[]string{"path", "update", "watch"}, "edit", true},
+		"edit":      {[]string{"patch", "update", "watch"}, "edit", true},
 		"no_edit":   {[]string{"get", "list", "watch"}, "edit", false},
 	}
 
