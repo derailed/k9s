@@ -12,12 +12,14 @@ type Limits map[v1.ResourceName]string
 
 // ShellPod represents k9s shell configuration.
 type ShellPod struct {
-	Image     string            `json:"image"`
-	Command   []string          `json:"command,omitempty"`
-	Args      []string          `json:"args,omitempty"`
-	Namespace string            `json:"namespace"`
-	Limits    Limits            `json:"resources,omitempty"`
-	Labels    map[string]string `json:"labels,omitempty"`
+	Image            string                    `json:"image"`
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty" yaml:"imagePullSecrets,omitempty"`
+	ImagePullPolicy  string                    `json:"imagePullPolicy,omitempty" yaml:"imagePullPolicy,omitempty"`
+	Command          []string                  `json:"command,omitempty"`
+	Args             []string                  `json:"args,omitempty"`
+	Namespace        string                    `json:"namespace"`
+	Limits           Limits                    `json:"resources,omitempty"`
+	Labels           map[string]string         `json:"labels,omitempty"`
 }
 
 // NewShellPod returns a new instance.
@@ -36,6 +38,9 @@ func (s *ShellPod) Validate(client.Connection, KubeSettings) {
 	}
 	if len(s.Limits) == 0 {
 		s.Limits = defaultLimits()
+	}
+	if len(s.ImagePullSecrets) == 0 {
+		s.ImagePullSecrets = []v1.LocalObjectReference{}
 	}
 }
 
