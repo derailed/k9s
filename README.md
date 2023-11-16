@@ -388,8 +388,8 @@ K9s uses aliases to navigate most K8s resources.
           # imagePullPolicy defaults to Always
           imagePullPolicy: Always
           # imagePullSecrets defaults to no secrets
-          # imagePullSecrets:
-          # - name: my-regcred
+          imagePullSecrets:
+          - name: my-regcred
           # The resource limit to set on the shell pod.
           limits:
             cpu: 100m
@@ -436,9 +436,9 @@ k9s:
         namespace: blee
         # imagePullPolicy defaults to Always
         imagePullPolicy: Always
-        # imagePullSecrets defaults to no secrets
-        # imagePullSecrets:
-        # - name: my-regcred
+        # imagePullSecrets defaults to no secret, remove the option if you don't need it.
+        imagePullSecrets:
+        - name: my-regcred
         # The resource limit to
         limits:
           cpu: 100m
