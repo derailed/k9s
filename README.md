@@ -439,7 +439,7 @@ k9s:
         # imagePullSecrets defaults to no secret
         imagePullSecrets:
         - name: my-regcred
-        # The resource limit to
+        # The resource limit to set on the shell pod.
         limits:
           cpu: 100m
           memory: 100Mi
