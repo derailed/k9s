@@ -1,4 +1,4 @@
-name: K9s Checks
+name: K9s Test
 
 on:
   workflow_dispatch:
@@ -13,7 +13,7 @@ on:
       - master
 jobs:
   build:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4.1.1
