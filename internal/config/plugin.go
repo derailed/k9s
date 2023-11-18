@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package config
 
 import (
@@ -45,7 +48,7 @@ func NewPlugins() Plugins {
 
 // Load K9s plugins.
 func (p Plugins) Load() error {
-	var pluginDirs []string
+	pluginDirs := make([]string, 0, len(xdg.DataDirs))
 	for _, dataDir := range xdg.DataDirs {
 		pluginDirs = append(pluginDirs, filepath.Join(dataDir, K9sPluginDirectory))
 	}

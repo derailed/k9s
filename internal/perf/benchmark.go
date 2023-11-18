@@ -1,16 +1,20 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package perf
 
 import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/derailed/k9s/internal/dao"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
+
+	"github.com/derailed/k9s/internal/dao"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
