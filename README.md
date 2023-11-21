@@ -364,6 +364,16 @@ K9s uses aliases to navigate most K8s resources.
     currentCluster: minikube
     # KeepMissingClusters will keep clusters in the config if they are missing from the current kubeconfig file. Default false
     KeepMissingClusters: false
+    # Provide shell pod customization of feature gate is enabled
+    shellPod:
+      # The shell pod image to use.
+      image: killerAdmin
+      # The namespace to launch to shell pod into.
+      namespace: fred
+      # The resource limit to set on the shell pod.
+      limits:
+        cpu: 100m
+        memory: 100Mi
     # Persists per cluster preferences for favorite namespaces and view.
     clusters:
       coolio:
@@ -379,21 +389,6 @@ K9s uses aliases to navigate most K8s resources.
         featureGates:
           # Toggles NodeShell support. Allow K9s to shell into nodes if needed. Default false.
           nodeShell: false
-        # Provide shell pod customization of feature gate is enabled
-        shellPod:
-          # The shell pod image to use.
-          image: killerAdmin
-          # The namespace to launch to shell pod into.
-          namespace: fred
-          # imagePullPolicy defaults to Always
-          imagePullPolicy: Always
-          # imagePullSecrets defaults to no secret
-          imagePullSecrets:
-          - name: my-regcred
-          # The resource limit to set on the shell pod.
-          limits:
-            cpu: 100m
-            memory: 100Mi
         # The IP Address to use when launching a port-forward.
         portForwardAddress: 1.2.3.4
       kind:
@@ -424,25 +419,19 @@ By enabling the nodeShell feature gate on a given cluster, K9s allows you to she
 ```yaml
 # $XDG_CONFIG_HOME/k9s/config.yml
 k9s:
+  # You can also further tune the shell pod specification
+  shellPod:
+    image: cool_kid_admin:42
+    namespace: blee
+    limits:
+      cpu: 100m
+      memory: 100Mi
   clusters:
     # Configures node shell on cluster blee
     blee:
       featureGates:
         # You must enable the nodeShell feature gate to enable shelling into nodes
         nodeShell: true
-      # You can also further tune the shell pod specification
-      shellPod:
-        image: cool_kid_admin:42
-        namespace: blee
-        # imagePullPolicy defaults to Always
-        imagePullPolicy: Always
-        # imagePullSecrets defaults to no secret
-        imagePullSecrets:
-        - name: my-regcred
-        # The resource limit to set on the shell pod.
-        limits:
-          cpu: 100m
-          memory: 100Mi
 ```
 
 ---

@@ -24,6 +24,7 @@ type K9s struct {
 	ReadOnly            bool                `yaml:"readOnly"`
 	NoExitOnCtrlC       bool                `yaml:"noExitOnCtrlC"`
 	NoIcons             bool                `yaml:"noIcons"`
+	ShellPod            *ShellPod           `yaml:"shellPod"`
 	SkipLatestRevCheck  bool                `yaml:"skipLatestRevCheck"`
 	Logger              *Logger             `yaml:"logger"`
 	CurrentContext      string              `yaml:"currentContext"`
@@ -51,6 +52,7 @@ func NewK9s() *K9s {
 		Clusters:      make(map[string]*Cluster),
 		Thresholds:    NewThreshold(),
 		ScreenDumpDir: K9sDefaultScreenDumpDir,
+		ShellPod:      NewShellPod(),
 	}
 }
 
@@ -236,6 +238,11 @@ func (k *K9s) Validate(c client.Connection, ks KubeSettings) {
 		k.Clusters = map[string]*Cluster{}
 	}
 	k.validateClusters(c, ks)
+
+	if k.ShellPod == nil {
+		k.ShellPod = NewShellPod()
+	}
+	k.ShellPod.Validate(c, ks)
 
 	if k.Logger == nil {
 		k.Logger = NewLogger()

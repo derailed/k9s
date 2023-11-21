@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/adrg/xdg"
-	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 )
 
@@ -52,6 +51,7 @@ func (p Plugins) Load() error {
 	for _, dataDir := range xdg.DataDirs {
 		pluginDirs = append(pluginDirs, filepath.Join(dataDir, K9sPluginDirectory))
 	}
+
 	return p.LoadPlugins(K9sPluginsFilePath, pluginDirs)
 }
 
@@ -61,15 +61,18 @@ func (p Plugins) LoadPlugins(path string, pluginDirs []string) error {
 	if err != nil {
 		return err
 	}
+
 	var pp Plugins
 	if err := yaml.Unmarshal(f, &pp); err != nil {
 		return err
+	}
+	for k, v := range pp.Plugin {
+		p.Plugin[k] = v
 	}
 
 	for _, pluginDir := range pluginDirs {
 		pluginFiles, err := os.ReadDir(pluginDir)
 		if err != nil {
-			log.Warn().Msgf("Failed reading plugin path %s; %s", pluginDir, err)
 			continue
 		}
 		for _, file := range pluginFiles {
@@ -86,10 +89,6 @@ func (p Plugins) LoadPlugins(path string, pluginDirs []string) error {
 			}
 			p.Plugin[strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))] = plugin
 		}
-	}
-
-	for k, v := range pp.Plugin {
-		p.Plugin[k] = v
 	}
 
 	return nil
