@@ -130,7 +130,7 @@ func BenchConfig(context string) string {
 func (c *Configurator) RefreshStyles(context string) {
 	c.BenchFile = BenchConfig(context)
 
-	clusterSkins := filepath.Join(config.K9sHome(), fmt.Sprintf("%s_skin.yml", context))
+	clusterSkins := config.YamlExtension(filepath.Join(config.K9sHome(), fmt.Sprintf("%s_skin.yml", context)))
 	if c.Styles == nil {
 		c.Styles = config.NewStyles()
 	} else {

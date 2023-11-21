@@ -11,7 +11,7 @@ import (
 )
 
 // K9sHotKeys manages K9s hotKeys.
-var K9sHotKeys = filepath.Join(K9sHome(), "hotkey.yml")
+var K9sHotKeys = YamlExtension(filepath.Join(K9sHome(), "hotkey.yml"))
 
 // HotKeys represents a collection of plugins.
 type HotKeys struct {
