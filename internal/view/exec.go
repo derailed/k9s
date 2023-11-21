@@ -360,8 +360,9 @@ func k9sShellPod(node string, cfg *config.ShellPod) *v1.Pod {
 
 	log.Debug().Msgf("Shell Config %#v", cfg)
 	c := v1.Container{
-		Name:  k9sShell,
-		Image: cfg.Image,
+		Name:            k9sShell,
+		Image:           cfg.Image,
+		ImagePullPolicy: cfg.ImagePullPolicy,
 		VolumeMounts: []v1.VolumeMount{
 			{
 				Name:      "root-vol",
@@ -393,6 +394,7 @@ func k9sShellPod(node string, cfg *config.ShellPod) *v1.Pod {
 			RestartPolicy:                 v1.RestartPolicyNever,
 			HostPID:                       true,
 			HostNetwork:                   true,
+			ImagePullSecrets:              cfg.ImagePullSecrets,
 			TerminationGracePeriodSeconds: &grace,
 			Volumes: []v1.Volume{
 				{

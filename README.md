@@ -385,6 +385,11 @@ K9s uses aliases to navigate most K8s resources.
           image: killerAdmin
           # The namespace to launch to shell pod into.
           namespace: fred
+          # imagePullPolicy defaults to Always
+          imagePullPolicy: Always
+          # imagePullSecrets defaults to no secret
+          imagePullSecrets:
+          - name: my-regcred
           # The resource limit to set on the shell pod.
           limits:
             cpu: 100m
@@ -429,6 +434,12 @@ k9s:
       shellPod:
         image: cool_kid_admin:42
         namespace: blee
+        # imagePullPolicy defaults to Always
+        imagePullPolicy: Always
+        # imagePullSecrets defaults to no secret
+        imagePullSecrets:
+        - name: my-regcred
+        # The resource limit to set on the shell pod.
         limits:
           cpu: 100m
           memory: 100Mi
