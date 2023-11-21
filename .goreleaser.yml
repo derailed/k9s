@@ -12,6 +12,7 @@ builds:
       - linux
       - darwin
       - windows
+      - freebsd
     goarch:
       - amd64
       - arm64
@@ -33,6 +34,7 @@ archives:
       darwin: Darwin
       linux: Linux
       windows: Windows
+      freebsd: FreeBSD
       bit: Arm
       bitv6: Arm6
       bitv7: Arm7
