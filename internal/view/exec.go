@@ -378,9 +378,6 @@ func k9sShellPod(node string, cfg *config.ShellPod) *v1.Pod {
 	if len(cfg.Args) > 0 {
 		c.Args = cfg.Args
 	}
-	if len(cfg.ImagePullPolicy) > 0 {
-		c.ImagePullPolicy = v1.PullPolicy(cfg.ImagePullPolicy)
-	}
 
 	return &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
