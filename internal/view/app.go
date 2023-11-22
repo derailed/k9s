@@ -176,7 +176,7 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 }
 
 func (a *App) suggestSubCommand(command string) []string {
-	cmds := strings.Split(command, " ")
+	cmds := strings.Fields(command)
 	if len(cmds[0]) == 0 || len(cmds) != 2 {
 		return nil
 	}
