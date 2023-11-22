@@ -244,8 +244,8 @@ github.com/json-iterator/go v1.1.7/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/u
 github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnrnM=
 github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
 github.com/julienschmidt/httprouter v1.2.0/go.mod h1:SYymIcj16QtmaHHD7aYtjjsJG7VTCxuUUipMqKk8s4w=
-github.com/karrick/godirwalk v1.17.0 h1:b4kY7nqDdioR/6qnbHQyDvmA17u5G1cZ6J+CZXwSWoI=
-github.com/karrick/godirwalk v1.17.0/go.mod h1:j4mkqPuvaLI8mp1DroR3P6ad7cyYd4c1qeJ3RV7ULlk=
+github.com/karrick/godirwalk v1.16.1 h1:DynhcF+bztK8gooS0+NDJFrdNZjJ3gzVzC545UNA9iw=
+github.com/karrick/godirwalk v1.16.1/go.mod h1:j4mkqPuvaLI8mp1DroR3P6ad7cyYd4c1qeJ3RV7ULlk=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/klauspost/compress v1.16.0 h1:iULayQNOReoYUe+1qtKOqw9CwJv3aNQu8ivo7lw1HU4=
@@ -627,8 +627,6 @@ k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9 h1:LyMgNKD2P8Wn1iAwQU5Ohx
 k8s.io/kube-openapi v0.0.0-20230717233707-2695361300d9/go.mod h1:wZK2AVp1uHCp4VamDVgBP2COHZjqD1T68Rf0CM3YjSM=
 k8s.io/kubectl v0.28.3 h1:H1Peu1O3EbN9zHkJCcvhiJ4NUj6lb88sGPO5wrWIM6k=
 k8s.io/kubectl v0.28.3/go.mod h1:RDAudrth/2wQ3Sg46fbKKl4/g+XImzvbsSRZdP2RiyE=
-k8s.io/kubernetes v1.28.3 h1:XTci6gzk+JR51UZuZQCFJ4CsyUkfivSjLI4O1P9z6LY=
-k8s.io/kubernetes v1.28.3/go.mod h1:NhAysZWvHtNcJFFHic87ofxQN7loylCQwg3ZvXVDbag=
 k8s.io/metrics v0.28.3 h1:w2s3kVi7HulXqCVDFkF4hN/OsL1tXTTb4Biif995h/g=
 k8s.io/metrics v0.28.3/go.mod h1:OZZ23AHFojPzU6r3xoHGRUcV3I9pauLua+07sAUbwLc=
 k8s.io/utils v0.0.0-20230406110748-d93618cff8a2 h1:qY1Ad8PODbnymg2pRbkyMT/ylpTrCM8P2RJ0yroCyIk=

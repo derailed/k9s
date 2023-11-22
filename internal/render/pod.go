@@ -15,10 +15,15 @@ import (
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/kubernetes/pkg/util/node"
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 
 	"github.com/derailed/k9s/internal/client"
+)
+
+const (
+	// NodeUnreachablePodReason is reason and message set on a pod when its state
+	// cannot be confirmed as kubelet is unresponsive on the node it is (was) running.
+	NodeUnreachablePodReason = "NodeLost" // k8s.io/kubernetes/pkg/util/node.NodeUnreachablePodReason
 )
 
 const (
@@ -309,7 +314,7 @@ func (*Pod) Statuses(ss []v1.ContainerStatus) (cr, ct, rc int) {
 func (p *Pod) Phase(po *v1.Pod) string {
 	status := string(po.Status.Phase)
 	if po.Status.Reason != "" {
-		if po.DeletionTimestamp != nil && po.Status.Reason == "NodeLost" {
+		if po.DeletionTimestamp != nil && po.Status.Reason == NodeUnreachablePodReason {
 			return "Unknown"
 		}
 		status = po.Status.Reason
@@ -456,7 +461,7 @@ func PodStatus(pod *v1.Pod) string {
 		}
 	}
 
-	if pod.DeletionTimestamp != nil && pod.Status.Reason == node.NodeUnreachablePodReason {
+	if pod.DeletionTimestamp != nil && pod.Status.Reason == NodeUnreachablePodReason {
 		reason = PhaseUnknown
 	} else if pod.DeletionTimestamp != nil {
 		reason = PhaseTerminating
