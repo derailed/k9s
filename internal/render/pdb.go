@@ -41,7 +41,7 @@ func (PodDisruptionBudget) Header(ns string) Header {
 func (p PodDisruptionBudget) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected PodDisruptionBudget, but got %T", o)
+		return fmt.Errorf("expected PodDisruptionBudget, but got %T", o)
 	}
 	var pdb v1beta1.PodDisruptionBudget
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &pdb)

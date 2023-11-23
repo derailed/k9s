@@ -39,7 +39,7 @@ func (DaemonSet) Header(ns string) Header {
 func (d DaemonSet) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected DaemonSet, but got %T", o)
+		return fmt.Errorf("expected DaemonSet, but got %T", o)
 	}
 	var ds appsv1.DaemonSet
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &ds)

@@ -38,7 +38,7 @@ func (StatefulSet) Header(ns string) Header {
 func (s StatefulSet) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected StatefulSet, but got %T", o)
+		return fmt.Errorf("expected StatefulSet, but got %T", o)
 	}
 	var sts appsv1.StatefulSet
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &sts)

@@ -41,7 +41,7 @@ func ShowError(styles config.Dialog, pages *ui.Pages, msg string) {
 }
 
 func cowTalk(says string) string {
-	msg := fmt.Sprintf("< Ruroh? %s >", says)
+	msg := fmt.Sprintf("< Ruroh? %s >", strings.TrimSuffix(says, "\n"))
 	buff := make([]string, 0, len(cow)+3)
 	buff = append(buff, msg)
 	buff = append(buff, cow...)

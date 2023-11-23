@@ -42,7 +42,7 @@ func (Deployment) Header(ns string) Header {
 func (d Deployment) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected Deployment, but got %T", o)
+		return fmt.Errorf("expected Deployment, but got %T", o)
 	}
 
 	var dp appsv1.Deployment

@@ -55,7 +55,7 @@ func (Namespace) Header(string) Header {
 func (n Namespace) Render(o interface{}, _ string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected Namespace, but got %T", o)
+		return fmt.Errorf("expected Namespace, but got %T", o)
 	}
 	var ns v1.Namespace
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &ns)

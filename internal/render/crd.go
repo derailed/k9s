@@ -35,7 +35,7 @@ func (CustomResourceDefinition) Header(string) Header {
 func (c CustomResourceDefinition) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected CustomResourceDefinition, but got %T", o)
+		return fmt.Errorf("expected CustomResourceDefinition, but got %T", o)
 	}
 
 	var crd v1.CustomResourceDefinition
@@ -87,7 +87,7 @@ func (c CustomResourceDefinition) diagnose(n string, vv []v1.CustomResourceDefin
 			if v.DeprecationWarning != nil {
 				ee = append(ee, fmt.Errorf("%s", *v.DeprecationWarning))
 			} else {
-				ee = append(ee, fmt.Errorf("%s[%s] is deprecated!", n, v.Name))
+				ee = append(ee, fmt.Errorf("%s[%s] is deprecated", n, v.Name))
 			}
 		}
 	}

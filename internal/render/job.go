@@ -42,7 +42,7 @@ func (Job) Header(ns string) Header {
 func (j Job) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected Job, but got %T", o)
+		return fmt.Errorf("expected Job, but got %T", o)
 	}
 	var job batchv1.Job
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &job)

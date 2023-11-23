@@ -686,8 +686,7 @@ func (a *App) gotoResource(cmd, path string, clearStack bool) {
 func (a *App) inject(c model.Component, clearStack bool) error {
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	if err := c.Init(ctx); err != nil {
-		log.Error().Err(err).Msgf("component init failed for %q", c.Name())
-		//dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
+		log.Error().Err(err).Msgf("Component init failed for %q", c.Name())
 		return err
 	}
 	if clearStack {

@@ -42,7 +42,7 @@ func (CronJob) Header(ns string) Header {
 func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected CronJob, but got %T", o)
+		return fmt.Errorf("expected CronJob, but got %T", o)
 	}
 	var cj batchv1.CronJob
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &cj)

@@ -99,7 +99,7 @@ func (Container) Header(ns string) Header {
 func (c Container) Render(o interface{}, name string, r *Row) error {
 	co, ok := o.(ContainerRes)
 	if !ok {
-		return fmt.Errorf("Expected ContainerRes, but got %T", o)
+		return fmt.Errorf("expected ContainerRes, but got %T", o)
 	}
 
 	cur, res := gatherMetrics(co.Container, co.MX)

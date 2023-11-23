@@ -40,7 +40,7 @@ func (RoleBinding) Header(ns string) Header {
 func (r RoleBinding) Render(o interface{}, ns string, row *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected RoleBinding, but got %T", o)
+		return fmt.Errorf("expected RoleBinding, but got %T", o)
 	}
 	var rb rbacv1.RoleBinding
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &rb)

@@ -42,7 +42,7 @@ func (ReplicaSet) Header(ns string) Header {
 func (r ReplicaSet) Render(o interface{}, ns string, row *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected ReplicaSet, but got %T", o)
+		return fmt.Errorf("expected ReplicaSet, but got %T", o)
 	}
 	var rs appsv1.ReplicaSet
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &rs)
