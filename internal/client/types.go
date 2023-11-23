@@ -58,10 +58,13 @@ const (
 var (
 	// GetAccess reads a resource.
 	GetAccess = []string{GetVerb}
+
 	// ListAccess list resources.
 	ListAccess = []string{ListVerb}
+
 	// MonitorAccess monitors a collection of resources.
 	MonitorAccess = []string{ListVerb, WatchVerb}
+
 	// ReadAllAccess represents an all read access to a resource.
 	ReadAllAccess = []string{GetVerb, ListVerb, WatchVerb}
 )

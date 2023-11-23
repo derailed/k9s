@@ -265,7 +265,7 @@ func (x *Xray) showLogs(spec *xray.NodeSpec, prev bool) {
 	}
 
 	ns, _ := client.Namespaced(path)
-	_, err := x.app.factory.CanForResource(ns, "v1/pods", client.MonitorAccess)
+	_, err := x.app.factory.CanForResource(ns, "v1/pods", client.ListAccess)
 	if err != nil {
 		x.app.Flash().Err(err)
 		return

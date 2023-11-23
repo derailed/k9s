@@ -58,7 +58,7 @@ func isResourcePath(p string) bool {
 
 func (l *LogsExtender) showLogs(path string, prev bool) {
 	ns, _ := client.Namespaced(path)
-	_, err := l.App().factory.CanForResource(ns, "v1/pods", client.MonitorAccess)
+	_, err := l.App().factory.CanForResource(ns, "v1/pods", client.ListAccess)
 	if err != nil {
 		l.App().Flash().Err(err)
 		return
