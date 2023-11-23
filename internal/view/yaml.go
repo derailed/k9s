@@ -29,7 +29,6 @@ const (
 
 func colorizeYAML(style config.Yaml, raw string) string {
 	lines := strings.Split(tview.Escape(raw), "\n")
-
 	fullFmt := strings.Replace(yamlFullFmt, "[key", "["+style.KeyColor.String(), 1)
 	fullFmt = strings.Replace(fullFmt, "[colon", "["+style.ColonColor.String(), 1)
 	fullFmt = strings.Replace(fullFmt, "[val", "["+style.ValueColor.String(), 1)
@@ -64,14 +63,12 @@ func enableRegion(str string) string {
 }
 
 func saveYAML(screenDumpDir, context, name, data string) (string, error) {
-	dir := filepath.Join(screenDumpDir, context)
+	dir := filepath.Join(screenDumpDir, config.SanitizeFilename(context))
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}
 
-	now := time.Now().UnixNano()
-	fName := fmt.Sprintf("%s-%d.yml", config.SanitizeFilename(name), now)
-
+	fName := fmt.Sprintf("%s--%d.yml", config.SanitizeFilename(name), time.Now().Unix())
 	path := filepath.Join(dir, fName)
 	mod := os.O_CREATE | os.O_WRONLY
 	file, err := os.OpenFile(path, mod, 0600)

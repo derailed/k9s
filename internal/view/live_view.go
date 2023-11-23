@@ -79,7 +79,9 @@ func (v *LiveView) Init(_ context.Context) error {
 
 	v.bindKeys()
 	v.SetInputCapture(v.keyboard)
-	v.model.AddListener(v)
+	if v.model != nil {
+		v.model.AddListener(v)
+	}
 
 	return nil
 }
@@ -198,7 +200,9 @@ func (v *LiveView) StylesChanged(s *config.Styles) {
 	v.SetBackgroundColor(v.app.Styles.BgColor())
 	v.text.SetTextColor(v.app.Styles.FgColor())
 	v.SetBorderFocusColor(v.app.Styles.Frame().Border.FocusColor.Color())
-	v.ResourceChanged(v.model.Peek(), nil)
+	if v.model != nil {
+		v.ResourceChanged(v.model.Peek(), nil)
+	}
 }
 
 // Actions returns menu actions.
@@ -351,10 +355,11 @@ func (v *LiveView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (v *LiveView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveYAML(v.app.Config.K9s.GetScreenDumpDir(), v.app.Config.K9s.CurrentContextDir(), v.title, v.text.GetText(true)); err != nil {
+	name := fmt.Sprintf("%s--%s", strings.Replace(v.model.GetPath(), "/", "-", 1), strings.ToLower(v.title))
+	if _, err := saveYAML(v.app.Config.K9s.GetScreenDumpDir(), v.app.Config.K9s.CurrentContextDir(), name, sanitizeEsc(v.text.GetText(true))); err != nil {
 		v.app.Flash().Err(err)
 	} else {
-		v.app.Flash().Infof("Log %s saved successfully!", path)
+		v.app.Flash().Infof("File %q saved successfully!", name)
 	}
 
 	return nil
@@ -364,7 +369,10 @@ func (v *LiveView) updateTitle() {
 	if v.title == "" {
 		return
 	}
-	fmat := fmt.Sprintf(liveViewTitleFmt, v.title, v.model.GetPath())
+	var fmat string
+	if v.model != nil {
+		fmat = fmt.Sprintf(liveViewTitleFmt, v.title, v.model.GetPath())
+	}
 
 	buff := v.cmdBuff.GetText()
 	if buff == "" {
