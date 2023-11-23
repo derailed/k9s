@@ -367,6 +367,7 @@ func k9sShellPod(node string, cfg *config.ShellPod) *v1.Pod {
 		},
 		Resources: asResource(cfg.Limits),
 		Stdin:     true,
+		TTY:       cfg.TTY,
 		SecurityContext: &v1.SecurityContext{
 			Privileged: &priv,
 		},

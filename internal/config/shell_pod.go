@@ -23,6 +23,7 @@ type ShellPod struct {
 	Labels           map[string]string         `yaml:"labels,omitempty"`
 	ImagePullSecrets []v1.LocalObjectReference `yaml:"imagePullSecrets,omitempty"`
 	ImagePullPolicy  v1.PullPolicy             `yaml:"imagePullPolicy,omitempty"`
+	TTY              bool                      `yaml:"tty,omitempty"`
 }
 
 // NewShellPod returns a new instance.

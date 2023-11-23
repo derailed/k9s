@@ -376,6 +376,8 @@ K9s uses aliases to navigate most K8s resources.
       limits:
         cpu: 100m
         memory: 100Mi
+      # Enable TTY
+      tty: true
     # Persists per cluster preferences for favorite namespaces and view.
     clusters:
       coolio:
