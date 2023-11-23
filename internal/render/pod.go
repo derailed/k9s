@@ -121,8 +121,10 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 		return err
 	}
 
-	ss := po.Status.ContainerStatuses
-	cr, _, rc := p.Statuses(ss)
+	ics := po.Status.InitContainerStatuses
+	_, _, irc := p.Statuses(ics)
+	cs := po.Status.ContainerStatuses
+	cr, _, rc := p.Statuses(cs)
 
 	c, r := p.gatherPodMX(&po, pwm.MX)
 	phase := p.Phase(&po)
@@ -133,7 +135,7 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 		"●",
 		strconv.Itoa(cr) + "/" + strconv.Itoa(len(po.Spec.Containers)),
 		phase,
-		strconv.Itoa(rc),
+		strconv.Itoa(rc + irc),
 		na(po.Status.PodIP),
 		na(po.Spec.NodeName),
 		asNominated(po.Status.NominatedNodeName),
@@ -148,7 +150,7 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 		client.ToPercentageStr(c.mem, r.lmem),
 		p.mapQOS(po.Status.QOSClass),
 		mapToStr(po.Labels),
-		asStatus(p.diagnose(phase, cr, len(ss))),
+		asStatus(p.diagnose(phase, cr, len(cs))),
 		toAge(po.GetCreationTimestamp()),
 	}
 
