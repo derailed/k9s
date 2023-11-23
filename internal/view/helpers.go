@@ -26,9 +26,13 @@ func clipboardWrite(text string) error {
 	return clipboard.WriteAll(text)
 }
 
+func sanitizeEsc(s string) string {
+	return strings.ReplaceAll(s, "[]", "]")
+}
+
 func cpCmd(flash *model.Flash, v *tview.TextView) func(*tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		if err := clipboardWrite(v.GetText(true)); err != nil {
+		if err := clipboardWrite(sanitizeEsc(v.GetText(true))); err != nil {
 			flash.Err(err)
 			return evt
 		}
