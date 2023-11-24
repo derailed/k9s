@@ -137,7 +137,6 @@ func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
 
 		cb := func() {
 			opts := shellOpts{
-				clear:      true,
 				binary:     p.Command,
 				background: p.Background,
 				pipes:      p.Pipes,
