@@ -75,7 +75,7 @@ func (d *Dir) bindKeys(aa ui.KeyActions) {
 		d.bindDangerousKeys(aa)
 	}
 	aa.Add(ui.KeyActions{
-		ui.KeyY:        ui.NewKeyAction("YAML", d.viewCmd, true),
+		ui.KeyY:        ui.NewKeyAction(yamlAction, d.viewCmd, true),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", d.gotoCmd, true),
 	})
 }
@@ -96,7 +96,7 @@ func (d *Dir) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails(d.App(), "YAML", sel, true).Update(string(yaml))
+	details := NewDetails(d.App(), yamlAction, sel, true).Update(string(yaml))
 	if err := d.App().inject(details, false); err != nil {
 		d.App().Flash().Err(err)
 	}

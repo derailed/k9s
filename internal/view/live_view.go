@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
@@ -20,7 +19,10 @@ import (
 	"github.com/sahilm/fuzzy"
 )
 
-const liveViewTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
+const (
+	liveViewTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
+	yamlAction       = "YAML"
+)
 
 // LiveView represents a live text viewer.
 type LiveView struct {
@@ -116,10 +118,6 @@ func (*LiveView) linesWithRegions(lines []string, matches fuzzy.Matches) []strin
 // ResourceChanged notifies when the filter changes.
 func (v *LiveView) ResourceChanged(lines []string, matches fuzzy.Matches) {
 	v.app.QueueUpdateDraw(func() {
-		defer func(t time.Time) {
-			log.Debug().Msgf("Live view render time: %v", time.Since(t))
-		}(time.Now())
-
 		v.text.SetTextAlign(tview.AlignLeft)
 		v.maxRegions = len(matches)
 
@@ -128,7 +126,6 @@ func (v *LiveView) ResourceChanged(lines []string, matches fuzzy.Matches) {
 		}
 
 		lines = v.linesWithRegions(lines, matches)
-
 		v.text.SetText(colorizeYAML(v.app.Styles.Views().Yaml, strings.Join(lines, "\n")))
 		v.text.Highlight()
 		if v.currentRegion < v.maxRegions {
@@ -166,11 +163,30 @@ func (v *LiveView) bindKeys() {
 		tcell.KeyDelete: ui.NewSharedKeyAction("Erase", v.eraseCmd, false),
 	})
 
-	if v.title == "YAML" {
+	if !v.app.Config.K9s.IsReadOnly() {
+		v.actions.Add(ui.KeyActions{
+			ui.KeyE: ui.NewKeyAction("Edit", v.editCmd, true),
+		})
+	}
+	if v.title == yamlAction {
 		v.actions.Add(ui.KeyActions{
 			ui.KeyM: ui.NewKeyAction("Toggle ManagedFields", v.toggleManagedCmd, true),
 		})
 	}
+}
+
+func (v *LiveView) editCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := v.model.GetPath()
+	if path == "" {
+		return evt
+	}
+	v.Stop()
+	defer v.Start()
+	if err := editRes(v.app, v.model.GVR(), path); err != nil {
+		v.app.Flash().Err(err)
+	}
+
+	return nil
 }
 
 // ToggleRefreshCmd is used for pausing the refreshing of data on config map and secrets.
@@ -200,9 +216,6 @@ func (v *LiveView) StylesChanged(s *config.Styles) {
 	v.SetBackgroundColor(v.app.Styles.BgColor())
 	v.text.SetTextColor(v.app.Styles.FgColor())
 	v.SetBorderFocusColor(v.app.Styles.Frame().Border.FocusColor.Color())
-	if v.model != nil {
-		v.ResourceChanged(v.model.Peek(), nil)
-	}
 }
 
 // Actions returns menu actions.

@@ -160,7 +160,7 @@ func (x *Xray) refreshActions() {
 		aa[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", x.deleteCmd, true)
 	}
 	if !dao.IsK9sMeta(x.meta) {
-		aa[ui.KeyY] = ui.NewKeyAction("YAML", x.viewCmd, true)
+		aa[ui.KeyY] = ui.NewKeyAction(yamlAction, x.viewCmd, true)
 		aa[ui.KeyD] = ui.NewKeyAction("Describe", x.describeCmd, true)
 	}
 
@@ -341,7 +341,7 @@ func (x *Xray) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails(x.app, "YAML", spec.Path(), true).Update(raw)
+	details := NewDetails(x.app, yamlAction, spec.Path(), true).Update(raw)
 	if err := x.app.inject(details, false); err != nil {
 		x.app.Flash().Err(err)
 	}

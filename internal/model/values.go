@@ -51,6 +51,11 @@ func getValues(path string, allValues bool) []string {
 	return strings.Split(string(vals), "\n")
 }
 
+// GVR returns the resource gvr.
+func (v *Values) GVR() client.GVR {
+	return v.gvr
+}
+
 // ToggleValues toggles between user supplied values and computed values.
 func (v *Values) ToggleValues() {
 	v.allValues = !v.allValues

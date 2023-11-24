@@ -33,6 +33,7 @@ type ViewerToggleOpts map[string]bool
 type ResourceViewer interface {
 	GetPath() string
 	Filter(string)
+	GVR() client.GVR
 	ClearFilter()
 	Peek() []string
 	SetOptions(context.Context, ViewerToggleOpts)

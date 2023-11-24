@@ -39,6 +39,11 @@ func NewDescribe(gvr client.GVR, path string) *Describe {
 	}
 }
 
+// GVR returns the resource gvr.
+func (d *Describe) GVR() client.GVR {
+	return d.gvr
+}
+
 // GetPath returns the active resource path.
 func (d *Describe) GetPath() string {
 	return d.path

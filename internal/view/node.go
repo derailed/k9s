@@ -59,7 +59,7 @@ func (n *Node) bindKeys(aa ui.KeyActions) {
 	}
 
 	aa.Add(ui.KeyActions{
-		ui.KeyY:      ui.NewKeyAction("YAML", n.yamlCmd, true),
+		ui.KeyY:      ui.NewKeyAction(yamlAction, n.yamlCmd, true),
 		ui.KeyShiftC: ui.NewKeyAction("Sort CPU", n.GetTable().SortColCmd(cpuCol, false), false),
 		ui.KeyShiftM: ui.NewKeyAction("Sort MEM", n.GetTable().SortColCmd(memCol, false), false),
 		ui.KeyShift0: ui.NewKeyAction("Sort Pods", n.GetTable().SortColCmd("PODS", false), false),
@@ -194,7 +194,7 @@ func (n *Node) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails(n.App(), "YAML", sel, true).Update(raw)
+	details := NewDetails(n.App(), yamlAction, sel, true).Update(raw)
 	if err := n.App().inject(details, false); err != nil {
 		n.App().Flash().Err(err)
 	}

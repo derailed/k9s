@@ -43,6 +43,11 @@ func NewYAML(gvr client.GVR, path string) *YAML {
 	}
 }
 
+// GVR returns the resource gvr.
+func (y *YAML) GVR() client.GVR {
+	return y.gvr
+}
+
 // GetPath returns the active resource path.
 func (y *YAML) GetPath() string {
 	return y.path
