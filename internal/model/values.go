@@ -39,8 +39,8 @@ func NewValues(gvr client.GVR, path string) *Values {
 	}
 }
 
-func getHelmDao() *dao.Helm {
-	return Registry["helm"].DAO.(*dao.Helm)
+func getHelmDao() *dao.HelmChart {
+	return Registry["helm"].DAO.(*dao.HelmChart)
 }
 
 func getValues(path string, allValues bool) []string {

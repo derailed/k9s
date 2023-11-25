@@ -103,7 +103,7 @@ func TestToAge(t *testing.T) {
 	for k := range uu {
 		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, uc.e, toAge(metav1.Time{Time: uc.t}))
+			assert.Equal(t, uc.e, ToAge(metav1.Time{Time: uc.t}))
 		})
 	}
 }

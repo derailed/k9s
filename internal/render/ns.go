@@ -68,8 +68,8 @@ func (n Namespace) Render(o interface{}, _ string, r *Row) error {
 		ns.Name,
 		string(ns.Status.Phase),
 		mapToStr(ns.Labels),
-		asStatus(n.diagnose(ns.Status.Phase)),
-		toAge(ns.GetCreationTimestamp()),
+		AsStatus(n.diagnose(ns.Status.Phase)),
+		ToAge(ns.GetCreationTimestamp()),
 	}
 
 	return nil

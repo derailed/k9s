@@ -59,8 +59,8 @@ func (d Deployment) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(int(dp.Status.UpdatedReplicas)),
 		strconv.Itoa(int(dp.Status.AvailableReplicas)),
 		mapToStr(dp.Labels),
-		asStatus(d.diagnose(dp.Status.Replicas, dp.Status.AvailableReplicas)),
-		toAge(dp.GetCreationTimestamp()),
+		AsStatus(d.diagnose(dp.Status.Replicas, dp.Status.AvailableReplicas)),
+		ToAge(dp.GetCreationTimestamp()),
 	}
 
 	return nil

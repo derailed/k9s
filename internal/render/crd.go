@@ -63,8 +63,8 @@ func (c CustomResourceDefinition) Render(o interface{}, ns string, r *Row) error
 		crd.GetName(),
 		naStrings(versions),
 		mapToIfc(crd.GetLabels()),
-		asStatus(c.diagnose(crd.GetName(), crd.Spec.Versions)),
-		toAge(crd.GetCreationTimestamp()),
+		AsStatus(c.diagnose(crd.GetName(), crd.Spec.Versions)),
+		ToAge(crd.GetCreationTimestamp()),
 	}
 
 	return nil

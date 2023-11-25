@@ -6,6 +6,7 @@ package model
 import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/render/helm"
 	"github.com/derailed/k9s/internal/xray"
 )
 
@@ -25,14 +26,14 @@ var Registry = map[string]ResourceMeta{
 		DAO: &dao.Pulse{},
 	},
 	"helm": {
-		DAO:      &dao.Helm{},
-		Renderer: &render.Helm{},
+		DAO:      &dao.HelmChart{},
+		Renderer: &helm.Chart{},
 	},
-	// BOZO!! revamp with latest...
-	// "openfaas": {
-	// 	DAO:      &dao.OpenFaas{},
-	// 	Renderer: &render.OpenFaas{},
-	// },
+	"helm-history": {
+		DAO:      &dao.HelmHistory{},
+		Renderer: &helm.History{},
+	},
+
 	"containers": {
 		DAO:          &dao.Container{},
 		Renderer:     &render.Container{},

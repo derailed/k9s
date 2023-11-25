@@ -54,7 +54,7 @@ func (s StorageClass) Render(o interface{}, ns string, r *Row) error {
 		boolPtrToStr(sc.AllowVolumeExpansion),
 		mapToStr(sc.Labels),
 		"",
-		toAge(sc.GetCreationTimestamp()),
+		ToAge(sc.GetCreationTimestamp()),
 	}
 
 	return nil

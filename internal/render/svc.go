@@ -58,8 +58,8 @@ func (s Service) Render(o interface{}, ns string, r *Row) error {
 		mapToStr(svc.Spec.Selector),
 		ToPorts(svc.Spec.Ports),
 		mapToStr(svc.Labels),
-		asStatus(s.diagnose()),
-		toAge(svc.GetCreationTimestamp()),
+		AsStatus(s.diagnose()),
+		ToAge(svc.GetCreationTimestamp()),
 	}
 
 	return nil

@@ -58,8 +58,8 @@ func (r ReplicaSet) Render(o interface{}, ns string, row *Row) error {
 		strconv.Itoa(int(rs.Status.Replicas)),
 		strconv.Itoa(int(rs.Status.ReadyReplicas)),
 		mapToStr(rs.Labels),
-		asStatus(r.diagnose(rs)),
-		toAge(rs.GetCreationTimestamp()),
+		AsStatus(r.diagnose(rs)),
+		ToAge(rs.GetCreationTimestamp()),
 	}
 
 	return nil

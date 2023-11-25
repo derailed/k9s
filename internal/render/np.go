@@ -63,7 +63,7 @@ func (n NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
 		eb,
 		mapToStr(np.Labels),
 		"",
-		toAge(np.GetCreationTimestamp()),
+		ToAge(np.GetCreationTimestamp()),
 	}
 
 	return nil

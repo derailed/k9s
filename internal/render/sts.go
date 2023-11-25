@@ -56,8 +56,8 @@ func (s StatefulSet) Render(o interface{}, ns string, r *Row) error {
 		podContainerNames(sts.Spec.Template.Spec, true),
 		podImageNames(sts.Spec.Template.Spec, true),
 		mapToStr(sts.Labels),
-		asStatus(s.diagnose(sts.Status.Replicas, sts.Status.ReadyReplicas)),
-		toAge(sts.GetCreationTimestamp()),
+		AsStatus(s.diagnose(sts.Status.Replicas, sts.Status.ReadyReplicas)),
+		ToAge(sts.GetCreationTimestamp()),
 	}
 
 	return nil

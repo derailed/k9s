@@ -150,8 +150,8 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 		client.ToPercentageStr(c.mem, r.lmem),
 		p.mapQOS(po.Status.QOSClass),
 		mapToStr(po.Labels),
-		asStatus(p.diagnose(phase, cr, len(cs))),
-		toAge(po.GetCreationTimestamp()),
+		AsStatus(p.diagnose(phase, cr, len(cs))),
+		ToAge(po.GetCreationTimestamp()),
 	}
 
 	return nil

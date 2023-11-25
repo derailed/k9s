@@ -16,6 +16,7 @@ const (
 	KeyPath        ContextKey = "path"
 	KeySubject     ContextKey = "subject"
 	KeyGVR         ContextKey = "gvr"
+	KeyFQN         ContextKey = "fqn"
 	KeyForwards    ContextKey = "forwards"
 	KeyContainers  ContextKey = "containers"
 	KeyBenchCfg    ContextKey = "benchcfg"

@@ -105,8 +105,8 @@ func (p PersistentVolume) Render(o interface{}, ns string, r *Row) error {
 		pv.Status.Reason,
 		p.volumeMode(pv.Spec.VolumeMode),
 		mapToStr(pv.Labels),
-		asStatus(p.diagnose(phase)),
-		toAge(pv.GetCreationTimestamp()),
+		AsStatus(p.diagnose(phase)),
+		ToAge(pv.GetCreationTimestamp()),
 	}
 
 	return nil

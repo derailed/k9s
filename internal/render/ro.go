@@ -53,7 +53,7 @@ func (r Role) Render(o interface{}, ns string, row *Row) error {
 		ro.Name,
 		mapToStr(ro.Labels),
 		"",
-		toAge(ro.GetCreationTimestamp()),
+		ToAge(ro.GetCreationTimestamp()),
 	)
 
 	return nil

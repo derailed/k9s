@@ -75,7 +75,7 @@ func (b Benchmark) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 	b.augmentRow(r.Fields, data)
-	r.Fields[8] = asStatus(b.diagnose(ns, r.Fields))
+	r.Fields[8] = AsStatus(b.diagnose(ns, r.Fields))
 
 	return nil
 }

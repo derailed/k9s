@@ -85,7 +85,8 @@ func Happy(ns string, h Header, r Row) bool {
 	return strings.TrimSpace(r.Fields[validCol]) == ""
 }
 
-func asStatus(err error) string {
+// AsStatus returns error as string.
+func AsStatus(err error) string {
 	if err == nil {
 		return ""
 	}
@@ -204,7 +205,8 @@ func boolToStr(b bool) string {
 	}
 }
 
-func toAge(t metav1.Time) string {
+// ToAge converts time to human duration.
+func ToAge(t metav1.Time) string {
 	if t.IsZero() {
 		return UnknownValue
 	}

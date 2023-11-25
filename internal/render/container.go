@@ -127,8 +127,8 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 		client.ToPercentageStr(cur.mem, res.mem),
 		client.ToPercentageStr(cur.mem, res.lmem),
 		ToContainerPorts(co.Container.Ports),
-		asStatus(c.diagnose(state, ready)),
-		toAge(co.Age),
+		AsStatus(c.diagnose(state, ready)),
+		ToAge(co.Age),
 	}
 
 	return nil

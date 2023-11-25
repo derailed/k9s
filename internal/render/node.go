@@ -103,8 +103,8 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 		toMc(a.cpu),
 		toMi(a.mem),
 		mapToStr(no.Labels),
-		asStatus(n.diagnose(statuses)),
-		toAge(no.GetCreationTimestamp()),
+		AsStatus(n.diagnose(statuses)),
+		ToAge(no.GetCreationTimestamp()),
 	}
 
 	return nil

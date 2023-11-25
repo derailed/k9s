@@ -47,7 +47,7 @@ func (e Endpoints) Render(o interface{}, ns string, r *Row) error {
 		ep.Namespace,
 		ep.Name,
 		missing(toEPs(ep.Subsets)),
-		toAge(ep.GetCreationTimestamp()),
+		ToAge(ep.GetCreationTimestamp()),
 	}
 
 	return nil

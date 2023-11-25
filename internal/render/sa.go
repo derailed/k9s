@@ -49,7 +49,7 @@ func (s ServiceAccount) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(len(sa.Secrets)),
 		mapToStr(sa.Labels),
 		"",
-		toAge(sa.GetCreationTimestamp()),
+		ToAge(sa.GetCreationTimestamp()),
 	}
 
 	return nil

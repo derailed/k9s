@@ -74,8 +74,8 @@ func (p PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
 		accessModes,
 		class,
 		mapToStr(pvc.Labels),
-		asStatus(p.diagnose(string(phase))),
-		toAge(pvc.GetCreationTimestamp()),
+		AsStatus(p.diagnose(string(phase))),
+		ToAge(pvc.GetCreationTimestamp()),
 	}
 
 	return nil

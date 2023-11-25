@@ -57,8 +57,8 @@ func (d DaemonSet) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(int(ds.Status.UpdatedNumberScheduled)),
 		strconv.Itoa(int(ds.Status.NumberAvailable)),
 		mapToStr(ds.Labels),
-		asStatus(d.diagnose(ds.Status.DesiredNumberScheduled, ds.Status.NumberReady)),
-		toAge(ds.GetCreationTimestamp()),
+		AsStatus(d.diagnose(ds.Status.DesiredNumberScheduled, ds.Status.NumberReady)),
+		ToAge(ds.GetCreationTimestamp()),
 	}
 
 	return nil

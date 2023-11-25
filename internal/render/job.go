@@ -62,8 +62,8 @@ func (j Job) Render(o interface{}, ns string, r *Row) error {
 		jobSelector(job.Spec),
 		cc,
 		ii,
-		asStatus(j.diagnose(ready, job.Status.CompletionTime)),
-		toAge(job.GetCreationTimestamp()),
+		AsStatus(j.diagnose(ready, job.Status.CompletionTime)),
+		ToAge(job.GetCreationTimestamp()),
 	}
 
 	return nil

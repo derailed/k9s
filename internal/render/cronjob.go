@@ -52,7 +52,7 @@ func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 
 	lastScheduled := "<none>"
 	if cj.Status.LastScheduleTime != nil {
-		lastScheduled = toAge(*cj.Status.LastScheduleTime)
+		lastScheduled = ToAge(*cj.Status.LastScheduleTime)
 	}
 
 	r.ID = client.MetaFQN(cj.ObjectMeta)
@@ -68,7 +68,7 @@ func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 		podImageNames(cj.Spec.JobTemplate.Spec.Template.Spec, true),
 		mapToStr(cj.Labels),
 		"",
-		toAge(cj.GetCreationTimestamp()),
+		ToAge(cj.GetCreationTimestamp()),
 	}
 
 	return nil
