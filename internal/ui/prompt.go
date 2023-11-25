@@ -149,24 +149,31 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	switch evt.Key() {
 	case tcell.KeyBackspace2, tcell.KeyBackspace, tcell.KeyDelete:
 		p.model.Delete()
+
 	case tcell.KeyRune:
 		p.model.Add(evt.Rune())
+
 	case tcell.KeyEscape:
 		p.model.ClearText(true)
 		p.model.SetActive(false)
+
 	case tcell.KeyEnter, tcell.KeyCtrlE:
 		p.model.SetText(p.model.GetText(), "")
 		p.model.SetActive(false)
+
 	case tcell.KeyCtrlW, tcell.KeyCtrlU:
 		p.model.ClearText(true)
+
 	case tcell.KeyUp:
 		if s, ok := m.NextSuggestion(); ok {
-			p.suggest(p.model.GetText(), s)
+			p.model.SetText(s, "")
 		}
+
 	case tcell.KeyDown:
 		if s, ok := m.PrevSuggestion(); ok {
-			p.suggest(p.model.GetText(), s)
+			p.model.SetText(s, "")
 		}
+
 	case tcell.KeyTab, tcell.KeyRight, tcell.KeyCtrlF:
 		if s, ok := m.CurrentSuggestion(); ok {
 			p.model.SetText(p.model.GetText()+s, "")
