@@ -15,7 +15,7 @@ import (
 )
 
 // K9sPluginsFilePath manages K9s plugins.
-var K9sPluginsFilePath = filepath.Join(K9sHome(), "plugin.yml")
+var K9sPluginsFilePath = YamlExtension(filepath.Join(K9sHome(), "plugin.yml"))
 var K9sPluginDirectory = filepath.Join("k9s", "plugins")
 
 // Plugins represents a collection of plugins.
@@ -73,7 +73,7 @@ func (p Plugins) LoadPlugins(path string, pluginDirs []string) error {
 			continue
 		}
 		for _, file := range pluginFiles {
-			if file.IsDir() || !isYamlFile(file) {
+			if file.IsDir() || !isYamlFile(file.Name()) {
 				continue
 			}
 			pluginFile, err := os.ReadFile(filepath.Join(pluginDir, file.Name()))
@@ -93,9 +93,4 @@ func (p Plugins) LoadPlugins(path string, pluginDirs []string) error {
 	}
 
 	return nil
-}
-
-func isYamlFile(file os.DirEntry) bool {
-	ext := filepath.Ext(file.Name())
-	return ext == ".yml" || ext == ".yaml"
 }

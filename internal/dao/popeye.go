@@ -68,9 +68,9 @@ func (p *Popeye) List(ctx context.Context, ns string) ([]runtime.Object, error) 
 		flags.Sections = &sections
 		flags.ActiveNamespace = &ns
 	}
-	spinach := filepath.Join(cfg.K9sHome(), "spinach.yml")
+	spinach := cfg.YamlExtension(filepath.Join(cfg.K9sHome(), "spinach.yml"))
 	if c, err := p.GetFactory().Client().Config().CurrentContextName(); err == nil {
-		spinach = filepath.Join(cfg.K9sHome(), fmt.Sprintf("%s_spinach.yml", c))
+		spinach = cfg.YamlExtension(filepath.Join(cfg.K9sHome(), fmt.Sprintf("%s_spinach.yml", c)))
 	}
 	if _, err := os.Stat(spinach); err == nil {
 		flags.Spinach = &spinach
