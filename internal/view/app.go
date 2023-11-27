@@ -151,6 +151,16 @@ func (a *App) initSignals() {
 }
 
 func (a *App) suggestCommand() model.SuggestionFunc {
+	namespaceNames, err := a.namespaceNames()
+	if err != nil {
+		log.Error().Err(err).Msg("failed to list namespaces")
+	}
+
+	contextNames, err := a.contextNames()
+	if err != nil {
+		log.Error().Err(err).Msg("failed to list contexts")
+	}
+
 	return func(s string) (entries sort.StringSlice) {
 		if s == "" {
 			if a.cmdHistory.Empty() {
@@ -161,19 +171,44 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 
 		s = strings.ToLower(s)
 		for _, k := range a.command.alias.Aliases.Keys() {
-			if k == s {
-				continue
-			}
-			if strings.HasPrefix(k, s) {
-				entries = append(entries, strings.Replace(k, s, "", 1))
+			if suggest, ok := shouldAddSuggest(s, k); ok {
+				entries = append(entries, suggest)
 			}
 		}
+
+		entries = append(entries, suggestSubCommand(s, namespaceNames, contextNames)...)
 		if len(entries) == 0 {
 			return nil
 		}
 		entries.Sort()
 		return
 	}
+}
+
+func (a *App) namespaceNames() ([]string, error) {
+	namespaces, err := a.factory.Client().ValidNamespaces()
+	if err != nil {
+		return nil, err
+	}
+
+	namespaceNames := make([]string, 0, len(namespaces))
+	for _, namespace := range namespaces {
+		namespaceNames = append(namespaceNames, namespace.Name)
+	}
+	return namespaceNames, nil
+}
+
+func (a *App) contextNames() ([]string, error) {
+	contexts, err := a.factory.Client().Config().Contexts()
+	if err != nil {
+		return nil, err
+	}
+
+	contextNames := make([]string, 0, len(contexts))
+	for ctxName := range contexts {
+		contextNames = append(contextNames, ctxName)
+	}
+	return contextNames, nil
 }
 
 func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
@@ -670,4 +705,46 @@ func (a *App) clusterInfo() *ClusterInfo {
 
 func (a *App) statusIndicator() *ui.StatusIndicator {
 	return a.Views()["statusIndicator"].(*ui.StatusIndicator)
+}
+
+// ----------------------------------------------------------------------------
+// Helpers
+
+func suggestSubCommand(command string, namespaces, contexts []string) []string {
+	cmds := strings.Fields(command)
+	if len(cmds[0]) == 0 || len(cmds) != 2 {
+		return nil
+	}
+
+	var suggests []string
+	switch strings.ToLower(cmds[0]) {
+	case "cow", "q", "q!", "qa", "Q", "quit", "?", "h", "help", "a", "alias", "x", "xray", "dir":
+		return nil // ignore special commands
+	case "ctx", "context", "contexts":
+		for _, ctxName := range contexts {
+			if suggest, ok := shouldAddSuggest(cmds[1], ctxName); ok {
+				suggests = append(suggests, suggest)
+			}
+		}
+	default:
+		if suggest, ok := shouldAddSuggest(cmds[1], client.NamespaceAll); ok {
+			suggests = append(suggests, suggest)
+		}
+
+		for _, ns := range namespaces {
+			if suggest, ok := shouldAddSuggest(cmds[1], ns); ok {
+				suggests = append(suggests, suggest)
+			}
+		}
+	}
+
+	return suggests
+}
+
+func shouldAddSuggest(command, suggest string) (string, bool) {
+	if command != suggest && strings.HasPrefix(suggest, command) {
+		return strings.TrimPrefix(suggest, command), true
+	}
+
+	return "", false
 }
