@@ -151,11 +151,6 @@ func (a *App) initSignals() {
 }
 
 func (a *App) suggestCommand() model.SuggestionFunc {
-	namespaceNames, err := a.namespaceNames()
-	if err != nil {
-		log.Error().Err(err).Msg("failed to list namespaces")
-	}
-
 	contextNames, err := a.contextNames()
 	if err != nil {
 		log.Error().Err(err).Msg("failed to list contexts")
@@ -174,6 +169,11 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 			if suggest, ok := shouldAddSuggest(s, k); ok {
 				entries = append(entries, suggest)
 			}
+		}
+
+		namespaceNames, err := a.namespaceNames()
+		if err != nil {
+			log.Error().Err(err).Msg("failed to list namespaces")
 		}
 
 		entries = append(entries, suggestSubCommand(s, namespaceNames, contextNames)...)
