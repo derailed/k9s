@@ -122,6 +122,14 @@ func (p *Prompt) SendStrokes(s string) {
 	}
 }
 
+// Deactivate sets the prompt as inactive.
+func (p *Prompt) Deactivate() {
+	if p.model != nil {
+		p.model.ClearText(true)
+		p.model.SetActive(false)
+	}
+}
+
 // SetModel sets the prompt buffer model.
 func (p *Prompt) SetModel(m PromptModel) {
 	if p.model != nil {

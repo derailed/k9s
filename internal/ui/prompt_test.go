@@ -51,6 +51,19 @@ func TestCmdMode(t *testing.T) {
 	}
 }
 
+func TestPrompt_Deactivate(t *testing.T) {
+	model := model.NewFishBuff(':', model.CommandBuffer)
+	v := ui.NewPrompt(&ui.App{}, true, config.NewStyles())
+	v.SetModel(model)
+	model.AddListener(v)
+
+	model.SetActive(true)
+	if assert.True(t, v.InCmdMode()) {
+		v.Deactivate()
+		assert.False(t, v.InCmdMode())
+	}
+}
+
 // Tests that, when active, the prompt has the appropriate color
 func TestPromptColor(t *testing.T) {
 	styles := config.NewStyles()
