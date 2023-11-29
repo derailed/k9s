@@ -38,6 +38,27 @@ type Generic struct {
 	NonResource
 }
 
+func (g *Generic) Create(ctx context.Context, ns string, obj runtime.Object) (runtime.Object, error) {
+	dial, err := g.dynClient()
+	if err != nil {
+		return nil, err
+	}
+	unstructuredObj, err := runtime.DefaultUnstructuredConverter.ToUnstructured(obj)
+	if err != nil {
+		return nil, err
+	}
+	var respObj *unstructured.Unstructured
+	if client.IsClusterScoped(ns) {
+		respObj, err = dial.Create(ctx, &unstructured.Unstructured{Object: unstructuredObj}, metav1.CreateOptions{})
+	} else {
+		respObj, err = dial.Namespace(ns).Create(ctx, &unstructured.Unstructured{Object: unstructuredObj}, metav1.CreateOptions{})
+	}
+	if err != nil {
+		return nil, err
+	}
+	return respObj, nil
+}
+
 // List returns a collection of resources.
 // BOZO!! no auth check??
 func (g *Generic) List(ctx context.Context, ns string) ([]runtime.Object, error) {

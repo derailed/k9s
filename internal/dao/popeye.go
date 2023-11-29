@@ -49,6 +49,10 @@ func (readWriteCloser) Close() error {
 	return nil
 }
 
+func (p *Popeye) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("Popeye create NYI")
+}
+
 // List returns a collection of aliases.
 func (p *Popeye) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	defer func(t time.Time) {

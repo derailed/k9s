@@ -20,6 +20,10 @@ type Reference struct {
 	NonResource
 }
 
+func (r *Reference) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("Reference Create NYI")
+}
+
 // List collects all references.
 func (r *Reference) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	gvr, ok := ctx.Value(internal.KeyGVR).(string)
@@ -36,7 +40,7 @@ func (r *Reference) List(ctx context.Context, ns string) ([]runtime.Object, erro
 
 // Get fetch a given reference.
 func (r *Reference) Get(ctx context.Context, path string) (runtime.Object, error) {
-	panic("NYI")
+	panic("Reference create NYI")
 }
 
 // Scan scan cluster resources for references.

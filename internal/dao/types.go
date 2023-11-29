@@ -47,7 +47,7 @@ type Factory interface {
 	// DeleteForwarder deletes a pod forwarder.
 	DeleteForwarder(path string)
 
-	// Forwards returns all portforwards.
+	// Forwarders returns all port-forwards.
 	Forwarders() watch.Forwarders
 }
 
@@ -63,10 +63,17 @@ type Lister interface {
 	List(ctx context.Context, ns string) ([]runtime.Object, error)
 }
 
+// Creator represents a resource creator.
+type Creator interface {
+	// Create creates a resource.
+	Create(ctx context.Context, ns string, obj runtime.Object) (runtime.Object, error)
+}
+
 // Accessor represents an accessible k8s resource.
 type Accessor interface {
 	Lister
 	Getter
+	Creator
 
 	// Init the resource with a factory object.
 	Init(Factory, client.GVR)
@@ -95,7 +102,7 @@ type NodeMaintainer interface {
 
 // Loggable represents resources with logs.
 type Loggable interface {
-	// TaiLogs streams resource logs.
+	// TailLogs streams resource logs.
 	TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 }
 

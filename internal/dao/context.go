@@ -26,6 +26,10 @@ func (c *Context) config() *client.Config {
 	return c.GetFactory().Client().Config()
 }
 
+func (c *Context) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("Context create NYI")
+}
+
 // Get a Context.
 func (c *Context) Get(ctx context.Context, path string) (runtime.Object, error) {
 	co, err := c.config().GetContext(path)

@@ -33,6 +33,10 @@ func NewDir(f Factory) *Dir {
 
 var yamlRX = regexp.MustCompile(`.*\.(yml|yaml|json)`)
 
+func (a *Dir) Create(ctx context.Context, ns string, _ runtime.Object) (runtime.Object, error) {
+	panic("Dir create NYI")
+}
+
 // List returns a collection of aliases.
 func (a *Dir) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	dir, ok := ctx.Value(internal.KeyPath).(string)
