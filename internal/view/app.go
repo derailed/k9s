@@ -641,12 +641,11 @@ func (a *App) dirCmd(path string) error {
 }
 
 func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	top := a.Content.Top()
-
-	if a.CmdBuff().InCmdMode() || (top != nil && top.InCmdMode()) {
+	if evt != nil && evt.Rune() == '?' && a.Prompt().InCmdMode() {
 		return evt
 	}
 
+	top := a.Content.Top()
 	if top != nil && top.Name() == "help" {
 		a.Content.Pop()
 		return nil
@@ -656,6 +655,7 @@ func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 		a.Flash().Err(err)
 	}
 
+	a.Prompt().Deactivate()
 	return nil
 }
 
