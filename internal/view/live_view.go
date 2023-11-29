@@ -106,7 +106,11 @@ func (*LiveView) linesWithRegions(lines []string, matches fuzzy.Matches) []strin
 	offsetForLine := make(map[int]int)
 	for i, m := range matches {
 		loc, line := m.MatchedIndexes, ll[m.Index]
+		if len(loc) < 2 {
+			continue
+		}
 		offset := offsetForLine[m.Index]
+
 		loc[0], loc[1] = loc[0]+offset, loc[1]+offset
 		regionStr := `<<<"search_` + strconv.Itoa(i) + `">>>` + line[loc[0]:loc[1]] + `<<<"">>>`
 		ll[m.Index] = line[:loc[0]] + regionStr + line[loc[1]:]

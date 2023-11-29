@@ -523,12 +523,19 @@ func (p *Pod) Sanitize(ctx context.Context, ns string) (int, error) {
 		}
 		log.Debug().Msgf("Pod status: %q", render.PodStatus(&pod))
 		switch render.PodStatus(&pod) {
-		case render.PhaseCompleted, render.PhaseCrashLoop, render.PhaseError, render.PhaseImagePullBackOff, render.PhaseOOMKilled:
+		case render.PhaseCompleted:
+			fallthrough
+		case render.PhaseCrashLoop:
+			fallthrough
+		case render.PhaseError:
+			fallthrough
+		case render.PhaseImagePullBackOff:
+			fallthrough
+		case render.PhaseOOMKilled:
 			log.Debug().Msgf("Sanitizing %s:%s", pod.Namespace, pod.Name)
 			fqn := client.FQN(pod.Namespace, pod.Name)
 			if err := p.Resource.Delete(ctx, fqn, nil, NowGrace); err != nil {
-				log.Warn().Err(err).Msgf("Pod %s deletion failed", fqn)
-				continue
+				return count, err
 			}
 			count++
 		}
