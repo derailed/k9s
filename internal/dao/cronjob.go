@@ -60,7 +60,6 @@ func (c *CronJob) Run(path string) error {
 	if len(cj.Name) >= maxJobNameSize {
 		jobName = cj.Name[0:maxJobNameSize]
 	}
-	true := true
 	job := &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:        jobName + "-manual-" + rand.String(3),
@@ -71,7 +70,6 @@ func (c *CronJob) Run(path string) error {
 				{
 					APIVersion:         c.gvr.GV().String(),
 					Kind:               "CronJob",
-					BlockOwnerDeletion: &true,
 					Name:               cj.Name,
 					UID:                cj.UID,
 				},
