@@ -18,6 +18,7 @@ type K9s struct {
 	RefreshRate         int                 `yaml:"refreshRate"`
 	MaxConnRetry        int                 `yaml:"maxConnRetry"`
 	EnableMouse         bool                `yaml:"enableMouse"`
+	EnableImageScan     bool                `yaml:"enableImageScan"`
 	Headless            bool                `yaml:"headless"`
 	Logoless            bool                `yaml:"logoless"`
 	Crumbsless          bool                `yaml:"crumbsless"`

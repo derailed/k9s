@@ -67,6 +67,9 @@ func miscViewers(vv MetaViewers) {
 	vv[client.NewGVR("containers")] = MetaViewer{
 		viewerFn: NewContainer,
 	}
+	vv[client.NewGVR("scans")] = MetaViewer{
+		viewerFn: NewImageScan,
+	}
 	vv[client.NewGVR("portforwards")] = MetaViewer{
 		viewerFn: NewPortForward,
 	}

@@ -33,11 +33,14 @@ var Registry = map[string]ResourceMeta{
 		DAO:      &dao.HelmHistory{},
 		Renderer: &helm.History{},
 	},
-
 	"containers": {
 		DAO:          &dao.Container{},
 		Renderer:     &render.Container{},
 		TreeRenderer: &xray.Container{},
+	},
+	"scans": {
+		DAO:      &dao.ImageScan{},
+		Renderer: &render.ImageScan{},
 	},
 	"contexts": {
 		DAO:      &dao.Context{},

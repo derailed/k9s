@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tview"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -26,9 +27,10 @@ func (d Deployment) ColorerFunc() ColorerFunc {
 
 // Header returns a header row.
 func (Deployment) Header(ns string) Header {
-	return Header{
+	h := Header{
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "VS"},
 		HeaderColumn{Name: "READY", Align: tview.AlignRight},
 		HeaderColumn{Name: "UP-TO-DATE", Align: tview.AlignRight},
 		HeaderColumn{Name: "AVAILABLE", Align: tview.AlignRight},
@@ -36,6 +38,11 @@ func (Deployment) Header(ns string) Header {
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true},
 	}
+	if vul.ImgScanner == nil {
+		h = append(h[:vulIdx], h[vulIdx+1:]...)
+	}
+
+	return h
 }
 
 // Render renders a K8s resource to screen.
@@ -55,12 +62,16 @@ func (d Deployment) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = Fields{
 		dp.Namespace,
 		dp.Name,
+		computeVulScore(&dp.Spec.Template.Spec),
 		strconv.Itoa(int(dp.Status.AvailableReplicas)) + "/" + strconv.Itoa(int(dp.Status.Replicas)),
 		strconv.Itoa(int(dp.Status.UpdatedReplicas)),
 		strconv.Itoa(int(dp.Status.AvailableReplicas)),
 		mapToStr(dp.Labels),
 		AsStatus(d.diagnose(dp.Status.Replicas, dp.Status.AvailableReplicas)),
 		ToAge(dp.GetCreationTimestamp()),
+	}
+	if vul.ImgScanner == nil {
+		r.Fields = append(r.Fields[:vulIdx], r.Fields[vulIdx+1:]...)
 	}
 
 	return nil

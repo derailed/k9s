@@ -45,8 +45,10 @@ type Pod struct {
 func NewPod(gvr client.GVR) ResourceViewer {
 	var p Pod
 	p.ResourceViewer = NewPortForwardExtender(
-		NewImageExtender(
-			NewLogsExtender(NewBrowser(gvr), p.logOptions),
+		NewVulnerabilityExtender(
+			NewImageExtender(
+				NewLogsExtender(NewBrowser(gvr), p.logOptions),
+			),
 		),
 	)
 	p.AddBindKeysFn(p.bindKeys)

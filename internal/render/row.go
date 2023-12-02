@@ -193,19 +193,16 @@ func (s RowSorter) Less(i, j int) bool {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-// Less return true if c1 < c2.
+// Less return true if c1 <= c2.
 func Less(isNumber, isDuration, isCapacity bool, id1, id2, v1, v2 string) bool {
 	var less bool
 	switch {
 	case isNumber:
-		v1, v2 = strings.Replace(v1, ",", "", -1), strings.Replace(v2, ",", "", -1)
-		less = sortorder.NaturalLess(v1, v2)
+		less = lessNumber(v1, v2)
 	case isDuration:
-		d1, d2 := durationToSeconds(v1), durationToSeconds(v2)
-		less = d1 <= d2
+		less = lessDuration(v1, v2)
 	case isCapacity:
-		c1, c2 := capacityToNumber(v1), capacityToNumber(v2)
-		less = c1 <= c2
+		less = lessCapacity(v1, v2)
 	default:
 		less = sortorder.NaturalLess(v1, v2)
 	}
@@ -214,4 +211,21 @@ func Less(isNumber, isDuration, isCapacity bool, id1, id2, v1, v2 string) bool {
 	}
 
 	return less
+}
+
+func lessDuration(s1, s2 string) bool {
+	d1, d2 := durationToSeconds(s1), durationToSeconds(s2)
+	return d1 <= d2
+}
+
+func lessCapacity(s1, s2 string) bool {
+	c1, c2 := capacityToNumber(s1), capacityToNumber(s2)
+
+	return c1 <= c2
+}
+
+func lessNumber(s1, s2 string) bool {
+	v1, v2 := strings.Replace(s1, ",", "", -1), strings.Replace(s2, ",", "", -1)
+
+	return sortorder.NaturalLess(v1, v2)
 }

@@ -25,7 +25,7 @@ apiVersion: v1
 `
 
 	v := NewLiveView(NewApp(config.NewConfig(nil)), "fred", nil)
-	v.Init(context.Background())
+	assert.NoError(t, v.Init(context.Background()))
 	v.text.SetText(colorizeYAML(config.Yaml{}, s))
 
 	assert.Equal(t, s, sanitizeEsc(v.text.GetText(true)))

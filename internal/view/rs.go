@@ -21,7 +21,7 @@ type ReplicaSet struct {
 // NewReplicaSet returns a new viewer.
 func NewReplicaSet(gvr client.GVR) ResourceViewer {
 	r := ReplicaSet{
-		ResourceViewer: NewBrowser(gvr),
+		ResourceViewer: NewVulnerabilityExtender(NewBrowser(gvr)),
 	}
 	r.AddBindKeysFn(r.bindKeys)
 	r.GetTable().SetEnterFn(r.showPods)

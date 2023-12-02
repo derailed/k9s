@@ -100,7 +100,7 @@ func drainNode(v ResourceViewer, path string, opts dao.DrainOptions) {
 	v.Stop()
 	defer v.Start()
 	{
-		d := NewDetails(v.App(), "Drain Progress", path, true)
+		d := NewDetails(v.App(), "Drain Progress", path, contentYAML, true)
 		if err := v.App().inject(d, false); err != nil {
 			v.App().Flash().Err(err)
 		}
@@ -194,7 +194,7 @@ func (n *Node) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails(n.App(), yamlAction, sel, true).Update(raw)
+	details := NewDetails(n.App(), yamlAction, sel, contentYAML, true).Update(raw)
 	if err := n.App().inject(details, false); err != nil {
 		n.App().Flash().Err(err)
 	}

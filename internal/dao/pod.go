@@ -33,6 +33,7 @@ var (
 	_ Loggable        = (*Pod)(nil)
 	_ Controller      = (*Pod)(nil)
 	_ ContainsPodSpec = (*Pod)(nil)
+	_ ImageLister     = (*Pod)(nil)
 )
 
 const (
@@ -74,6 +75,16 @@ func (p *Pod) Get(ctx context.Context, path string) (runtime.Object, error) {
 	}
 
 	return &render.PodWithMetrics{Raw: u, MX: pmx}, nil
+}
+
+// ListImages lists container images.
+func (p *Pod) ListImages(ctx context.Context, path string) ([]string, error) {
+	pod, err := p.GetInstance(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return render.ExtractImages(&pod.Spec), nil
 }
 
 // List returns a collection of nodes.

@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/vul"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -20,9 +21,10 @@ type StatefulSet struct {
 
 // Header returns a header row.
 func (StatefulSet) Header(ns string) Header {
-	return Header{
+	h := Header{
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "VS"},
 		HeaderColumn{Name: "READY"},
 		HeaderColumn{Name: "SELECTOR", Wide: true},
 		HeaderColumn{Name: "SERVICE"},
@@ -32,6 +34,11 @@ func (StatefulSet) Header(ns string) Header {
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true},
 	}
+	if vul.ImgScanner == nil {
+		h = append(h[:vulIdx], h[vulIdx+1:]...)
+	}
+
+	return h
 }
 
 // Render renders a K8s resource to screen.
@@ -50,6 +57,7 @@ func (s StatefulSet) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = Fields{
 		sts.Namespace,
 		sts.Name,
+		computeVulScore(&sts.Spec.Template.Spec),
 		strconv.Itoa(int(sts.Status.ReadyReplicas)) + "/" + strconv.Itoa(int(sts.Status.Replicas)),
 		asSelector(sts.Spec.Selector),
 		na(sts.Spec.ServiceName),
@@ -58,6 +66,9 @@ func (s StatefulSet) Render(o interface{}, ns string, r *Row) error {
 		mapToStr(sts.Labels),
 		AsStatus(s.diagnose(sts.Status.Replicas, sts.Status.ReadyReplicas)),
 		ToAge(sts.GetCreationTimestamp()),
+	}
+	if vul.ImgScanner == nil {
+		r.Fields = append(r.Fields[:vulIdx], r.Fields[vulIdx+1:]...)
 	}
 
 	return nil

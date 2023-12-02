@@ -17,7 +17,11 @@ import (
 	"github.com/sahilm/fuzzy"
 )
 
-const detailsTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
+const (
+	detailsTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-] "
+	contentTXT      = "text"
+	contentYAML     = "yaml"
+)
 
 // Details represents a generic text viewer.
 type Details struct {
@@ -32,20 +36,22 @@ type Details struct {
 	currentRegion, maxRegions int
 	searchable                bool
 	fullScreen                bool
+	contentType               string
 }
 
 // NewDetails returns a details viewer.
-func NewDetails(app *App, title, subject string, searchable bool) *Details {
+func NewDetails(app *App, title, subject, contentType string, searchable bool) *Details {
 	d := Details{
-		Flex:       tview.NewFlex(),
-		text:       tview.NewTextView(),
-		app:        app,
-		title:      title,
-		subject:    subject,
-		actions:    make(ui.KeyActions),
-		cmdBuff:    model.NewFishBuff('/', model.FilterBuffer),
-		model:      model.NewText(),
-		searchable: searchable,
+		Flex:        tview.NewFlex(),
+		text:        tview.NewTextView(),
+		app:         app,
+		title:       title,
+		subject:     subject,
+		actions:     make(ui.KeyActions),
+		cmdBuff:     model.NewFishBuff('/', model.FilterBuffer),
+		model:       model.NewText(),
+		searchable:  searchable,
+		contentType: contentType,
 	}
 	d.AddItem(d.text, 0, 1, true)
 
@@ -85,7 +91,12 @@ func (d *Details) InCmdMode() bool {
 
 // TextChanged notifies the model changed.
 func (d *Details) TextChanged(lines []string) {
-	d.text.SetText(colorizeYAML(d.app.Styles.Views().Yaml, strings.Join(lines, "\n")))
+	switch d.contentType {
+	case contentYAML:
+		d.text.SetText(colorizeYAML(d.app.Styles.Views().Yaml, strings.Join(lines, "\n")))
+	default:
+		d.text.SetText(strings.Join(lines, "\n"))
+	}
 	d.text.ScrollToBeginning()
 }
 

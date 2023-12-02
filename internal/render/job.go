@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/vul"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -25,9 +26,10 @@ type Job struct {
 
 // Header returns a header row.
 func (Job) Header(ns string) Header {
-	return Header{
+	h := Header{
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "VS"},
 		HeaderColumn{Name: "COMPLETIONS"},
 		HeaderColumn{Name: "DURATION"},
 		HeaderColumn{Name: "SELECTOR", Wide: true},
@@ -36,6 +38,11 @@ func (Job) Header(ns string) Header {
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true},
 	}
+	if vul.ImgScanner == nil {
+		h = append(h[:vulIdx], h[vulIdx+1:]...)
+	}
+
+	return h
 }
 
 // Render renders a K8s resource to screen.
@@ -57,6 +64,7 @@ func (j Job) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = Fields{
 		job.Namespace,
 		job.Name,
+		computeVulScore(&job.Spec.Template.Spec),
 		ready,
 		toDuration(job.Status),
 		jobSelector(job.Spec),
@@ -64,6 +72,9 @@ func (j Job) Render(o interface{}, ns string, r *Row) error {
 		ii,
 		AsStatus(j.diagnose(ready, job.Status.CompletionTime)),
 		ToAge(job.GetCreationTimestamp()),
+	}
+	if vul.ImgScanner == nil {
+		r.Fields = append(r.Fields[:vulIdx], r.Fields[vulIdx+1:]...)
 	}
 
 	return nil

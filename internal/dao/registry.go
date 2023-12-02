@@ -85,6 +85,7 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 	m := Accessors{
 		client.NewGVR("contexts"):               &Context{},
 		client.NewGVR("containers"):             &Container{},
+		client.NewGVR("scans"):                  &ImageScan{},
 		client.NewGVR("screendumps"):            &ScreenDump{},
 		client.NewGVR("benchmarks"):             &Benchmark{},
 		client.NewGVR("portforwards"):           &PortForward{},
@@ -94,6 +95,7 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		client.NewGVR("apps/v1/deployments"):    &Deployment{},
 		client.NewGVR("apps/v1/daemonsets"):     &DaemonSet{},
 		client.NewGVR("apps/v1/statefulsets"):   &StatefulSet{},
+		client.NewGVR("apps/v1/replicasets"):    &ReplicaSet{},
 		client.NewGVR("batch/v1/cronjobs"):      &CronJob{},
 		client.NewGVR("batch/v1beta1/cronjobs"): &CronJob{},
 		client.NewGVR("batch/v1/jobs"):          &Job{},
@@ -287,6 +289,13 @@ func loadK9s(m ResourceMetas) {
 		Name:         "containers",
 		Kind:         "Containers",
 		SingularName: "container",
+		Verbs:        []string{},
+		Categories:   []string{k9sCat},
+	}
+	m[client.NewGVR("scans")] = metav1.APIResource{
+		Name:         "scans",
+		Kind:         "Scans",
+		SingularName: "scan",
 		Verbs:        []string{},
 		Categories:   []string{k9sCat},
 	}

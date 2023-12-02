@@ -18,12 +18,14 @@ import (
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/vul"
 )
 
 const (
 	// NodeUnreachablePodReason is reason and message set on a pod when its state
 	// cannot be confirmed as kubelet is unresponsive on the node it is (was) running.
 	NodeUnreachablePodReason = "NodeLost" // k8s.io/kubernetes/pkg/util/node.NodeUnreachablePodReason
+	vulIdx                   = 2
 )
 
 const (
@@ -83,9 +85,10 @@ func (p Pod) ColorerFunc() ColorerFunc {
 
 // Header returns a header row.
 func (Pod) Header(ns string) Header {
-	return Header{
+	h := Header{
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "VS"},
 		HeaderColumn{Name: "PF"},
 		HeaderColumn{Name: "READY"},
 		HeaderColumn{Name: "STATUS"},
@@ -107,6 +110,22 @@ func (Pod) Header(ns string) Header {
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true},
 	}
+	if vul.ImgScanner == nil {
+		h = append(h[:vulIdx], h[vulIdx+1:]...)
+	}
+
+	return h
+}
+
+// ExtractImages returns a collection of container images.
+// !!BOZO!! If this has any legs?? enable scans on other container types.
+func ExtractImages(spec *v1.PodSpec) []string {
+	ii := make([]string, 0, len(spec.Containers))
+	for _, c := range spec.Containers {
+		ii = append(ii, c.Image)
+	}
+
+	return ii
 }
 
 // Render renders a K8s resource to screen.
@@ -132,6 +151,7 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 	row.Fields = Fields{
 		po.Namespace,
 		po.ObjectMeta.Name,
+		computeVulScore(&po.Spec),
 		"●",
 		strconv.Itoa(cr) + "/" + strconv.Itoa(len(po.Spec.Containers)),
 		phase,
@@ -152,6 +172,9 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 		mapToStr(po.Labels),
 		AsStatus(p.diagnose(phase, cr, len(cs))),
 		ToAge(po.GetCreationTimestamp()),
+	}
+	if vul.ImgScanner == nil {
+		row.Fields = append(row.Fields[:vulIdx], row.Fields[vulIdx+1:]...)
 	}
 
 	return nil
