@@ -4,6 +4,7 @@
 package render
 
 import (
+	"math"
 	"testing"
 	"time"
 
@@ -69,6 +70,7 @@ func TestDurationToSecond(t *testing.T) {
 		"day_hour_minute_seconds": {s: "2d22h3m50s", e: 252230},
 		"year":                    {s: "3y", e: 94608000},
 		"year_day":                {s: "1y2d", e: 31708800},
+		"n/a":                     {s: NAValue, e: math.MaxInt64},
 	}
 
 	for k := range uu {

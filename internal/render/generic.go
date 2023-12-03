@@ -101,7 +101,7 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 		r.Fields = append(r.Fields, d)
 	} else if g.ageIndex > 0 {
 		log.Warn().Msgf("No Duration detected on age field")
-		r.Fields = append(r.Fields, "0")
+		r.Fields = append(r.Fields, NAValue)
 	}
 
 	return nil

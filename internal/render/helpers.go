@@ -4,6 +4,7 @@
 package render
 
 import (
+	"math"
 	"sort"
 	"strconv"
 	"strings"
@@ -47,6 +48,9 @@ func runesToNum(rr []rune) int64 {
 func durationToSeconds(duration string) int64 {
 	if len(duration) == 0 {
 		return 0
+	}
+	if duration == NAValue {
+		return math.MaxInt64
 	}
 
 	num := make([]rune, 0, 5)
