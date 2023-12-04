@@ -23,6 +23,10 @@ const K9sConfig = "K9SCONFIG"
 var (
 	// K9sConfigFile represents K9s config file location.
 	K9sConfigFile = filepath.Join(K9sHome(), "config.yml")
+
+	// K9sSkinDir represent K9s skin dir
+	K9sSkinDir = filepath.Join(K9sHome(), "skins")
+
 	// K9sDefaultScreenDumpDir represents a default directory where K9s screen dumps will be persisted.
 	K9sDefaultScreenDumpDir = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-screens-%s", MustK9sUser()))
 )

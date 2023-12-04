@@ -6,7 +6,6 @@ package ui
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -100,6 +99,7 @@ func (c *Configurator) StylesWatcher(ctx context.Context, s synchronizer) error 
 			select {
 			case evt := <-w.Events:
 				if evt.Name == c.skinFile && evt.Op != fsnotify.Chmod {
+					log.Debug().Msgf("Skin changed: %s", c.skinFile)
 					s.QueueUpdateDraw(func() {
 						c.RefreshStyles(c.Config.K9s.CurrentCluster)
 					})
@@ -117,8 +117,12 @@ func (c *Configurator) StylesWatcher(ctx context.Context, s synchronizer) error 
 		}
 	}()
 
-	log.Debug().Msgf("SkinWatcher watching `%s", c.skinFile)
-	return w.Add(config.K9sHome())
+	log.Debug().Msgf("SkinWatcher watching %q", config.K9sHome())
+	if err := w.Add(config.K9sHome()); err != nil {
+		return err
+	}
+	log.Debug().Msgf("SkinWatcher watching %q", config.K9sSkinDir)
+	return w.Add(config.K9sSkinDir)
 }
 
 // BenchConfig location of the benchmarks configuration file.
@@ -130,21 +134,35 @@ func BenchConfig(context string) string {
 func (c *Configurator) RefreshStyles(context string) {
 	c.BenchFile = BenchConfig(context)
 
-	clusterSkins := config.YamlExtension(filepath.Join(config.K9sHome(), fmt.Sprintf("%s_skin.yml", context)))
 	if c.Styles == nil {
 		c.Styles = config.NewStyles()
 	} else {
 		c.Styles.Reset()
 	}
-	if err := c.Styles.Load(clusterSkins); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			log.Warn().Msgf("No context specific skin file found -- %s", clusterSkins)
-		} else {
-			log.Error().Msgf("Failed to parse context specific skin file -- %s. %s.", clusterSkins, err)
+
+	var skin string
+	if c.Config != nil {
+		cl, ok := c.Config.K9s.Clusters[context]
+		if !ok {
+			return
 		}
-	} else {
-		c.updateStyles(clusterSkins)
-		return
+		skin = cl.Skin
+	}
+
+	var (
+		skinFile = filepath.Join(config.K9sSkinDir, skin+".yml")
+	)
+	if skin != "" {
+		if err := c.Styles.Load(skinFile); err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				log.Warn().Msgf("Skin file %q not found in skins dir: %s", skinFile, config.K9sSkinDir)
+			} else {
+				log.Error().Msgf("Failed to parse skin file -- %s: %s.", skinFile, err)
+			}
+		} else {
+			c.updateStyles(skinFile)
+			return
+		}
 	}
 
 	if err := c.Styles.Load(config.K9sStylesFile); err != nil {

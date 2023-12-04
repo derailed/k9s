@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -25,7 +28,7 @@ type HelmHistory struct {
 }
 
 // List returns a collection of resources.
-func (h *HelmHistory) List(ctx context.Context, ns string) ([]runtime.Object, error) {
+func (h *HelmHistory) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	path, ok := ctx.Value(internal.KeyFQN).(string)
 	if !ok {
 		return nil, fmt.Errorf("expecting FQN in context")

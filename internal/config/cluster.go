@@ -12,6 +12,7 @@ const DefaultPFAddress = "localhost"
 type Cluster struct {
 	Namespace          *Namespace    `yaml:"namespace"`
 	View               *View         `yaml:"view"`
+	Skin               string        `yaml:"skin,omitempty"`
 	FeatureGates       *FeatureGates `yaml:"featureGates"`
 	PortForwardAddress string        `yaml:"portForwardAddress"`
 }
