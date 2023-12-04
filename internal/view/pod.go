@@ -113,6 +113,7 @@ func (p *Pod) logOptions(prev bool) (*dao.LogOptions, error) {
 		SinceSeconds:    cfg.SinceSeconds,
 		SingleContainer: len(cc) == 1,
 		ShowTimestamp:   cfg.ShowTime,
+		ShowJSON:        cfg.ShowJSON,
 		Previous:        prev,
 	}
 	if c, ok := dao.GetDefaultContainer(pod.ObjectMeta, pod.Spec); ok {
