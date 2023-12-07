@@ -51,6 +51,12 @@ type Factory interface {
 	Forwarders() watch.Forwarders
 }
 
+// ImageLister tracks resources with container images.
+type ImageLister interface {
+	// ListImages lists container images.
+	ListImages(ctx context.Context, path string) ([]string, error)
+}
+
 // Getter represents a resource getter.
 type Getter interface {
 	// Get return a given resource.

@@ -40,7 +40,7 @@ func (Service) Header(ns string) Header {
 func (s Service) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected Service, but got %T", o)
+		return fmt.Errorf("expected Service, but got %T", o)
 	}
 	var svc v1.Service
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &svc)
@@ -58,8 +58,8 @@ func (s Service) Render(o interface{}, ns string, r *Row) error {
 		mapToStr(svc.Spec.Selector),
 		ToPorts(svc.Spec.Ports),
 		mapToStr(svc.Labels),
-		asStatus(s.diagnose()),
-		toAge(svc.GetCreationTimestamp()),
+		AsStatus(s.diagnose()),
+		ToAge(svc.GetCreationTimestamp()),
 	}
 
 	return nil

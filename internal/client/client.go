@@ -22,7 +22,6 @@ import (
 	"k8s.io/client-go/dynamic"
 	"k8s.io/client-go/kubernetes"
 	restclient "k8s.io/client-go/rest"
-	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 	metricsapi "k8s.io/metrics/pkg/apis/metrics"
 	"k8s.io/metrics/pkg/client/clientset/versioned"
 )
@@ -457,9 +456,7 @@ func (a *APIClient) supportsMetricsResources() error {
 		a.cache.Add(cacheMXAPIKey, supported, cacheExpiry)
 	}()
 
-	cfg := cmdutil.NewMatchVersionFlags(a.config.flags)
-	f := cmdutil.NewFactory(cfg)
-	dial, err := f.ToDiscoveryClient()
+	dial, err := a.CachedDiscovery()
 	if err != nil {
 		log.Warn().Err(err).Msgf("Unable to dial discovery API")
 		return err

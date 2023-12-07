@@ -70,7 +70,7 @@ func (PersistentVolume) Header(string) Header {
 func (p PersistentVolume) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected PersistentVolume, but got %T", o)
+		return fmt.Errorf("expected PersistentVolume, but got %T", o)
 	}
 	var pv v1.PersistentVolume
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &pv)
@@ -105,8 +105,8 @@ func (p PersistentVolume) Render(o interface{}, ns string, r *Row) error {
 		pv.Status.Reason,
 		p.volumeMode(pv.Spec.VolumeMode),
 		mapToStr(pv.Labels),
-		asStatus(p.diagnose(phase)),
-		toAge(pv.GetCreationTimestamp()),
+		AsStatus(p.diagnose(phase)),
+		ToAge(pv.GetCreationTimestamp()),
 	}
 
 	return nil

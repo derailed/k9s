@@ -1,9 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Authors of K9s
 
-// SPDX-License-Identifier: Apache-2.0
-// Copyright Authors of K9s
-
 package dao
 
 import (
@@ -12,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -33,11 +31,22 @@ var (
 	_ Scalable        = (*Deployment)(nil)
 	_ Controller      = (*Deployment)(nil)
 	_ ContainsPodSpec = (*Deployment)(nil)
+	_ ImageLister     = (*Deployment)(nil)
 )
 
 // Deployment represents a deployment K8s resource.
 type Deployment struct {
 	Resource
+}
+
+// ListImages lists container images.
+func (d *Deployment) ListImages(ctx context.Context, fqn string) ([]string, error) {
+	dp, err := d.GetInstance(fqn)
+	if err != nil {
+		return nil, err
+	}
+
+	return render.ExtractImages(&dp.Spec.Template.Spec), nil
 }
 
 // IsHappy check for happy deployments.
@@ -121,7 +130,7 @@ func (d *Deployment) Restart(ctx context.Context, path string) error {
 
 // TailLogs tail logs for all pods represented by this Deployment.
 func (d *Deployment) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error) {
-	dp, err := d.GetInstance(d.Factory, opts.Path)
+	dp, err := d.GetInstance(opts.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +143,7 @@ func (d *Deployment) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan,
 
 // Pod returns a pod victim by name.
 func (d *Deployment) Pod(fqn string) (string, error) {
-	dp, err := d.GetInstance(d.Factory, fqn)
+	dp, err := d.GetInstance(fqn)
 	if err != nil {
 		return "", err
 	}
@@ -143,8 +152,8 @@ func (d *Deployment) Pod(fqn string) (string, error) {
 }
 
 // GetInstance fetch a matching deployment.
-func (*Deployment) GetInstance(f Factory, fqn string) (*appsv1.Deployment, error) {
-	o, err := f.Get("apps/v1/deployments", fqn, true, labels.Everything())
+func (d *Deployment) GetInstance(fqn string) (*appsv1.Deployment, error) {
+	o, err := d.Factory.Get(d.GVR(), fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +255,7 @@ func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs
 
 // GetPodSpec returns a pod spec given a resource.
 func (d *Deployment) GetPodSpec(path string) (*v1.PodSpec, error) {
-	dp, err := d.GetInstance(d.Factory, path)
+	dp, err := d.GetInstance(path)
 	if err != nil {
 		return nil, err
 	}

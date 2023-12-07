@@ -54,14 +54,12 @@ func (n *Node) bindDangerousKeys(aa ui.KeyActions) {
 }
 
 func (n *Node) bindKeys(aa ui.KeyActions) {
-	aa.Delete(ui.KeySpace, tcell.KeyCtrlSpace)
-
 	if !n.App().Config.K9s.IsReadOnly() {
 		n.bindDangerousKeys(aa)
 	}
 
 	aa.Add(ui.KeyActions{
-		ui.KeyY:      ui.NewKeyAction("YAML", n.yamlCmd, true),
+		ui.KeyY:      ui.NewKeyAction(yamlAction, n.yamlCmd, true),
 		ui.KeyShiftC: ui.NewKeyAction("Sort CPU", n.GetTable().SortColCmd(cpuCol, false), false),
 		ui.KeyShiftM: ui.NewKeyAction("Sort MEM", n.GetTable().SortColCmd(memCol, false), false),
 		ui.KeyShift0: ui.NewKeyAction("Sort Pods", n.GetTable().SortColCmd("PODS", false), false),
@@ -102,7 +100,7 @@ func drainNode(v ResourceViewer, path string, opts dao.DrainOptions) {
 	v.Stop()
 	defer v.Start()
 	{
-		d := NewDetails(v.App(), "Drain Progress", path, true)
+		d := NewDetails(v.App(), "Drain Progress", path, contentYAML, true)
 		if err := v.App().inject(d, false); err != nil {
 			v.App().Flash().Err(err)
 		}
@@ -196,7 +194,7 @@ func (n *Node) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails(n.App(), "YAML", sel, true).Update(raw)
+	details := NewDetails(n.App(), yamlAction, sel, contentYAML, true).Update(raw)
 	if err := n.App().inject(details, false); err != nil {
 		n.App().Flash().Err(err)
 	}

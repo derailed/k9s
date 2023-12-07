@@ -47,7 +47,7 @@ func (b *Benchmark) viewBench(app *App, model ui.Tabular, gvr, path string) {
 		return
 	}
 
-	details := NewDetails(b.App(), "Results", fileToSubject(path), false).Update(data)
+	details := NewDetails(b.App(), "Results", fileToSubject(path), contentYAML, false).Update(data)
 	if err := app.inject(details, false); err != nil {
 		app.Flash().Err(err)
 	}

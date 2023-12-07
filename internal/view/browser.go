@@ -62,7 +62,7 @@ func (b *Browser) Init(ctx context.Context) error {
 	}
 	ns := client.CleanseNamespace(b.app.Config.ActiveNamespace())
 	if dao.IsK8sMeta(b.meta) && b.app.ConOK() {
-		if _, e := b.app.factory.CanForResource(ns, b.GVR().String(), client.MonitorAccess); e != nil {
+		if _, e := b.app.factory.CanForResource(ns, b.GVR().String(), client.ListAccess); e != nil {
 			return e
 		}
 	}
@@ -262,7 +262,7 @@ func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	v := NewLiveView(b.app, "YAML", model.NewYAML(b.GVR(), path))
+	v := NewLiveView(b.app, yamlAction, model.NewYAML(b.GVR(), path))
 	if err := v.app.inject(v, false); err != nil {
 		v.app.Flash().Err(err)
 	}
@@ -367,33 +367,42 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path == "" {
 		return evt
 	}
+
+	b.Stop()
+	defer b.Start()
+	if err := editRes(b.app, b.GVR(), path); err != nil {
+		b.App().Flash().Err(err)
+	}
+
+	return nil
+}
+
+func editRes(app *App, gvr client.GVR, path string) error {
+	if path == "" {
+		return fmt.Errorf("nothing selected %q", path)
+	}
 	ns, n := client.Namespaced(path)
 	if client.IsClusterScoped(ns) {
 		ns = client.AllNamespaces
 	}
-	if b.GVR().String() == "v1/namespaces" {
+	if gvr.String() == "v1/namespaces" {
 		ns = n
 	}
-	if ok, err := b.app.Conn().CanI(ns, b.GVR().String(), []string{"patch"}); !ok || err != nil {
-		b.App().Flash().Errf("Current user can't edit resource %s", b.GVR())
-		return nil
+	if ok, err := app.Conn().CanI(ns, gvr.String(), []string{"patch"}); !ok || err != nil {
+		return fmt.Errorf("current user can't edit resource %s", gvr)
 	}
 
-	b.Stop()
-	defer b.Start()
-	{
-		args := make([]string, 0, 10)
-		args = append(args, "edit")
-		args = append(args, b.GVR().FQN(n))
-		if ns != client.AllNamespaces {
-			args = append(args, "-n", ns)
-		}
-		if err := runK(b.app, shellOpts{clear: true, args: args}); err != nil {
-			b.app.Flash().Errf("Edit command failed: %s", err)
-		}
+	args := make([]string, 0, 10)
+	args = append(args, "edit")
+	args = append(args, gvr.FQN(n))
+	if ns != client.AllNamespaces {
+		args = append(args, "-n", ns)
+	}
+	if err := runK(app, shellOpts{clear: true, args: args}); err != nil {
+		app.Flash().Errf("Edit command failed: %s", err)
 	}
 
-	return evt
+	return nil
 }
 
 func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -404,7 +413,7 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	ns := b.namespaces[i]
 
-	auth, err := b.App().factory.Client().CanI(ns, b.GVR().String(), client.MonitorAccess)
+	auth, err := b.App().factory.Client().CanI(ns, b.GVR().String(), client.ListAccess)
 	if !auth {
 		if err == nil {
 			err = fmt.Errorf("current user can't access namespace %s", ns)
@@ -488,7 +497,7 @@ func (b *Browser) refreshActions() {
 	}
 
 	if !dao.IsK9sMeta(b.meta) {
-		aa[ui.KeyY] = ui.NewKeyAction("YAML", b.viewCmd, true)
+		aa[ui.KeyY] = ui.NewKeyAction(yamlAction, b.viewCmd, true)
 		aa[ui.KeyD] = ui.NewKeyAction("Describe", b.describeCmd, true)
 	}
 

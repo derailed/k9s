@@ -249,19 +249,13 @@ func ssh(a *App, node string) error {
 	if err := launchShellPod(a, node); err != nil {
 		return err
 	}
-
-	cl := a.Config.K9s.ActiveCluster()
-	if cl == nil {
-		return fmt.Errorf("no active cluster detected")
-	}
-	ns := cl.ShellPod.Namespace
+	ns := a.Config.K9s.ShellPod.Namespace
 
 	return sshIn(a, client.FQN(ns, k9sShellPodName()), k9sShell)
 }
 
 func sshIn(a *App, fqn, co string) error {
-	cl := a.Config.K9s.ActiveCluster()
-	cfg := cl.ShellPod
+	cfg := a.Config.K9s.ShellPod
 	os, err := getPodOS(a.factory, fqn)
 	if err != nil {
 		return fmt.Errorf("os detect failed: %w", err)
@@ -295,8 +289,7 @@ func nukeK9sShell(a *App) error {
 		return nil
 	}
 
-	cl := a.Config.K9s.ActiveCluster()
-	ns := cl.ShellPod.Namespace
+	ns := a.Config.K9s.ShellPod.Namespace
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
@@ -315,9 +308,11 @@ func nukeK9sShell(a *App) error {
 
 func launchShellPod(a *App, node string) error {
 	a.Flash().Infof("Launching node shell on %s...", node)
-	cl := a.Config.K9s.ActiveCluster()
-	ns := cl.ShellPod.Namespace
-	spec := k9sShellPod(node, cl.ShellPod)
+
+	var (
+		spo  = a.Config.K9s.ShellPod
+		spec = k9sShellPod(node, spo)
+	)
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
@@ -325,13 +320,13 @@ func launchShellPod(a *App, node string) error {
 	if err != nil {
 		return err
 	}
-	conn := dial.CoreV1().Pods(ns)
+	conn := dial.CoreV1().Pods(spo.Namespace)
 	if _, err := conn.Create(ctx, spec, metav1.CreateOptions{}); err != nil {
 		return err
 	}
 
 	for i := 0; i < k9sShellRetryCount; i++ {
-		o, err := a.factory.Get("v1/pods", client.FQN(ns, k9sShellPodName()), true, labels.Everything())
+		o, err := a.factory.Get("v1/pods", client.FQN(spo.Namespace, k9sShellPodName()), true, labels.Everything())
 		if err != nil {
 			time.Sleep(k9sShellRetryDelay)
 			continue
@@ -372,6 +367,7 @@ func k9sShellPod(node string, cfg *config.ShellPod) *v1.Pod {
 		},
 		Resources: asResource(cfg.Limits),
 		Stdin:     true,
+		TTY:       cfg.TTY,
 		SecurityContext: &v1.SecurityContext{
 			Privileged: &priv,
 		},

@@ -19,7 +19,7 @@ type Job struct {
 
 // NewJob returns a new viewer.
 func NewJob(gvr client.GVR) ResourceViewer {
-	j := Job{ResourceViewer: NewLogsExtender(NewBrowser(gvr), nil)}
+	j := Job{ResourceViewer: NewVulnerabilityExtender(NewLogsExtender(NewBrowser(gvr), nil))}
 	j.GetTable().SetEnterFn(j.showPods)
 	j.GetTable().SetSortCol("AGE", true)
 

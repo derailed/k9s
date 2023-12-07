@@ -5,13 +5,15 @@ before:
     - go generate ./...
 release:
   prerelease: false
+
+env:
+  - CGO_ENABLED=0
+
 builds:
-  - env:
-      - CGO_ENABLED=0
+  - id: linux
     goos:
       - linux
-      - darwin
-      - windows
+      - freebsd
     goarch:
       - amd64
       - arm64
@@ -27,15 +29,40 @@ builds:
       - -s -w -X github.com/derailed/k9s/cmd.commit={{.Commit}}
       - -s -w -X github.com/derailed/k9s/cmd.date={{.Date}}
 
+  - id: osx
+    goos:
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X github.com/derailed/k9s/cmd.version=v{{.Version}}
+      - -s -w -X github.com/derailed/k9s/cmd.commit={{.Commit}}
+      - -s -w -X github.com/derailed/k9s/cmd.date={{.Date}}
+
+  - id: windows
+    goos:
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w -X github.com/derailed/k9s/cmd.version=v{{.Version}}
+      - -s -w -X github.com/derailed/k9s/cmd.commit={{.Commit}}
+      - -s -w -X github.com/derailed/k9s/cmd.date={{.Date}}
+
 archives:
-  - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}"
-    replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      bit: Arm
-      bitv6: Arm6
-      bitv7: Arm7
+  - name_template: >-
+      {{ .ProjectName }}_
+      {{- title .Os }}_
+      {{- if eq .Arch "amd64" }}amd64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
+      {{- if .Arm }}v{{ .Arm }}{{ end }}
     format_overrides:
       - goos: windows
         format: zip
@@ -55,7 +82,7 @@ changelog:
 
 brews:
   - name: k9s
-    tap:
+    repository:
       owner: derailed
       name: homebrew-k9s
     commit_author:
@@ -69,8 +96,6 @@ brews:
 
 nfpms:
   - file_name_template: '{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}'
-    replacements:
-      linux: Linux
     maintainer: Fernand Galiana
     homepage: https://k9scli.io
     description: Kubernetes CLI To Manage Your Clusters In Style!

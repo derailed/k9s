@@ -40,7 +40,7 @@ func (NetworkPolicy) Header(ns string) Header {
 func (n NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected NetworkPolicy, but got %T", o)
+		return fmt.Errorf("expected NetworkPolicy, but got %T", o)
 	}
 	var np netv1.NetworkPolicy
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &np)
@@ -63,7 +63,7 @@ func (n NetworkPolicy) Render(o interface{}, ns string, r *Row) error {
 		eb,
 		mapToStr(np.Labels),
 		"",
-		toAge(np.GetCreationTimestamp()),
+		ToAge(np.GetCreationTimestamp()),
 	}
 
 	return nil

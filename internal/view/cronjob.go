@@ -35,7 +35,7 @@ type CronJob struct {
 
 // NewCronJob returns a new viewer.
 func NewCronJob(gvr client.GVR) ResourceViewer {
-	c := CronJob{ResourceViewer: NewBrowser(gvr)}
+	c := CronJob{ResourceViewer: NewVulnerabilityExtender(NewBrowser(gvr))}
 	c.AddBindKeysFn(c.bindKeys)
 	c.GetTable().SetEnterFn(c.showJobs)
 

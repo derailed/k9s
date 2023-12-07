@@ -36,7 +36,7 @@ func (Role) Header(ns string) Header {
 func (r Role) Render(o interface{}, ns string, row *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected Role, but got %T", o)
+		return fmt.Errorf("expected Role, but got %T", o)
 	}
 	var ro rbacv1.Role
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &ro)
@@ -53,7 +53,7 @@ func (r Role) Render(o interface{}, ns string, row *Row) error {
 		ro.Name,
 		mapToStr(ro.Labels),
 		"",
-		toAge(ro.GetCreationTimestamp()),
+		ToAge(ro.GetCreationTimestamp()),
 	)
 
 	return nil

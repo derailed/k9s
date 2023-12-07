@@ -37,7 +37,7 @@ func (PersistentVolumeClaim) Header(ns string) Header {
 func (p PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected PersistentVolumeClaim, but got %T", o)
+		return fmt.Errorf("expected PersistentVolumeClaim, but got %T", o)
 	}
 	var pvc v1.PersistentVolumeClaim
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &pvc)
@@ -74,8 +74,8 @@ func (p PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
 		accessModes,
 		class,
 		mapToStr(pvc.Labels),
-		asStatus(p.diagnose(string(phase))),
-		toAge(pvc.GetCreationTimestamp()),
+		AsStatus(p.diagnose(string(phase))),
+		ToAge(pvc.GetCreationTimestamp()),
 	}
 
 	return nil

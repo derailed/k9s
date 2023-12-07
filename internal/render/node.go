@@ -35,6 +35,7 @@ func (Node) Header(_ string) Header {
 		HeaderColumn{Name: "NAME"},
 		HeaderColumn{Name: "STATUS"},
 		HeaderColumn{Name: "ROLE"},
+		HeaderColumn{Name: "TAINTS"},
 		HeaderColumn{Name: "VERSION"},
 		HeaderColumn{Name: "KERNEL", Wide: true},
 		HeaderColumn{Name: "INTERNAL-IP", Wide: true},
@@ -89,6 +90,7 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 		no.Name,
 		join(statuses, ","),
 		join(roles, ","),
+		strconv.Itoa(len(no.Spec.Taints)),
 		no.Status.NodeInfo.KubeletVersion,
 		no.Status.NodeInfo.KernelVersion,
 		iIP,
@@ -101,8 +103,8 @@ func (n Node) Render(o interface{}, ns string, r *Row) error {
 		toMc(a.cpu),
 		toMi(a.mem),
 		mapToStr(no.Labels),
-		asStatus(n.diagnose(statuses)),
-		toAge(no.GetCreationTimestamp()),
+		AsStatus(n.diagnose(statuses)),
+		ToAge(no.GetCreationTimestamp()),
 	}
 
 	return nil

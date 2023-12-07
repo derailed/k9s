@@ -23,6 +23,7 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
+	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
@@ -120,7 +121,26 @@ func (a *App) Init(version string, rate int) error {
 	a.layout(ctx)
 	a.initSignals()
 
+	if a.Config.K9s.EnableImageScan {
+		a.initImgScanner(version)
+	}
+
 	return nil
+}
+
+func (a *App) stopImgScanner() {
+	if vul.ImgScanner != nil {
+		vul.ImgScanner.Stop()
+	}
+}
+
+func (a *App) initImgScanner(version string) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("Scanner init time %s", time.Since(t))
+	}(time.Now())
+
+	vul.ImgScanner = vul.NewImageScanner()
+	go vul.ImgScanner.Init("k9s", version)
 }
 
 func (a *App) layout(ctx context.Context) {
@@ -492,6 +512,8 @@ func (a *App) BailOut() {
 	if err := nukeK9sShell(a); err != nil {
 		log.Error().Err(err).Msgf("nuking k9s shell pod")
 	}
+
+	a.stopImgScanner()
 	a.factory.Terminate()
 	a.App.BailOut()
 }
@@ -686,8 +708,7 @@ func (a *App) gotoResource(cmd, path string, clearStack bool) {
 func (a *App) inject(c model.Component, clearStack bool) error {
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	if err := c.Init(ctx); err != nil {
-		log.Error().Err(err).Msgf("component init failed for %q", c.Name())
-		//dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
+		log.Error().Err(err).Msgf("Component init failed for %q", c.Name())
 		return err
 	}
 	if clearStack {

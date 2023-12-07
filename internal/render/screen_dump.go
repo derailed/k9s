@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/tcell/v2"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
+	"k8s.io/apimachinery/pkg/util/duration"
 )
 
 // ScreenDump renders a screendumps to screen.
@@ -58,7 +59,7 @@ func (b ScreenDump) Render(o interface{}, ns string, r *Row) error {
 // Helpers...
 
 func timeToAge(timestamp time.Time) string {
-	return time.Since(timestamp).String()
+	return duration.HumanDuration(time.Since(timestamp))
 }
 
 // FileRes represents a file resource.

@@ -75,7 +75,7 @@ func (d *Dir) bindKeys(aa ui.KeyActions) {
 		d.bindDangerousKeys(aa)
 	}
 	aa.Add(ui.KeyActions{
-		ui.KeyY:        ui.NewKeyAction("YAML", d.viewCmd, true),
+		ui.KeyY:        ui.NewKeyAction(yamlAction, d.viewCmd, true),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", d.gotoCmd, true),
 	})
 }
@@ -96,7 +96,7 @@ func (d *Dir) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails(d.App(), "YAML", sel, true).Update(string(yaml))
+	details := NewDetails(d.App(), yamlAction, sel, contentYAML, true).Update(string(yaml))
 	if err := d.App().inject(details, false); err != nil {
 		d.App().Flash().Err(err)
 	}
@@ -216,7 +216,7 @@ func (d *Dir) applyCmd(evt *tcell.EventKey) *tcell.EventKey {
 			res = "message:\n" + fmtResults(res)
 		}
 
-		details := NewDetails(d.App(), "Applied Manifest", sel, true).Update(res)
+		details := NewDetails(d.App(), "Applied Manifest", sel, contentYAML, true).Update(res)
 		if err := d.App().inject(details, false); err != nil {
 			d.App().Flash().Err(err)
 		}
@@ -255,7 +255,7 @@ func (d *Dir) delCmd(evt *tcell.EventKey) *tcell.EventKey {
 		} else {
 			res = "message:\n" + fmtResults(res)
 		}
-		details := NewDetails(d.App(), "Deleted Manifest", sel, true).Update(res)
+		details := NewDetails(d.App(), "Deleted Manifest", sel, contentYAML, true).Update(res)
 		if err := d.App().inject(details, false); err != nil {
 			d.App().Flash().Err(err)
 		}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	batchv1 "k8s.io/api/batch/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -18,14 +19,25 @@ import (
 )
 
 var (
-	_ Accessor = (*Job)(nil)
-	_ Nuker    = (*Job)(nil)
-	_ Loggable = (*Job)(nil)
+	_ Accessor    = (*Job)(nil)
+	_ Nuker       = (*Job)(nil)
+	_ Loggable    = (*Job)(nil)
+	_ ImageLister = (*Deployment)(nil)
 )
 
 // Job represents a K8s job resource.
 type Job struct {
 	Resource
+}
+
+// ListImages lists container images.
+func (j *Job) ListImages(ctx context.Context, fqn string) ([]string, error) {
+	job, err := j.GetInstance(fqn)
+	if err != nil {
+		return nil, err
+	}
+
+	return render.ExtractImages(&job.Spec.Template.Spec), nil
 }
 
 // List returns a collection of resources.
@@ -77,6 +89,21 @@ func (j *Job) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 	}
 
 	return podLogs(ctx, job.Spec.Selector.MatchLabels, opts)
+}
+
+func (j *Job) GetInstance(fqn string) (*batchv1.Job, error) {
+	o, err := j.GetFactory().Get(j.gvr.String(), fqn, true, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	var job batchv1.Job
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &job)
+	if err != nil {
+		return nil, errors.New("expecting a job resource")
+	}
+
+	return &job, nil
 }
 
 // ScanSA scans for serviceaccount refs.

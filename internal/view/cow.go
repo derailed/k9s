@@ -74,7 +74,7 @@ func cowTalk(says string, w int) string {
 	msg := fmt.Sprintf("[red::]< [::b]Ruroh? %s[::-] >", says)
 	buff := make([]string, 0, len(cow)+3)
 	buff = append(buff, "[red::] "+strings.Repeat("─", len(says)+8))
-	buff = append(buff, msg)
+	buff = append(buff, strings.TrimSuffix(msg, "\n"))
 	buff = append(buff, " "+strings.Repeat("─", len(says)+8))
 	rCount := w/2 - 8
 	if rCount < 0 {

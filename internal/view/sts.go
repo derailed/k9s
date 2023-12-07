@@ -21,10 +21,12 @@ type StatefulSet struct {
 func NewStatefulSet(gvr client.GVR) ResourceViewer {
 	var s StatefulSet
 	s.ResourceViewer = NewPortForwardExtender(
-		NewRestartExtender(
-			NewScaleExtender(
-				NewImageExtender(
-					NewLogsExtender(NewBrowser(gvr), s.logOptions),
+		NewVulnerabilityExtender(
+			NewRestartExtender(
+				NewScaleExtender(
+					NewImageExtender(
+						NewLogsExtender(NewBrowser(gvr), s.logOptions),
+					),
 				),
 			),
 		),

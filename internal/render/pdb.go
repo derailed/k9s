@@ -41,7 +41,7 @@ func (PodDisruptionBudget) Header(ns string) Header {
 func (p PodDisruptionBudget) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected PodDisruptionBudget, but got %T", o)
+		return fmt.Errorf("expected PodDisruptionBudget, but got %T", o)
 	}
 	var pdb v1beta1.PodDisruptionBudget
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &pdb)
@@ -60,8 +60,8 @@ func (p PodDisruptionBudget) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(int(pdb.Status.DesiredHealthy)),
 		strconv.Itoa(int(pdb.Status.ExpectedPods)),
 		mapToStr(pdb.Labels),
-		asStatus(p.diagnose(pdb.Spec.MinAvailable, pdb.Status.CurrentHealthy)),
-		toAge(pdb.GetCreationTimestamp()),
+		AsStatus(p.diagnose(pdb.Spec.MinAvailable, pdb.Status.CurrentHealthy)),
+		ToAge(pdb.GetCreationTimestamp()),
 	}
 
 	return nil

@@ -24,7 +24,7 @@ type Pod struct{}
 func (p *Pod) Render(ctx context.Context, ns string, o interface{}) error {
 	pwm, ok := o.(*render.PodWithMetrics)
 	if !ok {
-		return fmt.Errorf("Expected PodWithMetrics, but got %T", o)
+		return fmt.Errorf("expected PodWithMetrics, but got %T", o)
 	}
 
 	var po v1.Pod

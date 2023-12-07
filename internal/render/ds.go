@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tview"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -21,9 +22,10 @@ type DaemonSet struct {
 
 // Header returns a header row.
 func (DaemonSet) Header(ns string) Header {
-	return Header{
+	h := Header{
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "VS"},
 		HeaderColumn{Name: "DESIRED", Align: tview.AlignRight},
 		HeaderColumn{Name: "CURRENT", Align: tview.AlignRight},
 		HeaderColumn{Name: "READY", Align: tview.AlignRight},
@@ -33,13 +35,18 @@ func (DaemonSet) Header(ns string) Header {
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true},
 	}
+	if vul.ImgScanner == nil {
+		h = append(h[:vulIdx], h[vulIdx+1:]...)
+	}
+
+	return h
 }
 
 // Render renders a K8s resource to screen.
 func (d DaemonSet) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected DaemonSet, but got %T", o)
+		return fmt.Errorf("expected DaemonSet, but got %T", o)
 	}
 	var ds appsv1.DaemonSet
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &ds)
@@ -51,14 +58,18 @@ func (d DaemonSet) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = Fields{
 		ds.Namespace,
 		ds.Name,
+		computeVulScore(&ds.Spec.Template.Spec),
 		strconv.Itoa(int(ds.Status.DesiredNumberScheduled)),
 		strconv.Itoa(int(ds.Status.CurrentNumberScheduled)),
 		strconv.Itoa(int(ds.Status.NumberReady)),
 		strconv.Itoa(int(ds.Status.UpdatedNumberScheduled)),
 		strconv.Itoa(int(ds.Status.NumberAvailable)),
 		mapToStr(ds.Labels),
-		asStatus(d.diagnose(ds.Status.DesiredNumberScheduled, ds.Status.NumberReady)),
-		toAge(ds.GetCreationTimestamp()),
+		AsStatus(d.diagnose(ds.Status.DesiredNumberScheduled, ds.Status.NumberReady)),
+		ToAge(ds.GetCreationTimestamp()),
+	}
+	if vul.ImgScanner == nil {
+		r.Fields = append(r.Fields[:vulIdx], r.Fields[vulIdx+1:]...)
 	}
 
 	return nil

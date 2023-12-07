@@ -33,7 +33,7 @@ func (ClusterRoleBinding) Header(string) Header {
 func (ClusterRoleBinding) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected ClusterRoleBinding, but got %T", o)
+		return fmt.Errorf("expected ClusterRoleBinding, but got %T", o)
 	}
 	var crb rbacv1.ClusterRoleBinding
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &crb)
@@ -50,7 +50,7 @@ func (ClusterRoleBinding) Render(o interface{}, ns string, r *Row) error {
 		kind,
 		ss,
 		mapToStr(crb.Labels),
-		toAge(crb.GetCreationTimestamp()),
+		ToAge(crb.GetCreationTimestamp()),
 	}
 
 	return nil

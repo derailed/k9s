@@ -11,6 +11,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
@@ -32,11 +33,22 @@ var (
 	_ Restartable     = (*DaemonSet)(nil)
 	_ Controller      = (*DaemonSet)(nil)
 	_ ContainsPodSpec = (*DaemonSet)(nil)
+	_ ImageLister     = (*DaemonSet)(nil)
 )
 
 // DaemonSet represents a K8s daemonset.
 type DaemonSet struct {
 	Resource
+}
+
+// ListImages lists container images.
+func (d *DaemonSet) ListImages(ctx context.Context, fqn string) ([]string, error) {
+	ds, err := d.GetInstance(fqn)
+	if err != nil {
+		return nil, err
+	}
+
+	return render.ExtractImages(&ds.Spec.Template.Spec), nil
 }
 
 // IsHappy check for happy deployments.

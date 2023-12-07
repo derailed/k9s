@@ -313,13 +313,15 @@ K9s uses aliases to navigate most K8s resources.
 
 ## K9s Configuration
 
-  K9s keeps its configurations inside of a `k9s` directory and the location depends on your operating system. K9s leverages [XDG](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html) to load its various configurations files. For information on the default locations for your OS please see [this link](https://github.com/adrg/xdg/blob/master/README.md). If you are still confused a quick `k9s info` will reveal where k9s is loading its configurations from. Alternatively, you can set `K9SCONFIG` to tell K9s the directory location to pull its configurations from.
+  K9s keeps its configurations as YAML files inside of a `k9s` directory and the location depends on your operating system. K9s leverages [XDG](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html) to load its various configurations files. For information on the default locations for your OS please see [this link](https://github.com/adrg/xdg/blob/master/README.md). If you are still confused a quick `k9s info` will reveal where k9s is loading its configurations from. Alternatively, you can set `K9SCONFIG` to tell K9s the directory location to pull its configurations from.
 
   | Unix            | macOS                              | Windows               |
   |-----------------|------------------------------------|-----------------------|
   | `~/.config/k9s` | `~/Library/Application Support/k9s` | `%LOCALAPPDATA%\k9s`  |
 
   > NOTE: This is still in flux and will change while in pre-release stage!
+
+  > NOTE! Thanks to [Mr Alexandru Placenta](https://github.com/placintaalexandru) the config files can now use either `.yml` or `.yaml` mimes.
 
   ```yaml
   # $XDG_CONFIG_HOME/k9s/config.yml
@@ -350,8 +352,8 @@ K9s uses aliases to navigate most K8s resources.
       tail: 200
       # Defines the total number of log lines to allow in the view. Default 1000
       buffer: 500
-      # Represents how far to go back in the log timeline in seconds. Setting to -1 will show all available logs. Default is 5min.
-      sinceSeconds: 300
+      # Represents how far to go back in the log timeline in seconds. Setting to -1 will tail logs. Default is -1.
+      sinceSeconds: 300 # => tail the last 5 mins.
       # Go full screen while displaying logs. Default false
       fullScreenLogs: false
       # Toggles log line wrap. Default false
@@ -364,6 +366,18 @@ K9s uses aliases to navigate most K8s resources.
     currentCluster: minikube
     # KeepMissingClusters will keep clusters in the config if they are missing from the current kubeconfig file. Default false
     KeepMissingClusters: false
+    # Provide shell pod customization when nodeShell feature gate is enabled!
+    shellPod:
+      # The shell pod image to use.
+      image: killerAdmin
+      # The namespace to launch to shell pod into.
+      namespace: default
+      # The resource limit to set on the shell pod.
+      limits:
+        cpu: 100m
+        memory: 100Mi
+      # Enable TTY
+      tty: true
     # Persists per cluster preferences for favorite namespaces and view.
     clusters:
       coolio:
@@ -378,22 +392,7 @@ K9s uses aliases to navigate most K8s resources.
           active: po
         featureGates:
           # Toggles NodeShell support. Allow K9s to shell into nodes if needed. Default false.
-          nodeShell: false
-        # Provide shell pod customization of feature gate is enabled
-        shellPod:
-          # The shell pod image to use.
-          image: killerAdmin
-          # The namespace to launch to shell pod into.
-          namespace: fred
-          # imagePullPolicy defaults to Always
-          imagePullPolicy: Always
-          # imagePullSecrets defaults to no secret
-          imagePullSecrets:
-          - name: my-regcred
-          # The resource limit to set on the shell pod.
-          limits:
-            cpu: 100m
-            memory: 100Mi
+          nodeShell: true
         # The IP Address to use when launching a port-forward.
         portForwardAddress: 1.2.3.4
       kind:
@@ -424,25 +423,19 @@ By enabling the nodeShell feature gate on a given cluster, K9s allows you to she
 ```yaml
 # $XDG_CONFIG_HOME/k9s/config.yml
 k9s:
+  # You can also further tune the shell pod specification
+  shellPod:
+    image: cool_kid_admin:42
+    namespace: blee
+    limits:
+      cpu: 100m
+      memory: 100Mi
   clusters:
     # Configures node shell on cluster blee
     blee:
       featureGates:
         # You must enable the nodeShell feature gate to enable shelling into nodes
         nodeShell: true
-      # You can also further tune the shell pod specification
-      shellPod:
-        image: cool_kid_admin:42
-        namespace: blee
-        # imagePullPolicy defaults to Always
-        imagePullPolicy: Always
-        # imagePullSecrets defaults to no secret
-        imagePullSecrets:
-        - name: my-regcred
-        # The resource limit to set on the shell pod.
-        limits:
-          cpu: 100m
-          memory: 100Mi
 ```
 
 ---
@@ -809,21 +802,36 @@ Example: Dracula Skin ;)
 
 <img src="assets/skins/dracula.png" alt="Dracula Skin">
 
-You can style K9s based on your own sense of look and style. Skins are YAML files, that enable a user to change the K9s presentation layer. K9s skins are loaded from `$XDG_CONFIG_HOME/k9s/skin.yml`. If a skin file is detected then the skin would be loaded if not the current stock skin remains in effect.
+You can style K9s based on your own sense of look and style. Skins are YAML files, that enable a user to change the K9s presentation layer. K9s default skin is loaded from `$XDG_CONFIG_HOME/k9s/skin.yml`. If a skin file is detected then the skin will be loaded if not the current stock skin remains in effect.
 
-You can also change K9s skins based on the cluster you are connecting too. In this case, you can specify the skin file name as `$XDG_CONFIG_HOME/k9s/mycontext_skin.yml`
-Below is a sample skin file, more skins are available in the skins directory in this repo, just simply copy any of these in your user's home dir as `skin.yml`.
+You can also change K9s skins based on the cluster you are connecting too. In this case, you can specify a skin field on your cluster config aka `skin: dracula` (just the name of the skin!) and copy this repo skins/dracula.yml to `$XDG_CONFIG_HOME/k9s/skins` directory.
+Below is a sample skin file, more skins are available in the skins directory in this repo, just simply copy any of these in your k9s home dir as `skin.yml`.
 
 Colors can be defined by name or using a hex representation. Of recent, we've added a color named `default` to indicate a transparent background color to preserve your terminal background color settings if so desired.
 
 > NOTE: This is very much an experimental feature at this time, more will be added/modified if this feature has legs so thread accordingly!
-
-
 > NOTE: Please see [K9s Skins](https://k9scli.io/topics/skins/) for a list of available colors.
 
+```yaml
+# Make cluster fred display in_the_navy skin when loaded...
+k9s:
+  ...
+  clusters:
+    fred:
+      # Override the default skin and use this skin for this cluster.
+      # NOTE: Just the skin file name to extension!
+      skin: in_the_navy # -> Look for a skin file in ~/.config/k9s/skins/in_the_navy.yml
+      namespace:
+        ...
+      view:
+        active: pod
+      featureGates:
+        nodeShell: false
+      portForwardAddress: localhost
+```
 
 ```yaml
-# Skin InTheNavy...
+# in_the_navy.yml: Skin InTheNavy...
 k9s:
   # General K9s styles
   body:

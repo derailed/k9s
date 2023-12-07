@@ -4,15 +4,31 @@
 package view
 
 import (
+	"context"
 	"strconv"
 	"testing"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/sahilm/fuzzy"
 	"github.com/stretchr/testify/assert"
 )
 
 func matchTag(i int, s string) string {
 	return `<<<"search_` + strconv.Itoa(i) + `">>>` + s + `<<<"">>>`
+}
+
+func TestLiveViewSetText(t *testing.T) {
+	s := `
+apiVersion: v1
+  data:
+    the secret name you want to quote to use tls.","title":"secretName","type":"string"}},"required":["http","class","classInSpec"],"type":"object"}
+`
+
+	v := NewLiveView(NewApp(config.NewConfig(nil)), "fred", nil)
+	assert.NoError(t, v.Init(context.Background()))
+	v.text.SetText(colorizeYAML(config.Yaml{}, s))
+
+	assert.Equal(t, s, sanitizeEsc(v.text.GetText(true)))
 }
 
 func TestLiveView_linesWithRegions(t *testing.T) {

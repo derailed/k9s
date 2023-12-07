@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -31,11 +32,22 @@ var (
 	_ Scalable        = (*StatefulSet)(nil)
 	_ Controller      = (*StatefulSet)(nil)
 	_ ContainsPodSpec = (*StatefulSet)(nil)
+	_ ImageLister     = (*StatefulSet)(nil)
 )
 
 // StatefulSet represents a K8s sts.
 type StatefulSet struct {
 	Resource
+}
+
+// ListImages lists container images.
+func (s *StatefulSet) ListImages(ctx context.Context, fqn string) ([]string, error) {
+	sts, err := s.GetInstance(s.Factory, fqn)
+	if err != nil {
+		return nil, err
+	}
+
+	return render.ExtractImages(&sts.Spec.Template.Spec), nil
 }
 
 // IsHappy check for happy sts.

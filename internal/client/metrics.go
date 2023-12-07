@@ -228,7 +228,7 @@ func (m *MetricsServer) FetchPodsMetrics(ctx context.Context, ns string) (*mv1be
 	if entry, ok := m.cache.Get(key); ok {
 		mxList, ok := entry.(*mv1beta1.PodMetricsList)
 		if !ok {
-			return mx, fmt.Errorf("expected podmetricslist but got %T", entry)
+			return mx, fmt.Errorf("expected PodMetricsList but got %T", entry)
 		}
 		return mxList, nil
 	}

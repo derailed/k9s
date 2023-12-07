@@ -61,12 +61,12 @@ func (Benchmark) Header(ns string) Header {
 func (b Benchmark) Render(o interface{}, ns string, r *Row) error {
 	bench, ok := o.(BenchInfo)
 	if !ok {
-		return fmt.Errorf("No benchmarks available %T", o)
+		return fmt.Errorf("no benchmarks available %T", o)
 	}
 
 	data, err := b.readFile(bench.Path)
 	if err != nil {
-		return fmt.Errorf("Unable to load bench file %s", bench.Path)
+		return fmt.Errorf("unable to load bench file %s", bench.Path)
 	}
 
 	r.ID = bench.Path
@@ -75,7 +75,7 @@ func (b Benchmark) Render(o interface{}, ns string, r *Row) error {
 		return err
 	}
 	b.augmentRow(r.Fields, data)
-	r.Fields[8] = asStatus(b.diagnose(ns, r.Fields))
+	r.Fields[8] = AsStatus(b.diagnose(ns, r.Fields))
 
 	return nil
 }
@@ -111,7 +111,7 @@ func (Benchmark) readFile(file string) (string, error) {
 func (b Benchmark) initRow(row Fields, f os.FileInfo) error {
 	tokens := strings.Split(f.Name(), "_")
 	if len(tokens) < 2 {
-		return fmt.Errorf("Invalid file name %s", f.Name())
+		return fmt.Errorf("invalid file name %s", f.Name())
 	}
 	row[0] = tokens[0]
 	row[1] = tokens[1]

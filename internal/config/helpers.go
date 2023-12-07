@@ -20,7 +20,7 @@ const (
 	DefaultFileMod os.FileMode = 0600
 )
 
-var invalidPathCharsRX = regexp.MustCompile(`[:]+`)
+var invalidPathCharsRX = regexp.MustCompile(`[:/]+`)
 
 // SanitizeFilename sanitizes the dump filename.
 func SanitizeFilename(name string) string {

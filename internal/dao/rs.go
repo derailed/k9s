@@ -4,12 +4,14 @@
 package dao
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/render"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
@@ -19,9 +21,23 @@ import (
 	"k8s.io/kubectl/pkg/polymorphichelpers"
 )
 
+var (
+	_ ImageLister = (*ReplicaSet)(nil)
+)
+
 // ReplicaSet represents a replicaset K8s resource.
 type ReplicaSet struct {
 	Resource
+}
+
+// ListImages lists container images.
+func (r *ReplicaSet) ListImages(ctx context.Context, fqn string) ([]string, error) {
+	rs, err := r.Load(r.Factory, fqn)
+	if err != nil {
+		return nil, err
+	}
+
+	return render.ExtractImages(&rs.Spec.Template.Spec), nil
 }
 
 // Load returns a given instance.
@@ -98,7 +114,8 @@ func (r *ReplicaSet) Rollback(fqn string) error {
 	}
 
 	var ddp Deployment
-	dp, err := ddp.GetInstance(r.Factory, client.FQN(rs.Namespace, name))
+	ddp.Init(r.Factory, client.NewGVR("apps/v1/deployments"))
+	dp, err := ddp.GetInstance(client.FQN(rs.Namespace, name))
 	if err != nil {
 		return err
 	}

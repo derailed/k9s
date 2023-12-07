@@ -39,8 +39,8 @@ func NewValues(gvr client.GVR, path string) *Values {
 	}
 }
 
-func getHelmDao() *dao.Helm {
-	return Registry["helm"].DAO.(*dao.Helm)
+func getHelmDao() *dao.HelmChart {
+	return Registry["helm"].DAO.(*dao.HelmChart)
 }
 
 func getValues(path string, allValues bool) []string {
@@ -49,6 +49,11 @@ func getValues(path string, allValues bool) []string {
 		log.Error().Err(err).Msgf("Failed to get Helm values")
 	}
 	return strings.Split(string(vals), "\n")
+}
+
+// GVR returns the resource gvr.
+func (v *Values) GVR() client.GVR {
+	return v.gvr
 }
 
 // ToggleValues toggles between user supplied values and computed values.

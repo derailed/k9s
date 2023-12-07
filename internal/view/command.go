@@ -66,21 +66,17 @@ func (c *Command) Reset(clear bool) error {
 }
 
 func allowedXRay(gvr client.GVR) bool {
-	gg := []string{
-		"v1/pods",
-		"v1/services",
-		"apps/v1/deployments",
-		"apps/v1/daemonsets",
-		"apps/v1/statefulsets",
-		"apps/v1/replicasets",
-	}
-	for _, g := range gg {
-		if g == gvr.String() {
-			return true
-		}
+	gg := map[string]struct{}{
+		"v1/pods":              {},
+		"v1/services":          {},
+		"apps/v1/deployments":  {},
+		"apps/v1/daemonsets":   {},
+		"apps/v1/statefulsets": {},
+		"apps/v1/replicasets":  {},
 	}
 
-	return false
+	_, ok := gg[gvr.String()]
+	return ok
 }
 
 func (c *Command) xrayCmd(cmd string) error {
@@ -273,10 +269,11 @@ func (c *Command) exec(cmd, gvr string, comp model.Component, clearStack bool) (
 		return fmt.Errorf("no component found for %s", gvr)
 	}
 	c.app.Flash().Infof("Viewing %s...", client.NewGVR(gvr).R())
+	command := cmd
 	if tokens := strings.Split(cmd, " "); len(tokens) >= 2 {
-		cmd = tokens[0]
+		command = tokens[0]
 	}
-	c.app.Config.SetActiveView(cmd)
+	c.app.Config.SetActiveView(command)
 	if err := c.app.Config.Save(); err != nil {
 		log.Error().Err(err).Msg("Config save failed!")
 	}

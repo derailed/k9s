@@ -284,17 +284,24 @@ var expectedConfig = `k9s:
   refreshRate: 100
   maxConnRetry: 5
   enableMouse: false
+  enableImageScan: false
   headless: false
   logoless: false
   crumbsless: false
   readOnly: true
   noExitOnCtrlC: false
   noIcons: false
+  shellPod:
+    image: busybox:1.35.0
+    namespace: default
+    limits:
+      cpu: 100m
+      memory: 100Mi
   skipLatestRevCheck: false
   logger:
     tail: 500
     buffer: 800
-    sinceSeconds: 300
+    sinceSeconds: -1
     fullScreenLogs: false
     textWrap: false
     showTime: false
@@ -312,15 +319,6 @@ var expectedConfig = `k9s:
         active: po
       featureGates:
         nodeShell: false
-      shellPod:
-        image: busybox:1.35.0
-        command: []
-        args: []
-        namespace: default
-        limits:
-          cpu: 100m
-          memory: 100Mi
-        labels: {}
       portForwardAddress: localhost
     fred:
       namespace:
@@ -336,15 +334,6 @@ var expectedConfig = `k9s:
         active: po
       featureGates:
         nodeShell: false
-      shellPod:
-        image: busybox:1.35.0
-        command: []
-        args: []
-        namespace: default
-        limits:
-          cpu: 100m
-          memory: 100Mi
-        labels: {}
       portForwardAddress: localhost
     minikube:
       namespace:
@@ -360,15 +349,6 @@ var expectedConfig = `k9s:
         active: ctx
       featureGates:
         nodeShell: false
-      shellPod:
-        image: busybox:1.35.0
-        command: []
-        args: []
-        namespace: default
-        limits:
-          cpu: 100m
-          memory: 100Mi
-        labels: {}
       portForwardAddress: localhost
   thresholds:
     cpu:
@@ -386,17 +366,24 @@ var resetConfig = `k9s:
   refreshRate: 2
   maxConnRetry: 5
   enableMouse: false
+  enableImageScan: false
   headless: false
   logoless: false
   crumbsless: false
   readOnly: false
   noExitOnCtrlC: false
   noIcons: false
+  shellPod:
+    image: busybox:1.35.0
+    namespace: default
+    limits:
+      cpu: 100m
+      memory: 100Mi
   skipLatestRevCheck: false
   logger:
     tail: 200
     buffer: 2000
-    sinceSeconds: 300
+    sinceSeconds: -1
     fullScreenLogs: false
     textWrap: false
     showTime: false
@@ -414,15 +401,6 @@ var resetConfig = `k9s:
         active: po
       featureGates:
         nodeShell: false
-      shellPod:
-        image: busybox:1.35.0
-        command: []
-        args: []
-        namespace: default
-        limits:
-          cpu: 100m
-          memory: 100Mi
-        labels: {}
       portForwardAddress: localhost
   thresholds:
     cpu:

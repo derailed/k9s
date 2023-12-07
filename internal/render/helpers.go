@@ -10,15 +10,27 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tview"
 	runewidth "github.com/mattn/go-runewidth"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 )
+
+func computeVulScore(spec *v1.PodSpec) string {
+	if vul.ImgScanner == nil {
+		return "0"
+	}
+	ii := ExtractImages(spec)
+	vul.ImgScanner.Enqueue(ii...)
+
+	return vul.ImgScanner.Score(ii...)
+}
 
 func runesToNum(rr []rune) int64 {
 	var r int64
@@ -85,7 +97,8 @@ func Happy(ns string, h Header, r Row) bool {
 	return strings.TrimSpace(r.Fields[validCol]) == ""
 }
 
-func asStatus(err error) string {
+// AsStatus returns error as string.
+func AsStatus(err error) string {
 	if err == nil {
 		return ""
 	}
@@ -204,7 +217,8 @@ func boolToStr(b bool) string {
 	}
 }
 
-func toAge(t metav1.Time) string {
+// ToAge converts time to human duration.
+func ToAge(t metav1.Time) string {
 	if t.IsZero() {
 		return UnknownValue
 	}
