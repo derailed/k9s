@@ -346,6 +346,8 @@ K9s uses aliases to navigate most K8s resources.
     noIcons: false
     # Toggles whether k9s should check for the latest revision from the Github repository releases. Default is false.
     skipLatestRevCheck: false
+    # When altering kubeconfig or using multiple kube configs, k9s will clean up clusters configurations that are no longer in use. Setting this flag to true will keep k9s from cleaning up inactive cluster configs. Defaults to false.
+    keepMissingClusters: false
     # Logs configuration
     logger:
       # Defines the number of lines to return. Default 100

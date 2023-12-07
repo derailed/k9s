@@ -6,6 +6,7 @@ package ui
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -130,6 +131,29 @@ func BenchConfig(context string) string {
 	return filepath.Join(config.K9sHome(), config.K9sBench+"-"+context+".yml")
 }
 
+func (c *Configurator) clusterFromContext(name string) (*config.Cluster, error) {
+	if c.Config == nil || c.Config.GetConnection() == nil {
+		return nil, fmt.Errorf("No config set in configurator")
+	}
+
+	cc, err := c.Config.GetConnection().Config().Contexts()
+	if err != nil {
+		return nil, errors.New("unable to retrieve contexts map")
+	}
+
+	context, ok := cc[name]
+	if !ok {
+		return nil, fmt.Errorf("no context named %s found", name)
+	}
+
+	cl, ok := c.Config.K9s.Clusters[context.Cluster]
+	if !ok {
+		return nil, fmt.Errorf("no cluster named %s found", context.Cluster)
+	}
+
+	return cl, nil
+}
+
 // RefreshStyles load for skin configuration changes.
 func (c *Configurator) RefreshStyles(context string) {
 	c.BenchFile = BenchConfig(context)
@@ -141,11 +165,10 @@ func (c *Configurator) RefreshStyles(context string) {
 	}
 
 	var skin string
-	if c.Config != nil {
-		cl, ok := c.Config.K9s.Clusters[context]
-		if !ok {
-			return
-		}
+	cl, err := c.clusterFromContext(context)
+	if err != nil {
+		log.Warn().Err(err).Msgf("No cluster found. Using default skin")
+	} else {
 		skin = cl.Skin
 	}
 
