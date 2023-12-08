@@ -18,7 +18,6 @@ import (
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/vul"
 )
 
 const (
@@ -88,15 +87,11 @@ func (Pod) Header(ns string) Header {
 	h := Header{
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "VS"},
+		HeaderColumn{Name: "VS", VS: true},
 		HeaderColumn{Name: "PF"},
 		HeaderColumn{Name: "READY"},
 		HeaderColumn{Name: "STATUS"},
 		HeaderColumn{Name: "RESTARTS", Align: tview.AlignRight},
-		HeaderColumn{Name: "IP"},
-		HeaderColumn{Name: "NODE"},
-		HeaderColumn{Name: "NOMINATED NODE", Wide: true},
-		HeaderColumn{Name: "READINESS GATES", Wide: true},
 		HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "CPU/R:L", Align: tview.AlignRight, Wide: true},
@@ -105,13 +100,14 @@ func (Pod) Header(ns string) Header {
 		HeaderColumn{Name: "%CPU/L", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "%MEM/R", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "%MEM/L", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "IP", Wide: true},
+		HeaderColumn{Name: "NODE", Wide: true},
+		HeaderColumn{Name: "NOMINATED NODE", Wide: true},
+		HeaderColumn{Name: "READINESS GATES", Wide: true},
 		HeaderColumn{Name: "QOS", Wide: true},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true},
-	}
-	if vul.ImgScanner == nil {
-		h = append(h[:vulIdx], h[vulIdx+1:]...)
 	}
 
 	return h
@@ -156,10 +152,6 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 		strconv.Itoa(cr) + "/" + strconv.Itoa(len(po.Spec.Containers)),
 		phase,
 		strconv.Itoa(rc + irc),
-		na(po.Status.PodIP),
-		na(po.Spec.NodeName),
-		asNominated(po.Status.NominatedNodeName),
-		asReadinessGate(po),
 		toMc(c.cpu),
 		toMi(c.mem),
 		toMc(r.cpu) + ":" + toMc(r.lcpu),
@@ -168,13 +160,14 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 		client.ToPercentageStr(c.cpu, r.lcpu),
 		client.ToPercentageStr(c.mem, r.mem),
 		client.ToPercentageStr(c.mem, r.lmem),
+		na(po.Status.PodIP),
+		na(po.Spec.NodeName),
+		asNominated(po.Status.NominatedNodeName),
+		asReadinessGate(po),
 		p.mapQOS(po.Status.QOSClass),
 		mapToStr(po.Labels),
 		AsStatus(p.diagnose(phase, cr, len(cs))),
 		ToAge(po.GetCreationTimestamp()),
-	}
-	if vul.ImgScanner == nil {
-		row.Fields = append(row.Fields[:vulIdx], row.Fields[vulIdx+1:]...)
 	}
 
 	return nil

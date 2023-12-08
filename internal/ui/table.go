@@ -14,6 +14,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
@@ -241,6 +242,10 @@ func (t *Table) doUpdate(data *render.TableData) {
 		if h.MX && !t.hasMetrics {
 			continue
 		}
+		if h.VS && vul.ImgScanner == nil {
+			continue
+		}
+
 		t.AddHeaderCell(col, h)
 		c := t.GetCell(0, col)
 		c.SetBackgroundColor(bg)
