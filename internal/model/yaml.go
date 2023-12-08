@@ -7,7 +7,6 @@ import (
 	"context"
 	"fmt"
 	"reflect"
-	"regexp"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -78,26 +77,11 @@ func (y *YAML) filter(q string, lines []string) fuzzy.Matches {
 	if dao.IsFuzzySelector(q) {
 		return y.fuzzyFilter(strings.TrimSpace(q[2:]), lines)
 	}
-	return y.rxFilter(q, lines)
+	return rxFilter(q, lines)
 }
 
 func (*YAML) fuzzyFilter(q string, lines []string) fuzzy.Matches {
 	return fuzzy.Find(q, lines)
-}
-
-func (*YAML) rxFilter(q string, lines []string) fuzzy.Matches {
-	rx, err := regexp.Compile(`(?i)` + q)
-	if err != nil {
-		return nil
-	}
-	matches := make(fuzzy.Matches, 0, len(lines))
-	for i, l := range lines {
-		locs := rx.FindAllStringIndex(l, -1)
-		for _, loc := range locs {
-			matches = append(matches, fuzzy.Match{Str: q, Index: i, MatchedIndexes: loc})
-		}
-	}
-	return matches
 }
 
 func (y *YAML) fireResourceChanged(lines []string, matches fuzzy.Matches) {

@@ -4,7 +4,6 @@
 package model
 
 import (
-	"regexp"
 	"strings"
 
 	"github.com/derailed/k9s/internal/dao"
@@ -115,24 +114,9 @@ func (t *Text) filter(q string, lines []string) fuzzy.Matches {
 	if dao.IsFuzzySelector(q) {
 		return t.fuzzyFilter(strings.TrimSpace(q[2:]), lines)
 	}
-	return t.rxFilter(q, lines)
+	return rxFilter(q, lines)
 }
 
 func (*Text) fuzzyFilter(q string, lines []string) fuzzy.Matches {
 	return fuzzy.Find(q, lines)
-}
-
-func (*Text) rxFilter(q string, lines []string) fuzzy.Matches {
-	rx, err := regexp.Compile(`(?i)` + q)
-	if err != nil {
-		return nil
-	}
-	matches := make(fuzzy.Matches, 0, len(lines))
-	for i, l := range lines {
-		if loc := rx.FindStringIndex(l); len(loc) == 2 {
-			matches = append(matches, fuzzy.Match{Str: q, Index: i, MatchedIndexes: loc})
-		}
-	}
-
-	return matches
 }

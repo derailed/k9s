@@ -226,7 +226,7 @@ func (t *Tree) reconcile(ctx context.Context) error {
 
 	root.Sort()
 	if t.query != "" {
-		t.root = root.Filter(t.query, rxFilter)
+		t.root = root.Filter(t.query, rxMatch)
 	}
 	if t.root == nil || t.root.Diff(root) {
 		t.root = root
@@ -277,7 +277,7 @@ func (t *Tree) getMeta(ctx context.Context, gvr string) (ResourceMeta, error) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func rxFilter(q, path string) bool {
+func rxMatch(q, path string) bool {
 	rx := regexp.MustCompile(`(?i)` + q)
 
 	tokens := strings.Split(path, "::")

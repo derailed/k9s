@@ -14,6 +14,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog"
+	"github.com/sahilm/fuzzy"
 	"github.com/stretchr/testify/assert"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
@@ -263,6 +264,64 @@ func TestContainerID(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, containerID(u.path, u.co))
+		})
+	}
+}
+
+func Test_linesWithRegions(t *testing.T) {
+	uu := map[string]struct {
+		lines   []string
+		matches fuzzy.Matches
+		e       []string
+	}{
+		"empty-lines": {
+			e: []string{},
+		},
+		"no-match": {
+			lines: []string{"bar"},
+			e:     []string{"bar"},
+		},
+		"single-match": {
+			lines: []string{"foo", "bar", "baz"},
+			matches: fuzzy.Matches{
+				{Index: 1, MatchedIndexes: []int{0, 1, 2}},
+			},
+			e: []string{"foo", matchTag(0, "bar"), "baz"},
+		},
+		"single-character": {
+			lines: []string{"foo", "bar", "baz"},
+			matches: fuzzy.Matches{
+				{Index: 1, MatchedIndexes: []int{1}},
+			},
+			e: []string{"foo", "b" + matchTag(0, "a") + "r", "baz"},
+		},
+		"multiple-matches": {
+			lines: []string{"foo", "bar", "baz"},
+			matches: fuzzy.Matches{
+				{Index: 1, MatchedIndexes: []int{0, 1, 2}},
+				{Index: 2, MatchedIndexes: []int{0, 1, 2}},
+			},
+			e: []string{"foo", matchTag(0, "bar"), matchTag(1, "baz")},
+		},
+		"multiple-matches-same-line": {
+			lines: []string{"foosfoo baz", "dfbarfoos bar"},
+			matches: fuzzy.Matches{
+				{Index: 0, MatchedIndexes: []int{0, 1, 2}},
+				{Index: 0, MatchedIndexes: []int{4, 5, 6}},
+				{Index: 1, MatchedIndexes: []int{5, 6, 7}},
+			},
+			e: []string{
+				matchTag(0, "foo") + "s" + matchTag(1, "foo") + " baz",
+				"dfbar" + matchTag(2, "foo") + "s bar",
+			},
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			t.Parallel()
+			assert.Equal(t, u.e, linesWithRegions(u.lines, u.matches))
 		})
 	}
 }
