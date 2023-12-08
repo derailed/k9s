@@ -14,12 +14,14 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
+	"github.com/sahilm/fuzzy"
 )
 
 func clipboardWrite(text string) error {
@@ -239,4 +241,23 @@ func decorateCpuMemHeaderRows(app *App, data *render.TableData) {
 			}
 		}
 	}
+}
+
+func matchTag(i int, s string) string {
+	return `<<<"search_` + strconv.Itoa(i) + `">>>` + s + `<<<"">>>`
+}
+
+func linesWithRegions(lines []string, matches fuzzy.Matches) []string {
+	ll := make([]string, len(lines))
+	copy(ll, lines)
+	offsetForLine := make(map[int]int)
+	for i, m := range matches {
+		for _, loc := range dao.ContinuousRanges(m.MatchedIndexes) {
+			start, end := loc[0]+offsetForLine[m.Index], loc[1]+offsetForLine[m.Index]
+			regionStr := matchTag(i, ll[m.Index][start:end])
+			ll[m.Index] = ll[m.Index][:start] + regionStr + ll[m.Index][end:]
+			offsetForLine[m.Index] += len(regionStr) - (end - start)
+		}
+	}
+	return ll
 }

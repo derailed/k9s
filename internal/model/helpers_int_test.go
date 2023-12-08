@@ -4,13 +4,12 @@
 package model
 
 import (
-	"testing"
-
 	"github.com/sahilm/fuzzy"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-func TestYAML_rxFilter(t *testing.T) {
+func Test_rxFilter(t *testing.T) {
 	uu := map[string]struct {
 		q     string
 		lines []string
@@ -32,7 +31,7 @@ func TestYAML_rxFilter(t *testing.T) {
 				{
 					Str:            "foo",
 					Index:          0,
-					MatchedIndexes: []int{0, 3},
+					MatchedIndexes: []int{0, 1, 2},
 				},
 			},
 		},
@@ -43,26 +42,25 @@ func TestYAML_rxFilter(t *testing.T) {
 				{
 					Str:            "foo",
 					Index:          0,
-					MatchedIndexes: []int{0, 3},
+					MatchedIndexes: []int{0, 1, 2},
 				},
 				{
 					Str:            "foo",
 					Index:          2,
-					MatchedIndexes: []int{0, 3},
+					MatchedIndexes: []int{0, 1, 2},
 				},
 				{
 					Str:            "foo",
 					Index:          2,
-					MatchedIndexes: []int{8, 11},
+					MatchedIndexes: []int{8, 9, 10},
 				},
 			},
 		},
 	}
-	var y YAML
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, y.rxFilter(u.q, u.lines))
+			assert.Equal(t, u.e, rxFilter(u.q, u.lines))
 		})
 	}
 }

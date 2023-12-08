@@ -102,19 +102,12 @@ func (d *Details) TextChanged(lines []string) {
 
 // TextFiltered notifies when the filter changed.
 func (d *Details) TextFiltered(lines []string, matches fuzzy.Matches) {
-	d.currentRegion, d.maxRegions = 0, 0
-
-	ll := make([]string, len(lines))
-	copy(ll, lines)
-	for _, m := range matches {
-		loc, line := m.MatchedIndexes, ll[m.Index]
-		ll[m.Index] = line[:loc[0]] + fmt.Sprintf(`<<<"search_%d">>>`, d.maxRegions) + line[loc[0]:loc[1]] + `<<<"">>>` + line[loc[1]:]
-		d.maxRegions++
-	}
+	d.currentRegion, d.maxRegions = 0, len(matches)
+	ll := linesWithRegions(lines, matches)
 
 	d.text.SetText(colorizeYAML(d.app.Styles.Views().Yaml, strings.Join(ll, "\n")))
 	d.text.Highlight()
-	if d.maxRegions > 0 {
+	if len(matches) > 0 {
 		d.text.Highlight("search_0")
 		d.text.ScrollToHighlight()
 	}

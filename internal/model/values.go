@@ -5,7 +5,6 @@ package model
 
 import (
 	"context"
-	"regexp"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -93,26 +92,11 @@ func (v *Values) filter(q string, lines []string) fuzzy.Matches {
 	if dao.IsFuzzySelector(q) {
 		return v.fuzzyFilter(strings.TrimSpace(q[2:]), lines)
 	}
-	return v.rxFilter(q, lines)
+	return rxFilter(q, lines)
 }
 
 func (*Values) fuzzyFilter(q string, lines []string) fuzzy.Matches {
 	return fuzzy.Find(q, lines)
-}
-
-func (*Values) rxFilter(q string, lines []string) fuzzy.Matches {
-	rx, err := regexp.Compile(`(?i)` + q)
-	if err != nil {
-		return nil
-	}
-	matches := make(fuzzy.Matches, 0, len(lines))
-	for i, l := range lines {
-		if loc := rx.FindStringIndex(l); len(loc) == 2 {
-			matches = append(matches, fuzzy.Match{Str: q, Index: i, MatchedIndexes: loc})
-		}
-	}
-
-	return matches
 }
 
 func (v *Values) fireResourceChanged(lines []string, matches fuzzy.Matches) {

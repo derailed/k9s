@@ -5,11 +5,13 @@ package model
 
 import (
 	"context"
+	"regexp"
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
 	"github.com/derailed/tview"
-	runewidth "github.com/mattn/go-runewidth"
+	"github.com/mattn/go-runewidth"
+	"github.com/sahilm/fuzzy"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -36,4 +38,26 @@ func NewExpBackOff(ctx context.Context, start, max time.Duration) backoff.BackOf
 	bf := backoff.NewExponentialBackOff()
 	bf.InitialInterval, bf.MaxElapsedTime = start, max
 	return backoff.WithContext(bf, ctx)
+}
+
+func rxFilter(q string, lines []string) fuzzy.Matches {
+	rx, err := regexp.Compile(`(?i)` + q)
+	if err != nil {
+		return nil
+	}
+
+	matches := make(fuzzy.Matches, 0, len(lines))
+	for i, l := range lines {
+		locs := rx.FindAllStringIndex(l, -1)
+		for _, loc := range locs {
+			indexes := make([]int, 0, loc[1]-loc[0])
+			for v := loc[0]; v < loc[1]; v++ {
+				indexes = append(indexes, v)
+			}
+
+			matches = append(matches, fuzzy.Match{Str: q, Index: i, MatchedIndexes: indexes})
+		}
+	}
+
+	return matches
 }
