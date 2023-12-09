@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/rs/zerolog/log"
 
 	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 )
@@ -98,6 +99,9 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 	}
 	if d, ok := duration.(string); ok {
 		r.Fields = append(r.Fields, d)
+	} else if g.ageIndex > 0 {
+		log.Warn().Msgf("No Duration detected on age field")
+		r.Fields = append(r.Fields, NAValue)
 	}
 
 	return nil
