@@ -24,10 +24,10 @@ RUN apt-get update \
     && chmod +x ./kubectl \
     && mv ./kubectl /usr/bin/ \
     # Install azure kubelogin
-    && cd /tmp \
-    && curl -LO https://github.com/Azure/kubelogin/releases/download/${KUBELOGIN_VERSION}/kubelogin-linux-${ARCHITECTURE}.zip \
-    && unzip kubelogin-linux-${ARCHITECTURE}.zip \
-    && mv bin/linux_${ARCHITECTURE}/kubelogin /usr/local/bin/ \
+    # && cd /tmp \
+    # && curl -LO https://github.com/Azure/kubelogin/releases/download/${KUBELOGIN_VERSION}/kubelogin-linux-${ARCHITECTURE}.zip \
+    # && unzip kubelogin-linux-${ARCHITECTURE}.zip \
+    # && mv bin/linux_${ARCHITECTURE}/kubelogin /usr/local/bin/ \
     # Install yq
     && curl -L -o /tmp/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_${ARCHITECTURE} \
     && chmod +x /tmp/yq \
