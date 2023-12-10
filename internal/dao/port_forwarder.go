@@ -52,8 +52,8 @@ func (p *PortForwarder) String() string {
 }
 
 // Age returns the port forward age.
-func (p *PortForwarder) Age() string {
-	return time.Since(p.age).String()
+func (p *PortForwarder) Age() time.Time {
+	return p.age
 }
 
 // Active returns the forward status.

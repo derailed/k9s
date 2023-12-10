@@ -237,7 +237,7 @@ func toAgeHuman(s string) string {
 
 	t, err := time.Parse(time.RFC3339, s)
 	if err != nil {
-		return s
+		return NAValue
 	}
 
 	return duration.HumanDuration(time.Since(t))
