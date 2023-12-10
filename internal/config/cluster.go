@@ -8,11 +8,18 @@ import "github.com/derailed/k9s/internal/client"
 // DefaultPFAddress specifies the default PortForward host address.
 const DefaultPFAddress = "localhost"
 
+// ContextSkin tracks context specific skins when cluster spans multi contexts.
+type ContextSkin struct {
+	Name string `yaml:"name"`
+	Skin string `yaml:"skin"`
+}
+
 // Cluster tracks K9s cluster configuration.
 type Cluster struct {
 	Namespace          *Namespace    `yaml:"namespace"`
 	View               *View         `yaml:"view"`
 	Skin               string        `yaml:"skin,omitempty"`
+	ContextSkins       []ContextSkin `yaml:"skinContexts,omitempty"`
 	FeatureGates       *FeatureGates `yaml:"featureGates"`
 	PortForwardAddress string        `yaml:"portForwardAddress"`
 }
