@@ -284,20 +284,25 @@ var expectedConfig = `k9s:
   refreshRate: 100
   maxConnRetry: 5
   enableMouse: false
-  enableImageScan: false
   headless: false
   logoless: false
   crumbsless: false
   readOnly: true
   noExitOnCtrlC: false
   noIcons: false
+  skipLatestRevCheck: false
+  screenDumpDir: /tmp
+  disablePodCounting: false
   shellPod:
     image: busybox:1.35.0
     namespace: default
     limits:
       cpu: 100m
       memory: 100Mi
-  skipLatestRevCheck: false
+  imageScans:
+    enable: false
+    blackList:
+      labels: {}
   logger:
     tail: 500
     buffer: 800
@@ -357,8 +362,6 @@ var expectedConfig = `k9s:
     memory:
       critical: 90
       warn: 70
-  screenDumpDir: /tmp
-  disablePodCounting: false
 `
 
 var resetConfig = `k9s:
@@ -366,20 +369,25 @@ var resetConfig = `k9s:
   refreshRate: 2
   maxConnRetry: 5
   enableMouse: false
-  enableImageScan: false
   headless: false
   logoless: false
   crumbsless: false
   readOnly: false
   noExitOnCtrlC: false
   noIcons: false
+  skipLatestRevCheck: false
+  screenDumpDir: /tmp
+  disablePodCounting: false
   shellPod:
     image: busybox:1.35.0
     namespace: default
     limits:
       cpu: 100m
       memory: 100Mi
-  skipLatestRevCheck: false
+  imageScans:
+    enable: false
+    blackList:
+      labels: {}
   logger:
     tail: 200
     buffer: 2000
@@ -409,6 +417,4 @@ var resetConfig = `k9s:
     memory:
       critical: 90
       warn: 70
-  screenDumpDir: /tmp
-  disablePodCounting: false
 `

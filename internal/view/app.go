@@ -121,7 +121,7 @@ func (a *App) Init(version string, rate int) error {
 	a.layout(ctx)
 	a.initSignals()
 
-	if a.Config.K9s.EnableImageScan {
+	if a.Config.K9s.ImageScans.Enable {
 		a.initImgScanner(version)
 	}
 
@@ -139,7 +139,7 @@ func (a *App) initImgScanner(version string) {
 		log.Debug().Msgf("Scanner init time %s", time.Since(t))
 	}(time.Now())
 
-	vul.ImgScanner = vul.NewImageScanner()
+	vul.ImgScanner = vul.NewImageScanner(a.Config.K9s.ImageScans)
 	go vul.ImgScanner.Init("k9s", version)
 }
 

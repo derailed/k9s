@@ -63,7 +63,7 @@ func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = Fields{
 		cj.Namespace,
 		cj.Name,
-		computeVulScore(&cj.Spec.JobTemplate.Spec.Template.Spec),
+		computeVulScore(cj.ObjectMeta, &cj.Spec.JobTemplate.Spec.Template.Spec),
 		cj.Spec.Schedule,
 		boolPtrToStr(cj.Spec.Suspend),
 		strconv.Itoa(len(cj.Status.Active)),

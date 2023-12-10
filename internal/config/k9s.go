@@ -18,23 +18,23 @@ type K9s struct {
 	RefreshRate         int                 `yaml:"refreshRate"`
 	MaxConnRetry        int                 `yaml:"maxConnRetry"`
 	EnableMouse         bool                `yaml:"enableMouse"`
-	EnableImageScan     bool                `yaml:"enableImageScan"`
 	Headless            bool                `yaml:"headless"`
 	Logoless            bool                `yaml:"logoless"`
 	Crumbsless          bool                `yaml:"crumbsless"`
 	ReadOnly            bool                `yaml:"readOnly"`
 	NoExitOnCtrlC       bool                `yaml:"noExitOnCtrlC"`
 	NoIcons             bool                `yaml:"noIcons"`
-	ShellPod            *ShellPod           `yaml:"shellPod"`
 	SkipLatestRevCheck  bool                `yaml:"skipLatestRevCheck"`
+	ScreenDumpDir       string              `yaml:"screenDumpDir"`
+	DisablePodCounting  bool                `yaml:"disablePodCounting"`
+	ShellPod            *ShellPod           `yaml:"shellPod"`
+	ImageScans          *ImageScans         `yaml:"imageScans"`
 	Logger              *Logger             `yaml:"logger"`
 	CurrentContext      string              `yaml:"currentContext"`
 	CurrentCluster      string              `yaml:"currentCluster"`
 	KeepMissingClusters bool                `yaml:"keepMissingClusters"`
 	Clusters            map[string]*Cluster `yaml:"clusters,omitempty"`
 	Thresholds          Threshold           `yaml:"thresholds"`
-	ScreenDumpDir       string              `yaml:"screenDumpDir"`
-	DisablePodCounting  bool                `yaml:"disablePodCounting"`
 	manualRefreshRate   int
 	manualHeadless      *bool
 	manualLogoless      *bool
@@ -54,6 +54,7 @@ func NewK9s() *K9s {
 		Thresholds:    NewThreshold(),
 		ScreenDumpDir: K9sDefaultScreenDumpDir,
 		ShellPod:      NewShellPod(),
+		ImageScans:    NewImageScans(),
 	}
 }
 
@@ -240,6 +241,9 @@ func (k *K9s) Validate(c client.Connection, ks KubeSettings) {
 	}
 	k.validateClusters(c, ks)
 
+	if k.ImageScans == nil {
+		k.ImageScans = NewImageScans()
+	}
 	if k.ShellPod == nil {
 		k.ShellPod = NewShellPod()
 	}

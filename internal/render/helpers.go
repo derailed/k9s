@@ -23,8 +23,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
-func computeVulScore(spec *v1.PodSpec) string {
-	if vul.ImgScanner == nil {
+func computeVulScore(m metav1.ObjectMeta, spec *v1.PodSpec) string {
+	if vul.ImgScanner == nil || vul.ImgScanner.ShouldExcludes(m) {
 		return "0"
 	}
 	ii := ExtractImages(spec)
@@ -237,7 +237,7 @@ func toAgeHuman(s string) string {
 
 	t, err := time.Parse(time.RFC3339, s)
 	if err != nil {
-		return NAValue
+		return s
 	}
 
 	return duration.HumanDuration(time.Since(t))

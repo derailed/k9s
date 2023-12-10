@@ -57,7 +57,7 @@ func (r ReplicaSet) Render(o interface{}, ns string, row *Row) error {
 	row.Fields = Fields{
 		rs.Namespace,
 		rs.Name,
-		computeVulScore(&rs.Spec.Template.Spec),
+		computeVulScore(rs.ObjectMeta, &rs.Spec.Template.Spec),
 		strconv.Itoa(int(*rs.Spec.Replicas)),
 		strconv.Itoa(int(rs.Status.Replicas)),
 		strconv.Itoa(int(rs.Status.ReadyReplicas)),

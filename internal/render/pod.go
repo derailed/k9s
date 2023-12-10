@@ -147,7 +147,7 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 	row.Fields = Fields{
 		po.Namespace,
 		po.ObjectMeta.Name,
-		computeVulScore(&po.Spec),
+		computeVulScore(po.ObjectMeta, &po.Spec),
 		"●",
 		strconv.Itoa(cr) + "/" + strconv.Itoa(len(po.Spec.Containers)),
 		phase,

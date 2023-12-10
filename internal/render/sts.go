@@ -53,7 +53,7 @@ func (s StatefulSet) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = Fields{
 		sts.Namespace,
 		sts.Name,
-		computeVulScore(&sts.Spec.Template.Spec),
+		computeVulScore(sts.ObjectMeta, &sts.Spec.Template.Spec),
 		strconv.Itoa(int(sts.Status.ReadyReplicas)) + "/" + strconv.Itoa(int(sts.Status.Replicas)),
 		asSelector(sts.Spec.Selector),
 		na(sts.Spec.ServiceName),

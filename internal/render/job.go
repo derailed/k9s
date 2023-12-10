@@ -60,7 +60,7 @@ func (j Job) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = Fields{
 		job.Namespace,
 		job.Name,
-		computeVulScore(&job.Spec.Template.Spec),
+		computeVulScore(job.ObjectMeta, &job.Spec.Template.Spec),
 		ready,
 		toDuration(job.Status),
 		jobSelector(job.Spec),

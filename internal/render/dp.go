@@ -58,7 +58,7 @@ func (d Deployment) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = Fields{
 		dp.Namespace,
 		dp.Name,
-		computeVulScore(&dp.Spec.Template.Spec),
+		computeVulScore(dp.ObjectMeta, &dp.Spec.Template.Spec),
 		strconv.Itoa(int(dp.Status.AvailableReplicas)) + "/" + strconv.Itoa(int(dp.Status.Replicas)),
 		strconv.Itoa(int(dp.Status.UpdatedReplicas)),
 		strconv.Itoa(int(dp.Status.AvailableReplicas)),

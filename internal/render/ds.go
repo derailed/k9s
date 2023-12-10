@@ -54,7 +54,7 @@ func (d DaemonSet) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = Fields{
 		ds.Namespace,
 		ds.Name,
-		computeVulScore(&ds.Spec.Template.Spec),
+		computeVulScore(ds.ObjectMeta, &ds.Spec.Template.Spec),
 		strconv.Itoa(int(ds.Status.DesiredNumberScheduled)),
 		strconv.Itoa(int(ds.Status.CurrentNumberScheduled)),
 		strconv.Itoa(int(ds.Status.NumberReady)),
