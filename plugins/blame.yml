@@ -1,0 +1,12 @@
+plugin:
+  blame:
+    shortCut: b
+    confirm: false
+    description: "Blame"
+    scopes:
+      - all
+    command: sh
+    background: false
+    args:
+      - -c
+      - "kubectl-blame $RESOURCE_NAME $NAME -n $NAMESPACE --context $CONTEXT | less"
