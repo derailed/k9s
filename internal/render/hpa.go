@@ -20,10 +20,8 @@ func (hpa HorizontalPodAutoscaler) ColorerFunc() ColorerFunc {
 	return func(ns string, h Header, re RowEvent) tcell.Color {
 		c := DefaultColorer(ns, h, re)
 
-		maxPodsIndex := h.IndexOf("MAXPODS", true)
-		currentReplicasIndex := h.IndexOf("REPLICAS", true)
-		maxPodsS := strings.TrimSpace(re.Row.Fields[maxPodsIndex])
-		currentReplicasS := strings.TrimSpace(re.Row.Fields[currentReplicasIndex])
+		maxPodsS := strings.TrimSpace(re.Row.Fields[h.IndexOf("MAXPODS", true)])
+		currentReplicasS := strings.TrimSpace(re.Row.Fields[h.IndexOf("REPLICAS", true)])
 
 		maxPods, err := strconv.Atoi(maxPodsS)
 		if err != nil {
@@ -35,7 +33,6 @@ func (hpa HorizontalPodAutoscaler) ColorerFunc() ColorerFunc {
 		}
 		if currentReplicas >= maxPods {
 			c = ErrColor
-			return c
 		}
 		return c
 	}
