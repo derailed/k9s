@@ -110,6 +110,12 @@ K9s is available on Linux, macOS and Windows platforms.
   curl -sS https://webinstall.dev/k9s | bash
   ```
 
+* Via [pkgx](https://pkgx.dev/pkgs/k9scli.io/) for Linux and macOS
+
+  ```shell
+  pkgx k9s
+  ```
+
 * Via [Webi](https://webinstall.dev) for Windows
 
   ```shell
