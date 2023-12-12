@@ -31,6 +31,9 @@ func NewHistory(gvr client.GVR) ResourceViewer {
 	h.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorMediumSpringGreen).Attributes(tcell.AttrNone))
 	h.AddBindKeysFn(h.bindKeys)
 	h.SetContextFn(h.HistoryContext)
+	h.GetTable().SetSelectedFn(func(s string) string {
+		return s[:strings.Index(s, ":")]
+	})
 
 	return &h
 }
