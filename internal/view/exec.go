@@ -378,6 +378,9 @@ func k9sShellPod(node string, cfg *config.ShellPod) *v1.Pod {
 	if len(cfg.Args) > 0 {
 		c.Args = cfg.Args
 	}
+	if len(cfg.Env) > 0 {
+		c.Env = cfg.Env
+	}
 
 	return &v1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
