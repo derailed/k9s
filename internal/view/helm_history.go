@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
@@ -80,10 +79,6 @@ func (h *History) getValsCmd(app *App, _ ui.Tabular, _ client.GVR, path string) 
 	if err := v.app.inject(v, false); err != nil {
 		v.app.Flash().Err(err)
 	}
-}
-
-func (h *History) defaultCtx() context.Context {
-	return context.WithValue(context.Background(), internal.KeyFactory, h.App().factory)
 }
 
 func (h *History) bindDangerousKeys(aa ui.KeyActions) {

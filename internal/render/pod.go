@@ -40,6 +40,7 @@ const (
 	PhaseError             = "Error"
 	PhaseImagePullBackOff  = "ImagePullBackOff"
 	PhaseOOMKilled         = "OOMKilled"
+	PhasePending           = "Pending"
 )
 
 // Pod renders a K8s Pod to screen.
@@ -58,9 +59,9 @@ func (p Pod) ColorerFunc() ColorerFunc {
 		}
 		status := strings.TrimSpace(re.Row.Fields[statusCol])
 		switch status {
-		case Pending:
+		case Pending, ContainerCreating:
 			c = PendingColor
-		case ContainerCreating, PodInitializing:
+		case PodInitializing:
 			c = AddColor
 		case Initialized:
 			c = HighlightColor
@@ -232,9 +233,12 @@ func (p *PodWithMetrics) DeepCopyObject() runtime.Object {
 }
 
 func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, r metric) {
-	rcpu, rmem := podRequests(pod.Spec)
-	lcpu, lmem := podLimits(pod.Spec)
-	r.cpu, r.lcpu, r.mem, r.lmem = rcpu.MilliValue(), lcpu.MilliValue(), rmem.Value(), lmem.Value()
+	rcpu, rmem := podRequests(pod.Spec.Containers)
+	r.cpu, r.mem = rcpu.MilliValue(), rmem.Value()
+
+	lcpu, lmem := podLimits(pod.Spec.Containers)
+	r.lcpu, r.lmem = lcpu.MilliValue(), lmem.Value()
+
 	if mx != nil {
 		ccpu, cmem := currentRes(mx)
 		c.cpu, c.mem = ccpu.MilliValue(), cmem.Value()
@@ -243,23 +247,10 @@ func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, r metric) {
 	return
 }
 
-func containerRequests(co *v1.Container) v1.ResourceList {
-	req := co.Resources.Requests
-	if len(req) != 0 {
-		return req
-	}
-	lim := co.Resources.Limits
-	if len(lim) != 0 {
-		return lim
-	}
-
-	return nil
-}
-
-func podLimits(spec v1.PodSpec) (resource.Quantity, resource.Quantity) {
+func podLimits(cc []v1.Container) (resource.Quantity, resource.Quantity) {
 	cpu, mem := new(resource.Quantity), new(resource.Quantity)
-	for _, co := range spec.Containers {
-		limits := co.Resources.Limits
+	for _, c := range cc {
+		limits := c.Resources.Limits
 		if len(limits) == 0 {
 			return resource.Quantity{}, resource.Quantity{}
 		}
@@ -273,10 +264,11 @@ func podLimits(spec v1.PodSpec) (resource.Quantity, resource.Quantity) {
 	return *cpu, *mem
 }
 
-func podRequests(spec v1.PodSpec) (resource.Quantity, resource.Quantity) {
+func podRequests(cc []v1.Container) (resource.Quantity, resource.Quantity) {
 	cpu, mem := new(resource.Quantity), new(resource.Quantity)
-	for i := range spec.Containers {
-		rl := containerRequests(&spec.Containers[i])
+	for _, c := range cc {
+		co := c
+		rl := containerRequests(&co)
 		if rl.Cpu() != nil {
 			cpu.Add(*rl.Cpu())
 		}
@@ -284,6 +276,7 @@ func podRequests(spec v1.PodSpec) (resource.Quantity, resource.Quantity) {
 			mem.Add(*rl.Memory())
 		}
 	}
+
 	return *cpu, *mem
 }
 

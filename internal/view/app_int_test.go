@@ -32,8 +32,8 @@ func Test_suggestSubCommand(t *testing.T) {
 		{Command: "contexts   t", Suggestions: []string{"est"}},
 		{Command: "po ", Suggestions: nil},
 		{Command: "po  x", Suggestions: nil},
-		{Command: "po k", Suggestions: []string{"ube-system", "ube-public"}},
-		{Command: "po  kube-", Suggestions: []string{"system", "public"}},
+		{Command: "po k", Suggestions: []string{"ube-public", "ube-system"}},
+		{Command: "po  kube-", Suggestions: []string{"public", "system"}},
 	}
 
 	for _, tt := range tests {

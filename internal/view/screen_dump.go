@@ -28,7 +28,7 @@ func NewScreenDump(gvr client.GVR) ResourceViewer {
 	s.GetTable().SetBorderFocusColor(tcell.ColorSteelBlue)
 	s.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorRoyalBlue).Attributes(tcell.AttrNone))
 	s.GetTable().SetSortCol(ageCol, true)
-	s.GetTable().SelectRow(1, true)
+	s.GetTable().SelectRow(1, 0, true)
 	s.GetTable().SetEnterFn(s.edit)
 	s.SetContextFn(s.dirContext)
 
@@ -45,7 +45,7 @@ func (s *ScreenDump) dirContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeyDir, dir)
 }
 
-func (s *ScreenDump) edit(app *App, model ui.Tabular, gvr, path string) {
+func (s *ScreenDump) edit(app *App, _ ui.Tabular, _ client.GVR, path string) {
 	log.Debug().Msgf("ScreenDump selection is %q", path)
 
 	s.Stop()

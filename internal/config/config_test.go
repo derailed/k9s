@@ -234,24 +234,6 @@ func TestSetup(t *testing.T) {
 	})
 }
 
-type mockSettings struct {
-	flags *genericclioptions.ConfigFlags
-}
-
-var _ config.KubeSettings = (*mockSettings)(nil)
-
-func newMockSettings(flags *genericclioptions.ConfigFlags) *mockSettings {
-	return &mockSettings{flags: flags}
-}
-func (m *mockSettings) CurrentContextName() (string, error) {
-	return *m.flags.Context, nil
-}
-func (m *mockSettings) CurrentClusterName() (string, error) { return "", nil }
-func (m *mockSettings) CurrentNamespaceName() (string, error) {
-	return *m.flags.Namespace, nil
-}
-func (m *mockSettings) ClusterNames() (map[string]struct{}, error) { return nil, nil }
-
 // ----------------------------------------------------------------------------
 // Test Data...
 

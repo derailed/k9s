@@ -102,7 +102,7 @@ func (s *SelectTable) GetSelectedRowIndex() int {
 }
 
 // SelectRow select a given row by index.
-func (s *SelectTable) SelectRow(r int, broadcast bool) {
+func (s *SelectTable) SelectRow(r, c int, broadcast bool) {
 	if !broadcast {
 		s.SetSelectionChangedFunc(nil)
 	}
@@ -110,13 +110,13 @@ func (s *SelectTable) SelectRow(r int, broadcast bool) {
 		r = c + 1
 	}
 	defer s.SetSelectionChangedFunc(s.selectionChanged)
-	s.Select(r, 0)
+	s.Select(r, c)
 }
 
 // UpdateSelection refresh selected row.
 func (s *SelectTable) updateSelection(broadcast bool) {
-	r, _ := s.GetSelection()
-	s.SelectRow(r, broadcast)
+	r, c := s.GetSelection()
+	s.SelectRow(r, c, broadcast)
 }
 
 func (s *SelectTable) selectionChanged(r, c int) {

@@ -296,12 +296,12 @@ func (c *Config) CurrentUserName() (string, error) {
 
 // CurrentNamespaceName retrieves the active namespace.
 func (c *Config) CurrentNamespaceName() (string, error) {
-	ns, overriden, err := c.clientConfig().Namespace()
+	ns, overridden, err := c.clientConfig().Namespace()
 	if err != nil {
 		return DefaultNamespace, err
 	}
 	// Checks if ns is passed is in args.
-	if overriden {
+	if overridden {
 		return ns, nil
 	}
 

@@ -1,5 +1,9 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package config
 
+// Labels tracks a collection of labels.
 type Labels map[string][]string
 
 func (l Labels) exclude(k, val string) bool {
@@ -17,6 +21,7 @@ func (l Labels) exclude(k, val string) bool {
 	return false
 }
 
+// Blacklist tracks vul scan exclusions.
 type BlackList struct {
 	Namespaces []string `yaml:"namespaces"`
 	Labels     Labels   `yaml:"labels"`
@@ -43,17 +48,20 @@ func (b BlackList) exclude(ns string, ll map[string]string) bool {
 	return false
 }
 
+// ImageScans tracks vul scans options.
 type ImageScans struct {
 	Enable    bool      `yaml:"enable"`
 	BlackList BlackList `yaml:"blackList"`
 }
 
+// NewImageScans returns a new instance.
 func NewImageScans() *ImageScans {
 	return &ImageScans{
 		BlackList: newBlackList(),
 	}
 }
 
+// ShouldExclude checks if scan should be excluder given ns/labels
 func (i *ImageScans) ShouldExclude(ns string, ll map[string]string) bool {
 	if !i.Enable {
 		return false
