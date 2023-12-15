@@ -12,7 +12,7 @@ import (
 	"github.com/derailed/k9s/internal/health"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
-	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -119,7 +119,7 @@ func (h *PulseHealth) check(ctx context.Context, ns, gvr string) (*health.Check,
 	c := health.NewCheck(gvr)
 
 	if meta.Renderer.IsGeneric() {
-		table, ok := oo[0].(*metav1beta1.Table)
+		table, ok := oo[0].(*metav1.Table)
 		if !ok {
 			return nil, fmt.Errorf("expecting a meta table but got %T", oo[0])
 		}
