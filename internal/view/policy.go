@@ -33,7 +33,7 @@ func NewPolicy(app *App, subject, name string) *Policy {
 		subjectName:    name,
 	}
 	p.AddBindKeysFn(p.bindKeys)
-	p.GetTable().SetSortCol(nameCol, false)
+	p.GetTable().SetSortCol("API-GROUP", false)
 	p.SetContextFn(p.subjectCtx)
 	p.GetTable().SetEnterFn(blankEnterFn)
 
@@ -50,7 +50,7 @@ func (p *Policy) bindKeys(aa ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlSpace, ui.KeySpace)
 	aa.Add(ui.KeyActions{
 		ui.KeyShiftN: ui.NewKeyAction("Sort Name", p.GetTable().SortColCmd(nameCol, true), false),
-		ui.KeyShiftO: ui.NewKeyAction("Sort Group", p.GetTable().SortColCmd("GROUP", true), false),
+		ui.KeyShiftA: ui.NewKeyAction("Sort Api-Group", p.GetTable().SortColCmd("API-GROUP", true), false),
 		ui.KeyShiftB: ui.NewKeyAction("Sort Binding", p.GetTable().SortColCmd("BINDING", true), false),
 	})
 }
