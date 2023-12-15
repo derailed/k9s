@@ -23,12 +23,12 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ExitStatus indicates UI exit conditions.
@@ -186,36 +186,24 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 
 		s = strings.ToLower(s)
 		for _, k := range a.command.alias.Aliases.Keys() {
-			if suggest, ok := shouldAddSuggest(s, k); ok {
+			if suggest, ok := cmd.ShouldAddSuggest(s, k); ok {
 				entries = append(entries, suggest)
 			}
 		}
 
-		namespaceNames, err := a.namespaceNames()
+		namespaceNames, err := a.factory.Client().ValidNamespaceNames()
 		if err != nil {
 			log.Error().Err(err).Msg("failed to list namespaces")
 		}
 
-		entries = append(entries, suggestSubCommand(s, namespaceNames, contextNames)...)
+		entries = append(entries, cmd.SuggestSubCommand(s, namespaceNames, contextNames)...)
 		if len(entries) == 0 {
 			return nil
 		}
+
 		entries.Sort()
 		return
 	}
-}
-
-func (a *App) namespaceNames() ([]string, error) {
-	namespaces, err := a.factory.Client().ValidNamespaces()
-	if err != nil {
-		return nil, err
-	}
-
-	namespaceNames := make([]string, 0, len(namespaces))
-	for _, namespace := range namespaces {
-		namespaceNames = append(namespaceNames, namespace.Name)
-	}
-	return namespaceNames, nil
 }
 
 func (a *App) contextNames() ([]string, error) {
@@ -413,7 +401,7 @@ func (a *App) refreshCluster(context.Context) error {
 
 func (a *App) switchNS(ns string) error {
 	if ns == client.ClusterScope {
-		ns = client.AllNamespaces
+		ns = client.BlankNamespace
 	}
 	if ns == a.Config.ActiveNamespace() {
 		return nil
@@ -437,19 +425,12 @@ func (a *App) switchNS(ns string) error {
 }
 
 func (a *App) isValidNS(ns string) (bool, error) {
-	if ns == client.AllNamespaces || ns == client.NamespaceAll {
+	if ns == client.BlankNamespace || ns == client.NamespaceAll {
 		return true, nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), a.Conn().Config().CallTimeout())
-	defer cancel()
-	dial, err := a.Conn().Dial()
-	if err != nil {
-		return false, err
-	}
-	_, err = dial.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
-	if err != nil {
-		log.Warn().Err(err).Msgf("Validation failed for namespace: %q", ns)
+	if !a.Conn().IsValidNamespace(ns) {
+		return false, fmt.Errorf("invalid namespace: %q", ns)
 	}
 
 	return true, nil
@@ -460,19 +441,25 @@ func (a *App) switchContext(name string) error {
 	a.Halt()
 	defer a.Resume()
 	{
-		ns, err := a.Conn().Config().CurrentNamespaceName()
-		if err != nil {
-			log.Warn().Msg("No namespace specified in context. Using K9s config")
-			ns = a.Config.ActiveNamespace()
-		}
-		a.initFactory(ns)
+		//ns, err := a.Conn().Config().CurrentNamespaceName()
+		//if err != nil {
+		//	log.Warn().Msg("No namespace specified in context. Using K9s config")
+		//}
+		//if ns == client.BlankNamespace {
+		//	ns = a.Config.ActiveNamespace()
+		//}
+		//a.initFactory(ns)
 
-		if e := a.command.Reset(true); e != nil {
-			return e
+		if err := a.command.Reset(true); err != nil {
+			return err
 		}
-		if a.Config.ActiveView() == "" || isContextCmd(a.Config.ActiveView()) {
+
+		p := cmd.NewInterpreter(a.Config.ActiveView())
+		if p.IsContextCmd() {
 			a.Config.SetActiveView("pod")
 		}
+		p.ResetContextArg()
+
 		a.Config.Reset()
 		a.Config.K9s.CurrentContext = name
 		cluster, err := a.Conn().Config().CurrentClusterName()
@@ -480,9 +467,9 @@ func (a *App) switchContext(name string) error {
 			return err
 		}
 		a.Config.K9s.CurrentCluster = cluster
-		if err := a.Config.SetActiveNamespace(ns); err != nil {
-			log.Error().Err(err).Msg("unable to set active ns")
-		}
+		//if err := a.Config.SetActiveNamespace(ns); err != nil {
+		//	log.Error().Err(err).Msg("unable to set active ns")
+		//}
 		if err := a.Config.Save(); err != nil {
 			log.Error().Err(err).Msg("config save failed!")
 		}
@@ -682,10 +669,6 @@ func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.CmdBuff().InCmdMode() {
-		return evt
-	}
-
 	if a.Content.Top() != nil && a.Content.Top().Name() == aliasTitle {
 		a.Content.Pop()
 		return nil
@@ -698,8 +681,8 @@ func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (a *App) gotoResource(cmd, path string, clearStack bool) {
-	err := a.command.run(cmd, path, clearStack)
+func (a *App) gotoResource(c, path string, clearStack bool) {
+	err := a.command.run(cmd.NewInterpreter(c), path, clearStack)
 	if err != nil {
 		dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
 	}
@@ -726,46 +709,4 @@ func (a *App) clusterInfo() *ClusterInfo {
 
 func (a *App) statusIndicator() *ui.StatusIndicator {
 	return a.Views()["statusIndicator"].(*ui.StatusIndicator)
-}
-
-// ----------------------------------------------------------------------------
-// Helpers
-
-func suggestSubCommand(command string, namespaces, contexts []string) []string {
-	cmds := strings.Fields(command)
-	if len(cmds[0]) == 0 || len(cmds) != 2 {
-		return nil
-	}
-
-	var suggests []string
-	switch strings.ToLower(cmds[0]) {
-	case "cow", "q", "q!", "qa", "Q", "quit", "?", "h", "help", "a", "alias", "x", "xray", "dir":
-		return nil // ignore special commands
-	case "ctx", "context", "contexts":
-		for _, ctxName := range contexts {
-			if suggest, ok := shouldAddSuggest(cmds[1], ctxName); ok {
-				suggests = append(suggests, suggest)
-			}
-		}
-	default:
-		if suggest, ok := shouldAddSuggest(cmds[1], client.NamespaceAll); ok {
-			suggests = append(suggests, suggest)
-		}
-
-		for _, ns := range namespaces {
-			if suggest, ok := shouldAddSuggest(cmds[1], ns); ok {
-				suggests = append(suggests, suggest)
-			}
-		}
-	}
-
-	return suggests
-}
-
-func shouldAddSuggest(command, suggest string) (string, bool) {
-	if command != suggest && strings.HasPrefix(suggest, command) {
-		return strings.TrimPrefix(suggest, command), true
-	}
-
-	return "", false
 }

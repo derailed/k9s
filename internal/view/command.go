@@ -6,27 +6,21 @@ package view
 import (
 	"errors"
 	"fmt"
-	"regexp"
 	"runtime/debug"
-	"strings"
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/rs/zerolog/log"
 )
 
-var (
-	customViewers MetaViewers
-
-	canRX = regexp.MustCompile(`\Acan\s([u|g|s]):([\w-:]+)\b`)
-)
+var customViewers MetaViewers
 
 // Command represents a user command.
 type Command struct {
-	app *App
-
+	app   *App
 	alias *dao.Alias
 	mx    sync.Mutex
 }
@@ -74,172 +68,198 @@ func allowedXRay(gvr client.GVR) bool {
 		"apps/v1/statefulsets": {},
 		"apps/v1/replicasets":  {},
 	}
-
 	_, ok := gg[gvr.String()]
+
 	return ok
 }
 
-func (c *Command) xrayCmd(cmd string) error {
-	tokens := strings.Split(cmd, " ")
-	if len(tokens) < 2 {
-		return errors.New("you must specify a resource")
-	}
-	gvr, ok := c.alias.AsGVR(tokens[1])
+func (c *Command) contextCmd(p *cmd.Interpreter) error {
+	ctx, ok := p.ContextArg()
 	if !ok {
-		return fmt.Errorf("`%s` command not found", cmd)
-	}
-	if !allowedXRay(gvr) {
-		return fmt.Errorf("`%s` command not found", cmd)
+		return fmt.Errorf("invalid command use `context xxx`")
 	}
 
-	x := NewXray(gvr)
+	if ctx != "" {
+		return useContext(c.app, ctx)
+	}
+
+	gvr, v, err := c.viewMetaFor(p)
+	if err != nil {
+		return err
+	}
+
+	return c.exec(p, gvr, c.componentFor(gvr, ctx, v), true)
+}
+
+func (c *Command) xrayCmd(p *cmd.Interpreter) error {
+	arg, cns, ok := p.XrayArgs()
+	if !ok {
+		return errors.New("invalid command. use `xray xxx`")
+	}
+	gvr, ok := c.alias.AsGVR(arg)
+	if !ok {
+		return fmt.Errorf("invalid resource name: %q", arg)
+	}
+	if !allowedXRay(gvr) {
+		return fmt.Errorf("unsupported resource %q", arg)
+	}
 	ns := c.app.Config.ActiveNamespace()
-	if len(tokens) == 3 {
-		ns = tokens[2]
+	if cns != "" {
+		ns = cns
 	}
 	if err := c.app.Config.SetActiveNamespace(client.CleanseNamespace(ns)); err != nil {
 		return err
 	}
+	if err := c.app.switchNS(ns); err != nil {
+		return err
+	}
+
 	if err := c.app.Config.Save(); err != nil {
 		return err
 	}
 
-	return c.exec(cmd, "xrays", x, true)
+	return c.exec(p, client.NewGVR("xrays"), NewXray(gvr), true)
 }
 
 // Run execs the command by showing associated display.
-func (c *Command) run(cmd, path string, clearStack bool) error {
-	if c.specialCmd(cmd, path) {
+func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
+	if c.specialCmd(p) {
 		return nil
 	}
-	cmds := strings.Split(cmd, " ")
-	command := strings.ToLower(cmds[0])
-	gvr, v, err := c.viewMetaFor(command)
+	if !c.alias.Check(p.Cmd()) {
+		return fmt.Errorf("command not found %q", p.Cmd())
+	}
+
+	gvr, v, err := c.viewMetaFor(p)
 	if err != nil {
 		return err
 	}
-	var cns string
-	tt := strings.Split(gvr, " ")
-	if len(tt) == 2 {
-		gvr, cns = tt[0], tt[1]
+
+	ns := c.app.Config.ActiveNamespace()
+	if cns, ok := p.NSArg(); ok {
+		ns = cns
+	}
+	if err := c.app.switchNS(ns); err != nil {
+		return err
 	}
 
-	switch command {
-	case "ctx", "context", "contexts":
-		if len(cmds) == 2 {
-			return useContext(c.app, cmds[1])
-		}
-		return c.exec(cmd, gvr, c.componentFor(gvr, path, v), clearStack)
-	case "dir":
-		if len(cmds) != 2 {
-			return errors.New("you must specify a directory")
-		}
-		return c.app.dirCmd(cmds[1])
-	default:
-		// checks if Command includes a namespace
-		ns := c.app.Config.ActiveNamespace()
-		if len(cmds) == 2 {
-			ns = cmds[1]
-		}
-		if cns != "" {
-			ns = cns
-		}
-		if err := c.app.switchNS(ns); err != nil {
-			return err
-		}
-		if !c.alias.Check(command) {
-			return fmt.Errorf("`%s` Command not found", cmd)
-		}
-		return c.exec(cmd, gvr, c.componentFor(gvr, path, v), clearStack)
+	//if context, ok := p.HasContext(); ok {
+	//	res, err := dao.AccessorFor(c.app.factory, client.NewGVR("contexts"))
+	//	if err != nil {
+	//		return err
+	//	}
+	//	switcher, ok := res.(dao.Switchable)
+	//	if !ok {
+	//		return errors.New("expecting a switchable resource")
+	//	}
+	//	if err := switcher.Switch(context); err != nil {
+	//		log.Error().Err(err).Msgf("Context switch failed")
+	//		return err
+	//	}
+	//
+	//	if err := c.app.switchContext(context); err != nil {
+	//		return err
+	//	}
+	//}
+
+	co := c.componentFor(gvr, fqn, v)
+	co.SetFilter("")
+	co.SetLabelFilter(nil)
+	if f, ok := p.FilterArg(); ok {
+		co.SetFilter(f)
 	}
+	if ll, ok := p.LabelsArg(); ok {
+		co.SetLabelFilter(ll)
+	}
+
+	return c.exec(p, gvr, co, clearStack)
 }
 
 func (c *Command) defaultCmd() error {
 	if c.app.Conn() == nil || !c.app.Conn().ConnectionOK() {
-		return c.run("context", "", true)
-	}
-	view := c.app.Config.ActiveView()
-	if view == "" {
-		return c.run("pod", "", true)
-	}
-	tokens := strings.Split(view, " ")
-	cmd := view
-	if len(tokens) == 1 {
-		if !isContextCmd(tokens[0]) {
-			cmd = tokens[0] + " " + c.app.Config.ActiveNamespace()
-		}
+		return c.run(cmd.NewInterpreter("context"), "", true)
 	}
 
-	if err := c.run(cmd, "", true); err != nil {
-		log.Error().Err(err).Msgf("Default run command failed %q", cmd)
-		return c.run("pod", "", true)
+	p := cmd.NewInterpreter(c.app.Config.ActiveView())
+	if p.IsBlank() {
+		return c.run(p.Reset("pod"), "", true)
 	}
+
+	if err := c.run(p, "", true); err != nil {
+		log.Error().Err(err).Msgf("Default run command failed %q", p.GetLine())
+		return c.run(p.Reset("pod"), "", true)
+	}
+
 	return nil
 }
 
-func isContextCmd(c string) bool {
-	return c == "ctx" || c == "context"
-}
-
-func (c *Command) specialCmd(cmd, path string) bool {
-	cmds := strings.Split(cmd, " ")
-	switch cmds[0] {
-	case "cow":
-		c.app.cowCmd(path)
-		return true
-	case "q", "q!", "qa", "Q", "quit":
+func (c *Command) specialCmd(p *cmd.Interpreter) bool {
+	switch {
+	case p.IsCowCmd():
+		if msg, ok := p.CowArg(); !ok {
+			c.app.Flash().Errf("Invalid command. Use `cow xxx`")
+		} else {
+			c.app.cowCmd(msg)
+		}
+	case p.IsBailCmd():
 		c.app.BailOut()
-		return true
-	case "?", "h", "help":
-		c.app.helpCmd(nil)
-		return true
-	case "a", "alias":
-		c.app.aliasCmd(nil)
-		return true
-	case "x", "xray":
-		if err := c.xrayCmd(cmd); err != nil {
+	case p.IsHelpCmd():
+		_ = c.app.helpCmd(nil)
+	case p.IsAliasCmd():
+		_ = c.app.aliasCmd(nil)
+	case p.IsXrayCmd():
+		if err := c.xrayCmd(p); err != nil {
 			c.app.Flash().Err(err)
 		}
-		return true
+	case p.IsRBACCmd():
+		if cat, sub, ok := p.RBACArgs(); !ok {
+			c.app.Flash().Errf("Invalid command. Use `can [u|g|s]:xxx`")
+		} else if err := c.app.inject(NewPolicy(c.app, cat, sub), true); err != nil {
+			c.app.Flash().Err(err)
+		}
+	case p.IsContextCmd():
+		if err := c.contextCmd(p); err != nil {
+			c.app.Flash().Err(err)
+		}
+	case p.IsDirCmd():
+		if a, ok := p.DirArg(); !ok {
+			c.app.Flash().Errf("Invalid command. Use `dir xxx`")
+		} else if err := c.app.dirCmd(a); err != nil {
+			c.app.Flash().Err(err)
+		}
 	default:
-		if !canRX.MatchString(cmd) {
-			return false
-		}
-		tokens := canRX.FindAllStringSubmatch(cmd, -1)
-		if len(tokens) == 1 && len(tokens[0]) == 3 {
-			if err := c.app.inject(NewPolicy(c.app, tokens[0][1], tokens[0][2]), false); err != nil {
-				log.Error().Err(err).Msgf("policy view load failed")
-				return false
-			}
-			return true
-		}
+		return false
 	}
-	return false
+
+	return true
 }
 
-func (c *Command) viewMetaFor(cmd string) (string, *MetaViewer, error) {
-	gvr, ok := c.alias.AsGVR(cmd)
+func (c *Command) viewMetaFor(p *cmd.Interpreter) (client.GVR, *MetaViewer, error) {
+	alias, ok := c.alias.AsGVR(p.Cmd())
 	if !ok {
-		return "", nil, fmt.Errorf("`%s` command not found", cmd)
+		return client.GVR{}, nil, fmt.Errorf("`%s` command not found", p.Cmd())
+	}
+	ap := cmd.NewInterpreter(alias.String())
+	gvr := client.NewGVR(ap.Cmd())
+	p.Amend(ap)
+
+	v := MetaViewer{viewerFn: NewBrowser}
+	if mv, ok := customViewers[gvr]; ok {
+		v = mv
 	}
 
-	v, ok := customViewers[gvr]
-	if !ok {
-		return gvr.String(), &MetaViewer{viewerFn: NewBrowser}, nil
-	}
-
-	return gvr.String(), &v, nil
+	return gvr, &v, nil
 }
 
-func (c *Command) componentFor(gvr, path string, v *MetaViewer) ResourceViewer {
+func (c *Command) componentFor(gvr client.GVR, fqn string, v *MetaViewer) ResourceViewer {
 	var view ResourceViewer
 	if v.viewerFn != nil {
-		view = v.viewerFn(client.NewGVR(gvr))
+		view = v.viewerFn(gvr)
 	} else {
-		view = NewBrowser(client.NewGVR(gvr))
+		view = NewBrowser(gvr)
 	}
 
-	view.SetInstance(path)
+	view.SetInstance(fqn)
 	if v.enterFn != nil {
 		view.GetTable().SetEnterFn(v.enterFn)
 	}
@@ -247,7 +267,7 @@ func (c *Command) componentFor(gvr, path string, v *MetaViewer) ResourceViewer {
 	return view
 }
 
-func (c *Command) exec(cmd, gvr string, comp model.Component, clearStack bool) (err error) {
+func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component, clearStack bool) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			log.Error().Msgf("Something bad happened! %#v", e)
@@ -255,33 +275,29 @@ func (c *Command) exec(cmd, gvr string, comp model.Component, clearStack bool) (
 			log.Debug().Msgf("History %v", c.app.cmdHistory.List())
 			log.Error().Msg(string(debug.Stack()))
 
-			hh := c.app.cmdHistory.List()
-			if len(hh) == 0 {
-				_ = c.run("pod", "", true)
-			} else {
-				_ = c.run(hh[0], "", true)
+			p := cmd.NewInterpreter("pod")
+			if cmd := c.app.cmdHistory.Pop(); cmd != "" {
+				p = p.Reset(cmd)
 			}
-			err = fmt.Errorf("invalid command %q", cmd)
+			err = c.run(p, "", true)
 		}
 	}()
 
 	if comp == nil {
 		return fmt.Errorf("no component found for %s", gvr)
 	}
-	c.app.Flash().Infof("Viewing %s...", client.NewGVR(gvr).R())
-	command := cmd
-	if tokens := strings.Split(cmd, " "); len(tokens) >= 2 {
-		command = tokens[0]
-	}
-	c.app.Config.SetActiveView(command)
-	if err := c.app.Config.Save(); err != nil {
-		log.Error().Err(err).Msg("Config save failed!")
+	c.app.Flash().Infof("Viewing %s...", gvr.R())
+	if clearStack {
+		c.app.Config.SetActiveView(p.GetLine())
+		if err := c.app.Config.Save(); err != nil {
+			log.Error().Err(err).Msg("Config save failed!")
+		}
 	}
 	if err := c.app.inject(comp, clearStack); err != nil {
 		return err
 	}
 
-	c.app.cmdHistory.Push(cmd)
+	c.app.cmdHistory.Push(p.GetLine())
 
 	return
 }
