@@ -86,7 +86,7 @@ func (s *StatefulSet) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (s *StatefulSet) showPods(app *App, _ ui.Tabular, _, path string) {
+func (s *StatefulSet) showPods(app *App, _ ui.Tabular, _ client.GVR, path string) {
 	i, err := s.getInstance(path)
 	if err != nil {
 		app.Flash().Err(err)

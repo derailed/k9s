@@ -40,7 +40,7 @@ func (b *Benchmark) benchContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeyDir, benchDir(b.App().Config))
 }
 
-func (b *Benchmark) viewBench(app *App, model ui.Tabular, gvr, path string) {
+func (b *Benchmark) viewBench(app *App, model ui.Tabular, gvr client.GVR, path string) {
 	data, err := readBenchFile(app.Config, b.benchFile())
 	if err != nil {
 		app.Flash().Errf("Unable to load bench file %s", err)

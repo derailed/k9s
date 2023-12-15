@@ -53,7 +53,7 @@ func (s *Service) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (s *Service) showPods(a *App, _ ui.Tabular, gvr, path string) {
+func (s *Service) showPods(a *App, _ ui.Tabular, _ client.GVR, path string) {
 	var res dao.Service
 	res.Init(a.factory, s.GVR())
 
@@ -71,7 +71,7 @@ func (s *Service) showPods(a *App, _ ui.Tabular, gvr, path string) {
 		return
 	}
 
-	showPodsWithLabels(a, path, svc.Spec.Selector)
+	showPods(a, path, toLabelsStr(svc.Spec.Selector), "")
 }
 
 func (s *Service) checkSvc(svc *v1.Service) error {

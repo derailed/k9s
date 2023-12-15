@@ -67,7 +67,7 @@ func (h *History) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (h *History) getValsCmd(app *App, _ ui.Tabular, gvr, path string) {
+func (h *History) getValsCmd(app *App, _ ui.Tabular, _ client.GVR, path string) {
 	ns, n := client.Namespaced(path)
 	tt := strings.Split(n, ":")
 	if len(tt) < 2 {

@@ -101,7 +101,7 @@ func (c *Context) makeStyledForm() *tview.Form {
 	return f
 }
 
-func (c *Context) useCtx(app *App, model ui.Tabular, gvr, path string) {
+func (c *Context) useCtx(app *App, model ui.Tabular, gvr client.GVR, path string) {
 	log.Debug().Msgf("SWITCH CTX %q--%q", gvr, path)
 	if err := useContext(app, path); err != nil {
 		app.Flash().Err(err)

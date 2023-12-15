@@ -91,7 +91,7 @@ func (d *Deploy) logOptions(prev bool) (*dao.LogOptions, error) {
 	return &opts, nil
 }
 
-func (d *Deploy) showPods(app *App, model ui.Tabular, gvr, fqn string) {
+func (d *Deploy) showPods(app *App, model ui.Tabular, gvr client.GVR, fqn string) {
 	var ddp dao.Deployment
 	ddp.Init(d.App().factory, d.GVR())
 

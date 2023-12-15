@@ -110,7 +110,7 @@ func (c *Container) logOptions(prev bool) (*dao.LogOptions, error) {
 	return &opts, nil
 }
 
-func (c *Container) viewLogs(app *App, model ui.Tabular, gvr, path string) {
+func (c *Container) viewLogs(app *App, model ui.Tabular, gvr client.GVR, path string) {
 	c.ResourceViewer.(*LogsExtender).showLogs(c.GetTable().Path, false)
 }
 

@@ -128,7 +128,7 @@ func (p *Pod) logOptions(prev bool) (*dao.LogOptions, error) {
 	return &opts, nil
 }
 
-func (p *Pod) showContainers(app *App, model ui.Tabular, gvr, path string) {
+func (p *Pod) showContainers(app *App, _ ui.Tabular, _ client.GVR, _ string) {
 	co := NewContainer(client.NewGVR("containers"))
 	co.SetContextFn(p.coContext)
 	if err := app.inject(co, false); err != nil {
@@ -455,7 +455,7 @@ func buildShellArgs(cmd, path, co string, kcfg *string) []string {
 	args := make([]string, 0, 15)
 	args = append(args, cmd, "-it")
 	ns, po := client.Namespaced(path)
-	if ns != client.AllNamespaces {
+	if ns != client.BlankNamespace {
 		args = append(args, "-n", ns)
 	}
 	args = append(args, po)
