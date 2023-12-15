@@ -10,7 +10,12 @@ import (
 )
 
 func Test_suggestSubCommand(t *testing.T) {
-	namespaceNames := []string{"kube-system", "kube-public", "default", "nginx-ingress"}
+	namespaceNames := map[string]struct{}{
+		"kube-system":   {},
+		"kube-public":   {},
+		"default":       {},
+		"nginx-ingress": {},
+	}
 	contextNames := []string{"develop", "test", "pre", "prod"}
 
 	tests := []struct {

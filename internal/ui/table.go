@@ -291,6 +291,9 @@ func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads M
 		if h[c].MX && !t.hasMetrics {
 			continue
 		}
+		if h[c].VS && vul.ImgScanner == nil {
+			continue
+		}
 
 		if !re.Deltas.IsBlank() && !h.IsTimeCol(c) {
 			field += Deltas(re.Deltas[c], field)
@@ -432,7 +435,7 @@ func (t *Table) UpdateTitle() {
 }
 
 func (t *Table) styleTitle() string {
-	rc := t.GetRowCount()
+	rc := int64(t.GetRowCount())
 	if rc > 0 {
 		rc--
 	}
@@ -456,17 +459,22 @@ func (t *Table) styleTitle() string {
 	}
 	var title string
 	if ns == client.ClusterScope {
-		title = SkinTitle(fmt.Sprintf(TitleFmt, base, rc), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(TitleFmt, base, render.AsThousands(rc)), t.styles.Frame())
 	} else {
-		title = SkinTitle(fmt.Sprintf(NSTitleFmt, base, ns, rc), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(NSTitleFmt, base, ns, render.AsThousands(rc)), t.styles.Frame())
 	}
 
 	buff := t.cmdBuff.GetText()
-	if buff == "" {
-		return title
-	}
 	if IsLabelSelector(buff) {
 		buff = TrimLabelSelector(buff)
+	} else {
+		if l := t.GetModel().GetLabelFilter(); l != "" {
+			buff = l
+		}
+	}
+
+	if buff == "" {
+		return title
 	}
 
 	return title + SkinTitle(fmt.Sprintf(SearchFmt, buff), t.styles.Frame())

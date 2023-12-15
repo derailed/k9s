@@ -125,7 +125,7 @@ func startFwdCB(v ResourceViewer, path string, pts port.PortTunnels) error {
 		}
 		log.Debug().Msgf(">>> Starting port forward %q -- %#v", pf.ID(), pt)
 		go runForward(v, pf, fwd)
-		tt = append(tt, pt.ContainerPort)
+		tt = append(tt, pt.LocalPort)
 	}
 	if len(tt) == 1 {
 		v.App().Flash().Infof("PortForward activated %s", tt[0])

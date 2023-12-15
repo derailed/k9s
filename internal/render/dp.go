@@ -6,8 +6,10 @@ package render
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -21,7 +23,23 @@ type Deployment struct {
 
 // ColorerFunc colors a resource row.
 func (d Deployment) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+	return func(ns string, h Header, re RowEvent) tcell.Color {
+		c := DefaultColorer(ns, h, re)
+		if !Happy(ns, h, re.Row) {
+			return ErrColor
+		}
+		rdCol := h.IndexOf("READY", true)
+		if rdCol == -1 {
+			return c
+		}
+		ready := strings.TrimSpace(re.Row.Fields[rdCol])
+		tt := strings.Split(ready, "/")
+		if len(tt) == 2 && tt[1] == "0" {
+			return PendingColor
+		}
+
+		return c
+	}
 }
 
 // Header returns a header row.
@@ -74,5 +92,6 @@ func (Deployment) diagnose(desired, avail int32) error {
 	if desired != avail {
 		return fmt.Errorf("desiring %d replicas got %d available", desired, avail)
 	}
+
 	return nil
 }
