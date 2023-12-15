@@ -18,7 +18,8 @@ func (l Labels) exclude(k, val string) bool {
 }
 
 type BlackList struct {
-	Labels Labels `yaml:"labels"`
+	Namespaces []string `yaml:"namespaces"`
+	Labels     Labels   `yaml:"labels"`
 }
 
 func newBlackList() BlackList {
@@ -27,7 +28,12 @@ func newBlackList() BlackList {
 	}
 }
 
-func (b BlackList) exclude(ll map[string]string) bool {
+func (b BlackList) exclude(ns string, ll map[string]string) bool {
+	for _, nss := range b.Namespaces {
+		if nss == ns {
+			return true
+		}
+	}
 	for k, v := range ll {
 		if b.Labels.exclude(k, v) {
 			return true
@@ -48,10 +54,10 @@ func NewImageScans() *ImageScans {
 	}
 }
 
-func (i *ImageScans) ShouldExclude(ll map[string]string) bool {
+func (i *ImageScans) ShouldExclude(ns string, ll map[string]string) bool {
 	if !i.Enable {
 		return false
 	}
 
-	return i.BlackList.exclude(ll)
+	return i.BlackList.exclude(ns, ll)
 }
