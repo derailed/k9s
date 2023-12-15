@@ -215,7 +215,7 @@ func (s *StatefulSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, 
 }
 
 // Scan scans for cluster resource refs.
-func (s *StatefulSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
+func (s *StatefulSet) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
 	oo, err := s.GetFactory().List(s.GVR(), ns, wait, labels.Everything())
 	if err != nil {
@@ -230,7 +230,7 @@ func (s *StatefulSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Ref
 			return nil, errors.New("expecting StatefulSet resource")
 		}
 		switch gvr {
-		case "v1/configmaps":
+		case CmGVR:
 			if !hasConfigMap(&sts.Spec.Template.Spec, n) {
 				continue
 			}
@@ -238,7 +238,7 @@ func (s *StatefulSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Ref
 				GVR: s.GVR(),
 				FQN: client.FQN(sts.Namespace, sts.Name),
 			})
-		case "v1/secrets":
+		case SecGVR:
 			found, err := hasSecret(s.Factory, &sts.Spec.Template.Spec, sts.Namespace, n, wait)
 			if err != nil {
 				log.Warn().Err(err).Msgf("locate secret %q", fqn)
@@ -251,7 +251,7 @@ func (s *StatefulSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Ref
 				GVR: s.GVR(),
 				FQN: client.FQN(sts.Namespace, sts.Name),
 			})
-		case "v1/persistentvolumeclaims":
+		case PvcGVR:
 			for _, v := range sts.Spec.VolumeClaimTemplates {
 				if !strings.HasPrefix(n, v.Name+"-"+sts.Name) {
 					continue
@@ -268,7 +268,7 @@ func (s *StatefulSet) Scan(ctx context.Context, gvr, fqn string, wait bool) (Ref
 				GVR: s.GVR(),
 				FQN: client.FQN(sts.Namespace, sts.Name),
 			})
-		case "scheduling.k8s.io/v1/priorityclasses":
+		case PcGVR:
 			if !hasPC(&sts.Spec.Template.Spec, n) {
 				continue
 			}

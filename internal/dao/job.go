@@ -133,7 +133,7 @@ func (j *Job) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 }
 
 // Scan scans for resource references.
-func (j *Job) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
+func (j *Job) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
 	oo, err := j.GetFactory().List(j.GVR(), ns, wait, labels.Everything())
 	if err != nil {
@@ -148,7 +148,7 @@ func (j *Job) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 			return nil, errors.New("expecting Job resource")
 		}
 		switch gvr {
-		case "v1/configmaps":
+		case CmGVR:
 			if !hasConfigMap(&job.Spec.Template.Spec, n) {
 				continue
 			}
@@ -156,7 +156,7 @@ func (j *Job) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 				GVR: j.GVR(),
 				FQN: client.FQN(job.Namespace, job.Name),
 			})
-		case "v1/secrets":
+		case SecGVR:
 			found, err := hasSecret(j.Factory, &job.Spec.Template.Spec, job.Namespace, n, wait)
 			if err != nil {
 				log.Warn().Err(err).Msgf("locate secret %q", fqn)
@@ -169,7 +169,7 @@ func (j *Job) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error
 				GVR: j.GVR(),
 				FQN: client.FQN(job.Namespace, job.Name),
 			})
-		case "scheduling.k8s.io/v1/priorityclasses":
+		case PcGVR:
 			if !hasPC(&job.Spec.Template.Spec, n) {
 				continue
 			}

@@ -173,7 +173,7 @@ func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
 }
 
 // Scan scans for cluster resource refs.
-func (c *CronJob) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
+func (c *CronJob) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
 	oo, err := c.GetFactory().List(c.GVR(), ns, wait, labels.Everything())
 	if err != nil {
@@ -188,7 +188,7 @@ func (c *CronJob) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, e
 			return nil, errors.New("expecting CronJob resource")
 		}
 		switch gvr {
-		case "v1/configmaps":
+		case CmGVR:
 			if !hasConfigMap(&cj.Spec.JobTemplate.Spec.Template.Spec, n) {
 				continue
 			}
@@ -196,7 +196,7 @@ func (c *CronJob) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, e
 				GVR: c.GVR(),
 				FQN: client.FQN(cj.Namespace, cj.Name),
 			})
-		case "v1/secrets":
+		case SecGVR:
 			found, err := hasSecret(c.Factory, &cj.Spec.JobTemplate.Spec.Template.Spec, cj.Namespace, n, wait)
 			if err != nil {
 				log.Warn().Err(err).Msgf("locate secret %q", fqn)
@@ -209,7 +209,7 @@ func (c *CronJob) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, e
 				GVR: c.GVR(),
 				FQN: client.FQN(cj.Namespace, cj.Name),
 			})
-		case "scheduling.k8s.io/v1/priorityclasses":
+		case PcGVR:
 			if !hasPC(&cj.Spec.JobTemplate.Spec.Template.Spec, n) {
 				continue
 			}

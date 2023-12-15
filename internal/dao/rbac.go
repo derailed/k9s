@@ -36,7 +36,7 @@ type Rbac struct {
 
 // List lists out rbac resources.
 func (r *Rbac) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	gvr, ok := ctx.Value(internal.KeyGVR).(string)
+	gvr, ok := ctx.Value(internal.KeyGVR).(client.GVR)
 	if !ok {
 		return nil, fmt.Errorf("expecting a context gvr")
 	}
@@ -45,8 +45,7 @@ func (r *Rbac) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		return r.Resource.List(ctx, ns)
 	}
 
-	res := client.NewGVR(gvr)
-	switch res.R() {
+	switch gvr.R() {
 	case "clusterrolebindings":
 		return r.loadClusterRoleBinding(path)
 	case "rolebindings":
@@ -56,7 +55,7 @@ func (r *Rbac) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	case "roles":
 		return r.loadRole(path)
 	default:
-		return nil, fmt.Errorf("expecting clusterrole/role but found %s", res.R())
+		return nil, fmt.Errorf("expecting clusterrole/role but found %s", gvr.R())
 	}
 }
 
