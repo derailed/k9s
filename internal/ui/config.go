@@ -170,6 +170,12 @@ func (c *Configurator) RefreshStyles(context string) {
 		log.Warn().Err(err).Msgf("No cluster found. Using default skin")
 	} else {
 		skin = cl.Skin
+		for _, cs := range cl.ContextSkins {
+			if cs.Name == context {
+				log.Info().Msgf("Loading context %s -- skin: %s", context, cs.Skin)
+				skin = cs.Skin
+			}
+		}
 	}
 
 	var (
