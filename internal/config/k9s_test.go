@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
-	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 func TestIsReadOnly(t *testing.T) {
@@ -49,8 +49,7 @@ func TestIsReadOnly(t *testing.T) {
 		},
 	}
 
-	mk := NewMockKubeSettings()
-	cfg := config.NewConfig(mk)
+	cfg := config.NewConfig(newMockKubeSettings(&genericclioptions.ConfigFlags{}))
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
@@ -63,23 +62,14 @@ func TestIsReadOnly(t *testing.T) {
 }
 
 func TestK9sValidate(t *testing.T) {
-	mc := NewMockConnection()
-	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
-
-	mk := NewMockKubeSettings()
-	m.When(mk.CurrentContextName()).ThenReturn("ctx1", nil)
-	m.When(mk.CurrentClusterName()).ThenReturn("c1", nil)
-	m.When(mk.ClusterNames()).ThenReturn(map[string]struct{}{"c1": {}, "c2": {}}, nil)
-	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"default"})
-
 	c := config.NewK9s()
-	c.Validate(mc, mk)
+	c.Validate(newMockConnection(), newMockKubeSettings(&genericclioptions.ConfigFlags{}))
 
 	assert.Equal(t, 2, c.RefreshRate)
 	assert.Equal(t, int64(100), c.Logger.TailCount)
 	assert.Equal(t, 5000, c.Logger.BufferSize)
-	assert.Equal(t, "ctx1", c.CurrentContext)
-	assert.Equal(t, "c1", c.CurrentCluster)
+	assert.Equal(t, "minikube", c.CurrentContext)
+	assert.Equal(t, "minikube", c.CurrentCluster)
 	assert.Equal(t, 1, len(c.Clusters))
 	assert.Equal(t, config.K9sDefaultScreenDumpDir, c.GetScreenDumpDir())
 	_, ok := c.Clusters[c.CurrentCluster]
@@ -87,23 +77,14 @@ func TestK9sValidate(t *testing.T) {
 }
 
 func TestK9sValidateBlank(t *testing.T) {
-	mc := NewMockConnection()
-	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
-
-	mk := NewMockKubeSettings()
-	m.When(mk.CurrentContextName()).ThenReturn("ctx1", nil)
-	m.When(mk.CurrentClusterName()).ThenReturn("c1", nil)
-	m.When(mk.ClusterNames()).ThenReturn(map[string]struct{}{"c1": {}, "c2": {}}, nil)
-	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"default"})
-
 	var c config.K9s
-	c.Validate(mc, mk)
+	c.Validate(newMockConnection(), newMockKubeSettings(&genericclioptions.ConfigFlags{}))
 
 	assert.Equal(t, 2, c.RefreshRate)
 	assert.Equal(t, int64(100), c.Logger.TailCount)
 	assert.Equal(t, 5000, c.Logger.BufferSize)
-	assert.Equal(t, "ctx1", c.CurrentContext)
-	assert.Equal(t, "c1", c.CurrentCluster)
+	assert.Equal(t, "minikube", c.CurrentContext)
+	assert.Equal(t, "minikube", c.CurrentCluster)
 	assert.Equal(t, 1, len(c.Clusters))
 	_, ok := c.Clusters[c.CurrentCluster]
 	assert.True(t, ok)
@@ -113,6 +94,7 @@ func TestK9sActiveClusterZero(t *testing.T) {
 	c := config.NewK9s()
 	c.CurrentCluster = "fred"
 	cl := c.ActiveCluster()
+
 	assert.NotNil(t, cl)
 	assert.Equal(t, "default", cl.Namespace.Active)
 	assert.Equal(t, 1, len(cl.Namespace.Favorites))
@@ -121,12 +103,12 @@ func TestK9sActiveClusterZero(t *testing.T) {
 func TestK9sActiveClusterBlank(t *testing.T) {
 	var c config.K9s
 	cl := c.ActiveCluster()
+
 	assert.Equal(t, config.NewCluster(), cl)
 }
 
 func TestK9sActiveCluster(t *testing.T) {
-	mk := NewMockKubeSettings()
-	cfg := config.NewConfig(mk)
+	cfg := config.NewConfig(newMockKubeSettings(&genericclioptions.ConfigFlags{}))
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 
 	cl := cfg.K9s.ActiveCluster()
@@ -136,7 +118,8 @@ func TestK9sActiveCluster(t *testing.T) {
 }
 
 func TestGetScreenDumpDir(t *testing.T) {
-	mk := NewMockKubeSettings()
+	mk := newMockKubeSettings(&genericclioptions.ConfigFlags{})
+
 	cfg := config.NewConfig(mk)
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 
@@ -144,8 +127,7 @@ func TestGetScreenDumpDir(t *testing.T) {
 }
 
 func TestGetScreenDumpDirOverride(t *testing.T) {
-	mk := NewMockKubeSettings()
-	cfg := config.NewConfig(mk)
+	cfg := config.NewConfig(newMockKubeSettings(&genericclioptions.ConfigFlags{}))
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 	cfg.K9s.OverrideScreenDumpDir("/override")
 
@@ -153,19 +135,17 @@ func TestGetScreenDumpDirOverride(t *testing.T) {
 }
 
 func TestGetScreenDumpDirOverrideEmpty(t *testing.T) {
-	mk := NewMockKubeSettings()
-	cfg := config.NewConfig(mk)
+	cfg := config.NewConfig(newMockKubeSettings(&genericclioptions.ConfigFlags{}))
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
-	cfg.K9s.OverrideScreenDumpDir("")
 
+	cfg.K9s.OverrideScreenDumpDir("")
 	assert.Equal(t, "/tmp", cfg.K9s.GetScreenDumpDir())
 }
 
 func TestGetScreenDumpDirEmpty(t *testing.T) {
-	mk := NewMockKubeSettings()
-	cfg := config.NewConfig(mk)
+	cfg := config.NewConfig(newMockKubeSettings(&genericclioptions.ConfigFlags{}))
 	assert.Nil(t, cfg.Load("testdata/k9s1.yml"))
-	cfg.K9s.OverrideScreenDumpDir("")
 
+	cfg.K9s.OverrideScreenDumpDir("")
 	assert.Equal(t, config.K9sDefaultScreenDumpDir, cfg.K9s.GetScreenDumpDir())
 }

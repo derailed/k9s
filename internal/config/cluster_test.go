@@ -7,21 +7,15 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
-	m "github.com/petergtz/pegomock"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 func TestClusterValidate(t *testing.T) {
-	mc := NewMockConnection()
-	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
-
-	mk := NewMockKubeSettings()
-	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"ns1", "ns2", "default"})
-
 	c := config.NewCluster()
-	c.Validate(mc, mk)
+	c.Validate(newMockConnection(), newMockKubeSettings(&genericclioptions.ConfigFlags{}))
 
 	assert.Equal(t, "po", c.View.Active)
 	assert.Equal(t, "default", c.Namespace.Active)
@@ -30,14 +24,8 @@ func TestClusterValidate(t *testing.T) {
 }
 
 func TestClusterValidateEmpty(t *testing.T) {
-	mc := NewMockConnection()
-	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
-
-	mk := NewMockKubeSettings()
-	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"ns1", "ns2", "default"})
-
-	var c config.Cluster
-	c.Validate(mc, mk)
+	c := config.NewCluster()
+	c.Validate(newMockConnection(), newMockKubeSettings(&genericclioptions.ConfigFlags{}))
 
 	assert.Equal(t, "po", c.View.Active)
 	assert.Equal(t, "default", c.Namespace.Active)

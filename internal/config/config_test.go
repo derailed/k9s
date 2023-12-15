@@ -22,7 +22,11 @@ func init() {
 }
 
 func TestConfigRefine(t *testing.T) {
-	cfgFile, ctx, cluster, ns := "testdata/kubeconfig-test.yml", "test2", "cluster2", "ns2"
+	var (
+		cfgFile          = "testdata/kubeconfig-test.yml"
+		ctx, cluster, ns = "test2", "cluster2", "ns2"
+	)
+
 	uu := map[string]struct {
 		flags                       *genericclioptions.ConfigFlags
 		issue                       bool
@@ -61,10 +65,8 @@ func TestConfigRefine(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			mc := NewMockConnection()
-			m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
-			mk := newMockSettings(u.flags)
-			cfg := config.NewConfig(mk)
+			cfg := config.NewConfig(newMockKubeSettings(u.flags))
+			cfg.SetConnection(newMockConnection())
 
 			err := cfg.Refine(u.flags, nil, client.NewConfig(u.flags))
 			if u.issue {
@@ -80,23 +82,17 @@ func TestConfigRefine(t *testing.T) {
 }
 
 func TestConfigValidate(t *testing.T) {
-	mc := NewMockConnection()
-	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
+	cfg := config.NewConfig(newMockKubeSettings(&genericclioptions.ConfigFlags{}))
+	cfg.SetConnection(newMockConnection())
 
-	mk := NewMockKubeSettings()
-	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"default"})
-
-	cfg := config.NewConfig(mk)
-	cfg.SetConnection(mc)
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 	cfg.Validate()
 }
 
 func TestConfigLoad(t *testing.T) {
-	mk := NewMockKubeSettings()
-	cfg := config.NewConfig(mk)
-	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
+	cfg := config.NewConfig(newMockKubeSettings(&genericclioptions.ConfigFlags{}))
 
+	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 	assert.Equal(t, 2, cfg.K9s.RefreshRate)
 	assert.Equal(t, 2000, cfg.K9s.Logger.BufferSize)
 	assert.Equal(t, int64(200), cfg.K9s.Logger.TailCount)
@@ -119,8 +115,7 @@ func TestConfigLoad(t *testing.T) {
 }
 
 func TestConfigCurrentCluster(t *testing.T) {
-	mk := NewMockKubeSettings()
-	cfg := config.NewConfig(mk)
+	cfg := config.NewConfig(newMockKubeSettings(&genericclioptions.ConfigFlags{}))
 
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 	assert.NotNil(t, cfg.CurrentCluster())
@@ -129,8 +124,7 @@ func TestConfigCurrentCluster(t *testing.T) {
 }
 
 func TestConfigActiveNamespace(t *testing.T) {
-	mk := NewMockKubeSettings()
-	cfg := config.NewConfig(mk)
+	cfg := newMockConfig()
 
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 	assert.Equal(t, "kube-system", cfg.ActiveNamespace())
@@ -138,12 +132,13 @@ func TestConfigActiveNamespace(t *testing.T) {
 
 func TestConfigActiveNamespaceBlank(t *testing.T) {
 	cfg := config.Config{K9s: new(config.K9s)}
+	cfg.SetConnection(newMockConnection())
+
 	assert.Equal(t, "default", cfg.ActiveNamespace())
 }
 
 func TestConfigSetActiveNamespace(t *testing.T) {
-	mk := NewMockKubeSettings()
-	cfg := config.NewConfig(mk)
+	cfg := newMockConfig()
 
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 	assert.Nil(t, cfg.SetActiveNamespace("default"))
@@ -151,8 +146,7 @@ func TestConfigSetActiveNamespace(t *testing.T) {
 }
 
 func TestConfigActiveView(t *testing.T) {
-	mk := NewMockKubeSettings()
-	cfg := config.NewConfig(mk)
+	cfg := newMockConfig()
 
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 	assert.Equal(t, "ctx", cfg.ActiveView())
@@ -160,53 +154,46 @@ func TestConfigActiveView(t *testing.T) {
 
 func TestConfigActiveViewBlank(t *testing.T) {
 	cfg := config.Config{K9s: new(config.K9s)}
+	cfg.SetConnection(newMockConnection())
+
 	assert.Equal(t, "po", cfg.ActiveView())
 }
 
 func TestConfigSetActiveView(t *testing.T) {
-	mk := NewMockKubeSettings()
-	cfg := config.NewConfig(mk)
+	cfg := newMockConfig()
 
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
+
 	cfg.SetActiveView("po")
 	assert.Equal(t, "po", cfg.ActiveView())
 }
 
 func TestConfigFavNamespaces(t *testing.T) {
-	mk := NewMockKubeSettings()
-	cfg := config.NewConfig(mk)
+	cfg := newMockConfig()
 
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
+
 	expectedNS := []string{"default", "kube-public", "istio-system", "all", "kube-system"}
 	assert.Equal(t, expectedNS, cfg.FavNamespaces())
 }
 
 func TestConfigLoadOldCfg(t *testing.T) {
-	mk := NewMockKubeSettings()
-	cfg := config.NewConfig(mk)
+	cfg := newMockConfig()
+
 	assert.Nil(t, cfg.Load("testdata/k9s_old.yml"))
 }
 
 func TestConfigLoadCrap(t *testing.T) {
-	mk := NewMockKubeSettings()
-	cfg := config.NewConfig(mk)
+	cfg := newMockConfig()
+
 	assert.NotNil(t, cfg.Load("testdata/k9s_not_there.yml"))
 }
 
 func TestConfigSaveFile(t *testing.T) {
-	mc := NewMockConnection()
-	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
+	cfg := newMockConfig()
 
-	mk := NewMockKubeSettings()
-	m.When(mk.CurrentContextName()).ThenReturn("minikube", nil)
-	m.When(mk.CurrentClusterName()).ThenReturn("minikube", nil)
-	m.When(mk.CurrentNamespaceName()).ThenReturn("default", nil)
-	m.When(mk.ClusterNames()).ThenReturn(map[string]struct{}{"minikube": {}, "fred": {}, "blee": {}}, nil)
-	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"default"})
-
-	cfg := config.NewConfig(mk)
-	cfg.SetConnection(mc)
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
+
 	cfg.K9s.RefreshRate = 100
 	cfg.K9s.ReadOnly = true
 	cfg.K9s.Logger.TailCount = 500
@@ -214,28 +201,17 @@ func TestConfigSaveFile(t *testing.T) {
 	cfg.K9s.CurrentContext = "blee"
 	cfg.K9s.CurrentCluster = "blee"
 	cfg.Validate()
+
 	path := filepath.Join("/tmp", "k9s.yml")
 	err := cfg.SaveFile(path)
 	assert.Nil(t, err)
-
 	raw, err := os.ReadFile(path)
 	assert.Nil(t, err)
 	assert.Equal(t, expectedConfig, string(raw))
 }
 
 func TestConfigReset(t *testing.T) {
-	mc := NewMockConnection()
-	m.When(mc.ValidNamespaces()).ThenReturn(namespaces(), nil)
-
-	mk := NewMockKubeSettings()
-	m.When(mk.CurrentContextName()).ThenReturn("blee", nil)
-	m.When(mk.CurrentClusterName()).ThenReturn("blee", nil)
-	m.When(mk.CurrentNamespaceName()).ThenReturn("default", nil)
-	m.When(mk.ClusterNames()).ThenReturn(map[string]struct{}{"blee": {}}, nil)
-	m.When(mk.NamespaceNames(namespaces())).ThenReturn([]string{"default"})
-
-	cfg := config.NewConfig(mk)
-	cfg.SetConnection(mc)
+	cfg := newMockConfig()
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 	cfg.Reset()
 	cfg.Validate()
@@ -302,6 +278,7 @@ var expectedConfig = `k9s:
   imageScans:
     enable: false
     blackList:
+      namespaces: []
       labels: {}
   logger:
     tail: 500
@@ -387,6 +364,7 @@ var resetConfig = `k9s:
   imageScans:
     enable: false
     blackList:
+      namespaces: []
       labels: {}
   logger:
     tail: 200
@@ -395,18 +373,37 @@ var resetConfig = `k9s:
     fullScreenLogs: false
     textWrap: false
     showTime: false
-  currentContext: blee
-  currentCluster: blee
+  currentContext: minikube
+  currentCluster: minikube
   keepMissingClusters: false
   clusters:
-    blee:
+    fred:
       namespace:
         active: default
         lockFavorites: false
         favorites:
         - default
+        - kube-public
+        - istio-system
+        - all
+        - kube-system
       view:
         active: po
+      featureGates:
+        nodeShell: false
+      portForwardAddress: localhost
+    minikube:
+      namespace:
+        active: kube-system
+        lockFavorites: false
+        favorites:
+        - default
+        - kube-public
+        - istio-system
+        - all
+        - kube-system
+      view:
+        active: ctx
       featureGates:
         nodeShell: false
       portForwardAddress: localhost
