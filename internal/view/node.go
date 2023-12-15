@@ -66,8 +66,8 @@ func (n *Node) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (n *Node) showPods(a *App, _ ui.Tabular, _, path string) {
-	showPods(a, n.GetTable().GetSelectedItem(), client.AllNamespaces, "spec.nodeName="+path)
+func (n *Node) showPods(a *App, _ ui.Tabular, _ client.GVR, path string) {
+	showPods(a, n.GetTable().GetSelectedItem(), client.BlankNamespace, "spec.nodeName="+path)
 }
 
 func (n *Node) drainCmd(evt *tcell.EventKey) *tcell.EventKey {

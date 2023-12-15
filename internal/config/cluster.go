@@ -43,7 +43,7 @@ func (c *Cluster) Validate(conn client.Connection, ks KubeSettings) {
 	if c.Namespace == nil {
 		c.Namespace = NewNamespace()
 	}
-	if c.Namespace.Active == client.AllNamespaces {
+	if c.Namespace.Active == client.BlankNamespace {
 		c.Namespace.Active = client.NamespaceAll
 	}
 
