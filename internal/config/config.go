@@ -141,28 +141,25 @@ func (c *Config) CurrentCluster() *Cluster {
 }
 
 // ActiveNamespace returns the active namespace in the current cluster.
+// If none found return the empty ns.
 func (c *Config) ActiveNamespace() string {
 	if c.K9s.Clusters == nil {
-		log.Warn().Msgf("No context detected returning default namespace")
-		return "default"
+		log.Warn().Msgf("No context detected. Using default namespace")
+		return client.DefaultNamespace
 	}
 	cl := c.CurrentCluster()
-	if cl != nil && cl.Namespace != nil {
-		return cl.Namespace.Active
-	}
 	if cl == nil {
 		cl = NewCluster()
 		c.K9s.Clusters[c.K9s.CurrentCluster] = cl
 	}
-	if ns, err := c.settings.CurrentNamespaceName(); err == nil && ns != "" {
-		if cl.Namespace == nil {
-			cl.Namespace = NewNamespace()
-		}
-		cl.Namespace.Active = ns
-		return ns
+	if cl.Namespace == nil {
+		cl.Namespace = NewNamespace()
+	}
+	if c.client != nil && c.client.IsValidNamespace(cl.Namespace.Active) {
+		return cl.Namespace.Active
 	}
 
-	return "default"
+	return client.DefaultNamespace
 }
 
 // ValidateFavorites ensure favorite ns are legit.

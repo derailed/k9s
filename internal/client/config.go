@@ -10,7 +10,6 @@ import (
 	"sync"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	restclient "k8s.io/client-go/rest"
 	clientcmd "k8s.io/client-go/tools/clientcmd"
@@ -18,7 +17,7 @@ import (
 )
 
 const (
-	defaultCallTimeoutDuration time.Duration = 10 * time.Second
+	defaultCallTimeoutDuration time.Duration = 15 * time.Second
 
 	// UsePersistentConfig caches client config to avoid reloads.
 	UsePersistentConfig = true
@@ -297,16 +296,17 @@ func (c *Config) CurrentUserName() (string, error) {
 
 // CurrentNamespaceName retrieves the active namespace.
 func (c *Config) CurrentNamespaceName() (string, error) {
-	ns, _, err := c.clientConfig().Namespace()
-
-	if ns == "default" {
-		ns, err = c.CurrentContextNamespace()
-		if ns == "" && err == nil {
-			return "", errors.New("No namespace specified in context")
-		}
+	ns, overriden, err := c.clientConfig().Namespace()
+	if err != nil {
+		return DefaultNamespace, err
+	}
+	// Checks if ns is passed is in args.
+	if overriden {
+		return ns, nil
 	}
 
-	return ns, err
+	// Return ns set in context if any??
+	return c.CurrentContextNamespace()
 }
 
 // ConfigAccess return the current kubeconfig api server access configuration.
@@ -319,16 +319,6 @@ func (c *Config) ConfigAccess() (clientcmd.ConfigAccess, error) {
 
 // ----------------------------------------------------------------------------
 // Helpers...
-
-// NamespaceNames fetch all available namespaces on current cluster.
-func NamespaceNames(nns []v1.Namespace) []string {
-	nn := make([]string, 0, len(nns))
-	for _, ns := range nns {
-		nn = append(nn, ns.Name)
-	}
-
-	return nn
-}
 
 func isSet(s *string) bool {
 	return s != nil && len(*s) != 0

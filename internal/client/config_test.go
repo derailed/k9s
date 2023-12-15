@@ -10,8 +10,6 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
@@ -287,15 +285,4 @@ func TestConfigBadConfig(t *testing.T) {
 	cfg := client.NewConfig(&flags)
 	_, err := cfg.RESTConfig()
 	assert.NotNil(t, err)
-}
-
-func TestNamespaceNames(t *testing.T) {
-	nn := []v1.Namespace{
-		{ObjectMeta: metav1.ObjectMeta{Name: "ns1"}},
-		{ObjectMeta: metav1.ObjectMeta{Name: "ns2"}},
-	}
-
-	nns := client.NamespaceNames(nn)
-	assert.Equal(t, 2, len(nns))
-	assert.Equal(t, []string{"ns1", "ns2"}, nns)
 }
