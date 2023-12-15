@@ -128,6 +128,7 @@ var _ ui.Tabular = (*mockTableModel)(nil)
 
 func (t *mockTableModel) SetInstance(string)                 {}
 func (t *mockTableModel) SetLabelFilter(string)              {}
+func (t *mockTableModel) GetLabelFilter() string             { return "" }
 func (t *mockTableModel) Empty() bool                        { return false }
 func (t *mockTableModel) Count() int                         { return 1 }
 func (t *mockTableModel) HasMetrics() bool                   { return true }

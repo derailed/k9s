@@ -15,6 +15,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/k9s/internal/xray"
@@ -51,6 +52,9 @@ func NewXray(gvr client.GVR) ResourceViewer {
 		model: model.NewTree(gvr),
 	}
 }
+
+func (x *Xray) SetFilter(string)                 {}
+func (x *Xray) SetLabelFilter(map[string]string) {}
 
 // Init initializes the view.
 func (x *Xray) Init(ctx context.Context) error {
@@ -644,9 +648,9 @@ func (x *Xray) styleTitle() string {
 
 	var title string
 	if ns == client.ClusterScope {
-		title = ui.SkinTitle(fmt.Sprintf(ui.TitleFmt, base, x.Count), x.app.Styles.Frame())
+		title = ui.SkinTitle(fmt.Sprintf(ui.TitleFmt, base, render.AsThousands(int64(x.Count))), x.app.Styles.Frame())
 	} else {
-		title = ui.SkinTitle(fmt.Sprintf(ui.NSTitleFmt, base, ns, x.Count), x.app.Styles.Frame())
+		title = ui.SkinTitle(fmt.Sprintf(ui.NSTitleFmt, base, ns, render.AsThousands(int64(x.Count))), x.app.Styles.Frame())
 	}
 
 	buff := x.CmdBuff().GetText()

@@ -58,6 +58,9 @@ func NewDetails(app *App, title, subject, contentType string, searchable bool) *
 	return &d
 }
 
+func (d *Details) SetFilter(string)                 {}
+func (d *Details) SetLabelFilter(map[string]string) {}
+
 // Init initializes the viewer.
 func (d *Details) Init(_ context.Context) error {
 	if d.title != "" {

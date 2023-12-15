@@ -114,6 +114,7 @@ func (t *mockModel) PrevSuggestion() (string, bool)     { return "", false }
 func (t *mockModel) ClearSuggestions()                  {}
 func (t *mockModel) SetInstance(string)                 {}
 func (t *mockModel) SetLabelFilter(string)              {}
+func (t *mockModel) GetLabelFilter() string             { return "" }
 func (t *mockModel) Empty() bool                        { return false }
 func (t *mockModel) Count() int                         { return 1 }
 func (t *mockModel) HasMetrics() bool                   { return true }

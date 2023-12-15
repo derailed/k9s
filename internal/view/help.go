@@ -43,6 +43,9 @@ func NewHelp(app *App) *Help {
 	}
 }
 
+func (h *Help) SetFilter(string)                 {}
+func (h *Help) SetLabelFilter(map[string]string) {}
+
 // Init initializes the component.
 func (h *Help) Init(ctx context.Context) error {
 	if err := h.Table.Init(ctx); err != nil {

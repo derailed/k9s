@@ -61,6 +61,9 @@ func NewLog(gvr client.GVR, opts *dao.LogOptions) *Log {
 	return &l
 }
 
+func (l *Log) SetFilter(string)                 {}
+func (l *Log) SetLabelFilter(map[string]string) {}
+
 // Init initializes the viewer.
 func (l *Log) Init(ctx context.Context) (err error) {
 	if l.app, err = extractApp(ctx); err != nil {

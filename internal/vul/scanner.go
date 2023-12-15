@@ -52,7 +52,7 @@ func NewImageScanner(cfg *config.ImageScans) *imageScanner {
 }
 
 func (s *imageScanner) ShouldExcludes(m metav1.ObjectMeta) bool {
-	return s.config.ShouldExclude(m.Labels)
+	return s.config.ShouldExclude(m.Namespace, m.Labels)
 }
 
 // GetScan fetch scan for a given image. Returns ok=false when not found.

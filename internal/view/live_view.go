@@ -60,6 +60,9 @@ func NewLiveView(app *App, title string, m model.ResourceViewer) *LiveView {
 	return &v
 }
 
+func (v *LiveView) SetFilter(string)                 {}
+func (v *LiveView) SetLabelFilter(map[string]string) {}
+
 // Init initializes the viewer.
 func (v *LiveView) Init(_ context.Context) error {
 	if v.title != "" {
