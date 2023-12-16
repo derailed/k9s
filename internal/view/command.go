@@ -138,8 +138,15 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 	default:
 		// checks if Command includes a namespace
 		ns := c.app.Config.ActiveNamespace()
+		view := c.componentFor(gvr, path, v)
 		if len(cmds) == 2 {
-			ns = cmds[1]
+			if cmds[1] != "" && cmds[1][0:1] == "/" {
+				// update the filter of the table
+				table := view.GetTable()
+				table.CmdBuff().SetText(cmds[1][1:], table.CmdBuff().GetSuggestion())
+			} else {
+				ns = cmds[1]
+			}
 		}
 		if cns != "" {
 			ns = cns
@@ -150,7 +157,7 @@ func (c *Command) run(cmd, path string, clearStack bool) error {
 		if !c.alias.Check(command) {
 			return fmt.Errorf("`%s` Command not found", cmd)
 		}
-		return c.exec(cmd, gvr, c.componentFor(gvr, path, v), clearStack)
+		return c.exec(cmd, gvr, view, clearStack)
 	}
 }
 
