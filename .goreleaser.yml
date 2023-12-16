@@ -112,5 +112,25 @@ nfpms:
         file_info:
           mode: 0644
 
+winget:
+  - name: k9s
+    publisher: k9s
+    short_description: "K9s - Kubernetes CLI To Manage Your Clusters In Style!"
+    license: "Apache 2.0"
+    publisher_support_url: "https://github.com/derailed/k9s/issues"
+    package_identifier: Derailed.k9s
+    homepage: "https://k9scli.io/"
+    repository:
+      owner: derailed
+      name: winget-pkgs
+      branch: "k9s-{{.Version}}"
+      pull_request:
+        enabled: true
+        draft: true
+        base:
+          owner: microsoft
+          name: winget-pkgs
+          branch: master
+
 sboms:
   - artifacts: archive
