@@ -8,20 +8,16 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 )
 
 // HelmChart represents a helm chart view.
 type HelmChart struct {
 	ResourceViewer
-
-	Values *model.Values
 }
 
-// NewHelm returns a new alias view.
+// NewHelmChart returns a new helm-chart view.
 func NewHelmChart(gvr client.GVR) ResourceViewer {
 	c := HelmChart{
 		ResourceViewer: NewBrowser(gvr),
@@ -84,26 +80,10 @@ func (c *HelmChart) getValsCmd() func(evt *tcell.EventKey) *tcell.EventKey {
 		if path == "" {
 			return evt
 		}
-		c.Values = model.NewValues(c.GVR(), path)
-		v := NewLiveView(c.App(), "Values", c.Values)
-		v.actions.Add(ui.KeyActions{
-			ui.KeyV: ui.NewKeyAction("Toggle All Values", c.toggleValuesCmd, true),
-		})
-		if err := v.app.inject(v, false); err != nil {
-			v.app.Flash().Err(err)
-		}
-		return nil
-	}
-}
 
-func (c *HelmChart) toggleValuesCmd(evt *tcell.EventKey) *tcell.EventKey {
-	c.Values.ToggleValues()
-	if err := c.Values.Refresh(c.defaultCtx()); err != nil {
-		log.Error().Err(err).Msgf("helm refresh failed")
+		showValues(c.defaultCtx(), c.App(), path, c.GVR())
 		return nil
 	}
-	c.App().Flash().Infof("Values toggled")
-	return nil
 }
 
 func (c *HelmChart) defaultCtx() context.Context {

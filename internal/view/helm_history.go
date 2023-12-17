@@ -8,8 +8,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render/helm"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
@@ -21,7 +23,7 @@ type History struct {
 	ResourceViewer
 }
 
-// NewHelm returns a new alias view.
+// NewHistory returns a new helm-history view.
 func NewHistory(gvr client.GVR) ResourceViewer {
 	h := History{
 		ResourceViewer: NewBrowser(gvr),
@@ -31,14 +33,12 @@ func NewHistory(gvr client.GVR) ResourceViewer {
 	h.GetTable().SetSelectedStyle(tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorMediumSpringGreen).Attributes(tcell.AttrNone))
 	h.AddBindKeysFn(h.bindKeys)
 	h.SetContextFn(h.HistoryContext)
-	h.GetTable().SetSelectedFn(func(s string) string {
-		return s[:strings.Index(s, ":")]
-	})
+	h.GetTable().SetEnterFn(h.enterFn)
 
 	return &h
 }
 
-// Init initializes the vie
+// Init initializes the view
 func (h *History) Init(ctx context.Context) error {
 	if err := h.ResourceViewer.Init(ctx); err != nil {
 		return err
@@ -59,6 +59,9 @@ func (h *History) bindKeys(aa ui.KeyActions) {
 
 	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace, tcell.KeyCtrlD)
 	aa.Add(ui.KeyActions{
+		ui.KeyY:      ui.NewKeyAction(yamlAction, h.yamlCmd, true),
+		ui.KeyD:      ui.NewKeyAction("Describe", h.describeCmd, true),
+		ui.KeyV:      ui.NewKeyAction("Values", h.valuesCmd, true),
 		ui.KeyShiftN: ui.NewKeyAction("Sort Revision", h.GetTable().SortColCmd("REVISION", true), false),
 		ui.KeyShiftS: ui.NewKeyAction("Sort Status", h.GetTable().SortColCmd("STATUS", true), false),
 		ui.KeyShiftA: ui.NewKeyAction("Sort Age", h.GetTable().SortColCmd("AGE", true), false),
@@ -100,6 +103,43 @@ func (h *History) rollbackCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
+func (h *History) yamlCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := h.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	v := NewLiveView(h.App(), yamlAction, model.NewYAML(h.GVR(), path))
+	if err := v.app.inject(v, false); err != nil {
+		v.app.Flash().Err(err)
+	}
+	return nil
+}
+
+func (h *History) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := h.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	describeResource(h.App(), h.GetTable().GetModel(), h.GVR().String(), path)
+	return nil
+}
+
+func (h *History) valuesCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := h.GetTable().GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+
+	showValues(h.defaultCtx(), h.App(), path, h.GVR())
+	return nil
+}
+
+func (h *History) enterFn(app *App, _ ui.Tabular, gvr, path string) {
+	h.valuesCmd(nil)
+}
+
 func (h *History) rollback(ctx context.Context, path, rev string) error {
 	var hm dao.HelmHistory
 	hm.Init(h.App().factory, h.GVR())
@@ -109,4 +149,8 @@ func (h *History) rollback(ctx context.Context, path, rev string) error {
 	h.Refresh()
 
 	return nil
+}
+
+func (h *History) defaultCtx() context.Context {
+	return context.WithValue(context.Background(), internal.KeyFactory, h.App().factory)
 }

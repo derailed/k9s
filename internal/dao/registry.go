@@ -102,6 +102,7 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		client.NewGVR("v1/namespaces"):          &Namespace{},
 		client.NewGVR("popeye"):                 &Popeye{},
 		client.NewGVR("helm"):                   &HelmChart{},
+		client.NewGVR("helm-history"):           &HelmHistory{},
 		client.NewGVR("dir"):                    &Dir{},
 	}
 

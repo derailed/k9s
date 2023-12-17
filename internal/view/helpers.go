@@ -261,3 +261,34 @@ func linesWithRegions(lines []string, matches fuzzy.Matches) []string {
 	}
 	return ll
 }
+
+func showValues(ctx context.Context, app *App, path string, gvr client.GVR) {
+	vm := model.NewValues(gvr, path)
+	if err := vm.Init(app.factory); err != nil {
+		app.Flash().Errf("Initializing the values model failed: %s", err)
+	}
+
+	toggleValuesCmd := func(evt *tcell.EventKey) *tcell.EventKey {
+		if err := vm.ToggleValues(); err != nil {
+			app.Flash().Errf("Values toggle failed: %s", err)
+			return nil
+		}
+
+		if err := vm.Refresh(ctx); err != nil {
+			log.Error().Err(err).Msgf("values refresh failed")
+			return nil
+		}
+
+		app.Flash().Infof("Values toggled")
+		return nil
+	}
+
+	v := NewLiveView(app, "Values", vm)
+	v.actions.Add(ui.KeyActions{
+		ui.KeyV: ui.NewKeyAction("Toggle All Values", toggleValuesCmd, true),
+	})
+
+	if err := v.app.inject(v, false); err != nil {
+		v.app.Flash().Err(err)
+	}
+}
