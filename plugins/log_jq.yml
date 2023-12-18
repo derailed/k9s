@@ -6,10 +6,10 @@ plugin:
     description: "Logs (jq)"
     scopes:
       - po
-    command: kubectl
+    # Replace PATH with the proper path where 'kubectl-jq' can be found, or add that location into '$PATH' and remove 'PATH/' altogether
+    command: PATH/kubectl-jq
     background: false
     args:
-      - jq
       - $NAME
       - $NAMESPACE
       - $CONTEXT

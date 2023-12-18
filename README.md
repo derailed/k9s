@@ -591,7 +591,7 @@ K9s allows you to extend your command line and tooling by defining your very own
 * Confirm option (when enabled) lets you see the command that is going to be executed and gives you an option to confirm or prevent execution
 * Description will be printed next to the shortcut in the k9s menu
 * Scopes defines a collection of resources names/short-names for the views associated with the plugin. You can specify `all` to provide this shortcut for all views.
-* Command represents ad-hoc commands the plugin runs upon activation
+* Command represents ad-hoc commands the plugin runs upon activation. The command needs to be available in `$PATH` or have a full path defined (`~` is not honored).
 * Background specifies whether or not the command runs in the background
 * Args specifies the various arguments that should apply to the command above
 
