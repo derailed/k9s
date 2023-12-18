@@ -129,8 +129,8 @@ type Connection interface {
 	// CheckConnectivity checks if api server connection is happy or not.
 	CheckConnectivity() bool
 
-	// ActiveCluster returns the current cluster name.
-	ActiveCluster() string
+	// ActiveContext returns the current context name.
+	ActiveContext() string
 
 	// ActiveNamespace returns the current namespace.
 	ActiveNamespace() string

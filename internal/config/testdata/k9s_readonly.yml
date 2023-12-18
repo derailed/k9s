@@ -5,8 +5,7 @@ k9s:
     tail: 200
     buffer: 2000
   currentContext: minikube
-  currentCluster: minikube
-  clusters:
+  contexts:
     minikube:
       namespace:
         active: kube-system

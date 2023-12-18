@@ -327,8 +327,6 @@ K9s uses aliases to navigate most K8s resources.
 
   > NOTE: This is still in flux and will change while in pre-release stage!
 
-  > NOTE! Thanks to [Mr Alexandru Placenta](https://github.com/placintaalexandru) the config files can now use either `.yml` or `.yaml` mimes.
-
   ```yaml
   # $XDG_CONFIG_HOME/k9s/config.yml
   k9s:

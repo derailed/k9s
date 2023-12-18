@@ -33,7 +33,12 @@ func ShowPortForwards(v ResourceViewer, path string, ports port.ContainerPortSpe
 		SetFieldTextColor(styles.FieldFgColor.Color()).
 		SetFieldBackgroundColor(styles.BgColor.Color())
 
-	address := v.App().Config.CurrentCluster().PortForwardAddress
+	ct, err := v.App().Config.K9s.ActiveContext()
+	if err != nil {
+		log.Error().Err(err).Msgf("No active context detected")
+		return
+	}
+	address := ct.PortForwardAddress
 
 	pf, err := aa.PreferredPorts(ports)
 	if err != nil {

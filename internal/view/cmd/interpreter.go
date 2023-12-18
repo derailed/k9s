@@ -3,7 +3,9 @@
 
 package cmd
 
-import "strings"
+import (
+	"strings"
+)
 
 type Interpreter struct {
 	line string
@@ -26,10 +28,8 @@ func (c *Interpreter) grok() {
 	if len(ff) == 0 {
 		return
 	}
-	c.cmd, c.args = ff[0], newArgs(ff[1:])
-	if c.IsBlank() {
-		return
-	}
+	c.cmd = ff[0]
+	c.args = newArgs(c, ff[1:])
 }
 
 func (c *Interpreter) HasNS() bool {
@@ -90,11 +90,13 @@ func (c *Interpreter) IsAliasCmd() bool {
 
 func (c *Interpreter) IsXrayCmd() bool {
 	_, ok := xrayCmd[c.cmd]
+
 	return ok
 }
 
 func (c *Interpreter) IsContextCmd() bool {
 	_, ok := contextCmd[c.cmd]
+
 	return ok
 }
 
@@ -112,19 +114,19 @@ func (c *Interpreter) ContextArg() (string, bool) {
 		return "", false
 	}
 
-	return c.args[nsKey], true
+	return c.args[contextKey], true
 }
 
 func (c *Interpreter) ResetContextArg() {
-	c.args[contextFlag] = ""
+	delete(c.args, contextFlag)
 }
 
 func (c *Interpreter) DirArg() (string, bool) {
-	if !c.IsDirCmd() || c.args[nsKey] == "" {
+	if !c.IsDirCmd() || c.args[topicKey] == "" {
 		return "", false
 	}
 
-	return c.args[nsKey], true
+	return c.args[topicKey], true
 }
 
 func (c *Interpreter) CowArg() (string, bool) {
@@ -151,13 +153,12 @@ func (c *Interpreter) XrayArgs() (string, string, bool) {
 	if !c.IsXrayCmd() {
 		return "", "", false
 	}
-
-	gvr, ok1 := c.args[nsKey]
+	gvr, ok1 := c.args[topicKey]
 	if !ok1 {
 		return "", "", false
 	}
 
-	ns, ok2 := c.args[topicKey]
+	ns, ok2 := c.args[nsKey]
 	switch {
 	case ok1 && ok2:
 		return gvr, ns, true
@@ -182,7 +183,7 @@ func (c *Interpreter) NSArg() (string, bool) {
 
 func (c *Interpreter) HasContext() (string, bool) {
 	ctx, ok := c.args[contextKey]
-	if ctx == "" {
+	if !ok || ctx == "" {
 		return "", false
 	}
 

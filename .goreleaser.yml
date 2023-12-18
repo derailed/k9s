@@ -1,8 +1,10 @@
 project_name: k9s
+
 before:
   hooks:
     - go mod download
     - go generate ./...
+
 release:
   prerelease: false
 

@@ -85,7 +85,7 @@ func (f *Flash) SetMessage(m model.LevelMessage) {
 }
 
 func (f *Flash) flashEmoji(l model.FlashLevel) string {
-	if f.app.Config.K9s.NoIcons {
+	if f.app.Config.K9s.UI.NoIcons {
 		return ""
 	}
 	// nolint:exhaustive

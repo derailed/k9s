@@ -45,8 +45,12 @@ func (n *Node) bindDangerousKeys(aa ui.KeyActions) {
 		ui.KeyU: ui.NewKeyAction("Uncordon", n.toggleCordonCmd(false), true),
 		ui.KeyR: ui.NewKeyAction("Drain", n.drainCmd, true),
 	})
-	cl := n.App().Config.K9s.CurrentCluster
-	if n.App().Config.K9s.Clusters[cl].FeatureGates.NodeShell {
+	ct, err := n.App().Config.K9s.ActiveContext()
+	if err != nil {
+		log.Error().Err(err).Msgf("No active context located")
+		return
+	}
+	if ct.FeatureGates.NodeShell {
 		aa.Add(ui.KeyActions{
 			ui.KeyS: ui.NewKeyAction("Shell", n.sshCmd, true),
 		})

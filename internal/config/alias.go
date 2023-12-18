@@ -5,15 +5,15 @@ package config
 
 import (
 	"os"
-	"path/filepath"
 	"sync"
 
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 )
 
 // K9sAlias manages K9s aliases.
-var K9sAlias = YamlExtension(filepath.Join(K9sHome(), "alias.yml"))
+// var K9sAlias = YamlExtension(filepath.Join(K9sHome(), "alias.yml"))
 
 // Alias tracks shortname to GVR mappings.
 type Alias map[string]string
@@ -103,7 +103,7 @@ func (a *Aliases) Define(gvr string, aliases ...string) {
 // Load K9s aliases.
 func (a *Aliases) Load() error {
 	a.loadDefaultAliases()
-	return a.LoadFileAliases(K9sAlias)
+	return a.LoadFileAliases(AppAliasesFile)
 }
 
 // LoadFileAliases loads alias from a given file.
@@ -165,12 +165,12 @@ func (a *Aliases) loadDefaultAliases() {
 // Save alias to disk.
 func (a *Aliases) Save() error {
 	log.Debug().Msg("[Config] Saving Aliases...")
-	return a.SaveAliases(K9sAlias)
+	return a.SaveAliases(AppAliasesFile)
 }
 
 // SaveAliases saves aliases to a given file.
 func (a *Aliases) SaveAliases(path string) error {
-	if err := EnsureDirPath(path, DefaultDirMod); err != nil {
+	if err := data.EnsureDirPath(path, data.DefaultDirMod); err != nil {
 		return err
 	}
 	cfg, err := yaml.Marshal(a)

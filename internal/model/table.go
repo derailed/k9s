@@ -61,7 +61,7 @@ func (t *Table) SetLabelFilter(f string) {
 	t.labelFilter = f
 }
 
-// SetLabelFilter sets the labels filter.
+// GetLabelFilter sets the labels filter.
 func (t *Table) GetLabelFilter() string {
 	t.mx.Lock()
 	defer t.mx.Unlock()
@@ -236,6 +236,9 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 	ns := client.CleanseNamespace(t.namespace)
 	if client.IsClusterScoped(t.namespace) {
 		ns = client.BlankNamespace
+	}
+	if t.labelFilter != "" {
+		ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
 	}
 
 	return a.List(ctx, ns)

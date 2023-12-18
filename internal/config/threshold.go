@@ -5,6 +5,7 @@ package config
 
 import (
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config/data"
 )
 
 const (
@@ -65,7 +66,7 @@ func NewThreshold() Threshold {
 }
 
 // Validate a namespace is setup correctly.
-func (t Threshold) Validate(c client.Connection, ks KubeSettings) {
+func (t Threshold) Validate(c client.Connection, ks data.KubeSettings) {
 	for _, k := range []string{"cpu", "memory"} {
 		v, ok := t[k]
 		if !ok {

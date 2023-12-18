@@ -143,24 +143,24 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
 		return err
 	}
 
-	//if context, ok := p.HasContext(); ok {
-	//	res, err := dao.AccessorFor(c.app.factory, client.NewGVR("contexts"))
-	//	if err != nil {
-	//		return err
-	//	}
-	//	switcher, ok := res.(dao.Switchable)
-	//	if !ok {
-	//		return errors.New("expecting a switchable resource")
-	//	}
-	//	if err := switcher.Switch(context); err != nil {
-	//		log.Error().Err(err).Msgf("Context switch failed")
-	//		return err
-	//	}
-	//
-	//	if err := c.app.switchContext(context); err != nil {
-	//		return err
-	//	}
-	//}
+	if context, ok := p.HasContext(); ok {
+		res, err := dao.AccessorFor(c.app.factory, client.NewGVR("contexts"))
+		if err != nil {
+			return err
+		}
+		switcher, ok := res.(dao.Switchable)
+		if !ok {
+			return errors.New("expecting a switchable resource")
+		}
+		if err := switcher.Switch(context); err != nil {
+			log.Error().Err(err).Msgf("Context switch failed")
+			return err
+		}
+
+		if err := c.app.switchContext(p); err != nil {
+			return err
+		}
+	}
 
 	co := c.componentFor(gvr, fqn, v)
 	co.SetFilter("")

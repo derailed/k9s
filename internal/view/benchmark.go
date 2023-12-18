@@ -12,7 +12,6 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 )
@@ -68,7 +67,7 @@ func fileToSubject(path string) string {
 }
 
 func benchDir(cfg *config.Config) string {
-	return filepath.Join(perf.K9sBenchDir, cfg.K9s.CurrentCluster)
+	return filepath.Join(config.AppBenchmarksDir, config.SanitizeFilename(cfg.K9s.ActiveContextName()))
 }
 
 func readBenchFile(cfg *config.Config, n string) (string, error) {

@@ -100,7 +100,7 @@ func (*Sanitizer) InCmdMode() bool {
 
 // ExtraHints returns additional hints.
 func (s *Sanitizer) ExtraHints() map[string]string {
-	if s.app.Config.K9s.NoIcons {
+	if s.app.Config.K9s.UI.NoIcons {
 		return nil
 	}
 	return xray.EmojiInfo()
@@ -270,7 +270,7 @@ func (s *Sanitizer) TreeLoadFailed(err error) {
 }
 
 func (s *Sanitizer) update(node *xray.TreeNode) {
-	root := makeTreeNode(node, s.ExpandNodes(), s.app.Config.K9s.NoIcons, s.app.Styles)
+	root := makeTreeNode(node, s.ExpandNodes(), s.app.Config.K9s.UI.NoIcons, s.app.Styles)
 	if node == nil {
 		s.app.QueueUpdateDraw(func() {
 			s.SetRoot(root)
@@ -317,7 +317,7 @@ func (s *Sanitizer) TreeChanged(node *xray.TreeNode) {
 }
 
 func (s *Sanitizer) hydrate(parent *tview.TreeNode, n *xray.TreeNode) {
-	node := makeTreeNode(n, s.ExpandNodes(), s.app.Config.K9s.NoIcons, s.app.Styles)
+	node := makeTreeNode(n, s.ExpandNodes(), s.app.Config.K9s.UI.NoIcons, s.app.Styles)
 	for _, c := range n.Children {
 		s.hydrate(node, c)
 	}

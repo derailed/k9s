@@ -106,9 +106,9 @@ func makeCacheKey(ns, gvr string, vv []string) string {
 	return ns + ":" + gvr + "::" + strings.Join(vv, ",")
 }
 
-// ActiveCluster returns the current cluster name.
-func (a *APIClient) ActiveCluster() string {
-	c, err := a.config.CurrentClusterName()
+// ActiveContext returns the current context name.
+func (a *APIClient) ActiveContext() string {
+	c, err := a.config.CurrentContextName()
 	if err != nil {
 		log.Error().Msgf("Unable to located active cluster")
 		return ""
@@ -131,7 +131,7 @@ func (a *APIClient) ActiveNamespace() string {
 		return ns
 	}
 
-	return DefaultNamespace
+	return BlankNamespace
 }
 
 func (a *APIClient) clearCache() {

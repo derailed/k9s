@@ -5,13 +5,9 @@ package config
 
 import (
 	"os"
-	"path/filepath"
 
 	"gopkg.in/yaml.v2"
 )
-
-// K9sViewConfigFile represents the location for the views configuration.
-var K9sViewConfigFile = YamlExtension(filepath.Join(K9sHome(), "views.yml"))
 
 // ViewConfigListener represents a view config listener.
 type ViewConfigListener interface {

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Authors of K9s
 
-package config
+package data
 
 import (
 	"github.com/derailed/k9s/internal/client"
@@ -11,8 +11,6 @@ import (
 const (
 	// MaxFavoritesNS number # favorite namespaces to keep in the configuration.
 	MaxFavoritesNS = 9
-	defaultNS      = "default"
-	allNS          = "all"
 )
 
 // Namespace tracks active and favorites namespaces.
@@ -25,14 +23,25 @@ type Namespace struct {
 // NewNamespace create a new namespace configuration.
 func NewNamespace() *Namespace {
 	return &Namespace{
-		Active:    defaultNS,
-		Favorites: []string{defaultNS},
+		Active:    client.DefaultNamespace,
+		Favorites: []string{client.DefaultNamespace},
+	}
+}
+
+func NewActiveNamespace(n string) *Namespace {
+	return &Namespace{
+		Active:    n,
+		Favorites: []string{client.DefaultNamespace},
 	}
 }
 
 // Validate a namespace is setup correctly.
 func (n *Namespace) Validate(c client.Connection, ks KubeSettings) {
 	if c == nil {
+		n = NewActiveNamespace(client.DefaultNamespace)
+	}
+	if c == nil {
+		log.Debug().Msgf("No connection found. Skipping ns validation")
 		return
 	}
 	if !n.isAllNamespaces() && !c.IsValidNamespace(n.Active) {
@@ -40,7 +49,7 @@ func (n *Namespace) Validate(c client.Connection, ks KubeSettings) {
 	}
 
 	for _, ns := range n.Favorites {
-		if ns != allNS && !c.IsValidNamespace(ns) {
+		if ns != client.NamespaceAll && !c.IsValidNamespace(ns) {
 			log.Debug().Msgf("[Config] Invalid favorite found '%s' - %t", ns, n.isAllNamespaces())
 			n.rmFavNS(ns)
 		}
@@ -49,8 +58,8 @@ func (n *Namespace) Validate(c client.Connection, ks KubeSettings) {
 
 // SetActive set the active namespace.
 func (n *Namespace) SetActive(ns string, ks KubeSettings) error {
-	if ns == client.NotNamespaced {
-		ns = client.BlankNamespace
+	if ns == client.BlankNamespace {
+		ns = client.NamespaceAll
 	}
 	n.Active = ns
 	if ns != "" && !n.LockFavorites {
@@ -61,7 +70,7 @@ func (n *Namespace) SetActive(ns string, ks KubeSettings) error {
 }
 
 func (n *Namespace) isAllNamespaces() bool {
-	return n.Active == allNS || n.Active == ""
+	return n.Active == client.NamespaceAll || n.Active == ""
 }
 
 func (n *Namespace) addFavNS(ns string) {

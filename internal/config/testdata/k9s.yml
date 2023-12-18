@@ -6,9 +6,9 @@ k9s:
     tail: 200
     buffer: 2000
   currentContext: minikube
-  currentCluster: minikube
-  clusters:
+  contexts:
     minikube:
+      cluster: minikube
       namespace:
         active: kube-system
         favorites:
@@ -20,6 +20,7 @@ k9s:
       view:
         active: ctx
     fred:
+      cluster: fred
       namespace:
         active: default
         favorites:

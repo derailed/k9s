@@ -116,7 +116,7 @@ func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (p *PortForward) runBenchmark() {
 	log.Debug().Msg("Bench starting...")
 
-	p.bench.Run(p.App().Config.K9s.CurrentCluster, func() {
+	p.bench.Run(p.App().Config.K9s.ActiveContextName(), func() {
 		log.Debug().Msg("Bench Completed!")
 		p.App().QueueUpdate(func() {
 			if p.bench.Canceled() {

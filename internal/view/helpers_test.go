@@ -11,6 +11,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog"
@@ -59,7 +60,7 @@ func TestParsePFAnn(t *testing.T) {
 }
 
 func TestExtractApp(t *testing.T) {
-	app := NewApp(config.NewConfig(nil))
+	app := NewApp(mock.NewMockConfig())
 
 	uu := map[string]struct {
 		app *App

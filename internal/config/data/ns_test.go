@@ -1,35 +1,35 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Authors of K9s
 
-package config_test
+package data_test
 
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 func TestNSValidate(t *testing.T) {
-	ns := config.NewNamespace()
-	ns.Validate(newMockConnection(), newMockKubeSettings(&genericclioptions.ConfigFlags{}))
+	ns := data.NewNamespace()
+	ns.Validate(mock.NewMockConnection(), mock.NewMockKubeSettings(makeFlags("cl-1", "ct-1")))
 
 	assert.Equal(t, "default", ns.Active)
 	assert.Equal(t, []string{"default"}, ns.Favorites)
 }
 
 func TestNSValidateMissing(t *testing.T) {
-	ns := config.NewNamespace()
-	ns.Validate(newMockConnection(), newMockKubeSettings(&genericclioptions.ConfigFlags{}))
+	ns := data.NewNamespace()
+	ns.Validate(mock.NewMockConnection(), mock.NewMockKubeSettings(makeFlags("cl-1", "ct-1")))
 
 	assert.Equal(t, "default", ns.Active)
 	assert.Equal(t, []string{"default"}, ns.Favorites)
 }
 
 func TestNSValidateNoNS(t *testing.T) {
-	ns := config.NewNamespace()
-	ns.Validate(newMockConnection(), newMockKubeSettings(&genericclioptions.ConfigFlags{}))
+	ns := data.NewNamespace()
+	ns.Validate(mock.NewMockConnection(), mock.NewMockKubeSettings(makeFlags("cl-1", "ct-1")))
 
 	assert.Equal(t, "default", ns.Active)
 	assert.Equal(t, []string{"default"}, ns.Favorites)
@@ -48,8 +48,8 @@ func TestNSSetActive(t *testing.T) {
 		{"ns4", allNS},
 	}
 
-	mk := newMockKubeSettings(&genericclioptions.ConfigFlags{})
-	ns := config.NewNamespace()
+	mk := mock.NewMockKubeSettings(makeFlags("cl-1", "ct-1"))
+	ns := data.NewNamespace()
 	for _, u := range uu {
 		err := ns.SetActive(u.ns, mk)
 		assert.Nil(t, err)
@@ -59,9 +59,9 @@ func TestNSSetActive(t *testing.T) {
 }
 
 func TestNSValidateRmFavs(t *testing.T) {
-	ns := config.NewNamespace()
+	ns := data.NewNamespace()
 	ns.Favorites = []string{"default", "fred"}
-	ns.Validate(newMockConnection(), newMockKubeSettings(&genericclioptions.ConfigFlags{}))
+	ns.Validate(mock.NewMockConnection(), mock.NewMockKubeSettings(makeFlags("cl-1", "ct-1")))
 
 	assert.Equal(t, []string{"default", "fred"}, ns.Favorites)
 }

@@ -16,14 +16,14 @@ import (
 )
 
 func TestBenchConfig(t *testing.T) {
-	os.Setenv(config.K9sConfig, "/tmp/blee")
+	os.Setenv(config.K9sConfigDir, "/tmp/blee")
 	assert.Equal(t, "/tmp/blee/bench-fred.yml", ui.BenchConfig("fred"))
 }
 
 func TestConfiguratorRefreshStyle(t *testing.T) {
 	config.K9sStylesFile = filepath.Join("..", "config", "testdata", "black_and_wtf.yml")
 
-	cfg := ui.Configurator{}
+	var cfg ui.Configurator
 	cfg.RefreshStyles("")
 
 	assert.True(t, cfg.HasSkin())

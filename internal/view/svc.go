@@ -160,7 +160,7 @@ func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
 
 	s.App().Status(model.FlashWarn, "Benchmark in progress...")
 	log.Debug().Msg("Bench starting...")
-	go s.bench.Run(s.App().Config.K9s.CurrentCluster, s.benchDone)
+	go s.bench.Run(s.App().Config.K9s.ActiveContextName(), s.benchDone)
 
 	return nil
 }

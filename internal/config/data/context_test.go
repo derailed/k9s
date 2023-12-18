@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Authors of K9s
 
-package config_test
+package data_test
 
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/stretchr/testify/assert"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
 func TestClusterValidate(t *testing.T) {
-	c := config.NewCluster()
-	c.Validate(newMockConnection(), newMockKubeSettings(&genericclioptions.ConfigFlags{}))
+	c := data.NewContext()
+	c.Validate(mock.NewMockConnection(), mock.NewMockKubeSettings(makeFlags("cl-1", "ct-1")))
 
 	assert.Equal(t, "po", c.View.Active)
 	assert.Equal(t, "default", c.Namespace.Active)
@@ -22,8 +22,8 @@ func TestClusterValidate(t *testing.T) {
 }
 
 func TestClusterValidateEmpty(t *testing.T) {
-	c := config.NewCluster()
-	c.Validate(newMockConnection(), newMockKubeSettings(&genericclioptions.ConfigFlags{}))
+	c := data.NewContext()
+	c.Validate(mock.NewMockConnection(), mock.NewMockKubeSettings(makeFlags("cl-1", "ct-1")))
 
 	assert.Equal(t, "po", c.View.Active)
 	assert.Equal(t, "default", c.Namespace.Active)

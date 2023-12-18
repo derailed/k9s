@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Authors of K9s
 
-package config
+package data
 
-const defaultView = "po"
+const DefaultView = "po"
 
 // View tracks view configuration options.
 type View struct {
@@ -12,12 +12,12 @@ type View struct {
 
 // NewView creates a new view configuration.
 func NewView() *View {
-	return &View{Active: defaultView}
+	return &View{Active: DefaultView}
 }
 
 // Validate a view configuration.
 func (v *View) Validate() {
 	if len(v.Active) == 0 {
-		v.Active = defaultView
+		v.Active = DefaultView
 	}
 }

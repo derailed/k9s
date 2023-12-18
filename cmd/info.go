@@ -5,7 +5,6 @@ package cmd
 
 import (
 	"fmt"
-
 	"os"
 
 	"github.com/derailed/k9s/internal/color"
@@ -19,21 +18,30 @@ import (
 func infoCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "info",
-		Short: "Print configuration info",
-		Long:  "Print configuration information",
-		Run: func(cmd *cobra.Command, args []string) {
-			printInfo()
-		},
+		Short: "List K9s configurations info",
+		RunE:  printInfo,
 	}
 }
 
-func printInfo() {
-	const fmat = "%-25s %s\n"
+func printInfo(cmd *cobra.Command, args []string) error {
+	if err := config.InitLocs(); err != nil {
+		return err
+	}
 
+	const fmat = "%-27s %s\n"
 	printLogo(color.Cyan)
-	printTuple(fmat, "Configuration", config.K9sConfigFile, color.Cyan)
-	printTuple(fmat, "Logs", config.DefaultLogFile, color.Cyan)
-	printTuple(fmat, "Screen Dumps", getScreenDumpDirForInfo(), color.Cyan)
+	printTuple(fmat, "Version", version, color.Cyan)
+	printTuple(fmat, "Config", config.AppConfigFile, color.Cyan)
+	printTuple(fmat, "Logs", config.AppLogFile, color.Cyan)
+	printTuple(fmat, "Dumps dir", getScreenDumpDirForInfo(), color.Cyan)
+	printTuple(fmat, "Benchmarks dir", config.AppBenchmarksDir, color.Cyan)
+	printTuple(fmat, "Skins dir", config.AppSkinsDir, color.Cyan)
+	printTuple(fmat, "Contexts dir", config.AppContextsDir, color.Cyan)
+	printTuple(fmat, "Custom views file", config.AppViewsFile, color.Cyan)
+	printTuple(fmat, "Plugins file", config.AppPluginsFile, color.Cyan)
+	printTuple(fmat, "Hotkeys file", config.AppHotKeysFile, color.Cyan)
+
+	return nil
 }
 
 func printLogo(c color.Paint) {
@@ -45,23 +53,20 @@ func printLogo(c color.Paint) {
 
 // getScreenDumpDirForInfo get default screen dump config dir or from config.K9sConfigFile configuration.
 func getScreenDumpDirForInfo() string {
-	if config.K9sConfigFile == "" {
-		return config.K9sDefaultScreenDumpDir
+	if config.AppConfigFile == "" {
+		return config.AppDumpsDir
 	}
 
-	f, err := os.ReadFile(config.K9sConfigFile)
+	f, err := os.ReadFile(config.AppConfigFile)
 	if err != nil {
 		log.Error().Err(err).Msgf("Reads k9s config file %v", err)
-		return config.K9sDefaultScreenDumpDir
+		return config.AppDumpsDir
 	}
 
 	var cfg config.Config
 	if err := yaml.Unmarshal(f, &cfg); err != nil {
 		log.Error().Err(err).Msgf("Unmarshal k9s config %v", err)
-		return config.K9sDefaultScreenDumpDir
-	}
-	if cfg.K9s == nil {
-		cfg.K9s = config.NewK9s()
+		return config.AppDumpsDir
 	}
 
 	return cfg.K9s.GetScreenDumpDir()

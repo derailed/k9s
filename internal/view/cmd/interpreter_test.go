@@ -178,20 +178,24 @@ func TestXRayCmd(t *testing.T) {
 		res, ns string
 	}{
 		"empty": {},
+
 		"happy": {
 			cmd: "xray po",
 			ok:  true,
 			res: "po",
 		},
+
 		"happy+ns": {
 			cmd: "xray po ns1",
 			ok:  true,
 			res: "po",
 			ns:  "ns1",
 		},
+
 		"toast": {
 			cmd: "xrayzor po",
 		},
+
 		"toast-1": {
 			cmd: "xray",
 		},
@@ -218,19 +222,23 @@ func TestDirCmd(t *testing.T) {
 		dir string
 	}{
 		"empty": {},
+
 		"happy": {
 			cmd: "dir dir1",
 			ok:  true,
 			dir: "dir1",
 		},
+
 		"extra-ns": {
 			cmd: "dir dir1 ns1",
 			ok:  true,
 			dir: "dir1",
 		},
+
 		"toast": {
 			cmd: "dirdel dir1",
 		},
+
 		"toast-nodir": {
 			cmd: "dir",
 		},

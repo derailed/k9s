@@ -14,7 +14,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
@@ -172,6 +172,7 @@ func (b *Browser) SetFilter(s string) {
 
 func (b *Browser) SetLabelFilter(labels map[string]string) {
 	b.CmdBuff().SetText(toLabelsStr(labels), "")
+	b.GetModel().SetLabelFilter(toLabelsStr(labels))
 }
 
 // BufferChanged indicates the buffer was changed.
@@ -288,7 +289,9 @@ func (b *Browser) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (b *Browser) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !b.CmdBuff().InCmdMode() {
 		b.CmdBuff().ClearText(false)
+		b.GetModel().SetLabelFilter("")
 		return b.App().PrevCmd(evt)
+
 	}
 
 	b.CmdBuff().Reset()
@@ -521,7 +524,7 @@ func (b *Browser) namespaceActions(aa ui.KeyActions) {
 	if !b.meta.Namespaced || b.GetTable().Path != "" {
 		return
 	}
-	b.namespaces = make(map[int]string, config.MaxFavoritesNS)
+	b.namespaces = make(map[int]string, data.MaxFavoritesNS)
 	aa[ui.Key0] = ui.NewKeyAction(client.NamespaceAll, b.switchNamespaceCmd, true)
 	b.namespaces[0] = client.NamespaceAll
 	index := 1

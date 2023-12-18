@@ -61,7 +61,7 @@ type App struct {
 // NewApp returns a K9s app instance.
 func NewApp(cfg *config.Config) *App {
 	a := App{
-		App:           ui.NewApp(cfg, cfg.K9s.CurrentContext),
+		App:           ui.NewApp(cfg, cfg.K9s.ActiveContextName()),
 		cmdHistory:    model.NewHistory(model.MaxHistory),
 		filterHistory: model.NewHistory(model.MaxHistory),
 		Content:       NewPageStack(),
@@ -207,6 +207,9 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 }
 
 func (a *App) contextNames() ([]string, error) {
+	if !a.Conn().ConnectionOK() {
+		return nil, errors.New("no connection")
+	}
 	contexts, err := a.factory.Client().Config().Contexts()
 	if err != nil {
 		return nil, err
@@ -290,11 +293,13 @@ func (a *App) buildHeader() tview.Primitive {
 	}
 
 	clWidth := clusterInfoWidth
-	n, err := a.Conn().Config().CurrentClusterName()
-	if err == nil {
-		size := len(n) + clusterInfoPad
-		if size > clWidth {
-			clWidth = size
+	if a.Conn().ConnectionOK() {
+		n, err := a.Conn().Config().CurrentClusterName()
+		if err == nil {
+			size := len(n) + clusterInfoPad
+			if size > clWidth {
+				clWidth = size
+			}
 		}
 	}
 	header.AddItem(a.clusterInfo(), clWidth, 1, false)
@@ -326,6 +331,8 @@ func (a *App) Resume() {
 	}
 	if err := a.CustomViewsWatcher(ctx, a); err != nil {
 		log.Warn().Err(err).Msgf("CustomView watcher failed")
+	} else {
+		log.Debug().Msgf("CustomViews watching `%s", config.AppViewsFile)
 	}
 }
 
@@ -403,10 +410,6 @@ func (a *App) switchNS(ns string) error {
 	if ns == client.ClusterScope {
 		ns = client.BlankNamespace
 	}
-	if ns == a.Config.ActiveNamespace() {
-		return nil
-	}
-
 	ok, err := a.isValidNS(ns)
 	if err != nil {
 		return err
@@ -436,20 +439,16 @@ func (a *App) isValidNS(ns string) (bool, error) {
 	return true, nil
 }
 
-func (a *App) switchContext(name string) error {
+func (a *App) switchContext(ci *cmd.Interpreter) error {
+	name, ok := ci.HasContext()
+	if !ok {
+		return nil
+	}
+
 	log.Debug().Msgf("--> Switching Context %q--%q", name, a.Config.ActiveView())
 	a.Halt()
 	defer a.Resume()
 	{
-		//ns, err := a.Conn().Config().CurrentNamespaceName()
-		//if err != nil {
-		//	log.Warn().Msg("No namespace specified in context. Using K9s config")
-		//}
-		//if ns == client.BlankNamespace {
-		//	ns = a.Config.ActiveNamespace()
-		//}
-		//a.initFactory(ns)
-
 		if err := a.command.Reset(true); err != nil {
 			return err
 		}
@@ -461,18 +460,19 @@ func (a *App) switchContext(name string) error {
 		p.ResetContextArg()
 
 		a.Config.Reset()
-		a.Config.K9s.CurrentContext = name
-		cluster, err := a.Conn().Config().CurrentClusterName()
+		ct, err := a.Config.K9s.ActivateContext(name)
 		if err != nil {
 			return err
 		}
-		a.Config.K9s.CurrentCluster = cluster
-		//if err := a.Config.SetActiveNamespace(ns); err != nil {
-		//	log.Error().Err(err).Msg("unable to set active ns")
-		//}
+		if cns, ok := ci.NSArg(); ok {
+			ct.Namespace.Active = cns
+		}
 		if err := a.Config.Save(); err != nil {
 			log.Error().Err(err).Msg("config save failed!")
 		}
+
+		ns := a.Config.ActiveNamespace()
+		a.initFactory(ns)
 
 		a.Flash().Infof("Switching context to %s", name)
 		a.ReloadStyles(name)

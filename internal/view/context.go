@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
@@ -128,5 +129,5 @@ func useContext(app *App, name string) error {
 		return err
 	}
 
-	return app.switchContext(name)
+	return app.switchContext(cmd.NewInterpreter("ctx " + name))
 }

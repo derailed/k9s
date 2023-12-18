@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/mock"
 	m "github.com/petergtz/pegomock"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/assert"
@@ -24,7 +24,7 @@ func init() {
 func TestConfigRefine(t *testing.T) {
 	var (
 		cfgFile          = "testdata/kubeconfig-test.yml"
-		ctx, cluster, ns = "test2", "cluster2", "ns2"
+		ctx, cluster, ns = "ct-1-1", "cl-1", "ns-1"
 	)
 
 	uu := map[string]struct {
@@ -32,13 +32,6 @@ func TestConfigRefine(t *testing.T) {
 		issue                       bool
 		context, cluster, namespace string
 	}{
-		"plain": {
-			flags:     &genericclioptions.ConfigFlags{KubeConfig: &cfgFile},
-			issue:     false,
-			context:   "test1",
-			cluster:   "cluster1",
-			namespace: "ns1",
-		},
 		"overrideNS": {
 			flags: &genericclioptions.ConfigFlags{
 				KubeConfig:  &cfgFile,
@@ -65,16 +58,14 @@ func TestConfigRefine(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			cfg := config.NewConfig(newMockKubeSettings(u.flags))
-			cfg.SetConnection(newMockConnection())
+			cfg := mock.NewMockConfig()
 
 			err := cfg.Refine(u.flags, nil, client.NewConfig(u.flags))
 			if u.issue {
 				assert.NotNil(t, err)
 			} else {
 				assert.Nil(t, err)
-				assert.Equal(t, u.context, cfg.K9s.CurrentContext)
-				assert.Equal(t, u.cluster, cfg.K9s.CurrentCluster)
+				assert.Equal(t, u.context, cfg.K9s.ActiveContextName())
 				assert.Equal(t, u.namespace, cfg.ActiveNamespace())
 			}
 		})
@@ -82,115 +73,36 @@ func TestConfigRefine(t *testing.T) {
 }
 
 func TestConfigValidate(t *testing.T) {
-	cfg := config.NewConfig(newMockKubeSettings(&genericclioptions.ConfigFlags{}))
-	cfg.SetConnection(newMockConnection())
+	cfg := mock.NewMockConfig()
+	cfg.SetConnection(mock.NewMockConnection())
 
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 	cfg.Validate()
 }
 
 func TestConfigLoad(t *testing.T) {
-	cfg := config.NewConfig(newMockKubeSettings(&genericclioptions.ConfigFlags{}))
+	cfg := mock.NewMockConfig()
 
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 	assert.Equal(t, 2, cfg.K9s.RefreshRate)
 	assert.Equal(t, 2000, cfg.K9s.Logger.BufferSize)
 	assert.Equal(t, int64(200), cfg.K9s.Logger.TailCount)
-	assert.Equal(t, "minikube", cfg.K9s.CurrentContext)
-	assert.Equal(t, "minikube", cfg.K9s.CurrentCluster)
-	assert.NotNil(t, cfg.K9s.Clusters)
-	assert.Equal(t, 2, len(cfg.K9s.Clusters))
-
-	nn := []string{
-		"default",
-		"kube-public",
-		"istio-system",
-		"all",
-		"kube-system",
-	}
-
-	assert.Equal(t, "kube-system", cfg.K9s.Clusters["minikube"].Namespace.Active)
-	assert.Equal(t, nn, cfg.K9s.Clusters["minikube"].Namespace.Favorites)
-	assert.Equal(t, "ctx", cfg.K9s.Clusters["minikube"].View.Active)
-}
-
-func TestConfigCurrentCluster(t *testing.T) {
-	cfg := config.NewConfig(newMockKubeSettings(&genericclioptions.ConfigFlags{}))
-
-	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
-	assert.NotNil(t, cfg.CurrentCluster())
-	assert.Equal(t, "kube-system", cfg.CurrentCluster().Namespace.Active)
-	assert.Equal(t, "ctx", cfg.CurrentCluster().View.Active)
-}
-
-func TestConfigActiveNamespace(t *testing.T) {
-	cfg := newMockConfig()
-
-	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
-	assert.Equal(t, "kube-system", cfg.ActiveNamespace())
-}
-
-func TestConfigActiveNamespaceBlank(t *testing.T) {
-	cfg := config.Config{K9s: new(config.K9s)}
-	cfg.SetConnection(newMockConnection())
-
-	assert.Equal(t, "default", cfg.ActiveNamespace())
-}
-
-func TestConfigSetActiveNamespace(t *testing.T) {
-	cfg := newMockConfig()
-
-	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
-	assert.Nil(t, cfg.SetActiveNamespace("default"))
-	assert.Equal(t, "default", cfg.ActiveNamespace())
-}
-
-func TestConfigActiveView(t *testing.T) {
-	cfg := newMockConfig()
-
-	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
-	assert.Equal(t, "ctx", cfg.ActiveView())
-}
-
-func TestConfigActiveViewBlank(t *testing.T) {
-	cfg := config.Config{K9s: new(config.K9s)}
-	cfg.SetConnection(newMockConnection())
-
-	assert.Equal(t, "po", cfg.ActiveView())
-}
-
-func TestConfigSetActiveView(t *testing.T) {
-	cfg := newMockConfig()
-
-	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
-
-	cfg.SetActiveView("po")
-	assert.Equal(t, "po", cfg.ActiveView())
-}
-
-func TestConfigFavNamespaces(t *testing.T) {
-	cfg := newMockConfig()
-
-	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
-
-	expectedNS := []string{"default", "kube-public", "istio-system", "all", "kube-system"}
-	assert.Equal(t, expectedNS, cfg.FavNamespaces())
 }
 
 func TestConfigLoadOldCfg(t *testing.T) {
-	cfg := newMockConfig()
+	cfg := mock.NewMockConfig()
 
 	assert.Nil(t, cfg.Load("testdata/k9s_old.yml"))
 }
 
 func TestConfigLoadCrap(t *testing.T) {
-	cfg := newMockConfig()
+	cfg := mock.NewMockConfig()
 
 	assert.NotNil(t, cfg.Load("testdata/k9s_not_there.yml"))
 }
 
 func TestConfigSaveFile(t *testing.T) {
-	cfg := newMockConfig()
+	cfg := mock.NewMockConfig()
 
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 
@@ -198,8 +110,6 @@ func TestConfigSaveFile(t *testing.T) {
 	cfg.K9s.ReadOnly = true
 	cfg.K9s.Logger.TailCount = 500
 	cfg.K9s.Logger.BufferSize = 800
-	cfg.K9s.CurrentContext = "blee"
-	cfg.K9s.CurrentCluster = "blee"
 	cfg.Validate()
 
 	path := filepath.Join("/tmp", "k9s.yml")
@@ -211,7 +121,7 @@ func TestConfigSaveFile(t *testing.T) {
 }
 
 func TestConfigReset(t *testing.T) {
-	cfg := newMockConfig()
+	cfg := mock.NewMockConfig()
 	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
 	cfg.Reset()
 	cfg.Validate()
@@ -239,17 +149,18 @@ func TestSetup(t *testing.T) {
 
 var expectedConfig = `k9s:
   liveViewAutoRefresh: true
+  screenDumpDir: /tmp
   refreshRate: 100
   maxConnRetry: 5
-  enableMouse: false
-  headless: false
-  logoless: false
-  crumbsless: false
   readOnly: true
   noExitOnCtrlC: false
-  noIcons: false
+  ui:
+    enableMouse: false
+    headless: false
+    logoless: false
+    crumbsless: false
+    noIcons: false
   skipLatestRevCheck: false
-  screenDumpDir: /tmp
   disablePodCounting: false
   shellPod:
     image: busybox:1.35.0
@@ -269,51 +180,6 @@ var expectedConfig = `k9s:
     fullScreenLogs: false
     textWrap: false
     showTime: false
-  currentContext: blee
-  currentCluster: blee
-  keepMissingClusters: false
-  clusters:
-    blee:
-      namespace:
-        active: default
-        lockFavorites: false
-        favorites:
-        - default
-      view:
-        active: po
-      featureGates:
-        nodeShell: false
-      portForwardAddress: localhost
-    fred:
-      namespace:
-        active: default
-        lockFavorites: false
-        favorites:
-        - default
-        - kube-public
-        - istio-system
-        - all
-        - kube-system
-      view:
-        active: po
-      featureGates:
-        nodeShell: false
-      portForwardAddress: localhost
-    minikube:
-      namespace:
-        active: kube-system
-        lockFavorites: false
-        favorites:
-        - default
-        - kube-public
-        - istio-system
-        - all
-        - kube-system
-      view:
-        active: ctx
-      featureGates:
-        nodeShell: false
-      portForwardAddress: localhost
   thresholds:
     cpu:
       critical: 90
@@ -325,17 +191,18 @@ var expectedConfig = `k9s:
 
 var resetConfig = `k9s:
   liveViewAutoRefresh: true
+  screenDumpDir: /tmp
   refreshRate: 2
   maxConnRetry: 5
-  enableMouse: false
-  headless: false
-  logoless: false
-  crumbsless: false
   readOnly: false
   noExitOnCtrlC: false
-  noIcons: false
+  ui:
+    enableMouse: false
+    headless: false
+    logoless: false
+    crumbsless: false
+    noIcons: false
   skipLatestRevCheck: false
-  screenDumpDir: /tmp
   disablePodCounting: false
   shellPod:
     image: busybox:1.35.0
@@ -355,40 +222,6 @@ var resetConfig = `k9s:
     fullScreenLogs: false
     textWrap: false
     showTime: false
-  currentContext: minikube
-  currentCluster: minikube
-  keepMissingClusters: false
-  clusters:
-    fred:
-      namespace:
-        active: default
-        lockFavorites: false
-        favorites:
-        - default
-        - kube-public
-        - istio-system
-        - all
-        - kube-system
-      view:
-        active: po
-      featureGates:
-        nodeShell: false
-      portForwardAddress: localhost
-    minikube:
-      namespace:
-        active: kube-system
-        lockFavorites: false
-        favorites:
-        - default
-        - kube-public
-        - istio-system
-        - all
-        - kube-system
-      view:
-        active: ctx
-      featureGates:
-        nodeShell: false
-      portForwardAddress: localhost
   thresholds:
     cpu:
       critical: 90

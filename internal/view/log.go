@@ -406,7 +406,7 @@ func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 // SaveCmd dumps the logs to file.
 func (l *Log) SaveCmd(*tcell.EventKey) *tcell.EventKey {
-	path, err := saveData(l.app.Config.K9s.GetScreenDumpDir(), l.app.Config.K9s.CurrentContextDir(), l.model.GetPath(), l.logs.GetText(true))
+	path, err := saveData(l.app.Config.K9s.GetScreenDumpDir(), l.app.Config.K9s.ActiveContextDir(), l.model.GetPath(), l.logs.GetText(true))
 	if err != nil {
 		l.app.Flash().Err(err)
 		return nil

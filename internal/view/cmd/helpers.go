@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/rs/zerolog/log"
 )
 
 func toLabels(s string) map[string]string {
@@ -64,11 +63,11 @@ func SuggestSubCommand(command string, namespaces client.NamespaceNames, context
 		suggests = completeNS(ns, namespaces)
 
 	case p.IsContextCmd():
-		ctx, ok := p.ContextArg()
+		n, ok := p.ContextArg()
 		if !ok {
 			return nil
 		}
-		suggests = completeCtx(ctx, contexts)
+		suggests = completeCtx(n, contexts)
 
 	case p.HasNS():
 		ns, ok := p.NSArg()
@@ -78,7 +77,9 @@ func SuggestSubCommand(command string, namespaces client.NamespaceNames, context
 		suggests = completeNS(ns, namespaces)
 
 	default:
-		log.Debug().Msgf("Suggest. No match %q", command)
+		if n, ok := p.HasContext(); ok {
+			suggests = completeCtx(n, contexts)
+		}
 	}
 	slices.Sort(suggests)
 

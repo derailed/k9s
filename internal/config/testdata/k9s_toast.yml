@@ -2,8 +2,7 @@ k9s:
   refreshRate: 2
   logBufferSize: 200
   currentContext: minikube
-  currentCluster: minikube
-  clusters:
+  contexts:
     minikube:
       namespace:
         active: kube-system
