@@ -211,7 +211,7 @@ func loadK9s(m ResourceMetas) {
 		Kind:         "Workload",
 		SingularName: "workload",
 		Namespaced:   true,
-		ShortNames:   []string{"wk", "wkl"},
+		ShortNames:   []string{"wk"},
 		Categories:   []string{k9sCat},
 	}
 	m[client.NewGVR("pulses")] = metav1.APIResource{

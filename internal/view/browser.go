@@ -166,13 +166,12 @@ func (b *Browser) Stop() {
 	b.Table.Stop()
 }
 
-func (b *Browser) SetFilter(string) {
-	// b.GetModel().SetFilter(s)
+func (b *Browser) SetFilter(s string) {
+	b.CmdBuff().SetText(s, "")
 }
 
 func (b *Browser) SetLabelFilter(labels map[string]string) {
 	b.CmdBuff().SetText(toLabelsStr(labels), "")
-	// b.GetModel().SetLabelFilter(toLabelsStr(labels))
 }
 
 // BufferChanged indicates the buffer was changed.

@@ -247,8 +247,12 @@ func linesWithRegions(lines []string, matches fuzzy.Matches) []string {
 	for i, m := range matches {
 		for _, loc := range dao.ContinuousRanges(m.MatchedIndexes) {
 			start, end := loc[0]+offsetForLine[m.Index], loc[1]+offsetForLine[m.Index]
-			regionStr := matchTag(i, ll[m.Index][start:end])
-			ll[m.Index] = ll[m.Index][:start] + regionStr + ll[m.Index][end:]
+			line := ll[m.Index]
+			if end > len(line) {
+				end = len(line)
+			}
+			regionStr := matchTag(i, line[start:end])
+			ll[m.Index] = line[:start] + regionStr + line[end:]
 			offsetForLine[m.Index] += len(regionStr) - (end - start)
 		}
 	}

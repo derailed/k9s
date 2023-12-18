@@ -57,10 +57,10 @@ func (a *Alias) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 
 // AsGVR returns a matching gvr if it exists.
 func (a *Alias) AsGVR(cmd string) (client.GVR, bool) {
-	gvr, ok := a.Aliases.Get(cmd)
-	if ok {
+	if gvr, ok := a.Aliases.Get(cmd); ok {
 		return client.NewGVR(gvr), true
 	}
+
 	return client.GVR{}, false
 }
 
