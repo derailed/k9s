@@ -150,7 +150,7 @@ export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
 
 source ~/.bashrc
 or
-source .zshrc
+source ~/.zshrc
 ```
 checking the version
 ```
