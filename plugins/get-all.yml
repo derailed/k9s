@@ -5,20 +5,20 @@ plugin:
     confirm: false
     description: get-all
     scopes:
-    - namespaces
+      - namespaces
     command: sh
     background: false
     args:
-    - -c
-    - "kubectl get-all --context $CONTEXT -n $NAME | less"
+      - -c
+      - "kubectl get-all --context $CONTEXT -n $NAME | less -K"
   get-all-other:
     shortCut: g
     confirm: false
     description: get-all
     scopes:
-    - all
+      - all
     command: sh
     background: false
     args:
-    - -c
-    - "kubectl get-all --context $CONTEXT -n $NAMESPACE | less"
+      - -c
+      - "kubectl get-all --context $CONTEXT -n $NAMESPACE | less -K"

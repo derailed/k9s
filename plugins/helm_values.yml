@@ -6,9 +6,9 @@ plugin:
     confirm: false
     description: Values
     scopes:
-    - helm
+      - helm
     command: sh
     background: false
     args:
-    - -c
-    - "helm get values $COL-NAME -n $NAMESPACE --kube-context $CONTEXT | less"
+      - -c
+      - "helm get values $COL-NAME -n $NAMESPACE --kube-context $CONTEXT | less -K"

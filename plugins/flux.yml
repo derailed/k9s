@@ -13,7 +13,14 @@ plugin:
     background: false
     args:
       - -c
-      - "flux --context $CONTEXT $([ $(kubectl --context $CONTEXT get helmreleases -n $NAMESPACE $NAME -o=custom-columns=TYPE:.spec.suspend | tail -1) = \"true\" ] && echo \"resume\" || echo \"suspend\") helmrelease -n $NAMESPACE $NAME |& less"
+      - >-
+        suspended=$(kubectl --context $CONTEXT get helmreleases -n $NAMESPACE $NAME -o=custom-columns=TYPE:.spec.suspend | tail -1);
+        verb=$([ $suspended = "true" ] && echo "resume" || echo "suspend");
+        flux
+        $verb helmrelease
+        --context $CONTEXT
+        -n $NAMESPACE $NAME 
+        | less -K
   toggle-kustomization:
     shortCut: Shift-T
     confirm: true
@@ -24,29 +31,46 @@ plugin:
     background: false
     args:
       - -c
-      - "flux --context $CONTEXT $([ $(kubectl --context $CONTEXT get kustomizations -n $NAMESPACE $NAME -o=custom-columns=TYPE:.spec.suspend | tail -1) = \"true\" ] && echo \"resume\" || echo \"suspend\") kustomization -n $NAMESPACE $NAME |& less"
+      - >-
+        suspended=$(kubectl --context $CONTEXT get kustomizations -n $NAMESPACE $NAME -o=custom-columns=TYPE:.spec.suspend | tail -1);
+        verb=$([ $suspended = "true" ] && echo "resume" || echo "suspend");
+        flux 
+        $verb kustomization 
+        --context $CONTEXT 
+        -n $NAMESPACE $NAME 
+        | less -K
   reconcile-git:
     shortCut: Shift-R
     confirm: false
     description: Flux reconcile
     scopes:
-    - gitrepositories
+      - gitrepositories
     command: bash
     background: false
     args:
-    - -c
-    - "flux --context $CONTEXT reconcile source git -n $NAMESPACE $NAME |& less"
+      - -c
+      - >-
+        flux
+        reconcile source git
+        --context $CONTEXT
+        -n $NAMESPACE $NAME 
+        | less -K
   reconcile-hr:
     shortCut: Shift-R
     confirm: false
     description: Flux reconcile
     scopes:
-    - helmreleases
+      - helmreleases
     command: bash
     background: false
     args:
-    - -c
-    - "flux --context $CONTEXT reconcile helmrelease -n $NAMESPACE $NAME |& less"
+      - -c
+      - >-
+        flux 
+        reconcile helmrelease 
+        --context $CONTEXT 
+        -n $NAMESPACE $NAME 
+        | less -K
   reconcile-helm-repo:
     shortCut: Shift-Z
     description: Flux reconcile
@@ -57,7 +81,12 @@ plugin:
     confirm: false
     args:
       - -c
-      - "flux reconcile source helm --context $CONTEXT -n $NAMESPACE $NAME |& less"
+      - >-
+        flux 
+        reconcile source helm 
+        --context $CONTEXT 
+        -n $NAMESPACE $NAME 
+        | less -K
   reconcile-oci-repo:
     shortCut: Shift-Z
     description: Flux reconcile
@@ -68,48 +97,109 @@ plugin:
     confirm: false
     args:
       - -c
-      - "flux reconcile source oci --context $CONTEXT -n $NAMESPACE $NAME |& less"
+      - >-
+        flux 
+        reconcile source oci 
+        --context $CONTEXT 
+        -n $NAMESPACE $NAME 
+        | less -K
   reconcile-ks:
     shortCut: Shift-R
     confirm: false
     description: Flux reconcile
     scopes:
-    - kustomizations
+      - kustomizations
     command: bash
     background: false
     args:
-    - -c
-    - "flux --context $CONTEXT reconcile kustomization -n $NAMESPACE $NAME |& less"
+      - -c
+      - >-
+        flux
+        reconcile kustomization
+        --context $CONTEXT
+        -n $NAMESPACE $NAME
+        | less -K
   reconcile-ir:
     shortCut: Shift-R
     confirm: false
     description: Flux reconcile
     scopes:
-    - imagerepositories
+      - imagerepositories
     command: sh
     background: false
     args:
-    - -c
-    - "flux --context $CONTEXT reconcile image repository -n $NAMESPACE $NAME | less"
+      - -c
+      - >-
+        flux
+        reconcile image repository
+        --context $CONTEXT
+        -n $NAMESPACE $NAME 
+        | less -K
   reconcile-iua:
     shortCut: Shift-R
     confirm: false
     description: Flux reconcile
     scopes:
-    - imageupdateautomations
+      - imageupdateautomations
     command: sh
     background: false
     args:
-    - -c
-    - "flux --context $CONTEXT reconcile image update -n $NAMESPACE $NAME | less"
+      - -c
+      - >-
+        flux 
+        reconcile image update 
+        --context $CONTEXT
+        -n $NAMESPACE $NAME 
+        | less -K
   trace:
     shortCut: Shift-A
     confirm: false
     description: Flux trace
     scopes:
-    - all
+      - all
     command: bash
     background: false
     args:
-    - -c
-    - "flux --context $CONTEXT trace --kind `echo $RESOURCE_NAME | sed -E 's/ies$/y/' | sed -E 's/ses$/se/' | sed -E 's/(s|es)$//g'` --api-version $RESOURCE_GROUP/$RESOURCE_VERSION --namespace $NAMESPACE $NAME |& less"
+      - -c
+      - >-
+        resource=$(echo $RESOURCE_NAME | sed -E 's/ies$/y/' | sed -E 's/ses$/se/' | sed -E 's/(s|es)$//g')
+        flux 
+        trace 
+        --context $CONTEXT 
+        --kind $resource 
+        --api-version $RESOURCE_GROUP/$RESOURCE_VERSION 
+        --namespace $NAMESPACE $NAME 
+        | less -K
+  # credits: https://github.com/fluxcd/flux2/discussions/2494
+  get-suspended-helmreleases:
+    shortCut: Shift-S
+    confirm: false
+    description: Suspended Helm Releases
+    scopes:
+      - helmrelease
+    command: sh
+    background: false
+    args:
+      - -c
+      - >-
+        kubectl get 
+        --all-namespaces 
+        helmreleases.helm.toolkit.fluxcd.io -o json 
+        | jq -r '.items[] | select(.spec.suspend==true) | [.metadata.namespace,.metadata.name,.spec.suspend] | @tsv' 
+        | less
+  get-suspended-kustomizations:
+    shortCut: Shift-S
+    confirm: false
+    description: Suspended Kustomizations
+    scopes:
+      - kustomizations
+    command: sh
+    background: false
+    args:
+      - -c
+      - >-
+        kubectl get 
+        --all-namespaces
+        kustomizations.kustomize.toolkit.fluxcd.io -o json
+        | jq -r '.items[] | select(.spec.suspend==true) | [.metadata.name,.spec.suspend] | @tsv'
+        | less

@@ -10,4 +10,12 @@ plugin:
     background: false
     args:
       - -c
-      - "kubectl lineage -d 6 --exclude-types Event,ProviderConfigUsage.aws.upbound.io,ProviderConfigUsage.kubernetes.crossplane.io --show-group --context $CONTEXT $RESOURCE_NAME $NAME | less"
+      - >-
+        kubectl lineage 
+        -d 6
+        --exclude-types Event,ProviderConfigUsage.aws.upbound.io,ProviderConfigUsage.kubernetes.crossplane.io
+        --show-group
+        --context $CONTEXT 
+        $RESOURCE_NAME 
+        $NAME 
+        | less -K
