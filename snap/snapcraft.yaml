@@ -1,5 +1,5 @@
 name: k9s
-base: core20 
+base: core20
 version: 'v0.27.4'
 summary: K9s is a CLI to view and manage your Kubernetes clusters.
 description: |
@@ -38,11 +38,9 @@ parts:
       make test
       make build
       install $SNAPCRAFT_PART_BUILD/execs/k9s -D $SNAPCRAFT_PART_INSTALL/bin/k9s
-    override-prime: |
       mkdir -p $SNAPCRAFT_PART_INSTALL/bin
-      ln -s $SNAPCRAFT_PART_INSTALL/bin/k9s $SNAPCRAFT_PART_INSTALL/bin/k9s
+      if [ ! -e $SNAPCRAFT_PART_INSTALL/bin/k9s ]; then
+        ln -s $SNAPCRAFT_PART_INSTALL/bin/k9s $SNAPCRAFT_PART_INSTALL/bin/k9s
+      fi
     build-packages:
       - build-essential
-
-prime:
-  - $build/bin/k9s
