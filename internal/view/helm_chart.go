@@ -20,7 +20,7 @@ type HelmChart struct {
 // NewHelmChart returns a new helm-chart view.
 func NewHelmChart(gvr client.GVR) ResourceViewer {
 	c := HelmChart{
-		ResourceViewer: NewBrowser(gvr),
+		ResourceViewer: NewValueExtender(NewBrowser(gvr)),
 	}
 	c.GetTable().SetBorderFocusColor(tcell.ColorMediumSpringGreen)
 	c.GetTable().SetSelectedStyle(tcell.StyleDefault.
@@ -42,7 +42,6 @@ func (c *HelmChart) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
 		ui.KeyR:      ui.NewKeyAction("Releases", c.historyCmd, true),
 		ui.KeyShiftS: ui.NewKeyAction("Sort Status", c.GetTable().SortColCmd(statusCol, true), false),
-		ui.KeyV:      ui.NewKeyAction("Values", c.getValsCmd(), true),
 	})
 }
 
@@ -72,20 +71,4 @@ func (c *HelmChart) helmContext(ctx context.Context) context.Context {
 	ctx = context.WithValue(ctx, internal.KeyFQN, path)
 
 	return context.WithValue(ctx, internal.KeyPath, path)
-}
-
-func (c *HelmChart) getValsCmd() func(evt *tcell.EventKey) *tcell.EventKey {
-	return func(evt *tcell.EventKey) *tcell.EventKey {
-		path := c.GetTable().GetSelectedItem()
-		if path == "" {
-			return evt
-		}
-
-		showValues(c.defaultCtx(), c.App(), path, c.GVR())
-		return nil
-	}
-}
-
-func (c *HelmChart) defaultCtx() context.Context {
-	return context.WithValue(context.Background(), internal.KeyFactory, c.App().factory)
 }

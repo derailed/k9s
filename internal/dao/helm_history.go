@@ -23,6 +23,7 @@ var (
 	_ Accessor  = (*HelmHistory)(nil)
 	_ Nuker     = (*HelmHistory)(nil)
 	_ Describer = (*HelmHistory)(nil)
+	_ Valuer    = (*HelmHistory)(nil)
 )
 
 // HelmHistory represents a helm chart.
