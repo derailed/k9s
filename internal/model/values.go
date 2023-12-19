@@ -5,6 +5,7 @@ package model
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -18,6 +19,7 @@ import (
 
 // Values tracks Helm values representations.
 type Values struct {
+	factory   dao.Factory
 	gvr       client.GVR
 	inUpdate  int32
 	path      string
@@ -34,20 +36,36 @@ func NewValues(gvr client.GVR, path string) *Values {
 		gvr:       gvr,
 		path:      path,
 		allValues: false,
-		lines:     getValues(path, false),
 	}
 }
 
-func getHelmDao() *dao.HelmChart {
-	return Registry["helm"].DAO.(*dao.HelmChart)
+// Init initializes the model.
+func (v *Values) Init(f dao.Factory) error {
+	v.factory = f
+
+	var err error
+	v.lines, err = v.getValues()
+
+	return err
 }
 
-func getValues(path string, allValues bool) []string {
-	vals, err := getHelmDao().GetValues(path, allValues)
+func (v *Values) getValues() ([]string, error) {
+	accessor, err := dao.AccessorFor(v.factory, v.gvr)
 	if err != nil {
-		log.Error().Err(err).Msgf("Failed to get Helm values")
+		return nil, err
 	}
-	return strings.Split(string(vals), "\n")
+
+	valuer, ok := accessor.(dao.Valuer)
+	if !ok {
+		return nil, fmt.Errorf("Resource %s is not Valuer", v.gvr)
+	}
+
+	values, err := valuer.GetValues(v.path, v.allValues)
+	if err != nil {
+		return nil, err
+	}
+
+	return strings.Split(string(values), "\n"), nil
 }
 
 // GVR returns the resource gvr.
@@ -56,10 +74,16 @@ func (v *Values) GVR() client.GVR {
 }
 
 // ToggleValues toggles between user supplied values and computed values.
-func (v *Values) ToggleValues() {
+func (v *Values) ToggleValues() error {
 	v.allValues = !v.allValues
-	lines := getValues(v.path, v.allValues)
+
+	lines, err := v.getValues()
+	if err != nil {
+		return err
+	}
+
 	v.lines = lines
+	return nil
 }
 
 // GetPath returns the active resource path.

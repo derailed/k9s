@@ -21,6 +21,7 @@ var (
 	_ Accessor  = (*HelmChart)(nil)
 	_ Nuker     = (*HelmChart)(nil)
 	_ Describer = (*HelmChart)(nil)
+	_ Valuer    = (*HelmChart)(nil)
 )
 
 // HelmChart represents a helm chart.

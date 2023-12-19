@@ -21,10 +21,10 @@ type History struct {
 	ResourceViewer
 }
 
-// NewHelm returns a new alias view.
+// NewHistory returns a new helm-history view.
 func NewHistory(gvr client.GVR) ResourceViewer {
 	h := History{
-		ResourceViewer: NewBrowser(gvr),
+		ResourceViewer: NewValueExtender(NewBrowser(gvr)),
 	}
 	h.GetTable().SetColorerFn(helm.History{}.ColorerFunc())
 	h.GetTable().SetBorderFocusColor(tcell.ColorMediumSpringGreen)
@@ -35,7 +35,7 @@ func NewHistory(gvr client.GVR) ResourceViewer {
 	return &h
 }
 
-// Init initializes the vie
+// Init initializes the view
 func (h *History) Init(ctx context.Context) error {
 	if err := h.ResourceViewer.Init(ctx); err != nil {
 		return err
