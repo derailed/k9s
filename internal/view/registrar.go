@@ -17,6 +17,7 @@ func loadCustomViewers() MetaViewers {
 	batchViewers(m)
 	extViewers(m)
 	helmViewers(m)
+	openshiftViewers(m)
 
 	return m
 }
@@ -153,6 +154,12 @@ func batchViewers(vv MetaViewers) {
 func extViewers(vv MetaViewers) {
 	vv[client.NewGVR("apiextensions.k8s.io/v1/customresourcedefinitions")] = MetaViewer{
 		enterFn: showCRD,
+	}
+}
+
+func openshiftViewers(vv MetaViewers) {
+	vv[client.NewGVR("project.openshift.io/v1/projects")] = MetaViewer{
+		viewerFn: NewNamespace,
 	}
 }
 
