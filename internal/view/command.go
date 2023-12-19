@@ -282,6 +282,7 @@ func (c *Command) exec(cmd, gvr string, comp model.Component, clearStack bool) (
 	}
 
 	c.app.cmdHistory.Push(cmd)
+	c.app.navHistory.Push(cmd)
 
 	return
 }
