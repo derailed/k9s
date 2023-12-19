@@ -1,0 +1,21 @@
+plugin:
+  remove_finalizers:
+    shortCut: Ctrl-F
+    confirm: true
+    scopes:
+      - all
+    description: Removes all finalizers from selected resource
+    command: kubectl
+    background: true
+    args:
+      - patch
+      - --context
+      - $CONTEXT
+      - --namespace
+      - $NAMESPACE
+      - $RESOURCE_NAME
+      - $NAME
+      - -p
+      - '{"metadata":{"finalizers":null}}'
+      - --type
+      - merge
