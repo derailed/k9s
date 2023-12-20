@@ -137,26 +137,8 @@ K9s is available on Linux, macOS and Windows platforms.
 
  
  ```bash
-wget https://golang.org/dl/goX.Y.Z.linux-amd64.tar.gz
-
 sudo tar -xvf go1.21.0.linux-amd64.tar.gz -C /usr/local
-
  ```
-Update your environment variables
-```bash
-export GOROOT=/usr/local/go
-export GOPATH=$HOME/go
-export PATH=$GOPATH/bin:$GOROOT/bin:$PATH
-
-source ~/.bashrc
-or
-source ~/.zshrc
-```
-checking the version
-```
-go version
-```
-
  1. Clone the repo
  2. Build and run the executable
 
