@@ -133,7 +133,12 @@ K9s is available on Linux, macOS and Windows platforms.
 ## Building From Source
 
  K9s is currently using go v1.14 or above. In order to build K9s from source you must:
+ installing go language
 
+ 
+ ```bash
+sudo tar -xvf go1.21.0.linux-amd64.tar.gz -C /usr/local
+ ```
  1. Clone the repo
  2. Build and run the executable
 
