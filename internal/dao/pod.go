@@ -110,7 +110,6 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Debug().Msgf("!!SEL!! %q -- %#v", sel, fsel)
 	nodeName := fsel["spec.nodeName"]
 
 	res := make([]runtime.Object, 0, len(oo))

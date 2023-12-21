@@ -186,7 +186,10 @@ func (p *Pod) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (p *Pod) portForwardContext(ctx context.Context) context.Context {
-	ctx = context.WithValue(ctx, internal.KeyBenchCfg, p.App().BenchFile)
+	if bc := p.App().BenchFile; bc != "" {
+		ctx = context.WithValue(ctx, internal.KeyBenchCfg, p.App().BenchFile)
+	}
+
 	return context.WithValue(ctx, internal.KeyPath, p.GetTable().GetSelectedItem())
 }
 

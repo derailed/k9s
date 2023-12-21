@@ -136,7 +136,10 @@ func (c *Container) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (c *Container) portForwardContext(ctx context.Context) context.Context {
-	ctx = context.WithValue(ctx, internal.KeyBenchCfg, c.App().BenchFile)
+	if bc := c.App().BenchFile; bc != "" {
+		ctx = context.WithValue(ctx, internal.KeyBenchCfg, c.App().BenchFile)
+	}
+
 	return context.WithValue(ctx, internal.KeyPath, c.GetTable().Path)
 }
 

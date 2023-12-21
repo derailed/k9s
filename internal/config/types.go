@@ -24,4 +24,8 @@ type UI struct {
 
 	// NoIcons toggles icons display.
 	NoIcons bool `yaml:"noIcons"`
+
+	// Skin reference the general k9s skin name.
+	// Can be overridden per context.
+	Skin string `yaml:"skin"`
 }

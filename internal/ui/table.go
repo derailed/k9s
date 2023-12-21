@@ -467,10 +467,8 @@ func (t *Table) styleTitle() string {
 	buff := t.cmdBuff.GetText()
 	if IsLabelSelector(buff) {
 		buff = TrimLabelSelector(buff)
-	} else {
-		if l := t.GetModel().GetLabelFilter(); l != "" {
-			buff = l
-		}
+	} else if l := t.GetModel().GetLabelFilter(); l != "" {
+		buff = l
 	}
 
 	if buff == "" {

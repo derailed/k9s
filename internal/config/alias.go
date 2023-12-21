@@ -12,9 +12,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// K9sAlias manages K9s aliases.
-// var K9sAlias = YamlExtension(filepath.Join(K9sHome(), "alias.yml"))
-
 // Alias tracks shortname to GVR mappings.
 type Alias map[string]string
 
@@ -155,7 +152,7 @@ func (a *Aliases) loadDefaultAliases() {
 	a.declare("users", "user", "usr")
 	a.declare("groups", "group", "grp")
 	a.declare("portforwards", "portforward", "pf")
-	a.declare("benchmarks", "bench", "benchmark", "be")
+	a.declare("benchmarks", "benchmark", "bench")
 	a.declare("screendumps", "screendump", "sd")
 	a.declare("pulses", "pulse", "pu", "hz")
 	a.declare("xrays", "xray", "x")

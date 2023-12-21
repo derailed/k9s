@@ -71,6 +71,11 @@ func IsLabelSelector(s string) bool {
 	if s == "" {
 		return false
 	}
+
+	if strings.Contains(s, "=") {
+		return true
+	}
+
 	return LabelRx.MatchString(s)
 }
 
@@ -92,7 +97,11 @@ func IsInverseSelector(s string) bool {
 
 // TrimLabelSelector extracts label query.
 func TrimLabelSelector(s string) string {
-	return strings.TrimSpace(s[2:])
+	if strings.Index(s, "-l") == 0 {
+		return strings.TrimSpace(s[2:])
+	}
+
+	return s
 }
 
 // SkinTitle decorates a title.

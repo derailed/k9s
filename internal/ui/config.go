@@ -6,6 +6,7 @@ package ui
 import (
 	"context"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -69,7 +70,7 @@ func (c *Configurator) CustomViewsWatcher(ctx context.Context, s synchronizer) e
 	if err := c.RefreshCustomViews(); err != nil {
 		return err
 	}
-	return w.Add(config.K9sHome())
+	return w.Add(config.AppViewsFile)
 }
 
 // RefreshCustomViews load view configuration changes.
@@ -126,13 +127,25 @@ func (c *Configurator) StylesWatcher(ctx context.Context, s synchronizer) error 
 }
 
 // BenchConfig location of the benchmarks configuration file.
-func BenchConfig(context string) string {
-	return filepath.Join(config.K9sHome(), config.K9sBench+"-"+context+".yml")
+func (c *Configurator) benchConfig(context string) (string, error) {
+	if c.Config == nil {
+		return "", fmt.Errorf("invalid bench config file. no root config")
+	}
+	ct, err := c.Config.K9s.ActiveContext()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(config.AppContextsDir, ct.ClusterName, context, "benchmarks.yaml"), nil
 }
 
 // RefreshStyles load for skin configuration changes.
 func (c *Configurator) RefreshStyles(context string) {
-	c.BenchFile = BenchConfig(context)
+	if bc, err := c.benchConfig(context); err != nil {
+		log.Warn().Err(err).Msgf("No benchmark config file found for context: %s", context)
+	} else {
+		c.BenchFile = bc
+	}
 
 	if c.Styles == nil {
 		c.Styles = config.NewStyles()
@@ -142,39 +155,30 @@ func (c *Configurator) RefreshStyles(context string) {
 
 	var skin string
 	if c.Config != nil {
+		skin = c.Config.K9s.UI.Skin
 		ct, err := c.Config.K9s.ActiveContext()
 		if err != nil {
 			log.Warn().Msgf("No active context found. Using default skin")
-		} else {
+		} else if ct.Skin != "" {
 			skin = ct.Skin
 		}
 	}
-	var (
-		skinFile = filepath.Join(config.AppSkinsDir, skin+".yml")
-	)
-	if skin != "" {
-		if err := c.Styles.Load(skinFile); err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				log.Warn().Msgf("Skin file %q not found in skins dir: %s", skinFile, config.AppSkinsDir)
-			} else {
-				log.Error().Msgf("Failed to parse skin file -- %s: %s.", skinFile, err)
-			}
-		} else {
-			c.updateStyles(skinFile)
-			return
-		}
-	}
 
-	if err := c.Styles.Load(config.K9sStylesFile); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			log.Warn().Msgf("Using stock skin. No skin file found: %s", config.K9sStylesFile)
-		} else {
-			log.Error().Msgf("Failed to parse skin file -- %s. %s. Loading stock skins.", config.K9sStylesFile, err)
-		}
-		c.updateStyles("")
+	// !!BOZO!! Need to axe yml -> yaml
+	var skinFile = filepath.Join(config.AppSkinsDir, skin+".yml")
+	if skin == "" {
 		return
 	}
-	c.updateStyles(config.K9sStylesFile)
+	if err := c.Styles.Load(skinFile); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			log.Warn().Msgf("Skin file %q not found in skins dir: %s", skinFile, config.AppSkinsDir)
+		} else {
+			log.Error().Msgf("Failed to parse skin file -- %s: %s.", skinFile, err)
+		}
+	} else {
+		c.updateStyles(skinFile)
+		return
+	}
 }
 
 func (c *Configurator) updateStyles(f string) {

@@ -74,17 +74,23 @@ func initK9sEnvLocs() error {
 	}
 
 	AppDumpsDir = filepath.Join(AppConfigDir, "screen-dumps")
+	if err := data.EnsureFullPath(AppDumpsDir, data.DefaultDirMod); err != nil {
+		log.Warn().Err(err).Msgf("Unable to create screen-dumps dir: %s", AppDumpsDir)
+	}
 	AppBenchmarksDir = filepath.Join(AppConfigDir, "benchmarks")
-	AppConfigFile = filepath.Join(AppConfigDir, data.MainConfigFile)
+	if err := data.EnsureFullPath(AppBenchmarksDir, data.DefaultDirMod); err != nil {
+		log.Warn().Err(err).Msgf("Unable to create benchmarks dir: %s", AppBenchmarksDir)
+	}
 	AppSkinsDir = filepath.Join(AppConfigDir, "skins")
 	if err := data.EnsureFullPath(AppSkinsDir, data.DefaultDirMod); err != nil {
-		log.Warn().Err(err).Msgf("No skins dir detected")
+		log.Warn().Err(err).Msgf("Unable to create skins dir: %s", AppSkinsDir)
 	}
 	AppContextsDir = filepath.Join(AppConfigDir, "clusters")
 	if err := data.EnsureFullPath(AppContextsDir, data.DefaultDirMod); err != nil {
-		log.Warn().Err(err).Msgf("No context dir detected")
+		log.Warn().Err(err).Msgf("Unable to create clusters dir: %s", AppContextsDir)
 	}
 
+	AppConfigFile = filepath.Join(AppConfigDir, data.MainConfigFile)
 	AppHotKeysFile = filepath.Join(AppConfigDir, "hotkeys.yaml")
 	AppAliasesFile = filepath.Join(AppConfigDir, "aliases.yaml")
 	AppPluginsFile = filepath.Join(AppConfigDir, "plugins.yaml")

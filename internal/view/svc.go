@@ -48,8 +48,8 @@ func NewService(gvr client.GVR) ResourceViewer {
 
 func (s *Service) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		tcell.KeyCtrlL: ui.NewKeyAction("Bench Run/Stop", s.toggleBenchCmd, true),
-		ui.KeyShiftT:   ui.NewKeyAction("Sort Type", s.GetTable().SortColCmd("TYPE", true), false),
+		ui.KeyB:      ui.NewKeyAction("Bench Run/Stop", s.toggleBenchCmd, true),
+		ui.KeyShiftT: ui.NewKeyAction("Sort Type", s.GetTable().SortColCmd("TYPE", true), false),
 	})
 }
 
@@ -159,8 +159,15 @@ func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
 	}
 
 	s.App().Status(model.FlashWarn, "Benchmark in progress...")
-	log.Debug().Msg("Bench starting...")
-	go s.bench.Run(s.App().Config.K9s.ActiveContextName(), s.benchDone)
+	log.Debug().Msg("Benchmark starting...")
+
+	ct, err := s.App().Config.K9s.ActiveContext()
+	if err != nil {
+		return err
+	}
+	name := s.App().Config.K9s.ActiveContextName()
+
+	go s.bench.Run(ct.ClusterName, name, s.benchDone)
 
 	return nil
 }

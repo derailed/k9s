@@ -11,15 +11,12 @@ import (
 
 	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/action"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render/helm"
-	"gopkg.in/yaml.v2"
-	"helm.sh/helm/v3/pkg/action"
-	"helm.sh/helm/v3/pkg/release"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 var (
@@ -152,19 +149,22 @@ func (h *HelmHistory) Rollback(_ context.Context, path, rev string) error {
 	return client.Run(n)
 }
 
-// Helpers...
-
-func (h *HelmHistory) findRelease(cfg *action.Configuration, n string, rev int) (*release.Release, error) {
-	rr, err := action.NewHistory(cfg).Run(n)
+// Delete uninstall a Helm.
+func (h *HelmHistory) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, _ Grace) error {
+	ns, n := client.Namespaced(path)
+	cfg, err := ensureHelmConfig(h.Client(), ns)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	for _, r := range rr {
-		if r.Version == rev {
-			return r, nil
-		}
+	res, err := action.NewUninstall(cfg).Run(n)
+	if err != nil {
+		return err
 	}
 
-	return nil, fmt.Errorf("unable to locate char %s rev: %d", n, rev)
+	if res != nil && res.Info != "" {
+		return fmt.Errorf("%s", res.Info)
+	}
+
+	return nil
 }

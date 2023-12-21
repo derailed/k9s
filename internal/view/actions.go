@@ -94,7 +94,7 @@ func pluginActions(r Runner, aa ui.KeyActions) {
 		return
 	}
 
-	for k, plugin := range pp.Plugin {
+	for k, plugin := range pp.Plugins {
 		if !inScope(plugin.Scopes, r.Aliases()) {
 			continue
 		}

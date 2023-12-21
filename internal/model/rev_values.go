@@ -45,7 +45,7 @@ func getHelmHistDao() *dao.HelmHistory {
 }
 
 func getRevValues(path, rev string) []string {
-	vals, err := getHelmHistDao().GetValues(path, rev)
+	vals, err := getHelmHistDao().GetValues(path, true)
 	if err != nil {
 		log.Error().Err(err).Msgf("Failed to get Helm values")
 	}

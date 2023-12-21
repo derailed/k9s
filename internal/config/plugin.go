@@ -13,13 +13,12 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-// K9sPluginsFilePath manages K9s plugins.
-var K9sPluginsFilePath = YamlExtension(filepath.Join(K9sHome(), "plugin.yml"))
+// K9sPluginsDirectory relative plugins dir.
 var K9sPluginDirectory = filepath.Join("k9s", "plugins")
 
 // Plugins represents a collection of plugins.
 type Plugins struct {
-	Plugin map[string]Plugin `yaml:"plugin"`
+	Plugins map[string]Plugin `yaml:"plugins"`
 }
 
 // Plugin describes a K9s plugin.
@@ -41,7 +40,7 @@ func (p Plugin) String() string {
 // NewPlugins returns a new plugin.
 func NewPlugins() Plugins {
 	return Plugins{
-		Plugin: make(map[string]Plugin),
+		Plugins: make(map[string]Plugin),
 	}
 }
 
@@ -52,7 +51,7 @@ func (p Plugins) Load() error {
 		pluginDirs = append(pluginDirs, filepath.Join(dataDir, K9sPluginDirectory))
 	}
 
-	return p.LoadPlugins(K9sPluginsFilePath, pluginDirs)
+	return p.LoadPlugins(AppPluginsFile, pluginDirs)
 }
 
 // LoadPlugins loads plugins from a given file and a set of plugin directories.
@@ -66,8 +65,8 @@ func (p Plugins) LoadPlugins(path string, pluginDirs []string) error {
 	if err := yaml.Unmarshal(f, &pp); err != nil {
 		return err
 	}
-	for k, v := range pp.Plugin {
-		p.Plugin[k] = v
+	for k, v := range pp.Plugins {
+		p.Plugins[k] = v
 	}
 
 	for _, pluginDir := range pluginDirs {
@@ -87,7 +86,7 @@ func (p Plugins) LoadPlugins(path string, pluginDirs []string) error {
 			if err = yaml.Unmarshal(pluginFile, &plugin); err != nil {
 				return err
 			}
-			p.Plugin[strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))] = plugin
+			p.Plugins[strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))] = plugin
 		}
 	}
 

@@ -40,6 +40,7 @@ func printInfo(cmd *cobra.Command, args []string) error {
 	printTuple(fmat, "Custom views file", config.AppViewsFile, color.Cyan)
 	printTuple(fmat, "Plugins file", config.AppPluginsFile, color.Cyan)
 	printTuple(fmat, "Hotkeys file", config.AppHotKeysFile, color.Cyan)
+	printTuple(fmat, "Alias file", config.AppAliasesFile, color.Cyan)
 
 	return nil
 }

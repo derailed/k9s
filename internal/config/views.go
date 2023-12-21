@@ -11,7 +11,7 @@ import (
 
 // ViewConfigListener represents a view config listener.
 type ViewConfigListener interface {
-	// ConfigChanged notifies listener the view configuration changed.
+	// ViewSettingsChanged notifies listener the view configuration changed.
 	ViewSettingsChanged(ViewSetting)
 }
 
@@ -86,6 +86,8 @@ func (v *CustomView) fireConfigChanged() {
 	for gvr, list := range v.listeners {
 		if v, ok := v.K9s.Views[gvr]; ok {
 			list.ViewSettingsChanged(v)
+		} else {
+			list.ViewSettingsChanged(ViewSetting{})
 		}
 	}
 }

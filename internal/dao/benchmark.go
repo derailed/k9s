@@ -55,7 +55,7 @@ func (b *Benchmark) List(ctx context.Context, _ string) ([]runtime.Object, error
 	fileName := BenchRx.ReplaceAllString(strings.Replace(path, "/", "_", 1), "_")
 	oo := make([]runtime.Object, 0, len(ff))
 	for _, f := range ff {
-		if path != "" && !strings.HasPrefix(f.Name(), fileName) {
+		if !strings.HasPrefix(f.Name(), fileName) {
 			continue
 		}
 

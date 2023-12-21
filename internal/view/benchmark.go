@@ -14,6 +14,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
+	"github.com/rs/zerolog/log"
 )
 
 // Benchmark represents a service benchmark results view.
@@ -67,7 +68,15 @@ func fileToSubject(path string) string {
 }
 
 func benchDir(cfg *config.Config) string {
-	return filepath.Join(config.AppBenchmarksDir, config.SanitizeFilename(cfg.K9s.ActiveContextName()))
+	ct, err := cfg.K9s.ActiveContext()
+	if err != nil {
+		log.Error().Err(err).Msgf("no active context located")
+	}
+	return filepath.Join(
+		config.AppBenchmarksDir,
+		config.SanitizeFileName(ct.ClusterName),
+		config.SanitizeFilename(cfg.K9s.ActiveContextName()),
+	)
 }
 
 func readBenchFile(cfg *config.Config, n string) (string, error) {
