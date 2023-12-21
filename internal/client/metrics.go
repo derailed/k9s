@@ -11,7 +11,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/cache"
@@ -201,13 +200,6 @@ func (m *MetricsServer) FetchNodeMetrics(ctx context.Context, n string) (*mv1bet
 
 // FetchPodsMetricsMap fetch pods metrics as a map.
 func (m *MetricsServer) FetchPodsMetricsMap(ctx context.Context, ns string) (PodsMetricsMap, error) {
-	defer func(t time.Time) {
-		e := time.Since(t)
-		if e >= 1*time.Second {
-			log.Debug().Msgf("!!!PERF MX!!! %v", e)
-		}
-	}(time.Now())
-
 	mm, err := m.FetchPodsMetrics(ctx, ns)
 	if err != nil {
 		return nil, err

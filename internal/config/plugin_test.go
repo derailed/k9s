@@ -42,7 +42,7 @@ var test2YmlTestData = config.Plugin{
 
 func TestSinglePluginFileLoad(t *testing.T) {
 	p := config.NewPlugins()
-	assert.Nil(t, p.LoadPlugins("testdata/plugin.yml", []string{"/random/dir/not/exist"}))
+	assert.Nil(t, p.LoadPlugins("testdata/plugin.yaml", []string{"/random/dir/not/exist"}))
 
 	assert.Equal(t, 1, len(p.Plugin))
 	k, ok := p.Plugin["blah"]
@@ -53,7 +53,7 @@ func TestSinglePluginFileLoad(t *testing.T) {
 
 func TestMultiplePluginFilesLoad(t *testing.T) {
 	p := config.NewPlugins()
-	assert.Nil(t, p.LoadPlugins("testdata/plugin.yml", []string{"testdata/plugins"}))
+	assert.Nil(t, p.LoadPlugins("testdata/plugin.yaml", []string{"testdata/plugins"}))
 
 	testPlugins := map[string]config.Plugin{
 		"blah":  pluginYmlTestData,

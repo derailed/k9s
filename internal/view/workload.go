@@ -31,7 +31,7 @@ func NewWorkload(gvr client.GVR) ResourceViewer {
 	}
 	w.GetTable().SetEnterFn(w.showRes)
 	w.AddBindKeysFn(w.bindKeys)
-	w.GetTable().SetSortCol("GVR", true)
+	w.GetTable().SetSortCol("RESOURCE", true)
 
 	return &w
 }
@@ -49,7 +49,7 @@ func (w *Workload) bindKeys(aa ui.KeyActions) {
 	}
 
 	aa.Add(ui.KeyActions{
-		ui.KeyShiftG: ui.NewKeyAction("Sort GVR", w.GetTable().SortColCmd("GVR", true), false),
+		ui.KeyShiftR: ui.NewKeyAction("Sort Resource", w.GetTable().SortColCmd("RESOURCE", true), false),
 		ui.KeyShiftS: ui.NewKeyAction("Sort Status", w.GetTable().SortColCmd(statusCol, true), false),
 		ui.KeyShiftA: ui.NewKeyAction("Sort Age", w.GetTable().SortColCmd(ageCol, true), false),
 		ui.KeyY:      ui.NewKeyAction(yamlAction, w.yamlCmd, true),

@@ -35,7 +35,7 @@ func TestEnsureDirPathNone(t *testing.T) {
 	dir := filepath.Join("/tmp", "fred")
 	os.Remove(dir)
 
-	path := filepath.Join(dir, "duh.yml")
+	path := filepath.Join(dir, "duh.yaml")
 	assert.NoError(t, data.EnsureDirPath(path, mod))
 
 	p, err := os.Stat(dir)
@@ -49,7 +49,7 @@ func TestEnsureDirPathNoOpt(t *testing.T) {
 	os.Remove(dir)
 	assert.NoError(t, os.Mkdir(dir, mod))
 
-	path := filepath.Join(dir, "duh.yml")
+	path := filepath.Join(dir, "duh.yaml")
 	assert.NoError(t, data.EnsureDirPath(path, mod))
 
 	p, err := os.Stat(dir)

@@ -220,13 +220,6 @@ func (t *Table) refresh(ctx context.Context) error {
 }
 
 func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, error) {
-	defer func(ti time.Time) {
-		e := time.Since(ti)
-		if e >= 1*time.Second {
-			log.Debug().Msgf("!!!PERF List!!! %s: %v", t.gvr, e)
-		}
-	}(time.Now())
-
 	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
 	if !ok {
 		return nil, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
@@ -237,9 +230,7 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 	if client.IsClusterScoped(t.namespace) {
 		ns = client.BlankNamespace
 	}
-	if t.labelFilter != "" {
-		ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
-	}
+	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
 
 	return a.List(ctx, ns)
 }
@@ -248,9 +239,7 @@ func (t *Table) reconcile(ctx context.Context) error {
 	t.mx.Lock()
 	defer t.mx.Unlock()
 	meta := resourceMeta(t.gvr)
-	if t.labelFilter != "" {
-		ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
-	}
+	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
 	var (
 		oo  []runtime.Object
 		err error
@@ -318,13 +307,6 @@ func (t *Table) fireTableLoadFailed(err error) {
 // Helpers...
 
 func hydrate(ns string, oo []runtime.Object, rr render.Rows, re Renderer) error {
-	defer func(ti time.Time) {
-		e := time.Since(ti)
-		if e >= 1*time.Second {
-			log.Debug().Msgf("!!PERF HYDRATE!! %d, %v", len(oo), e)
-		}
-	}(time.Now())
-
 	for i, o := range oo {
 		if err := re.Render(o, ns, &rr[i]); err != nil {
 			return err

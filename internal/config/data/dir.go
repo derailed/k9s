@@ -38,7 +38,7 @@ func (d Dir) Load(n string, ct *api.Context) (*Config, error) {
 		cfg  *Config
 		err  error
 	)
-	if _, e := os.Stat(path); os.IsNotExist(e) {
+	if f, e := os.Stat(path); os.IsNotExist(e) || f.Size() == 0 {
 		log.Debug().Msgf("Context config not found! Generating... %q", path)
 		cfg, err = d.genConfig(path, ct)
 	} else {

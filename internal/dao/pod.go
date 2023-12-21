@@ -89,13 +89,6 @@ func (p *Pod) ListImages(ctx context.Context, path string) ([]string, error) {
 
 // List returns a collection of nodes.
 func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	defer func(t time.Time) {
-		e := time.Since(t)
-		if e >= 1*time.Second {
-			log.Debug().Msgf("!!!PERF PODLIST!!! %v", e)
-		}
-	}(time.Now())
-
 	oo, err := p.Resource.List(ctx, ns)
 	if err != nil {
 		return oo, err

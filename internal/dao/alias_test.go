@@ -22,7 +22,7 @@ import (
 func TestAsGVR(t *testing.T) {
 	a := dao.NewAlias(makeFactory())
 	a.Aliases.Define("v1/pods", "po", "pod", "pods")
-	a.Aliases.Define("workloads -l app=fred", "wkl")
+	a.Aliases.Define("workloads", "workloads", "workload", "wkl")
 
 	uu := map[string]struct {
 		cmd string
@@ -45,14 +45,14 @@ func TestAsGVR(t *testing.T) {
 		"alias": {
 			cmd: "wkl",
 			ok:  true,
-			gvr: client.NewGVR("workloads -l app=fred"),
+			gvr: client.NewGVR("workloads"),
 		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			gvr, ok := a.AsGVR(u.cmd)
+			gvr, _, ok := a.AsGVR(u.cmd)
 			assert.Equal(t, u.ok, ok)
 			if u.ok {
 				assert.Equal(t, u.gvr, gvr)

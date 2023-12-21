@@ -30,25 +30,25 @@ func TestDirLoad(t *testing.T) {
 		"happy-cl-1-ct-1": {
 			dir:   "testdata/data/k9s",
 			flags: makeFlags("cl-1", "ct-1-1"),
-			cfg:   mustLoadConfig("testdata/configs/ct-1-1.yml"),
+			cfg:   mustLoadConfig("testdata/configs/ct-1-1.yaml"),
 		},
 
 		"happy-cl-1-ct2": {
 			dir:   "testdata/data/k9s",
 			flags: makeFlags("cl-1", "ct-1-2"),
-			cfg:   mustLoadConfig("testdata/configs/ct-1-2.yml"),
+			cfg:   mustLoadConfig("testdata/configs/ct-1-2.yaml"),
 		},
 
 		"happy-cl-2": {
 			dir:   "testdata/data/k9s",
 			flags: makeFlags("cl-2", "ct-2-1"),
-			cfg:   mustLoadConfig("testdata/configs/ct-2-1.yml"),
+			cfg:   mustLoadConfig("testdata/configs/ct-2-1.yaml"),
 		},
 
 		"toast": {
 			dir:   "/tmp/data/k9s",
 			flags: makeFlags("cl-test", "ct-test-1"),
-			cfg:   mustLoadConfig("testdata/configs/def_ct.yml"),
+			cfg:   mustLoadConfig("testdata/configs/def_ct.yaml"),
 		},
 	}
 

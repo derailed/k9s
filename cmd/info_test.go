@@ -16,7 +16,7 @@ func Test_getScreenDumpDirForInfo(t *testing.T) {
 		expectedScreenDumpDir string
 	}{
 		"withK9sConfigFile": {
-			k9sConfigFile:         "testdata/k9s.yml",
+			k9sConfigFile:         "testdata/k9s.yaml",
 			expectedScreenDumpDir: "/tmp",
 		},
 		"withEmptyK9sConfigFile": {
@@ -28,7 +28,7 @@ func Test_getScreenDumpDirForInfo(t *testing.T) {
 			expectedScreenDumpDir: config.AppDumpsDir,
 		},
 		"withScreenDumpDirEmptyInK9sConfigFile": {
-			k9sConfigFile:         "testdata/k9s1.yml",
+			k9sConfigFile:         "testdata/k9s1.yaml",
 			expectedScreenDumpDir: config.AppDumpsDir,
 		},
 	}

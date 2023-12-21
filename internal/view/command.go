@@ -6,7 +6,9 @@ package view
 import (
 	"errors"
 	"fmt"
+	"regexp"
 	"runtime/debug"
+	"strings"
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
@@ -16,7 +18,10 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var customViewers MetaViewers
+var (
+	customViewers MetaViewers
+	contextRX     = regexp.MustCompile(`\s+@([\w-]+)`)
+)
 
 // Command represents a user command.
 type Command struct {
@@ -96,7 +101,7 @@ func (c *Command) xrayCmd(p *cmd.Interpreter) error {
 	if !ok {
 		return errors.New("invalid command. use `xray xxx`")
 	}
-	gvr, ok := c.alias.AsGVR(arg)
+	gvr, _, ok := c.alias.AsGVR(arg)
 	if !ok {
 		return fmt.Errorf("invalid resource name: %q", arg)
 	}
@@ -126,9 +131,9 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
 	if c.specialCmd(p) {
 		return nil
 	}
-	if !c.alias.Check(p.Cmd()) {
-		return fmt.Errorf("command not found %q", p.Cmd())
-	}
+	// if _, ok := c.alias.Check(p.Cmd()); !ok {
+	// 	return fmt.Errorf("command not found %q", p.Cmd())
+	// }
 
 	gvr, v, err := c.viewMetaFor(p)
 	if err != nil {
@@ -235,13 +240,18 @@ func (c *Command) specialCmd(p *cmd.Interpreter) bool {
 }
 
 func (c *Command) viewMetaFor(p *cmd.Interpreter) (client.GVR, *MetaViewer, error) {
-	alias, ok := c.alias.AsGVR(p.Cmd())
+	agvr, exp, ok := c.alias.AsGVR(p.Cmd())
 	if !ok {
-		return client.GVR{}, nil, fmt.Errorf("`%s` command not found", p.Cmd())
+		return client.NoGVR, nil, fmt.Errorf("`%s` command not found", p.Cmd())
 	}
-	ap := cmd.NewInterpreter(alias.String())
-	gvr := client.NewGVR(ap.Cmd())
-	p.Amend(ap)
+	gvr := agvr
+	if exp != "" {
+		ff := strings.Fields(exp)
+		ff[0] = agvr.String()
+		ap := cmd.NewInterpreter(strings.Join(ff, " "))
+		gvr = client.NewGVR(ap.Cmd())
+		p.Amend(ap)
+	}
 
 	v := MetaViewer{viewerFn: NewBrowser}
 	if mv, ok := customViewers[gvr]; ok {
@@ -288,7 +298,8 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 	}
 	c.app.Flash().Infof("Viewing %s...", gvr.R())
 	if clearStack {
-		c.app.Config.SetActiveView(p.GetLine())
+		cmd := contextRX.ReplaceAllString(p.GetLine(), "")
+		c.app.Config.SetActiveView(cmd)
 		if err := c.app.Config.Save(); err != nil {
 			log.Error().Err(err).Msg("Config save failed!")
 		}

@@ -23,7 +23,7 @@ func init() {
 
 func TestConfigRefine(t *testing.T) {
 	var (
-		cfgFile          = "testdata/kubeconfig-test.yml"
+		cfgFile          = "testdata/kubeconfig-test.yaml"
 		ctx, cluster, ns = "ct-1-1", "cl-1", "ns-1"
 	)
 
@@ -76,14 +76,14 @@ func TestConfigValidate(t *testing.T) {
 	cfg := mock.NewMockConfig()
 	cfg.SetConnection(mock.NewMockConnection())
 
-	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
+	assert.Nil(t, cfg.Load("testdata/k9s.yaml"))
 	cfg.Validate()
 }
 
 func TestConfigLoad(t *testing.T) {
 	cfg := mock.NewMockConfig()
 
-	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
+	assert.Nil(t, cfg.Load("testdata/k9s.yaml"))
 	assert.Equal(t, 2, cfg.K9s.RefreshRate)
 	assert.Equal(t, 2000, cfg.K9s.Logger.BufferSize)
 	assert.Equal(t, int64(200), cfg.K9s.Logger.TailCount)
@@ -92,19 +92,19 @@ func TestConfigLoad(t *testing.T) {
 func TestConfigLoadOldCfg(t *testing.T) {
 	cfg := mock.NewMockConfig()
 
-	assert.Nil(t, cfg.Load("testdata/k9s_old.yml"))
+	assert.Nil(t, cfg.Load("testdata/k9s_old.yaml"))
 }
 
 func TestConfigLoadCrap(t *testing.T) {
 	cfg := mock.NewMockConfig()
 
-	assert.NotNil(t, cfg.Load("testdata/k9s_not_there.yml"))
+	assert.NotNil(t, cfg.Load("testdata/k9s_not_there.yaml"))
 }
 
 func TestConfigSaveFile(t *testing.T) {
 	cfg := mock.NewMockConfig()
 
-	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
+	assert.Nil(t, cfg.Load("testdata/k9s.yaml"))
 
 	cfg.K9s.RefreshRate = 100
 	cfg.K9s.ReadOnly = true
@@ -112,7 +112,7 @@ func TestConfigSaveFile(t *testing.T) {
 	cfg.K9s.Logger.BufferSize = 800
 	cfg.Validate()
 
-	path := filepath.Join("/tmp", "k9s.yml")
+	path := filepath.Join("/tmp", "k9s.yaml")
 	err := cfg.SaveFile(path)
 	assert.Nil(t, err)
 	raw, err := os.ReadFile(path)
@@ -122,11 +122,11 @@ func TestConfigSaveFile(t *testing.T) {
 
 func TestConfigReset(t *testing.T) {
 	cfg := mock.NewMockConfig()
-	assert.Nil(t, cfg.Load("testdata/k9s.yml"))
+	assert.Nil(t, cfg.Load("testdata/k9s.yaml"))
 	cfg.Reset()
 	cfg.Validate()
 
-	path := filepath.Join("/tmp", "k9s.yml")
+	path := filepath.Join("/tmp", "k9s.yaml")
 	err := cfg.SaveFile(path)
 	assert.Nil(t, err)
 

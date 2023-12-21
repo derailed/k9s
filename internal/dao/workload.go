@@ -10,7 +10,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -82,11 +81,6 @@ func (w *Workload) Delete(ctx context.Context, path string, propagation *metav1.
 }
 
 func (a *Workload) fetch(ctx context.Context, gvr client.GVR, ns string) (*metav1.Table, error) {
-	defer func(t time.Time) {
-		e := time.Since(t)
-		log.Debug().Msgf("!!!PERF WK_FETCH!!! %v", e)
-	}(time.Now())
-
 	a.Table.gvr = gvr
 	oo, err := a.Table.List(ctx, ns)
 	if err != nil {
@@ -105,11 +99,6 @@ func (a *Workload) fetch(ctx context.Context, gvr client.GVR, ns string) (*metav
 
 // List fetch workloads.
 func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	defer func(t time.Time) {
-		e := time.Since(t)
-		log.Debug().Msgf("!!!PERF WK_LIST!!! %v", e)
-	}(time.Now())
-
 	oo := make([]runtime.Object, 0, 100)
 	for _, gvr := range resList {
 		table, err := a.fetch(ctx, gvr, ns)
@@ -159,9 +148,6 @@ func status(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinition)
 		return fmt.Sprintf("%d/%d", c, d)
 	case SvcGVR:
 		return ""
-		// t := r.Cells[indexOf("Type", h)].(string)
-		// ip := r.Cells[indexOf("Cluster-IP", h)].(string)
-		// return t + ":" + ip
 	}
 
 	return render.NAValue

@@ -39,7 +39,7 @@ func (n Workload) ColorerFunc() ColorerFunc {
 // Header returns a header rbw.
 func (Workload) Header(string) Header {
 	return Header{
-		HeaderColumn{Name: "GVR"},
+		HeaderColumn{Name: "RESOURCE"},
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
 		HeaderColumn{Name: "STATUS"},

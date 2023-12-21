@@ -165,7 +165,7 @@ func (c *Config) ActiveView() string {
 
 // SetActiveView sets current context active view.
 func (c *Config) SetActiveView(view string) {
-	if ct, err := c.K9s.ActiveContext(); err != nil {
+	if ct, err := c.K9s.ActiveContext(); err == nil {
 		ct.View.Active = view
 	}
 }

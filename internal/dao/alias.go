@@ -14,6 +14,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -34,9 +35,8 @@ func NewAlias(f Factory) *Alias {
 }
 
 // Check verifies an alias is defined for this command.
-func (a *Alias) Check(cmd string) bool {
-	_, ok := a.Aliases.Get(cmd)
-	return ok
+func (a *Alias) Check(cmd string) (string, bool) {
+	return a.Aliases.Get(cmd)
 }
 
 // List returns a collection of aliases.
@@ -56,12 +56,20 @@ func (a *Alias) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 }
 
 // AsGVR returns a matching gvr if it exists.
-func (a *Alias) AsGVR(cmd string) (client.GVR, bool) {
-	if gvr, ok := a.Aliases.Get(cmd); ok {
-		return client.NewGVR(gvr), true
+func (a *Alias) AsGVR(c string) (client.GVR, string, bool) {
+	exp, ok := a.Aliases.Get(c)
+	if !ok {
+		return client.NoGVR, "", ok
+	}
+	p := cmd.NewInterpreter(exp)
+	if strings.Contains(p.Cmd(), "/") {
+		return client.NewGVR(p.Cmd()), "", true
+	}
+	if gvr, ok := a.Aliases.Get(p.Cmd()); ok {
+		return client.NewGVR(gvr), exp, true
 	}
 
-	return client.GVR{}, false
+	return client.NoGVR, "", false
 }
 
 // Get fetch a resource.

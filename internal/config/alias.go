@@ -20,7 +20,7 @@ type ShortNames map[string][]string
 
 // Aliases represents a collection of aliases.
 type Aliases struct {
-	Alias Alias `yaml:"alias"`
+	Alias Alias `yaml:"aliases"`
 	mx    sync.RWMutex
 }
 
