@@ -23,12 +23,15 @@ var _ Accessor = (*Alias)(nil)
 // Alias tracks standard and custom command aliases.
 type Alias struct {
 	NonResource
+
 	*config.Aliases
 }
 
 // NewAlias returns a new set of aliases.
 func NewAlias(f Factory) *Alias {
-	a := Alias{Aliases: config.NewAliases()}
+	a := Alias{
+		Aliases: config.NewAliases(),
+	}
 	a.Init(f, client.NewGVR("aliases"))
 
 	return &a
@@ -49,7 +52,10 @@ func (a *Alias) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	oo := make([]runtime.Object, 0, len(m))
 	for gvr, aliases := range m {
 		sort.StringSlice(aliases).Sort()
-		oo = append(oo, render.AliasRes{GVR: gvr, Aliases: aliases})
+		oo = append(oo, render.AliasRes{
+			GVR:     gvr,
+			Aliases: aliases,
+		})
 	}
 
 	return oo, nil
@@ -78,15 +84,15 @@ func (a *Alias) Get(_ context.Context, _ string) (runtime.Object, error) {
 }
 
 // Ensure makes sure alias are loaded.
-func (a *Alias) Ensure() (config.Alias, error) {
+func (a *Alias) Ensure(path string) (config.Alias, error) {
 	if err := MetaAccess.LoadResources(a.Factory); err != nil {
 		return config.Alias{}, err
 	}
-	return a.Alias, a.load()
+	return a.Alias, a.load(path)
 }
 
-func (a *Alias) load() error {
-	if err := a.Load(); err != nil {
+func (a *Alias) load(path string) error {
+	if err := a.Load(path); err != nil {
 		return err
 	}
 

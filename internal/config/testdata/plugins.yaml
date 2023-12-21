@@ -1,4 +1,4 @@
-plugin:
+plugins:
   blah:
     shortCut: shift-s
     confirm: true

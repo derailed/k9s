@@ -46,6 +46,26 @@ func NewConfig(ks data.KubeSettings) *Config {
 	}
 }
 
+// ContextAliasesPath returns a context specific aliases file spec.
+func (c *Config) ContextAliasesPath() string {
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return ""
+	}
+
+	return AppContextAliasesFile(ct.ClusterName, c.K9s.activeContextName)
+}
+
+// ContextPluginsPath returns a context specific plugins file spec.
+func (c *Config) ContextPluginsPath() string {
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return ""
+	}
+
+	return AppContextPluginsFile(ct.ClusterName, c.K9s.activeContextName)
+}
+
 // Refine the configuration based on cli args.
 func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, cfg *client.Config) error {
 	if isSet(flags.Context) {

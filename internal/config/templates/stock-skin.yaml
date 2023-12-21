@@ -1,0 +1,97 @@
+# -----------------------------------------------------------------------------
+# Stock skin
+# -----------------------------------------------------------------------------
+
+# Skin...
+k9s:
+  body:
+    fgColor: cadetblue
+    bgColor: black
+    logoColor: orange
+    logoColorMsg: white
+    logoColorInfo: green
+    logoColorWarn: mediumvioletred
+    logoColorError: red
+  prompt:
+    fgColor: cadetblue
+    bgColor: black
+    suggestColor: dodgerblue
+    border:
+      default: seagreen
+      command: aqua
+  info:
+    fgColor: orange
+    sectionColor: white
+  dialog:
+    fgColor: dodgerblue
+    bgColor: black
+    buttonFgColor: black
+    buttonBgColor: dodgerblue
+    buttonFocusFgColor: white
+    buttonFocusBgColor: fuchsia
+    labelFgColor: fuchsia
+    fieldFgColor: dodgerblue
+  frame:
+    border:
+      fgColor: dodgerblue
+      focusColor: aqua
+    menu:
+      fgColor: white
+      keyColor: dodgerblue
+      numKeyColor: fuchsia
+    crumbs:
+      fgColor: black
+      bgColor: aqua
+      activeColor: orange
+    status:
+      newColor: lightskyblue
+      modifyColor: greenyellow
+      addColor: white
+      errorColor: orangered
+      pendingColor: darkorange
+      highlightColor: aqua
+      killColor: mediumpurple
+      completedColor: gray
+    title:
+      fgColor: aqua
+      highlightColor: fuchsia
+      counterColor: papayawhip
+      filterColor: steelblue
+  views:
+    # Charts skins...
+    charts:
+      bgColor: black
+      defaultDialColors:
+        - linegreen
+        - orangered
+      defaultChartColors:
+        - linegreen
+        - orangered
+    table:
+      fgColor: aqua
+      bgColor: black
+      cursorFgColor: white
+      cursorBgColor: black
+      markColor: darkgoldenrod
+      header:
+        fgColor: lightGray
+        bgColor: black
+        sorterColor: orange
+    xray:
+      fgColor: blue
+      bgColor: black
+      cursorColor: aqua
+      graphicColor: darkgoldenrod
+      showIcons: false
+    yaml:
+      keyColor: steelblue
+      colonColor: white
+      valueColor: papayawhip
+    logs:
+      fgColor: white
+      bgColor: black
+      indicator:
+        fgColor: dodgerblue
+        bgColor: black
+        toggleOnColor: limegreen
+        toggleOffColor: steelblue

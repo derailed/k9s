@@ -430,6 +430,11 @@ func newMenu() Menu {
 
 // NewStyles creates a new default config.
 func NewStyles() *Styles {
+	var s Styles
+	if err := yaml.Unmarshal(stockSkinTpl, &s); err == nil {
+		return &s
+	}
+
 	return &Styles{
 		K9s: newStyle(),
 	}
@@ -442,7 +447,6 @@ func (s *Styles) Reset() {
 
 // DefaultSkin loads the default skin.
 func (s *Styles) DefaultSkin() {
-	s.K9s = newStyle()
 }
 
 // FgColor returns the foreground color.
@@ -541,7 +545,6 @@ func (s *Styles) Load(path string) error {
 	if err := yaml.Unmarshal(f, s); err != nil {
 		return err
 	}
-	// s.fireStylesChanged()
 
 	return nil
 }

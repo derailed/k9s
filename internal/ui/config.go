@@ -6,9 +6,7 @@ package ui
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
@@ -126,22 +124,16 @@ func (c *Configurator) StylesWatcher(ctx context.Context, s synchronizer) error 
 	return w.Add(config.AppSkinsDir)
 }
 
-// BenchConfig location of the benchmarks configuration file.
-func (c *Configurator) benchConfig(context string) (string, error) {
-	if c.Config == nil {
-		return "", fmt.Errorf("invalid bench config file. no root config")
-	}
-	ct, err := c.Config.K9s.ActiveContext()
-	if err != nil {
-		return "", err
-	}
-
-	return filepath.Join(config.AppContextsDir, ct.ClusterName, context, "benchmarks.yaml"), nil
-}
-
 // RefreshStyles load for skin configuration changes.
 func (c *Configurator) RefreshStyles(context string) {
-	if bc, err := c.benchConfig(context); err != nil {
+	cluster := "na"
+	if c.Config != nil {
+		if ct, err := c.Config.K9s.ActiveContext(); err == nil {
+			cluster = ct.ClusterName
+		}
+	}
+
+	if bc, err := config.EnsureBenchmarksCfgFile(cluster, context); err != nil {
 		log.Warn().Err(err).Msgf("No benchmark config file found for context: %s", context)
 	} else {
 		c.BenchFile = bc
@@ -163,12 +155,11 @@ func (c *Configurator) RefreshStyles(context string) {
 			skin = ct.Skin
 		}
 	}
-
-	// !!BOZO!! Need to axe yml -> yaml
-	var skinFile = filepath.Join(config.AppSkinsDir, skin+".yml")
 	if skin == "" {
+		c.updateStyles("")
 		return
 	}
+	var skinFile = config.SkinFileFromName(skin)
 	if err := c.Styles.Load(skinFile); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			log.Warn().Msgf("Skin file %q not found in skins dir: %s", skinFile, config.AppSkinsDir)
@@ -177,7 +168,6 @@ func (c *Configurator) RefreshStyles(context string) {
 		}
 	} else {
 		c.updateStyles(skinFile)
-		return
 	}
 }
 

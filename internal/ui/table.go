@@ -99,8 +99,11 @@ func (t *Table) StylesChanged(s *config.Styles) {
 	t.SetBackgroundColor(s.Table().BgColor.Color())
 	t.SetBorderColor(s.Frame().Border.FgColor.Color())
 	t.SetBorderFocusColor(s.Frame().Border.FocusColor.Color())
-	t.SetSelectedStyle(tcell.StyleDefault.Foreground(t.styles.Table().CursorFgColor.Color()).Background(t.styles.Table().CursorBgColor.Color()).Attributes(tcell.AttrBold))
-	t.fgColor = s.Table().CursorFgColor.Color()
+	t.SetSelectedStyle(
+		tcell.StyleDefault.Foreground(t.styles.Table().CursorFgColor.Color()).
+			Background(t.styles.Table().CursorBgColor.Color()).Attributes(tcell.AttrBold))
+	t.selFgColor = s.Table().CursorFgColor.Color()
+	t.selBgColor = s.Table().CursorBgColor.Color()
 	t.Refresh()
 }
 

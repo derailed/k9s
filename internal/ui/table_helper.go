@@ -72,11 +72,11 @@ func IsLabelSelector(s string) bool {
 		return false
 	}
 
-	if strings.Contains(s, "=") {
+	if LabelRx.MatchString(s) {
 		return true
 	}
 
-	return LabelRx.MatchString(s)
+	return !strings.Contains(s, " ") && strings.Contains(s, "=")
 }
 
 // IsFuzzySelector checks if query is fuzzy.

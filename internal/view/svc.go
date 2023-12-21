@@ -153,7 +153,16 @@ func (s *Service) runBenchmark(port string, cfg config.BenchConfig) error {
 	}
 
 	var err error
-	base := "http://" + cfg.HTTP.Host + ":" + port + cfg.HTTP.Path
+	base := cfg.HTTP.Host
+	if !strings.Contains(base, ":") {
+		base += ":" + port + cfg.HTTP.Path
+	} else {
+		base += cfg.HTTP.Path
+	}
+	if strings.Index(base, "http") != 0 {
+		base = "http://" + base
+	}
+
 	if s.bench, err = perf.NewBenchmark(base, s.App().version, cfg); err != nil {
 		return err
 	}

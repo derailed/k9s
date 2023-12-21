@@ -98,13 +98,28 @@ func (a *Aliases) Define(gvr string, aliases ...string) {
 }
 
 // Load K9s aliases.
-func (a *Aliases) Load() error {
+func (a *Aliases) Load(path string) error {
 	a.loadDefaultAliases()
-	return a.LoadFileAliases(AppAliasesFile)
+
+	f, err := EnsureAliasesCfgFile()
+	if err != nil {
+		log.Error().Err(err).Msgf("Unable to gen config aliases")
+	}
+
+	// load global alias file
+	if err := a.LoadFile(f); err != nil {
+		return err
+	}
+
+	// load context specific aliases if any
+	return a.LoadFile(path)
 }
 
-// LoadFileAliases loads alias from a given file.
-func (a *Aliases) LoadFileAliases(path string) error {
+// LoadFile loads alias from a given file.
+func (a *Aliases) LoadFile(path string) error {
+	if path == "" {
+		return nil
+	}
 	f, err := os.ReadFile(path)
 	if err == nil {
 		var aa Aliases
@@ -132,15 +147,6 @@ func (a *Aliases) declare(key string, aliases ...string) {
 func (a *Aliases) loadDefaultAliases() {
 	a.mx.Lock()
 	defer a.mx.Unlock()
-
-	a.Alias["dp"] = "apps/v1/deployments"
-	a.Alias["sec"] = "v1/secrets"
-	a.Alias["jo"] = "batch/v1/jobs"
-	a.Alias["cr"] = "rbac.authorization.k8s.io/v1/clusterroles"
-	a.Alias["crb"] = "rbac.authorization.k8s.io/v1/clusterrolebindings"
-	a.Alias["ro"] = "rbac.authorization.k8s.io/v1/roles"
-	a.Alias["rb"] = "rbac.authorization.k8s.io/v1/rolebindings"
-	a.Alias["np"] = "networking.k8s.io/v1/networkpolicies"
 
 	a.declare("help", "h", "?")
 	a.declare("quit", "q", "q!", "qa", "Q")

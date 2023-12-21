@@ -4,6 +4,7 @@
 package config
 
 import (
+	_ "embed"
 	"os"
 	"os/user"
 	"path/filepath"
@@ -26,19 +27,56 @@ const (
 )
 
 var (
-	invalidPathCharsRX = regexp.MustCompile(`[:/]+`)
+	//go:embed templates/benchmarks.yaml
+	// benchmarkTpl tracks benchmark default config template
+	benchmarkTpl []byte
 
-	AppConfigDir     string
-	AppSkinsDir      string
+	//go:embed templates/aliases.yaml
+	// aliasesTpl tracks aliases default config template
+	aliasesTpl []byte
+
+	//go:embed templates/hotkeys.yaml
+	// hotkeysTpl tracks hotkeys default config template
+	hotkeysTpl []byte
+
+	//go:embed templates/stock-skin.yaml
+	// stockSkinTpl tracks stock skin template
+	stockSkinTpl []byte
+)
+
+var (
+	// AppConfigDir tracks main k9s config home directory.
+	AppConfigDir string
+
+	// AppSkinsDir tracks skins data directory.
+	AppSkinsDir string
+
+	// AppBenchmarksDir tracks benchmarks results directory.
 	AppBenchmarksDir string
-	AppDumpsDir      string
-	AppContextsDir   string
-	AppConfigFile    string
-	AppLogFile       string
-	AppViewsFile     string
-	AppAliasesFile   string
-	AppPluginsFile   string
-	AppHotKeysFile   string
+
+	// AppDumpsDir tracks screen dumps data directory.
+	AppDumpsDir string
+
+	// AppContextsDir tracks contexts data directory.
+	AppContextsDir string
+
+	// AppConfigFile tracks k9s config file.
+	AppConfigFile string
+
+	// AppLogFile tracks k9s logs file.
+	AppLogFile string
+
+	// AppViewsFile tracks custom views config file.
+	AppViewsFile string
+
+	// AppAliasesFile tracks aliases config file.
+	AppAliasesFile string
+
+	// AppPluginsFile tracks plugins config file.
+	AppPluginsFile string
+
+	// AppHotKeysFile tracks hotkeys config file.
+	AppHotKeysFile string
 )
 
 // InitLogsLoc initializes K9s logs location.
@@ -107,6 +145,21 @@ func initXDGLocs() error {
 		return err
 	}
 
+	AppConfigFile, err = xdg.ConfigFile(filepath.Join(AppName, data.MainConfigFile))
+	if err != nil {
+		return err
+	}
+
+	AppHotKeysFile = filepath.Join(AppConfigDir, "hotkeys.yaml")
+	AppAliasesFile = filepath.Join(AppConfigDir, "aliases.yaml")
+	AppPluginsFile = filepath.Join(AppConfigDir, "plugins.yaml")
+	AppViewsFile = filepath.Join(AppConfigDir, "views.yaml")
+
+	AppSkinsDir = filepath.Join(AppConfigDir, "skins")
+	if err := data.EnsureFullPath(AppSkinsDir, data.DefaultDirMod); err != nil {
+		log.Warn().Err(err).Msgf("No skins dir detected")
+	}
+
 	AppDumpsDir, err = xdg.StateFile(filepath.Join(AppName, "screen-dumps"))
 	if err != nil {
 		return err
@@ -117,88 +170,112 @@ func initXDGLocs() error {
 		log.Warn().Err(err).Msgf("No benchmarks dir detected")
 	}
 
-	AppConfigFile, err = xdg.ConfigFile(filepath.Join(AppName, data.MainConfigFile))
-	if err != nil {
-		return err
-	}
-
 	dataDir, err := xdg.DataFile(AppName)
 	if err != nil {
 		return err
-	}
-	AppSkinsDir = filepath.Join(dataDir, "skins")
-	if err := data.EnsureFullPath(AppSkinsDir, data.DefaultDirMod); err != nil {
-		log.Warn().Err(err).Msgf("No skins dir detected")
 	}
 	AppContextsDir = filepath.Join(dataDir, "clusters")
 	if err := data.EnsureFullPath(AppContextsDir, data.DefaultDirMod); err != nil {
 		log.Warn().Err(err).Msgf("No context dir detected")
 	}
 
-	AppHotKeysFile, err = xdg.DataFile(filepath.Join(AppName, "hotkeys.yaml"))
-	if err != nil {
-		log.Warn().Err(err).Msgf("No hotkeys file detected")
-	}
-
-	AppAliasesFile, err = xdg.DataFile(filepath.Join(AppName, "aliases.yaml"))
-	if err != nil {
-		log.Warn().Err(err).Msgf("No aliases file detected")
-	}
-
-	AppPluginsFile, err = xdg.DataFile(filepath.Join(AppName, "plugins.yaml"))
-	if err != nil {
-		log.Warn().Err(err).Msgf("No plugins file detected")
-	}
-
-	AppViewsFile, err = xdg.DataFile(filepath.Join(AppName, "views.yaml"))
-	if err != nil {
-		log.Warn().Err(err).Msgf("No views file detected")
-	}
-
 	return nil
 }
 
+var invalidPathCharsRX = regexp.MustCompile(`[:/]+`)
+
+// SanitizeFileName ensure file spec is valid.
 func SanitizeFileName(name string) string {
 	return invalidPathCharsRX.ReplaceAllString(name, "-")
 }
 
-func AppContextDir(context string) string {
-	return filepath.Join(AppContextsDir, SanitizeFileName(context))
+// AppContextDir generates a valid context config dir.
+func AppContextDir(cluster, context string) string {
+	return filepath.Join(AppContextsDir, sanContextSubpath(cluster, context))
 }
 
-func AppContextConfig(context string) string {
-	return filepath.Join(AppContextDir(context), "config.yaml")
+// AppContextAliasesFile generates a valid context specific aliases file path.
+func AppContextAliasesFile(cluster, context string) string {
+	return filepath.Join(AppContextsDir, sanContextSubpath(cluster, context), "aliases.yaml")
 }
 
-func DumpsDir(context string) (string, error) {
-	dir := filepath.Join(AppDumpsDir, SanitizeFileName(context))
+// AppContextPluginsFile generates a valid context specific plugins file path.
+func AppContextPluginsFile(cluster, context string) string {
+	return filepath.Join(AppContextsDir, sanContextSubpath(cluster, context), "plugins.yaml")
+}
+
+// AppContextHotkeysFile generates a valid context specific hotkeys file path.
+func AppContextHotkeysFile(cluster, context string) string {
+	return filepath.Join(AppContextsDir, sanContextSubpath(cluster, context), "hotkeys.yaml")
+}
+
+// AppContextConfig generates a valid context config file path.
+func AppContextConfig(cluster, context string) string {
+	return filepath.Join(AppContextDir(cluster, context), data.MainConfigFile)
+}
+
+// DumpsDir generates a valid context dump directory.
+func DumpsDir(cluster, context string) (string, error) {
+	dir := filepath.Join(AppDumpsDir, sanContextSubpath(cluster, context))
 
 	return dir, data.EnsureDirPath(dir, data.DefaultDirMod)
 }
 
-func BenchmarksDir(context string) (string, error) {
-	dir := filepath.Join(AppBenchmarksDir, SanitizeFileName(context))
+// EnsureBenchmarksDir generates a valid benchmark results directory.
+func EnsureBenchmarksDir(cluster, context string) (string, error) {
+	dir := filepath.Join(AppBenchmarksDir, sanContextSubpath(cluster, context))
 
 	return dir, data.EnsureDirPath(dir, data.DefaultDirMod)
 }
 
-func BenchConfigFile(context string) (string, error) {
-	path := filepath.Join(AppContextDir(context), "benchmarks.yaml")
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+// EnsureBenchmarksCfgFile generates a valid benchmark file.
+func EnsureBenchmarksCfgFile(cluster, context string) (string, error) {
+	f := filepath.Join(AppContextDir(cluster, context), "benchmarks.yaml")
+	if err := data.EnsureDirPath(f, data.DefaultDirMod); err != nil {
 		return "", err
 	}
+	if _, err := os.Stat(f); os.IsNotExist(err) {
+		return f, os.WriteFile(f, benchmarkTpl, data.DefaultFileMod)
+	}
 
-	return path, nil
+	return f, nil
 }
 
-func SkinFile(skin string) (string, error) {
-	path := filepath.Join(AppSkinsDir, "skin.yaml")
-	_, err := os.Stat(path)
-	if err != nil {
+// EnsureAliasesCfgFile generates a valid aliases file.
+func EnsureAliasesCfgFile() (string, error) {
+	f := filepath.Join(AppConfigDir, "aliases.yaml")
+	if err := data.EnsureDirPath(f, data.DefaultDirMod); err != nil {
 		return "", err
 	}
+	if _, err := os.Stat(f); os.IsNotExist(err) {
+		return f, os.WriteFile(f, aliasesTpl, data.DefaultFileMod)
+	}
 
-	return path, nil
+	return f, nil
+}
+
+// EnsureHotkeysCfgFile generates a valid hotkeys file.
+func EnsureHotkeysCfgFile() (string, error) {
+	f := filepath.Join(AppConfigDir, "hotkeys.yaml")
+	if err := data.EnsureDirPath(f, data.DefaultDirMod); err != nil {
+		return "", err
+	}
+	if _, err := os.Stat(f); os.IsNotExist(err) {
+		return f, os.WriteFile(f, hotkeysTpl, data.DefaultFileMod)
+	}
+
+	return f, nil
+}
+
+// SkinFileFromName generate skin file path from spec.
+func SkinFileFromName(n string) string {
+	return filepath.Join(AppSkinsDir, n+".yaml")
+}
+
+// Helpers...
+
+func sanContextSubpath(cluster, context string) string {
+	return filepath.Join(SanitizeFileName(cluster), SanitizeFileName(context))
 }
 
 func hasK9sConfigEnv() bool {

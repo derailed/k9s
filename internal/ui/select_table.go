@@ -15,7 +15,8 @@ type SelectTable struct {
 	model      Tabular
 	selectedFn func(string) string
 	marks      map[string]struct{}
-	fgColor    tcell.Color
+	selFgColor tcell.Color
+	selBgColor tcell.Color
 }
 
 // SetModel sets the table model.
@@ -124,7 +125,9 @@ func (s *SelectTable) selectionChanged(r, c int) {
 		return
 	}
 	if cell := s.GetCell(r, c); cell != nil {
-		s.SetSelectedStyle(tcell.StyleDefault.Foreground(s.fgColor).Background(cell.Color).Attributes(tcell.AttrBold))
+		s.SetSelectedStyle(
+			tcell.StyleDefault.Foreground(s.selFgColor).
+				Background(cell.Color).Attributes(tcell.AttrBold))
 	}
 }
 

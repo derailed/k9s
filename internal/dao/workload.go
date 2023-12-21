@@ -164,10 +164,20 @@ func diagnose(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinitio
 			return DegradedStatus
 		}
 	case RsGVR, DsGVR:
-		rd := r.Cells[indexOf("Ready", h)].(int64)
-		de := r.Cells[indexOf("Desired", h)].(int64)
-		if !isReady(fmt.Sprintf("%d/%d", rd, de)) {
-			return DegradedStatus
+		rd, ok1 := r.Cells[indexOf("Ready", h)].(int64)
+		de, ok2 := r.Cells[indexOf("Desired", h)].(int64)
+		if ok1 && ok2 {
+			if !isReady(fmt.Sprintf("%d/%d", rd, de)) {
+				return DegradedStatus
+			}
+			break
+		}
+		rds, oks1 := r.Cells[indexOf("Ready", h)].(string)
+		des, oks2 := r.Cells[indexOf("Desired", h)].(string)
+		if oks1 && oks2 {
+			if !isReady(fmt.Sprintf("%s/%s", rds, des)) {
+				return DegradedStatus
+			}
 		}
 	case SvcGVR:
 	default:
@@ -207,5 +217,4 @@ func indexOf(n string, defs []metav1.TableColumnDefinition) int {
 	}
 
 	return -1
-
 }

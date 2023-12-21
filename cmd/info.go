@@ -32,15 +32,15 @@ func printInfo(cmd *cobra.Command, args []string) error {
 	printLogo(color.Cyan)
 	printTuple(fmat, "Version", version, color.Cyan)
 	printTuple(fmat, "Config", config.AppConfigFile, color.Cyan)
+	printTuple(fmat, "Custom Views", config.AppViewsFile, color.Cyan)
+	printTuple(fmat, "Plugins", config.AppPluginsFile, color.Cyan)
+	printTuple(fmat, "Hotkeys", config.AppHotKeysFile, color.Cyan)
+	printTuple(fmat, "Aliases", config.AppAliasesFile, color.Cyan)
+	printTuple(fmat, "Skins", config.AppSkinsDir, color.Cyan)
+	printTuple(fmat, "Context Configs", config.AppContextsDir, color.Cyan)
 	printTuple(fmat, "Logs", config.AppLogFile, color.Cyan)
-	printTuple(fmat, "Dumps dir", getScreenDumpDirForInfo(), color.Cyan)
-	printTuple(fmat, "Benchmarks dir", config.AppBenchmarksDir, color.Cyan)
-	printTuple(fmat, "Skins dir", config.AppSkinsDir, color.Cyan)
-	printTuple(fmat, "Contexts dir", config.AppContextsDir, color.Cyan)
-	printTuple(fmat, "Custom views file", config.AppViewsFile, color.Cyan)
-	printTuple(fmat, "Plugins file", config.AppPluginsFile, color.Cyan)
-	printTuple(fmat, "Hotkeys file", config.AppHotKeysFile, color.Cyan)
-	printTuple(fmat, "Alias file", config.AppAliasesFile, color.Cyan)
+	printTuple(fmat, "Benchmarks", config.AppBenchmarksDir, color.Cyan)
+	printTuple(fmat, "ScreenDumps", getScreenDumpDirForInfo(), color.Cyan)
 
 	return nil
 }

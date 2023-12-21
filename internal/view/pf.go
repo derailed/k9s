@@ -130,7 +130,7 @@ func (p *PortForward) runBenchmark() error {
 	}
 	name := p.App().Config.K9s.ActiveContextName()
 	p.bench.Run(ct.ClusterName, name, func() {
-		log.Debug().Msg("Bench Completed!")
+		log.Debug().Msgf("Benchmark %q Completed!", name)
 		p.App().QueueUpdate(func() {
 			if p.bench.Canceled() {
 				p.App().Status(model.FlashInfo, "Benchmark canceled")

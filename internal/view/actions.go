@@ -90,7 +90,7 @@ func gotoCmd(r Runner, cmd, path string) ui.ActionHandler {
 
 func pluginActions(r Runner, aa ui.KeyActions) {
 	pp := config.NewPlugins()
-	if err := pp.Load(); err != nil {
+	if err := pp.Load(r.App().Config.ContextPluginsPath()); err != nil {
 		return
 	}
 

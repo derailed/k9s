@@ -126,12 +126,11 @@ func (b *Benchmark) save(cluster, context string, r io.Reader) error {
 	ns, n := client.Namespaced(b.config.Name)
 	n = strings.Replace(n, "|", "_", -1)
 	n = strings.Replace(n, ":", "_", -1)
-	bf := filepath.Join(
-		config.AppBenchmarksDir,
-		config.SanitizeFileName(cluster),
-		config.SanitizeFileName(context),
-		fmt.Sprintf(benchFmat, ns, n, time.Now().UnixNano()),
-	)
+	dir, err := config.EnsureBenchmarksDir(cluster, context)
+	if err != nil {
+		return err
+	}
+	bf := filepath.Join(dir, fmt.Sprintf(benchFmat, ns, n, time.Now().UnixNano()))
 	if err := data.EnsureDirPath(bf, data.DefaultDirMod); err != nil {
 		return err
 	}

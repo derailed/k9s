@@ -45,7 +45,7 @@ func TestEnsureDirPathNone(t *testing.T) {
 
 func TestEnsureDirPathNoOpt(t *testing.T) {
 	var mod os.FileMode = 0744
-	dir := filepath.Join("/tmp", "blee")
+	dir := filepath.Join("/tmp", "k9s-test")
 	os.Remove(dir)
 	assert.NoError(t, os.Mkdir(dir, mod))
 

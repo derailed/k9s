@@ -113,7 +113,7 @@ func (a *App) Init(version string, rate int) error {
 	}
 
 	a.command = NewCommand(a)
-	if err := a.command.Init(); err != nil {
+	if err := a.command.Init(a.Config.ContextAliasesPath()); err != nil {
 		return err
 	}
 	a.CmdBuff().SetSuggestionFn(a.suggestCommand())
@@ -395,7 +395,7 @@ func (a *App) refreshCluster(context.Context) error {
 
 	// Reload alias
 	go func() {
-		if err := a.command.Reset(false); err != nil {
+		if err := a.command.Reset(a.Config.ContextAliasesPath(), false); err != nil {
 			log.Error().Err(err).Msgf("Command reset failed")
 		}
 	}()
@@ -449,10 +449,6 @@ func (a *App) switchContext(ci *cmd.Interpreter) error {
 	a.Halt()
 	defer a.Resume()
 	{
-		if err := a.command.Reset(true); err != nil {
-			return err
-		}
-
 		p := cmd.NewInterpreter(a.Config.ActiveView())
 		if p.IsContextCmd() {
 			a.Config.SetActiveView("pod")
@@ -462,6 +458,9 @@ func (a *App) switchContext(ci *cmd.Interpreter) error {
 		a.Config.Reset()
 		ct, err := a.Config.K9s.ActivateContext(name)
 		if err != nil {
+			return err
+		}
+		if err := a.command.Reset(a.Config.ContextAliasesPath(), true); err != nil {
 			return err
 		}
 		if cns, ok := ci.NSArg(); ok {

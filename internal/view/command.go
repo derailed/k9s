@@ -38,9 +38,9 @@ func NewCommand(app *App) *Command {
 }
 
 // Init initializes the command.
-func (c *Command) Init() error {
+func (c *Command) Init(path string) error {
 	c.alias = dao.NewAlias(c.app.factory)
-	if _, err := c.alias.Ensure(); err != nil {
+	if _, err := c.alias.Ensure(path); err != nil {
 		log.Error().Err(err).Msgf("command init failed!")
 		return err
 	}
@@ -50,14 +50,14 @@ func (c *Command) Init() error {
 }
 
 // Reset resets Command and reload aliases.
-func (c *Command) Reset(clear bool) error {
+func (c *Command) Reset(path string, clear bool) error {
 	c.mx.Lock()
 	defer c.mx.Unlock()
 
 	if clear {
 		c.alias.Clear()
 	}
-	if _, err := c.alias.Ensure(); err != nil {
+	if _, err := c.alias.Ensure(path); err != nil {
 		return err
 	}
 
