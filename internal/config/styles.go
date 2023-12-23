@@ -5,15 +5,11 @@ package config
 
 import (
 	"os"
-	"path/filepath"
 
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"gopkg.in/yaml.v2"
 )
-
-// K9sStylesFile represents K9s skins file location.
-var K9sStylesFile = YamlExtension(filepath.Join(K9sHome(), "skin.yml"))
 
 // StyleListener represents a skin's listener.
 type StyleListener interface {
@@ -434,6 +430,11 @@ func newMenu() Menu {
 
 // NewStyles creates a new default config.
 func NewStyles() *Styles {
+	var s Styles
+	if err := yaml.Unmarshal(stockSkinTpl, &s); err == nil {
+		return &s
+	}
+
 	return &Styles{
 		K9s: newStyle(),
 	}
@@ -446,7 +447,6 @@ func (s *Styles) Reset() {
 
 // DefaultSkin loads the default skin.
 func (s *Styles) DefaultSkin() {
-	s.K9s = newStyle()
 }
 
 // FgColor returns the foreground color.
@@ -545,7 +545,6 @@ func (s *Styles) Load(path string) error {
 	if err := yaml.Unmarshal(f, s); err != nil {
 		return err
 	}
-	// s.fireStylesChanged()
 
 	return nil
 }

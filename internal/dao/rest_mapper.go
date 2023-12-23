@@ -28,7 +28,7 @@ func (r *RestMapper) ToRESTMapper() (meta.RESTMapper, error) {
 		return nil, err
 	}
 	mapper := restmapper.NewDeferredDiscoveryRESTMapper(dial)
-	expander := restmapper.NewShortcutExpander(mapper, dial)
+	expander := restmapper.NewShortcutExpander(mapper, dial, nil)
 
 	return expander, nil
 }

@@ -30,7 +30,7 @@ func TestColor(t *testing.T) {
 
 func TestSkinNone(t *testing.T) {
 	s := config.NewStyles()
-	assert.Nil(t, s.Load("testdata/empty_skin.yml"))
+	assert.Nil(t, s.Load("testdata/empty_skin.yaml"))
 	s.Update()
 
 	assert.Equal(t, "#5f9ea0", s.Body().FgColor.String())
@@ -43,7 +43,7 @@ func TestSkinNone(t *testing.T) {
 
 func TestSkin(t *testing.T) {
 	s := config.NewStyles()
-	assert.Nil(t, s.Load("testdata/black_and_wtf.yml"))
+	assert.Nil(t, s.Load("testdata/black_and_wtf.yaml"))
 	s.Update()
 
 	assert.Equal(t, "#ffffff", s.Body().FgColor.String())
@@ -56,10 +56,10 @@ func TestSkin(t *testing.T) {
 
 func TestSkinNotExits(t *testing.T) {
 	s := config.NewStyles()
-	assert.NotNil(t, s.Load("testdata/blee.yml"))
+	assert.NotNil(t, s.Load("testdata/blee.yaml"))
 }
 
 func TestSkinBoarked(t *testing.T) {
 	s := config.NewStyles()
-	assert.NotNil(t, s.Load("testdata/skin_boarked.yml"))
+	assert.NotNil(t, s.Load("testdata/skin_boarked.yaml"))
 }

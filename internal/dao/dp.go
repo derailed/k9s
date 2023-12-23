@@ -194,7 +194,7 @@ func (d *Deployment) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, e
 }
 
 // Scan scans for resource references.
-func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
+func (d *Deployment) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
 	oo, err := d.GetFactory().List(d.GVR(), ns, wait, labels.Everything())
 	if err != nil {
@@ -209,7 +209,7 @@ func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs
 			return nil, errors.New("expecting Deployment resource")
 		}
 		switch gvr {
-		case "v1/configmaps":
+		case CmGVR:
 			if !hasConfigMap(&dp.Spec.Template.Spec, n) {
 				continue
 			}
@@ -217,7 +217,7 @@ func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs
 				GVR: d.GVR(),
 				FQN: client.FQN(dp.Namespace, dp.Name),
 			})
-		case "v1/secrets":
+		case SecGVR:
 			found, err := hasSecret(d.Factory, &dp.Spec.Template.Spec, dp.Namespace, n, wait)
 			if err != nil {
 				log.Warn().Err(err).Msgf("scanning secret %q", fqn)
@@ -230,7 +230,7 @@ func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs
 				GVR: d.GVR(),
 				FQN: client.FQN(dp.Namespace, dp.Name),
 			})
-		case "v1/persistentvolumeclaims":
+		case PvcGVR:
 			if !hasPVC(&dp.Spec.Template.Spec, n) {
 				continue
 			}
@@ -238,7 +238,7 @@ func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs
 				GVR: d.GVR(),
 				FQN: client.FQN(dp.Namespace, dp.Name),
 			})
-		case "scheduling.k8s.io/v1/priorityclasses":
+		case PcGVR:
 			if !hasPC(&dp.Spec.Template.Spec, n) {
 				continue
 			}

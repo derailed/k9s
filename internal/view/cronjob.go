@@ -42,9 +42,9 @@ func NewCronJob(gvr client.GVR) ResourceViewer {
 	return &c
 }
 
-func (c *CronJob) showJobs(app *App, model ui.Tabular, gvr, path string) {
+func (c *CronJob) showJobs(app *App, model ui.Tabular, gvr client.GVR, path string) {
 	log.Debug().Msgf("Showing Jobs %q:%q -- %q", model.GetNamespace(), gvr, path)
-	o, err := app.factory.Get(gvr, path, true, labels.Everything())
+	o, err := app.factory.Get(gvr.String(), path, true, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return

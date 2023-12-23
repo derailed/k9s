@@ -64,7 +64,7 @@ func runK(a *App, opts shellOpts) error {
 	if isInsecure := a.Conn().Config().Flags().Insecure; isInsecure != nil && *isInsecure {
 		args = append(args, "--insecure-skip-tls-verify")
 	}
-	args = append(args, "--context", a.Config.K9s.CurrentContext)
+	args = append(args, "--context", a.Config.K9s.ActiveContextName())
 	if cfg := a.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
 		args = append(args, "--kubeconfig", *cfg)
 	}
@@ -198,7 +198,7 @@ func runKu(a *App, opts shellOpts) (string, error) {
 	if g, err := a.Conn().Config().ImpersonateGroups(); err == nil {
 		args = append(args, "--as-group", g)
 	}
-	args = append(args, "--context", a.Config.K9s.CurrentContext)
+	args = append(args, "--context", a.Config.K9s.ActiveContextName())
 	if cfg := a.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
 		args = append(args, "--kubeconfig", *cfg)
 	}
@@ -284,8 +284,11 @@ func sshIn(a *App, fqn, co string) error {
 }
 
 func nukeK9sShell(a *App) error {
-	clName := a.Config.K9s.CurrentCluster
-	if !a.Config.K9s.Clusters[clName].FeatureGates.NodeShell {
+	ct, err := a.Config.K9s.ActiveContext()
+	if err != nil {
+		return err
+	}
+	if !ct.FeatureGates.NodeShell {
 		return nil
 	}
 

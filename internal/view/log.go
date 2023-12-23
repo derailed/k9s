@@ -61,6 +61,9 @@ func NewLog(gvr client.GVR, opts *dao.LogOptions) *Log {
 	return &l
 }
 
+func (l *Log) SetFilter(string)                 {}
+func (l *Log) SetLabelFilter(map[string]string) {}
+
 // Init initializes the viewer.
 func (l *Log) Init(ctx context.Context) (err error) {
 	if l.app, err = extractApp(ctx); err != nil {
@@ -403,7 +406,7 @@ func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 // SaveCmd dumps the logs to file.
 func (l *Log) SaveCmd(*tcell.EventKey) *tcell.EventKey {
-	path, err := saveData(l.app.Config.K9s.GetScreenDumpDir(), l.app.Config.K9s.CurrentContextDir(), l.model.GetPath(), l.logs.GetText(true))
+	path, err := saveData(l.app.Config.K9s.GetScreenDumpDir(), l.app.Config.K9s.ActiveContextDir(), l.model.GetPath(), l.logs.GetText(true))
 	if err != nil {
 		l.app.Flash().Err(err)
 		return nil

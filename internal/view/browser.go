@@ -14,7 +14,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
@@ -166,6 +166,15 @@ func (b *Browser) Stop() {
 	b.Table.Stop()
 }
 
+func (b *Browser) SetFilter(s string) {
+	b.CmdBuff().SetText(s, "")
+}
+
+func (b *Browser) SetLabelFilter(labels map[string]string) {
+	b.CmdBuff().SetText(toLabelsStr(labels), "")
+	b.GetModel().SetLabelFilter(toLabelsStr(labels))
+}
+
 // BufferChanged indicates the buffer was changed.
 func (b *Browser) BufferChanged(_, _ string) {}
 
@@ -280,7 +289,9 @@ func (b *Browser) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (b *Browser) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !b.CmdBuff().InCmdMode() {
 		b.CmdBuff().ClearText(false)
+		b.GetModel().SetLabelFilter("")
 		return b.App().PrevCmd(evt)
+
 	}
 
 	b.CmdBuff().Reset()
@@ -317,7 +328,7 @@ func (b *Browser) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if b.enterFn != nil {
 		f = b.enterFn
 	}
-	f(b.app, b.GetModel(), b.GVR().String(), path)
+	f(b.app, b.GetModel(), b.GVR(), path)
 
 	return nil
 }
@@ -357,7 +368,7 @@ func (b *Browser) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path == "" {
 		return evt
 	}
-	describeResource(b.app, b.GetModel(), b.GVR().String(), path)
+	describeResource(b.app, b.GetModel(), b.GVR(), path)
 
 	return nil
 }
@@ -383,7 +394,7 @@ func editRes(app *App, gvr client.GVR, path string) error {
 	}
 	ns, n := client.Namespaced(path)
 	if client.IsClusterScoped(ns) {
-		ns = client.AllNamespaces
+		ns = client.BlankNamespace
 	}
 	if gvr.String() == "v1/namespaces" {
 		ns = n
@@ -395,7 +406,7 @@ func editRes(app *App, gvr client.GVR, path string) error {
 	args := make([]string, 0, 10)
 	args = append(args, "edit")
 	args = append(args, gvr.FQN(n))
-	if ns != client.AllNamespaces {
+	if ns != client.BlankNamespace {
 		args = append(args, "-n", ns)
 	}
 	if err := runK(app, shellOpts{clear: true, args: args}); err != nil {
@@ -434,7 +445,7 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	b.app.Flash().Infof("Viewing namespace `%s`...", ns)
 	b.refresh()
 	b.UpdateTitle()
-	b.SelectRow(1, true)
+	b.SelectRow(1, 0, true)
 	b.app.CmdBuff().Reset()
 	if err := b.app.Config.SetActiveNamespace(b.GetModel().GetNamespace()); err != nil {
 		log.Error().Err(err).Msg("Config save NS failed!")
@@ -462,14 +473,13 @@ func (b *Browser) setNamespace(ns string) {
 
 func (b *Browser) defaultContext() context.Context {
 	ctx := context.WithValue(context.Background(), internal.KeyFactory, b.app.factory)
-	ctx = context.WithValue(ctx, internal.KeyGVR, b.GVR().String())
-	if b.Path != "" {
-		ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
-	}
+	ctx = context.WithValue(ctx, internal.KeyGVR, b.GVR())
+	ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
 	if ui.IsLabelSelector(b.CmdBuff().GetText()) {
 		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(b.CmdBuff().GetText()))
 	}
 	ctx = context.WithValue(ctx, internal.KeyNamespace, client.CleanseNamespace(b.App().Config.ActiveNamespace()))
+	ctx = context.WithValue(ctx, internal.KeyWithMetrics, b.app.factory.Client().HasMetrics())
 
 	return ctx
 }
@@ -514,7 +524,7 @@ func (b *Browser) namespaceActions(aa ui.KeyActions) {
 	if !b.meta.Namespaced || b.GetTable().Path != "" {
 		return
 	}
-	b.namespaces = make(map[int]string, config.MaxFavoritesNS)
+	b.namespaces = make(map[int]string, data.MaxFavoritesNS)
 	aa[ui.Key0] = ui.NewKeyAction(client.NamespaceAll, b.switchNamespaceCmd, true)
 	b.namespaces[0] = client.NamespaceAll
 	index := 1

@@ -4,37 +4,28 @@
 package config
 
 import (
-	"github.com/derailed/k9s/internal/client"
-)
+	"errors"
+	"path/filepath"
 
-const (
-	defaultRefreshRate  = 2
-	defaultMaxConnRetry = 5
+	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config/data"
 )
 
 // K9s tracks K9s configuration options.
 type K9s struct {
-	LiveViewAutoRefresh bool                `yaml:"liveViewAutoRefresh"`
-	RefreshRate         int                 `yaml:"refreshRate"`
-	MaxConnRetry        int                 `yaml:"maxConnRetry"`
-	EnableMouse         bool                `yaml:"enableMouse"`
-	EnableImageScan     bool                `yaml:"enableImageScan"`
-	Headless            bool                `yaml:"headless"`
-	Logoless            bool                `yaml:"logoless"`
-	Crumbsless          bool                `yaml:"crumbsless"`
-	ReadOnly            bool                `yaml:"readOnly"`
-	NoExitOnCtrlC       bool                `yaml:"noExitOnCtrlC"`
-	NoIcons             bool                `yaml:"noIcons"`
-	ShellPod            *ShellPod           `yaml:"shellPod"`
-	SkipLatestRevCheck  bool                `yaml:"skipLatestRevCheck"`
-	Logger              *Logger             `yaml:"logger"`
-	CurrentContext      string              `yaml:"currentContext"`
-	CurrentCluster      string              `yaml:"currentCluster"`
-	KeepMissingClusters bool                `yaml:"keepMissingClusters"`
-	Clusters            map[string]*Cluster `yaml:"clusters,omitempty"`
-	Thresholds          Threshold           `yaml:"thresholds"`
-	ScreenDumpDir       string              `yaml:"screenDumpDir"`
-	DisablePodCounting  bool                `yaml:"disablePodCounting"`
+	LiveViewAutoRefresh bool        `yaml:"liveViewAutoRefresh"`
+	ScreenDumpDir       string      `yaml:"screenDumpDir,omitempty"`
+	RefreshRate         int         `yaml:"refreshRate"`
+	MaxConnRetry        int         `yaml:"maxConnRetry"`
+	ReadOnly            bool        `yaml:"readOnly"`
+	NoExitOnCtrlC       bool        `yaml:"noExitOnCtrlC"`
+	UI                  UI          `yaml:"ui"`
+	SkipLatestRevCheck  bool        `yaml:"skipLatestRevCheck"`
+	DisablePodCounting  bool        `yaml:"disablePodCounting"`
+	ShellPod            *ShellPod   `yaml:"shellPod"`
+	ImageScans          *ImageScans `yaml:"imageScans"`
+	Logger              *Logger     `yaml:"logger"`
+	Thresholds          Threshold   `yaml:"thresholds"`
 	manualRefreshRate   int
 	manualHeadless      *bool
 	manualLogoless      *bool
@@ -42,36 +33,151 @@ type K9s struct {
 	manualReadOnly      *bool
 	manualCommand       *string
 	manualScreenDumpDir *string
+	dir                 *data.Dir
+	activeContextName   string
+	activeConfig        *data.Config
+	conn                client.Connection
+	ks                  data.KubeSettings
 }
 
 // NewK9s create a new K9s configuration.
-func NewK9s() *K9s {
+func NewK9s(conn client.Connection, ks data.KubeSettings) *K9s {
 	return &K9s{
 		RefreshRate:   defaultRefreshRate,
 		MaxConnRetry:  defaultMaxConnRetry,
+		ScreenDumpDir: AppDumpsDir,
 		Logger:        NewLogger(),
-		Clusters:      make(map[string]*Cluster),
 		Thresholds:    NewThreshold(),
-		ScreenDumpDir: K9sDefaultScreenDumpDir,
 		ShellPod:      NewShellPod(),
+		ImageScans:    NewImageScans(),
+		dir:           data.NewDir(AppContextsDir, conn, ks),
+		conn:          conn,
+		ks:            ks,
 	}
 }
 
-func (k *K9s) CurrentContextDir() string {
-	return SanitizeFilename(k.CurrentContext)
+func (k *K9s) Save() error {
+	if k.activeConfig != nil {
+		path := filepath.Join(
+			AppContextsDir,
+			k.activeConfig.Context.ClusterName,
+			k.activeContextName,
+			data.MainConfigFile,
+		)
+		return k.activeConfig.Save(path)
+	}
+
+	return nil
 }
 
-// ActivateCluster initializes the active cluster is not present.
-func (k *K9s) ActivateCluster(ns string) {
-	if k.Clusters == nil {
-		k.Clusters = map[string]*Cluster{}
+func (k *K9s) Refine(k1 *K9s) {
+	k.LiveViewAutoRefresh = k1.LiveViewAutoRefresh
+	k.ScreenDumpDir = k1.ScreenDumpDir
+	k.RefreshRate = k1.RefreshRate
+	k.MaxConnRetry = k1.MaxConnRetry
+	k.ReadOnly = k1.ReadOnly
+	k.NoExitOnCtrlC = k1.NoExitOnCtrlC
+	k.UI = k1.UI
+	k.SkipLatestRevCheck = k1.SkipLatestRevCheck
+	k.DisablePodCounting = k1.DisablePodCounting
+	k.ShellPod = k1.ShellPod
+	k.ImageScans = k1.ImageScans
+	k.Logger = k1.Logger
+	k.Thresholds = k1.Thresholds
+}
+
+func (k *K9s) Generate(k9sFlags *Flags) {
+	if *k9sFlags.RefreshRate != DefaultRefreshRate {
+		k.OverrideRefreshRate(*k9sFlags.RefreshRate)
 	}
-	if _, ok := k.Clusters[k.CurrentCluster]; ok {
-		return
+
+	k.OverrideHeadless(*k9sFlags.Headless)
+	k.OverrideLogoless(*k9sFlags.Logoless)
+	k.OverrideCrumbsless(*k9sFlags.Crumbsless)
+	k.OverrideReadOnly(*k9sFlags.ReadOnly)
+	k.OverrideWrite(*k9sFlags.Write)
+	k.OverrideCommand(*k9sFlags.Command)
+	k.OverrideScreenDumpDir(*k9sFlags.ScreenDumpDir)
+}
+
+// OverrideScreenDumpDir set the screen dump dir manually.
+func (k *K9s) OverrideScreenDumpDir(dir string) {
+	k.manualScreenDumpDir = &dir
+}
+
+func (k *K9s) GetScreenDumpDir() string {
+	screenDumpDir := k.ScreenDumpDir
+	if k.manualScreenDumpDir != nil && *k.manualScreenDumpDir != "" {
+		screenDumpDir = *k.manualScreenDumpDir
 	}
-	cl := NewCluster()
-	cl.Namespace.Active = ns
-	k.Clusters[k.CurrentCluster] = cl
+	if screenDumpDir == "" {
+		screenDumpDir = AppDumpsDir
+	}
+
+	return screenDumpDir
+}
+
+func (k *K9s) Reset() {
+	k.activeConfig, k.activeContextName = nil, ""
+}
+
+func (k *K9s) ActiveContextDir() string {
+	if k.activeConfig == nil {
+		return "na"
+	}
+
+	return filepath.Join(
+		SanitizeFileName(k.activeConfig.Context.ClusterName),
+		SanitizeFileName(k.ActiveContextName()),
+	)
+}
+
+func (k *K9s) ActiveContextNamespace() (string, error) {
+	if k.activeConfig != nil {
+		return k.activeConfig.Context.Namespace.Active, nil
+	}
+
+	return "", errors.New("context config is not set")
+}
+
+func (k *K9s) ActiveContextName() string {
+	return k.activeContextName
+}
+
+// ActiveContext returns the currently active context.
+func (k *K9s) ActiveContext() (*data.Context, error) {
+	if k.activeConfig != nil {
+		return k.activeConfig.Context, nil
+	}
+
+	ct, err := k.ActivateContext(k.activeContextName)
+	if err != nil {
+		return nil, err
+	}
+
+	return ct, nil
+}
+
+// ActivateContext initializes the active context is not present.
+func (k *K9s) ActivateContext(n string) (*data.Context, error) {
+	k.activeContextName = n
+	ct, err := k.ks.GetContext(k.activeContextName)
+	if err != nil {
+		return nil, err
+	}
+	cfg, err := k.dir.Load(n, ct)
+	if err != nil {
+		return nil, err
+	}
+	k.activeConfig = cfg
+	// If the context specifies a default namespace, use it!
+	if k.conn != nil {
+		if ns := k.conn.ActiveNamespace(); ns != client.BlankNamespace {
+			k.activeConfig.Context.Namespace.Active = ns
+		}
+	}
+
+	return cfg.Context, nil
 }
 
 // OverrideRefreshRate set the refresh rate manually.
@@ -114,14 +220,9 @@ func (k *K9s) OverrideCommand(cmd string) {
 	k.manualCommand = &cmd
 }
 
-// OverrideScreenDumpDir set the screen dump dir manually.
-func (k *K9s) OverrideScreenDumpDir(dir string) {
-	k.manualScreenDumpDir = &dir
-}
-
 // IsHeadless returns headless setting.
 func (k *K9s) IsHeadless() bool {
-	h := k.Headless
+	h := k.UI.Headless
 	if k.manualHeadless != nil && *k.manualHeadless {
 		h = *k.manualHeadless
 	}
@@ -131,7 +232,7 @@ func (k *K9s) IsHeadless() bool {
 
 // IsLogoless returns logoless setting.
 func (k *K9s) IsLogoless() bool {
-	h := k.Logoless
+	h := k.UI.Logoless
 	if k.manualLogoless != nil && *k.manualLogoless {
 		h = *k.manualLogoless
 	}
@@ -141,7 +242,7 @@ func (k *K9s) IsLogoless() bool {
 
 // IsCrumbsless returns crumbsless setting.
 func (k *K9s) IsCrumbsless() bool {
-	h := k.Crumbsless
+	h := k.UI.Crumbsless
 	if k.manualCrumbsless != nil && *k.manualCrumbsless {
 		h = *k.manualCrumbsless
 	}
@@ -165,34 +266,11 @@ func (k *K9s) IsReadOnly() bool {
 	if k.manualReadOnly != nil {
 		readOnly = *k.manualReadOnly
 	}
+	if k.activeConfig != nil && k.activeConfig.Context.ReadOnly {
+		readOnly = true
+	}
 
 	return readOnly
-}
-
-// ActiveCluster returns the currently active cluster.
-func (k *K9s) ActiveCluster() *Cluster {
-	if k.Clusters == nil {
-		k.Clusters = map[string]*Cluster{}
-	}
-	if c, ok := k.Clusters[k.CurrentCluster]; ok {
-		return c
-	}
-	k.Clusters[k.CurrentCluster] = NewCluster()
-
-	return k.Clusters[k.CurrentCluster]
-}
-
-func (k *K9s) GetScreenDumpDir() string {
-	screenDumpDir := k.ScreenDumpDir
-	if k.manualScreenDumpDir != nil && *k.manualScreenDumpDir != "" {
-		screenDumpDir = *k.manualScreenDumpDir
-	}
-
-	if screenDumpDir == "" {
-		return K9sDefaultScreenDumpDir
-	}
-
-	return screenDumpDir
 }
 
 func (k *K9s) validateDefaults() {
@@ -202,44 +280,19 @@ func (k *K9s) validateDefaults() {
 	if k.MaxConnRetry <= 0 {
 		k.MaxConnRetry = defaultMaxConnRetry
 	}
-	if k.ScreenDumpDir == "" {
-		k.ScreenDumpDir = K9sDefaultScreenDumpDir
-	}
-}
-
-func (k *K9s) validateClusters(c client.Connection, ks KubeSettings) {
-	cc, err := ks.ClusterNames()
-	if err != nil {
-		return
-	}
-	for key, cluster := range k.Clusters {
-		cluster.Validate(c, ks)
-		// if the cluster is defined in the $KUBECONFIG file, keep it in the k9s config file
-		if _, ok := cc[key]; ok {
-			continue
-		}
-
-		// if we asked to keep the clusters in the config file
-		if k.KeepMissingClusters {
-			continue
-		}
-
-		// else remove it from the k9s config file
-		if k.CurrentCluster == key {
-			k.CurrentCluster = ""
-		}
-		delete(k.Clusters, key)
-	}
 }
 
 // Validate the current configuration.
-func (k *K9s) Validate(c client.Connection, ks KubeSettings) {
+func (k *K9s) Validate(c client.Connection, ks data.KubeSettings) {
 	k.validateDefaults()
-	if k.Clusters == nil {
-		k.Clusters = map[string]*Cluster{}
+	if k.activeConfig == nil {
+		if n, err := ks.CurrentContextName(); err == nil {
+			_, _ = k.ActivateContext(n)
+		}
 	}
-	k.validateClusters(c, ks)
-
+	if k.ImageScans == nil {
+		k.ImageScans = NewImageScans()
+	}
 	if k.ShellPod == nil {
 		k.ShellPod = NewShellPod()
 	}
@@ -254,18 +307,4 @@ func (k *K9s) Validate(c client.Connection, ks KubeSettings) {
 		k.Thresholds = NewThreshold()
 	}
 	k.Thresholds.Validate(c, ks)
-
-	if context, err := ks.CurrentContextName(); err == nil && len(k.CurrentContext) == 0 {
-		k.CurrentContext = context
-		k.CurrentCluster = ""
-	}
-
-	if cl, err := ks.CurrentClusterName(); err == nil && len(k.CurrentCluster) == 0 {
-		k.CurrentCluster = cl
-	}
-
-	if _, ok := k.Clusters[k.CurrentCluster]; !ok {
-		k.Clusters[k.CurrentCluster] = NewCluster()
-	}
-	k.Clusters[k.CurrentCluster].Validate(c, ks)
 }

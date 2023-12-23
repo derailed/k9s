@@ -45,7 +45,7 @@ func (c *HelmChart) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (c *HelmChart) viewReleases(app *App, model ui.Tabular, _, path string) {
+func (c *HelmChart) viewReleases(app *App, model ui.Tabular, _ client.GVR, path string) {
 	v := NewHistory(client.NewGVR("helm-history"))
 	v.SetContextFn(c.helmContext)
 	if err := app.inject(v, false); err != nil {
@@ -58,7 +58,7 @@ func (c *HelmChart) historyCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path == "" {
 		return evt
 	}
-	c.viewReleases(c.App(), c.GetTable().GetModel(), c.GVR().String(), path)
+	c.viewReleases(c.App(), c.GetTable().GetModel(), c.GVR(), path)
 
 	return nil
 }

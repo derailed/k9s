@@ -46,7 +46,7 @@ func (Rbac) Header(ns string) Header {
 	h := make(Header, 0, 10)
 	h = append(h,
 		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "APIGROUP"},
+		HeaderColumn{Name: "API-GROUP"},
 	)
 	h = append(h, rbacVerbHeader()...)
 

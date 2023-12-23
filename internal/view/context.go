@@ -10,6 +10,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
@@ -101,7 +102,7 @@ func (c *Context) makeStyledForm() *tview.Form {
 	return f
 }
 
-func (c *Context) useCtx(app *App, model ui.Tabular, gvr, path string) {
+func (c *Context) useCtx(app *App, model ui.Tabular, gvr client.GVR, path string) {
 	log.Debug().Msgf("SWITCH CTX %q--%q", gvr, path)
 	if err := useContext(app, path); err != nil {
 		app.Flash().Err(err)
@@ -128,5 +129,5 @@ func useContext(app *App, name string) error {
 		return err
 	}
 
-	return app.switchContext(name)
+	return app.switchContext(cmd.NewInterpreter("ctx " + name))
 }

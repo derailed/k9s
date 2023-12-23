@@ -41,7 +41,7 @@ func (s *ServiceAccount) subjectCtx(ctx context.Context) context.Context {
 }
 
 func (s *ServiceAccount) refCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return scanSARefs(evt, s.App(), s.GetTable(), "v1/serviceaccounts")
+	return scanSARefs(evt, s.App(), s.GetTable(), dao.SaGVR)
 }
 
 func (s *ServiceAccount) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -56,7 +56,7 @@ func (s *ServiceAccount) policyCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func scanSARefs(evt *tcell.EventKey, a *App, t *Table, gvr string) *tcell.EventKey {
+func scanSARefs(evt *tcell.EventKey, a *App, t *Table, gvr client.GVR) *tcell.EventKey {
 	path := t.GetSelectedItem()
 	if path == "" {
 		return evt

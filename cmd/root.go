@@ -8,6 +8,8 @@ import (
 	"os"
 	"runtime/debug"
 
+	"github.com/derailed/k9s/internal/config/data"
+
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
@@ -20,12 +22,12 @@ import (
 )
 
 const (
-	appName      = "k9s"
+	appName      = config.AppName
 	shortAppDesc = "A graphical CLI for your Kubernetes cluster management."
 	longAppDesc  = "K9s is a CLI to view and manage your Kubernetes clusters."
 )
 
-var _ config.KubeSettings = (*client.Config)(nil)
+var _ data.KubeSettings = (*client.Config)(nil)
 
 var (
 	version, commit, date = "dev", "dev", client.NA
@@ -43,6 +45,10 @@ var (
 )
 
 func init() {
+	if err := config.InitLogLoc(); err != nil {
+		fmt.Printf("Fail to init k9s logs location %s\n", err)
+	}
+
 	rootCmd.AddCommand(versionCmd(), infoCmd())
 	initK9sFlags()
 	initK8sFlags()
@@ -51,18 +57,21 @@ func init() {
 // Execute root command.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		log.Panic().Err(err)
+		panic(err)
 	}
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	if err := config.EnsureDirPath(*k9sFlags.LogFile, config.DefaultDirMod); err != nil {
+	if err := config.InitLocs(); err != nil {
 		return err
 	}
-	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
-	file, err := os.OpenFile(*k9sFlags.LogFile, mod, config.DefaultFileMod)
+	file, err := os.OpenFile(
+		*k9sFlags.LogFile,
+		os.O_CREATE|os.O_APPEND|os.O_WRONLY,
+		data.DefaultFileMod,
+	)
 	if err != nil {
-		return err
+		return fmt.Errorf("Log file %q init failed: %w", *k9sFlags.LogFile, err)
 	}
 	defer func() {
 		if file != nil {
@@ -80,8 +89,8 @@ func run(cmd *cobra.Command, args []string) error {
 	}()
 
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: file})
-
 	zerolog.SetGlobalLevel(parseLevel(*k9sFlags.LogLevel))
+
 	app := view.NewApp(loadConfiguration())
 	if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
 		return err
@@ -99,38 +108,24 @@ func run(cmd *cobra.Command, args []string) error {
 func loadConfiguration() *config.Config {
 	log.Info().Msg("🐶 K9s starting up...")
 
-	// Load K9s config file...
 	k8sCfg := client.NewConfig(k8sFlags)
 	k9sCfg := config.NewConfig(k8sCfg)
-
-	if err := k9sCfg.Load(config.K9sConfigFile); err != nil {
+	if err := k9sCfg.Load(config.AppConfigFile); err != nil {
 		log.Warn().Msg("Unable to locate K9s config. Generating new configuration...")
+		k9sCfg.K9s.Generate(k9sFlags)
 	}
-
-	if *k9sFlags.RefreshRate != config.DefaultRefreshRate {
-		k9sCfg.K9s.OverrideRefreshRate(*k9sFlags.RefreshRate)
-	}
-
-	k9sCfg.K9s.OverrideHeadless(*k9sFlags.Headless)
-	k9sCfg.K9s.OverrideLogoless(*k9sFlags.Logoless)
-	k9sCfg.K9s.OverrideCrumbsless(*k9sFlags.Crumbsless)
-	k9sCfg.K9s.OverrideReadOnly(*k9sFlags.ReadOnly)
-	k9sCfg.K9s.OverrideWrite(*k9sFlags.Write)
-	k9sCfg.K9s.OverrideCommand(*k9sFlags.Command)
-	k9sCfg.K9s.OverrideScreenDumpDir(*k9sFlags.ScreenDumpDir)
-
 	if err := k9sCfg.Refine(k8sFlags, k9sFlags, k8sCfg); err != nil {
 		log.Error().Err(err).Msgf("refine failed")
 	}
 	conn, err := client.InitConnection(k8sCfg)
 	k9sCfg.SetConnection(conn)
 	if err != nil {
-		log.Error().Err(err).Msgf("failed to connect to cluster %q", k9sCfg.K9s.CurrentContext)
+		log.Error().Err(err).Msgf("failed to connect to context %q", k9sCfg.K9s.ActiveContextName())
 		return k9sCfg
 	}
 	// Try to access server version if that fail. Connectivity issue?
 	if !k9sCfg.GetConnection().CheckConnectivity() {
-		log.Panic().Msgf("Cannot connect to cluster %s", k9sCfg.K9s.CurrentCluster)
+		log.Panic().Msgf("Cannot connect to context %s", k9sCfg.K9s.ActiveContextName())
 	}
 	if !k9sCfg.GetConnection().ConnectionOK() {
 		panic("No connectivity")
@@ -177,7 +172,7 @@ func initK9sFlags() {
 	rootCmd.Flags().StringVarP(
 		k9sFlags.LogFile,
 		"logFile", "",
-		config.DefaultLogFile,
+		config.AppLogFile,
 		"Specify the log file",
 	)
 	rootCmd.Flags().BoolVar(

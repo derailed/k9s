@@ -24,10 +24,10 @@ const (
 	SearchFmt = "<[filter:bg:r]/%s[fg:bg:-]> "
 
 	// NSTitleFmt represents a namespaced view title.
-	NSTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
+	NSTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%s[fg:bg:-]][fg:bg:-] "
 
 	// TitleFmt represents a standard view title.
-	TitleFmt = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
+	TitleFmt = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%s[fg:bg:-]][fg:bg:-] "
 
 	descIndicator = "↓"
 	ascIndicator  = "↑"
@@ -71,7 +71,12 @@ func IsLabelSelector(s string) bool {
 	if s == "" {
 		return false
 	}
-	return LabelRx.MatchString(s)
+
+	if LabelRx.MatchString(s) {
+		return true
+	}
+
+	return !strings.Contains(s, " ") && strings.Contains(s, "=")
 }
 
 // IsFuzzySelector checks if query is fuzzy.
@@ -92,7 +97,11 @@ func IsInverseSelector(s string) bool {
 
 // TrimLabelSelector extracts label query.
 func TrimLabelSelector(s string) string {
-	return strings.TrimSpace(s[2:])
+	if strings.Index(s, "-l") == 0 {
+		return strings.TrimSpace(s[2:])
+	}
+
+	return s
 }
 
 // SkinTitle decorates a title.

@@ -14,7 +14,6 @@ import (
 
 	"github.com/rs/zerolog/log"
 	authorizationv1 "k8s.io/api/authorization/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/cache"
 	"k8s.io/apimachinery/pkg/version"
@@ -35,8 +34,8 @@ const (
 
 var supportedMetricsAPIVersions = []string{"v1beta1"}
 
-// Namespaces tracks a collection of namespace names.
-type Namespaces map[string]struct{}
+// NamespaceNames tracks a collection of namespace names.
+type NamespaceNames map[string]struct{}
 
 // APIClient represents a Kubernetes api client.
 type APIClient struct {
@@ -86,7 +85,7 @@ func (a *APIClient) ConnectionOK() bool {
 
 func makeSAR(ns, gvr string) *authorizationv1.SelfSubjectAccessReview {
 	if ns == ClusterScope {
-		ns = AllNamespaces
+		ns = BlankNamespace
 	}
 	spec := NewGVR(gvr)
 	res := spec.GVR()
@@ -107,9 +106,9 @@ func makeCacheKey(ns, gvr string, vv []string) string {
 	return ns + ":" + gvr + "::" + strings.Join(vv, ",")
 }
 
-// ActiveCluster returns the current cluster name.
-func (a *APIClient) ActiveCluster() string {
-	c, err := a.config.CurrentClusterName()
+// ActiveContext returns the current context name.
+func (a *APIClient) ActiveContext() string {
+	c, err := a.config.CurrentContextName()
 	if err != nil {
 		log.Error().Msgf("Unable to located active cluster")
 		return ""
@@ -119,9 +118,10 @@ func (a *APIClient) ActiveCluster() string {
 
 // IsActiveNamespace returns true if namespaces matches.
 func (a *APIClient) IsActiveNamespace(ns string) bool {
-	if a.ActiveNamespace() == AllNamespaces {
+	if a.ActiveNamespace() == BlankNamespace {
 		return true
 	}
+
 	return a.ActiveNamespace() == ns
 }
 
@@ -131,7 +131,7 @@ func (a *APIClient) ActiveNamespace() string {
 		return ns
 	}
 
-	return AllNamespaces
+	return BlankNamespace
 }
 
 func (a *APIClient) clearCache() {
@@ -149,7 +149,7 @@ func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) 
 		return false, errors.New("ACCESS -- No API server connection")
 	}
 	if IsClusterWide(ns) {
-		ns = AllNamespaces
+		ns = BlankNamespace
 	}
 	key := makeCacheKey(ns, gvr, verbs)
 	if v, ok := a.cache.Get(key); ok {
@@ -212,14 +212,27 @@ func (a *APIClient) ServerVersion() (*version.Info, error) {
 	return info, nil
 }
 
-// ValidNamespaces returns all available namespaces.
-func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
+func (a *APIClient) IsValidNamespace(ns string) bool {
+	if IsAllNamespace(ns) {
+		return true
+	}
+	nn, err := a.ValidNamespaceNames()
+	if err != nil {
+		return false
+	}
+	_, ok := nn[ns]
+
+	return ok
+}
+
+// ValidNamespaceNames returns all available namespaces.
+func (a *APIClient) ValidNamespaceNames() (NamespaceNames, error) {
 	if a == nil {
 		return nil, fmt.Errorf("validNamespaces: no available client found")
 	}
 
 	if nn, ok := a.cache.Get("validNamespaces"); ok {
-		if nss, ok := nn.([]v1.Namespace); ok {
+		if nss, ok := nn.(NamespaceNames); ok {
 			return nss, nil
 		}
 	}
@@ -233,9 +246,13 @@ func (a *APIClient) ValidNamespaces() ([]v1.Namespace, error) {
 	if err != nil {
 		return nil, err
 	}
-	a.cache.Add("validNamespaces", nn.Items, cacheExpiry)
+	nns := make(NamespaceNames, len(nn.Items))
+	for _, n := range nn.Items {
+		nns[n.Name] = struct{}{}
+	}
+	a.cache.Add("validNamespaces", nns, cacheExpiry)
 
-	return nn.Items, nil
+	return nns, nil
 }
 
 // CheckConnectivity return true if api server is cool or false otherwise.

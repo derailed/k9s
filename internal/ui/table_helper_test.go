@@ -11,19 +11,20 @@ import (
 
 func TestIsLabelSelector(t *testing.T) {
 	uu := map[string]struct {
-		sel string
-		e   bool
+		s  string
+		ok bool
 	}{
-		"cool":       {"-l app=fred,env=blee", true},
-		"noMode":     {"app=fred,env=blee", false},
-		"noSpace":    {"-lapp=fred,env=blee", true},
-		"wrongLabel": {"-f app=fred,env=blee", false},
+		"empty":      {s: ""},
+		"cool":       {s: "-l app=fred,env=blee", ok: true},
+		"no-flag":    {s: "app=fred,env=blee", ok: true},
+		"no-space":   {s: "-lapp=fred,env=blee", ok: true},
+		"wrong-flag": {s: "-f app=fred,env=blee"},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, IsLabelSelector(u.sel))
+			assert.Equal(t, u.ok, IsLabelSelector(u.s))
 		})
 	}
 }

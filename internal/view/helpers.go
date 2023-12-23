@@ -99,27 +99,28 @@ func defaultEnv(c *client.Config, path string, header render.Header, row render.
 	return env
 }
 
-func describeResource(app *App, m ui.Tabular, gvr, path string) {
-	v := NewLiveView(app, "Describe", model.NewDescribe(client.NewGVR(gvr), path))
+func describeResource(app *App, m ui.Tabular, gvr client.GVR, path string) {
+	v := NewLiveView(app, "Describe", model.NewDescribe(gvr, path))
 	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
 	}
 }
 
-func showPodsWithLabels(app *App, path string, sel map[string]string) {
-	labels := make([]string, 0, len(sel))
-	for k, v := range sel {
-		labels = append(labels, fmt.Sprintf("%s=%s", k, v))
+func toLabelsStr(labels map[string]string) string {
+	ll := make([]string, 0, len(labels))
+	for k, v := range labels {
+		ll = append(ll, fmt.Sprintf("%s=%s", k, v))
 	}
-	showPods(app, path, strings.Join(labels, ","), "")
+
+	return strings.Join(ll, ",")
 }
 
 func showPods(app *App, path, labelSel, fieldSel string) {
-	if err := app.switchNS(client.AllNamespaces); err != nil {
-		app.Flash().Err(err)
-		return
-	}
-
+	// !!BOZO!! needed??
+	// if err := app.switchNS(client.BlankNamespace); err != nil {
+	// 	app.Flash().Err(err)
+	// 	return
+	// }
 	v := NewPod(client.NewGVR("v1/pods"))
 	v.SetContextFn(podCtx(app, path, labelSel, fieldSel))
 
@@ -136,14 +137,6 @@ func podCtx(app *App, path, labelSel, fieldSel string) ContextFunc {
 	return func(ctx context.Context) context.Context {
 		ctx = context.WithValue(ctx, internal.KeyPath, path)
 		ctx = context.WithValue(ctx, internal.KeyLabels, labelSel)
-
-		ns, _ := client.Namespaced(path)
-		mx := client.NewMetricsServer(app.factory.Client())
-		nmx, err := mx.FetchPodsMetrics(ctx, ns)
-		if err != nil {
-			log.Debug().Err(err).Msgf("No pods metrics")
-		}
-		ctx = context.WithValue(ctx, internal.KeyMetrics, nmx)
 
 		return context.WithValue(ctx, internal.KeyFields, fieldSel)
 	}
@@ -254,8 +247,12 @@ func linesWithRegions(lines []string, matches fuzzy.Matches) []string {
 	for i, m := range matches {
 		for _, loc := range dao.ContinuousRanges(m.MatchedIndexes) {
 			start, end := loc[0]+offsetForLine[m.Index], loc[1]+offsetForLine[m.Index]
-			regionStr := matchTag(i, ll[m.Index][start:end])
-			ll[m.Index] = ll[m.Index][:start] + regionStr + ll[m.Index][end:]
+			line := ll[m.Index]
+			if end > len(line) {
+				end = len(line)
+			}
+			regionStr := matchTag(i, line[start:end])
+			ll[m.Index] = line[:start] + regionStr + line[end:]
 			offsetForLine[m.Index] += len(regionStr) - (end - start)
 		}
 	}

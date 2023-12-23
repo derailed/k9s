@@ -77,6 +77,9 @@ func NewPulse(gvr client.GVR) ResourceViewer {
 	}
 }
 
+func (p *Pulse) SetFilter(string)                 {}
+func (p *Pulse) SetLabelFilter(map[string]string) {}
+
 // Init initializes the view.
 func (p *Pulse) Init(ctx context.Context) error {
 	p.SetBorder(true)

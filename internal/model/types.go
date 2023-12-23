@@ -84,6 +84,12 @@ type Component interface {
 	Igniter
 	Hinter
 	Commander
+	Filterer
+}
+
+type Filterer interface {
+	SetFilter(string)
+	SetLabelFilter(map[string]string)
 }
 
 // Renderer represents a resource renderer.

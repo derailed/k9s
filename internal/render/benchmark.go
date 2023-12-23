@@ -14,6 +14,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -116,7 +117,7 @@ func (b Benchmark) initRow(row Fields, f os.FileInfo) error {
 	row[0] = tokens[0]
 	row[1] = tokens[1]
 	row[7] = f.Name()
-	row[9] = timeToAge(f.ModTime())
+	row[9] = ToAge(metav1.Time{Time: f.ModTime()})
 
 	return nil
 }

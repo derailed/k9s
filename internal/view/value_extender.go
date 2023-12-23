@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -20,7 +23,7 @@ type ValueExtender struct {
 func NewValueExtender(r ResourceViewer) ResourceViewer {
 	p := ValueExtender{ResourceViewer: r}
 	p.AddBindKeysFn(p.bindKeys)
-	p.GetTable().SetEnterFn(func(app *App, model ui.Tabular, gvr, path string) {
+	p.GetTable().SetEnterFn(func(app *App, model ui.Tabular, gvr client.GVR, path string) {
 		p.valuesCmd(nil)
 	})
 

@@ -20,6 +20,8 @@ import (
 const (
 	mxCacheSize   = 100
 	mxCacheExpiry = 1 * time.Minute
+	podMXGVR      = "metrics.k8s.io/v1beta1/pods"
+	nodeMXGVR     = "metrics.k8s.io/v1beta1/nodes"
 )
 
 // MetricsDial tracks global metric server handle.
@@ -149,7 +151,7 @@ func (m *MetricsServer) FetchNodesMetrics(ctx context.Context) (*mv1beta1.NodeMe
 	const msg = "user is not authorized to list node metrics"
 
 	mx := new(mv1beta1.NodeMetricsList)
-	if err := m.checkAccess(ClusterScope, "metrics.k8s.io/v1beta1/nodes", msg); err != nil {
+	if err := m.checkAccess(ClusterScope, nodeMXGVR, msg); err != nil {
 		return mx, err
 	}
 
@@ -180,7 +182,7 @@ func (m *MetricsServer) FetchNodeMetrics(ctx context.Context, n string) (*mv1bet
 	const msg = "user is not authorized to list node metrics"
 
 	mx := new(mv1beta1.NodeMetrics)
-	if err := m.checkAccess(ClusterScope, "metrics.k8s.io/v1beta1/nodes", msg); err != nil {
+	if err := m.checkAccess(ClusterScope, nodeMXGVR, msg); err != nil {
 		return mx, err
 	}
 
@@ -218,9 +220,9 @@ func (m *MetricsServer) FetchPodsMetrics(ctx context.Context, ns string) (*mv1be
 	const msg = "user is not authorized to list pods metrics"
 
 	if ns == NamespaceAll {
-		ns = AllNamespaces
+		ns = BlankNamespace
 	}
-	if err := m.checkAccess(ns, "metrics.k8s.io/v1beta1/pods", msg); err != nil {
+	if err := m.checkAccess(ns, podMXGVR, msg); err != nil {
 		return mx, err
 	}
 
@@ -269,9 +271,9 @@ func (m *MetricsServer) FetchPodMetrics(ctx context.Context, fqn string) (*mv1be
 
 	ns, _ := Namespaced(fqn)
 	if ns == NamespaceAll {
-		ns = AllNamespaces
+		ns = BlankNamespace
 	}
-	if err := m.checkAccess(ns, "metrics.k8s.io/v1beta1/pods", msg); err != nil {
+	if err := m.checkAccess(ns, podMXGVR, msg); err != nil {
 		return mx, err
 	}
 

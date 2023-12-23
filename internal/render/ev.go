@@ -9,7 +9,7 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tcell/v2"
-	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Event renders a K8s Event to screen.
@@ -68,7 +68,7 @@ func (e *Event) Header(ns string) Header {
 
 // Render renders a K8s resource to screen.
 func (e *Event) Render(o interface{}, ns string, r *Row) error {
-	row, ok := o.(metav1beta1.TableRow)
+	row, ok := o.(metav1.TableRow)
 	if !ok {
 		return fmt.Errorf("expecting a TableRow but got %T", o)
 	}

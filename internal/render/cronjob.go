@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/vul"
 	batchv1 "k8s.io/api/batch/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -26,7 +25,7 @@ func (CronJob) Header(ns string) Header {
 	h := Header{
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "VS"},
+		HeaderColumn{Name: "VS", VS: true},
 		HeaderColumn{Name: "SCHEDULE"},
 		HeaderColumn{Name: "SUSPEND"},
 		HeaderColumn{Name: "ACTIVE"},
@@ -37,9 +36,6 @@ func (CronJob) Header(ns string) Header {
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true},
-	}
-	if vul.ImgScanner == nil {
-		h = append(h[:vulIdx], h[vulIdx+1:]...)
 	}
 
 	return h
@@ -67,7 +63,7 @@ func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = Fields{
 		cj.Namespace,
 		cj.Name,
-		computeVulScore(&cj.Spec.JobTemplate.Spec.Template.Spec),
+		computeVulScore(cj.ObjectMeta, &cj.Spec.JobTemplate.Spec.Template.Spec),
 		cj.Spec.Schedule,
 		boolPtrToStr(cj.Spec.Suspend),
 		strconv.Itoa(len(cj.Status.Active)),
@@ -78,9 +74,6 @@ func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 		mapToStr(cj.Labels),
 		"",
 		ToAge(cj.GetCreationTimestamp()),
-	}
-	if vul.ImgScanner == nil {
-		r.Fields = append(r.Fields[:vulIdx], r.Fields[vulIdx+1:]...)
 	}
 
 	return nil

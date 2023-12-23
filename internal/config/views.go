@@ -5,17 +5,13 @@ package config
 
 import (
 	"os"
-	"path/filepath"
 
 	"gopkg.in/yaml.v2"
 )
 
-// K9sViewConfigFile represents the location for the views configuration.
-var K9sViewConfigFile = YamlExtension(filepath.Join(K9sHome(), "views.yml"))
-
 // ViewConfigListener represents a view config listener.
 type ViewConfigListener interface {
-	// ConfigChanged notifies listener the view configuration changed.
+	// ViewSettingsChanged notifies listener the view configuration changed.
 	ViewSettingsChanged(ViewSetting)
 }
 
@@ -90,6 +86,8 @@ func (v *CustomView) fireConfigChanged() {
 	for gvr, list := range v.listeners {
 		if v, ok := v.K9s.Views[gvr]; ok {
 			list.ViewSettingsChanged(v)
+		} else {
+			list.ViewSettingsChanged(ViewSetting{})
 		}
 	}
 }

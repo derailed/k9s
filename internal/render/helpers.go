@@ -23,8 +23,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
-func computeVulScore(spec *v1.PodSpec) string {
-	if vul.ImgScanner == nil {
+func computeVulScore(m metav1.ObjectMeta, spec *v1.PodSpec) string {
+	if vul.ImgScanner == nil || vul.ImgScanner.ShouldExcludes(m) {
 		return "0"
 	}
 	ii := ExtractImages(spec)

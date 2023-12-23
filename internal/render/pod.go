@@ -18,7 +18,6 @@ import (
 	mv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/vul"
 )
 
 const (
@@ -41,6 +40,7 @@ const (
 	PhaseError             = "Error"
 	PhaseImagePullBackOff  = "ImagePullBackOff"
 	PhaseOOMKilled         = "OOMKilled"
+	PhasePending           = "Pending"
 )
 
 // Pod renders a K8s Pod to screen.
@@ -59,9 +59,9 @@ func (p Pod) ColorerFunc() ColorerFunc {
 		}
 		status := strings.TrimSpace(re.Row.Fields[statusCol])
 		switch status {
-		case Pending:
+		case Pending, ContainerCreating:
 			c = PendingColor
-		case ContainerCreating, PodInitializing:
+		case PodInitializing:
 			c = AddColor
 		case Initialized:
 			c = HighlightColor
@@ -88,15 +88,11 @@ func (Pod) Header(ns string) Header {
 	h := Header{
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "VS"},
+		HeaderColumn{Name: "VS", VS: true},
 		HeaderColumn{Name: "PF"},
 		HeaderColumn{Name: "READY"},
 		HeaderColumn{Name: "STATUS"},
 		HeaderColumn{Name: "RESTARTS", Align: tview.AlignRight},
-		HeaderColumn{Name: "IP"},
-		HeaderColumn{Name: "NODE"},
-		HeaderColumn{Name: "NOMINATED NODE", Wide: true},
-		HeaderColumn{Name: "READINESS GATES", Wide: true},
 		HeaderColumn{Name: "CPU", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "MEM", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "CPU/R:L", Align: tview.AlignRight, Wide: true},
@@ -105,13 +101,14 @@ func (Pod) Header(ns string) Header {
 		HeaderColumn{Name: "%CPU/L", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "%MEM/R", Align: tview.AlignRight, MX: true},
 		HeaderColumn{Name: "%MEM/L", Align: tview.AlignRight, MX: true},
+		HeaderColumn{Name: "IP", Wide: true},
+		HeaderColumn{Name: "NODE", Wide: true},
+		HeaderColumn{Name: "NOMINATED NODE", Wide: true},
+		HeaderColumn{Name: "READINESS GATES", Wide: true},
 		HeaderColumn{Name: "QOS", Wide: true},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true},
-	}
-	if vul.ImgScanner == nil {
-		h = append(h[:vulIdx], h[vulIdx+1:]...)
 	}
 
 	return h
@@ -151,15 +148,11 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 	row.Fields = Fields{
 		po.Namespace,
 		po.ObjectMeta.Name,
-		computeVulScore(&po.Spec),
+		computeVulScore(po.ObjectMeta, &po.Spec),
 		"●",
 		strconv.Itoa(cr) + "/" + strconv.Itoa(len(po.Spec.Containers)),
 		phase,
 		strconv.Itoa(rc + irc),
-		na(po.Status.PodIP),
-		na(po.Spec.NodeName),
-		asNominated(po.Status.NominatedNodeName),
-		asReadinessGate(po),
 		toMc(c.cpu),
 		toMi(c.mem),
 		toMc(r.cpu) + ":" + toMc(r.lcpu),
@@ -168,13 +161,14 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 		client.ToPercentageStr(c.cpu, r.lcpu),
 		client.ToPercentageStr(c.mem, r.mem),
 		client.ToPercentageStr(c.mem, r.lmem),
+		na(po.Status.PodIP),
+		na(po.Spec.NodeName),
+		asNominated(po.Status.NominatedNodeName),
+		asReadinessGate(po),
 		p.mapQOS(po.Status.QOSClass),
 		mapToStr(po.Labels),
 		AsStatus(p.diagnose(phase, cr, len(cs))),
 		ToAge(po.GetCreationTimestamp()),
-	}
-	if vul.ImgScanner == nil {
-		row.Fields = append(row.Fields[:vulIdx], row.Fields[vulIdx+1:]...)
 	}
 
 	return nil
@@ -239,9 +233,12 @@ func (p *PodWithMetrics) DeepCopyObject() runtime.Object {
 }
 
 func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, r metric) {
-	rcpu, rmem := podRequests(pod.Spec)
-	lcpu, lmem := podLimits(pod.Spec)
-	r.cpu, r.lcpu, r.mem, r.lmem = rcpu.MilliValue(), lcpu.MilliValue(), rmem.Value(), lmem.Value()
+	rcpu, rmem := podRequests(pod.Spec.Containers)
+	r.cpu, r.mem = rcpu.MilliValue(), rmem.Value()
+
+	lcpu, lmem := podLimits(pod.Spec.Containers)
+	r.lcpu, r.lmem = lcpu.MilliValue(), lmem.Value()
+
 	if mx != nil {
 		ccpu, cmem := currentRes(mx)
 		c.cpu, c.mem = ccpu.MilliValue(), cmem.Value()
@@ -250,23 +247,10 @@ func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, r metric) {
 	return
 }
 
-func containerRequests(co *v1.Container) v1.ResourceList {
-	req := co.Resources.Requests
-	if len(req) != 0 {
-		return req
-	}
-	lim := co.Resources.Limits
-	if len(lim) != 0 {
-		return lim
-	}
-
-	return nil
-}
-
-func podLimits(spec v1.PodSpec) (resource.Quantity, resource.Quantity) {
+func podLimits(cc []v1.Container) (resource.Quantity, resource.Quantity) {
 	cpu, mem := new(resource.Quantity), new(resource.Quantity)
-	for _, co := range spec.Containers {
-		limits := co.Resources.Limits
+	for _, c := range cc {
+		limits := c.Resources.Limits
 		if len(limits) == 0 {
 			return resource.Quantity{}, resource.Quantity{}
 		}
@@ -280,10 +264,11 @@ func podLimits(spec v1.PodSpec) (resource.Quantity, resource.Quantity) {
 	return *cpu, *mem
 }
 
-func podRequests(spec v1.PodSpec) (resource.Quantity, resource.Quantity) {
+func podRequests(cc []v1.Container) (resource.Quantity, resource.Quantity) {
 	cpu, mem := new(resource.Quantity), new(resource.Quantity)
-	for i := range spec.Containers {
-		rl := containerRequests(&spec.Containers[i])
+	for _, c := range cc {
+		co := c
+		rl := containerRequests(&co)
 		if rl.Cpu() != nil {
 			cpu.Add(*rl.Cpu())
 		}
@@ -291,6 +276,7 @@ func podRequests(spec v1.PodSpec) (resource.Quantity, resource.Quantity) {
 			mem.Add(*rl.Memory())
 		}
 	}
+
 	return *cpu, *mem
 }
 

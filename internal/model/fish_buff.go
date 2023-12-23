@@ -136,5 +136,4 @@ func (f *FishBuff) fireSuggestionChanged(ss []string) {
 		suggest = ss[f.suggestionIndex]
 	}
 	f.SetText(f.GetText(), suggest)
-
 }

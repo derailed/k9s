@@ -17,13 +17,13 @@ var toFileName = regexp.MustCompile(`[^(\w/\.)]`)
 
 // IsClusterWide returns true if ns designates cluster scope, false otherwise.
 func IsClusterWide(ns string) bool {
-	return ns == NamespaceAll || ns == AllNamespaces || ns == ClusterScope
+	return ns == NamespaceAll || ns == BlankNamespace || ns == ClusterScope
 }
 
 // CleanseNamespace ensures all ns maps to blank.
 func CleanseNamespace(ns string) string {
 	if IsAllNamespace(ns) {
-		return AllNamespaces
+		return BlankNamespace
 	}
 
 	return ns
@@ -36,7 +36,7 @@ func IsAllNamespace(ns string) bool {
 
 // IsAllNamespaces returns true if all namespaces, false otherwise.
 func IsAllNamespaces(ns string) bool {
-	return ns == NamespaceAll || ns == AllNamespaces
+	return ns == NamespaceAll || ns == BlankNamespace
 }
 
 // IsNamespaced returns true if a specific ns is given.

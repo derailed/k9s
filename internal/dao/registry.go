@@ -83,6 +83,7 @@ func NewMeta() *Meta {
 // Customize here for non resource types or types with metrics or logs.
 func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 	m := Accessors{
+		client.NewGVR("workloads"):              &Workload{},
 		client.NewGVR("contexts"):               &Context{},
 		client.NewGVR("containers"):             &Container{},
 		client.NewGVR("scans"):                  &ImageScan{},
@@ -205,6 +206,14 @@ func loadNonResource(m ResourceMetas) {
 }
 
 func loadK9s(m ResourceMetas) {
+	m[client.NewGVR("workloads")] = metav1.APIResource{
+		Name:         "workloads",
+		Kind:         "Workload",
+		SingularName: "workload",
+		Namespaced:   true,
+		ShortNames:   []string{"wk"},
+		Categories:   []string{k9sCat},
+	}
 	m[client.NewGVR("pulses")] = metav1.APIResource{
 		Name:         "pulses",
 		Kind:         "Pulse",

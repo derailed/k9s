@@ -61,6 +61,9 @@ func coreViewers(vv MetaViewers) {
 }
 
 func miscViewers(vv MetaViewers) {
+	vv[client.NewGVR("workloads")] = MetaViewer{
+		viewerFn: NewWorkload,
+	}
 	vv[client.NewGVR("contexts")] = MetaViewer{
 		viewerFn: NewContext,
 	}
@@ -156,7 +159,7 @@ func extViewers(vv MetaViewers) {
 	}
 }
 
-func showCRD(app *App, _ ui.Tabular, _, path string) {
+func showCRD(app *App, _ ui.Tabular, _ client.GVR, path string) {
 	_, crd := client.Namespaced(path)
 	app.gotoResource(crd, "", false)
 }

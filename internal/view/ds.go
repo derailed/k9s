@@ -43,7 +43,7 @@ func (d *DaemonSet) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (d *DaemonSet) showPods(app *App, model ui.Tabular, _, path string) {
+func (d *DaemonSet) showPods(app *App, model ui.Tabular, _ client.GVR, path string) {
 	var res dao.DaemonSet
 	res.Init(app.factory, d.GVR())
 

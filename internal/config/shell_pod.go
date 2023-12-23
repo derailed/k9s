@@ -5,6 +5,7 @@ package config
 
 import (
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config/data"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -36,7 +37,7 @@ func NewShellPod() *ShellPod {
 }
 
 // Validate validates the configuration.
-func (s *ShellPod) Validate(client.Connection, KubeSettings) {
+func (s *ShellPod) Validate(client.Connection, data.KubeSettings) {
 	if s.Image == "" {
 		s.Image = defaultDockerShellImage
 	}

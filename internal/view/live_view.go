@@ -60,6 +60,9 @@ func NewLiveView(app *App, title string, m model.ResourceViewer) *LiveView {
 	return &v
 }
 
+func (v *LiveView) SetFilter(string)                 {}
+func (v *LiveView) SetLabelFilter(map[string]string) {}
+
 // Init initializes the viewer.
 func (v *LiveView) Init(_ context.Context) error {
 	if v.title != "" {
@@ -354,7 +357,7 @@ func (v *LiveView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (v *LiveView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	name := fmt.Sprintf("%s--%s", strings.Replace(v.model.GetPath(), "/", "-", 1), strings.ToLower(v.title))
-	if _, err := saveYAML(v.app.Config.K9s.GetScreenDumpDir(), v.app.Config.K9s.CurrentContextDir(), name, sanitizeEsc(v.text.GetText(true))); err != nil {
+	if _, err := saveYAML(v.app.Config.K9s.GetScreenDumpDir(), v.app.Config.K9s.ActiveContextDir(), name, sanitizeEsc(v.text.GetText(true))); err != nil {
 		v.app.Flash().Err(err)
 	} else {
 		v.app.Flash().Infof("File %q saved successfully!", name)

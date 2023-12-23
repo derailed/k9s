@@ -10,7 +10,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/client-go/rest"
@@ -25,7 +25,7 @@ type Table struct {
 
 // Get returns a given resource.
 func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
-	a := fmt.Sprintf(gvFmt, metav1beta1.SchemeGroupVersion.Version, metav1beta1.GroupName)
+	a := fmt.Sprintf(gvFmt, metav1.SchemeGroupVersion.Version, metav1.GroupName)
 	_, codec := t.codec()
 
 	c, err := t.getClient()
@@ -37,7 +37,7 @@ func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
 		SetHeader("Accept", a).
 		Name(n).
 		Resource(t.gvr.R()).
-		VersionedParams(&metav1beta1.TableOptions{}, codec)
+		VersionedParams(&metav1.TableOptions{}, codec)
 	if ns != client.ClusterScope {
 		req = req.Namespace(ns)
 	}
@@ -47,12 +47,8 @@ func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
 
 // List all Resources in a given namespace.
 func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	labelSel, ok := ctx.Value(internal.KeyLabels).(string)
-	if !ok {
-		labelSel = ""
-	}
-
-	a := fmt.Sprintf(gvFmt, metav1beta1.SchemeGroupVersion.Version, metav1beta1.GroupName)
+	labelSel, _ := ctx.Value(internal.KeyLabels).(string)
+	a := fmt.Sprintf(gvFmt, metav1.SchemeGroupVersion.Version, metav1.GroupName)
 	_, codec := t.codec()
 
 	c, err := t.getClient()
@@ -103,8 +99,8 @@ func (t *Table) codec() (serializer.CodecFactory, runtime.ParameterCodec) {
 	scheme := runtime.NewScheme()
 	gv := t.gvr.GV()
 	metav1.AddToGroupVersion(scheme, gv)
-	scheme.AddKnownTypes(gv, &metav1beta1.Table{}, &metav1beta1.TableOptions{})
-	scheme.AddKnownTypes(metav1beta1.SchemeGroupVersion, &metav1beta1.Table{}, &metav1beta1.TableOptions{})
+	scheme.AddKnownTypes(gv, &metav1.Table{}, &metav1.TableOptions{IncludeObject: v1.IncludeObject})
+	scheme.AddKnownTypes(metav1.SchemeGroupVersion, &metav1.Table{}, &metav1.TableOptions{IncludeObject: v1.IncludeObject})
 
 	return serializer.NewCodecFactory(scheme), runtime.NewParameterCodec(scheme)
 }

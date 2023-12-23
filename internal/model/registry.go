@@ -13,6 +13,10 @@ import (
 // Registry tracks resources metadata.
 // BOZO!! Break up deps and merge into single registrar.
 var Registry = map[string]ResourceMeta{
+	"workloads": {
+		DAO:      &dao.Workload{},
+		Renderer: &render.Workload{},
+	},
 	// Custom...
 	"references": {
 		DAO:      &dao.Reference{},

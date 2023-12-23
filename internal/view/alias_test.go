@@ -10,7 +10,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
@@ -18,7 +18,6 @@ import (
 	"github.com/derailed/k9s/internal/view"
 	"github.com/derailed/tcell/v2"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -74,31 +73,9 @@ func (b *buffL) BufferActive(state bool, kind model.BufferKind) {
 }
 
 func makeContext() context.Context {
-	a := view.NewApp(config.NewConfig(ks{}))
+	a := view.NewApp(mock.NewMockConfig())
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	return context.WithValue(ctx, internal.KeyStyles, a.Styles)
-}
-
-type ks struct{}
-
-func (k ks) CurrentContextName() (string, error) {
-	return "test", nil
-}
-
-func (k ks) CurrentClusterName() (string, error) {
-	return "test", nil
-}
-
-func (k ks) CurrentNamespaceName() (string, error) {
-	return "test", nil
-}
-
-func (k ks) ClusterNames() (map[string]struct{}, error) {
-	return map[string]struct{}{"test": {}}, nil
-}
-
-func (k ks) NamespaceNames(nn []v1.Namespace) []string {
-	return []string{"test"}
 }
 
 type mockModel struct{}
@@ -114,6 +91,7 @@ func (t *mockModel) PrevSuggestion() (string, bool)     { return "", false }
 func (t *mockModel) ClearSuggestions()                  {}
 func (t *mockModel) SetInstance(string)                 {}
 func (t *mockModel) SetLabelFilter(string)              {}
+func (t *mockModel) GetLabelFilter() string             { return "" }
 func (t *mockModel) Empty() bool                        { return false }
 func (t *mockModel) Count() int                         { return 1 }
 func (t *mockModel) HasMetrics() bool                   { return true }

@@ -4,9 +4,10 @@
 package model
 
 import (
+	"testing"
+
 	"github.com/sahilm/fuzzy"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func Test_rxFilter(t *testing.T) {

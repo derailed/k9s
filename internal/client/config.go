@@ -10,15 +10,14 @@ import (
 	"sync"
 	"time"
 
-	v1 "k8s.io/api/core/v1"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	restclient "k8s.io/client-go/rest"
 	clientcmd "k8s.io/client-go/tools/clientcmd"
-	clientcmdapi "k8s.io/client-go/tools/clientcmd/api"
+	"k8s.io/client-go/tools/clientcmd/api"
 )
 
 const (
-	defaultCallTimeoutDuration time.Duration = 10 * time.Second
+	defaultCallTimeoutDuration time.Duration = 15 * time.Second
 
 	// UsePersistentConfig caches client config to avoid reloads.
 	UsePersistentConfig = true
@@ -60,7 +59,7 @@ func (c *Config) Flags() *genericclioptions.ConfigFlags {
 	return c.flags
 }
 
-func (c *Config) RawConfig() (clientcmdapi.Config, error) {
+func (c *Config) RawConfig() (api.Config, error) {
 	return c.clientConfig().RawConfig()
 }
 
@@ -72,16 +71,35 @@ func (c *Config) reset() {}
 
 // SwitchContext changes the kubeconfig context to a new cluster.
 func (c *Config) SwitchContext(name string) error {
-	if _, err := c.GetContext(name); err != nil {
+	ct, err := c.GetContext(name)
+	if err != nil {
 		return fmt.Errorf("context %q does not exist", name)
 	}
+	// !!BOZO!! Do you need to reset the flags?
 	flags := genericclioptions.NewConfigFlags(UsePersistentConfig)
-	flags.Context = &name
+	flags.Context, flags.ClusterName = &name, &ct.Cluster
+	flags.Namespace = c.flags.Namespace
 	flags.Timeout = c.flags.Timeout
 	flags.KubeConfig = c.flags.KubeConfig
 	c.flags = flags
 
 	return nil
+}
+
+// CurrentClusterName returns the currently active cluster name.
+func (c *Config) CurrentClusterName() (string, error) {
+	if isSet(c.flags.ClusterName) {
+		return *c.flags.ClusterName, nil
+	}
+	cfg, err := c.RawConfig()
+	if err != nil {
+		return "", err
+	}
+
+	ct := cfg.Contexts[cfg.CurrentContext]
+
+	return ct.Cluster, nil
+
 }
 
 // CurrentContextName returns the currently active config context.
@@ -110,8 +128,17 @@ func (c *Config) CurrentContextNamespace() (string, error) {
 	return context.Namespace, nil
 }
 
+// CurrentContext returns the current context configuration.
+func (c *Config) CurrentContext() (*api.Context, error) {
+	n, err := c.CurrentContextName()
+	if err != nil {
+		return nil, err
+	}
+	return c.GetContext(n)
+}
+
 // GetContext fetch a given context or error if it does not exists.
-func (c *Config) GetContext(n string) (*clientcmdapi.Context, error) {
+func (c *Config) GetContext(n string) (*api.Context, error) {
 	cfg, err := c.RawConfig()
 	if err != nil {
 		return nil, err
@@ -124,7 +151,7 @@ func (c *Config) GetContext(n string) (*clientcmdapi.Context, error) {
 }
 
 // Contexts fetch all available contexts.
-func (c *Config) Contexts() (map[string]*clientcmdapi.Context, error) {
+func (c *Config) Contexts() (map[string]*api.Context, error) {
 	cfg, err := c.RawConfig()
 	if err != nil {
 		return nil, err
@@ -180,63 +207,14 @@ func (c *Config) RenameContext(old string, new string) error {
 }
 
 // ContextNames fetch all available contexts.
-func (c *Config) ContextNames() ([]string, error) {
+func (c *Config) ContextNames() (map[string]struct{}, error) {
 	cfg, err := c.RawConfig()
 	if err != nil {
 		return nil, err
 	}
-
-	cc := make([]string, 0, len(cfg.Contexts))
+	cc := make(map[string]struct{}, len(cfg.Contexts))
 	for n := range cfg.Contexts {
-		cc = append(cc, n)
-	}
-	return cc, nil
-}
-
-// ClusterNameFromContext returns the cluster associated with the given context.
-func (c *Config) ClusterNameFromContext(context string) (string, error) {
-	cfg, err := c.RawConfig()
-	if err != nil {
-		return "", err
-	}
-
-	if ctx, ok := cfg.Contexts[context]; ok {
-		return ctx.Cluster, nil
-	}
-	return "", fmt.Errorf("unable to locate cluster from context %s", context)
-}
-
-// CurrentClusterName returns the active cluster name.
-func (c *Config) CurrentClusterName() (string, error) {
-	if isSet(c.flags.ClusterName) {
-		return *c.flags.ClusterName, nil
-	}
-	cfg, err := c.RawConfig()
-	if err != nil {
-		return "", err
-	}
-	context, err := c.CurrentContextName()
-	if err != nil {
-		context = cfg.CurrentContext
-	}
-
-	if ctx, ok := cfg.Contexts[context]; ok {
-		return ctx.Cluster, nil
-	}
-
-	return "", errors.New("unable to locate current cluster")
-}
-
-// ClusterNames fetch all kubeconfig defined clusters.
-func (c *Config) ClusterNames() (map[string]struct{}, error) {
-	cfg, err := c.RawConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	cc := make(map[string]struct{}, len(cfg.Clusters))
-	for name := range cfg.Clusters {
-		cc[name] = struct{}{}
+		cc[n] = struct{}{}
 	}
 
 	return cc, nil
@@ -297,16 +275,17 @@ func (c *Config) CurrentUserName() (string, error) {
 
 // CurrentNamespaceName retrieves the active namespace.
 func (c *Config) CurrentNamespaceName() (string, error) {
-	ns, _, err := c.clientConfig().Namespace()
-
-	if ns == "default" {
-		ns, err = c.CurrentContextNamespace()
-		if ns == "" && err == nil {
-			return "", errors.New("No namespace specified in context")
-		}
+	ns, overridden, err := c.clientConfig().Namespace()
+	if err != nil {
+		return BlankNamespace, err
+	}
+	// Checks if ns is passed is in args.
+	if overridden {
+		return ns, nil
 	}
 
-	return ns, err
+	// Return ns set in context if any??
+	return c.CurrentContextNamespace()
 }
 
 // ConfigAccess return the current kubeconfig api server access configuration.
@@ -319,16 +298,6 @@ func (c *Config) ConfigAccess() (clientcmd.ConfigAccess, error) {
 
 // ----------------------------------------------------------------------------
 // Helpers...
-
-// NamespaceNames fetch all available namespaces on current cluster.
-func NamespaceNames(nns []v1.Namespace) []string {
-	nn := make([]string, 0, len(nns))
-	for _, ns := range nns {
-		nn = append(nn, ns.Name)
-	}
-
-	return nn
-}
 
 func isSet(s *string) bool {
 	return s != nil && len(*s) != 0

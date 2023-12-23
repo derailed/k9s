@@ -6,9 +6,10 @@ package render
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/vul"
+	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -22,7 +23,23 @@ type Deployment struct {
 
 // ColorerFunc colors a resource row.
 func (d Deployment) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+	return func(ns string, h Header, re RowEvent) tcell.Color {
+		c := DefaultColorer(ns, h, re)
+		if !Happy(ns, h, re.Row) {
+			return ErrColor
+		}
+		rdCol := h.IndexOf("READY", true)
+		if rdCol == -1 {
+			return c
+		}
+		ready := strings.TrimSpace(re.Row.Fields[rdCol])
+		tt := strings.Split(ready, "/")
+		if len(tt) == 2 && tt[1] == "0" {
+			return PendingColor
+		}
+
+		return c
+	}
 }
 
 // Header returns a header row.
@@ -30,16 +47,13 @@ func (Deployment) Header(ns string) Header {
 	h := Header{
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "VS"},
+		HeaderColumn{Name: "VS", VS: true},
 		HeaderColumn{Name: "READY", Align: tview.AlignRight},
 		HeaderColumn{Name: "UP-TO-DATE", Align: tview.AlignRight},
 		HeaderColumn{Name: "AVAILABLE", Align: tview.AlignRight},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true},
-	}
-	if vul.ImgScanner == nil {
-		h = append(h[:vulIdx], h[vulIdx+1:]...)
 	}
 
 	return h
@@ -62,16 +76,13 @@ func (d Deployment) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = Fields{
 		dp.Namespace,
 		dp.Name,
-		computeVulScore(&dp.Spec.Template.Spec),
+		computeVulScore(dp.ObjectMeta, &dp.Spec.Template.Spec),
 		strconv.Itoa(int(dp.Status.AvailableReplicas)) + "/" + strconv.Itoa(int(dp.Status.Replicas)),
 		strconv.Itoa(int(dp.Status.UpdatedReplicas)),
 		strconv.Itoa(int(dp.Status.AvailableReplicas)),
 		mapToStr(dp.Labels),
 		AsStatus(d.diagnose(dp.Status.Replicas, dp.Status.AvailableReplicas)),
 		ToAge(dp.GetCreationTimestamp()),
-	}
-	if vul.ImgScanner == nil {
-		r.Fields = append(r.Fields[:vulIdx], r.Fields[vulIdx+1:]...)
 	}
 
 	return nil
@@ -81,5 +92,6 @@ func (Deployment) diagnose(desired, avail int32) error {
 	if desired != avail {
 		return fmt.Errorf("desiring %d replicas got %d available", desired, avail)
 	}
+
 	return nil
 }

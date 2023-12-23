@@ -181,13 +181,13 @@ func (p *Policy) fetchRoleBindingNamespaces(kind, name string) (map[string]strin
 // isSameSubject verifies if the incoming type name and namespace match a subject from a
 // cluster/roleBinding. A ServiceAccount will always have a namespace and needs to be validated to ensure
 // we don't display permissions for a ServiceAccount with the same name in a different namespace
-func isSameSubject(kind, namespace, name string, subject *rbacv1.Subject) bool {
+func isSameSubject(kind, ns, name string, subject *rbacv1.Subject) bool {
 	if subject.Kind != kind || subject.Name != name {
 		return false
 	}
 	if kind == rbacv1.ServiceAccountKind {
 		// Kind and name were checked above, check the namespace
-		return subject.Namespace == namespace
+		return client.IsAllNamespaces(ns) || subject.Namespace == ns
 	}
 	return true
 }
@@ -215,7 +215,7 @@ func (p *Policy) fetchClusterRoles() ([]rbacv1.ClusterRole, error) {
 func (p *Policy) fetchRoles() ([]rbacv1.Role, error) {
 	const gvr = "rbac.authorization.k8s.io/v1/roles"
 
-	oo, err := p.GetFactory().List(gvr, client.AllNamespaces, false, labels.Everything())
+	oo, err := p.GetFactory().List(gvr, client.BlankNamespace, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

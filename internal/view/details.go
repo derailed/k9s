@@ -58,6 +58,9 @@ func NewDetails(app *App, title, subject, contentType string, searchable bool) *
 	return &d
 }
 
+func (d *Details) SetFilter(string)                 {}
+func (d *Details) SetLabelFilter(map[string]string) {}
+
 // Init initializes the viewer.
 func (d *Details) Init(_ context.Context) error {
 	if d.title != "" {
@@ -294,7 +297,7 @@ func (d *Details) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (d *Details) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveYAML(d.app.Config.K9s.GetScreenDumpDir(), d.app.Config.K9s.CurrentContextDir(), d.title, d.text.GetText(true)); err != nil {
+	if path, err := saveYAML(d.app.Config.K9s.GetScreenDumpDir(), d.app.Config.K9s.ActiveContextDir(), d.title, d.text.GetText(true)); err != nil {
 		d.app.Flash().Err(err)
 	} else {
 		d.app.Flash().Infof("Log %s saved successfully!", path)

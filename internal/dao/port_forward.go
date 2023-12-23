@@ -38,14 +38,14 @@ func (p *PortForward) Delete(_ context.Context, path string, _ *metav1.DeletionP
 // List returns a collection of port forwards.
 func (p *PortForward) List(ctx context.Context, _ string) ([]runtime.Object, error) {
 	benchFile, ok := ctx.Value(internal.KeyBenchCfg).(string)
-	if !ok {
-		return nil, fmt.Errorf("no bench file found in context")
+	if !ok || benchFile == "" {
+		return nil, fmt.Errorf("no benchmark config file found in context")
 	}
 	path, _ := ctx.Value(internal.KeyPath).(string)
 
 	config, err := config.NewBench(benchFile)
 	if err != nil {
-		log.Warn().Msgf("No custom benchmark config file found")
+		log.Debug().Msgf("No custom benchmark config file found: %q", benchFile)
 	}
 
 	ff, cc := p.GetFactory().Forwarders(), config.Benchmarks.Containers
@@ -92,7 +92,7 @@ func BenchConfigFor(benchFile, path string) config.BenchConfig {
 	def := config.DefaultBenchSpec()
 	cust, err := config.NewBench(benchFile)
 	if err != nil {
-		log.Debug().Msgf("No custom benchmark config file found")
+		log.Debug().Msgf("No custom benchmark config file found. Using default: %q", benchFile)
 		return def
 	}
 	if b, ok := cust.Benchmarks.Containers[PodToKey(path)]; ok {

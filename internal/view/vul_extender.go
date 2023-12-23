@@ -26,7 +26,7 @@ func NewVulnerabilityExtender(r ResourceViewer) ResourceViewer {
 }
 
 func (v *VulnerabilityExtender) bindKeys(aa ui.KeyActions) {
-	if v.App().Config.K9s.EnableImageScan {
+	if v.App().Config.K9s.ImageScans.Enable {
 		aa.Add(ui.KeyActions{
 			ui.KeyV:      ui.NewKeyAction("Show Vulnerabilities", v.showVulCmd, true),
 			ui.KeyShiftV: ui.NewKeyAction("Sort Vulnerabilities", v.GetTable().SortColCmd("VS", true), false),

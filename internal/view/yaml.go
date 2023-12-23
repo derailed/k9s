@@ -68,7 +68,7 @@ func saveYAML(screenDumpDir, context, name, data string) (string, error) {
 		return "", err
 	}
 
-	fName := fmt.Sprintf("%s--%d.yml", config.SanitizeFilename(name), time.Now().Unix())
+	fName := fmt.Sprintf("%s--%d.yaml", config.SanitizeFilename(name), time.Now().Unix())
 	path := filepath.Join(dir, fName)
 	mod := os.O_CREATE | os.O_WRONLY
 	file, err := os.OpenFile(path, mod, 0600)

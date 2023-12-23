@@ -13,13 +13,13 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
 	"github.com/stretchr/testify/assert"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -29,7 +29,8 @@ func TestTableSave(t *testing.T) {
 	assert.NoError(t, v.Init(makeContext()))
 	v.SetTitle("k9s-test")
 
-	dir := filepath.Join(v.app.Config.K9s.GetScreenDumpDir(), v.app.Config.K9s.CurrentCluster)
+	assert.NoError(t, ensureDumpDir("/tmp/test-dumps"))
+	dir := filepath.Join(v.app.Config.K9s.GetScreenDumpDir(), v.app.Config.K9s.ActiveContextDir())
 	c1, _ := os.ReadDir(dir)
 	v.saveCmd(nil)
 
@@ -128,6 +129,7 @@ var _ ui.Tabular = (*mockTableModel)(nil)
 
 func (t *mockTableModel) SetInstance(string)                 {}
 func (t *mockTableModel) SetLabelFilter(string)              {}
+func (t *mockTableModel) GetLabelFilter() string             { return "" }
 func (t *mockTableModel) Empty() bool                        { return false }
 func (t *mockTableModel) Count() int                         { return 1 }
 func (t *mockTableModel) HasMetrics() bool                   { return true }
@@ -195,29 +197,40 @@ func makeTableData() *render.TableData {
 }
 
 func makeContext() context.Context {
-	a := NewApp(config.NewConfig(ks{}))
+	a := NewApp(mock.NewMockConfig())
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	return context.WithValue(ctx, internal.KeyStyles, a.Styles)
 }
 
-type ks struct{}
+// type ks struct{}
 
-func (k ks) CurrentContextName() (string, error) {
-	return "test", nil
-}
+// func (k ks) CurrentContextName() (string, error) {
+// 	return "test", nil
+// }
 
-func (k ks) CurrentClusterName() (string, error) {
-	return "test", nil
-}
+// func (k ks) CurrentClusterName() (string, error) {
+// 	return "test", nil
+// }
 
-func (k ks) CurrentNamespaceName() (string, error) {
-	return "test", nil
-}
+// func (k ks) CurrentNamespaceName() (string, error) {
+// 	return "test", nil
+// }
 
-func (k ks) ClusterNames() (map[string]struct{}, error) {
-	return map[string]struct{}{"test": {}}, nil
-}
+// func (k ks) ContextNames() (map[string]struct{}, error) {
+// 	return map[string]struct{}{"test": {}}, nil
+// }
 
-func (k ks) NamespaceNames(nn []v1.Namespace) []string {
-	return []string{"test"}
+// func (k ks) NamespaceNames(nn []v1.Namespace) []string {
+// 	return []string{"test"}
+// }
+
+func ensureDumpDir(n string) error {
+	config.AppDumpsDir = n
+	if _, err := os.Stat(n); os.IsNotExist(err) {
+		return os.Mkdir(n, 0700)
+	}
+	if err := os.RemoveAll(n); err != nil {
+		return err
+	}
+	return os.Mkdir(n, 0700)
 }

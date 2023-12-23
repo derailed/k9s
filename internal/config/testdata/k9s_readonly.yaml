@@ -1,0 +1,30 @@
+k9s:
+  refreshRate: 2
+  readOnly: true
+  logger:
+    tail: 200
+    buffer: 2000
+  currentContext: minikube
+  contexts:
+    minikube:
+      namespace:
+        active: kube-system
+        favorites:
+          - default
+          - kube-public
+          - istio-system
+          - all
+          - kube-system
+      view:
+        active: ctx
+    fred:
+      namespace:
+        active: default
+        favorites:
+          - default
+          - kube-public
+          - istio-system
+          - all
+          - kube-system
+      view:
+        active: po
