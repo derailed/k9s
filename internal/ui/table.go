@@ -22,6 +22,8 @@ import (
 	"golang.org/x/text/language"
 )
 
+const maxTruncate = 50
+
 type (
 	// ColorerFunc represents a row colorer.
 	ColorerFunc func(ns string, evt render.RowEvent) tcell.Color
@@ -469,9 +471,9 @@ func (t *Table) styleTitle() string {
 
 	buff := t.cmdBuff.GetText()
 	if IsLabelSelector(buff) {
-		buff = TrimLabelSelector(buff)
+		buff = truncate(TrimLabelSelector(buff), maxTruncate)
 	} else if l := t.GetModel().GetLabelFilter(); l != "" {
-		buff = l
+		buff = truncate(l, maxTruncate)
 	}
 
 	if buff == "" {

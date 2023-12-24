@@ -9,6 +9,29 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestTruncate(t *testing.T) {
+	uu := map[string]struct {
+		s, e string
+	}{
+		"empty": {},
+		"max": {
+			s: "/app.kubernetes.io/instance=prom,app.kubernetes.io/name=prometheus,app.kubernetes.io/component=server",
+			e: "/app.kubernetes.io/instance=prom,app.kubernetes.io...",
+		},
+		"less": {
+			s: "app=fred,env=blee",
+			e: "app=fred,env=blee",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, truncate(u.s, 50))
+		})
+	}
+}
+
 func TestIsLabelSelector(t *testing.T) {
 	uu := map[string]struct {
 		s  string
