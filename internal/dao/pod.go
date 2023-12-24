@@ -70,7 +70,7 @@ func (p *Pod) Get(ctx context.Context, path string) (runtime.Object, error) {
 	}
 
 	var pmx *mv1beta1.PodMetrics
-	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); ok && withMx {
 		pmx, _ = client.DialMetrics(p.Client()).FetchPodMetrics(ctx, path)
 	}
 
@@ -95,7 +95,7 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	}
 
 	var pmx client.PodsMetricsMap
-	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); false && ok && withMx {
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); ok && withMx {
 		pmx, _ = client.DialMetrics(p.Client()).FetchPodsMetricsMap(ctx, ns)
 	}
 	sel, _ := ctx.Value(internal.KeyLabels).(string)
