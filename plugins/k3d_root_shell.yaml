@@ -1,4 +1,4 @@
-plugin:
+plugins:
   # Opens a shell to k3d container as root
   k3d-root-shell:
     shortCut: Shift-S

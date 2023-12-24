@@ -1,4 +1,4 @@
-plugin:
+plugins:
   #get all resources in a namespace using the krew get-all plugin
   get-all-namespace:
     shortCut: g

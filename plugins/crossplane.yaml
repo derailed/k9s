@@ -1,4 +1,4 @@
-plugin:
+plugins:
   # List all the resources managed by a Composite Resource
   kube-lineage:
     shortCut: Ctrl-X
@@ -11,11 +11,11 @@ plugin:
     args:
       - -c
       - >-
-        kubectl lineage 
+        kubectl lineage
         -d 6
         --exclude-types Event,ProviderConfigUsage.aws.upbound.io,ProviderConfigUsage.kubernetes.crossplane.io
         --show-group
-        --context $CONTEXT 
-        $RESOURCE_NAME 
-        $NAME 
+        --context $CONTEXT
+        $RESOURCE_NAME
+        $NAME
         | less -K

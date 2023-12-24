@@ -1,4 +1,4 @@
-plugin:
+plugins:
   # remove finalizers from a stuck namespace
   rm-ns:
     shortCut: n

@@ -1,6 +1,6 @@
 # View user-supplied values when the helm chart was created
 
-plugin:
+plugins:
   helm-values:
     shortCut: v
     confirm: false

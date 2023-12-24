@@ -148,8 +148,7 @@ func (c *Configurator) RefreshStyles(context string) {
 	var skin string
 	if c.Config != nil {
 		skin = c.Config.K9s.UI.Skin
-		ct, err := c.Config.K9s.ActiveContext()
-		if err != nil {
+		if ct, err := c.Config.K9s.ActiveContext(); err != nil {
 			log.Warn().Msgf("No active context found. Using default skin")
 		} else if ct.Skin != "" {
 			skin = ct.Skin

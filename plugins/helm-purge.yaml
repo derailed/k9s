@@ -1,5 +1,5 @@
 # $HOME/.k9s/plugin.yml
-plugin:
+plugins:
   # Issues a helm delete --purge for the resource associated with the selected pod
   helm-purge:
     shortCut: Ctrl-P

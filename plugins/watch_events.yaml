@@ -2,7 +2,7 @@
 # requires linux "watch" command
 # change '-n' to adjust refresh time in seconds
 
-plugin:
+plugins:
   watch-events:
     shortCut: Shift-E
     confirm: false

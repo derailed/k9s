@@ -38,7 +38,7 @@ func newArgs(p *Interpreter, aa []string) args {
 			args[filterKey] = a[1:]
 
 		case strings.Contains(a, labelFlag):
-			if ll := toLabels(a); len(ll) != 0 {
+			if ll := ToLabels(a); len(ll) != 0 {
 				args[labelKey] = a
 			}
 

@@ -541,7 +541,6 @@ func (s *Styles) Load(path string) error {
 	if err != nil {
 		return err
 	}
-
 	if err := yaml.Unmarshal(f, s); err != nil {
 		return err
 	}

@@ -1,5 +1,5 @@
 # $HOME/.k9s/plugin.yml
-plugin:
+plugins:
   kapp-inspect:
     shortCut: Shift-Z
     confirm: false

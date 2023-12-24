@@ -139,7 +139,7 @@ func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
 	}
 
 	var nmx *mv1beta1.NodeMetrics
-	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); ok && withMx {
 		nmx, _ = client.DialMetrics(n.Client()).FetchNodeMetrics(ctx, path)
 	}
 

@@ -1,4 +1,4 @@
-plugin:
+plugins:
   helm-default-values:
     shortCut: Shift-V
     confirm: false
