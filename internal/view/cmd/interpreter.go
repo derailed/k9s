@@ -196,5 +196,5 @@ func (c *Interpreter) LabelsArg() (map[string]string, bool) {
 		return nil, false
 	}
 
-	return toLabels(ll), true
+	return ToLabels(ll), true
 }

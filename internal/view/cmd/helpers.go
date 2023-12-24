@@ -11,7 +11,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func toLabels(s string) map[string]string {
+func ToLabels(s string) map[string]string {
 	ll := strings.Split(s, ",")
 	lbls := make(map[string]string, len(ll))
 	for _, l := range ll {

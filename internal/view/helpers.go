@@ -18,6 +18,7 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
@@ -116,13 +117,9 @@ func toLabelsStr(labels map[string]string) string {
 }
 
 func showPods(app *App, path, labelSel, fieldSel string) {
-	// !!BOZO!! needed??
-	// if err := app.switchNS(client.BlankNamespace); err != nil {
-	// 	app.Flash().Err(err)
-	// 	return
-	// }
 	v := NewPod(client.NewGVR("v1/pods"))
-	v.SetContextFn(podCtx(app, path, labelSel, fieldSel))
+	v.SetContextFn(podCtx(app, path, fieldSel))
+	v.SetLabelFilter(cmd.ToLabels(labelSel))
 
 	ns, _ := client.Namespaced(path)
 	if err := app.Config.SetActiveNamespace(ns); err != nil {
@@ -133,11 +130,9 @@ func showPods(app *App, path, labelSel, fieldSel string) {
 	}
 }
 
-func podCtx(app *App, path, labelSel, fieldSel string) ContextFunc {
+func podCtx(app *App, path, fieldSel string) ContextFunc {
 	return func(ctx context.Context) context.Context {
 		ctx = context.WithValue(ctx, internal.KeyPath, path)
-		ctx = context.WithValue(ctx, internal.KeyLabels, labelSel)
-
 		return context.WithValue(ctx, internal.KeyFields, fieldSel)
 	}
 }

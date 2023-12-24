@@ -53,7 +53,7 @@ func Test_toLabels(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.ll, toLabels(u.s))
+			assert.Equal(t, u.ll, ToLabels(u.s))
 		})
 	}
 }
