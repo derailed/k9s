@@ -14,7 +14,6 @@ import (
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -161,9 +160,7 @@ func (n *Node) sshCmd(evt *tcell.EventKey) *tcell.EventKey {
 	n.Stop()
 	defer n.Start()
 	_, node := client.Namespaced(path)
-	if err := ssh(n.App(), node); err != nil {
-		log.Error().Err(err).Msgf("Node Shell Failed")
-	}
+	launchNodeShell(n, n.App(), node)
 
 	return nil
 }
