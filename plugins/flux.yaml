@@ -2,7 +2,7 @@
 # move selected line to chosen resource in K9s, then:
 # Shift-T (with confirmation) to toggle helm releases or kustomizations suspend and resume
 # Shift-R (no confirmation) to reconcile a git source or a helm release or a kustomization
-plugin:
+plugins:
   toggle-helmrelease:
     shortCut: Shift-T
     confirm: true
@@ -19,7 +19,7 @@ plugin:
         flux
         $verb helmrelease
         --context $CONTEXT
-        -n $NAMESPACE $NAME 
+        -n $NAMESPACE $NAME
         | less -K
   toggle-kustomization:
     shortCut: Shift-T
@@ -34,10 +34,10 @@ plugin:
       - >-
         suspended=$(kubectl --context $CONTEXT get kustomizations -n $NAMESPACE $NAME -o=custom-columns=TYPE:.spec.suspend | tail -1);
         verb=$([ $suspended = "true" ] && echo "resume" || echo "suspend");
-        flux 
-        $verb kustomization 
-        --context $CONTEXT 
-        -n $NAMESPACE $NAME 
+        flux
+        $verb kustomization
+        --context $CONTEXT
+        -n $NAMESPACE $NAME
         | less -K
   reconcile-git:
     shortCut: Shift-R
@@ -53,7 +53,7 @@ plugin:
         flux
         reconcile source git
         --context $CONTEXT
-        -n $NAMESPACE $NAME 
+        -n $NAMESPACE $NAME
         | less -K
   reconcile-hr:
     shortCut: Shift-R
@@ -66,10 +66,10 @@ plugin:
     args:
       - -c
       - >-
-        flux 
-        reconcile helmrelease 
-        --context $CONTEXT 
-        -n $NAMESPACE $NAME 
+        flux
+        reconcile helmrelease
+        --context $CONTEXT
+        -n $NAMESPACE $NAME
         | less -K
   reconcile-helm-repo:
     shortCut: Shift-Z
@@ -82,10 +82,10 @@ plugin:
     args:
       - -c
       - >-
-        flux 
-        reconcile source helm 
-        --context $CONTEXT 
-        -n $NAMESPACE $NAME 
+        flux
+        reconcile source helm
+        --context $CONTEXT
+        -n $NAMESPACE $NAME
         | less -K
   reconcile-oci-repo:
     shortCut: Shift-Z
@@ -98,10 +98,10 @@ plugin:
     args:
       - -c
       - >-
-        flux 
-        reconcile source oci 
-        --context $CONTEXT 
-        -n $NAMESPACE $NAME 
+        flux
+        reconcile source oci
+        --context $CONTEXT
+        -n $NAMESPACE $NAME
         | less -K
   reconcile-ks:
     shortCut: Shift-R
@@ -133,7 +133,7 @@ plugin:
         flux
         reconcile image repository
         --context $CONTEXT
-        -n $NAMESPACE $NAME 
+        -n $NAMESPACE $NAME
         | less -K
   reconcile-iua:
     shortCut: Shift-R
@@ -146,10 +146,10 @@ plugin:
     args:
       - -c
       - >-
-        flux 
-        reconcile image update 
+        flux
+        reconcile image update
         --context $CONTEXT
-        -n $NAMESPACE $NAME 
+        -n $NAMESPACE $NAME
         | less -K
   trace:
     shortCut: Shift-A
@@ -163,12 +163,12 @@ plugin:
       - -c
       - >-
         resource=$(echo $RESOURCE_NAME | sed -E 's/ies$/y/' | sed -E 's/ses$/se/' | sed -E 's/(s|es)$//g')
-        flux 
-        trace 
-        --context $CONTEXT 
-        --kind $resource 
-        --api-version $RESOURCE_GROUP/$RESOURCE_VERSION 
-        --namespace $NAMESPACE $NAME 
+        flux
+        trace
+        --context $CONTEXT
+        --kind $resource
+        --api-version $RESOURCE_GROUP/$RESOURCE_VERSION
+        --namespace $NAMESPACE $NAME
         | less -K
   # credits: https://github.com/fluxcd/flux2/discussions/2494
   get-suspended-helmreleases:
@@ -182,10 +182,10 @@ plugin:
     args:
       - -c
       - >-
-        kubectl get 
-        --all-namespaces 
-        helmreleases.helm.toolkit.fluxcd.io -o json 
-        | jq -r '.items[] | select(.spec.suspend==true) | [.metadata.namespace,.metadata.name,.spec.suspend] | @tsv' 
+        kubectl get
+        --all-namespaces
+        helmreleases.helm.toolkit.fluxcd.io -o json
+        | jq -r '.items[] | select(.spec.suspend==true) | [.metadata.namespace,.metadata.name,.spec.suspend] | @tsv'
         | less
   get-suspended-kustomizations:
     shortCut: Shift-S
@@ -198,7 +198,7 @@ plugin:
     args:
       - -c
       - >-
-        kubectl get 
+        kubectl get
         --all-namespaces
         kustomizations.kustomize.toolkit.fluxcd.io -o json
         | jq -r '.items[] | select(.spec.suspend==true) | [.metadata.name,.spec.suspend] | @tsv'

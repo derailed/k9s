@@ -1,4 +1,4 @@
-plugin:
+plugins:
   # Suspends/Resumes a cronjob
   toggleCronjob:
     shortCut: Ctrl-S

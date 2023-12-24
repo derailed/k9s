@@ -1,4 +1,4 @@
-plugin:
+plugins:
   # Sends logs over to jq for processing. This leverages kubectl plugin kubectl-jq.
   jqlogs:
     shortCut: Ctrl-J
