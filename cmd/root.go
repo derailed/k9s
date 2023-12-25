@@ -112,8 +112,8 @@ func loadConfiguration() *config.Config {
 	k9sCfg := config.NewConfig(k8sCfg)
 	if err := k9sCfg.Load(config.AppConfigFile); err != nil {
 		log.Warn().Msg("Unable to locate K9s config. Generating new configuration...")
-		k9sCfg.K9s.Generate(k9sFlags)
 	}
+	k9sCfg.K9s.Override(k9sFlags)
 	if err := k9sCfg.Refine(k8sFlags, k9sFlags, k8sCfg); err != nil {
 		log.Error().Err(err).Msgf("refine failed")
 	}
