@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
@@ -74,8 +75,8 @@ func benchDir(cfg *config.Config) string {
 	}
 	return filepath.Join(
 		config.AppBenchmarksDir,
-		config.SanitizeFileName(ct.ClusterName),
-		config.SanitizeFilename(cfg.K9s.ActiveContextName()),
+		data.SanitizeFileName(ct.ClusterName),
+		data.SanitizeFileName(cfg.K9s.ActiveContextName()),
 	)
 }
 

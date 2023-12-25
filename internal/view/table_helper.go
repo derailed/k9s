@@ -12,21 +12,21 @@ import (
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/rs/zerolog/log"
 )
 
-func computeFilename(screenDumpDir, context, ns, title, path string) (string, error) {
+func computeFilename(dumpPath, ns, title, path string) (string, error) {
 	now := time.Now().UnixNano()
 
-	dir := filepath.Join(screenDumpDir, context)
+	dir := filepath.Join(dumpPath)
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}
 
-	name := title + "-" + config.SanitizeFilename(path)
+	name := title + "-" + data.SanitizeFileName(path)
 	if path == "" {
 		name = title
 	}
@@ -41,13 +41,13 @@ func computeFilename(screenDumpDir, context, ns, title, path string) (string, er
 	return strings.ToLower(filepath.Join(dir, fName)), nil
 }
 
-func saveTable(screenDumpDir, context, title, path string, data *render.TableData) (string, error) {
+func saveTable(dir, title, path string, data *render.TableData) (string, error) {
 	ns := data.Namespace
 	if client.IsClusterWide(ns) {
 		ns = client.NamespaceAll
 	}
 
-	fPath, err := computeFilename(screenDumpDir, context, ns, title, path)
+	fPath, err := computeFilename(dir, ns, title, path)
 	if err != nil {
 		return "", err
 	}

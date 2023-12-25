@@ -142,7 +142,11 @@ func (p Pod) Render(o interface{}, ns string, row *Row) error {
 	cs := po.Status.ContainerStatuses
 	cr, _, rc := p.Statuses(cs)
 
-	c, r := p.gatherPodMX(&po, pwm.MX)
+	var ccmx []mv1beta1.ContainerMetrics
+	if pwm.MX != nil {
+		ccmx = pwm.MX.Containers
+	}
+	c, r := gatherCoMX(po.Spec.Containers, ccmx)
 	phase := p.Phase(&po)
 	row.ID = client.MetaFQN(po.ObjectMeta)
 	row.Fields = Fields{
@@ -232,22 +236,20 @@ func (p *PodWithMetrics) DeepCopyObject() runtime.Object {
 	return p
 }
 
-func (*Pod) gatherPodMX(pod *v1.Pod, mx *mv1beta1.PodMetrics) (c, r metric) {
-	rcpu, rmem := podRequests(pod.Spec.Containers)
+func gatherCoMX(cc []v1.Container, ccmx []mv1beta1.ContainerMetrics) (c, r metric) {
+	rcpu, rmem := cosRequests(cc)
 	r.cpu, r.mem = rcpu.MilliValue(), rmem.Value()
 
-	lcpu, lmem := podLimits(pod.Spec.Containers)
+	lcpu, lmem := cosLimits(cc)
 	r.lcpu, r.lmem = lcpu.MilliValue(), lmem.Value()
 
-	if mx != nil {
-		ccpu, cmem := currentRes(mx)
-		c.cpu, c.mem = ccpu.MilliValue(), cmem.Value()
-	}
+	ccpu, cmem := currentRes(ccmx)
+	c.cpu, c.mem = ccpu.MilliValue(), cmem.Value()
 
 	return
 }
 
-func podLimits(cc []v1.Container) (resource.Quantity, resource.Quantity) {
+func cosLimits(cc []v1.Container) (resource.Quantity, resource.Quantity) {
 	cpu, mem := new(resource.Quantity), new(resource.Quantity)
 	for _, c := range cc {
 		limits := c.Resources.Limits
@@ -264,7 +266,7 @@ func podLimits(cc []v1.Container) (resource.Quantity, resource.Quantity) {
 	return *cpu, *mem
 }
 
-func podRequests(cc []v1.Container) (resource.Quantity, resource.Quantity) {
+func cosRequests(cc []v1.Container) (resource.Quantity, resource.Quantity) {
 	cpu, mem := new(resource.Quantity), new(resource.Quantity)
 	for _, c := range cc {
 		co := c
@@ -280,12 +282,12 @@ func podRequests(cc []v1.Container) (resource.Quantity, resource.Quantity) {
 	return *cpu, *mem
 }
 
-func currentRes(mx *mv1beta1.PodMetrics) (resource.Quantity, resource.Quantity) {
+func currentRes(ccmx []mv1beta1.ContainerMetrics) (resource.Quantity, resource.Quantity) {
 	cpu, mem := new(resource.Quantity), new(resource.Quantity)
-	if mx == nil {
+	if ccmx == nil {
 		return *cpu, *mem
 	}
-	for _, co := range mx.Containers {
+	for _, co := range ccmx {
 		c, m := co.Usage.Cpu(), co.Usage.Memory()
 		cpu.Add(*c)
 		mem.Add(*m)

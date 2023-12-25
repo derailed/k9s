@@ -7,7 +7,6 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/derailed/k9s/internal/client"
@@ -113,7 +112,7 @@ func TestLogViewSave(t *testing.T) {
 	dd := "/tmp/test-dumps/na"
 	assert.NoError(t, ensureDumpDir(dd))
 	app.Config.K9s.ScreenDumpDir = "/tmp/test-dumps"
-	dir := filepath.Join(app.Config.K9s.GetScreenDumpDir(), app.Config.K9s.ActiveContextDir())
+	dir := app.Config.K9s.ActiveScreenDumpsDir()
 	c1, err := os.ReadDir(dir)
 	assert.NoError(t, err, fmt.Sprintf("Dir: %q", dir))
 	v.SaveCmd(nil)

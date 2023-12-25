@@ -6,7 +6,20 @@ package data
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 )
+
+var invalidPathCharsRX = regexp.MustCompile(`[:/]+`)
+
+// SanitizeContextSubpath ensure cluster/context produces a valid path.
+func SanitizeContextSubpath(cluster, context string) string {
+	return filepath.Join(SanitizeFileName(cluster), SanitizeFileName(context))
+}
+
+// SanitizeFileName ensure file spec is valid.
+func SanitizeFileName(name string) string {
+	return invalidPathCharsRX.ReplaceAllString(name, "-")
+}
 
 // InList check if string is in a collection of strings.
 func InList(ll []string, n string) bool {

@@ -50,6 +50,12 @@ func TestDirLoad(t *testing.T) {
 			flags: makeFlags("cl-test", "ct-test-1"),
 			cfg:   mustLoadConfig("testdata/configs/def_ct.yaml"),
 		},
+
+		"non-sanitized-path": {
+			dir:   "/tmp/data/k9s",
+			flags: makeFlags("arn:aws:eks:eu-central-1:xxx:cluster/fred-blee", "fred-blee"),
+			cfg:   mustLoadConfig("testdata/configs/aws_ct.yaml"),
+		},
 	}
 
 	for k := range uu {
