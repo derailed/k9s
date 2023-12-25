@@ -98,7 +98,7 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); ok && withMx {
 		pmx, _ = client.DialMetrics(p.Client()).FetchPodsMetricsMap(ctx, ns)
 	}
-	sel, _ := ctx.Value(internal.KeyLabels).(string)
+	sel, _ := ctx.Value(internal.KeyFields).(string)
 	fsel, err := labels.ConvertSelectorToLabelsMap(sel)
 	if err != nil {
 		return nil, err
