@@ -6,7 +6,6 @@ package view
 import (
 	"context"
 	"os"
-	"path/filepath"
 	"testing"
 	"time"
 
@@ -30,7 +29,7 @@ func TestTableSave(t *testing.T) {
 	v.SetTitle("k9s-test")
 
 	assert.NoError(t, ensureDumpDir("/tmp/test-dumps"))
-	dir := filepath.Join(v.app.Config.K9s.GetScreenDumpDir(), v.app.Config.K9s.ActiveContextDir())
+	dir := v.app.Config.K9s.ActiveScreenDumpsDir()
 	c1, _ := os.ReadDir(dir)
 	v.saveCmd(nil)
 

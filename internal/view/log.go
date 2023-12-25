@@ -406,7 +406,7 @@ func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 // SaveCmd dumps the logs to file.
 func (l *Log) SaveCmd(*tcell.EventKey) *tcell.EventKey {
-	path, err := saveData(l.app.Config.K9s.GetScreenDumpDir(), l.app.Config.K9s.ActiveContextDir(), l.model.GetPath(), l.logs.GetText(true))
+	path, err := saveData(l.app.Config.K9s.ActiveScreenDumpsDir(), l.model.GetPath(), l.logs.GetText(true))
 	if err != nil {
 		l.app.Flash().Err(err)
 		return nil
@@ -420,8 +420,7 @@ func ensureDir(dir string) error {
 	return os.MkdirAll(dir, 0744)
 }
 
-func saveData(screenDumpDir, context, fqn, data string) (string, error) {
-	dir := filepath.Join(screenDumpDir, context)
+func saveData(dir, fqn, data string) (string, error) {
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}

@@ -5,7 +5,6 @@ package view
 
 import (
 	"context"
-	"path/filepath"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -36,7 +35,7 @@ func NewScreenDump(gvr client.GVR) ResourceViewer {
 }
 
 func (s *ScreenDump) dirContext(ctx context.Context) context.Context {
-	dir := filepath.Join(s.App().Config.K9s.GetScreenDumpDir(), s.App().Config.K9s.ActiveContextDir())
+	dir := s.App().Config.K9s.ActiveScreenDumpsDir()
 	if err := data.EnsureFullPath(dir, data.DefaultDirMod); err != nil {
 		s.App().Flash().Err(err)
 		return ctx

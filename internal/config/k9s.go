@@ -56,6 +56,7 @@ func NewK9s(conn client.Connection, ks data.KubeSettings) *K9s {
 	}
 }
 
+// Save saves the k9s config to dis.
 func (k *K9s) Save() error {
 	if k.activeConfig != nil {
 		path := filepath.Join(
@@ -70,6 +71,7 @@ func (k *K9s) Save() error {
 	return nil
 }
 
+// Refine merges k9s configs.
 func (k *K9s) Refine(k1 *K9s) {
 	k.LiveViewAutoRefresh = k1.LiveViewAutoRefresh
 	k.ScreenDumpDir = k1.ScreenDumpDir
@@ -86,6 +88,7 @@ func (k *K9s) Refine(k1 *K9s) {
 	k.Thresholds = k1.Thresholds
 }
 
+// Override overrides k9s config from cli args.
 func (k *K9s) Override(k9sFlags *Flags) {
 	if *k9sFlags.RefreshRate != DefaultRefreshRate {
 		k.OverrideRefreshRate(*k9sFlags.RefreshRate)
@@ -105,6 +108,7 @@ func (k *K9s) OverrideScreenDumpDir(dir string) {
 	k.manualScreenDumpDir = &dir
 }
 
+// GetScreenDumpDir fetch screen dumps dir.
 func (k *K9s) GetScreenDumpDir() string {
 	screenDumpDir := k.ScreenDumpDir
 	if k.manualScreenDumpDir != nil && *k.manualScreenDumpDir != "" {
@@ -117,21 +121,29 @@ func (k *K9s) GetScreenDumpDir() string {
 	return screenDumpDir
 }
 
+// Reset resets configuration and context.
 func (k *K9s) Reset() {
 	k.activeConfig, k.activeContextName = nil, ""
 }
 
+// ActiveScreenDumpsDir fetch context specific screen dumps dir.
+func (k *K9s) ActiveScreenDumpsDir() string {
+	return filepath.Join(k.GetScreenDumpDir(), k.ActiveContextDir())
+}
+
+// ActiveContextDir fetch current cluster/context path.
 func (k *K9s) ActiveContextDir() string {
 	if k.activeConfig == nil {
 		return "na"
 	}
 
-	return filepath.Join(
-		SanitizeFileName(k.activeConfig.Context.ClusterName),
-		SanitizeFileName(k.ActiveContextName()),
+	return data.SanitizeContextSubpath(
+		k.activeConfig.Context.ClusterName,
+		k.ActiveContextName(),
 	)
 }
 
+// ActiveContextNamespace fetch the context active ns.
 func (k *K9s) ActiveContextNamespace() (string, error) {
 	if k.activeConfig != nil {
 		return k.activeConfig.Context.Namespace.Active, nil
@@ -140,6 +152,7 @@ func (k *K9s) ActiveContextNamespace() (string, error) {
 	return "", errors.New("context config is not set")
 }
 
+// ActiveContextName returns the active context name.
 func (k *K9s) ActiveContextName() string {
 	return k.activeContextName
 }
