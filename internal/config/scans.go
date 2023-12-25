@@ -21,19 +21,19 @@ func (l Labels) exclude(k, val string) bool {
 	return false
 }
 
-// Blacklist tracks vul scan exclusions.
-type BlackList struct {
+// ScanExcludes tracks vul scan exclusions.
+type ScanExcludes struct {
 	Namespaces []string `yaml:"namespaces"`
 	Labels     Labels   `yaml:"labels"`
 }
 
-func newBlackList() BlackList {
-	return BlackList{
+func newScanExcludes() ScanExcludes {
+	return ScanExcludes{
 		Labels: make(Labels),
 	}
 }
 
-func (b BlackList) exclude(ns string, ll map[string]string) bool {
+func (b ScanExcludes) exclude(ns string, ll map[string]string) bool {
 	for _, nss := range b.Namespaces {
 		if nss == ns {
 			return true
@@ -50,14 +50,14 @@ func (b BlackList) exclude(ns string, ll map[string]string) bool {
 
 // ImageScans tracks vul scans options.
 type ImageScans struct {
-	Enable    bool      `yaml:"enable"`
-	BlackList BlackList `yaml:"blackList"`
+	Enable     bool         `yaml:"enable"`
+	Exclusions ScanExcludes `yaml:"exclusions"`
 }
 
 // NewImageScans returns a new instance.
 func NewImageScans() *ImageScans {
 	return &ImageScans{
-		BlackList: newBlackList(),
+		Exclusions: newScanExcludes(),
 	}
 }
 
@@ -67,5 +67,5 @@ func (i *ImageScans) ShouldExclude(ns string, ll map[string]string) bool {
 		return false
 	}
 
-	return i.BlackList.exclude(ns, ll)
+	return i.Exclusions.exclude(ns, ll)
 }
