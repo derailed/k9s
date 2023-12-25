@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 )
@@ -41,11 +42,9 @@ const (
 
 var (
 	// LabelRx identifies a label query.
-	LabelRx = regexp.MustCompile(`\A\-l`)
-
+	LabelRx   = regexp.MustCompile(`\A\-l`)
 	inverseRx = regexp.MustCompile(`\A\!`)
-
-	fuzzyRx = regexp.MustCompile(`\A\-f`)
+	fuzzyRx   = regexp.MustCompile(`\A\-f`)
 )
 
 func mustExtractStyles(ctx context.Context) *config.Styles {
@@ -71,12 +70,11 @@ func IsLabelSelector(s string) bool {
 	if s == "" {
 		return false
 	}
-
 	if LabelRx.MatchString(s) {
 		return true
 	}
 
-	return !strings.Contains(s, " ") && strings.Contains(s, "=")
+	return !strings.Contains(s, " ") && cmd.ToLabels(s) != nil
 }
 
 // IsFuzzySelector checks if query is fuzzy.
