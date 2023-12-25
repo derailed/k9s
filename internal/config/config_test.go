@@ -170,7 +170,7 @@ var expectedConfig = `k9s:
       memory: 100Mi
   imageScans:
     enable: false
-    blackList:
+    exclusions:
       namespaces: []
       labels: {}
   logger:
@@ -212,7 +212,7 @@ var resetConfig = `k9s:
       memory: 100Mi
   imageScans:
     enable: false
-    blackList:
+    exclusions:
       namespaces: []
       labels: {}
   logger:

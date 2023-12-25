@@ -116,8 +116,8 @@ k9s:
   # ImageScan config changed from v0.29.0!
   imageScans:
     enable: false
-    # Now figures exclusions ie blacklist namespaces or specific workload labels
-    blackList:
+    # Now figures exclusions ie excludes certain namespaces or specific workload labels
+    exclusions:
       # Exclude the following namespaces for image vulscans!
       namespaces:
         - kube-system
@@ -236,13 +236,13 @@ This is a feature reported by many of you and its (finally!) here. As of this dr
 
 ---
 
-# The Black List...
+# Vulnerability Scan Exclusions...
 
 As it seems customary with all k9s new features, folks want to turn them off ;(
 The `Vulscan` feature did not get out unscaped ;(
 As it was rightfully so pointed out, you may want to opted out scans for images that you do not control.
 Tho I think it might be a good idea to run wide open once in a while to see if your cluster has any holes??
-For this reason, we've opted to intro a blacklist section under the image scan configuration to exclude certain images from the scans.
+For this reason, we've opted to intro an exclusion section under the image scan configuration to exclude certain images from the scans.
 
 Here is a sample configuration:
 
@@ -258,7 +258,7 @@ k9s:
     noIcons: false
   imageScans:
     enable: true
-    blackList:
+    exclusions:
       # Skip scans on these namespaces
       namespaces:
         - ns-1

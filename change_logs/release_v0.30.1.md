@@ -19,7 +19,7 @@ On Slack? Please join us [K9slackers](https://join.slack.com/t/k9sers/shared_inv
 
 ## 🎄 Maintenance Release! 🎄
 
-🎵 `On The twentyfouth day of Christmas my true love gave to me... Bugs!!` 🎵
+🎵 `On The eleventh day of Christmas my true love gave to me... Bugs!!` 🎵
 
 Got to love the aftermath... Thank you all for pitch'in in and help flesh out bugs!! The gift that keeps on... giving?
 
@@ -41,8 +41,8 @@ Please dial [K9s Channel](https://www.youtube.com/channel/UC897uwPygni4QIjkPCpgj
 * [#2368](https://github.com/derailed/k9s/issues/2368) Pod CPU and MEM columns are empty in 0.30.0
 * [#2367](https://github.com/derailed/k9s/issues/2367) k9s 0.30.0 issue loading plugins
 * [#2366](https://github.com/derailed/k9s/issues/2366) List pods of deployment is now impossible
-* [#2264](https://github.com/derailed/k9s/issues/2264) k9s 0.30.0 fields and values missed in action in the "namespace view"
-* [#2263](https://github.com/derailed/k9s/issues/2263) Default 0.30.0 default skin on macOS is no good
+* [#2364](https://github.com/derailed/k9s/issues/2364) k9s 0.30.0 fields and values missed in action in the "namespace view"
+* [#2363](https://github.com/derailed/k9s/issues/2363) Default 0.30.0 default skin on macOS is no good
 
 ---
 
