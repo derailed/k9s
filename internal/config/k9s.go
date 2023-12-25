@@ -86,7 +86,7 @@ func (k *K9s) Refine(k1 *K9s) {
 	k.Thresholds = k1.Thresholds
 }
 
-func (k *K9s) Generate(k9sFlags *Flags) {
+func (k *K9s) Override(k9sFlags *Flags) {
 	if *k9sFlags.RefreshRate != DefaultRefreshRate {
 		k.OverrideRefreshRate(*k9sFlags.RefreshRate)
 	}
