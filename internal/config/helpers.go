@@ -11,11 +11,6 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
-// SanitizeFilename sanitizes the dump filename.
-func SanitizeFilename(name string) string {
-	return invalidPathCharsRX.ReplaceAllString(name, "-")
-}
-
 // InNSList check if ns is in an ns collection.
 func InNSList(nn []interface{}, ns string) bool {
 	ss := make([]string, len(nn))

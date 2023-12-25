@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"regexp"
 
 	"github.com/derailed/k9s/internal/config/data"
 
@@ -81,19 +80,13 @@ var (
 
 // InitLogsLoc initializes K9s logs location.
 func InitLogLoc() error {
-	if hasK9sConfigEnv() {
-		tmpDir, err := userTmpDir()
-		if err != nil {
-			return err
-		}
-		AppLogFile = filepath.Join(tmpDir, K9sLogsFile)
-		return nil
+	tmpDir, err := userTmpDir()
+	if err != nil {
+		return err
 	}
+	AppLogFile = filepath.Join(tmpDir, K9sLogsFile)
 
-	var err error
-	AppLogFile, err = xdg.StateFile(filepath.Join(AppName, K9sLogsFile))
-
-	return err
+	return nil
 }
 
 // InitLocs initializes k9s artifacts locations.
@@ -182,31 +175,24 @@ func initXDGLocs() error {
 	return nil
 }
 
-var invalidPathCharsRX = regexp.MustCompile(`[:/]+`)
-
-// SanitizeFileName ensure file spec is valid.
-func SanitizeFileName(name string) string {
-	return invalidPathCharsRX.ReplaceAllString(name, "-")
-}
-
 // AppContextDir generates a valid context config dir.
 func AppContextDir(cluster, context string) string {
-	return filepath.Join(AppContextsDir, sanContextSubpath(cluster, context))
+	return filepath.Join(AppContextsDir, data.SanitizeContextSubpath(cluster, context))
 }
 
 // AppContextAliasesFile generates a valid context specific aliases file path.
 func AppContextAliasesFile(cluster, context string) string {
-	return filepath.Join(AppContextsDir, sanContextSubpath(cluster, context), "aliases.yaml")
+	return filepath.Join(AppContextsDir, data.SanitizeContextSubpath(cluster, context), "aliases.yaml")
 }
 
 // AppContextPluginsFile generates a valid context specific plugins file path.
 func AppContextPluginsFile(cluster, context string) string {
-	return filepath.Join(AppContextsDir, sanContextSubpath(cluster, context), "plugins.yaml")
+	return filepath.Join(AppContextsDir, data.SanitizeContextSubpath(cluster, context), "plugins.yaml")
 }
 
 // AppContextHotkeysFile generates a valid context specific hotkeys file path.
 func AppContextHotkeysFile(cluster, context string) string {
-	return filepath.Join(AppContextsDir, sanContextSubpath(cluster, context), "hotkeys.yaml")
+	return filepath.Join(AppContextsDir, data.SanitizeContextSubpath(cluster, context), "hotkeys.yaml")
 }
 
 // AppContextConfig generates a valid context config file path.
@@ -216,14 +202,14 @@ func AppContextConfig(cluster, context string) string {
 
 // DumpsDir generates a valid context dump directory.
 func DumpsDir(cluster, context string) (string, error) {
-	dir := filepath.Join(AppDumpsDir, sanContextSubpath(cluster, context))
+	dir := filepath.Join(AppDumpsDir, data.SanitizeContextSubpath(cluster, context))
 
 	return dir, data.EnsureDirPath(dir, data.DefaultDirMod)
 }
 
 // EnsureBenchmarksDir generates a valid benchmark results directory.
 func EnsureBenchmarksDir(cluster, context string) (string, error) {
-	dir := filepath.Join(AppBenchmarksDir, sanContextSubpath(cluster, context))
+	dir := filepath.Join(AppBenchmarksDir, data.SanitizeContextSubpath(cluster, context))
 
 	return dir, data.EnsureDirPath(dir, data.DefaultDirMod)
 }
@@ -273,10 +259,6 @@ func SkinFileFromName(n string) string {
 }
 
 // Helpers...
-
-func sanContextSubpath(cluster, context string) string {
-	return filepath.Join(SanitizeFileName(cluster), SanitizeFileName(context))
-}
 
 func hasK9sConfigEnv() bool {
 	return os.Getenv(K9sConfigDir) != ""

@@ -34,9 +34,14 @@ func (d Dir) Load(n string, ct *api.Context) (*Config, error) {
 	}
 
 	var (
-		path = filepath.Join(d.root, ct.Cluster, n, MainConfigFile)
-		cfg  *Config
-		err  error
+		path = filepath.Join(
+			d.root,
+			SanitizeFileName(ct.Cluster),
+			SanitizeFileName(n),
+			MainConfigFile,
+		)
+		cfg *Config
+		err error
 	)
 	if f, e := os.Stat(path); os.IsNotExist(e) || f.Size() == 0 {
 		log.Debug().Msgf("Context config not found! Generating... %q", path)
