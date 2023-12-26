@@ -31,19 +31,17 @@ func newArgs(p *Interpreter, aa []string) args {
 
 		case strings.Index(a, fuzzyFlag) == 0:
 			i++
-			args[filterKey] = strings.TrimSpace(aa[i])
-			continue
+			args[filterKey] = strings.ToLower(strings.TrimSpace(aa[i]))
 
 		case strings.Index(a, filterFlag) == 0:
-			args[filterKey] = a[1:]
+			args[filterKey] = strings.ToLower(a[1:])
 
 		case strings.Contains(a, labelFlag):
 			if ll := ToLabels(a); len(ll) != 0 {
-				args[labelKey] = a
+				args[labelKey] = strings.ToLower(a)
 			}
 
 		default:
-			a := strings.TrimSpace(aa[i])
 			switch {
 			case p.IsContextCmd():
 				args[contextKey] = a
@@ -53,12 +51,12 @@ func newArgs(p *Interpreter, aa []string) args {
 				}
 			case p.IsXrayCmd():
 				if _, ok := args[topicKey]; ok {
-					args[nsKey] = a
+					args[nsKey] = strings.ToLower(a)
 				} else {
-					args[topicKey] = a
+					args[topicKey] = strings.ToLower(a)
 				}
 			default:
-				args[nsKey] = a
+				args[nsKey] = strings.ToLower(a)
 			}
 		}
 	}

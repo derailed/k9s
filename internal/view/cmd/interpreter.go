@@ -15,7 +15,7 @@ type Interpreter struct {
 
 func NewInterpreter(s string) *Interpreter {
 	c := Interpreter{
-		line: strings.ToLower(s),
+		line: s,
 		args: make(args),
 	}
 	c.grok()
@@ -28,7 +28,7 @@ func (c *Interpreter) grok() {
 	if len(ff) == 0 {
 		return
 	}
-	c.cmd = ff[0]
+	c.cmd = strings.ToLower(ff[0])
 	c.args = newArgs(c, ff[1:])
 }
 
@@ -59,7 +59,7 @@ func (c *Interpreter) Amend(c1 *Interpreter) {
 }
 
 func (c *Interpreter) Reset(s string) *Interpreter {
-	c.line = strings.ToLower(s)
+	c.line = s
 	c.grok()
 
 	return c

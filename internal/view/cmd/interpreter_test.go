@@ -242,6 +242,11 @@ func TestDirCmd(t *testing.T) {
 		"toast-nodir": {
 			cmd: "dir",
 		},
+		"caps": {
+			cmd: "dir DirName",
+			ok:  true,
+			dir: "DirName",
+		},
 	}
 
 	for k := range uu {
@@ -329,6 +334,11 @@ func TestContextCmd(t *testing.T) {
 		},
 		"toast": {
 			cmd: "ctxto ctx1",
+		},
+		"caps": {
+			cmd: "ctx Dev",
+			ok:  true,
+			ctx: "Dev",
 		},
 	}
 
