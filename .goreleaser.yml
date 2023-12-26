@@ -128,7 +128,6 @@ winget:
       branch: "k9s-{{.Version}}"
       pull_request:
         enabled: true
-        draft: true
         base:
           owner: microsoft
           name: winget-pkgs
