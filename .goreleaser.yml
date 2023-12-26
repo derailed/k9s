@@ -116,7 +116,7 @@ nfpms:
 
 winget:
   - name: k9s
-    publisher: k9s
+    publisher: Derailed
     short_description: "K9s - Kubernetes CLI To Manage Your Clusters In Style!"
     license: "Apache 2.0"
     publisher_support_url: "https://github.com/derailed/k9s/issues"
