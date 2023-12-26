@@ -16,5 +16,5 @@ func TestCronJobRender(t *testing.T) {
 
 	assert.NoError(t, c.Render(load(t, "cj"), "", &r))
 	assert.Equal(t, "default/hello", r.ID)
-	assert.Equal(t, render.Fields{"default", "hello", "*/1 * * * *", "false", "0"}, r.Fields[:5])
+	assert.Equal(t, render.Fields{"default", "hello", "0", "*/1 * * * *", "false", "0"}, r.Fields[:6])
 }

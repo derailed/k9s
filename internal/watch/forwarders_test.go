@@ -5,6 +5,7 @@ package watch_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/derailed/k9s/internal/port"
 	"github.com/derailed/k9s/internal/watch"
@@ -182,5 +183,5 @@ func (m noOpForwarder) Port() string               { return "" }
 func (m noOpForwarder) FQN() string                { return "" }
 func (m noOpForwarder) Active() bool               { return false }
 func (m noOpForwarder) SetActive(bool)             {}
-func (m noOpForwarder) Age() string                { return "" }
+func (m noOpForwarder) Age() time.Time             { return time.Now() }
 func (m noOpForwarder) HasPortMapping(string) bool { return false }

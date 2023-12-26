@@ -5,6 +5,7 @@ package config
 
 import (
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config/data"
 )
 
 const (
@@ -38,7 +39,7 @@ func NewLogger() *Logger {
 }
 
 // Validate checks thresholds and make sure we're cool. If not use defaults.
-func (l *Logger) Validate(_ client.Connection, _ KubeSettings) {
+func (l *Logger) Validate(_ client.Connection, _ data.KubeSettings) {
 	if l.TailCount <= 0 {
 		l.TailCount = DefaultLoggerTailCount
 	}

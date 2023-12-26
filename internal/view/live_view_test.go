@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -18,7 +19,7 @@ apiVersion: v1
     the secret name you want to quote to use tls.","title":"secretName","type":"string"}},"required":["http","class","classInSpec"],"type":"object"}
 `
 
-	v := NewLiveView(NewApp(config.NewConfig(nil)), "fred", nil)
+	v := NewLiveView(NewApp(mock.NewMockConfig()), "fred", nil)
 	assert.NoError(t, v.Init(context.Background()))
 	v.text.SetText(colorizeYAML(config.Yaml{}, s))
 

@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tview"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -25,7 +24,7 @@ func (DaemonSet) Header(ns string) Header {
 	h := Header{
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "VS"},
+		HeaderColumn{Name: "VS", VS: true},
 		HeaderColumn{Name: "DESIRED", Align: tview.AlignRight},
 		HeaderColumn{Name: "CURRENT", Align: tview.AlignRight},
 		HeaderColumn{Name: "READY", Align: tview.AlignRight},
@@ -34,9 +33,6 @@ func (DaemonSet) Header(ns string) Header {
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true},
-	}
-	if vul.ImgScanner == nil {
-		h = append(h[:vulIdx], h[vulIdx+1:]...)
 	}
 
 	return h
@@ -58,7 +54,7 @@ func (d DaemonSet) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = Fields{
 		ds.Namespace,
 		ds.Name,
-		computeVulScore(&ds.Spec.Template.Spec),
+		computeVulScore(ds.ObjectMeta, &ds.Spec.Template.Spec),
 		strconv.Itoa(int(ds.Status.DesiredNumberScheduled)),
 		strconv.Itoa(int(ds.Status.CurrentNumberScheduled)),
 		strconv.Itoa(int(ds.Status.NumberReady)),
@@ -67,9 +63,6 @@ func (d DaemonSet) Render(o interface{}, ns string, r *Row) error {
 		mapToStr(ds.Labels),
 		AsStatus(d.diagnose(ds.Status.DesiredNumberScheduled, ds.Status.NumberReady)),
 		ToAge(ds.GetCreationTimestamp()),
-	}
-	if vul.ImgScanner == nil {
-		r.Fields = append(r.Fields[:vulIdx], r.Fields[vulIdx+1:]...)
 	}
 
 	return nil

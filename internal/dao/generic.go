@@ -40,7 +40,7 @@ type Generic struct {
 func (g *Generic) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	labelSel, _ := ctx.Value(internal.KeyLabels).(string)
 	if client.IsAllNamespace(ns) {
-		ns = client.AllNamespaces
+		ns = client.BlankNamespace
 	}
 
 	var (

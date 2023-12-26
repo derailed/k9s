@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/derailed/k9s/internal/config"
 	"github.com/rs/zerolog/log"
 
 	"github.com/anchore/clio"
@@ -26,6 +27,7 @@ import (
 	"github.com/anchore/grype/grype/pkg"
 	"github.com/anchore/grype/grype/store"
 	"github.com/anchore/grype/grype/vex"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 var ImgScanner *imageScanner
@@ -38,13 +40,19 @@ type imageScanner struct {
 	scans       Scans
 	mx          sync.RWMutex
 	initialized bool
+	config      *config.ImageScans
 }
 
 // NewImageScanner returns a new instance.
-func NewImageScanner() *imageScanner {
+func NewImageScanner(cfg *config.ImageScans) *imageScanner {
 	return &imageScanner{
-		scans: make(Scans),
+		scans:  make(Scans),
+		config: cfg,
 	}
+}
+
+func (s *imageScanner) ShouldExcludes(m metav1.ObjectMeta) bool {
+	return s.config.ShouldExclude(m.Namespace, m.Labels)
 }
 
 // GetScan fetch scan for a given image. Returns ok=false when not found.
@@ -56,7 +64,7 @@ func (s *imageScanner) GetScan(img string) (*Scan, bool) {
 	return scan, ok
 }
 
-func (s *imageScanner) SetScan(img string, sc *Scan) {
+func (s *imageScanner) setScan(img string, sc *Scan) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
 	s.scans[img] = sc
@@ -127,7 +135,7 @@ func (s *imageScanner) Enqueue(images ...string) {
 				return
 			}
 			sc := newScan(img)
-			s.SetScan(img, sc)
+			s.setScan(img, sc)
 			if err := s.scan(img, sc); err != nil {
 				log.Warn().Err(err).Msgf("Scan failed for img %s --", img)
 			}

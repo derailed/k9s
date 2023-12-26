@@ -139,7 +139,7 @@ func (n *Node) Get(ctx context.Context, path string) (runtime.Object, error) {
 	}
 
 	var nmx *mv1beta1.NodeMetrics
-	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); ok && withMx {
 		nmx, _ = client.DialMetrics(n.Client()).FetchNodeMetrics(ctx, path)
 	}
 
@@ -189,7 +189,7 @@ func (n *Node) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 // CountPods counts the pods scheduled on a given node.
 func (n *Node) CountPods(nodeName string) (int, error) {
 	var count int
-	oo, err := n.GetFactory().List("v1/pods", client.AllNamespaces, false, labels.Everything())
+	oo, err := n.GetFactory().List("v1/pods", client.BlankNamespace, false, labels.Everything())
 	if err != nil {
 		return 0, err
 	}
@@ -213,7 +213,7 @@ func (n *Node) CountPods(nodeName string) (int, error) {
 
 // GetPods returns all pods running on given node.
 func (n *Node) GetPods(nodeName string) ([]*v1.Pod, error) {
-	oo, err := n.GetFactory().List("v1/pods", client.AllNamespaces, false, labels.Everything())
+	oo, err := n.GetFactory().List("v1/pods", client.BlankNamespace, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

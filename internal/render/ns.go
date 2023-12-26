@@ -79,5 +79,6 @@ func (Namespace) diagnose(phase v1.NamespacePhase) error {
 	if phase != v1.NamespaceActive && phase != v1.NamespaceTerminating {
 		return errors.New("namespace not ready")
 	}
+
 	return nil
 }

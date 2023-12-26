@@ -45,20 +45,21 @@ func (b *Benchmark) List(ctx context.Context, _ string) ([]runtime.Object, error
 	if !ok {
 		return nil, errors.New("no benchmark dir found in context")
 	}
-	path, _ := ctx.Value(internal.KeyPath).(string)
+	path, ok := ctx.Value(internal.KeyPath).(string)
+	if !ok {
+		return nil, errors.New("no path specified in context")
+	}
+	pathMatch := BenchRx.ReplaceAllString(strings.Replace(path, "/", "_", 1), "_")
 
 	ff, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
 	}
-
-	fileName := BenchRx.ReplaceAllString(strings.Replace(path, "/", "_", 1), "_")
 	oo := make([]runtime.Object, 0, len(ff))
 	for _, f := range ff {
-		if path != "" && !strings.HasPrefix(f.Name(), fileName) {
+		if !strings.HasPrefix(f.Name(), pathMatch) {
 			continue
 		}
-
 		if fi, err := f.Info(); err == nil {
 			oo = append(oo, render.BenchInfo{File: fi, Path: filepath.Join(dir, f.Name())})
 		}

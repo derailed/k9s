@@ -21,6 +21,7 @@ type HeaderColumn struct {
 	MX        bool
 	Time      bool
 	Capacity  bool
+	VS        bool
 }
 
 // Clone copies a header.

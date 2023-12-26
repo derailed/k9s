@@ -70,7 +70,10 @@ func TestPromptColor(t *testing.T) {
 	app := ui.App{}
 
 	// Make sure to have different values to be sure that the prompt color actually changes depending on its type
-	assert.NotEqual(t, styles.Prompt().Border.DefaultColor.Color(), styles.Prompt().Border.CommandColor.Color())
+	assert.NotEqual(t,
+		styles.Prompt().Border.DefaultColor.Color(),
+		styles.Prompt().Border.CommandColor.Color(),
+	)
 
 	testCases := []struct {
 		kind          model.BufferKind

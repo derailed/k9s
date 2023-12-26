@@ -17,7 +17,7 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/xray"
 	"github.com/rs/zerolog/log"
-	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -213,7 +213,7 @@ func (t *Tree) reconcile(ctx context.Context) error {
 	root := xray.NewTreeNode(res, res)
 	ctx = context.WithValue(ctx, xray.KeyParent, root)
 	if _, ok := meta.TreeRenderer.(*xray.Generic); ok {
-		table, ok := oo[0].(*metav1beta1.Table)
+		table, ok := oo[0].(*metav1.Table)
 		if !ok {
 			return fmt.Errorf("expecting a Table but got %T", oo[0])
 		}
@@ -302,7 +302,7 @@ func treeHydrate(ctx context.Context, ns string, oo []runtime.Object, re TreeRen
 	return nil
 }
 
-func genericTreeHydrate(ctx context.Context, ns string, table *metav1beta1.Table, re TreeRenderer) error {
+func genericTreeHydrate(ctx context.Context, ns string, table *metav1.Table, re TreeRenderer) error {
 	tre, ok := re.(*xray.Generic)
 	if !ok {
 		return fmt.Errorf("expecting xray.Generic renderer but got %T", re)

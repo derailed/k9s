@@ -110,7 +110,7 @@ func (c *Container) logOptions(prev bool) (*dao.LogOptions, error) {
 	return &opts, nil
 }
 
-func (c *Container) viewLogs(app *App, model ui.Tabular, gvr, path string) {
+func (c *Container) viewLogs(app *App, model ui.Tabular, gvr client.GVR, path string) {
 	c.ResourceViewer.(*LogsExtender).showLogs(c.GetTable().Path, false)
 }
 
@@ -136,7 +136,10 @@ func (c *Container) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (c *Container) portForwardContext(ctx context.Context) context.Context {
-	ctx = context.WithValue(ctx, internal.KeyBenchCfg, c.App().BenchFile)
+	if bc := c.App().BenchFile; bc != "" {
+		ctx = context.WithValue(ctx, internal.KeyBenchCfg, c.App().BenchFile)
+	}
+
 	return context.WithValue(ctx, internal.KeyPath, c.GetTable().Path)
 }
 

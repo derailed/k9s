@@ -19,7 +19,7 @@ type RefScanner interface {
 	// Init initializes the scanner
 	Init(Factory, client.GVR)
 	// Scan scan the resource for references.
-	Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error)
+	Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (Refs, error)
 	ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error)
 }
 
@@ -58,7 +58,7 @@ func ScanForRefs(ctx context.Context, f Factory) (Refs, error) {
 		log.Debug().Msgf("Cluster Scan %v", time.Since(t))
 	}(time.Now())
 
-	gvr, ok := ctx.Value(internal.KeyGVR).(string)
+	gvr, ok := ctx.Value(internal.KeyGVR).(client.GVR)
 	if !ok {
 		return nil, errors.New("expecting context GVR")
 	}

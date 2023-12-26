@@ -7,19 +7,23 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
+
+	"gopkg.in/yaml.v2"
+	"helm.sh/helm/v3/pkg/action"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/render/helm"
-	"helm.sh/helm/v3/pkg/action"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 var (
 	_ Accessor  = (*HelmHistory)(nil)
 	_ Nuker     = (*HelmHistory)(nil)
 	_ Describer = (*HelmHistory)(nil)
+	_ Valuer    = (*HelmHistory)(nil)
 )
 
 // HelmHistory represents a helm chart.
@@ -55,12 +59,24 @@ func (h *HelmHistory) List(ctx context.Context, _ string) ([]runtime.Object, err
 
 // Get returns a resource.
 func (h *HelmHistory) Get(_ context.Context, path string) (runtime.Object, error) {
-	ns, n := client.Namespaced(path)
+	fqn, rev, found := strings.Cut(path, ":")
+	if !found || len(rev) == 0 {
+		return nil, fmt.Errorf("invalid path %q", path)
+	}
+
+	ns, n := client.Namespaced(fqn)
 	cfg, err := ensureHelmConfig(h.Client(), ns)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := action.NewGet(cfg).Run(n)
+
+	getter := action.NewGet(cfg)
+	getter.Version, err = strconv.Atoi(rev)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := getter.Run(n)
 	if err != nil {
 		return nil, err
 	}
@@ -70,32 +86,50 @@ func (h *HelmHistory) Get(_ context.Context, path string) (runtime.Object, error
 
 // Describe returns the chart notes.
 func (h *HelmHistory) Describe(path string) (string, error) {
-	ns, n := client.Namespaced(path)
-	cfg, err := ensureHelmConfig(h.Client(), ns)
-	if err != nil {
-		return "", err
-	}
-	resp, err := action.NewGet(cfg).Run(n)
+	rel, err := h.Get(context.Background(), path)
 	if err != nil {
 		return "", err
 	}
 
-	return resp.Info.Notes, nil
+	resp, ok := rel.(helm.ReleaseRes)
+	if !ok {
+		return "", fmt.Errorf("expected helm.ReleaseRes, but got %T", rel)
+	}
+
+	return resp.Release.Info.Notes, nil
 }
 
 // ToYAML returns the chart manifest.
 func (h *HelmHistory) ToYAML(path string, showManaged bool) (string, error) {
-	ns, n := client.Namespaced(path)
-	cfg, err := ensureHelmConfig(h.Client(), ns)
-	if err != nil {
-		return "", err
-	}
-	resp, err := action.NewGet(cfg).Run(n)
+	rel, err := h.Get(context.Background(), path)
 	if err != nil {
 		return "", err
 	}
 
-	return resp.Manifest, nil
+	resp, ok := rel.(helm.ReleaseRes)
+	if !ok {
+		return "", fmt.Errorf("expected helm.ReleaseRes, but got %T", rel)
+	}
+
+	return resp.Release.Manifest, nil
+}
+
+// GetValues return the config for this chart.
+func (h *HelmHistory) GetValues(path string, allValues bool) ([]byte, error) {
+	rel, err := h.Get(context.Background(), path)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, ok := rel.(helm.ReleaseRes)
+	if !ok {
+		return nil, fmt.Errorf("expected helm.ReleaseRes, but got %T", rel)
+	}
+
+	if allValues {
+		return yaml.Marshal(resp.Release.Chart.Values)
+	}
+	return yaml.Marshal(resp.Release.Config)
 }
 
 func (h *HelmHistory) Rollback(_ context.Context, path, rev string) error {

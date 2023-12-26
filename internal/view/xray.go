@@ -15,6 +15,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/k9s/internal/xray"
@@ -51,6 +52,9 @@ func NewXray(gvr client.GVR) ResourceViewer {
 		model: model.NewTree(gvr),
 	}
 }
+
+func (x *Xray) SetFilter(string)                 {}
+func (x *Xray) SetLabelFilter(map[string]string) {}
 
 // Init initializes the view.
 func (x *Xray) Init(ctx context.Context) error {
@@ -103,7 +107,7 @@ func (*Xray) InCmdMode() bool {
 
 // ExtraHints returns additional hints.
 func (x *Xray) ExtraHints() map[string]string {
-	if x.app.Config.K9s.NoIcons {
+	if x.app.Config.K9s.UI.NoIcons {
 		return nil
 	}
 	return xray.EmojiInfo()
@@ -411,7 +415,7 @@ func (x *Xray) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		args = append(args, "edit")
 		args = append(args, client.NewGVR(spec.GVR()).R())
 		args = append(args, "-n", ns)
-		args = append(args, "--context", x.app.Config.K9s.CurrentContext)
+		args = append(args, "--context", x.app.Config.K9s.ActiveContextName())
 		if cfg := x.app.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
 			args = append(args, "--kubeconfig", *cfg)
 		}
@@ -501,7 +505,7 @@ func (x *Xray) TreeLoadFailed(err error) {
 }
 
 func (x *Xray) update(node *xray.TreeNode) {
-	root := makeTreeNode(node, x.ExpandNodes(), x.app.Config.K9s.NoIcons, x.app.Styles)
+	root := makeTreeNode(node, x.ExpandNodes(), x.app.Config.K9s.UI.NoIcons, x.app.Styles)
 	if node == nil {
 		x.app.QueueUpdateDraw(func() {
 			x.SetRoot(root)
@@ -548,7 +552,7 @@ func (x *Xray) TreeChanged(node *xray.TreeNode) {
 }
 
 func (x *Xray) hydrate(parent *tview.TreeNode, n *xray.TreeNode) {
-	node := makeTreeNode(n, x.ExpandNodes(), x.app.Config.K9s.NoIcons, x.app.Styles)
+	node := makeTreeNode(n, x.ExpandNodes(), x.app.Config.K9s.UI.NoIcons, x.app.Styles)
 	for _, c := range n.Children {
 		x.hydrate(node, c)
 	}
@@ -644,9 +648,9 @@ func (x *Xray) styleTitle() string {
 
 	var title string
 	if ns == client.ClusterScope {
-		title = ui.SkinTitle(fmt.Sprintf(ui.TitleFmt, base, x.Count), x.app.Styles.Frame())
+		title = ui.SkinTitle(fmt.Sprintf(ui.TitleFmt, base, render.AsThousands(int64(x.Count))), x.app.Styles.Frame())
 	} else {
-		title = ui.SkinTitle(fmt.Sprintf(ui.NSTitleFmt, base, ns, x.Count), x.app.Styles.Frame())
+		title = ui.SkinTitle(fmt.Sprintf(ui.NSTitleFmt, base, ns, render.AsThousands(int64(x.Count))), x.app.Styles.Frame())
 	}
 
 	buff := x.CmdBuff().GetText()

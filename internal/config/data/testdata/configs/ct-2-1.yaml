@@ -1,0 +1,15 @@
+k9s:
+  cluster: cl-2
+  skin: skin-2
+  readOnly: true
+  namespace:
+    active: ns-2
+    lockFavorites: true
+    favorites:
+    - ns-1
+    - ns-2
+  view:
+    active: svc
+  featureGates:
+    nodeShell: true
+  portForwardAddress: fred

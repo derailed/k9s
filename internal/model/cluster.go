@@ -58,7 +58,7 @@ func NewCluster(f dao.Factory) *Cluster {
 // Version returns the current K8s cluster version.
 func (c *Cluster) Version() string {
 	info, err := c.factory.Client().ServerVersion()
-	if err != nil {
+	if err != nil || info == nil {
 		return client.NA
 	}
 
@@ -74,7 +74,7 @@ func (c *Cluster) ContextName() string {
 	return n
 }
 
-// ClusterName returns the cluster name.
+// ClusterName returns the context name.
 func (c *Cluster) ClusterName() string {
 	n, err := c.factory.Client().Config().CurrentClusterName()
 	if err != nil {

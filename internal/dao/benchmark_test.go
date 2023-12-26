@@ -19,6 +19,7 @@ func TestBenchmarkList(t *testing.T) {
 	a.Init(makeFactory(), client.NewGVR("benchmarks"))
 
 	ctx := context.WithValue(context.Background(), internal.KeyDir, "testdata/bench")
+	ctx = context.WithValue(ctx, internal.KeyPath, "")
 	oo, err := a.List(ctx, "-")
 
 	assert.Nil(t, err)

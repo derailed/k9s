@@ -17,7 +17,6 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -57,8 +56,17 @@ func NewTable(gvr client.GVR) *Table {
 // SetLabelFilter sets the labels filter.
 func (t *Table) SetLabelFilter(f string) {
 	t.mx.Lock()
+	defer t.mx.Unlock()
+
 	t.labelFilter = f
-	t.mx.Unlock()
+}
+
+// GetLabelFilter sets the labels filter.
+func (t *Table) GetLabelFilter() string {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	return t.labelFilter
 }
 
 // SetInstance sets a single entry table.
@@ -220,8 +228,9 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 
 	ns := client.CleanseNamespace(t.namespace)
 	if client.IsClusterScoped(t.namespace) {
-		ns = client.AllNamespaces
+		ns = client.BlankNamespace
 	}
+	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
 
 	return a.List(ctx, ns)
 }
@@ -230,9 +239,7 @@ func (t *Table) reconcile(ctx context.Context) error {
 	t.mx.Lock()
 	defer t.mx.Unlock()
 	meta := resourceMeta(t.gvr)
-	if t.labelFilter != "" {
-		ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
-	}
+	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
 	var (
 		oo  []runtime.Object
 		err error
@@ -250,7 +257,7 @@ func (t *Table) reconcile(ctx context.Context) error {
 	var rows render.Rows
 	if len(oo) > 0 {
 		if meta.Renderer.IsGeneric() {
-			table, ok := oo[0].(*metav1beta1.Table)
+			table, ok := oo[0].(*metav1.Table)
 			if !ok {
 				return fmt.Errorf("expecting a meta table but got %T", oo[0])
 			}
@@ -312,7 +319,7 @@ func hydrate(ns string, oo []runtime.Object, rr render.Rows, re Renderer) error 
 // Generic represents a generic resource.
 type Generic interface {
 	// SetTable sets up the resource tabular definition.
-	SetTable(ns string, table *metav1beta1.Table)
+	SetTable(ns string, table *metav1.Table)
 
 	// Header returns a resource header.
 	Header(ns string) render.Header
@@ -321,7 +328,7 @@ type Generic interface {
 	Render(o interface{}, ns string, row *render.Row) error
 }
 
-func genericHydrate(ns string, table *metav1beta1.Table, rr render.Rows, re Renderer) error {
+func genericHydrate(ns string, table *metav1.Table, rr render.Rows, re Renderer) error {
 	gr, ok := re.(Generic)
 	if !ok {
 		return fmt.Errorf("expecting generic renderer but got %T", re)

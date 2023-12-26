@@ -38,7 +38,7 @@ func (r *ReplicaSet) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (r *ReplicaSet) showPods(app *App, model ui.Tabular, gvr, path string) {
+func (r *ReplicaSet) showPods(app *App, _ ui.Tabular, _ client.GVR, path string) {
 	var drs dao.ReplicaSet
 	rs, err := drs.Load(app.factory, path)
 	if err != nil {

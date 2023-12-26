@@ -75,7 +75,7 @@ func TestAliasDefine(t *testing.T) {
 func TestAliasesLoad(t *testing.T) {
 	a := config.NewAliases()
 
-	assert.Nil(t, a.LoadFileAliases("testdata/alias.yml"))
+	assert.Nil(t, a.LoadFile("testdata/alias.yaml"))
 	assert.Equal(t, 2, len(a.Alias))
 }
 
@@ -84,7 +84,7 @@ func TestAliasesSave(t *testing.T) {
 	a.Alias["test"] = "fred"
 	a.Alias["blee"] = "duh"
 
-	assert.Nil(t, a.SaveAliases("/tmp/a.yml"))
-	assert.Nil(t, a.LoadFileAliases("/tmp/a.yml"))
+	assert.Nil(t, a.SaveAliases("/tmp/a.yaml"))
+	assert.Nil(t, a.LoadFile("/tmp/a.yaml"))
 	assert.Equal(t, 2, len(a.Alias))
 }

@@ -7,11 +7,11 @@ import (
 	"bytes"
 	"fmt"
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view"
@@ -109,10 +109,15 @@ func TestLogViewSave(t *testing.T) {
 	ii.Lines(0, false, ll)
 	v.Flush(ll)
 
-	dir := filepath.Join(app.Config.K9s.GetScreenDumpDir(), app.Config.K9s.CurrentCluster)
-	c1, _ := os.ReadDir(dir)
+	dd := "/tmp/test-dumps/na"
+	assert.NoError(t, ensureDumpDir(dd))
+	app.Config.K9s.ScreenDumpDir = "/tmp/test-dumps"
+	dir := app.Config.K9s.ActiveScreenDumpsDir()
+	c1, err := os.ReadDir(dir)
+	assert.NoError(t, err, fmt.Sprintf("Dir: %q", dir))
 	v.SaveCmd(nil)
-	c2, _ := os.ReadDir(dir)
+	c2, err := os.ReadDir(dir)
+	assert.NoError(t, err, fmt.Sprintf("Dir: %q", dir))
 	assert.Equal(t, len(c2), len(c1)+1)
 }
 
@@ -144,5 +149,16 @@ func TestAllContainerKeyBinding(t *testing.T) {
 // Helpers...
 
 func makeApp() *view.App {
-	return view.NewApp(config.NewConfig(ks{}))
+	return view.NewApp(mock.NewMockConfig())
+}
+
+func ensureDumpDir(n string) error {
+	config.AppDumpsDir = n
+	if _, err := os.Stat(n); os.IsNotExist(err) {
+		return os.MkdirAll(n, 0700)
+	}
+	if err := os.RemoveAll(n); err != nil {
+		return err
+	}
+	return os.MkdirAll(n, 0700)
 }

@@ -13,10 +13,10 @@ clusters:
   - cluster:
       insecure-skip-tls-verify: true
       server: https://localhost:3002
-    name: duh
+    name: zorg
 contexts:
   - context:
-      cluster: fred
+      cluster: zorg
       user: fred
     name: fred
   - context:

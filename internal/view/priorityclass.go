@@ -5,6 +5,7 @@ package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 )
@@ -31,5 +32,5 @@ func (s *PriorityClass) bindKeys(aa ui.KeyActions) {
 }
 
 func (s *PriorityClass) refCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return scanRefs(evt, s.App(), s.GetTable(), "scheduling.k8s.io/v1/priorityclasses")
+	return scanRefs(evt, s.App(), s.GetTable(), dao.PcGVR)
 }

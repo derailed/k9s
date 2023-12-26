@@ -149,16 +149,29 @@ func (Container) diagnose(state, ready string) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
+func containerRequests(co *v1.Container) v1.ResourceList {
+	req := co.Resources.Requests
+	if len(req) != 0 {
+		return req
+	}
+	lim := co.Resources.Limits
+	if len(lim) != 0 {
+		return lim
+	}
+
+	return nil
+}
+
 func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, r metric) {
 	rList, lList := containerRequests(co), co.Resources.Limits
 	if rList.Cpu() != nil {
 		r.cpu = rList.Cpu().MilliValue()
 	}
-	if lList.Cpu() != nil {
-		r.lcpu = lList.Cpu().MilliValue()
-	}
 	if rList.Memory() != nil {
 		r.mem = rList.Memory().Value()
+	}
+	if lList.Cpu() != nil {
+		r.lcpu = lList.Cpu().MilliValue()
 	}
 	if lList.Memory() != nil {
 		r.lmem = lList.Memory().Value()
