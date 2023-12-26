@@ -1,4 +1,4 @@
-plugin:
+plugins:
   # kubectl-blame by knight42
   # Annotate each line in the given resource's YAML with information from the managedFields to show who last modified the field.
   # Source: https://github.com/knight42/kubectl-blame
