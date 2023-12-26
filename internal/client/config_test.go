@@ -154,7 +154,7 @@ func TestConfigGetContext(t *testing.T) {
 		},
 		"custom": {
 			cluster: "bozo",
-			err:     errors.New("invalid context `bozo specified"),
+			err:     errors.New(`getcontext - invalid context specified: "bozo"`),
 		},
 	}
 

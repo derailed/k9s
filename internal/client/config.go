@@ -103,7 +103,7 @@ func (c *Config) CurrentClusterName() (string, error) {
 	if isSet(c.flags.Context) {
 		ct, ok = cfg.Contexts[*c.flags.Context]
 		if !ok {
-			return "", fmt.Errorf("invalid context specified: %q", *c.flags.Context)
+			return "", fmt.Errorf("current-cluster - invalid context specified: %q", *c.flags.Context)
 		}
 	}
 
@@ -156,7 +156,7 @@ func (c *Config) GetContext(n string) (*api.Context, error) {
 		return c, nil
 	}
 
-	return nil, fmt.Errorf("invalid context `%s specified", n)
+	return nil, fmt.Errorf("getcontext - invalid context specified: %q", n)
 }
 
 // Contexts fetch all available contexts.

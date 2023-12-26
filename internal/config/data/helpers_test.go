@@ -12,6 +12,37 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestSanitizeFileName(t *testing.T) {
+	uu := map[string]struct {
+		file, e string
+	}{
+		"empty": {},
+		"plain": {
+			file: "bumble-bee-tuna",
+			e:    "bumble-bee-tuna",
+		},
+		"slash": {
+			file: "bumble/bee/tuna",
+			e:    "bumble-bee-tuna",
+		},
+		"column": {
+			file: "bumble::bee:tuna",
+			e:    "bumble-bee-tuna",
+		},
+		"eks": {
+			file: "arn:aws:eks:us-east-1:123456789:cluster/us-east-1-app-dev-common-eks",
+			e:    "arn-aws-eks-us-east-1-123456789-cluster-us-east-1-app-dev-common-eks",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, data.SanitizeFileName(u.file))
+		})
+	}
+}
+
 func TestHelperInList(t *testing.T) {
 	uu := []struct {
 		item     string

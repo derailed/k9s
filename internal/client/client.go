@@ -216,13 +216,57 @@ func (a *APIClient) IsValidNamespace(ns string) bool {
 	if IsAllNamespace(ns) {
 		return true
 	}
+
+	ok, err := a.CanI(ClusterScope, "v1/namespaces", []string{ListVerb})
+	if !ok || err != nil {
+		cool, err := a.isValidNamespace(ns)
+		if err != nil {
+			log.Error().Err(err).Msgf("unable to assert valid namespace")
+		}
+		return cool
+	}
 	nn, err := a.ValidNamespaceNames()
 	if err != nil {
 		return false
 	}
-	_, ok := nn[ns]
+	_, ok = nn[ns]
 
 	return ok
+}
+
+func (a *APIClient) cachedNamespaceNames() NamespaceNames {
+	cns, ok := a.cache.Get("validNamespaces")
+	if !ok {
+		return make(NamespaceNames)
+	}
+
+	return cns.(NamespaceNames)
+}
+
+func (a *APIClient) isValidNamespace(n string) (bool, error) {
+	if a == nil {
+		return false, errors.New("invalid client")
+	}
+
+	cnss := a.cachedNamespaceNames()
+	if _, ok := cnss[n]; ok {
+		return true, nil
+	}
+
+	dial, err := a.Dial()
+	if err != nil {
+		return false, err
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), a.config.CallTimeout())
+	defer cancel()
+	_, err = dial.CoreV1().Namespaces().Get(ctx, n, metav1.GetOptions{})
+	if err != nil {
+		return false, err
+	}
+	cnss[n] = struct{}{}
+	a.cache.Add("validNamespaces", cnss, cacheExpiry)
+
+	return true, nil
 }
 
 // ValidNamespaceNames returns all available namespaces.

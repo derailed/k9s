@@ -61,8 +61,7 @@ func (k *K9s) Save() error {
 	if k.activeConfig != nil {
 		path := filepath.Join(
 			AppContextsDir,
-			k.activeConfig.Context.ClusterName,
-			k.activeContextName,
+			data.SanitizeContextSubpath(k.activeConfig.Context.ClusterName, k.activeContextName),
 			data.MainConfigFile,
 		)
 		return k.activeConfig.Save(path)
