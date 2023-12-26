@@ -100,7 +100,7 @@ func (a *App) Init(version string, rate int) error {
 	a.factory = watch.NewFactory(a.Conn())
 	ok, err := a.isValidNS(ns)
 	if !ok && err == nil {
-		return fmt.Errorf("invalid namespace %s", ns)
+		return fmt.Errorf("app-init - invalid namespace: %q", ns)
 	}
 	a.initFactory(ns)
 
@@ -415,7 +415,7 @@ func (a *App) switchNS(ns string) error {
 		return err
 	}
 	if !ok {
-		return fmt.Errorf("invalid namespace %q", ns)
+		return fmt.Errorf("switchns - invalid namespace: %q", ns)
 	}
 	if err := a.Config.SetActiveNamespace(ns); err != nil {
 		return err
@@ -433,7 +433,7 @@ func (a *App) isValidNS(ns string) (bool, error) {
 	}
 
 	if !a.Conn().IsValidNamespace(ns) {
-		return false, fmt.Errorf("invalid namespace: %q", ns)
+		return false, fmt.Errorf("isvalidns - invalid namespace: %q", ns)
 	}
 
 	return true, nil
