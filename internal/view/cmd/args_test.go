@@ -79,6 +79,16 @@ func TestFlagsNew(t *testing.T) {
 			aa: []string{"app=fred", "ns1", "-f", "blee", "/zorg", "@ctx1"},
 			ll: args{filterKey: "zorg", labelKey: "app=fred", nsKey: "ns1", contextKey: "ctx1"},
 		},
+		"caps": {
+			i:  NewInterpreter("po"),
+			aa: []string{"app=fred", "ns1", "-f", "blee", "/zorg", "@Dev"},
+			ll: args{filterKey: "zorg", labelKey: "app=fred", nsKey: "ns1", contextKey: "Dev"},
+		},
+		"ctx": {
+			i:  NewInterpreter("ctx"),
+			aa: []string{"Dev"},
+			ll: args{contextKey: "Dev"},
+		},
 	}
 
 	for k := range uu {
