@@ -96,7 +96,16 @@ func (c *Config) CurrentClusterName() (string, error) {
 		return "", err
 	}
 
-	ct := cfg.Contexts[cfg.CurrentContext]
+	ct, ok := cfg.Contexts[cfg.CurrentContext]
+	if !ok {
+		return "", fmt.Errorf("invalid current context specified: %q", cfg.CurrentContext)
+	}
+	if isSet(c.flags.Context) {
+		ct, ok = cfg.Contexts[*c.flags.Context]
+		if !ok {
+			return "", fmt.Errorf("invalid context specified: %q", *c.flags.Context)
+		}
+	}
 
 	return ct.Cluster, nil
 
