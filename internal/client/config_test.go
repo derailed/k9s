@@ -54,15 +54,20 @@ func TestConfigCurrentCluster(t *testing.T) {
 	name, kubeConfig := "blee", "./testdata/config"
 	uu := map[string]struct {
 		flags   *genericclioptions.ConfigFlags
-		context string
+		cluster string
 	}{
 		"default": {
-			flags:   &genericclioptions.ConfigFlags{KubeConfig: &kubeConfig},
-			context: "fred",
+			flags: &genericclioptions.ConfigFlags{
+				KubeConfig: &kubeConfig,
+			},
+			cluster: "zorg",
 		},
 		"custom": {
-			flags:   &genericclioptions.ConfigFlags{KubeConfig: &kubeConfig, Context: &name},
-			context: "blee",
+			flags: &genericclioptions.ConfigFlags{
+				KubeConfig: &kubeConfig,
+				Context:    &name,
+			},
+			cluster: "blee",
 		},
 	}
 
@@ -70,9 +75,9 @@ func TestConfigCurrentCluster(t *testing.T) {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
 			cfg := client.NewConfig(u.flags)
-			ct, err := cfg.CurrentContextName()
+			ct, err := cfg.CurrentClusterName()
 			assert.Nil(t, err)
-			assert.Equal(t, u.context, ct)
+			assert.Equal(t, u.cluster, ct)
 		})
 	}
 }
@@ -252,7 +257,7 @@ func TestConfigRestConfig(t *testing.T) {
 	cfg := client.NewConfig(&flags)
 	rc, err := cfg.RESTConfig()
 	assert.Nil(t, err)
-	assert.Equal(t, "https://localhost:3000", rc.Host)
+	assert.Equal(t, "https://localhost:3002", rc.Host)
 }
 
 func TestConfigBadConfig(t *testing.T) {
