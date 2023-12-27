@@ -19,6 +19,9 @@ const (
 	// K9sConfigDir represents k9s configuration dir env var.
 	K9sConfigDir = "K9S_CONFIG_DIR"
 
+	// K9sLogsDir represents k9s logs dir env var.
+	K9sLogsDir = "K9S_LOGS_DIR"
+
 	// AppName tracks k9s app name.
 	AppName = "k9s"
 
@@ -80,11 +83,20 @@ var (
 
 // InitLogsLoc initializes K9s logs location.
 func InitLogLoc() error {
-	tmpDir, err := userTmpDir()
-	if err != nil {
+	var appLogDir string
+	if envDir := os.Getenv(K9sLogsDir); envDir != "" {
+		appLogDir = envDir
+	} else {
+		tmpDir, err := userTmpDir()
+		if err != nil {
+			return err
+		}
+		appLogDir = tmpDir
+	}
+	if err := data.EnsureFullPath(appLogDir, data.DefaultDirMod); err != nil {
 		return err
 	}
-	AppLogFile = filepath.Join(tmpDir, K9sLogsFile)
+	AppLogFile = filepath.Join(appLogDir, K9sLogsFile)
 
 	return nil
 }
@@ -271,9 +283,6 @@ func userTmpDir() (string, error) {
 	}
 
 	dir := filepath.Join(os.TempDir(), AppName, u.Username)
-	if err := data.EnsureFullPath(dir, data.DefaultDirMod); err != nil {
-		return "", err
-	}
 
 	return dir, nil
 }
