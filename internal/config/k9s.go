@@ -50,10 +50,14 @@ func NewK9s(conn client.Connection, ks data.KubeSettings) *K9s {
 		Thresholds:    NewThreshold(),
 		ShellPod:      NewShellPod(),
 		ImageScans:    NewImageScans(),
-		dir:           data.NewDir(AppContextsDir, conn, ks),
+		dir:           data.NewDir(AppContextsDir),
 		conn:          conn,
 		ks:            ks,
 	}
+}
+
+func (k *K9s) resetConnection(conn client.Connection) {
+	k.conn = conn
 }
 
 // Save saves the k9s config to dis.
@@ -177,19 +181,20 @@ func (k *K9s) ActivateContext(n string) (*data.Context, error) {
 	if err != nil {
 		return nil, err
 	}
-	cfg, err := k.dir.Load(n, ct)
+	k.activeConfig, err = k.dir.Load(n, ct)
 	if err != nil {
 		return nil, err
 	}
-	k.activeConfig = cfg
 	// If the context specifies a default namespace, use it!
 	if k.conn != nil {
 		if ns := k.conn.ActiveNamespace(); ns != client.BlankNamespace {
 			k.activeConfig.Context.Namespace.Active = ns
+		} else {
+			k.activeConfig.Context.Namespace.Active = client.DefaultNamespace
 		}
 	}
 
-	return cfg.Context, nil
+	return k.activeConfig.Context, nil
 }
 
 // OverrideRefreshRate set the refresh rate manually.
@@ -319,4 +324,8 @@ func (k *K9s) Validate(c client.Connection, ks data.KubeSettings) {
 		k.Thresholds = NewThreshold()
 	}
 	k.Thresholds.Validate(c, ks)
+
+	if k.activeConfig != nil {
+		k.activeConfig.Validate(c, ks)
+	}
 }

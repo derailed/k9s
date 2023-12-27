@@ -131,10 +131,6 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
 	if c.specialCmd(p) {
 		return nil
 	}
-	// if _, ok := c.alias.Check(p.Cmd()); !ok {
-	// 	return fmt.Errorf("command not found %q", p.Cmd())
-	// }
-
 	gvr, v, err := c.viewMetaFor(p)
 	if err != nil {
 		return err

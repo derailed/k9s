@@ -16,6 +16,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
@@ -420,19 +421,17 @@ func ensureDir(dir string) error {
 	return os.MkdirAll(dir, 0744)
 }
 
-func saveData(dir, fqn, data string) (string, error) {
+func saveData(dir, fqn, logs string) (string, error) {
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}
 
-	now := time.Now().UnixNano()
-	fName := fmt.Sprintf("%s-%d.log", strings.Replace(fqn, "/", "-", 1), now)
-
-	path := filepath.Join(dir, fName)
+	f := fmt.Sprintf("%s-%d.log", fqn, time.Now().UnixNano())
+	path := filepath.Join(dir, data.SanitizeFileName(f))
 	mod := os.O_CREATE | os.O_WRONLY
 	file, err := os.OpenFile(path, mod, 0600)
 	if err != nil {
-		log.Error().Err(err).Msgf("LogFile create %s", path)
+		log.Error().Err(err).Msgf("Log file save failed: %q", path)
 		return "", nil
 	}
 	defer func() {
@@ -440,7 +439,7 @@ func saveData(dir, fqn, data string) (string, error) {
 			log.Error().Err(err).Msg("Closing Log file")
 		}
 	}()
-	if _, err := file.Write([]byte(data)); err != nil {
+	if _, err := file.WriteString(logs); err != nil {
 		return "", err
 	}
 

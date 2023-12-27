@@ -4,12 +4,29 @@
 package config
 
 import (
+	"os"
 	"os/user"
+	"path/filepath"
 
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 )
+
+func isEnvSet(env string) bool {
+	return os.Getenv(env) != ""
+}
+
+func userTmpDir() (string, error) {
+	u, err := user.Current()
+	if err != nil {
+		return "", err
+	}
+
+	dir := filepath.Join(os.TempDir(), AppName, u.Username)
+
+	return dir, nil
+}
 
 // InNSList check if ns is in an ns collection.
 func InNSList(nn []interface{}, ns string) bool {

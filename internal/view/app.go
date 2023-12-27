@@ -407,6 +407,10 @@ func (a *App) refreshCluster(context.Context) error {
 }
 
 func (a *App) switchNS(ns string) error {
+	if a.Config.ActiveNamespace() == ns {
+		return nil
+	}
+
 	if ns == client.ClusterScope {
 		ns = client.BlankNamespace
 	}
@@ -433,7 +437,7 @@ func (a *App) isValidNS(ns string) (bool, error) {
 	}
 
 	if !a.Conn().IsValidNamespace(ns) {
-		return false, fmt.Errorf("isvalidns - invalid namespace: %q", ns)
+		return false, fmt.Errorf("invalid namespace: %q", ns)
 	}
 
 	return true, nil
@@ -445,16 +449,9 @@ func (a *App) switchContext(ci *cmd.Interpreter) error {
 		return nil
 	}
 
-	log.Debug().Msgf("--> Switching Context %q--%q", name, a.Config.ActiveView())
 	a.Halt()
 	defer a.Resume()
 	{
-		p := cmd.NewInterpreter(a.Config.ActiveView())
-		if p.IsContextCmd() {
-			a.Config.SetActiveView("pod")
-		}
-		p.ResetContextArg()
-
 		a.Config.Reset()
 		ct, err := a.Config.K9s.ActivateContext(name)
 		if err != nil {
@@ -466,14 +463,26 @@ func (a *App) switchContext(ci *cmd.Interpreter) error {
 		if cns, ok := ci.NSArg(); ok {
 			ct.Namespace.Active = cns
 		}
+
+		p := cmd.NewInterpreter(a.Config.ActiveView())
+		p.ResetContextArg()
+		if p.IsContextCmd() {
+			a.Config.SetActiveView("pod")
+		}
+		ns := a.Config.ActiveNamespace()
+		if !a.Conn().IsValidNamespace(ns) {
+			ns = client.DefaultNamespace
+			if err := a.Config.SetActiveNamespace(ns); err != nil {
+				return err
+			}
+		}
 		if err := a.Config.Save(); err != nil {
 			log.Error().Err(err).Msg("config save failed!")
 		}
-
-		ns := a.Config.ActiveNamespace()
 		a.initFactory(ns)
 
-		a.Flash().Infof("Switching context to %s", name)
+		log.Debug().Msgf("--> Switching Context %q -- %q -- %q", name, ns, a.Config.ActiveView())
+		a.Flash().Infof("Switching context to %q::%q", name, ns)
 		a.ReloadStyles(name)
 		a.gotoResource(a.Config.ActiveView(), "", true)
 		a.clusterModel.Reset(a.factory)

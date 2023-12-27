@@ -47,16 +47,12 @@ func (c *Context) Validate(conn client.Connection, ks KubeSettings) {
 	if c.PortForwardAddress == "" {
 		c.PortForwardAddress = DefaultPFAddress
 	}
-
 	if cl, err := ks.CurrentClusterName(); err != nil {
 		c.ClusterName = cl
 	}
 
 	if c.Namespace == nil {
 		c.Namespace = NewNamespace()
-	}
-	if c.Namespace.Active == client.BlankNamespace {
-		c.Namespace.Active = client.DefaultNamespace
 	}
 	c.Namespace.Validate(conn, ks)
 

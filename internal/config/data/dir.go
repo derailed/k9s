@@ -8,31 +8,28 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
 
+// Dir tracks context configurations.
 type Dir struct {
 	root string
-	conn client.Connection
-	ks   KubeSettings
 }
 
-func NewDir(root string, conn client.Connection, ks KubeSettings) *Dir {
+// NewDir returns a new instance.
+func NewDir(root string) *Dir {
 	return &Dir{
 		root: root,
-		ks:   ks,
-		conn: conn,
 	}
 }
 
-func (d Dir) Load(n string, ct *api.Context) (*Config, error) {
+// Load loads context configuration.
+func (d *Dir) Load(n string, ct *api.Context) (*Config, error) {
 	if ct == nil {
 		return nil, errors.New("api.Context must not be nil")
 	}
-
 	var (
 		path = filepath.Join(d.root, SanitizeContextSubpath(ct.Cluster, n), MainConfigFile)
 		cfg  *Config
@@ -51,7 +48,6 @@ func (d Dir) Load(n string, ct *api.Context) (*Config, error) {
 
 func (d *Dir) genConfig(path string, ct *api.Context) (*Config, error) {
 	cfg := NewConfig(ct)
-	cfg.Validate(d.conn, d.ks)
 	if err := cfg.Save(path); err != nil {
 		return nil, err
 	}
@@ -68,7 +64,6 @@ func (d *Dir) loadConfig(path string) (*Config, error) {
 	if err := yaml.Unmarshal(bb, &cfg); err != nil {
 		return nil, err
 	}
-	cfg.Validate(d.conn, d.ks)
 
 	return &cfg, nil
 }
