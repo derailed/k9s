@@ -318,6 +318,22 @@ tail -f /Users/fernand/.local/data/k9s/k9s.log
 k9s -l debug
 ```
 
+### Customize logs destination
+
+You can override the default log file destination either with the `--logFile` argument:
+
+```shell
+k9s --logFile /tmp/k9s.log
+less /tmp/k9s.log
+```
+
+Or through the `K9S_LOGS_DIR` environment variable:
+
+```shell
+K9S_LOGS_DIR=/var/log k9s
+less /var/log/k9s.log
+```
+
 ## Key Bindings
 
 K9s uses aliases to navigate most K8s resources.
