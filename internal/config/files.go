@@ -282,7 +282,7 @@ func userTmpDir() (string, error) {
 		return "", err
 	}
 
-	dir := filepath.Join(os.TempDir(), AppName, u.Username)
+	dir := filepath.Join(os.TempDir(), u.Username, AppName)
 
 	return dir, nil
 }
