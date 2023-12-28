@@ -93,7 +93,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	cfg, err := loadConfiguration()
 	if err != nil {
-		return err
+		log.Error().Err(err).Msgf("load configuration failed")
 	}
 	app := view.NewApp(cfg)
 	if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
@@ -120,12 +120,11 @@ func loadConfiguration() (*config.Config, error) {
 	k9sCfg.K9s.Override(k9sFlags)
 	if err := k9sCfg.Refine(k8sFlags, k9sFlags, k8sCfg); err != nil {
 		log.Error().Err(err).Msgf("refine failed")
-		return nil, err
 	}
 	conn, err := client.InitConnection(k8sCfg)
+	k9sCfg.SetConnection(conn)
 	if err != nil {
-		log.Error().Err(err).Msgf("failed to connect to context %q", k9sCfg.K9s.ActiveContextName())
-		return nil, err
+		return k9sCfg, err
 	}
 	// Try to access server version if that fail. Connectivity issue?
 	if !conn.CheckConnectivity() {
@@ -134,7 +133,6 @@ func loadConfiguration() (*config.Config, error) {
 	if !conn.ConnectionOK() {
 		return nil, fmt.Errorf("k8s connection failed for context: %s", k9sCfg.K9s.ActiveContextName())
 	}
-	k9sCfg.SetConnection(conn)
 
 	log.Info().Msg("✅ Kubernetes connectivity")
 	if err := k9sCfg.Save(); err != nil {
