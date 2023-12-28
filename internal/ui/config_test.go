@@ -19,9 +19,9 @@ import (
 )
 
 func TestBenchConfig(t *testing.T) {
-	os.Setenv(config.K9sConfigDir, "/tmp/test-config")
+	os.Setenv(config.K9sEnvConfigDir, "/tmp/test-config")
 	assert.NoError(t, config.InitLocs())
-	defer assert.NoError(t, os.RemoveAll(config.K9sConfigDir))
+	defer assert.NoError(t, os.RemoveAll(config.K9sEnvConfigDir))
 
 	bc, error := config.EnsureBenchmarksCfgFile("cl-1", "ct-1")
 	assert.NoError(t, error)
@@ -29,9 +29,9 @@ func TestBenchConfig(t *testing.T) {
 }
 
 func TestSkinnedContext(t *testing.T) {
-	os.Setenv(config.K9sConfigDir, "/tmp/test-config")
+	os.Setenv(config.K9sEnvConfigDir, "/tmp/test-config")
 	assert.NoError(t, config.InitLocs())
-	defer assert.NoError(t, os.RemoveAll(config.K9sConfigDir))
+	defer assert.NoError(t, os.RemoveAll(config.K9sEnvConfigDir))
 
 	sf := filepath.Join("..", "config", "testdata", "black_and_wtf.yaml")
 	raw, err := os.ReadFile(sf)

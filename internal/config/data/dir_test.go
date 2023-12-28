@@ -71,7 +71,7 @@ func TestDirLoad(t *testing.T) {
 				assert.NoError(t, mock.EnsureDir(u.dir))
 			}
 
-			d := data.NewDir(u.dir, mock.NewMockConnection(), ks)
+			d := data.NewDir(u.dir)
 			ct, err := ks.CurrentContext()
 			assert.NoError(t, err)
 			if err != nil {

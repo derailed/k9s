@@ -6,7 +6,6 @@ package config
 import (
 	_ "embed"
 	"os"
-	"os/user"
 	"path/filepath"
 
 	"github.com/derailed/k9s/internal/config/data"
@@ -16,11 +15,11 @@ import (
 )
 
 const (
-	// K9sConfigDir represents k9s configuration dir env var.
-	K9sConfigDir = "K9S_CONFIG_DIR"
+	// K9sEnvConfigDir represents k9s configuration dir env var.
+	K9sEnvConfigDir = "K9S_CONFIG_DIR"
 
-	// K9sLogsDir represents k9s logs dir env var.
-	K9sLogsDir = "K9S_LOGS_DIR"
+	// K9sEnvLogsDir represents k9s logs dir env var.
+	K9sEnvLogsDir = "K9S_LOGS_DIR"
 
 	// AppName tracks k9s app name.
 	AppName = "k9s"
@@ -84,14 +83,21 @@ var (
 // InitLogsLoc initializes K9s logs location.
 func InitLogLoc() error {
 	var appLogDir string
-	if envDir := os.Getenv(K9sLogsDir); envDir != "" {
-		appLogDir = envDir
-	} else {
-		tmpDir, err := userTmpDir()
+	switch {
+	case isEnvSet(K9sEnvLogsDir):
+		appLogDir = os.Getenv(K9sEnvLogsDir)
+	case isEnvSet(K9sEnvConfigDir):
+		tmpDir, err := UserTmpDir()
 		if err != nil {
 			return err
 		}
 		appLogDir = tmpDir
+	default:
+		var err error
+		appLogDir, err = xdg.StateFile(AppName)
+		if err != nil {
+			return err
+		}
 	}
 	if err := data.EnsureFullPath(appLogDir, data.DefaultDirMod); err != nil {
 		return err
@@ -103,7 +109,7 @@ func InitLogLoc() error {
 
 // InitLocs initializes k9s artifacts locations.
 func InitLocs() error {
-	if hasK9sConfigEnv() {
+	if isEnvSet(K9sEnvConfigDir) {
 		return initK9sEnvLocs()
 	}
 
@@ -111,7 +117,7 @@ func InitLocs() error {
 }
 
 func initK9sEnvLocs() error {
-	AppConfigDir = os.Getenv(K9sConfigDir)
+	AppConfigDir = os.Getenv(K9sEnvConfigDir)
 	if err := data.EnsureFullPath(AppConfigDir, data.DefaultDirMod); err != nil {
 		return err
 	}
@@ -268,21 +274,4 @@ func EnsureHotkeysCfgFile() (string, error) {
 // SkinFileFromName generate skin file path from spec.
 func SkinFileFromName(n string) string {
 	return filepath.Join(AppSkinsDir, n+".yaml")
-}
-
-// Helpers...
-
-func hasK9sConfigEnv() bool {
-	return os.Getenv(K9sConfigDir) != ""
-}
-
-func userTmpDir() (string, error) {
-	u, err := user.Current()
-	if err != nil {
-		return "", err
-	}
-
-	dir := filepath.Join(os.TempDir(), u.Username, AppName)
-
-	return dir, nil
 }

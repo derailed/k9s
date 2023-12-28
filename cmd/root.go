@@ -91,7 +91,11 @@ func run(cmd *cobra.Command, args []string) error {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: file})
 	zerolog.SetGlobalLevel(parseLevel(*k9sFlags.LogLevel))
 
-	app := view.NewApp(loadConfiguration())
+	cfg, err := loadConfiguration()
+	if err != nil {
+		return err
+	}
+	app := view.NewApp(cfg)
 	if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
 		return err
 	}
@@ -105,7 +109,7 @@ func run(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func loadConfiguration() *config.Config {
+func loadConfiguration() (*config.Config, error) {
 	log.Info().Msg("🐶 K9s starting up...")
 
 	k8sCfg := client.NewConfig(k8sFlags)
@@ -116,26 +120,29 @@ func loadConfiguration() *config.Config {
 	k9sCfg.K9s.Override(k9sFlags)
 	if err := k9sCfg.Refine(k8sFlags, k9sFlags, k8sCfg); err != nil {
 		log.Error().Err(err).Msgf("refine failed")
+		return nil, err
 	}
 	conn, err := client.InitConnection(k8sCfg)
-	k9sCfg.SetConnection(conn)
 	if err != nil {
 		log.Error().Err(err).Msgf("failed to connect to context %q", k9sCfg.K9s.ActiveContextName())
-		return k9sCfg
+		return nil, err
 	}
 	// Try to access server version if that fail. Connectivity issue?
-	if !k9sCfg.GetConnection().CheckConnectivity() {
-		log.Panic().Msgf("Cannot connect to context %s", k9sCfg.K9s.ActiveContextName())
+	if !conn.CheckConnectivity() {
+		return nil, fmt.Errorf("cannot connect to context: %s", k9sCfg.K9s.ActiveContextName())
 	}
-	if !k9sCfg.GetConnection().ConnectionOK() {
-		panic("No connectivity")
+	if !conn.ConnectionOK() {
+		return nil, fmt.Errorf("k8s connection failed for context: %s", k9sCfg.K9s.ActiveContextName())
 	}
+	k9sCfg.SetConnection(conn)
+
 	log.Info().Msg("✅ Kubernetes connectivity")
 	if err := k9sCfg.Save(); err != nil {
 		log.Error().Err(err).Msg("Config save")
+		return nil, err
 	}
 
-	return k9sCfg
+	return k9sCfg, nil
 }
 
 func parseLevel(level string) zerolog.Level {

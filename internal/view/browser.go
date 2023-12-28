@@ -133,7 +133,6 @@ func (b *Browser) SetInstance(path string) {
 
 // Start initializes browser updates.
 func (b *Browser) Start() {
-	b.app.Config.ValidateFavorites()
 	ns := b.app.Config.ActiveNamespace()
 	if n := b.GetModel().GetNamespace(); !client.IsClusterScoped(n) {
 		ns = n

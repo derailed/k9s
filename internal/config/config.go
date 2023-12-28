@@ -26,8 +26,8 @@ type Config struct {
 
 // K9sHome returns k9s configs home directory.
 func K9sHome() string {
-	if env := os.Getenv(K9sConfigDir); env != "" {
-		return env
+	if isEnvSet(K9sEnvConfigDir) {
+		return os.Getenv(K9sEnvConfigDir)
 	}
 
 	xdgK9sHome, err := xdg.ConfigFile(AppName)
@@ -84,7 +84,7 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 	}
 	log.Debug().Msgf("Active Context %q", c.K9s.ActiveContextName())
 
-	var ns = client.DefaultNamespace
+	var ns string
 	switch {
 	case k9sFlags != nil && IsBoolSet(k9sFlags.AllNamespaces):
 		ns = client.NamespaceAll
@@ -97,10 +97,12 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 		}
 		ns = nss
 	}
+	if ns == "" {
+		ns = client.DefaultNamespace
+	}
 	if err := c.SetActiveNamespace(ns); err != nil {
 		return err
 	}
-	flags.Namespace = &ns
 
 	return data.EnsureDirPath(c.K9s.GetScreenDumpDir(), data.DefaultDirMod)
 }
@@ -139,10 +141,10 @@ func (c *Config) ActiveNamespace() string {
 // ValidateFavorites ensure favorite ns are legit.
 func (c *Config) ValidateFavorites() {
 	ct, err := c.K9s.ActiveContext()
-	if err == nil {
-		ct.Validate(c.conn, c.settings)
-		ct.Namespace.Validate(c.conn, c.settings)
+	if err != nil {
+		return
 	}
+	ct.Validate(c.conn, c.settings)
 }
 
 // FavNamespaces returns fav namespaces in the current context.
@@ -197,8 +199,10 @@ func (c *Config) GetConnection() client.Connection {
 
 // SetConnection set an api server connection.
 func (c *Config) SetConnection(conn client.Connection) {
-	c.conn, c.K9s.conn = conn, conn
-	c.Validate()
+	c.conn = conn
+	if conn != nil {
+		c.K9s.resetConnection(conn)
+	}
 }
 
 func (c *Config) ActiveContextName() string {

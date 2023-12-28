@@ -116,10 +116,6 @@ func (c *Configurator) StylesWatcher(ctx context.Context, s synchronizer) error 
 		}
 	}()
 
-	log.Debug().Msgf("SkinWatcher watching %q", config.K9sHome())
-	if err := w.Add(config.K9sHome()); err != nil {
-		return err
-	}
 	log.Debug().Msgf("SkinWatcher watching %q", config.AppSkinsDir)
 	return w.Add(config.AppSkinsDir)
 }

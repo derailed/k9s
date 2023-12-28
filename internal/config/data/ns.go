@@ -29,28 +29,30 @@ func NewNamespace() *Namespace {
 }
 
 func NewActiveNamespace(n string) *Namespace {
+	if n == client.BlankNamespace {
+		n = client.DefaultNamespace
+	}
 	return &Namespace{
 		Active:    n,
 		Favorites: []string{client.DefaultNamespace},
 	}
 }
 
-// Validate a namespace is setup correctly.
+// Validate validates a namespace is setup correctly.
 func (n *Namespace) Validate(c client.Connection, ks KubeSettings) {
-	if c == nil {
-		n = NewActiveNamespace(client.DefaultNamespace)
+	if n.Active == client.BlankNamespace || c == nil {
+		n.Active = client.DefaultNamespace
 	}
 	if c == nil {
-		log.Debug().Msgf("No connection found. Skipping ns validation")
 		return
 	}
 	if !n.isAllNamespaces() && !c.IsValidNamespace(n.Active) {
-		log.Error().Msgf("[Config] Validation error active namespace %q does not exists", n.Active)
+		log.Error().Msgf("[Config] Validation failed active namespace %q does not exists. Resetting to default ns", n.Active)
+		n.Active = client.DefaultNamespace
 	}
-
 	for _, ns := range n.Favorites {
 		if ns != client.NamespaceAll && !c.IsValidNamespace(ns) {
-			log.Debug().Msgf("[Config] Invalid favorite found '%s' - %t", ns, n.isAllNamespaces())
+			log.Debug().Msgf("[Namespace] Invalid favorite found '%s' - %t", ns, n.isAllNamespaces())
 			n.rmFavNS(ns)
 		}
 	}

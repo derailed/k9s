@@ -14,9 +14,6 @@ const (
 	DefaultCommand = ""
 )
 
-// DefaultLogFile represents the default K9s log file.
-// var DefaultLogFile = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-%s.log", MustK9sUser()))
-
 // Flags represents K9s configuration flags.
 type Flags struct {
 	RefreshRate   *int
