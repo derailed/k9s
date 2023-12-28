@@ -184,9 +184,9 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 			return a.cmdHistory.List()
 		}
 
-		s = strings.ToLower(s)
+		ls := strings.ToLower(s)
 		for _, k := range a.command.alias.Aliases.Keys() {
-			if suggest, ok := cmd.ShouldAddSuggest(s, k); ok {
+			if suggest, ok := cmd.ShouldAddSuggest(ls, k); ok {
 				entries = append(entries, suggest)
 			}
 		}
@@ -195,12 +195,10 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 		if err != nil {
 			log.Error().Err(err).Msg("failed to list namespaces")
 		}
-
 		entries = append(entries, cmd.SuggestSubCommand(s, namespaceNames, contextNames)...)
 		if len(entries) == 0 {
 			return nil
 		}
-
 		entries.Sort()
 		return
 	}
@@ -214,11 +212,11 @@ func (a *App) contextNames() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-
 	contextNames := make([]string, 0, len(contexts))
 	for ctxName := range contexts {
 		contextNames = append(contextNames, ctxName)
 	}
+
 	return contextNames, nil
 }
 

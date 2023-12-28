@@ -94,6 +94,7 @@ func SuggestSubCommand(command string, namespaces client.NamespaceNames, context
 }
 
 func completeNS(s string, nn client.NamespaceNames) []string {
+	s = strings.ToLower(s)
 	var suggests []string
 	if suggest, ok := ShouldAddSuggest(s, client.NamespaceAll); ok {
 		suggests = append(suggests, suggest)
