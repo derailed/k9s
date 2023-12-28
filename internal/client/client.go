@@ -30,6 +30,7 @@ const (
 	cacheExpiry   = 5 * time.Minute
 	cacheMXAPIKey = "metricsAPI"
 	serverVersion = "serverVersion"
+	cacheNSKey    = "validNamespaces"
 )
 
 var supportedMetricsAPIVersions = []string{"v1beta1"}
@@ -213,29 +214,28 @@ func (a *APIClient) ServerVersion() (*version.Info, error) {
 }
 
 func (a *APIClient) IsValidNamespace(ns string) bool {
-	if IsAllNamespace(ns) {
+	if IsClusterWide(ns) || ns == NotNamespaced {
 		return true
 	}
 
 	ok, err := a.CanI(ClusterScope, "v1/namespaces", []string{ListVerb})
-	if !ok || err != nil {
-		cool, err := a.isValidNamespace(ns)
-		if err != nil {
-			log.Error().Err(err).Msgf("unable to assert valid namespace")
-		}
-		return cool
+	if ok && err == nil {
+		nn, _ := a.ValidNamespaceNames()
+		_, ok = nn[ns]
+		return ok
 	}
-	nn, err := a.ValidNamespaceNames()
-	if err != nil {
-		return false
-	}
-	_, ok = nn[ns]
 
-	return ok
+	ok, err = a.isValidNamespace(ns)
+	if ok && err == nil {
+		return ok
+	}
+	log.Warn().Err(err).Msgf("namespace validation failed for: %q", ns)
+
+	return false
 }
 
 func (a *APIClient) cachedNamespaceNames() NamespaceNames {
-	cns, ok := a.cache.Get("validNamespaces")
+	cns, ok := a.cache.Get(cacheNSKey)
 	if !ok {
 		return make(NamespaceNames)
 	}
@@ -244,6 +244,10 @@ func (a *APIClient) cachedNamespaceNames() NamespaceNames {
 }
 
 func (a *APIClient) isValidNamespace(n string) (bool, error) {
+	if IsClusterWide(n) || n == NotNamespaced {
+		return true, nil
+	}
+
 	if a == nil {
 		return false, errors.New("invalid client")
 	}
@@ -264,7 +268,7 @@ func (a *APIClient) isValidNamespace(n string) (bool, error) {
 		return false, err
 	}
 	cnss[n] = struct{}{}
-	a.cache.Add("validNamespaces", cnss, cacheExpiry)
+	a.cache.Add(cacheNSKey, cnss, cacheExpiry)
 
 	return true, nil
 }
@@ -275,7 +279,7 @@ func (a *APIClient) ValidNamespaceNames() (NamespaceNames, error) {
 		return nil, fmt.Errorf("validNamespaces: no available client found")
 	}
 
-	if nn, ok := a.cache.Get("validNamespaces"); ok {
+	if nn, ok := a.cache.Get(cacheNSKey); ok {
 		if nss, ok := nn.(NamespaceNames); ok {
 			return nss, nil
 		}
@@ -294,7 +298,7 @@ func (a *APIClient) ValidNamespaceNames() (NamespaceNames, error) {
 	for _, n := range nn.Items {
 		nns[n.Name] = struct{}{}
 	}
-	a.cache.Add("validNamespaces", nns, cacheExpiry)
+	a.cache.Add(cacheNSKey, nns, cacheExpiry)
 
 	return nns, nil
 }

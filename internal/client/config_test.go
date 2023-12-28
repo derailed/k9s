@@ -7,6 +7,7 @@ import (
 	"errors"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog"
@@ -16,6 +17,31 @@ import (
 
 func init() {
 	zerolog.SetGlobalLevel(zerolog.FatalLevel)
+}
+
+func TestCallTimeout(t *testing.T) {
+	uu := map[string]struct {
+		t string
+		e time.Duration
+	}{
+		"custom": {
+			t: "1m",
+			e: 1 * time.Minute,
+		},
+		"default": {
+			e: 15 * time.Second,
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			flags := genericclioptions.NewConfigFlags(false)
+			flags.Timeout = &u.t
+			cfg := client.NewConfig(flags)
+			assert.Equal(t, u.e, cfg.CallTimeout())
+		})
+	}
 }
 
 func TestConfigCurrentContext(t *testing.T) {
