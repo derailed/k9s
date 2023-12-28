@@ -26,8 +26,8 @@ type Config struct {
 
 // K9sHome returns k9s configs home directory.
 func K9sHome() string {
-	if env := os.Getenv(K9sConfigDir); env != "" {
-		return env
+	if isEnvSet(K9sEnvConfigDir) {
+		return os.Getenv(K9sEnvConfigDir)
 	}
 
 	xdgK9sHome, err := xdg.ConfigFile(AppName)

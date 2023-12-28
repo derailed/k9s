@@ -87,7 +87,7 @@ func InitLogLoc() error {
 	case isEnvSet(K9sEnvLogsDir):
 		appLogDir = os.Getenv(K9sEnvLogsDir)
 	case isEnvSet(K9sEnvConfigDir):
-		tmpDir, err := userTmpDir()
+		tmpDir, err := UserTmpDir()
 		if err != nil {
 			return err
 		}

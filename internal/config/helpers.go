@@ -13,17 +13,19 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+// isEnvSet checks if env var is set.
 func isEnvSet(env string) bool {
 	return os.Getenv(env) != ""
 }
 
-func userTmpDir() (string, error) {
+// UserTmpDir returns the temp dir with the current user name.
+func UserTmpDir() (string, error) {
 	u, err := user.Current()
 	if err != nil {
 		return "", err
 	}
 
-	dir := filepath.Join(os.TempDir(), AppName, u.Username)
+	dir := filepath.Join(os.TempDir(), u.Username, AppName)
 
 	return dir, nil
 }
