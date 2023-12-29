@@ -162,7 +162,12 @@ func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
 			dialog.ShowConfirm(r.App().Styles.Dialog(), r.App().Content.Pages, "Confirm "+p.Description, msg, cb, func() {})
 			return nil
 		}
-		cb()
+
+		if p.Background {
+			go cb()
+		} else {
+			cb()
+		}
 
 		return nil
 	}
