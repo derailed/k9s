@@ -11,6 +11,7 @@ import (
 	"runtime"
 
 	"github.com/creativeprojects/go-selfupdate"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
 
@@ -20,22 +21,28 @@ func selfUpdate() *cobra.Command {
 		Short: "Update k9s binary",
 		Long:  "Update k9s binary",
 		Run: func(cmd *cobra.Command, args []string) {
-			updateApp()
+			checkAndUpdateApp()
 		},
 	}
 
 	return &command
 }
 
-func updateApp() error {
-	latest, found, err := selfupdate.DetectLatest(context.Background(), selfupdate.ParseSlug("derailed/k9s"))
+func checkAndUpdateApp() error {
+	latest, err := checkVersion()
 	if err != nil {
-		return fmt.Errorf("error occurred while detecting version: %w", err)
-	}
-	if !found {
-		return fmt.Errorf("latest version for %s/%s could not be found from github repository", runtime.GOOS, runtime.GOARCH)
+		return err
 	}
 
+	if latest.LessOrEqual(version) {
+		log.Info().Msgf("Current version (%s) is the latest", version)
+		return nil
+	}
+
+	return updateApp(latest)
+}
+
+func updateApp(latest *selfupdate.Release) error {
 	exe, err := os.Executable()
 	if err != nil {
 		return errors.New("could not locate executable path")
@@ -45,4 +52,15 @@ func updateApp() error {
 	}
 
 	return nil
+}
+
+func checkVersion() (*selfupdate.Release, error) {
+	latest, found, err := selfupdate.DetectLatest(context.Background(), selfupdate.ParseSlug("derailed/k9s"))
+	if err != nil {
+		return nil, fmt.Errorf("error occurred while detecting version: %w", err)
+	}
+	if !found {
+		return nil, fmt.Errorf("latest version for %s/%s could not be found from github repository", runtime.GOOS, runtime.GOARCH)
+	}
+	return latest, nil
 }
