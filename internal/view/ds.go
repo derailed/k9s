@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -15,9 +18,11 @@ type DaemonSet struct {
 func NewDaemonSet(gvr client.GVR) ResourceViewer {
 	d := DaemonSet{
 		ResourceViewer: NewPortForwardExtender(
-			NewRestartExtender(
-				NewImageExtender(
-					NewLogsExtender(NewBrowser(gvr), nil),
+			NewVulnerabilityExtender(
+				NewRestartExtender(
+					NewImageExtender(
+						NewLogsExtender(NewBrowser(gvr), nil),
+					),
 				),
 			),
 		),
@@ -38,7 +43,7 @@ func (d *DaemonSet) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (d *DaemonSet) showPods(app *App, model ui.Tabular, _, path string) {
+func (d *DaemonSet) showPods(app *App, model ui.Tabular, _ client.GVR, path string) {
 	var res dao.DaemonSet
 	res.Init(app.factory, d.GVR())
 

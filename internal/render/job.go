@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -22,9 +25,10 @@ type Job struct {
 
 // Header returns a header row.
 func (Job) Header(ns string) Header {
-	return Header{
+	h := Header{
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "VS", VS: true},
 		HeaderColumn{Name: "COMPLETIONS"},
 		HeaderColumn{Name: "DURATION"},
 		HeaderColumn{Name: "SELECTOR", Wide: true},
@@ -33,13 +37,15 @@ func (Job) Header(ns string) Header {
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true},
 	}
+
+	return h
 }
 
 // Render renders a K8s resource to screen.
 func (j Job) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected Job, but got %T", o)
+		return fmt.Errorf("expected Job, but got %T", o)
 	}
 	var job batchv1.Job
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &job)
@@ -54,13 +60,14 @@ func (j Job) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = Fields{
 		job.Namespace,
 		job.Name,
+		computeVulScore(job.ObjectMeta, &job.Spec.Template.Spec),
 		ready,
 		toDuration(job.Status),
 		jobSelector(job.Spec),
 		cc,
 		ii,
-		asStatus(j.diagnose(ready, job.Status.CompletionTime)),
-		toAge(job.GetCreationTimestamp()),
+		AsStatus(j.diagnose(ready, job.Status.CompletionTime)),
+		ToAge(job.GetCreationTimestamp()),
 	}
 
 	return nil

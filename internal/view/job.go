@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -16,15 +19,15 @@ type Job struct {
 
 // NewJob returns a new viewer.
 func NewJob(gvr client.GVR) ResourceViewer {
-	j := Job{ResourceViewer: NewLogsExtender(NewBrowser(gvr), nil)}
+	j := Job{ResourceViewer: NewVulnerabilityExtender(NewLogsExtender(NewBrowser(gvr), nil))}
 	j.GetTable().SetEnterFn(j.showPods)
 	j.GetTable().SetSortCol("AGE", true)
 
 	return &j
 }
 
-func (*Job) showPods(app *App, model ui.Tabular, gvr, path string) {
-	o, err := app.factory.Get(gvr, path, true, labels.Everything())
+func (*Job) showPods(app *App, model ui.Tabular, gvr client.GVR, path string) {
+	o, err := app.factory.Get(gvr.String(), path, true, labels.Everything())
 	if err != nil {
 		app.Flash().Err(err)
 		return

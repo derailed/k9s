@@ -1,11 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
 	"context"
 	"errors"
-	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
@@ -44,16 +45,18 @@ func (c *Configurator) CustomViewsWatcher(ctx context.Context, s synchronizer) e
 		for {
 			select {
 			case evt := <-w.Events:
-				if evt.Name == config.K9sViewConfigFile {
+				if evt.Name == config.AppViewsFile {
 					s.QueueUpdateDraw(func() {
-						c.RefreshCustomViews()
+						if err := c.RefreshCustomViews(); err != nil {
+							log.Warn().Err(err).Msgf("Custom views refresh failed")
+						}
 					})
 				}
 			case err := <-w.Errors:
 				log.Warn().Err(err).Msg("CustomView watcher failed")
 				return
 			case <-ctx.Done():
-				log.Debug().Msgf("CustomViewWatcher CANCELED `%s!!", config.K9sViewConfigFile)
+				log.Debug().Msgf("CustomViewWatcher CANCELED `%s!!", config.AppViewsFile)
 				if err := w.Close(); err != nil {
 					log.Error().Err(err).Msg("Closing CustomView watcher")
 				}
@@ -62,23 +65,21 @@ func (c *Configurator) CustomViewsWatcher(ctx context.Context, s synchronizer) e
 		}
 	}()
 
-	log.Debug().Msgf("CustomView watching `%s", config.K9sViewConfigFile)
-	c.RefreshCustomViews()
-	return w.Add(config.K9sHome())
+	if err := c.RefreshCustomViews(); err != nil {
+		return err
+	}
+	return w.Add(config.AppViewsFile)
 }
 
 // RefreshCustomViews load view configuration changes.
-func (c *Configurator) RefreshCustomViews() {
+func (c *Configurator) RefreshCustomViews() error {
 	if c.CustomView == nil {
 		c.CustomView = config.NewCustomView()
 	} else {
 		c.CustomView.Reset()
 	}
 
-	if err := c.CustomView.Load(config.K9sViewConfigFile); err != nil {
-		log.Warn().Err(err).Msgf("Custom view load failed %s", config.K9sViewConfigFile)
-		return
-	}
+	return c.CustomView.Load(config.AppViewsFile)
 }
 
 // StylesWatcher watches for skin file changes.
@@ -97,8 +98,9 @@ func (c *Configurator) StylesWatcher(ctx context.Context, s synchronizer) error 
 			select {
 			case evt := <-w.Events:
 				if evt.Name == c.skinFile && evt.Op != fsnotify.Chmod {
+					log.Debug().Msgf("Skin changed: %s", c.skinFile)
 					s.QueueUpdateDraw(func() {
-						c.RefreshStyles(c.Config.K9s.CurrentCluster)
+						c.RefreshStyles(c.Config.K9s.ActiveContextName())
 					})
 				}
 			case err := <-w.Errors:
@@ -114,46 +116,54 @@ func (c *Configurator) StylesWatcher(ctx context.Context, s synchronizer) error 
 		}
 	}()
 
-	log.Debug().Msgf("SkinWatcher watching `%s", c.skinFile)
-	return w.Add(config.K9sHome())
-}
-
-// BenchConfig location of the benchmarks configuration file.
-func BenchConfig(context string) string {
-	return filepath.Join(config.K9sHome(), config.K9sBench+"-"+context+".yml")
+	log.Debug().Msgf("SkinWatcher watching %q", config.AppSkinsDir)
+	return w.Add(config.AppSkinsDir)
 }
 
 // RefreshStyles load for skin configuration changes.
 func (c *Configurator) RefreshStyles(context string) {
-	c.BenchFile = BenchConfig(context)
+	cluster := "na"
+	if c.Config != nil {
+		if ct, err := c.Config.K9s.ActiveContext(); err == nil {
+			cluster = ct.ClusterName
+		}
+	}
 
-	clusterSkins := filepath.Join(config.K9sHome(), fmt.Sprintf("%s_skin.yml", context))
+	if bc, err := config.EnsureBenchmarksCfgFile(cluster, context); err != nil {
+		log.Warn().Err(err).Msgf("No benchmark config file found for context: %s", context)
+	} else {
+		c.BenchFile = bc
+	}
+
 	if c.Styles == nil {
 		c.Styles = config.NewStyles()
 	} else {
 		c.Styles.Reset()
 	}
-	if err := c.Styles.Load(clusterSkins); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			log.Warn().Msgf("No context specific skin file found -- %s", clusterSkins)
-		} else {
-			log.Error().Msgf("Failed to parse context specific skin file -- %s. %s.", clusterSkins, err)
-		}
-	} else {
-		c.updateStyles(clusterSkins)
-		return
-	}
 
-	if err := c.Styles.Load(config.K9sStylesFile); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			log.Warn().Msgf("No skin file found -- %s. Loading stock skins.", config.K9sStylesFile)
-		} else {
-			log.Error().Msgf("Failed to parse skin file -- %s. %s. Loading stock skins.", config.K9sStylesFile, err)
+	var skin string
+	if c.Config != nil {
+		skin = c.Config.K9s.UI.Skin
+		if ct, err := c.Config.K9s.ActiveContext(); err != nil {
+			log.Warn().Msgf("No active context found. Using default skin")
+		} else if ct.Skin != "" {
+			skin = ct.Skin
 		}
+	}
+	if skin == "" {
 		c.updateStyles("")
 		return
 	}
-	c.updateStyles(config.K9sStylesFile)
+	var skinFile = config.SkinFileFromName(skin)
+	if err := c.Styles.Load(skinFile); err != nil {
+		if errors.Is(err, os.ErrNotExist) {
+			log.Warn().Msgf("Skin file %q not found in skins dir: %s", skinFile, config.AppSkinsDir)
+		} else {
+			log.Error().Msgf("Failed to parse skin file -- %s: %s.", skinFile, err)
+		}
+	} else {
+		c.updateStyles(skinFile)
+	}
 }
 
 func (c *Configurator) updateStyles(f string) {

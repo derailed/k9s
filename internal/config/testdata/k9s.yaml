@@ -1,0 +1,35 @@
+k9s:
+  liveViewAutoRefresh: true
+  refreshRate: 2
+  readOnly: false
+  logger:
+    tail: 200
+    buffer: 2000
+  currentContext: minikube
+  contexts:
+    minikube:
+      cluster: minikube
+      namespace:
+        active: kube-system
+        favorites:
+          - default
+          - kube-public
+          - istio-system
+          - all
+          - kube-system
+      view:
+        active: ctx
+    fred:
+      cluster: fred
+      namespace:
+        active: default
+        favorites:
+          - default
+          - kube-public
+          - istio-system
+          - all
+          - kube-system
+      view:
+        active: po
+  screenDumpDir: /tmp
+  disablePodCounting: false

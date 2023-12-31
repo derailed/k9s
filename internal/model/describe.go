@@ -1,10 +1,12 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model
 
 import (
 	"context"
 	"fmt"
 	"reflect"
-	"regexp"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -36,6 +38,11 @@ func NewDescribe(gvr client.GVR, path string) *Describe {
 	}
 }
 
+// GVR returns the resource gvr.
+func (d *Describe) GVR() client.GVR {
+	return d.gvr
+}
+
 // GetPath returns the active resource path.
 func (d *Describe) GetPath() string {
 	return d.path
@@ -61,26 +68,11 @@ func (d *Describe) filter(q string, lines []string) fuzzy.Matches {
 	if dao.IsFuzzySelector(q) {
 		return d.fuzzyFilter(strings.TrimSpace(q[2:]), lines)
 	}
-	return d.rxFilter(q, lines)
+	return rxFilter(q, lines)
 }
 
 func (*Describe) fuzzyFilter(q string, lines []string) fuzzy.Matches {
 	return fuzzy.Find(q, lines)
-}
-
-func (*Describe) rxFilter(q string, lines []string) fuzzy.Matches {
-	rx, err := regexp.Compile(`(?i)` + q)
-	if err != nil {
-		return nil
-	}
-	matches := make(fuzzy.Matches, 0, len(lines))
-	for i, l := range lines {
-		if loc := rx.FindStringIndex(l); len(loc) == 2 {
-			matches = append(matches, fuzzy.Match{Str: q, Index: i, MatchedIndexes: loc})
-		}
-	}
-
-	return matches
 }
 
 func (d *Describe) fireResourceChanged(lines []string, matches fuzzy.Matches) {

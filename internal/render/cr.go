@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -39,7 +42,7 @@ func (ClusterRole) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = Fields{
 		cr.Name,
 		mapToStr(cr.Labels),
-		toAge(cr.GetCreationTimestamp()),
+		ToAge(cr.GetCreationTimestamp()),
 	}
 
 	return nil

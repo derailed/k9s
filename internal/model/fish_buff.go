@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model
 
 import (
@@ -133,5 +136,4 @@ func (f *FishBuff) fireSuggestionChanged(ss []string) {
 		suggest = ss[f.suggestionIndex]
 	}
 	f.SetText(f.GetText(), suggest)
-
 }

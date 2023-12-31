@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -25,7 +28,7 @@ func (r *RestMapper) ToRESTMapper() (meta.RESTMapper, error) {
 		return nil, err
 	}
 	mapper := restmapper.NewDeferredDiscoveryRESTMapper(dial)
-	expander := restmapper.NewShortcutExpander(mapper, dial)
+	expander := restmapper.NewShortcutExpander(mapper, dial, nil)
 
 	return expander, nil
 }

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -96,7 +99,7 @@ func (Container) Header(ns string) Header {
 func (c Container) Render(o interface{}, name string, r *Row) error {
 	co, ok := o.(ContainerRes)
 	if !ok {
-		return fmt.Errorf("Expected ContainerRes, but got %T", o)
+		return fmt.Errorf("expected ContainerRes, but got %T", o)
 	}
 
 	cur, res := gatherMetrics(co.Container, co.MX)
@@ -124,8 +127,8 @@ func (c Container) Render(o interface{}, name string, r *Row) error {
 		client.ToPercentageStr(cur.mem, res.mem),
 		client.ToPercentageStr(cur.mem, res.lmem),
 		ToContainerPorts(co.Container.Ports),
-		asStatus(c.diagnose(state, ready)),
-		toAge(co.Age),
+		AsStatus(c.diagnose(state, ready)),
+		ToAge(co.Age),
 	}
 
 	return nil
@@ -146,16 +149,29 @@ func (Container) diagnose(state, ready string) error {
 // ----------------------------------------------------------------------------
 // Helpers...
 
+func containerRequests(co *v1.Container) v1.ResourceList {
+	req := co.Resources.Requests
+	if len(req) != 0 {
+		return req
+	}
+	lim := co.Resources.Limits
+	if len(lim) != 0 {
+		return lim
+	}
+
+	return nil
+}
+
 func gatherMetrics(co *v1.Container, mx *mv1beta1.ContainerMetrics) (c, r metric) {
 	rList, lList := containerRequests(co), co.Resources.Limits
 	if rList.Cpu() != nil {
 		r.cpu = rList.Cpu().MilliValue()
 	}
-	if lList.Cpu() != nil {
-		r.lcpu = lList.Cpu().MilliValue()
-	}
 	if rList.Memory() != nil {
 		r.mem = rList.Memory().Value()
+	}
+	if lList.Cpu() != nil {
+		r.lcpu = lList.Cpu().MilliValue()
 	}
 	if lList.Memory() != nil {
 		r.lmem = lList.Memory().Value()

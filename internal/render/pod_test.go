@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render_test
 
 import (
@@ -159,8 +162,8 @@ func TestPodRender(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := render.Fields{"default", "nginx", "●", "1/1", "0", "Running", "100", "50", "100:0", "70:170", "100", "n/a", "71", "29", "172.17.0.6", "minikube", "BE"}
-	assert.Equal(t, e, r.Fields[:17])
+	e := render.Fields{"default", "nginx", "0", "●", "1/1", "Running", "0", "100", "50", "100:0", "70:170", "100", "n/a", "71", "29", "172.17.0.6", "minikube", "<none>", "<none>"}
+	assert.Equal(t, e, r.Fields[:19])
 }
 
 func BenchmarkPodRender(b *testing.B) {
@@ -190,8 +193,68 @@ func TestPodInitRender(t *testing.T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "default/nginx", r.ID)
-	e := render.Fields{"default", "nginx", "●", "1/1", "0", "Init:0/1", "10", "10", "100:0", "70:170", "10", "n/a", "14", "5", "172.17.0.6", "minikube", "BE"}
-	assert.Equal(t, e, r.Fields[:17])
+	e := render.Fields{"default", "nginx", "0", "●", "1/1", "Init:0/1", "0", "10", "10", "100:0", "70:170", "10", "n/a", "14", "5", "172.17.0.6", "minikube", "<none>", "<none>"}
+	assert.Equal(t, e, r.Fields[:19])
+}
+
+func TestCheckPodStatus(t *testing.T) {
+	uu := map[string]struct {
+		pod v1.Pod
+		e   string
+	}{
+		"unknown": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase: render.PhaseUnknown,
+				},
+			},
+			e: render.PhaseUnknown,
+		},
+		"running": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase:                 v1.PodRunning,
+					InitContainerStatuses: []v1.ContainerStatus{},
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "c1",
+							State: v1.ContainerState{
+								Running: &v1.ContainerStateRunning{},
+							},
+						},
+					},
+				},
+			},
+			e: render.PhaseRunning,
+		},
+		"backoff": {
+			pod: v1.Pod{
+				Status: v1.PodStatus{
+					Phase:                 v1.PodRunning,
+					InitContainerStatuses: []v1.ContainerStatus{},
+					ContainerStatuses: []v1.ContainerStatus{
+						{
+							Name: "c1",
+							State: v1.ContainerState{
+								Waiting: &v1.ContainerStateWaiting{
+									Reason: render.PhaseImagePullBackOff,
+								},
+							},
+						},
+					},
+				},
+			},
+			e: render.PhaseImagePullBackOff,
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, render.PodStatus(&u.pod))
+		})
+	}
+
 }
 
 // ----------------------------------------------------------------------------

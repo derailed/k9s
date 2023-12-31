@@ -1,8 +1,10 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"regexp"
 	"strings"
@@ -13,6 +15,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/k9s/internal/xray"
@@ -49,6 +52,9 @@ func NewXray(gvr client.GVR) ResourceViewer {
 		model: model.NewTree(gvr),
 	}
 }
+
+func (x *Xray) SetFilter(string)                 {}
+func (x *Xray) SetLabelFilter(map[string]string) {}
 
 // Init initializes the view.
 func (x *Xray) Init(ctx context.Context) error {
@@ -101,7 +107,7 @@ func (*Xray) InCmdMode() bool {
 
 // ExtraHints returns additional hints.
 func (x *Xray) ExtraHints() map[string]string {
-	if x.app.Config.K9s.NoIcons {
+	if x.app.Config.K9s.UI.NoIcons {
 		return nil
 	}
 	return xray.EmojiInfo()
@@ -158,7 +164,7 @@ func (x *Xray) refreshActions() {
 		aa[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", x.deleteCmd, true)
 	}
 	if !dao.IsK9sMeta(x.meta) {
-		aa[ui.KeyY] = ui.NewKeyAction("YAML", x.viewCmd, true)
+		aa[ui.KeyY] = ui.NewKeyAction(yamlAction, x.viewCmd, true)
 		aa[ui.KeyD] = ui.NewKeyAction("Describe", x.describeCmd, true)
 	}
 
@@ -263,7 +269,7 @@ func (x *Xray) showLogs(spec *xray.NodeSpec, prev bool) {
 	}
 
 	ns, _ := client.Namespaced(path)
-	_, err := x.app.factory.CanForResource(ns, "v1/pods", client.MonitorAccess)
+	_, err := x.app.factory.CanForResource(ns, "v1/pods", client.ListAccess)
 	if err != nil {
 		x.app.Flash().Err(err)
 		return
@@ -339,7 +345,7 @@ func (x *Xray) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails(x.app, "YAML", spec.Path(), true).Update(raw)
+	details := NewDetails(x.app, yamlAction, spec.Path(), contentYAML, true).Update(raw)
 	if err := x.app.inject(details, false); err != nil {
 		x.app.Flash().Err(err)
 	}
@@ -389,7 +395,7 @@ func (x *Xray) describe(gvr, path string) {
 		return
 	}
 
-	details := NewDetails(x.app, "Describe", path, true).Update(yaml)
+	details := NewDetails(x.app, "Describe", path, contentYAML, true).Update(yaml)
 	if err := x.app.inject(details, false); err != nil {
 		x.app.Flash().Err(err)
 	}
@@ -409,12 +415,12 @@ func (x *Xray) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 		args = append(args, "edit")
 		args = append(args, client.NewGVR(spec.GVR()).R())
 		args = append(args, "-n", ns)
-		args = append(args, "--context", x.app.Config.K9s.CurrentContext)
+		args = append(args, "--context", x.app.Config.K9s.ActiveContextName())
 		if cfg := x.app.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
 			args = append(args, "--kubeconfig", *cfg)
 		}
-		if !runK(x.app, shellOpts{args: append(args, n)}) {
-			x.app.Flash().Err(errors.New("Edit exec failed"))
+		if err := runK(x.app, shellOpts{args: append(args, n)}); err != nil {
+			x.app.Flash().Errf("Edit exec failed: %s", err)
 		}
 	}
 
@@ -499,7 +505,7 @@ func (x *Xray) TreeLoadFailed(err error) {
 }
 
 func (x *Xray) update(node *xray.TreeNode) {
-	root := makeTreeNode(node, x.ExpandNodes(), x.app.Config.K9s.NoIcons, x.app.Styles)
+	root := makeTreeNode(node, x.ExpandNodes(), x.app.Config.K9s.UI.NoIcons, x.app.Styles)
 	if node == nil {
 		x.app.QueueUpdateDraw(func() {
 			x.SetRoot(root)
@@ -546,7 +552,7 @@ func (x *Xray) TreeChanged(node *xray.TreeNode) {
 }
 
 func (x *Xray) hydrate(parent *tview.TreeNode, n *xray.TreeNode) {
-	node := makeTreeNode(n, x.ExpandNodes(), x.app.Config.K9s.NoIcons, x.app.Styles)
+	node := makeTreeNode(n, x.ExpandNodes(), x.app.Config.K9s.UI.NoIcons, x.app.Styles)
 	for _, c := range n.Children {
 		x.hydrate(node, c)
 	}
@@ -642,9 +648,9 @@ func (x *Xray) styleTitle() string {
 
 	var title string
 	if ns == client.ClusterScope {
-		title = ui.SkinTitle(fmt.Sprintf(ui.TitleFmt, base, x.Count), x.app.Styles.Frame())
+		title = ui.SkinTitle(fmt.Sprintf(ui.TitleFmt, base, render.AsThousands(int64(x.Count))), x.app.Styles.Frame())
 	} else {
-		title = ui.SkinTitle(fmt.Sprintf(ui.NSTitleFmt, base, ns, x.Count), x.app.Styles.Frame())
+		title = ui.SkinTitle(fmt.Sprintf(ui.NSTitleFmt, base, ns, render.AsThousands(int64(x.Count))), x.app.Styles.Frame())
 	}
 
 	buff := x.CmdBuff().GetText()

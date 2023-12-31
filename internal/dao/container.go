@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -35,7 +38,7 @@ func (c *Container) List(ctx context.Context, _ string) ([]runtime.Object, error
 		cmx client.ContainersMetrics
 		err error
 	)
-	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); withMx || !ok {
+	if withMx, ok := ctx.Value(internal.KeyWithMetrics).(bool); ok && withMx {
 		cmx, _ = client.DialMetrics(c.Client()).FetchContainersMetrics(ctx, fqn)
 	}
 

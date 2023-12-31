@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -19,12 +22,12 @@ type Reference struct {
 
 // List collects all references.
 func (r *Reference) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	gvr, ok := ctx.Value(internal.KeyGVR).(string)
+	gvr, ok := ctx.Value(internal.KeyGVR).(client.GVR)
 	if !ok {
 		return nil, errors.New("No context GVR found")
 	}
 	switch gvr {
-	case "v1/serviceaccounts":
+	case SaGVR:
 		return r.ScanSA(ctx)
 	default:
 		return r.Scan(ctx)

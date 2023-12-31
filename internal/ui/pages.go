@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
@@ -99,7 +102,7 @@ func (p *Pages) StackTop(top model.Component) {
 
 func componentID(c model.Component) string {
 	if c.Name() == "" {
-		panic("Component has no name")
+		log.Error().Msg("Component has no name")
 	}
 	return fmt.Sprintf("%s-%p", c.Name(), c)
 }

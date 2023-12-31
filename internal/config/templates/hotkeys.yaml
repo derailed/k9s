@@ -1,0 +1,6 @@
+hotKeys:
+  # Examples...
+  # shift-0:
+  #   shortCut: Shift-0
+  #   description: View Workloads
+  #   command: wk k8s-app=cilium

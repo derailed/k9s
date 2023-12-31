@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -31,7 +34,7 @@ func (ServiceAccount) Header(ns string) Header {
 func (s ServiceAccount) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected ServiceAccount, but got %T", o)
+		return fmt.Errorf("expected ServiceAccount, but got %T", o)
 	}
 	var sa v1.ServiceAccount
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &sa)
@@ -46,7 +49,7 @@ func (s ServiceAccount) Render(o interface{}, ns string, r *Row) error {
 		strconv.Itoa(len(sa.Secrets)),
 		mapToStr(sa.Labels),
 		"",
-		toAge(sa.GetCreationTimestamp()),
+		ToAge(sa.GetCreationTimestamp()),
 	}
 
 	return nil

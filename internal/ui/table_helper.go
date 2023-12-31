@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
@@ -9,6 +12,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 )
@@ -21,10 +25,10 @@ const (
 	SearchFmt = "<[filter:bg:r]/%s[fg:bg:-]> "
 
 	// NSTitleFmt represents a namespaced view title.
-	NSTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
+	NSTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%s[fg:bg:-]][fg:bg:-] "
 
 	// TitleFmt represents a standard view title.
-	TitleFmt = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
+	TitleFmt = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%s[fg:bg:-]][fg:bg:-] "
 
 	descIndicator = "↓"
 	ascIndicator  = "↑"
@@ -38,11 +42,9 @@ const (
 
 var (
 	// LabelRx identifies a label query.
-	LabelRx = regexp.MustCompile(`\A\-l`)
-
+	LabelRx   = regexp.MustCompile(`\A\-l`)
 	inverseRx = regexp.MustCompile(`\A\!`)
-
-	fuzzyRx = regexp.MustCompile(`\A\-f`)
+	fuzzyRx   = regexp.MustCompile(`\A\-f`)
 )
 
 func mustExtractStyles(ctx context.Context) *config.Styles {
@@ -68,7 +70,11 @@ func IsLabelSelector(s string) bool {
 	if s == "" {
 		return false
 	}
-	return LabelRx.MatchString(s)
+	if LabelRx.MatchString(s) {
+		return true
+	}
+
+	return !strings.Contains(s, " ") && cmd.ToLabels(s) != nil
 }
 
 // IsFuzzySelector checks if query is fuzzy.
@@ -89,7 +95,19 @@ func IsInverseSelector(s string) bool {
 
 // TrimLabelSelector extracts label query.
 func TrimLabelSelector(s string) string {
-	return strings.TrimSpace(s[2:])
+	if strings.Index(s, "-l") == 0 {
+		return strings.TrimSpace(s[2:])
+	}
+
+	return s
+}
+
+func truncate(s string, max int) string {
+	if len(s) < max {
+		return s
+	}
+
+	return s[:max] + "..."
 }
 
 // SkinTitle decorates a title.
@@ -162,14 +180,12 @@ func rxFilter(q string, inverse bool, data *render.TableData) (*render.TableData
 		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
 		Namespace: data.Namespace,
 	}
-	ageIndex := -1
-	if data.Header.HasAge() {
-		ageIndex = data.Header.IndexOf("AGE", true)
-	}
+	ageIndex := data.Header.IndexOf("AGE", true)
+
 	const spacer = " "
 	for _, re := range data.RowEvents {
 		ff := re.Row.Fields
-		if ageIndex > 0 {
+		if ageIndex >= 0 && ageIndex+1 <= len(ff) {
 			ff = append(ff[0:ageIndex], ff[ageIndex+1:]...)
 		}
 		fields := strings.Join(ff, spacer)

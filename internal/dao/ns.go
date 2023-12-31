@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -15,7 +18,7 @@ type Namespace struct {
 	Generic
 }
 
-// List returns a collection of nodes.
+// List returns a collection of namespaces.
 func (n *Namespace) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 	oo, err := n.Generic.List(ctx, ns)
 	if err != nil {

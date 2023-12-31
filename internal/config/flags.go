@@ -1,10 +1,7 @@
-package config
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
 
-import (
-	"fmt"
-	"os"
-	"path/filepath"
-)
+package config
 
 const (
 	// DefaultRefreshRate represents the refresh interval.
@@ -16,9 +13,6 @@ const (
 	// DefaultCommand represents the default command to run.
 	DefaultCommand = ""
 )
-
-// DefaultLogFile represents the default K9s log file.
-var DefaultLogFile = filepath.Join(os.TempDir(), fmt.Sprintf("k9s-%s.log", MustK9sUser()))
 
 // Flags represents K9s configuration flags.
 type Flags struct {
@@ -40,7 +34,7 @@ func NewFlags() *Flags {
 	return &Flags{
 		RefreshRate:   intPtr(DefaultRefreshRate),
 		LogLevel:      strPtr(DefaultLogLevel),
-		LogFile:       strPtr(DefaultLogFile),
+		LogFile:       strPtr(AppLogFile),
 		Headless:      boolPtr(false),
 		Logoless:      boolPtr(false),
 		Command:       strPtr(DefaultCommand),
@@ -48,7 +42,7 @@ func NewFlags() *Flags {
 		ReadOnly:      boolPtr(false),
 		Write:         boolPtr(false),
 		Crumbsless:    boolPtr(false),
-		ScreenDumpDir: strPtr(K9sDefaultScreenDumpDir),
+		ScreenDumpDir: strPtr(AppDumpsDir),
 	}
 }
 

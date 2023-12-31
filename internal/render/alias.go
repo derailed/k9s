@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -19,7 +22,7 @@ func (Alias) Header(ns string) Header {
 	return Header{
 		HeaderColumn{Name: "RESOURCE"},
 		HeaderColumn{Name: "COMMAND"},
-		HeaderColumn{Name: "APIGROUP"},
+		HeaderColumn{Name: "API-GROUP"},
 	}
 }
 

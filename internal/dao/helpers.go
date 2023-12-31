@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -92,4 +95,18 @@ func serviceAccountMatches(podSA, saName string) bool {
 		podSA = defaultServiceAccount
 	}
 	return podSA == saName
+}
+
+// ContinuousRanges takes a sorted slice of integers and returns a slice of
+// sub-slices representing continuous ranges of integers.
+func ContinuousRanges(indexes []int) [][]int {
+	var ranges [][]int
+	for i, p := 1, 0; i <= len(indexes); i++ {
+		if i == len(indexes) || indexes[i]-indexes[p] != i-p {
+			ranges = append(ranges, []int{indexes[p], indexes[i-1] + 1})
+			p = i
+		}
+	}
+
+	return ranges
 }

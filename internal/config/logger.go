@@ -1,16 +1,22 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package config
 
 import (
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config/data"
 )
 
 const (
 	// DefaultLoggerTailCount tracks default log tail size.
 	DefaultLoggerTailCount = 100
+
 	// MaxLogThreshold sets the max value for log size.
 	MaxLogThreshold = 5000
+
 	// DefaultSinceSeconds tracks default log age.
-	DefaultSinceSeconds = 300 // all logs
+	DefaultSinceSeconds = -1 // tail logs by default
 )
 
 // Logger tracks logger options.
@@ -33,7 +39,7 @@ func NewLogger() *Logger {
 }
 
 // Validate checks thresholds and make sure we're cool. If not use defaults.
-func (l *Logger) Validate(_ client.Connection, _ KubeSettings) {
+func (l *Logger) Validate(_ client.Connection, _ data.KubeSettings) {
 	if l.TailCount <= 0 {
 		l.TailCount = DefaultLoggerTailCount
 	}

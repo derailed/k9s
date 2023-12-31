@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -30,7 +33,7 @@ func (r *Reference) Init(ctx context.Context) error {
 	if err := r.ResourceViewer.Init(ctx); err != nil {
 		return err
 	}
-	r.GetTable().GetModel().SetNamespace(client.AllNamespaces)
+	r.GetTable().GetModel().SetNamespace(client.BlankNamespace)
 
 	return nil
 }

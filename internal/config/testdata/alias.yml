@@ -1,3 +1,0 @@
-alias:
-  dp: "apps.v1.deployments"
-  pe: ".v1.pods"

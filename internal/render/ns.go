@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -52,7 +55,7 @@ func (Namespace) Header(string) Header {
 func (n Namespace) Render(o interface{}, _ string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected Namespace, but got %T", o)
+		return fmt.Errorf("expected Namespace, but got %T", o)
 	}
 	var ns v1.Namespace
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &ns)
@@ -65,8 +68,8 @@ func (n Namespace) Render(o interface{}, _ string, r *Row) error {
 		ns.Name,
 		string(ns.Status.Phase),
 		mapToStr(ns.Labels),
-		asStatus(n.diagnose(ns.Status.Phase)),
-		toAge(ns.GetCreationTimestamp()),
+		AsStatus(n.diagnose(ns.Status.Phase)),
+		ToAge(ns.GetCreationTimestamp()),
 	}
 
 	return nil
@@ -76,5 +79,6 @@ func (Namespace) diagnose(phase v1.NamespacePhase) error {
 	if phase != v1.NamespaceActive && phase != v1.NamespaceTerminating {
 		return errors.New("namespace not ready")
 	}
+
 	return nil
 }

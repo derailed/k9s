@@ -1,6 +1,10 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
@@ -86,11 +90,11 @@ func gotoCmd(r Runner, cmd, path string) ui.ActionHandler {
 
 func pluginActions(r Runner, aa ui.KeyActions) {
 	pp := config.NewPlugins()
-	if err := pp.Load(); err != nil {
+	if err := pp.Load(r.App().Config.ContextPluginsPath()); err != nil {
 		return
 	}
 
-	for k, plugin := range pp.Plugin {
+	for k, plugin := range pp.Plugins {
 		if !inScope(plugin.Scopes, r.Aliases()) {
 			continue
 		}
@@ -101,7 +105,7 @@ func pluginActions(r Runner, aa ui.KeyActions) {
 		}
 		_, ok := aa[key]
 		if ok {
-			log.Warn().Err(fmt.Errorf("Doh! you are trying to override an existing command `%s", k)).Msg("Invalid shortcut")
+			log.Warn().Msgf("Invalid shortcut. You are trying to override an existing command `%s", k)
 			continue
 		}
 		aa[key] = ui.NewKeyAction(
@@ -133,17 +137,25 @@ func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
 
 		cb := func() {
 			opts := shellOpts{
-				clear:      true,
 				binary:     p.Command,
 				background: p.Background,
 				pipes:      p.Pipes,
 				args:       args,
 			}
-			if run(r.App(), opts) {
-				r.App().Flash().Info("Plugin command launched successfully!")
+			suspend, errChan := run(r.App(), opts)
+			if !suspend {
+				r.App().Flash().Info("Plugin command failed!")
 				return
 			}
-			r.App().Flash().Info("Plugin command failed!")
+			var errs error
+			for e := range errChan {
+				errs = errors.Join(errs, e)
+			}
+			if errs != nil {
+				r.App().cowCmd(errs.Error())
+				return
+			}
+			r.App().Flash().Info("Plugin command launched successfully!")
 		}
 		if p.Confirm {
 			msg := fmt.Sprintf("Run?\n%s %s", p.Command, strings.Join(args, " "))

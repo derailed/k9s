@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -18,6 +21,7 @@ type HeaderColumn struct {
 	MX        bool
 	Time      bool
 	Capacity  bool
+	VS        bool
 }
 
 // Clone copies a header.

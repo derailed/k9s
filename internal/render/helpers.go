@@ -1,21 +1,37 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
+	"math"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tview"
 	runewidth "github.com/mattn/go-runewidth"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/duration"
 )
+
+func computeVulScore(m metav1.ObjectMeta, spec *v1.PodSpec) string {
+	if vul.ImgScanner == nil || vul.ImgScanner.ShouldExcludes(m) {
+		return "0"
+	}
+	ii := ExtractImages(spec)
+	vul.ImgScanner.Enqueue(ii...)
+
+	return vul.ImgScanner.Score(ii...)
+}
 
 func runesToNum(rr []rune) int64 {
 	var r int64
@@ -32,6 +48,9 @@ func runesToNum(rr []rune) int64 {
 func durationToSeconds(duration string) int64 {
 	if len(duration) == 0 {
 		return 0
+	}
+	if duration == NAValue {
+		return math.MaxInt64
 	}
 
 	num := make([]rune, 0, 5)
@@ -82,7 +101,8 @@ func Happy(ns string, h Header, r Row) bool {
 	return strings.TrimSpace(r.Fields[validCol]) == ""
 }
 
-func asStatus(err error) string {
+// AsStatus returns error as string.
+func AsStatus(err error) string {
 	if err == nil {
 		return ""
 	}
@@ -201,7 +221,8 @@ func boolToStr(b bool) string {
 	}
 }
 
-func toAge(t metav1.Time) string {
+// ToAge converts time to human duration.
+func ToAge(t metav1.Time) string {
 	if t.IsZero() {
 		return UnknownValue
 	}
@@ -302,6 +323,13 @@ func boolPtrToStr(b *bool) string {
 	}
 
 	return boolToStr(*b)
+}
+
+func strPtrToStr(s *string) string {
+	if s == nil {
+		return ""
+	}
+	return *s
 }
 
 // Check if string is in a string list.

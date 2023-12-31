@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package client
 
 import metricsapi "k8s.io/metrics/pkg/apis/metrics"

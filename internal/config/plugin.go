@@ -1,20 +1,24 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/adrg/xdg"
 	"gopkg.in/yaml.v2"
 )
 
-// K9sPlugins manages K9s plugins.
-var K9sPlugins = filepath.Join(K9sHome(), "plugin.yml")
+const k9sPluginsDir = "k9s/plugins"
 
 // Plugins represents a collection of plugins.
 type Plugins struct {
-	Plugin map[string]Plugin `yaml:"plugin"`
+	Plugins map[string]Plugin `yaml:"plugins"`
 }
 
 // Plugin describes a K9s plugin.
@@ -36,17 +40,58 @@ func (p Plugin) String() string {
 // NewPlugins returns a new plugin.
 func NewPlugins() Plugins {
 	return Plugins{
-		Plugin: make(map[string]Plugin),
+		Plugins: make(map[string]Plugin),
 	}
 }
 
 // Load K9s plugins.
-func (p Plugins) Load() error {
-	return p.LoadPlugins(K9sPlugins)
+func (p Plugins) Load(path string) error {
+	var errs error
+	if err := p.load(AppPluginsFile); err != nil {
+		errs = errors.Join(errs, err)
+	}
+	if err := p.load(path); err != nil {
+		errs = errors.Join(errs, err)
+	}
+
+	for _, dataDir := range xdg.DataDirs {
+		if err := p.loadPluginDir(filepath.Join(dataDir, k9sPluginsDir)); err != nil {
+			errs = errors.Join(errs, err)
+		}
+	}
+
+	return errs
 }
 
-// LoadPlugins loads plugins from a given file.
-func (p Plugins) LoadPlugins(path string) error {
+func (p Plugins) loadPluginDir(dir string) error {
+	pluginFiles, err := os.ReadDir(dir)
+	if err != nil {
+		return nil
+	}
+
+	var errs error
+	for _, file := range pluginFiles {
+		if file.IsDir() || !isYamlFile(file.Name()) {
+			continue
+		}
+		pluginFile, err := os.ReadFile(filepath.Join(dir, file.Name()))
+		if err != nil {
+			errs = errors.Join(errs, err)
+		}
+		var plugin Plugin
+		if err = yaml.Unmarshal(pluginFile, &plugin); err != nil {
+			return err
+		}
+		p.Plugins[strings.TrimSuffix(file.Name(), filepath.Ext(file.Name()))] = plugin
+	}
+
+	return errs
+}
+
+func (p *Plugins) load(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil
+	}
 	f, err := os.ReadFile(path)
 	if err != nil {
 		return err
@@ -56,8 +101,8 @@ func (p Plugins) LoadPlugins(path string) error {
 	if err := yaml.Unmarshal(f, &pp); err != nil {
 		return err
 	}
-	for k, v := range pp.Plugin {
-		p.Plugin[k] = v
+	for k, v := range pp.Plugins {
+		p.Plugins[k] = v
 	}
 
 	return nil

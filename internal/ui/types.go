@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
@@ -53,6 +56,9 @@ type Tabular interface {
 
 	// SetLabelFilter sets the label filter.
 	SetLabelFilter(string)
+
+	// GetLabelFilter fetch the label filter.
+	GetLabelFilter() string
 
 	// Empty returns true if model has no data.
 	Empty() bool

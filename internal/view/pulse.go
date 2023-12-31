@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -73,6 +76,9 @@ func NewPulse(gvr client.GVR) ResourceViewer {
 		actions: make(ui.KeyActions),
 	}
 }
+
+func (p *Pulse) SetFilter(string)                 {}
+func (p *Pulse) SetLabelFilter(map[string]string) {}
 
 // Init initializes the view.
 func (p *Pulse) Init(ctx context.Context) error {

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -41,7 +44,7 @@ func (Policy) Header(ns string) Header {
 	h := Header{
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "API GROUP"},
+		HeaderColumn{Name: "API-GROUP"},
 		HeaderColumn{Name: "BINDING"},
 	}
 	h = append(h, rbacVerbHeader()...)

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render_test
 
 import (
@@ -13,7 +16,7 @@ func TestDpRender(t *testing.T) {
 
 	assert.Nil(t, c.Render(load(t, "dp"), "", &r))
 	assert.Equal(t, "icx/icx-db", r.ID)
-	assert.Equal(t, render.Fields{"icx", "icx-db", "1/1", "1", "1"}, r.Fields[:5])
+	assert.Equal(t, render.Fields{"icx", "icx-db", "0", "1/1", "1", "1"}, r.Fields[:6])
 }
 
 func BenchmarkDpRender(b *testing.B) {

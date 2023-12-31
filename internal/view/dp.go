@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -21,10 +24,12 @@ type Deploy struct {
 func NewDeploy(gvr client.GVR) ResourceViewer {
 	var d Deploy
 	d.ResourceViewer = NewPortForwardExtender(
-		NewRestartExtender(
-			NewScaleExtender(
-				NewImageExtender(
-					NewLogsExtender(NewBrowser(gvr), d.logOptions),
+		NewVulnerabilityExtender(
+			NewRestartExtender(
+				NewScaleExtender(
+					NewImageExtender(
+						NewLogsExtender(NewBrowser(gvr), d.logOptions),
+					),
 				),
 			),
 		),
@@ -86,20 +91,24 @@ func (d *Deploy) logOptions(prev bool) (*dao.LogOptions, error) {
 	return &opts, nil
 }
 
-func (d *Deploy) showPods(app *App, model ui.Tabular, gvr, path string) {
+func (d *Deploy) showPods(app *App, model ui.Tabular, gvr client.GVR, fqn string) {
 	var ddp dao.Deployment
-	dp, err := ddp.Load(app.factory, path)
+	ddp.Init(d.App().factory, d.GVR())
+
+	dp, err := ddp.GetInstance(fqn)
 	if err != nil {
 		app.Flash().Err(err)
 		return
 	}
 
-	showPodsFromSelector(app, path, dp.Spec.Selector)
+	showPodsFromSelector(app, fqn, dp.Spec.Selector)
 }
 
-func (d *Deploy) dp(path string) (*appsv1.Deployment, error) {
+func (d *Deploy) dp(fqn string) (*appsv1.Deployment, error) {
 	var dp dao.Deployment
-	return dp.Load(d.App().factory, path)
+	dp.Init(d.App().factory, d.GVR())
+
+	return dp.GetInstance(fqn)
 }
 
 // ----------------------------------------------------------------------------

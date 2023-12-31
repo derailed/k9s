@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -20,7 +23,7 @@ func loadCustomViewers() MetaViewers {
 
 func helmViewers(vv MetaViewers) {
 	vv[client.NewGVR("helm")] = MetaViewer{
-		viewerFn: NewHelm,
+		viewerFn: NewHelmChart,
 	}
 }
 
@@ -58,15 +61,17 @@ func coreViewers(vv MetaViewers) {
 }
 
 func miscViewers(vv MetaViewers) {
+	vv[client.NewGVR("workloads")] = MetaViewer{
+		viewerFn: NewWorkload,
+	}
 	vv[client.NewGVR("contexts")] = MetaViewer{
 		viewerFn: NewContext,
 	}
-	// BOZO!! revamp with latest...
-	// vv[client.NewGVR("openfaas")] = MetaViewer{
-	// 	viewerFn: NewOpenFaas,
-	// }
 	vv[client.NewGVR("containers")] = MetaViewer{
 		viewerFn: NewContainer,
+	}
+	vv[client.NewGVR("scans")] = MetaViewer{
+		viewerFn: NewImageScan,
 	}
 	vv[client.NewGVR("portforwards")] = MetaViewer{
 		viewerFn: NewPortForward,
@@ -154,7 +159,7 @@ func extViewers(vv MetaViewers) {
 	}
 }
 
-func showCRD(app *App, _ ui.Tabular, _, path string) {
+func showCRD(app *App, _ ui.Tabular, _ client.GVR, path string) {
 	_, crd := client.Namespaced(path)
 	app.gotoResource(crd, "", false)
 }

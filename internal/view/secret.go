@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 	v1 "k8s.io/api/core/v1"
@@ -34,7 +38,7 @@ func (s *Secret) bindKeys(aa ui.KeyActions) {
 }
 
 func (s *Secret) refCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return scanRefs(evt, s.App(), s.GetTable(), "v1/secrets")
+	return scanRefs(evt, s.App(), s.GetTable(), dao.SecGVR)
 }
 
 func (s *Secret) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -66,7 +70,7 @@ func (s *Secret) decodeCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return nil
 	}
 
-	details := NewDetails(s.App(), "Secret Decoder", path, true).Update(string(raw))
+	details := NewDetails(s.App(), "Secret Decoder", path, contentYAML, true).Update(string(raw))
 	if err := s.App().inject(details, false); err != nil {
 		s.App().Flash().Err(err)
 	}

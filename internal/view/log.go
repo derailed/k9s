@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -13,6 +16,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
@@ -33,15 +37,16 @@ const (
 type Log struct {
 	*tview.Flex
 
-	app           *App
-	logs          *Logger
-	indicator     *LogIndicator
-	ansiWriter    io.Writer
-	model         *model.Log
-	cancelFn      context.CancelFunc
-	cancelUpdates bool
-	mx            sync.Mutex
-	follow        bool
+	app               *App
+	logs              *Logger
+	indicator         *LogIndicator
+	ansiWriter        io.Writer
+	model             *model.Log
+	cancelFn          context.CancelFunc
+	cancelUpdates     bool
+	mx                sync.Mutex
+	follow            bool
+	requestOneRefresh bool
 }
 
 var _ model.Component = (*Log)(nil)
@@ -56,6 +61,9 @@ func NewLog(gvr client.GVR, opts *dao.LogOptions) *Log {
 
 	return &l
 }
+
+func (l *Log) SetFilter(string)                 {}
+func (l *Log) SetLabelFilter(map[string]string) {}
 
 // Init initializes the viewer.
 func (l *Log) Init(ctx context.Context) (err error) {
@@ -338,8 +346,11 @@ func (l *Log) Flush(lines [][]byte) {
 		}
 	}()
 
-	if len(lines) == 0 || !l.indicator.AutoScroll() || l.cancelUpdates {
+	if len(lines) == 0 || (!l.requestOneRefresh && !l.indicator.AutoScroll()) || l.cancelUpdates {
 		return
+	}
+	if l.requestOneRefresh {
+		l.requestOneRefresh = false
 	}
 	for i := 0; i < len(lines); i++ {
 		if l.cancelUpdates {
@@ -364,6 +375,7 @@ func (l *Log) sinceCmd(n int) func(evt *tcell.EventKey) *tcell.EventKey {
 		} else {
 			l.model.SetSinceSeconds(ctx, int64(n))
 		}
+		l.requestOneRefresh = true
 		l.updateTitle()
 
 		return nil
@@ -395,7 +407,7 @@ func (l *Log) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 // SaveCmd dumps the logs to file.
 func (l *Log) SaveCmd(*tcell.EventKey) *tcell.EventKey {
-	path, err := saveData(l.app.Config.K9s.GetScreenDumpDir(), l.app.Config.K9s.CurrentContextDir(), l.model.GetPath(), l.logs.GetText(true))
+	path, err := saveData(l.app.Config.K9s.ActiveScreenDumpsDir(), l.model.GetPath(), l.logs.GetText(true))
 	if err != nil {
 		l.app.Flash().Err(err)
 		return nil
@@ -409,20 +421,17 @@ func ensureDir(dir string) error {
 	return os.MkdirAll(dir, 0744)
 }
 
-func saveData(screenDumpDir, context, fqn, data string) (string, error) {
-	dir := filepath.Join(screenDumpDir, context)
+func saveData(dir, fqn, logs string) (string, error) {
 	if err := ensureDir(dir); err != nil {
 		return "", err
 	}
 
-	now := time.Now().UnixNano()
-	fName := fmt.Sprintf("%s-%d.log", strings.Replace(fqn, "/", "-", 1), now)
-
-	path := filepath.Join(dir, fName)
+	f := fmt.Sprintf("%s-%d.log", fqn, time.Now().UnixNano())
+	path := filepath.Join(dir, data.SanitizeFileName(f))
 	mod := os.O_CREATE | os.O_WRONLY
 	file, err := os.OpenFile(path, mod, 0600)
 	if err != nil {
-		log.Error().Err(err).Msgf("LogFile create %s", path)
+		log.Error().Err(err).Msgf("Log file save failed: %q", path)
 		return "", nil
 	}
 	defer func() {
@@ -430,7 +439,7 @@ func saveData(screenDumpDir, context, fqn, data string) (string, error) {
 			log.Error().Err(err).Msg("Closing Log file")
 		}
 	}()
-	if _, err := file.Write([]byte(data)); err != nil {
+	if _, err := file.WriteString(logs); err != nil {
 		return "", err
 	}
 

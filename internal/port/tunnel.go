@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package port
 
 import (
@@ -30,6 +33,11 @@ func NewPortTunnel(a, co, lp, cp string) PortTunnel {
 		LocalPort:     lp,
 		ContainerPort: cp,
 	}
+}
+
+// String dumps as string.
+func (t PortTunnel) String() string {
+	return fmt.Sprintf("%s|%s|%s:%s", t.Address, t.Container, t.LocalPort, t.ContainerPort)
 }
 
 // PortMap returns a port mapping.

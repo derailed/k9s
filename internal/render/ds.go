@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -18,9 +21,10 @@ type DaemonSet struct {
 
 // Header returns a header row.
 func (DaemonSet) Header(ns string) Header {
-	return Header{
+	h := Header{
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "VS", VS: true},
 		HeaderColumn{Name: "DESIRED", Align: tview.AlignRight},
 		HeaderColumn{Name: "CURRENT", Align: tview.AlignRight},
 		HeaderColumn{Name: "READY", Align: tview.AlignRight},
@@ -30,13 +34,15 @@ func (DaemonSet) Header(ns string) Header {
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true},
 	}
+
+	return h
 }
 
 // Render renders a K8s resource to screen.
 func (d DaemonSet) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected DaemonSet, but got %T", o)
+		return fmt.Errorf("expected DaemonSet, but got %T", o)
 	}
 	var ds appsv1.DaemonSet
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &ds)
@@ -48,14 +54,15 @@ func (d DaemonSet) Render(o interface{}, ns string, r *Row) error {
 	r.Fields = Fields{
 		ds.Namespace,
 		ds.Name,
+		computeVulScore(ds.ObjectMeta, &ds.Spec.Template.Spec),
 		strconv.Itoa(int(ds.Status.DesiredNumberScheduled)),
 		strconv.Itoa(int(ds.Status.CurrentNumberScheduled)),
 		strconv.Itoa(int(ds.Status.NumberReady)),
 		strconv.Itoa(int(ds.Status.UpdatedNumberScheduled)),
 		strconv.Itoa(int(ds.Status.NumberAvailable)),
 		mapToStr(ds.Labels),
-		asStatus(d.diagnose(ds.Status.DesiredNumberScheduled, ds.Status.NumberReady)),
-		toAge(ds.GetCreationTimestamp()),
+		AsStatus(d.diagnose(ds.Status.DesiredNumberScheduled, ds.Status.NumberReady)),
+		ToAge(ds.GetCreationTimestamp()),
 	}
 
 	return nil

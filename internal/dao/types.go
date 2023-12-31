@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -46,6 +49,12 @@ type Factory interface {
 
 	// Forwards returns all portforwards.
 	Forwarders() watch.Forwarders
+}
+
+// ImageLister tracks resources with container images.
+type ImageLister interface {
+	// ListImages lists container images.
+	ListImages(ctx context.Context, path string) ([]string, error)
 }
 
 // Getter represents a resource getter.
@@ -154,4 +163,16 @@ type ContainsPodSpec interface {
 
 	// Set Images for a resource
 	SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error
+}
+
+// Sanitizer represents a resource sanitizer.
+type Sanitizer interface {
+	// Sanitize nukes all resources in unhappy state.
+	Sanitize(context.Context, string) (int, error)
+}
+
+// Valuer represents a resource with values.
+type Valuer interface {
+	// GetValues returns values for a resource.
+	GetValues(path string, allValues bool) ([]byte, error)
 }

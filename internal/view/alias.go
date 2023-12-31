@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -51,7 +54,7 @@ func (a *Alias) bindKeys(aa ui.KeyActions) {
 		tcell.KeyEnter: ui.NewKeyAction("Goto", a.gotoCmd, true),
 		ui.KeyShiftR:   ui.NewKeyAction("Sort Resource", a.GetTable().SortColCmd("RESOURCE", true), false),
 		ui.KeyShiftC:   ui.NewKeyAction("Sort Command", a.GetTable().SortColCmd("COMMAND", true), false),
-		ui.KeyShiftA:   ui.NewKeyAction("Sort ApiGroup", a.GetTable().SortColCmd("APIGROUP", true), false),
+		ui.KeyShiftA:   ui.NewKeyAction("Sort ApiGroup", a.GetTable().SortColCmd("API-GROUP", true), false),
 	})
 }
 

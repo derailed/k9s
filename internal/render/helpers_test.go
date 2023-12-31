@@ -1,6 +1,10 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
+	"math"
 	"testing"
 	"time"
 
@@ -66,6 +70,7 @@ func TestDurationToSecond(t *testing.T) {
 		"day_hour_minute_seconds": {s: "2d22h3m50s", e: 252230},
 		"year":                    {s: "3y", e: 94608000},
 		"year_day":                {s: "1y2d", e: 31708800},
+		"n/a":                     {s: NAValue, e: math.MaxInt64},
 	}
 
 	for k := range uu {
@@ -100,7 +105,7 @@ func TestToAge(t *testing.T) {
 	for k := range uu {
 		uc := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, uc.e, toAge(metav1.Time{Time: uc.t}))
+			assert.Equal(t, uc.e, ToAge(metav1.Time{Time: uc.t}))
 		})
 	}
 }

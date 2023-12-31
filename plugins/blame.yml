@@ -1,0 +1,18 @@
+plugins:
+  # kubectl-blame by knight42
+  # Annotate each line in the given resource's YAML with information from the managedFields to show who last modified the field.
+  # Source: https://github.com/knight42/kubectl-blame
+  # Install via:
+  #   krew: `kubectl krew install blame`
+  #   go: `go install github.com/knight42/kubectl-blame@latest`
+  blame:
+    shortCut: b
+    confirm: false
+    description: "Blame"
+    scopes:
+      - all
+    command: sh
+    background: false
+    args:
+      - -c
+      - "kubectl-blame $RESOURCE_NAME $NAME -n $NAMESPACE --context $CONTEXT | less"

@@ -1,17 +1,15 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package config
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"gopkg.in/yaml.v2"
 )
-
-// K9sStylesFile represents K9s skins file location.
-var K9sStylesFile = filepath.Join(K9sHome(), "skin.yml")
 
 // StyleListener represents a skin's listener.
 type StyleListener interface {
@@ -45,9 +43,16 @@ type (
 
 	// Prompt tracks command styles
 	Prompt struct {
-		FgColor      Color `yaml:"fgColor"`
-		BgColor      Color `yaml:"bgColor"`
-		SuggestColor Color `yaml:"suggestColor"`
+		FgColor      Color        `yaml:"fgColor"`
+		BgColor      Color        `yaml:"bgColor"`
+		SuggestColor Color        `yaml:"suggestColor"`
+		Border       PromptBorder `yaml:"border"`
+	}
+
+	// PromptBorder tracks the color of the prompt depending on its kind (e.g., command or filter)
+	PromptBorder struct {
+		CommandColor Color `yaml:"command"`
+		DefaultColor Color `yaml:"default"`
 	}
 
 	// Help tracks help styles.
@@ -97,6 +102,7 @@ type (
 		Xray   Xray   `yaml:"xray"`
 		Charts Charts `yaml:"charts"`
 		Yaml   Yaml   `yaml:"yaml"`
+		Picker Picker `yaml:"picker"`
 		Log    Log    `yaml:"logs"`
 	}
 
@@ -117,6 +123,13 @@ type (
 		FgColor   Color        `yaml:"fgColor"`
 		BgColor   Color        `yaml:"bgColor"`
 		Indicator LogIndicator `yaml:"indicator"`
+	}
+
+	// Picker tracks color when selecting containers
+	Picker struct {
+		MainColor     Color `yaml:"mainColor"`
+		FocusColor    Color `yaml:"focusColor"`
+		ShortcutColor Color `yaml:"shortcutColor"`
 	}
 
 	// LogIndicator tracks log view indicator.
@@ -206,57 +219,6 @@ type (
 	}
 )
 
-const (
-	// DefaultColor represents  a default color.
-	DefaultColor Color = "default"
-
-	// TransparentColor represents the terminal bg color.
-	TransparentColor Color = "-"
-)
-
-// NewColor returns a new color.
-func NewColor(c string) Color {
-	return Color(c)
-}
-
-// String returns color as string.
-func (c Color) String() string {
-	if c.isHex() {
-		return string(c)
-	}
-	if c == DefaultColor {
-		return "-"
-	}
-	col := c.Color().TrueColor().Hex()
-	if col < 0 {
-		return "-"
-	}
-
-	return fmt.Sprintf("#%06x", col)
-}
-
-func (c Color) isHex() bool {
-	return len(c) == 7 && c[0] == '#'
-}
-
-// Color returns a view color.
-func (c Color) Color() tcell.Color {
-	if c == DefaultColor {
-		return tcell.ColorDefault
-	}
-
-	return tcell.GetColor(string(c)).TrueColor()
-}
-
-// Colors converts series string colors to colors.
-func (c Colors) Colors() []tcell.Color {
-	cc := make([]tcell.Color, 0, len(c))
-	for _, color := range c {
-		cc = append(cc, color.Color())
-	}
-	return cc
-}
-
 func newStyle() Style {
 	return Style{
 		Body:   newBody(),
@@ -287,6 +249,10 @@ func newPrompt() Prompt {
 		FgColor:      "cadetblue",
 		BgColor:      "black",
 		SuggestColor: "dodgerblue",
+		Border: PromptBorder{
+			DefaultColor: "seagreen",
+			CommandColor: "aqua",
+		},
 	}
 }
 
@@ -310,6 +276,7 @@ func newViews() Views {
 		Xray:   newXray(),
 		Charts: newCharts(),
 		Yaml:   newYaml(),
+		Picker: newPicker(),
 		Log:    newLog(),
 	}
 }
@@ -356,6 +323,14 @@ func newStatus() Status {
 		HighlightColor: "aqua",
 		KillColor:      "mediumpurple",
 		CompletedColor: "lightslategray",
+	}
+}
+
+func newPicker() Picker {
+	return Picker{
+		MainColor:     "white",
+		FocusColor:    "aqua",
+		ShortcutColor: "aqua",
 	}
 }
 
@@ -455,6 +430,11 @@ func newMenu() Menu {
 
 // NewStyles creates a new default config.
 func NewStyles() *Styles {
+	var s Styles
+	if err := yaml.Unmarshal(stockSkinTpl, &s); err == nil {
+		return &s
+	}
+
 	return &Styles{
 		K9s: newStyle(),
 	}
@@ -467,7 +447,6 @@ func (s *Styles) Reset() {
 
 // DefaultSkin loads the default skin.
 func (s *Styles) DefaultSkin() {
-	s.K9s = newStyle()
 }
 
 // FgColor returns the foreground color.
@@ -509,6 +488,11 @@ func (s *Styles) fireStylesChanged() {
 // Body returns body styles.
 func (s *Styles) Body() Body {
 	return s.K9s.Body
+}
+
+// Prompt returns prompt styles.
+func (s *Styles) Prompt() Prompt {
+	return s.K9s.Prompt
 }
 
 // Frame returns frame styles.
@@ -557,11 +541,9 @@ func (s *Styles) Load(path string) error {
 	if err != nil {
 		return err
 	}
-
 	if err := yaml.Unmarshal(f, s); err != nil {
 		return err
 	}
-	// s.fireStylesChanged()
 
 	return nil
 }

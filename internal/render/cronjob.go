@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -19,9 +22,10 @@ type CronJob struct {
 
 // Header returns a header row.
 func (CronJob) Header(ns string) Header {
-	return Header{
+	h := Header{
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "VS", VS: true},
 		HeaderColumn{Name: "SCHEDULE"},
 		HeaderColumn{Name: "SUSPEND"},
 		HeaderColumn{Name: "ACTIVE"},
@@ -33,13 +37,16 @@ func (CronJob) Header(ns string) Header {
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true},
 	}
+
+	return h
+
 }
 
 // Render renders a K8s resource to screen.
 func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected CronJob, but got %T", o)
+		return fmt.Errorf("expected CronJob, but got %T", o)
 	}
 	var cj batchv1.CronJob
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &cj)
@@ -49,13 +56,14 @@ func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 
 	lastScheduled := "<none>"
 	if cj.Status.LastScheduleTime != nil {
-		lastScheduled = toAge(*cj.Status.LastScheduleTime)
+		lastScheduled = ToAge(*cj.Status.LastScheduleTime)
 	}
 
 	r.ID = client.MetaFQN(cj.ObjectMeta)
 	r.Fields = Fields{
 		cj.Namespace,
 		cj.Name,
+		computeVulScore(cj.ObjectMeta, &cj.Spec.JobTemplate.Spec.Template.Spec),
 		cj.Spec.Schedule,
 		boolPtrToStr(cj.Spec.Suspend),
 		strconv.Itoa(len(cj.Status.Active)),
@@ -65,7 +73,7 @@ func (c CronJob) Render(o interface{}, ns string, r *Row) error {
 		podImageNames(cj.Spec.JobTemplate.Spec.Template.Spec, true),
 		mapToStr(cj.Labels),
 		"",
-		toAge(cj.GetCreationTimestamp()),
+		ToAge(cj.GetCreationTimestamp()),
 	}
 
 	return nil

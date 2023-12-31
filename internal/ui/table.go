@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
@@ -11,12 +14,15 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
+
+const maxTruncate = 50
 
 type (
 	// ColorerFunc represents a row colorer.
@@ -31,11 +37,12 @@ type (
 
 // Table represents tabular data.
 type Table struct {
-	gvr     client.GVR
-	sortCol SortColumn
-	header  render.Header
-	Path    string
-	Extras  string
+	gvr        client.GVR
+	sortCol    SortColumn
+	manualSort bool
+	header     render.Header
+	Path       string
+	Extras     string
 	*SelectTable
 	actions     KeyActions
 	cmdBuff     *model.FishBuff
@@ -85,7 +92,7 @@ func (t *Table) GVR() client.GVR { return t.gvr }
 
 // ViewSettingsChanged notifies listener the view configuration changed.
 func (t *Table) ViewSettingsChanged(settings config.ViewSetting) {
-	t.viewSetting = &settings
+	t.viewSetting, t.manualSort = &settings, false
 	t.Refresh()
 }
 
@@ -94,8 +101,11 @@ func (t *Table) StylesChanged(s *config.Styles) {
 	t.SetBackgroundColor(s.Table().BgColor.Color())
 	t.SetBorderColor(s.Frame().Border.FgColor.Color())
 	t.SetBorderFocusColor(s.Frame().Border.FocusColor.Color())
-	t.SetSelectedStyle(tcell.StyleDefault.Foreground(t.styles.Table().CursorFgColor.Color()).Background(t.styles.Table().CursorBgColor.Color()).Attributes(tcell.AttrBold))
-	t.fgColor = s.Table().CursorFgColor.Color()
+	t.SetSelectedStyle(
+		tcell.StyleDefault.Foreground(t.styles.Table().CursorFgColor.Color()).
+			Background(t.styles.Table().CursorBgColor.Color()).Attributes(tcell.AttrBold))
+	t.selFgColor = s.Table().CursorFgColor.Color()
+	t.selBgColor = s.Table().CursorBgColor.Color()
 	t.Refresh()
 }
 
@@ -202,9 +212,11 @@ func (t *Table) doUpdate(data *render.TableData) {
 		cols = t.viewSetting.Columns
 	}
 	custData := data.Customize(cols, t.wide)
-	if t.viewSetting != nil && t.viewSetting.SortColumn != "" {
+	// The sortColumn settings in the configuration file are only used
+	// if the sortCol has not been modified manually
+	if t.viewSetting != nil && t.viewSetting.SortColumn != "" && !t.manualSort {
 		tokens := strings.Split(t.viewSetting.SortColumn, ":")
-		if custData.Header.IndexOf(tokens[0], false) >= 0 && custData.Header.IndexOf(t.sortCol.name, false) < 0 {
+		if custData.Header.IndexOf(tokens[0], false) >= 0 && !t.manualSort {
 			t.sortCol.name, t.sortCol.asc = tokens[0], true
 			if len(tokens) == 2 && tokens[1] == "desc" {
 				t.sortCol.asc = false
@@ -235,6 +247,10 @@ func (t *Table) doUpdate(data *render.TableData) {
 		if h.MX && !t.hasMetrics {
 			continue
 		}
+		if h.VS && vul.ImgScanner == nil {
+			continue
+		}
+
 		t.AddHeaderCell(col, h)
 		c := t.GetCell(0, col)
 		c.SetBackgroundColor(bg)
@@ -280,6 +296,9 @@ func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads M
 		if h[c].MX && !t.hasMetrics {
 			continue
 		}
+		if h[c].VS && vul.ImgScanner == nil {
+			continue
+		}
 
 		if !re.Deltas.IsBlank() && !h.IsTimeCol(c) {
 			field += Deltas(re.Deltas[c], field)
@@ -311,11 +330,13 @@ func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads M
 // SortColCmd designates a sorted column.
 func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
+		t.manualSort = true
 		t.sortCol.asc = !t.sortCol.asc
 		if t.sortCol.name != name {
 			t.sortCol.asc = asc
 		}
 		t.sortCol.name = name
+		t.manualSort = true
 		t.Refresh()
 		return nil
 	}
@@ -419,7 +440,7 @@ func (t *Table) UpdateTitle() {
 }
 
 func (t *Table) styleTitle() string {
-	rc := t.GetRowCount()
+	rc := int64(t.GetRowCount())
 	if rc > 0 {
 		rc--
 	}
@@ -443,17 +464,20 @@ func (t *Table) styleTitle() string {
 	}
 	var title string
 	if ns == client.ClusterScope {
-		title = SkinTitle(fmt.Sprintf(TitleFmt, base, rc), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(TitleFmt, base, render.AsThousands(rc)), t.styles.Frame())
 	} else {
-		title = SkinTitle(fmt.Sprintf(NSTitleFmt, base, ns, rc), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(NSTitleFmt, base, ns, render.AsThousands(rc)), t.styles.Frame())
 	}
 
 	buff := t.cmdBuff.GetText()
+	if IsLabelSelector(buff) {
+		buff = truncate(TrimLabelSelector(buff), maxTruncate)
+	} else if l := t.GetModel().GetLabelFilter(); l != "" {
+		buff = truncate(l, maxTruncate)
+	}
+
 	if buff == "" {
 		return title
-	}
-	if IsLabelSelector(buff) {
-		buff = TrimLabelSelector(buff)
 	}
 
 	return title + SkinTitle(fmt.Sprintf(SearchFmt, buff), t.styles.Frame())

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -34,7 +37,7 @@ func (Subject) Header(ns string) Header {
 func (s Subject) Render(o interface{}, ns string, r *Row) error {
 	res, ok := o.(SubjectRes)
 	if !ok {
-		return fmt.Errorf("Expected SubjectRes, but got %T", s)
+		return fmt.Errorf("expected SubjectRes, but got %T", s)
 	}
 
 	r.ID = res.Name

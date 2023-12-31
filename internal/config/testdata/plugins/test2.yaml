@@ -1,0 +1,12 @@
+shortCut: shift-r
+confirm: false
+description: bla
+scopes:
+  - svc
+  - ing
+command: duha
+background: true
+args:
+  - -n
+  - $NAMESPACE
+  - -oyaml

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -6,7 +9,6 @@ import (
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
-	"github.com/rs/zerolog/log"
 )
 
 const spacer = "     "
@@ -151,8 +153,6 @@ func (l *LogIndicator) Refresh() {
 	} else {
 		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "Wrap", "")...)
 	}
-
-	log.Debug().Msgf("INDICATOR: %q", l.indicator)
 
 	_, _ = l.Write(l.indicator)
 }

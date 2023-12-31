@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package config_test
 
 import (
@@ -9,7 +12,7 @@ import (
 
 func TestHotKeyLoad(t *testing.T) {
 	h := config.NewHotKeys()
-	assert.Nil(t, h.LoadHotKeys("testdata/hot_key.yml"))
+	assert.Nil(t, h.LoadHotKeys("testdata/hotkeys.yaml"))
 
 	assert.Equal(t, 1, len(h.HotKey))
 

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render_test
 
 import (
@@ -43,7 +46,7 @@ func TestGenericRender(t *testing.T) {
 			},
 		},
 		"allNS": {
-			ns:      client.AllNamespaces,
+			ns:      client.NamespaceAll,
 			table:   makeNSGeneric(),
 			eID:     "ns1/fred",
 			eFields: render.Fields{"ns1", "c1", "c2", "c3"},

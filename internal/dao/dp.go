@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao
 
 import (
@@ -6,6 +9,7 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/rs/zerolog/log"
 	appsv1 "k8s.io/api/apps/v1"
 	v1 "k8s.io/api/core/v1"
@@ -27,11 +31,22 @@ var (
 	_ Scalable        = (*Deployment)(nil)
 	_ Controller      = (*Deployment)(nil)
 	_ ContainsPodSpec = (*Deployment)(nil)
+	_ ImageLister     = (*Deployment)(nil)
 )
 
 // Deployment represents a deployment K8s resource.
 type Deployment struct {
 	Resource
+}
+
+// ListImages lists container images.
+func (d *Deployment) ListImages(ctx context.Context, fqn string) ([]string, error) {
+	dp, err := d.GetInstance(fqn)
+	if err != nil {
+		return nil, err
+	}
+
+	return render.ExtractImages(&dp.Spec.Template.Spec), nil
 }
 
 // IsHappy check for happy deployments.
@@ -115,7 +130,7 @@ func (d *Deployment) Restart(ctx context.Context, path string) error {
 
 // TailLogs tail logs for all pods represented by this Deployment.
 func (d *Deployment) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error) {
-	dp, err := d.Load(d.Factory, opts.Path)
+	dp, err := d.GetInstance(opts.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +143,7 @@ func (d *Deployment) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan,
 
 // Pod returns a pod victim by name.
 func (d *Deployment) Pod(fqn string) (string, error) {
-	dp, err := d.Load(d.Factory, fqn)
+	dp, err := d.GetInstance(fqn)
 	if err != nil {
 		return "", err
 	}
@@ -136,9 +151,9 @@ func (d *Deployment) Pod(fqn string) (string, error) {
 	return podFromSelector(d.Factory, dp.Namespace, dp.Spec.Selector.MatchLabels)
 }
 
-// Load returns a deployment instance.
-func (*Deployment) Load(f Factory, fqn string) (*appsv1.Deployment, error) {
-	o, err := f.Get("apps/v1/deployments", fqn, true, labels.Everything())
+// GetInstance fetch a matching deployment.
+func (d *Deployment) GetInstance(fqn string) (*appsv1.Deployment, error) {
+	o, err := d.Factory.Get(d.GVR(), fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -179,7 +194,7 @@ func (d *Deployment) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, e
 }
 
 // Scan scans for resource references.
-func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs, error) {
+func (d *Deployment) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
 	oo, err := d.GetFactory().List(d.GVR(), ns, wait, labels.Everything())
 	if err != nil {
@@ -194,7 +209,7 @@ func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs
 			return nil, errors.New("expecting Deployment resource")
 		}
 		switch gvr {
-		case "v1/configmaps":
+		case CmGVR:
 			if !hasConfigMap(&dp.Spec.Template.Spec, n) {
 				continue
 			}
@@ -202,7 +217,7 @@ func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs
 				GVR: d.GVR(),
 				FQN: client.FQN(dp.Namespace, dp.Name),
 			})
-		case "v1/secrets":
+		case SecGVR:
 			found, err := hasSecret(d.Factory, &dp.Spec.Template.Spec, dp.Namespace, n, wait)
 			if err != nil {
 				log.Warn().Err(err).Msgf("scanning secret %q", fqn)
@@ -215,7 +230,7 @@ func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs
 				GVR: d.GVR(),
 				FQN: client.FQN(dp.Namespace, dp.Name),
 			})
-		case "v1/persistentvolumeclaims":
+		case PvcGVR:
 			if !hasPVC(&dp.Spec.Template.Spec, n) {
 				continue
 			}
@@ -223,7 +238,7 @@ func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs
 				GVR: d.GVR(),
 				FQN: client.FQN(dp.Namespace, dp.Name),
 			})
-		case "scheduling.k8s.io/v1/priorityclasses":
+		case PcGVR:
 			if !hasPC(&dp.Spec.Template.Spec, n) {
 				continue
 			}
@@ -240,7 +255,7 @@ func (d *Deployment) Scan(ctx context.Context, gvr, fqn string, wait bool) (Refs
 
 // GetPodSpec returns a pod spec given a resource.
 func (d *Deployment) GetPodSpec(path string) (*v1.PodSpec, error) {
-	dp, err := d.Load(d.Factory, path)
+	dp, err := d.GetInstance(path)
 	if err != nil {
 		return nil, err
 	}

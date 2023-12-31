@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -28,7 +31,7 @@ type (
 	BoostActionsFunc func(ui.KeyActions)
 
 	// EnterFunc represents an enter key action.
-	EnterFunc func(app *App, model ui.Tabular, gvr, path string)
+	EnterFunc func(app *App, model ui.Tabular, gvr client.GVR, path string)
 
 	// LogOptionsFunc returns the active log options.
 	LogOptionsFunc func(bool) (*dao.LogOptions, error)

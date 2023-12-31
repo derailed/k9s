@@ -1,0 +1,16 @@
+k9s:
+  cluster: cl-1
+  skin: skin-1
+  readOnly: false
+  namespace:
+    active: ns-1
+    lockFavorites: true
+    favorites:
+    - default
+    - ns-1
+    - ns-2
+  view:
+    active: dp
+  featureGates:
+    nodeShell: true
+  portForwardAddress: localhost

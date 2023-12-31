@@ -1,14 +1,17 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/rs/zerolog/log"
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
-	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
+	"github.com/rs/zerolog/log"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 const ageTableCol = "Age"
@@ -16,7 +19,7 @@ const ageTableCol = "Age"
 // Generic renders a generic resource to screen.
 type Generic struct {
 	Base
-	table    *metav1beta1.Table
+	table    *metav1.Table
 	header   Header
 	ageIndex int
 }
@@ -26,7 +29,7 @@ func (*Generic) IsGeneric() bool {
 }
 
 // SetTable sets the tabular resource.
-func (g *Generic) SetTable(ns string, t *metav1beta1.Table) {
+func (g *Generic) SetTable(ns string, t *metav1.Table) {
 	g.table = t
 	g.header = g.Header(ns)
 }
@@ -64,7 +67,7 @@ func (g *Generic) Header(ns string) Header {
 
 // Render renders a K8s resource to screen.
 func (g *Generic) Render(o interface{}, ns string, r *Row) error {
-	row, ok := o.(metav1beta1.TableRow)
+	row, ok := o.(metav1.TableRow)
 	if !ok {
 		return fmt.Errorf("expecting a TableRow but got %T", o)
 	}
@@ -95,8 +98,9 @@ func (g *Generic) Render(o interface{}, ns string, r *Row) error {
 	}
 	if d, ok := duration.(string); ok {
 		r.Fields = append(r.Fields, d)
-	} else {
+	} else if g.ageIndex > 0 {
 		log.Warn().Msgf("No Duration detected on age field")
+		r.Fields = append(r.Fields, NAValue)
 	}
 
 	return nil

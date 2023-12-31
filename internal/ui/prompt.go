@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package ui
 
 import (
@@ -119,6 +122,14 @@ func (p *Prompt) SendStrokes(s string) {
 	}
 }
 
+// Deactivate sets the prompt as inactive.
+func (p *Prompt) Deactivate() {
+	if p.model != nil {
+		p.model.ClearText(true)
+		p.model.SetActive(false)
+	}
+}
+
 // SetModel sets the prompt buffer model.
 func (p *Prompt) SetModel(m PromptModel) {
 	if p.model != nil {
@@ -138,24 +149,31 @@ func (p *Prompt) keyboard(evt *tcell.EventKey) *tcell.EventKey {
 	switch evt.Key() {
 	case tcell.KeyBackspace2, tcell.KeyBackspace, tcell.KeyDelete:
 		p.model.Delete()
+
 	case tcell.KeyRune:
 		p.model.Add(evt.Rune())
+
 	case tcell.KeyEscape:
 		p.model.ClearText(true)
 		p.model.SetActive(false)
+
 	case tcell.KeyEnter, tcell.KeyCtrlE:
 		p.model.SetText(p.model.GetText(), "")
 		p.model.SetActive(false)
+
 	case tcell.KeyCtrlW, tcell.KeyCtrlU:
 		p.model.ClearText(true)
+
 	case tcell.KeyUp:
 		if s, ok := m.NextSuggestion(); ok {
-			p.suggest(p.model.GetText(), s)
+			p.model.SetText(p.model.GetText(), s)
 		}
+
 	case tcell.KeyDown:
 		if s, ok := m.PrevSuggestion(); ok {
-			p.suggest(p.model.GetText(), s)
+			p.model.SetText(p.model.GetText(), s)
 		}
+
 	case tcell.KeyTab, tcell.KeyRight, tcell.KeyCtrlF:
 		if s, ok := m.CurrentSuggestion(); ok {
 			p.model.SetText(p.model.GetText()+s, "")
@@ -202,7 +220,7 @@ func (p *Prompt) write(text, suggest string) {
 	p.SetCursorIndex(p.spacer + len(text))
 	txt := text
 	if suggest != "" {
-		txt += fmt.Sprintf("[%s::-]%s", p.styles.K9s.Prompt.SuggestColor, suggest)
+		txt += fmt.Sprintf("[%s::-]%s", p.styles.Prompt().SuggestColor, suggest)
 	}
 	fmt.Fprintf(p, defaultPrompt, p.icon, txt)
 }
@@ -231,7 +249,7 @@ func (p *Prompt) BufferActive(activate bool, kind model.BufferKind) {
 		p.ShowCursor(true)
 		p.SetBorder(true)
 		p.SetTextColor(p.styles.FgColor())
-		p.SetBorderColor(colorFor(kind))
+		p.SetBorderColor(p.colorFor(kind))
 		p.icon = p.iconFor(kind)
 		p.activate()
 		return
@@ -260,12 +278,12 @@ func (p *Prompt) iconFor(k model.BufferKind) rune {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func colorFor(k model.BufferKind) tcell.Color {
+func (p *Prompt) colorFor(k model.BufferKind) tcell.Color {
 	// nolint:exhaustive
 	switch k {
 	case model.CommandBuffer:
-		return tcell.ColorAqua
+		return p.styles.Prompt().Border.CommandColor.Color()
 	default:
-		return tcell.ColorSeaGreen
+		return p.styles.Prompt().Border.DefaultColor.Color()
 	}
 }

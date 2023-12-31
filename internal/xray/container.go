@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package xray
 
 import (
@@ -20,7 +23,7 @@ type Container struct{}
 func (c *Container) Render(ctx context.Context, ns string, o interface{}) error {
 	co, ok := o.(render.ContainerRes)
 	if !ok {
-		return fmt.Errorf("Expected ContainerRes, but got %T", o)
+		return fmt.Errorf("expected ContainerRes, but got %T", o)
 	}
 
 	f, ok := ctx.Value(internal.KeyFactory).(dao.Factory)

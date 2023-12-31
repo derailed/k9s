@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
@@ -20,11 +23,12 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
+	"github.com/derailed/k9s/internal/view/cmd"
+	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/k9s/internal/watch"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // ExitStatus indicates UI exit conditions.
@@ -57,7 +61,7 @@ type App struct {
 // NewApp returns a K9s app instance.
 func NewApp(cfg *config.Config) *App {
 	a := App{
-		App:           ui.NewApp(cfg, cfg.K9s.CurrentContext),
+		App:           ui.NewApp(cfg, cfg.K9s.ActiveContextName()),
 		cmdHistory:    model.NewHistory(model.MaxHistory),
 		filterHistory: model.NewHistory(model.MaxHistory),
 		Content:       NewPageStack(),
@@ -89,14 +93,14 @@ func (a *App) Init(version string, rate int) error {
 	a.SetInputCapture(a.keyboard)
 	a.bindKeys()
 	if a.Conn() == nil {
-		return errors.New("No client connection detected")
+		return errors.New("no client connection detected")
 	}
 	ns := a.Config.ActiveNamespace()
 
 	a.factory = watch.NewFactory(a.Conn())
 	ok, err := a.isValidNS(ns)
 	if !ok && err == nil {
-		return fmt.Errorf("Invalid namespace %s", ns)
+		return fmt.Errorf("app-init - invalid namespace: %q", ns)
 	}
 	a.initFactory(ns)
 
@@ -109,7 +113,7 @@ func (a *App) Init(version string, rate int) error {
 	}
 
 	a.command = NewCommand(a)
-	if err := a.command.Init(); err != nil {
+	if err := a.command.Init(a.Config.ContextAliasesPath()); err != nil {
 		return err
 	}
 	a.CmdBuff().SetSuggestionFn(a.suggestCommand())
@@ -117,7 +121,26 @@ func (a *App) Init(version string, rate int) error {
 	a.layout(ctx)
 	a.initSignals()
 
+	if a.Config.K9s.ImageScans.Enable {
+		a.initImgScanner(version)
+	}
+
 	return nil
+}
+
+func (a *App) stopImgScanner() {
+	if vul.ImgScanner != nil {
+		vul.ImgScanner.Stop()
+	}
+}
+
+func (a *App) initImgScanner(version string) {
+	defer func(t time.Time) {
+		log.Debug().Msgf("Scanner init time %s", time.Since(t))
+	}(time.Now())
+
+	vul.ImgScanner = vul.NewImageScanner(a.Config.K9s.ImageScans)
+	go vul.ImgScanner.Init("k9s", version)
 }
 
 func (a *App) layout(ctx context.Context) {
@@ -148,6 +171,11 @@ func (a *App) initSignals() {
 }
 
 func (a *App) suggestCommand() model.SuggestionFunc {
+	contextNames, err := a.contextNames()
+	if err != nil {
+		log.Error().Err(err).Msg("failed to list contexts")
+	}
+
 	return func(s string) (entries sort.StringSlice) {
 		if s == "" {
 			if a.cmdHistory.Empty() {
@@ -156,21 +184,40 @@ func (a *App) suggestCommand() model.SuggestionFunc {
 			return a.cmdHistory.List()
 		}
 
-		s = strings.ToLower(s)
+		ls := strings.ToLower(s)
 		for _, k := range a.command.alias.Aliases.Keys() {
-			if k == s {
-				continue
-			}
-			if strings.HasPrefix(k, s) {
-				entries = append(entries, strings.Replace(k, s, "", 1))
+			if suggest, ok := cmd.ShouldAddSuggest(ls, k); ok {
+				entries = append(entries, suggest)
 			}
 		}
+
+		namespaceNames, err := a.factory.Client().ValidNamespaceNames()
+		if err != nil {
+			log.Error().Err(err).Msg("failed to list namespaces")
+		}
+		entries = append(entries, cmd.SuggestSubCommand(s, namespaceNames, contextNames)...)
 		if len(entries) == 0 {
 			return nil
 		}
 		entries.Sort()
 		return
 	}
+}
+
+func (a *App) contextNames() ([]string, error) {
+	if !a.Conn().ConnectionOK() {
+		return nil, errors.New("no connection")
+	}
+	contexts, err := a.factory.Client().Config().Contexts()
+	if err != nil {
+		return nil, err
+	}
+	contextNames := make([]string, 0, len(contexts))
+	for ctxName := range contexts {
+		contextNames = append(contextNames, ctxName)
+	}
+
+	return contextNames, nil
 }
 
 func (a *App) keyboard(evt *tcell.EventKey) *tcell.EventKey {
@@ -206,8 +253,7 @@ func (a *App) ActiveView() model.Component {
 }
 
 func (a *App) toggleHeader(header, logo bool) {
-	a.showHeader = header
-	a.showLogo = logo
+	a.showHeader, a.showLogo = header, logo
 	flex, ok := a.Main.GetPrimitive("main").(*tview.Flex)
 	if !ok {
 		log.Fatal().Msg("Expecting valid flex view")
@@ -245,11 +291,13 @@ func (a *App) buildHeader() tview.Primitive {
 	}
 
 	clWidth := clusterInfoWidth
-	n, err := a.Conn().Config().CurrentClusterName()
-	if err == nil {
-		size := len(n) + clusterInfoPad
-		if size > clWidth {
-			clWidth = size
+	if a.Conn().ConnectionOK() {
+		n, err := a.Conn().Config().CurrentClusterName()
+		if err == nil {
+			size := len(n) + clusterInfoPad
+			if size > clWidth {
+				clWidth = size
+			}
 		}
 	}
 	header.AddItem(a.clusterInfo(), clWidth, 1, false)
@@ -281,11 +329,13 @@ func (a *App) Resume() {
 	}
 	if err := a.CustomViewsWatcher(ctx, a); err != nil {
 		log.Warn().Err(err).Msgf("CustomView watcher failed")
+	} else {
+		log.Debug().Msgf("CustomViews watching `%s", config.AppViewsFile)
 	}
 }
 
 func (a *App) clusterUpdater(ctx context.Context) {
-	if err := a.refreshCluster(); err != nil {
+	if err := a.refreshCluster(ctx); err != nil {
 		log.Error().Err(err).Msgf("Cluster updater failed!")
 		return
 	}
@@ -298,7 +348,7 @@ func (a *App) clusterUpdater(ctx context.Context) {
 			log.Debug().Msg("ClusterInfo updater canceled!")
 			return
 		case <-time.After(delay):
-			if err := a.refreshCluster(); err != nil {
+			if err := a.refreshCluster(ctx); err != nil {
 				log.Error().Err(err).Msgf("ClusterUpdater failed")
 				if delay = bf.NextBackOff(); delay == backoff.Stop {
 					a.BailOut()
@@ -312,7 +362,7 @@ func (a *App) clusterUpdater(ctx context.Context) {
 	}
 }
 
-func (a *App) refreshCluster() error {
+func (a *App) refreshCluster(context.Context) error {
 	c := a.Content.Top()
 	if ok := a.Conn().CheckConnectivity(); ok {
 		if atomic.LoadInt32(&a.conRetry) > 0 {
@@ -338,12 +388,12 @@ func (a *App) refreshCluster() error {
 	}
 	if count > 0 {
 		a.Status(model.FlashWarn, fmt.Sprintf("Dial K8s Toast [%d/%d]", count, maxConnRetry))
-		return fmt.Errorf("Conn check failed (%d/%d)", count, maxConnRetry)
+		return fmt.Errorf("conn check failed (%d/%d)", count, maxConnRetry)
 	}
 
 	// Reload alias
 	go func() {
-		if err := a.command.Reset(false); err != nil {
+		if err := a.command.Reset(a.Config.ContextAliasesPath(), false); err != nil {
 			log.Error().Err(err).Msgf("Command reset failed")
 		}
 	}()
@@ -355,19 +405,19 @@ func (a *App) refreshCluster() error {
 }
 
 func (a *App) switchNS(ns string) error {
-	if ns == client.ClusterScope {
-		ns = client.AllNamespaces
-	}
-	if ns == a.Config.ActiveNamespace() {
+	if a.Config.ActiveNamespace() == ns {
 		return nil
 	}
 
+	if ns == client.ClusterScope {
+		ns = client.BlankNamespace
+	}
 	ok, err := a.isValidNS(ns)
 	if err != nil {
 		return err
 	}
 	if !ok {
-		return fmt.Errorf("Invalid namespace %q", ns)
+		return fmt.Errorf("switchns - invalid namespace: %q", ns)
 	}
 	if err := a.Config.SetActiveNamespace(ns); err != nil {
 		return err
@@ -380,56 +430,57 @@ func (a *App) switchNS(ns string) error {
 }
 
 func (a *App) isValidNS(ns string) (bool, error) {
-	if ns == client.AllNamespaces || ns == client.NamespaceAll {
+	if ns == client.BlankNamespace || ns == client.NamespaceAll {
 		return true, nil
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), a.Conn().Config().CallTimeout())
-	defer cancel()
-	dial, err := a.Conn().Dial()
-	if err != nil {
-		return false, err
-	}
-	_, err = dial.CoreV1().Namespaces().Get(ctx, ns, metav1.GetOptions{})
-	if err != nil {
-		log.Warn().Err(err).Msgf("Validation failed for namespace: %q", ns)
+	if !a.Conn().IsValidNamespace(ns) {
+		return false, fmt.Errorf("invalid namespace: %q", ns)
 	}
 
 	return true, nil
 }
 
-func (a *App) switchContext(name string) error {
-	log.Debug().Msgf("--> Switching Context %q--%q", name, a.Config.ActiveView())
+func (a *App) switchContext(ci *cmd.Interpreter) error {
+	name, ok := ci.HasContext()
+	if !ok {
+		return nil
+	}
+
 	a.Halt()
 	defer a.Resume()
 	{
-		ns, err := a.Conn().Config().CurrentNamespaceName()
-		if err != nil {
-			log.Warn().Msg("No namespace specified in context. Using K9s config")
-		}
-		a.initFactory(ns)
-
-		if e := a.command.Reset(true); e != nil {
-			return e
-		}
-		if a.Config.ActiveView() == "" || isContextCmd(a.Config.ActiveView()) {
-			a.Config.SetActiveView("pod")
-		}
 		a.Config.Reset()
-		a.Config.K9s.CurrentContext = name
-		cluster, err := a.Conn().Config().CurrentClusterName()
+		ct, err := a.Config.K9s.ActivateContext(name)
 		if err != nil {
 			return err
 		}
-		a.Config.K9s.CurrentCluster = cluster
-		if err := a.Config.SetActiveNamespace(ns); err != nil {
-			log.Error().Err(err).Msg("unable to set active ns")
+		if err := a.command.Reset(a.Config.ContextAliasesPath(), true); err != nil {
+			return err
+		}
+		if cns, ok := ci.NSArg(); ok {
+			ct.Namespace.Active = cns
+		}
+
+		p := cmd.NewInterpreter(a.Config.ActiveView())
+		p.ResetContextArg()
+		if p.IsContextCmd() {
+			a.Config.SetActiveView("pod")
+		}
+		ns := a.Config.ActiveNamespace()
+		if !a.Conn().IsValidNamespace(ns) {
+			ns = client.DefaultNamespace
+			if err := a.Config.SetActiveNamespace(ns); err != nil {
+				return err
+			}
 		}
 		if err := a.Config.Save(); err != nil {
 			log.Error().Err(err).Msg("config save failed!")
 		}
+		a.initFactory(ns)
 
-		a.Flash().Infof("Switching context to %s", name)
+		log.Debug().Msgf("--> Switching Context %q -- %q -- %q", name, ns, a.Config.ActiveView())
+		a.Flash().Infof("Switching context to %q::%q", name, ns)
 		a.ReloadStyles(name)
 		a.gotoResource(a.Config.ActiveView(), "", true)
 		a.clusterModel.Reset(a.factory)
@@ -454,6 +505,8 @@ func (a *App) BailOut() {
 	if err := nukeK9sShell(a); err != nil {
 		log.Error().Err(err).Msgf("nuking k9s shell pod")
 	}
+
+	a.stopImgScanner()
 	a.factory.Terminate()
 	a.App.BailOut()
 }
@@ -603,12 +656,11 @@ func (a *App) dirCmd(path string) error {
 }
 
 func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
-	top := a.Content.Top()
-
-	if a.CmdBuff().InCmdMode() || (top != nil && top.InCmdMode()) {
+	if evt != nil && evt.Rune() == '?' && a.Prompt().InCmdMode() {
 		return evt
 	}
 
+	top := a.Content.Top()
 	if top != nil && top.Name() == "help" {
 		a.Content.Pop()
 		return nil
@@ -618,14 +670,11 @@ func (a *App) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 		a.Flash().Err(err)
 	}
 
+	a.Prompt().Deactivate()
 	return nil
 }
 
 func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if a.CmdBuff().InCmdMode() {
-		return evt
-	}
-
 	if a.Content.Top() != nil && a.Content.Top().Name() == aliasTitle {
 		a.Content.Pop()
 		return nil
@@ -638,8 +687,8 @@ func (a *App) aliasCmd(evt *tcell.EventKey) *tcell.EventKey {
 	return nil
 }
 
-func (a *App) gotoResource(cmd, path string, clearStack bool) {
-	err := a.command.run(cmd, path, clearStack)
+func (a *App) gotoResource(c, path string, clearStack bool) {
+	err := a.command.run(cmd.NewInterpreter(c), path, clearStack)
 	if err != nil {
 		dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
 	}
@@ -648,8 +697,7 @@ func (a *App) gotoResource(cmd, path string, clearStack bool) {
 func (a *App) inject(c model.Component, clearStack bool) error {
 	ctx := context.WithValue(context.Background(), internal.KeyApp, a)
 	if err := c.Init(ctx); err != nil {
-		log.Error().Err(err).Msgf("component init failed for %q", c.Name())
-		//dialog.ShowError(a.Styles.Dialog(), a.Content.Pages, err.Error())
+		log.Error().Err(err).Msgf("Component init failed for %q", c.Name())
 		return err
 	}
 	if clearStack {

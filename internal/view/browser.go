@@ -1,8 +1,10 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package view
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -12,7 +14,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
@@ -60,7 +62,7 @@ func (b *Browser) Init(ctx context.Context) error {
 	}
 	ns := client.CleanseNamespace(b.app.Config.ActiveNamespace())
 	if dao.IsK8sMeta(b.meta) && b.app.ConOK() {
-		if _, e := b.app.factory.CanForResource(ns, b.GVR().String(), client.MonitorAccess); e != nil {
+		if _, e := b.app.factory.CanForResource(ns, b.GVR().String(), client.ListAccess); e != nil {
 			return e
 		}
 	}
@@ -131,7 +133,6 @@ func (b *Browser) SetInstance(path string) {
 
 // Start initializes browser updates.
 func (b *Browser) Start() {
-	b.app.Config.ValidateFavorites()
 	ns := b.app.Config.ActiveNamespace()
 	if n := b.GetModel().GetNamespace(); !client.IsClusterScoped(n) {
 		ns = n
@@ -145,7 +146,7 @@ func (b *Browser) Start() {
 	b.Table.Start()
 	b.CmdBuff().AddListener(b)
 	if err := b.GetModel().Watch(b.prepareContext()); err != nil {
-		b.App().Flash().Err(fmt.Errorf("Watcher failed for %s -- %w", b.GVR(), err))
+		b.App().Flash().Errf("Watcher failed for %s -- %s", b.GVR(), err)
 	}
 }
 
@@ -162,6 +163,15 @@ func (b *Browser) Stop() {
 	b.GetModel().RemoveListener(b)
 	b.CmdBuff().RemoveListener(b)
 	b.Table.Stop()
+}
+
+func (b *Browser) SetFilter(s string) {
+	b.CmdBuff().SetText(s, "")
+}
+
+func (b *Browser) SetLabelFilter(labels map[string]string) {
+	b.CmdBuff().SetText(toLabelsStr(labels), "")
+	b.GetModel().SetLabelFilter(toLabelsStr(labels))
 }
 
 // BufferChanged indicates the buffer was changed.
@@ -260,7 +270,7 @@ func (b *Browser) viewCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	v := NewLiveView(b.app, "YAML", model.NewYAML(b.GVR(), path))
+	v := NewLiveView(b.app, yamlAction, model.NewYAML(b.GVR(), path))
 	if err := v.app.inject(v, false); err != nil {
 		v.app.Flash().Err(err)
 	}
@@ -278,7 +288,9 @@ func (b *Browser) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (b *Browser) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !b.CmdBuff().InCmdMode() {
 		b.CmdBuff().ClearText(false)
+		b.GetModel().SetLabelFilter("")
 		return b.App().PrevCmd(evt)
+
 	}
 
 	b.CmdBuff().Reset()
@@ -315,7 +327,7 @@ func (b *Browser) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if b.enterFn != nil {
 		f = b.enterFn
 	}
-	f(b.app, b.GetModel(), b.GVR().String(), path)
+	f(b.app, b.GetModel(), b.GVR(), path)
 
 	return nil
 }
@@ -355,7 +367,7 @@ func (b *Browser) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path == "" {
 		return evt
 	}
-	describeResource(b.app, b.GetModel(), b.GVR().String(), path)
+	describeResource(b.app, b.GetModel(), b.GVR(), path)
 
 	return nil
 }
@@ -365,33 +377,42 @@ func (b *Browser) editCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path == "" {
 		return evt
 	}
-	ns, n := client.Namespaced(path)
-	if client.IsClusterScoped(ns) {
-		ns = client.AllNamespaces
-	}
-	if b.GVR().String() == "v1/namespaces" {
-		ns = n
-	}
-	if ok, err := b.app.Conn().CanI(ns, b.GVR().String(), []string{"patch"}); !ok || err != nil {
-		b.App().Flash().Err(fmt.Errorf("Current user can't edit resource %s", b.GVR()))
-		return nil
-	}
 
 	b.Stop()
 	defer b.Start()
-	{
-		args := make([]string, 0, 10)
-		args = append(args, "edit")
-		args = append(args, b.GVR().FQN(n))
-		if ns != client.AllNamespaces {
-			args = append(args, "-n", ns)
-		}
-		if !runK(b.app, shellOpts{clear: true, args: args}) {
-			b.app.Flash().Err(errors.New("Edit exec failed"))
-		}
+	if err := editRes(b.app, b.GVR(), path); err != nil {
+		b.App().Flash().Err(err)
 	}
 
-	return evt
+	return nil
+}
+
+func editRes(app *App, gvr client.GVR, path string) error {
+	if path == "" {
+		return fmt.Errorf("nothing selected %q", path)
+	}
+	ns, n := client.Namespaced(path)
+	if client.IsClusterScoped(ns) {
+		ns = client.BlankNamespace
+	}
+	if gvr.String() == "v1/namespaces" {
+		ns = n
+	}
+	if ok, err := app.Conn().CanI(ns, gvr.String(), []string{"patch"}); !ok || err != nil {
+		return fmt.Errorf("current user can't edit resource %s", gvr)
+	}
+
+	args := make([]string, 0, 10)
+	args = append(args, "edit")
+	args = append(args, gvr.FQN(n))
+	if ns != client.BlankNamespace {
+		args = append(args, "-n", ns)
+	}
+	if err := runK(app, shellOpts{clear: true, args: args}); err != nil {
+		app.Flash().Errf("Edit command failed: %s", err)
+	}
+
+	return nil
 }
 
 func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -402,7 +423,7 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	ns := b.namespaces[i]
 
-	auth, err := b.App().factory.Client().CanI(ns, b.GVR().String(), client.MonitorAccess)
+	auth, err := b.App().factory.Client().CanI(ns, b.GVR().String(), client.ListAccess)
 	if !auth {
 		if err == nil {
 			err = fmt.Errorf("current user can't access namespace %s", ns)
@@ -423,7 +444,7 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	b.app.Flash().Infof("Viewing namespace `%s`...", ns)
 	b.refresh()
 	b.UpdateTitle()
-	b.SelectRow(1, true)
+	b.SelectRow(1, 0, true)
 	b.app.CmdBuff().Reset()
 	if err := b.app.Config.SetActiveNamespace(b.GetModel().GetNamespace()); err != nil {
 		log.Error().Err(err).Msg("Config save NS failed!")
@@ -451,14 +472,13 @@ func (b *Browser) setNamespace(ns string) {
 
 func (b *Browser) defaultContext() context.Context {
 	ctx := context.WithValue(context.Background(), internal.KeyFactory, b.app.factory)
-	ctx = context.WithValue(ctx, internal.KeyGVR, b.GVR().String())
-	if b.Path != "" {
-		ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
-	}
+	ctx = context.WithValue(ctx, internal.KeyGVR, b.GVR())
+	ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
 	if ui.IsLabelSelector(b.CmdBuff().GetText()) {
 		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(b.CmdBuff().GetText()))
 	}
 	ctx = context.WithValue(ctx, internal.KeyNamespace, client.CleanseNamespace(b.App().Config.ActiveNamespace()))
+	ctx = context.WithValue(ctx, internal.KeyWithMetrics, b.app.factory.Client().HasMetrics())
 
 	return ctx
 }
@@ -486,7 +506,7 @@ func (b *Browser) refreshActions() {
 	}
 
 	if !dao.IsK9sMeta(b.meta) {
-		aa[ui.KeyY] = ui.NewKeyAction("YAML", b.viewCmd, true)
+		aa[ui.KeyY] = ui.NewKeyAction(yamlAction, b.viewCmd, true)
 		aa[ui.KeyD] = ui.NewKeyAction("Describe", b.describeCmd, true)
 	}
 
@@ -503,7 +523,7 @@ func (b *Browser) namespaceActions(aa ui.KeyActions) {
 	if !b.meta.Namespaced || b.GetTable().Path != "" {
 		return
 	}
-	b.namespaces = make(map[int]string, config.MaxFavoritesNS)
+	b.namespaces = make(map[int]string, data.MaxFavoritesNS)
 	aa[ui.Key0] = ui.NewKeyAction(client.NamespaceAll, b.switchNamespaceCmd, true)
 	b.namespaces[0] = client.NamespaceAll
 	index := 1
@@ -543,7 +563,7 @@ func (b *Browser) simpleDelete(selections []string, msg string) {
 }
 
 func (b *Browser) resourceDelete(selections []string, msg string) {
-	dialog.ShowDelete(b.app.Styles.Dialog(), b.app.Content.Pages, msg, func(propagation *metav1.DeletionPropagation, force bool) {
+	okFn := func(propagation *metav1.DeletionPropagation, force bool) {
 		b.ShowDeleted()
 		if len(selections) > 1 {
 			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.GVR())
@@ -563,5 +583,6 @@ func (b *Browser) resourceDelete(selections []string, msg string) {
 			b.GetTable().DeleteMark(sel)
 		}
 		b.refresh()
-	}, func() {})
+	}
+	dialog.ShowDelete(b.app.Styles.Dialog(), b.app.Content.Pages, msg, okFn, func() {})
 }

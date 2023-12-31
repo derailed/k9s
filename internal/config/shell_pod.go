@@ -1,7 +1,11 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package config
 
 import (
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/config/data"
 	v1 "k8s.io/api/core/v1"
 )
 
@@ -12,12 +16,15 @@ type Limits map[v1.ResourceName]string
 
 // ShellPod represents k9s shell configuration.
 type ShellPod struct {
-	Image     string            `json:"image"`
-	Command   []string          `json:"command,omitempty"`
-	Args      []string          `json:"args,omitempty"`
-	Namespace string            `json:"namespace"`
-	Limits    Limits            `json:"resources,omitempty"`
-	Labels    map[string]string `json:"labels,omitempty"`
+	Image            string                    `yaml:"image"`
+	Command          []string                  `yaml:"command,omitempty"`
+	Args             []string                  `yaml:"args,omitempty"`
+	Namespace        string                    `yaml:"namespace"`
+	Limits           Limits                    `yaml:"limits,omitempty"`
+	Labels           map[string]string         `yaml:"labels,omitempty"`
+	ImagePullSecrets []v1.LocalObjectReference `yaml:"imagePullSecrets,omitempty"`
+	ImagePullPolicy  v1.PullPolicy             `yaml:"imagePullPolicy,omitempty"`
+	TTY              bool                      `yaml:"tty,omitempty"`
 }
 
 // NewShellPod returns a new instance.
@@ -30,7 +37,7 @@ func NewShellPod() *ShellPod {
 }
 
 // Validate validates the configuration.
-func (s *ShellPod) Validate(client.Connection, KubeSettings) {
+func (s *ShellPod) Validate(client.Connection, data.KubeSettings) {
 	if s.Image == "" {
 		s.Image = defaultDockerShellImage
 	}

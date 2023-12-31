@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package render
 
 import (
@@ -23,9 +26,10 @@ func (r ReplicaSet) ColorerFunc() ColorerFunc {
 
 // Header returns a header row.
 func (ReplicaSet) Header(ns string) Header {
-	return Header{
+	h := Header{
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "VS", VS: true},
 		HeaderColumn{Name: "DESIRED", Align: tview.AlignRight},
 		HeaderColumn{Name: "CURRENT", Align: tview.AlignRight},
 		HeaderColumn{Name: "READY", Align: tview.AlignRight},
@@ -33,13 +37,15 @@ func (ReplicaSet) Header(ns string) Header {
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true},
 	}
+
+	return h
 }
 
 // Render renders a K8s resource to screen.
 func (r ReplicaSet) Render(o interface{}, ns string, row *Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
-		return fmt.Errorf("Expected ReplicaSet, but got %T", o)
+		return fmt.Errorf("expected ReplicaSet, but got %T", o)
 	}
 	var rs appsv1.ReplicaSet
 	err := runtime.DefaultUnstructuredConverter.FromUnstructured(raw.Object, &rs)
@@ -51,12 +57,13 @@ func (r ReplicaSet) Render(o interface{}, ns string, row *Row) error {
 	row.Fields = Fields{
 		rs.Namespace,
 		rs.Name,
+		computeVulScore(rs.ObjectMeta, &rs.Spec.Template.Spec),
 		strconv.Itoa(int(*rs.Spec.Replicas)),
 		strconv.Itoa(int(rs.Status.Replicas)),
 		strconv.Itoa(int(rs.Status.ReadyReplicas)),
 		mapToStr(rs.Labels),
-		asStatus(r.diagnose(rs)),
-		toAge(rs.GetCreationTimestamp()),
+		AsStatus(r.diagnose(rs)),
+		ToAge(rs.GetCreationTimestamp()),
 	}
 
 	return nil

@@ -1,14 +1,22 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package model
 
 import (
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/render/helm"
 	"github.com/derailed/k9s/internal/xray"
 )
 
 // Registry tracks resources metadata.
 // BOZO!! Break up deps and merge into single registrar.
 var Registry = map[string]ResourceMeta{
+	"workloads": {
+		DAO:      &dao.Workload{},
+		Renderer: &render.Workload{},
+	},
 	// Custom...
 	"references": {
 		DAO:      &dao.Reference{},
@@ -22,18 +30,21 @@ var Registry = map[string]ResourceMeta{
 		DAO: &dao.Pulse{},
 	},
 	"helm": {
-		DAO:      &dao.Helm{},
-		Renderer: &render.Helm{},
+		DAO:      &dao.HelmChart{},
+		Renderer: &helm.Chart{},
 	},
-	// BOZO!! revamp with latest...
-	// "openfaas": {
-	// 	DAO:      &dao.OpenFaas{},
-	// 	Renderer: &render.OpenFaas{},
-	// },
+	"helm-history": {
+		DAO:      &dao.HelmHistory{},
+		Renderer: &helm.History{},
+	},
 	"containers": {
 		DAO:          &dao.Container{},
 		Renderer:     &render.Container{},
 		TreeRenderer: &xray.Container{},
+	},
+	"scans": {
+		DAO:      &dao.ImageScan{},
+		Renderer: &render.ImageScan{},
 	},
 	"contexts": {
 		DAO:      &dao.Context{},
