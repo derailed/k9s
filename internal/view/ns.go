@@ -108,10 +108,9 @@ func (n *Namespace) decorate(td *render.TableData) {
 
 func (n *Namespace) deleteNamespaceKeyBindings(evt *tcell.EventKey) *tcell.EventKey {
 	app := n.App()
-	cfg := app.Config
-	cl := cfg.K9s.ActiveCluster()
+	cl, err := app.Config.K9s.ActiveContext()
 
-	if cl == nil {
+	if err != nil {
 		return evt
 	}
 

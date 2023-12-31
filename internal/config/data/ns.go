@@ -44,13 +44,8 @@ func (n *Namespace) Validate(c client.Connection, ks KubeSettings) {
 		return
 	}
 	for _, ns := range n.Favorites {
-<<<<<<< HEAD:internal/config/ns.go
-		if ns != client.NamespaceAll && !InList(nn, ns) {
-			log.Debug().Msgf("[Config] Invalid favorite found '%s' - %t", ns, n.isAllNamespaces())
-=======
 		if !c.IsValidNamespace(ns) {
 			log.Debug().Msgf("[Namespace] Invalid favorite found '%s' - %t", ns, n.isAllNamespaces())
->>>>>>> master:internal/config/data/ns.go
 			n.rmFavNS(ns)
 		}
 	}
