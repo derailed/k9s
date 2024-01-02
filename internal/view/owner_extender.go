@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -50,8 +49,8 @@ func (o *OwnerExtender) ownerCmd(prev bool) func(evt *tcell.EventKey) *tcell.Eve
 	}
 }
 
-func (o *OwnerExtender) showOwner(gvr client.GVR, path string, prev bool, evt *tcell.EventKey) {
-	var ownerReferences []v1.OwnerReference
+func (o *OwnerExtender) showOwner(gvr client.GVR, path string, _ bool, _ *tcell.EventKey) {
+	var ownerRefs []v1.OwnerReference
 
 	r, err := o.App().factory.Get(gvr.String(), path, true, labels.Everything())
 	if err != nil {
@@ -65,35 +64,24 @@ func (o *OwnerExtender) showOwner(gvr client.GVR, path string, prev bool, evt *t
 		return
 	}
 
-	ownerReferences, err = o.extractOwnerReference(u)
+	ownerRefs, err = extractOwnerRefs(u)
 	if err != nil {
 		o.App().Flash().Err(err)
 		return
 	}
 
-	var owner model.Component
-	for _, ownerReference := range ownerReferences {
-		ownerPath := u.GetNamespace() + "/" + ownerReference.Name
-
-		switch ownerReference.Kind {
-		case "ReplicaSet":
-			rs := NewReplicaSet(client.NewGVR(ownerReference.APIVersion + "/replicasets"))
-			rs.SetInstance(ownerPath)
-			owner = rs
-		case "DaemonSet":
-			ds := NewDaemonSet(client.NewGVR(ownerReference.APIVersion + "/daemonsets"))
-			ds.SetInstance(ownerPath)
-			owner = ds
-		case "Deployment":
-			d := NewDeploy(client.NewGVR(ownerReference.APIVersion + "/deployments"))
-			d.SetInstance(ownerPath)
-			owner = d
+	var owner ResourceViewer
+	for _, ownerRef := range ownerRefs {
+		gvrString, newViewerFunc, err := getKindInfo(ownerRef)
+		if err != nil {
+			o.App().Flash().Err(err)
+			return
 		}
-	}
 
-	if owner == nil {
-		o.App().Flash().Err(errors.New(fmt.Sprintf("unsupported owner kind")))
-		return
+		owner = newViewerFunc(client.NewGVR(gvrString))
+
+		ownerPath := u.GetNamespace() + "/" + ownerRef.Name
+		owner.SetInstance(ownerPath)
 	}
 
 	if err := o.App().inject(owner, false); err != nil {
@@ -103,9 +91,9 @@ func (o *OwnerExtender) showOwner(gvr client.GVR, path string, prev bool, evt *t
 	return
 }
 
-// extractOwnerReference extracts the OwnerReferences from an unstructured object
-func (o *OwnerExtender) extractOwnerReference(obj *unstructured.Unstructured) ([]v1.OwnerReference, error) {
-	ownerRef, found, err := unstructured.NestedSlice(obj.Object, "metadata", "ownerReferences")
+// extractOwnerRefs extracts the OwnerReferences from an unstructured object
+func extractOwnerRefs(obj *unstructured.Unstructured) ([]v1.OwnerReference, error) {
+	ownerRefInterfaces, found, err := unstructured.NestedSlice(obj.Object, "metadata", "ownerReferences")
 	if err != nil {
 		return nil, err
 	}
@@ -113,21 +101,56 @@ func (o *OwnerExtender) extractOwnerReference(obj *unstructured.Unstructured) ([
 		return nil, nil
 	}
 
-	var ownerReferences []v1.OwnerReference
-	for _, ref := range ownerRef {
-		ownerReferenceMap, ok := ref.(map[string]interface{})
+	var ownerRefs []v1.OwnerReference
+	for _, refInterface := range ownerRefInterfaces {
+		refMap, ok := refInterface.(map[string]interface{})
 		if !ok {
 			return nil, errors.New("could not extract ownerReference")
 		}
 
-		ownerReference := v1.OwnerReference{}
-		err := runtime.DefaultUnstructuredConverter.FromUnstructured(ownerReferenceMap, &ownerReference)
+		var ref v1.OwnerReference
+		err := runtime.DefaultUnstructuredConverter.FromUnstructured(refMap, &ref)
 		if err != nil {
 			return nil, err
 		}
 
-		ownerReferences = append(ownerReferences, ownerReference)
+		ownerRefs = append(ownerRefs, ref)
 	}
 
-	return ownerReferences, nil
+	return ownerRefs, nil
+}
+
+func getKindInfo(ownerRef v1.OwnerReference) (string, func(client.GVR) ResourceViewer, error) {
+	var (
+		gvrStrings = map[string]string{
+			"ReplicaSet": "apps/v1/replicasets",
+			"DaemonSet":  "apps/v1/daemonsets",
+			"Deployment": "apps/v1/deployments",
+			"Jobs":       "apps/v1/jobs",
+			"CronJobs":   "apps/v1/cronjobs",
+		}
+		newViewerFuncs = map[string]func(client.GVR) ResourceViewer{
+			"ReplicaSet": NewReplicaSet,
+			"DaemonSet":  NewDaemonSet,
+			"Deployment": NewDeploy,
+			"Jobs":       NewJob,
+			"CronJobs":   NewCronJob,
+		}
+	)
+
+	if ownerRef.APIVersion != "apps/v1" {
+		return "", nil, errors.New(fmt.Sprintf("unsupported ownerReference API version: %s", ownerRef.APIVersion))
+	}
+
+	gvrString, found := gvrStrings[ownerRef.Kind]
+	if !found {
+		return "", nil, errors.New(fmt.Sprintf("unsupported ownerReference kind: %s", ownerRef.Kind))
+	}
+
+	newViewerFunc, found := newViewerFuncs[ownerRef.Kind]
+	if !found {
+		return "", nil, errors.New(fmt.Sprintf("unsupported ownerReference kind: %s", ownerRef.Kind))
+	}
+
+	return gvrString, newViewerFunc, nil
 }
