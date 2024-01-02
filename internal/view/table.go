@@ -5,6 +5,8 @@ package view
 
 import (
 	"context"
+	"github.com/derailed/k9s/internal/render"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -173,7 +175,7 @@ func (t *Table) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path, err := saveTable(t.app.Config.K9s.ActiveScreenDumpsDir(), t.GVR().R(), t.Path, t.GetFilteredData()); err != nil {
 		t.app.Flash().Err(err)
 	} else {
-		t.app.Flash().Infof("File %s saved successfully!", path)
+		t.app.Flash().Infof("File saved successfully: %q", render.Truncate(filepath.Base(path), 50))
 	}
 
 	return nil

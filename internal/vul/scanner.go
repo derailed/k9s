@@ -67,6 +67,7 @@ func (s *imageScanner) GetScan(img string) (*Scan, bool) {
 func (s *imageScanner) setScan(img string, sc *Scan) {
 	s.mx.Lock()
 	defer s.mx.Unlock()
+
 	s.scans[img] = sc
 }
 

@@ -151,6 +151,7 @@ func (c *Configurator) RefreshStyles(context string) {
 		}
 	}
 	if skin == "" {
+		log.Debug().Msgf("No custom skin found. Loading default")
 		c.updateStyles("")
 		return
 	}
@@ -161,7 +162,9 @@ func (c *Configurator) RefreshStyles(context string) {
 		} else {
 			log.Error().Msgf("Failed to parse skin file -- %s: %s.", skinFile, err)
 		}
+		c.updateStyles("")
 	} else {
+		log.Debug().Msgf("Loading skin file: %q", skinFile)
 		c.updateStyles(skinFile)
 	}
 }
