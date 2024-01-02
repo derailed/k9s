@@ -224,18 +224,33 @@ func TestNa(t *testing.T) {
 }
 
 func TestTruncate(t *testing.T) {
-	uu := []struct {
-		s string
-		l int
-		e string
+	uu := map[string]struct {
+		data string
+		size int
+		e    string
 	}{
-		{"fred", 3, "fr…"},
-		{"fred", 2, "f…"},
-		{"fred", 10, "fred"},
+		"same": {
+			data: "fred",
+			size: 4,
+			e:    "fred",
+		},
+		"small": {
+			data: "fred",
+			size: 10,
+			e:    "fred",
+		},
+		"larger": {
+			data: "fred",
+			size: 3,
+			e:    "fr…",
+		},
 	}
 
-	for _, u := range uu {
-		assert.Equal(t, u.e, Truncate(u.s, u.l))
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, Truncate(u.data, u.size))
+		})
 	}
 }
 

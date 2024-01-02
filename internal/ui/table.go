@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/vul"
@@ -407,14 +408,13 @@ func (t *Table) filtered(data *render.TableData) *render.TableData {
 	}
 
 	q := t.cmdBuff.GetText()
-	if IsFuzzySelector(q) {
-		return fuzzyFilter(q[2:], filtered)
+	if f, ok := dao.HasFuzzySelector(q); ok {
+		return fuzzyFilter(f, filtered)
 	}
 
-	filtered, err := rxFilter(q, IsInverseSelector(q), filtered)
+	filtered, err := rxFilter(q, dao.IsInverseSelector(q), filtered)
 	if err != nil {
-		log.Error().Err(errors.New("Invalid filter expression")).Msg("Regexp")
-		// t.cmdBuff.ClearText(true)
+		log.Error().Err(errors.New("invalid filter expression")).Msg("Regexp")
 	}
 
 	return filtered
@@ -471,9 +471,9 @@ func (t *Table) styleTitle() string {
 
 	buff := t.cmdBuff.GetText()
 	if IsLabelSelector(buff) {
-		buff = truncate(TrimLabelSelector(buff), maxTruncate)
+		buff = render.Truncate(TrimLabelSelector(buff), maxTruncate)
 	} else if l := t.GetModel().GetLabelFilter(); l != "" {
-		buff = truncate(l, maxTruncate)
+		buff = render.Truncate(l, maxTruncate)
 	}
 
 	if buff == "" {
