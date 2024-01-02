@@ -6,11 +6,14 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
+	"github.com/derailed/tview"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime"
 )
+
+const selectOwnerDialogKey = "owner"
 
 // OwnerExtender adds log actions to a given viewer.
 type OwnerExtender struct {
@@ -70,25 +73,40 @@ func (o *OwnerExtender) showOwner(gvr client.GVR, path string, _ bool, _ *tcell.
 		return
 	}
 
-	var owner ResourceViewer
-	for _, ownerRef := range ownerRefs {
-		gvrString, newViewerFunc, err := getKindInfo(ownerRef)
-		if err != nil {
-			o.App().Flash().Err(err)
-			return
-		}
-
-		owner = newViewerFunc(client.NewGVR(gvrString))
-
-		ownerPath := u.GetNamespace() + "/" + ownerRef.Name
-		owner.SetInstance(ownerPath)
+	if len(ownerRefs) == 0 {
+		o.App().Flash().Err(errors.New("resource does not have an owner"))
+		return
 	}
+
+	namespace := u.GetNamespace()
+
+	if len(ownerRefs) == 1 {
+		o.goToOwner(ownerRefs[0], namespace)
+		return
+	}
+
+	o.showSelectOwnerDialog(ownerRefs, namespace)
+	return
+}
+
+func (o *OwnerExtender) goToOwner(ownerRef v1.OwnerReference, namespace string) bool {
+	var owner ResourceViewer
+
+	gvrString, newViewerFunc, err := getKindInfo(ownerRef)
+	if err != nil {
+		o.App().Flash().Err(err)
+		return true
+	}
+
+	owner = newViewerFunc(client.NewGVR(gvrString))
+
+	ownerPath := namespace + "/" + ownerRef.Name
+	owner.SetInstance(ownerPath)
 
 	if err := o.App().inject(owner, false); err != nil {
 		o.App().Flash().Err(err)
 	}
-
-	return
+	return false
 }
 
 // extractOwnerRefs extracts the OwnerReferences from an unstructured object
@@ -153,4 +171,63 @@ func getKindInfo(ownerRef v1.OwnerReference) (string, func(client.GVR) ResourceV
 	}
 
 	return gvrString, newViewerFunc, nil
+}
+
+func (o *OwnerExtender) showSelectOwnerDialog(refs []v1.OwnerReference, namespace string) {
+	form, err := o.makeSelectOwnerForm(refs, namespace)
+	if err != nil {
+		o.App().Flash().Err(err)
+		return
+	}
+	modal := tview.NewModalForm("<Owner>", form)
+	msg := "Select owner"
+	modal.SetText(msg)
+	modal.SetDoneFunc(func(int, string) {
+		o.dismissDialog()
+	})
+	o.App().Content.AddPage(selectOwnerDialogKey, modal, false, false)
+	o.App().Content.ShowPage(selectOwnerDialogKey)
+}
+
+func (o *OwnerExtender) makeSelectOwnerForm(refs []v1.OwnerReference, namespace string) (*tview.Form, error) {
+	f := o.makeStyledForm()
+
+	var ownerLabels []string
+	for _, ref := range refs {
+		ownerLabels = append(ownerLabels, fmt.Sprintf("<%s> %s", ref.Kind, ref.Name))
+	}
+
+	var selectedRef v1.OwnerReference
+
+	f.AddDropDown("Owner:", ownerLabels, 0, func(option string, optionIndex int) {
+		selectedRef = refs[optionIndex]
+		return
+	})
+
+	f.AddButton("OK", func() {
+		defer o.dismissDialog()
+		o.goToOwner(selectedRef, namespace)
+	})
+
+	f.AddButton("Cancel", func() {
+		o.dismissDialog()
+	})
+
+	return f, nil
+}
+
+func (o *OwnerExtender) makeStyledForm() *tview.Form {
+	f := tview.NewForm()
+	f.SetItemPadding(0)
+	f.SetButtonsAlign(tview.AlignCenter).
+		SetButtonBackgroundColor(tview.Styles.PrimitiveBackgroundColor).
+		SetButtonTextColor(tview.Styles.PrimaryTextColor).
+		SetLabelColor(tcell.ColorAqua).
+		SetFieldTextColor(tcell.ColorOrange)
+
+	return f
+}
+
+func (o *OwnerExtender) dismissDialog() {
+	o.App().Content.RemovePage(selectOwnerDialogKey)
 }
