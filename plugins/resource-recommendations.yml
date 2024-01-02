@@ -1,6 +1,8 @@
-plugin:
-# Recommends requests and limits for CPU and memory
-# Open cluster in deployments/daemonsets/statefulsets view, then:
+plugins:
+# Author: Daniel Rubin
+# Get recommendations for CPU/Memory requests and limits using Robusta KRR
+# Requires Prometheus in the Cluster and Robusta KRR (https://github.com/robusta-dev/krr) on your system
+# Open K9s in deployments/daemonsets/statefulsets view, then:
 # Shift-K to get recommendations
   krr:
     shortCut: Shift-K
