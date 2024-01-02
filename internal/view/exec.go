@@ -16,6 +16,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/derailed/k9s/internal/render"
+
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
@@ -75,7 +77,7 @@ func runK(a *App, opts shellOpts) error {
 	}
 	opts.binary = bin
 
-	suspended, errChan := run(a, opts)
+	suspended, errChan, _ := run(a, opts)
 	if !suspended {
 		return fmt.Errorf("unable to run command")
 	}
@@ -87,28 +89,29 @@ func runK(a *App, opts shellOpts) error {
 	return errs
 }
 
-func run(a *App, opts shellOpts) (bool, chan error) {
+func run(a *App, opts shellOpts) (bool, chan error, chan string) {
 	errChan := make(chan error, 1)
+	statusChan := make(chan string, 1)
 
 	if opts.background {
-		if err := execute(opts); err != nil {
+		if err := execute(opts, statusChan); err != nil {
 			errChan <- err
 			a.Flash().Errf("Exec failed %q: %s", opts, err)
 		}
 		close(errChan)
-		return true, errChan
+		return true, errChan, statusChan
 	}
 
 	a.Halt()
 	defer a.Resume()
 
 	return a.Suspend(func() {
-		if err := execute(opts); err != nil {
+		if err := execute(opts, statusChan); err != nil {
 			errChan <- err
 			a.Flash().Errf("Exec failed %q: %s", opts, err)
 		}
 		close(errChan)
-	}), errChan
+	}), errChan, statusChan
 }
 
 func edit(a *App, opts shellOpts) bool {
@@ -122,18 +125,20 @@ func edit(a *App, opts shellOpts) bool {
 	}
 	opts.binary, opts.background = bin, false
 
-	suspended, errChan := run(a, opts)
+	suspended, errChan, _ := run(a, opts)
 	if !suspended {
 		a.Flash().Errf("edit command failed")
 	}
+	status := true
 	for e := range errChan {
 		a.Flash().Err(e)
-		return false
+		status = false
 	}
-	return true
+
+	return status
 }
 
-func execute(opts shellOpts) error {
+func execute(opts shellOpts, statusChan chan<- string) error {
 	if opts.clear {
 		clearScreen()
 	}
@@ -174,7 +179,7 @@ func execute(opts shellOpts) error {
 	}
 
 	var o, e bytes.Buffer
-	err := pipe(ctx, opts, &o, &e, cmds...)
+	err := pipe(ctx, opts, statusChan, &o, &e, cmds...)
 	if err != nil {
 		log.Err(err).Msgf("Command failed")
 		return errors.Join(err, fmt.Errorf("%s", e.String()))
@@ -458,7 +463,7 @@ func asResource(r config.Limits) v1.ResourceRequirements {
 	}
 }
 
-func pipe(_ context.Context, opts shellOpts, w, e io.Writer, cmds ...*exec.Cmd) error {
+func pipe(_ context.Context, opts shellOpts, statusChan chan<- string, w, e io.Writer, cmds ...*exec.Cmd) error {
 	if len(cmds) == 0 {
 		return nil
 	}
@@ -466,8 +471,17 @@ func pipe(_ context.Context, opts shellOpts, w, e io.Writer, cmds ...*exec.Cmd) 
 	if len(cmds) == 1 {
 		cmd := cmds[0]
 		if opts.background {
-			cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, w, e
-			return cmd.Run()
+			go func() {
+				cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, w, e
+				if err := cmd.Run(); err != nil {
+					log.Error().Err(err).Msgf("Command failed: %s", err)
+				} else {
+					statusChan <- fmt.Sprintf("Command completed successfully: %q", render.Truncate(cmd.String(), 20))
+					log.Info().Msgf("Command completed successfully: %q", cmd.String())
+				}
+				close(statusChan)
+			}()
+			return nil
 		}
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 		_, _ = cmd.Stdout.Write([]byte(opts.banner))
@@ -475,6 +489,10 @@ func pipe(_ context.Context, opts shellOpts, w, e io.Writer, cmds ...*exec.Cmd) 
 		log.Debug().Msgf("Running Start")
 		err := cmd.Run()
 		log.Debug().Msgf("Running Done: %s", err)
+		if err == nil {
+			statusChan <- fmt.Sprintf("Command completed successfully: %q", cmd.String())
+		}
+		close(statusChan)
 
 		return err
 	}

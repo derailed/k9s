@@ -142,9 +142,9 @@ func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
 				pipes:      p.Pipes,
 				args:       args,
 			}
-			suspend, errChan := run(r.App(), opts)
+			suspend, errChan, statusChan := run(r.App(), opts)
 			if !suspend {
-				r.App().Flash().Info("Plugin command failed!")
+				r.App().Flash().Infof("Plugin command failed: %q", p.Description)
 				return
 			}
 			var errs error
@@ -155,7 +155,12 @@ func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
 				r.App().cowCmd(errs.Error())
 				return
 			}
-			r.App().Flash().Info("Plugin command launched successfully!")
+			go func() {
+				for st := range statusChan {
+					r.App().Flash().Infof("Plugin command launched successfully: %q", st)
+				}
+			}()
+
 		}
 		if p.Confirm {
 			msg := fmt.Sprintf("Run?\n%s %s", p.Command, strings.Join(args, " "))
