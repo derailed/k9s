@@ -30,8 +30,9 @@ func newArgs(p *Interpreter, aa []string) args {
 			args[contextKey] = a[1:]
 
 		case strings.Index(a, fuzzyFlag) == 0:
-			i++
-			args[filterKey] = strings.ToLower(strings.TrimSpace(aa[i]))
+			if i++; i < len(aa) {
+				args[filterKey] = strings.ToLower(strings.TrimSpace(aa[i]))
+			}
 
 		case strings.Index(a, filterFlag) == 0:
 			args[filterKey] = strings.ToLower(a[1:])
