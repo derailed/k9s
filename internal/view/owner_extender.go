@@ -33,11 +33,11 @@ func NewOwnerExtender(v ResourceViewer) ResourceViewer {
 // BindKeys injects new menu actions.
 func (o *OwnerExtender) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		ui.KeyO: ui.NewKeyAction("Show Owner", o.ownerCmd(false), true),
+		ui.KeyO: ui.NewKeyAction("Show Owner", o.ownerCmd(), true),
 	})
 }
 
-func (o *OwnerExtender) ownerCmd(prev bool) func(evt *tcell.EventKey) *tcell.EventKey {
+func (o *OwnerExtender) ownerCmd() func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
 		path := o.GetTable().GetSelectedItem()
 		if path == "" {
@@ -46,47 +46,47 @@ func (o *OwnerExtender) ownerCmd(prev bool) func(evt *tcell.EventKey) *tcell.Eve
 		if !isResourcePath(path) {
 			path = o.GetTable().Path
 		}
-		o.showOwner(o.GetTable().GVR(), path, prev, evt)
+
+		err := o.showOwner(o.GetTable().GVR(), path)
+		if err != nil {
+			o.App().Flash().Err(err)
+		}
 
 		return nil
 	}
 }
 
-func (o *OwnerExtender) showOwner(gvr client.GVR, path string, _ bool, _ *tcell.EventKey) {
+func (o *OwnerExtender) showOwner(gvr client.GVR, path string) error {
 	var ownerRefs []v1.OwnerReference
 
 	r, err := o.App().factory.Get(gvr.String(), path, true, labels.Everything())
 	if err != nil {
-		o.App().Flash().Err(err)
-		return
+		return err
 	}
 
 	u, ok := r.(*unstructured.Unstructured)
 	if !ok {
-		o.App().Flash().Err(errors.New("unable to parse resource"))
-		return
+		return errors.New("unable to parse resource")
 	}
 
 	ownerRefs, err = extractOwnerRefs(u)
 	if err != nil {
-		o.App().Flash().Err(err)
-		return
+		return err
 	}
 
 	if len(ownerRefs) == 0 {
-		o.App().Flash().Err(errors.New("resource does not have an owner"))
-		return
+		return errors.New("resource does not have an owner")
 	}
 
 	namespace := u.GetNamespace()
 
 	if len(ownerRefs) == 1 {
 		o.goToOwner(ownerRefs[0], namespace)
-		return
+		return nil
 	}
 
 	o.showSelectOwnerDialog(ownerRefs, namespace)
-	return
+	return nil
 }
 
 func (o *OwnerExtender) goToOwner(ownerRef v1.OwnerReference, namespace string) bool {
