@@ -81,21 +81,18 @@ func (o *OwnerExtender) showOwner(gvr client.GVR, path string) error {
 	namespace := u.GetNamespace()
 
 	if len(ownerRefs) == 1 {
-		o.goToOwner(ownerRefs[0], namespace)
-		return nil
+		return o.goToOwner(ownerRefs[0], namespace)
 	}
 
-	o.showSelectOwnerDialog(ownerRefs, namespace)
-	return nil
+	return o.showSelectOwnerDialog(ownerRefs, namespace)
 }
 
-func (o *OwnerExtender) goToOwner(ownerRef v1.OwnerReference, namespace string) bool {
+func (o *OwnerExtender) goToOwner(ownerRef v1.OwnerReference, namespace string) error {
 	var owner ResourceViewer
 
 	gvrString, newViewerFunc, err := getKindInfo(ownerRef)
 	if err != nil {
-		o.App().Flash().Err(err)
-		return true
+		return err
 	}
 
 	owner = newViewerFunc(client.NewGVR(gvrString))
@@ -104,9 +101,10 @@ func (o *OwnerExtender) goToOwner(ownerRef v1.OwnerReference, namespace string) 
 	owner.SetInstance(ownerPath)
 
 	if err := o.App().inject(owner, false); err != nil {
-		o.App().Flash().Err(err)
+		return err
 	}
-	return false
+
+	return nil
 }
 
 // extractOwnerRefs extracts the OwnerReferences from an unstructured object
@@ -173,11 +171,10 @@ func getKindInfo(ownerRef v1.OwnerReference) (string, func(client.GVR) ResourceV
 	return gvrString, newViewerFunc, nil
 }
 
-func (o *OwnerExtender) showSelectOwnerDialog(refs []v1.OwnerReference, namespace string) {
+func (o *OwnerExtender) showSelectOwnerDialog(refs []v1.OwnerReference, namespace string) error {
 	form, err := o.makeSelectOwnerForm(refs, namespace)
 	if err != nil {
-		o.App().Flash().Err(err)
-		return
+		return err
 	}
 	modal := tview.NewModalForm("<Owner>", form)
 	msg := "Select owner"
@@ -187,6 +184,8 @@ func (o *OwnerExtender) showSelectOwnerDialog(refs []v1.OwnerReference, namespac
 	})
 	o.App().Content.AddPage(selectOwnerDialogKey, modal, false, false)
 	o.App().Content.ShowPage(selectOwnerDialogKey)
+
+	return nil
 }
 
 func (o *OwnerExtender) makeSelectOwnerForm(refs []v1.OwnerReference, namespace string) (*tview.Form, error) {
@@ -206,7 +205,10 @@ func (o *OwnerExtender) makeSelectOwnerForm(refs []v1.OwnerReference, namespace 
 
 	f.AddButton("OK", func() {
 		defer o.dismissDialog()
-		o.goToOwner(selectedRef, namespace)
+		err := o.goToOwner(selectedRef, namespace)
+		if err != nil {
+			o.App().Flash().Err(err)
+		}
 	})
 
 	f.AddButton("Cancel", func() {
