@@ -19,6 +19,7 @@ type HotKey struct {
 	ShortCut    string `yaml:"shortCut"`
 	Description string `yaml:"description"`
 	Command     string `yaml:"command"`
+	Navigable   bool   `yaml:"navigable"`
 }
 
 // NewHotKeys returns a new plugin.
