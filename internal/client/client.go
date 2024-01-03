@@ -352,7 +352,7 @@ func (a *APIClient) Config() *Config {
 
 // HasMetrics checks if the cluster supports metrics.
 func (a *APIClient) HasMetrics() bool {
-	return a.supportsMetricsResources() != nil
+	return a.supportsMetricsResources() == nil
 }
 
 // DialLogs returns a handle to api server for logs.
