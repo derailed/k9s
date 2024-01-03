@@ -111,7 +111,7 @@ k9s:
       indicator:
         fgColor: *red
         bgColor: *blue
-        toggleOnColor: *green
+        toggleOnColor: *yellow
         toggleOffColor: *grey
 
     # Chart drawing

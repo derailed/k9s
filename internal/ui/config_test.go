@@ -18,18 +18,9 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-func TestBenchConfig(t *testing.T) {
-	os.Setenv(config.K9sEnvConfigDir, "/tmp/test-config")
-	assert.NoError(t, config.InitLocs())
-	defer assert.NoError(t, os.RemoveAll(config.K9sEnvConfigDir))
-
-	bc, error := config.EnsureBenchmarksCfgFile("cl-1", "ct-1")
-	assert.NoError(t, error)
-	assert.Equal(t, "/tmp/test-config/clusters/cl-1/ct-1/benchmarks.yaml", bc)
-}
-
 func TestSkinnedContext(t *testing.T) {
 	os.Setenv(config.K9sEnvConfigDir, "/tmp/test-config")
+
 	assert.NoError(t, config.InitLocs())
 	defer assert.NoError(t, os.RemoveAll(config.K9sEnvConfigDir))
 
@@ -50,10 +41,22 @@ func TestSkinnedContext(t *testing.T) {
 	cfg.Config.K9s = config.NewK9s(
 		mock.NewMockConnection(),
 		mock.NewMockKubeSettings(&flags))
+	_, err = cfg.Config.K9s.ActivateContext("ct-1-1")
+	assert.NoError(t, err)
 	cfg.Config.K9s.UI = config.UI{Skin: "black_and_wtf"}
-	cfg.RefreshStyles("ct-1")
+	cfg.RefreshStyles()
 
 	assert.True(t, cfg.HasSkin())
 	assert.Equal(t, tcell.ColorGhostWhite.TrueColor(), render.StdColor)
 	assert.Equal(t, tcell.ColorWhiteSmoke.TrueColor(), render.ErrColor)
+}
+
+func TestBenchConfig(t *testing.T) {
+	os.Setenv(config.K9sEnvConfigDir, "/tmp/test-config")
+	assert.NoError(t, config.InitLocs())
+	defer assert.NoError(t, os.RemoveAll(config.K9sEnvConfigDir))
+
+	bc, error := config.EnsureBenchmarksCfgFile("cl-1", "ct-1")
+	assert.NoError(t, error)
+	assert.Equal(t, "/tmp/test-config/clusters/cl-1/ct-1/benchmarks.yaml", bc)
 }
