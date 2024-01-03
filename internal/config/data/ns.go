@@ -22,10 +22,7 @@ type Namespace struct {
 
 // NewNamespace create a new namespace configuration.
 func NewNamespace() *Namespace {
-	return &Namespace{
-		Active:    client.DefaultNamespace,
-		Favorites: []string{client.DefaultNamespace},
-	}
+	return NewActiveNamespace(client.DefaultNamespace)
 }
 
 func NewActiveNamespace(n string) *Namespace {
@@ -39,7 +36,7 @@ func NewActiveNamespace(n string) *Namespace {
 }
 
 // Validate validates a namespace is setup correctly.
-func (n *Namespace) Validate(c client.Connection, ks KubeSettings) {
+func (n *Namespace) Validate(c client.Connection) {
 	if c == nil || !c.IsValidNamespace(n.Active) {
 		return
 	}
@@ -56,7 +53,11 @@ func (n *Namespace) SetActive(ns string, ks KubeSettings) error {
 	if ns == client.BlankNamespace {
 		ns = client.NamespaceAll
 	}
-	n.Active = ns
+	if n == nil {
+		n = NewActiveNamespace(ns)
+	} else {
+		n.Active = ns
+	}
 	if ns != "" && !n.LockFavorites {
 		n.addFavNS(ns)
 	}

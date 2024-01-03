@@ -13,7 +13,7 @@ import (
 
 func TestNSValidate(t *testing.T) {
 	ns := data.NewNamespace()
-	ns.Validate(mock.NewMockConnection(), mock.NewMockKubeSettings(makeFlags("cl-1", "ct-1")))
+	ns.Validate(mock.NewMockConnection())
 
 	assert.Equal(t, "default", ns.Active)
 	assert.Equal(t, []string{"default"}, ns.Favorites)
@@ -21,7 +21,7 @@ func TestNSValidate(t *testing.T) {
 
 func TestNSValidateMissing(t *testing.T) {
 	ns := data.NewNamespace()
-	ns.Validate(mock.NewMockConnection(), mock.NewMockKubeSettings(makeFlags("cl-1", "ct-1")))
+	ns.Validate(mock.NewMockConnection())
 
 	assert.Equal(t, "default", ns.Active)
 	assert.Equal(t, []string{"default"}, ns.Favorites)
@@ -29,7 +29,7 @@ func TestNSValidateMissing(t *testing.T) {
 
 func TestNSValidateNoNS(t *testing.T) {
 	ns := data.NewNamespace()
-	ns.Validate(mock.NewMockConnection(), mock.NewMockKubeSettings(makeFlags("cl-1", "ct-1")))
+	ns.Validate(mock.NewMockConnection())
 
 	assert.Equal(t, "default", ns.Active)
 	assert.Equal(t, []string{"default"}, ns.Favorites)
@@ -61,7 +61,7 @@ func TestNSSetActive(t *testing.T) {
 func TestNSValidateRmFavs(t *testing.T) {
 	ns := data.NewNamespace()
 	ns.Favorites = []string{"default", "fred"}
-	ns.Validate(mock.NewMockConnection(), mock.NewMockKubeSettings(makeFlags("cl-1", "ct-1")))
+	ns.Validate(mock.NewMockConnection())
 
 	assert.Equal(t, []string{"default", "fred"}, ns.Favorites)
 }
