@@ -163,6 +163,13 @@ func (k *K9s) ActiveContextName() string {
 // ActiveContext returns the currently active context.
 func (k *K9s) ActiveContext() (*data.Context, error) {
 	if k.activeConfig != nil {
+		if k.activeConfig.Context == nil {
+			ct, err := k.ks.CurrentContext()
+			if err != nil {
+				return nil, err
+			}
+			k.activeConfig.Context = data.NewContextFromConfig(ct)
+		}
 		return k.activeConfig.Context, nil
 	}
 
@@ -187,6 +194,7 @@ func (k *K9s) ActivateContext(n string) (*data.Context, error) {
 	}
 	// If the context specifies a default namespace, use it!
 	if k.conn != nil {
+		k.Validate(k.conn, k.ks)
 		if ns := k.conn.ActiveNamespace(); ns != client.BlankNamespace {
 			k.activeConfig.Context.Namespace.Active = ns
 		} else {
@@ -328,17 +336,17 @@ func (k *K9s) Validate(c client.Connection, ks data.KubeSettings) {
 	if k.ShellPod == nil {
 		k.ShellPod = NewShellPod()
 	}
-	k.ShellPod.Validate(c, ks)
+	k.ShellPod.Validate()
 
 	if k.Logger == nil {
 		k.Logger = NewLogger()
 	} else {
-		k.Logger.Validate(c, ks)
+		k.Logger.Validate()
 	}
 	if k.Thresholds == nil {
 		k.Thresholds = NewThreshold()
 	}
-	k.Thresholds.Validate(c, ks)
+	k.Thresholds.Validate()
 
 	if k.activeConfig != nil {
 		k.activeConfig.Validate(c, ks)

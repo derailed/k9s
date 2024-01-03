@@ -38,6 +38,8 @@ const (
 	bannerFmt  = "<<K9s-Shell>> Pod: %s | Container: %s \n"
 )
 
+var editorEnvVars = []string{"KUBE_EDITOR", "K9S_EDITOR", "EDITOR"}
+
 type shellOpts struct {
 	clear, background bool
 	pipes             []string
@@ -115,13 +117,23 @@ func run(a *App, opts shellOpts) (bool, chan error, chan string) {
 }
 
 func edit(a *App, opts shellOpts) bool {
-	bin, err := exec.LookPath(os.Getenv("K9S_EDITOR"))
-	if err != nil {
-		bin, err = exec.LookPath(os.Getenv("EDITOR"))
-		if err != nil {
-			log.Error().Err(err).Msgf("K9S_EDITOR|EDITOR not set")
-			return false
+	var (
+		bin string
+		err error
+	)
+	for _, e := range editorEnvVars {
+		env := os.Getenv(e)
+		if env != "" {
+			continue
 		}
+		bin, err = exec.LookPath(env)
+		if err != nil {
+			continue
+		}
+	}
+	if bin == "" {
+		a.Flash().Errf("You must set at least one of those env vars: %s", strings.Join(editorEnvVars, "|"))
+		return false
 	}
 	opts.binary, opts.background = bin, false
 
