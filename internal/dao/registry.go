@@ -4,6 +4,7 @@
 package dao
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -100,6 +101,77 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 
 	return r, nil
 }
+
+func GVRForKind(apiVersion string, kind string) (string, bool, error) {
+	type gvrInfo struct {
+		gvr        string
+		namespaced bool
+	}
+
+	gvrs := map[string]gvrInfo{}
+
+	switch v := apiVersion; v {
+	case "apps/v1":
+		gvrs = map[string]gvrInfo{
+			"ReplicaSet":  {"apps/v1/replicasets", true},
+			"DaemonSet":   {"apps/v1/daemonsets", true},
+			"StatefulSet": {"apps/v1/statefulsets", true},
+			"Deployment":  {"apps/v1/deployments", true},
+			"Jobs":        {"apps/v1/jobs", true},
+			"CronJobs":    {"apps/v1/cronjobs", true},
+		}
+	case "v1":
+		gvrs = map[string]gvrInfo{
+			"Node": {"v1/nodes", false},
+		}
+	default:
+		return "", false, errors.New(fmt.Sprintf("unsupported ownerReference API version: %s", apiVersion))
+	}
+
+	gvr, found := gvrs[kind]
+	if !found {
+		return "", false, errors.New(fmt.Sprintf("unsupported ownerReference kind: %s", kind))
+	}
+
+	return gvr.gvr, gvr.namespaced, nil
+}
+
+/*
+func GetKindInfo(ownerRef metav1.OwnerReference) (string, func(client.GVR) view.ResourceViewer, error) {
+	var (
+		gvrStrings = map[string]string{
+			"ReplicaSet": "apps/v1/replicasets",
+			"DaemonSet":  "apps/v1/daemonsets",
+			"Deployment": "apps/v1/deployments",
+			"Jobs":       "apps/v1/jobs",
+			"CronJobs":   "apps/v1/cronjobs",
+		}
+		newViewerFuncs = map[string]func(client.GVR) view.ResourceViewer{
+			"ReplicaSet": view.NewReplicaSet,
+			"DaemonSet":  view.NewDaemonSet,
+			"Deployment": view.NewDeploy,
+			"Jobs":       view.NewJob,
+			"CronJobs":   view.NewCronJob,
+		}
+	)
+
+	if ownerRef.APIVersion != "apps/v1" {
+		return "", nil, errors.New(fmt.Sprintf("unsupported ownerReference API version: %s", ownerRef.APIVersion))
+	}
+
+	gvrString, found := gvrStrings[ownerRef.Kind]
+	if !found {
+		return "", nil, errors.New(fmt.Sprintf("unsupported ownerReference kind: %s", ownerRef.Kind))
+	}
+
+	newViewerFunc, found := newViewerFuncs[ownerRef.Kind]
+	if !found {
+		return "", nil, errors.New(fmt.Sprintf("unsupported ownerReference kind: %s", ownerRef.Kind))
+	}
+
+	return gvrString, newViewerFunc, nil
+}
+*/
 
 // RegisterMeta registers a new resource meta object.
 func (m *Meta) RegisterMeta(gvr string, res metav1.APIResource) {

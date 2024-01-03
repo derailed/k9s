@@ -127,3 +127,50 @@ func (r *ReplicaSet) Rollback(fqn string) error {
 
 	return nil
 }
+
+// GetOwners returns the owners of the resource.
+func (r *ReplicaSet) GetOwners(path string) ([]OwnerInfo, error) {
+	var owners []OwnerInfo
+
+	rs, err := r.GetInstance(path)
+	if err != nil {
+		return nil, err
+	}
+	ownerRefs := rs.GetObjectMeta().GetOwnerReferences()
+
+	for _, ownerRef := range ownerRefs {
+		gvr, namespaced, err := GVRForKind(ownerRef.APIVersion, ownerRef.Kind)
+		if err != nil {
+			return nil, err
+		}
+
+		var ownerFQN string
+		if namespaced {
+			ownerFQN = FQN(rs.Namespace, ownerRef.Name)
+		} else {
+			ownerFQN = ownerRef.Name
+		}
+
+		owners = append(owners, OwnerInfo{
+			GVR: gvr,
+			FQN: ownerFQN,
+		})
+	}
+
+	return owners, nil
+}
+
+func (r *ReplicaSet) GetInstance(fqn string) (*appsv1.ReplicaSet, error) {
+	o, err := r.GetFactory().Get(r.gvr.String(), fqn, true, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	var rs appsv1.ReplicaSet
+	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &rs)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rs, nil
+}

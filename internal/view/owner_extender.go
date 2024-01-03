@@ -3,14 +3,10 @@ package view
 import (
 	"errors"
 	"fmt"
-	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
-	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
-	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 )
 
 const selectOwnerDialogKey = "owner"
@@ -32,9 +28,19 @@ func NewOwnerExtender(v ResourceViewer) ResourceViewer {
 
 // BindKeys injects new menu actions.
 func (o *OwnerExtender) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		ui.KeyO: ui.NewKeyAction("Show Owner", o.ownerCmd(), true),
-	})
+	res, err := dao.AccessorFor(o.App().factory, o.GVR())
+	if err != nil {
+		o.App().Flash().Err(errors.New(fmt.Sprintf("could not get accessor for GVR: %w", err)))
+
+		return
+	}
+	_, ok := res.(dao.Owned)
+	if ok {
+		aa.Add(ui.KeyActions{
+			ui.KeyO: ui.NewKeyAction("Show Owner", o.ownerCmd(), true),
+		})
+	}
+
 }
 
 func (o *OwnerExtender) ownerCmd() func(evt *tcell.EventKey) *tcell.EventKey {
@@ -47,7 +53,7 @@ func (o *OwnerExtender) ownerCmd() func(evt *tcell.EventKey) *tcell.EventKey {
 			path = o.GetTable().Path
 		}
 
-		err := o.showOwner(o.GetTable().GVR(), path)
+		err := o.showOwner(path)
 		if err != nil {
 			o.App().Flash().Err(err)
 		}
@@ -56,123 +62,39 @@ func (o *OwnerExtender) ownerCmd() func(evt *tcell.EventKey) *tcell.EventKey {
 	}
 }
 
-func (o *OwnerExtender) showOwner(gvr client.GVR, path string) error {
-	var ownerRefs []v1.OwnerReference
-
-	r, err := o.App().factory.Get(gvr.String(), path, true, labels.Everything())
+func (o *OwnerExtender) showOwner(path string) error {
+	res, err := dao.AccessorFor(o.App().factory, o.GVR())
 	if err != nil {
 		return err
 	}
-
-	u, ok := r.(*unstructured.Unstructured)
+	owned, ok := res.(dao.Owned)
 	if !ok {
-		return errors.New("unable to parse resource")
+		return fmt.Errorf("owner navigation not possible for resource %q", o.GVR())
 	}
 
-	ownerRefs, err = extractOwnerRefs(u)
+	owners, err := owned.GetOwners(path)
 	if err != nil {
 		return err
 	}
 
-	if len(ownerRefs) == 0 {
+	if len(owners) == 0 {
 		return errors.New("resource does not have an owner")
 	}
 
-	namespace := u.GetNamespace()
-
-	if len(ownerRefs) == 1 {
-		return o.goToOwner(ownerRefs[0], namespace)
+	if len(owners) == 1 {
+		o.goToOwner(owners[0])
+		return nil
 	}
 
-	return o.showSelectOwnerDialog(ownerRefs, namespace)
+	return o.showSelectOwnerDialog(owners)
 }
 
-func (o *OwnerExtender) goToOwner(ownerRef v1.OwnerReference, namespace string) error {
-	var owner ResourceViewer
-
-	gvrString, newViewerFunc, err := getKindInfo(ownerRef)
-	if err != nil {
-		return err
-	}
-
-	owner = newViewerFunc(client.NewGVR(gvrString))
-
-	ownerPath := namespace + "/" + ownerRef.Name
-	owner.SetInstance(ownerPath)
-
-	if err := o.App().inject(owner, false); err != nil {
-		return err
-	}
-
-	return nil
+func (o *OwnerExtender) goToOwner(owner dao.OwnerInfo) {
+	o.App().gotoResource(owner.GVR, owner.FQN, false)
 }
 
-// extractOwnerRefs extracts the OwnerReferences from an unstructured object
-func extractOwnerRefs(obj *unstructured.Unstructured) ([]v1.OwnerReference, error) {
-	ownerRefInterfaces, found, err := unstructured.NestedSlice(obj.Object, "metadata", "ownerReferences")
-	if err != nil {
-		return nil, err
-	}
-	if !found {
-		return nil, nil
-	}
-
-	var ownerRefs []v1.OwnerReference
-	for _, refInterface := range ownerRefInterfaces {
-		refMap, ok := refInterface.(map[string]interface{})
-		if !ok {
-			return nil, errors.New("could not extract ownerReference")
-		}
-
-		var ref v1.OwnerReference
-		err := runtime.DefaultUnstructuredConverter.FromUnstructured(refMap, &ref)
-		if err != nil {
-			return nil, err
-		}
-
-		ownerRefs = append(ownerRefs, ref)
-	}
-
-	return ownerRefs, nil
-}
-
-func getKindInfo(ownerRef v1.OwnerReference) (string, func(client.GVR) ResourceViewer, error) {
-	var (
-		gvrStrings = map[string]string{
-			"ReplicaSet": "apps/v1/replicasets",
-			"DaemonSet":  "apps/v1/daemonsets",
-			"Deployment": "apps/v1/deployments",
-			"Jobs":       "apps/v1/jobs",
-			"CronJobs":   "apps/v1/cronjobs",
-		}
-		newViewerFuncs = map[string]func(client.GVR) ResourceViewer{
-			"ReplicaSet": NewReplicaSet,
-			"DaemonSet":  NewDaemonSet,
-			"Deployment": NewDeploy,
-			"Jobs":       NewJob,
-			"CronJobs":   NewCronJob,
-		}
-	)
-
-	if ownerRef.APIVersion != "apps/v1" {
-		return "", nil, errors.New(fmt.Sprintf("unsupported ownerReference API version: %s", ownerRef.APIVersion))
-	}
-
-	gvrString, found := gvrStrings[ownerRef.Kind]
-	if !found {
-		return "", nil, errors.New(fmt.Sprintf("unsupported ownerReference kind: %s", ownerRef.Kind))
-	}
-
-	newViewerFunc, found := newViewerFuncs[ownerRef.Kind]
-	if !found {
-		return "", nil, errors.New(fmt.Sprintf("unsupported ownerReference kind: %s", ownerRef.Kind))
-	}
-
-	return gvrString, newViewerFunc, nil
-}
-
-func (o *OwnerExtender) showSelectOwnerDialog(refs []v1.OwnerReference, namespace string) error {
-	form, err := o.makeSelectOwnerForm(refs, namespace)
+func (o *OwnerExtender) showSelectOwnerDialog(refs []dao.OwnerInfo) error {
+	form, err := o.makeSelectOwnerForm(refs)
 	if err != nil {
 		return err
 	}
@@ -188,15 +110,15 @@ func (o *OwnerExtender) showSelectOwnerDialog(refs []v1.OwnerReference, namespac
 	return nil
 }
 
-func (o *OwnerExtender) makeSelectOwnerForm(refs []v1.OwnerReference, namespace string) (*tview.Form, error) {
+func (o *OwnerExtender) makeSelectOwnerForm(refs []dao.OwnerInfo) (*tview.Form, error) {
 	f := o.makeStyledForm()
 
 	var ownerLabels []string
 	for _, ref := range refs {
-		ownerLabels = append(ownerLabels, fmt.Sprintf("<%s> %s", ref.Kind, ref.Name))
+		ownerLabels = append(ownerLabels, fmt.Sprintf("<%s> %s", ref.GVR, ref.FQN))
 	}
 
-	var selectedRef v1.OwnerReference
+	var selectedRef dao.OwnerInfo
 
 	f.AddDropDown("Owner:", ownerLabels, 0, func(option string, optionIndex int) {
 		selectedRef = refs[optionIndex]
@@ -205,10 +127,7 @@ func (o *OwnerExtender) makeSelectOwnerForm(refs []v1.OwnerReference, namespace 
 
 	f.AddButton("OK", func() {
 		defer o.dismissDialog()
-		err := o.goToOwner(selectedRef, namespace)
-		if err != nil {
-			o.App().Flash().Err(err)
-		}
+		o.goToOwner(selectedRef)
 	})
 
 	f.AddButton("Cancel", func() {
