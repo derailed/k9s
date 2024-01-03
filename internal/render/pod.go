@@ -28,19 +28,21 @@ const (
 )
 
 const (
-	PhaseTerminating       = "Terminating"
-	PhaseInitialized       = "Initialized"
-	PhaseRunning           = "Running"
-	PhaseNotReady          = "NoReady"
-	PhaseCompleted         = "Completed"
-	PhaseContainerCreating = "ContainerCreating"
-	PhasePodInitializing   = "PodInitializing"
-	PhaseUnknown           = "Unknown"
-	PhaseCrashLoop         = "CrashLoopBackOff"
-	PhaseError             = "Error"
-	PhaseImagePullBackOff  = "ImagePullBackOff"
-	PhaseOOMKilled         = "OOMKilled"
-	PhasePending           = "Pending"
+	PhaseTerminating            = "Terminating"
+	PhaseInitialized            = "Initialized"
+	PhaseRunning                = "Running"
+	PhaseNotReady               = "NoReady"
+	PhaseCompleted              = "Completed"
+	PhaseContainerCreating      = "ContainerCreating"
+	PhasePodInitializing        = "PodInitializing"
+	PhaseUnknown                = "Unknown"
+	PhaseCrashLoop              = "CrashLoopBackOff"
+	PhaseError                  = "Error"
+	PhaseImagePullBackOff       = "ImagePullBackOff"
+	PhaseOOMKilled              = "OOMKilled"
+	PhasePending                = "Pending"
+	PhaseContainerStatusUnknown = "ContainerStatusUnknown"
+	PhaseEvicted                = "Evicted"
 )
 
 // Pod renders a K8s Pod to screen.
