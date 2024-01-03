@@ -324,8 +324,12 @@ func (a *App) Resume() {
 	ctx, a.cancelFn = context.WithCancel(context.Background())
 
 	go a.clusterUpdater(ctx)
-	if err := a.StylesWatcher(ctx, a); err != nil {
-		log.Warn().Err(err).Msgf("Styles watcher failed")
+	if err := a.ConfigWatcher(ctx, a); err != nil {
+		log.Warn().Err(err).Msgf("ConfigWatcher failed")
+	}
+
+	if err := a.SkinsDirWatcher(ctx, a); err != nil {
+		log.Warn().Err(err).Msgf("SkinsWatcher failed")
 	}
 	if err := a.CustomViewsWatcher(ctx, a); err != nil {
 		log.Warn().Err(err).Msgf("CustomView watcher failed")
@@ -408,16 +412,8 @@ func (a *App) switchNS(ns string) error {
 	if a.Config.ActiveNamespace() == ns {
 		return nil
 	}
-
 	if ns == client.ClusterScope {
 		ns = client.BlankNamespace
-	}
-	ok, err := a.isValidNS(ns)
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return fmt.Errorf("switchns - invalid namespace: %q", ns)
 	}
 	if err := a.Config.SetActiveNamespace(ns); err != nil {
 		return err
@@ -469,6 +465,7 @@ func (a *App) switchContext(ci *cmd.Interpreter) error {
 		}
 		ns := a.Config.ActiveNamespace()
 		if !a.Conn().IsValidNamespace(ns) {
+			a.Flash().Errf("Unable to validate namespace %q. Using %q namespace", ns, client.DefaultNamespace)
 			ns = client.DefaultNamespace
 			if err := a.Config.SetActiveNamespace(ns); err != nil {
 				return err
@@ -481,7 +478,7 @@ func (a *App) switchContext(ci *cmd.Interpreter) error {
 
 		log.Debug().Msgf("--> Switching Context %q -- %q -- %q", name, ns, a.Config.ActiveView())
 		a.Flash().Infof("Switching context to %q::%q", name, ns)
-		a.ReloadStyles(name)
+		a.ReloadStyles()
 		a.gotoResource(a.Config.ActiveView(), "", true)
 		a.clusterModel.Reset(a.factory)
 	}

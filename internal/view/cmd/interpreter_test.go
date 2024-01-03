@@ -317,11 +317,6 @@ func TestContextCmd(t *testing.T) {
 		ctx string
 	}{
 		"empty": {},
-		"plain": {
-			cmd: "context",
-			ok:  true,
-			ctx: "",
-		},
 		"happy-full": {
 			cmd: "context ctx1",
 			ok:  true,

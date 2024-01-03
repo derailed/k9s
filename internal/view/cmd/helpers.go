@@ -11,8 +11,10 @@ import (
 )
 
 func ToLabels(s string) map[string]string {
-	ll := strings.Split(s, ",")
-	lbls := make(map[string]string, len(ll))
+	var (
+		ll   = strings.Split(s, ",")
+		lbls = make(map[string]string, len(ll))
+	)
 	for _, l := range ll {
 		kv := strings.Split(l, "=")
 		if len(kv) < 2 || kv[0] == "" || kv[1] == "" {
@@ -20,7 +22,6 @@ func ToLabels(s string) map[string]string {
 		}
 		lbls[kv[0]] = kv[1]
 	}
-
 	if len(lbls) == 0 {
 		return nil
 	}

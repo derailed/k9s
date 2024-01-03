@@ -11,6 +11,7 @@ const (
 	nsKey      = "ns"
 	topicKey   = "topic"
 	filterKey  = "filter"
+	fuzzyKey   = "fuzzy"
 	labelKey   = "labels"
 	contextKey = "context"
 )
@@ -30,8 +31,12 @@ func newArgs(p *Interpreter, aa []string) args {
 			args[contextKey] = a[1:]
 
 		case strings.Index(a, fuzzyFlag) == 0:
-			if i++; i < len(aa) {
-				args[filterKey] = strings.ToLower(strings.TrimSpace(aa[i]))
+			if a == fuzzyFlag {
+				if i++; i < len(aa) {
+					args[fuzzyKey] = strings.ToLower(strings.TrimSpace(aa[i]))
+				}
+			} else {
+				args[fuzzyKey] = strings.ToLower(a[2:])
 			}
 
 		case strings.Index(a, filterFlag) == 0:
@@ -67,7 +72,8 @@ func newArgs(p *Interpreter, aa []string) args {
 
 func (a args) hasFilters() bool {
 	_, fok := a[filterKey]
+	_, zok := a[fuzzyKey]
 	_, lok := a[labelKey]
 
-	return fok || lok
+	return fok || zok || lok
 }

@@ -84,6 +84,10 @@ func (n *Namespace) addFavNS(ns string) {
 }
 
 func (n *Namespace) rmFavNS(ns string) {
+	if n.LockFavorites {
+		return
+	}
+
 	victim := -1
 	for i, f := range n.Favorites {
 		if f == ns {

@@ -174,8 +174,8 @@ func (l *LogItems) Filter(index int, q string, showTime bool) ([]int, [][]int, e
 	if q == "" {
 		return nil, nil, nil
 	}
-	if IsFuzzySelector(q) {
-		mm, ii := l.fuzzyFilter(index, strings.TrimSpace(q[2:]), showTime)
+	if f, ok := HasFuzzySelector(q); ok {
+		mm, ii := l.fuzzyFilter(index, f, showTime)
 		return mm, ii, nil
 	}
 	matches, indices, err := l.filterLogs(index, q, showTime)

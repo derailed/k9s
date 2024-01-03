@@ -243,11 +243,11 @@ func (s *Sanitizer) filter(root *xray.TreeNode) *xray.TreeNode {
 	}
 
 	s.UpdateTitle()
-	if ui.IsFuzzySelector(q) {
-		return root.Filter(q, fuzzyFilter)
+	if f, ok := dao.HasFuzzySelector(q); ok {
+		return root.Filter(f, fuzzyFilter)
 	}
 
-	if ui.IsInverseSelector(q) {
+	if dao.IsInverseSelector(q) {
 		return root.Filter(q, rxInverseFilter)
 	}
 
