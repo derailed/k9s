@@ -1,0 +1,17 @@
+plugins:
+# Author: Daniel Rubin
+# Edit your resources via Visual Studio Code
+# Requires Visual Studio Code with 'code' shell command installed on your system
+# Open K9s in any view, then:
+# Shift-E to edit the resource via Visual Studio Code
+  vscode-edit:
+    shortCut: Shift-E
+    description: vscode-edit
+    scopes:
+    - all
+    background: false
+    confirm: false
+    command: sh
+    args:
+    - -c
+    - "KUBE_EDITOR=\"code --wait\" kubectl edit $RESOURCE_NAME $NAME -n $NAMESPACE --context $CONTEXT"
