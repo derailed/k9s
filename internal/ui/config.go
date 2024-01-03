@@ -211,12 +211,12 @@ func (c *Configurator) activeConfig() (cluster string, context string, ok bool) 
 func (c *Configurator) RefreshStyles() {
 	if c.Styles == nil {
 		c.Styles = config.NewStyles()
-	} else {
-		c.Styles.Reset()
 	}
 
 	cl, ct, ok := c.activeConfig()
 	if !ok {
+		log.Debug().Msgf("No custom skin found. Using stock skin")
+		c.updateStyles("")
 		return
 	}
 
@@ -228,7 +228,7 @@ func (c *Configurator) RefreshStyles() {
 
 	skin, ok := c.activeSkin()
 	if !ok {
-		log.Debug().Msgf("No custom skin found. Loading default")
+		log.Debug().Msgf("No custom skin found. Using stock skin")
 		c.updateStyles("")
 		return
 	}
@@ -248,9 +248,6 @@ func (c *Configurator) RefreshStyles() {
 
 func (c *Configurator) updateStyles(f string) {
 	c.skinFile = f
-	if !c.HasSkin() {
-		c.Styles.DefaultSkin()
-	}
 	c.Styles.Update()
 
 	render.ModColor = c.Styles.Frame().Status.ModifyColor.Color()
