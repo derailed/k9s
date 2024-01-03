@@ -176,3 +176,14 @@ type Valuer interface {
 	// GetValues returns values for a resource.
 	GetValues(path string, allValues bool) ([]byte, error)
 }
+
+type OwnerInfo struct {
+	GVR string
+	FQN string
+}
+
+// Owned represents resources that are controlled by an owner.
+type Owned interface {
+	// GetOwners returns the owners of the resource.
+	GetOwners(path string) ([]OwnerInfo, error)
+}
