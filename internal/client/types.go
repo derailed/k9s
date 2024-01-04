@@ -117,7 +117,7 @@ type Connection interface {
 	// HasMetrics checks if metrics server is available.
 	HasMetrics() bool
 
-	// ValidNamespaces returns all available namespace names.
+	// ValidNamespaceNames returns all available namespace names.
 	ValidNamespaceNames() (NamespaceNames, error)
 
 	// IsValidNamespace checks if given namespace is known.

@@ -21,6 +21,7 @@ type (
 		Action      ActionHandler
 		Visible     bool
 		Shared      bool
+		Plugin      bool
 	}
 
 	// KeyActions tracks mappings between keystrokes and actions.

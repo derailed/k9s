@@ -101,6 +101,11 @@ func pluginActions(r Runner, aa ui.KeyActions) {
 		return
 	}
 
+	for k, a := range aa {
+		if a.Plugin {
+			delete(aa, k)
+		}
+	}
 	for k, plugin := range pp.Plugins {
 		if !inScope(plugin.Scopes, r.Aliases()) {
 			continue
@@ -115,10 +120,12 @@ func pluginActions(r Runner, aa ui.KeyActions) {
 			log.Warn().Msgf("Invalid shortcut. You are trying to override an existing command `%s", k)
 			continue
 		}
-		aa[key] = ui.NewKeyAction(
+		a := ui.NewKeyAction(
 			plugin.Description,
 			pluginAction(r, plugin),
 			true)
+		a.Plugin = true
+		aa[key] = a
 	}
 }
 
