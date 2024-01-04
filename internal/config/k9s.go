@@ -4,7 +4,7 @@
 package config
 
 import (
-	"errors"
+	"fmt"
 	"path/filepath"
 
 	"github.com/derailed/k9s/internal/client"
@@ -148,11 +148,12 @@ func (k *K9s) ActiveContextDir() string {
 
 // ActiveContextNamespace fetch the context active ns.
 func (k *K9s) ActiveContextNamespace() (string, error) {
-	if k.activeConfig != nil {
-		return k.activeConfig.Context.Namespace.Active, nil
+	ct, err := k.ActiveContext()
+	if err != nil {
+		return "", err
 	}
 
-	return "", errors.New("context config is not set")
+	return ct.Namespace.Active, nil
 }
 
 // ActiveContextName returns the active context name.
@@ -162,14 +163,7 @@ func (k *K9s) ActiveContextName() string {
 
 // ActiveContext returns the currently active context.
 func (k *K9s) ActiveContext() (*data.Context, error) {
-	if k.activeConfig != nil {
-		if k.activeConfig.Context == nil {
-			ct, err := k.ks.CurrentContext()
-			if err != nil {
-				return nil, err
-			}
-			k.activeConfig.Context = data.NewContextFromConfig(ct)
-		}
+	if k.activeConfig != nil && k.activeConfig.Context != nil {
 		return k.activeConfig.Context, nil
 	}
 
@@ -181,7 +175,7 @@ func (k *K9s) ActiveContext() (*data.Context, error) {
 	return ct, nil
 }
 
-// ActivateContext initializes the active context is not present.
+// ActivateContext initializes the active context if not present.
 func (k *K9s) ActivateContext(n string) (*data.Context, error) {
 	k.activeContextName = n
 	ct, err := k.ks.GetContext(n)
@@ -192,14 +186,18 @@ func (k *K9s) ActivateContext(n string) (*data.Context, error) {
 	if err != nil {
 		return nil, err
 	}
-	// If the context specifies a default namespace, use it!
+
+	k.Validate(k.conn, k.ks)
 	if k.conn != nil {
-		k.Validate(k.conn, k.ks)
+		// If the context specifies a default namespace, use it!
 		if ns := k.conn.ActiveNamespace(); ns != client.BlankNamespace {
 			k.activeConfig.Context.Namespace.Active = ns
 		} else {
 			k.activeConfig.Context.Namespace.Active = client.DefaultNamespace
 		}
+	}
+	if k.activeConfig.Context == nil {
+		return nil, fmt.Errorf("context activation failed for: %s", n)
 	}
 
 	return k.activeConfig.Context, nil
@@ -216,6 +214,7 @@ func (k *K9s) Reload() error {
 	if err != nil {
 		return err
 	}
+	k.activeConfig.Validate(k.conn, k.ks)
 
 	return nil
 }

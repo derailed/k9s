@@ -153,6 +153,7 @@ func (c *Config) FavNamespaces() []string {
 	if err != nil {
 		return nil
 	}
+	ct.Validate(c.conn, c.settings)
 
 	return ct.Namespace.Favorites
 }
@@ -248,11 +249,15 @@ func (c *Config) SaveFile(path string) error {
 		log.Error().Msgf("[Config] Unable to save K9s config file: %v", err)
 		return err
 	}
+
 	return os.WriteFile(path, cfg, 0644)
 }
 
 // Validate the configuration.
 func (c *Config) Validate() {
+	if c.K9s == nil {
+		c.K9s = NewK9s(c.conn, c.settings)
+	}
 	c.K9s.Validate(c.conn, c.settings)
 }
 

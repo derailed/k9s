@@ -32,6 +32,7 @@ func NewContext() *Context {
 	}
 }
 
+// NewContextFromConfig returns a config based on a kubecontext.
 func NewContextFromConfig(cfg *api.Context) *Context {
 	return &Context{
 		Namespace:          NewActiveNamespace(cfg.Namespace),
@@ -42,12 +43,22 @@ func NewContextFromConfig(cfg *api.Context) *Context {
 	}
 }
 
-// Validate a context config.
+// NewContextFromKubeConfig returns a new instance based on kubesettings or an error.
+func NewContextFromKubeConfig(ks KubeSettings) (*Context, error) {
+	ct, err := ks.CurrentContext()
+	if err != nil {
+		return nil, err
+	}
+
+	return NewContextFromConfig(ct), nil
+}
+
+// Validate ensures a context config is tip top.
 func (c *Context) Validate(conn client.Connection, ks KubeSettings) {
 	if c.PortForwardAddress == "" {
 		c.PortForwardAddress = DefaultPFAddress
 	}
-	if cl, err := ks.CurrentClusterName(); err != nil {
+	if cl, err := ks.CurrentClusterName(); err == nil {
 		c.ClusterName = cl
 	}
 
