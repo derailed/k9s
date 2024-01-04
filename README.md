@@ -368,7 +368,7 @@ K9s uses aliases to navigate most K8s resources.
 
 ## K9s Configuration
 
-  K9s keeps its configurations as YAML files inside of a `k9s` directory and the location depends on your operating system. K9s leverages [XDG](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html) to load its various configurations files. For information on the default locations for your OS please see [this link](https://github.com/adrg/xdg/blob/master/README.md). If you are still confused a quick `k9s info` will reveal where k9s is loading its configurations from. Alternatively, you can set `K9SCONFIG` to tell K9s the directory location to pull its configurations from.
+  K9s keeps its configurations as YAML files inside of a `k9s` directory and the location depends on your operating system. K9s leverages [XDG](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html) to load its various configurations files. For information on the default locations for your OS please see [this link](https://github.com/adrg/xdg/blob/master/README.md). If you are still confused a quick `k9s info` will reveal where k9s is loading its configurations from. Alternatively, you can set `K9S_CONFIG_DIR` to tell K9s the directory location to pull its configurations from.
 
   | Unix            | macOS                              | Windows               |
   |-----------------|------------------------------------|-----------------------|
