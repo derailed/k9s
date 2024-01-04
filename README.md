@@ -911,7 +911,7 @@ k9s:
     crumbsless: false
     noIcons: false
     # By default all contexts wil use the dracula skin unless explicitly overridden in the context config file.
-    skin: dracula # => assumes the file skins/dracular.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
+    skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
   skipLatestRevCheck: false
   disablePodCounting: false
   shellPod:
