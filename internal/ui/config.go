@@ -212,20 +212,21 @@ func (c *Configurator) RefreshStyles() {
 	if c.Styles == nil {
 		c.Styles = config.NewStyles()
 	}
+	defer c.loadSkinFile()
 
 	cl, ct, ok := c.activeConfig()
 	if !ok {
 		log.Debug().Msgf("No custom skin found. Using stock skin")
-		c.updateStyles("")
 		return
 	}
-
 	if bc, err := config.EnsureBenchmarksCfgFile(cl, ct); err != nil {
 		log.Warn().Err(err).Msgf("No benchmark config file found: %q@%q", cl, ct)
 	} else {
 		c.BenchFile = bc
 	}
+}
 
+func (c *Configurator) loadSkinFile() {
 	skin, ok := c.activeSkin()
 	if !ok {
 		log.Debug().Msgf("No custom skin found. Using stock skin")
