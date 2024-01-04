@@ -83,7 +83,7 @@ func hotKeyActions(r Runner, aa ui.KeyActions) {
 
 		aa[key] = ui.NewSharedKeyAction(
 			hk.Description,
-			gotoCmd(r, command, "", !hk.Navigable),
+			gotoCmd(r, command, "", !hk.KeepHistory),
 			false)
 	}
 }

@@ -530,7 +530,7 @@ In order to surface hotkeys globally please follow these steps:
           shortCut:    Ctrl-U
           description: Namespaced resources
           command:     "$RESOURCE_NAME $NAMESPACE"
-          navigable:   true # whether you can return to the previous view
+          keepHistory: true # whether you can return to the previous view
       ```
 
  Not feeling so hot? Your custom hotkeys will be listed in the help view `?`.
