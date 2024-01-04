@@ -193,6 +193,9 @@ func (k *K9s) ActivateContext(n string) (*data.Context, error) {
 	if k.activeConfig.Context == nil {
 		return nil, fmt.Errorf("context activation failed for: %s", n)
 	}
+	if k.activeConfig.Context == nil {
+		return nil, fmt.Errorf("context activation failed for: %s", n)
+	}
 
 	return k.activeConfig.Context, nil
 }
