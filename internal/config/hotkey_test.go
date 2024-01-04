@@ -21,4 +21,5 @@ func TestHotKeyLoad(t *testing.T) {
 	assert.Equal(t, "shift-0", k.ShortCut)
 	assert.Equal(t, "Launch pod view", k.Description)
 	assert.Equal(t, "pods", k.Command)
+	assert.Equal(t, true, k.KeepHistory)
 }

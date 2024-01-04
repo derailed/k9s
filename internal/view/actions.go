@@ -74,16 +74,23 @@ func hotKeyActions(r Runner, aa ui.KeyActions) {
 			log.Warn().Err(fmt.Errorf("HOT-KEY Doh! you are trying to override an existing command `%s", k)).Msg("Invalid shortcut")
 			continue
 		}
+
+		command, err := r.EnvFn()().Substitute(hk.Command)
+		if err != nil {
+			log.Warn().Err(err).Msg("Invalid shortcut command")
+			continue
+		}
+
 		aa[key] = ui.NewSharedKeyAction(
 			hk.Description,
-			gotoCmd(r, hk.Command, ""),
+			gotoCmd(r, command, "", !hk.KeepHistory),
 			false)
 	}
 }
 
-func gotoCmd(r Runner, cmd, path string) ui.ActionHandler {
+func gotoCmd(r Runner, cmd, path string, clearStack bool) ui.ActionHandler {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		r.App().gotoResource(cmd, path, true)
+		r.App().gotoResource(cmd, path, clearStack)
 		return nil
 	}
 }

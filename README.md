@@ -525,12 +525,20 @@ In order to surface hotkeys globally please follow these steps:
           shortCut:    Shift-2
           description: Xray Deployments
           command:     xray deploy
+        # Hitting Ctrl-U view the resources in the namespace of your current selection
+        ctrl-u:
+          shortCut:    Ctrl-U
+          description: Namespaced resources
+          command:     "$RESOURCE_NAME $NAMESPACE"
+          keepHistory: true # whether you can return to the previous view
       ```
 
  Not feeling so hot? Your custom hotkeys will be listed in the help view `?`.
  Also your hotkeys file will be automatically reloaded so you can readily use your hotkeys as you define them.
 
  You can choose any keyboard shortcuts that make sense to you, provided they are not part of the standard K9s shortcuts list.
+
+ Similarly, referencing environment variables in hotkeys is also supported. The available environment variables can refer to the description in the [Plugins](#plugins) section.
 
 > NOTE: This feature/configuration might change in future releases!
 
