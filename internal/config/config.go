@@ -254,7 +254,6 @@ func (c *Config) Validate() {
 	if c.K9s == nil {
 		c.K9s = NewK9s(c.conn, c.settings)
 	}
-
 	c.K9s.Validate(c.conn, c.settings)
 }
 
