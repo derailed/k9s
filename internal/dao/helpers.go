@@ -9,8 +9,6 @@ import (
 	"math"
 	"regexp"
 
-	"github.com/derailed/tview"
-	runewidth "github.com/mattn/go-runewidth"
 	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -21,7 +19,7 @@ const defaultServiceAccount = "default"
 
 var (
 	inverseRx = regexp.MustCompile(`\A\!`)
-	fuzzyRx   = regexp.MustCompile(`\A\-f`)
+	fuzzyRx   = regexp.MustCompile(`\A-f\s?([\w-]+)\b`)
 )
 
 func inList(ll []string, s string) bool {
@@ -41,12 +39,14 @@ func IsInverseSelector(s string) bool {
 	return inverseRx.MatchString(s)
 }
 
-// IsFuzzySelector checks if filter is fuzzy or not.
-func IsFuzzySelector(s string) bool {
-	if s == "" {
-		return false
+// HasFuzzySelector checks if query is fuzzy.
+func HasFuzzySelector(s string) (string, bool) {
+	mm := fuzzyRx.FindStringSubmatch(s)
+	if len(mm) != 2 {
+		return "", false
 	}
-	return fuzzyRx.MatchString(s)
+
+	return mm[1], true
 }
 
 func toPerc(v1, v2 float64) float64 {
@@ -54,11 +54,6 @@ func toPerc(v1, v2 float64) float64 {
 		return 0
 	}
 	return math.Round((v1 / v2) * 100)
-}
-
-// Truncate a string to the given l and suffix ellipsis if needed.
-func Truncate(str string, width int) string {
-	return runewidth.Truncate(str, width, string(tview.SemigraphicsHorizontalEllipsis))
 }
 
 // ToYAML converts a resource to its YAML representation.

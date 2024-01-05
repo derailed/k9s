@@ -445,10 +445,6 @@ func (s *Styles) Reset() {
 	s.K9s = newStyle()
 }
 
-// DefaultSkin loads the default skin.
-func (s *Styles) DefaultSkin() {
-}
-
 // FgColor returns the foreground color.
 func (s *Styles) FgColor() tcell.Color {
 	return s.Body().FgColor.Color()

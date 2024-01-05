@@ -368,7 +368,7 @@ K9s uses aliases to navigate most K8s resources.
 
 ## K9s Configuration
 
-  K9s keeps its configurations as YAML files inside of a `k9s` directory and the location depends on your operating system. K9s leverages [XDG](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html) to load its various configurations files. For information on the default locations for your OS please see [this link](https://github.com/adrg/xdg/blob/master/README.md). If you are still confused a quick `k9s info` will reveal where k9s is loading its configurations from. Alternatively, you can set `K9SCONFIG` to tell K9s the directory location to pull its configurations from.
+  K9s keeps its configurations as YAML files inside of a `k9s` directory and the location depends on your operating system. K9s leverages [XDG](https://specifications.freedesktop.org/basedir-spec/basedir-spec-latest.html) to load its various configurations files. For information on the default locations for your OS please see [this link](https://github.com/adrg/xdg/blob/master/README.md). If you are still confused a quick `k9s info` will reveal where k9s is loading its configurations from. Alternatively, you can set `K9S_CONFIG_DIR` to tell K9s the directory location to pull its configurations from.
 
   | Unix            | macOS                              | Windows               |
   |-----------------|------------------------------------|-----------------------|
@@ -525,12 +525,20 @@ In order to surface hotkeys globally please follow these steps:
           shortCut:    Shift-2
           description: Xray Deployments
           command:     xray deploy
+        # Hitting Ctrl-U view the resources in the namespace of your current selection
+        ctrl-u:
+          shortCut:    Ctrl-U
+          description: Namespaced resources
+          command:     "$RESOURCE_NAME $NAMESPACE"
+          keepHistory: true # whether you can return to the previous view
       ```
 
  Not feeling so hot? Your custom hotkeys will be listed in the help view `?`.
  Also your hotkeys file will be automatically reloaded so you can readily use your hotkeys as you define them.
 
  You can choose any keyboard shortcuts that make sense to you, provided they are not part of the standard K9s shortcuts list.
+
+ Similarly, referencing environment variables in hotkeys is also supported. The available environment variables can refer to the description in the [Plugins](#plugins) section.
 
 > NOTE: This feature/configuration might change in future releases!
 
@@ -903,7 +911,7 @@ k9s:
     crumbsless: false
     noIcons: false
     # By default all contexts wil use the dracula skin unless explicitly overridden in the context config file.
-    skin: dracula # => assumes the file skins/dracular.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
+    skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
   skipLatestRevCheck: false
   disablePodCounting: false
   shellPod:

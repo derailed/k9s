@@ -3,11 +3,6 @@
 
 package config
 
-import (
-	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config/data"
-)
-
 const (
 	// SeverityLow tracks low severity.
 	SeverityLow SeverityLevel = iota
@@ -66,7 +61,7 @@ func NewThreshold() Threshold {
 }
 
 // Validate a namespace is setup correctly.
-func (t Threshold) Validate(c client.Connection, ks data.KubeSettings) {
+func (t Threshold) Validate() {
 	for _, k := range []string{"cpu", "memory"} {
 		v, ok := t[k]
 		if !ok {

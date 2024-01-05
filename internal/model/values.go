@@ -113,8 +113,8 @@ func (v *Values) filter(q string, lines []string) fuzzy.Matches {
 	if q == "" {
 		return nil
 	}
-	if dao.IsFuzzySelector(q) {
-		return v.fuzzyFilter(strings.TrimSpace(q[2:]), lines)
+	if f, ok := dao.HasFuzzySelector(q); ok {
+		return v.fuzzyFilter(strings.TrimSpace(f), lines)
 	}
 	return rxFilter(q, lines)
 }

@@ -163,6 +163,13 @@ func (k *K9s) ActiveContextName() string {
 // ActiveContext returns the currently active context.
 func (k *K9s) ActiveContext() (*data.Context, error) {
 	if k.activeConfig != nil {
+		if k.activeConfig.Context == nil {
+			ct, err := k.ks.CurrentContext()
+			if err != nil {
+				return nil, err
+			}
+			k.activeConfig.Context = data.NewContextFromConfig(ct)
+		}
 		return k.activeConfig.Context, nil
 	}
 
@@ -177,7 +184,7 @@ func (k *K9s) ActiveContext() (*data.Context, error) {
 // ActivateContext initializes the active context is not present.
 func (k *K9s) ActivateContext(n string) (*data.Context, error) {
 	k.activeContextName = n
-	ct, err := k.ks.GetContext(k.activeContextName)
+	ct, err := k.ks.GetContext(n)
 	if err != nil {
 		return nil, err
 	}
@@ -187,6 +194,7 @@ func (k *K9s) ActivateContext(n string) (*data.Context, error) {
 	}
 	// If the context specifies a default namespace, use it!
 	if k.conn != nil {
+		k.Validate(k.conn, k.ks)
 		if ns := k.conn.ActiveNamespace(); ns != client.BlankNamespace {
 			k.activeConfig.Context.Namespace.Active = ns
 		} else {
@@ -195,6 +203,21 @@ func (k *K9s) ActivateContext(n string) (*data.Context, error) {
 	}
 
 	return k.activeConfig.Context, nil
+}
+
+// Reload reloads the active config from disk.
+func (k *K9s) Reload() error {
+	ct, err := k.ks.GetContext(k.activeContextName)
+	if err != nil {
+		return err
+	}
+
+	k.activeConfig, err = k.dir.Load(k.activeContextName, ct)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // OverrideRefreshRate set the refresh rate manually.
@@ -313,17 +336,17 @@ func (k *K9s) Validate(c client.Connection, ks data.KubeSettings) {
 	if k.ShellPod == nil {
 		k.ShellPod = NewShellPod()
 	}
-	k.ShellPod.Validate(c, ks)
+	k.ShellPod.Validate()
 
 	if k.Logger == nil {
 		k.Logger = NewLogger()
 	} else {
-		k.Logger.Validate(c, ks)
+		k.Logger.Validate()
 	}
 	if k.Thresholds == nil {
 		k.Thresholds = NewThreshold()
 	}
-	k.Thresholds.Validate(c, ks)
+	k.Thresholds.Validate()
 
 	if k.activeConfig != nil {
 		k.activeConfig.Validate(c, ks)

@@ -9,8 +9,6 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v4"
-	"github.com/derailed/tview"
-	"github.com/mattn/go-runewidth"
 	"github.com/sahilm/fuzzy"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -26,11 +24,6 @@ func FQN(ns, n string) string {
 		return n
 	}
 	return ns + "/" + n
-}
-
-// Truncate a string to the given l and suffix ellipsis if needed.
-func Truncate(str string, width int) string {
-	return runewidth.Truncate(str, width, string(tview.SemigraphicsHorizontalEllipsis))
 }
 
 // NewExpBackOff returns a new exponential backoff timer.

@@ -111,8 +111,8 @@ func (t *Text) filter(q string, lines []string) fuzzy.Matches {
 	if q == "" {
 		return nil
 	}
-	if dao.IsFuzzySelector(q) {
-		return t.fuzzyFilter(strings.TrimSpace(q[2:]), lines)
+	if f, ok := dao.HasFuzzySelector(q); ok {
+		return t.fuzzyFilter(strings.TrimSpace(f), lines)
 	}
 	return rxFilter(q, lines)
 }

@@ -54,7 +54,7 @@ func (c *Context) Validate(conn client.Connection, ks KubeSettings) {
 	if c.Namespace == nil {
 		c.Namespace = NewNamespace()
 	}
-	c.Namespace.Validate(conn, ks)
+	c.Namespace.Validate(conn)
 
 	if c.View == nil {
 		c.View = NewView()

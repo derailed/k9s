@@ -42,9 +42,7 @@ const (
 
 var (
 	// LabelRx identifies a label query.
-	LabelRx   = regexp.MustCompile(`\A\-l`)
-	inverseRx = regexp.MustCompile(`\A\!`)
-	fuzzyRx   = regexp.MustCompile(`\A\-f`)
+	LabelRx = regexp.MustCompile(`\A\-l`)
 )
 
 func mustExtractStyles(ctx context.Context) *config.Styles {
@@ -67,30 +65,11 @@ func TrimCell(tv *SelectTable, row, col int) string {
 
 // IsLabelSelector checks if query is a label query.
 func IsLabelSelector(s string) bool {
-	if s == "" {
-		return false
-	}
 	if LabelRx.MatchString(s) {
 		return true
 	}
 
 	return !strings.Contains(s, " ") && cmd.ToLabels(s) != nil
-}
-
-// IsFuzzySelector checks if query is fuzzy.
-func IsFuzzySelector(s string) bool {
-	if s == "" {
-		return false
-	}
-	return fuzzyRx.MatchString(s)
-}
-
-// IsInverseSelector checks if inverse char has been provided.
-func IsInverseSelector(s string) bool {
-	if s == "" {
-		return false
-	}
-	return inverseRx.MatchString(s)
 }
 
 // TrimLabelSelector extracts label query.
@@ -100,14 +79,6 @@ func TrimLabelSelector(s string) string {
 	}
 
 	return s
-}
-
-func truncate(s string, max int) string {
-	if len(s) < max {
-		return s
-	}
-
-	return s[:max] + "..."
 }
 
 // SkinTitle decorates a title.

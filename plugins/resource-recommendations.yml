@@ -1,0 +1,28 @@
+plugins:
+# Author: Daniel Rubin
+# Get recommendations for CPU/Memory requests and limits using Robusta KRR
+# Requires Prometheus in the Cluster and Robusta KRR (https://github.com/robusta-dev/krr) on your system
+# Open K9s in deployments/daemonsets/statefulsets view, then:
+# Shift-K to get recommendations
+  krr:
+    shortCut: Shift-K
+    description: Get krr
+    scopes:
+      - deployments
+      - daemonsets
+      - statefulsets
+    command: bash
+    background: false
+    confirm: false
+    args:
+      - -c
+      - |
+        LABELS=$(kubectl get $RESOURCE_NAME $NAME -n $NAMESPACE  --context $CONTEXT  --show-labels | awk '{print $NF}' | awk '{if(NR>1)print}')
+        krr simple --cluster $CONTEXT --selector $LABELS 
+        echo "Press 'q' to exit"
+        while : ; do
+        read -n 1 k <&1
+        if [[ $k = q ]] ; then
+        break
+        fi
+        done

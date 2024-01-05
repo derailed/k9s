@@ -4,6 +4,7 @@
 package view
 
 import (
+	"errors"
 	"runtime"
 	"strings"
 
@@ -68,7 +69,7 @@ func (s *ImageScan) viewCVE(app *App, _ ui.Tabular, _ client.GVR, path string) {
 	}
 	site += cve
 
-	ok, errChan := run(app, shellOpts{
+	ok, errChan, _ := run(app, shellOpts{
 		background: true,
 		binary:     bin,
 		args:       []string{site},
@@ -77,9 +78,11 @@ func (s *ImageScan) viewCVE(app *App, _ ui.Tabular, _ client.GVR, path string) {
 		app.Flash().Errf("unable to run browser command")
 		return
 	}
+	var errs error
 	for e := range errChan {
-		if e != nil {
-			app.Flash().Err(e)
-		}
+		errs = errors.Join(e)
+	}
+	if errs != nil {
+		app.Flash().Err(errs)
 	}
 }

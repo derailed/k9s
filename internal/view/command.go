@@ -79,13 +79,13 @@ func allowedXRay(gvr client.GVR) bool {
 }
 
 func (c *Command) contextCmd(p *cmd.Interpreter) error {
-	ctx, ok := p.ContextArg()
+	ct, ok := p.ContextArg()
 	if !ok {
 		return fmt.Errorf("invalid command use `context xxx`")
 	}
 
-	if ctx != "" {
-		return useContext(c.app, ctx)
+	if ct != "" {
+		return useContext(c.app, ct)
 	}
 
 	gvr, v, err := c.viewMetaFor(p)
@@ -93,7 +93,7 @@ func (c *Command) contextCmd(p *cmd.Interpreter) error {
 		return err
 	}
 
-	return c.exec(p, gvr, c.componentFor(gvr, ctx, v), true)
+	return c.exec(p, gvr, c.componentFor(gvr, ct, v), true)
 }
 
 func (c *Command) xrayCmd(p *cmd.Interpreter) error {
@@ -168,6 +168,9 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
 	co.SetLabelFilter(nil)
 	if f, ok := p.FilterArg(); ok {
 		co.SetFilter(f)
+	}
+	if f, ok := p.FuzzyArg(); ok {
+		co.SetFilter("-f " + f)
 	}
 	if ll, ok := p.LabelsArg(); ok {
 		co.SetLabelFilter(ll)

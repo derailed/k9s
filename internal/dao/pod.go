@@ -544,6 +544,10 @@ func (p *Pod) Sanitize(ctx context.Context, ns string) (int, error) {
 			fallthrough
 		case render.PhaseImagePullBackOff:
 			fallthrough
+		case render.PhaseContainerStatusUnknown:
+			fallthrough
+		case render.PhaseEvicted:
+			fallthrough
 		case render.PhaseOOMKilled:
 			// !!BOZO!! Might need to bump timeout otherwise rev limit if too many??
 			log.Debug().Msgf("Sanitizing %s:%s", pod.Namespace, pod.Name)

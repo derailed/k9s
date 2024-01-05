@@ -34,7 +34,7 @@ plugins:
       - -c
       - "export FORCE_COLOR=1;kctrl app pause -a $NAME --namespace $NAMESPACE --kubeconfig-context $CONTEXT --yes --color --tty | less -RK"
   kctrl-app-kick:
-    shortCut: Shift-Z
+    shortCut: Shift-K
     confirm: false
     description: kctrl app kick
     scopes:

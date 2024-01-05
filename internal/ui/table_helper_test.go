@@ -6,6 +6,7 @@ package ui
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -16,7 +17,7 @@ func TestTruncate(t *testing.T) {
 		"empty": {},
 		"max": {
 			s: "/app.kubernetes.io/instance=prom,app.kubernetes.io/name=prometheus,app.kubernetes.io/component=server",
-			e: "/app.kubernetes.io/instance=prom,app.kubernetes.io...",
+			e: "/app.kubernetes.io/instance=prom,app.kubernetes.i…",
 		},
 		"less": {
 			s: "app=fred,env=blee",
@@ -27,7 +28,7 @@ func TestTruncate(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, truncate(u.s, 50))
+			assert.Equal(t, u.e, render.Truncate(u.s, 50))
 		})
 	}
 }

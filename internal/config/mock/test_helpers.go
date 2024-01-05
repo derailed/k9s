@@ -104,11 +104,17 @@ func (m mockKubeSettings) ContextNames() (map[string]struct{}, error) {
 	return mm, nil
 }
 
-type mockConnection struct{}
+type mockConnection struct {
+	ct string
+}
 
 func NewMockConnection() mockConnection {
 	return mockConnection{}
 }
+func NewMockConnectionWithContext(ct string) mockConnection {
+	return mockConnection{ct: ct}
+}
+
 func (m mockConnection) CanI(ns, gvr string, verbs []string) (bool, error) {
 	return true, nil
 }
@@ -155,7 +161,7 @@ func (m mockConnection) CheckConnectivity() bool {
 	return false
 }
 func (m mockConnection) ActiveContext() string {
-	return ""
+	return m.ct
 }
 func (m mockConnection) ActiveNamespace() string {
 	return ""
