@@ -61,7 +61,7 @@ func NewThreshold() Threshold {
 }
 
 // Validate a namespace is setup correctly.
-func (t Threshold) Validate() {
+func (t Threshold) Validate() Threshold {
 	for _, k := range []string{"cpu", "memory"} {
 		v, ok := t[k]
 		if !ok {
@@ -70,6 +70,8 @@ func (t Threshold) Validate() {
 			v.Validate()
 		}
 	}
+
+	return t
 }
 
 // LevelFor returns a defcon level for the current state.

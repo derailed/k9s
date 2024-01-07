@@ -99,5 +99,5 @@ k9s:
       indicator:
         fgColor: *foreground
         bgColor: *selection
-        toggleOnColor: *margenta
+        toggleOnColor: *magenta
         toggleOffColor: *blue

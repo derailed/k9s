@@ -6,6 +6,7 @@ package ui
 import (
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/tview"
@@ -17,6 +18,7 @@ type Logo struct {
 
 	logo, status *tview.TextView
 	styles       *config.Styles
+	mx           sync.Mutex
 }
 
 // NewLogo returns a new logo.
@@ -89,6 +91,9 @@ func (l *Logo) update(msg string, c config.Color) {
 }
 
 func (l *Logo) refreshStatus(msg string, c config.Color) {
+	l.mx.Lock()
+	defer l.mx.Unlock()
+
 	l.status.SetBackgroundColor(c.Color())
 	l.status.SetText(
 		fmt.Sprintf("[%s::b]%s", l.styles.Body().LogoColorMsg, msg),
@@ -96,6 +101,8 @@ func (l *Logo) refreshStatus(msg string, c config.Color) {
 }
 
 func (l *Logo) refreshLogo(c config.Color) {
+	l.mx.Lock()
+	defer l.mx.Unlock()
 	l.logo.Clear()
 	for i, s := range LogoSmall {
 		fmt.Fprintf(l.logo, "[%s::b]%s", c, s)

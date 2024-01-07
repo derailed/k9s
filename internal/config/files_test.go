@@ -58,10 +58,11 @@ func TestInitLogLoc(t *testing.T) {
 		})
 	}
 }
+
 func TestEnsureBenchmarkCfg(t *testing.T) {
 	os.Setenv(config.K9sEnvConfigDir, "/tmp/test-config")
 	assert.NoError(t, config.InitLocs())
-	defer assert.NoError(t, os.RemoveAll(config.K9sEnvConfigDir))
+	defer assert.NoError(t, os.RemoveAll("/tmp/test-config"))
 
 	assert.NoError(t, data.EnsureFullPath("/tmp/test-config/clusters/cl-1/ct-2", data.DefaultDirMod))
 	assert.NoError(t, os.WriteFile("/tmp/test-config/clusters/cl-1/ct-2/benchmarks.yaml", []byte{}, data.DefaultFileMod))
@@ -92,6 +93,31 @@ func TestEnsureBenchmarkCfg(t *testing.T) {
 			bb, err := os.ReadFile(f)
 			assert.NoError(t, err)
 			assert.Equal(t, u.e, string(bb))
+		})
+	}
+}
+
+func TestSkinFileFromName(t *testing.T) {
+	config.AppSkinsDir = "/tmp/k9s-test/skins"
+	defer assert.NoError(t, os.RemoveAll("/tmp/k9s-test/skins"))
+
+	uu := map[string]struct {
+		n string
+		e string
+	}{
+		"empty": {
+			e: "/tmp/k9s-test/skins/stock.yaml",
+		},
+		"happy": {
+			n: "fred-blee",
+			e: "/tmp/k9s-test/skins/fred-blee.yaml",
+		},
+	}
+
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			assert.Equal(t, u.e, config.SkinFileFromName(u.n))
 		})
 	}
 }

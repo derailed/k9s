@@ -1,8 +1,0 @@
-k9s:
-  views:
-    v1/pods:
-      columns:
-        - NAMESPACE
-        - NAME
-        - AGE
-        - IP

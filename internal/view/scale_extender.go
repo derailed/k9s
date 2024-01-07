@@ -34,7 +34,11 @@ func (s *ScaleExtender) bindKeys(aa ui.KeyActions) {
 		return
 	}
 	aa.Add(ui.KeyActions{
-		ui.KeyS: ui.NewKeyAction("Scale", s.scaleCmd, true),
+		ui.KeyS: ui.NewKeyActionWithOpts("Scale", s.scaleCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
 	})
 }
 

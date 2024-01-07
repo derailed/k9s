@@ -33,7 +33,7 @@ func EnsureDir(d string) error {
 
 func NewMockConfig() *config.Config {
 	config.AppContextsDir = "/tmp/test"
-	cl, ct := "cl-1", "ct-1"
+	cl, ct := "cl-1", "ct-1-1"
 	flags := genericclioptions.ConfigFlags{
 		ClusterName: &cl,
 		Context:     &ct,
@@ -63,7 +63,7 @@ func NewMockKubeSettings(f *genericclioptions.ConfigFlags) mockKubeSettings {
 			},
 			ctId + "-2": {
 				Cluster:   *f.ClusterName,
-				Namespace: "ns-1",
+				Namespace: "ns-2",
 			},
 			ctId + "-3": {
 				Cluster:   *f.ClusterName,

@@ -4,8 +4,10 @@
 package config
 
 import (
+	"os"
 	"testing"
 
+	"github.com/adrg/xdg"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -39,10 +41,24 @@ var test2YmlTestData = Plugin{
 	Background:  true,
 }
 
+func TestPluginLoad(t *testing.T) {
+	AppPluginsFile = "/tmp/k9s-test/fred.yaml"
+	os.Setenv("XDG_DATA_HOME", "/tmp/k9s-test")
+	xdg.Reload()
+
+	p := NewPlugins()
+	assert.NoError(t, p.Load("testdata/plugins.yaml"))
+
+	assert.Equal(t, 1, len(p.Plugins))
+	k, ok := p.Plugins["blah"]
+	assert.True(t, ok)
+	assert.ObjectsAreEqual(pluginYmlTestData, k)
+}
+
 func TestSinglePluginFileLoad(t *testing.T) {
 	p := NewPlugins()
-	assert.Nil(t, p.load("testdata/plugins.yaml"))
-	assert.Nil(t, p.loadPluginDir("/random/dir/not/exist"))
+	assert.NoError(t, p.load("testdata/plugins.yaml"))
+	assert.NoError(t, p.loadPluginDir("/random/dir/not/exist"))
 
 	assert.Equal(t, 1, len(p.Plugins))
 	k, ok := p.Plugins["blah"]
@@ -53,8 +69,8 @@ func TestSinglePluginFileLoad(t *testing.T) {
 
 func TestMultiplePluginFilesLoad(t *testing.T) {
 	p := NewPlugins()
-	assert.Nil(t, p.load("testdata/plugins.yaml"))
-	assert.Nil(t, p.loadPluginDir("testdata/plugins"))
+	assert.NoError(t, p.load("testdata/plugins.yaml"))
+	assert.NoError(t, p.loadPluginDir("testdata/plugins"))
 
 	testPlugins := map[string]Plugin{
 		"blah":  pluginYmlTestData,

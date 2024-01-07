@@ -14,20 +14,20 @@ type Limits map[v1.ResourceName]string
 
 // ShellPod represents k9s shell configuration.
 type ShellPod struct {
-	Image            string                    `yaml:"image"`
-	Command          []string                  `yaml:"command,omitempty"`
-	Args             []string                  `yaml:"args,omitempty"`
-	Namespace        string                    `yaml:"namespace"`
-	Limits           Limits                    `yaml:"limits,omitempty"`
-	Labels           map[string]string         `yaml:"labels,omitempty"`
-	ImagePullSecrets []v1.LocalObjectReference `yaml:"imagePullSecrets,omitempty"`
-	ImagePullPolicy  v1.PullPolicy             `yaml:"imagePullPolicy,omitempty"`
-	TTY              bool                      `yaml:"tty,omitempty"`
+	Image            string                    `json:"image" yaml:"image"`
+	Command          []string                  `json:"command,omitempty" yaml:"command,omitempty"`
+	Args             []string                  `json:"args,omitempty" yaml:"args,omitempty"`
+	Namespace        string                    `json:"namespace" yaml:"namespace"`
+	Limits           Limits                    `json:"limits,omitempty" yaml:"limits,omitempty"`
+	Labels           map[string]string         `json:"labels,omitempty" yaml:"labels,omitempty"`
+	ImagePullSecrets []v1.LocalObjectReference `json:"imagePullSecrets,omitempty" yaml:"imagePullSecrets,omitempty"`
+	ImagePullPolicy  v1.PullPolicy             `json:"imagePullPolicy,omitempty" yaml:"imagePullPolicy,omitempty"`
+	TTY              bool                      `json:"tty,omitempty" yaml:"tty,omitempty"`
 }
 
 // NewShellPod returns a new instance.
-func NewShellPod() *ShellPod {
-	return &ShellPod{
+func NewShellPod() ShellPod {
+	return ShellPod{
 		Image:     defaultDockerShellImage,
 		Namespace: "default",
 		Limits:    defaultLimits(),
@@ -35,13 +35,15 @@ func NewShellPod() *ShellPod {
 }
 
 // Validate validates the configuration.
-func (s *ShellPod) Validate() {
+func (s ShellPod) Validate() ShellPod {
 	if s.Image == "" {
 		s.Image = defaultDockerShellImage
 	}
 	if len(s.Limits) == 0 {
 		s.Limits = defaultLimits()
 	}
+
+	return s
 }
 
 func defaultLimits() Limits {

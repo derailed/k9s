@@ -16,17 +16,17 @@ const (
 
 // Logger tracks logger options.
 type Logger struct {
-	TailCount      int64 `yaml:"tail"`
-	BufferSize     int   `yaml:"buffer"`
-	SinceSeconds   int64 `yaml:"sinceSeconds"`
-	FullScreenLogs bool  `yaml:"fullScreenLogs"`
-	TextWrap       bool  `yaml:"textWrap"`
-	ShowTime       bool  `yaml:"showTime"`
+	TailCount    int64 `json:"tail" yaml:"tail"`
+	BufferSize   int   `json:"buffer" yaml:"buffer"`
+	SinceSeconds int64 `json:"sinceSeconds" yaml:"sinceSeconds"`
+	FullScreen   bool  `json:"fullScreen" yaml:"fullScreen"`
+	TextWrap     bool  `json:"textWrap" yaml:"textWrap"`
+	ShowTime     bool  `json:"showTime" yaml:"showTime"`
 }
 
 // NewLogger returns a new instance.
-func NewLogger() *Logger {
-	return &Logger{
+func NewLogger() Logger {
+	return Logger{
 		TailCount:    DefaultLoggerTailCount,
 		BufferSize:   MaxLogThreshold,
 		SinceSeconds: DefaultSinceSeconds,
@@ -34,7 +34,7 @@ func NewLogger() *Logger {
 }
 
 // Validate checks thresholds and make sure we're cool. If not use defaults.
-func (l *Logger) Validate() {
+func (l Logger) Validate() Logger {
 	if l.TailCount <= 0 {
 		l.TailCount = DefaultLoggerTailCount
 	}
@@ -47,4 +47,6 @@ func (l *Logger) Validate() {
 	if l.SinceSeconds == 0 {
 		l.SinceSeconds = DefaultSinceSeconds
 	}
+
+	return l
 }

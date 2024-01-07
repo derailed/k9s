@@ -12,6 +12,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNewStyle(t *testing.T) {
+	s := config.NewStyles()
+
+	assert.Equal(t, config.Color("black"), s.K9s.Body.BgColor)
+	assert.Equal(t, config.Color("cadetblue"), s.K9s.Body.FgColor)
+	assert.Equal(t, config.Color("lightskyblue"), s.K9s.Frame.Status.NewColor)
+}
+
 func TestColor(t *testing.T) {
 	uu := map[string]tcell.Color{
 		"blah":    tcell.ColorDefault,
@@ -28,22 +36,9 @@ func TestColor(t *testing.T) {
 	}
 }
 
-func TestSkinNone(t *testing.T) {
+func TestSkinHappy(t *testing.T) {
 	s := config.NewStyles()
-	assert.Nil(t, s.Load("testdata/empty_skin.yaml"))
-	s.Update()
-
-	assert.Equal(t, "#5f9ea0", s.Body().FgColor.String())
-	assert.Equal(t, "#000000", s.Body().BgColor.String())
-	assert.Equal(t, "#000000", s.Table().BgColor.String())
-	assert.Equal(t, tcell.ColorCadetBlue.TrueColor(), s.FgColor())
-	assert.Equal(t, tcell.ColorBlack.TrueColor(), s.BgColor())
-	assert.Equal(t, tcell.ColorBlack.TrueColor(), tview.Styles.PrimitiveBackgroundColor)
-}
-
-func TestSkin(t *testing.T) {
-	s := config.NewStyles()
-	assert.Nil(t, s.Load("testdata/black_and_wtf.yaml"))
+	assert.Nil(t, s.Load("../../skins/black-and-wtf.yaml"))
 	s.Update()
 
 	assert.Equal(t, "#ffffff", s.Body().FgColor.String())
@@ -54,12 +49,38 @@ func TestSkin(t *testing.T) {
 	assert.Equal(t, tcell.ColorBlack.TrueColor(), tview.Styles.PrimitiveBackgroundColor)
 }
 
-func TestSkinNotExits(t *testing.T) {
-	s := config.NewStyles()
-	assert.NotNil(t, s.Load("testdata/blee.yaml"))
-}
+func TestSkinLoad(t *testing.T) {
+	uu := map[string]struct {
+		f   string
+		err string
+	}{
+		"not-exist": {
+			f:   "testdata/skins/blee.yaml",
+			err: "open testdata/skins/blee.yaml: no such file or directory",
+		},
+		"toast": {
+			f: "testdata/skins/boarked.yaml",
+			err: `Additional property bgColor is not allowed
+Additional property fgColor is not allowed
+Additional property logoColor is not allowed
+Invalid type. Expected: object, given: array`,
+		},
+	}
 
-func TestSkinBoarked(t *testing.T) {
-	s := config.NewStyles()
-	assert.NotNil(t, s.Load("testdata/skin_boarked.yaml"))
+	for k := range uu {
+		u := uu[k]
+		t.Run(k, func(t *testing.T) {
+			s := config.NewStyles()
+			err := s.Load(u.f)
+			if err != nil {
+				assert.Equal(t, u.err, err.Error())
+			}
+			assert.Equal(t, "#5f9ea0", s.Body().FgColor.String())
+			assert.Equal(t, "#000000", s.Body().BgColor.String())
+			assert.Equal(t, "#000000", s.Table().BgColor.String())
+			assert.Equal(t, tcell.ColorCadetBlue.TrueColor(), s.FgColor())
+			assert.Equal(t, tcell.ColorBlack.TrueColor(), s.BgColor())
+			assert.Equal(t, tcell.ColorBlack.TrueColor(), tview.Styles.PrimitiveBackgroundColor)
+		})
+	}
 }

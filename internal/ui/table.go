@@ -367,14 +367,14 @@ func (t *Table) Refresh() {
 	t.Update(data, t.hasMetrics)
 }
 
-// GetSelectedRow returns the entire selected row.
-func (t *Table) GetSelectedRow(path string) (render.Row, bool) {
+// GetSelectedRow returns the entire selected row or nil if nothing selected.
+func (t *Table) GetSelectedRow(path string) *render.Row {
 	data := t.model.Peek()
 	i, ok := data.RowEvents.FindIndex(path)
 	if !ok {
-		return render.Row{}, ok
+		return nil
 	}
-	return data.RowEvents[i].Row, true
+	return &data.RowEvents[i].Row
 }
 
 // NameColIndex returns the index of the resource name column.

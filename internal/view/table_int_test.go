@@ -29,7 +29,7 @@ func TestTableSave(t *testing.T) {
 	v.SetTitle("k9s-test")
 
 	assert.NoError(t, ensureDumpDir("/tmp/test-dumps"))
-	dir := v.app.Config.K9s.ActiveScreenDumpsDir()
+	dir := v.app.Config.K9s.ContextScreenDumpDir()
 	c1, _ := os.ReadDir(dir)
 	v.saveCmd(nil)
 

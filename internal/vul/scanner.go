@@ -27,6 +27,7 @@ import (
 	"github.com/anchore/grype/grype/pkg"
 	"github.com/anchore/grype/grype/store"
 	"github.com/anchore/grype/grype/vex"
+	"github.com/anchore/syft/syft/pkg/cataloger"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -40,11 +41,11 @@ type imageScanner struct {
 	scans       Scans
 	mx          sync.RWMutex
 	initialized bool
-	config      *config.ImageScans
+	config      config.ImageScans
 }
 
 // NewImageScanner returns a new instance.
-func NewImageScanner(cfg *config.ImageScans) *imageScanner {
+func NewImageScanner(cfg config.ImageScans) *imageScanner {
 	return &imageScanner{
 		scans:  make(Scans),
 		config: cfg,
@@ -183,7 +184,7 @@ func getProviderConfig(opts *options.Grype) pkg.ProviderConfig {
 		SyftProviderConfig: pkg.SyftProviderConfig{
 			RegistryOptions:        opts.Registry.ToOptions(),
 			Exclusions:             opts.Exclusions,
-			CatalogingOptions:      opts.Search.ToConfig(),
+			CatalogingOptions:      cataloger.DefaultConfig(),
 			Platform:               opts.Platform,
 			Name:                   opts.Name,
 			DefaultImagePullSource: opts.DefaultImagePullSource,

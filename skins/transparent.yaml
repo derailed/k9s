@@ -7,7 +7,7 @@
 k9s:
   body:
     bgColor: default
-  promt:
+  prompt:
     bgColor: default
   info:
     sectionColor: default

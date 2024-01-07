@@ -12,7 +12,7 @@ import (
 
 func TestNewLogger(t *testing.T) {
 	l := config.NewLogger()
-	l.Validate()
+	l = l.Validate()
 
 	assert.Equal(t, int64(100), l.TailCount)
 	assert.Equal(t, 5000, l.BufferSize)
@@ -20,7 +20,7 @@ func TestNewLogger(t *testing.T) {
 
 func TestLoggerValidate(t *testing.T) {
 	var l config.Logger
-	l.Validate()
+	l = l.Validate()
 
 	assert.Equal(t, int64(100), l.TailCount)
 	assert.Equal(t, 5000, l.BufferSize)

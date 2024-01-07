@@ -4,7 +4,11 @@
 package config
 
 import (
+	"fmt"
 	"os"
+
+	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/config/json"
 
 	"gopkg.in/yaml.v2"
 )
@@ -21,51 +25,41 @@ type ViewSetting struct {
 	SortColumn string   `yaml:"sortColumn"`
 }
 
-// ViewSettings represent a collection of view configurations.
-type ViewSettings struct {
-	Views map[string]ViewSetting `yaml:"views"`
-}
-
-// NewViewSettings returns a new configuration.
-func NewViewSettings() ViewSettings {
-	return ViewSettings{
-		Views: make(map[string]ViewSetting),
-	}
-}
-
 // CustomView represents a collection of view customization.
 type CustomView struct {
-	K9s       ViewSettings `yaml:"k9s"`
+	Views     map[string]ViewSetting `yaml:"views"`
 	listeners map[string]ViewConfigListener
 }
 
 // NewCustomView returns a views configuration.
 func NewCustomView() *CustomView {
 	return &CustomView{
-		K9s:       NewViewSettings(),
+		Views:     make(map[string]ViewSetting),
 		listeners: make(map[string]ViewConfigListener),
 	}
 }
 
 // Reset clears out configurations.
 func (v *CustomView) Reset() {
-	for k := range v.K9s.Views {
-		delete(v.K9s.Views, k)
+	for k := range v.Views {
+		delete(v.Views, k)
 	}
 }
 
 // Load loads view configurations.
 func (v *CustomView) Load(path string) error {
-	raw, err := os.ReadFile(path)
+	bb, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
-
+	if err := data.JSONValidator.Validate(json.ViewsSchema, bb); err != nil {
+		return fmt.Errorf("validation failed for %q: %w", path, err)
+	}
 	var in CustomView
-	if err := yaml.Unmarshal(raw, &in); err != nil {
+	if err := yaml.Unmarshal(bb, &in); err != nil {
 		return err
 	}
-	v.K9s = in.K9s
+	v.Views = in.Views
 	v.fireConfigChanged()
 
 	return nil
@@ -84,7 +78,7 @@ func (v *CustomView) RemoveListener(gvr string) {
 
 func (v *CustomView) fireConfigChanged() {
 	for gvr, list := range v.listeners {
-		if v, ok := v.K9s.Views[gvr]; ok {
+		if v, ok := v.Views[gvr]; ok {
 			list.ViewSettingsChanged(v)
 		} else {
 			list.ViewSettingsChanged(ViewSetting{})

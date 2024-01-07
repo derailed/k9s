@@ -1,8 +1,0 @@
-k9s:
-  refreshRate: 10
-  namespace:
-    active: fred
-    favorites:
-      - blee
-      - duh
-      - crap

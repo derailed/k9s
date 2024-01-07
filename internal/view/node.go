@@ -41,9 +41,30 @@ func (n *Node) nodeContext(ctx context.Context) context.Context {
 
 func (n *Node) bindDangerousKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		ui.KeyC: ui.NewKeyAction("Cordon", n.toggleCordonCmd(true), true),
-		ui.KeyU: ui.NewKeyAction("Uncordon", n.toggleCordonCmd(false), true),
-		ui.KeyR: ui.NewKeyAction("Drain", n.drainCmd, true),
+		ui.KeyC: ui.NewKeyActionWithOpts(
+			"Cordon",
+			n.toggleCordonCmd(true),
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			},
+		),
+		ui.KeyU: ui.NewKeyActionWithOpts(
+			"Uncordon",
+			n.toggleCordonCmd(false),
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			},
+		),
+		ui.KeyR: ui.NewKeyActionWithOpts(
+			"Drain",
+			n.drainCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			},
+		),
 	})
 	ct, err := n.App().Config.K9s.ActiveContext()
 	if err != nil {
@@ -66,7 +87,7 @@ func (n *Node) bindKeys(aa ui.KeyActions) {
 		ui.KeyY:      ui.NewKeyAction(yamlAction, n.yamlCmd, true),
 		ui.KeyShiftC: ui.NewKeyAction("Sort CPU", n.GetTable().SortColCmd(cpuCol, false), false),
 		ui.KeyShiftM: ui.NewKeyAction("Sort MEM", n.GetTable().SortColCmd(memCol, false), false),
-		ui.KeyShift0: ui.NewKeyAction("Sort Pods", n.GetTable().SortColCmd("PODS", false), false),
+		ui.KeyShiftO: ui.NewKeyAction("Sort Pods", n.GetTable().SortColCmd("PODS", false), false),
 	})
 }
 

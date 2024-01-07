@@ -11,21 +11,24 @@ const (
 // UI tracks ui specific configs.
 type UI struct {
 	// EnableMouse toggles mouse support.
-	EnableMouse bool `yaml:"enableMouse"`
+	EnableMouse bool `json:"enableMouse" yaml:"enableMouse"`
 
 	// Headless toggles top header display.
-	Headless bool `yaml:"headless"`
+	Headless bool `json:"headless" yaml:"headless"`
 
 	// LogoLess toggles k9s logo.
-	Logoless bool `yaml:"logoless"`
+	Logoless bool `json:"logoless" yaml:"logoless"`
 
 	// Crumbsless toggles nav crumb display.
-	Crumbsless bool `yaml:"crumbsless"`
+	Crumbsless bool `json:"crumbsless" yaml:"crumbsless"`
+
+	// Reactive toggles reactive ui changes.
+	Reactive bool `json:"reactive" yaml:"reactive"`
 
 	// NoIcons toggles icons display.
-	NoIcons bool `yaml:"noIcons"`
+	NoIcons bool `json:"noIcons" yaml:"noIcons"`
 
 	// Skin reference the general k9s skin name.
 	// Can be overridden per context.
-	Skin string `yaml:"skin,omitempty"`
+	Skin string `json:"skin" yaml:"skin,omitempty"`
 }

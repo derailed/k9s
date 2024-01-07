@@ -73,5 +73,5 @@ func getScreenDumpDirForInfo() string {
 		return config.AppDumpsDir
 	}
 
-	return cfg.K9s.GetScreenDumpDir()
+	return cfg.K9s.AppScreenDumpDir()
 }

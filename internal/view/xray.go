@@ -133,8 +133,12 @@ func (x *Xray) refreshActions() {
 	aa := make(ui.KeyActions)
 
 	defer func() {
-		pluginActions(x, aa)
-		hotKeyActions(x, aa)
+		if err := pluginActions(x, aa); err != nil {
+			log.Warn().Err(err).Msg("Plugins load failed")
+		}
+		if err := hotKeyActions(x, aa); err != nil {
+			log.Warn().Err(err).Msg("HotKeys load failed")
+		}
 
 		x.Actions().Add(aa)
 		x.app.Menu().HydrateMenu(x.Hints())

@@ -1,0 +1,33 @@
+hotKey:
+  shift-0:
+    shortCut:    Shift-0
+    description: Popeye
+    command:     popeye
+  shift-1:
+    shortCut:    Shift-1
+    description: View deployments
+    command:     dp
+  shift-2:
+    shortCut:    Shift-2
+    description: View services
+    command:     service
+  shift-3:
+    shortCut:    Shift-3
+    description: View statefulsets
+    command:     sts
+  shift-4:
+    shortCut:    Shift-4
+    description: Xray Deployments
+    command:     xray dp
+  shift-5:
+    shortCut:    Shift-5
+    description: Xray StatefulSets
+    command:     xray sts
+  shift-6:
+    shortCut:    Shift-6
+    description: Xray DaemonSets
+    command:     xray ds
+  shift-7:
+    shortCut:    Shift-7
+    description: Xray Services
+    command:     xray svc

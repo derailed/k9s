@@ -72,11 +72,41 @@ func (p *Pod) portForwardIndicator(data *render.TableData) {
 
 func (p *Pod) bindDangerousKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		tcell.KeyCtrlK: ui.NewKeyAction("Kill", p.killCmd, true),
-		ui.KeyS:        ui.NewKeyAction("Shell", p.shellCmd, true),
-		ui.KeyA:        ui.NewKeyAction("Attach", p.attachCmd, true),
-		ui.KeyT:        ui.NewKeyAction("Transfer", p.transferCmd, true),
-		ui.KeyZ:        ui.NewKeyAction("Sanitize", p.sanitizeCmd, true),
+		tcell.KeyCtrlK: ui.NewKeyActionWithOpts(
+			"Kill",
+			p.killCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
+		ui.KeyS: ui.NewKeyActionWithOpts(
+			"Shell",
+			p.shellCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
+		ui.KeyA: ui.NewKeyActionWithOpts(
+			"Attach",
+			p.attachCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
+		ui.KeyT: ui.NewKeyActionWithOpts(
+			"Transfer",
+			p.transferCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
+		ui.KeyZ: ui.NewKeyActionWithOpts(
+			"Sanitize",
+			p.sanitizeCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
 	})
 }
 

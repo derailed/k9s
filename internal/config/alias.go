@@ -4,10 +4,12 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"sync"
 
 	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/config/json"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 )
@@ -120,18 +122,26 @@ func (a *Aliases) LoadFile(path string) error {
 	if path == "" {
 		return nil
 	}
-	f, err := os.ReadFile(path)
-	if err == nil {
-		var aa Aliases
-		if err := yaml.Unmarshal(f, &aa); err != nil {
-			return err
-		}
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil
+	}
 
-		a.mx.Lock()
-		defer a.mx.Unlock()
-		for k, v := range aa.Alias {
-			a.Alias[k] = v
-		}
+	bb, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	if err := data.JSONValidator.Validate(json.AliasesSchema, bb); err != nil {
+		return fmt.Errorf("validation failed for %q: %w", path, err)
+	}
+
+	var aa Aliases
+	if err := yaml.Unmarshal(bb, &aa); err != nil {
+		return err
+	}
+	a.mx.Lock()
+	defer a.mx.Unlock()
+	for k, v := range aa.Alias {
+		a.Alias[k] = v
 	}
 
 	return nil

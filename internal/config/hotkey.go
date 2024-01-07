@@ -4,8 +4,11 @@
 package config
 
 import (
+	"fmt"
 	"os"
 
+	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/config/json"
 	"gopkg.in/yaml.v2"
 )
 
@@ -30,19 +33,32 @@ func NewHotKeys() HotKeys {
 }
 
 // Load K9s plugins.
-func (h HotKeys) Load() error {
-	return h.LoadHotKeys(AppHotKeysFile)
+func (h HotKeys) Load(path string) error {
+	if err := h.LoadHotKeys(AppHotKeysFile); err != nil {
+		return err
+	}
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil
+	}
+
+	return h.LoadHotKeys(path)
 }
 
 // LoadHotKeys loads plugins from a given file.
 func (h HotKeys) LoadHotKeys(path string) error {
-	f, err := os.ReadFile(path)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil
+	}
+	bb, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
+	if err := data.JSONValidator.Validate(json.HotkeysSchema, bb); err != nil {
+		return fmt.Errorf("validation failed for %q: %w", path, err)
+	}
 
 	var hh HotKeys
-	if err := yaml.Unmarshal(f, &hh); err != nil {
+	if err := yaml.Unmarshal(bb, &hh); err != nil {
 		return err
 	}
 	for k, v := range hh.HotKey {

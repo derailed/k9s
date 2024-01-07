@@ -93,7 +93,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	cfg, err := loadConfiguration()
 	if err != nil {
-		log.Error().Err(err).Msgf("load configuration failed")
+		return err
 	}
 	app := view.NewApp(cfg)
 	if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
@@ -115,11 +115,12 @@ func loadConfiguration() (*config.Config, error) {
 	k8sCfg := client.NewConfig(k8sFlags)
 	k9sCfg := config.NewConfig(k8sCfg)
 	if err := k9sCfg.Load(config.AppConfigFile); err != nil {
-		log.Warn().Msg("Unable to locate K9s config. Generating new configuration...")
+		return nil, err
 	}
 	k9sCfg.K9s.Override(k9sFlags)
 	if err := k9sCfg.Refine(k8sFlags, k9sFlags, k8sCfg); err != nil {
-		log.Error().Err(err).Msgf("refine failed")
+		log.Error().Err(err).Msgf("config refine failed")
+		return nil, err
 	}
 	conn, err := client.InitConnection(k8sCfg)
 	k9sCfg.SetConnection(conn)

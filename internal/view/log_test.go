@@ -112,7 +112,7 @@ func TestLogViewSave(t *testing.T) {
 	dd := "/tmp/test-dumps/na"
 	assert.NoError(t, ensureDumpDir(dd))
 	app.Config.K9s.ScreenDumpDir = "/tmp/test-dumps"
-	dir := app.Config.K9s.ActiveScreenDumpsDir()
+	dir := app.Config.K9s.ContextScreenDumpDir()
 	c1, err := os.ReadDir(dir)
 	assert.NoError(t, err, fmt.Sprintf("Dir: %q", dir))
 	v.SaveCmd(nil)
