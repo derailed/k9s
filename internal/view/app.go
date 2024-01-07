@@ -439,7 +439,7 @@ func (a *App) isValidNS(ns string) (bool, error) {
 
 func (a *App) switchContext(ci *cmd.Interpreter) error {
 	name, ok := ci.HasContext()
-	if !ok {
+	if !ok || a.Config.ActiveContextName() == name {
 		return nil
 	}
 
