@@ -1,6 +1,6 @@
 <img src="https://raw.githubusercontent.com/derailed/k9s/master/assets/k9s.png" align="center" width="800" height="auto"/>
 
-# Release v0.31.0
+# Release v0.31.1
 
 ## Notes
 
@@ -55,6 +55,8 @@ Be sure to dial in the v0.31.0 SneakPeek video below for the gory details!
 
 Thank you all for your kindness, feedback and assistance in flushing out issues!!
 
+> ☢️ Repeating v0.31.0 release notes here as we tweaked the initial drop ☢️
+
 ### Hold My Hand...
 
 In this drop, we've added schema validation to ensure various configs are setup as expected.
@@ -76,6 +78,8 @@ The schemas are set to be a bit loose for the time being. Once we/ve vetted they
 In the meantime, you'll need to keep k9s logs handy, to check for validation errors. The validation messages can be somewhat cryptic at times and so please be sure to include your debug logs and config settings when reporting issues which might be plenty ;(.
 
 ### Breaking Bad!
+
+With this release, k9s may not start correctly if the config.yaml configurations are incorrect!
 
 Configuration changes:
 
