@@ -207,6 +207,9 @@ func (c *Config) Merge(c1 *Config) {
 func (c *Config) Load(path string) error {
 	bb, err := os.ReadFile(path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
 		return err
 	}
 	if err := data.JSONValidator.Validate(json.K9sSchema, bb); err != nil {

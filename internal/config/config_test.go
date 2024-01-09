@@ -537,7 +537,7 @@ func TestConfigLoad(t *testing.T) {
 func TestConfigLoadCrap(t *testing.T) {
 	cfg := mock.NewMockConfig()
 
-	assert.NotNil(t, cfg.Load("testdata/configs/k9s_not_there.yaml"))
+	assert.NoError(t, cfg.Load("testdata/configs/k9s_not_there.yaml"))
 }
 
 func TestConfigSaveFile(t *testing.T) {
