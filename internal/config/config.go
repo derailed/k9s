@@ -68,16 +68,16 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 	}
 	if isStringSet(flags.Context) {
 		if _, err := c.K9s.ActivateContext(*flags.Context); err != nil {
-			return err
+			return fmt.Errorf("k8sflags. unable to activate context %q: %w", *flags.Context, err)
 		}
 	} else {
 		n, err := cfg.CurrentContextName()
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to retrieve kubeconfig current context %q: %w", n, err)
 		}
 		_, err = c.K9s.ActivateContext(n)
 		if err != nil {
-			return err
+			return fmt.Errorf("unable to activate context %q: %w", *flags.Context, err)
 		}
 	}
 	log.Debug().Msgf("Active Context %q", c.K9s.ActiveContextName())
@@ -220,7 +220,7 @@ func (c *Config) Load(path string) error {
 
 	var cfg Config
 	if err := yaml.Unmarshal(bb, &cfg); err != nil {
-		return err
+		return fmt.Errorf("main config yaml load failed: %w", err)
 	}
 	c.Merge(&cfg)
 

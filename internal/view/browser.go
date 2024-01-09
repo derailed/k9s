@@ -249,13 +249,6 @@ func (b *Browser) TableDataChanged(data *render.TableData) {
 
 	b.app.QueueUpdateDraw(func() {
 		b.refreshActions()
-		if !b.app.Config.K9s.UI.Reactive {
-			if err := b.app.RefreshCustomViews(); err != nil {
-				log.Warn().Err(err).Msg("CustomViews load failed")
-				b.app.Logo().Warn("Views load failed!")
-			}
-		}
-
 		b.Update(data, b.app.Conn().HasMetrics())
 	})
 }

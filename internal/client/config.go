@@ -118,7 +118,7 @@ func (c *Config) CurrentContextName() (string, error) {
 	}
 	cfg, err := c.RawConfig()
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("fail to load rawConfig: %w", err)
 	}
 
 	return cfg.CurrentContext, nil

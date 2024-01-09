@@ -4,7 +4,6 @@
 package config_test
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -407,7 +406,7 @@ func TestConfigRefine(t *testing.T) {
 	uu := map[string]struct {
 		flags     *genericclioptions.ConfigFlags
 		k9sFlags  *config.Flags
-		err       error
+		err       string
 		context   string
 		cluster   string
 		namespace string
@@ -488,7 +487,7 @@ func TestConfigRefine(t *testing.T) {
 				KubeConfig: &cfgFile,
 				Context:    &ns1,
 			},
-			err: errors.New(`no context found for: "ns-1"`),
+			err: `k8sflags. unable to activate context "ns-1": no context found for: "ns-1"`,
 		},
 		"use-current-context": {
 			flags: &genericclioptions.ConfigFlags{
@@ -507,7 +506,7 @@ func TestConfigRefine(t *testing.T) {
 
 			err := cfg.Refine(u.flags, u.k9sFlags, client.NewConfig(u.flags))
 			if err != nil {
-				assert.Equal(t, u.err, err)
+				assert.Equal(t, u.err, err.Error())
 			} else {
 				assert.Nil(t, err)
 				assert.Equal(t, u.context, cfg.K9s.ActiveContextName())

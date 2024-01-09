@@ -129,5 +129,5 @@ func useContext(app *App, name string) error {
 		return err
 	}
 
-	return app.switchContext(cmd.NewInterpreter("ctx " + name))
+	return app.switchContext(cmd.NewInterpreter("ctx "+name), true)
 }

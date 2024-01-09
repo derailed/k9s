@@ -10,6 +10,7 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config/data"
+	"github.com/rs/zerolog/log"
 )
 
 // K9s tracks K9s configuration options.
@@ -65,10 +66,11 @@ func (k *K9s) resetConnection(conn client.Connection) {
 	k.conn = conn
 }
 
-// Save saves the k9s config to dis.
+// Save saves the k9s config to disk.
 func (k *K9s) Save() error {
 	if k.activeConfig == nil {
-		return fmt.Errorf("save failed. no active config detected")
+		log.Warn().Msgf("Save failed. no active config detected")
+		return nil
 	}
 	path := filepath.Join(
 		AppContextsDir,
@@ -97,7 +99,9 @@ func (k *K9s) Merge(k1 *K9s) {
 	k.ShellPod = k1.ShellPod
 	k.Logger = k1.Logger
 	k.ImageScans = k1.ImageScans
-	k.Thresholds = k1.Thresholds
+	if k1.Thresholds != nil {
+		k.Thresholds = k1.Thresholds
+	}
 }
 
 // AppScreenDumpDir fetch screen dumps dir.
@@ -189,6 +193,9 @@ func (k *K9s) ActivateContext(n string) (*data.Context, error) {
 		k.activeConfig.Context.Namespace.Active = ns
 	} else {
 		k.activeConfig.Context.Namespace.Active = client.DefaultNamespace
+	}
+	if k.activeConfig.Context == nil {
+		return nil, fmt.Errorf("context activation failed for: %s", n)
 	}
 	if k.activeConfig.Context == nil {
 		return nil, fmt.Errorf("context activation failed for: %s", n)
