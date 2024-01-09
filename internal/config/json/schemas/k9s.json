@@ -55,7 +55,17 @@
               "additionalProperties": { "type": "string" },
               "required": []
             },
-            "tty": { "type": "boolean" }
+            "tty": { "type": "boolean" },
+            "imagePullPolicy": { "type": "string" },
+            "imagePullSecrets": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" }
+                }
+              }
+            }
           },
           "required": ["image", "namespace", "limits"]
         },
