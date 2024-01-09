@@ -453,10 +453,12 @@ func (a *App) isValidNS(ns string) (bool, error) {
 	return true, nil
 }
 
-func (a *App) switchContext(ci *cmd.Interpreter) error {
+func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 	name, ok := ci.HasContext()
 	if !ok || a.Config.ActiveContextName() == name {
-		return nil
+		if !force {
+			return nil
+		}
 	}
 
 	a.Halt()
