@@ -96,6 +96,16 @@ func (c *Command) contextCmd(p *cmd.Interpreter) error {
 	return c.exec(p, gvr, c.componentFor(gvr, ct, v), true)
 }
 
+func (c *Command) aliasCmd(p *cmd.Interpreter) error {
+	filter, _ := p.FilterArg()
+
+	gvr := client.NewGVR("aliases")
+	v := NewAlias(gvr)
+	v.SetFilter(filter)
+
+	return c.exec(p, gvr, v, false)
+}
+
 func (c *Command) xrayCmd(p *cmd.Interpreter) error {
 	arg, cns, ok := p.XrayArgs()
 	if !ok {
@@ -118,7 +128,6 @@ func (c *Command) xrayCmd(p *cmd.Interpreter) error {
 	if err := c.app.switchNS(ns); err != nil {
 		return err
 	}
-
 	if err := c.app.Config.Save(); err != nil {
 		return err
 	}
@@ -210,7 +219,9 @@ func (c *Command) specialCmd(p *cmd.Interpreter) bool {
 	case p.IsHelpCmd():
 		_ = c.app.helpCmd(nil)
 	case p.IsAliasCmd():
-		_ = c.app.aliasCmd(nil)
+		if err := c.aliasCmd(p); err != nil {
+			c.app.Flash().Err(err)
+		}
 	case p.IsXrayCmd():
 		if err := c.xrayCmd(p); err != nil {
 			c.app.Flash().Err(err)

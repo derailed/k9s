@@ -1,0 +1,12 @@
+views:
+  v1/nodes:
+    columns:
+      - NAME
+      - IP
+  v1/endpoints:
+    sortColumn: AGE:asc
+    columns:
+      - NAME
+      - NAMESPACE
+      - ENDPOINTS
+      - AGE

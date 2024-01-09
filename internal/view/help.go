@@ -191,7 +191,7 @@ func (h *Help) showNav() model.MenuHints {
 
 func (h *Help) showHotKeys() (model.MenuHints, error) {
 	hh := config.NewHotKeys()
-	if err := hh.Load(); err != nil {
+	if err := hh.Load(h.App().Config.ContextHotkeysPath()); err != nil {
 		return nil, fmt.Errorf("no hotkey configuration found")
 	}
 	kk := make(sort.StringSlice, 0, len(hh.HotKey))

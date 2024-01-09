@@ -225,13 +225,11 @@ Binaries for Linux, Windows and Mac are available as tarballs in the [release pa
     export TERM=xterm-256color
     ```
 
-* In order to issue manifest edit commands make sure your EDITOR env is set.
+* In order to issue resource edit commands make sure your EDITOR and KUBE_EDITOR env vars are set.
 
     ```shell
     # Kubectl edit command will use this env var.
-    export EDITOR=my_fav_editor
-    # Should your editor deal with streamed vs on disk files differently, also set...
-    export K9S_EDITOR=my_fav_editor
+    export KUBE_EDITOR=my_fav_editor
     ```
 
 * K9s prefers recent kubernetes versions ie 1.28+
@@ -607,24 +605,23 @@ Here is a sample views configuration that customize a pods and services views.
 
 ```yaml
 # $XDG_CONFIG_HOME/k9s/views.yaml
-k9s:
-  views:
-    v1/pods:
-      columns:
-        - AGE
-        - NAMESPACE
-        - NAME
-        - IP
-        - NODE
-        - STATUS
-        - READY
-    v1/services:
-      columns:
-        - AGE
-        - NAMESPACE
-        - NAME
-        - TYPE
-        - CLUSTER-IP
+views:
+  v1/pods:
+    columns:
+      - AGE
+      - NAMESPACE
+      - NAME
+      - IP
+      - NODE
+      - STATUS
+      - READY
+  v1/services:
+    columns:
+      - AGE
+      - NAMESPACE
+      - NAME
+      - TYPE
+      - CLUSTER-IP
 ```
 
 ---
@@ -897,6 +894,7 @@ k9s:
 You can also specify a default skin for all contexts in the root k9s config file as so:
 
 ```yaml
+#  $XDG_CONFIG_HOME/k9s/config.yaml
 k9s:
   liveViewAutoRefresh: false
   screenDumpDir: /tmp/dumps
@@ -910,6 +908,8 @@ k9s:
     logoless: false
     crumbsless: false
     noIcons: false
+    # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live  Defaults to false.
+    reactive: false
     # By default all contexts wil use the dracula skin unless explicitly overridden in the context config file.
     skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
   skipLatestRevCheck: false
@@ -929,7 +929,7 @@ k9s:
     tail: 100
     buffer: 5000
     sinceSeconds: -1
-    fullScreenLogs: false
+    fullScreen: false
     textWrap: false
     showTime: false
   thresholds:
@@ -942,7 +942,7 @@ k9s:
 ```
 
 ```yaml
-#  $XDG_DATA_HOME/k9s/skins/in_the_navy.yaml
+# $XDG_DATA_HOME/k9s/skins/in_the_navy.yaml
 # Skin InTheNavy!
 k9s:
   # General K9s styles

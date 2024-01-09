@@ -69,6 +69,9 @@ func getScreenDumpDirForInfo() string {
 		log.Error().Err(err).Msgf("Unmarshal k9s config %v", err)
 		return config.AppDumpsDir
 	}
+	if cfg.K9s == nil {
+		return config.AppDumpsDir
+	}
 
-	return cfg.K9s.GetScreenDumpDir()
+	return cfg.K9s.AppScreenDumpDir()
 }

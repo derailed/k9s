@@ -357,7 +357,7 @@ func (v *LiveView) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (v *LiveView) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
 	name := fmt.Sprintf("%s--%s", strings.Replace(v.model.GetPath(), "/", "-", 1), strings.ToLower(v.title))
-	if _, err := saveYAML(v.app.Config.K9s.ActiveScreenDumpsDir(), name, sanitizeEsc(v.text.GetText(true))); err != nil {
+	if _, err := saveYAML(v.app.Config.K9s.ContextScreenDumpDir(), name, sanitizeEsc(v.text.GetText(true))); err != nil {
 		v.app.Flash().Err(err)
 	} else {
 		v.app.Flash().Infof("File %q saved successfully!", name)

@@ -34,7 +34,10 @@ func (r *RestartExtender) bindKeys(aa ui.KeyActions) {
 		return
 	}
 	aa.Add(ui.KeyActions{
-		ui.KeyR: ui.NewKeyAction("Restart", r.restartCmd, true),
+		ui.KeyR: ui.NewKeyActionWithOpts("Restart", r.restartCmd, ui.ActionOpts{
+			Visible:   true,
+			Dangerous: true,
+		}),
 	})
 }
 

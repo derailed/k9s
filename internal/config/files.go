@@ -80,7 +80,7 @@ var (
 	AppHotKeysFile string
 )
 
-// InitLogsLoc initializes K9s logs location.
+// InitLogLoc initializes K9s logs location.
 func InitLogLoc() error {
 	var appLogDir string
 	switch {
@@ -273,5 +273,9 @@ func EnsureHotkeysCfgFile() (string, error) {
 
 // SkinFileFromName generate skin file path from spec.
 func SkinFileFromName(n string) string {
+	if n == "" {
+		n = "stock"
+	}
+
 	return filepath.Join(AppSkinsDir, n+".yaml")
 }

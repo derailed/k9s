@@ -66,11 +66,24 @@ func NewApp(cfg *config.Config) *App {
 		filterHistory: model.NewHistory(model.MaxHistory),
 		Content:       NewPageStack(),
 	}
+	a.ReloadStyles()
 
 	a.Views()["statusIndicator"] = ui.NewStatusIndicator(a.App, a.Styles)
 	a.Views()["clusterInfo"] = NewClusterInfo(&a)
 
 	return &a
+}
+
+// ReloadStyles reloads skin file.
+func (a *App) ReloadStyles() {
+	a.RefreshStyles(a)
+}
+
+// UpdateClusterInfo updates clusterInfo panel
+func (a *App) UpdateClusterInfo() {
+	if a.factory != nil {
+		a.clusterModel.Reset(a.factory)
+	}
 }
 
 // ConOK checks the connection is cool, returns false otherwise.
@@ -104,7 +117,7 @@ func (a *App) Init(version string, rate int) error {
 	}
 	a.initFactory(ns)
 
-	a.clusterModel = model.NewClusterInfo(a.factory, a.version, a.Config.K9s.SkipLatestRevCheck)
+	a.clusterModel = model.NewClusterInfo(a.factory, a.version, a.Config.K9s)
 	a.clusterModel.AddListener(a.clusterInfo())
 	a.clusterModel.AddListener(a.statusIndicator())
 	if a.Conn().ConnectionOK() {
@@ -124,6 +137,7 @@ func (a *App) Init(version string, rate int) error {
 	if a.Config.K9s.ImageScans.Enable {
 		a.initImgScanner(version)
 	}
+	a.ReloadStyles()
 
 	return nil
 }
@@ -324,17 +338,17 @@ func (a *App) Resume() {
 	ctx, a.cancelFn = context.WithCancel(context.Background())
 
 	go a.clusterUpdater(ctx)
-	if err := a.ConfigWatcher(ctx, a); err != nil {
-		log.Warn().Err(err).Msgf("ConfigWatcher failed")
-	}
 
-	if err := a.SkinsDirWatcher(ctx, a); err != nil {
-		log.Warn().Err(err).Msgf("SkinsWatcher failed")
-	}
-	if err := a.CustomViewsWatcher(ctx, a); err != nil {
-		log.Warn().Err(err).Msgf("CustomView watcher failed")
-	} else {
-		log.Debug().Msgf("CustomViews watching `%s", config.AppViewsFile)
+	if a.Config.K9s.UI.Reactive {
+		if err := a.ConfigWatcher(ctx, a); err != nil {
+			log.Warn().Err(err).Msgf("ConfigWatcher failed")
+		}
+		if err := a.SkinsDirWatcher(ctx, a); err != nil {
+			log.Warn().Err(err).Msgf("SkinsWatcher failed")
+		}
+		if err := a.CustomViewsWatcher(ctx, a); err != nil {
+			log.Warn().Err(err).Msgf("CustomView watcher failed")
+		}
 	}
 }
 
@@ -398,10 +412,12 @@ func (a *App) refreshCluster(context.Context) error {
 	// Reload alias
 	go func() {
 		if err := a.command.Reset(a.Config.ContextAliasesPath(), false); err != nil {
-			log.Error().Err(err).Msgf("Command reset failed")
+			log.Warn().Err(err).Msgf("Command reset failed")
+			a.QueueUpdateDraw(func() {
+				a.Logo().Warn("Aliases load failed!")
+			})
 		}
 	}()
-
 	// Update cluster info
 	a.clusterModel.Refresh()
 

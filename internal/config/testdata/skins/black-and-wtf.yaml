@@ -31,11 +31,12 @@ k9s:
       highlightColor: navajowhite
       counterColor: navajowhite
       filterColor: slategray
-  table:
-    fgColor: white
-    bgColor: black
-    cursorColor: white
-    header:
-      fgColor: darkgray
+  views:
+    table:
+      fgColor: white
       bgColor: black
-      sorterColor: white
+      cursorColor: white
+      header:
+        fgColor: darkgray
+        bgColor: black
+        sorterColor: white

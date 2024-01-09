@@ -403,7 +403,7 @@ func k9sShellPodName() string {
 	return fmt.Sprintf("%s-%d", k9sShell, os.Getpid())
 }
 
-func k9sShellPod(node string, cfg *config.ShellPod) *v1.Pod {
+func k9sShellPod(node string, cfg config.ShellPod) *v1.Pod {
 	var grace int64
 	var priv bool = true
 
@@ -500,7 +500,7 @@ func pipe(_ context.Context, opts shellOpts, statusChan chan<- string, w, e io.W
 
 		log.Debug().Msgf("Running Start")
 		err := cmd.Run()
-		log.Debug().Msgf("Running Done: %s", err)
+		log.Debug().Msgf("Running Done: %v", err)
 		if err == nil {
 			statusChan <- fmt.Sprintf("Command completed successfully: %q", cmd.String())
 		}

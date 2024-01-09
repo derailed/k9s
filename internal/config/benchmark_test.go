@@ -35,14 +35,14 @@ func TestBenchLoad(t *testing.T) {
 		coCount  int
 	}{
 		"goodConfig": {
-			"testdata/b_good.yaml",
+			"testdata/benchmarks/b_good.yaml",
 			2,
 			1000,
 			2,
 			0,
 		},
 		"malformed": {
-			"testdata/b_toast.yaml",
+			"testdata/benchmarks/b_toast.yaml",
 			1,
 			200,
 			0,
@@ -103,7 +103,7 @@ func TestBenchServiceLoad(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			b, err := NewBench("testdata/b_good.yaml")
+			b, err := NewBench("testdata/benchmarks/b_good.yaml")
 
 			assert.Nil(t, err)
 			assert.Equal(t, 2, len(b.Benchmarks.Services))
@@ -122,11 +122,11 @@ func TestBenchServiceLoad(t *testing.T) {
 }
 
 func TestBenchReLoad(t *testing.T) {
-	b, err := NewBench("testdata/b_containers.yaml")
+	b, err := NewBench("testdata/benchmarks/b_containers.yaml")
 	assert.Nil(t, err)
 
 	assert.Equal(t, 2, b.Benchmarks.Defaults.C)
-	assert.Nil(t, b.Reload("testdata/b_containers_1.yaml"))
+	assert.NoError(t, b.Reload("testdata/benchmarks/b_containers_1.yaml"))
 	assert.Equal(t, 20, b.Benchmarks.Defaults.C)
 }
 
@@ -174,7 +174,7 @@ func TestBenchContainerLoad(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			b, err := NewBench("testdata/b_containers.yaml")
+			b, err := NewBench("testdata/benchmarks/b_containers.yaml")
 
 			assert.Nil(t, err)
 			assert.Equal(t, 2, len(b.Benchmarks.Services))

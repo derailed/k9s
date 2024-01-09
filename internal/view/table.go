@@ -15,7 +15,6 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 )
 
 // Table represents a table viewer.
@@ -111,10 +110,7 @@ func (t *Table) EnvFn() EnvFunc {
 
 func (t *Table) defaultEnv() Env {
 	path := t.GetSelectedItem()
-	row, ok := t.GetSelectedRow(path)
-	if !ok {
-		log.Error().Msgf("unable to locate selected row for %q", path)
-	}
+	row := t.GetSelectedRow(path)
 	env := defaultEnv(t.app.Conn().Config(), path, t.GetModel().Peek().Header, row)
 	env["FILTER"] = t.CmdBuff().GetText()
 	if env["FILTER"] == "" {
@@ -172,7 +168,7 @@ func (t *Table) BufferActive(state bool, k model.BufferKind) {
 }
 
 func (t *Table) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveTable(t.app.Config.K9s.ActiveScreenDumpsDir(), t.GVR().R(), t.Path, t.GetFilteredData()); err != nil {
+	if path, err := saveTable(t.app.Config.K9s.ContextScreenDumpDir(), t.GVR().R(), t.Path, t.GetFilteredData()); err != nil {
 		t.app.Flash().Err(err)
 	} else {
 		t.app.Flash().Infof("File saved successfully: %q", render.Truncate(filepath.Base(path), 50))

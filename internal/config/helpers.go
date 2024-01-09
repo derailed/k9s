@@ -13,6 +13,19 @@ import (
 	v1 "k8s.io/api/core/v1"
 )
 
+func isBoolSet(b *bool) bool {
+	return b != nil && *b
+}
+
+func isStringSet(s *string) bool {
+	return s != nil && len(*s) > 0
+}
+
+func isYamlFile(file string) bool {
+	ext := filepath.Ext(file)
+	return ext == ".yml" || ext == ".yaml"
+}
+
 // isEnvSet checks if env var is set.
 func isEnvSet(env string) bool {
 	return os.Getenv(env) != ""

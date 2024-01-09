@@ -249,6 +249,13 @@ func (b *Browser) TableDataChanged(data *render.TableData) {
 
 	b.app.QueueUpdateDraw(func() {
 		b.refreshActions()
+		if !b.app.Config.K9s.UI.Reactive {
+			if err := b.app.RefreshCustomViews(); err != nil {
+				log.Warn().Err(err).Msg("CustomViews load failed")
+				b.app.Logo().Warn("Views load failed!")
+			}
+		}
+
 		b.Update(data, b.app.Conn().HasMetrics())
 	})
 }
@@ -497,25 +504,41 @@ func (b *Browser) refreshActions() {
 		b.namespaceActions(aa)
 		if !b.app.Config.K9s.IsReadOnly() {
 			if client.Can(b.meta.Verbs, "edit") {
-				aa[ui.KeyE] = ui.NewKeyAction("Edit", b.editCmd, true)
+				aa[ui.KeyE] = ui.NewKeyActionWithOpts("Edit", b.editCmd,
+					ui.ActionOpts{
+						Visible:   true,
+						Dangerous: true,
+					})
 			}
 			if client.Can(b.meta.Verbs, "delete") {
-				aa[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", b.deleteCmd, true)
+				aa[tcell.KeyCtrlD] = ui.NewKeyActionWithOpts("Delete", b.deleteCmd,
+					ui.ActionOpts{
+						Visible:   true,
+						Dangerous: true,
+					})
 			}
+		} else {
+			b.Actions().ClearDanger()
 		}
 	}
-
 	if !dao.IsK9sMeta(b.meta) {
 		aa[ui.KeyY] = ui.NewKeyAction(yamlAction, b.viewCmd, true)
 		aa[ui.KeyD] = ui.NewKeyAction("Describe", b.describeCmd, true)
 	}
-
-	pluginActions(b, aa)
-	hotKeyActions(b, aa)
 	for _, f := range b.bindKeysFn {
 		f(aa)
 	}
 	b.Actions().Add(aa)
+
+	if err := pluginActions(b, b.Actions()); err != nil {
+		log.Warn().Msgf("Plugins load failed: %s", err)
+		b.app.Logo().Warn("Plugins load failed!")
+	}
+	if err := hotKeyActions(b, b.Actions()); err != nil {
+		log.Warn().Msgf("Hotkeys load failed: %s", err)
+		b.app.Logo().Warn("HotKeys load failed!")
+	}
+
 	b.app.Menu().HydrateMenu(b.Hints())
 }
 

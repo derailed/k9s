@@ -6,12 +6,10 @@ package config
 import (
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
 
-	"github.com/adrg/xdg"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/config/json"
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -19,23 +17,9 @@ import (
 
 // Config tracks K9s configuration options.
 type Config struct {
-	K9s      *K9s `yaml:"k9s"`
+	K9s      *K9s `yaml:"k9s" json:"k9s"`
 	conn     client.Connection
 	settings data.KubeSettings
-}
-
-// K9sHome returns k9s configs home directory.
-func K9sHome() string {
-	if isEnvSet(K9sEnvConfigDir) {
-		return os.Getenv(K9sEnvConfigDir)
-	}
-
-	xdgK9sHome, err := xdg.ConfigFile(AppName)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Unable to create configuration directory for k9s")
-	}
-
-	return xdgK9sHome
 }
 
 // NewConfig creates a new default config.
@@ -46,6 +30,16 @@ func NewConfig(ks data.KubeSettings) *Config {
 	}
 }
 
+// ContextHotKeysPath returns a context specific hotkeys file spec.
+func (c *Config) ContextHotkeysPath() string {
+	ct, err := c.K9s.ActiveContext()
+	if err != nil {
+		return ""
+	}
+
+	return AppContextHotkeysFile(ct.ClusterName, c.K9s.activeContextName)
+}
+
 // ContextAliasesPath returns a context specific aliases file spec.
 func (c *Config) ContextAliasesPath() string {
 	ct, err := c.K9s.ActiveContext()
@@ -53,13 +47,14 @@ func (c *Config) ContextAliasesPath() string {
 		return ""
 	}
 
-	return AppContextAliasesFile(ct.ClusterName, c.K9s.activeContextName)
+	return AppContextAliasesFile(ct.GetClusterName(), c.K9s.activeContextName)
 }
 
 // ContextPluginsPath returns a context specific plugins file spec.
 func (c *Config) ContextPluginsPath() string {
 	ct, err := c.K9s.ActiveContext()
 	if err != nil {
+		log.Error().Err(err).Msgf("active context load failed")
 		return ""
 	}
 
@@ -68,7 +63,10 @@ func (c *Config) ContextPluginsPath() string {
 
 // Refine the configuration based on cli args.
 func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, cfg *client.Config) error {
-	if isSet(flags.Context) {
+	if flags == nil {
+		return nil
+	}
+	if isStringSet(flags.Context) {
 		if _, err := c.K9s.ActivateContext(*flags.Context); err != nil {
 			return err
 		}
@@ -88,7 +86,7 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 	switch {
 	case k9sFlags != nil && IsBoolSet(k9sFlags.AllNamespaces):
 		ns = client.NamespaceAll
-	case isSet(flags.Namespace):
+	case isStringSet(flags.Namespace):
 		ns = *flags.Namespace
 	default:
 		nss, err := c.K9s.ActiveContextNamespace()
@@ -104,7 +102,7 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 		return err
 	}
 
-	return data.EnsureDirPath(c.K9s.GetScreenDumpDir(), data.DefaultDirMod)
+	return data.EnsureDirPath(c.K9s.AppScreenDumpDir(), data.DefaultDirMod)
 }
 
 // Reset resets the context to the new current context/cluster.
@@ -115,7 +113,7 @@ func (c *Config) Reset() {
 func (c *Config) SetCurrentContext(n string) (*data.Context, error) {
 	ct, err := c.K9s.ActivateContext(n)
 	if err != nil {
-		return nil, fmt.Errorf("set current context %q failed: %w", n, err)
+		return nil, fmt.Errorf("set current context failed. %w", err)
 	}
 
 	return ct, nil
@@ -138,21 +136,13 @@ func (c *Config) ActiveNamespace() string {
 	return ns
 }
 
-// ValidateFavorites ensure favorite ns are legit.
-func (c *Config) ValidateFavorites() {
-	ct, err := c.K9s.ActiveContext()
-	if err != nil {
-		return
-	}
-	ct.Validate(c.conn, c.settings)
-}
-
 // FavNamespaces returns fav namespaces in the current context.
 func (c *Config) FavNamespaces() []string {
 	ct, err := c.K9s.ActiveContext()
 	if err != nil {
 		return nil
 	}
+	ct.Validate(c.conn, c.settings)
 
 	return ct.Namespace.Favorites
 }
@@ -209,23 +199,26 @@ func (c *Config) ActiveContextName() string {
 	return c.K9s.activeContextName
 }
 
+func (c *Config) Merge(c1 *Config) {
+	c.K9s.Merge(c1.K9s)
+}
+
 // Load loads K9s configuration from file.
 func (c *Config) Load(path string) error {
-	f, err := os.ReadFile(path)
+	bb, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
+	if err := data.JSONValidator.Validate(json.K9sSchema, bb); err != nil {
+		return fmt.Errorf("k9s config file %q load failed:\n%w", path, err)
+	}
 
 	var cfg Config
-	if err := yaml.Unmarshal(f, &cfg); err != nil {
+	if err := yaml.Unmarshal(bb, &cfg); err != nil {
 		return err
 	}
-	if cfg.K9s != nil {
-		c.K9s.Refine(cfg.K9s)
-	}
-	if c.K9s.Logger == nil {
-		c.K9s.Logger = NewLogger()
-	}
+	c.Merge(&cfg)
+
 	return nil
 }
 
@@ -235,7 +228,11 @@ func (c *Config) Save() error {
 	if err := c.K9s.Save(); err != nil {
 		return err
 	}
-	return c.SaveFile(AppConfigFile)
+	if _, err := os.Stat(AppConfigFile); os.IsNotExist(err) {
+		return c.SaveFile(AppConfigFile)
+	}
+
+	return nil
 }
 
 // SaveFile K9s configuration to disk.
@@ -248,48 +245,26 @@ func (c *Config) SaveFile(path string) error {
 		log.Error().Msgf("[Config] Unable to save K9s config file: %v", err)
 		return err
 	}
+
 	return os.WriteFile(path, cfg, 0644)
 }
 
 // Validate the configuration.
 func (c *Config) Validate() {
+	if c.K9s == nil {
+		c.K9s = NewK9s(c.conn, c.settings)
+	}
+
 	c.K9s.Validate(c.conn, c.settings)
 }
 
-// Dump debug...
+// Dump for debug...
 func (c *Config) Dump(msg string) {
 	ct, err := c.K9s.ActiveContext()
-	if err != nil {
-		log.Debug().Msgf("Current Contexts: %s\n", ct.ClusterName)
+	if err == nil {
+		bb, _ := yaml.Marshal(ct)
+		fmt.Printf("Dump: %q\n%s\n", msg, string(bb))
+	} else {
+		fmt.Println("BOOM!", err)
 	}
-}
-
-// YamlExtension tries to find the correct extension for a YAML file
-func YamlExtension(path string) string {
-	if !isYamlFile(path) {
-		log.Error().Msgf("Config: File %s is not a yaml file", path)
-		return path
-	}
-
-	// Strip any extension, if there is no extension the path will remain unchanged
-	path = strings.TrimSuffix(path, filepath.Ext(path))
-	result := path + ".yml"
-
-	if _, err := os.Stat(result); os.IsNotExist(err) {
-		return path + ".yaml"
-	}
-
-	return result
-}
-
-// ----------------------------------------------------------------------------
-// Helpers...
-
-func isSet(s *string) bool {
-	return s != nil && len(*s) > 0
-}
-
-func isYamlFile(file string) bool {
-	ext := filepath.Ext(file)
-	return ext == ".yml" || ext == ".yaml"
 }

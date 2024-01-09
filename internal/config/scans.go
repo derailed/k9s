@@ -23,8 +23,8 @@ func (l Labels) exclude(k, val string) bool {
 
 // ScanExcludes tracks vul scan exclusions.
 type ScanExcludes struct {
-	Namespaces []string `yaml:"namespaces"`
-	Labels     Labels   `yaml:"labels"`
+	Namespaces []string `json:"namespaces" yaml:"namespaces"`
+	Labels     Labels   `json:"labels" yaml:"labels"`
 }
 
 func newScanExcludes() ScanExcludes {
@@ -50,19 +50,19 @@ func (b ScanExcludes) exclude(ns string, ll map[string]string) bool {
 
 // ImageScans tracks vul scans options.
 type ImageScans struct {
-	Enable     bool         `yaml:"enable"`
-	Exclusions ScanExcludes `yaml:"exclusions"`
+	Enable     bool         `json:"enable" yaml:"enable"`
+	Exclusions ScanExcludes `json:"exclusions" yaml:"exclusions"`
 }
 
 // NewImageScans returns a new instance.
-func NewImageScans() *ImageScans {
-	return &ImageScans{
+func NewImageScans() ImageScans {
+	return ImageScans{
 		Exclusions: newScanExcludes(),
 	}
 }
 
 // ShouldExclude checks if scan should be excluder given ns/labels
-func (i *ImageScans) ShouldExclude(ns string, ll map[string]string) bool {
+func (i ImageScans) ShouldExclude(ns string, ll map[string]string) bool {
 	if !i.Enable {
 		return false
 	}

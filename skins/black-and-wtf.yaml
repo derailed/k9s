@@ -24,7 +24,7 @@ k9s:
   prompt:
     fgColor: *fg
     bgColor: *bg
-    suggestColor: &gray
+    suggestColor: *gray
   info:
     fgColor: *text
     sectionColor: *fg

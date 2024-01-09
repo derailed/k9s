@@ -83,7 +83,14 @@ func (h *History) getValsCmd(app *App, _ ui.Tabular, _ client.GVR, path string) 
 
 func (h *History) bindDangerousKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		ui.KeyR: ui.NewKeyAction("RollBackTo...", h.rollbackCmd, true),
+		ui.KeyR: ui.NewKeyActionWithOpts(
+			"RollBackTo...",
+			h.rollbackCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			},
+		),
 	})
 }
 

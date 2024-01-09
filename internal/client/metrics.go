@@ -90,7 +90,7 @@ func (m *MetricsServer) ClusterLoad(nos *v1.NodeList, nmx *mv1beta1.NodeMetricsL
 
 func (m *MetricsServer) checkAccess(ns, gvr, msg string) error {
 	if !m.HasMetrics() {
-		return errors.New("No metrics-server detected on cluster")
+		return errors.New("no metrics-server detected on cluster")
 	}
 
 	auth, err := m.CanI(ns, gvr, ListAccess)
@@ -193,7 +193,7 @@ func (m *MetricsServer) FetchNodeMetrics(ctx context.Context, n string) (*mv1bet
 
 	mx, ok := mmx[n]
 	if !ok {
-		return nil, fmt.Errorf("Unable to retrieve node metrics for %q", n)
+		return nil, fmt.Errorf("unable to retrieve node metrics for %q", n)
 	}
 	return mx, nil
 }
@@ -283,7 +283,7 @@ func (m *MetricsServer) FetchPodMetrics(ctx context.Context, fqn string) (*mv1be
 	}
 	pmx, ok := mmx[fqn]
 	if !ok {
-		return nil, fmt.Errorf("Unable to locate pod metrics for pod %q", fqn)
+		return nil, fmt.Errorf("unable to locate pod metrics for pod %q", fqn)
 	}
 
 	return pmx, nil

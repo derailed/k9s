@@ -4,8 +4,9 @@
 package config
 
 import (
-	"errors"
+	"fmt"
 	"path/filepath"
+	"sync"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config/data"
@@ -13,19 +14,19 @@ import (
 
 // K9s tracks K9s configuration options.
 type K9s struct {
-	LiveViewAutoRefresh bool        `yaml:"liveViewAutoRefresh"`
-	ScreenDumpDir       string      `yaml:"screenDumpDir,omitempty"`
-	RefreshRate         int         `yaml:"refreshRate"`
-	MaxConnRetry        int         `yaml:"maxConnRetry"`
-	ReadOnly            bool        `yaml:"readOnly"`
-	NoExitOnCtrlC       bool        `yaml:"noExitOnCtrlC"`
-	UI                  UI          `yaml:"ui"`
-	SkipLatestRevCheck  bool        `yaml:"skipLatestRevCheck"`
-	DisablePodCounting  bool        `yaml:"disablePodCounting"`
-	ShellPod            *ShellPod   `yaml:"shellPod"`
-	ImageScans          *ImageScans `yaml:"imageScans"`
-	Logger              *Logger     `yaml:"logger"`
-	Thresholds          Threshold   `yaml:"thresholds"`
+	LiveViewAutoRefresh bool       `json:"liveViewAutoRefresh" yaml:"liveViewAutoRefresh"`
+	ScreenDumpDir       string     `json:"screenDumpDir" yaml:"screenDumpDir,omitempty"`
+	RefreshRate         int        `json:"refreshRate" yaml:"refreshRate"`
+	MaxConnRetry        int        `json:"maxConnRetry" yaml:"maxConnRetry"`
+	ReadOnly            bool       `json:"readOnly" yaml:"readOnly"`
+	NoExitOnCtrlC       bool       `json:"noExitOnCtrlC" yaml:"noExitOnCtrlC"`
+	UI                  UI         `json:"ui" yaml:"ui"`
+	SkipLatestRevCheck  bool       `json:"skipLatestRevCheck" yaml:"skipLatestRevCheck"`
+	DisablePodCounting  bool       `json:"disablePodCounting" yaml:"disablePodCounting"`
+	ShellPod            ShellPod   `json:"shellPod" yaml:"shellPod"`
+	ImageScans          ImageScans `json:"imageScans" yaml:"imageScans"`
+	Logger              Logger     `json:"logger" yaml:"logger"`
+	Thresholds          Threshold  `json:"thresholds" yaml:"thresholds"`
 	manualRefreshRate   int
 	manualHeadless      *bool
 	manualLogoless      *bool
@@ -38,6 +39,7 @@ type K9s struct {
 	activeConfig        *data.Config
 	conn                client.Connection
 	ks                  data.KubeSettings
+	mx                  sync.RWMutex
 }
 
 // NewK9s create a new K9s configuration.
@@ -57,25 +59,32 @@ func NewK9s(conn client.Connection, ks data.KubeSettings) *K9s {
 }
 
 func (k *K9s) resetConnection(conn client.Connection) {
+	k.mx.Lock()
+	defer k.mx.Unlock()
+
 	k.conn = conn
 }
 
 // Save saves the k9s config to dis.
 func (k *K9s) Save() error {
-	if k.activeConfig != nil {
-		path := filepath.Join(
-			AppContextsDir,
-			data.SanitizeContextSubpath(k.activeConfig.Context.ClusterName, k.activeContextName),
-			data.MainConfigFile,
-		)
-		return k.activeConfig.Save(path)
+	if k.activeConfig == nil {
+		return fmt.Errorf("save failed. no active config detected")
 	}
+	path := filepath.Join(
+		AppContextsDir,
+		data.SanitizeContextSubpath(k.activeConfig.Context.ClusterName, k.activeContextName),
+		data.MainConfigFile,
+	)
 
-	return nil
+	return k.activeConfig.Save(path)
 }
 
-// Refine merges k9s configs.
-func (k *K9s) Refine(k1 *K9s) {
+// Merge merges k9s configs.
+func (k *K9s) Merge(k1 *K9s) {
+	if k1 == nil {
+		return
+	}
+
 	k.LiveViewAutoRefresh = k1.LiveViewAutoRefresh
 	k.ScreenDumpDir = k1.ScreenDumpDir
 	k.RefreshRate = k1.RefreshRate
@@ -86,56 +95,31 @@ func (k *K9s) Refine(k1 *K9s) {
 	k.SkipLatestRevCheck = k1.SkipLatestRevCheck
 	k.DisablePodCounting = k1.DisablePodCounting
 	k.ShellPod = k1.ShellPod
-	k.ImageScans = k1.ImageScans
 	k.Logger = k1.Logger
+	k.ImageScans = k1.ImageScans
 	k.Thresholds = k1.Thresholds
 }
 
-// Override overrides k9s config from cli args.
-func (k *K9s) Override(k9sFlags *Flags) {
-	if *k9sFlags.RefreshRate != DefaultRefreshRate {
-		k.OverrideRefreshRate(*k9sFlags.RefreshRate)
+// AppScreenDumpDir fetch screen dumps dir.
+func (k *K9s) AppScreenDumpDir() string {
+	d := k.ScreenDumpDir
+	if isStringSet(k.manualScreenDumpDir) {
+		d = *k.manualScreenDumpDir
+		k.ScreenDumpDir = d
+	}
+	if d == "" {
+		d = AppDumpsDir
 	}
 
-	k.OverrideHeadless(*k9sFlags.Headless)
-	k.OverrideLogoless(*k9sFlags.Logoless)
-	k.OverrideCrumbsless(*k9sFlags.Crumbsless)
-	k.OverrideReadOnly(*k9sFlags.ReadOnly)
-	k.OverrideWrite(*k9sFlags.Write)
-	k.OverrideCommand(*k9sFlags.Command)
-	k.OverrideScreenDumpDir(*k9sFlags.ScreenDumpDir)
+	return d
 }
 
-// OverrideScreenDumpDir set the screen dump dir manually.
-func (k *K9s) OverrideScreenDumpDir(dir string) {
-	k.manualScreenDumpDir = &dir
+// ContextScreenDumpDir fetch context specific screen dumps dir.
+func (k *K9s) ContextScreenDumpDir() string {
+	return filepath.Join(k.AppScreenDumpDir(), k.contextPath())
 }
 
-// GetScreenDumpDir fetch screen dumps dir.
-func (k *K9s) GetScreenDumpDir() string {
-	screenDumpDir := k.ScreenDumpDir
-	if k.manualScreenDumpDir != nil && *k.manualScreenDumpDir != "" {
-		screenDumpDir = *k.manualScreenDumpDir
-	}
-	if screenDumpDir == "" {
-		screenDumpDir = AppDumpsDir
-	}
-
-	return screenDumpDir
-}
-
-// Reset resets configuration and context.
-func (k *K9s) Reset() {
-	k.activeConfig, k.activeContextName = nil, ""
-}
-
-// ActiveScreenDumpsDir fetch context specific screen dumps dir.
-func (k *K9s) ActiveScreenDumpsDir() string {
-	return filepath.Join(k.GetScreenDumpDir(), k.ActiveContextDir())
-}
-
-// ActiveContextDir fetch current cluster/context path.
-func (k *K9s) ActiveContextDir() string {
+func (k *K9s) contextPath() string {
 	if k.activeConfig == nil {
 		return "na"
 	}
@@ -146,33 +130,39 @@ func (k *K9s) ActiveContextDir() string {
 	)
 }
 
+// Reset resets configuration and context.
+func (k *K9s) Reset() {
+	k.activeConfig, k.activeContextName = nil, ""
+}
+
 // ActiveContextNamespace fetch the context active ns.
 func (k *K9s) ActiveContextNamespace() (string, error) {
-	if k.activeConfig != nil {
-		return k.activeConfig.Context.Namespace.Active, nil
+	act, err := k.ActiveContext()
+	if err != nil {
+		return "", err
 	}
 
-	return "", errors.New("context config is not set")
+	return act.Namespace.Active, nil
 }
 
 // ActiveContextName returns the active context name.
 func (k *K9s) ActiveContextName() string {
+	k.mx.RLock()
+	defer k.mx.RUnlock()
+
 	return k.activeContextName
 }
 
 // ActiveContext returns the currently active context.
 func (k *K9s) ActiveContext() (*data.Context, error) {
-	if k.activeConfig != nil {
-		if k.activeConfig.Context == nil {
-			ct, err := k.ks.CurrentContext()
-			if err != nil {
-				return nil, err
-			}
-			k.activeConfig.Context = data.NewContextFromConfig(ct)
-		}
-		return k.activeConfig.Context, nil
-	}
+	var ac *data.Config
+	k.mx.RLock()
+	ac = k.activeConfig
+	k.mx.RUnlock()
 
+	if ac != nil && ac.Context != nil {
+		return ac.Context, nil
+	}
 	ct, err := k.ActivateContext(k.activeContextName)
 	if err != nil {
 		return nil, err
@@ -181,7 +171,7 @@ func (k *K9s) ActiveContext() (*data.Context, error) {
 	return ct, nil
 }
 
-// ActivateContext initializes the active context is not present.
+// ActivateContext initializes the active context if not present.
 func (k *K9s) ActivateContext(n string) (*data.Context, error) {
 	k.activeContextName = n
 	ct, err := k.ks.GetContext(n)
@@ -192,161 +182,128 @@ func (k *K9s) ActivateContext(n string) (*data.Context, error) {
 	if err != nil {
 		return nil, err
 	}
-	// If the context specifies a default namespace, use it!
-	if k.conn != nil {
-		k.Validate(k.conn, k.ks)
-		if ns := k.conn.ActiveNamespace(); ns != client.BlankNamespace {
-			k.activeConfig.Context.Namespace.Active = ns
-		} else {
-			k.activeConfig.Context.Namespace.Active = client.DefaultNamespace
-		}
+
+	k.Validate(k.conn, k.ks)
+	// If the context specifies a namespace, use it!
+	if ns := ct.Namespace; ns != client.BlankNamespace {
+		k.activeConfig.Context.Namespace.Active = ns
+	} else {
+		k.activeConfig.Context.Namespace.Active = client.DefaultNamespace
+	}
+	if k.activeConfig.Context == nil {
+		return nil, fmt.Errorf("context activation failed for: %s", n)
 	}
 
 	return k.activeConfig.Context, nil
 }
 
-// Reload reloads the active config from disk.
+// Reload reloads the context config from disk.
 func (k *K9s) Reload() error {
+	k.mx.Lock()
+	defer k.mx.Unlock()
+
 	ct, err := k.ks.GetContext(k.activeContextName)
 	if err != nil {
 		return err
 	}
-
 	k.activeConfig, err = k.dir.Load(k.activeContextName, ct)
 	if err != nil {
 		return err
 	}
+	k.activeConfig.Validate(k.conn, k.ks)
 
 	return nil
 }
 
-// OverrideRefreshRate set the refresh rate manually.
-func (k *K9s) OverrideRefreshRate(r int) {
-	k.manualRefreshRate = r
-}
-
-// OverrideHeadless toggle the header manually.
-func (k *K9s) OverrideHeadless(b bool) {
-	k.manualHeadless = &b
-}
-
-// OverrideLogoless toggle the k9s logo manually.
-func (k *K9s) OverrideLogoless(b bool) {
-	k.manualLogoless = &b
-}
-
-// OverrideCrumbsless tooh the crumbslessness manually.
-func (k *K9s) OverrideCrumbsless(b bool) {
-	k.manualCrumbsless = &b
-}
-
-// OverrideReadOnly set the readonly mode manually.
-func (k *K9s) OverrideReadOnly(b bool) {
-	if b {
-		k.manualReadOnly = &b
+// Override overrides k9s config from cli args.
+func (k *K9s) Override(k9sFlags *Flags) {
+	if k9sFlags.RefreshRate != nil && *k9sFlags.RefreshRate != DefaultRefreshRate {
+		k.manualRefreshRate = *k9sFlags.RefreshRate
 	}
-}
 
-// OverrideWrite set the write mode manually.
-func (k *K9s) OverrideWrite(b bool) {
-	if b {
-		var flag bool
-		k.manualReadOnly = &flag
+	k.manualHeadless = k9sFlags.Headless
+	k.manualLogoless = k9sFlags.Logoless
+	k.manualCrumbsless = k9sFlags.Crumbsless
+	if k9sFlags.ReadOnly != nil && *k9sFlags.ReadOnly {
+		k.manualReadOnly = k9sFlags.ReadOnly
 	}
-}
-
-// OverrideCommand set the command manually.
-func (k *K9s) OverrideCommand(cmd string) {
-	k.manualCommand = &cmd
+	if k9sFlags.Write != nil && *k9sFlags.Write {
+		var false bool
+		k.manualReadOnly = &false
+	}
+	k.manualCommand = k9sFlags.Command
+	k.manualScreenDumpDir = k9sFlags.ScreenDumpDir
 }
 
 // IsHeadless returns headless setting.
 func (k *K9s) IsHeadless() bool {
-	h := k.UI.Headless
-	if k.manualHeadless != nil && *k.manualHeadless {
-		h = *k.manualHeadless
+	if isBoolSet(k.manualHeadless) {
+		return true
 	}
 
-	return h
+	return k.UI.Headless
 }
 
 // IsLogoless returns logoless setting.
 func (k *K9s) IsLogoless() bool {
-	h := k.UI.Logoless
-	if k.manualLogoless != nil && *k.manualLogoless {
-		h = *k.manualLogoless
+	if isBoolSet(k.manualLogoless) {
+		return true
 	}
 
-	return h
+	return k.UI.Logoless
 }
 
 // IsCrumbsless returns crumbsless setting.
 func (k *K9s) IsCrumbsless() bool {
-	h := k.UI.Crumbsless
-	if k.manualCrumbsless != nil && *k.manualCrumbsless {
-		h = *k.manualCrumbsless
+	if isBoolSet(k.manualCrumbsless) {
+		return true
 	}
 
-	return h
+	return k.UI.Crumbsless
 }
 
 // GetRefreshRate returns the current refresh rate.
 func (k *K9s) GetRefreshRate() int {
-	rate := k.RefreshRate
 	if k.manualRefreshRate != 0 {
-		rate = k.manualRefreshRate
+		return k.manualRefreshRate
 	}
 
-	return rate
+	return k.RefreshRate
 }
 
 // IsReadOnly returns the readonly setting.
 func (k *K9s) IsReadOnly() bool {
-	readOnly := k.ReadOnly
-	if k.manualReadOnly != nil {
-		readOnly = *k.manualReadOnly
+	k.mx.RLock()
+	defer k.mx.RUnlock()
+
+	ro := k.ReadOnly
+	if k.activeConfig != nil && k.activeConfig.Context.ReadOnly != nil {
+		ro = *k.activeConfig.Context.ReadOnly
 	}
-	if k.activeConfig != nil && k.activeConfig.Context.ReadOnly {
-		readOnly = true
+	if k.manualReadOnly != nil {
+		ro = true
 	}
 
-	return readOnly
+	return ro
 }
 
-func (k *K9s) validateDefaults() {
+// Validate the current configuration.
+func (k *K9s) Validate(c client.Connection, ks data.KubeSettings) {
 	if k.RefreshRate <= 0 {
 		k.RefreshRate = defaultRefreshRate
 	}
 	if k.MaxConnRetry <= 0 {
 		k.MaxConnRetry = defaultMaxConnRetry
 	}
-}
 
-// Validate the current configuration.
-func (k *K9s) Validate(c client.Connection, ks data.KubeSettings) {
-	k.validateDefaults()
 	if k.activeConfig == nil {
 		if n, err := ks.CurrentContextName(); err == nil {
 			_, _ = k.ActivateContext(n)
 		}
 	}
-	if k.ImageScans == nil {
-		k.ImageScans = NewImageScans()
-	}
-	if k.ShellPod == nil {
-		k.ShellPod = NewShellPod()
-	}
-	k.ShellPod.Validate()
-
-	if k.Logger == nil {
-		k.Logger = NewLogger()
-	} else {
-		k.Logger.Validate()
-	}
-	if k.Thresholds == nil {
-		k.Thresholds = NewThreshold()
-	}
-	k.Thresholds.Validate()
+	k.ShellPod = k.ShellPod.Validate()
+	k.Logger = k.Logger.Validate()
+	k.Thresholds = k.Thresholds.Validate()
 
 	if k.activeConfig != nil {
 		k.activeConfig.Validate(c, ks)

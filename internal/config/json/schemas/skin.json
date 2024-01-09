@@ -1,0 +1,185 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "K9s skin schema",
+  "type": "object",
+  "additionalProperties": true,
+  "properties": {
+    "k9s": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "body": {
+          "type": "object",
+          "properties": {
+            "fgColor": {"type": "string"},
+            "bgColor": {"type": "string"},
+            "logoColor": {"type": "string"}
+          }
+        },
+        "prompt": {
+          "type": "object",
+          "properties": {
+            "fgColor": {"type": "string"},
+            "bgColor": {"type": "string"},
+            "suggestColor": {"type": "string"}
+          }
+        },
+        "info": {
+          "type": "object",
+          "properties": {
+            "fgColor": {"type": "string"},
+            "sectionColor": {"type": "string"}
+          }
+        },
+        "help": {
+          "type": "object",
+          "properties": {
+            "fgColor": {"type": "string"},
+            "bgColor": {"type": "string"},
+            "keyColor": {"type": "string"},
+            "numKeyColor": {"type": "string"},
+            "sectionColor": {"type": "string"}
+          }
+        },
+        "dialog": {
+          "type": "object",
+          "properties": {
+            "fgColor": {"type": "string"},
+            "bgColor": {"type": "string"},
+            "buttonFgColor": {"type": "string"},
+            "buttonBgColor": {"type": "string"},
+            "buttonFocusFgColor": {"type": "string"},
+            "buttonFocusBgColor": {"type": "string"},
+            "labelFgColor": {"type": "string"},
+            "fieldFgColor": {"type": "string"}
+          }
+        },
+        "frame": {
+          "type": "object",
+          "properties": {
+            "border": {
+              "type": "object",
+              "properties": {
+                "fgColor": {"type": "string"},
+                "bgColor": {"type": "string"}
+              }
+            },
+            "menu": {
+              "type": "object",
+              "properties": {
+                "fgColor": {"type": "string"},
+                "keyColor": {"type": "string"},
+                "numKeyColor": {"type": "string"}
+              }
+            },
+            "crumbs": {
+              "type": "object",
+              "properties": {
+                "fgColor": {"type": "string"},
+                "keyColor": {"type": "string"},
+                "activeColor": {"type": "string"}
+              }
+            },
+            "status": {
+              "type": "object",
+              "properties": {
+                "newColor": {"type": "string"},
+                "modifyColor": {"type": "string"},
+                "addColor:": {"type": "string"},
+                "errorColor": {"type": "string"},
+                "highlightColor": {"type": "string"},
+                "killColor": {"type": "string"},
+                "completedColor": {"type": "string"}
+              }
+            },
+            "title": {
+              "type": "object",
+              "properties": {
+                "fgColor": {"type": "string"},
+                "bgColor":{"type": "string"},
+                "highlightColor": {"type": "string"},
+                "counterColor":{"type": "string"},
+                "filterColor": {"type": "string"}
+              }
+            }
+          }
+        },
+        "views": {
+          "type": "object",
+          "properties": {
+            "charts": {
+              "type": "object",
+              "properties": {
+                "bgColor": {"type": "string"},
+                "defaultDialColors": {
+                  "type": "array",
+                  "items": {"type": "string"}
+                },
+                "defaultChartColors": {
+                  "type": "array",
+                  "items": {"type": "string"}
+                }
+              },
+              "table": {
+                "type": "object",
+                "properties": {
+                  "fgColor": {"type": "string"},
+                  "bgColor": {"type": "string"},
+                  "cursorFgColor": {"type": "string"},
+                  "cursorBgColor": {"type": "string"},
+                  "header": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "fgColor": {"type": "string"},
+                        "bgColor": {"type": "string"}
+                      }
+                    }
+                  }
+                }
+              },
+              "xray": {
+                "type": "object",
+                "properties": {
+                  "fgColor": {"type": "string"},
+                  "bgColor": {"type": "string"},
+                  "cursorFgColor": {"type": "string"},
+                  "graphicColor": {"type": "string"},
+                  "showIcons": {"type": "boolean"}
+                }
+              },
+              "yaml": {
+                "type": "object",
+                "properties": {
+                  "keyColor": {"type": "string"},
+                  "colonColor": {"type": "string"},
+                  "valueColor": {"type": "string"}
+                }
+              },
+              "logs": {
+                "type": "object",
+                "properties": {
+                  "fgColor": {"type": "string"},
+                  "bgColor": {"type": "string"},
+                  "indicator": {
+                    "type": "object",
+                    "additionalProperties": {
+                      "type": "object",
+                      "properties": {
+                        "fgColor": {"type": "string"},
+                        "bgColor": {"type": "string"},
+                        "toggleOnColor": {"type": "string"},
+                        "toggleOffColor": {"type": "string"}
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

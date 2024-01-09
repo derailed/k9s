@@ -34,12 +34,11 @@ func NewApp(cfg *config.Config, context string) *App {
 	a := App{
 		Application:  tview.NewApplication(),
 		actions:      make(KeyActions),
-		Configurator: Configurator{Config: cfg},
+		Configurator: Configurator{Config: cfg, Styles: config.NewStyles()},
 		Main:         NewPages(),
 		flash:        model.NewFlash(model.DefaultFlashDelay),
 		cmdBuff:      model.NewFishBuff(':', model.CommandBuffer),
 	}
-	a.ReloadStyles()
 
 	a.views = map[string]tview.Primitive{
 		"menu":   NewMenu(a.Styles),
@@ -132,11 +131,6 @@ func (a *App) StylesChanged(s *config.Styles) {
 	} else {
 		log.Error().Msgf("Main not found")
 	}
-}
-
-// ReloadStyles reloads skin file.
-func (a *App) ReloadStyles() {
-	a.RefreshStyles()
 }
 
 // Conn returns an api server connection.

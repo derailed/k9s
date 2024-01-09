@@ -6,8 +6,12 @@ package data
 import (
 	"os"
 
+	"github.com/derailed/k9s/internal/config/json"
 	"k8s.io/client-go/tools/clientcmd/api"
 )
+
+// JSONValidator validate yaml configurations.
+var JSONValidator = json.NewValidator()
 
 const (
 	// DefaultDirMod default unix perms for k9s directory.

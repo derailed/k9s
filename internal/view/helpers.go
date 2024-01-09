@@ -87,9 +87,12 @@ func k8sEnv(c *client.Config) Env {
 	}
 }
 
-func defaultEnv(c *client.Config, path string, header render.Header, row render.Row) Env {
+func defaultEnv(c *client.Config, path string, header render.Header, row *render.Row) Env {
 	env := k8sEnv(c)
 	env["NAMESPACE"], env["NAME"] = client.Namespaced(path)
+	if row == nil {
+		return env
+	}
 	for _, col := range header.Columns(true) {
 		i := header.IndexOf(col, true)
 		if i >= 0 && i < len(row.Fields) {
@@ -154,7 +157,7 @@ func asKey(key string) (tcell.Key, error) {
 		}
 	}
 
-	return 0, fmt.Errorf("no matching key found %s", key)
+	return 0, fmt.Errorf("invalid key specified: %q", key)
 }
 
 // FwFQN returns a fully qualified ns/name:container id.

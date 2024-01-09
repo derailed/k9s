@@ -517,12 +517,12 @@ func (a *APIClient) supportsMetricsResources() error {
 		a.cache.Add(cacheMXAPIKey, supported, cacheExpiry)
 	}()
 
-	dial, err := a.CachedDiscovery()
+	dial, err := a.Dial()
 	if err != nil {
 		log.Warn().Err(err).Msgf("Unable to dial discovery API")
 		return err
 	}
-	apiGroups, err := dial.ServerGroups()
+	apiGroups, err := dial.Discovery().ServerGroups()
 	if err != nil {
 		return err
 	}
