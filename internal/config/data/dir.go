@@ -68,7 +68,7 @@ func (d *Dir) loadConfig(path string) (*Config, error) {
 
 	var cfg Config
 	if err := yaml.Unmarshal(bb, &cfg); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("context-config yaml load failed: %w\n%s", err, string(bb))
 	}
 
 	return &cfg, nil
