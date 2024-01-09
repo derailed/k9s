@@ -205,6 +205,11 @@ func (c *Config) Merge(c1 *Config) {
 
 // Load loads K9s configuration from file.
 func (c *Config) Load(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		if err := c.Save(); err != nil {
+			return err
+		}
+	}
 	bb, err := os.ReadFile(path)
 	if err != nil {
 		return err

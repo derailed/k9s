@@ -48,6 +48,9 @@ func (v *CustomView) Reset() {
 
 // Load loads view configurations.
 func (v *CustomView) Load(path string) error {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil
+	}
 	bb, err := os.ReadFile(path)
 	if err != nil {
 		return err

@@ -11,7 +11,8 @@
         "properties": {
           "shortCut": {"type": "string"},
           "description": {"type": "string"},
-          "command": {"type": "string"}
+          "command": {"type": "string"},
+          "keepHistory": {"type": "boolean"}
         }
       }
     }
