@@ -166,7 +166,6 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
 			log.Error().Err(err).Msgf("Context switch failed")
 			return err
 		}
-
 		if err := c.app.switchContext(p, false); err != nil {
 			return err
 		}
