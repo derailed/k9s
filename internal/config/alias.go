@@ -190,5 +190,6 @@ func (a *Aliases) SaveAliases(path string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, cfg, 0644)
+
+	return os.WriteFile(path, cfg, data.DefaultFileMod)
 }

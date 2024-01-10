@@ -77,7 +77,7 @@ func (c *Config) Refine(flags *genericclioptions.ConfigFlags, k9sFlags *Flags, c
 		}
 		_, err = c.K9s.ActivateContext(n)
 		if err != nil {
-			return fmt.Errorf("unable to activate context %q: %w", *flags.Context, err)
+			return fmt.Errorf("unable to activate context %q: %w", n, err)
 		}
 	}
 	log.Debug().Msgf("Active Context %q", c.K9s.ActiveContextName())
@@ -149,6 +149,10 @@ func (c *Config) FavNamespaces() []string {
 
 // SetActiveNamespace set the active namespace in the current context.
 func (c *Config) SetActiveNamespace(ns string) error {
+	if ns == client.NotNamespaced {
+		log.Debug().Msgf("[SetNS] No namespace given. skipping!")
+		return nil
+	}
 	ct, err := c.K9s.ActiveContext()
 	if err != nil {
 		return err
@@ -251,7 +255,7 @@ func (c *Config) SaveFile(path string) error {
 		return err
 	}
 
-	return os.WriteFile(path, cfg, 0644)
+	return os.WriteFile(path, cfg, data.DefaultFileMod)
 }
 
 // Validate the configuration.

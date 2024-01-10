@@ -191,11 +191,8 @@ func (k *K9s) ActivateContext(n string) (*data.Context, error) {
 	// If the context specifies a namespace, use it!
 	if ns := ct.Namespace; ns != client.BlankNamespace {
 		k.activeConfig.Context.Namespace.Active = ns
-	} else {
+	} else if k.activeConfig.Context.Namespace.Active == "" {
 		k.activeConfig.Context.Namespace.Active = client.DefaultNamespace
-	}
-	if k.activeConfig.Context == nil {
-		return nil, fmt.Errorf("context activation failed for: %s", n)
 	}
 	if k.activeConfig.Context == nil {
 		return nil, fmt.Errorf("context activation failed for: %s", n)

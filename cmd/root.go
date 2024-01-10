@@ -93,7 +93,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	cfg, err := loadConfiguration()
 	if err != nil {
-		return err
+		log.Error().Err(err).Msgf("Fail to load global/context configuration")
 	}
 	app := view.NewApp(cfg)
 	if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
