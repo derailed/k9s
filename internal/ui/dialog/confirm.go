@@ -85,12 +85,10 @@ func ShowConfirm(styles config.Dialog, pages *ui.Pages, title, msg string, ack c
 		cancel()
 	})
 	for i := 0; i < 2; i++ {
-		b := f.GetButton(i)
-		if b == nil {
-			continue
+		if b := f.GetButton(i); b != nil {
+			b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
+			b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
 		}
-		b.SetBackgroundColorActivated(styles.ButtonFocusBgColor.Color())
-		b.SetLabelColorActivated(styles.ButtonFocusFgColor.Color())
 	}
 	f.SetFocus(0)
 	modal := tview.NewModalForm("<"+title+">", f)

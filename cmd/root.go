@@ -115,12 +115,12 @@ func loadConfiguration() (*config.Config, error) {
 	k8sCfg := client.NewConfig(k8sFlags)
 	k9sCfg := config.NewConfig(k8sCfg)
 	if err := k9sCfg.Load(config.AppConfigFile); err != nil {
-		return nil, err
+		return k9sCfg, err
 	}
 	k9sCfg.K9s.Override(k9sFlags)
 	if err := k9sCfg.Refine(k8sFlags, k9sFlags, k8sCfg); err != nil {
 		log.Error().Err(err).Msgf("config refine failed")
-		return nil, err
+		return k9sCfg, err
 	}
 	conn, err := client.InitConnection(k8sCfg)
 	k9sCfg.SetConnection(conn)
@@ -129,16 +129,16 @@ func loadConfiguration() (*config.Config, error) {
 	}
 	// Try to access server version if that fail. Connectivity issue?
 	if !conn.CheckConnectivity() {
-		return nil, fmt.Errorf("cannot connect to context: %s", k9sCfg.K9s.ActiveContextName())
+		return k9sCfg, fmt.Errorf("cannot connect to context: %s", k9sCfg.K9s.ActiveContextName())
 	}
 	if !conn.ConnectionOK() {
-		return nil, fmt.Errorf("k8s connection failed for context: %s", k9sCfg.K9s.ActiveContextName())
+		return k9sCfg, fmt.Errorf("k8s connection failed for context: %s", k9sCfg.K9s.ActiveContextName())
 	}
 
 	log.Info().Msg("✅ Kubernetes connectivity")
 	if err := k9sCfg.Save(); err != nil {
 		log.Error().Err(err).Msg("Config save")
-		return nil, err
+		return k9sCfg, err
 	}
 
 	return k9sCfg, nil
