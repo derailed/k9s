@@ -1,0 +1,46 @@
+# $HOME/.k9s/plugin.yml
+plugins:
+  kapp-inspect:
+    shortCut: Shift-Z
+    confirm: false
+    description: Kapp inspect
+    scopes:
+      - app
+    command: bash
+    background: false
+    args:
+      - -c
+      - "export FORCE_COLOR=1;kapp inspect -a $NAME.app --namespace $NAMESPACE --kubeconfig-context $CONTEXT --color --tty | less -RK"
+  kctrl-app-status:
+    shortCut: Shift-Q
+    confirm: false
+    description: kctrl app status
+    scopes:
+      - app
+    command: bash
+    background: false
+    args:
+      - -c
+      - "export FORCE_COLOR=1;kctrl app status -a $NAME --namespace $NAMESPACE --kubeconfig-context $CONTEXT --color --tty | less -RK"
+  kctrl-app-pause:
+    shortCut: Shift-T
+    confirm: false
+    description: kctrl app pause
+    scopes:
+      - app
+    command: bash
+    background: false
+    args:
+      - -c
+      - "export FORCE_COLOR=1;kctrl app pause -a $NAME --namespace $NAMESPACE --kubeconfig-context $CONTEXT --yes --color --tty | less -RK"
+  kctrl-app-kick:
+    shortCut: Shift-K
+    confirm: false
+    description: kctrl app kick
+    scopes:
+      - app
+    command: bash
+    background: false
+    args:
+      - -c
+      - "export FORCE_COLOR=1;kctrl app kick -a $NAME --namespace $NAMESPACE --kubeconfig-context $CONTEXT --yes --color --tty | less -RK"

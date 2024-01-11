@@ -1,0 +1,44 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "K9s context config schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "k9s": {
+      "additionalProperties": false,
+      "properties": {
+        "cluster": { "type": "string" },
+        "readOnly": {"type": "boolean"},
+        "skin": { "type": "string" },
+        "portForwardAddress": { "type": "string" },
+        "namespace": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "active": {"type": "string"},
+            "lockFavorites": {"type": "boolean"},
+            "favorites": {
+              "type": "array",
+              "items": {"type": "string"}
+            }
+          }
+        },
+        "view": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "active": { "type": "string" }
+          }
+        },
+        "featureGates": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "nodeShell": { "type": "boolean" }
+          }
+        }
+      }
+    }
+  },
+  "required": ["k9s"]
+}

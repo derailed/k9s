@@ -1,0 +1,4 @@
+benchmarks:
+  defaults:
+    concurrency: 2
+    requests: 200

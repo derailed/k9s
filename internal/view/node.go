@@ -41,12 +41,37 @@ func (n *Node) nodeContext(ctx context.Context) context.Context {
 
 func (n *Node) bindDangerousKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		ui.KeyC: ui.NewKeyAction("Cordon", n.toggleCordonCmd(true), true),
-		ui.KeyU: ui.NewKeyAction("Uncordon", n.toggleCordonCmd(false), true),
-		ui.KeyR: ui.NewKeyAction("Drain", n.drainCmd, true),
+		ui.KeyC: ui.NewKeyActionWithOpts(
+			"Cordon",
+			n.toggleCordonCmd(true),
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			},
+		),
+		ui.KeyU: ui.NewKeyActionWithOpts(
+			"Uncordon",
+			n.toggleCordonCmd(false),
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			},
+		),
+		ui.KeyR: ui.NewKeyActionWithOpts(
+			"Drain",
+			n.drainCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			},
+		),
 	})
-	cl := n.App().Config.K9s.CurrentCluster
-	if n.App().Config.K9s.Clusters[cl].FeatureGates.NodeShell {
+	ct, err := n.App().Config.K9s.ActiveContext()
+	if err != nil {
+		log.Error().Err(err).Msgf("No active context located")
+		return
+	}
+	if ct.FeatureGates.NodeShell {
 		aa.Add(ui.KeyActions{
 			ui.KeyS: ui.NewKeyAction("Shell", n.sshCmd, true),
 		})
@@ -62,12 +87,12 @@ func (n *Node) bindKeys(aa ui.KeyActions) {
 		ui.KeyY:      ui.NewKeyAction(yamlAction, n.yamlCmd, true),
 		ui.KeyShiftC: ui.NewKeyAction("Sort CPU", n.GetTable().SortColCmd(cpuCol, false), false),
 		ui.KeyShiftM: ui.NewKeyAction("Sort MEM", n.GetTable().SortColCmd(memCol, false), false),
-		ui.KeyShift0: ui.NewKeyAction("Sort Pods", n.GetTable().SortColCmd("PODS", false), false),
+		ui.KeyShiftO: ui.NewKeyAction("Sort Pods", n.GetTable().SortColCmd("PODS", false), false),
 	})
 }
 
-func (n *Node) showPods(a *App, _ ui.Tabular, _, path string) {
-	showPods(a, n.GetTable().GetSelectedItem(), client.AllNamespaces, "spec.nodeName="+path)
+func (n *Node) showPods(a *App, _ ui.Tabular, _ client.GVR, path string) {
+	showPods(a, n.GetTable().GetSelectedItem(), client.BlankNamespace, "spec.nodeName="+path)
 }
 
 func (n *Node) drainCmd(evt *tcell.EventKey) *tcell.EventKey {
@@ -157,9 +182,7 @@ func (n *Node) sshCmd(evt *tcell.EventKey) *tcell.EventKey {
 	n.Stop()
 	defer n.Start()
 	_, node := client.Namespaced(path)
-	if err := ssh(n.App(), node); err != nil {
-		log.Error().Err(err).Msgf("Node Shell Failed")
-	}
+	launchNodeShell(n, n.App(), node)
 
 	return nil
 }

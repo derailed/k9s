@@ -11,6 +11,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog"
@@ -59,7 +60,7 @@ func TestParsePFAnn(t *testing.T) {
 }
 
 func TestExtractApp(t *testing.T) {
-	app := NewApp(config.NewConfig(nil))
+	app := NewApp(mock.NewMockConfig())
 
 	uu := map[string]struct {
 		app *App
@@ -107,7 +108,7 @@ func TestAsKey(t *testing.T) {
 		e   tcell.Key
 	}{
 		"cool": {k: "Ctrl-A", e: tcell.KeyCtrlA},
-		"miss": {k: "fred", e: 0, err: errors.New("no matching key found fred")},
+		"miss": {k: "fred", e: 0, err: errors.New(`invalid key specified: "fred"`)},
 	}
 
 	for k := range uu {
@@ -156,7 +157,7 @@ func TestK9sEnv(t *testing.T) {
 	r := render.Row{
 		Fields: []string{"a1", "b1", "c1"},
 	}
-	env := defaultEnv(c, "fred/blee", h, r)
+	env := defaultEnv(c, "fred/blee", h, &r)
 
 	assert.Equal(t, 10, len(env))
 	assert.Equal(t, cl, env["CLUSTER"])

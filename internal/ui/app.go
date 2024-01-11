@@ -34,17 +34,16 @@ func NewApp(cfg *config.Config, context string) *App {
 	a := App{
 		Application:  tview.NewApplication(),
 		actions:      make(KeyActions),
-		Configurator: Configurator{Config: cfg},
+		Configurator: Configurator{Config: cfg, Styles: config.NewStyles()},
 		Main:         NewPages(),
 		flash:        model.NewFlash(model.DefaultFlashDelay),
 		cmdBuff:      model.NewFishBuff(':', model.CommandBuffer),
 	}
-	a.ReloadStyles(context)
 
 	a.views = map[string]tview.Primitive{
 		"menu":   NewMenu(a.Styles),
 		"logo":   NewLogo(a.Styles),
-		"prompt": NewPrompt(&a, a.Config.K9s.NoIcons, a.Styles),
+		"prompt": NewPrompt(&a, a.Config.K9s.UI.NoIcons, a.Styles),
 		"crumbs": NewCrumbs(a.Styles),
 	}
 
@@ -58,7 +57,7 @@ func (a *App) Init() {
 	a.cmdBuff.AddListener(a)
 	a.Styles.AddListener(a)
 
-	a.SetRoot(a.Main, true).EnableMouse(a.Config.K9s.EnableMouse)
+	a.SetRoot(a.Main, true).EnableMouse(a.Config.K9s.UI.EnableMouse)
 }
 
 // QueueUpdate queues up a ui action.
@@ -132,11 +131,6 @@ func (a *App) StylesChanged(s *config.Styles) {
 	} else {
 		log.Error().Msgf("Main not found")
 	}
-}
-
-// ReloadStyles reloads skin file.
-func (a *App) ReloadStyles(context string) {
-	a.RefreshStyles(context)
 }
 
 // Conn returns an api server connection.

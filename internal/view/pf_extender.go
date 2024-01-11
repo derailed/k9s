@@ -125,7 +125,7 @@ func startFwdCB(v ResourceViewer, path string, pts port.PortTunnels) error {
 		}
 		log.Debug().Msgf(">>> Starting port forward %q -- %#v", pf.ID(), pt)
 		go runForward(v, pf, fwd)
-		tt = append(tt, pt.ContainerPort)
+		tt = append(tt, pt.LocalPort)
 	}
 	if len(tt) == 1 {
 		v.App().Flash().Infof("PortForward activated %s", tt[0])
@@ -137,6 +137,10 @@ func startFwdCB(v ResourceViewer, path string, pts port.PortTunnels) error {
 }
 
 func showFwdDialog(v ResourceViewer, path string, cb PortForwardCB) error {
+	ct, err := v.App().Config.CurrentContext()
+	if err != nil {
+		return err
+	}
 	mm, anns, err := fetchPodPorts(v.App().factory, path)
 	if err != nil {
 		return err
@@ -156,7 +160,7 @@ func showFwdDialog(v ResourceViewer, path string, cb PortForwardCB) error {
 			return err
 		}
 
-		pts, err := pfs.ToTunnels(v.App().Config.CurrentCluster().PortForwardAddress, ports, port.IsPortFree)
+		pts, err := pfs.ToTunnels(ct.PortForwardAddress, ports, port.IsPortFree)
 		if err != nil {
 			return err
 		}

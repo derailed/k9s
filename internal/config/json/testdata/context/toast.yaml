@@ -1,0 +1,16 @@
+k9s:
+  cluster: kind-dashb
+  readOnly: false
+  skin: nightfox
+  namespaces:
+    active: default
+    lockFavorites: false
+    favorites:
+    - kube-system
+    - default
+  view:
+    active: pod
+  fred: blee
+  featureGates:
+    nodeShell: false
+  portForwardAddress: localhost

@@ -18,6 +18,7 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
@@ -86,9 +87,12 @@ func k8sEnv(c *client.Config) Env {
 	}
 }
 
-func defaultEnv(c *client.Config, path string, header render.Header, row render.Row) Env {
+func defaultEnv(c *client.Config, path string, header render.Header, row *render.Row) Env {
 	env := k8sEnv(c)
 	env["NAMESPACE"], env["NAME"] = client.Namespaced(path)
+	if row == nil {
+		return env
+	}
 	for _, col := range header.Columns(true) {
 		i := header.IndexOf(col, true)
 		if i >= 0 && i < len(row.Fields) {
@@ -99,29 +103,26 @@ func defaultEnv(c *client.Config, path string, header render.Header, row render.
 	return env
 }
 
-func describeResource(app *App, m ui.Tabular, gvr, path string) {
-	v := NewLiveView(app, "Describe", model.NewDescribe(client.NewGVR(gvr), path))
+func describeResource(app *App, m ui.Tabular, gvr client.GVR, path string) {
+	v := NewLiveView(app, "Describe", model.NewDescribe(gvr, path))
 	if err := app.inject(v, false); err != nil {
 		app.Flash().Err(err)
 	}
 }
 
-func showPodsWithLabels(app *App, path string, sel map[string]string) {
-	labels := make([]string, 0, len(sel))
-	for k, v := range sel {
-		labels = append(labels, fmt.Sprintf("%s=%s", k, v))
+func toLabelsStr(labels map[string]string) string {
+	ll := make([]string, 0, len(labels))
+	for k, v := range labels {
+		ll = append(ll, fmt.Sprintf("%s=%s", k, v))
 	}
-	showPods(app, path, strings.Join(labels, ","), "")
+
+	return strings.Join(ll, ",")
 }
 
 func showPods(app *App, path, labelSel, fieldSel string) {
-	if err := app.switchNS(client.AllNamespaces); err != nil {
-		app.Flash().Err(err)
-		return
-	}
-
 	v := NewPod(client.NewGVR("v1/pods"))
-	v.SetContextFn(podCtx(app, path, labelSel, fieldSel))
+	v.SetContextFn(podCtx(app, path, fieldSel))
+	v.SetLabelFilter(cmd.ToLabels(labelSel))
 
 	ns, _ := client.Namespaced(path)
 	if err := app.Config.SetActiveNamespace(ns); err != nil {
@@ -132,19 +133,9 @@ func showPods(app *App, path, labelSel, fieldSel string) {
 	}
 }
 
-func podCtx(app *App, path, labelSel, fieldSel string) ContextFunc {
+func podCtx(app *App, path, fieldSel string) ContextFunc {
 	return func(ctx context.Context) context.Context {
 		ctx = context.WithValue(ctx, internal.KeyPath, path)
-		ctx = context.WithValue(ctx, internal.KeyLabels, labelSel)
-
-		ns, _ := client.Namespaced(path)
-		mx := client.NewMetricsServer(app.factory.Client())
-		nmx, err := mx.FetchPodsMetrics(ctx, ns)
-		if err != nil {
-			log.Debug().Err(err).Msgf("No pods metrics")
-		}
-		ctx = context.WithValue(ctx, internal.KeyMetrics, nmx)
-
 		return context.WithValue(ctx, internal.KeyFields, fieldSel)
 	}
 }
@@ -166,7 +157,7 @@ func asKey(key string) (tcell.Key, error) {
 		}
 	}
 
-	return 0, fmt.Errorf("no matching key found %s", key)
+	return 0, fmt.Errorf("invalid key specified: %q", key)
 }
 
 // FwFQN returns a fully qualified ns/name:container id.
@@ -254,8 +245,12 @@ func linesWithRegions(lines []string, matches fuzzy.Matches) []string {
 	for i, m := range matches {
 		for _, loc := range dao.ContinuousRanges(m.MatchedIndexes) {
 			start, end := loc[0]+offsetForLine[m.Index], loc[1]+offsetForLine[m.Index]
-			regionStr := matchTag(i, ll[m.Index][start:end])
-			ll[m.Index] = ll[m.Index][:start] + regionStr + ll[m.Index][end:]
+			line := ll[m.Index]
+			if end > len(line) {
+				end = len(line)
+			}
+			regionStr := matchTag(i, line[start:end])
+			ll[m.Index] = line[:start] + regionStr + line[end:]
 			offsetForLine[m.Index] += len(regionStr) - (end - start)
 		}
 	}

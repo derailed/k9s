@@ -5,6 +5,7 @@ package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 )
@@ -35,5 +36,5 @@ func (p *PersistentVolumeClaim) bindKeys(aa ui.KeyActions) {
 }
 
 func (p *PersistentVolumeClaim) refCmd(evt *tcell.EventKey) *tcell.EventKey {
-	return scanRefs(evt, p.App(), p.GetTable(), "v1/persistentvolumeclaims")
+	return scanRefs(evt, p.App(), p.GetTable(), dao.PvcGVR)
 }

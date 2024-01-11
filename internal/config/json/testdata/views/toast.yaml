@@ -1,0 +1,9 @@
+views:
+  v1/nodes:
+  v1/endpoints:
+    sortCol: AGE:asc
+    cols:
+      - NAME
+      - NAMESPACE
+      - ENDPOINTS
+      - AGE

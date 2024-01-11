@@ -12,14 +12,18 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tcell/v2"
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
+
+const maxTruncate = 50
 
 type (
 	// ColorerFunc represents a row colorer.
@@ -98,8 +102,11 @@ func (t *Table) StylesChanged(s *config.Styles) {
 	t.SetBackgroundColor(s.Table().BgColor.Color())
 	t.SetBorderColor(s.Frame().Border.FgColor.Color())
 	t.SetBorderFocusColor(s.Frame().Border.FocusColor.Color())
-	t.SetSelectedStyle(tcell.StyleDefault.Foreground(t.styles.Table().CursorFgColor.Color()).Background(t.styles.Table().CursorBgColor.Color()).Attributes(tcell.AttrBold))
-	t.fgColor = s.Table().CursorFgColor.Color()
+	t.SetSelectedStyle(
+		tcell.StyleDefault.Foreground(t.styles.Table().CursorFgColor.Color()).
+			Background(t.styles.Table().CursorBgColor.Color()).Attributes(tcell.AttrBold))
+	t.selFgColor = s.Table().CursorFgColor.Color()
+	t.selBgColor = s.Table().CursorBgColor.Color()
 	t.Refresh()
 }
 
@@ -241,6 +248,10 @@ func (t *Table) doUpdate(data *render.TableData) {
 		if h.MX && !t.hasMetrics {
 			continue
 		}
+		if h.VS && vul.ImgScanner == nil {
+			continue
+		}
+
 		t.AddHeaderCell(col, h)
 		c := t.GetCell(0, col)
 		c.SetBackgroundColor(bg)
@@ -284,6 +295,9 @@ func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads M
 			continue
 		}
 		if h[c].MX && !t.hasMetrics {
+			continue
+		}
+		if h[c].VS && vul.ImgScanner == nil {
 			continue
 		}
 
@@ -353,14 +367,14 @@ func (t *Table) Refresh() {
 	t.Update(data, t.hasMetrics)
 }
 
-// GetSelectedRow returns the entire selected row.
-func (t *Table) GetSelectedRow(path string) (render.Row, bool) {
+// GetSelectedRow returns the entire selected row or nil if nothing selected.
+func (t *Table) GetSelectedRow(path string) *render.Row {
 	data := t.model.Peek()
 	i, ok := data.RowEvents.FindIndex(path)
 	if !ok {
-		return render.Row{}, ok
+		return nil
 	}
-	return data.RowEvents[i].Row, true
+	return &data.RowEvents[i].Row
 }
 
 // NameColIndex returns the index of the resource name column.
@@ -394,14 +408,13 @@ func (t *Table) filtered(data *render.TableData) *render.TableData {
 	}
 
 	q := t.cmdBuff.GetText()
-	if IsFuzzySelector(q) {
-		return fuzzyFilter(q[2:], filtered)
+	if f, ok := dao.HasFuzzySelector(q); ok {
+		return fuzzyFilter(f, filtered)
 	}
 
-	filtered, err := rxFilter(q, IsInverseSelector(q), filtered)
+	filtered, err := rxFilter(q, dao.IsInverseSelector(q), filtered)
 	if err != nil {
-		log.Error().Err(errors.New("Invalid filter expression")).Msg("Regexp")
-		// t.cmdBuff.ClearText(true)
+		log.Error().Err(errors.New("invalid filter expression")).Msg("Regexp")
 	}
 
 	return filtered
@@ -427,7 +440,7 @@ func (t *Table) UpdateTitle() {
 }
 
 func (t *Table) styleTitle() string {
-	rc := t.GetRowCount()
+	rc := int64(t.GetRowCount())
 	if rc > 0 {
 		rc--
 	}
@@ -451,17 +464,20 @@ func (t *Table) styleTitle() string {
 	}
 	var title string
 	if ns == client.ClusterScope {
-		title = SkinTitle(fmt.Sprintf(TitleFmt, base, rc), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(TitleFmt, base, render.AsThousands(rc)), t.styles.Frame())
 	} else {
-		title = SkinTitle(fmt.Sprintf(NSTitleFmt, base, ns, rc), t.styles.Frame())
+		title = SkinTitle(fmt.Sprintf(NSTitleFmt, base, ns, render.AsThousands(rc)), t.styles.Frame())
 	}
 
 	buff := t.cmdBuff.GetText()
+	if IsLabelSelector(buff) {
+		buff = render.Truncate(TrimLabelSelector(buff), maxTruncate)
+	} else if l := t.GetModel().GetLabelFilter(); l != "" {
+		buff = render.Truncate(l, maxTruncate)
+	}
+
 	if buff == "" {
 		return title
-	}
-	if IsLabelSelector(buff) {
-		buff = TrimLabelSelector(buff)
 	}
 
 	return title + SkinTitle(fmt.Sprintf(SearchFmt, buff), t.styles.Frame())

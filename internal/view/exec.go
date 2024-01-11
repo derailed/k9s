@@ -16,8 +16,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/derailed/k9s/internal/render"
+
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/fatih/color"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
@@ -33,6 +37,8 @@ const (
 	shellCheck = `command -v bash >/dev/null && exec bash || exec sh`
 	bannerFmt  = "<<K9s-Shell>> Pod: %s | Container: %s \n"
 )
+
+var editorEnvVars = []string{"KUBE_EDITOR", "K9S_EDITOR", "EDITOR"}
 
 type shellOpts struct {
 	clear, background bool
@@ -64,7 +70,7 @@ func runK(a *App, opts shellOpts) error {
 	if isInsecure := a.Conn().Config().Flags().Insecure; isInsecure != nil && *isInsecure {
 		args = append(args, "--insecure-skip-tls-verify")
 	}
-	args = append(args, "--context", a.Config.K9s.CurrentContext)
+	args = append(args, "--context", a.Config.K9s.ActiveContextName())
 	if cfg := a.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
 		args = append(args, "--kubeconfig", *cfg)
 	}
@@ -73,7 +79,7 @@ func runK(a *App, opts shellOpts) error {
 	}
 	opts.binary = bin
 
-	suspended, errChan := run(a, opts)
+	suspended, errChan, _ := run(a, opts)
 	if !suspended {
 		return fmt.Errorf("unable to run command")
 	}
@@ -85,53 +91,66 @@ func runK(a *App, opts shellOpts) error {
 	return errs
 }
 
-func run(a *App, opts shellOpts) (bool, chan error) {
+func run(a *App, opts shellOpts) (bool, chan error, chan string) {
 	errChan := make(chan error, 1)
+	statusChan := make(chan string, 1)
 
 	if opts.background {
-		if err := execute(opts); err != nil {
+		if err := execute(opts, statusChan); err != nil {
 			errChan <- err
 			a.Flash().Errf("Exec failed %q: %s", opts, err)
 		}
 		close(errChan)
-		return true, errChan
+		return true, errChan, statusChan
 	}
 
 	a.Halt()
 	defer a.Resume()
 
 	return a.Suspend(func() {
-		if err := execute(opts); err != nil {
+		if err := execute(opts, statusChan); err != nil {
 			errChan <- err
 			a.Flash().Errf("Exec failed %q: %s", opts, err)
 		}
 		close(errChan)
-	}), errChan
+	}), errChan, statusChan
 }
 
 func edit(a *App, opts shellOpts) bool {
-	bin, err := exec.LookPath(os.Getenv("K9S_EDITOR"))
-	if err != nil {
-		bin, err = exec.LookPath(os.Getenv("EDITOR"))
-		if err != nil {
-			log.Error().Err(err).Msgf("K9S_EDITOR|EDITOR not set")
-			return false
+	var (
+		bin string
+		err error
+	)
+	for _, e := range editorEnvVars {
+		env := os.Getenv(e)
+		if env != "" {
+			continue
 		}
+		bin, err = exec.LookPath(env)
+		if err != nil {
+			continue
+		}
+	}
+	if bin == "" {
+		a.Flash().Errf("You must set at least one of those env vars: %s", strings.Join(editorEnvVars, "|"))
+		return false
 	}
 	opts.binary, opts.background = bin, false
 
-	suspended, errChan := run(a, opts)
+	suspended, errChan, _ := run(a, opts)
 	if !suspended {
 		a.Flash().Errf("edit command failed")
 	}
+	status := true
 	for e := range errChan {
 		a.Flash().Err(e)
-		return false
+		status = false
 	}
-	return true
+
+	return status
 }
 
-func execute(opts shellOpts) error {
+func execute(opts shellOpts, statusChan chan<- string) error {
 	if opts.clear {
 		clearScreen()
 	}
@@ -172,7 +191,7 @@ func execute(opts shellOpts) error {
 	}
 
 	var o, e bytes.Buffer
-	err := pipe(ctx, opts, &o, &e, cmds...)
+	err := pipe(ctx, opts, statusChan, &o, &e, cmds...)
 	if err != nil {
 		log.Err(err).Msgf("Command failed")
 		return errors.Join(err, fmt.Errorf("%s", e.String()))
@@ -198,7 +217,7 @@ func runKu(a *App, opts shellOpts) (string, error) {
 	if g, err := a.Conn().Config().ImpersonateGroups(); err == nil {
 		args = append(args, "--as-group", g)
 	}
-	args = append(args, "--context", a.Config.K9s.CurrentContext)
+	args = append(args, "--context", a.Config.K9s.ActiveContextName())
 	if cfg := a.Conn().Config().Flags().KubeConfig; cfg != nil && *cfg != "" {
 		args = append(args, "--kubeconfig", *cfg)
 	}
@@ -233,25 +252,50 @@ func clearScreen() {
 
 const (
 	k9sShell           = "k9s-shell"
-	k9sShellRetryCount = 10
-	k9sShellRetryDelay = 10 * time.Second
+	k9sShellRetryCount = 50
+	k9sShellRetryDelay = 2 * time.Second
 )
 
-func ssh(a *App, node string) error {
+func launchNodeShell(v model.Igniter, a *App, node string) {
 	if err := nukeK9sShell(a); err != nil {
-		return err
+		a.Flash().Errf("Cleaning node shell failed: %s", err)
+		return
 	}
+
+	msg := fmt.Sprintf("Launching node shell on %s...", node)
+	dialog.ShowPrompt(a.Styles.Dialog(), a.Content.Pages, "Launching", msg, func(ctx context.Context) {
+		err := launchShellPod(ctx, a, node)
+		if err != nil {
+			if !errors.Is(err, context.Canceled) {
+				a.Flash().Errf("Launching node shell failed: %s", err)
+			}
+			return
+		}
+
+		go launchPodShell(v, a)
+	}, func() {
+		if err := nukeK9sShell(a); err != nil {
+			a.Flash().Errf("Cleaning node shell failed: %s", err)
+			return
+		}
+	})
+}
+
+func launchPodShell(v model.Igniter, a *App) {
 	defer func() {
 		if err := nukeK9sShell(a); err != nil {
-			log.Error().Err(err).Msgf("nuking k9s shell pod")
+			a.Flash().Errf("Launching node shell failed: %s", err)
+			return
 		}
 	}()
-	if err := launchShellPod(a, node); err != nil {
-		return err
-	}
-	ns := a.Config.K9s.ShellPod.Namespace
 
-	return sshIn(a, client.FQN(ns, k9sShellPodName()), k9sShell)
+	v.Stop()
+	defer v.Start()
+
+	ns := a.Config.K9s.ShellPod.Namespace
+	if err := sshIn(a, client.FQN(ns, k9sShellPodName()), k9sShell); err != nil {
+		a.Flash().Errf("Launching node shell failed: %s", err)
+	}
 }
 
 func sshIn(a *App, fqn, co string) error {
@@ -284,8 +328,11 @@ func sshIn(a *App, fqn, co string) error {
 }
 
 func nukeK9sShell(a *App) error {
-	clName := a.Config.K9s.CurrentCluster
-	if !a.Config.K9s.Clusters[clName].FeatureGates.NodeShell {
+	ct, err := a.Config.K9s.ActiveContext()
+	if err != nil {
+		return err
+	}
+	if !ct.FeatureGates.NodeShell {
 		return nil
 	}
 
@@ -306,31 +353,33 @@ func nukeK9sShell(a *App) error {
 	return err
 }
 
-func launchShellPod(a *App, node string) error {
-	a.Flash().Infof("Launching node shell on %s...", node)
-
+func launchShellPod(ctx context.Context, a *App, node string) error {
 	var (
 		spo  = a.Config.K9s.ShellPod
 		spec = k9sShellPod(node, spo)
 	)
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
 
 	dial, err := a.Conn().Dial()
 	if err != nil {
 		return err
 	}
+
 	conn := dial.CoreV1().Pods(spo.Namespace)
-	if _, err := conn.Create(ctx, spec, metav1.CreateOptions{}); err != nil {
+	if _, err = conn.Create(ctx, spec, metav1.CreateOptions{}); err != nil {
 		return err
 	}
 
 	for i := 0; i < k9sShellRetryCount; i++ {
 		o, err := a.factory.Get("v1/pods", client.FQN(spo.Namespace, k9sShellPodName()), true, labels.Everything())
 		if err != nil {
-			time.Sleep(k9sShellRetryDelay)
-			continue
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case <-time.After(k9sShellRetryDelay):
+				continue
+			}
 		}
+
 		var pod v1.Pod
 		if err := runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &pod); err != nil {
 			return err
@@ -339,7 +388,12 @@ func launchShellPod(a *App, node string) error {
 		if pod.Status.Phase == v1.PodRunning {
 			return nil
 		}
-		time.Sleep(k9sShellRetryDelay)
+
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(k9sShellRetryDelay):
+		}
 	}
 
 	return fmt.Errorf("unable to launch shell pod on node %s", node)
@@ -349,7 +403,7 @@ func k9sShellPodName() string {
 	return fmt.Sprintf("%s-%d", k9sShell, os.Getpid())
 }
 
-func k9sShellPod(node string, cfg *config.ShellPod) *v1.Pod {
+func k9sShellPod(node string, cfg config.ShellPod) *v1.Pod {
 	var grace int64
 	var priv bool = true
 
@@ -424,7 +478,7 @@ func asResource(r config.Limits) v1.ResourceRequirements {
 	}
 }
 
-func pipe(_ context.Context, opts shellOpts, w, e io.Writer, cmds ...*exec.Cmd) error {
+func pipe(_ context.Context, opts shellOpts, statusChan chan<- string, w, e io.Writer, cmds ...*exec.Cmd) error {
 	if len(cmds) == 0 {
 		return nil
 	}
@@ -432,15 +486,28 @@ func pipe(_ context.Context, opts shellOpts, w, e io.Writer, cmds ...*exec.Cmd) 
 	if len(cmds) == 1 {
 		cmd := cmds[0]
 		if opts.background {
-			cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, w, e
-			return cmd.Run()
+			go func() {
+				cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, w, e
+				if err := cmd.Run(); err != nil {
+					log.Error().Err(err).Msgf("Command failed: %s", err)
+				} else {
+					statusChan <- fmt.Sprintf("Command completed successfully: %q", render.Truncate(cmd.String(), 20))
+					log.Info().Msgf("Command completed successfully: %q", cmd.String())
+				}
+				close(statusChan)
+			}()
+			return nil
 		}
 		cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
 		_, _ = cmd.Stdout.Write([]byte(opts.banner))
 
 		log.Debug().Msgf("Running Start")
 		err := cmd.Run()
-		log.Debug().Msgf("Running Done: %s", err)
+		log.Debug().Msgf("Running Done: %v", err)
+		if err == nil {
+			statusChan <- fmt.Sprintf("Command completed successfully: %q", cmd.String())
+		}
+		close(statusChan)
 
 		return err
 	}

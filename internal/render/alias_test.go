@@ -26,17 +26,17 @@ func TestAliasColorer(t *testing.T) {
 		e  tcell.Color
 	}{
 		"addAll": {
-			ns: client.AllNamespaces,
+			ns: client.NamespaceAll,
 			re: render.RowEvent{Kind: render.EventAdd, Row: r},
 			e:  tcell.ColorBlue,
 		},
 		"deleteAll": {
-			ns: client.AllNamespaces,
+			ns: client.NamespaceAll,
 			re: render.RowEvent{Kind: render.EventDelete, Row: r},
 			e:  tcell.ColorGray,
 		},
 		"updateAll": {
-			ns: client.AllNamespaces,
+			ns: client.NamespaceAll,
 			re: render.RowEvent{Kind: render.EventUpdate, Row: r},
 			e:  tcell.ColorDefault,
 		},
@@ -54,12 +54,12 @@ func TestAliasHeader(t *testing.T) {
 	h := render.Header{
 		render.HeaderColumn{Name: "RESOURCE"},
 		render.HeaderColumn{Name: "COMMAND"},
-		render.HeaderColumn{Name: "APIGROUP"},
+		render.HeaderColumn{Name: "API-GROUP"},
 	}
 
 	var a render.Alias
 	assert.Equal(t, h, a.Header("fred"))
-	assert.Equal(t, h, a.Header(client.AllNamespaces))
+	assert.Equal(t, h, a.Header(client.NamespaceAll))
 }
 
 func TestAliasRender(t *testing.T) {

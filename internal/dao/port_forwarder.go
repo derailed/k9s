@@ -15,7 +15,6 @@ import (
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	metav1beta1 "k8s.io/apimachinery/pkg/apis/meta/v1beta1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
@@ -52,8 +51,8 @@ func (p *PortForwarder) String() string {
 }
 
 // Age returns the port forward age.
-func (p *PortForwarder) Age() string {
-	return time.Since(p.age).String()
+func (p *PortForwarder) Age() time.Time {
+	return p.age
 }
 
 // Active returns the forward status.
@@ -191,8 +190,8 @@ func codec() (serializer.CodecFactory, runtime.ParameterCodec) {
 	scheme := runtime.NewScheme()
 	gv := schema.GroupVersion{Group: "", Version: "v1"}
 	metav1.AddToGroupVersion(scheme, gv)
-	scheme.AddKnownTypes(gv, &metav1beta1.Table{}, &metav1beta1.TableOptions{})
-	scheme.AddKnownTypes(metav1beta1.SchemeGroupVersion, &metav1beta1.Table{}, &metav1beta1.TableOptions{})
+	scheme.AddKnownTypes(gv, &metav1.Table{}, &metav1.TableOptions{})
+	scheme.AddKnownTypes(metav1.SchemeGroupVersion, &metav1.Table{}, &metav1.TableOptions{})
 
 	return serializer.NewCodecFactory(scheme), runtime.NewParameterCodec(scheme)
 }

@@ -1,0 +1,21 @@
+plugins:
+  blee:
+    shortCuts: g
+    confirm: false
+    description: blee
+    scopes:
+      - namespaces
+    command: sh
+    background: false
+    args:
+      - -c
+      - "blee bla"
+  duh:
+    shortCut: h
+    confirm: true
+    description: duh
+    command: sh
+    background: true
+    args:
+      - -c
+      - "duh fred"

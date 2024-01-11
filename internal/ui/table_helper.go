@@ -12,6 +12,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/view/cmd"
 	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
 )
@@ -24,10 +25,10 @@ const (
 	SearchFmt = "<[filter:bg:r]/%s[fg:bg:-]> "
 
 	// NSTitleFmt represents a namespaced view title.
-	NSTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
+	NSTitleFmt = "[fg:bg:b] %s([hilite:bg:b]%s[fg:bg:-])[fg:bg:-][[count:bg:b]%s[fg:bg:-]][fg:bg:-] "
 
 	// TitleFmt represents a standard view title.
-	TitleFmt = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%d[fg:bg:-]][fg:bg:-] "
+	TitleFmt = "[fg:bg:b] %s[fg:bg:-][[count:bg:b]%s[fg:bg:-]][fg:bg:-] "
 
 	descIndicator = "↓"
 	ascIndicator  = "↑"
@@ -42,10 +43,6 @@ const (
 var (
 	// LabelRx identifies a label query.
 	LabelRx = regexp.MustCompile(`\A\-l`)
-
-	inverseRx = regexp.MustCompile(`\A\!`)
-
-	fuzzyRx = regexp.MustCompile(`\A\-f`)
 )
 
 func mustExtractStyles(ctx context.Context) *config.Styles {
@@ -68,31 +65,20 @@ func TrimCell(tv *SelectTable, row, col int) string {
 
 // IsLabelSelector checks if query is a label query.
 func IsLabelSelector(s string) bool {
-	if s == "" {
-		return false
+	if LabelRx.MatchString(s) {
+		return true
 	}
-	return LabelRx.MatchString(s)
-}
 
-// IsFuzzySelector checks if query is fuzzy.
-func IsFuzzySelector(s string) bool {
-	if s == "" {
-		return false
-	}
-	return fuzzyRx.MatchString(s)
-}
-
-// IsInverseSelector checks if inverse char has been provided.
-func IsInverseSelector(s string) bool {
-	if s == "" {
-		return false
-	}
-	return inverseRx.MatchString(s)
+	return !strings.Contains(s, " ") && cmd.ToLabels(s) != nil
 }
 
 // TrimLabelSelector extracts label query.
 func TrimLabelSelector(s string) string {
-	return strings.TrimSpace(s[2:])
+	if strings.Index(s, "-l") == 0 {
+		return strings.TrimSpace(s[2:])
+	}
+
+	return s
 }
 
 // SkinTitle decorates a title.

@@ -170,3 +170,9 @@ type Sanitizer interface {
 	// Sanitize nukes all resources in unhappy state.
 	Sanitize(context.Context, string) (int, error)
 }
+
+// Valuer represents a resource with values.
+type Valuer interface {
+	// GetValues returns values for a resource.
+	GetValues(path string, allValues bool) ([]byte, error)
+}

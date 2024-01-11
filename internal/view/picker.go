@@ -27,6 +27,9 @@ func NewPicker() *Picker {
 	}
 }
 
+func (p *Picker) SetFilter(string)                 {}
+func (p *Picker) SetLabelFilter(map[string]string) {}
+
 // Init initializes the view.
 func (p *Picker) Init(ctx context.Context) error {
 	app, err := extractApp(ctx)

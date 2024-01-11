@@ -5,12 +5,14 @@ package view
 
 import (
 	"context"
+	"path/filepath"
 	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 	"github.com/rs/zerolog/log"
@@ -45,6 +47,13 @@ func (t *Table) Init(ctx context.Context) (err error) {
 		ctx = context.WithValue(ctx, internal.KeyHasMetrics, t.app.Conn().HasMetrics())
 	}
 	ctx = context.WithValue(ctx, internal.KeyStyles, t.app.Styles)
+	if !t.app.Config.K9s.UI.Reactive {
+		if err := t.app.RefreshCustomViews(); err != nil {
+			log.Warn().Err(err).Msg("CustomViews load failed")
+			t.app.Logo().Warn("Views load failed!")
+		}
+	}
+
 	ctx = context.WithValue(ctx, internal.KeyViewConfig, t.app.CustomView)
 	t.Table.Init(ctx)
 	t.SetInputCapture(t.keyboard)
@@ -109,10 +118,7 @@ func (t *Table) EnvFn() EnvFunc {
 
 func (t *Table) defaultEnv() Env {
 	path := t.GetSelectedItem()
-	row, ok := t.GetSelectedRow(path)
-	if !ok {
-		log.Error().Msgf("unable to locate selected row for %q", path)
-	}
+	row := t.GetSelectedRow(path)
 	env := defaultEnv(t.app.Conn().Config(), path, t.GetModel().Peek().Header, row)
 	env["FILTER"] = t.CmdBuff().GetText()
 	if env["FILTER"] == "" {
@@ -170,10 +176,10 @@ func (t *Table) BufferActive(state bool, k model.BufferKind) {
 }
 
 func (t *Table) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if path, err := saveTable(t.app.Config.K9s.GetScreenDumpDir(), t.app.Config.K9s.CurrentContextDir(), t.GVR().R(), t.Path, t.GetFilteredData()); err != nil {
+	if path, err := saveTable(t.app.Config.K9s.ContextScreenDumpDir(), t.GVR().R(), t.Path, t.GetFilteredData()); err != nil {
 		t.app.Flash().Err(err)
 	} else {
-		t.app.Flash().Infof("File %s saved successfully!", path)
+		t.app.Flash().Infof("File saved successfully: %q", render.Truncate(filepath.Base(path), 50))
 	}
 
 	return nil

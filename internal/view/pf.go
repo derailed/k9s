@@ -44,13 +44,17 @@ func NewPortForward(gvr client.GVR) ResourceViewer {
 }
 
 func (p *PortForward) portForwardContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, internal.KeyBenchCfg, p.App().BenchFile)
+	if bc := p.App().BenchFile; bc != "" {
+		return context.WithValue(ctx, internal.KeyBenchCfg, p.App().BenchFile)
+	}
+
+	return ctx
 }
 
 func (p *PortForward) bindKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
 		tcell.KeyEnter: ui.NewKeyAction("View Benchmarks", p.showBenchCmd, true),
-		tcell.KeyCtrlL: ui.NewKeyAction("Benchmark Run/Stop", p.toggleBenchCmd, true),
+		ui.KeyB:        ui.NewKeyAction("Benchmark Run/Stop", p.toggleBenchCmd, true),
 		tcell.KeyCtrlD: ui.NewKeyAction("Delete", p.deleteCmd, true),
 		ui.KeyShiftP:   ui.NewKeyAction("Sort Ports", p.GetTable().SortColCmd("PORTS", true), false),
 		ui.KeyShiftU:   ui.NewKeyAction("Sort URL", p.GetTable().SortColCmd("URL", true), false),
@@ -108,16 +112,25 @@ func (p *PortForward) toggleBenchCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	p.App().Status(model.FlashWarn, "Benchmark in progress...")
-	go p.runBenchmark()
+	go func() {
+		if err := p.runBenchmark(); err != nil {
+			log.Error().Err(err).Msgf("Benchmark run failed")
+		}
+	}()
 
 	return nil
 }
 
-func (p *PortForward) runBenchmark() {
+func (p *PortForward) runBenchmark() error {
 	log.Debug().Msg("Bench starting...")
 
-	p.bench.Run(p.App().Config.K9s.CurrentCluster, func() {
-		log.Debug().Msg("Bench Completed!")
+	ct, err := p.App().Config.K9s.ActiveContext()
+	if err != nil {
+		return err
+	}
+	name := p.App().Config.K9s.ActiveContextName()
+	p.bench.Run(ct.ClusterName, name, func() {
+		log.Debug().Msgf("Benchmark %q Completed!", name)
 		p.App().QueueUpdate(func() {
 			if p.bench.Canceled() {
 				p.App().Status(model.FlashInfo, "Benchmark canceled")
@@ -132,6 +145,8 @@ func (p *PortForward) runBenchmark() {
 			}()
 		})
 	})
+
+	return nil
 }
 
 func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {

@@ -8,6 +8,8 @@ import (
 	"os"
 	"runtime/debug"
 
+	"github.com/derailed/k9s/internal/config/data"
+
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
 	"github.com/derailed/k9s/internal/config"
@@ -20,12 +22,12 @@ import (
 )
 
 const (
-	appName      = "k9s"
+	appName      = config.AppName
 	shortAppDesc = "A graphical CLI for your Kubernetes cluster management."
 	longAppDesc  = "K9s is a CLI to view and manage your Kubernetes clusters."
 )
 
-var _ config.KubeSettings = (*client.Config)(nil)
+var _ data.KubeSettings = (*client.Config)(nil)
 
 var (
 	version, commit, date = "dev", "dev", client.NA
@@ -43,6 +45,10 @@ var (
 )
 
 func init() {
+	if err := config.InitLogLoc(); err != nil {
+		fmt.Printf("Fail to init k9s logs location %s\n", err)
+	}
+
 	rootCmd.AddCommand(versionCmd(), infoCmd())
 	initK9sFlags()
 	initK8sFlags()
@@ -51,18 +57,21 @@ func init() {
 // Execute root command.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		log.Panic().Err(err)
+		panic(err)
 	}
 }
 
 func run(cmd *cobra.Command, args []string) error {
-	if err := config.EnsureDirPath(*k9sFlags.LogFile, config.DefaultDirMod); err != nil {
+	if err := config.InitLocs(); err != nil {
 		return err
 	}
-	mod := os.O_CREATE | os.O_APPEND | os.O_WRONLY
-	file, err := os.OpenFile(*k9sFlags.LogFile, mod, config.DefaultFileMod)
+	file, err := os.OpenFile(
+		*k9sFlags.LogFile,
+		os.O_CREATE|os.O_APPEND|os.O_WRONLY,
+		data.DefaultFileMod,
+	)
 	if err != nil {
-		return err
+		return fmt.Errorf("Log file %q init failed: %w", *k9sFlags.LogFile, err)
 	}
 	defer func() {
 		if file != nil {
@@ -80,9 +89,13 @@ func run(cmd *cobra.Command, args []string) error {
 	}()
 
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: file})
-
 	zerolog.SetGlobalLevel(parseLevel(*k9sFlags.LogLevel))
-	app := view.NewApp(loadConfiguration())
+
+	cfg, err := loadConfiguration()
+	if err != nil {
+		log.Error().Err(err).Msgf("Fail to load global/context configuration")
+	}
+	app := view.NewApp(cfg)
 	if err := app.Init(version, *k9sFlags.RefreshRate); err != nil {
 		return err
 	}
@@ -96,51 +109,39 @@ func run(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
-func loadConfiguration() *config.Config {
+func loadConfiguration() (*config.Config, error) {
 	log.Info().Msg("🐶 K9s starting up...")
 
-	// Load K9s config file...
 	k8sCfg := client.NewConfig(k8sFlags)
 	k9sCfg := config.NewConfig(k8sCfg)
-
-	if err := k9sCfg.Load(config.K9sConfigFile); err != nil {
-		log.Warn().Msg("Unable to locate K9s config. Generating new configuration...")
+	if err := k9sCfg.Load(config.AppConfigFile); err != nil {
+		return k9sCfg, err
 	}
-
-	if *k9sFlags.RefreshRate != config.DefaultRefreshRate {
-		k9sCfg.K9s.OverrideRefreshRate(*k9sFlags.RefreshRate)
-	}
-
-	k9sCfg.K9s.OverrideHeadless(*k9sFlags.Headless)
-	k9sCfg.K9s.OverrideLogoless(*k9sFlags.Logoless)
-	k9sCfg.K9s.OverrideCrumbsless(*k9sFlags.Crumbsless)
-	k9sCfg.K9s.OverrideReadOnly(*k9sFlags.ReadOnly)
-	k9sCfg.K9s.OverrideWrite(*k9sFlags.Write)
-	k9sCfg.K9s.OverrideCommand(*k9sFlags.Command)
-	k9sCfg.K9s.OverrideScreenDumpDir(*k9sFlags.ScreenDumpDir)
-
+	k9sCfg.K9s.Override(k9sFlags)
 	if err := k9sCfg.Refine(k8sFlags, k9sFlags, k8sCfg); err != nil {
-		log.Error().Err(err).Msgf("refine failed")
+		log.Error().Err(err).Msgf("config refine failed")
+		return k9sCfg, err
 	}
 	conn, err := client.InitConnection(k8sCfg)
 	k9sCfg.SetConnection(conn)
 	if err != nil {
-		log.Error().Err(err).Msgf("failed to connect to cluster %q", k9sCfg.K9s.CurrentContext)
-		return k9sCfg
+		return k9sCfg, err
 	}
 	// Try to access server version if that fail. Connectivity issue?
-	if !k9sCfg.GetConnection().CheckConnectivity() {
-		log.Panic().Msgf("Cannot connect to cluster %s", k9sCfg.K9s.CurrentCluster)
+	if !conn.CheckConnectivity() {
+		return k9sCfg, fmt.Errorf("cannot connect to context: %s", k9sCfg.K9s.ActiveContextName())
 	}
-	if !k9sCfg.GetConnection().ConnectionOK() {
-		panic("No connectivity")
+	if !conn.ConnectionOK() {
+		return k9sCfg, fmt.Errorf("k8s connection failed for context: %s", k9sCfg.K9s.ActiveContextName())
 	}
+
 	log.Info().Msg("✅ Kubernetes connectivity")
 	if err := k9sCfg.Save(); err != nil {
 		log.Error().Err(err).Msg("Config save")
+		return k9sCfg, err
 	}
 
-	return k9sCfg
+	return k9sCfg, nil
 }
 
 func parseLevel(level string) zerolog.Level {
@@ -177,7 +178,7 @@ func initK9sFlags() {
 	rootCmd.Flags().StringVarP(
 		k9sFlags.LogFile,
 		"logFile", "",
-		config.DefaultLogFile,
+		config.AppLogFile,
 		"Specify the log file",
 	)
 	rootCmd.Flags().BoolVar(

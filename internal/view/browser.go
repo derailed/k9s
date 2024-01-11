@@ -14,7 +14,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/render"
@@ -133,7 +133,6 @@ func (b *Browser) SetInstance(path string) {
 
 // Start initializes browser updates.
 func (b *Browser) Start() {
-	b.app.Config.ValidateFavorites()
 	ns := b.app.Config.ActiveNamespace()
 	if n := b.GetModel().GetNamespace(); !client.IsClusterScoped(n) {
 		ns = n
@@ -164,6 +163,15 @@ func (b *Browser) Stop() {
 	b.GetModel().RemoveListener(b)
 	b.CmdBuff().RemoveListener(b)
 	b.Table.Stop()
+}
+
+func (b *Browser) SetFilter(s string) {
+	b.CmdBuff().SetText(s, "")
+}
+
+func (b *Browser) SetLabelFilter(labels map[string]string) {
+	b.CmdBuff().SetText(toLabelsStr(labels), "")
+	b.GetModel().SetLabelFilter(toLabelsStr(labels))
 }
 
 // BufferChanged indicates the buffer was changed.
@@ -280,7 +288,9 @@ func (b *Browser) helpCmd(evt *tcell.EventKey) *tcell.EventKey {
 func (b *Browser) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if !b.CmdBuff().InCmdMode() {
 		b.CmdBuff().ClearText(false)
+		b.GetModel().SetLabelFilter("")
 		return b.App().PrevCmd(evt)
+
 	}
 
 	b.CmdBuff().Reset()
@@ -317,7 +327,7 @@ func (b *Browser) enterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if b.enterFn != nil {
 		f = b.enterFn
 	}
-	f(b.app, b.GetModel(), b.GVR().String(), path)
+	f(b.app, b.GetModel(), b.GVR(), path)
 
 	return nil
 }
@@ -357,7 +367,7 @@ func (b *Browser) describeCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if path == "" {
 		return evt
 	}
-	describeResource(b.app, b.GetModel(), b.GVR().String(), path)
+	describeResource(b.app, b.GetModel(), b.GVR(), path)
 
 	return nil
 }
@@ -383,7 +393,7 @@ func editRes(app *App, gvr client.GVR, path string) error {
 	}
 	ns, n := client.Namespaced(path)
 	if client.IsClusterScoped(ns) {
-		ns = client.AllNamespaces
+		ns = client.BlankNamespace
 	}
 	if gvr.String() == "v1/namespaces" {
 		ns = n
@@ -395,7 +405,7 @@ func editRes(app *App, gvr client.GVR, path string) error {
 	args := make([]string, 0, 10)
 	args = append(args, "edit")
 	args = append(args, gvr.FQN(n))
-	if ns != client.AllNamespaces {
+	if ns != client.BlankNamespace {
 		args = append(args, "-n", ns)
 	}
 	if err := runK(app, shellOpts{clear: true, args: args}); err != nil {
@@ -434,7 +444,7 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	b.app.Flash().Infof("Viewing namespace `%s`...", ns)
 	b.refresh()
 	b.UpdateTitle()
-	b.SelectRow(1, true)
+	b.SelectRow(1, 0, true)
 	b.app.CmdBuff().Reset()
 	if err := b.app.Config.SetActiveNamespace(b.GetModel().GetNamespace()); err != nil {
 		log.Error().Err(err).Msg("Config save NS failed!")
@@ -462,14 +472,13 @@ func (b *Browser) setNamespace(ns string) {
 
 func (b *Browser) defaultContext() context.Context {
 	ctx := context.WithValue(context.Background(), internal.KeyFactory, b.app.factory)
-	ctx = context.WithValue(ctx, internal.KeyGVR, b.GVR().String())
-	if b.Path != "" {
-		ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
-	}
+	ctx = context.WithValue(ctx, internal.KeyGVR, b.GVR())
+	ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
 	if ui.IsLabelSelector(b.CmdBuff().GetText()) {
 		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(b.CmdBuff().GetText()))
 	}
 	ctx = context.WithValue(ctx, internal.KeyNamespace, client.CleanseNamespace(b.App().Config.ActiveNamespace()))
+	ctx = context.WithValue(ctx, internal.KeyWithMetrics, b.app.factory.Client().HasMetrics())
 
 	return ctx
 }
@@ -488,25 +497,41 @@ func (b *Browser) refreshActions() {
 		b.namespaceActions(aa)
 		if !b.app.Config.K9s.IsReadOnly() {
 			if client.Can(b.meta.Verbs, "edit") {
-				aa[ui.KeyE] = ui.NewKeyAction("Edit", b.editCmd, true)
+				aa[ui.KeyE] = ui.NewKeyActionWithOpts("Edit", b.editCmd,
+					ui.ActionOpts{
+						Visible:   true,
+						Dangerous: true,
+					})
 			}
 			if client.Can(b.meta.Verbs, "delete") {
-				aa[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", b.deleteCmd, true)
+				aa[tcell.KeyCtrlD] = ui.NewKeyActionWithOpts("Delete", b.deleteCmd,
+					ui.ActionOpts{
+						Visible:   true,
+						Dangerous: true,
+					})
 			}
+		} else {
+			b.Actions().ClearDanger()
 		}
 	}
-
 	if !dao.IsK9sMeta(b.meta) {
 		aa[ui.KeyY] = ui.NewKeyAction(yamlAction, b.viewCmd, true)
 		aa[ui.KeyD] = ui.NewKeyAction("Describe", b.describeCmd, true)
 	}
-
-	pluginActions(b, aa)
-	hotKeyActions(b, aa)
 	for _, f := range b.bindKeysFn {
 		f(aa)
 	}
 	b.Actions().Add(aa)
+
+	if err := pluginActions(b, b.Actions()); err != nil {
+		log.Warn().Msgf("Plugins load failed: %s", err)
+		b.app.Logo().Warn("Plugins load failed!")
+	}
+	if err := hotKeyActions(b, b.Actions()); err != nil {
+		log.Warn().Msgf("Hotkeys load failed: %s", err)
+		b.app.Logo().Warn("HotKeys load failed!")
+	}
+
 	b.app.Menu().HydrateMenu(b.Hints())
 }
 
@@ -514,7 +539,7 @@ func (b *Browser) namespaceActions(aa ui.KeyActions) {
 	if !b.meta.Namespaced || b.GetTable().Path != "" {
 		return
 	}
-	b.namespaces = make(map[int]string, config.MaxFavoritesNS)
+	b.namespaces = make(map[int]string, data.MaxFavoritesNS)
 	aa[ui.Key0] = ui.NewKeyAction(client.NamespaceAll, b.switchNamespaceCmd, true)
 	b.namespaces[0] = client.NamespaceAll
 	index := 1

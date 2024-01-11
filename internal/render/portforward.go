@@ -6,9 +6,11 @@ package render
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/tcell/v2"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
@@ -28,7 +30,7 @@ type Forwarder interface {
 	Active() bool
 
 	// Age returns forwarder age.
-	Age() string
+	Age() time.Time
 }
 
 // PortForward renders a portforwards to screen.
@@ -78,7 +80,7 @@ func (f PortForward) Render(o interface{}, gvr string, r *Row) error {
 		AsThousands(int64(pf.Config.C)),
 		AsThousands(int64(pf.Config.N)),
 		"",
-		pf.Age(),
+		ToAge(metav1.Time{Time: pf.Age()}),
 	}
 
 	return nil

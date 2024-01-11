@@ -1,0 +1,116 @@
+# -----------------------------------------------------------------------------
+# Stock skin
+# -----------------------------------------------------------------------------
+
+# Skin...
+k9s:
+  body:
+    fgColor: cadetblue
+    bgColor: black
+    logoColor: orange
+    logoColorMsg: white
+    logoColorInfo: green
+    logoColorWarn: mediumvioletred
+    logoColorError: red
+  prompt:
+    fgColor: cadetblue
+    bgColor: black
+    suggestColor: dodgerblue
+    border:
+      command: aqua
+      default: seagreen
+  help:
+    fgColor: cadetblue
+    bgColor: black
+    sectionColor: green
+    keyColor: dodgerblue
+    numKeyColor: fuchsia
+  frame:
+    title:
+      fgColor: aqua
+      bgColor: black
+      highlightColor: fuchsia
+      counterColor: papayawhip
+      filterColor: seagreen
+    border:
+      fgColor: dodgerblue
+      focusColor: lightskyblue
+    menu:
+      fgColor: white
+      keyColor: dodgerblue
+      numKeyColor: fuchsia
+    crumbs:
+      fgColor: black
+      bgColor: aqua
+      activeColor: orange
+    status:
+      newColor: lightskyblue
+      modifyColor: greenyellow
+      addColor: dodgerblue
+      pendingColor: darkorange
+      errorColor: orangered
+      highlightColor: aqua
+      killColor: mediumpurple
+      completedColor: lightslategray
+  info:
+    sectionColor: white
+    fgColor: orange
+  views:
+    table:
+      fgColor: aqua
+      bgColor: black
+      cursorFgColor: black
+      cursorBgColor: aqua
+      markColor: palegreen
+      header:
+        fgColor: white
+        bgColor: black
+        sorterColor: aqua
+    xray:
+      fgColor: aqua
+      bgColor: black
+      cursorColor: dodgerblue
+      cursorTextColor: black
+      graphicColor: cadetblue
+    charts:
+      bgColor: black
+      dialBgColor: black
+      chartBgColor: black
+      defaultDialColors:
+      - palegreen
+      - orangered
+      defaultChartColors:
+      - palegreen
+      - orangered
+      resourceColors:
+        cpu:
+        - dodgerblue
+        - darkslateblue
+        mem:
+        - yellow
+        - goldenrod
+    yaml:
+      keyColor: steelblue
+      valueColor: papayawhip
+      colonColor: white
+    picker:
+      mainColor: white
+      focusColor: aqua
+      shortcutColor: aqua
+    logs:
+      fgColor: lightskyblue
+      bgColor: black
+      indicator:
+        fgColor: dodgerblue
+        bgColor: black
+        toggleOnColor: limegreen
+        toggleOffColor: gray
+  dialog:
+    fgColor: cadetblue
+    bgColor: black
+    buttonFgColor: black
+    buttonBgColor: darkslateblue
+    buttonFocusFgColor: black
+    buttonFocusBgColor: dodgerblue
+    labelFgColor: white
+    fieldFgColor: white

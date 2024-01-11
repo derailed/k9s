@@ -72,11 +72,41 @@ func (p *Pod) portForwardIndicator(data *render.TableData) {
 
 func (p *Pod) bindDangerousKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		tcell.KeyCtrlK: ui.NewKeyAction("Kill", p.killCmd, true),
-		ui.KeyS:        ui.NewKeyAction("Shell", p.shellCmd, true),
-		ui.KeyA:        ui.NewKeyAction("Attach", p.attachCmd, true),
-		ui.KeyT:        ui.NewKeyAction("Transfer", p.transferCmd, true),
-		ui.KeyZ:        ui.NewKeyAction("Sanitize", p.sanitizeCmd, true),
+		tcell.KeyCtrlK: ui.NewKeyActionWithOpts(
+			"Kill",
+			p.killCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
+		ui.KeyS: ui.NewKeyActionWithOpts(
+			"Shell",
+			p.shellCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
+		ui.KeyA: ui.NewKeyActionWithOpts(
+			"Attach",
+			p.attachCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
+		ui.KeyT: ui.NewKeyActionWithOpts(
+			"Transfer",
+			p.transferCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
+		ui.KeyZ: ui.NewKeyActionWithOpts(
+			"Sanitize",
+			p.sanitizeCmd,
+			ui.ActionOpts{
+				Visible:   true,
+				Dangerous: true,
+			}),
 	})
 }
 
@@ -128,7 +158,7 @@ func (p *Pod) logOptions(prev bool) (*dao.LogOptions, error) {
 	return &opts, nil
 }
 
-func (p *Pod) showContainers(app *App, model ui.Tabular, gvr, path string) {
+func (p *Pod) showContainers(app *App, _ ui.Tabular, _ client.GVR, _ string) {
 	co := NewContainer(client.NewGVR("containers"))
 	co.SetContextFn(p.coContext)
 	if err := app.inject(co, false); err != nil {
@@ -186,7 +216,10 @@ func (p *Pod) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
 }
 
 func (p *Pod) portForwardContext(ctx context.Context) context.Context {
-	ctx = context.WithValue(ctx, internal.KeyBenchCfg, p.App().BenchFile)
+	if bc := p.App().BenchFile; bc != "" {
+		ctx = context.WithValue(ctx, internal.KeyBenchCfg, p.App().BenchFile)
+	}
+
 	return context.WithValue(ctx, internal.KeyPath, p.GetTable().GetSelectedItem())
 }
 
@@ -455,7 +488,7 @@ func buildShellArgs(cmd, path, co string, kcfg *string) []string {
 	args := make([]string, 0, 15)
 	args = append(args, cmd, "-it")
 	ns, po := client.Namespaced(path)
-	if ns != client.AllNamespaces {
+	if ns != client.BlankNamespace {
 		args = append(args, "-n", ns)
 	}
 	args = append(args, po)

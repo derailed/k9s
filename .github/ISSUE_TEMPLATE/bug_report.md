@@ -25,6 +25,9 @@ Steps to reproduce the behavior:
 3. Scroll down to '....'
 4. See error
 
+**Historical Documents**
+When applicable please include any supporting artifacts: k9s debug logs, configurations, resource manifests, ...
+
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 

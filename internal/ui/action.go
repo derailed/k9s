@@ -15,12 +15,19 @@ type (
 	// ActionHandler handles a keyboard command.
 	ActionHandler func(*tcell.EventKey) *tcell.EventKey
 
+	ActionOpts struct {
+		Visible   bool
+		Shared    bool
+		Plugin    bool
+		HotKey    bool
+		Dangerous bool
+	}
+
 	// KeyAction represents a keyboard action.
 	KeyAction struct {
 		Description string
 		Action      ActionHandler
-		Visible     bool
-		Shared      bool
+		Opts        ActionOpts
 	}
 
 	// KeyActions tracks mappings between keystrokes and actions.
@@ -28,13 +35,32 @@ type (
 )
 
 // NewKeyAction returns a new keyboard action.
-func NewKeyAction(d string, a ActionHandler, display bool) KeyAction {
-	return KeyAction{Description: d, Action: a, Visible: display}
+func NewKeyAction(d string, a ActionHandler, visible bool) KeyAction {
+	return NewKeyActionWithOpts(d, a, ActionOpts{
+		Visible: visible,
+	})
 }
 
 // NewSharedKeyAction returns a new shared keyboard action.
-func NewSharedKeyAction(d string, a ActionHandler, display bool) KeyAction {
-	return KeyAction{Description: d, Action: a, Visible: display, Shared: true}
+func NewSharedKeyAction(d string, a ActionHandler, visible bool) KeyAction {
+	return NewKeyActionWithOpts(d, a, ActionOpts{
+		Visible: visible,
+		Shared:  true,
+	})
+}
+
+// NewKeyActionWithOpts returns a new keyboard action.
+func NewKeyActionWithOpts(d string, a ActionHandler, opts ActionOpts) KeyAction {
+	return KeyAction{
+		Description: d,
+		Action:      a,
+		Opts:        opts,
+	}
+}
+
+func (a KeyActions) Reset(aa KeyActions) {
+	a.Clear()
+	a.Add(aa)
 }
 
 // Add sets up keyboard action listener.
@@ -48,6 +74,15 @@ func (a KeyActions) Add(aa KeyActions) {
 func (a KeyActions) Clear() {
 	for k := range a {
 		delete(a, k)
+	}
+}
+
+// ClearDanger remove all dangerous actions.
+func (a KeyActions) ClearDanger() {
+	for k, v := range a {
+		if v.Opts.Dangerous {
+			delete(a, k)
+		}
 	}
 }
 
@@ -69,7 +104,7 @@ func (a KeyActions) Delete(kk ...tcell.Key) {
 func (a KeyActions) Hints() model.MenuHints {
 	kk := make([]int, 0, len(a))
 	for k := range a {
-		if !a[k].Shared {
+		if !a[k].Opts.Shared {
 			kk = append(kk, int(k))
 		}
 	}
@@ -82,7 +117,7 @@ func (a KeyActions) Hints() model.MenuHints {
 				model.MenuHint{
 					Mnemonic:    name,
 					Description: a[tcell.Key(k)].Description,
-					Visible:     a[tcell.Key(k)].Visible,
+					Visible:     a[tcell.Key(k)].Opts.Visible,
 				},
 			)
 		} else {

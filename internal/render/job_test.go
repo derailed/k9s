@@ -16,5 +16,5 @@ func TestJobRender(t *testing.T) {
 
 	assert.NoError(t, c.Render(load(t, "job"), "", &r))
 	assert.Equal(t, "default/hello-1567179180", r.ID)
-	assert.Equal(t, render.Fields{"default", "hello-1567179180", "1/1", "8s", "controller-uid=7473e6d0-cb3b-11e9-990f-42010a800218", "c1", "blang/busybox-bash"}, r.Fields[:7])
+	assert.Equal(t, render.Fields{"default", "hello-1567179180", "0", "1/1", "8s", "controller-uid=7473e6d0-cb3b-11e9-990f-42010a800218", "c1", "blang/busybox-bash"}, r.Fields[:8])
 }

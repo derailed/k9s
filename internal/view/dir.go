@@ -12,7 +12,7 @@ import (
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
@@ -62,13 +62,23 @@ func (d *Dir) dirContext(ctx context.Context) context.Context {
 
 func (d *Dir) bindDangerousKeys(aa ui.KeyActions) {
 	aa.Add(ui.KeyActions{
-		ui.KeyA: ui.NewKeyAction("Apply", d.applyCmd, true),
-		ui.KeyD: ui.NewKeyAction("Delete", d.delCmd, true),
-		ui.KeyE: ui.NewKeyAction("Edit", d.editCmd, true),
+		ui.KeyA: ui.NewKeyActionWithOpts("Apply", d.applyCmd, ui.ActionOpts{
+			Visible:   true,
+			Dangerous: true,
+		}),
+		ui.KeyD: ui.NewKeyActionWithOpts("Delete", d.delCmd, ui.ActionOpts{
+			Visible:   true,
+			Dangerous: true,
+		}),
+		ui.KeyE: ui.NewKeyActionWithOpts("Edit", d.editCmd, ui.ActionOpts{
+			Visible:   true,
+			Dangerous: true,
+		}),
 	})
 }
 
 func (d *Dir) bindKeys(aa ui.KeyActions) {
+	// !!BOZO!! Lame!
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
 	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL, tcell.KeyCtrlD, tcell.KeyCtrlZ)
 	if !d.App().Config.K9s.IsReadOnly() {
@@ -163,7 +173,7 @@ func isKustomized(sel string) bool {
 	}
 	kk := []string{kustomizeNoExt, kustomizeYAML, kustomizeYML}
 	for _, f := range ff {
-		if config.InList(kk, f.Name()) {
+		if data.InList(kk, f.Name()) {
 			return true
 		}
 	}

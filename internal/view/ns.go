@@ -5,7 +5,7 @@ package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
@@ -41,7 +41,7 @@ func (n *Namespace) bindKeys(aa ui.KeyActions) {
 	})
 }
 
-func (n *Namespace) switchNs(app *App, model ui.Tabular, gvr, path string) {
+func (n *Namespace) switchNs(app *App, _ ui.Tabular, _ client.GVR, path string) {
 	n.useNamespace(path)
 	app.gotoResource("pods", "", false)
 }
@@ -73,14 +73,14 @@ func (n *Namespace) useNamespace(fqn string) {
 	}
 }
 
-func (n *Namespace) decorate(data *render.TableData) {
-	if n.App().Conn() == nil || len(data.RowEvents) == 0 {
+func (n *Namespace) decorate(td *render.TableData) {
+	if n.App().Conn() == nil || len(td.RowEvents) == 0 {
 		return
 	}
 
 	// checks if all ns is in the list if not add it.
-	if _, ok := data.RowEvents.FindIndex(client.NamespaceAll); !ok {
-		data.RowEvents = append(data.RowEvents,
+	if _, ok := td.RowEvents.FindIndex(client.NamespaceAll); !ok {
+		td.RowEvents = append(td.RowEvents,
 			render.RowEvent{
 				Kind: render.EventUnchanged,
 				Row: render.Row{
@@ -91,8 +91,8 @@ func (n *Namespace) decorate(data *render.TableData) {
 		)
 	}
 
-	for _, re := range data.RowEvents {
-		if config.InList(n.App().Config.FavNamespaces(), re.Row.ID) {
+	for _, re := range td.RowEvents {
+		if data.InList(n.App().Config.FavNamespaces(), re.Row.ID) {
 			re.Row.Fields[0] += favNSIndicator
 			re.Kind = render.EventUnchanged
 		}

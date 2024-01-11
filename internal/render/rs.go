@@ -8,7 +8,6 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tview"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -30,16 +29,13 @@ func (ReplicaSet) Header(ns string) Header {
 	h := Header{
 		HeaderColumn{Name: "NAMESPACE"},
 		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "VS"},
+		HeaderColumn{Name: "VS", VS: true},
 		HeaderColumn{Name: "DESIRED", Align: tview.AlignRight},
 		HeaderColumn{Name: "CURRENT", Align: tview.AlignRight},
 		HeaderColumn{Name: "READY", Align: tview.AlignRight},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true},
-	}
-	if vul.ImgScanner == nil {
-		h = append(h[:vulIdx], h[vulIdx+1:]...)
 	}
 
 	return h
@@ -61,16 +57,13 @@ func (r ReplicaSet) Render(o interface{}, ns string, row *Row) error {
 	row.Fields = Fields{
 		rs.Namespace,
 		rs.Name,
-		computeVulScore(&rs.Spec.Template.Spec),
+		computeVulScore(rs.ObjectMeta, &rs.Spec.Template.Spec),
 		strconv.Itoa(int(*rs.Spec.Replicas)),
 		strconv.Itoa(int(rs.Status.Replicas)),
 		strconv.Itoa(int(rs.Status.ReadyReplicas)),
 		mapToStr(rs.Labels),
 		AsStatus(r.diagnose(rs)),
 		ToAge(rs.GetCreationTimestamp()),
-	}
-	if vul.ImgScanner == nil {
-		row.Fields = append(row.Fields[:vulIdx], row.Fields[vulIdx+1:]...)
 	}
 
 	return nil

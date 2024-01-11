@@ -4,18 +4,17 @@
 package config
 
 import (
+	"fmt"
 	"os"
-	"path/filepath"
 
+	"github.com/derailed/k9s/internal/config/data"
+	"github.com/derailed/k9s/internal/config/json"
 	"gopkg.in/yaml.v2"
 )
 
-// K9sHotKeys manages K9s hotKeys.
-var K9sHotKeys = YamlExtension(filepath.Join(K9sHome(), "hotkey.yml"))
-
 // HotKeys represents a collection of plugins.
 type HotKeys struct {
-	HotKey map[string]HotKey `yaml:"hotKey"`
+	HotKey map[string]HotKey `yaml:"hotKeys"`
 }
 
 // HotKey describes a K9s hotkey.
@@ -23,6 +22,7 @@ type HotKey struct {
 	ShortCut    string `yaml:"shortCut"`
 	Description string `yaml:"description"`
 	Command     string `yaml:"command"`
+	KeepHistory bool   `yaml:"keepHistory"`
 }
 
 // NewHotKeys returns a new plugin.
@@ -33,19 +33,32 @@ func NewHotKeys() HotKeys {
 }
 
 // Load K9s plugins.
-func (h HotKeys) Load() error {
-	return h.LoadHotKeys(K9sHotKeys)
+func (h HotKeys) Load(path string) error {
+	if err := h.LoadHotKeys(AppHotKeysFile); err != nil {
+		return err
+	}
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil
+	}
+
+	return h.LoadHotKeys(path)
 }
 
 // LoadHotKeys loads plugins from a given file.
 func (h HotKeys) LoadHotKeys(path string) error {
-	f, err := os.ReadFile(path)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		return nil
+	}
+	bb, err := os.ReadFile(path)
 	if err != nil {
 		return err
 	}
+	if err := data.JSONValidator.Validate(json.HotkeysSchema, bb); err != nil {
+		return fmt.Errorf("validation failed for %q: %w", path, err)
+	}
 
 	var hh HotKeys
-	if err := yaml.Unmarshal(f, &hh); err != nil {
+	if err := yaml.Unmarshal(bb, &hh); err != nil {
 		return err
 	}
 	for k, v := range hh.HotKey {

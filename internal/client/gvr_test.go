@@ -49,7 +49,7 @@ func TestGVRCan(t *testing.T) {
 	}
 }
 
-func TestAsGVR(t *testing.T) {
+func TestGVR(t *testing.T) {
 	uu := map[string]struct {
 		gvr string
 		e   schema.GroupVersionResource

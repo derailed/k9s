@@ -57,62 +57,92 @@ func inScope(scopes, aliases []string) bool {
 	return false
 }
 
-func hotKeyActions(r Runner, aa ui.KeyActions) {
+func hotKeyActions(r Runner, aa ui.KeyActions) error {
 	hh := config.NewHotKeys()
-	if err := hh.Load(); err != nil {
-		return
+	for k, a := range aa {
+		if a.Opts.HotKey {
+			delete(aa, k)
+		}
 	}
 
+	var errs error
+	if err := hh.Load(r.App().Config.ContextHotkeysPath()); err != nil {
+		errs = errors.Join(errs, err)
+	}
 	for k, hk := range hh.HotKey {
 		key, err := asKey(hk.ShortCut)
 		if err != nil {
-			log.Warn().Err(err).Msg("HOT-KEY Unable to map hotkey shortcut to a key")
+			errs = errors.Join(errs, err)
 			continue
 		}
 		_, ok := aa[key]
 		if ok {
-			log.Warn().Err(fmt.Errorf("HOT-KEY Doh! you are trying to override an existing command `%s", k)).Msg("Invalid shortcut")
+			errs = errors.Join(errs, fmt.Errorf("duplicated hotkeys found for %q in %q", hk.ShortCut, k))
 			continue
 		}
-		aa[key] = ui.NewSharedKeyAction(
+
+		command, err := r.EnvFn()().Substitute(hk.Command)
+		if err != nil {
+			log.Warn().Err(err).Msg("Invalid shortcut command")
+			continue
+		}
+
+		aa[key] = ui.NewKeyActionWithOpts(
 			hk.Description,
-			gotoCmd(r, hk.Command, ""),
-			false)
+			gotoCmd(r, command, "", !hk.KeepHistory),
+			ui.ActionOpts{
+				Shared: true,
+				HotKey: true,
+			},
+		)
 	}
+
+	return errs
 }
 
-func gotoCmd(r Runner, cmd, path string) ui.ActionHandler {
+func gotoCmd(r Runner, cmd, path string, clearStack bool) ui.ActionHandler {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		r.App().gotoResource(cmd, path, true)
+		r.App().gotoResource(cmd, path, clearStack)
 		return nil
 	}
 }
 
-func pluginActions(r Runner, aa ui.KeyActions) {
+func pluginActions(r Runner, aa ui.KeyActions) error {
 	pp := config.NewPlugins()
-	if err := pp.Load(); err != nil {
-		return
+	for k, a := range aa {
+		if a.Opts.Plugin {
+			delete(aa, k)
+		}
 	}
 
-	for k, plugin := range pp.Plugin {
+	var errs error
+	if err := pp.Load(r.App().Config.ContextPluginsPath()); err != nil {
+		errs = errors.Join(errs, err)
+	}
+	for k, plugin := range pp.Plugins {
 		if !inScope(plugin.Scopes, r.Aliases()) {
 			continue
 		}
 		key, err := asKey(plugin.ShortCut)
 		if err != nil {
-			log.Warn().Err(err).Msg("Unable to map plugin shortcut to a key")
+			errs = errors.Join(errs, err)
 			continue
 		}
 		_, ok := aa[key]
 		if ok {
-			log.Warn().Msgf("Invalid shortcut. You are trying to override an existing command `%s", k)
+			errs = errors.Join(errs, fmt.Errorf("duplicated plugin key found for %q in %q", plugin.ShortCut, k))
 			continue
 		}
-		aa[key] = ui.NewKeyAction(
+		aa[key] = ui.NewKeyActionWithOpts(
 			plugin.Description,
 			pluginAction(r, plugin),
-			true)
+			ui.ActionOpts{
+				Visible: true,
+				Plugin:  true,
+			})
 	}
+
+	return errs
 }
 
 func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
@@ -142,9 +172,9 @@ func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
 				pipes:      p.Pipes,
 				args:       args,
 			}
-			suspend, errChan := run(r.App(), opts)
+			suspend, errChan, statusChan := run(r.App(), opts)
 			if !suspend {
-				r.App().Flash().Info("Plugin command failed!")
+				r.App().Flash().Infof("Plugin command failed: %q", p.Description)
 				return
 			}
 			var errs error
@@ -155,7 +185,12 @@ func pluginAction(r Runner, p config.Plugin) ui.ActionHandler {
 				r.App().cowCmd(errs.Error())
 				return
 			}
-			r.App().Flash().Info("Plugin command launched successfully!")
+			go func() {
+				for st := range statusChan {
+					r.App().Flash().Infof("Plugin command launched successfully: %q", st)
+				}
+			}()
+
 		}
 		if p.Confirm {
 			msg := fmt.Sprintf("Run?\n%s %s", p.Command, strings.Join(args, " "))

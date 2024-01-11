@@ -100,12 +100,25 @@ func (c *ClusterInfo) ClusterInfoUpdated(data model.ClusterMeta) {
 	c.ClusterInfoChanged(data, data)
 }
 
+func (c *ClusterInfo) warnCell(s string, w bool) string {
+	if w {
+		return fmt.Sprintf("[orangered::b]%s", s)
+	}
+
+	return s
+}
+
 // ClusterInfoChanged notifies the cluster meta was changed.
 func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
 	c.app.QueueUpdateDraw(func() {
+		var ic = " ✏️"
+		if c.app.Config.K9s.IsReadOnly() {
+			ic = " 🔒"
+		}
+
 		c.Clear()
 		c.layout()
-		row := c.setCell(0, curr.Context)
+		row := c.setCell(0, curr.Context+ic)
 		row = c.setCell(row, curr.Cluster)
 		row = c.setCell(row, curr.User)
 		if curr.K9sLatest != "" {
@@ -119,8 +132,8 @@ func (c *ClusterInfo) ClusterInfoChanged(prev, curr model.ClusterMeta) {
 			_ = c.setCell(row, ui.AsPercDelta(prev.Mem, curr.Mem))
 			c.setDefCon(curr.Cpu, curr.Mem)
 		} else {
-			row = c.setCell(row, "[orangered::b]n/a")
-			_ = c.setCell(row, "[orangered::b]n/a")
+			row = c.setCell(row, c.warnCell(render.NAValue, true))
+			_ = c.setCell(row, c.warnCell(render.NAValue, true))
 		}
 		c.updateStyle()
 	})

@@ -13,7 +13,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/vul"
 	"github.com/derailed/tview"
-	runewidth "github.com/mattn/go-runewidth"
+	"github.com/mattn/go-runewidth"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -23,8 +23,8 @@ import (
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
-func computeVulScore(spec *v1.PodSpec) string {
-	if vul.ImgScanner == nil {
+func computeVulScore(m metav1.ObjectMeta, spec *v1.PodSpec) string {
+	if vul.ImgScanner == nil || vul.ImgScanner.ShouldExcludes(m) {
 		return "0"
 	}
 	ii := ExtractImages(spec)
