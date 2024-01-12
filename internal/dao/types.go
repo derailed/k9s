@@ -47,7 +47,7 @@ type Factory interface {
 	// DeleteForwarder deletes a pod forwarder.
 	DeleteForwarder(path string)
 
-	// Forwards returns all portforwards.
+	// Forwarders returns all portforwards.
 	Forwarders() watch.Forwarders
 }
 
@@ -101,7 +101,7 @@ type NodeMaintainer interface {
 
 // Loggable represents resources with logs.
 type Loggable interface {
-	// TaiLogs streams resource logs.
+	// TailLogs streams resource logs.
 	TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 }
 
@@ -158,10 +158,10 @@ type Logger interface {
 
 // ContainsPodSpec represents a resource with a pod template.
 type ContainsPodSpec interface {
-	// Get PodSpec of a resource
+	// GetPodSpec returns a podspec for the resource.
 	GetPodSpec(path string) (*v1.PodSpec, error)
 
-	// Set Images for a resource
+	// SetImages sets container image.
 	SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error
 }
 
