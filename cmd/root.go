@@ -114,17 +114,18 @@ func loadConfiguration() (*config.Config, error) {
 
 	k8sCfg := client.NewConfig(k8sFlags)
 	k9sCfg := config.NewConfig(k8sCfg)
+	conn, err := client.InitConnection(k8sCfg)
+	k9sCfg.SetConnection(conn)
+	if err != nil {
+		return k9sCfg, err
+	}
+
 	if err := k9sCfg.Load(config.AppConfigFile); err != nil {
 		return k9sCfg, err
 	}
 	k9sCfg.K9s.Override(k9sFlags)
 	if err := k9sCfg.Refine(k8sFlags, k9sFlags, k8sCfg); err != nil {
 		log.Error().Err(err).Msgf("config refine failed")
-		return k9sCfg, err
-	}
-	conn, err := client.InitConnection(k8sCfg)
-	k9sCfg.SetConnection(conn)
-	if err != nil {
 		return k9sCfg, err
 	}
 	// Try to access server version if that fail. Connectivity issue?

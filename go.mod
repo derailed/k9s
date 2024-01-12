@@ -13,7 +13,7 @@ require (
 	github.com/cenkalti/backoff/v4 v4.2.1
 	github.com/derailed/popeye v0.11.2
 	github.com/derailed/tcell/v2 v2.3.1-rc.3
-	github.com/derailed/tview v0.8.2
+	github.com/derailed/tview v0.8.3
 	github.com/fatih/color v1.16.0
 	github.com/fsnotify/fsnotify v1.7.0
 	github.com/fvbommel/sortorder v1.1.0

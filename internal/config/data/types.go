@@ -32,10 +32,10 @@ type KubeSettings interface {
 	// CurrentClusterName returns the name of the current cluster.
 	CurrentClusterName() (string, error)
 
-	// CurrentNamespace returns the name of the current namespace.
+	// CurrentNamespaceName returns the name of the current namespace.
 	CurrentNamespaceName() (string, error)
 
-	// ContextNames() returns all available context names.
+	// ContextNames returns all available context names.
 	ContextNames() (map[string]struct{}, error)
 
 	// CurrentContext returns the current context configuration.

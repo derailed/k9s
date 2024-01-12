@@ -30,7 +30,7 @@ func NewConfig(ks data.KubeSettings) *Config {
 	}
 }
 
-// ContextHotKeysPath returns a context specific hotkeys file spec.
+// ContextHotkeysPath returns a context specific hotkeys file spec.
 func (c *Config) ContextHotkeysPath() string {
 	ct, err := c.K9s.ActiveContext()
 	if err != nil {
