@@ -71,7 +71,7 @@ func InitConnection(config *Config) (*APIClient, error) {
 	if err != nil {
 		log.Error().Err(err).Msgf("Fail to locate metrics-server")
 	}
-	if errors.Is(err, noMetricServerErr) || errors.Is(err, metricsUnsupportedErr) {
+	if err == nil || errors.Is(err, noMetricServerErr) || errors.Is(err, metricsUnsupportedErr) {
 		return &a, nil
 	}
 	a.connOK = false
