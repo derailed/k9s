@@ -40,7 +40,7 @@ func (r *Reference) Init(ctx context.Context) error {
 
 func (r *Reference) bindKeys(aa ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
-	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL, tcell.KeyCtrlZ)
+	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL)
 	aa.Add(ui.KeyActions{
 		tcell.KeyEnter: ui.NewKeyAction("Goto", r.gotoCmd, true),
 		ui.KeyShiftV:   ui.NewKeyAction("Sort GVR", r.GetTable().SortColCmd("GVR", true), false),

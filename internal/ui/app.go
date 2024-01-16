@@ -6,6 +6,7 @@ package ui
 import (
 	"os"
 	"sync"
+	"syscall"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
@@ -143,6 +144,7 @@ func (a *App) bindKeys() {
 		KeyColon:       NewKeyAction("Cmd", a.activateCmd, false),
 		tcell.KeyCtrlR: NewKeyAction("Redraw", a.redrawCmd, false),
 		tcell.KeyCtrlC: NewKeyAction("Quit", a.quitCmd, false),
+		tcell.KeyCtrlZ: NewKeyAction("Suspend", a.suspendCmd, false),
 		tcell.KeyCtrlU: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 		tcell.KeyCtrlQ: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 	}
@@ -196,6 +198,27 @@ func (a *App) quitCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	// overwrite the default ctrl-c behavior of tview
+	return nil
+}
+
+func (a *App) suspendCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if a.InCmdMode() {
+		return evt
+	}
+
+	if !a.Config.K9s.NoSuspendOnCtrlZ {
+		a.Suspend(func() {
+			a.Lock()
+			defer a.Unlock()
+
+			err := syscall.Kill(syscall.Getpid(), syscall.SIGTSTP)
+			if err != nil {
+				a.Flash().Err(err)
+			}
+		})
+	}
+
+	// overwrite the default ctrl-z behavior of tview
 	return nil
 }
 

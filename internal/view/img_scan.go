@@ -42,7 +42,7 @@ func NewImageScan(gvr client.GVR) ResourceViewer {
 func (s *ImageScan) Name() string { return imgScanTitle }
 
 func (c *ImageScan) bindKeys(aa ui.KeyActions) {
-	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlZ, tcell.KeyCtrlW)
+	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlW)
 
 	aa.Add(ui.KeyActions{
 		ui.KeyShiftL: ui.NewKeyAction("Sort Lib", c.GetTable().SortColCmd("LIBRARY", false), true),

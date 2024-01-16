@@ -5,6 +5,7 @@ k9s:
   maxConnRetry: 5
   readOnly: false
   noExitOnCtrlC: false
+  noSuspendOnCtrlZ: false
   skipLatestRevCheck: false
   disablePodCounting: false
   shellPods:

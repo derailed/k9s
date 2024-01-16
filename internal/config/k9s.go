@@ -21,6 +21,7 @@ type K9s struct {
 	MaxConnRetry        int        `json:"maxConnRetry" yaml:"maxConnRetry"`
 	ReadOnly            bool       `json:"readOnly" yaml:"readOnly"`
 	NoExitOnCtrlC       bool       `json:"noExitOnCtrlC" yaml:"noExitOnCtrlC"`
+	NoSuspendOnCtrlZ    bool       `json:"noSuspendOnCtrlZ" yaml:"noSuspendOnCtrlZ"`
 	UI                  UI         `json:"ui" yaml:"ui"`
 	SkipLatestRevCheck  bool       `json:"skipLatestRevCheck" yaml:"skipLatestRevCheck"`
 	DisablePodCounting  bool       `json:"disablePodCounting" yaml:"disablePodCounting"`
@@ -93,6 +94,7 @@ func (k *K9s) Merge(k1 *K9s) {
 	k.MaxConnRetry = k1.MaxConnRetry
 	k.ReadOnly = k1.ReadOnly
 	k.NoExitOnCtrlC = k1.NoExitOnCtrlC
+	k.NoSuspendOnCtrlZ = k1.NoSuspendOnCtrlZ
 	k.UI = k1.UI
 	k.SkipLatestRevCheck = k1.SkipLatestRevCheck
 	k.DisablePodCounting = k1.DisablePodCounting
