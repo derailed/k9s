@@ -35,7 +35,7 @@ func (Node) Header(_ string) Header {
 		HeaderColumn{Name: "NAME"},
 		HeaderColumn{Name: "STATUS"},
 		HeaderColumn{Name: "ROLE"},
-		HeaderColumn{Name: "ARCH"},
+		HeaderColumn{Name: "ARCH", Wide: true},
 		HeaderColumn{Name: "TAINTS"},
 		HeaderColumn{Name: "VERSION"},
 		HeaderColumn{Name: "KERNEL", Wide: true},
