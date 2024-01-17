@@ -215,7 +215,6 @@ func (a *App) suspendCmd(evt *tcell.EventKey) *tcell.EventKey {
 		})
 	}
 
-	// overwrite the default ctrl-z behavior of tview
 	return nil
 }
 
