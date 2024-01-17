@@ -208,9 +208,6 @@ func (a *App) suspendCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	if !a.Config.K9s.NoSuspendOnCtrlZ {
 		a.Suspend(func() {
-			a.Lock()
-			defer a.Unlock()
-
 			err := syscall.Kill(syscall.Getpid(), syscall.SIGTSTP)
 			if err != nil {
 				a.Flash().Err(err)
