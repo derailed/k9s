@@ -49,7 +49,7 @@ func init() {
 		fmt.Printf("Fail to init k9s logs location %s\n", err)
 	}
 
-	rootCmd.AddCommand(versionCmd(), infoCmd())
+	rootCmd.AddCommand(versionCmd(), infoCmd(), selfUpdate())
 	initK9sFlags()
 	initK8sFlags()
 }
