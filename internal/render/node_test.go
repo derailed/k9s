@@ -25,7 +25,7 @@ func TestNodeRender(t *testing.T) {
 
 	assert.Equal(t, "minikube", r.ID)
 	e := render.Fields{"minikube", "Ready", "master", "amd64", "0", "v1.15.2", "4.15.0", "192.168.64.107", "<none>", "0", "10", "20", "0", "0", "4000", "7874"}
-	assert.Equal(t, e, r.Fields[:15])
+	assert.Equal(t, e, r.Fields[:16])
 }
 
 func BenchmarkNodeRender(b *testing.B) {
