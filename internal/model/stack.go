@@ -166,6 +166,8 @@ func (s *Stack) Top() Component {
 		return nil
 	}
 
+	s.mx.RLock()
+	defer s.mx.RUnlock()
 	return s.components[len(s.components)-1]
 }
 

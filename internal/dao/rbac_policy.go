@@ -195,7 +195,7 @@ func isSameSubject(kind, ns, name string, subject *rbacv1.Subject) bool {
 func (p *Policy) fetchClusterRoles() ([]rbacv1.ClusterRole, error) {
 	const gvr = "rbac.authorization.k8s.io/v1/clusterroles"
 
-	oo, err := p.GetFactory().List(gvr, client.ClusterScope, false, labels.Everything())
+	oo, err := p.getFactory().List(gvr, client.ClusterScope, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -215,7 +215,7 @@ func (p *Policy) fetchClusterRoles() ([]rbacv1.ClusterRole, error) {
 func (p *Policy) fetchRoles() ([]rbacv1.Role, error) {
 	const gvr = "rbac.authorization.k8s.io/v1/roles"
 
-	oo, err := p.GetFactory().List(gvr, client.BlankNamespace, false, labels.Everything())
+	oo, err := p.getFactory().List(gvr, client.BlankNamespace, false, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

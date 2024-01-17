@@ -58,7 +58,7 @@ func (d *DaemonSet) IsHappy(ds appsv1.DaemonSet) bool {
 
 // Restart a DaemonSet rollout.
 func (d *DaemonSet) Restart(ctx context.Context, path string) error {
-	o, err := d.GetFactory().Get("apps/v1/daemonsets", path, true, labels.Everything())
+	o, err := d.getFactory().Get("apps/v1/daemonsets", path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -173,7 +173,7 @@ func (d *DaemonSet) Pod(fqn string) (string, error) {
 
 // GetInstance returns a daemonset instance.
 func (d *DaemonSet) GetInstance(fqn string) (*appsv1.DaemonSet, error) {
-	o, err := d.GetFactory().Get(d.gvr.String(), fqn, true, labels.Everything())
+	o, err := d.getFactory().Get(d.gvrStr(), fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +190,7 @@ func (d *DaemonSet) GetInstance(fqn string) (*appsv1.DaemonSet, error) {
 // ScanSA scans for serviceaccount refs.
 func (d *DaemonSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := d.GetFactory().List(d.GVR(), ns, wait, labels.Everything())
+	oo, err := d.getFactory().List(d.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +216,7 @@ func (d *DaemonSet) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, er
 // Scan scans for cluster refs.
 func (d *DaemonSet) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := d.GetFactory().List(d.GVR(), ns, wait, labels.Everything())
+	oo, err := d.getFactory().List(d.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

@@ -30,7 +30,7 @@ type PortForward struct {
 
 // Delete deletes a portforward.
 func (p *PortForward) Delete(_ context.Context, path string, _ *metav1.DeletionPropagation, _ Grace) error {
-	p.GetFactory().DeleteForwarder(path)
+	p.getFactory().DeleteForwarder(path)
 
 	return nil
 }
@@ -48,7 +48,7 @@ func (p *PortForward) List(ctx context.Context, _ string) ([]runtime.Object, err
 		log.Debug().Msgf("No custom benchmark config file found: %q", benchFile)
 	}
 
-	ff, cc := p.GetFactory().Forwarders(), config.Benchmarks.Containers
+	ff, cc := p.getFactory().Forwarders(), config.Benchmarks.Containers
 	oo := make([]runtime.Object, 0, len(ff))
 	for k, f := range ff {
 		if !strings.HasPrefix(k, path) {

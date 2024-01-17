@@ -58,6 +58,9 @@ func (n *Namespace) useNsCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (n *Namespace) useNamespace(fqn string) {
 	_, ns := client.Namespaced(fqn)
+	if client.CleanseNamespace(n.App().Config.ActiveNamespace()) == ns {
+		return
+	}
 	if err := n.App().switchNS(ns); err != nil {
 		n.App().Flash().Err(err)
 		return
