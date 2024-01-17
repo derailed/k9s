@@ -4,11 +4,14 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"runtime/debug"
+	"strings"
 
 	"github.com/derailed/k9s/internal/config/data"
+	"k8s.io/client-go/tools/clientcmd/api"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/color"
@@ -44,10 +47,18 @@ var (
 	out = colorable.NewColorableStdout()
 )
 
+type FlagError struct{ err error }
+
+func (e *FlagError) Error() string { return e.err.Error() }
+
 func init() {
 	if err := config.InitLogLoc(); err != nil {
 		fmt.Printf("Fail to init k9s logs location %s\n", err)
 	}
+
+	rootCmd.SetFlagErrorFunc(func(command *cobra.Command, err error) error {
+		return &FlagError{err: err}
+	})
 
 	rootCmd.AddCommand(versionCmd(), infoCmd())
 	initK9sFlags()
@@ -57,7 +68,10 @@ func init() {
 // Execute root command.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		panic(err)
+		var flagError *FlagError
+		if !errors.As(err, &flagError) {
+			panic(err)
+		}
 	}
 }
 
@@ -281,6 +295,7 @@ func initK8sFlags() {
 
 	initAsFlags()
 	initCertFlags()
+	initK8sFlagCompletion()
 }
 
 func initAsFlags() {
@@ -334,4 +349,52 @@ func initCertFlags() {
 		"",
 		"Bearer token for authentication to the API server",
 	)
+}
+
+func initK8sFlagCompletion() {
+	_ = rootCmd.RegisterFlagCompletionFunc("context", k8sFlagCompletionFunc(func(cfg *api.Config) map[string]*api.Context {
+		return cfg.Contexts
+	}))
+
+	_ = rootCmd.RegisterFlagCompletionFunc("cluster", k8sFlagCompletionFunc(func(cfg *api.Config) map[string]*api.Cluster {
+		return cfg.Clusters
+	}))
+
+	_ = rootCmd.RegisterFlagCompletionFunc("user", k8sFlagCompletionFunc(func(cfg *api.Config) map[string]*api.AuthInfo {
+		return cfg.AuthInfos
+	}))
+
+	_ = rootCmd.RegisterFlagCompletionFunc("namespace", func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		conn, err := client.InitConnection(client.NewConfig(k8sFlags))
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		nss, err := conn.ValidNamespaceNames()
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+
+		return filterFlagCompletions(nss, toComplete)
+	})
+}
+
+func k8sFlagCompletionFunc[T any](picker func(cfg *api.Config) map[string]T) func(*cobra.Command, []string, string) ([]string, cobra.ShellCompDirective) {
+	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+		k8sCfg, err := client.NewConfig(k8sFlags).RawConfig()
+		if err != nil {
+			return nil, cobra.ShellCompDirectiveError
+		}
+		return filterFlagCompletions(picker(&k8sCfg), toComplete)
+	}
+}
+
+func filterFlagCompletions[T any](m map[string]T, toComplete string) ([]string, cobra.ShellCompDirective) {
+	var completions []string
+	for name := range m {
+		if strings.HasPrefix(name, toComplete) {
+			completions = append(completions, name)
+		}
+	}
+	return completions, cobra.ShellCompDirectiveNoFileComp
 }
