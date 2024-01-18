@@ -5,7 +5,7 @@ k9s:
   maxConnRetry: 5
   readOnly: true
   noExitOnCtrlC: false
-  noSuspendOnCtrlZ: false
+  allowSuspend: false
   ui:
     enableMouse: false
     headless: false

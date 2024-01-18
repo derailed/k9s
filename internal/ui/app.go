@@ -144,9 +144,14 @@ func (a *App) bindKeys() {
 		KeyColon:       NewKeyAction("Cmd", a.activateCmd, false),
 		tcell.KeyCtrlR: NewKeyAction("Redraw", a.redrawCmd, false),
 		tcell.KeyCtrlC: NewKeyAction("Quit", a.quitCmd, false),
-		tcell.KeyCtrlZ: NewKeyAction("Suspend", a.suspendCmd, false),
 		tcell.KeyCtrlU: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 		tcell.KeyCtrlQ: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
+	}
+
+	if a.Config.K9s.AllowSuspend {
+		a.actions.Add(KeyActions{
+			tcell.KeyCtrlZ: NewKeyAction("Suspend", a.suspendCmd, false),
+		})
 	}
 }
 
@@ -206,14 +211,12 @@ func (a *App) suspendCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	if !a.Config.K9s.NoSuspendOnCtrlZ {
-		a.Suspend(func() {
-			err := syscall.Kill(syscall.Getpid(), syscall.SIGTSTP)
-			if err != nil {
-				a.Flash().Err(err)
-			}
-		})
-	}
+	a.Suspend(func() {
+		err := syscall.Kill(syscall.Getpid(), syscall.SIGTSTP)
+		if err != nil {
+			a.Flash().Err(err)
+		}
+	})
 
 	return nil
 }
