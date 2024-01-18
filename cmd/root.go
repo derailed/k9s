@@ -357,25 +357,20 @@ type (
 )
 
 func initK8sFlagCompletion() {
-	conn := client.NewConfig(k8sFlags)
-	cfg, err := conn.RawConfig()
-	if err != nil {
-		log.Error().Err(err).Msgf("k8s config getter failed")
-	}
-
-	_ = rootCmd.RegisterFlagCompletionFunc("context", k8sFlagCompletion(&cfg, func(cfg *api.Config) map[string]*api.Context {
+	_ = rootCmd.RegisterFlagCompletionFunc("context", k8sFlagCompletion(func(cfg *api.Config) map[string]*api.Context {
 		return cfg.Contexts
 	}))
 
-	_ = rootCmd.RegisterFlagCompletionFunc("cluster", k8sFlagCompletion(&cfg, func(cfg *api.Config) map[string]*api.Cluster {
+	_ = rootCmd.RegisterFlagCompletionFunc("cluster", k8sFlagCompletion(func(cfg *api.Config) map[string]*api.Cluster {
 		return cfg.Clusters
 	}))
 
-	_ = rootCmd.RegisterFlagCompletionFunc("user", k8sFlagCompletion(&cfg, func(cfg *api.Config) map[string]*api.AuthInfo {
+	_ = rootCmd.RegisterFlagCompletionFunc("user", k8sFlagCompletion(func(cfg *api.Config) map[string]*api.AuthInfo {
 		return cfg.AuthInfos
 	}))
 
 	_ = rootCmd.RegisterFlagCompletionFunc("namespace", func(cmd *cobra.Command, args []string, s string) ([]string, cobra.ShellCompDirective) {
+		conn := client.NewConfig(k8sFlags)
 		if c, err := client.InitConnection(conn); err == nil {
 			if nss, err := c.ValidNamespaceNames(); err == nil {
 				return filterFlagCompletions(nss, s)
@@ -386,13 +381,15 @@ func initK8sFlagCompletion() {
 	})
 }
 
-func k8sFlagCompletion[T any](cfg *api.Config, picker k8sPickerFn[T]) completeFn {
+func k8sFlagCompletion[T any](picker k8sPickerFn[T]) completeFn {
 	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
-		if cfg == nil {
-			return nil, cobra.ShellCompDirectiveError
+		conn := client.NewConfig(k8sFlags)
+		cfg, err := conn.RawConfig()
+		if err != nil {
+			log.Error().Err(err).Msgf("k8s config getter failed")
 		}
 
-		return filterFlagCompletions(picker(cfg), toComplete)
+		return filterFlagCompletions(picker(&cfg), toComplete)
 	}
 }
 

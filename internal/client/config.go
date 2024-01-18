@@ -26,14 +26,13 @@ const (
 // Config tracks a kubernetes configuration.
 type Config struct {
 	flags *genericclioptions.ConfigFlags
-	mutex *sync.RWMutex
+	mx    sync.RWMutex
 }
 
 // NewConfig returns a new k8s config or an error if the flags are invalid.
 func NewConfig(f *genericclioptions.ConfigFlags) *Config {
 	return &Config{
 		flags: f,
-		mutex: &sync.RWMutex{},
 	}
 }
 
@@ -299,8 +298,8 @@ func (c *Config) CurrentNamespaceName() (string, error) {
 
 // ConfigAccess return the current kubeconfig api server access configuration.
 func (c *Config) ConfigAccess() (clientcmd.ConfigAccess, error) {
-	c.mutex.RLock()
-	defer c.mutex.RUnlock()
+	c.mx.RLock()
+	defer c.mx.RUnlock()
 
 	return c.clientConfig().ConfigAccess(), nil
 }
