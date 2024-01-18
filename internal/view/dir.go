@@ -80,7 +80,7 @@ func (d *Dir) bindDangerousKeys(aa ui.KeyActions) {
 func (d *Dir) bindKeys(aa ui.KeyActions) {
 	// !!BOZO!! Lame!
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
-	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL, tcell.KeyCtrlD)
+	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL, tcell.KeyCtrlD, tcell.KeyCtrlT)
 	if !d.App().Config.K9s.IsReadOnly() {
 		d.bindDangerousKeys(aa)
 	}
