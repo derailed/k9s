@@ -469,9 +469,6 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 		if err != nil {
 			return err
 		}
-		if err := a.command.Reset(a.Config.ContextAliasesPath(), true); err != nil {
-			return err
-		}
 		if cns, ok := ci.NSArg(); ok {
 			ct.Namespace.Active = cns
 		}
@@ -493,6 +490,9 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 			log.Error().Err(err).Msg("config save failed!")
 		}
 		a.initFactory(ns)
+		if err := a.command.Reset(a.Config.ContextAliasesPath(), true); err != nil {
+			return err
+		}
 
 		log.Debug().Msgf("--> Switching Context %q -- %q -- %q", name, ns, a.Config.ActiveView())
 		a.Flash().Infof("Switching context to %q::%q", name, ns)

@@ -41,7 +41,7 @@ func NewCommand(app *App) *Command {
 func (c *Command) Init(path string) error {
 	c.alias = dao.NewAlias(c.app.factory)
 	if _, err := c.alias.Ensure(path); err != nil {
-		log.Error().Err(err).Msgf("command init failed!")
+		log.Error().Err(err).Msgf("Alias ensure failed!")
 		return err
 	}
 	customViewers = loadCustomViewers()
