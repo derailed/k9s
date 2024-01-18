@@ -15,5 +15,5 @@ func TestDir(t *testing.T) {
 
 	assert.Nil(t, v.Init(makeCtx()))
 	assert.Equal(t, "Directory", v.Name())
-	assert.Equal(t, 8, len(v.Hints()))
+	assert.Equal(t, 7, len(v.Hints()))
 }
