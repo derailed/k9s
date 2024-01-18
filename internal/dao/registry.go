@@ -67,6 +67,12 @@ var stdGroups = []string{
 	"v1",
 }
 
+func (m ResourceMetas) clear() {
+	for k := range m {
+		delete(m, k)
+	}
+}
+
 // Meta represents available resource metas.
 type Meta struct {
 	resMetas ResourceMetas
@@ -188,7 +194,7 @@ func (m *Meta) LoadResources(f Factory) error {
 	m.mx.Lock()
 	defer m.mx.Unlock()
 
-	m.resMetas = make(ResourceMetas, 100)
+	m.resMetas.clear()
 	if err := loadPreferred(f, m.resMetas); err != nil {
 		return err
 	}
