@@ -43,6 +43,14 @@ type ResourceViewer interface {
 	RemoveListener(ResourceViewerListener)
 }
 
+// EncDecResourceViewer interface extends the ResourceViewer interface and
+// adds a `Toggle` that allows the user to switch between encoded or decoded
+// state of the view.
+type EncDecResourceViewer interface {
+	ResourceViewer
+	Toggle()
+}
+
 // Igniter represents a runnable view.
 type Igniter interface {
 	// Start starts a component.

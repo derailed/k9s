@@ -27,6 +27,7 @@ type Describe struct {
 	lines       []string
 	refreshRate time.Duration
 	listeners   []ResourceViewerListener
+	decode      bool
 }
 
 // NewDescribe returns a new describe resource model.
@@ -180,6 +181,10 @@ func (d *Describe) describe(ctx context.Context, gvr client.GVR, path string) (s
 		return "", fmt.Errorf("no describer for %q", meta.DAO.GVR())
 	}
 
+	if desc, ok := meta.DAO.(*dao.Secret); ok {
+		desc.SetDecode(d.decode)
+	}
+
 	return desc.Describe(path)
 }
 
@@ -201,4 +206,9 @@ func (d *Describe) RemoveListener(l ResourceViewerListener) {
 	if victim >= 0 {
 		d.listeners = append(d.listeners[:victim], d.listeners[victim+1:]...)
 	}
+}
+
+// Toggle toggles the decode flag.
+func (d *Describe) Toggle() {
+	d.decode = !d.decode
 }
