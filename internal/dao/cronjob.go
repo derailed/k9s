@@ -56,7 +56,7 @@ func (c *CronJob) Run(path string) error {
 		return fmt.Errorf("user is not authorized to run jobs")
 	}
 
-	o, err := c.GetFactory().Get(c.GVR(), path, true, labels.Everything())
+	o, err := c.getFactory().Get(c.GVR(), path, true, labels.Everything())
 	if err != nil {
 		return err
 	}
@@ -102,7 +102,7 @@ func (c *CronJob) Run(path string) error {
 // ScanSA scans for serviceaccount refs.
 func (c *CronJob) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := c.GetFactory().List(c.GVR(), ns, wait, labels.Everything())
+	oo, err := c.getFactory().List(c.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ func (c *CronJob) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, erro
 
 // GetInstance fetch a matching cronjob.
 func (c *CronJob) GetInstance(fqn string) (*batchv1.CronJob, error) {
-	o, err := c.GetFactory().Get(c.GVR(), fqn, true, labels.Everything())
+	o, err := c.getFactory().Get(c.GVR(), fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func (c *CronJob) ToggleSuspend(ctx context.Context, path string) error {
 // Scan scans for cluster resource refs.
 func (c *CronJob) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := c.GetFactory().List(c.GVR(), ns, wait, labels.Everything())
+	oo, err := c.getFactory().List(c.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

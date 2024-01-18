@@ -46,7 +46,7 @@ type APIClient struct {
 	mxsClient         *versioned.Clientset
 	cachedClient      *disk.CachedDiscoveryClient
 	config            *Config
-	mx                sync.Mutex
+	mx                sync.RWMutex
 	cache             *cache.LRUExpireCache
 	connOK            bool
 }
@@ -143,10 +143,7 @@ func (a *APIClient) clearCache() {
 
 // CanI checks if user has access to a certain resource.
 func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) {
-	a.mx.Lock()
-	defer a.mx.Unlock()
-
-	if !a.connOK {
+	if !a.getConnOK() {
 		return false, errors.New("ACCESS -- No API server connection")
 	}
 	if IsClusterWide(ns) {
@@ -305,14 +302,11 @@ func (a *APIClient) ValidNamespaceNames() (NamespaceNames, error) {
 
 // CheckConnectivity return true if api server is cool or false otherwise.
 func (a *APIClient) CheckConnectivity() bool {
-	a.mx.Lock()
-	defer a.mx.Unlock()
-
 	defer func() {
 		if err := recover(); err != nil {
-			a.connOK = false
+			a.setConnOK(false)
 		}
-		if !a.connOK {
+		if !a.getConnOK() {
 			a.clearCache()
 		}
 	}()
@@ -328,21 +322,21 @@ func (a *APIClient) CheckConnectivity() bool {
 	client, err := kubernetes.NewForConfig(cfg)
 	if err != nil {
 		log.Error().Err(err).Msgf("Unable to connect to api server")
-		a.connOK = false
-		return a.connOK
+		a.setConnOK(false)
+		return a.getConnOK()
 	}
 
 	// Check connection
 	if _, err := client.ServerVersion(); err == nil {
-		if !a.connOK {
+		if !a.getConnOK() {
 			a.reset()
 		}
 	} else {
 		log.Error().Err(err).Msgf("can't connect to cluster")
-		a.connOK = false
+		a.setConnOK(false)
 	}
 
-	return a.connOK
+	return a.getConnOK()
 }
 
 // Config return a kubernetes configuration.
@@ -355,13 +349,97 @@ func (a *APIClient) HasMetrics() bool {
 	return a.supportsMetricsResources() == nil
 }
 
+func (a *APIClient) getMxsClient() *versioned.Clientset {
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+
+	return a.mxsClient
+}
+
+func (a *APIClient) setMxsClient(c *versioned.Clientset) {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
+	a.mxsClient = c
+}
+
+func (a *APIClient) getCachedClient() *disk.CachedDiscoveryClient {
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+
+	return a.cachedClient
+}
+
+func (a *APIClient) setCachedClient(c *disk.CachedDiscoveryClient) {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
+	a.cachedClient = c
+}
+
+func (a *APIClient) getDClient() dynamic.Interface {
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+
+	return a.dClient
+}
+
+func (a *APIClient) setDClient(c dynamic.Interface) {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
+	a.dClient = c
+}
+
+func (a *APIClient) getConnOK() bool {
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+
+	return a.connOK
+}
+
+func (a *APIClient) setConnOK(b bool) {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
+	a.connOK = b
+}
+
+func (a *APIClient) setLogClient(k kubernetes.Interface) {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
+	a.logClient = k
+}
+
+func (a *APIClient) getLogClient() kubernetes.Interface {
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+
+	return a.logClient
+}
+
+func (a *APIClient) setClient(k kubernetes.Interface) {
+	a.mx.Lock()
+	defer a.mx.Unlock()
+
+	a.client = k
+}
+
+func (a *APIClient) getClient() kubernetes.Interface {
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+
+	return a.client
+}
+
 // DialLogs returns a handle to api server for logs.
 func (a *APIClient) DialLogs() (kubernetes.Interface, error) {
-	if !a.connOK {
-		return nil, errors.New("no connection to dial")
+	if !a.getConnOK() {
+		return nil, errors.New("dialLogs - no connection to dial")
 	}
-	if a.logClient != nil {
-		return a.logClient, nil
+	if clt := a.getLogClient(); clt != nil {
+		return clt, nil
 	}
 
 	cfg, err := a.RestConfig()
@@ -369,31 +447,35 @@ func (a *APIClient) DialLogs() (kubernetes.Interface, error) {
 		return nil, err
 	}
 	cfg.Timeout = 0
-	if a.logClient, err = kubernetes.NewForConfig(cfg); err != nil {
+	c, err := kubernetes.NewForConfig(cfg)
+	if err != nil {
 		return nil, err
 	}
+	a.setLogClient(c)
 
-	return a.logClient, nil
+	return a.getLogClient(), nil
 }
 
 // Dial returns a handle to api server or die.
 func (a *APIClient) Dial() (kubernetes.Interface, error) {
-	if !a.connOK {
+	if !a.getConnOK() {
 		return nil, errors.New("no connection to dial")
 	}
-	if a.client != nil {
-		return a.client, nil
+	if c := a.getClient(); c != nil {
+		return c, nil
 	}
 
 	cfg, err := a.RestConfig()
 	if err != nil {
 		return nil, err
 	}
-	if a.client, err = kubernetes.NewForConfig(cfg); err != nil {
+	if c, err := kubernetes.NewForConfig(cfg); err != nil {
 		return nil, err
+	} else {
+		a.setClient(c)
 	}
 
-	return a.client, nil
+	return a.getClient(), nil
 }
 
 // RestConfig returns a rest api client.
@@ -403,15 +485,12 @@ func (a *APIClient) RestConfig() (*restclient.Config, error) {
 
 // CachedDiscovery returns a cached discovery client.
 func (a *APIClient) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
-	a.mx.Lock()
-	defer a.mx.Unlock()
-
-	if !a.connOK {
+	if !a.getConnOK() {
 		return nil, errors.New("no connection to cached dial")
 	}
 
-	if a.cachedClient != nil {
-		return a.cachedClient, nil
+	if c := a.getCachedClient(); c != nil {
+		return c, nil
 	}
 
 	cfg, err := a.RestConfig()
@@ -422,37 +501,38 @@ func (a *APIClient) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
 	httpCacheDir := filepath.Join(mustHomeDir(), ".kube", "http-cache")
 	discCacheDir := filepath.Join(mustHomeDir(), ".kube", "cache", "discovery", toHostDir(cfg.Host))
 
-	a.cachedClient, err = disk.NewCachedDiscoveryClientForConfig(cfg, discCacheDir, httpCacheDir, cacheExpiry)
+	c, err := disk.NewCachedDiscoveryClientForConfig(cfg, discCacheDir, httpCacheDir, cacheExpiry)
 	if err != nil {
 		return nil, err
 	}
-	return a.cachedClient, nil
+	a.setCachedClient(c)
+
+	return a.getCachedClient(), nil
 }
 
 // DynDial returns a handle to a dynamic interface.
 func (a *APIClient) DynDial() (dynamic.Interface, error) {
-	if a.dClient != nil {
-		return a.dClient, nil
+	if c := a.getDClient(); c != nil {
+		return c, nil
 	}
 
 	cfg, err := a.RestConfig()
 	if err != nil {
 		return nil, err
 	}
-	if a.dClient, err = dynamic.NewForConfig(cfg); err != nil {
-		log.Panic().Err(err)
+	c, err := dynamic.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
 	}
+	a.setDClient(c)
 
-	return a.dClient, nil
+	return a.getDClient(), nil
 }
 
 // MXDial returns a handle to the metrics server.
 func (a *APIClient) MXDial() (*versioned.Clientset, error) {
-	a.mx.Lock()
-	defer a.mx.Unlock()
-
-	if a.mxsClient != nil {
-		return a.mxsClient, nil
+	if c := a.getMxsClient(); c != nil {
+		return c, nil
 	}
 
 	cfg, err := a.RestConfig()
@@ -460,11 +540,13 @@ func (a *APIClient) MXDial() (*versioned.Clientset, error) {
 		return nil, err
 	}
 
-	if a.mxsClient, err = versioned.NewForConfig(cfg); err != nil {
-		log.Error().Err(err)
+	c, err := versioned.NewForConfig(cfg)
+	if err != nil {
+		return nil, err
 	}
+	a.setMxsClient(c)
 
-	return a.mxsClient, err
+	return a.getMxsClient(), err
 }
 
 // SwitchContext handles kubeconfig context switches.
@@ -473,12 +555,8 @@ func (a *APIClient) SwitchContext(name string) error {
 	if err := a.config.SwitchContext(name); err != nil {
 		return err
 	}
-	a.mx.Lock()
-	{
-		a.reset()
-		ResetMetrics()
-	}
-	a.mx.Unlock()
+	a.reset()
+	ResetMetrics()
 
 	if !a.CheckConnectivity() {
 		return fmt.Errorf("unable to connect to context %q", name)
@@ -490,9 +568,14 @@ func (a *APIClient) SwitchContext(name string) error {
 func (a *APIClient) reset() {
 	a.config.reset()
 	a.cache = cache.NewLRUExpireCache(cacheSize)
-	a.client, a.dClient, a.nsClient, a.mxsClient = nil, nil, nil, nil
-	a.cachedClient, a.logClient = nil, nil
-	a.connOK = true
+	a.nsClient = nil
+
+	a.setDClient(nil)
+	a.setMxsClient(nil)
+	a.setCachedClient(nil)
+	a.setClient(nil)
+	a.setLogClient(nil)
+	a.setConnOK(true)
 }
 
 func (a *APIClient) checkCacheBool(key string) (state bool, ok bool) {

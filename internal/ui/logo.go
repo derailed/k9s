@@ -52,7 +52,10 @@ func (l *Logo) Status() *tview.TextView {
 // StylesChanged notifies the skin changed.
 func (l *Logo) StylesChanged(s *config.Styles) {
 	l.styles = s
-	l.Reset()
+	l.SetBackgroundColor(l.styles.BgColor())
+	l.status.SetBackgroundColor(l.styles.BgColor())
+	l.logo.SetBackgroundColor(l.styles.BgColor())
+	l.refreshLogo(l.styles.Body().LogoColor)
 }
 
 // IsBenchmarking checks if benchmarking is active or not.
@@ -64,10 +67,7 @@ func (l *Logo) IsBenchmarking() bool {
 // Reset clears out the logo view and resets colors.
 func (l *Logo) Reset() {
 	l.status.Clear()
-	l.SetBackgroundColor(l.styles.BgColor())
-	l.status.SetBackgroundColor(l.styles.BgColor())
-	l.logo.SetBackgroundColor(l.styles.BgColor())
-	l.refreshLogo(l.styles.Body().LogoColor)
+	l.StylesChanged(l.styles)
 }
 
 // Err displays a log error state.

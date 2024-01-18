@@ -4,6 +4,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -58,7 +59,7 @@ func (c *Config) ContextPluginsPath() string {
 		return ""
 	}
 
-	return AppContextPluginsFile(ct.ClusterName, c.K9s.activeContextName)
+	return AppContextPluginsFile(ct.GetClusterName(), c.K9s.activeContextName)
 }
 
 // Refine the configuration based on cli args.
@@ -218,17 +219,18 @@ func (c *Config) Load(path string) error {
 	if err != nil {
 		return err
 	}
+	var errs error
 	if err := data.JSONValidator.Validate(json.K9sSchema, bb); err != nil {
-		return fmt.Errorf("k9s config file %q load failed:\n%w", path, err)
+		errs = errors.Join(errs, fmt.Errorf("k9s config file %q load failed:\n%w", path, err))
 	}
 
 	var cfg Config
 	if err := yaml.Unmarshal(bb, &cfg); err != nil {
-		return fmt.Errorf("main config yaml load failed: %w", err)
+		errs = errors.Join(errs, fmt.Errorf("main config.yaml load failed: %w", err))
 	}
 	c.Merge(&cfg)
 
-	return nil
+	return errs
 }
 
 // Save configuration to disk.

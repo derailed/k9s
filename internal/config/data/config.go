@@ -29,8 +29,6 @@ func NewConfig(ct *api.Context) *Config {
 
 // Validate ensures config is in norms.
 func (c *Config) Validate(conn client.Connection, ks KubeSettings) {
-	c.mx.Lock()
-	defer c.mx.Unlock()
 
 	if c.Context == nil {
 		c.Context = NewContext()

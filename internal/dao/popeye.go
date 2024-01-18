@@ -69,7 +69,7 @@ func (p *Popeye) List(ctx context.Context, ns string) ([]runtime.Object, error) 
 		flags.ActiveNamespace = &ns
 	}
 	spinach := filepath.Join(cfg.AppConfigDir, "spinach.yaml")
-	if c, err := p.GetFactory().Client().Config().CurrentContextName(); err == nil {
+	if c, err := p.getFactory().Client().Config().CurrentContextName(); err == nil {
 		spinach = filepath.Join(cfg.AppConfigDir, fmt.Sprintf("%s_spinach.yaml", c))
 	}
 	if _, err := os.Stat(spinach); err == nil {

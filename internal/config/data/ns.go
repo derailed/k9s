@@ -4,6 +4,8 @@
 package data
 
 import (
+	"sync"
+
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
 )
@@ -18,6 +20,7 @@ type Namespace struct {
 	Active        string   `yaml:"active"`
 	LockFavorites bool     `yaml:"lockFavorites"`
 	Favorites     []string `yaml:"favorites"`
+	mx            sync.RWMutex
 }
 
 // NewNamespace create a new namespace configuration.
@@ -37,6 +40,9 @@ func NewActiveNamespace(n string) *Namespace {
 
 // Validate validates a namespace is setup correctly.
 func (n *Namespace) Validate(c client.Connection) {
+	n.mx.RLock()
+	defer n.mx.RUnlock()
+
 	if c == nil || !c.IsValidNamespace(n.Active) {
 		return
 	}
@@ -50,14 +56,18 @@ func (n *Namespace) Validate(c client.Connection) {
 
 // SetActive set the active namespace.
 func (n *Namespace) SetActive(ns string, ks KubeSettings) error {
+	if n == nil {
+		n = NewActiveNamespace(ns)
+	}
+
+	n.mx.Lock()
+	defer n.mx.Unlock()
+
 	if ns == client.BlankNamespace {
 		ns = client.NamespaceAll
 	}
-	if n == nil {
-		n = NewActiveNamespace(ns)
-	} else {
-		n.Active = ns
-	}
+	n.Active = ns
+
 	if ns != "" && !n.LockFavorites {
 		n.addFavNS(ns)
 	}

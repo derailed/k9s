@@ -76,6 +76,9 @@ func (t *Table) SetInstance(path string) {
 
 // AddListener adds a new model listener.
 func (t *Table) AddListener(l TableListener) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
 	t.listeners = append(t.listeners, l)
 }
 
@@ -91,8 +94,8 @@ func (t *Table) RemoveListener(l TableListener) {
 
 	if victim >= 0 {
 		t.mx.Lock()
-		defer t.mx.Unlock()
 		t.listeners = append(t.listeners[:victim], t.listeners[victim+1:]...)
+		t.mx.Unlock()
 	}
 }
 
@@ -289,16 +292,23 @@ func (t *Table) reconcile(ctx context.Context) error {
 }
 
 func (t *Table) fireTableChanged(data *render.TableData) {
+	var ll []TableListener
 	t.mx.RLock()
-	defer t.mx.RUnlock()
+	ll = t.listeners
+	t.mx.RUnlock()
 
-	for _, l := range t.listeners {
+	for _, l := range ll {
 		l.TableDataChanged(data)
 	}
 }
 
 func (t *Table) fireTableLoadFailed(err error) {
-	for _, l := range t.listeners {
+	var ll []TableListener
+	t.mx.RLock()
+	ll = t.listeners
+	t.mx.RUnlock()
+
+	for _, l := range ll {
 		l.TableLoadFailed(err)
 	}
 }

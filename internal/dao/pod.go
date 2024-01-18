@@ -177,7 +177,7 @@ func (p *Pod) Pod(fqn string) (string, error) {
 
 // GetInstance returns a pod instance.
 func (p *Pod) GetInstance(fqn string) (*v1.Pod, error) {
-	o, err := p.GetFactory().Get(p.gvr.String(), fqn, true, labels.Everything())
+	o, err := p.getFactory().Get(p.gvrStr(), fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +197,7 @@ func (p *Pod) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 	if !ok {
 		return nil, errors.New("no factory in context")
 	}
-	o, err := fac.Get(p.gvr.String(), opts.Path, true, labels.Everything())
+	o, err := fac.Get(p.gvrStr(), opts.Path, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -240,7 +240,7 @@ func (p *Pod) TailLogs(ctx context.Context, opts *LogOptions) ([]LogChan, error)
 // ScanSA scans for ServiceAccount refs.
 func (p *Pod) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := p.GetFactory().List(p.GVR(), ns, wait, labels.Everything())
+	oo, err := p.getFactory().List(p.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
@@ -270,7 +270,7 @@ func (p *Pod) ScanSA(ctx context.Context, fqn string, wait bool) (Refs, error) {
 // Scan scans for cluster resource refs.
 func (p *Pod) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (Refs, error) {
 	ns, n := client.Namespaced(fqn)
-	oo, err := p.GetFactory().List(p.GVR(), ns, wait, labels.Everything())
+	oo, err := p.getFactory().List(p.GVR(), ns, wait, labels.Everything())
 	if err != nil {
 		return nil, err
 	}

@@ -56,8 +56,8 @@ func (s *StatusIndicator) ClusterInfoUpdated(data model.ClusterMeta) {
 		s.SetPermanent(fmt.Sprintf(
 			statusIndicatorFmt,
 			data.K9sVer,
+			data.Context,
 			data.Cluster,
-			data.User,
 			data.K8sVer,
 			render.PrintPerc(data.Cpu),
 			render.PrintPerc(data.Mem),

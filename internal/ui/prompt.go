@@ -5,6 +5,7 @@ package ui
 
 import (
 	"fmt"
+	"sync"
 
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/model"
@@ -83,6 +84,7 @@ type Prompt struct {
 	styles  *config.Styles
 	model   PromptModel
 	spacer  int
+	mx      sync.RWMutex
 }
 
 // NewPrompt returns a new command view.
@@ -206,17 +208,29 @@ func (p *Prompt) activate() {
 	p.model.Notify(false)
 }
 
+func (p *Prompt) Clear() {
+	p.mx.Lock()
+	defer p.mx.Unlock()
+
+	p.TextView.Clear()
+}
+
+func (p *Prompt) Draw(sc tcell.Screen) {
+	p.mx.RLock()
+	defer p.mx.RUnlock()
+
+	p.TextView.Draw(sc)
+}
+
 func (p *Prompt) update(text, suggestion string) {
 	p.Clear()
 	p.write(text, suggestion)
 }
 
-func (p *Prompt) suggest(text, suggestion string) {
-	p.Clear()
-	p.write(text, suggestion)
-}
-
 func (p *Prompt) write(text, suggest string) {
+	p.mx.Lock()
+	defer p.mx.Unlock()
+
 	p.SetCursorIndex(p.spacer + len(text))
 	txt := text
 	if suggest != "" {
@@ -240,7 +254,7 @@ func (p *Prompt) BufferChanged(text, suggestion string) {
 
 // SuggestionChanged notifies the suggestion changed.
 func (p *Prompt) SuggestionChanged(text, suggestion string) {
-	p.suggest(text, suggestion)
+	p.update(text, suggestion)
 }
 
 // BufferActive indicates the buff activity changed.

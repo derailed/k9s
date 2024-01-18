@@ -20,6 +20,7 @@ import (
 // Synchronizer manages ui event queue.
 type synchronizer interface {
 	Flash() *model.Flash
+	Logo() *Logo
 	UpdateClusterInfo()
 	QueueUpdateDraw(func())
 	QueueUpdate(func())
@@ -101,7 +102,7 @@ func (c *Configurator) SkinsDirWatcher(ctx context.Context, s synchronizer) erro
 		for {
 			select {
 			case evt := <-w.Events:
-				if evt.Name == c.skinFile && evt.Op != fsnotify.Chmod {
+				if evt.Op != fsnotify.Chmod && filepath.Base(evt.Name) == filepath.Base(c.skinFile) {
 					log.Debug().Msgf("Skin changed: %s", c.skinFile)
 					s.QueueUpdateDraw(func() {
 						c.RefreshStyles(s)
@@ -141,11 +142,13 @@ func (c *Configurator) ConfigWatcher(ctx context.Context, s synchronizer) error 
 						if err := c.Config.Load(evt.Name); err != nil {
 							log.Error().Err(err).Msgf("k9s config reload failed")
 							s.Flash().Warn("k9s config reload failed. Check k9s logs!")
+							s.Logo().Warn("K9s config reload failed!")
 						}
 					} else {
 						if err := c.Config.K9s.Reload(); err != nil {
 							log.Error().Err(err).Msgf("k9s context config reload failed")
 							s.Flash().Warn("Context config reload failed. Check k9s logs!")
+							s.Logo().Warn("Context config reload failed!")
 						}
 					}
 					s.QueueUpdateDraw(func() {
@@ -252,10 +255,11 @@ func (c *Configurator) loadSkinFile(s synchronizer) {
 	if err := c.Styles.Load(skinFile); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			s.Flash().Warnf("Skin file %q not found in skins dir: %s", filepath.Base(skinFile), config.AppSkinsDir)
+			c.updateStyles("")
 		} else {
 			s.Flash().Errf("Failed to parse skin file -- %s: %s.", filepath.Base(skinFile), err)
+			c.updateStyles(skinFile)
 		}
-		c.updateStyles("")
 	} else {
 		s.Flash().Infof("Skin file loaded: %q", skinFile)
 		c.updateStyles(skinFile)

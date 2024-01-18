@@ -72,6 +72,7 @@ func newMockSynchronizer() synchronizer {
 func (s synchronizer) Flash() *model.Flash {
 	return model.NewFlash(100 * time.Millisecond)
 }
+func (s synchronizer) Logo() *ui.Logo         { return nil }
 func (s synchronizer) UpdateClusterInfo()     {}
 func (s synchronizer) QueueUpdateDraw(func()) {}
 func (s synchronizer) QueueUpdate(func())     {}
