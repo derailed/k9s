@@ -99,11 +99,9 @@ func runForward(v ResourceViewer, pf watch.Forwarder, f *portforward.PortForward
 	pf.SetActive(true)
 	if err := f.ForwardPorts(); err != nil {
 		v.App().Flash().Err(err)
-		return
 	}
-
 	v.App().QueueUpdateDraw(func() {
-		v.App().factory.DeleteForwarder(pf.FQN())
+		v.App().factory.DeleteForwarder(pf.ID())
 		pf.SetActive(false)
 	})
 }
