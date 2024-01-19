@@ -161,7 +161,7 @@ func (r *ReplicaSet) GetOwners(path string) ([]OwnerInfo, error) {
 }
 
 func (r *ReplicaSet) GetInstance(fqn string) (*appsv1.ReplicaSet, error) {
-	o, err := r.GetFactory().Get(r.gvr.String(), fqn, true, labels.Everything())
+	o, err := r.getFactory().Get(r.gvr.String(), fqn, true, labels.Everything())
 	if err != nil {
 		return nil, err
 	}
