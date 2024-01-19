@@ -125,6 +125,10 @@ var Registry = map[string]ResourceMeta{
 		DAO:      &dao.Table{},
 		Renderer: &render.Event{},
 	},
+	"v1/secrets": {
+		DAO:      &dao.Secret{},
+		Renderer: &render.Generic{},
+	},
 
 	// Apps...
 	"apps/v1/deployments": {

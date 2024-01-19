@@ -73,7 +73,7 @@ func (c *conn) IsActiveNamespace(string) bool                       { return fal
 
 type podFactory struct{}
 
-var _ dao.Factory = testFactory{}
+var _ dao.Factory = &testFactory{}
 
 func (f podFactory) Client() client.Connection {
 	return makeConn()

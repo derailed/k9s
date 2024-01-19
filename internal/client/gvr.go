@@ -135,6 +135,11 @@ func (g GVR) G() string {
 	return g.g
 }
 
+// IsDecodable checks if the k8s resource has a decodable view
+func (g GVR) IsDecodable() bool {
+	return g.GVK().Kind == "secrets"
+}
+
 // GVRs represents a collection of gvr.
 type GVRs []GVR
 
