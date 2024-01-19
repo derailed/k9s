@@ -24,6 +24,8 @@ import (
 	"k8s.io/client-go/transport/spdy"
 )
 
+const defaultTimeout = 30 * time.Second
+
 // PortForwarder tracks a port forward stream.
 type PortForwarder struct {
 	Factory
@@ -94,7 +96,10 @@ func (p *PortForwarder) Container() string {
 func (p *PortForwarder) Stop() {
 	log.Debug().Msgf("<<< Stopping PortForward %s", p.ID())
 	p.active = false
-	close(p.stopChan)
+	if p.stopChan != nil {
+		close(p.stopChan)
+		p.stopChan = nil
+	}
 }
 
 // FQN returns the portforward unique id.
@@ -169,7 +174,7 @@ func (p *PortForwarder) forwardPorts(method string, url *url.URL, addr, portMap 
 	if err != nil {
 		return nil, err
 	}
-	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, method, url)
+	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport, Timeout: defaultTimeout}, method, url)
 
 	return portforward.NewOnAddresses(dialer, []string{addr}, []string{portMap}, p.stopChan, p.readyChan, p.Out, p.ErrOut)
 }
