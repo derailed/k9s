@@ -70,7 +70,6 @@ func (n *Namespace) useNamespace(fqn string) {
 		return
 	}
 
-	n.App().Flash().Infof("Namespace %s is now active!", ns)
 	if err := n.App().Config.Save(); err != nil {
 		log.Error().Err(err).Msg("Config file save failed!")
 	}
