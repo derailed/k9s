@@ -4,7 +4,6 @@
 package dao
 
 import (
-	"errors"
 	"fmt"
 	"sort"
 	"strings"
@@ -125,12 +124,12 @@ func GVRForKind(apiVersion string, kind string) (client.GVR, bool, error) {
 			"Node": {client.NewGVR("v1/nodes"), false},
 		}
 	default:
-		return client.GVR{}, false, errors.New(fmt.Sprintf("unsupported ownerReference API version: %s", apiVersion))
+		return client.GVR{}, false, fmt.Errorf("unsupported ownerReference API version: %s", apiVersion)
 	}
 
 	gvr, found := gvrs[kind]
 	if !found {
-		return client.GVR{}, false, errors.New(fmt.Sprintf("unsupported ownerReference kind: %s", kind))
+		return client.GVR{}, false, fmt.Errorf("unsupported ownerReference kind: %s", kind)
 	}
 
 	return gvr.gvr, gvr.namespaced, nil
