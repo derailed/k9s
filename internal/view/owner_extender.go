@@ -30,7 +30,7 @@ func NewOwnerExtender(v ResourceViewer) ResourceViewer {
 func (o *OwnerExtender) bindKeys(aa ui.KeyActions) {
 	res, err := dao.AccessorFor(o.App().factory, o.GVR())
 	if err != nil {
-		o.App().Flash().Err(errors.New(fmt.Sprintf("could not get accessor for GVR: %w", err)))
+		o.App().Flash().Err(fmt.Errorf("could not get accessor for GVR: %w", err))
 
 		return
 	}
@@ -90,7 +90,7 @@ func (o *OwnerExtender) showOwner(path string) error {
 }
 
 func (o *OwnerExtender) goToOwner(owner dao.OwnerInfo) {
-	o.App().gotoResource(owner.GVR, owner.FQN, false)
+	o.App().gotoResource(owner.GVR.String(), owner.FQN, false)
 }
 
 func (o *OwnerExtender) showSelectOwnerDialog(refs []dao.OwnerInfo) error {

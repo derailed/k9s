@@ -329,7 +329,7 @@ func (p *Pod) GetOwners(path string) ([]OwnerInfo, error) {
 	ownerRefs := pod.GetObjectMeta().GetOwnerReferences()
 
 	for _, ownerRef := range ownerRefs {
-		gvrString, namespaced, err := GVRForKind(ownerRef.APIVersion, ownerRef.Kind)
+		gvr, namespaced, err := GVRForKind(ownerRef.APIVersion, ownerRef.Kind)
 		if err != nil {
 			return nil, err
 		}
@@ -342,7 +342,7 @@ func (p *Pod) GetOwners(path string) ([]OwnerInfo, error) {
 		}
 
 		owners = append(owners, OwnerInfo{
-			GVR: gvrString,
+			GVR: gvr,
 			FQN: ownerFQN,
 		})
 	}

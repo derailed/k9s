@@ -177,8 +177,9 @@ type Valuer interface {
 	GetValues(path string, allValues bool) ([]byte, error)
 }
 
+// OwnerInfo contains the information about a resource's owner required to navigate to it.
 type OwnerInfo struct {
-	GVR string
+	GVR client.GVR
 	FQN string
 }
 
