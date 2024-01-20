@@ -104,7 +104,7 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 
 func GVRForKind(apiVersion string, kind string) (client.GVR, bool, error) {
 	type gvrInfo struct {
-		gvr        string
+		gvr        client.GVR
 		namespaced bool
 	}
 
@@ -113,16 +113,16 @@ func GVRForKind(apiVersion string, kind string) (client.GVR, bool, error) {
 	switch v := apiVersion; v {
 	case "apps/v1":
 		gvrs = map[string]gvrInfo{
-			"ReplicaSet":  {"apps/v1/replicasets", true},
-			"DaemonSet":   {"apps/v1/daemonsets", true},
-			"StatefulSet": {"apps/v1/statefulsets", true},
-			"Deployment":  {"apps/v1/deployments", true},
-			"Jobs":        {"apps/v1/jobs", true},
-			"CronJobs":    {"apps/v1/cronjobs", true},
+			"ReplicaSet":  {client.NewGVR("apps/v1/replicasets"), true},
+			"DaemonSet":   {client.NewGVR("apps/v1/daemonsets"), true},
+			"StatefulSet": {client.NewGVR("apps/v1/statefulsets"), true},
+			"Deployment":  {client.NewGVR("apps/v1/deployments"), true},
+			"Jobs":        {client.NewGVR("apps/v1/jobs"), true},
+			"CronJobs":    {client.NewGVR("apps/v1/cronjobs"), true},
 		}
 	case "v1":
 		gvrs = map[string]gvrInfo{
-			"Node": {"v1/nodes", false},
+			"Node": {client.NewGVR("v1/nodes"), false},
 		}
 	default:
 		return client.GVR{}, false, errors.New(fmt.Sprintf("unsupported ownerReference API version: %s", apiVersion))
@@ -133,7 +133,7 @@ func GVRForKind(apiVersion string, kind string) (client.GVR, bool, error) {
 		return client.GVR{}, false, errors.New(fmt.Sprintf("unsupported ownerReference kind: %s", kind))
 	}
 
-	return client.NewGVR(gvr.gvr), gvr.namespaced, nil
+	return gvr.gvr, gvr.namespaced, nil
 }
 
 // RegisterMeta registers a new resource meta object.
