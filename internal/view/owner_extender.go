@@ -28,19 +28,9 @@ func NewOwnerExtender(v ResourceViewer) ResourceViewer {
 
 // BindKeys injects new menu actions.
 func (o *OwnerExtender) bindKeys(aa ui.KeyActions) {
-	res, err := dao.AccessorFor(o.App().factory, o.GVR())
-	if err != nil {
-		o.App().Flash().Err(fmt.Errorf("could not get accessor for GVR: %w", err))
-
-		return
-	}
-	_, ok := res.(dao.Owned)
-	if ok {
-		aa.Add(ui.KeyActions{
-			ui.KeyO: ui.NewKeyAction("Show Owner", o.ownerCmd(), true),
-		})
-	}
-
+	aa.Add(ui.KeyActions{
+		ui.KeyO: ui.NewKeyAction("Show Owner", o.ownerCmd(), true),
+	})
 }
 
 func (o *OwnerExtender) ownerCmd() func(evt *tcell.EventKey) *tcell.EventKey {
