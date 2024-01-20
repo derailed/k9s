@@ -101,33 +101,32 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 	return r, nil
 }
 
+type gvrInfo struct {
+	gvr        client.GVR
+	namespaced bool
+}
+
+var gvrs = map[string]map[string]gvrInfo{
+	"apps/v1": {
+		"ReplicaSet":  {client.NewGVR("apps/v1/replicasets"), true},
+		"DaemonSet":   {client.NewGVR("apps/v1/daemonsets"), true},
+		"StatefulSet": {client.NewGVR("apps/v1/statefulsets"), true},
+		"Deployment":  {client.NewGVR("apps/v1/deployments"), true},
+		"Jobs":        {client.NewGVR("apps/v1/jobs"), true},
+		"CronJobs":    {client.NewGVR("apps/v1/cronjobs"), true},
+	},
+	"v1": {
+		"Node": {client.NewGVR("v1/nodes"), false},
+	},
+}
+
 func GVRForKind(apiVersion string, kind string) (client.GVR, bool, error) {
-	type gvrInfo struct {
-		gvr        client.GVR
-		namespaced bool
-	}
-
-	gvrs := map[string]gvrInfo{}
-
-	switch v := apiVersion; v {
-	case "apps/v1":
-		gvrs = map[string]gvrInfo{
-			"ReplicaSet":  {client.NewGVR("apps/v1/replicasets"), true},
-			"DaemonSet":   {client.NewGVR("apps/v1/daemonsets"), true},
-			"StatefulSet": {client.NewGVR("apps/v1/statefulsets"), true},
-			"Deployment":  {client.NewGVR("apps/v1/deployments"), true},
-			"Jobs":        {client.NewGVR("apps/v1/jobs"), true},
-			"CronJobs":    {client.NewGVR("apps/v1/cronjobs"), true},
-		}
-	case "v1":
-		gvrs = map[string]gvrInfo{
-			"Node": {client.NewGVR("v1/nodes"), false},
-		}
-	default:
+	_, found := gvrs[apiVersion]
+	if !found {
 		return client.GVR{}, false, fmt.Errorf("unsupported ownerReference API version: %s", apiVersion)
 	}
 
-	gvr, found := gvrs[kind]
+	gvr, found := gvrs[apiVersion][kind]
 	if !found {
 		return client.GVR{}, false, fmt.Errorf("unsupported ownerReference kind: %s", kind)
 	}
