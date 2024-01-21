@@ -130,34 +130,13 @@ func (r *ReplicaSet) Rollback(fqn string) error {
 
 // GetOwners returns the owners of the resource.
 func (r *ReplicaSet) GetOwners(path string) ([]OwnerInfo, error) {
-	var owners []OwnerInfo
-
 	rs, err := r.GetInstance(path)
 	if err != nil {
 		return nil, err
 	}
 	ownerRefs := rs.GetObjectMeta().GetOwnerReferences()
 
-	for _, ownerRef := range ownerRefs {
-		gvr, namespaced, err := GVRForKind(ownerRef.APIVersion, ownerRef.Kind)
-		if err != nil {
-			return nil, err
-		}
-
-		var ownerFQN string
-		if namespaced {
-			ownerFQN = FQN(rs.Namespace, ownerRef.Name)
-		} else {
-			ownerFQN = ownerRef.Name
-		}
-
-		owners = append(owners, OwnerInfo{
-			GVR: gvr,
-			FQN: ownerFQN,
-		})
-	}
-
-	return owners, nil
+	return AsOwnerInfo(ownerRefs, rs.Namespace)
 }
 
 func (r *ReplicaSet) GetInstance(fqn string) (*appsv1.ReplicaSet, error) {
