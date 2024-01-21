@@ -320,34 +320,13 @@ func (p *Pod) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (
 
 // GetOwners returns the owners of the resource.
 func (p *Pod) GetOwners(path string) ([]OwnerInfo, error) {
-	var owners []OwnerInfo
-
 	pod, err := p.GetInstance(path)
 	if err != nil {
 		return nil, err
 	}
 	ownerRefs := pod.GetObjectMeta().GetOwnerReferences()
 
-	for _, ownerRef := range ownerRefs {
-		gvr, namespaced, err := GVRForKind(ownerRef.APIVersion, ownerRef.Kind)
-		if err != nil {
-			return nil, err
-		}
-
-		var ownerFQN string
-		if namespaced {
-			ownerFQN = FQN(pod.Namespace, ownerRef.Name)
-		} else {
-			ownerFQN = ownerRef.Name
-		}
-
-		owners = append(owners, OwnerInfo{
-			GVR: gvr,
-			FQN: ownerFQN,
-		})
-	}
-
-	return owners, nil
+	return AsOwnerInfo(ownerRefs, pod.Namespace)
 }
 
 // ----------------------------------------------------------------------------
