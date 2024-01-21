@@ -177,40 +177,8 @@ type Valuer interface {
 	GetValues(path string, allValues bool) ([]byte, error)
 }
 
-// OwnerInfo contains the information about a resource's owner required to navigate to it.
-type OwnerInfo struct {
-	GVR client.GVR
-	FQN string
-}
-
 // Owned represents resources that are controlled by an owner.
 type Owned interface {
 	// GetOwners returns the owners of the resource.
 	GetOwners(path string) ([]OwnerInfo, error)
-}
-
-// AsOwnerInfo converts metav1.OwnerReference entries to gvr and fqn owner information.
-func AsOwnerInfo(ownerRefs []metav1.OwnerReference, namespace string) ([]OwnerInfo, error) {
-	var owners []OwnerInfo
-
-	for _, ownerRef := range ownerRefs {
-		gvr, namespaced, err := GVRForKind(ownerRef.APIVersion, ownerRef.Kind)
-		if err != nil {
-			return nil, err
-		}
-
-		var ownerFQN string
-		if namespaced {
-			ownerFQN = FQN(namespace, ownerRef.Name)
-		} else {
-			ownerFQN = ownerRef.Name
-		}
-
-		owners = append(owners, OwnerInfo{
-			GVR: gvr,
-			FQN: ownerFQN,
-		})
-	}
-
-	return owners, nil
 }

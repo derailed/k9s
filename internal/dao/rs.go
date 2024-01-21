@@ -127,29 +127,3 @@ func (r *ReplicaSet) Rollback(fqn string) error {
 
 	return nil
 }
-
-// GetOwners returns the owners of the resource.
-func (r *ReplicaSet) GetOwners(path string) ([]OwnerInfo, error) {
-	rs, err := r.GetInstance(path)
-	if err != nil {
-		return nil, err
-	}
-	ownerRefs := rs.GetObjectMeta().GetOwnerReferences()
-
-	return AsOwnerInfo(ownerRefs, rs.Namespace)
-}
-
-func (r *ReplicaSet) GetInstance(fqn string) (*appsv1.ReplicaSet, error) {
-	o, err := r.getFactory().Get(r.gvr.String(), fqn, true, labels.Everything())
-	if err != nil {
-		return nil, err
-	}
-
-	var rs appsv1.ReplicaSet
-	err = runtime.DefaultUnstructuredConverter.FromUnstructured(o.(*unstructured.Unstructured).Object, &rs)
-	if err != nil {
-		return nil, err
-	}
-
-	return &rs, nil
-}
