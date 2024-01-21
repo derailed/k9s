@@ -318,17 +318,6 @@ func (p *Pod) Scan(ctx context.Context, gvr client.GVR, fqn string, wait bool) (
 	return refs, nil
 }
 
-// GetOwners returns the owners of the resource.
-func (p *Pod) GetOwners(path string) ([]OwnerInfo, error) {
-	pod, err := p.GetInstance(path)
-	if err != nil {
-		return nil, err
-	}
-	ownerRefs := pod.GetObjectMeta().GetOwnerReferences()
-
-	return AsOwnerInfo(ownerRefs, pod.Namespace)
-}
-
 // ----------------------------------------------------------------------------
 // Helpers...
 

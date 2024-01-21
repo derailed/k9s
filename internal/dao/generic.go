@@ -6,6 +6,7 @@ package dao
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/labels"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -143,4 +144,46 @@ func (g *Generic) dynClient() (dynamic.NamespaceableResourceInterface, error) {
 	}
 
 	return dial.Resource(g.gvr.GVR()), nil
+}
+
+// OwnerInfo contains the information about a resource's owner required to navigate to it.
+type OwnerInfo struct {
+	GVR client.GVR
+	FQN string
+}
+
+// GetOwners returns the owners of the resource.
+func (g *Generic) GetOwners(path string) ([]OwnerInfo, error) {
+	o, err := g.getFactory().Get(g.gvr.String(), path, true, labels.Everything())
+	if err != nil {
+		return nil, err
+	}
+
+	u, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		return nil, fmt.Errorf("error reading ")
+	}
+
+	var owners []OwnerInfo
+
+	for _, ownerRef := range u.GetOwnerReferences() {
+		gvr, namespaced, err := GVRForKind(ownerRef.APIVersion, ownerRef.Kind)
+		if err != nil {
+			return nil, err
+		}
+
+		var ownerFQN string
+		if namespaced {
+			ownerFQN = FQN(u.GetNamespace(), ownerRef.Name)
+		} else {
+			ownerFQN = ownerRef.Name
+		}
+
+		owners = append(owners, OwnerInfo{
+			GVR: gvr,
+			FQN: ownerFQN,
+		})
+	}
+
+	return owners, nil
 }
