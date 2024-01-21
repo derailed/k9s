@@ -167,7 +167,7 @@ func (g *Generic) GetOwners(path string) ([]OwnerInfo, error) {
 	var owners []OwnerInfo
 
 	for _, ownerRef := range u.GetOwnerReferences() {
-		gvr, namespaced, err := GVRForKind(ownerRef.APIVersion, ownerRef.Kind)
+		gvr, namespaced, err := GVRForKind(g.Client(), ownerRef.APIVersion, ownerRef.Kind)
 		if err != nil {
 			return nil, err
 		}
