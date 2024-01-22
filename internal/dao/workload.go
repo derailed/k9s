@@ -126,9 +126,10 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 				gvr.String(),
 				ns,
 				r.Cells[indexOf("Name", table.ColumnDefinitions)],
-				diagnose(gvr, r, table.ColumnDefinitions),
 				status(gvr, r, table.ColumnDefinitions),
+				readiness(gvr, r, table.ColumnDefinitions),
 				ts,
+				validity(gvr, r, table.ColumnDefinitions),
 			}}})
 		}
 	}
@@ -138,7 +139,7 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 
 // Helpers...
 
-func status(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinition) string {
+func readiness(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinition) string {
 	switch gvr {
 	case PodGVR, DpGVR, StsGVR:
 		return r.Cells[indexOf("Ready", h)].(string)
@@ -153,7 +154,7 @@ func status(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinition)
 	return render.NAValue
 }
 
-func diagnose(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinition) string {
+func status(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinition) string {
 	switch gvr {
 	case PodGVR:
 		if !isReady(r.Cells[indexOf("Ready", h)].(string)) || r.Cells[indexOf("Status", h)] != render.PhaseRunning {
@@ -185,6 +186,15 @@ func diagnose(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinitio
 	}
 
 	return StatusOK
+}
+
+func validity(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinition) string {
+	stat := status(gvr, r, h)
+	if stat != "DEGRADED" {
+		return ""
+	}
+
+	return stat
 }
 
 func isReady(s string) bool {
