@@ -164,7 +164,7 @@ func (v *LiveView) bindKeys() {
 	}
 	if v.model != nil && v.model.GVR().IsDecodable() {
 		v.actions.Add(ui.KeyActions{
-			ui.KeyT: ui.NewKeyAction("Toggle Encoded / Decoded", v.toggleEncodedDecodedCmd, true),
+			ui.KeyX: ui.NewKeyAction("Toggle Decode", v.toggleEncodedDecodedCmd, true),
 		})
 	}
 }

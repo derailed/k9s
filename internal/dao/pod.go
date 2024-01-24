@@ -54,6 +54,7 @@ func (p *Pod) IsHappy(po v1.Pod) bool {
 			return false
 		}
 	}
+
 	return true
 }
 

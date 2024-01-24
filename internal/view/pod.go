@@ -116,7 +116,7 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 	}
 
 	aa.Add(ui.KeyActions{
-		ui.KeyN:      ui.NewKeyAction("Show Node", p.showNode, true),
+		ui.KeyO:      ui.NewKeyAction("Show Node", p.showNode, true),
 		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", p.GetTable().SortColCmd(readyCol, true), false),
 		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd("RESTARTS", false), false),
 		ui.KeyShiftS: ui.NewKeyAction("Sort Status", p.GetTable().SortColCmd(statusCol, true), false),
