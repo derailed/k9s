@@ -229,8 +229,8 @@ func (b *Browser) SetContextFn(f ContextFunc) { b.contextFn = f }
 func (b *Browser) GetTable() *Table { return b.Table }
 
 // Aliases returns all available aliases.
-func (b *Browser) Aliases() []string {
-	return append(b.meta.ShortNames, b.meta.SingularName, b.meta.Name)
+func (b *Browser) Aliases() map[string]struct{} {
+	return aliasesFor(b.meta, b.app.command.AliasesFor(b.meta.Name))
 }
 
 // ----------------------------------------------------------------------------
@@ -539,6 +539,8 @@ func (b *Browser) namespaceActions(aa ui.KeyActions) {
 	if !b.meta.Namespaced || b.GetTable().Path != "" {
 		return
 	}
+	aa[ui.KeyN] = ui.NewKeyAction("Copy Namespace", b.cpNsCmd, false)
+
 	b.namespaces = make(map[int]string, data.MaxFavoritesNS)
 	aa[ui.Key0] = ui.NewKeyAction(client.NamespaceAll, b.switchNamespaceCmd, true)
 	b.namespaces[0] = client.NamespaceAll

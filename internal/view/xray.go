@@ -247,8 +247,8 @@ func (x *Xray) k9sEnv() Env {
 }
 
 // Aliases returns all available aliases.
-func (x *Xray) Aliases() []string {
-	return append(x.meta.ShortNames, x.meta.SingularName, x.meta.Name)
+func (x *Xray) Aliases() map[string]struct{} {
+	return aliasesFor(x.meta, x.app.command.AliasesFor(x.meta.Name))
 }
 
 func (x *Xray) logsCmd(prev bool) func(evt *tcell.EventKey) *tcell.EventKey {

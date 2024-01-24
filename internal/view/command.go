@@ -37,6 +37,18 @@ func NewCommand(app *App) *Command {
 	}
 }
 
+// AliasesFor gather all known aliases for a given resource.
+func (c *Command) AliasesFor(s string) []string {
+	aa := make([]string, 0, 10)
+	for k, v := range c.alias.Alias {
+		if v == s {
+			aa = append(aa, k)
+		}
+	}
+
+	return aa
+}
+
 // Init initializes the command.
 func (c *Command) Init(path string) error {
 	c.alias = dao.NewAlias(c.app.factory)
