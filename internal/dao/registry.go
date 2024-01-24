@@ -319,8 +319,8 @@ func loadK9s(m ResourceMetas) {
 
 func loadHelm(m ResourceMetas) {
 	m[client.NewGVR("helm")] = metav1.APIResource{
-		Name:       "chart",
-		Kind:       "Chart",
+		Name:       "helm",
+		Kind:       "Helm",
 		Namespaced: true,
 		Verbs:      []string{"delete"},
 		Categories: []string{helmCat},
