@@ -76,7 +76,7 @@ func hotKeyActions(r Runner, aa ui.KeyActions) error {
 			continue
 		}
 		_, ok := aa[key]
-		if ok {
+		if ok && !hk.Override {
 			errs = errors.Join(errs, fmt.Errorf("duplicated hotkeys found for %q in %q", hk.ShortCut, k))
 			continue
 		}
@@ -124,12 +124,13 @@ func pluginActions(r Runner, aa ui.KeyActions) error {
 			continue
 		}
 		key, err := asKey(plugin.ShortCut)
+
 		if err != nil {
 			errs = errors.Join(errs, err)
 			continue
 		}
 		_, ok := aa[key]
-		if ok {
+		if ok && !plugin.Override {
 			errs = errors.Join(errs, fmt.Errorf("duplicated plugin key found for %q in %q", plugin.ShortCut, k))
 			continue
 		}
