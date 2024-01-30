@@ -31,4 +31,7 @@ type UI struct {
 	// Skin reference the general k9s skin name.
 	// Can be overridden per context.
 	Skin string `json:"skin" yaml:"skin,omitempty"`
+
+	// FullScreenLView sets default full screen for live_view.
+	FullScreenLView bool `json:"fullScreenLView" yaml:"fullScreenLView"`
 }

@@ -25,7 +25,8 @@
             "crumbsless": {"type": "boolean"},
             "noIcons": {"type": "boolean"},
             "reactive": {"type": "boolean"},
-            "skin": {"type": "string"}
+            "skin": {"type": "string"},
+            "fullScreenLView": {"type": "boolean"}
           }
         },
         "shellPod": {

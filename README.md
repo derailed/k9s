@@ -385,16 +385,27 @@ K9s uses aliases to navigate most K8s resources.
     refreshRate: 2
     # Number of retries once the connection to the api-server is lost. Default 15.
     maxConnRetry: 5
-    # Enable mouse support. Default false
-    enableMouse: true
-    # Set to true to hide K9s header. Default false
-    headless: false
-    # Set to true to hide K9s crumbs. Default false
-    crumbsless: false
     # Indicates whether modification commands like delete/kill/edit are disabled. Default is false
     readOnly: false
     # Toggles whether k9s should exit when CTRL-C is pressed. When set to true, you will need to exist k9s via the :quit command. Default is false.
     noExitOnCtrlC: false
+    #UI settings
+    ui:
+      # Enable mouse support. Default false
+      enableMouse: false
+      # Set to true to hide K9s header. Default false
+      headless: false
+      # Set to true to hide the K9S logo Default false
+      logoless: false
+      # Set to true to hide K9s crumbs. Default false
+      crumbsless: false
+      noIcons: false
+      # Toggles reactive UI. This option provide for watching on disk artifacts changes and update the UI live Defaults to false.
+      reactive: false
+      # By default all contexts wil use the dracula skin unless explicitly overridden in the context config file.
+      skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
+      # By default start all Live_View in full screen mode. (yaml, helm history, describe, value_extender) Default false
+      fullScreenLView: false
     # Toggles icons display as not all terminal support these chars.
     noIcons: false
     # Toggles whether k9s should check for the latest revision from the Github repository releases. Default is false.
@@ -410,7 +421,7 @@ K9s uses aliases to navigate most K8s resources.
       # Represents how far to go back in the log timeline in seconds. Setting to -1 will tail logs. Default is -1.
       sinceSeconds: 300 # => tail the last 5 mins.
       # Go full screen while displaying logs. Default false
-      fullScreenLogs: false
+      fullScreen: false
       # Toggles log line wrap. Default false
       textWrap: false
       # Toggles log line timestamp info. Default false
@@ -912,6 +923,7 @@ k9s:
     reactive: false
     # By default all contexts wil use the dracula skin unless explicitly overridden in the context config file.
     skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
+    fullScreenLView: false
   skipLatestRevCheck: false
   disablePodCounting: false
   shellPod:
