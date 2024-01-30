@@ -80,7 +80,7 @@ func hotKeyActions(r Runner, aa ui.KeyActions) error {
 			errs = errors.Join(errs, fmt.Errorf("duplicated hotkeys found for %q in %q", hk.ShortCut, k))
 			continue
 		} else if ok && hk.Override == true {
-			log.Info().Msgf("Action %q has been overrided by hotkey %q", hk.ShortCut, k)
+			log.Info().Msgf("Action %q has been overrided by hotkey in %q", hk.ShortCut, k)
 		}
 
 		command, err := r.EnvFn()().Substitute(hk.Command)
