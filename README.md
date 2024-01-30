@@ -524,8 +524,9 @@ In order to surface hotkeys globally please follow these steps:
           description: Xray Deployments
           command:     xray deploy
         # Hitting Ctrl-U view the resources in the namespace of your current selection
-        ctrl-u:
-          shortCut:    Ctrl-U
+        shift-s:
+          shortCut:    Shift-S
+          override:    true # => will override the default shortcut related action if set to true (default to false)
           description: Namespaced resources
           command:     "$RESOURCE_NAME $NAMESPACE"
           keepHistory: true # whether you can return to the previous view
@@ -669,6 +670,7 @@ plugins:
   # Defines a plugin to provide a `ctrl-l` shortcut to tail the logs while in pod view.
   fred:
     shortCut: Ctrl-L
+    override: false # => will override the default shortcut related action if set to true (default to false)
     confirm: false
     description: Pod logs
     scopes:
