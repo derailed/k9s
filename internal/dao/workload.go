@@ -122,14 +122,15 @@ func (a *Workload) List(ctx context.Context, ns string) ([]runtime.Object, error
 					ts = m.CreationTimestamp
 				}
 			}
+			stat := status(gvr, r, table.ColumnDefinitions)
 			oo = append(oo, &render.WorkloadRes{Row: metav1.TableRow{Cells: []interface{}{
 				gvr.String(),
 				ns,
 				r.Cells[indexOf("Name", table.ColumnDefinitions)],
-				status(gvr, r, table.ColumnDefinitions),
+				stat,
 				readiness(gvr, r, table.ColumnDefinitions),
+				validity(stat),
 				ts,
-				validity(gvr, r, table.ColumnDefinitions),
 			}}})
 		}
 	}
@@ -188,13 +189,12 @@ func status(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinition)
 	return StatusOK
 }
 
-func validity(gvr client.GVR, r metav1.TableRow, h []metav1.TableColumnDefinition) string {
-	stat := status(gvr, r, h)
-	if stat != "DEGRADED" {
+func validity(status string) string {
+	if status != "DEGRADED" {
 		return ""
 	}
 
-	return stat
+	return status
 }
 
 func isReady(s string) bool {
