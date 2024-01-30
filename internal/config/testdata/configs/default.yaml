@@ -12,6 +12,7 @@ k9s:
     crumbsless: false
     reactive: false
     noIcons: false
+    fullScreenLView: false
   skipLatestRevCheck: false
   disablePodCounting: false
   shellPod:
