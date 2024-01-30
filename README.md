@@ -634,6 +634,7 @@ K9s allows you to extend your command line and tooling by defining your very own
 A plugin is defined as follows:
 
 * Shortcut option represents the key combination a user would type to activate the plugin
+* Override option make that the default action related to the shortcut will be overrided by the plugin
 * Confirm option (when enabled) lets you see the command that is going to be executed and gives you an option to confirm or prevent execution
 * Description will be printed next to the shortcut in the k9s menu
 * Scopes defines a collection of resources names/short-names for the views associated with the plugin. You can specify `all` to provide this shortcut for all views.
@@ -670,7 +671,7 @@ plugins:
   # Defines a plugin to provide a `ctrl-l` shortcut to tail the logs while in pod view.
   fred:
     shortCut: Ctrl-L
-    override: false # => will override the default shortcut related action if set to true (default to false)
+    override: false
     confirm: false
     description: Pod logs
     scopes:
