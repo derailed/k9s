@@ -13,6 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"gopkg.in/yaml.v2"
 	"helm.sh/helm/v3/pkg/action"
+	"helm.sh/helm/v3/pkg/cli"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -122,8 +123,10 @@ func (h *HelmChart) Delete(_ context.Context, path string, _ *metav1.DeletionPro
 // Uninstall uninstalls a HelmChart.
 func (h *HelmChart) Uninstall(path string, keepHist bool) error {
 	ns, n := client.Namespaced(path)
-	cfg, err := ensureHelmConfig(h.Client(), ns)
-	if err != nil {
+	cfg := new(action.Configuration)
+	settings := cli.New()
+	settings.SetNamespace(ns)
+	if err := cfg.Init(settings.RESTClientGetter(), ns, os.Getenv("HELM_DRIVER"), helmLogger); err != nil {
 		return err
 	}
 	u := action.NewUninstall(cfg)
