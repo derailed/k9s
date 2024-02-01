@@ -32,6 +32,6 @@ type UI struct {
 	// Can be overridden per context.
 	Skin string `json:"skin" yaml:"skin,omitempty"`
 
-	// FullScreenLView sets default full screen for live_view.
-	FullScreenLView bool `json:"fullScreenLView" yaml:"fullScreenLView"`
+	// DefaultsToFullScreen toggles fullscreen on views like logs, yaml, details.
+	DefaultsToFullScreen bool `json:"defaultsToFullScreen" yaml:"defaultsToFullScreen"`
 }

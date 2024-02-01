@@ -404,8 +404,8 @@ K9s uses aliases to navigate most K8s resources.
       reactive: false
       # By default all contexts wil use the dracula skin unless explicitly overridden in the context config file.
       skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
-      # By default start all Live_View in full screen mode. (yaml, helm history, describe, value_extender) Default false
-      fullScreenLView: false
+      # Allows to set certain views default fullscreen mode. (yaml, helm history, describe, value_extender, details, logs) Default false
+      defaultsToFullScreen: false
     # Toggles icons display as not all terminal support these chars.
     noIcons: false
     # Toggles whether k9s should check for the latest revision from the Github repository releases. Default is false.
@@ -420,8 +420,6 @@ K9s uses aliases to navigate most K8s resources.
       buffer: 500
       # Represents how far to go back in the log timeline in seconds. Setting to -1 will tail logs. Default is -1.
       sinceSeconds: 300 # => tail the last 5 mins.
-      # Go full screen while displaying logs. Default false
-      fullScreen: false
       # Toggles log line wrap. Default false
       textWrap: false
       # Toggles log line timestamp info. Default false
@@ -923,7 +921,7 @@ k9s:
     reactive: false
     # By default all contexts wil use the dracula skin unless explicitly overridden in the context config file.
     skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
-    fullScreenLView: false
+    defaultsToFullScreen: false
   skipLatestRevCheck: false
   disablePodCounting: false
   shellPod:
@@ -941,7 +939,6 @@ k9s:
     tail: 100
     buffer: 5000
     sinceSeconds: -1
-    fullScreen: false
     textWrap: false
     showTime: false
   thresholds:

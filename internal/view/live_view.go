@@ -78,7 +78,7 @@ func (v *LiveView) Init(_ context.Context) error {
 
 	v.app.Styles.AddListener(v)
 	v.StylesChanged(v.app.Styles)
-	v.setFullScreen(v.app.Config.K9s.UI.FullScreenLView)
+	v.setFullScreen(v.app.Config.K9s.UI.DefaultsToFullScreen)
 
 	v.app.Prompt().SetModel(v.cmdBuff)
 	v.cmdBuff.AddListener(v)

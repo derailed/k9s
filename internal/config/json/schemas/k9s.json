@@ -26,7 +26,7 @@
             "noIcons": {"type": "boolean"},
             "reactive": {"type": "boolean"},
             "skin": {"type": "string"},
-            "fullScreenLView": {"type": "boolean"}
+            "defaultsToFullScreen": {"type": "boolean"}
           }
         },
         "shellPod": {
@@ -102,7 +102,6 @@
             "tail": {"type": "integer"},
             "buffer": {"type": "integer"},
             "sinceSeconds": {"type": "integer"},
-            "fullScreen": {"type": "boolean"},
             "textWrap": {"type": "boolean"},
             "showTime": {"type": "boolean"}
           }
