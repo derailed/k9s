@@ -44,6 +44,7 @@ func (Workload) Header(string) Header {
 		HeaderColumn{Name: "NAME"},
 		HeaderColumn{Name: "STATUS"},
 		HeaderColumn{Name: "READY"},
+		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true},
 	}
 }
@@ -62,7 +63,8 @@ func (n Workload) Render(o interface{}, _ string, r *Row) error {
 		res.Row.Cells[2].(string),
 		res.Row.Cells[3].(string),
 		res.Row.Cells[4].(string),
-		ToAge(res.Row.Cells[5].(metav1.Time)),
+		res.Row.Cells[5].(string),
+		ToAge(res.Row.Cells[6].(metav1.Time)),
 	}
 
 	return nil
