@@ -76,6 +76,7 @@ func (d *Details) Init(_ context.Context) error {
 
 	d.app.Styles.AddListener(d)
 	d.StylesChanged(d.app.Styles)
+	d.setFullScreen(d.app.Config.K9s.UI.DefaultsToFullScreen)
 
 	d.app.Prompt().SetModel(d.cmdBuff)
 	d.cmdBuff.AddListener(d)
@@ -226,16 +227,20 @@ func (d *Details) toggleFullScreenCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	d.fullScreen = !d.fullScreen
-	d.SetFullScreen(d.fullScreen)
-	d.Box.SetBorder(!d.fullScreen)
-	if d.fullScreen {
+	d.setFullScreen(!d.fullScreen)
+
+	return nil
+}
+
+func (d *Details) setFullScreen(isFullScreen bool) {
+	d.fullScreen = isFullScreen
+	d.SetFullScreen(isFullScreen)
+	d.Box.SetBorder(!isFullScreen)
+	if isFullScreen {
 		d.Box.SetBorderPadding(0, 0, 0, 0)
 	} else {
 		d.Box.SetBorderPadding(0, 0, 1, 1)
 	}
-
-	return nil
 }
 
 func (d *Details) prevCmd(evt *tcell.EventKey) *tcell.EventKey {

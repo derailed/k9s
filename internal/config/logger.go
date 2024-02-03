@@ -19,7 +19,6 @@ type Logger struct {
 	TailCount    int64 `json:"tail" yaml:"tail"`
 	BufferSize   int   `json:"buffer" yaml:"buffer"`
 	SinceSeconds int64 `json:"sinceSeconds" yaml:"sinceSeconds"`
-	FullScreen   bool  `json:"fullScreen" yaml:"fullScreen"`
 	TextWrap     bool  `json:"textWrap" yaml:"textWrap"`
 	ShowTime     bool  `json:"showTime" yaml:"showTime"`
 }
