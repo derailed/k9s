@@ -5,6 +5,7 @@ package ui
 
 import (
 	"os"
+	"runtime"
 	"sync"
 	"syscall"
 
@@ -148,7 +149,7 @@ func (a *App) bindKeys() {
 		tcell.KeyCtrlQ: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 	}
 
-	if a.Config.K9s.AllowSuspend {
+	if a.Config.K9s.AllowSuspend && runtime.GOOS != "windows" {
 		a.actions.Add(KeyActions{
 			tcell.KeyCtrlZ: NewKeyAction("Suspend", a.suspendCmd, false),
 		})

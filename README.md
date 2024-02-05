@@ -389,7 +389,7 @@ K9s uses aliases to navigate most K8s resources.
     readOnly: false
     # Toggles whether k9s should exit when CTRL-C is pressed. When set to true, you will need to exist k9s via the :quit command. Default is false.
     noExitOnCtrlC: false
-    # Toggles whether k9s should be suspended and sent to background when CTRL-Z is pressed. Default is false.
+    # Toggles whether k9s should be suspended and sent to background when CTRL-Z is pressed. Default is false. Not supported on Windows
     allowSuspend: false
     #UI settings
     ui:
