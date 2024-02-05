@@ -381,8 +381,8 @@ github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/deitch/magic v0.0.0-20230404182410-1ff89d7342da h1:ZOjWpVsFZ06eIhnh4mkaceTiVoktdU67+M7KDHJ268M=
 github.com/deitch/magic v0.0.0-20230404182410-1ff89d7342da/go.mod h1:B3tI9iGHi4imdLi4Asdha1Sc6feLMTfPLXh9IUYmysk=
-github.com/derailed/popeye v0.11.2 h1:8MKMjYBJdYNktTKeh98TeT127jZY6CFAsurrENoTZCY=
-github.com/derailed/popeye v0.11.2/go.mod h1:HygqX7A8BwidorJjJUnWDZ5AvbxHIU7uRwXgOtn9GwY=
+github.com/derailed/popeye v0.11.3 h1:gQUp6zuSIRDBdyLS1Ln0nFs8FbQ+KGE+iQxe0w4Ug8M=
+github.com/derailed/popeye v0.11.3/go.mod h1:HygqX7A8BwidorJjJUnWDZ5AvbxHIU7uRwXgOtn9GwY=
 github.com/derailed/tcell/v2 v2.3.1-rc.3 h1:9s1fmyRcSPRlwr/C9tcpJKCujbrtmPpST6dcMUD2piY=
 github.com/derailed/tcell/v2 v2.3.1-rc.3/go.mod h1:nf68BEL8fjmXQHJT3xZjoZFs2uXOzyJcNAQqGUEMrFY=
 github.com/derailed/tview v0.8.3 h1:jhN7LW7pfCWf7Z6VC5Dpi/1usavOBZxz2mY90//TMsU=
