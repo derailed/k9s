@@ -523,7 +523,7 @@ In order to surface hotkeys globally please follow these steps:
           shortCut:    Shift-2
           description: Xray Deployments
           command:     xray deploy
-        # Hitting Ctrl-U view the resources in the namespace of your current selection
+        # Hitting Shift-S view the resources in the namespace of your current selection
         shift-s:
           shortCut:    Shift-S
           override:    true # => will override the default shortcut related action if set to true (default to false)
