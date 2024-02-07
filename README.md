@@ -389,7 +389,7 @@ K9s uses aliases to navigate most K8s resources.
     readOnly: false
     # Toggles whether k9s should exit when CTRL-C is pressed. When set to true, you will need to exist k9s via the :quit command. Default is false.
     noExitOnCtrlC: false
-    #UI settings
+    # UI settings
     ui:
       # Enable mouse support. Default false
       enableMouse: false
@@ -406,6 +406,19 @@ K9s uses aliases to navigate most K8s resources.
       skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
       # Allows to set certain views default fullscreen mode. (yaml, helm history, describe, value_extender, details, logs) Default false
       defaultsToFullScreen: false
+      # Statusindicator settings
+      statusIndicator:
+        # Set the formatting string of the status indicator. The %s placeholders are filled with the fields in an ordered manner.
+        statusIndicatorFmt: '[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s[white::]::[darkturquoise::]%s'
+        # Fields to fill the status indicator formatting string with.
+        fields:
+        - K9SVER
+        - CLUSTER
+        - CONTEXT
+        - K8SVER
+        - CPU
+        - MEMORY
+
     # Toggles icons display as not all terminal support these chars.
     noIcons: false
     # Toggles whether k9s should check for the latest revision from the Github repository releases. Default is false.
@@ -922,6 +935,16 @@ k9s:
     # By default all contexts wil use the dracula skin unless explicitly overridden in the context config file.
     skin: dracula # => assumes the file skins/dracula.yaml is present in the  $XDG_DATA_HOME/k9s/skins directory
     defaultsToFullScreen: false
+    statusIndicator:
+      statusIndicatorFmt: '[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s[white::]::[darkturquoise::]%s'
+      fields:
+      - K9SVER
+      - CLUSTER
+      - CONTEXT
+      - K8SVER
+      - CPU
+      - MEMORY
+
   skipLatestRevCheck: false
   disablePodCounting: false
   shellPod:
