@@ -34,4 +34,14 @@ type UI struct {
 
 	// DefaultsToFullScreen toggles fullscreen on views like logs, yaml, details.
 	DefaultsToFullScreen bool `json:"defaultsToFullScreen" yaml:"defaultsToFullScreen"`
+
+	//StatusIndicator contains the formatting template and the desired fields for the status indicator.
+	StatusIndicator StatusIndicatorConf `json:"statusIndicator" yaml:"statusIndicator"`
+}
+
+// NewShellPod returns a new instance.
+func NewUI() UI {
+	return UI{
+		StatusIndicator: NewStatusIndicatorConf(),
+	}
 }

@@ -6,6 +6,7 @@ package ui
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/derailed/k9s/internal/config"
@@ -32,6 +33,7 @@ func NewStatusIndicator(app *App, styles *config.Styles) *StatusIndicator {
 		app:      app,
 		styles:   styles,
 	}
+	s.CorrectStatusIndConfig()
 	s.SetTextAlign(tview.AlignCenter)
 	s.SetTextColor(tcell.ColorWhite)
 	s.SetBackgroundColor(styles.BgColor())
@@ -48,21 +50,63 @@ func (s *StatusIndicator) StylesChanged(styles *config.Styles) {
 	s.SetTextColor(styles.FgColor())
 }
 
-const statusIndicatorFmt = "[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s[white::]::[darkturquoise::]%s"
+const defaultStatusIndicatorFmt = "[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s[white::]::[darkturquoise::]%s"
+
+// Checks if status indicator config is correct if not loads default.
+func (s *StatusIndicator) CorrectStatusIndConfig() {
+	statIndConf := &s.app.Config.K9s.UI.StatusIndicator
+	if statIndConf.Format == "" || len(statIndConf.Fields) != strings.Count(statIndConf.Format, "%s") {
+		statIndConf.Format = defaultStatusIndicatorFmt
+		statIndConf.Fields = []string{"K9SVER", "CONTEXT", "CLUSTER", "K8SVER", "CPU", "MEMORY"}
+	}
+}
 
 // ClusterInfoUpdated notifies the cluster meta was updated.
 func (s *StatusIndicator) ClusterInfoUpdated(data model.ClusterMeta) {
 	s.app.QueueUpdateDraw(func() {
-		s.SetPermanent(fmt.Sprintf(
-			statusIndicatorFmt,
-			data.K9sVer,
-			data.Context,
-			data.Cluster,
-			data.K8sVer,
-			render.PrintPerc(data.Cpu),
-			render.PrintPerc(data.Mem),
-		))
+		s.SetPermanent(
+			s.BuildStatusIndicatorText(nil, &data),
+		)
 	})
+}
+
+// Builds the text to be put into the status indicator based on the config.
+func (s *StatusIndicator) BuildStatusIndicatorText(prev, cur *model.ClusterMeta) (statusStr string) {
+	var (
+		statIndConf config.StatusIndicatorConf
+		cpuPerc     string
+		memPerc     string
+		orderedData []any
+	)
+
+	if prev != nil {
+		cpuPerc = AsPercDelta(prev.Cpu, cur.Cpu)
+		memPerc = AsPercDelta(prev.Cpu, cur.Mem)
+	} else {
+		cpuPerc = render.PrintPerc(cur.Cpu)
+		memPerc = render.PrintPerc(cur.Mem)
+	}
+
+	statIndConf = s.app.Config.K9s.UI.StatusIndicator
+	for _, field := range statIndConf.Fields {
+		switch field {
+		case "K9SVER":
+			orderedData = append(orderedData, cur.K9sVer)
+		case "CONTEXT":
+			orderedData = append(orderedData, cur.Context)
+		case "CLUSTER":
+			orderedData = append(orderedData, cur.Cluster)
+		case "USER":
+			orderedData = append(orderedData, cur.User)
+		case "K8SVER":
+			orderedData = append(orderedData, cur.K8sVer)
+		case "CPU":
+			orderedData = append(orderedData, cpuPerc)
+		case "MEMORY":
+			orderedData = append(orderedData, memPerc)
+		}
+	}
+	return fmt.Sprintf(statIndConf.Format, orderedData...)
 }
 
 // ClusterInfoChanged notifies the cluster meta was changed.
@@ -71,15 +115,7 @@ func (s *StatusIndicator) ClusterInfoChanged(prev, cur model.ClusterMeta) {
 		return
 	}
 	s.app.QueueUpdateDraw(func() {
-		s.SetPermanent(fmt.Sprintf(
-			statusIndicatorFmt,
-			cur.K9sVer,
-			cur.Cluster,
-			cur.User,
-			cur.K8sVer,
-			AsPercDelta(prev.Cpu, cur.Cpu),
-			AsPercDelta(prev.Cpu, cur.Mem),
-		))
+		s.SetPermanent(s.BuildStatusIndicatorText(&prev, &cur))
 	})
 }
 

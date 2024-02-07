@@ -10,6 +10,7 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config"
+	"github.com/derailed/k9s/internal/model"
 	version "k8s.io/apimachinery/pkg/version"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	disk "k8s.io/client-go/discovery/cached/disk"
@@ -74,6 +75,18 @@ func NewMockKubeSettings(f *genericclioptions.ConfigFlags) mockKubeSettings {
 				Namespace: client.DefaultNamespace,
 			},
 		},
+	}
+}
+func NewMockClusterMeta() model.ClusterMeta {
+	return model.ClusterMeta{
+		Context:   "context",
+		Cluster:   "cluster",
+		User:      "user",
+		K9sVer:    "k9ver",
+		K9sLatest: "k9latest",
+		K8sVer:    "k8ver",
+		Cpu:       1,
+		Mem:       1,
 	}
 }
 func (m mockKubeSettings) CurrentContextName() (string, error) {

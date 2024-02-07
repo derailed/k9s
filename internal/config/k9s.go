@@ -53,6 +53,7 @@ func NewK9s(conn client.Connection, ks data.KubeSettings) *K9s {
 		Thresholds:    NewThreshold(),
 		ShellPod:      NewShellPod(),
 		ImageScans:    NewImageScans(),
+		UI:            NewUI(),
 		dir:           data.NewDir(AppContextsDir),
 		conn:          conn,
 		ks:            ks,

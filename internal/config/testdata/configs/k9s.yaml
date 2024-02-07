@@ -13,6 +13,15 @@ k9s:
     reactive: false
     noIcons: false
     defaultsToFullScreen: false
+    statusIndicator:
+      format: '[orange::b]K9s [aqua::]%s [white::]%s:%s:%s [lawngreen::]%s[white::]::[darkturquoise::]%s'
+      fields:
+      - K9SVER
+      - CONTEXT
+      - CLUSTER
+      - K8SVER
+      - CPU
+      - MEMORY
   skipLatestRevCheck: false
   disablePodCounting: false
   shellPod:
