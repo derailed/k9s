@@ -15,8 +15,8 @@ import (
 	"github.com/derailed/k9s/internal/model"
 	"github.com/derailed/k9s/internal/perf"
 	"github.com/derailed/k9s/internal/ui"
+	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
-	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
 )
 
@@ -165,16 +165,14 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 	var msg string
 	if len(selections) > 1 {
 		msg = fmt.Sprintf("Delete %d marked %s?", len(selections), p.GVR())
+	} else if h, err := pfToHuman(selections[0]); err == nil {
+		msg = fmt.Sprintf("Delete %s %s?", p.GVR().R(), h)
 	} else {
-		h, err := pfToHuman(selections[0])
-		if err == nil {
-			msg = fmt.Sprintf("Delete %s %s?", p.GVR().R(), h)
-		} else {
-			p.App().Flash().Err(err)
-			return nil
-		}
+		p.App().Flash().Err(err)
+		return nil
 	}
-	showModal(p.App(), msg, func() {
+
+	dialog.ShowConfirm(p.App().Styles.Dialog(), p.App().Content.Pages, "Delete", msg, func() {
 		for _, s := range selections {
 			var pf dao.PortForward
 			pf.Init(p.App().factory, client.NewGVR("portforwards"))
@@ -185,7 +183,7 @@ func (p *PortForward) deleteCmd(evt *tcell.EventKey) *tcell.EventKey {
 		}
 		p.App().Flash().Infof("Successfully deleted %d PortForward!", len(selections))
 		p.GetTable().Refresh()
-	})
+	}, func() {})
 
 	return nil
 }
@@ -202,27 +200,4 @@ func pfToHuman(s string) (string, error) {
 	}
 
 	return fmt.Sprintf("%s::%s %s->%s", mm[2], mm[3], mm[4], mm[5]), nil
-}
-
-func showModal(a *App, msg string, ok func()) {
-	p := a.Content.Pages
-	styles := a.Styles.Dialog()
-	m := tview.NewModal().
-		AddButtons([]string{"Cancel", "OK"}).
-		SetButtonBackgroundColor(styles.ButtonBgColor.Color()).
-		SetTextColor(tcell.ColorFuchsia).
-		SetText(msg).
-		SetDoneFunc(func(_ int, b string) {
-			if b == "OK" {
-				ok()
-			}
-			dismissModal(p)
-		})
-	m.SetTitle("<Delete Benchmark>")
-	p.AddPage(promptPage, m, false, false)
-	p.ShowPage(promptPage)
-}
-
-func dismissModal(p *ui.Pages) {
-	p.RemovePage(promptPage)
 }
