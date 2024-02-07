@@ -381,8 +381,8 @@ github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc h1:U9qPSI2PIWSS1
 github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/deitch/magic v0.0.0-20230404182410-1ff89d7342da h1:ZOjWpVsFZ06eIhnh4mkaceTiVoktdU67+M7KDHJ268M=
 github.com/deitch/magic v0.0.0-20230404182410-1ff89d7342da/go.mod h1:B3tI9iGHi4imdLi4Asdha1Sc6feLMTfPLXh9IUYmysk=
-github.com/derailed/popeye v0.11.2 h1:8MKMjYBJdYNktTKeh98TeT127jZY6CFAsurrENoTZCY=
-github.com/derailed/popeye v0.11.2/go.mod h1:HygqX7A8BwidorJjJUnWDZ5AvbxHIU7uRwXgOtn9GwY=
+github.com/derailed/popeye v0.11.3 h1:gQUp6zuSIRDBdyLS1Ln0nFs8FbQ+KGE+iQxe0w4Ug8M=
+github.com/derailed/popeye v0.11.3/go.mod h1:HygqX7A8BwidorJjJUnWDZ5AvbxHIU7uRwXgOtn9GwY=
 github.com/derailed/tcell/v2 v2.3.1-rc.3 h1:9s1fmyRcSPRlwr/C9tcpJKCujbrtmPpST6dcMUD2piY=
 github.com/derailed/tcell/v2 v2.3.1-rc.3/go.mod h1:nf68BEL8fjmXQHJT3xZjoZFs2uXOzyJcNAQqGUEMrFY=
 github.com/derailed/tview v0.8.3 h1:jhN7LW7pfCWf7Z6VC5Dpi/1usavOBZxz2mY90//TMsU=
@@ -1013,8 +1013,8 @@ github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFR
 github.com/rogpeppe/go-internal v1.11.0 h1:cWPaGQEPrBb5/AsnsZesgZZ9yb1OQ+GOISoDNXVBh4M=
 github.com/rogpeppe/go-internal v1.11.0/go.mod h1:ddIwULY96R17DhadqLgMfk9H9tvdUzkipdSkR5nkCZA=
 github.com/rs/xid v1.5.0/go.mod h1:trrq9SKmegXys3aeAKXMUTdJsYXVwGY3RLcfgqegfbg=
-github.com/rs/zerolog v1.31.0 h1:FcTR3NnLWW+NnTwwhFWiJSZr4ECLpqCm6QsEnyvbV4A=
-github.com/rs/zerolog v1.31.0/go.mod h1:/7mN4D5sKwJLZQ2b/znpjC3/GQWY/xaDXUM0kKWRHss=
+github.com/rs/zerolog v1.32.0 h1:keLypqrlIjaFsbmJOBdB/qvyF8KEtCWHwobLp5l/mQ0=
+github.com/rs/zerolog v1.32.0/go.mod h1:/7mN4D5sKwJLZQ2b/znpjC3/GQWY/xaDXUM0kKWRHss=
 github.com/rubenv/sql-migrate v1.5.2 h1:bMDqOnrJVV/6JQgQ/MxOpU+AdO8uzYYA/TxFUBzFtS0=
 github.com/rubenv/sql-migrate v1.5.2/go.mod h1:H38GW8Vqf8F0Su5XignRyaRcbXbJunSWxs+kmzlg0Is=
 github.com/russross/blackfriday/v2 v2.0.1/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
