@@ -335,7 +335,7 @@ func (p *Pod) Phase(po *v1.Pod) string {
 		status = po.Status.Reason
 	}
 
-	status, ok := p.initContainerPhase(po.Status, len(po.Spec.InitContainers), status)
+	status, ok := p.initContainerPhase(po, status)
 	if ok {
 		return status
 	}
@@ -374,13 +374,16 @@ func (*Pod) containerPhase(st v1.PodStatus, status string) (string, bool) {
 	return status, running
 }
 
-func (*Pod) initContainerPhase(st v1.PodStatus, initCount int, status string) (string, bool) {
-	for i, cs := range st.InitContainerStatuses {
-		s := checkContainerStatus(cs, i, initCount)
-		if s == "" {
-			continue
+func (*Pod) initContainerPhase(po *v1.Pod, status string) (string, bool) {
+	count := len(po.Spec.InitContainers)
+	rs := make(map[string]bool, count)
+	for _, c := range po.Spec.InitContainers {
+		rs[c.Name] = restartableInitCO(c.RestartPolicy)
+	}
+	for i, cs := range po.Status.InitContainerStatuses {
+		if s := checkInitContainerStatus(cs, i, count, rs[cs.Name]); s != "" {
+			return s, true
 		}
-		return s, true
 	}
 
 	return status, false
@@ -389,7 +392,7 @@ func (*Pod) initContainerPhase(st v1.PodStatus, initCount int, status string) (s
 // ----------------------------------------------------------------------------
 // Helpers..
 
-func checkContainerStatus(cs v1.ContainerStatus, i, initCount int) string {
+func checkInitContainerStatus(cs v1.ContainerStatus, count, initCount int, restartable bool) string {
 	switch {
 	case cs.State.Terminated != nil:
 		if cs.State.Terminated.ExitCode == 0 {
@@ -402,11 +405,15 @@ func checkContainerStatus(cs v1.ContainerStatus, i, initCount int) string {
 			return "Init:Signal:" + strconv.Itoa(int(cs.State.Terminated.Signal))
 		}
 		return "Init:ExitCode:" + strconv.Itoa(int(cs.State.Terminated.ExitCode))
+	case restartable && cs.Started != nil && *cs.Started:
+		if cs.Ready {
+			return ""
+		}
 	case cs.State.Waiting != nil && cs.State.Waiting.Reason != "" && cs.State.Waiting.Reason != "PodInitializing":
 		return "Init:" + cs.State.Waiting.Reason
-	default:
-		return "Init:" + strconv.Itoa(i) + "/" + strconv.Itoa(initCount)
 	}
+
+	return "Init:" + strconv.Itoa(count) + "/" + strconv.Itoa(initCount)
 }
 
 // PosStatus computes pod status.
@@ -429,7 +436,7 @@ func PodStatus(pod *v1.Pod) string {
 		case container.State.Terminated != nil && container.State.Terminated.ExitCode == 0:
 			continue
 		case container.State.Terminated != nil:
-			if len(container.State.Terminated.Reason) == 0 {
+			if container.State.Terminated.Reason == "" {
 				if container.State.Terminated.Signal != 0 {
 					reason = fmt.Sprintf("Init:Signal:%d", container.State.Terminated.Signal)
 				} else {
@@ -493,4 +500,8 @@ func hasPodReadyCondition(conditions []v1.PodCondition) bool {
 	}
 
 	return false
+}
+
+func restartableInitCO(p *v1.ContainerRestartPolicy) bool {
+	return p != nil && *p == v1.ContainerRestartPolicyAlways
 }
