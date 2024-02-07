@@ -78,6 +78,7 @@ func (v *LiveView) Init(_ context.Context) error {
 
 	v.app.Styles.AddListener(v)
 	v.StylesChanged(v.app.Styles)
+	v.setFullScreen(v.app.Config.K9s.UI.DefaultsToFullScreen)
 
 	v.app.Prompt().SetModel(v.cmdBuff)
 	v.cmdBuff.AddListener(v)
@@ -286,16 +287,20 @@ func (v *LiveView) toggleFullScreenCmd(evt *tcell.EventKey) *tcell.EventKey {
 		return evt
 	}
 
-	v.fullScreen = !v.fullScreen
-	v.SetFullScreen(v.fullScreen)
-	v.Box.SetBorder(!v.fullScreen)
-	if v.fullScreen {
+	v.setFullScreen(!v.fullScreen)
+
+	return nil
+}
+
+func (v *LiveView) setFullScreen(isFullScreen bool) {
+	v.fullScreen = isFullScreen
+	v.SetFullScreen(isFullScreen)
+	v.Box.SetBorder(!isFullScreen)
+	if isFullScreen {
 		v.Box.SetBorderPadding(0, 0, 0, 0)
 	} else {
 		v.Box.SetBorderPadding(0, 0, 1, 1)
 	}
-
-	return nil
 }
 
 func (v *LiveView) nextCmd(evt *tcell.EventKey) *tcell.EventKey {

@@ -31,4 +31,7 @@ type UI struct {
 	// Skin reference the general k9s skin name.
 	// Can be overridden per context.
 	Skin string `json:"skin" yaml:"skin,omitempty"`
+
+	// DefaultsToFullScreen toggles fullscreen on views like logs, yaml, details.
+	DefaultsToFullScreen bool `json:"defaultsToFullScreen" yaml:"defaultsToFullScreen"`
 }

@@ -34,7 +34,7 @@ func NewLogIndicator(cfg *config.Config, styles *config.Styles, allContainers bo
 		TextView:                   tview.NewTextView(),
 		indicator:                  make([]byte, 0, 100),
 		scrollStatus:               1,
-		fullScreen:                 cfg.K9s.Logger.FullScreen,
+		fullScreen:                 cfg.K9s.UI.DefaultsToFullScreen,
 		textWrap:                   cfg.K9s.Logger.TextWrap,
 		showTime:                   cfg.K9s.Logger.ShowTime,
 		shouldDisplayAllContainers: allContainers,

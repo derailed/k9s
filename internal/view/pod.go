@@ -117,7 +117,6 @@ func (p *Pod) bindKeys(aa ui.KeyActions) {
 
 	aa.Add(ui.KeyActions{
 		ui.KeyN:      ui.NewKeyAction("Show Node", p.showNode, true),
-		ui.KeyF:      ui.NewKeyAction("Show PortForward", p.showPFCmd, true),
 		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", p.GetTable().SortColCmd(readyCol, true), false),
 		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", p.GetTable().SortColCmd("RESTARTS", false), false),
 		ui.KeyShiftS: ui.NewKeyAction("Sort Status", p.GetTable().SortColCmd(statusCol, true), false),
@@ -194,33 +193,6 @@ func (p *Pod) showNode(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	return nil
-}
-
-func (p *Pod) showPFCmd(evt *tcell.EventKey) *tcell.EventKey {
-	path := p.GetTable().GetSelectedItem()
-	if path == "" {
-		return evt
-	}
-
-	if !p.App().factory.Forwarders().IsPodForwarded(path) {
-		p.App().Flash().Errf("no port-forward defined")
-		return nil
-	}
-	pf := NewPortForward(client.NewGVR("portforwards"))
-	pf.SetContextFn(p.portForwardContext)
-	if err := p.App().inject(pf, false); err != nil {
-		p.App().Flash().Err(err)
-	}
-
-	return nil
-}
-
-func (p *Pod) portForwardContext(ctx context.Context) context.Context {
-	if bc := p.App().BenchFile; bc != "" {
-		ctx = context.WithValue(ctx, internal.KeyBenchCfg, p.App().BenchFile)
-	}
-
-	return context.WithValue(ctx, internal.KeyPath, p.GetTable().GetSelectedItem())
 }
 
 func (p *Pod) killCmd(evt *tcell.EventKey) *tcell.EventKey {
