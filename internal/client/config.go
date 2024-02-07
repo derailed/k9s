@@ -20,7 +20,7 @@ const (
 	defaultCallTimeoutDuration time.Duration = 15 * time.Second
 
 	// UsePersistentConfig caches client config to avoid reloads.
-	UsePersistentConfig = true
+	UsePersistentConfig = false
 )
 
 // Config tracks a kubernetes configuration.
@@ -83,6 +83,24 @@ func (c *Config) SwitchContext(name string) error {
 	c.flags = flags
 
 	return nil
+}
+
+func (c *Config) Clone(ns string) (*genericclioptions.ConfigFlags, error) {
+	flags := genericclioptions.NewConfigFlags(false)
+	ct, err := c.CurrentContextName()
+	if err != nil {
+		return nil, err
+	}
+	cl, err := c.CurrentClusterName()
+	if err != nil {
+		return nil, err
+	}
+	flags.Context, flags.ClusterName = &ct, &cl
+	flags.Namespace = &ns
+	flags.Timeout = c.Flags().Timeout
+	flags.KubeConfig = c.Flags().KubeConfig
+
+	return flags, nil
 }
 
 // CurrentClusterName returns the currently active cluster name.
