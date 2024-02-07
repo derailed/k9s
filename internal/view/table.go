@@ -220,7 +220,22 @@ func (t *Table) cpCmd(evt *tcell.EventKey) *tcell.EventKey {
 		t.app.Flash().Err(err)
 		return nil
 	}
-	t.app.Flash().Info("Current selection copied to clipboard...")
+	t.app.Flash().Info("Resource name copied to clipboard...")
+
+	return nil
+}
+
+func (t *Table) cpNsCmd(evt *tcell.EventKey) *tcell.EventKey {
+	path := t.GetSelectedItem()
+	if path == "" {
+		return evt
+	}
+	ns, _ := client.Namespaced(path)
+	if err := clipboardWrite(ns); err != nil {
+		t.app.Flash().Err(err)
+		return nil
+	}
+	t.app.Flash().Info("Resource namespace copied to clipboard...")
 
 	return nil
 }

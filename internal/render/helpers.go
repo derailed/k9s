@@ -4,6 +4,7 @@
 package render
 
 import (
+	"context"
 	"math"
 	"sort"
 	"strconv"
@@ -28,7 +29,7 @@ func computeVulScore(m metav1.ObjectMeta, spec *v1.PodSpec) string {
 		return "0"
 	}
 	ii := ExtractImages(spec)
-	vul.ImgScanner.Enqueue(ii...)
+	vul.ImgScanner.Enqueue(context.Background(), ii...)
 
 	return vul.ImgScanner.Score(ii...)
 }

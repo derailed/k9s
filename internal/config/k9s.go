@@ -78,7 +78,7 @@ func (k *K9s) Save() error {
 		data.MainConfigFile,
 	)
 
-	return k.getActiveConfig().Save(path)
+	return k.dir.Save(path, k.getActiveConfig())
 }
 
 // Merge merges k9s configs.
@@ -157,7 +157,6 @@ func (k *K9s) ActiveContextName() string {
 
 // ActiveContext returns the currently active context.
 func (k *K9s) ActiveContext() (*data.Context, error) {
-
 	if cfg := k.getActiveConfig(); cfg != nil && cfg.Context != nil {
 		return cfg.Context, nil
 	}

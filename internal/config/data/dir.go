@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sync"
 
 	"github.com/derailed/k9s/internal/config/json"
 	"github.com/rs/zerolog/log"
@@ -18,6 +19,7 @@ import (
 // Dir tracks context configurations.
 type Dir struct {
 	root string
+	mx   sync.Mutex
 }
 
 // NewDir returns a new instance.
@@ -50,14 +52,32 @@ func (d *Dir) Load(n string, ct *api.Context) (*Config, error) {
 
 func (d *Dir) genConfig(path string, ct *api.Context) (*Config, error) {
 	cfg := NewConfig(ct)
-	if err := cfg.Save(path); err != nil {
+	if err := d.Save(path, cfg); err != nil {
 		return nil, err
 	}
 
 	return cfg, nil
 }
 
+func (d *Dir) Save(path string, c *Config) error {
+	d.mx.Lock()
+	defer d.mx.Unlock()
+
+	if err := EnsureDirPath(path, DefaultDirMod); err != nil {
+		return err
+	}
+	cfg, err := yaml.Marshal(c)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(path, cfg, DefaultFileMod)
+}
+
 func (d *Dir) loadConfig(path string) (*Config, error) {
+	d.mx.Lock()
+	defer d.mx.Unlock()
+
 	bb, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err

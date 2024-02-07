@@ -23,7 +23,26 @@ import (
 	"github.com/derailed/tview"
 	"github.com/rs/zerolog/log"
 	"github.com/sahilm/fuzzy"
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
+
+func aliasesFor(m v1.APIResource, aa []string) map[string]struct{} {
+	rr := make(map[string]struct{})
+	rr[m.Name] = struct{}{}
+	for _, a := range aa {
+		rr[a] = struct{}{}
+	}
+	if m.ShortNames != nil {
+		for _, a := range m.ShortNames {
+			rr[a] = struct{}{}
+		}
+	}
+	if m.SingularName != "" {
+		rr[m.SingularName] = struct{}{}
+	}
+
+	return rr
+}
 
 func clipboardWrite(text string) error {
 	return clipboard.WriteAll(text)

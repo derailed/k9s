@@ -37,6 +37,18 @@ func NewCommand(app *App) *Command {
 	}
 }
 
+// AliasesFor gather all known aliases for a given resource.
+func (c *Command) AliasesFor(s string) []string {
+	aa := make([]string, 0, 10)
+	for k, v := range c.alias.Alias {
+		if v == s {
+			aa = append(aa, k)
+		}
+	}
+
+	return aa
+}
+
 // Init initializes the command.
 func (c *Command) Init(path string) error {
 	c.alias = dao.NewAlias(c.app.factory)
@@ -126,9 +138,6 @@ func (c *Command) xrayCmd(p *cmd.Interpreter) error {
 		return err
 	}
 	if err := c.app.switchNS(ns); err != nil {
-		return err
-	}
-	if err := c.app.Config.Save(); err != nil {
 		return err
 	}
 
@@ -309,9 +318,6 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 	if clearStack {
 		cmd := contextRX.ReplaceAllString(p.GetLine(), "")
 		c.app.Config.SetActiveView(cmd)
-		if err := c.app.Config.Save(); err != nil {
-			log.Error().Err(err).Msg("Config save failed!")
-		}
 	}
 	if err := c.app.inject(comp, clearStack); err != nil {
 		return err

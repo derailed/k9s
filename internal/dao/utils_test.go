@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright Authors of K9s
+
 package dao_test
 
 import (
@@ -65,13 +68,11 @@ func (f *testFactory) Forwarders() watch.Forwarders {
 }
 func (f *testFactory) DeleteForwarder(string) {}
 
-type testResource struct{}
-
 func load(n string) *unstructured.Unstructured {
 	raw, _ := os.ReadFile(fmt.Sprintf("testdata/%s.json", n))
 
 	var o unstructured.Unstructured
-	json.Unmarshal(raw, &o)
+	_ = json.Unmarshal(raw, &o)
 
 	return &o
 }

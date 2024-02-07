@@ -22,7 +22,7 @@ const AllScopes = "all"
 type Runner interface {
 	App() *App
 	GetSelectedItem() string
-	Aliases() []string
+	Aliases() map[string]struct{}
 	EnvFn() EnvFunc
 }
 
@@ -44,13 +44,13 @@ func includes(aliases []string, s string) bool {
 	return false
 }
 
-func inScope(scopes, aliases []string) bool {
+func inScope(scopes []string, aliases map[string]struct{}) bool {
 	if hasAll(scopes) {
 		return true
 	}
 	for _, s := range scopes {
-		if includes(aliases, s) {
-			return true
+		if _, ok := aliases[s]; ok {
+			return ok
 		}
 	}
 
@@ -119,8 +119,9 @@ func pluginActions(r Runner, aa ui.KeyActions) error {
 	if err := pp.Load(r.App().Config.ContextPluginsPath()); err != nil {
 		errs = errors.Join(errs, err)
 	}
+	aliases := r.Aliases()
 	for k, plugin := range pp.Plugins {
-		if !inScope(plugin.Scopes, r.Aliases()) {
+		if !inScope(plugin.Scopes, aliases) {
 			continue
 		}
 		key, err := asKey(plugin.ShortCut)

@@ -214,7 +214,7 @@ func (c *Configurator) activeConfig() (cluster string, context string, ok bool) 
 	if err != nil {
 		return
 	}
-	cluster, context = ct.ClusterName, c.Config.K9s.ActiveContextName()
+	cluster, context = ct.GetClusterName(), c.Config.K9s.ActiveContextName()
 	if cluster != "" && context != "" {
 		ok = true
 	}
@@ -254,14 +254,13 @@ func (c *Configurator) loadSkinFile(s synchronizer) {
 	log.Debug().Msgf("Loading skin file: %q", skinFile)
 	if err := c.Styles.Load(skinFile); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			s.Flash().Warnf("Skin file %q not found in skins dir: %s", filepath.Base(skinFile), config.AppSkinsDir)
+			log.Warn().Msgf("Skin file %q not found in skins dir: %s", filepath.Base(skinFile), config.AppSkinsDir)
 			c.updateStyles("")
 		} else {
-			s.Flash().Errf("Failed to parse skin file -- %s: %s.", filepath.Base(skinFile), err)
+			log.Error().Msgf("Failed to parse skin file -- %s: %s.", filepath.Base(skinFile), err)
 			c.updateStyles(skinFile)
 		}
 	} else {
-		s.Flash().Infof("Skin file loaded: %q", skinFile)
 		c.updateStyles(skinFile)
 	}
 }

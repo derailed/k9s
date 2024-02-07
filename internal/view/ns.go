@@ -9,7 +9,6 @@ import (
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
-	"github.com/rs/zerolog/log"
 )
 
 const (
@@ -68,11 +67,6 @@ func (n *Namespace) useNamespace(fqn string) {
 	if err := n.App().Config.SetActiveNamespace(ns); err != nil {
 		n.App().Flash().Err(err)
 		return
-	}
-
-	n.App().Flash().Infof("Namespace %s is now active!", ns)
-	if err := n.App().Config.Save(); err != nil {
-		log.Error().Err(err).Msg("Config file save failed!")
 	}
 }
 
