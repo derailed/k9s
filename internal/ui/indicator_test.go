@@ -118,11 +118,10 @@ func TestIndicatorTextFromConfig(t *testing.T) {
 
 	actualStatText := i.BuildStatusIndicatorText(nil, &mockClustMetaCurr)
 	actualStatTextWithPrev := i.BuildStatusIndicatorText(&mockClustMetaPrev, &mockClustMetaCurr)
-	expectedStatText := DefaultStatusIndicatorText(nil, &mockClustMetaCurr)
-	expectedStatTextWithPrev := DefaultStatusIndicatorText(&mockClustMetaPrev, &mockClustMetaCurr)
+	expectedStatText := fmt.Sprintf("[orange::b]MYTEXT %s", mockClustMetaCurr.Context)
 
 	assert.Equal(t, expectedStatText, actualStatText)
-	assert.Equal(t, expectedStatTextWithPrev, actualStatTextWithPrev)
+	assert.Equal(t, expectedStatText, actualStatTextWithPrev)
 }
 
 // Helper funcs
