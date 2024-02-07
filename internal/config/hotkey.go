@@ -20,6 +20,7 @@ type HotKeys struct {
 // HotKey describes a K9s hotkey.
 type HotKey struct {
 	ShortCut    string `yaml:"shortCut"`
+	Override    bool   `yaml:"override"`
 	Description string `yaml:"description"`
 	Command     string `yaml:"command"`
 	KeepHistory bool   `yaml:"keepHistory"`

@@ -11,6 +11,7 @@
         "additionalProperties": false,
         "properties": {
           "shortCut": { "type": "string" },
+          "override": { "type": "boolean" },
           "description": { "type": "string" },
           "confirm": { "type": "boolean" },
           "scopes": {

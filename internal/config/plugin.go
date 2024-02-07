@@ -29,6 +29,7 @@ type Plugin struct {
 	Scopes      []string `yaml:"scopes"`
 	Args        []string `yaml:"args"`
 	ShortCut    string   `yaml:"shortCut"`
+	Override    bool     `yaml:"override"`
 	Pipes       []string `yaml:"pipes"`
 	Description string   `yaml:"description"`
 	Command     string   `yaml:"command"`
