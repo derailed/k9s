@@ -449,9 +449,6 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if err := b.app.Config.SetActiveNamespace(b.GetModel().GetNamespace()); err != nil {
 		log.Error().Err(err).Msg("Config save NS failed!")
 	}
-	if err := b.app.Config.Save(); err != nil {
-		log.Error().Err(err).Msg("Config save failed!")
-	}
 
 	return nil
 }

@@ -74,13 +74,11 @@ func (j Job) Render(o interface{}, ns string, r *Row) error {
 }
 
 func (Job) diagnose(ready string, completed *metav1.Time) error {
-	if completed == nil {
-		return nil
-	}
 	tokens := strings.Split(ready, "/")
 	if tokens[0] != tokens[1] {
 		return fmt.Errorf("expecting %s completion got %s", tokens[1], tokens[0])
 	}
+
 	return nil
 }
 

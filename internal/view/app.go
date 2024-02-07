@@ -434,9 +434,6 @@ func (a *App) switchNS(ns string) error {
 	if err := a.Config.SetActiveNamespace(ns); err != nil {
 		return err
 	}
-	if err := a.Config.Save(); err != nil {
-		return err
-	}
 
 	return a.factory.SetActiveNS(ns)
 }
@@ -516,6 +513,10 @@ func (a *App) BailOut() {
 			log.Error().Msgf("Bailing out %v", err)
 		}
 	}()
+
+	if err := a.Config.Save(); err != nil {
+		log.Error().Err(err).Msg("config save failed!")
+	}
 
 	if err := nukeK9sShell(a); err != nil {
 		log.Error().Err(err).Msgf("nuking k9s shell pod")

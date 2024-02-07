@@ -4,6 +4,7 @@
 package vul
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"sync"
@@ -33,6 +34,12 @@ import (
 
 var ImgScanner *imageScanner
 
+const (
+	imgChanSize     = 3
+	imgScanTimeout  = 2 * time.Second
+	scanConcurrency = 2
+)
+
 type imageScanner struct {
 	store       *store.Store
 	dbCloser    *db.Closer
@@ -60,6 +67,7 @@ func (s *imageScanner) ShouldExcludes(m metav1.ObjectMeta) bool {
 func (s *imageScanner) GetScan(img string) (*Scan, bool) {
 	s.mx.RLock()
 	defer s.mx.RUnlock()
+
 	scan, ok := s.scans[img]
 
 	return scan, ok
@@ -106,6 +114,7 @@ func (s *imageScanner) Stop() {
 
 	if s.dbCloser != nil {
 		s.dbCloser.Close()
+		s.dbCloser = nil
 	}
 }
 
@@ -127,27 +136,35 @@ func (s *imageScanner) isInitialized() bool {
 	return s.initialized
 }
 
-func (s *imageScanner) Enqueue(images ...string) {
+func (s *imageScanner) Enqueue(ctx context.Context, images ...string) {
 	if !s.isInitialized() {
 		return
 	}
-	for _, i := range images {
-		go func(img string) {
-			if _, ok := s.GetScan(img); ok {
-				return
-			}
-			sc := newScan(img)
-			s.setScan(img, sc)
-			if err := s.scan(img, sc); err != nil {
-				log.Warn().Err(err).Msgf("Scan failed for img %s --", img)
-			}
-		}(i)
+	ctx, cancel := context.WithTimeout(ctx, imgScanTimeout)
+	defer cancel()
+
+	for _, img := range images {
+		if _, ok := s.GetScan(img); ok {
+			continue
+		}
+		go s.scanWorker(ctx, img)
 	}
 }
 
-func (s *imageScanner) scan(img string, sc *Scan) error {
+func (s *imageScanner) scanWorker(ctx context.Context, img string) {
+	defer log.Debug().Msgf("ScanWorker bailing out!")
+
+	log.Debug().Msgf("ScanWorker processing: %q", img)
+	sc := newScan(img)
+	s.setScan(img, sc)
+	if err := s.scan(ctx, img, sc); err != nil {
+		log.Warn().Err(err).Msgf("Scan failed for img %s --", img)
+	}
+}
+
+func (s *imageScanner) scan(ctx context.Context, img string, sc *Scan) error {
 	defer func(t time.Time) {
-		log.Debug().Msgf("Scan %s images: %v", img, time.Since(t))
+		log.Debug().Msgf("ScanTime %q: %v", img, time.Since(t))
 	}(time.Now())
 
 	var errs error

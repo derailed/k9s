@@ -140,9 +140,6 @@ func (c *Command) xrayCmd(p *cmd.Interpreter) error {
 	if err := c.app.switchNS(ns); err != nil {
 		return err
 	}
-	if err := c.app.Config.Save(); err != nil {
-		return err
-	}
 
 	return c.exec(p, client.NewGVR("xrays"), NewXray(gvr), true)
 }
@@ -321,9 +318,6 @@ func (c *Command) exec(p *cmd.Interpreter, gvr client.GVR, comp model.Component,
 	if clearStack {
 		cmd := contextRX.ReplaceAllString(p.GetLine(), "")
 		c.app.Config.SetActiveView(cmd)
-		if err := c.app.Config.Save(); err != nil {
-			log.Error().Err(err).Msg("Config save failed!")
-		}
 	}
 	if err := c.app.inject(comp, clearStack); err != nil {
 		return err
