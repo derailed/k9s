@@ -304,7 +304,7 @@ func (k *K9s) IsReadOnly() bool {
 		ro = *cfg.Context.ReadOnly
 	}
 	if k.manualReadOnly != nil {
-		ro = true
+		ro = *k.manualReadOnly
 	}
 
 	return ro
