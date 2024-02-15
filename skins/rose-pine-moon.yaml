@@ -1,0 +1,110 @@
+# -----------------------------------------------------------------------------
+# Rose Pine Main
+# https://rosepinetheme.com/palette/ingredients/
+# -----------------------------------------------------------------------------
+#
+text: &text "#e0def4"
+base: &base "#232136"
+overlay: &overlay "#393552"
+muted: &muted "#6e6a86"
+rose: &rose "#ea9a97"
+pine: &pine "#3e8fb0"
+gold: &gold "#f6c177"
+iris: &iris "#c4a7e7"
+love: &love "#eb6f92"
+
+# Skin...
+k9s:
+  # General K9s styles
+  body:
+    fgColor: *text
+    bgColor: *base
+    logoColor: *iris
+  # Command prompt styles
+  prompt:
+    fgColor: *text
+    bgColor: *base
+    suggestColor: *iris
+  # ClusterInfoView styles.
+  info:
+    fgColor: *iris
+    sectionColor: *text
+  # Dialog styles.
+  dialog:
+    fgColor: *text
+    bgColor: *base
+    buttonFgColor: *text
+    buttonBgColor: *iris
+    buttonFocusFgColor: *gold
+    buttonFocusBgColor: *iris
+    labelFgColor: *gold
+    fieldFgColor: *text
+  frame:
+    # Borders styles.
+    border:
+      fgColor: *overlay
+      focusColor: *overlay
+    menu:
+      fgColor: *text
+      keyColor: *iris
+      # Used for favorite namespaces
+      numKeyColor: *iris
+    # CrumbView attributes for history navigation.
+    crumbs:
+      fgColor: *text
+      bgColor: *overlay
+      activeColor: *overlay
+    # Resource status and update styles
+    status:
+      newColor: *rose
+      modifyColor: *iris
+      addColor: *pine
+      errorColor: *love
+      highlightcolor: *gold
+      killColor: *muted
+      completedColor: *muted
+    # Border title styles.
+    title:
+      fgColor: *text
+      bgColor: *overlay
+      highlightColor: *gold
+      counterColor: *iris
+      filterColor: *iris
+  views:
+    # Charts skins...
+    charts:
+      bgColor: default
+      defaultDialColors:
+        - *iris
+        - *love
+      defaultChartColors:
+        - *iris
+        - *love
+    # TableView attributes.
+    table:
+      fgColor: *text
+      bgColor: *base
+      # Header row styles.
+      header:
+        fgColor: *text
+        bgColor: *base
+        sorterColor: *rose
+    # Xray view attributes.
+    xray:
+      fgColor: *text
+      bgColor: *base
+      cursorColor: *overlay
+      graphicColor: *iris
+      showIcons: false
+    # YAML info styles.
+    yaml:
+      keyColor: *iris
+      colonColor: *iris
+      valueColor: *text
+    # Logs styles.
+    logs:
+      fgColor: *text
+      bgColor: *base
+      indicator:
+        fgColor: *text
+        bgColor: *iris
