@@ -53,7 +53,7 @@ func (c *ClusterInfo) StylesChanged(s *config.Styles) {
 func (c *ClusterInfo) hasMetrics() bool {
 	mx := c.app.Conn().HasMetrics()
 	if mx {
-		auth, err := c.app.Conn().CanI("", "metrics.k8s.io/v1beta1/nodes", client.ListAccess)
+		auth, err := c.app.Conn().CanI("", "metrics.k8s.io/v1beta1/nodes", "", client.ListAccess)
 		if err != nil {
 			log.Warn().Err(err).Msgf("No nodes metrics access")
 		}
