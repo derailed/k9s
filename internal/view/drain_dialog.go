@@ -4,6 +4,7 @@
 package view
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -15,10 +16,10 @@ import (
 const drainKey = "drain"
 
 // DrainFunc represents a drain callback function.
-type DrainFunc func(v ResourceViewer, path string, opts dao.DrainOptions)
+type DrainFunc func(v ResourceViewer, sels []string, opts dao.DrainOptions)
 
 // ShowDrain pops a node drain dialog.
-func ShowDrain(view ResourceViewer, path string, opts dao.DrainOptions, okFn DrainFunc) {
+func ShowDrain(view ResourceViewer, sels []string, opts dao.DrainOptions, okFn DrainFunc) {
 	styles := view.App().Styles
 
 	f := tview.NewForm()
@@ -63,10 +64,17 @@ func ShowDrain(view ResourceViewer, path string, opts dao.DrainOptions, okFn Dra
 	})
 	f.AddButton("OK", func() {
 		DismissDrain(view, pages)
-		okFn(view, path, opts)
+		okFn(view, sels, opts)
 	})
 
 	modal := tview.NewModalForm("<Drain>", f)
+	path := "Drain "
+	if len(sels) == 1 {
+		path += sels[0]
+	} else {
+		path += fmt.Sprintf("(%d) nodes", len(sels))
+	}
+	path += "?"
 	modal.SetText(path)
 	modal.SetDoneFunc(func(_ int, b string) {
 		DismissDrain(view, pages)
