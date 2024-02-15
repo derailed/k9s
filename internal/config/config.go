@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/config/data"
@@ -157,6 +158,10 @@ func (c *Config) SetActiveNamespace(ns string) error {
 	ct, err := c.K9s.ActiveContext()
 	if err != nil {
 		return err
+	}
+	ff := strings.Fields(ct.View.Active)
+	if len(ff) == 2 && ns != client.BlankNamespace {
+		ct.View.Active = ff[0] + " " + ns
 	}
 
 	return ct.Namespace.SetActive(ns, c.settings)
