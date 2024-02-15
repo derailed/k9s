@@ -33,6 +33,20 @@ func NewAliases() *Aliases {
 	}
 }
 
+func (a *Aliases) AliasesFor(s string) []string {
+	aa := make([]string, 0, 10)
+
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+	for k, v := range a.Alias {
+		if v == s {
+			aa = append(aa, k)
+		}
+	}
+
+	return aa
+}
+
 // Keys returns all aliases keys.
 func (a *Aliases) Keys() []string {
 	a.mx.RLock()
