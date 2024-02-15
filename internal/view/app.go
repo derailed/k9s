@@ -485,6 +485,8 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 		}
 		if err := a.Config.Save(); err != nil {
 			log.Error().Err(err).Msg("config save failed!")
+		} else {
+			log.Debug().Msgf("Saved context config for: %q", name)
 		}
 		a.initFactory(ns)
 		if err := a.command.Reset(a.Config.ContextAliasesPath(), true); err != nil {

@@ -75,12 +75,12 @@ func hotKeyActions(r Runner, aa ui.KeyActions) error {
 			errs = errors.Join(errs, err)
 			continue
 		}
-		_, ok := aa[key]
-		if ok && !hk.Override {
-			errs = errors.Join(errs, fmt.Errorf("duplicated hotkeys found for %q in %q", hk.ShortCut, k))
-			continue
-		} else if ok && hk.Override == true {
-			log.Info().Msgf("Action %q has been overrided by hotkey in %q", hk.ShortCut, k)
+		if _, ok := aa[key]; ok {
+			if !hk.Override {
+				errs = errors.Join(errs, fmt.Errorf("duplicate hotkey found for %q in %q", hk.ShortCut, k))
+				continue
+			}
+			log.Info().Msgf("Action %q has been overridden by hotkey in %q", hk.ShortCut, k)
 		}
 
 		command, err := r.EnvFn()().Substitute(hk.Command)
@@ -127,18 +127,18 @@ func pluginActions(r Runner, aa ui.KeyActions) error {
 			continue
 		}
 		key, err := asKey(plugin.ShortCut)
-
 		if err != nil {
 			errs = errors.Join(errs, err)
 			continue
 		}
-		_, ok := aa[key]
-		if ok && !plugin.Override {
-			errs = errors.Join(errs, fmt.Errorf("duplicated plugin key found for %q in %q", plugin.ShortCut, k))
-			continue
-		} else if ok && plugin.Override == true {
-			log.Info().Msgf("Action %q has been overrided by plugin in %q", plugin.ShortCut, k)
+		if _, ok := aa[key]; ok {
+			if !plugin.Override {
+				errs = errors.Join(errs, fmt.Errorf("duplicate plugin key found for %q in %q", plugin.ShortCut, k))
+				continue
+			}
+			log.Info().Msgf("Action %q has been overridden by plugin in %q", plugin.ShortCut, k)
 		}
+
 		aa[key] = ui.NewKeyActionWithOpts(
 			plugin.Description,
 			pluginAction(r, plugin),
