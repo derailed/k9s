@@ -26,7 +26,18 @@
             "noIcons": {"type": "boolean"},
             "reactive": {"type": "boolean"},
             "skin": {"type": "string"},
-            "defaultsToFullScreen": {"type": "boolean"}
+            "defaultsToFullScreen": {"type": "boolean"},
+            "statusIndicator": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "format": {"type": "string"},
+                "fields": {
+                  "type": "array",
+                  "items": { "type": "string" }
+                }
+              }
+            }
           }
         },
         "shellPod": {
