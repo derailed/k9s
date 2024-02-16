@@ -96,8 +96,8 @@ func (n *Node) showPods(a *App, _ ui.Tabular, _ client.GVR, path string) {
 }
 
 func (n *Node) drainCmd(evt *tcell.EventKey) *tcell.EventKey {
-	path := n.GetTable().GetSelectedItem()
-	if path == "" {
+	sels := n.GetTable().GetSelectedItems()
+	if len(sels) == 0 {
 		return evt
 	}
 
@@ -105,12 +105,12 @@ func (n *Node) drainCmd(evt *tcell.EventKey) *tcell.EventKey {
 		GracePeriodSeconds: -1,
 		Timeout:            5 * time.Second,
 	}
-	ShowDrain(n, path, opts, drainNode)
+	ShowDrain(n, sels, opts, drainNode)
 
 	return nil
 }
 
-func drainNode(v ResourceViewer, path string, opts dao.DrainOptions) {
+func drainNode(v ResourceViewer, sels []string, opts dao.DrainOptions) {
 	res, err := dao.AccessorFor(v.App().factory, v.GVR())
 	if err != nil {
 		v.App().Flash().Err(err)
@@ -125,14 +125,14 @@ func drainNode(v ResourceViewer, path string, opts dao.DrainOptions) {
 	v.Stop()
 	defer v.Start()
 	{
-		d := NewDetails(v.App(), "Drain Progress", path, contentYAML, true)
+		d := NewDetails(v.App(), "Drain Progress", "nodes", contentYAML, true)
 		if err := v.App().inject(d, false); err != nil {
 			v.App().Flash().Err(err)
 		}
-
-		if err := m.Drain(path, opts, d.GetWriter()); err != nil {
-			v.App().Flash().Err(err)
-			return
+		for _, sel := range sels {
+			if err := m.Drain(sel, opts, d.GetWriter()); err != nil {
+				v.App().Flash().Err(err)
+			}
 		}
 		v.Refresh()
 	}
@@ -140,8 +140,8 @@ func drainNode(v ResourceViewer, path string, opts dao.DrainOptions) {
 
 func (n *Node) toggleCordonCmd(cordon bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		path := n.GetTable().GetSelectedItem()
-		if path == "" {
+		sels := n.GetTable().GetSelectedItems()
+		if len(sels) == 0 {
 			return evt
 		}
 
@@ -151,7 +151,11 @@ func (n *Node) toggleCordonCmd(cordon bool) func(evt *tcell.EventKey) *tcell.Eve
 		} else {
 			title, msg = title+"Uncordon", "Uncordon "
 		}
-		msg += path + "?"
+		if len(sels) == 1 {
+			msg += sels[0] + "?"
+		} else {
+			msg += fmt.Sprintf("(%d) marked %s?", len(sels), n.GVR().R())
+		}
 		dialog.ShowConfirm(n.App().Styles.Dialog(), n.App().Content.Pages, title, msg, func() {
 			res, err := dao.AccessorFor(n.App().factory, n.GVR())
 			if err != nil {
@@ -163,8 +167,10 @@ func (n *Node) toggleCordonCmd(cordon bool) func(evt *tcell.EventKey) *tcell.Eve
 				n.App().Flash().Err(fmt.Errorf("expecting a maintainer for %q", n.GVR()))
 				return
 			}
-			if err := m.ToggleCordon(path, cordon); err != nil {
-				n.App().Flash().Err(err)
+			for _, s := range sels {
+				if err := m.ToggleCordon(s, cordon); err != nil {
+					n.App().Flash().Err(err)
+				}
 			}
 			n.Refresh()
 		}, func() {})

@@ -398,7 +398,7 @@ func editRes(app *App, gvr client.GVR, path string) error {
 	if gvr.String() == "v1/namespaces" {
 		ns = n
 	}
-	if ok, err := app.Conn().CanI(ns, gvr.String(), []string{"patch"}); !ok || err != nil {
+	if ok, err := app.Conn().CanI(ns, gvr.String(), n, []string{"patch"}); !ok || err != nil {
 		return fmt.Errorf("current user can't edit resource %s", gvr)
 	}
 
@@ -423,7 +423,7 @@ func (b *Browser) switchNamespaceCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 	ns := b.namespaces[i]
 
-	auth, err := b.App().factory.Client().CanI(ns, b.GVR().String(), client.ListAccess)
+	auth, err := b.App().factory.Client().CanI(ns, b.GVR().String(), "", client.ListAccess)
 	if !auth {
 		if err == nil {
 			err = fmt.Errorf("current user can't access namespace %s", ns)
@@ -556,7 +556,7 @@ func (b *Browser) simpleDelete(selections []string, msg string) {
 	dialog.ShowConfirm(b.app.Styles.Dialog(), b.app.Content.Pages, "Confirm Delete", msg, func() {
 		b.ShowDeleted()
 		if len(selections) > 1 {
-			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.GVR())
+			b.app.Flash().Infof("Delete %d marked %s", len(selections), b.GVR().R())
 		} else {
 			b.app.Flash().Infof("Delete resource %s %s", b.GVR(), selections[0])
 		}

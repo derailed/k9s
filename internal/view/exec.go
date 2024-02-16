@@ -123,12 +123,11 @@ func edit(a *App, opts shellOpts) bool {
 	)
 	for _, e := range editorEnvVars {
 		env := os.Getenv(e)
-		if env != "" {
+		if env == "" {
 			continue
 		}
-		bin, err = exec.LookPath(env)
-		if err != nil {
-			continue
+		if bin, err = exec.LookPath(env); err == nil {
+			break
 		}
 	}
 	if bin == "" {

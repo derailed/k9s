@@ -107,10 +107,11 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		client.NewGVR("batch/v1beta1/cronjobs"): &CronJob{},
 		client.NewGVR("batch/v1/jobs"):          &Job{},
 		client.NewGVR("v1/namespaces"):          &Namespace{},
-		client.NewGVR("popeye"):                 &Popeye{},
-		client.NewGVR("helm"):                   &HelmChart{},
-		client.NewGVR("helm-history"):           &HelmHistory{},
-		client.NewGVR("dir"):                    &Dir{},
+		// !!BOZO!!
+		//client.NewGVR("popeye"):                 &Popeye{},
+		client.NewGVR("helm"):         &HelmChart{},
+		client.NewGVR("helm-history"): &HelmHistory{},
+		client.NewGVR("dir"):          &Dir{},
 	}
 
 	r, ok := m[gvr]

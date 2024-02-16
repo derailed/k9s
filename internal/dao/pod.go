@@ -132,8 +132,8 @@ func (p *Pod) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 // Logs fetch container logs for a given pod and container.
 func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, error) {
-	ns, _ := client.Namespaced(path)
-	auth, err := p.Client().CanI(ns, "v1/pods:log", []string{client.GetVerb})
+	ns, n := client.Namespaced(path)
+	auth, err := p.Client().CanI(ns, "v1/pods:log", n, []string{client.GetVerb})
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +141,6 @@ func (p *Pod) Logs(path string, opts *v1.PodLogOptions) (*restclient.Request, er
 		return nil, fmt.Errorf("user is not authorized to view pod logs")
 	}
 
-	ns, n := client.Namespaced(path)
 	dial, err := p.Client().DialLogs()
 	if err != nil {
 		return nil, err
@@ -457,7 +456,7 @@ func (p *Pod) GetPodSpec(path string) (*v1.PodSpec, error) {
 // SetImages sets container images.
 func (p *Pod) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error {
 	ns, n := client.Namespaced(path)
-	auth, err := p.Client().CanI(ns, "v1/pod", []string{client.PatchVerb})
+	auth, err := p.Client().CanI(ns, "v1/pod", n, []string{client.PatchVerb})
 	if err != nil {
 		return err
 	}

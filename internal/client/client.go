@@ -84,7 +84,7 @@ func (a *APIClient) ConnectionOK() bool {
 	return a.connOK
 }
 
-func makeSAR(ns, gvr string) *authorizationv1.SelfSubjectAccessReview {
+func makeSAR(ns, gvr, name string) *authorizationv1.SelfSubjectAccessReview {
 	if ns == ClusterScope {
 		ns = BlankNamespace
 	}
@@ -98,13 +98,14 @@ func makeSAR(ns, gvr string) *authorizationv1.SelfSubjectAccessReview {
 				Version:     res.Version,
 				Resource:    res.Resource,
 				Subresource: spec.SubResource(),
+				Name:        name,
 			},
 		},
 	}
 }
 
-func makeCacheKey(ns, gvr string, vv []string) string {
-	return ns + ":" + gvr + "::" + strings.Join(vv, ",")
+func makeCacheKey(ns, gvr, n string, vv []string) string {
+	return ns + ":" + gvr + ":" + n + "::" + strings.Join(vv, ",")
 }
 
 // ActiveContext returns the current context name.
@@ -142,14 +143,14 @@ func (a *APIClient) clearCache() {
 }
 
 // CanI checks if user has access to a certain resource.
-func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) {
+func (a *APIClient) CanI(ns, gvr, name string, verbs []string) (auth bool, err error) {
 	if !a.getConnOK() {
 		return false, errors.New("ACCESS -- No API server connection")
 	}
 	if IsClusterWide(ns) {
 		ns = BlankNamespace
 	}
-	key := makeCacheKey(ns, gvr, verbs)
+	key := makeCacheKey(ns, gvr, name, verbs)
 	if v, ok := a.cache.Get(key); ok {
 		if auth, ok = v.(bool); ok {
 			return auth, nil
@@ -160,7 +161,7 @@ func (a *APIClient) CanI(ns, gvr string, verbs []string) (auth bool, err error) 
 	if err != nil {
 		return false, err
 	}
-	client, sar := dial.AuthorizationV1().SelfSubjectAccessReviews(), makeSAR(ns, gvr)
+	client, sar := dial.AuthorizationV1().SelfSubjectAccessReviews(), makeSAR(ns, gvr, name)
 
 	ctx, cancel := context.WithTimeout(context.Background(), a.config.CallTimeout())
 	defer cancel()
@@ -215,7 +216,7 @@ func (a *APIClient) IsValidNamespace(ns string) bool {
 		return true
 	}
 
-	ok, err := a.CanI(ClusterScope, "v1/namespaces", []string{ListVerb})
+	ok, err := a.CanI(ClusterScope, "v1/namespaces", "", []string{ListVerb})
 	if ok && err == nil {
 		nn, _ := a.ValidNamespaceNames()
 		_, ok = nn[ns]

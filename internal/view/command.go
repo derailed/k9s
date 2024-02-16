@@ -39,14 +39,7 @@ func NewCommand(app *App) *Command {
 
 // AliasesFor gather all known aliases for a given resource.
 func (c *Command) AliasesFor(s string) []string {
-	aa := make([]string, 0, 10)
-	for k, v := range c.alias.Alias {
-		if v == s {
-			aa = append(aa, k)
-		}
-	}
-
-	return aa
+	return c.alias.AliasesFor(s)
 }
 
 // Init initializes the command.
@@ -163,6 +156,13 @@ func (c *Command) run(p *cmd.Interpreter, fqn string, clearStack bool) error {
 	}
 
 	if context, ok := p.HasContext(); ok {
+		if context != c.app.Config.ActiveContextName() {
+			if err := c.app.Config.Save(); err != nil {
+				log.Error().Err(err).Msg("config save failed!")
+			} else {
+				log.Debug().Msgf("Saved context config for: %q", context)
+			}
+		}
 		res, err := dao.AccessorFor(c.app.factory, client.NewGVR("contexts"))
 		if err != nil {
 			return err

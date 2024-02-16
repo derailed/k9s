@@ -115,7 +115,7 @@ func NewMockConnectionWithContext(ct string) mockConnection {
 	return mockConnection{ct: ct}
 }
 
-func (m mockConnection) CanI(ns, gvr string, verbs []string) (bool, error) {
+func (m mockConnection) CanI(ns, gvr, n string, verbs []string) (bool, error) {
 	return true, nil
 }
 func (m mockConnection) Config() *client.Config {

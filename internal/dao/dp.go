@@ -57,7 +57,7 @@ func (d *Deployment) IsHappy(dp appsv1.Deployment) bool {
 // Scale a Deployment.
 func (d *Deployment) Scale(ctx context.Context, path string, replicas int32) error {
 	ns, n := client.Namespaced(path)
-	auth, err := d.Client().CanI(ns, "apps/v1/deployments:scale", []string{client.GetVerb, client.UpdateVerb})
+	auth, err := d.Client().CanI(ns, "apps/v1/deployments:scale", n, []string{client.GetVerb, client.UpdateVerb})
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func (d *Deployment) Restart(ctx context.Context, path string) error {
 		return err
 	}
 
-	auth, err := d.Client().CanI(dp.Namespace, "apps/v1/deployments", []string{client.PatchVerb})
+	auth, err := d.Client().CanI(dp.Namespace, "apps/v1/deployments", dp.Name, []string{client.PatchVerb})
 	if err != nil {
 		return err
 	}
@@ -266,7 +266,7 @@ func (d *Deployment) GetPodSpec(path string) (*v1.PodSpec, error) {
 // SetImages sets container images.
 func (d *Deployment) SetImages(ctx context.Context, path string, imageSpecs ImageSpecs) error {
 	ns, n := client.Namespaced(path)
-	auth, err := d.Client().CanI(ns, "apps/v1/deployments", []string{client.PatchVerb})
+	auth, err := d.Client().CanI(ns, "apps/v1/deployments", n, []string{client.PatchVerb})
 	if err != nil {
 		return err
 	}

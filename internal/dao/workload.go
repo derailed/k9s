@@ -48,7 +48,7 @@ type Workload struct {
 func (w *Workload) Delete(ctx context.Context, path string, propagation *metav1.DeletionPropagation, grace Grace) error {
 	gvr, _ := ctx.Value(internal.KeyGVR).(client.GVR)
 	ns, n := client.Namespaced(path)
-	auth, err := w.Client().CanI(ns, gvr.String(), []string{client.DeleteVerb})
+	auth, err := w.Client().CanI(ns, gvr.String(), n, []string{client.DeleteVerb})
 	if err != nil {
 		return err
 	}
