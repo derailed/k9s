@@ -5,6 +5,7 @@ package view
 
 import (
 	"errors"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
@@ -71,6 +72,9 @@ func (s *StatefulSet) logOptions(prev bool) (*dao.LogOptions, error) {
 		AllContainers:   allCos,
 		ShowTimestamp:   cfg.ShowTime,
 		Previous:        prev,
+	}
+	if cfg.LocalTime {
+		opts.Timezone = time.Local
 	}
 	if co == "" {
 		opts.AllContainers = true

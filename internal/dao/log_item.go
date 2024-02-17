@@ -5,6 +5,7 @@ package dao
 
 import (
 	"bytes"
+	"time"
 )
 
 // LogChan represents a channel for logs.
@@ -18,6 +19,24 @@ type LogItem struct {
 	SingleContainer bool
 	Bytes           []byte
 	IsError         bool
+}
+
+// The time.RFC3339Nano preset removes trailing zeroes, which breaks the alignment
+// of the log lines on screen.
+const RFC3339NanoTrailingZeroes = "2006-01-02T15:04:05.000000000Z07:00"
+
+func ConvertTimeZone(ts string, tz *time.Location) string {
+	if tz == nil {
+		return ts
+	}
+
+	dt, err := time.Parse(time.RFC3339Nano, string(ts[:]))
+
+	if err != nil {
+		return ts
+	}
+
+	return dt.In(tz).Format(RFC3339NanoTrailingZeroes)
 }
 
 // NewLogItem returns a new item.
@@ -67,11 +86,11 @@ func (l *LogItem) Size() int {
 }
 
 // Render returns a log line as string.
-func (l *LogItem) Render(paint string, showTime bool, bb *bytes.Buffer) {
+func (l *LogItem) Render(paint string, showTime bool, tz *time.Location, bb *bytes.Buffer) {
 	index := bytes.Index(l.Bytes, []byte{' '})
 	if showTime && index > 0 {
 		bb.WriteString("[gray::b]")
-		bb.Write(l.Bytes[:index])
+		bb.WriteString(ConvertTimeZone(string(l.Bytes[:index]), tz))
 		bb.WriteString(" ")
 		if l := 30 - len(l.Bytes[:index]); l > 0 {
 			bb.Write(bytes.Repeat([]byte{' '}, l))

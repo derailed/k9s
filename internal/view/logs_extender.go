@@ -4,6 +4,8 @@
 package view
 
 import (
+	"time"
+
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/ui"
@@ -87,6 +89,9 @@ func (l *LogsExtender) buildLogOpts(path, co string, prevLogs bool) *dao.LogOpti
 	}
 	if opts.Container == "" {
 		opts.AllContainers = true
+	}
+	if cfg.LocalTime {
+		opts.Timezone = time.Local
 	}
 
 	return &opts

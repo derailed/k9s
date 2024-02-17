@@ -424,6 +424,8 @@ K9s uses aliases to navigate most K8s resources.
       textWrap: false
       # Toggles log line timestamp info. Default false
       showTime: false
+      # Show time in local time rather than cluster time. Default false
+      localTime: false
     # Provide shell pod customization when nodeShell feature gate is enabled!
     shellPod:
       # The shell pod image to use.
@@ -944,6 +946,7 @@ k9s:
     sinceSeconds: -1
     textWrap: false
     showTime: false
+    localTime: false
   thresholds:
     cpu:
       critical: 90
