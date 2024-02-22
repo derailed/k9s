@@ -25,8 +25,8 @@ func NewPersistentVolumeClaim(gvr client.GVR) ResourceViewer {
 	return &v
 }
 
-func (p *PersistentVolumeClaim) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (p *PersistentVolumeClaim) bindKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
 		ui.KeyU:      ui.NewKeyAction("UsedBy", p.refCmd, true),
 		ui.KeyShiftS: ui.NewKeyAction("Sort Status", p.GetTable().SortColCmd("STATUS", true), false),
 		ui.KeyShiftV: ui.NewKeyAction("Sort Volume", p.GetTable().SortColCmd("VOLUME", true), false),

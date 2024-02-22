@@ -36,18 +36,14 @@ func NewWorkload(gvr client.GVR) ResourceViewer {
 	return &w
 }
 
-func (w *Workload) bindDangerousKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
-		ui.KeyE: ui.NewKeyActionWithOpts(
-			"Edit",
-			w.editCmd,
+func (w *Workload) bindDangerousKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
+		ui.KeyE: ui.NewKeyActionWithOpts("Edit", w.editCmd,
 			ui.ActionOpts{
 				Visible:   true,
 				Dangerous: true,
 			}),
-		tcell.KeyCtrlD: ui.NewKeyActionWithOpts(
-			"Delete",
-			w.deleteCmd,
+		tcell.KeyCtrlD: ui.NewKeyActionWithOpts("Delete", w.deleteCmd,
 			ui.ActionOpts{
 				Visible:   true,
 				Dangerous: true,
@@ -55,12 +51,12 @@ func (w *Workload) bindDangerousKeys(aa ui.KeyActions) {
 	})
 }
 
-func (w *Workload) bindKeys(aa ui.KeyActions) {
+func (w *Workload) bindKeys(aa *ui.KeyActions) {
 	if !w.App().Config.K9s.IsReadOnly() {
 		w.bindDangerousKeys(aa)
 	}
 
-	aa.Add(ui.KeyActions{
+	aa.Bulk(ui.KeyMap{
 		ui.KeyShiftK: ui.NewKeyAction("Sort Kind", w.GetTable().SortColCmd("KIND", true), false),
 		ui.KeyShiftS: ui.NewKeyAction("Sort Status", w.GetTable().SortColCmd(statusCol, true), false),
 		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", w.GetTable().SortColCmd("READY", true), false),

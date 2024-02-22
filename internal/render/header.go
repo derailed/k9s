@@ -34,18 +34,24 @@ func (h HeaderColumn) Clone() HeaderColumn {
 // Header represents a table header.
 type Header []HeaderColumn
 
+func (h Header) Clear() Header {
+	h = h[:0]
+
+	return h
+}
+
 // Clone duplicates a header.
 func (h Header) Clone() Header {
-	header := make(Header, len(h))
-	for i, c := range h {
-		header[i] = c.Clone()
+	he := make(Header, 0, len(h))
+	for _, h := range h {
+		he = append(he, h.Clone())
 	}
 
-	return header
+	return he
 }
 
 // Labelize returns a new Header based on labels.
-func (h Header) Labelize(cols []int, labelCol int, rr RowEvents) Header {
+func (h Header) Labelize(cols []int, labelCol int, rr *RowEvents) Header {
 	header := make(Header, 0, len(cols)+1)
 	for _, c := range cols {
 		header = append(header, h[c])
@@ -129,8 +135,8 @@ func (h Header) Diff(header Header) bool {
 	return !reflect.DeepEqual(h, header)
 }
 
-// Columns return header as a collection of strings.
-func (h Header) Columns(wide bool) []string {
+// ColumnNames return header col names
+func (h Header) ColumnNames(wide bool) []string {
 	if len(h) == 0 {
 		return nil
 	}

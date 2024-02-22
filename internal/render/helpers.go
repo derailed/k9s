@@ -24,6 +24,17 @@ import (
 	"k8s.io/apimachinery/pkg/util/duration"
 )
 
+// ExtractImages returns a collection of container images.
+// !!BOZO!! If this has any legs?? enable scans on other container types.
+func ExtractImages(spec *v1.PodSpec) []string {
+	ii := make([]string, 0, len(spec.Containers))
+	for _, c := range spec.Containers {
+		ii = append(ii, c.Image)
+	}
+
+	return ii
+}
+
 func computeVulScore(m metav1.ObjectMeta, spec *v1.PodSpec) string {
 	if vul.ImgScanner == nil || vul.ImgScanner.ShouldExcludes(m) {
 		return "0"
@@ -95,7 +106,7 @@ func Happy(ns string, h Header, r Row) bool {
 		return true
 	}
 	validCol := h.IndexOf("VALID", true)
-	if validCol < 0 {
+	if validCol < 0 || validCol >= len(r.Fields) {
 		return true
 	}
 

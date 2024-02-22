@@ -242,7 +242,7 @@ func (l *Log) Stop() {
 func (l *Log) Name() string { return logTitle }
 
 func (l *Log) bindKeys() {
-	l.logs.Actions().Set(ui.KeyActions{
+	l.logs.Actions().Bulk(ui.KeyMap{
 		ui.Key0:         ui.NewKeyAction("tail", l.sinceCmd(-1), true),
 		ui.Key1:         ui.NewKeyAction("head", l.sinceCmd(0), true),
 		ui.Key2:         ui.NewKeyAction("1m", l.sinceCmd(60), true),
@@ -262,9 +262,7 @@ func (l *Log) bindKeys() {
 		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(l.app.Flash(), l.logs.TextView), true),
 	})
 	if l.model.HasDefaultContainer() {
-		l.logs.Actions().Set(ui.KeyActions{
-			ui.KeyA: ui.NewKeyAction("Toggle AllContainers", l.toggleAllContainers, true),
-		})
+		l.logs.Actions().Add(ui.KeyA, ui.NewKeyAction("Toggle AllContainers", l.toggleAllContainers, true))
 	}
 }
 

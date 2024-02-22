@@ -33,8 +33,8 @@ func NewDaemonSet(gvr client.GVR) ResourceViewer {
 	return &d
 }
 
-func (d *DaemonSet) bindKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (d *DaemonSet) bindKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
 		ui.KeyShiftD: ui.NewKeyAction("Sort Desired", d.GetTable().SortColCmd("DESIRED", true), false),
 		ui.KeyShiftC: ui.NewKeyAction("Sort Current", d.GetTable().SortColCmd("CURRENT", true), false),
 		ui.KeyShiftR: ui.NewKeyAction("Sort Ready", d.GetTable().SortColCmd(readyCol, true), false),

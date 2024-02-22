@@ -112,7 +112,7 @@ func defaultEnv(c *client.Config, path string, header render.Header, row *render
 	if row == nil {
 		return env
 	}
-	for _, col := range header.Columns(true) {
+	for _, col := range header.ColumnNames(true) {
 		i := header.IndexOf(col, true)
 		if i >= 0 && i < len(row.Fields) {
 			env["COL-"+col] = row.Fields[i]
@@ -230,26 +230,28 @@ func decorateCpuMemHeaderRows(app *App, data *render.TableData) {
 		if len(check) == 0 {
 			continue
 		}
-		for _, re := range data.RowEvents {
+		data.RowEvents.Range(func(_ int, re render.RowEvent) bool {
 			if re.Row.Fields[colIndex] == render.NAValue {
-				continue
+				return true
 			}
 			n, err := strconv.Atoi(re.Row.Fields[colIndex])
 			if err != nil {
-				continue
+				return true
 			}
 			if n > 100 {
 				n = 100
 			}
 			severity := app.Config.K9s.Thresholds.LevelFor(check, n)
 			if severity == config.SeverityLow {
-				continue
+				return true
 			}
 			color := app.Config.K9s.Thresholds.SeverityColor(check, n)
 			if len(color) > 0 {
 				re.Row.Fields[colIndex] = "[" + color + "::b]" + re.Row.Fields[colIndex]
 			}
-		}
+
+			return true
+		})
 	}
 }
 

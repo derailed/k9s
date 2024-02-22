@@ -82,7 +82,7 @@ var Registry = map[string]ResourceMeta{
 		DAO:      &dao.Alias{},
 		Renderer: &render.Alias{},
 	},
-	// !!BOZO!!
+	// !!BOZO!! Popeye
 	//"popeye": {
 	//	DAO:      &dao.Popeye{},
 	//	Renderer: &render.Popeye{},
@@ -128,7 +128,11 @@ var Registry = map[string]ResourceMeta{
 	},
 	"v1/secrets": {
 		DAO:      &dao.Secret{},
-		Renderer: &render.Generic{},
+		Renderer: &render.Secret{},
+	},
+	"v1/configmaps": {
+		DAO:      &dao.ConfigMap{},
+		Renderer: &render.ConfigMap{},
 	},
 
 	// Apps...

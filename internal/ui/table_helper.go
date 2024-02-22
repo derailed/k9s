@@ -118,21 +118,22 @@ func formatCell(field string, padding int) string {
 }
 
 func filterToast(data *render.TableData) *render.TableData {
-	validX := data.Header.IndexOf("VALID", true)
-	if validX == -1 {
+	validCol := data.Header.IndexOf("VALID", true)
+	if validCol == -1 {
 		return data
 	}
 
 	toast := render.TableData{
 		Header:    data.Header,
-		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
+		RowEvents: render.NewRowEvents(data.RowEvents.Len()),
 		Namespace: data.Namespace,
 	}
-	for _, re := range data.RowEvents {
-		if re.Row.Fields[validX] != "" {
-			toast.RowEvents = append(toast.RowEvents, re)
+	data.RowEvents.Range(func(_ int, re render.RowEvent) bool {
+		if re.Row.Fields[validCol] != "" {
+			toast.RowEvents.Add(re)
 		}
-	}
+		return true
+	})
 
 	return &toast
 }
@@ -148,13 +149,13 @@ func rxFilter(q string, inverse bool, data *render.TableData) (*render.TableData
 
 	filtered := render.TableData{
 		Header:    data.Header,
-		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
+		RowEvents: render.NewRowEvents(data.RowEvents.Len()),
 		Namespace: data.Namespace,
 	}
 	ageIndex := data.Header.IndexOf("AGE", true)
 
 	const spacer = " "
-	for _, re := range data.RowEvents {
+	data.RowEvents.Range(func(_ int, re render.RowEvent) bool {
 		ff := re.Row.Fields
 		if ageIndex >= 0 && ageIndex+1 <= len(ff) {
 			ff = append(ff[0:ageIndex], ff[ageIndex+1:]...)
@@ -162,28 +163,36 @@ func rxFilter(q string, inverse bool, data *render.TableData) (*render.TableData
 		fields := strings.Join(ff, spacer)
 		if (inverse && !rx.MatchString(fields)) ||
 			((!inverse) && rx.MatchString(fields)) {
-			filtered.RowEvents = append(filtered.RowEvents, re)
+			filtered.RowEvents.Add(re)
 		}
-	}
+
+		return true
+	})
 
 	return &filtered, nil
 }
 
 func fuzzyFilter(q string, data *render.TableData) *render.TableData {
 	q = strings.TrimSpace(q)
-	ss := make([]string, 0, len(data.RowEvents))
-	for _, re := range data.RowEvents {
+	ss := make([]string, 0, data.RowEvents.Len())
+	data.RowEvents.Range(func(_ int, re render.RowEvent) bool {
 		ss = append(ss, re.Row.ID)
-	}
+		return true
+	})
 
 	filtered := render.TableData{
 		Header:    data.Header,
-		RowEvents: make(render.RowEvents, 0, len(data.RowEvents)),
+		RowEvents: render.NewRowEvents(data.RowEvents.Len()),
 		Namespace: data.Namespace,
 	}
 	mm := fuzzy.Find(q, ss)
 	for _, m := range mm {
-		filtered.RowEvents = append(filtered.RowEvents, data.RowEvents[m.Index])
+		re, ok := data.RowEvents.At(m.Index)
+		if !ok {
+			log.Error().Msgf("unable to find event for index in fuzzfilter: %d", m.Index)
+			continue
+		}
+		filtered.RowEvents.Add(re)
 	}
 
 	return &filtered

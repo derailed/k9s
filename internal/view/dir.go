@@ -60,8 +60,8 @@ func (d *Dir) dirContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, internal.KeyPath, d.path)
 }
 
-func (d *Dir) bindDangerousKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (d *Dir) bindDangerousKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
 		ui.KeyA: ui.NewKeyActionWithOpts("Apply", d.applyCmd, ui.ActionOpts{
 			Visible:   true,
 			Dangerous: true,
@@ -77,14 +77,14 @@ func (d *Dir) bindDangerousKeys(aa ui.KeyActions) {
 	})
 }
 
-func (d *Dir) bindKeys(aa ui.KeyActions) {
+func (d *Dir) bindKeys(aa *ui.KeyActions) {
 	// !!BOZO!! Lame!
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
 	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL, tcell.KeyCtrlD, tcell.KeyCtrlZ)
 	if !d.App().Config.K9s.IsReadOnly() {
 		d.bindDangerousKeys(aa)
 	}
-	aa.Add(ui.KeyActions{
+	aa.Bulk(ui.KeyMap{
 		ui.KeyY:        ui.NewKeyAction(yamlAction, d.viewCmd, true),
 		tcell.KeyEnter: ui.NewKeyAction("Goto", d.gotoCmd, true),
 	})

@@ -6,21 +6,63 @@ package dao
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	"math"
 	"regexp"
 
+	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
+	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/cli-runtime/pkg/printers"
 )
 
-const defaultServiceAccount = "default"
+const (
+	defaultServiceAccount      = "default"
+	defaultContainerAnnotation = "kubectl.kubernetes.io/default-container"
+)
 
 var (
 	inverseRx = regexp.MustCompile(`\A\!`)
 	fuzzyRx   = regexp.MustCompile(`\A-f\s?([\w-]+)\b`)
 )
+
+// GetDefaultContainer returns a container name if specified in an annotation.
+func GetDefaultContainer(m metav1.ObjectMeta, spec v1.PodSpec) (string, bool) {
+	defaultContainer, ok := m.Annotations[defaultContainerAnnotation]
+	if !ok {
+		return "", false
+	}
+
+	for _, container := range spec.Containers {
+		if container.Name == defaultContainer {
+			return defaultContainer, true
+		}
+	}
+	log.Warn().Msg(defaultContainer + " container  not found. " + defaultContainerAnnotation + " annotation will be ignored")
+
+	return "", false
+}
+
+func extractFQN(o runtime.Object) string {
+	u, ok := o.(*unstructured.Unstructured)
+	if !ok {
+		log.Error().Err(fmt.Errorf("expecting unstructured but got %T", o))
+		return client.NA
+	}
+
+	return FQN(u.GetNamespace(), u.GetName())
+}
+
+// FQN returns a fully qualified resource name.
+func FQN(ns, n string) string {
+	if ns == "" {
+		return n
+	}
+	return ns + "/" + n
+}
 
 func inList(ll []string, s string) bool {
 	for _, l := range ll {

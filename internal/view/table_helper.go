@@ -65,15 +65,12 @@ func saveTable(dir, title, path string, data *render.TableData) (string, error) 
 	}()
 
 	w := csv.NewWriter(out)
-	if err := w.Write(data.Header.Columns(true)); err != nil {
-		return "", err
-	}
+	_ = w.Write(data.ColumnNames(true))
 
-	for _, re := range data.RowEvents {
-		if err := w.Write(re.Row.Fields); err != nil {
-			return "", err
-		}
-	}
+	data.RowEvents.Range(func(_ int, re render.RowEvent) bool {
+		_ = w.Write(re.Row.Fields)
+		return true
+	})
 	w.Flush()
 	if err := w.Error(); err != nil {
 		return "", err

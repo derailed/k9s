@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -41,11 +42,10 @@ type Table struct {
 	gvr        client.GVR
 	sortCol    SortColumn
 	manualSort bool
-	header     render.Header
 	Path       string
 	Extras     string
 	*SelectTable
-	actions     KeyActions
+	actions     *KeyActions
 	cmdBuff     *model.FishBuff
 	styles      *config.Styles
 	viewSetting *config.ViewSetting
@@ -54,6 +54,7 @@ type Table struct {
 	wide        bool
 	toast       bool
 	hasMetrics  bool
+	ctx         context.Context
 }
 
 // NewTable returns a new table view.
@@ -65,10 +66,18 @@ func NewTable(gvr client.GVR) *Table {
 			marks: make(map[string]struct{}),
 		},
 		gvr:     gvr,
-		actions: make(KeyActions),
+		actions: NewKeyActions(),
 		cmdBuff: model.NewFishBuff('/', model.FilterBuffer),
 		sortCol: SortColumn{asc: true},
 	}
+}
+
+func (t *Table) GetContext() context.Context {
+	return t.ctx
+}
+
+func (t *Table) SetContext(ctx context.Context) {
+	t.ctx = ctx
 }
 
 // Init initializes the component.
@@ -129,7 +138,7 @@ func (t *Table) ToggleWide() {
 }
 
 // Actions returns active menu bindings.
-func (t *Table) Actions() KeyActions {
+func (t *Table) Actions() *KeyActions {
 	return t.actions
 }
 
@@ -191,24 +200,31 @@ func (t *Table) SetSortCol(name string, asc bool) {
 }
 
 // Update table content.
-func (t *Table) Update(data *render.TableData, hasMetrics bool) {
-	t.header = data.Header
+func (t *Table) Update(data *render.TableData, hasMetrics bool) *render.TableData {
+	defer func(ti time.Time) {
+		log.Debug().Msgf(">>>>> TABLE-UPDATE <<<< (%s) [%d]", time.Since(ti), data.Count())
+	}(time.Now())
+
 	if t.decorateFn != nil {
 		t.decorateFn(data)
 	}
 	t.hasMetrics = hasMetrics
-	t.doUpdate(t.filtered(data))
-	t.UpdateTitle()
+
+	return t.doUpdate(t.filtered(data))
 }
 
-func (t *Table) doUpdate(data *render.TableData) {
+func (t *Table) doUpdate(data *render.TableData) *render.TableData {
+	defer func(ti time.Time) {
+		log.Debug().Msgf("   >> DO-UPDATE !!! (%s) [%d]", time.Since(ti), data.Count())
+	}(time.Now())
+
 	if client.IsAllNamespaces(data.Namespace) {
-		t.actions[KeyShiftP] = NewKeyAction("Sort Namespace", t.SortColCmd("NAMESPACE", true), false)
+		t.actions.Add(KeyShiftP, NewKeyAction("Sort Namespace", t.SortColCmd("NAMESPACE", true), false))
 	} else {
 		t.actions.Delete(KeyShiftP)
 	}
 
-	cols := t.header.Columns(t.wide)
+	cols := data.ColumnNames(t.wide)
 	if t.viewSetting != nil && len(t.viewSetting.Columns) > 0 {
 		cols = t.viewSetting.Columns
 	}
@@ -236,6 +252,10 @@ func (t *Table) doUpdate(data *render.TableData) {
 		}
 	}
 
+	return custData
+}
+
+func (t *Table) UpdateUI(data, custData *render.TableData) {
 	t.Clear()
 	fg := t.styles.Table().Header.FgColor.Color()
 	bg := t.styles.Table().Header.BgColor.Color()
@@ -270,11 +290,19 @@ func (t *Table) doUpdate(data *render.TableData) {
 
 	pads := make(MaxyPad, len(custData.Header))
 	ComputeMaxColumns(pads, t.sortCol.name, custData.Header, custData.RowEvents)
-	for row, re := range custData.RowEvents {
-		idx, _ := data.RowEvents.FindIndex(re.Row.ID)
-		t.buildRow(row+1, re, data.RowEvents[idx], custData.Header, pads)
-	}
+	custData.RowEvents.Range(func(row int, re render.RowEvent) bool {
+		ore, ok := data.RowEvents.Get(re.Row.ID)
+		if !ok {
+			log.Error().Msgf("unable to find original re: %q", re.Row.ID)
+			return true
+		}
+		t.buildRow(row+1, re, ore, custData.Header, pads)
+
+		return true
+	})
+
 	t.updateSelection(true)
+	t.UpdateTitle()
 }
 
 func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads MaxyPad) {
@@ -315,7 +343,7 @@ func (t *Table) buildRow(r int, re, ore render.RowEvent, h render.Header, pads M
 		cell := tview.NewTableCell(field)
 		cell.SetExpansion(1)
 		cell.SetAlign(h[c].Align)
-		fgColor := color(t.GetModel().GetNamespace(), t.header, ore)
+		fgColor := color(t.GetModel().GetNamespace(), h, ore)
 		cell.SetTextColor(fgColor)
 		if marked {
 			cell.SetTextColor(t.styles.Table().MarkColor.Color())
@@ -364,7 +392,9 @@ func (t *Table) Refresh() {
 		return
 	}
 	// BOZO!! Really want to tell model reload now. Refactor!
-	t.Update(data, t.hasMetrics)
+	cdata := t.Update(data, t.hasMetrics)
+	t.UpdateUI(data, cdata)
+
 }
 
 // GetSelectedRow returns the entire selected row or nil if nothing selected.
@@ -374,7 +404,12 @@ func (t *Table) GetSelectedRow(path string) *render.Row {
 	if !ok {
 		return nil
 	}
-	return &data.RowEvents[i].Row
+	re, ok := data.RowEvents.At(i)
+	if !ok {
+		return nil
+	}
+
+	return &re.Row
 }
 
 // NameColIndex returns the index of the resource name column.
@@ -399,6 +434,10 @@ func (t *Table) AddHeaderCell(col int, h render.HeaderColumn) {
 }
 
 func (t *Table) filtered(data *render.TableData) *render.TableData {
+	defer func(ti time.Time) {
+		log.Debug().Msgf("   >> Filtering !!! (%s) [%d]", time.Since(ti), data.Count())
+	}(time.Now())
+
 	filtered := data
 	if t.toast {
 		filtered = filterToast(data)

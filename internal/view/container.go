@@ -41,11 +41,12 @@ func NewContainer(gvr client.GVR) ResourceViewer {
 func (c *Container) portForwardIndicator(data *render.TableData) {
 	ff := c.App().factory.Forwarders()
 	col := data.IndexOfHeader("PF")
-	for _, re := range data.RowEvents {
+	data.RowEvents.Range(func(_ int, re render.RowEvent) bool {
 		if ff.IsContainerForwarded(c.GetTable().Path, re.Row.ID) {
 			re.Row.Fields[col] = "[orange::b]Ⓕ"
 		}
-	}
+		return true
+	})
 }
 
 func (c *Container) decorateRows(data *render.TableData) {
@@ -55,8 +56,8 @@ func (c *Container) decorateRows(data *render.TableData) {
 // Name returns the component name.
 func (c *Container) Name() string { return containerTitle }
 
-func (c *Container) bindDangerousKeys(aa ui.KeyActions) {
-	aa.Add(ui.KeyActions{
+func (c *Container) bindDangerousKeys(aa *ui.KeyActions) {
+	aa.Bulk(ui.KeyMap{
 		ui.KeyS: ui.NewKeyActionWithOpts(
 			"Shell",
 			c.shellCmd,
@@ -74,19 +75,19 @@ func (c *Container) bindDangerousKeys(aa ui.KeyActions) {
 	})
 }
 
-func (c *Container) bindKeys(aa ui.KeyActions) {
+func (c *Container) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(tcell.KeyCtrlSpace, ui.KeySpace)
 
 	if !c.App().Config.K9s.IsReadOnly() {
 		c.bindDangerousKeys(aa)
 	}
 
-	aa.Add(ui.KeyActions{
+	aa.Bulk(ui.KeyMap{
 		ui.KeyF:      ui.NewKeyAction("Show PortForward", c.showPFCmd, true),
 		ui.KeyShiftF: ui.NewKeyAction("PortForward", c.portFwdCmd, true),
 		ui.KeyShiftT: ui.NewKeyAction("Sort Restart", c.GetTable().SortColCmd("RESTARTS", false), false),
 	})
-	aa.Add(resourceSorters(c.GetTable()))
+	aa.Merge(resourceSorters(c.GetTable()))
 }
 
 func (c *Container) k9sEnv() Env {

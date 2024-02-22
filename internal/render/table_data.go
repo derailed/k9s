@@ -5,21 +5,25 @@ package render
 
 import (
 	"sync"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/rs/zerolog/log"
 )
 
 // TableData tracks a K8s resource for tabular display.
 type TableData struct {
 	Header    Header
-	RowEvents RowEvents
+	RowEvents *RowEvents
 	Namespace string
 	mx        sync.RWMutex
 }
 
 // NewTableData returns a new table.
 func NewTableData() *TableData {
-	return &TableData{}
+	return &TableData{
+		RowEvents: NewRowEvents(10),
+	}
 }
 
 // Empty checks if there are no entries.
@@ -27,7 +31,7 @@ func (t *TableData) Empty() bool {
 	t.mx.RLock()
 	defer t.mx.RUnlock()
 
-	return len(t.RowEvents) == 0
+	return t.RowEvents.Empty()
 }
 
 // Count returns the number of entries.
@@ -35,7 +39,7 @@ func (t *TableData) Count() int {
 	t.mx.RLock()
 	defer t.mx.RUnlock()
 
-	return len(t.RowEvents)
+	return t.RowEvents.Len()
 }
 
 // IndexOfHeader return the index of the header.
@@ -73,11 +77,18 @@ func (t *TableData) Customize(cols []string, wide bool) *TableData {
 
 // Clear clears out the entire table.
 func (t *TableData) Clear() {
-	t.Header, t.RowEvents = Header{}, RowEvents{}
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.Header = t.Header.Clear()
+	t.RowEvents.Clear()
 }
 
 // Clone returns a copy of the table.
 func (t *TableData) Clone() *TableData {
+	t.mx.RLock()
+	defer t.mx.RUnlock()
+
 	return &TableData{
 		Header:    t.Header.Clone(),
 		RowEvents: t.RowEvents.Clone(),
@@ -85,35 +96,60 @@ func (t *TableData) Clone() *TableData {
 	}
 }
 
+func (t *TableData) GetHeader() Header {
+	t.mx.RLock()
+	defer t.mx.RUnlock()
+
+	return t.Header
+}
+
+func (t *TableData) ColumnNames(w bool) []string {
+	t.mx.RLock()
+	defer t.mx.RUnlock()
+
+	return t.Header.ColumnNames(w)
+}
+
 // SetHeader sets table header.
 func (t *TableData) SetHeader(ns string, h Header) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
 	t.Namespace, t.Header = ns, h
 }
 
 // Update computes row deltas and update the table data.
 func (t *TableData) Update(rows Rows) {
+	defer func(ti time.Time) {
+		log.Debug().Msgf("  TDA-UPDATE  [%d] (%s)", len(rows), time.Since(ti))
+	}(time.Now())
+
 	empty := t.Empty()
 	kk := make(map[string]struct{}, len(rows))
+	var blankDelta DeltaRow
 	t.mx.Lock()
 	{
-		var blankDelta DeltaRow
 		for _, row := range rows {
 			kk[row.ID] = struct{}{}
 			if empty {
-				t.RowEvents = append(t.RowEvents, NewRowEvent(EventAdd, row))
+				t.RowEvents.Add(NewRowEvent(EventAdd, row))
 				continue
 			}
 			if index, ok := t.RowEvents.FindIndex(row.ID); ok {
-				delta := NewDeltaRow(t.RowEvents[index].Row, row, t.Header)
+				ev, ok := t.RowEvents.At(index)
+				if !ok {
+					continue
+				}
+				delta := NewDeltaRow(ev.Row, row, t.Header)
 				if delta.IsBlank() {
-					t.RowEvents[index].Kind, t.RowEvents[index].Deltas = EventUnchanged, blankDelta
-					t.RowEvents[index].Row = row
+					ev.Kind, ev.Deltas, ev.Row = EventUnchanged, blankDelta, row
+					t.RowEvents.Set(index, ev)
 				} else {
-					t.RowEvents[index] = NewRowEventWithDeltas(row, delta)
+					t.RowEvents.Set(index, NewRowEventWithDeltas(row, delta))
 				}
 				continue
 			}
-			t.RowEvents = append(t.RowEvents, NewRowEvent(EventAdd, row))
+			t.RowEvents.Add(NewRowEvent(EventAdd, row))
 		}
 	}
 	t.mx.Unlock()
@@ -127,14 +163,17 @@ func (t *TableData) Update(rows Rows) {
 func (t *TableData) Delete(newKeys map[string]struct{}) {
 	t.mx.Lock()
 	{
-		var victims []string
-		for _, re := range t.RowEvents {
-			if _, ok := newKeys[re.Row.ID]; !ok {
-				victims = append(victims, re.Row.ID)
+		victims := make([]string, 0, 10)
+		t.RowEvents.Range(func(_ int, e RowEvent) bool {
+			if _, ok := newKeys[e.Row.ID]; !ok {
+				victims = append(victims, e.Row.ID)
+			} else {
+				delete(newKeys, e.Row.ID)
 			}
-		}
+			return true
+		})
 		for _, id := range victims {
-			t.RowEvents = t.RowEvents.Delete(id)
+			t.RowEvents.Delete(id)
 		}
 	}
 	t.mx.Unlock()

@@ -5,7 +5,6 @@ package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/ui"
 )
 
 func loadCustomViewers() MetaViewers {
@@ -91,9 +90,10 @@ func miscViewers(vv MetaViewers) {
 	vv[client.NewGVR("pulses")] = MetaViewer{
 		viewerFn: NewPulse,
 	}
-	vv[client.NewGVR("popeye")] = MetaViewer{
-		viewerFn: NewPopeye,
-	}
+	// !!BOZO!! Popeye
+	// vv[client.NewGVR("popeye")] = MetaViewer{
+	// 	viewerFn: NewPopeye,
+	// }
 	vv[client.NewGVR("sanitizer")] = MetaViewer{
 		viewerFn: NewSanitizer,
 	}
@@ -155,11 +155,6 @@ func batchViewers(vv MetaViewers) {
 
 func extViewers(vv MetaViewers) {
 	vv[client.NewGVR("apiextensions.k8s.io/v1/customresourcedefinitions")] = MetaViewer{
-		enterFn: showCRD,
+		viewerFn: NewCRD,
 	}
-}
-
-func showCRD(app *App, _ ui.Tabular, _ client.GVR, path string) {
-	_, crd := client.Namespaced(path)
-	app.gotoResource(crd, "", false)
 }

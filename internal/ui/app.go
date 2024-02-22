@@ -22,7 +22,7 @@ type App struct {
 
 	Main    *Pages
 	flash   *model.Flash
-	actions KeyActions
+	actions *KeyActions
 	views   map[string]tview.Primitive
 	cmdBuff *model.FishBuff
 	running bool
@@ -33,7 +33,7 @@ type App struct {
 func NewApp(cfg *config.Config, context string) *App {
 	a := App{
 		Application:  tview.NewApplication(),
-		actions:      make(KeyActions),
+		actions:      NewKeyActions(),
 		Configurator: Configurator{Config: cfg, Styles: config.NewStyles()},
 		Main:         NewPages(),
 		flash:        model.NewFlash(model.DefaultFlashDelay),
@@ -139,13 +139,13 @@ func (a *App) Conn() client.Connection {
 }
 
 func (a *App) bindKeys() {
-	a.actions = KeyActions{
+	a.actions = NewKeyActionsFromMap(KeyMap{
 		KeyColon:       NewKeyAction("Cmd", a.activateCmd, false),
 		tcell.KeyCtrlR: NewKeyAction("Redraw", a.redrawCmd, false),
 		tcell.KeyCtrlC: NewKeyAction("Quit", a.quitCmd, false),
 		tcell.KeyCtrlU: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 		tcell.KeyCtrlQ: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
-	}
+	})
 }
 
 // BailOut exits the application.
@@ -156,6 +156,7 @@ func (a *App) BailOut() {
 
 // ResetPrompt reset the prompt model and marks buffer as active.
 func (a *App) ResetPrompt(m PromptModel) {
+	m.ClearText(false)
 	a.Prompt().SetModel(m)
 	a.SetFocus(a.Prompt())
 	m.SetActive(true)
@@ -206,20 +207,17 @@ func (a *App) InCmdMode() bool {
 
 // HasAction checks if key matches a registered binding.
 func (a *App) HasAction(key tcell.Key) (KeyAction, bool) {
-	act, ok := a.actions[key]
-	return act, ok
+	return a.actions.Get(key)
 }
 
 // GetActions returns a collection of actions.
-func (a *App) GetActions() KeyActions {
+func (a *App) GetActions() *KeyActions {
 	return a.actions
 }
 
 // AddActions returns the application actions.
-func (a *App) AddActions(aa KeyActions) {
-	for k, v := range aa {
-		a.actions[k] = v
-	}
+func (a *App) AddActions(aa *KeyActions) {
+	a.actions.Merge(aa)
 }
 
 // Views return the application root views.

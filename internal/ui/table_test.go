@@ -32,9 +32,10 @@ func TestTableUpdate(t *testing.T) {
 	v.Init(makeContext())
 
 	data := makeTableData()
-	v.Update(data, false)
+	cdata := v.Update(data, false)
+	v.UpdateUI(cdata, data)
 
-	assert.Equal(t, len(data.RowEvents)+1, v.GetRowCount())
+	assert.Equal(t, data.RowEvents.Len()+1, v.GetRowCount())
 	assert.Equal(t, len(data.Header), v.GetColumnCount())
 }
 
@@ -43,7 +44,9 @@ func TestTableSelection(t *testing.T) {
 	v.Init(makeContext())
 	m := &mockModel{}
 	v.SetModel(m)
-	v.Update(m.Peek(), false)
+	data := m.Peek()
+	cdata := v.Update(data, false)
+	v.UpdateUI(cdata, data)
 	v.SelectRow(1, 0, true)
 
 	r := v.GetSelectedRow("r1")
@@ -105,7 +108,7 @@ func makeTableData() *render.TableData {
 		render.HeaderColumn{Name: "B"},
 		render.HeaderColumn{Name: "C"},
 	}
-	t.RowEvents = render.RowEvents{
+	t.RowEvents = render.NewRowEventsWithEvts(
 		render.RowEvent{
 			Row: render.Row{
 				ID:     "r1",
@@ -118,7 +121,7 @@ func makeTableData() *render.TableData {
 				Fields: render.Fields{"blee", "duh", "zorg"},
 			},
 		},
-	}
+	)
 
 	return t
 }

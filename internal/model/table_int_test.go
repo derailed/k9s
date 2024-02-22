@@ -36,7 +36,7 @@ func TestTableReconcile(t *testing.T) {
 	assert.Nil(t, err)
 	data := ta.Peek()
 	assert.Equal(t, 23, len(data.Header))
-	assert.Equal(t, 1, len(data.RowEvents))
+	assert.Equal(t, 1, data.RowEvents.Len())
 	assert.Equal(t, client.NamespaceAll, data.Namespace)
 }
 

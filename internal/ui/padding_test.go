@@ -19,7 +19,7 @@ func TestMaxColumn(t *testing.T) {
 		"ascii col 0": {
 			&render.TableData{
 				Header: render.Header{render.HeaderColumn{Name: "A"}, render.HeaderColumn{Name: "B"}},
-				RowEvents: render.RowEvents{
+				RowEvents: render.NewRowEventsWithEvts(
 					render.RowEvent{
 						Row: render.Row{
 							Fields: render.Fields{"hello", "world"},
@@ -30,7 +30,7 @@ func TestMaxColumn(t *testing.T) {
 							Fields: render.Fields{"yo", "mama"},
 						},
 					},
-				},
+				),
 			},
 			"A",
 			MaxyPad{6, 6},
@@ -38,7 +38,7 @@ func TestMaxColumn(t *testing.T) {
 		"ascii col 1": {
 			&render.TableData{
 				Header: render.Header{render.HeaderColumn{Name: "A"}, render.HeaderColumn{Name: "B"}},
-				RowEvents: render.RowEvents{
+				RowEvents: render.NewRowEventsWithEvts(
 					render.RowEvent{
 						Row: render.Row{
 							Fields: render.Fields{"hello", "world"},
@@ -49,7 +49,7 @@ func TestMaxColumn(t *testing.T) {
 							Fields: render.Fields{"yo", "mama"},
 						},
 					},
-				},
+				),
 			},
 			"B",
 			MaxyPad{6, 6},
@@ -57,7 +57,7 @@ func TestMaxColumn(t *testing.T) {
 		"non_ascii": {
 			&render.TableData{
 				Header: render.Header{render.HeaderColumn{Name: "A"}, render.HeaderColumn{Name: "B"}},
-				RowEvents: render.RowEvents{
+				RowEvents: render.NewRowEventsWithEvts(
 					render.RowEvent{
 						Row: render.Row{
 							Fields: render.Fields{"Hello World lord of ipsums 😅", "world"},
@@ -68,7 +68,7 @@ func TestMaxColumn(t *testing.T) {
 							Fields: render.Fields{"o", "mama"},
 						},
 					},
-				},
+				),
 			},
 			"A",
 			MaxyPad{32, 6},
@@ -121,7 +121,7 @@ func TestPad(t *testing.T) {
 func BenchmarkMaxColumn(b *testing.B) {
 	table := render.TableData{
 		Header: render.Header{render.HeaderColumn{Name: "A"}, render.HeaderColumn{Name: "B"}},
-		RowEvents: render.RowEvents{
+		RowEvents: render.NewRowEventsWithEvts(
 			render.RowEvent{
 				Row: render.Row{
 					Fields: render.Fields{"hello", "world"},
@@ -132,7 +132,7 @@ func BenchmarkMaxColumn(b *testing.B) {
 					Fields: render.Fields{"yo", "mama"},
 				},
 			},
-		},
+		),
 	}
 
 	pads := make(MaxyPad, len(table.Header))

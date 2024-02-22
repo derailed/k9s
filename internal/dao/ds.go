@@ -140,7 +140,7 @@ func podLogs(ctx context.Context, sel map[string]string, opts *LogOptions) ([]Lo
 	}
 	opts.MultiPods = true
 
-	po := Pod{}
+	var po Pod
 	po.Init(f, client.NewGVR("v1/pods"))
 
 	outs := make([]LogChan, 0, len(oo))

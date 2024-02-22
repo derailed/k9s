@@ -299,7 +299,7 @@ func TestHeaderColumns(t *testing.T) {
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, u.h.Columns(u.wide))
+			assert.Equal(t, u.e, u.h.ColumnNames(u.wide))
 		})
 	}
 }

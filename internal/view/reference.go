@@ -38,10 +38,10 @@ func (r *Reference) Init(ctx context.Context) error {
 	return nil
 }
 
-func (r *Reference) bindKeys(aa ui.KeyActions) {
+func (r *Reference) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, tcell.KeyCtrlS, tcell.KeyCtrlSpace, ui.KeySpace)
 	aa.Delete(tcell.KeyCtrlW, tcell.KeyCtrlL, tcell.KeyCtrlZ)
-	aa.Add(ui.KeyActions{
+	aa.Bulk(ui.KeyMap{
 		tcell.KeyEnter: ui.NewKeyAction("Goto", r.gotoCmd, true),
 		ui.KeyShiftV:   ui.NewKeyAction("Sort GVR", r.GetTable().SortColCmd("GVR", true), false),
 	})

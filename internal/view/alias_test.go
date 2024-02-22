@@ -131,7 +131,7 @@ func makeTableData() *render.TableData {
 			render.HeaderColumn{Name: "COMMAND"},
 			render.HeaderColumn{Name: "APIGROUP"},
 		},
-		RowEvents: render.RowEvents{
+		RowEvents: render.NewRowEventsWithEvts(
 			render.RowEvent{
 				Row: render.Row{
 					ID:     "r1",
@@ -144,6 +144,6 @@ func makeTableData() *render.TableData {
 					Fields: render.Fields{"fred", "duh", "zorg"},
 				},
 			},
-		},
+		),
 	}
 }

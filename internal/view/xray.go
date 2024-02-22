@@ -117,7 +117,7 @@ func (x *Xray) ExtraHints() map[string]string {
 func (x *Xray) SetInstance(string) {}
 
 func (x *Xray) bindKeys() {
-	x.Actions().Add(ui.KeyActions{
+	x.Actions().Bulk(ui.KeyMap{
 		ui.KeySlash:     ui.NewSharedKeyAction("Filter Mode", x.activateCmd, false),
 		tcell.KeyEscape: ui.NewSharedKeyAction("Filter Reset", x.resetCmd, false),
 		tcell.KeyEnter:  ui.NewKeyAction("Goto", x.gotoCmd, true),
@@ -130,7 +130,7 @@ func (x *Xray) keyEntered() {
 }
 
 func (x *Xray) refreshActions() {
-	aa := make(ui.KeyActions)
+	aa := ui.NewKeyActions()
 
 	defer func() {
 		if err := pluginActions(x, aa); err != nil {
@@ -140,7 +140,7 @@ func (x *Xray) refreshActions() {
 			log.Warn().Err(err).Msg("HotKeys load failed")
 		}
 
-		x.Actions().Add(aa)
+		x.Actions().Merge(aa)
 		x.app.Menu().HydrateMenu(x.Hints())
 	}()
 
@@ -162,14 +162,16 @@ func (x *Xray) refreshActions() {
 	}
 
 	if client.Can(x.meta.Verbs, "edit") {
-		aa[ui.KeyE] = ui.NewKeyAction("Edit", x.editCmd, true)
+		aa.Add(ui.KeyE, ui.NewKeyAction("Edit", x.editCmd, true))
 	}
 	if client.Can(x.meta.Verbs, "delete") {
-		aa[tcell.KeyCtrlD] = ui.NewKeyAction("Delete", x.deleteCmd, true)
+		aa.Add(tcell.KeyCtrlD, ui.NewKeyAction("Delete", x.deleteCmd, true))
 	}
 	if !dao.IsK9sMeta(x.meta) {
-		aa[ui.KeyY] = ui.NewKeyAction(yamlAction, x.viewCmd, true)
-		aa[ui.KeyD] = ui.NewKeyAction("Describe", x.describeCmd, true)
+		aa.Bulk(ui.KeyMap{
+			ui.KeyY: ui.NewKeyAction(yamlAction, x.viewCmd, true),
+			ui.KeyD: ui.NewKeyAction("Describe", x.describeCmd, true),
+		})
 	}
 
 	switch gvr {
@@ -177,16 +179,20 @@ func (x *Xray) refreshActions() {
 		x.Actions().Delete(tcell.KeyEnter)
 	case "containers":
 		x.Actions().Delete(tcell.KeyEnter)
-		aa[ui.KeyS] = ui.NewKeyAction("Shell", x.shellCmd, true)
-		aa[ui.KeyL] = ui.NewKeyAction("Logs", x.logsCmd(false), true)
-		aa[ui.KeyP] = ui.NewKeyAction("Logs Previous", x.logsCmd(true), true)
+		aa.Bulk(ui.KeyMap{
+			ui.KeyS: ui.NewKeyAction("Shell", x.shellCmd, true),
+			ui.KeyL: ui.NewKeyAction("Logs", x.logsCmd(false), true),
+			ui.KeyP: ui.NewKeyAction("Logs Previous", x.logsCmd(true), true),
+		})
 	case "v1/pods":
-		aa[ui.KeyS] = ui.NewKeyAction("Shell", x.shellCmd, true)
-		aa[ui.KeyA] = ui.NewKeyAction("Attach", x.attachCmd, true)
-		aa[ui.KeyL] = ui.NewKeyAction("Logs", x.logsCmd(false), true)
-		aa[ui.KeyP] = ui.NewKeyAction("Logs Previous", x.logsCmd(true), true)
+		aa.Bulk(ui.KeyMap{
+			ui.KeyS: ui.NewKeyAction("Shell", x.shellCmd, true),
+			ui.KeyA: ui.NewKeyAction("Attach", x.attachCmd, true),
+			ui.KeyL: ui.NewKeyAction("Logs", x.logsCmd(false), true),
+			ui.KeyP: ui.NewKeyAction("Logs Previous", x.logsCmd(true), true),
+		})
 	}
-	x.Actions().Add(aa)
+	x.Actions().Merge(aa)
 }
 
 // GetSelectedPath returns the current selection as string.

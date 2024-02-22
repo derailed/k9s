@@ -41,10 +41,10 @@ func NewImageScan(gvr client.GVR) ResourceViewer {
 // Name returns the component name.
 func (s *ImageScan) Name() string { return imgScanTitle }
 
-func (c *ImageScan) bindKeys(aa ui.KeyActions) {
+func (c *ImageScan) bindKeys(aa *ui.KeyActions) {
 	aa.Delete(ui.KeyShiftA, ui.KeyShiftN, tcell.KeyCtrlZ, tcell.KeyCtrlW)
 
-	aa.Add(ui.KeyActions{
+	aa.Bulk(ui.KeyMap{
 		ui.KeyShiftL: ui.NewKeyAction("Sort Lib", c.GetTable().SortColCmd("LIBRARY", false), true),
 		ui.KeyShiftS: ui.NewKeyAction("Sort Severity", c.GetTable().SortColCmd("SEVERITY", false), true),
 		ui.KeyShiftF: ui.NewKeyAction("Sort Fixed-in", c.GetTable().SortColCmd("FIXED-IN", false), true),

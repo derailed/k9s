@@ -112,6 +112,7 @@ func (s *Stack) Pop() (Component, bool) {
 	s.mx.Lock()
 	{
 		c = s.components[len(s.components)-1]
+		c.Stop()
 		s.components = s.components[:len(s.components)-1]
 	}
 	s.mx.Unlock()

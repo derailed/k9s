@@ -48,7 +48,7 @@ func TestTableNew(t *testing.T) {
 		render.HeaderColumn{Name: "FRED"},
 		render.HeaderColumn{Name: "AGE", Time: true, Decorator: render.AgeDecorator},
 	}
-	data.RowEvents = render.RowEvents{
+	data.RowEvents = render.NewRowEventsWithEvts(
 		render.RowEvent{
 			Row: render.Row{
 				Fields: render.Fields{"ns1", "a", "10", "3m"},
@@ -59,10 +59,11 @@ func TestTableNew(t *testing.T) {
 				Fields: render.Fields{"ns1", "b", "15", "1m"},
 			},
 		},
-	}
+	)
 	data.Namespace = ""
+	cdata := v.Update(data, false)
+	v.UpdateUI(cdata, data)
 
-	v.Update(data, false)
 	assert.Equal(t, 3, v.GetRowCount())
 }
 
@@ -71,6 +72,7 @@ func TestTableViewFilter(t *testing.T) {
 	assert.NoError(t, v.Init(makeContext()))
 	v.SetModel(&mockTableModel{})
 	v.Refresh()
+
 	v.CmdBuff().SetActive(true)
 	v.CmdBuff().SetText("blee", "")
 
@@ -80,7 +82,7 @@ func TestTableViewFilter(t *testing.T) {
 func TestTableViewSort(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
 	assert.NoError(t, v.Init(makeContext()))
-	v.SetModel(&mockTableModel{})
+	v.SetModel(new(mockTableModel))
 
 	uu := map[string]struct {
 		sortCol  string
@@ -168,7 +170,7 @@ func makeTableData() *render.TableData {
 		render.HeaderColumn{Name: "FRED"},
 		render.HeaderColumn{Name: "AGE", Time: true},
 	}
-	t.RowEvents = render.RowEvents{
+	t.RowEvents = render.NewRowEventsWithEvts(
 		render.RowEvent{
 			Row: render.Row{
 				Fields: render.Fields{"ns1", "r3", "10", "3y125d"},
@@ -190,7 +192,7 @@ func makeTableData() *render.TableData {
 				Fields: render.Fields{"ns1", "r0", "15", "10s"},
 			},
 		},
-	}
+	)
 
 	return t
 }

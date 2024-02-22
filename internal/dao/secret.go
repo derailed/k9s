@@ -15,13 +15,13 @@ import (
 
 // Secret represents a secret K8s resource.
 type Secret struct {
-	Table
+	Resource
 	decode bool
 }
 
 // Describe describes a secret that can be encoded or decoded.
 func (s *Secret) Describe(path string) (string, error) {
-	encodedDescription, err := s.Table.Describe(path)
+	encodedDescription, err := s.Generic.Describe(path)
 
 	if err != nil {
 		return "", err
@@ -51,13 +51,13 @@ func (s *Secret) Decode(encodedDescription, path string) (string, error) {
 	dataEndIndex := strings.Index(encodedDescription, "====")
 
 	if dataEndIndex == -1 {
-		return "", fmt.Errorf("Unable to find data section in secret description")
+		return "", fmt.Errorf("unable to find data section in secret description")
 	}
 
 	dataEndIndex += 4
 
 	if dataEndIndex >= len(encodedDescription) {
-		return "", fmt.Errorf("Data section in secret description is invalid")
+		return "", fmt.Errorf("data section in secret description is invalid")
 	}
 
 	// Remove the encoded part from k8s's describe API

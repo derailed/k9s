@@ -24,11 +24,11 @@ func TestTableDataCustomize(t *testing.T) {
 					render.HeaderColumn{Name: "B"},
 					render.HeaderColumn{Name: "C"},
 				},
-				RowEvents: render.RowEvents{
-					{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-					{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-					{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-				},
+				RowEvents: render.NewRowEventsWithEvts(
+					render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+				),
 			},
 			cols: []string{"A", "B", "C"},
 			e: &render.TableData{
@@ -38,11 +38,11 @@ func TestTableDataCustomize(t *testing.T) {
 					render.HeaderColumn{Name: "B"},
 					render.HeaderColumn{Name: "C"},
 				},
-				RowEvents: render.RowEvents{
-					{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-					{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-					{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-				},
+				RowEvents: render.NewRowEventsWithEvts(
+					render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+				),
 			},
 		},
 		"wide-col": {
@@ -53,11 +53,11 @@ func TestTableDataCustomize(t *testing.T) {
 					render.HeaderColumn{Name: "B", Wide: true},
 					render.HeaderColumn{Name: "C"},
 				},
-				RowEvents: render.RowEvents{
-					{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-					{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-					{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-				},
+				RowEvents: render.NewRowEventsWithEvts(
+					render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+				),
 			},
 			cols: []string{"A", "B", "C"},
 			e: &render.TableData{
@@ -67,11 +67,11 @@ func TestTableDataCustomize(t *testing.T) {
 					render.HeaderColumn{Name: "B", Wide: false},
 					render.HeaderColumn{Name: "C"},
 				},
-				RowEvents: render.RowEvents{
-					{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-					{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-					{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-				},
+				RowEvents: render.NewRowEventsWithEvts(
+					render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+				),
 			},
 		},
 		"wide": {
@@ -82,11 +82,11 @@ func TestTableDataCustomize(t *testing.T) {
 					render.HeaderColumn{Name: "B", Wide: true},
 					render.HeaderColumn{Name: "C"},
 				},
-				RowEvents: render.RowEvents{
-					{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-					{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-					{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-				},
+				RowEvents: render.NewRowEventsWithEvts(
+					render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+				),
 			},
 			wide: true,
 			cols: []string{"A", "C"},
@@ -97,11 +97,11 @@ func TestTableDataCustomize(t *testing.T) {
 					render.HeaderColumn{Name: "C"},
 					render.HeaderColumn{Name: "B", Wide: true},
 				},
-				RowEvents: render.RowEvents{
-					{Row: render.Row{ID: "A", Fields: render.Fields{"1", "3", "2"}}},
-					{Row: render.Row{ID: "B", Fields: render.Fields{"0", "3", "2"}}},
-					{Row: render.Row{ID: "C", Fields: render.Fields{"10", "3", "2"}}},
-				},
+				RowEvents: render.NewRowEventsWithEvts(
+					render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "3", "2"}}},
+					render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "3", "2"}}},
+					render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "3", "2"}}},
+				),
 			},
 		},
 	}
@@ -127,11 +127,11 @@ func TestTableDataDiff(t *testing.T) {
 					render.HeaderColumn{Name: "B"},
 					render.HeaderColumn{Name: "C"},
 				},
-				RowEvents: render.RowEvents{
-					{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-					{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-					{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-				},
+				RowEvents: render.NewRowEventsWithEvts(
+					render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+				),
 			},
 			e: true,
 		},
@@ -143,11 +143,11 @@ func TestTableDataDiff(t *testing.T) {
 					render.HeaderColumn{Name: "B"},
 					render.HeaderColumn{Name: "C"},
 				},
-				RowEvents: render.RowEvents{
-					{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-					{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-					{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-				},
+				RowEvents: render.NewRowEventsWithEvts(
+					render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+				),
 			},
 			t2: &render.TableData{
 				Namespace: "fred",
@@ -156,11 +156,11 @@ func TestTableDataDiff(t *testing.T) {
 					render.HeaderColumn{Name: "B"},
 					render.HeaderColumn{Name: "C"},
 				},
-				RowEvents: render.RowEvents{
-					{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-					{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-					{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-				},
+				RowEvents: render.NewRowEventsWithEvts(
+					render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+				),
 			},
 		},
 		"ns-diff": {
@@ -171,11 +171,11 @@ func TestTableDataDiff(t *testing.T) {
 					render.HeaderColumn{Name: "B"},
 					render.HeaderColumn{Name: "C"},
 				},
-				RowEvents: render.RowEvents{
-					{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-					{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-					{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-				},
+				RowEvents: render.NewRowEventsWithEvts(
+					render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+				),
 			},
 			t2: &render.TableData{
 				Namespace: "blee",
@@ -184,11 +184,11 @@ func TestTableDataDiff(t *testing.T) {
 					render.HeaderColumn{Name: "B"},
 					render.HeaderColumn{Name: "C"},
 				},
-				RowEvents: render.RowEvents{
-					{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-					{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-					{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-				},
+				RowEvents: render.NewRowEventsWithEvts(
+					render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+				),
 			},
 			e: true,
 		},
@@ -200,11 +200,11 @@ func TestTableDataDiff(t *testing.T) {
 					render.HeaderColumn{Name: "D"},
 					render.HeaderColumn{Name: "C"},
 				},
-				RowEvents: render.RowEvents{
-					{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-					{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-					{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-				},
+				RowEvents: render.NewRowEventsWithEvts(
+					render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+				),
 			},
 			t2: &render.TableData{
 				Namespace: "fred",
@@ -213,11 +213,11 @@ func TestTableDataDiff(t *testing.T) {
 					render.HeaderColumn{Name: "B"},
 					render.HeaderColumn{Name: "C"},
 				},
-				RowEvents: render.RowEvents{
-					{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-					{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-					{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-				},
+				RowEvents: render.NewRowEventsWithEvts(
+					render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+				),
 			},
 			e: true,
 		},
@@ -229,11 +229,11 @@ func TestTableDataDiff(t *testing.T) {
 					render.HeaderColumn{Name: "B"},
 					render.HeaderColumn{Name: "C"},
 				},
-				RowEvents: render.RowEvents{
-					{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-					{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-					{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-				},
+				RowEvents: render.NewRowEventsWithEvts(
+					render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+				),
 			},
 			t2: &render.TableData{
 				Namespace: "fred",
@@ -242,11 +242,11 @@ func TestTableDataDiff(t *testing.T) {
 					render.HeaderColumn{Name: "B"},
 					render.HeaderColumn{Name: "C"},
 				},
-				RowEvents: render.RowEvents{
-					{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-					{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-					{Row: render.Row{ID: "C", Fields: render.Fields{"100", "2", "3"}}},
-				},
+				RowEvents: render.NewRowEventsWithEvts(
+					render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+					render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"100", "2", "3"}}},
+				),
 			},
 			e: true,
 		},
@@ -262,81 +262,80 @@ func TestTableDataDiff(t *testing.T) {
 
 func TestTableDataUpdate(t *testing.T) {
 	uu := map[string]struct {
-		re render.RowEvents
-		rr render.Rows
-		e  render.RowEvents
+		re, e *render.RowEvents
+		rr    render.Rows
 	}{
 		"no-change": {
-			re: render.RowEvents{
-				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-			},
+			re: render.NewRowEventsWithEvts(
+				render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+				render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+				render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+			),
 			rr: render.Rows{
 				render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}},
 				render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}},
 				render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}},
 			},
-			e: render.RowEvents{
-				{Kind: render.EventUnchanged, Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-				{Kind: render.EventUnchanged, Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-				{Kind: render.EventUnchanged, Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-			},
+			e: render.NewRowEventsWithEvts(
+				render.RowEvent{Kind: render.EventUnchanged, Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+				render.RowEvent{Kind: render.EventUnchanged, Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+				render.RowEvent{Kind: render.EventUnchanged, Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+			),
 		},
 		"add": {
-			re: render.RowEvents{
-				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-			},
+			re: render.NewRowEventsWithEvts(
+				render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+				render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+				render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+			),
 			rr: render.Rows{
 				render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}},
 				render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}},
 				render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}},
 				render.Row{ID: "D", Fields: render.Fields{"10", "2", "3"}},
 			},
-			e: render.RowEvents{
-				{Kind: render.EventUnchanged, Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-				{Kind: render.EventUnchanged, Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-				{Kind: render.EventUnchanged, Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-				{Kind: render.EventAdd, Row: render.Row{ID: "D", Fields: render.Fields{"10", "2", "3"}}},
-			},
+			e: render.NewRowEventsWithEvts(
+				render.RowEvent{Kind: render.EventUnchanged, Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+				render.RowEvent{Kind: render.EventUnchanged, Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+				render.RowEvent{Kind: render.EventUnchanged, Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+				render.RowEvent{Kind: render.EventAdd, Row: render.Row{ID: "D", Fields: render.Fields{"10", "2", "3"}}},
+			),
 		},
 		"delete": {
-			re: render.RowEvents{
-				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-			},
+			re: render.NewRowEventsWithEvts(
+				render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+				render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+				render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+			),
 			rr: render.Rows{
 				render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}},
 				render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}},
 			},
-			e: render.RowEvents{
-				{Kind: render.EventUnchanged, Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-				{Kind: render.EventUnchanged, Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-			},
+			e: render.NewRowEventsWithEvts(
+				render.RowEvent{Kind: render.EventUnchanged, Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+				render.RowEvent{Kind: render.EventUnchanged, Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+			),
 		},
 		"update": {
-			re: render.RowEvents{
-				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-			},
+			re: render.NewRowEventsWithEvts(
+				render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+				render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+				render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+			),
 			rr: render.Rows{
 				render.Row{ID: "A", Fields: render.Fields{"10", "2", "3"}},
 				render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}},
 				render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}},
 			},
-			e: render.RowEvents{
-				{
+			e: render.NewRowEventsWithEvts(
+				render.RowEvent{
 					Kind:   render.EventUpdate,
 					Row:    render.Row{ID: "A", Fields: render.Fields{"10", "2", "3"}},
 					Deltas: render.DeltaRow{"1", "", ""},
 				},
-				{Kind: render.EventUnchanged, Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-				{Kind: render.EventUnchanged, Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-			},
+				render.RowEvent{Kind: render.EventUnchanged, Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+				render.RowEvent{Kind: render.EventUnchanged, Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+			),
 		},
 	}
 
@@ -353,34 +352,33 @@ func TestTableDataUpdate(t *testing.T) {
 
 func TestTableDataDelete(t *testing.T) {
 	uu := map[string]struct {
-		re render.RowEvents
-		kk map[string]struct{}
-		e  render.RowEvents
+		re, e *render.RowEvents
+		kk    map[string]struct{}
 	}{
 		"ordered": {
-			re: render.RowEvents{
-				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-			},
+			re: render.NewRowEventsWithEvts(
+				render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+				render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+				render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+			),
 			kk: map[string]struct{}{"A": {}, "C": {}},
-			e: render.RowEvents{
-				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-			},
+			e: render.NewRowEventsWithEvts(
+				render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+				render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+			),
 		},
 		"unordered": {
-			re: render.RowEvents{
-				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-				{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
-				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-				{Row: render.Row{ID: "D", Fields: render.Fields{"10", "2", "3"}}},
-			},
+			re: render.NewRowEventsWithEvts(
+				render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+				render.RowEvent{Row: render.Row{ID: "B", Fields: render.Fields{"0", "2", "3"}}},
+				render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+				render.RowEvent{Row: render.Row{ID: "D", Fields: render.Fields{"10", "2", "3"}}},
+			),
 			kk: map[string]struct{}{"C": {}, "A": {}},
-			e: render.RowEvents{
-				{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
-				{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
-			},
+			e: render.NewRowEventsWithEvts(
+				render.RowEvent{Row: render.Row{ID: "A", Fields: render.Fields{"1", "2", "3"}}},
+				render.RowEvent{Row: render.Row{ID: "C", Fields: render.Fields{"10", "2", "3"}}},
+			),
 		},
 	}
 

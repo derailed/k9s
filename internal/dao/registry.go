@@ -107,7 +107,9 @@ func AccessorFor(f Factory, gvr client.GVR) (Accessor, error) {
 		client.NewGVR("batch/v1beta1/cronjobs"): &CronJob{},
 		client.NewGVR("batch/v1/jobs"):          &Job{},
 		client.NewGVR("v1/namespaces"):          &Namespace{},
-		// !!BOZO!!
+		client.NewGVR("v1/secrets"):             &Secret{},
+		client.NewGVR("v1/configmap"):           &ConfigMap{},
+		// !!BOZO!! Popeye
 		//client.NewGVR("popeye"):                 &Popeye{},
 		client.NewGVR("helm"):         &HelmChart{},
 		client.NewGVR("helm-history"): &HelmHistory{},
@@ -369,6 +371,7 @@ func loadPreferred(f Factory, m ResourceMetas) error {
 	if err != nil {
 		return err
 	}
+	dial.Invalidate()
 	rr, err := dial.ServerPreferredResources()
 	if err != nil {
 		log.Debug().Err(err).Msgf("Failed to load preferred resources")

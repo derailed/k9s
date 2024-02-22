@@ -116,17 +116,6 @@ func (Pod) Header(ns string) Header {
 	return h
 }
 
-// ExtractImages returns a collection of container images.
-// !!BOZO!! If this has any legs?? enable scans on other container types.
-func ExtractImages(spec *v1.PodSpec) []string {
-	ii := make([]string, 0, len(spec.Containers))
-	for _, c := range spec.Containers {
-		ii = append(ii, c.Image)
-	}
-
-	return ii
-}
-
 // Render renders a K8s resource to screen.
 func (p Pod) Render(o interface{}, ns string, row *Row) error {
 	pwm, ok := o.(*PodWithMetrics)

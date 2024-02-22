@@ -139,7 +139,7 @@ func TestAllContainerKeyBinding(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			v := view.NewLog(client.NewGVR("v1/pods"), u.opts)
 			assert.NoError(t, v.Init(makeContext()))
-			_, got := v.Logs().Actions()[ui.KeyA]
+			_, got := v.Logs().Actions().Get(ui.KeyA)
 			assert.Equal(t, u.e, got)
 		})
 	}

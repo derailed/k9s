@@ -14,7 +14,7 @@ import (
 type MaxyPad []int
 
 // ComputeMaxColumns figures out column max size and necessary padding.
-func ComputeMaxColumns(pads MaxyPad, sortColName string, header render.Header, ee render.RowEvents) {
+func ComputeMaxColumns(pads MaxyPad, sortColName string, header render.Header, ee *render.RowEvents) {
 	const colPadding = 1
 
 	for index, h := range header {
@@ -25,15 +25,16 @@ func ComputeMaxColumns(pads MaxyPad, sortColName string, header render.Header, e
 	}
 
 	var row int
-	for _, e := range ee {
-		for index, field := range e.Row.Fields {
+	ee.Range(func(_ int, re render.RowEvent) bool {
+		for index, field := range re.Row.Fields {
 			width := len(field) + colPadding
 			if index < len(pads) && width > pads[index] {
 				pads[index] = width
 			}
 		}
 		row++
-	}
+		return true
+	})
 }
 
 // IsASCII checks if table cell has all ascii characters.

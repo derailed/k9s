@@ -31,17 +31,16 @@ func NewScaleExtender(r ResourceViewer) ResourceViewer {
 	return &s
 }
 
-func (s *ScaleExtender) bindKeys(aa ui.KeyActions) {
+func (s *ScaleExtender) bindKeys(aa *ui.KeyActions) {
 	if s.App().Config.K9s.IsReadOnly() {
 		return
 	}
-	aa.Add(ui.KeyActions{
-		ui.KeyS: ui.NewKeyActionWithOpts("Scale", s.scaleCmd,
-			ui.ActionOpts{
-				Visible:   true,
-				Dangerous: true,
-			}),
-	})
+	aa.Add(ui.KeyS, ui.NewKeyActionWithOpts("Scale", s.scaleCmd,
+		ui.ActionOpts{
+			Visible:   true,
+			Dangerous: true,
+		},
+	))
 }
 
 func (s *ScaleExtender) scaleCmd(evt *tcell.EventKey) *tcell.EventKey {

@@ -152,7 +152,7 @@ func (t *Table) SetNamespace(ns string) {
 
 // InNamespace checks if current namespace matches desired namespace.
 func (t *Table) InNamespace(ns string) bool {
-	return len(t.data.RowEvents) > 0 && t.namespace == ns
+	return !t.data.RowEvents.Empty() && t.namespace == ns
 }
 
 // SetRefreshRate sets model refresh duration.
@@ -184,8 +184,6 @@ func (t *Table) Peek() *render.TableData {
 }
 
 func (t *Table) updater(ctx context.Context) {
-	defer log.Debug().Msgf("TABLE-UPDATER canceled -- %q", t.gvr)
-
 	bf := backoff.NewExponentialBackOff()
 	bf.InitialInterval, bf.MaxElapsedTime = initRefreshRate, maxReaderRetryInterval
 	rate := initRefreshRate
@@ -199,7 +197,7 @@ func (t *Table) updater(ctx context.Context) {
 				return t.refresh(ctx)
 			}, backoff.WithContext(bf, ctx))
 			if err != nil {
-				log.Error().Err(err).Msgf("Retry failed")
+				log.Warn().Err(err).Msgf("reconciler exited")
 				t.fireTableLoadFailed(err)
 				return
 			}
@@ -208,6 +206,10 @@ func (t *Table) updater(ctx context.Context) {
 }
 
 func (t *Table) refresh(ctx context.Context) error {
+	defer func(ti time.Time) {
+		log.Debug().Msgf(">>>> REFRESH!!! [%s] (%s)", t.gvr, time.Since(ti))
+	}(time.Now())
+
 	if !atomic.CompareAndSwapInt32(&t.inUpdate, 0, 1) {
 		log.Debug().Msgf("Dropping update...")
 		return nil
@@ -223,6 +225,10 @@ func (t *Table) refresh(ctx context.Context) error {
 }
 
 func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, error) {
+	defer func(ti time.Time) {
+		log.Debug().Msgf("  LIST ELAPSED (%s)", time.Since(ti))
+	}(time.Now())
+
 	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
 	if !ok {
 		return nil, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
@@ -233,20 +239,25 @@ func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, err
 	if client.IsClusterScoped(t.namespace) {
 		ns = client.BlankNamespace
 	}
+	t.mx.RLock()
 	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
+	t.mx.RUnlock()
 
 	return a.List(ctx, ns)
 }
 
 func (t *Table) reconcile(ctx context.Context) error {
-	t.mx.Lock()
-	defer t.mx.Unlock()
-	meta := resourceMeta(t.gvr)
-	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
 	var (
 		oo  []runtime.Object
 		err error
 	)
+
+	defer func(ti time.Time) {
+		log.Debug().Msgf("  RECONCILE-ELAPSED %s[%d] (%s)", t.gvr, len(oo), time.Since(ti))
+	}(time.Now())
+
+	meta := resourceMeta(t.gvr)
+	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
 	if t.instance == "" {
 		oo, err = t.list(ctx, meta.DAO)
 	} else {
@@ -283,7 +294,6 @@ func (t *Table) reconcile(ctx context.Context) error {
 	}
 	t.data.Update(rows)
 	t.data.SetHeader(t.namespace, meta.Renderer.Header(t.namespace))
-
 	if len(t.data.Header) == 0 {
 		return fmt.Errorf("fail to list resource %s", t.gvr)
 	}
@@ -317,6 +327,10 @@ func (t *Table) fireTableLoadFailed(err error) {
 // Helpers...
 
 func hydrate(ns string, oo []runtime.Object, rr render.Rows, re Renderer) error {
+	defer func(ti time.Time) {
+		log.Debug().Msgf("    HYDRATE ELAPSED [%d] (%s)", len(oo), time.Since(ti))
+	}(time.Now())
+
 	for i, o := range oo {
 		if err := re.Render(o, ns, &rr[i]); err != nil {
 			return err
@@ -339,6 +353,10 @@ type Generic interface {
 }
 
 func genericHydrate(ns string, table *metav1.Table, rr render.Rows, re Renderer) error {
+	defer func(ti time.Time) {
+		log.Debug().Msgf("    GEN-HYDRATE ELAPSED [%d] (%s)", len(table.Rows), time.Since(ti))
+	}(time.Now())
+
 	gr, ok := re.(Generic)
 	if !ok {
 		return fmt.Errorf("expecting generic renderer but got %T", re)
