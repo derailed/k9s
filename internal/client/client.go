@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -499,8 +500,13 @@ func (a *APIClient) CachedDiscovery() (*disk.CachedDiscoveryClient, error) {
 		return nil, err
 	}
 
-	httpCacheDir := filepath.Join(mustHomeDir(), ".kube", "http-cache")
-	discCacheDir := filepath.Join(mustHomeDir(), ".kube", "cache", "discovery", toHostDir(cfg.Host))
+	baseCacheDir := os.Getenv("KUBECACHEDIR")
+	if baseCacheDir == "" {
+		baseCacheDir = filepath.Join(mustHomeDir(), ".kube", "cache")
+	}
+
+	httpCacheDir := filepath.Join(baseCacheDir, "http")
+	discCacheDir := filepath.Join(baseCacheDir, "discovery", toHostDir(cfg.Host))
 
 	c, err := disk.NewCachedDiscoveryClientForConfig(cfg, discCacheDir, httpCacheDir, cacheExpiry)
 	if err != nil {
