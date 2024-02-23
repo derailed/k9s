@@ -125,6 +125,21 @@
               }
             }
           }
+        },
+        "customResourceLinks":{
+          "type": "object",
+          "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "target": {"type": "string"},
+                "labelSelector": {
+                  "type": "object",
+                  "additionalItems": {
+                    "type": "string"
+                  }
+                }
+              }
+          }
         }
       }
     }

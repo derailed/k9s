@@ -647,6 +647,52 @@ views:
 
 ---
 
+## Custom Resource Links
+
+You can change the behaviour of an `<ENTER>` keypress on resources defined by yourself. K9S will prepare selectors using your configuration and show you a browser with selected resources.
+The configuration of custom resource links leverages GVR (Group/Version/Resource) to configure the associated links. If no GVR is found for a view the default rendering will take over (ie what we have now).
+
+There are two types of selectors: `fieldSelector` and `labelSelector`. Both of them are optional and can be used together.
+The `fieldSelector` is used to filter resources by a fields, and the `labelSelector` is used to filter resources by a labels.
+The value of the `fieldSelector` and `labelSelector` is a JSONPath expression executed on the selected resource.
+
+For example, you can define a custom resource link for ExternalSecrets - `<ENTER>` keypress on ExternalSecrets will show your browser with target secret.
+
+```yaml
+k9s:
+  customResourceLinks:
+    external-secrets.io/v1beta1/externalsecrets:
+      target: v1/secrets
+      fieldSelector:
+        # key defines target field to filter
+        # value defines source field to filter (JSONPath executed on selected resource)
+        metadata.name: .spec.target.name
+```
+
+Or if you're using `cluster.k8s.io` resources, you can define a custom resource link to show pods on the machine:
+
+```yaml
+k9s:
+  customResourceLinks:
+    cluster.k8s.io/v1alpha1/machines:
+      target: v1/pods
+      fieldSelector:
+        spec.nodeName: .metadata.name
+```
+
+If you're running your own k8s operator which is spawning jobs for you, you can select pods from your custom resources:
+
+```yaml
+k9s:
+  customResourceLinks:
+    any.io/v1/customresources:
+      target: v1/pods
+      labelSelector:
+        batch.kubernetes.io/job-name: .metadata.name
+```
+
+---
+
 ## Plugins
 
 K9s allows you to extend your command line and tooling by defining your very own cluster commands via plugins. K9s will look at `$XDG_CONFIG_HOME/k9s/plugins.yaml` to locate all available plugins.
@@ -966,6 +1012,7 @@ k9s:
     memory:
       critical: 90
       warn: 70
+  customResourceLinks: {}
 ```
 
 ```yaml
