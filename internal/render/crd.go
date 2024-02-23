@@ -24,7 +24,11 @@ type CustomResourceDefinition struct {
 func (CustomResourceDefinition) Header(string) Header {
 	return Header{
 		HeaderColumn{Name: "NAME"},
+		HeaderColumn{Name: "GROUP"},
+		HeaderColumn{Name: "KIND"},
 		HeaderColumn{Name: "VERSIONS"},
+		HeaderColumn{Name: "SCOPE"},
+		HeaderColumn{Name: "ALIASES", Wide: true},
 		HeaderColumn{Name: "LABELS", Wide: true},
 		HeaderColumn{Name: "VALID", Wide: true},
 		HeaderColumn{Name: "AGE", Time: true},
@@ -44,7 +48,7 @@ func (c CustomResourceDefinition) Render(o interface{}, ns string, r *Row) error
 		return err
 	}
 
-	versions := make([]string, 0, 3)
+	versions := make([]string, 0, len(crd.Spec.Versions))
 	for _, v := range crd.Spec.Versions {
 		if v.Served {
 			n := v.Name
@@ -55,15 +59,19 @@ func (c CustomResourceDefinition) Render(o interface{}, ns string, r *Row) error
 		}
 	}
 	if len(versions) == 0 {
-		log.Warn().Msgf("unable to assert CRD versions for %s", crd.GetName())
+		log.Warn().Msgf("unable to assert CRD versions for %s", crd.Name)
 	}
 
-	r.ID = client.FQN(client.ClusterScope, crd.GetName())
+	r.ID = client.MetaFQN(crd.ObjectMeta)
 	r.Fields = Fields{
-		crd.GetName(),
+		crd.Spec.Names.Plural,
+		crd.Spec.Group,
+		crd.Spec.Names.Kind,
 		naStrings(versions),
+		string(crd.Spec.Scope),
+		naStrings(crd.Spec.Names.ShortNames),
 		mapToIfc(crd.GetLabels()),
-		AsStatus(c.diagnose(crd.GetName(), crd.Spec.Versions)),
+		AsStatus(c.diagnose(crd.Name, crd.Spec.Versions)),
 		ToAge(crd.GetCreationTimestamp()),
 	}
 
