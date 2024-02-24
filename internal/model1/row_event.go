@@ -1,28 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Authors of K9s
 
-package render
+package model1
 
 import (
+	"fmt"
 	"sort"
 )
 
-const (
-	// EventUnchanged notifies listener resource has not changed.
-	EventUnchanged ResEvent = 1 << iota
-
-	// EventAdd notifies listener of a resource was added.
-	EventAdd
-
-	// EventUpdate notifies listener of a resource updated.
-	EventUpdate
-
-	// EventDelete  notifies listener of a resource was deleted.
-	EventDelete
-
-	// EventClear the stack was reset.
-	EventClear
-)
+type ReRangeFn func(int, RowEvent) bool
 
 // ResEvent represents a resource event.
 type ResEvent int
@@ -177,6 +163,7 @@ func (r *RowEvents) Customize(cols []int) *RowEvents {
 	for _, re := range r.events {
 		ee = append(ee, re.Customize(cols))
 	}
+
 	return NewRowEventsWithEvts(ee...)
 }
 
@@ -185,7 +172,6 @@ func (r *RowEvents) Diff(re *RowEvents, ageCol int) bool {
 	if len(r.events) != len(re.events) {
 		return true
 	}
-
 	for i := range r.events {
 		if r.events[i].Diff(re.events[i], ageCol) {
 			return true
@@ -215,14 +201,16 @@ func (r *RowEvents) Upsert(re RowEvent) {
 }
 
 // Delete removes an element by id.
-func (r *RowEvents) Delete(id string) {
-	victim, ok := r.FindIndex(id)
+func (r *RowEvents) Delete(fqn string) error {
+	victim, ok := r.FindIndex(fqn)
 	if !ok {
-		return
+		return fmt.Errorf("unable to delete row with fqn: %q", fqn)
 	}
 	r.events = append(r.events[0:victim], r.events[victim+1:]...)
-	delete(r.index, id)
+	delete(r.index, fqn)
 	r.reindex()
+
+	return nil
 }
 
 func (r *RowEvents) Len() int {
@@ -240,8 +228,6 @@ func (r *RowEvents) Clear() {
 		delete(r.index, k)
 	}
 }
-
-type ReRangeFn func(int, RowEvent) bool
 
 func (r *RowEvents) Range(f ReRangeFn) {
 	for i, e := range r.events {

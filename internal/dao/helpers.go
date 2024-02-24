@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"math"
-	"regexp"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/rs/zerolog/log"
@@ -22,11 +21,6 @@ import (
 const (
 	defaultServiceAccount      = "default"
 	defaultContainerAnnotation = "kubectl.kubernetes.io/default-container"
-)
-
-var (
-	inverseRx = regexp.MustCompile(`\A\!`)
-	fuzzyRx   = regexp.MustCompile(`\A-f\s?([\w-]+)\b`)
 )
 
 // GetDefaultContainer returns a container name if specified in an annotation.
@@ -71,24 +65,6 @@ func inList(ll []string, s string) bool {
 		}
 	}
 	return false
-}
-
-// IsInverseSelector checks if inverse char has been provided.
-func IsInverseSelector(s string) bool {
-	if s == "" {
-		return false
-	}
-	return inverseRx.MatchString(s)
-}
-
-// HasFuzzySelector checks if query is fuzzy.
-func HasFuzzySelector(s string) (string, bool) {
-	mm := fuzzyRx.FindStringSubmatch(s)
-	if len(mm) != 2 {
-		return "", false
-	}
-
-	return mm[1], true
 }
 
 func toPerc(v1, v2 float64) float64 {

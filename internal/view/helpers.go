@@ -16,6 +16,7 @@ import (
 	"github.com/derailed/k9s/internal/config"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/view/cmd"
@@ -106,7 +107,7 @@ func k8sEnv(c *client.Config) Env {
 	}
 }
 
-func defaultEnv(c *client.Config, path string, header render.Header, row *render.Row) Env {
+func defaultEnv(c *client.Config, path string, header model1.Header, row *model1.Row) Env {
 	env := k8sEnv(c)
 	env["NAMESPACE"], env["NAME"] = client.Namespaced(path)
 	if row == nil {
@@ -218,8 +219,8 @@ func fqn(ns, n string) string {
 	return ns + "/" + n
 }
 
-func decorateCpuMemHeaderRows(app *App, data *render.TableData) {
-	for colIndex, header := range data.Header {
+func decorateCpuMemHeaderRows(app *App, data *model1.TableData) {
+	for colIndex, header := range data.Header() {
 		var check string
 		if header.Name == "%CPU/L" {
 			check = "cpu"
@@ -230,7 +231,7 @@ func decorateCpuMemHeaderRows(app *App, data *render.TableData) {
 		if len(check) == 0 {
 			continue
 		}
-		data.RowEvents.Range(func(_ int, re render.RowEvent) bool {
+		data.RowsRange(func(_ int, re model1.RowEvent) bool {
 			if re.Row.Fields[colIndex] == render.NAValue {
 				return true
 			}

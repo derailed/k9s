@@ -12,6 +12,7 @@ import (
 	"time"
 
 	backoff "github.com/cenkalti/backoff/v4"
+	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/rs/zerolog/log"
@@ -66,7 +67,7 @@ func (d *Describe) filter(q string, lines []string) fuzzy.Matches {
 	if q == "" {
 		return nil
 	}
-	if f, ok := dao.HasFuzzySelector(q); ok {
+	if f, ok := internal.IsFuzzySelector(q); ok {
 		return d.fuzzyFilter(strings.TrimSpace(f), lines)
 	}
 	return rxFilter(q, lines)

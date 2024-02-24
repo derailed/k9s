@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Authors of K9s
 
-package render_test
+package model1_test
 
 import (
 	"testing"
 
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestHeaderMapIndices(t *testing.T) {
 	uu := map[string]struct {
-		h1   render.Header
+		h1   model1.Header
 		cols []string
 		wide bool
 		e    []int
@@ -50,7 +50,7 @@ func TestHeaderMapIndices(t *testing.T) {
 
 func TestHeaderIndexOf(t *testing.T) {
 	uu := map[string]struct {
-		h    render.Header
+		h    model1.Header
 		name string
 		wide bool
 		e    int
@@ -83,10 +83,10 @@ func TestHeaderIndexOf(t *testing.T) {
 
 func TestHeaderCustomize(t *testing.T) {
 	uu := map[string]struct {
-		h    render.Header
+		h    model1.Header
 		cols []string
 		wide bool
-		e    render.Header
+		e    model1.Header
 	}{
 		"default": {
 			h: makeHeader(),
@@ -98,58 +98,58 @@ func TestHeaderCustomize(t *testing.T) {
 			e:    makeHeader(),
 		},
 		"reverse": {
-			h: render.Header{
-				render.HeaderColumn{Name: "A"},
-				render.HeaderColumn{Name: "B", Wide: true},
-				render.HeaderColumn{Name: "C"},
+			h: model1.Header{
+				model1.HeaderColumn{Name: "A"},
+				model1.HeaderColumn{Name: "B", Wide: true},
+				model1.HeaderColumn{Name: "C"},
 			},
 			cols: []string{"C", "A"},
-			e: render.Header{
-				render.HeaderColumn{Name: "C"},
-				render.HeaderColumn{Name: "A"},
+			e: model1.Header{
+				model1.HeaderColumn{Name: "C"},
+				model1.HeaderColumn{Name: "A"},
 			},
 		},
 		"reverse-wide": {
-			h: render.Header{
-				render.HeaderColumn{Name: "A"},
-				render.HeaderColumn{Name: "B", Wide: true},
-				render.HeaderColumn{Name: "C"},
+			h: model1.Header{
+				model1.HeaderColumn{Name: "A"},
+				model1.HeaderColumn{Name: "B", Wide: true},
+				model1.HeaderColumn{Name: "C"},
 			},
 			cols: []string{"C", "A"},
 			wide: true,
-			e: render.Header{
-				render.HeaderColumn{Name: "C"},
-				render.HeaderColumn{Name: "A"},
-				render.HeaderColumn{Name: "B", Wide: true},
+			e: model1.Header{
+				model1.HeaderColumn{Name: "C"},
+				model1.HeaderColumn{Name: "A"},
+				model1.HeaderColumn{Name: "B", Wide: true},
 			},
 		},
 		"toggle-wide": {
-			h: render.Header{
-				render.HeaderColumn{Name: "A"},
-				render.HeaderColumn{Name: "B", Wide: true},
-				render.HeaderColumn{Name: "C"},
+			h: model1.Header{
+				model1.HeaderColumn{Name: "A"},
+				model1.HeaderColumn{Name: "B", Wide: true},
+				model1.HeaderColumn{Name: "C"},
 			},
 			cols: []string{"C", "B"},
 			wide: true,
-			e: render.Header{
-				render.HeaderColumn{Name: "C"},
-				render.HeaderColumn{Name: "B", Wide: false},
-				render.HeaderColumn{Name: "A", Wide: true},
+			e: model1.Header{
+				model1.HeaderColumn{Name: "C"},
+				model1.HeaderColumn{Name: "B", Wide: false},
+				model1.HeaderColumn{Name: "A", Wide: true},
 			},
 		},
 		"missing": {
-			h: render.Header{
-				render.HeaderColumn{Name: "A"},
-				render.HeaderColumn{Name: "B", Wide: true},
-				render.HeaderColumn{Name: "C"},
+			h: model1.Header{
+				model1.HeaderColumn{Name: "A"},
+				model1.HeaderColumn{Name: "B", Wide: true},
+				model1.HeaderColumn{Name: "C"},
 			},
 			cols: []string{"BLEE", "A"},
 			wide: true,
-			e: render.Header{
-				render.HeaderColumn{Name: "BLEE"},
-				render.HeaderColumn{Name: "A"},
-				render.HeaderColumn{Name: "B", Wide: true},
-				render.HeaderColumn{Name: "C", Wide: true},
+			e: model1.Header{
+				model1.HeaderColumn{Name: "BLEE"},
+				model1.HeaderColumn{Name: "A"},
+				model1.HeaderColumn{Name: "B", Wide: true},
+				model1.HeaderColumn{Name: "C", Wide: true},
 			},
 		},
 	}
@@ -164,7 +164,7 @@ func TestHeaderCustomize(t *testing.T) {
 
 func TestHeaderDiff(t *testing.T) {
 	uu := map[string]struct {
-		h1, h2 render.Header
+		h1, h2 model1.Header
 		e      bool
 	}{
 		"same": {
@@ -177,37 +177,37 @@ func TestHeaderDiff(t *testing.T) {
 			e:  true,
 		},
 		"differ-wide": {
-			h1: render.Header{
-				render.HeaderColumn{Name: "A"},
-				render.HeaderColumn{Name: "B", Wide: true},
-				render.HeaderColumn{Name: "C"},
+			h1: model1.Header{
+				model1.HeaderColumn{Name: "A"},
+				model1.HeaderColumn{Name: "B", Wide: true},
+				model1.HeaderColumn{Name: "C"},
 			},
-			h2: render.Header{
-				render.HeaderColumn{Name: "A"},
-				render.HeaderColumn{Name: "B"},
-				render.HeaderColumn{Name: "C"},
+			h2: model1.Header{
+				model1.HeaderColumn{Name: "A"},
+				model1.HeaderColumn{Name: "B"},
+				model1.HeaderColumn{Name: "C"},
 			},
 			e: true,
 		},
 		"differ-order": {
-			h1: render.Header{
-				render.HeaderColumn{Name: "A"},
-				render.HeaderColumn{Name: "B", Wide: true},
-				render.HeaderColumn{Name: "C"},
+			h1: model1.Header{
+				model1.HeaderColumn{Name: "A"},
+				model1.HeaderColumn{Name: "B", Wide: true},
+				model1.HeaderColumn{Name: "C"},
 			},
-			h2: render.Header{
-				render.HeaderColumn{Name: "A"},
-				render.HeaderColumn{Name: "C"},
-				render.HeaderColumn{Name: "B", Wide: true},
+			h2: model1.Header{
+				model1.HeaderColumn{Name: "A"},
+				model1.HeaderColumn{Name: "C"},
+				model1.HeaderColumn{Name: "B", Wide: true},
 			},
 			e: true,
 		},
 		"differ-name": {
-			h1: render.Header{
-				render.HeaderColumn{Name: "A"},
+			h1: model1.Header{
+				model1.HeaderColumn{Name: "A"},
 			},
-			h2: render.Header{
-				render.HeaderColumn{Name: "B"},
+			h2: model1.Header{
+				model1.HeaderColumn{Name: "B"},
 			},
 			e: true,
 		},
@@ -223,17 +223,17 @@ func TestHeaderDiff(t *testing.T) {
 
 func TestHeaderHasAge(t *testing.T) {
 	uu := map[string]struct {
-		h      render.Header
+		h      model1.Header
 		age, e bool
 	}{
 		"no-age": {
-			h: render.Header{},
+			h: model1.Header{},
 		},
 		"age": {
-			h: render.Header{
-				render.HeaderColumn{Name: "A"},
-				render.HeaderColumn{Name: "B", Wide: true},
-				render.HeaderColumn{Name: "AGE", Time: true},
+			h: model1.Header{
+				model1.HeaderColumn{Name: "A"},
+				model1.HeaderColumn{Name: "B", Wide: true},
+				model1.HeaderColumn{Name: "AGE", Time: true},
 			},
 			e:   true,
 			age: true,
@@ -251,18 +251,18 @@ func TestHeaderHasAge(t *testing.T) {
 
 func TestHeaderValidColIndex(t *testing.T) {
 	uu := map[string]struct {
-		h render.Header
+		h model1.Header
 		e int
 	}{
 		"none": {
-			h: render.Header{},
+			h: model1.Header{},
 			e: -1,
 		},
 		"valid": {
-			h: render.Header{
-				render.HeaderColumn{Name: "A"},
-				render.HeaderColumn{Name: "B", Wide: true},
-				render.HeaderColumn{Name: "VALID", Wide: true},
+			h: model1.Header{
+				model1.HeaderColumn{Name: "A"},
+				model1.HeaderColumn{Name: "B", Wide: true},
+				model1.HeaderColumn{Name: "VALID", Wide: true},
 			},
 			e: 2,
 		},
@@ -278,12 +278,12 @@ func TestHeaderValidColIndex(t *testing.T) {
 
 func TestHeaderColumns(t *testing.T) {
 	uu := map[string]struct {
-		h    render.Header
+		h    model1.Header
 		wide bool
 		e    []string
 	}{
 		"empty": {
-			h: render.Header{},
+			h: model1.Header{},
 		},
 		"regular": {
 			h: makeHeader(),
@@ -306,10 +306,10 @@ func TestHeaderColumns(t *testing.T) {
 
 func TestHeaderClone(t *testing.T) {
 	uu := map[string]struct {
-		h render.Header
+		h model1.Header
 	}{
 		"empty": {
-			h: render.Header{},
+			h: model1.Header{},
 		},
 		"full": {
 			h: makeHeader(),
@@ -332,10 +332,10 @@ func TestHeaderClone(t *testing.T) {
 // ----------------------------------------------------------------------------
 // Helpers...
 
-func makeHeader() render.Header {
-	return render.Header{
-		render.HeaderColumn{Name: "A"},
-		render.HeaderColumn{Name: "B", Wide: true},
-		render.HeaderColumn{Name: "C"},
+func makeHeader() model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "A"},
+		model1.HeaderColumn{Name: "B", Wide: true},
+		model1.HeaderColumn{Name: "C"},
 	}
 }

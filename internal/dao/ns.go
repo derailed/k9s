@@ -11,13 +11,3 @@ var (
 type Namespace struct {
 	Resource
 }
-
-// // List returns a collection of namespaces.
-// func (n *Namespace) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-// 	oo, err := n.Generic.List(ctx, ns)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return oo, nil
-// }

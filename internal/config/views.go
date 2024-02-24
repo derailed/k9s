@@ -6,6 +6,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/config/json"
@@ -23,6 +24,18 @@ type ViewConfigListener interface {
 type ViewSetting struct {
 	Columns    []string `yaml:"columns"`
 	SortColumn string   `yaml:"sortColumn"`
+}
+
+func (v *ViewSetting) SortCol() (string, bool, error) {
+	if v == nil || v.SortColumn == "" {
+		return "", false, fmt.Errorf("no sort column specified")
+	}
+	tt := strings.Split(v.SortColumn, ":")
+	if len(tt) < 2 {
+		return "", false, fmt.Errorf("invalid sort column spec: %q. must be col-name:asc|desc", v.SortColumn)
+	}
+
+	return tt[0], tt[1] == "desc", nil
 }
 
 // CustomView represents a collection of view customization.

@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tview"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -20,29 +21,27 @@ type ReplicaSet struct {
 }
 
 // ColorerFunc colors a resource row.
-func (r ReplicaSet) ColorerFunc() ColorerFunc {
-	return DefaultColorer
+func (r ReplicaSet) ColorerFunc() model1.ColorerFunc {
+	return model1.DefaultColorer
 }
 
 // Header returns a header row.
-func (ReplicaSet) Header(ns string) Header {
-	h := Header{
-		HeaderColumn{Name: "NAMESPACE"},
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "VS", VS: true},
-		HeaderColumn{Name: "DESIRED", Align: tview.AlignRight},
-		HeaderColumn{Name: "CURRENT", Align: tview.AlignRight},
-		HeaderColumn{Name: "READY", Align: tview.AlignRight},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (ReplicaSet) Header(ns string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAMESPACE"},
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "VS", VS: true},
+		model1.HeaderColumn{Name: "DESIRED", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "CURRENT", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "READY", Align: tview.AlignRight},
+		model1.HeaderColumn{Name: "LABELS", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
-
-	return h
 }
 
 // Render renders a K8s resource to screen.
-func (r ReplicaSet) Render(o interface{}, ns string, row *Row) error {
+func (r ReplicaSet) Render(o interface{}, ns string, row *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected ReplicaSet, but got %T", o)
@@ -54,7 +53,7 @@ func (r ReplicaSet) Render(o interface{}, ns string, row *Row) error {
 	}
 
 	row.ID = client.MetaFQN(rs.ObjectMeta)
-	row.Fields = Fields{
+	row.Fields = model1.Fields{
 		rs.Namespace,
 		rs.Name,
 		computeVulScore(rs.ObjectMeta, &rs.Spec.Template.Spec),

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/derailed/k9s/internal"
 	"github.com/sahilm/fuzzy"
 )
 
@@ -174,7 +175,7 @@ func (l *LogItems) Filter(index int, q string, showTime bool) ([]int, [][]int, e
 	if q == "" {
 		return nil, nil, nil
 	}
-	if f, ok := HasFuzzySelector(q); ok {
+	if f, ok := internal.IsFuzzySelector(q); ok {
 		mm, ii := l.fuzzyFilter(index, f, showTime)
 		return mm, ii, nil
 	}
@@ -200,7 +201,7 @@ func (l *LogItems) fuzzyFilter(index int, q string, showTime bool) ([]int, [][]i
 
 func (l *LogItems) filterLogs(index int, q string, showTime bool) ([]int, [][]int, error) {
 	var invert bool
-	if IsInverseSelector(q) {
+	if internal.IsInverseSelector(q) {
 		invert = true
 		q = q[1:]
 	}

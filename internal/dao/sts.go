@@ -50,11 +50,6 @@ func (s *StatefulSet) ListImages(ctx context.Context, fqn string) ([]string, err
 	return render.ExtractImages(&sts.Spec.Template.Spec), nil
 }
 
-// IsHappy check for happy sts.
-func (s *StatefulSet) IsHappy(sts appsv1.StatefulSet) bool {
-	return sts.Status.Replicas == sts.Status.ReadyReplicas
-}
-
 // Scale a StatefulSet.
 func (s *StatefulSet) Scale(ctx context.Context, path string, replicas int32) error {
 	ns, n := client.Namespaced(path)

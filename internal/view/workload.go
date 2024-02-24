@@ -110,7 +110,7 @@ func (w *Workload) defaultContext(gvr client.GVR, fqn string) context.Context {
 	if fqn != "" {
 		ctx = context.WithValue(ctx, internal.KeyPath, fqn)
 	}
-	if ui.IsLabelSelector(w.GetTable().CmdBuff().GetText()) {
+	if internal.IsLabelSelector(w.GetTable().CmdBuff().GetText()) {
 		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(w.GetTable().CmdBuff().GetText()))
 	}
 	ctx = context.WithValue(ctx, internal.KeyNamespace, client.CleanseNamespace(w.App().Config.ActiveNamespace()))

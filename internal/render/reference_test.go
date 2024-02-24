@@ -6,6 +6,7 @@ package render_test
 import (
 	"testing"
 
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,11 +20,11 @@ func TestReferenceRender(t *testing.T) {
 
 	var (
 		ref = render.Reference{}
-		r   render.Row
+		r   model1.Row
 	)
 	assert.Nil(t, ref.Render(o, "fred", &r))
 	assert.Equal(t, "ns1/blee", r.ID)
-	assert.Equal(t, render.Fields{
+	assert.Equal(t, model1.Fields{
 		"ns1",
 		"blee",
 		"v1/secrets",

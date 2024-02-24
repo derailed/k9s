@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -18,23 +19,23 @@ type PersistentVolumeClaim struct {
 }
 
 // Header returns a header rbw.
-func (PersistentVolumeClaim) Header(ns string) Header {
-	return Header{
-		HeaderColumn{Name: "NAMESPACE"},
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "STATUS"},
-		HeaderColumn{Name: "VOLUME"},
-		HeaderColumn{Name: "CAPACITY", Capacity: true},
-		HeaderColumn{Name: "ACCESS MODES"},
-		HeaderColumn{Name: "STORAGECLASS"},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (PersistentVolumeClaim) Header(ns string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAMESPACE"},
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "STATUS"},
+		model1.HeaderColumn{Name: "VOLUME"},
+		model1.HeaderColumn{Name: "CAPACITY", Capacity: true},
+		model1.HeaderColumn{Name: "ACCESS MODES"},
+		model1.HeaderColumn{Name: "STORAGECLASS"},
+		model1.HeaderColumn{Name: "LABELS", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (p PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
+func (p PersistentVolumeClaim) Render(o interface{}, ns string, r *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected PersistentVolumeClaim, but got %T", o)
@@ -65,7 +66,7 @@ func (p PersistentVolumeClaim) Render(o interface{}, ns string, r *Row) error {
 	}
 
 	r.ID = client.MetaFQN(pvc.ObjectMeta)
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		pvc.Namespace,
 		pvc.Name,
 		string(phase),

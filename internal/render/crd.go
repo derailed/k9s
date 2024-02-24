@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/rs/zerolog/log"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -21,22 +22,22 @@ type CustomResourceDefinition struct {
 }
 
 // Header returns a header rbw.
-func (CustomResourceDefinition) Header(string) Header {
-	return Header{
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "GROUP"},
-		HeaderColumn{Name: "KIND"},
-		HeaderColumn{Name: "VERSIONS"},
-		HeaderColumn{Name: "SCOPE"},
-		HeaderColumn{Name: "ALIASES", Wide: true},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (CustomResourceDefinition) Header(string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "GROUP"},
+		model1.HeaderColumn{Name: "KIND"},
+		model1.HeaderColumn{Name: "VERSIONS"},
+		model1.HeaderColumn{Name: "SCOPE"},
+		model1.HeaderColumn{Name: "ALIASES", Wide: true},
+		model1.HeaderColumn{Name: "LABELS", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (c CustomResourceDefinition) Render(o interface{}, ns string, r *Row) error {
+func (c CustomResourceDefinition) Render(o interface{}, ns string, r *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected CustomResourceDefinition, but got %T", o)
@@ -63,7 +64,7 @@ func (c CustomResourceDefinition) Render(o interface{}, ns string, r *Row) error
 	}
 
 	r.ID = client.MetaFQN(crd.ObjectMeta)
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		crd.Spec.Names.Plural,
 		crd.Spec.Group,
 		crd.Spec.Names.Kind,

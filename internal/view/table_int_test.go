@@ -15,6 +15,7 @@ import (
 	"github.com/derailed/k9s/internal/config/mock"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tview"
@@ -41,26 +42,27 @@ func TestTableNew(t *testing.T) {
 	v := NewTable(client.NewGVR("test"))
 	assert.NoError(t, v.Init(makeContext()))
 
-	data := render.NewTableData()
-	data.Header = render.Header{
-		render.HeaderColumn{Name: "NAMESPACE"},
-		render.HeaderColumn{Name: "NAME", Align: tview.AlignRight},
-		render.HeaderColumn{Name: "FRED"},
-		render.HeaderColumn{Name: "AGE", Time: true, Decorator: render.AgeDecorator},
-	}
-	data.RowEvents = render.NewRowEventsWithEvts(
-		render.RowEvent{
-			Row: render.Row{
-				Fields: render.Fields{"ns1", "a", "10", "3m"},
-			},
+	data := model1.NewTableDataWithRows(
+		client.NewGVR("test"),
+		model1.Header{
+			model1.HeaderColumn{Name: "NAMESPACE"},
+			model1.HeaderColumn{Name: "NAME", Align: tview.AlignRight},
+			model1.HeaderColumn{Name: "FRED"},
+			model1.HeaderColumn{Name: "AGE", Time: true, Decorator: render.AgeDecorator},
 		},
-		render.RowEvent{
-			Row: render.Row{
-				Fields: render.Fields{"ns1", "b", "15", "1m"},
+		model1.NewRowEventsWithEvts(
+			model1.RowEvent{
+				Row: model1.Row{
+					Fields: model1.Fields{"ns1", "a", "10", "3m"},
+				},
 			},
-		},
+			model1.RowEvent{
+				Row: model1.Row{
+					Fields: model1.Fields{"ns1", "b", "15", "1m"},
+				},
+			},
+		),
 	)
-	data.Namespace = ""
 	cdata := v.Update(data, false)
 	v.UpdateUI(cdata, data)
 
@@ -132,9 +134,9 @@ func (t *mockTableModel) SetInstance(string)                 {}
 func (t *mockTableModel) SetLabelFilter(string)              {}
 func (t *mockTableModel) GetLabelFilter() string             { return "" }
 func (t *mockTableModel) Empty() bool                        { return false }
-func (t *mockTableModel) Count() int                         { return 1 }
+func (t *mockTableModel) RowCount() int                      { return 1 }
 func (t *mockTableModel) HasMetrics() bool                   { return true }
-func (t *mockTableModel) Peek() *render.TableData            { return makeTableData() }
+func (t *mockTableModel) Peek() *model1.TableData            { return makeTableData() }
 func (t *mockTableModel) Refresh(context.Context) error      { return nil }
 func (t *mockTableModel) ClusterWide() bool                  { return false }
 func (t *mockTableModel) GetNamespace() string               { return "blee" }
@@ -162,39 +164,39 @@ func (t *mockTableModel) ToYAML(ctx context.Context, path string) (string, error
 func (t *mockTableModel) InNamespace(string) bool      { return true }
 func (t *mockTableModel) SetRefreshRate(time.Duration) {}
 
-func makeTableData() *render.TableData {
-	t := render.NewTableData()
-	t.Header = render.Header{
-		render.HeaderColumn{Name: "NAMESPACE"},
-		render.HeaderColumn{Name: "NAME", Align: tview.AlignRight},
-		render.HeaderColumn{Name: "FRED"},
-		render.HeaderColumn{Name: "AGE", Time: true},
-	}
-	t.RowEvents = render.NewRowEventsWithEvts(
-		render.RowEvent{
-			Row: render.Row{
-				Fields: render.Fields{"ns1", "r3", "10", "3y125d"},
-			},
+func makeTableData() *model1.TableData {
+	return model1.NewTableDataWithRows(
+		client.NewGVR("test"),
+		model1.Header{
+			model1.HeaderColumn{Name: "NAMESPACE"},
+			model1.HeaderColumn{Name: "NAME", Align: tview.AlignRight},
+			model1.HeaderColumn{Name: "FRED"},
+			model1.HeaderColumn{Name: "AGE", Time: true},
 		},
-		render.RowEvent{
-			Row: render.Row{
-				Fields: render.Fields{"ns1", "r2", "15", "2y12d"},
+		model1.NewRowEventsWithEvts(
+			model1.RowEvent{
+				Row: model1.Row{
+					Fields: model1.Fields{"ns1", "r3", "10", "3y125d"},
+				},
 			},
-			Deltas: render.DeltaRow{"", "", "20", ""},
-		},
-		render.RowEvent{
-			Row: render.Row{
-				Fields: render.Fields{"ns1", "r1", "20", "19h"},
+			model1.RowEvent{
+				Row: model1.Row{
+					Fields: model1.Fields{"ns1", "r2", "15", "2y12d"},
+				},
+				Deltas: model1.DeltaRow{"", "", "20", ""},
 			},
-		},
-		render.RowEvent{
-			Row: render.Row{
-				Fields: render.Fields{"ns1", "r0", "15", "10s"},
+			model1.RowEvent{
+				Row: model1.Row{
+					Fields: model1.Fields{"ns1", "r1", "20", "19h"},
+				},
 			},
-		},
+			model1.RowEvent{
+				Row: model1.Row{
+					Fields: model1.Fields{"ns1", "r0", "15", "10s"},
+				},
+			},
+		),
 	)
-
-	return t
 }
 
 func makeContext() context.Context {

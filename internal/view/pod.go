@@ -14,6 +14,7 @@ import (
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
@@ -58,7 +59,7 @@ func NewPod(gvr client.GVR) ResourceViewer {
 	return &p
 }
 
-func (p *Pod) portForwardIndicator(data *render.TableData) {
+func (p *Pod) portForwardIndicator(data *model1.TableData) {
 	ff := p.App().factory.Forwarders()
 
 	defer decorateCpuMemHeaderRows(p.App(), data)
@@ -68,7 +69,7 @@ func (p *Pod) portForwardIndicator(data *render.TableData) {
 	}
 
 	const idc = "[orange::b]Ⓕ"
-	data.RowEvents.Range(func(_ int, re render.RowEvent) bool {
+	data.RowsRange(func(_ int, re model1.RowEvent) bool {
 		if ff.IsPodForwarded(re.Row.ID) {
 			re.Row.Fields[col] = idc
 		}

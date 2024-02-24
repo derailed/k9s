@@ -11,6 +11,7 @@ import (
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/port"
 	"github.com/derailed/k9s/internal/render"
 	"github.com/derailed/k9s/internal/ui"
@@ -38,10 +39,10 @@ func NewContainer(gvr client.GVR) ResourceViewer {
 	return &c
 }
 
-func (c *Container) portForwardIndicator(data *render.TableData) {
+func (c *Container) portForwardIndicator(data *model1.TableData) {
 	ff := c.App().factory.Forwarders()
 	col := data.IndexOfHeader("PF")
-	data.RowEvents.Range(func(_ int, re render.RowEvent) bool {
+	data.RowsRange(func(_ int, re model1.RowEvent) bool {
 		if ff.IsContainerForwarded(c.GetTable().Path, re.Row.ID) {
 			re.Row.Fields[col] = "[orange::b]Ⓕ"
 		}
@@ -49,7 +50,7 @@ func (c *Container) portForwardIndicator(data *render.TableData) {
 	})
 }
 
-func (c *Container) decorateRows(data *render.TableData) {
+func (c *Container) decorateRows(data *model1.TableData) {
 	decorateCpuMemHeaderRows(c.App(), data)
 }
 
@@ -93,7 +94,7 @@ func (c *Container) bindKeys(aa *ui.KeyActions) {
 func (c *Container) k9sEnv() Env {
 	path := c.GetTable().GetSelectedItem()
 	row := c.GetTable().GetSelectedRow(path)
-	env := defaultEnv(c.App().Conn().Config(), path, c.GetTable().GetModel().Peek().Header, row)
+	env := defaultEnv(c.App().Conn().Config(), path, c.GetTable().GetModel().Peek().Header(), row)
 	env["NAMESPACE"], env["POD"] = client.Namespaced(c.GetTable().Path)
 
 	return env

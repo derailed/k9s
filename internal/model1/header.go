@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Authors of K9s
 
-package render
+package model1
 
 import (
 	"reflect"
@@ -99,10 +99,7 @@ func (h Header) Customize(cols []string, wide bool) Header {
 		idx := h.IndexOf(c, true)
 		if idx == -1 {
 			log.Warn().Msgf("Column %s is not available on this resource", c)
-			col := HeaderColumn{
-				Name: c,
-			}
-			cc = append(cc, col)
+			cc = append(cc, HeaderColumn{Name: c})
 			continue
 		}
 		xx[idx] = struct{}{}

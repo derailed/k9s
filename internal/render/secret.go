@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 )
 
@@ -20,19 +21,19 @@ type Secret struct {
 }
 
 // Header returns a header rbw.
-func (Secret) Header(string) Header {
-	return Header{
-		HeaderColumn{Name: "NAMESPACE"},
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "TYPE"},
-		HeaderColumn{Name: "DATA"},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (Secret) Header(string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAMESPACE"},
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "TYPE"},
+		model1.HeaderColumn{Name: "DATA"},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (n Secret) Render(o interface{}, _ string, r *Row) error {
+func (n Secret) Render(o interface{}, _ string, r *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected Secret, but got %T", o)
@@ -44,7 +45,7 @@ func (n Secret) Render(o interface{}, _ string, r *Row) error {
 	}
 
 	r.ID = client.FQN(sec.Namespace, sec.Name)
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		sec.Namespace,
 		sec.Name,
 		string(sec.Type),

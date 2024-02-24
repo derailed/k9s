@@ -142,6 +142,7 @@ func (a *App) bindKeys() {
 	a.actions = NewKeyActionsFromMap(KeyMap{
 		KeyColon:       NewKeyAction("Cmd", a.activateCmd, false),
 		tcell.KeyCtrlR: NewKeyAction("Redraw", a.redrawCmd, false),
+		tcell.KeyCtrlH: NewKeyAction("Hijack", a.keepCmd, false),
 		tcell.KeyCtrlC: NewKeyAction("Quit", a.quitCmd, false),
 		tcell.KeyCtrlU: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 		tcell.KeyCtrlQ: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
@@ -165,6 +166,15 @@ func (a *App) ResetPrompt(m PromptModel) {
 // ResetCmd clear out user command.
 func (a *App) ResetCmd() {
 	a.cmdBuff.Reset()
+}
+
+func (a *App) keepCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if err := a.Config.Save(); err != nil {
+		a.Flash().Err(err)
+	}
+	a.Flash().Info("cluster config saved")
+
+	return nil
 }
 
 // ActivateCmd toggle command mode.

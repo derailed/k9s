@@ -51,11 +51,6 @@ func (d *DaemonSet) ListImages(ctx context.Context, fqn string) ([]string, error
 	return render.ExtractImages(&ds.Spec.Template.Spec), nil
 }
 
-// IsHappy check for happy deployments.
-func (d *DaemonSet) IsHappy(ds appsv1.DaemonSet) bool {
-	return ds.Status.DesiredNumberScheduled == ds.Status.CurrentNumberScheduled
-}
-
 // Restart a DaemonSet rollout.
 func (d *DaemonSet) Restart(ctx context.Context, path string) error {
 	o, err := d.getFactory().Get("apps/v1/daemonsets", path, true, labels.Everything())

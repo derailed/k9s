@@ -9,7 +9,7 @@ import (
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tview"
 	"github.com/sahilm/fuzzy"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -100,21 +100,6 @@ type Filterer interface {
 	SetLabelFilter(map[string]string)
 }
 
-// Renderer represents a resource renderer.
-type Renderer interface {
-	// IsGeneric identifies a generic handler.
-	IsGeneric() bool
-
-	// Render converts raw resources to tabular data.
-	Render(o interface{}, ns string, row *render.Row) error
-
-	// Header returns the resource header.
-	Header(ns string) render.Header
-
-	// ColorerFunc returns a row colorer function.
-	ColorerFunc() render.ColorerFunc
-}
-
 // Cruder performs crud operations.
 type Cruder interface {
 	// List returns a collection of resources.
@@ -149,6 +134,6 @@ type TreeRenderer interface {
 // ResourceMeta represents model info about a resource.
 type ResourceMeta struct {
 	DAO          dao.Accessor
-	Renderer     Renderer
+	Renderer     model1.Renderer
 	TreeRenderer TreeRenderer
 }

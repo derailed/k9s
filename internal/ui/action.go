@@ -77,8 +77,9 @@ func NewKeyActionsFromMap(mm KeyMap) *KeyActions {
 }
 
 func (a *KeyActions) Get(key tcell.Key) (KeyAction, bool) {
-	// a.mx.RLock()
-	// defer a.mx.RUnlock()
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+
 	v, ok := a.actions[key]
 
 	return v, ok
@@ -97,8 +98,9 @@ func (a *KeyActions) Reset(aa *KeyActions) {
 type RangeFn func(tcell.Key, KeyAction)
 
 func (a *KeyActions) Range(f RangeFn) {
-	// a.mx.Lock()
-	// defer a.mx.Unlock()
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+
 	for k, v := range a.actions {
 		f(k, v)
 	}
@@ -175,8 +177,8 @@ func (a *KeyActions) Delete(kk ...tcell.Key) {
 
 // Hints returns a collection of hints.
 func (a *KeyActions) Hints() model.MenuHints {
-	// a.mx.RLock()
-	// defer a.mx.RUnlock()
+	a.mx.RLock()
+	defer a.mx.RUnlock()
 
 	kk := make([]int, 0, len(a.actions))
 	for k := range a.actions {

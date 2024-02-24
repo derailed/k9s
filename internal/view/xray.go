@@ -460,7 +460,7 @@ func (x *Xray) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (x *Xray) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 	if x.CmdBuff().IsActive() {
-		if ui.IsLabelSelector(x.CmdBuff().GetText()) {
+		if internal.IsLabelSelector(x.CmdBuff().GetText()) {
 			x.Start()
 		}
 		x.CmdBuff().SetActive(false)
@@ -483,16 +483,16 @@ func (x *Xray) gotoCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 func (x *Xray) filter(root *xray.TreeNode) *xray.TreeNode {
 	q := x.CmdBuff().GetText()
-	if x.CmdBuff().Empty() || ui.IsLabelSelector(q) {
+	if x.CmdBuff().Empty() || internal.IsLabelSelector(q) {
 		return root
 	}
 
 	x.UpdateTitle()
-	if f, ok := dao.HasFuzzySelector(q); ok {
+	if f, ok := internal.IsFuzzySelector(q); ok {
 		return root.Filter(f, fuzzyFilter)
 	}
 
-	if dao.IsInverseSelector(q) {
+	if internal.IsInverseSelector(q) {
 		return root.Filter(q, rxInverseFilter)
 	}
 
@@ -667,7 +667,7 @@ func (x *Xray) styleTitle() string {
 	if buff == "" {
 		return title
 	}
-	if ui.IsLabelSelector(buff) {
+	if internal.IsLabelSelector(buff) {
 		buff = ui.TrimLabelSelector(buff)
 	}
 

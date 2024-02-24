@@ -6,7 +6,7 @@ package model
 import (
 	"strings"
 
-	"github.com/derailed/k9s/internal/dao"
+	"github.com/derailed/k9s/internal"
 	"github.com/sahilm/fuzzy"
 )
 
@@ -111,7 +111,7 @@ func (t *Text) filter(q string, lines []string) fuzzy.Matches {
 	if q == "" {
 		return nil
 	}
-	if f, ok := dao.HasFuzzySelector(q); ok {
+	if f, ok := internal.IsFuzzySelector(q); ok {
 		return t.fuzzyFilter(strings.TrimSpace(f), lines)
 	}
 	return rxFilter(q, lines)

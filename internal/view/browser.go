@@ -17,7 +17,7 @@ import (
 	"github.com/derailed/k9s/internal/config/data"
 	"github.com/derailed/k9s/internal/dao"
 	"github.com/derailed/k9s/internal/model"
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/k9s/internal/ui/dialog"
 	"github.com/derailed/tcell/v2"
@@ -64,7 +64,7 @@ func (b *Browser) Init(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	colorerFn := render.DefaultColorer
+	colorerFn := model1.DefaultColorer
 	if r, ok := model.Registry[b.GVR().String()]; ok && r.Renderer != nil {
 		colorerFn = r.Renderer.ColorerFunc()
 	}
@@ -192,7 +192,7 @@ func (b *Browser) BufferChanged(_, _ string) {}
 
 // BufferCompleted indicates input was accepted.
 func (b *Browser) BufferCompleted(text, _ string) {
-	if ui.IsLabelSelector(text) {
+	if internal.IsLabelSelector(text) {
 		b.GetModel().SetLabelFilter(ui.TrimLabelSelector(text))
 	} else {
 		b.GetModel().SetLabelFilter("")
@@ -208,7 +208,7 @@ func (b *Browser) BufferActive(state bool, k model.BufferKind) {
 		log.Error().Err(err).Msgf("Refresh failed for %s", b.GVR())
 	}
 	data := b.GetModel().Peek()
-	custData := b.Update(data, b.App().Conn().HasMetrics())
+	cdata := b.Update(data, b.App().Conn().HasMetrics())
 	b.app.QueueUpdateDraw(func() {
 		if b.getUpdating() {
 			log.Debug().Msgf("!!!!BUFF-ACTIVE CANCEL!!!!")
@@ -217,7 +217,7 @@ func (b *Browser) BufferActive(state bool, k model.BufferKind) {
 		log.Debug().Msgf("!!!!BUFF-ACTIVE UI!!!!")
 		b.setUpdating(true)
 		defer b.setUpdating(false)
-		b.UpdateUI(data, custData)
+		b.UpdateUI(cdata, data)
 		if b.GetRowCount() > 1 {
 			b.App().filterHistory.Push(b.CmdBuff().GetText())
 		}
@@ -274,9 +274,9 @@ func (b *Browser) Aliases() map[string]struct{} {
 // Model Protocol...
 
 // TableDataChanged notifies view new data is available.
-func (b *Browser) TableDataChanged(data *render.TableData) {
+func (b *Browser) TableDataChanged(data *model1.TableData) {
 	defer func(ti time.Time) {
-		log.Debug().Msgf("----> TABLE DATA CHANGED!!! (%s) [%d]", time.Since(ti), data.Count())
+		log.Debug().Msgf("----> TABLE DATA CHANGED!!! (%s) [%d]", time.Since(ti), data.RowCount())
 	}(time.Now())
 
 	var cancel context.CancelFunc
@@ -288,10 +288,10 @@ func (b *Browser) TableDataChanged(data *render.TableData) {
 		return
 	}
 
-	custData := b.Update(data, b.app.Conn().HasMetrics())
+	cdata := b.Update(data, b.app.Conn().HasMetrics())
 	b.app.QueueUpdateDraw(func() {
 		defer func(ti time.Time) {
-			log.Debug().Msgf("----> Q UPDATE!!! (%s) [%d]", time.Since(ti), custData.Count())
+			log.Debug().Msgf("----> Q UPDATE!!! (%s) [%d]", time.Since(ti), cdata.RowCount())
 		}(time.Now())
 
 		if b.getUpdating() {
@@ -300,7 +300,7 @@ func (b *Browser) TableDataChanged(data *render.TableData) {
 		b.setUpdating(true)
 		defer b.setUpdating(false)
 		b.refreshActions()
-		b.UpdateUI(data, custData)
+		b.UpdateUI(cdata, data)
 	})
 }
 
@@ -348,7 +348,7 @@ func (b *Browser) resetCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	b.CmdBuff().Reset()
-	if ui.IsLabelSelector(b.CmdBuff().GetText()) {
+	if internal.IsLabelSelector(b.CmdBuff().GetText()) {
 		b.Start()
 	}
 	b.Refresh()
@@ -362,7 +362,7 @@ func (b *Browser) filterCmd(evt *tcell.EventKey) *tcell.EventKey {
 	}
 
 	b.CmdBuff().SetActive(false)
-	if ui.IsLabelSelector(b.CmdBuff().GetText()) {
+	if internal.IsLabelSelector(b.CmdBuff().GetText()) {
 		b.Start()
 		return nil
 	}
@@ -525,7 +525,7 @@ func (b *Browser) defaultContext() context.Context {
 	ctx := context.WithValue(context.Background(), internal.KeyFactory, b.app.factory)
 	ctx = context.WithValue(ctx, internal.KeyGVR, b.GVR())
 	ctx = context.WithValue(ctx, internal.KeyPath, b.Path)
-	if ui.IsLabelSelector(b.CmdBuff().GetText()) {
+	if internal.IsLabelSelector(b.CmdBuff().GetText()) {
 		ctx = context.WithValue(ctx, internal.KeyLabels, ui.TrimLabelSelector(b.CmdBuff().GetText()))
 	}
 	ctx = context.WithValue(ctx, internal.KeyNamespace, client.CleanseNamespace(b.App().Config.ActiveNamespace()))

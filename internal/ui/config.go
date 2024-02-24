@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 
 	"github.com/derailed/k9s/internal/model"
+	"github.com/derailed/k9s/internal/model1"
 
 	"github.com/derailed/k9s/internal/config"
-	"github.com/derailed/k9s/internal/render"
 	"github.com/fsnotify/fsnotify"
 	"github.com/rs/zerolog/log"
 )
@@ -272,12 +272,12 @@ func (c *Configurator) updateStyles(f string) {
 	}
 	c.Styles.Update()
 
-	render.ModColor = c.Styles.Frame().Status.ModifyColor.Color()
-	render.AddColor = c.Styles.Frame().Status.AddColor.Color()
-	render.ErrColor = c.Styles.Frame().Status.ErrorColor.Color()
-	render.StdColor = c.Styles.Frame().Status.NewColor.Color()
-	render.PendingColor = c.Styles.Frame().Status.PendingColor.Color()
-	render.HighlightColor = c.Styles.Frame().Status.HighlightColor.Color()
-	render.KillColor = c.Styles.Frame().Status.KillColor.Color()
-	render.CompletedColor = c.Styles.Frame().Status.CompletedColor.Color()
+	model1.ModColor = c.Styles.Frame().Status.ModifyColor.Color()
+	model1.AddColor = c.Styles.Frame().Status.AddColor.Color()
+	model1.ErrColor = c.Styles.Frame().Status.ErrorColor.Color()
+	model1.StdColor = c.Styles.Frame().Status.NewColor.Color()
+	model1.PendingColor = c.Styles.Frame().Status.PendingColor.Color()
+	model1.HighlightColor = c.Styles.Frame().Status.HighlightColor.Color()
+	model1.KillColor = c.Styles.Frame().Status.KillColor.Color()
+	model1.CompletedColor = c.Styles.Frame().Status.CompletedColor.Color()
 }

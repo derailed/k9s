@@ -14,7 +14,7 @@ func loadCustomViewers() MetaViewers {
 	appsViewers(m)
 	rbacViewers(m)
 	batchViewers(m)
-	extViewers(m)
+	crdViewers(m)
 	helmViewers(m)
 
 	return m
@@ -153,7 +153,7 @@ func batchViewers(vv MetaViewers) {
 	}
 }
 
-func extViewers(vv MetaViewers) {
+func crdViewers(vv MetaViewers) {
 	vv[client.NewGVR("apiextensions.k8s.io/v1/customresourcedefinitions")] = MetaViewer{
 		viewerFn: NewCRD,
 	}

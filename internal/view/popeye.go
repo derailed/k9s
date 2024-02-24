@@ -45,7 +45,7 @@ package view
 // 	return nil
 // }
 
-// func (p *Popeye) decorateRows(data *render.TableData) {
+// func (p *Popeye) decorateRows(data *model1.TableData) {
 // 	var sum int
 // 	for _, re := range data.RowEvents {
 // 		n, err := strconv.Atoi(re.Row.Fields[1])

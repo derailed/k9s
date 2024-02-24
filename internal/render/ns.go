@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/tcell/v2"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -21,19 +22,17 @@ type Namespace struct {
 }
 
 // ColorerFunc colors a resource row.
-func (n Namespace) ColorerFunc() ColorerFunc {
-	return func(ns string, h Header, re RowEvent) tcell.Color {
-		c := DefaultColorer(ns, h, re)
-
-		if re.Kind == EventUpdate {
-			c = StdColor
+func (n Namespace) ColorerFunc() model1.ColorerFunc {
+	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
+		c := model1.DefaultColorer(ns, h, re)
+		if c == model1.ErrColor {
+			return c
+		}
+		if re.Kind == model1.EventUpdate {
+			c = model1.StdColor
 		}
 		if strings.Contains(strings.TrimSpace(re.Row.Fields[0]), "*") {
-			c = HighlightColor
-		}
-
-		if !Happy(ns, h, re.Row) {
-			c = ErrColor
+			c = model1.HighlightColor
 		}
 
 		return c
@@ -41,18 +40,18 @@ func (n Namespace) ColorerFunc() ColorerFunc {
 }
 
 // Header returns a header rbw.
-func (Namespace) Header(string) Header {
-	return Header{
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "STATUS"},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (Namespace) Header(string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "STATUS"},
+		model1.HeaderColumn{Name: "LABELS", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (n Namespace) Render(o interface{}, _ string, r *Row) error {
+func (n Namespace) Render(o interface{}, _ string, r *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected Namespace, but got %T", o)
@@ -64,7 +63,7 @@ func (n Namespace) Render(o interface{}, _ string, r *Row) error {
 	}
 
 	r.ID = client.MetaFQN(ns.ObjectMeta)
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		ns.Name,
 		string(ns.Status.Phase),
 		mapToStr(ns.Labels),

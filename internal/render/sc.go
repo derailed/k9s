@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/derailed/k9s/internal/client"
+	"github.com/derailed/k9s/internal/model1"
 	storagev1 "k8s.io/api/storage/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
@@ -20,21 +21,21 @@ type StorageClass struct {
 }
 
 // Header returns a header row.
-func (StorageClass) Header(ns string) Header {
-	return Header{
-		HeaderColumn{Name: "NAME"},
-		HeaderColumn{Name: "PROVISIONER"},
-		HeaderColumn{Name: "RECLAIMPOLICY"},
-		HeaderColumn{Name: "VOLUMEBINDINGMODE"},
-		HeaderColumn{Name: "ALLOWVOLUMEEXPANSION"},
-		HeaderColumn{Name: "LABELS", Wide: true},
-		HeaderColumn{Name: "VALID", Wide: true},
-		HeaderColumn{Name: "AGE", Time: true},
+func (StorageClass) Header(ns string) model1.Header {
+	return model1.Header{
+		model1.HeaderColumn{Name: "NAME"},
+		model1.HeaderColumn{Name: "PROVISIONER"},
+		model1.HeaderColumn{Name: "RECLAIMPOLICY"},
+		model1.HeaderColumn{Name: "VOLUMEBINDINGMODE"},
+		model1.HeaderColumn{Name: "ALLOWVOLUMEEXPANSION"},
+		model1.HeaderColumn{Name: "LABELS", Wide: true},
+		model1.HeaderColumn{Name: "VALID", Wide: true},
+		model1.HeaderColumn{Name: "AGE", Time: true},
 	}
 }
 
 // Render renders a K8s resource to screen.
-func (s StorageClass) Render(o interface{}, ns string, r *Row) error {
+func (s StorageClass) Render(o interface{}, ns string, r *model1.Row) error {
 	raw, ok := o.(*unstructured.Unstructured)
 	if !ok {
 		return fmt.Errorf("expected StorageClass, but got %T", o)
@@ -46,7 +47,7 @@ func (s StorageClass) Render(o interface{}, ns string, r *Row) error {
 	}
 
 	r.ID = client.FQN(client.ClusterScope, sc.ObjectMeta.Name)
-	r.Fields = Fields{
+	r.Fields = model1.Fields{
 		s.nameWithDefault(sc.ObjectMeta),
 		sc.Provisioner,
 		strPtrToStr((*string)(sc.ReclaimPolicy)),

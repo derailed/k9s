@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright Authors of K9s
 
-package render
+package model1
 
-import (
-	"github.com/derailed/tcell/v2"
-)
+import "github.com/derailed/tcell/v2"
 
 var (
 	// ModColor row modified color.
@@ -33,12 +31,9 @@ var (
 	CompletedColor tcell.Color
 )
 
-// ColorerFunc represents a resource row colorer.
-type ColorerFunc func(ns string, h Header, re RowEvent) tcell.Color
-
 // DefaultColorer set the default table row colors.
-func DefaultColorer(ns string, h Header, re RowEvent) tcell.Color {
-	if !Happy(ns, h, re.Row) {
+func DefaultColorer(ns string, h Header, re *RowEvent) tcell.Color {
+	if !IsValid(ns, h, re.Row) {
 		return ErrColor
 	}
 

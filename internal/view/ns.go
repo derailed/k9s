@@ -5,7 +5,7 @@ package view
 
 import (
 	"github.com/derailed/k9s/internal/client"
-	"github.com/derailed/k9s/internal/render"
+	"github.com/derailed/k9s/internal/model1"
 	"github.com/derailed/k9s/internal/ui"
 	"github.com/derailed/tcell/v2"
 )
@@ -69,17 +69,17 @@ func (n *Namespace) useNamespace(fqn string) {
 	}
 }
 
-func (n *Namespace) decorate(td *render.TableData) {
-	if n.App().Conn() == nil || td.RowEvents.Empty() {
+func (n *Namespace) decorate(td *model1.TableData) {
+	if n.App().Conn() == nil || td.RowCount() == 0 {
 		return
 	}
 	// checks if all ns is in the list if not add it.
-	if _, ok := td.RowEvents.FindIndex(client.NamespaceAll); !ok {
-		td.RowEvents.Add(render.RowEvent{
-			Kind: render.EventUnchanged,
-			Row: render.Row{
+	if _, ok := td.FindRow(client.NamespaceAll); !ok {
+		td.AddRow(model1.RowEvent{
+			Kind: model1.EventUnchanged,
+			Row: model1.Row{
 				ID:     client.NamespaceAll,
-				Fields: render.Fields{client.NamespaceAll, "Active", "", "", ""},
+				Fields: model1.Fields{client.NamespaceAll, "Active", "", "", ""},
 			},
 		},
 		)
@@ -90,7 +90,7 @@ func (n *Namespace) decorate(td *render.TableData) {
 		favs[ns] = struct{}{}
 	}
 	ans := n.App().Config.ActiveNamespace()
-	td.RowEvents.Range(func(i int, re render.RowEvent) bool {
+	td.RowsRange(func(i int, re model1.RowEvent) bool {
 		_, n := client.Namespaced(re.Row.ID)
 		if _, ok := favs[n]; ok {
 			re.Row.Fields[0] += favNSIndicator
@@ -98,8 +98,8 @@ func (n *Namespace) decorate(td *render.TableData) {
 		if ans == re.Row.ID {
 			re.Row.Fields[0] += defaultNSIndicator
 		}
-		re.Kind = render.EventUnchanged
-		td.RowEvents.Set(i, re)
+		re.Kind = model1.EventUnchanged
+		td.SetRow(i, re)
 		return true
 	})
 }

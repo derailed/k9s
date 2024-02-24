@@ -74,7 +74,7 @@ func (y *YAML) filter(q string, lines []string) fuzzy.Matches {
 	if q == "" {
 		return nil
 	}
-	if f, ok := dao.HasFuzzySelector(q); ok {
+	if f, ok := internal.IsFuzzySelector(q); ok {
 		return y.fuzzyFilter(strings.TrimSpace(f), lines)
 	}
 	return rxFilter(q, lines)
