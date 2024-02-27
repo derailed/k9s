@@ -6,6 +6,7 @@ package config
 import (
 	"fmt"
 	"path/filepath"
+	"runtime"
 	"sync"
 
 	"github.com/derailed/k9s/internal/client"
@@ -334,4 +335,8 @@ func (k *K9s) Validate(c client.Connection, ks data.KubeSettings) {
 	if cfg := k.getActiveConfig(); cfg != nil {
 		cfg.Validate(c, ks)
 	}
+}
+
+func (k *K9s) IsSuspendable() bool {
+	return k.AllowSuspend && runtime.GOOS != "windows"
 }
