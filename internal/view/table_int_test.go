@@ -5,6 +5,8 @@ package view
 
 import (
 	"context"
+	"errors"
+	"io/fs"
 	"os"
 	"testing"
 	"time"
@@ -205,31 +207,9 @@ func makeContext() context.Context {
 	return context.WithValue(ctx, internal.KeyStyles, a.Styles)
 }
 
-// type ks struct{}
-
-// func (k ks) CurrentContextName() (string, error) {
-// 	return "test", nil
-// }
-
-// func (k ks) CurrentClusterName() (string, error) {
-// 	return "test", nil
-// }
-
-// func (k ks) CurrentNamespaceName() (string, error) {
-// 	return "test", nil
-// }
-
-// func (k ks) ContextNames() (map[string]struct{}, error) {
-// 	return map[string]struct{}{"test": {}}, nil
-// }
-
-// func (k ks) NamespaceNames(nn []v1.Namespace) []string {
-// 	return []string{"test"}
-// }
-
 func ensureDumpDir(n string) error {
 	config.AppDumpsDir = n
-	if _, err := os.Stat(n); os.IsNotExist(err) {
+	if _, err := os.Stat(n); errors.Is(err, fs.ErrNotExist) {
 		return os.Mkdir(n, 0700)
 	}
 	if err := os.RemoveAll(n); err != nil {

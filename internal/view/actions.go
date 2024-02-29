@@ -117,10 +117,15 @@ func pluginActions(r Runner, aa *ui.KeyActions) error {
 		}
 	})
 
-	var errs error
-	if err := pp.Load(r.App().Config.ContextPluginsPath()); err != nil {
-		errs = errors.Join(errs, err)
+	path, err := r.App().Config.ContextPluginsPath()
+	if err != nil {
+		return err
 	}
+	if err := pp.Load(path); err != nil {
+		return err
+	}
+
+	var errs error
 	aliases := r.Aliases()
 	for k, plugin := range pp.Plugins {
 		if !inScope(plugin.Scopes, aliases) {

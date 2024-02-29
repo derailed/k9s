@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"strings"
 
@@ -35,6 +36,7 @@ const (
 	osBetaSelector = "beta." + osSelector
 	trUpload       = "Upload"
 	trDownload     = "Download"
+	pfIndicator    = "[orange::b]Ⓕ"
 )
 
 // Pod represents a pod viewer.
@@ -63,15 +65,14 @@ func (p *Pod) portForwardIndicator(data *model1.TableData) {
 	ff := p.App().factory.Forwarders()
 
 	defer decorateCpuMemHeaderRows(p.App(), data)
-	col := data.IndexOfHeader("PF")
-	if col < 0 {
+	idx, ok := data.IndexOfHeader("PF")
+	if !ok {
 		return
 	}
 
-	const idc = "[orange::b]Ⓕ"
 	data.RowsRange(func(_ int, re model1.RowEvent) bool {
 		if ff.IsPodForwarded(re.Row.ID) {
-			re.Row.Fields[col] = idc
+			re.Row.Fields[idx] = pfIndicator
 		}
 		return true
 	})
@@ -314,7 +315,7 @@ func (p *Pod) transferCmd(evt *tcell.EventKey) *tcell.EventKey {
 		if !download {
 			local = from
 		}
-		if _, err := os.Stat(local); !download && os.IsNotExist(err) {
+		if _, err := os.Stat(local); !download && errors.Is(err, fs.ErrNotExist) {
 			p.App().Flash().Err(err)
 			return false
 		}

@@ -4,7 +4,9 @@
 package config
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"strings"
 
@@ -24,6 +26,14 @@ type ViewConfigListener interface {
 type ViewSetting struct {
 	Columns    []string `yaml:"columns"`
 	SortColumn string   `yaml:"sortColumn"`
+}
+
+func (v *ViewSetting) HasCols() bool {
+	return len(v.Columns) > 0
+}
+
+func (v *ViewSetting) IsBlank() bool {
+	return v == nil || len(v.Columns) == 0
 }
 
 func (v *ViewSetting) SortCol() (string, bool, error) {
@@ -61,7 +71,7 @@ func (v *CustomView) Reset() {
 
 // Load loads view configurations.
 func (v *CustomView) Load(path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
 	bb, err := os.ReadFile(path)
