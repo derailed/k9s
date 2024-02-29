@@ -24,11 +24,11 @@ func (n Workload) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
 		c := model1.DefaultColorer(ns, h, re)
 
-		statusCol := h.IndexOf("STATUS", true)
-		if statusCol == -1 {
+		idx, ok := h.IndexOf("STATUS", true)
+		if !ok {
 			return c
 		}
-		status := strings.TrimSpace(re.Row.Fields[statusCol])
+		status := strings.TrimSpace(re.Row.Fields[idx])
 		if status == "DEGRADED" {
 			c = model1.PendingColor
 		}

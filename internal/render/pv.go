@@ -28,11 +28,11 @@ func (p PersistentVolume) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
 		c := model1.DefaultColorer(ns, h, re)
 
-		statusCol := h.IndexOf("STATUS", true)
-		if statusCol == -1 {
+		idx, ok := h.IndexOf("STATUS", true)
+		if ok {
 			return c
 		}
-		switch strings.TrimSpace(re.Row.Fields[statusCol]) {
+		switch strings.TrimSpace(re.Row.Fields[idx]) {
 		case string(v1.VolumeBound):
 			return model1.StdColor
 		case string(v1.VolumeAvailable):

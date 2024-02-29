@@ -56,11 +56,11 @@ func (p Pod) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
 		c := model1.DefaultColorer(ns, h, re)
 
-		statusIdx := h.IndexOf("STATUS", true)
-		if statusIdx == -1 {
+		idx, ok := h.IndexOf("STATUS", true)
+		if !ok {
 			return c
 		}
-		status := strings.TrimSpace(re.Row.Fields[statusIdx])
+		status := strings.TrimSpace(re.Row.Fields[idx])
 		switch status {
 		case Pending, ContainerCreating:
 			c = model1.PendingColor
@@ -83,7 +83,7 @@ func (p Pod) ColorerFunc() model1.ColorerFunc {
 }
 
 // Header returns a header row.
-func (Pod) Header(ns string) model1.Header {
+func (p Pod) Header(ns string) model1.Header {
 	return model1.Header{
 		model1.HeaderColumn{Name: "NAMESPACE"},
 		model1.HeaderColumn{Name: "NAME"},
@@ -135,9 +135,10 @@ func (p Pod) Render(o interface{}, ns string, row *model1.Row) error {
 	c, r := gatherCoMX(po.Spec.Containers, ccmx)
 	phase := p.Phase(&po)
 	row.ID = client.MetaFQN(po.ObjectMeta)
+
 	row.Fields = model1.Fields{
 		po.Namespace,
-		po.ObjectMeta.Name,
+		po.Name,
 		computeVulScore(po.ObjectMeta, &po.Spec),
 		"●",
 		strconv.Itoa(cr) + "/" + strconv.Itoa(len(po.Spec.Containers)),

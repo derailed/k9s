@@ -4,6 +4,7 @@
 package config_test
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -265,16 +266,19 @@ func TestContextAliasesPath(t *testing.T) {
 
 func TestContextPluginsPath(t *testing.T) {
 	uu := map[string]struct {
-		ct string
-		e  string
+		ct, e string
+		err   error
 	}{
-		"empty": {},
+		"empty": {
+			err: errors.New(`no context found for: ""`),
+		},
 		"happy": {
 			ct: "ct-1-1",
 			e:  "/tmp/test/cl-1/ct-1-1/plugins.yaml",
 		},
 		"not-exists": {
-			ct: "fred",
+			ct:  "fred",
+			err: errors.New(`no context found for: "fred"`),
 		},
 	}
 
@@ -283,7 +287,11 @@ func TestContextPluginsPath(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			c := mock.NewMockConfig()
 			_, _ = c.K9s.ActivateContext(u.ct)
-			assert.Equal(t, u.e, c.ContextPluginsPath())
+			s, err := c.ContextPluginsPath()
+			if err != nil {
+				assert.Equal(t, u.err, err)
+			}
+			assert.Equal(t, u.e, s)
 		})
 	}
 }

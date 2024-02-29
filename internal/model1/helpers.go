@@ -8,20 +8,14 @@ import (
 	"math"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/fvbommel/sortorder"
-	"github.com/rs/zerolog/log"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
 
 func Hydrate(ns string, oo []runtime.Object, rr Rows, re Renderer) error {
-	defer func(ti time.Time) {
-		log.Debug().Msgf("    HYDRATE ELAPSED [%d] (%s)", len(oo), time.Since(ti))
-	}(time.Now())
-
 	for i, o := range oo {
 		if err := re.Render(o, ns, &rr[i]); err != nil {
 			return err
@@ -32,10 +26,6 @@ func Hydrate(ns string, oo []runtime.Object, rr Rows, re Renderer) error {
 }
 
 func GenericHydrate(ns string, table *metav1.Table, rr Rows, re Renderer) error {
-	defer func(ti time.Time) {
-		log.Debug().Msgf("    GEN-HYDRATE ELAPSED [%d] (%s)", len(table.Rows), time.Since(ti))
-	}(time.Now())
-
 	gr, ok := re.(Generic)
 	if !ok {
 		return fmt.Errorf("expecting generic renderer but got %T", re)
@@ -55,12 +45,12 @@ func IsValid(ns string, h Header, r Row) bool {
 	if len(r.Fields) == 0 {
 		return true
 	}
-	validIdx := h.IndexOf("VALID", true)
-	if validIdx < 0 || validIdx >= len(r.Fields) {
+	idx, ok := h.IndexOf("VALID", true)
+	if !ok || idx >= len(r.Fields) {
 		return true
 	}
 
-	return strings.TrimSpace(r.Fields[validIdx]) == ""
+	return strings.TrimSpace(r.Fields[idx]) == ""
 }
 
 func sortLabels(m map[string]string) (keys, vals []string) {
@@ -79,7 +69,6 @@ func sortLabels(m map[string]string) (keys, vals []string) {
 func labelize(labels string) map[string]string {
 	ll := strings.Split(labels, ",")
 	data := make(map[string]string, len(ll))
-
 	for _, l := range ll {
 		tokens := strings.Split(l, "=")
 		if len(tokens) == 2 {

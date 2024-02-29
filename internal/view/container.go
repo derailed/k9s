@@ -41,7 +41,10 @@ func NewContainer(gvr client.GVR) ResourceViewer {
 
 func (c *Container) portForwardIndicator(data *model1.TableData) {
 	ff := c.App().factory.Forwarders()
-	col := data.IndexOfHeader("PF")
+	col, ok := data.IndexOfHeader("PF")
+	if !ok {
+		return
+	}
 	data.RowsRange(func(_ int, re model1.RowEvent) bool {
 		if ff.IsContainerForwarded(c.GetTable().Path, re.Row.ID) {
 			re.Row.Fields[col] = "[orange::b]Ⓕ"

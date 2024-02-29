@@ -50,15 +50,16 @@ func TestHeaderMapIndices(t *testing.T) {
 
 func TestHeaderIndexOf(t *testing.T) {
 	uu := map[string]struct {
-		h    model1.Header
-		name string
-		wide bool
-		e    int
+		h        model1.Header
+		name     string
+		wide, ok bool
+		e        int
 	}{
 		"shown": {
 			h:    makeHeader(),
 			name: "A",
 			e:    0,
+			ok:   true,
 		},
 		"hidden": {
 			h:    makeHeader(),
@@ -70,13 +71,16 @@ func TestHeaderIndexOf(t *testing.T) {
 			name: "B",
 			wide: true,
 			e:    1,
+			ok:   true,
 		},
 	}
 
 	for k := range uu {
 		u := uu[k]
 		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, u.h.IndexOf(u.name, u.wide))
+			idx, ok := u.h.IndexOf(u.name, u.wide)
+			assert.Equal(t, u.ok, ok)
+			assert.Equal(t, u.e, idx)
 		})
 	}
 }
@@ -245,33 +249,6 @@ func TestHeaderHasAge(t *testing.T) {
 		t.Run(k, func(t *testing.T) {
 			assert.Equal(t, u.e, u.h.HasAge())
 			assert.Equal(t, u.e, u.h.IsTimeCol(2))
-		})
-	}
-}
-
-func TestHeaderValidColIndex(t *testing.T) {
-	uu := map[string]struct {
-		h model1.Header
-		e int
-	}{
-		"none": {
-			h: model1.Header{},
-			e: -1,
-		},
-		"valid": {
-			h: model1.Header{
-				model1.HeaderColumn{Name: "A"},
-				model1.HeaderColumn{Name: "B", Wide: true},
-				model1.HeaderColumn{Name: "VALID", Wide: true},
-			},
-			e: 2,
-		},
-	}
-
-	for k := range uu {
-		u := uu[k]
-		t.Run(k, func(t *testing.T) {
-			assert.Equal(t, u.e, u.h.ValidColIndex())
 		})
 	}
 }

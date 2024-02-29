@@ -29,11 +29,11 @@ func (c ImageScan) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
 		c := model1.DefaultColorer(ns, h, re)
 
-		sevCol := h.IndexOf(sevColName, true)
-		if sevCol == -1 {
+		idx, ok := h.IndexOf(sevColName, true)
+		if !ok {
 			return c
 		}
-		sev := strings.TrimSpace(re.Row.Fields[sevCol])
+		sev := strings.TrimSpace(re.Row.Fields[idx])
 		switch sev {
 		case vul.Sev1:
 			c = tcell.ColorRed

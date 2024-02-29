@@ -3,7 +3,9 @@
 
 package render
 
-import "github.com/derailed/k9s/internal/model1"
+import (
+	"github.com/derailed/k9s/internal/model1"
+)
 
 // DecoratorFunc decorates a string.
 type DecoratorFunc func(string) string

@@ -58,6 +58,9 @@ func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 	labelSel, _ := ctx.Value(internal.KeyLabels).(string)
 	a := fmt.Sprintf(gvFmt, metav1.SchemeGroupVersion.Version, metav1.GroupName)
+
+	fieldSel, _ := ctx.Value(internal.KeyFields).(string)
+
 	f, p := t.codec()
 
 	c, err := t.getClient(f)
@@ -68,7 +71,10 @@ func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 		SetHeader("Accept", a).
 		Namespace(ns).
 		Resource(t.gvr.R()).
-		VersionedParams(&metav1.ListOptions{LabelSelector: labelSel}, p).
+		VersionedParams(&metav1.ListOptions{
+			LabelSelector: labelSel,
+			FieldSelector: fieldSel,
+		}, p).
 		Do(ctx).Get()
 	if err != nil {
 		return nil, err

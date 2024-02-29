@@ -211,10 +211,8 @@ func (b *Browser) BufferActive(state bool, k model.BufferKind) {
 	cdata := b.Update(data, b.App().Conn().HasMetrics())
 	b.app.QueueUpdateDraw(func() {
 		if b.getUpdating() {
-			log.Debug().Msgf("!!!!BUFF-ACTIVE CANCEL!!!!")
 			return
 		}
-		log.Debug().Msgf("!!!!BUFF-ACTIVE UI!!!!")
 		b.setUpdating(true)
 		defer b.setUpdating(false)
 		b.UpdateUI(cdata, data)
@@ -275,10 +273,6 @@ func (b *Browser) Aliases() map[string]struct{} {
 
 // TableDataChanged notifies view new data is available.
 func (b *Browser) TableDataChanged(data *model1.TableData) {
-	defer func(ti time.Time) {
-		log.Debug().Msgf("----> TABLE DATA CHANGED!!! (%s) [%d]", time.Since(ti), data.RowCount())
-	}(time.Now())
-
 	var cancel context.CancelFunc
 	b.mx.RLock()
 	cancel = b.cancelFn
@@ -290,10 +284,6 @@ func (b *Browser) TableDataChanged(data *model1.TableData) {
 
 	cdata := b.Update(data, b.app.Conn().HasMetrics())
 	b.app.QueueUpdateDraw(func() {
-		defer func(ti time.Time) {
-			log.Debug().Msgf("----> Q UPDATE!!! (%s) [%d]", time.Since(ti), cdata.RowCount())
-		}(time.Now())
-
 		if b.getUpdating() {
 			return
 		}
@@ -582,7 +572,6 @@ func (b *Browser) refreshActions() {
 		log.Warn().Msgf("Hotkeys load failed: %s", err)
 		b.app.Logo().Warn("HotKeys load failed!")
 	}
-
 	b.app.Menu().HydrateMenu(b.Hints())
 }
 

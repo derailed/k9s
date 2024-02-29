@@ -204,10 +204,6 @@ func (t *Table) updater(ctx context.Context) {
 }
 
 func (t *Table) refresh(ctx context.Context) error {
-	defer func(ti time.Time) {
-		log.Debug().Msgf(">>>> REFRESH!!! [%s] (%s)", t.gvr, time.Since(ti))
-	}(time.Now())
-
 	if !atomic.CompareAndSwapInt32(&t.inUpdate, 0, 1) {
 		log.Debug().Msgf("Dropping update...")
 		return nil
@@ -223,10 +219,6 @@ func (t *Table) refresh(ctx context.Context) error {
 }
 
 func (t *Table) list(ctx context.Context, a dao.Accessor) ([]runtime.Object, error) {
-	defer func(ti time.Time) {
-		log.Debug().Msgf("  LIST ELAPSED (%s)", time.Since(ti))
-	}(time.Now())
-
 	factory, ok := ctx.Value(internal.KeyFactory).(dao.Factory)
 	if !ok {
 		return nil, fmt.Errorf("expected Factory in context but got %T", ctx.Value(internal.KeyFactory))
@@ -250,11 +242,6 @@ func (t *Table) reconcile(ctx context.Context) error {
 		oo  []runtime.Object
 		err error
 	)
-
-	defer func(ti time.Time) {
-		log.Debug().Msgf("  RECONCILE-ELAPSED %s[%d] (%s)", t.gvr, len(oo), time.Since(ti))
-	}(time.Now())
-
 	meta := resourceMeta(t.gvr)
 	ctx = context.WithValue(ctx, internal.KeyLabels, t.labelFilter)
 	if t.instance == "" {

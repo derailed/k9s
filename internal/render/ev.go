@@ -25,8 +25,8 @@ func (*Event) IsGeneric() bool {
 // ColorerFunc colors a resource row.
 func (e *Event) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
-		reasonCol := h.IndexOf("REASON", true)
-		if reasonCol >= 0 && strings.TrimSpace(re.Row.Fields[reasonCol]) == "Killing" {
+		idx, ok := h.IndexOf("REASON", true)
+		if ok && strings.TrimSpace(re.Row.Fields[idx]) == "Killing" {
 			return model1.KillColor
 		}
 

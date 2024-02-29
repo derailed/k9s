@@ -48,11 +48,11 @@ func (c Container) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
 		c := model1.DefaultColorer(ns, h, re)
 
-		stateCol := h.IndexOf("STATE", true)
-		if stateCol == -1 {
+		idx, ok := h.IndexOf("STATE", true)
+		if !ok {
 			return c
 		}
-		switch strings.TrimSpace(re.Row.Fields[stateCol]) {
+		switch strings.TrimSpace(re.Row.Fields[idx]) {
 		case Pending:
 			return model1.PendingColor
 		case ContainerCreating, PodInitializing:

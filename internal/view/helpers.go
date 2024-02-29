@@ -114,9 +114,9 @@ func defaultEnv(c *client.Config, path string, header model1.Header, row *model1
 		return env
 	}
 	for _, col := range header.ColumnNames(true) {
-		i := header.IndexOf(col, true)
-		if i >= 0 && i < len(row.Fields) {
-			env["COL-"+col] = row.Fields[i]
+		idx, ok := header.IndexOf(col, true)
+		if ok && idx < len(row.Fields) {
+			env["COL-"+col] = row.Fields[idx]
 		}
 	}
 

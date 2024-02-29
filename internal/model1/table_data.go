@@ -10,7 +10,6 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -128,8 +127,8 @@ func (t *TableData) HeaderCount() int {
 }
 
 func (t *TableData) HeadCol(n string, w bool) (HeaderColumn, int) {
-	idx := t.header.IndexOf(n, w)
-	if idx < 0 {
+	idx, ok := t.header.IndexOf(n, w)
+	if !ok {
 		return HeaderColumn{}, -1
 	}
 
@@ -168,12 +167,12 @@ func (t *TableData) rxFilter(q string, inverse bool) (*RowEvents, error) {
 		return nil, fmt.Errorf("invalid rx filter %q: %w", q, err)
 	}
 
-	ageIndex := t.header.IndexOf("AGE", true)
+	ageIndex, ok := t.header.IndexOf("AGE", true)
 
 	rr := NewRowEvents(t.RowCount() / 2)
 	t.rowEvents.Range(func(_ int, re RowEvent) bool {
 		ff := re.Row.Fields
-		if ageIndex >= 0 && ageIndex+1 <= len(ff) {
+		if ok && ageIndex+1 <= len(ff) {
 			ff = append(ff[0:ageIndex], ff[ageIndex+1:]...)
 		}
 		fields := strings.Join(ff, spacer)
@@ -210,14 +209,14 @@ func (t *TableData) fuzzyFilter(q string) *RowEvents {
 }
 
 func (t *TableData) filterToast() *RowEvents {
-	validCol := t.header.IndexOf("VALID", true)
-	if validCol == -1 {
+	idx, ok := t.header.IndexOf("VALID", true)
+	if !ok {
 		return nil
 	}
 
 	rr := NewRowEvents(10)
 	t.rowEvents.Range(func(_ int, re RowEvent) bool {
-		if re.Row.Fields[validCol] != "" {
+		if re.Row.Fields[idx] != "" {
 			rr.Add(re)
 		}
 		return true
@@ -294,33 +293,36 @@ func (t *TableData) RowCount() int {
 }
 
 // IndexOfHeader return the index of the header.
-func (t *TableData) IndexOfHeader(h string) int {
+func (t *TableData) IndexOfHeader(h string) (int, bool) {
 	return t.header.IndexOf(h, false)
 }
 
 // Labelize prints out specific label columns.
 func (t *TableData) Labelize(labels []string) *TableData {
-	labelCol := t.header.IndexOf("LABELS", true)
+	idx, ok := t.header.IndexOf("LABELS", true)
+	if !ok {
+		return t
+	}
 	cols := []int{0, 1}
 	if client.IsNamespaced(t.namespace) {
 		cols = cols[1:]
 	}
 	data := TableData{
 		namespace: t.namespace,
-		header:    t.header.Labelize(cols, labelCol, t.rowEvents),
+		header:    t.header.Labelize(cols, idx, t.rowEvents),
 	}
-	data.rowEvents = t.rowEvents.Labelize(cols, labelCol, labels)
+	data.rowEvents = t.rowEvents.Labelize(cols, idx, labels)
 
 	return &data
 }
 
 // Customize returns a new model with customized column layout.
 func (t *TableData) Customize(vs *config.ViewSetting, sc SortColumn, manual, wide bool) (*TableData, SortColumn) {
-	cols := t.ColumnNames(wide)
-	if vs != nil && len(vs.Columns) > 0 {
-		cols = vs.Columns
+	if vs.IsBlank() {
+		return t, sc
 	}
 
+	cols := vs.Columns
 	cdata := TableData{
 		gvr:       t.gvr,
 		namespace: t.namespace,
@@ -349,19 +351,18 @@ func (t *TableData) sortCol(vs *config.ViewSetting) (SortColumn, error) {
 	if err != nil {
 		return psc, err
 	}
-	if t.header.IndexOf(name, false) >= 0 {
+	if _, ok := t.header.IndexOf(name, false); ok {
 		psc.Name, psc.ASC = name, order
 		return psc, nil
 	}
 	if client.IsAllNamespaces(t.GetNamespace()) {
-		switch {
-		case t.header.IndexOf("NAMESPACE", false) >= 0:
+		if _, ok := t.header.IndexOf("NAMESPACE", false); ok {
 			psc.Name = "NAMESPACE"
-		case t.header.IndexOf("NAME", false) >= 0:
+		} else if _, ok := t.header.IndexOf("NAME", false); ok {
 			psc.Name = "NAME"
 		}
 	} else {
-		if t.header.IndexOf("NAME", false) >= 0 {
+		if _, ok := t.header.IndexOf("NAME", false); ok {
 			psc.Name = "NAME"
 		} else {
 			psc.Name = t.header[0].Name
@@ -417,10 +418,6 @@ func (t *TableData) SetHeader(ns string, h Header) {
 
 // Update computes row deltas and update the table data.
 func (t *TableData) Update(rows Rows) {
-	defer func(ti time.Time) {
-		log.Debug().Msgf("  TDA-UPDATE  [%d] (%s)", len(rows), time.Since(ti))
-	}(time.Now())
-
 	empty := t.Empty()
 	kk := make(map[string]struct{}, len(rows))
 	var blankDelta DeltaRow
@@ -483,6 +480,9 @@ func (t *TableData) Diff(t2 *TableData) bool {
 	if t2 == nil || t.namespace != t2.namespace || t.header.Diff(t2.header) {
 		return true
 	}
-
-	return t.rowEvents.Diff(t2.rowEvents, t.header.IndexOf("AGE", true))
+	idx, ok := t.header.IndexOf("AGE", true)
+	if !ok {
+		idx = -1
+	}
+	return t.rowEvents.Diff(t2.rowEvents, idx)
 }

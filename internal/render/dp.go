@@ -27,11 +27,11 @@ func (d Deployment) ColorerFunc() model1.ColorerFunc {
 	return func(ns string, h model1.Header, re *model1.RowEvent) tcell.Color {
 		c := model1.DefaultColorer(ns, h, re)
 
-		rdCol := h.IndexOf("READY", true)
-		if rdCol == -1 {
+		idx, ok := h.IndexOf("READY", true)
+		if !ok {
 			return c
 		}
-		ready := strings.TrimSpace(re.Row.Fields[rdCol])
+		ready := strings.TrimSpace(re.Row.Fields[idx])
 		tt := strings.Split(ready, "/")
 		if len(tt) == 2 && tt[1] == "0" {
 			return model1.PendingColor

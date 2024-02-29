@@ -6,7 +6,6 @@ package ui
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -199,10 +198,6 @@ func (t *Table) SetSortCol(name string, asc bool) {
 
 // Update table content.
 func (t *Table) Update(data *model1.TableData, hasMetrics bool) *model1.TableData {
-	defer func(ti time.Time) {
-		log.Debug().Msgf(">>>>> TABLE-UPDATE <<<< (%s) [%d]", time.Since(ti), data.RowCount())
-	}(time.Now())
-
 	if t.decorateFn != nil {
 		t.decorateFn(data)
 	}
@@ -218,7 +213,7 @@ func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 		t.actions.Delete(KeyShiftP)
 	}
 
-	cdata, sortCol := data.Customize(t.viewSetting, t.sortCol, t.manualSort, t.wide)
+	cdata, sortCol := data.Customize(t.viewSetting, t.sortCol, t.manualSort, true)
 	t.sortCol = sortCol
 
 	return cdata
@@ -231,6 +226,9 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 
 	var col int
 	for _, h := range cdata.Header() {
+		if !t.wide && h.Wide {
+			continue
+		}
 		if h.Name == "NAMESPACE" && !t.GetModel().ClusterWide() {
 			continue
 		}
@@ -278,6 +276,9 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 	for c, field := range re.Row.Fields {
 		if c >= len(h) {
 			log.Error().Msgf("field/header overflow detected for %q -- %d::%d. Check your mappings!", t.GVR(), c, len(h))
+			continue
+		}
+		if !t.wide && h[c].Wide {
 			continue
 		}
 

@@ -69,8 +69,8 @@ func (h Header) MapIndices(cols []string, wide bool) []int {
 	ii := make([]int, 0, len(cols))
 	cc := make(map[int]struct{}, len(cols))
 	for _, col := range cols {
-		idx := h.IndexOf(col, true)
-		if idx < 0 {
+		idx, ok := h.IndexOf(col, true)
+		if !ok {
 			log.Warn().Msgf("Column %q not found on resource", col)
 		}
 		ii, cc[idx] = append(ii, idx), struct{}{}
@@ -96,8 +96,8 @@ func (h Header) Customize(cols []string, wide bool) Header {
 	cc := make(Header, 0, len(h))
 	xx := make(map[int]struct{}, len(h))
 	for _, c := range cols {
-		idx := h.IndexOf(c, true)
-		if idx == -1 {
+		idx, ok := h.IndexOf(c, true)
+		if !ok {
 			log.Warn().Msgf("Column %s is not available on this resource", c)
 			cc = append(cc, HeaderColumn{Name: c})
 			continue
@@ -150,7 +150,9 @@ func (h Header) ColumnNames(wide bool) []string {
 
 // HasAge returns true if table has an age column.
 func (h Header) HasAge() bool {
-	return h.IndexOf(ageCol, true) != -1
+	_, ok := h.IndexOf(ageCol, true)
+
+	return ok
 }
 
 // IsMetricsCol checks if given column index represents metrics.
@@ -180,22 +182,17 @@ func (h Header) IsCapacityCol(col int) bool {
 	return h[col].Capacity
 }
 
-// ValidColIndex returns the valid col index or -1 if none.
-func (h Header) ValidColIndex() int {
-	return h.IndexOf("VALID", true)
-}
-
 // IndexOf returns the col index or -1 if none.
-func (h Header) IndexOf(colName string, includeWide bool) int {
+func (h Header) IndexOf(colName string, includeWide bool) (int, bool) {
 	for i, c := range h {
 		if c.Wide && !includeWide {
 			continue
 		}
 		if c.Name == colName {
-			return i
+			return i, true
 		}
 	}
-	return -1
+	return -1, false
 }
 
 // Dump for debugging.
