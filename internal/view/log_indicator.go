@@ -23,6 +23,7 @@ type LogIndicator struct {
 	fullScreen                 bool
 	textWrap                   bool
 	showTime                   bool
+	localTime                  bool
 	allContainers              bool
 	shouldDisplayAllContainers bool
 }
@@ -37,6 +38,7 @@ func NewLogIndicator(cfg *config.Config, styles *config.Styles, allContainers bo
 		fullScreen:                 cfg.K9s.UI.DefaultsToFullScreen,
 		textWrap:                   cfg.K9s.Logger.TextWrap,
 		showTime:                   cfg.K9s.Logger.ShowTime,
+		localTime:                  cfg.K9s.Logger.LocalTime,
 		shouldDisplayAllContainers: allContainers,
 	}
 	l.StylesChanged(styles)
@@ -64,6 +66,11 @@ func (l *LogIndicator) Timestamp() bool {
 	return l.showTime
 }
 
+// Localtime reports the current timezone mode (local or cluster).
+func (l *LogIndicator) LocalTime() bool {
+	return l.localTime
+}
+
 // TextWrap reports the current wrap mode.
 func (l *LogIndicator) TextWrap() bool {
 	return l.textWrap
@@ -77,6 +84,11 @@ func (l *LogIndicator) FullScreen() bool {
 // ToggleTimestamp toggles the current timestamp mode.
 func (l *LogIndicator) ToggleTimestamp() {
 	l.showTime = !l.showTime
+}
+
+// ToggleLocaltime toggles the current timezone mode (local or cluster).
+func (l *LogIndicator) ToggleLocalTime() {
+	l.localTime = !l.localTime
 }
 
 // ToggleFullScreen toggles the screen mode.
@@ -146,6 +158,12 @@ func (l *LogIndicator) Refresh() {
 		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "Timestamps", spacer)...)
 	} else {
 		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "Timestamps", spacer)...)
+	}
+
+	if l.LocalTime() {
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOnFmt, "LocalTime", spacer)...)
+	} else {
+		l.indicator = append(l.indicator, fmt.Sprintf(toggleOffFmt, "LocalTime", spacer)...)
 	}
 
 	if l.TextWrap() {

@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -113,6 +114,9 @@ func (c *Container) logOptions(prev bool) (*dao.LogOptions, error) {
 		SingleContainer: true,
 		ShowTimestamp:   cfg.ShowTime,
 		Previous:        prev,
+	}
+	if cfg.LocalTime {
+		opts.Timezone = time.Local
 	}
 
 	return &opts, nil

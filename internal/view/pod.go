@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -152,6 +153,9 @@ func (p *Pod) logOptions(prev bool) (*dao.LogOptions, error) {
 		opts.Container = cc[0]
 	} else {
 		opts.AllContainers = true
+	}
+	if cfg.LocalTime {
+		opts.Timezone = time.Local
 	}
 
 	return &opts, nil

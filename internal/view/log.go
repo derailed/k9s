@@ -257,6 +257,7 @@ func (l *Log) bindKeys() {
 		ui.KeyS:         ui.NewKeyAction("Toggle AutoScroll", l.toggleAutoScrollCmd, true),
 		ui.KeyF:         ui.NewKeyAction("Toggle FullScreen", l.toggleFullScreenCmd, true),
 		ui.KeyT:         ui.NewKeyAction("Toggle Timestamp", l.toggleTimestampCmd, true),
+		ui.KeyZ:         ui.NewKeyAction("Toggle LocalTime", l.toggleLocalTime, true),
 		ui.KeyW:         ui.NewKeyAction("Toggle Wrap", l.toggleTextWrapCmd, true),
 		tcell.KeyCtrlS:  ui.NewKeyAction("Save", l.SaveCmd, true),
 		ui.KeyC:         ui.NewKeyAction("Copy", cpCmd(l.app.Flash(), l.logs.TextView), true),
@@ -478,6 +479,18 @@ func (l *Log) toggleTextWrapCmd(evt *tcell.EventKey) *tcell.EventKey {
 
 	l.indicator.ToggleTextWrap()
 	l.logs.SetWrap(l.indicator.textWrap)
+	l.indicator.Refresh()
+
+	return nil
+}
+
+func (l *Log) toggleLocalTime(evt *tcell.EventKey) *tcell.EventKey {
+	if l.app.InCmdMode() {
+		return evt
+	}
+
+	l.indicator.ToggleLocalTime()
+	l.model.ToggleLocaltime(l.indicator.LocalTime())
 	l.indicator.Refresh()
 
 	return nil

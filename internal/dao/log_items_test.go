@@ -6,6 +6,7 @@ package dao_test
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/derailed/k9s/internal/client"
 	"github.com/derailed/k9s/internal/dao"
@@ -74,7 +75,7 @@ func TestLogItemsFilter(t *testing.T) {
 			for _, i := range ii.Items() {
 				i.Pod, i.Container = n, u.opts.Container
 			}
-			res, _, err := ii.Filter(0, u.q, false)
+			res, _, err := ii.Filter(0, u.q, false, nil)
 			assert.Equal(t, u.err, err)
 			if err == nil {
 				assert.Equal(t, u.e, res)
@@ -84,6 +85,7 @@ func TestLogItemsFilter(t *testing.T) {
 }
 
 func TestLogItemsRender(t *testing.T) {
+	tz, _ := time.LoadLocation("Europe/Berlin")
 	uu := map[string]struct {
 		opts dao.LogOptions
 		e    string
@@ -110,8 +112,9 @@ func TestLogItemsRender(t *testing.T) {
 				Path:          "blee/fred",
 				Container:     "blee",
 				ShowTimestamp: true,
+				Timezone:      tz,
 			},
-			e: "[gray::b]2018-12-14T10:36:43.326972-07:00 [-::-][teal::]fred [teal::b]blee[-::-] Testing 1,2,3...\n",
+			e: "[gray::b]2018-12-14T18:36:43.326972000+01:00 [-::-][teal::]fred [teal::b]blee[-::-] Testing 1,2,3...\n",
 		},
 	}
 
@@ -124,7 +127,7 @@ func TestLogItemsRender(t *testing.T) {
 		ii.Items()[0].Pod, ii.Items()[0].Container = n, u.opts.Container
 		t.Run(k, func(t *testing.T) {
 			res := make([][]byte, 1)
-			ii.Render(0, u.opts.ShowTimestamp, res)
+			ii.Render(0, u.opts.ShowTimestamp, u.opts.Timezone, res)
 			assert.Equal(t, u.e, string(res[0]))
 		})
 	}

@@ -24,6 +24,7 @@ k9s:
     sinceSeconds: -1
     textWrap: false
     showTime: false
+    localTime: false
   thresholds:
     cpu:
       critical: 90
