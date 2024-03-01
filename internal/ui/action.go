@@ -13,9 +13,13 @@ import (
 )
 
 type (
+	// RangeFn represents a range iteration callback.
+	RangeFn func(tcell.Key, KeyAction)
+
 	// ActionHandler handles a keyboard command.
 	ActionHandler func(*tcell.EventKey) *tcell.EventKey
 
+	// ActionOpts tracks various action options.
 	ActionOpts struct {
 		Visible   bool
 		Shared    bool
@@ -31,6 +35,7 @@ type (
 		Opts        ActionOpts
 	}
 
+	// KeyMap tracks key to action mappings.
 	KeyMap map[tcell.Key]KeyAction
 
 	// KeyActions tracks mappings between keystrokes and actions.
@@ -76,6 +81,7 @@ func NewKeyActionsFromMap(mm KeyMap) *KeyActions {
 	return &KeyActions{actions: mm}
 }
 
+// Get fetches an action given a key.
 func (a *KeyActions) Get(key tcell.Key) (KeyAction, bool) {
 	a.mx.RLock()
 	defer a.mx.RUnlock()
@@ -85,7 +91,11 @@ func (a *KeyActions) Get(key tcell.Key) (KeyAction, bool) {
 	return v, ok
 }
 
+// Len returns action mapping count.
 func (a *KeyActions) Len() int {
+	a.mx.RLock()
+	defer a.mx.RUnlock()
+
 	return len(a.actions)
 }
 
@@ -95,13 +105,16 @@ func (a *KeyActions) Reset(aa *KeyActions) {
 	a.Merge(aa)
 }
 
-type RangeFn func(tcell.Key, KeyAction)
-
+// Range ranges over all actions and triggers a given function.
 func (a *KeyActions) Range(f RangeFn) {
+	var km KeyMap
 	a.mx.RLock()
-	defer a.mx.RUnlock()
+	{
+		km = a.actions
+	}
+	a.mx.RUnlock()
 
-	for k, v := range a.actions {
+	for k, v := range km {
 		f(k, v)
 	}
 }
@@ -114,9 +127,10 @@ func (a *KeyActions) Add(k tcell.Key, ka KeyAction) {
 	a.actions[k] = ka
 }
 
+// Bulk bulk insert key mappings.
 func (a *KeyActions) Bulk(aa KeyMap) {
-	// a.mx.Lock()
-	// defer a.mx.Unlock()
+	a.mx.Lock()
+	defer a.mx.Unlock()
 
 	for k, v := range aa {
 		a.actions[k] = v
@@ -135,8 +149,8 @@ func (a *KeyActions) Merge(aa *KeyActions) {
 
 // Clear remove all actions.
 func (a *KeyActions) Clear() {
-	// a.mx.Lock()
-	// defer a.mx.Unlock()
+	a.mx.Lock()
+	defer a.mx.Unlock()
 
 	for k := range a.actions {
 		delete(a.actions, k)
@@ -145,8 +159,8 @@ func (a *KeyActions) Clear() {
 
 // ClearDanger remove all dangerous actions.
 func (a *KeyActions) ClearDanger() {
-	// a.mx.Lock()
-	// defer a.mx.Unlock()
+	a.mx.Lock()
+	defer a.mx.Unlock()
 
 	for k, v := range a.actions {
 		if v.Opts.Dangerous {
@@ -157,8 +171,8 @@ func (a *KeyActions) ClearDanger() {
 
 // Set replace actions with new ones.
 func (a *KeyActions) Set(aa *KeyActions) {
-	// a.mx.Lock()
-	// defer a.mx.Unlock()
+	a.mx.Lock()
+	defer a.mx.Unlock()
 
 	for k, v := range aa.actions {
 		a.actions[k] = v
@@ -167,8 +181,8 @@ func (a *KeyActions) Set(aa *KeyActions) {
 
 // Delete deletes actions by the given keys.
 func (a *KeyActions) Delete(kk ...tcell.Key) {
-	// a.mx.Lock()
-	// defer a.mx.Unlock()
+	a.mx.Lock()
+	defer a.mx.Unlock()
 
 	for _, k := range kk {
 		delete(a.actions, k)

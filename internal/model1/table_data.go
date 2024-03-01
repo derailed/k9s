@@ -73,7 +73,7 @@ func NewTableDataWithRows(gvr client.GVR, h Header, re *RowEvents) *TableData {
 func NewTableDataFromTable(td *TableData) *TableData {
 	t := NewTableData(td.gvr)
 	t.header = td.header
-	t.rowEvents = NewRowEvents(td.RowCount())
+	t.rowEvents = td.rowEvents
 	t.namespace = td.namespace
 
 	return t
@@ -142,17 +142,17 @@ func (t *TableData) Filter(f FilterOpts) *TableData {
 		td.rowEvents = t.filterToast()
 	}
 	if f.Filter == "" || internal.IsLabelSelector(f.Filter) {
-		return t
+		return td
 	}
 	if f, ok := internal.IsFuzzySelector(f.Filter); ok {
 		td.rowEvents = t.fuzzyFilter(f)
+		return td
 	}
 	rr, err := t.rxFilter(f.Filter, internal.IsInverseSelector(f.Filter))
-	if err != nil {
-		log.Error().Err(err).Msg("rx filter failed")
-		return t
-	} else {
+	if err == nil {
 		td.rowEvents = rr
+	} else {
+		log.Error().Err(err).Msg("rx filter failed")
 	}
 
 	return td
@@ -226,11 +226,19 @@ func (t *TableData) filterToast() *RowEvents {
 }
 
 func (t *TableData) GetNamespace() string {
+	t.mx.RLock()
+	defer t.mx.RUnlock()
+
 	return t.namespace
 }
 
 func (t *TableData) Reset(ns string) {
-	t.namespace = ns
+	t.mx.Lock()
+	{
+		t.namespace = ns
+	}
+	t.mx.Unlock()
+
 	t.Clear()
 }
 
@@ -255,10 +263,6 @@ func (t *TableData) Reconcile(ctx context.Context, r Renderer, oo []runtime.Obje
 		}
 	}
 
-	sel, ok := ctx.Value(internal.KeyLabels).(string)
-	if ok && sel != "" {
-		t.Clear()
-	}
 	t.Update(rows)
 	t.SetHeader(t.namespace, r.Header(t.namespace))
 	if t.HeaderCount() == 0 {
@@ -319,6 +323,13 @@ func (t *TableData) Labelize(labels []string) *TableData {
 // Customize returns a new model with customized column layout.
 func (t *TableData) Customize(vs *config.ViewSetting, sc SortColumn, manual, wide bool) (*TableData, SortColumn) {
 	if vs.IsBlank() {
+		if sc.Name != "" {
+			return t, sc
+		}
+		psc, err := t.sortCol(vs)
+		if err == nil {
+			return t, psc
+		}
 		return t, sc
 	}
 
@@ -347,10 +358,7 @@ func (t *TableData) sortCol(vs *config.ViewSetting) (SortColumn, error) {
 	if t.HeaderCount() == 0 {
 		return psc, errors.New("no header found")
 	}
-	name, order, err := vs.SortCol()
-	if err != nil {
-		return psc, err
-	}
+	name, order, _ := vs.SortCol()
 	if _, ok := t.header.IndexOf(name, false); ok {
 		psc.Name, psc.ASC = name, order
 		return psc, nil

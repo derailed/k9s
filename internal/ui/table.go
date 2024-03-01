@@ -6,6 +6,7 @@ package ui
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -52,6 +53,7 @@ type Table struct {
 	toast       bool
 	hasMetrics  bool
 	ctx         context.Context
+	mx          sync.RWMutex
 }
 
 // NewTable returns a new table view.
@@ -67,6 +69,55 @@ func NewTable(gvr client.GVR) *Table {
 		cmdBuff: model.NewFishBuff('/', model.FilterBuffer),
 		sortCol: model1.SortColumn{ASC: true},
 	}
+}
+
+func (t *Table) setSortCol(sc model1.SortColumn) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.sortCol = sc
+}
+
+func (t *Table) toggleSortCol() {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.sortCol.ASC = !t.sortCol.ASC
+}
+
+func (t *Table) getSortCol() model1.SortColumn {
+	t.mx.RLock()
+	defer t.mx.RUnlock()
+
+	return t.sortCol
+}
+
+func (t *Table) setMSort(b bool) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.manualSort = b
+}
+
+func (t *Table) getMSort() bool {
+	t.mx.RLock()
+	defer t.mx.RUnlock()
+
+	return t.manualSort
+}
+
+func (t *Table) setVs(vs *config.ViewSetting) {
+	t.mx.Lock()
+	defer t.mx.Unlock()
+
+	t.viewSetting = vs
+}
+
+func (t *Table) getVs() *config.ViewSetting {
+	t.mx.RLock()
+	defer t.mx.RUnlock()
+
+	return t.viewSetting
 }
 
 func (t *Table) GetContext() context.Context {
@@ -98,8 +149,9 @@ func (t *Table) Init(ctx context.Context) {
 func (t *Table) GVR() client.GVR { return t.gvr }
 
 // ViewSettingsChanged notifies listener the view configuration changed.
-func (t *Table) ViewSettingsChanged(settings config.ViewSetting) {
-	t.viewSetting, t.manualSort = &settings, false
+func (t *Table) ViewSettingsChanged(vs config.ViewSetting) {
+	t.setVs(&vs)
+	t.setMSort(false)
 	t.Refresh()
 }
 
@@ -193,7 +245,7 @@ func (t *Table) SetColorerFn(f model1.ColorerFunc) {
 
 // SetSortCol sets in sort column index and order.
 func (t *Table) SetSortCol(name string, asc bool) {
-	t.sortCol.Name, t.sortCol.ASC = name, asc
+	t.setSortCol(model1.SortColumn{Name: name, ASC: asc})
 }
 
 // Update table content.
@@ -208,13 +260,16 @@ func (t *Table) Update(data *model1.TableData, hasMetrics bool) *model1.TableDat
 
 func (t *Table) doUpdate(data *model1.TableData) *model1.TableData {
 	if client.IsAllNamespaces(data.GetNamespace()) {
-		t.actions.Add(KeyShiftP, NewKeyAction("Sort Namespace", t.SortColCmd("NAMESPACE", true), false))
+		t.actions.Add(
+			KeyShiftP,
+			NewKeyAction("Sort Namespace", t.SortColCmd("NAMESPACE", true), false),
+		)
 	} else {
 		t.actions.Delete(KeyShiftP)
 	}
 
-	cdata, sortCol := data.Customize(t.viewSetting, t.sortCol, t.manualSort, true)
-	t.sortCol = sortCol
+	cdata, sortCol := data.Customize(t.getVs(), t.getSortCol(), t.getMSort(), true)
+	t.setSortCol(sortCol)
 
 	return cdata
 }
@@ -245,10 +300,10 @@ func (t *Table) UpdateUI(cdata, data *model1.TableData) {
 		c.SetTextColor(fg)
 		col++
 	}
-	cdata.Sort(t.sortCol)
+	cdata.Sort(t.getSortCol())
 
 	pads := make(MaxyPad, cdata.HeaderCount())
-	ComputeMaxColumns(pads, t.sortCol.Name, cdata)
+	ComputeMaxColumns(pads, t.getSortCol().Name, cdata)
 	cdata.RowsRange(func(row int, re model1.RowEvent) bool {
 		ore, ok := data.FindRow(re.Row.ID)
 		if !ok {
@@ -322,13 +377,14 @@ func (t *Table) buildRow(r int, re, ore model1.RowEvent, h model1.Header, pads M
 // SortColCmd designates a sorted column.
 func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tcell.EventKey {
 	return func(evt *tcell.EventKey) *tcell.EventKey {
-		t.manualSort = true
-		t.sortCol.ASC = !t.sortCol.ASC
-		if t.sortCol.Name != name {
-			t.sortCol.ASC = asc
+		sc := t.getSortCol()
+		sc.ASC = !sc.ASC
+		if sc.Name != name {
+			sc.ASC = asc
 		}
-		t.sortCol.Name = name
-		t.manualSort = true
+		sc.Name = name
+		t.setSortCol(sc)
+		t.setMSort(true)
 		t.Refresh()
 		return nil
 	}
@@ -336,7 +392,7 @@ func (t *Table) SortColCmd(name string, asc bool) func(evt *tcell.EventKey) *tce
 
 // SortInvertCmd reverses sorting order.
 func (t *Table) SortInvertCmd(evt *tcell.EventKey) *tcell.EventKey {
-	t.sortCol.ASC = !t.sortCol.ASC
+	t.toggleSortCol()
 	t.Refresh()
 
 	return nil
@@ -357,7 +413,6 @@ func (t *Table) Refresh() {
 	// BOZO!! Really want to tell model reload now. Refactor!
 	cdata := t.Update(data, t.hasMetrics)
 	t.UpdateUI(cdata, data)
-
 }
 
 // GetSelectedRow returns the entire selected row or nil if nothing selected.
@@ -386,8 +441,9 @@ func (t *Table) NameColIndex() int {
 
 // AddHeaderCell configures a table cell header.
 func (t *Table) AddHeaderCell(col int, h model1.HeaderColumn) {
-	sortCol := h.Name == t.sortCol.Name
-	c := tview.NewTableCell(sortIndicator(sortCol, t.sortCol.ASC, t.styles.Table(), h.Name))
+	sc := t.getSortCol()
+	sortCol := h.Name == sc.Name
+	c := tview.NewTableCell(sortIndicator(sortCol, sc.ASC, t.styles.Table(), h.Name))
 	c.SetExpansion(1)
 	c.SetAlign(h.Align)
 	t.SetCell(0, col, c)

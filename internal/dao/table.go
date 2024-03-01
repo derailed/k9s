@@ -6,9 +6,6 @@ package dao
 import (
 	"context"
 	"fmt"
-	"time"
-
-	"github.com/rs/zerolog/log"
 
 	"github.com/derailed/k9s/internal"
 	"github.com/derailed/k9s/internal/client"
@@ -19,7 +16,7 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-// BOZO!! Figure out how to convert to table def and use factory.
+const gvFmt = "application/json;as=Table;v=%s;g=%s, application/json"
 
 var genScheme = runtime.NewScheme()
 
@@ -30,14 +27,14 @@ type Table struct {
 
 // Get returns a given resource.
 func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
-	a := fmt.Sprintf(gvFmt, metav1.SchemeGroupVersion.Version, metav1.GroupName)
 	f, p := t.codec()
-
 	c, err := t.getClient(f)
 	if err != nil {
 		return nil, err
 	}
+
 	ns, n := client.Namespaced(path)
+	a := fmt.Sprintf(gvFmt, metav1.SchemeGroupVersion.Version, metav1.GroupName)
 	req := c.Get().
 		SetHeader("Accept", a).
 		Name(n).
@@ -52,28 +49,24 @@ func (t *Table) Get(ctx context.Context, path string) (runtime.Object, error) {
 
 // List all Resources in a given namespace.
 func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
-	defer func(ti time.Time) {
-		log.Debug().Msgf(">>>> TABLE-COL [%s] (%s)", t.gvr, time.Since(ti))
-	}(time.Now())
-
 	labelSel, _ := ctx.Value(internal.KeyLabels).(string)
-	a := fmt.Sprintf(gvFmt, metav1.SchemeGroupVersion.Version, metav1.GroupName)
-
 	fieldSel, _ := ctx.Value(internal.KeyFields).(string)
 
 	f, p := t.codec()
-
 	c, err := t.getClient(f)
 	if err != nil {
 		return nil, err
 	}
+	a := fmt.Sprintf(gvFmt, metav1.SchemeGroupVersion.Version, metav1.GroupName)
 	o, err := c.Get().
 		SetHeader("Accept", a).
 		Namespace(ns).
 		Resource(t.gvr.R()).
 		VersionedParams(&metav1.ListOptions{
-			LabelSelector: labelSel,
-			FieldSelector: fieldSel,
+			LabelSelector:        labelSel,
+			FieldSelector:        fieldSel,
+			ResourceVersion:      "0",
+			ResourceVersionMatch: v1.ResourceVersionMatchNotOlderThan,
 		}, p).
 		Do(ctx).Get()
 	if err != nil {
@@ -85,8 +78,6 @@ func (t *Table) List(ctx context.Context, ns string) ([]runtime.Object, error) {
 
 // ----------------------------------------------------------------------------
 // Helpers...
-
-const gvFmt = "application/json;as=Table;v=%s;g=%s, application/json"
 
 func (t *Table) getClient(f serializer.CodecFactory) (*rest.RESTClient, error) {
 	cfg, err := t.Client().RestConfig()

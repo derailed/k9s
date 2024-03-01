@@ -108,7 +108,7 @@ func (c *Cluster) Metrics(ctx context.Context, mx *client.ClusterMetrics) error 
 		}
 	}
 	if nn == nil {
-		return errors.New("Unable to fetch nodes list")
+		return errors.New("unable to fetch nodes list")
 	}
 	if len(nn.Items) > 0 {
 		c.cache.Add(clusterNodesKey, nn, clusterCacheExpiry)
