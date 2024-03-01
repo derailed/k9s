@@ -209,9 +209,9 @@ func (c *Config) Merge(c1 *Config) {
 }
 
 // Load loads K9s configuration from file.
-func (c *Config) Load(path string) error {
+func (c *Config) Load(path string, force bool) error {
 	if _, err := os.Stat(path); errors.Is(err, fs.ErrNotExist) {
-		if err := c.Save(); err != nil {
+		if err := c.Save(force); err != nil {
 			return err
 		}
 	}
@@ -234,9 +234,9 @@ func (c *Config) Load(path string) error {
 }
 
 // Save configuration to disk.
-func (c *Config) Save() error {
+func (c *Config) Save(force bool) error {
 	c.Validate()
-	if err := c.K9s.Save(); err != nil {
+	if err := c.K9s.Save(force); err != nil {
 		return err
 	}
 	if _, err := os.Stat(AppConfigFile); errors.Is(err, fs.ErrNotExist) {

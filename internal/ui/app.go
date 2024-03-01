@@ -142,7 +142,7 @@ func (a *App) bindKeys() {
 	a.actions = NewKeyActionsFromMap(KeyMap{
 		KeyColon:       NewKeyAction("Cmd", a.activateCmd, false),
 		tcell.KeyCtrlR: NewKeyAction("Redraw", a.redrawCmd, false),
-		tcell.KeyCtrlH: NewKeyAction("Hijack", a.keepCmd, false),
+		tcell.KeyCtrlP: NewKeyAction("Persist", a.saveCmd, false),
 		tcell.KeyCtrlC: NewKeyAction("Quit", a.quitCmd, false),
 		tcell.KeyCtrlU: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
 		tcell.KeyCtrlQ: NewSharedKeyAction("Clear Filter", a.clearCmd, false),
@@ -168,11 +168,11 @@ func (a *App) ResetCmd() {
 	a.cmdBuff.Reset()
 }
 
-func (a *App) keepCmd(evt *tcell.EventKey) *tcell.EventKey {
-	if err := a.Config.Save(); err != nil {
+func (a *App) saveCmd(evt *tcell.EventKey) *tcell.EventKey {
+	if err := a.Config.Save(true); err != nil {
 		a.Flash().Err(err)
 	}
-	a.Flash().Info("cluster config saved")
+	a.Flash().Info("current context config saved")
 
 	return nil
 }

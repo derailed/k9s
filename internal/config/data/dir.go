@@ -62,6 +62,10 @@ func (d *Dir) genConfig(path string, ct *api.Context) (*Config, error) {
 }
 
 func (d *Dir) Save(path string, c *Config) error {
+	if cfg, err := d.loadConfig(path); err == nil {
+		c.Merge(cfg)
+	}
+
 	d.mx.Lock()
 	defer d.mx.Unlock()
 

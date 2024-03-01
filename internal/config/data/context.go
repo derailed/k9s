@@ -56,6 +56,13 @@ func NewContextFromKubeConfig(ks KubeSettings) (*Context, error) {
 	return NewContextFromConfig(ct), nil
 }
 
+func (c *Context) merge(old *Context) {
+	if old == nil {
+		return
+	}
+	c.Namespace.merge(old.Namespace)
+
+}
 func (c *Context) GetClusterName() string {
 	c.mx.RLock()
 	defer c.mx.RUnlock()

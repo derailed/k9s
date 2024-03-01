@@ -140,7 +140,7 @@ func (c *Configurator) ConfigWatcher(ctx context.Context, s synchronizer) error 
 				if evt.Has(fsnotify.Create) || evt.Has(fsnotify.Write) {
 					log.Debug().Msgf("ConfigWatcher file changed: %s", evt.Name)
 					if evt.Name == config.AppConfigFile {
-						if err := c.Config.Load(evt.Name); err != nil {
+						if err := c.Config.Load(evt.Name, false); err != nil {
 							log.Error().Err(err).Msgf("k9s config reload failed")
 							s.Flash().Warn("k9s config reload failed. Check k9s logs!")
 							s.Logo().Warn("K9s config reload failed!")

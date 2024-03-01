@@ -483,7 +483,7 @@ func (a *App) switchContext(ci *cmd.Interpreter, force bool) error {
 				return err
 			}
 		}
-		if err := a.Config.Save(); err != nil {
+		if err := a.Config.Save(true); err != nil {
 			log.Error().Err(err).Msg("config save failed!")
 		} else {
 			log.Debug().Msgf("Saved context config for: %q", name)
@@ -516,7 +516,7 @@ func (a *App) BailOut() {
 		}
 	}()
 
-	if err := a.Config.Save(); err != nil {
+	if err := a.Config.Save(true); err != nil {
 		log.Error().Err(err).Msg("config save failed!")
 	}
 
